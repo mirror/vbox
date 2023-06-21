@@ -113,10 +113,6 @@ typedef struct _SHCLX11CTX
     RTTHREAD         Thread;
     /** Flag indicating that the thread is in a started state. */
     bool             fThreadStarted;
-    /** Request queue.
-     *  Needed for processing HGCM requests within the HGCM (main) thread from
-     *  the X11 event thread. */
-    RTREQQUEUE       hReqQ;
     /** The X Toolkit widget which we use as our clipboard client.  It is never made visible. */
     Widget           pWidget;
     /** Should we try to grab the clipboard on startup? */
