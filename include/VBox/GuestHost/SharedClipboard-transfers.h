@@ -449,7 +449,7 @@ typedef struct _SHCLLISTENTRY
     /** Size (in bytes) of entry name.
      *  Includes terminator. */
     uint32_t   cbName;
-    /** Information flag(s). Of type VBOX_SHCL_INFO_FLAG_XXX. */
+    /** Information flag(s). Of type VBOX_SHCL_INFO_F_XXX. */
     uint32_t   fInfo;
     /** Size (in bytes) of the actual list entry. */
     uint32_t   cbInfo;

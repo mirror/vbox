@@ -933,7 +933,7 @@ typedef struct _VBoxShClRootListEntryParms
 {
     /** uint64_t, in: Context ID. */
     HGCMFunctionParameter uContext;
-    /** uint32_t, in: VBOX_SHCL_INFO_FLAG_XXX. */
+    /** uint32_t, in: VBOX_SHCL_INFO_F_XXX. */
     HGCMFunctionParameter fInfo;
     /** uint64_t, in: Index of root list entry to get (zero-based). */
     HGCMFunctionParameter uIndex;
@@ -1060,7 +1060,7 @@ typedef struct _VBoxShClListEntryReqParms
     HGCMFunctionParameter uContext;
     /** uint64_t, in: List handle. */
     HGCMFunctionParameter uHandle;
-    /** uint32_t, in: VBOX_SHCL_INFO_FLAG_XXX. */
+    /** uint32_t, in: VBOX_SHCL_INFO_F_XXX. */
     HGCMFunctionParameter fInfo;
 } VBoxShClListEntryReqParms;
 
