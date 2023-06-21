@@ -390,10 +390,10 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
     /* Or select Windows 10 item for Windows family as default: */
     else if (m_strFamilyId == "Windows")
     {
-        QString strDefaultID = "Windows10_64";
-        const int iIndexWin10 = m_pComboType->findData(strDefaultID, TypeID);
-        if (iIndexWin10 != -1)
-            m_pComboType->setCurrentIndex(iIndexWin10);
+        QString strDefaultID = "Windows11_64";
+        const int iIndexWin = m_pComboType->findData(strDefaultID, TypeID);
+        if (iIndexWin != -1)
+            m_pComboType->setCurrentIndex(iIndexWin);
     }
     /* Or select Oracle Linux item for Linux family as default: */
     else if (m_strFamilyId == "Linux")
