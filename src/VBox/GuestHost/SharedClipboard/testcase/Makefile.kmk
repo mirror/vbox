@@ -79,7 +79,8 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
    	tstClipboardHttpServer.cpp \
    	../clipboard-common.cpp \
    	../clipboard-transfers.cpp \
-   	../clipboard-transfers-http.cpp
+   	../clipboard-transfers-http.cpp \
+   	../clipboard-transfers-provider-local.cpp
    tstClipboardHttpServer_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
   endif
  endif
