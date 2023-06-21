@@ -51,27 +51,8 @@
 
 #include "clipboard.h"
 
-#include <iprt/req.h>
-
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
-#if 0
-/**
- * Worker for reading the transfer root list from the host.
- */
-static DECLCALLBACK(int) vbclX11ReqTransferReadRootListWorker(PSHCLCONTEXT pCtx, PSHCLTRANSFER pTransfer)
-{
-    RT_NOREF(pCtx);
-
-    LogFlowFuncEnter();
-
-    int rc = ShClTransferRootListRead(pTransfer);
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-#endif
-
 /**
  * Worker for waiting for a transfer status change.
  */
@@ -205,7 +186,7 @@ static DECLCALLBACK(void) vbclX11OnHttpTransferErrorCallback(PSHCLTRANSFERCALLBA
 /**
  * Worker for a reading clipboard from the host.
  */
-static DECLCALLBACK(int) vbclX11ReqReadDataWorker(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb, void *pvUser)
+static DECLCALLBACK(int) vbclX11ReadDataWorker(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb, void *pvUser)
 {
     RT_NOREF(pvUser);
 
@@ -285,21 +266,19 @@ static DECLCALLBACK(int) vbclX11OnRequestDataFromSourceCallback(PSHCLCONTEXT pCt
 
     LogFlowFunc(("pCtx=%p, uFmt=%#x\n", pCtx, uFmt));
 
-    /* Request reading host clipboard data. */
-    PRTREQ pReq = NULL;
-    int rc = RTReqQueueCallEx(pCtx->X11.hReqQ, &pReq, SHCL_TIMEOUT_DEFAULT_MS, RTREQFLAGS_IPRT_STATUS,
-                              (PFNRT)vbclX11ReqReadDataWorker, 5, pCtx, uFmt, ppv, pcb, pvUser);
-    RTReqRelease(pReq);
+    int rc;
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
     if (uFmt == VBOX_SHCL_FMT_URI_LIST)
     {
         PSHCLHTTPSERVER pSrv = &pCtx->X11.HttpCtx.HttpServer;
 
-        rc = ShClTransferHttpServerWaitForStatusChange(pSrv, SHCLHTTPSERVERSTATUS_TRANSFER_REGISTERED, SHCL_TIMEOUT_DEFAULT_MS);
+        rc = vbclX11ReadDataWorker(pCtx, uFmt, ppv, pcb, pvUser);
+        if (RT_SUCCESS(rc))
+            rc = ShClTransferHttpServerWaitForStatusChange(pSrv, SHCLHTTPSERVERSTATUS_TRANSFER_REGISTERED, 5000 /* SHCL_TIMEOUT_DEFAULT_MS */);
         if (RT_SUCCESS(rc))
         {
-            PSHCLTRANSFER pTransfer = ShClTransferHttpServerGetTransferFirst(pSrv);
+            PSHCLTRANSFER pTransfer = ShClTransferHttpServerGetTransferLast(pSrv);
             if (pTransfer)
             {
                 rc = vbclX11TransferWaitForStatusWorker(pCtx, pTransfer, SHCLTRANSFERSTATUS_STARTED, SHCL_TIMEOUT_DEFAULT_MS);
@@ -312,11 +291,11 @@ static DECLCALLBACK(int) vbclX11OnRequestDataFromSourceCallback(PSHCLCONTEXT pCt
                     *ppv = pszData;
                     *pcb = strlen(pszData) + 1 /* Include terminator */;
 
+                    LogFlowFunc(("pszURL=%s\n", pszURL));
+
                     RTStrFree(pszURL);
 
                     rc = VINF_SUCCESS;
-
-                    LogFlowFunc(("pszURL=%s\n", pszURL));
                 }
             }
             else
@@ -325,25 +304,14 @@ static DECLCALLBACK(int) vbclX11OnRequestDataFromSourceCallback(PSHCLCONTEXT pCt
         else
             LogRel(("Shared Clipboard: Could not start transfer, as the HTTP server is not running\n"));
     }
+    else /* Anything else */
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP */
+    {
+        rc = vbclX11ReadDataWorker(pCtx, uFmt, ppv, pcb, pvUser);
+    }
 
     if (RT_FAILURE(rc))
         LogRel(("Requesting data in format %#x from host failed with %Rrc\n", uFmt, rc));
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Worker for reporting clipboard formats to the host.
- */
-static DECLCALLBACK(int) vbclX11ReqReportFormatsWorker(PSHCLCONTEXT pCtx, uint32_t fFormats, void *pvUser)
-{
-    RT_NOREF(pvUser);
-
-    LogFlowFunc(("fFormats=%#x\n", fFormats));
-
-    int rc = VbglR3ClipboardReportFormats(pCtx->CmdCtx.idClient, fFormats);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -358,11 +326,11 @@ static DECLCALLBACK(int) vbclX11ReqReportFormatsWorker(PSHCLCONTEXT pCtx, uint32
  */
 static DECLCALLBACK(int) vbclX11ReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_t fFormats, void *pvUser)
 {
-    /* Request reading host clipboard data. */
-    PRTREQ pReq = NULL;
-    int rc = RTReqQueueCallEx(pCtx->X11.hReqQ, &pReq, SHCL_TIMEOUT_DEFAULT_MS, RTREQFLAGS_IPRT_STATUS,
-                              (PFNRT)vbclX11ReqReportFormatsWorker, 3, pCtx, fFormats, pvUser);
-    RTReqRelease(pReq);
+    RT_NOREF(pvUser);
+
+    LogFlowFunc(("fFormats=%#x\n", fFormats));
+
+    int rc = VbglR3ClipboardReportFormats(pCtx->CmdCtx.idClient, fFormats);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -430,9 +398,6 @@ int VBClX11ClipboardMain(void)
 {
     PSHCLCONTEXT pCtx = &g_Ctx;
 
-    int rc = RTReqQueueCreate(&pCtx->X11.hReqQ);
-    AssertRCReturn(rc, rc);
-
     bool fShutdown = false;
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
@@ -458,17 +423,17 @@ int VBClX11ClipboardMain(void)
     LogFlowFunc(("fUseLegacyProtocol=%RTbool, fHostFeatures=%#RX64 ...\n",
                  pCtx->CmdCtx.fUseLegacyProtocol, pCtx->CmdCtx.fHostFeatures));
 
-    /* The thread processes incoming messages from the host and the worker queue. */
-    PVBGLR3CLIPBOARDEVENT pEvent = NULL;
+    int rc;
+
+    /* The thread waits for incoming messages from the host. */
     for (;;)
     {
-        if (!pEvent)
-            pEvent = (PVBGLR3CLIPBOARDEVENT)RTMemAllocZ(sizeof(VBGLR3CLIPBOARDEVENT));
+        PVBGLR3CLIPBOARDEVENT pEvent = (PVBGLR3CLIPBOARDEVENT)RTMemAllocZ(sizeof(VBGLR3CLIPBOARDEVENT));
         AssertPtrBreakStmt(pEvent, rc = VERR_NO_MEMORY);
 
         uint32_t idMsg  = 0;
         uint32_t cParms = 0;
-        rc = VbglR3ClipboardMsgPeek(&pCtx->CmdCtx, &idMsg, &cParms, NULL /* pidRestoreCheck */);
+        rc = VbglR3ClipboardMsgPeekWait(&pCtx->CmdCtx, &idMsg, &cParms, NULL /* pidRestoreCheck */);
         if (RT_SUCCESS(rc))
         {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
@@ -476,11 +441,6 @@ int VBClX11ClipboardMain(void)
 #else
             rc = VbglR3ClipboardEventGetNext(idMsg, cParms, &pCtx->CmdCtx, pEvent);
 #endif
-        }
-        else if (rc == VERR_TRY_AGAIN) /* No new message (yet). */
-        {
-            RTReqQueueProcess(pCtx->X11.hReqQ, RT_MS_1SEC);
-            continue;
         }
 
         if (RT_FAILURE(rc))
@@ -590,8 +550,6 @@ int VBClX11ClipboardMain(void)
         if (fShutdown)
             break;
     }
-
-    RTReqQueueDestroy(pCtx->X11.hReqQ);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
