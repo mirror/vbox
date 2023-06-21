@@ -983,7 +983,7 @@ typedef enum _SHCLHTTPSERVERSTATUS
     SHCLHTTPSERVERSTATUS_NONE                  = 0x0,
     /** A new transfer got registered. */
     SHCLHTTPSERVERSTATUS_TRANSFER_REGISTERED   = 0x1,
-    /** A new transfer got registered. */
+    /** A transfer got unregistered. */
     SHCLHTTPSERVERSTATUS_TRANSFER_UNREGISTERED = 0x2
 } SHCLHTTPSERVERSTATUS;
 
@@ -997,6 +997,10 @@ typedef struct _SHCLHTTPSERVER
     /** Status event for callers to wait for.
      *  Updates \a enmStatus. */
     RTSEMEVENT           StatusEvent;
+    /** Initialized indicator. */
+    bool                 fInitialized;
+    /** Running indicator. */
+    bool                 fRunning;
     /** Current status. */
     SHCLHTTPSERVERSTATUS enmStatus;
     /** Handle of the HTTP server instance. */
@@ -1187,13 +1191,15 @@ int ShClTransferHttpServerMaybeStop(PSHCLHTTPCONTEXT pCtx);
 /** @name Shared Clipboard HTTP server API.
  *  @{
  */
+int ShClTransferHttpServerInit(PSHCLHTTPSERVER pSrv);
+int ShClTransferHttpServerDestroy(PSHCLHTTPSERVER pSrv);
 int ShClTransferHttpServerStart(PSHCLHTTPSERVER pSrv, unsigned cMaxAttempts, uint16_t *puPort);
 int ShClTransferHttpServerStartEx(PSHCLHTTPSERVER pSrv, uint16_t uPort);
-int ShClTransferHttpServerDestroy(PSHCLHTTPSERVER pSrv);
-int ShClTransferHttpServerInit(PSHCLHTTPSERVER pSrv);
+int ShClTransferHttpServerStop(PSHCLHTTPSERVER pSrv);
 int ShClTransferHttpServerRegisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER pTransfer);
 int ShClTransferHttpServerUnregisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER pTransfer);
 PSHCLTRANSFER ShClTransferHttpServerGetTransferFirst(PSHCLHTTPSERVER pSrv);
+PSHCLTRANSFER ShClTransferHttpServerGetTransferLast(PSHCLHTTPSERVER pSrv);
 bool ShClTransferHttpServerGetTransfer(PSHCLHTTPSERVER pSrv, SHCLTRANSFERID idTransfer);
 uint16_t ShClTransferHttpServerGetPort(PSHCLHTTPSERVER pSrv);
 uint32_t ShClTransferHttpServerGetTransferCount(PSHCLHTTPSERVER pSrv);

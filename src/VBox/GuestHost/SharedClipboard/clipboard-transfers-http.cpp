@@ -100,6 +100,28 @@ static SHCLHTTPSERVERSTATUS shclTransferHttpServerSetStatusLocked(PSHCLHTTPSERVE
 *********************************************************************************************************************************/
 
 /**
+ * Locks the critical section of a Shared Clipboard HTTP server instance.
+ *
+ * @param   pSrv                Shared Clipboard HTTP server instance to lock.
+ */
+DECLINLINE(void) shClTransferHttpServerLock(PSHCLHTTPSERVER pSrv)
+{
+    int rc2 = RTCritSectEnter(&pSrv->CritSect);
+    AssertRC(rc2);
+}
+
+/**
+ * Unlocks the critical section of a Shared Clipboard HTTP server instance.
+ *
+ * @param   pSrv                Shared Clipboard HTTP server instance to unlock.
+ */
+DECLINLINE(void) shClTransferHttpServerUnlock(PSHCLHTTPSERVER pSrv)
+{
+    int rc2 = RTCritSectLeave(&pSrv->CritSect);
+    AssertRC(rc2);
+}
+
+/**
  * Locks an HTTP transfer.
  *
  * @param   pSrvTx              HTTP transfer to lock.
@@ -372,15 +394,20 @@ static DECLCALLBACK(int) shClTransferHttpQueryInfo(PRTHTTPCALLBACKDATA pData,
                     rc = ShClTransferObjOpen(pTx, &openParms, &pSrvTx->hObj);
                     if (RT_SUCCESS(rc))
                     {
-                        char szPath[RTPATH_MAX];
-                        rc = ShClTransferGetRootPathAbs(pTx, szPath, sizeof(szPath));
-                        if (RT_SUCCESS(rc))
+                        rc = VERR_NOT_SUPPORTED; /* Play safe by default. */
+
+                        if (   pEntry->fInfo & VBOX_SHCL_INFO_F_FSOBJINFO
+                            && pEntry->cbInfo == sizeof(SHCLFSOBJINFO))
                         {
-                            rc = RTPathAppend(szPath, sizeof(szPath), openParms.pszPath);
-                            if (RT_SUCCESS(rc))
+                            PCSHCLFSOBJINFO pSrcObjInfo = (PSHCLFSOBJINFO)pEntry->pvInfo;
+
+                            LogFlowFunc(("pszName=%s, cbInfo=%RU32, fMode=0x%x (type %#x)\n",
+                                         pEntry->pszName, pEntry->cbInfo, pSrcObjInfo->Attr.fMode, (pSrcObjInfo->Attr.fMode & RTFS_TYPE_MASK)));
+
+                            if (RTFS_IS_FILE(pSrcObjInfo->Attr.fMode))
                             {
-                                /* Now that the object is locked, query information that we can return. */
-                                rc = RTPathQueryInfo(szPath, pObjInfo, RTFSOBJATTRADD_NOTHING);
+                                memcpy(pObjInfo, pSrcObjInfo, sizeof(SHCLFSOBJINFO));
+                                rc = VINF_SUCCESS;
                             }
                         }
                     }
@@ -394,6 +421,9 @@ static DECLCALLBACK(int) shClTransferHttpQueryInfo(PRTHTTPCALLBACKDATA pData,
     }
     else
         rc = VERR_NOT_FOUND;
+
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Querying info for HTTP transfer failed with %Rrc\n", rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -421,6 +451,15 @@ static DECLCALLBACK(int) shClTransferHttpDestroy(PRTHTTPCALLBACKDATA pData)
  */
 static int shClTransferHttpServerDestroyInternal(PSHCLHTTPSERVER pSrv)
 {
+    LogFlowFuncEnter();
+
+    if (!ASMAtomicReadBool(&pSrv->fInitialized))
+        return VINF_SUCCESS;
+
+    ASMAtomicXchgBool(&pSrv->fInitialized, false);
+
+    shClTransferHttpServerLock(pSrv);
+
     int rc = VINF_SUCCESS;
 
     PSHCLHTTPSERVERTRANSFER pSrvTx, pSrvTxNext;
@@ -435,6 +474,8 @@ static int shClTransferHttpServerDestroyInternal(PSHCLHTTPSERVER pSrv)
 
     pSrv->hHTTPServer = NIL_RTHTTPSERVER;
 
+    shClTransferHttpServerUnlock(pSrv);
+
     if (RTCritSectIsInitialized(&pSrv->CritSect))
     {
         int rc2 = RTCritSectDelete(&pSrv->CritSect);
@@ -442,32 +483,8 @@ static int shClTransferHttpServerDestroyInternal(PSHCLHTTPSERVER pSrv)
             rc = rc2;
     }
 
-    rc = RTSemEventDestroy(pSrv->StatusEvent);
-    pSrv->StatusEvent = NIL_RTSEMEVENT;
-
+    LogFlowFuncLeaveRC(rc);
     return rc;
-}
-
-/**
- * Locks the critical section of a Shared Clipboard HTTP server instance.
- *
- * @param   pSrv                Shared Clipboard HTTP server instance to lock.
- */
-DECLINLINE(void) shClTransferHttpServerLock(PSHCLHTTPSERVER pSrv)
-{
-    int rc2 = RTCritSectEnter(&pSrv->CritSect);
-    AssertRC(rc2);
-}
-
-/**
- * Unlocks the critical section of a Shared Clipboard HTTP server instance.
- *
- * @param   pSrv                Shared Clipboard HTTP server instance to unlock.
- */
-DECLINLINE(void) shClTransferHttpServerUnlock(PSHCLHTTPSERVER pSrv)
-{
-    int rc2 = RTCritSectLeave(&pSrv->CritSect);
-    AssertRC(rc2);
 }
 
 /**
@@ -491,6 +508,9 @@ static int shClTransferHttpServerInitInternal(PSHCLHTTPSERVER pSrv)
 
     rc = RTHttpServerResponseInit(&pSrv->Resp);
     AssertRCReturn(rc, rc);
+
+    ASMAtomicXchgBool(&pSrv->fInitialized, true);
+    ASMAtomicXchgBool(&pSrv->fRunning, false);
 
     return rc;
 }
@@ -568,17 +588,13 @@ int ShClTransferHttpServerStartEx(PSHCLHTTPSERVER pSrv, uint16_t uPort)
     if (RT_SUCCESS(rc))
     {
         pSrv->uPort = uPort;
+        ASMAtomicXchgBool(&pSrv->fRunning, true);
 
-        LogRel2(("Shared Clipboard: HTTP server running at port %RU16\n", pSrv->uPort));
-    }
-    else
-    {
-        int rc2 = shClTransferHttpServerDestroyInternal(pSrv);
-        AssertRC(rc2);
+        LogRel2(("Shared Clipboard: HTTP server started at port %RU16\n", pSrv->uPort));
     }
 
     if (RT_FAILURE(rc))
-        LogRel(("Shared Clipboard: HTTP server failed to run, rc=%Rrc\n", rc));
+        LogRel(("Shared Clipboard: HTTP server failed to start, rc=%Rrc\n", rc));
 
     return rc;
 }
@@ -626,12 +642,38 @@ int ShClTransferHttpServerStart(PSHCLHTTPSERVER pSrv, unsigned cMaxAttempts, uin
 
         if (   RT_FAILURE(rc)
             && i == cMaxAttempts)
-            LogRel(("Shared Clipboard: Maximum attempts to create HTTP server reached (%u), giving up\n", cMaxAttempts));
+            LogRel(("Shared Clipboard: Maximum attempts to start HTTP server reached (%u), giving up\n", cMaxAttempts));
 
         RTRandAdvDestroy(hRand);
     }
 
     return rc;
+}
+
+/**
+ * Stops a Shared Clipboard HTTP server instance.
+ *
+ * @returns VBox status code.
+ * @param   pSrv                HTTP server instance to stop.
+ */
+int ShClTransferHttpServerStop(PSHCLHTTPSERVER pSrv)
+{
+     if (!ASMAtomicReadBool(&pSrv->fRunning))
+         return VINF_SUCCESS;
+
+     Assert(pSrv->hHTTPServer != NIL_RTHTTPSERVER);
+
+     int rc = RTHttpServerDestroy(pSrv->hHTTPServer);
+     if (RT_SUCCESS(rc))
+     {
+         pSrv->hHTTPServer = NIL_RTHTTPSERVER;
+         ASMAtomicXchgBool(&pSrv->fRunning, false);
+         LogRel2(("Shared Clipboard: HTTP server stopped\n"));
+     }
+     else
+         LogRel(("Shared Clipboard: HTTP server failed to stop, rc=%Rrc\n", rc));
+
+     return rc;
 }
 
 /**
@@ -644,18 +686,11 @@ int ShClTransferHttpServerDestroy(PSHCLHTTPSERVER pSrv)
 {
     AssertPtrReturn(pSrv, VERR_INVALID_POINTER);
 
-    if (pSrv->hHTTPServer == NIL_RTHTTPSERVER)
-        return VINF_SUCCESS;
+    int rc = ShClTransferHttpServerStop(pSrv);
+    if (RT_FAILURE(rc))
+        return rc;
 
-    int rc = RTHttpServerDestroy(pSrv->hHTTPServer);
-    if (RT_SUCCESS(rc))
-        rc = shClTransferHttpServerDestroyInternal(pSrv);
-
-    if (RT_SUCCESS(rc))
-        LogRel2(("Shared Clipboard: HTTP server stopped\n"));
-    else
-        LogRel(("Shared Clipboard: HTTP server failed to stop, rc=%Rrc\n", rc));
-
+    rc = shClTransferHttpServerDestroyInternal(pSrv);
     return rc;
 }
 
@@ -680,6 +715,8 @@ static const char *shClTransferHttpServerGetHost(PSHCLHTTPSERVER pSrv)
  * @param   pSrv                HTTP server instance to unregister transfer from.
  * @param   pTransfer           Server transfer to destroy
  *                              The pointer will be invalid on success.
+ *
+ * @note    Caller must take the server critical section.
  */
 static int shClTransferHttpServerDestroyTransfer(PSHCLHTTPSERVER pSrv, PSHCLHTTPSERVERTRANSFER pSrvTx)
 {
@@ -805,8 +842,8 @@ int ShClTransferHttpServerUnregisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER
 
     int rc = VINF_SUCCESS;
 
-    PSHCLHTTPSERVERTRANSFER pSrvTx;
-    RTListForEach(&pSrv->lstTransfers, pSrvTx, SHCLHTTPSERVERTRANSFER, Node)
+    PSHCLHTTPSERVERTRANSFER pSrvTx, pSrvTxNext;
+    RTListForEachSafe(&pSrv->lstTransfers, pSrvTx, pSrvTxNext, SHCLHTTPSERVERTRANSFER, Node)
     {
         AssertPtr(pSrvTx->pTransfer);
         if (pSrvTx->pTransfer->State.uID == pTransfer->State.uID)
@@ -838,9 +875,7 @@ static SHCLHTTPSERVERSTATUS shclTransferHttpServerSetStatusLocked(PSHCLHTTPSERVE
     Assert(RTCritSectIsOwner(&pSrv->CritSect));
 
     /* Bogus checks. */
-    Assert(   !(enmStatus & SHCLHTTPSERVERSTATUS_NONE) || enmStatus == SHCLHTTPSERVERSTATUS_NONE);
-    Assert(     enmStatus & SHCLHTTPSERVERSTATUS_TRANSFER_REGISTERED
-           && !(enmStatus & SHCLHTTPSERVERSTATUS_TRANSFER_UNREGISTERED));
+    Assert(!(enmStatus & SHCLHTTPSERVERSTATUS_NONE) || enmStatus == SHCLHTTPSERVERSTATUS_NONE);
 
     pSrv->enmStatus = enmStatus;
     LogFlowFunc(("fStatus=%#x\n", pSrv->enmStatus));
@@ -862,6 +897,23 @@ PSHCLTRANSFER ShClTransferHttpServerGetTransferFirst(PSHCLHTTPSERVER pSrv)
     shClTransferHttpServerLock(pSrv);
 
     PSHCLHTTPSERVERTRANSFER pHttpTransfer = RTListGetFirst(&pSrv->lstTransfers, SHCLHTTPSERVERTRANSFER, Node);
+
+    shClTransferHttpServerUnlock(pSrv);
+
+    return pHttpTransfer ? pHttpTransfer->pTransfer : NULL;
+}
+
+/**
+ * Returns the last transfer in the list.
+ *
+ * @returns Pointer to last transfer if found, or NULL if not found.
+ * @param   pSrv                HTTP server instance.
+ */
+PSHCLTRANSFER ShClTransferHttpServerGetTransferLast(PSHCLHTTPSERVER pSrv)
+{
+    shClTransferHttpServerLock(pSrv);
+
+    PSHCLHTTPSERVERTRANSFER pHttpTransfer = RTListGetLast(&pSrv->lstTransfers, SHCLHTTPSERVERTRANSFER, Node);
 
     shClTransferHttpServerUnlock(pSrv);
 
@@ -989,7 +1041,7 @@ bool ShClTransferHttpServerIsRunning(PSHCLHTTPSERVER pSrv)
 {
     AssertPtrReturn(pSrv, false);
 
-    return (pSrv->hHTTPServer != NIL_RTHTTPSERVER); /* Seems enough for now. */
+    return ASMAtomicReadBool(&pSrv->fRunning);
 }
 
 /**
@@ -1021,17 +1073,21 @@ int ShClTransferHttpServerWaitForStatusChange(PSHCLHTTPSERVER pSrv, SHCLHTTPSERV
 
         shClTransferHttpServerLock(pSrv);
 
-        if (RT_SUCCESS(rc))
+        if (RT_FAILURE(rc))
+            break;
+
+        LogFlowFunc(("Current status now is: %#x\n", pSrv->enmStatus));
+
+        if (pSrv->enmStatus & fStatus)
         {
-            if (pSrv->enmStatus & fStatus)
-            {
-                rc = VINF_SUCCESS;
-                break;
-            }
+            rc = VINF_SUCCESS;
+            break;
         }
     }
 
     shClTransferHttpServerUnlock(pSrv);
+
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -1050,6 +1106,8 @@ int ShClTransferHttpServerMaybeStart(PSHCLHTTPCONTEXT pCtx)
 {
     int rc = VINF_SUCCESS;
 
+    LogFlowFuncEnter();
+
     /* Start the built-in HTTP server to serve file(s). */
     if (!ShClTransferHttpServerIsRunning(&pCtx->HttpServer)) /* Only one HTTP server per transfer context. */
         rc = ShClTransferHttpServerStart(&pCtx->HttpServer, 32 /* cMaxAttempts */, NULL /* puPort */);
@@ -1058,7 +1116,7 @@ int ShClTransferHttpServerMaybeStart(PSHCLHTTPCONTEXT pCtx)
 }
 
 /**
- * Stops the HTTP server, if no transfers are left.
+ * Stops the HTTP server, if no running transfers are left.
  *
  * @returns VBox status code.
  * @param   pCtx                HTTP context to stop HTTP server for.
@@ -1067,11 +1125,13 @@ int ShClTransferHttpServerMaybeStop(PSHCLHTTPCONTEXT pCtx)
 {
     int rc = VINF_SUCCESS;
 
+    LogFlowFuncEnter();
+
     if (ShClTransferHttpServerIsRunning(&pCtx->HttpServer))
     {
         /* No more registered transfers left? Tear down the HTTP server instance then. */
         if (ShClTransferHttpServerGetTransferCount(&pCtx->HttpServer) == 0)
-            rc = ShClTransferHttpServerDestroy(&pCtx->HttpServer);
+            rc = ShClTransferHttpServerStop(&pCtx->HttpServer);
     }
 
     return rc;
