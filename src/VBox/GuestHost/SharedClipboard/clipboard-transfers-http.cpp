@@ -600,7 +600,7 @@ int ShClTransferHttpServerStartEx(PSHCLHTTPSERVER pSrv, uint16_t uPort)
 }
 
 /**
- * Starts the Shared Clipboard HTTP server instance using a random port (>= 1024).
+ * Starts the Shared Clipboard HTTP server instance using a random port (>= 49152).
  *
  * This does automatic probing of TCP ports if a port already is being used.
  *
@@ -608,6 +608,8 @@ int ShClTransferHttpServerStartEx(PSHCLHTTPSERVER pSrv, uint16_t uPort)
  * @param   pSrv                HTTP server instance to create.
  * @param   cMaxAttempts        Maximum number of attempts to create a HTTP server.
  * @param   puPort              Where to return the TCP port number being used on success. Optional.
+ *
+ * @note    Complies with RFC 6335 (IANA).
  */
 int ShClTransferHttpServerStart(PSHCLHTTPSERVER pSrv, unsigned cMaxAttempts, uint16_t *puPort)
 {
@@ -623,9 +625,9 @@ int ShClTransferHttpServerStart(PSHCLHTTPSERVER pSrv, unsigned cMaxAttempts, uin
         unsigned i = 0;
         for (i; i < cMaxAttempts; i++)
         {
-            /* Try some random ports above 1024 (i.e. "unprivileged ports") -- required, as VBoxClient runs as a user process
-             * on the guest. */
-            uPort = RTRandAdvU32Ex(hRand, 1024, UINT16_MAX);
+            /* Try some random ports >= 49152 (i.e. "dynamic ports", see RFC 6335)
+             * -- required, as VBoxClient runs as a user process on the guest. */
+            uPort = RTRandAdvU32Ex(hRand, 49152, UINT16_MAX);
 
             /* If the port selected turns is known to be buggy for whatever reason, skip it and try another one. */
             if (shClTransferHttpServerPortIsBuggy(uPort))
