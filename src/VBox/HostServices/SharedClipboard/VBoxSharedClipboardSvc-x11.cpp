@@ -274,13 +274,15 @@ int ShClBackendReadData(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLCLIENTC
                     Assert(pPayload->cbData == sizeof(SHCLX11RESPONSE));
                     PSHCLX11RESPONSE pResp = (PSHCLX11RESPONSE)pPayload->pvData;
 
-                    size_t const cbToCopy = RT_MIN(cbData, pPayload->cbData);
+                    uint32_t const cbRead = pResp->Read.cbData;
+
+                    size_t const cbToCopy = RT_MIN(cbData, cbRead);
                     if (cbToCopy) /* memcpy doesn't like 0 byte inputs. */
-                        memcpy(pvData, pResp->Read.pvData, RT_MIN(cbData, pPayload->cbData));
+                        memcpy(pvData, pResp->Read.pvData, RT_MIN(cbData, cbRead));
 
-                    LogRel2(("Shared Clipboard: Read %RU32 bytes host X11 clipboard data\n", pResp->Read.cbData));
+                    LogRel2(("Shared Clipboard: Read %RU32 bytes host X11 clipboard data\n", cbRead));
 
-                    *pcbActual = pResp->Read.cbData;
+                    *pcbActual = cbRead;
 
                     RTMemFree(pResp->Read.pvData);
                     pResp->Read.cbData = 0;
