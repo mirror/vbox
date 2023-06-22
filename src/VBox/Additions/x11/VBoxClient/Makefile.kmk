@@ -71,6 +71,15 @@ VBoxClient_INCS += ../x11include/randrproto-1.5.0
 VBoxClient_SOURCES = \
 	main.cpp \
 	logging.cpp
+
+ifdef VBOX_WITH_WAYLAND_ADDITIONS
+VBoxClient_DEFS += VBOX_WITH_WAYLAND_ADDITIONS
+VBoxClient_SOURCES += \
+	wayland-helper-dcp.cpp \
+	wayland-helper-gtk.cpp \
+	wayland.cpp
+endif
+
 VBoxClient_SOURCES += $(VBOX_GH_SOURCES)
 
 VBoxDRMClient_TEMPLATE = VBoxGuestR3Exe

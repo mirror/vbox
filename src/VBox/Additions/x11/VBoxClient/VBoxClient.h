@@ -132,6 +132,9 @@ extern VBCLSERVICE g_SvcDisplaySVGASession;
 extern VBCLSERVICE g_SvcDragAndDrop;
 extern VBCLSERVICE g_SvcHostVersion;
 extern VBCLSERVICE g_SvcSeamless;
+# ifdef VBOX_WITH_WAYLAND_ADDITIONS
+extern VBCLSERVICE g_SvcWayland;
+# endif
 
 extern unsigned    g_cVerbosity;
 extern bool        g_fDaemonized;

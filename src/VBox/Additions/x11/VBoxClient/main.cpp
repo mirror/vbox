@@ -65,6 +65,7 @@
 #define VBOXCLIENT_OPT_DISPLAY              VBOXCLIENT_OPT_SERVICES + 6
 #define VBOXCLIENT_OPT_SESSION_DETECT       VBOXCLIENT_OPT_SERVICES + 7
 #define VBOXCLIENT_OPT_SESSION_TYPE         VBOXCLIENT_OPT_SERVICES + 8
+#define VBOXCLIENT_OPT_WAYLAND              VBOXCLIENT_OPT_SERVICES + 9
 
 
 /*********************************************************************************************************************************
@@ -329,6 +330,9 @@ static void vboxClientUsage(const char *pcszFileName)
     RTPrintf("  --session-type       specifies the session type to use (auto, x11, wayland)\n");
     RTPrintf("  --session-detect     detects and prints the current session type\n"
              "                       (exit code 0 if detection succeeded)\n");
+#ifdef VBOX_WITH_WAYLAND_ADDITIONS
+    RTPrintf("  --wayland            starts the shared clipboard and drag-and-drop services for Wayland\n");
+#endif
     RTPrintf("  -f, --foreground     run in the foreground (no daemonizing)\n");
     RTPrintf("  -d, --nodaemon       continues running as a system service\n");
     RTPrintf("  -h, --help           shows this help text\n");
@@ -537,7 +541,10 @@ int main(int argc, char *argv[])
         { "--display",                      VBOXCLIENT_OPT_DISPLAY,             RTGETOPT_REQ_NOTHING },
 #endif
         { "--session-detect",               VBOXCLIENT_OPT_SESSION_DETECT,      RTGETOPT_REQ_NOTHING },
-        { "--session-type",                 VBOXCLIENT_OPT_SESSION_TYPE,        RTGETOPT_REQ_STRING }
+        { "--session-type",                 VBOXCLIENT_OPT_SESSION_TYPE,        RTGETOPT_REQ_STRING  },
+#ifdef VBOX_WITH_WAYLAND_ADDITIONS
+        { "--wayland",                      VBOXCLIENT_OPT_WAYLAND,             RTGETOPT_REQ_NOTHING }
+#endif
     };
 
     int                     ch;
@@ -704,6 +711,15 @@ int main(int argc, char *argv[])
                 }
                 break;
             }
+#ifdef VBOX_WITH_WAYLAND_ADDITIONS
+            case VBOXCLIENT_OPT_WAYLAND:
+            {
+                if (g_Service.pDesc)
+                    return vbclSyntaxOnlyOneService();
+                g_Service.pDesc = &g_SvcWayland;
+                break;
+            }
+#endif
 
             case VINF_GETOPT_NOT_OPTION:
                 break;
