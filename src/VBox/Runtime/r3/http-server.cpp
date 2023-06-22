@@ -77,6 +77,8 @@
 #include <iprt/system.h>
 #include <iprt/tcp.h>
 
+#define LOG_GROUP RTLOGGROUP_HTTP
+#include <iprt/log.h>
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
