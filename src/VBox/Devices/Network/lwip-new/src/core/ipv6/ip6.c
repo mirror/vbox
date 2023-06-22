@@ -412,7 +412,7 @@ ip6_forward(struct pbuf *p, struct ip6_hdr *iphdr, struct netif *inp)
  *         processed, but currently always returns ERR_OK)
  */
 err_t
-ip6_input(struct pbuf *p, struct netif *inp)
+lwip_ip6_input(struct pbuf *p, struct netif *inp)
 {
   struct ip6_hdr *ip6hdr;
   struct netif *netif;

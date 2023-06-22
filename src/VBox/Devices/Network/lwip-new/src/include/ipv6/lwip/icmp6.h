@@ -146,7 +146,10 @@ PACK_STRUCT_END
 
 #if LWIP_ICMP6 && LWIP_IPV6 /* don't build if not configured for use in lwipopts.h */
 
-void icmp6_input(struct pbuf *p, struct netif *inp);
+/* Renaming functions to avoid linker collisions with libslirp  */
+#define icmp6_input lwip_icmp6_input
+
+void lwip_icmp6_input(struct pbuf *p, struct netif *inp);
 #if LWIP_CONNECTION_PROXY
 void icmp6_proxy_input(struct pbuf *p, struct netif *inp);
 #endif

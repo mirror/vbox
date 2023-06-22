@@ -82,7 +82,7 @@ static void *ping6_proxy_accept_arg;
  * @param inp the netif on which this packet was received
  */
 void
-icmp6_input(struct pbuf *p, struct netif *inp)
+lwip_icmp6_input(struct pbuf *p, struct netif *inp)
 {
   struct icmp6_hdr *icmp6hdr;
   struct pbuf * r;
