@@ -1315,13 +1315,26 @@ bool UIVMActivityMonitor::guestAdditionsAvailable(const char *pszMinimumVersion)
 {
     if (m_comGuest.isNull() || !pszMinimumVersion)
         return false;
-    bool fGuestAdditionsStatus = m_comGuest.GetAdditionsStatus(m_comGuest.GetAdditionsRunLevel());
-    if (fGuestAdditionsStatus && m_comGuest.isOk())
-    {
-        QString strGAVersion = m_comGuest.GetAdditionsVersion();
-        if (m_comGuest.isOk())
-            return (RTStrVersionCompare(strGAVersion.toUtf8().constData(), pszMinimumVersion) >= 0);
-    }
+
+    /* Guest control stuff is in userland: */
+    if (!m_comGuest.GetAdditionsStatus(KAdditionsRunLevelType_Userland))
+        return false;
+
+    if (!m_comGuest.isOk())
+        return false;
+
+    /* Check the related GA facility: */
+    LONG64 iLastUpdatedIgnored;
+    if (m_comGuest.GetFacilityStatus(KAdditionsFacilityType_VBoxService, iLastUpdatedIgnored) != KAdditionsFacilityStatus_Active)
+        return false;
+
+    if (!m_comGuest.isOk())
+        return false;
+
+    QString strGAVersion = m_comGuest.GetAdditionsVersion();
+    if (m_comGuest.isOk())
+        return (RTStrVersionCompare(strGAVersion.toUtf8().constData(), pszMinimumVersion) >= 0);
+
     return false;
 }
 

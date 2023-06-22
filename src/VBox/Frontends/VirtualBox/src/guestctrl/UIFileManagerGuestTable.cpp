@@ -1301,19 +1301,30 @@ int UIFileManagerGuestTable::isGuestAdditionsAvailable(const char* pszMinimumVer
 {
     if (m_comGuest.isNull() || !pszMinimumVersion)
         return 0;
-    bool fGuestAdditionsStatus = m_comGuest.GetAdditionsStatus(m_comGuest.GetAdditionsRunLevel());
-    if (fGuestAdditionsStatus && m_comGuest.isOk())
-    {
-        QString strGAVersion = m_comGuest.GetAdditionsVersion();
-        if (m_comGuest.isOk())
-        {
-            int iCode = RTStrVersionCompare(strGAVersion.toUtf8().constData(), pszMinimumVersion);
-            if (iCode >= 0)
-                return 1;
-            else
-                return -1;
-        }
-    }
+
+    /* Guest control stuff is in userland: */
+    if (!m_comGuest.GetAdditionsStatus(KAdditionsRunLevelType_Userland))
+        return 0;
+
+    if (!m_comGuest.isOk())
+        return 0;
+
+    /* Check the related GA facility: */
+    LONG64 iLastUpdatedIgnored;
+    if (m_comGuest.GetFacilityStatus(KAdditionsFacilityType_VBoxService, iLastUpdatedIgnored) != KAdditionsFacilityStatus_Active)
+        return 0;
+
+    if (!m_comGuest.isOk())
+        return 0;
+
+    /* Check if GA is new enough to have the goodies: */
+    QString strGAVersion = m_comGuest.GetAdditionsVersion();
+    int iCode = RTStrVersionCompare(strGAVersion.toUtf8().constData(), pszMinimumVersion);
+    if (iCode >= 0)
+        return 1;
+    else
+        return -1;
+
     return 0;
 }
 

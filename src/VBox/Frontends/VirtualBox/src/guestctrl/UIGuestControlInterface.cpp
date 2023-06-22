@@ -704,13 +704,26 @@ bool UIGuestControlInterface::isGuestAdditionsAvailable(const CGuest &guest, con
 
     if (guestNonConst.isNull() || !pszMinimumVersion)
         return false;
-    bool fGuestAdditionsStatus = guestNonConst.GetAdditionsStatus(guestNonConst.GetAdditionsRunLevel());
-    if (fGuestAdditionsStatus && guestNonConst.isOk())
-    {
-        QString strGAVersion = guestNonConst.GetAdditionsVersion();
-        if (guestNonConst.isOk())
-            return (RTStrVersionCompare(strGAVersion.toUtf8().constData(), pszMinimumVersion) >= 0);
-    }
+
+    /* Guest control stuff is in userland: */
+    if (!guestNonConst.GetAdditionsStatus(KAdditionsRunLevelType_Userland))
+        return false;
+
+    if (!guestNonConst.isOk())
+        return false;
+
+    /* Check the related GA facility: */
+    LONG64 iLastUpdatedIgnored;
+    if (guestNonConst.GetFacilityStatus(KAdditionsFacilityType_VBoxService, iLastUpdatedIgnored) != KAdditionsFacilityStatus_Active)
+        return false;
+
+    if (!guestNonConst.isOk())
+        return false;
+
+    QString strGAVersion = guestNonConst.GetAdditionsVersion();
+    if (guestNonConst.isOk())
+        return (RTStrVersionCompare(strGAVersion.toUtf8().constData(), pszMinimumVersion) >= 0);
+
     return false;
 }
 
