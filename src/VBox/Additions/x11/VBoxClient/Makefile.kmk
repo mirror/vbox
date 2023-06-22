@@ -73,11 +73,11 @@ VBoxClient_SOURCES = \
 	logging.cpp
 
 ifdef VBOX_WITH_WAYLAND_ADDITIONS
-VBoxClient_DEFS += VBOX_WITH_WAYLAND_ADDITIONS
-VBoxClient_SOURCES += \
-	wayland-helper-dcp.cpp \
-	wayland-helper-gtk.cpp \
-	wayland.cpp
+ VBoxClient_DEFS += VBOX_WITH_WAYLAND_ADDITIONS
+ VBoxClient_SOURCES += \
+ 	wayland-helper-dcp.cpp \
+ 	wayland-helper-gtk.cpp \
+ 	wayland.cpp
 endif
 
 VBoxClient_SOURCES += $(VBOX_GH_SOURCES)
