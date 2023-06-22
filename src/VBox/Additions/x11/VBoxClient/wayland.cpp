@@ -45,7 +45,7 @@ static const VBCLWAYLANDHELPER *g_pWaylandHelperHelperDnd       = NULL;
  */
 static DECLCALLBACK(int) vbclWaylandInit(void)
 {
-    int rc;
+    int rc = VERR_NOT_SUPPORTED;
     int idxHelper = 0;
 
     /** Custom log prefix to be used for logger instance of this process. */
