@@ -1179,7 +1179,6 @@ reload()
             # Try unload drivers unconditionally (ignore previous command exit code).
             # If final goal of unloading vboxguest.ko won't be met, we will fail on
             # the next step anyway.
-            running_vboxvideo && modprobe -r vboxvideo >/dev/null  2>&1
             running_vboxsf && modprobe -r vboxsf >/dev/null  2>&1
             running_vboxguest
             if [ $? -eq 0 ]; then
@@ -1204,14 +1203,6 @@ reload()
         # Load drivers (skip vboxvideo since it is not loaded for very old guests).
         [ $? -eq 0 ] && try_load_preserve_rc "modprobe vboxguest" "unable to load vboxguest kernel module, see dmesg"
         [ $? -eq 0 ] && try_load_preserve_rc "modprobe vboxsf" "unable to load vboxsf kernel module, see dmesg"
-
-        # Load vboxvideo if present.
-        if [ -f "/lib/modules/"$(uname -r)"/misc/vboxvideo.ko" ]; then
-            try_load_preserve_rc "modprobe vboxvideo" "unable to load vboxvideo kernel module, see dmesg"
-        else
-            # Do not spoil $?.
-            true
-        fi
 
         # Start VBoxService and VBoxDRMClient.
         [ $? -eq 0 ] && try_load_preserve_rc "$VBOX_SERVICE_SCRIPT start" "unable to start VBoxService"
