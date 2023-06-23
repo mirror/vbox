@@ -107,6 +107,25 @@
 #endif
 
 
+/** Marks the beginning of a readonly C strings section. */
+#if defined(__clang__)
+# define BEGINCONSTSTRINGS .section __TEXT,__cstring,cstring_literals
+#elif defined(__GNUC__)
+# define BEGINCONSTSTRINGS .section .rodata
+#else
+# error "Port me!"
+#endif
+
+/** Marks the end of a readonly C strings section. */
+#if defined(__clang__)
+# define ENDCONSTSTRINGS
+#elif defined(__GNUC__)
+# define ENDCONSTSTRINGS
+#else
+# error "Port me!"
+#endif
+
+
 /**
  * Returns the page address of the given symbol (used with the adrp instruction primarily).
  *

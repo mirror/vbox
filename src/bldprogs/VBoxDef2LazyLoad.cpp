@@ -1206,7 +1206,7 @@ static RTEXITCODE generateOutputInnerArm64(FILE *pOutput)
             "/*\n"
             " * Imported names.\n"
             " */\n"
-            "BEGINCONST\n"
+            "BEGINCONSTSTRINGS\n"
             "g_szLibrary:\n"
             "    .asciz \"%s\"\n"
             "\n"
@@ -1222,7 +1222,7 @@ static RTEXITCODE generateOutputInnerArm64(FILE *pOutput)
             "\n"
             "g_szFailLoadFmt:    .asciz \"Lazy loader failed to load \\\"%%s\\\": %%Rrc\\n\"\n"
             "g_szFailResolveFmt: .asciz \"Lazy loader failed to resolve symbol \\\"%%s\\\" in \\\"%%s\\\": %%Rrc\\n\"\n"
-            "ENDCONST\n"
+            "ENDCONSTSTRINGS\n"
             "\n"
             "\n");
 
