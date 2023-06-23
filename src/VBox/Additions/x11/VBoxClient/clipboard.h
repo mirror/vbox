@@ -37,18 +37,18 @@
 struct SHCLCONTEXT
 {
     /** Client command context */
-    VBGLR3SHCLCMDCTX CmdCtx;
+    VBGLR3SHCLCMDCTX     CmdCtx;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     /** Associated transfer data. */
-    SHCLTRANSFERCTX  TransferCtx;
+    SHCLTRANSFERCTX      TransferCtx;
 #endif
+    /** Event source for waiting for X11 request responses in the VbglR3 clipboard event loop. */
+    SHCLEVENTSOURCE      EventSrc;
     union
     {
-        /** Event source for waiting for request responses. */
-        SHCLEVENTSOURCE  EventSrc;
         /** X11 clipboard context. */
         SHCLX11CTX       X11;
-        /** @todo Way clipboard context goes here. */
+        /** @todo Wayland clipboard context goes here. */
         /* SHCLWAYLANDCTX Wl; */
     };
 };
