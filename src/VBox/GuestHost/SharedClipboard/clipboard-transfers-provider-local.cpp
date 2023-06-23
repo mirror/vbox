@@ -316,32 +316,26 @@ DECLINLINE(SHCLLISTHANDLE) shClTransferListHandleNew(PSHCLTRANSFER pTransfer)
     return pTransfer->uListHandleNext++; /** @todo Good enough for now. Improve this later. */
 }
 
-static int shClTransferListEntryQueryFsInfo(PSHCLLISTENTRY pListEntry, PSHCLFSOBJINFO pFsObjInfo)
+/**
+ * Queries information about a local list entry.
+ *
+ * @returns VBox status code.
+ * @param   pszPathRootAbs      Absolute root path to use for the entry.
+ * @param   pListEntry          List entry to query information for.
+ * @param   pFsObjInfo          Where to store the queried information on success.
+ */
+static int shClTransferListEntryQueryFsInfo(const char *pszPathRootAbs, PSHCLLISTENTRY pListEntry, PSHCLFSOBJINFO pFsObjInfo)
 {
+    AssertPtrReturn(pszPathRootAbs, VERR_INVALID_POINTER);
     AssertPtrReturn(pListEntry, VERR_INVALID_POINTER);
 
-    const char *pcszSrcPathAbs = pListEntry->pszName;
-    AssertPtrReturn(pcszSrcPathAbs, VERR_INVALID_POINTER);
+    const char *pszSrcPathAbs = RTPathJoinA(pszPathRootAbs, pListEntry->pszName);
+    AssertPtrReturn(pszSrcPathAbs, VERR_NO_MEMORY);
 
-    int rc;
-
-    /* Make sure that we only advertise relative source paths, not absolute ones. */
-    char *pszFileName = RTPathFilename(pcszSrcPathAbs);
-    if (pszFileName)
-    {
-        Assert(pszFileName >= pcszSrcPathAbs);
-        size_t cchDstBase = pszFileName - pcszSrcPathAbs;
-        const char *pszDstPath = &pcszSrcPathAbs[cchDstBase];
-
-        LogFlowFunc(("pcszSrcPathAbs=%s, pszDstPath=%s\n", pcszSrcPathAbs, pszDstPath));
-
-        RTFSOBJINFO fsObjInfo;
-        rc = RTPathQueryInfo(pcszSrcPathAbs, &fsObjInfo, RTFSOBJATTRADD_NOTHING);
-        if (RT_SUCCESS(rc))
-            rc = ShClFsObjInfoFromIPRT(pFsObjInfo, &fsObjInfo);
-    }
-    else
-        rc = VERR_INVALID_POINTER;
+    RTFSOBJINFO fsObjInfo;
+    int rc = RTPathQueryInfo(pszSrcPathAbs, &fsObjInfo, RTFSOBJATTRADD_NOTHING);
+    if (RT_SUCCESS(rc))
+        rc = ShClFsObjInfoFromIPRT(pFsObjInfo, &fsObjInfo);
 
     return rc;
 }
@@ -357,7 +351,7 @@ static DECLCALLBACK(int) shclTransferIfaceLocalRootListRead(PSHCLTXPROVIDERCTX p
     RTListForEach(&pCtx->pTransfer->lstRoots.lstEntries, pEntry, SHCLLISTENTRY, Node)
     {
         AssertBreakStmt(pEntry->cbInfo == sizeof(SHCLFSOBJINFO), rc = VERR_WRONG_ORDER);
-        rc = shClTransferListEntryQueryFsInfo(pEntry, (PSHCLFSOBJINFO)pEntry->pvInfo);
+        rc = shClTransferListEntryQueryFsInfo(pCtx->pTransfer->pszPathRootAbs, pEntry, (PSHCLFSOBJINFO)pEntry->pvInfo);
         if (RT_FAILURE(rc)) /* Currently this is an all-or-nothing op. */
             break;
     }
