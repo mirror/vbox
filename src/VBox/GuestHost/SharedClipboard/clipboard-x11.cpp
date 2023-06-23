@@ -138,10 +138,11 @@ SHCL_X11_DECL(SHCLX11FMTTABLE) g_aFormats[] =
     /** @todo Inkscape exports image/png but not bmp... */
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    { "text/uri-list",                      SHCLX11FMT_URI_LIST,    VBOX_SHCL_FMT_URI_LIST },
-    { "x-special/gnome-copied-files",       SHCLX11FMT_URI_LIST,    VBOX_SHCL_FMT_URI_LIST },
-    { "x-special/nautilus-clipboard",       SHCLX11FMT_URI_LIST,    VBOX_SHCL_FMT_URI_LIST },
-    { "application/x-kde-cutselection",     SHCLX11FMT_URI_LIST,    VBOX_SHCL_FMT_URI_LIST },
+    { "text/uri-list",                      SHCLX11FMT_URI_LIST,                    VBOX_SHCL_FMT_URI_LIST },
+    { "x-special/gnome-copied-files",       SHCLX11FMT_URI_LIST_GNOME_COPIED_FILES, VBOX_SHCL_FMT_URI_LIST },
+    { "x-special/mate-copied-files",        SHCLX11FMT_URI_LIST_MATE_COPIED_FILES,  VBOX_SHCL_FMT_URI_LIST },
+    { "x-special/nautilus-clipboard",       SHCLX11FMT_URI_LIST_NAUTILUS_CLIPBOARD, VBOX_SHCL_FMT_URI_LIST },
+    { "application/x-kde-cutselection",     SHCLX11FMT_URI_LIST_KDE_CUTSELECTION,   VBOX_SHCL_FMT_URI_LIST },
     /** @todo Anything else we need to add here? */
     /** @todo Add Wayland / Weston support. */
 #endif

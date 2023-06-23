@@ -73,8 +73,18 @@ typedef enum _SHCLX11FMT
     SHCLX11FMT_BMP,
     SHCLX11FMT_HTML
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+    /** URI list as (UTF-8) text. */
     , SHCLX11FMT_URI_LIST
-#endif
+    /** URI list as a representation for copying files for GNOME-based applications. */
+    , SHCLX11FMT_URI_LIST_GNOME_COPIED_FILES
+    /** URI list as a representation for copying files for MATE-based applications. */
+    , SHCLX11FMT_URI_LIST_MATE_COPIED_FILES
+    /** URI list as representation for copying files for the Nautilus file manager (GNOME). */
+    , SHCLX11FMT_URI_LIST_NAUTILUS_CLIPBOARD
+    /** URI list as a representation for copying files for KDE-based applications.
+     *  Also being used for Dolphin (KDE). */
+    , SHCLX11FMT_URI_LIST_KDE_CUTSELECTION
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 } SHCLX11FMT;
 
 /**
