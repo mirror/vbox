@@ -192,7 +192,7 @@ DECLASM(int) vgdrvOS2Init(const char *pszArgs)
                                            vgdrvOS2DetectVersion(),
                                            0);
             else
-                rc = VGDrvCommonInitDevExt(&g_DevExt, g_IOPortBase, NULL, 0, vgdrvOS2DetectVersion(), 0);
+                rc = VGDrvCommonInitDevExt(&g_DevExt, g_IOPortBase, NULL /*pvMmioReq*/, NULL, 0, vgdrvOS2DetectVersion(), 0);
             if (RT_SUCCESS(rc))
             {
                 /*
