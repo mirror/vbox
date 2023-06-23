@@ -225,6 +225,18 @@ ifdef VBOX_WITH_ADDITIONS_ISO.linux.amd64
  GUESTADDITIONS_FILESPEC.linux.amd64 = \
  	$(VBOX_LNX_ADD_AMD64_RUN_PKG)=$(VBOX_PATH_ADDITIONS.linux.amd64)/VBoxLinuxAdditions.run
 endif
+ifdef VBOX_WITH_LNX_ARM64_ADDITIONS
+ ifdef VBOX_WITH_ADDITIONS_ISO.linux.arm64
+  VBOX_PATH_ADDITIONS.linux.arm64 = $(PATH_OUT_BASE)/linux.arm64/$(KBUILD_TYPE)/bin/additions
+  ifdef VBOX_WITH_COMBINED_LINUX_GUEST_PACKAGE
+   VBOX_LNX_ADD_ARM64_RUN_PKG = VBoxLinuxAdditions.run
+  else
+   VBOX_LNX_ADD_ARM64_RUN_PKG = VBoxLinuxAdditions-arm64.run
+  endif
+  GUESTADDITIONS_FILESPEC.linux.arm64 = \
+     $(VBOX_LNX_ADD_ARM64_RUN_PKG)=$(VBOX_PATH_ADDITIONS.linux.arm64)/VBoxLinuxAdditions.run
+ endif
+endif
 ifdef VBOX_WITH_ADDITIONS_ISO.linux.x86
  VBOX_PATH_ADDITIONS.linux.x86 = $(PATH_OUT_BASE)/linux.x86/$(KBUILD_TYPE)/bin/additions
  ## @todo 64-bit additions: rename this package, update docs (?) and tests (?). create wrapper? create gnome/kde autorun app (xplatform) ?
@@ -361,6 +373,7 @@ GUESTADDITIONS_FILESPEC_ALL = \
 	$(GUESTADDITIONS_FILESPEC.os2.x86) \
 	$(GUESTADDITIONS_FILESPEC.linux.x86) \
 	$(GUESTADDITIONS_FILESPEC.linux.amd64) \
+	$(if-expr defined(VBOX_WITH_LNX_ARM64_ADDITIONS),$(GUESTADDITIONS_FILESPEC.linux.arm64,)) \
 	$(GUESTADDITIONS_FILESPEC.freebsd.x86) \
 	$(GUESTADDITIONS_FILESPEC.freebsd.amd64) \
 	$(GUESTADDITIONS_FILESPEC.haiku.x86) \

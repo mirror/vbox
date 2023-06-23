@@ -324,6 +324,10 @@ case "$cpu" in
     cpu="amd64"
     lib_candidates="/usr/lib/x86_64-linux-gnu /usr/lib64 /usr/lib /lib64 /lib"
     ;;
+  aarch64|arm64)
+    cpu="arm64"
+    lib_candidates="/usr/lib64 /usr/lib /lib64 /lib"
+    ;;
   *)
     cpu="unknown"
 esac

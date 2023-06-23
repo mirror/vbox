@@ -95,12 +95,16 @@ VBOX_LNX_ADD_INST_DEP_ON_MAKEFILE := $(MAKEFILE_CURRENT)
 VBOX_SELINUX_CMPLD := $(PATH_SUB_CURRENT)/selinux-fedora/vbox_x11.pp
 VBOX_LNX_ADD_ARCHIVE.x86   := $(PATH_OUT_BASE)/linux.x86/$(KBUILD_TYPE)/bin/additions/VBoxGuestAdditions-x86.tar.bz2
 VBOX_LNX_ADD_ARCHIVE.amd64 := $(PATH_OUT_BASE)/linux.amd64/$(KBUILD_TYPE)/bin/additions/VBoxGuestAdditions-amd64.tar.bz2
+ifdef VBOX_WITH_LNX_ARM64_ADDITIONS
+ VBOX_LNX_ADD_ARCHIVE.arm64 := $(PATH_OUT_BASE)/linux.arm64/$(KBUILD_TYPE)/bin/additions/VBoxGuestAdditions-arm64.tar.bz2
+endif
 ifndef VBOX_WITH_COMBINED_LINUX_GUEST_PACKAGE
  VBOX_LNX_ADD_ARCHIVES := $(PATH_STAGE_BIN)/additions/VBoxGuestAdditions-$(KBUILD_TARGET_ARCH).tar.bz2
 else
  VBOX_LNX_ADD_ARCHIVES := \
  	$(VBOX_LNX_ADD_ARCHIVE.x86) \
- 	$(VBOX_LNX_ADD_ARCHIVE.amd64)
+ 	$(VBOX_LNX_ADD_ARCHIVE.amd64) \
+ 	$(if-expr defined(VBOX_WITH_LNX_ARM64_ADDITIONS),$(VBOX_LNX_ADD_ARCHIVE.arm64,)
 endif
 BLDDIRS     += \
 	$(VBOX_LNX_ADD_ARCH_INST_DIRS) \
