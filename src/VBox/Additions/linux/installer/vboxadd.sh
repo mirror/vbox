@@ -1205,6 +1205,14 @@ reload()
         [ $? -eq 0 ] && try_load_preserve_rc "modprobe vboxguest" "unable to load vboxguest kernel module, see dmesg"
         [ $? -eq 0 ] && try_load_preserve_rc "modprobe vboxsf" "unable to load vboxsf kernel module, see dmesg"
 
+        # Load vboxvideo if present.
+        if [ -f "/lib/modules/"$(uname -r)"/misc/vboxvideo.ko" ]; then
+            try_load_preserve_rc "modprobe vboxvideo" "unable to load vboxvideo kernel module, see dmesg"
+        else
+            # Do not spoil $?.
+            true
+        fi
+
         # Start VBoxService and VBoxDRMClient.
         [ $? -eq 0 ] && try_load_preserve_rc "$VBOX_SERVICE_SCRIPT start" "unable to start VBoxService"
 
