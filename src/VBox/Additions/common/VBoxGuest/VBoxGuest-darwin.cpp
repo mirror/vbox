@@ -921,7 +921,7 @@ bool org_virtualbox_VBoxGuest::start(IOService *pProvider)
                             /*
                              * Initialize the device extension.
                              */
-                            int rc = VGDrvCommonInitDevExt(&g_DevExt, IOPortBase, pvMMIOBase, cbMMIO,
+                            int rc = VGDrvCommonInitDevExt(&g_DevExt, IOPortBase, NULL /*pvMmioReq*/, pvMMIOBase, cbMMIO,
                                                            ARCH_BITS == 64 ? VBOXOSTYPE_MacOS_x64 : VBOXOSTYPE_MacOS, 0);
                             if (RT_SUCCESS(rc))
                             {

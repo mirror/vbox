@@ -214,21 +214,15 @@ struct VBGLPHYSHEAPCHUNK
 {
     /** Magic value (VBGL_PH_CHUNKSIGNATURE). */
     uint32_t u32Signature;
-
     /** Size of the chunk. Includes the chunk header. */
     uint32_t cbChunk;
-
-    /** Physical address of the chunk (contiguous). */
-    uint32_t physAddr;
-
-#if !defined(VBGL_PH_USE_MEMOBJ) || ARCH_BITS != 32
-    uint32_t uPadding1;
-#endif
-
     /** Number of block of any kind. */
     int32_t  cBlocks;
     /** Number of free blocks. */
     int32_t  cFreeBlocks;
+
+    /** Physical address of the chunk (contiguous). */
+    RTCCPHYS physAddr;
 
     /** Pointer to the next chunk. */
     VBGLPHYSHEAPCHUNK  *pNext;
@@ -238,9 +232,7 @@ struct VBGLPHYSHEAPCHUNK
 #if defined(VBGL_PH_USE_MEMOBJ)
     /** The allocation handle. */
     RTR0MEMOBJ          hMemObj;
-#endif
-
-#if ARCH_BITS == 64
+#elif ARCH_BITS == 64
     /** Pad the size up to 64 bytes. */
 # ifdef VBGL_PH_USE_MEMOBJ
     uintptr_t           auPadding2[2];
@@ -251,6 +243,10 @@ struct VBGLPHYSHEAPCHUNK
 };
 #if ARCH_BITS == 64
 AssertCompileSize(VBGLPHYSHEAPCHUNK, 64);
+#elif ARCH_BITS == 32
+AssertCompileSize(VBGLPHYSHEAPCHUNK, 32);
+#else
+# error "Unknown architecture!"
 #endif
 
 
@@ -535,17 +531,30 @@ static VBGLPHYSHEAPFREEBLOCK *vbglPhysHeapChunkAlloc(uint32_t cbMinBlock)
     cbChunk = cbMinBlock + sizeof(VBGLPHYSHEAPCHUNK) + sizeof(VBGLPHYSHEAPFREEBLOCK);
     cbChunk = RT_ALIGN_32(cbChunk, VBGL_PH_CHUNKSIZE);
 
-    /*
-     * This function allocates physical contiguous memory below 4 GB.  This 4GB
-     * limitation stems from using a 32-bit OUT instruction to pass a block
-     * physical address to the host.
-     */
+    if (g_vbgldata.fAlloc32BitAddr)
+    {
+        /*
+         * This function allocates physical contiguous memory below 4 GB.  This 4GB
+         * limitation stems from using a 32-bit OUT instruction to pass a block
+         * physical address to the host.
+         */
 #ifdef VBGL_PH_USE_MEMOBJ
-    rc = RTR0MemObjAllocCont(&hMemObj, cbChunk, false /*fExecutable*/);
-    pChunk = (VBGLPHYSHEAPCHUNK *)(RT_SUCCESS(rc) ? RTR0MemObjAddress(hMemObj) : NULL);
+        rc = RTR0MemObjAllocCont(&hMemObj, cbChunk, false /*fExecutable*/);
+        pChunk = (VBGLPHYSHEAPCHUNK *)(RT_SUCCESS(rc) ? RTR0MemObjAddress(hMemObj) : NULL);
 #else
-    pChunk = (VBGLPHYSHEAPCHUNK *)RTMemContAlloc(&PhysAddr, cbChunk);
+        pChunk = (VBGLPHYSHEAPCHUNK *)RTMemContAlloc(&PhysAddr, cbChunk);
 #endif
+    }
+    else
+    {
+        /** @todo Provide appropriate memory API. */
+#ifdef VBGL_PH_USE_MEMOBJ
+        rc = RTR0MemObjAllocCont(&hMemObj, cbChunk, false /*fExecutable*/);
+        pChunk = (VBGLPHYSHEAPCHUNK *)(RT_SUCCESS(rc) ? RTR0MemObjAddress(hMemObj) : NULL);
+#else
+        pChunk = (VBGLPHYSHEAPCHUNK *)RTMemContAlloc(&PhysAddr, cbChunk);
+#endif
+    }
     if (!pChunk)
     {
         /* If the allocation fail, halv the size till and try again. */
@@ -568,14 +577,15 @@ static VBGLPHYSHEAPFREEBLOCK *vbglPhysHeapChunkAlloc(uint32_t cbMinBlock)
     {
         VBGLPHYSHEAPCHUNK     *pOldHeadChunk;
         VBGLPHYSHEAPFREEBLOCK *pBlock;
-        AssertRelease(PhysAddr < _4G && PhysAddr + cbChunk <= _4G);
+        AssertRelease(   !g_vbgldata.fAlloc32BitAddr
+                      || (PhysAddr < _4G && PhysAddr + cbChunk <= _4G));
 
         /*
          * Init the new chunk.
          */
         pChunk->u32Signature     = VBGL_PH_CHUNKSIGNATURE;
         pChunk->cbChunk          = cbChunk;
-        pChunk->physAddr         = (uint32_t)PhysAddr;
+        pChunk->physAddr         = PhysAddr;
         pChunk->cBlocks          = 0;
         pChunk->cFreeBlocks      = 0;
         pChunk->pNext            = NULL;
@@ -585,9 +595,6 @@ static VBGLPHYSHEAPFREEBLOCK *vbglPhysHeapChunkAlloc(uint32_t cbMinBlock)
 #endif
 
         /* Initialize the padding too: */
-#if !defined(VBGL_PH_USE_MEMOBJ) || ARCH_BITS != 32
-        pChunk->uPadding1        = UINT32_C(0xADDCAAA1);
-#endif
 #if ARCH_BITS == 64
         pChunk->auPadding2[0]    = UINT64_C(0xADDCAAA3ADDCAAA2);
         pChunk->auPadding2[1]    = UINT64_C(0xADDCAAA5ADDCAAA4);
@@ -864,7 +871,7 @@ DECLR0VBGL(void *) VbglR0PhysHeapAlloc(uint32_t cb)
 }
 
 
-DECLR0VBGL(uint32_t) VbglR0PhysHeapGetPhysAddr(void *pv)
+DECLR0VBGL(RTCCPHYS) VbglR0PhysHeapGetPhysAddr(void *pv)
 {
     /*
      * Validate the incoming pointer.
@@ -1175,9 +1182,10 @@ DECLVBGL(int) VbglR0PhysHeapCheck(PRTERRINFO pErrInfo)
 
 #endif /* IN_TESTCASE */
 
-DECLR0VBGL(int) VbglR0PhysHeapInit(void)
+DECLR0VBGL(int) VbglR0PhysHeapInit(bool fAlloc32BitAddr)
 {
-    g_vbgldata.hMtxHeap = NIL_RTSEMFASTMUTEX;
+    g_vbgldata.fAlloc32BitAddr = fAlloc32BitAddr;
+    g_vbgldata.hMtxHeap        = NIL_RTSEMFASTMUTEX;
 
     /* Allocate the first chunk of the heap. */
     VBGLPHYSHEAPFREEBLOCK *pBlock = vbglPhysHeapChunkAlloc(0);

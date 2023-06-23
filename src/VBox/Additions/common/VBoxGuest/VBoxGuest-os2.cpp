@@ -186,6 +186,7 @@ DECLASM(int) vgdrvOS2Init(const char *pszArgs)
              */
             if (g_MemMapMMIO != NIL_RTR0MEMOBJ)
                 rc = VGDrvCommonInitDevExt(&g_DevExt, g_IOPortBase,
+                                           NULL /*pvMmioReq*/,
                                            RTR0MemObjAddress(g_MemMapMMIO),
                                            RTR0MemObjSize(g_MemMapMMIO),
                                            vgdrvOS2DetectVersion(),

@@ -124,11 +124,14 @@ enum VbglLibStatus
  */
 typedef struct VBGLDATA
 {
-    enum VbglLibStatus status;
-
-    RTIOPORT portVMMDev;
-
-    VMMDevMemory *pVMMDevMemory;
+    /** Init status of the library. */
+    enum VbglLibStatus      status;
+    /** I/O port to issue requests to. */
+    RTIOPORT                portVMMDev;
+    /** MMIO request region if available. */
+    volatile uintptr_t      *pMmioReq;
+    /** VMMDev adapter memory region if available. */
+    VMMDevMemory            *pVMMDevMemory;
 
     /** Physical memory heap data.
      * @{
@@ -148,6 +151,9 @@ typedef struct VBGLDATA
     int32_t                 cFreeBlocks;
     /** Head of the chunk list. */
     VBGLPHYSHEAPCHUNK      *pChunkHead;
+    /** Flag whether all allocations should be below 4GiB to fit into
+     * a 32-bit address. */
+    bool                   fAlloc32BitAddr;
     /** @} */
 
     /**

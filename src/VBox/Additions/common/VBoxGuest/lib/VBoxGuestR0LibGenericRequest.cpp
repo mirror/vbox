@@ -34,7 +34,9 @@
 *********************************************************************************************************************************/
 #include "VBoxGuestR0LibInternal.h"
 #include <iprt/asm.h>
-#include <iprt/asm-amd64-x86.h>
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# include <iprt/asm-amd64-x86.h>
+#endif
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <VBox/err.h>
@@ -158,13 +160,32 @@ DECLR0VBGL(int) VbglR0GRPerform(VMMDevRequestHeader *pReq)
         if (pReq)
         {
             RTCCPHYS PhysAddr = VbglR0PhysHeapGetPhysAddr(pReq);
-            if (   PhysAddr != 0
-                && PhysAddr < _4G) /* Port IO is 32 bit. */
+            if (PhysAddr != 0)
             {
-                ASMOutU32(g_vbgldata.portVMMDev + VMMDEV_PORT_OFF_REQUEST, (uint32_t)PhysAddr);
+                if (g_vbgldata.pMmioReq)
+                {
+                    Assert((uintptr_t)PhysAddr == PhysAddr);
+                    *g_vbgldata.pMmioReq = (uintptr_t)PhysAddr;
+                }
+                else if (PhysAddr < _4G) /* Port IO is 32 bit. */
+                {
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+                    ASMOutU32(g_vbgldata.portVMMDev + VMMDEV_PORT_OFF_REQUEST, (uint32_t)PhysAddr);
+#elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+                    rc = VERR_INVALID_STATE;
+#else
+# error "I have no memory of this architecture"
+#endif
+                }
+                else
+                    rc = VERR_VBGL_INVALID_ADDR;
+
                 /* Make the compiler aware that the host has changed memory. */
-                ASMCompilerBarrier();
-                rc = pReq->rc;
+                if (RT_SUCCESS(rc))
+                {
+                    ASMCompilerBarrier();
+                    rc = pReq->rc;
+                }
             }
             else
                 rc = VERR_VBGL_INVALID_ADDR;

@@ -475,7 +475,8 @@ static status_t vgdrvHaikuAttach(const pci_info *pDevice)
             /*
              * Call the common device extension initializer.
              */
-            rc = VGDrvCommonInitDevExt(&g_DevExt, pState->uIOPortBase, pState->pMMIOBase, pState->VMMDevMemSize,
+            rc = VGDrvCommonInitDevExt(&g_DevExt, pState->uIOPortBase, NULL /*pvMmioReq*/,
+                                       pState->pMMIOBase, pState->VMMDevMemSize,
 #if ARCH_BITS == 64
                                        VBOXOSTYPE_Haiku_x64,
 #else

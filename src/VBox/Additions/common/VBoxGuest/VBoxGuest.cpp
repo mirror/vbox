@@ -71,7 +71,9 @@
 #include <iprt/time.h>
 #include <iprt/memobj.h>
 #include <iprt/asm.h>
-#include <iprt/asm-amd64-x86.h>
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# include <iprt/asm-amd64-x86.h>
+#endif
 #include <iprt/string.h>
 #include <iprt/process.h>
 #include <iprt/assert.h>
@@ -993,6 +995,8 @@ int VGDrvCommonInitDevExtFundament(PVBOXGUESTDEVEXT pDevExt)
      * Initialize the data.
      */
     pDevExt->IOPortBase = UINT16_MAX;
+    pDevExt->pMmioReq      = NULL;
+    pDevExt->pMmioReqFast  = NULL;
     pDevExt->pVMMDevMemory = NULL;
     pDevExt->hGuestMappings = NIL_RTR0MEMOBJ;
     pDevExt->EventSpinlock = NIL_RTSPINLOCK;
@@ -1097,6 +1101,7 @@ void VGDrvCommonDeleteDevExtFundament(PVBOXGUESTDEVEXT pDevExt)
  *
  * @param   pDevExt         The device extension. Allocated by the native code.
  * @param   IOPortBase      The base of the I/O port range.
+ * @param   pvMmioReq       The base of the MMIO request region.
  * @param   pvMMIOBase      The base of the MMIO memory mapping.
  *                          This is optional, pass NULL if not present.
  * @param   cbMMIO          The size of the MMIO memory mapping.
@@ -1106,7 +1111,8 @@ void VGDrvCommonDeleteDevExtFundament(PVBOXGUESTDEVEXT pDevExt)
  *                          will ever be allowed to mask.
  */
 int VGDrvCommonInitDevExtResources(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
-                                   void *pvMMIOBase, uint32_t cbMMIO, VBOXOSTYPE enmOSType, uint32_t fFixedEvents)
+                                   void *pvMmioReq, void *pvMMIOBase, uint32_t cbMMIO,
+                                   VBOXOSTYPE enmOSType, uint32_t fFixedEvents)
 {
     int rc;
     AssertMsgReturn(pDevExt->uInitState == VBOXGUESTDEVEXT_INIT_STATE_FUNDAMENT, ("uInitState=%#x\n", pDevExt->uInitState),
@@ -1137,8 +1143,10 @@ int VGDrvCommonInitDevExtResources(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase
      * set the interrupt control filter mask, and fixate the guest mappings
      * made by the VMM.
      */
-    pDevExt->IOPortBase = IOPortBase;
-    rc = VbglR0InitPrimary(pDevExt->IOPortBase, (VMMDevMemory *)pDevExt->pVMMDevMemory, &pDevExt->fHostFeatures);
+    pDevExt->IOPortBase   = IOPortBase;
+    pDevExt->pMmioReq     = (uintptr_t volatile *)pvMmioReq;
+    pDevExt->pMmioReqFast = (uint32_t volatile *)((uintptr_t)pvMmioReq + VMMDEV_MMIO_OFF_REQUEST_FAST);
+    rc = VbglR0InitPrimary(pDevExt->IOPortBase, pDevExt->pMmioReq, (VMMDevMemory *)pDevExt->pVMMDevMemory, &pDevExt->fHostFeatures);
     if (RT_SUCCESS(rc))
     {
         VMMDevRequestHeader *pAckReq = NULL;
@@ -1146,7 +1154,8 @@ int VGDrvCommonInitDevExtResources(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase
         if (RT_SUCCESS(rc))
         {
             pDevExt->PhysIrqAckEvents = VbglR0PhysHeapGetPhysAddr(pAckReq);
-            Assert(pDevExt->PhysIrqAckEvents != 0);
+            Assert(   pDevExt->PhysIrqAckEvents != 0
+                   && pDevExt->PhysIrqAckEvents == (uintptr_t)pDevExt->PhysIrqAckEvents);
             ASMCompilerBarrier(); /* linux + solaris already have IRQs hooked up at this point, so take care. */
             pDevExt->pIrqAckEvents = (VMMDevEvents *)pAckReq;
 
@@ -1320,6 +1329,7 @@ void VGDrvCommonDeleteDevExtResources(PVBOXGUESTDEVEXT pDevExt)
  *
  * @param   pDevExt         The device extension. Allocated by the native code.
  * @param   IOPortBase      The base of the I/O port range.
+ * @param   pvMmioReq       The base of the MMIO request region.
  * @param   pvMMIOBase      The base of the MMIO memory mapping.
  *                          This is optional, pass NULL if not present.
  * @param   cbMMIO          The size of the MMIO memory mapping.
@@ -1329,7 +1339,8 @@ void VGDrvCommonDeleteDevExtResources(PVBOXGUESTDEVEXT pDevExt)
  *                          will ever be allowed to mask.
  */
 int VGDrvCommonInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
-                          void *pvMMIOBase, uint32_t cbMMIO, VBOXOSTYPE enmOSType, uint32_t fFixedEvents)
+                          void *pvMmioReq, void *pvMMIOBase, uint32_t cbMMIO,
+                          VBOXOSTYPE enmOSType, uint32_t fFixedEvents)
 {
     int rc;
     VGDrvCommonInitLoggers();
@@ -1337,7 +1348,8 @@ int VGDrvCommonInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
     rc = VGDrvCommonInitDevExtFundament(pDevExt);
     if (RT_SUCCESS(rc))
     {
-        rc = VGDrvCommonInitDevExtResources(pDevExt, IOPortBase, pvMMIOBase, cbMMIO, enmOSType, fFixedEvents);
+        rc = VGDrvCommonInitDevExtResources(pDevExt, IOPortBase, pvMmioReq, pvMMIOBase, cbMMIO,
+                                            enmOSType, fFixedEvents);
         if (RT_SUCCESS(rc))
             return rc;
 
@@ -2075,6 +2087,7 @@ static int vgdrvIoCtl_GetVMMDevIoInfo(PVBOXGUESTDEVEXT pDevExt, PVBGLIOCGETVMMDE
 
     pInfo->u.Out.IoPort          = pDevExt->IOPortBase;
     pInfo->u.Out.pvVmmDevMapping = pDevExt->pVMMDevMemory;
+    pInfo->u.Out.pMmioReq        = pDevExt->pMmioReq;
     pInfo->u.Out.auPadding[0]    = 0;
 #if HC_ARCH_BITS != 32
     pInfo->u.Out.auPadding[1]    = 0;
@@ -2798,7 +2811,7 @@ static int vgdrvIoCtl_HGCMCallInner(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION 
     LogFlow(("VBOXGUEST_IOCTL_HGCM_CALL: u32Client=%RX32\n", pInfo->u32ClientID));
     fFlags = !fUserData && pSession->R0Process == NIL_RTR0PROCESS ? VBGLR0_HGCMCALL_F_KERNEL : VBGLR0_HGCMCALL_F_USER;
     uint32_t cbInfo = (uint32_t)(cbData - cbExtra);
-#ifdef RT_ARCH_AMD64
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64)
     if (f32bit)
     {
         if (fInterruptible)
@@ -2863,6 +2876,7 @@ static int vgdrvIoCtl_HGCMFastCall(PVBOXGUESTDEVEXT pDevExt, VBGLIOCIDCHGCMFASTC
      * Check out the physical address.
      */
     Assert((pCallReq->GCPhysReq & PAGE_OFFSET_MASK) == ((uintptr_t)pHgcmCall & PAGE_OFFSET_MASK));
+    AssertReturn(pCallReq->GCPhysReq == (uintptr_t)pCallReq->GCPhysReq, VERR_VBGL_INVALID_ADDR);
 
     AssertReturn(!pCallReq->fInterruptible, VERR_NOT_IMPLEMENTED);
 
@@ -2870,7 +2884,19 @@ static int vgdrvIoCtl_HGCMFastCall(PVBOXGUESTDEVEXT pDevExt, VBGLIOCIDCHGCMFASTC
      * Submit the request.
      */
     Log(("vgdrvIoCtl_HGCMFastCall -> host\n"));
-    ASMOutU32(pDevExt->IOPortBase + VMMDEV_PORT_OFF_REQUEST, (uint32_t)pCallReq->GCPhysReq);
+    if (pDevExt->pMmioReq)
+        *pDevExt->pMmioReq = (uintptr_t)pCallReq->GCPhysReq;
+    else
+    {
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+        ASMOutU32(pDevExt->IOPortBase + VMMDEV_PORT_OFF_REQUEST, (uint32_t)pCallReq->GCPhysReq);
+#elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+        AssertReleaseFailed(); /* Not possible on ARM. */
+        return VERR_INVALID_STATE;
+#else
+# error "I have no memory of this architecture"
+#endif
+    }
 
     /* Make the compiler aware that the host has changed memory. */
     ASMCompilerBarrier();
@@ -4412,7 +4438,18 @@ bool VGDrvCommonISR(PVBOXGUESTDEVEXT pDevExt)
         uint32_t fEvents;
         if (!pReq)
         {
-            fEvents = ASMInU32(pDevExt->IOPortBase + VMMDEV_PORT_OFF_REQUEST_FAST);
+            if (pDevExt->pMmioReqFast)
+                fEvents = *pDevExt->pMmioReqFast;
+            else
+            {
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+                fEvents = ASMInU32(pDevExt->IOPortBase + VMMDEV_PORT_OFF_REQUEST_FAST);
+#elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+                AssertReleaseFailed(); /* No port I/O on ARM. */
+#else
+# error "I have no memory of this architecture"
+#endif
+            }
             ASMCompilerBarrier();   /* paranoia */
             rc = fEvents != UINT32_MAX ? VINF_SUCCESS : VERR_INTERNAL_ERROR;
         }
@@ -4421,7 +4458,19 @@ bool VGDrvCommonISR(PVBOXGUESTDEVEXT pDevExt)
             pReq->header.rc = VERR_INTERNAL_ERROR;
             pReq->events    = 0;
             ASMCompilerBarrier();
-            ASMOutU32(pDevExt->IOPortBase + VMMDEV_PORT_OFF_REQUEST, (uint32_t)pDevExt->PhysIrqAckEvents);
+            if (pDevExt->pMmioReq)
+                *pDevExt->pMmioReq = pDevExt->PhysIrqAckEvents;
+            else
+            {
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+                ASMOutU32(pDevExt->IOPortBase + VMMDEV_PORT_OFF_REQUEST, (uint32_t)pDevExt->PhysIrqAckEvents);
+#elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+                AssertReleaseFailed();
+#else
+# error "I have no memory of this architecture"
+#endif
+            }
+
             ASMCompilerBarrier();   /* paranoia */
             fEvents = pReq->events;
             rc = pReq->header.rc;

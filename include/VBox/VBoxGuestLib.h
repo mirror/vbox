@@ -120,7 +120,7 @@ typedef uint32_t HGCMCLIENTID;
  *
  * @return VBox status code.
  */
-DECLR0VBGL(int)     VbglR0InitPrimary(RTIOPORT portVMMDev, VMMDevMemory *pVMMDevMemory, uint32_t *pfFeatures);
+DECLR0VBGL(int)     VbglR0InitPrimary(RTIOPORT portVMMDev, uintptr_t volatile *pMmioReq, VMMDevMemory *pVMMDevMemory, uint32_t *pfFeatures);
 
 /**
  * The library termination function to be used by the main VBoxGuest driver.
@@ -483,8 +483,10 @@ DECLR0VBGL(int) VbglR0CrCtlConCallUserDataRaw(VBGLCRCTLHANDLE hCtl, struct VBGLI
  * Initialize the heap.
  *
  * @returns VBox status code.
+ * @param   fAlloc32BitAddr     Flag whether all allocations should be below 4GiB,
+ *                              so they fit into a 32-bit address.
  */
-DECLR0VBGL(int)     VbglR0PhysHeapInit(void);
+DECLR0VBGL(int)     VbglR0PhysHeapInit(bool fAlloc32BitAddr);
 
 /**
  * Shutdown the heap.
@@ -512,7 +514,7 @@ DECLR0VBGL(void *)  VbglR0PhysHeapAlloc(uint32_t cb);
  * @returns Physical address of the memory block.  Zero is returned if @a pv
  *          isn't valid.
  */
-DECLR0VBGL(uint32_t) VbglR0PhysHeapGetPhysAddr(void *pv);
+DECLR0VBGL(RTCCPHYS) VbglR0PhysHeapGetPhysAddr(void *pv);
 
 # ifdef IN_TESTCASE
 DECLVBGL(size_t)     VbglR0PhysHeapGetFreeSize(void);

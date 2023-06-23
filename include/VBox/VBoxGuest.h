@@ -265,6 +265,8 @@ typedef struct VBGLIOCGETVMMDEVIOINFO
         {
             /** The MMIO mapping.  NULL if no MMIO region. */
             struct VMMDevMemory volatile RT_FAR *pvVmmDevMapping;
+            /** The MMIO region for the request port, NULL if not available. */
+            uintptr_t volatile RT_FAR           *pMmioReq;
             /** The I/O port address. */
             RTIOPORT                        IoPort;
             /** Padding, ignore. */
@@ -272,7 +274,7 @@ typedef struct VBGLIOCGETVMMDEVIOINFO
         } Out;
     } u;
 } VBGLIOCGETVMMDEVIOINFO, RT_FAR *PVBGLIOCGETVMMDEVIOINFO;
-AssertCompileSize(VBGLIOCGETVMMDEVIOINFO, 24 + (HC_ARCH_BITS == 64 ? 16 : 8));
+AssertCompileSize(VBGLIOCGETVMMDEVIOINFO, 24 + (HC_ARCH_BITS == 64 ? 24 : 12));
 /** @} */
 
 
@@ -387,26 +389,25 @@ typedef struct VBGLIOCIDCHGCMFASTCALL
     /** The header. */
     VBGLREQHDR      Hdr;
     /** The physical address of the following VMMDevHGCMCall structure. */
-    RTGCPHYS32      GCPhysReq;
+    RTGCPHYS64      GCPhysReq;
+    uint64_t        uTimestamp[2]; /** @todo Looks completely unused. */
     /** Set if interruptible. */
     bool            fInterruptible;
     /** Reserved. */
     uint8_t         abReserved0[3];
-    uint64_t        uTimestamp[2];
-    uint8_t         abReserved1[4];
     /* After this structure follows a VMMDevHGCMCall strcuture (44 bytes), then
        zero or more HGCMFunctionParameter structures (12 or 16 bytes), and finally
        page lists and embedded buffers. */
 } VBGLIOCIDCHGCMFASTCALL, RT_FAR *PVBGLIOCIDCHGCMFASTCALL;
 #pragma pack()
-AssertCompileSize(VBGLIOCIDCHGCMFASTCALL, /* 24 + 4 + 1 + 3 + 2*8 + 4 = 0x34 (52) = */ 0x34);
+AssertCompileSize(VBGLIOCIDCHGCMFASTCALL, /* 24 + 8 + 2*8 + 1 + 3 = 0x34 (52) = */ 0x34);
 
 /**
  * Macro for initializing VBGLIOCIDCHGCMFASTCALL and the following
  * VMMDevHGCMCall structures.
  *
  * @param   a_pHdr      The request header to initialize.
- * @param   a_HdrPhys   The 32-bit physical address corresponding to @a a_pHdr.
+ * @param   a_HdrPhys   The physical address corresponding to @a a_pHdr.
  * @param   a_pCall     Pointer to the VMMDevHGCMCall structure.
  * @param   a_idClient  The HGCM client ID.
  * @param   a_uFunction The HGCM function number.

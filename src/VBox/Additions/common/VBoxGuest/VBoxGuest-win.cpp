@@ -1071,6 +1071,7 @@ static NTSTATUS vgdrvNtSetupDevice(PVBOXGUESTDEVEXTWIN pDevExt, PDEVICE_OBJECT p
 
             int vrc = VGDrvCommonInitDevExtResources(&pDevExt->Core,
                                                      pDevExt->Core.IOPortBase,
+                                                     NULL /*pvMmioReq*/,
                                                      pvMMIOBase, cbMMIO,
                                                      vgdrvNtVersionToOSType(g_enmVGDrvNtVer),
                                                      VMMDEV_EVENT_MOUSE_POSITION_CHANGED);

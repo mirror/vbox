@@ -147,6 +147,11 @@ static RTHCPHYS                 g_MMIOPhysAddr = NIL_RTHCPHYS;
 static uint32_t                 g_cbMMIO;
 /** The pointer to the mapping of the MMIO range. */
 static void                    *g_pvMMIOBase;
+
+static RTHCPHYS                 g_MmioReqPhysAddr = NIL_RTHCPHYS;
+static uint32_t                 g_cbMmioReq;
+static void                    *g_pvMmioReq = NULL;
+
 /** Wait queue used by polling. */
 static wait_queue_head_t        g_PollEventQueue;
 /** Asynchronous notification stuff.  */
@@ -287,6 +292,30 @@ static int vgdrvLinuxConvertToNegErrno(int rc)
 }
 
 
+#if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+static int vgdrvLinuxMapMmio(struct pci_dev *pPciDev)
+{
+    g_MmioReqPhysAddr = pci_resource_start(pPciDev, 3);
+    g_cbMmioReq       = pci_resource_len(pPciDev, 3);
+    if (request_mem_region(g_MmioReqPhysAddr, g_cbMmioReq, DEVICE_NAME) != NULL)
+    {
+        g_pvMmioReq = ioremap(g_MmioReqPhysAddr, g_cbMmioReq);
+        if (g_pvMmioReq)
+            return 0;
+
+        /* failure cleanup path */
+        LogRel((DEVICE_NAME ": ioremap failed; MMIO Addr=%RHp cb=%#x\n", g_MmioReqPhysAddr, g_cbMmioReq));
+        release_mem_region(g_MmioReqPhysAddr, g_cbMmioReq);
+        return -ENOMEM;
+    }
+    else
+        LogRel((DEVICE_NAME ": failed to obtain adapter memory\n"));
+
+    return -EBUSY;
+}
+#endif
+
+
 /**
  * Does the PCI detection and init of the device.
  *
@@ -301,9 +330,16 @@ static int vgdrvLinuxProbePci(struct pci_dev *pPciDev, const struct pci_device_i
     rc = pci_enable_device(pPciDev);
     if (rc >= 0)
     {
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
         /* I/O Ports are mandatory, the MMIO bit is not. */
         g_IOPortBase = pci_resource_start(pPciDev, 0);
         if (g_IOPortBase != 0)
+#elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+        rc = vgdrvLinuxMapMmio(pPciDev);
+        if (!rc)
+#else
+# error "I have no memory of this arechitecture"
+#endif
         {
             /*
              * Map the register address space.
@@ -355,6 +391,16 @@ static void vgdrvLinuxTermPci(struct pci_dev *pPciDev)
     g_pPciDev = NULL;
     if (pPciDev)
     {
+        if (g_pvMmioReq)
+        {
+            iounmap(g_pvMmioReq);
+            g_pvMmioReq = NULL;
+
+            release_mem_region(g_MmioReqPhysAddr, g_cbMmioReq);
+            g_MmioReqPhysAddr = NIL_RTHCPHYS;
+            g_cbMmioReq = 0;
+        }
+
         iounmap(g_pvMMIOBase);
         g_pvMMIOBase = NULL;
 
@@ -702,9 +748,9 @@ static int __init vgdrvLinuxModInit(void)
         /*
          * Call the common device extension initializer.
          */
-#if RTLNX_VER_MIN(2,6,0) && defined(RT_ARCH_X86)
+#if RTLNX_VER_MIN(2,6,0) && defined(RT_ARCH_X86) || defined(RT_ARCH_ARM32)
         VBOXOSTYPE enmOSType = VBOXOSTYPE_Linux26;
-#elif RTLNX_VER_MIN(2,6,0) && defined(RT_ARCH_AMD64)
+#elif RTLNX_VER_MIN(2,6,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64))
         VBOXOSTYPE enmOSType = VBOXOSTYPE_Linux26_x64;
 #elif RTLNX_VER_MIN(2,4,0) && defined(RT_ARCH_X86)
         VBOXOSTYPE enmOSType = VBOXOSTYPE_Linux24;
@@ -716,6 +762,7 @@ static int __init vgdrvLinuxModInit(void)
 #endif
         rc = VGDrvCommonInitDevExt(&g_DevExt,
                                    g_IOPortBase,
+                                   g_pvMmioReq,
                                    g_pvMMIOBase,
                                    g_cbMMIO,
                                    enmOSType,

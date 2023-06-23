@@ -156,6 +156,10 @@ typedef struct VBOXGUESTDEVEXT
     uint32_t                    uInitState;
     /** The base of the adapter I/O ports. */
     RTIOPORT                    IOPortBase;
+    /** Pointer to the mapping of the MMIO request region if available. */
+    uintptr_t volatile         *pMmioReq;
+    /** Pointer to the fast request register in the MMIO region if available. */
+    uint32_t volatile          *pMmioReqFast;
     /** Pointer to the mapping of the VMMDev adapter memory. */
     VMMDevMemory volatile      *pVMMDevMemory;
     /** The memory object reserving space for the guest mappings. */
@@ -349,7 +353,8 @@ typedef struct VBOXGUESTSESSION
 
 RT_C_DECLS_BEGIN
 
-int  VGDrvCommonInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase, void *pvMMIOBase, uint32_t cbMMIO,
+int  VGDrvCommonInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase, void *pvMmioReq,
+                           void *pvMMIOBase, uint32_t cbMMIO,
                            VBOXOSTYPE enmOSType, uint32_t fEvents);
 void VGDrvCommonDeleteDevExt(PVBOXGUESTDEVEXT pDevExt);
 
@@ -358,7 +363,8 @@ void VGDrvCommonDestroyLoggers(void);
 int  VGDrvCommonInitDevExtFundament(PVBOXGUESTDEVEXT pDevExt);
 void VGDrvCommonDeleteDevExtFundament(PVBOXGUESTDEVEXT pDevExt);
 int  VGDrvCommonInitDevExtResources(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
-                                    void *pvMMIOBase, uint32_t cbMMIO, VBOXOSTYPE enmOSType, uint32_t fFixedEvents);
+                                    void *pvMmioReq, void *pvMMIOBase, uint32_t cbMMIO,
+                                    VBOXOSTYPE enmOSType, uint32_t fFixedEvents);
 void VGDrvCommonDeleteDevExtResources(PVBOXGUESTDEVEXT pDevExt);
 int  VGDrvCommonReinitDevExtAfterHibernation(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enmOSType);
 
