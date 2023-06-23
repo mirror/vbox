@@ -169,7 +169,8 @@ endif
 # ARM only headers.
 ifn1of ($(KBUILD_TARGET_ARCH), arm32 arm64)
  VBOX_HDRS_OMIT += \
- 	iprt/asm-arm.h
+ 	iprt/asm-arm.h \
+ 	iprt/asmdefs-arm.h
 endif
 
 
