@@ -87,6 +87,8 @@ static RTLDRFMT     g_enmLdrFmt = RTLDRFMT_PE;
 #elif    defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD) || defined(RT_OS_SOLARIS) \
       || defined(RT_OS_NETBSD) || defined(RT_OS_OPENBSD)
 static RTLDRFMT     g_enmLdrFmt = RTLDRFMT_ELF;
+#elif    defined(RT_OS_OS2)
+static RTLDRFMT     g_enmLdrFmt = RTLDRFMT_LX;
 #else
 # error "Port me!"
 #endif
