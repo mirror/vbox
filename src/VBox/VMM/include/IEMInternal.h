@@ -788,6 +788,13 @@ typedef struct IEMCPU
 
     /** The offset of the ModR/M byte relative to the start of the instruction. */
     uint8_t                 offModRm;                                                                       /* 0x34 */
+
+#  ifdef IEM_WITH_CODE_TLB_AND_OPCODE_BUF
+    /** The current offset into abOpcode. */
+    uint8_t                 offOpcode;                                                                      /* 0x35 */
+#  else
+    uint8_t                 bUnused;                                                                        /* 0x35 */
+#  endif
 # else  /* !IEM_WITH_CODE_TLB */
     /** The size of what has currently been fetched into abOpcode. */
     uint8_t                 cbOpcode;                                                                       /*       0x08 */
@@ -812,26 +819,28 @@ typedef struct IEMCPU
 # endif /* !IEM_WITH_CODE_TLB */
 
     /** The effective operand mode. */
-    IEMMODE                 enmEffOpSize;                                                                   /* 0x35, 0x13 */
+    IEMMODE                 enmEffOpSize;                                                                   /* 0x36, 0x13 */
     /** The default addressing mode. */
-    IEMMODE                 enmDefAddrMode;                                                                 /* 0x36, 0x14 */
+    IEMMODE                 enmDefAddrMode;                                                                 /* 0x37, 0x14 */
     /** The effective addressing mode. */
-    IEMMODE                 enmEffAddrMode;                                                                 /* 0x37, 0x15 */
+    IEMMODE                 enmEffAddrMode;                                                                 /* 0x38, 0x15 */
     /** The default operand mode. */
-    IEMMODE                 enmDefOpSize;                                                                   /* 0x38, 0x16 */
+    IEMMODE                 enmDefOpSize;                                                                   /* 0x39, 0x16 */
 
     /** Prefix index (VEX.pp) for two byte and three byte tables. */
-    uint8_t                 idxPrefix;                                                                      /* 0x39, 0x17 */
+    uint8_t                 idxPrefix;                                                                      /* 0x3a, 0x17 */
     /** 3rd VEX/EVEX/XOP register.
      * Please use IEM_GET_EFFECTIVE_VVVV to access.  */
-    uint8_t                 uVex3rdReg;                                                                     /* 0x3a, 0x18 */
+    uint8_t                 uVex3rdReg;                                                                     /* 0x3b, 0x18 */
     /** The VEX/EVEX/XOP length field. */
-    uint8_t                 uVexLength;                                                                     /* 0x3b, 0x19 */
+    uint8_t                 uVexLength;                                                                     /* 0x3c, 0x19 */
     /** Additional EVEX stuff. */
-    uint8_t                 fEvexStuff;                                                                     /* 0x3c, 0x1a */
+    uint8_t                 fEvexStuff;                                                                     /* 0x3d, 0x1a */
 
+# ifndef IEM_WITH_CODE_TLB
     /** Explicit alignment padding. */
-    uint8_t                 abAlignment2a[1];                                                               /* 0x3d, 0x1b */
+    uint8_t                 abAlignment2a[1];                                                               /*       0x1b */
+# endif
     /** The FPU opcode (FOP). */
     uint16_t                uFpuOpcode;                                                                     /* 0x3e, 0x1c */
 # ifndef IEM_WITH_CODE_TLB

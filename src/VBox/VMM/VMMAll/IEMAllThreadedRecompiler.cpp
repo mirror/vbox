@@ -47,6 +47,7 @@
 #ifndef LOG_GROUP /* defined when included by tstIEMCheckMc.cpp */
 # define LOG_GROUP LOG_GROUP_IEM_RE_THREADED
 #endif
+#define IEM_WITH_CODE_TLB_AND_OPCODE_BUF  /* A bit hackish, but its all in IEMInline.h. */
 #define VMCPU_INCL_CPUM_GST_CTX
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/cpum.h>
@@ -160,47 +161,11 @@ typedef struct IEMTB
     {
         struct
         {
-            /** @todo we actually need BASE, LIM and CS?  If we don't tie a TB to a RIP
-             * range, because that's bad for PIC/PIE code on unix with address space
-             * randomization enabled, the assumption is that anything involving PC
-             * (RIP/EIP/IP, maybe + CS.BASE) will be done by reading current register
-             * values and not embedding presumed values into the code. Thus the uCsBase
-             * member here shouldn't be needed.  For the same reason, uCsLimit isn't helpful
-             * either as RIP/EIP/IP may differ between address spaces.  So, before TB
-             * execution we'd need to check CS.LIM against RIP+cbPC (ditto for 64-bit
-             * canonicallity).
-             *
-             * We could bake instruction limit / canonicallity checks into the generated
-             * code if we find ourselves close to the limit and should expect to run into
-             * it by the end of the translation block. That would just be using a very
-             * simple threshold distance and be a special IEMTB_F_XXX flag so we figure out
-             * it out when picking the TB.
-             *
-             * The CS value is likewise useless as we'll always be using the actual CS
-             * register value whenever it is relevant (mainly pushing to the stack in a
-             * call, trap, whatever).
-             *
-             * The segment attributes should be handled via the IEM_F_MODE_XXX and
-             * IEM_F_X86_CPL_MASK portions of fFlags, so we could skip those too, I think.
-             * All the places where they matter, we would be in CIMPL code which would
-             * consult the actual CS.ATTR and not depend on the recompiled code block.
-             */
-            /** The CS base. */
-            uint32_t uCsBase;
-            /** The CS limit (UINT32_MAX for 64-bit code). */
-            uint32_t uCsLimit;
-            /** The CS selector value. */
-            uint16_t CS;
             /**< Relevant CS X86DESCATTR_XXX bits. */
-            uint16_t fAttr;
+            uint16_t    fAttr;
         } x86;
     };
     /** @} */
-
-    /** Number of bytes of opcodes covered by this block.
-     * @todo Support discontiguous chunks of opcodes in same block, though maybe
-     *       restrict to the initial page or smth. */
-    uint32_t    cbPC;
 
     union
     {
@@ -214,6 +179,14 @@ typedef struct IEMTB
             PIEMTHRDEDCALLENTRY paCalls;
         } Thrd;
     };
+
+
+    /** Number of bytes of opcodes stored in pabOpcodes. */
+    uint16_t            cbOpcodes;
+    /** The max storage available in the pabOpcodes block. */
+    uint16_t            cbOpcodesAllocated;
+    /** Pointer to the opcode bytes this block was recompiled from. */
+    uint8_t            *pabOpcodes;
 } IEMTB;
 
 
@@ -240,6 +213,11 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb);
     ((a_GCPtrEff) = iemOpHlpCalcRmEffAddrJmpEx(pVCpu, (bRm), (cbImm), &uEffAddrInfo))
 #endif
 
+#define IEM_MC2_PRE_EMIT_CALLS() do { \
+        AssertMsg(pVCpu->iem.s.offOpcode == IEM_GET_INSTR_LEN(pVCpu), \
+                  ("%u vs %u (%04x:%08RX64)\n", pVCpu->iem.s.offOpcode, IEM_GET_INSTR_LEN(pVCpu), \
+                  pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip)); \
+    } while (0)
 #define IEM_MC2_EMIT_CALL_0(a_enmFunction) do { \
         IEMTHREADEDFUNCS const enmFunctionCheck = a_enmFunction; RT_NOREF(enmFunctionCheck); \
         \
@@ -309,6 +287,326 @@ DECLINLINE(VBOXSTRICTRC) iemThreadedRecompilerMcDeferToCImpl0(PVMCPUCC pVCpu, PF
     return pfnCImpl(pVCpu, IEM_GET_INSTR_LEN(pVCpu));
 }
 
+/**
+ * Calculates the effective address of a ModR/M memory operand, extended version
+ * for use in the recompilers.
+ *
+ * Meant to be used via IEM_MC_CALC_RM_EFF_ADDR.
+ *
+ * May longjmp on internal error.
+ *
+ * @return  The effective address.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   bRm                 The ModRM byte.
+ * @param   cbImmAndRspOffset   - First byte: The size of any immediate
+ *                                following the effective address opcode bytes
+ *                                (only for RIP relative addressing).
+ *                              - Second byte: RSP displacement (for POP [ESP]).
+ * @param   puInfo              Extra info: 32-bit displacement (bits 31:0) and
+ *                              SIB byte (bits 39:32).
+ *
+ * @note This must be defined in a source file with matching
+ *       IEM_WITH_CODE_TLB_AND_OPCODE_BUF define till the define is made default
+ *       or implemented differently...
+ */
+RTGCPTR iemOpHlpCalcRmEffAddrJmpEx(PVMCPUCC pVCpu, uint8_t bRm, uint32_t cbImmAndRspOffset, uint64_t *puInfo) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    Log5(("iemOpHlpCalcRmEffAddrJmp: bRm=%#x\n", bRm));
+# define SET_SS_DEF() \
+    do \
+    { \
+        if (!(pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SEG_MASK)) \
+            pVCpu->iem.s.iEffSeg = X86_SREG_SS; \
+    } while (0)
+
+    if (!IEM_IS_64BIT_CODE(pVCpu))
+    {
+/** @todo Check the effective address size crap! */
+        if (pVCpu->iem.s.enmEffAddrMode == IEMMODE_16BIT)
+        {
+            uint16_t u16EffAddr;
+
+            /* Handle the disp16 form with no registers first. */
+            if ((bRm & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 6)
+            {
+                IEM_OPCODE_GET_NEXT_U16(&u16EffAddr);
+                *puInfo = u16EffAddr;
+            }
+            else
+            {
+                /* Get the displacment. */
+                switch ((bRm >> X86_MODRM_MOD_SHIFT) & X86_MODRM_MOD_SMASK)
+                {
+                    case 0:  u16EffAddr = 0;                             break;
+                    case 1:  IEM_OPCODE_GET_NEXT_S8_SX_U16(&u16EffAddr); break;
+                    case 2:  IEM_OPCODE_GET_NEXT_U16(&u16EffAddr);       break;
+                    default: AssertFailedStmt(IEM_DO_LONGJMP(pVCpu, VERR_IEM_IPE_1)); /* (caller checked for these) */
+                }
+                *puInfo = u16EffAddr;
+
+                /* Add the base and index registers to the disp. */
+                switch (bRm & X86_MODRM_RM_MASK)
+                {
+                    case 0: u16EffAddr += pVCpu->cpum.GstCtx.bx + pVCpu->cpum.GstCtx.si; break;
+                    case 1: u16EffAddr += pVCpu->cpum.GstCtx.bx + pVCpu->cpum.GstCtx.di; break;
+                    case 2: u16EffAddr += pVCpu->cpum.GstCtx.bp + pVCpu->cpum.GstCtx.si; SET_SS_DEF(); break;
+                    case 3: u16EffAddr += pVCpu->cpum.GstCtx.bp + pVCpu->cpum.GstCtx.di; SET_SS_DEF(); break;
+                    case 4: u16EffAddr += pVCpu->cpum.GstCtx.si;            break;
+                    case 5: u16EffAddr += pVCpu->cpum.GstCtx.di;            break;
+                    case 6: u16EffAddr += pVCpu->cpum.GstCtx.bp;            SET_SS_DEF(); break;
+                    case 7: u16EffAddr += pVCpu->cpum.GstCtx.bx;            break;
+                }
+            }
+
+            Log5(("iemOpHlpCalcRmEffAddrJmp: EffAddr=%#06RX16 uInfo=%#RX64\n", u16EffAddr, *puInfo));
+            return u16EffAddr;
+        }
+
+        Assert(pVCpu->iem.s.enmEffAddrMode == IEMMODE_32BIT);
+        uint32_t u32EffAddr;
+        uint64_t uInfo;
+
+        /* Handle the disp32 form with no registers first. */
+        if ((bRm & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 5)
+        {
+            IEM_OPCODE_GET_NEXT_U32(&u32EffAddr);
+            uInfo = u32EffAddr;
+        }
+        else
+        {
+            /* Get the register (or SIB) value. */
+            uInfo = 0;
+            switch ((bRm & X86_MODRM_RM_MASK))
+            {
+                case 0: u32EffAddr = pVCpu->cpum.GstCtx.eax; break;
+                case 1: u32EffAddr = pVCpu->cpum.GstCtx.ecx; break;
+                case 2: u32EffAddr = pVCpu->cpum.GstCtx.edx; break;
+                case 3: u32EffAddr = pVCpu->cpum.GstCtx.ebx; break;
+                case 4: /* SIB */
+                {
+                    uint8_t bSib; IEM_OPCODE_GET_NEXT_U8(&bSib);
+                    uInfo = (uint64_t)bSib << 32;
+
+                    /* Get the index and scale it. */
+                    switch ((bSib >> X86_SIB_INDEX_SHIFT) & X86_SIB_INDEX_SMASK)
+                    {
+                        case 0: u32EffAddr = pVCpu->cpum.GstCtx.eax; break;
+                        case 1: u32EffAddr = pVCpu->cpum.GstCtx.ecx; break;
+                        case 2: u32EffAddr = pVCpu->cpum.GstCtx.edx; break;
+                        case 3: u32EffAddr = pVCpu->cpum.GstCtx.ebx; break;
+                        case 4: u32EffAddr = 0; /*none */ break;
+                        case 5: u32EffAddr = pVCpu->cpum.GstCtx.ebp; break;
+                        case 6: u32EffAddr = pVCpu->cpum.GstCtx.esi; break;
+                        case 7: u32EffAddr = pVCpu->cpum.GstCtx.edi; break;
+                        IEM_NOT_REACHED_DEFAULT_CASE_RET2(RTGCPTR_MAX);
+                    }
+                    u32EffAddr <<= (bSib >> X86_SIB_SCALE_SHIFT) & X86_SIB_SCALE_SMASK;
+
+                    /* add base */
+                    switch (bSib & X86_SIB_BASE_MASK)
+                    {
+                        case 0: u32EffAddr += pVCpu->cpum.GstCtx.eax; break;
+                        case 1: u32EffAddr += pVCpu->cpum.GstCtx.ecx; break;
+                        case 2: u32EffAddr += pVCpu->cpum.GstCtx.edx; break;
+                        case 3: u32EffAddr += pVCpu->cpum.GstCtx.ebx; break;
+                        case 4: u32EffAddr += pVCpu->cpum.GstCtx.esp + (cbImmAndRspOffset >> 8); SET_SS_DEF(); break;
+                        case 5:
+                            if ((bRm & X86_MODRM_MOD_MASK) != 0)
+                            {
+                                u32EffAddr += pVCpu->cpum.GstCtx.ebp;
+                                SET_SS_DEF();
+                            }
+                            else
+                            {
+                                uint32_t u32Disp;
+                                IEM_OPCODE_GET_NEXT_U32(&u32Disp);
+                                u32EffAddr += u32Disp;
+                                uInfo      |= u32Disp;
+                            }
+                            break;
+                        case 6: u32EffAddr += pVCpu->cpum.GstCtx.esi; break;
+                        case 7: u32EffAddr += pVCpu->cpum.GstCtx.edi; break;
+                        IEM_NOT_REACHED_DEFAULT_CASE_RET2(RTGCPTR_MAX);
+                    }
+                    break;
+                }
+                case 5: u32EffAddr = pVCpu->cpum.GstCtx.ebp; SET_SS_DEF(); break;
+                case 6: u32EffAddr = pVCpu->cpum.GstCtx.esi; break;
+                case 7: u32EffAddr = pVCpu->cpum.GstCtx.edi; break;
+                IEM_NOT_REACHED_DEFAULT_CASE_RET2(RTGCPTR_MAX);
+            }
+
+            /* Get and add the displacement. */
+            switch ((bRm >> X86_MODRM_MOD_SHIFT) & X86_MODRM_MOD_SMASK)
+            {
+                case 0:
+                    break;
+                case 1:
+                {
+                    int8_t i8Disp; IEM_OPCODE_GET_NEXT_S8(&i8Disp);
+                    u32EffAddr += i8Disp;
+                    uInfo      |= (uint32_t)(int32_t)i8Disp;
+                    break;
+                }
+                case 2:
+                {
+                    uint32_t u32Disp; IEM_OPCODE_GET_NEXT_U32(&u32Disp);
+                    u32EffAddr += u32Disp;
+                    uInfo      |= u32Disp;
+                    break;
+                }
+                default:
+                    AssertFailedStmt(IEM_DO_LONGJMP(pVCpu, VERR_IEM_IPE_2)); /* (caller checked for these) */
+            }
+        }
+
+        *puInfo = uInfo;
+        Log5(("iemOpHlpCalcRmEffAddrJmp: EffAddr=%#010RX32 uInfo=%#RX64\n", u32EffAddr, uInfo));
+        return u32EffAddr;
+    }
+
+    uint64_t u64EffAddr;
+    uint64_t uInfo;
+
+    /* Handle the rip+disp32 form with no registers first. */
+    if ((bRm & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 5)
+    {
+        IEM_OPCODE_GET_NEXT_S32_SX_U64(&u64EffAddr);
+        uInfo = (uint32_t)u64EffAddr;
+        u64EffAddr += pVCpu->cpum.GstCtx.rip + IEM_GET_INSTR_LEN(pVCpu) + (cbImmAndRspOffset & UINT32_C(0xff));
+    }
+    else
+    {
+        /* Get the register (or SIB) value. */
+        uInfo = 0;
+        switch ((bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB)
+        {
+            case  0: u64EffAddr = pVCpu->cpum.GstCtx.rax; break;
+            case  1: u64EffAddr = pVCpu->cpum.GstCtx.rcx; break;
+            case  2: u64EffAddr = pVCpu->cpum.GstCtx.rdx; break;
+            case  3: u64EffAddr = pVCpu->cpum.GstCtx.rbx; break;
+            case  5: u64EffAddr = pVCpu->cpum.GstCtx.rbp; SET_SS_DEF(); break;
+            case  6: u64EffAddr = pVCpu->cpum.GstCtx.rsi; break;
+            case  7: u64EffAddr = pVCpu->cpum.GstCtx.rdi; break;
+            case  8: u64EffAddr = pVCpu->cpum.GstCtx.r8;  break;
+            case  9: u64EffAddr = pVCpu->cpum.GstCtx.r9;  break;
+            case 10: u64EffAddr = pVCpu->cpum.GstCtx.r10; break;
+            case 11: u64EffAddr = pVCpu->cpum.GstCtx.r11; break;
+            case 13: u64EffAddr = pVCpu->cpum.GstCtx.r13; break;
+            case 14: u64EffAddr = pVCpu->cpum.GstCtx.r14; break;
+            case 15: u64EffAddr = pVCpu->cpum.GstCtx.r15; break;
+            /* SIB */
+            case 4:
+            case 12:
+            {
+                uint8_t bSib; IEM_OPCODE_GET_NEXT_U8(&bSib);
+                uInfo = (uint64_t)bSib << 32;
+
+                /* Get the index and scale it. */
+                switch (((bSib >> X86_SIB_INDEX_SHIFT) & X86_SIB_INDEX_SMASK) | pVCpu->iem.s.uRexIndex)
+                {
+                    case  0: u64EffAddr = pVCpu->cpum.GstCtx.rax; break;
+                    case  1: u64EffAddr = pVCpu->cpum.GstCtx.rcx; break;
+                    case  2: u64EffAddr = pVCpu->cpum.GstCtx.rdx; break;
+                    case  3: u64EffAddr = pVCpu->cpum.GstCtx.rbx; break;
+                    case  4: u64EffAddr = 0; /*none */ break;
+                    case  5: u64EffAddr = pVCpu->cpum.GstCtx.rbp; break;
+                    case  6: u64EffAddr = pVCpu->cpum.GstCtx.rsi; break;
+                    case  7: u64EffAddr = pVCpu->cpum.GstCtx.rdi; break;
+                    case  8: u64EffAddr = pVCpu->cpum.GstCtx.r8;  break;
+                    case  9: u64EffAddr = pVCpu->cpum.GstCtx.r9;  break;
+                    case 10: u64EffAddr = pVCpu->cpum.GstCtx.r10; break;
+                    case 11: u64EffAddr = pVCpu->cpum.GstCtx.r11; break;
+                    case 12: u64EffAddr = pVCpu->cpum.GstCtx.r12; break;
+                    case 13: u64EffAddr = pVCpu->cpum.GstCtx.r13; break;
+                    case 14: u64EffAddr = pVCpu->cpum.GstCtx.r14; break;
+                    case 15: u64EffAddr = pVCpu->cpum.GstCtx.r15; break;
+                    IEM_NOT_REACHED_DEFAULT_CASE_RET2(RTGCPTR_MAX);
+                }
+                u64EffAddr <<= (bSib >> X86_SIB_SCALE_SHIFT) & X86_SIB_SCALE_SMASK;
+
+                /* add base */
+                switch ((bSib & X86_SIB_BASE_MASK) | pVCpu->iem.s.uRexB)
+                {
+                    case  0: u64EffAddr += pVCpu->cpum.GstCtx.rax; break;
+                    case  1: u64EffAddr += pVCpu->cpum.GstCtx.rcx; break;
+                    case  2: u64EffAddr += pVCpu->cpum.GstCtx.rdx; break;
+                    case  3: u64EffAddr += pVCpu->cpum.GstCtx.rbx; break;
+                    case  4: u64EffAddr += pVCpu->cpum.GstCtx.rsp + (cbImmAndRspOffset >> 8); SET_SS_DEF(); break;
+                    case  6: u64EffAddr += pVCpu->cpum.GstCtx.rsi; break;
+                    case  7: u64EffAddr += pVCpu->cpum.GstCtx.rdi; break;
+                    case  8: u64EffAddr += pVCpu->cpum.GstCtx.r8;  break;
+                    case  9: u64EffAddr += pVCpu->cpum.GstCtx.r9;  break;
+                    case 10: u64EffAddr += pVCpu->cpum.GstCtx.r10; break;
+                    case 11: u64EffAddr += pVCpu->cpum.GstCtx.r11; break;
+                    case 12: u64EffAddr += pVCpu->cpum.GstCtx.r12; break;
+                    case 14: u64EffAddr += pVCpu->cpum.GstCtx.r14; break;
+                    case 15: u64EffAddr += pVCpu->cpum.GstCtx.r15; break;
+                    /* complicated encodings */
+                    case 5:
+                    case 13:
+                        if ((bRm & X86_MODRM_MOD_MASK) != 0)
+                        {
+                            if (!pVCpu->iem.s.uRexB)
+                            {
+                                u64EffAddr += pVCpu->cpum.GstCtx.rbp;
+                                SET_SS_DEF();
+                            }
+                            else
+                                u64EffAddr += pVCpu->cpum.GstCtx.r13;
+                        }
+                        else
+                        {
+                            uint32_t u32Disp;
+                            IEM_OPCODE_GET_NEXT_U32(&u32Disp);
+                            u64EffAddr += (int32_t)u32Disp;
+                            uInfo      |= u32Disp;
+                        }
+                        break;
+                    IEM_NOT_REACHED_DEFAULT_CASE_RET2(RTGCPTR_MAX);
+                }
+                break;
+            }
+            IEM_NOT_REACHED_DEFAULT_CASE_RET2(RTGCPTR_MAX);
+        }
+
+        /* Get and add the displacement. */
+        switch ((bRm >> X86_MODRM_MOD_SHIFT) & X86_MODRM_MOD_SMASK)
+        {
+            case 0:
+                break;
+            case 1:
+            {
+                int8_t i8Disp;
+                IEM_OPCODE_GET_NEXT_S8(&i8Disp);
+                u64EffAddr += i8Disp;
+                uInfo      |= (uint32_t)(int32_t)i8Disp;
+                break;
+            }
+            case 2:
+            {
+                uint32_t u32Disp;
+                IEM_OPCODE_GET_NEXT_U32(&u32Disp);
+                u64EffAddr += (int32_t)u32Disp;
+                uInfo      |= u32Disp;
+                break;
+            }
+            IEM_NOT_REACHED_DEFAULT_CASE_RET2(RTGCPTR_MAX); /* (caller checked for these) */
+        }
+
+    }
+
+    *puInfo = uInfo;
+    if (pVCpu->iem.s.enmEffAddrMode == IEMMODE_64BIT)
+    {
+        Log5(("iemOpHlpCalcRmEffAddrJmp: EffAddr=%#010RGv uInfo=%#RX64\n", u64EffAddr, uInfo));
+        return u64EffAddr;
+    }
+    Assert(pVCpu->iem.s.enmEffAddrMode == IEMMODE_32BIT);
+    Log5(("iemOpHlpCalcRmEffAddrJmp: EffAddr=%#010RGv uInfo=%#RX64\n", u64EffAddr & UINT32_MAX, uInfo));
+    return u64EffAddr & UINT32_MAX;
+}
+
 
 /*
  * Include the "annotated" IEMAllInstructions*.cpp.h files.
@@ -350,22 +648,26 @@ static PIEMTB iemThreadedTbAlloc(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPc, u
     PIEMTB pTb = (PIEMTB)RTMemAlloc(sizeof(IEMTB));
     if (pTb)
     {
-        pTb->Thrd.paCalls = (PIEMTHRDEDCALLENTRY)RTMemAlloc(sizeof(IEMTHRDEDCALLENTRY) * 128);
+        unsigned const cCalls = 128;
+        pTb->Thrd.paCalls = (PIEMTHRDEDCALLENTRY)RTMemAlloc(sizeof(IEMTHRDEDCALLENTRY) * cCalls);
         if (pTb->Thrd.paCalls)
         {
-            pTb->Thrd.cAllocated = 128;
-            pTb->Thrd.cCalls     = 0;
-            pTb->pNext           = NULL;
-            RTListInit(&pTb->LocalList);
-            pTb->cbPC            = 0;
-            pTb->GCPhysPc        = GCPhysPc;
-            pTb->x86.uCsBase     = (uint32_t)pVCpu->cpum.GstCtx.cs.u64Base;
-            pTb->x86.uCsLimit    = (uint32_t)pVCpu->cpum.GstCtx.cs.u32Limit;
-            pTb->x86.CS          = (uint32_t)pVCpu->cpum.GstCtx.cs.Sel;
-            pTb->x86.fAttr       = (uint16_t)pVCpu->cpum.GstCtx.cs.Attr.u;
-            pTb->fFlags          = (pVCpu->iem.s.fExec & IEMTB_F_IEM_F_MASK) | fExtraFlags;
-            pVCpu->iem.s.cTbAllocs++;
-            return pTb;
+            pTb->pabOpcodes = (uint8_t *)RTMemAlloc(cCalls * 16); /* This will be reallocated later. */
+            if (pTb->pabOpcodes)
+            {
+                pTb->Thrd.cAllocated    = cCalls;
+                pTb->cbOpcodesAllocated = cCalls * 16;
+                pTb->Thrd.cCalls        = 0;
+                pTb->cbOpcodes          = 0;
+                pTb->pNext              = NULL;
+                RTListInit(&pTb->LocalList);
+                pTb->GCPhysPc           = GCPhysPc;
+                pTb->x86.fAttr          = (uint16_t)pVCpu->cpum.GstCtx.cs.Attr.u;
+                pTb->fFlags             = (pVCpu->iem.s.fExec & IEMTB_F_IEM_F_MASK) | fExtraFlags;
+                pVCpu->iem.s.cTbAllocs++;
+                return pTb;
+            }
+            RTMemFree(pTb->Thrd.paCalls);
         }
         RTMemFree(pTb);
     }
@@ -387,11 +689,32 @@ static void iemThreadedTbFree(PVMCC pVM, PVMCPUCC pVCpu, PIEMTB pTb)
     RT_NOREF(pVM);
     AssertPtr(pTb);
 
-    AssertCompile((IEMTB_F_STATE_OBSOLETE >> IEMTB_F_STATE_SHIFT) == (IEMTB_F_STATE_MASK >> IEMTB_F_STATE_SHIFT));
+    AssertCompile(IEMTB_F_STATE_OBSOLETE == IEMTB_F_STATE_MASK);
     pTb->fFlags |= IEMTB_F_STATE_OBSOLETE; /* works, both bits set */
 
+    /* Unlink it from the hash table: */
+    uint32_t const idxHash = IEMTBCACHE_HASH(&g_TbCache, pTb->fFlags, pTb->GCPhysPc);
+    PIEMTB pTbCur = g_TbCache.apHash[idxHash];
+    if (pTbCur == pTb)
+        g_TbCache.apHash[idxHash] = pTb->pNext;
+    else
+        while (pTbCur)
+        {
+            PIEMTB const pNextTb = pTbCur->pNext;
+            if (pNextTb == pTb)
+            {
+                pTbCur->pNext = pTb->pNext;
+                break;
+            }
+            pTbCur = pNextTb;
+        }
+
+    /* Free it. */
     RTMemFree(pTb->Thrd.paCalls);
     pTb->Thrd.paCalls = NULL;
+
+    RTMemFree(pTb->pabOpcodes);
+    pTb->pabOpcodes = NULL;
 
     RTMemFree(pTb);
     pVCpu->iem.s.cTbFrees++;
@@ -414,8 +737,8 @@ static PIEMTB iemThreadedTbLookup(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPc, 
                 {
 #ifdef VBOX_WITH_STATISTICS
                     pVCpu->iem.s.cTbLookupHits++;
-                    return pTb;
 #endif
+                    return pTb;
                 }
                 Log11(("TB miss: CS: %#x, wanted %#x\n", pTb->x86.fAttr, (uint16_t)pVCpu->cpum.GstCtx.cs.Attr.u));
             }
@@ -438,7 +761,7 @@ static void iemThreadedTbAdd(PVMCC pVM, PVMCPUCC pVCpu, PIEMTB pTb)
     uint32_t const idxHash = IEMTBCACHE_HASH(&g_TbCache, pTb->fFlags, pTb->GCPhysPc);
     pTb->pNext = g_TbCache.apHash[idxHash];
     g_TbCache.apHash[idxHash] = pTb;
-    Log12(("TB added: %p %RGp LB %#x fl=%#x idxHash=%#x\n", pTb, pTb->GCPhysPc, pTb->cbPC, pTb->fFlags, idxHash));
+    Log12(("TB added: %p %RGp LB %#x fl=%#x idxHash=%#x\n", pTb, pTb->GCPhysPc, pTb->cbOpcodes, pTb->fFlags, idxHash));
     RT_NOREF(pVM, pVCpu);
 }
 
@@ -587,6 +910,9 @@ DECL_FORCE_INLINE(void) iemThreadedCompileInitOpcodeFetching(PVMCPUCC pVCpu)
     pVCpu->iem.s.pbInstrBuf         = NULL;
     pVCpu->iem.s.offInstrNextByte   = 0;
     pVCpu->iem.s.offCurInstrStart   = 0;
+#ifdef IEM_WITH_CODE_TLB_AND_OPCODE_BUF
+    pVCpu->iem.s.offOpcode          = 0;
+#endif
 #ifdef VBOX_STRICT
     pVCpu->iem.s.GCPhysInstrBuf     = NIL_RTGCPHYS;
     pVCpu->iem.s.cbInstrBuf         = UINT16_MAX;
@@ -640,6 +966,9 @@ DECL_FORCE_INLINE(void) iemThreadedCompileReInitOpcodeFetching(PVMCPUCC pVCpu)
         pVCpu->iem.s.GCPhysInstrBuf   = NIL_RTGCPHYS;
 #endif
     }
+#ifdef IEM_WITH_CODE_TLB_AND_OPCODE_BUF
+    pVCpu->iem.s.offOpcode          = 0;
+#endif
 }
 
 
@@ -697,16 +1026,28 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
 #endif
         uint8_t b; IEM_OPCODE_GET_FIRST_U8(&b);
         uint16_t const cCallsPrev = pTb->Thrd.cCalls;
+
         rcStrict = FNIEMOP_CALL(g_apfnIemThreadedRecompilerOneByteMap[b]);
         if (   rcStrict == VINF_SUCCESS
             && !pVCpu->iem.s.fEndTb)
         {
             Assert(pTb->Thrd.cCalls > cCallsPrev);
             Assert(cCallsPrev - pTb->Thrd.cCalls < 5);
+
+            memcpy(&pTb->pabOpcodes[pTb->cbOpcodes], pVCpu->iem.s.abOpcode, pVCpu->iem.s.offOpcode);
+            pTb->cbOpcodes += pVCpu->iem.s.offOpcode;
+            Assert(pTb->cbOpcodes <= pTb->cbOpcodesAllocated);
         }
         else if (pTb->Thrd.cCalls > 0)
         {
             Log8(("%04x:%08RX64: End TB - %u calls, rc=%d\n", uCsLog, uRipLog, pTb->Thrd.cCalls, VBOXSTRICTRC_VAL(rcStrict)));
+
+            if (cCallsPrev != pTb->Thrd.cCalls)
+            {
+                memcpy(&pTb->pabOpcodes[pTb->cbOpcodes], pVCpu->iem.s.abOpcode, pVCpu->iem.s.offOpcode);
+                pTb->cbOpcodes += pVCpu->iem.s.offOpcode;
+                Assert(pTb->cbOpcodes <= pTb->cbOpcodesAllocated);
+            }
             break;
         }
         else
@@ -754,6 +1095,16 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
  */
 static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb)
 {
+    if (memcmp(pTb->pabOpcodes, &pVCpu->iem.s.pbInstrBuf[pVCpu->iem.s.offInstrNextByte],
+               RT_MIN(pTb->cbOpcodes, pVCpu->iem.s.cbInstrBuf - pVCpu->iem.s.offInstrNextByte)) == 0)
+    { /* likely */ }
+    else
+    {
+        Log11(("TB obsolete: %p GCPhys=%RGp\n", pTb, pTb->GCPhysPc));
+        iemThreadedTbFree(pVCpu->pVMR3, pVCpu, pTb);
+        return VINF_SUCCESS;
+    }
+
     /* Set the current TB so CIMPL function may get at it. */
     pVCpu->iem.s.pCurTbR3 = pTb;
 

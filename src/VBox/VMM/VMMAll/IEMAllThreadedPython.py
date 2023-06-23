@@ -876,7 +876,11 @@ class ThreadedFunctionVariation(object):
             assert asFrags;
             sCode += ', ' + ' | '.join(asFrags);
         sCode += ');';
-        aoStmts = [ iai.McCppGeneric(sCode, cchIndent = cchIndent), ];
+
+        aoStmts = [
+            iai.McCppGeneric('IEM_MC2_PRE_EMIT_CALLS();', cchIndent = cchIndent), # Serves as a hook for various stuff.
+            iai.McCppGeneric(sCode, cchIndent = cchIndent),
+        ];
 
         # For CIMPL stuff, we need to consult the associated IEM_CIMPL_F_XXX
         # mask and maybe emit additional checks.
