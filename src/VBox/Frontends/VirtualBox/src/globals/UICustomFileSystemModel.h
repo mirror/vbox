@@ -47,7 +47,7 @@ enum UICustomFileSystemModelData
     UICustomFileSystemModelData_ChangeTime,
     UICustomFileSystemModelData_Owner,
     UICustomFileSystemModelData_Permissions,
-    UICustomFileSystemModelData_ISOPath,
+    UICustomFileSystemModelData_VISOPath,
     UICustomFileSystemModelData_LocalPath,
     UICustomFileSystemModelData_Max
 };

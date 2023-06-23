@@ -61,8 +61,11 @@ public:
 
     UIVisoContentBrowser(QWidget *pParent = 0);
     ~UIVisoContentBrowser();
+    /* Imports pathList (relative to ISO file's root) to VISO content. */
+    void importISOContentToViso(const QString &strISOFilePath, const QStringList &pathList,
+                                const QList<KFsObjType> &fileObjectTypeList);
     /** Adds file objests from the host file system. @p pathList consists of list of paths to there objects. */
-    void addObjectsToViso(QStringList pathList);
+    void addObjectsToViso(const QStringList &pathList);
     /** Returns the content of the VISO as a string list. Each element of the list becomes a line in the
       * .viso file. */
     QStringList entryList();
@@ -119,10 +122,10 @@ private:
     void                    updateStartItemName();
     void                    renameFileObject(UICustomFileSystemItem *pItem);
     void                    removeItems(const QList<UICustomFileSystemItem*> itemList);
-    /** Creates and entry for pItem consisting of a map item (key is iso path and value is host file system path)
+    /** Creates and entry for pItem consisting of a map item (key is viso path and value is host file system path)
      *  if @p bRemove is true then the value is the string ":remove:" which effectively removes the file object
      *  from the iso image. */
-    void                    createAnIsoEntry(UICustomFileSystemItem *pItem, bool bRemove = false);
+    void                    createVisoEntry(UICustomFileSystemItem *pItem, bool bRemove = false);
     void                    reset();
     /** Returns a list of items which are currecntly selected
      *  in the table view. */
