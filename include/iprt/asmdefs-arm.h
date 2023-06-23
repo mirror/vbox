@@ -127,6 +127,18 @@
 
 
 /**
+ * Mangles the name so it can be referenced using DECLASM() in the C/C++ world.
+ *
+ * @returns a_SymbolC with the necessary prefix/postfix.
+ * @param   a_SymbolC   A C symbol name to mangle as needed.
+ */
+#if defined(RT_OS_DARWIN)
+# define NAME(a_SymbolC)    _ ## a_SymbolC
+#else
+# define NAME(a_SymbolC)    a_SymbolC
+#endif
+
+/**
  * Returns the page address of the given symbol (used with the adrp instruction primarily).
  *
  * @returns Page aligned address of the given symbol
@@ -156,5 +168,6 @@
 
 
 /** @} */
+
 #endif /* !IPRT_INCLUDED_asmdefs_arm_h */
 
