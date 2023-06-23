@@ -49,6 +49,7 @@ ValidationKitTestsApi_EXEC_SOURCES := \
 	$(PATH_SUB_CURRENT)/tdMoveMedium1.py \
 	$(PATH_SUB_CURRENT)/tdMoveVm1.py \
 	$(PATH_SUB_CURRENT)/tdPython1.py \
+	$(PATH_SUB_CURRENT)/tdSnapshots1.py \
 	$(PATH_SUB_CURRENT)/tdTreeDepth1.py
 
 ifndef VBOX_OSE

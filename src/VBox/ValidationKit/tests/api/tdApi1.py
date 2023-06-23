@@ -95,5 +95,7 @@ if __name__ == '__main__':
     from tdTreeDepth1    import SubTstDrvTreeDepth1;  # pylint: disable=relative-import
     from tdMoveVm1       import SubTstDrvMoveVm1;     # pylint: disable=relative-import
     from tdCloneMedium1  import SubTstDrvCloneMedium1;# pylint: disable=relative-import
+    from tdSnapshots1    import SubTstDrvNestedSnapshots1;# pylint: disable=relative-import
     sys.exit(tdApi1([SubTstDrvPython1, SubTstDrvAppliance1, SubTstDrvMoveMedium1,
-                     SubTstDrvTreeDepth1, SubTstDrvMoveVm1, SubTstDrvCloneMedium1]).main(sys.argv))
+                     SubTstDrvTreeDepth1, SubTstDrvMoveVm1, SubTstDrvCloneMedium1,
+                     SubTstDrvNestedSnapshots1]).main(sys.argv))
