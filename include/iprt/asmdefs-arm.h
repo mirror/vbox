@@ -48,21 +48,19 @@
  * @{
  */
 
-/** @todo Should the selection be done by object format (ELF, MachO, ...) maybe?. */
-
 /** Marks the beginning of a code section. */
-#if defined(__clang__)
+#ifdef ASM_FORMAT_MACHO
 # define BEGINCODE .section __TEXT,__text,regular,pure_instructions
-#elif defined(__GNUC__)
+#elif defined(ASM_FORMAT_ELF)
 # define BEGINCODE .section .text
 #else
 # error "Port me!"
 #endif
 
 /** Marks the end of a code section. */
-#if defined(__clang__)
+#if ASM_FORMAT_MACHO
 # define ENDCODE
-#elif defined(__GNUC__)
+#elif defined(ASM_FORMAT_ELF)
 # define ENDCODE
 #else
 # error "Port me!"
@@ -70,18 +68,18 @@
 
 
 /** Marks the beginning of a data section. */
-#if defined(__clang__)
+#if ASM_FORMAT_MACHO
 # define BEGINDATA .section __DATA,__data
-#elif defined(__GNUC__)
+#elif defined(ASM_FORMAT_ELF)
 # define BEGINDATA .section .data
 #else
 # error "Port me!"
 #endif
 
 /** Marks the end of a data section. */
-#if defined(__clang__)
+#if ASM_FORMAT_MACHO
 # define ENDDATA
-#elif defined(__GNUC__)
+#elif defined(ASM_FORMAT_ELF)
 # define ENDDATA
 #else
 # error "Port me!"
@@ -89,18 +87,18 @@
 
 
 /** Marks the beginning of a readonly data section. */
-#if defined(__clang__)
+#if ASM_FORMAT_MACHO
 # define BEGINCONST .section __RODATA,__rodata
-#elif defined(__GNUC__)
+#elif defined(ASM_FORMAT_ELF)
 # define BEGINCONST .section .rodata
 #else
 # error "Port me!"
 #endif
 
 /** Marks the end of a readonly data section. */
-#if defined(__clang__)
+#if ASM_FORMAT_MACHO
 # define ENDCONST
-#elif defined(__GNUC__)
+#elif defined(ASM_FORMAT_ELF)
 # define ENDCONST
 #else
 # error "Port me!"
@@ -108,18 +106,18 @@
 
 
 /** Marks the beginning of a readonly C strings section. */
-#if defined(__clang__)
+#if ASM_FORMAT_MACHO
 # define BEGINCONSTSTRINGS .section __TEXT,__cstring,cstring_literals
-#elif defined(__GNUC__)
+#elif defined(ASM_FORMAT_ELF)
 # define BEGINCONSTSTRINGS .section .rodata
 #else
 # error "Port me!"
 #endif
 
 /** Marks the end of a readonly C strings section. */
-#if defined(__clang__)
+#if ASM_FORMAT_MACHO
 # define ENDCONSTSTRINGS
-#elif defined(__GNUC__)
+#elif defined(ASM_FORMAT_ELF)
 # define ENDCONSTSTRINGS
 #else
 # error "Port me!"
