@@ -2076,8 +2076,8 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
 
     AssertPtrReturnVoid(pReq->pCtx);
 
-    LogRel2(("Shared Clipboard: Converting X11 format '%s' to VBox format %#x (%RU32 bytes max)\n",
-             g_aFormats[pReq->Read.idxFmtX11].pcszAtom, pReq->Read.uFmtVBox, pReq->Read.cbMax));
+    LogRel2(("Shared Clipboard: Converting X11 format index %#x to VBox format %#x (%RU32 bytes max)\n",
+             pReq->Read.idxFmtX11, pReq->Read.uFmtVBox, pReq->Read.cbMax));
 
     int rc = VINF_SUCCESS;
 
@@ -2293,8 +2293,8 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
     LogFlowFunc(("pvDst=%p, cbDst=%RU32\n", pvDst, cbDst));
 
     if (RT_FAILURE(rc))
-        LogRel(("Shared Clipboard: Converting X11 format '%s' (idxFmtX11=%u) to VBox format %#x failed, rc=%Rrc\n",
-                g_aFormats[pReq->Read.idxFmtX11].pcszAtom, pReq->Read.idxFmtX11, pReq->Read.uFmtVBox, rc));
+        LogRel(("Shared Clipboard: Converting X11 format index %#x to VBox format %#x failed, rc=%Rrc\n",
+                pReq->Read.idxFmtX11, pReq->Read.uFmtVBox, rc));
 
     int rc2;
 
