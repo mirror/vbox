@@ -234,7 +234,7 @@ ifdef VBOX_WITH_LNX_ARM64_ADDITIONS
    VBOX_LNX_ADD_ARM64_RUN_PKG = VBoxLinuxAdditions-arm64.run
   endif
   GUESTADDITIONS_FILESPEC.linux.arm64 = \
-     $(VBOX_LNX_ADD_ARM64_RUN_PKG)=$(VBOX_PATH_ADDITIONS.linux.arm64)/VBoxLinuxAdditions.run
+  	$(VBOX_LNX_ADD_ARM64_RUN_PKG)=$(VBOX_PATH_ADDITIONS.linux.arm64)/VBoxLinuxAdditions.run
  endif
 endif
 ifdef VBOX_WITH_ADDITIONS_ISO.linux.x86
