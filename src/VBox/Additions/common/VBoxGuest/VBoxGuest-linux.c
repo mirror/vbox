@@ -748,7 +748,7 @@ static int __init vgdrvLinuxModInit(void)
         /*
          * Call the common device extension initializer.
          */
-#if RTLNX_VER_MIN(2,6,0) && defined(RT_ARCH_X86) || defined(RT_ARCH_ARM32)
+#if RTLNX_VER_MIN(2,6,0) && (defined(RT_ARCH_X86) || defined(RT_ARCH_ARM32))
         VBOXOSTYPE enmOSType = VBOXOSTYPE_Linux26;
 #elif RTLNX_VER_MIN(2,6,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64))
         VBOXOSTYPE enmOSType = VBOXOSTYPE_Linux26_x64;
