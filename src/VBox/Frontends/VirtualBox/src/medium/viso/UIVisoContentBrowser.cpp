@@ -210,7 +210,7 @@ UIVisoContentBrowser::~UIVisoContentBrowser()
 void UIVisoContentBrowser::importISOContentToViso(const QString &strISOFilePath, const QStringList &pathList,
                                                   const QList<KFsObjType> &fileObjectTypeList)
 {
-    //rootItem();
+    Q_UNUSED(strISOFilePath);
     UICustomFileSystemItem *pParentItem = rootItem()->children()[0];
     if (!m_pTableView || !pParentItem)
         return;
