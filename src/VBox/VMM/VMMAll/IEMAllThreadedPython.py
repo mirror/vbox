@@ -878,7 +878,7 @@ class ThreadedFunctionVariation(object):
         sCode += ');';
 
         aoStmts = [
-            iai.McCppGeneric('IEM_MC2_PRE_EMIT_CALLS();', cchIndent = cchIndent), # Serves as a hook for various stuff.
+            iai.McCppGeneric('IEM_MC2_BEGIN_EMIT_CALLS();', cchIndent = cchIndent), # Scope and a hook for various stuff.
             iai.McCppGeneric(sCode, cchIndent = cchIndent),
         ];
 
@@ -888,6 +888,7 @@ class ThreadedFunctionVariation(object):
             aoStmts.append(iai.McCppGeneric('IEM_MC2_EMIT_CALL_1(kIemThreadedFunc_CheckMode, pVCpu->iem.s.fExec);',
                                             cchIndent = cchIndent));
 
+        aoStmts.append(iai.McCppGeneric('IEM_MC2_END_EMIT_CALLS();', cchIndent = cchIndent)); # For closing the scope.
         return aoStmts;
 
 
@@ -1246,6 +1247,7 @@ class IEMThreadedGenerator(object):
             '     * Predefined'
             '     */'
             '    kIemThreadedFunc_CheckMode,',
+            '    kIemThreadedFunc_CheckCsLim,',
         ];
         iThreadedFunction = 1;
         for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
@@ -1404,6 +1406,7 @@ class IEMThreadedGenerator(object):
                    + '     * Predefined.\n'
                    + '     */'
                    + '    iemThreadedFunc_BltIn_CheckMode,\n'
+                   + '    iemThreadedFunc_BltIn_CheckCsLim,\n'
                    );
         iThreadedFunction = 1;
         for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
@@ -1436,6 +1439,7 @@ class IEMThreadedGenerator(object):
                    + '     * Predefined.\n'
                    + '     */'
                    + '    "BltIn_CheckMode",\n'
+                   + '    "BltIn_CheckCsLim",\n'
                    );
         iThreadedFunction = 1;
         for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:

@@ -817,9 +817,10 @@ void iemOpcodeFlushHeavy(PVMCPUCC pVCpu, uint8_t cbInstr)
  * @param   pVCpu               The cross context virtual CPU structure of the
  *                              calling thread.
  * @param   pvDst               Where to return the bytes.
- * @param   cbDst               Number of bytes to read.
- *
- * @todo    Make cbDst = 0 a way of initializing pbInstrBuf?
+ * @param   cbDst               Number of bytes to read.  A value of zero is
+ *                              allowed for initializing pbInstrBuf (the
+ *                              recompiler does this).  In this case it is best
+ *                              to set pbInstrBuf to NULL prior to the call.
  */
 void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXCEPT_MAY_LONGJMP
 {
@@ -1059,26 +1060,38 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
 
             /* Do the reading. */
             uint32_t const cbToRead = RT_MIN((uint32_t)cbDst, cbMaxRead);
-            VBOXSTRICTRC rcStrict = PGMPhysRead(pVCpu->CTX_SUFF(pVM), pTlbe->GCPhys + (GCPtrFirst & X86_PAGE_OFFSET_MASK),
-                                                pvDst, cbToRead, PGMACCESSORIGIN_IEM);
-            if (RT_LIKELY(rcStrict == VINF_SUCCESS))
-            { /* likely */ }
-            else if (PGM_PHYS_RW_IS_SUCCESS(rcStrict))
+            if (cbToRead > 0)
             {
-                Log(("iemOpcodeFetchMoreBytes: %RGv/%RGp LB %#x - read status -  rcStrict=%Rrc\n",
-                     GCPtrFirst, pTlbe->GCPhys + (GCPtrFirst & X86_PAGE_OFFSET_MASK), VBOXSTRICTRC_VAL(rcStrict), cbToRead));
-                rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
-                AssertStmt(rcStrict == VINF_SUCCESS, IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(rcStrict)));
+                VBOXSTRICTRC rcStrict = PGMPhysRead(pVCpu->CTX_SUFF(pVM), pTlbe->GCPhys + (GCPtrFirst & X86_PAGE_OFFSET_MASK),
+                                                    pvDst, cbToRead, PGMACCESSORIGIN_IEM);
+                if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+                { /* likely */ }
+                else if (PGM_PHYS_RW_IS_SUCCESS(rcStrict))
+                {
+                    Log(("iemOpcodeFetchMoreBytes: %RGv/%RGp LB %#x - read status -  rcStrict=%Rrc\n",
+                         GCPtrFirst, pTlbe->GCPhys + (GCPtrFirst & X86_PAGE_OFFSET_MASK), VBOXSTRICTRC_VAL(rcStrict), cbToRead));
+                    rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
+                    AssertStmt(rcStrict == VINF_SUCCESS, IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(rcStrict)));
+                }
+                else
+                {
+                    Log((RT_SUCCESS(rcStrict)
+                         ? "iemOpcodeFetchMoreBytes: %RGv/%RGp LB %#x - read status - rcStrict=%Rrc\n"
+                         : "iemOpcodeFetchMoreBytes: %RGv/%RGp LB %#x - read error - rcStrict=%Rrc (!!)\n",
+                         GCPtrFirst, pTlbe->GCPhys + (GCPtrFirst & X86_PAGE_OFFSET_MASK), VBOXSTRICTRC_VAL(rcStrict), cbToRead));
+                    IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(rcStrict));
+                }
             }
-            else
-            {
-                Log((RT_SUCCESS(rcStrict)
-                     ? "iemOpcodeFetchMoreBytes: %RGv/%RGp LB %#x - read status - rcStrict=%Rrc\n"
-                     : "iemOpcodeFetchMoreBytes: %RGv/%RGp LB %#x - read error - rcStrict=%Rrc (!!)\n",
-                     GCPtrFirst, pTlbe->GCPhys + (GCPtrFirst & X86_PAGE_OFFSET_MASK), VBOXSTRICTRC_VAL(rcStrict), cbToRead));
-                IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(rcStrict));
-            }
-            pVCpu->iem.s.offInstrNextByte = offBuf + cbToRead;
+
+            /* Update the state and probably return. */
+            uint32_t const offPg = (GCPtrFirst & X86_PAGE_OFFSET_MASK);
+            pVCpu->iem.s.offCurInstrStart = (int16_t)(offPg - cbInstr);
+            pVCpu->iem.s.offInstrNextByte = offPg + cbInstr + cbToRead;
+            pVCpu->iem.s.cbInstrBuf       = offPg + RT_MIN(15, cbMaxRead + cbInstr) - cbToRead - cbInstr;
+            pVCpu->iem.s.cbInstrBufTotal  = X86_PAGE_SIZE;
+            pVCpu->iem.s.GCPhysInstrBuf   = pTlbe->GCPhys;
+            pVCpu->iem.s.uInstrBufPc      = GCPtrFirst & ~(RTGCPTR)X86_PAGE_OFFSET_MASK;
+            pVCpu->iem.s.pbInstrBuf       = NULL;
             if (cbToRead == cbDst)
                 return;
         }

@@ -122,14 +122,11 @@ typedef struct IEMTHRDEDCALLENTRY
     uint16_t    enmFunction;
     uint16_t    uUnused0;
 
+    /** Offset into IEMTB::pabOpcodes. */
+    uint16_t    offOpcode;
     /** The opcode length. */
     uint8_t     cbOpcode;
-    /** The opcode chunk number.
-     * @note sketches for discontiguous opcode support  */
-    uint8_t     idxOpcodeChunk;
-    /** The offset into the opcode chunk of this function.
-     * @note sketches for discontiguous opcode support  */
-    uint16_t    offOpcodeChunk;
+    uint8_t     uUnused1;
 
     /** Generic parameters. */
     uint64_t    auParams[3];
@@ -187,6 +184,18 @@ typedef struct IEMTB
     uint16_t            cbOpcodesAllocated;
     /** Pointer to the opcode bytes this block was recompiled from. */
     uint8_t            *pabOpcodes;
+
+#if 0
+    struct
+    {
+        uint16_t        offOpcodes;
+        uint16_t        cbOpcodes;
+    } aRanges;
+
+    /** Physical pages that the .    */
+    RTGCPHYS            aGCPhysPgs[2];
+#endif
+
 } IEMTB;
 
 
@@ -213,17 +222,32 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb);
     ((a_GCPtrEff) = iemOpHlpCalcRmEffAddrJmpEx(pVCpu, (bRm), (cbImm), &uEffAddrInfo))
 #endif
 
-#define IEM_MC2_PRE_EMIT_CALLS() do { \
+#define IEM_MC2_BEGIN_EMIT_CALLS() \
+    { \
+        PIEMTB const pTb = pVCpu->iem.s.pCurTbR3; \
         AssertMsg(pVCpu->iem.s.offOpcode == IEM_GET_INSTR_LEN(pVCpu), \
                   ("%u vs %u (%04x:%08RX64)\n", pVCpu->iem.s.offOpcode, IEM_GET_INSTR_LEN(pVCpu), \
                   pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip)); \
-    } while (0)
+        /** @todo check for cross page stuff */ \
+        if (!(pTb->fFlags & IEMTB_F_CS_LIM_CHECKS)) \
+        { /* likely */ } \
+        else \
+        { \
+            PIEMTHRDEDCALLENTRY const pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++]; \
+            pCall->enmFunction = kIemThreadedFunc_CheckCsLim; \
+            pCall->offOpcode   = pTb->cbOpcodes; \
+            pCall->auParams[0] = pCall->cbOpcode = IEM_GET_INSTR_LEN(pVCpu); \
+            pCall->auParams[1] = 0; \
+            pCall->auParams[2] = 0; \
+        } \
+        do { } while (0)
+
 #define IEM_MC2_EMIT_CALL_0(a_enmFunction) do { \
         IEMTHREADEDFUNCS const enmFunctionCheck = a_enmFunction; RT_NOREF(enmFunctionCheck); \
         \
-        PIEMTB              const pTb   = pVCpu->iem.s.pCurTbR3; \
         PIEMTHRDEDCALLENTRY const pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++]; \
         pCall->enmFunction = a_enmFunction; \
+        pCall->offOpcode   = pTb->cbOpcodes; \
         pCall->cbOpcode    = IEM_GET_INSTR_LEN(pVCpu); \
         pCall->auParams[0] = 0; \
         pCall->auParams[1] = 0; \
@@ -233,9 +257,9 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb);
         IEMTHREADEDFUNCS const enmFunctionCheck = a_enmFunction; RT_NOREF(enmFunctionCheck); \
         uint64_t         const uArg0Check       = (a_uArg0);     RT_NOREF(uArg0Check); \
         \
-        PIEMTB              const pTb   = pVCpu->iem.s.pCurTbR3; \
         PIEMTHRDEDCALLENTRY const pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++]; \
         pCall->enmFunction = a_enmFunction; \
+        pCall->offOpcode   = pTb->cbOpcodes; \
         pCall->cbOpcode    = IEM_GET_INSTR_LEN(pVCpu); \
         pCall->auParams[0] = a_uArg0; \
         pCall->auParams[1] = 0; \
@@ -246,9 +270,9 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb);
         uint64_t         const uArg0Check       = (a_uArg0);     RT_NOREF(uArg0Check); \
         uint64_t         const uArg1Check       = (a_uArg1);     RT_NOREF(uArg1Check); \
         \
-        PIEMTB              const pTb   = pVCpu->iem.s.pCurTbR3; \
         PIEMTHRDEDCALLENTRY const pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++]; \
         pCall->enmFunction = a_enmFunction; \
+        pCall->offOpcode   = pTb->cbOpcodes; \
         pCall->cbOpcode    = IEM_GET_INSTR_LEN(pVCpu); \
         pCall->auParams[0] = a_uArg0; \
         pCall->auParams[1] = a_uArg1; \
@@ -260,13 +284,16 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb);
         uint64_t         const uArg1Check       = (a_uArg1);     RT_NOREF(uArg1Check); \
         uint64_t         const uArg2Check       = (a_uArg2);     RT_NOREF(uArg2Check); \
         \
-        PIEMTB              const pTb   = pVCpu->iem.s.pCurTbR3; \
         PIEMTHRDEDCALLENTRY const pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++]; \
         pCall->enmFunction = a_enmFunction; \
+        pCall->offOpcode   = pTb->cbOpcodes; \
         pCall->cbOpcode    = IEM_GET_INSTR_LEN(pVCpu); \
         pCall->auParams[0] = a_uArg0; \
         pCall->auParams[1] = a_uArg1; \
         pCall->auParams[2] = a_uArg2; \
+    } while (0)
+
+#define IEM_MC2_END_EMIT_CALLS() \
     } while (0)
 
 
@@ -906,20 +933,12 @@ DECL_FORCE_INLINE(void) iemThreadedCompileInitDecoder(PVMCPUCC pVCpu, bool const
  */
 DECL_FORCE_INLINE(void) iemThreadedCompileInitOpcodeFetching(PVMCPUCC pVCpu)
 {
-// // // // // // // // // // figure this out // // // //
-    pVCpu->iem.s.pbInstrBuf         = NULL;
-    pVCpu->iem.s.offInstrNextByte   = 0;
-    pVCpu->iem.s.offCurInstrStart   = 0;
+    /* Almost everything is done by iemGetPcWithPhysAndCode() already.  We just need to initialize the index into abOpcode. */
 #ifdef IEM_WITH_CODE_TLB_AND_OPCODE_BUF
     pVCpu->iem.s.offOpcode          = 0;
+#else
+    RT_NOREF(pVCpu);
 #endif
-#ifdef VBOX_STRICT
-    pVCpu->iem.s.GCPhysInstrBuf     = NIL_RTGCPHYS;
-    pVCpu->iem.s.cbInstrBuf         = UINT16_MAX;
-    pVCpu->iem.s.cbInstrBufTotal    = UINT16_MAX;
-    pVCpu->iem.s.uInstrBufPc        = UINT64_C(0xc0ffc0ffcff0c0ff);
-#endif
-// // // // // // // // // // // // // // // // // // //
 }
 
 
@@ -993,17 +1012,7 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
     /*
      * Allocate a new translation block.
      */
-    if (!(fExtraFlags & IEMTB_F_RIP_CHECKS))
-    { /* likely */  }
-    else if (  !IEM_IS_64BIT_CODE(pVCpu)
-             ? pVCpu->cpum.GstCtx.eip <= pVCpu->cpum.GstCtx.cs.u32Limit
-             : IEM_IS_CANONICAL(pVCpu->cpum.GstCtx.rip))
-    { /* likely */ }
-    else
-        return IEMExecOne(pVCpu);
-    fExtraFlags |= IEMTB_F_STATE_COMPILING;
-
-    PIEMTB pTb = iemThreadedTbAlloc(pVM, pVCpu, GCPhysPc, fExtraFlags);
+    PIEMTB pTb = iemThreadedTbAlloc(pVM, pVCpu, GCPhysPc, fExtraFlags | IEMTB_F_STATE_COMPILING);
     AssertReturn(pTb, VERR_IEM_TB_ALLOC_FAILED);
 
     /* Set the current TB so iemThreadedCompileLongJumped and the CIMPL
@@ -1143,48 +1152,35 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb)
 
 /**
  * This is called when the PC doesn't match the current pbInstrBuf.
+ *
+ * Upon return, we're ready for opcode fetching.  But please note that
+ * pbInstrBuf can be NULL iff the memory doesn't have readable backing (i.e.
+ * MMIO or unassigned).
  */
-static RTGCPHYS iemGetPcWithPhysAndCodeMissed(PVMCPUCC pVCpu, uint64_t const uPc)
+static RTGCPHYS iemGetPcWithPhysAndCodeMissed(PVMCPUCC pVCpu)
 {
-    /** @todo see iemOpcodeFetchBytesJmp */
-    pVCpu->iem.s.pbInstrBuf = NULL;
-
-    pVCpu->iem.s.offInstrNextByte = 0;
+    pVCpu->iem.s.pbInstrBuf       = NULL;
     pVCpu->iem.s.offCurInstrStart = 0;
-    pVCpu->iem.s.cbInstrBuf       = 0;
-    pVCpu->iem.s.cbInstrBufTotal  = 0;
-
-    uint8_t bIgn;
-    iemOpcodeFetchBytesJmp(pVCpu, 1, &bIgn);
-
-    uint64_t off = uPc - pVCpu->iem.s.uInstrBufPc;
-    if (off < pVCpu->iem.s.cbInstrBufTotal)
-    {
-        pVCpu->iem.s.offInstrNextByte = (uint32_t)off;
-        pVCpu->iem.s.offCurInstrStart = (uint16_t)off;
-        if ((uint16_t)off + 15 <= pVCpu->iem.s.cbInstrBufTotal)
-            pVCpu->iem.s.cbInstrBuf = (uint16_t)off + 15;
-        else
-            pVCpu->iem.s.cbInstrBuf = pVCpu->iem.s.cbInstrBufTotal;
-
-        return pVCpu->iem.s.GCPhysInstrBuf + off;
-    }
-
-    AssertFailed();
-    RT_NOREF(uPc);
-    return NIL_RTGCPHYS;
+    pVCpu->iem.s.offInstrNextByte = 0;
+    iemOpcodeFetchBytesJmp(pVCpu, 0, NULL);
+    return pVCpu->iem.s.GCPhysInstrBuf + pVCpu->iem.s.offCurInstrStart;
 }
 
 
 /** @todo need private inline decl for throw/nothrow matching IEM_WITH_SETJMP? */
 DECL_FORCE_INLINE_THROW(RTGCPHYS) iemGetPcWithPhysAndCode(PVMCPUCC pVCpu)
 {
-    /* Set uCurTbStartPc to RIP and calc the effective PC. */
+    /*
+     * Set uCurTbStartPc to RIP and calc the effective PC.
+     */
     uint64_t uPc = pVCpu->cpum.GstCtx.rip;
     pVCpu->iem.s.uCurTbStartPc = uPc;
     Assert(pVCpu->cpum.GstCtx.cs.u64Base == 0 || !IEM_IS_64BIT_CODE(pVCpu));
     uPc += pVCpu->cpum.GstCtx.cs.u64Base;
 
+    /*
+     * Advance within the current buffer (PAGE) when possible.
+     */
     if (pVCpu->iem.s.pbInstrBuf)
     {
         uint64_t off = uPc - pVCpu->iem.s.uInstrBufPc;
@@ -1200,7 +1196,7 @@ DECL_FORCE_INLINE_THROW(RTGCPHYS) iemGetPcWithPhysAndCode(PVMCPUCC pVCpu)
             return pVCpu->iem.s.GCPhysInstrBuf + off;
         }
     }
-    return iemGetPcWithPhysAndCodeMissed(pVCpu, uPc);
+    return iemGetPcWithPhysAndCodeMissed(pVCpu);
 }
 
 
@@ -1218,18 +1214,13 @@ DECL_FORCE_INLINE(uint32_t) iemGetTbFlagsForCurrentPc(PVMCPUCC pVCpu)
      * likely to go invalid before the end of the translation block.
      */
     if (IEM_IS_64BIT_CODE(pVCpu))
-    {
-        if (RT_LIKELY(   IEM_IS_CANONICAL(pVCpu->cpum.GstCtx.rip)
-                      && IEM_IS_CANONICAL(pVCpu->cpum.GstCtx.rip + 256)))
-            return IEMTB_F_TYPE_THREADED;
-    }
-    else
-    {
-        if (RT_LIKELY(   pVCpu->cpum.GstCtx.eip < pVCpu->cpum.GstCtx.cs.u32Limit
-                      && (uint64_t)256 + pVCpu->cpum.GstCtx.eip < pVCpu->cpum.GstCtx.cs.u32Limit))
-            return IEMTB_F_TYPE_THREADED;
-    }
-    return IEMTB_F_RIP_CHECKS | IEMTB_F_TYPE_THREADED;
+        return IEMTB_F_TYPE_THREADED;
+
+    if (RT_LIKELY(   pVCpu->cpum.GstCtx.eip < pVCpu->cpum.GstCtx.cs.u32Limit
+                  && pVCpu->cpum.GstCtx.eip - pVCpu->cpum.GstCtx.cs.u32Limit >= X86_PAGE_SIZE))
+        return IEMTB_F_TYPE_THREADED;
+
+    return IEMTB_F_TYPE_THREADED | IEMTB_F_CS_LIM_CHECKS;
 }
 
 
@@ -1264,9 +1255,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecRecompilerThreaded(PVMCC pVM, PVMCPUCC pVCpu)
     {
         PIEMTB       pTb = NULL;
         VBOXSTRICTRC rcStrict;
-#ifdef IEM_WITH_SETJMP
         IEM_TRY_SETJMP(pVCpu, rcStrict)
-#endif
         {
             for (;;)
             {
@@ -1299,18 +1288,28 @@ VMMDECL(VBOXSTRICTRC) IEMExecRecompilerThreaded(PVMCC pVM, PVMCPUCC pVCpu)
                     return rcStrict;
             }
         }
-#ifdef IEM_WITH_SETJMP
         IEM_CATCH_LONGJMP_BEGIN(pVCpu, rcStrict);
         {
             pVCpu->iem.s.cLongJumps++;
             if (pVCpu->iem.s.cActiveMappings > 0)
                 iemMemRollback(pVCpu);
-            if (pTb)
-                return rcStrict;
-            return iemThreadedCompileLongJumped(pVM, pVCpu, rcStrict);
+
+            /* If pTb isn't NULL we're in iemThreadedTbExec. */
+            if (!pTb)
+            {
+                /* If pCurTbR3 is NULL, we're in iemGetPcWithPhysAndCode.*/
+                pTb = pVCpu->iem.s.pCurTbR3;
+                if (pTb)
+                {
+                    /* If the pCurTbR3 block is in compiling state, we're in iemThreadedCompile,
+                       otherwise it's iemThreadedTbExec inside iemThreadedCompile (compile option). */
+                    if ((pTb->fFlags & IEMTB_F_STATE_MASK) == IEMTB_F_STATE_COMPILING)
+                        return iemThreadedCompileLongJumped(pVM, pVCpu, rcStrict);
+                }
+            }
+            return rcStrict;
         }
         IEM_CATCH_LONGJMP_END(pVCpu);
-#endif
     }
 }
 
