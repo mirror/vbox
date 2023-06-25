@@ -62,7 +62,9 @@ public:
     UIVisoContentBrowser(QWidget *pParent = 0);
     ~UIVisoContentBrowser();
     /* Imports pathList (relative to ISO file's root) to VISO content. */
-    void importISOContentToViso(const QString &strISOFilePath);
+    void importISOContentToViso(const QString &strISOFilePath,
+                                UICustomFileSystemItem *pParentItem = 0,
+                                const QString &strDirPath = QString());
     /** Adds file objests from the host file system. @p pathList consists of list of paths to there objects. */
     void addObjectsToViso(const QStringList &pathList);
     /** Returns the content of the VISO as a string list. Each element of the list becomes a line in the
