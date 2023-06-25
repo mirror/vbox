@@ -457,7 +457,8 @@ QVariant UICustomFileSystemModel::data(const QModelIndex &index, int role) const
         }
         return item->data(index.column());
     }
-    /* Show the up directory array: */
+    /* Show file object icons: */
+    QString strContainingISOFile = item->data(UICustomFileSystemModelData_ISOFilePath).toString();
     if (role == Qt::DecorationRole && index.column() == 0)
     {
         if (item->isDirectory())
@@ -467,10 +468,20 @@ QVariant UICustomFileSystemModel::data(const QModelIndex &index, int role) const
             else if(item->isDriveItem())
                 return QIcon(":/hd_32px.png");
             else
-                return QIcon(":/file_manager_folder_16px.png");
+            {
+                if (!strContainingISOFile.isEmpty())
+                    return QIcon(":/file_manager_cd_folder_16px.png");
+                else
+                    return QIcon(":/file_manager_folder_16px.png");
+            }
         }
         else if (item->isFile())
-            return QIcon(":/file_manager_file_16px.png");
+        {
+            if (!strContainingISOFile.isEmpty())
+                return QIcon(":/file_manager_cd_file_16px.png");
+            else
+                return QIcon(":/file_manager_file_16px.png");
+        }
         else if (item->isSymLink())
         {
             if (item->isSymLinkToADirectory())

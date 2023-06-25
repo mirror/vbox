@@ -259,6 +259,8 @@
         <file alias="file_manager_16px_x4.png">images/x4/file_manager_16px_x4.png</file>
         <file alias="file_manager_24px_x4.png">images/x4/file_manager_24px_x4.png</file>
         <file alias="file_manager_32px_x4.png">images/x4/file_manager_32px_x4.png</file>
+        <file alias="file_manager_cd_file_16px_x4.png">images/x4/file_manager_cd_file_16px_x4.png</file>
+        <file alias="file_manager_cd_folder_16px_x4.png">images/x4/file_manager_cd_folder_16px_x4.png</file>
         <file alias="file_manager_copy_16px_x4.png">images/x4/file_manager_copy_16px_x4.png</file>
         <file alias="file_manager_copy_24px_x4.png">images/x4/file_manager_copy_24px_x4.png</file>
         <file alias="file_manager_copy_disabled_16px_x4.png">images/x4/file_manager_copy_disabled_16px_x4.png</file>
@@ -490,6 +492,5 @@
         <file alias="log_viewer_bookmark_32px_x4.png">images/x4/log_viewer_bookmark_32px_x4.png</file>
         <file alias="log_viewer_bookmark_disabled_16px_x4.png">images/x4/log_viewer_bookmark_disabled_16px_x4.png</file>
         <file alias="log_viewer_bookmark_disabled_32px_x4.png">images/x4/log_viewer_bookmark_disabled_32px_x4.png</file>
-        <file alias="log_viewer_bookmark_off_16px_x4.png">images/x4/log_viewer_bookmark_off_16px_x4.png</file>
     </qresource>
 </RCC>

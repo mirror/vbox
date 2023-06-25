@@ -224,7 +224,7 @@ void UIVisoContentBrowser::importISOContentToViso(const QString &strISOFilePath,
         QFileInfo fileInfo(pathList[i]);
         if (pParentItem->child(fileInfo.fileName()))
             continue;
-        printf("%s %s %s\n", qPrintable(fileInfo.fileName()), qPrintable(pathList[i]), qPrintable(pParentItem->data(UICustomFileSystemModelData_VISOPath).toString()));
+
         UICustomFileSystemItem* pAddedItem = new UICustomFileSystemItem(fileInfo.fileName(), pParentItem,
                                                                         fileObjectTypeList[i]);
         pAddedItem->setData(pathList[i], UICustomFileSystemModelData_LocalPath);
