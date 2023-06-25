@@ -60,10 +60,6 @@
 /* Other VBox includes: */
 #include <iprt/assert.h>
 #include <iprt/getopt.h>
-#include <iprt/path.h>
-#include <iprt/vfs.h>
-#include <iprt/file.h>
-#include <iprt/fsvfs.h>
 
 /*********************************************************************************************************************************
 *   UIVisoSettingWidget definition.                                                                                          *
@@ -447,69 +443,7 @@ void UIVisoCreatorWidget::sltISOImportAction()
     QStringList selectedObjectPaths = m_pHostBrowser->selectedPathList();
     if (selectedObjectPaths.isEmpty())
         return;
-    QList<KFsObjType> fileObjectTypeList;
-    QStringList pathList;
-
-    int iIndex = 0;
-
-    RTVFSFILE hVfsFileIso;
-    int vrc = RTVfsFileOpenNormal(selectedObjectPaths[iIndex].toUtf8().constData(), RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, &hVfsFileIso);
-    if (RT_SUCCESS(vrc))
-    {
-        RTERRINFOSTATIC ErrInfo;
-        RTVFS hVfsIso;
-        vrc = RTFsIso9660VolOpen(hVfsFileIso, 0 /*fFlags*/, &hVfsIso, RTErrInfoInitStatic(&ErrInfo));
-        if (RT_SUCCESS(vrc))
-        {
-            RTVFSDIR hVfsSrcRootDir;
-            vrc = RTVfsOpenRoot(hVfsIso, &hVfsSrcRootDir);
-            if (RT_SUCCESS(vrc))
-            {
-                size_t cbDirEntry = sizeof(RTDIRENTRYEX);
-                PRTDIRENTRYEX pDirEntry = (PRTDIRENTRYEX)RTMemTmpAlloc(cbDirEntry);
-                size_t cbDirEntryAlloced = cbDirEntry;
-                for(;;)
-                {
-                    if (pDirEntry)
-                    {
-                        vrc = RTVfsDirReadEx(hVfsSrcRootDir, pDirEntry, &cbDirEntry, RTFSOBJATTRADD_UNIX);
-                        if (RT_FAILURE(vrc))
-                        {
-                            if (vrc == VERR_BUFFER_OVERFLOW)
-                            {
-                                RTMemTmpFree(pDirEntry);
-                                cbDirEntryAlloced = RT_ALIGN_Z(RT_MIN(cbDirEntry, cbDirEntryAlloced) + 64, 64);
-                                pDirEntry  = (PRTDIRENTRYEX)RTMemTmpAlloc(cbDirEntryAlloced);
-                                if (pDirEntry)
-                                    continue;
-                                /// @todo log error
-                                //rcExit = RTMsgErrorExitFailure("Out of memory (direntry buffer)");
-                            }
-                            /// @todo log error
-                            // else if (rc != VERR_NO_MORE_FILES)
-                            //     rcExit = RTMsgErrorExitFailure("RTVfsDirReadEx failed: %Rrc\n", rc);
-                            break;
-                        }
-                        else
-                        {
-                            if (RTFS_IS_DIRECTORY(pDirEntry->Info.Attr.fMode))
-                                fileObjectTypeList << KFsObjType_Directory;
-                            else
-                                fileObjectTypeList << KFsObjType_File;
-                            pathList << pDirEntry->szName;
-                        }
-                    }
-                }
-                RTMemTmpFree(pDirEntry);
-            }
-            RTVfsRelease(hVfsIso);
-        }
-        RTVfsFileRelease(hVfsFileIso);
-    }
-    if (!pathList.isEmpty() && pathList.size() == fileObjectTypeList.size() && m_pVISOContentBrowser)
-        m_pVISOContentBrowser->importISOContentToViso(selectedObjectPaths[iIndex], pathList, fileObjectTypeList);
-    //     return setErrorBoth(E_NOTIMPL, vrc, tr("Failed to open '%s' (%Rrc)"), mStrIsoPath.c_str(), vrc);
-
+    m_pVISOContentBrowser->importISOContentToViso(selectedObjectPaths[0]);
 }
 
 void UIVisoCreatorWidget::prepareWidgets()

@@ -41,6 +41,87 @@
 #include "UIPathOperations.h"
 #include "UIVisoContentBrowser.h"
 
+/* iprt includes: */
+#include <iprt/path.h>
+#include <iprt/vfs.h>
+#include <iprt/file.h>
+#include <iprt/fsvfs.h>
+
+struct ISOFileObject
+{
+    QString strName;
+    KFsObjType enmObjectType;
+};
+
+static QList<ISOFileObject> readISODir(const QString &strISOFilePath)
+{
+    // QList<KFsObjType> fileObjectTypeList;
+    // QStringList pathList;
+    QList<ISOFileObject> fileObjectList;
+
+
+    RTVFSFILE hVfsFileIso;
+    int vrc = RTVfsFileOpenNormal(strISOFilePath.toUtf8().constData(), RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, &hVfsFileIso);
+    if (RT_SUCCESS(vrc))
+    {
+        RTERRINFOSTATIC ErrInfo;
+        RTVFS hVfsIso;
+        vrc = RTFsIso9660VolOpen(hVfsFileIso, 0 /*fFlags*/, &hVfsIso, RTErrInfoInitStatic(&ErrInfo));
+        if (RT_SUCCESS(vrc))
+        {
+            RTVFSDIR hVfsSrcRootDir;
+            vrc = RTVfsOpenRoot(hVfsIso, &hVfsSrcRootDir);
+            if (RT_SUCCESS(vrc))
+            {
+                size_t cbDirEntry = sizeof(RTDIRENTRYEX);
+                PRTDIRENTRYEX pDirEntry = (PRTDIRENTRYEX)RTMemTmpAlloc(cbDirEntry);
+                size_t cbDirEntryAlloced = cbDirEntry;
+                for(;;)
+                {
+                    if (pDirEntry)
+                    {
+                        vrc = RTVfsDirReadEx(hVfsSrcRootDir, pDirEntry, &cbDirEntry, RTFSOBJATTRADD_UNIX);
+                        if (RT_FAILURE(vrc))
+                        {
+                            if (vrc == VERR_BUFFER_OVERFLOW)
+                            {
+                                RTMemTmpFree(pDirEntry);
+                                cbDirEntryAlloced = RT_ALIGN_Z(RT_MIN(cbDirEntry, cbDirEntryAlloced) + 64, 64);
+                                pDirEntry  = (PRTDIRENTRYEX)RTMemTmpAlloc(cbDirEntryAlloced);
+                                if (pDirEntry)
+                                    continue;
+                                /// @todo log error
+                                //rcExit = RTMsgErrorExitFailure("Out of memory (direntry buffer)");
+                            }
+                            /// @todo log error
+                            // else if (rc != VERR_NO_MORE_FILES)
+                            //     rcExit = RTMsgErrorExitFailure("RTVfsDirReadEx failed: %Rrc\n", rc);
+                            break;
+                        }
+                        else
+                        {
+                            ISOFileObject fileObject;
+
+                            if (RTFS_IS_DIRECTORY(pDirEntry->Info.Attr.fMode))
+                                fileObject.enmObjectType =  KFsObjType_Directory;
+                            else
+                                fileObject.enmObjectType = KFsObjType_File;
+                            fileObject.strName = pDirEntry->szName;
+                            fileObjectList << fileObject;
+                        }
+                    }
+                }
+                RTMemTmpFree(pDirEntry);
+            }
+            RTVfsRelease(hVfsIso);
+        }
+        RTVfsFileRelease(hVfsFileIso);
+    }
+    return fileObjectList;
+    // if (!pathList.isEmpty() && pathList.size() == fileObjectTypeList.size() && m_pVISOContentBrowser)
+    //     m_pVISOContentBrowser->importISOContentToViso(selectedObjectPaths[iIndex], pathList, fileObjectTypeList);
+}
+
 
 /*********************************************************************************************************************************
 *   UIContentBrowserDelegate definition.                                                                                         *
@@ -207,27 +288,25 @@ UIVisoContentBrowser::~UIVisoContentBrowser()
 {
 }
 
-void UIVisoContentBrowser::importISOContentToViso(const QString &strISOFilePath, const QStringList &pathList,
-                                                  const QList<KFsObjType> &fileObjectTypeList)
+void UIVisoContentBrowser::importISOContentToViso(const QString &strISOFilePath)
 {
     UICustomFileSystemItem *pParentItem = rootItem()->children()[0];
     if (!m_pTableView || !pParentItem)
         return;
-    if (pathList.size() != fileObjectTypeList.size())
-        return;
+    QList<ISOFileObject> objectList = readISODir(strISOFilePath);
 
-    for (int i = 0; i < pathList.size(); ++i)
+    for (int i = 0; i < objectList.size(); ++i)
     {
-        if (pathList[i] == "." || pathList[i] == "..")
+        if (objectList[i].strName == "." || objectList[i].strName == "..")
             continue;
 
-        QFileInfo fileInfo(pathList[i]);
+        QFileInfo fileInfo(objectList[i].strName);
         if (pParentItem->child(fileInfo.fileName()))
             continue;
 
         UICustomFileSystemItem* pAddedItem = new UICustomFileSystemItem(fileInfo.fileName(), pParentItem,
-                                                                        fileObjectTypeList[i]);
-        pAddedItem->setData(pathList[i], UICustomFileSystemModelData_LocalPath);
+                                                                        objectList[i].enmObjectType);
+        pAddedItem->setData(objectList[i].strName, UICustomFileSystemModelData_LocalPath);
         pAddedItem->setData(strISOFilePath, UICustomFileSystemModelData_ISOFilePath);
         pAddedItem->setData(UIPathOperations::mergePaths(pParentItem->path(), fileInfo.fileName()),
                            UICustomFileSystemModelData_VISOPath);
@@ -344,7 +423,7 @@ void UIVisoContentBrowser::tableViewItemDoubleClick(const QModelIndex &index)
     if (pClickedItem->isUpDirectory())
     {
         QModelIndex currentRoot = m_pTableProxyModel->mapToSource(m_pTableView->rootIndex());
-        /* Go up if we are not already there: */
+        /* Go up if we are not already in root: */
         if (currentRoot != m_pModel->rootIndex())
         {
             setTableRootIndex(currentRoot.parent());
@@ -867,5 +946,6 @@ QList<UICustomFileSystemItem*> UIVisoContentBrowser::tableSelectedItems()
     }
     return selectedItems;
 }
+
 
 #include "UIVisoContentBrowser.moc"
