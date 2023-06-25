@@ -210,7 +210,6 @@ UIVisoContentBrowser::~UIVisoContentBrowser()
 void UIVisoContentBrowser::importISOContentToViso(const QString &strISOFilePath, const QStringList &pathList,
                                                   const QList<KFsObjType> &fileObjectTypeList)
 {
-    Q_UNUSED(strISOFilePath);
     UICustomFileSystemItem *pParentItem = rootItem()->children()[0];
     if (!m_pTableView || !pParentItem)
         return;
@@ -229,6 +228,7 @@ void UIVisoContentBrowser::importISOContentToViso(const QString &strISOFilePath,
         UICustomFileSystemItem* pAddedItem = new UICustomFileSystemItem(fileInfo.fileName(), pParentItem,
                                                                         fileObjectTypeList[i]);
         pAddedItem->setData(pathList[i], UICustomFileSystemModelData_LocalPath);
+        pAddedItem->setData(strISOFilePath, UICustomFileSystemModelData_ISOFilePath);
         pAddedItem->setData(UIPathOperations::mergePaths(pParentItem->path(), fileInfo.fileName()),
                            UICustomFileSystemModelData_VISOPath);
         pAddedItem->setIsOpened(false);

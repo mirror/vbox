@@ -49,6 +49,7 @@ enum UICustomFileSystemModelData
     UICustomFileSystemModelData_Permissions,
     UICustomFileSystemModelData_VISOPath,
     UICustomFileSystemModelData_LocalPath,
+    UICustomFileSystemModelData_ISOFilePath, /* in case of import-iso this contains full path of the container iso file. */
     UICustomFileSystemModelData_Max
 };
 
