@@ -1178,7 +1178,7 @@ void ShClTransferCtxCleanup(PSHCLTRANSFERCTX pTransferCtx);
 bool ShClTransferCtxTransfersMaximumReached(PSHCLTRANSFERCTX pTransferCtx);
 int ShClTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, SHCLTRANSFERID *pidTransfer);
 int ShClTransferCtxTransferRegisterById(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, SHCLTRANSFERID idTransfer);
-int ShClTransferCtxTransferUnregister(PSHCLTRANSFERCTX pTransferCtx, SHCLTRANSFERID idTransfer);
+int ShClTransferCtxTransferUnregisterById(PSHCLTRANSFERCTX pTransferCtx, SHCLTRANSFERID idTransfer);
 /** @} */
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
