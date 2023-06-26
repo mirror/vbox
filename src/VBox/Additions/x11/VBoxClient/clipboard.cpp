@@ -128,6 +128,7 @@ static DECLCALLBACK(int) vbclShClTerm(void)
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     ShClTransferCtxDestroy(&g_Ctx.TransferCtx);
 #endif
+    VBClX11ClipboardDestroy();
 
     return VINF_SUCCESS;
 }
