@@ -229,8 +229,7 @@ class SubTstDrvNestedSnapshots1(base.SubTestDriverBase):
                     oProgress = oVM.delete([]);
             except:
                 return reporter.error('Failed to delete configuration of VM \'%s\'' % self.sVmName);
-            else:
-                self.oTstDrv.waitOnProgress(oProgress);
+            self.oTstDrv.waitOnProgress(oProgress);
         else:
             try:
                 self.oTstDrv.oVBox.unregisterMachine(oVM.id);
