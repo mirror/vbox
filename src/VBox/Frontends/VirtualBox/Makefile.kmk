@@ -952,6 +952,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/machine/UIMachineSettingsUSB.h \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.h \
 	src/widgets/UIFilePathSelector.h \
+	src/widgets/UIFileTableNavigationWidget.h \
 	src/widgets/UIFilmContainer.h \
 	src/widgets/UIMediaComboBox.h \
 	src/widgets/UIMediumSizeEditor.h \
@@ -1087,6 +1088,7 @@ UICommon_QT_MOCSRCS = \
 	src/settings/machine/UIMachineSettingsNetwork.cpp \
 	src/settings/machine/UIMachineSettingsSerial.cpp \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
+	src/widgets/UIFileTableNavigationWidget.cpp \
 	src/widgets/UIFilmContainer.cpp \
 	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UIStatusBarEditorWindow.cpp \
@@ -1536,6 +1538,7 @@ UICommon_SOURCES = \
 	src/settings/machine/UIMachineSettingsUSB.cpp \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/widgets/UIFilePathSelector.cpp \
+	src/widgets/UIFileTableNavigationWidget.cpp \
 	src/widgets/UIFilmContainer.cpp \
 	src/widgets/UIMediaComboBox.cpp \
 	src/widgets/UIMediumSizeEditor.cpp \
