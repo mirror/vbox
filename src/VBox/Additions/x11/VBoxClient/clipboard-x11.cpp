@@ -39,17 +39,19 @@
 #include <iprt/process.h>
 #include <iprt/semaphore.h>
 
-#define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
-#include <iprt/log.h>
-
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <VBox/GuestHost/SharedClipboard.h>
 #include <VBox/GuestHost/SharedClipboard-x11.h>
 
 #include "VBoxClient.h"
-
 #include "clipboard.h"
+
+#ifdef LOG_GROUP
+# undef LOG_GROUP
+#endif
+#define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
+#include <iprt/log.h>
 
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
