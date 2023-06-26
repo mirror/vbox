@@ -89,7 +89,7 @@ static DECLCALLBACK(int) vbclX11TransferWaitForStatusWorker(PSHCLCONTEXT pCtx, P
  *
  * This starts the HTTP server if not done yet and registers the transfer with it.
  *
- * @thread Clipbpoard main thread.
+ * @thread Clipboard main thread.
  */
 static DECLCALLBACK(void) vbclX11OnHttpTransferRegisteredCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, PSHCLTRANSFERCTX pTransferCtx)
 {
@@ -132,7 +132,7 @@ static DECLCALLBACK(void) vbclX11OnHttpTransferRegisteredCallback(PSHCLTRANSFERC
  * @param   pCtx                Shared clipboard context to unregister transfer for.
  * @param   pTransfer           Transfer to unregister.
  *
- * @thread Clipbpoard main thread.
+ * @thread Clipboard main thread.
  */
 static void vbclX11HttpTransferUnregister(PSHCLCONTEXT pCtx, PSHCLTRANSFER pTransfer)
 {
@@ -150,7 +150,7 @@ static void vbclX11HttpTransferUnregister(PSHCLCONTEXT pCtx, PSHCLTRANSFER pTran
  *
  * Unregisters a (now) unregistered transfer from the HTTP server.
  *
- * @thread Clipbpoard main thread.
+ * @thread Clipboard main thread.
  */
 static DECLCALLBACK(void) vbclX11OnHttpTransferUnregisteredCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, PSHCLTRANSFERCTX pTransferCtx)
 {
@@ -163,7 +163,7 @@ static DECLCALLBACK(void) vbclX11OnHttpTransferUnregisteredCallback(PSHCLTRANSFE
  *
  * Unregisters a complete transfer from the HTTP server.
  *
- * @thread Clipbpoard main thread.
+ * @thread Clipboard main thread.
  */
 static DECLCALLBACK(void) vbclX11OnHttpTransferCompletedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, int rc)
 {
@@ -175,7 +175,7 @@ static DECLCALLBACK(void) vbclX11OnHttpTransferCompletedCallback(PSHCLTRANSFERCA
  *
  * Unregisters a failed transfer from the HTTP server.
  *
- * @thread Clipbpoard main thread.
+ * @thread Clipboard main thread.
  */
 static DECLCALLBACK(void) vbclX11OnHttpTransferErrorCallback(PSHCLTRANSFERCALLBACKCTX pCtx, int rc)
 {
