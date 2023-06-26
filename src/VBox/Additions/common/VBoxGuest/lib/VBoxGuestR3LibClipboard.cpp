@@ -1975,7 +1975,7 @@ static int vbglR3ClipboardTransferInit(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFERC
                 rc = ShClTransferCtxTransferRegisterById(pTransferCtx, pTransfer, uTransferID);
 
             if (RT_FAILURE(rc))
-                ShClTransferCtxTransferUnregister(pTransferCtx, uTransferID);
+                ShClTransferCtxTransferUnregisterById(pTransferCtx, uTransferID);
         }
     }
 
@@ -2027,7 +2027,7 @@ static int vbglR3ClipboardTransferUninit(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFE
     PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransferById(pTransferCtx, uTransferID);
     if (pTransfer)
     {
-        rc = ShClTransferCtxTransferUnregister(pTransferCtx, uTransferID);
+        rc = ShClTransferCtxTransferUnregisterById(pTransferCtx, uTransferID);
         if (RT_SUCCESS(rc))
             rc = ShClTransferDestroy(pTransfer);
 
@@ -2117,7 +2117,7 @@ static int vbglR3ClipboardTransferStop(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFERC
     PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransferById(pTransferCtx, uTransferID);
     if (pTransfer)
     {
-        rc = ShClTransferCtxTransferUnregister(pTransferCtx, uTransferID);
+        rc = ShClTransferCtxTransferUnregisterById(pTransferCtx, uTransferID);
         if (RT_SUCCESS(rc))
         {
             LogRel(("Shared Clipboard: Transfer %RU32 successfully stopped\n", uTransferID));

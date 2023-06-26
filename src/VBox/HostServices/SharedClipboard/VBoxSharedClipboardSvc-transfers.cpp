@@ -1972,7 +1972,7 @@ void shClSvcTransferCleanupAllUnused(PSHCLCLIENT pClient)
                                                 SHCLTRANSFERSTATUS_UNINITIALIZED, VINF_SUCCESS, NULL /* ppEvent */);
             AssertRC(rc2);
 
-            ShClTransferCtxTransferUnregister(pTxCtx, pTransfer->State.uID);
+            ShClTransferCtxTransferUnregisterById(pTxCtx, pTransfer->State.uID);
 
             ShClTransferDestroy(pTransfer);
 
@@ -2072,7 +2072,7 @@ int shClSvcTransferInit(PSHCLCLIENT pClient,
                     }
 
                     if (RT_FAILURE(rc))
-                        ShClTransferCtxTransferUnregister(pTxCtx, uTransferID);
+                        ShClTransferCtxTransferUnregisterById(pTxCtx, uTransferID);
                 }
             }
 
@@ -2166,7 +2166,7 @@ int shClSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, bool fWait
 
     /* Regardless of whether the guest was able to report back and/or stop the transfer, remove the transfer on the host
      * so that we don't risk of having stale transfers here. */
-    int rc2 = ShClTransferCtxTransferUnregister(&pClient->Transfers.Ctx, ShClTransferGetID(pTransfer));
+    int rc2 = ShClTransferCtxTransferUnregisterById(&pClient->Transfers.Ctx, ShClTransferGetID(pTransfer));
     if (RT_SUCCESS(rc2))
     {
         ShClBackendTransferDestroy(pClient->pBackend, pClient, pTransfer);
