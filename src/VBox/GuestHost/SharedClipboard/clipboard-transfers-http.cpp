@@ -92,7 +92,7 @@ typedef SHCLHTTPSERVERTRANSFER *PSHCLHTTPSERVERTRANSFER;
 static int shClTransferHttpServerDestroyInternal(PSHCLHTTPSERVER pThis);
 static const char *shClTransferHttpServerGetHost(PSHCLHTTPSERVER pSrv);
 static int shClTransferHttpServerDestroyTransfer(PSHCLHTTPSERVER pSrv, PSHCLHTTPSERVERTRANSFER pSrvTx);
-static SHCLHTTPSERVERSTATUS shclTransferHttpServerSetStatusLocked(PSHCLHTTPSERVER pSrv, SHCLHTTPSERVERSTATUS enmStatus);
+static SHCLHTTPSERVERSTATUS shclTransferHttpServerSetStatusLocked(PSHCLHTTPSERVER pSrv, SHCLHTTPSERVERSTATUS fStatus);
 
 
 /*********************************************************************************************************************************
@@ -429,15 +429,6 @@ static DECLCALLBACK(int) shClTransferHttpQueryInfo(PRTHTTPCALLBACKDATA pData,
     return rc;
 }
 
-/** @copydoc RTHTTPSERVERCALLBACKS::pfnDestroy */
-static DECLCALLBACK(int) shClTransferHttpDestroy(PRTHTTPCALLBACKDATA pData)
-{
-    PSHCLHTTPSERVER pThis = (PSHCLHTTPSERVER)pData->pvUser;
-    Assert(pData->cbUser == sizeof(SHCLHTTPSERVER));
-
-    return shClTransferHttpServerDestroyInternal(pThis);
-}
-
 
 /*********************************************************************************************************************************
 *   Internal Shared Clipboard HTTP server functions                                                                              *
@@ -448,17 +439,16 @@ static DECLCALLBACK(int) shClTransferHttpDestroy(PRTHTTPCALLBACKDATA pData)
  *
  * @returns VBox status code.
  * @param   pSrv                Shared Clipboard HTTP server instance to destroy.
+ *
+ * @note    Caller needs to take the critical section.
  */
 static int shClTransferHttpServerDestroyInternal(PSHCLHTTPSERVER pSrv)
 {
+    Assert(RTCritSectIsOwner(&pSrv->CritSect));
+
     LogFlowFuncEnter();
 
-    if (!ASMAtomicReadBool(&pSrv->fInitialized))
-        return VINF_SUCCESS;
-
     ASMAtomicXchgBool(&pSrv->fInitialized, false);
-
-    shClTransferHttpServerLock(pSrv);
 
     int rc = VINF_SUCCESS;
 
@@ -474,7 +464,7 @@ static int shClTransferHttpServerDestroyInternal(PSHCLHTTPSERVER pSrv)
 
     pSrv->hHTTPServer = NIL_RTHTTPSERVER;
 
-    shClTransferHttpServerUnlock(pSrv);
+    shClTransferHttpServerUnlock(pSrv); /* Unlock critical section taken by the caller before deleting it. */
 
     if (RTCritSectIsInitialized(&pSrv->CritSect))
     {
@@ -571,6 +561,8 @@ int ShClTransferHttpServerStartEx(PSHCLHTTPSERVER pSrv, uint16_t uPort)
 
     AssertReturn(!shClTransferHttpServerPortIsBuggy(uPort), VERR_ADDRESS_CONFLICT);
 
+    shClTransferHttpServerLock(pSrv);
+
     RTHTTPSERVERCALLBACKS Callbacks;
     RT_ZERO(Callbacks);
 
@@ -580,7 +572,6 @@ int ShClTransferHttpServerStartEx(PSHCLHTTPSERVER pSrv, uint16_t uPort)
     Callbacks.pfnRead          = shClTransferHttpRead;
     Callbacks.pfnClose         = shClTransferHttpClose;
     Callbacks.pfnQueryInfo     = shClTransferHttpQueryInfo;
-    Callbacks.pfnDestroy       = shClTransferHttpDestroy;
 
     /* Note: The server always and *only* runs against the localhost interface. */
     int rc = RTHttpServerCreate(&pSrv->hHTTPServer, "localhost", uPort, &Callbacks,
@@ -591,7 +582,11 @@ int ShClTransferHttpServerStartEx(PSHCLHTTPSERVER pSrv, uint16_t uPort)
         ASMAtomicXchgBool(&pSrv->fRunning, true);
 
         LogRel2(("Shared Clipboard: HTTP server started at port %RU16\n", pSrv->uPort));
+
+        rc = shclTransferHttpServerSetStatusLocked(pSrv, SHCLHTTPSERVERSTATUS_STARTED);
     }
+
+    shClTransferHttpServerUnlock(pSrv);
 
     if (RT_FAILURE(rc))
         LogRel(("Shared Clipboard: HTTP server failed to start, rc=%Rrc\n", rc));
@@ -660,21 +655,35 @@ int ShClTransferHttpServerStart(PSHCLHTTPSERVER pSrv, unsigned cMaxAttempts, uin
  */
 int ShClTransferHttpServerStop(PSHCLHTTPSERVER pSrv)
 {
-     if (!ASMAtomicReadBool(&pSrv->fRunning))
-         return VINF_SUCCESS;
+     LogFlowFuncEnter();
 
-     Assert(pSrv->hHTTPServer != NIL_RTHTTPSERVER);
+     shClTransferHttpServerLock(pSrv);
 
-     int rc = RTHttpServerDestroy(pSrv->hHTTPServer);
-     if (RT_SUCCESS(rc))
+     int rc = VINF_SUCCESS;
+
+     if (ASMAtomicReadBool(&pSrv->fRunning))
      {
-         pSrv->hHTTPServer = NIL_RTHTTPSERVER;
-         ASMAtomicXchgBool(&pSrv->fRunning, false);
-         LogRel2(("Shared Clipboard: HTTP server stopped\n"));
+         Assert(pSrv->hHTTPServer != NIL_RTHTTPSERVER);
+
+         rc = RTHttpServerDestroy(pSrv->hHTTPServer);
+         if (RT_SUCCESS(rc))
+         {
+             pSrv->hHTTPServer = NIL_RTHTTPSERVER;
+             pSrv->fRunning    = false;
+
+             /* Let any eventual waiters know. */
+             shclTransferHttpServerSetStatusLocked(pSrv, SHCLHTTPSERVERSTATUS_STOPPED);
+
+             LogRel2(("Shared Clipboard: HTTP server stopped\n"));
+         }
      }
-     else
+
+     if (RT_FAILURE(rc))
          LogRel(("Shared Clipboard: HTTP server failed to stop, rc=%Rrc\n", rc));
 
+     shClTransferHttpServerUnlock(pSrv);
+
+     LogFlowFuncLeaveRC(rc);
      return rc;
 }
 
@@ -692,7 +701,15 @@ int ShClTransferHttpServerDestroy(PSHCLHTTPSERVER pSrv)
     if (RT_FAILURE(rc))
         return rc;
 
+    if (!ASMAtomicReadBool(&pSrv->fInitialized))
+        return VINF_SUCCESS;
+
+    shClTransferHttpServerLock(pSrv);
+
     rc = shClTransferHttpServerDestroyInternal(pSrv);
+
+    /* Unlock not needed anymore, as the critical section got destroyed. */
+
     return rc;
 }
 
@@ -718,7 +735,7 @@ static const char *shClTransferHttpServerGetHost(PSHCLHTTPSERVER pSrv)
  * @param   pTransfer           Server transfer to destroy
  *                              The pointer will be invalid on success.
  *
- * @note    Caller must take the server critical section.
+ * @note    Caller needs to take the server critical section.
  */
 static int shClTransferHttpServerDestroyTransfer(PSHCLHTTPSERVER pSrv, PSHCLHTTPSERVERTRANSFER pSrvTx)
 {
@@ -833,8 +850,6 @@ int ShClTransferHttpServerUnregisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER
 
     shClTransferHttpServerLock(pSrv);
 
-    AssertReturn(pSrv->cTransfers, VERR_WRONG_ORDER);
-
     int rc = VINF_SUCCESS;
 
     PSHCLHTTPSERVERTRANSFER pSrvTx, pSrvTxNext;
@@ -861,7 +876,7 @@ int ShClTransferHttpServerUnregisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER
  *
  * @returns New status set.
  * @param   pSrv                HTTP server instance to set status for.
- * @param   enmStatus           New status to set.
+ * @param   fStatus             New status to set.
  *
  * @note    Caller needs to take critical section.
  */
@@ -967,6 +982,7 @@ uint32_t ShClTransferHttpServerGetTransferCount(PSHCLHTTPSERVER pSrv)
     shClTransferHttpServerLock(pSrv);
 
     const uint32_t cTransfers = pSrv->cTransfers;
+    LogFlowFunc(("cTransfers=%RU32\n", cTransfers));
 
     shClTransferHttpServerUnlock(pSrv);
 
@@ -1043,6 +1059,7 @@ bool ShClTransferHttpServerIsRunning(PSHCLHTTPSERVER pSrv)
  * Waits for a status change.
  *
  * @returns VBox status code.
+ * @retval  VERR_STATE_CHANGED if the HTTP server status has changed (not running anymore).
  * @param   pSrv                HTTP server instance to wait for.
  * @param   fStatus             Status to wait for.
  *                              Multiple statuses are possible, @sa SHCLHTTPSERVERSTATUS.
@@ -1051,6 +1068,7 @@ bool ShClTransferHttpServerIsRunning(PSHCLHTTPSERVER pSrv)
 int ShClTransferHttpServerWaitForStatusChange(PSHCLHTTPSERVER pSrv, SHCLHTTPSERVERSTATUS fStatus, RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pSrv, VERR_INVALID_POINTER);
+    AssertMsgReturn(ASMAtomicReadBool(&pSrv->fInitialized), ("Server not initialized yet\n"), VERR_WRONG_ORDER);
 
     shClTransferHttpServerLock(pSrv);
 
@@ -1062,6 +1080,13 @@ int ShClTransferHttpServerWaitForStatusChange(PSHCLHTTPSERVER pSrv, SHCLHTTPSERV
 
     while (RTTimeMilliTS() - tsStartMs <= msTimeout)
     {
+        if (   !pSrv->fInitialized
+            || !pSrv->fRunning)
+        {
+            rc = VERR_STATE_CHANGED;
+            break;
+        }
+
         shClTransferHttpServerUnlock(pSrv); /* Leave lock before waiting. */
 
         rc = RTSemEventWait(pSrv->StatusEvent, msTimeout);

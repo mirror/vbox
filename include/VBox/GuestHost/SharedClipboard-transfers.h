@@ -982,9 +982,13 @@ typedef enum _SHCLHTTPSERVERSTATUS
     /** No status set yet. */
     SHCLHTTPSERVERSTATUS_NONE                  = 0x0,
     /** A new transfer got registered. */
-    SHCLHTTPSERVERSTATUS_TRANSFER_REGISTERED   = 0x1,
+    SHCLHTTPSERVERSTATUS_STARTED               = 0x1,
+    /** A new transfer got registered. */
+    SHCLHTTPSERVERSTATUS_STOPPED               = 0x2,
+    /** A new transfer got registered. */
+    SHCLHTTPSERVERSTATUS_TRANSFER_REGISTERED   = 0x4,
     /** A transfer got unregistered. */
-    SHCLHTTPSERVERSTATUS_TRANSFER_UNREGISTERED = 0x2
+    SHCLHTTPSERVERSTATUS_TRANSFER_UNREGISTERED = 0x8
 } SHCLHTTPSERVERSTATUS;
 
 /**
