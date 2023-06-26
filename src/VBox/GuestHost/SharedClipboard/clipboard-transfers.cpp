@@ -590,7 +590,7 @@ static bool shclTransferListEntryNameIsValid(const char *pszName, size_t cbName)
  *
  * @returns VBox status code.
  * @param   pListEntry          Clipboard list entry structure to initialize.
- * @param   fInfo               Info flags (of type VBOX_SHCL_INFO_FLAG_XXX).
+ * @param   fInfo               Info flags (of type VBOX_SHCL_INFO_F_XXX).
  * @param   pszName             Name (e.g. filename) to use. Can be NULL if not being used.
  *                              Up to SHCLLISTENTRY_MAX_NAME characters.
  * @param   pvInfo              Pointer to info data to assign. Must match \a fInfo.
@@ -2740,14 +2740,14 @@ int ShClTransferValidatePath(const char *pcszPath, bool fMustExist)
             }
             else /* Everything else (e.g. symbolic links) are not supported. */
             {
-                LogRel2(("Shared Clipboard: Path '%s' contains a symbolic link or junction, which are not supported\n", pcszPath));
+                LogRelMax(64, ("Shared Clipboard: Path '%s' contains a symbolic link or junction, which are not supported\n", pcszPath));
                 rc = VERR_NOT_SUPPORTED;
             }
         }
     }
 
     if (RT_FAILURE(rc))
-        LogRel2(("Shared Clipboard: Validating path '%s' failed: %Rrc\n", pcszPath, rc));
+        LogRelMax(64, ("Shared Clipboard: Validating path '%s' failed: %Rrc\n", pcszPath, rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
