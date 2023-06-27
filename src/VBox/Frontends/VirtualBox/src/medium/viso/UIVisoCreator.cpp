@@ -526,8 +526,6 @@ void UIVisoCreatorWidget::prepareConnections()
     {
         connect(m_pHostBrowser, &UIVisoHostBrowser::sigAddObjectsToViso,
                 this, &UIVisoCreatorWidget::sltAddObjectsToViso);
-        connect(m_pHostBrowser, &UIVisoHostBrowser::sigTreeViewVisibilityChanged,
-                this, &UIVisoCreatorWidget::sltBrowserTreeViewVisibilityChanged);
         connect(m_pHostBrowser, &UIVisoHostBrowser::sigTableSelectionChanged,
                 this, &UIVisoCreatorWidget::sltHostBrowserTableSelectionChanged);
         connect(m_pHostBrowser, &UIVisoHostBrowser::sigCreateFileTableViewContextMenu,

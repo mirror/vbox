@@ -41,17 +41,15 @@
 /* Forward declarations: */
 class QItemSelection;
 class QGridLayout;
-class QTreeView;
-class UILocationSelector;
 
-/** An abstract QWidget extension hosting a tree and table view. */
+
+/** An abstract QWidget extension hosting and table view. */
 class UIVisoBrowserBase : public QIWithRetranslateUI<QGroupBox>
 {
     Q_OBJECT;
 
 signals:
 
-    void sigTreeViewVisibilityChanged(bool fVisible);
     void sigCreateFileTableViewContextMenu(QWidget *pMenuRequester, const QPoint &point);
 
 public:
@@ -59,9 +57,6 @@ public:
     UIVisoBrowserBase(QWidget *pParent = 0);
     ~UIVisoBrowserBase();
     virtual void showHideHiddenObjects(bool bShow) = 0;
-    /* Returns true if tree view is currently visible: */
-    bool isTreeViewVisible() const;
-    void hideTreeView();
     virtual bool tableViewHasSelection() const = 0;
 
 public slots:
@@ -72,7 +67,6 @@ protected:
 
     void prepareObjects();
     void prepareConnections();
-    void updateLocationSelectorText(const QString &strText);
 
     virtual void tableViewItemDoubleClick(const QModelIndex &index) = 0;
     virtual void setTableRootIndex(QModelIndex index = QModelIndex()) = 0;
@@ -81,7 +75,6 @@ protected:
     virtual bool eventFilter(QObject *pObj, QEvent *pEvent) RT_OVERRIDE;
     virtual void keyPressEvent(QKeyEvent *pEvent) RT_OVERRIDE;
 
-    QTreeView          *m_pTreeView;
     QGridLayout        *m_pMainLayout;
 
 protected slots:
@@ -90,14 +83,8 @@ protected slots:
 
 private slots:
 
-    void sltTreeSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
-    void sltTreeItemClicked(const QModelIndex &modelIndex);
-    void sltExpandCollapseTreeView();
-
 private:
 
-    void updateTreeViewGeometry(bool fShow);
-    UILocationSelector    *m_pLocationSelector;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_viso_UIVisoBrowserBase_h */
