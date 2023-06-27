@@ -1882,6 +1882,84 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'Perform GoForward' in file manager action class. */
+class UIActionMenuFileManagerGoForward : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuFileManagerGoForward(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/file_manager_go_home_24px.png", ":/file_manager_go_home_16px.png",
+                         ":/file_manager_go_home_disabled_24px.png", ":/file_manager_go_home_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
+    {
+        return QString("FileManagerGoForward");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() RT_OVERRIDE
+    {
+        setName(QApplication::translate("UIActionPool", "Go Forward"));
+        setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Go forward"));
+        setToolTip(  QApplication::translate("UIActionPool", "Go Forward")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+/** Simple action extension, used as 'Perform GoBackward' in file manager action class. */
+class UIActionMenuFileManagerGoBackward : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuFileManagerGoBackward(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/file_manager_go_home_24px.png", ":/file_manager_go_home_16px.png",
+                         ":/file_manager_go_home_disabled_24px.png", ":/file_manager_go_home_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
+    {
+        return QString("FileManagerGoBackward");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() RT_OVERRIDE
+    {
+        setName(QApplication::translate("UIActionPool", "Go Backward"));
+        setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Go forward"));
+        setToolTip(  QApplication::translate("UIActionPool", "Go Backward")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
 /** Simple action extension, used as 'Perform Delete' in file manager action class. */
 class UIActionMenuFileManagerDelete : public UIActionSimple
 {
@@ -3195,6 +3273,10 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_FileManager_S_Guest_GoUp] = new UIActionMenuFileManagerGoUp(this);
     m_pool[UIActionIndex_M_FileManager_S_Host_GoHome] = new UIActionMenuFileManagerGoHome(this);
     m_pool[UIActionIndex_M_FileManager_S_Guest_GoHome] = new UIActionMenuFileManagerGoHome(this);
+    m_pool[UIActionIndex_M_FileManager_S_Host_GoForward] = new UIActionMenuFileManagerGoForward(this);
+    m_pool[UIActionIndex_M_FileManager_S_Guest_GoForward] = new UIActionMenuFileManagerGoForward(this);
+    m_pool[UIActionIndex_M_FileManager_S_Host_GoBackward] = new UIActionMenuFileManagerGoBackward(this);
+    m_pool[UIActionIndex_M_FileManager_S_Guest_GoBackward] = new UIActionMenuFileManagerGoBackward(this);
     m_pool[UIActionIndex_M_FileManager_S_Host_Refresh] = new UIActionMenuFileManagerRefresh(this);
     m_pool[UIActionIndex_M_FileManager_S_Guest_Refresh] = new UIActionMenuFileManagerRefresh(this);
     m_pool[UIActionIndex_M_FileManager_S_Host_Delete] = new UIActionMenuFileManagerDelete(this);

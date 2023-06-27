@@ -38,6 +38,8 @@
 #include "UIIconPool.h"
 #include "UIVisoBrowserBase.h"
 
+/* Other VBox includes: */
+#include <iprt/assert.h>
 
 /*********************************************************************************************************************************
 *   UIVisoBrowserBase implementation.                                                                                   *

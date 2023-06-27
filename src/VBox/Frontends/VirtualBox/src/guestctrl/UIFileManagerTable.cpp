@@ -451,6 +451,8 @@ void UIFileManagerTable::prepareObjects()
         m_pNavigationWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
         connect(m_pNavigationWidget, &UIFileTableNavigationWidget::sigPathChanged,
                 this, &UIFileManagerTable::sltHandleNavigationWidgetPathChange);
+        connect(m_pNavigationWidget, &UIFileTableNavigationWidget::sigHistoryListChanged,
+                this, &UIFileManagerTable::sltHandleNavigationWidgetHistoryListChanged);
         m_pMainLayout->addWidget(m_pNavigationWidget, 1, 1, 1, 6);
         m_sessionWidgets << m_pNavigationWidget;
     }
@@ -636,6 +638,14 @@ void UIFileManagerTable::sltGoUp()
 void UIFileManagerTable::sltGoHome()
 {
     goToHomeDirectory();
+}
+
+void UIFileManagerTable::sltGoForward()
+{
+}
+
+void UIFileManagerTable::sltGoBackward()
+{
 }
 
 void UIFileManagerTable::sltRefresh()
@@ -903,6 +913,13 @@ void UIFileManagerTable::sltCreateFileViewContextMenu(const QPoint &point)
 void UIFileManagerTable::sltHandleNavigationWidgetPathChange(const QString& strPath)
 {
     goIntoDirectory(UIPathOperations::pathTrail(strPath));
+}
+
+void UIFileManagerTable::sltHandleNavigationWidgetHistoryListChanged()
+{
+    /* Check if forward/backward actions should be disabled/enabled: */
+    int iHistoryListCount = m_pNavigationWidget->historyItemCount();
+    int iCurrentHistoryIndex = m_pNavigationWidget->currentHistoryIndex();
 }
 
 void UIFileManagerTable::deSelectUpDirectoryItem()

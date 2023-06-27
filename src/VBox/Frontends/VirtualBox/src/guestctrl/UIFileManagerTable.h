@@ -173,6 +173,8 @@ public slots:
     void sltItemClicked(const QModelIndex &index);
     void sltGoUp();
     void sltGoHome();
+    void sltGoForward();
+    void sltGoBackward();
     void sltRefresh();
     void sltDelete();
     /** Calls the edit on the data item over m_pView. This causes setData(..) call on the model. After setting
@@ -275,6 +277,7 @@ private slots:
      *  sltRename() for more details. */
     void sltHandleItemRenameAttempt(UICustomFileSystemItem *pItem, QString strOldName, QString strNewName);
     void sltHandleNavigationWidgetPathChange(const QString& strPath);
+    void sltHandleNavigationWidgetHistoryListChanged();
 
 private:
 

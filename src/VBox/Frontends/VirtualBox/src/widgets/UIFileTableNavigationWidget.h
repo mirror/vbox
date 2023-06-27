@@ -51,6 +51,7 @@ class UIFileTableNavigationWidget : public QWidget
 signals:
 
     void sigPathChanged(const QString &strPath);
+    void sigHistoryListChanged();
 
 public:
 
@@ -58,6 +59,11 @@ public:
     void setPath(const QString &strLocation);
     void reset();
     void setPathSeparator(const QChar &separator);
+    int historyItemCount() const;
+    int currentHistoryIndex() const;
+
+protected:
+
     bool eventFilter(QObject *pObject, QEvent *pEvent) override;
 
 private slots:

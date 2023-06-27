@@ -44,6 +44,7 @@
 # include "VBoxUtils-darwin.h"
 #endif
 
+/* Other VBox includes: */
 #include <iprt/assert.h>
 
 QPointer<UIHelpBrowserDialog> UIHelpBrowserDialog::m_pInstance;
