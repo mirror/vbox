@@ -267,14 +267,14 @@ void UIFileTableNavigationWidget::setPathSeparator(const QChar &separator)
 
 int UIFileTableNavigationWidget::historyItemCount() const
 {
-    if (m_pHistoryComboBox)
+    if (!m_pHistoryComboBox)
         return 0;
     return m_pHistoryComboBox->count();
 }
 
 int UIFileTableNavigationWidget::currentHistoryIndex() const
 {
-    if (m_pHistoryComboBox)
+    if (!m_pHistoryComboBox)
         return 0;
     return m_pHistoryComboBox->currentIndex();
 }

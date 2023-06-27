@@ -34,6 +34,7 @@
 #include "QILabel.h"
 #include "UIActionPool.h"
 #include "UIFileManager.h"
+#include "UIFileTableNavigationWidget.h"
 #include "UICustomFileSystemModel.h"
 #include "UIFileManagerHostTable.h"
 #include "UIPathOperations.h"
@@ -190,6 +191,8 @@ void UIFileManagerHostTable::prepareToolbar()
 {
     if (m_pToolBar && m_pActionPool)
     {
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoBackward));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoForward));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoUp));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoHome));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Refresh));
@@ -248,6 +251,12 @@ void UIFileManagerHostTable::createFileViewContextMenu(const QWidget *pWidget, c
 
 void UIFileManagerHostTable::toggleForwardBackwardActions()
 {
+    int iCount = m_pNavigationWidget->historyItemCount();
+    int iCurrent = m_pNavigationWidget->currentHistoryIndex();
+    if (m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoForward))
+        m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoForward)->setEnabled(iCurrent < iCount - 1);
+    if (m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoBackward))
+        m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoBackward)->setEnabled(iCurrent > 0);
 }
 
 void UIFileManagerHostTable::readDirectory(const QString& strPath, UICustomFileSystemItem *parent, bool isStartDir /*= false*/)

@@ -42,6 +42,7 @@
 #include "UIFileManager.h"
 #include "UIFileManagerHostTable.h"
 #include "UIFileManagerGuestTable.h"
+#include "UIFileTableNavigationWidget.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UIPathOperations.h"
@@ -1049,6 +1050,8 @@ void UIFileManagerGuestTable::prepareToolbar()
 {
     if (m_pToolBar && m_pActionPool)
     {
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoBackward));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoForward));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoUp));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoHome));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_Refresh));
@@ -1090,6 +1093,8 @@ void UIFileManagerGuestTable::createFileViewContextMenu(const QWidget *pWidget, 
         return;
 
     QMenu menu;
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoBackward));
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoForward));
     menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoUp));
 
     menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoHome));
@@ -1152,6 +1157,9 @@ void UIFileManagerGuestTable::prepareActionConnections()
     manageConnection(m_fIsCurrent, m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_InvertSelection), &UIFileManagerTable::sltInvertSelection);
     manageConnection(m_fIsCurrent, m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_ShowProperties), &UIFileManagerTable::sltShowProperties);
     manageConnection(m_fIsCurrent, m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_CreateNewDirectory), &UIFileManagerTable::sltCreateNewDirectory);
+
+    /* Also disable/enable go forward/backward actions: */
+    toggleForwardBackwardActions();
 }
 
 void UIFileManagerGuestTable::prepareGuestSessionPanel()
@@ -1477,6 +1485,12 @@ void UIFileManagerGuestTable::sltOpenGuestSession(QString strUserName, QString s
 
 void UIFileManagerGuestTable::toggleForwardBackwardActions()
 {
+    int iCount = m_pNavigationWidget->historyItemCount();
+    int iCurrent = m_pNavigationWidget->currentHistoryIndex();
+    if (m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoForward))
+        m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoForward)->setEnabled(iCurrent < iCount - 1);
+    if (m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoBackward))
+        m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoBackward)->setEnabled(iCurrent > 0);
 }
 
 void UIFileManagerGuestTable::setState()
@@ -1644,6 +1658,5 @@ void UIFileManagerGuestTable::cleanAll()
     closeGuestSession();
     closeMachineSession();
 }
-
 
 #include "UIFileManagerGuestTable.moc"
