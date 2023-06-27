@@ -168,12 +168,12 @@ typedef struct IEMTB
     {
         struct
         {
+            /** The call sequence table. */
+            PIEMTHRDEDCALLENTRY paCalls;
             /** Number of calls in paCalls. */
             uint16_t            cCalls;
             /** Number of calls allocated. */
             uint16_t            cAllocated;
-            /** The call sequence table. */
-            PIEMTHRDEDCALLENTRY paCalls;
         } Thrd;
     };
 
@@ -1046,6 +1046,7 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
             memcpy(&pTb->pabOpcodes[pTb->cbOpcodes], pVCpu->iem.s.abOpcode, pVCpu->iem.s.offOpcode);
             pTb->cbOpcodes += pVCpu->iem.s.offOpcode;
             Assert(pTb->cbOpcodes <= pTb->cbOpcodesAllocated);
+            pVCpu->iem.s.cInstructions++;
         }
         else if (pTb->Thrd.cCalls > 0)
         {
@@ -1056,6 +1057,7 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
                 memcpy(&pTb->pabOpcodes[pTb->cbOpcodes], pVCpu->iem.s.abOpcode, pVCpu->iem.s.offOpcode);
                 pTb->cbOpcodes += pVCpu->iem.s.offOpcode;
                 Assert(pTb->cbOpcodes <= pTb->cbOpcodesAllocated);
+                pVCpu->iem.s.cInstructions++;
             }
             break;
         }
@@ -1116,6 +1118,7 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb)
 
     /* Set the current TB so CIMPL function may get at it. */
     pVCpu->iem.s.pCurTbR3 = pTb;
+    pVCpu->iem.s.cTbExec++;
 
     /* The execution loop. */
     PCIEMTHRDEDCALLENTRY pCallEntry = pTb->Thrd.paCalls;
@@ -1257,7 +1260,8 @@ VMMDECL(VBOXSTRICTRC) IEMExecRecompilerThreaded(PVMCC pVM, PVMCPUCC pVCpu)
         VBOXSTRICTRC rcStrict;
         IEM_TRY_SETJMP(pVCpu, rcStrict)
         {
-            for (;;)
+            uint32_t const cPollRate = 511; /* EM.cpp passes 4095 to IEMExecLots, so an eigth of that seems reasonable for now. */
+            for (uint32_t iIterations = 0; ; iIterations++)
             {
                 /* Translate PC to physical address, we'll need this for both lookup and compilation. */
                 RTGCPHYS const GCPhysPc    = iemGetPcWithPhysAndCode(pVCpu);
@@ -1277,9 +1281,18 @@ VMMDECL(VBOXSTRICTRC) IEMExecRecompilerThreaded(PVMCC pVM, PVMCPUCC pVCpu)
                                                   | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
                                                   | VMCPU_FF_TLB_FLUSH
                                                   | VMCPU_FF_UNHALT );
-                    if (!fCpu)
+                    if (RT_LIKELY(   (   !fCpu
+                                      || (   !(fCpu & ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+                                          && !pVCpu->cpum.GstCtx.rflags.Bits.u1IF) )
+                                  && !VM_FF_IS_ANY_SET(pVM, VM_FF_ALL_MASK) ))
                     {
-                        /* likely */
+                        if (RT_LIKELY(   (iIterations & cPollRate) != 0
+                                      || !TMTimerPollBool(pVM, pVCpu)))
+                        {
+
+                        }
+                        else
+                            return VINF_SUCCESS;
                     }
                     else
                         return VINF_SUCCESS;
