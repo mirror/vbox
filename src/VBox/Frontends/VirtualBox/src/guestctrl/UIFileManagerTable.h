@@ -223,6 +223,7 @@ protected:
     virtual void     determinePathSeparator() = 0;
     virtual void     prepareToolbar() = 0;
     virtual void     createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) = 0;
+    virtual void     toggleForwardBackwardActions() = 0;
     virtual bool     event(QEvent *pEvent) RT_OVERRIDE;
 
     /** @name Copy/Cut guest-to-guest (host-to-host) stuff.

@@ -72,6 +72,7 @@ protected:
     virtual void    determinePathSeparator() override final;
     virtual void    prepareToolbar() override final;
     virtual void    createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) override final;
+    virtual void    toggleForwardBackwardActions() override final;
     /** @name Copy/Cut host-to-host stuff. Currently not implemented.
      * @{ */
         /** Disable/enable paste action depending on the m_eFileOperationType. */

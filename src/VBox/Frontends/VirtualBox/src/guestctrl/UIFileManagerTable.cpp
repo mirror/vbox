@@ -917,9 +917,7 @@ void UIFileManagerTable::sltHandleNavigationWidgetPathChange(const QString& strP
 
 void UIFileManagerTable::sltHandleNavigationWidgetHistoryListChanged()
 {
-    /* Check if forward/backward actions should be disabled/enabled: */
-    int iHistoryListCount = m_pNavigationWidget->historyItemCount();
-    int iCurrentHistoryIndex = m_pNavigationWidget->currentHistoryIndex();
+    toggleForwardBackwardActions();
 }
 
 void UIFileManagerTable::deSelectUpDirectoryItem()

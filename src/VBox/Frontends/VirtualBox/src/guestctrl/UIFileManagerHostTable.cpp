@@ -246,6 +246,10 @@ void UIFileManagerHostTable::createFileViewContextMenu(const QWidget *pWidget, c
     menu.exec(pWidget->mapToGlobal(point));
 }
 
+void UIFileManagerHostTable::toggleForwardBackwardActions()
+{
+}
+
 void UIFileManagerHostTable::readDirectory(const QString& strPath, UICustomFileSystemItem *parent, bool isStartDir /*= false*/)
 {
     if (!parent)

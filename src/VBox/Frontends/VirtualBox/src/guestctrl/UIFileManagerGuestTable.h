@@ -98,6 +98,7 @@ protected:
         virtual void  setPasteActionEnabled(bool fEnabled) override final;
         virtual void  pasteCutCopiedObjects() override final;
     /** @} */
+    virtual void  toggleForwardBackwardActions() override final;
     virtual void  setState();
     virtual void  setSessionDependentWidgetsEnabled();
 

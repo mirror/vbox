@@ -1475,6 +1475,10 @@ void UIFileManagerGuestTable::sltOpenGuestSession(QString strUserName, QString s
     openGuestSession(strUserName, strPassword);
 }
 
+void UIFileManagerGuestTable::toggleForwardBackwardActions()
+{
+}
+
 void UIFileManagerGuestTable::setState()
 {
     if (m_comMachine.isNull())
