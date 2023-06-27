@@ -590,45 +590,35 @@ void UIVisoContentBrowser::initializeModel()
 
 void UIVisoContentBrowser::setTableRootIndex(QModelIndex index /* = QModelIndex */)
 {
-    if (!m_pTableView)
+    if (!m_pTableView || !index.isValid())
         return;
 
     QModelIndex tableIndex;
-    if (index.isValid())
-    {
-        tableIndex = convertIndexToTableIndex(index);
-        if (tableIndex.isValid())
-            m_pTableView->setRootIndex(tableIndex);
-    }
-    else
-    {
-        // if (m_pTreeView && m_pTreeView->selectionModel())
-        // {
-        //     QItemSelectionModel *selectionModel = m_pTreeView->selectionModel();
-        //     if (!selectionModel->selectedIndexes().isEmpty())
-        //     {
-        //         QModelIndex treeIndex = selectionModel->selectedIndexes().at(0);
-        //         tableIndex = convertIndexToTableIndex(treeIndex);
-        //         if (tableIndex.isValid())
-        //             m_pTableView->setRootIndex(tableIndex);
-        //     }
-        // }
-    }
+    tableIndex = convertIndexToTableIndex(index);
     if (tableIndex.isValid())
-    {
-        UICustomFileSystemItem *pItem =
-            static_cast<UICustomFileSystemItem*>(m_pTableProxyModel->mapToSource(tableIndex).internalPointer());
-        if (pItem)
-        {
-            //QString strPath = pItem->data(UICustomFileSystemModelData_VISOPath).toString();
-            //updateLocationSelectorText(strPath);
-        }
-    }
+        m_pTableView->setRootIndex(tableIndex);
+    updateNavigationWidgetPath(currentPath());
 }
 
 void UIVisoContentBrowser::setPathFromNavigationWidget(const QString &strPath)
 {
-    Q_UNUSED(strPath);
+    if (strPath == currentPath())
+        return;
+    QStringList path = UIPathOperations::pathTrail(strPath);
+    const UICustomFileSystemItem *pItem = m_pModel->rootItem()->child(0);
+
+    foreach (const QString strName, path)
+    {
+        if (!pItem)
+            break;
+        pItem = pItem->child(strName);
+    }
+    if (pItem)
+    {
+        QModelIndex index = convertIndexToTableIndex(m_pModel->index(pItem));
+        if (index.isValid())
+            setTableRootIndex(index);
+    }
 }
 
 void UIVisoContentBrowser::showHideHiddenObjects(bool bShow)
@@ -670,20 +660,6 @@ QModelIndex UIVisoContentBrowser::convertIndexToTableIndex(const QModelIndex &in
         return m_pTableProxyModel->mapFromSource(index);
     return QModelIndex();
 }
-
-// QModelIndex UIVisoContentBrowser::convertIndexToTreeIndex(const QModelIndex &index)
-// {
-//     if (!index.isValid())
-//         return QModelIndex();
-
-//     if (index.model() == m_pTreeProxyModel)
-//         return index;
-//     else if (index.model() == m_pModel)
-//         return m_pTreeProxyModel->mapFromSource(index);
-//     else if (index.model() == m_pTableProxyModel)
-//         return m_pTreeProxyModel->mapFromSource(m_pTableProxyModel->mapToSource(index));
-//     return QModelIndex();
-// }
 
 void UIVisoContentBrowser::scanHostDirectory(UICustomFileSystemItem *directoryItem)
 {
@@ -846,5 +822,15 @@ QList<UICustomFileSystemItem*> UIVisoContentBrowser::tableSelectedItems()
     return selectedItems;
 }
 
+QString UIVisoContentBrowser::currentPath() const
+{
+    if (!m_pTableView || !m_pTableView->rootIndex().isValid())
+        return QString();
+    QModelIndex index = m_pTableProxyModel->mapToSource(m_pTableView->rootIndex());
+    UICustomFileSystemItem *pItem = static_cast<UICustomFileSystemItem*>((index).internalPointer());
+    if (!pItem)
+        return QString();
+    return pItem->data(UICustomFileSystemModelData_VISOPath).toString();
+}
 
 #include "UIVisoContentBrowser.moc"

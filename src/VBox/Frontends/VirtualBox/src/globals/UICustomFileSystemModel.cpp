@@ -88,11 +88,11 @@ UICustomFileSystemItem *UICustomFileSystemItem::child(int row) const
     return m_childItems.value(row);
 }
 
-UICustomFileSystemItem *UICustomFileSystemItem::child(const QString &path) const
+UICustomFileSystemItem *UICustomFileSystemItem::child(const QString &name) const
 {
-    if (!m_childMap.contains(path))
+    if (!m_childMap.contains(name))
         return 0;
-    return m_childMap.value(path);
+    return m_childMap.value(name);
 }
 
 int UICustomFileSystemItem::childCount() const
@@ -520,11 +520,11 @@ QVariant UICustomFileSystemModel::headerData(int section, Qt::Orientation orient
     return QVariant();
 }
 
-QModelIndex UICustomFileSystemModel::index(UICustomFileSystemItem* item)
+QModelIndex UICustomFileSystemModel::index(const UICustomFileSystemItem* item)
 {
     if (!item)
         return QModelIndex();
-    return createIndex(item->row(), 0, item);
+    return createIndex(item->row(), 0, const_cast<UICustomFileSystemItem*>(item));
 }
 
 QModelIndex UICustomFileSystemModel::index(int row, int column, const QModelIndex &parent) const

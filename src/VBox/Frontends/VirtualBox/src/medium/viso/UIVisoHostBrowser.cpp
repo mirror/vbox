@@ -246,11 +246,7 @@ void UIVisoHostBrowser::tableViewItemDoubleClick(const QModelIndex &index)
     if (!fileInfo.isDir())
         return;
     if (QString::compare(fileInfo.fileName(), "..") == 0)
-    {
-        //printf("rrr %s\n", qPrintable(m_pModel->filePath(m_pModel->parent(m_pTableView->rootIndex()))));
-
         setTableRootIndex(m_pModel->parent(m_pTableView->rootIndex()));
-    }
     else
         setTableRootIndex(index);
 }
