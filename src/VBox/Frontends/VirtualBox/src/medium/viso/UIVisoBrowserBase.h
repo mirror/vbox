@@ -75,9 +75,7 @@ protected:
     void updateLocationSelectorText(const QString &strText);
 
     virtual void tableViewItemDoubleClick(const QModelIndex &index) = 0;
-    virtual void treeSelectionChanged(const QModelIndex &selectedTreeIndex) = 0;
     virtual void setTableRootIndex(QModelIndex index = QModelIndex()) = 0;
-    virtual void setTreeCurrentIndex(QModelIndex index = QModelIndex()) = 0;
 
     virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
     virtual bool eventFilter(QObject *pObj, QEvent *pEvent) RT_OVERRIDE;

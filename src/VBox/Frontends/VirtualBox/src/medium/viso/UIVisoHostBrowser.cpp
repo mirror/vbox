@@ -31,7 +31,6 @@
 #include <QItemDelegate>
 #include <QMimeData>
 #include <QTextEdit>
-#include <QTreeView>
 #include <QTableView>
 
 /* GUI includes: */
@@ -154,7 +153,6 @@ QMimeData *UIVisoHostBrowserModel::mimeData(const QModelIndexList &indexes) cons
 
 UIVisoHostBrowser::UIVisoHostBrowser(QWidget *pParent /* = 0 */)
     : UIVisoBrowserBase(pParent)
-    , m_pTreeModel(0)
     , m_pTableModel(0)
     , m_pTableView(0)
 {
@@ -174,25 +172,10 @@ void UIVisoHostBrowser::prepareObjects()
 {
     UIVisoBrowserBase::prepareObjects();
 
-    m_pTreeModel = new UIVisoHostBrowserModel(this);
-    m_pTreeModel->setRootPath(QDir::rootPath());
-    m_pTreeModel->setReadOnly(true);
-    m_pTreeModel->setFilter(QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden);
     m_pTableModel = new UIVisoHostBrowserModel(this);
     m_pTableModel->setRootPath(QDir::rootPath());
     m_pTableModel->setReadOnly(true);
     m_pTableModel->setFilter(QDir::AllEntries | QDir::NoDot | QDir::Hidden | QDir::System);
-
-    if (m_pTreeView)
-    {
-        m_pTreeView->setModel(m_pTreeModel);
-        m_pTreeView->setRootIndex(m_pTreeModel->index(m_pTreeModel->rootPath()).parent());
-        m_pTreeView->setCurrentIndex(m_pTreeModel->index(QDir::homePath()));
-        /* Show only the 0th column that is "name': */
-        m_pTreeView->hideColumn(1);
-        m_pTreeView->hideColumn(2);
-        m_pTreeView->hideColumn(3);
-    }
 
     m_pTableView = new QTableView;
     if (m_pTableView)
@@ -220,7 +203,7 @@ void UIVisoHostBrowser::prepareObjects()
         }
 
         m_pTableView->setModel(m_pTableModel);
-        setTableRootIndex();
+        //setTableRootIndex();
         /* Hide the "type" column: */
         m_pTableView->hideColumn(2);
 
@@ -258,50 +241,42 @@ void UIVisoHostBrowser::tableViewItemDoubleClick(const QModelIndex &index)
 {
     if (!index.isValid())
         return;
-    QFileInfo fileInfo = m_pTableModel->fileInfo(index);
     /* QFileInfo::isDir() returns true if QFileInfo is a folder or a symlink to folder: */
+    QFileInfo fileInfo = m_pTableModel->fileInfo(index);
     if (!fileInfo.isDir())
         return;
-    setTableRootIndex(index);
+    if (QString::compare(fileInfo.fileName(), "..") == 0)
+    {
+        //printf("rrr %s\n", qPrintable(m_pTableModel->filePath(m_pTableModel->parent(m_pTableView->rootIndex()))));
 
-    m_pTreeView->blockSignals(true);
-    setTreeCurrentIndex(index);
-    m_pTreeView->blockSignals(false);
-}
-
-void UIVisoHostBrowser::treeSelectionChanged(const QModelIndex &selectedTreeIndex)
-{
-    setTableRootIndex(selectedTreeIndex);
+        setTableRootIndex(m_pTableModel->parent(m_pTableView->rootIndex()));
+    }
+    else
+        setTableRootIndex(index);
 }
 
 void UIVisoHostBrowser::showHideHiddenObjects(bool bShow)
 {
     if (bShow)
-    {
-        m_pTreeModel->setFilter(QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden);
         m_pTableModel->setFilter(QDir::AllEntries | QDir::NoDot | QDir::Hidden | QDir::System);
-    }
     else
-    {
-        m_pTreeModel->setFilter(QDir::AllDirs | QDir::NoDotAndDotDot);
         m_pTableModel->setFilter(QDir::AllEntries | QDir::NoDot);
-    }
 }
 
 QString UIVisoHostBrowser::currentPath() const
 {
-    if (!m_pTreeView || !m_pTreeModel)
+    if (!m_pTableView || !m_pTableModel)
         return QString();
-    QModelIndex currentTreeIndex = m_pTreeView->selectionModel()->currentIndex();
-    return QDir::fromNativeSeparators(m_pTreeModel->filePath(currentTreeIndex));
+    QModelIndex currentTableIndex = m_pTableView->selectionModel()->currentIndex();
+    return QDir::fromNativeSeparators(m_pTableModel->filePath(currentTableIndex));
 }
 
 void UIVisoHostBrowser::setCurrentPath(const QString &strPath)
 {
-    if (strPath.isEmpty() || !m_pTreeModel)
+    if (strPath.isEmpty() || !m_pTableModel)
         return;
-    QModelIndex index = m_pTreeModel->index(strPath);
-    setTreeCurrentIndex(index);
+    QModelIndex index = m_pTableModel->index(strPath);
+    setTableRootIndex(index);
 }
 
 bool UIVisoHostBrowser::tableViewHasSelection() const
@@ -340,37 +315,16 @@ QStringList UIVisoHostBrowser::selectedPathList() const
 
 void UIVisoHostBrowser::setTableRootIndex(QModelIndex index /* = QModelIndex */)
 {
-    if (!m_pTreeView || !m_pTreeView->selectionModel() || !m_pTableView)
+    if (!m_pTableView)
         return;
-    QString strCurrentTreePath;
-    if (!index.isValid())
-    {
-        QModelIndex currentTreeIndex = m_pTreeView->selectionModel()->currentIndex();
-        strCurrentTreePath = m_pTreeModel->filePath(currentTreeIndex);
-    }
-    else
-        strCurrentTreePath = m_pTreeModel->filePath(index);
-    if (!strCurrentTreePath.isEmpty())
-        m_pTableView->setRootIndex(m_pTableModel->index(strCurrentTreePath));
-    updateLocationSelectorText(strCurrentTreePath);
+    m_pTableView->setRootIndex(index);
     m_pTableView->clearSelection();
 }
 
-void UIVisoHostBrowser::setTreeCurrentIndex(QModelIndex index /* = QModelIndex() */)
+QModelIndex UIVisoHostBrowser::currentRootIndex() const
 {
-    QString strCurrentTablePath;
-    if (!index.isValid())
-    {
-        QModelIndex currentTableIndex = m_pTableView->selectionModel()->currentIndex();
-        strCurrentTablePath = m_pTableModel->filePath(currentTableIndex);
-    }
-    else
-        strCurrentTablePath = m_pTableModel->filePath(index);
-    QModelIndex treeIndex = m_pTreeModel->index(strCurrentTablePath);
-    m_pTreeView->setCurrentIndex(treeIndex);
-    m_pTreeView->setExpanded(treeIndex, true);
-    m_pTreeView->scrollTo(treeIndex, QAbstractItemView::PositionAtCenter);
+    if (!m_pTableView)
+        return QModelIndex();
+    return m_pTableView->rootIndex();
 }
-
-
 #include "UIVisoHostBrowser.moc"

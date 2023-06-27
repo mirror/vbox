@@ -296,7 +296,6 @@ void UIVisoBrowserBase::sltTreeSelectionChanged(const QItemSelection &selected, 
     if (indices.empty())
         return;
     QModelIndex selectedIndex = indices[0];
-    treeSelectionChanged(selectedIndex);
 }
 
 void UIVisoBrowserBase::sltTreeItemClicked(const QModelIndex &modelIndex)

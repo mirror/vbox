@@ -459,20 +459,17 @@ void UIVisoContentBrowser::tableViewItemDoubleClick(const QModelIndex &index)
         if (currentRoot != m_pModel->rootIndex())
         {
             setTableRootIndex(currentRoot.parent());
-            setTreeCurrentIndex(currentRoot.parent());
         }
     }
     else if (!strISOPath.isEmpty())
     {
         importISOContentToViso(strISOPath, pClickedItem, pClickedItem->data(UICustomFileSystemModelData_LocalPath).toString());
         setTableRootIndex(index);
-        setTreeCurrentIndex(index);
     }
     else
     {
         scanHostDirectory(pClickedItem);
         setTableRootIndex(index);
-        setTreeCurrentIndex(index);
     }
 }
 
@@ -713,57 +710,57 @@ void UIVisoContentBrowser::setTableRootIndex(QModelIndex index /* = QModelIndex 
     }
 }
 
-void UIVisoContentBrowser::setTreeCurrentIndex(QModelIndex index /* = QModelIndex() */)
-{
-    if (!m_pTreeView)
-        return;
-    QItemSelectionModel *pSelectionModel = m_pTreeView->selectionModel();
-    if (!pSelectionModel)
-        return;
-    m_pTreeView->blockSignals(true);
-    pSelectionModel->blockSignals(true);
-    QModelIndex treeIndex;
-    if (index.isValid())
-    {
-        treeIndex = convertIndexToTreeIndex(index);
-    }
-    else
-    {
-        QItemSelectionModel *selectionModel = m_pTableView->selectionModel();
-        if (selectionModel)
-        {
-            if (!selectionModel->selectedIndexes().isEmpty())
-            {
-                QModelIndex tableIndex = selectionModel->selectedIndexes().at(0);
-                treeIndex = convertIndexToTreeIndex(tableIndex);
-            }
-        }
-    }
+// void UIVisoContentBrowser::setTreeCurrentIndex(QModelIndex index /* = QModelIndex() */)
+// {
+//     if (!m_pTreeView)
+//         return;
+//     QItemSelectionModel *pSelectionModel = m_pTreeView->selectionModel();
+//     if (!pSelectionModel)
+//         return;
+//     m_pTreeView->blockSignals(true);
+//     pSelectionModel->blockSignals(true);
+//     QModelIndex treeIndex;
+//     if (index.isValid())
+//     {
+//         treeIndex = convertIndexToTreeIndex(index);
+//     }
+//     else
+//     {
+//         QItemSelectionModel *selectionModel = m_pTableView->selectionModel();
+//         if (selectionModel)
+//         {
+//             if (!selectionModel->selectedIndexes().isEmpty())
+//             {
+//                 QModelIndex tableIndex = selectionModel->selectedIndexes().at(0);
+//                 treeIndex = convertIndexToTreeIndex(tableIndex);
+//             }
+//         }
+//     }
 
-    if (treeIndex.isValid())
-    {
-        m_pTreeView->setCurrentIndex(treeIndex);
-        m_pTreeView->setExpanded(treeIndex, true);
-        m_pTreeView->scrollTo(index, QAbstractItemView::PositionAtCenter);
-        m_pTreeProxyModel->invalidate();
-    }
-    pSelectionModel->blockSignals(false);
-    m_pTreeView->blockSignals(false);
-}
+//     if (treeIndex.isValid())
+//     {
+//         m_pTreeView->setCurrentIndex(treeIndex);
+//         m_pTreeView->setExpanded(treeIndex, true);
+//         m_pTreeView->scrollTo(index, QAbstractItemView::PositionAtCenter);
+//         m_pTreeProxyModel->invalidate();
+//     }
+//     pSelectionModel->blockSignals(false);
+//     m_pTreeView->blockSignals(false);
+// }
 
-void UIVisoContentBrowser::treeSelectionChanged(const QModelIndex &selectedTreeIndex)
-{
-    if (!m_pTableProxyModel || !m_pTreeProxyModel)
-        return;
+// void UIVisoContentBrowser::treeSelectionChanged(const QModelIndex &selectedTreeIndex)
+// {
+//     if (!m_pTableProxyModel || !m_pTreeProxyModel)
+//         return;
 
-    /* Check if we need to scan the directory in the host system: */
-    UICustomFileSystemItem *pClickedItem =
-        static_cast<UICustomFileSystemItem*>(m_pTreeProxyModel->mapToSource(selectedTreeIndex).internalPointer());
-    scanHostDirectory(pClickedItem);
-    setTableRootIndex(selectedTreeIndex);
-    m_pTableProxyModel->invalidate();
-    m_pTreeProxyModel->invalidate();
-}
+//     /* Check if we need to scan the directory in the host system: */
+//     UICustomFileSystemItem *pClickedItem =
+//         static_cast<UICustomFileSystemItem*>(m_pTreeProxyModel->mapToSource(selectedTreeIndex).internalPointer());
+//     scanHostDirectory(pClickedItem);
+//     setTableRootIndex(selectedTreeIndex);
+//     m_pTableProxyModel->invalidate();
+//     m_pTreeProxyModel->invalidate();
+// }
 
 void UIVisoContentBrowser::showHideHiddenObjects(bool bShow)
 {
@@ -807,19 +804,19 @@ QModelIndex UIVisoContentBrowser::convertIndexToTableIndex(const QModelIndex &in
     return QModelIndex();
 }
 
-QModelIndex UIVisoContentBrowser::convertIndexToTreeIndex(const QModelIndex &index)
-{
-    if (!index.isValid())
-        return QModelIndex();
+// QModelIndex UIVisoContentBrowser::convertIndexToTreeIndex(const QModelIndex &index)
+// {
+//     if (!index.isValid())
+//         return QModelIndex();
 
-    if (index.model() == m_pTreeProxyModel)
-        return index;
-    else if (index.model() == m_pModel)
-        return m_pTreeProxyModel->mapFromSource(index);
-    else if (index.model() == m_pTableProxyModel)
-        return m_pTreeProxyModel->mapFromSource(m_pTableProxyModel->mapToSource(index));
-    return QModelIndex();
-}
+//     if (index.model() == m_pTreeProxyModel)
+//         return index;
+//     else if (index.model() == m_pModel)
+//         return m_pTreeProxyModel->mapFromSource(index);
+//     else if (index.model() == m_pTableProxyModel)
+//         return m_pTreeProxyModel->mapFromSource(m_pTableProxyModel->mapToSource(index));
+//     return QModelIndex();
+// }
 
 void UIVisoContentBrowser::scanHostDirectory(UICustomFileSystemItem *directoryItem)
 {
