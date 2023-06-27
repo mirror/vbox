@@ -34,7 +34,6 @@
 #include <QHeaderView>
 #include <QMimeData>
 #include <QTableView>
-#include <QTreeView>
 
 /* GUI includes: */
 #include "UICustomFileSystemModel.h"
@@ -182,26 +181,6 @@ public:
 
 
 /*********************************************************************************************************************************
-*   UIVisoContentTreeProxyModel definition.                                                                                      *
-*********************************************************************************************************************************/
-
-class UIVisoContentTreeProxyModel : public UICustomFileSystemProxyModel
-{
-
-    Q_OBJECT;
-
-public:
-
-    UIVisoContentTreeProxyModel(QObject *parent = 0);
-
-protected:
-
-    /** Used to filter-out files and show only directories. */
-    virtual bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const RT_OVERRIDE;
-};
-
-
-/*********************************************************************************************************************************
 *   UIVisoContentTableView implementation.                                                                                       *
 *********************************************************************************************************************************/
 UIVisoContentTableView::UIVisoContentTableView(QWidget *pParent /* = 0 */)
@@ -241,34 +220,6 @@ void UIVisoContentTableView::dropEvent(QDropEvent *pEvent)
 
 
 /*********************************************************************************************************************************
-*   UIVisoContentTreeProxyModel implementation.                                                                                  *
-*********************************************************************************************************************************/
-
-UIVisoContentTreeProxyModel::UIVisoContentTreeProxyModel(QObject *parent /* = 0 */)
-    :UICustomFileSystemProxyModel(parent)
-{
-}
-
-bool UIVisoContentTreeProxyModel::filterAcceptsRow(int iSourceRow, const QModelIndex &sourceParent) const /* override */
-{
-    QModelIndex itemIndex = sourceModel()->index(iSourceRow, 0, sourceParent);
-    if (!itemIndex.isValid())
-        return false;
-
-    UICustomFileSystemItem *item = static_cast<UICustomFileSystemItem*>(itemIndex.internalPointer());
-    if (!item)
-        return false;
-
-    if (item->isUpDirectory())
-        return false;
-    if (item->isDirectory() || item->isSymLinkToADirectory())
-        return true;
-
-    return false;
-}
-
-
-/*********************************************************************************************************************************
 *   UIVisoContentBrowser implementation.                                                                                         *
 *********************************************************************************************************************************/
 
@@ -277,7 +228,6 @@ UIVisoContentBrowser::UIVisoContentBrowser(QWidget *pParent)
     , m_pTableView(0)
     , m_pModel(0)
     , m_pTableProxyModel(0)
-    , m_pTreeProxyModel(0)
 {
     prepareObjects();
     prepareConnections();
@@ -286,8 +236,7 @@ UIVisoContentBrowser::UIVisoContentBrowser(QWidget *pParent)
     /* Hack alert. for some reason without invalidating proxy models mapFromSource return invalid index. */
     if (m_pTableProxyModel)
         m_pTableProxyModel->invalidate();
-    if (m_pTreeProxyModel)
-        m_pTreeProxyModel->setSourceModel(m_pModel);
+
     if (rootItem() && rootItem()->childCount() > 0)
     {
         UICustomFileSystemItem *pStartItem = static_cast<UICustomFileSystemItem*>(rootItem()->children()[0]);
@@ -349,11 +298,6 @@ void UIVisoContentBrowser::importISOContentToViso(const QString &strISOFilePath,
     }
     if (m_pTableProxyModel)
         m_pTableProxyModel->invalidate();
-    if (m_pTreeProxyModel)
-    {
-        m_pTreeProxyModel->invalidate();
-        m_pTreeView->setExpanded(m_pTreeView->currentIndex(), true);
-    }
 }
 
 
@@ -392,11 +336,6 @@ void UIVisoContentBrowser::addObjectsToViso(const QStringList &pathList)
     }
     if (m_pTableProxyModel)
         m_pTableProxyModel->invalidate();
-    if (m_pTreeProxyModel)
-    {
-        m_pTreeProxyModel->invalidate();
-        m_pTreeView->setExpanded(m_pTreeView->currentIndex(), true);
-    }
 }
 
 void UIVisoContentBrowser::createVisoEntry(UICustomFileSystemItem *pItem, bool bRemove /* = false */)
@@ -544,11 +483,8 @@ void UIVisoContentBrowser::removeItems(const QList<UICustomFileSystemItem*> item
         if (m_pModel)
             m_pModel->deleteItem(pItem);
     }
-    if (m_pTreeProxyModel)
-        m_pTreeProxyModel->invalidate();
     if (m_pTableProxyModel)
         m_pTableProxyModel->invalidate();
-
 }
 
 void UIVisoContentBrowser::prepareObjects()
@@ -563,27 +499,7 @@ void UIVisoContentBrowser::prepareObjects()
         m_pTableProxyModel->setListDirectoriesOnTop(true);
     }
 
-    m_pTreeProxyModel = new UIVisoContentTreeProxyModel(this);
-    if (m_pTreeProxyModel)
-    {
-        m_pTreeProxyModel->setSourceModel(m_pModel);
-    }
-
     initializeModel();
-
-    if (m_pTreeView)
-    {
-        m_pTreeView->setModel(m_pTreeProxyModel);
-        m_pTreeView->setCurrentIndex(m_pTreeProxyModel->mapFromSource(m_pModel->rootIndex()));
-        m_pTreeView->setEditTriggers(QAbstractItemView::NoEditTriggers);
-        /* Show only the 0th column that is "name': */
-        m_pTreeView->hideColumn(UICustomFileSystemModelData_Owner);
-        m_pTreeView->hideColumn(UICustomFileSystemModelData_Permissions);
-        m_pTreeView->hideColumn(UICustomFileSystemModelData_Size);
-        m_pTreeView->hideColumn(UICustomFileSystemModelData_ChangeTime);
-        m_pTreeView->hideColumn(UICustomFileSystemModelData_VISOPath);
-        m_pTreeView->hideColumn(UICustomFileSystemModelData_LocalPath);
-    }
 
     m_pTableView = new UIVisoContentTableView;
     if (m_pTableView)
@@ -686,17 +602,17 @@ void UIVisoContentBrowser::setTableRootIndex(QModelIndex index /* = QModelIndex 
     }
     else
     {
-        if (m_pTreeView && m_pTreeView->selectionModel())
-        {
-            QItemSelectionModel *selectionModel = m_pTreeView->selectionModel();
-            if (!selectionModel->selectedIndexes().isEmpty())
-            {
-                QModelIndex treeIndex = selectionModel->selectedIndexes().at(0);
-                tableIndex = convertIndexToTableIndex(treeIndex);
-                if (tableIndex.isValid())
-                    m_pTableView->setRootIndex(tableIndex);
-            }
-        }
+        // if (m_pTreeView && m_pTreeView->selectionModel())
+        // {
+        //     QItemSelectionModel *selectionModel = m_pTreeView->selectionModel();
+        //     if (!selectionModel->selectedIndexes().isEmpty())
+        //     {
+        //         QModelIndex treeIndex = selectionModel->selectedIndexes().at(0);
+        //         tableIndex = convertIndexToTableIndex(treeIndex);
+        //         if (tableIndex.isValid())
+        //             m_pTableView->setRootIndex(tableIndex);
+        //     }
+        // }
     }
     if (tableIndex.isValid())
     {
@@ -799,8 +715,6 @@ QModelIndex UIVisoContentBrowser::convertIndexToTableIndex(const QModelIndex &in
         return index;
     else if (index.model() == m_pModel)
         return m_pTableProxyModel->mapFromSource(index);
-    else if (index.model() == m_pTreeProxyModel)
-        return m_pTableProxyModel->mapFromSource(m_pTreeProxyModel->mapToSource(index));
     return QModelIndex();
 }
 
@@ -879,7 +793,6 @@ void UIVisoContentBrowser::updateStartItemName()
     /* If the table root index is the start item then we have to update the location selector text here: */
     if (m_pTableProxyModel->mapToSource(m_pTableView->rootIndex()).internalPointer() == rootItem()->child(0))
         updateLocationSelectorText(strName);
-    m_pTreeProxyModel->invalidate();
     m_pTableProxyModel->invalidate();
 }
 
@@ -949,8 +862,6 @@ void UIVisoContentBrowser::sltResetAction()
     m_entryMap.clear();
     if (m_pTableProxyModel)
         m_pTableProxyModel->invalidate();
-    if (m_pTreeProxyModel)
-        m_pTreeProxyModel->invalidate();
 }
 
 void UIVisoContentBrowser::sltDroppedItems(QStringList pathList)

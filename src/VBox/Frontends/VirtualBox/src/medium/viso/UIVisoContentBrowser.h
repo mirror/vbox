@@ -131,7 +131,6 @@ private:
     UIVisoContentTableView       *m_pTableView;
     UICustomFileSystemModel      *m_pModel;
     UICustomFileSystemProxyModel *m_pTableProxyModel;
-    UIVisoContentTreeProxyModel  *m_pTreeProxyModel;
 
     QString                       m_strVisoName;
     /** keys of m_entryMap are iso locations and values are
