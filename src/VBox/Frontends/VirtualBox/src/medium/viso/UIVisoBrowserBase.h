@@ -41,7 +41,7 @@
 /* Forward declarations: */
 class QItemSelection;
 class QGridLayout;
-
+class UIFileTableNavigationWidget;
 
 /** An abstract QWidget extension hosting and table view. */
 class UIVisoBrowserBase : public QIWithRetranslateUI<QGroupBox>
@@ -70,10 +70,12 @@ protected:
 
     virtual void tableViewItemDoubleClick(const QModelIndex &index) = 0;
     virtual void setTableRootIndex(QModelIndex index = QModelIndex()) = 0;
+    virtual void setPathFromNavigationWidget(const QString &strPath) = 0;
 
     virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
     virtual bool eventFilter(QObject *pObj, QEvent *pEvent) RT_OVERRIDE;
     virtual void keyPressEvent(QKeyEvent *pEvent) RT_OVERRIDE;
+            void updateNavigationWidgetPath(const QString &strPath);
 
     QGridLayout        *m_pMainLayout;
 
@@ -83,8 +85,11 @@ protected slots:
 
 private slots:
 
+    void sltNavigationWidgetPathChange(const QString &strPath);
+
 private:
 
+    UIFileTableNavigationWidget *m_pNavigationWidget;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_viso_UIVisoBrowserBase_h */

@@ -153,7 +153,7 @@ QMimeData *UIVisoHostBrowserModel::mimeData(const QModelIndexList &indexes) cons
 
 UIVisoHostBrowser::UIVisoHostBrowser(QWidget *pParent /* = 0 */)
     : UIVisoBrowserBase(pParent)
-    , m_pTableModel(0)
+    , m_pModel(0)
     , m_pTableView(0)
 {
     prepareObjects();
@@ -172,10 +172,10 @@ void UIVisoHostBrowser::prepareObjects()
 {
     UIVisoBrowserBase::prepareObjects();
 
-    m_pTableModel = new UIVisoHostBrowserModel(this);
-    m_pTableModel->setRootPath(QDir::rootPath());
-    m_pTableModel->setReadOnly(true);
-    m_pTableModel->setFilter(QDir::AllEntries | QDir::NoDot | QDir::Hidden | QDir::System);
+    m_pModel = new UIVisoHostBrowserModel(this);
+    m_pModel->setRootPath(QDir::rootPath());
+    m_pModel->setReadOnly(true);
+    m_pModel->setFilter(QDir::AllEntries | QDir::NoDot | QDir::Hidden | QDir::System);
 
     m_pTableView = new QTableView;
     if (m_pTableView)
@@ -202,7 +202,7 @@ void UIVisoHostBrowser::prepareObjects()
             pHorizontalHeader->setSectionResizeMode(QHeaderView::Stretch);
         }
 
-        m_pTableView->setModel(m_pTableModel);
+        m_pTableView->setModel(m_pModel);
         //setTableRootIndex();
         /* Hide the "type" column: */
         m_pTableView->hideColumn(2);
@@ -242,14 +242,14 @@ void UIVisoHostBrowser::tableViewItemDoubleClick(const QModelIndex &index)
     if (!index.isValid())
         return;
     /* QFileInfo::isDir() returns true if QFileInfo is a folder or a symlink to folder: */
-    QFileInfo fileInfo = m_pTableModel->fileInfo(index);
+    QFileInfo fileInfo = m_pModel->fileInfo(index);
     if (!fileInfo.isDir())
         return;
     if (QString::compare(fileInfo.fileName(), "..") == 0)
     {
-        //printf("rrr %s\n", qPrintable(m_pTableModel->filePath(m_pTableModel->parent(m_pTableView->rootIndex()))));
+        //printf("rrr %s\n", qPrintable(m_pModel->filePath(m_pModel->parent(m_pTableView->rootIndex()))));
 
-        setTableRootIndex(m_pTableModel->parent(m_pTableView->rootIndex()));
+        setTableRootIndex(m_pModel->parent(m_pTableView->rootIndex()));
     }
     else
         setTableRootIndex(index);
@@ -258,24 +258,24 @@ void UIVisoHostBrowser::tableViewItemDoubleClick(const QModelIndex &index)
 void UIVisoHostBrowser::showHideHiddenObjects(bool bShow)
 {
     if (bShow)
-        m_pTableModel->setFilter(QDir::AllEntries | QDir::NoDot | QDir::Hidden | QDir::System);
+        m_pModel->setFilter(QDir::AllEntries | QDir::NoDot | QDir::Hidden | QDir::System);
     else
-        m_pTableModel->setFilter(QDir::AllEntries | QDir::NoDot);
+        m_pModel->setFilter(QDir::AllEntries | QDir::NoDot);
 }
 
 QString UIVisoHostBrowser::currentPath() const
 {
-    if (!m_pTableView || !m_pTableModel)
+    if (!m_pTableView || !m_pModel)
         return QString();
     QModelIndex currentTableIndex = m_pTableView->selectionModel()->currentIndex();
-    return QDir::fromNativeSeparators(m_pTableModel->filePath(currentTableIndex));
+    return QDir::fromNativeSeparators(m_pModel->filePath(currentTableIndex));
 }
 
 void UIVisoHostBrowser::setCurrentPath(const QString &strPath)
 {
-    if (strPath.isEmpty() || !m_pTableModel)
+    if (strPath.isEmpty() || !m_pModel)
         return;
-    QModelIndex index = m_pTableModel->index(strPath);
+    QModelIndex index = m_pModel->index(strPath);
     setTableRootIndex(index);
 }
 
@@ -291,7 +291,7 @@ bool UIVisoHostBrowser::tableViewHasSelection() const
 
 void UIVisoHostBrowser::sltAddAction()
 {
-    if (!m_pTableView || !m_pTableModel)
+    if (!m_pTableView || !m_pModel)
         return;
     emit sigAddObjectsToViso(selectedPathList());
 }
@@ -305,7 +305,7 @@ QStringList UIVisoHostBrowser::selectedPathList() const
     QStringList pathList;
     for (int i = 0; i < selectedIndices.size(); ++i)
     {
-        QString strPath = m_pTableModel->filePath(selectedIndices[i]);
+        QString strPath = m_pModel->filePath(selectedIndices[i]);
         if (strPath.contains(".."))
             continue;
         pathList << strPath;
@@ -315,10 +315,21 @@ QStringList UIVisoHostBrowser::selectedPathList() const
 
 void UIVisoHostBrowser::setTableRootIndex(QModelIndex index /* = QModelIndex */)
 {
-    if (!m_pTableView)
+    if (!m_pTableView || !m_pModel)
         return;
     m_pTableView->setRootIndex(index);
     m_pTableView->clearSelection();
+    updateNavigationWidgetPath(m_pModel->filePath(index));
+}
+
+void UIVisoHostBrowser::setPathFromNavigationWidget(const QString &strPath)
+{
+    if (!m_pModel)
+        return;
+    QModelIndex index = m_pModel->index(strPath);
+    if (!index.isValid())
+        return;
+    setTableRootIndex(index);
 }
 
 QModelIndex UIVisoHostBrowser::currentRootIndex() const

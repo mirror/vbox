@@ -626,57 +626,10 @@ void UIVisoContentBrowser::setTableRootIndex(QModelIndex index /* = QModelIndex 
     }
 }
 
-// void UIVisoContentBrowser::setTreeCurrentIndex(QModelIndex index /* = QModelIndex() */)
-// {
-//     if (!m_pTreeView)
-//         return;
-//     QItemSelectionModel *pSelectionModel = m_pTreeView->selectionModel();
-//     if (!pSelectionModel)
-//         return;
-//     m_pTreeView->blockSignals(true);
-//     pSelectionModel->blockSignals(true);
-//     QModelIndex treeIndex;
-//     if (index.isValid())
-//     {
-//         treeIndex = convertIndexToTreeIndex(index);
-//     }
-//     else
-//     {
-//         QItemSelectionModel *selectionModel = m_pTableView->selectionModel();
-//         if (selectionModel)
-//         {
-//             if (!selectionModel->selectedIndexes().isEmpty())
-//             {
-//                 QModelIndex tableIndex = selectionModel->selectedIndexes().at(0);
-//                 treeIndex = convertIndexToTreeIndex(tableIndex);
-//             }
-//         }
-//     }
-
-//     if (treeIndex.isValid())
-//     {
-//         m_pTreeView->setCurrentIndex(treeIndex);
-//         m_pTreeView->setExpanded(treeIndex, true);
-//         m_pTreeView->scrollTo(index, QAbstractItemView::PositionAtCenter);
-//         m_pTreeProxyModel->invalidate();
-//     }
-//     pSelectionModel->blockSignals(false);
-//     m_pTreeView->blockSignals(false);
-// }
-
-// void UIVisoContentBrowser::treeSelectionChanged(const QModelIndex &selectedTreeIndex)
-// {
-//     if (!m_pTableProxyModel || !m_pTreeProxyModel)
-//         return;
-
-//     /* Check if we need to scan the directory in the host system: */
-//     UICustomFileSystemItem *pClickedItem =
-//         static_cast<UICustomFileSystemItem*>(m_pTreeProxyModel->mapToSource(selectedTreeIndex).internalPointer());
-//     scanHostDirectory(pClickedItem);
-//     setTableRootIndex(selectedTreeIndex);
-//     m_pTableProxyModel->invalidate();
-//     m_pTreeProxyModel->invalidate();
-// }
+void UIVisoContentBrowser::setPathFromNavigationWidget(const QString &strPath)
+{
+    Q_UNUSED(strPath);
+}
 
 void UIVisoContentBrowser::showHideHiddenObjects(bool bShow)
 {

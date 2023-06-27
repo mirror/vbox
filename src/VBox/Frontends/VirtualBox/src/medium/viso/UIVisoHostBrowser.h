@@ -69,6 +69,7 @@ protected:
     virtual void retranslateUi() final override;
     virtual void tableViewItemDoubleClick(const QModelIndex &index) final override;
     virtual void setTableRootIndex(QModelIndex index = QModelIndex()) final override;
+    virtual void setPathFromNavigationWidget(const QString &strPath) final override;
 
 private slots:
 
@@ -80,7 +81,7 @@ private:
     void prepareConnections();
     QModelIndex currentRootIndex() const;
     /** We have two file system models (one for each item view) since we set different filters on each of these models. */
-    UIVisoHostBrowserModel *m_pTableModel;
+    UIVisoHostBrowserModel *m_pModel;
     QTableView             *m_pTableView;
 };
 

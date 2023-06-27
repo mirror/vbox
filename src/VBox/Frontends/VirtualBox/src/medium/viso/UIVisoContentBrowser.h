@@ -88,11 +88,8 @@ protected:
 
     void retranslateUi() final override;
     virtual void tableViewItemDoubleClick(const QModelIndex &index)  final override;
-    /** @name Functions to set view root indices explicitly. They block the related signals. @p is converted
-        to the correct index before setting.
-      * @{ */
-        virtual void setTableRootIndex(QModelIndex index = QModelIndex())  final override;
-    /** @} */
+    virtual void setPathFromNavigationWidget(const QString &strPath) final override;
+    virtual void setTableRootIndex(QModelIndex index = QModelIndex())  final override;
 
 private slots:
 

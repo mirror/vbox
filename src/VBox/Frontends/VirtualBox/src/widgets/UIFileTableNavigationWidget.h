@@ -61,6 +61,7 @@ public:
     bool eventFilter(QObject *pObject, QEvent *pEvent) override;
 
 private slots:
+
     void sltHandleSwitch();
     /* Makes sure that we switch to breadcrumbs widget as soon as the combo box popup is hidden. */
     void sltHandleHidePopup();

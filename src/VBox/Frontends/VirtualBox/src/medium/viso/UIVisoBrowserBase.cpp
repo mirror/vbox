@@ -33,6 +33,7 @@
 
 /* GUI includes: */
 #include "QIToolButton.h"
+#include "UIFileTableNavigationWidget.h"
 #include "UIIconPool.h"
 #include "UIVisoBrowserBase.h"
 
@@ -44,6 +45,7 @@
 UIVisoBrowserBase::UIVisoBrowserBase(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QGroupBox>(pParent)
     , m_pMainLayout(0)
+    , m_pNavigationWidget(0)
 {
 }
 
@@ -59,12 +61,18 @@ void UIVisoBrowserBase::prepareObjects()
     if (!m_pMainLayout)
         return;
 
+    m_pNavigationWidget = new UIFileTableNavigationWidget;
+    if (m_pNavigationWidget)
+        m_pMainLayout->addWidget(m_pNavigationWidget, 0, 0, 1, 4);
+
     m_pMainLayout->setRowStretch(1, 2);
 }
 
 void UIVisoBrowserBase::prepareConnections()
 {
-
+    if (m_pNavigationWidget)
+        connect(m_pNavigationWidget, &UIFileTableNavigationWidget::sigPathChanged,
+                this, &UIVisoBrowserBase::sltNavigationWidgetPathChange);
 }
 
 void UIVisoBrowserBase::resizeEvent(QResizeEvent *pEvent)
@@ -97,4 +105,14 @@ void UIVisoBrowserBase::sltTableViewItemDoubleClick(const QModelIndex &index)
     tableViewItemDoubleClick(index);
 }
 
-#include "UIVisoBrowserBase.moc"
+void UIVisoBrowserBase::updateNavigationWidgetPath(const QString &strPath)
+{
+    if (!m_pNavigationWidget)
+        return;
+    m_pNavigationWidget->setPath(strPath);
+}
+
+void UIVisoBrowserBase::sltNavigationWidgetPathChange(const QString &strPath)
+{
+    setPathFromNavigationWidget(strPath);
+}
