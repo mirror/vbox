@@ -322,10 +322,6 @@ QMenu *UIVisoCreatorWidget::menu() const
 
 void UIVisoCreatorWidget::retranslateUi()
 {
-    if (m_pHostBrowser)
-        m_pHostBrowser->setTitle(tr("Host File System"));
-    if (m_pVISOContentBrowser)
-        m_pVISOContentBrowser->setTitle(tr("VISO Content"));
     if (m_pSettingsWidget)
         m_pSettingsWidget->setTitle(tr("Settings"));
 }

@@ -166,6 +166,7 @@ UIVisoHostBrowser::~UIVisoHostBrowser()
 
 void UIVisoHostBrowser::retranslateUi()
 {
+    setFileTableLabelText(QApplication::translate("UIVisoCreatorWidget","Host System"));
 }
 
 void UIVisoHostBrowser::prepareObjects()
@@ -203,7 +204,7 @@ void UIVisoHostBrowser::prepareObjects()
         }
 
         m_pTableView->setModel(m_pModel);
-        //setTableRootIndex();
+
         /* Hide the "type" column: */
         m_pTableView->hideColumn(2);
 

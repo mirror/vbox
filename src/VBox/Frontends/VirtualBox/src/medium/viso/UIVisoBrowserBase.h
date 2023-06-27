@@ -33,7 +33,7 @@
 
 /* Qt includes: */
 #include <QModelIndex>
-#include <QGroupBox>
+#include <QWidget>
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
@@ -41,10 +41,11 @@
 /* Forward declarations: */
 class QItemSelection;
 class QGridLayout;
+class QLabel;
 class UIFileTableNavigationWidget;
 
 /** An abstract QWidget extension hosting and table view. */
-class UIVisoBrowserBase : public QIWithRetranslateUI<QGroupBox>
+class UIVisoBrowserBase : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -75,7 +76,8 @@ protected:
     virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
     virtual bool eventFilter(QObject *pObj, QEvent *pEvent) RT_OVERRIDE;
     virtual void keyPressEvent(QKeyEvent *pEvent) RT_OVERRIDE;
-            void updateNavigationWidgetPath(const QString &strPath);
+    void updateNavigationWidgetPath(const QString &strPath);
+    void setFileTableLabelText(const QString &strText);
 
     QGridLayout        *m_pMainLayout;
 
@@ -90,6 +92,7 @@ private slots:
 private:
 
     UIFileTableNavigationWidget *m_pNavigationWidget;
+    QLabel *m_pFileTableLabel;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_viso_UIVisoBrowserBase_h */

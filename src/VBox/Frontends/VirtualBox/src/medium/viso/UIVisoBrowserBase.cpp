@@ -28,6 +28,7 @@
 /* Qt includes: */
 #include <QHeaderView>
 #include <QGridLayout>
+#include <QLabel>
 #include <QLineEdit>
 #include <QTreeView>
 
@@ -43,7 +44,7 @@
 *********************************************************************************************************************************/
 
 UIVisoBrowserBase::UIVisoBrowserBase(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QGroupBox>(pParent)
+    : QIWithRetranslateUI<QWidget>(pParent)
     , m_pMainLayout(0)
     , m_pNavigationWidget(0)
 {
@@ -56,14 +57,22 @@ UIVisoBrowserBase::~UIVisoBrowserBase()
 void UIVisoBrowserBase::prepareObjects()
 {
     m_pMainLayout = new QGridLayout;
+    AssertPtrReturnVoid(m_pMainLayout);
     setLayout(m_pMainLayout);
 
-    if (!m_pMainLayout)
-        return;
+    QHBoxLayout *pTopLayout = new QHBoxLayout;
+    AssertPtrReturnVoid(pTopLayout);
+
 
     m_pNavigationWidget = new UIFileTableNavigationWidget;
-    if (m_pNavigationWidget)
-        m_pMainLayout->addWidget(m_pNavigationWidget, 0, 0, 1, 4);
+    m_pFileTableLabel = new QLabel;
+
+    AssertReturnVoid(m_pNavigationWidget);
+    AssertReturnVoid(m_pFileTableLabel);
+
+    pTopLayout->addWidget(m_pFileTableLabel);
+    pTopLayout->addWidget(m_pNavigationWidget);
+    m_pMainLayout->addLayout(pTopLayout, 0, 0, 1, 4);
 
     m_pMainLayout->setRowStretch(1, 2);
 }
@@ -77,19 +86,19 @@ void UIVisoBrowserBase::prepareConnections()
 
 void UIVisoBrowserBase::resizeEvent(QResizeEvent *pEvent)
 {
-    QIWithRetranslateUI<QGroupBox>::resizeEvent(pEvent);
+    QIWithRetranslateUI<QWidget>::resizeEvent(pEvent);
 }
 
 /* Close the tree view when it recieves focus-out and enter key press event: */
 bool UIVisoBrowserBase::eventFilter(QObject *pObj, QEvent *pEvent)
 {
     /* Call to base-class: */
-    return QIWithRetranslateUI<QGroupBox>::eventFilter(pObj, pEvent);
+    return QIWithRetranslateUI<QWidget>::eventFilter(pObj, pEvent);
 }
 
 void UIVisoBrowserBase::keyPressEvent(QKeyEvent *pEvent)
 {
-    QIWithRetranslateUI<QGroupBox>::keyPressEvent(pEvent);
+    QIWithRetranslateUI<QWidget>::keyPressEvent(pEvent);
 }
 
 void UIVisoBrowserBase::sltFileTableViewContextMenu(const QPoint &point)
@@ -115,4 +124,10 @@ void UIVisoBrowserBase::updateNavigationWidgetPath(const QString &strPath)
 void UIVisoBrowserBase::sltNavigationWidgetPathChange(const QString &strPath)
 {
     setPathFromNavigationWidget(strPath);
+}
+
+void UIVisoBrowserBase::setFileTableLabelText(const QString &strText)
+{
+    if (m_pFileTableLabel)
+        m_pFileTableLabel->setText(strText);
 }

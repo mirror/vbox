@@ -380,6 +380,7 @@ void UIVisoContentBrowser::retranslateUi()
         pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Local Path"), UICustomFileSystemModelData_LocalPath);
         pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "VISO Path"), UICustomFileSystemModelData_VISOPath);
     }
+    setFileTableLabelText(QApplication::translate("UIVisoCreatorWidget","VISO Content"));
 }
 
 void UIVisoContentBrowser::tableViewItemDoubleClick(const QModelIndex &index)
