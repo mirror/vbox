@@ -292,10 +292,7 @@ void UIVisoBrowserBase::sltTableViewItemDoubleClick(const QModelIndex &index)
 void UIVisoBrowserBase::sltTreeSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
 {
     Q_UNUSED(deselected);
-    QModelIndexList indices = selected.indexes();
-    if (indices.empty())
-        return;
-    QModelIndex selectedIndex = indices[0];
+    Q_UNUSED(selected);
 }
 
 void UIVisoBrowserBase::sltTreeItemClicked(const QModelIndex &modelIndex)
