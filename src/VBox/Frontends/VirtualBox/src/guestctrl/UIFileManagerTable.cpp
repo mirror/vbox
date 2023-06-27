@@ -642,10 +642,14 @@ void UIFileManagerTable::sltGoHome()
 
 void UIFileManagerTable::sltGoForward()
 {
+    if (m_pNavigationWidget)
+        m_pNavigationWidget->goForwardInHistory();
 }
 
 void UIFileManagerTable::sltGoBackward()
 {
+    if (m_pNavigationWidget)
+        m_pNavigationWidget->goBackwardInHistory();
 }
 
 void UIFileManagerTable::sltRefresh()

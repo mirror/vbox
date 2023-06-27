@@ -279,6 +279,20 @@ int UIFileTableNavigationWidget::currentHistoryIndex() const
     return m_pHistoryComboBox->currentIndex();
 }
 
+void UIFileTableNavigationWidget::goForwardInHistory()
+{
+    if (!m_pHistoryComboBox || m_pHistoryComboBox->currentIndex() >= m_pHistoryComboBox->count() - 1)
+        return;
+    m_pHistoryComboBox->setCurrentIndex(m_pHistoryComboBox->currentIndex() + 1);
+}
+
+void UIFileTableNavigationWidget::goBackwardInHistory()
+{
+    if (!m_pHistoryComboBox || m_pHistoryComboBox->currentIndex() <= 0)
+        return;
+    m_pHistoryComboBox->setCurrentIndex(m_pHistoryComboBox->currentIndex() - 1);
+}
+
 void UIFileTableNavigationWidget::prepare()
 {
     QHBoxLayout *pLayout = new QHBoxLayout;

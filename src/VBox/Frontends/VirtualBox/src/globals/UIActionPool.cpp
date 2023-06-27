@@ -1892,8 +1892,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuFileManagerGoForward(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/file_manager_go_home_24px.png", ":/file_manager_go_home_16px.png",
-                         ":/file_manager_go_home_disabled_24px.png", ":/file_manager_go_home_disabled_16px.png")
+                         ":/file_manager_go_forward_24px.png", ":/file_manager_go_forward_16px.png",
+                         ":/file_manager_go_forward_disabled_24px.png", ":/file_manager_go_forward_disabled_16px.png")
     {}
 
 protected:
@@ -1931,8 +1931,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuFileManagerGoBackward(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/file_manager_go_home_24px.png", ":/file_manager_go_home_16px.png",
-                         ":/file_manager_go_home_disabled_24px.png", ":/file_manager_go_home_disabled_16px.png")
+                         ":/file_manager_go_backward_24px.png", ":/file_manager_go_backward_16px.png",
+                         ":/file_manager_go_backward_disabled_24px.png", ":/file_manager_go_backward_disabled_16px.png")
     {}
 
 protected:

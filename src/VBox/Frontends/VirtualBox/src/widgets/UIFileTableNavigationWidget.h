@@ -61,6 +61,8 @@ public:
     void setPathSeparator(const QChar &separator);
     int historyItemCount() const;
     int currentHistoryIndex() const;
+    void goForwardInHistory();
+    void goBackwardInHistory();
 
 protected:
 

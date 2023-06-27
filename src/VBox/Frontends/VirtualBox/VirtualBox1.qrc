@@ -288,6 +288,14 @@
         <file alias="file_manager_file_symlink_16px.png">images/file_manager_file_symlink_16px.png</file>
         <file alias="file_manager_folder_16px.png">images/file_manager_folder_16px.png</file>
         <file alias="file_manager_folder_symlink_16px.png">images/file_manager_folder_symlink_16px.png</file>
+        <file alias="file_manager_go_backward_16px.png">images/file_manager_go_backward_16px.png</file>
+        <file alias="file_manager_go_backward_24px.png">images/file_manager_go_backward_24px.png</file>
+        <file alias="file_manager_go_backward_disabled_16px.png">images/file_manager_go_backward_disabled_16px.png</file>
+        <file alias="file_manager_go_backward_disabled_24px.png">images/file_manager_go_backward_disabled_24px.png</file>
+        <file alias="file_manager_go_forward_16px.png">images/file_manager_go_forward_16px.png</file>
+        <file alias="file_manager_go_forward_24px.png">images/file_manager_go_forward_24px.png</file>
+        <file alias="file_manager_go_forward_disabled_16px.png">images/file_manager_go_forward_disabled_16px.png</file>
+        <file alias="file_manager_go_forward_disabled_24px.png">images/file_manager_go_forward_disabled_24px.png</file>
         <file alias="file_manager_go_home_16px.png">images/file_manager_go_home_16px.png</file>
         <file alias="file_manager_go_home_24px.png">images/file_manager_go_home_24px.png</file>
         <file alias="file_manager_go_home_disabled_16px.png">images/file_manager_go_home_disabled_16px.png</file>
@@ -501,9 +509,5 @@
         <file alias="log_viewer_delete_filter_16px.png">images/log_viewer_delete_filter_16px.png</file>
         <file alias="log_viewer_filter_16px.png">images/log_viewer_filter_16px.png</file>
         <file alias="log_viewer_filter_32px.png">images/log_viewer_filter_32px.png</file>
-        <file alias="log_viewer_filter_add_16px.png">images/log_viewer_filter_add_16px.png</file>
-        <file alias="log_viewer_filter_disabled_16px.png">images/log_viewer_filter_disabled_16px.png</file>
-        <file alias="log_viewer_filter_disabled_32px.png">images/log_viewer_filter_disabled_32px.png</file>
-        <file alias="log_viewer_find_16px.png">images/log_viewer_find_16px.png</file>
     </qresource>
 </RCC>

@@ -1147,6 +1147,8 @@ void UIFileManagerGuestTable::prepareActionConnections()
 
     manageConnection(m_fIsCurrent, m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoUp), &UIFileManagerTable::sltGoUp);
     manageConnection(m_fIsCurrent, m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoHome), &UIFileManagerTable::sltGoHome);
+    manageConnection(m_fIsCurrent, m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoBackward), &UIFileManagerTable::sltGoBackward);
+    manageConnection(m_fIsCurrent, m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoForward), &UIFileManagerTable::sltGoForward);
     manageConnection(m_fIsCurrent, m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_Refresh), &UIFileManagerTable::sltRefresh);
     manageConnection(m_fIsCurrent, m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_Delete), &UIFileManagerTable::sltDelete);
     manageConnection(m_fIsCurrent, m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_Rename), &UIFileManagerTable::sltRename);

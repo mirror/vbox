@@ -543,6 +543,10 @@ void UIFileManagerHostTable::prepareActionConnections()
             this, &UIFileManagerTable::sltGoUp);
     connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoHome), &QAction::triggered,
             this, &UIFileManagerTable::sltGoHome);
+    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoForward), &QAction::triggered,
+            this, &UIFileManagerTable::sltGoForward);
+    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoBackward), &QAction::triggered,
+            this, &UIFileManagerTable::sltGoBackward);
     connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Refresh), &QAction::triggered,
             this, &UIFileManagerTable::sltRefresh);
     connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Delete), &QAction::triggered,

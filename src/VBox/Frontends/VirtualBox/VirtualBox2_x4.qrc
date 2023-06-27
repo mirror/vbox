@@ -1,5 +1,9 @@
 <RCC>
     <qresource suffix="/">
+        <file alias="log_viewer_bookmark_16px_x4.png">images/x4/log_viewer_bookmark_16px_x4.png</file>
+        <file alias="log_viewer_bookmark_32px_x4.png">images/x4/log_viewer_bookmark_32px_x4.png</file>
+        <file alias="log_viewer_bookmark_disabled_16px_x4.png">images/x4/log_viewer_bookmark_disabled_16px_x4.png</file>
+        <file alias="log_viewer_bookmark_disabled_32px_x4.png">images/x4/log_viewer_bookmark_disabled_32px_x4.png</file>
         <file alias="log_viewer_bookmark_off_16px_x4.png">images/x4/log_viewer_bookmark_off_16px_x4.png</file>
         <file alias="log_viewer_bookmark_on_16px_x4.png">images/x4/log_viewer_bookmark_on_16px_x4.png</file>
         <file alias="log_viewer_choose_font_16px_x4.png">images/x4/log_viewer_choose_font_16px_x4.png</file>
