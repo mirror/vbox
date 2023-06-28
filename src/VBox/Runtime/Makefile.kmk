@@ -2738,7 +2738,7 @@ RuntimeBldProg_SOURCES.linux = $(filter-out \
 		r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
 		r3/memsafer-r3.cpp \
 		, $(RuntimeBaseR3_SOURCES.linux)) \
-		r3/posix/rtmempage-exec-mmap-posix.cpp
+	r3/posix/rtmempage-exec-mmap-posix.cpp
 
 ## @todo reduce linux, solaris and freebsd sources too.
 
@@ -2782,7 +2782,7 @@ RuntimeGuestR3_SOURCES.linux             = $(filter-out \
 		r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
 		r3/memsafer-r3.cpp \
 		, $(RuntimeR3_SOURCES.linux)) \
-		r3/posix/rtmempage-exec-mmap-posix.cpp
+	r3/posix/rtmempage-exec-mmap-posix.cpp
 
 
 #
