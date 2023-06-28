@@ -43,6 +43,7 @@
 #include "UIVisoContentBrowser.h"
 
 /* iprt includes: */
+#include <iprt/assert.h>
 #include <iprt/path.h>
 #include <iprt/vfs.h>
 #include <iprt/file.h>
