@@ -608,7 +608,7 @@ static int rtR0MemObjLinuxVMap(PRTR0MEMOBJLNX pMemLnx, bool fExecutable)
         /*
          * Use vmap - 2.4.22 and later.
          */
-#if RTLNX_VER_MIN(2,4,22)
+#if RTLNX_VER_MIN(2,4,22) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
         pgprot_t fPg;
         pgprot_val(fPg) = _PAGE_PRESENT | _PAGE_RW;
 # ifdef _PAGE_NX
@@ -977,13 +977,13 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     PRTR0MEMOBJLNX pMemLnx;
     int rc;
 
-#if (defined(RT_ARCH_AMD64) || defined(CONFIG_X86_PAE)) && defined(GFP_DMA32)
+#if (defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64) || defined(CONFIG_X86_PAE)) && defined(GFP_DMA32)
     /* ZONE_DMA32: 0-4GB */
     rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, PAGE_SIZE, GFP_DMA32,
                                    true /* contiguous */, fExecutable, VERR_NO_CONT_MEMORY, pszTag);
     if (RT_FAILURE(rc))
 #endif
-#ifdef RT_ARCH_AMD64
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64)
         /* ZONE_DMA: 0-16MB */
         rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, PAGE_SIZE, GFP_DMA,
                                        true /* contiguous */, fExecutable, VERR_NO_CONT_MEMORY, pszTag);
@@ -1144,6 +1144,7 @@ static int rtR0MemObjLinuxAllocPhysSub(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJTYP
  */
 RTDECL(struct page *) rtR0MemObjLinuxVirtToPage(void *pv)
 {
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     unsigned long   ulAddr = (unsigned long)pv;
     unsigned long   pfn;
     struct page    *pPage;
@@ -1151,12 +1152,12 @@ RTDECL(struct page *) rtR0MemObjLinuxVirtToPage(void *pv)
     union
     {
         pgd_t       Global;
-#if RTLNX_VER_MIN(4,12,0)
+# if RTLNX_VER_MIN(4,12,0)
         p4d_t       Four;
-#endif
-#if RTLNX_VER_MIN(2,6,11)
+# endif
+# if RTLNX_VER_MIN(2,6,11)
         pud_t       Upper;
-#endif
+# endif
         pmd_t       Middle;
         pte_t       Entry;
     } u;
@@ -1169,8 +1170,8 @@ RTDECL(struct page *) rtR0MemObjLinuxVirtToPage(void *pv)
     u.Global = *pgd_offset(current->active_mm, ulAddr);
     if (RT_UNLIKELY(pgd_none(u.Global)))
         return NULL;
-#if RTLNX_VER_MIN(2,6,11)
-# if RTLNX_VER_MIN(4,12,0)
+# if RTLNX_VER_MIN(2,6,11)
+#  if RTLNX_VER_MIN(4,12,0)
     u.Four  = *p4d_offset(&u.Global, ulAddr);
     if (RT_UNLIKELY(p4d_none(u.Four)))
         return NULL;
@@ -1184,12 +1185,12 @@ RTDECL(struct page *) rtR0MemObjLinuxVirtToPage(void *pv)
         return pfn_to_page(pfn);
     }
     u.Upper = *pud_offset(&u.Four, ulAddr);
-# else /* < 4.12 */
+#  else /* < 4.12 */
     u.Upper = *pud_offset(&u.Global, ulAddr);
-# endif /* < 4.12 */
+#  endif /* < 4.12 */
     if (RT_UNLIKELY(pud_none(u.Upper)))
         return NULL;
-# if RTLNX_VER_MIN(2,6,25)
+#  if RTLNX_VER_MIN(2,6,25)
     if (pud_large(u.Upper))
     {
         pPage = pud_page(u.Upper);
@@ -1198,14 +1199,14 @@ RTDECL(struct page *) rtR0MemObjLinuxVirtToPage(void *pv)
         pfn += (ulAddr >> PAGE_SHIFT) & ((UINT32_C(1) << (PUD_SHIFT - PAGE_SHIFT)) - 1);
         return pfn_to_page(pfn);
     }
-# endif
+#  endif
     u.Middle = *pmd_offset(&u.Upper, ulAddr);
-#else  /* < 2.6.11 */
+# else  /* < 2.6.11 */
     u.Middle = *pmd_offset(&u.Global, ulAddr);
-#endif /* < 2.6.11 */
+# endif /* < 2.6.11 */
     if (RT_UNLIKELY(pmd_none(u.Middle)))
         return NULL;
-#if RTLNX_VER_MIN(2,6,0)
+# if RTLNX_VER_MIN(2,6,0)
     if (pmd_large(u.Middle))
     {
         pPage = pmd_page(u.Middle);
@@ -1214,23 +1215,26 @@ RTDECL(struct page *) rtR0MemObjLinuxVirtToPage(void *pv)
         pfn += (ulAddr >> PAGE_SHIFT) & ((UINT32_C(1) << (PMD_SHIFT - PAGE_SHIFT)) - 1);
         return pfn_to_page(pfn);
     }
-#endif
+# endif
 
-#if RTLNX_VER_MIN(2,5,5) || defined(pte_offset_map) /* As usual, RHEL 3 had pte_offset_map earlier. */
+# if RTLNX_VER_MIN(2,5,5) || defined(pte_offset_map) /* As usual, RHEL 3 had pte_offset_map earlier. */
     pEntry = pte_offset_map(&u.Middle, ulAddr);
-#else
+# else
     pEntry = pte_offset(&u.Middle, ulAddr);
-#endif
+# endif
     if (RT_UNLIKELY(!pEntry))
         return NULL;
     u.Entry = *pEntry;
-#if RTLNX_VER_MIN(2,5,5) || defined(pte_offset_map)
+# if RTLNX_VER_MIN(2,5,5) || defined(pte_offset_map)
     pte_unmap(pEntry);
-#endif
+# endif
 
     if (RT_UNLIKELY(!pte_present(u.Entry)))
         return NULL;
     return pte_page(u.Entry);
+#else /* !defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86) */
+    return virt_to_page(pv);
+#endif
 }
 RT_EXPORT_SYMBOL(rtR0MemObjLinuxVirtToPage);
 
