@@ -52,7 +52,10 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
+/* Not available on linux.arm64 due to unknown page size in userspace. */
+#if !defined(RT_ARCH_ARM64) && !defined(RT_OS_LINUX)
 extern RTDATADECL(uint8_t const)   g_abRTZeroPage[PAGE_SIZE];
+#endif
 extern RTDATADECL(uint8_t const)   g_abRTZero4K[_4K];
 extern RTDATADECL(uint8_t const)   g_abRTZero8K[_8K];
 extern RTDATADECL(uint8_t const)   g_abRTZero16K[_16K];

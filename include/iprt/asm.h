@@ -5566,7 +5566,7 @@ DECLINLINE(uint32_t) ASMAtomicUoDecU32(uint32_t volatile RT_FAR *pu32) RT_NOTHRO
 # endif
 #else
 # define RT_ASM_PAGE_SIZE   0x1000
-# if defined(PAGE_SIZE) && !defined(NT_INCLUDED)
+# if defined(PAGE_SIZE) && !defined(NT_INCLUDED) && !defined(RT_OS_LINUX) && !defined(RT_ARCH_ARM64)
 #  if PAGE_SIZE != 0x1000
 #   error "PAGE_SIZE is not 0x1000!"
 #  endif
