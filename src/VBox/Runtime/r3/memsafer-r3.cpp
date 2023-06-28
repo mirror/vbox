@@ -51,6 +51,7 @@
 #include <iprt/rand.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
+#include <iprt/system.h>
 #ifdef IN_SUP_R3
 # include <VBox/sup.h>
 #endif
@@ -269,13 +270,14 @@ RT_EXPORT_SYMBOL(RTMemSaferUnscramble);
  */
 static void rtMemSaferInitializePages(PRTMEMSAFERNODE pThis, void *pvPages)
 {
-    RTRandBytes(pvPages, PAGE_SIZE + pThis->offUser);
+    uint32_t const cbPage = RTSystemGetPageSize();
+    RTRandBytes(pvPages, cbPage + pThis->offUser);
 
-    uint8_t *pbUser = (uint8_t *)pvPages + PAGE_SIZE + pThis->offUser;
+    uint8_t *pbUser = (uint8_t *)pvPages + cbPage + pThis->offUser;
     pThis->Core.Key = pbUser;
     RT_BZERO(pbUser, pThis->cbUser); /* paranoia */
 
-    RTRandBytes(pbUser + pThis->cbUser, (size_t)pThis->cPages * PAGE_SIZE - PAGE_SIZE - pThis->offUser - pThis->cbUser);
+    RTRandBytes(pbUser + pThis->cbUser, (size_t)pThis->cPages * cbPage - cbPage - pThis->offUser - pThis->cbUser);
 }
 
 
@@ -311,13 +313,14 @@ static int rtMemSaferSupR3AllocPages(PRTMEMSAFERNODE pThis)
          * Configure the guard pages.
          * SUPR3PageProtect isn't supported on all hosts, we ignore that.
          */
-        rc = SUPR3PageProtect(pvPages, NIL_RTR0PTR, 0, PAGE_SIZE, RTMEM_PROT_NONE);
+        uint32_t const cbPage = RTSystemGetPageSize();
+        rc = SUPR3PageProtect(pvPages, NIL_RTR0PTR, 0, cbPage, RTMEM_PROT_NONE);
         if (RT_SUCCESS(rc))
         {
-            rc = SUPR3PageProtect(pvPages, NIL_RTR0PTR, (pThis->cPages - 1) * PAGE_SIZE, PAGE_SIZE, RTMEM_PROT_NONE);
+            rc = SUPR3PageProtect(pvPages, NIL_RTR0PTR, (pThis->cPages - 1) * cbPage, cbPage, RTMEM_PROT_NONE);
             if (RT_SUCCESS(rc))
                 return VINF_SUCCESS;
-            SUPR3PageProtect(pvPages, NIL_RTR0PTR, 0, PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+            SUPR3PageProtect(pvPages, NIL_RTR0PTR, 0, cbPage, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
         }
         else if (rc == VERR_NOT_SUPPORTED)
             return VINF_SUCCESS;
@@ -347,8 +350,9 @@ static int rtMemSaferMemAllocPages(PRTMEMSAFERNODE pThis)
     /*
      * Try allocate the memory.
      */
+    uint32_t const cbPage = RTSystemGetPageSize();
     int rc = VINF_SUCCESS;
-    void *pvPages = RTMemPageAllocEx((size_t)pThis->cPages * PAGE_SIZE,
+    void *pvPages = RTMemPageAllocEx((size_t)pThis->cPages * cbPage,
                                      RTMEMPAGEALLOC_F_ADVISE_LOCKED | RTMEMPAGEALLOC_F_ADVISE_NO_DUMP | RTMEMPAGEALLOC_F_ZERO);
     if (pvPages)
     {
@@ -357,17 +361,17 @@ static int rtMemSaferMemAllocPages(PRTMEMSAFERNODE pThis)
         /*
          * Configure the guard pages.
          */
-        rc = RTMemProtect(pvPages, PAGE_SIZE, RTMEM_PROT_NONE);
+        rc = RTMemProtect(pvPages, cbPage, RTMEM_PROT_NONE);
         if (RT_SUCCESS(rc))
         {
-            rc = RTMemProtect((uint8_t *)pvPages + (size_t)(pThis->cPages - 1U) * PAGE_SIZE, PAGE_SIZE, RTMEM_PROT_NONE);
+            rc = RTMemProtect((uint8_t *)pvPages + (size_t)(pThis->cPages - 1U) * cbPage, cbPage, RTMEM_PROT_NONE);
             if (RT_SUCCESS(rc))
                 return VINF_SUCCESS;
-            rc = RTMemProtect(pvPages, PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+            rc = RTMemProtect(pvPages, cbPage, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
         }
 
         /* failed. */
-        RTMemPageFree(pvPages, (size_t)pThis->cPages * PAGE_SIZE);
+        RTMemPageFree(pvPages, (size_t)pThis->cPages * cbPage);
     }
     else
         rc = VERR_NO_PAGE_MEMORY;
@@ -386,7 +390,8 @@ RTDECL(int) RTMemSaferAllocZExTag(void **ppvNew, size_t cb, uint32_t fFlags, con
     AssertPtrReturn(ppvNew, VERR_INVALID_PARAMETER);
     *ppvNew = NULL;
     AssertReturn(cb, VERR_INVALID_PARAMETER);
-    AssertReturn(cb <= 32U*_1M - PAGE_SIZE * 3U, VERR_ALLOCATION_TOO_BIG); /* Max 32 MB minus padding and guard pages. */
+    uint32_t const cbPage = RTSystemGetPageSize();
+    AssertReturn(cb <= 32U*_1M - cbPage * 3U, VERR_ALLOCATION_TOO_BIG); /* Max 32 MB minus padding and guard pages. */
     AssertReturn(!(fFlags & ~RTMEMSAFER_F_VALID_MASK), VERR_INVALID_FLAGS);
 
     /*
@@ -405,12 +410,12 @@ RTDECL(int) RTMemSaferAllocZExTag(void **ppvNew, size_t cb, uint32_t fFlags, con
              * Prepare the allocation.
              */
             pThis->cbUser  = cb;
-            pThis->offUser = (RTRandU32Ex(0, 128) * RTMEMSAFER_ALIGN) & PAGE_OFFSET_MASK;
+            pThis->offUser = (RTRandU32Ex(0, 128) * RTMEMSAFER_ALIGN) & RTSystemGetPageOffsetMask();
 
             size_t cbNeeded = pThis->offUser + pThis->cbUser;
-            cbNeeded = RT_ALIGN_Z(cbNeeded, PAGE_SIZE);
+            cbNeeded = RT_ALIGN_Z(cbNeeded, cbPage);
 
-            pThis->cPages = (uint32_t)(cbNeeded / PAGE_SIZE) + 2; /* +2 for guard pages */
+            pThis->cPages = (uint32_t)(cbNeeded / cbPage) + 2; /* +2 for guard pages */
 
             /*
              * Try allocate the memory, using the best allocator by default and
@@ -464,20 +469,21 @@ RTDECL(void) RTMemSaferFree(void *pv, size_t cb) RT_NO_THROW_DEF
         /*
          * Free the pages.
          */
-        uint8_t *pbPages = (uint8_t *)pv - pThis->offUser - PAGE_SIZE;
-        size_t   cbPages = (size_t)pThis->cPages * PAGE_SIZE;
+        uint32_t const cbPage = RTSystemGetPageSize();
+        uint8_t *pbPages = (uint8_t *)pv - pThis->offUser - cbPage;
+        size_t   cbPages = (size_t)pThis->cPages * cbPage;
         switch (pThis->enmAllocator)
         {
 #ifdef IN_SUP_R3
             case RTMEMSAFERALLOCATOR_SUPR3:
-                SUPR3PageProtect(pbPages, NIL_RTR0PTR, 0, PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
-                SUPR3PageProtect(pbPages, NIL_RTR0PTR, (uint32_t)(cbPages - PAGE_SIZE), PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+                SUPR3PageProtect(pbPages, NIL_RTR0PTR, 0, cbPage, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+                SUPR3PageProtect(pbPages, NIL_RTR0PTR, (uint32_t)(cbPages - cbPage), cbPage, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
                 SUPR3PageFreeEx(pbPages, pThis->cPages);
                 break;
 #endif
             case RTMEMSAFERALLOCATOR_RTMEMPAGE:
-                RTMemProtect(pbPages, PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
-                RTMemProtect(pbPages + cbPages - PAGE_SIZE, PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+                RTMemProtect(pbPages, cbPage, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+                RTMemProtect(pbPages + cbPages - cbPage, cbPage, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
                 RTMemPageFree(pbPages, cbPages);
                 break;
 
@@ -551,7 +557,7 @@ RTDECL(int) RTMemSaferReallocZExTag(size_t cbOld, void *pvOld, size_t cbNew, voi
                 /*
                  * Is the enough room for us to grow?
                  */
-                size_t cbMax = (size_t)(pThis->cPages - 2) * PAGE_SIZE;
+                size_t cbMax = (size_t)(pThis->cPages - 2) * RTSystemGetPageSize();
                 if (cbNew <= cbMax)
                 {
                     size_t const cbAdded = (cbNew - cbOld);
@@ -594,7 +600,7 @@ RTDECL(int) RTMemSaferReallocZExTag(size_t cbOld, void *pvOld, size_t cbNew, voi
 
                         rtMemSaferNodeInsert(pThis);
                     }
-                    Assert(((uintptr_t)*ppvNew & PAGE_OFFSET_MASK) == pThis->offUser);
+                    Assert(((uintptr_t)*ppvNew & RTSystemGetPageOffsetMask()) == pThis->offUser);
                     pThis->cbUser = cbNew;
                     rc = VINF_SUCCESS;
                 }
