@@ -162,6 +162,14 @@ enum UIActionIndex
     UIActionIndex_M_VISOCreator_Reset,
     UIActionIndex_M_VISOCreator_Open,
     UIActionIndex_M_VISOCreator_ImportISO,
+    UIActionIndex_M_VISOCreator_VisoContent_GoHome,
+    UIActionIndex_M_VISOCreator_VisoContent_GoUp,
+    UIActionIndex_M_VISOCreator_VisoContent_GoForward,
+    UIActionIndex_M_VISOCreator_VisoContent_GoBackward,
+    UIActionIndex_M_VISOCreator_Host_GoHome,
+    UIActionIndex_M_VISOCreator_Host_GoUp,
+    UIActionIndex_M_VISOCreator_Host_GoForward,
+    UIActionIndex_M_VISOCreator_Host_GoBackward,
 
     /* Medium selector actions : */
     UIActionIndex_M_MediumSelector,

@@ -2649,6 +2649,162 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'Perform GoUp' in VISO creator action class. */
+class UIActionMenuVISOCreatorGoUp : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuVISOCreatorGoUp(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/file_manager_go_up_24px.png", ":/file_manager_go_up_16px.png",
+                         ":/file_manager_go_up_disabled_24px.png", ":/file_manager_go_up_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
+    {
+        return QString("VISOCreatorGoUp");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() RT_OVERRIDE
+    {
+        setName(QApplication::translate("UIActionPool", "Go Up"));
+        setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
+        setStatusTip(QApplication::translate("UIActionPool", "Go one level up to parent folder"));
+        setToolTip(  QApplication::translate("UIActionPool", "Go One Level Up")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+/** Simple action extension, used as 'Perform GoHome' in VISO creator action class. */
+class UIActionMenuVISOCreatorGoHome : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuVISOCreatorGoHome(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/file_manager_go_home_24px.png", ":/file_manager_go_home_16px.png",
+                         ":/file_manager_go_home_disabled_24px.png", ":/file_manager_go_home_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
+    {
+        return QString("VISOCreatorGoHome");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() RT_OVERRIDE
+    {
+        setName(QApplication::translate("UIActionPool", "Go Home"));
+        setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
+        setStatusTip(QApplication::translate("UIActionPool", "Go to home folder"));
+        setToolTip(  QApplication::translate("UIActionPool", "Go to Home Folder")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+/** Simple action extension, used as 'Perform GoForward' in VISO creator action class. */
+class UIActionMenuVISOCreatorGoForward : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuVISOCreatorGoForward(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/file_manager_go_forward_24px.png", ":/file_manager_go_forward_16px.png",
+                         ":/file_manager_go_forward_disabled_24px.png", ":/file_manager_go_forward_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
+    {
+        return QString("VISOCreatorGoForward");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() RT_OVERRIDE
+    {
+        setName(QApplication::translate("UIActionPool", "Go Forward"));
+        setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
+        setStatusTip(QApplication::translate("UIActionPool", "Go forward"));
+        setToolTip(  QApplication::translate("UIActionPool", "Go Forward")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+/** Simple action extension, used as 'Perform GoBackward' in VISO creator action class. */
+class UIActionMenuVISOCreatorGoBackward : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuVISOCreatorGoBackward(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/file_manager_go_backward_24px.png", ":/file_manager_go_backward_16px.png",
+                         ":/file_manager_go_backward_disabled_24px.png", ":/file_manager_go_backward_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
+    {
+        return QString("VISOCreatorGoBackward");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() RT_OVERRIDE
+    {
+        setName(QApplication::translate("UIActionPool", "Go Backward"));
+        setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
+        setStatusTip(QApplication::translate("UIActionPool", "Go forward"));
+        setToolTip(  QApplication::translate("UIActionPool", "Go Backward")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
 /** Menu action extension, used as 'Menu Selector' menu class. */
 class UIActionMenuMediumSelector : public UIActionMenu
 {
@@ -3308,6 +3464,16 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_VISOCreator_Reset] = new UIActionMenuVISOCreatorReset(this);
     m_pool[UIActionIndex_M_VISOCreator_Open] = new UIActionMenuVISOCreatorOpen(this);
     m_pool[UIActionIndex_M_VISOCreator_ImportISO] = new UIActionMenuVISOCreatorImportISO(this);
+
+    m_pool[UIActionIndex_M_VISOCreator_VisoContent_GoHome] = new UIActionMenuVISOCreatorGoHome(this);
+    m_pool[UIActionIndex_M_VISOCreator_VisoContent_GoUp] = new UIActionMenuVISOCreatorGoUp(this);
+    m_pool[UIActionIndex_M_VISOCreator_VisoContent_GoForward] = new UIActionMenuVISOCreatorGoForward(this);
+    m_pool[UIActionIndex_M_VISOCreator_VisoContent_GoBackward] = new UIActionMenuVISOCreatorGoBackward(this);
+    m_pool[UIActionIndex_M_VISOCreator_Host_GoHome] = new UIActionMenuVISOCreatorGoHome(this);
+    m_pool[UIActionIndex_M_VISOCreator_Host_GoUp] = new UIActionMenuVISOCreatorGoUp(this);
+    m_pool[UIActionIndex_M_VISOCreator_Host_GoForward] = new UIActionMenuVISOCreatorGoForward(this);
+    m_pool[UIActionIndex_M_VISOCreator_Host_GoBackward] = new UIActionMenuVISOCreatorGoBackward(this);
+
 
     /* Medium Selector actions: */
     m_pool[UIActionIndex_M_MediumSelector] = new UIActionMenuMediumSelector(this);

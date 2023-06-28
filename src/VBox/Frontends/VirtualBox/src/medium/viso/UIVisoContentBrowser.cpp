@@ -235,6 +235,10 @@ UIVisoContentBrowser::UIVisoContentBrowser(UIActionPool *pActionPool, QWidget *p
     , m_pCreateNewDirectoryAction(0)
     , m_pRenameAction(0)
     , m_pResetAction(0)
+    , m_pGoHome(0)
+    , m_pGoUp(0)
+    , m_pGoForward(0)
+    , m_pGoBackward(0)
 {
     prepareObjects();
     prepareToolBar();
@@ -560,16 +564,31 @@ void UIVisoContentBrowser::prepareToolBar()
     m_pCreateNewDirectoryAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_CreateNewDirectory);
     m_pRenameAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Rename);
     m_pResetAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Reset);
+    m_pGoHome = m_pActionPool->action(UIActionIndex_M_VISOCreator_VisoContent_GoHome);
+    m_pGoUp = m_pActionPool->action(UIActionIndex_M_VISOCreator_VisoContent_GoUp);
+    m_pGoForward = m_pActionPool->action(UIActionIndex_M_VISOCreator_VisoContent_GoForward);
+    m_pGoBackward = m_pActionPool->action(UIActionIndex_M_VISOCreator_VisoContent_GoBackward);
+
     AssertReturnVoid(m_pRemoveAction);
     AssertReturnVoid(m_pCreateNewDirectoryAction);
     AssertReturnVoid(m_pRenameAction);
     AssertReturnVoid(m_pResetAction);
     AssertReturnVoid(m_pToolBar);
+    AssertReturnVoid(m_pGoHome);
+    AssertReturnVoid(m_pGoUp);
+    AssertReturnVoid(m_pGoForward);
+    AssertReturnVoid(m_pGoBackward);
 
     m_pRemoveAction->setEnabled(tableViewHasSelection());
     m_pRenameAction->setEnabled(tableViewHasSelection());
 
+    m_pToolBar->addAction(m_pGoBackward);
+    m_pToolBar->addAction(m_pGoForward);
+    m_pToolBar->addAction(m_pGoUp);
+    m_pToolBar->addAction(m_pGoHome);
+    m_pToolBar->addSeparator();
     m_pToolBar->addAction(m_pRemoveAction);
+
     m_pToolBar->addAction(m_pCreateNewDirectoryAction);
     m_pToolBar->addAction(m_pRenameAction);
     m_pToolBar->addAction(m_pResetAction);

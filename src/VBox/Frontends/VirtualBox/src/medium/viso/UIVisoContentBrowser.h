@@ -141,7 +141,10 @@ private:
     QAction                      *m_pCreateNewDirectoryAction;
     QAction                      *m_pRenameAction;
     QAction                      *m_pResetAction;
-
+    QAction                      *m_pGoHome;
+    QAction                      *m_pGoUp;
+    QAction                      *m_pGoForward;
+    QAction                      *m_pGoBackward;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_viso_UIVisoContentBrowser_h */
