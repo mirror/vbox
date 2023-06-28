@@ -251,12 +251,12 @@ void UIFileManagerHostTable::createFileViewContextMenu(const QWidget *pWidget, c
 
 void UIFileManagerHostTable::toggleForwardBackwardActions()
 {
-    int iCount = m_pNavigationWidget->historyItemCount();
-    int iCurrent = m_pNavigationWidget->currentHistoryIndex();
+    if (!m_pNavigationWidget)
+        return;
     if (m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoForward))
-        m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoForward)->setEnabled(iCurrent < iCount - 1);
+        m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoForward)->setEnabled(m_pNavigationWidget->canGoForward());
     if (m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoBackward))
-        m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoBackward)->setEnabled(iCurrent > 0);
+        m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoBackward)->setEnabled(m_pNavigationWidget->canGoBackward());
 }
 
 void UIFileManagerHostTable::readDirectory(const QString& strPath, UICustomFileSystemItem *parent, bool isStartDir /*= false*/)

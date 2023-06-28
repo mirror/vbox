@@ -59,8 +59,8 @@ public:
     void setPath(const QString &strLocation);
     void reset();
     void setPathSeparator(const QChar &separator);
-    int historyItemCount() const;
-    int currentHistoryIndex() const;
+    bool canGoForward() const;
+    bool canGoBackward() const;
     void goForwardInHistory();
     void goBackwardInHistory();
 
