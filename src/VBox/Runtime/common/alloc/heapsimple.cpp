@@ -296,7 +296,7 @@ RTDECL(int) RTHeapSimpleInit(PRTHEAPSIMPLE phHeap, void *pvMemory, size_t cbMemo
     /*
      * Validate input. The imposed minimum heap size is just a convenient value.
      */
-    AssertReturn(cbMemory >= PAGE_SIZE, VERR_INVALID_PARAMETER);
+    AssertReturn(cbMemory >= _4K, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pvMemory, VERR_INVALID_POINTER);
     AssertReturn((uintptr_t)pvMemory + (cbMemory - 1) > (uintptr_t)cbMemory, VERR_INVALID_PARAMETER);
 

@@ -48,6 +48,7 @@
 #include <iprt/param.h>
 #include <iprt/string.h>
 #include <iprt/asm.h>
+#include <iprt/system.h>
 #include "internal/magics.h"
 #include "handletable.h"
 
@@ -109,7 +110,7 @@ RTDECL(int)     RTHandleTableAlloc(RTHANDLETABLE hHandleTable, void *pvObj, uint
              */
             uint32_t const iLevel1 = pThis->cCur / RTHT_LEVEL2_ENTRIES;
             uint32_t cLevel1 = iLevel1 >= pThis->cLevel1
-                             ? pThis->cLevel1 + PAGE_SIZE / sizeof(void *)
+                             ? pThis->cLevel1 + RTSystemGetPageSize() / sizeof(void *)
                              : 0;
             if (cLevel1 > pThis->cMax / RTHT_LEVEL2_ENTRIES)
                 cLevel1 = pThis->cMax / RTHT_LEVEL2_ENTRIES;
