@@ -33,6 +33,7 @@
 #include <QTreeView>
 
 /* GUI includes: */
+#include "QIToolBar.h"
 #include "QIToolButton.h"
 #include "UIFileTableNavigationWidget.h"
 #include "UIIconPool.h"
@@ -48,7 +49,9 @@
 UIVisoBrowserBase::UIVisoBrowserBase(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pMainLayout(0)
+    , m_pToolBar(0)
     , m_pNavigationWidget(0)
+    , m_pFileTableLabel(0)
 {
 }
 
@@ -65,18 +68,21 @@ void UIVisoBrowserBase::prepareObjects()
     QHBoxLayout *pTopLayout = new QHBoxLayout;
     AssertPtrReturnVoid(pTopLayout);
 
-
+    m_pToolBar = new QIToolBar;
     m_pNavigationWidget = new UIFileTableNavigationWidget;
     m_pFileTableLabel = new QLabel;
 
+    AssertReturnVoid(m_pToolBar);
     AssertReturnVoid(m_pNavigationWidget);
     AssertReturnVoid(m_pFileTableLabel);
 
     pTopLayout->addWidget(m_pFileTableLabel);
     pTopLayout->addWidget(m_pNavigationWidget);
-    m_pMainLayout->addLayout(pTopLayout, 0, 0, 1, 4);
 
-    m_pMainLayout->setRowStretch(1, 2);
+    m_pMainLayout->addWidget(m_pToolBar, 0, 0, 1, 4);
+    m_pMainLayout->addLayout(pTopLayout, 1, 0, 1, 4);
+
+    m_pMainLayout->setRowStretch(2, 2);
 }
 
 void UIVisoBrowserBase::prepareConnections()

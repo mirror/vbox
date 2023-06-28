@@ -42,9 +42,10 @@
 class QItemSelection;
 class QGridLayout;
 class QLabel;
+class QIToolBar;
 class UIFileTableNavigationWidget;
 
-/** An abstract QWidget extension hosting and table view. */
+/** An abstract QWidget extension hosting a toolbar, a navigation widget, and table view. */
 class UIVisoBrowserBase : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -80,6 +81,7 @@ protected:
     void setFileTableLabelText(const QString &strText);
 
     QGridLayout        *m_pMainLayout;
+    QIToolBar          *m_pToolBar;
 
 protected slots:
 

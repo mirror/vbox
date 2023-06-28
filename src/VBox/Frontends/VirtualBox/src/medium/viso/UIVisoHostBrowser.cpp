@@ -182,7 +182,7 @@ void UIVisoHostBrowser::prepareObjects()
     if (m_pTableView)
     {
         m_pTableView->setContextMenuPolicy(Qt::CustomContextMenu);
-        m_pMainLayout->addWidget(m_pTableView, 1, 0, 8, 4);
+        m_pMainLayout->addWidget(m_pTableView, 2, 0, 8, 4);
         m_pTableView->setShowGrid(false);
         m_pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
         m_pTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
