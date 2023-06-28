@@ -35,6 +35,7 @@
 /* GUI includes: */
 #include "QIToolBar.h"
 #include "QIToolButton.h"
+#include "UIActionPool.h"
 #include "UIFileTableNavigationWidget.h"
 #include "UIIconPool.h"
 #include "UIVisoBrowserBase.h"
@@ -42,14 +43,12 @@
 /* Other VBox includes: */
 #include <iprt/assert.h>
 
-/*********************************************************************************************************************************
-*   UIVisoBrowserBase implementation.                                                                                   *
-*********************************************************************************************************************************/
 
-UIVisoBrowserBase::UIVisoBrowserBase(QWidget *pParent /* = 0 */)
+UIVisoBrowserBase::UIVisoBrowserBase(UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pMainLayout(0)
     , m_pToolBar(0)
+    , m_pActionPool(pActionPool)
     , m_pNavigationWidget(0)
     , m_pFileTableLabel(0)
 {
@@ -107,14 +106,6 @@ bool UIVisoBrowserBase::eventFilter(QObject *pObj, QEvent *pEvent)
 void UIVisoBrowserBase::keyPressEvent(QKeyEvent *pEvent)
 {
     QIWithRetranslateUI<QWidget>::keyPressEvent(pEvent);
-}
-
-void UIVisoBrowserBase::sltFileTableViewContextMenu(const QPoint &point)
-{
-    QWidget *pSender = qobject_cast<QWidget*>(sender());
-    if (!pSender)
-        return;
-    emit sigCreateFileTableViewContextMenu(pSender, point);
 }
 
 void UIVisoBrowserBase::sltTableViewItemDoubleClick(const QModelIndex &index)

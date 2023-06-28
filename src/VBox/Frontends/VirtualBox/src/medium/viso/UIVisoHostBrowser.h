@@ -51,7 +51,7 @@ signals:
 
 public:
 
-    UIVisoHostBrowser(QWidget *pParent = 0);
+    UIVisoHostBrowser(UIActionPool *pActionPool, QWidget *pParent = 0);
     ~UIVisoHostBrowser();
     virtual void showHideHiddenObjects(bool bShow) final override;
     QString      currentPath() const;
@@ -74,6 +74,7 @@ protected:
 private slots:
 
     void sltTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
+    void sltShowContextMenu(const QPoint &point);
 
 private:
 

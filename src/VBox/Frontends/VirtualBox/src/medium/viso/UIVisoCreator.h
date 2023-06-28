@@ -115,7 +115,6 @@ private slots:
     void sltBrowserTreeViewVisibilityChanged(bool fVisible);
     void sltHostBrowserTableSelectionChanged(QStringList pathList);
     void sltContentBrowserTableSelectionChanged(bool fIsSelectionEmpty);
-    void sltShowContextMenu(const QWidget *pContextMenuRequester, const QPoint &point);
     void sltOpenAction();
     void sltISOImportAction();
 
@@ -140,10 +139,6 @@ private:
     /** @name These actions are addded to vertical toolbar, context menus, and the main menu.
       * @{ */
         QAction              *m_pAddAction;
-        QAction              *m_pRemoveAction;
-        QAction              *m_pCreateNewDirectoryAction;
-        QAction              *m_pRenameAction;
-        QAction              *m_pResetAction;
         QAction              *m_pOpenAction;
         QAction              *m_pImportISOAction;
     /** @} */

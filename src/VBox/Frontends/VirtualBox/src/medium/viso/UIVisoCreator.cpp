@@ -258,10 +258,6 @@ UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pPa
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pActionSettings(0)
     , m_pAddAction(0)
-    , m_pRemoveAction(0)
-    , m_pCreateNewDirectoryAction(0)
-    , m_pRenameAction(0)
-    , m_pResetAction(0)
     , m_pOpenAction(0)
     , m_pImportISOAction(0)
     , m_pMainLayout(0)
@@ -397,31 +393,7 @@ void UIVisoCreatorWidget::sltHostBrowserTableSelectionChanged(QStringList pathLi
 
 void UIVisoCreatorWidget::sltContentBrowserTableSelectionChanged(bool fIsSelectionEmpty)
 {
-    if (m_pRemoveAction)
-        m_pRemoveAction->setEnabled(!fIsSelectionEmpty);
-    if (m_pRenameAction)
-        m_pRenameAction->setEnabled(!fIsSelectionEmpty);
-}
-
-void UIVisoCreatorWidget::sltShowContextMenu(const QWidget *pContextMenuRequester, const QPoint &point)
-{
-    if (!pContextMenuRequester)
-        return;
-
-    QMenu menu;
-
-    if (sender() == m_pHostBrowser)
-    {
-        menu.addAction(m_pAddAction);
-    }
-    else if (sender() == m_pVISOContentBrowser)
-    {
-        menu.addAction(m_pRemoveAction);
-        menu.addAction(m_pCreateNewDirectoryAction);
-        menu.addAction(m_pResetAction);
-    }
-
-    menu.exec(pContextMenuRequester->mapToGlobal(point));
+    Q_UNUSED(fIsSelectionEmpty);
 }
 
 void UIVisoCreatorWidget::sltOpenAction()
@@ -484,7 +456,7 @@ void UIVisoCreatorWidget::prepareWidgets()
     AssertPtrReturnVoid(pContainerLayout);
     pContainerLayout->setContentsMargins(0, 0, 0, 0);
 
-    m_pHostBrowser = new UIVisoHostBrowser;
+    m_pHostBrowser = new UIVisoHostBrowser(m_pActionPool);
     AssertPtrReturnVoid(m_pHostBrowser);
     pContainerLayout->addWidget(m_pHostBrowser, 0, 0, 1, 4);
 
@@ -492,7 +464,7 @@ void UIVisoCreatorWidget::prepareWidgets()
     AssertPtrReturnVoid(m_pVerticalToolBar);
     pContainerLayout->addWidget(m_pVerticalToolBar, 0, 4, 1, 1);
 
-    m_pVISOContentBrowser = new UIVisoContentBrowser;
+    m_pVISOContentBrowser = new UIVisoContentBrowser(m_pActionPool);
     AssertPtrReturnVoid(m_pVISOContentBrowser);
     pContainerLayout->addWidget(m_pVISOContentBrowser, 0, 5, 1, 4);
     m_pVISOContentBrowser->setVisoName(m_visoOptions.m_strVisoName);
@@ -524,16 +496,12 @@ void UIVisoCreatorWidget::prepareConnections()
                 this, &UIVisoCreatorWidget::sltAddObjectsToViso);
         connect(m_pHostBrowser, &UIVisoHostBrowser::sigTableSelectionChanged,
                 this, &UIVisoCreatorWidget::sltHostBrowserTableSelectionChanged);
-        connect(m_pHostBrowser, &UIVisoHostBrowser::sigCreateFileTableViewContextMenu,
-                this, &UIVisoCreatorWidget::sltShowContextMenu);
     }
 
     if (m_pVISOContentBrowser)
     {
         connect(m_pVISOContentBrowser, &UIVisoContentBrowser::sigTableSelectionChanged,
                 this, &UIVisoCreatorWidget::sltContentBrowserTableSelectionChanged);
-        connect(m_pVISOContentBrowser, &UIVisoContentBrowser::sigCreateFileTableViewContextMenu,
-                this, &UIVisoCreatorWidget::sltShowContextMenu);
     }
 
     if (m_pActionSettings)
@@ -548,19 +516,6 @@ void UIVisoCreatorWidget::prepareConnections()
     if (m_pAddAction)
         connect(m_pAddAction, &QAction::triggered,
                 m_pHostBrowser, &UIVisoHostBrowser::sltAddAction);
-
-    if (m_pCreateNewDirectoryAction)
-        connect(m_pCreateNewDirectoryAction, &QAction::triggered,
-                m_pVISOContentBrowser, &UIVisoContentBrowser::sltCreateNewDirectory);
-    if (m_pRemoveAction)
-        connect(m_pRemoveAction, &QAction::triggered,
-                m_pVISOContentBrowser, &UIVisoContentBrowser::sltRemoveItems);
-    if (m_pResetAction)
-        connect(m_pResetAction, &QAction::triggered,
-                m_pVISOContentBrowser, &UIVisoContentBrowser::sltResetAction);
-    if (m_pRenameAction)
-        connect(m_pRenameAction, &QAction::triggered,
-                m_pVISOContentBrowser,&UIVisoContentBrowser::sltItemRenameAction);
     if (m_pOpenAction)
         connect(m_pOpenAction, &QAction::triggered,
                 this, &UIVisoCreatorWidget::sltOpenAction);
@@ -579,14 +534,6 @@ void UIVisoCreatorWidget::prepareActions()
     m_pAddAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Add);
     if (m_pAddAction && m_pHostBrowser)
         m_pAddAction->setEnabled(m_pHostBrowser->tableViewHasSelection());
-    m_pRemoveAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Remove);
-    if (m_pRemoveAction && m_pVISOContentBrowser)
-        m_pRemoveAction->setEnabled(m_pVISOContentBrowser->tableViewHasSelection());
-    m_pCreateNewDirectoryAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_CreateNewDirectory);
-    m_pRenameAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Rename);
-    if (m_pRenameAction && m_pVISOContentBrowser)
-        m_pRenameAction->setEnabled(m_pVISOContentBrowser->tableViewHasSelection());
-    m_pResetAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Reset);
     m_pOpenAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Open);
     m_pImportISOAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_ImportISO);
     if (m_pImportISOAction)
@@ -611,15 +558,9 @@ void UIVisoCreatorWidget::populateMenuMainToolbar()
             m_pMainMenu->addAction(m_pAddAction);
         if (m_pImportISOAction)
             m_pMainMenu->addAction(m_pImportISOAction);
-        if (m_pRemoveAction)
-            m_pMainMenu->addAction(m_pRemoveAction);
-        if (m_pRenameAction)
-            m_pMainMenu->addAction(m_pRenameAction);
-        if (m_pCreateNewDirectoryAction)
-            m_pMainMenu->addAction(m_pCreateNewDirectoryAction);
-        if (m_pResetAction)
-            m_pMainMenu->addAction(m_pResetAction);
     }
+    if (m_pVISOContentBrowser)
+        m_pVISOContentBrowser->prepareMainMenu(m_pMainMenu);
 
     if (m_pVerticalToolBar)
     {
@@ -638,14 +579,6 @@ void UIVisoCreatorWidget::populateMenuMainToolbar()
             m_pVerticalToolBar->addAction(m_pAddAction);
         if (m_pImportISOAction)
             m_pVerticalToolBar->addAction(m_pImportISOAction);
-        if (m_pRenameAction)
-            m_pVerticalToolBar->addAction(m_pRenameAction);
-        if (m_pRemoveAction)
-            m_pVerticalToolBar->addAction(m_pRemoveAction);
-        if (m_pCreateNewDirectoryAction)
-            m_pVerticalToolBar->addAction(m_pCreateNewDirectoryAction);
-        if (m_pResetAction)
-            m_pVerticalToolBar->addAction(m_pResetAction);
 
         m_pVerticalToolBar->addWidget(bottomSpacerWidget);
     }

@@ -36,6 +36,8 @@
 #include <QTableView>
 
 /* GUI includes: */
+#include "QIToolBar.h"
+#include "UIActionPool.h"
 #include "UICustomFileSystemModel.h"
 #include "UIPathOperations.h"
 #include "UIVisoContentBrowser.h"
@@ -223,14 +225,20 @@ void UIVisoContentTableView::dropEvent(QDropEvent *pEvent)
 *   UIVisoContentBrowser implementation.                                                                                         *
 *********************************************************************************************************************************/
 
-UIVisoContentBrowser::UIVisoContentBrowser(QWidget *pParent)
-    : UIVisoBrowserBase(pParent)
+UIVisoContentBrowser::UIVisoContentBrowser(UIActionPool *pActionPool, QWidget *pParent)
+    : UIVisoBrowserBase(pActionPool, pParent)
     , m_pTableView(0)
     , m_pModel(0)
     , m_pTableProxyModel(0)
+    , m_pRemoveAction(0)
+    , m_pCreateNewDirectoryAction(0)
+    , m_pRenameAction(0)
+    , m_pResetAction(0)
 {
     prepareObjects();
+    prepareToolBar();
     prepareConnections();
+    retranslateUi();
 
     /* Assuming the root items only child is the one with the path '/', navigate into it. */
     /* Hack alert. for some reason without invalidating proxy models mapFromSource return invalid index. */
@@ -543,7 +551,37 @@ void UIVisoContentBrowser::prepareObjects()
         m_pTableView->setDropIndicatorShown(true);
         m_pTableView->setDragDropMode(QAbstractItemView::DropOnly);
     }
-    retranslateUi();
+}
+
+void UIVisoContentBrowser::prepareToolBar()
+{
+    m_pRemoveAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Remove);
+    m_pCreateNewDirectoryAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_CreateNewDirectory);
+    m_pRenameAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Rename);
+    m_pResetAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Reset);
+    AssertReturnVoid(m_pRemoveAction);
+    AssertReturnVoid(m_pCreateNewDirectoryAction);
+    AssertReturnVoid(m_pRenameAction);
+    AssertReturnVoid(m_pResetAction);
+    AssertReturnVoid(m_pToolBar);
+
+    m_pRemoveAction->setEnabled(tableViewHasSelection());
+    m_pRenameAction->setEnabled(tableViewHasSelection());
+
+    m_pToolBar->addAction(m_pRemoveAction);
+    m_pToolBar->addAction(m_pCreateNewDirectoryAction);
+    m_pToolBar->addAction(m_pRenameAction);
+    m_pToolBar->addAction(m_pResetAction);
+}
+
+void UIVisoContentBrowser::prepareMainMenu(QMenu *pMenu)
+{
+    AssertReturnVoid(pMenu);
+
+    pMenu->addAction(m_pRemoveAction);
+    pMenu->addAction(m_pRenameAction);
+    pMenu->addAction(m_pCreateNewDirectoryAction);
+    pMenu->addAction(m_pResetAction);
 }
 
 void UIVisoContentBrowser::prepareConnections()
@@ -557,7 +595,7 @@ void UIVisoContentBrowser::prepareConnections()
         connect(m_pTableView, &UIVisoContentTableView::sigNewItemsDropped,
                 this, &UIVisoContentBrowser::sltDroppedItems);
         connect(m_pTableView, &QTableView::customContextMenuRequested,
-                this, &UIVisoContentBrowser::sltFileTableViewContextMenu);
+                this, &UIVisoContentBrowser::sltShowContextMenu);
     }
 
     if (m_pTableView->selectionModel())
@@ -566,6 +604,19 @@ void UIVisoContentBrowser::prepareConnections()
     if (m_pModel)
         connect(m_pModel, &UICustomFileSystemModel::sigItemRenamed,
                 this, &UIVisoContentBrowser::sltItemRenameAttempt);
+
+    if (m_pCreateNewDirectoryAction)
+        connect(m_pCreateNewDirectoryAction, &QAction::triggered,
+                this, &UIVisoContentBrowser::sltCreateNewDirectory);
+    if (m_pRemoveAction)
+        connect(m_pRemoveAction, &QAction::triggered,
+                this, &UIVisoContentBrowser::sltRemoveItems);
+    if (m_pResetAction)
+        connect(m_pResetAction, &QAction::triggered,
+                this, &UIVisoContentBrowser::sltResetAction);
+    if (m_pRenameAction)
+        connect(m_pRenameAction, &QAction::triggered,
+                this,&UIVisoContentBrowser::sltItemRenameAction);
 }
 
 UICustomFileSystemItem* UIVisoContentBrowser::rootItem()
@@ -782,6 +833,11 @@ void UIVisoContentBrowser::sltTableSelectionChanged(const QItemSelection &select
 {
     Q_UNUSED(deselected);
     emit sigTableSelectionChanged(selected.isEmpty());
+
+    if (m_pRemoveAction)
+        m_pRemoveAction->setEnabled(!selected.isEmpty());
+    if (m_pRenameAction)
+        m_pRenameAction->setEnabled(!selected.isEmpty());
 }
 
 void UIVisoContentBrowser::sltResetAction()
@@ -797,6 +853,19 @@ void UIVisoContentBrowser::sltResetAction()
 void UIVisoContentBrowser::sltDroppedItems(QStringList pathList)
 {
     addObjectsToViso(pathList);
+}
+
+void UIVisoContentBrowser::sltShowContextMenu(const QPoint &point)
+{
+    QWidget *pSender = qobject_cast<QWidget*>(sender());
+    AssertReturnVoid(pSender);
+
+    QMenu menu;
+
+    menu.addAction(m_pRemoveAction);
+    menu.addAction(m_pCreateNewDirectoryAction);
+    menu.addAction(m_pResetAction);
+    menu.exec(pSender->mapToGlobal(point));
 }
 
 void UIVisoContentBrowser::reset()

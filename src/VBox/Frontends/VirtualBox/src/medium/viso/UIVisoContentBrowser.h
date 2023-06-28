@@ -58,7 +58,7 @@ signals:
 
 public:
 
-    UIVisoContentBrowser(QWidget *pParent = 0);
+    UIVisoContentBrowser(UIActionPool *pActionPool, QWidget *pParent = 0);
     ~UIVisoContentBrowser();
     /* Imports pathList (relative to ISO file's root) to VISO content. */
     void importISOContentToViso(const QString &strISOFilePath,
@@ -73,6 +73,7 @@ public:
     void setVisoName(const QString &strName);
     virtual bool tableViewHasSelection() const final override;
     void parseVisoFileContent(const QString &strFileName);
+    void prepareMainMenu(QMenu *pMenu);
 
 public slots:
 
@@ -96,11 +97,13 @@ private slots:
     void sltTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
     /** Adds the dragged-dropped items to VISO. */
     void sltDroppedItems(QStringList pathList);
+    void sltShowContextMenu(const QPoint &point);
 
 private:
 
     void                    prepareObjects();
     void                    prepareConnections();
+    void                    prepareToolBar();
     void                    initializeModel();
     UICustomFileSystemItem *rootItem();
 
@@ -133,6 +136,12 @@ private:
      *  local location of file objects. these keys and values are
      *  concatenated and passed to the client to create ad-hoc.viso entries. */
     QMap<QString, QString>        m_entryMap;
+
+    QAction                      *m_pRemoveAction;
+    QAction                      *m_pCreateNewDirectoryAction;
+    QAction                      *m_pRenameAction;
+    QAction                      *m_pResetAction;
+
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_viso_UIVisoContentBrowser_h */

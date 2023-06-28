@@ -151,8 +151,8 @@ QMimeData *UIVisoHostBrowserModel::mimeData(const QModelIndexList &indexes) cons
 *   UIVisoHostBrowser implementation.                                                                                   *
 *********************************************************************************************************************************/
 
-UIVisoHostBrowser::UIVisoHostBrowser(QWidget *pParent /* = 0 */)
-    : UIVisoBrowserBase(pParent)
+UIVisoHostBrowser::UIVisoHostBrowser(UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
+    : UIVisoBrowserBase(pActionPool, pParent)
     , m_pModel(0)
     , m_pTableView(0)
 {
@@ -223,7 +223,7 @@ void UIVisoHostBrowser::prepareConnections()
         connect(m_pTableView, &QTableView::doubleClicked,
                 this, &UIVisoBrowserBase::sltTableViewItemDoubleClick);
         connect(m_pTableView, &QTableView::customContextMenuRequested,
-                this, &UIVisoHostBrowser::sltFileTableViewContextMenu);
+                this, &UIVisoHostBrowser::sltShowContextMenu);
     }
 
     if (m_pTableView->selectionModel())
@@ -236,6 +236,27 @@ void UIVisoHostBrowser::sltTableSelectionChanged(const QItemSelection &selected,
     Q_UNUSED(deselected);
     Q_UNUSED(selected);
     emit sigTableSelectionChanged(selectedPathList());
+}
+
+void UIVisoHostBrowser::sltShowContextMenu(const QPoint &point)
+{
+    Q_UNUSED(point);
+    if (!sender())
+        return;
+
+    // QMenu menu;
+
+    // if (sender() == m_pHostBrowser)
+    //     menu.addAction(m_pAddAction);
+    // }
+    // else if (sender() == m_pVISOContentBrowser)
+    // {
+    //     menu.addAction(m_pRemoveAction);
+    //     menu.addAction(m_pCreateNewDirectoryAction);
+    //     menu.addAction(m_pResetAction);
+    // }
+
+    // menu.exec(pContextMenuRequester->mapToGlobal(point));
 }
 
 void UIVisoHostBrowser::tableViewItemDoubleClick(const QModelIndex &index)
