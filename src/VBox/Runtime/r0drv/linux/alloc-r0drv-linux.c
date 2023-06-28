@@ -154,8 +154,10 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
 {
     int             cOrder;
     unsigned        cPages;
-    struct page    *paPages;
     void           *pvRet;
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+    struct page    *paPages;
+#endif
     IPRT_LINUX_SAVE_EFL_AC();
 
     /*
@@ -170,18 +172,19 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
     cb = RT_ALIGN_Z(cb, PAGE_SIZE);
     cPages = cb >> PAGE_SHIFT;
     cOrder = CalcPowerOf2Order(cPages);
-#if (defined(RT_ARCH_AMD64) || defined(CONFIG_X86_PAE)) && defined(GFP_DMA32)
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# if (defined(RT_ARCH_AMD64) || defined(CONFIG_X86_PAE)) && defined(GFP_DMA32)
     /* ZONE_DMA32: 0-4GB */
     paPages = alloc_pages(GFP_DMA32 | __GFP_NOWARN, cOrder);
     if (!paPages)
-#endif
-#ifdef RT_ARCH_AMD64
+# endif
+# ifdef RT_ARCH_AMD64
         /* ZONE_DMA; 0-16MB */
         paPages = alloc_pages(GFP_DMA | __GFP_NOWARN, cOrder);
-#else
+# else
         /* ZONE_NORMAL: 0-896MB */
         paPages = alloc_pages(GFP_USER | __GFP_NOWARN, cOrder);
-#endif
+# endif
     if (paPages)
     {
         /*
@@ -209,6 +212,11 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
     }
     else
         pvRet = NULL;
+#else
+    pvRet = (void *)__get_free_pages(GFP_DMA32 | __GFP_NOWARN, cOrder);
+    if (pvRet)
+        *pPhys = virt_to_phys(pvRet);
+#endif
 
     IPRT_LINUX_RESTORE_EFL_AC();
     return pvRet;
@@ -228,8 +236,10 @@ RTR0DECL(void) RTMemContFree(void *pv, size_t cb)
     {
         int             cOrder;
         unsigned        cPages;
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
         unsigned        iPage;
         struct page    *paPages;
+#endif
         IPRT_LINUX_SAVE_EFL_AC();
 
         /* validate */
@@ -240,6 +250,7 @@ RTR0DECL(void) RTMemContFree(void *pv, size_t cb)
         cb = RT_ALIGN_Z(cb, PAGE_SIZE);
         cPages = cb >> PAGE_SHIFT;
         cOrder = CalcPowerOf2Order(cPages);
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
         paPages = virt_to_page(pv);
 
         /*
@@ -250,6 +261,9 @@ RTR0DECL(void) RTMemContFree(void *pv, size_t cb)
             ClearPageReserved(&paPages[iPage]);
         }
         __free_pages(paPages, cOrder);
+#else
+        free_pages((uintptr_t)pv, cOrder);
+#endif
         IPRT_LINUX_RESTORE_EFL_AC();
     }
 }
