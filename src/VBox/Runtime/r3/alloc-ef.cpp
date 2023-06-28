@@ -55,6 +55,7 @@
 #include <iprt/assert.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
+#include <iprt/system.h>
 
 #ifdef RTALLOC_REPLACE_MALLOC
 # include <VBox/dis.h>
@@ -278,7 +279,8 @@ void RTMemDump(void)
  */
 DECLINLINE(void) rtmemBlockDelayInsert(PRTMEMBLOCK pBlock)
 {
-    size_t cbBlock = RT_ALIGN_Z(pBlock->cbAligned, PAGE_SIZE) + RTALLOC_EFENCE_SIZE;
+    size_t const cbFence = RTALLOC_EFENCE_SIZE_FACTOR * RTSystemGetPageSize();
+    size_t const cbBlock = RTSystemPageAlignSize(pBlock->cbAligned) + cbFence;
     pBlock->Core.pRight = NULL;
     pBlock->Core.pLeft = NULL;
     rtmemBlockLock();
@@ -314,7 +316,9 @@ DECLINLINE(PRTMEMBLOCK) rtmemBlockDelayRemove(void)
                 pBlock->Core.pLeft->pRight = NULL;
             else
                 g_pBlocksDelayHead = NULL;
-            g_cbBlocksDelay -= RT_ALIGN_Z(pBlock->cbAligned, PAGE_SIZE) + RTALLOC_EFENCE_SIZE;
+
+            size_t const cbFence = RTALLOC_EFENCE_SIZE_FACTOR * RTSystemGetPageSize();
+            g_cbBlocksDelay -= RTSystemPageAlignSize(pBlock->cbAligned) + cbFence;
         }
     }
     rtmemBlockUnlock();
@@ -454,8 +458,9 @@ static void rtMemReplaceMallocAndFriends(void)
     /*
      * Allocate a page for jump back code (we leak it).
      */
-    uint8_t *pbExecPage = (uint8_t *)RTMemPageAlloc(PAGE_SIZE); AssertFatal(pbExecPage);
-    int rc = RTMemProtect(pbExecPage, PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC); AssertFatalRC(rc);
+    size_t const cbPage = RTSystemGetPageSize();
+    uint8_t *pbExecPage = (uint8_t *)RTMemPageAlloc(cbPage); AssertFatal(pbExecPage);
+    int rc = RTMemProtect(pbExecPage, cbPage, RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC); AssertFatalRC(rc);
 
     /*
      * Do the ground work.
@@ -577,10 +582,11 @@ RTDECL(void *) rtR3MemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cbUnali
     /*
      * Sanity.
      */
-    if (    RT_ALIGN_Z(RTALLOC_EFENCE_SIZE, PAGE_SIZE) != RTALLOC_EFENCE_SIZE
-        &&  RTALLOC_EFENCE_SIZE <= 0)
+    size_t const cbFence = RTALLOC_EFENCE_SIZE_FACTOR * RTSystemGetPageSize();
+    size_t const cbPage = RTSystemGetPageSize();
+    if (RTALLOC_EFENCE_SIZE_FACTOR <= 0)
     {
-        rtmemComplain(pszOp, "Invalid E-fence size! %#x\n", RTALLOC_EFENCE_SIZE);
+        rtmemComplain(pszOp, "Invalid E-fence size! %#x\n", RTALLOC_EFENCE_SIZE_FACTOR);
         return NULL;
     }
     if (!cbUnaligned)
@@ -615,7 +621,7 @@ RTDECL(void *) rtR3MemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cbUnali
     /*
      * Allocate a block with page alignment space + the size of the E-fence.
      */
-    size_t  cbBlock = RT_ALIGN_Z(cbAligned, PAGE_SIZE) + RTALLOC_EFENCE_SIZE;
+    size_t  cbBlock = RT_ALIGN_Z(cbAligned, cbPage) + cbFence;
     void   *pvBlock = RTMemPageAlloc(cbBlock);
     if (pvBlock)
     {
@@ -625,23 +631,23 @@ RTDECL(void *) rtR3MemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cbUnali
          */
 #ifdef RTALLOC_EFENCE_IN_FRONT
         void *pvEFence = pvBlock;
-        void *pv       = (char *)pvEFence + RTALLOC_EFENCE_SIZE;
+        void *pv       = (char *)pvEFence + cbFence;
 # ifdef RTALLOC_EFENCE_NOMAN_FILLER
-        memset((char *)pv + cbUnaligned, RTALLOC_EFENCE_NOMAN_FILLER, cbBlock - RTALLOC_EFENCE_SIZE - cbUnaligned);
+        memset((char *)pv + cbUnaligned, RTALLOC_EFENCE_NOMAN_FILLER, cbBlock - cbFence - cbUnaligned);
 # endif
 #else
-        void *pvEFence = (char *)pvBlock + (cbBlock - RTALLOC_EFENCE_SIZE);
+        void *pvEFence = (char *)pvBlock + (cbBlock - cbFence);
         void *pv       = (char *)pvEFence - cbAligned;
 # ifdef RTALLOC_EFENCE_NOMAN_FILLER
-        memset(pvBlock, RTALLOC_EFENCE_NOMAN_FILLER, cbBlock - RTALLOC_EFENCE_SIZE - cbAligned);
+        memset(pvBlock, RTALLOC_EFENCE_NOMAN_FILLER, cbBlock - cbFence - cbAligned);
         memset((char *)pv + cbUnaligned, RTALLOC_EFENCE_NOMAN_FILLER, cbAligned - cbUnaligned);
 # endif
 #endif
 
 #ifdef RTALLOC_EFENCE_FENCE_FILLER
-        memset(pvEFence, RTALLOC_EFENCE_FENCE_FILLER, RTALLOC_EFENCE_SIZE);
+        memset(pvEFence, RTALLOC_EFENCE_FENCE_FILLER, cbFence);
 #endif
-        int rc = RTMemProtect(pvEFence, RTALLOC_EFENCE_SIZE, RTMEM_PROT_NONE);
+        int rc = RTMemProtect(pvEFence, cbFence, RTMEM_PROT_NONE);
         if (!rc)
         {
 #ifdef RTALLOC_EFENCE_TRACE
@@ -657,7 +663,7 @@ RTDECL(void *) rtR3MemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cbUnali
             rtmemLog(pszOp, "returns %p (pvBlock=%p cbBlock=%#x pvEFence=%p cbUnaligned=%#x)\n", pv, pvBlock, cbBlock, pvEFence, cbUnaligned);
             return pv;
         }
-        rtmemComplain(pszOp, "RTMemProtect failed, pvEFence=%p size %d, rc=%d\n", pvEFence, RTALLOC_EFENCE_SIZE, rc);
+        rtmemComplain(pszOp, "RTMemProtect failed, pvEFence=%p size %d, rc=%d\n", pvEFence, cbFence, rc);
         RTMemPageFree(pvBlock, cbBlock);
     }
     else
@@ -690,6 +696,7 @@ RTDECL(void) rtR3MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, size_t 
         if (gapvRTMemFreeWatch[i] == pv)
             RTAssertDoPanic();
 
+    size_t cbPage = RTSystemGetPageSize();
 #ifdef RTALLOC_EFENCE_TRACE
     /*
      * Find the block.
@@ -706,7 +713,7 @@ RTDECL(void) rtR3MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, size_t 
          */
 #  ifdef RTALLOC_EFENCE_IN_FRONT
         void *pvWrong = ASMMemFirstMismatchingU8((char *)pv + pBlock->cbUnaligned,
-                                                 RT_ALIGN_Z(pBlock->cbAligned, PAGE_SIZE) - pBlock->cbUnaligned,
+                                                 RT_ALIGN_Z(pBlock->cbAligned, cbPage) - pBlock->cbUnaligned,
                                                  RTALLOC_EFENCE_NOMAN_FILLER);
 #  else
         /* Alignment must match allocation alignment in rtMemAlloc(). */
@@ -715,8 +722,8 @@ RTDECL(void) rtR3MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, size_t 
                                                   RTALLOC_EFENCE_NOMAN_FILLER);
         if (pvWrong)
             RTAssertDoPanic();
-        pvWrong = ASMMemFirstMismatchingU8((void *)((uintptr_t)pv & ~(uintptr_t)PAGE_OFFSET_MASK),
-                                           RT_ALIGN_Z(pBlock->cbAligned, PAGE_SIZE) - pBlock->cbAligned,
+        pvWrong = ASMMemFirstMismatchingU8((void *)((uintptr_t)pv & ~RTSystemGetPageOffsetMask()),
+                                           RT_ALIGN_Z(pBlock->cbAligned, cbPage) - pBlock->cbAligned,
                                            RTALLOC_EFENCE_NOMAN_FILLER);
 #  endif
         if (pvWrong)
@@ -736,6 +743,7 @@ RTDECL(void) rtR3MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, size_t 
             memset(pv, RTALLOC_EFENCE_FREE_FILL, pBlock->cbUnaligned);
 # endif
 
+        size_t const cbFence = RTALLOC_EFENCE_SIZE_FACTOR * RTSystemGetPageSize();
 # if defined(RTALLOC_EFENCE_FREE_DELAYED) && RTALLOC_EFENCE_FREE_DELAYED > 0
         /*
          * We're doing delayed freeing.
@@ -752,14 +760,14 @@ RTDECL(void) rtR3MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, size_t 
             {
                 pv = pBlock->Core.Key;
 #  ifdef RTALLOC_EFENCE_IN_FRONT
-                void  *pvBlock = (char *)pv - RTALLOC_EFENCE_SIZE;
+                void  *pvBlock = (char *)pv - cbFence;
 #  else
-                void  *pvBlock = (void *)((uintptr_t)pv & ~(uintptr_t)PAGE_OFFSET_MASK);
+                void  *pvBlock = (void *)((uintptr_t)pv & ~RTSystemGetPageOffsetMask());
 #  endif
-                size_t cbBlock = RT_ALIGN_Z(pBlock->cbAligned, PAGE_SIZE) + RTALLOC_EFENCE_SIZE;
+                size_t cbBlock = RT_ALIGN_Z(pBlock->cbAligned, cbPage) + cbFence;
                 rc = RTMemProtect(pvBlock, cbBlock, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
                 if (RT_SUCCESS(rc))
-                    RTMemPageFree(pvBlock, RT_ALIGN_Z(pBlock->cbAligned, PAGE_SIZE) + RTALLOC_EFENCE_SIZE);
+                    RTMemPageFree(pvBlock, RT_ALIGN_Z(pBlock->cbAligned, cbPage) + cbFence);
                 else
                     rtmemComplain(pszOp, "RTMemProtect(%p, %#x, RTMEM_PROT_READ | RTMEM_PROT_WRITE) -> %d\n", pvBlock, cbBlock, rc);
                 rtmemBlockFree(pBlock);
@@ -774,17 +782,17 @@ RTDECL(void) rtR3MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, size_t 
          * Turn of the E-fence and free it.
          */
 #  ifdef RTALLOC_EFENCE_IN_FRONT
-        void *pvBlock = (char *)pv - RTALLOC_EFENCE_SIZE;
+        void *pvBlock = (char *)pv - cbFence;
         void *pvEFence = pvBlock;
 #  else
-        void *pvBlock = (void *)((uintptr_t)pv & ~(uintptr_t)PAGE_OFFSET_MASK);
+        void *pvBlock = (void *)((uintptr_t)pv & ~RTSystemGetPageOffsetMask());
         void *pvEFence = (char *)pv + pBlock->cb;
 #  endif
-        int rc = RTMemProtect(pvEFence, RTALLOC_EFENCE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+        int rc = RTMemProtect(pvEFence, cbFence, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
         if (RT_SUCCESS(rc))
-            RTMemPageFree(pvBlock, RT_ALIGN_Z(pBlock->cbAligned, PAGE_SIZE) + RTALLOC_EFENCE_SIZE);
+            RTMemPageFree(pvBlock, RT_ALIGN_Z(pBlock->cbAligned, cbPage) + cbFence);
         else
-            rtmemComplain(pszOp, "RTMemProtect(%p, %#x, RTMEM_PROT_READ | RTMEM_PROT_WRITE) -> %d\n", pvEFence, RTALLOC_EFENCE_SIZE, rc);
+            rtmemComplain(pszOp, "RTMemProtect(%p, %#x, RTMEM_PROT_READ | RTMEM_PROT_WRITE) -> %d\n", pvEFence, cbFence, rc);
         rtmemBlockFree(pBlock);
 
 # endif /* !RTALLOC_EFENCE_FREE_DELAYED */
@@ -802,9 +810,9 @@ RTDECL(void) rtR3MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, size_t 
      */
     if (enmType == RTMEMTYPE_RTMEMFREEZ)
         RT_BZERO(pv, cbUser);
-    int rc = RTMemProtect((void *)((uintptr_t)pv & ~(uintptr_t)PAGE_OFFSET_MASK), PAGE_SIZE, RTMEM_PROT_NONE);
+    int rc = RTMemProtect((void *)((uintptr_t)pv & ~RTSystemGetPageOffsetMask()), cbPage, RTMEM_PROT_NONE);
     if (RT_FAILURE(rc))
-        rtmemComplain(pszOp, "RTMemProtect(%p, PAGE_SIZE, RTMEM_PROT_NONE) -> %d\n", (void *)((uintptr_t)pv & ~(uintptr_t)PAGE_OFFSET_MASK), rc);
+        rtmemComplain(pszOp, "RTMemProtect(%p, cbPage, RTMEM_PROT_NONE) -> %d\n", (void *)((uintptr_t)pv & ~RTSystemGetPageOffsetMask()), rc);
 #endif /* !RTALLOC_EFENCE_TRACE */
 }
 
