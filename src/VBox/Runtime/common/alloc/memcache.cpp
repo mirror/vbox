@@ -46,7 +46,7 @@
 #include <iprt/critsect.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
-#include <iprt/param.h>
+#include <iprt/system.h>
 
 #include "internal/magics.h"
 
@@ -174,7 +174,9 @@ RTDECL(int) RTMemCacheCreate(PRTMEMCACHE phMemCache, size_t cbObject, size_t cbA
     AssertPtrNull(pfnDtor);
     AssertReturn(!pfnDtor || pfnCtor, VERR_INVALID_PARAMETER);
     AssertReturn(cbObject > 0, VERR_INVALID_PARAMETER);
-    AssertReturn(cbObject <= PAGE_SIZE / 8, VERR_INVALID_PARAMETER);
+
+    size_t const cbPage = RTSystemGetPageSize();
+    AssertReturn(cbObject <= cbPage / 8, VERR_INVALID_PARAMETER);
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
 
     if (cbAlignment == 0)
@@ -214,11 +216,11 @@ RTDECL(int) RTMemCacheCreate(PRTMEMCACHE phMemCache, size_t cbObject, size_t cbA
     pThis->u32Magic         = RTMEMCACHE_MAGIC;
     pThis->cbObject         = (uint32_t)RT_ALIGN_Z(cbObject, cbAlignment);
     pThis->cbAlignment      = (uint32_t)cbAlignment;
-    pThis->cPerPage         = (uint32_t)((PAGE_SIZE - RT_ALIGN_Z(sizeof(RTMEMCACHEPAGE), cbAlignment)) / pThis->cbObject);
+    pThis->cPerPage         = (uint32_t)((cbPage - RT_ALIGN_Z(sizeof(RTMEMCACHEPAGE), cbAlignment)) / pThis->cbObject);
     while (  RT_ALIGN_Z(sizeof(RTMEMCACHEPAGE), 8)
            + pThis->cPerPage * pThis->cbObject
            + RT_ALIGN(pThis->cPerPage, 64) / 8 * 2
-           > PAGE_SIZE)
+           > cbPage)
         pThis->cPerPage--;
     pThis->cBits            = RT_ALIGN(pThis->cPerPage, 64);
     pThis->cMax             = cMaxObjects;
@@ -275,7 +277,7 @@ RTDECL(int) RTMemCacheDestroy(RTMEMCACHE hMemCache)
                     pThis->pfnDtor(hMemCache, pPage->pbObjects + iObj * pThis->cbObject, pThis->pvUser);
         }
 
-        RTMemPageFree(pPage, PAGE_SIZE);
+        RTMemPageFree(pPage, RTSystemGetPageSize());
     }
 
     RTMemFree(pThis);
@@ -309,7 +311,8 @@ static int rtMemCacheGrow(RTMEMCACHEINT *pThis)
          * this increases performance markably when lots of threads are beating
          * on the cache.
          */
-        PRTMEMCACHEPAGE pPage = (PRTMEMCACHEPAGE)RTMemPageAlloc(PAGE_SIZE);
+        size_t const cbPage = RTSystemGetPageSize();
+        PRTMEMCACHEPAGE pPage = (PRTMEMCACHEPAGE)RTMemPageAlloc(cbPage);
         if (pPage)
         {
             uint32_t const cObjects = RT_MIN(pThis->cPerPage, pThis->cMax - pThis->cTotal);
@@ -322,7 +325,7 @@ static int rtMemCacheGrow(RTMEMCACHEINT *pThis)
             uint8_t *pb = (uint8_t *)(pPage + 1);
             pb = RT_ALIGN_PT(pb, 8, uint8_t *);
             pPage->pbmCtor      = pb;
-            pb = (uint8_t *)pPage + PAGE_SIZE - pThis->cbObject * cObjects;
+            pb = (uint8_t *)pPage + cbPage - pThis->cbObject * cObjects;
             pPage->pbObjects    = pb;   Assert(RT_ALIGN_P(pb, pThis->cbAlignment) == pb);
             pb -= pThis->cBits / 8;
             pb = (uint8_t *)((uintptr_t)pb & ~(uintptr_t)7);
@@ -470,7 +473,7 @@ RTDECL(int) RTMemCacheAllocEx(RTMEMCACHE hMemCache, void **ppvObj)
         Assert(iObj >= 0);
     }
     void *pvObj = &pPage->pbObjects[iObj * pThis->cbObject];
-    Assert((uintptr_t)pvObj - (uintptr_t)pPage < PAGE_SIZE);
+    Assert((uintptr_t)pvObj - (uintptr_t)pPage < RTSystemGetPageSize());
 
     /*
      * Call the constructor?
@@ -516,7 +519,7 @@ static void rtMemCacheFreeOne(RTMEMCACHEINT *pThis, void *pvObj)
     /*
      * Find the cache page.  The page structure is at the start of the page.
      */
-    PRTMEMCACHEPAGE pPage = (PRTMEMCACHEPAGE)(((uintptr_t)pvObj) & ~(uintptr_t)PAGE_OFFSET_MASK);
+    PRTMEMCACHEPAGE pPage = (PRTMEMCACHEPAGE)(((uintptr_t)pvObj) & ~RTSystemGetPageOffsetMask());
     Assert(pPage->pCache == pThis);
     Assert(ASMAtomicUoReadS32(&pPage->cFree) < (int32_t)pThis->cPerPage);
 
@@ -572,7 +575,7 @@ RTDECL(void) RTMemCacheFree(RTMEMCACHE hMemCache, void *pvObj)
     {
 # ifdef RT_STRICT
         /* This is the same as the other branch, except it's not actually freed. */
-        PRTMEMCACHEPAGE pPage = (PRTMEMCACHEPAGE)(((uintptr_t)pvObj) & ~(uintptr_t)PAGE_OFFSET_MASK);
+        PRTMEMCACHEPAGE pPage = (PRTMEMCACHEPAGE)(((uintptr_t)pvObj) & ~RTSystemGetPageOffsetMask());
         Assert(pPage->pCache == pThis);
         Assert(ASMAtomicUoReadS32(&pPage->cFree) < (int32_t)pThis->cPerPage);
         uintptr_t offObj = (uintptr_t)pvObj - (uintptr_t)pPage->pbObjects;
