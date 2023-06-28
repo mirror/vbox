@@ -98,11 +98,12 @@ static bool g_fSysMadviseWorks;
 static void vgsvcBalloonInitMadvise(void)
 {
 #ifdef RT_OS_LINUX
-    void *pv = (void*)mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    size_t const cbPage = RTSystemGetPageSize();
+    void *pv = (void*)mmap(NULL, cbPage, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (pv != MAP_FAILED)
     {
-        g_fSysMadviseWorks = madvise(pv, PAGE_SIZE, MADV_DONTFORK) == 0;
-        munmap(pv, PAGE_SIZE);
+        g_fSysMadviseWorks = madvise(pv, cbPage, MADV_DONTFORK) == 0;
+        munmap(pv, cbPage);
     }
 #endif
 }
@@ -118,8 +119,9 @@ static void *VGSvcBalloonAllocChunk(void)
     char *pu8;
 
 #ifdef RT_OS_LINUX
+    size_t const cbPage = RTSystemGetPageSize();
     if (!g_fSysMadviseWorks)
-        cb += 2 * PAGE_SIZE;
+        cb += 2 * cbPage;
 
     pu8 = (char*)mmap(NULL, cb, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (pu8 == MAP_FAILED)
@@ -142,9 +144,9 @@ static void *VGSvcBalloonAllocChunk(void)
          * mmapped region by two unmapped pages to guarantee that there is exactly one VM
          * area struct of the very same size as the mmap area.
          */
-        RTMemProtect(pu8, PAGE_SIZE, RTMEM_PROT_NONE);
-        RTMemProtect(pu8 + cb - PAGE_SIZE, PAGE_SIZE, RTMEM_PROT_NONE);
-        pu8 += PAGE_SIZE;
+        RTMemProtect(pu8, cbPage, RTMEM_PROT_NONE);
+        RTMemProtect(pu8 + cb - cbPage, cbPage, RTMEM_PROT_NONE);
+        pu8 += cbPage;
     }
 
 #else
@@ -169,14 +171,15 @@ static void vgsvcBalloonFreeChunk(void *pv)
     size_t cb = VMMDEV_MEMORY_BALLOON_CHUNK_SIZE;
 
 #ifdef RT_OS_LINUX
-
     if (!g_fSysMadviseWorks)
     {
-        cb += 2 * PAGE_SIZE;
-        pu8 -= PAGE_SIZE;
+        size_t const cbPage = RTSystemGetPageSize();
+
+        cb += 2 * cbPage;
+        pu8 -= cbPage;
         /* This is not really necessary */
-        RTMemProtect(pu8, PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
-        RTMemProtect(pu8 + cb - PAGE_SIZE, PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+        RTMemProtect(pu8, cbPage, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+        RTMemProtect(pu8 + cb - cbPage, cbPage, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
     }
     munmap(pu8, cb);
 
