@@ -52,6 +52,7 @@
 #include <iprt/pipe.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
+#include <iprt/system.h>
 
 #include "internal/magics.h"
 
@@ -97,7 +98,7 @@ typedef struct RTTESTINT
     const char         *pszTest;
     /** The length of the test name.  */
     size_t              cchTest;
-    /** The size of a guard. Multiple of PAGE_SIZE. */
+    /** The size of a guard. Multiple of system page size. */
     uint32_t            cbGuard;
     /** The verbosity level. */
     RTTESTLVL           enmMaxLevel;
@@ -265,7 +266,7 @@ RTR3DECL(int) RTTestCreateEx(const char *pszTest, uint32_t fFlags, RTTESTLVL enm
     pTest->u32Magic         = RTTESTINT_MAGIC;
     pTest->pszTest          = RTStrDup(pszTest);
     pTest->cchTest          = strlen(pszTest);
-    pTest->cbGuard          = PAGE_SIZE * 7;
+    pTest->cbGuard          = RTSystemGetPageSize() * 7;
     pTest->enmMaxLevel      = enmMaxLevel == RTTESTLVL_INVALID ? RTTESTLVL_INFO : enmMaxLevel;
     pTest->fFlags           = fFlags;
 
@@ -575,7 +576,8 @@ RTR3DECL(int) RTTestGuardedAlloc(RTTEST hTest, size_t cb, uint32_t cbAlign, bool
     RTTEST_GET_VALID_RETURN(pTest);
     if (cbAlign == 0)
         cbAlign = 1;
-    AssertReturn(cbAlign <= PAGE_SIZE, VERR_INVALID_PARAMETER);
+    uint32_t const cbPage = RTSystemGetPageSize();
+    AssertReturn(cbAlign <= cbPage, VERR_INVALID_PARAMETER);
     AssertReturn(cbAlign == (UINT32_C(1) << (ASMBitFirstSetU32(cbAlign) - 1)), VERR_INVALID_PARAMETER);
 
     /*
@@ -585,7 +587,7 @@ RTR3DECL(int) RTTestGuardedAlloc(RTTEST hTest, size_t cb, uint32_t cbAlign, bool
     PRTTESTGUARDEDMEM   pMem = (PRTTESTGUARDEDMEM)RTMemAlloc(sizeof(*pMem));
     if (RT_LIKELY(pMem))
     {
-        size_t const    cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
+        size_t const    cbAligned = RT_ALIGN_Z(cb, cbPage);
         pMem->aGuards[0].cb = pMem->aGuards[1].cb = pTest->cbGuard;
         pMem->cbAlloc       = pMem->aGuards[0].cb + pMem->aGuards[1].cb + cbAligned;
         pMem->pvAlloc       = RTMemPageAlloc(pMem->cbAlloc);
@@ -596,10 +598,10 @@ RTR3DECL(int) RTTestGuardedAlloc(RTTEST hTest, size_t cb, uint32_t cbAlign, bool
             pMem->aGuards[1].pv = (uint8_t *)pMem->pvUser + cbAligned;
             if (!fHead)
             {
-                size_t off = cb & PAGE_OFFSET_MASK;
+                size_t off = cb & RTSystemGetPageOffsetMask();
                 if (off)
                 {
-                    off = PAGE_SIZE - RT_ALIGN_Z(off, cbAlign);
+                    off = cbPage - RT_ALIGN_Z(off, cbAlign);
                     pMem->pvUser = (uint8_t *)pMem->pvUser + off;
                 }
             }
