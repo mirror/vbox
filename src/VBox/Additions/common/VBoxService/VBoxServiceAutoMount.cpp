@@ -54,6 +54,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/sort.h>
 #include <iprt/string.h>
+#include <iprt/system.h>
 #include <VBox/err.h>
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/shflsvc.h>
@@ -67,6 +68,7 @@
 # define OS2EMX_PLAIN_CHAR
 # include <os2emx.h>
 #else
+# include <alloca.h>
 # include <errno.h>
 # include <grp.h>
 # include <sys/mount.h>
@@ -386,18 +388,21 @@ static int vbsvcAutoMountSharedFolderOld(const char *pszShareName, const char *p
     int rc = vbsvcAutoMountPrepareMountPointOld(pszMountPoint, pszShareName, grp_vboxsf->gr_gid);
     if (RT_SUCCESS(rc))
     {
+        uint32_t cbOpts = RTSystemGetPageSize();
+        char *pszOpts = (char *)alloca(cbOpts);
+        RT_BZERO(pszOpts, cbOpts);
+
 # ifdef RT_OS_SOLARIS
         int const fFlags = MS_OPTIONSTR;
-        char szOptBuf[MAX_MNTOPT_STR] = { '\0', };
-        RTStrPrintf(szOptBuf, sizeof(szOptBuf), "uid=0,gid=%d,dmode=0770,fmode=0770,dmask=0000,fmask=0000", grp_vboxsf->gr_gid);
+        RTStrPrintf(pszOptBuf, sizeof(szOptBuf), "uid=0,gid=%d,dmode=0770,fmode=0770,dmask=0000,fmask=0000", grp_vboxsf->gr_gid);
         int r = mount(pszShareName,
                       pszMountPoint,
                       fFlags,
                       "vboxfs",
                       NULL,                     /* char *dataptr */
                       0,                        /* int datalen */
-                      szOptBuf,
-                      sizeof(szOptBuf));
+                      pszOpts,
+                      cbOpts);
         if (r == 0)
             VGSvcVerbose(0, "vbsvcAutoMountWorker: Shared folder '%s' was mounted to '%s'\n", pszShareName, pszMountPoint);
         else if (errno != EBUSY) /* Share is already mounted? Then skip error msg. */
@@ -409,14 +414,13 @@ static int vbsvcAutoMountSharedFolderOld(const char *pszShareName, const char *p
         AssertStmt(uname(&uts) != -1, strcpy(uts.release, "4.4.0"));
 
         unsigned long const fFlags = MS_NODEV;
-        char szOpts[MAX_MNTOPT_STR] = { '\0' };
-        ssize_t cchOpts = RTStrPrintf2(szOpts, sizeof(szOpts), "uid=0,gid=%d,dmode=0770,fmode=0770,dmask=0000,fmask=0000",
+        ssize_t cchOpts = RTStrPrintf2(pszOpts, cbOpts, "uid=0,gid=%d,dmode=0770,fmode=0770,dmask=0000,fmask=0000",
                                        grp_vboxsf->gr_gid);
         if (cchOpts > 0 && RTStrVersionCompare(uts.release, "2.6.0") < 0)
-            cchOpts = RTStrPrintf2(&szOpts[cchOpts], sizeof(szOpts) - cchOpts, ",sf_name=%s", pszShareName);
+            cchOpts = RTStrPrintf2(&pszOpts[cchOpts], cbOpts - cchOpts, ",sf_name=%s", pszShareName);
         if (cchOpts <= 0)
         {
-            VGSvcError("vbsvcAutomounterMountIt: szOpts overflow! %zd (share %s)\n", cchOpts, pszShareName);
+            VGSvcError("vbsvcAutomounterMountIt: pszOpts overflow! %zd (share %s)\n", cchOpts, pszShareName);
             return VERR_BUFFER_OVERFLOW;
         }
 
@@ -424,12 +428,12 @@ static int vbsvcAutoMountSharedFolderOld(const char *pszShareName, const char *p
                       pszMountPoint,
                       "vboxsf",
                       fFlags,
-                      szOpts);
+                      pszOpts);
         if (r == 0)
         {
             VGSvcVerbose(0, "vbsvcAutoMountWorker: Shared folder '%s' was mounted to '%s'\n", pszShareName, pszMountPoint);
 
-            r = vbsfmount_complete(pszShareName, pszMountPoint, fFlags, szOpts);
+            r = vbsfmount_complete(pszShareName, pszMountPoint, fFlags, pszOpts);
             switch (r)
             {
                 case 0: /* Success. */
@@ -1464,6 +1468,12 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
         gidMount = 0;
     }
 
+    /*
+     * Allocate options string buffer which is limited to a page on most systems.
+     */
+    uint32_t cbOpts = RTSystemGetPageSize();
+    char *pszOpts = (char *)alloca(cbOpts);
+
 #  if defined(RT_OS_LINUX)
     /*
      * Linux a bit more work...
@@ -1473,27 +1483,26 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
 
     /* Built mount option string.  Need st_name for pre 2.6.0 kernels. */
     unsigned long const fFlags = MS_NODEV;
-    char szOpts[MAX_MNTOPT_STR] = { '\0' };
-    ssize_t cchOpts = RTStrPrintf2(szOpts, sizeof(szOpts),
+    ssize_t cchOpts = RTStrPrintf2(pszOpts, cbOpts,
                                    "uid=0,gid=%d,dmode=0770,fmode=0770,dmask=0000,fmask=0000,tag=%s", gidMount, g_szTag);
     if (RTStrVersionCompare(uts.release, "2.6.0") < 0 && cchOpts > 0)
-        cchOpts += RTStrPrintf2(&szOpts[cchOpts], sizeof(szOpts) - cchOpts, ",sf_name=%s", pEntry->pszName);
+        cchOpts += RTStrPrintf2(&pszOpts[cchOpts], cbOpts - cchOpts, ",sf_name=%s", pEntry->pszName);
     if (cchOpts <= 0)
     {
-        VGSvcError("vbsvcAutomounterMountIt: szOpts overflow! %zd\n", cchOpts);
+        VGSvcError("vbsvcAutomounterMountIt: pszOpts overflow! %zd\n", cchOpts);
         return VERR_BUFFER_OVERFLOW;
     }
 
     /* Do the mounting. The fallback w/o tag is for the Linux vboxsf fork
        which lagged a lot behind when it first appeared in 5.6. */
     errno = 0;
-    rc = mount(pEntry->pszName, pEntry->pszActualMountPoint, "vboxsf", fFlags, szOpts);
+    rc = mount(pEntry->pszName, pEntry->pszActualMountPoint, "vboxsf", fFlags, pszOpts);
     if (rc != 0 && errno == EINVAL && RTStrVersionCompare(uts.release, "5.6.0") >= 0)
     {
         VGSvcVerbose(2, "vbsvcAutomounterMountIt: mount returned EINVAL, retrying without the tag.\n");
-        *strstr(szOpts, ",tag=") = '\0';
+        *strstr(pszOpts, ",tag=") = '\0';
         errno = 0;
-        rc = mount(pEntry->pszName, pEntry->pszActualMountPoint, "vboxsf", fFlags, szOpts);
+        rc = mount(pEntry->pszName, pEntry->pszActualMountPoint, "vboxsf", fFlags, pszOpts);
         if (rc == 0)
             VGSvcVerbose(0, "vbsvcAutomounterMountIt: Running outdated vboxsf module without support for the 'tag' option?\n");
     }
@@ -1503,7 +1512,7 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
                      pEntry->pszName, pEntry->pszActualMountPoint);
 
         errno = 0;
-        rc = vbsfmount_complete(pEntry->pszName, pEntry->pszActualMountPoint, fFlags, szOpts);
+        rc = vbsfmount_complete(pEntry->pszName, pEntry->pszActualMountPoint, fFlags, pszOpts);
         if (rc != 0) /* Ignorable. /etc/mtab is probably a link to /proc/mounts. */
             VGSvcVerbose(1, "vbsvcAutomounterMountIt: vbsfmount_complete failed: %s (%d/%d)\n",
                          rc == 1 ? "malloc" : rc == 2 ? "setmntent" : rc == 3 ? "addmntent" : "unknown", rc, errno);
@@ -1528,17 +1537,16 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
      * Note! Must pass MAX_MNTOPT_STR rather than cchOpts to mount, as it may fail
      *       with EOVERFLOW in vfs_buildoptionstr() during domount() otherwise.
      */
-    char szOpts[MAX_MNTOPT_STR] = { '\0', };
-    ssize_t cchOpts = RTStrPrintf2(szOpts, sizeof(szOpts),
+    ssize_t cchOpts = RTStrPrintf2(pszOpts, cbOpts,
                                    "uid=0,gid=%d,dmode=0770,fmode=0770,dmask=0000,fmask=0000,tag=%s", gidMount, g_szTag);
     if (cchOpts <= 0)
     {
-        VGSvcError("vbsvcAutomounterMountIt: szOpts overflow! %zd\n", cchOpts);
+        VGSvcError("vbsvcAutomounterMountIt: pszOpts overflow! %zd\n", cchOpts);
         return VERR_BUFFER_OVERFLOW;
     }
 
     rc = mount(pEntry->pszName, pEntry->pszActualMountPoint, MS_OPTIONSTR, "vboxfs",
-               NULL /*dataptr*/, 0 /* datalen */, szOpts, MAX_MNTOPT_STR);
+               NULL /*dataptr*/, 0 /* datalen */, pszOpts, MAX_MNTOPT_STR);
     if (rc == 0)
     {
         VGSvcVerbose(0, "vbsvcAutomounterMountIt: Successfully mounted '%s' on '%s'\n",
@@ -1547,8 +1555,8 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
     }
 
     rc = errno;
-    VGSvcError("vbsvcAutomounterMountIt: mount failed for '%s' on '%s' (szOpts=%s): %s (%d)\n",
-               pEntry->pszName, pEntry->pszActualMountPoint, szOpts, strerror(rc), rc);
+    VGSvcError("vbsvcAutomounterMountIt: mount failed for '%s' on '%s' (pszOpts=%s): %s (%d)\n",
+               pEntry->pszName, pEntry->pszActualMountPoint, pszOpts, strerror(rc), rc);
     return VERR_OPEN_FAILED;
 
 # else

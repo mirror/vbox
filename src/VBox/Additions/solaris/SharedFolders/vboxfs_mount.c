@@ -46,13 +46,15 @@
 #include <sys/vfs.h>
 #include <sys/mount.h>
 
+#include <iprt/param.h> /* For PAGE_SIZE */
+
 #include "vboxfs.h"
 
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-static char g_achOptBuf[MAX_MNTOPT_STR] = { '\0', };
+static char g_achOptBuf[PAGE_SIZE] = { '\0', };
 static const int g_RetErr = 33;
 static const int g_RetMagic = 2;
 static const int g_RetOK = 0;

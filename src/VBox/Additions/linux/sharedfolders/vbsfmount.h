@@ -34,8 +34,6 @@
 # pragma once
 #endif
 
-/* Linux constrains the size of data mount argument to PAGE_SIZE - 1. */
-#define MAX_MNTOPT_STR          PAGE_SIZE
 #define MAX_HOST_NAME           256
 #define MAX_NLS_NAME            32
 #define VBSF_DEFAULT_TTL_MS     200

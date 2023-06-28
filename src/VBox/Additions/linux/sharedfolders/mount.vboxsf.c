@@ -59,7 +59,6 @@
 #include "vbsfmount.h"
 
 #include <iprt/assertcompile.h>
-#include <iprt/param.h>  /* PAGE_SIZE (used by MAX_MNTOPT_STR) */
 #include <iprt/string.h>
 
 
@@ -542,7 +541,7 @@ main(int argc, char **argv)
     size_t offOpts;
     static const char s_szSfNameOpt[] = "sf_name=";
     char szSharedFolderIconved[sizeof(s_szSfNameOpt) - 1 + MAX_HOST_NAME];
-    char szOpts[MAX_MNTOPT_STR];
+    char *pszOpts = NULL;
     struct vbsf_mount_opts opts =
     {
         MS_NODEV,
@@ -571,6 +570,14 @@ main(int argc, char **argv)
 
     if (!argv[0])
         argv[0] = "mount.vboxsf";
+
+    long cbOpts = sysconf(_SC_PAGESIZE);
+    if (cbOpts == -1)
+        panic("Couldn't query system page size errno=%d.\n", errno);
+
+    pszOpts = alloca(cbOpts);
+    if (!pszOpts)
+        panic("Couldn't allocate memory for mount options buffers\n");
 
     /*
      * Parse options.
@@ -623,20 +630,20 @@ main(int argc, char **argv)
      * Concat option strings.
      */
     offOpts   = 0;
-    szOpts[0] = '\0';
-    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szTTL);
-    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szMsDirCacheTTL);
-    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szMsInodeTTL);
-    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szMaxIoPages);
-    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szDirBuf);
-    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szCacheMode);
-    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szUid);
-    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szGid);
-    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szDMode);
-    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szFMode);
-    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szDMask);
-    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szFMask);
-    offOpts = append_option(szOpts, sizeof(szOpts), offOpts, opts.szIoCharset);
+    pszOpts[0] = '\0';
+    offOpts = append_option(pszOpts, cbOpts, offOpts, opts.szTTL);
+    offOpts = append_option(pszOpts, cbOpts, offOpts, opts.szMsDirCacheTTL);
+    offOpts = append_option(pszOpts, cbOpts, offOpts, opts.szMsInodeTTL);
+    offOpts = append_option(pszOpts, cbOpts, offOpts, opts.szMaxIoPages);
+    offOpts = append_option(pszOpts, cbOpts, offOpts, opts.szDirBuf);
+    offOpts = append_option(pszOpts, cbOpts, offOpts, opts.szCacheMode);
+    offOpts = append_option(pszOpts, cbOpts, offOpts, opts.szUid);
+    offOpts = append_option(pszOpts, cbOpts, offOpts, opts.szGid);
+    offOpts = append_option(pszOpts, cbOpts, offOpts, opts.szDMode);
+    offOpts = append_option(pszOpts, cbOpts, offOpts, opts.szFMode);
+    offOpts = append_option(pszOpts, cbOpts, offOpts, opts.szDMask);
+    offOpts = append_option(pszOpts, cbOpts, offOpts, opts.szFMask);
+    offOpts = append_option(pszOpts, cbOpts, offOpts, opts.szIoCharset);
 
     /* For pre-2.6 kernels we have to supply the shared folder name as a
        string option because the kernel hides the device name from us. */
@@ -654,13 +661,13 @@ main(int argc, char **argv)
                 panic("%s: shared folder name is too long (max %d)", argv[0], (int)MAX_HOST_NAME - 1);
             strcpy(&szSharedFolderIconved[sizeof(s_szSfNameOpt) - 1], pszSharedFolder);
         }
-        offOpts = append_option(szOpts, sizeof(szOpts), offOpts, szSharedFolderIconved);
+        offOpts = append_option(pszOpts, cbOpts, offOpts, szSharedFolderIconved);
     }
 
     /*
      * Do the actual mounting.
      */
-    err = mount(pszSharedFolder, pszMountPoint, "vboxsf", opts.fFlags, szOpts);
+    err = mount(pszSharedFolder, pszMountPoint, "vboxsf", opts.fFlags, pszOpts);
     saved_errno = errno;
 
     if (err)
@@ -673,7 +680,7 @@ main(int argc, char **argv)
 
     if (!nomtab)
     {
-        err = vbsfmount_complete(pszSharedFolder, pszMountPoint, opts.fFlags, szOpts);
+        err = vbsfmount_complete(pszSharedFolder, pszMountPoint, opts.fFlags, pszOpts);
         switch (err)
         {
             case 0: /* Success. */
