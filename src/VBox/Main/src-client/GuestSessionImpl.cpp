@@ -3378,7 +3378,7 @@ int GuestSession::i_sendMessage(uint32_t uMessage, uint32_t uParms, PVBOXHGCMSVC
 
     /* Forward the information to the VMM device. */
     VMMDev *pVMMDev = pConsole->i_getVMMDev();
-    AssertPtr(pVMMDev);
+    AssertPtrReturn(pVMMDev, VERR_STATE_CHANGED);
 
     LogFlowThisFunc(("uMessage=%RU32 (%s), uParms=%RU32\n", uMessage, GstCtrlHostMsgtoStr((guestControl::eHostMsg)uMessage), uParms));
 
