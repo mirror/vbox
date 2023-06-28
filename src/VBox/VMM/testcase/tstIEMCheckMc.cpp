@@ -880,7 +880,7 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEM_MC_MEM_MAP_EX(a_pvMem, a_fAccess, a_cbMem, a_iSeg, a_GCPtrMem, a_cbAlign, a_iArg)  do { CHK_SEG_IDX(a_iSeg); (void)fMcBegin; AssertCompile((a_cbAlign) <= (a_cbMem)); } while (0)
 #define IEM_MC_MEM_COMMIT_AND_UNMAP(a_pvMem, a_fAccess)                             do { (void)fMcBegin; } while (0)
 #define IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(a_pvMem, a_fAccess, a_u16FSW)     do { (void)fMcBegin; } while (0)
-#define IEM_MC_CALC_RM_EFF_ADDR(a_GCPtrEff, bRm, cbImm)                 do { (a_GCPtrEff) = 0; CHK_GCPTR(a_GCPtrEff); (void)fMcBegin; } while (0)
+#define IEM_MC_CALC_RM_EFF_ADDR(a_GCPtrEff, a_bRm, a_cbImmAndRspOffset) do { (a_GCPtrEff) = 0; CHK_GCPTR(a_GCPtrEff); (void)fMcBegin; } while (0)
 #define IEM_MC_CALL_VOID_AIMPL_0(a_pfn)                                 do { (void)fMcBegin; } while (0)
 #define IEM_MC_CALL_VOID_AIMPL_1(a_pfn, a0) \
     do { CHK_CALL_ARG(a0, 0); (void)fMcBegin; } while (0)

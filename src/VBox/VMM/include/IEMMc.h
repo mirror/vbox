@@ -1065,11 +1065,11 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 
 /** Calculate efficient address from R/M. */
 #ifndef IEM_WITH_SETJMP
-# define IEM_MC_CALC_RM_EFF_ADDR(a_GCPtrEff, bRm, cbImm) \
-    IEM_MC_RETURN_ON_FAILURE(iemOpHlpCalcRmEffAddr(pVCpu, (bRm), (cbImm), &(a_GCPtrEff)))
+# define IEM_MC_CALC_RM_EFF_ADDR(a_GCPtrEff, a_bRm, a_cbImmAndRspOffset) \
+    IEM_MC_RETURN_ON_FAILURE(iemOpHlpCalcRmEffAddr(pVCpu, (a_bRm), (a_cbImmAndRspOffset), &(a_GCPtrEff)))
 #else
-# define IEM_MC_CALC_RM_EFF_ADDR(a_GCPtrEff, bRm, cbImm) \
-    ((a_GCPtrEff) = iemOpHlpCalcRmEffAddrJmp(pVCpu, (bRm), (cbImm)))
+# define IEM_MC_CALC_RM_EFF_ADDR(a_GCPtrEff, a_bRm, a_cbImmAndRspOffset) \
+    ((a_GCPtrEff) = iemOpHlpCalcRmEffAddrJmp(pVCpu, (a_bRm), (a_cbImmAndRspOffset)))
 #endif
 
 #define IEM_MC_CALL_VOID_AIMPL_0(a_pfn)                   (a_pfn)()

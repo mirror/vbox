@@ -164,26 +164,26 @@
 
 
 /** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters, 32-bit. */
-#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_32(a_GCPtrEff, a_bRm, a_bSib, a_u32Disp) \
-    (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr32(pVCpu, a_bRm, a_bSib, a_u32Disp)
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_32(a_GCPtrEff, a_bRm, a_uSibAndRspOffset, a_u32Disp) \
+    (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr32(pVCpu, a_bRm, a_uSibAndRspOffset, a_u32Disp)
 
 /** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters, 32-bit flat. */
-#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_32_FLAT(a_GCPtrEff, a_bRm, a_bSib, a_u32Disp) \
-    (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr32(pVCpu, a_bRm, a_bSib, a_u32Disp)
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_32_FLAT(a_GCPtrEff, a_bRm, a_uSibAndRspOffset, a_u32Disp) \
+    (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr32(pVCpu, a_bRm, a_uSibAndRspOffset, a_u32Disp)
 
 /** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters, 16-bit with address prefix. */
-#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_16_ADDR32(a_GCPtrEff, a_bRm, a_bSib, a_u32Disp) \
-    (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr32(pVCpu, a_bRm, a_bSib, a_u32Disp)
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_16_ADDR32(a_GCPtrEff, a_bRm, a_uSibAndRspOffset, a_u32Disp) \
+    (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr32(pVCpu, a_bRm, a_uSibAndRspOffset, a_u32Disp)
 
 
 /** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters. */
-#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_64(a_GCPtrEff, a_bRmEx, a_bSib, a_u32Disp, a_cbImm) \
-    (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr64(pVCpu, a_bRmEx, a_bSib, a_u32Disp, a_cbImm)
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_64(a_GCPtrEff, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm) \
+    (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr64(pVCpu, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm)
 
 /** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters.
  * @todo How did that address prefix thing work for 64-bit code again? */
-#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_64_ADDR32(a_GCPtrEff, a_bRmEx, a_bSib, a_u32Disp, a_cbImm) \
-    (a_GCPtrEff) = (uint32_t)iemOpHlpCalcRmEffAddrThreadedAddr64(pVCpu, a_bRmEx, a_bSib, a_u32Disp, a_cbImm)
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_64_ADDR32(a_GCPtrEff, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm) \
+    (a_GCPtrEff) = (uint32_t)iemOpHlpCalcRmEffAddrThreadedAddr64(pVCpu, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm)
 
 #undef  IEM_MC_CALC_RM_EFF_ADDR
 
@@ -382,14 +382,19 @@ static RTGCPTR iemOpHlpCalcRmEffAddrThreadedAddr16(PVMCPUCC pVCpu, uint8_t bRm, 
  * IEM_MC_CALC_RM_EFF_ADDR_THREADED_ADDR32FLAT.
  *
  * @returns The effective address.
- * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   pVCpu               The cross context virtual CPU structure of the
+ *                              calling thread.
  * @param   bRm                 The ModRM byte.
- * @param   bSib                The SIB byte, if any.
+ * @param   uSibAndRspOffset    Two parts:
+ *                                - The first 8 bits make up the SIB byte.
+ *                                - The next 8 bits are the fixed RSP/ESP offse
+ *                                  in case of a pop [xSP].
  * @param   u32Disp             The displacement byte/dword, if any.
  */
-static RTGCPTR iemOpHlpCalcRmEffAddrThreadedAddr32(PVMCPUCC pVCpu, uint8_t bRm, uint8_t bSib, uint32_t u32Disp) RT_NOEXCEPT
+static RTGCPTR iemOpHlpCalcRmEffAddrThreadedAddr32(PVMCPUCC pVCpu, uint8_t bRm, uint32_t uSibAndRspOffset,
+                                                   uint32_t u32Disp) RT_NOEXCEPT
 {
-    Log5(("iemOpHlpCalcRmEffAddrThreadedAddr32: bRm=%#x bSib=%#x u32Disp=%#x\n", bRm, bSib, u32Disp));
+    Log5(("iemOpHlpCalcRmEffAddrThreadedAddr32: bRm=%#x uSibAndRspOffset=%#x u32Disp=%#x\n", bRm, uSibAndRspOffset, u32Disp));
 
     /* Handle the disp32 form with no registers first. */
     if ((bRm & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 5)
@@ -412,7 +417,7 @@ static RTGCPTR iemOpHlpCalcRmEffAddrThreadedAddr32(PVMCPUCC pVCpu, uint8_t bRm, 
         case 4: /* SIB */
         {
             /* Get the index and scale it. */
-            switch ((bSib >> X86_SIB_INDEX_SHIFT) & X86_SIB_INDEX_SMASK)
+            switch ((uSibAndRspOffset >> X86_SIB_INDEX_SHIFT) & X86_SIB_INDEX_SMASK)
             {
                 case 0: u32EffAddr = pVCpu->cpum.GstCtx.eax; break;
                 case 1: u32EffAddr = pVCpu->cpum.GstCtx.ecx; break;
@@ -423,16 +428,19 @@ static RTGCPTR iemOpHlpCalcRmEffAddrThreadedAddr32(PVMCPUCC pVCpu, uint8_t bRm, 
                 case 6: u32EffAddr = pVCpu->cpum.GstCtx.esi; break;
                 case 7: u32EffAddr = pVCpu->cpum.GstCtx.edi; break;
             }
-            u32EffAddr <<= (bSib >> X86_SIB_SCALE_SHIFT) & X86_SIB_SCALE_SMASK;
+            u32EffAddr <<= (uSibAndRspOffset >> X86_SIB_SCALE_SHIFT) & X86_SIB_SCALE_SMASK;
 
             /* add base */
-            switch (bSib & X86_SIB_BASE_MASK)
+            switch (uSibAndRspOffset & X86_SIB_BASE_MASK)
             {
                 case 0: u32EffAddr += pVCpu->cpum.GstCtx.eax; break;
                 case 1: u32EffAddr += pVCpu->cpum.GstCtx.ecx; break;
                 case 2: u32EffAddr += pVCpu->cpum.GstCtx.edx; break;
                 case 3: u32EffAddr += pVCpu->cpum.GstCtx.ebx; break;
-                case 4: u32EffAddr += pVCpu->cpum.GstCtx.esp; break;
+                case 4:
+                    u32EffAddr += pVCpu->cpum.GstCtx.esp;
+                    u32EffAddr += uSibAndRspOffset >> 8;
+                    break;
                 case 5:
                     if ((bRm & X86_MODRM_MOD_MASK) != 0)
                         u32EffAddr += pVCpu->cpum.GstCtx.ebp;
@@ -469,18 +477,22 @@ static RTGCPTR iemOpHlpCalcRmEffAddrThreadedAddr32(PVMCPUCC pVCpu, uint8_t bRm, 
  * Meant to be used via IEM_MC_CALC_RM_EFF_ADDR_THREADED_ADDR64.
  *
  * @returns The effective address.
- * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   pVCpu               The cross context virtual CPU structure of the
+ *                              calling thread.
  * @param   bRmEx               The ModRM byte but with bit 3 set to REX.B and
  *                              bit 4 to REX.X.  The two bits are part of the
  *                              REG sub-field, which isn't needed in this
  *                              function.
- * @param   bSib                The SIB byte, if any.
+ * @param   uSibAndRspOffset    Two parts:
+ *                                - The first 8 bits make up the SIB byte.
+ *                                - The next 8 bits are the fixed RSP/ESP offse
+ *                                  in case of a pop [xSP].
  * @param   u32Disp             The displacement byte/word/dword, if any.
  * @param   cbInstr             The size of the fully decoded instruction. Used
  *                              for RIP relative addressing.
  * @todo combine cbInstr and cbImm!
  */
-static RTGCPTR iemOpHlpCalcRmEffAddrThreadedAddr64(PVMCPUCC pVCpu, uint8_t bRmEx, uint8_t bSib,
+static RTGCPTR iemOpHlpCalcRmEffAddrThreadedAddr64(PVMCPUCC pVCpu, uint8_t bRmEx, uint32_t uSibAndRspOffset,
                                                    uint32_t u32Disp, uint8_t cbInstr) RT_NOEXCEPT
 {
     Log5(("iemOpHlpCalcRmEffAddrThreadedAddr64: bRmEx=%#x\n", bRmEx));
@@ -522,7 +534,8 @@ static RTGCPTR iemOpHlpCalcRmEffAddrThreadedAddr64(PVMCPUCC pVCpu, uint8_t bRmEx
             case 12:
             {
                 /* Get the index and scale it. */
-                switch (((bSib >> X86_SIB_INDEX_SHIFT) & X86_SIB_INDEX_SMASK) | ((bRmEx & 0x10) >> 1)) /* bRmEx[bit 4] = REX.X */
+                switch (  ((uSibAndRspOffset >> X86_SIB_INDEX_SHIFT) & X86_SIB_INDEX_SMASK)
+                        | ((bRmEx & 0x10) >> 1)) /* bRmEx[bit 4] = REX.X */
                 {
                     case  0: u64EffAddr = pVCpu->cpum.GstCtx.rax; break;
                     case  1: u64EffAddr = pVCpu->cpum.GstCtx.rcx; break;
@@ -541,16 +554,19 @@ static RTGCPTR iemOpHlpCalcRmEffAddrThreadedAddr64(PVMCPUCC pVCpu, uint8_t bRmEx
                     case 14: u64EffAddr = pVCpu->cpum.GstCtx.r14; break;
                     case 15: u64EffAddr = pVCpu->cpum.GstCtx.r15; break;
                 }
-                u64EffAddr <<= (bSib >> X86_SIB_SCALE_SHIFT) & X86_SIB_SCALE_SMASK;
+                u64EffAddr <<= (uSibAndRspOffset >> X86_SIB_SCALE_SHIFT) & X86_SIB_SCALE_SMASK;
 
                 /* add base */
-                switch ((bSib & X86_SIB_BASE_MASK) | (bRmEx & 0x8)) /* bRmEx[bit 3] = REX.B */
+                switch ((uSibAndRspOffset & X86_SIB_BASE_MASK) | (bRmEx & 0x8)) /* bRmEx[bit 3] = REX.B */
                 {
                     case  0: u64EffAddr += pVCpu->cpum.GstCtx.rax; break;
                     case  1: u64EffAddr += pVCpu->cpum.GstCtx.rcx; break;
                     case  2: u64EffAddr += pVCpu->cpum.GstCtx.rdx; break;
                     case  3: u64EffAddr += pVCpu->cpum.GstCtx.rbx; break;
-                    case  4: u64EffAddr += pVCpu->cpum.GstCtx.rsp; break;
+                    case  4:
+                        u64EffAddr += pVCpu->cpum.GstCtx.rsp;
+                        u64EffAddr += uSibAndRspOffset >> 8;
+                        break;
                     case  6: u64EffAddr += pVCpu->cpum.GstCtx.rsi; break;
                     case  7: u64EffAddr += pVCpu->cpum.GstCtx.rdi; break;
                     case  8: u64EffAddr += pVCpu->cpum.GstCtx.r8;  break;

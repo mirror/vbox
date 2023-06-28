@@ -449,20 +449,25 @@ class ThreadedFunctionVariation(object):
                     assert self.sVariation != self.ksVariation_Default;
                     oNewStmt.sName = 'IEM_MC_CALC_RM_EFF_ADDR_THREADED' + self.sVariation.upper();
                     assert len(oNewStmt.asParams) == 3;
+
                     if self.sVariation in (self.ksVariation_16, self.ksVariation_16_Pre386, self.ksVariation_32_Addr16):
                         oNewStmt.asParams = [
                             oNewStmt.asParams[0], oNewStmt.asParams[1], self.dParamRefs['u16Disp'][0].sNewName,
                         ];
-                    elif self.sVariation in (self.ksVariation_32, self.ksVariation_32_Flat, self.ksVariation_16_Addr32):
-                        oNewStmt.asParams = [
-                            oNewStmt.asParams[0], oNewStmt.asParams[1], self.dParamRefs['bSib'][0].sNewName,
-                            self.dParamRefs['u32Disp'][0].sNewName,
-                        ];
                     else:
-                        oNewStmt.asParams = [
-                            oNewStmt.asParams[0], self.dParamRefs['bRmEx'][0].sNewName, self.dParamRefs['bSib'][0].sNewName,
-                            self.dParamRefs['u32Disp'][0].sNewName, self.dParamRefs['cbInstr'][0].sNewName,
-                        ];
+                        sSibAndMore = self.dParamRefs['bSib'][0].sNewName; # Merge bSib and 2nd part of cbImmAndRspOffset.
+                        if oStmt.asParams[2] not in ('0', '1', '2', '4'):
+                            sSibAndMore = '(%s) | ((%s) & 0x0f00)' % (self.dParamRefs['bSib'][0].sNewName, oStmt.asParams[2]);
+
+                        if self.sVariation in (self.ksVariation_32, self.ksVariation_32_Flat, self.ksVariation_16_Addr32):
+                            oNewStmt.asParams = [
+                                oNewStmt.asParams[0], oNewStmt.asParams[1], sSibAndMore, self.dParamRefs['u32Disp'][0].sNewName,
+                            ];
+                        else:
+                            oNewStmt.asParams = [
+                                oNewStmt.asParams[0], self.dParamRefs['bRmEx'][0].sNewName, sSibAndMore,
+                                self.dParamRefs['u32Disp'][0].sNewName, self.dParamRefs['cbInstr'][0].sNewName,
+                            ];
                 # ... and IEM_MC_ADVANCE_RIP_AND_FINISH into *_THREADED and maybe *_LM64/_NOT64 ...
                 elif oNewStmt.sName in ('IEM_MC_ADVANCE_RIP_AND_FINISH', 'IEM_MC_REL_JMP_S8_AND_FINISH',
                                         'IEM_MC_REL_JMP_S16_AND_FINISH', 'IEM_MC_REL_JMP_S32_AND_FINISH'):
@@ -643,6 +648,9 @@ class ThreadedFunctionVariation(object):
 
             if oStmt.sName == 'IEM_MC_CALC_RM_EFF_ADDR':
                 # This is being pretty presumptive about bRm always being the RM byte...
+                assert len(oStmt.asParams) == 3;
+                assert oStmt.asParams[1] == 'bRm';
+
                 if self.sVariation in (self.ksVariation_16, self.ksVariation_16_Pre386, self.ksVariation_32_Addr16):
                     self.aoParamRefs.append(ThreadedParamRef('bRm',     'uint8_t',  oStmt));
                     self.aoParamRefs.append(ThreadedParamRef('(uint16_t)uEffAddrInfo' ,
@@ -663,9 +671,7 @@ class ThreadedFunctionVariation(object):
                                                              'uint32_t', oStmt, sStdRef = 'u32Disp'));
                     self.aoParamRefs.append(ThreadedParamRef('IEM_GET_INSTR_LEN(pVCpu)',
                                                              'uint4_t',  oStmt, sStdRef = 'cbInstr'));
-                    assert len(oStmt.asParams) == 3;
-                    assert oStmt.asParams[1].startswith('bRm');
-                    aiSkipParams[1] = True; # Skip the bRm parameter
+                    aiSkipParams[1] = True; # Skip the bRm parameter as it is being replaced by bRmEx.
 
             # 8-bit register accesses needs to have their index argument reworked to take REX into account.
             if oStmt.sName.startswith('IEM_MC_') and oStmt.sName.find('_GREG_U8') > 0:
