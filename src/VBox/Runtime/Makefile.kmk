@@ -833,12 +833,14 @@ RuntimeBaseR3_SOURCES  += common/time/timesupref.cpp
 
 RuntimeBaseR3_SOURCES.x86 += \
 	generic/RTMpGetDescription-generic.cpp \
+	generic/system-page-size-generic.cpp \
 	common/misc/zero.asm \
 	common/misc/RTSystemIsInsideVM-amd64-x86.cpp \
 	common/string/RTStrMemFind32.asm \
 	VBox/RTLogWriteVmm-amd64-x86.asm
 RuntimeBaseR3_SOURCES.amd64 += \
 	generic/RTMpGetDescription-generic.cpp \
+	generic/system-page-size-generic.cpp \
 	common/misc/zero.asm \
 	common/misc/RTSystemIsInsideVM-amd64-x86.cpp \
 	common/string/RTStrMemFind32.asm \
@@ -867,6 +869,7 @@ RuntimeBaseR3_SOURCES.arm64 := \
 	common/misc/zero-alt.S
 RuntimeBaseR3_SOURCES.sparc32 += \
 	generic/RTMpGetDescription-generic-stub.cpp \
+	generic/system-page-size-generic.cpp \
 	generic/RTSystemIsInsideVM-generic.cpp \
 	common/asm/ASMBitFirstClear-generic.cpp \
 	common/asm/ASMBitNextClear-generic.cpp \
@@ -882,6 +885,7 @@ RuntimeBaseR3_SOURCES.sparc32 += \
 	common/string/RTStrMemFind32.cpp
 RuntimeBaseR3_SOURCES.sparc64 += \
 	generic/RTMpGetDescription-generic-stub.cpp \
+	generic/system-page-size-generic.cpp \
 	generic/RTSystemIsInsideVM-generic.cpp \
 	common/asm/ASMBitFirstClear-generic.cpp \
 	common/asm/ASMBitNextClear-generic.cpp \
@@ -1194,9 +1198,11 @@ else
  	r3/linux/semevent-linux.cpp \
  	r3/linux/semeventmulti-linux.cpp
  RuntimeBaseR3_SOURCES.linux.arm64 += \
+ 	r3/posix/system-page-size-posix.cpp \
  	r3/linux/semevent-linux.cpp \
  	r3/linux/semeventmulti-linux.cpp
  RuntimeBaseR3_SOURCES.linux.arm32 += \
+ 	r3/posix/system-page-size-posix.cpp \
  	r3/linux/semevent-linux.cpp \
  	r3/linux/semeventmulti-linux.cpp
  ifdef RT_NEW_LINUX_MUTEX_CODE
@@ -1396,10 +1402,12 @@ RuntimeBaseR3_SOURCES.darwin.amd64 += \
 RuntimeBaseR3_SOURCES.darwin.arm32 += \
 	common/string/mempcpy.cpp \
 	common/string/memrchr.cpp \
+	generic/system-page-size-generic.cpp \
 	r3/darwin/RTMpGetDescription-generic.cpp
 RuntimeBaseR3_SOURCES.darwin.arm64 += \
 	common/string/mempcpy.cpp \
 	common/string/memrchr.cpp \
+	generic/system-page-size-generic.cpp \
 	r3/darwin/RTMpGetDescription-generic.cpp
 
 ## @todo Make BSD sched, implement RTMP*.
@@ -3577,6 +3585,7 @@ RuntimeR0Drv_SOURCES    = \
 	generic/RTSemEventWaitNoResume-2-ex-generic.cpp \
 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
+	generic/system-page-size-generic.cpp \
 	generic/critsect-generic.cpp \
 	generic/critsectrw-generic.cpp \
 	generic/errvars-generic.cpp \

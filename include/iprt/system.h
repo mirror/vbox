@@ -163,6 +163,35 @@ RTDECL(int) RTSystemQueryAvailableRam(uint64_t *pcb);
  */
 RTDECL(int) RTSystemQueryUnavailableRam(uint64_t *pcb);
 
+/**
+ * Returns the page size in bytes of the system.
+ *
+ * @returns Page size in bytes.
+ */
+RTDECL(uint32_t) RTSystemGetPageSize(void);
+
+/**
+ * Returns the page shift in bits of the system.
+ *
+ * @returns Page shift in bits.
+ */
+RTDECL(uint32_t) RTSystemGetPageShift(void);
+
+/**
+ * Returns the page offset mask of the system.
+ *
+ * @returns Page offset maske.
+ */
+RTDECL(uintptr_t) RTSystemGetPageOffsetMask(void);
+
+/**
+ * Aligns the given size to the systems page size.
+ *
+ * @returns Byte size aligned to the systems page size.
+ * @param   cb                  The size in bytes to align.
+ */
+RTDECL(size_t) RTSystemPageAlignSize(size_t cb);
+
 
 /**
  * The DMI strings.

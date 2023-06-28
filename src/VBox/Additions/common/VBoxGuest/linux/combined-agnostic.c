@@ -167,6 +167,8 @@
 #undef LOG_GROUP
 #include "generic/mppresent-generic.c"
 #undef LOG_GROUP
+#include "generic/system-page-size-generic.c"
+#undef LOG_GROUP
 #include "VBox/log-vbox.c"
 #undef LOG_GROUP
 #include "VBox/logbackdoor.c"

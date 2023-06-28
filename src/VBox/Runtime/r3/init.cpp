@@ -87,6 +87,7 @@
 #include "internal/initterm.h"
 #include "internal/path.h"
 #include "internal/process.h"
+#include "internal/system.h"
 #include "internal/thread.h"
 #include "internal/time.h"
 
@@ -405,6 +406,14 @@ static int rtR3InitBody(uint32_t fFlags, int cArgs, char ***ppapszArgs, const ch
     }
 # endif  /* VBOX */
 #endif /* !IN_GUEST && !RT_NO_GIP */
+
+#if defined(RT_ARCH_ARM64) && defined(RT_OS_LINUX)
+    /*
+     * Initialize the page size.
+     */
+    rc = rtSystemInitPageSize();
+    AssertMsgRCReturn(rc, ("Failed to initialize the page size, rc=%Rrc!\n", rc), rc);
+#endif
 
     /*
      * Thread Thread database and adopt the caller thread as 'main'.
