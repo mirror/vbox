@@ -400,16 +400,11 @@ void UIVisoContentBrowser::tableViewItemDoubleClick(const QModelIndex &index)
         static_cast<UICustomFileSystemItem*>(m_pTableProxyModel->mapToSource(index).internalPointer());
     if (!pClickedItem)
         return;
+    if (!pClickedItem->isDirectory())
+        return;
     QString strISOPath = pClickedItem->data(UICustomFileSystemModelData_ISOFilePath).toString();
     if (pClickedItem->isUpDirectory())
-    {
-        QModelIndex currentRoot = m_pTableProxyModel->mapToSource(m_pTableView->rootIndex());
-        /* Go up if we are not already in root: */
-        if (currentRoot != m_pModel->rootIndex())
-        {
-            setTableRootIndex(currentRoot.parent());
-        }
-    }
+        goUp();
     else if (!strISOPath.isEmpty())
     {
         importISOContentToViso(strISOPath, pClickedItem, pClickedItem->data(UICustomFileSystemModelData_LocalPath).toString());
@@ -560,7 +555,6 @@ void UIVisoContentBrowser::prepareToolBar()
     m_pCreateNewDirectoryAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_CreateNewDirectory);
     m_pRenameAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Rename);
     m_pResetAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Reset);
-    m_pGoHome = m_pActionPool->action(UIActionIndex_M_VISOCreator_VisoContent_GoHome);
     m_pGoUp = m_pActionPool->action(UIActionIndex_M_VISOCreator_VisoContent_GoUp);
     m_pGoForward = m_pActionPool->action(UIActionIndex_M_VISOCreator_VisoContent_GoForward);
     m_pGoBackward = m_pActionPool->action(UIActionIndex_M_VISOCreator_VisoContent_GoBackward);
@@ -570,7 +564,6 @@ void UIVisoContentBrowser::prepareToolBar()
     AssertReturnVoid(m_pRenameAction);
     AssertReturnVoid(m_pResetAction);
     AssertReturnVoid(m_pToolBar);
-    AssertReturnVoid(m_pGoHome);
     AssertReturnVoid(m_pGoUp);
     AssertReturnVoid(m_pGoForward);
     AssertReturnVoid(m_pGoBackward);
@@ -581,7 +574,6 @@ void UIVisoContentBrowser::prepareToolBar()
     m_pToolBar->addAction(m_pGoBackward);
     m_pToolBar->addAction(m_pGoForward);
     m_pToolBar->addAction(m_pGoUp);
-    m_pToolBar->addAction(m_pGoHome);
     m_pToolBar->addSeparator();
     m_pToolBar->addAction(m_pRemoveAction);
 
@@ -635,6 +627,13 @@ void UIVisoContentBrowser::prepareConnections()
     if (m_pRenameAction)
         connect(m_pRenameAction, &QAction::triggered,
                 this,&UIVisoContentBrowser::sltItemRenameAction);
+
+    if (m_pGoUp)
+        connect(m_pGoUp, &QAction::triggered, this, &UIVisoContentBrowser::sltGoUp);
+    if (m_pGoForward)
+        connect(m_pGoForward, &QAction::triggered, this, &UIVisoContentBrowser::sltGoForward);
+    if (m_pGoBackward)
+        connect(m_pGoBackward, &QAction::triggered, this, &UIVisoContentBrowser::sltGoBackward);
 }
 
 UICustomFileSystemItem* UIVisoContentBrowser::rootItem()
@@ -642,6 +641,15 @@ UICustomFileSystemItem* UIVisoContentBrowser::rootItem()
     if (!m_pModel)
         return 0;
     return m_pModel->rootItem();
+}
+
+UICustomFileSystemItem* UIVisoContentBrowser::startItem()
+{
+    UICustomFileSystemItem* pRoot = rootItem();
+
+    if (!pRoot || pRoot->childCount() <= 0)
+        return 0;
+    return pRoot->child(0);
 }
 
 void UIVisoContentBrowser::initializeModel()
@@ -668,6 +676,8 @@ void UIVisoContentBrowser::setTableRootIndex(QModelIndex index /* = QModelIndex 
     if (tableIndex.isValid())
         m_pTableView->setRootIndex(tableIndex);
     updateNavigationWidgetPath(currentPath());
+    if (m_pGoUp)
+        m_pGoUp->setEnabled(!onStartItem());
 }
 
 void UIVisoContentBrowser::setPathFromNavigationWidget(const QString &strPath)
@@ -843,8 +853,6 @@ void UIVisoContentBrowser::sltItemRenameAttempt(UICustomFileSystemItem *pItem, Q
 
     if (m_pTableProxyModel)
         m_pTableProxyModel->invalidate();
-
-
 }
 
 void UIVisoContentBrowser::sltTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
@@ -886,6 +894,11 @@ void UIVisoContentBrowser::sltShowContextMenu(const QPoint &point)
     menu.exec(pSender->mapToGlobal(point));
 }
 
+void UIVisoContentBrowser::sltGoUp()
+{
+    goUp();
+}
+
 void UIVisoContentBrowser::reset()
 {
     m_entryMap.clear();
@@ -921,4 +934,30 @@ QString UIVisoContentBrowser::currentPath() const
     return pItem->data(UICustomFileSystemModelData_VISOPath).toString();
 }
 
+bool UIVisoContentBrowser::onStartItem()
+{
+    if (!m_pTableView || !m_pModel)
+        return false;
+    QModelIndex index = m_pTableProxyModel->mapToSource(m_pTableView->rootIndex());
+    UICustomFileSystemItem *pItem = static_cast<UICustomFileSystemItem*>((index).internalPointer());
+    if (!index.isValid() || !pItem)
+        return false;
+    if (pItem != startItem())
+        return false;
+    return true;
+}
+
+void UIVisoContentBrowser::goUp()
+{
+    AssertReturnVoid(m_pTableProxyModel);
+    AssertReturnVoid(m_pTableView);
+    QModelIndex currentRoot = m_pTableProxyModel->mapToSource(m_pTableView->rootIndex());
+    if (!currentRoot.isValid())
+        return;
+    /* Go up if we are not already in root: */
+    if (!onStartItem())
+    {
+        setTableRootIndex(currentRoot.parent());
+    }
+}
 #include "UIVisoContentBrowser.moc"
