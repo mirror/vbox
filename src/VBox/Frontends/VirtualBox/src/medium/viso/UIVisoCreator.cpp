@@ -287,6 +287,13 @@ QStringList UIVisoCreatorWidget::entryList() const
     return m_pVISOContentBrowser->entryList();
 }
 
+QString UIVisoCreatorWidget::importedISOPath() const
+{
+    if (!m_pVISOContentBrowser)
+        return QString();
+    return m_pVISOContentBrowser->importedISOPath();
+}
+
 const QString &UIVisoCreatorWidget::visoName() const
 {
     return m_visoOptions.m_strVisoName;
@@ -655,8 +662,8 @@ QUuid UIVisoCreatorDialog::createViso(UIActionPool *pActionPool, QWidget *pParen
     if (pVisoCreator->exec(false /* not application modal */))
     {
         QStringList VisoEntryList = pVisoCreator->entryList();
-
-        if (VisoEntryList.empty() || VisoEntryList[0].isEmpty())
+        QString strImportedISOPath = pVisoCreator->importedISOPath();
+        if ((VisoEntryList.empty() || VisoEntryList[0].isEmpty()) && strImportedISOPath.isEmpty())
         {
             delete pVisoCreator;
             return QUuid();
@@ -672,6 +679,8 @@ QUuid UIVisoCreatorDialog::createViso(UIActionPool *pActionPool, QWidget *pParen
             QTextStream stream(&file);
             stream << QString("%1 %2").arg("--iprt-iso-maker-file-marker-bourne-sh").arg(QUuid::createUuid().toString()) << "\n";
             stream<< "--volume-id=" << strVisoName << "\n";
+            if (!strImportedISOPath.isEmpty())
+                stream << "--import-iso=" << strImportedISOPath;
             stream << VisoEntryList.join("\n");
             if (!pVisoCreator->customOptions().isEmpty())
             {
@@ -721,6 +730,13 @@ QString UIVisoCreatorDialog::visoName() const
 {
     if (m_pVisoCreatorWidget)
         return m_pVisoCreatorWidget->visoName();
+    return QString();
+}
+
+QString UIVisoCreatorDialog::importedISOPath() const
+{
+    if (m_pVisoCreatorWidget)
+        return m_pVisoCreatorWidget->importedISOPath();
     return QString();
 }
 

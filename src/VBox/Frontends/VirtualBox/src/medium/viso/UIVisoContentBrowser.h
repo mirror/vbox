@@ -75,6 +75,9 @@ public:
     void parseVisoFileContent(const QString &strFileName);
     void prepareMainMenu(QMenu *pMenu);
 
+    const QString &importedISOPath() const;
+    void setImportedISOPath(const QString &strPath);
+
 public slots:
 
     void sltCreateNewDirectory();
@@ -110,10 +113,7 @@ private:
     /* Child of root. */
     UICustomFileSystemItem *startItem();
 
-    /** @name Index conversion functions. These are half-smart and tries to determine the source model before conversion.
-      * @{ */
-        QModelIndex         convertIndexToTableIndex(const QModelIndex &index);
-    /** @} */
+    QModelIndex             convertIndexToTableIndex(const QModelIndex &index);
     /** Lists the content of the host file system directory by using Qt file system API. */
     void                    scanHostDirectory(UICustomFileSystemItem *directory);
     KFsObjType              fileType(const QFileInfo &fsInfo);
@@ -132,11 +132,12 @@ private:
     QList<UICustomFileSystemItem*> tableSelectedItems();
     bool                           onStartItem();
     void                           goUp();
-    UIVisoContentTableView       *m_pTableView;
-    UICustomFileSystemModel      *m_pModel;
-    UICustomFileSystemProxyModel *m_pTableProxyModel;
+    UIVisoContentTableView        *m_pTableView;
+    UICustomFileSystemModel       *m_pModel;
+    UICustomFileSystemProxyModel  *m_pTableProxyModel;
 
     QString                       m_strVisoName;
+    QString                       m_strImportedISOPath;
     /** keys of m_entryMap are iso locations and values are
      *  local location of file objects. these keys and values are
      *  concatenated and passed to the client to create ad-hoc.viso entries. */
