@@ -38,6 +38,9 @@
 #include "UIActionPool.h"
 #include "UIVisoHostBrowser.h"
 
+/* Other VBox includes: */
+#include <iprt/assert.h>
+
 
 /*********************************************************************************************************************************
 *   UIHostBrowserDelegate definition.                                                                                            *
