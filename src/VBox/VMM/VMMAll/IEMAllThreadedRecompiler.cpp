@@ -1038,6 +1038,7 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
 
         rcStrict = FNIEMOP_CALL(g_apfnIemThreadedRecompilerOneByteMap[b]);
         if (   rcStrict == VINF_SUCCESS
+            && pVCpu->iem.s.rcPassUp == VINF_SUCCESS
             && !pVCpu->iem.s.fEndTb)
         {
             Assert(pTb->Thrd.cCalls > cCallsPrev);
@@ -1066,7 +1067,7 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
             Log8(("%04x:%08RX64: End TB - 0 calls, rc=%d\n", uCsLog, uRipLog, VBOXSTRICTRC_VAL(rcStrict)));
             pVCpu->iem.s.pCurTbR3 = NULL;
             iemThreadedTbFree(pVM, pVCpu, pTb);
-            return rcStrict;
+            return iemExecStatusCodeFiddling(pVCpu, rcStrict);
         }
 
         /* Still space in the TB? */
@@ -1092,7 +1093,7 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
      */
 #endif
 
-    return rcStrict;
+    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
 }
 
 
@@ -1134,7 +1135,9 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb)
                                                                                           pCallEntry->auParams[0],
                                                                                           pCallEntry->auParams[1],
                                                                                           pCallEntry->auParams[2]);
-        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+
+        if (RT_LIKELY(   rcStrict == VINF_SUCCESS
+                      && pVCpu->iem.s.rcPassUp == VINF_SUCCESS /** @todo this isn't great. */))
             pCallEntry++;
         else
         {
@@ -1143,8 +1146,8 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb)
             /* Some status codes are just to get us out of this loop and
                continue in a different translation block. */
             if (rcStrict == VINF_IEM_REEXEC_MODE_CHANGED)
-                return VINF_SUCCESS;
-            return rcStrict;
+                return iemExecStatusCodeFiddling(pVCpu, VINF_SUCCESS);
+            return iemExecStatusCodeFiddling(pVCpu, rcStrict);
         }
     }
 
