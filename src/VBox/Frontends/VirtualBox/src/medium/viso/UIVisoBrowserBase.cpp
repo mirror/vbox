@@ -49,6 +49,10 @@ UIVisoBrowserBase::UIVisoBrowserBase(UIActionPool *pActionPool, QWidget *pParent
     , m_pMainLayout(0)
     , m_pToolBar(0)
     , m_pActionPool(pActionPool)
+    , m_pGoHome(0)
+    , m_pGoUp(0)
+    , m_pGoForward(0)
+    , m_pGoBackward(0)
     , m_pNavigationWidget(0)
     , m_pFileTableLabel(0)
 {
@@ -123,10 +127,32 @@ void UIVisoBrowserBase::updateNavigationWidgetPath(const QString &strPath)
 void UIVisoBrowserBase::sltNavigationWidgetPathChange(const QString &strPath)
 {
     setPathFromNavigationWidget(strPath);
+    enableForwardBackwardActions();
 }
 
 void UIVisoBrowserBase::setFileTableLabelText(const QString &strText)
 {
     if (m_pFileTableLabel)
         m_pFileTableLabel->setText(strText);
+}
+
+void UIVisoBrowserBase::sltGoForward()
+{
+    if (m_pNavigationWidget)
+        m_pNavigationWidget->goForwardInHistory();
+}
+
+void UIVisoBrowserBase::sltGoBackward()
+{
+    if (m_pNavigationWidget)
+        m_pNavigationWidget->goBackwardInHistory();
+}
+
+void UIVisoBrowserBase::enableForwardBackwardActions()
+{
+    AssertReturnVoid(m_pNavigationWidget);
+    if (m_pGoForward)
+        m_pGoForward->setEnabled(m_pNavigationWidget->canGoForward());
+    if (m_pGoBackward)
+        m_pGoBackward->setEnabled(m_pNavigationWidget->canGoBackward());
 }

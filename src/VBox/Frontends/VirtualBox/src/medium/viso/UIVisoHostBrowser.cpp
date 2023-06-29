@@ -34,6 +34,8 @@
 #include <QTableView>
 
 /* GUI includes: */
+#include "QIToolBar.h"
+#include "UIActionPool.h"
 #include "UIVisoHostBrowser.h"
 
 
@@ -157,6 +159,7 @@ UIVisoHostBrowser::UIVisoHostBrowser(UIActionPool *pActionPool, QWidget *pParent
     , m_pTableView(0)
 {
     prepareObjects();
+    prepareToolBar();
     prepareConnections();
 }
 
@@ -218,6 +221,7 @@ void UIVisoHostBrowser::prepareObjects()
 void UIVisoHostBrowser::prepareConnections()
 {
     UIVisoBrowserBase::prepareConnections();
+
     if (m_pTableView)
     {
         connect(m_pTableView, &QTableView::doubleClicked,
@@ -229,6 +233,38 @@ void UIVisoHostBrowser::prepareConnections()
     if (m_pTableView->selectionModel())
         connect(m_pTableView->selectionModel(), &QItemSelectionModel::selectionChanged,
                 this, &UIVisoHostBrowser::sltTableSelectionChanged);
+
+    if (m_pGoHome)
+        connect(m_pGoHome, &QAction::triggered, this, &UIVisoHostBrowser::sltGoHome);
+    if (m_pGoUp)
+        connect(m_pGoUp, &QAction::triggered, this, &UIVisoHostBrowser::sltGoUp);
+    if (m_pGoForward)
+        connect(m_pGoForward, &QAction::triggered, this, &UIVisoHostBrowser::sltGoForward);
+    if (m_pGoBackward)
+        connect(m_pGoBackward, &QAction::triggered, this, &UIVisoHostBrowser::sltGoBackward);
+}
+
+void UIVisoHostBrowser::prepareToolBar()
+{
+    m_pGoHome = m_pActionPool->action(UIActionIndex_M_VISOCreator_Host_GoHome);
+    m_pGoUp = m_pActionPool->action(UIActionIndex_M_VISOCreator_Host_GoUp);
+    m_pGoForward = m_pActionPool->action(UIActionIndex_M_VISOCreator_Host_GoForward);
+    m_pGoBackward = m_pActionPool->action(UIActionIndex_M_VISOCreator_Host_GoBackward);
+
+    AssertReturnVoid(m_pGoHome);
+    AssertReturnVoid(m_pGoUp);
+    AssertReturnVoid(m_pGoForward);
+    AssertReturnVoid(m_pGoBackward);
+
+    m_pToolBar->addAction(m_pGoBackward);
+    m_pToolBar->addAction(m_pGoForward);
+    m_pToolBar->addAction(m_pGoUp);
+    m_pToolBar->addAction(m_pGoHome);
+    //m_pToolBar->addSeparator();
+
+    if (m_pGoUp)
+        m_pGoUp->setEnabled(!isRoot());
+    enableForwardBackwardActions();
 }
 
 void UIVisoHostBrowser::sltTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
@@ -259,6 +295,24 @@ void UIVisoHostBrowser::sltShowContextMenu(const QPoint &point)
     // menu.exec(pContextMenuRequester->mapToGlobal(point));
 }
 
+void UIVisoHostBrowser::sltGoHome()
+{
+    AssertReturnVoid(m_pModel);
+    QModelIndex homeIndex = m_pModel->index(QDir::homePath());
+    if (homeIndex.isValid())
+        setTableRootIndex(homeIndex);
+}
+
+void UIVisoHostBrowser::sltGoUp()
+{
+    AssertReturnVoid(m_pModel);
+    QDir currentDir = QDir(currentPath());
+    currentDir.cdUp();
+    QModelIndex upIndex = m_pModel->index(currentDir.absolutePath());
+    if (upIndex.isValid())
+        setTableRootIndex(upIndex);
+}
+
 void UIVisoHostBrowser::tableViewItemDoubleClick(const QModelIndex &index)
 {
     if (!index.isValid())
@@ -285,7 +339,7 @@ QString UIVisoHostBrowser::currentPath() const
 {
     if (!m_pTableView || !m_pModel)
         return QString();
-    QModelIndex currentTableIndex = m_pTableView->selectionModel()->currentIndex();
+    QModelIndex currentTableIndex = m_pTableView->rootIndex();
     return QDir::fromNativeSeparators(m_pModel->filePath(currentTableIndex));
 }
 
@@ -338,6 +392,8 @@ void UIVisoHostBrowser::setTableRootIndex(QModelIndex index /* = QModelIndex */)
     m_pTableView->setRootIndex(index);
     m_pTableView->clearSelection();
     updateNavigationWidgetPath(m_pModel->filePath(index));
+    if (m_pGoUp)
+        m_pGoUp->setEnabled(!isRoot());
 }
 
 void UIVisoHostBrowser::setPathFromNavigationWidget(const QString &strPath)
@@ -356,4 +412,10 @@ QModelIndex UIVisoHostBrowser::currentRootIndex() const
         return QModelIndex();
     return m_pTableView->rootIndex();
 }
+
+bool UIVisoHostBrowser::isRoot() const
+{
+    return QDir(currentPath()).isRoot();
+}
+
 #include "UIVisoHostBrowser.moc"

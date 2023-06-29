@@ -75,11 +75,15 @@ private slots:
 
     void sltTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
     void sltShowContextMenu(const QPoint &point);
+    void sltGoHome();
+    void sltGoUp();
 
 private:
 
     void prepareObjects();
     void prepareConnections();
+    void prepareToolBar();
+    bool isRoot() const;
     QModelIndex currentRootIndex() const;
     /** We have two file system models (one for each item view) since we set different filters on each of these models. */
     UIVisoHostBrowserModel *m_pModel;

@@ -662,8 +662,6 @@ QUuid UIVisoCreatorDialog::createViso(UIActionPool *pActionPool, QWidget *pParen
             return QUuid();
         }
 
-        gEDataManager->setVISOCreatorRecentFolder(pVisoCreator->currentPath());
-
         QFile file(pVisoCreator->visoFileFullPath());
         if (file.open(QFile::WriteOnly | QFile::Truncate))
         {
@@ -683,6 +681,8 @@ QUuid UIVisoCreatorDialog::createViso(UIActionPool *pActionPool, QWidget *pParen
             file.close();
         }
     } // if (pVisoCreator->exec(false /* not application modal */))
+    gEDataManager->setVISOCreatorRecentFolder(pVisoCreator->currentPath());
+
     delete pVisoCreator;
     return QUuid();
 }

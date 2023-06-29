@@ -235,10 +235,6 @@ UIVisoContentBrowser::UIVisoContentBrowser(UIActionPool *pActionPool, QWidget *p
     , m_pCreateNewDirectoryAction(0)
     , m_pRenameAction(0)
     , m_pResetAction(0)
-    , m_pGoHome(0)
-    , m_pGoUp(0)
-    , m_pGoForward(0)
-    , m_pGoBackward(0)
 {
     prepareObjects();
     prepareToolBar();
@@ -592,6 +588,8 @@ void UIVisoContentBrowser::prepareToolBar()
     m_pToolBar->addAction(m_pCreateNewDirectoryAction);
     m_pToolBar->addAction(m_pRenameAction);
     m_pToolBar->addAction(m_pResetAction);
+
+    enableForwardBackwardActions();
 }
 
 void UIVisoContentBrowser::prepareMainMenu(QMenu *pMenu)
