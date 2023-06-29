@@ -1247,3 +1247,177 @@ char *ShClFormatsToStrA(SHCLFORMATS fFormats)
     return pszFmts;
 }
 
+
+/*********************************************************************************************************************************
+*   Shared Clipboard Cache                                                                                                       *
+*********************************************************************************************************************************/
+
+/**
+ * Returns (mutable) data of a cache entry.
+ *
+ * @param   pCacheEntry         Cache entry to return data for.
+ * @param   pvData              Where to return the (mutable) data pointer.
+ * @param   pcbData             Where to return the data size.
+ */
+void ShClCacheEntryGet(PSHCLCACHEENTRY pCacheEntry, void **pvData, size_t *pcbData)
+{
+    AssertPtrReturnVoid(pCacheEntry);
+    AssertPtrReturnVoid(pvData);
+    AssertReturnVoid(pcbData);
+
+    *pvData  = pCacheEntry->pvData;
+    *pcbData = pCacheEntry->cbData;
+}
+
+/**
+ * Initializes a cache entry.
+ *
+ * @returns VBox status code.
+ * @param   pCacheEntry         Cache entry to init.
+ * @param   pvData              Data to copy to entry. Can be NULL to initialize an emptry entry.
+ * @param   cbData              Size (in bytes) of \a pvData to copy to entry. Must be 0 if \a pvData is NULL.
+ */
+static int shClCacheEntryInit(PSHCLCACHEENTRY pCacheEntry, const void *pvData, size_t cbData)
+{
+    AssertReturn(RT_VALID_PTR(pvData) || cbData == 0, VERR_INVALID_PARAMETER);
+
+    RT_BZERO(pCacheEntry, sizeof(SHCLCACHEENTRY));
+
+    if (pvData)
+    {
+        pCacheEntry->pvData = RTMemDup(pvData, cbData);
+        AssertPtrReturn(pCacheEntry->pvData, VERR_NO_MEMORY);
+        pCacheEntry->cbData = cbData;
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Returns whether a cache entry is valid (cache hit) or not.
+ *
+ * @returns \c true if valid, or \c false if not.
+ * @param   pCacheEntry         Cache entry to check for.
+ */
+DECLINLINE(bool) shClCacheEntryIsValid(PSHCLCACHEENTRY pCacheEntry)
+{
+    return pCacheEntry->pvData != NULL;
+}
+
+/**
+ * Destroys a cache entry.
+ *
+ * @param   pCacheEntry         Cache entry to destroy.
+ */
+DECLINLINE(void) shClCacheEntryDestroy(PSHCLCACHEENTRY pCacheEntry)
+{
+    if (pCacheEntry->pvData)
+    {
+        Assert(pCacheEntry->cbData);
+        RTMemFree(pCacheEntry->pvData);
+        pCacheEntry->pvData = NULL;
+        pCacheEntry->cbData = 0;
+    }
+}
+
+/**
+ * Initializes a cache.
+ *
+ * @param   pCache              Cache to init.
+ */
+void ShClCacheInit(PSHCLCACHE pCache)
+{
+    AssertPtrReturnVoid(pCache);
+
+    RT_BZERO(pCache, sizeof(SHCLCACHE));
+
+    for (size_t i = 0; i < RT_ELEMENTS(pCache->aEntries); i++)
+        shClCacheEntryInit(&pCache->aEntries[i], NULL, 0);
+}
+
+/**
+ * Destroys all entries of a cache.
+ *
+ * @param   pCache              Cache to destroy entries for.
+ */
+DECLINLINE(void) shClCacheDestroyEntries(PSHCLCACHE pCache)
+{
+    for (size_t i = 0; i < RT_ELEMENTS(pCache->aEntries); i++)
+        shClCacheEntryDestroy(&pCache->aEntries[i]);
+}
+
+/**
+ * Destroys a cache.
+ *
+ * @param   pCache              Cache to destroy.
+ */
+void ShClCacheDestroy(PSHCLCACHE pCache)
+{
+    AssertPtrReturnVoid(pCache);
+
+    shClCacheDestroyEntries(pCache);
+
+    RT_BZERO(pCache, sizeof(SHCLCACHE));
+}
+
+/**
+ * Invalidates a cache.
+ *
+ * @param   pCache              Cache to invalidate.
+ */
+void ShClCacheInvalidate(PSHCLCACHE pCache)
+{
+    AssertPtrReturnVoid(pCache);
+
+    shClCacheDestroyEntries(pCache);
+}
+
+/**
+ * Invalidates a specific cache entry.
+ *
+ * @param   pCache              Cache to invalidate.
+ * @param   uFmt                Format to invalidate entry for.
+ */
+void ShClCacheInvalidateEntry(PSHCLCACHE pCache, SHCLFORMAT uFmt)
+{
+    AssertPtrReturnVoid(pCache);
+    AssertReturnVoid(uFmt < VBOX_SHCL_FMT_MAX);
+    shClCacheEntryDestroy(&pCache->aEntries[uFmt]);
+}
+
+/**
+ * Gets an entry for a Shared Clipboard format.
+ *
+ * @returns Pointer to entry if cached, or NULL if not in cache (cache miss).
+ * @param   pCache              Cache to get entry for.
+ * @param   uFmt                Format to get entry for.
+ */
+PSHCLCACHEENTRY ShClCacheGet(PSHCLCACHE pCache, SHCLFORMAT uFmt)
+{
+    AssertReturn(uFmt < VBOX_SHCL_FMT_MAX, NULL);
+    return shClCacheEntryIsValid(&pCache->aEntries[uFmt]) ? &pCache->aEntries[uFmt] : NULL;
+}
+
+/**
+ * Sets data to cache for a specific clipboard format.
+ *
+ * @returns VBox status code.
+ * @param   pCache              Cache to set data for.
+ * @param   uFmt                Clipboard format to set data for.
+ * @param   pvData              Data to set.
+ * @param   cbData              Size (in bytes) of data to set.
+ */
+int ShClCacheSet(PSHCLCACHE pCache, SHCLFORMAT uFmt, const void *pvData, size_t cbData)
+{
+    AssertPtrReturn(pCache, VERR_INVALID_POINTER);
+
+    if (!pvData) /* Nothing to cache? */
+        return VINF_SUCCESS;
+
+    AssertReturn(cbData, VERR_INVALID_PARAMETER);
+    AssertReturn(uFmt < VBOX_SHCL_FMT_MAX, VERR_INVALID_PARAMETER);
+    AssertReturn(shClCacheEntryIsValid(&pCache->aEntries[uFmt]) == false, VERR_ALREADY_EXISTS);
+
+    return shClCacheEntryInit(&pCache->aEntries[uFmt], pvData, cbData);
+}
+

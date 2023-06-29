@@ -68,7 +68,12 @@
  *
  *  @since 7.1
  */
-# define VBOX_SHCL_FMT_URI_LIST     RT_BIT(3)
+#define VBOX_SHCL_FMT_URI_LIST      RT_BIT(3)
+/** Shared Clipboard format valid mask. */
+#define VBOX_SHCL_FMT_VALID_MASK    0xf
+/** Maximum number of Shared Clipboard formats.
+ *  This currently ASSUMES that there are no gaps in the bit mask. */
+#define VBOX_SHCL_FMT_MAX           VBOX_SHCL_FMT_VALID_MASK
 /** @}  */
 
 
@@ -247,6 +252,45 @@ typedef enum SHCLSOURCE
     /** The usual 32-bit hack. */
     SHCLSOURCE_32BIT_HACK = 0x7fffffff
 } SHCLSOURCE;
+
+/** @name Shared Clipboard caching.
+ *  @{
+ */
+/**
+ * A single Shared CLipboard cache entry.
+ */
+typedef struct _SHCLCACHEENTRY
+{
+    /** Entry data.
+     *  Acts as a beacon for entry validation. */
+    void  *pvData;
+    /** Entry data size (in bytes). */
+    size_t cbData;
+} SHCLCACHEENTRY;
+/** Pointer to a Shared Clipboard cache entry. */
+typedef SHCLCACHEENTRY *PSHCLCACHEENTRY;
+
+/**
+ * A (very simple) Shared Clipboard cache.
+ */
+typedef struct _SHCLCACHE
+{
+    /** Entries for all formats.
+     *  Right now this is static to keep it simple. */
+    SHCLCACHEENTRY aEntries[VBOX_SHCL_FMT_MAX];
+} SHCLCACHE;
+/** Pointer to a Shared Clipboard cache. */
+typedef SHCLCACHE *PSHCLCACHE;
+
+void ShClCacheEntryGet(PSHCLCACHEENTRY pCacheEntry, void **pvData, size_t *pcbData);
+
+void ShClCacheInit(PSHCLCACHE pCache);
+void ShClCacheDestroy(PSHCLCACHE pCache);
+void ShClCacheInvalidate(PSHCLCACHE pCache);
+void ShClCacheInvalidateEntry(PSHCLCACHE pCache, SHCLFORMAT uFmt);
+PSHCLCACHEENTRY ShClCacheGet(PSHCLCACHE pCache, SHCLFORMAT uFmt);
+int ShClCacheSet(PSHCLCACHE pCache, SHCLFORMAT uFmt, const void *pvData, size_t cbData);
+/** @}  */
 
 /** Opaque data structure for the X11/VBox frontend/glue code.
  * @{ */
