@@ -88,9 +88,9 @@ SEH64_END_PROLOGUE
     mov     xAX, [rbp + 8]              ; (not really necessary, except for validity check)
     mov     [xDX + VMMR0JMPBUF.rip], xAX
  %ifdef ASM_CALL64_MSC
-    lea     r10, [rsp + 20h]            ; must save the spill area
+    lea     r10, [rsp + 20h]            ; Must skip the callee spill area.
  %else
-    lea     r10, [rsp]
+    mov     r10, rsp
  %endif
     mov     [xDX + VMMR0JMPBUF.rsp], r10
  %ifdef RT_OS_WINDOWS
