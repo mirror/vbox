@@ -975,7 +975,10 @@
 /* #undef USE_OPENLDAP */
 
 /* if OpenSSL is in use */
-/* #undef USE_OPENSSL */
+#define USE_OPENSSL
+
+/* if SSL is enabled */
+#define USE_SSLEAY
 
 /* if PolarSSL is enabled */
 /* #undef USE_POLARSSL */
