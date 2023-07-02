@@ -54,7 +54,7 @@
 %undef  NAME
 %define NAME(a)                 BS3_CMN_NM(a)
 
-%macro BS3_BEGINPROC_EXPORTED_WRAPPER 1
+%macro BS3_BEGINPROC_EXPORTED_WRAPPER 1-2 0 ; %2 is ignored as we don't do endbr32/64
 BS3_PROC_BEGIN_CMN %1, BS3_PBC_NEAR
 %endmacro
 
