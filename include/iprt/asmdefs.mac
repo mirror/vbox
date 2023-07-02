@@ -369,7 +369,7 @@ RT_CONCAT(.seh64_op_label_,seh64_idxOps):
 %endmacro
 
 ;;
-; Macro for generating the endbr32/64 instruction when 
+; Macro for generating the endbr32/64 instruction when
 ; RT_WITH_IBT_BRANCH_PROTECTION is defined.
 %macro IBT_ENDBRxx 0
  %ifdef RT_WITH_IBT_BRANCH_PROTECTION
@@ -384,7 +384,7 @@ RT_CONCAT(.seh64_op_label_,seh64_idxOps):
 %endmacro
 
 ;;
-; Macro for generating the endbr32/64 instruction when 
+; Macro for generating the endbr32/64 instruction when
 ; RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK is defined.
 %macro IBT_ENDBRxx_WITHOUT_NOTRACK 0
  %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
@@ -398,8 +398,8 @@ RT_CONCAT(.seh64_op_label_,seh64_idxOps):
  %endif
 %endmacro
 
-;; 
-; Macro for generating a NOTRACK prefix to an indirect jmp or call 
+;;
+; Macro for generating a NOTRACK prefix to an indirect jmp or call
 ; instruction when RT_WITH_IBT_BRANCH_PROTECTION is defined.
 ;
 ; @note Carful if mixing with other segment prefixes (should work, but needs
@@ -407,8 +407,8 @@ RT_CONCAT(.seh64_op_label_,seh64_idxOps):
 %macro IBT_NOTRACK 0
  %ifdef RT_WITH_IBT_BRANCH_PROTECTION
   %ifndef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
-        db      0x3e			; DS prefix.
-  %endif      
+        db      0x3e                    ; DS prefix.
+  %endif
  %endif
 %endmacro
 
@@ -652,7 +652,7 @@ EXPORTEDNAME_RAW NAME(%1), %1, %2
 ;;
 ; Begins a procedure, raw version w/o automatic name mangling.
 ; @param 1  The (raw) name.
-; @param 2  Whether to manually apply IBT_ENDBRxx (1) or 
+; @param 2  Whether to manually apply IBT_ENDBRxx (1) or
 ;           not (0, default). Optional
 %macro BEGINPROC_RAW 1-2 0
  %ifdef RT_ASM_WITH_SEH64_ALT
@@ -681,7 +681,7 @@ BEGINPROC_RAW NAME(%1), %2
 ; Begins a exported procedure, raw version w/o automatic name mangling.
 ; @param 1  Internal name.
 ; @param 2  Exported name.
-; @param 3  Whether to manually apply IBT_ENDBRxx (1) or 
+; @param 3  Whether to manually apply IBT_ENDBRxx (1) or
 ;           not (0, default). Optional
 %macro BEGINPROC_EXPORTED_RAW 2-3 0
  %ifdef RT_ASM_WITH_SEH64_ALT
