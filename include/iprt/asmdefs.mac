@@ -368,6 +368,50 @@ RT_CONCAT(.seh64_op_label_,seh64_idxOps):
  %endif
 %endmacro
 
+;;
+; Macro for generating the endbr32/64 instruction when 
+; RT_WITH_IBT_BRANCH_PROTECTION is defined.
+%macro IBT_ENDBRxx 0
+ %ifdef RT_WITH_IBT_BRANCH_PROTECTION
+  %ifdef RT_ARCH_AMD64
+        db      0xf3, 0x0f, 0x1e, 0xfa ; yasm doesn't know about endbr64
+  %elifdef RT_ARCH_X86
+        db      0xf3, 0x0f, 0x1e, 0xfb ; yasm doesn't know about endbr32
+  %else
+   %error "Which arch?"
+  %endif
+ %endif
+%endmacro
+
+;;
+; Macro for generating the endbr32/64 instruction when 
+; RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK is defined.
+%macro IBT_ENDBRxx_WITHOUT_NOTRACK 0
+ %ifdef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
+  %ifdef RT_ARCH_AMD64
+        db      0xf3, 0x0f, 0x1e, 0xfa ; yasm doesn't know about endbr64
+  %elifdef RT_ARCH_X86
+        db      0xf3, 0x0f, 0x1e, 0xfb ; yasm doesn't know about endbr32
+  %else
+   %error "Which arch?"
+  %endif
+ %endif
+%endmacro
+
+;; 
+; Macro for generating a NOTRACK prefix to an indirect jmp or call 
+; instruction when RT_WITH_IBT_BRANCH_PROTECTION is defined.
+;
+; @note Carful if mixing with other segment prefixes (should work, but needs
+;       testing).
+%macro IBT_NOTRACK 0
+ %ifdef RT_WITH_IBT_BRANCH_PROTECTION
+  %ifndef RT_WITH_IBT_BRANCH_PROTECTION_WITHOUT_NOTRACK
+        db      0x3e			; DS prefix.
+  %endif      
+ %endif
+%endmacro
+
 
 ;;
 ; Align code, pad with INT3.
@@ -607,7 +651,10 @@ EXPORTEDNAME_RAW NAME(%1), %1, %2
 
 ;;
 ; Begins a procedure, raw version w/o automatic name mangling.
-%macro BEGINPROC_RAW 1
+; @param 1  The (raw) name.
+; @param 2  Whether to manually apply IBT_ENDBRxx (1) or 
+;           not (0, default). Optional
+%macro BEGINPROC_RAW 1-2 0
  %ifdef RT_ASM_WITH_SEH64_ALT
   SEH64_ALT_START_UNWIND_INFO %1
  %endif
@@ -618,12 +665,15 @@ proc_frame %1
 GLOBALNAME_RAW %1, function, hidden
  %endif
 .start_of_prologue:
+ %if %2 == 0
+        IBT_ENDBRxx
+ %endif
 %endmacro
 
 ;;
 ; Begins a C callable (DECLASM) procedure.
-%macro BEGINPROC 1
-BEGINPROC_RAW NAME(%1)
+%macro BEGINPROC 1-2 0
+BEGINPROC_RAW NAME(%1), %2
 %endmacro
 
 
@@ -631,7 +681,9 @@ BEGINPROC_RAW NAME(%1)
 ; Begins a exported procedure, raw version w/o automatic name mangling.
 ; @param 1  Internal name.
 ; @param 2  Exported name.
-%macro BEGINPROC_EXPORTED_RAW 2
+; @param 3  Whether to manually apply IBT_ENDBRxx (1) or 
+;           not (0, default). Optional
+%macro BEGINPROC_EXPORTED_RAW 2-3 0
  %ifdef RT_ASM_WITH_SEH64_ALT
   SEH64_ALT_START_UNWIND_INFO %1
  %endif
@@ -645,12 +697,15 @@ proc_frame %1
 EXPORTEDNAME_RAW %1, %2, function
  %endif
 .start_of_prologue:
+ %if %3 == 0
+        IBT_ENDBRxx
+ %endif
 %endmacro
 
 ;;
 ; Begins a C callable (DECLASM) exported procedure.
-%macro BEGINPROC_EXPORTED 1
-BEGINPROC_EXPORTED_RAW NAME(%1), %1
+%macro BEGINPROC_EXPORTED 1-2 0
+BEGINPROC_EXPORTED_RAW NAME(%1), %1, %2
 %endmacro
 
 
@@ -1174,9 +1229,9 @@ ENDPROC_RAW NAME(%1)
 ; @param    1       The function name.  Will apply NAME macro to it.
 %macro RT_BEGINPROC 1
  %ifdef IN_RT_STATIC
-BEGINPROC          %1
+BEGINPROC          %1, 0
  %else
-BEGINPROC_EXPORTED %1
+BEGINPROC_EXPORTED %1, 0
  %endif
 %endmacro ; RT_BEGINPROC
 
@@ -1209,7 +1264,7 @@ BEGINPROC_EXPORTED %1
 ;
 %macro RT_NOCRT_BEGINPROC 1
  %ifdef RT_WITH_NOCRT_ALIASES
-BEGINPROC_EXPORTED RT_NOCRT(%1)
+BEGINPROC_EXPORTED RT_NOCRT(%1), 1 ; Do our own IBT_ENDBRxx after aliasing/
   %ifdef ASM_FORMAT_ELF
    ; ELF
    %ifdef RT_WITH_NOCRT_UNDERSCORE_ALIASES
@@ -1228,8 +1283,9 @@ GLOBALNAME _%1
    %endif
 GLOBALNAME %1
   %endif
+        IBT_ENDBRxx
  %else  ; !RT_WITH_NOCRT_ALIASES
-BEGINPROC_EXPORTED RT_NOCRT(%1)
+BEGINPROC_EXPORTED RT_NOCRT(%1), 0
  %endif ; !RT_WITH_NOCRT_ALIASES
 %endmacro ; RT_NOCRT_BEGINPROC
 
