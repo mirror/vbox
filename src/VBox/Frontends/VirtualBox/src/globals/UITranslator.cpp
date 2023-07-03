@@ -189,8 +189,13 @@ void UITranslator::loadLanguage(const QString &strLangId /* = QString() */)
 #ifdef Q_OS_UNIX
         // We use system installations of Qt on Linux systems, so first, try
         // to load the Qt translation from the system location.
+# ifndef VBOX_IS_QT6_OR_LATER /* QLibraryInfo::location replaced by QLibraryInfo::path in Qt6 */
         strLanguageFileName = QLibraryInfo::location(QLibraryInfo::TranslationsPath) + "/qt_" +
                               languageId() + vboxLanguageFileExtension();
+# else
+        strLanguageFileName = QLibraryInfo::path(QLibraryInfo::TranslationsPath) + "/qt_" +
+                              languageId() + vboxLanguageFileExtension();
+# endif
         QTranslator *pQtSysTr = new QTranslator(s_pTranslator);
         Assert(pQtSysTr);
         if (pQtSysTr && pQtSysTr->load(strLanguageFileName))

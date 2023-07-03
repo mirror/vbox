@@ -4679,8 +4679,12 @@ QFont UIExtraDataManager::logViewerFont()
     int iFontSize = data[2].toInt(&fOk);
     if (!fOk)
         iFontSize = 9;
+#ifndef VBOX_IS_QT6_OR_LATER /* QFontDatabase is now more like a namespace .. */
     QFontDatabase dataBase;
     return dataBase.font(strFamily, strStyleName, iFontSize);
+#else
+    return QFontDatabase::font(strFamily, strStyleName, iFontSize);
+#endif
 }
 
 void UIExtraDataManager::setLogViewerVisiblePanels(const QStringList &panelNameList)
