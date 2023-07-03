@@ -2742,7 +2742,7 @@ bool UICommon::eventFilter(QObject *pObject, QEvent *pEvent)
 
     if (   pEvent->type() == QEvent::LanguageChange
         && pObject->isWidgetType()
-        && static_cast<QWidget*>(pObject)->isTopLevel())
+        && qobject_cast<QWidget*>(pObject)->isWindow())
     {
         /* Catch the language change event before any other widget gets it in
          * order to invalidate cached string resources (like the details view

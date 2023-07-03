@@ -763,12 +763,14 @@ QVariant UIPortForwardingModel::data(const QModelIndex &index, int iRole) const
             {
                 case UIPortForwardingDataType_HostIp:
                 case UIPortForwardingDataType_GuestIp:
+                {
+                    QFontMetrics fm = qobject_cast<QWidget*>(parent())->fontMetrics();
 #if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-                    return QSize(QApplication::fontMetrics().horizontalAdvance(" 888.888.888.888 "),
-                                 QApplication::fontMetrics().height());
+                    return QSize(fm.horizontalAdvance(" 888.888.888.888 "), fm.height());
 #else
-                    return QSize(QApplication::fontMetrics().width(" 888.888.888.888 "), QApplication::fontMetrics().height());
+                    return QSize(fm.width(" 888.888.888.888 "), fm.height());
 #endif
+                }
                 default: return QVariant();
             }
         }
