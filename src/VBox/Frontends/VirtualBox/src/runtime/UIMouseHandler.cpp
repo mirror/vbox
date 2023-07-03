@@ -1201,7 +1201,11 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
     if (!m_views.contains(uScreenId) || !m_viewports.contains(uScreenId))
         return true;
 
+#ifndef VBOX_IS_QT6_OR_LATER /* QTouchEvent::TouchPoint was replaced by QEventPoint in 6.0 */
     QVector<LONG64> contacts(pTouchEvent->touchPoints().size());
+#else
+    QVector<LONG64> contacts(pTouchEvent->points().size());
+#endif
 
     long xShift = 0, yShift = 0;
 
@@ -1269,7 +1273,11 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
                                                               0);
         } else {
             /* Get relative touch-point normalized position: */
+#ifndef VBOX_IS_QT6_OR_LATER /* QEventPoint::pos was replaced with QEventPoint::position in Qt6 */
             QPointF rawTouchPoint = touchPoint.normalizedPos();
+#else
+            QPointF rawTouchPoint = touchPoint.normalizedPosition();
+#endif
 
             /* Pass relative touch-point data as Normalized Integer: */
             uint16_t xNorm = rawTouchPoint.x() * 0xffff;
@@ -1287,7 +1295,7 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
         ++iTouchPointIndex;
     }
 
-    uimachine()->putEventMultiTouch(pTouchEvent->touchPoints().size(),
+    uimachine()->putEventMultiTouch(contacts.size(),
                                     contacts,
                                     fTouchScreen,
                                     RTTimeMilliTS());

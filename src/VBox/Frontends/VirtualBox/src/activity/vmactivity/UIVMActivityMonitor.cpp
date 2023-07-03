@@ -360,7 +360,11 @@ void UIChart::resizeEvent(QResizeEvent *pEvent)
 
 void UIChart::mouseMoveEvent(QMouseEvent *pEvent)
 {
+#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::pos, x, y were replaced with QSinglePointEvent::position in Qt6 */
     int iX = width() - pEvent->x() - m_iMarginRight;
+#else
+    int iX = width() - pEvent->position().x() - m_iMarginRight;
+#endif
     m_iDataIndexUnderCursor = -1;
     if (iX > m_iMarginLeft && iX <= width() - m_iMarginRight)
         m_iDataIndexUnderCursor = (int)((iX) / m_fPixelPerDataPoint) + 1;
