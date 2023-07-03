@@ -442,7 +442,7 @@ void UIEncryptionDataTable::prepare()
             /* Register UIPasswordEditor as the QString editor: */
             QStandardItemEditorCreator<UIPasswordEditor> *pQStringItemEditorCreator = new QStandardItemEditorCreator<UIPasswordEditor>();
             if (pQStringItemEditorCreator)
-            m_pItemEditorFactory->registerEditor(QVariant::String, pQStringItemEditorCreator);
+            m_pItemEditorFactory->registerEditor(QMetaType::QString, pQStringItemEditorCreator);
 
             /* Assign configured item editor factory to table delegate: */
             pStyledItemDelegate->setItemEditorFactory(m_pItemEditorFactory);

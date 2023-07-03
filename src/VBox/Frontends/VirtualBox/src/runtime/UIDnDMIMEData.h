@@ -87,7 +87,7 @@ signals:
      * @param vaType                Qt's variant type of the MIME data.
      * @param vaData                Reference to QVariant where to store the retrieved data.
      */
-    int sigGetData(Qt::DropAction dropAction, const QString &strMIMEType, QVariant::Type vaType, QVariant &vaData) const;
+    int sigGetData(Qt::DropAction dropAction, const QString &strMIMEType, QMetaType::Type vaType, QVariant &vaData) const;
 
 public slots:
 
@@ -104,8 +104,8 @@ protected:
 
     virtual bool hasFormat(const QString &mimeType) const;
 
-#ifndef VBOX_IS_QT6_OR_LATER /* QVariant::Type is repalced with QMetaType in Qt6 */
-    virtual QVariant retrieveData(const QString &strMIMEType, QVariant::Type vaType) const RT_OVERRIDE;
+#ifndef VBOX_IS_QT6_OR_LATER /* QVariant::Type is replaced with QMetaType in Qt6 for retrieveData */
+    virtual QVariant retrieveData(const QString &strMIMEType, QVariant::Type enmType) const RT_OVERRIDE;
 #else
     virtual QVariant retrieveData(const QString &strMIMEType, QMetaType metaType) const RT_OVERRIDE;
 #endif
@@ -117,12 +117,12 @@ public:
      * @{ */
 
     /**
-     * Returns the matching variant type of a given MIME type.
+     * Returns the matching meta type of a given MIME type.
      *
-     * @returns Variant type.
+     * @returns Meta type.
      * @param strMIMEType               MIME type to retrieve variant type for.
      */
-    static QVariant::Type getVariantType(const QString &strMIMEType);
+    static QMetaType::Type getMetaType(const QString &strMIMEType);
 
     /**
      * Fills a QVariant with data according to the given type and data.
@@ -134,7 +134,7 @@ public:
      * @param   vaData                  Variant holding the transformed result.
      *                                  Note: The variant's type might be different from the input vaType!
      */
-    static int getDataAsVariant(const QVector<uint8_t> &vecData, const QString &strMIMEType, QVariant::Type vaType, QVariant &vaData);
+    static int getDataAsVariant(const QVector<uint8_t> &vecData, const QString &strMIMEType, QMetaType::Type vaType, QVariant &vaData);
     /** @}  */
 
 protected:

@@ -243,7 +243,7 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                 LogRel3(("DnD: Got strFormat=%s, pvData=%p, cbData=%RU32\n",
                          m_strFormat.toUtf8().constData(), m_pvData, m_cbData));
 
-                QVariant::Type vaType = QVariant::Invalid; /* MSC: Might be used uninitialized otherwise! */
+                QMetaType::Type vaType = QMetaType::UnknownType; /* MSC: Might be used uninitialized otherwise! */
                 QString strMIMEType;
                 if (    (pFormatEtc->tymed & TYMED_HGLOBAL)
                      && pFormatEtc->dwAspect == DVASPECT_CONTENT
@@ -253,14 +253,14 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                 {
                     /* Use UTF-8, always. */
                     strMIMEType = "text/plain;charset=utf-8";
-                    vaType      = QVariant::String;
+                    vaType      = QMetaType::QString;
                 }
                 else if (   (pFormatEtc->tymed & TYMED_HGLOBAL)
                          && pFormatEtc->dwAspect == DVASPECT_CONTENT
                          && pFormatEtc->cfFormat == CF_HDROP)
                 {
                     strMIMEType = "text/uri-list";
-                    vaType = QVariant::StringList;
+                    vaType = QMetaType::QStringList;
                 }
 #if 0 /* More formats; not needed right now. */
                 else if (   (pFormatEtc->tymed & TYMED_ISTREAM)
@@ -310,9 +310,9 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                 {
                     if (   strMIMEType.startsWith("text/uri-list")
                                /* One item. */
-                        && (   m_vaData.canConvert(QVariant::String)
+                        && (   m_vaData.canConvert(QMetaType::QString)
                                /* Multiple items. */
-                            || m_vaData.canConvert(QVariant::StringList))
+                            || m_vaData.canConvert(QMetaType::QStringList))
                        )
                     {
                         QStringList lstFilesURI = m_vaData.toStringList();
@@ -430,7 +430,7 @@ STDMETHODIMP UIDnDDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMediu
                         }
                     }
                     else if (   strMIMEType.startsWith("text/plain;charset=utf-8") /* Use UTF-8, always. */
-                             && m_vaData.canConvert(QVariant::String))
+                             && m_vaData.canConvert(QMetaType::QString))
                     {
                         const bool fUnicode = pFormatEtc->cfFormat == CF_UNICODETEXT;
                         const size_t cbCh   = fUnicode

@@ -691,7 +691,7 @@ int UIDnDHandler::getProcessIntegrityLevel(DWORD *pdwIntegrityLevel)
 }
 #endif /* RT_OS_WINDOWS */
 
-int UIDnDHandler::retrieveData(Qt::DropAction          dropAction,
+int UIDnDHandler::retrieveData(      Qt::DropAction    dropAction,
                                const QString          &strMIMEType,
                                      QVector<uint8_t> &vecData)
 {
@@ -721,10 +721,10 @@ int UIDnDHandler::retrieveData(Qt::DropAction          dropAction,
     return rc;
 }
 
-int UIDnDHandler::retrieveData(      Qt::DropAction  dropAction,
-                               const QString        &strMIMEType,
-                                     QVariant::Type  vaType,
-                                     QVariant       &vaData)
+int UIDnDHandler::retrieveData(      Qt::DropAction   dropAction,
+                               const QString         &strMIMEType,
+                                     QMetaType::Type  vaType,
+                                     QVariant        &vaData)
 {
     QVector<uint8_t> vecData;
     int rc = retrieveData(dropAction, strMIMEType, vecData);
@@ -732,8 +732,8 @@ int UIDnDHandler::retrieveData(      Qt::DropAction  dropAction,
     {
         /* If no/an invalid variant is set, try to guess the variant type.
          * This can happen on OS X. */
-        if (vaType == QVariant::Invalid)
-            vaType = UIDnDMIMEData::getVariantType(strMIMEType);
+        if (vaType == QMetaType::UnknownType)
+            vaType = UIDnDMIMEData::getMetaType(strMIMEType);
 
         rc = UIDnDMIMEData::getDataAsVariant(vecData, strMIMEType, vaType, vaData);
     }
@@ -806,10 +806,10 @@ int UIDnDHandler::retrieveDataInternal(      Qt::DropAction    dropAction,
     return rc;
 }
 
-int UIDnDHandler::sltGetData(      Qt::DropAction  dropAction,
-                             const QString        &strMIMEType,
-                                   QVariant::Type  vaType,
-                                   QVariant       &vaData)
+int UIDnDHandler::sltGetData(      Qt::DropAction   dropAction,
+                             const QString         &strMIMEType,
+                                   QMetaType::Type  vaType,
+                                   QVariant        &vaData)
 {
     int rc = retrieveData(dropAction, strMIMEType, vaType, vaData);
     LogFlowFuncLeaveRC(rc);

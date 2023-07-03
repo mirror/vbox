@@ -89,7 +89,7 @@ public:
 
     /* Data access. */
     int                        retrieveData(Qt::DropAction dropAction, const QString &strMIMEType, QVector<uint8_t> &vecData);
-    int                        retrieveData(Qt::DropAction dropAction, const QString &strMIMEType, QVariant::Type vaType, QVariant &vaData);
+    int                        retrieveData(Qt::DropAction dropAction, const QString &strMIMEType, QMetaType::Type vaType, QVariant &vaData);
 
 public:
 
@@ -111,7 +111,7 @@ public slots:
      * @param vaType                Qt's variant type of the MIME data.
      * @param vaData                Reference to QVariant where to store the retrieved data.
      */
-    int                        sltGetData(Qt::DropAction dropAction, const QString &strMIMEType, QVariant::Type vaType, QVariant &vaData);
+    int                        sltGetData(Qt::DropAction dropAction, const QString &strMIMEType, QMetaType::Type vaType, QVariant &vaData);
 
 protected:
 
