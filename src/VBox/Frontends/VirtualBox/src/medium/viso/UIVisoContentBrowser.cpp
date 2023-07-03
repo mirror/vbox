@@ -266,8 +266,14 @@ void UIVisoContentBrowser::importISOContentToViso(const QString &strISOFilePath,
                                                   UICustomFileSystemItem *pParentItem /* = 0 */,
                                                   const QString &strDirPath /* = QString() */)
 {
+    /* We can import only a ISO file into VISO:*/
+    if (!importedISOPath().isEmpty())
+        return;
     if (!pParentItem)
-        pParentItem = rootItem()->children()[0];
+    {
+        pParentItem = startItem();
+        setTableRootIndex(m_pModel->index(pParentItem));
+    }
     if (!m_pTableView || !pParentItem)
         return;
 
@@ -311,8 +317,33 @@ void UIVisoContentBrowser::importISOContentToViso(const QString &strISOFilePath,
     }
     if (m_pTableProxyModel)
         m_pTableProxyModel->invalidate();
+    emit sigISOContentImportedOrRemoved(true /* imported*/);
 }
 
+void UIVisoContentBrowser::removeISOContentFromViso()
+{
+    UICustomFileSystemItem* pParentItem = startItem();
+    AssertReturnVoid(pParentItem);
+    AssertReturnVoid(m_pModel);
+
+    QList<UICustomFileSystemItem*> itemsToDelete;
+    /* Delete all children of startItem that were imported from an ISO: */
+    for (int i = 0; i < pParentItem->childCount(); ++i)
+    {
+        UICustomFileSystemItem* pItem = pParentItem->child(i);
+        if (!pItem || pItem->data(UICustomFileSystemModelData_ISOFilePath).toString().isEmpty())
+            continue;
+        itemsToDelete << pItem;
+    }
+
+    foreach (UICustomFileSystemItem *pItem, itemsToDelete)
+            m_pModel->deleteItem(pItem);
+    if (m_pTableProxyModel)
+        m_pTableProxyModel->invalidate();
+
+    setImportedISOPath();
+    emit sigISOContentImportedOrRemoved(false /* imported*/);
+}
 
 void UIVisoContentBrowser::addObjectsToViso(const QStringList &pathList)
 {
@@ -544,6 +575,7 @@ void UIVisoContentBrowser::prepareObjects()
         m_pTableView->hideColumn(UICustomFileSystemModelData_Permissions);
         m_pTableView->hideColumn(UICustomFileSystemModelData_Size);
         m_pTableView->hideColumn(UICustomFileSystemModelData_ChangeTime);
+        m_pTableView->hideColumn(UICustomFileSystemModelData_ISOFilePath);
 
         m_pTableView->setSortingEnabled(true);
         m_pTableView->sortByColumn(0, Qt::AscendingOrder);
@@ -605,7 +637,7 @@ const QString &UIVisoContentBrowser::importedISOPath() const
     return m_strImportedISOPath;
 }
 
-void UIVisoContentBrowser::setImportedISOPath(const QString &strPath)
+void UIVisoContentBrowser::setImportedISOPath(const QString &strPath /* = QString() */)
 {
     if (m_strImportedISOPath == strPath)
         return;

@@ -118,6 +118,8 @@ private slots:
     void sltContentBrowserTableSelectionChanged(bool fIsSelectionEmpty);
     void sltOpenAction();
     void sltISOImportAction();
+    void sltISORemoveAction();
+    void sltISOContentImportedOrRemoved(bool fImported);
 
 private:
 
@@ -142,6 +144,7 @@ private:
         QAction              *m_pAddAction;
         QAction              *m_pOpenAction;
         QAction              *m_pImportISOAction;
+        QAction              *m_pRemoveISOAction;
     /** @} */
 
     QVBoxLayout          *m_pMainLayout;

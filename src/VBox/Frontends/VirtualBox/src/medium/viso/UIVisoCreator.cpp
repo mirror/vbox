@@ -260,6 +260,7 @@ UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pPa
     , m_pAddAction(0)
     , m_pOpenAction(0)
     , m_pImportISOAction(0)
+    , m_pRemoveISOAction(0)
     , m_pMainLayout(0)
     , m_pHostBrowser(0)
     , m_pVISOContentBrowser(0)
@@ -413,12 +414,27 @@ void UIVisoCreatorWidget::sltOpenAction()
 
 void UIVisoCreatorWidget::sltISOImportAction()
 {
-    if (!m_pHostBrowser)
+    if (!m_pHostBrowser || !m_pVISOContentBrowser)
         return;
     QStringList selectedObjectPaths = m_pHostBrowser->selectedPathList();
     if (selectedObjectPaths.isEmpty())
         return;
     m_pVISOContentBrowser->importISOContentToViso(selectedObjectPaths[0]);
+}
+
+void UIVisoCreatorWidget::sltISORemoveAction()
+{
+    if (!m_pVISOContentBrowser)
+        return;
+    m_pVISOContentBrowser->removeISOContentFromViso();
+}
+
+void UIVisoCreatorWidget::sltISOContentImportedOrRemoved(bool fImported)
+{
+    if (m_pImportISOAction)
+        m_pImportISOAction->setEnabled(!fImported);
+    if (m_pRemoveISOAction)
+        m_pRemoveISOAction->setEnabled(fImported);
 }
 
 void UIVisoCreatorWidget::prepareWidgets()
@@ -509,6 +525,8 @@ void UIVisoCreatorWidget::prepareConnections()
     {
         connect(m_pVISOContentBrowser, &UIVisoContentBrowser::sigTableSelectionChanged,
                 this, &UIVisoCreatorWidget::sltContentBrowserTableSelectionChanged);
+        connect(m_pVISOContentBrowser, &UIVisoContentBrowser::sigISOContentImportedOrRemoved,
+                this, &UIVisoCreatorWidget::sltISOContentImportedOrRemoved);
     }
 
     if (m_pActionSettings)
@@ -529,6 +547,9 @@ void UIVisoCreatorWidget::prepareConnections()
     if (m_pImportISOAction)
         connect(m_pImportISOAction, &QAction::triggered,
                 this, &UIVisoCreatorWidget::sltISOImportAction);
+    if (m_pRemoveISOAction)
+        connect(m_pRemoveISOAction, &QAction::triggered,
+                this, &UIVisoCreatorWidget::sltISORemoveAction);
 }
 
 void UIVisoCreatorWidget::prepareActions()
@@ -545,6 +566,10 @@ void UIVisoCreatorWidget::prepareActions()
     m_pImportISOAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_ImportISO);
     if (m_pImportISOAction)
         m_pImportISOAction->setEnabled(false);
+
+    m_pRemoveISOAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_RemoveISO);
+    if (m_pRemoveISOAction)
+        m_pRemoveISOAction->setEnabled(false);
 }
 
 void UIVisoCreatorWidget::populateMenuMainToolbar()
@@ -565,6 +590,8 @@ void UIVisoCreatorWidget::populateMenuMainToolbar()
             m_pMainMenu->addAction(m_pAddAction);
         if (m_pImportISOAction)
             m_pMainMenu->addAction(m_pImportISOAction);
+        if (m_pRemoveISOAction)
+            m_pMainMenu->addAction(m_pRemoveISOAction);
     }
     if (m_pVISOContentBrowser)
         m_pVISOContentBrowser->prepareMainMenu(m_pMainMenu);
@@ -586,6 +613,8 @@ void UIVisoCreatorWidget::populateMenuMainToolbar()
             m_pVerticalToolBar->addAction(m_pAddAction);
         if (m_pImportISOAction)
             m_pVerticalToolBar->addAction(m_pImportISOAction);
+        if (m_pRemoveISOAction)
+            m_pVerticalToolBar->addAction(m_pRemoveISOAction);
 
         m_pVerticalToolBar->addWidget(bottomSpacerWidget);
     }
