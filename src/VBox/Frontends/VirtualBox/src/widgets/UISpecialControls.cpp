@@ -173,7 +173,11 @@ bool UIHelpButton::hitButton(const QPoint &position) const
 
 void UIHelpButton::mousePressEvent(QMouseEvent *pEvent)
 {
+#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::pos was replaced with QSinglePointEvent::position in Qt6 */
     if (hitButton(pEvent->pos()))
+#else
+    if (hitButton(pEvent->position().toPoint()))
+#endif
         m_pButtonPressed = true;
     QPushButton::mousePressEvent(pEvent);
     update();

@@ -2837,7 +2837,12 @@ void UISoftKeyboardWidget::setInitialSize(int iWidth, int iHeight)
 
 UISoftKeyboardKey *UISoftKeyboardWidget::keyUnderMouse(QMouseEvent *pEvent)
 {
-    QPoint eventPosition(pEvent->pos().x() / m_fScaleFactorX, pEvent->pos().y() / m_fScaleFactorY);
+#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::pos was replaced with QSinglePointEvent::position in Qt6 */
+    const QPoint lPos = pEvent->pos();
+#else
+    const QPoint lPos = pEvent->position().toPoint();
+#endif
+    QPoint eventPosition(lPos.x() / m_fScaleFactorX, lPos.y() / m_fScaleFactorY);
     if (m_fHideMultimediaKeys)
         eventPosition.setY(eventPosition.y() + m_multiMediaKeysLayout.totalHeight());
     return keyUnderMouse(eventPosition);

@@ -179,14 +179,22 @@ void UILineNumberArea::paintEvent(QPaintEvent *event)
 void UILineNumberArea::mouseMoveEvent(QMouseEvent *pEvent)
 {
     if (m_pTextEdit)
+#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::pos was replaced with QSinglePointEvent::position in Qt6 */
         m_pTextEdit->setMouseCursorLine(m_pTextEdit->lineNumberForPos(pEvent->pos()));
+#else
+        m_pTextEdit->setMouseCursorLine(m_pTextEdit->lineNumberForPos(pEvent->position().toPoint()));
+#endif
     update();
 }
 
 void UILineNumberArea::mousePressEvent(QMouseEvent *pEvent)
 {
     if (m_pTextEdit)
+#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::pos was replaced with QSinglePointEvent::position in Qt6 */
         m_pTextEdit->toggleBookmark(m_pTextEdit->bookmarkForPos(pEvent->pos()));
+#else
+        m_pTextEdit->toggleBookmark(m_pTextEdit->bookmarkForPos(pEvent->position().toPoint()));
+#endif
 }
 
 
@@ -387,7 +395,11 @@ void UIVMLogViewerTextEdit::resizeEvent(QResizeEvent *pEvent)
 
 void UIVMLogViewerTextEdit::mouseMoveEvent(QMouseEvent *pEvent)
 {
+#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::pos was replaced with QSinglePointEvent::position in Qt6 */
     setMouseCursorLine(lineNumberForPos(pEvent->pos()));
+#else
+    setMouseCursorLine(lineNumberForPos(pEvent->position().toPoint()));
+#endif
     if (m_pLineNumberArea)
         m_pLineNumberArea->update();
     QPlainTextEdit::mouseMoveEvent(pEvent);

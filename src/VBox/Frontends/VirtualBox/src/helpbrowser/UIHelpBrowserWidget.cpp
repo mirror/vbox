@@ -458,7 +458,11 @@ void UIBookmarksListWidget::mouseDoubleClickEvent(QMouseEvent *event)
 
 void UIBookmarksListWidget::mousePressEvent(QMouseEvent *pEvent)
 {
+#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::pos was replaced with QSinglePointEvent::position in Qt6 */
     if (!indexAt(pEvent->pos()).isValid())
+#else
+    if (!indexAt(pEvent->position().toPoint()).isValid())
+#endif
     {
         clearSelection();
         setCurrentItem(0);

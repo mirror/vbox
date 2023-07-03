@@ -3953,8 +3953,15 @@ void UIStorageSettingsEditor::sltHandleMouseMove(QMouseEvent *pEvent)
 {
     /* Make sure event is valid: */
     AssertPtrReturnVoid(pEvent);
+#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::globalPos was replaced with QSinglePointEvent::globalPosition in Qt6 */
+    const QPoint gPos = pEvent->globalPos();
+    const QPoint lPos = pEvent->pos();
+#else
+    const QPoint gPos = pEvent->globalPosition().toPoint();
+    const QPoint lPos = pEvent->position().toPoint();
+#endif
 
-    const QModelIndex index = m_pTreeViewStorage->indexAt(pEvent->pos());
+    const QModelIndex index = m_pTreeViewStorage->indexAt(lPos);
     const QRect indexRect = m_pTreeViewStorage->visualRect(index);
 
     /* Expander tool-tip: */
@@ -3962,7 +3969,7 @@ void UIStorageSettingsEditor::sltHandleMouseMove(QMouseEvent *pEvent)
     {
         QRect expanderRect = m_pModelStorage->data(index, StorageModel::R_ItemPixmapRect).toRect();
         expanderRect.translate(indexRect.x(), indexRect.y());
-        if (expanderRect.contains(pEvent->pos()))
+        if (expanderRect.contains(lPos))
         {
             pEvent->setAccepted(true);
             if (m_pModelStorage->data(index, StorageModel::R_ToolTipType).value<StorageModel::ToolTipType>() != StorageModel::ToolTipType_Expander)
@@ -4003,7 +4010,7 @@ void UIStorageSettingsEditor::sltHandleMouseMove(QMouseEvent *pEvent)
             }
             deviceRect.translate(indexRect.x() + indexRect.width(), indexRect.y());
 
-            if (deviceRect.contains(pEvent->pos()))
+            if (deviceRect.contains(lPos))
             {
                 pEvent->setAccepted(true);
                 switch (enmDeviceType)
@@ -4039,11 +4046,6 @@ void UIStorageSettingsEditor::sltHandleMouseMove(QMouseEvent *pEvent)
         m_pModelStorage->setData(index, StorageModel::ToolTipType_Default, StorageModel::R_ToolTipType);
 
     /* Check whether we should initiate dragging: */
-#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::globalPos was replaced with QSinglePointEvent::globalPosition in Qt6 */
-    const QPoint gPos = pEvent->globalPos();
-#else
-    const QPoint gPos = pEvent->globalPosition().toPoint();
-#endif
     if (   !m_mousePressPosition.isNull()
         && QLineF(gPos, m_mousePressPosition).length() >= QApplication::startDragDistance())
     {
@@ -4051,7 +4053,7 @@ void UIStorageSettingsEditor::sltHandleMouseMove(QMouseEvent *pEvent)
         m_mousePressPosition = QPoint();
 
         /* Check what item we are hovering currently: */
-        QModelIndex index = m_pTreeViewStorage->indexAt(pEvent->pos());
+        QModelIndex index = m_pTreeViewStorage->indexAt(lPos);
         AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer());
         /* And make sure this is attachment item, we are supporting dragging for this kind only: */
         AttachmentItem *pItemAttachment = qobject_cast<AttachmentItem*>(pItem);
@@ -4083,16 +4085,17 @@ void UIStorageSettingsEditor::sltHandleMouseClick(QMouseEvent *pEvent)
 {
     /* Make sure event is valid: */
     AssertPtrReturnVoid(pEvent);
-
 #ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::globalPos was replaced with QSinglePointEvent::globalPosition in Qt6 */
     const QPoint gPos = pEvent->globalPos();
+    const QPoint lPos = pEvent->pos();
 #else
     const QPoint gPos = pEvent->globalPosition().toPoint();
+    const QPoint lPos = pEvent->position().toPoint();
 #endif
 
     /* Acquire indexes: */
     const QModelIndex currentIndex = m_pTreeViewStorage->currentIndex();
-    const QModelIndex index = m_pTreeViewStorage->indexAt(pEvent->pos());
+    const QModelIndex index = m_pTreeViewStorage->indexAt(lPos);
     const QRect indexRect = m_pTreeViewStorage->visualRect(index);
 
     /* Remember last mouse press position only if we pressed current index: */
@@ -4104,7 +4107,7 @@ void UIStorageSettingsEditor::sltHandleMouseClick(QMouseEvent *pEvent)
     {
         QRect expanderRect = m_pModelStorage->data(index, StorageModel::R_ItemPixmapRect).toRect();
         expanderRect.translate(indexRect.x(), indexRect.y());
-        if (expanderRect.contains(pEvent->pos()))
+        if (expanderRect.contains(lPos))
         {
             pEvent->setAccepted(true);
             m_pTreeViewStorage->setExpanded(index, !m_pTreeViewStorage->isExpanded(index));
@@ -4144,7 +4147,7 @@ void UIStorageSettingsEditor::sltHandleMouseClick(QMouseEvent *pEvent)
             }
             deviceRect.translate(indexRect.x() + indexRect.width(), indexRect.y());
 
-            if (deviceRect.contains(pEvent->pos()))
+            if (deviceRect.contains(lPos))
             {
                 pEvent->setAccepted(true);
                 if (m_pActionAddAttachment->isEnabled())
@@ -4188,7 +4191,11 @@ void UIStorageSettingsEditor::sltHandleDragMove(QDragMoveEvent *pEvent)
     const QString strAttachmentId = pMimeData->data(UIStorageSettingsEditor::s_strAttachmentMimeType);
 
     /* Check what item we are hovering currently: */
+#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::pos was replaced with QSinglePointEvent::position in Qt6 */
     QModelIndex index = m_pTreeViewStorage->indexAt(pEvent->pos());
+#else
+    QModelIndex index = m_pTreeViewStorage->indexAt(pEvent->position().toPoint());
+#endif
     AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer());
     /* And make sure this is controller item, we are supporting dropping for this kind only: */
     ControllerItem *pItemController = qobject_cast<ControllerItem*>(pItem);
@@ -4216,7 +4223,11 @@ void UIStorageSettingsEditor::sltHandleDragDrop(QDropEvent *pEvent)
     AssertPtrReturnVoid(pMimeData);
 
     /* Check what item we are hovering currently: */
+#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::pos was replaced with QSinglePointEvent::position in Qt6 */
     QModelIndex index = m_pTreeViewStorage->indexAt(pEvent->pos());
+#else
+    QModelIndex index = m_pTreeViewStorage->indexAt(pEvent->position().toPoint());
+#endif
     AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer());
     /* And make sure this is controller item, we are supporting dropping for this kind only: */
     ControllerItem *pItemController = qobject_cast<ControllerItem*>(pItem);

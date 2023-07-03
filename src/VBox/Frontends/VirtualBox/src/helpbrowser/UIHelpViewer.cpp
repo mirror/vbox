@@ -680,7 +680,11 @@ void UIHelpViewer::mouseReleaseEvent(QMouseEvent *pEvent)
     clearOverlay();
     if (fOverlayMode)
         return;
+#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::pos was replaced with QSinglePointEvent::position in Qt6 */
     QString strAnchor = anchorAt(pEvent->pos());
+#else
+    QString strAnchor = anchorAt(pEvent->position().toPoint());
+#endif
 
     if (!strAnchor.isEmpty())
     {

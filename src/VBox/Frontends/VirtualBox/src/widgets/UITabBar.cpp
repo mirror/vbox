@@ -916,6 +916,12 @@ void UITabBar::dragMoveEvent(QDragMoveEvent *pEvent)
 {
     /* Make sure event is valid: */
     AssertPtrReturnVoid(pEvent);
+#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::pos was replaced with QSinglePointEvent::position in Qt6 */
+    const QPoint lPos = pEvent->pos();
+#else
+    const QPoint lPos = pEvent->position().toPoint();
+#endif
+
     /* And mime-data is set: */
     const QMimeData *pMimeData = pEvent->mimeData();
     AssertPtrReturnVoid(pMimeData);
@@ -928,15 +934,13 @@ void UITabBar::dragMoveEvent(QDragMoveEvent *pEvent)
     m_pItemToken = 0;
     m_fDropAfterTokenItem = true;
 
-    /* Get event position: */
-    const QPoint pos = pEvent->pos();
     /* Search for most suitable item: */
     foreach (UITabBarItem *pItem, m_aItems)
     {
         /* Advance token: */
         m_pItemToken = pItem;
         const QRect geo = m_pItemToken->geometry();
-        if (pos.x() < geo.center().x())
+        if (lPos.x() < geo.center().x())
         {
             m_fDropAfterTokenItem = false;
             break;

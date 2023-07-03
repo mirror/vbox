@@ -168,7 +168,11 @@ void QILabel::resizeEvent(QResizeEvent *pEvent)
 void QILabel::mousePressEvent(QMouseEvent *pEvent)
 {
     /* Start dragging: */
+#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::pos was replaced with QSinglePointEvent::position in Qt6 */
     if (pEvent->button() == Qt::LeftButton && geometry().contains(pEvent->pos()) && m_fFullSizeSelection)
+#else
+    if (pEvent->button() == Qt::LeftButton && geometry().contains(pEvent->position().toPoint()) && m_fFullSizeSelection)
+#endif
         m_fStartDragging = true;
     /* Call to base-class: */
     else

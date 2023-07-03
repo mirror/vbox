@@ -759,7 +759,11 @@ void UIVMActivityOverviewTableView::selectionChanged(const QItemSelection &selec
 
 void UIVMActivityOverviewTableView::mousePressEvent(QMouseEvent *pEvent)
 {
+#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::pos was replaced with QSinglePointEvent::position in Qt6 */
     if (!indexAt(pEvent->pos()).isValid())
+#else
+    if (!indexAt(pEvent->position().toPoint()).isValid())
+#endif
         clearSelection();
     QTableView::mousePressEvent(pEvent);
 }

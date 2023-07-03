@@ -652,13 +652,17 @@ void UIStatusBarEditorWidget::dragMoveEvent(QDragMoveEvent *pEvent)
     m_fDropAfterTokenButton = true;
 
     /* Get event position: */
-    const QPoint pos = pEvent->pos();
+#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::pos was replaced with QSinglePointEvent::position in Qt6 */
+    const QPoint lPos = pEvent->pos();
+#else
+    const QPoint lPos = pEvent->position().toPoint();
+#endif
     /* Search for most suitable button: */
     foreach (const IndicatorType &enmType, m_order)
     {
         m_pButtonDropToken = m_buttons.value(enmType);
         const QRect geo = m_pButtonDropToken->geometry();
-        if (pos.x() < geo.center().x())
+        if (lPos.x() < geo.center().x())
         {
             m_fDropAfterTokenButton = false;
             break;
