@@ -137,7 +137,11 @@ QVariant UICustomFileSystemItem::data(int column) const
 QString UICustomFileSystemItem::name() const
 {
     QVariant data = m_itemData.value(UICustomFileSystemModelData_Name, QVariant());
+#ifndef VBOX_IS_QT6_OR_LATER /* QVariant/QMetaType ::Type is replaced with QMetaType in Qt6 for canConvert */
     if (!data.canConvert(QMetaType::QString))
+#else
+    if (!data.canConvert(QMetaType(QMetaType::QString)))
+#endif
         return QString();
     return data.toString();
 }
@@ -409,7 +413,11 @@ bool UICustomFileSystemModel::setData(const QModelIndex &index, const QVariant &
 {
     if (index.isValid() && role == Qt::EditRole)
     {
+#ifndef VBOX_IS_QT6_OR_LATER /* QVariant/QMetaType ::Type is replaced with QMetaType in Qt6 for canConvert */
         if (index.column() == 0 && value.canConvert(QMetaType::QString))
+#else
+        if (index.column() == 0 && value.canConvert(QMetaType(QMetaType::QString)))
+#endif
         {
             UICustomFileSystemItem *pItem = static_cast<UICustomFileSystemItem*>(index.internalPointer());
             if (!pItem)
@@ -438,7 +446,11 @@ QVariant UICustomFileSystemModel::data(const QModelIndex &index, int role) const
         if (item->isUpDirectory() && index.column() != UICustomFileSystemModelData_Name)
             return QVariant();
         /* Format date/time column: */
+#ifndef VBOX_IS_QT6_OR_LATER /* QVariant/QMetaType ::Type is replaced with QMetaType in Qt6 for canConvert */
         if (item->data(index.column()).canConvert(QMetaType::QDateTime))
+#else
+        if (item->data(index.column()).canConvert(QMetaType(QMetaType::QDateTime)))
+#endif
         {
             QDateTime dateTime = item->data(index.column()).toDateTime();
             if (dateTime.isValid())
