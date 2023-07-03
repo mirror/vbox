@@ -680,7 +680,7 @@ QUuid UIVisoCreatorDialog::createViso(UIActionPool *pActionPool, QWidget *pParen
             stream << QString("%1 %2").arg("--iprt-iso-maker-file-marker-bourne-sh").arg(QUuid::createUuid().toString()) << "\n";
             stream<< "--volume-id=" << strVisoName << "\n";
             if (!strImportedISOPath.isEmpty())
-                stream << "--import-iso=" << strImportedISOPath;
+                stream << "--import-iso=" << strImportedISOPath << "\n";
             stream << VisoEntryList.join("\n");
             if (!pVisoCreator->customOptions().isEmpty())
             {
