@@ -4070,7 +4070,7 @@ ifn1of ($(VBOX_VCC_TOOL_STEM), VCC100 VCC110 VCC120)
  	'  </asmv3:windowsSettings>' \
  	' </asmv3:application>' \
  	'</assembly>' \
- 	$(NLTAB)$(QUIET)$(REDIRECT) -- $(requote sh,$(PATH_SDK_$(VBOX_WINPSDK)_BIN)/mt.exe) \
+ 	$(NLTAB)$(QUIET)$(REDIRECT) -- $(WINCMN_MT_RETRY) $(requote sh,$(PATH_SDK_$(VBOX_WINPSDK)_BIN)/mt.exe) \
  	-nologo -manifest '$(subst /,\,$(1).manifest)' '-outputresource:$(subst /,\,$(1));$(HASH)1' \
  	$(NLTAB)$(QUIET)$(RM) -f -- "$(1).manifest"
  VBOX_UTF8_MANIFEST_CMDS ?= $(if-expr "$(tool_do)" == "LINK_PROGRAM",$(call VBOX_UTF8_MANIFEST_FN,$(out),$(bld_trg_arch)),)
