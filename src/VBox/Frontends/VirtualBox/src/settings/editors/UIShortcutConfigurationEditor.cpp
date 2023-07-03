@@ -793,12 +793,12 @@ void UIShortcutConfigurationTable::prepare()
             /* Register UIHotKeyEditor as the UIHotKey editor: */
             int iHotKeyTypeId = qRegisterMetaType<UIHotKey>();
             QStandardItemEditorCreator<UIHotKeyEditor> *pHotKeyItemEditorCreator = new QStandardItemEditorCreator<UIHotKeyEditor>();
-            m_pItemEditorFactory->registerEditor((QVariant::Type)iHotKeyTypeId, pHotKeyItemEditorCreator);
+            m_pItemEditorFactory->registerEditor(iHotKeyTypeId, pHotKeyItemEditorCreator);
 
             /* Register UIHostComboEditor as the UIHostComboWrapper editor: */
             int iHostComboTypeId = qRegisterMetaType<UIHostComboWrapper>();
             QStandardItemEditorCreator<UIHostComboEditor> *pHostComboItemEditorCreator = new QStandardItemEditorCreator<UIHostComboEditor>();
-            m_pItemEditorFactory->registerEditor((QVariant::Type)iHostComboTypeId, pHostComboItemEditorCreator);
+            m_pItemEditorFactory->registerEditor(iHostComboTypeId, pHostComboItemEditorCreator);
 
             /* Assign configured item editor factory to item delegate: */
             pStyledItemDelegate->setItemEditorFactory(m_pItemEditorFactory);
