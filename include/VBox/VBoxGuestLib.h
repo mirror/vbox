@@ -483,10 +483,9 @@ DECLR0VBGL(int) VbglR0CrCtlConCallUserDataRaw(VBGLCRCTLHANDLE hCtl, struct VBGLI
  * Initialize the heap.
  *
  * @returns VBox status code.
- * @param   fAlloc32BitAddr     Flag whether all allocations should be below 4GiB,
- *                              so they fit into a 32-bit address.
+ * @param   HCPhysMax           The maximum physical address for any allocation, inclusive.
  */
-DECLR0VBGL(int)     VbglR0PhysHeapInit(bool fAlloc32BitAddr);
+DECLR0VBGL(int)     VbglR0PhysHeapInit(RTHCPHYS HCPhysMax);
 
 /**
  * Shutdown the heap.
