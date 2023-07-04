@@ -2024,7 +2024,7 @@ int VBOXCALL supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
     cbGipCpuGroups = 0;
 #endif
     cbGip = RT_UOFFSETOF_DYN(SUPGLOBALINFOPAGE, aCPUs[cCpus]) + cbGipCpuGroups;
-    rc = RTR0MemObjAllocCont(&pDevExt->GipMemObj, cbGip, false /*fExecutable*/);
+    rc = RTR0MemObjAllocCont(&pDevExt->GipMemObj, cbGip, NIL_RTHCPHYS /*PhysHighest*/, false /*fExecutable*/);
     if (RT_FAILURE(rc))
     {
         OSDBGPRINT(("supdrvGipCreate: failed to allocate the GIP page. rc=%d\n", rc));

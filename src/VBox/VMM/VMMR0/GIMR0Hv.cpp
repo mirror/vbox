@@ -59,7 +59,7 @@ static int gimR0HvPageAllocZ(PRTR0MEMOBJ pMemObj, PRTR0PTR ppVirt, PRTHCPHYS pHC
     AssertPtr(ppVirt);
     AssertPtr(pHCPhys);
 
-    int rc = RTR0MemObjAllocCont(pMemObj, HOST_PAGE_SIZE, false /* fExecutable */);
+    int rc = RTR0MemObjAllocCont(pMemObj, HOST_PAGE_SIZE, NIL_RTHCPHYS /*PhysHighest*/, false /* fExecutable */);
     if (RT_FAILURE(rc))
         return rc;
     *ppVirt  = RTR0MemObjAddress(*pMemObj);

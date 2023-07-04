@@ -453,7 +453,7 @@ static SUPFUNC g_aFunctions[] =
     SUPEXP_STK_BACK(    3,  RTR0MemKernelCopyTo),
     SUPEXP_STK_OKAY(    1,  RTR0MemObjAddress),
     SUPEXP_STK_OKAY(    1,  RTR0MemObjAddressR3),
-    SUPEXP_STK_BACK(    4,  RTR0MemObjAllocContTag),
+    SUPEXP_STK_BACK(    5,  RTR0MemObjAllocContTag),
     SUPEXP_STK_BACK(    5,  RTR0MemObjAllocLargeTag),
     SUPEXP_STK_BACK(    4,  RTR0MemObjAllocLowTag),
     SUPEXP_STK_BACK(    4,  RTR0MemObjAllocPageTag),
@@ -3503,7 +3503,8 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR
     /*
      * Let IPRT do the job.
      */
-    rc = RTR0MemObjAllocCont(&Mem.MemObj, cPages << PAGE_SHIFT, true /* executable R0 mapping */);
+    /** @todo Is the 4GiB requirement actually necessray? */
+    rc = RTR0MemObjAllocCont(&Mem.MemObj, cPages << PAGE_SHIFT, _4G-1 /*PhysHighest*/, true /* executable R0 mapping */);
     if (RT_SUCCESS(rc))
     {
         int rc2;

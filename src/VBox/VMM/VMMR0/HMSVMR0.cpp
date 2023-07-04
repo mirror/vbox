@@ -605,7 +605,8 @@ VMMR0DECL(int) SVMR0GlobalInit(void)
      * intercept all IO accesses, it's done once globally here instead of per-VM.
      */
     Assert(g_hMemObjIOBitmap == NIL_RTR0MEMOBJ);
-    int rc = RTR0MemObjAllocCont(&g_hMemObjIOBitmap, SVM_IOPM_PAGES << X86_PAGE_4K_SHIFT, false /* fExecutable */);
+    int rc = RTR0MemObjAllocCont(&g_hMemObjIOBitmap, SVM_IOPM_PAGES << X86_PAGE_4K_SHIFT,
+                                 NIL_RTHCPHYS /*PhysHighest*/, false /* fExecutable */);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -765,36 +766,33 @@ VMMR0DECL(int) SVMR0InitVM(PVMCC pVM)
          * Allocate one page for the host-context VM control block (VMCB). This is used for additional host-state (such as
          * FS, GS, Kernel GS Base, etc.) apart from the host-state save area specified in MSR_K8_VM_HSAVE_PA.
          */
-/** @todo Does this need to be below 4G? */
-        rc = RTR0MemObjAllocCont(&pVCpu->hmr0.s.svm.hMemObjVmcbHost, SVM_VMCB_PAGES << HOST_PAGE_SHIFT, false /* fExecutable */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hmr0.s.svm.hMemObjVmcbHost, SVM_VMCB_PAGES << HOST_PAGE_SHIFT,
+                                 NIL_RTHCPHYS /*PhysHighest*/, false /* fExecutable */);
         if (RT_FAILURE(rc))
             goto failure_cleanup;
 
         void *pvVmcbHost                    = RTR0MemObjAddress(pVCpu->hmr0.s.svm.hMemObjVmcbHost);
         pVCpu->hmr0.s.svm.HCPhysVmcbHost    = RTR0MemObjGetPagePhysAddr(pVCpu->hmr0.s.svm.hMemObjVmcbHost, 0 /* iPage */);
-        Assert(pVCpu->hmr0.s.svm.HCPhysVmcbHost < _4G);
         RT_BZERO(pvVmcbHost, HOST_PAGE_SIZE);
 
         /*
          * Allocate one page for the guest-state VMCB.
          */
-/** @todo Does this need to be below 4G? */
-        rc = RTR0MemObjAllocCont(&pVCpu->hmr0.s.svm.hMemObjVmcb, SVM_VMCB_PAGES << HOST_PAGE_SHIFT, false /* fExecutable */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hmr0.s.svm.hMemObjVmcb, SVM_VMCB_PAGES << HOST_PAGE_SHIFT,
+                                 NIL_RTHCPHYS /*PhysHighest*/, false /* fExecutable */);
         if (RT_FAILURE(rc))
             goto failure_cleanup;
 
         pVCpu->hmr0.s.svm.pVmcb             = (PSVMVMCB)RTR0MemObjAddress(pVCpu->hmr0.s.svm.hMemObjVmcb);
         pVCpu->hmr0.s.svm.HCPhysVmcb        = RTR0MemObjGetPagePhysAddr(pVCpu->hmr0.s.svm.hMemObjVmcb, 0 /* iPage */);
-        Assert(pVCpu->hmr0.s.svm.HCPhysVmcb < _4G);
         RT_BZERO(pVCpu->hmr0.s.svm.pVmcb, HOST_PAGE_SIZE);
 
         /*
          * Allocate two pages (8 KB) for the MSR permission bitmap. There doesn't seem to be a way to convince
          * SVM to not require one.
          */
-/** @todo Does this need to be below 4G? */
         rc = RTR0MemObjAllocCont(&pVCpu->hmr0.s.svm.hMemObjMsrBitmap, SVM_MSRPM_PAGES << HOST_PAGE_SHIFT,
-                                 false /* fExecutable */);
+                                 NIL_RTHCPHYS /*PhysHighest*/, false /* fExecutable */);
         if (RT_FAILURE(rc))
             goto failure_cleanup;
 

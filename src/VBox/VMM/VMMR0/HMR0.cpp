@@ -420,7 +420,7 @@ static int hmR0InitIntel(void)
         {
             /* Allocate a temporary VMXON region. */
             RTR0MEMOBJ hScatchMemObj;
-            rc = RTR0MemObjAllocCont(&hScatchMemObj, HOST_PAGE_SIZE, false /* fExecutable */);
+            rc = RTR0MemObjAllocCont(&hScatchMemObj, HOST_PAGE_SIZE, NIL_RTHCPHYS /*PhysHighest*/, false /* fExecutable */);
             if (RT_FAILURE(rc))
             {
                 LogRel(("hmR0InitIntel: RTR0MemObjAllocCont(,HOST_PAGE_SIZE,false) -> %Rrc\n", rc));
@@ -914,7 +914,7 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
             if (RTMpIsCpuPossible(RTMpCpuIdFromSetIndex(i)))
             {
                 /** @todo NUMA */
-                rc = RTR0MemObjAllocCont(&g_aHmCpuInfo[i].hMemObj, HOST_PAGE_SIZE, false /* executable R0 mapping */);
+                rc = RTR0MemObjAllocCont(&g_aHmCpuInfo[i].hMemObj, HOST_PAGE_SIZE, NIL_RTHCPHYS /*PhysHighest*/, false /* executable R0 mapping */);
                 AssertLogRelRCReturn(rc, rc);
 
                 g_aHmCpuInfo[i].HCPhysMemObj = RTR0MemObjGetPagePhysAddr(g_aHmCpuInfo[i].hMemObj, 0);
@@ -927,7 +927,7 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
                 rc = RTR0MemObjAllocCont(&g_aHmCpuInfo[i].n.svm.hNstGstMsrpm, SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT,
-                                         false /* executable R0 mapping */);
+                                         NIL_RTHCPHYS /*PhysHighest*/, false /* executable R0 mapping */);
                 AssertLogRelRCReturn(rc, rc);
 
                 g_aHmCpuInfo[i].n.svm.HCPhysNstGstMsrpm = RTR0MemObjGetPagePhysAddr(g_aHmCpuInfo[i].n.svm.hNstGstMsrpm, 0);

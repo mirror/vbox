@@ -287,12 +287,13 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, 
 }
 
 
-DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable, const char *pszTag)
+DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest,
+                                          bool fExecutable, const char *pszTag)
 {
     PRTR0MEMOBJNETBSD pMemNetBSD = (PRTR0MEMOBJNETBSD)rtR0MemObjNew(sizeof(*pMemNetBSD), RTR0MEMOBJTYPE_CONT, NULL, cb, pszTag);
     if (pMemNetBSD)
     {
-        int rc = rtR0MemObjNetBSDAllocHelper(pMemNetBSD, cb, fExecutable, _4G - 1, true /*fContiguous*/);
+        int rc = rtR0MemObjNetBSDAllocHelper(pMemNetBSD, cb, fExecutable, PhysHighest, true /*fContiguous*/);
         if (RT_SUCCESS(rc))
         {
             *ppMem = &pMemNetBSD->Core;
