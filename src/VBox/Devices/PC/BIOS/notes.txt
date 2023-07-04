@@ -72,6 +72,10 @@
 - NetWare 2.15 has a similar restriction, the FDPT must explicitly point above
   segment address C800 or the NetWare AT disk driver abends.
 
+- NetWare 286 2.0a SFT II uses INT 41h/46h vector to obtain the FDPT, but
+  at least in protected mode, assumes that those vectors must point into
+  the F000h segment.
+
 - Windows NT (including XP) uses INT 13h/08h to obtain the DPT for each floppy
   drive. NT assumes a 13-byte DPT which includes the number of tracks. NT will
   refuse to read more tracks than the DPT specifies and formats as many tracks
@@ -103,6 +107,7 @@
   thinks it counts as real mode. Same ENTER/LEAVE problem as above.
 
 - AIX 1.3 is a rare user of INT 15h/89h (switch to protected mode) service.
+  NetWare 286 2.0a is another.
 
 - IBM OS/2 1.0/1.1 (but not other versions!) attempt to execute a 286 LOADALL
   instruction. LOADALL must be emulated for OS/2 to work properly. HIMEM.SYS
