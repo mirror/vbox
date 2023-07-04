@@ -165,7 +165,7 @@ static int vboxClipboardSvcWinReadDataFromGuestWorker(PSHCLCONTEXT pCtx, SHCLFOR
 {
     LogFlowFunc(("uFmt=%#x\n", uFmt));
 
-    int rc = ShClSvcReadDataFromGuest(pCtx->pClient, uFmt, &pEvent);
+    int rc = ShClSvcReadDataFromGuest(pCtx->pClient, uFmt, ppvData, pcbData);
     if (RT_FAILURE(rc))
         LogRel(("Shared Clipboard: Reading guest clipboard data for Windows host failed with %Rrc\n", rc));
 
