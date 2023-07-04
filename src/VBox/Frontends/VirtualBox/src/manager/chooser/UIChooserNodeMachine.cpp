@@ -241,7 +241,7 @@ void UIChooserNodeMachine::searchForNodes(const QString &strSearchTerm, int iSea
         else
         {
 #ifdef VBOX_IS_QT6_OR_LATER /* fromWildcard is available since 6.0 */
-            QRegularExpression searchRegEx = QRegularExpression::fromWildcard(strSearchTerm, Qt::CaseInsensitive);
+            QRegularExpression searchRegEx = QRegularExpression::fromWildcard(strSearchTerm, Qt::CaseInsensitive, QRegularExpression::UnanchoredWildcardConversion);
 #else
             QRegExp searchRegEx(strSearchTerm, Qt::CaseInsensitive, QRegExp::WildcardUnix);
 #endif
