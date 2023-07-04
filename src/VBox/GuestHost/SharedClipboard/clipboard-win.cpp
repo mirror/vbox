@@ -1069,9 +1069,6 @@ int SharedClipboardWinTransferCreateAndSetDataObject(PSHCLWINCTX pWinCtx, PSHCLC
                 if (RT_SUCCESS(rc))
                 {
                     if (RT_SUCCESS(rc))
-                        pObj->SetCallbacks(pCallbacks);
-
-                    if (RT_SUCCESS(rc))
                         pWinCtx->pDataObjInFlight = pObj;
                 }
             }

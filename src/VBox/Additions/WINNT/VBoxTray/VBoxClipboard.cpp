@@ -119,7 +119,7 @@ static void vbtrShClTransferCallbackCleanup(PSHCLTRANSFERCTX pTransferCtx, PSHCL
         pTransfer->pvUser = NULL;
     }
 
-    int rc2 = ShClTransferCtxTransferUnregister(pTransferCtx, pTransfer->State.uID);
+    int rc2 = ShClTransferCtxUnregisterById(pTransferCtx, pTransfer->State.uID);
     AssertRC(rc2);
 
     ShClTransferDestroy(pTransfer);
@@ -250,7 +250,7 @@ static DECLCALLBACK(void) vbtrShClTransferStartedCallback(PSHCLTRANSFERCALLBACKC
         {
             SharedClipboardWinDataObject *pObj = pCtx->Win.pDataObjInFlight;
             AssertPtrReturnVoid(pObj);
-            rc = pObj->SetAndStartTransfer(pTransfer);
+            rc = pObj->SetTransfer(pTransfer);
 
             pCtx->Win.pDataObjInFlight = NULL; /* Hand off to Windows. */
 

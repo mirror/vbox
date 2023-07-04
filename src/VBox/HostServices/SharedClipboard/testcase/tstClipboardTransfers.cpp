@@ -211,11 +211,11 @@ static void testTransferRootsSetSingle(RTTEST hTest,
                                        int rcExpected)
 {
     PSHCLTRANSFER pTransfer;
-    int rc = ShClTransferCreate(&pTransfer);
+    int rc = ShClTransferCreate(SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL, &pTransfer);
     RTTESTI_CHECK_RC_OK(rc);
 
     SHCLTXPROVIDER Provider;
-    RTTESTI_CHECK(VBClTransferProviderLocalQueryInterface(&Provider) != NULL);
+    RTTESTI_CHECK(ShClTransferProviderLocalQueryInterface(&Provider) != NULL);
     RTTESTI_CHECK_RC_OK(ShClTransferSetProvider(pTransfer, &Provider));
 
     char szTestTransferRootsSetDir[RTPATH_MAX];
@@ -245,16 +245,16 @@ static void testTransferObjOpenSingle(RTTEST hTest,
     RT_NOREF(hTest);
 
     PSHCLTRANSFER pTransfer;
-    int rc = ShClTransferCreate(&pTransfer);
+    int rc = ShClTransferCreate(SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL, &pTransfer);
     RTTESTI_CHECK_RC_OK(rc);
 
     SHCLTXPROVIDER Provider;
-    VBClTransferProviderLocalQueryInterface(&Provider);
+    ShClTransferProviderLocalQueryInterface(&Provider);
 
     rc = ShClTransferSetProvider(pTransfer, &Provider);
     RTTESTI_CHECK_RC_OK(rc);
 
-    rc = ShClTransferInit(pTransfer, SHCLTRANSFERDIR_FROM_REMOTE, SHCLSOURCE_LOCAL);
+    rc = ShClTransferInit(pTransfer);
     RTTESTI_CHECK_RC_OK(rc);
 
     char szTestTransferObjOpenDir[RTPATH_MAX];
@@ -308,7 +308,7 @@ static void testTransferBasics(RTTEST hTest)
     rc = ShClEventSourceDestroy(&Source);
     RTTESTI_CHECK_RC_OK(rc);
     PSHCLTRANSFER pTransfer;
-    rc = ShClTransferCreate(&pTransfer);
+    rc = ShClTransferCreate(SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL, &pTransfer);
     RTTESTI_CHECK_RC_OK(rc);
     rc = ShClTransferDestroy(pTransfer);
     RTTESTI_CHECK_RC_OK(rc);
@@ -317,7 +317,7 @@ static void testTransferBasics(RTTEST hTest)
 
     PSHCLLIST pList = ShClTransferListAlloc();
     RTTESTI_CHECK(pList != NULL);
-    rc = ShClTransferCreate(&pTransfer);
+    rc = ShClTransferCreate(SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL, &pTransfer);
     RTTESTI_CHECK_RC_OK(rc);
     ShClTransferListFree(pList);
     pList = NULL;

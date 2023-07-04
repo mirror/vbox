@@ -230,8 +230,6 @@ public:
     int Init(PSHCLCONTEXT pCtx, LPFORMATETC pFormatEtc = NULL, LPSTGMEDIUM pStgMed = NULL, ULONG cFormats = 0);
     void Destroy(void);
 
-    void SetCallbacks(PSHCLCALLBACKS pCallbacks);
-
 public: /* IUnknown methods. */
 
     STDMETHOD(QueryInterface)(REFIID iid, void ** ppvObject);
@@ -262,8 +260,8 @@ public: /* IDataObjectAsyncCapability methods. */
 
 public:
 
-    int SetAndStartTransfer(PSHCLTRANSFER pTransfer);
-    int SetStatus(Status enmStatus, int rc = VINF_SUCCESS);
+    int SetTransfer(PSHCLTRANSFER pTransfer);
+    int SetStatus(Status enmStatus, int rcSts = VINF_SUCCESS);
 
 public:
 

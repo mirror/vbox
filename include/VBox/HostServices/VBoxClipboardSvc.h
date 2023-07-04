@@ -329,7 +329,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1.0
+ * @since   7.1.0
  */
 #define VBOX_SHCL_GUEST_FN_REPORT_FEATURES          6
 /** Query the host ones feature masks.
@@ -342,7 +342,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1.0
+ * @since   7.1.0
  */
 #define VBOX_SHCL_GUEST_FN_QUERY_FEATURES           7
 /** Peeks at the next message, returning immediately.
@@ -364,7 +364,7 @@
  * @retval  VERR_INVALID_CLIENT_ID
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1.0
+ * @since   7.1.0
  */
 #define VBOX_SHCL_GUEST_FN_MSG_PEEK_NOWAIT          8
 /** Peeks at the next message, waiting for one to arrive.
@@ -392,7 +392,7 @@
  * @retval  VERR_WRONG_PARAMETER_COUNT
  * @retval  VERR_WRONG_PARAMETER_TYPE
  * @note    This replaces VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT.
- * @since   6.1.0
+ * @since   7.1.0
  */
 #define VBOX_SHCL_GUEST_FN_MSG_PEEK_WAIT            9
 /** Gets the next message, returning immediately.
@@ -439,17 +439,8 @@
  * @retval  VERR_WRONG_PARAMETER_TYPE
  * @since   6.1.x
  */
-#define VBOX_SHCL_GUEST_FN_REPLY                  11
-/** Gets the root list header from the host.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_INVALID_CLIENT_ID
- * @retval  VERR_WRONG_PARAMETER_COUNT
- * @retval  VERR_WRONG_PARAMETER_TYPE
- * @since   6.1.x
- */
-#define VBOX_SHCL_GUEST_FN_ROOT_LIST_HDR_READ     12
-/** Sends the root list header to the host.
+#define VBOX_SHCL_GUEST_FN_REPLY                 11
+/** Gets the transfer root list header from the host.
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_INVALID_CLIENT_ID
@@ -457,8 +448,8 @@
  * @retval  VERR_WRONG_PARAMETER_TYPE
  * @since   7.1.x
  */
-#define VBOX_SHCL_GUEST_FN_ROOT_LIST_HDR_WRITE    13
-/** Gets a root list root entry from the host.
+#define VBOX_SHCL_GUEST_FN_ROOT_LIST_HDR_READ    12
+/** Sends the transfer root list header to the host.
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_INVALID_CLIENT_ID
@@ -466,8 +457,8 @@
  * @retval  VERR_WRONG_PARAMETER_TYPE
  * @since   7.1.x
  */
-#define VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_READ   14
-/** Sends a root list root entry to the host.
+#define VBOX_SHCL_GUEST_FN_ROOT_LIST_HDR_WRITE   13
+/** Gets a transfer root list root entry from the host.
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_INVALID_CLIENT_ID
@@ -475,8 +466,8 @@
  * @retval  VERR_WRONG_PARAMETER_TYPE
  * @since   7.1.x
  */
-#define VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_WRITE  15
-/** Opens / gets a list handle from the host.
+#define VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_READ  14
+/** Sends a transfer root list root entry to the host.
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_INVALID_CLIENT_ID
@@ -484,8 +475,8 @@
  * @retval  VERR_WRONG_PARAMETER_TYPE
  * @since   7.1.x
  */
-#define VBOX_SHCL_GUEST_FN_LIST_OPEN              16
-/** Closes a list handle from the host.
+#define VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_WRITE 15
+/** Opens / gets a transfer list handle from the host.
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_INVALID_CLIENT_ID
@@ -493,8 +484,8 @@
  * @retval  VERR_WRONG_PARAMETER_TYPE
  * @since   7.1.x
  */
-#define VBOX_SHCL_GUEST_FN_LIST_CLOSE             17
-/** Reads a list header from the host.
+#define VBOX_SHCL_GUEST_FN_LIST_OPEN             16
+/** Closes a transfer list handle from the host.
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_INVALID_CLIENT_ID
@@ -502,8 +493,8 @@
  * @retval  VERR_WRONG_PARAMETER_TYPE
  * @since   7.1.x
  */
-#define VBOX_SHCL_GUEST_FN_LIST_HDR_READ          18
-/** Writes a list header to the host.
+#define VBOX_SHCL_GUEST_FN_LIST_CLOSE            17
+/** Reads a transfer list header from the host.
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_INVALID_CLIENT_ID
@@ -511,8 +502,8 @@
  * @retval  VERR_WRONG_PARAMETER_TYPE
  * @since   7.1.x
  */
-#define VBOX_SHCL_GUEST_FN_LIST_HDR_WRITE         19
-/** Reads a list entry from the host.
+#define VBOX_SHCL_GUEST_FN_LIST_HDR_READ         18
+/** Writes a transfer list header to the host.
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_INVALID_CLIENT_ID
@@ -520,8 +511,8 @@
  * @retval  VERR_WRONG_PARAMETER_TYPE
  * @since   7.1.x
  */
-#define VBOX_SHCL_GUEST_FN_LIST_ENTRY_READ        20
-/** Sends a list entry to the host.
+#define VBOX_SHCL_GUEST_FN_LIST_HDR_WRITE        19
+/** Reads a transfer list entry from the host.
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_INVALID_CLIENT_ID
@@ -529,8 +520,8 @@
  * @retval  VERR_WRONG_PARAMETER_TYPE
  * @since   7.1.x
  */
-#define VBOX_SHCL_GUEST_FN_LIST_ENTRY_WRITE       21
-/** Opens an object on the host.
+#define VBOX_SHCL_GUEST_FN_LIST_ENTRY_READ       20
+/** Sends a transfer list entry to the host.
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_INVALID_CLIENT_ID
@@ -538,8 +529,8 @@
  * @retval  VERR_WRONG_PARAMETER_TYPE
  * @since   7.1.x
  */
-#define VBOX_SHCL_GUEST_FN_OBJ_OPEN               22
-/** Closes an object on the host.
+#define VBOX_SHCL_GUEST_FN_LIST_ENTRY_WRITE      21
+/** Opens a transfer object on the host.
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_INVALID_CLIENT_ID
@@ -547,8 +538,8 @@
  * @retval  VERR_WRONG_PARAMETER_TYPE
  * @since   7.1.x
  */
-#define VBOX_SHCL_GUEST_FN_OBJ_CLOSE              23
-/** Reads from an object on the host.
+#define VBOX_SHCL_GUEST_FN_OBJ_OPEN              22
+/** Closes a transfer object on the host.
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_INVALID_CLIENT_ID
@@ -556,8 +547,8 @@
  * @retval  VERR_WRONG_PARAMETER_TYPE
  * @since   7.1.x
  */
-#define VBOX_SHCL_GUEST_FN_OBJ_READ               24
-/** Writes to an object on the host.
+#define VBOX_SHCL_GUEST_FN_OBJ_CLOSE             23
+/** Reads from a transfer object on the host.
  *
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_INVALID_CLIENT_ID
@@ -565,8 +556,17 @@
  * @retval  VERR_WRONG_PARAMETER_TYPE
  * @since   7.1.x
  */
-#define VBOX_SHCL_GUEST_FN_OBJ_WRITE              25
-/** Reports an error to the host.
+#define VBOX_SHCL_GUEST_FN_OBJ_READ              24
+/** Writes to a transfer object on the host.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_INVALID_CLIENT_ID
+ * @retval  VERR_WRONG_PARAMETER_COUNT
+ * @retval  VERR_WRONG_PARAMETER_TYPE
+ * @since   7.1.x
+ */
+#define VBOX_SHCL_GUEST_FN_OBJ_WRITE             25
+/** Reports a transfer error to the host.
  *
  * @todo r=bird: Smells like GUEST_MSG_SKIP
  *
@@ -576,7 +576,7 @@
  * @retval  VERR_WRONG_PARAMETER_TYPE
  * @since   6.1
  */
-#define VBOX_SHCL_GUEST_FN_ERROR                  27
+#define VBOX_SHCL_GUEST_FN_ERROR                 27
 
 /** For negotiating a chunk size between the guest and host.
  *
@@ -592,7 +592,7 @@
  * @retval  VERR_WRONG_PARAMETER_TYPE
  * @retval  VERR_INVALID_PARAMETER if the 2nd parameter is larger than the
  *          first one
- * @since   6.1
+ * @since   7.1
  */
 #define VBOX_SHCL_GUEST_FN_NEGOTIATE_CHUNK_SIZE     28
 
@@ -835,17 +835,17 @@ typedef struct _VBoxShClStatusMsg
 #define VBOX_SHCL_CPARMS_STATUS 3
 
 /** Invalid message type, do not use. */
-#define VBOX_SHCL_REPLYMSGTYPE_INVALID           0
+#define VBOX_SHCL_TX_REPLYMSGTYPE_INVALID           0
 /** Replies a transfer status. */
-#define VBOX_SHCL_REPLYMSGTYPE_TRANSFER_STATUS   1
+#define VBOX_SHCL_TX_REPLYMSGTYPE_TRANSFER_STATUS   1
 /** Replies a list open status. */
-#define VBOX_SHCL_REPLYMSGTYPE_LIST_OPEN         2
+#define VBOX_SHCL_TX_REPLYMSGTYPE_LIST_OPEN         2
 /** Replies a list close status. */
-#define VBOX_SHCL_REPLYMSGTYPE_LIST_CLOSE        3
+#define VBOX_SHCL_TX_REPLYMSGTYPE_LIST_CLOSE        3
 /** Replies an object open status. */
-#define VBOX_SHCL_REPLYMSGTYPE_OBJ_OPEN          4
+#define VBOX_SHCL_TX_REPLYMSGTYPE_OBJ_OPEN          4
 /** Replies an object close status. */
-#define VBOX_SHCL_REPLYMSGTYPE_OBJ_CLOSE         5
+#define VBOX_SHCL_TX_REPLYMSGTYPE_OBJ_CLOSE         5
 
 /**
  * Generic reply message.
@@ -856,7 +856,7 @@ typedef struct _VBoxShClReplyMsg
 
     /** uint64_t, out: Context ID. */
     HGCMFunctionParameter uContext;
-    /** uint32_t, out: Message type of type VBOX_SHCL_REPLYMSGTYPE_XXX. */
+    /** uint32_t, out: Message type of type VBOX_SHCL_TX_REPLYMSGTYPE_XXX. */
     HGCMFunctionParameter enmType;
     /** uint32_t, out: IPRT result of overall operation. */
     HGCMFunctionParameter rc;

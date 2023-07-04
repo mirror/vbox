@@ -67,6 +67,12 @@
 *   Definitations                                                                                                                *
 *********************************************************************************************************************************/
 
+#ifdef DEBUG_andy
+/** When enabled, this lets the HTTP server run at a predictable URL and port for debugging:
+ *  URL: http://localhost:49200/transfer<ID> */
+# define VBOX_SHCL_DEBUG_HTTPSERVER
+#endif
+
 typedef struct _SHCLHTTPSERVERTRANSFER
 {
     /** The node list. */
@@ -93,6 +99,26 @@ static int shClTransferHttpServerDestroyInternal(PSHCLHTTPSERVER pThis);
 static const char *shClTransferHttpServerGetHost(PSHCLHTTPSERVER pSrv);
 static int shClTransferHttpServerDestroyTransfer(PSHCLHTTPSERVER pSrv, PSHCLHTTPSERVERTRANSFER pSrvTx);
 static SHCLHTTPSERVERSTATUS shclTransferHttpServerSetStatusLocked(PSHCLHTTPSERVER pSrv, SHCLHTTPSERVERSTATUS fStatus);
+
+
+/*********************************************************************************************************************************
+*   Static assets                                                                                                                *
+*********************************************************************************************************************************/
+
+static char s_shClHttpServerPage404[] = " \
+<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \
+        \"http://www.w3.org/TR/html4/strict.dtd\"> \
+<html> \
+    <head> \
+        <meta http-equiv=\"Content-Type\" content=\"text/html;charset=utf-8\"> \
+        <title>VirtualBox Shared Clipboard</title> \
+    </head> \
+    <body> \
+        <h1>VirtualBox Shared Clipboard</h1> \
+        <p>Error: 404</p> \
+        <p>Message: Entry not found.</p> \
+    </body> \
+</html>";
 
 
 /*********************************************************************************************************************************
@@ -239,7 +265,6 @@ static DECLCALLBACK(int) shClTransferHttpBegin(PRTHTTPCALLBACKDATA pData, PRTHTT
     PSHCLHTTPSERVERTRANSFER pSrvTx = shClTransferHttpGetTransferFromUrl(pThis, pReq->pszUrl);
     if (pSrvTx)
     {
-        shClHttpTransferLock(pSrvTx);
         pReq->pvUser = pSrvTx;
     }
 
@@ -257,7 +282,6 @@ static DECLCALLBACK(int) shClTransferHttpEnd(PRTHTTPCALLBACKDATA pData, PRTHTTPS
     PSHCLHTTPSERVERTRANSFER pSrvTx = (PSHCLHTTPSERVERTRANSFER)pReq->pvUser;
     if (pSrvTx)
     {
-        shClHttpTransferUnlock(pSrvTx);
         pReq->pvUser = NULL;
     }
 
@@ -297,6 +321,14 @@ static DECLCALLBACK(int) shClTransferHttpRead(PRTHTTPCALLBACKDATA pData, PRTHTTP
                                               void *pvHandle, void *pvBuf, size_t cbBuf, size_t *pcbRead)
 {
     RT_NOREF(pData);
+
+    if (pvHandle == NULL) /* Serve a 404 page if we got an invalid handle. */
+    {
+        Assert(cbBuf >= sizeof(s_shClHttpServerPage404)); /* Keep it simple for now. */
+        memcpy(pvBuf, &s_shClHttpServerPage404, RT_MIN(cbBuf, sizeof(s_shClHttpServerPage404)));
+        *pcbRead = sizeof(s_shClHttpServerPage404);
+        return VINF_SUCCESS;
+    }
 
     int rc;
 
@@ -384,10 +416,12 @@ static DECLCALLBACK(int) shClTransferHttpQueryInfo(PRTHTTPCALLBACKDATA pData,
             PSHCLTRANSFER pTx = pSrvTx->pTransfer;
             AssertPtr(pTx);
 
-            /* For now we only serve single files, hence index 0 below. */
+            /** @todo For now we only serve single files, hence index 0 below. */
             PCSHCLLISTENTRY pEntry = ShClTransferRootsEntryGet(pTx, 0 /* First file */);
             if (pEntry)
             {
+                LogRel2(("Shared Clipboard: Querying HTTP transfer information for '%s' ...\n", pEntry->pszName));
+
                 rc = RTStrCopy(openParms.pszPath, openParms.cbPath, pEntry->pszName);
                 if (RT_SUCCESS(rc))
                 {
@@ -401,7 +435,7 @@ static DECLCALLBACK(int) shClTransferHttpQueryInfo(PRTHTTPCALLBACKDATA pData,
                         {
                             PCSHCLFSOBJINFO pSrcObjInfo = (PSHCLFSOBJINFO)pEntry->pvInfo;
 
-                            LogFlowFunc(("pszName=%s, cbInfo=%RU32, fMode=0x%x (type %#x)\n",
+                            LogFlowFunc(("pszName=%s, cbInfo=%RU32, fMode=%#x (type %#x)\n",
                                          pEntry->pszName, pEntry->cbInfo, pSrcObjInfo->Attr.fMode, (pSrcObjInfo->Attr.fMode & RTFS_TYPE_MASK)));
 
                             if (RTFS_IS_FILE(pSrcObjInfo->Attr.fMode))
@@ -410,6 +444,9 @@ static DECLCALLBACK(int) shClTransferHttpQueryInfo(PRTHTTPCALLBACKDATA pData,
                                 rc = VINF_SUCCESS;
                             }
                         }
+                        else
+                            LogRel2(("Shared Clipboard: Supplied entry information for '%s' not supported (fInfo=%#x, cbInfo=%RU32\n",
+                                     pEntry->pszName, pEntry->fInfo, pEntry->cbInfo));
                     }
                 }
             }
@@ -448,7 +485,8 @@ static int shClTransferHttpServerDestroyInternal(PSHCLHTTPSERVER pSrv)
 
     LogFlowFuncEnter();
 
-    ASMAtomicXchgBool(&pSrv->fInitialized, false);
+    pSrv->fInitialized = false;
+    pSrv->fRunning     = false;
 
     int rc = VINF_SUCCESS;
 
@@ -595,6 +633,26 @@ int ShClTransferHttpServerStartEx(PSHCLHTTPSERVER pSrv, uint16_t uPort)
 }
 
 /**
+ * Translates a Shared Clipboard HTTP server status to a string.
+ *
+ * @returns Status as a string.
+ * @param   uMsg                Status to translate.
+ */
+static const char *shClTransferHttpServerStatusToStr(SHCLHTTPSERVERSTATUS enmStatus)
+{
+    switch (enmStatus)
+    {
+        RT_CASE_RET_STR(SHCLHTTPSERVERSTATUS_NONE);
+        RT_CASE_RET_STR(SHCLHTTPSERVERSTATUS_STARTED);
+        RT_CASE_RET_STR(SHCLHTTPSERVERSTATUS_STOPPED);
+        RT_CASE_RET_STR(SHCLHTTPSERVERSTATUS_TRANSFER_REGISTERED);
+        RT_CASE_RET_STR(SHCLHTTPSERVERSTATUS_TRANSFER_UNREGISTERED);
+    }
+
+    AssertFailedReturn("Unknown");
+}
+
+/**
  * Starts the Shared Clipboard HTTP server instance using a random port (>= 49152).
  *
  * This does automatic probing of TCP ports if a port already is being used.
@@ -612,8 +670,20 @@ int ShClTransferHttpServerStart(PSHCLHTTPSERVER pSrv, unsigned cMaxAttempts, uin
     AssertReturn(cMaxAttempts, VERR_INVALID_PARAMETER);
     /* puPort is optional. */
 
+    int rc;
+#ifdef VBOX_SHCL_DEBUG_HTTPSERVER
+    uint16_t uDebugPort = 49200;
+    rc = ShClTransferHttpServerStartEx(pSrv, (uint32_t)uDebugPort);
+    if (RT_SUCCESS(rc))
+    {
+        if (puPort)
+            *puPort = uDebugPort;
+    }
+    return rc;
+#endif
+
     RTRAND hRand;
-    int rc = RTRandAdvCreateSystemFaster(&hRand); /* Should be good enough for this task. */
+    rc = RTRandAdvCreateSystemFaster(&hRand); /* Should be good enough for this task. */
     if (RT_SUCCESS(rc))
     {
         uint16_t uPort;
@@ -661,7 +731,7 @@ int ShClTransferHttpServerStop(PSHCLHTTPSERVER pSrv)
 
      int rc = VINF_SUCCESS;
 
-     if (ASMAtomicReadBool(&pSrv->fRunning))
+     if (pSrv->fRunning)
      {
          Assert(pSrv->hHTTPServer != NIL_RTHTTPSERVER);
 
@@ -739,6 +809,8 @@ static const char *shClTransferHttpServerGetHost(PSHCLHTTPSERVER pSrv)
  */
 static int shClTransferHttpServerDestroyTransfer(PSHCLHTTPSERVER pSrv, PSHCLHTTPSERVERTRANSFER pSrvTx)
 {
+    Assert(RTCritSectIsOwner(&pSrv->CritSect));
+
     RTListNodeRemove(&pSrvTx->Node);
 
     Assert(pSrv->cTransfers);
@@ -750,13 +822,16 @@ static int shClTransferHttpServerDestroyTransfer(PSHCLHTTPSERVER pSrv, PSHCLHTTP
     LogRel2(("Shared Clipboard: Destroyed HTTP transfer %RU16, now %RU32 HTTP transfers total\n",
              pSrvTx->pTransfer->State.uID, pSrv->cTransfers));
 
-    int rc = RTCritSectDelete(&pSrvTx->CritSect);
-    AssertRCReturn(rc, rc);
+    if (RTCritSectIsInitialized(&pSrvTx->CritSect))
+    {
+        int rc = RTCritSectDelete(&pSrvTx->CritSect);
+        AssertRCReturn(rc, rc);
+    }
 
     RTMemFree(pSrvTx);
     pSrvTx = NULL;
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -798,15 +873,24 @@ int ShClTransferHttpServerRegisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER p
         if (RT_SUCCESS(rc))
         {
             rc = RTCritSectInit(&pSrvTx->CritSect);
-            AssertRC(rc);
+            AssertRCReturn(rc, rc);
 
             PCSHCLLISTENTRY pEntry = ShClTransferRootsEntryGet(pTransfer, 0 /* First file */);
             if (pEntry)
             {
                 /* Create the virtual HTTP path for the transfer.
                  * Every transfer has a dedicated HTTP path (but live in the same URL namespace). */
+#ifdef VBOX_SHCL_DEBUG_HTTPSERVER
+# ifdef DEBUG_andy /** Too lazy to specify a different transfer ID for debugging. */
+                ssize_t cch = RTStrPrintf2(pSrvTx->szPathVirtual, sizeof(pSrvTx->szPathVirtual), "/transfer");
+# else
+                ssize_t cch = RTStrPrintf2(pSrvTx->szPathVirtual, sizeof(pSrvTx->szPathVirtual), "/transfer%RU16",
+                                           pTransfer->State.uID);
+# endif
+#else
                 ssize_t cch = RTStrPrintf2(pSrvTx->szPathVirtual, sizeof(pSrvTx->szPathVirtual), "/%s/%s/%s",
                                            SHCL_HTTPT_URL_NAMESPACE, szUuid, pEntry->pszName);
+#endif
                 AssertReturn(cch, VERR_BUFFER_OVERFLOW);
 
                 pSrvTx->pTransfer = pTransfer;
@@ -1043,6 +1127,19 @@ char *ShClTransferHttpServerGetUrlA(PSHCLHTTPSERVER pSrv, SHCLTRANSFERID idTrans
 }
 
 /**
+ * Returns whether a given HTTP server instance is initialized or not.
+ *
+ * @returns \c true if running, or \c false if not.
+ * @param   pSrv                HTTP server instance to check initialized state for.
+ */
+bool ShClTransferHttpServerIsInitialized(PSHCLHTTPSERVER pSrv)
+{
+    AssertPtrReturn(pSrv, false);
+
+    return ASMAtomicReadBool(&pSrv->fInitialized);
+}
+
+/**
  * Returns whether a given HTTP server instance is running or not.
  *
  * @returns \c true if running, or \c false if not.
@@ -1059,7 +1156,7 @@ bool ShClTransferHttpServerIsRunning(PSHCLHTTPSERVER pSrv)
  * Waits for a status change.
  *
  * @returns VBox status code.
- * @retval  VERR_STATE_CHANGED if the HTTP server status has changed (not running anymore).
+ * @retval  VERR_STATE_CHANGED if the HTTP server was uninitialized.
  * @param   pSrv                HTTP server instance to wait for.
  * @param   fStatus             Status to wait for.
  *                              Multiple statuses are possible, @sa SHCLHTTPSERVERSTATUS.
@@ -1076,12 +1173,11 @@ int ShClTransferHttpServerWaitForStatusChange(PSHCLHTTPSERVER pSrv, SHCLHTTPSERV
 
     int rc = VERR_TIMEOUT;
 
-    LogFlowFunc(("fStatus=%#x, msTimeout=%RU32\n", fStatus, msTimeout));
+    LogFlowFunc(("fStatus=%#x, msTimeout=%RU32 -- current is %#x\n", fStatus, msTimeout, pSrv->enmStatus));
 
     while (RTTimeMilliTS() - tsStartMs <= msTimeout)
     {
-        if (   !pSrv->fInitialized
-            || !pSrv->fRunning)
+        if (!pSrv->fInitialized)
         {
             rc = VERR_STATE_CHANGED;
             break;
@@ -1097,6 +1193,7 @@ int ShClTransferHttpServerWaitForStatusChange(PSHCLHTTPSERVER pSrv, SHCLHTTPSERV
             break;
 
         LogFlowFunc(("Current status now is: %#x\n", pSrv->enmStatus));
+        LogRel2(("Shared Clipboard: HTTP server entered status '%s'\n", shClTransferHttpServerStatusToStr(pSrv->enmStatus)));
 
         if (pSrv->enmStatus & fStatus)
         {
@@ -1132,6 +1229,7 @@ int ShClTransferHttpServerMaybeStart(PSHCLHTTPCONTEXT pCtx)
     if (!ShClTransferHttpServerIsRunning(&pCtx->HttpServer)) /* Only one HTTP server per transfer context. */
         rc = ShClTransferHttpServerStart(&pCtx->HttpServer, 32 /* cMaxAttempts */, NULL /* puPort */);
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -1154,6 +1252,7 @@ int ShClTransferHttpServerMaybeStop(PSHCLHTTPCONTEXT pCtx)
             rc = ShClTransferHttpServerStop(&pCtx->HttpServer);
     }
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 

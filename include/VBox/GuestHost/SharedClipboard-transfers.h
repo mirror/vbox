@@ -89,21 +89,25 @@ typedef enum
 {
     /** No status set. */
     SHCLTRANSFERSTATUS_NONE = 0,
-    /** The transfer has been initialized but is not running yet. */
-    SHCLTRANSFERSTATUS_INITIALIZED,
+    /** Requests a transfer to be initialized by the host. Only used for H->G transfers.
+     *  Needed as only the host creates new transfer IDs. */
+    SHCLTRANSFERSTATUS_REQUESTED = 8,
+    /** The transfer has been initialized and is ready to go, but is not running yet.
+     *  At this stage the other party can start reading the root list and other stuff. */
+    SHCLTRANSFERSTATUS_INITIALIZED = 1,
     /** The transfer has been uninitialized and is not usable anymore. */
-    SHCLTRANSFERSTATUS_UNINITIALIZED,
+    SHCLTRANSFERSTATUS_UNINITIALIZED = 2,
     /** The transfer is active and running. */
-    SHCLTRANSFERSTATUS_STARTED,
+    SHCLTRANSFERSTATUS_STARTED = 3,
     /** The transfer has been stopped. */
-    SHCLTRANSFERSTATUS_STOPPED,
+    SHCLTRANSFERSTATUS_STOPPED = 4,
     /** The transfer has been canceled. */
-    SHCLTRANSFERSTATUS_CANCELED,
+    SHCLTRANSFERSTATUS_CANCELED = 5,
     /** The transfer has been killed. */
-    SHCLTRANSFERSTATUS_KILLED,
+    SHCLTRANSFERSTATUS_KILLED = 6,
     /** The transfer ran into an unrecoverable error.
      *  This results in completely aborting the operation. */
-    SHCLTRANSFERSTATUS_ERROR,
+    SHCLTRANSFERSTATUS_ERROR = 7,
     /** The usual 32-bit hack. */
     SHCLTRANSFERSTATUS_32BIT_SIZE_HACK = 0x7fffffff
 } SHCLTRANSFERSTATUSENUM;
@@ -360,33 +364,33 @@ typedef SHCLOBJOPENCREATEPARMS *PSHCLOBJOPENCREATEPARMS;
  */
 typedef struct _SHCLREPLY
 {
-    /** Message type (of type VBOX_SHCL_REPLYMSGTYPE_TRANSFER_XXX). */
+    /** Message type (of type VBOX_SHCL_TX_REPLYMSGTYPE_TRANSFER_XXX). */
     uint32_t uType;
     /** IPRT result of overall operation. Note: int vs. uint32! */
     uint32_t rc;
     union
     {
-        /** For VBOX_SHCL_REPLYMSGTYPE_TRANSFER_STATUS. */
+        /** For VBOX_SHCL_TX_REPLYMSGTYPE_TRANSFER_STATUS. */
         struct
         {
             SHCLTRANSFERSTATUS uStatus;
         } TransferStatus;
-        /** For VBOX_SHCL_REPLYMSGTYPE_LIST_OPEN. */
+        /** For VBOX_SHCL_TX_REPLYMSGTYPE_LIST_OPEN. */
         struct
         {
             SHCLLISTHANDLE uHandle;
         } ListOpen;
-        /** For VBOX_SHCL_REPLYMSGTYPE_LIST_CLOSE. */
+        /** For VBOX_SHCL_TX_REPLYMSGTYPE_LIST_CLOSE. */
         struct
         {
             SHCLLISTHANDLE uHandle;
         } ListClose;
-        /** For VBOX_SHCL_REPLYMSGTYPE_OBJ_OPEN. */
+        /** For VBOX_SHCL_TX_REPLYMSGTYPE_OBJ_OPEN. */
         struct
         {
             SHCLOBJHANDLE uHandle;
         } ObjOpen;
-        /** For VBOX_SHCL_REPLYMSGTYPE_OBJ_CLOSE. */
+        /** For VBOX_SHCL_TX_REPLYMSGTYPE_OBJ_CLOSE. */
         struct
         {
             SHCLOBJHANDLE uHandle;
@@ -646,8 +650,8 @@ typedef struct _SHCLTXPROVIDERCTX
 /** Pointer to Shared Clipboard transfer provider context data. */
 typedef SHCLTXPROVIDERCTX *PSHCLTXPROVIDERCTX;
 
-struct SHCLTRANSFERCTX;
-typedef struct SHCLTRANSFERCTX *PSHCLTRANSFERCTX;
+struct _SHCLTRANSFERCTX;
+typedef struct _SHCLTRANSFERCTX *PSHCLTRANSFERCTX;
 
 /**
  * Shared Clipboard transfer provider interface table.
@@ -906,6 +910,8 @@ typedef struct SHCLTRANSFER
 {
     /** The node member for using this struct in a RTList. */
     RTLISTNODE                Node;
+    /** Critical section for serializing access. */
+    RTCRITSECT                CritSect;
     /** Number of references to this transfer. */
     uint32_t                  cRefs;
     /** The transfer's state (for SSM, later). */
@@ -916,6 +922,8 @@ typedef struct SHCLTRANSFER
     RTMSINTERVAL              uTimeoutMs;
     /** Maximum data chunk size (in bytes) to transfer. Default is 64K. */
     uint32_t                  cbMaxChunkSize;
+    /** Status change event. */
+    RTSEMEVENT                StatusChangeEvent;
     /** The transfer's own event source. */
     SHCLEVENTSOURCE           Events;
     /** Current number of concurrent list handles in \a lstHandles. */
@@ -950,8 +958,6 @@ typedef struct SHCLTRANSFER
     size_t                    cbUser;
     /** Contains thread-related attributes. */
     SHCLTRANSFERTHREAD        Thread;
-    /** Critical section for serializing access. */
-    RTCRITSECT                CritSect;
 } SHCLTRANSFER;
 /** Pointer to a Shared Clipboard transfer. */
 typedef SHCLTRANSFER *PSHCLTRANSFER;
@@ -975,7 +981,7 @@ typedef SHCLTRANSFERREPORT *PSHCLTRANSFERREPORT;
 /**
  * Enumeration for HTTP server status changes.
  *
- * Keep those as flags, so that we can wait for multiple statuses, if needed.
+ * Keep those as flags, so that we can wait for multiple statuses, if ever needed.
  */
 typedef enum _SHCLHTTPSERVERSTATUS
 {
@@ -1040,14 +1046,32 @@ typedef SHCLHTTPCONTEXT *PSHCLHTTPCONTEXT;
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP */
 
 /**
+ * Structure for keeping a single transfer context event.
+ */
+typedef struct _SHCLTRANSFERCTXEVENT
+{
+    /** Transfer bound to this event.
+     *  Can be NULL if not being used. */
+    PSHCLTRANSFER  pTransfer;
+    /** Whether a transfer was registered or not. */
+    bool           fRegistered;
+} SHCLTRANSFERCTXEVENT;
+/** Pointer to Shared Clipboard transfer context event. */
+typedef SHCLTRANSFERCTXEVENT *PSHCLTRANSFERCTXEVENT;
+
+/**
  * Structure for keeping Shared Clipboard transfer context around.
  *
  * A transfer context contains a list of (grouped) transfers for book keeping.
  */
-struct SHCLTRANSFERCTX
+typedef struct _SHCLTRANSFERCTX
 {
     /** Critical section for serializing access. */
     RTCRITSECT                  CritSect;
+    /** Event used for waiting. for transfer context changes. */
+    RTSEMEVENT                  ChangedEvent;
+    /** Event data for \a ChangedEvent. */
+    SHCLTRANSFERCTXEVENT        ChangedEventData;
     /** List of transfers. */
     RTLISTANCHOR                List;
     /** Transfer ID allocation bitmap; clear bits are free, set bits are busy. */
@@ -1058,12 +1082,14 @@ struct SHCLTRANSFERCTX
     uint16_t                    cMaxRunning;
     /** Number of total transfers (in list). */
     uint16_t                    cTransfers;
-};
+} SHCLTRANSFERCTX;
+/** Pointer to Shared Clipboard transfer context. */
+typedef SHCLTRANSFERCTX *PSHCLTRANSFERCTX;
 
 /** @name Shared Clipboard transfer interface providers.
  *  @{
  */
-PSHCLTXPROVIDERIFACE VBClTransferProviderLocalQueryInterface(PSHCLTXPROVIDER pProvider);
+PSHCLTXPROVIDERIFACE ShClTransferProviderLocalQueryInterface(PSHCLTXPROVIDER pProvider);
 /** @} */
 
 /** @name Shared Clipboard transfer object API.
@@ -1095,9 +1121,9 @@ void ShClTransferObjDataChunkFree(PSHCLOBJDATACHUNK pDataChunk);
 /** @name Shared Clipboard transfer API.
  *  @{
  */
-int ShClTransferCreateEx(uint32_t cbMaxChunkSize, uint32_t cMaxListHandles, uint32_t cMaxObjHandles, PSHCLTRANSFER *ppTransfer);
-int ShClTransferCreate(PSHCLTRANSFER *ppTransfer);
-int ShClTransferInit(PSHCLTRANSFER pTransfer, SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource);
+int ShClTransferCreateEx(SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource, uint32_t cbMaxChunkSize, uint32_t cMaxListHandles, uint32_t cMaxObjHandles, PSHCLTRANSFER *ppTransfer);
+int ShClTransferCreate(SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource, PSHCLTRANSFER *ppTransfer);
+int ShClTransferInit(PSHCLTRANSFER pTransfer);
 int ShClTransferDestroy(PSHCLTRANSFER pTransfer);
 void ShClTransferReset(PSHCLTRANSFER pTransfer);
 
@@ -1112,6 +1138,8 @@ SHCLTRANSFERDIR ShClTransferGetDir(PSHCLTRANSFER pTransfer);
 int ShClTransferGetRootPathAbs(PSHCLTRANSFER pTransfer, char *pszPath, size_t cbPath);
 SHCLSOURCE ShClTransferGetSource(PSHCLTRANSFER pTransfer);
 SHCLTRANSFERSTATUS ShClTransferGetStatus(PSHCLTRANSFER pTransfer);
+int ShClTransferWaitForStatus(PSHCLTRANSFER pTransfer, RTMSINTERVAL msTimeout, SHCLTRANSFERSTATUS enmStatus);
+int ShClTransferWaitForStatusChange(PSHCLTRANSFER pTransfer, RTMSINTERVAL msTimeout, SHCLTRANSFERSTATUS *penmStatus);
 
 int ShClTransferListOpen(PSHCLTRANSFER pTransfer, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList);
 int ShClTransferListClose(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList);
@@ -1158,6 +1186,7 @@ void ShClTransferSetCallbacks(PSHCLTRANSFER pTransfer, PSHCLTRANSFERCALLBACKS pC
 int ShClTransferSetProvider(PSHCLTRANSFER pTransfer, PSHCLTXPROVIDER pProvider);
 
 int ShClTransferRootsInitFromStringList(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots);
+int ShClTransferRootsInitFromStringListUnicode(PSHCLTRANSFER pTransfer, PRTUTF16 pwszRoots, size_t cbRoots);
 int ShClTransferRootsInitFromFile(PSHCLTRANSFER pTransfer, const char *pszFile);
 uint64_t ShClTransferRootsCount(PSHCLTRANSFER pTransfer);
 PCSHCLLISTENTRY ShClTransferRootsEntryGet(PSHCLTRANSFER pTransfer, uint64_t uIndex);
@@ -1172,13 +1201,16 @@ void ShClTransferCtxDestroy(PSHCLTRANSFERCTX pTransferCtx);
 void ShClTransferCtxReset(PSHCLTRANSFERCTX pTransferCtx);
 PSHCLTRANSFER ShClTransferCtxGetTransferById(PSHCLTRANSFERCTX pTransferCtx, uint32_t uID);
 PSHCLTRANSFER ShClTransferCtxGetTransferByIndex(PSHCLTRANSFERCTX pTransferCtx, uint32_t uIdx);
+PSHCLTRANSFER ShClTransferCtxGetTransferLast(PSHCLTRANSFERCTX pTransferCtx);
 uint32_t ShClTransferCtxGetRunningTransfers(PSHCLTRANSFERCTX pTransferCtx);
 uint32_t ShClTransferCtxGetTotalTransfers(PSHCLTRANSFERCTX pTransferCtx);
 void ShClTransferCtxCleanup(PSHCLTRANSFERCTX pTransferCtx);
-bool ShClTransferCtxTransfersMaximumReached(PSHCLTRANSFERCTX pTransferCtx);
-int ShClTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, SHCLTRANSFERID *pidTransfer);
-int ShClTransferCtxTransferRegisterById(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, SHCLTRANSFERID idTransfer);
-int ShClTransferCtxTransferUnregisterById(PSHCLTRANSFERCTX pTransferCtx, SHCLTRANSFERID idTransfer);
+bool ShClTransferCtxIsMaximumReached(PSHCLTRANSFERCTX pTransferCtx);
+int ShClTransferCtxCreateId(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFERID pidTransfer);
+int ShClTransferCtxRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, PSHCLTRANSFERID pidTransfer);
+int ShClTransferCtxRegisterById(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, SHCLTRANSFERID idTransfer);
+int ShClTransferCtxUnregisterById(PSHCLTRANSFERCTX pTransferCtx, SHCLTRANSFERID idTransfer);
+int ShClTransferCtxWait(PSHCLTRANSFERCTX pTransferCtx, RTMSINTERVAL msTimeout, bool fRegister, SHCLTRANSFERID idTransfer, PSHCLTRANSFER *ppTransfer);
 /** @} */
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
@@ -1209,6 +1241,7 @@ uint16_t ShClTransferHttpServerGetPort(PSHCLHTTPSERVER pSrv);
 uint32_t ShClTransferHttpServerGetTransferCount(PSHCLHTTPSERVER pSrv);
 char *ShClTransferHttpServerGetAddressA(PSHCLHTTPSERVER pSrv);
 char *ShClTransferHttpServerGetUrlA(PSHCLHTTPSERVER pSrv, SHCLTRANSFERID idTransfer);
+bool ShClTransferHttpServerIsInitialized(PSHCLHTTPSERVER pSrv);
 bool ShClTransferHttpServerIsRunning(PSHCLHTTPSERVER pSrv);
 int ShClTransferHttpServerWaitForStatusChange(PSHCLHTTPSERVER pSrv, SHCLHTTPSERVERSTATUS fStatus, RTMSINTERVAL msTimeout);
 /** @} */
@@ -1221,7 +1254,7 @@ int ShClPathSanitizeFilename(char *pszPath, size_t cbPath);
 int ShClPathSanitize(char *pszPath, size_t cbPath);
 const char *ShClTransferStatusToStr(SHCLTRANSFERSTATUS enmStatus);
 int ShClTransferValidatePath(const char *pcszPath, bool fMustExist);
-int ShClFsObjInfoQuery(const char *pszPath, PSHCLFSOBJINFO pObjInfo);
+int ShClFsObjInfoQueryLocal(const char *pszPath, PSHCLFSOBJINFO pObjInfo);
 int ShClFsObjInfoFromIPRT(PSHCLFSOBJINFO pDst, PCRTFSOBJINFO pSrc);
 /** @} */
 

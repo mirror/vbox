@@ -903,7 +903,7 @@ static DECLCALLBACK(int) shclTransferIfaceLocalObjWrite(PSHCLTXPROVIDERCTX pCtx,
  * @returns Interface pointer assigned to the provider.
  * @param   pProvider           Provider to assign interface to.
  */
-PSHCLTXPROVIDERIFACE VBClTransferProviderLocalQueryInterface(PSHCLTXPROVIDER pProvider)
+PSHCLTXPROVIDERIFACE ShClTransferProviderLocalQueryInterface(PSHCLTXPROVIDER pProvider)
 {
     pProvider->Interface.pfnRootListRead   = shclTransferIfaceLocalRootListRead;
     pProvider->Interface.pfnListOpen       = shclTransferIfaceLocalListOpen;

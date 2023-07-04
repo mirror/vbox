@@ -281,8 +281,6 @@ typedef struct _SHCLEXTSTATE
 
 extern SHCLEXTSTATE g_ExtState;
 
-int shClSvcSetSource(PSHCLCLIENT pClient, SHCLSOURCE enmSource);
-
 void shClSvcMsgQueueReset(PSHCLCLIENT pClient);
 PSHCLCLIENTMSG shClSvcMsgAlloc(PSHCLCLIENT pClient, uint32_t uMsg, uint32_t cParms);
 void shClSvcMsgFree(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg);
@@ -301,20 +299,12 @@ void shclSvcClientStateReset(PSHCLCLIENTSTATE pClientState);
 
 int shClSvcClientWakeup(PSHCLCLIENT pClient);
 
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-int shClSvcTransferModeSet(uint32_t fMode);
-int shClSvcTransferInit(PSHCLCLIENT pClient, SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource, PSHCLTRANSFER *ppTransfer);
-int shClSvcTransferStart(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
-int shClSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, bool fWaitForGuest);
-bool shClSvcTransferMsgIsAllowed(uint32_t uMode, uint32_t uMsg);
-void shClSvcClientTransfersReset(PSHCLCLIENT pClient);
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
-
 /** @name Service functions, accessible by the backends.
  * Locking is between the (host) service thread and the platform-dependent (window) thread.
  * @{
  */
 int ShClSvcReadDataFromGuestAsync(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVENT *ppEvent);
+int ShClSvcReadDataFromGuest(PSHCLCLIENT pClient, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb);
 int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat, void *pvData, uint32_t cbData);
 int ShClSvcHostReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats);
 PSHCLBACKEND ShClSvcGetBackend(void);
@@ -450,15 +440,6 @@ int ShClBackendSync(PSHCLBACKEND pBackend, PSHCLCLIENT pClient);
  * @{
  */
 /**
- * Called after a transfer got created.
- *
- * @returns VBox status code.
- * @param   pBackend            Shared Clipboard backend to use.
- * @param   pClient             Shared Clipboard client context.
- * @param   pTransfer           Shared Clipboard transfer created.
- */
-int ShClBackendTransferCreate(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
-/**
  * Called before a transfer gets destroyed.
  *
  * @returns VBox status code.
@@ -468,14 +449,26 @@ int ShClBackendTransferCreate(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLT
  */
 int ShClBackendTransferDestroy(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
 /**
- * Called when getting (determining) the transfer roots on the host side.
+ * Called after a transfer status got processed.
+ *
+ * @returns VBox status code.
+ * @param   pBackend            Shared Clipboard backend to use.
+ * @param   pClient             Shared Clipboard client context.
+ * @param   pTransfer           Shared Clipboard transfer to process status for.
+ * @param   enmSource           Transfer source which issues the reply.
+ * @param   enmStatus           Transfer status.
+ * @param   rcStatus            Status code (IPRT-style). Depends on \a enmStatus set.
+ */
+int ShClBackendTransferHandleStatusReply(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCLSOURCE enmSource, SHCLTRANSFERSTATUS enmStatus, int rcStatus);
+/**
+ * Called when the guest wants to read the transfer roots.
  *
  * @returns VBox status code.
  * @param   pBackend            Shared Clipboard backend to use.
  * @param   pClient             Shared Clipboard client context.
  * @param   pTransfer           Shared Clipboard transfer to get roots for.
  */
-int ShClBackendTransferGetRoots(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
+int ShClBackendTransferHGRootListRead(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
 /** @} */
 #endif
 
@@ -496,19 +489,19 @@ int shClSvcTransferHostHandler(uint32_t u32Function, uint32_t cParms, VBOXHGCMSV
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP */
 
 int shClSvcTransferIfaceRootsGet(PSHCLTXPROVIDERCTX pCtx, PSHCLLIST pRootList);
-int shClSvcTransferIfaceListOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList);
-int shClSvcTransferIfaceListClose(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList);
-int shClSvcTransferIfaceListHdrRead(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
-int shClSvcTransferIfaceListHdrWrite(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
-int shClSvcTransferIfaceListEntryRead(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry);
-int shClSvcTransferIfaceListEntryWrite(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry);
+int shClSvcTransferIfaceGHListOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList);
+int shClSvcTransferIfaceGHListClose(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList);
+int shClSvcTransferIfaceGHListHdrRead(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
+int shClSvcTransferIfaceHGListHdrWrite(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
+int shClSvcTransferIfaceGHListEntryRead(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry);
+int shClSvcTransferIfaceHGListEntryWrite(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry);
 
-int shClSvcTransferIfaceObjOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms,
+int shClSvcTransferIfaceGHObjOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms,
                                 PSHCLOBJHANDLE phObj);
-int shClSvcTransferIfaceObjClose(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj);
-int shClSvcTransferIfaceObjRead(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
+int shClSvcTransferIfaceGHObjClose(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj);
+int shClSvcTransferIfaceGHObjRead(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
                                 void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbRead);
-int shClSvcTransferIfaceObjWrite(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
+int shClSvcTransferIfaceHGObjWrite(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
                                  void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbWritten);
 /** @} */
 

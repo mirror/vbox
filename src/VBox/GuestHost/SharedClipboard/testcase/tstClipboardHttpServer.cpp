@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
 
     /* Query the local transfer provider. */
     SHCLTXPROVIDER Provider;
-    RTTESTI_CHECK(VBClTransferProviderLocalQueryInterface(&Provider) != NULL);
+    RTTESTI_CHECK(ShClTransferProviderLocalQueryInterface(&Provider) != NULL);
 
     /* Parse options again, but this time we only fetch all files we want to serve.
      * Only can be done after we initialized the HTTP server above. */
@@ -211,11 +211,11 @@ int main(int argc, char *argv[])
             case VINF_GETOPT_NOT_OPTION:
             {
                 PSHCLTRANSFER pTx;
-                RTTEST_CHECK_RC_OK(hTest, ShClTransferCreate(&pTx));
+                RTTEST_CHECK_RC_OK(hTest, ShClTransferCreate(SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL, &pTx));
                 RTTEST_CHECK_RC_OK(hTest, ShClTransferSetProvider(pTx, &Provider));
-                RTTEST_CHECK_RC_OK(hTest, ShClTransferInit(pTx, SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL));
+                RTTEST_CHECK_RC_OK(hTest, ShClTransferInit(pTx));
                 RTTEST_CHECK_RC_OK(hTest, ShClTransferRootsInitFromFile(pTx, ValueUnion.psz));
-                RTTEST_CHECK_RC_OK(hTest, ShClTransferCtxTransferRegister(&TxCtx, pTx, NULL));
+                RTTEST_CHECK_RC_OK(hTest, ShClTransferCtxRegister(&TxCtx, pTx, NULL));
                 RTTEST_CHECK_RC_OK(hTest, ShClTransferHttpServerRegisterTransfer(&HttpSrv, pTx));
                 break;
             }

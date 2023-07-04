@@ -56,34 +56,76 @@
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
 /**
- * Worker for waiting for a transfer status change.
+ * @copydoc SHCLTRANSFERCALLBACKS::pfnOnInitialized
+ *
+ * @thread Clipboard main thread.
  */
-static DECLCALLBACK(int) vbclX11TransferWaitForStatusWorker(PSHCLCONTEXT pCtx, PSHCLTRANSFER pTransfer, SHCLTRANSFERSTATUS enmSts,
-                                                            RTMSINTERVAL msTimeout)
+static DECLCALLBACK(void) vbclX11OnTransferInitializedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
 {
-    RT_NOREF(pCtx);
-
     LogFlowFuncEnter();
 
-    int rc = VERR_TIMEOUT;
+    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
+    AssertPtr(pCtx);
 
-    ShClTransferAcquire(pTransfer);
+    PSHCLTRANSFER pTransfer = pCbCtx->pTransfer;
+    AssertPtr(pTransfer);
 
-    uint64_t const tsStartMs = RTTimeMilliTS();
+    int rc = VINF_SUCCESS;
 
-    while (RTTimeMilliTS() - tsStartMs <= msTimeout)
+    /* If this is a G->H transfer, we need to set the root list entries here, as the host
+     * will start reading those as soon as we report the INITIALIZED status. */
+    switch (ShClTransferGetDir(pTransfer))
     {
-        if (ShClTransferGetStatus(pTransfer) == enmSts) /* Currently we only have busy waiting here. */
+        case SHCLTRANSFERDIR_TO_REMOTE: /* G->H */
         {
-            rc = VINF_SUCCESS;
+            PSHCLEVENT pEvent;
+            rc = ShClEventSourceGenerateAndRegisterEvent(&pCtx->EventSrc, &pEvent);
+            if (RT_SUCCESS(rc))
+            {
+                rc = ShClX11ReadDataFromX11Async(&g_Ctx.X11, VBOX_SHCL_FMT_URI_LIST, UINT32_MAX, pEvent);
+                if (RT_SUCCESS(rc))
+                {
+                    PSHCLEVENTPAYLOAD pPayload;
+                    rc = ShClEventWait(pEvent, SHCL_TIMEOUT_DEFAULT_MS, &pPayload);
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (pPayload)
+                        {
+                            Assert(pPayload->cbData == sizeof(SHCLX11RESPONSE));
+                            PSHCLX11RESPONSE pResp = (PSHCLX11RESPONSE)pPayload->pvData;
+
+                            rc = ShClTransferRootsInitFromStringList(pTransfer, (const char *)pResp->Read.pvData, pResp->Read.cbData);
+
+                            RTMemFree(pResp->Read.pvData);
+                            pResp->Read.cbData = 0;
+
+                            ShClPayloadFree(pPayload);
+                        }
+                    }
+                }
+            }
             break;
         }
-        RTThreadSleep(100);
+
+        case SHCLTRANSFERDIR_FROM_REMOTE: /* H->G */
+        {
+            /* Retrieve the root entries as a first action, so that the transfer is ready to go
+             * once it gets registered to HTTP server. */
+            int rc2 = ShClTransferRootListRead(pTransfer);
+            if (   RT_SUCCESS(rc2)
+                /* As soon as we register the transfer with the HTTP server, the transfer needs to have its roots set. */
+                && ShClTransferRootsCount(pTransfer))
+            {
+                rc2 = ShClTransferHttpServerRegisterTransfer(&pCtx->X11.HttpCtx.HttpServer, pTransfer);
+            }
+            break;
+        }
+
+        default:
+            break;
     }
 
-    ShClTransferRelease(pTransfer);
-
-    return rc;
+    LogFlowFuncLeaveRC(rc);
 }
 
 /**
@@ -93,7 +135,7 @@ static DECLCALLBACK(int) vbclX11TransferWaitForStatusWorker(PSHCLCONTEXT pCtx, P
  *
  * @thread Clipboard main thread.
  */
-static DECLCALLBACK(void) vbclX11OnHttpTransferRegisteredCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, PSHCLTRANSFERCTX pTransferCtx)
+static DECLCALLBACK(void) vbclX11OnTransferRegisteredCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, PSHCLTRANSFERCTX pTransferCtx)
 {
     RT_NOREF(pTransferCtx);
 
@@ -105,20 +147,10 @@ static DECLCALLBACK(void) vbclX11OnHttpTransferRegisteredCallback(PSHCLTRANSFERC
     PSHCLTRANSFER pTransfer = pCbCtx->pTransfer;
     AssertPtr(pTransfer);
 
-    ShClTransferAcquire(pTransfer);
-
     /* We only need to start the HTTP server when we actually receive data from the remote (host). */
-    if (ShClTransferGetDir(pTransfer) == SHCLTRANSFERDIR_FROM_REMOTE)
+    if (ShClTransferGetDir(pTransfer) == SHCLTRANSFERDIR_FROM_REMOTE) /* H->G */
     {
-        /* Retrieve the root entries as a first action, so that the transfer is ready to go
-         * once it gets registered to HTTP server below. */
-        int rc2 = ShClTransferRootListRead(pTransfer);
-        if (RT_SUCCESS(rc2))
-        {
-            ShClTransferHttpServerMaybeStart(&pCtx->X11.HttpCtx);
-            rc2 = ShClTransferHttpServerRegisterTransfer(&pCtx->X11.HttpCtx.HttpServer, pTransfer);
-        }
-
+        int rc2 = ShClTransferHttpServerMaybeStart(&pCtx->X11.HttpCtx);
         if (RT_FAILURE(rc2))
             LogRel(("Shared Clipboard: Registering HTTP transfer failed: %Rrc\n", rc2));
     }
@@ -136,15 +168,16 @@ static DECLCALLBACK(void) vbclX11OnHttpTransferRegisteredCallback(PSHCLTRANSFERC
  *
  * @thread Clipboard main thread.
  */
-static void vbclX11HttpTransferUnregister(PSHCLCONTEXT pCtx, PSHCLTRANSFER pTransfer)
+static void vbclX11TransferUnregister(PSHCLCONTEXT pCtx, PSHCLTRANSFER pTransfer)
 {
     if (ShClTransferGetDir(pTransfer) == SHCLTRANSFERDIR_FROM_REMOTE)
     {
-        ShClTransferHttpServerUnregisterTransfer(&pCtx->X11.HttpCtx.HttpServer, pTransfer);
-        ShClTransferHttpServerMaybeStop(&pCtx->X11.HttpCtx);
+        if (ShClTransferHttpServerIsInitialized(&pCtx->X11.HttpCtx.HttpServer))
+        {
+            ShClTransferHttpServerUnregisterTransfer(&pCtx->X11.HttpCtx.HttpServer, pTransfer);
+            ShClTransferHttpServerMaybeStop(&pCtx->X11.HttpCtx);
+        }
     }
-
-    ShClTransferRelease(pTransfer);
 }
 
 /**
@@ -154,10 +187,10 @@ static void vbclX11HttpTransferUnregister(PSHCLCONTEXT pCtx, PSHCLTRANSFER pTran
  *
  * @thread Clipboard main thread.
  */
-static DECLCALLBACK(void) vbclX11OnHttpTransferUnregisteredCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, PSHCLTRANSFERCTX pTransferCtx)
+static DECLCALLBACK(void) vbclX11OnTransferUnregisteredCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, PSHCLTRANSFERCTX pTransferCtx)
 {
     RT_NOREF(pTransferCtx);
-    vbclX11HttpTransferUnregister((PSHCLCONTEXT)pCbCtx->pvUser, pCbCtx->pTransfer);
+    vbclX11TransferUnregister((PSHCLCONTEXT)pCbCtx->pvUser, pCbCtx->pTransfer);
 }
 
 /**
@@ -167,10 +200,10 @@ static DECLCALLBACK(void) vbclX11OnHttpTransferUnregisteredCallback(PSHCLTRANSFE
  *
  * @thread Clipboard main thread.
  */
-static DECLCALLBACK(void) vbclX11OnHttpTransferCompletedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, int rc)
+static DECLCALLBACK(void) vbclX11OnTransferCompletedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, int rc)
 {
     RT_NOREF(rc);
-    vbclX11HttpTransferUnregister((PSHCLCONTEXT)pCbCtx->pvUser, pCbCtx->pTransfer);
+    vbclX11TransferUnregister((PSHCLCONTEXT)pCbCtx->pvUser, pCbCtx->pTransfer);
 }
 
 /** @copydoc SHCLTRANSFERCALLBACKS::pfnOnError
@@ -179,9 +212,9 @@ static DECLCALLBACK(void) vbclX11OnHttpTransferCompletedCallback(PSHCLTRANSFERCA
  *
  * @thread Clipboard main thread.
  */
-static DECLCALLBACK(void) vbclX11OnHttpTransferErrorCallback(PSHCLTRANSFERCALLBACKCTX pCtx, int rc)
+static DECLCALLBACK(void) vbclX11OnTransferErrorCallback(PSHCLTRANSFERCALLBACKCTX pCtx, int rc)
 {
-    return vbclX11OnHttpTransferCompletedCallback(pCtx, rc);
+    return vbclX11OnTransferCompletedCallback(pCtx, rc);
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP */
 
@@ -256,8 +289,9 @@ static DECLCALLBACK(int) vbclX11ReadDataWorker(PSHCLCONTEXT pCtx, SHCLFORMAT uFm
 /**
  * @copydoc SHCLCALLBACKS::pfnOnRequestDataFromSource
  *
- * Requests URI data from the host.
- * This initiates a transfer on the host. Most of the handling will be done VbglR3 then.
+ * Requests data from the host.
+ *
+ * For transfers: This requests a transfer from the host. Most of the handling will be done VbglR3 then.
  *
  * @thread  X11 event thread.
  */
@@ -273,38 +307,48 @@ static DECLCALLBACK(int) vbclX11OnRequestDataFromSourceCallback(PSHCLCONTEXT pCt
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
     if (uFmt == VBOX_SHCL_FMT_URI_LIST)
     {
-        PSHCLHTTPSERVER pSrv = &pCtx->X11.HttpCtx.HttpServer;
-
         rc = vbclX11ReadDataWorker(pCtx, uFmt, ppv, pcb, pvUser);
         if (RT_SUCCESS(rc))
-            rc = ShClTransferHttpServerWaitForStatusChange(pSrv, SHCLHTTPSERVERSTATUS_TRANSFER_REGISTERED, 5000 /* SHCL_TIMEOUT_DEFAULT_MS */);
-        if (RT_SUCCESS(rc))
         {
-            PSHCLTRANSFER pTransfer = ShClTransferHttpServerGetTransferLast(pSrv);
-            if (pTransfer)
+            /* Request a new H->G transfer from the host.
+             * This is needed in order to get a transfer ID from the host we can initialize our own local transfer with.
+             * Transfer creation and set up will be done in VbglR3. */
+            rc = VbglR3ClipboardTransferRequest(&pCtx->CmdCtx);
+            if (RT_SUCCESS(rc))
             {
-                rc = vbclX11TransferWaitForStatusWorker(pCtx, pTransfer, SHCLTRANSFERSTATUS_STARTED, SHCL_TIMEOUT_DEFAULT_MS);
+                PSHCLHTTPSERVER pSrv = &pCtx->X11.HttpCtx.HttpServer;
+
+                /* Wait until the HTTP server got the transfer registered, so that we have something to work with. */
+                rc = ShClTransferHttpServerWaitForStatusChange(pSrv, SHCLHTTPSERVERSTATUS_TRANSFER_REGISTERED, SHCL_TIMEOUT_DEFAULT_MS);
                 if (RT_SUCCESS(rc))
                 {
-                    char *pszURL = ShClTransferHttpServerGetUrlA(pSrv, pTransfer->State.uID);
-                    char *pszData = NULL;
-                    RTStrAPrintf(&pszData, "copy\n%s", pszURL);
+                    PSHCLTRANSFER pTransfer = ShClTransferHttpServerGetTransferLast(pSrv);
+                    if (pTransfer)
+                    {
+                        rc = ShClTransferWaitForStatus(pTransfer, SHCL_TIMEOUT_DEFAULT_MS, SHCLTRANSFERSTATUS_INITIALIZED);
+                        if (RT_SUCCESS(rc))
+                        {
+                            char *pszURL = ShClTransferHttpServerGetUrlA(pSrv, pTransfer->State.uID);
+                            if (pszURL)
+                            {
+                                *ppv = pszURL;
+                                *pcb = strlen(pszURL) + 1 /* Include terminator */;
 
-                    *ppv = pszData;
-                    *pcb = strlen(pszData) + 1 /* Include terminator */;
+                                LogFlowFunc(("URL is '%s'\n", pszURL));
 
-                    LogFlowFunc(("pszURL=%s\n", pszURL));
-
-                    RTStrFree(pszURL);
-
-                    rc = VINF_SUCCESS;
+                                /* ppv has ownership of pszURL. */
+                            }
+                            else
+                                rc = VERR_NO_MEMORY;
+                        }
+                    }
+                    else
+                        AssertMsgFailed(("No registered transfer found for HTTP server\n"));
                 }
+                else
+                    LogRel(("Shared Clipboard: Could not start transfer, as no new HTTP transfer was registered in time\n"));
             }
-            else
-                AssertMsgFailed(("No registered transfer found for HTTP server\n"));
         }
-        else
-            LogRel(("Shared Clipboard: Could not start transfer, as the HTTP server is not running\n"));
     }
     else /* Anything else */
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP */
@@ -313,7 +357,7 @@ static DECLCALLBACK(int) vbclX11OnRequestDataFromSourceCallback(PSHCLCONTEXT pCt
     }
 
     if (RT_FAILURE(rc))
-        LogRel(("Requesting data in format %#x from host failed with %Rrc\n", uFmt, rc));
+        LogRel(("Shared Clipboard: Requesting data in format %#x from host failed with %Rrc\n", uFmt, rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -417,10 +461,11 @@ int VBClX11ClipboardMain(void)
     pCtx->CmdCtx.Transfers.Callbacks.pvUser = pCtx; /* Assign context as user-provided callback data. */
     pCtx->CmdCtx.Transfers.Callbacks.cbUser = sizeof(SHCLCONTEXT);
 
-    pCtx->CmdCtx.Transfers.Callbacks.pfnOnRegistered   = vbclX11OnHttpTransferRegisteredCallback;
-    pCtx->CmdCtx.Transfers.Callbacks.pfnOnUnregistered = vbclX11OnHttpTransferUnregisteredCallback;
-    pCtx->CmdCtx.Transfers.Callbacks.pfnOnCompleted    = vbclX11OnHttpTransferCompletedCallback;
-    pCtx->CmdCtx.Transfers.Callbacks.pfnOnError        = vbclX11OnHttpTransferErrorCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnInitialized  = vbclX11OnTransferInitializedCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnRegistered   = vbclX11OnTransferRegisteredCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnUnregistered = vbclX11OnTransferUnregisteredCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnCompleted    = vbclX11OnTransferCompletedCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnError        = vbclX11OnTransferErrorCallback;
 # endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP */
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 

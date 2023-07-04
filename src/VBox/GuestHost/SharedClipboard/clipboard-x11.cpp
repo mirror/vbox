@@ -439,9 +439,9 @@ static void clipReportFormatsToVBox(PSHCLX11CTX pCtx)
                  pCtx->idxFmtBmp,  g_aFormats[pCtx->idxFmtBmp].pcszAtom,
                  pCtx->idxFmtHTML, g_aFormats[pCtx->idxFmtHTML].pcszAtom));
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    LogFlowFunc((", idxFmtURI=%u ('%s')", pCtx->idxFmtURI, g_aFormats[pCtx->idxFmtURI].pcszAtom));
+    Log((", idxFmtURI=%u ('%s')", pCtx->idxFmtURI, g_aFormats[pCtx->idxFmtURI].pcszAtom));
 #endif
-    LogFlow((" -> vboxFmt=%#x\n", vboxFmt));
+    Log((" -> vboxFmt=%#x\n", vboxFmt));
 
 #ifdef LOG_ENABLED
     char *pszFmts = ShClFormatsToStrA(vboxFmt);
@@ -1209,6 +1209,9 @@ int ShClX11Init(PSHCLX11CTX pCtx, PSHCLCALLBACKS pCallbacks, PSHCLCONTEXT pParen
         LogRel(("Shared Clipboard: X11 DISPLAY variable not set -- disabling clipboard sharing\n"));
     }
 
+    /* Init clipboard cache. */
+    ShClCacheInit(&pCtx->Cache);
+
     /* Install given callbacks. */
     shClX11SetCallbacksInternal(pCtx, pCallbacks);
 
@@ -1249,6 +1252,9 @@ void ShClX11Destroy(PSHCLX11CTX pCtx)
         return;
 
     LogFlowFunc(("pCtx=%p\n", pCtx));
+
+    /* Destroy clipboard cache. */
+    ShClCacheDestroy(&pCtx->Cache);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
     ShClTransferHttpServerDestroy(&pCtx->HttpCtx.HttpServer);
@@ -1501,34 +1507,40 @@ static int shClX11RequestDataForX11CallbackHelper(PSHCLX11CTX pCtx, SHCLFORMAT u
     RTStrFree(pszFmts);
 #endif
 
-    LogFlowFunc(("pCtx=%p, uFmt=%#x\n", pCtx, uFmt));
-
     int rc = VINF_SUCCESS;
 
     void    *pv = NULL;
     uint32_t cb = 0;
 
-    if (uFmt == VBOX_SHCL_FMT_UNICODETEXT)
+    PSHCLCACHEENTRY pCacheEntry = ShClCacheGet(&pCtx->Cache, uFmt);
+    if (!pCacheEntry) /* Cache miss */
     {
-        if (pCtx->pvUnicodeCache == NULL) /** @todo r=andy Using string cache here? */
-            rc = pCtx->Callbacks.pfnOnRequestDataFromSource(pCtx->pFrontend, uFmt, &pCtx->pvUnicodeCache, &pCtx->cbUnicodeCache,
-                                                            NULL /* pvUser */);
-        if (   RT_SUCCESS(rc)
-            /* Catch misbehaving callbacks. */
-            && pCtx->pvUnicodeCache
-            && pCtx->cbUnicodeCache)
+        rc = pCtx->Callbacks.pfnOnRequestDataFromSource(pCtx->pFrontend, uFmt, &pv, &cb,
+                                                        NULL /* pvUser */);
+        if (RT_SUCCESS(rc))
+            rc = ShClCacheSet(&pCtx->Cache, uFmt, pv, cb);
+    }
+    else /* Cache hit */
+    {
+        void   *pvCache = NULL;
+        size_t  cbCache = 0;
+        ShClCacheEntryGet(pCacheEntry, &pvCache, &cbCache);
+        if (   pvCache
+            && cbCache)
         {
-            pv = RTMemDup(pCtx->pvUnicodeCache, pCtx->cbUnicodeCache);
+            pv = RTMemDup(pvCache, cbCache);
             if (pv)
-                cb = pCtx->cbUnicodeCache;
+            {
+                cb = cbCache;
+            }
             else
-                rc = VERR_NO_MEMORY;
+               rc = VERR_NO_MEMORY;
         }
     }
-    else
-        rc = pCtx->Callbacks.pfnOnRequestDataFromSource(pCtx->pFrontend, uFmt, &pv, &cb, NULL /* pvUser */);
 
-    /* Safey net in case the callbacks above misbehave
+    LogFlowFunc(("pCtx=%p, uFmt=%#x -> Cache %s\n", pCtx, uFmt, pCacheEntry ? "HIT" : "MISS"));
+
+    /* Safey net in case the stuff above misbehaves
      * (must return VERR_NO_DATA if no data available). */
     if (   RT_SUCCESS(rc)
         && (pv == NULL || cb == 0))
@@ -1773,13 +1785,43 @@ static int clipConvertToX11Data(PSHCLX11CTX pCtx, Atom *atomTarget,
         }
     }
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    else if (fmtX11 == SHCLX11FMT_URI_LIST)
+    else if (   fmtX11 == SHCLX11FMT_URI_LIST
+             || fmtX11 == SHCLX11FMT_URI_LIST_GNOME_COPIED_FILES
+            /** @todo BUGBUG Not sure about the following ones; test those. */
+             || fmtX11 == SHCLX11FMT_URI_LIST_MATE_COPIED_FILES
+             || fmtX11 == SHCLX11FMT_URI_LIST_NAUTILUS_CLIPBOARD
+             || fmtX11 == SHCLX11FMT_URI_LIST_KDE_CUTSELECTION)
     {
         if (pCtx->vboxFormats & VBOX_SHCL_FMT_URI_LIST)
         {
             rc = shClX11RequestDataForX11CallbackHelper(pCtx, VBOX_SHCL_FMT_URI_LIST, &pv, &cb);
             if (RT_SUCCESS(rc))
             {
+                 if (   fmtX11 == SHCLX11FMT_URI_LIST_GNOME_COPIED_FILES
+                     /** @todo BUGBUG Ditto, see above. */
+                     || fmtX11 == SHCLX11FMT_URI_LIST_MATE_COPIED_FILES
+                     || fmtX11 == SHCLX11FMT_URI_LIST_NAUTILUS_CLIPBOARD
+                     || fmtX11 == SHCLX11FMT_URI_LIST_KDE_CUTSELECTION)
+                 {
+                    /* Note: There must be *no* final new line ('\n') at the end, otherwise Nautilus will crash! */
+                    char *pszData = NULL;
+
+                    RTStrAPrintf(&pszData, "copy\n%s", (const char *)pv);
+
+                    cb = strlen(pszData);
+                    pv = pszData;
+                }
+                else /* SHCLX11FMT_URI_LIST -> String only, w/o any special formatting. */
+                {
+                    char *pszData = NULL;
+                    RTStrAPrintf(&pszData, "%s\n", (const char *)pv);
+
+                    cb = strlen(pszData) + 1;
+                    pv = pszData;
+                }
+
+                LogFlowFunc(("Data:\n%.*RhXd\n", cb, pv));
+
                 void *pvDst = (void *)XtMalloc(cb);
                 if (pvDst)
                 {
@@ -1793,6 +1835,9 @@ static int clipConvertToX11Data(PSHCLX11CTX pCtx, Atom *atomTarget,
                 else
                     rc = VERR_NO_MEMORY;
             }
+
+            RTMemFree(pv);
+            pv = NULL;
         }
         /* else not supported yet. */
     }
@@ -1875,17 +1920,15 @@ static void clipXtConvertSelectionProcDone(Widget widget, Atom *atomSelection, A
 }
 
 /**
- * Invalidates the local cache of the data in the VBox clipboard.
+ * Invalidates the local clipboard cache.
  *
  * @param   pCtx                The X11 clipboard context to use.
  */
 static void clipInvalidateClipboardCache(PSHCLX11CTX pCtx)
 {
-    if (pCtx->pvUnicodeCache != NULL)
-    {
-        RTMemFree(pCtx->pvUnicodeCache);
-        pCtx->pvUnicodeCache = NULL;
-    }
+    LogFlowFuncEnter();
+
+    ShClCacheInvalidate(&pCtx->Cache);
 }
 
 /**
@@ -2031,6 +2074,8 @@ int ShClX11TransferConvertDataToStringList(const char *pvData, size_t cbData, ch
 
     *pcbList = 0;
 
+    LogFlowFunc(("Data:\n%.*RhXd\n", cbData, pvData));
+
     char **papszStrings;
     size_t cStrings;
     rc = RTStrSplit(pvData, cbData, SHCL_TRANSFER_URI_LIST_SEP_STR, &papszStrings, &cStrings);
@@ -2039,6 +2084,7 @@ int ShClX11TransferConvertDataToStringList(const char *pvData, size_t cbData, ch
         for (size_t i = 0; i < cStrings; i++)
         {
             const char *pszString = papszStrings[i];
+            LogRel2(("Shared Clipboard: Received entry #%zu from X11: '%s'\n", i, pszString));
             rc = RTStrAAppend(ppszList, pszString);
             if (RT_FAILURE(rc))
                 break;
@@ -2235,53 +2281,22 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
         switch (clipRealFormatForX11Format(pReq->Read.idxFmtX11))
         {
             case SHCLX11FMT_URI_LIST:
+                RT_FALL_THROUGH();
+            case SHCLX11FMT_URI_LIST_GNOME_COPIED_FILES:
+                RT_FALL_THROUGH();
+            case SHCLX11FMT_URI_LIST_MATE_COPIED_FILES:
+                RT_FALL_THROUGH();
+            case SHCLX11FMT_URI_LIST_NAUTILUS_CLIPBOARD:
+                RT_FALL_THROUGH();
+            case SHCLX11FMT_URI_LIST_KDE_CUTSELECTION:
             {
-                RTCList<RTCString> lstRootEntries;
                 rc = ShClX11TransferConvertDataToStringList((const char *)pvSrc, cbSrc, (char **)&pvDst, &cbDst);
-                if (RT_SUCCESS(rc))
-                {
-            #if 0
-                    for (size_t i = 0; i < lstRootEntries.size(); ++i)
-                    {
-                        char *pszEntry = RTUriFilePath(lstRootEntries.at(i).c_str())
-                        AssertPtrBreakStmt(pszEntry, VERR_INVALID_PARAMETER);
-
-                        LogFlowFunc(("Entry '%s' -> ", (char *)pszEntry));
-
-                        rc = RTStrAAppend((char **)&pvDst, "http://localhost");
-                        AssertRCBreakStmt(rc, VERR_NO_MEMORY);
-                        cbDst += (uint32_t)strlen(pszEntry);
-
-
-
-                        /** @todo BUGBUG Fix port! */
-                        /** @todo Add port + UUID (virtual path). */
-
-                        rc = RTStrAAppend((char **)&pvDst, pszEntry);
-                        AssertRCBreakStmt(rc, VERR_NO_MEMORY);
-                        cbDst += (uint32_t)strlen(pszEntry);
-
-                        LogFlowFunc(("'%s'\n", (char *)pvDst));
-
-                        rc = RTStrAAppend((char **)&pvDst, SHCL_TRANSFER_URI_LIST_SEP_STR);
-                        AssertRCBreakStmt(rc, VERR_NO_MEMORY);
-                        cbDst += (uint32_t)strlen(SHCL_TRANSFER_URI_LIST_SEP_STR);
-
-                        RTStrFree(pszEntry);
-                    }
-
-                    if (cbDst)
-                        cbDst++; /* Include final (zero) termination. */
-            #endif
-
-
-                }
                 break;
             }
 
             default:
             {
-                rc = VERR_INVALID_PARAMETER;
+                AssertFailedStmt(rc = VERR_NOT_SUPPORTED); /* Missing code? */
                 break;
             }
         }

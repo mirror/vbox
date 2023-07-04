@@ -143,10 +143,8 @@ typedef struct _SHCLX11CTX
 #endif
     /** What kind of formats does VBox have to offer? */
     SHCLFORMATS      vboxFormats;
-    /** Cache of the last unicode data that we received. */
-    void            *pvUnicodeCache;
-    /** Size of the unicode data in the cache. */
-    uint32_t         cbUnicodeCache;
+    /** Internval cache of VBox clipboard formats. */
+    SHCLCACHE        Cache;
     /** When we wish the clipboard to exit, we have to wake up the event
      * loop.  We do this by writing into a pipe.  This end of the pipe is
      * the end that another thread can write to. */
