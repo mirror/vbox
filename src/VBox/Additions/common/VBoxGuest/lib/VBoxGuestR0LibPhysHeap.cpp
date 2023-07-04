@@ -244,10 +244,6 @@ struct VBGLPHYSHEAPCHUNK
 };
 #if ARCH_BITS == 64
 AssertCompileSize(VBGLPHYSHEAPCHUNK, 64);
-#elif ARCH_BITS == 32
-AssertCompileSize(VBGLPHYSHEAPCHUNK, 32);
-#else
-# error "Unknown architecture!"
 #endif
 
 
