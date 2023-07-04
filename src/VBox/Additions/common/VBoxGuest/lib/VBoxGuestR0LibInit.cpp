@@ -116,7 +116,12 @@ static int vbglR0QueryDriverInfo(void)
                     g_vbgldata.pVMMDevMemory = (VMMDevMemory *)PortInfo.u.Out.pvVmmDevMapping;
                     g_vbgldata.pMmioReq      = PortInfo.u.Out.pMmioReq;
 
-                    rc = VbglR0PhysHeapInit(g_vbgldata.pMmioReq == NULL /*fAlloc32BitAddr*/);
+                    /*
+                     * Initialize the physical heap, only allocate memory below 4GiB if the new
+                     * MMIO interface isn't available and we are using a 32-bit OUT instruction to pass a block
+                     * physical address to the host.
+                     */
+                    rc = VbglR0PhysHeapInit(g_vbgldata.pMmioReq == NULL ? _4G - 1 : NIL_RTHCPHYS /*HCPhysMax*/);
                     if (RT_SUCCESS(rc))
                     {
                         g_vbgldata.status = VbglStatusReady;
@@ -207,7 +212,12 @@ DECLR0VBGL(int) VbglR0InitPrimary(RTIOPORT portVMMDev, uintptr_t volatile *pMmio
         g_vbgldata.pVMMDevMemory = pVMMDevMemory;
         g_vbgldata.pMmioReq      = pMmioReq;
 
-        rc = VbglR0PhysHeapInit(pMmioReq == NULL /*fAlloc32BitAddr*/);
+        /*
+         * Initialize the physical heap, only allocate memory below 4GiB if the new
+         * MMIO interface isn't available and we are using a 32-bit OUT instruction to pass a block
+         * physical address to the host.
+         */
+        rc = VbglR0PhysHeapInit(g_vbgldata.pMmioReq == NULL ? _4G - 1 : NIL_RTHCPHYS /*HCPhysMax*/);
         if (RT_SUCCESS(rc))
         {
             g_vbgldata.status = VbglStatusReady;

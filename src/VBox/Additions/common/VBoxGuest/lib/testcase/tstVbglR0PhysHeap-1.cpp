@@ -52,6 +52,7 @@
 
 #define IN_TESTCASE
 #define IN_RING0 /* pretend we're in ring-0 so we get access to the functions */
+#include <iprt/memobj.h>
 #include "../VBoxGuestR0LibInternal.h"
 
 
@@ -65,6 +66,13 @@ typedef struct
 } TSTHISTORYENTRY;
 
 
+typedef struct TSTMEMOBJ
+{
+    size_t cb;
+} TSTMEMOBJ;
+typedef TSTMEMOBJ *PTSTMEMOBJ;
+
+
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
@@ -74,49 +82,76 @@ int      g_cChunks  = 0;
 size_t   g_cbChunks = 0;
 
 /** Drop-in replacement for RTMemContAlloc   */
-static void *tstMemContAlloc(PRTCCPHYS pPhys, size_t cb)
+static int tstMemObjContAllocTag(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysHighest, bool fExecutable, const char *pszTag)
 {
+    RT_NOREF(pszTag, PhysHighest, fExecutable);
+
     RTTESTI_CHECK(cb > 0);
 
 #define TST_MAX_CHUNKS 24
     if (g_cChunks < TST_MAX_CHUNKS)
     {
-        void *pvRet = RTMemAlloc(cb);
-        if (pvRet)
+        PTSTMEMOBJ pMem = (PTSTMEMOBJ)RTMemAlloc(sizeof(TSTMEMOBJ) + cb);
+        if (pMem)
         {
+            pMem->cb = cb;
+
             g_cChunks++;
             g_cbChunks += cb;
-            *pPhys = (uint32_t)(uintptr_t)pvRet ^ (UINT32_C(0xf0f0f0f0) & ~(uint32_t)PAGE_OFFSET_MASK);
-
-            /* Avoid problematic values that won't happen in real life:  */
-            if (!*pPhys)
-                *pPhys = 4U << PAGE_SHIFT;
-            if (UINT32_MAX - *pPhys < cb)
-                *pPhys -= RT_ALIGN_32(cb, PAGE_SIZE);
-
-            return pvRet;
+            *pMemObj = (RTR0MEMOBJ)pMem;
+            return VINF_SUCCESS;
         }
     }
 
-    *pPhys = NIL_RTCCPHYS;
-    return NULL;
+    return VERR_NO_MEMORY;
 }
 
 
-/** Drop-in replacement for RTMemContFree   */
-static void tstMemContFree(void *pv, size_t cb)
+/** Drop-in replacement for RTR0MemObjAddress   */
+static void *tstMemObjAddress(RTR0MEMOBJ hMemObj)
 {
-    RTTESTI_CHECK(RT_VALID_PTR(pv));
-    RTTESTI_CHECK(cb > 0);
-    RTTESTI_CHECK(g_cChunks > 0);
-    RTMemFree(pv);
-    g_cChunks--;
-    g_cbChunks -= cb;
+    return (void *)((PTSTMEMOBJ)hMemObj + 1);
 }
 
 
-#define RTMemContAlloc  tstMemContAlloc
-#define RTMemContFree   tstMemContFree
+/** Drop-in replacement for RTR0MemObjGetPagePhysAddr   */
+static RTHCPHYS tstMemObjGetPagePhysAddr(RTR0MEMOBJ hMemObj, uint32_t iPage)
+{
+    RTTESTI_CHECK(iPage == 0);
+
+    PTSTMEMOBJ pMemObj = (PTSTMEMOBJ)hMemObj;
+    uintptr_t PtrMem = (uintptr_t)(pMemObj + 1);
+    RTHCPHYS Phys = (uint32_t)(uintptr_t)PtrMem ^ (UINT32_C(0xf0f0f0f0) & ~(uint32_t)PAGE_OFFSET_MASK);
+
+    /* Avoid problematic values that won't happen in real life:  */
+    if (!Phys)
+        Phys = 4U << PAGE_SHIFT;
+    if (UINT32_MAX - Phys < pMemObj->cb)
+        Phys -= RT_ALIGN_32(pMemObj->cb, PAGE_SIZE);
+
+    return Phys;
+}
+
+
+/** Drop-in replacement for RTR0MemObjFree   */
+static void tstMemObjFree(RTR0MEMOBJ hMemObj, bool fFreeMappings)
+{
+    RT_NOREF(fFreeMappings);
+
+    PTSTMEMOBJ pMemObj = (PTSTMEMOBJ)hMemObj;
+    RTTESTI_CHECK(RT_VALID_PTR(pMemObj));
+    RTTESTI_CHECK(pMemObj->cb > 0);
+    RTTESTI_CHECK(g_cChunks > 0);
+    g_cChunks--;
+    g_cbChunks -= pMemObj->cb;
+    RTMemFree(pMemObj);
+}
+
+
+#define RTR0MemObjAllocContTag      tstMemObjContAllocTag
+#define RTR0MemObjAddress           tstMemObjAddress
+#define RTR0MemObjGetPagePhysAddr   tstMemObjGetPagePhysAddr
+#define RTR0MemObjFree              tstMemObjFree
 #include "../VBoxGuestR0LibPhysHeap.cpp"
 
 
@@ -177,7 +212,7 @@ int main(int argc, char **argv)
      * Create a heap.
      */
     RTTestSub(hTest, "Basics");
-    RTTESTI_CHECK_RC(rc = VbglR0PhysHeapInit(true /*fAlloc32BitAddr*/), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(rc = VbglR0PhysHeapInit(NIL_RTHCPHYS), VINF_SUCCESS);
     if (RT_FAILURE(rc))
         return RTTestSummaryAndDestroy(hTest);
     RTTESTI_CHECK_RC_OK(VbglR0PhysHeapCheck(NULL));
@@ -287,7 +322,7 @@ int main(int argc, char **argv)
      * Use random allocation pattern
      */
     RTTestSub(hTest, "Random Test");
-    RTTESTI_CHECK_RC(rc = VbglR0PhysHeapInit(true /*fAlloc32BitAddr*/), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(rc = VbglR0PhysHeapInit(NIL_RTHCPHYS), VINF_SUCCESS);
     if (RT_FAILURE(rc))
         return RTTestSummaryAndDestroy(hTest);
 

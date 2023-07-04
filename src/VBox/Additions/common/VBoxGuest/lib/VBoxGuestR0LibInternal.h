@@ -151,9 +151,8 @@ typedef struct VBGLDATA
     int32_t                 cFreeBlocks;
     /** Head of the chunk list. */
     VBGLPHYSHEAPCHUNK      *pChunkHead;
-    /** Flag whether all allocations should be below 4GiB to fit into
-     * a 32-bit address. */
-    bool                   fAlloc32BitAddr;
+    /** Maximum physical address allowed for allocations, inclusive. */
+    RTHCPHYS                HCPhysMax;
     /** @} */
 
     /**

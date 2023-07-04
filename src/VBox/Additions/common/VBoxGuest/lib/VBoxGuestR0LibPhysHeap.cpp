@@ -156,10 +156,10 @@
  * the latter is typically always dragged into the link on guests where the
  * linker cannot eliminiate functions within objects.  Only drawback is that
  * RTR0MemObjAllocCont requires another heap allocation for the handle.
+ *
+ * Update: Just enable it everywhere so we can more easily use memory above 4G.
  */
-#if defined(DOXYGEN_RUNNING) || (!defined(IN_TESTCASE) && 0)
-# define VBGL_PH_USE_MEMOBJ
-#endif
+#define VBGL_PH_USE_MEMOBJ
 
 
 /*********************************************************************************************************************************
@@ -232,7 +232,8 @@ struct VBGLPHYSHEAPCHUNK
 #if defined(VBGL_PH_USE_MEMOBJ)
     /** The allocation handle. */
     RTR0MEMOBJ          hMemObj;
-#elif ARCH_BITS == 64
+#endif
+#if ARCH_BITS == 64
     /** Pad the size up to 64 bytes. */
 # ifdef VBGL_PH_USE_MEMOBJ
     uintptr_t           auPadding2[2];
@@ -531,30 +532,13 @@ static VBGLPHYSHEAPFREEBLOCK *vbglPhysHeapChunkAlloc(uint32_t cbMinBlock)
     cbChunk = cbMinBlock + sizeof(VBGLPHYSHEAPCHUNK) + sizeof(VBGLPHYSHEAPFREEBLOCK);
     cbChunk = RT_ALIGN_32(cbChunk, VBGL_PH_CHUNKSIZE);
 
-    if (g_vbgldata.fAlloc32BitAddr)
-    {
-        /*
-         * This function allocates physical contiguous memory below 4 GB.  This 4GB
-         * limitation stems from using a 32-bit OUT instruction to pass a block
-         * physical address to the host.
-         */
 #ifdef VBGL_PH_USE_MEMOBJ
-        rc = RTR0MemObjAllocCont(&hMemObj, cbChunk, false /*fExecutable*/);
-        pChunk = (VBGLPHYSHEAPCHUNK *)(RT_SUCCESS(rc) ? RTR0MemObjAddress(hMemObj) : NULL);
+    rc = RTR0MemObjAllocCont(&hMemObj, cbChunk, g_vbgldata.HCPhysMax, false /*fExecutable*/);
+    pChunk = (VBGLPHYSHEAPCHUNK *)(RT_SUCCESS(rc) ? RTR0MemObjAddress(hMemObj) : NULL);
+    PhysAddr = RT_SUCCESS(rc) ? (RTCCPHYS)RTR0MemObjGetPagePhysAddr(hMemObj, 0 /*iPage*/) : NIL_RTCCPHYS;
 #else
-        pChunk = (VBGLPHYSHEAPCHUNK *)RTMemContAlloc(&PhysAddr, cbChunk);
+    pChunk = (VBGLPHYSHEAPCHUNK *)RTMemContAlloc(&PhysAddr, cbChunk);
 #endif
-    }
-    else
-    {
-        /** @todo Provide appropriate memory API. */
-#ifdef VBGL_PH_USE_MEMOBJ
-        rc = RTR0MemObjAllocCont(&hMemObj, cbChunk, false /*fExecutable*/);
-        pChunk = (VBGLPHYSHEAPCHUNK *)(RT_SUCCESS(rc) ? RTR0MemObjAddress(hMemObj) : NULL);
-#else
-        pChunk = (VBGLPHYSHEAPCHUNK *)RTMemContAlloc(&PhysAddr, cbChunk);
-#endif
-    }
     if (!pChunk)
     {
         /* If the allocation fail, halv the size till and try again. */
@@ -566,8 +550,9 @@ static VBGLPHYSHEAPFREEBLOCK *vbglPhysHeapChunkAlloc(uint32_t cbMinBlock)
                 cbChunk >>= 2;
                 cbChunk = RT_ALIGN_32(cbChunk, PAGE_SIZE);
 #ifdef VBGL_PH_USE_MEMOBJ
-                rc = RTR0MemObjAllocCont(&hMemObj, cbChunk, false /*fExecutable*/);
+                rc = RTR0MemObjAllocCont(&hMemObj, cbChunk, g_vbgldata.HCPhysMax, false /*fExecutable*/);
                 pChunk = (VBGLPHYSHEAPCHUNK *)(RT_SUCCESS(rc) ? RTR0MemObjAddress(hMemObj) : NULL);
+                PhysAddr = RT_SUCCESS(rc) ? (RTCCPHYS)RTR0MemObjGetPagePhysAddr(hMemObj, 0 /*iPage*/) : NIL_RTCCPHYS;
 #else
                 pChunk = (VBGLPHYSHEAPCHUNK *)RTMemContAlloc(&PhysAddr, cbChunk);
 #endif
@@ -577,7 +562,7 @@ static VBGLPHYSHEAPFREEBLOCK *vbglPhysHeapChunkAlloc(uint32_t cbMinBlock)
     {
         VBGLPHYSHEAPCHUNK     *pOldHeadChunk;
         VBGLPHYSHEAPFREEBLOCK *pBlock;
-        AssertRelease(   !g_vbgldata.fAlloc32BitAddr
+        AssertRelease(   g_vbgldata.HCPhysMax == NIL_RTHCPHYS
                       || (PhysAddr < _4G && PhysAddr + cbChunk <= _4G));
 
         /*
@@ -1182,10 +1167,10 @@ DECLVBGL(int) VbglR0PhysHeapCheck(PRTERRINFO pErrInfo)
 
 #endif /* IN_TESTCASE */
 
-DECLR0VBGL(int) VbglR0PhysHeapInit(bool fAlloc32BitAddr)
+DECLR0VBGL(int) VbglR0PhysHeapInit(RTHCPHYS HCPhysMax)
 {
-    g_vbgldata.fAlloc32BitAddr = fAlloc32BitAddr;
-    g_vbgldata.hMtxHeap        = NIL_RTSEMFASTMUTEX;
+    g_vbgldata.HCPhysMax = HCPhysMax;
+    g_vbgldata.hMtxHeap  = NIL_RTSEMFASTMUTEX;
 
     /* Allocate the first chunk of the heap. */
     VBGLPHYSHEAPFREEBLOCK *pBlock = vbglPhysHeapChunkAlloc(0);
