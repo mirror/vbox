@@ -150,6 +150,35 @@ typedef struct RTR0MEMOBJLNX
 typedef RTR0MEMOBJLNX *PRTR0MEMOBJLNX;
 
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/*
+ * Linux allows only a coarse selection of zones for
+ * allocations matching a particular maximum physical address.
+ *
+ * Sorted from high to low physical address!
+ */
+static const struct
+{
+    RTHCPHYS    PhysHighest;
+    gfp_t       fGfp;
+} g_aZones[] =
+{
+    { NIL_RTHCPHYS,      GFP_KERNEL },
+#if (defined(RT_ARCH_AMD64) || defined(CONFIG_X86_PAE)) && defined(GFP_DMA32)
+    { _4G - 1,           GFP_DMA32  }, /* ZONE_DMA32: 0-4GB */
+#elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
+    { _4G - 1,           GFP_DMA    }, /* ZONE_DMA: 0-4GB */
+#endif
+#if defined(RT_ARCH_AMD64)
+    { _16M - 1,          GFP_DMA    }, /* ZONE_DMA: 0-16MB */
+#elif defined(RT_ARCH_X86)
+    { 896 * _1M - 1,     GFP_USER   }, /* ZONE_NORMAL (32-bit hosts): 0-896MB */
+#endif
+};
+
+
 static void rtR0MemObjLinuxFreePages(PRTR0MEMOBJLNX pMemLnx);
 
 
@@ -971,36 +1000,52 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, 
 }
 
 
-DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable, const char *pszTag)
+DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest,
+                                          bool fExecutable, const char *pszTag)
 {
     IPRT_LINUX_SAVE_EFL_AC();
     PRTR0MEMOBJLNX pMemLnx;
     int rc;
+    uint32_t idxZone;
 
-#if (defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64) || defined(CONFIG_X86_PAE)) && defined(GFP_DMA32)
-    /* ZONE_DMA32: 0-4GB */
-    rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, PAGE_SIZE, GFP_DMA32,
-                                   true /* contiguous */, fExecutable, VERR_NO_CONT_MEMORY, pszTag);
-    if (RT_FAILURE(rc))
-#endif
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64)
-        /* ZONE_DMA: 0-16MB */
-        rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, PAGE_SIZE, GFP_DMA,
+    /*
+     * The last zone must be able to satisfy the PhysHighest requirement or there
+     * will be no zone at all.
+     */
+    if (g_aZones[RT_ELEMENTS(g_aZones) - 1].PhysHighest > PhysHighest)
+    {
+        IPRT_LINUX_RESTORE_EFL_AC();
+        AssertMsgFailedReturn(("No zone can satisfy PhysHighest=%RHp!\n", PhysHighest),
+                              VERR_NO_CONT_MEMORY);
+    }
+
+    /* Find the first zone matching our PhysHighest requirement. */
+    idxZone = 0;
+    for (;;)
+    {
+        if (g_aZones[idxZone].PhysHighest <= PhysHighest)
+            break; /* We found a zone satisfying the requirement. */
+        idxZone++;
+    }
+
+    /* Now try to allocate pages from all the left zones until one succeeds. */
+    for (;;)
+    {
+        rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, PAGE_SIZE, g_aZones[idxZone].fGfp,
                                        true /* contiguous */, fExecutable, VERR_NO_CONT_MEMORY, pszTag);
-#else
-        /* ZONE_NORMAL (32-bit hosts): 0-896MB */
-        rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, PAGE_SIZE, GFP_USER,
-                                       true /* contiguous */, fExecutable, VERR_NO_CONT_MEMORY, pszTag);
-#endif
+        idxZone++;
+        if (RT_SUCCESS(rc) || idxZone == RT_ELEMENTS(g_aZones))
+            break;
+    }
     if (RT_SUCCESS(rc))
     {
         rc = rtR0MemObjLinuxVMap(pMemLnx, fExecutable);
         if (RT_SUCCESS(rc))
         {
-#if defined(RT_STRICT) && (defined(RT_ARCH_AMD64) || defined(CONFIG_HIGHMEM64G))
+#if defined(RT_STRICT)
             size_t iPage = pMemLnx->cPages;
             while (iPage-- > 0)
-                Assert(page_to_phys(pMemLnx->apPages[iPage]) < _4G);
+                Assert(page_to_phys(pMemLnx->apPages[iPage]) < PhysHighest);
 #endif
             pMemLnx->Core.u.Cont.Phys = page_to_phys(pMemLnx->apPages[0]);
             *ppMem = &pMemLnx->Core;

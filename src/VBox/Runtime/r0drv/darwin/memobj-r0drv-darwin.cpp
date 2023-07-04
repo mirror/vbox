@@ -884,12 +884,30 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, 
 }
 
 
-DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable, const char *pszTag)
+/**
+ * Translates the PhysHighest address into a mask.
+ */
+static mach_vm_address_t rtR0MemObjDarwinCalcPhysMask(RTHCPHYS PhysHighest, size_t uAlignment)
 {
+    if (PhysHighest == NIL_RTHCPHYS)
+        return uAlignment <= PAGE_SIZE ? 0 : ~(mach_vm_address_t)(uAlignment - 1);
+
+    mach_vm_address_t PhysMask = ~(mach_vm_address_t)0;
+    while (PhysMask > (PhysHighest | PAGE_OFFSET_MASK))
+        PhysMask >>= 1;
+    PhysMask &= ~(mach_vm_address_t)(uAlignment - 1);
+
+    return PhysMask;
+}
+
+
+DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest,
+                                          bool fExecutable, const char *pszTag)
+{
+    mach_vm_address_t const PhysMask = rtR0MemObjDarwinCalcPhysMask(PhysHighest, PAGE_SIZE);
     IPRT_DARWIN_SAVE_EFL_AC();
 
-    int rc = rtR0MemObjNativeAllocWorker(ppMem, cb, fExecutable, true /* fContiguous */,
-                                         ~(uint32_t)PAGE_OFFSET_MASK, _4G - PAGE_SIZE,
+    int rc = rtR0MemObjNativeAllocWorker(ppMem, cb, fExecutable, true /* fContiguous */, PhysMask, PhysHighest,
                                          RTR0MEMOBJTYPE_CONT, PAGE_SIZE, pszTag, false /*fOnKernelThread*/);
 
     /*
@@ -897,8 +915,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
      * cb <= PAGE_SIZE allocations take a different path, using a different allocator.
      */
     if (RT_FAILURE(rc) && cb <= PAGE_SIZE)
-        rc = rtR0MemObjNativeAllocWorker(ppMem, cb + PAGE_SIZE, fExecutable, true /* fContiguous */,
-                                         ~(uint32_t)PAGE_OFFSET_MASK, _4G - PAGE_SIZE,
+        rc = rtR0MemObjNativeAllocWorker(ppMem, cb + PAGE_SIZE, fExecutable, true /* fContiguous */, PhysMask, PhysHighest,
                                          RTR0MEMOBJTYPE_CONT, PAGE_SIZE, pszTag, false /*fOnKernelThread*/);
     IPRT_DARWIN_RESTORE_EFL_AC();
     return rc;
@@ -914,6 +931,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
         if (version_major < 9 /* 9 = 10.5.x = Snow Leopard */)
             return VERR_NOT_SUPPORTED;
     }
+    mach_vm_address_t const PhysMask = rtR0MemObjDarwinCalcPhysMask(PhysHighest, uAlignment);
 
     IPRT_DARWIN_SAVE_EFL_AC();
 
@@ -922,20 +940,12 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
      */
     int rc;
     if (PhysHighest == NIL_RTHCPHYS)
-        rc = rtR0MemObjNativeAllocWorker(ppMem, cb, false /* fExecutable */, true /* fContiguous */,
-                                         uAlignment <= PAGE_SIZE ? 0 : ~(mach_vm_address_t)(uAlignment - 1) /* PhysMask*/,
-                                         UINT64_MAX, RTR0MEMOBJTYPE_PHYS, uAlignment, pszTag, false /*fOnKernelThread*/);
+        rc = rtR0MemObjNativeAllocWorker(ppMem, cb, false /* fExecutable */, true /* fContiguous */, PhysMask, UINT64_MAX,
+                                         RTR0MEMOBJTYPE_PHYS, uAlignment, pszTag, false /*fOnKernelThread*/);
     else
     {
-        mach_vm_address_t PhysMask = 0;
-        PhysMask = ~(mach_vm_address_t)0;
-        while (PhysMask > (PhysHighest | PAGE_OFFSET_MASK))
-            PhysMask >>= 1;
         AssertReturn(PhysMask + 1 <= cb, VERR_INVALID_PARAMETER);
-        PhysMask &= ~(mach_vm_address_t)(uAlignment - 1);
-
-        rc = rtR0MemObjNativeAllocWorker(ppMem, cb, false /* fExecutable */, true /* fContiguous */,
-                                         PhysMask, PhysHighest,
+        rc = rtR0MemObjNativeAllocWorker(ppMem, cb, false /* fExecutable */, true /* fContiguous */, PhysMask, PhysHighest,
                                          RTR0MEMOBJTYPE_PHYS, uAlignment, pszTag, false /*fOnKernelThread*/);
     }
 
