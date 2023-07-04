@@ -360,13 +360,10 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, 
  * @returns IPRT status code.
  * @param   ppMem           Where to store the ring-0 memory object handle.
  * @param   cb              Number of bytes to allocate, page aligned.
- * @param   PhysHighest     The highest permitable address (inclusive).
- *                          Pass NIL_RTHCPHYS if any address is acceptable.
  * @param   fExecutable     Flag indicating whether it should be permitted to executed code in the memory object.
  * @param   pszTag          Allocation tag used for statistics and such.
  */
-DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest,
-                                          bool fExecutable, const char *pszTag);
+DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable, const char *pszTag);
 
 /**
  * Locks a range of user virtual memory.

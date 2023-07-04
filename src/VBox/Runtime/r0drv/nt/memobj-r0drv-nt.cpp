@@ -564,7 +564,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, 
     /*
      * Fall back on contiguous memory...
      */
-    return rtR0MemObjNativeAllocCont(ppMem, cb, _4G - 1, fExecutable, pszTag);
+    return rtR0MemObjNativeAllocCont(ppMem, cb, fExecutable, pszTag);
 }
 
 
@@ -635,10 +635,9 @@ static int rtR0MemObjNativeAllocContEx(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bo
 }
 
 
-DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest,
-                                          bool fExecutable, const char *pszTag)
+DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable, const char *pszTag)
 {
-    return rtR0MemObjNativeAllocContEx(ppMem, cb, fExecutable, PhysHighest, PAGE_SIZE /* alignment */, pszTag);
+    return rtR0MemObjNativeAllocContEx(ppMem, cb, fExecutable, _4G-1, PAGE_SIZE /* alignment */, pszTag);
 }
 
 

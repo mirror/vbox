@@ -173,9 +173,9 @@ RTR0DECL(RTR3PTR) RTR0MemObjAddressR3(RTR0MEMOBJ MemObj)
 {
     return g_VBoxGuest->_RTR0MemObjAddressR3(MemObj);
 }
-RTR0DECL(int) RTR0MemObjAllocContTag(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysHighest, bool fExecutable, const char *pszTag)
+RTR0DECL(int) RTR0MemObjAllocContTag(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutable, const char *pszTag)
 {
-    return g_VBoxGuest->_RTR0MemObjAllocContTag(pMemObj, cb, PhysHighest, fExecutable, pszTag);
+    return g_VBoxGuest->_RTR0MemObjAllocContTag(pMemObj, cb, fExecutable, pszTag);
 }
 RTR0DECL(int) RTR0MemObjAllocLowTag(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutable, const char *pszTag)
 {
