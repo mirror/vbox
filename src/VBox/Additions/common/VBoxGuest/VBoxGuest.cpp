@@ -1145,7 +1145,7 @@ int VGDrvCommonInitDevExtResources(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase
      */
     pDevExt->IOPortBase   = IOPortBase;
     pDevExt->pMmioReq     = (uintptr_t volatile *)pvMmioReq;
-    pDevExt->pMmioReqFast = (uint32_t volatile *)((uintptr_t)pvMmioReq + VMMDEV_MMIO_OFF_REQUEST_FAST);
+    pDevExt->pMmioReqFast = pvMmioReq ? (uint32_t volatile *)((uintptr_t)pvMmioReq + VMMDEV_MMIO_OFF_REQUEST_FAST) : NULL;
     rc = VbglR0InitPrimary(pDevExt->IOPortBase, pDevExt->pMmioReq, (VMMDevMemory *)pDevExt->pVMMDevMemory, &pDevExt->fHostFeatures);
     if (RT_SUCCESS(rc))
     {
