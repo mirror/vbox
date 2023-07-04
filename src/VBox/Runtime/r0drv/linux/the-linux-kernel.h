@@ -442,7 +442,9 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
  * The AMD 64 switch_to in macro in arch/x86/include/asm/switch_to.h stopped
  * restoring flags.
  * @{ */
-#if (defined(CONFIG_X86_SMAP) || defined(RT_STRICT) || defined(IPRT_WITH_EFLAGS_AC_PRESERVING)) \
+#if (   defined(CONFIG_X86_SMAP) \
+     || (defined(RT_STRICT) && (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64))) \
+     || defined(IPRT_WITH_EFLAGS_AC_PRESERVING)) \
   && !defined(IPRT_WITHOUT_EFLAGS_AC_PRESERVING)
 # include <iprt/asm-amd64-x86.h>
 # define IPRT_X86_EFL_AC                    RT_BIT(18)
