@@ -294,8 +294,8 @@ RTR0DECL(int) RTR0MemObjAllocLowTag(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecut
  *                          use RTR0MemObjProtect after initialization the
  *                          allocation to actually make it executable.
  */
-#define RTR0MemObjAllocCont(pMemObj, cb, PhysHigest, fExecutable) \
-    RTR0MemObjAllocContTag((pMemObj), (cb), (PhysHigest), (fExecutable), RTMEM_TAG)
+#define RTR0MemObjAllocCont(pMemObj, cb, PhysHighest, fExecutable) \
+    RTR0MemObjAllocContTag((pMemObj), (cb), (PhysHighest), (fExecutable), RTMEM_TAG)
 
 /**
  * Allocates page aligned virtual kernel memory with contiguous physical
