@@ -392,7 +392,6 @@ static DECLCALLBACK(void) shClSvcX11OnTransferInitCallback(PSHCLTRANSFERCALLBACK
 {
     RT_NOREF(pCbCtx);
 
-#if 1
     LogFlowFuncEnter();
 
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;

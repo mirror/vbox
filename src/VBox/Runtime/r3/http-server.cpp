@@ -723,7 +723,7 @@ static DECLCALLBACK(int) rtHttpServerHandleGET(PRTHTTPSERVERCLIENT pClient, PRTH
 
     RTHTTPSTATUS enmStsResponse = RTHTTPSTATUS_OK;
 
-    int rc;
+    int rc = VINF_SUCCESS;
 
     RTHTTPSERVER_HANDLE_CALLBACK_VA(pfnQueryInfo, pReq, &fsObj, &pszMIMEHint);
     if (RT_FAILURE(rc))
