@@ -72,7 +72,7 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  endif
 
  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
+  if defined(VBOX_WITH_LIBCURL) && defined(VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP)
    PROGRAMS += tstClipboardHttpServer
    tstClipboardHttpServer_TEMPLATE = VBoxR3TstExe
    tstClipboardHttpServer_SOURCES  = \
