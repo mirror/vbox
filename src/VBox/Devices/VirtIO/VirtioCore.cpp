@@ -136,7 +136,7 @@ typedef struct virt_used
     //uint16_t  uAvailEventIdx;                                  /**< avail_event if (VIRTQ_USED_F_EVENT_IDX)   */
 } VIRTQ_USED_T, *PVIRTQ_USED_T;
 
-const char *virtioCoreGetStateChangeText(VIRTIOVMSTATECHANGED enmState)
+DECLHIDDEN(const char *) virtioCoreGetStateChangeText(VIRTIOVMSTATECHANGED enmState)
 {
     switch (enmState)
     {
@@ -335,7 +335,7 @@ DECLINLINE(uint16_t) virtioCoreVirtqAvailCnt(PPDMDEVINS pDevIns, PVIRTIOCORE pVi
  * @returns how many entries have been added to ring as a delta of the consumer's
  *          avail index and the queue's guest-side current avail index.
  */
-uint16_t virtioCoreVirtqAvailBufCount(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq)
+DECLHIDDEN(uint16_t) virtioCoreVirtqAvailBufCount(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq)
 {
     AssertMsgReturn(uVirtq < RT_ELEMENTS(pVirtio->aVirtqueues), ("uVirtq out of range"), 0);
     PVIRTQUEUE pVirtq = &pVirtio->aVirtqueues[uVirtq];
@@ -391,7 +391,7 @@ static void virtioCoreR3FeatureDump(VIRTIOCORE *pVirtio, PCDBGFINFOHLP pHlp, con
 }
 
 /** API Function: See header file*/
-void  virtioCorePrintDeviceFeatures(VIRTIOCORE *pVirtio, PCDBGFINFOHLP pHlp,
+DECLHIDDEN(void) virtioCorePrintDeviceFeatures(VIRTIOCORE *pVirtio, PCDBGFINFOHLP pHlp,
     const VIRTIO_FEATURES_LIST *s_aDevSpecificFeatures, int cFeatures) {
     virtioCoreR3FeatureDump(pVirtio, pHlp, s_aCoreFeatures, RT_ELEMENTS(s_aCoreFeatures), 1 /*fBanner */);
     virtioCoreR3FeatureDump(pVirtio, pHlp, s_aDevSpecificFeatures, cFeatures, 0 /*fBanner */);
@@ -402,7 +402,7 @@ void  virtioCorePrintDeviceFeatures(VIRTIOCORE *pVirtio, PCDBGFINFOHLP pHlp,
 #ifdef LOG_ENABLED
 
 /** API Function: See header file */
-void virtioCoreHexDump(uint8_t *pv, uint32_t cb, uint32_t uBase, const char *pszTitle)
+DECLHIDDEN(void) virtioCoreHexDump(uint8_t *pv, uint32_t cb, uint32_t uBase, const char *pszTitle)
 {
 #define ADJCURSOR(cb) pszOut += cb; cbRemain -= cb;
     size_t cbPrint = 0, cbRemain = ((cb / 16) + 1) * 80;
@@ -441,7 +441,7 @@ void virtioCoreHexDump(uint8_t *pv, uint32_t cb, uint32_t uBase, const char *psz
 }
 
 /* API FUnction: See header file */
-void virtioCoreGCPhysHexDump(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint16_t cb, uint32_t uBase, const char *pszTitle)
+DECLHIDDEN(void) virtioCoreGCPhysHexDump(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint16_t cb, uint32_t uBase, const char *pszTitle)
 {
     PVIRTIOCORE pVirtio = PDMDEVINS_2_DATA(pDevIns, PVIRTIOCORE);
 #define ADJCURSOR(cb) pszOut += cb; cbRemain -= cb;
@@ -485,9 +485,9 @@ void virtioCoreGCPhysHexDump(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint16_t cb, u
 
 
 /** API function: See header file */
-void virtioCoreLogMappedIoValue(const char *pszFunc, const char *pszMember, uint32_t uMemberSize,
-                                const void *pv, uint32_t cb, uint32_t uOffset, int fWrite,
-                                int fHasIndex, uint32_t idx)
+DECLHIDDEN(void) virtioCoreLogMappedIoValue(const char *pszFunc, const char *pszMember, uint32_t uMemberSize,
+                                            const void *pv, uint32_t cb, uint32_t uOffset, int fWrite,
+                                            int fHasIndex, uint32_t idx)
 {
     if (LogIs6Enabled())
     {
@@ -577,14 +577,14 @@ DECLINLINE(void) virtioCoreFormatDeviceStatus(uint8_t bStatus, char *pszBuf, siz
 #endif /* LOG_ENABLED */
 
 /** API function: See header file */
-int virtioCoreIsLegacyMode(PVIRTIOCORE pVirtio)
+DECLHIDDEN(int) virtioCoreIsLegacyMode(PVIRTIOCORE pVirtio)
 {
     return pVirtio->fLegacyDriver;
 }
 
 #ifdef IN_RING3
 
-int virtioCoreR3VirtqAttach(PVIRTIOCORE pVirtio, uint16_t uVirtq, const char *pcszName)
+DECLHIDDEN(int) virtioCoreR3VirtqAttach(PVIRTIOCORE pVirtio, uint16_t uVirtq, const char *pcszName)
 {
     LogFunc(("Attaching %s to VirtIO core\n", pcszName));
     PVIRTQUEUE pVirtq = &pVirtio->aVirtqueues[uVirtq];
@@ -595,7 +595,7 @@ int virtioCoreR3VirtqAttach(PVIRTIOCORE pVirtio, uint16_t uVirtq, const char *pc
     return VINF_SUCCESS;
 }
 
-int virtioCoreR3VirtqDetach(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr)
+DECLHIDDEN(int) virtioCoreR3VirtqDetach(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr)
 {
     PVIRTQUEUE pVirtq = &pVirtio->aVirtqueues[uVirtqNbr];
     pVirtq->uVirtq          = 0;
@@ -607,19 +607,19 @@ int virtioCoreR3VirtqDetach(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr)
     return VINF_SUCCESS;
 }
 
-bool virtioCoreR3VirtqIsAttached(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr)
+DECLHIDDEN(bool) virtioCoreR3VirtqIsAttached(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr)
 {
     return pVirtio->aVirtqueues[uVirtqNbr].fAttached;
 }
 
-bool virtioCoreR3VirtqIsEnabled(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr)
+DECLHIDDEN(bool) virtioCoreR3VirtqIsEnabled(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr)
 {
     PVIRTQUEUE pVirtq = &pVirtio->aVirtqueues[uVirtqNbr];
     return (bool)pVirtq->uEnable && pVirtq->GCPhysVirtqDesc;
 }
 
 /** API Fuunction: See header file */
-void virtioCoreR3VirtqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs, int uVirtq)
+DECLHIDDEN(void) virtioCoreR3VirtqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs, int uVirtq)
 {
     RT_NOREF(pszArgs);
     PVIRTIOCORE pVirtio = PDMDEVINS_2_DATA(pDevIns, PVIRTIOCORE);
@@ -696,7 +696,7 @@ void virtioCoreR3VirtqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *p
 
 
 /** API Function: See header file */
-PVIRTQBUF virtioCoreR3VirtqBufAlloc(void)
+DECLHIDDEN(PVIRTQBUF) virtioCoreR3VirtqBufAlloc(void)
 {
     PVIRTQBUF pVirtqBuf = (PVIRTQBUF)RTMemAllocZ(sizeof(VIRTQBUF_T));
     AssertReturn(pVirtqBuf, NULL);
@@ -707,7 +707,7 @@ PVIRTQBUF virtioCoreR3VirtqBufAlloc(void)
 
 
 /** API Function: See header file */
-uint32_t virtioCoreR3VirtqBufRetain(PVIRTQBUF pVirtqBuf)
+DECLHIDDEN(uint32_t) virtioCoreR3VirtqBufRetain(PVIRTQBUF pVirtqBuf)
 {
     AssertReturn(pVirtqBuf, UINT32_MAX);
     AssertReturn(pVirtqBuf->u32Magic == VIRTQBUF_MAGIC, UINT32_MAX);
@@ -718,7 +718,7 @@ uint32_t virtioCoreR3VirtqBufRetain(PVIRTQBUF pVirtqBuf)
 }
 
 /** API Function: See header file */
-uint32_t virtioCoreR3VirtqBufRelease(PVIRTIOCORE pVirtio, PVIRTQBUF pVirtqBuf)
+DECLHIDDEN(uint32_t) virtioCoreR3VirtqBufRelease(PVIRTIOCORE pVirtio, PVIRTQBUF pVirtqBuf)
 {
     if (!pVirtqBuf)
         return 0;
@@ -739,14 +739,14 @@ uint32_t virtioCoreR3VirtqBufRelease(PVIRTIOCORE pVirtio, PVIRTQBUF pVirtqBuf)
 }
 
 /** API Function: See header file */
-void virtioCoreNotifyConfigChanged(PVIRTIOCORE pVirtio)
+DECLHIDDEN(void) virtioCoreNotifyConfigChanged(PVIRTIOCORE pVirtio)
 {
     virtioNudgeGuest(pVirtio->pDevInsR3, pVirtio, VIRTIO_ISR_DEVICE_CONFIG, pVirtio->uMsixConfig);
 }
 
 
 /** API Function: See header file */
-void virtioCoreVirtqEnableNotify(PVIRTIOCORE pVirtio, uint16_t uVirtq, bool fEnable)
+DECLHIDDEN(void) virtioCoreVirtqEnableNotify(PVIRTIOCORE pVirtio, uint16_t uVirtq, bool fEnable)
 {
     Assert(uVirtq < RT_ELEMENTS(pVirtio->aVirtqueues));
     PVIRTQUEUE pVirtq = &pVirtio->aVirtqueues[uVirtq];
@@ -765,7 +765,7 @@ void virtioCoreVirtqEnableNotify(PVIRTIOCORE pVirtio, uint16_t uVirtq, bool fEna
 }
 
 /** API function: See Header file  */
-void virtioCoreResetAll(PVIRTIOCORE pVirtio)
+DECLHIDDEN(void) virtioCoreResetAll(PVIRTIOCORE pVirtio)
 {
     LogFunc(("\n"));
     pVirtio->fDeviceStatus |= VIRTIO_STATUS_DEVICE_NEEDS_RESET;
@@ -778,14 +778,14 @@ void virtioCoreResetAll(PVIRTIOCORE pVirtio)
 }
 
 /** API function: See Header file  */
-int virtioCoreR3VirtqAvailBufPeek(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq, PVIRTQBUF pVirtqBuf)
+DECLHIDDEN(int) virtioCoreR3VirtqAvailBufPeek(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq, PVIRTQBUF pVirtqBuf)
 {
     return virtioCoreR3VirtqAvailBufGet(pDevIns, pVirtio, uVirtq, pVirtqBuf, false);
 }
 
 
 /** API function: See Header file  */
-int virtioCoreR3VirtqAvailBufNext(PVIRTIOCORE pVirtio, uint16_t uVirtq)
+DECLHIDDEN(int) virtioCoreR3VirtqAvailBufNext(PVIRTIOCORE pVirtio, uint16_t uVirtq)
 {
     Assert(uVirtq < RT_ELEMENTS(pVirtio->aVirtqueues));
     PVIRTQUEUE pVirtq = &pVirtio->aVirtqueues[uVirtq];
@@ -804,8 +804,8 @@ int virtioCoreR3VirtqAvailBufNext(PVIRTIOCORE pVirtio, uint16_t uVirtq)
 }
 
 /** API Function: See header file */
-int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq,
-                                 uint16_t uHeadIdx, PVIRTQBUF pVirtqBuf)
+DECLHIDDEN(int) virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq,
+                                             uint16_t uHeadIdx, PVIRTQBUF pVirtqBuf)
 {
     AssertMsgReturn(uVirtq < RT_ELEMENTS(pVirtio->aVirtqueues),
                         ("uVirtq out of range"), VERR_INVALID_PARAMETER);
@@ -924,8 +924,8 @@ int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16
 }
 
 /** API function: See Header file  */
-int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq,
-                                 PVIRTQBUF pVirtqBuf, bool fRemove)
+DECLHIDDEN(int) virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq,
+                                             PVIRTQBUF pVirtqBuf, bool fRemove)
 {
     Assert(uVirtq < RT_ELEMENTS(pVirtio->aVirtqueues));
     PVIRTQUEUE pVirtq = &pVirtio->aVirtqueues[uVirtq];
@@ -945,8 +945,8 @@ int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16
 }
 
 /** API function: See Header file  */
-int virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq, PRTSGBUF pSgVirtReturn,
-                            PVIRTQBUF pVirtqBuf, bool fFence)
+DECLHIDDEN(int) virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq, PRTSGBUF pSgVirtReturn,
+                                            PVIRTQBUF pVirtqBuf, bool fFence)
 {
     Assert(uVirtq < RT_ELEMENTS(pVirtio->aVirtqueues));
     PVIRTQUEUE pVirtq = &pVirtio->aVirtqueues[uVirtq];
@@ -1033,8 +1033,8 @@ int virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_
 }
 
 /** API function: See Header file  */
-int virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq,
-                                size_t cb, void const *pv, PVIRTQBUF pVirtqBuf, size_t cbEnqueue, bool fFence)
+DECLHIDDEN(int) virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq,
+                                            size_t cb, void const *pv, PVIRTQBUF pVirtqBuf, size_t cbEnqueue, bool fFence)
 {
     Assert(uVirtq < RT_ELEMENTS(pVirtio->aVirtqueues));
     Assert(pv);
@@ -1109,7 +1109,7 @@ int virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_
 #endif /* IN_RING3 */
 
 /** API function: See Header file  */
-int virtioCoreVirtqUsedRingSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq)
+DECLHIDDEN(int) virtioCoreVirtqUsedRingSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq)
 {
     Assert(uVirtq < RT_ELEMENTS(pVirtio->aVirtqueues));
     PVIRTQUEUE pVirtq = &pVirtio->aVirtqueues[uVirtq];
@@ -2109,8 +2109,8 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioR3PciConfigWrite(PPDMDEVINS pDevIns, PPD
  * @param   pSSM        The saved state handle.
  * @returns VBox status code.
  */
-int virtioCoreR3LegacyDeviceLoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp,
-                               PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uVirtioLegacy_3_1_Beta)
+DECLHIDDEN(int) virtioCoreR3LegacyDeviceLoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM,
+                                                 uint32_t uVersion, uint32_t uVirtioLegacy_3_1_Beta)
 {
     int rc;
     uint32_t uDriverFeaturesLegacy32bit;
@@ -2205,7 +2205,8 @@ int virtioCoreR3LegacyDeviceLoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp,
  * @param   pSSM        The saved state handle.
  * @returns VBox status code.
  */
-int virtioCoreR3ModernDeviceLoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uTestVersion, uint32_t cQueues)
+DECLHIDDEN(int) virtioCoreR3ModernDeviceLoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM,
+                                                 uint32_t uVersion, uint32_t uTestVersion, uint32_t cQueues)
 {
     RT_NOREF2(cQueues, uVersion);
     LogFunc(("\n"));
@@ -2287,7 +2288,7 @@ int virtioCoreR3ModernDeviceLoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PS
  * @param   pSSM        The saved state handle.
  * @returns VBox status code.
  */
-int virtioCoreR3SaveExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t cQueues)
+DECLHIDDEN(int) virtioCoreR3SaveExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t cQueues)
 {
     RT_NOREF(cQueues);
     /** @todo figure out a way to save cQueues (with SSM versioning) */
@@ -2338,7 +2339,7 @@ int virtioCoreR3SaveExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSS
  * @param   pDevIns     The device instance.
  * @param   pVirtio     Pointer to the shared virtio state.
  */
-void virtioCoreR3VmStateChanged(PVIRTIOCORE pVirtio, VIRTIOVMSTATECHANGED enmState)
+DECLHIDDEN(void) virtioCoreR3VmStateChanged(PVIRTIOCORE pVirtio, VIRTIOVMSTATECHANGED enmState)
 {
     LogFunc(("State changing to %s\n",
         virtioCoreGetStateChangeText(enmState)));
@@ -2373,7 +2374,7 @@ void virtioCoreR3VmStateChanged(PVIRTIOCORE pVirtio, VIRTIOVMSTATECHANGED enmSta
  * @param   pVirtio     Pointer to the shared virtio state.
  * @param   pVirtioCC   Pointer to the ring-3 virtio state.
  */
-void virtioCoreR3Term(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC)
+DECLHIDDEN(void) virtioCoreR3Term(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC)
 {
     if (pVirtioCC->pbPrevDevSpecificCfg)
     {
@@ -2385,9 +2386,9 @@ void virtioCoreR3Term(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVi
 }
 
 /** API Function: See header file */
-int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, PVIRTIOPCIPARAMS pPciParams,
-                     const char *pcszInstance, uint64_t fDevSpecificFeatures, uint32_t fOfferLegacy,
-                     void *pvDevSpecificCfg, uint16_t cbDevSpecificCfg)
+DECLHIDDEN(int) virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, PVIRTIOPCIPARAMS pPciParams,
+                                 const char *pcszInstance, uint64_t fDevSpecificFeatures, uint32_t fOfferLegacy,
+                                 void *pvDevSpecificCfg, uint16_t cbDevSpecificCfg)
 {
     /*
      * Virtio state must be the first member of shared device instance data,
@@ -2663,7 +2664,7 @@ int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVir
  * @param   pVirtio     Pointer to the shared virtio state.  This must be the first
  *                      member in the shared device instance data!
  */
-int virtioCoreRZInit(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio)
+DECLHIDDEN(int) virtioCoreRZInit(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio)
 {
     AssertLogRelReturn(pVirtio == PDMINS_2_DATA(pDevIns, PVIRTIOCORE), VERR_STATE_CHANGED);
     int rc;
