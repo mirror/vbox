@@ -87,10 +87,10 @@ static DECLCALLBACK(int) shClSvcX11ReportFormatsCallback(PSHCLCONTEXT pCtx, uint
 static DECLCALLBACK(int) shClSvcX11RequestDataFromSourceCallback(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb, void *pvUser);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-static DECLCALLBACK(void) shClSvcX11OnTransferCreatedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx);
-static DECLCALLBACK(void) shClSvcX11OnTransferInitCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx);
-static DECLCALLBACK(void) shClSvcX11OnTransferDestroyCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx);
-static DECLCALLBACK(void) shClSvcX11OnTransferUnregisteredCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, PSHCLTRANSFERCTX pTransferCtx);
+static DECLCALLBACK(void) shClSvcX11TransferOnCreatedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx);
+static DECLCALLBACK(void) shClSvcX11TransferOnInitCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx);
+static DECLCALLBACK(void) shClSvcX11TransferOnDestroyCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx);
+static DECLCALLBACK(void) shClSvcX11TransferOnUnregisteredCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, PSHCLTRANSFERCTX pTransferCtx);
 
 static DECLCALLBACK(int) shClSvcX11TransferIfaceHGRootListRead(PSHCLTXPROVIDERCTX pCtx);
 #endif
@@ -173,10 +173,10 @@ int ShClBackendConnect(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, bool fHeadles
                 pClient->Transfers.Callbacks.pvUser = pCtx; /* Assign context as user-provided callback data. */
                 pClient->Transfers.Callbacks.cbUser = sizeof(SHCLCONTEXT);
 
-                pClient->Transfers.Callbacks.pfnOnCreated      = shClSvcX11OnTransferCreatedCallback;
-                pClient->Transfers.Callbacks.pfnOnInitialized  = shClSvcX11OnTransferInitCallback;
-                pClient->Transfers.Callbacks.pfnOnDestroy      = shClSvcX11OnTransferDestroyCallback;
-                pClient->Transfers.Callbacks.pfnOnUnregistered = shClSvcX11OnTransferUnregisteredCallback;
+                pClient->Transfers.Callbacks.pfnOnCreated      = shClSvcX11TransferOnCreatedCallback;
+                pClient->Transfers.Callbacks.pfnOnInitialized  = shClSvcX11TransferOnInitCallback;
+                pClient->Transfers.Callbacks.pfnOnDestroy      = shClSvcX11TransferOnDestroyCallback;
+                pClient->Transfers.Callbacks.pfnOnUnregistered = shClSvcX11TransferOnUnregisteredCallback;
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
                 rc = ShClX11ThreadStart(&pCtx->X11, true /* grab shared clipboard */);
@@ -390,7 +390,7 @@ static DECLCALLBACK(int) shClSvcX11ReportFormatsCallback(PSHCLCONTEXT pCtx, uint
  *
  * @thread Service main thread.
  */
-static DECLCALLBACK(void) shClSvcX11OnTransferCreatedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
+static DECLCALLBACK(void) shClSvcX11TransferOnCreatedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
 {
     LogFlowFuncEnter();
 
@@ -453,7 +453,7 @@ static DECLCALLBACK(void) shClSvcX11OnTransferCreatedCallback(PSHCLTRANSFERCALLB
  *
  * @thread Service main thread.
  */
-static DECLCALLBACK(void) shClSvcX11OnTransferInitCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
+static DECLCALLBACK(void) shClSvcX11TransferOnInitCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
 {
     LogFlowFuncEnter();
 
@@ -497,7 +497,7 @@ static DECLCALLBACK(void) shClSvcX11OnTransferInitCallback(PSHCLTRANSFERCALLBACK
  *
  * @thread Service main thread.
  */
-static DECLCALLBACK(void) shClSvcX11OnTransferDestroyCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
+static DECLCALLBACK(void) shClSvcX11TransferOnDestroyCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
 {
     LogFlowFuncEnter();
 
@@ -552,7 +552,7 @@ static void shClSvcX11HttpTransferUnregister(PSHCLCONTEXT pCtx, PSHCLTRANSFER pT
  *
  * @thread Clipboard main thread.
  */
-static DECLCALLBACK(void) shClSvcX11OnTransferUnregisteredCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, PSHCLTRANSFERCTX pTransferCtx)
+static DECLCALLBACK(void) shClSvcX11TransferOnUnregisteredCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, PSHCLTRANSFERCTX pTransferCtx)
 {
     RT_NOREF(pTransferCtx);
     shClSvcX11HttpTransferUnregister((PSHCLCONTEXT)pCbCtx->pvUser, pCbCtx->pTransfer);
