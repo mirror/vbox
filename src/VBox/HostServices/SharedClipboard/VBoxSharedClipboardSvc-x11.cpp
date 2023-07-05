@@ -452,9 +452,10 @@ static DECLCALLBACK(void) shClSvcX11TransferOnCreatedCallback(PSHCLTRANSFERCALLB
 /**
  * @copydoc SHCLTRANSFERCALLBACKS::pfnOnInitialized
  *
- * This starts the HTTP server if not done yet and registers the transfer with it.
+ * For G->H: Starts the HTTP server if not done yet and registers the transfer with it.
+ * For H->G: Called on transfer intialization to populate the transfer's root list.
  *
- * @thread Service main thread.
+ * @thread  Service main thread.
  */
 static DECLCALLBACK(void) shClSvcX11TransferOnInitCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
 {
@@ -483,12 +484,12 @@ static DECLCALLBACK(void) shClSvcX11TransferOnInitCallback(PSHCLTRANSFERCALLBACK
 
         case SHCLTRANSFERDIR_TO_REMOTE: /* H->G */
         {
-            rc = ShClTransferRootListRead(pTransfer); /* Calls shClSvcTransferIfaceHGRootListRead(). */
+            rc = ShClTransferRootListRead(pTransfer); /* Calls shClSvcX11TransferIfaceHGRootListRead(). */
             break;
         }
 
         default:
-            rc = VERR_NOT_IMPLEMENTED;
+            AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
             break;
     }
 
