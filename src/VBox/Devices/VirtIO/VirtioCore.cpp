@@ -634,13 +634,8 @@ void virtioCoreR3VirtqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *p
     uint16_t uUsedIdx        = virtioReadUsedRingIdx(pDevIns, pVirtio, pVirtq);
     uint16_t uUsedIdxShadow  = pVirtq->uUsedIdxShadow;
 
-#ifdef VIRTIO_VBUF_ON_STACK
     VIRTQBUF_T VirtqBuf;
     PVIRTQBUF pVirtqBuf = &VirtqBuf;
-#else /* !VIRTIO_VBUF_ON_STACK */
-    PVIRTQBUF pVirtqBuf = NULL;
-#endif /* !VIRTIO_VBUF_ON_STACK */
-
     bool fEmpty = IS_VIRTQ_EMPTY(pDevIns, pVirtio, pVirtq);
 
     LogFunc(("%s, empty = %s\n", pVirtq->szName, fEmpty ? "true" : "false"));
@@ -648,11 +643,7 @@ void virtioCoreR3VirtqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *p
     int cSendSegs = 0, cReturnSegs = 0;
     if (!fEmpty)
     {
-#ifdef VIRTIO_VBUF_ON_STACK
         virtioCoreR3VirtqAvailBufPeek(pDevIns,  pVirtio, uVirtq, pVirtqBuf);
-#else /* !VIRTIO_VBUF_ON_STACK */
-        virtioCoreR3VirtqAvailBufPeek(pDevIns,  pVirtio, uVirtq, &pVirtqBuf);
-#endif /* !VIRTIO_VBUF_ON_STACK */
         cSendSegs   = pVirtqBuf->pSgPhysSend ? pVirtqBuf->pSgPhysSend->cSegs : 0;
         cReturnSegs = pVirtqBuf->pSgPhysReturn ? pVirtqBuf->pSgPhysReturn->cSegs : 0;
     }
@@ -703,7 +694,7 @@ void virtioCoreR3VirtqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *p
     pHlp->pfnPrintf(pHlp, "\n");
 }
 
-#ifdef VIRTIO_VBUF_ON_STACK
+
 /** API Function: See header file */
 PVIRTQBUF virtioCoreR3VirtqBufAlloc(void)
 {
@@ -713,7 +704,7 @@ PVIRTQBUF virtioCoreR3VirtqBufAlloc(void)
     pVirtqBuf->cRefs     = 1;
     return pVirtqBuf;
 }
-#endif /* VIRTIO_VBUF_ON_STACK */
+
 
 /** API Function: See header file */
 uint32_t virtioCoreR3VirtqBufRetain(PVIRTQBUF pVirtqBuf)
@@ -787,18 +778,11 @@ void virtioCoreResetAll(PVIRTIOCORE pVirtio)
 }
 
 /** API function: See Header file  */
-#ifdef VIRTIO_VBUF_ON_STACK
 int virtioCoreR3VirtqAvailBufPeek(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq, PVIRTQBUF pVirtqBuf)
 {
     return virtioCoreR3VirtqAvailBufGet(pDevIns, pVirtio, uVirtq, pVirtqBuf, false);
 }
-#else /* !VIRTIO_VBUF_ON_STACK */
-int virtioCoreR3VirtqAvailBufPeek(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq,
-                         PPVIRTQBUF ppVirtqBuf)
-{
-    return virtioCoreR3VirtqAvailBufGet(pDevIns, pVirtio, uVirtq, ppVirtqBuf, false);
-}
-#endif /* !VIRTIO_VBUF_ON_STACK */
+
 
 /** API function: See Header file  */
 int virtioCoreR3VirtqAvailBufNext(PVIRTIOCORE pVirtio, uint16_t uVirtq)
@@ -820,19 +804,9 @@ int virtioCoreR3VirtqAvailBufNext(PVIRTIOCORE pVirtio, uint16_t uVirtq)
 }
 
 /** API Function: See header file */
-#ifdef VIRTIO_VBUF_ON_STACK
 int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq,
                                  uint16_t uHeadIdx, PVIRTQBUF pVirtqBuf)
-#else /* !VIRTIO_VBUF_ON_STACK */
-int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq,
-                             uint16_t uHeadIdx, PPVIRTQBUF ppVirtqBuf)
-#endif /* !VIRTIO_VBUF_ON_STACK */
 {
-#ifndef VIRTIO_VBUF_ON_STACK
-    AssertReturn(ppVirtqBuf, VERR_INVALID_POINTER);
-    *ppVirtqBuf = NULL;
-#endif /* !VIRTIO_VBUF_ON_STACK */
-
     AssertMsgReturn(uVirtq < RT_ELEMENTS(pVirtio->aVirtqueues),
                         ("uVirtq out of range"), VERR_INVALID_PARAMETER);
 
@@ -849,17 +823,10 @@ int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16
     /*
      * Allocate and initialize the descriptor chain structure.
      */
-#ifndef VIRTIO_VBUF_ON_STACK
-    PVIRTQBUF pVirtqBuf = (PVIRTQBUF)RTMemAllocZ(sizeof(VIRTQBUF_T));
-    AssertReturn(pVirtqBuf, VERR_NO_MEMORY);
-#endif /* !VIRTIO_VBUF_ON_STACK */
     pVirtqBuf->u32Magic  = VIRTQBUF_MAGIC;
     pVirtqBuf->cRefs     = 1;
     pVirtqBuf->uHeadIdx  = uHeadIdx;
     pVirtqBuf->uVirtq    = uVirtq;
-#ifndef VIRTIO_VBUF_ON_STACK
-    *ppVirtqBuf          = pVirtqBuf;
-#endif /* !VIRTIO_VBUF_ON_STACK */
 
     /*
      * Gather segments.
@@ -957,13 +924,8 @@ int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16
 }
 
 /** API function: See Header file  */
-#ifdef VIRTIO_VBUF_ON_STACK
 int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq,
                                  PVIRTQBUF pVirtqBuf, bool fRemove)
-#else /* !VIRTIO_VBUF_ON_STACK */
-int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq,
-                         PPVIRTQBUF ppVirtqBuf, bool fRemove)
-#endif /* !VIRTIO_VBUF_ON_STACK */
 {
     Assert(uVirtq < RT_ELEMENTS(pVirtio->aVirtqueues));
     PVIRTQUEUE pVirtq = &pVirtio->aVirtqueues[uVirtq];
@@ -979,12 +941,7 @@ int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16
     if (fRemove)
         pVirtq->uAvailIdxShadow++;
 
-#ifdef VIRTIO_VBUF_ON_STACK
-    int rc = virtioCoreR3VirtqAvailBufGet(pDevIns, pVirtio, uVirtq, uHeadIdx, pVirtqBuf);
-#else /* !VIRTIO_VBUF_ON_STACK */
-    int rc = virtioCoreR3VirtqAvailBufGet(pDevIns, pVirtio, uVirtq, uHeadIdx, ppVirtqBuf);
-#endif /* !VIRTIO_VBUF_ON_STACK */
-    return rc;
+    return virtioCoreR3VirtqAvailBufGet(pDevIns, pVirtio, uVirtq, uHeadIdx, pVirtqBuf);
 }
 
 /** API function: See Header file  */

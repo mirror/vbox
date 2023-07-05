@@ -32,9 +32,6 @@
 # pragma once
 #endif
 
-/* Do not allocate VIRTQBUF from the heap when possible */
-#define VIRTIO_VBUF_ON_STACK 1
-
 #include <iprt/ctype.h>
 #include <iprt/sg.h>
 #include <iprt/types.h>
@@ -697,7 +694,6 @@ void  virtioCoreR3VirtqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *
  */
 uint16_t virtioCoreVirtqAvailBufCount(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr);
 
-#ifdef VIRTIO_VBUF_ON_STACK
 /**
  * This function is identical to virtioCoreR3VirtqAvailBufGet(), *except* it doesn't consume
  * peeked buffer from avail ring of the virtq. The function *becomes* identical to the
@@ -766,80 +762,6 @@ int  virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint1
  */
 int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr,
                                   uint16_t uHeadIdx, PVIRTQBUF pVirtqBuf);
-#else /* !VIRTIO_VBUF_ON_STACK */
-/**
- * This function is identical to virtioCoreR3VirtqAvailBufGet(), *except* it doesn't consume
- * peeked buffer from avail ring of the virtq. The function *becomes* identical to the
- * virtioCoreR3VirtqAvailBufGet() only if virtioCoreR3VirtqAvailRingNext() is invoked to
- * consume buf from the queue's avail ring, followed by invocation of virtioCoreR3VirtqUsedBufPut(),
- * to hand host-processed buffer back to guest, which completes guest-initiated virtq buffer circuit.
- *
- * @param   pDevIns     The device instance.
- * @param   pVirtio     Pointer to the shared virtio state.
- * @param   uVirtqNbr   Virtq number
- * @param   ppVirtqBuf  Address to store pointer to descriptor chain that contains the
- *                      pre-processed transaction information pulled from the virtq.
- *
- * @returns VBox status code:
- * @retval  VINF_SUCCESS         Success
- * @retval  VERR_INVALID_STATE   VirtIO not in ready state (asserted).
- * @retval  VERR_NOT_AVAILABLE   If the queue is empty.
- */
-int  virtioCoreR3VirtqAvailBufPeek(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr,
-                                   PPVIRTQBUF ppVirtqBuf);
-
-/**
- * This function fetches the next buffer (descriptor chain) from the VirtIO "avail" ring of
- * indicated queue, separating the buf's s/g vectors into OUT (e.g. guest-to-host)
- * components and and IN (host-to-guest) components.
- *
- * Caller is responsible for GCPhys to host virtual memory conversions. If the
- * virtq buffer being peeked at is "consumed", virtioCoreR3VirtqAvailRingNext() must
- * be called, and after that virtioCoreR3VirtqUsedBufPut() must be called to
- * complete the buffer transfer cycle with the guest.
- *
- * @param   pDevIns     The device instance.
- * @param   pVirtio     Pointer to the shared virtio state.
- * @param   uVirtqNbr   Virtq number
- * @param   ppVirtqBuf  Address to store pointer to descriptor chain that contains the
- *                      pre-processed transaction information pulled from the virtq.
- *                      Returned reference must be released by calling
- *                      virtioCoreR3VirtqBufRelease().
- * @param   fRemove     flags whether to remove desc chain from queue (false = peek)
- *
- * @returns VBox status code:
- * @retval  VINF_SUCCESS         Success
- * @retval  VERR_INVALID_STATE   VirtIO not in ready state (asserted).
- * @retval  VERR_NOT_AVAILABLE   If the queue is empty.
- */
-int  virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr,
-                                  PPVIRTQBUF ppVirtqBuf, bool fRemove);
-
-/**
- * Fetches a specific descriptor chain using avail ring of indicated queue and converts the
- * descriptor chain into its OUT (to device) and IN (to guest) components.
- *
- * The caller is responsible for GCPhys to host virtual memory conversions and *must*
- * return the virtq buffer using virtioCoreR3VirtqUsedBufPut() to complete the roundtrip
- * virtq transaction.
- * *
- * @param   pDevIns     The device instance.
- * @param   pVirtio     Pointer to the shared virtio state.
- * @param   uVirtqNbr   Virtq number
- * @param   ppVirtqBuf  Address to store pointer to descriptor chain that contains the
- *                      pre-processed transaction information pulled from the virtq.
- *                      Returned reference must be released by calling
- *                      virtioCoreR3VirtqBufRelease().
- * @param   fRemove     flags whether to remove desc chain from queue (false = peek)
- *
- * @returns VBox status code:
- * @retval  VINF_SUCCESS         Success
- * @retval  VERR_INVALID_STATE   VirtIO not in ready state (asserted).
- * @retval  VERR_NOT_AVAILABLE   If the queue is empty.
- */
-int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr,
-                                  uint16_t uHeadIdx, PPVIRTQBUF ppVirtqBuf);
-#endif /* !VIRTIO_VBUF_ON_STACK */
 
 /**
  * Returns data to the guest to complete a transaction initiated by virtioCoreR3VirtqAvailBufGet(),
@@ -1184,7 +1106,6 @@ DECLINLINE(void) virtioCoreR3VirtqBufDrain(PVIRTIOCORE pVirtio, PVIRTQBUF pVirtq
  */
 int  virtioCoreVirtqUsedRingSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr);
 
-#ifdef VIRTIO_VBUF_ON_STACK
 /**
  * Allocates a descriptor chain object with the reference count of one. Copying the reference
  * to this object requires a call to virtioCoreR3VirtqBufRetain. All references must be later
@@ -1199,7 +1120,6 @@ int  virtioCoreVirtqUsedRingSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16
  * triggering an assertion if virtioCoreR3VirtqBufRelease is called on them.
  */
 PVIRTQBUF virtioCoreR3VirtqBufAlloc(void);
-#endif /* VIRTIO_VBUF_ON_STACK */
 
 /**
  * Retains a reference to the given descriptor chain.

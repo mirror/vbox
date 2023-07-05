@@ -1647,7 +1647,6 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
              /* Process any reqs that were suspended saved to the redo queue in save exec. */
              for (int i = 0; i < pWorkerR3->cRedoDescs; i++)
              {
-#ifdef VIRTIO_VBUF_ON_STACK
                 PVIRTQBUF pVirtqBuf = virtioCoreR3VirtqBufAlloc();
                 if (!pVirtqBuf)
                 {
@@ -1656,55 +1655,43 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
                 }
                 int rc = virtioCoreR3VirtqAvailBufGet(pDevIns, &pThis->Virtio, uVirtqNbr,
                                                     pWorkerR3->auRedoDescs[i], pVirtqBuf);
-#else /* !VIRTIO_VBUF_ON_STACK */
-                  PVIRTQBUF pVirtqBuf;
-                  int rc = virtioCoreR3VirtqAvailBufGet(pDevIns, &pThis->Virtio, uVirtqNbr,
-                                                        pWorkerR3->auRedoDescs[i], &pVirtqBuf);
-#endif /* !VIRTIO_VBUF_ON_STACK */
-                  if (RT_FAILURE(rc))
-                      LogRel(("Error fetching desc chain to redo, %Rrc", rc));
+                if (RT_FAILURE(rc))
+                    LogRel(("Error fetching desc chain to redo, %Rrc", rc));
 
-                  rc = virtioScsiR3ReqSubmit(pDevIns, pThis, pThisCC, uVirtqNbr, pVirtqBuf);
-                  if (RT_FAILURE(rc))
-                      LogRel(("Error submitting req packet, resetting %Rrc", rc));
+                rc = virtioScsiR3ReqSubmit(pDevIns, pThis, pThisCC, uVirtqNbr, pVirtqBuf);
+                if (RT_FAILURE(rc))
+                    LogRel(("Error submitting req packet, resetting %Rrc", rc));
 
                   virtioCoreR3VirtqBufRelease(&pThis->Virtio, pVirtqBuf);
              }
              pWorkerR3->cRedoDescs = 0;
 
              Log6Func(("fetching next descriptor chain from %s\n", VIRTQNAME(uVirtqNbr)));
-#ifdef VIRTIO_VBUF_ON_STACK
             PVIRTQBUF pVirtqBuf = virtioCoreR3VirtqBufAlloc();
             if (!pVirtqBuf)
                 LogRel(("Failed to allocate memory for VIRTQBUF\n"));
             else
             {
-             int rc = virtioCoreR3VirtqAvailBufGet(pDevIns, &pThis->Virtio, uVirtqNbr, pVirtqBuf, true);
-#else /* !VIRTIO_VBUF_ON_STACK */
-             PVIRTQBUF pVirtqBuf = NULL;
-             int rc = virtioCoreR3VirtqAvailBufGet(pDevIns, &pThis->Virtio, uVirtqNbr, &pVirtqBuf, true);
-#endif /* !VIRTIO_VBUF_ON_STACK */
-             if (rc == VERR_NOT_AVAILABLE)
-             {
-                 Log6Func(("Nothing found in %s\n", VIRTQNAME(uVirtqNbr)));
-                 virtioCoreR3VirtqBufRelease(&pThis->Virtio, pVirtqBuf);
-                 continue;
-             }
+                int rc = virtioCoreR3VirtqAvailBufGet(pDevIns, &pThis->Virtio, uVirtqNbr, pVirtqBuf, true);
+                if (rc == VERR_NOT_AVAILABLE)
+                {
+                    Log6Func(("Nothing found in %s\n", VIRTQNAME(uVirtqNbr)));
+                    virtioCoreR3VirtqBufRelease(&pThis->Virtio, pVirtqBuf);
+                    continue;
+                }
 
-             AssertRC(rc);
-             if (uVirtqNbr == CONTROLQ_IDX)
-                 virtioScsiR3Ctrl(pDevIns, pThis, pThisCC, uVirtqNbr, pVirtqBuf);
-             else /* request queue index */
-             {
-                 rc = virtioScsiR3ReqSubmit(pDevIns, pThis, pThisCC, uVirtqNbr, pVirtqBuf);
-                 if (RT_FAILURE(rc))
-                     LogRel(("Error submitting req packet, resetting %Rrc", rc));
-             }
+                AssertRC(rc);
+                if (uVirtqNbr == CONTROLQ_IDX)
+                    virtioScsiR3Ctrl(pDevIns, pThis, pThisCC, uVirtqNbr, pVirtqBuf);
+                else /* request queue index */
+                {
+                    rc = virtioScsiR3ReqSubmit(pDevIns, pThis, pThisCC, uVirtqNbr, pVirtqBuf);
+                    if (RT_FAILURE(rc))
+                        LogRel(("Error submitting req packet, resetting %Rrc", rc));
+                }
 
-             virtioCoreR3VirtqBufRelease(&pThis->Virtio, pVirtqBuf);
-#ifdef VIRTIO_VBUF_ON_STACK
+                virtioCoreR3VirtqBufRelease(&pThis->Virtio, pVirtqBuf);
             }
-#endif /* VIRTIO_VBUF_ON_STACK */
         }
     }
     return VINF_SUCCESS;
