@@ -101,7 +101,7 @@ static DECLCALLBACK(int) shClSvcX11TransferIfaceHGRootListRead(PSHCLTXPROVIDERCT
 *********************************************************************************************************************************/
 int ShClBackendInit(PSHCLBACKEND pBackend, VBOXHGCMSVCFNTABLE *pTable)
 {
-    RT_NOREF(pBackend);
+    RT_NOREF(pBackend);m
 
     LogFlowFuncEnter();
 
@@ -444,7 +444,7 @@ static DECLCALLBACK(void) shClSvcX11TransferOnCreatedCallback(PSHCLTRANSFERCALLB
             AssertFailed();
     }
 
-    int rc = ShClTransferSetProvider(pTransfer, &pClient->Transfers.Provider);
+    int rc = ShClTransferSetProvider(pTransfer, &pClient->Transfers.Provider); RT_NOREF(rc);
 
     LogFlowFuncLeaveRC(rc);
 }

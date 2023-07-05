@@ -2375,8 +2375,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
 
                         default:
                             LogRel(("Shared Clipboard: Received unknown status %#x (%Rrc) for transfer %RU32\n",
-                                    pEvent->u.TransferStatus.Report.rc,
-                                    pEvent->u.TransferStatus.uID));
+                                    transferReport.uStatus, pEvent->u.TransferStatus.Report.rc, pEvent->u.TransferStatus.uID));
                             rc = VERR_NOT_SUPPORTED;
                             break;
                     }

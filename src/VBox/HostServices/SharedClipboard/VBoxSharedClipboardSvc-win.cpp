@@ -278,7 +278,7 @@ static DECLCALLBACK(void) shClSvcWinTransferOnCreatedCallback(PSHCLTRANSFERCALLB
             AssertFailed();
     }
 
-    int rc = ShClTransferSetProvider(pTransfer, &pClient->Transfers.Provider);
+    int rc = ShClTransferSetProvider(pTransfer, &pClient->Transfers.Provider); RT_NOREF(rc);
 
     LogFlowFuncLeaveRC(rc);
 }
