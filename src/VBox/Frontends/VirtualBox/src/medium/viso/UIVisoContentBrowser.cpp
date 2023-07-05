@@ -790,14 +790,24 @@ void UIVisoContentBrowser::parseVisoFileContent(const QString &strFileName)
     QTextStream stream(&file);
     QString strFileContent = stream.readAll();
     strFileContent.replace(' ', '\n');
-    QStringList list = strFileContent.split("\n", Qt::SkipEmptyParts);
+    QStringList list;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    list = strFileContent.split("\n", Qt::SkipEmptyParts);
+#else
+    list = strFileContent.split("\n", QString::SkipEmptyParts);
+#endif
     QMap<QString, QString> fileEntries;
     foreach (const QString &strPart, list)
     {
         /* We currently do not support different on-ISO names for different namespaces. */
         if (strPart.startsWith("/") && strPart.count('=') <= 1)
         {
-            QStringList fileEntry = strPart.split("=", Qt::SkipEmptyParts);
+            QStringList fileEntry;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+            fileEntry = strPart.split("=", Qt::SkipEmptyParts);
+#else
+            fileEntry = strPart.split("=", QString::SkipEmptyParts);
+#endif
             if (fileEntry.size() == 1)
             {
                 QFileInfo fileInfo(fileEntry[0]);
