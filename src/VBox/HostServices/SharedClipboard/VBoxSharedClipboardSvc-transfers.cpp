@@ -1662,16 +1662,6 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
             ASSERT_GUEST_RETURN(aParms[1].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_WRONG_PARAMETER_TYPE); /* Features */
             ASSERT_GUEST_RETURN(aParms[2].type == VBOX_HGCM_SVC_PARM_64BIT, VERR_WRONG_PARAMETER_TYPE); /* # Entries  */
 
-            if (   ShClTransferGetSource(pTransfer) == SHCLSOURCE_LOCAL
-                && ShClTransferGetDir(pTransfer)    == SHCLTRANSFERDIR_TO_REMOTE)
-            {
-                rc = ShClBackendTransferHGRootListRead(pClient->pBackend, pClient, pTransfer);
-                if (RT_FAILURE(rc))
-                    break;
-            }
-            else
-                break;
-
             SHCLLISTHDR rootListHdr;
             RT_ZERO(rootListHdr);
 

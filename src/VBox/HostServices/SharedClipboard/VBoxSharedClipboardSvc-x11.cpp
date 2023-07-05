@@ -433,9 +433,6 @@ static DECLCALLBACK(void) shClSvcX11OnTransferInitCallback(PSHCLTRANSFERCALLBACK
 
                             rc = ShClTransferRootsInitFromStringList(pTransfer,
                                                                      (char *)pResp->Read.pvData, pResp->Read.cbData + 1 /* Include zero terminator */);
-                            //if (RT_SUCCESS(rc))
-                            //    rc = ShClTransferRootListRead(pTransfer);
-
                             if (RT_SUCCESS(rc))
                                 LogRel2(("Shared Clipboard: Host reported %RU64 X11 root entries for transfer to guest\n", ShClTransferRootsCount(pTransfer)));
 
@@ -660,63 +657,6 @@ int ShClBackendTransferHandleStatusReply(PSHCLBACKEND pBackend, PSHCLCLIENT pCli
     }
 
     return VINF_SUCCESS;
-}
-
-int ShClBackendTransferHGRootListRead(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
-{
-    RT_NOREF(pBackend);
-
-#if 1
-    RT_NOREF(pClient, pTransfer);
-    int rc = 0;
-#else
-    LogFlowFuncEnter();
-
-    PSHCLEVENT pEvent;
-    int rc = ShClEventSourceGenerateAndRegisterEvent(&pClient->EventSrc, &pEvent);
-    if (RT_SUCCESS(rc))
-    {
-        rc = ShClX11ReadDataFromX11Async(&pClient->State.pCtx->X11, VBOX_SHCL_FMT_URI_LIST, UINT32_MAX, pEvent);
-        if (RT_SUCCESS(rc))
-        {
-            /* X supplies the data asynchronously, so we need to wait for data to arrive first. */
-            PSHCLEVENTPAYLOAD pPayload;
-            rc = ShClEventWait(pEvent, SHCL_TIMEOUT_DEFAULT_MS, &pPayload);
-            if (RT_SUCCESS(rc))
-            {
-                if (pPayload)
-                {
-                    Assert(pPayload->cbData == sizeof(SHCLX11RESPONSE));
-                    AssertPtr(pPayload->pvData);
-                    PSHCLX11RESPONSE pResp = (PSHCLX11RESPONSE)pPayload->pvData;
-
-                    rc = ShClTransferRootsInitFromStringList(pTransfer,
-                                              (char *)pResp->Read.pvData, pResp->Read.cbData + 1 /* Include zero terminator */);
-                    if (RT_SUCCESS(rc))
-                        rc = ShClTransferRootListRead(pTransfer);
-
-                    if (RT_SUCCESS(rc))
-                        LogRel2(("Shared Clipboard: Host reported %RU64 X11 root entries for transfer to guest\n", ShClTransferRootsCount(pTransfer)));
-
-                    RTMemFree(pResp->Read.pvData);
-                    pResp->Read.cbData = 0;
-
-                    ShClPayloadFree(pPayload);
-                    pPayload = NULL;
-                }
-                else
-                    rc = VERR_NO_DATA; /* No payload. */
-            }
-        }
-
-        ShClEventRelease(pEvent);
-    }
-    else
-        rc = VERR_SHCLPB_MAX_EVENTS_REACHED;
-#endif
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 

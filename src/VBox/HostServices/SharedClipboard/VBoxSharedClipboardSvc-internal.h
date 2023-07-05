@@ -460,15 +460,6 @@ int ShClBackendTransferDestroy(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCL
  * @param   rcStatus            Status code (IPRT-style). Depends on \a enmStatus set.
  */
 int ShClBackendTransferHandleStatusReply(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCLSOURCE enmSource, SHCLTRANSFERSTATUS enmStatus, int rcStatus);
-/**
- * Called when the guest wants to read the transfer roots.
- *
- * @returns VBox status code.
- * @param   pBackend            Shared Clipboard backend to use.
- * @param   pClient             Shared Clipboard client context.
- * @param   pTransfer           Shared Clipboard transfer to get roots for.
- */
-int ShClBackendTransferHGRootListRead(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
 /** @} */
 #endif
 
