@@ -828,6 +828,12 @@ typedef SHCLTRANSFERCALLBACKCTX *PSHCLTRANSFERCALLBACKCTX;
 typedef struct _SHCLTRANSFERCALLBACKS
 {
     /**
+     * Called after the transfer got created.
+     *
+     * @param   pCbCtx              Pointer to callback context to use.
+     */
+    DECLCALLBACKMEMBER(void,  pfnOnCreated,(PSHCLTRANSFERCALLBACKCTX pCbCtx));
+    /**
      * Called after the transfer got initialized.
      *
      * @param   pCbCtx              Pointer to callback context to use.
