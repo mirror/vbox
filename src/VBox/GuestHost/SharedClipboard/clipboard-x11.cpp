@@ -1820,8 +1820,9 @@ static int clipConvertToX11Data(PSHCLX11CTX pCtx, Atom *atomTarget,
                     pv = pszData;
                 }
 
-                Log3(("clipConvertToX11Data:\n%.*RhXd\n", cb, pv));
-
+# ifdef DEBUG_andy
+                LogFlowFunc(("Data:\n%.*RhXd\n", cb, pv));
+# endif
                 void *pvDst = (void *)XtMalloc(cb);
                 if (pvDst)
                 {
@@ -1841,7 +1842,7 @@ static int clipConvertToX11Data(PSHCLX11CTX pCtx, Atom *atomTarget,
         }
         /* else not supported yet. */
     }
-#endif
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
     else
     {
         *atomTypeReturn = XT_CONVERT_FAIL;
@@ -2074,7 +2075,9 @@ int ShClX11TransferConvertDataToStringList(const char *pvData, size_t cbData, ch
 
     *pcbList = 0;
 
-    Log3(("ShClX11TransferConvertDataToStringList:\n%.*RhXd\n", cbData, pvData));
+# ifdef DEBUG_andy
+    LogFlowFunc(("Data:\n%.*RhXd\n", cbData, pvData));
+# endif
 
     char **papszStrings;
     size_t cStrings;
