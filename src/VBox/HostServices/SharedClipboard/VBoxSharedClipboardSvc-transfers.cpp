@@ -2342,50 +2342,18 @@ int ShClSvcTransferInit(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
         LogRel2(("Shared Clipboard: Initializing %s transfer ...\n",
                  enmDir == SHCLTRANSFERDIR_FROM_REMOTE ? "guest -> host" : "host -> guest"));
 
-        SHCLTXPROVIDER Provider;
-        RT_ZERO(Provider);
+        ShClTransferSetCallbacks(pTransfer, &pClient->Transfers.Callbacks);
 
-        /* Assign local provider first and overwrite interface methods below if needed. */
-        ShClTransferProviderLocalQueryInterface(&Provider);
+        pClient->Transfers.Provider.enmSource = pClient->State.enmSource;
+        pClient->Transfers.Provider.pvUser    = pClient;
 
-        if (enmDir == SHCLTRANSFERDIR_FROM_REMOTE) /* Guest -> Host. */
-        {
-            Provider.Interface.pfnRootListRead  = shClSvcTransferIfaceGHRootListRead;
-
-            Provider.Interface.pfnListOpen      = shClSvcTransferIfaceGHListOpen;
-            Provider.Interface.pfnListClose     = shClSvcTransferIfaceGHListClose;
-            Provider.Interface.pfnListHdrRead   = shClSvcTransferIfaceGHListHdrRead;
-            Provider.Interface.pfnListEntryRead = shClSvcTransferIfaceGHListEntryRead;
-
-            Provider.Interface.pfnObjOpen       = shClSvcTransferIfaceGHObjOpen;
-            Provider.Interface.pfnObjClose      = shClSvcTransferIfaceGHObjClose;
-            Provider.Interface.pfnObjRead       = shClSvcTransferIfaceGHObjRead;
-        }
-        else if (enmDir == SHCLTRANSFERDIR_TO_REMOTE) /* Host -> Guest. */
-        {
-            Provider.Interface.pfnListHdrWrite   = shClSvcTransferIfaceHGListHdrWrite;
-            Provider.Interface.pfnListEntryWrite = shClSvcTransferIfaceHGListEntryWrite;
-            Provider.Interface.pfnObjWrite       = shClSvcTransferIfaceHGObjWrite;
-        }
-        else
-            AssertFailed();
-
-        Provider.enmSource = pClient->State.enmSource;
-        Provider.pvUser    = pClient;
-
-        rc = ShClTransferSetProvider(pTransfer, &Provider);
+        rc = ShClTransferInit(pTransfer);
         if (RT_SUCCESS(rc))
         {
-            ShClTransferSetCallbacks(pTransfer, &pClient->Transfers.Callbacks);
-
-            rc = ShClTransferInit(pTransfer);
-            if (RT_SUCCESS(rc))
-            {
-                /* Sanity: Make sure that the transfer we're gonna report as INITIALIZED to the guest
-                 *         actually has some root entries set, as the guest can query for those at any time then. */
-                if (enmDir == SHCLTRANSFERDIR_TO_REMOTE)
-                    AssertMsgStmt(ShClTransferRootsCount(pTransfer), ("Transfer has no root entries set\n"), rc = VERR_WRONG_ORDER);
-            }
+            /* Sanity: Make sure that the transfer we're gonna report as INITIALIZED to the guest
+             *         actually has some root entries set, as the guest can query for those at any time then. */
+            if (enmDir == SHCLTRANSFERDIR_TO_REMOTE)
+                AssertMsgStmt(ShClTransferRootsCount(pTransfer), ("Transfer has no root entries set\n"), rc = VERR_WRONG_ORDER);
         }
     }
     else

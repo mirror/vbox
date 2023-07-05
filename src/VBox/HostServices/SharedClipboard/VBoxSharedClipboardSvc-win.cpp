@@ -212,6 +212,58 @@ static DECLCALLBACK(int) vboxClipboardSvcWinRequestDataFromSourceCallback(PSHCLC
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 /**
+ * @copydoc SHCLTRANSFERCALLBACKS::pfnOnCreated
+ *
+ * @thread Service main thread.
+ */
+static DECLCALLBACK(void) shClSvcWinTransferOnCreatedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
+{
+    LogFlowFuncEnter();
+
+    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
+    AssertPtr(pCtx);
+
+    PSHCLTRANSFER pTransfer = pCbCtx->pTransfer;
+    AssertPtr(pTransfer);
+
+    PSHCLCLIENT const pClient = pCtx->pClient;
+    AssertPtr(pClient);
+
+    /*
+     * Set transfer provider.
+     * Those will be registered within ShClSvcTransferInit() when a new transfer gets initialized.
+     */
+
+    /* Set the interface to the local provider by default first. */
+    RT_ZERO(pClient->Transfers.Provider);
+    ShClTransferProviderLocalQueryInterface(&pClient->Transfers.Provider);
+
+    PSHCLTXPROVIDERIFACE pIface = &pClient->Transfers.Provider.Interface;
+
+    switch (ShClTransferGetDir(pTransfer))
+    {
+        case SHCLTRANSFERDIR_FROM_REMOTE: /* Guest -> Host. */
+        {
+            /** @todo BUGBUG */
+            break;
+        }
+
+        case SHCLTRANSFERDIR_TO_REMOTE: /* Host -> Guest. */
+        {
+            /** @todo BUGBUG */
+            break;
+        }
+
+        default:
+            AssertFailed();
+    }
+
+    int rc = ShClTransferSetProvider(pTransfer, &pClient->Transfers.Provider);
+
+    LogFlowFuncLeaveRC(rc);
+}
+
+/**
  * @copydoc SHCLTRANSFERCALLBACKS::pfnOnInitialized
  *
  * Called on transfer intialization to notify the "in-flight" IDataObject about a data transfer.
