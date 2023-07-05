@@ -43,6 +43,7 @@
 #include "QIFileDialog.h"
 #include "QILabel.h"
 #include "QILineEdit.h"
+#include "UIMessageCenter.h"
 #include "QIToolBar.h"
 #include "UIActionPool.h"
 #include "UICommon.h"
@@ -406,6 +407,9 @@ void UIVisoCreatorWidget::sltContentBrowserTableSelectionChanged(bool fIsSelecti
 
 void UIVisoCreatorWidget::sltOpenAction()
 {
+    if (!msgCenter().confirmVisoDiscard(this))
+        return;
+
     QString strFileName =  QIFileDialog::getOpenFileName(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD),
                                                          "VISO files (*.viso)", this, UIVisoCreatorWidget::tr("Select a VISO file to load"));
     if (!strFileName.isEmpty() && m_pVISOContentBrowser)

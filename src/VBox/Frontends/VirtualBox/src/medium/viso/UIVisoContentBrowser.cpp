@@ -34,6 +34,7 @@
 #include <QHeaderView>
 #include <QMimeData>
 #include <QTableView>
+#include <QTextStream>
 
 /* GUI includes: */
 #include "QIToolBar.h"
@@ -50,6 +51,8 @@
 #include <iprt/fsvfs.h>
 #include <iprt/mem.h>
 #include <iprt/err.h>
+
+const ULONG uAllowedFileSize = _4K;
 
 struct ISOFileObject
 {
@@ -350,6 +353,7 @@ void UIVisoContentBrowser::addObjectsToViso(const QStringList &pathList)
     if (!m_pTableView)
         return;
 
+    /* Insert items to the current directory shown in the table view: */
     QModelIndex parentIndex = m_pTableProxyModel->mapToSource(m_pTableView->rootIndex());
     if (!parentIndex.isValid())
          return;
@@ -357,6 +361,7 @@ void UIVisoContentBrowser::addObjectsToViso(const QStringList &pathList)
     UICustomFileSystemItem *pParentItem = static_cast<UICustomFileSystemItem*>(parentIndex.internalPointer());
     if (!pParentItem)
         return;
+
     foreach (const QString &strPath, pathList)
     {
         QFileInfo fileInfo(strPath);
@@ -776,7 +781,40 @@ bool UIVisoContentBrowser::tableViewHasSelection() const
 
 void UIVisoContentBrowser::parseVisoFileContent(const QString &strFileName)
 {
-    Q_UNUSED(strFileName);
+    sltResetAction();
+    QFile file(strFileName);
+    if (!file.exists() || !file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return;
+    if (file.size() > uAllowedFileSize)
+        return;
+    QTextStream stream(&file);
+    QString strFileContent = stream.readAll();
+    strFileContent.replace(' ', '\n');
+    QStringList list = strFileContent.split("\n", Qt::SkipEmptyParts);
+    QMap<QString, QString> fileEntries;
+    foreach (const QString &strPart, list)
+    {
+        /* We currently do not support different on-ISO names for different namespaces. */
+        if (strPart.startsWith("/") && strPart.count('=') <= 1)
+        {
+            QStringList fileEntry = strPart.split("=", Qt::SkipEmptyParts);
+            if (fileEntry.size() == 1)
+            {
+                QFileInfo fileInfo(fileEntry[0]);
+                if (fileInfo.exists())
+                {
+                    QString isoName = QString("/%1").arg(fileInfo.fileName());
+                    fileEntries[isoName] = fileEntry[0];
+                }
+            }
+            else if (fileEntry.size() == 2)
+            {
+                if (QFileInfo(fileEntry[1]).exists())
+                    fileEntries[fileEntry[0]] = fileEntry[1];
+            }
+        }
+    }
+    file.close();
 }
 
 QModelIndex UIVisoContentBrowser::convertIndexToTableIndex(const QModelIndex &index)
@@ -924,6 +962,7 @@ void UIVisoContentBrowser::sltResetAction()
     m_entryMap.clear();
     if (m_pTableProxyModel)
         m_pTableProxyModel->invalidate();
+    m_strImportedISOPath.clear();
 }
 
 void UIVisoContentBrowser::sltDroppedItems(QStringList pathList)
@@ -947,11 +986,6 @@ void UIVisoContentBrowser::sltShowContextMenu(const QPoint &point)
 void UIVisoContentBrowser::sltGoUp()
 {
     goUp();
-}
-
-void UIVisoContentBrowser::reset()
-{
-    m_entryMap.clear();
 }
 
 QList<UICustomFileSystemItem*> UIVisoContentBrowser::tableSelectedItems()

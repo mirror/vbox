@@ -127,7 +127,6 @@ private:
      *  if @p bRemove is true then the value is the string ":remove:" which effectively removes the file object
      *  from the iso image. */
     void                    createVisoEntry(UICustomFileSystemItem *pItem, bool bRemove = false);
-    void                    reset();
     QString                 currentPath() const;
     /** Returns a list of items which are currecntly selected
      *  in the table view. */
