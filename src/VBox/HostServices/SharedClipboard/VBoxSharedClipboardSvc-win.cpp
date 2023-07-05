@@ -251,9 +251,14 @@ static DECLCALLBACK(void) shClSvcWinTransferOnCreatedCallback(PSHCLTRANSFERCALLB
 
     PSHCLTXPROVIDERIFACE pIface = &pClient->Transfers.Provider.Interface;
 
+    pClient->Transfers.Provider.enmSource = pClient->State.enmSource;
+    pClient->Transfers.Provider.pvUser    = pClient;
+
+    int rc = VINF_SUCCESS;
+
     switch (ShClTransferGetDir(pTransfer))
     {
-        case SHCLTRANSFERDIR_FROM_REMOTE: /* Guest -> Host. */
+        case SHCLTRANSFERDIR_FROM_REMOTE: /* G->H */
         {
             pIface->pfnRootListRead  = shClSvcTransferIfaceGHRootListRead;
 
@@ -268,17 +273,19 @@ static DECLCALLBACK(void) shClSvcWinTransferOnCreatedCallback(PSHCLTRANSFERCALLB
             break;
         }
 
-        case SHCLTRANSFERDIR_TO_REMOTE: /* Host -> Guest. */
+        case SHCLTRANSFERDIR_TO_REMOTE: /* H->G */
         {
             pIface->pfnRootListRead  = shClSvcWinTransferIfaceHGRootListRead;
             break;
         }
 
         default:
-            AssertFailed();
+            AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
+            break;
     }
 
-    int rc = ShClTransferSetProvider(pTransfer, &pClient->Transfers.Provider); RT_NOREF(rc);
+    if (RT_SUCCESS(rc))
+        rc = ShClTransferSetProvider(pTransfer, &pClient->Transfers.Provider); RT_NOREF(rc);
 
     LogFlowFuncLeaveRC(rc);
 }
@@ -286,7 +293,8 @@ static DECLCALLBACK(void) shClSvcWinTransferOnCreatedCallback(PSHCLTRANSFERCALLB
 /**
  * @copydoc SHCLTRANSFERCALLBACKS::pfnOnInitialized
  *
- * Called on transfer intialization to notify the "in-flight" IDataObject about a data transfer.
+ * For G->H: Called on transfer intialization to notify the "in-flight" IDataObject about a data transfer.
+ * For H->G: Called on transfer intialization to populate the transfer's root list.
  *
  * @thread  Service main thread.
  */
@@ -298,33 +306,40 @@ static DECLCALLBACK(void) shClSvcWinTransferOnInitializedCallback(PSHCLTRANSFERC
     PSHCLTRANSFER pTransfer = pCbCtx->pTransfer;
     AssertPtr(pTransfer);
 
-    const SHCLTRANSFERDIR enmDir = ShClTransferGetDir(pTransfer);
-
     int rc = VINF_SUCCESS;
 
-    LogFlowFunc(("pCtx=%p, idTransfer=%RU32, enmDir=%RU32\n", pCtx, ShClTransferGetID(pTransfer), enmDir));
-
-    /* The host wants to transfer data from the guest. */
-    if (enmDir == SHCLTRANSFERDIR_FROM_REMOTE)
+    switch (ShClTransferGetDir(pTransfer))
     {
-        rc = RTCritSectEnter(&pCtx->Win.CritSect);
-        if (RT_SUCCESS(rc))
+        case SHCLTRANSFERDIR_FROM_REMOTE: /* G->H */
         {
-            SharedClipboardWinDataObject *pObj = pCtx->Win.pDataObjInFlight;
-            AssertPtrReturnVoid(pObj);
-            rc = pObj->SetTransfer(pTransfer);
+            rc = RTCritSectEnter(&pCtx->Win.CritSect);
+            if (RT_SUCCESS(rc))
+            {
+                SharedClipboardWinDataObject *pObj = pCtx->Win.pDataObjInFlight;
+                AssertPtrReturnVoid(pObj);
+                rc = pObj->SetTransfer(pTransfer);
 
-            pCtx->Win.pDataObjInFlight = NULL; /* Hand off to Windows. */
+                pCtx->Win.pDataObjInFlight = NULL; /* Hand off to Windows. */
 
-            int rc2 = RTCritSectLeave(&pCtx->Win.CritSect);
-            AssertRC(rc2);
+                int rc2 = RTCritSectLeave(&pCtx->Win.CritSect);
+                AssertRC(rc2);
+            }
+
+            break;
         }
+
+        case SHCLTRANSFERDIR_TO_REMOTE: /* H->G */
+        {
+            rc = ShClTransferRootListRead(pTransfer); /* Calls shClSvcWinTransferIfaceHGRootListRead(). */
+            break;
+        }
+
+        default:
+            AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
+            break;
     }
 
-    if (RT_FAILURE(rc))
-        LogRel(("Shared Clipboard: Starting transfer failed, rc=%Rrc\n", rc));
-
-    LogFlowFunc(("LEAVE: idTransfer=%RU32, rc=%Rrc\n", ShClTransferGetID(pTransfer), rc));
+    LogFlowFuncLeaveRC(rc);
 }
 
 /**
@@ -802,15 +817,18 @@ int ShClBackendConnect(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, bool fHeadles
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
         /*
-         * Init transfer callbacks.
+         * Set callbacks.
+         * Those will be registered within ShClSvcTransferInit() when a new transfer gets initialized.
          */
         RT_ZERO(pClient->Transfers.Callbacks);
-        pClient->Transfers.Callbacks.pfnOnInitialized = shClSvcWinTransferOnInitializedCallback;
-        pClient->Transfers.Callbacks.pfnOnStarted     = shClSvcWinTransferOnStartedCallback;
-        pClient->Transfers.Callbacks.pfnOnDestroy     = shClSvcWinTransferOnDestroyCallback;
 
         pClient->Transfers.Callbacks.pvUser = pCtx; /* Assign context as user-provided callback data. */
         pClient->Transfers.Callbacks.cbUser = sizeof(SHCLCONTEXT);
+
+        pClient->Transfers.Callbacks.pfnOnCreated     = shClSvcWinTransferOnCreatedCallback;
+        pClient->Transfers.Callbacks.pfnOnInitialized = shClSvcWinTransferOnInitializedCallback;
+        pClient->Transfers.Callbacks.pfnOnStarted     = shClSvcWinTransferOnStartedCallback;
+        pClient->Transfers.Callbacks.pfnOnDestroy     = shClSvcWinTransferOnDestroyCallback;
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
     }
     else

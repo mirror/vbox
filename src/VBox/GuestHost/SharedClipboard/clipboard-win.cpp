@@ -1049,7 +1049,8 @@ int SharedClipboardWinDataWrite(UINT cfFormat, void *pvData, uint32_t cbData)
  *                              Needed for the data object to communicate with the main window thread.
  * @param   pCallbacks          Callbacks table to use.
  */
-int SharedClipboardWinTransferCreateAndSetDataObject(PSHCLWINCTX pWinCtx, PSHCLCONTEXT pCtx, PSHCLCALLBACKS pCallbacks)
+int SharedClipboardWinTransferCreateAndSetDataObject(PSHCLWINCTX pWinCtx,
+                                                     PSHCLCONTEXT pCtx, SharedClipboardWinDataObject::PCALLBACKS pCallbacks)
 {
     AssertPtrReturn(pWinCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -1065,7 +1066,7 @@ int SharedClipboardWinTransferCreateAndSetDataObject(PSHCLWINCTX pWinCtx, PSHCLC
             SharedClipboardWinDataObject *pObj = new SharedClipboardWinDataObject();
             if (pObj)
             {
-                rc = pObj->Init(pCtx);
+                rc = pObj->Init(pCtx, pCallbacks);
                 if (RT_SUCCESS(rc))
                 {
                     if (RT_SUCCESS(rc))

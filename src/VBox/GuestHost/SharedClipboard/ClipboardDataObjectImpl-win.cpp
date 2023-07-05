@@ -78,21 +78,34 @@ SharedClipboardWinDataObject::~SharedClipboardWinDataObject(void)
  * Initializes a data object instance.
  *
  * @returns VBox status code.
- * @param   pFormatEtc          FormatETC to use.
- * @param   pStgMed             Storage medium to use.
- * @param   cFormats            Number of formats in \a pFormatEtc and \a pStgMed.
+ * @param   pCtx                Opaque Shared Clipboard context to use.
+ * @param   pCallbacks          Callbacks table to use.
+ * @param   pFormatEtc          FormatETC to use. Optional.
+ * @param   pStgMed             Storage medium to use. Optional.
+ * @param   cFormats            Number of formats in \a pFormatEtc and \a pStgMed. Optional.
  */
-int SharedClipboardWinDataObject::Init(PSHCLCONTEXT pCtx,
+int SharedClipboardWinDataObject::Init(PSHCLCONTEXT pCtx, SharedClipboardWinDataObject::PCALLBACKS pCallbacks,
                                        LPFORMATETC pFormatEtc /* = NULL */, LPSTGMEDIUM pStgMed /* = NULL */,
                                        ULONG cFormats /* = 0 */)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCallbacks, VERR_INVALID_POINTER);
     AssertReturn(cFormats == 0 || (RT_VALID_PTR(pFormatEtc) && RT_VALID_PTR(pStgMed)), VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
 
     m_pCtx = pCtx; /* Save opaque context. */
 
+    /*
+     * Set up callback context + table.
+     */
+    memcpy(&m_Callbacks, pCallbacks, sizeof(SharedClipboardWinDataObject::CALLBACKS));
+    m_CallbackCtx.pvUser = pCtx;
+    m_CallbackCtx.pThis  = this;
+
+    /*
+     * Set up / register handled formats.
+     */
     ULONG cFixedFormats = 3; /* CFSTR_FILEDESCRIPTORA + CFSTR_FILECONTENTS + CFSTR_PERFORMEDDROPEFFECT */
 #ifdef VBOX_CLIPBOARD_WITH_UNICODE_SUPPORT
     cFixedFormats++; /* CFSTR_FILEDESCRIPTORW */
@@ -689,28 +702,21 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
 
                 /* Leave lock while requesting + waiting. */
                 rc2 = RTCritSectLeave(&m_CritSect);
-                AssertRCReturn(rc2, E_UNEXPECTED);
+                AssertRCBreak(rc2);
 
-                /* Request the transfer from the source.
-                 * This will generate a transfer status message which we're waiting for here. */
-            #if 0 // CLEAN
-                AssertPtr(m_Callbacks.pfnOnRequestDataFromSource);
-                rc = m_Callbacks.pfnOnRequestDataFromSource(m_pCtx,
-                                                            VBOX_SHCL_FMT_URI_LIST, NULL /* ppv */, NULL /* pv */,
-                                                            this /* pvUser */);
-                AssertRCBreak(rc);
-            #else
-                rc = ShClTransferStart(m_pTransfer);
-                AssertRCBreak(rc);
-            #endif
+                /* Start the transfer. */
+                AssertPtrBreak(m_Callbacks.pfnTransferStart);
+                rc = m_Callbacks.pfnTransferStart(&m_CallbackCtx);
+                AssertRCBreak(rc2);
 
                 LogRel2(("Shared Clipboard: Waiting for IDataObject started status ...\n"));
 
                 rc = RTSemEventWait(m_EventStatusChanged, SHCL_TIMEOUT_DEFAULT_MS);
+                AssertRCBreak(rc2);
 
                 /* Re-acquire lock. */
                 rc2 = RTCritSectEnter(&m_CritSect);
-                AssertRCReturn(rc2, E_UNEXPECTED);
+                AssertRCBreak(rc2);
 
                 if (RT_SUCCESS(rc))
                 {

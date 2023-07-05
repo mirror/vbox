@@ -170,13 +170,6 @@ LRESULT SharedClipboardWinChainPassToNext(PSHCLWINCTX pWinCtx, UINT msg, WPARAM 
 SHCLFORMAT SharedClipboardWinClipboardFormatToVBox(UINT uFormat);
 int SharedClipboardWinGetFormats(PSHCLWINCTX pCtx, PSHCLFORMATS pfFormats);
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-int SharedClipboardWinTransferGetRoots(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
-int SharedClipboardWinTransferDropFilesToStringList(DROPFILES *pDropFiles, char **papszList, uint32_t *pcbList);
-int SharedClipboardWinTransferGetRootsFromClipboard(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
-int SharedClipboardWinTransferCreateAndSetDataObject(PSHCLWINCTX pWinCtx, PSHCLCONTEXT pCtx, PSHCLCALLBACKS pCallbacks);
-#endif
-
 int SharedClipboardWinGetCFHTMLHeaderValue(const char *pszSrc, const char *pszOption, uint32_t *puValue);
 bool SharedClipboardWinIsCFHTML(const char *pszSource);
 int SharedClipboardWinConvertCFHTMLToMIME(const char *pszSource, const uint32_t cch, char **ppszOutput, uint32_t *pcbOutput);
@@ -188,20 +181,48 @@ int SharedClipboardWinHandleWMRenderAllFormats(PSHCLWINCTX pWinCtx, HWND hWnd);
 int SharedClipboardWinHandleWMTimer(PSHCLWINCTX pWinCtx);
 
 int SharedClipboardWinClearAndAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fFormats, HWND hWnd);
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-int SharedClipboardWinTransferCreate(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
-void SharedClipboardWinTransferDestroy(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
-#endif
 
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 class SharedClipboardTransferList;
 #  ifndef FILEGROUPDESCRIPTOR
 class FILEGROUPDESCRIPTOR;
 #  endif
 
+/**
+ * Generic Windows class implementing IDataObject for Shared Clipboard data transfers.
+ */
 class SharedClipboardWinDataObject : public IDataObject //, public IDataObjectAsyncCapability
 {
 public:
+
+    /**
+     * Structure for keeping a data object callback context.
+     */
+    struct CALLBACKCTX
+    {
+        /** Pointer to the data object of this callback. */
+        SharedClipboardWinDataObject *pThis;
+        /** User-supplied pointer to more context data. */
+        void                         *pvUser;
+    };
+    /** Pointer to a Shared Clipboard Windows data object callback table. */
+    typedef CALLBACKCTX *PCALLBACKCTX;
+
+    /**
+     * @name Shared Clipboard Windows data object callback table.
+     */
+    struct CALLBACKS
+    {
+        /**
+         * Called by the data object if a transfer needs to be started.
+         *
+         * @returns VBox status code.
+         * @param   pCbCtx          Pointer to callback context.
+         */
+        DECLCALLBACKMEMBER(int, pfnTransferStart, (PCALLBACKCTX pCbCtx));
+    };
+    /** Pointer to a Shared Clipboard Windows data object callback table. */
+    typedef CALLBACKS *PCALLBACKS;
 
     enum Status
     {
@@ -227,7 +248,7 @@ public:
 
 public:
 
-    int Init(PSHCLCONTEXT pCtx, LPFORMATETC pFormatEtc = NULL, LPSTGMEDIUM pStgMed = NULL, ULONG cFormats = 0);
+    int Init(PSHCLCONTEXT pCtx, SharedClipboardWinDataObject::PCALLBACKS pCallbacks, LPFORMATETC pFormatEtc = NULL, LPSTGMEDIUM pStgMed = NULL, ULONG cFormats = 0);
     void Destroy(void);
 
 public: /* IUnknown methods. */
@@ -302,10 +323,12 @@ protected:
 
     /** Shared Clipboard context to use. */
     PSHCLCONTEXT                m_pCtx;
-    /** Callbacks table to use. */
-    SHCLCALLBACKS               m_Callbacks;
     /** The object's current status. */
     Status                      m_enmStatus;
+    /** Data object callback table to use. */
+    CALLBACKS                   m_Callbacks;
+    /** Data object callback table context to use. */
+    CALLBACKCTX                 m_CallbackCtx;
     /** The object's current reference count. */
     LONG                        m_lRefCount;
     /** How many formats have been registered. */
@@ -339,6 +362,9 @@ protected:
     UINT                        m_cfPerformedDropEffect;
 };
 
+/**
+ * Generic Windows class implementing IEnumFORMATETC for Shared Clipboard data transfers.
+ */
 class SharedClipboardWinEnumFormatEtc : public IEnumFORMATETC
 {
 public:
@@ -378,8 +404,7 @@ private:
 };
 
 /**
- * Own IStream implementation to implement file-based clipboard operations
- * through HGCM. Needed on Windows hosts and guests.
+ * Generic Windows class implementing IStream for Shared Clipboard data transfers.
  */
 class SharedClipboardWinStreamImpl : public IStream
 {
@@ -453,6 +478,15 @@ public:
      *  Can be NULL if not being used. */
     SharedClipboardWinDataObject *pDataObj;
 };
+
+int SharedClipboardWinTransferGetRoots(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
+int SharedClipboardWinTransferDropFilesToStringList(DROPFILES *pDropFiles, char **papszList, uint32_t *pcbList);
+int SharedClipboardWinTransferGetRootsFromClipboard(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
+
+int SharedClipboardWinTransferCreate(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
+void SharedClipboardWinTransferDestroy(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
+
+int SharedClipboardWinTransferCreateAndSetDataObject(PSHCLWINCTX pWinCtx, PSHCLCONTEXT pCtx, SharedClipboardWinDataObject::PCALLBACKS pCallbacks);
 # endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_win_h */
 
