@@ -1820,7 +1820,7 @@ static int clipConvertToX11Data(PSHCLX11CTX pCtx, Atom *atomTarget,
                     pv = pszData;
                 }
 
-                LogFlowFunc(("Data:\n%.*RhXd\n", cb, pv));
+                Log3(("clipConvertToX11Data:\n%.*RhXd\n", cb, pv));
 
                 void *pvDst = (void *)XtMalloc(cb);
                 if (pvDst)
