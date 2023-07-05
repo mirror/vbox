@@ -96,6 +96,9 @@ static DECLCALLBACK(int) shClSvcX11TransferIfaceHGRootListRead(PSHCLTXPROVIDERCT
 #endif
 
 
+/*********************************************************************************************************************************
+*   Backend implementation                                                                                                       *
+*********************************************************************************************************************************/
 int ShClBackendInit(PSHCLBACKEND pBackend, VBOXHGCMSVCFNTABLE *pTable)
 {
     RT_NOREF(pBackend);
