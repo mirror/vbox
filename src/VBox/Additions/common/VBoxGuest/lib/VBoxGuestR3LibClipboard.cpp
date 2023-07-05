@@ -960,8 +960,8 @@ static int vbglR3ClipboardTransferStatusReplyEx(PVBGLR3SHCLCMDCTX pCtx, uint64_t
 VBGLR3DECL(int) VbglR3ClipboardTransferStatusReply(PVBGLR3SHCLCMDCTX pCtx, PSHCLTRANSFER pTransfer,
                                                    SHCLTRANSFERSTATUS uStatus, int rcTransfer)
 {
-    AssertPtrReturn(pCtx,      VERR_INVALID_POINTER);
-    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    RT_NOREF(pTransfer); /* Currently not used (yet). */
 
     int rc = vbglR3ClipboardTransferStatusReplyEx(pCtx, pCtx->idContext, uStatus, rcTransfer);
 
@@ -2117,7 +2117,7 @@ static int vbglR3ClipboardTransferDestroy(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSF
 }
 
 /**
- * Requests a new transfer from the host.
+ * Requests a new host -> guest transfer from the host.
  *
  * On success this will issue an INITIALIZED status reply from the host with a transfer ID set.
  * This ID will be used to initialize the transfer on the guest side then.
