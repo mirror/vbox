@@ -460,8 +460,10 @@ static DECLCALLBACK(void) shClSvcX11TransferOnInitCallback(PSHCLTRANSFERCALLBACK
 {
     LogFlowFuncEnter();
 
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
     AssertPtr(pCtx);
+# endif
 
     PSHCLTRANSFER pTransfer = pCbCtx->pTransfer;
     AssertPtr(pTransfer);

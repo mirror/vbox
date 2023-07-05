@@ -72,11 +72,17 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  tstClipboardMockHGCM_CLEAN = $(tstClipboardMockHGCM_0_OUTDIR)/tstClipboardMockHGCM.run
 
  if defined(VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS)
-  tstClipboardMockHGCM_DEFS   += VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+  tstClipboardMockHGCM_DEFS   += \
+	VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS \
+	$(if $(VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP),VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP,)
   tstClipboardMockHGCM_SOURCES += \
   	../VBoxSharedClipboardSvc-transfers.cpp \
   	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers.cpp \
   	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers-provider-local.cpp
+  if VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
+   tstClipboardMockHGCM_SOURCES.linux += \
+  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers-http.cpp
+  endif
   tstClipboardMockHGCM_SOURCES.win += \
   	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardDataObjectImpl-win.cpp \
   	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardEnumFormatEtcImpl-win.cpp \
