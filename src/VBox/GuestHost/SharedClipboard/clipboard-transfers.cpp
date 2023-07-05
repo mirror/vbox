@@ -1738,7 +1738,7 @@ int ShClTransferRootsInitFromStringList(PSHCLTRANSFER pTransfer, const char *psz
     AssertPtrReturn(pszRoots,       VERR_INVALID_POINTER);
     AssertReturn(cbRoots,           VERR_INVALID_PARAMETER);
 
-    LogFlowFunc(("\n%.*Rhxd\n", cbRoots, pszRoots));
+    Log3(("ShClTransferRootsInitFromStringList:\n%.*Rhxd\n", cbRoots, pszRoots));
 
     if (!RTStrIsValidEncoding(pszRoots))
         return VERR_INVALID_UTF8_ENCODING;

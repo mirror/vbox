@@ -2074,7 +2074,7 @@ int ShClX11TransferConvertDataToStringList(const char *pvData, size_t cbData, ch
 
     *pcbList = 0;
 
-    LogFlowFunc(("Data:\n%.*RhXd\n", cbData, pvData));
+    Log3(("ShClX11TransferConvertDataToStringList:\n%.*RhXd\n", cbData, pvData));
 
     char **papszStrings;
     size_t cStrings;

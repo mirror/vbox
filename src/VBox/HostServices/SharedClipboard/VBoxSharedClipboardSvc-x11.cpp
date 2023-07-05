@@ -101,7 +101,7 @@ static DECLCALLBACK(int) shClSvcX11TransferIfaceHGRootListRead(PSHCLTXPROVIDERCT
 *********************************************************************************************************************************/
 int ShClBackendInit(PSHCLBACKEND pBackend, VBOXHGCMSVCFNTABLE *pTable)
 {
-    RT_NOREF(pBackend);m
+    RT_NOREF(pBackend);
 
     LogFlowFuncEnter();
 
