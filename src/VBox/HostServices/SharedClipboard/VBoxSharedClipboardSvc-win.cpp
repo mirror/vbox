@@ -60,10 +60,11 @@
 
 
 /*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
+*   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-static int vboxClipboardSvcWinSyncInternal(PSHCLCONTEXT pCtx);
-
+/**
+ * Global context information used by the host glue for the X11 clipboard backend.
+ */
 struct SHCLCONTEXT
 {
     /** Handle for window message handling thread. */
@@ -73,6 +74,16 @@ struct SHCLCONTEXT
     /** Windows-specific context data. */
     SHCLWINCTX                 Win;
 };
+
+
+/*********************************************************************************************************************************
+*   Prototypes                                                                                                                   *
+*********************************************************************************************************************************/
+static int vboxClipboardSvcWinSyncInternal(PSHCLCONTEXT pCtx);
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+static DECLCALLBACK(int) shClSvcWinTransferIfaceHGRootListRead(PSHCLTXPROVIDERCTX pCtx);
+#endif
 
 
 /**
@@ -244,13 +255,22 @@ static DECLCALLBACK(void) shClSvcWinTransferOnCreatedCallback(PSHCLTRANSFERCALLB
     {
         case SHCLTRANSFERDIR_FROM_REMOTE: /* Guest -> Host. */
         {
-            /** @todo BUGBUG */
+            pIface->pfnRootListRead  = shClSvcTransferIfaceGHRootListRead;
+
+            pIface->pfnListOpen      = shClSvcTransferIfaceGHListOpen;
+            pIface->pfnListClose     = shClSvcTransferIfaceGHListClose;
+            pIface->pfnListHdrRead   = shClSvcTransferIfaceGHListHdrRead;
+            pIface->pfnListEntryRead = shClSvcTransferIfaceGHListEntryRead;
+
+            pIface->pfnObjOpen       = shClSvcTransferIfaceGHObjOpen;
+            pIface->pfnObjClose      = shClSvcTransferIfaceGHObjClose;
+            pIface->pfnObjRead       = shClSvcTransferIfaceGHObjRead;
             break;
         }
 
         case SHCLTRANSFERDIR_TO_REMOTE: /* Host -> Guest. */
         {
-            /** @todo BUGBUG */
+            pIface->pfnRootListRead  = shClSvcWinTransferIfaceHGRootListRead;
             break;
         }
 
@@ -723,10 +743,10 @@ static int vboxClipboardSvcWinSyncInternal(PSHCLCONTEXT pCtx)
     return rc;
 }
 
-/*
- * Public platform dependent functions.
- */
 
+/*********************************************************************************************************************************
+*   Backend implementation                                                                                                       *
+*********************************************************************************************************************************/
 int ShClBackendInit(PSHCLBACKEND pBackend, VBOXHGCMSVCFNTABLE *pTable)
 {
     RT_NOREF(pBackend, pTable);
@@ -1029,6 +1049,28 @@ int ShClBackendTransferHandleStatusReply(PSHCLBACKEND pBackend, PSHCLCLIENT pCli
     RT_NOREF(pBackend, pClient, pTransfer, enmSource, enmStatus, rcStatus);
 
     return VINF_SUCCESS;
+}
+
+
+/*********************************************************************************************************************************
+*   Provider interface implementation                                                                                            *
+*********************************************************************************************************************************/
+
+/** @copydoc SHCLTXPROVIDERIFACE::pfnRootListRead */
+static DECLCALLBACK(int) shClSvcWinTransferIfaceHGRootListRead(PSHCLTXPROVIDERCTX pCtx)
+{
+    LogFlowFuncEnter();
+
+    PSHCLCLIENT pClient = (PSHCLCLIENT)pCtx->pvUser;
+    AssertPtr(pClient);
+
+    AssertPtr(pClient->State.pCtx);
+    PSHCLWINCTX pWin = &pClient->State.pCtx->Win;
+
+    int rc = SharedClipboardWinTransferGetRootsFromClipboard(pWin, pCtx->pTransfer);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
