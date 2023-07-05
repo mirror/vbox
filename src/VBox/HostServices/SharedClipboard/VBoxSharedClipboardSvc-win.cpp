@@ -270,7 +270,7 @@ static DECLCALLBACK(void) shClSvcWinTransferOnCreatedCallback(PSHCLTRANSFERCALLB
  *
  * @thread  Service main thread.
  */
-static DECLCALLBACK(void) vboxClipboardSvcWinTransferInitializedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
+static DECLCALLBACK(void) shClSvcWinTransferOnInitializedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
 {
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
     AssertPtr(pCtx);
@@ -312,7 +312,7 @@ static DECLCALLBACK(void) vboxClipboardSvcWinTransferInitializedCallback(PSHCLTR
  *
  * @thread  Service main thread.
  */
-static DECLCALLBACK(void) vboxClipboardSvcWinTransferDestroyCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
+static DECLCALLBACK(void) shClSvcWinTransferOnDestroyCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
 {
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
     AssertPtr(pCtx);
@@ -328,7 +328,7 @@ static DECLCALLBACK(void) vboxClipboardSvcWinTransferDestroyCallback(PSHCLTRANSF
  *
  * @thread  Service main thread.
  */
-static DECLCALLBACK(void) vboxClipboardSvcWinTransferStartedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
+static DECLCALLBACK(void) shClSvcWinTransferOnStartedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
 {
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
     AssertPtr(pCtx);
@@ -785,9 +785,9 @@ int ShClBackendConnect(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, bool fHeadles
          * Init transfer callbacks.
          */
         RT_ZERO(pClient->Transfers.Callbacks);
-        pClient->Transfers.Callbacks.pfnOnInitialized = vboxClipboardSvcWinTransferInitializedCallback;
-        pClient->Transfers.Callbacks.pfnOnStarted     = vboxClipboardSvcWinTransferStartedCallback;
-        pClient->Transfers.Callbacks.pfnOnDestroy     = vboxClipboardSvcWinTransferDestroyCallback;
+        pClient->Transfers.Callbacks.pfnOnInitialized = shClSvcWinTransferOnInitializedCallback;
+        pClient->Transfers.Callbacks.pfnOnStarted     = shClSvcWinTransferOnStartedCallback;
+        pClient->Transfers.Callbacks.pfnOnDestroy     = shClSvcWinTransferOnDestroyCallback;
 
         pClient->Transfers.Callbacks.pvUser = pCtx; /* Assign context as user-provided callback data. */
         pClient->Transfers.Callbacks.cbUser = sizeof(SHCLCONTEXT);
