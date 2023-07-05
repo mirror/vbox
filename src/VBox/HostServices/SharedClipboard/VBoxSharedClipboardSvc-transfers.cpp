@@ -2257,7 +2257,7 @@ int ShClSvcTransferCreate(PSHCLCLIENT pClient, SHCLTRANSFERDIR enmDir, SHCLSOURC
     shClSvcTransferCleanupAllUnused(pClient);
 
     PSHCLTRANSFER pTransfer;
-    int rc = ShClTransferCreate(enmDir, enmSource, &pTransfer);
+    int rc = ShClTransferCreate(enmDir, enmSource, &pClient->Transfers.Callbacks, &pTransfer);
     if (RT_SUCCESS(rc))
     {
         if (idTransfer == NIL_SHCLTRANSFERID)
@@ -2341,11 +2341,6 @@ int ShClSvcTransferInit(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 
         LogRel2(("Shared Clipboard: Initializing %s transfer ...\n",
                  enmDir == SHCLTRANSFERDIR_FROM_REMOTE ? "guest -> host" : "host -> guest"));
-
-        ShClTransferSetCallbacks(pTransfer, &pClient->Transfers.Callbacks);
-
-        pClient->Transfers.Provider.enmSource = pClient->State.enmSource;
-        pClient->Transfers.Provider.pvUser    = pClient;
 
         rc = ShClTransferInit(pTransfer);
         if (RT_SUCCESS(rc))

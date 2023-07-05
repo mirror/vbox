@@ -401,6 +401,7 @@ typedef struct _SHCLCALLBACKS
      */
     DECLCALLBACKMEMBER(int, pfnOnSendDataToDest, (PSHCLCONTEXT pCtx, void *pv, uint32_t cb, void *pvUser));
 } SHCLCALLBACKS;
+/** Pointer to a Shared Clipboard callback table. */
 typedef SHCLCALLBACKS *PSHCLCALLBACKS;
 /** @} */
 

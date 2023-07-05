@@ -43,8 +43,15 @@
 #include <VBox/GuestHost/SharedClipboard-transfers.h>
 
 
+
+/*********************************************************************************************************************************
+ * Prototypes                                                                                                                    *
+ ********************************************************************************************************************************/
+
+static void shClTransferCopyCallbacks(PSHCLTRANSFERCALLBACKS pCallbacksDst, PSHCLTRANSFERCALLBACKS pCallbacksSrc);
 DECLINLINE(void) shClTransferLock(PSHCLTRANSFER pTransfer);
 DECLINLINE(void) shClTransferUnlock(PSHCLTRANSFER pTransfer);
+static void shClTransferSetCallbacks(PSHCLTRANSFER pTransfer, PSHCLTRANSFERCALLBACKS pCallbacks);
 static int shClTransferSetStatus(PSHCLTRANSFER pTransfer, SHCLTRANSFERSTATUS enmStatus);
 static int shClTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThreadFunc, void *pvUser);
 static int shClTransferThreadDestroy(PSHCLTRANSFER pTransfer, RTMSINTERVAL uTimeoutMs);
@@ -1051,18 +1058,18 @@ void ShClTransferObjDataChunkFree(PSHCLOBJDATACHUNK pDataChunk)
  * @returns VBox status code.
  * @param   enmDir              Specifies the transfer direction of this transfer.
  * @param   enmSource           Specifies the data source of the transfer.
+ * @param   pCallbacks          Callback table to use. Optional and can be NULL.
  * @param   cbMaxChunkSize      Maximum transfer chunk size (in bytes) to use.
  * @param   cMaxListHandles     Maximum list entries the transfer can have.
  * @param   cMaxObjHandles      Maximum transfer objects the transfer can have.
  * @param   ppTransfer          Where to return the created clipboard transfer struct.
  *                              Must be destroyed by ShClTransferDestroy().
  */
-int ShClTransferCreateEx(SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource,
+int ShClTransferCreateEx(SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource, PSHCLTRANSFERCALLBACKS pCallbacks,
                          uint32_t cbMaxChunkSize, uint32_t cMaxListHandles, uint32_t cMaxObjHandles, PSHCLTRANSFER *ppTransfer)
 {
-
-
     AssertPtrReturn(ppTransfer, VERR_INVALID_POINTER);
+    /* pCallbacks can be NULL. */
 
     LogFlowFuncEnter();
 
@@ -1095,6 +1102,9 @@ int ShClTransferCreateEx(SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource,
     /* The provider context + interface is NULL by default. */
     RT_ZERO(pTransfer->ProviderCtx);
     RT_ZERO(pTransfer->ProviderIface);
+
+    /* Make sure to set the callbacks before calling pfnOnCreate below. */
+    shClTransferSetCallbacks(pTransfer, pCallbacks);
 
     ShClTransferListInit(&pTransfer->lstRoots);
 
@@ -1131,12 +1141,13 @@ int ShClTransferCreateEx(SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource,
  * @returns VBox status code.
  * @param   enmDir              Specifies the transfer direction of this transfer.
  * @param   enmSource           Specifies the data source of the transfer.
+ * @param   pCallbacks          Callback table to use. Optional and can be NULL.
  * @param   ppTransfer          Where to return the created clipboard transfer struct.
  *                              Must be destroyed by ShClTransferDestroy().
  */
-int ShClTransferCreate(SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource, PSHCLTRANSFER *ppTransfer)
+int ShClTransferCreate(SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource, PSHCLTRANSFERCALLBACKS pCallbacks, PSHCLTRANSFER *ppTransfer)
 {
-    return ShClTransferCreateEx(enmDir, enmSource,
+    return ShClTransferCreateEx(enmDir, enmSource, pCallbacks,
                                 SHCL_TRANSFER_DEFAULT_MAX_CHUNK_SIZE,
                                 SHCL_TRANSFER_DEFAULT_MAX_LIST_HANDLES,
                                 SHCL_TRANSFER_DEFAULT_MAX_OBJ_HANDLES,
@@ -1468,10 +1479,10 @@ bool ShClTransferListHandleIsValid(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList
  * @param   pCallbacksSrc       Callback source. If set to NULL, the
  *                              destination callback table will be unset.
  */
-void ShClTransferCopyCallbacks(PSHCLTRANSFERCALLBACKS pCallbacksDst,
-                               PSHCLTRANSFERCALLBACKS pCallbacksSrc)
+static void shClTransferCopyCallbacks(PSHCLTRANSFERCALLBACKS pCallbacksDst, PSHCLTRANSFERCALLBACKS pCallbacksSrc)
 {
     AssertPtrReturnVoid(pCallbacksDst);
+    /* pCallbacksSrc can be NULL */
 
     if (pCallbacksSrc) /* Set */
     {
@@ -1507,13 +1518,12 @@ void ShClTransferCopyCallbacks(PSHCLTRANSFERCALLBACKS pCallbacksDst,
  *
  * @note    Must come before initializing the transfer via ShClTransferInit().
  */
-void ShClTransferSetCallbacks(PSHCLTRANSFER pTransfer,
-                              PSHCLTRANSFERCALLBACKS pCallbacks)
+static void shClTransferSetCallbacks(PSHCLTRANSFER pTransfer, PSHCLTRANSFERCALLBACKS pCallbacks)
 {
     AssertPtrReturnVoid(pTransfer);
     /* pCallbacks can be NULL. */
 
-    ShClTransferCopyCallbacks(&pTransfer->Callbacks, pCallbacks);
+    shClTransferCopyCallbacks(&pTransfer->Callbacks, pCallbacks);
 
     /* Make sure that the callback context has all values set according to the callback table.
      * This only needs to be done once, so do this here. */

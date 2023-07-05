@@ -211,7 +211,7 @@ static void testTransferRootsSetSingle(RTTEST hTest,
                                        int rcExpected)
 {
     PSHCLTRANSFER pTransfer;
-    int rc = ShClTransferCreate(SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL, &pTransfer);
+    int rc = ShClTransferCreate(SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL, NULL /* Callbacks */, &pTransfer);
     RTTESTI_CHECK_RC_OK(rc);
 
     SHCLTXPROVIDER Provider;
@@ -245,7 +245,7 @@ static void testTransferObjOpenSingle(RTTEST hTest,
     RT_NOREF(hTest);
 
     PSHCLTRANSFER pTransfer;
-    int rc = ShClTransferCreate(SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL, &pTransfer);
+    int rc = ShClTransferCreate(SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL, NULL /* Callbacks */, &pTransfer);
     RTTESTI_CHECK_RC_OK(rc);
 
     SHCLTXPROVIDER Provider;
@@ -308,7 +308,7 @@ static void testTransferBasics(RTTEST hTest)
     rc = ShClEventSourceDestroy(&Source);
     RTTESTI_CHECK_RC_OK(rc);
     PSHCLTRANSFER pTransfer;
-    rc = ShClTransferCreate(SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL, &pTransfer);
+    rc = ShClTransferCreate(SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL, NULL /* Callbacks */, &pTransfer);
     RTTESTI_CHECK_RC_OK(rc);
     rc = ShClTransferDestroy(pTransfer);
     RTTESTI_CHECK_RC_OK(rc);
@@ -317,7 +317,7 @@ static void testTransferBasics(RTTEST hTest)
 
     PSHCLLIST pList = ShClTransferListAlloc();
     RTTESTI_CHECK(pList != NULL);
-    rc = ShClTransferCreate(SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL, &pTransfer);
+    rc = ShClTransferCreate(SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL, NULL /* Callbacks */, &pTransfer);
     RTTESTI_CHECK_RC_OK(rc);
     ShClTransferListFree(pList);
     pList = NULL;

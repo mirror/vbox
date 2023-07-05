@@ -1972,12 +1972,9 @@ static int vbglR3ClipboardTransferCreate(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFE
     RT_NOREF(pCmdCtx);
 
     PSHCLTRANSFER pTransfer;
-    int rc = ShClTransferCreate(enmDir, enmSource, &pTransfer);
+    int rc = ShClTransferCreate(enmDir, enmSource, &pCmdCtx->Transfers.Callbacks, &pTransfer);
     if (RT_SUCCESS(rc))
     {
-        /* Set the callbacks the (OS-dependent) implementation relies on. Optional. */
-        ShClTransferSetCallbacks(pTransfer, &pCmdCtx->Transfers.Callbacks);
-
         rc = ShClTransferCtxRegisterById(pTransferCtx, pTransfer, idTransfer);
         if (   RT_SUCCESS(rc)
             && ppTransfer)
@@ -2217,20 +2214,6 @@ static int vbglR3ClipboardTransferStop(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFERC
 
     LogFlowFuncLeaveRC(rc);
     return rc;
-}
-
-/**
- * Sets transfer callbacks of a Shared Clipboard command context.
- *
- * @param   pCmdCtx             Command context to set callbacks for.
- * @param   pCallbacks          Pointer to callback table to set.
- */
-VBGLR3DECL(void) VbglR3ClipboardTransferSetCallbacks(PVBGLR3SHCLCMDCTX pCmdCtx,  PSHCLTRANSFERCALLBACKS pCallbacks)
-{
-    AssertPtrReturnVoid(pCmdCtx);
-    AssertPtrReturnVoid(pCallbacks);
-
-    ShClTransferCopyCallbacks(&pCmdCtx->Transfers.Callbacks, pCallbacks);
 }
 
 VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,

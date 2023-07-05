@@ -417,6 +417,9 @@ static DECLCALLBACK(void) shClSvcX11TransferOnCreatedCallback(PSHCLTRANSFERCALLB
 
     PSHCLTXPROVIDERIFACE pIface = &pClient->Transfers.Provider.Interface;
 
+    pClient->Transfers.Provider.enmSource = pClient->State.enmSource;
+    pClient->Transfers.Provider.pvUser    = pClient;
+
     switch (ShClTransferGetDir(pTransfer))
     {
         case SHCLTRANSFERDIR_FROM_REMOTE: /* Guest -> Host. */

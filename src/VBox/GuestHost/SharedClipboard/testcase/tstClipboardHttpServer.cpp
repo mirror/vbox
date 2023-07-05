@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
             case VINF_GETOPT_NOT_OPTION:
             {
                 PSHCLTRANSFER pTx;
-                RTTEST_CHECK_RC_OK(hTest, ShClTransferCreate(SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL, &pTx));
+                RTTEST_CHECK_RC_OK(hTest, ShClTransferCreate(SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL, NULL /* Callbacks */, &pTx));
                 RTTEST_CHECK_RC_OK(hTest, ShClTransferSetProvider(pTx, &Provider));
                 RTTEST_CHECK_RC_OK(hTest, ShClTransferInit(pTx));
                 RTTEST_CHECK_RC_OK(hTest, ShClTransferRootsInitFromFile(pTx, ValueUnion.psz));
