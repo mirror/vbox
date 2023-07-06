@@ -69,6 +69,62 @@ typedef CTX_SUFF(PVIRTIOCORE) PVIRTIOCORECC;
 #define VIRTIO_REGION_MSIX_CAP              0                    /**< Bar for MSI-X handling                   */
 #define VIRTIO_PAGE_SIZE                 4096                    /**< Page size used by VirtIO specification   */
 
+/** Virtio-over-MMIO transport region size, excluding the device specific configuration area. */
+#define VIRTIO_MMIO_SIZE                  256
+/** Register containing a magic value identifying a VirtIO over MMIO device - readonly. */
+#define VIRTIO_MMIO_REG_MAGIC_OFF           0
+/** Magic value read from the register. */
+# define VIRTIO_MMIO_REG_MAGIC_VALUE        UINT32_C(0x74726976)
+/** Register containing th version of the MMIO transport - readonly. */
+#define VIRTIO_MMIO_REG_VERSION_OFF         4
+/** Version value read from the register. */
+# define VIRTIO_MMIO_REG_VERSION_VALUE      UINT32_C(0x2)
+/** Register containing the device ID of the device - readonly. */
+#define VIRTIO_MMIO_REG_DEVICEID_OFF        8
+/** Register containing the vendor ID of the device - readonly. */
+#define VIRTIO_MMIO_REG_VENDORID_OFF       12
+/** Register containing the features the device supports - readonly. */
+#define VIRTIO_MMIO_REG_DEVICEFEAT_OFF     16
+/** Device features selection - writeonly. */
+#define VIRTIO_MMIO_REG_DEVICEFEATSEL_OFF  20
+/** Features of the device selected by the driver - writeonly. */
+#define VIRTIO_MMIO_REG_DRIVERFEAT_OFF     32
+/** - writeonly. */
+#define VIRTIO_MMIO_REG_DRIVERFEATSEL_OFF  36
+/** Virtual queue selection - writeonly. */
+#define VIRTIO_MMIO_REG_QUEUESEL_OFF       48
+/**  - readonly */
+#define VIRTIO_MMIO_REG_QUEUENUMMAX_OFF    52
+/**  - writeonly */
+#define VIRTIO_MMIO_REG_QUEUENUM_OFF       56
+/** - read/write. */
+#define VIRTIO_MMIO_REG_QUEUEALIGN_LEGACY_OFF   60
+/** - read/write. */
+#define VIRTIO_MMIO_REG_QUEUERDY_OFF       68
+/**  - writeonly */
+#define VIRTIO_MMIO_REG_QUEUENOTIFY_OFF    80
+/**  - readonly */
+#define VIRTIO_MMIO_REG_INTRSTATUS_OFF     96
+/**  - writeonly */
+#define VIRTIO_MMIO_REG_INTRACK_OFF       100
+/**  - read/write */
+#define VIRTIO_MMIO_REG_DEVSTATUS_OFF     112
+/**  - writeonly */
+#define VIRTIO_MMIO_REG_QUEUEDESCLOW_OFF  128
+/**  - writeonly */
+#define VIRTIO_MMIO_REG_QUEUEDESCHIGH_OFF 132
+/**  - writeonly */
+#define VIRTIO_MMIO_REG_QUEUEDRVLOW_OFF   144
+/**  - writeonly */
+#define VIRTIO_MMIO_REG_QUEUEDRVHIGH_OFF  148
+/**  - writeonly */
+#define VIRTIO_MMIO_REG_QUEUEDEVLOW_OFF   160
+/**  - writeonly */
+#define VIRTIO_MMIO_REG_QUEUEDEVHIGH_OFF  164
+/**  - readonly */
+#define VIRTIO_MMIO_REG_CFGGEN_OFF        252
+
+
 /**
  * @todo Move the following virtioCoreGCPhysChain*() functions mimic the functionality of the related
  *       into some VirtualBox source tree common location and out of this code.
@@ -153,6 +209,7 @@ typedef struct VIRTIOPCIPARAMS
     uint16_t  uSubsystemId;                                      /**< PCI Cfg Card Manufacturer Vendor ID       */
     uint16_t  uInterruptLine;                                    /**< PCI Cfg Interrupt line                    */
     uint16_t  uInterruptPin;                                     /**< PCI Cfg Interrupt pin                     */
+    uint8_t   uDeviceType;                                       /**< Device type (used for Virtio-over-MMIO)   */
 } VIRTIOPCIPARAMS, *PVIRTIOPCIPARAMS;
 
 
@@ -206,6 +263,34 @@ static const VIRTIO_FEATURES_LIST s_aCoreFeatures[] =
  * 0x1040 to 0x107f.
  */
 #define DEVICE_PCI_DEVICE_ID_VIRTIO_BASE           0x1040
+
+/**
+ * @name Virtio Device types as outlined in chapter 5.
+ * @{ */
+#define VIRTIO_DEVICE_TYPE_INVALID                      0
+#define VIRTIO_DEVICE_TYPE_NETWORK                      1
+#define VIRTIO_DEVICE_TYPE_BLOCK                        2
+#define VIRTIO_DEVICE_TYPE_CONSOLE                      3
+#define VIRTIO_DEVICE_TYPE_ENTROPY_SOURCE               4
+#define VIRTIO_DEVICE_TYPE_MEMORY_BALLOONING_TRAD       5
+#define VIRTIO_DEVICE_TYPE_IOMEM                        6
+#define VIRTIO_DEVICE_TYPE_RPMSG                        7
+#define VIRTIO_DEVICE_TYPE_SCSI_HOST                    8
+#define VIRTIO_DEVICE_TYPE_9P_TRANSPORT                 9
+#define VIRTIO_DEVICE_TYPE_MAC80211_WLAN               10
+#define VIRTIO_DEVICE_TYPE_RPROC_SERIAL                11
+#define VIRTIO_DEVICE_TYPE_CAIF                        12
+#define VIRTIO_DEVICE_TYPE_MEMORY_BALLOONING           13
+#define VIRTIO_DEVICE_TYPE_GPU                         16
+#define VIRTIO_DEVICE_TYPE_TIMER                       17
+#define VIRTIO_DEVICE_TYPE_INPUT                       18
+#define VIRTIO_DEVICE_TYPE_SOCKET                      19
+#define VIRTIO_DEVICE_TYPE_CRYPTO                      20
+#define VIRTIO_DEVICE_TYPE_SIGNAL_DIST_MOD             21
+#define VIRTIO_DEVICE_TYPE_PSTORE                      22
+#define VIRTIO_DEVICE_TYPE_IOMMU                       23
+#define VIRTIO_DEVICE_TYPE_MEMORY                      24
+/** @} */
 
 /** Reserved (*negotiated*) Feature Bits (e.g. device independent features, VirtIO 1.0 spec,section 6) */
 
@@ -370,6 +455,8 @@ typedef struct VIRTIOCORE
     uint16_t                    uVirtqSelect;                     /**< (MMIO) queue selector               GUEST */
     uint32_t                    fLegacyDriver;                    /**< Set if guest drv < VirtIO 1.0 and allowed */
     uint32_t                    fOfferLegacy;                     /**< Set at init call from dev-specific code   */
+    uint16_t                    uIrqMmio;                         /**< The interrupt number when Virtio-over-MMIO is used */
+    uint8_t                     uDeviceType;                      /**< The implemented device type for Virtio-over-MMIO   */
 
     /** @name The locations of the capability structures in PCI config space and the BAR.
      * @{ */
@@ -859,7 +946,8 @@ DECLHIDDEN(int) virtioCoreIsLegacyMode(PVIRTIOCORE pVirtio);
 DECLINLINE(int) virtioCoreGCPhysWrite(PVIRTIOCORE pVirtio, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbWrite)
 {
     int rc;
-    if (virtioCoreIsLegacyMode(pVirtio))
+    if (   virtioCoreIsLegacyMode(pVirtio)
+        || pVirtio->uIrqMmio)
         rc = PDMDevHlpPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
     else
         rc = PDMDevHlpPCIPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
@@ -869,7 +957,8 @@ DECLINLINE(int) virtioCoreGCPhysWrite(PVIRTIOCORE pVirtio, PPDMDEVINS pDevIns, R
 DECLINLINE(int) virtioCoreGCPhysRead(PVIRTIOCORE pVirtio, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 {
     int rc;
-    if (virtioCoreIsLegacyMode(pVirtio))
+    if (   virtioCoreIsLegacyMode(pVirtio)
+        || pVirtio->uIrqMmio)
         rc = PDMDevHlpPhysRead(pDevIns, GCPhys, pvBuf, cbRead);
     else
         rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhys, pvBuf, cbRead);
@@ -1075,7 +1164,10 @@ DECLINLINE(void) virtioCoreR3VirtqBufDrain(PVIRTIOCORE pVirtio, PVIRTQBUF pVirtq
     {
         size_t cbSeg = cbLim;
         RTGCPHYS GCPhys = virtioCoreGCPhysChainGetNextSeg(pVirtqBuf->pSgPhysSend, &cbSeg);
-        PDMDevHlpPCIPhysRead(pVirtio->pDevInsR3, GCPhys, pb, cbSeg);
+        if (pVirtio->uIrqMmio)
+            PDMDevHlpPhysRead(pVirtio->pDevInsR3, GCPhys, pb, cbSeg);
+        else
+            PDMDevHlpPCIPhysRead(pVirtio->pDevInsR3, GCPhys, pb, cbSeg);
         pb += cbSeg;
         cbLim -= cbSeg;
         pVirtqBuf->cbPhysSend -= cbSeg;

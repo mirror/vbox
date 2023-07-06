@@ -3455,7 +3455,14 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
     /*
      * Validate configuration.
      */
-    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "MAC|CableConnected|LineSpeed|LinkUpDelay|StatNo|Legacy", "");
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "MAC"
+                                           "|CableConnected"
+                                           "|LineSpeed"
+                                           "|LinkUpDelay"
+                                           "|StatNo"
+                                           "|Legacy"
+                                           "|MmioBase"
+                                           "|Irq", "");
 
     /* Get config params */
     int rc = pHlp->pfnCFGMQueryBytes(pCfg, "MAC", pThis->macConfigured.au8, sizeof(pThis->macConfigured));
@@ -3514,6 +3521,7 @@ static DECLCALLBACK(int) virtioNetR3Construct(PPDMDEVINS pDevIns, int iInstance,
     VirtioPciParams.uSubsystemId                   = DEVICE_PCI_NETWORK_SUBSYSTEM;  /* VirtIO 1.0 allows PCI Device ID here */
     VirtioPciParams.uInterruptLine                 = 0x00;
     VirtioPciParams.uInterruptPin                  = 0x01;
+    VirtioPciParams.uDeviceType                    = VIRTIO_DEVICE_TYPE_NETWORK;
 
     /* Create semaphore used to synchronize/throttle the downstream LUN's Rx waiter thread. */
     rc = PDMDevHlpSUPSemEventCreate(pDevIns, &pThis->hEventRxDescAvail);
