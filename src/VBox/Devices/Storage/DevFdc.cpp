@@ -2842,7 +2842,7 @@ static DECLCALLBACK(int)  fdcAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
     fdctrl_t *fdctrl = PDMDEVINS_2_DATA(pDevIns, fdctrl_t *);
     fdrive_t *drv;
     int rc;
-    LogFlow (("ideDetach: iLUN=%u\n", iLUN));
+    LogFlow (("fdcAttach: iLUN=%u\n", iLUN));
 
     AssertMsgReturn(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG,
                     ("The FDC device does not support hotplugging\n"),
@@ -2888,7 +2888,7 @@ static DECLCALLBACK(void) fdcDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
 {
     RT_NOREF(fFlags);
     fdctrl_t *pThis = PDMDEVINS_2_DATA(pDevIns, fdctrl_t *);
-    LogFlow (("ideDetach: iLUN=%u\n", iLUN));
+    LogFlow (("fdcDetach: iLUN=%u\n", iLUN));
 
     switch (iLUN)
     {
@@ -3082,7 +3082,7 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         AssertRCReturn(rc, rc);
     }
     else
-        AssertMsgFailedReturn(("Memory mapped floppy not support by now\n"), VERR_NOT_SUPPORTED);
+        AssertMsgFailedReturn(("Memory mapped floppy not supported\n"), VERR_NOT_SUPPORTED);
 
     /*
      * Register the saved state data unit.
