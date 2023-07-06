@@ -165,7 +165,7 @@ UIFileManagerHostTable::UIFileManagerHostTable(UIActionPool *pActionPool, QWidge
         item->setData(fileInfo.lastModified(), UICustomFileSystemModelData_ChangeTime);
         item->setData(fileInfo.owner(),        UICustomFileSystemModelData_Owner);
         item->setData(permissionString(fileInfo.permissions()),  UICustomFileSystemModelData_Permissions);
-        item->setPath(fileInfo.absoluteFilePath());
+
         /* if the item is a symlink set the target path and
            check the target if it is a directory: */
         if (fileInfo.isSymLink()) /** @todo No symlinks here on windows, while fsObjectPropertyString() does see them.  RTDirReadEx works wrt symlinks, btw. */

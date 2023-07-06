@@ -76,6 +76,14 @@ void UICustomFileSystemItem::appendChild(UICustomFileSystemItem *item)
     m_childMap.insert(item->fileObjectName(), item);
 }
 
+void UICustomFileSystemItem::childRenamed()
+{
+    /* Recreate child map to accomadate the new file object name of the children: */
+    m_childMap.clear();
+    foreach(UICustomFileSystemItem* pItem, m_childItems)
+        m_childMap[pItem->fileObjectName()] = pItem;
+}
+
 void UICustomFileSystemItem::reset()
 {
     qDeleteAll(m_childItems);
@@ -149,7 +157,11 @@ QString UICustomFileSystemItem::fileObjectName() const
 
 void UICustomFileSystemItem::setData(const QVariant &data, int index)
 {
+    if (m_itemData[static_cast<UICustomFileSystemModelData>(index)] == data)
+        return;
     m_itemData[static_cast<UICustomFileSystemModelData>(index)] = data;
+    if (static_cast<UICustomFileSystemModelData>(index) == UICustomFileSystemModelData_Name && parentItem())
+        parentItem()->childRenamed();
 }
 
 void UICustomFileSystemItem::setData(const QVariant &data, UICustomFileSystemModelData enmColumn)
@@ -219,13 +231,6 @@ QString UICustomFileSystemItem::path(bool fRemoveTrailingDelimiters /* = false *
     }
 
     return UIPathOperations::removeMultipleDelimiters(path.join("/"));
-}
-
-void UICustomFileSystemItem::setPath(const QString &path)
-{
-    if (path.isNull() || path.isEmpty())
-        return;
-    m_itemData[UICustomFileSystemModelData_VISOPath] = path;
 }
 
 bool UICustomFileSystemItem::isUpDirectory() const

@@ -568,7 +568,6 @@ void UIFileManagerGuestTable::readDirectory(const QString& strPath,
                     item->setData(changeTime, UICustomFileSystemModelData_ChangeTime);
                     item->setData(fsInfo.GetUserName(), UICustomFileSystemModelData_Owner);
                     item->setData(permissionString(fsInfo), UICustomFileSystemModelData_Permissions);
-                    item->setPath(UIPathOperations::removeTrailingDelimiters(UIPathOperations::mergePaths(strPath, fsInfo.GetName())));
                     item->setIsOpened(false);
                     item->setIsHidden(isFileObjectHidden(fsInfo));
                     fileObjects.insert(fsInfo.GetName(), item);

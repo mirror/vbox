@@ -717,7 +717,7 @@ void UIVisoContentBrowser::initializeModel()
     const QString startPath = QString("/%1").arg(m_strVisoName);
 
     UICustomFileSystemItem *pStartItem = new UICustomFileSystemItem(startPath, rootItem(), KFsObjType_Directory);
-    pStartItem->setPath("/");
+
     pStartItem->setIsOpened(false);
 }
 

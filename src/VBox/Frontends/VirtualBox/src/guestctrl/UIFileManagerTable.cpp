@@ -519,9 +519,7 @@ void UIFileManagerTable::prepareObjects()
 void UIFileManagerTable::updateCurrentLocationEdit(const QString& strLocation)
 {
     if (m_pNavigationWidget)
-    {
         m_pNavigationWidget->setPath(strLocation);
-    }
 }
 
 void UIFileManagerTable::changeLocation(const QModelIndex &index)
@@ -552,7 +550,7 @@ void UIFileManagerTable::initializeFileTree()
 
     const QString startPath("/");
     UICustomFileSystemItem* startItem = new UICustomFileSystemItem(startPath, rootItem(), KFsObjType_Directory);
-    startItem->setPath(startPath);
+
     startItem->setIsOpened(false);
     populateStartDirectory(startItem);
 
@@ -575,7 +573,6 @@ void UIFileManagerTable::populateStartDirectory(UICustomFileSystemItem *startIte
         {
             UICustomFileSystemItem* driveItem = new UICustomFileSystemItem(UIPathOperations::removeTrailingDelimiters(m_driveLetterList[i]),
                                                                            startItem, KFsObjType_Directory);
-            driveItem->setPath(m_driveLetterList[i]);
             driveItem->setIsOpened(false);
             driveItem->setIsDriveItem(true);
             startItem->setIsOpened(true);
@@ -701,6 +698,7 @@ void UIFileManagerTable::goIntoDirectory(const QStringList &pathTrail)
             readDirectory(parent->path(), parent, parent == getStartDirectoryItem());
         /* search the current path item among the parent's children: */
         UICustomFileSystemItem *item = parent->child(pathTrail.at(i));
+
         if (!item)
             return;
         parent = item;
