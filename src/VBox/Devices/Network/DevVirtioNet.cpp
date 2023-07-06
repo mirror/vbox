@@ -1076,12 +1076,14 @@ static int virtioNetR3VirtqDestroy(PVIRTIOCORE pVirtio, PVIRTIONETVIRTQ pVirtq)
     if (pVirtq->fHasWorker)
     {
         Log10((" and its worker"));
-        rc = PDMDevHlpSUPSemEventClose(pVirtio->pDevInsR3, pWorker->hEvtProcess);
-        AssertRCReturn(rc, rc);
-        pWorker->hEvtProcess = 0;
         rc = PDMDevHlpThreadDestroy(pVirtio->pDevInsR3,  pWorkerR3->pThread, &rcThread);
         AssertRCReturn(rc, rc);
         pWorkerR3->pThread = 0;
+
+        rc = PDMDevHlpSUPSemEventClose(pVirtio->pDevInsR3, pWorker->hEvtProcess);
+        AssertRCReturn(rc, rc);
+        pWorker->hEvtProcess = 0;
+
         pVirtq->fHasWorker = false;
     }
     pWorker->fAssigned = false;
@@ -3240,9 +3242,16 @@ static DECLCALLBACK(void) pfnFeatureNegotiationComplete(PVIRTIOCORE pVirtio, uin
     virtioNetConfigurePktHdr(pThis, fLegacy);
     virtioNetR3SetVirtqNames(pThis, fLegacy);
 
+    /** @todo r=aeichner We can't just destroy the control queue here because the UEFI firmware and the guest OS might have different
+     * opinions on how to use the device and if the UEFI firmware causes the control queue to be destroyed Linux guests
+     * will have a hard time using it. */
+#if 0
     /* Senseless for modern guest to use control queue in this case. (See Note 1 in PDM-invoked device constructor) */
     if (!fLegacy && !(fDriverFeatures & VIRTIONET_F_CTRL_VQ))
         virtioNetR3VirtqDestroy(pVirtio, &pThis->aVirtqs[CTRLQIDX]);
+#else
+    RT_NOREF(fDriverFeatures);
+#endif
 }
 
 #endif /* IN_RING3 */
