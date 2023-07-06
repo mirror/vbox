@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic xml:lang="en-us" id="guestadd-clipboard">
+  <title>Clipboard</title>
+  
+  <body>
+    <p>
+      <ph conkeyref="vbox-conkeyref-phrases/product-name"/> enables you to copy clipboard content from the host
+      to the guest, and vice versa. For this to work the latest version
+      of the Guest Additions must be installed on the guest.
+    </p>    
+    <p>
+      To use the <userinput>VBoxManage</userinput> command to control the
+      current clipboard mode, see <xref href="vboxmanage.dita#vboxmanage"/>. The
+      <userinput>modifyvm</userinput> and <userinput>controlvm</userinput>
+      commands enable setting of a VM's current clipboard mode from
+      the command line.
+    </p>
+  </body>
+</topic>

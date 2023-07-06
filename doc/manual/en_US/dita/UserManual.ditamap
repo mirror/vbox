@@ -284,6 +284,9 @@
             <topicref href="topics/sf_mount_manual.dita"/>
             <topicref href="topics/sf_mount_auto.dita"/>
          </topicref>
+         <topicref href="topics/guestadd-clipboard.dita">
+            <topicref href="topics/guestadd-clipboard-limitations.dita"/>
+         </topicref>
          <topicref href="topics/guestadd-dnd.dita">
             <topicref href="topics/guestadd-dnd-formats.dita"/>
             <topicref href="topics/guestadd-dnd-limitations.dita"/>
