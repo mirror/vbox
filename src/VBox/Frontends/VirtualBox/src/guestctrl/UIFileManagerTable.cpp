@@ -808,7 +808,7 @@ void UIFileManagerTable::sltCreateNewDirectory()
     if (!parentFolderItem)
         return;
 
-    QString newDirectoryName(UICustomFileSystemModel::tr("New Directory"));
+    QString newDirectoryName(UICustomFileSystemModel::tr("NewDirectory"));
 
     if (!createDirectory(parentFolderItem->path(), newDirectoryName))
         return;
