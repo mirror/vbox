@@ -94,7 +94,7 @@ class SubTstDrvNestedSnapshots1(base.SubTestDriverBase):
           + Boot and then poweroff the VM
           + Verify snapshot 'beta' still exists (IMachine::findSnapshot())
         """
-        reporter.testStart('Restore a nested snapshot and verify saved state file exists afterwards');
+        reporter.testStart('testRestoreNestedSnapshot');
 
         # Restoring an online snapshot requires an updated TXS (r157880 or later) for the
         # TCP keep alive support added in r157875 thus it is essential that the
