@@ -1671,6 +1671,8 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
             HGCMSvcSetU64(&aParms[0], 0 /* Context ID */);
             HGCMSvcSetU32(&aParms[1], rootListHdr.fFeatures);
             HGCMSvcSetU64(&aParms[2], rootListHdr.cEntries);
+
+            rc = VINF_SUCCESS;
             break;
         }
 
