@@ -128,6 +128,8 @@ private:
      *  from the iso image. */
     void                    createVisoEntry(UICustomFileSystemItem *pItem, bool bRemove = false);
     QString                 currentPath() const;
+    UICustomFileSystemItem* searchItemByPath(const QString &strPath);
+
     /** Returns a list of items which are currecntly selected
      *  in the table view. */
     QList<UICustomFileSystemItem*> tableSelectedItems();

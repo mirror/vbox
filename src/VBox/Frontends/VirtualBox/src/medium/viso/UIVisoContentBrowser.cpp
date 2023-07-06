@@ -739,21 +739,28 @@ void UIVisoContentBrowser::setPathFromNavigationWidget(const QString &strPath)
 {
     if (strPath == currentPath())
         return;
-    QStringList path = UIPathOperations::pathTrail(strPath);
-    const UICustomFileSystemItem *pItem = m_pModel->rootItem()->child(0);
+    UICustomFileSystemItem *pItem = searchItemByPath(strPath);
 
-    foreach (const QString strName, path)
-    {
-        if (!pItem)
-            break;
-        pItem = pItem->child(strName);
-    }
     if (pItem)
     {
         QModelIndex index = convertIndexToTableIndex(m_pModel->index(pItem));
         if (index.isValid())
             setTableRootIndex(index);
     }
+}
+
+UICustomFileSystemItem* UIVisoContentBrowser::searchItemByPath(const QString &strPath)
+{
+    UICustomFileSystemItem *pItem = startItem();
+    QStringList path = UIPathOperations::pathTrail(strPath);
+
+    foreach (const QString strName, path)
+    {
+        if (!pItem)
+            return 0;
+        pItem = pItem->child(strName);
+    }
+    return pItem;
 }
 
 void UIVisoContentBrowser::showHideHiddenObjects(bool bShow)
