@@ -702,36 +702,33 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
 
                 /* Leave lock while requesting + waiting. */
                 rc2 = RTCritSectLeave(&m_CritSect);
-                AssertRCBreak(rc2);
+                AssertRCBreak(rc);
 
                 /* Start the transfer. */
                 AssertPtrBreak(m_Callbacks.pfnTransferStart);
                 rc = m_Callbacks.pfnTransferStart(&m_CallbackCtx);
-                AssertRCBreak(rc2);
+                AssertRCBreak(rc);
 
                 LogRel2(("Shared Clipboard: Waiting for IDataObject started status ...\n"));
 
-                rc = RTSemEventWait(m_EventStatusChanged, SHCL_TIMEOUT_DEFAULT_MS);
-                AssertRCBreak(rc2);
+                /* Note: Keep the timeout low here (instead of using SHCL_TIMEOUT_DEFAULT_MS), as this will make
+                 *       Windows Explorer unresponsive (i.e. "ghost window") when waiting for too long. */
+                rc = RTSemEventWait(m_EventStatusChanged, RT_MS_10SEC);
+                AssertRCBreak(rc);
 
                 /* Re-acquire lock. */
-                rc2 = RTCritSectEnter(&m_CritSect);
-                AssertRCBreak(rc2);
+                rc = RTCritSectEnter(&m_CritSect);
+                AssertRCBreak(rc);
 
-                if (RT_SUCCESS(rc))
+                if (m_enmStatus != Running)
                 {
-                    if (m_enmStatus != Running)
-                    {
-                        LogRel(("Shared Clipboard: Received wrong IDataObject status (%#x)\n", m_enmStatus));
-                        rc = VERR_WRONG_ORDER;
-                        break;
-                    }
-
-                    /* There now must be a transfer assigned. */
-                    AssertPtrBreakStmt(m_pTransfer, rc = VERR_WRONG_ORDER);
-                }
-                else /* Bail out on failure. */
+                    LogRel(("Shared Clipboard: Received wrong IDataObject status (%#x)\n", m_enmStatus));
+                    rc = VERR_WRONG_ORDER;
                     break;
+                }
+
+                /* There now must be a transfer assigned. */
+                AssertPtrBreakStmt(m_pTransfer, rc = VERR_WRONG_ORDER);
 
                 RT_FALL_THROUGH();
             }
@@ -740,7 +737,7 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
             {
                 const bool fUnicode = pFormatEtc->cfFormat == m_cfFileDescriptorW;
 
-                const uint32_t enmTransferStatus = ShClTransferGetStatus(m_pTransfer);
+                SHCLTRANSFERSTATUS const enmTransferStatus = ShClTransferGetStatus(m_pTransfer);
                 RT_NOREF(enmTransferStatus);
 
                 LogFlowFunc(("FormatIndex_FileDescriptor%s, enmTransferStatus=%s, m_fRunning=%RTbool\n",
@@ -749,23 +746,27 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
                 /* The caller can call GetData() several times, so make sure we don't do the same transfer multiple times. */
                 if (!m_fThreadRunning)
                 {
-                    /* Start the transfer asynchronously in a separate thread. */
-                    rc = ShClTransferRun(m_pTransfer, &SharedClipboardWinDataObject::readThread, this /* pvUser */);
+                    /* Start the transfer + run it asynchronously in a separate thread. */
+                    rc = ShClTransferStart(m_pTransfer);
                     if (RT_SUCCESS(rc))
                     {
-                        m_fThreadRunning = true;
+                        rc = ShClTransferRun(m_pTransfer, &SharedClipboardWinDataObject::readThread, this /* pvUser */);
+                        if (RT_SUCCESS(rc))
+                        {
+                            m_fThreadRunning = true;
 
-                        /* Leave lock while waiting. */
-                        rc2 = RTCritSectLeave(&m_CritSect);
-                        AssertRCReturn(rc2, E_UNEXPECTED);
+                            /* Leave lock while waiting. */
+                            rc = RTCritSectLeave(&m_CritSect);
+                            AssertRCReturn(rc, E_UNEXPECTED);
 
-                        /* Don't block for too long here, as this also will screw other apps running on the OS. */
-                        LogRel2(("Shared Clipboard: Waiting for IDataObject listing to arrive ...\n"));
-                        rc = RTSemEventWait(m_EventListComplete, SHCL_TIMEOUT_DEFAULT_MS);
+                            /* Don't block for too long here, as this also will screw other apps running on the OS. */
+                            LogRel2(("Shared Clipboard: Waiting for IDataObject listing to arrive ...\n"));
+                            rc = RTSemEventWait(m_EventListComplete, SHCL_TIMEOUT_DEFAULT_MS);
 
-                        /* Re-acquire lock. */
-                        rc2 = RTCritSectEnter(&m_CritSect);
-                        AssertRCReturn(rc2, E_UNEXPECTED);
+                            /* Re-acquire lock. */
+                            rc = RTCritSectEnter(&m_CritSect);
+                            AssertRCReturn(rc, E_UNEXPECTED);
+                        }
                     }
                 }
 
@@ -1025,12 +1026,15 @@ int SharedClipboardWinDataObject::SetTransfer(PSHCLTRANSFER pTransfer)
     {
         if (m_enmStatus == Initialized)
         {
-            AssertMsgReturn(ShClTransferGetStatus(pTransfer) == SHCLTRANSFERSTATUS_STARTED,
-                            ("Cannot set a non-started transfer\n"), VERR_WRONG_ORDER);
+            SHCLTRANSFERSTATUS const enmSts = ShClTransferGetStatus(pTransfer);
+            AssertMsgStmt(enmSts == SHCLTRANSFERSTATUS_INITIALIZED, /* Transfer must not be started yet. */
+                          ("Transfer has wrong status (%#x)\n", enmSts), rc = VERR_WRONG_ORDER);
+            if (RT_SUCCESS(rc))
+            {
+                m_pTransfer = pTransfer;
 
-            m_pTransfer = pTransfer;
-
-            ShClTransferAcquire(pTransfer);
+                ShClTransferAcquire(pTransfer);
+            }
         }
         else
             AssertFailedStmt(rc = VERR_WRONG_ORDER);

@@ -92,9 +92,9 @@ static char s_szClipWndClassName[] = SHCL_WIN_WNDCLASS_NAME;
 *   Prototypes                                                                                                                   *
 *********************************************************************************************************************************/
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-static DECLCALLBACK(void) vbtrShClTransferInitializedCallback(PSHCLTXPROVIDERCTX pCbCtx);
-static DECLCALLBACK(void) vbtrShClTransferStartedCallback(PSHCLTXPROVIDERCTX pCbCtx);
-static DECLCALLBACK(void) vbtrShClTransferErrorCallback(PSHCLTXPROVIDERCTX pCbCtx, int rc);
+static DECLCALLBACK(void) vbtrShClTransferInitializedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx);
+static DECLCALLBACK(void) vbtrShClTransferStartedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx);
+static DECLCALLBACK(void) vbtrShClTransferErrorCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, int rc);
 #endif
 
 
@@ -194,7 +194,7 @@ static DECLCALLBACK(int) vbtrShClDataObjectTransferStartCallback(SharedClipboard
  *
  * @thread  Clipboard main thread.
  */
-static DECLCALLBACK(void) vbtrShClTransferInitializedCallback(PSHCLTXPROVIDERCTX pCbCtx)
+static DECLCALLBACK(void) vbtrShClTransferInitializedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
 {
     LogFlowFuncEnter();
 
@@ -208,7 +208,9 @@ static DECLCALLBACK(void) vbtrShClTransferInitializedCallback(PSHCLTXPROVIDERCTX
         case SHCLTRANSFERDIR_FROM_REMOTE:
         {
             AssertPtrBreak(pCtx->Win.pDataObjInFlight);
-            rc = pCtx->Win.pDataObjInFlight->SetStatus(SharedClipboardWinDataObject::Running);
+            rc = pCtx->Win.pDataObjInFlight->SetTransfer(pCbCtx->pTransfer);
+            if (RT_SUCCESS(rc))
+                rc = pCtx->Win.pDataObjInFlight->SetStatus(SharedClipboardWinDataObject::Running);
             break;
         }
 
@@ -300,40 +302,24 @@ static DECLCALLBACK(void) vbtrShClTransferStartedCallback(PSHCLTRANSFERCALLBACKC
     PSHCLTRANSFER pTransfer = pCbCtx->pTransfer;
     AssertPtr(pTransfer);
 
-    const SHCLTRANSFERDIR enmDir = ShClTransferGetDir(pTransfer);
+    SHCLTRANSFERDIR const enmDir = ShClTransferGetDir(pTransfer);
 
-    LogFlowFunc(("pCtx=%p, idTransfer=%RU32, enmDir=%RU32\n", pCtx, ShClTransferGetID(pTransfer), enmDir));
-
-    int rc;
+    int rc = VINF_SUCCESS;
 
     /* The guest wants to transfer data to the host. */
-    if (enmDir == SHCLTRANSFERDIR_TO_REMOTE)
+    if (enmDir == SHCLTRANSFERDIR_TO_REMOTE) /* G->H */
     {
         rc = SharedClipboardWinTransferGetRootsFromClipboard(&pCtx->Win, pTransfer);
     }
-    /* The guest wants to transfer data from the host. */
-    else if (enmDir == SHCLTRANSFERDIR_FROM_REMOTE)
+    else if (enmDir == SHCLTRANSFERDIR_FROM_REMOTE) /* H->G */
     {
-        rc = RTCritSectEnter(&pCtx->Win.CritSect);
-        if (RT_SUCCESS(rc))
-        {
-            SharedClipboardWinDataObject *pObj = pCtx->Win.pDataObjInFlight;
-            AssertPtrReturnVoid(pObj);
-            rc = pObj->SetTransfer(pTransfer);
-
-            pCtx->Win.pDataObjInFlight = NULL; /* Hand off to Windows. */
-
-            int rc2 = RTCritSectLeave(&pCtx->Win.CritSect);
-            AssertRC(rc2);
-        }
+        /* Nothing to do here. */
     }
     else
         AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
 
     if (RT_FAILURE(rc))
         LogRel(("Shared Clipboard: Starting transfer failed, rc=%Rrc\n", rc));
-
-    LogFlowFunc(("LEAVE: idTransfer=%RU32, rc=%Rrc\n", ShClTransferGetID(pTransfer), rc));
 }
 
 /** @copydoc SHCLTRANSFERCALLBACKS::pfnOnCompleted */
@@ -1092,6 +1078,7 @@ DECLCALLBACK(int) vbtrShClWorker(void *pInstance, bool volatile *pfShutdown)
     pCtx->CmdCtx.Transfers.Callbacks.pvUser = pCtx; /* Assign context as user-provided callback data. */
     pCtx->CmdCtx.Transfers.Callbacks.cbUser = sizeof(SHCLCONTEXT);
 
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnInitialized = vbtrShClTransferInitializedCallback;
     pCtx->CmdCtx.Transfers.Callbacks.pfnOnStarted     = vbtrShClTransferStartedCallback;
     pCtx->CmdCtx.Transfers.Callbacks.pfnOnCompleted   = vbtrShClTransferCompletedCallback;
     pCtx->CmdCtx.Transfers.Callbacks.pfnOnError       = vbtrShClTransferErrorCallback;
@@ -1112,7 +1099,7 @@ DECLCALLBACK(int) vbtrShClWorker(void *pInstance, bool volatile *pfShutdown)
 
         uint32_t idMsg  = 0;
         uint32_t cParms = 0;
-        rc = VbglR3ClipboardMsgPeek(&pCtx->CmdCtx, &idMsg, &cParms, NULL /* pidRestoreCheck */);
+        rc = VbglR3ClipboardMsgPeekWait(&pCtx->CmdCtx, &idMsg, &cParms, NULL /* pidRestoreCheck */);
         if (RT_SUCCESS(rc))
         {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS

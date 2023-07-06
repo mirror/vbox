@@ -350,7 +350,7 @@ protected:
     bool                        m_fThreadRunning;
     /** Event being triggered when reading the transfer list been completed. */
     RTSEMEVENT                  m_EventListComplete;
-    /** Event being triggered when the transfer status has been changed. */
+    /** Event being triggered when the object status has been changed. */
     RTSEMEVENT                  m_EventStatusChanged;
     /** Registered format for CFSTR_FILEDESCRIPTORA. */
     UINT                        m_cfFileDescriptorA;
