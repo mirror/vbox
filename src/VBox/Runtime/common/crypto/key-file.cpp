@@ -51,6 +51,7 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/crypto/rsa.h>
+#include <iprt/crypto/pkcs8.h>
 #include <iprt/crypto/pkix.h>
 #include <iprt/crypto/x509.h>
 
@@ -469,8 +470,28 @@ RTDECL(int) RTCrKeyCreateFromPemSection(PRTCRKEY phKey, PCRTCRPEMSECTION pSectio
         }
 
         case kKeyFormat_PrivateKeyInfo:
-            rc = RTErrInfoSet(pErrInfo, VERR_CR_KEY_FORMAT_NOT_SUPPORTED,
-                              "Support for PKCS#8 PrivateKeyInfo is not yet implemented");
+            RTAsn1CursorInitPrimary(&PrimaryCursor, pSection->pbData, (uint32_t)pSection->cbData,
+                                    pErrInfo, &g_RTAsn1DefaultAllocator, RTASN1CURSOR_FLAGS_DER, pszErrorTag);
+            RTCRPKCS8PRIVATEKEYINFO PrivateKeyInfo;
+            RT_ZERO(PrivateKeyInfo);
+            rc = RTCrPkcs8PrivateKeyInfo_DecodeAsn1(&PrimaryCursor.Cursor, 0, &PrivateKeyInfo,
+                                                    pszErrorTag ? pszErrorTag : "PrivateKeyInfo");
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Check if the algorithm is pkcs1-RsaEncryption
+                 */
+                if (strcmp(PrivateKeyInfo.PrivateKeyAlgorithm.Algorithm.szObjId,"1.2.840.113549.1.1.1") == 0)
+                {
+                    uint32_t cbContent = PrivateKeyInfo.PrivateKey.Asn1Core.cb;
+                    rc = rtCrKeyCreateRsaPrivate(phKey, PrivateKeyInfo.PrivateKey.Asn1Core.uData.pv, cbContent, pErrInfo, pszErrorTag);
+                }
+                else
+                {
+                    rc = RTErrInfoSet(pErrInfo, VERR_CR_KEY_FORMAT_NOT_SUPPORTED,
+                                    "Support for PKCS#8 PrivateKeyInfo (with no RSA encryption) is not yet implemented");
+                }
+            }
             break;
 
         case kKeyFormat_EncryptedPrivateKeyInfo:

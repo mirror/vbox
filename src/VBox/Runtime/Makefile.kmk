@@ -454,6 +454,10 @@ RuntimeBaseR3_SOURCES      := \
 	common/crypto/pkcs7-sanity.cpp \
 	common/crypto/pkcs7-sign.cpp \
 	common/crypto/pkcs7-verify.cpp \
+	common/crypto/pkcs8-asn1-decoder.cpp \
+	common/crypto/pkcs8-core.cpp \
+	common/crypto/pkcs8-init.cpp \
+	common/crypto/pkcs8-sanity.cpp \
 	common/crypto/pkix-sign.cpp \
 	common/crypto/pkix-signature-builtin.cpp \
 	common/crypto/pkix-signature-core.cpp \
@@ -2297,6 +2301,10 @@ RuntimeBldProg_SOURCES          = \
 	common/crypto/pkcs7-init.cpp \
 	common/crypto/pkcs7-sanity.cpp \
 	common/crypto/pkcs7-verify.cpp \
+	common/crypto/pkcs8-asn1-decoder.cpp \
+	common/crypto/pkcs8-core.cpp \
+	common/crypto/pkcs8-init.cpp \
+	common/crypto/pkcs8-sanity.cpp \
 	common/crypto/pkix-signature-builtin.cpp \
 	common/crypto/pkix-signature-core.cpp \
 	common/crypto/pkix-signature-rsa.cpp \
@@ -3708,6 +3716,10 @@ RuntimeR0Drv_SOURCES.win = \
 	common/crypto/pkcs7-init.cpp \
 	common/crypto/pkcs7-sanity.cpp \
 	common/crypto/pkcs7-verify.cpp \
+	common/crypto/pkcs8-asn1-decoder.cpp \
+	common/crypto/pkcs8-core.cpp \
+	common/crypto/pkcs8-init.cpp \
+	common/crypto/pkcs8-sanity.cpp \
 	common/crypto/pkix-signature-builtin.cpp \
 	common/crypto/pkix-signature-core.cpp \
 	common/crypto/pkix-signature-rsa.cpp \
@@ -3861,6 +3873,10 @@ RuntimeR0Drv_SOURCES.darwin = \
 	common/crypto/pkcs7-init.cpp \
 	common/crypto/pkcs7-sanity.cpp \
 	common/crypto/pkcs7-verify.cpp \
+	common/crypto/pkcs8-asn1-decoder.cpp \
+	common/crypto/pkcs8-core.cpp \
+	common/crypto/pkcs8-init.cpp \
+	common/crypto/pkcs8-sanity.cpp \
 	common/crypto/pkix-signature-builtin.cpp \
 	common/crypto/pkix-signature-core.cpp \
 	common/crypto/pkix-signature-rsa.cpp \
@@ -4913,3 +4929,4 @@ taf-template.o taf-template.obj: taf-core.o taf-asn1-decoder.o taf-sanity.o taf-
 tsp-template.o tsp-template.obj: tsp-core.o tsp-asn1-decoder.o tsp-sanity.o tsp-init.o
 x509-template.o x509-template.obj: x509-core.o x509-asn1-decoder.o x509-sanity.o x509-init.o
 pkcs7-template.o pkcs7-template.obj: pkcs7-core.o pkcs7-asn1-decoder.o pkcs7-sanity.o pkcs7-init.o
+pkcs8-template.o pkcs8-template.obj: pkcs8-core.o pkcs8-asn1-decoder.o pkcs8-sanity.o pkcs8-init.o

@@ -254,6 +254,36 @@ static const struct { unsigned cBits; const char *pszPrivateKey, *pszPublicKey, 
         "AwIDAQAB\n"
         "-----END PUBLIC KEY-----\n",
         "password"
+    },
+
+    /*
+     * PKCS8 Test Keys
+     */
+    {
+        1024,
+        "-----BEGIN PRIVATE KEY-----\n"
+        "MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBAK4uHX+XRbLQ7dGm\n"
+        "sE1IqNDi4Obf7WS2TwfklmterJvCMrN3DxDAFq9et5j8kFRtI0Lgbc6sVAxlSkaw\n"
+        "+0LltbkC8JX0cjPSIlozzcZn+9dQ+m5rVLDl3AaV3kBLrYpnNggdTRiHuVbNPqZq\n"
+        "0CNDMxCqHpqRjtIOuoKukcOZasD5AgMBAAECgYA4IlKNaTIkM+NBGshcz9rgHw4+\n"
+        "OdKnD34e3BOCHOvh8s8mOWuYiV+GOy9OVa8qFlYz2mJpJe6cZBRw/d6sK53Jrzc1\n"
+        "ULULW9YNqgkhdhTm0z8QolYjBU+qp9pAXhh29tCdMxgCWAsiVR9jsnFtPQX4QEmM\n"
+        "9t+65ghTFQWtQXMqpQJBANly600i4GYoxvzvp67RvUkmnG47LvwuVRMwUAmAX6QP\n"
+        "Ww5q6aJd9HnHttLsNHxgX49aVxgpFu2uJI2SwSV3qwMCQQDND2kty83UXW5RahIt\n"
+        "BXAY8W60Itw6+bPLg3P4IixDCoHphnLqkz5ZT2NxxPsAPGeaFZDVyNs3Hgasnd8V\n"
+        "V8VTAkEAi4KWgrvQmtqoqFkeDSRVvBwAmxxvja4wOQpzH1V0hy6u7fYcBWcgVg2T\n"
+        "N4oCNpYiWTfNzxt1sXJb01UHhIFdfwJAO8ZiQpdGSMFzhwgEhFsxchPu0VPYHtjr\n"
+        "MEgBZjOP83r8o7YtiXOimSYrNt7UzBzPlnry3V7PiCGYkHj0rqQHQQJBANi5N5X4\n"
+        "g7dNDsE5i1B0JsQ4ru8qE60ZtoOOCwNjwiI/IIsMVW2KqhTBynEYLnWolkRRogEF\n"
+        "ACoRRxUBhj9EefI=\n"
+        "-----END PRIVATE KEY-----\n",
+        "-----BEGIN PUBLIC KEY-----\n"
+        "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCuLh1/l0Wy0O3RprBNSKjQ4uDm\n"
+        "3+1ktk8H5JZrXqybwjKzdw8QwBavXreY/JBUbSNC4G3OrFQMZUpGsPtC5bW5AvCV\n"
+        "9HIz0iJaM83GZ/vXUPpua1Sw5dwGld5AS62KZzYIHU0Yh7lWzT6matAjQzMQqh6a\n"
+        "kY7SDrqCrpHDmWrA+QIDAQAB\n"
+        "-----END PUBLIC KEY-----\n",
+        NULL
     }
 };
 
