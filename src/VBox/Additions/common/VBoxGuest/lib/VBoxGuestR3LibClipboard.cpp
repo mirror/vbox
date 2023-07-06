@@ -817,8 +817,10 @@ VBGLR3DECL(int) VbglR3ClipboardTransferRootListRead(PVBGLR3SHCLCMDCTX pCtx, PSHC
     AssertPtrReturn(pCtx,      VERR_INVALID_POINTER);
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
 
-    AssertMsgReturn(ShClTransferGetStatus(pTransfer) == SHCLTRANSFERSTATUS_INITIALIZED,
-                    ("Can't read root list -- wrong transfer status\n"), VERR_WRONG_ORDER);
+    SHCLTRANSFERSTATUS const enmSts = ShClTransferGetStatus(pTransfer);
+    AssertMsgReturn(   enmSts == SHCLTRANSFERSTATUS_INITIALIZED
+                    || enmSts == SHCLTRANSFERSTATUS_STARTED,
+                    ("Can't read root list -- wrong transfer status (%#x)\n", enmSts), VERR_WRONG_ORDER);
 
     SHCLLISTHDR Hdr;
     int rc = vbglR3ClipboardTransferRootListHdrRead(pCtx, &Hdr);

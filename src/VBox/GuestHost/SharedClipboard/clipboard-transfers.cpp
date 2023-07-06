@@ -1703,7 +1703,8 @@ int ShClTransferRootListRead(PSHCLTRANSFER pTransfer)
 
 #ifdef DEBUG
     shClTransferLock(pTransfer);
-    AssertMsgReturn(pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_INITIALIZED,
+    AssertMsgReturn(   pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_INITIALIZED
+                    || pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_STARTED,
                     ("Cannot read root list in status %s\n", ShClTransferStatusToStr(pTransfer->State.enmStatus)),
                     VERR_WRONG_ORDER);
     shClTransferUnlock(pTransfer);
