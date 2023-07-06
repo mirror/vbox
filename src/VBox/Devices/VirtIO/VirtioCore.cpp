@@ -1399,6 +1399,8 @@ DECLINLINE(int) virtioDeviceStatusWrite(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio,
 
     if (fStatusChanged)
         pVirtioCC->pfnStatusChanged(pVirtio, pVirtioCC, IS_DRIVER_OK(pVirtio));
+#else
+    RT_NOREF(pDevIns, pVirtioCC);
 #endif
     /*
      * Save the current status for the next write so we can see what changed.
@@ -1955,6 +1957,7 @@ DECLINLINE(VBOXSTRICTRC) virtioDeviceCfgRead(PPDMDEVINS pDevIns, PVIRTIOCORE pVi
         virtioLowerInterrupt(pDevIns, 0);
         return rcStrict;
 #else
+        RT_NOREF(pDevIns, pVirtio, pVirtioCC, offDevCfg, pv, cb);
         return VINF_IOM_R3_MMIO_READ;
 #endif
 }
