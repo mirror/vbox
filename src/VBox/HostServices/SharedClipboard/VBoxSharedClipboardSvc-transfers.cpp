@@ -60,7 +60,7 @@ extern ClipboardClientQueue g_listClientsDeferred;
 /*********************************************************************************************************************************
 *   Prototypes                                                                                                                   *
 *********************************************************************************************************************************/
-static int shClSvcTransferSendStatusAsyncInternal(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCLTRANSFERSTATUS uStatus, int rcTransfer, PSHCLEVENT *ppEvent);
+static int shClSvcTransferSendStatusAsync(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCLTRANSFERSTATUS uStatus, int rcTransfer, PSHCLEVENT *ppEvent);
 static int shClSvcTransferSetListOpen(uint32_t cParms, VBOXHGCMSVCPARM aParms[], uint64_t idCtx, PSHCLLISTOPENPARMS pOpenParms);
 static int shClSvcTransferSetListClose(uint32_t cParms, VBOXHGCMSVCPARM aParms[], uint64_t idCtx, SHCLLISTHANDLE hList);
 
@@ -1425,9 +1425,9 @@ static int shClSvcTransferHandleReply(PSHCLCLIENT pClient, SHCLTRANSFERID idTran
                                         {
                                             shClSvcClientLock(pClient);
 
-                                            rc = shClSvcTransferSendStatusAsyncInternal(pClient, pTransfer,
-                                                                                        SHCLTRANSFERSTATUS_REQUESTED, VINF_SUCCESS,
-                                                                                        NULL);
+                                            rc = shClSvcTransferSendStatusAsync(pClient, pTransfer,
+                                                                                SHCLTRANSFERSTATUS_REQUESTED, VINF_SUCCESS,
+                                                                                NULL);
                                             shClSvcClientUnlock(pClient);
                                         }
                                     }
@@ -2035,8 +2035,8 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
         shClSvcClientLock(pClient);
 
         /* Let the guest know. */
-        int rc2 = shClSvcTransferSendStatusAsyncInternal(pClient, pTransfer,
-                                                         SHCLTRANSFERSTATUS_ERROR, rc, NULL /* ppEvent */);
+        int rc2 = shClSvcTransferSendStatusAsync(pClient, pTransfer,
+                                                 SHCLTRANSFERSTATUS_ERROR, rc, NULL /* ppEvent */);
         AssertRC(rc2);
 
         ShClSvcTransferDestroy(pClient, pTransfer);
@@ -2119,6 +2119,8 @@ static int shClSvcTransferSendStatusExAsync(PSHCLCLIENT pClient, SHCLTRANSFERID 
     AssertReturn(idTransfer != NIL_SHCLTRANSFERID, VERR_INVALID_PARAMETER);
     /* ppEvent is optional. */
 
+    Assert(RTCritSectIsOwner(&pClient->CritSect));
+
     PSHCLCLIENTMSG pMsgReadData = shClSvcMsgAlloc(pClient, VBOX_SHCL_HOST_MSG_TRANSFER_STATUS,
                                                   VBOX_SHCL_CPARMS_TRANSFER_STATUS);
     if (!pMsgReadData)
@@ -2164,7 +2166,7 @@ static int shClSvcTransferSendStatusExAsync(PSHCLCLIENT pClient, SHCLTRANSFERID 
 }
 
 /**
- * Reports a transfer status to the guest.
+ * Reports a transfer status to the guest, internal version.
  *
  * @returns VBox status code.
  * @param   pClient             Client that owns the transfer.
@@ -2176,8 +2178,8 @@ static int shClSvcTransferSendStatusExAsync(PSHCLCLIENT pClient, SHCLTRANSFERID 
  *
  * @note    Caller must enter the client's critical section.
  */
-static int shClSvcTransferSendStatusAsyncInternal(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCLTRANSFERSTATUS uStatus,
-                                                  int rcTransfer, PSHCLEVENT *ppEvent)
+static int shClSvcTransferSendStatusAsync(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCLTRANSFERSTATUS uStatus,
+                                          int rcTransfer, PSHCLEVENT *ppEvent)
 {
     AssertPtrReturn(pClient,   VERR_INVALID_POINTER);
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
@@ -2187,16 +2189,21 @@ static int shClSvcTransferSendStatusAsyncInternal(PSHCLCLIENT pClient, PSHCLTRAN
                                            uStatus, rcTransfer, ppEvent);
 }
 
+/**
+ * Reports a transfer status to the guest.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Client that owns the transfer.
+ * @param   pTransfer           Transfer to report status for.
+ * @param   uStatus             Status to report.
+ * @param   rcTransfer          Result code to report. Optional and depending on status.
+ * @param   ppEvent             Where to return the wait event on success. Optional.
+ *                              Must be released by the caller with ShClEventRelease().
+ */
 int ShClSvcTransferSendStatusAsync(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCLTRANSFERSTATUS uStatus,
                                    int rcTransfer, PSHCLEVENT *ppEvent)
 {
-    shClSvcClientLock(pClient);
-
-    int rc = shClSvcTransferSendStatusAsyncInternal(pClient, pTransfer, uStatus, rcTransfer, ppEvent);
-
-    shClSvcClientUnlock(pClient);
-
-    return rc;
+    return shClSvcTransferSendStatusAsync(pClient, pTransfer, uStatus, rcTransfer, ppEvent);
 }
 
 /**
@@ -2221,8 +2228,8 @@ static void shClSvcTransferCleanupAllUnused(PSHCLCLIENT pClient)
         if (enmSts != SHCLTRANSFERSTATUS_STARTED)
         {
             /* Let the guest know. */
-            int rc2 = shClSvcTransferSendStatusAsyncInternal(pClient, pTransfer,
-                                                             SHCLTRANSFERSTATUS_UNINITIALIZED, VINF_SUCCESS, NULL /* ppEvent */);
+            int rc2 = shClSvcTransferSendStatusAsync(pClient, pTransfer,
+                                                     SHCLTRANSFERSTATUS_UNINITIALIZED, VINF_SUCCESS, NULL /* ppEvent */);
             AssertRC(rc2);
 
             ShClTransferCtxUnregisterById(pTxCtx, pTransfer->State.uID);
@@ -2357,10 +2364,10 @@ int ShClSvcTransferInit(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
         rc = VERR_SHCLPB_MAX_TRANSFERS_REACHED;
 
     /* Tell the guest the outcome. */
-    int rc2 = shClSvcTransferSendStatusAsyncInternal(pClient, pTransfer,
-                                                       RT_SUCCESS(rc)
-                                                     ? SHCLTRANSFERSTATUS_INITIALIZED : SHCLTRANSFERSTATUS_ERROR, rc,
-                                                     NULL /* ppEvent */);
+    int rc2 = shClSvcTransferSendStatusAsync(pClient, pTransfer,
+                                               RT_SUCCESS(rc)
+                                             ? SHCLTRANSFERSTATUS_INITIALIZED : SHCLTRANSFERSTATUS_ERROR, rc,
+                                             NULL /* ppEvent */);
     if (RT_SUCCESS(rc))
         rc2 = rc;
 
@@ -2390,9 +2397,10 @@ int ShClSvcTransferStart(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 
     /* Let the guest know in any case
      * (so that it can tear down the transfer on error as well). */
-    int rc2 = shClSvcTransferSendStatusAsyncInternal(pClient, pTransfer,
-                                                     RT_SUCCESS(rc) ? SHCLTRANSFERSTATUS_STARTED : SHCLTRANSFERSTATUS_ERROR, rc,
-                                                     NULL /* ppEvent */);
+    int rc2 = shClSvcTransferSendStatusAsync(pClient, pTransfer,
+                                              RT_SUCCESS(rc)
+                                            ? SHCLTRANSFERSTATUS_STARTED : SHCLTRANSFERSTATUS_ERROR, rc,
+                                            NULL /* ppEvent */);
     if (RT_SUCCESS(rc))
         rc = rc2;
 
@@ -2415,8 +2423,8 @@ int ShClSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, bool fWait
     shClSvcClientLock(pClient);
 
     PSHCLEVENT pEvent;
-    int rc = shClSvcTransferSendStatusAsyncInternal(pClient, pTransfer,
-                                                    SHCLTRANSFERSTATUS_STOPPED, VINF_SUCCESS, &pEvent);
+    int rc = shClSvcTransferSendStatusAsync(pClient, pTransfer,
+                                            SHCLTRANSFERSTATUS_STOPPED, VINF_SUCCESS, &pEvent);
     if (   RT_SUCCESS(rc)
         && fWaitForGuest)
     {
