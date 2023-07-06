@@ -923,8 +923,9 @@ void UIVisoContentBrowser::sltItemRenameAction()
     renameFileObject(selectedItems.at(0));
 }
 
-void UIVisoContentBrowser::sltItemRenameAttempt(UICustomFileSystemItem *pItem, QString strOldName, QString strNewName)
+void UIVisoContentBrowser::sltItemRenameAttempt(UICustomFileSystemItem *pItem, QString strOldPath, QString strOldName, QString strNewName)
 {
+    Q_UNUSED(strOldPath);
     if (!pItem || !pItem->parentItem())
         return;
     QList<UICustomFileSystemItem*> children = pItem->parentItem()->children();

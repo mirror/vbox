@@ -78,6 +78,7 @@ public:
     void setData(const QVariant &data, UICustomFileSystemModelData enmColumn);
     int row() const;
     UICustomFileSystemItem *parentItem();
+    UICustomFileSystemItem *parentItem() const;
 
     bool isDirectory() const;
     bool isSymLink() const;
@@ -174,7 +175,7 @@ class SHARED_LIBRARY_STUFF UICustomFileSystemModel : public QAbstractItemModel
 
 signals:
 
-    void sigItemRenamed(UICustomFileSystemItem *pItem, QString strOldName, QString strNewName);
+    void sigItemRenamed(UICustomFileSystemItem *pItem, QString strOldPath, QString strOldName, QString strNewName);
 
 public:
 

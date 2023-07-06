@@ -892,12 +892,14 @@ void UIFileManagerTable::sltSearchTextChanged(const QString &strText)
     performSelectionSearch(strText);
 }
 
-void UIFileManagerTable::sltHandleItemRenameAttempt(UICustomFileSystemItem *pItem, QString strOldName, QString strNewName)
+void UIFileManagerTable::sltHandleItemRenameAttempt(UICustomFileSystemItem *pItem, QString strOldPath,
+                                                    QString strOldName, QString strNewName)
 {
+    Q_UNUSED(strNewName);
     if (!pItem)
         return;
     /* Attempt to chage item name in the file system: */
-    if (!renameItem(pItem, strNewName))
+    if (!renameItem(pItem, strOldPath))
     {
         /* Restore the previous name. relist the view: */
         pItem->setData(strOldName, static_cast<int>(UICustomFileSystemModelData_Name));

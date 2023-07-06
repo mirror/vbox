@@ -213,7 +213,7 @@ protected:
     virtual void     deleteByItem(UICustomFileSystemItem *item) = 0;
     virtual void     deleteByPath(const QStringList &pathList) = 0;
     virtual void     goToHomeDirectory() = 0;
-    virtual bool     renameItem(UICustomFileSystemItem *item, QString newBaseName) = 0;
+    virtual bool     renameItem(UICustomFileSystemItem *item, QString strOldPath) = 0;
     virtual bool     createDirectory(const QString &path, const QString &directoryName) = 0;
     virtual QString  fsObjectPropertyString() = 0;
     virtual void     showProperties() = 0;
@@ -277,8 +277,8 @@ private slots:
     void sltSearchTextChanged(const QString &strText);
     /** m_pModel signals when an tree item is renamed. we try to apply this rename to the file system.
      *  if the file system rename fails we restore the old name of the item. See the comment of
-     *  sltRename() for more details. */
-    void sltHandleItemRenameAttempt(UICustomFileSystemItem *pItem, QString strOldName, QString strNewName);
+     *  sltRename() for more details. Note that when this slot is called item->path() has also changed. Thus strOldPath. */
+    void sltHandleItemRenameAttempt(UICustomFileSystemItem *pItem, QString strOldPath, QString strOldName, QString strNewName);
     void sltHandleNavigationWidgetPathChange(const QString& strPath);
     void sltHandleNavigationWidgetHistoryListChanged();
 
