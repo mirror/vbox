@@ -208,6 +208,7 @@ void UICustomFileSystemItem::setIsOpened(bool flag)
 
 QString UICustomFileSystemItem::path(bool fRemoveTrailingDelimiters /* = false */) const
 {
+    Q_UNUSED(fRemoveTrailingDelimiters);
     const UICustomFileSystemItem *pParent = this;
     QStringList path;
 
@@ -219,13 +220,6 @@ QString UICustomFileSystemItem::path(bool fRemoveTrailingDelimiters /* = false *
     }
 
     return UIPathOperations::removeMultipleDelimiters(path.join("/"));
-
-    const QString &strPath = m_itemData.value(UICustomFileSystemModelData_VISOPath, QString()).toString();
-
-    if (fRemoveTrailingDelimiters)
-        return UIPathOperations::removeTrailingDelimiters(strPath);
-
-    return strPath;
 }
 
 void UICustomFileSystemItem::setPath(const QString &path)
