@@ -215,7 +215,6 @@ QString UICustomFileSystemItem::path(bool fRemoveTrailingDelimiters /* = false *
     while(pParent && pParent->parentItem())
     {
         path.prepend(pParent->fileObjectName());
-
         pParent = pParent->parentItem();
     }
 

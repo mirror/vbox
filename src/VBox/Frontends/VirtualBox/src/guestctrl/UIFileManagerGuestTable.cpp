@@ -663,7 +663,7 @@ void UIFileManagerGuestTable::goToHomeDirectory()
     goIntoDirectory(UIPathOperations::pathTrail(userHome));
 }
 
-bool UIFileManagerGuestTable::renameItem(UICustomFileSystemItem *item, QString strOldPath)
+bool UIFileManagerGuestTable::renameItem(UICustomFileSystemItem *item, const QString &strOldPath)
 {
     if (!item || item->isUpDirectory())
         return false;

@@ -175,7 +175,8 @@ class SHARED_LIBRARY_STUFF UICustomFileSystemModel : public QAbstractItemModel
 
 signals:
 
-    void sigItemRenamed(UICustomFileSystemItem *pItem, QString strOldPath, QString strOldName, QString strNewName);
+    void sigItemRenamed(UICustomFileSystemItem *pItem, const QString &strOldPath,
+                        const QString &strOldName, const QString &strNewName);
 
 public:
 

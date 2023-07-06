@@ -85,7 +85,8 @@ public slots:
     void sltCreateNewDirectory();
     /** Handles the signal we get from the model during setData call. Restores the old name of the file object
      *  to @p strOldName if need be (if rename fails for some reason). */
-    void sltItemRenameAttempt(UICustomFileSystemItem *pItem, QString strOldPath, QString strOldName, QString strNewName);
+    void sltItemRenameAttempt(UICustomFileSystemItem *pItem, const QString &strOldPath,
+                              const QString &strOldName, const QString &strNewName);
     void sltRemoveItems();
     void sltResetAction();
     void sltItemRenameAction();
