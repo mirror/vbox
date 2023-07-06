@@ -101,7 +101,7 @@ class SubTstDrvNestedSnapshots1(base.SubTestDriverBase):
         # ValidationKit ISO be mounted in the VM so that TXS can auto-update if needed.
         reporter.log('Creating test VM: \'%s\'' % self.sVmName);
         oVM = self.oTstDrv.createTestVM(self.sVmName, 1, sHd = '7.1/ol-6u10-x86.vdi',
-                                        sKind = 'Oracle6_64', fIoApic = True,
+                                        sKind = 'Oracle', fIoApic = True,
                                         sDvdImage = self.oTstDrv.sVBoxValidationKitIso);
         if oVM is None:
             reporter.error('Error creating test VM: \'%s\'' % self.sVmName);
