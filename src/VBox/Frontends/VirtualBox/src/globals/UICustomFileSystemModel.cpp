@@ -44,7 +44,7 @@ const char *UICustomFileSystemModel::strUpDirectoryString = "..";
 *   UICustomFileSystemItem implementation.                                                                                       *
 *********************************************************************************************************************************/
 
-UICustomFileSystemItem::UICustomFileSystemItem(const QString &strName, UICustomFileSystemItem *parent, KFsObjType type)
+UICustomFileSystemItem::UICustomFileSystemItem(const QString &strFileObjectName, UICustomFileSystemItem *parent, KFsObjType type)
     : m_parentItem(parent)
     , m_bIsOpened(false)
     , m_fIsTargetADirectory(false)
@@ -55,7 +55,7 @@ UICustomFileSystemItem::UICustomFileSystemItem(const QString &strName, UICustomF
     for (int i = static_cast<int>(UICustomFileSystemModelData_Name);
          i < static_cast<int>(UICustomFileSystemModelData_Max); ++i)
         m_itemData[static_cast<UICustomFileSystemModelData>(i)] = QVariant();
-    m_itemData[UICustomFileSystemModelData_Name] = strName;
+    m_itemData[UICustomFileSystemModelData_Name] = strFileObjectName;
     if (parent)
         parent->appendChild(this);
 }
@@ -72,7 +72,7 @@ void UICustomFileSystemItem::appendChild(UICustomFileSystemItem *item)
     if (m_childItems.contains(item))
         return;
     m_childItems.append(item);
-    m_childMap.insert(item->name(), item);
+    m_childMap.insert(item->fileObjectName(), item);
 }
 
 void UICustomFileSystemItem::reset()
@@ -88,11 +88,11 @@ UICustomFileSystemItem *UICustomFileSystemItem::child(int row) const
     return m_childItems.value(row);
 }
 
-UICustomFileSystemItem *UICustomFileSystemItem::child(const QString &name) const
+UICustomFileSystemItem *UICustomFileSystemItem::child(const QString &fileObjectName) const
 {
-    if (!m_childMap.contains(name))
+    if (!m_childMap.contains(fileObjectName))
         return 0;
-    return m_childMap.value(name);
+    return m_childMap.value(fileObjectName);
 }
 
 int UICustomFileSystemItem::childCount() const
@@ -114,7 +114,7 @@ void UICustomFileSystemItem::removeChild(UICustomFileSystemItem *pItem)
     if (iIndex == -1 || iIndex > m_childItems.size())
         return;
     m_childItems.removeAt(iIndex);
-    m_childMap.remove(pItem->name());
+    m_childMap.remove(pItem->fileObjectName());
     delete pItem;
     pItem = 0;
 }
@@ -134,7 +134,7 @@ QVariant UICustomFileSystemItem::data(int column) const
     return m_itemData.value(static_cast<UICustomFileSystemModelData>(column), QVariant());
 }
 
-QString UICustomFileSystemItem::name() const
+QString UICustomFileSystemItem::fileObjectName() const
 {
     QVariant data = m_itemData.value(UICustomFileSystemModelData_Name, QVariant());
 #ifndef VBOX_IS_QT6_OR_LATER /* QVariant/QMetaType ::Type is replaced with QMetaType in Qt6 for canConvert */
@@ -422,7 +422,7 @@ bool UICustomFileSystemModel::setData(const QModelIndex &index, const QVariant &
             UICustomFileSystemItem *pItem = static_cast<UICustomFileSystemItem*>(index.internalPointer());
             if (!pItem)
                 return false;
-            QString strOldName = pItem->name();
+            QString strOldName = pItem->fileObjectName();
             pItem->setData(value, index.column());
             emit dataChanged(index, index);
             emit sigItemRenamed(pItem, strOldName, value.toString());

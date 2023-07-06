@@ -477,7 +477,7 @@ void UIVisoContentBrowser::sltCreateNewDirectory()
     const QList<UICustomFileSystemItem*> children = pParentItem->children();
     foreach (const UICustomFileSystemItem *item, children)
     {
-        if (item->name() == strNewDirectoryName)
+        if (item->fileObjectName() == strNewDirectoryName)
             return;
     }
 
@@ -931,10 +931,10 @@ void UIVisoContentBrowser::sltItemRenameAttempt(UICustomFileSystemItem *pItem, Q
     bool bDuplicate = false;
     foreach (const UICustomFileSystemItem *item, children)
     {
-        if (item->name() == strNewName && item != pItem)
+        if (item->fileObjectName() == strNewName && item != pItem)
             bDuplicate = true;
     }
-    QString strNewPath = UIPathOperations::mergePaths(pItem->parentItem()->path(), pItem->name());
+    QString strNewPath = UIPathOperations::mergePaths(pItem->parentItem()->path(), pItem->fileObjectName());
 
     if (bDuplicate)
     {

@@ -60,13 +60,13 @@ class SHARED_LIBRARY_STUFF UICustomFileSystemItem
 public:
 
     /** @p strName contains file object name which is assumed to be unique among a parent object's children. */
-    UICustomFileSystemItem(const QString &strName, UICustomFileSystemItem *parentItem, KFsObjType type);
+    UICustomFileSystemItem(const QString &strFileObjectName, UICustomFileSystemItem *parentItem, KFsObjType type);
     virtual ~UICustomFileSystemItem();
 
     void reset();
     virtual UICustomFileSystemItem *child(int row) const;
-    /** Searches for the child by name and returns it if found. */
-    UICustomFileSystemItem *child(const QString &name) const;
+    /** Searches for the child by file object name and returns it if found. */
+    UICustomFileSystemItem *child(const QString &strFileObjectName) const;
     int childCount() const;
     QList<UICustomFileSystemItem*> children() const;
     /** Removes the item from the list of children and !!DELETES!! the item. */
@@ -90,7 +90,7 @@ public:
     QString  path(bool fRemoveTrailingDelimiters = false) const;
     void setPath(const QString &path);
 
-    /** Returns true if this is directory and name is ".." */
+    /** Returns true if this is directory and file object name is ".." */
     bool isUpDirectory() const;
     void clearChildren();
 
@@ -107,7 +107,7 @@ public:
     const QString &owner() const;
     void setOwner(const QString &owner);
 
-    QString name() const;
+    QString fileObjectName() const;
 
     void setIsDriveItem(bool flag);
     bool isDriveItem() const;
@@ -119,7 +119,7 @@ private:
     void appendChild(UICustomFileSystemItem *child);
 
     QList<UICustomFileSystemItem*>         m_childItems;
-    /** Used to find children by name */
+    /** Used to find children by file object name */
     QMap<QString, UICustomFileSystemItem*> m_childMap;
     QMap<UICustomFileSystemModelData, QVariant>  m_itemData;
     UICustomFileSystemItem *m_parentItem;
