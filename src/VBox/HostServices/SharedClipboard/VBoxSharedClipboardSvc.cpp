@@ -1334,30 +1334,6 @@ int ShClSvcReadDataFromGuestAsync(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSH
                         *ppEvent = pEvent;
                 }
 
-#if 0 /* ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
-                /*
-                 * When the host wants to read URI data from the guest:
-                 *   - Initialize a transfer locally.
-                 *   - Request URI data from the guest; this tells the guest to initialize a transfer on the guest side.
-                 *   - Start the transfer locally once we receive the transfer INITIALIZED status from the guest via VBOX_SHCL_GUEST_FN_REPLY.
-                 *
-                 * When this function returns, the X11 clipboard will try reading the data, so we need to make sure that
-                 *   - the local HTTP server is up and running (will be done in ShClBackendTransferCreate() on X11)
-                 *   - the right (HTTP) URL data is filled into the clipboard
-                 * by then.
-                 */
-                if (   RT_SUCCESS(rc)
-                    && (fFormat & VBOX_SHCL_FMT_URI_LIST))
-                {
-                    PSHCLTRANSFER pTransfer;
-                    rc = ShClSvcTransferInit(pClient, SHCLTRANSFERDIR_FROM_REMOTE, SHCLSOURCE_REMOTE, &pTransfer);
-                    if (RT_SUCCESS(rc))
-                        rc = shClSvcSetSource(pClient, SHCLSOURCE_REMOTE);
-
-                    if (RT_FAILURE(rc))
-                        LogRel(("Shared Clipboard: Initializing guest -> host transfer failed with %Rrc\n", rc));
-                }
-#endif
                 /* Remove event from list if caller did not request event handle or in case
                  * of failure (in this case caller should not release event). */
                 if (   RT_FAILURE(rc)
