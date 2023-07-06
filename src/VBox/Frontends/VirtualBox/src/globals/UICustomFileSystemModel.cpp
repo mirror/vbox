@@ -73,22 +73,12 @@ void UICustomFileSystemItem::appendChild(UICustomFileSystemItem *item)
     if (m_childItems.contains(item))
         return;
     m_childItems.append(item);
-    m_childMap.insert(item->fileObjectName(), item);
-}
-
-void UICustomFileSystemItem::childRenamed()
-{
-    /* Recreate child map to accomadate the new file object name of the children: */
-    m_childMap.clear();
-    foreach(UICustomFileSystemItem* pItem, m_childItems)
-        m_childMap[pItem->fileObjectName()] = pItem;
 }
 
 void UICustomFileSystemItem::reset()
 {
     qDeleteAll(m_childItems);
     m_childItems.clear();
-    m_childMap.clear();
     m_bIsOpened = false;
 }
 
@@ -99,9 +89,10 @@ UICustomFileSystemItem *UICustomFileSystemItem::child(int row) const
 
 UICustomFileSystemItem *UICustomFileSystemItem::child(const QString &fileObjectName) const
 {
-    if (!m_childMap.contains(fileObjectName))
-        return 0;
-    return m_childMap.value(fileObjectName);
+    foreach (UICustomFileSystemItem *pItem, m_childItems)
+        if (pItem && pItem->fileObjectName() == fileObjectName)
+            return pItem;
+    return 0;
 }
 
 int UICustomFileSystemItem::childCount() const
@@ -123,7 +114,6 @@ void UICustomFileSystemItem::removeChild(UICustomFileSystemItem *pItem)
     if (iIndex == -1 || iIndex > m_childItems.size())
         return;
     m_childItems.removeAt(iIndex);
-    m_childMap.remove(pItem->fileObjectName());
     delete pItem;
     pItem = 0;
 }
@@ -160,8 +150,6 @@ void UICustomFileSystemItem::setData(const QVariant &data, int index)
     if (m_itemData[static_cast<UICustomFileSystemModelData>(index)] == data)
         return;
     m_itemData[static_cast<UICustomFileSystemModelData>(index)] = data;
-    if (static_cast<UICustomFileSystemModelData>(index) == UICustomFileSystemModelData_Name && parentItem())
-        parentItem()->childRenamed();
 }
 
 void UICustomFileSystemItem::setData(const QVariant &data, UICustomFileSystemModelData enmColumn)
@@ -205,7 +193,6 @@ void UICustomFileSystemItem::clearChildren()
 {
     qDeleteAll(m_childItems);
     m_childItems.clear();
-    m_childMap.clear();
 }
 
 bool UICustomFileSystemItem::isOpened() const

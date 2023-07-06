@@ -118,10 +118,7 @@ public:
 private:
 
     void appendChild(UICustomFileSystemItem *child);
-    void childRenamed();
     QList<UICustomFileSystemItem*>         m_childItems;
-    /** Used to find children by file object name */
-    QMap<QString, UICustomFileSystemItem*> m_childMap;
     QMap<UICustomFileSystemModelData, QVariant>  m_itemData;
     UICustomFileSystemItem *m_parentItem;
     bool             m_bIsOpened;
