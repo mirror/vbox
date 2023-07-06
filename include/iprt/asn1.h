@@ -1686,7 +1686,7 @@ RTDECL(int) RTAsn1EncodeToBuffer(PCRTASN1CORE pRoot, uint32_t fFlags, void *pvBu
  * but also handy when structures needs to be digested or similar during signing
  * or verification.
  *
- * We sometimes can use the data we've decoded directly, but often we have
+ * We sometimes can use the data we've decoded directly, but often we have to
  * encode it into a temporary heap buffer.
  *
  * @returns IPRT status code, details in @a pErrInfo if present.
