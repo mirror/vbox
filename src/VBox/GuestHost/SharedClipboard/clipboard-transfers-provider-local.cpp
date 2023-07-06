@@ -709,7 +709,7 @@ static DECLCALLBACK(int) shclTransferIfaceLocalObjOpen(PSHCLTXPROVIDERCTX pCtx,
         rc = ShClTransferObjHandleInfoInit(pInfo);
         if (RT_SUCCESS(rc))
         {
-            uint64_t fOpen;
+            uint64_t fOpen = 0; /* Shut up GCC. */
             rc = shClConvertFileCreateFlags(pCreateParms->fCreate, &fOpen);
             if (RT_SUCCESS(rc))
             {
