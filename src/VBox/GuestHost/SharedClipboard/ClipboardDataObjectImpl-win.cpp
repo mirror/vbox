@@ -187,6 +187,9 @@ void SharedClipboardWinDataObject::Destroy(void)
 
     AssertReturnVoid(m_lRefCount == 0);
 
+    /* Make sure to release the transfer. */
+    setTransferLocked(NULL);
+
     int rc = RTCritSectDelete(&m_CritSect);
     AssertRC(rc);
 
@@ -309,6 +312,22 @@ int SharedClipboardWinDataObject::copyToHGlobal(const void *pvData, size_t cbDat
 
     GlobalFree(hGlobal);
     return VERR_ACCESS_DENIED;
+}
+
+inline int SharedClipboardWinDataObject::lock(void)
+{
+    int rc = RTCritSectEnter(&m_CritSect);
+    AssertRCReturn(rc, rc);
+
+    return rc;
+}
+
+inline int SharedClipboardWinDataObject::unlock(void)
+{
+    int rc = RTCritSectLeave(&m_CritSect);
+    AssertRCReturn(rc, rc);
+
+    return rc;
 }
 
 /**
@@ -674,8 +693,7 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
     AssertPtrReturn(pFormatEtc, DV_E_FORMATETC);
     AssertPtrReturn(pMedium, DV_E_FORMATETC);
 
-    int rc2 = RTCritSectEnter(&m_CritSect);
-    AssertRCReturn(rc2, E_UNEXPECTED);
+    lock();
 
     LogFlowFunc(("lIndex=%RI32, enmStatus=%#x\n", pFormatEtc->lindex, m_enmStatus));
 
@@ -701,8 +719,7 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
                 LogRel2(("Shared Clipboard: Requesting data for IDataObject ...\n"));
 
                 /* Leave lock while requesting + waiting. */
-                rc2 = RTCritSectLeave(&m_CritSect);
-                AssertRCBreak(rc);
+                unlock();
 
                 /* Start the transfer. */
                 AssertPtrBreak(m_Callbacks.pfnTransferStart);
@@ -714,11 +731,15 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
                 /* Note: Keep the timeout low here (instead of using SHCL_TIMEOUT_DEFAULT_MS), as this will make
                  *       Windows Explorer unresponsive (i.e. "ghost window") when waiting for too long. */
                 rc = RTSemEventWait(m_EventStatusChanged, RT_MS_10SEC);
-                AssertRCBreak(rc);
 
                 /* Re-acquire lock. */
-                rc = RTCritSectEnter(&m_CritSect);
-                AssertRCBreak(rc);
+                lock();
+
+                if (RT_FAILURE(rc))
+                {
+                    LogRel(("Shared Clipboard: Waiting for IDataObject status status failed, rc=%Rrc\n", rc));
+                    break;
+                }
 
                 if (m_enmStatus != Running)
                 {
@@ -756,16 +777,14 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
                             m_fThreadRunning = true;
 
                             /* Leave lock while waiting. */
-                            rc = RTCritSectLeave(&m_CritSect);
-                            AssertRCReturn(rc, E_UNEXPECTED);
+                            unlock();
 
                             /* Don't block for too long here, as this also will screw other apps running on the OS. */
                             LogRel2(("Shared Clipboard: Waiting for IDataObject listing to arrive ...\n"));
                             rc = RTSemEventWait(m_EventListComplete, SHCL_TIMEOUT_DEFAULT_MS);
 
                             /* Re-acquire lock. */
-                            rc = RTCritSectEnter(&m_CritSect);
-                            AssertRCReturn(rc, E_UNEXPECTED);
+                            lock();
                         }
                     }
                 }
@@ -846,8 +865,7 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
         }
     }
 
-    rc2 = RTCritSectLeave(&m_CritSect);
-    AssertRCReturn(rc2, E_UNEXPECTED);
+    unlock();
 
     LogFlowFunc(("hr=%Rhrc\n", hr));
     return hr;
@@ -1011,19 +1029,23 @@ STDMETHODIMP SharedClipboardWinDataObject::StartOperation(IBindCtx *pbcReserved)
  */
 
 /**
- * Assigns a transfer object for the data object.
+ * Assigns a transfer object for the data object, internal version.
  *
  * @returns VBox status code.
  * @param   pTransfer           Transfer to assign.
- *                              Must be in started state.
+ *                              Must be in INITIALIZED state.
+ *                              When set to NULL, the transfer will be released from the object.
  */
-int SharedClipboardWinDataObject::SetTransfer(PSHCLTRANSFER pTransfer)
+int SharedClipboardWinDataObject::setTransferLocked(PSHCLTRANSFER pTransfer)
 {
-    AssertReturn(m_pTransfer == NULL, VERR_WRONG_ORDER); /* Transfer already set? */
+    LogFlowFunc(("pTransfer=%p\n", pTransfer));
 
-    int rc = RTCritSectEnter(&m_CritSect);
-    if (RT_SUCCESS(rc))
+    int rc = VINF_SUCCESS;
+
+    if (pTransfer) /* Set */
     {
+        Assert(m_pTransfer == NULL); /* Transfer already set? */
+
         if (m_enmStatus == Initialized)
         {
             SHCLTRANSFERSTATUS const enmSts = ShClTransferGetStatus(pTransfer);
@@ -1038,9 +1060,34 @@ int SharedClipboardWinDataObject::SetTransfer(PSHCLTRANSFER pTransfer)
         }
         else
             AssertFailedStmt(rc = VERR_WRONG_ORDER);
-
-        RTCritSectLeave(&m_CritSect);
     }
+    else /* Unset */
+    {
+        if (m_pTransfer)
+        {
+            ShClTransferRelease(m_pTransfer);
+            m_pTransfer = NULL;
+        }
+    }
+
+    return rc;
+}
+
+/**
+ * Assigns a transfer object for the data object.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           Transfer to assign.
+ *                              Must be in INITIALIZED state.
+ *                              When set to NULL, the transfer will be released from the object.
+ */
+int SharedClipboardWinDataObject::SetTransfer(PSHCLTRANSFER pTransfer)
+{
+    lock();
+
+    int rc = setTransferLocked(pTransfer);
+
+    unlock();
 
     return rc;
 }
@@ -1056,14 +1103,11 @@ int SharedClipboardWinDataObject::SetTransfer(PSHCLTRANSFER pTransfer)
  */
 int SharedClipboardWinDataObject::SetStatus(Status enmStatus, int rcSts /* = VINF_SUCCESS */)
 {
-    int rc = RTCritSectEnter(&m_CritSect);
-    if (RT_SUCCESS(rc))
-    {
-        rc = setStatusLocked(enmStatus, rcSts);
+    lock();
 
-        RTCritSectLeave(&m_CritSect);
-    }
+    int rc = setStatusLocked(enmStatus, rcSts);
 
+    unlock();
     return rc;
 }
 
@@ -1140,38 +1184,34 @@ int SharedClipboardWinDataObject::setStatusLocked(Status enmStatus, int rc /* = 
 
     RT_NOREF(rc);
 
-    int rc2 = RTCritSectEnter(&m_CritSect);
-    if (RT_SUCCESS(rc2))
+    LogFlowFunc(("enmStatus=%#x (current is: %#x)\n", enmStatus, m_enmStatus));
+
+    int rc2 = VINF_SUCCESS;
+
+    switch (enmStatus)
     {
-        LogFlowFunc(("enmStatus=%#x (current is: %#x)\n", enmStatus, m_enmStatus));
-
-        switch (enmStatus)
+        case Completed:
         {
-            case Completed:
-            {
-                LogFlowFunc(("m_uObjIdx=%RU32 (total: %zu)\n", m_uObjIdx, m_lstEntries.size()));
+            LogFlowFunc(("m_uObjIdx=%RU32 (total: %zu)\n", m_uObjIdx, m_lstEntries.size()));
 
-                const bool fComplete = m_uObjIdx == m_lstEntries.size() - 1 /* Object index is zero-based */;
-                if (fComplete)
-                    m_enmStatus = Completed;
-                break;
-            }
-
-            default:
-            {
-                m_enmStatus = enmStatus;
-                break;
-            }
+            const bool fComplete = m_uObjIdx == m_lstEntries.size() - 1 /* Object index is zero-based */;
+            if (fComplete)
+                m_enmStatus = Completed;
+            break;
         }
 
-        if (RT_FAILURE(rc))
-            LogRel(("Shared Clipboard: Data object received error %Rrc (status %#x)\n", rc, enmStatus));
-
-        if (m_EventStatusChanged != NIL_RTSEMEVENT)
-            rc2 = RTSemEventSignal(m_EventStatusChanged);
-
-        RTCritSectLeave(&m_CritSect);
+        default:
+        {
+            m_enmStatus = enmStatus;
+            break;
+        }
     }
+
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Data object received error %Rrc (status %#x)\n", rc, enmStatus));
+
+    if (m_EventStatusChanged != NIL_RTSEMEVENT)
+        rc2 = RTSemEventSignal(m_EventStatusChanged);
 
     return rc2;
 }

@@ -294,6 +294,9 @@ protected:
 
     static int Thread(RTTHREAD hThread, void *pvUser);
 
+    inline int lock(void);
+    inline int unlock(void);
+
     int readDir(PSHCLTRANSFER pTransfer, const Utf8Str &strPath);
 
     int copyToHGlobal(const void *pvData, size_t cbData, UINT fFlags, HGLOBAL *phGlobal);
@@ -303,6 +306,7 @@ protected:
     bool lookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex);
     void registerFormat(LPFORMATETC pFormatEtc, CLIPFORMAT clipFormat, TYMED tyMed = TYMED_HGLOBAL,
                         LONG lindex = -1, DWORD dwAspect = DVASPECT_CONTENT, DVTARGETDEVICE *pTargetDevice = NULL);
+    int setTransferLocked(PSHCLTRANSFER pTransfer);
     int setStatusLocked(Status enmStatus, int rc = VINF_SUCCESS);
 
 protected:
