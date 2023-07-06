@@ -100,7 +100,7 @@ int SharedClipboardWinOpen(HWND hWnd)
     {
         const DWORD dwLastErr = GetLastError();
         rc = RTErrConvertFromWin32(dwLastErr);
-        LogRel(("Failed to open clipboard, rc=%Rrc (0x%x)\n", rc, dwLastErr));
+        LogRel(("Shared Clipboard: Failed to open clipboard, rc=%Rrc (0x%x)\n", rc, dwLastErr));
     }
 
     return rc;
@@ -550,33 +550,34 @@ int SharedClipboardWinConvertCFHTMLToMIME(const char *pszSource, const uint32_t 
                     }
                     else
                     {
-                        LogRelFlowFunc(("Error: Unknown CF_HTML format. Expected EndFragment. rc = %Rrc\n", rc));
+                        LogRel(("Shared Clipboard: Unknown CF_HTML format, expected EndFragment, rc=%Rrc\n", rc));
                         RTMemFree(pszResult);
                     }
                 }
                 else
-                {
-                    LogRelFlowFunc(("Error: Unknown CF_HTML format. Expected EndFragment\n"));
+
                     rc = VERR_NO_MEMORY;
-                }
             }
             else
             {
-                LogRelFlowFunc(("Error: CF_HTML out of bounds - offStart=%#x offEnd=%#x cch=%#x\n", offStart, offEnd, cch));
+                LogRel(("Shared Clipboard: Error: CF_HTML out of bounds - offStart=%#x, offEnd=%#x, cch=%#x\n", offStart, offEnd, cch));
                 rc = VERR_INVALID_PARAMETER;
             }
         }
         else
         {
-            LogRelFlowFunc(("Error: Unknown CF_HTML format. Expected EndFragment. rc = %Rrc\n", rc));
+            LogRel(("Shared Clipboard: Error: Unknown CF_HTML format, expected EndFragment, rc=%Rrc\n", rc));
             rc = VERR_INVALID_PARAMETER;
         }
     }
     else
     {
-        LogRelFlowFunc(("Error: Unknown CF_HTML format. Expected StartFragment. rc = %Rrc\n", rc));
+        LogRel(("Shared Clipboard: Error: Unknown CF_HTML format, expected StartFragment, rc=%Rrc\n", rc));
         rc = VERR_INVALID_PARAMETER;
     }
+
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: HTML to MIME conversion failed with %Rrc\n", rc));
 
     return rc;
 }
@@ -624,7 +625,7 @@ int SharedClipboardWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char
     { /* likely */ }
     else
     {
-        LogRelFlowFunc(("Error: invalid source fragment. rc = %Rrc\n", rc));
+        LogRel2(("Shared Clipboard: Error: Invalid source fragment.for HTML MIME data, rc=%Rrc\n", rc));
         return rc;
     }
     size_t const cchFragment = strlen(pszSource); /* Unfortunately the validator doesn't return the length. */
