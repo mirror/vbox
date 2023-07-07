@@ -285,7 +285,11 @@ static DECLCALLBACK(void) shClSvcWinTransferOnCreatedCallback(PSHCLTRANSFERCALLB
     }
 
     if (RT_SUCCESS(rc))
+    {
         rc = ShClTransferSetProvider(pTransfer, &pClient->Transfers.Provider); RT_NOREF(rc);
+        if (RT_SUCCESS(rc))
+            rc = SharedClipboardWinTransferCreate(&pCtx->Win, pTransfer);
+    }
 
     LogFlowFuncLeaveRC(rc);
 }
