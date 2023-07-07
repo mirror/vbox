@@ -136,6 +136,7 @@ private:
     QList<UICustomFileSystemItem*> tableSelectedItems();
     bool                           onStartItem();
     void                           goUp();
+    void                           createLoadedFileEntries(const QMap<QString, QString> &fileEntries);
     UIVisoContentTableView        *m_pTableView;
     UICustomFileSystemModel       *m_pModel;
     UICustomFileSystemProxyModel  *m_pTableProxyModel;
