@@ -58,6 +58,78 @@ checkdep_ips()
     return 1
 }
 
+checkdep_ips_python()
+{
+    if test -z "$1"; then
+        errorprint "Missing argument to checkdep_ips_python"
+        return 1
+    fi
+
+    # Check installed packages for any python runtime from the argument list passed
+    # to this function.  We can't use 'pkg list -q' here since it didn't exist until
+    # S11.2 FCS (CR 16663535).
+    for pkg in "${@}"; do
+        $BIN_PKG $BASEDIR_OPT list "${pkg}" >/dev/null 2>&1
+        if test "$?" -eq 0; then
+            return 0
+        fi
+    done
+
+    # 'pkg info' Branch fields:
+    # For S11-11.3: TrunkID|Update|SRU|Reserved|BuildID|NightlyID
+    # For S11.4:    TrunkID|Update|SRU|Reserved|Reserved|BuildID|NightlyID
+    #   N.B. For S11-11.3: TrunkID=0.175  For S11.4: TrunkID=11
+    # Example Solaris 11 FMRIs:
+    # Solaris 11 pre-FCS = 5.12.0.0.0.128.1
+    # Solaris 11 FCS =     0.175.0.0.0.2.0
+    # Solaris 11.1 SRU21 = 0.175.1.21.0.4.1
+    # Solaris 11.2 SRU15 = 0.175.2.14.0.2.2
+    # Solaris 11.3 SRU36 = 0.175.3.36.0.8.0
+    # Solaris 11.4 SRU55 = 11.4.55.0.1.138.3
+    eval `$BIN_PKG $BASEDIR_OPT info system/kernel | \
+        awk '/Branch:/ { split($2, array, "."); if ($2 == 175) {print "export UPDATE="array[3] " SRU="array[4];} \
+            else {print "export UPDATE="array[2] " SRU="array[3]} }'`
+
+    # If the parsing of the pkg FMRI failed for any reason then default to the first
+    # Solaris 11.4 CBE which was released relatively recently (March 2022) and is
+    # freely available.
+    if test -z "$UPDATE"; then
+        export UPDATE=4 SRU=42
+    fi
+
+    # Map of introduction and removal of python releases in Solaris 11 releases/SRUs:
+    # python 2.6:  S11 FCS -> S11.3 SRU19 [removed in S11.3 SRU20]
+    # python 2.7:  S11 FCS -> S11.4 SRU56 [removed in S11.4 SRU57]
+    # python 3.4:  S11.3 FCS -> S11.4 SRU26 [removed in S11.4 SRU27]
+    # python 3.5:  S11.4 FCS -> S11.4 SRU29 [removed in S11.4 SRU30]
+    # python 3.7:  S11.4 SRU4 -> TBD
+    # python 3.9:  S11.4 SRU30 -> TBD
+    # python 3.11: S11.4 SRU54 -> TBD
+    if test "$UPDATE" -lt 3 || test "$UPDATE" -gt 4; then  # S11 FCS - S11.2 SRU15 or anything before S11 FCS
+        PKG_MISSING_IPS="$PKG_MISSING_IPS runtime/python-26 or runtime/python-27"
+    elif test "$UPDATE" -eq 3 && test "$SRU" -le 19; then  # S11.3 FCS - S11.3 SRU19
+        PKG_MISSING_IPS="$PKG_MISSING_IPS runtime/python-26 or runtime/python-27 or runtime/python-34"
+    elif test "$UPDATE" -eq 3 && test "$SRU" -gt 19; then  # S11.3 SRU20 - S11.3 SRU<latest>
+        PKG_MISSING_IPS="$PKG_MISSING_IPS runtime/python-27 or runtime/python-34"
+    elif test "$UPDATE" -eq 4 && test "$SRU" -le 3; then  # S11.4 FCS - S11.4 SRU3
+        PKG_MISSING_IPS="$PKG_MISSING_IPS runtime/python-27 or runtime/python-34 or runtime/python-35"
+    elif test "$UPDATE" -eq 4 && test "$SRU" -le 26; then  # S11.4 SRU4 - S11.4 SRU26
+        PKG_MISSING_IPS="$PKG_MISSING_IPS runtime/python-27 or runtime/python-34 or runtime/python-35 or runtime/python-37"
+    elif test "$UPDATE" -eq 4 && test "$SRU" -le 29; then  # S11.4 SRU27 - S11.4 SRU29
+        PKG_MISSING_IPS="$PKG_MISSING_IPS runtime/python-27 or runtime/python-35 or runtime/python-37"
+    elif test "$UPDATE" -eq 4 && test "$SRU" -le 53; then  # S11.4 SRU30 - S11.4 SRU53
+        PKG_MISSING_IPS="$PKG_MISSING_IPS runtime/python-27 or runtime/python-37 or runtime/python-39"
+    elif test "$UPDATE" -eq 4 && test "$SRU" -le 56; then  # S11.4 SRU54 - S11.4 SRU56
+        PKG_MISSING_IPS="$PKG_MISSING_IPS runtime/python-27 or runtime/python-37 or runtime/python-39 or runtime/python-311"
+    elif test "$UPDATE" -eq 4 && test "$SRU" -gt 56; then  # S11.4 SRU57 - S11.4 SRU<latest>
+        PKG_MISSING_IPS="$PKG_MISSING_IPS runtime/python-37 or runtime/python-39 or runtime/python-311"
+    else # Fall through just in case.
+        PKG_MISSING_IPS="$PKG_MISSING_IPS runtime/python-37 or runtime/python-39 or runtime/python-311"
+    fi
+
+    return 1
+}
+
 checkdep_ips_either()
 {
     if test -z "$1" || test -z "$2"; then
@@ -167,7 +239,7 @@ if test -x "$BIN_PKG"; then
     checkdep_ips "x11/library/mesa"
     checkdep_ips "x11/library/toolkit/libxt"
     checkdep_ips "x11/library/xcb-util"
-    checkdep_ips_either "runtime/python-26" "runtime/python-27" "runtime/python-35" "runtime/python-36" "runtime/python-37" "runtime/python-38" "runtime/python-39"
+    checkdep_ips_python "runtime/python-26" "runtime/python-27" "runtime/python-34" "runtime/python-35" "runtime/python-37" "runtime/python-39" "runtime/python-311"
     checkdep_ips_either "system/library/gcc/gcc-c++-runtime" "system/library/gcc/gcc-c++-runtime-9"
     checkdep_ips_either "system/library/gcc/gcc-c-runtime" "system/library/gcc/gcc-c-runtime-9"
 else
