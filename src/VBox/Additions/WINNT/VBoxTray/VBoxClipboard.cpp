@@ -92,6 +92,8 @@ static char s_szClipWndClassName[] = SHCL_WIN_WNDCLASS_NAME;
 *   Prototypes                                                                                                                   *
 *********************************************************************************************************************************/
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+static DECLCALLBACK(void) vbtrShClTransferCreatedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx);
+static DECLCALLBACK(void) vbtrShClTransferDestroyCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx);
 static DECLCALLBACK(void) vbtrShClTransferInitializedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx);
 static DECLCALLBACK(void) vbtrShClTransferStartedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx);
 static DECLCALLBACK(void) vbtrShClTransferErrorCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx, int rc);
@@ -184,6 +186,44 @@ static DECLCALLBACK(int) vbtrShClDataObjectTransferStartCallback(SharedClipboard
 
     LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+/**
+ * @copydoc SHCLTRANSFERCALLBACKS::pfnOnCreated
+ *
+ * Called by ShClTransferCreate via VbglR3.
+ *
+ * @thread  Clipboard main thread.
+ */
+static DECLCALLBACK(void) vbtrShClTransferCreatedCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
+{
+    LogFlowFuncEnter();
+
+    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
+    AssertPtr(pCtx);
+
+    int rc = SharedClipboardWinTransferCreate(&pCtx->Win, pCbCtx->pTransfer);
+
+    LogFlowFuncLeaveRC(rc);
+}
+
+/**
+ * @copydoc SHCLTRANSFERCALLBACKS::pfnOnDestroy
+ *
+ * Called by ShClTransferDestroy via VbglR3.
+ *
+ * @thread  Clipboard main thread.
+ */
+static DECLCALLBACK(void) vbtrShClTransferDestroyCallback(PSHCLTRANSFERCALLBACKCTX pCbCtx)
+{
+    LogFlowFuncEnter();
+
+    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
+    AssertPtr(pCtx);
+
+    SharedClipboardWinTransferDestroy(&pCtx->Win, pCbCtx->pTransfer);
+
+    LogFlowFuncLeave();
 }
 
 /**
@@ -1093,6 +1133,8 @@ DECLCALLBACK(int) vbtrShClWorker(void *pInstance, bool volatile *pfShutdown)
     pCtx->CmdCtx.Transfers.Callbacks.pvUser = pCtx; /* Assign context as user-provided callback data. */
     pCtx->CmdCtx.Transfers.Callbacks.cbUser = sizeof(SHCLCONTEXT);
 
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnCreated     = vbtrShClTransferCreatedCallback;
+    pCtx->CmdCtx.Transfers.Callbacks.pfnOnDestroy     = vbtrShClTransferDestroyCallback;
     pCtx->CmdCtx.Transfers.Callbacks.pfnOnInitialized = vbtrShClTransferInitializedCallback;
     pCtx->CmdCtx.Transfers.Callbacks.pfnOnStarted     = vbtrShClTransferStartedCallback;
     pCtx->CmdCtx.Transfers.Callbacks.pfnOnCompleted   = vbtrShClTransferCompletedCallback;
