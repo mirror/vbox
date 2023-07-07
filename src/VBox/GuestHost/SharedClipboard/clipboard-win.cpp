@@ -1144,7 +1144,7 @@ void SharedClipboardWinTransferDestroy(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTrans
     {
         Assert(pTransfer->cbUser == sizeof(SharedClipboardWinTransferCtx));
         SharedClipboardWinTransferCtx *pWinURITransferCtx = (SharedClipboardWinTransferCtx *)pTransfer->pvUser;
-        Assert(pWinURITransferCtx);
+        AssertPtr(pWinURITransferCtx);
 
         if (pWinURITransferCtx->pDataObj)
         {
@@ -1153,6 +1153,7 @@ void SharedClipboardWinTransferDestroy(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTrans
         }
 
         delete pWinURITransferCtx;
+        pWinURITransferCtx = NULL;
 
         pTransfer->pvUser = NULL;
         pTransfer->cbUser = 0;
