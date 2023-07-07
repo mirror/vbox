@@ -843,7 +843,8 @@ void UIVisoContentBrowser::createLoadedFileEntries(const QMap<QString, QString> 
         QStringList pathList = UIPathOperations::pathTrail(iterator.key());
         QString strPath;
         const QString &strLocalPath = iterator.value();
-        if (!QFileInfo(strLocalPath).exists())
+        QFileInfo localFileObjectInfo(strLocalPath);
+        if (!localFileObjectInfo.exists())
             continue;
 
         UICustomFileSystemItem *pParent = startItem();
@@ -855,9 +856,9 @@ void UIVisoContentBrowser::createLoadedFileEntries(const QMap<QString, QString> 
 
             UICustomFileSystemItem *pItem = searchItemByPath(strPath);
             KFsObjType enmObjectType;
-            /* All objects except the last one are directories:*/
+            /* All objects except possibly the last one are directories:*/
             if (i == pathList.size() - 1)
-                enmObjectType = fileType(strLocalPath);
+                enmObjectType = fileType(localFileObjectInfo);
             else
                 enmObjectType = KFsObjType_Directory;
             if (!pItem)
