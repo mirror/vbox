@@ -185,8 +185,7 @@ STDMETHODIMP SharedClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRe
 
     int rc;
 
-    if (   m_hObj == NIL_SHCLOBJHANDLE
-        && m_pTransfer->ProviderIface.pfnObjOpen)
+    if (m_hObj == NIL_SHCLOBJHANDLE)
     {
         SHCLOBJOPENCREATEPARMS openParms;
         rc = ShClTransferObjOpenParmsInit(&openParms);
@@ -197,9 +196,7 @@ STDMETHODIMP SharedClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRe
 
             rc = RTStrCopy(openParms.pszPath, openParms.cbPath, m_strPath.c_str());
             if (RT_SUCCESS(rc))
-            {
-                rc = m_pTransfer->ProviderIface.pfnObjOpen(&m_pTransfer->ProviderCtx, &openParms, &m_hObj);
-            }
+                rc = ShClTransferObjOpen(m_pTransfer, &openParms, &m_hObj);
 
             ShClTransferObjOpenParmsDestroy(&openParms);
         }
@@ -216,8 +213,7 @@ STDMETHODIMP SharedClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRe
     {
         if (cbToRead)
         {
-            rc = m_pTransfer->ProviderIface.pfnObjRead(&m_pTransfer->ProviderCtx, m_hObj,
-                                                       pvBuffer, cbToRead, 0 /* fFlags */, &cbRead);
+            rc = ShClTransferObjRead(m_pTransfer, m_hObj, pvBuffer, cbToRead, 0 /* fFlags */, &cbRead);
             if (RT_SUCCESS(rc))
             {
                 m_cbProcessed += cbRead;
@@ -230,11 +226,7 @@ STDMETHODIMP SharedClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRe
 
         if (m_fIsComplete)
         {
-            if (m_pTransfer->ProviderIface.pfnObjClose)
-            {
-                int rc2 = m_pTransfer->ProviderIface.pfnObjClose(&m_pTransfer->ProviderCtx, m_hObj);
-                AssertRC(rc2);
-            }
+            rc = ShClTransferObjClose(m_pTransfer, m_hObj);
 
             if (m_pParent)
                 m_pParent->SetStatus(SharedClipboardWinDataObject::Completed);
