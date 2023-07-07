@@ -464,7 +464,7 @@ private:
 
 /**
  * Class for Windows-specifics for maintaining a single Shared Clipboard transfer.
- * Set as pvUser / cbUser in SHCLTRANSFERCTX.
+ * Set as pvUser / cbUser for SHCLTRANSFER on Windows hosts / guests.
  */
 class SharedClipboardWinTransferCtx
 {
