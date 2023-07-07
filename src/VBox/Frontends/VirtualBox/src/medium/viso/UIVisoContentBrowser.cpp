@@ -847,13 +847,12 @@ void UIVisoContentBrowser::createLoadedFileEntries(const QMap<QString, QString> 
             continue;
 
         UICustomFileSystemItem *pParent = startItem();
-        /* Make sure all the parents from start item until immediate parent are created: */
+        /* Make sure all the parents from start item until the immediate parent are created: */
         for (int i = 0; i < pathList.size(); ++i)
         {
             strPath.append("/");
             strPath.append(pathList[i]);
 
-            printf("%s\n", qPrintable(strPath));
             UICustomFileSystemItem *pItem = searchItemByPath(strPath);
             KFsObjType enmObjectType;
             /* All objects except the last one are directories:*/
