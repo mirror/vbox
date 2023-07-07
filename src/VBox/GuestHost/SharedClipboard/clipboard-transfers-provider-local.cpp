@@ -562,6 +562,38 @@ static DECLCALLBACK(int) shclTransferIfaceLocalListHdrRead(PSHCLTXPROVIDERCTX pC
     return rc;
 }
 
+/**
+ * Initializes a local list entry.
+ *
+ * @returns VBox status code.
+ * @param   pEntry              List entry to init.
+ * @param   pszName             File name to use.
+ * @param   pObjInfo            Object information to use.
+ */
+static DECLCALLBACK(int) shclTransferIfaceLocalListEntryInit(PSHCLLISTENTRY pEntry, const char *pszName, PRTFSOBJINFO pObjInfo)
+{
+    PSHCLFSOBJINFO pFsObjInfo = (PSHCLFSOBJINFO)RTMemAllocZ(sizeof(SHCLFSOBJINFO));
+    AssertPtrReturn(pFsObjInfo, VERR_NO_MEMORY);
+
+    int rc = ShClFsObjInfoFromIPRT(pFsObjInfo, pObjInfo);
+    if (RT_SUCCESS(rc))
+    {
+        rc = ShClTransferListEntryInitEx(pEntry, VBOX_SHCL_INFO_F_FSOBJINFO, pszName, pFsObjInfo, sizeof(SHCLFSOBJINFO));
+        /* pEntry has taken ownership of pFsObjInfo on success. */
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        RTMemFree(pFsObjInfo);
+        pFsObjInfo = NULL;
+    }
+
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Initializing list entry '%s' failed: %Rrc\n", pszName, rc));
+
+    return rc;
+}
+
 /** @copydoc SHCLTXPROVIDERIFACE::pfnListEntryRead */
 static DECLCALLBACK(int) shclTransferIfaceLocalListEntryRead(PSHCLTXPROVIDERCTX pCtx,
                                                              SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry)
@@ -624,21 +656,7 @@ static DECLCALLBACK(int) shclTransferIfaceLocalListEntryRead(PSHCLTXPROVIDERCTX 
 
                         if (   RT_SUCCESS(rc)
                             && !fSkipEntry)
-                        {
-                            rc = RTStrCopy(pEntry->pszName, pEntry->cbName, pDirEntry->szName);
-                            if (RT_SUCCESS(rc))
-                            {
-                                pEntry->cbName = (uint32_t)strlen(pEntry->pszName) + 1; /* Include termination. */
-
-                                AssertPtr(pEntry->pvInfo);
-                                Assert   (pEntry->cbInfo == sizeof(SHCLFSOBJINFO));
-
-                                ShClFsObjInfoFromIPRT(PSHCLFSOBJINFO(pEntry->pvInfo), &pDirEntry->Info);
-
-                                LogFlowFunc(("Entry pszName=%s, pvInfo=%p, cbInfo=%RU32\n",
-                                             pEntry->pszName, pEntry->pvInfo, pEntry->cbInfo));
-                            }
-                        }
+                            rc = shclTransferIfaceLocalListEntryInit(pEntry, pDirEntry->szName, &pDirEntry->Info);
 
                         RTDirReadExAFree(&pDirEntry, &cbDirEntry);
                     }
@@ -660,22 +678,7 @@ static DECLCALLBACK(int) shclTransferIfaceLocalListEntryRead(PSHCLTXPROVIDERCTX 
                 RTFSOBJINFO objInfo;
                 rc = RTFileQueryInfo(pInfo->u.Local.hFile, &objInfo, RTFSOBJATTRADD_NOTHING);
                 if (RT_SUCCESS(rc))
-                {
-                    pEntry->pvInfo = (PSHCLFSOBJINFO)RTMemAlloc(sizeof(SHCLFSOBJINFO));
-                    if (pEntry->pvInfo)
-                    {
-                        rc = RTStrCopy(pEntry->pszName, pEntry->cbName, pInfo->pszPathLocalAbs);
-                        if (RT_SUCCESS(rc))
-                        {
-                            ShClFsObjInfoFromIPRT(PSHCLFSOBJINFO(pEntry->pvInfo), &objInfo);
-
-                            pEntry->cbInfo = sizeof(SHCLFSOBJINFO);
-                            pEntry->fInfo  = VBOX_SHCL_INFO_F_FSOBJINFO;
-                        }
-                    }
-                    else
-                        rc = VERR_NO_MEMORY;
-                }
+                    rc = shclTransferIfaceLocalListEntryInit(pEntry, pInfo->pszPathLocalAbs, &objInfo);
 
                 break;
             }
