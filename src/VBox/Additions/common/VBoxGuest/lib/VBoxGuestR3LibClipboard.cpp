@@ -2503,34 +2503,30 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
             {
                 LogFlowFunc(("VBOX_SHCL_HOST_MSG_TRANSFER_LIST_ENTRY_READ\n"));
 
-                SHCLLISTENTRY entryList;
-                rc = ShClTransferListEntryInit(&entryList);
+                SHCLLISTHANDLE hList;
+                uint32_t       fInfo;
+                rc = VbglR3ClipboardTransferListEntryReadRecvReq(pCmdCtx, &hList, &fInfo);
                 if (RT_SUCCESS(rc))
                 {
-                    SHCLLISTHANDLE hList;
-                    uint32_t       fInfo;
-                    rc = VbglR3ClipboardTransferListEntryReadRecvReq(pCmdCtx, &hList, &fInfo);
+                    PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransferById(pTransferCtx,
+                                                                             VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->idContext));
+                    AssertPtrBreakStmt(pTransfer, rc = VERR_NOT_FOUND);
+
+                    SHCLLISTENTRY entryList;
+                    rc = ShClTransferListRead(pTransfer, hList, &entryList);
                     if (RT_SUCCESS(rc))
                     {
-                        PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransferById(pTransferCtx,
-                                                                                 VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->idContext));
-                        AssertPtrBreakStmt(pTransfer, rc = VERR_NOT_FOUND);
+                        PSHCLFSOBJINFO pObjInfo = (PSHCLFSOBJINFO)entryList.pvInfo;
+                        Assert(entryList.cbInfo == sizeof(SHCLFSOBJINFO));
 
-                        rc = ShClTransferListRead(pTransfer, hList, &entryList);
-                        if (RT_SUCCESS(rc))
-                        {
-                            PSHCLFSOBJINFO pObjInfo = (PSHCLFSOBJINFO)entryList.pvInfo;
-                            Assert(entryList.cbInfo == sizeof(SHCLFSOBJINFO));
+                        RT_NOREF(pObjInfo);
 
-                            RT_NOREF(pObjInfo);
+                        LogFlowFunc(("\t%s (%RU64 bytes)\n", entryList.pszName, pObjInfo->cbObject));
 
-                            LogFlowFunc(("\t%s (%RU64 bytes)\n", entryList.pszName, pObjInfo->cbObject));
+                        rc = VbglR3ClipboardTransferListEntryWrite(pCmdCtx, hList, &entryList);
 
-                            rc = VbglR3ClipboardTransferListEntryWrite(pCmdCtx, hList, &entryList);
-                        }
+                        ShClTransferListEntryDestroy(&entryList);
                     }
-
-                    ShClTransferListEntryDestroy(&entryList);
                 }
 
                 break;
