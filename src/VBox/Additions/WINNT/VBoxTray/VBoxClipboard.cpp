@@ -190,7 +190,8 @@ static DECLCALLBACK(int) vbtrShClDataObjectTransferStartCallback(SharedClipboard
  * @copydoc SHCLTRANSFERCALLBACKS::pfnOnInitialized
  *
  * Called by ShClTransferInit via VbglR3.
- * This lets the current in-flight data object know that it can start the actual transfer as needed.
+ * For G->H: Called on transfer intialization to notify the "in-flight" IDataObject about a data transfer.
+ * For H->G: Called on transfer intialization to populate the transfer's root list.
  *
  * @thread  Clipboard main thread.
  */
@@ -205,13 +206,7 @@ static DECLCALLBACK(void) vbtrShClTransferInitializedCallback(PSHCLTRANSFERCALLB
 
     switch(ShClTransferGetDir(pCbCtx->pTransfer))
     {
-        case SHCLTRANSFERDIR_TO_REMOTE: /* G->H */
-        {
-            rc = SharedClipboardWinTransferGetRootsFromClipboard(&pCtx->Win, pCbCtx->pTransfer);
-            break;
-        }
-
-        case SHCLTRANSFERDIR_FROM_REMOTE: /* H->G */
+        case SHCLTRANSFERDIR_FROM_REMOTE: /* G->H */
         {
             SharedClipboardWinDataObject *pObj = pCtx->Win.pDataObjInFlight;
             if (pObj)
@@ -225,6 +220,12 @@ static DECLCALLBACK(void) vbtrShClTransferInitializedCallback(PSHCLTRANSFERCALLB
             else
                 AssertMsgFailed(("No data object in flight!\n"));
 
+            break;
+        }
+
+        case SHCLTRANSFERDIR_TO_REMOTE: /* H->G */
+        {
+            rc = SharedClipboardWinTransferGetRootsFromClipboard(&pCtx->Win, pCbCtx->pTransfer);
             break;
         }
 
