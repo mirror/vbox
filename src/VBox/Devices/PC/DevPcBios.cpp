@@ -632,9 +632,9 @@ PDMMEDIAGEOMETRY aGeomPCAT[] = {
  */
 static bool pcbiosCmosTryPCATHardDisk(PPDMDEVINS pDevIns, int drive, PCPDMMEDIAGEOMETRY pLCHSGeometry)
 {
-    int     type;
-    int     typeLow;
-    bool    fCompatGeom = false;
+    unsigned    type;
+    unsigned    typeLow;
+    bool        fCompatGeom = false;
 
     Assert((drive == 0) || (drive == 1));
 
