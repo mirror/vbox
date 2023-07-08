@@ -2269,6 +2269,8 @@
 
 /** @name RTCr misc status codes.
  * @{ */
+/** The OpenSSL version is too old for the attempted operation. */
+#define VERR_CR_OPENSSL_VERSION_TOO_OLD             (-24395)
 /** Failed to derivate key from password. */
 #define VERR_CR_PASSWORD_2_KEY_DERIVIATION_FAILED   (-24396)
 /** Failed getting cryptographically strong random bytes. */

@@ -150,7 +150,7 @@ static DECLCALLBACK(int) rtCrPkixSignatureOsslEvp_Verify(PCRTCRPKIXSIGNATUREDESC
     Assert(!pThis->fSigning);
     RT_NOREF_PV(pThis);
 
-#if 1
+#if OPENSSL_VERSION_NUMBER >= 0x30000000 && !defined(LIBRESSL_VERSION_NUMBER)
     PRTERRINFO const pErrInfo = NULL;
 
     /*
@@ -219,7 +219,7 @@ static DECLCALLBACK(int) rtCrPkixSignatureOsslEvp_Verify(PCRTCRPKIXSIGNATUREDESC
 
 #else
     RT_NOREF(pDesc, pvState, hKey, hDigest, pvSignature, cbSignature);
-    return VERR_NOT_IMPLEMENTED;
+    return VERR_CR_OPENSSL_VERSION_TOO_OLD;
 #endif
 }
 
