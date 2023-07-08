@@ -658,6 +658,25 @@ void BIOSCALL ata_detect(void)
                     sum += *((uint8_t __far *)fdpt + i);
                 sum = -sum;
                 fdpt->csum = sum;
+
+                /* Read the drive type from the CMOS. If it is one of the old
+                 * IBM compatible drive types (rather than Type 47 or so), point
+                 * INT 41h/46h at the drive table in ROM.
+                 * This is required for some old guests which look at INT 41h/46h,
+                 * but either insist that it point to a high segment (NetWare 2.x)
+                 * or wipe out all RAM (286 XENIX 2.1.3/2.2.1).
+                 */
+                i   = inb_cmos(0x12);
+                i >>= ((1 - device) * 4);
+                i  &= 0x0f;
+                if (i == 0xf)
+                    i = inb_cmos(0x19 + device);
+
+                if (i <= 23) {  // Should be in sync with DevPcBios.cpp
+                    fdpt = MK_FP(0xF000, 0xE401);
+                    fdpt += i - 1;
+                    *int_vec = fdpt;
+                }
             }
 
             // fill hdidmap
