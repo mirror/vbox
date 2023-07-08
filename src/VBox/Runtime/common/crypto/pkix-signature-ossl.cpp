@@ -107,7 +107,7 @@ static DECLCALLBACK(int) rtCrPkixSignatureOsslEvp_Init(PCRTCRPKIXSIGNATUREDESC p
     if (RT_FAILURE(rc))
         return rc;
 
-    /* 
+    /*
      * Locate the EVP_MD for the algorithm.
      */
     rtCrOpenSslInit();
