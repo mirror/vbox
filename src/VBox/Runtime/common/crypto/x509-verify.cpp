@@ -61,20 +61,14 @@ RTDECL(int) RTCrX509Certificate_VerifySignature(PCRTCRX509CERTIFICATE pThis, PCR
     AssertPtrReturn(pAlgorithm, VERR_INVALID_POINTER);
     AssertReturn(RTAsn1ObjId_IsPresent(pAlgorithm), VERR_INVALID_POINTER);
 
-    if (pParameters)
-    {
-        AssertPtrReturn(pParameters, VERR_INVALID_POINTER);
-        if (pParameters->enmType == RTASN1TYPE_NULL)
-            pParameters = NULL;
-    }
-
     AssertPtrReturn(pPublicKey, VERR_INVALID_POINTER);
     AssertReturn(RTAsn1BitString_IsPresent(pPublicKey), VERR_INVALID_POINTER);
 
     /*
      * Check if the algorithm matches.
      */
-    const char *pszCipherOid = RTCrPkixGetCiperOidFromSignatureAlgorithm(&pThis->SignatureAlgorithm.Algorithm);
+    const char * const pszCipherOid = RTCrX509AlgorithmIdentifier_GetEncryptionOid(&pThis->SignatureAlgorithm,
+                                                                                   true /*fMustIncludeHash*/);
     if (!pszCipherOid)
         return RTErrInfoSetF(pErrInfo, VERR_CR_X509_UNKNOWN_CERT_SIGN_ALGO,
                              "Certificate signature algorithm not known: %s",
@@ -89,7 +83,7 @@ RTDECL(int) RTCrX509Certificate_VerifySignature(PCRTCRX509CERTIFICATE pThis, PCR
      * Wrap up the public key.
      */
     RTCRKEY hPubKey;
-    int rc = RTCrKeyCreateFromPublicAlgorithmAndBits(&hPubKey, pAlgorithm, pPublicKey, pErrInfo, NULL);
+    int rc = RTCrKeyCreateFromPublicAlgorithmAndBits(&hPubKey, pAlgorithm, pParameters, pPublicKey, pErrInfo, NULL);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -104,8 +98,8 @@ RTDECL(int) RTCrX509Certificate_VerifySignature(PCRTCRX509CERTIFICATE pThis, PCR
     rc = RTAsn1EncodeQueryRawBits(RTCrX509TbsCertificate_GetAsn1Core(&pThis->TbsCertificate), &pbRaw, &cbRaw, &pvFree, pErrInfo);
     if (RT_SUCCESS(rc))
     {
-        rc = RTCrPkixPubKeyVerifySignature(&pThis->SignatureAlgorithm.Algorithm, hPubKey, pParameters, &pThis->SignatureValue,
-                                           pbRaw, cbRaw, pErrInfo);
+        rc = RTCrPkixPubKeyVerifySignature(&pThis->SignatureAlgorithm.Algorithm, hPubKey, &pThis->SignatureAlgorithm.Parameters,
+                                           &pThis->SignatureValue, pbRaw, cbRaw, pErrInfo);
         RTMemTmpFree(pvFree);
     }
 
@@ -126,14 +120,12 @@ RTDECL(int) RTCrX509Certificate_VerifySignatureSelfSigned(PCRTCRX509CERTIFICATE 
     AssertReturn(RTCrX509Certificate_IsPresent(pThis), VERR_INVALID_PARAMETER);
 
     /*
-     * Assemble parameters for the generic verification call.
+     * Call generic verification function.
      */
-    PCRTCRX509TBSCERTIFICATE const pTbsCert    = &pThis->TbsCertificate;
-    PCRTASN1DYNTYPE                pParameters = NULL;
-    if (   RTASN1CORE_IS_PRESENT(&pTbsCert->SubjectPublicKeyInfo.Algorithm.Parameters.u.Core)
-        && pTbsCert->SubjectPublicKeyInfo.Algorithm.Parameters.enmType != RTASN1TYPE_NULL)
-        pParameters = &pTbsCert->SubjectPublicKeyInfo.Algorithm.Parameters;
-    return RTCrX509Certificate_VerifySignature(pThis, &pTbsCert->SubjectPublicKeyInfo.Algorithm.Algorithm, pParameters,
+    PCRTCRX509TBSCERTIFICATE const pTbsCert = &pThis->TbsCertificate;
+    return RTCrX509Certificate_VerifySignature(pThis,
+                                               &pTbsCert->SubjectPublicKeyInfo.Algorithm.Algorithm,
+                                               &pTbsCert->SubjectPublicKeyInfo.Algorithm.Parameters,
                                                &pTbsCert->SubjectPublicKeyInfo.SubjectPublicKey, pErrInfo);
 }
 

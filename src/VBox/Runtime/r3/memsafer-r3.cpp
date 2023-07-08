@@ -510,12 +510,22 @@ RTDECL(size_t) RTMemSaferGetSize(void *pv) RT_NO_THROW_DEF
     size_t cbRet = 0;
     if (pv)
     {
-        void *pvKey = rtMemSaferScramblePointer(pv);
-        RTCritSectRwEnterShared(&g_MemSaferCritSect);
-        PRTMEMSAFERNODE pThis = (PRTMEMSAFERNODE)RTAvlPVGet(&g_pMemSaferTree, pvKey);
-        if (pThis)
-            cbRet = pThis->cbUser;
-        RTCritSectRwLeaveShared(&g_MemSaferCritSect);
+        /*
+         * We use this API for testing whether pv is a safer allocation or not,
+         * so we may be called before the allocators.  Thus, it's prudent to
+         * make sure initialization has taken place before attempting to enter
+         * the critical section and such.
+         */
+        int rc = RTOnceEx(&g_MemSaferOnce, rtMemSaferOnceInit, rtMemSaferOnceTerm, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            void *pvKey = rtMemSaferScramblePointer(pv);
+            RTCritSectRwEnterShared(&g_MemSaferCritSect);
+            PRTMEMSAFERNODE pThis = (PRTMEMSAFERNODE)RTAvlPVGet(&g_pMemSaferTree, pvKey);
+            if (pThis)
+                cbRet = pThis->cbUser;
+            RTCritSectRwLeaveShared(&g_MemSaferCritSect);
+        }
     }
     return cbRet;
 }

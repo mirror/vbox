@@ -2939,7 +2939,8 @@ static int rtldrPE_VerifySignatureDecodeNested(PRTLDRPESIGNATURE pSignature, PRT
                     if (RT_SUCCESS(rc))
                     {
                         PCRTCRX509ALGORITHMIDENTIFIER pDigestAlgorithm = &pInfo->pIndData->DigestInfo.DigestAlgorithm;
-                        pInfo->enmDigest = RTCrX509AlgorithmIdentifier_QueryDigestType(pDigestAlgorithm);
+                        pInfo->enmDigest = RTCrX509AlgorithmIdentifier_GetDigestType(pDigestAlgorithm,
+                                                                                     true /*fPureDigestsOnly*/);
                         AssertReturn(pInfo->enmDigest != RTDIGESTTYPE_INVALID, VERR_INTERNAL_ERROR_4); /* Checked above! */
                     }
                     else
@@ -3010,7 +3011,7 @@ static int rtldrPE_VerifySignatureDecode(PRTLDRMODPE pModPe, PRTLDRPESIGNATURE p
                 if (RT_SUCCESS(rc))
                 {
                     PCRTCRX509ALGORITHMIDENTIFIER pDigestAlgorithm = &pInfo->pIndData->DigestInfo.DigestAlgorithm;
-                    pInfo->enmDigest = RTCrX509AlgorithmIdentifier_QueryDigestType(pDigestAlgorithm);
+                    pInfo->enmDigest = RTCrX509AlgorithmIdentifier_GetDigestType(pDigestAlgorithm, true /*fPureDigestsOnly*/);
                     AssertReturn(pInfo->enmDigest != RTDIGESTTYPE_INVALID, VERR_INTERNAL_ERROR_4); /* Checked above! */
 
                     /*

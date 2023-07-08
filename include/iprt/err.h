@@ -2169,6 +2169,12 @@
 #define VERR_CR_PKIX_NOT_RSA_PRIVATE_KEY            (-23523)
 /** Expected RSA public key. */
 #define VERR_CR_PKIX_NOT_RSA_PUBLIC_KEY             (-23524)
+/** Expected ECDSA private key. */
+#define VERR_CR_PKIX_NOT_ECDSA_PRIVATE_KEY          (-23525)
+/** Expected ECDSA public key. */
+#define VERR_CR_PKIX_NOT_ECDSA_PUBLIC_KEY           (-23526)
+/** OpenSSL failed to decode the key parameters. */
+#define VERR_CR_PKIX_OSSL_D2I_KEY_PARAMS_FAILED     (-23527)
 /** @} */
 
 /** @name RTCrStore status codes.
@@ -2212,6 +2218,15 @@
 #define VINF_CR_KEY_WAS_DECRYPTED                   (23814)
 /** Failed to generate RSA key. */
 #define VERR_CR_KEY_GEN_FAILED_RSA                  (-23815)
+/** Key algorithm parameters not expected. */
+#define VERR_CR_KEY_ALGO_PARAMS_UNEXPECTED          (-23816)
+/** Key algorithm parameters are required but missing. */
+#define VERR_CR_KEY_ALGO_PARAMS_MISSING             (-23817)
+/** Key algorithm parameters are not known/supported. */
+#define VERR_CR_KEY_ALGO_PARAMS_UNKNOWN             (-23818)
+/** Algorithm parameters does not match the key. */
+#define VERR_CR_KEY_ALGO_PARAMS_MISMATCH            (-23819)
+
 /** @} */
 
 /** @name RTCrRsa status codes.

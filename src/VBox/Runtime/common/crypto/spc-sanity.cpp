@@ -81,13 +81,15 @@ RTDECL(int) RTCrSpcIndirectDataContent_CheckSanityEx(PCRTCRSPCINDIRECTDATACONTEN
 
     if (fFlags & RTCRSPCINDIRECTDATACONTENT_SANITY_F_ONLY_KNOWN_HASH)
     {
-        if (RTCrX509AlgorithmIdentifier_QueryDigestType(&pIndData->DigestInfo.DigestAlgorithm) == RTDIGESTTYPE_INVALID)
+        if (   RTCrX509AlgorithmIdentifier_GetDigestType(&pIndData->DigestInfo.DigestAlgorithm, true /*fPureDigestsOnly*/)
+            == RTDIGESTTYPE_INVALID)
             return RTErrInfoSetF(pErrInfo, VERR_CR_SPC_UNKNOWN_DIGEST_ALGO,
                                  "SpcIndirectDataContent DigestAlgortihm is not known: %s",
                                  pIndData->DigestInfo.DigestAlgorithm.Algorithm.szObjId);
     }
 
-    uint32_t cbDigest = RTCrX509AlgorithmIdentifier_QueryDigestSize(&pIndData->DigestInfo.DigestAlgorithm);
+    uint32_t cbDigest = RTCrX509AlgorithmIdentifier_GetDigestSize(&pIndData->DigestInfo.DigestAlgorithm,
+                                                                  true /*fPureDigestsOnly*/);
     if (   pIndData->DigestInfo.Digest.Asn1Core.cb != cbDigest
         && (cbDigest != UINT32_MAX || (fFlags & RTCRSPCINDIRECTDATACONTENT_SANITY_F_ONLY_KNOWN_HASH)))
         return RTErrInfoSetF(pErrInfo, VERR_CR_SPC_IND_DATA_DIGEST_SIZE_MISMATCH,

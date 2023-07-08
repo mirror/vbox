@@ -77,7 +77,9 @@ static int rtCrPkcs7SignedData_CheckSanityExtra(PCRTCRPKCS7SIGNEDDATA pSignedDat
     if (fFlags & RTCRPKCS7SIGNEDDATA_SANITY_F_ONLY_KNOWN_HASH)
         for (uint32_t i = 0; i < pSignedData->DigestAlgorithms.cItems; i++)
         {
-            if (RTCrX509AlgorithmIdentifier_QueryDigestType(pSignedData->DigestAlgorithms.papItems[i]) == RTDIGESTTYPE_INVALID)
+            if (   RTCrX509AlgorithmIdentifier_GetDigestType(pSignedData->DigestAlgorithms.papItems[i],
+                                                             true /*fPureDigestsOnly*/)
+                == RTDIGESTTYPE_INVALID)
                 return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_UNKNOWN_DIGEST_ALGORITHM,
                                      "%s: SignedData.DigestAlgorithms[%i] is not known: %s",
                                      pszErrorTag, i, pSignedData->DigestAlgorithms.papItems[i]->Algorithm.szObjId);

@@ -43,6 +43,9 @@
 #include <iprt/crypto/pkix.h>
 
 extern DECL_HIDDEN_DATA(RTCRPKIXSIGNATUREDESC const) g_rtCrPkixSigningHashWithRsaDesc;
+#ifdef IPRT_WITH_OPENSSL
+extern DECL_HIDDEN_DATA(RTCRPKIXSIGNATUREDESC const) g_rtCrPkixSigningHashWithEcdsaDesc;
+#endif
 
 #endif /* !IPRT_INCLUDED_SRC_common_crypto_pkix_signature_builtin_h */
 

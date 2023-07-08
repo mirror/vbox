@@ -5317,7 +5317,8 @@ static int HandleShowExeWorkerPkcs7DisplaySignerInfo(PSHOWEXEPKCS7 pThis, size_t
         RTStrPrintf(pThis->szTmp, sizeof(pThis->szTmp), "%Rrc", rc);
     RTPrintf("%s                     Issuer: %s\n", pThis->szPrefix, pThis->szTmp);
 
-    const char *pszType = RTCrDigestTypeToName(RTCrX509AlgorithmIdentifier_QueryDigestType(&pSignerInfo->DigestAlgorithm));
+    const char *pszType = RTCrDigestTypeToName(RTCrX509AlgorithmIdentifier_GetDigestType(&pSignerInfo->DigestAlgorithm,
+                                                                                         true /*fPureDigestsOnly*/));
     if (!pszType)
         pszType = pSignerInfo->DigestAlgorithm.Algorithm.szObjId;
     RTPrintf("%s           Digest Algorithm: %s", pThis->szPrefix, pszType);
@@ -5380,7 +5381,8 @@ static int HandleShowExeWorkerPkcs7DisplaySpcIdirectDataContent(PSHOWEXEPKCS7 pT
     /*
      * The image hash.
      */
-    RTDIGESTTYPE const enmDigestType = RTCrX509AlgorithmIdentifier_QueryDigestType(&pIndData->DigestInfo.DigestAlgorithm);
+    RTDIGESTTYPE const enmDigestType = RTCrX509AlgorithmIdentifier_GetDigestType(&pIndData->DigestInfo.DigestAlgorithm,
+                                                                                 true /*fPureDigestsOnly*/);
     const char        *pszDigestType = RTCrDigestTypeToName(enmDigestType);
     RTPrintf("%s Digest Type: %s", pThis->szPrefix, pszDigestType);
     if (pThis->cVerbosity > 1)
@@ -5588,7 +5590,8 @@ static int HandleShowExeWorkerPkcs7Display(PSHOWEXEPKCS7 pThis, PRTCRPKCS7SIGNED
     for (unsigned i = 0; i < pSignedData->DigestAlgorithms.cItems; i++)
     {
         PCRTCRX509ALGORITHMIDENTIFIER pAlgoId = pSignedData->DigestAlgorithms.papItems[i];
-        const char *pszDigestType = RTCrDigestTypeToName(RTCrX509AlgorithmIdentifier_QueryDigestType(pAlgoId));
+        const char *pszDigestType = RTCrDigestTypeToName(RTCrX509AlgorithmIdentifier_GetDigestType(pAlgoId,
+                                                                                                   true /*fPureDigestsOnly*/));
         if (!pszDigestType)
             pszDigestType = pAlgoId->Algorithm.szObjId;
         RTPrintf(i == 0 ? "%s" : ", %s", pszDigestType);

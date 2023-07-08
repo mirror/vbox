@@ -98,6 +98,7 @@ if !defined(VBOX_ONLY_DOCS)
    bldRTSignTool_DEFS     += IPRT_WITH_OPENSSL
    bldRTSignTool_SOURCES  += \
    	../common/crypto/pkix-signature-builtin.cpp \
+   	../common/crypto/pkix-signature-ossl.cpp \
    	../common/crypto/store.cpp \
    	../common/crypto/digest-builtin.cpp \
    	../common/crypto/iprt-openssl.cpp \

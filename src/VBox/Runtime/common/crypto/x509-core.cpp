@@ -44,8 +44,20 @@
 #include <iprt/err.h>
 #include <iprt/string.h>
 #include <iprt/uni.h>
+#include <iprt/crypto/pkix.h>
+#ifdef RT_STRICT
+# include <iprt/crypto/digest.h>
+#endif
 
 #include "x509-internal.h"
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+#ifdef RT_STRICT
+static void rtCrX509AlgorithmIdentifier_AssertTableSanityAndMore(void);
+#endif
 
 
 /*
@@ -72,78 +84,342 @@ RTDECL(bool) RTCrX509Validity_IsValidAtTimeSpec(PCRTCRX509VALIDITY pThis, PCRTTI
  * One X.509 Algorithm Identifier.
  */
 
-RTDECL(RTDIGESTTYPE) RTCrX509AlgorithmIdentifier_QueryDigestType(PCRTCRX509ALGORITHMIDENTIFIER pThis)
+/**
+ * String table with the encryption OIDs (used by g_aSignatureOidInfo).
+ */
+static const char * const g_apszEncryptionOids[] =
+{
+    NULL,
+#define IDX_ENCRYPTION_NIL      0
+    RTCR_X962_ECDSA_OID,
+#define IDX_ENCRYPTION_ECDSA    1
+    RTCR_PKCS1_RSA_OID,
+#define IDX_ENCRYPTION_RSA      2
+};
+
+/**
+ * Information about an algorithm identifier.
+ */
+typedef struct RTCRX509ALGORITHIDENTIFIERINTERNALINFO
+{
+    /** The signature OID. */
+    const char     *pszSignatureOid;
+    /** Index into g_apszEncryptionOids of the encryption ODI.
+     * This is IDX_ENCRYPTION_NIL for hashes. */
+    uint8_t         idxEncryption;
+    /** The message digest type specified by the OID.
+     * This is set to RTDIGESTTYPE_INVALID in two cases:
+     *      1. Pure encryption algorithm OID (cBitsDigest also zero).
+     *      2. The hash is so esoteric that IPRT doesn't support it. */
+    uint8_t         enmDigestType;
+    /** The digest size in bits.
+     * This is ZERO if the OID does not include an hash. */
+    uint16_t        cBitsDigest;
+} RTCRX509ALGORITHIDENTIFIERINTERNALINFO;
+typedef RTCRX509ALGORITHIDENTIFIERINTERNALINFO const *PCRTCRX509ALGORITHIDENTIFIERINTERNALINFO;
+
+/**
+ * Signature to encryption OID.
+ *
+ * @note This is sorted to allow binary searching.
+ * @note This origins in pkix-utils.cpp, which is why it uses the other set of
+ *       OID defines.
+ */
+static RTCRX509ALGORITHIDENTIFIERINTERNALINFO const g_aSignatureOidInfo[] =
+{
+    { /*1.0.10118.3.0.55*/     RTCRX509ALGORITHMIDENTIFIERID_WHIRLPOOL, IDX_ENCRYPTION_NIL,   RTDIGESTTYPE_INVALID,    512, },
+
+    { /*1.2.840.10045.2.1    */     RTCR_X962_ECDSA_OID,                IDX_ENCRYPTION_ECDSA, RTDIGESTTYPE_INVALID,    0, },
+    { /*1.2.840.10045.4.1    */     RTCR_X962_ECDSA_WITH_SHA1_OID,      IDX_ENCRYPTION_ECDSA, RTDIGESTTYPE_SHA1,       160, },
+    { /*1.2.840.10045.4.3.1  */     RTCR_X962_ECDSA_WITH_SHA224_OID,    IDX_ENCRYPTION_ECDSA, RTDIGESTTYPE_SHA224,     224, },
+    { /*1.2.840.10045.4.3.2  */     RTCR_X962_ECDSA_WITH_SHA256_OID,    IDX_ENCRYPTION_ECDSA, RTDIGESTTYPE_SHA256,     256, },
+    { /*1.2.840.10045.4.3.3  */     RTCR_X962_ECDSA_WITH_SHA384_OID,    IDX_ENCRYPTION_ECDSA, RTDIGESTTYPE_SHA384,     384, },
+    { /*1.2.840.10045.4.3.4  */     RTCR_X962_ECDSA_WITH_SHA512_OID,    IDX_ENCRYPTION_ECDSA, RTDIGESTTYPE_SHA512,     512, },
+
+    { /*1.2.840.113549.1.1.1 */     RTCR_PKCS1_RSA_OID,                 IDX_ENCRYPTION_RSA,   RTDIGESTTYPE_INVALID,    0, },
+    { /*1.2.840.113549.1.1.11*/     RTCR_PKCS1_SHA256_WITH_RSA_OID,     IDX_ENCRYPTION_RSA,   RTDIGESTTYPE_SHA256,     256, },
+    { /*1.2.840.113549.1.1.12*/     RTCR_PKCS1_SHA384_WITH_RSA_OID,     IDX_ENCRYPTION_RSA,   RTDIGESTTYPE_SHA384,     384, },
+    { /*1.2.840.113549.1.1.13*/     RTCR_PKCS1_SHA512_WITH_RSA_OID,     IDX_ENCRYPTION_RSA,   RTDIGESTTYPE_SHA512,     512, },
+    { /*1.2.840.113549.1.1.14*/     RTCR_PKCS1_SHA224_WITH_RSA_OID,     IDX_ENCRYPTION_RSA,   RTDIGESTTYPE_SHA224,     224, },
+    { /*1.2.840.113549.1.1.15*/     RTCR_PKCS1_SHA512T224_WITH_RSA_OID, IDX_ENCRYPTION_RSA,   RTDIGESTTYPE_SHA512T224, 224, },
+    { /*1.2.840.113549.1.1.16*/     RTCR_PKCS1_SHA512T256_WITH_RSA_OID, IDX_ENCRYPTION_RSA,   RTDIGESTTYPE_SHA512T256, 256, },
+    { /*1.2.840.113549.1.1.2*/      RTCR_PKCS1_MD2_WITH_RSA_OID,        IDX_ENCRYPTION_RSA,   RTDIGESTTYPE_MD2,        128, },
+    { /*1.2.840.113549.1.1.3*/      RTCR_PKCS1_MD4_WITH_RSA_OID,        IDX_ENCRYPTION_RSA,   RTDIGESTTYPE_MD4,        128, },
+    { /*1.2.840.113549.1.1.4*/      RTCR_PKCS1_MD5_WITH_RSA_OID,        IDX_ENCRYPTION_RSA,   RTDIGESTTYPE_MD5,        128, },
+    { /*1.2.840.113549.1.1.5*/      RTCR_PKCS1_SHA1_WITH_RSA_OID,       IDX_ENCRYPTION_RSA,   RTDIGESTTYPE_SHA1,       160, },
+
+    { /*1.2.840.113549.2.2*/        RTCRX509ALGORITHMIDENTIFIERID_MD2,  IDX_ENCRYPTION_NIL,   RTDIGESTTYPE_MD2,        128, },
+    { /*1.2.840.113549.2.4*/        RTCRX509ALGORITHMIDENTIFIERID_MD4,  IDX_ENCRYPTION_NIL,   RTDIGESTTYPE_MD4,        128, },
+    { /*1.2.840.113549.2.5*/        RTCRX509ALGORITHMIDENTIFIERID_MD5,  IDX_ENCRYPTION_NIL,   RTDIGESTTYPE_MD5,        128, },
+
+    /* oddballs for which we don't support the padding (skip?): */
+  //{  "1.3.14.3.2.11"                                /*rsaSignature*/, IDX_ENCRYPTION_RSA/*?*/, RTDIGESTTYPE_INVALID, 0, },
+    {  "1.3.14.3.2.14"      /*mdc2WithRSASignature w/ 9796-2 padding*/, IDX_ENCRYPTION_RSA,   RTDIGESTTYPE_INVALID,    0, },
+  //{  "1.3.14.3.2.15"      /*sha0WithRSASignature w/ 9796-2 padding*/, IDX_ENCRYPTION_RSA,   RTDIGESTTYPE_INVALID,    160, },
+    {  "1.3.14.3.2.24"       /*md2WithRSASignature w/ 9796-2 padding*/, IDX_ENCRYPTION_RSA,   RTDIGESTTYPE_MD2,        128, },
+    {  "1.3.14.3.2.25"       /*md5WithRSASignature w/ 9796-2 padding*/, IDX_ENCRYPTION_RSA,   RTDIGESTTYPE_MD5,        128, },
+    { /*1.3.14.3.2.26*/             RTCRX509ALGORITHMIDENTIFIERID_SHA1, IDX_ENCRYPTION_NIL,   RTDIGESTTYPE_SHA1,       160, },
+    {  "1.3.14.3.2.29"           /*sha1WithRSAEncryption (obsolete?)*/, IDX_ENCRYPTION_RSA,   RTDIGESTTYPE_SHA1,       160, },
+
+    { /*2.16.840.1.101.3.4.2.1*/  RTCRX509ALGORITHMIDENTIFIERID_SHA256, IDX_ENCRYPTION_NIL,   RTDIGESTTYPE_SHA256,     256, },
+    { /*2.16.840.1.101.3.4.2.10*/ RTCRX509ALGORITHMIDENTIFIERID_SHA3_512, IDX_ENCRYPTION_NIL, RTDIGESTTYPE_SHA3_512,   512, },
+    { /*2.16.840.1.101.3.4.2.2*/  RTCRX509ALGORITHMIDENTIFIERID_SHA384, IDX_ENCRYPTION_NIL,   RTDIGESTTYPE_SHA384,     384, },
+    { /*2.16.840.1.101.3.4.2.3*/  RTCRX509ALGORITHMIDENTIFIERID_SHA512, IDX_ENCRYPTION_NIL,   RTDIGESTTYPE_SHA512,     512, },
+    { /*2.16.840.1.101.3.4.2.4*/  RTCRX509ALGORITHMIDENTIFIERID_SHA224, IDX_ENCRYPTION_NIL,   RTDIGESTTYPE_SHA224,     224, },
+    { /*2.16.840.1.101.3.4.2.5*/ RTCRX509ALGORITHMIDENTIFIERID_SHA512T224,IDX_ENCRYPTION_NIL, RTDIGESTTYPE_SHA512T224, 224, },
+    { /*2.16.840.1.101.3.4.2.6*/ RTCRX509ALGORITHMIDENTIFIERID_SHA512T256,IDX_ENCRYPTION_NIL, RTDIGESTTYPE_SHA512T256, 256, },
+    { /*2.16.840.1.101.3.4.2.7*/  RTCRX509ALGORITHMIDENTIFIERID_SHA3_224, IDX_ENCRYPTION_NIL, RTDIGESTTYPE_SHA3_224,   224, },
+    { /*2.16.840.1.101.3.4.2.8*/  RTCRX509ALGORITHMIDENTIFIERID_SHA3_256, IDX_ENCRYPTION_NIL, RTDIGESTTYPE_SHA3_256,   256, },
+    { /*2.16.840.1.101.3.4.2.9*/  RTCRX509ALGORITHMIDENTIFIERID_SHA3_384, IDX_ENCRYPTION_NIL, RTDIGESTTYPE_SHA3_384,   384, },
+
+    { /*2.16.840.1.101.3.4.3.10*/   RTCR_NIST_SHA3_256_WITH_ECDSA_OID,  IDX_ENCRYPTION_ECDSA, RTDIGESTTYPE_SHA3_256,   256, },
+    { /*2.16.840.1.101.3.4.3.11*/   RTCR_NIST_SHA3_384_WITH_ECDSA_OID,  IDX_ENCRYPTION_ECDSA, RTDIGESTTYPE_SHA3_384,   384, },
+    { /*2.16.840.1.101.3.4.3.12*/   RTCR_NIST_SHA3_512_WITH_ECDSA_OID,  IDX_ENCRYPTION_ECDSA, RTDIGESTTYPE_SHA3_512,   512, },
+    { /*2.16.840.1.101.3.4.3.13*/   RTCR_NIST_SHA3_224_WITH_RSA_OID,    IDX_ENCRYPTION_RSA,   RTDIGESTTYPE_SHA3_224,   224, },
+    { /*2.16.840.1.101.3.4.3.14*/   RTCR_NIST_SHA3_256_WITH_RSA_OID,    IDX_ENCRYPTION_RSA,   RTDIGESTTYPE_SHA3_256,   256, },
+    { /*2.16.840.1.101.3.4.3.15*/   RTCR_NIST_SHA3_384_WITH_RSA_OID,    IDX_ENCRYPTION_RSA,   RTDIGESTTYPE_SHA3_384,   384, },
+    { /*2.16.840.1.101.3.4.3.16*/   RTCR_NIST_SHA3_512_WITH_RSA_OID,    IDX_ENCRYPTION_RSA,   RTDIGESTTYPE_SHA3_512,   512, },
+    { /*2.16.840.1.101.3.4.3.9*/    RTCR_NIST_SHA3_224_WITH_ECDSA_OID,  IDX_ENCRYPTION_ECDSA, RTDIGESTTYPE_SHA3_224,   224, },
+};
+
+/**
+ * Encryption and digest combining.
+ *
+ * This is a subset of g_aSignatureOidInfo.
+ * @todo Organize this more efficiently...
+ */
+typedef struct RTCRX509ALGORITHIDENTIFIERCOMBINING
+{
+    const char *pszDigestOid;
+    const char *pszEncryptedDigestOid;
+} RTCRX509ALGORITHIDENTIFIERCOMBINING;
+typedef RTCRX509ALGORITHIDENTIFIERCOMBINING const *PCRTCRX509ALGORITHIDENTIFIERCOMBINING;
+
+#undef MY_COMBINE
+#define MY_COMBINE(a_Encrypt, a_Digest) \
+        { RTCRX509ALGORITHMIDENTIFIERID_ ## a_Digest, \
+          RTCRX509ALGORITHMIDENTIFIERID_ ## a_Digest ## _WITH_ ## a_Encrypt }
+
+/** Digest and encryption combinations for ECDSA. */
+static RTCRX509ALGORITHIDENTIFIERCOMBINING const g_aDigestAndEncryptionEcdsa[] =
+{
+    MY_COMBINE(ECDSA, SHA1),
+    MY_COMBINE(ECDSA, SHA224),
+    MY_COMBINE(ECDSA, SHA256),
+    MY_COMBINE(ECDSA, SHA384),
+    MY_COMBINE(ECDSA, SHA512),
+    MY_COMBINE(ECDSA, SHA3_224),
+    MY_COMBINE(ECDSA, SHA3_256),
+    MY_COMBINE(ECDSA, SHA3_384),
+    MY_COMBINE(ECDSA, SHA3_512),
+};
+
+/** Digest and encryption combinations for RSA. */
+static RTCRX509ALGORITHIDENTIFIERCOMBINING const g_aDigestAndEncryptionRsa[] =
+{
+    MY_COMBINE(RSA, SHA1),
+    MY_COMBINE(RSA, SHA256),
+    MY_COMBINE(RSA, SHA512),
+    MY_COMBINE(RSA, SHA384),
+    MY_COMBINE(RSA, MD5),
+    MY_COMBINE(RSA, MD2),
+    MY_COMBINE(RSA, MD4),
+    MY_COMBINE(RSA, SHA224),
+    MY_COMBINE(RSA, SHA512T224),
+    MY_COMBINE(RSA, SHA512T256),
+    MY_COMBINE(RSA, SHA3_224),
+    MY_COMBINE(RSA, SHA3_256),
+    MY_COMBINE(RSA, SHA3_384),
+    MY_COMBINE(RSA, SHA3_512),
+};
+
+#undef MY_COMBINE
+
+/**
+ * Table running parallel to g_apszEncryptionOids.
+ */
+static struct
+{
+    PCRTCRX509ALGORITHIDENTIFIERCOMBINING   paCombinations;
+    size_t                                  cCombinations;
+} const g_aDigestAndEncryption[] =
+{
+    /* [IDX_ENCRYPTION_NIL]   = */ { NULL, 0 },
+    /* [IDX_ENCRYPTION_ECDSA] = */ { &g_aDigestAndEncryptionEcdsa[0], RT_ELEMENTS(g_aDigestAndEncryptionEcdsa) },
+    /* [IDX_ENCRYPTION_RSA]   = */ { &g_aDigestAndEncryptionRsa[0],   RT_ELEMENTS(g_aDigestAndEncryptionRsa) },
+};
+AssertCompile(IDX_ENCRYPTION_NIL == 0 && IDX_ENCRYPTION_ECDSA == 1 && IDX_ENCRYPTION_RSA == 2);
+
+
+/**
+ * Looks up info we've got on a algorithm identifier.
+ */
+static PCRTCRX509ALGORITHIDENTIFIERINTERNALINFO rtCrX509AlgorithmIdentifier_LookupInfoByOid(const char *pszSignatureOid)
+{
+#ifdef RT_STRICT
+    /*
+     * Do internal santiy checking on first call.
+     */
+    static bool volatile s_fChecked = false;
+    if (RT_LIKELY(s_fChecked))
+    { /* likely */ }
+    else
+    {
+        s_fChecked = true; /* Must be set before the call, as the callee will calls us again. */
+        rtCrX509AlgorithmIdentifier_AssertTableSanityAndMore();
+    }
+#endif
+
+    /*
+     * Do a binary search of g_aSignatureOidInfo.
+     */
+    size_t iFirst = 0;
+    size_t iEnd   = RT_ELEMENTS(g_aSignatureOidInfo);
+    for (;;)
+    {
+        size_t const i     = iFirst + (iEnd - iFirst) / 2;
+        int const    iDiff = strcmp(pszSignatureOid, g_aSignatureOidInfo[i].pszSignatureOid);
+        if (iDiff < 0)
+        {
+            if (i > iFirst)
+                iEnd = i;
+            else
+                return NULL;
+        }
+        else if (iDiff > 0)
+        {
+            if (i + 1 < iEnd)
+                iFirst = i + 1;
+            else
+                return NULL;
+        }
+        else
+            return &g_aSignatureOidInfo[i];
+    }
+}
+
+#ifdef RT_STRICT
+/**
+ * Check that the g_aSignatureOidInfo and g_aDigestAndEncryption makes sense and
+ * matches up with one another and other IPRT information sources.
+ */
+static void rtCrX509AlgorithmIdentifier_AssertTableSanityAndMore(void)
+{
+    /* Check that binary searching work and that digest info matches up: */
+    for (size_t i = 1; i < RT_ELEMENTS(g_aSignatureOidInfo); i++)
+        Assert(strcmp(g_aSignatureOidInfo[i].pszSignatureOid, g_aSignatureOidInfo[i - 1].pszSignatureOid) > 0);
+    for (size_t i = 0; i < RT_ELEMENTS(g_aSignatureOidInfo); i++)
+    {
+        PCRTCRX509ALGORITHIDENTIFIERINTERNALINFO const pInfo
+            = rtCrX509AlgorithmIdentifier_LookupInfoByOid(g_aSignatureOidInfo[i].pszSignatureOid);
+        Assert(pInfo && pInfo->pszSignatureOid == g_aSignatureOidInfo[i].pszSignatureOid);
+
+        /* If the digest type is RTDIGESTTYPE_INVALID, we must have an pure encryption entry or an obscure hash function. */
+        if (g_aSignatureOidInfo[i].enmDigestType != RTDIGESTTYPE_INVALID)
+            Assert(   RTCrDigestTypeToHashSize((RTDIGESTTYPE)g_aSignatureOidInfo[i].enmDigestType) * 8
+                   == g_aSignatureOidInfo[i].cBitsDigest);
+        else
+            Assert(g_aSignatureOidInfo[i].cBitsDigest == 0 || g_aSignatureOidInfo[i].idxEncryption == IDX_ENCRYPTION_NIL);
+
+# ifdef IN_RING3
+        /* Check with the RTCrDigestFindByObjIdString API: */
+        RTDIGESTTYPE enmDigestType2 = (RTDIGESTTYPE)g_aSignatureOidInfo[i].enmDigestType;
+#  if defined(IPRT_WITHOUT_DIGEST_MD2) || defined(IPRT_WITHOUT_DIGEST_MD4) || defined(IPRT_WITHOUT_DIGEST_MD5) \
+|| defined(IPRT_WITHOUT_SHA512T224) || defined(IPRT_WITHOUT_SHA512T256) || defined(IPRT_WITHOUT_SHA3)
+        switch (enmDigestType2)
+        {
+            default: break;
+#   ifdef IPRT_WITHOUT_DIGEST_MD2
+            case RTDIGESTTYPE_MD2:
+#   endif
+#   ifdef IPRT_WITHOUT_DIGEST_MD4
+            case RTDIGESTTYPE_MD4:
+#   endif
+#   ifdef IPRT_WITHOUT_DIGEST_MD5
+            case RTDIGESTTYPE_MD5:
+#   endif
+#   ifdef IPRT_WITHOUT_SHA512T224
+            case RTDIGESTTYPE_SHA512T224:
+#   endif
+#   ifdef IPRT_WITHOUT_SHA512T256
+            case RTDIGESTTYPE_SHA512T256:
+#   endif
+#   ifdef IPRT_WITHOUT_SHA3
+            case RTDIGESTTYPE_SHA3_224:
+            case RTDIGESTTYPE_SHA3_256:
+            case RTDIGESTTYPE_SHA3_384:
+            case RTDIGESTTYPE_SHA3_512:
+#   endif
+                enmDigestType2 = RTDIGESTTYPE_INVALID;
+                break;
+        }
+#  endif
+        PCRTCRDIGESTDESC const pDigestDesc = RTCrDigestFindByObjIdString(g_aSignatureOidInfo[i].pszSignatureOid,
+                                                                         NULL /*ppvOpaque*/);
+        if (pDigestDesc)
+        {
+            AssertMsg(pDigestDesc->enmType == enmDigestType2,
+                      ("%s pDigestDesc=%s enmDigestType2=%s\n",  g_aSignatureOidInfo[i].pszSignatureOid,
+                       RTCrDigestTypeToName(pDigestDesc->enmType), RTCrDigestTypeToName(enmDigestType2)));
+            Assert(pDigestDesc->cbHash * 8 == g_aSignatureOidInfo[i].cBitsDigest);
+        }
+        else
+            AssertMsg(enmDigestType2 == RTDIGESTTYPE_INVALID,
+                      ("%s enmDigestType2=%s\n", g_aSignatureOidInfo[i].pszSignatureOid, RTCrDigestTypeToName(enmDigestType2)));
+# endif /* IN_RING3 */
+
+
+# ifdef IN_RING3
+        /* Look it up the encryption descriptor. */
+        const char * const pszCheckEncryptId = g_apszEncryptionOids[g_aSignatureOidInfo[i].idxEncryption];
+        PCRTCRPKIXSIGNATUREDESC const pSigDesc = RTCrPkixSignatureFindByObjIdString(g_aSignatureOidInfo[i].pszSignatureOid,
+                                                                                    NULL /*ppvOpaque*/);
+        if (pSigDesc)
+            Assert(pszCheckEncryptId && strcmp(pSigDesc->pszObjId, pszCheckEncryptId) == 0);
+#  ifdef IPRT_WITH_OPENSSL /* No ECDSA implementation w/o OpenSSL at the moment. */
+        else
+            AssertMsg(!pSigDesc && pInfo->idxEncryption == IDX_ENCRYPTION_NIL, ("%s\n", g_aSignatureOidInfo[i].pszSignatureOid));
+#  endif
+# endif /* IN_RING3 */
+    }
+
+    /*
+     * Check that everything in g_aDigestAndEncryption is resolvable here and that the info matches up.
+     */
+    for (size_t idxEncryption = IDX_ENCRYPTION_NIL; idxEncryption < RT_ELEMENTS(g_aDigestAndEncryption); idxEncryption++)
+    {
+        PCRTCRX509ALGORITHIDENTIFIERCOMBINING const paCombinations = g_aDigestAndEncryption[idxEncryption].paCombinations;
+        size_t const                                cCombinations  = g_aDigestAndEncryption[idxEncryption].cCombinations;
+        for (size_t i = 0; i < cCombinations; i++)
+        {
+            PCRTCRX509ALGORITHIDENTIFIERINTERNALINFO const pInfo
+                = rtCrX509AlgorithmIdentifier_LookupInfoByOid(paCombinations[i].pszEncryptedDigestOid);
+            AssertContinue(pInfo);
+            Assert(strcmp(paCombinations[i].pszEncryptedDigestOid, pInfo->pszSignatureOid) == 0);
+            Assert(pInfo->idxEncryption == idxEncryption);
+            Assert(strcmp(paCombinations[i].pszDigestOid,
+                          RTCrDigestTypeToAlgorithmOid((RTDIGESTTYPE)pInfo->enmDigestType)) == 0);
+        }
+    }
+}
+#endif /* RT_STRICT */
+
+
+RTDECL(RTDIGESTTYPE) RTCrX509AlgorithmIdentifier_GetDigestType(PCRTCRX509ALGORITHMIDENTIFIER pThis, bool fPureDigestsOnly)
 {
     AssertPtrReturn(pThis, RTDIGESTTYPE_INVALID);
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_MD5))
-        return RTDIGESTTYPE_MD5;
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA1))
-        return RTDIGESTTYPE_SHA1;
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA256))
-        return RTDIGESTTYPE_SHA256;
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA512))
-        return RTDIGESTTYPE_SHA512;
-
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA384))
-        return RTDIGESTTYPE_SHA384;
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA224))
-        return RTDIGESTTYPE_SHA224;
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA512T224))
-        return RTDIGESTTYPE_SHA512T224;
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA512T256))
-        return RTDIGESTTYPE_SHA512T256;
-
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA3_224))
-        return RTDIGESTTYPE_SHA3_224;
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA3_256))
-        return RTDIGESTTYPE_SHA3_256;
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA3_384))
-        return RTDIGESTTYPE_SHA3_384;
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA3_512))
-        return RTDIGESTTYPE_SHA3_512;
-    return RTDIGESTTYPE_INVALID;
+    PCRTCRX509ALGORITHIDENTIFIERINTERNALINFO const pInfo = rtCrX509AlgorithmIdentifier_LookupInfoByOid(pThis->Algorithm.szObjId);
+    return pInfo && (!fPureDigestsOnly || pInfo->idxEncryption == IDX_ENCRYPTION_NIL)
+         ? (RTDIGESTTYPE)pInfo->enmDigestType : RTDIGESTTYPE_INVALID;
 }
 
 
-RTDECL(uint32_t) RTCrX509AlgorithmIdentifier_QueryDigestSize(PCRTCRX509ALGORITHMIDENTIFIER pThis)
+RTDECL(uint32_t) RTCrX509AlgorithmIdentifier_GetDigestSize(PCRTCRX509ALGORITHMIDENTIFIER pThis, bool fPureDigestsOnly)
 {
     AssertPtrReturn(pThis, UINT32_MAX);
-
-    /* common */
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_MD5))
-        return 128 / 8;
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA1))
-        return 160 / 8;
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA256))
-        return 256 / 8;
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA512))
-        return 512 / 8;
-
-    /* Less common. */
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_MD2))
-        return 128 / 8;
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_MD4))
-        return 128 / 8;
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA384))
-        return 384 / 8;
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA224))
-        return 224 / 8;
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA512T224))
-        return 224 / 8;
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA512T256))
-        return 256 / 8;
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA3_224))
-        return 224 / 8;
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA3_256))
-        return 256 / 8;
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA3_384))
-        return 384 / 8;
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_SHA3_512))
-        return 512 / 8;
-    if (!strcmp(pThis->Algorithm.szObjId, RTCRX509ALGORITHMIDENTIFIERID_WHIRLPOOL))
-        return 512 / 8;
-
-    return UINT32_MAX;
+    PCRTCRX509ALGORITHIDENTIFIERINTERNALINFO const pInfo = rtCrX509AlgorithmIdentifier_LookupInfoByOid(pThis->Algorithm.szObjId);
+    return pInfo && (!fPureDigestsOnly || pInfo->idxEncryption == IDX_ENCRYPTION_NIL)
+         ? pInfo->cBitsDigest / 8 : UINT32_MAX;
 }
 
 
@@ -156,85 +432,20 @@ RTDECL(int) RTCrX509AlgorithmIdentifier_CompareWithString(PCRTCRX509ALGORITHMIDE
 RTDECL(int) RTCrX509AlgorithmIdentifier_CompareDigestOidAndEncryptedDigestOid(const char *pszDigestOid,
                                                                               const char *pszEncryptedDigestOid)
 {
-    /* common */
-    if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_MD5))
-    {
-        if (!strcmp(pszEncryptedDigestOid, RTCRX509ALGORITHMIDENTIFIERID_MD5_WITH_RSA))
-            return 0;
-    }
-    else if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA1))
-    {
-        if (!strcmp(pszEncryptedDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA1_WITH_RSA))
-            return 0;
-    }
-    else if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA256))
-    {
-        if (!strcmp(pszEncryptedDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA256_WITH_RSA))
-            return 0;
-    }
-    else if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512))
-    {
-        if (!strcmp(pszEncryptedDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512_WITH_RSA))
-            return 0;
-    }
-    /* Less common. */
-    else if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_MD2))
-    {
-        if (!strcmp(pszEncryptedDigestOid, RTCRX509ALGORITHMIDENTIFIERID_MD2_WITH_RSA))
-            return 0;
-    }
-    else if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_MD4))
-    {
-        if (!strcmp(pszEncryptedDigestOid, RTCRX509ALGORITHMIDENTIFIERID_MD4_WITH_RSA))
-            return 0;
-    }
-    else if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA384))
-    {
-        if (!strcmp(pszEncryptedDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA384_WITH_RSA))
-            return 0;
-    }
-    else if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA224))
-    {
-        if (!strcmp(pszEncryptedDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA224_WITH_RSA))
-            return 0;
-    }
-    else if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512T224))
-    {
-        if (!strcmp(pszEncryptedDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512T224_WITH_RSA))
-            return 0;
-    }
-    else if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512T256))
-    {
-        if (!strcmp(pszEncryptedDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512T256_WITH_RSA))
-            return 0;
-    }
-    else if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_224))
-    {
-        if (!strcmp(pszEncryptedDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_224_WITH_RSA))
-            return 0;
-    }
-    else if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_256))
-    {
-        if (!strcmp(pszEncryptedDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_256_WITH_RSA))
-            return 0;
-    }
-    else if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_384))
-    {
-        if (!strcmp(pszEncryptedDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_384_WITH_RSA))
-            return 0;
-    }
-    else if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_512))
-    {
-        if (!strcmp(pszEncryptedDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_512_WITH_RSA))
-            return 0;
-    }
-    else if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_WHIRLPOOL))
-    {
-        /* ?? */
-    }
-    else
-        return -1;
-    return 1;
+    /*
+     * Lookup the digest and encrypted digest OIDs.
+     */
+    PCRTCRX509ALGORITHIDENTIFIERINTERNALINFO const pDigest  = rtCrX509AlgorithmIdentifier_LookupInfoByOid(pszDigestOid);
+    AssertMsgReturn(pDigest,                                      ("pszDigestOid=%s\n", pszDigestOid), -1);
+    AssertMsgReturn(pDigest->idxEncryption == IDX_ENCRYPTION_NIL, ("pszDigestOid=%s\n", pszDigestOid), -1);
+    AssertMsgReturn(pDigest->cBitsDigest   != 0,                  ("pszDigestOid=%s\n", pszDigestOid), -1);
+
+    PCRTCRX509ALGORITHIDENTIFIERINTERNALINFO const pEncrypt = rtCrX509AlgorithmIdentifier_LookupInfoByOid(pszEncryptedDigestOid);
+    AssertMsgReturn(pEncrypt,                                        ("pszEncryptedDigestOid=%s\n", pszEncryptedDigestOid), 1);
+    AssertMsgReturn(pEncrypt->idxEncryption != IDX_ENCRYPTION_NIL,   ("pszEncryptedDigestOid=%s\n", pszEncryptedDigestOid), 1);
+    AssertMsgReturn(pEncrypt->enmDigestType != RTDIGESTTYPE_INVALID, ("pszEncryptedDigestOid=%s\n", pszEncryptedDigestOid), 1);
+
+    return pDigest->enmDigestType == pEncrypt->enmDigestType ? 0 : 1;
 }
 
 RTDECL(int) RTCrX509AlgorithmIdentifier_CompareDigestAndEncryptedDigest(PCRTCRX509ALGORITHMIDENTIFIER pDigest,
@@ -248,59 +459,65 @@ RTDECL(int) RTCrX509AlgorithmIdentifier_CompareDigestAndEncryptedDigest(PCRTCRX5
 RTDECL(const char *) RTCrX509AlgorithmIdentifier_CombineEncryptionOidAndDigestOid(const char *pszEncryptionOid,
                                                                                   const char *pszDigestOid)
 {
-    /* RSA: */
-    if (!strcmp(pszEncryptionOid, RTCRX509ALGORITHMIDENTIFIERID_RSA))
+    /*
+     * We can look up the two OIDs and see what they actually are.
+     */
+    /* The digest OID should be a pure hash algorithm, however we also accept
+       the already combined algorithm. */
+    PCRTCRX509ALGORITHIDENTIFIERINTERNALINFO const pDigest  = rtCrX509AlgorithmIdentifier_LookupInfoByOid(pszDigestOid);
+    AssertReturn(pDigest, NULL);
+    AssertReturn(pDigest->enmDigestType != RTDIGESTTYPE_INVALID, NULL);
+
+    /* The encryption OID should be a pure encryption algorithm, however we
+       also accept the already combined algorithm. */
+    PCRTCRX509ALGORITHIDENTIFIERINTERNALINFO const pEncrypt = rtCrX509AlgorithmIdentifier_LookupInfoByOid(pszEncryptionOid);
+    AssertReturn(pEncrypt, NULL);
+    uint8_t const idxEncryption = pEncrypt->idxEncryption;
+    AssertReturn(idxEncryption != IDX_ENCRYPTION_NIL, NULL);
+    Assert(idxEncryption < RT_ELEMENTS(g_aDigestAndEncryption));
+
+    /* Is the encryption OID purely encryption? */
+    if (pEncrypt->cBitsDigest == 0)
     {
-        if (   !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_MD5)
-            || !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_MD5_WITH_RSA))
-            return RTCRX509ALGORITHMIDENTIFIERID_MD5_WITH_RSA;
-        if (   !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA1)
-            || !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA1_WITH_RSA))
-            return RTCRX509ALGORITHMIDENTIFIERID_SHA1_WITH_RSA;
-        if (   !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA256)
-            || !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA256_WITH_RSA))
-            return RTCRX509ALGORITHMIDENTIFIERID_SHA256_WITH_RSA;
-        if (   !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512)
-            || !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512_WITH_RSA))
-            return RTCRX509ALGORITHMIDENTIFIERID_SHA512_WITH_RSA;
-        if (   !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_MD2)
-            || !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_MD2_WITH_RSA))
-            return RTCRX509ALGORITHMIDENTIFIERID_MD2_WITH_RSA;
-        if (   !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_MD4)
-            || !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_MD4_WITH_RSA))
-            return RTCRX509ALGORITHMIDENTIFIERID_MD4_WITH_RSA;
-        if (   !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA384)
-            || !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA384_WITH_RSA))
-            return RTCRX509ALGORITHMIDENTIFIERID_SHA384_WITH_RSA;
-        if (   !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA224)
-            || !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA224_WITH_RSA))
-            return RTCRX509ALGORITHMIDENTIFIERID_SHA224_WITH_RSA;
-        if (   !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512T224)
-            || !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512T224_WITH_RSA))
-            return RTCRX509ALGORITHMIDENTIFIERID_SHA512T224_WITH_RSA;
-        if (   !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512T256)
-            || !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA512T256_WITH_RSA))
-            return RTCRX509ALGORITHMIDENTIFIERID_SHA512T256_WITH_RSA;
-        if (   !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_224)
-            || !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_224_WITH_RSA))
-            return RTCRX509ALGORITHMIDENTIFIERID_SHA3_224_WITH_RSA;
-        if (   !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_256)
-            || !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_256_WITH_RSA))
-            return RTCRX509ALGORITHMIDENTIFIERID_SHA3_256_WITH_RSA;
-        if (   !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_384)
-            || !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_384_WITH_RSA))
-            return RTCRX509ALGORITHMIDENTIFIERID_SHA3_384_WITH_RSA;
-        if (   !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_512)
-            || !strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_SHA3_512_WITH_RSA))
-            return RTCRX509ALGORITHMIDENTIFIERID_SHA3_512_WITH_RSA;
+        Assert(pEncrypt->enmDigestType == RTDIGESTTYPE_INVALID);
 
-        /* if (!strcmp(pszDigestOid, RTCRX509ALGORITHMIDENTIFIERID_WHIRLPOOL))
-            return ???; */
+        /* Identify the slice of the table related to this encryption OID: */
+        PCRTCRX509ALGORITHIDENTIFIERCOMBINING const paCombinations = g_aDigestAndEncryption[idxEncryption].paCombinations;
+        size_t                                const cCombinations  = g_aDigestAndEncryption[idxEncryption].cCombinations;
+
+        /* Is the digest OID purely a digest? */
+        if (pDigest->idxEncryption == IDX_ENCRYPTION_NIL)
+        {
+            for (size_t i = 0; i < cCombinations; i++)
+                if (!strcmp(pszDigestOid, paCombinations[i].pszDigestOid))
+                    return paCombinations[i].pszEncryptedDigestOid;
+            AssertMsgFailed(("enc=%s hash=%s\n", pszEncryptionOid, pszDigestOid));
+        }
+        else
+        {
+            /* No, it's a combined one. */
+            for (size_t i = 0; i < cCombinations; i++)
+                if (!strcmp(pszDigestOid, paCombinations[i].pszEncryptedDigestOid))
+                    return paCombinations[i].pszEncryptedDigestOid;
+            AssertMsgFailed(("enc=%s hash+enc=%s\n", pszEncryptionOid, pszDigestOid));
+        }
     }
-    else if (RTCrX509AlgorithmIdentifier_CompareDigestOidAndEncryptedDigestOid(pszDigestOid, pszEncryptionOid) == 0)
-        return pszEncryptionOid;
+    /* The digest OID purely a digest? */
+    else if (pDigest->idxEncryption == IDX_ENCRYPTION_NIL)
+    {
+        /* Check that it's for the same hash before returning it. */
+        Assert(pEncrypt->enmDigestType != RTDIGESTTYPE_INVALID);
+        if (pEncrypt->enmDigestType == pDigest->enmDigestType)
+            return pEncrypt->pszSignatureOid;
+        AssertMsgFailed(("enc+hash=%s hash=%s\n", pszEncryptionOid, pszDigestOid));
+    }
+    /* Both the digest and encryption OIDs are combined ones, so they have to
+       be the same entry then or they cannot be combined. */
+    else if (pDigest == pEncrypt)
+        return pEncrypt->pszSignatureOid;
+    else
+        AssertMsgFailed(("enc+hash=%s hash+enc=%s\n", pszEncryptionOid, pszDigestOid));
 
-    AssertMsgFailed(("enc=%s hash=%s\n", pszEncryptionOid, pszDigestOid));
     return NULL;
 }
 
@@ -310,6 +527,26 @@ RTDECL(const char *) RTCrX509AlgorithmIdentifier_CombineEncryptionAndDigest(PCRT
 {
     return RTCrX509AlgorithmIdentifier_CombineEncryptionOidAndDigestOid(pEncryption->Algorithm.szObjId,
                                                                         pDigest->Algorithm.szObjId);
+}
+
+
+RTDECL(const char *) RTCrX509AlgorithmIdentifier_GetEncryptionOid(PCRTCRX509ALGORITHMIDENTIFIER pThis, bool fMustIncludeHash)
+{
+    AssertPtrReturn(pThis, NULL);
+    PCRTCRX509ALGORITHIDENTIFIERINTERNALINFO const pInfo = rtCrX509AlgorithmIdentifier_LookupInfoByOid(pThis->Algorithm.szObjId);
+    if (pInfo && (!fMustIncludeHash || pInfo->enmDigestType != RTDIGESTTYPE_INVALID))
+        return g_apszEncryptionOids[pInfo->idxEncryption];
+    return NULL;
+}
+
+
+RTDECL(const char *) RTCrX509AlgorithmIdentifier_GetEncryptionOidFromOid(const char *pszAlgorithmOid, bool fMustIncludeHash)
+{
+    AssertPtrReturn(pszAlgorithmOid, NULL);
+    PCRTCRX509ALGORITHIDENTIFIERINTERNALINFO const pInfo = rtCrX509AlgorithmIdentifier_LookupInfoByOid(pszAlgorithmOid);
+    if (pInfo && (!fMustIncludeHash || pInfo->enmDigestType != RTDIGESTTYPE_INVALID))
+        return g_apszEncryptionOids[pInfo->idxEncryption];
+    return NULL;
 }
 
 

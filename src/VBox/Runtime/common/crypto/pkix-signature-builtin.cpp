@@ -63,6 +63,9 @@
 static PCRTCRPKIXSIGNATUREDESC const g_apPkixSignatureDescriptors[] =
 {
     &g_rtCrPkixSigningHashWithRsaDesc,
+#ifdef IPRT_WITH_OPENSSL
+    &g_rtCrPkixSigningHashWithEcdsaDesc,
+#endif
 };
 
 

@@ -178,7 +178,11 @@ static DECLCALLBACK(int) rtCrPkixSignatureRsa_Init(PCRTCRPKIXSIGNATUREDESC pDesc
 {
     RT_NOREF_PV(pDesc); RT_NOREF_PV(pvState); RT_NOREF_PV(pvOpaque);
 
-    if (pParams)
+    if (   !pParams
+        || pParams->enmType == RTASN1TYPE_NULL
+        || pParams->enmType == RTASN1TYPE_NOT_PRESENT)
+    { /* likely */ }
+    else
         return VERR_CR_PKIX_SIGNATURE_TAKES_NO_PARAMETERS;
 
     RTCRKEYTYPE enmKeyType = RTCrKeyGetType(hKey);
@@ -478,6 +482,10 @@ static const char * const g_apszHashWithRsaAliases[] =
     RTCR_PKCS1_SHA224_WITH_RSA_OID,
     RTCR_PKCS1_SHA512T224_WITH_RSA_OID,
     RTCR_PKCS1_SHA512T256_WITH_RSA_OID,
+    RTCR_NIST_SHA3_224_WITH_RSA_OID,
+    RTCR_NIST_SHA3_256_WITH_RSA_OID,
+    RTCR_NIST_SHA3_384_WITH_RSA_OID,
+    RTCR_NIST_SHA3_512_WITH_RSA_OID,
     /* Note: Note quite sure about these OIW oddballs. */
     "1.3.14.3.2.11" /* OIW rsaSignature */,
     "1.3.14.3.2.14" /* OIW mdc2WithRSASignature */,

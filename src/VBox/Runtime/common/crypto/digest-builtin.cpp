@@ -260,6 +260,7 @@ static const char * const g_apszSha1Aliases[] =
 {
     RTCR_PKCS1_SHA1_WITH_RSA_OID,
     "1.3.14.3.2.29" /* OIW sha1WithRSASignature */,
+    RTCR_X962_ECDSA_WITH_SHA1_OID,
     NULL
 };
 
@@ -314,6 +315,7 @@ static DECLCALLBACK(int) rtCrDigestSha256_Init(void *pvState, void *pvOpaque, bo
 static const char * const g_apszSha256Aliases[] =
 {
     RTCR_PKCS1_SHA256_WITH_RSA_OID,
+    RTCR_X962_ECDSA_WITH_SHA256_OID,
     NULL
 };
 
@@ -368,6 +370,7 @@ static DECLCALLBACK(int) rtCrDigestSha512_Init(void *pvState, void *pvOpaque, bo
 static const char * const g_apszSha512Aliases[] =
 {
     RTCR_PKCS1_SHA512_WITH_RSA_OID,
+    RTCR_X962_ECDSA_WITH_SHA512_OID,
     NULL
 };
 
@@ -422,6 +425,7 @@ static DECLCALLBACK(int) rtCrDigestSha224_Init(void *pvState, void *pvOpaque, bo
 static const char * const g_apszSha224Aliases[] =
 {
     RTCR_PKCS1_SHA224_WITH_RSA_OID,
+    RTCR_X962_ECDSA_WITH_SHA224_OID,
     NULL
 };
 
@@ -476,6 +480,7 @@ static DECLCALLBACK(int) rtCrDigestSha384_Init(void *pvState, void *pvOpaque, bo
 static const char * const g_apszSha384Aliases[] =
 {
     RTCR_PKCS1_SHA384_WITH_RSA_OID,
+    RTCR_X962_ECDSA_WITH_SHA384_OID,
     NULL
 };
 
@@ -658,6 +663,7 @@ static DECLCALLBACK(int) rtCrDigestSha3t224_Clone(void *pvState, void const *pvS
 static const char * const g_apszSha3t224Aliases[] =
 {
     "2.16.840.1.101.3.4.3.13",
+    RTCR_NIST_SHA3_224_WITH_ECDSA_OID,
     NULL
 };
 
@@ -727,6 +733,7 @@ static DECLCALLBACK(int) rtCrDigestSha3t256_Clone(void *pvState, void const *pvS
 static const char * const g_apszSha3t256Aliases[] =
 {
     "2.16.840.1.101.3.4.3.14",
+    RTCR_NIST_SHA3_256_WITH_ECDSA_OID,
     NULL
 };
 
@@ -796,6 +803,7 @@ static DECLCALLBACK(int) rtCrDigestSha3t384_Clone(void *pvState, void const *pvS
 static const char * const g_apszSha3t384Aliases[] =
 {
     "2.16.840.1.101.3.4.3.15",
+    RTCR_NIST_SHA3_384_WITH_ECDSA_OID,
     NULL
 };
 
@@ -865,6 +873,7 @@ static DECLCALLBACK(int) rtCrDigestSha3t512_Clone(void *pvState, void const *pvS
 static const char * const g_apszSha3t512Aliases[] =
 {
     "2.16.840.1.101.3.4.3.16",
+    RTCR_NIST_SHA3_512_WITH_ECDSA_OID,
     NULL
 };
 

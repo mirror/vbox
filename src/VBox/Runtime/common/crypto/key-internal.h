@@ -83,6 +83,14 @@ typedef struct RTCRKEYINT
             /** The exponent.  */
             RTBIGNUM                Exponent;
         } RsaPublic;
+
+        /** RTCRKEYTYPE_ECDSA_PUBLIC. */
+        struct
+        {
+            /** The named curve. */
+            RTASN1OBJID             NamedCurve;
+            /** @todo ECPoint. */
+        } EcdsaPublic;
     } u;
 
 #if defined(IPRT_WITH_OPENSSL)
@@ -118,5 +126,7 @@ DECLHIDDEN(int) rtCrKeyCreateRsaPublic(PRTCRKEY phKey, const void *pvKeyBits, ui
                                        PRTERRINFO pErrInfo, const char *pszErrorTag);
 DECLHIDDEN(int) rtCrKeyCreateRsaPrivate(PRTCRKEY phKey, const void *pvKeyBits, uint32_t cbKeyBits,
                                         PRTERRINFO pErrInfo, const char *pszErrorTag);
+DECLHIDDEN(int) rtCrKeyCreateEcdsaPublic(PRTCRKEY phKey, PCRTASN1DYNTYPE pParameters,
+                                         const void *pvKeyBits, uint32_t cbKeyBits, PRTERRINFO pErrInfo, const char *pszErrorTag);
 
 #endif /* !IPRT_INCLUDED_SRC_common_crypto_key_internal_h */

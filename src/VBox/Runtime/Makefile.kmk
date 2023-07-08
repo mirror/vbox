@@ -462,6 +462,7 @@ RuntimeBaseR3_SOURCES      := \
 	common/crypto/pkix-signature-builtin.cpp \
 	common/crypto/pkix-signature-core.cpp \
 	common/crypto/pkix-signature-rsa.cpp \
+	common/crypto/pkix-signature-ossl.cpp \
 	common/crypto/pkix-util.cpp \
 	common/crypto/pkix-verify.cpp \
 	common/crypto/spc-asn1-decoder.cpp \
@@ -2308,6 +2309,7 @@ RuntimeBldProg_SOURCES          = \
 	common/crypto/pkix-signature-builtin.cpp \
 	common/crypto/pkix-signature-core.cpp \
 	common/crypto/pkix-signature-rsa.cpp \
+	common/crypto/pkix-signature-ossl.cpp \
 	common/crypto/pkix-util.cpp \
 	common/crypto/pkix-verify.cpp \
 	common/crypto/rsa-asn1-decoder.cpp \

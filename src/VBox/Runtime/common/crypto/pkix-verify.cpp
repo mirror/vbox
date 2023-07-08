@@ -68,15 +68,10 @@ RTDECL(int) RTCrPkixPubKeyVerifySignature(PCRTASN1OBJID pAlgorithm, RTCRKEY hPub
     AssertPtrReturn(pAlgorithm, VERR_INVALID_POINTER);
     AssertReturn(RTAsn1ObjId_IsPresent(pAlgorithm), VERR_INVALID_POINTER);
 
-    if (pParameters)
-    {
-        AssertPtrReturn(pParameters, VERR_INVALID_POINTER);
-        if (pParameters->enmType == RTASN1TYPE_NULL)
-            pParameters = NULL;
-    }
-
     AssertPtrReturn(hPublicKey, VERR_INVALID_POINTER);
     Assert(RTCrKeyHasPublicPart(hPublicKey));
+    RTCRKEYTYPE const enmKeyType = RTCrKeyGetType(hPublicKey);
+    AssertReturn(enmKeyType != RTCRKEYTYPE_INVALID, VERR_INVALID_HANDLE);
 
     AssertPtrReturn(pSignatureValue, VERR_INVALID_POINTER);
     AssertReturn(RTAsn1BitString_IsPresent(pSignatureValue), VERR_INVALID_POINTER);
@@ -85,20 +80,23 @@ RTDECL(int) RTCrPkixPubKeyVerifySignature(PCRTASN1OBJID pAlgorithm, RTCRKEY hPub
     AssertReturn(cbData > 0, VERR_INVALID_PARAMETER);
 
     /*
-     * Parameters are not currently supported (openssl code path).
+     * Verify that the parameters are compatible with the key.  We ASSUME the
+     * parameters are for a hash+cryption combination, like those found in
+     * RTCRX509TBSCERTIFICATE::Signature.  At present, these should NULL (or
+     * absent) for the two key types we support RSA & ECDSA, which is an
+     * ASSUMPTION by the OpenSSL code below.
      */
-    if (pParameters)
-        return RTErrInfoSet(pErrInfo, VERR_CR_PKIX_CIPHER_ALGO_PARAMS_NOT_IMPL,
-                            "Cipher algorithm parameters are not yet supported.");
+    int rcIprt = RTCrKeyVerifyParameterCompatibility(hPublicKey, pParameters, true /*fForSignature*/, pAlgorithm, pErrInfo);
+    AssertRCReturn(rcIprt, rcIprt);
 
     /*
      * Validate using IPRT.
      */
     RTCRPKIXSIGNATURE hSignature;
-    int rcIprt = RTCrPkixSignatureCreateByObjId(&hSignature, pAlgorithm, hPublicKey, pParameters, false /*fSigning*/);
+    rcIprt = RTCrPkixSignatureCreateByObjId(&hSignature, pAlgorithm, hPublicKey, pParameters, false /*fSigning*/);
     if (RT_FAILURE(rcIprt))
         return RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_CIPHER_ALGO_NOT_KNOWN,
-                             "Unknown public key algorithm [IPRT]: %s", pAlgorithm->szObjId);
+                             "Unknown public key algorithm [IPRT %Rrc]: %s", rcIprt, pAlgorithm->szObjId);
 
     RTCRDIGEST hDigest;
     rcIprt = RTCrDigestCreateByObjId(&hDigest, pAlgorithm);
@@ -121,6 +119,14 @@ RTDECL(int) RTCrPkixPubKeyVerifySignature(PCRTASN1OBJID pAlgorithm, RTCRKEY hPub
     RTCrPkixSignatureRelease(hSignature);
 
 #ifdef IPRT_WITH_OPENSSL
+    /* We don't implement digest+cipher parameters in OpenSSL (or at all),
+       RTCrKeyVerifyParameterCompatibility should ensure we don't get here
+       (ASSUMING only RSA and ECDSA keys). But, just in case, bail out if we do. */
+    AssertReturn(   !pParameters
+                 || pParameters->enmType == RTASN1TYPE_NULL
+                 || pParameters->enmType == RTASN1TYPE_NOT_PRESENT,
+                 VERR_CR_PKIX_CIPHER_ALGO_PARAMS_NOT_IMPL);
+
     /*
      * Validate using OpenSSL EVP.
      */
@@ -186,15 +192,10 @@ RTDECL(int) RTCrPkixPubKeyVerifySignedDigest(PCRTASN1OBJID pAlgorithm, RTCRKEY h
     AssertPtrReturn(pAlgorithm, VERR_INVALID_POINTER);
     AssertReturn(RTAsn1ObjId_IsPresent(pAlgorithm), VERR_INVALID_POINTER);
 
-    if (pParameters)
-    {
-        AssertPtrReturn(pParameters, VERR_INVALID_POINTER);
-        if (pParameters->enmType == RTASN1TYPE_NULL)
-            pParameters = NULL;
-    }
-
     AssertPtrReturn(hPublicKey, VERR_INVALID_POINTER);
     Assert(RTCrKeyHasPublicPart(hPublicKey));
+    RTCRKEYTYPE const enmKeyType = RTCrKeyGetType(hPublicKey);
+    AssertReturn(enmKeyType != RTCRKEYTYPE_INVALID, VERR_INVALID_HANDLE);
 
     AssertPtrReturn(pvSignedDigest, VERR_INVALID_POINTER);
     AssertReturn(cbSignedDigest, VERR_INVALID_PARAMETER);
@@ -202,20 +203,23 @@ RTDECL(int) RTCrPkixPubKeyVerifySignedDigest(PCRTASN1OBJID pAlgorithm, RTCRKEY h
     AssertPtrReturn(hDigest, VERR_INVALID_HANDLE);
 
     /*
-     * Parameters are not currently supported (openssl code path).
+     * Verify that the parameters are compatible with the key.  We ASSUME the
+     * parameters are for a hash+cryption combination, like those found in
+     * RTCRX509TBSCERTIFICATE::Signature.  At present, these should NULL (or
+     * absent) for the two key types we support RSA & ECDSA, which is an
+     * ASSUMPTION by the OpenSSL code below.
      */
-    if (pParameters)
-        return RTErrInfoSet(pErrInfo, VERR_CR_PKIX_CIPHER_ALGO_PARAMS_NOT_IMPL,
-                            "Cipher algorithm parameters are not yet supported.");
+    int rcIprt = RTCrKeyVerifyParameterCompatibility(hPublicKey, pParameters, true /*fForSignature*/, pAlgorithm, pErrInfo);
+    AssertRCReturn(rcIprt, rcIprt);
 
     /*
      * Validate using IPRT.
      */
     RTCRPKIXSIGNATURE hSignature;
-    int rcIprt = RTCrPkixSignatureCreateByObjId(&hSignature, pAlgorithm, hPublicKey, pParameters, false /*fSigning*/);
+    rcIprt = RTCrPkixSignatureCreateByObjId(&hSignature, pAlgorithm, hPublicKey, pParameters, false /*fSigning*/);
     if (RT_FAILURE(rcIprt))
         return RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_CIPHER_ALGO_NOT_KNOWN,
-                             "Unknown public key algorithm [IPRT]: %s", pAlgorithm->szObjId);
+                             "Unknown public key algorithm [IPRT %Rrc]: %s", rcIprt, pAlgorithm->szObjId);
 
     rcIprt = RTCrPkixSignatureVerify(hSignature, hDigest, pvSignedDigest, cbSignedDigest);
     if (RT_FAILURE(rcIprt))
@@ -228,15 +232,19 @@ RTDECL(int) RTCrPkixPubKeyVerifySignedDigest(PCRTASN1OBJID pAlgorithm, RTCRKEY h
     /*
      * Validate using OpenSSL EVP.
      */
-    /* Combine encryption and digest if the algorithm doesn't specify the digest type. */
-    const char *pszAlgObjId = pAlgorithm->szObjId;
-    if (!strcmp(pszAlgObjId, RTCRX509ALGORITHMIDENTIFIERID_RSA))
-    {
-        pszAlgObjId = RTCrX509AlgorithmIdentifier_CombineEncryptionOidAndDigestOid(pszAlgObjId,
-                                                                                   RTCrDigestGetAlgorithmOid(hDigest));
-        AssertMsgStmt(pszAlgObjId, ("enc=%s hash=%s\n", pAlgorithm->szObjId, RTCrDigestGetAlgorithmOid(hDigest)),
-                      pszAlgObjId = RTCrDigestGetAlgorithmOid(hDigest));
-    }
+    /* Make sure the algorithm includes the digest and isn't just RSA, ECDSA or similar.  */
+    const char *pszAlgObjId = RTCrX509AlgorithmIdentifier_CombineEncryptionOidAndDigestOid(pAlgorithm->szObjId,
+                                                                                           RTCrDigestGetAlgorithmOid(hDigest));
+    AssertMsgStmt(pszAlgObjId, ("enc=%s hash=%s\n", pAlgorithm->szObjId, RTCrDigestGetAlgorithmOid(hDigest)),
+                  pszAlgObjId = RTCrDigestGetAlgorithmOid(hDigest));
+
+    /* We don't implement digest+cipher parameters in OpenSSL (or at all),
+       RTCrKeyVerifyParameterCompatibility should ensure we don't get here
+       (ASSUMING only RSA and ECDSA keys). But, just in case, bail out if we do. */
+    AssertReturn(   !pParameters
+                 || pParameters->enmType == RTASN1TYPE_NULL
+                 || pParameters->enmType == RTASN1TYPE_NOT_PRESENT,
+                 VERR_CR_PKIX_CIPHER_ALGO_PARAMS_NOT_IMPL);
 
     /* Create an EVP public key. */
     EVP_PKEY     *pEvpPublicKey = NULL;
@@ -304,12 +312,14 @@ RTDECL(int) RTCrPkixPubKeyVerifySignedDigestByCertPubKeyInfo(PCRTCRX509SUBJECTPU
 {
     RTCRKEY hPublicKey;
     int rc = RTCrKeyCreateFromPublicAlgorithmAndBits(&hPublicKey, &pCertPubKeyInfo->Algorithm.Algorithm,
+                                                     &pCertPubKeyInfo->Algorithm.Parameters,
                                                      &pCertPubKeyInfo->SubjectPublicKey, pErrInfo, NULL);
     if (RT_SUCCESS(rc))
     {
-        rc = RTCrPkixPubKeyVerifySignedDigest(&pCertPubKeyInfo->Algorithm.Algorithm, hPublicKey,
-                                              &pCertPubKeyInfo->Algorithm.Parameters, pvSignedDigest, cbSignedDigest,
-                                              hDigest, pErrInfo);
+        /** @todo r=bird (2023-07-06): This ASSUMES no digest+cipher parameters, which
+         *        is the case for RSA and ECDSA. */
+        rc = RTCrPkixPubKeyVerifySignedDigest(&pCertPubKeyInfo->Algorithm.Algorithm, hPublicKey, NULL,
+                                              pvSignedDigest, cbSignedDigest, hDigest, pErrInfo);
 
         uint32_t cRefs = RTCrKeyRelease(hPublicKey);
         Assert(cRefs == 0); RT_NOREF(cRefs);

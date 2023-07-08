@@ -59,7 +59,8 @@ struct RTCRX509SUBJECTPUBLICKEYINFO;
  * @returns IPRT status code.
  * @param   pAlgorithm      The signature algorithm (digest w/ cipher).
  * @param   hPublicKey      The public key.
- * @param   pParameters     Parameter to the public key algorithm. Optional.
+ * @param   pParameters     The signature parameters (not key, those are already
+ *                          kept by hPublicKey).
  * @param   pSignatureValue The signature value.
  * @param   pvData          The signed data.
  * @param   cbData          The amount of signed data.
@@ -80,7 +81,8 @@ RTDECL(int) RTCrPkixPubKeyVerifySignature(PCRTASN1OBJID pAlgorithm, RTCRKEY hPub
  * @returns IPRT status code.
  * @param   pAlgorithm      The signature algorithm (digest w/ cipher).
  * @param   hPublicKey      The public key.
- * @param   pParameters     Parameter to the public key algorithm. Optional.
+ * @param   pParameters     The signature parameters (not key, those are already
+ *                          kept by hPublicKey).
  * @param   pvSignedDigest  The signed digest.
  * @param   cbSignedDigest  The signed digest size.
  * @param   hDigest         The digest of the data to compare @a pvSignedDigest
@@ -145,9 +147,21 @@ RTDECL(int) RTCrPkixPubKeySignDigest(PCRTASN1OBJID pAlgorithm, RTCRKEY hPrivateK
  * Gets the cipher OID matching the given signature algorithm.
  *
  * @returns Cipher OID string on success, NULL on failure.
- * @param   pAlgorithm      The signature algorithm (digest w/ cipher).
+ * @param   pAlgorithm          The signature algorithm (hash function w/ cipher).
+ * @sa      RTCrX509AlgorithmIdentifier_GetEncryptionOid,
+ *          RTCrX509AlgorithmIdentifier_GetEncryptionOidFromOid
  */
 RTDECL(const char *) RTCrPkixGetCiperOidFromSignatureAlgorithm(PCRTASN1OBJID pAlgorithm);
+
+/**
+ * Gets the cipher OID matching the given signature algorithm OID.
+ *
+ * @returns Cipher OID string on success, NULL on failure.
+ * @param   pszSignatureOid     The signature algorithm ID (hash function w/ cipher).
+ * @sa      RTCrX509AlgorithmIdentifier_GetEncryptionOid,
+ *          RTCrX509AlgorithmIdentifier_GetEncryptionOidFromOid
+ */
+RTDECL(const char *) RTCrPkixGetCiperOidFromSignatureAlgorithmOid(const char *pszSignatureOid);
 
 
 /** @name PKCS-1 Object Identifiers (OIDs)
@@ -169,6 +183,32 @@ RTDECL(const char *) RTCrPkixGetCiperOidFromSignatureAlgorithm(PCRTASN1OBJID pAl
 #define RTCR_PKCS1_SHA224_WITH_RSA_OID              "1.2.840.113549.1.1.14"
 #define RTCR_PKCS1_SHA512T224_WITH_RSA_OID          "1.2.840.113549.1.1.15"
 #define RTCR_PKCS1_SHA512T256_WITH_RSA_OID          "1.2.840.113549.1.1.16"
+/** @} */
+
+/** @name ANSI X9.62 Object Identifiers (OIDs)
+ * @{ */
+#define RTCR_X962_ECDSA_OID                         "1.2.840.10045.2.1"
+#define RTCR_X962_ECDSA_WITH_SHA1_OID               "1.2.840.10045.4.1"
+#define RTCR_X962_ECDSA_WITH_SHA2_OID               "1.2.840.10045.4.3"
+#define RTCR_X962_ECDSA_WITH_SHA224_OID             "1.2.840.10045.4.3.1"
+#define RTCR_X962_ECDSA_WITH_SHA256_OID             "1.2.840.10045.4.3.2"
+#define RTCR_X962_ECDSA_WITH_SHA384_OID             "1.2.840.10045.4.3.3"
+#define RTCR_X962_ECDSA_WITH_SHA512_OID             "1.2.840.10045.4.3.4"
+/** @}  */
+
+/** @name NIST Object Identifiers (OIDs)
+ * @{ */
+#define RTCR_NIST_ALGORITHM_OID                     "2.16.840.1.101.3.4"
+#define RTCR_NIST_HASH_ALGS_OID                     "2.16.840.1.101.3.4.2"
+#define RTCR_NIST_SIG_ALGS_OID                      "2.16.840.1.101.3.4.3"
+#define RTCR_NIST_SHA3_224_WITH_ECDSA_OID           "2.16.840.1.101.3.4.3.9"
+#define RTCR_NIST_SHA3_256_WITH_ECDSA_OID           "2.16.840.1.101.3.4.3.10"
+#define RTCR_NIST_SHA3_384_WITH_ECDSA_OID           "2.16.840.1.101.3.4.3.11"
+#define RTCR_NIST_SHA3_512_WITH_ECDSA_OID           "2.16.840.1.101.3.4.3.12"
+#define RTCR_NIST_SHA3_224_WITH_RSA_OID             "2.16.840.1.101.3.4.3.13"
+#define RTCR_NIST_SHA3_256_WITH_RSA_OID             "2.16.840.1.101.3.4.3.14"
+#define RTCR_NIST_SHA3_384_WITH_RSA_OID             "2.16.840.1.101.3.4.3.15"
+#define RTCR_NIST_SHA3_512_WITH_RSA_OID             "2.16.840.1.101.3.4.3.16"
 /** @}  */
 
 
@@ -299,7 +339,7 @@ typedef RTCRPKIXSIGNATUREDESC const *PCRTCRPKIXSIGNATUREDESC;
  * @param   pszObjId    The ID of the signature to search for.
  * @param   ppvOpaque   Where to store an opaque schema parameter. Optional.
  */
-PCRTCRPKIXSIGNATUREDESC RTCrPkixSignatureFindByObjIdString(const char *pszObjId, void *ppvOpaque);
+PCRTCRPKIXSIGNATUREDESC RTCrPkixSignatureFindByObjIdString(const char *pszObjId, void **ppvOpaque);
 
 /**
  * Locates a signature schema provider descriptor by ASN.1 object ID.

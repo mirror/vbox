@@ -38,10 +38,13 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP RTLOGGROUP_CRYPTO
 #include "internal/iprt.h"
 #include <iprt/crypto/key.h>
 
 #include <iprt/err.h>
+#include <iprt/log.h>
+#include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/crypto/digest.h>
 
@@ -57,6 +60,63 @@
 # endif
 
 # include "key-internal.h"
+
+
+/**
+ * Helper that loads key parameters if present.
+ */
+static int rtCrKeyToOpenSslKeyLoadParams(RTCRKEY hKey, int idKeyType, EVP_PKEY **ppEvpNewKey, PRTERRINFO pErrInfo)
+{
+    int rc = VINF_SUCCESS;
+    if (   hKey->enmType == RTCRKEYTYPE_ECDSA_PUBLIC
+        || hKey->enmType == RTCRKEYTYPE_ECDSA_PRIVATE)
+    {
+        void          *pvFree = NULL;
+        const uint8_t *pbRaw  = NULL;
+        uint32_t       cbRaw  = 0;
+        if (hKey->enmType == RTCRKEYTYPE_ECDSA_PUBLIC)
+            rc = RTAsn1EncodeQueryRawBits(&hKey->u.EcdsaPublic.NamedCurve.Asn1Core, &pbRaw, &cbRaw, &pvFree, pErrInfo);
+        else
+            AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+        if (RT_SUCCESS(rc))
+        {
+            const unsigned char *puchParams = pbRaw;
+            EVP_PKEY *pRet = d2i_KeyParams(idKeyType, ppEvpNewKey, &puchParams, cbRaw);
+            if (pRet != NULL && pRet == *ppEvpNewKey)
+                rc = VINF_SUCCESS;
+            else
+                rc = RTERRINFO_LOG_SET(pErrInfo, VERR_CR_PKIX_OSSL_D2I_KEY_PARAMS_FAILED, "d2i_KeyParams failed");
+
+            RTMemTmpFree(pvFree);
+        }
+    }
+    return rc;
+}
+
+
+/**
+ * Helper that loads key bits.
+ */
+static int rtCrKeyToOpenSslKeyLoadKeyBits(RTCRKEY hKey, int idKeyType, EVP_PKEY **ppEvpNewKey,
+                                          bool fNeedPublic, PRTERRINFO pErrInfo)
+{
+    /*
+     * Load the key into the structure.
+     */
+    const unsigned char *puchPublicKey = hKey->pbEncoded;
+    EVP_PKEY *pRet;
+    if (fNeedPublic)
+        pRet = d2i_PublicKey(idKeyType, ppEvpNewKey, &puchPublicKey, hKey->cbEncoded);
+    else
+        pRet = d2i_PrivateKey(idKeyType, ppEvpNewKey, &puchPublicKey, hKey->cbEncoded);
+    if (pRet != NULL && pRet == *ppEvpNewKey)
+        return VINF_SUCCESS;
+
+    /* Bail out: */
+    if (fNeedPublic)
+        return RTERRINFO_LOG_SET(pErrInfo, VERR_CR_PKIX_OSSL_D2I_PUBLIC_KEY_FAILED, "d2i_PublicKey failed");
+    return RTERRINFO_LOG_SET(pErrInfo, VERR_CR_PKIX_OSSL_D2I_PRIVATE_KEY_FAILED, "d2i_PrivateKey failed");
+}
 
 
 /**
@@ -90,6 +150,12 @@ DECLHIDDEN(int) rtCrKeyToOpenSslKey(RTCRKEY hKey, bool fNeedPublic, void /*EVP_P
         case RTCRKEYTYPE_RSA_PUBLIC:
             idKeyType = EVP_PKEY_RSA;
             break;
+
+        case RTCRKEYTYPE_ECDSA_PUBLIC:
+        case RTCRKEYTYPE_ECDSA_PRIVATE:
+            idKeyType = EVP_PKEY_EC;
+            break;
+
         default:
             return RTErrInfoSetF(pErrInfo, VERR_NOT_SUPPORTED, "Unsupported key type: %d", hKey->enmType);
     }
@@ -102,21 +168,20 @@ DECLHIDDEN(int) rtCrKeyToOpenSslKey(RTCRKEY hKey, bool fNeedPublic, void /*EVP_P
         return RTErrInfoSetF(pErrInfo, VERR_NO_MEMORY, "EVP_PKEY_new/%d failed", idKeyType);
 
     /*
-     * Load the key into the structure.
+     * Load key parameters and the key into the EVP structure.
      */
-    const unsigned char *puchPublicKey = hKey->pbEncoded;
-    EVP_PKEY *pRet;
-    if (fNeedPublic)
-        *ppEvpKey = pRet = d2i_PublicKey(idKeyType, &pEvpNewKey, &puchPublicKey, hKey->cbEncoded);
-    else
-        *ppEvpKey = pRet = d2i_PrivateKey(idKeyType, &pEvpNewKey, &puchPublicKey, hKey->cbEncoded);
-    if (pRet != NULL && pRet == pEvpNewKey)
-        return VINF_SUCCESS;
-
-    /* Bail out: */
+    int rc = rtCrKeyToOpenSslKeyLoadParams(hKey, idKeyType, &pEvpNewKey, pErrInfo);
+    if (RT_SUCCESS(rc))
+    {
+        rc = rtCrKeyToOpenSslKeyLoadKeyBits(hKey, idKeyType, &pEvpNewKey, fNeedPublic, pErrInfo);
+        if (RT_SUCCESS(rc))
+        {
+            *ppEvpKey = pEvpNewKey;
+            return rc;
+        }
+    }
     EVP_PKEY_free(pEvpNewKey);
-    return RTErrInfoSet(pErrInfo, VERR_CR_PKIX_OSSL_D2I_PUBLIC_KEY_FAILED,
-                        fNeedPublic ? "d2i_PublicKey failed" : "d2i_PrivateKey failed");
+    return rc;
 }
 
 
@@ -149,29 +214,29 @@ DECLHIDDEN(int) rtCrKeyToOpenSslKeyEx(RTCRKEY hKey, bool fNeedPublic, const char
      */
     int iAlgoNid = OBJ_txt2nid(pszAlgoObjId);
     if (iAlgoNid == NID_undef)
-        return RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN,
-                             "Unknown public key algorithm [OpenSSL]: %s", pszAlgoObjId);
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN,
+                                   "Unknown public key algorithm [OpenSSL]: %s", pszAlgoObjId);
     const char *pszAlgoSn = OBJ_nid2sn(iAlgoNid);
 
 # if OPENSSL_VERSION_NUMBER >= 0x10001000 && !defined(LIBRESSL_VERSION_NUMBER)
     int idAlgoPkey = 0;
     int idAlgoMd = 0;
     if (!OBJ_find_sigid_algs(iAlgoNid, &idAlgoMd, &idAlgoPkey))
-        return RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN_EVP,
-                             "OBJ_find_sigid_algs failed on %u (%s, %s)", iAlgoNid, pszAlgoSn, pszAlgoObjId);
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN_EVP,
+                                   "OBJ_find_sigid_algs failed on %u (%s, %s)", iAlgoNid, pszAlgoSn, pszAlgoObjId);
     if (ppEvpMdType)
     {
         const EVP_MD *pEvpMdType = EVP_get_digestbynid(idAlgoMd);
         if (!pEvpMdType)
-            return RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN_EVP,
-                                 "EVP_get_digestbynid failed on %d (%s, %s)", idAlgoMd, pszAlgoSn, pszAlgoObjId);
+            return RTERRINFO_LOG_SET_F(pErrInfo, VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN_EVP,
+                                       "EVP_get_digestbynid failed on %d (%s, %s)", idAlgoMd, pszAlgoSn, pszAlgoObjId);
         *ppEvpMdType = pEvpMdType;
     }
 # else
     const EVP_MD *pEvpMdType = EVP_get_digestbyname(pszAlgoSn);
     if (!pEvpMdType)
-        return RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN_EVP,
-                             "EVP_get_digestbyname failed on %s (%s)", pszAlgoSn, pszAlgoObjId);
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN_EVP,
+                                   "EVP_get_digestbyname failed on %s (%s)", pszAlgoSn, pszAlgoObjId);
     if (ppEvpMdType)
         *ppEvpMdType = pEvpMdType;
 # endif
@@ -181,7 +246,7 @@ DECLHIDDEN(int) rtCrKeyToOpenSslKeyEx(RTCRKEY hKey, bool fNeedPublic, const char
      */
     EVP_PKEY *pEvpNewKey = EVP_PKEY_new();
     if (!pEvpNewKey)
-        return RTErrInfoSetF(pErrInfo, VERR_NO_MEMORY, "EVP_PKEY_new(%d) failed", iAlgoNid);
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_NO_MEMORY, "EVP_PKEY_new(%d) failed", iAlgoNid);
 
     int rc;
 # if OPENSSL_VERSION_NUMBER >= 0x10001000 && !defined(LIBRESSL_VERSION_NUMBER)
@@ -195,33 +260,32 @@ DECLHIDDEN(int) rtCrKeyToOpenSslKeyEx(RTCRKEY hKey, bool fNeedPublic, const char
 
         {
             /*
-             * Load the key into the structure.
+             * Load key parameters and the key into the EVP structure.
              */
-            const unsigned char *puchPublicKey = hKey->pbEncoded;
-            EVP_PKEY *pRet;
-            if (fNeedPublic)
-                *ppEvpKey = pRet = d2i_PublicKey(idKeyType, &pEvpNewKey, &puchPublicKey, hKey->cbEncoded);
-            else
-                *ppEvpKey = pRet = d2i_PrivateKey(idKeyType, &pEvpNewKey, &puchPublicKey, hKey->cbEncoded);
-            if (pRet != NULL && pRet == pEvpNewKey)
-                return VINF_SUCCESS;
-
-            /* Bail out: */
-            rc = RTErrInfoSet(pErrInfo, VERR_CR_PKIX_OSSL_D2I_PUBLIC_KEY_FAILED,
-                              fNeedPublic ? "d2i_PublicKey failed" : "d2i_PrivateKey failed");
+            rc = rtCrKeyToOpenSslKeyLoadParams(hKey, idKeyType, &pEvpNewKey, pErrInfo);
+            if (RT_SUCCESS(rc))
+            {
+                rc = rtCrKeyToOpenSslKeyLoadKeyBits(hKey, idKeyType, &pEvpNewKey, fNeedPublic, pErrInfo);
+                if (RT_SUCCESS(rc))
+                {
+                    *ppEvpKey = pEvpNewKey;
+                    return rc;
+                }
+            }
         }
         else
 # if OPENSSL_VERSION_NUMBER < 0x10001000 || defined(LIBRESSL_VERSION_NUMBER)
-            rc = RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR, "EVP_PKEY_type() failed");
+            rc = RTERRINFO_LOG_SET(pErrInfo, VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR, "EVP_PKEY_type() failed");
 # else
-            rc = RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR, "EVP_PKEY_base_id() failed");
+            rc = RTERRINFO_LOG_SET(pErrInfo, VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR, "EVP_PKEY_base_id() failed");
     }
     else
-        rc = RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR,
-                           "EVP_PKEY_set_type(%u) failed (sig algo %s)", idAlgoPkey, pszAlgoSn);
+        rc = RTERRINFO_LOG_SET_F(pErrInfo, VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR,
+                                 "EVP_PKEY_set_type(%u) failed (sig algo %s)", idAlgoPkey, pszAlgoSn);
 # endif
 
     EVP_PKEY_free(pEvpNewKey);
+    *ppEvpKey = NULL;
     return rc;
 }
 

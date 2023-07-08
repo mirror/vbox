@@ -38,12 +38,14 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP RTLOGGROUP_CRYPTO
 #include "internal/iprt.h"
 #include <iprt/crypto/key.h>
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/memsafer.h>
 #include <iprt/string.h>
@@ -125,9 +127,9 @@ DECLHIDDEN(int) rtCrKeyCreateRsaPublic(PRTCRKEY phKey, const void *pvKeyBits, ui
     int rc = RTCrRsaPublicKey_DecodeAsn1(&PrimaryCursor.Cursor, 0, &PublicKey, pszErrorTag ? pszErrorTag : "PublicKey");
     if (RT_SUCCESS(rc))
     {
-       /*
-        * Create a key instance for it.
-        */
+        /*
+         * Create a key instance for it.
+         */
         PRTCRKEYINT pThis;
         rc = rtCrKeyCreateWorker(&pThis, RTCRKEYTYPE_RSA_PUBLIC, RTCRKEYINT_F_PUBLIC, pvKeyBits, cbKeyBits);
         if (RT_SUCCESS(rc))
@@ -155,8 +157,85 @@ DECLHIDDEN(int) rtCrKeyCreateRsaPublic(PRTCRKEY phKey, const void *pvKeyBits, ui
 }
 
 
-RTDECL(int) RTCrKeyCreateFromPublicAlgorithmAndBits(PRTCRKEY phKey, PCRTASN1OBJID pAlgorithm, PCRTASN1BITSTRING pPublicKey,
-                                                    PRTERRINFO pErrInfo, const char *pszErrorTag)
+/**
+ * Creates an EC (ECDSA) public key from a DER encoded RTCRX50-PUBLICKEY blob.
+ *
+ * @returns IPRT status code.
+ * @param   phKey       Where to return the key handle.
+ * @param   pParameters The algorithm parameters, typically namedCurve OID.
+ * @param   pvKeyBits   The DER encoded RTCRRSAPUBLICKEY blob.
+ * @param   cbKeyBits   The size of the blob.
+ * @param   pErrInfo    Where to supply addition error details.  Optional.
+ * @param   pszErrorTag Error tag. Optional.
+ */
+DECLHIDDEN(int) rtCrKeyCreateEcdsaPublic(PRTCRKEY phKey, PCRTASN1DYNTYPE pParameters, const void *pvKeyBits, uint32_t cbKeyBits,
+                                         PRTERRINFO pErrInfo, const char *pszErrorTag)
+{
+#if 0
+    /*
+     * Decode the key data first since that's what's most likely to fail here.
+     */
+    RTASN1CURSORPRIMARY PrimaryCursor;
+    RTAsn1CursorInitPrimary(&PrimaryCursor, pvKeyBits, cbKeyBits, pErrInfo, &g_RTAsn1DefaultAllocator,
+                            RTASN1CURSOR_FLAGS_DER, pszErrorTag ? pszErrorTag : "rsa");
+    RTCRRSAPUBLICKEY PublicKey;
+    RT_ZERO(PublicKey);
+    int rc = RTCrRsaPublicKey_DecodeAsn1(&PrimaryCursor.Cursor, 0, &PublicKey, pszErrorTag ? pszErrorTag : "PublicKey");
+#else
+    RT_NOREF(pszErrorTag);
+    int rc = VINF_SUCCESS;
+#endif
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Check the parameter (see RTC-5480, section 2.1.1).
+         */
+        if (   pParameters
+            && pParameters->enmType == RTASN1TYPE_OBJID
+            && RTAsn1ObjId_IsPresent(&pParameters->u.ObjId) /* paranoia */)
+        {
+            /*
+             * Create a key instance for it.
+             */
+            PRTCRKEYINT pThis;
+            rc = rtCrKeyCreateWorker(&pThis, RTCRKEYTYPE_ECDSA_PUBLIC, RTCRKEYINT_F_PUBLIC, pvKeyBits, cbKeyBits);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTAsn1ObjId_Clone(&pThis->u.EcdsaPublic.NamedCurve, &pParameters->u.ObjId, &g_RTAsn1DefaultAllocator);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Done. */
+#if 0
+                    RTAsn1VtDelete(&PublicKey.SeqCore.Asn1Core);
+#endif
+                    *phKey = pThis;
+                    return VINF_SUCCESS;
+                }
+                RTCrKeyRelease(pThis);
+            }
+        }
+        else if (!pParameters || pParameters->enmType == RTASN1TYPE_NOT_PRESENT)
+            rc = RTERRINFO_LOG_SET_F(pErrInfo, VERR_CR_KEY_ALGO_PARAMS_MISSING,
+                                     "%s: ECDSA public key expected a namedCurve parameter", pszErrorTag);
+        else if (pParameters->enmType == RTASN1TYPE_NULL)
+            rc = RTERRINFO_LOG_SET_F(pErrInfo, VERR_CR_KEY_ALGO_PARAMS_UNKNOWN,
+                                     "%s: ECDSA public key expected a namedCurve parameter, found implicitCurve (NULL) instead",
+                                     pszErrorTag);
+        else
+            rc = RTERRINFO_LOG_SET_F(pErrInfo, VERR_CR_KEY_ALGO_PARAMS_UNKNOWN,
+                                     "%s: ECDSA public key expected namedCurve parameter, found %d",
+                                     pszErrorTag, pParameters->enmType);
+#if 0
+        RTAsn1VtDelete(&PublicKey.SeqCore.Asn1Core);
+#endif
+    }
+    *phKey = NIL_RTCRKEY;
+    return rc;
+}
+
+
+RTDECL(int) RTCrKeyCreateFromPublicAlgorithmAndBits(PRTCRKEY phKey, PCRTASN1OBJID pAlgorithm, PCRTASN1DYNTYPE pParameters,
+                                                    PCRTASN1BITSTRING pPublicKey, PRTERRINFO pErrInfo, const char *pszErrorTag)
 {
     /*
      * Validate input.
@@ -171,15 +250,25 @@ RTDECL(int) RTCrKeyCreateFromPublicAlgorithmAndBits(PRTCRKEY phKey, PCRTASN1OBJI
     AssertReturn(RTAsn1BitString_IsPresent(pPublicKey), VERR_INVALID_PARAMETER);
 
     /*
-     * Taking a weird shortcut here.
+     * Identify the key type from the algorithm ID
      */
-    PCRTCRPKIXSIGNATUREDESC pDesc = RTCrPkixSignatureFindByObjId(pAlgorithm, NULL);
-    if (pDesc && strcmp(pDesc->pszObjId, RTCRX509ALGORITHMIDENTIFIERID_RSA) == 0)
-        return rtCrKeyCreateRsaPublic(phKey,
-                                      RTASN1BITSTRING_GET_BIT0_PTR(pPublicKey),
-                                      RTASN1BITSTRING_GET_BYTE_SIZE(pPublicKey),
-                                      pErrInfo, pszErrorTag);
-    Assert(pDesc == NULL);
+    const char * const pszEncryptionOid = RTCrX509AlgorithmIdentifier_GetEncryptionOidFromOid(pAlgorithm->szObjId,
+                                                                                              false /*fMustIncludeHash*/);
+    if (pszEncryptionOid)
+    {
+        if (strcmp(pszEncryptionOid, RTCRX509ALGORITHMIDENTIFIERID_RSA) == 0)
+            return rtCrKeyCreateRsaPublic(phKey,
+                                          RTASN1BITSTRING_GET_BIT0_PTR(pPublicKey),
+                                          RTASN1BITSTRING_GET_BYTE_SIZE(pPublicKey),
+                                          pErrInfo, pszErrorTag);
+        if (strcmp(pszEncryptionOid, RTCRX509ALGORITHMIDENTIFIERID_ECDSA) == 0)
+            return rtCrKeyCreateEcdsaPublic(phKey,
+                                            pParameters,
+                                            RTASN1BITSTRING_GET_BIT0_PTR(pPublicKey),
+                                            RTASN1BITSTRING_GET_BYTE_SIZE(pPublicKey),
+                                            pErrInfo, pszErrorTag);
+    }
+    Assert(pszEncryptionOid == NULL);
     return RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_CIPHER_ALGO_NOT_KNOWN, "oid=%s", pAlgorithm->szObjId);
 }
 
@@ -189,8 +278,8 @@ RTDECL(int) RTCrKeyCreateFromSubjectPublicKeyInfo(PRTCRKEY phKey, struct RTCRX50
 {
     AssertPtrReturn(pSrc, VERR_INVALID_POINTER);
     AssertReturn(RTCrX509SubjectPublicKeyInfo_IsPresent(pSrc), VERR_INVALID_PARAMETER);
-    return RTCrKeyCreateFromPublicAlgorithmAndBits(phKey, &pSrc->Algorithm.Algorithm, &pSrc->SubjectPublicKey,
-                                                   pErrInfo, pszErrorTag);
+    return RTCrKeyCreateFromPublicAlgorithmAndBits(phKey, &pSrc->Algorithm.Algorithm, &pSrc->Algorithm.Parameters,
+                                                   &pSrc->SubjectPublicKey, pErrInfo, pszErrorTag);
 }
 
 
@@ -291,6 +380,11 @@ static int rtCrKeyDestroy(PRTCRKEYINT pThis)
             RTBigNumDestroy(&pThis->u.RsaPrivate.PublicExponent);
             break;
 
+        case RTCRKEYTYPE_ECDSA_PUBLIC:
+            RTAsn1ObjId_Delete(&pThis->u.EcdsaPublic.NamedCurve);
+            break;
+
+        case RTCRKEYTYPE_ECDSA_PRIVATE: /* not yet implemented */
         case RTCRKEYTYPE_INVALID:
         case RTCRKEYTYPE_END:
         case RTCRKEYTYPE_32BIT_HACK:
@@ -391,5 +485,73 @@ RTDECL(int) RTCrKeyQueryRsaPrivateExponent(RTCRKEY hKey, PRTBIGNUM pPrivateExpon
     AssertPtrReturn(pPrivateExponent, VERR_INVALID_POINTER);
 
     return RTBigNumAssign(pPrivateExponent, &pThis->u.RsaPrivate.PrivateExponent);
+}
+
+
+RTDECL(int) RTCrKeyVerifyParameterCompatibility(RTCRKEY hKey, PCRTASN1DYNTYPE pParameters, bool fForSignature,
+                                                PCRTASN1OBJID pAlgorithm, PRTERRINFO pErrInfo)
+{
+    PRTCRKEYINT pThis = hKey;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTCRKEYINT_MAGIC, VERR_INVALID_HANDLE);
+    RT_NOREF(pAlgorithm);
+
+    switch (pThis->enmType)
+    {
+        /*
+         * No parameters. Ignore NULL.
+         */
+        case RTCRKEYTYPE_RSA_PRIVATE:
+        case RTCRKEYTYPE_RSA_PUBLIC:
+            if (   !pParameters
+                || pParameters->enmType == RTASN1TYPE_NOT_PRESENT
+                || pParameters->enmType == RTASN1TYPE_NULL)
+                return VINF_SUCCESS;
+            return RTERRINFO_LOG_SET_F(pErrInfo, VERR_CR_KEY_ALGO_PARAMS_UNEXPECTED,
+                                       "RSA keys does not generally take parameters (enmType=%d)", pParameters->enmType);
+
+        /*
+         * ECDSA requires a parameter.  Currently only the named curve choice is supported.
+         * RFC-3279 section 2.2.3 states that for ecdsa-with-SHA1 the parameter MUST be
+         * omitted.  ASSUMING the same applies to the other ecdsa-with-xxxx variants.
+         */
+        case RTCRKEYTYPE_ECDSA_PUBLIC:
+            if (!fForSignature)
+            {
+                /* Key rules: Parameters required. */
+                if (pParameters)
+                {
+                    if (pParameters->enmType == RTASN1TYPE_OBJID)
+                    {
+                        if (RTAsn1ObjId_Compare(&pParameters->u.ObjId, &pThis->u.EcdsaPublic.NamedCurve) == 0)
+                            return VINF_SUCCESS;
+                        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_CR_KEY_ALGO_PARAMS_MISMATCH,
+                                                   "ECDSA NamedCurve difference: %s, key uses %s",
+                                                   pParameters->u.ObjId.szObjId, pThis->u.EcdsaPublic.NamedCurve.szObjId);
+                    }
+                    /* We don't implement the other variants. */
+                    return RTERRINFO_LOG_SET_F(pErrInfo, VERR_CR_KEY_ALGO_PARAMS_UNKNOWN,
+                                               "Unexpected ECDSA parameter: enmType=%d", pParameters->enmType);
+                }
+                return RTERRINFO_LOG_SET(pErrInfo, VERR_CR_KEY_ALGO_PARAMS_MISSING, "ECDSA keys requires parameter(s)");
+            }
+
+            /* Hash+ecdsa parameter rules: No parameters */
+            if (   !pParameters
+                || pParameters->enmType == RTASN1TYPE_NOT_PRESENT
+                || pParameters->enmType == RTASN1TYPE_NULL)
+                return VINF_SUCCESS;
+            return RTERRINFO_LOG_SET_F(pErrInfo, VERR_CR_KEY_ALGO_PARAMS_UNEXPECTED,
+                                       "ECDSA signature should have no parameters (enmType=%d)", pParameters->enmType);
+
+        case RTCRKEYTYPE_ECDSA_PRIVATE:
+            AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+
+        case RTCRKEYTYPE_INVALID:
+        case RTCRKEYTYPE_END:
+        case RTCRKEYTYPE_32BIT_HACK:
+            break;
+    }
+    AssertFailedReturn(VERR_INTERNAL_ERROR_5);
 }
 

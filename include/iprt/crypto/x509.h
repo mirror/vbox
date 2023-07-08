@@ -80,19 +80,50 @@ RTASN1_IMPL_GEN_SET_OF_TYPEDEFS_AND_PROTOS(RTCRX509ALGORITHMIDENTIFIERS, RTCRX50
  * Tries to convert an X.509 digest algorithm ID into a RTDIGESTTYPE value.
  *
  * @returns Valid RTDIGESTTYPE on success, RTDIGESTTYPE_INVALID on failure.
- * @param   pThis           The IPRT representation of a X.509 algorithm
- *                          identifier object.
+ * @param   pThis               The IPRT representation of a X.509 algorithm
+ *                              identifier object.
+ * @param   fPureDigestsOnly    Whether to only match IDs that only identify
+ *                              digest algorithms, or whether to also include
+ *                              IDs that mixes hash and encryption/whatever.
  */
-RTDECL(RTDIGESTTYPE) RTCrX509AlgorithmIdentifier_QueryDigestType(PCRTCRX509ALGORITHMIDENTIFIER pThis);
+RTDECL(RTDIGESTTYPE) RTCrX509AlgorithmIdentifier_GetDigestType(PCRTCRX509ALGORITHMIDENTIFIER pThis, bool fPureDigestsOnly);
 
 /**
  * Tries to figure the digest size of an X.509 digest algorithm ID.
  *
  * @returns The digest size in bytes, UINT32_MAX if unknown digest.
- * @param   pThis           The IPRT representation of a X.509 algorithm
- *                          identifier object.
+ * @param   pThis               The IPRT representation of a X.509 algorithm
+ *                              identifier object.
+ * @param   fPureDigestsOnly    Whether to only match IDs that only identify
+ *                              digest algorithms, or whether to also include
+ *                              IDs that mixes hash and encryption/whatever.
  */
-RTDECL(uint32_t) RTCrX509AlgorithmIdentifier_QueryDigestSize(PCRTCRX509ALGORITHMIDENTIFIER pThis);
+RTDECL(uint32_t) RTCrX509AlgorithmIdentifier_GetDigestSize(PCRTCRX509ALGORITHMIDENTIFIER pThis, bool fPureDigestsOnly);
+
+/**
+ * Tries to get the encryption OID from the algorithm.
+ *
+ * @returns The encryption (cipher) OID  on success, NULL on failure.
+ * @param   pThis               The IPRT representation of a X.509 algorithm
+ *                              identifier object.
+ * @param   fMustIncludeHash    Whether the algorithm ID represented by @a pThis
+ *                              must include a hash (true) or whether it is
+ *                              okay to accept pure encryption IDs as well
+ *                              (false).
+ */
+RTDECL(const char *) RTCrX509AlgorithmIdentifier_GetEncryptionOid(PCRTCRX509ALGORITHMIDENTIFIER pThis, bool fMustIncludeHash);
+
+/**
+ * Tries to get the encryption OID from the given algorithm OID string.
+ *
+ * @returns The encryption (cipher) OID  on success, NULL on failure.
+ * @param   pszAlgorithmOid     The IPRT representation of a X.509 algorithm
+ *                              identifier object.
+ * @param   fMustIncludeHash    Whether @a pszAlgorithmOid must include a hash
+ *                              (true) or whether it is okay to accept pure
+ *                              encryption IDs as well (false).
+ */
+RTDECL(const char *) RTCrX509AlgorithmIdentifier_GetEncryptionOidFromOid(const char *pszAlgorithmOid, bool fMustIncludeHash);
 
 RTDECL(int) RTCrX509AlgorithmIdentifier_CompareWithString(PCRTCRX509ALGORITHMIDENTIFIER pThis, const char *pszObjId);
 
@@ -154,6 +185,7 @@ RTDECL(const char *) RTCrX509AlgorithmIdentifier_CombineEncryptionOidAndDigestOi
 #define RTCRX509ALGORITHMIDENTIFIERID_MD2               "1.2.840.113549.2.2"
 #define RTCRX509ALGORITHMIDENTIFIERID_MD4               "1.2.840.113549.2.4"
 #define RTCRX509ALGORITHMIDENTIFIERID_MD5               "1.2.840.113549.2.5"
+#define RTCRX509ALGORITHMIDENTIFIERID_SHA0              "1.3.14.3.2.18"
 #define RTCRX509ALGORITHMIDENTIFIERID_SHA1              "1.3.14.3.2.26"
 #define RTCRX509ALGORITHMIDENTIFIERID_SHA256            "2.16.840.1.101.3.4.2.1"
 #define RTCRX509ALGORITHMIDENTIFIERID_SHA384            "2.16.840.1.101.3.4.2.2"
@@ -187,6 +219,16 @@ RTDECL(const char *) RTCrX509AlgorithmIdentifier_CombineEncryptionOidAndDigestOi
 #define RTCRX509ALGORITHMIDENTIFIERID_SHA3_256_WITH_RSA     "2.16.840.1.101.3.4.3.14"
 #define RTCRX509ALGORITHMIDENTIFIERID_SHA3_384_WITH_RSA     "2.16.840.1.101.3.4.3.15"
 #define RTCRX509ALGORITHMIDENTIFIERID_SHA3_512_WITH_RSA     "2.16.840.1.101.3.4.3.16"
+#define RTCRX509ALGORITHMIDENTIFIERID_ECDSA                 "1.2.840.10045.2.1"
+#define RTCRX509ALGORITHMIDENTIFIERID_SHA1_WITH_ECDSA       "1.2.840.10045.4.1"
+#define RTCRX509ALGORITHMIDENTIFIERID_SHA224_WITH_ECDSA     "1.2.840.10045.4.3.1"
+#define RTCRX509ALGORITHMIDENTIFIERID_SHA256_WITH_ECDSA     "1.2.840.10045.4.3.2"
+#define RTCRX509ALGORITHMIDENTIFIERID_SHA384_WITH_ECDSA     "1.2.840.10045.4.3.3"
+#define RTCRX509ALGORITHMIDENTIFIERID_SHA512_WITH_ECDSA     "1.2.840.10045.4.3.4"
+#define RTCRX509ALGORITHMIDENTIFIERID_SHA3_224_WITH_ECDSA   "2.16.840.1.101.3.4.3.9"
+#define RTCRX509ALGORITHMIDENTIFIERID_SHA3_256_WITH_ECDSA   "2.16.840.1.101.3.4.3.10"
+#define RTCRX509ALGORITHMIDENTIFIERID_SHA3_384_WITH_ECDSA   "2.16.840.1.101.3.4.3.11"
+#define RTCRX509ALGORITHMIDENTIFIERID_SHA3_512_WITH_ECDSA   "2.16.840.1.101.3.4.3.12"
 /** @} */
 
 

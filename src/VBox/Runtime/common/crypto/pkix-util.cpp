@@ -44,66 +44,18 @@
 #include <iprt/asn1.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
-#include <iprt/string.h>
 #include <iprt/crypto/rsa.h>
 
-#ifdef IPRT_WITH_OPENSSL
-# include "internal/iprt-openssl.h"
-# include "internal/openssl-pre.h"
-# include <openssl/evp.h>
-# include "internal/openssl-post.h"
-#endif
 
-
+RTDECL(const char *) RTCrPkixGetCiperOidFromSignatureAlgorithmOid(const char *pszSignatureOid)
+{
+    return RTCrX509AlgorithmIdentifier_GetEncryptionOidFromOid(pszSignatureOid, true /*fMustIncludeHash*/);
+}
 
 
 RTDECL(const char *) RTCrPkixGetCiperOidFromSignatureAlgorithm(PCRTASN1OBJID pAlgorithm)
 {
-    /*
-     * This is all hardcoded, at least for the time being.
-     */
-    if (RTAsn1ObjId_StartsWith(pAlgorithm, RTCR_PKCS1_OID))
-    {
-        if (RTAsn1ObjIdCountComponents(pAlgorithm) == 7)
-            switch (RTAsn1ObjIdGetLastComponentsAsUInt32(pAlgorithm))
-            {
-                case 2:
-                case 3:
-                case 4:
-                case 5:
-                case 11:
-                case 12:
-                case 13:
-                case 14:
-                    return RTCR_PKCS1_RSA_OID;
-                case 1: AssertFailed();
-                    RT_FALL_THRU();
-                default:
-                    return NULL;
-            }
-    }
-    /*
-     * OIW oddballs.
-     */
-    else if (RTAsn1ObjId_StartsWith(pAlgorithm, "1.3.14.3.2"))
-    {
-        if (RTAsn1ObjIdCountComponents(pAlgorithm) == 6)
-            switch (RTAsn1ObjIdGetLastComponentsAsUInt32(pAlgorithm))
-            {
-                case 11:
-                case 14:
-                case 15:
-                case 24:
-                case 25:
-                case 29:
-                    return RTCR_PKCS1_RSA_OID;
-                default:
-                    return NULL;
-            }
-    }
-
-
-    return NULL;
+    return RTCrX509AlgorithmIdentifier_GetEncryptionOidFromOid(pAlgorithm->szObjId, true /*fMustIncludeHash*/);
 }
 
 
@@ -137,6 +89,7 @@ RTDECL(bool) RTCrPkixPubKeyCanHandleDigestType(PCRTCRX509SUBJECTPUBLICKEYINFO pP
         }
         else
         {
+            /** @todo ECDSA when adding signing support.  */
             RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_CIPHER_ALGO_NOT_KNOWN, "%s", pPublicKeyInfo->Algorithm.Algorithm.szObjId);
             AssertMsgFailed(("unknown key algorithm: %s\n", pPublicKeyInfo->Algorithm.Algorithm.szObjId));
             fRc = true;
