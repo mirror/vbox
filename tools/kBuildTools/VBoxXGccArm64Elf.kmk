@@ -1,0 +1,382 @@
+# $Id$
+## @file
+# kBuild Tool Config - GCC v13.1.x, targeting baremetal ARM64 (for the UEFI firmware).
+#
+
+#
+# Copyright (C) 2023 Oracle and/or its affiliates.
+#
+# This file is part of VirtualBox base platform packages, as
+# available from https://www.virtualbox.org.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation, in version 3 of the
+# License.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, see <https://www.gnu.org/licenses>.
+#
+# SPDX-License-Identifier: GPL-3.0-only
+#
+
+TOOL_VBoxXGccArm64Elf := Generic GCC v13.1.x or later using the tools GCC and Binutils, targeting ARM64.
+
+
+#
+# Tool Specific Properties
+#
+ifndef PATH_TOOL_VBoxXGccArm64Elf
+ PATH_TOOL_VBoxXGccArm64Elf := $(firstfile $(rversortfiles $(qwildcard ,$(KBUILD_DEVTOOLS_HST)/gcc-aarch64/v13.1*/bin)))
+ ifeq ($(PATH_TOOL_VBoxXGccArm64Elf),)
+  PATH_TOOL_VBoxXGccArm64Elf := $(PATH_TOOL_VBoxXGccArm64Elf)
+ endif
+ ifeq ($(PATH_TOOL_VBoxXGccArm64Elf),)
+  $(error kBuild: PATH_TOOL_VBoxXGccArm64Elf cannot be determined!)
+ endif
+else
+ # Resolve any fancy stuff once and for all.
+ PATH_TOOL_VBoxXGccArm64Elf := $(PATH_TOOL_VBoxXGccArm64Elf)
+endif
+
+
+# Tool Specific Properties
+ifndef TOOL_VBoxXGccArm64Elf_PREFIX
+ TOOL_VBoxXGccArm64Elf_PREFIX := aarch64-elf-
+endif
+ifndef TOOL_VBoxXGccArm64Elf_SUFFIX
+ TOOL_VBoxXGccArm64Elf_SUFFIX := $(HOSTSUFF_EXE)
+endif
+
+TOOL_VBoxXGccArm64Elf_CC        ?= $(PATH_TOOL_VBoxXGccArm64Elf)/$(TOOL_VBoxXGccArm64Elf_PREFIX)gcc$(TOOL_VBoxXGccArm64Elf_SUFFIX)
+TOOL_VBoxXGccArm64Elf_CXX       ?= $(PATH_TOOL_VBoxXGccArm64Elf)/$(TOOL_VBoxXGccArm64Elf_PREFIX)g++$(TOOL_VBoxXGccArm64Elf_SUFFIX)
+TOOL_VBoxXGccArm64Elf_PCH       ?= $(TOOL_VBoxXGccArm64Elf_CXX)
+TOOL_VBoxXGccArm64Elf_AS        ?= $(PATH_TOOL_VBoxXGccArm64Elf)/$(TOOL_VBoxXGccArm64Elf_PREFIX)gcc$(TOOL_VBoxXGccArm64Elf_SUFFIX)
+TOOL_VBoxXGccArm64Elf_AR        ?= $(PATH_TOOL_VBoxXGccArm64Elf)/$(TOOL_VBoxXGccArm64Elf_PREFIX)ar$(TOOL_VBoxXGccArm64Elf_SUFFIX)
+TOOL_VBoxXGccArm64Elf_AR_IMP    ?= $(ECHO) not supported!
+TOOL_VBoxXGccArm64Elf_LD        ?= $(PATH_TOOL_VBoxXGccArm64Elf)/$(TOOL_VBoxXGccArm64Elf_PREFIX)g++$(TOOL_VBoxXGccArm64Elf_SUFFIX)
+TOOL_VBoxXGccArm64Elf_LD_SYSMOD ?= $(PATH_TOOL_VBoxXGccArm64Elf)/$(TOOL_VBoxXGccArm64Elf_PREFIX)ld$(TOOL_VBoxXGccArm64Elf_SUFFIX)
+ifndef TOOL_VBoxXGccArm64Elf_LDFLAGS.$(KBUILD_TARGET)
+ TOOL_VBoxXGccArm64Elf_LDFLAGS.dll   ?= -shared
+else
+ TOOL_VBoxXGccArm64Elf_LDFLAGS.dll   ?= $(TOOL_VBoxXGccArm64Elf_LDFLAGS.$(KBUILD_TARGET))
+endif
+TOOL_VBoxXGccArm64Elf_LDFLAGS.sysmod ?= -r
+TOOL_VBoxXGccArm64Elf_LD_SONAME      ?= -Wl,-soname=$(firstword $($(1)_SONAME.$(KBUILD_TARGET).$(KBUILD_TYPE)) $($(1)_SONAME.$(KBUILD_TARGET)) $($(1)_SONAME.$(KBUILD_TYPE)) $($(1)_SONAME) $(notdir $(2)))
+ifeq ($(KBUILD_TARGET),os2)
+ TOOL_VBoxXGccArm64Elf_LD_MAP        ?= -Zmap=$(1)
+ TOOL_VBoxXGccArm64Elf_LD_SYSMOD_MAP ?= -Zmap=$(1)
+else
+ TOOL_VBoxXGccArm64Elf_LD_MAP        ?=
+ TOOL_VBoxXGccArm64Elf_LD_SYSMOD_MAP ?=
+endif
+TOOL_VBoxXGccArm64Elf_OBJCOPY ?= $(PATH_TOOL_VBoxXGccArm64Elf)/$(TOOL_VBoxXGccArm64Elf_PREFIX)objcopy$(TOOL_VBoxXGccArm64Elf_SUFFIX)
+
+# General Properties used by kBuild
+TOOL_VBoxXGccArm64Elf_COBJSUFF         ?= .o
+TOOL_VBoxXGccArm64Elf_CFLAGS           ?=
+TOOL_VBoxXGccArm64Elf_CFLAGS.debug     ?= -g
+TOOL_VBoxXGccArm64Elf_CFLAGS.profile   ?= -O2 #-g -pg
+TOOL_VBoxXGccArm64Elf_CFLAGS.release   ?= -O2
+TOOL_VBoxXGccArm64Elf_CINCS            ?=
+TOOL_VBoxXGccArm64Elf_CDEFS            ?=
+
+TOOL_VBoxXGccArm64Elf_CXXOBJSUFF       ?= .o
+TOOL_VBoxXGccArm64Elf_CXXFLAGS         ?=
+TOOL_VBoxXGccArm64Elf_CXXFLAGS.debug   ?= -g
+TOOL_VBoxXGccArm64Elf_CXXFLAGS.profile ?= -O2 #-g -pg
+TOOL_VBoxXGccArm64Elf_CXXFLAGS.release ?= -O2
+TOOL_VBoxXGccArm64Elf_CXXINCS          ?=
+TOOL_VBoxXGccArm64Elf_CXXDEFS          ?=
+
+TOOL_VBoxXGccArm64Elf_PCHOBJSUFF       ?= .h.gch
+TOOL_VBoxXGccArm64Elf_PCHFLAGS         ?= $(TOOL_VBoxXGccArm64Elf_CXXFLAGS)
+TOOL_VBoxXGccArm64Elf_PCHFLAGS.debug   ?= $(TOOL_VBoxXGccArm64Elf_CXXFLAGS.debug)
+TOOL_VBoxXGccArm64Elf_PCHFLAGS.profile ?= $(TOOL_VBoxXGccArm64Elf_CXXFLAGS.profile)
+TOOL_VBoxXGccArm64Elf_PCHFLAGS.release ?= $(TOOL_VBoxXGccArm64Elf_CXXFLAGS.release)
+TOOL_VBoxXGccArm64Elf_PCHINCS          ?= $(TOOL_VBoxXGccArm64Elf_CXXINCS)
+TOOL_VBoxXGccArm64Elf_PCHDEFS          ?= $(TOOL_VBoxXGccArm64Elf_CXXDEFS)
+
+TOOL_VBoxXGccArm64Elf_ASFLAGS          ?= -x assembler-with-cpp
+TOOL_VBoxXGccArm64Elf_ASFLAGS.debug    ?= -g
+TOOL_VBoxXGccArm64Elf_ASFLAGS.profile  ?= -g
+TOOL_VBoxXGccArm64Elf_ASOBJSUFF        ?= .o
+
+TOOL_VBoxXGccArm64Elf_ARFLAGS          ?= cr
+TOOL_VBoxXGccArm64Elf_ARLIBSUFF        ?= .a
+
+TOOL_VBoxXGccArm64Elf_LDFLAGS          ?=
+TOOL_VBoxXGccArm64Elf_LDFLAGS.debug    ?= -g
+TOOL_VBoxXGccArm64Elf_LDFLAGS.profile  ?= -g
+
+
+## Compile C source.
+# @param    $(target)   Normalized main target name.
+# @param    $(source)   Source filename (relative).
+# @param    $(obj)      Object file name. This shall be (re)created by the compilation.
+# @param    $(dep)	    Dependcy file. This shall be (re)created by the compilation.
+# @param    $(flags)    Flags.
+# @param    $(defs)     Definitions. No -D or something.
+# @param    $(incs)     Includes. No -I or something.
+# @param    $(dirdep)   Directory creation dependency.
+# @param    $(deps)		Other dependencies.
+#
+# @param    $(outbase)  Output basename (full). Use this for list files and such.
+# @param    $(objsuff)  Object suffix.
+TOOL_VBoxXGccArm64Elf_COMPILE_C_DEPEND =
+TOOL_VBoxXGccArm64Elf_COMPILE_C_DEPORD =
+TOOL_VBoxXGccArm64Elf_COMPILE_C_OUTPUT         = $(if-expr "$(use_objcache)" != "",$(outbase).i,)
+TOOL_VBoxXGccArm64Elf_COMPILE_C_USES_KOBJCACHE = $(if-expr "$(use_objcache)" != "",1,)
+define TOOL_VBoxXGccArm64Elf_COMPILE_C_CMDS
+if "$(use_objcache)" != ""
+	$(QUIET)$(KOBJCACHE) -f $(outbase).koc -d $(PATH_OBJCACHE) -t $(bld_trg).$(bld_trg_arch) -p\
+		--kObjCache-cpp $(outbase).i\
+		$(TOOL_VBoxXGccArm64Elf_CC) -E -o -\
+		$(flags) $(qaddprefix sh,-I, $(incs)) $(qaddprefix sh,-D, $(defs))\
+		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
+		$(abspath $(source))\
+		--kObjCache-cc $(obj)\
+		$(TOOL_VBoxXGccArm64Elf_CC) -c\
+		$(flags) -fpreprocessed -x c\
+		-o $(obj)\
+		-
+else
+	$(QUIET)$(TOOL_VBoxXGccArm64Elf_CC) -c\
+		$(flags) $(qaddprefix sh,-I, $(incs)) $(qaddprefix sh,-D, $(defs))\
+		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
+		-o $(obj)\
+		$(abspath $(source))
+endif
+	$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
+endef
+
+
+## Compile C++ source.
+# @param    $(target)   Normalized main target name.
+# @param    $(source)   Source filename (relative).
+# @param    $(obj)      Object file name. This shall be (re)created by the compilation.
+# @param    $(dep)      Dependcy file. This shall be (re)created by the compilation.
+# @param    $(flags)    Flags.
+# @param    $(defs)     Definitions. No -D or something.
+# @param    $(incs)     Includes. No -I or something.
+# @param    $(dirdep)   Directory creation dependency.
+# @param    $(deps)     Other dependencies.
+# @param    $(outbase)  Output basename (full). Use this for list files and such.
+# @param    $(objsuff)  Object suffix.
+TOOL_VBoxXGccArm64Elf_COMPILE_CXX_OUTPUT         = $(if-expr "$(use_objcache)" != "",$(outbase).ii,)
+TOOL_VBoxXGccArm64Elf_COMPILE_CXX_DEPEND         = $($(target)_1_GCC_PCH_FILE)
+TOOL_VBoxXGccArm64Elf_COMPILE_CXX_DEPORD         =
+TOOL_VBoxXGccArm64Elf_COMPILE_CXX_USES_KOBJCACHE = $(if-expr "$(use_objcache)" != "",1,)
+define TOOL_VBoxXGccArm64Elf_COMPILE_CXX_CMDS
+if "$(use_objcache)" != ""
+	$(QUIET)$(KOBJCACHE) -f $(outbase).koc -d $(PATH_OBJCACHE) -t $(bld_trg).$(bld_trg_arch) -p\
+		--kObjCache-cpp $(outbase).ii\
+		$(TOOL_VBoxXGccArm64Elf_CXX) -E -o - $(if-expr defined($(target)_PCH_HDR)\
+		,-fpch-preprocess -Winvalid-pch -I$($(target)_1_GCC_PCH_DIR) -include $(basename $($(target)_1_GCC_PCH_FILE)),)\
+		$(flags) $(qaddprefix sh,-I, $(incs)) $(qaddprefix sh,-D, $(defs))\
+		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
+		$(abspath $(source))\
+		--kObjCache-cc $(obj)\
+		$(TOOL_VBoxXGccArm64Elf_CXX) -c\
+		$(flags) -fpreprocessed $(if-expr defined($(target)_PCH_HDR),-fpch-preprocess,) -x c++\
+		-o $(obj)\
+		-
+else
+	$(QUIET)$(TOOL_VBoxXGccArm64Elf_CXX) -c\
+		$(flags) $(qaddprefix sh,-I, $($(target)_1_GCC_PCH_DIR) $(incs)) $(qaddprefix sh,-D, $(defs))\
+		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
+		-o $(obj) $(if-expr defined($(target)_PCH_HDR) \
+		,-Winvalid-pch -include $(basename $($(target)_1_GCC_PCH_FILE)),) \
+		$(abspath $(source))
+endif
+	$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
+endef
+
+
+## Precompile C++ header.
+# @param    $(target)   Normalized main target name.
+# @param    $(source)   Source filename (relative).
+# @param    $(obj)      Object file name. This shall be (re)created by the compilation.
+# @param    $(dep)	    Dependcy file. This shall be (re)created by the compilation.
+# @param    $(flags)    Flags.
+# @param    $(defs)     Definitions. No -D or something.
+# @param    $(incs)     Includes. No -I or something.
+# @param    $(dirdep)   Directory creation dependency.
+# @param    $(deps)		Other dependencies.
+# @param    $(outbase)  Output basename (full). Use this for list files and such.
+# @param    $(objsuff)  Object suffix.
+TOOL_VBoxXGccArm64Elf_COMPILE_PCH_OUTPUT = $($(target)_1_GCC_PCH_FILE)
+TOOL_VBoxXGccArm64Elf_COMPILE_PCH_DEPEND =
+TOOL_VBoxXGccArm64Elf_COMPILE_PCH_DEPORD = $($(target)_1_GCC_PCH_DIR)
+define TOOL_VBoxXGccArm64Elf_COMPILE_PCH_CMDS
+	$(QUIET)$(TOOL_VBoxXGccArm64Elf_PCH) -c\
+		$(flags) $(qaddprefix sh,-I, $($(target)_1_GCC_PCH_DIR) $(incs)) $(qaddprefix sh,-D, $(defs))\
+		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
+		-o $(obj)\
+		$(abspath $(source))
+	$(INSTALL) --hard-link-files-when-possible -m 0644 -- "$(obj)" "$($(target)_1_GCC_PCH_FILE)"
+	$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
+endef
+
+
+## Compile Assembly source.
+# @param    $(target)   Normalized main target name.
+# @param    $(source)   Source filename (relative).
+# @param    $(obj)      Object file name. This shall be (re)created by the compilation.
+# @param    $(dep)      Dependcy file. This shall be (re)created by the compilation.
+# @param    $(flags)    Flags.
+# @param    $(defs)     Definitions. No -D or something.
+# @param    $(incs)     Includes. No -I or something.
+# @param    $(dirdep)   Directory creation dependency.
+# @param    $(deps)     Other dependencies.
+# @param    $(outbase)  Output basename (full). Use this for list files and such.
+# @param    $(objsuff)  Object suffix.
+#
+TOOL_VBoxXGccArm64Elf_COMPILE_AS_OUTPUT =
+TOOL_VBoxXGccArm64Elf_COMPILE_AS_DEPEND =
+TOOL_VBoxXGccArm64Elf_COMPILE_AS_DEPORD =
+define TOOL_VBoxXGccArm64Elf_COMPILE_AS_CMDS
+	$(QUIET)$(TOOL_VBoxXGccArm64Elf_AS) -c\
+		$(flags) $(qaddprefix sh,-I, $(incs)) $(qaddprefix sh,-D, $(defs))\
+		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
+		-o $(obj)\
+		$(abspath $(source))
+	$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
+endef
+
+
+## Link library
+# @param    $(target)   Normalized main target name.
+# @param    $(out)      Library name.
+# @param    $(objs)     Object files to put in the library.
+# @param    $(flags)    Flags.
+# @param    $(dirdep)   Directory creation dependency.
+# @param    $(deps)     Other dependencies.
+# @param    $(othersrc) Unhandled sources.
+# @param    $(outbase)  Output basename (full). Use this for list files and such.
+TOOL_VBoxXGccArm64Elf_LINK_LIBRARY_OUTPUT = $(out).ar-script
+TOOL_VBoxXGccArm64Elf_LINK_LIBRARY_OUTPUT_MAYBE = $(outbase).imp.a
+TOOL_VBoxXGccArm64Elf_LINK_LIBRARY_DEPEND = $(othersrc)
+TOOL_VBoxXGccArm64Elf_LINK_LIBRARY_DEPORD =
+define TOOL_VBoxXGccArm64Elf_LINK_LIBRARY_CMDS
+	$(QUIET)$(APPEND) $(out).ar-script 'CREATE $(out)'
+	$(QUIET)$(APPEND) -n $(out).ar-script \
+		$(foreach o,$(filter-out %.h.gch,$(objs)), 'ADDMOD $(o)') \
+		$(foreach o,$(filter-out %.def %.imp %.dll,$(othersrc)), 'ADDLIB $(o)')
+	$(if $(filter %.def %.imp %.dll,$(othersrc))\
+		,$(TOOL_VBoxXGccArm64Elf_AR_IMP) -o $(outbase).imp.a $(filter %.def %.imp %.dll,$(othersrc))\
+		 $(NL)$(TAB)$(QUIET)$(APPEND) $(out).ar-script 'ADDLIB $(outbase).imp.a')
+	$(QUIET)$(APPEND) $(out).ar-script 'SAVE'
+	$(QUIET)$(APPEND) $(out).ar-script 'END'
+	$(QUIET)$(REDIRECT) -rti $(out).ar-script -- $(TOOL_VBoxXGccArm64Elf_AR) -M
+endef
+
+
+## Link program
+# @param    $(target)   Normalized main target name.
+# @param    $(out)		Program name.
+# @param    $(objs)     Object files to link together.
+# @param    $(libs)     Libraries to search.
+# @param    $(libpath)  Library search paths.
+# @param    $(flags)    Flags.
+# @param    $(dirdep)   Directory creation dependency.
+# @param    $(deps)		Other dependencies.
+# @param    $(othersrc) Unhandled sources.
+# @param    $(custom_pre)   Custom step invoked before linking.
+# @param    $(custom_post)  Custom step invoked after linking.
+# @param    $(outbase)  Output basename (full). Use this for list files and such.
+TOOL_VBoxXGccArm64Elf_LINK_PROGRAM_OUTPUT =
+TOOL_VBoxXGccArm64Elf_LINK_PROGRAM_OUTPUT_MAYBE = $(outbase).map
+TOOL_VBoxXGccArm64Elf_LINK_PROGRAM_OUTPUT_DEBUG = $(outbase).debug
+TOOL_VBoxXGccArm64Elf_LINK_PROGRAM_DEBUG_INSTALL_FN = $(2).debug=>$(basename $(3)).debug
+TOOL_VBoxXGccArm64Elf_LINK_PROGRAM_DEPEND = $(foreach lib,$(libs),$(if $(findstring $(lib),$(subst /,x,$(lib))),, $(lib)))\
+		$(filter %.def, $(othersrc))
+TOOL_VBoxXGccArm64Elf_LINK_PROGRAM_DEPORD =
+define TOOL_VBoxXGccArm64Elf_LINK_PROGRAM_CMDS
+	$(QUIET)$(TOOL_VBoxXGccArm64Elf_LD) $(flags) -o $(out) $(filter-out %.h.gch,$(objs))\
+		$(filter %.def, $(othersrc))\
+		$(foreach p,$(libpath), -L$(p))\
+		$(foreach lib,$(libs), $(if $(findstring $(lib),$(subst /,x,$(lib))), -l$(patsubst lib%,%,$(lib)), $(lib)))\
+		$(call TOOL_VBoxXGccArm64Elf_LD_MAP,$(outbase).map)
+ ifeq ($(ld_debug),split)
+	$(QUIET)$(TOOL_VBoxXGccArm64Elf_OBJCOPY) --only-keep-debug $(out) $(outbase).debug
+	$(QUIET)$(CHMOD) a-x $(outbase).debug
+	$(QUIET)$(TOOL_VBoxXGccArm64Elf_OBJCOPY) --strip-debug --strip-unneeded --add-gnu-debuglink=$(outbase).debug $(out)
+ endif
+endef
+
+
+## Link DLL
+# @param    $(target)   Normalized main target name.
+# @param    $(out)		Program name.
+# @param    $(objs)     Object files to link together.
+# @param    $(libs)     Libraries to search.
+# @param    $(libpath)  Library search paths.
+# @param    $(flags)    Flags.
+# @param    $(dirdep)   Directory creation dependency.
+# @param    $(deps)		Other dependencies.
+# @param    $(othersrc) Unhandled sources.
+# @param    $(custom_pre)   Custom step invoked before linking.
+# @param    $(custom_post)  Custom step invoked after linking.
+# @param    $(outbase)  Output basename (full). Use this for list files and such.
+TOOL_VBoxXGccArm64Elf_LINK_DLL_OUTPUT =
+TOOL_VBoxXGccArm64Elf_LINK_DLL_OUTPUT_MAYBE = $(outbase).map
+TOOL_VBoxXGccArm64Elf_LINK_DLL_OUTPUT_DEBUG = $(outbase).debug
+TOOL_VBoxXGccArm64Elf_LINK_DLL_DEBUG_INSTALL_FN = $(2).debug=>$(basename $(3)).debug
+TOOL_VBoxXGccArm64Elf_LINK_DLL_DEPEND = $(foreach lib,$(libs),$(if $(findstring $(lib),$(subst /,x,$(lib))),, $(lib)))\
+		$(filter %.def, $(othersrc))
+TOOL_VBoxXGccArm64Elf_LINK_DLL_DEPORD =
+define TOOL_VBoxXGccArm64Elf_LINK_DLL_CMDS
+	$(QUIET)$(TOOL_VBoxXGccArm64Elf_LD) $(TOOL_VBoxXGccArm64Elf_LDFLAGS.dll) $(flags) -o $(out)\
+		$(if $(filter-out win os2, $(KBUILD_TARGET)),$(call TOOL_VBoxXGccArm64Elf_LD_SONAME,$(target),$(out)))\
+		$(filter-out %.h.gch,$(objs))\
+		$(filter %.def, $(othersrc))\
+		$(foreach p,$(libpath), -L$(p))\
+		$(foreach lib,$(libs), $(if $(findstring $(lib),$(subst /,x,$(lib))), -l$(patsubst lib%,%,$(lib)), $(lib)))\
+		$(call TOOL_VBoxXGccArm64Elf_LD_MAP,$(outbase).map)
+ ifeq ($(ld_debug),split)
+	$(QUIET)$(TOOL_VBoxXGccArm64Elf_OBJCOPY) --only-keep-debug $(out) $(outbase).debug
+	$(QUIET)$(CHMOD) a-x $(outbase).debug
+	$(QUIET)$(TOOL_VBoxXGccArm64Elf_OBJCOPY) --strip-debug --strip-unneeded --add-gnu-debuglink=$(outbase).debug $(out)
+ endif
+endef
+
+
+## Link system module (windows aka driver, linux aka kernel module)
+# @param    $(target)   Normalized main target name.
+# @param    $(out)		System module name.
+# @param    $(objs)     Object files to link together.
+# @param    $(libs)     Libraries to search.
+# @param    $(libpath)  Library search paths.
+# @param    $(flags)    Flags.
+# @param    $(dirdep)   Directory creation dependency.
+# @param    $(deps)		Other dependencies.
+# @param    $(othersrc) Unhandled sources.
+# @param    $(custom_pre)   Custom step invoked before linking.
+# @param    $(custom_post)  Custom step invoked after linking.
+# @param    $(outbase)  Output basename (full). Use this for list files and such.
+TOOL_VBoxXGccArm64Elf_LINK_SYSMOD_OUTPUT =
+TOOL_VBoxXGccArm64Elf_LINK_SYSMOD_OUTPUT_MAYBE = $(outbase).map
+TOOL_VBoxXGccArm64Elf_LINK_SYSMOD_OUTPUT_DEBUG = $(outbase).debug
+TOOL_VBoxXGccArm64Elf_LINK_SYSMOD_DEBUG_INSTALL_FN = $(2).debug=>$(basename $(3)).debug
+TOOL_VBoxXGccArm64Elf_LINK_SYSMOD_DEPEND = $(foreach lib,$(libs),$(if $(findstring $(lib),$(subst /,x,$(lib))),, $(lib)))\
+		$(filter %.def, $(othersrc))
+TOOL_VBoxXGccArm64Elf_LINK_SYSMOD_DEPORD =
+define TOOL_VBoxXGccArm64Elf_LINK_SYSMOD_CMDS
+	$(QUIET)$(TOOL_VBoxXGccArm64Elf_LD_SYSMOD) $(TOOL_VBoxXGccArm64Elf_LDFLAGS.sysmod) $(flags) -o $(out) $(filter-out %.h.gch,$(objs))\
+		$(filter %.def, $(othersrc))\
+		$(foreach p,$(libpath), -L$(p))\
+		$(foreach lib,$(libs), $(if $(findstring $(lib),$(subst /,x,$(lib))), -l$(patsubst lib%,%,$(lib)), $(lib)))\
+		$(call TOOL_VBoxXGccArm64Elf_LD_SYSMOD_MAP,$(outbase).map)
+ ifeq ($(ld_debug),split)
+	$(QUIET)$(TOOL_VBoxXGccArm64Elf_OBJCOPY) --only-keep-debug $(out) $(outbase).debug
+	$(QUIET)$(CHMOD) a-x $(outbase).debug
+	$(QUIET)$(TOOL_VBoxXGccArm64Elf_OBJCOPY) --strip-debug --strip-unneeded --add-gnu-debuglink=$(outbase).debug $(out)
+ endif
+endef
+
