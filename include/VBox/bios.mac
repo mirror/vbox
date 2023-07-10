@@ -40,5 +40,8 @@
 %ifndef RT_WITHOUT_PRAGMA_ONCE
 %endif
 %define VBOX_BIOS_SHUTDOWN_PORT                 0x040f
+%define VBOX_BIOS_CTL_SHUTDOWN                  0x8001
+%define VBOX_BIOS_CTL_BOOTFAIL                  0x8002
+%define VBOX_BIOS_CTL_PROCHALT                  0x8003
 %define VBOX_BIOS_OLD_SHUTDOWN_PORT             0x8900
 %endif

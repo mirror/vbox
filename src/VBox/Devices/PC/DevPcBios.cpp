@@ -226,13 +226,14 @@ typedef struct DEVPCBIOS
     bool            fCheckShutdownStatusForSoftReset;
     /** Whether to clear the shutdown status on hard reset. */
     bool            fClearShutdownStatusOnHardReset;
-    /** Current port number for Bochs shutdown (used by APM). */
-    RTIOPORT        ShutdownPort;
-    /** True=use new port number for Bochs shutdown (used by APM). */
-    bool            fNewShutdownPort;
+    /** Current port number for BIOS control (used by APM). */
+    RTIOPORT        ControlPort;
+    /** True=use new port number for BIOS control (used by APM). */
+    bool            fNewControlPort;
     bool            afPadding[3+4];
-    /** The shudown I/O port, either at 0x040f or 0x8900 (old saved state). */
-    IOMMMIOHANDLE   hIoPortShutdown;
+    /** The BIOS I/O port, either at 0x040f or 0x8900
+     *  (old saved state). */
+    IOMMMIOHANDLE   hIoPortControl;
 } DEVPCBIOS;
 /** Pointer to the BIOS device state. */
 typedef DEVPCBIOS *PDEVPCBIOS;
@@ -251,7 +252,7 @@ typedef DEVPCBIOS *PDEVPCBIOS;
 /** Saved state DEVPCBIOS field descriptors. */
 static SSMFIELD const g_aPcBiosFields[] =
 {
-    SSMFIELD_ENTRY(         DEVPCBIOS, fNewShutdownPort),
+    SSMFIELD_ENTRY(         DEVPCBIOS, fNewControlPort),
     SSMFIELD_ENTRY_TERM()
 };
 
@@ -324,21 +325,52 @@ pcbiosIOPortDebugWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint3
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTNEWIN, Bochs Shutdown port.}
+ * @callback_method_impl{FNIOMIOPORTNEWIN, BIOS control port.}
  */
 static DECLCALLBACK(VBOXSTRICTRC)
-pcbiosIOPortShutdownRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
+pcbiosIOPortControlRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     RT_NOREF5(pDevIns, pvUser, offPort, pu32, cb);
     return VERR_IOM_IOPORT_UNUSED;
 }
 
 
+static VBOXSTRICTRC pcbiosApmShutdown(PPDMDEVINS pDevIns)
+{
+    LogRel(("PcBios: APM shutdown request\n"));
+    return PDMDevHlpVMPowerOff(pDevIns);
+}
+
+
+static VBOXSTRICTRC pcbiosApmIdle(PPDMDEVINS pDevIns)
+{
+    Log3(("PcBios: APM idle request\n"));
+
+    /* This request is used to put the CPU into a halted state *without* using
+     * a HLT instruction. This is especially useful for the APM BIOS
+     * in situations where executing HLT causes problems. See BIOS APM source
+     * code for comments.
+     * NB: The CPU will be woken up by an interrupt regardless of the
+     * state of rFLAGS.IF.
+     */
+    int rc = PDMDevHlpVMWaitForDeviceReady(pDevIns, PDMDevHlpGetCurrentCpuId(pDevIns));
+    return rc;
+}
+
+static void pcbiosReportBootFail(PPDMDEVINS pDevIns)
+{
+    LogRel(("PcBios: Boot failure\n"));
+    int rc = PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "VMBootFail",
+                                        N_("The VM failed to boot. This is possibly caused by not having an operating system installed or a misconfigured boot order. Maybe picking a guest OS install DVD will resolve the situation"));
+    AssertRC(rc);
+}
+
+
 /**
- * @callback_method_impl{FNIOMIOPORTNEWOUT, Bochs Shutdown port.}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, BIOS control port.}
  */
 static DECLCALLBACK(VBOXSTRICTRC)
-pcbiosIOPortShutdownWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+pcbiosIOPortControlWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     PDEVPCBIOS pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPCBIOS);
     RT_NOREF(pvUser, offPort);
@@ -348,7 +380,9 @@ pcbiosIOPortShutdownWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, ui
     {
         static const unsigned char s_szShutdown[] = "Shutdown";
         static const unsigned char s_szBootfail[] = "Bootfail";
+        static const unsigned char s_szProchalt[] = "Prochalt";
         AssertCompile(sizeof(s_szShutdown) == sizeof(s_szBootfail));
+        AssertCompile(sizeof(s_szShutdown) == sizeof(s_szProchalt));
 
         if (pThis->iControl < sizeof(s_szShutdown)) /* paranoia */
         {
@@ -359,8 +393,7 @@ pcbiosIOPortShutdownWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, ui
                 if (pThis->iControl >= 8)
                 {
                     pThis->iControl = 0;
-                    LogRel(("PcBios: APM shutdown request\n"));
-                    return PDMDevHlpVMPowerOff(pDevIns);
+                    return pcbiosApmShutdown(pDevIns);
                 }
             }
             else if (u32 == s_szBootfail[pThis->iControl])
@@ -369,10 +402,17 @@ pcbiosIOPortShutdownWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, ui
                 if (pThis->iControl >= 8)
                 {
                     pThis->iControl = 0;
-                    LogRel(("PcBios: Boot failure\n"));
-                    int rc = PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "VMBootFail",
-                                                        N_("The VM failed to boot. This is possibly caused by not having an operating system installed or a misconfigured boot order. Maybe picking a guest OS install DVD will resolve the situation"));
-                    AssertRC(rc);
+                    pcbiosReportBootFail(pDevIns);
+                }
+            }
+            else if (u32 == s_szProchalt[pThis->iControl])
+            {
+
+                pThis->iControl++;
+                if (pThis->iControl >= 8)
+                {
+                    pThis->iControl = 0;
+                    return pcbiosApmIdle(pDevIns);
                 }
             }
             else
@@ -381,6 +421,24 @@ pcbiosIOPortShutdownWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, ui
         else
             pThis->iControl = 0;
     }
+    else if (cb == 2)
+    {
+        pThis->iControl = 0;
+        /* Shortcuts for BIOS control, allowing guest to use one simple 16-bit I/O port write. */
+        switch (u32)
+        {
+        case VBOX_BIOS_CTL_SHUTDOWN:
+            return pcbiosApmShutdown(pDevIns);
+        case VBOX_BIOS_CTL_BOOTFAIL:
+            pcbiosReportBootFail(pDevIns);
+            break;
+        case VBOX_BIOS_CTL_PROCHALT:
+            return pcbiosApmIdle(pDevIns);
+        default:
+            /* Ignore and do nothing. */
+            LogFunc(("unrecognized control value (u32=%X)\n", u32));
+        }
+    }
     /* else: not in use. */
 
     return VINF_SUCCESS;
@@ -388,23 +446,23 @@ pcbiosIOPortShutdownWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, ui
 
 
 /**
- * Register the Bochs shutdown port.
+ * Register the BIOS control port.
  * This is used by pcbiosConstruct, pcbiosReset and pcbiosLoadExec.
  */
-static int pcbiosRegisterShutdown(PPDMDEVINS pDevIns, PDEVPCBIOS pThis, bool fNewShutdownPort)
+static int pcbiosRegisterControl(PPDMDEVINS pDevIns, PDEVPCBIOS pThis, bool fNewControlPort)
 {
-    if (pThis->ShutdownPort != 0)
+    if (pThis->ControlPort != 0)
     {
-        int rc = PDMDevHlpIoPortUnmap(pDevIns, pThis->hIoPortShutdown);
+        int rc = PDMDevHlpIoPortUnmap(pDevIns, pThis->hIoPortControl);
         AssertRC(rc);
     }
 
-    pThis->fNewShutdownPort = fNewShutdownPort;
-    if (fNewShutdownPort)
-        pThis->ShutdownPort = VBOX_BIOS_SHUTDOWN_PORT;
+    pThis->fNewControlPort = fNewControlPort;
+    if (fNewControlPort)
+        pThis->ControlPort = VBOX_BIOS_SHUTDOWN_PORT;
     else
-        pThis->ShutdownPort = VBOX_BIOS_OLD_SHUTDOWN_PORT;
-    return PDMDevHlpIoPortMap(pDevIns, pThis->hIoPortShutdown, pThis->ShutdownPort);
+        pThis->ControlPort = VBOX_BIOS_OLD_SHUTDOWN_PORT;
+    return PDMDevHlpIoPortMap(pDevIns, pThis->hIoPortControl, pThis->ControlPort);
 }
 
 
@@ -420,7 +478,7 @@ static DECLCALLBACK(int) pcbiosSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
 /**
  * @callback_method_impl{FNSSMDEVLOADPREP,
- *      Clears the fNewShutdownPort flag prior to loading the state so that old
+ *      Clears the fNewControlPort flag prior to loading the state so that old
  *      saved VM states keeps using the old port address (no pcbios state)}
  */
 static DECLCALLBACK(int) pcbiosLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
@@ -430,7 +488,7 @@ static DECLCALLBACK(int) pcbiosLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
     /* Since there are legacy saved state files without any SSM data for PCBIOS
      * this is the only way to handle them correctly. */
-    pThis->fNewShutdownPort = false;
+    pThis->fNewControlPort = false;
 
     return VINF_SUCCESS;
 }
@@ -459,7 +517,7 @@ static DECLCALLBACK(int) pcbiosLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     RT_NOREF(pSSM);
     PDEVPCBIOS pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPCBIOS);
-    return pcbiosRegisterShutdown(pDevIns, pThis, pThis->fNewShutdownPort);
+    return pcbiosRegisterControl(pDevIns, pThis, pThis->fNewControlPort);
 }
 
 
@@ -541,8 +599,8 @@ static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
         }
     }
 
-    /* After reset the new BIOS code is active, use the new shutdown port. */
-    pcbiosRegisterShutdown(pDevIns, pThis, true /* fNewShutdownPort */);
+    /* After reset the new BIOS code is active, use the new control port. */
+    pcbiosRegisterControl(pDevIns, pThis, true /* fNewControlPort */);
 }
 
 
@@ -1505,10 +1563,10 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                                      "Bochs PC BIOS - Panic & Debug", NULL, &hIoPorts);
     AssertRCReturn(rc, rc);
 
-    rc = PDMDevHlpIoPortCreateIsa(pDevIns, 1 /*cPorts*/, pcbiosIOPortShutdownWrite, pcbiosIOPortShutdownRead, NULL /*pvUser*/,
-                                  "Bochs PC BIOS - Shutdown", NULL /*paExtDescs*/, &pThis->hIoPortShutdown);
+    rc = PDMDevHlpIoPortCreateIsa(pDevIns, 1 /*cPorts*/, pcbiosIOPortControlWrite, pcbiosIOPortControlRead, NULL /*pvUser*/,
+                                  "PC BIOS - Control", NULL /*paExtDescs*/, &pThis->hIoPortControl);
     AssertRCReturn(rc, rc);
-    rc = pcbiosRegisterShutdown(pDevIns, pThis, true /* fNewShutdownPort */);
+    rc = pcbiosRegisterControl(pDevIns, pThis, true /* fNewControlPort */);
     AssertRCReturn(rc, rc);
 
     /*

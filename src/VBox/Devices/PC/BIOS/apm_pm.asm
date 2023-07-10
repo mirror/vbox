@@ -37,6 +37,10 @@ extern		_apm_function:near	; implemented in C code
 
 public		apm_pm16_entry
 
+;
+; This module is for protected mode only and therefore
+; 286+ only
+;
 SET_DEFAULT_CPU_286
 
 
@@ -81,6 +85,28 @@ apmf_disconnect:			; function 04h
 		jmp	apmw_success
 
 apmf_idle:				; function 05h
+if 1
+		; Port I/O based HLT equivalent using a custom BIOS I/O port.
+		; Works in situations where HLT can't be used, such as Windows 3.1
+		; in Standard mode or DR-DOS 5.0/6.0 EMM386.SYS.
+		push	si
+		push	cx
+		push	dx
+
+		mov	dx, 40Fh
+		mov	si, offset hlt_string
+		mov	cx,8
+		rep outsb
+
+		pop	dx
+		pop	cx
+		pop	si
+
+		jmp	apmw_success
+
+hlt_string	db	'Prochalt'
+
+else
                 ;
                 ; Windows 3.1 POWER.DRV in Standard mode calls into APM
                 ; with CPL=3. If that happens, the HLT instruction will fault
@@ -94,6 +120,7 @@ apmf_idle:				; function 05h
 		sti
 		hlt
 		jmp	apmw_success
+endif
 
 apmf_busy:				; function 06h
 ;		jmp	apmw_success

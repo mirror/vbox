@@ -41,14 +41,23 @@
 # pragma once
 #endif
 
-/** The BIOS shutdown port.
- * You write "Shutdown" byte by byte to shutdown the VM.
+/** The BIOS control port.
+ * Write "Shutdown" byte by byte to shutdown the VM.
+ * Write "Bootfail" to indicate no bootable device.
+ * Write "Prochalt" to execute alternative CPU halt.
  * @sa VBOX_BIOS_OLD_SHUTDOWN_PORT  */
 #define VBOX_BIOS_SHUTDOWN_PORT                 0x040f
 
+/** Write this value to shut down VM. */
+#define VBOX_BIOS_CTL_SHUTDOWN                  0x8001
+/** Write this value to report boot failure. */
+#define VBOX_BIOS_CTL_BOOTFAIL                  0x8002
+/** Write this value to halt CPU. */
+#define VBOX_BIOS_CTL_PROCHALT                  0x8003
+
 /** The old shutdown port number.
  * Older versions of VirtualBox uses this as does Bochs.
- * @sa VBOX_BIOS_SHUTDOWN_PORT  */
+ * @sa VBOX_BIOS_CONTROL_PORT  */
 #define VBOX_BIOS_OLD_SHUTDOWN_PORT             0x8900
 
 
