@@ -2086,7 +2086,7 @@ validationkit-packing:
 # Build the EFI firmware, all of it.
 #
 efi-fetch:
-	+ $(KMK) -C tools fetch VBOX_ONLY_EXTPACKS=1
+	+ $(KMK) -C tools fetch VBOX_ONLY_EXTPACKS=1 VBOX_ONLY_EFI=1
 
 efi-build: $(VBOX_VERSION_HEADER)
 	+ $(KMK) -C src/VBox/Devices/EFI/Firmware$(VBOX_EFI_FIRMWARE_SUFFIX)
