@@ -134,9 +134,12 @@ private:
     /** Returns a list of items which are currecntly selected
      *  in the table view. */
     QList<UICustomFileSystemItem*> tableSelectedItems();
+    /* Names of the file objects of the current directory. */
+    QStringList                    currentDirectoryListing() const;
     bool                           onStartItem();
     void                           goUp();
     void                           createLoadedFileEntries(const QMap<QString, QString> &fileEntries);
+    const UICustomFileSystemItem*  currentDirectoryItem() const;
     UIVisoContentTableView        *m_pTableView;
     UICustomFileSystemModel       *m_pModel;
     UICustomFileSystemProxyModel  *m_pTableProxyModel;

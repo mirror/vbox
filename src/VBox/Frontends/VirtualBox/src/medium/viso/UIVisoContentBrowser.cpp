@@ -463,7 +463,12 @@ void UIVisoContentBrowser::sltCreateNewDirectory()
 {
     if (!m_pTableView)
         return;
-    QString strNewDirectoryName("NewDirectory");
+    QString strBaseName("NewDirectory");
+    QString strNewDirectoryName(strBaseName);
+    QStringList currentListing = currentDirectoryListing();
+    int iSuffix = 1;
+    while (currentListing.contains(strNewDirectoryName))
+        strNewDirectoryName = QString("%1_%2").arg(strBaseName).arg(QString::number(iSuffix++));
 
     QModelIndex parentIndex = m_pTableProxyModel->mapToSource(m_pTableView->rootIndex());
     if (!parentIndex.isValid())
@@ -1113,4 +1118,28 @@ void UIVisoContentBrowser::goUp()
         setTableRootIndex(currentRoot.parent());
     }
 }
+
+const UICustomFileSystemItem* UIVisoContentBrowser::currentDirectoryItem() const
+{
+    if (!m_pTableView || !m_pTableView->rootIndex().isValid())
+        return 0;
+    QModelIndex currentRoot = m_pTableProxyModel->mapToSource(m_pTableView->rootIndex());
+
+    return static_cast<UICustomFileSystemItem*>(currentRoot.internalPointer());
+}
+
+QStringList UIVisoContentBrowser::currentDirectoryListing() const
+{
+    const UICustomFileSystemItem *pCurrentDirectoryItem = currentDirectoryItem();
+    if (!pCurrentDirectoryItem)
+        return QStringList();
+    QStringList nameList;
+    foreach (const UICustomFileSystemItem *pChild, pCurrentDirectoryItem->children())
+    {
+        if (pChild)
+            nameList << pChild->fileObjectName();
+    }
+    return nameList;
+}
+
 #include "UIVisoContentBrowser.moc"

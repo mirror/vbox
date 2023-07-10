@@ -807,8 +807,12 @@ void UIFileManagerTable::sltCreateNewDirectory()
     UICustomFileSystemItem *parentFolderItem = static_cast<UICustomFileSystemItem*>(currentIndex.internalPointer());
     if (!parentFolderItem)
         return;
-
-    QString newDirectoryName(UICustomFileSystemModel::tr("NewDirectory"));
+    QString strBase(UICustomFileSystemModel::tr("NewDirectory"));
+    QString newDirectoryName(strBase);
+    QStringList nameList = currentDirectoryListing();
+    int iSuffix = 1;
+    while (nameList.contains(newDirectoryName))
+        newDirectoryName = QString("%1_%2").arg(strBase).arg(QString::number(iSuffix++));
 
     if (!createDirectory(parentFolderItem->path(), newDirectoryName))
         return;
@@ -1320,4 +1324,19 @@ void UIFileManagerTable::setSessionWidgetsEnabled(bool fEnabled)
             pWidget->setEnabled(fEnabled);
     }
 }
+
+QStringList UIFileManagerTable::currentDirectoryListing() const
+{
+    UICustomFileSystemItem *pItem = static_cast<UICustomFileSystemItem*>(currentRootIndex().internalPointer());
+    if (!pItem)
+        return QStringList();
+    QStringList list;
+    foreach (const UICustomFileSystemItem *pChild, pItem->children())
+    {
+        if (pChild)
+            list << pChild->fileObjectName();
+    }
+    return list;
+}
+
 #include "UIFileManagerTable.moc"

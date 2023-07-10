@@ -309,7 +309,7 @@ private:
     /** Marks/umarks the search line edit to signal that there are no matches for the current search.
       * uses m_searchLineUnmarkColor and m_searchLineMarkColor. */
     void            markUnmarkSearchLineEdit(bool fMark);
-
+    QStringList     currentDirectoryListing() const;
     UICustomFileSystemModel       *m_pModel;
     UIGuestControlFileView        *m_pView;
     UICustomFileSystemProxyModel  *m_pProxyModel;
