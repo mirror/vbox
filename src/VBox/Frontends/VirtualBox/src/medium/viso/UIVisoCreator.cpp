@@ -34,7 +34,6 @@
 #include <QPainter>
 #include <QPushButton>
 #include <QStyle>
-#include <QStatusBar>
 #include <QStackedLayout>
 #include <QTextStream>
 
@@ -742,8 +741,6 @@ UIVisoCreatorDialog::UIVisoCreatorDialog(UIActionPool *pActionPool, QWidget *pPa
     : QIWithRetranslateUI<QIWithRestorableGeometry<QIMainDialog> >(pParent)
     , m_pVisoCreatorWidget(0)
     , m_pButtonBox(0)
-    , m_pStatusBar(0)
-    , m_pStatusLabel(0)
     , m_pActionPool(pActionPool)
     , m_iGeometrySaveTimerId(-1)
     , m_strVisoSavePath(strVisoSavePath)
@@ -835,14 +832,6 @@ void UIVisoCreatorDialog::prepareWidgets(const QString &strMachineName)
 
     uiCommon().setHelpKeyword(m_pButtonBox->button(QIDialogButtonBox::Help), "create-optical-disk-image");
 
-    m_pStatusLabel = new QILabel;
-    m_pStatusBar = new QStatusBar(this);
-    AssertPtrReturnVoid(m_pButtonBox);
-    AssertPtrReturnVoid(m_pStatusLabel);
-
-    pMainLayout->addWidget(m_pStatusBar);
-    m_pStatusBar->addPermanentWidget(m_pStatusLabel);
-
     retranslateUi();
 }
 
@@ -866,7 +855,6 @@ void UIVisoCreatorDialog::retranslateUi()
     if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Help))
         m_pButtonBox->button(QDialogButtonBox::Help)->setToolTip(UIVisoCreatorWidget::tr("Opens the help browser and navigates to the related section"));
     updateWindowTitle();
-    updateStatusLabel();
 }
 
 bool UIVisoCreatorDialog::event(QEvent *pEvent)
@@ -900,7 +888,6 @@ void UIVisoCreatorDialog::sltVisoNameChanged(const QString &strName)
 {
     Q_UNUSED(strName);
     updateWindowTitle();
-    updateStatusLabel();
 }
 
 void UIVisoCreatorDialog::sltSettingDialogToggle(bool fIsShown)
@@ -935,13 +922,7 @@ void UIVisoCreatorDialog::saveDialogGeometry()
 
 void UIVisoCreatorDialog::updateWindowTitle()
 {
-    setWindowTitle(QString("%1 - %2.%3").arg(UIVisoCreatorWidget::tr("VISO Creator")).arg(visoName()).arg("viso"));
-}
-
-void UIVisoCreatorDialog::updateStatusLabel()
-{
-    if (m_pStatusLabel)
-        m_pStatusLabel->setText(QString("%1: %2").arg(UIVisoCreatorWidget::tr("VISO file")).arg(visoFileFullPath()));
+    setWindowTitle(QString("%1 - %2").arg(UIVisoCreatorWidget::tr("VISO Creator")).arg(visoFileFullPath()));
 }
 
 QString UIVisoCreatorDialog::visoFileFullPath() const
