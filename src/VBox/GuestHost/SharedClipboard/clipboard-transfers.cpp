@@ -1572,8 +1572,6 @@ int ShClTransferSetProvider(PSHCLTRANSFER pTransfer, PSHCLTXPROVIDER pProvider)
     pTransfer->ProviderCtx.pvUser    = pProvider->pvUser;
     pTransfer->ProviderCtx.cbUser    = pProvider->cbUser;
 
-    LogRelFunc(("pfnOnInitialized=%p\n", pTransfer->Callbacks.pfnOnInitialized));
-
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
