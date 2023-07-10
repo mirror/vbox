@@ -96,6 +96,7 @@ if 1
 		mov	dx, 40Fh
 		mov	si, offset hlt_string
 		mov	cx,8
+.286	; build fix; @todo remove
 		rep outsb
 
 		pop	dx
