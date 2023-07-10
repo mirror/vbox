@@ -338,7 +338,8 @@ ifdef VBOX_WITH_VBOXDRV
 	$(foreach kext,$(VBOX_DI_KEXTS) \
 		,$(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext/Contents/MacOS/$(kext),org.virtualbox.app.kext.$(kext)) )
 	$(foreach kext,$(VBOX_DI_KEXTS) \
-		,$(NLTAB)$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext,org.virtualbox.app.kext.$(kext)) )
+		,$(NLTAB)$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext,org.virtualbox.app.kext.$(kext)) \
+		$(NLTAB)chmod a+r $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext/Contents/_CodeSignature/* )
   ## @TODO check why this fails on the build box:	$(foreach kext,$(VBOX_DI_KEXTS), $(NLTAB)codesign --verify --verbose=1 $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext )
  endif
 	@# Set the correct owners.

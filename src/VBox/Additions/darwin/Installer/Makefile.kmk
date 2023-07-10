@@ -268,10 +268,11 @@ else
 	$(foreach kext,$(VBOX_ADD_DI_KEXTS), \
 		$(NLTAB)$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/additions/$(kext).kext/Contents/MacOS/$(kext) $(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.root/Library/Extensions/$(kext).kext/Contents/MacOS/)
 endif
-	@# Signed the kext bundles.
+	@# Sign the kext bundles.
 ifdef VBOX_SIGNING_MODE
 	$(foreach kext,$(VBOX_ADD_DI_KEXTS), \
-		$(NLTAB)$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.root/Library/Extensions/$(kext).kext,) )
+		$(NLTAB)$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.root/Library/Extensions/$(kext).kext,) \
+		$(NLTAB)chmod a+r $(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.root/Library/Extensions/$(kext).kext/Contents/_CodeSignature/* )
 endif
 	@# Set the correct owners.
 	sudo chown    root:admin $(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.root/Library
