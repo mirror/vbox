@@ -249,6 +249,7 @@ public:
 public:
 
     int Init(PSHCLCONTEXT pCtx, SharedClipboardWinDataObject::PCALLBACKS pCallbacks, LPFORMATETC pFormatEtc = NULL, LPSTGMEDIUM pStgMed = NULL, ULONG cFormats = 0);
+    void Uninit(void);
     void Destroy(void);
 
 public: /* IUnknown methods. */
@@ -291,6 +292,8 @@ public:
     static void logFormat(CLIPFORMAT fmt);
 
 protected:
+
+    void uninitInternal(void);
 
     static int Thread(RTTHREAD hThread, void *pvUser);
 
@@ -350,8 +353,6 @@ protected:
     FsObjEntryList              m_lstEntries;
     /** Critical section to serialize access. */
     RTCRITSECT                  m_CritSect;
-    /** Whether the transfer thread is running. */
-    bool                        m_fThreadRunning;
     /** Event being triggered when reading the transfer list been completed. */
     RTSEMEVENT                  m_EventListComplete;
     /** Event being triggered when the object status has been changed. */
@@ -472,13 +473,9 @@ public:
     SharedClipboardWinTransferCtx()
         : pDataObj(NULL) { }
 
-    virtual ~SharedClipboardWinTransferCtx()
-    {
-        if (pDataObj)
-            delete pDataObj;
-    }
+    virtual ~SharedClipboardWinTransferCtx() { }
 
-    /** Pointer to data object to use for this transfer.
+    /** Pointer to data object to use for this transfer. Not owned.
      *  Can be NULL if not being used. */
     SharedClipboardWinDataObject *pDataObj;
 };

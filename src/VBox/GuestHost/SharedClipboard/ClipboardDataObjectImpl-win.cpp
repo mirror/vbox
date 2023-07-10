@@ -61,7 +61,6 @@ SharedClipboardWinDataObject::SharedClipboardWinDataObject(void)
     , m_pTransfer(NULL)
     , m_pStream(NULL)
     , m_uObjIdx(0)
-    , m_fThreadRunning(false)
     , m_EventListComplete(NIL_RTSEMEVENT)
     , m_EventStatusChanged(NIL_RTSEMEVENT)
 {
@@ -179,16 +178,48 @@ int SharedClipboardWinDataObject::Init(PSHCLCONTEXT pCtx, SharedClipboardWinData
 }
 
 /**
+ * Uninitialized a data object instance, internal version.
+ */
+void SharedClipboardWinDataObject::uninitInternal(void)
+{
+    LogFlowFuncEnter();
+
+    /* Let waiters know. */
+    setStatusLocked(Uninitialized, VINF_SUCCESS);
+
+    /* Make sure to release the transfer. */
+    setTransferLocked(NULL);
+}
+
+/**
+ * Uninitialized a data object instance.
+ */
+void SharedClipboardWinDataObject::Uninit(void)
+{
+    LogFlowFuncEnter();
+
+    lock();
+
+    uninitInternal();
+
+    unlock();
+}
+
+/**
  * Destroys a data object instance.
  */
 void SharedClipboardWinDataObject::Destroy(void)
 {
     LogFlowFuncEnter();
 
-    AssertReturnVoid(m_lRefCount == 0);
+    if (m_enmStatus == Uninitialized) /* Crit sect not available anymore. */
+        return;
 
-    /* Make sure to release the transfer. */
-    setTransferLocked(NULL);
+    lock();
+
+    uninitInternal();
+
+    unlock();
 
     int rc = RTCritSectDelete(&m_CritSect);
     AssertRC(rc);
@@ -235,10 +266,6 @@ void SharedClipboardWinDataObject::Destroy(void)
         ++itRoot;
     }
     m_lstEntries.clear();
-
-    m_enmStatus = Uninitialized;
-    m_fThreadRunning = false;
-    m_pTransfer = NULL;
 }
 
 
@@ -389,7 +416,9 @@ int SharedClipboardWinDataObject::readDir(PSHCLTRANSFER pTransfer, const Utf8Str
                                         AssertPtrBreakStmt(objEntry.pszPath, rc = VERR_NO_MEMORY);
                                         objEntry.objInfo = *pFsObjInfo;
 
+                                        lock();
                                         m_lstEntries.push_back(objEntry); /** @todo Can this throw? */
+                                        unlock();
                                     }
                                     else /* Not fatal, just skip. */
                                         LogRel(("Shared Clipboard: Warning: File system object '%s' of type %#x not supported, skipping\n",
@@ -476,7 +505,9 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
                 AssertPtrBreakStmt(objEntry.pszPath, rc = VERR_NO_MEMORY);
                 objEntry.objInfo = *pFsObjInfo;
 
+                pThis->lock();
                 pThis->m_lstEntries.push_back(objEntry); /** @todo Can this throw? */
+                pThis->unlock();
 
                 rc = pThis->readDir(pTransfer, pRootEntry->pszName);
             }
@@ -487,7 +518,9 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
                 AssertPtrBreakStmt(objEntry.pszPath, rc = VERR_NO_MEMORY);
                 objEntry.objInfo = *pFsObjInfo;
 
+                pThis->lock();
                 pThis->m_lstEntries.push_back(objEntry); /** @todo Can this throw? */
+                pThis->unlock();
             }
             else
             {
@@ -515,41 +548,68 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
              * Signal the "list complete" event so that this data object can return (valid) data via ::GetData().
              * This in turn then will create IStream instances (by the OS) for each file system object to handle.
              */
-            int rc2 = RTSemEventSignal(pThis->m_EventListComplete);
-            AssertRC(rc2);
-
-            if (pThis->m_lstEntries.size())
+            rc = RTSemEventSignal(pThis->m_EventListComplete);
+            if (RT_SUCCESS(rc))
             {
+                pThis->lock();
+
+                AssertReleaseMsg(pThis->m_lstEntries.size(),
+                                 ("Shared Clipboard: No transfer root entries found -- should not happen, please file a bug report\n"));
+
                 LogRel2(("Shared Clipboard: Waiting for transfer to complete ...\n"));
 
-                /* Transferring stuff can take a while, so don't use any timeout here. */
-                rc2 = RTSemEventWait(pThis->m_EventStatusChanged, RT_INDEFINITE_WAIT);
-                AssertRC(rc2);
-
-                switch (pThis->m_enmStatus)
+                for (;;)
                 {
-                    case Completed:
-                        LogRel2(("Shared Clipboard: Transfer complete\n"));
+                    pThis->unlock();
+
+                    /* Transferring stuff can take a while, so don't use any timeout here. */
+                    rc = RTSemEventWait(pThis->m_EventStatusChanged, RT_INDEFINITE_WAIT);
+
+                    pThis->lock();
+
+                    if (RT_FAILURE(rc))
                         break;
 
-                    case Canceled:
-                        LogRel2(("Shared Clipboard: Transfer canceled\n"));
-                        break;
+                    switch (pThis->m_enmStatus)
+                    {
+                        case Uninitialized: /* Can happen due to transfer erros. */
+                            LogRel2(("Shared Clipboard: Data object was unitialized\n"));
+                            break;
 
-                    case Error:
-                        LogRel2(("Shared Clipboard: Transfer error occurred\n"));
-                        break;
+                        case Initialized:
+                            AssertFailed(); /* State machine error -- debug this! */
+                            break;
 
-                    default:
-                        break;
+                        case Running:
+                            continue;
+
+                        case Completed:
+                            LogRel2(("Shared Clipboard: Transfer complete\n"));
+                            break;
+
+                        case Canceled:
+                            LogRel2(("Shared Clipboard: Transfer canceled\n"));
+                            break;
+
+                        case Error:
+                            LogRel(("Shared Clipboard: Transfer error within data object thread occurred\n"));
+                            break;
+
+                        default:
+                            AssertFailed();
+                            break;
+                    }
+
+                    break;
                 }
+
+                pThis->unlock();
             }
-            else
-               LogRel(("Shared Clipboard: No transfer root entries found -- should not happen, please file a bug report\n"));
         }
-        else if (RT_FAILURE(rc))
-            LogRel(("Shared Clipboard: Transfer failed with %Rrc\n", rc));
     }
+
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Transfer failed with %Rrc\n", rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -706,10 +766,16 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
 
     int rc = VINF_SUCCESS;
 
-    if (   pFormatEtc->cfFormat == m_cfFileDescriptorA
+    /* Pre-check -- see if the data object still is alive. */
+    if (m_enmStatus == Uninitialized)
+        rc = VERR_OBJECT_DESTROYED;
+
+    if (    RT_SUCCESS(rc)
+        && (   pFormatEtc->cfFormat == m_cfFileDescriptorA
 #ifdef VBOX_CLIPBOARD_WITH_UNICODE_SUPPORT
-        || pFormatEtc->cfFormat == m_cfFileDescriptorW
+            || pFormatEtc->cfFormat == m_cfFileDescriptorW
 #endif
+           )
        )
     {
         switch (m_enmStatus)
@@ -761,11 +827,11 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
                 SHCLTRANSFERSTATUS const enmTransferStatus = ShClTransferGetStatus(m_pTransfer);
                 RT_NOREF(enmTransferStatus);
 
-                LogFlowFunc(("FormatIndex_FileDescriptor%s, enmTransferStatus=%s, m_fRunning=%RTbool\n",
-                             fUnicode ? "W" : "A", ShClTransferStatusToStr(enmTransferStatus), m_fThreadRunning));
+                LogFlowFunc(("FormatIndex_FileDescriptor%s, enmTransferStatus=%s\n",
+                             fUnicode ? "W" : "A", ShClTransferStatusToStr(enmTransferStatus)));
 
                 /* The caller can call GetData() several times, so make sure we don't do the same transfer multiple times. */
-                if (!m_fThreadRunning)
+                if (ShClTransferGetStatus(m_pTransfer) != SHCLTRANSFERSTATUS_STARTED)
                 {
                     /* Start the transfer + run it asynchronously in a separate thread. */
                     rc = ShClTransferStart(m_pTransfer);
@@ -774,17 +840,22 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
                         rc = ShClTransferRun(m_pTransfer, &SharedClipboardWinDataObject::readThread, this /* pvUser */);
                         if (RT_SUCCESS(rc))
                         {
-                            m_fThreadRunning = true;
-
                             /* Leave lock while waiting. */
                             unlock();
 
                             /* Don't block for too long here, as this also will screw other apps running on the OS. */
                             LogRel2(("Shared Clipboard: Waiting for IDataObject listing to arrive ...\n"));
-                            rc = RTSemEventWait(m_EventListComplete, SHCL_TIMEOUT_DEFAULT_MS);
+                            rc = RTSemEventWait(m_EventListComplete, RT_MS_10SEC);
 
                             /* Re-acquire lock. */
                             lock();
+
+                            if (   m_pTransfer == NULL
+                                || m_enmStatus != Running) /* Still in running state? */
+                            {
+                                rc = VERR_OBJECT_DESTROYED;
+                                break;
+                            }
                         }
                     }
                 }
@@ -806,7 +877,11 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
                 break;
             }
 
+            case Completed:
+                break;
+
             default:
+                AssertFailedStmt(rc = VERR_STATE_CHANGED);
                 break;
         }
 
@@ -816,6 +891,8 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
             hr = E_UNEXPECTED; /* We can't tell any better to the caller, unfortunately. */
         }
     }
+
+    Log2Func(("enmStatus=%#x, pTransfer=%p, rc=%Rrc\n", m_enmStatus, m_pTransfer, rc));
 
     if (RT_SUCCESS(rc))
     {
@@ -867,7 +944,7 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
 
     unlock();
 
-    LogFlowFunc(("hr=%Rhrc\n", hr));
+    LogFlowFunc(("LEAVE hr=%Rhrc\n", hr));
     return hr;
 }
 
@@ -1038,6 +1115,8 @@ STDMETHODIMP SharedClipboardWinDataObject::StartOperation(IBindCtx *pbcReserved)
  */
 int SharedClipboardWinDataObject::setTransferLocked(PSHCLTRANSFER pTransfer)
 {
+    AssertReturn(RTCritSectIsOwned(&m_CritSect), VERR_WRONG_ORDER);
+
     LogFlowFunc(("pTransfer=%p\n", pTransfer));
 
     int rc = VINF_SUCCESS;
@@ -1055,6 +1134,11 @@ int SharedClipboardWinDataObject::setTransferLocked(PSHCLTRANSFER pTransfer)
             {
                 m_pTransfer = pTransfer;
 
+                SharedClipboardWinTransferCtx *pWinURITransferCtx = (SharedClipboardWinTransferCtx *)pTransfer->pvUser;
+                AssertPtr(pWinURITransferCtx);
+
+                pWinURITransferCtx->pDataObj = this; /* Save a backref to this object. */
+
                 ShClTransferAcquire(pTransfer);
             }
         }
@@ -1065,8 +1149,17 @@ int SharedClipboardWinDataObject::setTransferLocked(PSHCLTRANSFER pTransfer)
     {
         if (m_pTransfer)
         {
+            SharedClipboardWinTransferCtx *pWinURITransferCtx = (SharedClipboardWinTransferCtx *)m_pTransfer->pvUser;
+            AssertPtr(pWinURITransferCtx);
+
+            pWinURITransferCtx->pDataObj = NULL; /* Release backref to this object. */
+
             ShClTransferRelease(m_pTransfer);
             m_pTransfer = NULL;
+
+            /* Make sure to notify any waiters. */
+            rc = RTSemEventSignal(m_EventListComplete);
+            AssertRC(rc);
         }
     }
 
