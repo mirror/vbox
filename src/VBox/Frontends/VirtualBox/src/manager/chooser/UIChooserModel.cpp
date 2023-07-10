@@ -1684,6 +1684,9 @@ bool UIChooserModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEv
                                 m_cloudMenus.value(UIChooserNodeType_Group)->exec(pEvent->screenPos());
                             break;
                         }
+                        /* Otherwise we have to find a first child machine-item: */
+                        else
+                            pItem = qobject_cast<UIChooserItem*>(pGroupItem)->firstMachineItem();
                     }
                     RT_FALL_THRU();
                     case UIChooserNodeType_Machine:
