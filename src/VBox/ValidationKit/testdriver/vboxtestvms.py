@@ -2066,7 +2066,7 @@ class TestVmManager(object):
         #       sKind = 'Windows7', acCpusSup = range(1, 33), fIoApic = True),
 
         # W8
-        TestVm('tst-win8-64',               kfGrpStdSmoke,        sHd = '4.2/win8-64/t-win8-64-edited.vdi',
+        TestVm('tst-win8-64',               kfGrpStdSmoke,        sHd = '4.2/win8-64/t-win8-64-testmode.vdi',
                sKind = 'Windows8_64', acCpusSup = range(1, 33), fIoApic = True),
         #TestVm('tst-win8-64-ich9',          kfGrpStdSmoke,         sHd = '4.2/win8-64/t-win8-64.vdi',
         #       sKind = 'Windows8_64', acCpusSup = range(1, 33), fIoApic = True, sChipsetType = 'ich9'),
