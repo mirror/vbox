@@ -679,16 +679,18 @@ bool ShClTransferListEntryIsValid(PSHCLLISTENTRY pListEntry)
 {
     AssertPtrReturn(pListEntry, false);
 
-    if (!shclTransferListEntryNameIsValid(pListEntry->pszName, pListEntry->cbName))
-        return false;
+    bool fValid = false;
 
-    if (pListEntry->cbInfo) /* cbInfo / pvInfo is optional. */
+    if (shclTransferListEntryNameIsValid(pListEntry->pszName, pListEntry->cbName))
     {
-        if (!pListEntry->pvInfo)
-            return false;
+        fValid =    pListEntry->cbInfo == 0 /* cbInfo / pvInfo is optional. */
+                 || pListEntry->pvInfo != NULL;
     }
 
-    return true;
+    if (!fValid)
+        LogRel2(("Shared Clipboard: List entry '%s' is invalid\n", pListEntry->pszName));
+
+    return fValid;
 }
 
 
@@ -896,6 +898,10 @@ int ShClTransferObjOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCr
     else
         rc = VERR_NOT_SUPPORTED;
 
+    if (RT_FAILURE(rc))
+         LogRel(("Shared Clipboard: Opening object '%s' (flags %#x) failed with %Rrc\n",
+                 pOpenCreateParms->pszPath, pOpenCreateParms->fCreate, rc));
+
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -916,6 +922,9 @@ int ShClTransferObjClose(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj)
         rc = pTransfer->ProviderIface.pfnObjClose(&pTransfer->ProviderCtx, hObj);
     else
         rc = VERR_NOT_SUPPORTED;
+
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Reading object 0x%x failed with %Rrc\n", hObj, rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -947,6 +956,9 @@ int ShClTransferObjRead(PSHCLTRANSFER pTransfer,
     else
         rc = VERR_NOT_SUPPORTED;
 
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Reading object 0x%x failed with %Rrc\n", hObj, rc));
+
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -975,6 +987,9 @@ int ShClTransferObjWrite(PSHCLTRANSFER pTransfer,
         rc = pTransfer->ProviderIface.pfnObjWrite(&pTransfer->ProviderCtx, hObj, pvBuf, cbBuf, fFlags, pcbWritten);
     else
         rc = VERR_NOT_SUPPORTED;
+
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Writing object 0x%x failed with %Rrc\n", hObj, rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1302,6 +1317,10 @@ int ShClTransferListOpen(PSHCLTRANSFER pTransfer, PSHCLLISTOPENPARMS pOpenParms,
     else
         rc = VERR_NOT_SUPPORTED;
 
+    if (RT_FAILURE(rc))
+         LogRel(("Shared Clipboard: Opening list '%s' (fiter '%s', flags %#x) failed with %Rrc\n",
+                 pOpenParms->pszPath, pOpenParms->pszFilter, pOpenParms->fList, rc));
+
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -1325,6 +1344,9 @@ int ShClTransferListClose(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList)
         rc = pTransfer->ProviderIface.pfnListClose(&pTransfer->ProviderCtx, hList);
     else
         rc = VERR_NOT_SUPPORTED;
+
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Closing list 0x%x entry failed with %Rrc\n", hList, rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1351,6 +1373,9 @@ int ShClTransferListGetHeader(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
         rc = pTransfer->ProviderIface.pfnListHdrRead(&pTransfer->ProviderCtx, hList, pHdr);
     else
         rc = VERR_NOT_SUPPORTED;
+
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Reading list header list 0x%x entry failed with %Rrc\n", hList, rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1419,6 +1444,9 @@ int ShClTransferListRead(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
     else
         rc = VERR_NOT_SUPPORTED;
 
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Reading list for list 0x%x entry failed with %Rrc\n", hList, rc));
+
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -1442,6 +1470,9 @@ int ShClTransferListWrite(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
     if (pTransfer->ProviderIface.pfnListEntryWrite)
         rc = pTransfer->ProviderIface.pfnListEntryWrite(&pTransfer->ProviderCtx, hList, pEntry);
 #endif
+
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Writing list entry to list 0x%x failed with %Rrc\n", hList, rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
