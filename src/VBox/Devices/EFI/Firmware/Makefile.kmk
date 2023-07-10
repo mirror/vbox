@@ -320,7 +320,7 @@ ifeq ($(KBUILD_HOST),win)
 endif
 
 ifdef VBOX_WITH_VIRT_ARMV8
- if1of ($(KBUILD_HOST),darwin linux)
+ if1of ($(KBUILD_HOST), darwin linux)
   ifndef TOOL_VBoxXGccArm64Elf
    include $(KBUILD_TOOL_PATHS)/VBoxXGccArm64Elf.kmk
   endif
