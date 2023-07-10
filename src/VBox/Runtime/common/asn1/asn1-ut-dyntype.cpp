@@ -120,6 +120,14 @@ RTDECL(int) RTAsn1DynType_SetToNull(PRTASN1DYNTYPE pThis)
 }
 
 
+RTDECL(int) RTAsn1DynType_SetToObjId(PRTASN1DYNTYPE pThis, PCRTASN1OBJID pSrc, PCRTASN1ALLOCATORVTABLE pAllocator)
+{
+    RTAsn1DynType_Delete(pThis);
+    pThis->enmType = RTASN1TYPE_OBJID;
+    return RTAsn1ObjId_Clone(&pThis->u.ObjId, pSrc, pAllocator);
+}
+
+
 RTDECL(int) RTAsn1DynType_Enum(PRTASN1DYNTYPE pThis, PFNRTASN1ENUMCALLBACK pfnCallback, uint32_t uDepth, void *pvUser)
 {
     if (   pThis
