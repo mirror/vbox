@@ -48,7 +48,6 @@
 #include <iprt/string.h>
 #include <iprt/crypto/digest.h>
 
-
 #ifdef IPRT_WITH_OPENSSL
 # include "internal/iprt-openssl.h"
 # include "internal/magics.h"
@@ -58,14 +57,18 @@
 # ifndef OPENSSL_VERSION_NUMBER
 #  error "Missing OPENSSL_VERSION_NUMBER!"
 # endif
+# if OPENSSL_VERSION_NUMBER < 0x30000000 || defined(LIBRESSL_VERSION_NUMBER)
+#  include "openssl/x509.h"
+#  include <iprt/crypto/x509.h>
+# endif
 
 # include "key-internal.h"
 
 
 /**
- * Helper that loads key parameters if present.
+ * Helper that loads key parameters and the actual key bits if present.
  */
-static int rtCrKeyToOpenSslKeyLoadParams(RTCRKEY hKey, int idKeyType, EVP_PKEY **ppEvpNewKey, PRTERRINFO pErrInfo)
+static int rtCrKeyToOpenSslKeyLoad(RTCRKEY hKey, int idKeyType, EVP_PKEY **ppEvpNewKey, bool fNeedPublic, PRTERRINFO pErrInfo)
 {
     int rc = VINF_SUCCESS;
     if (   hKey->enmType == RTCRKEYTYPE_ECDSA_PUBLIC
@@ -91,40 +94,78 @@ static int rtCrKeyToOpenSslKeyLoadParams(RTCRKEY hKey, int idKeyType, EVP_PKEY *
             RTMemTmpFree(pvFree);
         }
 #else
-        /** @todo d2i_KeyParams was introduced with 3.0.0, so ECDSA stuff won't work
-         *        with older openssl versions atm.  Fortunately we only really needs
-         *        it on Windows atm., so no problem. */
+        /*
+         * Cannot find any real suitable alternative to d2i_KeyParams in pre-3.0.x 
+         * OpenSSL, so decided to use d2i_PUBKEY instead.  This means we need to 
+         * encode the stuff a X.509 SubjectPublicKeyInfo ASN.1 sequence first.
+         */
+        if (hKey->enmType == RTCRKEYTYPE_ECDSA_PUBLIC)
+        {
+            RTCRX509SUBJECTPUBLICKEYINFO PubKeyInfo;
+            rc = RTCrX509SubjectPublicKeyInfo_Init(&PubKeyInfo, &g_RTAsn1DefaultAllocator);
+            AssertRCReturn(rc, rc);
+
+            rc = RTAsn1ObjId_SetFromString(&PubKeyInfo.Algorithm.Algorithm, RTCRX509ALGORITHMIDENTIFIERID_ECDSA,
+                                           &g_RTAsn1DefaultAllocator);
+            if (RT_SUCCESS(rc))
+                rc = RTAsn1DynType_SetToObjId(&PubKeyInfo.Algorithm.Parameters, &hKey->u.EcdsaPublic.NamedCurve,
+                                              &g_RTAsn1DefaultAllocator);
+            if (RT_SUCCESS(rc))
+            {
+                RTAsn1BitString_Delete(&PubKeyInfo.SubjectPublicKey);
+                rc = RTAsn1BitString_InitWithData(&PubKeyInfo.SubjectPublicKey, hKey->pbEncoded, hKey->cbEncoded * 8,
+                                                  &g_RTAsn1DefaultAllocator);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Encode the whole shebang. */
+                    void          *pvFree = NULL;
+                    const uint8_t *pbRaw  = NULL;
+                    uint32_t       cbRaw  = 0;
+                    rc = RTAsn1EncodeQueryRawBits(&PubKeyInfo.SeqCore.Asn1Core, &pbRaw, &cbRaw, &pvFree, pErrInfo);
+                    if (RT_SUCCESS(rc))
+                    {
+
+                        const unsigned char *puchPubKey = pbRaw;
+                        EVP_PKEY *pRet = d2i_PUBKEY(ppEvpNewKey, &puchPubKey, cbRaw);
+                        if (pRet != NULL && pRet == *ppEvpNewKey)
+                            rc = VINF_SUCCESS;
+                        else
+                            rc = RTERRINFO_LOG_SET(pErrInfo, VERR_CR_PKIX_OSSL_D2I_KEY_PARAMS_FAILED, "d2i_KeyParams failed");
+                        RTMemTmpFree(pvFree);
+                    }
+                }
+            }
+            AssertRC(rc);
+            RTCrX509SubjectPublicKeyInfo_Delete(&PubKeyInfo);
+            return rc;
+        }
         rc = RTERRINFO_LOG_SET_F(pErrInfo, VERR_CR_OPENSSL_VERSION_TOO_OLD,
                                  "OpenSSL version %#x is too old for IPRTs ECDSA code", OPENSSL_VERSION_NUMBER);
         RT_NOREF(idKeyType, ppEvpNewKey);
 #endif
     }
+
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Load the key into the structure.
+         */
+        const unsigned char *puchPublicKey = hKey->pbEncoded;
+        EVP_PKEY *pRet;
+        if (fNeedPublic)
+            pRet = d2i_PublicKey(idKeyType, ppEvpNewKey, &puchPublicKey, hKey->cbEncoded);
+        else
+            pRet = d2i_PrivateKey(idKeyType, ppEvpNewKey, &puchPublicKey, hKey->cbEncoded);
+        if (pRet != NULL && pRet == *ppEvpNewKey)
+            return VINF_SUCCESS;
+
+        /* Bail out: */
+        if (fNeedPublic)
+            rc = RTERRINFO_LOG_SET(pErrInfo, VERR_CR_PKIX_OSSL_D2I_PUBLIC_KEY_FAILED, "d2i_PublicKey failed");
+        else
+            rc = RTERRINFO_LOG_SET(pErrInfo, VERR_CR_PKIX_OSSL_D2I_PRIVATE_KEY_FAILED, "d2i_PrivateKey failed");
+    }
     return rc;
-}
-
-
-/**
- * Helper that loads key bits.
- */
-static int rtCrKeyToOpenSslKeyLoadKeyBits(RTCRKEY hKey, int idKeyType, EVP_PKEY **ppEvpNewKey,
-                                          bool fNeedPublic, PRTERRINFO pErrInfo)
-{
-    /*
-     * Load the key into the structure.
-     */
-    const unsigned char *puchPublicKey = hKey->pbEncoded;
-    EVP_PKEY *pRet;
-    if (fNeedPublic)
-        pRet = d2i_PublicKey(idKeyType, ppEvpNewKey, &puchPublicKey, hKey->cbEncoded);
-    else
-        pRet = d2i_PrivateKey(idKeyType, ppEvpNewKey, &puchPublicKey, hKey->cbEncoded);
-    if (pRet != NULL && pRet == *ppEvpNewKey)
-        return VINF_SUCCESS;
-
-    /* Bail out: */
-    if (fNeedPublic)
-        return RTERRINFO_LOG_SET(pErrInfo, VERR_CR_PKIX_OSSL_D2I_PUBLIC_KEY_FAILED, "d2i_PublicKey failed");
-    return RTERRINFO_LOG_SET(pErrInfo, VERR_CR_PKIX_OSSL_D2I_PRIVATE_KEY_FAILED, "d2i_PrivateKey failed");
 }
 
 
@@ -179,15 +220,11 @@ DECLHIDDEN(int) rtCrKeyToOpenSslKey(RTCRKEY hKey, bool fNeedPublic, void /*EVP_P
     /*
      * Load key parameters and the key into the EVP structure.
      */
-    int rc = rtCrKeyToOpenSslKeyLoadParams(hKey, idKeyType, &pEvpNewKey, pErrInfo);
+    int rc = rtCrKeyToOpenSslKeyLoad(hKey, idKeyType, &pEvpNewKey, fNeedPublic, pErrInfo);
     if (RT_SUCCESS(rc))
     {
-        rc = rtCrKeyToOpenSslKeyLoadKeyBits(hKey, idKeyType, &pEvpNewKey, fNeedPublic, pErrInfo);
-        if (RT_SUCCESS(rc))
-        {
-            *ppEvpKey = pEvpNewKey;
-            return rc;
-        }
+        *ppEvpKey = pEvpNewKey;
+        return rc;
     }
     EVP_PKEY_free(pEvpNewKey);
     return rc;
@@ -271,15 +308,11 @@ DECLHIDDEN(int) rtCrKeyToOpenSslKeyEx(RTCRKEY hKey, bool fNeedPublic, const char
             /*
              * Load key parameters and the key into the EVP structure.
              */
-            rc = rtCrKeyToOpenSslKeyLoadParams(hKey, idKeyType, &pEvpNewKey, pErrInfo);
+            rc = rtCrKeyToOpenSslKeyLoad(hKey, idKeyType, &pEvpNewKey, fNeedPublic, pErrInfo);
             if (RT_SUCCESS(rc))
             {
-                rc = rtCrKeyToOpenSslKeyLoadKeyBits(hKey, idKeyType, &pEvpNewKey, fNeedPublic, pErrInfo);
-                if (RT_SUCCESS(rc))
-                {
-                    *ppEvpKey = pEvpNewKey;
-                    return rc;
-                }
+                *ppEvpKey = pEvpNewKey;
+                return rc;
             }
         }
         else
