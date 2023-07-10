@@ -202,7 +202,7 @@ class SubTstDrvNestedSnapshots1(base.SubTestDriverBase):
           + Check that the snapshots are truly gone.
         """
 
-        reporter.testStart('Verify IMachine::unregister()+deleteConfig() deletes snapshots');
+        reporter.testStart('testDeleteSnapshots');
         oVM = self.oTstDrv.getVmByName(self.sVmName);
         # IMachine::stateFilePath() isn't implemented in the testdriver so we manually
         # retrieve the paths to the snapshots.
