@@ -3137,3 +3137,155 @@ int ShClTransferValidatePath(const char *pcszPath, bool fMustExist)
     return rc;
 }
 
+/**
+ * Resolves a relative path of a specific transfer to its absolute path.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           Clipboard transfer to resolve path for.
+ * @param   pszPath             Relative path to resolve.
+ *                              Paths have to end with a (back-)slash, otherwise this is considered to be a file.
+ * @param   fFlags              Resolve flags. Currently not used and must be 0.
+ * @param   ppszResolved        Where to store the allocated resolved path. Must be free'd by the called using RTStrFree().
+ */
+int ShClTransferResolvePathAbs(PSHCLTRANSFER pTransfer, const char *pszPath, uint32_t fFlags, char **ppszResolved)
+{
+    AssertPtrReturn(pTransfer,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pszPath,      VERR_INVALID_POINTER);
+    AssertReturn   (fFlags == 0,  VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppszResolved, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("pszPath=%s, fFlags=%#x (pszPathRootAbs=%s, cRootListEntries=%RU64)\n",
+                 pszPath, fFlags, pTransfer->pszPathRootAbs, pTransfer->lstRoots.Hdr.cEntries));
+
+    int rc = ShClTransferValidatePath(pszPath, false /* fMustExist */);
+    if (RT_SUCCESS(rc))
+    {
+        rc = VERR_PATH_NOT_FOUND; /* Play safe by default. */
+
+        PSHCLLISTENTRY pEntry;
+        RTListForEach(&pTransfer->lstRoots.lstEntries, pEntry, SHCLLISTENTRY, Node)
+        {
+            LogFlowFunc(("\tpEntry->pszName=%s\n", pEntry->pszName));
+
+            if (RTStrStartsWith(pszPath, pEntry->pszName)) /* Case-sensitive! */
+            {
+                rc = VINF_SUCCESS;
+                break;
+            }
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            char *pszPathAbs = RTPathJoinA(pTransfer->pszPathRootAbs, pszPath);
+            if (pszPathAbs)
+            {
+                char   szResolved[RTPATH_MAX];
+                size_t cbResolved = sizeof(szResolved);
+                rc = RTPathAbsEx(pTransfer->pszPathRootAbs, pszPathAbs, RTPATH_STR_F_STYLE_HOST, szResolved, &cbResolved);
+
+                RTStrFree(pszPathAbs);
+                pszPathAbs = NULL;
+
+                if (RT_SUCCESS(rc))
+                {
+                    LogRel2(("Shared Clipboard: Resolved: '%s' -> '%s'\n", pszPath, szResolved));
+
+                    *ppszResolved = RTStrDup(szResolved);
+                }
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+    }
+
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Resolving absolute path for '%s' failed, rc=%Rrc\n", pszPath, rc));
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Converts Shared Clipboard create flags (see SharedClipboard-transfers.h) into IPRT create flags.
+ *
+ * @returns IPRT status code.
+ * @param       fShClFlags  Shared clipboard create flags.
+ * @param[out]  pfOpen      Where to store the RTFILE_O_XXX flags for
+ *                          RTFileOpen.
+ *
+ * @sa Initially taken from vbsfConvertFileOpenFlags().
+ */
+int ShClTransferConvertFileCreateFlags(uint32_t fShClFlags, uint64_t *pfOpen)
+{
+    AssertMsgReturnStmt(!(fShClFlags & ~SHCL_OBJ_CF_VALID_MASK), ("%#x4\n", fShClFlags), *pfOpen = 0, VERR_INVALID_FLAGS);
+
+    uint64_t fOpen = 0;
+
+    switch (fShClFlags & SHCL_OBJ_CF_ACCESS_MASK_RW)
+    {
+        case SHCL_OBJ_CF_ACCESS_NONE:
+        {
+#ifdef RT_OS_WINDOWS
+            if ((fShClFlags & SHCL_OBJ_CF_ACCESS_MASK_ATTR) != SHCL_OBJ_CF_ACCESS_ATTR_NONE)
+                fOpen |= RTFILE_O_OPEN | RTFILE_O_ATTR_ONLY;
+            else
+#endif
+                fOpen |= RTFILE_O_OPEN | RTFILE_O_READ;
+            LogFlowFunc(("SHCL_OBJ_CF_ACCESS_NONE\n"));
+            break;
+        }
+
+        case SHCL_OBJ_CF_ACCESS_READ:
+        {
+            fOpen |= RTFILE_O_OPEN | RTFILE_O_READ;
+            LogFlowFunc(("SHCL_OBJ_CF_ACCESS_READ\n"));
+            break;
+        }
+
+        default:
+            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
+    }
+
+    switch (fShClFlags & SHCL_OBJ_CF_ACCESS_MASK_ATTR)
+    {
+        case SHCL_OBJ_CF_ACCESS_ATTR_NONE:
+        {
+            fOpen |= RTFILE_O_ACCESS_ATTR_DEFAULT;
+            LogFlowFunc(("SHCL_OBJ_CF_ACCESS_ATTR_NONE\n"));
+            break;
+        }
+
+        case SHCL_OBJ_CF_ACCESS_ATTR_READ:
+        {
+            fOpen |= RTFILE_O_ACCESS_ATTR_READ;
+            LogFlowFunc(("SHCL_OBJ_CF_ACCESS_ATTR_READ\n"));
+            break;
+        }
+
+        default:
+            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
+    }
+
+    /* Sharing mask */
+    switch (fShClFlags & SHCL_OBJ_CF_ACCESS_MASK_DENY)
+    {
+        case SHCL_OBJ_CF_ACCESS_DENYNONE:
+            fOpen |= RTFILE_O_DENY_NONE;
+            LogFlowFunc(("SHCL_OBJ_CF_ACCESS_DENYNONE\n"));
+            break;
+
+        case SHCL_OBJ_CF_ACCESS_DENYWRITE:
+            fOpen |= RTFILE_O_DENY_WRITE;
+            LogFlowFunc(("SHCL_OBJ_CF_ACCESS_DENYWRITE\n"));
+            break;
+
+        default:
+            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
+    }
+
+    *pfOpen = fOpen;
+
+    LogFlowFuncLeaveRC(VINF_SUCCESS);
+    return VINF_SUCCESS;
+}
+
