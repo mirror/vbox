@@ -514,24 +514,20 @@ static LRESULT vbtrShClWndProcWorker(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg, WPA
 
         case WM_RENDERFORMAT: /* Guest wants to render the clipboard data. */
         {
-            LogFunc(("WM_RENDERFORMAT\n"));
-
             /* Insert the requested clipboard format data into the clipboard. */
-            const UINT cfFormat = (UINT)wParam;
+            const UINT       uFmtWin  = (UINT)wParam;
+            const SHCLFORMAT uFmtVBox = SharedClipboardWinClipboardFormatToVBox(uFmtWin);
 
-            const SHCLFORMAT fFormat = SharedClipboardWinClipboardFormatToVBox(cfFormat);
-
-            LogFunc(("WM_RENDERFORMAT: cfFormat=%u -> fFormat=0x%x\n", cfFormat, fFormat));
-
+            LogFunc(("WM_RENDERFORMAT: uFmtWin=%u -> uFmtVBox=0x%x\n", uFmtWin, uFmtVBox));
 #ifdef LOG_ENABLED
-            char *pszFmts = ShClFormatsToStrA(fFormat);
+            char *pszFmts = ShClFormatsToStrA(uFmtVBox);
             AssertPtrReturn(pszFmts, 0);
-            LogRel(("Shared Clipboard: Rendering Windows format %#x as VBox format '%s'\n", cfFormat, pszFmts));
+            LogRel(("Shared Clipboard: Rendering Windows format %#x as VBox format '%s'\n", uFmtWin, pszFmts));
             RTStrFree(pszFmts);
 #endif
-            if (fFormat == VBOX_SHCL_FMT_NONE)
+            if (uFmtVBox == VBOX_SHCL_FMT_NONE)
             {
-                LogRel(("Shared Clipboard: Unsupported format (%#x) requested\n", cfFormat));
+                LogRel(("Shared Clipboard: Unsupported format (%#x) requested\n", uFmtWin));
                 SharedClipboardWinClear();
             }
             else
@@ -547,7 +543,7 @@ static LRESULT vbtrShClWndProcWorker(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg, WPA
                     if (pvMem)
                     {
                         /* Read the host data to the preallocated buffer. */
-                        int rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, fFormat, pvMem, cbPrealloc, &cb);
+                        int rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, uFmtVBox, pvMem, cbPrealloc, &cb);
                         if (RT_SUCCESS(rc))
                         {
                             if (cb == 0)
@@ -574,7 +570,7 @@ static LRESULT vbtrShClWndProcWorker(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg, WPA
                                     {
                                         /* Read the host data to the preallocated buffer. */
                                         uint32_t cbNew = 0;
-                                        rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, fFormat, pvMem, cb, &cbNew);
+                                        rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, uFmtVBox, pvMem, cb, &cbNew);
                                         if (   RT_SUCCESS(rc)
                                             && cbNew <= cb)
                                         {
@@ -607,7 +603,7 @@ static LRESULT vbtrShClWndProcWorker(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg, WPA
                                 /* Verify the size of returned text, the memory block for clipboard
                                  * must have the exact string size.
                                  */
-                                if (fFormat == VBOX_SHCL_FMT_UNICODETEXT)
+                                if (uFmtVBox == VBOX_SHCL_FMT_UNICODETEXT)
                                 {
                                     size_t cwcActual = 0;
                                     rc = RTUtf16NLenEx((PCRTUTF16)pvMem, cb / sizeof(RTUTF16), &cwcActual);
@@ -624,7 +620,7 @@ static LRESULT vbtrShClWndProcWorker(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg, WPA
                                         hMem = NULL;
                                     }
                                 }
-                                else if (fFormat == VBOX_SHCL_FMT_HTML)
+                                else if (uFmtVBox == VBOX_SHCL_FMT_HTML)
                                 {
                                     /* Wrap content into CF_HTML clipboard format if needed. */
                                     if (!SharedClipboardWinIsCFHTML((const char *)pvMem))
@@ -677,7 +673,7 @@ static LRESULT vbtrShClWndProcWorker(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg, WPA
                                 {
                                     /* 'hMem' contains the host clipboard data.
                                      * size is 'cb' and format is 'format'. */
-                                    HANDLE hClip = SetClipboardData(cfFormat, hMem);
+                                    HANDLE hClip = SetClipboardData(uFmtWin, hMem);
                                     if (hClip)
                                     {
                                         /* The hMem ownership has gone to the system. Finish the processing. */

@@ -495,14 +495,18 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
 
         case WM_RENDERFORMAT:
         {
-            LogFunc(("WM_RENDERFORMAT\n"));
-
             /* Insert the requested clipboard format data into the clipboard. */
-            const UINT       uFormat = (UINT)wParam;
-            const SHCLFORMAT fFormat = SharedClipboardWinClipboardFormatToVBox(uFormat);
-            LogFunc(("WM_RENDERFORMAT: uFormat=%u -> fFormat=0x%x\n", uFormat, fFormat));
+            const UINT       uFmtWin  = (UINT)wParam;
+            const SHCLFORMAT uFmtVBox = SharedClipboardWinClipboardFormatToVBox(uFmtWin);
 
-            if (   fFormat       == VBOX_SHCL_FMT_NONE
+            LogFunc(("WM_RENDERFORMAT: uFmtWin=%u -> uFmtVBox=0x%x\n", uFmtWin, uFmtVBox));
+#ifdef LOG_ENABLED
+            char *pszFmts = ShClFormatsToStrA(uFmtVBox);
+            AssertPtrReturn(pszFmts, 0);
+            LogRel(("Shared Clipboard: Rendering Windows format %#x as VBox format '%s'\n", uFmtWin, pszFmts));
+            RTStrFree(pszFmts);
+#endif
+            if (   uFmtVBox      == VBOX_SHCL_FMT_NONE
                 || pCtx->pClient == NULL)
             {
                 /* Unsupported clipboard format is requested. */
@@ -513,13 +517,13 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
             {
                 void    *pvData = NULL;
                 uint32_t cbData = 0;
-                int rc = ShClSvcReadDataFromGuest(pCtx->pClient, uFormat, &pvData, &cbData);
+                int rc = ShClSvcReadDataFromGuest(pCtx->pClient, uFmtVBox, &pvData, &cbData);
                 if (   RT_SUCCESS(rc)
                     && pvData
                     && cbData)
                 {
                     /* Wrap HTML clipboard content info CF_HTML format if needed. */
-                    if (fFormat == VBOX_SHCL_FMT_HTML
+                    if (uFmtVBox == VBOX_SHCL_FMT_HTML
                         && !SharedClipboardWinIsCFHTML((char *)pvData))
                     {
                         char *pszWrapped = NULL;
@@ -536,7 +540,7 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
                             LogRel(("Shared Clipboard: cannot convert HTML clipboard into CF_HTML format, rc=%Rrc\n", rc));
                     }
 
-                    rc = SharedClipboardWinDataWrite(uFormat, pvData, cbData);
+                    rc = SharedClipboardWinDataWrite(uFmtWin, pvData, cbData);
                     if (RT_FAILURE(rc))
                         LogRel(("Shared Clipboard: Setting clipboard data for Windows host failed with %Rrc\n", rc));
 
