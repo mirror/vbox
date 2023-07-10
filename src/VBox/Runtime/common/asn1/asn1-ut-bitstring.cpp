@@ -367,7 +367,7 @@ RTDECL(int) RTAsn1BitString_InitWithData(PRTASN1BITSTRING pThis, void const *pvS
         pThis->cBits    = cSrcBits;
         uint8_t *pbDst  = (uint8_t *)pThis->Asn1Core.uData.pu8;
         pThis->uBits.pv = pbDst + 1;
-        *pbDst = 8 - (cSrcBits & 7); /* unused bits */
+        *pbDst = (cSrcBits & 7) != 0 ? 8 - (cSrcBits & 7) : 0; /* unused bits */
         memcpy(pbDst + 1, pvSrc, cbToCopy);
     }
     return rc;
