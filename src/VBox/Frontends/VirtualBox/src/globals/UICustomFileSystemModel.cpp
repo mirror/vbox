@@ -649,5 +649,4 @@ void UICustomFileSystemModel::initializeTree()
     m_pRootItem->setData(UICustomFileSystemModel::tr("Owner"), UICustomFileSystemModelData_Owner);
     m_pRootItem->setData(UICustomFileSystemModel::tr("Permissions"), UICustomFileSystemModelData_Permissions);
     m_pRootItem->setData(UICustomFileSystemModel::tr("Local Path"), UICustomFileSystemModelData_LocalPath);
-    m_pRootItem->setData(UICustomFileSystemModel::tr("Path"), UICustomFileSystemModelData_VISOPath);
 }
