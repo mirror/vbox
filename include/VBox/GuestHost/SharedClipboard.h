@@ -87,8 +87,10 @@ typedef uint32_t SHCLFORMATS;
 /** Pointer to a bit map of Shared Clipboard formats (VBOX_SHCL_FMT_XXX). */
 typedef SHCLFORMATS *PSHCLFORMATS;
 
-/** Defines the default timeout (in ms) to use for clipboard operations. */
-#define SHCL_TIMEOUT_DEFAULT_MS                 RT_MS_30SEC
+/** Defines the default timeout (in ms) to use for clipboard single wait operations.
+ *  Not being used for lenghtly operations as a whole!
+ *  Note: Don't set this too high, otherwise the UI feels sluggish. */
+#define SHCL_TIMEOUT_DEFAULT_MS                 RT_MS_5SEC
 
 
 /**
