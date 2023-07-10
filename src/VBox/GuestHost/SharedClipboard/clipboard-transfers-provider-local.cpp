@@ -863,6 +863,7 @@ static DECLCALLBACK(int) shclTransferIfaceLocalObjRead(PSHCLTXPROVIDERCTX pCtx,
     return rc;
 }
 
+/** @copydoc SHCLTXPROVIDERIFACE::pfnObjWrite */
 static DECLCALLBACK(int) shclTransferIfaceLocalObjWrite(PSHCLTXPROVIDERCTX pCtx,
                                                         SHCLOBJHANDLE hObj, void *pvData, uint32_t cbData, uint32_t fFlags,
                                                         uint32_t *pcbWritten)
