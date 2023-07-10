@@ -95,7 +95,10 @@
 
 - Windows 3.1 Standard mode violates the APM specifications and calls into
   APM with CPL=3, causing the HLT instruction to fault if used. 386 Enhanced
-  mode Windows 3.1 calls into APM with CPL=3.
+  mode Windows 3.1 calls into APM with CPL=0.
+
+- DR-DOS 5.0/6.0 EMM386.SYS does handle HLT instructions executed by real-mode
+  code, but does not halt the CPU and just continues execution.
 
 - QNX4 calls 16-bit protected-mode PCI BIOS in an environment where ESP is
   16-bit but SS is a 32-bit stack segment. In such environments, using the
