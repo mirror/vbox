@@ -1775,6 +1775,14 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
 
         case VBOX_SHCL_GUEST_FN_LIST_OPEN:
         {
+            if (cParms != VBOX_SHCL_CPARMS_LIST_OPEN)
+                break;
+
+            ASSERT_GUEST_RETURN(aParms[1].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_WRONG_PARAMETER_TYPE); /* List flags */
+            ASSERT_GUEST_RETURN(aParms[2].type == VBOX_HGCM_SVC_PARM_PTR,   VERR_WRONG_PARAMETER_TYPE); /* Filter string */
+            ASSERT_GUEST_RETURN(aParms[3].type == VBOX_HGCM_SVC_PARM_PTR,   VERR_WRONG_PARAMETER_TYPE); /* Path */
+            ASSERT_GUEST_RETURN(aParms[4].type == VBOX_HGCM_SVC_PARM_64BIT, VERR_WRONG_PARAMETER_TYPE); /* List handle (output) */
+
             SHCLLISTOPENPARMS listOpenParms;
             rc = shClSvcTransferGetListOpen(cParms, aParms, &listOpenParms);
             if (RT_SUCCESS(rc))
@@ -1784,7 +1792,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
                 if (RT_SUCCESS(rc))
                 {
                     /* Return list handle. */
-                    HGCMSvcSetU64(&aParms[6], hList);
+                    HGCMSvcSetU64(&aParms[4], hList);
                 }
             }
             break;
