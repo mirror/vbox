@@ -147,10 +147,10 @@ VBoxEfiFirmwareDbg32_INST = $(INST_VBOXDBG_SYMS)x86/
 VBoxEfiFirmwareDbg32_MODE = 0644
 if1of ($(KBUILD_HOST), win)
  VBoxEfiFirmwareDbg32_SOURCES = \
- 	$(foreach mod,$(VBOX_EFI_MODULES),$(VBoxEfiFirmware_0_OUTDIR)/x86/$(VBOX_EFI_OUTPUT_SUBDIR)/IA32/$(mod).pdb)
+ 	$(foreach mod,$(VBOX_EFI_MODULES_X86),$(VBoxEfiFirmware_0_OUTDIR)/x86/$(VBOX_EFI_OUTPUT_SUBDIR)/IA32/$(mod).pdb)
 else
  VBoxEfiFirmwareDbg32_SOURCES = \
- 	$(foreach mod,$(VBOX_EFI_MODULES_FLAT),$(VBoxEfiFirmware_0_OUTDIR)/x86/$(VBOX_EFI_OUTPUT_SUBDIR)/IA32/$(mod).debug)
+ 	$(foreach mod,$(VBOX_EFI_MODULES_FLAT_X86),$(VBoxEfiFirmware_0_OUTDIR)/x86/$(VBOX_EFI_OUTPUT_SUBDIR)/IA32/$(mod).debug)
 endif
 
 INSTALLS += VBoxEfiFirmwareDbg64
@@ -158,10 +158,10 @@ VBoxEfiFirmwareDbg64_INST = $(INST_VBOXDBG_SYMS)amd64/
 VBoxEfiFirmwareDbg64_MODE = 0644
 if1of ($(KBUILD_HOST), win)
  VBoxEfiFirmwareDbg64_SOURCES = \
- 	$(foreach mod,$(VBOX_EFI_MODULES),$(VBoxEfiFirmware_0_OUTDIR)/amd64/$(VBOX_EFI_OUTPUT_SUBDIR)/X64/$(mod).pdb)
+ 	$(foreach mod,$(VBOX_EFI_MODULES_X86),$(VBoxEfiFirmware_0_OUTDIR)/amd64/$(VBOX_EFI_OUTPUT_SUBDIR)/X64/$(mod).pdb)
 else
  VBoxEfiFirmwareDbg64_SOURCES = \
- 	$(foreach mod,$(VBOX_EFI_MODULES_FLAT),$(VBoxEfiFirmware_0_OUTDIR)/amd64/$(VBOX_EFI_OUTPUT_SUBDIR)/X64/$(mod).debug)
+ 	$(foreach mod,$(VBOX_EFI_MODULES_FLAT_X86),$(VBoxEfiFirmware_0_OUTDIR)/amd64/$(VBOX_EFI_OUTPUT_SUBDIR)/X64/$(mod).debug)
 endif
 
 ifdef VBOX_WITH_VIRT_ARMV8
@@ -170,10 +170,10 @@ ifdef VBOX_WITH_VIRT_ARMV8
  VBoxEfiFirmwareDbgAarch32_MODE = 0644
  if1of ($(KBUILD_HOST), win)
   VBoxEfiFirmwareDbgAarch32_SOURCES = \
-  	$(foreach mod,$(VBOX_EFI_MODULES),$(VBoxEfiFirmware_0_OUTDIR)/aarch32/$(VBOX_EFI_OUTPUT_SUBDIR)/ARM/$(mod).pdb)
+  	$(foreach mod,$(VBOX_EFI_MODULES_ARM),$(VBoxEfiFirmware_0_OUTDIR)/aarch32/$(VBOX_EFI_OUTPUT_SUBDIR)/ARM/$(mod).pdb)
  else
   VBoxEfiFirmwareDbgAarch32_SOURCES = \
-  	$(foreach mod,$(VBOX_EFI_MODULES_FLAT),$(VBoxEfiFirmware_0_OUTDIR)/aarch32/$(VBOX_EFI_OUTPUT_SUBDIR)/ARM/$(mod).debug)
+  	$(foreach mod,$(VBOX_EFI_MODULES_FLAT_ARM),$(VBoxEfiFirmware_0_OUTDIR)/aarch32/$(VBOX_EFI_OUTPUT_SUBDIR)/ARM/$(mod).debug)
  endif
 
  INSTALLS += VBoxEfiFirmwareDbgAarch64
@@ -181,10 +181,10 @@ ifdef VBOX_WITH_VIRT_ARMV8
  VBoxEfiFirmwareDbgAarch64_MODE = 0644
  if1of ($(KBUILD_HOST), win)
   VBoxEfiFirmwareDbgAarch64_SOURCES = \
-  	$(foreach mod,$(VBOX_EFI_MODULES),$(VBoxEfiFirmware_0_OUTDIR)/aarch64/$(VBOX_EFI_OUTPUT_SUBDIR)/AARCH64/$(mod).pdb)
+  	$(foreach mod,$(VBOX_EFI_MODULES_ARM),$(VBoxEfiFirmware_0_OUTDIR)/aarch64/$(VBOX_EFI_OUTPUT_SUBDIR)/AARCH64/$(mod).pdb)
  else
   VBoxEfiFirmwareDbgAarch64_SOURCES = \
-  	$(foreach mod,$(VBOX_EFI_MODULES_FLAT),$(VBoxEfiFirmware_0_OUTDIR)/aarch64/$(VBOX_EFI_OUTPUT_SUBDIR)/AARCH64/$(mod).debug)
+  	$(foreach mod,$(VBOX_EFI_MODULES_FLAT_ARM),$(VBoxEfiFirmware_0_OUTDIR)/aarch64/$(VBOX_EFI_OUTPUT_SUBDIR)/AARCH64/$(mod).debug)
  endif
 endif
 
@@ -213,8 +213,8 @@ $(PATH_STAGE)/VBoxEfiFirmware.zip:
 		VBoxEFI32.fd \
 		VBoxEFI64.fd
 	$(REDIRECT) -C "$(PATH_STAGE)/$(INST_VBOXDBG_SYMS)" -- $(TOOL_ZIP_PACK) $(TOOL_ZIP_PACKFLAGS) -9X $@ \
-		$(foreach mod,$(VBOX_EFI_MODULES_FLAT),amd64/$(mod)$(VBOX_EFI_DBG_SUFF)) \
-		$(foreach mod,$(VBOX_EFI_MODULES_FLAT),x86/$(mod)$(VBOX_EFI_DBG_SUFF))
+		$(foreach mod,$(VBOX_EFI_MODULES_FLAT_X86),amd64/$(mod)$(VBOX_EFI_DBG_SUFF)) \
+		$(foreach mod,$(VBOX_EFI_MODULES_FLAT_X86),x86/$(mod)$(VBOX_EFI_DBG_SUFF))
 
 ifdef VBOX_WITH_VIRT_ARMV8
  VBoxEfiFirmware-armv8.zip: $(PATH_STAGE)/VBoxEfiFirmware-armv8.zip
@@ -223,8 +223,8 @@ ifdef VBOX_WITH_VIRT_ARMV8
  		VBoxEFIAArch32.fd \
  		VBoxEFIAArch64.fd
 	$(REDIRECT) -C "$(PATH_STAGE)/$(INST_VBOXDBG_SYMS)" -- $(TOOL_ZIP_PACK) $(TOOL_ZIP_PACKFLAGS) -9X $@ \
- 		$(foreach mod,$(VBOX_EFI_MODULES_FLAT),aarch64/$(mod)$(VBOX_EFI_DBG_SUFF)) \
- 		$(foreach mod,$(VBOX_EFI_MODULES_FLAT),aarch32/$(mod)$(VBOX_EFI_DBG_SUFF))
+ 		$(foreach mod,$(VBOX_EFI_MODULES_FLAT_ARM),aarch64/$(mod)$(VBOX_EFI_DBG_SUFF)) \
+ 		$(foreach mod,$(VBOX_EFI_MODULES_FLAT_ARM),aarch32/$(mod)$(VBOX_EFI_DBG_SUFF))
 endif
 
 #
@@ -319,20 +319,15 @@ ifeq ($(KBUILD_HOST),win)
  endif
 endif
 
-#
-# @todo This is temporary and shoud be changed to use proper tools depending
-#       on the build environment
 ifdef VBOX_WITH_VIRT_ARMV8
- ifeq ($(KBUILD_HOST),darwin)
-  VBOX_PATH_PREFIX_GCC_AARCH64 ?= aarch64-elf-
-  VBOX_PATH_PREFIX_GCC_ARM     ?= arm-none-eabi-
- else
-  VBOX_PATH_PREFIX_GCC_AARCH64 ?=
-  VBOX_PATH_PREFIX_GCC_ARM     ?=
+ if1of ($(KBUILD_HOST),darwin linux)
+  ifndef TOOL_VBoxXGccArm64Elf
+   include $(KBUILD_TOOL_PATHS)/VBoxXGccArm64Elf.kmk
+  endif
+  ifndef TOOL_VBoxXGccArmNoneEabi
+   include $(KBUILD_TOOL_PATHS)/VBoxXGccArmNoneEabi.kmk
+  endif
  endif
-else
- VBOX_PATH_PREFIX_GCC_AARCH64 ?=
- VBOX_PATH_PREFIX_GCC_ARM     ?=
 endif
 
 $(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/tools_def.txt \
@@ -350,8 +345,8 @@ $(if $(VBOX_WITH_VIRT_ARMV8),$(VBoxEfiFirmware_0_OUTDIR)/aarch64/Conf/tools_def.
                \
 		-e 's,@VBOX_PATH_PREFIX_GCC32@,$(PATH_TOOL_$(VBOX_GCC_TOOL)),' \
 		-e 's,@VBOX_PATH_PREFIX_GCC64@,$(PATH_TOOL_$(VBOX_GCC_TOOL)),' \
-		-e 's,@VBOX_PATH_PREFIX_GCC_AARCH64@,$(VBOX_PATH_PREFIX_GCC_AARCH64),' \
-		-e 's,@VBOX_PATH_PREFIX_GCC_ARM@,$(VBOX_PATH_PREFIX_GCC_ARM),' \
+		-e 's,@VBOX_PATH_PREFIX_GCC_AARCH64@,$(PATH_TOOL_VBoxXGccArm64Elf)/$(TOOL_VBoxXGccArm64Elf_PREFIX),' \
+		-e 's,@VBOX_PATH_PREFIX_GCC_ARM@,$(PATH_TOOL_VBoxXGccArmNoneEabi)/$(TOOL_VBoxXGccArmNoneEabi_PREFIX),' \
                \
 		-e 's,@PATH_VS2010@,$(PATH_TOOL_$(VBOX_VCC_TOOL)),' \
 		-e 's,@PATH_VS2010_AMD64_BIN@,$(PATH_TOOL_$(VBOX_VCC_TOOL))/bin/$(subst x86,x86_amd64,$(KBUILD_HOST_ARCH)),' \

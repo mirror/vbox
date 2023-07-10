@@ -2092,7 +2092,7 @@ efi-build: $(VBOX_VERSION_HEADER)
 	+ $(KMK) -C src/VBox/Devices/EFI/Firmware$(VBOX_EFI_FIRMWARE_SUFFIX)
 
 efi-packing:
-	+ $(KMK) -C src/VBox/Devices/EFI/Firmware$(VBOX_EFI_FIRMWARE_SUFFIX) $(PATH_STAGE)/VBoxEfiFirmware.zip
+	+ $(KMK) -C src/VBox/Devices/EFI/Firmware$(VBOX_EFI_FIRMWARE_SUFFIX) $(PATH_STAGE)/VBoxEfiFirmware.zip $(if $(VBOX_WITH_VIRT_ARMV8),$(PATH_STAGE)/VBoxEfiFirmware-armv8.zip,)
 
 
 

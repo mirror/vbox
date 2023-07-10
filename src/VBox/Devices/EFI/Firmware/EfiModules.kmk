@@ -50,7 +50,11 @@ ifndef VBOX_EFI_FIRMWARE_EFI_MODULES_KMK_INCLUDED
  #
  # List of modules that ends up producing .efi, .debug and .pdb files.
  #
- VBOX_EFI_MODULES = \
+ VBOX_EFI_MODULES_CMN = \
+ 	MdeModulePkg/Universal/BdsDxe/BdsDxe/$(VBOX_EFI_DEBUG_DIR)/BdsDxe
+
+ VBOX_EFI_MODULES_X86 = \
+ 	$(VBOX_EFI_MODULES_CMN) \
  	FatPkg/EnhancedFatDxe/Fat/$(VBOX_EFI_DEBUG_DIR)/Fat \
  	MdeModulePkg/Application/UiApp/UiApp/$(VBOX_EFI_DEBUG_DIR)/UiApp \
  	MdeModulePkg/Bus/Ata/AtaAtapiPassThru/AtaAtapiPassThru/$(VBOX_EFI_DEBUG_DIR)/AtaAtapiPassThruDxe \
@@ -75,7 +79,6 @@ ifndef VBOX_EFI_FIRMWARE_EFI_MODULES_KMK_INCLUDED
  	MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatformDxe/$(VBOX_EFI_DEBUG_DIR)/AcpiPlatform \
  	MdeModulePkg/Universal/Acpi/AcpiTableDxe/AcpiTableDxe/$(VBOX_EFI_DEBUG_DIR)/AcpiTableDxe \
  	MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe/$(VBOX_EFI_DEBUG_DIR)/BootGraphicsResourceTableDxe \
- 	MdeModulePkg/Universal/BdsDxe/BdsDxe/$(VBOX_EFI_DEBUG_DIR)/BdsDxe \
  	MdeModulePkg/Universal/CapsuleRuntimeDxe/CapsuleRuntimeDxe/$(VBOX_EFI_DEBUG_DIR)/CapsuleRuntimeDxe \
  	MdeModulePkg/Universal/Console/ConPlatformDxe/ConPlatformDxe/$(VBOX_EFI_DEBUG_DIR)/ConPlatformDxe \
  	MdeModulePkg/Universal/Console/ConSplitterDxe/ConSplitterDxe/$(VBOX_EFI_DEBUG_DIR)/ConSplitterDxe \
@@ -145,9 +148,12 @@ ifndef VBOX_EFI_FIRMWARE_EFI_MODULES_KMK_INCLUDED
  	VBoxPkg/VBoxVgaDxe/VBoxVgaDxe/$(VBOX_EFI_DEBUG_DIR)/VBoxVgaDxe \
  	VBoxPkg/VBoxVgaMiniPortDxe/VBoxVgaMiniPortDxe/$(VBOX_EFI_DEBUG_DIR)/VBoxVgaMiniPortDxe
 
- # Version of VBOX_EFI_MODULES without directories. (Using $(value ) to avoid
- # expanding all the build target macros and then immediately discarding them.)
- VBOX_EFI_MODULES_FLAT = $(notdir $(value VBOX_EFI_MODULES))
+ VBOX_EFI_MODULES_ARM = \
+ 	$(VBOX_EFI_MODULES_CMN)
+
+ # Version of VBOX_EFI_MODULES without directories.
+ VBOX_EFI_MODULES_FLAT_X86 = $(notdir $(VBOX_EFI_MODULES_X86))
+ VBOX_EFI_MODULES_FLAT_ARM = $(notdir $(VBOX_EFI_MODULES_ARM))
 
 endif
 
