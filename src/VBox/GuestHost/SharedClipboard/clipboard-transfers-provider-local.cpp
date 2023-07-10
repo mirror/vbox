@@ -199,7 +199,7 @@ static int shClTransferResolvePathAbs(PSHCLTRANSFER pTransfer, const char *pszPa
  * @param   pHdr                List header to add file to.
  * @param   pszPath             Path of file to add.
  */
-static int shclTransferListHdrAddFile(PSHCLLISTHDR pHdr, const char *pszPath)
+static int shclTransferLocalListHdrAddFile(PSHCLLISTHDR pHdr, const char *pszPath)
 {
     AssertPtrReturn(pHdr, VERR_INVALID_POINTER);
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
@@ -223,7 +223,7 @@ static int shclTransferListHdrAddFile(PSHCLLISTHDR pHdr, const char *pszPath)
  * @param   pHdr                Where to store the build list header.
  * @param   pcszPathAbs         Absolute path to use for building the transfer list.
  */
-static int shclTransferListHdrFromDir(PSHCLLISTHDR pHdr, const char *pcszPathAbs)
+static int shclTransferLocalListHdrFromDir(PSHCLLISTHDR pHdr, const char *pcszPathAbs)
 {
     AssertPtrReturn(pcszPathAbs, VERR_INVALID_POINTER);
 
@@ -268,7 +268,7 @@ static int shclTransferListHdrFromDir(PSHCLLISTHDR pHdr, const char *pcszPathAbs
                             char *pszSrc = RTPathJoinA(pcszPathAbs, pDirEntry->szName);
                             if (pszSrc)
                             {
-                                rc = shclTransferListHdrAddFile(pHdr, pszSrc);
+                                rc = shclTransferLocalListHdrAddFile(pHdr, pszSrc);
                                 RTStrFree(pszSrc);
                             }
                             else
@@ -292,7 +292,7 @@ static int shclTransferListHdrFromDir(PSHCLLISTHDR pHdr, const char *pcszPathAbs
         }
         else if (RTFS_IS_FILE(objInfo.Attr.fMode))
         {
-            rc = shclTransferListHdrAddFile(pHdr, pcszPathAbs);
+            rc = shclTransferLocalListHdrAddFile(pHdr, pcszPathAbs);
         }
         else if (RTFS_IS_SYMLINK(objInfo.Attr.fMode))
         {
@@ -312,7 +312,7 @@ static int shclTransferListHdrFromDir(PSHCLLISTHDR pHdr, const char *pcszPathAbs
  * @returns New List handle on success, or NIL_SHCLLISTHANDLE on error.
  * @param   pTransfer           Clipboard transfer to create new list handle for.
  */
-DECLINLINE(SHCLLISTHANDLE) shClTransferListHandleNew(PSHCLTRANSFER pTransfer)
+DECLINLINE(SHCLLISTHANDLE) shClTransferLocalListHandleNew(PSHCLTRANSFER pTransfer)
 {
     return pTransfer->uListHandleNext++; /** @todo Good enough for now. Improve this later. */
 }
@@ -325,7 +325,7 @@ DECLINLINE(SHCLLISTHANDLE) shClTransferListHandleNew(PSHCLTRANSFER pTransfer)
  * @param   pListEntry          List entry to query information for.
  * @param   pFsObjInfo          Where to store the queried information on success.
  */
-static int shClTransferListEntryQueryFsInfo(const char *pszPathRootAbs, PSHCLLISTENTRY pListEntry, PSHCLFSOBJINFO pFsObjInfo)
+static int shClTransferLocalListEntryQueryFsInfo(const char *pszPathRootAbs, PSHCLLISTENTRY pListEntry, PSHCLFSOBJINFO pFsObjInfo)
 {
     AssertPtrReturn(pszPathRootAbs, VERR_INVALID_POINTER);
     AssertPtrReturn(pListEntry, VERR_INVALID_POINTER);
@@ -352,7 +352,7 @@ static DECLCALLBACK(int) shclTransferIfaceLocalRootListRead(PSHCLTXPROVIDERCTX p
     RTListForEach(&pCtx->pTransfer->lstRoots.lstEntries, pEntry, SHCLLISTENTRY, Node)
     {
         AssertBreakStmt(pEntry->cbInfo == sizeof(SHCLFSOBJINFO), rc = VERR_WRONG_ORDER);
-        rc = shClTransferListEntryQueryFsInfo(pCtx->pTransfer->pszPathRootAbs, pEntry, (PSHCLFSOBJINFO)pEntry->pvInfo);
+        rc = shClTransferLocalListEntryQueryFsInfo(pCtx->pTransfer->pszPathRootAbs, pEntry, (PSHCLFSOBJINFO)pEntry->pvInfo);
         if (RT_FAILURE(rc)) /* Currently this is an all-or-nothing op. */
             break;
     }
@@ -417,7 +417,7 @@ static DECLCALLBACK(int) shclTransferIfaceLocalListOpen(PSHCLTXPROVIDERCTX pCtx,
 
                     if (RT_SUCCESS(rc))
                     {
-                        pInfo->hList = shClTransferListHandleNew(pTransfer);
+                        pInfo->hList = shClTransferLocalListHandleNew(pTransfer);
 
                         RTListAppend(&pTransfer->lstHandles, &pInfo->Node);
                         pTransfer->cListHandles++;
@@ -527,7 +527,7 @@ static DECLCALLBACK(int) shclTransferIfaceLocalListHdrRead(PSHCLTXPROVIDERCTX pC
                 {
                     LogFlowFunc(("DirAbs: %s\n", pInfo->pszPathLocalAbs));
 
-                    rc = shclTransferListHdrFromDir(pListHdr, pInfo->pszPathLocalAbs);
+                    rc = shclTransferLocalListHdrFromDir(pListHdr, pInfo->pszPathLocalAbs);
                     break;
                 }
 
