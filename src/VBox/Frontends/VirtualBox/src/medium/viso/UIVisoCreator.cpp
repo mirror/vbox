@@ -597,6 +597,10 @@ void UIVisoCreatorWidget::populateMenuMainToolbar()
         if (m_pRemoveISOAction)
             m_pMainMenu->addAction(m_pRemoveISOAction);
     }
+
+    if (m_pHostBrowser)
+        m_pHostBrowser->prepareMainMenu(m_pMainMenu);
+
     if (m_pVISOContentBrowser)
         m_pVISOContentBrowser->prepareMainMenu(m_pMainMenu);
 

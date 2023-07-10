@@ -90,7 +90,7 @@ protected:
     QAction             *m_pGoUp;
     QAction             *m_pGoForward;
     QAction             *m_pGoBackward;
-
+    QPointer<QMenu>      m_pSubMenu;
 
 protected slots:
 

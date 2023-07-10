@@ -59,6 +59,7 @@ public:
     virtual bool tableViewHasSelection() const final override;
     /* The list of path of the selected file objects. */
     QStringList selectedPathList() const;
+    void prepareMainMenu(QMenu *pMenu);
 
 public slots:
 
