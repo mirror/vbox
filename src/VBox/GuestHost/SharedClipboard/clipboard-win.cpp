@@ -148,9 +148,11 @@ int SharedClipboardWinClear(void)
         return VINF_SUCCESS;
 
     DWORD const dwLastErr = GetLastError();
-    int   const rc        = RTErrConvertFromWin32(dwLastErr);
-    if (dwLastErr != ERROR_CLIPBOARD_NOT_OPEN) /* Can happen if we didn't open the clipboard before. Just ignore this. */
-        LogRel2(("Shared Clipboard: Clearing Windows clipboard failed with %Rrc (0x%x)\n", rc, dwLastErr));
+    if (dwLastErr == ERROR_CLIPBOARD_NOT_OPEN) /* Can happen if we didn't open the clipboard before. Just ignore this. */
+        return VINF_SUCCESS;
+
+    int const rc = RTErrConvertFromWin32(dwLastErr);
+    LogRel2(("Shared Clipboard: Clearing Windows clipboard failed with %Rrc (0x%x)\n", rc, dwLastErr));
 
     return rc;
 }
@@ -1168,11 +1170,10 @@ void SharedClipboardWinTransferDestroy(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTrans
         SharedClipboardWinTransferCtx *pWinURITransferCtx = (SharedClipboardWinTransferCtx *)pTransfer->pvUser;
         AssertPtr(pWinURITransferCtx);
 
+        /* If the transfer has a data object assigned, uninitialize it here.
+         * Note: We don't free the object here, as other processes like the Windows Explorer still might refer to it. */
         if (pWinURITransferCtx->pDataObj)
-        {
-            delete pWinURITransferCtx->pDataObj;
-            pWinURITransferCtx->pDataObj = NULL;
-        }
+            pWinURITransferCtx->pDataObj->Uninit();
 
         delete pWinURITransferCtx;
         pWinURITransferCtx = NULL;
