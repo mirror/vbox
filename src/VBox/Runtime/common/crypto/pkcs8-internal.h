@@ -40,9 +40,6 @@
 # pragma once
 #endif
 
-/** The max number of bits we support in the modulus. */
-#define RTCRRSA_MAX_MODULUS_BITS        16384
-
 #define RTASN1TMPL_TEMPLATE_FILE "../common/crypto/pkcs8-template.h"
 #include <iprt/asn1-generator-internal-header.h>
 

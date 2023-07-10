@@ -47,16 +47,18 @@
 RT_C_DECLS_BEGIN
 
 /** @defgroup grp_rt_crpkcs8 RTCrPkcs8 - PKCS \#8, Private-Key Information Syntax Standard
+ *
+ * See RFC-5208 for details.
+ *
  * @ingroup grp_rt_crypto
  * @{
  */
 
 /**
  * PKCS\#8 PrivateKeyInfo.
+ *
+ * See RFC-5208 section 5.
  */
-/** @todo bird: rename to RTCRPKCS8PRIVATEKEYINFO. Should eventually be moved
- *        into a new iprt/crypto/pkcs8.h header file. Ditto for the template
- *        and associated code instantiation/whatever. */
 typedef struct RTCRPKCS8PRIVATEKEYINFO
 {
     /** Sequence core for the structure. */
@@ -65,7 +67,8 @@ typedef struct RTCRPKCS8PRIVATEKEYINFO
     RTASN1INTEGER               Version;
     /** The private key algorithm. */
     RTCRX509ALGORITHMIDENTIFIER PrivateKeyAlgorithm;
-    /** The private key. */
+    /** The private key, according to PrivateKeyAlgorithm.
+     * For RSA there is RSAPrivateKey (in BER encoding) embedded in this string. */
     RTASN1OCTETSTRING           PrivateKey;
     /** Attributes, optional [0].
      * @todo check this one. */
@@ -81,6 +84,8 @@ RTASN1TYPE_STANDARD_PROTOTYPES(RTCRPKCS8PRIVATEKEYINFO, RTDECL, RTCrPkcs8Private
 
 /**
  * PKCS\#8 EncryptedPrivateKeyInfo.
+ *
+ * See RFC-5208 section 6.
  */
 typedef struct RTCRENCRYPTEDPRIVATEKEY
 {

@@ -41,7 +41,7 @@
  */
 #define RTASN1TMPL_TYPE         RTCRPKCS8PRIVATEKEYINFO
 #define RTASN1TMPL_EXT_NAME     RTCrPkcs8PrivateKeyInfo
-#define RTASN1TMPL_INT_NAME     rTCrPkcs8PrivateKeyInfo
+#define RTASN1TMPL_INT_NAME     RTCrPkcs8PrivateKeyInfo
 RTASN1TMPL_BEGIN_SEQCORE();
 RTASN1TMPL_MEMBER(              Version,                RTASN1INTEGER,                  RTAsn1Integer);
 RTASN1TMPL_MEMBER(              PrivateKeyAlgorithm,    RTCRX509ALGORITHMIDENTIFIER,    RTCrX509AlgorithmIdentifier);

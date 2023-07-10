@@ -470,6 +470,7 @@ RTDECL(int) RTCrKeyCreateFromPemSection(PRTCRKEY phKey, PCRTCRPEMSECTION pSectio
         }
 
         case kKeyFormat_PrivateKeyInfo:
+        {
             RTAsn1CursorInitPrimary(&PrimaryCursor, pSection->pbData, (uint32_t)pSection->cbData,
                                     pErrInfo, &g_RTAsn1DefaultAllocator, RTASN1CURSOR_FLAGS_DER, pszErrorTag);
             RTCRPKCS8PRIVATEKEYINFO PrivateKeyInfo;
@@ -478,21 +479,20 @@ RTDECL(int) RTCrKeyCreateFromPemSection(PRTCRKEY phKey, PCRTCRPEMSECTION pSectio
                                                     pszErrorTag ? pszErrorTag : "PrivateKeyInfo");
             if (RT_SUCCESS(rc))
             {
-                /*
-                 * Check if the algorithm is pkcs1-RsaEncryption
+                /* 
+                 * Load the private key according to it's algorithm. 
+                 * We currently only support RSA (pkcs1-RsaEncryption).
                  */
-                if (strcmp(PrivateKeyInfo.PrivateKeyAlgorithm.Algorithm.szObjId,"1.2.840.113549.1.1.1") == 0)
-                {
-                    uint32_t cbContent = PrivateKeyInfo.PrivateKey.Asn1Core.cb;
-                    rc = rtCrKeyCreateRsaPrivate(phKey, PrivateKeyInfo.PrivateKey.Asn1Core.uData.pv, cbContent, pErrInfo, pszErrorTag);
-                }
+                if (RTAsn1ObjId_CompareWithString(&PrivateKeyInfo.PrivateKeyAlgorithm.Algorithm,
+                                                  RTCRX509ALGORITHMIDENTIFIERID_RSA) == 0)
+                    rc = rtCrKeyCreateRsaPrivate(phKey, PrivateKeyInfo.PrivateKey.Asn1Core.uData.pv,
+                                                 PrivateKeyInfo.PrivateKey.Asn1Core.cb, pErrInfo, pszErrorTag);
                 else
-                {
                     rc = RTErrInfoSet(pErrInfo, VERR_CR_KEY_FORMAT_NOT_SUPPORTED,
-                                    "Support for PKCS#8 PrivateKeyInfo (with no RSA encryption) is not yet implemented");
-                }
+                                      "Support for PKCS#8 PrivateKeyInfo for non-RSA keys is not yet implemented");
             }
             break;
+        }
 
         case kKeyFormat_EncryptedPrivateKeyInfo:
             rc = RTErrInfoSet(pErrInfo, VERR_CR_KEY_FORMAT_NOT_SUPPORTED,
