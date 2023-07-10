@@ -95,8 +95,8 @@ static int rtCrKeyToOpenSslKeyLoad(RTCRKEY hKey, int idKeyType, EVP_PKEY **ppEvp
         }
 #else
         /*
-         * Cannot find any real suitable alternative to d2i_KeyParams in pre-3.0.x 
-         * OpenSSL, so decided to use d2i_PUBKEY instead.  This means we need to 
+         * Cannot find any real suitable alternative to d2i_KeyParams in pre-3.0.x
+         * OpenSSL, so decided to use d2i_PUBKEY instead.  This means we need to
          * encode the stuff a X.509 SubjectPublicKeyInfo ASN.1 sequence first.
          */
         if (hKey->enmType == RTCRKEYTYPE_ECDSA_PUBLIC)
