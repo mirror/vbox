@@ -479,8 +479,8 @@ RTDECL(int) RTCrKeyCreateFromPemSection(PRTCRKEY phKey, PCRTCRPEMSECTION pSectio
                                                     pszErrorTag ? pszErrorTag : "PrivateKeyInfo");
             if (RT_SUCCESS(rc))
             {
-                /* 
-                 * Load the private key according to it's algorithm. 
+                /*
+                 * Load the private key according to it's algorithm.
                  * We currently only support RSA (pkcs1-RsaEncryption).
                  */
                 if (RTAsn1ObjId_CompareWithString(&PrivateKeyInfo.PrivateKeyAlgorithm.Algorithm,
