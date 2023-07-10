@@ -129,30 +129,32 @@ static int shClConvertFileCreateFlags(uint32_t fShClFlags, uint64_t *pfOpen)
  * @returns VBox status code.
  * @param   pTransfer           Clipboard transfer to resolve path for.
  * @param   pszPath             Relative path to resolve.
+ *                              Paths have to end with a (back-)slash, otherwise this is considered to be a file.
  * @param   fFlags              Resolve flags. Currently not used and must be 0.
  * @param   ppszResolved        Where to store the allocated resolved path. Must be free'd by the called using RTStrFree().
  */
 static int shClTransferResolvePathAbs(PSHCLTRANSFER pTransfer, const char *pszPath, uint32_t fFlags,
                                       char **ppszResolved)
 {
-    AssertPtrReturn(pTransfer,   VERR_INVALID_POINTER);
-    AssertPtrReturn(pszPath,     VERR_INVALID_POINTER);
-    AssertReturn   (fFlags == 0, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pTransfer,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pszPath,      VERR_INVALID_POINTER);
+    AssertReturn   (fFlags == 0,  VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppszResolved, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("pszPathRootAbs=%s, pszPath=%s\n", pTransfer->pszPathRootAbs, pszPath));
+    LogFlowFunc(("pszPath=%s, fFlags=%#x (pszPathRootAbs=%s, cRootListEntries=%RU64)\n",
+                 pszPath, fFlags, pTransfer->pszPathRootAbs, pTransfer->lstRoots.Hdr.cEntries));
 
     int rc = ShClTransferValidatePath(pszPath, false /* fMustExist */);
     if (RT_SUCCESS(rc))
     {
         rc = VERR_PATH_NOT_FOUND; /* Play safe by default. */
 
-        /* Make sure the given path is part of the set of root entries. */
         PSHCLLISTENTRY pEntry;
         RTListForEach(&pTransfer->lstRoots.lstEntries, pEntry, SHCLLISTENTRY, Node)
         {
             LogFlowFunc(("\tpEntry->pszName=%s\n", pEntry->pszName));
 
-            if (!RTStrCmp(pszPath, pEntry->pszName)) /* Case-sensitive! */
+            if (RTStrStartsWith(pszPath, pEntry->pszName)) /* Case-sensitive! */
             {
                 rc = VINF_SUCCESS;
                 break;
@@ -173,10 +175,9 @@ static int shClTransferResolvePathAbs(PSHCLTRANSFER pTransfer, const char *pszPa
 
                 if (RT_SUCCESS(rc))
                 {
-                    LogFlowFunc(("pszResolved=%s\n", szResolved));
+                    LogRel2(("Shared Clipboard: Resolved: '%s' -> '%s'\n", pszPath, szResolved));
 
-                    if (RT_SUCCESS(rc))
-                        *ppszResolved = RTStrDup(szResolved);
+                    *ppszResolved = RTStrDup(szResolved);
                 }
             }
             else
