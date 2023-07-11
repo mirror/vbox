@@ -57,7 +57,6 @@ static RTTEST g_hTest;
  */
 static const struct { unsigned cBits; const char *pszPrivateKey, *pszPublicKey, *pszPassword; } g_aKeyPairs[] =
 {
-#if 0
     {
         4096,
         "-----BEGIN RSA PRIVATE KEY-----\n"
@@ -256,9 +255,9 @@ static const struct { unsigned cBits; const char *pszPrivateKey, *pszPublicKey, 
         "-----END PUBLIC KEY-----\n",
         "password"
     },
-#endif
+
     /*
-     * PKCS8 Test Keys
+     * PKCS8 Test Keys with and without passwords.
      */
     {
         1024,
