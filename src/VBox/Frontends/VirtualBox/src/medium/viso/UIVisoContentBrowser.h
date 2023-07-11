@@ -126,7 +126,7 @@ private:
     /** Creates and entry for pItem consisting of a map item (key is viso path and value is host file system path)
      *  if @p bRemove is true then the value is the string ":remove:" which effectively removes the file object
      *  from the iso image. */
-    void                    createVisoEntry(UICustomFileSystemItem *pItem, bool bRemove = false);
+    void                    createVisoEntry(const QString &strPath, const QString &strLocalPath, bool bRemove = false);
     QString                 currentPath() const;
     UICustomFileSystemItem* searchItemByPath(const QString &strPath);
 
