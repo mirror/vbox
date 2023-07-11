@@ -233,7 +233,13 @@ STDMETHODIMP SharedClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRe
         }
     }
 
-    LogFlowThisFunc(("Leave: rc=%Rrc, cbSize=%RU64, cbProcessed=%RU64 -> nBytesToRead=%RU32, cbToRead=%RU32, cbRead=%RU32\n",
+    if (RT_FAILURE(rc))
+    {
+        if (m_pParent)
+            m_pParent->SetStatus(SharedClipboardWinDataObject::Error, rc /* Propagate rc */);
+    }
+
+    LogFlowThisFunc(("LEAVE: rc=%Rrc, cbSize=%RU64, cbProcessed=%RU64 -> nBytesToRead=%RU32, cbToRead=%RU32, cbRead=%RU32\n",
                      rc, cbSize, m_cbProcessed, nBytesToRead, cbToRead, cbRead));
 
     if (nBytesRead)
