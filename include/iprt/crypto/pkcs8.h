@@ -80,14 +80,12 @@ typedef RTCRPKCS8PRIVATEKEYINFO *PRTCRPKCS8PRIVATEKEYINFO;
 typedef RTCRPKCS8PRIVATEKEYINFO const *PCRTCRPKCS8PRIVATEKEYINFO;
 RTASN1TYPE_STANDARD_PROTOTYPES(RTCRPKCS8PRIVATEKEYINFO, RTDECL, RTCrPkcs8PrivateKeyInfo, SeqCore.Asn1Core);
 
-#if 0
-
 /**
  * PKCS\#8 EncryptedPrivateKeyInfo.
  *
  * See RFC-5208 section 6.
  */
-typedef struct RTCRENCRYPTEDPRIVATEKEY
+typedef struct RTCRPKCS8ENCRYPTEDPRIVATEKEYINFO
 {
     /** Sequence core for the structure. */
     RTASN1SEQUENCECORE          SeqCore;
@@ -95,14 +93,14 @@ typedef struct RTCRENCRYPTEDPRIVATEKEY
     RTCRX509ALGORITHMIDENTIFIER EncryptionAlgorithm;
     /** The encrypted data. */
     RTASN1OCTETSTRING           EncryptedData;
-} RTCRENCRYPTEDPRIVATEKEY;
-/** Pointer to the ASN.1 IPRT representation of a PKCS8 encrypted private key. */
-typedef RTCRENCRYPTEDPRIVATEKEY *PRTCRENCRYPTEDPRIVATEKEY;
-/** Pointer to the const ASN.1 IPRT representation of a PKCS8 encrypted private key. */
-typedef RTCRENCRYPTEDPRIVATEKEY const *PCRTCRENCRYPTEDPRIVATEKEY;
-RTASN1TYPE_STANDARD_PROTOTYPES(RTCRENCRYPTEDPRIVATEKEY, RTDECL, RTCrEncryptedPrivateKey, SeqCore.Asn1Core);
-
-#endif
+} RTCRPKCS8ENCRYPTEDPRIVATEKEYINFO;
+/** Pointer to the ASN.1 IPRT representation of a PKCS8 encrypted private
+ * key info. */
+typedef RTCRPKCS8ENCRYPTEDPRIVATEKEYINFO *PRTCRPKCS8ENCRYPTEDPRIVATEKEYINFO;
+/** Pointer to the const ASN.1 IPRT representation of a PKCS8 encrypted
+ * private key info. */
+typedef RTCRPKCS8ENCRYPTEDPRIVATEKEYINFO const *PCRTCRPKCS8ENCRYPTEDPRIVATEKEYINFO;
+RTASN1TYPE_STANDARD_PROTOTYPES(RTCRPKCS8ENCRYPTEDPRIVATEKEYINFO, RTDECL, RTCrPkcs8EncryptedPrivateKeyInfo, SeqCore.Asn1Core);
 
 /** @} */
 

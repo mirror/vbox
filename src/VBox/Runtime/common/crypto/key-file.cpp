@@ -38,6 +38,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP RTLOGGROUP_CRYPTO
 #include "internal/iprt.h"
 #include <iprt/crypto/key.h>
 
@@ -46,6 +47,7 @@
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
 #include <iprt/err.h>
+#include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/memsafer.h>
 #include <iprt/path.h>
@@ -61,7 +63,9 @@
 #ifdef IPRT_WITH_OPENSSL
 # include "internal/iprt-openssl.h"
 # include "internal/openssl-pre.h"
+# include <openssl/err.h>
 # include <openssl/evp.h>
+# include <openssl/pkcs12.h>
 # include "internal/openssl-post.h"
 # ifndef OPENSSL_VERSION_NUMBER
 #  error "Missing OPENSSL_VERSION_NUMBER!"
@@ -113,13 +117,148 @@ RT_DECL_DATA_CONST(uint32_t const) g_cRTCrKeyPrivateMarkers = RT_ELEMENTS(g_aRTC
 /** Private and public key markers. */
 RT_DECL_DATA_CONST(RTCRPEMMARKER const) g_aRTCrKeyAllMarkers[] =
 {
-    { g_aWords_RsaPublicKey,  RT_ELEMENTS(g_aWords_RsaPublicKey) },
-    { g_aWords_PublicKey,     RT_ELEMENTS(g_aWords_PublicKey) },
-    { g_aWords_RsaPrivateKey, RT_ELEMENTS(g_aWords_RsaPrivateKey) },
-    { g_aWords_PrivateKey,    RT_ELEMENTS(g_aWords_PrivateKey) },
+    { g_aWords_RsaPublicKey,        RT_ELEMENTS(g_aWords_RsaPublicKey) },
+    { g_aWords_PublicKey,           RT_ELEMENTS(g_aWords_PublicKey) },
+    { g_aWords_RsaPrivateKey,       RT_ELEMENTS(g_aWords_RsaPrivateKey) },
+    { g_aWords_EncryptedPrivateKey, RT_ELEMENTS(g_aWords_EncryptedPrivateKey) },
+    { g_aWords_PrivateKey,          RT_ELEMENTS(g_aWords_PrivateKey) },
 };
 /** Number of entries in g_aRTCrKeyAllMarkers. */
 RT_DECL_DATA_CONST(uint32_t const) g_cRTCrKeyAllMarkers = RT_ELEMENTS(g_aRTCrKeyAllMarkers);
+
+
+/**
+ * Creates a key from a raw PKCS\#8 PrivateKeyInfo structure.
+ *
+ * This is common code to both kKeyFormat_PrivateKeyInfo and
+ * kKeyFormat_EncryptedPrivateKeyInfo.
+ *
+ * @returns IPRT status code.
+ * @param   phKey           Where to return the key handle on success.
+ * @param   pPrimaryCursor  Cursor structure to use.
+ * @param   pbRaw           The raw PrivateKeyInfo bytes.
+ * @param   cbRaw           Size of the raw PrivateKeyInfo structure.
+ * @param   pErrInfo        Where to return additional error information.
+ * @param   pszErrorTag     What to tag the decoding with.
+ */
+static int rtCrKeyCreateFromPrivateKeyInfo(PRTCRKEY phKey, PRTASN1CURSORPRIMARY pPrimaryCursor,
+                                           uint8_t const *pbRaw, size_t cbRaw, PRTERRINFO pErrInfo, const char *pszErrorTag)
+
+{
+    RTCRPKCS8PRIVATEKEYINFO PrivateKeyInfo;
+    RT_ZERO(PrivateKeyInfo);
+    RTAsn1CursorInitPrimary(pPrimaryCursor, pbRaw, (uint32_t)cbRaw, pErrInfo, &g_RTAsn1DefaultAllocator,
+                            RTASN1CURSOR_FLAGS_DER, pszErrorTag);
+    int rc = RTCrPkcs8PrivateKeyInfo_DecodeAsn1(&pPrimaryCursor->Cursor, 0, &PrivateKeyInfo,
+                                                pszErrorTag ? pszErrorTag : "PrivateKeyInfo");
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Load the private key according to it's algorithm.
+         * We currently only support RSA (pkcs1-RsaEncryption).
+         */
+        if (RTAsn1ObjId_CompareWithString(&PrivateKeyInfo.PrivateKeyAlgorithm.Algorithm, RTCRX509ALGORITHMIDENTIFIERID_RSA) == 0)
+            rc = rtCrKeyCreateRsaPrivate(phKey, PrivateKeyInfo.PrivateKey.Asn1Core.uData.pv,
+                                         PrivateKeyInfo.PrivateKey.Asn1Core.cb, pErrInfo, pszErrorTag);
+        else
+            rc = RTERRINFO_LOG_SET(pErrInfo, VERR_CR_KEY_FORMAT_NOT_SUPPORTED,
+                                   "Support for PKCS#8 PrivateKeyInfo for non-RSA keys is not yet implemented");
+        RTCrPkcs8PrivateKeyInfo_Delete(&PrivateKeyInfo);
+    }
+    return rc;
+}
+
+
+/**
+ * Decrypts a PEM message.
+ *
+ * @returns IPRT status code
+ * @param   pEncryptedKey       The encrypted private key information.
+ * @param   pszPassword         The password to use to decrypt the key text.
+ * @param   ppbDecrypted        Where to return the decrypted message. Free using RTMemSaferFree.
+ * @param   pcbDecrypted        Where to return the length of the decrypted message.
+ * @param   pcbDecryptedAlloced Where to return the allocation size.
+ * @param   pErrInfo            Where to return additional error information.
+ */
+static int rtCrKeyDecryptPkcs8Info(PRTCRPKCS8ENCRYPTEDPRIVATEKEYINFO pEncryptedKey, const char *pszPassword,
+                                   uint8_t **ppbDecrypted, size_t *pcbDecrypted, size_t *pcbDecryptedAlloced, PRTERRINFO pErrInfo)
+{
+    /*
+     * Initialize return values.
+     */
+    *ppbDecrypted        = NULL;
+    *pcbDecrypted        = 0;
+    *pcbDecryptedAlloced = 0;
+
+    /*
+     * This operation requires a password.
+     */
+    if (!pszPassword)
+        return VERR_CR_KEY_ENCRYPTED;
+
+#ifdef IPRT_WITH_OPENSSL /** @todo abstract encryption & decryption. */
+
+    /*
+     * Query the EncryptionAlgorithm bytes so we can construction a X509_ALGOR
+     * for use in PKCS12_pbe_crypt.
+     */
+    void          *pvAlgoFree = NULL;
+    const uint8_t *pbAlgoRaw  = NULL;
+    uint32_t       cbAlgoRaw  = 0;
+    int rc = RTAsn1EncodeQueryRawBits(&pEncryptedKey->EncryptionAlgorithm.SeqCore.Asn1Core,
+                                      &pbAlgoRaw, &cbAlgoRaw, &pvAlgoFree, pErrInfo);
+    AssertRCReturn(rc, rc);
+
+    const unsigned char *puchAlgo     = pbAlgoRaw;
+    X509_ALGOR          *pOsslAlgoRet = NULL;
+    pOsslAlgoRet = d2i_X509_ALGOR(&pOsslAlgoRet, &puchAlgo, cbAlgoRaw);
+
+    RTMemTmpFree(pvAlgoFree);
+    if (pOsslAlgoRet)
+    {
+        /*
+         * Do the decryption (en_de = 0).
+         */
+        int            cbDecrypted   = 0;
+        unsigned char *puchDecrypted = NULL;
+        puchDecrypted = PKCS12_pbe_crypt(pOsslAlgoRet, pszPassword, (int)strlen(pszPassword),
+                                         pEncryptedKey->EncryptedData.Asn1Core.uData.puch,
+                                         (int)pEncryptedKey->EncryptedData.Asn1Core.cb,
+                                         &puchDecrypted, &cbDecrypted, 0 /*en_de*/);
+        if (puchDecrypted)
+        {
+            /*
+             * Transfer to a safer buffer and carefully wipe the OpenSSL buffer.
+             */
+            uint8_t *pbFinal = (uint8_t *)RTMemSaferAllocZ(cbDecrypted);
+            if (pbFinal)
+            {
+                memcpy(pbFinal, puchDecrypted, cbDecrypted);
+                *ppbDecrypted        = pbFinal;
+                *pcbDecrypted        = cbDecrypted;
+                *pcbDecryptedAlloced = cbDecrypted;
+                rc = VINF_SUCCESS;
+            }
+            else
+                rc = VERR_NO_MEMORY;
+            RTMemWipeThoroughly(puchDecrypted, cbDecrypted, 3);
+            OPENSSL_free(puchDecrypted);
+        }
+        else
+            rc = RTERRINFO_LOG_SET_F(pErrInfo, VERR_CR_KEY_DECRYPTION_FAILED,
+                                     "Incorrect password? d2i_X509_ALGOR failed (%u)", ERR_get_error());
+        X509_ALGOR_free(pOsslAlgoRet);
+    }
+    else
+        rc = RTERRINFO_LOG_SET_F(pErrInfo, VERR_CR_PKIX_OSSL_D2I_PRIVATE_KEY_FAILED /* close enough */,
+                                 "d2i_X509_ALGOR failed (%u)", ERR_get_error());
+    return rc;
+
+#else
+    RT_NOREF(pEncryptedKey, pszPassword, pErrInfo);
+    return VERR_CR_KEY_DECRYPTION_NOT_SUPPORTED;
+#endif
+}
 
 
 /**
@@ -172,7 +311,7 @@ static int rtCrKeyDecryptPemMessage(const char *pszDekInfo, const char *pszPassw
     size_t const cchParams = strlen(pszParams);
 
     /*
-     * Do we support the cihper?
+     * Do we support the cipher?
      */
 #ifdef IPRT_WITH_OPENSSL /** @todo abstract encryption & decryption. */
     const EVP_CIPHER *pCipher = EVP_get_cipherbyname(szAlgo);
@@ -470,34 +609,34 @@ RTDECL(int) RTCrKeyCreateFromPemSection(PRTCRKEY phKey, PCRTCRPEMSECTION pSectio
         }
 
         case kKeyFormat_PrivateKeyInfo:
+            rc = rtCrKeyCreateFromPrivateKeyInfo(phKey, &PrimaryCursor, pSection->pbData, pSection->cbData, pErrInfo, pszErrorTag);
+            break;
+
+        case kKeyFormat_EncryptedPrivateKeyInfo:
         {
             RTAsn1CursorInitPrimary(&PrimaryCursor, pSection->pbData, (uint32_t)pSection->cbData,
                                     pErrInfo, &g_RTAsn1DefaultAllocator, RTASN1CURSOR_FLAGS_DER, pszErrorTag);
-            RTCRPKCS8PRIVATEKEYINFO PrivateKeyInfo;
-            RT_ZERO(PrivateKeyInfo);
-            rc = RTCrPkcs8PrivateKeyInfo_DecodeAsn1(&PrimaryCursor.Cursor, 0, &PrivateKeyInfo,
-                                                    pszErrorTag ? pszErrorTag : "PrivateKeyInfo");
+            RTCRPKCS8ENCRYPTEDPRIVATEKEYINFO EncryptedPrivateKeyInfo;
+            RT_ZERO(EncryptedPrivateKeyInfo);
+            rc = RTCrPkcs8EncryptedPrivateKeyInfo_DecodeAsn1(&PrimaryCursor.Cursor, 0, &EncryptedPrivateKeyInfo,
+                                                             pszErrorTag ? pszErrorTag : "EncryptedPrivateKeyInfo");
             if (RT_SUCCESS(rc))
             {
-                /*
-                 * Load the private key according to it's algorithm.
-                 * We currently only support RSA (pkcs1-RsaEncryption).
-                 */
-                if (RTAsn1ObjId_CompareWithString(&PrivateKeyInfo.PrivateKeyAlgorithm.Algorithm,
-                                                  RTCRX509ALGORITHMIDENTIFIERID_RSA) == 0)
-                    rc = rtCrKeyCreateRsaPrivate(phKey, PrivateKeyInfo.PrivateKey.Asn1Core.uData.pv,
-                                                 PrivateKeyInfo.PrivateKey.Asn1Core.cb, pErrInfo, pszErrorTag);
-                else
-                    rc = RTErrInfoSet(pErrInfo, VERR_CR_KEY_FORMAT_NOT_SUPPORTED,
-                                      "Support for PKCS#8 PrivateKeyInfo for non-RSA keys is not yet implemented");
+                uint8_t *pbDecrypted = NULL;
+                size_t   cbDecrypted = 0;
+                size_t   cbDecryptedAlloced = 0;
+                rc = rtCrKeyDecryptPkcs8Info(&EncryptedPrivateKeyInfo, pszPassword,
+                                             &pbDecrypted, &cbDecrypted, &cbDecryptedAlloced, pErrInfo);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = rtCrKeyCreateFromPrivateKeyInfo(phKey, &PrimaryCursor, pbDecrypted, cbDecrypted, pErrInfo, pszErrorTag);
+
+                    RTMemSaferFree(pbDecrypted, cbDecryptedAlloced);
+                }
+                RTCrPkcs8EncryptedPrivateKeyInfo_Delete(&EncryptedPrivateKeyInfo);
             }
             break;
         }
-
-        case kKeyFormat_EncryptedPrivateKeyInfo:
-            rc = RTErrInfoSet(pErrInfo, VERR_CR_KEY_FORMAT_NOT_SUPPORTED,
-                              "Support for encrypted PKCS#8 PrivateKeyInfo is not yet implemented");
-            break;
 
         default:
             AssertFailedStmt(rc = VERR_INTERNAL_ERROR_4);

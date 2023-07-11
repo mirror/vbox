@@ -52,14 +52,13 @@ RTASN1TMPL_END_SEQCORE();
 #undef RTASN1TMPL_EXT_NAME
 #undef RTASN1TMPL_INT_NAME
 
-#if 0
 
 /*
  * Encrypted private key info
  */
-#define RTASN1TMPL_TYPE         RTCRENCRYPTEDPRIVATEKEY
-#define RTASN1TMPL_EXT_NAME     RTCrEncryptedPrivateKey
-#define RTASN1TMPL_INT_NAME     rtCrEncryptedPrivateKey
+#define RTASN1TMPL_TYPE         RTCRPKCS8ENCRYPTEDPRIVATEKEYINFO
+#define RTASN1TMPL_EXT_NAME     RTCrPkcs8EncryptedPrivateKeyInfo
+#define RTASN1TMPL_INT_NAME     rtCrPkcs8EncryptedPrivateKeyInfo
 RTASN1TMPL_BEGIN_SEQCORE();
 RTASN1TMPL_MEMBER(              EncryptionAlgorithm,    RTCRX509ALGORITHMIDENTIFIER,    RTCrX509AlgorithmIdentifier);
 RTASN1TMPL_MEMBER(              EncryptedData,          RTASN1OCTETSTRING,              RTAsn1OctetString);
@@ -68,4 +67,3 @@ RTASN1TMPL_END_SEQCORE();
 #undef RTASN1TMPL_EXT_NAME
 #undef RTASN1TMPL_INT_NAME
 
-#endif

@@ -2155,7 +2155,7 @@
 #define VERR_CR_PKIX_OSSL_D2I_PUBLIC_KEY_FAILED     (-23516)
 /** The EVP_PKEY_type API in OpenSSL failed.  */
 #define VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR       (-23517)
-/** OpenSSL failed to decode the public key. */
+/** OpenSSL failed to decode the private key. */
 #define VERR_CR_PKIX_OSSL_D2I_PRIVATE_KEY_FAILED    (-23518)
 /** The EVP_PKEY_CTX_set_rsa_padding API in OpenSSL failed.  */
 #define VERR_CR_PKIX_OSSL_EVP_PKEY_RSA_PAD_ERROR    (-23519)
