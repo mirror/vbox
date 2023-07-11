@@ -161,6 +161,7 @@ enum UIActionIndex
     UIActionIndex_M_VISOCreator_Rename,
     UIActionIndex_M_VISOCreator_Reset,
     UIActionIndex_M_VISOCreator_Open,
+    UIActionIndex_M_VISOCreator_SaveAs,
     UIActionIndex_M_VISOCreator_ImportISO,
     UIActionIndex_M_VISOCreator_RemoveISO,
     UIActionIndex_M_VISOCreator_VisoContent_GoHome,

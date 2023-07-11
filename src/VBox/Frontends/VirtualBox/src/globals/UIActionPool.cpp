@@ -2616,6 +2616,37 @@ protected:
     }
 };
 
+class UIActionMenuVISOCreatorSaveAs : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuVISOCreatorSaveAs(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/cd_remove_16px.png", ":/cd_remove_32px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
+    {
+        return QString("VISOSaveAs");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() RT_OVERRIDE
+    {
+        setName(QApplication::translate("UIActionPool", "SaveAs"));
+        setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
+        setStatusTip(QApplication::translate("UIActionPool", "Select a file to save the VISO content."));
+        setToolTip(QApplication::translate("UIActionPool", "Select a file to save the VISO content.")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
 
 class UIActionMenuVISOCreatorImportISO : public UIActionSimple
 {
@@ -3496,6 +3527,7 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_VISOCreator_Rename] = new UIActionMenuVISOCreatorRename(this);
     m_pool[UIActionIndex_M_VISOCreator_Reset] = new UIActionMenuVISOCreatorReset(this);
     m_pool[UIActionIndex_M_VISOCreator_Open] = new UIActionMenuVISOCreatorOpen(this);
+    m_pool[UIActionIndex_M_VISOCreator_SaveAs] = new UIActionMenuVISOCreatorSaveAs(this);
     m_pool[UIActionIndex_M_VISOCreator_ImportISO] = new UIActionMenuVISOCreatorImportISO(this);
     m_pool[UIActionIndex_M_VISOCreator_RemoveISO] = new UIActionMenuVISOCreatorRemoveISO(this);
 

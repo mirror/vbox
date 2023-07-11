@@ -116,6 +116,7 @@ private slots:
     void sltHostBrowserTableSelectionChanged(QStringList pathList);
     void sltContentBrowserTableSelectionChanged(bool fIsSelectionEmpty);
     void sltOpenAction();
+    void sltSaveAsAction();
     void sltISOImportAction();
     void sltISORemoveAction();
     void sltISOContentImportedOrRemoved(bool fImported);
@@ -142,6 +143,7 @@ private:
       * @{ */
         QAction              *m_pAddAction;
         QAction              *m_pOpenAction;
+        QAction              *m_pSaveAsAction;
         QAction              *m_pImportISOAction;
         QAction              *m_pRemoveISOAction;
     /** @} */

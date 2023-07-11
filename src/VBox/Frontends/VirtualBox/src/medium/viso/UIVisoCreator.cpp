@@ -259,6 +259,7 @@ UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pPa
     , m_pActionSettings(0)
     , m_pAddAction(0)
     , m_pOpenAction(0)
+    , m_pSaveAsAction(0)
     , m_pImportISOAction(0)
     , m_pRemoveISOAction(0)
     , m_pMainLayout(0)
@@ -415,6 +416,12 @@ void UIVisoCreatorWidget::sltOpenAction()
         m_pVISOContentBrowser->parseVisoFileContent(strFileName);
 }
 
+void UIVisoCreatorWidget::sltSaveAsAction()
+{
+    // QString strSaveFileName = getSaveFileName(visoFileFullPath(), "VISO files (*.viso)", this,
+    //                                           UIVisoCreatorWidget::tr("Select a file to save Viso content to"));
+}
+
 void UIVisoCreatorWidget::sltISOImportAction()
 {
     if (!m_pHostBrowser || !m_pVISOContentBrowser)
@@ -547,6 +554,9 @@ void UIVisoCreatorWidget::prepareConnections()
     if (m_pOpenAction)
         connect(m_pOpenAction, &QAction::triggered,
                 this, &UIVisoCreatorWidget::sltOpenAction);
+    if (m_pSaveAsAction)
+        connect(m_pSaveAsAction, &QAction::triggered,
+                this, &UIVisoCreatorWidget::sltSaveAsAction);
     if (m_pImportISOAction)
         connect(m_pImportISOAction, &QAction::triggered,
                 this, &UIVisoCreatorWidget::sltISOImportAction);
@@ -566,6 +576,7 @@ void UIVisoCreatorWidget::prepareActions()
     if (m_pAddAction && m_pHostBrowser)
         m_pAddAction->setEnabled(m_pHostBrowser->tableViewHasSelection());
     m_pOpenAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Open);
+    m_pSaveAsAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_SaveAs);
     m_pImportISOAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_ImportISO);
     if (m_pImportISOAction)
         m_pImportISOAction->setEnabled(false);
@@ -589,6 +600,8 @@ void UIVisoCreatorWidget::populateMenuMainToolbar()
         m_pMainMenu->addSeparator();
         if (m_pOpenAction)
             m_pMainMenu->addAction(m_pOpenAction);
+        if (m_pSaveAsAction)
+            m_pMainMenu->addAction(m_pSaveAsAction);
         if (m_pAddAction)
             m_pMainMenu->addAction(m_pAddAction);
         if (m_pImportISOAction)
