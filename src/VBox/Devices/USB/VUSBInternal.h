@@ -77,6 +77,7 @@ typedef struct VUSBROOTHUB *PVUSBROOTHUB;
  * @{ */
 #define VUSB_DEFAULT_ADDRESS        0
 #define VUSB_INVALID_ADDRESS        UINT8_C(0xff)
+#define VUSB_ADDRESS_MASK           UINT8_C(0x7f)
 /** @} */
 
 /** @name Feature bits (1<<FEATURE for the u16Status bit)

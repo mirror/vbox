@@ -514,6 +514,16 @@ static bool vusbDevStdReqSetAddress(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup,
         return false;
     }
 
+    /*
+     * If wValue has any bits set beyond 0-6, throw them away.
+     */
+    if ((pSetup->wValue & VUSB_ADDRESS_MASK) != pSetup->wValue) {
+        LogRelMax(10, ("VUSB: %s: Warning: Ignoring high bits of requested address (wLength=0x%X), using only lower 7 bits.\n",
+                       pDev->pUsbIns->pszName, pSetup->wValue));
+
+        pSetup->wValue &= VUSB_ADDRESS_MASK;
+    }
+
     pDev->u8NewAddress = pSetup->wValue;
     return true;
 }
@@ -1028,6 +1038,10 @@ void vusbDevSetAddress(PVUSBDEV pDev, uint8_t u8Address)
         LogRel(("VUSB: %s: set address ignored, the device is resetting\n", pDev->pUsbIns->pszName));
         return;
     }
+
+    /* Paranoia. */
+    Assert((u8Address & VUSB_ADDRESS_MASK) == u8Address);
+    u8Address &= VUSB_ADDRESS_MASK;
 
     /*
      * Ok, get on with it.
