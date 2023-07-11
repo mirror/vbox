@@ -826,7 +826,7 @@ typedef struct _SHCLTRANSFERCALLBACKS
      */
     DECLCALLBACKMEMBER(void,  pfnOnInitialized,(PSHCLTRANSFERCALLBACKCTX pCbCtx));
     /**
-     * Called before the transfer gets destroys.
+     * Called before the transfer gets destroyed.
      *
      * @param   pCbCtx              Pointer to callback context to use.
      */
