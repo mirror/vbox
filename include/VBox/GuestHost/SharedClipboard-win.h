@@ -339,7 +339,7 @@ protected:
     /** Data object callback table context to use. */
     CALLBACKCTX                 m_CallbackCtx;
     /** The object's current reference count. */
-    LONG                        m_lRefCount;
+    ULONG                       m_lRefCount;
     /** How many formats have been registered. */
     ULONG                       m_cFormats;
     LPFORMATETC                 m_pFormatEtc;
