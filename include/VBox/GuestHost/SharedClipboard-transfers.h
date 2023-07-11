@@ -518,25 +518,6 @@ typedef struct _SHCLTRANSFEROBJSTATE
 typedef SHCLTRANSFEROBJSTATE *PSHCLTRANSFEROBJSTATE;
 
 /**
- * Structure for a Shared Clipboard transfer object.
- */
-typedef struct _SHCLTRANSFEROBJ
-{
-    /** Handle of the object. */
-    SHCLOBJHANDLE        uHandle;
-    /** Absolute (local) path of the object. Source-style path. */
-    char                *pszPathAbs;
-    /** Object information. */
-    SHCLFSOBJINFO        objInfo;
-    /** Object type. */
-    SHCLSOURCE           enmSource;
-    /** Current state. */
-    SHCLTRANSFEROBJSTATE State;
-} SHCLTRANSFEROBJ;
-/** Pointer to a Shared Clipboard transfer object. */
-typedef SHCLTRANSFEROBJ *PSHCLTRANSFEROBJ;
-
-/**
  * Enumeration for specifying a Shared Clipboard object type.
  */
 typedef enum _SHCLOBJTYPE
@@ -552,6 +533,42 @@ typedef enum _SHCLOBJTYPE
     /** The usual 32-bit hack. */
     SHCLOBJTYPE_32BIT_SIZE_HACK = 0x7fffffff
 } SHCLOBJTYPE;
+
+/**
+ * Structure for a single Shared Clipboard transfer object.
+ */
+typedef struct _SHCLTRANSFEROBJ
+{
+    /** The list node. */
+    RTLISTNODE           Node;
+    /** Handle of the object. */
+    SHCLOBJHANDLE        hObj;
+    /** Absolute (local) path of the object. Source-style path. */
+    char                *pszPathLocalAbs;
+    /** Object file system information. */
+    SHCLFSOBJINFO        objInfo;
+    /** Source the object originates from. */
+    SHCLSOURCE           enmSource;
+    /** Current state. */
+    SHCLTRANSFEROBJSTATE State;
+    /** Type of object handle. */
+    SHCLOBJTYPE          enmType;
+    /** Data union, based on \a enmType. */
+    union
+    {
+        /** Local data. */
+        struct
+        {
+            union
+            {
+                RTDIR  hDir;
+                RTFILE hFile;
+            };
+        } Local;
+    } u;
+} SHCLTRANSFEROBJ;
+/** Pointer to a Shared Clipboard transfer object. */
+typedef SHCLTRANSFEROBJ *PSHCLTRANSFEROBJ;
 
 /**
  * Structure for keeping transfer list handle information.
@@ -583,37 +600,6 @@ typedef struct _SHCLLISTHANDLEINFO
 } SHCLLISTHANDLEINFO;
 /** Pointer to a Shared Clipboard transfer list handle info. */
 typedef SHCLLISTHANDLEINFO *PSHCLLISTHANDLEINFO;
-
-/**
- * Structure for keeping transfer object handle information.
- * This is using to map own (local) handles to the underlying file system.
- */
-typedef struct _SHCLOBJHANDLEINFO
-{
-    /** The list node. */
-    RTLISTNODE     Node;
-    /** The object's handle. */
-    SHCLOBJHANDLE  hObj;
-    /** Type of object handle. */
-    SHCLOBJTYPE    enmType;
-    /** Absolute local path of the object. */
-    char          *pszPathLocalAbs;
-    /** Data union, based on \a enmType. */
-    union
-    {
-        /** Local data. */
-        struct
-        {
-            union
-            {
-                RTDIR  hDir;
-                RTFILE hFile;
-            };
-        } Local;
-    } u;
-} SHCLOBJHANDLEINFO;
-/** Pointer to a Shared Clipboard transfer object handle. */
-typedef SHCLOBJHANDLEINFO *PSHCLOBJHANDLEINFO;
 
 /**
  * Structure for maintaining an Shared Clipboard transfer state.
@@ -852,7 +838,7 @@ typedef struct _SHCLTRANSFERCALLBACKS
      */
     DECLCALLBACKMEMBER(void,  pfnOnStarted,(PSHCLTRANSFERCALLBACKCTX pCbCtx));
     /**
-     * Called when the transfer has been complete.
+     * Called when the transfer has been completed.
      *
      * @param   pCbCtx              Pointer to callback context to use.
      * @param   rcCompletion        Completion result.
@@ -1105,8 +1091,8 @@ int ShClTransferObjCtxInit(PSHCLCLIENTTRANSFEROBJCTX pObjCtx);
 void ShClTransferObjCtxDestroy(PSHCLCLIENTTRANSFEROBJCTX pObjCtx);
 bool ShClTransferObjCtxIsValid(PSHCLCLIENTTRANSFEROBJCTX pObjCtx);
 
-int ShClTransferObjHandleInfoInit(PSHCLOBJHANDLEINFO pInfo);
-void ShClTransferObjHandleInfoDestroy(PSHCLOBJHANDLEINFO pInfo);
+int ShClTransferObjInit(PSHCLTRANSFEROBJ pObj);
+void ShClTransferObjDestroy(PSHCLTRANSFEROBJ pObj);
 
 int ShClTransferObjOpenParmsInit(PSHCLOBJOPENCREATEPARMS pParms);
 int ShClTransferObjOpenParmsCopy(PSHCLOBJOPENCREATEPARMS pParmsDst, PSHCLOBJOPENCREATEPARMS pParmsSrc);
@@ -1117,7 +1103,7 @@ int ShClTransferObjClose(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj);
 bool ShClTransferObjIsComplete(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj);
 int ShClTransferObjRead(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t fFlags, uint32_t *pcbRead);
 int ShClTransferObjWrite(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t fFlags, uint32_t *pcbWritten);
-PSHCLOBJHANDLEINFO ShClTransferObjGet(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj);
+PSHCLTRANSFEROBJ ShClTransferObjGet(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj);
 
 PSHCLOBJDATACHUNK ShClTransferObjDataChunkDup(PSHCLOBJDATACHUNK pDataChunk);
 void ShClTransferObjDataChunkDestroy(PSHCLOBJDATACHUNK pDataChunk);

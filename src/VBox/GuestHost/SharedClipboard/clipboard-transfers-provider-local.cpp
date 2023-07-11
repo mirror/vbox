@@ -554,10 +554,10 @@ static DECLCALLBACK(int) shclTransferIfaceLocalObjOpen(PSHCLTXPROVIDERCTX pCtx,
     PSHCLTRANSFER const pTransfer = pCtx->pTransfer;
     AssertPtr(pTransfer);
 
-    PSHCLOBJHANDLEINFO pInfo = (PSHCLOBJHANDLEINFO)RTMemAllocZ(sizeof(SHCLOBJHANDLEINFO));
+    PSHCLTRANSFEROBJ pInfo = (PSHCLTRANSFEROBJ)RTMemAllocZ(sizeof(SHCLTRANSFEROBJ));
     if (pInfo)
     {
-        rc = ShClTransferObjHandleInfoInit(pInfo);
+        rc = ShClTransferObjInit(pInfo);
         if (RT_SUCCESS(rc))
         {
             uint64_t fOpen = 0; /* Shut up GCC. */
@@ -591,7 +591,7 @@ static DECLCALLBACK(int) shclTransferIfaceLocalObjOpen(PSHCLTXPROVIDERCTX pCtx,
         }
         else
         {
-            ShClTransferObjHandleInfoDestroy(pInfo);
+            ShClTransferObjDestroy(pInfo);
             RTMemFree(pInfo);
         }
     }
@@ -612,7 +612,7 @@ static DECLCALLBACK(int) shclTransferIfaceLocalObjClose(PSHCLTXPROVIDERCTX pCtx,
     PSHCLTRANSFER const pTransfer = pCtx->pTransfer;
     AssertPtr(pTransfer);
 
-    PSHCLOBJHANDLEINFO pInfo = ShClTransferObjGet(pTransfer, hObj);
+    PSHCLTRANSFEROBJ pInfo = ShClTransferObjGet(pTransfer, hObj);
     if (pInfo)
     {
         switch (pInfo->enmType)
@@ -655,7 +655,7 @@ static DECLCALLBACK(int) shclTransferIfaceLocalObjClose(PSHCLTXPROVIDERCTX pCtx,
         Assert(pTransfer->cObjHandles);
         pTransfer->cObjHandles--;
 
-        ShClTransferObjHandleInfoDestroy(pInfo);
+        ShClTransferObjDestroy(pInfo);
 
         RTMemFree(pInfo);
         pInfo = NULL;
@@ -681,7 +681,7 @@ static DECLCALLBACK(int) shclTransferIfaceLocalObjRead(PSHCLTXPROVIDERCTX pCtx,
     PSHCLTRANSFER const pTransfer = pCtx->pTransfer;
     AssertPtr(pTransfer);
 
-    PSHCLOBJHANDLEINFO pInfo = ShClTransferObjGet(pTransfer, hObj);
+    PSHCLTRANSFEROBJ pInfo = ShClTransferObjGet(pTransfer, hObj);
     if (pInfo)
     {
         switch (pInfo->enmType)
@@ -724,7 +724,7 @@ static DECLCALLBACK(int) shclTransferIfaceLocalObjWrite(PSHCLTXPROVIDERCTX pCtx,
     PSHCLTRANSFER const pTransfer = pCtx->pTransfer;
     AssertPtr(pTransfer);
 
-    PSHCLOBJHANDLEINFO pInfo = ShClTransferObjGet(pTransfer, hObj);
+    PSHCLTRANSFEROBJ pInfo = ShClTransferObjGet(pTransfer, hObj);
     if (pInfo)
     {
         switch (pInfo->enmType)

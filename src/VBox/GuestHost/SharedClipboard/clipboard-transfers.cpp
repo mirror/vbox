@@ -728,39 +728,39 @@ bool ShClTransferObjCtxIsValid(PSHCLCLIENTTRANSFEROBJCTX pObjCtx)
 }
 
 /**
- * Initializes an object handle info structure.
+ * Initializes a transfer object structure.
  *
  * @returns VBox status code.
- * @param   pInfo               Object handle info structure to initialize.
+ * @param   pObj                Object structure to initialize.
  */
-int ShClTransferObjHandleInfoInit(PSHCLOBJHANDLEINFO pInfo)
+int ShClTransferObjInit(PSHCLTRANSFEROBJ pObj)
 {
-    AssertPtrReturn(pInfo, VERR_INVALID_POINTER);
+    AssertPtrReturn(pObj, VERR_INVALID_POINTER);
 
-    pInfo->hObj    = NIL_SHCLOBJHANDLE;
-    pInfo->enmType = SHCLOBJTYPE_INVALID;
+    pObj->hObj    = NIL_SHCLOBJHANDLE;
+    pObj->enmType = SHCLOBJTYPE_INVALID;
 
-    pInfo->pszPathLocalAbs = NULL;
+    pObj->pszPathLocalAbs = NULL;
 
-    RT_ZERO(pInfo->u);
+    RT_ZERO(pObj->u);
 
     return VINF_SUCCESS;
 }
 
 /**
- * Destroys an object handle info structure.
+ * Destroys a transfer object structure.
  *
- * @param   pInfo               Object handle info structure to destroy.
+ * @param   pObj                Object structure to destroy.
  */
-void ShClTransferObjHandleInfoDestroy(PSHCLOBJHANDLEINFO pInfo)
+void ShClTransferObjDestroy(PSHCLTRANSFEROBJ pObj)
 {
-    if (!pInfo)
+    if (!pObj)
         return;
 
-    if (pInfo->pszPathLocalAbs)
+    if (pObj->pszPathLocalAbs)
     {
-        RTStrFree(pInfo->pszPathLocalAbs);
-        pInfo->pszPathLocalAbs = NULL;
+        RTStrFree(pObj->pszPathLocalAbs);
+        pObj->pszPathLocalAbs = NULL;
     }
 }
 
@@ -840,16 +840,16 @@ void ShClTransferObjOpenParmsDestroy(PSHCLOBJOPENCREATEPARMS pParms)
 }
 
 /**
- * Returns a specific object handle info of a transfer.
+ * Returns a specific transfer object of a transfer.
  *
- * @returns Pointer to object handle info if found, or NULL if not found.
- * @param   pTransfer           Clipboard transfer to get object handle info from.
+ * @returns Pointer to transfer object if found, or NULL if not found.
+ * @param   pTransfer           Clipboard transfer to get transfer object from.
  * @param   hObj                Object handle of the object to get handle info for.
  */
-PSHCLOBJHANDLEINFO ShClTransferObjGet(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj)
+PSHCLTRANSFEROBJ ShClTransferObjGet(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj)
 {
-    PSHCLOBJHANDLEINFO pIt;
-    RTListForEach(&pTransfer->lstObj, pIt, SHCLOBJHANDLEINFO, Node) /** @todo Slooow ...but works for now. */
+    PSHCLTRANSFEROBJ pIt;
+    RTListForEach(&pTransfer->lstObj, pIt, SHCLTRANSFEROBJ, Node) /** @todo Slooow ...but works for now. */
     {
         if (pIt->hObj == hObj)
             return pIt;
@@ -1389,7 +1389,7 @@ PSHCLLISTHANDLEINFO ShClTransferListGetByHandle(PSHCLTRANSFER pTransfer, SHCLLIS
 }
 
 /**
- * Returns the current transfer object of a transfer list.
+ * Returns the a transfer object of a transfer list.
  *
  * Currently not implemented and wil return NULL.
  *
@@ -1664,10 +1664,10 @@ void ShClTransferReset(PSHCLTRANSFER pTransfer)
         RTMemFree(pItList);
     }
 
-    PSHCLOBJHANDLEINFO pItObj, pItObjNext;
-    RTListForEachSafe(&pTransfer->lstObj, pItObj, pItObjNext, SHCLOBJHANDLEINFO, Node)
+    PSHCLTRANSFEROBJ pItObj, pItObjNext;
+    RTListForEachSafe(&pTransfer->lstObj, pItObj, pItObjNext, SHCLTRANSFEROBJ, Node)
     {
-        ShClTransferObjHandleInfoDestroy(pItObj);
+        ShClTransferObjDestroy(pItObj);
 
         RTListNodeRemove(&pItObj->Node);
 
