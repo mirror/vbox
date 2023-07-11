@@ -56,6 +56,7 @@
 SharedClipboardWinDataObject::SharedClipboardWinDataObject(void)
     : m_pCtx(NULL)
     , m_enmStatus(Uninitialized)
+    , m_rcStatus(VERR_IPE_UNINITIALIZED_STATUS)
     , m_lRefCount(0)
     , m_cFormats(0)
     , m_pTransfer(NULL)
@@ -584,15 +585,15 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
                             continue;
 
                         case Completed:
-                            LogRel2(("Shared Clipboard: Transfer complete\n"));
+                            LogRel2(("Shared Clipboard: Data object: Transfer complete\n"));
                             break;
 
                         case Canceled:
-                            LogRel2(("Shared Clipboard: Transfer canceled\n"));
+                            LogRel2(("Shared Clipboard: Data object: Transfer canceled\n"));
                             break;
 
                         case Error:
-                            LogRel(("Shared Clipboard: Transfer error within data object thread occurred\n"));
+                            LogRel(("Shared Clipboard: Data object: Transfer error %Rrc occurred\n", pThis->m_rcStatus));
                             break;
 
                         default:
@@ -1272,6 +1273,7 @@ void SharedClipboardWinDataObject::registerFormat(LPFORMATETC pFormatEtc, CLIPFO
  * @returns VBox status code.
  * @param   enmStatus           New status to signal.
  * @param   rc                  Result code. Optional.
+ *                              Errors only accepted when status also is 'Error'.
  *
  * @note    Caller must have taken the critical section.
  */
@@ -1280,11 +1282,11 @@ int SharedClipboardWinDataObject::setStatusLocked(Status enmStatus, int rc /* = 
     AssertReturn(enmStatus == Error || RT_SUCCESS(rc), VERR_INVALID_PARAMETER);
     AssertReturn(RTCritSectIsOwned(&m_CritSect), VERR_WRONG_ORDER);
 
-    RT_NOREF(rc);
-
-    LogFlowFunc(("enmStatus=%#x (current is: %#x)\n", enmStatus, m_enmStatus));
+    LogFlowFunc(("enmStatus=%#x, rc=%Rrc (current is: %#x)\n", enmStatus, rc, m_enmStatus));
 
     int rc2 = VINF_SUCCESS;
+
+    m_rcStatus = rc;
 
     switch (enmStatus)
     {

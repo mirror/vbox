@@ -332,6 +332,8 @@ protected:
     PSHCLCONTEXT                m_pCtx;
     /** The object's current status. */
     Status                      m_enmStatus;
+    /** Last (IPRT-style) error set in conjunction with the status. */
+    int                         m_rcStatus;
     /** Data object callback table to use. */
     CALLBACKS                   m_Callbacks;
     /** Data object callback table context to use. */
