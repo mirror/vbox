@@ -254,7 +254,7 @@ UIVisoCreatorWidget::Settings UIVisoSettingWidget::settings() const
 *********************************************************************************************************************************/
 
 UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pParent,
-                                         bool fShowToolBar, const QString& strVisoSavePath, const QString& strMachineName)
+                                         bool fShowToolBar, const QString& strVisoFilePath, const QString& strMachineName)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pActionSettings(0)
     , m_pAddAction(0)
@@ -274,7 +274,7 @@ UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pPa
     , m_pSettingsWidget(0)
     , m_pBrowserContainerWidget(0)
     , m_pStackedLayout(0)
-    , m_strVisoSavePath(strVisoSavePath)
+    , m_strVisoFilePath(strVisoFilePath)
 {
     m_visoOptions.m_strVisoName = !strMachineName.isEmpty() ? strMachineName : "ad-hoc";
     prepareWidgets();
@@ -300,6 +300,22 @@ QString UIVisoCreatorWidget::importedISOPath() const
 const QString &UIVisoCreatorWidget::visoName() const
 {
     return m_visoOptions.m_strVisoName;
+}
+
+void UIVisoCreatorWidget::setVisoName(const QString& strName)
+{
+    if (m_visoOptions.m_strVisoName == strName)
+        return;
+    m_visoOptions.m_strVisoName = strName;
+    emit sigVisoNameChanged(m_visoOptions.m_strVisoName);
+}
+
+void UIVisoCreatorWidget::setVisoFilePath(const QString& strPath)
+{
+    if (m_strVisoFilePath == strPath)
+        return;
+    m_strVisoFilePath = strPath;
+    emit sigVisoFilePathChanged(m_strVisoFilePath);
 }
 
 const QStringList &UIVisoCreatorWidget::customOptions() const
@@ -376,11 +392,7 @@ void UIVisoCreatorWidget::sltSettingsDialogClosed(bool fAccepted)
     if (fAccepted && m_pSettingsWidget)
     {
         Settings newSettings = m_pSettingsWidget->settings();
-        if (m_visoOptions.m_strVisoName != newSettings.m_strVisoName)
-        {
-            m_visoOptions.m_strVisoName = newSettings.m_strVisoName;
-            emit sigVisoNameChanged(m_visoOptions.m_strVisoName);
-        }
+        setVisoName(newSettings.m_strVisoName);
         if (m_visoOptions.m_customOptions != newSettings.m_customOptions)
             m_visoOptions.m_customOptions = newSettings.m_customOptions;
         if (m_visoOptions.m_fShowHiddenObjects != newSettings.m_fShowHiddenObjects)
@@ -419,8 +431,14 @@ void UIVisoCreatorWidget::sltOpenAction()
 
 void UIVisoCreatorWidget::sltSaveAsAction()
 {
-    // QString strSaveFileName = getSaveFileName(visoFileFullPath(), "VISO files (*.viso)", this,
-    //                                           UIVisoCreatorWidget::tr("Select a file to save Viso content to"));
+    QString strSaveFileName = QIFileDialog::getSaveFileName(visoFileFullPath(), "VISO files (*.viso)", this,
+                                                            UIVisoCreatorWidget::tr("Select a file to save Viso content to"));
+    if (visoFileFullPath() != strSaveFileName)
+    {
+        QFileInfo fileInfo(strSaveFileName);
+        setVisoFilePath(fileInfo.absolutePath());
+        setVisoName(fileInfo.fileName());
+    }
 }
 
 void UIVisoCreatorWidget::sltISOImportAction()
@@ -694,7 +712,7 @@ void UIVisoCreatorWidget::prepareVerticalToolBar()
 
 QString UIVisoCreatorWidget::visoFileFullPath() const
 {
-    return QString("%1/%2%3").arg(m_strVisoSavePath).arg(visoName()).arg(".viso");
+    return QString("%1/%2%3").arg(m_strVisoFilePath).arg(visoName()).arg(".viso");
 }
 
 
@@ -702,7 +720,7 @@ QString UIVisoCreatorWidget::visoFileFullPath() const
 *   UIVisoCreatorDialog implementation.                                                                                          *
 *********************************************************************************************************************************/
 UIVisoCreatorDialog::UIVisoCreatorDialog(UIActionPool *pActionPool, QWidget *pParent,
-                                         const QString& strVisoSavePath, const QString& strMachineName /* = QString() */)
+                                         const QString& strVisoFilePath, const QString& strMachineName /* = QString() */)
     : QIWithRetranslateUI<QIWithRestorableGeometry<QIMainDialog> >(pParent)
     , m_pVisoCreatorWidget(0)
     , m_pButtonBox(0)
@@ -712,8 +730,7 @@ UIVisoCreatorDialog::UIVisoCreatorDialog(UIActionPool *pActionPool, QWidget *pPa
     /* Make sure that the base class does not close this dialog upon pressing escape.
        we manage escape key here with special casing: */
     setRejectByEscape(false);
-    prepareWidgets(strVisoSavePath, strMachineName);
-    prepareConnections();
+    prepareWidgets(strVisoFilePath, strMachineName);
     loadSettings();
 }
 
@@ -758,7 +775,7 @@ void    UIVisoCreatorDialog::setCurrentPath(const QString &strPath)
         m_pVisoCreatorWidget->setCurrentPath(strPath);
 }
 
-void UIVisoCreatorDialog::prepareWidgets(const QString& strVisoSavePath, const QString &strMachineName)
+void UIVisoCreatorDialog::prepareWidgets(const QString& strVisoFilePath, const QString &strMachineName)
 {
     QWidget *pCentralWidget = new QWidget;
     AssertPtrReturnVoid(pCentralWidget);
@@ -768,7 +785,7 @@ void UIVisoCreatorDialog::prepareWidgets(const QString& strVisoSavePath, const Q
     pCentralWidget->setLayout(pMainLayout);
 
 
-    m_pVisoCreatorWidget = new UIVisoCreatorWidget(m_pActionPool, this, true /* show toolbar */, strVisoSavePath, strMachineName);
+    m_pVisoCreatorWidget = new UIVisoCreatorWidget(m_pActionPool, this, true /* show toolbar */, strVisoFilePath, strMachineName);
     AssertPtrReturnVoid(m_pVisoCreatorWidget);
     if (m_pVisoCreatorWidget->menu())
     {
@@ -778,6 +795,8 @@ void UIVisoCreatorDialog::prepareWidgets(const QString& strVisoSavePath, const Q
                 this, &UIVisoCreatorDialog::sltSetCancelButtonShortCut);
         connect(m_pVisoCreatorWidget, &UIVisoCreatorWidget::sigVisoNameChanged,
                 this, &UIVisoCreatorDialog::sltVisoNameChanged);
+        connect(m_pVisoCreatorWidget, &UIVisoCreatorWidget::sigVisoFilePathChanged,
+                this, &UIVisoCreatorDialog::sltVisoFilePathChanged);
         connect(m_pVisoCreatorWidget, &UIVisoCreatorWidget::sigSettingDialogToggle,
                 this, &UIVisoCreatorDialog::sltSettingDialogToggle);
     }
@@ -794,18 +813,13 @@ void UIVisoCreatorDialog::prepareWidgets(const QString& strVisoSavePath, const Q
 
     m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(QKeySequence::HelpContents);
 
+    connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIVisoCreatorDialog::close);
+    connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UIVisoCreatorDialog::accept);
+
+
     uiCommon().setHelpKeyword(m_pButtonBox->button(QIDialogButtonBox::Help), "create-optical-disk-image");
 
     retranslateUi();
-}
-
-void UIVisoCreatorDialog::prepareConnections()
-{
-    if (m_pButtonBox)
-    {
-        connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIVisoCreatorDialog::close);
-        connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UIVisoCreatorDialog::accept);
-    }
 }
 
 void UIVisoCreatorDialog::retranslateUi()
@@ -851,6 +865,12 @@ void UIVisoCreatorDialog::sltSetCancelButtonShortCut(QKeySequence keySequence)
 void UIVisoCreatorDialog::sltVisoNameChanged(const QString &strName)
 {
     Q_UNUSED(strName);
+    updateWindowTitle();
+}
+
+void UIVisoCreatorDialog::sltVisoFilePathChanged(const QString &strPath)
+{
+    Q_UNUSED(strPath);
     updateWindowTitle();
 }
 
