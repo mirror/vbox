@@ -139,6 +139,7 @@ endif
 
 TEMPLATE_VBoxEfiBldProg_CFLAGS.linux  = $(TEMPLATE_VBoxBldProg_CFLAGS.linux)
 TEMPLATE_VBoxEfiBldProg_CFLAGS.linux += -Wno-misleading-indentation
+TEMPLATE_VBoxEfiBldProg_CFLAGS.linux += -Wno-error=stringop-truncation # VfrCompile/Pccts/antlr/mrhoist.c:2216:5: error: 'strncpy' specified bound 50 equals destination size
 
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.darwin.arm64  = $(TEMPLATE_VBoxBldProg_CXXFLAGS.darwin.arm64)
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.darwin.arm64 += -Wno-register # BaseTools/Source/C/VfrCompile/Pccts/h/AParser.cpp:475:2: error: ISO C++17 does not allow 'register' storage class specifier [-Wregister]
