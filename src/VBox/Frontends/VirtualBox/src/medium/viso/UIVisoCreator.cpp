@@ -437,7 +437,7 @@ void UIVisoCreatorWidget::sltSaveAsAction()
     {
         QFileInfo fileInfo(strSaveFileName);
         setVisoFilePath(fileInfo.absolutePath());
-        setVisoName(fileInfo.fileName());
+        setVisoName(fileInfo.completeBaseName());
     }
 }
 
