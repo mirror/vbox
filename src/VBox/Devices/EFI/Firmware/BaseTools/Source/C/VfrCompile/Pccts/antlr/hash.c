@@ -38,9 +38,6 @@
  */
 
 #include <stdio.h>
-#ifdef VBOX
-# include <iprt/stdint.h> /* for intptr.h */
-#endif
 #include "pcctscfg.h"
 #include "hash.h"
 
@@ -134,8 +131,16 @@ char *key;
 	unsigned h=0;
 	char *p=key;
 	Entry *q;
-/*	require(table!=NULL && key!=NULL, "get: invalid table and/or key");*/
-	if ( !(table!=NULL && key!=NULL) ) *((char *)(/*vbox:*/ intptr_t) 34) = 3;
+#ifndef VBOX
+	/*	require(table!=NULL && key!=NULL, "get: invalid table and/or key");*/
+	if ( !(table!=NULL && key!=NULL) ) *((char *)34) = 3;
+#else
+	/*
+	 * The original construct must be some sort of release assertion making the program
+	 * crash. Unfortunately newer compilers complain about this so use exit().
+	 */
+	require(table!=NULL && key!=NULL, "get: invalid table and/or key");
+#endif
 
 	Hash(p,h,size);
 	for (q = table[h]; q != NULL; q = q->next)
