@@ -491,30 +491,30 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
    	$(buildserver-efifw_0_OUTDIR)/VBoxEFI64.fd \
    	$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip \
    	$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip.tmp \
-   	$(foreach arch, amd64 x86, $(foreach mod,$(VBOX_EFI_MODULES_FLAT),$$(buildserver-efifw_0_OUTDIR)/$(arch)/$(mod).pdb))
+   	$(foreach arch, amd64 x86, $(foreach mod,$(VBOX_EFI_MODULES_FLAT_X86),$$(buildserver-efifw_0_OUTDIR)/$(arch)/$(mod).pdb))
 
    INSTALLS += buildserver-efifw-dbg-amd64
    buildserver-efifw-dbg-amd64_INST = $(INST_VBOXDBG_SYMS)amd64/
    buildserver-efifw-dbg-amd64_MODE = 0644
    buildserver-efifw-dbg-amd64_SOURCES = \
-   	$(foreach mod,$(VBOX_EFI_MODULES_FLAT),$(buildserver-efifw_0_OUTDIR)/amd64/$(mod).pdb)
+   	$(foreach mod,$(VBOX_EFI_MODULES_FLAT_X86),$(buildserver-efifw_0_OUTDIR)/amd64/$(mod).pdb)
 
    INSTALLS += buildserver-efifw-dbg-x86
    buildserver-efifw-dbg-x86_INST = $(INST_VBOXDBG_SYMS)x86/
    buildserver-efifw-dbg-x86_MODE = 0644
    buildserver-efifw-dbg-x86_SOURCES = \
-   	$(foreach mod,$(VBOX_EFI_MODULES_FLAT),$(buildserver-efifw_0_OUTDIR)/x86/$(mod).pdb)
+   	$(foreach mod,$(VBOX_EFI_MODULES_FLAT_X86),$(buildserver-efifw_0_OUTDIR)/x86/$(mod).pdb)
 
    $$(buildserver-efifw_0_OUTDIR)/unpacked.ts \
    +| $$(buildserver-efifw_0_OUTDIR)/VBoxEFI32.fd \
    $$(buildserver-efifw_0_OUTDIR)/VBoxEFI64.fd \
-   $(foreach arch, amd64 x86, $(foreach mod,$(VBOX_EFI_MODULES_FLAT),$$(buildserver-efifw_0_OUTDIR)/$(arch)/$(mod).pdb)): \
+   $(foreach arch, amd64 x86, $(foreach mod,$(VBOX_EFI_MODULES_FLAT_X86),$$(buildserver-efifw_0_OUTDIR)/$(arch)/$(mod).pdb)): \
    		$$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip
 	$(call MSG_L1,Unpacking EFI firmware)
 	$(QUIET)$(TOOL_ZIP_UNPACK) $(TOOL_ZIP_UNPACKFLAGS) -o $< -d $(buildserver-efifw_0_OUTDIR)
 	$(foreach arch, amd64 x86, \
 		$(NLTAB) $(QUIET)$(TEST) '!' -d $(dir $@)/$(arch) -- $(MKDIR_EXT) -- $(dir $@)/$(arch) \
-		$(foreach mod,$(VBOX_EFI_MODULES_FLAT) \
+		$(foreach mod,$(VBOX_EFI_MODULES_FLAT_X86) \
 		,$(NLTAB) $(QUIET)$(TEST) '!' -f $(dir $@)/$(arch)/$(mod).pdb -- $(APPEND_EXT) $(dir $@)/$(arch)/$(mod).pdb ))
 	$(TOUCH) -c -- $(buildserver-efifw_0_OUTDIR)/VBoxEFI32.fd \
 		$(buildserver-efifw_0_OUTDIR)/VBoxEFI64.fd
@@ -525,6 +525,58 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
 	$(RM) -f -- "$@" "$@.tmp"
 	$(SHELL) $(KBUILD_DEVTOOLS)/bin/efi_firmware.sh --cmd fetch --filename "$@.tmp" $(if $(VBOX_USE_PROXY_FOR_BUILD_SERVER),--default-proxy,)
 	$(MV) -f -- "$@.tmp" "$@"
+
+   ifdef VBOX_WITH_VIRT_ARMV8
+    #
+    # The ARMv8 EFI images
+    #
+    INSTALLS += buildserver-efifw-armv8
+    buildserver-efifw-armv8_INST = $(INST_BIN)
+    buildserver-efifw-armv8_MODE = 0644
+    buildserver-efifw-armv8_SOURCES = \
+    	$(buildserver-efifw-armv8_0_OUTDIR)/VBoxEFIAArch32.fd \
+    	$(buildserver-efifw-armv8_0_OUTDIR)/VBoxEFIAArch64.fd
+    buildserver-efifw-armv8_CLEANS = \
+    	$(buildserver-efifw-armv8_0_OUTDIR)/unpacked.ts \
+    	$(buildserver-efifw-armv8_0_OUTDIR)/VBoxEFIAArch32.fd \
+    	$(buildserver-efifw-armv8_0_OUTDIR)/VBoxEFIAArch64.fd \
+    	$(buildserver-efifw-armv8_0_OUTDIR)/VBoxEfiFirmware-armv8.zip \
+    	$(buildserver-efifw-armv8_0_OUTDIR)/VBoxEfiFirmware-armv8.zip.tmp \
+    	$(foreach arch, aarch64 aarch32, $(foreach mod,$(VBOX_EFI_MODULES_FLAT_ARM),$$(buildserver-efifw-armv8_0_OUTDIR)/$(arch)/$(mod).pdb))
+
+    INSTALLS += buildserver-efifw-dbg-aarch64
+    buildserver-efifw-dbg-aarch64_INST = $(INST_VBOXDBG_SYMS)aarch64/
+    buildserver-efifw-dbg-aarch64_MODE = 0644
+    buildserver-efifw-dbg-aarch64_SOURCES = \
+    	$(foreach mod,$(VBOX_EFI_MODULES_FLAT_ARM),$(buildserver-efifw-armv8_0_OUTDIR)/aarch64/$(mod).pdb)
+
+    INSTALLS += buildserver-efifw-dbg-aarch32
+    buildserver-efifw-dbg-aarch32_INST = $(INST_VBOXDBG_SYMS)aarch32/
+    buildserver-efifw-dbg-aarch32_MODE = 0644
+    buildserver-efifw-dbg-aarch32_SOURCES = \
+    	$(foreach mod,$(VBOX_EFI_MODULES_FLAT_ARM),$(buildserver-efifw-armv8_0_OUTDIR)/aarch32/$(mod).pdb)
+
+   $$(buildserver-efifw-armv8_0_OUTDIR)/unpacked.ts \
+   +| $$(buildserver-efifw-armv8_0_OUTDIR)/VBoxEFIAArch32.fd \
+   $$(buildserver-efifw-armv8_0_OUTDIR)/VBoxEFIAArch64.fd \
+   $(foreach arch, aarch64 aarch32, $(foreach mod,$(VBOX_EFI_MODULES_FLAT_ARM),$$(buildserver-efifw-armv8_0_OUTDIR)/$(arch)/$(mod).pdb)): \
+   		$$(buildserver-efifw-armv8_0_OUTDIR)/VBoxEfiFirmware-armv8.zip
+	$(call MSG_L1,Unpacking EFI ARMv8 firmware)
+	$(QUIET)$(TOOL_ZIP_UNPACK) $(TOOL_ZIP_UNPACKFLAGS) -o $< -d $(buildserver-efifw-armv8_0_OUTDIR)
+	$(foreach arch, aarch64 aarch32, \
+		$(NLTAB) $(QUIET)$(TEST) '!' -d $(dir $@)/$(arch) -- $(MKDIR_EXT) -- $(dir $@)/$(arch) \
+		$(foreach mod,$(VBOX_EFI_MODULES_FLAT_ARM) \
+		,$(NLTAB) $(QUIET)$(TEST) '!' -f $(dir $@)/$(arch)/$(mod).pdb -- $(APPEND_EXT) $(dir $@)/$(arch)/$(mod).pdb ))
+	$(TOUCH) -c -- $(buildserver-efifw-armv8_0_OUTDIR)/VBoxEFIAArch32.fd \
+		$(buildserver-efifw-armv8_0_OUTDIR)/VBoxEFIAArch64.fd
+	$(APPEND) -t $@ "done"
+
+   $$(buildserver-efifw-armv8_0_OUTDIR)/VBoxEfiFirmware-armv8.zip: \
+   		$(VBOX_SVN_REV_KMK) $(KBUILD_DEVTOOLS)/bin/efi_firmware.sh | $$(dir $$@)
+	$(RM) -f -- "$@" "$@.tmp"
+	$(SHELL) $(KBUILD_DEVTOOLS)/bin/efi_firmware.sh --cmd fetch-armv8 --filename "$@.tmp" $(if $(VBOX_USE_PROXY_FOR_BUILD_SERVER),--default-proxy,)
+	$(MV) -f -- "$@.tmp" "$@"
+   endif
 
   else # !VBOX_WITH_EFIFW_FROM_BUILD_SERVER
    #
