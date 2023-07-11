@@ -56,9 +56,8 @@ VBOX_EFI_OUTPUT_SUBDIR = $(VBOX_EFI_BUILD_TARGET)_$(VBOX_EFI_TOOL_CHAIN)
 ## @todo r=andy Is this still needed? Or can we just use TOOL_YASM_AS?
 VBOX_YASMCMD   ?= $(firstword $(wildcard $(KBUILD_DEVTOOLS_HST)/bin/yasm$(HOSTSUFF_EXE)) yasm$(HOSTSUFF_EXE))
 
-# VBox nasm command
+# VBox nasm command (we share this with ValKit/bootsector/Config.kmk, thus the TOOL-style variable name).
 include $(KBUILD_PATH)/tools/NASM.kmk
-TOOL_VBoxNasm = Our version of the NASM tool
 ifndef TOOL_VBoxNasm_PATH
  TOOL_VBoxNasm_PATH   := $(firstword $(rsort $(wildcard $(KBUILD_DEVTOOLS_HST)/nasm/v*.*)))
  if "$(TOOL_VBoxNasm_PATH)" == "" && "$(KBUILD_DEVTOOLS_HST_ALT)" != ""
