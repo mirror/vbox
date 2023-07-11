@@ -57,26 +57,15 @@
 #endif
 #include <iprt/utf16.h>
 
+#ifdef IN_RING3
+# include <iprt/formats/efi-fv.h>
+#endif
+
 #include "DevEFI.h"
 #include "FlashCore.h"
 #include "VBoxDD.h"
 #include "VBoxDD2.h"
 #include "../PC/DevFwCommon.h"
-
-/* EFI includes */
-#ifdef IN_RING3
-# ifdef _MSC_VER
-#  pragma warning(push)
-#  pragma warning(disable:4668)
-# endif
-# include <ProcessorBind.h>
-# ifdef _MSC_VER
-#  pragma warning(pop)
-# endif
-# include <Common/UefiBaseTypes.h>
-# include <Common/PiFirmwareVolume.h>
-# include <Common/PiFirmwareFile.h>
-#endif
 
 
 /*********************************************************************************************************************************
@@ -1193,37 +1182,38 @@ static int efiParseFirmware(PPDMDEVINS pDevIns, PDEVEFI pThis, PDEVEFIR3 pThisCC
     /*
      * Validate firmware volume header.
      */
-    AssertLogRelMsgReturn(pFwVolHdr->Signature == RT_MAKE_U32_FROM_U8('_', 'F', 'V', 'H'),
-                          ("%#x, expected %#x\n", pFwVolHdr->Signature, RT_MAKE_U32_FROM_U8('_', 'F', 'V', 'H')),
+    AssertLogRelMsgReturn(pFwVolHdr->u32Signature == EFI_FIRMWARE_VOLUME_HEADER_SIGNATURE,
+                          ("%#x, expected %#x\n", pFwVolHdr->u32Signature, EFI_FIRMWARE_VOLUME_HEADER_SIGNATURE),
                           VERR_INVALID_MAGIC);
-    AssertLogRelMsgReturn(pFwVolHdr->Revision == EFI_FVH_REVISION,
-                          ("%#x, expected %#x\n", pFwVolHdr->Signature, EFI_FVH_REVISION),
+    AssertLogRelMsgReturn(pFwVolHdr->bRevision == EFI_FIRMWARE_VOLUME_HEADER_REVISION,
+                          ("%#x, expected %#x\n", pFwVolHdr->bRevision, EFI_FIRMWARE_VOLUME_HEADER_REVISION),
                           VERR_VERSION_MISMATCH);
     /** @todo check checksum, see PE spec vol. 3 */
-    AssertLogRelMsgReturn(pFwVolHdr->FvLength <= pThisCC->cbEfiRom,
-                          ("%#llx, expected %#llx\n", pFwVolHdr->FvLength, pThisCC->cbEfiRom),
+    AssertLogRelMsgReturn(pFwVolHdr->cbFv <= pThisCC->cbEfiRom,
+                          ("%#llx, expected %#llx\n", pFwVolHdr->cbFv, pThisCC->cbEfiRom),
                           VERR_INVALID_PARAMETER);
-    AssertLogRelMsgReturn(      pFwVolHdr->BlockMap[0].Length > 0
-                          &&    pFwVolHdr->BlockMap[0].NumBlocks > 0,
-                          ("%#x, %x\n", pFwVolHdr->BlockMap[0].Length, pFwVolHdr->BlockMap[0].NumBlocks),
+    PCEFI_FW_BLOCK_MAP pBlockMap = (PCEFI_FW_BLOCK_MAP)(pFwVolHdr + 1);
+    AssertLogRelMsgReturn(      pBlockMap->cbBlock > 0
+                          &&    pBlockMap->cBlocks > 0,
+                          ("%#x, %x\n", pBlockMap->cbBlock, pBlockMap->cBlocks),
                           VERR_INVALID_PARAMETER);
 
     AssertLogRelMsgReturn(!(pThisCC->cbEfiRom & GUEST_PAGE_OFFSET_MASK), ("%RX64\n", pThisCC->cbEfiRom), VERR_INVALID_PARAMETER);
 
-    LogRel(("Found EFI FW Volume, %u bytes (%u %u-byte blocks)\n", pFwVolHdr->FvLength, pFwVolHdr->BlockMap[0].NumBlocks, pFwVolHdr->BlockMap[0].Length));
+    LogRel(("Found EFI FW Volume, %u bytes (%u %u-byte blocks)\n", pFwVolHdr->cbFv, pBlockMap->cBlocks, pBlockMap->cbBlock));
 
     /** @todo Make this more dynamic, this assumes that the NV storage area comes first (always the case for our builds). */
-    AssertLogRelMsgReturn(!memcmp(&pFwVolHdr->FileSystemGuid, &g_UuidNvDataFv, sizeof(g_UuidNvDataFv)),
+    AssertLogRelMsgReturn(!memcmp(&pFwVolHdr->GuidFilesystem, &g_UuidNvDataFv, sizeof(g_UuidNvDataFv)),
                           ("Expected EFI_SYSTEM_NV_DATA_FV_GUID as an identifier"),
                           VERR_INVALID_MAGIC);
 
     /* Found NVRAM storage, configure flash device. */
-    pThisCC->offEfiRom   = pFwVolHdr->FvLength;
-    pThisCC->cbNvram     = pFwVolHdr->FvLength;
+    pThisCC->offEfiRom   = pFwVolHdr->cbFv;
+    pThisCC->cbNvram     = pFwVolHdr->cbFv;
     pThisCC->GCPhysNvram = UINT32_C(0xfffff000) - pThisCC->cbEfiRom + GUEST_PAGE_SIZE;
     pThisCC->cbEfiRom   -= pThisCC->cbNvram;
 
-    int rc = flashR3Init(&pThis->Flash, pThisCC->pDevIns, 0xA289 /*Intel*/, pThisCC->cbNvram, pFwVolHdr->BlockMap[0].Length);
+    int rc = flashR3Init(&pThis->Flash, pThisCC->pDevIns, 0xA289 /*Intel*/, pThisCC->cbNvram, pBlockMap->cbBlock);
     if (RT_FAILURE(rc))
         return rc;
 
