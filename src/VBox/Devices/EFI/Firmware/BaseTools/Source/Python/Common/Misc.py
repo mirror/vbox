@@ -64,6 +64,34 @@ gDependencyDatabase = {}    # arch : {file path : [dependent files list]}
 #
 _TempInfs = []
 
+# VBox: BEGIN
+#
+#       Monkey patching copyxattr to also ignore errno.EACCES for older python versions.
+#       Otherwise building in a docker container fails due to a PermissionError because SELinux
+#       denies copying the security context extended attributes. This was just fixed 3 months ago
+#       in python so all our python versions in the containers are too old to have it.
+#
+# [vbox@tinderlin ~]$ sudo ausearch -m AVC,USER_AVC -ts recent
+# time->Tue Jul 11 07:44:16 2023
+# type=AVC msg=audit(1689061456.361:1300563): avc:  denied  { relabelto } for  pid=1160256 comm="python3"
+# name="PcdPeim.uni" dev="sda1" ino=186911506 scontext=system_u:system_r:container_t:s0:c100,c482
+# tcontext=unconfined_u:object_r:container_file_t:s0 tclass=file permissive=0
+#
+# See for further reference:
+#    https://github.com/python/cpython/issues/82814
+#    https://bugs.python.org/issue38893
+#    https://github.com/python/cpython/pull/21430
+#
+import errno
+orig_copyxattr = shutil._copyxattr
+def patched_copyxattr(src, dst, *, follow_symlinks=True):
+    try:
+        orig_copyxattr(src, dst, follow_symlinks=follow_symlinks)
+    except OSError as ex:
+        if ex.errno != errno.EACCES: raise
+shutil._copyxattr = patched_copyxattr
+# VBox: END
+
 def GetVariableOffset(mapfilepath, efifilepath, varnames):
     """ Parse map file to get variable offset in current EFI file
     @param mapfilepath    Map file absolution path
