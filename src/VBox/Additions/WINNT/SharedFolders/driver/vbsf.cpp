@@ -1508,7 +1508,7 @@ NTSTATUS VBoxMRxQueryEaInfo(IN OUT PRX_CONTEXT RxContext)
 {
     RT_NOREF(RxContext);
     Log(("VBOXSF: MRxQueryEaInfo: Ea buffer len remaining is %d\n", RxContext->Info.LengthRemaining));
-    return STATUS_SUCCESS;
+    return STATUS_NOT_SUPPORTED;
 }
 
 NTSTATUS VBoxMRxSetEaInfo(IN OUT PRX_CONTEXT RxContext)
