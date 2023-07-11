@@ -276,22 +276,22 @@ void SharedClipboardWinDataObject::Destroy(void)
 
 STDMETHODIMP_(ULONG) SharedClipboardWinDataObject::AddRef(void)
 {
-    LONG lCount = InterlockedIncrement(&m_lRefCount);
-    LogFlowFunc(("lCount=%RI32\n", lCount));
-    return lCount;
+    ULONG ulCount = InterlockedIncrement(&m_lRefCount);
+    LogFlowFunc(("lCount=%RU32\n", ulCount));
+    return ulCount;
 }
 
 STDMETHODIMP_(ULONG) SharedClipboardWinDataObject::Release(void)
 {
-    LONG lCount = InterlockedDecrement(&m_lRefCount);
-    LogFlowFunc(("lCount=%RI32\n", m_lRefCount));
-    if (lCount == 0)
+    ULONG ulCount = InterlockedDecrement(&m_lRefCount);
+    LogFlowFunc(("lCount=%RU32\n", ulCount));
+    if (ulCount == 0)
     {
         delete this;
         return 0;
     }
 
-    return lCount;
+    return ulCount;
 }
 
 STDMETHODIMP SharedClipboardWinDataObject::QueryInterface(REFIID iid, void **ppvObject)
