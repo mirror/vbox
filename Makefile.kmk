@@ -572,7 +572,7 @@ if   !defined(VBOX_ONLY_ADDITIONS) \
 	$(APPEND) -t $@ "done"
 
     $$(buildserver-efifw-armv8_0_OUTDIR)/VBoxEfiFirmware-armv8.zip: \
-   	 	$(VBOX_SVN_REV_KMK) $(KBUILD_DEVTOOLS)/bin/efi_firmware.sh | $$(dir $$@)
+    		$(VBOX_SVN_REV_KMK) $(KBUILD_DEVTOOLS)/bin/efi_firmware.sh | $$(dir $$@)
 	$(RM) -f -- "$@" "$@.tmp"
 	$(SHELL) $(KBUILD_DEVTOOLS)/bin/efi_firmware.sh --cmd fetch-armv8 --filename "$@.tmp" $(if $(VBOX_USE_PROXY_FOR_BUILD_SERVER),--default-proxy,)
 	$(MV) -f -- "$@.tmp" "$@"
