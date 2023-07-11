@@ -489,7 +489,10 @@ void UIVisoCreatorWidget::prepareWidgets()
 #endif
 
     if (m_pActionPool && m_pActionPool->action(UIActionIndex_M_VISOCreator))
+    {
         m_pMainMenu = m_pActionPool->action(UIActionIndex_M_VISOCreator)->menu();
+        m_pMainMenu->clear();
+    }
 
     if (m_fShowToolBar)
     {
