@@ -85,7 +85,7 @@ public:
     };
 
     UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pParent,
-                        bool fShowToolBar, const QString& strMachineName = QString());
+                        bool fShowToolBar, const QString& strVisoSavePath, const QString& strMachineName);
     /** Returns the content of the .viso file. Each element of the list corresponds to a line in the .viso file. */
     QStringList       entryList() const;
     QString           importedISOPath() const;
@@ -96,6 +96,7 @@ public:
     QString currentPath() const;
     void    setCurrentPath(const QString &strPath);
     QMenu *menu() const;
+    QString visoFileFullPath() const;
 
 #ifdef VBOX_WS_MAC
     /** Returns the toolbar. */
@@ -164,6 +165,7 @@ private:
     QLabel                *m_pOverlayWidget;
     QGraphicsBlurEffect   *m_pOverlayBlurEffect;
     QStackedLayout        *m_pStackedLayout;
+    QString                m_strVisoSavePath;
 };
 
 
@@ -203,7 +205,7 @@ private slots:
     void sltSettingDialogToggle(bool fIsShown);
 
 private:
-    void prepareWidgets(const QString &strMachineName);
+    void prepareWidgets(const QString& strVisoSavePath, const QString &strMachineName);
     void prepareConnections();
     virtual void retranslateUi() final override;
     void loadSettings();
@@ -214,6 +216,5 @@ private:
     QIDialogButtonBox   *m_pButtonBox;
     QPointer<UIActionPool> m_pActionPool;
     int                  m_iGeometrySaveTimerId;
-    QString              m_strVisoSavePath;
 };
 #endif /* !FEQT_INCLUDED_SRC_medium_viso_UIVisoCreator_h */
