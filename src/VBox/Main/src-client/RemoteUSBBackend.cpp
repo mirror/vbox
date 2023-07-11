@@ -1106,13 +1106,15 @@ int RemoteUSBBackend::saveDeviceList(const void *pvList, uint32_t cbList)
     {
         RTMemFree(mpvDeviceList);
         mpvDeviceList = NULL;
-
-        mcbDeviceList = cbList;
+        mcbDeviceList = 0;
 
         if (cbList > 0)
         {
             mpvDeviceList = RTMemAlloc(cbList);
+            AssertPtrReturn(mpvDeviceList, VERR_NO_MEMORY);
+
             memcpy(mpvDeviceList, pvList, cbList);
+            mcbDeviceList = cbList;
         }
 
         mfHasDeviceList = true;
