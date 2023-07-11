@@ -364,6 +364,8 @@
         <file alias="group_abstract_16px.png">images/group_abstract_16px.png</file>
         <file alias="guesttools_16px.png">images/guesttools_16px.png</file>
         <file alias="guesttools_disabled_16px.png">images/guesttools_disabled_16px.png</file>
+        <file alias="guesttools_update_16px.png">images/guesttools_update_16px.png</file>
+        <file alias="guesttools_update_disabled_16px.png">images/guesttools_update_disabled_16px.png</file>
         <file alias="hd_16px.png">images/hd_16px.png</file>
         <file alias="hd_24px.png">images/hd_24px.png</file>
         <file alias="hd_32px.png">images/hd_32px.png</file>
@@ -508,6 +510,5 @@
         <file alias="log_viewer_delete_current_bookmark_16px.png">images/log_viewer_delete_current_bookmark_16px.png</file>
         <file alias="log_viewer_delete_filter_16px.png">images/log_viewer_delete_filter_16px.png</file>
         <file alias="log_viewer_filter_16px.png">images/log_viewer_filter_16px.png</file>
-        <file alias="log_viewer_filter_32px.png">images/log_viewer_filter_32px.png</file>
     </qresource>
 </RCC>

@@ -364,6 +364,8 @@
         <file alias="group_abstract_16px_x3.png">images/x3/group_abstract_16px_x3.png</file>
         <file alias="guesttools_16px_x3.png">images/x3/guesttools_16px_x3.png</file>
         <file alias="guesttools_disabled_16px_x3.png">images/x3/guesttools_disabled_16px_x3.png</file>
+        <file alias="guesttools_update_16px_x3.png">images/x3/guesttools_update_16px_x3.png</file>
+        <file alias="guesttools_update_disabled_16px_x3.png">images/x3/guesttools_update_disabled_16px_x3.png</file>
         <file alias="hd_16px_x3.png">images/x3/hd_16px_x3.png</file>
         <file alias="hd_24px_x3.png">images/x3/hd_24px_x3.png</file>
         <file alias="hd_32px_x3.png">images/x3/hd_32px_x3.png</file>
@@ -495,6 +497,5 @@
         <file alias="list_movedown_16px_x3.png">images/x3/list_movedown_16px_x3.png</file>
         <file alias="list_movedown_disabled_16px_x3.png">images/x3/list_movedown_disabled_16px_x3.png</file>
         <file alias="list_moveup_16px_x3.png">images/x3/list_moveup_16px_x3.png</file>
-        <file alias="list_moveup_disabled_16px_x3.png">images/x3/list_moveup_disabled_16px_x3.png</file>
     </qresource>
 </RCC>

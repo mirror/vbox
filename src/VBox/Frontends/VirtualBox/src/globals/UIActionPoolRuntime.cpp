@@ -2800,7 +2800,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimePerformUpgradeGuestAdditions(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/guesttools_16px.png", ":/guesttools_disabled_16px.png", true)
+        : UIActionSimple(pParent, ":/guesttools_update_16px.png", ":/guesttools_update_disabled_16px.png", true)
     {}
 
 protected:
