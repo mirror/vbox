@@ -775,22 +775,26 @@ static int vbglR3ClipboardTransferRootListEntryRead(PVBGLR3SHCLCMDCTX pCtx, uint
         {
             uint32_t fInfoRet;
             rc = Msg.Parms.fInfo.GetUInt32(&fInfoRet);
-            AssertRCReturn(rc, rc);
-            AssertMsgStmt((fInfoRet & VBOX_SHCL_INFO_F_FSOBJINFO) == VBOX_SHCL_INFO_F_FSOBJINFO,
-                          ("Host returned unknown entry info flags (%#x)\n", fInfoRet), rc = VERR_INVALID_PARAMETER);
             if (RT_SUCCESS(rc))
             {
-                uint32_t cbInfoRet = 0;
-                Msg.cbInfo.GetUInt32(&cbInfoRet);
-
-                AssertMsgStmt(cbInfo == cbInfoRet,
-                              ("Host reported cbInfo %RU32, expected %RU32\n", cbInfoRet, cbInfo), rc = VERR_INVALID_PARAMETER);
-
-                rc = ShClTransferListEntryInitEx(pRootListEntry, fInfo, szName, pvInfo, cbInfo);
+                AssertMsgStmt((fInfoRet & VBOX_SHCL_INFO_F_FSOBJINFO) == VBOX_SHCL_INFO_F_FSOBJINFO,
+                              ("Host returned unknown root entry info flags (%#x)\n", fInfoRet), rc = VERR_INVALID_PARAMETER);
                 if (RT_SUCCESS(rc))
                 {
-                    pvInfo = NULL;  /* Entry took ownership of pvInfo now. */
-                    cbInfo = 0;
+                    uint32_t cbInfoRet = 0;
+                    rc = Msg.cbInfo.GetUInt32(&cbInfoRet);
+                    if (RT_SUCCESS(rc))
+                    {
+                        AssertMsgStmt(cbInfo == cbInfoRet,
+                                      ("Host reported cbInfo %RU32, expected %RU32\n", cbInfoRet, cbInfo), rc = VERR_INVALID_PARAMETER);
+                        if (RT_SUCCESS(rc))
+                            rc = ShClTransferListEntryInitEx(pRootListEntry, fInfo, szName, pvInfo, cbInfo);
+                        if (RT_SUCCESS(rc))
+                        {
+                            pvInfo = NULL;  /* Entry took ownership of pvInfo now. */
+                            cbInfo = 0;
+                        }
+                    }
                 }
             }
         }
@@ -1419,19 +1423,56 @@ VBGLR3DECL(int) VbglR3ClipboardTransferListEntryRead(PVBGLR3SHCLCMDCTX pCtx, SHC
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->idClient,
                        VBOX_SHCL_GUEST_FN_LIST_ENTRY_READ, VBOX_SHCL_CPARMS_LIST_ENTRY);
 
+    uint32_t const fInfo = VBOX_SHCL_INFO_F_FSOBJINFO; /* For now the only info we have. */
+
     Msg.ReqParms.uContext.SetUInt64(pCtx->idContext);
     Msg.ReqParms.uHandle.SetUInt64(hList);
-    Msg.ReqParms.fInfo.SetUInt32(0);
+    Msg.ReqParms.fInfo.SetUInt32(fInfo);
 
-    Msg.szName.SetPtr(pListEntry->pszName, pListEntry->cbName);
-    Msg.cbInfo.SetUInt32(pListEntry->cbInfo);
-    Msg.pvInfo.SetPtr(pListEntry->pvInfo, pListEntry->cbInfo);
+    char szName[SHCLLISTENTRY_MAX_NAME];
+    Msg.szName.SetPtr(szName, sizeof(szName));
 
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+    void    *pvInfo = NULL;
+    uint32_t cbInfo = 0;
+
+    int rc = VINF_SUCCESS;
+
+    if ((fInfo & VBOX_SHCL_INFO_F_FSOBJINFO) == VBOX_SHCL_INFO_F_FSOBJINFO)
+    {
+        cbInfo = sizeof(SHCLFSOBJINFO);
+        pvInfo = RTMemAlloc(cbInfo);
+        if (!pvInfo)
+            rc = VERR_NO_MEMORY;
+    }
+
     if (RT_SUCCESS(rc))
     {
-        rc = Msg.cbInfo.GetUInt32(&pListEntry->cbInfo); AssertRC(rc);
+        Msg.cbInfo.SetUInt32(cbInfo);
+        Msg.pvInfo.SetPtr(pvInfo, cbInfo);
+
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            uint32_t cbInfoRet = 0;
+            rc = Msg.cbInfo.GetUInt32(&cbInfoRet);
+            if (RT_SUCCESS(rc))
+            {
+                AssertMsgStmt(cbInfo == cbInfoRet,
+                              ("Host reported cbInfo %RU32, expected %RU32\n", cbInfoRet, cbInfo), rc = VERR_INVALID_PARAMETER);
+                if (RT_SUCCESS(rc))
+                    rc = ShClTransferListEntryInitEx(pListEntry, fInfo, szName, pvInfo, cbInfo);
+                if (RT_SUCCESS(rc))
+                {
+                    pvInfo = NULL;  /* Entry took ownership of pvInfo now. */
+                    cbInfo = 0;
+                }
+            }
+        }
+        else
+            LogRel(("Shared Clipboard: Reading list entry failed: %Rrc\n", rc));
     }
+
+    RTMemFree(pvInfo);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -2513,19 +2554,23 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                     AssertPtrBreakStmt(pTransfer, rc = VERR_NOT_FOUND);
 
                     SHCLLISTENTRY entryList;
-                    rc = ShClTransferListRead(pTransfer, hList, &entryList);
+                    rc = ShClTransferListEntryInit(&entryList);
                     if (RT_SUCCESS(rc))
                     {
-                        PSHCLFSOBJINFO pObjInfo = (PSHCLFSOBJINFO)entryList.pvInfo;
-                        Assert(entryList.cbInfo == sizeof(SHCLFSOBJINFO));
+                        rc = ShClTransferListRead(pTransfer, hList, &entryList);
+                        if (RT_SUCCESS(rc))
+                        {
+                            PSHCLFSOBJINFO pObjInfo = (PSHCLFSOBJINFO)entryList.pvInfo;
+                            Assert(entryList.cbInfo == sizeof(SHCLFSOBJINFO));
 
-                        RT_NOREF(pObjInfo);
+                            RT_NOREF(pObjInfo);
 
-                        LogFlowFunc(("\t%s (%RU64 bytes)\n", entryList.pszName, pObjInfo->cbObject));
+                            LogFlowFunc(("\t%s (%RU64 bytes)\n", entryList.pszName, pObjInfo->cbObject));
 
-                        rc = VbglR3ClipboardTransferListEntryWrite(pCmdCtx, hList, &entryList);
+                            rc = VbglR3ClipboardTransferListEntryWrite(pCmdCtx, hList, &entryList);
 
-                        ShClTransferListEntryDestroy(&entryList);
+                            ShClTransferListEntryDestroy(&entryList);
+                        }
                     }
                 }
 

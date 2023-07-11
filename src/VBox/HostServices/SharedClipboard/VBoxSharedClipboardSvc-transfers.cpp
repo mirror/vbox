@@ -1277,21 +1277,30 @@ static int shClSvcTransferGetListEntry(uint32_t cParms, VBOXHGCMSVCPARM aParms[]
  * @returns VBox status code.
  * @param   cParms              Number of HGCM parameters supplied in \a aParms.
  * @param   aParms              Array of HGCM parameters.
- * @param   pListEntry          Pointer list entry to set.
+ * @param   pEntry              Pointer list entry to set.
  */
 static int shClSvcTransferSetListEntry(uint32_t cParms, VBOXHGCMSVCPARM aParms[],
-                                       PSHCLLISTENTRY pListEntry)
+                                       PSHCLLISTENTRY pEntry)
 {
     int rc;
 
     /* Sanity. */
-    AssertReturn(ShClTransferListEntryIsValid(pListEntry), VERR_INVALID_PARAMETER);
+    AssertReturn(ShClTransferListEntryIsValid(pEntry), VERR_INVALID_PARAMETER);
 
     if (cParms == VBOX_SHCL_CPARMS_LIST_ENTRY)
     {
-        HGCMSvcSetPv (&aParms[3], pListEntry->pszName, pListEntry->cbName);
-        HGCMSvcSetU32(&aParms[4], pListEntry->cbInfo);
-        HGCMSvcSetPv (&aParms[5], pListEntry->pvInfo, pListEntry->cbInfo);
+        /* Entry name */
+        void  *pvDst = aParms[3].u.pointer.addr;
+        size_t cbDst = aParms[3].u.pointer.size;
+        memcpy(pvDst, pEntry->pszName, RT_MIN(pEntry->cbName, cbDst));
+
+        /* Info size */
+        HGCMSvcSetU32(&aParms[4], pEntry->cbInfo);
+
+        /* Info data */
+        pvDst = aParms[5].u.pointer.addr;
+        cbDst = aParms[5].u.pointer.size;
+        memcpy(pvDst, pEntry->pvInfo, RT_MIN(pEntry->cbInfo, cbDst));
 
         rc = VINF_SUCCESS;
     }
