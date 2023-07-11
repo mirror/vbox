@@ -418,7 +418,7 @@ static DECLCALLBACK(int) shclTransferIfaceLocalListHdrRead(PSHCLTXPROVIDERCTX pC
  * @param   pszName             File name to use.
  * @param   pObjInfo            Object information to use.
  */
-static DECLCALLBACK(int) shclTransferIfaceLocalListEntryInit(PSHCLLISTENTRY pEntry, const char *pszName, PRTFSOBJINFO pObjInfo)
+static int shclTransferIfaceLocalListEntryInit(PSHCLLISTENTRY pEntry, const char *pszName, PRTFSOBJINFO pObjInfo)
 {
     PSHCLFSOBJINFO pFsObjInfo = (PSHCLFSOBJINFO)RTMemAllocZ(sizeof(SHCLFSOBJINFO));
     AssertPtrReturn(pFsObjInfo, VERR_NO_MEMORY);
