@@ -519,7 +519,6 @@ void UIVisoCreatorWidget::prepareWidgets()
     m_pVISOContentBrowser = new UIVisoContentBrowser(m_pActionPool);
     AssertPtrReturnVoid(m_pVISOContentBrowser);
     pContainerLayout->addWidget(m_pVISOContentBrowser, 0, 5, 1, 4);
-    m_pVISOContentBrowser->setVisoName(m_visoOptions.m_strVisoName);
 
     m_pOverlayWidget = new QLabel(this);
     AssertPtrReturnVoid(m_pOverlayWidget);
