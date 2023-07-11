@@ -2025,7 +2025,7 @@ static int vbglR3ClipboardTransferCreate(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFE
     }
 
     if (RT_SUCCESS(rc))
-        LogRel(("Shared Clipboard: Transfer %RU32 successfully created\n", idTransfer));
+        LogRel2(("Shared Clipboard: Transfer %RU32 successfully created\n", idTransfer));
     else
         LogRel(("Shared Clipboard: Error creating transfer %RU32, rc=%Rrc\n", idTransfer, rc));
 
@@ -2097,8 +2097,8 @@ static int vbglR3ClipboardTransferInit(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFER 
 
     if (RT_SUCCESS(rc))
     {
-        LogRel(("Shared Clipboard: Transfer %RU32 (%s) successfully initialized\n",
-                idTransfer, enmDir == SHCLTRANSFERDIR_FROM_REMOTE ? "host -> guest" : "guest -> host"));
+        LogRel2(("Shared Clipboard: Transfer %RU32 (%s) successfully initialized\n",
+                 idTransfer, enmDir == SHCLTRANSFERDIR_FROM_REMOTE ? "host -> guest" : "guest -> host"));
     }
     else
         LogRel(("Shared Clipboard: Unable to initialize transfer %RU32, rc=%Rrc\n", idTransfer, rc));
@@ -2285,8 +2285,8 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                 {
                     const SHCLTRANSFERID idTransfer = VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->idContext);
 
-                    LogRel(("Shared Clipboard: Received status %s (%Rrc) for transfer %RU32\n",
-                            ShClTransferStatusToStr(transferReport.uStatus), transferReport.rc, idTransfer));
+                    LogRel2(("Shared Clipboard: Received status %s (%Rrc) for transfer %RU32\n",
+                             ShClTransferStatusToStr(transferReport.uStatus), transferReport.rc, idTransfer));
 
                     SHCLSOURCE enmSource = SHCLSOURCE_INVALID;
 
