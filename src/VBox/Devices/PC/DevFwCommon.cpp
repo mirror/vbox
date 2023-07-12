@@ -45,6 +45,7 @@
 #include <iprt/uuid.h>
 #include <iprt/system.h>
 #include <iprt/cdefs.h>
+#include <iprt/alloca.h>
 
 #include "VBoxDD.h"
 #include "VBoxDD2.h"
@@ -434,6 +435,43 @@ static void fwCommonUseHostDMIStrings(void)
 }
 
 /**
+ * Replace the DmiSystemUuid placeholder with the actual value.
+ *
+ * @param   pszBuf              Buffer
+ * @param   cbBuf               Size of buffer
+ * @param   pcszPlaceholder     Pointer to placeholder, must be in pszBuf
+ * @param   cbPlaceholder       Length of placeholder
+ * @param   pcszDmiSystemUuid   DmiSystemUuid value
+ */
+static void fwUseDmiSystemUuidInString(char *pszBuf, size_t cbBuf,
+                                       const char *pcszPlaceholder, size_t cbPlaceholder,
+                                       const char *pcszDmiSystemUuid)
+{
+    size_t const cbPrefix = pcszPlaceholder - pszBuf;
+    size_t const cbUuid = strlen(pcszDmiSystemUuid);
+    size_t const cbSuffix = strlen(pcszPlaceholder + cbPlaceholder);
+    if (cbPrefix + cbUuid + cbSuffix < cbBuf)
+    {
+        /* Everything fits, no truncation. */
+        memmove(pszBuf + cbPrefix + cbUuid, pcszPlaceholder + cbPlaceholder, cbSuffix + 1); \
+        memcpy(pszBuf + cbPrefix, pcszDmiSystemUuid, cbUuid); \
+    }
+    else if (cbPrefix + cbUuid < cbBuf)
+    {
+        /* Prefix + DmiSystemUuid fits, truncate suffix. */
+        memmove(pszBuf + cbPrefix + cbUuid, pcszPlaceholder + cbPlaceholder, cbBuf - cbPrefix - cbUuid - 1); \
+        memcpy(pszBuf + cbPrefix, pcszDmiSystemUuid, cbUuid); \
+        pszBuf[cbBuf] = '\0';
+    }
+    else
+    {
+        /* Prefix fits, truncate DmiSystemUuid. */
+        memcpy(pszBuf + cbPrefix, pcszDmiSystemUuid, cbBuf - cbPrefix - 1); \
+        pszBuf[cbBuf] = '\0';
+    }
+}
+
+/**
  * Construct the DMI table.
  *
  * @returns VBox status code.
@@ -500,6 +538,17 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
             } \
             if (!strcmp(szBuf, "<EMPTY>")) \
                 pszTmp = ""; \
+            else if ((pszTmp = RTStrStr(szBuf, "<DmiSystemUuid>"))) \
+            { \
+                char *pszUuid = pszDmiSystemUuid; \
+                if (!pszUuid) \
+                { \
+                    pszUuid = (char *)alloca(RTUUID_STR_LENGTH); \
+                    RTUuidToStr(pUuid, pszUuid, RTUUID_STR_LENGTH); \
+                } \
+                fwUseDmiSystemUuidInString(szBuf, sizeof(szBuf), pszTmp, 15, pszUuid); \
+                pszTmp = szBuf; \
+            } \
             else \
                 pszTmp = szBuf; \
         } \
