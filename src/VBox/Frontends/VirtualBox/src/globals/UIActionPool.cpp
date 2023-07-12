@@ -2675,7 +2675,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "ISOImport"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
         setStatusTip(QApplication::translate("UIActionPool", "Import ISO into the VISO content."));
-        setToolTip(QApplication::translate("UIActionPool", "Import Selected ISO(s) into the VISO content.")
+        setToolTip(QApplication::translate("UIActionPool", "Import Selected ISO into the VISO content.")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -2707,8 +2707,8 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "ISORemove"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
-        setStatusTip(QApplication::translate("UIActionPool", "Remove ISO into the VISO content."));
-        setToolTip(QApplication::translate("UIActionPool", "Remove Selected ISO(s) into the VISO content.")
+        setStatusTip(QApplication::translate("UIActionPool", "Remove the imported ISO from the VISO content."));
+        setToolTip(QApplication::translate("UIActionPool", "Remove the imported ISO from the VISO content.")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
