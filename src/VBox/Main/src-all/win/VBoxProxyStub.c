@@ -2149,7 +2149,8 @@ static void vbpsRemoveOldTypeLibs(VBPSREGSTATE *pState)
                             if (lrc == ERROR_SUCCESS)
                             {
                                 szValue[cbValue] = '\0';
-                                if (!strcmp(szValue, "VirtualBox Type Library"))
+                                if (   !strcmp(szValue, "VirtualBox Type Library")
+                                    || !strcmp(szValue, "InnoTek VirtualBox Machine Type Library")) /* 2005-05-25 build */
                                 {
                                     /*
                                      * Delete the type library version.
