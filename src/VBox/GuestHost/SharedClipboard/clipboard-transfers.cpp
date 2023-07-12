@@ -2187,8 +2187,12 @@ static DECLCALLBACK(int) shClTransferThreadWorker(RTTHREAD ThreadSelf, void *pvU
 
     LogFlowFuncEnter();
 
-    PSHCLTRANSFERTHREADCTX pCtx      = (PSHCLTRANSFERTHREADCTX)pvUser;
-    PSHCLTRANSFER          pTransfer = pCtx->pTransfer;
+    SHCLTRANSFERTHREADCTX Ctx;
+    memcpy(&Ctx, pvUser, sizeof(SHCLTRANSFERTHREADCTX));
+
+    LogFlowFunc(("pfnThread=%p, pTransfer=%p, pvUser=%p\n", Ctx.pfnThread, Ctx.pTransfer, Ctx.pvUser));
+
+    PSHCLTRANSFER pTransfer = Ctx.pTransfer;
 
     shClTransferLock(pTransfer);
 
@@ -2199,7 +2203,7 @@ static DECLCALLBACK(int) shClTransferThreadWorker(RTTHREAD ThreadSelf, void *pvU
 
     RTThreadUserSignal(RTThreadSelf());
 
-    int rc = pCtx->pfnThread(pTransfer, pCtx->pvUser);
+    int rc = Ctx.pfnThread(pTransfer, Ctx.pvUser);
 
     if (pTransfer->Callbacks.pfnOnCompleted)
         pTransfer->Callbacks.pfnOnCompleted(&pTransfer->CallbackCtx, rc);
@@ -2235,7 +2239,7 @@ static int shClTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNSHCLTRANSFERTHRE
     /* Spawn a worker thread, so that we don't block the window thread for too long. */
     int rc = RTThreadCreate(&pTransfer->Thread.hThread, shClTransferThreadWorker,
                             &Ctx, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
-                            "shclptx");
+                            "shcltx");
     if (RT_SUCCESS(rc))
     {
         shClTransferUnlock(pTransfer); /* Leave lock while waiting. */
