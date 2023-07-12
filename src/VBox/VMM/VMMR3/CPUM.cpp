@@ -1880,7 +1880,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCFGMNODE pCpumCfg, PCVMXMSRS pH
     EmuFeat.fVmxExitSaveDebugCtls     = 1;
     EmuFeat.fVmxHostAddrSpaceSize     = 1;
     EmuFeat.fVmxExitAckExtInt         = 1;
-    EmuFeat.fVmxExitSavePatMsr        = 0;
+    EmuFeat.fVmxExitSavePatMsr        = 1;
     EmuFeat.fVmxExitLoadPatMsr        = 1;
     EmuFeat.fVmxExitSaveEferMsr       = 1;
     EmuFeat.fVmxExitLoadEferMsr       = 1;
