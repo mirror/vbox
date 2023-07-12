@@ -1124,6 +1124,9 @@ void ShClTransferReset(PSHCLTRANSFER pTransfer);
 
 int ShClTransferRun(PSHCLTRANSFER pTransfer, PFNSHCLTRANSFERTHREAD pfnThreadFunc, void *pvUser);
 int ShClTransferStart(PSHCLTRANSFER pTransfer);
+int ShClTransferComplete(PSHCLTRANSFER pTransfer);
+int ShClTransferCancel(PSHCLTRANSFER pTransfer);
+int ShClTransferError(PSHCLTRANSFER pTransfer, int rc);
 
 uint32_t ShClTransferAcquire(PSHCLTRANSFER pTransfer);
 uint32_t ShClTransferRelease(PSHCLTRANSFER pTransfer);
