@@ -3287,7 +3287,7 @@ static void vbcppExprDestoryTree(PVBCPPEXPR pExpr)
             break;
         case kVBCppExprKind_Ternary:
             vbcppExprDestoryTree(pExpr->u.Ternary.pExpr);
-            vbcppExprDestoryTree(pExpr->u.Ternary.pExpr);
+            vbcppExprDestoryTree(pExpr->u.Ternary.pTrue);
             vbcppExprDestoryTree(pExpr->u.Ternary.pFalse);
             break;
         case kVBCppExprKind_SignedValue:
@@ -4911,7 +4911,7 @@ static RTEXITCODE vbcppDirectiveInclude(PVBCPP pThis, PSCMSTREAM pStrmInput, siz
             {
                 /** @todo Search for the include file and push it onto the input stack.
                  *  Not difficult, just unnecessary rigth now. */
-                rcExit = vbcppError(pThis, "Includes are fully implemented");
+                rcExit = vbcppError(pThis, "Sorry, includes are not yet implemented");
             }
             else if (pThis->enmIncludeAction == kVBCppIncludeAction_PassThru)
             {
@@ -5344,6 +5344,8 @@ static RTEXITCODE vbcppParseOptions(PVBCPP pThis, int argc, char **argv, bool *p
         { "--keep-comments",            'C',                    RTGETOPT_REQ_NOTHING },
         { "--strip-comments",           'c',                    RTGETOPT_REQ_NOTHING },
         { "--D-strip",                  'd',                    RTGETOPT_REQ_NOTHING },
+#define OPT_MODE    1000
+        { "--mode",                     OPT_MODE,               RTGETOPT_REQ_STRING },
     };
 
     RTGETOPTUNION   ValueUnion;
@@ -5370,6 +5372,20 @@ static RTEXITCODE vbcppParseOptions(PVBCPP pThis, int argc, char **argv, bool *p
                 vbcppSetMode(pThis, kVBCppMode_SelectiveD);
                 break;
 
+            case OPT_MODE:
+                if (   strcmp(ValueUnion.psz, "standard") == 0
+                    || strcmp(ValueUnion.psz, "std") == 0)
+                    vbcppSetMode(pThis, kVBCppMode_Standard);
+                else if (   strcmp(ValueUnion.psz, "selective") == 0
+                         || strcmp(ValueUnion.psz, "sel") == 0)
+                    vbcppSetMode(pThis, kVBCppMode_Selective);
+                else if (   strcmp(ValueUnion.psz, "selective-D") == 0
+                         || strcmp(ValueUnion.psz, "D-strip") == 0)
+                    vbcppSetMode(pThis, kVBCppMode_SelectiveD);
+                else
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown mode '%s'!", ValueUnion.psz);
+                break;
+
             case 'D':
             {
                 const char *pszEqual = strchr(ValueUnion.psz, '=');
@@ -5393,7 +5409,41 @@ static RTEXITCODE vbcppParseOptions(PVBCPP pThis, int argc, char **argv, bool *p
                 break;
 
             case 'h':
-                RTPrintf("No help yet, sorry\n");
+                RTPrintf("Usage: VBoxCPP [options] <input.c> [output.ii]\n"
+                         "\n"
+                         "Options:\n"
+                         "  --mode={mode}\n"
+                         "    Sets the processing mode and asscoiated defaults:\n"
+                         "      - selective   / sel: (default)\n"
+                         "          Selectively applying the defines from the command line\n"
+                         "          and preserving the rest.\n"
+                         "      - selective-D / D-strip:\n"
+                         "          Selectively applying the defines from the command line\n"
+                         "          and removing things DTrace doesn't like.\n"
+                         "      - standard    / std:\n"
+                         "          Standard C preprocesing.  This is incomplete as, among other\n"
+                         "          things, include processing has not yet been implemented.\n"
+                         "  --D-strip\n"
+                         "    Alias for --mode=selective-D\n"
+                         "  --define={macro}[=val], -D{macro}[=val]\n"
+                         "    Defines a macro.\n"
+                         "  --undefine={macro}, -U{macro}\n"
+                         "    Undefines a macro.\n"
+                         "  --include-dir={dir}, -I{dir}\n"
+                         "    Adds {dir} to the list of include directories that should\n"
+                         "    be searched for header files."
+                         "  --keep-comments, -C\n"
+                         "    Keep comments unchanged in the output.\n"
+                         "  --strip-comments, -c\n"
+                         "    Strip comments in the output. (default)\n"
+                         "\n"
+                         "This is not a complete C preprocessor implementation (yet), as its use is\n"
+                         "mainly to selectively apply and eliminate defines and/or things are DTrace\n"
+                         "finds problematic.  Among the missing features are:\n"
+                         "  - Support for ternary expressions.\n"
+                         "  - Including header files (in standard mode).\n"
+                         "  - +++\n"
+                         );
                 *pfExit = true;
                 return RTEXITCODE_SUCCESS;
 
