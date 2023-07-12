@@ -1499,7 +1499,7 @@ static int shClSvcTransferHandleReply(PSHCLCLIENT pClient, SHCLTRANSFERID idTran
                                 break;
                             }
 
-                            case SHCLTRANSFERSTATUS_STOPPED:
+                            case SHCLTRANSFERSTATUS_COMPLETED:
                             {
                                 LogRel(("Shared Clipboard: Guest has stopped transfer %RU32\n", pTransfer->State.uID));
 
@@ -2445,7 +2445,7 @@ int ShClSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, bool fWait
 
     PSHCLEVENT pEvent;
     int rc = shClSvcTransferSendStatusAsync(pClient, pTransfer,
-                                            SHCLTRANSFERSTATUS_STOPPED, VINF_SUCCESS, &pEvent);
+                                            SHCLTRANSFERSTATUS_COMPLETED, VINF_SUCCESS, &pEvent);
     if (   RT_SUCCESS(rc)
         && fWaitForGuest)
     {

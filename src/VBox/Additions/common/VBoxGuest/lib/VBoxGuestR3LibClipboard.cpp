@@ -2251,7 +2251,7 @@ static int vbglR3ClipboardTransferStop(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFERC
     /* Send a reply in any case. */
     int rc2 = VbglR3ClipboardTransferStatusReply(pCmdCtx, pTransfer,
                                                    RT_SUCCESS(rc)
-                                                 ? SHCLTRANSFERSTATUS_STOPPED : SHCLTRANSFERSTATUS_ERROR, rc);
+                                                 ? SHCLTRANSFERSTATUS_COMPLETED : SHCLTRANSFERSTATUS_ERROR, rc);
     if (RT_SUCCESS(rc))
         rc = rc2;
 
@@ -2387,7 +2387,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                             break;
                         }
 
-                        case SHCLTRANSFERSTATUS_STOPPED:
+                        case SHCLTRANSFERSTATUS_COMPLETED:
                             RT_FALL_THROUGH();
                         case SHCLTRANSFERSTATUS_CANCELED:
                             RT_FALL_THROUGH();

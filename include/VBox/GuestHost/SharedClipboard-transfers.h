@@ -99,8 +99,8 @@ typedef enum
     SHCLTRANSFERSTATUS_UNINITIALIZED = 2,
     /** The transfer is active and running. */
     SHCLTRANSFERSTATUS_STARTED = 3,
-    /** The transfer has been stopped. */
-    SHCLTRANSFERSTATUS_STOPPED = 4,
+    /** The transfer has been successfully completed. */
+    SHCLTRANSFERSTATUS_COMPLETED = 4,
     /** The transfer has been canceled. */
     SHCLTRANSFERSTATUS_CANCELED = 5,
     /** The transfer has been killed. */

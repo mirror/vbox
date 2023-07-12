@@ -2171,7 +2171,7 @@ int ShClTransferComplete(PSHCLTRANSFER pTransfer)
                         ("Wrong status (currently is %s)\n", ShClTransferStatusToStr(pTransfer->State.enmStatus)),
                         shClTransferUnlock(pTransfer), VERR_WRONG_ORDER);
 
-    int rc = shClTransferSetStatus(pTransfer, SHCLTRANSFERSTATUS_STOPPED);
+    int rc = shClTransferSetStatus(pTransfer, SHCLTRANSFERSTATUS_COMPLETED);
 
     shClTransferUnlock(pTransfer);
 
@@ -3210,7 +3210,7 @@ const char *ShClTransferStatusToStr(SHCLTRANSFERSTATUS enmStatus)
         RT_CASE_RET_STR(SHCLTRANSFERSTATUS_INITIALIZED);
         RT_CASE_RET_STR(SHCLTRANSFERSTATUS_UNINITIALIZED);
         RT_CASE_RET_STR(SHCLTRANSFERSTATUS_STARTED);
-        RT_CASE_RET_STR(SHCLTRANSFERSTATUS_STOPPED);
+        RT_CASE_RET_STR(SHCLTRANSFERSTATUS_COMPLETED);
         RT_CASE_RET_STR(SHCLTRANSFERSTATUS_CANCELED);
         RT_CASE_RET_STR(SHCLTRANSFERSTATUS_KILLED);
         RT_CASE_RET_STR(SHCLTRANSFERSTATUS_ERROR);

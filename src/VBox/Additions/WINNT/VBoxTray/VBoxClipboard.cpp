@@ -371,7 +371,7 @@ static DECLCALLBACK(void) vbtrShClTransferCompletedCallback(PSHCLTRANSFERCALLBAC
             break;
 
         case VINF_SUCCESS:
-            enmSts = SHCLTRANSFERSTATUS_STOPPED;
+            enmSts = SHCLTRANSFERSTATUS_COMPLETED;
             break;
 
         default:
