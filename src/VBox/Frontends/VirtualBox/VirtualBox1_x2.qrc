@@ -342,6 +342,10 @@
         <file alias="file_manager_rename_24px_x2.png">images/x2/file_manager_rename_24px_x2.png</file>
         <file alias="file_manager_rename_disabled_16px_x2.png">images/x2/file_manager_rename_disabled_16px_x2.png</file>
         <file alias="file_manager_rename_disabled_24px_x2.png">images/x2/file_manager_rename_disabled_24px_x2.png</file>
+        <file alias="file_manager_restore_16px_x2.png">images/x2/file_manager_restore_16px_x2.png</file>
+        <file alias="file_manager_restore_24px_x2.png">images/x2/file_manager_restore_24px_x2.png</file>
+        <file alias="file_manager_restore_disabled_16px_x2.png">images/x2/file_manager_restore_disabled_16px_x2.png</file>
+        <file alias="file_manager_restore_disabled_24px_x2.png">images/x2/file_manager_restore_disabled_24px_x2.png</file>
         <file alias="file_manager_select_all_16px_x2.png">images/x2/file_manager_select_all_16px_x2.png</file>
         <file alias="file_manager_select_all_24px_x2.png">images/x2/file_manager_select_all_24px_x2.png</file>
         <file alias="file_manager_select_all_disabled_16px_x2.png">images/x2/file_manager_select_all_disabled_16px_x2.png</file>
@@ -495,7 +499,5 @@
         <file alias="keyboard_32px_x2.png">images/x2/keyboard_32px_x2.png</file>
         <file alias="keyboard_settings_16px_x2.png">images/x2/keyboard_settings_16px_x2.png</file>
         <file alias="keyboard_settings_disabled_16px_x2.png">images/x2/keyboard_settings_disabled_16px_x2.png</file>
-        <file alias="launch_vm_16px_x2.png">images/x2/launch_vm_16px_x2.png</file>
-        <file alias="list_movedown_16px_x2.png">images/x2/list_movedown_16px_x2.png</file>
     </qresource>
 </RCC>

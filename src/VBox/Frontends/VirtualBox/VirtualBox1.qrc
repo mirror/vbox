@@ -342,6 +342,10 @@
         <file alias="file_manager_rename_24px.png">images/file_manager_rename_24px.png</file>
         <file alias="file_manager_rename_disabled_16px.png">images/file_manager_rename_disabled_16px.png</file>
         <file alias="file_manager_rename_disabled_24px.png">images/file_manager_rename_disabled_24px.png</file>
+        <file alias="file_manager_restore_16px.png">images/file_manager_restore_16px.png</file>
+        <file alias="file_manager_restore_24px.png">images/file_manager_restore_24px.png</file>
+        <file alias="file_manager_restore_disabled_16px.png">images/file_manager_restore_disabled_16px.png</file>
+        <file alias="file_manager_restore_disabled_24px.png">images/file_manager_restore_disabled_24px.png</file>
         <file alias="file_manager_select_all_16px.png">images/file_manager_select_all_16px.png</file>
         <file alias="file_manager_select_all_24px.png">images/file_manager_select_all_24px.png</file>
         <file alias="file_manager_select_all_disabled_16px.png">images/file_manager_select_all_disabled_16px.png</file>
@@ -509,7 +513,5 @@
         <file alias="log_viewer_choose_font_16px.png">images/log_viewer_choose_font_16px.png</file>
         <file alias="log_viewer_delete_all_bookmarks_16px.png">images/log_viewer_delete_all_bookmarks_16px.png</file>
         <file alias="log_viewer_delete_all_filters_16px.png">images/log_viewer_delete_all_filters_16px.png</file>
-        <file alias="log_viewer_delete_current_bookmark_16px.png">images/log_viewer_delete_current_bookmark_16px.png</file>
-        <file alias="log_viewer_delete_filter_16px.png">images/log_viewer_delete_filter_16px.png</file>
     </qresource>
 </RCC>
