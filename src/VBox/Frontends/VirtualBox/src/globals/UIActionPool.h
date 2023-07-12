@@ -157,6 +157,7 @@ enum UIActionIndex
     UIActionIndex_M_VISOCreator_ToggleSettingsDialog,
     UIActionIndex_M_VISOCreator_Add,
     UIActionIndex_M_VISOCreator_Remove,
+    UIActionIndex_M_VISOCreator_Restore,
     UIActionIndex_M_VISOCreator_CreateNewDirectory,
     UIActionIndex_M_VISOCreator_Rename,
     UIActionIndex_M_VISOCreator_Reset,

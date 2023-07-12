@@ -2482,6 +2482,41 @@ protected:
     }
 };
 
+class UIActionMenuVISOCreatorRestore : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuVISOCreatorRestore(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/file_manager_restore_24px.png",
+                         ":/file_manager_restore_16px.png",
+                         ":/file_manager_restore_disabled_24px.png",
+                         ":/file_manager_restore_disabled_16px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
+    {
+        return QString("VISORestoreItem");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() RT_OVERRIDE
+    {
+        setName(QApplication::translate("UIActionPool", "&Restore"));
+        setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
+        setStatusTip(QApplication::translate("UIActionPool", "Restore selected item(s)"));
+        setToolTip(QApplication::translate("UIActionPool", "Restore Selected Item(s)")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
 class UIActionMenuVISOCreatorCreateNewDirectory : public UIActionSimple
 {
     Q_OBJECT;
@@ -3523,6 +3558,7 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_VISOCreator_ToggleSettingsDialog] = new UIActionMenuVISOCreatorToggleSettingsDialog(this);
     m_pool[UIActionIndex_M_VISOCreator_Add] = new UIActionMenuVISOCreatorAdd(this);
     m_pool[UIActionIndex_M_VISOCreator_Remove] = new UIActionMenuVISOCreatorRemove(this);
+    m_pool[UIActionIndex_M_VISOCreator_Restore] = new UIActionMenuVISOCreatorRestore(this);
     m_pool[UIActionIndex_M_VISOCreator_CreateNewDirectory] = new UIActionMenuVISOCreatorCreateNewDirectory(this);
     m_pool[UIActionIndex_M_VISOCreator_Rename] = new UIActionMenuVISOCreatorRename(this);
     m_pool[UIActionIndex_M_VISOCreator_Reset] = new UIActionMenuVISOCreatorReset(this);

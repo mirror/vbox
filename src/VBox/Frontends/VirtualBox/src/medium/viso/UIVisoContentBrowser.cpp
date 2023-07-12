@@ -235,6 +235,7 @@ UIVisoContentBrowser::UIVisoContentBrowser(UIActionPool *pActionPool, QWidget *p
     , m_pModel(0)
     , m_pTableProxyModel(0)
     , m_pRemoveAction(0)
+    , m_pRestoreAction(0)
     , m_pCreateNewDirectoryAction(0)
     , m_pRenameAction(0)
     , m_pResetAction(0)
@@ -497,6 +498,11 @@ void UIVisoContentBrowser::sltRemoveItems()
     removeItems(tableSelectedItems());
 }
 
+void UIVisoContentBrowser::sltRestoreItems()
+{
+    restoreItems(tableSelectedItems());
+}
+
 void UIVisoContentBrowser::removeItems(const QList<UICustomFileSystemItem*> itemList)
 {
     foreach(UICustomFileSystemItem *pItem, itemList)
@@ -515,6 +521,12 @@ void UIVisoContentBrowser::removeItems(const QList<UICustomFileSystemItem*> item
     }
     if (m_pTableProxyModel)
         m_pTableProxyModel->invalidate();
+}
+
+
+void UIVisoContentBrowser::restoreItems(const QList<UICustomFileSystemItem*> itemList)
+{
+    Q_UNUSED(itemList);
 }
 
 void UIVisoContentBrowser::prepareObjects()
@@ -578,6 +590,7 @@ void UIVisoContentBrowser::prepareObjects()
 void UIVisoContentBrowser::prepareToolBar()
 {
     m_pRemoveAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Remove);
+    m_pRestoreAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Restore);
     m_pCreateNewDirectoryAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_CreateNewDirectory);
     m_pRenameAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Rename);
     m_pResetAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Reset);
@@ -586,6 +599,7 @@ void UIVisoContentBrowser::prepareToolBar()
     m_pGoBackward = m_pActionPool->action(UIActionIndex_M_VISOCreator_VisoContent_GoBackward);
 
     AssertReturnVoid(m_pRemoveAction);
+    AssertReturnVoid(m_pRestoreAction);
     AssertReturnVoid(m_pCreateNewDirectoryAction);
     AssertReturnVoid(m_pRenameAction);
     AssertReturnVoid(m_pResetAction);
@@ -595,6 +609,7 @@ void UIVisoContentBrowser::prepareToolBar()
     AssertReturnVoid(m_pGoBackward);
 
     m_pRemoveAction->setEnabled(tableViewHasSelection());
+    m_pRestoreAction->setEnabled(tableViewHasSelection());
     m_pRenameAction->setEnabled(tableViewHasSelection());
 
     m_pToolBar->addAction(m_pGoBackward);
@@ -602,7 +617,7 @@ void UIVisoContentBrowser::prepareToolBar()
     m_pToolBar->addAction(m_pGoUp);
     m_pToolBar->addSeparator();
     m_pToolBar->addAction(m_pRemoveAction);
-
+    m_pToolBar->addAction(m_pRestoreAction);
     m_pToolBar->addAction(m_pCreateNewDirectoryAction);
     m_pToolBar->addAction(m_pRenameAction);
     m_pToolBar->addAction(m_pResetAction);
@@ -621,11 +636,11 @@ void UIVisoContentBrowser::prepareMainMenu(QMenu *pMenu)
     m_pSubMenu->addAction(m_pGoBackward);
     m_pSubMenu->addAction(m_pGoForward);
     m_pSubMenu->addAction(m_pGoUp);
-    m_pSubMenu->addAction(m_pGoHome);
 
     m_pSubMenu->addSeparator();
 
     m_pSubMenu->addAction(m_pRemoveAction);
+    m_pSubMenu->addAction(m_pRestoreAction);
     m_pSubMenu->addAction(m_pRenameAction);
     m_pSubMenu->addAction(m_pCreateNewDirectoryAction);
     m_pSubMenu->addAction(m_pResetAction);
@@ -670,6 +685,9 @@ void UIVisoContentBrowser::prepareConnections()
     if (m_pRemoveAction)
         connect(m_pRemoveAction, &QAction::triggered,
                 this, &UIVisoContentBrowser::sltRemoveItems);
+    if (m_pRestoreAction)
+        connect(m_pRestoreAction, &QAction::triggered,
+                this, &UIVisoContentBrowser::sltRestoreItems);
     if (m_pResetAction)
         connect(m_pResetAction, &QAction::triggered,
                 this, &UIVisoContentBrowser::sltResetAction);
@@ -997,6 +1015,8 @@ void UIVisoContentBrowser::sltTableSelectionChanged(const QItemSelection &select
 
     if (m_pRemoveAction)
         m_pRemoveAction->setEnabled(!selected.isEmpty());
+    if (m_pRestoreAction)
+        m_pRestoreAction->setEnabled(!selected.isEmpty());
     if (m_pRenameAction)
         m_pRenameAction->setEnabled(!selected.isEmpty());
 }
@@ -1025,6 +1045,7 @@ void UIVisoContentBrowser::sltShowContextMenu(const QPoint &point)
     QMenu menu;
 
     menu.addAction(m_pRemoveAction);
+    menu.addAction(m_pRestoreAction);
     menu.addAction(m_pCreateNewDirectoryAction);
     menu.addAction(m_pResetAction);
     menu.exec(pSender->mapToGlobal(point));
