@@ -78,10 +78,11 @@ void shClSvcTransferDestroyAll(PSHCLCLIENT pClient)
     LogFlowFuncEnter();
 
     /* Unregister and destroy all transfers.
-     * Also make sure to let the backend know that all transfers are getting destroyed. */
-    uint32_t      uIdx = 0;
+     * Also make sure to let the backend know that all transfers are getting destroyed.
+     *
+     * Note: The index always will be 0, as the transfer gets unregistered. */
     PSHCLTRANSFER pTransfer;
-    while ((pTransfer = ShClTransferCtxGetTransferByIndex(&pClient->Transfers.Ctx, uIdx++)))
+    while ((pTransfer = ShClTransferCtxGetTransferByIndex(&pClient->Transfers.Ctx, 0 /* Index */)))
         ShClSvcTransferDestroy(pClient, pTransfer);
 }
 
