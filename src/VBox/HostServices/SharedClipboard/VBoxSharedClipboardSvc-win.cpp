@@ -373,14 +373,14 @@ static DECLCALLBACK(void) shClSvcWinTransferOnDestroyCallback(PSHCLTRANSFERCALLB
 }
 
 /**
- * @copydoc SharedClipboardWinDataObject::CALLBACKS::pfnTransferStart
+ * @copydoc SharedClipboardWinDataObject::CALLBACKS::pfnTransferBegin
  *
  * Called by SharedClipboardWinDataObject::GetData() when the user wants to paste data.
  * This then creates and initializes a new transfer on the host + lets the guest know about that new transfer.
  *
  * @thread  Service main thread.
  */
-static DECLCALLBACK(int) shClSvcWinDataObjectTransferStartCallback(SharedClipboardWinDataObject::PCALLBACKCTX pCbCtx)
+static DECLCALLBACK(int) shClSvcWinDataObjectTransferBeginCallback(SharedClipboardWinDataObject::PCALLBACKCTX pCbCtx)
 {
     LogFlowFuncEnter();
 
@@ -400,6 +400,29 @@ static DECLCALLBACK(int) shClSvcWinDataObjectTransferStartCallback(SharedClipboa
 
     LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+/**
+ * @copydoc SharedClipboardWinDataObject::CALLBACKS::pfnTransferEnd
+ *
+ * Called by SharedClipboardWinDataObject when the assigned transfer has been ended.
+ *
+ * @thread  Service main thread.
+ */
+static DECLCALLBACK(int) shClSvcWinDataObjectTransferEndCallback(SharedClipboardWinDataObject::PCALLBACKCTX pCbCtx,
+                                                                 PSHCLTRANSFER pTransfer, int rcTransfer)
+{
+    LogFlowFuncEnter();
+
+    RT_NOREF(rcTransfer);
+
+    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
+    AssertPtr(pCtx);
+
+    ShClSvcTransferDestroy(pCtx->pClient, pTransfer);
+
+    LogFlowFuncLeave();
+    return VINF_SUCCESS;
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
@@ -582,7 +605,8 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
                  */
                 SharedClipboardWinDataObject::CALLBACKS Callbacks;
                 RT_ZERO(Callbacks);
-                Callbacks.pfnTransferStart = shClSvcWinDataObjectTransferStartCallback;
+                Callbacks.pfnTransferBegin = shClSvcWinDataObjectTransferBeginCallback;
+                Callbacks.pfnTransferEnd   = shClSvcWinDataObjectTransferEndCallback;
 
                 rc = SharedClipboardWinTransferCreateAndSetDataObject(pWinCtx, pCtx, &Callbacks);
             }

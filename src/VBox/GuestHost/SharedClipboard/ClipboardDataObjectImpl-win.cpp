@@ -460,14 +460,12 @@ int SharedClipboardWinDataObject::readDir(PSHCLTRANSFER pTransfer, const Utf8Str
  * to block and wait until we have this data (via this thread) and continue.
  *
  * @returns VBox status code.
- * @param   ThreadSelf          Thread handle. Unused at the moment.
+ * @param   pTransfer           Pointer to transfer.
  * @param   pvUser              Pointer to user-provided data. Of type SharedClipboardWinDataObject.
  */
 /* static */
 DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(PSHCLTRANSFER pTransfer, void *pvUser)
 {
-    RT_NOREF(pTransfer);
-
     LogFlowFuncEnter();
 
     SharedClipboardWinDataObject *pThis = (SharedClipboardWinDataObject *)pvUser;
@@ -563,10 +561,12 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(PSHCLTRANSFER pTransf
                     if (RT_FAILURE(rc))
                         break;
 
+                    int rcTransfer = VERR_IPE_UNINITIALIZED_STATUS;
+
                     switch (pThis->m_enmStatus)
                     {
                         case Uninitialized: /* Can happen due to transfer erros. */
-                            LogRel2(("Shared Clipboard: Data object was unitialized\n"));
+                            LogRel2(("Shared Clipboard: Data object was uninitialized\n"));
                             break;
 
                         case Initialized:
@@ -578,20 +578,30 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(PSHCLTRANSFER pTransf
 
                         case Completed:
                             LogRel2(("Shared Clipboard: Data object: Transfer complete\n"));
+                            rcTransfer = VINF_SUCCESS;
                             break;
 
                         case Canceled:
                             LogRel2(("Shared Clipboard: Data object: Transfer canceled\n"));
+                            rcTransfer = VERR_CANCELLED;
                             break;
 
                         case Error:
                             LogRel(("Shared Clipboard: Data object: Transfer error %Rrc occurred\n", pThis->m_rcStatus));
+                            rcTransfer = pThis->m_rcStatus;
                             break;
 
                         default:
                             AssertFailed();
                             break;
                     }
+
+                    pThis->unlock();
+
+                    if (pThis->m_Callbacks.pfnTransferEnd)
+                        rc = pThis->m_Callbacks.pfnTransferEnd(&pThis->m_CallbackCtx, pTransfer, rcTransfer);
+
+                    pThis->lock();
 
                     break;
                 }
@@ -789,8 +799,8 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
                 unlock();
 
                 /* Start the transfer. */
-                AssertPtrBreak(m_Callbacks.pfnTransferStart);
-                rc = m_Callbacks.pfnTransferStart(&m_CallbackCtx);
+                AssertPtrBreak(m_Callbacks.pfnTransferBegin);
+                rc = m_Callbacks.pfnTransferBegin(&m_CallbackCtx);
                 AssertRCBreak(rc);
 
                 LogRel2(("Shared Clipboard: Waiting for IDataObject started status ...\n"));

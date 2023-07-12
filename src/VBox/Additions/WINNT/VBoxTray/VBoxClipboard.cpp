@@ -169,13 +169,15 @@ static DECLCALLBACK(int) vbtrReadDataWorker(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, 
 }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-
 /**
- * @copydoc SharedClipboardWinDataObject::CALLBACKS::pfnTransferStart
+ * @copydoc SharedClipboardWinDataObject::CALLBACKS::pfnTransferBegin
+ *
+ * Called by SharedClipboardWinDataObject::GetData() when the user wants to paste data.
+ * This then requests a new transfer on the host.
  *
  * @thread  Clipboard main thread.
  */
-static DECLCALLBACK(int) vbtrShClDataObjectTransferStartCallback(SharedClipboardWinDataObject::PCALLBACKCTX pCbCtx)
+static DECLCALLBACK(int) vbtrShClDataObjectTransferBeginCallback(SharedClipboardWinDataObject::PCALLBACKCTX pCbCtx)
 {
     LogFlowFuncEnter();
 
@@ -184,6 +186,41 @@ static DECLCALLBACK(int) vbtrShClDataObjectTransferStartCallback(SharedClipboard
 
     int rc = VbglR3ClipboardTransferRequest(&pCtx->CmdCtx);
 
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * @copydoc SharedClipboardWinDataObject::CALLBACKS::pfnTransferEnd
+ *
+ * Called by SharedClipboardWinDataObject when the assigned transfer has been ended.
+ *
+ * @thread  Clipboard main thread.
+ */
+static DECLCALLBACK(int) vbtrShClDataObjectTransferEndCallback(SharedClipboardWinDataObject::PCALLBACKCTX pCbCtx,
+                                                               PSHCLTRANSFER pTransfer, int rcTransfer)
+{
+    LogFlowFuncEnter();
+
+    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
+    AssertPtr(pCtx);
+
+    SHCLTRANSFERSTATUS enmSts;
+
+    switch (rcTransfer)
+    {
+        case VERR_CANCELLED:
+            enmSts = SHCLTRANSFERSTATUS_CANCELED;
+            break;
+
+        default:
+            enmSts =   RT_SUCCESS(rcTransfer)
+                     ? SHCLTRANSFERSTATUS_UNINITIALIZED : SHCLTRANSFERSTATUS_ERROR;
+            break;
+    }
+
+    int rc = VbglR3ClipboardTransferStatusReply(&pCtx->CmdCtx, pTransfer, enmSts,
+                                                enmSts == SHCLTRANSFERSTATUS_ERROR ? rcTransfer : VINF_SUCCESS);
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -277,34 +314,6 @@ static DECLCALLBACK(void) vbtrShClTransferInitializedCallback(PSHCLTRANSFERCALLB
 }
 
 /**
- * Cleanup helper function for transfer callbacks.
- *
- * @param   pTransferCtx        Pointer to transfer context that the transfer contains.
- * @param   pTransfer           Pointer to transfer to cleanup.
- */
-static void vbtrShClTransferCallbackCleanup(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer)
-{
-    LogFlowFuncEnter();
-
-    if (!pTransferCtx || !pTransfer)
-        return;
-
-    if (pTransfer->pvUser) /* SharedClipboardWinTransferCtx */
-    {
-        delete pTransfer->pvUser;
-        pTransfer->pvUser = NULL;
-    }
-
-    int rc2 = ShClTransferCtxUnregisterById(pTransferCtx, pTransfer->State.uID);
-    AssertRC(rc2);
-
-    ShClTransferDestroy(pTransfer);
-
-    RTMemFree(pTransfer);
-    pTransfer = NULL;
-}
-
-/**
  * Worker for a reading clipboard from the host.
  *
  * @thread  Clipboard main thread.
@@ -383,10 +392,8 @@ static DECLCALLBACK(void) vbtrShClTransferCompletedCallback(PSHCLTRANSFERCALLBAC
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
     AssertPtr(pCtx);
 
-    LogRel2(("Shared Clipboard: Transfer to destination %s\n",
-             rcCompletion == VERR_CANCELLED ? "canceled" : "complete"));
-
-    vbtrShClTransferCallbackCleanup(&pCtx->TransferCtx, pCbCtx->pTransfer);
+    LogRel2(("Shared Clipboard: Transfer %RU16 %s\n",
+             ShClTransferGetID(pCbCtx->pTransfer), rcCompletion == VERR_CANCELLED ? "canceled" : "complete"));
 }
 
 /** @copydoc SHCLTRANSFERCALLBACKS::pfnOnError */
@@ -395,9 +402,7 @@ static DECLCALLBACK(void) vbtrShClTransferErrorCallback(PSHCLTRANSFERCALLBACKCTX
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pCbCtx->pvUser;
     AssertPtr(pCtx);
 
-    LogRel(("Shared Clipboard: Transfer to destination failed with %Rrc\n", rcError));
-
-    vbtrShClTransferCallbackCleanup(&pCtx->TransferCtx, pCbCtx->pTransfer);
+    LogRel(("Shared Clipboard: Transfer %RU16 failed with %Rrc\n", ShClTransferGetID(pCbCtx->pTransfer), rcError));
 }
 
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
@@ -744,7 +749,8 @@ static LRESULT vbtrShClWndProcWorker(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg, WPA
                      */
                     SharedClipboardWinDataObject::CALLBACKS Callbacks;
                     RT_ZERO(Callbacks);
-                    Callbacks.pfnTransferStart = vbtrShClDataObjectTransferStartCallback;
+                    Callbacks.pfnTransferBegin = vbtrShClDataObjectTransferBeginCallback;
+                    Callbacks.pfnTransferEnd   = vbtrShClDataObjectTransferEndCallback;
 
                     rc = SharedClipboardWinTransferCreateAndSetDataObject(pWinCtx, pCtx, &Callbacks);
                 }

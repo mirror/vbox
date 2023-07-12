@@ -219,7 +219,16 @@ public:
          * @returns VBox status code.
          * @param   pCbCtx          Pointer to callback context.
          */
-        DECLCALLBACKMEMBER(int, pfnTransferStart, (PCALLBACKCTX pCbCtx));
+        DECLCALLBACKMEMBER(int, pfnTransferBegin, (PCALLBACKCTX pCbCtx));
+        /**
+         * Called by the data object if a transfer has been ended (succeeded or failed).
+         *
+         * @returns VBox status code.
+         * @param   pCbCtx          Pointer to callback context.
+         * @param   pTransfer       Pointer to transfer being completed.
+         * @param   rcTransfer      Result (IPRT-style) code.
+         */
+        DECLCALLBACKMEMBER(int, pfnTransferEnd, (PCALLBACKCTX pCbCtx, PSHCLTRANSFER pTransfer, int rcTransfer));
     };
     /** Pointer to a Shared Clipboard Windows data object callback table. */
     typedef CALLBACKS *PCALLBACKS;
