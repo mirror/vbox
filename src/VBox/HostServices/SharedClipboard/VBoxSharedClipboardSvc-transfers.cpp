@@ -2329,6 +2329,11 @@ void ShClSvcTransferDestroy(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 
     ShClTransferCtxUnregisterById(pTxCtx, pTransfer->State.uID);
 
+    /* Make sure to let the guest know. */
+    int rc = shClSvcTransferSendStatusAsync(pClient, pTransfer,
+                                            SHCLTRANSFERSTATUS_UNINITIALIZED, VINF_SUCCESS, NULL /* ppEvent */);
+    AssertRC(rc);
+
     ShClTransferDestroy(pTransfer);
 
     RTMemFree(pTransfer);
