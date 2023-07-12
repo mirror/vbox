@@ -53,7 +53,7 @@ DECLINLINE(void) shClTransferLock(PSHCLTRANSFER pTransfer);
 DECLINLINE(void) shClTransferUnlock(PSHCLTRANSFER pTransfer);
 static void shClTransferSetCallbacks(PSHCLTRANSFER pTransfer, PSHCLTRANSFERCALLBACKS pCallbacks);
 static int shClTransferSetStatus(PSHCLTRANSFER pTransfer, SHCLTRANSFERSTATUS enmStatus);
-static int shClTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThreadFunc, void *pvUser);
+static int shClTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNSHCLTRANSFERTHREAD pfnThreadFunc, void *pvUser);
 static int shClTransferThreadDestroy(PSHCLTRANSFER pTransfer, RTMSINTERVAL uTimeoutMs);
 
 static void shclTransferCtxTransferRemoveAndUnregister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer);
@@ -2110,7 +2110,7 @@ SHCLTRANSFERSTATUS ShClTransferGetStatus(PSHCLTRANSFER pTransfer)
  * @param   pfnThreadFunc       Pointer to thread function to use.
  * @param   pvUser              Pointer to user-provided data. Optional.
  */
-int ShClTransferRun(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThreadFunc, void *pvUser)
+int ShClTransferRun(PSHCLTRANSFER pTransfer, PFNSHCLTRANSFERTHREAD pfnThreadFunc, void *pvUser)
 {
     AssertPtrReturn(pTransfer,     VERR_INVALID_POINTER);
     AssertPtrReturn(pfnThreadFunc, VERR_INVALID_POINTER);
@@ -2160,6 +2160,55 @@ int ShClTransferStart(PSHCLTRANSFER pTransfer)
 }
 
 /**
+ * Internal struct for keeping a transfer thread context.
+ */
+typedef struct _SHCLTRANSFERTHREADCTX
+{
+    /** Pointer to transfer. */
+    PSHCLTRANSFER         pTransfer;
+    /** User-supplied context data. Can be NULL if not being used. */
+    void                 *pvUser;
+    /** Pointer to thread function to use. */
+    PFNSHCLTRANSFERTHREAD pfnThread;
+} SHCLTRANSFERTHREADCTX;
+/** Pointer to internal struct for keeping a transfer thread context. */
+typedef SHCLTRANSFERTHREADCTX *PSHCLTRANSFERTHREADCTX;
+
+/**
+ * Worker thread for a transfer.
+ *
+ * @returns VBox status code.
+ * @param   ThreadSelf          Thread self handle. Not being used.
+ * @param   pvUser              Context data of type PSHCLTRANSFERTHREADCTX.
+ */
+static DECLCALLBACK(int) shClTransferThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
+{
+    RT_NOREF(ThreadSelf);
+
+    LogFlowFuncEnter();
+
+    PSHCLTRANSFERTHREADCTX pCtx      = (PSHCLTRANSFERTHREADCTX)pvUser;
+    PSHCLTRANSFER          pTransfer = pCtx->pTransfer;
+
+    shClTransferLock(pTransfer);
+
+    pTransfer->Thread.fStarted = true;
+    pTransfer->Thread.fStop    = false;
+
+    shClTransferUnlock(pTransfer);
+
+    RTThreadUserSignal(RTThreadSelf());
+
+    int rc = pCtx->pfnThread(pTransfer, pCtx->pvUser);
+
+    if (pTransfer->Callbacks.pfnOnCompleted)
+        pTransfer->Callbacks.pfnOnCompleted(&pTransfer->CallbackCtx, rc);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
  * Creates a thread for a clipboard transfer.
  *
  * @returns VBox status code.
@@ -2167,7 +2216,7 @@ int ShClTransferStart(PSHCLTRANSFER pTransfer)
  * @param   pfnThreadFunc       Thread function to use for this transfer.
  * @param   pvUser              Pointer to user-provided data.
  */
-static int shClTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThreadFunc, void *pvUser)
+static int shClTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNSHCLTRANSFERTHREAD pfnThreadFunc, void *pvUser)
 
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
@@ -2181,9 +2230,11 @@ static int shClTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThre
     AssertMsgReturn(pTransfer->Thread.fStarted == false,
                     ("Transfer thread already started"), VERR_WRONG_ORDER);
 
+    SHCLTRANSFERTHREADCTX Ctx = { pTransfer, pvUser, pfnThreadFunc };
+
     /* Spawn a worker thread, so that we don't block the window thread for too long. */
-    int rc = RTThreadCreate(&pTransfer->Thread.hThread, pfnThreadFunc,
-                            pvUser, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
+    int rc = RTThreadCreate(&pTransfer->Thread.hThread, shClTransferThreadWorker,
+                            &Ctx, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
                             "shclptx");
     if (RT_SUCCESS(rc))
     {
@@ -2213,7 +2264,7 @@ static int shClTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThre
  *
  * @returns VBox status code.
  * @param   pTransfer           Clipboard transfer to destroy thread for.
- * @param   uTimeoutMs          Timeout (in ms) to wait for thread creation.
+ * @param   uTimeoutMs          Timeout (in ms) to wait for thread destruction.
  */
 static int shClTransferThreadDestroy(PSHCLTRANSFER pTransfer, RTMSINTERVAL uTimeoutMs)
 {
@@ -2234,7 +2285,7 @@ static int shClTransferThreadDestroy(PSHCLTRANSFER pTransfer, RTMSINTERVAL uTime
 
     shClTransferUnlock(pTransfer); /* Leave lock while waiting. */
 
-    int rcThread = VERR_WRONG_ORDER;
+    int rcThread = VERR_IPE_UNINITIALIZED_STATUS;
     int rc = RTThreadWait(pTransfer->Thread.hThread, uTimeoutMs, &rcThread);
 
     LogFlowFunc(("Waiting for thread resulted in %Rrc (thread exited with %Rrc)\n", rc, rcThread));

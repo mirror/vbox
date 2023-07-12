@@ -287,7 +287,7 @@ public:
 
 public:
 
-    static DECLCALLBACK(int) readThread(RTTHREAD ThreadSelf, void *pvUser);
+    static DECLCALLBACK(int) readThread(PSHCLTRANSFER pTransfer, void *pvUser);
 
     static void logFormat(CLIPFORMAT fmt);
 

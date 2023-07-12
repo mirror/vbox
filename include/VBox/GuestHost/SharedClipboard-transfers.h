@@ -875,6 +875,9 @@ typedef struct _SHCLTRANSFERCALLBACKS
 /** Pointer to a Shared Clipboard transfer callback table. */
 typedef SHCLTRANSFERCALLBACKS *PSHCLTRANSFERCALLBACKS;
 
+/** Function pointer for a transfer thread function. */
+typedef DECLCALLBACKPTR(int, PFNSHCLTRANSFERTHREAD,(PSHCLTRANSFER pTransfer, void *pvUser));
+
 /**
  * Structure for thread-related members for a single Shared Clipboard transfer.
  */
@@ -1119,7 +1122,7 @@ int ShClTransferInit(PSHCLTRANSFER pTransfer);
 int ShClTransferDestroy(PSHCLTRANSFER pTransfer);
 void ShClTransferReset(PSHCLTRANSFER pTransfer);
 
-int ShClTransferRun(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThreadFunc, void *pvUser);
+int ShClTransferRun(PSHCLTRANSFER pTransfer, PFNSHCLTRANSFERTHREAD pfnThreadFunc, void *pvUser);
 int ShClTransferStart(PSHCLTRANSFER pTransfer);
 
 uint32_t ShClTransferAcquire(PSHCLTRANSFER pTransfer);

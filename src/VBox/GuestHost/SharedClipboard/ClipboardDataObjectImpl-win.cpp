@@ -464,21 +464,13 @@ int SharedClipboardWinDataObject::readDir(PSHCLTRANSFER pTransfer, const Utf8Str
  * @param   pvUser              Pointer to user-provided data. Of type SharedClipboardWinDataObject.
  */
 /* static */
-DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, void *pvUser)
+DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(PSHCLTRANSFER pTransfer, void *pvUser)
 {
-    RT_NOREF(ThreadSelf);
+    RT_NOREF(pTransfer);
 
     LogFlowFuncEnter();
 
     SharedClipboardWinDataObject *pThis = (SharedClipboardWinDataObject *)pvUser;
-
-    PSHCLTRANSFER pTransfer = pThis->m_pTransfer;
-    AssertPtr(pTransfer);
-
-    pTransfer->Thread.fStarted = true;
-    pTransfer->Thread.fStop    = false;
-
-    RTThreadUserSignal(RTThreadSelf());
 
     LogRel2(("Shared Clipboard: Calculating transfer ...\n"));
 
