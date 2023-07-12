@@ -1867,7 +1867,7 @@ VBGLR3DECL(int) VbglR3ClipboardTransferObjWriteSend(PVBGLR3SHCLCMDCTX pCtx, SHCL
 *********************************************************************************************************************************/
 
 /** @copydoc SHCLTXPROVIDERIFACE::pfnRootListRead */
-static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceRootListRead(PSHCLTXPROVIDERCTX pCtx)
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceHGRootListRead(PSHCLTXPROVIDERCTX pCtx)
 {
     LogFlowFuncEnter();
 
@@ -1881,8 +1881,8 @@ static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceRootListRead(PSHCLTXPROVIDE
 }
 
 /** @copydoc SHCLTXPROVIDERIFACE::pfnListOpen */
-static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms,
-                                                              PSHCLLISTHANDLE phList)
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceHGListOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms,
+                                                                PSHCLLISTHANDLE phList)
 {
     LogFlowFuncEnter();
 
@@ -1896,7 +1896,7 @@ static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListOpen(PSHCLTXPROVIDERCTX
 }
 
 /** @copydoc SHCLTXPROVIDERIFACE::pfnListClose */
-static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListClose(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList)
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceHGListClose(PSHCLTXPROVIDERCTX pCtx, SHCLLISTHANDLE hList)
 {
     LogFlowFuncEnter();
 
@@ -1910,8 +1910,8 @@ static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListClose(PSHCLTXPROVIDERCT
 }
 
 /** @copydoc SHCLTXPROVIDERIFACE::pfnListHdrRead */
-static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListHdrRead(PSHCLTXPROVIDERCTX pCtx,
-                                                                 SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr)
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceHGListHdrRead(PSHCLTXPROVIDERCTX pCtx,
+                                                                  SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr)
 {
     LogFlowFuncEnter();
 
@@ -1934,8 +1934,8 @@ static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListHdrRead(PSHCLTXPROVIDER
 }
 
 /** @copydoc SHCLTXPROVIDERIFACE::pfnListEntryRead */
-static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListEntryRead(PSHCLTXPROVIDERCTX pCtx,
-                                                                   SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry)
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceHGListEntryRead(PSHCLTXPROVIDERCTX pCtx,
+                                                                     SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry)
 {
     LogFlowFuncEnter();
 
@@ -1949,8 +1949,8 @@ static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListEntryRead(PSHCLTXPROVID
 }
 
 /** @copydoc SHCLTXPROVIDERIFACE::pfnObjOpen */
-static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceObjOpen(PSHCLTXPROVIDERCTX pCtx,
-                                                             PSHCLOBJOPENCREATEPARMS pCreateParms, PSHCLOBJHANDLE phObj)
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceHGObjOpen(PSHCLTXPROVIDERCTX pCtx,
+                                                               PSHCLOBJOPENCREATEPARMS pCreateParms, PSHCLOBJHANDLE phObj)
 {
     LogFlowFuncEnter();
 
@@ -1964,7 +1964,7 @@ static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceObjOpen(PSHCLTXPROVIDERCTX 
 }
 
 /** @copydoc SHCLTXPROVIDERIFACE::pfnObjClose */
-static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceObjClose(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceHGObjClose(PSHCLTXPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
 {
     LogFlowFuncEnter();
 
@@ -1978,9 +1978,9 @@ static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceObjClose(PSHCLTXPROVIDERCTX
 }
 
 /** @copydoc SHCLTXPROVIDERIFACE::pfnObjRead */
-static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceObjRead(PSHCLTXPROVIDERCTX pCtx,
-                                                             SHCLOBJHANDLE hObj, void *pvData, uint32_t cbData,
-                                                             uint32_t fFlags, uint32_t *pcbRead)
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceHGObjRead(PSHCLTXPROVIDERCTX pCtx,
+                                                               SHCLOBJHANDLE hObj, void *pvData, uint32_t cbData,
+                                                               uint32_t fFlags, uint32_t *pcbRead)
 {
     LogFlowFuncEnter();
 
@@ -2056,16 +2056,16 @@ static int vbglR3ClipboardTransferInit(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFER 
      * our VbglR3 routines here. */
     if (enmDir == SHCLTRANSFERDIR_FROM_REMOTE) /* Host -> Guest */
     {
-        Provider.Interface.pfnRootListRead  = vbglR3ClipboardTransferIfaceRootListRead;
+        Provider.Interface.pfnRootListRead  = vbglR3ClipboardTransferIfaceHGRootListRead;
 
-        Provider.Interface.pfnListOpen      = vbglR3ClipboardTransferIfaceListOpen;
-        Provider.Interface.pfnListClose     = vbglR3ClipboardTransferIfaceListClose;
-        Provider.Interface.pfnListHdrRead   = vbglR3ClipboardTransferIfaceListHdrRead;
-        Provider.Interface.pfnListEntryRead = vbglR3ClipboardTransferIfaceListEntryRead;
+        Provider.Interface.pfnListOpen      = vbglR3ClipboardTransferIfaceHGListOpen;
+        Provider.Interface.pfnListClose     = vbglR3ClipboardTransferIfaceHGListClose;
+        Provider.Interface.pfnListHdrRead   = vbglR3ClipboardTransferIfaceHGListHdrRead;
+        Provider.Interface.pfnListEntryRead = vbglR3ClipboardTransferIfaceHGListEntryRead;
 
-        Provider.Interface.pfnObjOpen       = vbglR3ClipboardTransferIfaceObjOpen;
-        Provider.Interface.pfnObjClose      = vbglR3ClipboardTransferIfaceObjClose;
-        Provider.Interface.pfnObjRead       = vbglR3ClipboardTransferIfaceObjRead;
+        Provider.Interface.pfnObjOpen       = vbglR3ClipboardTransferIfaceHGObjOpen;
+        Provider.Interface.pfnObjClose      = vbglR3ClipboardTransferIfaceHGObjClose;
+        Provider.Interface.pfnObjRead       = vbglR3ClipboardTransferIfaceHGObjRead;
     }
     else if (enmDir == SHCLTRANSFERDIR_TO_REMOTE) /* Guest -> Host */
     {
