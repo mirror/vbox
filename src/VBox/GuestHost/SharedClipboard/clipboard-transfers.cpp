@@ -2953,7 +2953,6 @@ int ShClTransferCtxUnregisterById(PSHCLTRANSFERCTX pTransferCtx, SHCLTRANSFERID 
     if (ASMBitTestAndClear(&pTransferCtx->bmTransferIds, idTransfer), ("idTransfer=%#x\n", idTransfer))
     {
         PSHCLTRANSFER pTransfer = shClTransferCtxGetTransferByIdInternal(pTransferCtx, idTransfer);
-        AssertPtr(pTransfer);
         if (pTransfer)
         {
             shclTransferCtxTransferRemoveAndUnregister(pTransferCtx, pTransfer);
