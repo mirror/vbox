@@ -49,6 +49,7 @@ enum UICustomFileSystemModelData
     UICustomFileSystemModelData_Permissions,
     UICustomFileSystemModelData_LocalPath,
     UICustomFileSystemModelData_ISOFilePath, /* in case of import-iso this contains full path of the container iso file. */
+    UICustomFileSystemModelData_RemovedFromVISO,
     UICustomFileSystemModelData_Max
 };
 
@@ -113,6 +114,9 @@ public:
 
     void setIsHidden(bool flag);
     bool isHidden() const;
+
+    void setRemovedFromViso(bool fRemoved);
+    bool isRemovedFromViso() const;
 
 private:
 

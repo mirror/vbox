@@ -284,9 +284,11 @@
         <file alias="file_manager_disabled_32px_x4.png">images/x4/file_manager_disabled_32px_x4.png</file>
         <file alias="file_manager_file_16px_x4.png">images/x4/file_manager_file_16px_x4.png</file>
         <file alias="file_manager_file_cd_16px_x4.png">images/x4/file_manager_file_cd_16px_x4.png</file>
+        <file alias="file_manager_file_remove_16px_x4.png">images/x4/file_manager_file_remove_16px_x4.png</file>
         <file alias="file_manager_file_symlink_16px_x4.png">images/x4/file_manager_file_symlink_16px_x4.png</file>
         <file alias="file_manager_folder_16px_x4.png">images/x4/file_manager_folder_16px_x4.png</file>
         <file alias="file_manager_folder_cd_16px_x4.png">images/x4/file_manager_folder_cd_16px_x4.png</file>
+        <file alias="file_manager_folder_remove_16px_x4.png">images/x4/file_manager_folder_remove_16px_x4.png</file>
         <file alias="file_manager_folder_symlink_16px_x4.png">images/x4/file_manager_folder_symlink_16px_x4.png</file>
         <file alias="file_manager_go_backward_16px_x4.png">images/x4/file_manager_go_backward_16px_x4.png</file>
         <file alias="file_manager_go_backward_24px_x4.png">images/x4/file_manager_go_backward_24px_x4.png</file>
@@ -496,6 +498,5 @@
         <file alias="launch_vm_16px_x4.png">images/x4/launch_vm_16px_x4.png</file>
         <file alias="list_movedown_16px_x4.png">images/x4/list_movedown_16px_x4.png</file>
         <file alias="list_movedown_disabled_16px_x4.png">images/x4/list_movedown_disabled_16px_x4.png</file>
-        <file alias="list_moveup_16px_x4.png">images/x4/list_moveup_16px_x4.png</file>
     </qresource>
 </RCC>

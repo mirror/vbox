@@ -437,6 +437,9 @@ void UIVisoContentBrowser::tableViewItemDoubleClick(const QModelIndex &index)
         return;
     if (!pClickedItem->isDirectory())
         return;
+    /* Don't navigate into removed directories: */
+    if (pClickedItem->isRemovedFromViso())
+        return;
     QString strISOPath = pClickedItem->data(UICustomFileSystemModelData_ISOFilePath).toString();
     if (pClickedItem->isUpDirectory())
         goUp();
@@ -498,34 +501,17 @@ void UIVisoContentBrowser::removeItems(const QList<UICustomFileSystemItem*> item
 {
     foreach(UICustomFileSystemItem *pItem, itemList)
     {
-        if (!pItem)
+        if (!pItem || pItem->isUpDirectory())
             continue;
-        QString strIsoPath = pItem->path();
-        if (strIsoPath.isEmpty())
+        QString strVisoPath = pItem->path();
+        if (strVisoPath.isEmpty())
             continue;
 
-        bool bFoundInMap = false;
-        for (QMap<QString, QString>::iterator iterator = m_entryMap.begin(); iterator != m_entryMap.end(); )
-        {
-            if (iterator.key().startsWith(strIsoPath))
-            {
-                iterator = m_entryMap.erase(iterator);
-                bFoundInMap = true;
-            }
-            else
-                ++iterator;
-        }
+        bool bFoundInMap = m_entryMap.remove(strVisoPath) > 0;
         if (!bFoundInMap)
             createVisoEntry(pItem->path(), pItem->data(UICustomFileSystemModelData_LocalPath).toString(), true /* bool bRemove */);
-    }
 
-    foreach(UICustomFileSystemItem *pItem, itemList)
-    {
-        if (!pItem)
-            continue;
-        /* Remove the item from the m_pModel: */
-        if (m_pModel)
-            m_pModel->deleteItem(pItem);
+        pItem->setRemovedFromViso(true);
     }
     if (m_pTableProxyModel)
         m_pTableProxyModel->invalidate();
@@ -749,7 +735,7 @@ void UIVisoContentBrowser::setPathFromNavigationWidget(const QString &strPath)
         return;
     UICustomFileSystemItem *pItem = searchItemByPath(strPath);
 
-    if (pItem)
+    if (pItem && pItem->isDirectory() && !pItem->isRemovedFromViso())
     {
         QModelIndex index = convertIndexToTableIndex(m_pModel->index(pItem));
         if (index.isValid())
