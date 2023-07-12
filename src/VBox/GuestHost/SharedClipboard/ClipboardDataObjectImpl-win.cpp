@@ -561,8 +561,6 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(PSHCLTRANSFER pTransf
                     if (RT_FAILURE(rc))
                         break;
 
-                    int rcTransfer = VERR_IPE_UNINITIALIZED_STATUS;
-
                     switch (pThis->m_enmStatus)
                     {
                         case Uninitialized: /* Can happen due to transfer erros. */
@@ -578,17 +576,17 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(PSHCLTRANSFER pTransf
 
                         case Completed:
                             LogRel2(("Shared Clipboard: Data object: Transfer complete\n"));
-                            rcTransfer = VINF_SUCCESS;
+                            rc = ShClTransferComplete(pTransfer);
                             break;
 
                         case Canceled:
                             LogRel2(("Shared Clipboard: Data object: Transfer canceled\n"));
-                            rcTransfer = VERR_CANCELLED;
+                            rc = ShClTransferCancel(pTransfer);
                             break;
 
                         case Error:
                             LogRel(("Shared Clipboard: Data object: Transfer error %Rrc occurred\n", pThis->m_rcStatus));
-                            rcTransfer = pThis->m_rcStatus;
+                            rc = ShClTransferError(pTransfer, pThis->m_rcStatus);
                             break;
 
                         default:
@@ -599,7 +597,11 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(PSHCLTRANSFER pTransf
                     pThis->unlock();
 
                     if (pThis->m_Callbacks.pfnTransferEnd)
-                        rc = pThis->m_Callbacks.pfnTransferEnd(&pThis->m_CallbackCtx, pTransfer, rcTransfer);
+                    {
+                        int rc2 = pThis->m_Callbacks.pfnTransferEnd(&pThis->m_CallbackCtx, pTransfer, pThis->m_rcStatus);
+                        if (RT_SUCCESS(rc))
+                            rc = rc2;
+                    }
 
                     pThis->lock();
 
@@ -612,7 +614,7 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(PSHCLTRANSFER pTransf
     }
 
     if (RT_FAILURE(rc))
-        LogRel(("Shared Clipboard: Transfer failed with %Rrc\n", rc));
+        LogRel(("Shared Clipboard: Transfer read thread failed with %Rrc\n", rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
