@@ -1488,7 +1488,7 @@ static int shClSvcTransferHandleReply(PSHCLCLIENT pClient, SHCLTRANSFERID idTran
                             case SHCLTRANSFERSTATUS_KILLED:
                             {
                                 LogRel(("Shared Clipboard: Guest has %s transfer %RU32\n",
-                                        pReply->uType == SHCLTRANSFERSTATUS_CANCELED ? "canceled" : "killed", pTransfer->State.uID));
+                                        pReply->u.TransferStatus.uStatus == SHCLTRANSFERSTATUS_CANCELED ? "canceled" : "killed", pTransfer->State.uID));
 
                                 rc = ShClSvcTransferStop(pClient, pTransfer, false /* fWaitForGuest */);
 
