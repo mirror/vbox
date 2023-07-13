@@ -188,6 +188,8 @@ typedef struct SHCLEVENT
     RTSEMEVENTMULTI     hEvtMulSem;
     /** Payload to this event, optional (NULL). */
     PSHCLEVENTPAYLOAD   pPayload;
+    /** Result code (IPRT-style) to assign. */
+    int                 rc;
 } SHCLEVENT;
 /** Pointer to a shared clipboard event. */
 typedef SHCLEVENT *PSHCLEVENT;
@@ -235,8 +237,10 @@ PSHCLEVENT ShClEventSourceGetLast(PSHCLEVENTSOURCE pSource);
 uint32_t ShClEventGetRefs(PSHCLEVENT pEvent);
 uint32_t ShClEventRetain(PSHCLEVENT pEvent);
 uint32_t ShClEventRelease(PSHCLEVENT pEvent);
+int ShClEventSignalEx(PSHCLEVENT pEvent, int rc, PSHCLEVENTPAYLOAD pPayload);
 int ShClEventSignal(PSHCLEVENT pEvent, PSHCLEVENTPAYLOAD pPayload);
 int ShClEventWait(PSHCLEVENT pEvent, RTMSINTERVAL uTimeoutMs, PSHCLEVENTPAYLOAD *ppPayload);
+int ShClEventWaitEx(PSHCLEVENT pEvent, RTMSINTERVAL uTimeoutMs, int *pRc, PSHCLEVENTPAYLOAD *ppPayload);
 /** @} */
 
 /**

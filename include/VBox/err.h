@@ -3072,6 +3072,10 @@
 #define VERR_SHCLPB_MAX_EVENTS_REACHED              (-7106)
 /** Shared Clipboard transfer ID not found. */
 #define VERR_SHCLPB_TRANSFER_ID_NOT_FOUND           (-7150)
+/** Shared Clipboard guest error. */
+#define VERR_SHCLPB_GUEST_ERROR                     (-7151)
+/** Shared Clipboard event failed error. */
+#define VERR_SHCLPB_EVENT_FAILED                    (-7152)
 /** @} */
 
 /** @name Virtual IOMMU Status Codes

@@ -456,12 +456,14 @@ static PSHCLEVENTPAYLOAD shclEventPayloadDetachInternal(PSHCLEVENT pEvent)
  * Waits for an event to get signalled.
  *
  * @returns VBox status code.
+ * @retval  VERR_SHCLPB_EVENT_FAILED if the event has a set error code.
  * @param   pEvent              Event to wait for.
  * @param   uTimeoutMs          Timeout (in ms) to wait.
+ * @param   pRc                 Where to return the event rc. Optional and can be NULL.
  * @param   ppPayload           Where to store the (allocated) event payload on success. Needs to be free'd with
  *                              SharedClipboardPayloadFree(). Optional.
  */
-int ShClEventWait(PSHCLEVENT pEvent, RTMSINTERVAL uTimeoutMs, PSHCLEVENTPAYLOAD *ppPayload)
+int ShClEventWaitEx(PSHCLEVENT pEvent, RTMSINTERVAL uTimeoutMs, int *pRc, PSHCLEVENTPAYLOAD *ppPayload)
 {
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
     AssertPtrNullReturn(ppPayload, VERR_INVALID_POINTER);
@@ -470,6 +472,12 @@ int ShClEventWait(PSHCLEVENT pEvent, RTMSINTERVAL uTimeoutMs, PSHCLEVENTPAYLOAD 
     int rc = RTSemEventMultiWait(pEvent->hEvtMulSem, uTimeoutMs);
     if (RT_SUCCESS(rc))
     {
+        if (RT_FAILURE(pEvent->rc))
+            rc = VERR_SHCLPB_EVENT_FAILED;
+
+        if (pRc)
+            *pRc = pEvent->rc;
+
         if (ppPayload)
         {
             /* Make sure to detach payload here, as the caller now owns the data. */
@@ -482,6 +490,21 @@ int ShClEventWait(PSHCLEVENT pEvent, RTMSINTERVAL uTimeoutMs, PSHCLEVENTPAYLOAD 
 
     LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+/**
+ * Waits for an event to get signalled.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_SHCLPB_EVENT_FAILED if the event has a set error code.
+ * @param   pEvent              Event to wait for.
+ * @param   uTimeoutMs          Timeout (in ms) to wait.
+ * @param   ppPayload           Where to store the (allocated) event payload on success. Needs to be free'd with
+ *                              SharedClipboardPayloadFree(). Optional.
+ */
+int ShClEventWait(PSHCLEVENT pEvent, RTMSINTERVAL uTimeoutMs, PSHCLEVENTPAYLOAD *ppPayload)
+{
+    return ShClEventWaitEx(pEvent, uTimeoutMs, NULL /* pRc */, ppPayload);
 }
 
 /**
@@ -526,6 +549,32 @@ uint32_t ShClEventRelease(PSHCLEVENT pEvent)
 }
 
 /**
+ * Signals an event, extended version.
+ *
+ * @returns VBox status code.
+ * @param   pEvent              Event to signal.
+ * @param   rc                  Result code to set.
+ * @param   pPayload            Event payload to associate. Takes ownership on
+ *                              success. Optional.
+ */
+int ShClEventSignalEx(PSHCLEVENT pEvent, int rc, PSHCLEVENTPAYLOAD pPayload)
+{
+    AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
+
+    Assert(pEvent->pPayload == NULL);
+
+    pEvent->rc       = rc;
+    pEvent->pPayload = pPayload;
+
+    int rc2 = RTSemEventMultiSignal(pEvent->hEvtMulSem);
+    if (RT_FAILURE(rc2))
+        pEvent->pPayload = NULL; /* (no race condition if consumer also enters the critical section) */
+
+    LogFlowFuncLeaveRC(rc2);
+    return rc2;
+}
+
+/**
  * Signals an event.
  *
  * @returns VBox status code.
@@ -535,18 +584,7 @@ uint32_t ShClEventRelease(PSHCLEVENT pEvent)
  */
 int ShClEventSignal(PSHCLEVENT pEvent, PSHCLEVENTPAYLOAD pPayload)
 {
-    AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
-
-    Assert(pEvent->pPayload == NULL);
-
-    pEvent->pPayload = pPayload;
-
-    int rc = RTSemEventMultiSignal(pEvent->hEvtMulSem);
-    if (RT_FAILURE(rc))
-        pEvent->pPayload = NULL; /* (no race condition if consumer also enters the critical section) */
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    return ShClEventSignalEx(pEvent, VINF_SUCCESS, pPayload);
 }
 
 int ShClUtf16LenUtf8(PCRTUTF16 pcwszSrc, size_t cwcSrc, size_t *pchLen)
