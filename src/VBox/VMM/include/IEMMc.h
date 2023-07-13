@@ -515,6 +515,14 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
          (a_u256Dst).au64[2] = pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegSrcTmp].au64[0]; \
          (a_u256Dst).au64[3] = pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegSrcTmp].au64[1]; \
     } while (0)
+#define IEM_MC_STORE_YREG_U64(a_iYRegDst, a_iQword, a_u64Value) \
+    do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iYRegDst)].au64[(a_iQword)] = (a_u64Value); } while (0)
+#define IEM_MC_STORE_YREG_U32(a_iYRegDst, a_iDword, a_u32Value) \
+    do { pVCpu->cpum.GstCtx.XState.x87.aXMM[(a_iYRegDst)].au32[(a_iDword)] = (a_u32Value); } while (0)
+#define IEM_MC_STORE_YREGHI_U64(a_iYRegDst, a_iQword, a_u64Value) \
+    do { pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[(a_iYRegDst)].au64[(a_iQword)] = (a_u64Value); } while (0)
+#define IEM_MC_STORE_YREGHI_U32(a_iYRegDst, a_iDword, a_u32Value) \
+    do { pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[(a_iYRegDst)].au32[(a_iDword)] = (a_u32Value); } while (0)
 
 #define IEM_MC_INT_CLEAR_ZMM_256_UP(a_iXRegDst) do { /* For AVX512 and AVX1024 support. */ } while (0)
 #define IEM_MC_STORE_YREG_U32_ZX_VLMAX(a_iYRegDst, a_u32Src) \
@@ -548,6 +556,15 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
          pVCpu->cpum.GstCtx.XState.x87.aXMM[iYRegDstTmp].au64[1]       = (a_u256Src).au64[1]; \
          pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegDstTmp].au64[0] = (a_u256Src).au64[2]; \
          pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = (a_u256Src).au64[3]; \
+         IEM_MC_INT_CLEAR_ZMM_256_UP(iYRegDstTmp); \
+    } while (0)
+
+#define IEM_MC_STORE_YREG_BROADCAST_U128_ZX_VLMAX(a_iYRegDst, a_u128Src) \
+    do { uintptr_t const iYRegDstTmp    = (a_iYRegDst); \
+         pVCpu->cpum.GstCtx.XState.x87.aXMM[iYRegDstTmp].au64[0]       = (a_u128Src).au64[0]; \
+         pVCpu->cpum.GstCtx.XState.x87.aXMM[iYRegDstTmp].au64[1]       = (a_u128Src).au64[1]; \
+         pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegDstTmp].au64[0] = (a_u128Src).au64[0]; \
+         pVCpu->cpum.GstCtx.XState.u.YmmHi.aYmmHi[iYRegDstTmp].au64[1] = (a_u128Src).au64[1]; \
          IEM_MC_INT_CLEAR_ZMM_256_UP(iYRegDstTmp); \
     } while (0)
 
