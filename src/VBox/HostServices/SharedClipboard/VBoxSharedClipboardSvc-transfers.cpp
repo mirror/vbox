@@ -198,7 +198,7 @@ int ShClSvcTransferGHRootListReadEntryAsync(PSHCLCLIENT pClient, PSHCLTRANSFER p
                                                VBOX_SHCL_CPARMS_ROOT_LIST_ENTRY_READ_REQ);
 
     PSHCLEVENT pEvent;
-    int rc = ShClEventSourceGenerateAndRegisterEvent(&pClient->EventSrc, &pEvent);
+    int rc = ShClEventSourceGenerateAndRegisterEvent(&pTransfer->Events, &pEvent);
     if (RT_SUCCESS(rc))
     {
         HGCMSvcSetU64(&pMsgEntry->aParms[0],
@@ -1693,7 +1693,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
                 void    *pvData = ShClTransferListHdrDup(&lstHdr);
                 uint32_t cbData = sizeof(SHCLLISTHDR);
 
-                const PSHCLEVENT pEvent = ShClEventSourceGetFromId(&pClient->EventSrc, VBOX_SHCL_CONTEXTID_GET_EVENT(uCID));
+                const PSHCLEVENT pEvent = ShClEventSourceGetFromId(&pTransfer->Events, VBOX_SHCL_CONTEXTID_GET_EVENT(uCID));
                 if (pEvent)
                 {
                     PSHCLEVENTPAYLOAD pPayload;
@@ -1763,7 +1763,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
                 void    *pvData = ShClTransferListEntryDup(&lstEntry);
                 uint32_t cbData = sizeof(SHCLLISTENTRY);
 
-                const PSHCLEVENT pEvent = ShClEventSourceGetFromId(&pClient->EventSrc, VBOX_SHCL_CONTEXTID_GET_EVENT(uCID));
+                const PSHCLEVENT pEvent = ShClEventSourceGetFromId(&pTransfer->Events, VBOX_SHCL_CONTEXTID_GET_EVENT(uCID));
                 if (pEvent)
                 {
                     PSHCLEVENTPAYLOAD pPayload;
@@ -1845,7 +1845,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
                     void    *pvData = ShClTransferListHdrDup(&hdrList);
                     uint32_t cbData = sizeof(SHCLLISTHDR);
 
-                    const PSHCLEVENT pEvent = ShClEventSourceGetFromId(&pClient->EventSrc, VBOX_SHCL_CONTEXTID_GET_EVENT(uCID));
+                    const PSHCLEVENT pEvent = ShClEventSourceGetFromId(&pTransfer->Events, VBOX_SHCL_CONTEXTID_GET_EVENT(uCID));
                     if (pEvent)
                     {
                         PSHCLEVENTPAYLOAD pPayload;
@@ -1898,7 +1898,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
                     void    *pvData = ShClTransferListEntryDup(&entryList);
                     uint32_t cbData = sizeof(SHCLLISTENTRY);
 
-                    const PSHCLEVENT pEvent = ShClEventSourceGetFromId(&pClient->EventSrc, VBOX_SHCL_CONTEXTID_GET_EVENT(uCID));
+                    const PSHCLEVENT pEvent = ShClEventSourceGetFromId(&pTransfer->Events, VBOX_SHCL_CONTEXTID_GET_EVENT(uCID));
                     if (pEvent)
                     {
                         PSHCLEVENTPAYLOAD pPayload;
