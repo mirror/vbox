@@ -1168,6 +1168,9 @@ int ShClTransferDestroy(PSHCLTRANSFER pTransfer)
     if (!pTransfer)
         return VINF_SUCCESS;
 
+    if (!RTCritSectIsInitialized(&pTransfer->CritSect))
+        return VINF_SUCCESS;
+
     /* Must come before the refcount check below, as the callback might release a reference. */
     if (pTransfer->Callbacks.pfnOnDestroy)
         pTransfer->Callbacks.pfnOnDestroy(&pTransfer->CallbackCtx);
