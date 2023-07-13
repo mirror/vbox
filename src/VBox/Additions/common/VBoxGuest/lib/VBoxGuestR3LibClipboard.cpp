@@ -2672,8 +2672,8 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
         if (   !fErrorSent
             && RT_FAILURE(rc))
         {
-            /* Report error back to the host. */
-            int rc2 = VbglR3ClipboardWriteError(pCmdCtx->idClient, rc);
+            /* Report transfer-specific error back to the host. */
+            int rc2 = vbglR3ClipboardTransferStatusReplyEx(pCmdCtx, pCmdCtx->idContext, SHCLTRANSFERSTATUS_ERROR, rc);
             AssertRC(rc2);
         }
     }
