@@ -509,6 +509,8 @@ void UIVisoContentBrowser::removeItems(const QList<UICustomFileSystemItem*> item
     {
         if (!pItem || pItem->isUpDirectory())
             continue;
+        if (pItem->isRemovedFromViso())
+            continue;
         QString strVisoPath = pItem->path();
         if (strVisoPath.isEmpty())
             continue;
