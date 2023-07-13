@@ -38,6 +38,7 @@
 class QItemSelection;
 class QTableView;
 class UIVisoHostBrowserModel;
+class UIHostBrowserProxyModel;
 
 /** A UIVisoBrowserBase extension to view host file system. Uses QFileSystemModel. */
 class UIVisoHostBrowser : public UIVisoBrowserBase
@@ -87,8 +88,9 @@ private:
     bool isRoot() const;
     QModelIndex currentRootIndex() const;
     /** We have two file system models (one for each item view) since we set different filters on each of these models. */
-    UIVisoHostBrowserModel *m_pModel;
-    QTableView             *m_pTableView;
+    UIVisoHostBrowserModel  *m_pModel;
+    QTableView              *m_pTableView;
+    UIHostBrowserProxyModel *m_pProxyModel;
 };
 
 

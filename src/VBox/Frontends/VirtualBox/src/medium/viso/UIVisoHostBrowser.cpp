@@ -30,6 +30,7 @@
 #include <QHeaderView>
 #include <QItemDelegate>
 #include <QMimeData>
+#include <QSortFilterProxyModel>
 #include <QTextEdit>
 #include <QTableView>
 
@@ -40,6 +41,37 @@
 
 /* Other VBox includes: */
 #include <iprt/assert.h>
+
+
+class SHARED_LIBRARY_STUFF UIHostBrowserProxyModel : public QSortFilterProxyModel
+{
+
+    Q_OBJECT;
+
+public:
+
+    UIHostBrowserProxyModel(QObject *pParent = 0)
+        : QSortFilterProxyModel(pParent)
+    {
+    }
+
+    // void setListDirectoriesOnTop(bool fListDirectoriesOnTop);
+    // bool listDirectoriesOnTop() const;
+
+    // void setShowHiddenObjects(bool fShowHiddenObjects);
+    // bool showHiddenObjects() const;
+
+protected:
+
+    // virtual bool lessThan(const QModelIndex &left, const QModelIndex &right) const RT_OVERRIDE;
+    // /** Currently filters out hidden objects if options is set to "not showing them". */
+    // virtual bool filterAcceptsRow(int iSourceRow, const QModelIndex &sourceParent) const RT_OVERRIDE;
+
+private:
+
+    // bool m_fListDirectoriesOnTop;
+    // bool m_fShowHiddenObjects;
+};
 
 
 /*********************************************************************************************************************************
@@ -160,6 +192,7 @@ UIVisoHostBrowser::UIVisoHostBrowser(UIActionPool *pActionPool, QWidget *pParent
     : UIVisoBrowserBase(pActionPool, pParent)
     , m_pModel(0)
     , m_pTableView(0)
+    , m_pProxyModel(0)
 {
     prepareObjects();
     prepareToolBar();
@@ -182,43 +215,44 @@ void UIVisoHostBrowser::prepareObjects()
     UIVisoBrowserBase::prepareObjects();
 
     m_pModel = new UIVisoHostBrowserModel(this);
+    AssertReturnVoid(m_pModel);
     m_pModel->setRootPath(QDir::rootPath());
     m_pModel->setReadOnly(true);
     m_pModel->setFilter(QDir::AllEntries | QDir::NoDot | QDir::Hidden | QDir::System);
 
+    m_pProxyModel = new UIHostBrowserProxyModel(this);
+    AssertReturnVoid(m_pProxyModel);
+    m_pProxyModel->setSourceModel(m_pModel);
+
     m_pTableView = new QTableView;
-    if (m_pTableView)
-    {
-        m_pTableView->setContextMenuPolicy(Qt::CustomContextMenu);
-        m_pMainLayout->addWidget(m_pTableView, 2, 0, 8, 4);
-        m_pTableView->setShowGrid(false);
-        m_pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-        m_pTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
-        m_pTableView->setAlternatingRowColors(true);
-        m_pTableView->setTabKeyNavigation(false);
-        m_pTableView->setItemDelegate(new UIHostBrowserDelegate(this));
-        QHeaderView *pVerticalHeader = m_pTableView->verticalHeader();
-        if (pVerticalHeader)
-        {
-            m_pTableView->verticalHeader()->setVisible(false);
-            /* Minimize the row height: */
-            m_pTableView->verticalHeader()->setDefaultSectionSize(m_pTableView->verticalHeader()->minimumSectionSize());
-        }
-        QHeaderView *pHorizontalHeader = m_pTableView->horizontalHeader();
-        if (pHorizontalHeader)
-        {
-            pHorizontalHeader->setHighlightSections(false);
-            pHorizontalHeader->setSectionResizeMode(QHeaderView::Stretch);
-        }
+    AssertReturnVoid(m_pTableView);
+    m_pTableView->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_pMainLayout->addWidget(m_pTableView, 2, 0, 8, 4);
+    m_pTableView->setShowGrid(false);
+    m_pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_pTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_pTableView->setAlternatingRowColors(true);
+    m_pTableView->setTabKeyNavigation(false);
+    m_pTableView->setItemDelegate(new UIHostBrowserDelegate(this));
 
-        m_pTableView->setModel(m_pModel);
+    QHeaderView *pVerticalHeader = m_pTableView->verticalHeader();
+    QHeaderView *pHorizontalHeader = m_pTableView->horizontalHeader();
+    AssertReturnVoid(pVerticalHeader);
+    AssertReturnVoid(pHorizontalHeader);
 
-        /* Hide the "type" column: */
-        m_pTableView->hideColumn(2);
+    m_pTableView->verticalHeader()->setVisible(false);
+    /* Minimize the row height: */
+    m_pTableView->verticalHeader()->setDefaultSectionSize(m_pTableView->verticalHeader()->minimumSectionSize());
+    pHorizontalHeader->setHighlightSections(false);
+    pHorizontalHeader->setSectionResizeMode(QHeaderView::Stretch);
 
-        m_pTableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
-        m_pTableView->setDragDropMode(QAbstractItemView::DragOnly);
-    }
+    m_pTableView->setModel(m_pProxyModel);
+
+    /* Hide the "type" column: */
+    m_pTableView->hideColumn(2);
+
+    m_pTableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    m_pTableView->setDragDropMode(QAbstractItemView::DragOnly);
 
     retranslateUi();
 }
@@ -317,7 +351,8 @@ void UIVisoHostBrowser::sltShowContextMenu(const QPoint &point)
 void UIVisoHostBrowser::sltGoHome()
 {
     AssertReturnVoid(m_pModel);
-    QModelIndex homeIndex = m_pModel->index(QDir::homePath());
+    AssertReturnVoid(m_pProxyModel);
+    QModelIndex homeIndex = m_pProxyModel->mapFromSource(m_pModel->index(QDir::homePath()));
     if (homeIndex.isValid())
         setTableRootIndex(homeIndex);
 }
@@ -327,7 +362,7 @@ void UIVisoHostBrowser::sltGoUp()
     AssertReturnVoid(m_pModel);
     QDir currentDir = QDir(currentPath());
     currentDir.cdUp();
-    QModelIndex upIndex = m_pModel->index(currentDir.absolutePath());
+    QModelIndex upIndex = m_pProxyModel->mapFromSource(m_pModel->index(currentDir.absolutePath()));
     if (upIndex.isValid())
         setTableRootIndex(upIndex);
 }
@@ -337,7 +372,7 @@ void UIVisoHostBrowser::tableViewItemDoubleClick(const QModelIndex &index)
     if (!index.isValid())
         return;
     /* QFileInfo::isDir() returns true if QFileInfo is a folder or a symlink to folder: */
-    QFileInfo fileInfo = m_pModel->fileInfo(index);
+    QFileInfo fileInfo = m_pModel->fileInfo(m_pProxyModel->mapToSource(index));
     if (!fileInfo.isDir())
         return;
     if (QString::compare(fileInfo.fileName(), "..") == 0)
@@ -359,14 +394,14 @@ QString UIVisoHostBrowser::currentPath() const
     if (!m_pTableView || !m_pModel)
         return QString();
     QModelIndex currentTableIndex = m_pTableView->rootIndex();
-    return QDir::fromNativeSeparators(m_pModel->filePath(currentTableIndex));
+    return QDir::fromNativeSeparators(m_pModel->filePath(m_pProxyModel->mapToSource(currentTableIndex)));
 }
 
 void UIVisoHostBrowser::setCurrentPath(const QString &strPath)
 {
     if (strPath.isEmpty() || !m_pModel)
         return;
-    QModelIndex index = m_pModel->index(strPath);
+    QModelIndex index = m_pProxyModel->mapFromSource(m_pModel->index(strPath));
     setTableRootIndex(index);
 }
 
@@ -396,7 +431,7 @@ QStringList UIVisoHostBrowser::selectedPathList() const
     QStringList pathList;
     for (int i = 0; i < selectedIndices.size(); ++i)
     {
-        QString strPath = m_pModel->filePath(selectedIndices[i]);
+        QString strPath = m_pModel->filePath(m_pProxyModel->mapToSource(selectedIndices[i]));
         if (strPath.contains(".."))
             continue;
         pathList << strPath;
@@ -410,7 +445,8 @@ void UIVisoHostBrowser::setTableRootIndex(QModelIndex index /* = QModelIndex */)
         return;
     m_pTableView->setRootIndex(index);
     m_pTableView->clearSelection();
-    updateNavigationWidgetPath(m_pModel->filePath(index));
+    QString strPath = m_pModel->filePath(m_pProxyModel->mapToSource(index));
+    updateNavigationWidgetPath(strPath);
     if (m_pGoUp)
         m_pGoUp->setEnabled(!isRoot());
 }
@@ -419,7 +455,7 @@ void UIVisoHostBrowser::setPathFromNavigationWidget(const QString &strPath)
 {
     if (!m_pModel)
         return;
-    QModelIndex index = m_pModel->index(strPath);
+    QModelIndex index = m_pProxyModel->mapFromSource(m_pModel->index(strPath));
     if (!index.isValid())
         return;
     setTableRootIndex(index);
