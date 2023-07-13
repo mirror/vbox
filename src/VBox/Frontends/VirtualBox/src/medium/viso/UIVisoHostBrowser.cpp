@@ -43,36 +43,6 @@
 #include <iprt/assert.h>
 
 
-class SHARED_LIBRARY_STUFF UIHostBrowserProxyModel : public QSortFilterProxyModel
-{
-
-    Q_OBJECT;
-
-public:
-
-    UIHostBrowserProxyModel(QObject *pParent = 0)
-        : QSortFilterProxyModel(pParent)
-    {
-    }
-
-    // void setListDirectoriesOnTop(bool fListDirectoriesOnTop);
-    // bool listDirectoriesOnTop() const;
-
-    // void setShowHiddenObjects(bool fShowHiddenObjects);
-    // bool showHiddenObjects() const;
-
-protected:
-
-    // virtual bool lessThan(const QModelIndex &left, const QModelIndex &right) const RT_OVERRIDE;
-    // /** Currently filters out hidden objects if options is set to "not showing them". */
-    // virtual bool filterAcceptsRow(int iSourceRow, const QModelIndex &sourceParent) const RT_OVERRIDE;
-
-private:
-
-    // bool m_fListDirectoriesOnTop;
-    // bool m_fShowHiddenObjects;
-};
-
 
 /*********************************************************************************************************************************
 *   UIHostBrowserDelegate definition.                                                                                            *
@@ -114,6 +84,29 @@ protected:
 
 private:
 
+};
+
+/*********************************************************************************************************************************
+*   UIHostBrowserProxyModel definition.                                                                                   *
+*********************************************************************************************************************************/
+
+class SHARED_LIBRARY_STUFF UIHostBrowserProxyModel : public QSortFilterProxyModel
+{
+
+    Q_OBJECT;
+
+public:
+
+    UIHostBrowserProxyModel(QObject *pParent = 0)
+        : QSortFilterProxyModel(pParent)
+    {
+    }
+
+protected:
+
+    virtual bool lessThan(const QModelIndex &left, const QModelIndex &right) const RT_OVERRIDE;
+
+private:
 };
 
 /*********************************************************************************************************************************
@@ -184,6 +177,35 @@ QMimeData *UIVisoHostBrowserModel::mimeData(const QModelIndexList &indexes) cons
     return mimeData;
 }
 
+
+/*********************************************************************************************************************************
+*   UIHostBrowserProxyModel implementation.                                                                                      *
+*********************************************************************************************************************************/
+
+bool UIHostBrowserProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
+{
+    UIVisoHostBrowserModel *pModel = qobject_cast<UIVisoHostBrowserModel*>(sourceModel());
+    AssertReturn(pModel, true);
+
+    if (pModel->filePath(left).contains(".."))
+        return (sortOrder() == Qt::AscendingOrder);
+
+    if (pModel->filePath(right).contains(".."))
+        return (sortOrder() == Qt::DescendingOrder);
+
+    QFileInfo leftInfo(pModel->fileInfo(left));
+    QFileInfo rightInfo(pModel->fileInfo(right));
+
+    if (leftInfo.isDir() && !rightInfo.isDir())
+        return (sortOrder() == Qt::AscendingOrder);
+
+    if (!leftInfo.isDir() && rightInfo.isDir())
+        return (sortOrder() == Qt::DescendingOrder);
+
+    return QSortFilterProxyModel::lessThan(left, right);
+}
+
+
 /*********************************************************************************************************************************
 *   UIVisoHostBrowser implementation.                                                                                   *
 *********************************************************************************************************************************/
@@ -223,6 +245,8 @@ void UIVisoHostBrowser::prepareObjects()
     m_pProxyModel = new UIHostBrowserProxyModel(this);
     AssertReturnVoid(m_pProxyModel);
     m_pProxyModel->setSourceModel(m_pModel);
+    m_pProxyModel->setDynamicSortFilter(true);
+
 
     m_pTableView = new QTableView;
     AssertReturnVoid(m_pTableView);
@@ -247,6 +271,8 @@ void UIVisoHostBrowser::prepareObjects()
     pHorizontalHeader->setSectionResizeMode(QHeaderView::Stretch);
 
     m_pTableView->setModel(m_pProxyModel);
+    m_pTableView->setSortingEnabled(true);
+    m_pTableView->sortByColumn(0, Qt::AscendingOrder);
 
     /* Hide the "type" column: */
     m_pTableView->hideColumn(2);
@@ -376,7 +402,7 @@ void UIVisoHostBrowser::tableViewItemDoubleClick(const QModelIndex &index)
     if (!fileInfo.isDir())
         return;
     if (QString::compare(fileInfo.fileName(), "..") == 0)
-        setTableRootIndex(m_pModel->parent(m_pTableView->rootIndex()));
+        setTableRootIndex(m_pProxyModel->parent(m_pTableView->rootIndex()));
     else
         setTableRootIndex(index);
 }
@@ -441,14 +467,18 @@ QStringList UIVisoHostBrowser::selectedPathList() const
 
 void UIVisoHostBrowser::setTableRootIndex(QModelIndex index /* = QModelIndex */)
 {
-    if (!m_pTableView || !m_pModel)
-        return;
+    AssertReturnVoid(m_pTableView);
+    AssertReturnVoid(m_pModel);
+    AssertReturnVoid(m_pProxyModel);
+
     m_pTableView->setRootIndex(index);
     m_pTableView->clearSelection();
     QString strPath = m_pModel->filePath(m_pProxyModel->mapToSource(index));
     updateNavigationWidgetPath(strPath);
     if (m_pGoUp)
         m_pGoUp->setEnabled(!isRoot());
+
+    m_pTableView->sortByColumn(m_pProxyModel->sortColumn(), m_pProxyModel->sortOrder());
 }
 
 void UIVisoHostBrowser::setPathFromNavigationWidget(const QString &strPath)
