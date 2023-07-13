@@ -91,11 +91,11 @@ void shClSvcTransferDestroyAll(PSHCLCLIENT pClient)
  *
  * @returns VBox status code.
  * @param   pClient             Client to read from.
- * @param   idTransfer          Transfer ID to read root list header for.
+ * @param   pTransfer           Transfer to read root list header for.
  * @param   ppEvent             Where to return the event to wait for.
  *                              Must be released by the caller with ShClEventRelease().
  */
-int ShClSvcTransferGHRootListReadHdrAsync(PSHCLCLIENT pClient, SHCLTRANSFERID idTransfer, PSHCLEVENT *ppEvent)
+int ShClSvcTransferGHRootListReadHdrAsync(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, PSHCLEVENT *ppEvent)
 {
     LogFlowFuncEnter();
 
@@ -106,11 +106,11 @@ int ShClSvcTransferGHRootListReadHdrAsync(PSHCLCLIENT pClient, SHCLTRANSFERID id
     if (pMsgHdr)
     {
         PSHCLEVENT pEvent;
-        rc = ShClEventSourceGenerateAndRegisterEvent(&pClient->EventSrc, &pEvent);
+        rc = ShClEventSourceGenerateAndRegisterEvent(&pTransfer->Events, &pEvent);
         if (RT_SUCCESS(rc))
         {
             HGCMSvcSetU64(&pMsgHdr->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
-                                                                        idTransfer, pEvent->idEvent));
+                                                                        ShClTransferGetID(pTransfer), pEvent->idEvent));
             HGCMSvcSetU32(&pMsgHdr->aParms[1], 0 /* fRoots */);
 
             shClSvcClientLock(pClient);
@@ -149,13 +149,13 @@ int ShClSvcTransferGHRootListReadHdrAsync(PSHCLCLIENT pClient, SHCLTRANSFERID id
  *
  * @returns VBox status code.
  * @param   pClient             Client to read from.
- * @param   idTransfer          Transfer ID to read root list header for.
+ * @param   pTransfer           Transfer to read root list header for.
  * @param   pHdr                Where to store the root list header on succeess.
  */
-int ShClSvcTransferGHRootListReadHdr(PSHCLCLIENT pClient, SHCLTRANSFERID idTransfer, PSHCLLISTHDR pHdr)
+int ShClSvcTransferGHRootListReadHdr(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, PSHCLLISTHDR pHdr)
 {
     PSHCLEVENT pEvent;
-    int rc = ShClSvcTransferGHRootListReadHdrAsync(pClient, idTransfer, &pEvent);
+    int rc = ShClSvcTransferGHRootListReadHdrAsync(pClient, pTransfer, &pEvent);
     if (RT_SUCCESS(rc))
     {
         PSHCLEVENTPAYLOAD pPayload;
@@ -184,12 +184,12 @@ int ShClSvcTransferGHRootListReadHdr(PSHCLCLIENT pClient, SHCLTRANSFERID idTrans
  *
  * @returns VBox status code.
  * @param   pClient             Client to read from.
- * @param   idTransfer          Transfer ID to read root list header for.
+ * @param   pTransfer           Transfer to read root list header for.
  * @param   idxEntry            Index of entry to read.
  * @param   ppEvent             Where to return the event to wait for.
  *                              Must be released by the caller with ShClEventRelease().
  */
-int ShClSvcTransferGHRootListReadEntryAsync(PSHCLCLIENT pClient, SHCLTRANSFERID idTransfer, uint64_t idxEntry,
+int ShClSvcTransferGHRootListReadEntryAsync(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, uint64_t idxEntry,
                                             PSHCLEVENT *ppEvent)
 {
     LogFlowFuncEnter();
@@ -202,7 +202,7 @@ int ShClSvcTransferGHRootListReadEntryAsync(PSHCLCLIENT pClient, SHCLTRANSFERID 
     if (RT_SUCCESS(rc))
     {
         HGCMSvcSetU64(&pMsgEntry->aParms[0],
-                      VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uClientID, idTransfer, pEvent->idEvent));
+                      VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uClientID, ShClTransferGetID(pTransfer), pEvent->idEvent));
         HGCMSvcSetU32(&pMsgEntry->aParms[1], 0 /* fFeatures */);
         HGCMSvcSetU64(&pMsgEntry->aParms[2], idxEntry /* uIndex */);
 
@@ -236,17 +236,17 @@ int ShClSvcTransferGHRootListReadEntryAsync(PSHCLCLIENT pClient, SHCLTRANSFERID 
  *
  * @returns VBox status code.
  * @param   pClient             Client to read from.
- * @param   idTransfer          Transfer ID to read root list header for.
+ * @param   pTransfer           Transfer to read root list header for.
  * @param   idxEntry            Index of entry to read.
  * @param   ppListEntry         Where to return the allocated root list entry.
  */
-int ShClSvcTransferGHRootListReadEntry(PSHCLCLIENT pClient, SHCLTRANSFERID idTransfer, uint64_t idxEntry,
+int ShClSvcTransferGHRootListReadEntry(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, uint64_t idxEntry,
                                        PSHCLLISTENTRY *ppListEntry)
 {
     AssertPtrReturn(ppListEntry, VERR_INVALID_POINTER);
 
     PSHCLEVENT pEvent;
-    int rc = ShClSvcTransferGHRootListReadEntryAsync(pClient, idTransfer, idxEntry, &pEvent);
+    int rc = ShClSvcTransferGHRootListReadEntryAsync(pClient, pTransfer, idxEntry, &pEvent);
     if (RT_SUCCESS(rc))
     {
         PSHCLEVENTPAYLOAD pPayload;
@@ -278,16 +278,14 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHRootListRead(PSHCLTXPROVIDERCTX pCtx)
     PSHCLCLIENT pClient = (PSHCLCLIENT)pCtx->pvUser;
     AssertPtr(pClient);
 
-    SHCLTRANSFERID const idTransfer = ShClTransferGetID(pCtx->pTransfer);
-
     SHCLLISTHDR Hdr;
-    int rc = ShClSvcTransferGHRootListReadHdr(pClient, idTransfer, &Hdr);
+    int rc = ShClSvcTransferGHRootListReadHdr(pClient, pCtx->pTransfer, &Hdr);
     if (RT_SUCCESS(rc))
     {
         for (uint64_t i = 0; i < Hdr.cEntries; i++)
         {
             PSHCLLISTENTRY pEntry;
-            rc = ShClSvcTransferGHRootListReadEntry(pClient, idTransfer, i, &pEntry);
+            rc = ShClSvcTransferGHRootListReadEntry(pClient, pCtx->pTransfer, i, &pEntry);
             if (RT_SUCCESS(rc))
                 rc = ShClTransferListAddEntry(&pCtx->pTransfer->lstRoots, pEntry, true /* fAppend */);
 
@@ -316,7 +314,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHListOpen(PSHCLTXPROVIDERCTX pCtx,
     if (pMsg)
     {
         PSHCLEVENT pEvent;
-        rc = ShClEventSourceGenerateAndRegisterEvent(&pClient->EventSrc, &pEvent);
+        rc = ShClEventSourceGenerateAndRegisterEvent(&pCtx->pTransfer->Events, &pEvent);
         if (RT_SUCCESS(rc))
         {
             pMsg->idCtx = VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pCtx->pTransfer->State.uID,
@@ -384,7 +382,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHListClose(PSHCLTXPROVIDERCTX pCtx, SHCLL
     if (pMsg)
     {
         PSHCLEVENT pEvent;
-        rc = ShClEventSourceGenerateAndRegisterEvent(&pClient->EventSrc, &pEvent);
+        rc = ShClEventSourceGenerateAndRegisterEvent(&pCtx->pTransfer->Events, &pEvent);
         if (RT_SUCCESS(rc))
         {
             pMsg->idCtx = VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pCtx->pTransfer->State.uID,
@@ -440,7 +438,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHListHdrRead(PSHCLTXPROVIDERCTX pCtx,
     if (pMsg)
     {
         PSHCLEVENT pEvent;
-        rc = ShClEventSourceGenerateAndRegisterEvent(&pClient->EventSrc, &pEvent);
+        rc = ShClEventSourceGenerateAndRegisterEvent(&pCtx->pTransfer->Events, &pEvent);
         if (RT_SUCCESS(rc))
         {
             HGCMSvcSetU64(&pMsg->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
@@ -511,7 +509,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHListEntryRead(PSHCLTXPROVIDERCTX pCtx,
     if (pMsg)
     {
         PSHCLEVENT pEvent;
-        rc = ShClEventSourceGenerateAndRegisterEvent(&pClient->EventSrc, &pEvent);
+        rc = ShClEventSourceGenerateAndRegisterEvent(&pCtx->pTransfer->Events, &pEvent);
         if (RT_SUCCESS(rc))
         {
             HGCMSvcSetU64(&pMsg->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
@@ -581,7 +579,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHObjOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLOB
     if (pMsg)
     {
         PSHCLEVENT pEvent;
-        rc = ShClEventSourceGenerateAndRegisterEvent(&pClient->EventSrc, &pEvent);
+        rc = ShClEventSourceGenerateAndRegisterEvent(&pCtx->pTransfer->Events, &pEvent);
         if (RT_SUCCESS(rc))
         {
             LogFlowFunc(("pszPath=%s, fCreate=0x%x\n", pCreateParms->pszPath, pCreateParms->fCreate));
@@ -652,7 +650,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHObjClose(PSHCLTXPROVIDERCTX pCtx, SHCLOB
     if (pMsg)
     {
         PSHCLEVENT pEvent;
-        rc = ShClEventSourceGenerateAndRegisterEvent(&pClient->EventSrc, &pEvent);
+        rc = ShClEventSourceGenerateAndRegisterEvent(&pCtx->pTransfer->Events, &pEvent);
         if (RT_SUCCESS(rc))
         {
             HGCMSvcSetU64(&pMsg->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
@@ -716,7 +714,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHObjRead(PSHCLTXPROVIDERCTX pCtx, SHCLOBJ
     if (pMsg)
     {
         PSHCLEVENT pEvent;
-        rc = ShClEventSourceGenerateAndRegisterEvent(&pClient->EventSrc, &pEvent);
+        rc = ShClEventSourceGenerateAndRegisterEvent(&pCtx->pTransfer->Events, &pEvent);
         if (RT_SUCCESS(rc))
         {
             HGCMSvcSetU64(&pMsg->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
@@ -785,7 +783,7 @@ DECLCALLBACK(int) shClSvcTransferIfaceHGObjWrite(PSHCLTXPROVIDERCTX pCtx, SHCLOB
     if (pMsg)
     {
         PSHCLEVENT pEvent;
-        rc = ShClEventSourceGenerateAndRegisterEvent(&pClient->EventSrc, &pEvent);
+        rc = ShClEventSourceGenerateAndRegisterEvent(&pCtx->pTransfer->Events, &pEvent);
         if (RT_SUCCESS(rc))
         {
             HGCMSvcSetU64(&pMsg->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
@@ -2017,7 +2015,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
                 void    *pvData = ShClTransferObjDataChunkDup(&dataChunk);
                 uint32_t cbData = sizeof(SHCLOBJDATACHUNK);
 
-                const PSHCLEVENT pEvent = ShClEventSourceGetFromId(&pClient->EventSrc, VBOX_SHCL_CONTEXTID_GET_EVENT(uCID));
+                const PSHCLEVENT pEvent = ShClEventSourceGetFromId(&pTransfer->Events, VBOX_SHCL_CONTEXTID_GET_EVENT(uCID));
                 if (pEvent)
                 {
                     PSHCLEVENTPAYLOAD pPayload;
