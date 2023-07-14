@@ -25,7 +25,7 @@
 ; SPDX-License-Identifier: GPL-3.0-only
 ;
 
-LIBRARY @VBOX_LAZYLOAD_DEF_LIB_STRING@
+LIBRARY libX11.so.ignoredByDef2LazyLoad
 EXPORTS
     _XData32
     _XGetRequest

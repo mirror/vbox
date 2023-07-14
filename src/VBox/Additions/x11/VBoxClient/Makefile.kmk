@@ -208,18 +208,12 @@ ifdef VBOX_WITH_VBOXCLIENT_LAZY_LOAD
   VBoxClient_SOURCES       += \
   	$$(VBoxClient_0_OUTDIR)/$(2)LazyLoad.asm
   VBoxClient_CLEAN         += \
-  	$$(VBoxClient_0_OUTDIR)/$(2).def \
   	$$(VBoxClient_0_OUTDIR)/$(2)LazyLoad.asm
-  $$$$(VBoxClient_0_OUTDIR)/$(2).def: \
-  		$$(PATH_ROOT)/src/VBox/GuestHost/$(2).def $(MAKEFILE_CURRENT) | $$$$(dir $$@)
-	$$(call MSG_GENERATE,$(2).def,$$@,$$<)
-	$$(eval LIB_TO_LAZYLOAD_SUFF=$$$$(if $(3),$(SUFF_DLL).$(3),$(SUFF_DLL)))
-	$$(QUIET)$$(RM) -f $$@
-	$$(QUIET)$$(REDIRECT) -o $$@ -- $$(SED) -e "s+@VBOX_LAZYLOAD_DEF_LIB_STRING@+$(2)$$(LIB_TO_LAZYLOAD_SUFF)+g" $$(PATH_ROOT)/src/VBox/GuestHost/$(2).def
-  $$$$(VBoxClient_0_OUTDIR)/$(2)LazyLoad.asm: $$$$(VBoxClient_0_OUTDIR)/$(2).def $$(VBOX_DEF_2_LAZY_LOAD) | $$$$(dir $$@)
-	$$(call MSG_TOOL,VBoxDef2LazyLoad,VBoxClient,$$(VBoxClient_0_OUTDIR)/$(2).def -> $$@)
+  $$$$(VBoxClient_0_OUTDIR)/$(2)LazyLoad.asm: $$(PATH_ROOT)/src/VBox/GuestHost/$(2).def $(VBOX_DEF_2_LAZY_LOAD) | $$$$(dir $$@)
+	$$(call MSG_TOOL,VBoxDef2LazyLoad,$$(PATH_ROOT)/src/VBox/GuestHost/$(2).def,$$@)
+	$$(eval VBOX_VBOXCLIENT_LIB_TO_LAZYLOAD_SUFF=$$$$(if $(3),$(SUFF_DLL).$(3),$(SUFF_DLL)))
 	$$(QUIET)$$(RM) -f -- "$$@"
-	$$(QUIET)$$(VBOX_DEF_2_LAZY_LOAD) --system --library $(2)$(SUFF_DLL).$(3) --output "$$@" $$(VBoxClient_0_OUTDIR)/$(2).def
+	$$(VBOX_DEF_2_LAZY_LOAD) --system --library $(2)$$(VBOX_VBOXCLIENT_LIB_TO_LAZYLOAD_SUFF) --output "$$@" $$(PATH_ROOT)/src/VBox/GuestHost/$(2).def
  endef # VBOXCLIENT_LAZYLOAD_GEN_ASM_FN
 
  VBoxClient_DEFS    += VBOX_WITH_VBOXCLIENT_LAZY_LOAD

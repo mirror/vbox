@@ -24,7 +24,7 @@
 ;
 ; SPDX-License-Identifier: GPL-3.0-only
 ;
-LIBRARY @VBOX_LAZYLOAD_DEF_LIB_STRING@
+LIBRARY libXrandr.so.ignoredByDef2LazyLoad
 EXPORTS
     XRRAddOutputMode
     XRRAllocModeInfo
@@ -47,3 +47,4 @@ EXPORTS
     XRRSetOutputPrimary
     XRRSetScreenSize
     XRRUpdateConfiguration
+
