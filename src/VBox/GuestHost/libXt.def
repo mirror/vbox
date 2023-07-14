@@ -24,7 +24,7 @@
 ;
 ; SPDX-License-Identifier: GPL-3.0-only
 ;
-LIBRARY libXt.so.6
+LIBRARY @VBOX_LAZYLOAD_DEF_LIB_STRING@
 EXPORTS
     applicationShellWidgetClass         DATA
     XtShellStrings                      DATA
@@ -51,4 +51,3 @@ EXPORTS
     XtToolkitThreadInitialize
     XtVaAppCreateShell
     XtWindow
-
