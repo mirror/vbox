@@ -227,19 +227,19 @@ ifdef VBOX_WITH_VBOXCLIENT_LAZY_LOAD
  # Define library versions to use, depending on the OS we build for.
  # Note: Solaris does *not* have any of those libs with a version suffix, so simply keep those empty (= unset) then.
  if1of ($(KBUILD_TARGET), linux)
-  LIBX11_VER = 6
-  LIBXT_VER = 6
-  LIBXMU_VER = 6
-  LIBXRANDR_VER = 2
+  VBOX_VBOXCLIENT_LIBX11_VER = 6
+  VBOX_VBOXCLIENT_LIBXT_VER = 6
+  VBOX_VBOXCLIENT_LIBXMU_VER = 6
+  VBOX_VBOXCLIENT_LIBXRANDR_VER = 2
  endif
  ## Dynamic import no. 1: libX11.so.6
- $(evalcall2 def_libToLazyLoad,$(PATH_ROOT)/src/VBox/GuestHost/libX11.def,libX11,$(LIBX11_VER))
+ $(evalcall2 def_libToLazyLoad,$(PATH_ROOT)/src/VBox/GuestHost/libX11.def,libX11,$(VBOX_VBOXCLIENT_LIBX11_VER))
  ## Dynamic import no. 2: libXt.so.6
- $(evalcall2 def_libToLazyLoad,$(PATH_ROOT)/src/VBox/GuestHost/libXt.def,libXt,$(LIBXT_VER))
+ $(evalcall2 def_libToLazyLoad,$(PATH_ROOT)/src/VBox/GuestHost/libXt.def,libXt,$(VBOX_VBOXCLIENT_LIBXT_VER))
  ## Dynamic import no. 3: libXmu.so.6
- $(evalcall2 def_libToLazyLoad,$(PATH_ROOT)/src/VBox/GuestHost/libXmu.def,libXmu,$(LIBXMU_VER))
+ $(evalcall2 def_libToLazyLoad,$(PATH_ROOT)/src/VBox/GuestHost/libXmu.def,libXmu,$(VBOX_VBOXCLIENT_LIBXMU_VER))
  ## Dynamic import no. 4: libXrandr.so.2
- $(evalcall2 def_libToLazyLoad,$(PATH_ROOT)/src/VBox/GuestHost/libXrandr.def,libXrandr,$(LIBXRANDR_VER))
+ $(evalcall2 def_libToLazyLoad,$(PATH_ROOT)/src/VBox/GuestHost/libXrandr.def,libXrandr,$(VBOX_VBOXCLIENT_LIBXRANDR_VER))
 endif
 
 if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
