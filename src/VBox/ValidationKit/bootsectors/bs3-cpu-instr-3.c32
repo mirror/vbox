@@ -12926,7 +12926,7 @@ BS3_DECL(void) Main_pe32()
 #if defined(ALL_TESTS)
         { "vbroadcastss/vbroadcastsd/vbroadcastf128",       bs3CpuInstr3_vbroadcastss_vbroadcastsd_vbroadcastf128,   0 },
         { "vpbroadcastb/vpbroadcastw/vpbroadcastd/vpbroadcastq/vbroadcasti128",
-                                                            bs3CpuInstr3_vpbroadcastb_vpbroadcastw_vpbroadcastd_vpbroadcastq_vbroadcasti128,   0 }
+                                                            bs3CpuInstr3_vpbroadcastb_vpbroadcastw_vpbroadcastd_vpbroadcastq_vbroadcasti128,   0 },
 #endif
 #if defined (ALL_TESTS)
         { "vinserti128/vinsertf128",                        bs3CpuInstr3_vinserti128_vinsertf128, 0 },
