@@ -1562,23 +1562,17 @@ FNIEMOP_STUB(iemOp_vfnmsub231ss_d_Vx_Hx_Wx);
 /*  Opcode VEX.66.0F38 0xc6 - invalid. */
 /*  Opcode VEX.0F38 0xc7 - invalid. */
 /*  Opcode VEX.66.0F38 0xc7 - invalid. */
-/** Opcode VEX.0F38 0xc8. */
-FNIEMOP_STUB(iemOp_vsha1nexte_Vdq_Wdq);
+/*  Opcode VEX.0F38 0xc8 - invalid. */
 /*  Opcode VEX.66.0F38 0xc8 - invalid. */
-/** Opcode VEX.0F38 0xc9. */
-FNIEMOP_STUB(iemOp_vsha1msg1_Vdq_Wdq);
+/*  Opcode VEX.0F38 0xc9 - invalid. */
 /*  Opcode VEX.66.0F38 0xc9 - invalid. */
-/** Opcode VEX.0F38 0xca. */
-FNIEMOP_STUB(iemOp_vsha1msg2_Vdq_Wdq);
+/*  Opcode VEX.0F38 0xca. */
 /*  Opcode VEX.66.0F38 0xca - invalid. */
-/** Opcode VEX.0F38 0xcb. */
-FNIEMOP_STUB(iemOp_vsha256rnds2_Vdq_Wdq);
+/*  Opcode VEX.0F38 0xcb - invalid. */
 /*  Opcode VEX.66.0F38 0xcb - invalid. */
-/** Opcode VEX.0F38 0xcc. */
-FNIEMOP_STUB(iemOp_vsha256msg1_Vdq_Wdq);
+/*  Opcode VEX.0F38 0xcc - invalid. */
 /*  Opcode VEX.66.0F38 0xcc - invalid. */
-/** Opcode VEX.0F38 0xcd. */
-FNIEMOP_STUB(iemOp_vsha256msg2_Vdq_Wdq);
+/*  Opcode VEX.0F38 0xcd - invalid. */
 /*  Opcode VEX.66.0F38 0xcd - invalid. */
 /*  Opcode VEX.0F38 0xce - invalid. */
 /*  Opcode VEX.66.0F38 0xce - invalid. */
@@ -2569,12 +2563,12 @@ IEM_STATIC const PFNIEMOP g_apfnVexMap2[] =
     /* 0xc5 */  IEMOP_X4(iemOp_InvalidNeedRM),
     /* 0xc6 */  IEMOP_X4(iemOp_InvalidNeedRM),
     /* 0xc7 */  IEMOP_X4(iemOp_InvalidNeedRM),
-    /* 0xc8 */  iemOp_vsha1nexte_Vdq_Wdq,   iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xc9 */  iemOp_vsha1msg1_Vdq_Wdq,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xca */  iemOp_vsha1msg2_Vdq_Wdq,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xcb */  iemOp_vsha256rnds2_Vdq_Wdq, iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xcc */  iemOp_vsha256msg1_Vdq_Wdq,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xcd */  iemOp_vsha256msg2_Vdq_Wdq,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xc8 */  IEMOP_X4(iemOp_InvalidNeedRM),
+    /* 0xc9 */  IEMOP_X4(iemOp_InvalidNeedRM),
+    /* 0xca */  IEMOP_X4(iemOp_InvalidNeedRM),
+    /* 0xcb */  IEMOP_X4(iemOp_InvalidNeedRM),
+    /* 0xcc */  IEMOP_X4(iemOp_InvalidNeedRM),
+    /* 0xcd */  IEMOP_X4(iemOp_InvalidNeedRM),
     /* 0xce */  IEMOP_X4(iemOp_InvalidNeedRM),
     /* 0xcf */  IEMOP_X4(iemOp_InvalidNeedRM),
 

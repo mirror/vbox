@@ -856,8 +856,7 @@ FNIEMOP_STUB(iemOp_vfnmsubsd_Vx_Lx_Wx_Hx);
 /*  Opcode      0x0f 0xc9 - invalid */
 /*  Opcode      0x0f 0xca - invalid */
 /*  Opcode      0x0f 0xcb - invalid */
-/*  Opcode      0x0f 0xcc */
-FNIEMOP_STUB(iemOp_vsha1rnds4_Vdq_Wdq_Ib);
+/*  Opcode      0x0f 0xcc - invalid */
 /*  Opcode      0x0f 0xcd - invalid */
 /*  Opcode      0x0f 0xce - invalid */
 /*  Opcode      0x0f 0xcf - invalid */
@@ -1186,7 +1185,7 @@ IEM_STATIC const PFNIEMOP g_apfnVexMap3[] =
     /* 0xc9 */  IEMOP_X4(iemOp_InvalidNeedRMImm8),
     /* 0xca */  IEMOP_X4(iemOp_InvalidNeedRMImm8),
     /* 0xcb */  IEMOP_X4(iemOp_InvalidNeedRMImm8),
-    /* 0xcc */  iemOp_vsha1rnds4_Vdq_Wdq_Ib, iemOp_InvalidNeedRMImm8,  iemOp_InvalidNeedRMImm8,    iemOp_InvalidNeedRMImm8,
+    /* 0xcc */  IEMOP_X4(iemOp_InvalidNeedRMImm8),
     /* 0xcd */  IEMOP_X4(iemOp_InvalidNeedRMImm8),
     /* 0xce */  IEMOP_X4(iemOp_InvalidNeedRMImm8),
     /* 0xcf */  IEMOP_X4(iemOp_InvalidNeedRMImm8),
