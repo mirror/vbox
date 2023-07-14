@@ -4002,7 +4002,7 @@ static const DISOPCODE g_aDisasVexMap2_66[] =
     INVALID_OPCODE,
     OPVEX("vpbroadcastd %Vx,%Wx",           IDX_ParseModRM,    IDX_UseModRM,       0,                           0,          OP_VPBROADCASTD,    OP_PARM_Vx,   OP_PARM_Wx,   OP_PARM_NONE, OP_PARM_NONE, DISOPTYPE_HARMLESS),
     OPVEX("vpbroadcastq %Vx,%Wx",           IDX_ParseModRM,    IDX_UseModRM,       0,                           0,          OP_VPBROADCASTQ,    OP_PARM_Vx,   OP_PARM_Wx,   OP_PARM_NONE, OP_PARM_NONE, DISOPTYPE_HARMLESS),
-    OPVEX("vpbroadcasti128 %Vqq,%Mdq",      IDX_ParseModRM,    IDX_UseModRM,       0,                           0,          OP_VPBROADCASTI128, OP_PARM_Vqq,  OP_PARM_Mdq,  OP_PARM_NONE, OP_PARM_NONE, DISOPTYPE_HARMLESS),
+    OPVEX("vbroadcasti128 %Vqq,%Mdq",       IDX_ParseModRM,    IDX_UseModRM,       0,                           0,          OP_VBROADCASTI128,  OP_PARM_Vqq,  OP_PARM_Mdq,  OP_PARM_NONE, OP_PARM_NONE, DISOPTYPE_HARMLESS),
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
