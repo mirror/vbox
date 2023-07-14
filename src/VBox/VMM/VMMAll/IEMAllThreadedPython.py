@@ -53,7 +53,7 @@ g_kcThreadedParams = 3;
 
 g_kdTypeInfo = {
     # type name:    (cBits, fSigned, C-type       )
-    'int8_t':       (    8,    True, 'uint8_t',   ),
+    'int8_t':       (    8,    True, 'int8_t',    ),
     'int16_t':      (   16,    True, 'int16_t',   ),
     'int32_t':      (   32,    True, 'int32_t',   ),
     'int64_t':      (   64,    True, 'int64_t',   ),
