@@ -1598,10 +1598,10 @@ bool UIMessageCenter::proposeMountGuestAdditions(const QString &strUrl, const QS
                           tr("<p>The <b>VirtualBox Guest Additions</b> disk image file has been successfully downloaded "
                              "from <nobr><a href=\"%1\">%1</a></nobr> "
                              "and saved locally as <nobr><b>%2</b>.</nobr></p>"
-                             "<p>Do you wish to register this disk image file and insert it into the virtual optical drive?</p>")
+                             "<p>Do you wish to continue with Guest Additions installation?</p>")
                              .arg(strUrl, strSrc),
                           0 /* auto-confirm id */,
-                          tr("Insert", "additions"));
+                          tr("Continue", "additions"));
 }
 
 bool UIMessageCenter::confirmLookingForUserManual(const QString &strMissedLocation) const
