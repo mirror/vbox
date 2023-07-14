@@ -346,8 +346,59 @@ FNIEMOP_STUB(iemOp_vpextrw_RdMw_Vdq_Ib);
 FNIEMOP_STUB(iemOp_vpextrd_q_RdMw_Vdq_Ib);
 /** Opcode VEX.66.0F3A 0x17. */
 FNIEMOP_STUB(iemOp_vextractps_Ed_Vdq_Ib);
+
+
 /** Opcode VEX.66.0F3A 0x18 (vex only). */
-FNIEMOP_STUB(iemOp_vinsertf128_Vqq_Hqq_Wqq_Ib);
+FNIEMOP_DEF(iemOp_vinsertf128_Vqq_Hqq_Wqq_Ib)
+{
+    //IEMOP_MNEMONIC4(VEX_RMI, VINSERTF128, vinsertf128, Vx, Hx, Wx, Ib, DISOPTYPE_HARMLESS, 0);
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+        IEMOP_HLP_DONE_VEX_DECODING_L1_EX(fAvx2);
+
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(RTUINT128U,            uSrc);
+
+        IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+        IEM_MC_PREPARE_AVX_USAGE();
+
+        IEM_MC_FETCH_XREG_U128(uSrc,                                  IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_COPY_YREG_U256_ZX_VLMAX(IEM_GET_MODRM_REG(pVCpu, bRm), IEM_GET_EFFECTIVE_VVVV(pVCpu));
+        IEM_MC_STORE_YREG_U128(        IEM_GET_MODRM_REG(pVCpu, bRm), bImm & 1, uSrc);
+
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(RTUINT128U,            uSrc);
+        IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+        IEMOP_HLP_DONE_VEX_DECODING_L1_EX(fAvx2);
+        IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+        IEM_MC_PREPARE_AVX_USAGE();
+
+        IEM_MC_FETCH_MEM_U128(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+        IEM_MC_COPY_YREG_U256_ZX_VLMAX(IEM_GET_MODRM_REG(pVCpu, bRm), IEM_GET_EFFECTIVE_VVVV(pVCpu));
+        IEM_MC_STORE_YREG_U128(        IEM_GET_MODRM_REG(pVCpu, bRm), bImm & 1, uSrc);
+
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+}
+
+
 /** Opcode VEX.66.0F3A 0x19 (vex only). */
 FNIEMOP_STUB(iemOp_vextractf128_Wdq_Vqq_Ib);
 /*  Opcode VEX.66.0F3A 0x1a - invalid */
@@ -388,8 +439,59 @@ FNIEMOP_STUB(iemOp_vpinsrd_q_Vdq_Hdq_Ey_Ib);
 /*  Opcode VEX.66.0F3A 0x35 - invalid */
 /*  Opcode VEX.66.0F3A 0x36 - invalid */
 /*  Opcode VEX.66.0F3A 0x37 - invalid */
+
+
 /** Opcode VEX.66.0F3A 0x38 (vex only). */
-FNIEMOP_STUB(iemOp_vinserti128_Vqq_Hqq_Wqq_Ib);
+FNIEMOP_DEF(iemOp_vinserti128_Vqq_Hqq_Wqq_Ib)
+{
+    //IEMOP_MNEMONIC4(VEX_RMI, VINSERTI128, vinserti128, Vx, Hx, Wx, Ib, DISOPTYPE_HARMLESS, 0);
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if (IEM_IS_MODRM_REG_MODE(bRm))
+    {
+        /*
+         * Register, register.
+         */
+        uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+        IEMOP_HLP_DONE_VEX_DECODING_L1_EX(fAvx2);
+
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(RTUINT128U,            uSrc);
+
+        IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+        IEM_MC_PREPARE_AVX_USAGE();
+
+        IEM_MC_FETCH_XREG_U128(uSrc,                                  IEM_GET_MODRM_RM(pVCpu, bRm));
+        IEM_MC_COPY_YREG_U256_ZX_VLMAX(IEM_GET_MODRM_REG(pVCpu, bRm), IEM_GET_EFFECTIVE_VVVV(pVCpu));
+        IEM_MC_STORE_YREG_U128(        IEM_GET_MODRM_REG(pVCpu, bRm), bImm & 1, uSrc);
+
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(RTUINT128U,            uSrc);
+        IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+        IEMOP_HLP_DONE_VEX_DECODING_L1_EX(fAvx2);
+        IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
+        IEM_MC_PREPARE_AVX_USAGE();
+
+        IEM_MC_FETCH_MEM_U128(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+        IEM_MC_COPY_YREG_U256_ZX_VLMAX(IEM_GET_MODRM_REG(pVCpu, bRm), IEM_GET_EFFECTIVE_VVVV(pVCpu));
+        IEM_MC_STORE_YREG_U128(        IEM_GET_MODRM_REG(pVCpu, bRm), bImm & 1, uSrc);
+
+        IEM_MC_ADVANCE_RIP_AND_FINISH();
+        IEM_MC_END();
+    }
+}
+
+
 /** Opcode VEX.66.0F3A 0x39 (vex only). */
 FNIEMOP_STUB(iemOp_vextracti128_Wdq_Vqq_Ib);
 /*  Opcode VEX.66.0F3A 0x3a - invalid */
