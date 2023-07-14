@@ -422,9 +422,9 @@ void UIVisoCreatorWidget::sltOpenAction()
 {
     QWidget *pActive =  QApplication::activeWindow();
     AssertReturnVoid(pActive);
-
-    if (!msgCenter().confirmVisoDiscard(pActive))
-        return;
+    if (m_pVISOContentBrowser->hasContent())
+        if (!msgCenter().confirmVisoDiscard(pActive))
+            return;
     QString strFileName =  QIFileDialog::getOpenFileName(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD),
                                                          "VISO files (*.viso)", pActive, UIVisoCreatorWidget::tr("Select a VISO file to load"));
     if (!strFileName.isEmpty() && m_pVISOContentBrowser)

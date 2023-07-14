@@ -53,6 +53,7 @@
 #include <iprt/err.h>
 
 const ULONG uAllowedFileSize = _4K;
+const char *cRemoveText = ":remove:";
 
 struct ISOFileObject
 {
@@ -394,7 +395,7 @@ void UIVisoContentBrowser::createVisoEntry(const QString &strPath, const QString
         m_entryMap.insert(strPath, strLocalPath);
     }
     else
-        m_entryMap.insert(strPath, ":remove:");
+        m_entryMap.insert(strPath, cRemoveText);
 }
 
 QStringList UIVisoContentBrowser::entryList()
@@ -436,7 +437,7 @@ void UIVisoContentBrowser::tableViewItemDoubleClick(const QModelIndex &index)
         static_cast<UICustomFileSystemItem*>(m_pTableProxyModel->mapToSource(index).internalPointer());
     if (!pClickedItem)
         return;
-    if (!pClickedItem->isDirectory())
+    if (!pClickedItem->isDirectory() && !pClickedItem->isSymLinkToADirectory())
         return;
     /* Don't navigate into removed directories: */
     if (pClickedItem->isRemovedFromViso())
@@ -451,7 +452,7 @@ void UIVisoContentBrowser::tableViewItemDoubleClick(const QModelIndex &index)
     }
     else
     {
-        scanHostDirectory(pClickedItem);
+        scanHostDirectory(pClickedItem, false /* not recursive */);
         setTableRootIndex(index);
     }
 }
@@ -660,6 +661,13 @@ void UIVisoContentBrowser::setImportedISOPath(const QString &strPath /* = QStrin
     m_strImportedISOPath = strPath;
 }
 
+bool UIVisoContentBrowser::hasContent() const
+{
+    if (m_strImportedISOPath.isEmpty() && m_entryMap.isEmpty())
+        return false;
+    return true;
+}
+
 void UIVisoContentBrowser::prepareConnections()
 {
     UIVisoBrowserBase::prepareConnections();
@@ -810,6 +818,7 @@ void UIVisoContentBrowser::parseVisoFileContent(const QString &strFileName)
     list = strFileContent.split("\n", QString::SkipEmptyParts);
 #endif
     QMap<QString, QString> fileEntries;
+    QStringList removedEntries;
     foreach (const QString &strPart, list)
     {
         /* We currently do not support different on-ISO names for different namespaces. */
@@ -834,11 +843,14 @@ void UIVisoContentBrowser::parseVisoFileContent(const QString &strFileName)
             {
                 if (QFileInfo(fileEntry[1]).exists())
                     fileEntries[fileEntry[0]] = fileEntry[1];
+                else if (fileEntry[1] == cRemoveText)
+                    removedEntries.append(fileEntry[0]);
             }
         }
     }
     file.close();
     createLoadedFileEntries(fileEntries);
+    processRemovedEntries(removedEntries);
 }
 
 void UIVisoContentBrowser::createLoadedFileEntries(const QMap<QString, QString> &fileEntries)
@@ -862,7 +874,7 @@ void UIVisoContentBrowser::createLoadedFileEntries(const QMap<QString, QString> 
 
             UICustomFileSystemItem *pItem = searchItemByPath(strPath);
             KFsObjType enmObjectType;
-            /* All objects except possibly the last one are directories:*/
+            /* All objects, except possibly the last one, are directories:*/
             if (i == pathList.size() - 1)
                 enmObjectType = fileType(localFileObjectInfo);
             else
@@ -875,6 +887,9 @@ void UIVisoContentBrowser::createLoadedFileEntries(const QMap<QString, QString> 
 
                 if (i == pathList.size() - 1)
                     pItem->setData(strLocalPath, UICustomFileSystemModelData_LocalPath);
+                /* Pre-scan and populate the directory since we may need its content while processing removed items: */
+                if (enmObjectType == KFsObjType_Directory)
+                    scanHostDirectory(pItem, true  /* recursive */);
             }
             if (i == pathList.size() - 1)
                 createVisoEntry(pItem->path(), pItem->data(UICustomFileSystemModelData_LocalPath).toString(), false);
@@ -885,6 +900,14 @@ void UIVisoContentBrowser::createLoadedFileEntries(const QMap<QString, QString> 
     if (m_pTableProxyModel)
         m_pTableProxyModel->invalidate();
 
+}
+
+void UIVisoContentBrowser::processRemovedEntries(const QStringList &removedEntries)
+{
+    foreach (const QString &strPath, removedEntries)
+    {
+        QStringList path = UIPathOperations::pathTrail(strPath);
+    }
 }
 
 QModelIndex UIVisoContentBrowser::convertIndexToTableIndex(const QModelIndex &index)
@@ -899,34 +922,39 @@ QModelIndex UIVisoContentBrowser::convertIndexToTableIndex(const QModelIndex &in
     return QModelIndex();
 }
 
-void UIVisoContentBrowser::scanHostDirectory(UICustomFileSystemItem *directoryItem)
+void UIVisoContentBrowser::scanHostDirectory(UICustomFileSystemItem *directoryItem, bool fRecursive)
 {
     if (!directoryItem)
         return;
     /* the clicked item can be a directory created with the VISO content. in that case local path data
        should be empty: */
-    if (directoryItem->type() != KFsObjType_Directory ||
+    if ((directoryItem->type() != KFsObjType_Directory && !directoryItem->isSymLinkToADirectory()) ||
         directoryItem->data(UICustomFileSystemModelData_LocalPath).toString().isEmpty())
         return;
     QDir directory(directoryItem->data(UICustomFileSystemModelData_LocalPath).toString());
     if (directory.exists() && !directoryItem->isOpened())
     {
         QFileInfoList directoryContent = directory.entryInfoList();
+
         for (int i = 0; i < directoryContent.size(); ++i)
         {
             const QFileInfo &fileInfo = directoryContent[i];
             if (fileInfo.fileName() == ".")
                 continue;
+            KFsObjType enmType = fileType(fileInfo);
             UICustomFileSystemItem *newItem = new UICustomFileSystemItem(fileInfo.fileName(),
                                                                          directoryItem,
-                                                                         fileType(fileInfo));
+                                                                         enmType);
             newItem->setData(fileInfo.filePath(), UICustomFileSystemModelData_LocalPath);
-
             if (fileInfo.isSymLink())
             {
                 newItem->setTargetPath(fileInfo.symLinkTarget());
                 newItem->setIsSymLinkToADirectory(QFileInfo(fileInfo.symLinkTarget()).isDir());
             }
+            /* Do not recurse into sysmlinks since it may end up infinite recursion: */
+            if (fRecursive && enmType == KFsObjType_Directory && !newItem->isUpDirectory())
+                scanHostDirectory(newItem, true);
+
         }
         directoryItem->setIsOpened(true);
     }
@@ -1003,7 +1031,7 @@ void UIVisoContentBrowser::sltItemRenameAttempt(UICustomFileSystemItem *pItem, c
         m_entryMap.insert(strNewPath, pItem->data(UICustomFileSystemModelData_LocalPath).toString());
         m_entryMap.remove(strOldPath);
         if (!pItem->data(UICustomFileSystemModelData_LocalPath).toString().isEmpty())
-            m_entryMap.insert(strOldPath, ":remove:");
+            m_entryMap.insert(strOldPath, cRemoveText);
     }
 
     if (m_pTableProxyModel)
