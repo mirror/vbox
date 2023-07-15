@@ -1464,33 +1464,33 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     } while (0)
 
 /** Pushes FPU result onto the stack. */
-#define IEM_MC_PUSH_FPU_RESULT(a_FpuData) \
-    iemFpuPushResult(pVCpu, &a_FpuData)
+#define IEM_MC_PUSH_FPU_RESULT(a_FpuData, a_uFpuOpcode) \
+    iemFpuPushResult(pVCpu, &a_FpuData, a_uFpuOpcode)
 /** Pushes FPU result onto the stack and sets the FPUDP. */
-#define IEM_MC_PUSH_FPU_RESULT_MEM_OP(a_FpuData, a_iEffSeg, a_GCPtrEff) \
-    iemFpuPushResultWithMemOp(pVCpu, &a_FpuData, a_iEffSeg, a_GCPtrEff)
+#define IEM_MC_PUSH_FPU_RESULT_MEM_OP(a_FpuData, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode) \
+    iemFpuPushResultWithMemOp(pVCpu, &a_FpuData, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode)
 
 /** Replaces ST0 with value one and pushes value 2 onto the FPU stack. */
-#define IEM_MC_PUSH_FPU_RESULT_TWO(a_FpuDataTwo) \
-    iemFpuPushResultTwo(pVCpu, &a_FpuDataTwo)
+#define IEM_MC_PUSH_FPU_RESULT_TWO(a_FpuDataTwo, a_uFpuOpcode) \
+    iemFpuPushResultTwo(pVCpu, &a_FpuDataTwo, a_uFpuOpcode)
 
 /** Stores FPU result in a stack register. */
-#define IEM_MC_STORE_FPU_RESULT(a_FpuData, a_iStReg) \
-    iemFpuStoreResult(pVCpu, &a_FpuData, a_iStReg)
+#define IEM_MC_STORE_FPU_RESULT(a_FpuData, a_iStReg, a_uFpuOpcode) \
+    iemFpuStoreResult(pVCpu, &a_FpuData, a_iStReg, a_uFpuOpcode)
 /** Stores FPU result in a stack register and pops the stack. */
-#define IEM_MC_STORE_FPU_RESULT_THEN_POP(a_FpuData, a_iStReg) \
-    iemFpuStoreResultThenPop(pVCpu, &a_FpuData, a_iStReg)
+#define IEM_MC_STORE_FPU_RESULT_THEN_POP(a_FpuData, a_iStReg, a_uFpuOpcode) \
+    iemFpuStoreResultThenPop(pVCpu, &a_FpuData, a_iStReg, a_uFpuOpcode)
 /** Stores FPU result in a stack register and sets the FPUDP. */
-#define IEM_MC_STORE_FPU_RESULT_MEM_OP(a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff) \
-    iemFpuStoreResultWithMemOp(pVCpu, &a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff)
+#define IEM_MC_STORE_FPU_RESULT_MEM_OP(a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode) \
+    iemFpuStoreResultWithMemOp(pVCpu, &a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode)
 /** Stores FPU result in a stack register, sets the FPUDP, and pops the
  *  stack. */
-#define IEM_MC_STORE_FPU_RESULT_WITH_MEM_OP_THEN_POP(a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff) \
-    iemFpuStoreResultWithMemOpThenPop(pVCpu, &a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff)
+#define IEM_MC_STORE_FPU_RESULT_WITH_MEM_OP_THEN_POP(a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode) \
+    iemFpuStoreResultWithMemOpThenPop(pVCpu, &a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode)
 
 /** Only update the FOP, FPUIP, and FPUCS. (For FNOP.) */
-#define IEM_MC_UPDATE_FPU_OPCODE_IP() \
-    iemFpuUpdateOpcodeAndIp(pVCpu)
+#define IEM_MC_UPDATE_FPU_OPCODE_IP(a_uFpuOpcode) \
+    iemFpuUpdateOpcodeAndIp(pVCpu, a_uFpuOpcode)
 /** Free a stack register (for FFREE and FFREEP). */
 #define IEM_MC_FPU_STACK_FREE(a_iStReg) \
     iemFpuStackFree(pVCpu, a_iStReg)
@@ -1502,61 +1502,61 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     iemFpuStackDecTop(pVCpu)
 
 /** Updates the FSW, FOP, FPUIP, and FPUCS. */
-#define IEM_MC_UPDATE_FSW(a_u16FSW) \
-    iemFpuUpdateFSW(pVCpu, a_u16FSW)
+#define IEM_MC_UPDATE_FSW(a_u16FSW, a_uFpuOpcode) \
+    iemFpuUpdateFSW(pVCpu, a_u16FSW, a_uFpuOpcode)
 /** Updates the FSW with a constant value as well as FOP, FPUIP, and FPUCS. */
-#define IEM_MC_UPDATE_FSW_CONST(a_u16FSW) \
-    iemFpuUpdateFSW(pVCpu, a_u16FSW)
+#define IEM_MC_UPDATE_FSW_CONST(a_u16FSW, a_uFpuOpcode) \
+    iemFpuUpdateFSW(pVCpu, a_u16FSW, a_uFpuOpcode)
 /** Updates the FSW, FOP, FPUIP, FPUCS, FPUDP, and FPUDS. */
-#define IEM_MC_UPDATE_FSW_WITH_MEM_OP(a_u16FSW, a_iEffSeg, a_GCPtrEff) \
-    iemFpuUpdateFSWWithMemOp(pVCpu, a_u16FSW, a_iEffSeg, a_GCPtrEff)
+#define IEM_MC_UPDATE_FSW_WITH_MEM_OP(a_u16FSW, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode) \
+    iemFpuUpdateFSWWithMemOp(pVCpu, a_u16FSW, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode)
 /** Updates the FSW, FOP, FPUIP, and FPUCS, and then pops the stack. */
-#define IEM_MC_UPDATE_FSW_THEN_POP(a_u16FSW) \
-    iemFpuUpdateFSWThenPop(pVCpu, a_u16FSW)
+#define IEM_MC_UPDATE_FSW_THEN_POP(a_u16FSW, a_uFpuOpcode) \
+    iemFpuUpdateFSWThenPop(pVCpu, a_u16FSW, a_uFpuOpcode)
 /** Updates the FSW, FOP, FPUIP, FPUCS, FPUDP and FPUDS, and then pops the
  *  stack. */
-#define IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(a_u16FSW, a_iEffSeg, a_GCPtrEff) \
-    iemFpuUpdateFSWWithMemOpThenPop(pVCpu, a_u16FSW, a_iEffSeg, a_GCPtrEff)
+#define IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(a_u16FSW, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode) \
+    iemFpuUpdateFSWWithMemOpThenPop(pVCpu, a_u16FSW, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode)
 /** Updates the FSW, FOP, FPUIP, and FPUCS, and then pops the stack twice. */
-#define IEM_MC_UPDATE_FSW_THEN_POP_POP(a_u16FSW) \
-    iemFpuUpdateFSWThenPopPop(pVCpu, a_u16FSW)
+#define IEM_MC_UPDATE_FSW_THEN_POP_POP(a_u16FSW, a_uFpuOpcode) \
+    iemFpuUpdateFSWThenPopPop(pVCpu, a_u16FSW, a_uFpuOpcode)
 
 /** Raises a FPU stack underflow exception.  Sets FPUIP, FPUCS and FOP. */
-#define IEM_MC_FPU_STACK_UNDERFLOW(a_iStDst) \
-    iemFpuStackUnderflow(pVCpu, a_iStDst)
+#define IEM_MC_FPU_STACK_UNDERFLOW(a_iStDst, a_uFpuOpcode) \
+    iemFpuStackUnderflow(pVCpu, a_iStDst, a_uFpuOpcode)
 /** Raises a FPU stack underflow exception.  Sets FPUIP, FPUCS and FOP. Pops
  *  stack. */
-#define IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(a_iStDst) \
-    iemFpuStackUnderflowThenPop(pVCpu, a_iStDst)
+#define IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(a_iStDst, a_uFpuOpcode) \
+    iemFpuStackUnderflowThenPop(pVCpu, a_iStDst, a_uFpuOpcode)
 /** Raises a FPU stack underflow exception.  Sets FPUIP, FPUCS, FOP, FPUDP and
  *  FPUDS. */
-#define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(a_iStDst, a_iEffSeg, a_GCPtrEff) \
-    iemFpuStackUnderflowWithMemOp(pVCpu, a_iStDst, a_iEffSeg, a_GCPtrEff)
+#define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(a_iStDst, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode) \
+    iemFpuStackUnderflowWithMemOp(pVCpu, a_iStDst, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode)
 /** Raises a FPU stack underflow exception.  Sets FPUIP, FPUCS, FOP, FPUDP and
  *  FPUDS. Pops stack. */
-#define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(a_iStDst, a_iEffSeg, a_GCPtrEff) \
-    iemFpuStackUnderflowWithMemOpThenPop(pVCpu, a_iStDst, a_iEffSeg, a_GCPtrEff)
+#define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(a_iStDst, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode) \
+    iemFpuStackUnderflowWithMemOpThenPop(pVCpu, a_iStDst, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode)
 /** Raises a FPU stack underflow exception.  Sets FPUIP, FPUCS and FOP. Pops
  *  stack twice. */
-#define IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP_POP() \
-    iemFpuStackUnderflowThenPopPop(pVCpu)
+#define IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP_POP(a_uFpuOpcode) \
+    iemFpuStackUnderflowThenPopPop(pVCpu, a_uFpuOpcode)
 /** Raises a FPU stack underflow exception for an instruction pushing a result
  *  value onto the stack. Sets FPUIP, FPUCS and FOP. */
-#define IEM_MC_FPU_STACK_PUSH_UNDERFLOW() \
-    iemFpuStackPushUnderflow(pVCpu)
+#define IEM_MC_FPU_STACK_PUSH_UNDERFLOW(a_uFpuOpcode) \
+    iemFpuStackPushUnderflow(pVCpu, a_uFpuOpcode)
 /** Raises a FPU stack underflow exception for an instruction pushing a result
  *  value onto the stack and replacing ST0. Sets FPUIP, FPUCS and FOP. */
-#define IEM_MC_FPU_STACK_PUSH_UNDERFLOW_TWO() \
-    iemFpuStackPushUnderflowTwo(pVCpu)
+#define IEM_MC_FPU_STACK_PUSH_UNDERFLOW_TWO(a_uFpuOpcode) \
+    iemFpuStackPushUnderflowTwo(pVCpu, a_uFpuOpcode)
 
 /** Raises a FPU stack overflow exception as part of a push attempt.  Sets
  *  FPUIP, FPUCS and FOP. */
-#define IEM_MC_FPU_STACK_PUSH_OVERFLOW() \
-    iemFpuStackPushOverflow(pVCpu)
+#define IEM_MC_FPU_STACK_PUSH_OVERFLOW(a_uFpuOpcode) \
+    iemFpuStackPushOverflow(pVCpu, a_uFpuOpcode)
 /** Raises a FPU stack overflow exception as part of a push attempt.  Sets
  *  FPUIP, FPUCS, FOP, FPUDP and FPUDS. */
-#define IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(a_iEffSeg, a_GCPtrEff) \
-    iemFpuStackPushOverflowWithMemOp(pVCpu, a_iEffSeg, a_GCPtrEff)
+#define IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(a_iEffSeg, a_GCPtrEff, a_uFpuOpcode) \
+    iemFpuStackPushOverflowWithMemOp(pVCpu, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode)
 /** Prepares for using the FPU state.
  * Ensures that we can use the host FPU in the current context (RC+R0.
  * Ensures the guest FPU state in the CPUMCTX is up to date. */

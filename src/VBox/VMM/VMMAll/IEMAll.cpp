@@ -4930,11 +4930,12 @@ static void iemFpuMaybePopOne(PX86FXSTATE pFpuCtx) RT_NOEXCEPT
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pResult             The FPU operation result to push.
+ * @param   uFpuOpcode          The FPU opcode value.
  */
-void iemFpuPushResult(PVMCPUCC pVCpu, PIEMFPURESULT pResult) RT_NOEXCEPT
+void iemFpuPushResult(PVMCPUCC pVCpu, PIEMFPURESULT pResult, uint16_t uFpuOpcode) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
-    iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
+    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, uFpuOpcode);
     iemFpuMaybePushResult(pVCpu, pResult, pFpuCtx);
 }
 
@@ -4947,12 +4948,14 @@ void iemFpuPushResult(PVMCPUCC pVCpu, PIEMFPURESULT pResult) RT_NOEXCEPT
  * @param   pResult             The FPU operation result to push.
  * @param   iEffSeg             The effective segment register.
  * @param   GCPtrEff            The effective address relative to @a iEffSeg.
+ * @param   uFpuOpcode          The FPU opcode value.
  */
-void iemFpuPushResultWithMemOp(PVMCPUCC pVCpu, PIEMFPURESULT pResult, uint8_t iEffSeg, RTGCPTR GCPtrEff) RT_NOEXCEPT
+void iemFpuPushResultWithMemOp(PVMCPUCC pVCpu, PIEMFPURESULT pResult, uint8_t iEffSeg, RTGCPTR GCPtrEff,
+                               uint16_t uFpuOpcode) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateDP(pVCpu, pFpuCtx, iEffSeg, GCPtrEff);
-    iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
+    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, uFpuOpcode);
     iemFpuMaybePushResult(pVCpu, pResult, pFpuCtx);
 }
 
@@ -4963,11 +4966,12 @@ void iemFpuPushResultWithMemOp(PVMCPUCC pVCpu, PIEMFPURESULT pResult, uint8_t iE
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pResult             The FPU operation result to store and push.
+ * @param   uFpuOpcode          The FPU opcode value.
  */
-void iemFpuPushResultTwo(PVMCPUCC pVCpu, PIEMFPURESULTTWO pResult) RT_NOEXCEPT
+void iemFpuPushResultTwo(PVMCPUCC pVCpu, PIEMFPURESULTTWO pResult, uint16_t uFpuOpcode) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
-    iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
+    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, uFpuOpcode);
 
     /* Update FSW and bail if there are pending exceptions afterwards. */
     uint16_t fFsw = pFpuCtx->FSW & ~X86_FSW_C_MASK;
@@ -5022,11 +5026,12 @@ void iemFpuPushResultTwo(PVMCPUCC pVCpu, PIEMFPURESULTTWO pResult) RT_NOEXCEPT
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pResult             The result to store.
  * @param   iStReg              Which FPU register to store it in.
+ * @param   uFpuOpcode          The FPU opcode value.
  */
-void iemFpuStoreResult(PVMCPUCC pVCpu, PIEMFPURESULT pResult, uint8_t iStReg) RT_NOEXCEPT
+void iemFpuStoreResult(PVMCPUCC pVCpu, PIEMFPURESULT pResult, uint8_t iStReg, uint16_t uFpuOpcode) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
-    iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
+    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, uFpuOpcode);
     iemFpuStoreResultOnly(pVCpu, pFpuCtx, pResult, iStReg);
 }
 
@@ -5038,11 +5043,12 @@ void iemFpuStoreResult(PVMCPUCC pVCpu, PIEMFPURESULT pResult, uint8_t iStReg) RT
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   pResult             The result to store.
  * @param   iStReg              Which FPU register to store it in.
+ * @param   uFpuOpcode          The FPU opcode value.
  */
-void iemFpuStoreResultThenPop(PVMCPUCC pVCpu, PIEMFPURESULT pResult, uint8_t iStReg) RT_NOEXCEPT
+void iemFpuStoreResultThenPop(PVMCPUCC pVCpu, PIEMFPURESULT pResult, uint8_t iStReg, uint16_t uFpuOpcode) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
-    iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
+    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, uFpuOpcode);
     iemFpuStoreResultOnly(pVCpu, pFpuCtx, pResult, iStReg);
     iemFpuMaybePopOne(pFpuCtx);
 }
@@ -5057,13 +5063,14 @@ void iemFpuStoreResultThenPop(PVMCPUCC pVCpu, PIEMFPURESULT pResult, uint8_t iSt
  * @param   iStReg              Which FPU register to store it in.
  * @param   iEffSeg             The effective memory operand selector register.
  * @param   GCPtrEff            The effective memory operand offset.
+ * @param   uFpuOpcode          The FPU opcode value.
  */
 void iemFpuStoreResultWithMemOp(PVMCPUCC pVCpu, PIEMFPURESULT pResult, uint8_t iStReg,
-                                uint8_t iEffSeg, RTGCPTR GCPtrEff) RT_NOEXCEPT
+                                uint8_t iEffSeg, RTGCPTR GCPtrEff, uint16_t uFpuOpcode) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateDP(pVCpu, pFpuCtx, iEffSeg, GCPtrEff);
-    iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
+    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, uFpuOpcode);
     iemFpuStoreResultOnly(pVCpu, pFpuCtx, pResult, iStReg);
 }
 
@@ -5077,13 +5084,14 @@ void iemFpuStoreResultWithMemOp(PVMCPUCC pVCpu, PIEMFPURESULT pResult, uint8_t i
  * @param   iStReg              Which FPU register to store it in.
  * @param   iEffSeg             The effective memory operand selector register.
  * @param   GCPtrEff            The effective memory operand offset.
+ * @param   uFpuOpcode          The FPU opcode value.
  */
 void iemFpuStoreResultWithMemOpThenPop(PVMCPUCC pVCpu, PIEMFPURESULT pResult,
-                                       uint8_t iStReg, uint8_t iEffSeg, RTGCPTR GCPtrEff) RT_NOEXCEPT
+                                       uint8_t iStReg, uint8_t iEffSeg, RTGCPTR GCPtrEff, uint16_t uFpuOpcode) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateDP(pVCpu, pFpuCtx, iEffSeg, GCPtrEff);
-    iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
+    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, uFpuOpcode);
     iemFpuStoreResultOnly(pVCpu, pFpuCtx, pResult, iStReg);
     iemFpuMaybePopOne(pFpuCtx);
 }
@@ -5093,11 +5101,12 @@ void iemFpuStoreResultWithMemOpThenPop(PVMCPUCC pVCpu, PIEMFPURESULT pResult,
  * Updates the FOP, FPUIP, and FPUCS.  For FNOP.
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   uFpuOpcode          The FPU opcode value.
  */
-void iemFpuUpdateOpcodeAndIp(PVMCPUCC pVCpu) RT_NOEXCEPT
+void iemFpuUpdateOpcodeAndIp(PVMCPUCC pVCpu, uint16_t uFpuOpcode) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
-    iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
+    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, uFpuOpcode);
 }
 
 
@@ -5106,11 +5115,12 @@ void iemFpuUpdateOpcodeAndIp(PVMCPUCC pVCpu) RT_NOEXCEPT
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   u16FSW              The FSW from the current instruction.
+ * @param   uFpuOpcode          The FPU opcode value.
  */
-void iemFpuUpdateFSW(PVMCPUCC pVCpu, uint16_t u16FSW) RT_NOEXCEPT
+void iemFpuUpdateFSW(PVMCPUCC pVCpu, uint16_t u16FSW, uint16_t uFpuOpcode) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
-    iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
+    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, uFpuOpcode);
     iemFpuUpdateFSWOnly(pVCpu, pFpuCtx, u16FSW);
 }
 
@@ -5120,11 +5130,12 @@ void iemFpuUpdateFSW(PVMCPUCC pVCpu, uint16_t u16FSW) RT_NOEXCEPT
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   u16FSW              The FSW from the current instruction.
+ * @param   uFpuOpcode          The FPU opcode value.
  */
-void iemFpuUpdateFSWThenPop(PVMCPUCC pVCpu, uint16_t u16FSW) RT_NOEXCEPT
+void iemFpuUpdateFSWThenPop(PVMCPUCC pVCpu, uint16_t u16FSW, uint16_t uFpuOpcode) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
-    iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
+    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, uFpuOpcode);
     iemFpuUpdateFSWOnly(pVCpu, pFpuCtx, u16FSW);
     iemFpuMaybePopOne(pFpuCtx);
 }
@@ -5137,12 +5148,13 @@ void iemFpuUpdateFSWThenPop(PVMCPUCC pVCpu, uint16_t u16FSW) RT_NOEXCEPT
  * @param   u16FSW              The FSW from the current instruction.
  * @param   iEffSeg             The effective memory operand selector register.
  * @param   GCPtrEff            The effective memory operand offset.
+ * @param   uFpuOpcode          The FPU opcode value.
  */
-void iemFpuUpdateFSWWithMemOp(PVMCPUCC pVCpu, uint16_t u16FSW, uint8_t iEffSeg, RTGCPTR GCPtrEff) RT_NOEXCEPT
+void iemFpuUpdateFSWWithMemOp(PVMCPUCC pVCpu, uint16_t u16FSW, uint8_t iEffSeg, RTGCPTR GCPtrEff, uint16_t uFpuOpcode) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateDP(pVCpu, pFpuCtx, iEffSeg, GCPtrEff);
-    iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
+    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, uFpuOpcode);
     iemFpuUpdateFSWOnly(pVCpu, pFpuCtx, u16FSW);
 }
 
@@ -5152,11 +5164,12 @@ void iemFpuUpdateFSWWithMemOp(PVMCPUCC pVCpu, uint16_t u16FSW, uint8_t iEffSeg, 
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   u16FSW              The FSW from the current instruction.
+ * @param   uFpuOpcode          The FPU opcode value.
  */
-void iemFpuUpdateFSWThenPopPop(PVMCPUCC pVCpu, uint16_t u16FSW) RT_NOEXCEPT
+void iemFpuUpdateFSWThenPopPop(PVMCPUCC pVCpu, uint16_t u16FSW, uint16_t uFpuOpcode) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
-    iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
+    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, uFpuOpcode);
     iemFpuUpdateFSWOnly(pVCpu, pFpuCtx, u16FSW);
     iemFpuMaybePopOne(pFpuCtx);
     iemFpuMaybePopOne(pFpuCtx);
@@ -5170,12 +5183,14 @@ void iemFpuUpdateFSWThenPopPop(PVMCPUCC pVCpu, uint16_t u16FSW) RT_NOEXCEPT
  * @param   u16FSW              The FSW from the current instruction.
  * @param   iEffSeg             The effective memory operand selector register.
  * @param   GCPtrEff            The effective memory operand offset.
+ * @param   uFpuOpcode          The FPU opcode value.
  */
-void iemFpuUpdateFSWWithMemOpThenPop(PVMCPUCC pVCpu, uint16_t u16FSW, uint8_t iEffSeg, RTGCPTR GCPtrEff) RT_NOEXCEPT
+void iemFpuUpdateFSWWithMemOpThenPop(PVMCPUCC pVCpu, uint16_t u16FSW, uint8_t iEffSeg, RTGCPTR GCPtrEff,
+                                     uint16_t uFpuOpcode) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateDP(pVCpu, pFpuCtx, iEffSeg, GCPtrEff);
-    iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
+    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, uFpuOpcode);
     iemFpuUpdateFSWOnly(pVCpu, pFpuCtx, u16FSW);
     iemFpuMaybePopOne(pFpuCtx);
 }
@@ -5221,57 +5236,59 @@ static void iemFpuStackUnderflowOnly(PVMCPU pVCpu, PX86FXSTATE pFpuCtx, uint8_t 
  * @param   iStReg              The destination register that should be loaded
  *                              with QNaN if \#IS is not masked. Specify
  *                              UINT8_MAX if none (like for fcom).
+ * @param   uFpuOpcode          The FPU opcode value.
  */
-void iemFpuStackUnderflow(PVMCPUCC pVCpu, uint8_t iStReg) RT_NOEXCEPT
+void iemFpuStackUnderflow(PVMCPUCC pVCpu, uint8_t iStReg, uint16_t uFpuOpcode) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
-    iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
+    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, uFpuOpcode);
     iemFpuStackUnderflowOnly(pVCpu, pFpuCtx, iStReg);
 }
 
 
-void iemFpuStackUnderflowWithMemOp(PVMCPUCC pVCpu, uint8_t iStReg, uint8_t iEffSeg, RTGCPTR GCPtrEff) RT_NOEXCEPT
+void iemFpuStackUnderflowWithMemOp(PVMCPUCC pVCpu, uint8_t iStReg, uint8_t iEffSeg, RTGCPTR GCPtrEff, uint16_t uFpuOpcode) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateDP(pVCpu, pFpuCtx, iEffSeg, GCPtrEff);
-    iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
+    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, uFpuOpcode);
     iemFpuStackUnderflowOnly(pVCpu, pFpuCtx, iStReg);
 }
 
 
-void iemFpuStackUnderflowThenPop(PVMCPUCC pVCpu, uint8_t iStReg) RT_NOEXCEPT
+void iemFpuStackUnderflowThenPop(PVMCPUCC pVCpu, uint8_t iStReg, uint16_t uFpuOpcode) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
-    iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
+    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, uFpuOpcode);
     iemFpuStackUnderflowOnly(pVCpu, pFpuCtx, iStReg);
     iemFpuMaybePopOne(pFpuCtx);
 }
 
 
-void iemFpuStackUnderflowWithMemOpThenPop(PVMCPUCC pVCpu, uint8_t iStReg, uint8_t iEffSeg, RTGCPTR GCPtrEff) RT_NOEXCEPT
+void iemFpuStackUnderflowWithMemOpThenPop(PVMCPUCC pVCpu, uint8_t iStReg, uint8_t iEffSeg, RTGCPTR GCPtrEff,
+                                          uint16_t uFpuOpcode) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateDP(pVCpu, pFpuCtx, iEffSeg, GCPtrEff);
-    iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
+    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, uFpuOpcode);
     iemFpuStackUnderflowOnly(pVCpu, pFpuCtx, iStReg);
     iemFpuMaybePopOne(pFpuCtx);
 }
 
 
-void iemFpuStackUnderflowThenPopPop(PVMCPUCC pVCpu) RT_NOEXCEPT
+void iemFpuStackUnderflowThenPopPop(PVMCPUCC pVCpu, uint16_t uFpuOpcode) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
-    iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
+    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, uFpuOpcode);
     iemFpuStackUnderflowOnly(pVCpu, pFpuCtx, UINT8_MAX);
     iemFpuMaybePopOne(pFpuCtx);
     iemFpuMaybePopOne(pFpuCtx);
 }
 
 
-void iemFpuStackPushUnderflow(PVMCPUCC pVCpu) RT_NOEXCEPT
+void iemFpuStackPushUnderflow(PVMCPUCC pVCpu, uint16_t uFpuOpcode) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
-    iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
+    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, uFpuOpcode);
 
     if (pFpuCtx->FCW & X86_FCW_IM)
     {
@@ -5295,10 +5312,10 @@ void iemFpuStackPushUnderflow(PVMCPUCC pVCpu) RT_NOEXCEPT
 }
 
 
-void iemFpuStackPushUnderflowTwo(PVMCPUCC pVCpu) RT_NOEXCEPT
+void iemFpuStackPushUnderflowTwo(PVMCPUCC pVCpu, uint16_t uFpuOpcode) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
-    iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
+    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, uFpuOpcode);
 
     if (pFpuCtx->FCW & X86_FCW_IM)
     {
@@ -5359,10 +5376,10 @@ static void iemFpuStackPushOverflowOnly(PVMCPU pVCpu, PX86FXSTATE pFpuCtx) RT_NO
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-void iemFpuStackPushOverflow(PVMCPUCC pVCpu) RT_NOEXCEPT
+void iemFpuStackPushOverflow(PVMCPUCC pVCpu, uint16_t uFpuOpcode) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
-    iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
+    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, uFpuOpcode);
     iemFpuStackPushOverflowOnly(pVCpu, pFpuCtx);
 }
 
@@ -5374,11 +5391,11 @@ void iemFpuStackPushOverflow(PVMCPUCC pVCpu) RT_NOEXCEPT
  * @param   iEffSeg             The effective memory operand selector register.
  * @param   GCPtrEff            The effective memory operand offset.
  */
-void iemFpuStackPushOverflowWithMemOp(PVMCPUCC pVCpu, uint8_t iEffSeg, RTGCPTR GCPtrEff) RT_NOEXCEPT
+void iemFpuStackPushOverflowWithMemOp(PVMCPUCC pVCpu, uint8_t iEffSeg, RTGCPTR GCPtrEff, uint16_t uFpuOpcode) RT_NOEXCEPT
 {
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
     iemFpuUpdateDP(pVCpu, pFpuCtx, iEffSeg, GCPtrEff);
-    iemFpuUpdateOpcodeAndIpWorker(pVCpu, pFpuCtx);
+    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, uFpuOpcode);
     iemFpuStackPushOverflowOnly(pVCpu, pFpuCtx);
 }
 

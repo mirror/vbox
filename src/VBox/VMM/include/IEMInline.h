@@ -2842,21 +2842,6 @@ DECLINLINE(void) iemFpuUpdateOpcodeAndIpWorkerEx(PVMCPUCC pVCpu, PX86FXSTATE pFp
 }
 
 
-#ifndef IEM_WITH_OPAQUE_DECODER_STATE
-/**
- * Updates the FOP, FPU.CS and FPUIP registers.
- *
- * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
- * @param   pFpuCtx             The FPU context.
- */
-DECLINLINE(void) iemFpuUpdateOpcodeAndIpWorker(PVMCPUCC pVCpu, PX86FXSTATE pFpuCtx) RT_NOEXCEPT
-{
-    Assert(pVCpu->iem.s.uFpuOpcode != UINT16_MAX);
-    iemFpuUpdateOpcodeAndIpWorkerEx(pVCpu, pFpuCtx, pVCpu->iem.s.uFpuOpcode);
-}
-#endif /* !IEM_WITH_OPAQUE_DECODER_STATE */
-
-
 /**
  * Marks the specified stack register as free (for FFREE).
  *
