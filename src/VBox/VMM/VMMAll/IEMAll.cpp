@@ -5375,6 +5375,7 @@ static void iemFpuStackPushOverflowOnly(PVMCPU pVCpu, PX86FXSTATE pFpuCtx) RT_NO
  * Raises a FPU stack overflow exception on a push.
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   uFpuOpcode          The FPU opcode value.
  */
 void iemFpuStackPushOverflow(PVMCPUCC pVCpu, uint16_t uFpuOpcode) RT_NOEXCEPT
 {
@@ -5390,6 +5391,7 @@ void iemFpuStackPushOverflow(PVMCPUCC pVCpu, uint16_t uFpuOpcode) RT_NOEXCEPT
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   iEffSeg             The effective memory operand selector register.
  * @param   GCPtrEff            The effective memory operand offset.
+ * @param   uFpuOpcode          The FPU opcode value.
  */
 void iemFpuStackPushOverflowWithMemOp(PVMCPUCC pVCpu, uint8_t iEffSeg, RTGCPTR GCPtrEff, uint16_t uFpuOpcode) RT_NOEXCEPT
 {
