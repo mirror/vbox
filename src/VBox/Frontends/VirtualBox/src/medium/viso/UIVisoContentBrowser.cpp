@@ -547,47 +547,47 @@ void UIVisoContentBrowser::prepareObjects()
     initializeModel();
 
     m_pTableView = new UIVisoContentTableView;
-    if (m_pTableView)
-    {
-        m_pMainLayout->addWidget(m_pTableView, 2, 0, 6, 4);
-        m_pTableView->setContextMenuPolicy(Qt::CustomContextMenu);
-        m_pTableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
-        m_pTableView->setShowGrid(false);
-        m_pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-        m_pTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
-        m_pTableView->setAlternatingRowColors(true);
-        m_pTableView->setTabKeyNavigation(false);
-        m_pTableView->setItemDelegate(new UIContentBrowserDelegate(this));
-        QHeaderView *pVerticalHeader = m_pTableView->verticalHeader();
-        if (pVerticalHeader)
-        {
-            m_pTableView->verticalHeader()->setVisible(false);
-            /* Minimize the row height: */
-            m_pTableView->verticalHeader()->setDefaultSectionSize(m_pTableView->verticalHeader()->minimumSectionSize());
-        }
-        QHeaderView *pHorizontalHeader = m_pTableView->horizontalHeader();
-        if (pHorizontalHeader)
-        {
-            pHorizontalHeader->setHighlightSections(false);
-            pHorizontalHeader->setSectionResizeMode(QHeaderView::Stretch);
-        }
+    AssertReturnVoid(m_pTableView);
+    m_pMainLayout->addWidget(m_pTableView, 2, 0, 6, 4);
+    m_pTableView->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_pTableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    m_pTableView->setShowGrid(false);
+    m_pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_pTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_pTableView->setAlternatingRowColors(true);
+    m_pTableView->setTabKeyNavigation(false);
+    m_pTableView->setItemDelegate(new UIContentBrowserDelegate(this));
 
-        m_pTableView->setModel(m_pTableProxyModel);
-        setTableRootIndex();
-        m_pTableView->hideColumn(UICustomFileSystemModelData_Owner);
-        m_pTableView->hideColumn(UICustomFileSystemModelData_Permissions);
-        m_pTableView->hideColumn(UICustomFileSystemModelData_Size);
-        m_pTableView->hideColumn(UICustomFileSystemModelData_ChangeTime);
-        m_pTableView->hideColumn(UICustomFileSystemModelData_ISOFilePath);
+    QHeaderView *pVerticalHeader = m_pTableView->verticalHeader();
+    AssertReturnVoid(pVerticalHeader);
 
-        m_pTableView->setSortingEnabled(true);
-        m_pTableView->sortByColumn(0, Qt::AscendingOrder);
+    m_pTableView->verticalHeader()->setVisible(false);
+    /* Minimize the row height: */
+    m_pTableView->verticalHeader()->setDefaultSectionSize(m_pTableView->verticalHeader()->minimumSectionSize());
 
-        m_pTableView->setDragEnabled(false);
-        m_pTableView->setAcceptDrops(true);
-        m_pTableView->setDropIndicatorShown(true);
-        m_pTableView->setDragDropMode(QAbstractItemView::DropOnly);
-    }
+    QHeaderView *pHorizontalHeader = m_pTableView->horizontalHeader();
+    AssertReturnVoid(pHorizontalHeader);
+
+    pHorizontalHeader->setHighlightSections(false);
+    pHorizontalHeader->setSectionResizeMode(QHeaderView::Stretch);
+
+    m_pTableView->setModel(m_pTableProxyModel);
+    setTableRootIndex();
+    m_pTableView->hideColumn(UICustomFileSystemModelData_Owner);
+    m_pTableView->hideColumn(UICustomFileSystemModelData_Permissions);
+    m_pTableView->hideColumn(UICustomFileSystemModelData_Size);
+    m_pTableView->hideColumn(UICustomFileSystemModelData_ChangeTime);
+    m_pTableView->hideColumn(UICustomFileSystemModelData_ISOFilePath);
+    m_pTableView->hideColumn(UICustomFileSystemModelData_RemovedFromVISO);
+
+    m_pTableView->setSortingEnabled(true);
+    m_pTableView->sortByColumn(0, Qt::AscendingOrder);
+
+    m_pTableView->setDragEnabled(false);
+    m_pTableView->setAcceptDrops(true);
+    m_pTableView->setDropIndicatorShown(true);
+    m_pTableView->setDragDropMode(QAbstractItemView::DropOnly);
+    m_pTableView->setMouseTracking(true);
 }
 
 void UIVisoContentBrowser::prepareToolBar()

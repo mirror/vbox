@@ -518,7 +518,10 @@ QVariant UICustomFileSystemModel::data(const QModelIndex &index, int role) const
                 return QIcon(":/file_manager_file_symlink_16px.png");
         }
     }
-
+    if (role == Qt::ToolTipRole)
+    {
+        return QString(item->path());
+    }
     return QVariant();
 }
 
