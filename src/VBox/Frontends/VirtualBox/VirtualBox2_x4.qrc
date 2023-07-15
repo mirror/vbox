@@ -1,5 +1,6 @@
 <RCC>
     <qresource suffix="/">
+        <file alias="launch_vm_16px_x4.png">images/x4/launch_vm_16px_x4.png</file>
         <file alias="list_movedown_16px_x4.png">images/x4/list_movedown_16px_x4.png</file>
         <file alias="list_movedown_disabled_16px_x4.png">images/x4/list_movedown_disabled_16px_x4.png</file>
         <file alias="list_moveup_16px_x4.png">images/x4/list_moveup_16px_x4.png</file>

@@ -290,6 +290,7 @@
         <file alias="file_manager_folder_cd_16px_x3.png">images/x3/file_manager_folder_cd_16px_x3.png</file>
         <file alias="file_manager_folder_remove_16px_x3.png">images/x3/file_manager_folder_remove_16px_x3.png</file>
         <file alias="file_manager_folder_symlink_16px_x3.png">images/x3/file_manager_folder_symlink_16px_x3.png</file>
+        <file alias="file_manager_folder_warning_16px_x3.png">images/x3/file_manager_folder_warning_16px_x3.png</file>
         <file alias="file_manager_go_backward_16px_x3.png">images/x3/file_manager_go_backward_16px_x3.png</file>
         <file alias="file_manager_go_backward_24px_x3.png">images/x3/file_manager_go_backward_24px_x3.png</file>
         <file alias="file_manager_go_backward_disabled_16px_x3.png">images/x3/file_manager_go_backward_disabled_16px_x3.png</file>
@@ -499,6 +500,5 @@
         <file alias="keyboard_32px_x3.png">images/x3/keyboard_32px_x3.png</file>
         <file alias="keyboard_settings_16px_x3.png">images/x3/keyboard_settings_16px_x3.png</file>
         <file alias="keyboard_settings_disabled_16px_x3.png">images/x3/keyboard_settings_disabled_16px_x3.png</file>
-        <file alias="launch_vm_16px_x3.png">images/x3/launch_vm_16px_x3.png</file>
     </qresource>
 </RCC>

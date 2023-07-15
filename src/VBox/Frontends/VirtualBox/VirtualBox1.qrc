@@ -290,6 +290,7 @@
         <file alias="file_manager_folder_cd_16px.png">images/file_manager_folder_cd_16px.png</file>
         <file alias="file_manager_folder_remove_16px.png">images/file_manager_folder_remove_16px.png</file>
         <file alias="file_manager_folder_symlink_16px.png">images/file_manager_folder_symlink_16px.png</file>
+        <file alias="file_manager_folder_warning_16px.png">images/file_manager_folder_warning_16px.png</file>
         <file alias="file_manager_go_backward_16px.png">images/file_manager_go_backward_16px.png</file>
         <file alias="file_manager_go_backward_24px.png">images/file_manager_go_backward_24px.png</file>
         <file alias="file_manager_go_backward_disabled_16px.png">images/file_manager_go_backward_disabled_16px.png</file>
