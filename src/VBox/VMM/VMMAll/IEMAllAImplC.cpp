@@ -8528,9 +8528,67 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_paddsb_u128,(PCX86FXSTATE pFpuState, PRTUINT128
 
 #endif
 
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddsb_u128_fallback,(PRTUINT128U puDst,
+                                                        PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    puDst->au8[0]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[0]  + puSrc2->ai8[0]);
+    puDst->au8[1]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[1]  + puSrc2->ai8[1]);
+    puDst->au8[2]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[2]  + puSrc2->ai8[2]);
+    puDst->au8[3]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[3]  + puSrc2->ai8[3]);
+    puDst->au8[4]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[4]  + puSrc2->ai8[4]);
+    puDst->au8[5]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[5]  + puSrc2->ai8[5]);
+    puDst->au8[6]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[6]  + puSrc2->ai8[6]);
+    puDst->au8[7]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[7]  + puSrc2->ai8[7]);
+    puDst->au8[8]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[8]  + puSrc2->ai8[8]);
+    puDst->au8[9]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[9]  + puSrc2->ai8[9]);
+    puDst->au8[10] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[10] + puSrc2->ai8[10]);
+    puDst->au8[11] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[11] + puSrc2->ai8[11]);
+    puDst->au8[12] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[12] + puSrc2->ai8[12]);
+    puDst->au8[13] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[13] + puSrc2->ai8[13]);
+    puDst->au8[14] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[14] + puSrc2->ai8[14]);
+    puDst->au8[15] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[15] + puSrc2->ai8[15]);
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddsb_u256_fallback,(PRTUINT256U puDst,
+                                                        PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    puDst->au8[0]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[0]  + puSrc2->ai8[0]);
+    puDst->au8[1]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[1]  + puSrc2->ai8[1]);
+    puDst->au8[2]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[2]  + puSrc2->ai8[2]);
+    puDst->au8[3]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[3]  + puSrc2->ai8[3]);
+    puDst->au8[4]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[4]  + puSrc2->ai8[4]);
+    puDst->au8[5]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[5]  + puSrc2->ai8[5]);
+    puDst->au8[6]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[6]  + puSrc2->ai8[6]);
+    puDst->au8[7]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[7]  + puSrc2->ai8[7]);
+    puDst->au8[8]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[8]  + puSrc2->ai8[8]);
+    puDst->au8[9]  = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[9]  + puSrc2->ai8[9]);
+    puDst->au8[10] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[10] + puSrc2->ai8[10]);
+    puDst->au8[11] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[11] + puSrc2->ai8[11]);
+    puDst->au8[12] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[12] + puSrc2->ai8[12]);
+    puDst->au8[13] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[13] + puSrc2->ai8[13]);
+    puDst->au8[14] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[14] + puSrc2->ai8[14]);
+    puDst->au8[15] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[15] + puSrc2->ai8[15]);
+    puDst->au8[16] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[16] + puSrc2->ai8[16]);
+    puDst->au8[17] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[17] + puSrc2->ai8[17]);
+    puDst->au8[18] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[18] + puSrc2->ai8[18]);
+    puDst->au8[19] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[19] + puSrc2->ai8[19]);
+    puDst->au8[20] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[20] + puSrc2->ai8[20]);
+    puDst->au8[21] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[21] + puSrc2->ai8[21]);
+    puDst->au8[22] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[22] + puSrc2->ai8[22]);
+    puDst->au8[23] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[23] + puSrc2->ai8[23]);
+    puDst->au8[24] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[24] + puSrc2->ai8[24]);
+    puDst->au8[25] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[25] + puSrc2->ai8[25]);
+    puDst->au8[26] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[26] + puSrc2->ai8[26]);
+    puDst->au8[27] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[27] + puSrc2->ai8[27]);
+    puDst->au8[28] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[28] + puSrc2->ai8[28]);
+    puDst->au8[29] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[29] + puSrc2->ai8[29]);
+    puDst->au8[30] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[30] + puSrc2->ai8[30]);
+    puDst->au8[31] = SATURATED_SIGNED_WORD_TO_SIGNED_BYTE(puSrc1->ai8[31] + puSrc2->ai8[31]);
+}
+
 
 /*
- * PADDSB / VPADDSB
+ * PADDUSB / VPADDUSB
  */
 #define SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE(a_uWord) \
         ( (uint16_t)(a_uWord) <= (uint16_t)0xff  \
@@ -8752,6 +8810,40 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_paddsw_u128,(PCX86FXSTATE pFpuState, PRTUINT128
 }
 
 #endif
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddsw_u128_fallback,(PRTUINT128U puDst,
+                                                        PCRTUINT128U puSrc1, PCRTUINT128U puSrc2))
+{
+    puDst->au16[0] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[0] + puSrc2->ai16[0]);
+    puDst->au16[1] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[1] + puSrc2->ai16[1]);
+    puDst->au16[2] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[2] + puSrc2->ai16[2]);
+    puDst->au16[3] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[3] + puSrc2->ai16[3]);
+    puDst->au16[4] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[4] + puSrc2->ai16[4]);
+    puDst->au16[5] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[5] + puSrc2->ai16[5]);
+    puDst->au16[6] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[6] + puSrc2->ai16[6]);
+    puDst->au16[7] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[7] + puSrc2->ai16[7]);
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vpaddsw_u256_fallback,(PRTUINT256U puDst,
+                                                        PCRTUINT256U puSrc1, PCRTUINT256U puSrc2))
+{
+    puDst->au16[0]  = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[0]  + puSrc2->ai16[0]);
+    puDst->au16[1]  = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[1]  + puSrc2->ai16[1]);
+    puDst->au16[2]  = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[2]  + puSrc2->ai16[2]);
+    puDst->au16[3]  = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[3]  + puSrc2->ai16[3]);
+    puDst->au16[4]  = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[4]  + puSrc2->ai16[4]);
+    puDst->au16[5]  = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[5]  + puSrc2->ai16[5]);
+    puDst->au16[6]  = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[6]  + puSrc2->ai16[6]);
+    puDst->au16[7]  = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[7]  + puSrc2->ai16[7]);
+    puDst->au16[8]  = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[8]  + puSrc2->ai16[8]);
+    puDst->au16[9]  = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[9]  + puSrc2->ai16[9]);
+    puDst->au16[10] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[10] + puSrc2->ai16[10]);
+    puDst->au16[11] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[11] + puSrc2->ai16[11]);
+    puDst->au16[12] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[12] + puSrc2->ai16[12]);
+    puDst->au16[13] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[13] + puSrc2->ai16[13]);
+    puDst->au16[14] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[14] + puSrc2->ai16[14]);
+    puDst->au16[15] = SATURATED_SIGNED_DWORD_TO_SIGNED_WORD(puSrc1->ai16[15] + puSrc2->ai16[15]);
+}
 
 
 /*
@@ -9138,7 +9230,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vpsubsb_u256_fallback,(PRTUINT256U puDst,
 
 
 /*
- * PADDSB / VPADDSB
+ * PSUBUSB / VPSUBUSW
  */
 #define SATURATED_UNSIGNED_WORD_TO_UNSIGNED_BYTE_SUB(a_uWord) \
         ( (uint16_t)(a_uWord) <= (uint16_t)0xff  \
