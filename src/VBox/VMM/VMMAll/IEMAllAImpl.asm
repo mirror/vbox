@@ -4296,6 +4296,9 @@ IEMIMPL_MEDIA_OPT_F3 vunpcklps
 IEMIMPL_MEDIA_OPT_F3 vunpcklpd
 IEMIMPL_MEDIA_OPT_F3 vunpckhps
 IEMIMPL_MEDIA_OPT_F3 vunpckhpd
+IEMIMPL_MEDIA_OPT_F3 vpsubsb
+IEMIMPL_MEDIA_OPT_F3 vpsubsw
+
 
 ;;
 ; Media instruction working on one full sized source registers and one destination (AVX),

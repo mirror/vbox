@@ -5036,14 +5036,32 @@ FNIEMOP_DEF(iemOp_vmovntdq_Mx_Vx)
 
 
 /*  Opcode VEX.0F 0xe8 - invalid */
-/** Opcode VEX.66.0F 0xe8 - vpsubsb Vx, Hx, W */
-FNIEMOP_STUB(iemOp_vpsubsb_Vx_Hx_W);
+
+
+/** Opcode VEX.66.0F 0xe8 - vpsubsb Vx, Hx, Wx */
+FNIEMOP_DEF(iemOp_vpsubsb_Vx_Hx_Wx)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VPSUBSB, vpsubsb, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
+    IEMOPMEDIAOPTF3_INIT_VARS(vpsubsb);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+}
+
+
 /*  Opcode VEX.F3.0F 0xe8 - invalid */
 /*  Opcode VEX.F2.0F 0xe8 - invalid */
 
 /*  Opcode VEX.0F 0xe9 - invalid */
+
+
 /** Opcode VEX.66.0F 0xe9 - vpsubsw Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpsubsw_Vx_Hx_Wx);
+FNIEMOP_DEF(iemOp_vpsubsw_Vx_Hx_Wx)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VPSUBSW, vpsubsw, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
+    IEMOPMEDIAOPTF3_INIT_VARS(vpsubsw);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+}
+
+
 /*  Opcode VEX.F3.0F 0xe9 - invalid */
 /*  Opcode VEX.F2.0F 0xe9 - invalid */
 
@@ -5607,7 +5625,7 @@ IEM_STATIC const PFNIEMOP g_apfnVexMap1[] =
     /* 0xe5 */  iemOp_InvalidNeedRM,        iemOp_vpmulhw_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xe6 */  iemOp_InvalidNeedRM,        iemOp_vcvttpd2dq_Vx_Wpd,    iemOp_vcvtdq2pd_Vx_Wpd,     iemOp_vcvtpd2dq_Vx_Wpd,
     /* 0xe7 */  iemOp_InvalidNeedRM,        iemOp_vmovntdq_Mx_Vx,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xe8 */  iemOp_InvalidNeedRM,        iemOp_vpsubsb_Vx_Hx_W,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xe8 */  iemOp_InvalidNeedRM,        iemOp_vpsubsb_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xe9 */  iemOp_InvalidNeedRM,        iemOp_vpsubsw_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xea */  iemOp_InvalidNeedRM,        iemOp_vpminsw_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xeb */  iemOp_InvalidNeedRM,        iemOp_vpor_Vx_Hx_Wx,        iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
