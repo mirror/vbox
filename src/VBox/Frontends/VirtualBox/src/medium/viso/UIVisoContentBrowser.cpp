@@ -527,10 +527,31 @@ void UIVisoContentBrowser::removeItems(const QList<UICustomFileSystemItem*> item
         m_pTableProxyModel->invalidate();
 }
 
+void UIVisoContentBrowser::restoreItems(const QList<UICustomFileSystemItem*> itemList)
+{
+    foreach(UICustomFileSystemItem *pItem, itemList)
+    {
+        if (!pItem || pItem->isUpDirectory())
+            continue;
+        if (!pItem->isRemovedFromViso())
+            continue;
+        QString strVisoPath = pItem->path();
+        if (strVisoPath.isEmpty())
+            continue;
+
+        bool bFoundInMap = m_entryMap.remove(strVisoPath) > 0;
+        if (!bFoundInMap)
+            createVisoEntry(pItem->path(), pItem->data(UICustomFileSystemModelData_LocalPath).toString(), false /* bool bRemove */);
+
+        markRemovedUnremovedItemParents(pItem, false);
+    }
+    if (m_pTableProxyModel)
+        m_pTableProxyModel->invalidate();
+}
+
 void UIVisoContentBrowser::markRemovedUnremovedItemParents(UICustomFileSystemItem *pItem, bool fRemoved)
 {
-    Q_UNUSED(fRemoved);
-    pItem->setRemovedFromViso(true);
+    pItem->setRemovedFromViso(fRemoved);
     UICustomFileSystemItem *pRoot = rootItem();
     UICustomFileSystemItem *pParent = pItem->parentItem();
 
@@ -540,11 +561,6 @@ void UIVisoContentBrowser::markRemovedUnremovedItemParents(UICustomFileSystemIte
         pParent->setData(true, UICustomFileSystemModelData_DescendantRemovedFromVISO);
         pParent = pParent->parentItem();
     }
-}
-
-void UIVisoContentBrowser::restoreItems(const QList<UICustomFileSystemItem*> itemList)
-{
-    Q_UNUSED(itemList);
 }
 
 void UIVisoContentBrowser::prepareObjects()
