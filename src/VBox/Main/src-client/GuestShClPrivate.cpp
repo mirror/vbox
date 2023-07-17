@@ -90,9 +90,9 @@ void GuestShCl::uninit(void)
  */
 int GuestShCl::lock(void)
 {
-    int rc = RTCritSectEnter(&m_CritSect);
-    AssertRC(rc);
-    return rc;
+    int vrc = RTCritSectEnter(&m_CritSect);
+    AssertRC(vrc);
+    return vrc;
 }
 
 /**
@@ -102,9 +102,9 @@ int GuestShCl::lock(void)
  */
 int GuestShCl::unlock(void)
 {
-    int rc = RTCritSectLeave(&m_CritSect);
-    AssertRC(rc);
-    return rc;
+    int vrc = RTCritSectLeave(&m_CritSect);
+    AssertRC(vrc);
+    return vrc;
 }
 
 /**
@@ -116,6 +116,8 @@ int GuestShCl::unlock(void)
  */
 int GuestShCl::RegisterServiceExtension(PFNHGCMSVCEXT pfnExtension, void *pvExtension)
 {
+    AssertPtrReturn(pfnExtension, VERR_INVALID_POINTER);
+
     lock();
 
     PSHCLSVCEXT pExt = &this->m_SvcExtVRDP; /* Currently we only have one extension only. */
@@ -138,12 +140,14 @@ int GuestShCl::RegisterServiceExtension(PFNHGCMSVCEXT pfnExtension, void *pvExte
  */
 int GuestShCl::UnregisterServiceExtension(PFNHGCMSVCEXT pfnExtension)
 {
+    AssertPtrReturn(pfnExtension, VERR_INVALID_POINTER);
+
     lock();
 
     PSHCLSVCEXT pExt = &this->m_SvcExtVRDP; /* Currently we only have one extension only. */
 
-    Assert(pExt->pfnExt);
-    Assert(pExt->pfnExt == pfnExtension);
+    AssertReturnStmt(pExt->pfnExt == pfnExtension, unlock(), VERR_INVALID_PARAMETER);
+    AssertPtr(pExt->pfnExt);
 
     RT_BZERO(pExt, sizeof(SHCLSVCEXT));
 
@@ -227,19 +231,19 @@ DECLCALLBACK(int) GuestShCl::hgcmDispatcher(void *pvExtension, uint32_t u32Funct
     GuestShCl *pThis = reinterpret_cast<GuestShCl*>(pvExtension);
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     switch (u32Function)
     {
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
         case VBOX_SHCL_GUEST_FN_REPLY:
         {
-            rc = pThis->reportError("foo", VERR_ADDRESS_CONFLICT, "bar");
+            vrc = pThis->reportError("foo", VERR_ADDRESS_CONFLICT, "bar");
             break;
         }
 # endif
         case VBOX_SHCL_GUEST_FN_ERROR:
-            rc = pThis->reportError("foo", VERR_ADDRESS_CONFLICT, "bar");
+            vrc = pThis->reportError("foo", VERR_ADDRESS_CONFLICT, "bar");
             break;
 
         default:
@@ -250,13 +254,13 @@ DECLCALLBACK(int) GuestShCl::hgcmDispatcher(void *pvExtension, uint32_t u32Funct
 
     if (pExt->pfnExt)
     {
-        int rc2 = pExt->pfnExt(pExt->pvExt, u32Function, pvParms, cbParms);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+        int vrc2 = pExt->pfnExt(pExt->pvExt, u32Function, pvParms, cbParms);
+        if (RT_SUCCESS(vrc))
+            vrc = vrc2;
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc; /* Goes back to host service. */
+    LogFlowFuncLeaveRC(vrc);
+    return vrc; /* Goes back to host service. */
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD */
 

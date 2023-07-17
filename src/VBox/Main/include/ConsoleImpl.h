@@ -1191,10 +1191,8 @@ private:
 #endif
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     /* Service extension for the Shared Clipboard HGCM service. */
     HGCMSVCEXTHANDLE                    m_hHgcmSvcExtShCl;
-# endif
 #endif
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
