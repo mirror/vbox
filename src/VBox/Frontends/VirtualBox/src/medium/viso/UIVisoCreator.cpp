@@ -835,7 +835,7 @@ void UIVisoCreatorDialog::retranslateUi()
     updateWindowTitle();
     if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Ok))
     {
-        m_pButtonBox->button(QDialogButtonBox::Ok)->setText(UIVisoCreatorWidget::tr("C&reate"));
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setText(UIVisoCreatorWidget::tr("&Save and Close"));
         m_pButtonBox->button(QDialogButtonBox::Ok)->setToolTip(UIVisoCreatorWidget::tr("Creates VISO file with the selected content"));
     }
     if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Help))
