@@ -491,6 +491,13 @@ QVariant UICustomFileSystemModel::data(const QModelIndex &index, int role) const
             else
                 return item->data(index.column());
         }
+        if (index.column() == UICustomFileSystemModelData_DescendantRemovedFromVISO)
+        {
+            if (item->data(UICustomFileSystemModelData_DescendantRemovedFromVISO).toBool())
+                return QString(QApplication::translate("UIVisoCreatorWidget", "Yes"));
+            else
+                return QString(QApplication::translate("UIVisoCreatorWidget", "No"));
+        }
         return item->data(index.column());
     }
     /* Show file object icons: */

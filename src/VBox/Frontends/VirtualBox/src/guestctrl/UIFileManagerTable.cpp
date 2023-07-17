@@ -496,6 +496,10 @@ void UIFileManagerTable::prepareObjects()
         connect(m_pView, &UIGuestControlFileView::customContextMenuRequested,
                 this, &UIFileManagerTable::sltCreateFileViewContextMenu);
         m_pView->hideColumn(UICustomFileSystemModelData_LocalPath);
+        m_pView->hideColumn(UICustomFileSystemModelData_ISOFilePath);
+        m_pView->hideColumn(UICustomFileSystemModelData_RemovedFromVISO);
+        m_pView->hideColumn(UICustomFileSystemModelData_DescendantRemovedFromVISO);
+
         m_sessionWidgets << m_pView;
     }
 

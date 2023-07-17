@@ -422,6 +422,7 @@ void UIVisoContentBrowser::retranslateUi()
         pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Owner"), UICustomFileSystemModelData_Owner);
         pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Permissions"), UICustomFileSystemModelData_Permissions);
         pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Local Path"), UICustomFileSystemModelData_LocalPath);
+        pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Has Removed Child"), UICustomFileSystemModelData_DescendantRemovedFromVISO);
     }
     if (m_pSubMenu)
         m_pSubMenu->setTitle(QApplication::translate("UIVisoCreatorWidget", "VISO Browser"));
@@ -530,10 +531,13 @@ void UIVisoContentBrowser::markRemovedUnremovedItemParents(UICustomFileSystemIte
 {
     Q_UNUSED(fRemoved);
     pItem->setRemovedFromViso(true);
+    UICustomFileSystemItem *pRoot = rootItem();
     UICustomFileSystemItem *pParent = pItem->parentItem();
-    while (pParent)
+
+    while (pParent && pParent != pRoot)
     {
         pParent->setToolTip(QApplication::translate("UIVisoCreatorWidget", "Child/children removed"));
+        pParent->setData(true, UICustomFileSystemModelData_DescendantRemovedFromVISO);
         pParent = pParent->parentItem();
     }
 }
