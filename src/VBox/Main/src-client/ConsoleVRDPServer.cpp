@@ -3350,7 +3350,7 @@ ConsoleVRDPServer::ClipboardServiceExtension(void *pvExtension, uint32_t u32Func
     {
         case VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK:
         {
-            pServer->mpfnClipboardCallback = pParms->u.pfnCallback;
+            pServer->mpfnClipboardCallback = pParms->u.SetCallback.pfnCallback;
         } break;
 
         case VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE:
@@ -3360,7 +3360,7 @@ ConsoleVRDPServer::ClipboardServiceExtension(void *pvExtension, uint32_t u32Func
             {
                 mpEntryPoints->VRDEClipboard(pServer->mhServer,
                                              VRDE_CLIPBOARD_FUNCTION_FORMAT_ANNOUNCE,
-                                             pParms->uFormat,
+                                             pParms->u.ReportFormats.uFormats,
                                              NULL,
                                              0,
                                              NULL);
@@ -3377,10 +3377,10 @@ ConsoleVRDPServer::ClipboardServiceExtension(void *pvExtension, uint32_t u32Func
             {
                 mpEntryPoints->VRDEClipboard(pServer->mhServer,
                                              VRDE_CLIPBOARD_FUNCTION_DATA_READ,
-                                             pParms->uFormat,
-                                             pParms->u.pvData,
-                                             pParms->cbData,
-                                             &pParms->cbData);
+                                             pParms->u.ReadWriteData.uFormat,
+                                             pParms->u.ReadWriteData.pvData,
+                                             pParms->u.ReadWriteData.cbData,
+                                             &pParms->u.ReadWriteData.cbData);
             }
         } break;
 
@@ -3390,9 +3390,9 @@ ConsoleVRDPServer::ClipboardServiceExtension(void *pvExtension, uint32_t u32Func
             {
                 mpEntryPoints->VRDEClipboard(pServer->mhServer,
                                              VRDE_CLIPBOARD_FUNCTION_DATA_WRITE,
-                                             pParms->uFormat,
-                                             pParms->u.pvData,
-                                             pParms->cbData,
+                                             pParms->u.ReadWriteData.uFormat,
+                                             pParms->u.ReadWriteData.pvData,
+                                             pParms->u.ReadWriteData.cbData,
                                              NULL);
             }
         } break;
