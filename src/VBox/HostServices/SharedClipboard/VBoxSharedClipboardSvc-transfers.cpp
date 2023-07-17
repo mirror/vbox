@@ -1510,8 +1510,26 @@ static int shClSvcTransferHandleReply(PSHCLCLIENT pClient, SHCLTRANSFERID idTran
                             {
                                 LogRel(("Shared Clipboard: Guest reported error %Rrc for transfer %RU32\n",
                                         pReply->rc, pTransfer->State.uID));
+
+                                if (g_ExtState.pfnExtension)
+                                {
+                                    SHCLEXTPARMS parms;
+                                    RT_ZERO(parms);
+
+                                    parms.u.Error.rc     = pReply->rc;
+                                    parms.u.Error.pszMsg = RTStrAPrintf2("Guest reported error %Rrc for transfer %RU32", /** @todo Make the error messages more fine-grained based on rc. */
+                                                                         pReply->rc, pTransfer->State.uID);
+                                    AssertPtrBreakStmt(parms.u.Error.pszMsg, rc = VERR_NO_MEMORY);
+
+                                    g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_ERROR, &parms, sizeof(parms));
+
+                                    RTStrFree(parms.u.Error.pszMsg);
+                                    parms.u.Error.pszMsg = NULL;
+                                }
+
                                 RT_FALL_THROUGH();
                             }
+
                             default:
                             {
                                 /* Regardless of whether the guest was able to report back and/or stop the transfer, remove the transfer on the host

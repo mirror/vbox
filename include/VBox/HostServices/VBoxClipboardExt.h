@@ -49,6 +49,7 @@
 #define VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE      (1)
 #define VBOX_CLIPBOARD_EXT_FN_DATA_READ            (2)
 #define VBOX_CLIPBOARD_EXT_FN_DATA_WRITE           (3)
+#define VBOX_CLIPBOARD_EXT_FN_ERROR                (4)
 
 typedef DECLCALLBACKTYPE(int, FNSHCLEXTCALLBACK,(uint32_t u32Function, uint32_t u32Format, void *pvData, uint32_t cbData));
 typedef FNSHCLEXTCALLBACK *PFNSHCLEXTCALLBACK;
@@ -78,6 +79,16 @@ typedef struct _SHCLEXTPARMS
             PFNSHCLEXTCALLBACK
                                     pfnCallback;
         } SetCallback;
+        /** Reports a clipboard error. */
+        struct
+        {
+            /** Clipboard ID. Optional and can be NULL. */
+            char                   *pszId;
+            /** User friendly error message. */
+            char                   *pszMsg;
+            /** IPRT-style error code. */
+            int                     rc;
+        } Error;
     } u;
 } SHCLEXTPARMS;
 /** Pointer to Shared Clipboard service extension parameters. */

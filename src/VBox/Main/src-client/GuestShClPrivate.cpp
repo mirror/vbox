@@ -42,7 +42,11 @@
 # include <VMMDev.h>
 
 # include <VBox/GuestHost/SharedClipboard.h>
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+#  include <VBox/GuestHost/SharedClipboard-transfers.h>
+# endif
 # include <VBox/HostServices/VBoxClipboardSvc.h>
+# include <VBox/HostServices/VBoxClipboardExt.h>
 # include <VBox/version.h>
 
 
@@ -231,26 +235,24 @@ DECLCALLBACK(int) GuestShCl::hgcmDispatcher(void *pvExtension, uint32_t u32Funct
     GuestShCl *pThis = reinterpret_cast<GuestShCl*>(pvExtension);
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
+    PSHCLEXTPARMS pParms = (PSHCLEXTPARMS)pvParms;
+    /* pParms might be NULL, depending on the message. */
+
     int vrc = VINF_SUCCESS;
 
     switch (u32Function)
     {
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-        case VBOX_SHCL_GUEST_FN_REPLY:
+        case VBOX_CLIPBOARD_EXT_FN_ERROR:
         {
-            vrc = pThis->reportError("foo", VERR_ADDRESS_CONFLICT, "bar");
+            vrc = pThis->reportError(pParms->u.Error.pszId, pParms->u.Error.rc, pParms->u.Error.pszMsg);
             break;
         }
-# endif
-        case VBOX_SHCL_GUEST_FN_ERROR:
-            vrc = pThis->reportError("foo", VERR_ADDRESS_CONFLICT, "bar");
-            break;
 
         default:
             break;
     }
 
-    PSHCLSVCEXT const pExt = &pThis->m_SvcExtVRDP; /* Currently we only have one extension only. */
+    PSHCLSVCEXT const pExt = &pThis->m_SvcExtVRDP; /* Currently we have one extension only. */
 
     if (pExt->pfnExt)
     {
