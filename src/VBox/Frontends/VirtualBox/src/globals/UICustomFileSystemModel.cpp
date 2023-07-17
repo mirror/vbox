@@ -289,6 +289,16 @@ bool UICustomFileSystemItem::isRemovedFromViso() const
     return m_itemData[UICustomFileSystemModelData_RemovedFromVISO].toBool();
 }
 
+void UICustomFileSystemItem::setToolTip(const QString &strToolTip)
+{
+    m_strToolTip = strToolTip;
+}
+
+const QString &UICustomFileSystemItem::toolTip() const
+{
+    return m_strToolTip;
+}
+
 
 /*********************************************************************************************************************************
 *   UICustomFileSystemProxyModel implementation.                                                                                 *
@@ -499,7 +509,6 @@ QVariant UICustomFileSystemModel::data(const QModelIndex &index, int role) const
                 return QIcon(":/file_manager_folder_cd_16px.png");
             else
                 return QIcon(":/file_manager_folder_16px.png");
-
         }
         else if (item->isFile())
         {
@@ -520,7 +529,8 @@ QVariant UICustomFileSystemModel::data(const QModelIndex &index, int role) const
     }
     if (role == Qt::ToolTipRole)
     {
-        return QString(item->path());
+        if (!item->toolTip().isEmpty())
+            return QString(item->toolTip());
     }
     return QVariant();
 }

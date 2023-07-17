@@ -145,6 +145,7 @@ private:
     /* Processes a list of VISO paths that are loaded from a file and indicate file object to be removed from VISO content. */
     void                           processRemovedEntries(const QStringList &removedEntries);
     const UICustomFileSystemItem*  currentDirectoryItem() const;
+    void                           markRemovedUnremovedItemParents(UICustomFileSystemItem *pItem, bool fRemoved);
     UIVisoContentTableView        *m_pTableView;
     UICustomFileSystemModel       *m_pModel;
     UICustomFileSystemProxyModel  *m_pTableProxyModel;

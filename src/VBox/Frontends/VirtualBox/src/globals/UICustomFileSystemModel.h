@@ -118,6 +118,9 @@ public:
     void setRemovedFromViso(bool fRemoved);
     bool isRemovedFromViso() const;
 
+    void setToolTip(const QString &strToolTip);
+    const QString &toolTip() const;
+
 private:
 
     void appendChild(UICustomFileSystemItem *child);
@@ -134,6 +137,7 @@ private:
     bool             m_fIsDriveItem;
     /** True if the file object is hidden in the file system. */
     bool             m_fIsHidden;
+    QString          m_strToolTip;
 };
 
 /** A QSortFilterProxyModel extension used in file tables. Modifies some

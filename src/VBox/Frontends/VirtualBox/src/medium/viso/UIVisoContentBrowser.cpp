@@ -520,12 +520,23 @@ void UIVisoContentBrowser::removeItems(const QList<UICustomFileSystemItem*> item
         if (!bFoundInMap)
             createVisoEntry(pItem->path(), pItem->data(UICustomFileSystemModelData_LocalPath).toString(), true /* bool bRemove */);
 
-        pItem->setRemovedFromViso(true);
+        markRemovedUnremovedItemParents(pItem, true);
     }
     if (m_pTableProxyModel)
         m_pTableProxyModel->invalidate();
 }
 
+void UIVisoContentBrowser::markRemovedUnremovedItemParents(UICustomFileSystemItem *pItem, bool fRemoved)
+{
+    Q_UNUSED(fRemoved);
+    pItem->setRemovedFromViso(true);
+    UICustomFileSystemItem *pParent = pItem->parentItem();
+    while (pParent)
+    {
+        pParent->setToolTip(QApplication::translate("UIVisoCreatorWidget", "Child/children removed"));
+        pParent = pParent->parentItem();
+    }
+}
 
 void UIVisoContentBrowser::restoreItems(const QList<UICustomFileSystemItem*> itemList)
 {
@@ -904,16 +915,15 @@ void UIVisoContentBrowser::createLoadedFileEntries(const QMap<QString, QString> 
 
 void UIVisoContentBrowser::processRemovedEntries(const QStringList &removedEntries)
 {
+    QList<UICustomFileSystemItem*> itemList;
     foreach (const QString &strPath, removedEntries)
     {
         QFileInfo fileInfo(strPath);
         UICustomFileSystemItem *pItem = searchItemByPath(strPath);
         if (pItem)
-        {
-            pItem->setRemovedFromViso(true);
-            createVisoEntry(strPath,  QString(), true);
-        }
+            itemList << pItem;
     }
+    removeItems(itemList);
 }
 
 QModelIndex UIVisoContentBrowser::convertIndexToTableIndex(const QModelIndex &index)
