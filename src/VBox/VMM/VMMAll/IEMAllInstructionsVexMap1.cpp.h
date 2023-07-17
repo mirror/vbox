@@ -4793,14 +4793,31 @@ FNIEMOP_DEF(iemOp_vpmovmskb_Gd_Ux)
 
 
 /*  Opcode VEX.0F 0xd8 - invalid */
-/** Opcode VEX.66.0F 0xd8 - vpsubusb Vx, Hx, W */
-FNIEMOP_STUB(iemOp_vpsubusb_Vx_Hx_W);
+
+/** Opcode VEX.66.0F 0xd8 - vpsubusb Vx, Hx, Wx */
+FNIEMOP_DEF(iemOp_vpsubusb_Vx_Hx_Wx)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VPSUBUSB, vpsubusb, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
+    IEMOPMEDIAOPTF3_INIT_VARS(vpsubusb);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+}
+
+
 /*  Opcode VEX.F3.0F 0xd8 - invalid */
 /*  Opcode VEX.F2.0F 0xd8 - invalid */
 
 /*  Opcode VEX.0F 0xd9 - invalid */
+
+
 /** Opcode VEX.66.0F 0xd9 - vpsubusw Vx, Hx, Wx */
-FNIEMOP_STUB(iemOp_vpsubusw_Vx_Hx_Wx);
+FNIEMOP_DEF(iemOp_vpsubusw_Vx_Hx_Wx)
+{
+    IEMOP_MNEMONIC3(VEX_RVM, VPSUBUSW, vpsubusw, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0);
+    IEMOPMEDIAOPTF3_INIT_VARS(vpsubusw);
+    return FNIEMOP_CALL_1(iemOpCommonAvxAvx2_Vx_Hx_Wx_Opt, IEM_SELECT_HOST_OR_FALLBACK(fAvx2, &s_Host, &s_Fallback));
+}
+
+
 /*  Opcode VEX.F3.0F 0xd9 - invalid */
 /*  Opcode VEX.F2.0F 0xd9 - invalid */
 
@@ -5608,7 +5625,7 @@ IEM_STATIC const PFNIEMOP g_apfnVexMap1[] =
     /* 0xd5 */  iemOp_InvalidNeedRM,        iemOp_vpmullw_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xd6 */  iemOp_InvalidNeedRM,        iemOp_vmovq_Wq_Vq,          iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xd7 */  iemOp_InvalidNeedRM,        iemOp_vpmovmskb_Gd_Ux,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0xd8 */  iemOp_InvalidNeedRM,        iemOp_vpsubusb_Vx_Hx_W,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
+    /* 0xd8 */  iemOp_InvalidNeedRM,        iemOp_vpsubusb_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xd9 */  iemOp_InvalidNeedRM,        iemOp_vpsubusw_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xda */  iemOp_InvalidNeedRM,        iemOp_vpminub_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xdb */  iemOp_InvalidNeedRM,        iemOp_vpand_Vx_Hx_Wx,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
