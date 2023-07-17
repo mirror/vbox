@@ -231,7 +231,7 @@ private:
     void unlockConsoleVRDPServer (void);
 
     int mcClipboardRefs;
-    PFNVRDPCLIPBOARDEXTCALLBACK mpfnClipboardCallback;
+    PFNSHCLEXTCALLBACK mpfnClipboardCallback;
 
     static DECLCALLBACK(int) ClipboardCallback (void *pvCallback, uint32_t u32ClientId, uint32_t u32Function, uint32_t u32Format, const void *pvData, uint32_t cbData);
     static DECLCALLBACK(int) ClipboardServiceExtension(void *pvExtension, uint32_t u32Function, void *pvParms, uint32_t cbParms);

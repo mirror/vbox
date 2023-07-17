@@ -50,8 +50,8 @@
 #define VBOX_CLIPBOARD_EXT_FN_DATA_READ            (2)
 #define VBOX_CLIPBOARD_EXT_FN_DATA_WRITE           (3)
 
-typedef DECLCALLBACKTYPE(int, FNVRDPCLIPBOARDEXTCALLBACK,(uint32_t u32Function, uint32_t u32Format, void *pvData, uint32_t cbData));
-typedef FNVRDPCLIPBOARDEXTCALLBACK *PFNVRDPCLIPBOARDEXTCALLBACK;
+typedef DECLCALLBACKTYPE(int, FNSHCLEXTCALLBACK,(uint32_t u32Function, uint32_t u32Format, void *pvData, uint32_t cbData));
+typedef FNSHCLEXTCALLBACK *PFNSHCLEXTCALLBACK;
 
 /**
  * Structure for holding Shared Clipboard service extension parameters.
@@ -75,7 +75,7 @@ typedef struct _SHCLEXTPARMS
         /** Sets a read / write callback. */
         struct
         {
-            PFNVRDPCLIPBOARDEXTCALLBACK
+            PFNSHCLEXTCALLBACK
                                     pfnCallback;
         } SetCallback;
     } u;
