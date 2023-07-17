@@ -31,6 +31,9 @@
 #include "ConsoleVRDPServer.h"
 #include "ConsoleImpl.h"
 #include "DisplayImpl.h"
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
+# include "GuestShClPrivate.h" /* For (un-)registering the service extension. */
+#endif
 #include "KeyboardImpl.h"
 #include "MouseImpl.h"
 #ifdef VBOX_WITH_AUDIO_VRDE
@@ -1345,7 +1348,6 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDECallbackAudioIn(void *pvCallback,
 }
 
 ConsoleVRDPServer::ConsoleVRDPServer(Console *console)
-    : mhClipboard(NULL)
 {
     mConsole = console;
 
@@ -3411,8 +3413,10 @@ void ConsoleVRDPServer::ClipboardCreate(uint32_t u32ClientId)
     {
         if (mcClipboardRefs == 0)
         {
-            vrc = HGCMHostRegisterServiceExtension(&mhClipboard, "VBoxSharedClipboard", ClipboardServiceExtension, this);
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
+            vrc = GuestShClInst()->RegisterServiceExtension(ClipboardServiceExtension, this /* pvExtension */);
             AssertRC(vrc);
+#endif /* VBOX_WITH_SHARED_CLIPBOARD */
         }
 
         mcClipboardRefs++;
@@ -3432,10 +3436,11 @@ void ConsoleVRDPServer::ClipboardDelete(uint32_t u32ClientId)
         {
             mcClipboardRefs--;
 
-            if (mcClipboardRefs == 0 && mhClipboard)
+            if (mcClipboardRefs == 0)
             {
-                HGCMHostUnregisterServiceExtension(mhClipboard);
-                mhClipboard = NULL;
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
+                GuestShClInst()->UnregisterServiceExtension(ClipboardServiceExtension);
+#endif /* VBOX_WITH_SHARED_CLIPBOARD */
             }
         }
 

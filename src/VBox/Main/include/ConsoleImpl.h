@@ -219,6 +219,7 @@ public:
     HRESULT i_onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForce);
     HRESULT i_onCPUChange(ULONG aCPU, BOOL aRemove);
     HRESULT i_onCPUExecutionCapChange(ULONG aExecutionCap);
+    HRESULT i_onClipboardError(const Utf8Str &aId, const Utf8Str &aErrMsg, LONG aRc);
     HRESULT i_onClipboardModeChange(ClipboardMode_T aClipboardMode);
     HRESULT i_onClipboardFileTransferModeChange(bool aEnabled);
     HRESULT i_onDnDModeChange(DnDMode_T aDnDMode);
@@ -1189,10 +1190,17 @@ private:
     Utf8Str                             m_strLogKeyStore;
 #endif
 
-#ifdef VBOX_WITH_DRAG_AND_DROP
-    HGCMSVCEXTHANDLE m_hHgcmSvcExtDragAndDrop;
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+    /* Service extension for the Shared Clipboard HGCM service. */
+    HGCMSVCEXTHANDLE                    m_hHgcmSvcExtShCl;
+# endif
 #endif
 
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    /* Service extension for the Drag'n Drop HGCM service. */
+    HGCMSVCEXTHANDLE                    m_hHgcmSvcExtDragAndDrop;
+#endif
     /** Pointer to the progress object of a live cancelable task.
      *
      * This is currently only used by Console::Teleport(), but is intended to later

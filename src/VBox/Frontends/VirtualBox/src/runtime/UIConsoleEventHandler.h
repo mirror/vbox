@@ -102,6 +102,8 @@ signals:
     void sigAudioAdapterChange();
     /** Notifies clipboard mode change. */
     void sigClipboardModeChange(KClipboardMode enmMode);
+    /** Notifies about a clipboard error. */
+    void sigClipboardError(QString strId, QString strMsg, long rcError);
     /** Notifies drag and drop mode change. */
     void sigDnDModeChange(KDnDMode enmMode);
 

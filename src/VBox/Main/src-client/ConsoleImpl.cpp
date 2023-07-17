@@ -90,6 +90,9 @@
 #ifdef VBOX_WITH_VIRT_ARMV8
 # include "ResourceStoreImpl.h"
 #endif
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
+# include "GuestShClPrivate.h"
+#endif
 #include "StringifyEnums.h"
 
 #include "VBoxEvents.h"
@@ -5659,6 +5662,47 @@ HRESULT Console::i_onCPUExecutionCapChange(ULONG aExecutionCap)
 }
 
 /**
+ * Called by IInternalSessionControl::OnClipboardError().
+ *
+ * @note Locks this object for writing.
+ */
+HRESULT Console::i_onClipboardError(const Utf8Str &aId, const Utf8Str &aErrMsg, LONG aRc)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.hrc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT hrc = S_OK;
+
+    /* don't trigger the drag and drop mode change if the VM isn't running */
+    SafeVMPtrQuiet ptrVM(this);
+    if (ptrVM.isOk())
+    {
+        if (   mMachineState == MachineState_Running
+            || mMachineState == MachineState_Teleporting
+            || mMachineState == MachineState_LiveSnapshotting)
+        {
+        }
+        else
+            hrc = i_setInvalidMachineStateError();
+        ptrVM.release();
+    }
+
+    /* notify console callbacks on success */
+    if (SUCCEEDED(hrc))
+    {
+        alock.release();
+        ::FireClipboardErrorEvent(mEventSource, aId, aErrMsg, aRc);
+    }
+
+    LogFlowThisFunc(("Leaving hrc=%#x\n", hrc));
+    return hrc;
+}
+
+/**
  * Called by IInternalSessionControl::OnClipboardModeChange().
  *
  * @note Locks this object for writing.
@@ -8944,9 +8988,15 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
         /* Leave the lock since EMT might wait for it and will call us back as addVMCaller() */
         alock.release();
 
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-        /** @todo Deregister area callbacks?   */
-# endif
+# ifdef VBOX_WITH_SHARED_CLIPBOARD
+        if (m_hHgcmSvcExtShCl)
+        {
+            HGCMHostUnregisterServiceExtension(m_hHgcmSvcExtShCl);
+            m_hHgcmSvcExtShCl = NULL;
+        }
+        GuestShCl::destroyInstance();
+#endif
+
 # ifdef VBOX_WITH_DRAG_AND_DROP
         if (m_hHgcmSvcExtDragAndDrop)
         {

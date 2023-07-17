@@ -402,6 +402,10 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_CERTIFICATE,
     /** Main group, IChoiceFormValue. */
     LOG_GROUP_MAIN_CHOICEFORMVALUE,
+    /** Main group, IClipboardErrorEvent. */
+    LOG_GROUP_MAIN_CLIPBOARDERROREVENT,
+    /** Main group, IClipboardEvent. */
+    LOG_GROUP_MAIN_CLIPBOARDEVENT,
     /** Main group, ICloudClient. */
     LOG_GROUP_MAIN_CLOUDCLIENT,
     /** Main group, ICloudMachine. */
@@ -1014,6 +1018,8 @@ typedef enum VBOXLOGGROUP
     "MAIN_BOOLEANFORMVALUE", \
     "MAIN_CERTIFICATE", \
     "MAIN_CHOICEFORMVALUE", \
+    "MAIN_CLIPBOARDERROREVENT", \
+    "MAIN_CLIPBOARDEVENT", \
     "MAIN_CLOUDCLIENT", \
     "MAIN_CLOUDMACHINE", \
     "MAIN_CLOUDNETWORK", \

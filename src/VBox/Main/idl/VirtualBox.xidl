@@ -26395,7 +26395,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="03b0e6ea-28fe-4f0a-a3ec-1a21703da6f7"
+    uuid="f698ab32-91e4-4379-b99c-174cebecfa5e"
     >
 
     <desc>
@@ -26911,8 +26911,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           not unnecessarily overflow the event queue.</note>
       </desc>
     </const>
+    <const name="OnClipboardError" value="122">
+      <desc>
+        See <link to="IClipboardErrorEvent">IClipboardErrorEvent</link>.
+      </desc>
+    </const>
     <!-- End event marker -->
-    <const name="End" value="122">
+    <const name="End" value="123">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -27762,6 +27767,45 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Whether file transfers are allowed or not.
       </desc>
     </attribute>
+  </interface>
+
+  <interface
+    name="IClipboardEvent" extends="IEvent"
+    uuid="f22dd3b4-e4d0-437a-bfdf-0372896ba162"
+    wsmap="managed">
+    <desc>
+      Abstract base interface for clipboard events.
+    </desc>
+    <attribute name="id" type="wstring" readonly="yes">
+      <desc>Name of the clipboard this event belongs to.
+
+      For Windows or macOS hosts / guests, this string is empty.
+      For X11-based hosts / guests, this can hold either "PRIMARY" or "SECONDARY".
+      </desc>
+    </attribute>
+  </interface>
+
+  <interface
+    name="IClipboardErrorEvent" extends="IClipboardEvent"
+    uuid="9e5f6f25-beda-46ad-8ddb-23c0268ac345"
+    wsmap="managed" autogen="VBoxEvent" id="OnClipboardError"
+    >
+    <desc>
+      Notification when a clipboard error occurred.
+    </desc>
+
+    <attribute name="msg" type="wstring" readonly="yes">
+      <desc>
+        Error message in human readable format.
+      </desc>
+    </attribute>
+
+    <attribute name="rcError" type="long" readonly="yes">
+      <desc>
+        IPRT-style error code.
+      </desc>
+    </attribute>
+
   </interface>
 
   <interface

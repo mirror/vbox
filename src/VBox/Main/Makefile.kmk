@@ -1222,6 +1222,10 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
   	src-client/GuestProcessImpl.cpp \
   	src-client/GuestSessionImpl.cpp
  endif
+ ifdef VBOX_WITH_SHARED_CLIPBOARD
+  VBoxC_SOURCES += \
+  	src-client/GuestShClPrivate.cpp
+ endif
  ifdef VBOX_WITH_DRAG_AND_DROP
   VBoxC_SOURCES += \
   	src-client/GuestDnDPrivate.cpp \

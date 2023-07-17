@@ -141,6 +141,16 @@ void UINotificationMessage::warnAboutInvalidEncryptionPassword(const QString &st
                                                    .arg(strPasswordId));
 }
 
+/* static */
+void UINotificationMessage::showClipboardError(QString strId, QString strMsg, long rcError)
+{
+    RT_NOREF(strId, rcError);
+
+    UINotificationMessage::createMessage(
+        QApplication::translate("UIMessageCenter", "Shared Clipboard Error"),
+        QApplication::translate("UIMessageCenter", strMsg.toUtf8().constData()));
+}
+
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 /* static */
 void UINotificationMessage::showUpdateNotFound()

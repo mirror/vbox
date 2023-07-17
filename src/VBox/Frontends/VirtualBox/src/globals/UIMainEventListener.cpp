@@ -37,6 +37,7 @@
 /* COM includes: */
 #include "COMEnums.h"
 #include "CCanShowWindowEvent.h"
+#include "CClipboardErrorEvent.h"
 #include "CClipboardModeChangedEvent.h"
 #include "CCloudProfileChangedEvent.h"
 #include "CCloudProfileRegisteredEvent.h"
@@ -610,6 +611,12 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
         {
             CClipboardModeChangedEvent comEventSpecific(pEvent);
             emit sigClipboardModeChange(comEventSpecific.GetClipboardMode());
+            break;
+        }
+        case KVBoxEventType_OnClipboardError:
+        {
+            CClipboardErrorEvent comEventSpecific(pEvent);
+            emit sigClipboardError(comEventSpecific.GetId(), comEventSpecific.GetMsg(), comEventSpecific.GetRcError());
             break;
         }
         case KVBoxEventType_OnDnDModeChanged:

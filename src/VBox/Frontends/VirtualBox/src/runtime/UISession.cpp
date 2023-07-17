@@ -2514,6 +2514,8 @@ void UISession::prepareConsoleEventHandlers()
             this, &UISession::sigAudioAdapterChange);
     connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigClipboardModeChange,
             this, &UISession::sigClipboardModeChange);
+    connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigClipboardError,
+            this, &UISession::sigClipboardError);
     connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigCPUExecutionCapChange,
             this, &UISession::sigCPUExecutionCapChange);
     connect(m_pConsoleEventhandler, &UIConsoleEventHandler::sigDnDModeChange,
