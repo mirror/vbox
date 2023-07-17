@@ -5237,14 +5237,16 @@ IEMIMPL_MEDIA_SSE_INSN_IMM8_6 mpsadbw
 ; where the instruction encoding takes up 6 bytes.
 ;
 ; @param    1       The instruction name.
-; @param    2       Whether the instruction has a 256-bit variant (1) or not (0).
+; @param    2       Whether the instruction has a 128-bit variant (1) or not (0).
+; @param    3       Whether the instruction has a 256-bit variant (1) or not (0).
 ;
 ; @param    A0      Pointer to the destination media register size operand (output).
 ; @param    A1      Pointer to the first source media register size operand (input).
 ; @param    A2      Pointer to the second source media register size operand (input).
 ; @param    A3      The 8-bit immediate
 ;
-%macro IEMIMPL_MEDIA_AVX_INSN_IMM8_6 2
+%macro IEMIMPL_MEDIA_AVX_INSN_IMM8_6 3
+ %if %2 == 1
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
@@ -5275,8 +5277,9 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u128, 16
  %endrep
 .immEnd: IEMCHECK_256_JUMP_ARRAY_SIZE (.immEnd - .imm0), 0x800
 ENDPROC iemAImpl_ %+ %1 %+ _u128
+ %endif
 
- %if %2 == 1
+ %if %3 == 1
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u256, 16
         PROLOGUE_4_ARGS
         IEMIMPL_AVX_PROLOGUE
@@ -5310,11 +5313,13 @@ ENDPROC iemAImpl_ %+ %1 %+ _u256
  %endif
 %endmacro
 
-IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vblendps,   1
-IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vblendpd,   1
-IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vpblendw,   1
-IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vpalignr,   1
-IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vpclmulqdq, 0
+IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vblendps,   1, 1
+IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vblendpd,   1, 1
+IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vpblendw,   1, 1
+IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vpalignr,   1, 1
+IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vpclmulqdq, 1, 0
+IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vperm2i128, 0, 1
+IEMIMPL_MEDIA_AVX_INSN_IMM8_6 vperm2f128, 0, 1
 
 
 ;;

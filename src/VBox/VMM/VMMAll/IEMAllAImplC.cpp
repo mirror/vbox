@@ -18446,6 +18446,78 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_mpsadbw_u128_fallback,(PRTUINT128U puDst, PCRTU
 
 
 /**
+ * VPERM2I128
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_vperm2i128_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2, uint8_t bImm))
+{
+    if (bImm & RT_BIT(3))
+    {
+        puDst->au64[0] = 0;
+        puDst->au64[1] = 0;
+    }
+    else
+    {
+        switch (bImm & 0x3)
+        {
+            case 0:
+                puDst->au64[0] = puSrc1->au64[0];
+                puDst->au64[1] = puSrc1->au64[1];
+                break;
+            case 1:
+                puDst->au64[0] = puSrc1->au64[2];
+                puDst->au64[1] = puSrc1->au64[3];
+                break;
+            case 2:
+                puDst->au64[0] = puSrc2->au64[0];
+                puDst->au64[1] = puSrc2->au64[1];
+                break;
+            case 3:
+                puDst->au64[0] = puSrc2->au64[2];
+                puDst->au64[1] = puSrc2->au64[3];
+                break;
+        }
+    }
+
+    if (bImm & RT_BIT(7))
+    {
+        puDst->au64[2] = 0;
+        puDst->au64[3] = 0;
+    }
+    else
+    {
+        switch ((bImm >> 4) & 0x3)
+        {
+            case 0:
+                puDst->au64[2] = puSrc1->au64[0];
+                puDst->au64[3] = puSrc1->au64[1];
+                break;
+            case 1:
+                puDst->au64[2] = puSrc1->au64[2];
+                puDst->au64[3] = puSrc1->au64[3];
+                break;
+            case 2:
+                puDst->au64[2] = puSrc2->au64[0];
+                puDst->au64[3] = puSrc2->au64[1];
+                break;
+            case 3:
+                puDst->au64[2] = puSrc2->au64[2];
+                puDst->au64[3] = puSrc2->au64[3];
+                break;
+        }
+    }
+}
+
+
+/**
+ * VPERM2F128
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_vperm2f128_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2, uint8_t bImm))
+{
+    iemAImpl_vperm2i128_u256_fallback(puDst, puSrc1, puSrc2, bImm);
+}
+
+
+/**
  * DPPS
  */
 IEM_DECL_IMPL_DEF(void, iemAImpl_dpps_u128_fallback,(uint32_t *pfMxcsr, PX86XMMREG puDst, PCIEMMEDIAF2XMMSRC pSrc, uint8_t bImm))
