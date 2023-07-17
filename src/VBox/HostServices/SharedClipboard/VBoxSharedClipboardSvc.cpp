@@ -1616,7 +1616,7 @@ static int shClSvcClientReportFormats(PSHCLCLIENT pClient, uint32_t cParms, VBOX
             {
                 SHCLEXTPARMS parms;
                 RT_ZERO(parms);
-                parms.uFormat = fFormats;
+                parms.u.ReportFormats.uFormats = fFormats;
 
                 g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE, &parms, sizeof(parms));
             }
@@ -1753,9 +1753,9 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
         SHCLEXTPARMS parms;
         RT_ZERO(parms);
 
-        parms.uFormat  = uFormat;
-        parms.u.pvData = pvData;
-        parms.cbData   = cbData;
+        parms.u.ReadWriteData.uFormat = uFormat;
+        parms.u.ReadWriteData.pvData  = pvData;
+        parms.u.ReadWriteData.cbData  = cbData;
 
         g_ExtState.fReadingData = true;
 
@@ -1763,7 +1763,7 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
         rc = g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_READ, &parms, sizeof(parms));
 
         LogRel2(("Shared Clipboard: Read extension clipboard data (fDelayedAnnouncement=%RTbool, fDelayedFormats=%#x, max %RU32 bytes), got %RU32 bytes: rc=%Rrc\n",
-                 g_ExtState.fDelayedAnnouncement, g_ExtState.fDelayedFormats, cbData, parms.cbData, rc));
+                 g_ExtState.fDelayedAnnouncement, g_ExtState.fDelayedFormats, cbData, parms.u.ReadWriteData.cbData, rc));
 
         /* Did the extension send the clipboard formats yet?
          * Otherwise, do this now. */
@@ -1779,7 +1779,7 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
         g_ExtState.fReadingData = false;
 
         if (RT_SUCCESS(rc))
-            cbActual = parms.cbData;
+            cbActual = parms.u.ReadWriteData.cbData;
     }
     else
     {
@@ -1948,9 +1948,9 @@ static int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCM
     {
         SHCLEXTPARMS parms;
         RT_ZERO(parms);
-        parms.uFormat   = uFormat;
-        parms.u.pvData  = pvData;
-        parms.cbData    = cbData;
+        parms.u.ReadWriteData.uFormat = uFormat;
+        parms.u.ReadWriteData.pvData  = pvData;
+        parms.u.ReadWriteData.cbData  = cbData;
 
         g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_WRITE, &parms, sizeof(parms));
         rc = VINF_SUCCESS;
@@ -2797,7 +2797,8 @@ static DECLCALLBACK(int) svcRegisterExtension(void *, PFNHGCMSVCEXT pfnExtension
         g_ExtState.pfnExtension = pfnExtension;
         g_ExtState.pvExtension  = pvExtension;
 
-        parms.u.pfnCallback = extCallback;
+        parms.u.SetCallback.pfnCallback = extCallback;
+
         g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK, &parms, sizeof(parms));
 
         LogRel2(("Shared Clipboard: registered service extension\n"));
