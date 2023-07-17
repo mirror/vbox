@@ -3116,7 +3116,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
                 vrc = i_changeClipboardFileTransferMode(RT_BOOL(fFileTransfersEnabled));
-                AssertLogRelMsg(RT_SUCCESS(vrc), ("Shared Clipboard: Failed to set initial file transfers mode (%u): vrc=%Rrc\n",
+                AssertLogRelMsg(RT_SUCCESS(vrc), ("Shared Clipboard: Failed to set initial file transfer mode (%u): vrc=%Rrc\n",
                                                  fFileTransfersEnabled, vrc));
 # endif
                 GuestShCl::createInstance(this /* pConsole */);
