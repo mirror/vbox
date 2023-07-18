@@ -281,9 +281,6 @@ void UIVisoContentBrowser::importISOContentToViso(const QString &strISOFilePath,
                                                   UICustomFileSystemItem *pParentItem /* = 0 */,
                                                   const QString &strDirPath /* = QString() */)
 {
-    /* We can import only a ISO file into VISO:*/
-    if (!importedISOPath().isEmpty())
-        return;
     if (!pParentItem)
     {
         pParentItem = startItem();

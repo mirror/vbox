@@ -453,7 +453,9 @@ void UIVisoCreatorWidget::sltISOImportAction()
     QStringList selectedObjectPaths = m_pHostBrowser->selectedPathList();
     if (selectedObjectPaths.isEmpty())
         return;
-    m_pVISOContentBrowser->importISOContentToViso(selectedObjectPaths[0]);
+    /* We can import only a ISO file into VISO:*/
+    if (m_pVISOContentBrowser->importedISOPath().isEmpty())
+        m_pVISOContentBrowser->importISOContentToViso(selectedObjectPaths[0]);
 }
 
 void UIVisoCreatorWidget::sltISORemoveAction()
