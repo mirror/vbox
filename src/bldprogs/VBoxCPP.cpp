@@ -199,6 +199,7 @@ typedef enum VBCPPEXPRKIND
     kVBCppExprKind_Ternary,
     kVBCppExprKind_SignedValue,
     kVBCppExprKind_UnsignedValue,
+    kVBCppExprKind_UndefMacroCall,
     kVBCppExprKind_End
 } VBCPPEXPRKIND;
 
@@ -307,6 +308,14 @@ typedef struct VBCPPEXPR
         {
             uint64_t        u64;
         } UnsignedValue;
+
+        /** kVBCppExprKind_UndefMacroCall */
+        struct
+        {
+            char           *pszName;
+            size_t          cArgs;
+            PVBCPPEXPR     *papArgs;
+        } UndefMacroCall;
     } u;
 } VBCPPEXPR;
 
@@ -469,6 +478,8 @@ typedef struct VBCPP
     bool                fPassThruPragmaSTD;
     /** Whether to pass thru other pragmas. */
     bool                fPassThruPragmaOther;
+    /** Whether to pass thru \#error directives or execute them. */
+    bool                fPassThruError;
     /** Whether to remove dropped lines from the output. */
     bool                fRemoveDroppedLines;
     /** Whether to preforme line splicing.
@@ -531,9 +542,11 @@ typedef struct VBCPP
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+static VBCPPEXPRRET vbcppExprParseUnaryOrValue(PVBCPPEXPRPARSER pParser);
 static PVBCPPMACRO  vbcppMacroLookup(PVBCPP pThis, const char *pszDefine, size_t cchDefine);
 static RTEXITCODE   vbcppMacroExpandIt(PVBCPP pThis, PVBCPPMACROEXP pExp, size_t offMacro, PVBCPPMACRO pMacro, size_t offParameters);
-static RTEXITCODE   vbcppMacroExpandReScan(PVBCPP pThis, PVBCPPMACROEXP pExp, VBCPPMACRORESCANMODE enmMode, size_t *pcReplacements);
+static RTEXITCODE   vbcppMacroExpandReScan(PVBCPP pThis, PVBCPPMACROEXP pExp, VBCPPMACRORESCANMODE enmMode,
+                                           size_t *pcReplacements, size_t *pcDefinedUnknown);
 static void         vbcppMacroExpandCleanup(PVBCPPMACROEXP pExp);
 
 
@@ -621,9 +634,10 @@ static RTEXITCODE vbcppErrorPos(PVBCPP pThis, const char *pszPos, const char *ps
     NOREF(pszPos); NOREF(pThis);
     va_list va;
     va_start(va, pszMsg);
-    RTMsgErrorV(pszMsg, va);
+    //RTMsgErrorV(pszMsg, va);
+    RTEXITCODE rcExit = vbcppErrorV(pThis, pszMsg, va);
     va_end(va);
-    return pThis->rcExit = RTEXITCODE_FAILURE;
+    return rcExit;
 }
 
 
@@ -1592,7 +1606,7 @@ static RTEXITCODE vbcppProcessIdentifier(PVBCPP pThis, PSCMSTREAM pStrmInput)
         if (rcExit == RTEXITCODE_SUCCESS)
             rcExit = vbcppMacroExpandIt(pThis, &ExpCtx, 0 /* offset */, pMacro, cchDefine);
         if (rcExit == RTEXITCODE_SUCCESS)
-            rcExit = vbcppMacroExpandReScan(pThis, &ExpCtx, kMacroReScanMode_Normal, NULL);
+            rcExit = vbcppMacroExpandReScan(pThis, &ExpCtx, kMacroReScanMode_Normal, NULL, NULL);
         if (rcExit == RTEXITCODE_SUCCESS)
         {
             /*
@@ -2391,12 +2405,16 @@ static RTEXITCODE vbcppMacroExpandDefinedOperator(PVBCPP pThis, PVBCPPMACROEXP p
  * @param   enmMode             The re-scan mode.
  * @param   pcReplacements      Where to return the number of replacements
  *                              performed.  Optional.
+ * @param   pcDefinedUnknown    Where to return the number of defined() checks
+ *                              on unknown macros.  Optional.
  */
-static RTEXITCODE vbcppMacroExpandReScan(PVBCPP pThis, PVBCPPMACROEXP pExp, VBCPPMACRORESCANMODE enmMode, size_t *pcReplacements)
+static RTEXITCODE vbcppMacroExpandReScan(PVBCPP pThis, PVBCPPMACROEXP pExp, VBCPPMACRORESCANMODE enmMode,
+                                         size_t *pcReplacements, size_t *pcDefinedUnknown)
 {
-    RTEXITCODE  rcExit        = RTEXITCODE_SUCCESS;
-    size_t      cReplacements = 0;
-    size_t      off           = 0;
+    RTEXITCODE  rcExit          = RTEXITCODE_SUCCESS;
+    size_t      cReplacements   = 0;
+    size_t      cDefinedUnknown = 0;
+    size_t      off             = 0;
     unsigned    ch;
     while (   off < pExp->StrBuf.cchBuf
            && (ch = vbcppMacroExpandGetCh(pExp, &off)) != ~(unsigned)0)
@@ -2466,6 +2484,7 @@ static RTEXITCODE vbcppMacroExpandReScan(PVBCPP pThis, PVBCPPMACROEXP pExp, VBCP
                          && !strncmp(&pExp->StrBuf.pszBuf[offDefine], "defined", cchDefine))
                 {
                     cReplacements++;
+                    cDefinedUnknown++;
                     rcExit = vbcppMacroExpandDefinedOperator(pThis, pExp, offDefine, &off);
                 }
                 else
@@ -2481,6 +2500,8 @@ static RTEXITCODE vbcppMacroExpandReScan(PVBCPP pThis, PVBCPPMACROEXP pExp, VBCP
 
     if (pcReplacements)
         *pcReplacements = cReplacements;
+    if (pcDefinedUnknown)
+        *pcDefinedUnknown = cDefinedUnknown;
     return rcExit;
 }
 
@@ -2666,7 +2687,8 @@ static RTEXITCODE vbcppMacroAddFn(PVBCPP pThis, const char *pszDefine, size_t cc
      * Determin the number of arguments and how much space their names
      * requires.  Performing syntax validation while parsing.
      */
-    uint32_t cchArgNames = 0;
+    bool     fVariadic   = false;
+    size_t   cchArgNames = 0;
     uint32_t cArgs       = 0;
     for (size_t off = 0; off < cchParams; off++)
     {
@@ -2674,14 +2696,35 @@ static RTEXITCODE vbcppMacroAddFn(PVBCPP pThis, const char *pszDefine, size_t cc
         bool fIgnoreComma = cArgs != 0;
         while (off < cchParams)
         {
-            if (!RT_C_IS_SPACE(pszParams[off]))
+            if (   !RT_C_IS_SPACE(pszParams[off])
+                && (   pszParams[off] != '\\'
+                    || (pszParams[off + 1] != '\n' && pszParams[off + 1] != '\r')))
             {
                 if (pszParams[off] != ',' || !fIgnoreComma)
                 {
                     if (vbcppIsCIdentifierLeadChar(pszParams[off]))
                         break;
-                    /** @todo variadic macros. */
-                    return vbcppErrorPos(pThis, &pszParams[off], "Unexpected character");
+
+                    /* Check for variadic macro argument, just parsing it for now. */
+                    if (   pszParams[off]     == '.'
+                        && off + 3 <= cchParams
+                        && pszParams[off + 1] == '.'
+                        && pszParams[off + 2] == '.')
+                    {
+                        size_t const offSaved = off;
+                        off += 3;
+                        while (off < cchParams && RT_C_IS_SPACE(pszParams[off]))
+                            off++;
+                        if (off == cchParams)
+                        {
+                            cArgs++;
+                            cchArgNames += sizeof("...");
+                            fVariadic = true;
+                            break;
+                        }
+                        off = offSaved;
+                    }
+                    return vbcppErrorPos(pThis, &pszParams[off], "Unexpected character (%#x, off=%zu)", pszParams[off], off);
                 }
                 fIgnoreComma = false;
             }
@@ -2715,7 +2758,7 @@ static RTEXITCODE vbcppMacroAddFn(PVBCPP pThis, const char *pszDefine, size_t cc
     pszDst += cchDefine;
     *pszDst++ = '\0';
     pMacro->fFunction   = true;
-    pMacro->fVarArg     = false;
+    pMacro->fVarArg     = fVariadic;
     pMacro->fCmdLine    = fCmdLine;
     pMacro->fExpanding  = false;
     pMacro->cArgs       = cArgs;
@@ -2735,7 +2778,9 @@ static RTEXITCODE vbcppMacroAddFn(PVBCPP pThis, const char *pszDefine, size_t cc
         bool fIgnoreComma = cArgs != 0;
         while (off < cchParams)
         {
-            if (!RT_C_IS_SPACE(pszParams[off]))
+            if (   !RT_C_IS_SPACE(pszParams[off])
+                && (   pszParams[off] != '\\'
+                    || (pszParams[off + 1] != '\n' && pszParams[off + 1] != '\r')))
             {
                 if (pszParams[off] != ',' || !fIgnoreComma)
                     break;
@@ -2747,13 +2792,25 @@ static RTEXITCODE vbcppMacroAddFn(PVBCPP pThis, const char *pszDefine, size_t cc
             break;
 
         /* Found and argument. First character is already validated. */
-        VBCPP_BITMAP_SET(pMacro->bmArgs, pszParams[off]);
         pMacro->papszArgs[iArg] = pszDst;
-        do
+        if (!fVariadic || iArg + 1 < cArgs)
         {
-            *pszDst++ = pszParams[off++];
-        } while (   off < cchParams
-                 && vbcppIsCIdentifierChar(pszParams[off]));
+            VBCPP_BITMAP_SET(pMacro->bmArgs, pszParams[off]);
+            do
+            {
+                *pszDst++ = pszParams[off++];
+            } while (   off < cchParams
+                     && vbcppIsCIdentifierChar(pszParams[off]));
+        }
+        else
+        {
+            Assert(strncmp(&pszParams[off], "...", 3) == 0);
+            VBCPP_BITMAP_SET(pMacro->bmArgs, '_'); /* __VA_ARGS__ */
+            off += 3;
+            *pszDst++ = '.';
+            *pszDst++ = '.';
+            *pszDst++ = '.';
+        }
         *pszDst++ = '\0';
         iArg++;
     }
@@ -3031,6 +3088,7 @@ static RTEXITCODE vbcppDirectiveDefine(PVBCPP pThis, PSCMSTREAM pStrmInput, size
                         ScmStreamGetCh(pStrmInput);
                         break;
                     }
+                    chPrev = ch;
                     ScmStreamGetCh(pStrmInput);
                 }
             }
@@ -3230,7 +3288,7 @@ static RTEXITCODE vbcppCondPush(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offS
     pCond->fSeenElse        = false;
     pCond->fElIfDecided     = enmResult == kVBCppEval_True;
     pCond->iLevel           = pThis->cCondStackDepth;
-    pCond->iKeepLevel       = (pUp ? pUp->iKeepLevel : 0) + enmResult == kVBCppEval_Undecided;
+    pCond->iKeepLevel       = (pUp ? pUp->iKeepLevel : 0) + (enmResult == kVBCppEval_Undecided);
     pCond->pchCond          = pchCondition;
     pCond->cchCond          = cchCondition;
 
@@ -3293,6 +3351,13 @@ static void vbcppExprDestoryTree(PVBCPPEXPR pExpr)
         case kVBCppExprKind_SignedValue:
         case kVBCppExprKind_UnsignedValue:
             break;
+        case kVBCppExprKind_UndefMacroCall:
+            pExpr->u.UndefMacroCall.pszName = NULL;
+            for (size_t i = 0; i < pExpr->u.UndefMacroCall.cArgs; i++)
+                vbcppExprDestoryTree(pExpr->u.UndefMacroCall.papArgs[i]);
+            RTMemFree(pExpr->u.UndefMacroCall.papArgs);
+            RTMemFree(pExpr->u.UndefMacroCall.pszName);
+            break;
         default:
             AssertFailed();
             return;
@@ -3347,7 +3412,34 @@ static PVBCPPEXPR vbcppExprParseAllocNode(PVBCPPEXPRPARSER pParser)
 
 
 /**
- * Looks for right parentheses and/or end of expression.
+ * Checks if we're currently in an call to an undefined macro.
+ *
+ * This will walk up the expression chain and check for a call node while also
+ * taking parenthesis nodes into account.
+ *
+ * @returns true if we are, false if we aren't.
+ * @param   pParser             The parser instance.
+ */
+static bool vbcppExprParseIsInUndefCall(PVBCPPEXPRPARSER pParser)
+{
+    PVBCPPEXPR pExpr = pParser->pCur;
+    while (pExpr)
+    {
+        if (pExpr->enmKind == kVBCppExprKind_UndefMacroCall)
+            return true;
+        if (   pExpr->enmKind == kVBCppExprKind_Unary
+            && pExpr->u.Unary.enmOperator == kVBCppUnaryOp_Parenthesis)
+               break;
+        pExpr = pExpr->pParent;
+    }
+    return false;
+}
+
+
+/**
+ * Looks for right parentheses, comma and/or end of expression.
+ *
+ * (The comma is only if we're in the context of a undefined macro call.)
  *
  * @returns Expression status.
  * @retval  kExprRet_Ok
@@ -3361,17 +3453,45 @@ static VBCPPEXPRRET vbcppExprParseMaybeRParenOrEoe(PVBCPPEXPRPARSER pParser)
     for (;;)
     {
         vbcppExprParseSkipWhiteSpace(pParser);
-        char ch = *pParser->pszCur;
+        char const ch = *pParser->pszCur;
         if (ch == '\0')
-            return kExprRet_EndOfExpr;
-        if (ch != ')')
+        {
+            /* Unwind making sure we don't have any incomplete parentheses or
+               incomplete call expressions on the stack. */
+            PVBCPPEXPR pCur = pParser->pCur;
+            Assert(pCur);
+            for (;;)
+            {
+                if (!pCur->fComplete)
+                {
+                    if (   pCur->enmKind == kVBCppExprKind_Unary
+                        && pCur->u.Unary.enmOperator == kVBCppUnaryOp_Parenthesis)
+                        return vbcppExprParseError(pParser, "Missing right parenthesis");
+                    if (pCur->enmKind == kVBCppExprKind_UndefMacroCall)
+                        return vbcppExprParseError(pParser, "Missing right parenthesis for undefined macro call");
+                }
+                if (pCur->pParent)
+                    pCur = pCur->pParent;
+                else
+                {
+                    pParser->pCur  = pCur;
+                    pParser->ppCur = NULL;
+                    return kExprRet_EndOfExpr;
+                }
+            }
+        }
+
+        if (ch != ')' && (ch != ',' || !vbcppExprParseIsInUndefCall(pParser))) /** @todo just immediate?  */
             break;
         pParser->pszCur++;
 
         PVBCPPEXPR pCur = pParser->pCur;
         while (   pCur
+               && (   pCur->enmKind != kVBCppExprKind_UndefMacroCall
+                   || pCur->fComplete /*?*/)
                && (   pCur->enmKind != kVBCppExprKind_Unary
-                   || pCur->u.Unary.enmOperator != kVBCppUnaryOp_Parenthesis))
+                   || pCur->u.Unary.enmOperator != kVBCppUnaryOp_Parenthesis
+                   || pCur->fComplete))
         {
             switch (pCur->enmKind)
             {
@@ -3400,6 +3520,8 @@ static VBCPPEXPRRET vbcppExprParseMaybeRParenOrEoe(PVBCPPEXPRPARSER pParser)
                     pCur->fComplete = true;
 #endif
                     break;
+                case kVBCppExprKind_UndefMacroCall:
+                    break;
                 default:
                     return vbcppExprParseError(pParser, "Internal error (enmKind=%d)", pCur->enmKind);
             }
@@ -3407,16 +3529,29 @@ static VBCPPEXPRRET vbcppExprParseMaybeRParenOrEoe(PVBCPPEXPRPARSER pParser)
         }
         if (!pCur)
             return vbcppExprParseError(pParser, "Right parenthesis without a left one");
-        pCur->fComplete = true;
 
-        while (   pCur->enmKind == kVBCppExprKind_Unary
-               && pCur->u.Unary.enmOperator != kVBCppUnaryOp_Parenthesis
-               && pCur->pParent)
+        /*
+         * If we got down to an undefined macro call, we make it the current
+         * parser expression and return EndOfExpr.  The call expression is
+         * completed if we hit a ')'.
+         */
+        if (pCur->enmKind == kVBCppExprKind_UndefMacroCall)
         {
-            AssertReturn(pCur->u.Unary.pArg, vbcppExprParseError(pParser, "internal error"));
-            pCur->fComplete = true;
-            pCur = pCur->pParent;
+            pCur->fComplete = ch == ')';
+            pParser->pCur  = pCur;
+            pParser->ppCur = NULL;
+            return kExprRet_EndOfExpr;
         }
+
+        /*
+         * Complete the parenthesis expression and make it current.
+         */
+        Assert(   pCur->enmKind == kVBCppExprKind_Unary
+               && pCur->u.Unary.enmOperator == kVBCppUnaryOp_Parenthesis);
+        AssertReturn(pCur->u.Unary.pArg, vbcppExprParseError(pParser, "internal error"));
+        pCur->fComplete = true;
+        pParser->pCur  = pCur;
+        pParser->ppCur = NULL;
     }
 
     return kExprRet_Ok;
@@ -3564,8 +3699,8 @@ static VBCPPEXPRRET vbcppExprParseBinaryOperator(PVBCPPEXPRPARSER pParser)
      * Back up the tree until we find our spot.
      */
     PVBCPPEXPR *ppPlace = NULL;
-    PVBCPPEXPR  pChild  = NULL;
-    PVBCPPEXPR  pParent = pParser->pCur;
+    PVBCPPEXPR  pChild  = pParser->pCur;
+    PVBCPPEXPR  pParent = pChild->pParent;
     while (pParent)
     {
         if (pParent->enmKind == kVBCppExprKind_Unary)
@@ -3598,6 +3733,11 @@ static VBCPPEXPRRET vbcppExprParseBinaryOperator(PVBCPPEXPRPARSER pParser)
         else if (pParent->enmKind == kVBCppExprKind_Ternary)
         {
             return vbcppExprParseError(pParser, "The ternary operator is not implemented");
+        }
+        else if (pParent->enmKind == kVBCppExprKind_UndefMacroCall)
+        {
+            ppPlace = &pParent->u.UndefMacroCall.papArgs[pParent->u.UndefMacroCall.cArgs];
+            break;
         }
         else
             AssertReturn(   pParent->enmKind == kVBCppExprKind_SignedValue
@@ -3651,6 +3791,104 @@ static VBCPPEXPRRET vbcppExprParseBinaryOrEoeOrRparen(PVBCPPEXPRPARSER pParser)
 
 
 /**
+ * Worker for vbcppExprParseIdentifier that parses a call to an undefined macro
+ * in selective mode.
+ *
+ * @returns Expression status.
+ * @retval  kExprRet_Ok if binary operator was found processed.
+ * @retval  kExprRet_Error with msg.
+ * @retval  kExprRet_EndOfExpr
+ * @param   pParser             The parser instance.
+ * @param   pszMacro            The start of the macro name.
+ * @param   cchMacro            The length of the macro name.
+ */
+static VBCPPEXPRRET vbcppExprParseUndefMacroCall(PVBCPPEXPRPARSER pParser, const char *pszMacro, size_t cchMacro)
+{
+    /*
+     * Treat it as a call to an undefined macro function.
+     */
+    /* Create a node. */
+    PVBCPPEXPR const pExpr = vbcppExprParseAllocNode(pParser);
+    if (!pExpr)
+        return kExprRet_Error;
+    pExpr->enmKind                  = kVBCppExprKind_UndefMacroCall;
+    pExpr->fComplete                = false;
+    pExpr->u.UndefMacroCall.cArgs   = 0;
+    pExpr->u.UndefMacroCall.papArgs = NULL;
+    pExpr->u.UndefMacroCall.pszName = RTStrDupN(pszMacro, cchMacro);
+    AssertReturn(pExpr->u.UndefMacroCall.pszName, vbcppExprParseError(pParser, "out of memory"));
+
+    /* Link it. */
+    pExpr->pParent  = pParser->pCur;
+    pParser->pCur   = pExpr;
+    *pParser->ppCur = pExpr;
+    pParser->ppCur  = NULL;
+
+    /*
+     * Parse the argument list.
+     */
+    pParser->pszCur++;
+    for (size_t iArg = 0 ; ; iArg++)
+    {
+        /*
+         * Prepare the next argument expression pointer.
+         */
+        if (!(iArg % 16))
+        {
+            void *pvNew = RTMemRealloc(pExpr->u.UndefMacroCall.papArgs,
+                                       sizeof(pExpr->u.UndefMacroCall.papArgs[0]) * (iArg + 16));
+            AssertPtrReturn(pvNew, vbcppExprParseError(pParser, "out of memory"));
+            pExpr->u.UndefMacroCall.papArgs = (PVBCPPEXPR *)pvNew;
+        }
+        pExpr->u.UndefMacroCall.papArgs[iArg] = NULL;
+        pParser->ppCur = &pExpr->u.UndefMacroCall.papArgs[iArg];
+
+        /*
+         * Do the parsing.
+         */
+        for (;;)
+        {
+            /*
+             * Eat unary operators until we hit a value or end of argument/call.
+             */
+            VBCPPEXPRRET enmRet;
+            do
+                enmRet = vbcppExprParseUnaryOrValue(pParser);
+            while (enmRet == kExprRet_UnaryOperator);
+            if (enmRet == kExprRet_EndOfExpr)
+                break;
+            if (enmRet == kExprRet_Error)
+                return enmRet;
+            AssertReturn(enmRet == kExprRet_Value, vbcppExprParseError(pParser, "Expected value (enmRet=%d)", enmRet));
+
+            /*
+             * Non-unary operator, right parenthesis or end of argument/call is up next.
+             */
+            enmRet = vbcppExprParseBinaryOrEoeOrRparen(pParser);
+            if (enmRet == kExprRet_EndOfExpr)
+                break;
+            if (enmRet == kExprRet_Error)
+                return enmRet;
+            AssertReturn(enmRet == kExprRet_Ok, vbcppExprParseError(pParser, "Expected value (enmRet=%d)", enmRet));
+        }
+
+        /*
+         * Append the argument and skip past the comma or right parenthesis.
+         */
+        if (pExpr->u.UndefMacroCall.papArgs[iArg] != NULL || !pExpr->fComplete)
+            pExpr->u.UndefMacroCall.cArgs = iArg + 1;
+
+        Assert(pParser->pCur == pExpr);
+        if (pExpr->fComplete)
+            break;
+    }
+
+    pParser->ppCur = NULL;
+    return kExprRet_Value;
+}
+
+
+/**
  * Parses an identifier in the expression, replacing it by 0.
  *
  * All known identifiers has already been replaced by their macro values, so
@@ -3672,7 +3910,19 @@ static VBCPPEXPRRET vbcppExprParseIdentifier(PVBCPPEXPRPARSER pParser)
     const char *pszNext  = pszMacro + 1;
     while (vbcppIsCIdentifierChar(*pszNext))
         pszNext++;
-    size_t cchMacro = pszNext - pszMacro;
+    size_t const cchMacro = pszNext - pszMacro;
+
+    /* Skip spaces and check for parenthesis. */
+    pParser->pszCur = pszNext;
+    vbcppExprParseSkipWhiteSpace(pParser);
+    if (*pParser->pszCur == '(')
+    {
+        if (pParser->pThis->enmMode == kVBCppMode_Selective)
+            return vbcppExprParseUndefMacroCall(pParser, pszMacro, cchMacro);
+        return vbcppExprParseError(pParser, "%sUnknown unary operator '%.*s'",
+                                   pParser->pThis->enmMode != kVBCppMode_Standard ? "TODO selective: " : "",
+                                   cchMacro, pszMacro);
+    }
 
     /* Create a signed value node. */
     PVBCPPEXPR pExpr = vbcppExprParseAllocNode(pParser);
@@ -3687,12 +3937,6 @@ static VBCPPEXPRRET vbcppExprParseIdentifier(PVBCPPEXPRPARSER pParser)
     pParser->pCur               = pExpr;
     *pParser->ppCur             = pExpr;
     pParser->ppCur              = NULL;
-
-    /* Skip spaces and check for parenthesis. */
-    pParser->pszCur = pszNext;
-    vbcppExprParseSkipWhiteSpace(pParser);
-    if (*pParser->pszCur == '(')
-        return vbcppExprParseError(pParser, "Unknown unary operator '%.*s'", cchMacro, pszMacro);
 
     return kExprRet_Value;
 }
@@ -3749,18 +3993,18 @@ static VBCPPEXPRRET vbcppExprParseNumber(PVBCPPEXPRPARSER pParser)
         while (vbcppIsCIdentifierLeadChar(pszNext[cchSuffix]))
             cchSuffix++;
 
-        if (cchSuffix == '1' && (*pszNext == 'u' || *pszNext == 'U'))
+        if (cchSuffix == 1 && (*pszNext == 'u' || *pszNext == 'U'))
             fSigned = false;
-        else if (   cchSuffix == '1'
+        else if (   cchSuffix == 1
                  && (*pszNext == 'l' || *pszNext == 'L'))
             fSigned = true;
-        else if (   cchSuffix == '2'
+        else if (   cchSuffix == 2
                  && (!strncmp(pszNext, "ul", 2) || !strncmp(pszNext, "UL", 2)))
             fSigned = false;
-        else if (   cchSuffix == '2'
+        else if (   cchSuffix == 2
                  && (!strncmp(pszNext, "ll", 2) || !strncmp(pszNext, "LL", 2)))
             fSigned = true;
-        else if (   cchSuffix == '3'
+        else if (   cchSuffix == 3
                  && (!strncmp(pszNext, "ull", 3) || !strncmp(pszNext, "ULL", 3)))
             fSigned = false;
         else
@@ -3855,6 +4099,7 @@ static VBCPPEXPRRET vbcppExprParseCharacterConstant(PVBCPPEXPRPARSER pParser)
  * @retval  kExprRet_Value if value was found and processed.
  * @retval  kExprRet_UnaryOperator if an unary operator was found and processed.
  * @retval  kExprRet_Error with msg.
+ * @retval  kExprRet_EndOfExpr if reached ',' or ')' if in an undefined call.
  * @param   pParser             The parser instance.
  */
 static VBCPPEXPRRET vbcppExprParseUnaryOrValue(PVBCPPEXPRPARSER pParser)
@@ -3898,8 +4143,14 @@ static VBCPPEXPRRET vbcppExprParseUnaryOrValue(PVBCPPEXPRPARSER pParser)
         enmOperator = kVBCppUnaryOp_BitwiseNot;
     else if (ch == '(')
         enmOperator = kVBCppUnaryOp_Parenthesis;
+    else if ((ch == ',' || ch == ')') && pParser->pCur->enmKind == kVBCppExprKind_UndefMacroCall)
+    {
+        pParser->pszCur++;
+        pParser->pCur->fComplete = ch == ')';
+        return kExprRet_EndOfExpr;
+    }
     else
-        return vbcppExprParseError(pParser, "Unknown token '%.*s'", 32, pParser->pszCur - 1);
+        return vbcppExprParseError(pParser, "Unexpected token '%.*s'", 32, pParser->pszCur - 1);
     pParser->pszCur++;
 
     /* Create an operator node. */
@@ -4264,9 +4515,13 @@ static RTEXITCODE vbcppExprEvaluteTree(PVBCPP pThis, PVBCPPEXPR pRoot, PVBCPPEXP
  * @param   pThis               The C preprocessor instance.
  * @param   pszExpr             The expression.
  * @param   cchExpr             The length of the expression.
+ * @param   cReplacements       The number of replacements.
+ * @param   cDefinedUnknown     The number of defined(UNKNOWN) cases.  (Relevant
+ *                              for selective modes.)
  * @param   penmResult          Where to store the result.
  */
-static RTEXITCODE vbcppExprEval(PVBCPP pThis, char *pszExpr, size_t cchExpr, size_t cReplacements, VBCPPEVAL *penmResult)
+static RTEXITCODE vbcppExprEval(PVBCPP pThis, char *pszExpr, size_t cchExpr, size_t cReplacements, size_t cDefinedUnknown,
+                                VBCPPEVAL *penmResult)
 {
     Assert(strlen(pszExpr) == cchExpr);
     RT_NOREF_PV(cReplacements);
@@ -4276,7 +4531,7 @@ static RTEXITCODE vbcppExprEval(PVBCPP pThis, char *pszExpr, size_t cchExpr, siz
     RTEXITCODE  rcExit = vbcppExprParse(pThis, pszExpr, cchExpr, &pExprTree, &cUndefined);
     if (rcExit == RTEXITCODE_SUCCESS)
     {
-        if (   !cUndefined
+        if (   (!cUndefined && !cDefinedUnknown)
             || pThis->enmMode == kVBCppMode_SelectiveD
             || pThis->enmMode == kVBCppMode_Standard)
         {
@@ -4501,13 +4756,16 @@ static RTEXITCODE vbcppDirectiveIfOrElif(PVBCPP pThis, PSCMSTREAM pStrmInput, si
     RTEXITCODE  rcExit = vbcppExtractDirectiveLine(pThis, pStrmInput, &ExpCtx.StrBuf, &offComment);
     if (rcExit == RTEXITCODE_SUCCESS)
     {
+        if (RT_C_IS_SPACE(*pchCondition))
+            pchCondition++;
         size_t const    cchCondition = ScmStreamGetCur(pStrmInput) - pchCondition;
 
         /*
          * Expand known macros in it.
          */
         size_t          cReplacements;
-        rcExit = vbcppMacroExpandReScan(pThis, &ExpCtx, kMacroReScanMode_Expression, &cReplacements);
+        size_t          cDefinedUnknown;
+        rcExit = vbcppMacroExpandReScan(pThis, &ExpCtx, kMacroReScanMode_Expression, &cReplacements, &cDefinedUnknown);
         if (rcExit == RTEXITCODE_SUCCESS)
         {
             /*
@@ -4529,7 +4787,7 @@ static RTEXITCODE vbcppDirectiveIfOrElif(PVBCPP pThis, PSCMSTREAM pStrmInput, si
                  * Now, evalute the expression.
                  */
                 VBCPPEVAL enmResult;
-                rcExit = vbcppExprEval(pThis, pszExpr, cchExpr, cReplacements, &enmResult);
+                rcExit = vbcppExprEval(pThis, pszExpr, cchExpr, cReplacements, cDefinedUnknown, &enmResult);
                 if (rcExit == RTEXITCODE_SUCCESS)
                 {
                     /*
@@ -4570,7 +4828,7 @@ static RTEXITCODE vbcppDirectiveIfOrElif(PVBCPP pThis, PSCMSTREAM pStrmInput, si
                         {
                             ssize_t cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*selif", pCond->iKeepLevel - 1, "");
                             if (cch > 0)
-                                rcExit = vbcppOutputComment(pThis, pStrmInput, offStart, cch, 2);
+                                rcExit = vbcppOutputComment(pThis, pStrmInput, offStart, cch, 1);
                             else
                                 rcExit = vbcppError(pThis, "Output error %Rrc", (int)cch);
                         }
@@ -5017,8 +5275,33 @@ static RTEXITCODE vbcppDirectivePragma(PVBCPP pThis, PSCMSTREAM pStrmInput, size
  */
 static RTEXITCODE vbcppDirectiveError(PVBCPP pThis, PSCMSTREAM pStrmInput, size_t offStart)
 {
+    RT_NOREF(offStart);
+
+    /*
+     * Parse out the message.
+     */
+    size_t const off1st = vbcppProcessSkipWhite(pStrmInput);
+    size_t       offComment;
+    RTEXITCODE rcExit = vbcppInputSkipToEndOfDirectiveLine(pThis, pStrmInput, &offComment);
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        /*
+         * What to do about this
+         */
+        if (pThis->fPassThruError)
+        {
+            unsigned cchIndent = pThis->pCondStack ? pThis->pCondStack->iKeepLevel : 0;
+            ssize_t  cch = ScmStreamPrintf(&pThis->StrmOutput, "#%*serror", cchIndent, "");
+            if (cch > 0)
+                rcExit = vbcppOutputComment(pThis, pStrmInput, off1st, cch, 1);
+            else
+                rcExit = vbcppError(pThis, "output error");
+            return RTEXITCODE_SUCCESS;
+        }
+        return vbcppError(pThis, "Hit an #error");
+    }
     RT_NOREF_PV(offStart);
-    RT_NOREF_PV(pStrmInput);
+    vbcppError(pThis, "Malformed #error");
     return vbcppError(pThis, "Hit an #error");
 }
 
@@ -5074,7 +5357,7 @@ static RTEXITCODE vbcppProcessDirective(PVBCPP pThis, PSCMSTREAM pStrmInput)
     if (pchDirective)
     {
         size_t const offStart = ScmStreamTell(pStrmInput);
-#define IS_DIRECTIVE(a_sz) ( sizeof(a_sz) - 1 == cchDirective && strncmp(pchDirective, a_sz, sizeof(a_sz) - 1) == 0)
+#define IS_DIRECTIVE(a_sz) ( sizeof(a_sz) - 1 == cchDirective && memcmp(pchDirective, a_sz, sizeof(a_sz) - 1) == 0)
         if (IS_DIRECTIVE("if"))
             rcExit = vbcppDirectiveIfOrElif(pThis, pStrmInput, offStart, kVBCppCondKind_If);
         else if (IS_DIRECTIVE("elif"))
@@ -5234,21 +5517,30 @@ static RTEXITCODE vbcppPreprocess(PVBCPP pThis)
  */
 static RTEXITCODE vbcppOpenStreams(PVBCPP pThis)
 {
-    if (!pThis->pszInput)
-        return vbcppError(pThis, "Preprocessing the standard input stream is currently not supported");
-
-    size_t      cchName = strlen(pThis->pszInput);
-    PVBCPPINPUT pInput = (PVBCPPINPUT)RTMemAlloc(RT_UOFFSETOF_DYN(VBCPPINPUT, szName[cchName + 1]));
+    const char * const pszInput = pThis->pszInput ? pThis->pszInput : "stdin";
+    size_t const       cchName  = strlen(pszInput);
+    PVBCPPINPUT const  pInput   = (PVBCPPINPUT)RTMemAlloc(RT_UOFFSETOF_DYN(VBCPPINPUT, szName[cchName + 1]));
     if (!pInput)
         return vbcppError(pThis, "out of memory");
     pInput->pUp          = pThis->pInputStack;
     pInput->pszSpecified = pInput->szName;
-    memcpy(pInput->szName, pThis->pszInput, cchName + 1);
+    memcpy(pInput->szName, pszInput, cchName + 1);
     pThis->pInputStack   = pInput;
-    int rc = ScmStreamInitForReading(&pInput->StrmInput, pThis->pszInput);
-    if (RT_FAILURE(rc))
-        return vbcppError(pThis, "ScmStreamInitForReading returned %Rrc when opening input file (%s)",
-                          rc, pThis->pszInput);
+    int rc;
+    if (pThis->pszInput)
+    {
+        rc = ScmStreamInitForReading(&pInput->StrmInput, pThis->pszInput);
+        if (RT_FAILURE(rc))
+            return vbcppError(pThis, "ScmStreamInitForReading returned %Rrc when opening and reading in input file (%s)",
+                              rc, pThis->pszInput);
+    }
+    else
+    {
+        rc = ScmStreamInitForReadingFromStdInput(&pInput->StrmInput);
+        if (RT_FAILURE(rc))
+            return vbcppError(pThis, "ScmStreamInitForReadingFromStdInput returned %Rrc", rc);
+
+    }
 
     rc = ScmStreamInitForWriting(&pThis->StrmOutput, &pInput->StrmInput);
     if (RT_FAILURE(rc))
@@ -5278,6 +5570,7 @@ static void vbcppSetMode(PVBCPP pThis, VBCPPMODE enmMode)
             pThis->fPassThruPragmaD                 = false;
             pThis->fPassThruPragmaSTD               = true;
             pThis->fPassThruPragmaOther             = true;
+            pThis->fPassThruError                   = false;
             pThis->fRemoveDroppedLines              = false;
             pThis->fLineSplicing                    = true;
             pThis->enmIncludeAction                 = kVBCppIncludeAction_Include;
@@ -5292,6 +5585,7 @@ static void vbcppSetMode(PVBCPP pThis, VBCPPMODE enmMode)
             pThis->fPassThruPragmaD                 = true;
             pThis->fPassThruPragmaSTD               = true;
             pThis->fPassThruPragmaOther             = true;
+            pThis->fPassThruError                   = true;
             pThis->fRemoveDroppedLines              = true;
             pThis->fLineSplicing                    = false;
             pThis->enmIncludeAction                 = kVBCppIncludeAction_PassThru;
@@ -5306,6 +5600,7 @@ static void vbcppSetMode(PVBCPP pThis, VBCPPMODE enmMode)
             pThis->fPassThruPragmaD                 = true;
             pThis->fPassThruPragmaSTD               = false;
             pThis->fPassThruPragmaOther             = false;
+            pThis->fPassThruError                   = false;
             pThis->fRemoveDroppedLines              = true;
             pThis->fLineSplicing                    = false;
             pThis->enmIncludeAction                 = kVBCppIncludeAction_Drop;

@@ -102,6 +102,7 @@ typedef SCMSTREAM const *PCSCMSTREAM;
 
 
 int         ScmStreamInitForReading(PSCMSTREAM pStream, const char *pszFilename);
+int         ScmStreamInitForReadingFromStdInput(PSCMSTREAM pStream);
 int         ScmStreamInitForWriting(PSCMSTREAM pStream, PCSCMSTREAM pRelatedStream);
 void        ScmStreamDelete(PSCMSTREAM pStream);
 int         ScmStreamGetStatus(PCSCMSTREAM pStream);

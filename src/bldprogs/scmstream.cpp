@@ -91,6 +91,75 @@ int ScmStreamInitForReading(PSCMSTREAM pStream, const char *pszFilename)
 }
 
 /**
+ * Initialize an input stream from stdin.
+ *
+ * This will read the entire file from stdin before returning.
+ *
+ * @returns IPRT status code.
+ * @param   pStream             The stream to initialize.
+ * @param   pszFilename         The file to take the stream content from.
+ */
+int ScmStreamInitForReadingFromStdInput(PSCMSTREAM pStream)
+{
+    scmStreamInitInternal(pStream, false /*fWriteOrRead*/);
+
+    RTFILE hStdIn = NIL_RTFILE;
+    int rc = RTFileFromNative(&hStdIn, RTFILE_NATIVE_STDIN);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Allocate initial buffer.
+         */
+        pStream->pch = (char *)RTMemAlloc(_64K);
+        if (pStream->pch)
+        {
+            pStream->cbAllocated    = _64K;
+            pStream->fFileMemory    = false;
+
+            /*
+             * The read loop.
+             */
+            for (;;)
+            {
+                /* Make sure we've got at least 4K (random number) of buffer space to read into. */
+                size_t cbToRead = pStream->cbAllocated - pStream->cb;
+                if (cbToRead < _4K)
+                {
+                    size_t const cbNew = pStream->cbAllocated < _16M ? pStream->cbAllocated * 2 : pStream->cbAllocated + _16M;
+                    AssertStmt(cbNew < _2G, rc = VERR_TOO_MUCH_DATA);
+                    void * const pvNew = RTMemRealloc(pStream->pch, cbNew);
+                    AssertStmt(pvNew, rc = VERR_NO_MEMORY);
+
+                    pStream->pch         = (char *)pvNew;
+                    pStream->cbAllocated = cbNew;
+                    cbToRead = cbNew - pStream->cb;
+                }
+
+                /* Do the actual reading. */
+                size_t cbRead = 0;
+                rc = RTFileRead(hStdIn, &pStream->pch[pStream->cb], cbToRead, &cbRead);
+                if (RT_SUCCESS(rc))
+                {
+                    if (cbRead)
+                        pStream->cb += cbRead;
+                    else
+                        break;
+                }
+                else
+                {
+                    if (rc == VERR_EOF)
+                        rc = VINF_SUCCESS;
+                    break;
+                }
+            }
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    return rc;
+}
+
+/**
  * Initialize an output stream.
  *
  * @returns IPRT status code
