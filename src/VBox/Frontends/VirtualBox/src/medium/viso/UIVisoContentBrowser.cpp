@@ -288,7 +288,8 @@ void UIVisoContentBrowser::importISOContentToViso(const QString &strISOFilePath,
     }
     if (!m_pTableView || !pParentItem)
         return;
-
+    if (pParentItem->isOpened())
+        return;
     /* If this is not the root directory add an "up" file object explicity since RTVfsDirReadEx does not return one:*/
     if (!strDirPath.isEmpty())
     {
@@ -323,6 +324,7 @@ void UIVisoContentBrowser::importISOContentToViso(const QString &strISOFilePath,
     }
     if (m_pTableProxyModel)
         m_pTableProxyModel->invalidate();
+    pParentItem->setIsOpened(true);
     emit sigISOContentImportedOrRemoved(true /* imported*/);
 }
 
