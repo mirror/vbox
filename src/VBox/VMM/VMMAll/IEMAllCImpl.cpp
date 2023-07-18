@@ -326,7 +326,6 @@ IEM_CIMPL_DEF_2(iemCImpl_pop_mem16, uint16_t, iEffSeg, RTGCPTR, GCPtrEffDst)
     VBOXSTRICTRC rcStrict = iemMemStackPopU16Ex(pVCpu, &u16Value, &TmpRsp);
     if (rcStrict == VINF_SUCCESS)
     {
-LogAlways(("iemCImpl_pop_mem16: iEffSeg=%d GCPtrEffDst=%RGv u16Value=%#x\n", iEffSeg, GCPtrEffDst, u16Value));
         rcStrict = iemMemStoreDataU16(pVCpu, iEffSeg, GCPtrEffDst, u16Value);
         if (rcStrict == VINF_SUCCESS)
         {
@@ -350,7 +349,6 @@ IEM_CIMPL_DEF_2(iemCImpl_pop_mem32, uint16_t, iEffSeg, RTGCPTR, GCPtrEffDst)
     VBOXSTRICTRC rcStrict = iemMemStackPopU32Ex(pVCpu, &u32Value, &TmpRsp);
     if (rcStrict == VINF_SUCCESS)
     {
-LogAlways(("iemCImpl_pop_mem32: iEffSeg=%d GCPtrEffDst=%RGv u32Value=%#x\n", iEffSeg, GCPtrEffDst, u32Value));
         rcStrict = iemMemStoreDataU32(pVCpu, iEffSeg, GCPtrEffDst, u32Value);
         if (rcStrict == VINF_SUCCESS)
         {
