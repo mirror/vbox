@@ -3502,7 +3502,7 @@ void UIActionPoolRuntime::updateConfiguration()
 
     /* Recache extension-pack related action restrictions: */
     CExtPackManager extPackManager = uiCommon().virtualBox().GetExtensionPackManager();
-    if (!extPackManager.isNull() && !extPackManager.IsExtPackUsable(GUI_ExtPackName))
+    if (extPackManager.isNull() || !extPackManager.IsExtPackUsable(GUI_ExtPackName))
     {
         m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuViewActionType)
             (m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer);
