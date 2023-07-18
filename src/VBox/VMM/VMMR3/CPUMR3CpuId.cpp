@@ -2266,9 +2266,10 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
     }
 
     /* Cpuid 0x80000008:
-     * AMD:               EBX, EDX - reserved
-     *                    EAX: Virtual/Physical/Guest address Size
+     * AMD:               EAX: Long Mode Size Identifiers
+     *                    EBX: Extended Feature Identifiers
      *                    ECX: Number of cores + APICIdCoreIdSize
+     *                    EDX: RDPRU Register Identifier Range
      * Intel:             EAX: Virtual/Physical address Size
      *                    EBX, ECX, EDX - reserved
      * VIA:               EAX: Virtual/Physical address Size
@@ -2276,13 +2277,21 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
      *
      * We only expose the virtual+pysical address size to the guest atm.
      * On AMD we set the core count, but not the apic id stuff as we're
-     * currently not doing the apic id assignments in a complatible manner.
+     * currently not doing the apic id assignments in a compatible manner.
      */
     uSubLeaf = 0;
     while ((pCurLeaf = cpumR3CpuIdGetExactLeaf(pCpum, UINT32_C(0x80000008), uSubLeaf)) != NULL)
     {
         pCurLeaf->uEax &= UINT32_C(0x0000ffff); /* Virtual & physical address sizes only. */
-        pCurLeaf->uEbx  = 0;  /* reserved - [12] == IBPB */
+        if (   pCpum->GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD
+            || pCpum->GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_HYGON)
+        {
+            /* Expose XSaveErPtr aka RstrFpErrPtrs to guest. */
+            pCurLeaf->uEbx &= X86_CPUID_AMD_EFEID_EBX_XSAVE_ER_PTR;  /* reserved - [12] == IBPB */
+        }
+        else
+            pCurLeaf->uEbx  = 0;    /* reserved */
+
         pCurLeaf->uEdx  = 0;  /* reserved */
 
         /* Set APICIdCoreIdSize to zero (use legacy method to determine the number of cores per cpu).
@@ -4993,7 +5002,7 @@ static DBGFREGSUBFIELD const g_aExtLeaf8EbxSubFields[] =
 {
     DBGFREGSUBFIELD_RO("CLZERO\0"       "Clear zero instruction (cacheline)",            0, 1, 0),
     DBGFREGSUBFIELD_RO("IRPerf\0"       "Instructions retired count support",            1, 1, 0),
-    DBGFREGSUBFIELD_RO("XSaveErPtr\0"   "Save/restore error pointers (FXSAVE/RSTOR*)",   2, 1, 0),
+    DBGFREGSUBFIELD_RO("XSaveErPtr\0"   "Save/restore error pointers (FXSAVE/RSTOR)",    2, 1, 0),
     DBGFREGSUBFIELD_RO("RDPRU\0"        "RDPRU instruction",                             4, 1, 0),
     DBGFREGSUBFIELD_RO("MCOMMIT\0"      "MCOMMIT instruction",                           8, 1, 0),
     DBGFREGSUBFIELD_RO("IBPB\0"         "Supports the IBPB command in IA32_PRED_CMD",   12, 1, 0),
