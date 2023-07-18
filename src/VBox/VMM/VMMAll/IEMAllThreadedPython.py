@@ -951,6 +951,12 @@ class ThreadedFunction(object):
         Returns dummy True - raises exception on trouble.
         """
 
+        # Check the block for errors before we proceed (will decode it).
+        asErrors = self.oMcBlock.check();
+        if asErrors:
+            raise Exception('\n'.join(['%s:%s: error: %s' % (self.oMcBlock.sSrcFile, self.oMcBlock.iBeginLine, sError, )
+                                       for sError in asErrors]));
+
         # Decode the block into a list/tree of McStmt objects.
         aoStmts = self.oMcBlock.decode();
 

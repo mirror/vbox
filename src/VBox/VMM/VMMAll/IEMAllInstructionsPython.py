@@ -2451,6 +2451,44 @@ class McBlock(object):
         return self.aoStmts;
 
 
+    def checkForTooEarlyEffSegUse(self, aoStmts):
+        """
+        Checks if iEffSeg is used before the effective address has been decoded.
+        Returns None on success, error string on failure.
+
+        See r158454 for an example of this issue.
+        """
+
+        # Locate the IEM_MC_CALC_RM_EFF_ADDR statement, if found, scan backwards
+        # for IEMCPU::iEffSeg references. No need to check conditional branches,
+        # as we're ASSUMING these will not occur before address calculation.
+        for iStmt, oStmt in enumerate(aoStmts):
+            if oStmt.sName == 'IEM_MC_CALC_RM_EFF_ADDR':
+                while iStmt > 0:
+                    iStmt -= 1;
+                    oStmt  = aoStmts[iStmt];
+                    for sArg in oStmt.asParams:
+                        if sArg.find('pVCpu->iem.s.iEffSeg') >= 0:
+                            return "statement #%u: pVCpu->iem.s.iEffSeg is used prior to IEM_MC_CALC_RM_EFF_ADDR!" % (iStmt + 1,);
+                break;
+        return None;
+
+    def check(self):
+        """
+        Performs some sanity checks on the block.
+        Returns error string list, empty if all is fine.
+        """
+        aoStmts = self.decode();
+        asRet   = [];
+
+        sRet = self.checkForTooEarlyEffSegUse(aoStmts);
+        if sRet:
+            asRet.append(sRet);
+
+        return asRet;
+
+
+
 ## IEM_MC_XXX -> parser dictionary.
 # The raw table was generated via the following command
 #       sed -n -e "s/^# *define *\(IEM_MC_[A-Z_0-9]*\)[ (].*$/        '\1': McBlock.parseMcGeneric,/p" include/IEMMc.h \
