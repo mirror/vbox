@@ -5515,7 +5515,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         asArgs = [ sPnpUtil, '/enum-devices', '/connected', '/class', 'Display' ];
 
         try:
-            oCurProcess = self.processCreateWrapper(oGuestSession, sPnpUtil, 
+            oCurProcess = self.processCreateWrapper(oGuestSession, sPnpUtil,
                                                     asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:],
                                                     "", # Working directory.
                                                     [], [], 30 * 1000);
