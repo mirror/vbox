@@ -1723,7 +1723,7 @@ bool UIApplianceSortProxyModel::filterAcceptsRow(int iSourceRow, const QModelInd
     /* By default enable all, we will explicitly filter out below */
     if (srcParenIdx.isValid())
     {
-        QModelIndex i = index(iSourceRow, 0, srcParenIdx);
+        QModelIndex i = sourceModel()->index(iSourceRow, 0, srcParenIdx);
         if (i.isValid())
         {
             UIApplianceModelItem *pItem = static_cast<UIApplianceModelItem*>(i.internalPointer());
