@@ -1239,6 +1239,59 @@ int ShClTransferInit(PSHCLTRANSFER pTransfer)
 }
 
 /**
+ * Returns whether a transfer is in a running state or not.
+ *
+ * @returns @c true if in running state, or @c false if not.
+ * @param   pTransfer           Clipboard transfer to return status for.
+ */
+bool ShClTransferIsRunning(PSHCLTRANSFER pTransfer)
+{
+    shClTransferLock(pTransfer);
+
+    bool const fRunning = pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_STARTED;
+
+    shClTransferUnlock(pTransfer);
+
+    return fRunning;
+}
+
+/**
+ * Returns whether a transfer has been (successfully) completed or not.
+ *
+ * @returns @c true if complete, or @c false if not.
+ * @param   pTransfer           Clipboard transfer to return status for.
+ */
+bool ShClTransferIsComplete(PSHCLTRANSFER pTransfer)
+{
+    shClTransferLock(pTransfer);
+
+    bool const fCompleted = pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_COMPLETED;
+
+    shClTransferUnlock(pTransfer);
+
+    return fCompleted;
+}
+
+/**
+ * Returns whether a transfer has been aborted due to cancelling, killing or an error.
+ *
+ * @returns @c true if in aborted state, or @c false if not.
+ * @param   pTransfer           Clipboard transfer to return status for.
+ */
+bool ShClTransferIsAborted(PSHCLTRANSFER pTransfer)
+{
+    shClTransferLock(pTransfer);
+
+    bool const fAborted =    pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_CANCELED
+                          || pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_KILLED
+                          || pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_ERROR;
+
+    shClTransferUnlock(pTransfer);
+
+    return fAborted;
+}
+
+/**
  * Locks a transfer.
  *
  * @param   pTransfer           Transfer to lock.
@@ -2159,6 +2212,12 @@ int ShClTransferStart(PSHCLTRANSFER pTransfer)
     return rc;
 }
 
+/**
+ * Completes a transfer (as successful).
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           Clipboard transfer to complete.
+ */
 int ShClTransferComplete(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
@@ -2182,6 +2241,14 @@ int ShClTransferComplete(PSHCLTRANSFER pTransfer)
     return rc;
 }
 
+/**
+ * Cancels or sets an error for a transfer.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           Clipboard transfer to cancel or set error for.
+ * @param   rc                  Error code to set.
+ *                              If set to VERR_CANCELLED, the transfer will be canceled.
+ */
 static int shClTransferCancelOrError(PSHCLTRANSFER pTransfer, int rc)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
@@ -2216,11 +2283,37 @@ static int shClTransferCancelOrError(PSHCLTRANSFER pTransfer, int rc)
     return rc2;
 }
 
+/**
+ * Cancels a transfer.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           Clipboard transfer to cancel.
+ */
 int ShClTransferCancel(PSHCLTRANSFER pTransfer)
 {
     return shClTransferCancelOrError(pTransfer, VERR_CANCELLED);
 }
 
+/**
+ * Kills a transfer.
+ *
+ * Currently cancels it internally.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           Clipboard transfer to kill.
+ */
+int ShClTransferKill(PSHCLTRANSFER pTransfer)
+{
+    return ShClTransferCancel(pTransfer);
+}
+
+/**
+ * Sets an error for a transfer.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           Clipboard transfer to set error for.
+ * @param   rc                  Error code to set.
+ */
 int ShClTransferError(PSHCLTRANSFER pTransfer, int rc)
 {
     return shClTransferCancelOrError(pTransfer, rc);

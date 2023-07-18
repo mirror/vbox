@@ -1122,10 +1122,15 @@ int ShClTransferInit(PSHCLTRANSFER pTransfer);
 int ShClTransferDestroy(PSHCLTRANSFER pTransfer);
 void ShClTransferReset(PSHCLTRANSFER pTransfer);
 
+bool ShClTransferIsRunning(PSHCLTRANSFER pTransfer);
+bool ShClTransferIsComplete(PSHCLTRANSFER pTransfer);
+bool ShClTransferIsAborted(PSHCLTRANSFER pTransfer);
+
 int ShClTransferRun(PSHCLTRANSFER pTransfer, PFNSHCLTRANSFERTHREAD pfnThreadFunc, void *pvUser);
 int ShClTransferStart(PSHCLTRANSFER pTransfer);
 int ShClTransferComplete(PSHCLTRANSFER pTransfer);
 int ShClTransferCancel(PSHCLTRANSFER pTransfer);
+int ShClTransferKill(PSHCLTRANSFER pTransfer);
 int ShClTransferError(PSHCLTRANSFER pTransfer, int rc);
 
 uint32_t ShClTransferAcquire(PSHCLTRANSFER pTransfer);
