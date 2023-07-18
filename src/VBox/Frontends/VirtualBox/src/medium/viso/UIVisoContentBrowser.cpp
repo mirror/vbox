@@ -178,12 +178,14 @@ signals:
 
     void sigNewItemsDropped(QStringList pathList);
 
+
 public:
 
     UIVisoContentTableView(QWidget *pParent = 0);
     void dragEnterEvent(QDragEnterEvent *event);
     void dropEvent(QDropEvent *event);
     void dragMoveEvent(QDragMoveEvent *event);
+    bool hasSelection() const;
 };
 
 
@@ -198,6 +200,13 @@ UIVisoContentTableView::UIVisoContentTableView(QWidget *pParent /* = 0 */)
 void UIVisoContentTableView::dragMoveEvent(QDragMoveEvent *event)
 {
     event->acceptProposedAction();
+}
+
+bool UIVisoContentTableView::hasSelection() const
+{
+    if (!selectionModel())
+        return false;
+    return selectionModel()->hasSelection();
 }
 
 void UIVisoContentTableView::dragEnterEvent(QDragEnterEvent *pEvent)
@@ -642,9 +651,9 @@ void UIVisoContentBrowser::prepareToolBar()
     AssertReturnVoid(m_pGoForward);
     AssertReturnVoid(m_pGoBackward);
 
-    m_pRemoveAction->setEnabled(tableViewHasSelection());
-    m_pRestoreAction->setEnabled(tableViewHasSelection());
-    m_pRenameAction->setEnabled(tableViewHasSelection());
+    m_pRemoveAction->setEnabled(m_pTableView->hasSelection());
+    m_pRestoreAction->setEnabled(m_pTableView->hasSelection());
+    m_pRenameAction->setEnabled(m_pTableView->hasSelection());
 
     m_pToolBar->addAction(m_pGoBackward);
     m_pToolBar->addAction(m_pGoForward);
@@ -786,6 +795,8 @@ void UIVisoContentBrowser::setTableRootIndex(QModelIndex index /* = QModelIndex 
     updateNavigationWidgetPath(currentPath());
     if (m_pGoUp)
         m_pGoUp->setEnabled(!onStartItem());
+    m_pTableView->clearSelection();
+    enableDisableSelectionDependentActions();
 }
 
 void UIVisoContentBrowser::setPathFromNavigationWidget(const QString &strPath)
@@ -819,16 +830,6 @@ UICustomFileSystemItem* UIVisoContentBrowser::searchItemByPath(const QString &st
 void UIVisoContentBrowser::showHideHiddenObjects(bool bShow)
 {
     Q_UNUSED(bShow);
-}
-
-bool UIVisoContentBrowser::tableViewHasSelection() const
-{
-    if (!m_pTableView)
-        return false;
-    QItemSelectionModel *pSelectionModel = m_pTableView->selectionModel();
-    if (!pSelectionModel)
-        return false;
-    return pSelectionModel->hasSelection();
 }
 
 void UIVisoContentBrowser::parseVisoFileContent(const QString &strFileName)
@@ -1078,18 +1079,14 @@ void UIVisoContentBrowser::sltTableSelectionChanged(const QItemSelection &select
     Q_UNUSED(deselected);
     emit sigTableSelectionChanged(selected.isEmpty());
 
-    if (m_pRemoveAction)
-        m_pRemoveAction->setEnabled(!selected.isEmpty());
-    if (m_pRestoreAction)
-        m_pRestoreAction->setEnabled(!selected.isEmpty());
-    if (m_pRenameAction)
-        m_pRenameAction->setEnabled(!selected.isEmpty());
+    enableDisableSelectionDependentActions();
 }
 
 void UIVisoContentBrowser::sltResetAction()
 {
     if (!rootItem() || !rootItem()->child(0))
         return;
+    goToStart();
     rootItem()->child(0)->removeChildren();
     m_entryMap.clear();
     if (m_pTableProxyModel)
@@ -1173,9 +1170,13 @@ void UIVisoContentBrowser::goUp()
         return;
     /* Go up if we are not already in root: */
     if (!onStartItem())
-    {
         setTableRootIndex(currentRoot.parent());
-    }
+}
+
+void UIVisoContentBrowser::goToStart()
+{
+    while(!onStartItem())
+        goUp();
 }
 
 const UICustomFileSystemItem* UIVisoContentBrowser::currentDirectoryItem() const
@@ -1199,6 +1200,19 @@ QStringList UIVisoContentBrowser::currentDirectoryListing() const
             nameList << pChild->fileObjectName();
     }
     return nameList;
+}
+
+void UIVisoContentBrowser::enableDisableSelectionDependentActions()
+{
+    AssertReturnVoid(m_pTableView);
+
+    bool fSelection = m_pTableView->hasSelection();
+    if (m_pRemoveAction)
+        m_pRemoveAction->setEnabled(fSelection);
+    if (m_pRestoreAction)
+        m_pRestoreAction->setEnabled(fSelection);
+    if (m_pRenameAction)
+        m_pRenameAction->setEnabled(fSelection);
 }
 
 #include "UIVisoContentBrowser.moc"

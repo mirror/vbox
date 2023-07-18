@@ -61,7 +61,6 @@ public:
     UIVisoBrowserBase(UIActionPool *pActionPool, QWidget *pParent = 0);
     ~UIVisoBrowserBase();
     virtual void showHideHiddenObjects(bool bShow) = 0;
-    virtual bool tableViewHasSelection() const = 0;
 
 public slots:
 

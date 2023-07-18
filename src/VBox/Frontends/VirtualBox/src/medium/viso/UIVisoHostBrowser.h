@@ -57,7 +57,7 @@ public:
     virtual void showHideHiddenObjects(bool bShow) final override;
     QString      currentPath() const;
     void         setCurrentPath(const QString &strPath);
-    virtual bool tableViewHasSelection() const final override;
+    bool tableViewHasSelection() const;
     /* The list of path of the selected file objects. */
     QStringList selectedPathList() const;
     void prepareMainMenu(QMenu *pMenu);
