@@ -1616,11 +1616,16 @@ static int shClSvcClientReportFormats(PSHCLCLIENT pClient, uint32_t cParms, VBOX
             {
                 SHCLEXTPARMS parms;
                 RT_ZERO(parms);
+
                 parms.u.ReportFormats.uFormats = fFormats;
 
-                g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE, &parms, sizeof(parms));
+                rc = g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE, &parms, sizeof(parms));
             }
             else
+                rc = VERR_NOT_SUPPORTED;
+
+            /* Let the backend implementation know if the extension above didn't handle the format(s). */
+            if (rc == VERR_NOT_SUPPORTED)
             {
 #ifdef LOG_ENABLED
                 char *pszFmts = ShClFormatsToStrA(fFormats);
@@ -1782,6 +1787,10 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
             cbActual = parms.u.ReadWriteData.cbData;
     }
     else
+        rc = VERR_NOT_SUPPORTED;
+
+    /* Try reading from the backend if the extension above didn't handle the read. */
+    if (rc == VERR_NOT_SUPPORTED)
     {
         rc = ShClBackendReadData(&g_ShClBackend, pClient, &cmdCtx, uFormat, pvData, cbData, &cbActual);
         if (RT_SUCCESS(rc))
@@ -1948,16 +1957,19 @@ static int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCM
     {
         SHCLEXTPARMS parms;
         RT_ZERO(parms);
+
         parms.u.ReadWriteData.uFormat = uFormat;
         parms.u.ReadWriteData.pvData  = pvData;
         parms.u.ReadWriteData.cbData  = cbData;
 
-        g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_WRITE, &parms, sizeof(parms));
-        rc = VINF_SUCCESS;
+        rc = g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_WRITE, &parms, sizeof(parms));
     }
     else
+        rc = VERR_NOT_SUPPORTED;
+
+    /* Let the backend implementation know if the extension above didn't handle the write. */
+    if (rc == VERR_NOT_SUPPORTED)
     {
-        /* Let the backend implementation know. */
         rc = ShClBackendWriteData(&g_ShClBackend, pClient, &cmdCtx, uFormat, pvData, cbData);
         if (RT_FAILURE(rc))
             LogRel(("Shared Clipboard: Writing guest clipboard data to the host failed with %Rrc\n", rc));

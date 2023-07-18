@@ -220,6 +220,7 @@ int GuestShCl::reportError(const char *pcszId, int vrc, const char *pcszMsgFmt, 
  * Static main dispatcher function to handle callbacks from the Shared Clipboard host service.
  *
  * @returns VBox status code.
+ * @retval  VERR_NOT_SUPPORTED if the extension didn't handle the requested function. This will invoke the regular backend then.
  * @param   pvExtension         Pointer to service extension.
  * @param   u32Function         Callback HGCM message ID.
  * @param   pvParms             Pointer to optional data provided for a particular message. Optional.
@@ -238,7 +239,7 @@ DECLCALLBACK(int) GuestShCl::hgcmDispatcher(void *pvExtension, uint32_t u32Funct
     PSHCLEXTPARMS pParms = (PSHCLEXTPARMS)pvParms;
     /* pParms might be NULL, depending on the message. */
 
-    int vrc = VINF_SUCCESS;
+    int vrc;
 
     switch (u32Function)
     {
@@ -249,17 +250,14 @@ DECLCALLBACK(int) GuestShCl::hgcmDispatcher(void *pvExtension, uint32_t u32Funct
         }
 
         default:
+            vrc = VERR_NOT_SUPPORTED;
             break;
     }
 
     PSHCLSVCEXT const pExt = &pThis->m_SvcExtVRDP; /* Currently we have one extension only. */
 
-    if (pExt->pfnExt)
-    {
-        int vrc2 = pExt->pfnExt(pExt->pvExt, u32Function, pvParms, cbParms);
-        if (RT_SUCCESS(vrc))
-            vrc = vrc2;
-    }
+    if (pExt->pfnExt) /* Overwrite rc if we have an extension present. */
+        vrc = pExt->pfnExt(pExt->pvExt, u32Function, pvParms, cbParms);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc; /* Goes back to host service. */
