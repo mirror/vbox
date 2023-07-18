@@ -1505,6 +1505,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             ( False, self.testGuestCtrlFileWrite,           'file_write',       'File write',),
             ( False, self.testGuestCtrlFileRemove,          'file_remove',      'Removing files',), # Destroys prepped files.
             ( False, self.testGuestCtrlUpdateAdditions,     'update_additions', 'Updating Guest Additions',),
+            ( False, self.testGuestCtrl3D,                  '3d',               '3D acceleration',),
         ];
 
         if not self.fSkipKnownBugs:
@@ -5481,7 +5482,66 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return (fRc, oTxsSession);
 
+    def testGuestCtrl3D(self, oSession, oTxsSession, oTestVm):
+        """
+        Tests for VMSVGA device.
+        """
 
+        if oTestVm.sKind not in ('Windows7', 'Windows7_64', 'Windows8_64', 'Windows10', 'Windows10_64', 'Windows11_64'):
+            return (True, oTxsSession);
+
+        sPnpUtil = os.path.join(self.oTstDrv.getGuestSystemDir(oTestVm), 'pnputil.exe');
+
+        # Use credential defaults.
+        oCreds = tdCtxCreds();
+        oCreds.applyDefaultsIfNotSet(oTestVm);
+
+        #
+        # Create a session.
+        #
+        try:
+            oGuest = oSession.o.console.guest;
+            oGuestSession = oGuest.createSession(oCreds.sUser, oCreds.sPassword, oCreds.sDomain, "testGuestCtrl3D");
+            eWaitResult = oGuestSession.waitForArray([ vboxcon.GuestSessionWaitForFlag_Start, ], 30 * 1000);
+        except:
+            return (reporter.errorXcpt(), oTxsSession);
+
+        # Be nice to Guest Additions < 4.3: They don't support session handling and therefore return WaitFlagNotSupported.
+        if eWaitResult not in (vboxcon.GuestSessionWaitResult_Start, vboxcon.GuestSessionWaitResult_WaitFlagNotSupported):
+            return (reporter.error('Session did not start successfully - wait error: %d' % (eWaitResult,)), oTxsSession);
+        reporter.log('Session successfully started');
+
+        fRc = True;
+
+        try:
+            oCurProcess = self.processCreateWrapper(oGuestSession, sPnpUtil, [ sPnpUtil, '/enum-devices', '/connected', '/class', 'Display' ] if self.oTstDrv.fpApiVer >= 5.0 else [],
+                                                    "", # Working directory.
+                                                    [], [], 30 * 1000);
+        except:
+            fRc = reporter.errorXcpt();
+        else:
+            reporter.log('Waiting for PnPUtil process being started ...');
+            try:
+                eWaitResult = oCurProcess.waitForArray([ vboxcon.ProcessWaitForFlag_Start ], 30 * 1000);
+            except:
+                fRc = reporter.errorXcpt();
+            else:
+                if eWaitResult != vboxcon.ProcessWaitResult_Start:
+                    fRc = reporter.error('Waiting for PnPUtil process to start failed, got status %d' % (eWaitResult,));
+                else:
+                    reporter.log('PnPUtil process started');
+
+            oCurProcess = None;
+
+        #
+        # Clean up the session.
+        #
+        try:
+            oGuestSession.close();
+        except:
+            fRc = reporter.errorXcpt();
+
+        return (fRc, oTxsSession);
 
 class tdAddGuestCtrl(vbox.TestDriver):                                         # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """
