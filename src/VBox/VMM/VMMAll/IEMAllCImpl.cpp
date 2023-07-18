@@ -2308,7 +2308,7 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
     /** @todo check if the hidden bits are loaded correctly for 64-bit
      *        mode.  */
 
-    iemRecalcExecDbgFlags(pVCpu);
+    iemRecalcExecModeAndCplFlags(pVCpu);
 
     /* Flush the prefetch buffer. */
     IEM_FLUSH_PREFETCH_HEAVY(pVCpu, cbInstr);
