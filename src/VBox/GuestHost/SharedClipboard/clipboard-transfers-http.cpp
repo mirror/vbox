@@ -886,10 +886,10 @@ int ShClTransferHttpServerRegisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER p
 # ifdef DEBUG_andy /** Too lazy to specify a different transfer ID for debugging. */
                 ssize_t cch = RTStrAPrintf(&pszPath, "//transfer");
 # else
-                ssize_t cch = RTStrPrintf2(&pszPath, "//transfer%RU16", pTransfer->State.uID);
+                ssize_t cch = RTStrAPrintf2(&pszPath, "//transfer%RU16", pTransfer->State.uID);
 # endif
 #else /* Release mode */
-                ssize_t cch = RTStrPrintf2(&pszPath, "//%s/%s/%s", SHCL_HTTPT_URL_NAMESPACE, szUuid, pEntry->pszName);
+                ssize_t cch = RTStrAPrintf2(&pszPath, "//%s/%s/%s", SHCL_HTTPT_URL_NAMESPACE, szUuid, pEntry->pszName);
 #endif
                 AssertReturn(cch, VERR_NO_MEMORY);
 
