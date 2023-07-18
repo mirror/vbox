@@ -52,6 +52,7 @@
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
+#include <iprt/uri.h>
 #include <iprt/uuid.h>
 #include <iprt/vfs.h>
 
@@ -880,18 +881,44 @@ int ShClTransferHttpServerRegisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER p
             {
                 /* Create the virtual HTTP path for the transfer.
                  * Every transfer has a dedicated HTTP path (but live in the same URL namespace). */
+                char *pszPath;
 #ifdef VBOX_SHCL_DEBUG_HTTPSERVER
 # ifdef DEBUG_andy /** Too lazy to specify a different transfer ID for debugging. */
-                ssize_t cch = RTStrPrintf2(pSrvTx->szPathVirtual, sizeof(pSrvTx->szPathVirtual), "/transfer");
+                ssize_t cch = RTStrAPrintf(&pszPath, "//transfer");
 # else
-                ssize_t cch = RTStrPrintf2(pSrvTx->szPathVirtual, sizeof(pSrvTx->szPathVirtual), "/transfer%RU16",
-                                           pTransfer->State.uID);
+                ssize_t cch = RTStrPrintf2(&pszPath, "//transfer%RU16", pTransfer->State.uID);
 # endif
-#else
-                ssize_t cch = RTStrPrintf2(pSrvTx->szPathVirtual, sizeof(pSrvTx->szPathVirtual), "/%s/%s/%s",
-                                           SHCL_HTTPT_URL_NAMESPACE, szUuid, pEntry->pszName);
+#else /* Release mode */
+                ssize_t cch = RTStrPrintf2(&pszPath, "//%s/%s/%s", SHCL_HTTPT_URL_NAMESPACE, szUuid, pEntry->pszName);
 #endif
-                AssertReturn(cch, VERR_BUFFER_OVERFLOW);
+                AssertReturn(cch, VERR_NO_MEMORY);
+
+                const char   szScheme[] = "http"; /** @todo For now we only support HTTP. */
+                const size_t cchScheme  = strlen(szScheme) + 3 /* "://" */;
+
+                char *pszURI = RTUriCreate(szScheme, NULL /* pszAuthority */, pszPath, NULL /* pszQuery */, NULL /* pszFragment */);
+                if (pszURI)
+                {
+                    if (strlen(pszURI) >= cchScheme)
+                    {
+                        /* For the virtual path we only keep everything after the full scheme (e.g. "http://").
+                         * The virtual path always has to start with a "/". */
+                        if (RTStrPrintf2(pSrvTx->szPathVirtual, sizeof(pSrvTx->szPathVirtual), "/%s", pszURI + cchScheme) <= 0)
+                            rc = VERR_BUFFER_OVERFLOW;
+                    }
+                    else
+                        rc = VERR_INVALID_PARAMETER;
+
+                    RTStrFree(pszURI);
+                    pszURI = NULL;
+                }
+                else
+                    rc = VERR_NO_MEMORY;
+
+                RTStrFree(pszPath);
+                pszPath = NULL;
+
+                AssertRCReturn(rc, rc);
 
                 pSrvTx->pTransfer = pTransfer;
                 pSrvTx->pRootList = NULL;
