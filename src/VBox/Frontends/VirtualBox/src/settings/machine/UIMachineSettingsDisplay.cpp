@@ -398,16 +398,19 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
     }
 
     /* Check whether remote display server is valid: */
-    const CVRDEServer &vrdeServer = m_machine.GetVRDEServer();
-    oldDisplayData.m_fRemoteDisplayServerSupported = !vrdeServer.isNull();
-    if (!vrdeServer.isNull())
+    CExtPackManager comExtPackManager = uiCommon().virtualBox().GetExtensionPackManager();
+    const bool fExtPackPresent = comExtPackManager.isNotNull() && comExtPackManager.IsExtPackUsable(GUI_ExtPackName);
+    CVRDEServer comVrdeServer = m_machine.GetVRDEServer();
+    const bool fServerExists = m_machine.isOk() && comVrdeServer.isNotNull();
+    oldDisplayData.m_fRemoteDisplayServerSupported = fExtPackPresent && fServerExists;
+    if (oldDisplayData.m_fRemoteDisplayServerSupported)
     {
         /* Gather old 'Remote Display' data: */
-        oldDisplayData.m_fRemoteDisplayServerEnabled = vrdeServer.GetEnabled();
-        oldDisplayData.m_strRemoteDisplayPort = vrdeServer.GetVRDEProperty("TCP/Ports");
-        oldDisplayData.m_remoteDisplayAuthType = vrdeServer.GetAuthType();
-        oldDisplayData.m_uRemoteDisplayTimeout = vrdeServer.GetAuthTimeout();
-        oldDisplayData.m_fRemoteDisplayMultiConnAllowed = vrdeServer.GetAllowMultiConnection();
+        oldDisplayData.m_fRemoteDisplayServerEnabled = comVrdeServer.GetEnabled();
+        oldDisplayData.m_strRemoteDisplayPort = comVrdeServer.GetVRDEProperty("TCP/Ports");
+        oldDisplayData.m_remoteDisplayAuthType = comVrdeServer.GetAuthType();
+        oldDisplayData.m_uRemoteDisplayTimeout = comVrdeServer.GetAuthTimeout();
+        oldDisplayData.m_fRemoteDisplayMultiConnAllowed = comVrdeServer.GetAllowMultiConnection();
     }
 
     /* Gather old 'Recording' data: */
@@ -686,6 +689,7 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
     }
 
     /* Remote Display tab: */
+    if (m_pTabWidget->isTabEnabled(1))
     {
         /* Prepare message: */
         UIValidationMessage message;
@@ -1126,6 +1130,11 @@ bool UIMachineSettingsDisplay::saveRemoteDisplayData()
         const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
         /* Get new data from cache: */
         const UIDataSettingsMachineDisplay &newDisplayData = m_pCache->data();
+
+        /* Do not save anything if server isn't supported: */
+        if (   !oldDisplayData.m_fRemoteDisplayServerSupported
+            || !newDisplayData.m_fRemoteDisplayServerSupported)
+            return fSuccess;
 
         /* Get remote display server for further activities: */
         CVRDEServer comServer = m_machine.GetVRDEServer();
