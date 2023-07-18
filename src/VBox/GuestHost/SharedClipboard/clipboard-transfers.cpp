@@ -2257,25 +2257,27 @@ static int shClTransferCancelOrError(PSHCLTRANSFER pTransfer, int rc)
 
     shClTransferLock(pTransfer);
 
-    AssertMsgReturnStmt(pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_STARTED,
-                        ("Wrong status (currently is %s)\n", ShClTransferStatusToStr(pTransfer->State.enmStatus)),
-                        shClTransferUnlock(pTransfer), VERR_WRONG_ORDER);
-
     int rc2;
-    if (rc == VERR_CANCELLED)
-    {
-        rc2 = shClTransferSetStatus(pTransfer, SHCLTRANSFERSTATUS_CANCELED);
 
-        if (pTransfer->Callbacks.pfnOnCompleted)
-            pTransfer->Callbacks.pfnOnCompleted(&pTransfer->CallbackCtx, VERR_CANCELLED);
-    }
-    else
+    if (pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_STARTED)
     {
-        rc2 = shClTransferSetStatus(pTransfer, SHCLTRANSFERSTATUS_ERROR);
+        if (rc == VERR_CANCELLED)
+        {
+            rc2 = shClTransferSetStatus(pTransfer, SHCLTRANSFERSTATUS_CANCELED);
 
-        if (pTransfer->Callbacks.pfnOnError)
-            pTransfer->Callbacks.pfnOnError(&pTransfer->CallbackCtx, rc);
+            if (pTransfer->Callbacks.pfnOnCompleted)
+                pTransfer->Callbacks.pfnOnCompleted(&pTransfer->CallbackCtx, VERR_CANCELLED);
+        }
+        else
+        {
+            rc2 = shClTransferSetStatus(pTransfer, SHCLTRANSFERSTATUS_ERROR);
+
+            if (pTransfer->Callbacks.pfnOnError)
+                pTransfer->Callbacks.pfnOnError(&pTransfer->CallbackCtx, rc);
+        }
     }
+    else /* Nothing to do. */
+        rc2 = VINF_SUCCESS;
 
     shClTransferUnlock(pTransfer);
 
