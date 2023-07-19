@@ -2165,15 +2165,16 @@ int shClSvcTransferHostMsgHandler(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg)
  * @param   pClient             Client that owns the transfer.
  * @param   idTransfer          Transfer ID to report status for.
  * @param   enmDir              Transfer direction to report status for.
- * @param   uStatus             Status to report.
+ * @param   enmSts              Status to report.
  * @param   rcTransfer          Result code to report. Optional and depending on status.
  * @param   ppEvent             Where to return the wait event on success. Optional.
  *                              Must be released by the caller with ShClEventRelease().
  *
  * @note    Caller must enter the client's critical section.
  */
-static int shClSvcTransferSendStatusExAsync(PSHCLCLIENT pClient, SHCLTRANSFERID idTransfer, SHCLTRANSFERDIR enmDir, SHCLTRANSFERSTATUS uStatus,
-                                            int rcTransfer, PSHCLEVENT *ppEvent)
+static int shClSvcTransferSendStatusExAsync(PSHCLCLIENT pClient, SHCLTRANSFERID idTransfer,
+                                            SHCLTRANSFERDIR enmDir, SHCLTRANSFERSTATUS enmSts, int rcTransfer,
+                                            PSHCLEVENT *ppEvent)
 {
     AssertPtrReturn(pClient, VERR_INVALID_POINTER);
     AssertReturn(idTransfer != NIL_SHCLTRANSFERID, VERR_INVALID_PARAMETER);
@@ -2192,7 +2193,7 @@ static int shClSvcTransferSendStatusExAsync(PSHCLCLIENT pClient, SHCLTRANSFERID 
     {
         HGCMSvcSetU64(&pMsgReadData->aParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, idTransfer, pEvent->idEvent));
         HGCMSvcSetU32(&pMsgReadData->aParms[1], enmDir);
-        HGCMSvcSetU32(&pMsgReadData->aParms[2], uStatus);
+        HGCMSvcSetU32(&pMsgReadData->aParms[2], enmSts);
         HGCMSvcSetU32(&pMsgReadData->aParms[3], (uint32_t)rcTransfer); /** @todo uint32_t vs. int. */
         HGCMSvcSetU32(&pMsgReadData->aParms[4], 0 /* fFlags, unused */);
 
@@ -2202,7 +2203,7 @@ static int shClSvcTransferSendStatusExAsync(PSHCLCLIENT pClient, SHCLTRANSFERID 
         if (RT_SUCCESS(rc))
         {
             LogRel2(("Shared Clipboard: Reported status %s (rc=%Rrc) of transfer %RU32 to guest\n",
-                     ShClTransferStatusToStr(uStatus), rcTransfer, idTransfer));
+                     ShClTransferStatusToStr(enmSts), rcTransfer, idTransfer));
 
             if (ppEvent)
             {
@@ -2219,7 +2220,7 @@ static int shClSvcTransferSendStatusExAsync(PSHCLCLIENT pClient, SHCLTRANSFERID 
 
     if (RT_FAILURE(rc))
         LogRel(("Shared Clipboard: Reporting status %s (%Rrc) for transfer %RU32 to guest failed with %Rrc\n",
-                ShClTransferStatusToStr(uStatus), rcTransfer, idTransfer, rc));
+                ShClTransferStatusToStr(enmSts), rcTransfer, idTransfer, rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -2231,14 +2232,14 @@ static int shClSvcTransferSendStatusExAsync(PSHCLCLIENT pClient, SHCLTRANSFERID 
  * @returns VBox status code.
  * @param   pClient             Client that owns the transfer.
  * @param   pTransfer           Transfer to report status for.
- * @param   uStatus             Status to report.
+ * @param   enmSts              Status to report.
  * @param   rcTransfer          Result code to report. Optional and depending on status.
  * @param   ppEvent             Where to return the wait event on success. Optional.
  *                              Must be released by the caller with ShClEventRelease().
  *
  * @note    Caller must enter the client's critical section.
  */
-static int shClSvcTransferSendStatusAsync(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCLTRANSFERSTATUS uStatus,
+static int shClSvcTransferSendStatusAsync(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCLTRANSFERSTATUS enmSts,
                                           int rcTransfer, PSHCLEVENT *ppEvent)
 {
     AssertPtrReturn(pClient,   VERR_INVALID_POINTER);
@@ -2246,7 +2247,7 @@ static int shClSvcTransferSendStatusAsync(PSHCLCLIENT pClient, PSHCLTRANSFER pTr
     /* ppEvent is optional. */
 
    return shClSvcTransferSendStatusExAsync(pClient, ShClTransferGetID(pTransfer), ShClTransferGetDir(pTransfer),
-                                           uStatus, rcTransfer, ppEvent);
+                                           enmSts, rcTransfer, ppEvent);
 }
 
 /**
@@ -2255,15 +2256,15 @@ static int shClSvcTransferSendStatusAsync(PSHCLCLIENT pClient, PSHCLTRANSFER pTr
  * @returns VBox status code.
  * @param   pClient             Client that owns the transfer.
  * @param   pTransfer           Transfer to report status for.
- * @param   uStatus             Status to report.
+ * @param   enmSts              Status to report.
  * @param   rcTransfer          Result code to report. Optional and depending on status.
  * @param   ppEvent             Where to return the wait event on success. Optional.
  *                              Must be released by the caller with ShClEventRelease().
  */
-int ShClSvcTransferSendStatusAsync(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCLTRANSFERSTATUS uStatus,
+int ShClSvcTransferSendStatusAsync(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCLTRANSFERSTATUS enmSts,
                                    int rcTransfer, PSHCLEVENT *ppEvent)
 {
-    return shClSvcTransferSendStatusAsync(pClient, pTransfer, uStatus, rcTransfer, ppEvent);
+    return shClSvcTransferSendStatusAsync(pClient, pTransfer, enmSts, rcTransfer, ppEvent);
 }
 
 /**
