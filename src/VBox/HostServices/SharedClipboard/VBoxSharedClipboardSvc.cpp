@@ -1472,20 +1472,17 @@ int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLF
 /**
  * Reports clipboard formats to the guest.
  *
- * @note    Host backend callers must check if it's active (use
- *          ShClSvcIsBackendActive) before calling to prevent mixing up the
- *          VRDE clipboard.
- *
  * @returns VBox status code.
  * @param   pClient             Client to report clipboard formats to.
- * @param   fFormats            The formats to report (VBOX_SHCL_FMT_XXX), zero
- *                              is okay (empty the clipboard).
- *
+ * @param   fFormats            The formats to report (VBOX_SHCL_FMT_XXX).
+ *                              VBOX_SHCL_FMT_NONE will empty (clear) the clipboard.
  * @thread  Backend thread.
  */
 int ShClSvcReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
 {
-    LogFlowFuncEnter();
+    AssertPtrReturn(pClient, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("fFormats=%#x\n", fFormats));
 
     /*
      * Check if the service mode allows this operation and whether the guest is
@@ -1499,10 +1496,6 @@ int ShClSvcReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
     { /* likely */ }
     else
         return VINF_SUCCESS;
-
-    AssertPtrReturn(pClient, VERR_INVALID_POINTER);
-
-    LogFlowFunc(("fFormats=%#x\n", fFormats));
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     bool fSkipTransfers = false;
@@ -1528,19 +1521,42 @@ int ShClSvcReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
     RTStrFree(pszFmts);
 #endif
 
+    int rc;
+
+    /*
+     * Check if the HGCM callback can handle this first.
+     * This is needed in order to not mess up the clipboard if VRDE is active, for example.
+     */
+    if (g_ExtState.pfnExtension) /* Extension set? */
+    {
+        SHCLEXTPARMS parms;
+        RT_ZERO(parms);
+
+        parms.u.ReportFormats.uFormats = fFormats;
+
+        rc = g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_REPORT_TO_GUEST, &parms, sizeof(parms));
+        if (rc == VERR_NOT_SUPPORTED)
+        {
+            /* Not handled by the extension, continue below. */
+        }
+        else /* Handled by the extension, bail out. */
+            return rc;
+    }
+
     /*
      * Allocate a message, populate parameters and post it to the client.
      */
-    int rc;
     PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(pClient, VBOX_SHCL_HOST_MSG_FORMATS_REPORT, 2);
     if (pMsg)
     {
         HGCMSvcSetU32(&pMsg->aParms[0], VBOX_SHCL_HOST_MSG_FORMATS_REPORT);
         HGCMSvcSetU32(&pMsg->aParms[1], fFormats);
 
-        RTCritSectEnter(&pClient->CritSect);
+        shClSvcClientLock(pClient);
+
         rc = shClSvcMsgAddAndWakeupClient(pClient, pMsg);
-        RTCritSectLeave(&pClient->CritSect);
+
+        shClSvcClientUnlock(pClient);
     }
     else
         rc = VERR_NO_MEMORY;
@@ -1619,7 +1635,7 @@ static int shClSvcClientReportFormats(PSHCLCLIENT pClient, uint32_t cParms, VBOX
 
                 parms.u.ReportFormats.uFormats = fFormats;
 
-                rc = g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE, &parms, sizeof(parms));
+                rc = g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_REPORT_TO_HOST, &parms, sizeof(parms));
             }
             else
                 rc = VERR_NOT_SUPPORTED;
@@ -2729,10 +2745,10 @@ static DECLCALLBACK(int) extCallback(uint32_t u32Function, uint32_t u32Format, v
 
         switch (u32Function)
         {
-            /* The service extension announces formats to the guest. */
-            case VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE:
+            /* The service extension announces formats to the host. */
+            case VBOX_CLIPBOARD_EXT_FN_FORMAT_REPORT_TO_HOST:
             {
-                LogFlowFunc(("VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE: g_ExtState.fReadingData=%RTbool\n", g_ExtState.fReadingData));
+                LogFlowFunc(("VBOX_CLIPBOARD_EXT_FN_FORMAT_REPORT_TO_HOST: g_ExtState.fReadingData=%RTbool\n", g_ExtState.fReadingData));
                 if (!g_ExtState.fReadingData)
                     rc = ShClSvcReportFormats(pClient, u32Format);
                 else
@@ -2773,8 +2789,6 @@ static DECLCALLBACK(int) extCallback(uint32_t u32Function, uint32_t u32Format, v
                 }
                 break;
             }
-
-            /** @todo BUGBUG Why no VBOX_CLIPBOARD_EXT_FN_DATA_WRITE here? */
 
             default:
                 /* Just skip other messages. */

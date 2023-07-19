@@ -3306,7 +3306,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardCallback(void *pvCallback,
         {
             if (pServer->mpfnClipboardCallback)
             {
-                vrc = pServer->mpfnClipboardCallback(VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE,
+                vrc = pServer->mpfnClipboardCallback(VBOX_CLIPBOARD_EXT_FN_FORMAT_REPORT_TO_HOST,
                                                      u32Format,
                                                      (void *)pvData,
                                                      cbData);
@@ -3333,8 +3333,19 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardCallback(void *pvCallback,
     return vrc;
 }
 
-/*static*/ DECLCALLBACK(int)
-ConsoleVRDPServer::ClipboardServiceExtension(void *pvExtension, uint32_t u32Function, void *pvParms, uint32_t cbParms)
+/**
+ * Service extension callback called by GuestShCl::hgcmDispatcher().
+ *
+ * @returns VBox status code.
+ * @retval  VERR_NOT_SUPPORTED if the extension didn't handle the requested function. This will invoke the regular backend then.
+ * @param   pvExtension         Pointer to service extension.
+ * @param   u32Function         Callback HGCM message ID.
+ * @param   pvParms             Pointer to optional data provided for a particular message. Optional.
+ * @param   cbParms             Size (in bytes) of \a pvParms.
+ */
+/* static */
+DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension(void *pvExtension,
+                                                               uint32_t u32Function, void *pvParms, uint32_t cbParms)
 {
     RT_NOREF(cbParms);
     LogFlowFunc(("pvExtension = %p, u32Function = %d, pvParms = %p, cbParms = %d\n",
@@ -3343,8 +3354,10 @@ ConsoleVRDPServer::ClipboardServiceExtension(void *pvExtension, uint32_t u32Func
     int vrc = VINF_SUCCESS;
 
     ConsoleVRDPServer *pServer = static_cast <ConsoleVRDPServer *>(pvExtension);
+    AssertPtrReturn(pServer, VERR_INVALID_POINTER);
 
     SHCLEXTPARMS *pParms = (SHCLEXTPARMS *)pvParms;
+    AssertPtrReturn(pParms, VERR_INVALID_POINTER);
 
     switch (u32Function)
     {
@@ -3353,9 +3366,9 @@ ConsoleVRDPServer::ClipboardServiceExtension(void *pvExtension, uint32_t u32Func
             pServer->mpfnClipboardCallback = pParms->u.SetCallback.pfnCallback;
         } break;
 
-        case VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE:
+        case VBOX_CLIPBOARD_EXT_FN_FORMAT_REPORT_TO_HOST:
         {
-            /* The guest announces clipboard formats. This must be delivered to all clients. */
+            /* The guest announces clipboard formats to the host. This must be delivered to all clients. */
             if (mpEntryPoints && pServer->mhServer)
             {
                 mpEntryPoints->VRDEClipboard(pServer->mhServer,
@@ -3365,6 +3378,14 @@ ConsoleVRDPServer::ClipboardServiceExtension(void *pvExtension, uint32_t u32Func
                                              0,
                                              NULL);
             }
+        } break;
+
+        case VBOX_CLIPBOARD_EXT_FN_FORMAT_REPORT_TO_GUEST:
+        {
+            /* We need to handle this case here, to act as a no-op.
+             *
+             * If not being handled, this function otherwise would return VERR_NOT_SUPPORTED,
+             * which in turn then will invoke the host backend, messing up the VRDE clipboard handling. */
         } break;
 
         case VBOX_CLIPBOARD_EXT_FN_DATA_READ:

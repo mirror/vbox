@@ -46,15 +46,17 @@
 #endif
 
 /** Sets (or unsets) a clipboard extension callback. */
-#define VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK         (0)
-/** The guest announces clipboard formats to the extension. */
-#define VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE      (1)
+#define VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK               (0)
+/** The guest reports clipboard formats to the extension. */
+#define VBOX_CLIPBOARD_EXT_FN_FORMAT_REPORT_TO_HOST      (1)
+/** The clipboard service wants to report formats to the guest. */
+#define VBOX_CLIPBOARD_EXT_FN_FORMAT_REPORT_TO_GUEST     (2)
 /** The clipboard service requests clipboard data from the extension. */
-#define VBOX_CLIPBOARD_EXT_FN_DATA_READ            (2)
+#define VBOX_CLIPBOARD_EXT_FN_DATA_READ                  (3)
 /** The clipboard service writes clipboard data to the extension. */
-#define VBOX_CLIPBOARD_EXT_FN_DATA_WRITE           (3)
+#define VBOX_CLIPBOARD_EXT_FN_DATA_WRITE                 (4)
 /** The clipboard service announces an error to the extension. */
-#define VBOX_CLIPBOARD_EXT_FN_ERROR                (4)
+#define VBOX_CLIPBOARD_EXT_FN_ERROR                      (5)
 
 typedef DECLCALLBACKTYPE(int, FNSHCLEXTCALLBACK,(uint32_t u32Function, uint32_t u32Format, void *pvData, uint32_t cbData));
 typedef FNSHCLEXTCALLBACK *PFNSHCLEXTCALLBACK;

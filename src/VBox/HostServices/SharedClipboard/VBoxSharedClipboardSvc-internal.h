@@ -318,15 +318,6 @@ uint32_t ShClSvcGetMode(void);
 bool ShClSvcGetHeadless(void);
 bool ShClSvcLock(void);
 void ShClSvcUnlock(void);
-
-/**
- * Checks if the backend is active (@c true), or if VRDE is in control of
- * the host side.
- */
-DECLINLINE(bool) ShClSvcIsBackendActive(void)
-{
-    return g_ExtState.pfnExtension == NULL;
-}
 /** @} */
 
 /** @name Platform-dependent implementations for the Shared Clipboard host service ("backends"),
