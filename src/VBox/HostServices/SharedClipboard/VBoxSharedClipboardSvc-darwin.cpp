@@ -95,7 +95,7 @@ static int vboxClipboardChanged(SHCLCONTEXT *pCtx)
     if (   RT_SUCCESS(rc)
         && fChanged
         && ShClSvcIsBackendActive())
-        rc = ShClSvcHostReportFormats(pCtx->pClient, fFormats);
+        rc = ShClSvcReportFormats(pCtx->pClient, fFormats);
 
     LogFlowFuncLeaveRC(rc);
     return rc;

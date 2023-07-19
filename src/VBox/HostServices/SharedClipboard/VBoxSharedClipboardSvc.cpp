@@ -1483,7 +1483,7 @@ int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLF
  *
  * @thread  Backend thread.
  */
-int ShClSvcHostReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
+int ShClSvcReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
 {
     LogFlowFuncEnter();
 
@@ -1774,7 +1774,7 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
          * Otherwise, do this now. */
         if (g_ExtState.fDelayedAnnouncement)
         {
-            int rc2 = ShClSvcHostReportFormats(pClient, g_ExtState.fDelayedFormats);
+            int rc2 = ShClSvcReportFormats(pClient, g_ExtState.fDelayedFormats);
             AssertRC(rc2);
 
             g_ExtState.fDelayedAnnouncement = false;
@@ -2734,7 +2734,7 @@ static DECLCALLBACK(int) extCallback(uint32_t u32Function, uint32_t u32Format, v
             {
                 LogFlowFunc(("VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE: g_ExtState.fReadingData=%RTbool\n", g_ExtState.fReadingData));
                 if (!g_ExtState.fReadingData)
-                    rc = ShClSvcHostReportFormats(pClient, u32Format);
+                    rc = ShClSvcReportFormats(pClient, u32Format);
                 else
                 {
                     g_ExtState.fDelayedAnnouncement = true;

@@ -220,7 +220,7 @@ int ShClBackendSync(PSHCLBACKEND pBackend, PSHCLCLIENT pClient)
      * there is data in the host clipboard it will automatically be sent to
      * the guest when the clipboard starts up. */
     if (ShClSvcIsBackendActive())
-        return ShClSvcHostReportFormats(pClient, VBOX_SHCL_FMT_NONE);
+        return ShClSvcReportFormats(pClient, VBOX_SHCL_FMT_NONE);
     return VINF_SUCCESS;
 }
 
@@ -376,7 +376,7 @@ static DECLCALLBACK(int) shClSvcX11ReportFormatsCallback(PSHCLCONTEXT pCtx, uint
             /** @todo r=bird: BUGBUG: Revisit this   */
             if (fFormats != VBOX_SHCL_FMT_NONE) /* No formats to report? */
             {
-                rc = ShClSvcHostReportFormats(pCtx->pClient, fFormats);
+                rc = ShClSvcReportFormats(pCtx->pClient, fFormats);
             }
         }
 

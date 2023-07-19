@@ -312,7 +312,7 @@ int shClSvcClientWakeup(PSHCLCLIENT pClient);
 int ShClSvcReadDataFromGuestAsync(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVENT *ppEvent);
 int ShClSvcReadDataFromGuest(PSHCLCLIENT pClient, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb);
 int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat, void *pvData, uint32_t cbData);
-int ShClSvcHostReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats);
+int ShClSvcReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats);
 PSHCLBACKEND ShClSvcGetBackend(void);
 uint32_t ShClSvcGetMode(void);
 bool ShClSvcGetHeadless(void);

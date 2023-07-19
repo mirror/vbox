@@ -791,7 +791,7 @@ static int vboxClipboardSvcWinSyncInternal(PSHCLCONTEXT pCtx)
         if (   RT_SUCCESS(rc)
             && fFormats != VBOX_SHCL_FMT_NONE /** @todo r=bird: BUGBUG: revisit this. */
             && ShClSvcIsBackendActive())
-            rc = ShClSvcHostReportFormats(pCtx->pClient, fFormats);
+            rc = ShClSvcReportFormats(pCtx->pClient, fFormats);
     }
     else /* If we don't have any client data (yet), bail out. */
         rc = VINF_NO_CHANGE;
