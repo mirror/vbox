@@ -308,7 +308,7 @@ static void testEvents(void)
     PSHCLEVENT pEvent;
     RTTESTI_CHECK_RC_OK(ShClEventSourceGenerateAndRegisterEvent(&Source, &pEvent));
     ShClEventSourceReset(&Source);
-    RTTESTI_CHECK(ShClEventSourceGetLast(&Source) != NULL); /* Event still in, as it holds a reference. */
+    RTTESTI_CHECK(ShClEventSourceGetLast(&Source) == NULL); /* Event still valid, but removed from the source. */
     RTTESTI_CHECK(ShClEventRelease(pEvent) == 0);
     RTTESTI_CHECK(ShClEventRelease(pEvent) == UINT32_MAX); /* Ref count already was 0, so returns UINT32_MAX. */
     RTTESTI_CHECK(ShClEventRelease(pEvent) == UINT32_MAX); /* Again. */

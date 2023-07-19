@@ -48,6 +48,7 @@
 *   Prototypes                                                                                                                   *
 *********************************************************************************************************************************/
 static void shClEventSourceResetInternal(PSHCLEVENTSOURCE pSource);
+static int shClEventSourceUnregisterEvent(PSHCLEVENTSOURCE pSource, PSHCLEVENT pEvent);
 
 static void shClEventDestroy(PSHCLEVENT pEvent);
 DECLINLINE(PSHCLEVENT) shclEventGet(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
@@ -203,12 +204,20 @@ static void shClEventSourceResetInternal(PSHCLEVENTSOURCE pSource)
     PSHCLEVENT pEvItNext;
     RTListForEachSafe(&pSource->lstEvents, pEvIt, pEvItNext, SHCLEVENT, Node)
     {
-        RTListNodeRemove(&pEvIt->Node);
+        bool const fDealloc = ASMAtomicReadU32(&pEvIt->cRefs) == 0; /* Still any references left? Skip de-allocation. */
+        if (!fDealloc)
+            Log3Func(("Event %RU32 has %RU32 references left, skipping de-allocation\n", pEvIt->idEvent, pEvIt->cRefs));
 
         shClEventDestroy(pEvIt);
 
-        RTMemFree(pEvIt);
-        pEvIt = NULL;
+        int rc2 = shClEventSourceUnregisterEvent(pSource, pEvIt);
+        AssertRC(rc2);
+
+        if (fDealloc)
+        {
+            RTMemFree(pEvIt);
+            pEvIt = NULL;
+        }
     }
 }
 
@@ -303,9 +312,6 @@ static void shClEventDestroy(PSHCLEVENT pEvent)
     if (!pEvent)
         return;
 
-    AssertMsgReturnVoid(pEvent->cRefs == 0, ("Event %RU32 still has %RU32 references\n",
-                                             pEvent->idEvent, pEvent->cRefs));
-
     LogFlowFunc(("Event %RU32\n", pEvent->idEvent));
 
     if (pEvent->hEvtMulSem != NIL_RTSEMEVENT)
@@ -325,30 +331,18 @@ static void shClEventDestroy(PSHCLEVENT pEvent)
  *
  * @returns VBox status code.
  * @param   pSource             Event source to unregister event for.
- * @param   pEvent              Event to unregister. On success the pointer will be invalid.
+ * @param   pEvent              Event to unregister.
  */
-static int shClEventSourceUnregisterEventInternal(PSHCLEVENTSOURCE pSource, PSHCLEVENT pEvent)
+static int shClEventSourceUnregisterEvent(PSHCLEVENTSOURCE pSource, PSHCLEVENT pEvent)
 {
+    RT_NOREF(pSource);
+
     LogFlowFunc(("idEvent=%RU32, cRefs=%RU32\n", pEvent->idEvent, pEvent->cRefs));
 
-    AssertReturn(pEvent->cRefs == 0, VERR_WRONG_ORDER);
+    RTListNodeRemove(&pEvent->Node);
+    pEvent->pParent = NULL;
 
-    int rc = RTCritSectEnter(&pSource->CritSect);
-    if (RT_SUCCESS(rc))
-    {
-        RTListNodeRemove(&pEvent->Node);
-
-        shClEventDestroy(pEvent);
-
-        rc = RTCritSectLeave(&pSource->CritSect);
-        if (RT_SUCCESS(rc))
-        {
-            RTMemFree(pEvent);
-            pEvent = NULL;
-        }
-    }
-
-    return rc;
+    return VINF_SUCCESS;
 }
 
 /**
@@ -521,7 +515,7 @@ uint32_t ShClEventRetain(PSHCLEVENT pEvent)
 }
 
 /**
- * Releases event by decreasing its reference count. Will be destroys once the reference count reaches 0.
+ * Releases event by decreasing its reference count. Will be destroyed once the reference count reaches 0.
  *
  * @returns New reference count, or UINT32_MAX if failed.
  * @param   pEvent              Event to release.
@@ -538,11 +532,33 @@ uint32_t ShClEventRelease(PSHCLEVENT pEvent)
     uint32_t const cRefs = ASMAtomicDecU32(&pEvent->cRefs);
     if (cRefs == 0)
     {
-        AssertPtr(pEvent->pParent);
-        int rc2 = shClEventSourceUnregisterEventInternal(pEvent->pParent, pEvent);
-        AssertRC(rc2);
+        int rc;
+        PSHCLEVENTSOURCE pParent = pEvent->pParent;
+        if (   pParent
+            && RTCritSectIsInitialized(&pParent->CritSect))
+        {
+            rc = RTCritSectEnter(&pParent->CritSect);
+            if (RT_SUCCESS(rc))
+            {
+                rc = shClEventSourceUnregisterEvent(pParent, pEvent);
 
-        return RT_SUCCESS(rc2) ? 0 : UINT32_MAX;
+                int rc2 = RTCritSectLeave(&pParent->CritSect);
+                if (RT_SUCCESS(rc))
+                    rc = rc2;
+            }
+        }
+        else
+            rc = VINF_SUCCESS;
+
+        if (RT_SUCCESS(rc))
+        {
+            shClEventDestroy(pEvent);
+
+            RTMemFree(pEvent);
+            pEvent = NULL;
+        }
+
+        return RT_SUCCESS(rc) ? 0 : UINT32_MAX;
     }
 
     return cRefs;
