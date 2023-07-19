@@ -31,6 +31,8 @@
 # pragma once
 #endif
 
+#include <VBox/HostServices/VBoxClipboardExt.h>
+
 /**
  * Forward prototype declarations.
  */
@@ -43,9 +45,12 @@ struct SHCLSVCEXT
 {
     /** Service extension callback function.
      *  Setting this to NULL deactivates the extension. */
-    PFNHGCMSVCEXT    pfnExt;
+    PFNHGCMSVCEXT      pfnExt;
     /** User-supplied service extension data. Might be NULL if not being used. */
-    void            *pvExt;
+    void            *  pvExt;
+    /** Pointer to an optional extension callback.
+     *  Might be NULL if not being used. */
+    PFNSHCLEXTCALLBACK pfnExtCallback;
 };
 /** Pointer to a Shared Clipboard service extension. */
 typedef SHCLSVCEXT *PSHCLSVCEXT;
@@ -135,9 +140,13 @@ protected:
     RTCRITSECT                  m_CritSect;
     /** Pointer an additional service extension handle to serve (daisy chaining).
      *
-     *  This currently only is being used by the Console VRDP server helper class.
-     *  We might want to transform this into a map later if we (ever) need more than one service extension. */
+     *  This currently only is being used by the Console VRDP server helper class (historical reasons).
+     *  We might want to transform this into a map later if we (ever) need more than one service extension,
+     *  or drop this concept althogether when we move the service stuff out of the VM process (later). */
     SHCLSVCEXT                  m_SvcExtVRDP;
+    /** Pointer to an optional extension callback.
+     *  Might be NULL if not being used. */
+    PFNSHCLEXTCALLBACK          m_pfnExtCallback;
     /** @}  */
 
 private:

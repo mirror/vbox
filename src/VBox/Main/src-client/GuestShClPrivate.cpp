@@ -59,6 +59,7 @@ GuestShCl* GuestShCl::s_pInstance = NULL;
 
 GuestShCl::GuestShCl(Console *pConsole)
     : m_pConsole(pConsole)
+    , m_pfnExtCallback(NULL)
 {
     LogFlowFuncEnter();
 
@@ -85,6 +86,8 @@ void GuestShCl::uninit(void)
         RTCritSectDelete(&m_CritSect);
 
     RT_ZERO(m_SvcExtVRDP);
+
+    m_pfnExtCallback = NULL;
 }
 
 /**
@@ -121,15 +124,31 @@ int GuestShCl::unlock(void)
 int GuestShCl::RegisterServiceExtension(PFNHGCMSVCEXT pfnExtension, void *pvExtension)
 {
     AssertPtrReturn(pfnExtension, VERR_INVALID_POINTER);
+    /* pvExtension is optional. */
 
     lock();
+
+    LogFlowFunc(("m_pfnExtCallback=%p\n", this->m_pfnExtCallback));
 
     PSHCLSVCEXT pExt = &this->m_SvcExtVRDP; /* Currently we only have one extension only. */
 
     Assert(pExt->pfnExt == NULL);
 
-    pExt->pfnExt = pfnExtension;
-    pExt->pvExt  = pvExtension;
+    pExt->pfnExt         = pfnExtension;
+    pExt->pvExt          = pvExtension;
+    pExt->pfnExtCallback = this->m_pfnExtCallback; /* Assign callback function. Optional and can be NULL. */
+
+    if (pExt->pfnExtCallback)
+    {
+        /* Make sure to also give the extension the ability to use the callback. */
+        SHCLEXTPARMS parms;
+        RT_ZERO(parms);
+
+        parms.u.SetCallback.pfnCallback = pExt->pfnExtCallback;
+
+        /* ignore rc, callback is optional */ pExt->pfnExt(pExt->pvExt,
+                                                           VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK, &parms, sizeof(parms));
+    }
 
     unlock();
 
@@ -152,6 +171,13 @@ int GuestShCl::UnregisterServiceExtension(PFNHGCMSVCEXT pfnExtension)
 
     AssertReturnStmt(pExt->pfnExt == pfnExtension, unlock(), VERR_INVALID_PARAMETER);
     AssertPtr(pExt->pfnExt);
+
+    /* Unregister the callback (setting to NULL). */
+    SHCLEXTPARMS parms;
+    RT_ZERO(parms);
+
+    /* ignore rc, callback is optional */ pExt->pfnExt(pExt->pvExt,
+                                                       VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK, &parms, sizeof(parms));
 
     RT_BZERO(pExt, sizeof(SHCLSVCEXT));
 
@@ -243,6 +269,11 @@ DECLCALLBACK(int) GuestShCl::hgcmDispatcher(void *pvExtension, uint32_t u32Funct
 
     switch (u32Function)
     {
+        case VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK:
+            pThis->m_pfnExtCallback = pParms->u.SetCallback.pfnCallback;
+            vrc = VINF_SUCCESS;
+            break;
+
         case VBOX_CLIPBOARD_EXT_FN_ERROR:
         {
             vrc = pThis->reportError(pParms->u.Error.pszId, pParms->u.Error.rc, pParms->u.Error.pszMsg);
