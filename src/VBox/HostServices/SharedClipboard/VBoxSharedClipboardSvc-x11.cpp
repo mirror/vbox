@@ -366,7 +366,7 @@ static DECLCALLBACK(int) shClSvcX11ReportFormatsCallback(PSHCLCONTEXT pCtx, uint
     PSHCLCLIENT pClient = pCtx->pClient;
     AssertPtr(pClient);
 
-    rc = ShClSvcReportFormats(pCtx->pClient, fFormats);
+    rc = ShClSvcReportFormats(pClient, fFormats);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
