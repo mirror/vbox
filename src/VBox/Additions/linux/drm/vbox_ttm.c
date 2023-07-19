@@ -34,7 +34,7 @@
  */
 #include "vbox_drv.h"
 
-#if RTLNX_VER_MIN(6,3,0)
+#if RTLNX_VER_MIN(6,3,0) || RTLNX_RHEL_MAJ_PREREQ(9,3)
 # include <drm/ttm/ttm_tt.h>
 #endif
 
@@ -628,7 +628,7 @@ int vbox_bo_create(struct drm_device *dev, int size, int align,
 	drm_vma_node_reset(&vboxbo->bo.base.vma_node);
 #endif
 
-#if RTLNX_VER_MIN(6,1,0)
+#if RTLNX_VER_MIN(6,1,0) || RTLNX_RHEL_MAJ_PREREQ(9,3)
 	ret = ttm_bo_init_validate(&vbox->ttm.bdev, &vboxbo->bo,
 #else
 	ret = ttm_bo_init(&vbox->ttm.bdev, &vboxbo->bo, size,

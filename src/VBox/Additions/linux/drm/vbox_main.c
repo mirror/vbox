@@ -36,7 +36,7 @@
 #include <drm/drm_fb_helper.h>
 #include <drm/drm_crtc_helper.h>
 
-#if RTLNX_VER_MIN(6,3,0)
+#if RTLNX_VER_MIN(6,3,0) || RTLNX_RHEL_MAJ_PREREQ(9,3)
 # include <drm/drm_modeset_helper.h>
 #endif
 

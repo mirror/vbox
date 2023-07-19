@@ -50,7 +50,7 @@
 
 #include <VBoxVideo.h>
 
-#if RTLNX_VER_MIN(6,2,0)
+#if RTLNX_VER_MIN(6,2,0) || RTLNX_RHEL_MAJ_PREREQ(9,3)
 # define VBOX_FBDEV_INFO(_helper) _helper.info
 #else
 # define VBOX_FBDEV_INFO(_helper) _helper.fbdev
@@ -325,7 +325,7 @@ static int vboxfb_create(struct drm_fb_helper *helper,
 		return ret;
 	}
 
-#if RTLNX_VER_MIN(6,2,0)
+#if RTLNX_VER_MIN(6,2,0) || RTLNX_RHEL_MAJ_PREREQ(9,3)
 	info = drm_fb_helper_alloc_info(helper);
 #else
 	info = drm_fb_helper_alloc_fbi(helper);
@@ -349,7 +349,7 @@ static int vboxfb_create(struct drm_fb_helper *helper,
 	info->flags = FBINFO_DEFAULT | FBINFO_MISC_ALWAYS_SETPAR;
 	info->fbops = &vboxfb_ops;
 
-#if RTLNX_VER_MAX(6,3,0)
+#if RTLNX_VER_MAX(6,3,0) && !RTLNX_RHEL_MAJ_PREREQ(9,3)
 	/*
 	 * This seems to be done for safety checking that the framebuffer
 	 * is not registered twice by different drivers.
@@ -378,7 +378,7 @@ static int vboxfb_create(struct drm_fb_helper *helper,
 	info->screen_size = size;
 
 #ifdef CONFIG_FB_DEFERRED_IO
-# if RTLNX_VER_MIN(5,19,0) || RTLNX_RHEL_RANGE(8,8, 8,99)
+# if RTLNX_VER_MIN(5,19,0) || RTLNX_RHEL_RANGE(8,8, 8,99) || RTLNX_RHEL_MAJ_PREREQ(9,3)
 	info->fix.smem_len = info->screen_size;
 # endif
 	info->fbdefio = &vbox_defio;
@@ -415,7 +415,7 @@ void vbox_fbdev_fini(struct drm_device *dev)
 		fb_deferred_io_cleanup(VBOX_FBDEV_INFO(fbdev->helper));
 #endif
 
-#if RTLNX_VER_MIN(6,2,0)
+#if RTLNX_VER_MIN(6,2,0) || RTLNX_RHEL_MAJ_PREREQ(9,3)
 	drm_fb_helper_unregister_info(&fbdev->helper);
 #else
 	drm_fb_helper_unregister_fbi(&fbdev->helper);
@@ -463,7 +463,7 @@ int vbox_fbdev_init(struct drm_device *dev)
 	vbox->fbdev = fbdev;
 	spin_lock_init(&fbdev->dirty_lock);
 
-#if RTLNX_VER_MIN(6,3,0)
+#if RTLNX_VER_MIN(6,3,0) || RTLNX_RHEL_MAJ_PREREQ(9,3)
 	drm_fb_helper_prepare(dev, &fbdev->helper, 32, &vbox_fb_helper_funcs);
 #elif RTLNX_VER_MIN(3,17,0) || RTLNX_RHEL_MIN(7,2)
 	drm_fb_helper_prepare(dev, &fbdev->helper, &vbox_fb_helper_funcs);
@@ -492,7 +492,7 @@ int vbox_fbdev_init(struct drm_device *dev)
 	/* disable all the possible outputs/crtcs before entering KMS mode */
 	drm_helper_disable_unused_functions(dev);
 
-#if RTLNX_VER_MIN(6,3,0)
+#if RTLNX_VER_MIN(6,3,0) || RTLNX_RHEL_MAJ_PREREQ(9,3)
 	ret = drm_fb_helper_initial_config(&fbdev->helper);
 #else
 	ret = drm_fb_helper_initial_config(&fbdev->helper, 32);
@@ -511,7 +511,7 @@ void vbox_fbdev_set_base(struct vbox_private *vbox, unsigned long gpu_addr)
 {
 	struct fb_info *fbdev = VBOX_FBDEV_INFO(vbox->fbdev->helper);
 
-#if RTLNX_VER_MIN(6,3,0)
+#if RTLNX_VER_MIN(6,3,0) || RTLNX_RHEL_MAJ_PREREQ(9,3)
     fbdev->fix.smem_start =
 pci_resource_start(VBOX_DRM_TO_PCI_DEV(vbox->fbdev->helper.dev), 0) + gpu_addr;
 #else
