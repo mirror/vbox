@@ -983,7 +983,7 @@ static int shClSvcTransferGetReply(uint32_t cParms, VBOXHGCMSVCPARM aParms[],
                     if (cParms > idxParm)
                         rc = HGCMSvcGetU32(&aParms[idxParm], &pReply->u.TransferStatus.uStatus);
 
-                    LogFlowFunc(("uTransferStatus=%RU32 (%s)\n", 
+                    LogFlowFunc(("uTransferStatus=%RU32 (%s)\n",
                                  pReply->u.TransferStatus.uStatus, ShClTransferStatusToStr(pReply->u.TransferStatus.uStatus)));
                     break;
                 }
