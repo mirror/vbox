@@ -1787,18 +1787,35 @@ void UIVirtualBoxManager::sltPerformResetMachine()
     /* For each selected item: */
     foreach (UIVirtualMachineItem *pItem, itemsToReset)
     {
-        /* Open a session to modify VM state: */
-        CSession comSession = uiCommon().openExistingSession(pItem->id());
-        if (comSession.isNull())
-            return;
+        switch (pItem->itemType())
+        {
+            case UIVirtualMachineItemType_Local:
+            {
+                /* Open a session to modify VM state: */
+                CSession comSession = uiCommon().openExistingSession(pItem->id());
+                if (comSession.isNull())
+                    return;
 
-        /* Get session console: */
-        CConsole comConsole = comSession.GetConsole();
-        /* Reset VM: */
-        comConsole.Reset();
+                /* Get session console: */
+                CConsole comConsole = comSession.GetConsole();
+                /* Reset VM: */
+                comConsole.Reset();
 
-        /* Unlock machine finally: */
-        comSession.UnlockMachine();
+                /* Unlock machine finally: */
+                comSession.UnlockMachine();
+                break;
+            }
+            case UIVirtualMachineItemType_CloudReal:
+            {
+                /* Reset VM: */
+                UINotificationProgressCloudMachineReset *pNotification =
+                    new UINotificationProgressCloudMachineReset(pItem->toCloud()->machine());
+                gpNotificationCenter->append(pNotification);
+                break;
+            }
+            default:
+                break;
+        }
     }
 }
 
@@ -2925,6 +2942,7 @@ void UIVirtualBoxManager::updateMenuGroup(QMenu *pMenu)
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Add));
         pMenu->addSeparator();
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_M_StartOrShow));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Group_S_Reset));
         pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Console)->menu());
         pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Group_M_Stop)->menu());
         pMenu->addSeparator();
@@ -2982,6 +3000,7 @@ void UIVirtualBoxManager::updateMenuMachine(QMenu *pMenu)
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Remove));
         pMenu->addSeparator();
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Reset));
         pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Console)->menu());
         pMenu->addMenu(actionPool()->action(UIActionIndexMN_M_Machine_M_Stop)->menu());
         pMenu->addSeparator();
@@ -3592,8 +3611,7 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexMN_M_Group_S_Reset:
         case UIActionIndexMN_M_Machine_S_Reset:
         {
-            return isItemsLocal(items) &&
-                   isAtLeastOneItemRunning(items);
+            return isAtLeastOneItemRunning(items);
         }
         case UIActionIndexMN_M_Group_S_Detach:
         case UIActionIndexMN_M_Machine_S_Detach:
