@@ -69,6 +69,7 @@ signals:
     void sigVisoNameChanged(const QString &strVisoName);
     void sigVisoFilePathChanged(const QString &strPath);
     void sigSettingDialogToggle(bool fDialogShown);
+    void sigSave();
 
 public:
 
@@ -191,11 +192,10 @@ public:
     /** Creates a VISO by using the VISO creator dialog.
       * @param  pParent           Passes the dialog parent.
       * @param  strDefaultFolder  Passes the folder to save the VISO file.
-      * @param  strMachineName    Passes the name of the machine,
-      * returns the UUID of the created medium or a null QUuid. */
-    static QUuid createViso(UIActionPool *pActionPool, QWidget *pParent,
-                            const QString &strDefaultFolder = QString(),
-                            const QString &strMachineName  = QString());
+      * @param  strMachineName    Passes the name of the machine. */
+    static void createViso(UIActionPool *pActionPool, QWidget *pParent,
+                           const QString &strDefaultFolder = QString(),
+                           const QString &strMachineName  = QString());
 
 protected:
 
@@ -207,8 +207,11 @@ private slots:
     void sltVisoNameChanged(const QString &strName);
     void sltVisoFilePathChanged(const QString &strPath);
     void sltSettingDialogToggle(bool fIsShown);
+    void sltSave();
 
 private:
+
+    bool saveVISOFile();
     void prepareWidgets(const QString& strVisoSavePath, const QString &strMachineName);
     virtual void retranslateUi() final override;
     void loadSettings();

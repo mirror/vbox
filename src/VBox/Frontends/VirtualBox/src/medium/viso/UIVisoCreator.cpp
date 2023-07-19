@@ -183,6 +183,7 @@ void UIVisoSettingWidget::prepareObjects()
     AssertReturnVoid(m_pButtonBox);
     m_pButtonBox->setDoNotPickDefaultButton(true);
     m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
+    m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(QKeySequence(Qt::Key_Escape));
     pMainLayout->addWidget(m_pButtonBox);
 
     retranslateUi();
@@ -224,7 +225,6 @@ void UIVisoSettingWidget::sltButtonBoxCancel()
 {
     emit sigClosed(false);
 }
-
 
 void UIVisoSettingWidget::setSettings(const UIVisoCreatorWidget::Settings &settings)
 {
@@ -444,6 +444,7 @@ void UIVisoCreatorWidget::sltSaveAsAction()
         setVisoFilePath(fileInfo.absolutePath());
         setVisoName(fileInfo.completeBaseName());
     }
+    emit sigSave();
 }
 
 void UIVisoCreatorWidget::sltISOImportAction()
@@ -809,6 +810,8 @@ void UIVisoCreatorDialog::prepareWidgets(const QString& strVisoFilePath, const Q
                 this, &UIVisoCreatorDialog::sltVisoFilePathChanged);
         connect(m_pVisoCreatorWidget, &UIVisoCreatorWidget::sigSettingDialogToggle,
                 this, &UIVisoCreatorDialog::sltSettingDialogToggle);
+        connect(m_pVisoCreatorWidget, &UIVisoCreatorWidget::sigSave,
+                this, &UIVisoCreatorDialog::sltSave);
     }
 
     m_pButtonBox = new QIDialogButtonBox;
@@ -890,6 +893,11 @@ void UIVisoCreatorDialog::sltSettingDialogToggle(bool fIsShown)
         m_pButtonBox->setEnabled(!fIsShown);
 }
 
+void UIVisoCreatorDialog::sltSave()
+{
+    saveVISOFile();
+}
+
 void UIVisoCreatorDialog::loadSettings()
 {
     const QRect availableGeo = gpDesktop->availableGeometry(this);
@@ -927,9 +935,9 @@ QString UIVisoCreatorDialog::visoFileFullPath() const
 }
 
 /* static */
-QUuid UIVisoCreatorDialog::createViso(UIActionPool *pActionPool, QWidget *pParent,
-                                      const QString &strDefaultFolder /* = QString() */,
-                                      const QString &strMachineName /* = QString() */)
+void UIVisoCreatorDialog::createViso(UIActionPool *pActionPool, QWidget *pParent,
+                                     const QString &strDefaultFolder /* = QString() */,
+                                     const QString &strMachineName /* = QString() */)
 {
     QString strVisoSaveFolder(strDefaultFolder);
     if (strVisoSaveFolder.isEmpty())
@@ -938,47 +946,47 @@ QUuid UIVisoCreatorDialog::createViso(UIActionPool *pActionPool, QWidget *pParen
     QWidget *pDialogParent = windowManager().realParentWindow(pParent);
     UIVisoCreatorDialog *pVisoCreator = new UIVisoCreatorDialog(pActionPool, pDialogParent,
                                                                 strVisoSaveFolder, strMachineName);
-    AssertPtrReturn(pVisoCreator, QUuid());
+    AssertPtrReturnVoid(pVisoCreator);
 
     windowManager().registerNewParent(pVisoCreator, pDialogParent);
     pVisoCreator->setCurrentPath(gEDataManager->visoCreatorRecentFolder());
 
     if (pVisoCreator->exec(false /* not application modal */))
     {
-        QStringList VisoEntryList = pVisoCreator->entryList();
-        QString strImportedISOPath = pVisoCreator->importedISOPath();
-        if ((VisoEntryList.empty() || VisoEntryList[0].isEmpty()) && strImportedISOPath.isEmpty())
-        {
-            delete pVisoCreator;
-            return QUuid();
-        }
-
-        QFile file(pVisoCreator->visoFileFullPath());
-        if (file.open(QFile::WriteOnly | QFile::Truncate))
-        {
-            QString strVisoName = pVisoCreator->visoName();
-            if (strVisoName.isEmpty())
-                strVisoName = strMachineName;
-
-            QTextStream stream(&file);
-            stream << QString("%1 %2").arg("--iprt-iso-maker-file-marker-bourne-sh").arg(QUuid::createUuid().toString()) << "\n";
-            stream<< "--volume-id=" << strVisoName << "\n";
-            if (!strImportedISOPath.isEmpty())
-                stream << "--import-iso=" << strImportedISOPath << "\n";
-            stream << VisoEntryList.join("\n");
-            if (!pVisoCreator->customOptions().isEmpty())
-            {
-                stream << "\n";
-                stream << pVisoCreator->customOptions().join("\n");
-            }
-            file.close();
-        }
-    } // if (pVisoCreator->exec(false /* not application modal */))
-    gEDataManager->setVISOCreatorRecentFolder(pVisoCreator->currentPath());
+        if (pVisoCreator->saveVISOFile())
+            gEDataManager->setVISOCreatorRecentFolder(pVisoCreator->currentPath());
+    }
 
     delete pVisoCreator;
-    return QUuid();
+    return;
 }
 
+bool UIVisoCreatorDialog::saveVISOFile()
+{
+    QStringList VisoEntryList = entryList();
+    QString strImportedISOPath = importedISOPath();
+    if ((VisoEntryList.empty() || VisoEntryList[0].isEmpty()) && strImportedISOPath.isEmpty())
+        return false;
+
+    QFile file(visoFileFullPath());
+    if (file.open(QFile::WriteOnly | QFile::Truncate))
+    {
+        QString strVisoName = visoName();
+
+        QTextStream stream(&file);
+        stream << QString("%1 %2").arg("--iprt-iso-maker-file-marker-bourne-sh").arg(QUuid::createUuid().toString()) << "\n";
+        stream<< "--volume-id=" << strVisoName << "\n";
+        if (!strImportedISOPath.isEmpty())
+            stream << "--import-iso=" << strImportedISOPath << "\n";
+        stream << VisoEntryList.join("\n");
+        if (!customOptions().isEmpty())
+        {
+            stream << "\n";
+            stream << customOptions().join("\n");
+        }
+        file.close();
+    }
+    return true;
+}
 
 #include "UIVisoCreator.moc"

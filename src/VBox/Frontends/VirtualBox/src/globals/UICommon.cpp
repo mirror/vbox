@@ -1674,7 +1674,7 @@ QUuid UICommon::openMediumCreatorDialog(UIActionPool *pActionPool, QWidget *pPar
             uMediumId = UIWizardNewVD::createVDWithWizard(pParent, strDefaultFolder, strMachineName, strMachineGuestOSTypeId);
             break;
         case UIMediumDeviceType_DVD:
-            uMediumId = UIVisoCreatorDialog::createViso(pActionPool, pParent, strDefaultFolder, strMachineName);
+            UIVisoCreatorDialog::createViso(pActionPool, pParent, strDefaultFolder, strMachineName);
             break;
         case UIMediumDeviceType_Floppy:
             uMediumId = UIFDCreationDialog::createFloppyDisk(pParent, strDefaultFolder, strMachineName);
@@ -1685,8 +1685,8 @@ QUuid UICommon::openMediumCreatorDialog(UIActionPool *pActionPool, QWidget *pPar
     if (uMediumId.isNull())
         return QUuid();
 
-    /* Update the recent medium list only if the medium type is DVD or floppy: */
-    if (enmMediumType == UIMediumDeviceType_DVD || enmMediumType == UIMediumDeviceType_Floppy)
+    /* Update the recent medium list only if the medium type is floppy since updating when a VISO is created is not optimal: */
+    if (enmMediumType == UIMediumDeviceType_Floppy)
         updateRecentlyUsedMediumListAndFolder(enmMediumType, medium(uMediumId).location());
     return uMediumId;
 }
@@ -1907,8 +1907,8 @@ void UICommon::updateMachineStorage(const CMachine &comConstMachine, const UIMed
                                                              strMachineFolder, false /* fUseLastFolder */);
                 }
                 else if(target.type == UIMediumTarget::UIMediumTargetType_CreateAdHocVISO)
-                    uMediumID = UIVisoCreatorDialog::createViso(pActionPool, windowManager().mainWindowShown(),
-                                                                strMachineFolder, comConstMachine.GetName());
+                    UIVisoCreatorDialog::createViso(pActionPool, windowManager().mainWindowShown(),
+                                                    strMachineFolder, comConstMachine.GetName());
 
                 else if(target.type == UIMediumTarget::UIMediumTargetType_CreateFloppyDisk)
                     uMediumID = UIFDCreationDialog::createFloppyDisk(windowManager().mainWindowShown(), strMachineFolder, comConstMachine.GetName());
