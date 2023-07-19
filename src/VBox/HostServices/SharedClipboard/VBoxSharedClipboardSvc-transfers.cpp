@@ -158,8 +158,9 @@ int ShClSvcTransferGHRootListReadHdr(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfe
     int rc = ShClSvcTransferGHRootListReadHdrAsync(pClient, pTransfer, &pEvent);
     if (RT_SUCCESS(rc))
     {
+        int               rcEvent;
         PSHCLEVENTPAYLOAD pPayload;
-        rc = ShClEventWait(pEvent, SHCL_TIMEOUT_DEFAULT_MS, &pPayload);
+        rc = ShClEventWaitEx(pEvent, pTransfer->uTimeoutMs, &rcEvent, &pPayload);
         if (RT_SUCCESS(rc))
         {
             Assert(pPayload->cbData == sizeof(SHCLLISTHDR));
@@ -170,6 +171,8 @@ int ShClSvcTransferGHRootListReadHdr(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfe
 
             ShClPayloadFree(pPayload);
         }
+        else
+            rc = rcEvent;
 
         ShClEventRelease(pEvent);
         pEvent = NULL;
@@ -249,13 +252,15 @@ int ShClSvcTransferGHRootListReadEntry(PSHCLCLIENT pClient, PSHCLTRANSFER pTrans
     int rc = ShClSvcTransferGHRootListReadEntryAsync(pClient, pTransfer, idxEntry, &pEvent);
     if (RT_SUCCESS(rc))
     {
+        int               rcEvent;
         PSHCLEVENTPAYLOAD pPayload;
-        rc = ShClEventWait(pEvent, SHCL_TIMEOUT_DEFAULT_MS, &pPayload);
+        rc = ShClEventWaitEx(pEvent, pTransfer->uTimeoutMs, &rcEvent, &pPayload);
         if (RT_SUCCESS(rc))
         {
             *ppListEntry = (PSHCLLISTENTRY)pPayload->pvData; /* ppLisEntry own pPayload-pvData now. */
-
         }
+        else
+            rc = rcEvent;
 
         ShClEventRelease(pEvent);
         pEvent = NULL;
@@ -332,8 +337,9 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHListOpen(PSHCLTXPROVIDERCTX pCtx,
 
                 if (RT_SUCCESS(rc))
                 {
+                    int               rcEvent;
                     PSHCLEVENTPAYLOAD pPayload;
-                    rc = ShClEventWait(pEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
+                    rc = ShClEventWaitEx(pEvent, pCtx->pTransfer->uTimeoutMs, &rcEvent, &pPayload);
                     if (RT_SUCCESS(rc))
                     {
                         Assert(pPayload->cbData == sizeof(SHCLREPLY));
@@ -349,6 +355,8 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHListOpen(PSHCLTXPROVIDERCTX pCtx,
 
                         ShClPayloadFree(pPayload);
                     }
+                    else
+                        rc = rcEvent;
                 }
             }
 
@@ -400,10 +408,15 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHListClose(PSHCLTXPROVIDERCTX pCtx, SHCLL
 
                 if (RT_SUCCESS(rc))
                 {
+                    int               rcEvent;
                     PSHCLEVENTPAYLOAD pPayload;
-                    rc = ShClEventWait(pEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
+                    rc = ShClEventWaitEx(pEvent, pCtx->pTransfer->uTimeoutMs, &rcEvent, &pPayload);
                     if (RT_SUCCESS(rc))
+                    {
                         ShClPayloadFree(pPayload);
+                    }
+                    else
+                        rc = rcEvent;
                 }
             }
 
@@ -455,8 +468,9 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHListHdrRead(PSHCLTXPROVIDERCTX pCtx,
 
             if (RT_SUCCESS(rc))
             {
+                int               rcEvent;
                 PSHCLEVENTPAYLOAD pPayload;
-                rc = ShClEventWait(pEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
+                rc = ShClEventWaitEx(pEvent, pCtx->pTransfer->uTimeoutMs, &rcEvent, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
                     Assert(pPayload->cbData == sizeof(SHCLLISTHDR));
@@ -465,6 +479,8 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHListHdrRead(PSHCLTXPROVIDERCTX pCtx,
 
                     ShClPayloadFree(pPayload);
                 }
+                else
+                    rc = rcEvent;
             }
 
             ShClEventRelease(pEvent);
@@ -526,8 +542,9 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHListEntryRead(PSHCLTXPROVIDERCTX pCtx,
 
             if (RT_SUCCESS(rc))
             {
+                int               rcEvent;
                 PSHCLEVENTPAYLOAD pPayload;
-                rc = ShClEventWait(pEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
+                rc = ShClEventWaitEx(pEvent, pCtx->pTransfer->uTimeoutMs, &rcEvent, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
                     Assert(pPayload->cbData == sizeof(SHCLLISTENTRY));
@@ -536,6 +553,8 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHListEntryRead(PSHCLTXPROVIDERCTX pCtx,
 
                     ShClPayloadFree(pPayload);
                 }
+                else
+                    rc = rcEvent;
             }
 
             ShClEventRelease(pEvent);
@@ -601,8 +620,9 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHObjOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLOB
 
             if (RT_SUCCESS(rc))
             {
+                int               rcEvent;
                 PSHCLEVENTPAYLOAD pPayload;
-                rc = ShClEventWait(pEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
+                rc = ShClEventWaitEx(pEvent, pCtx->pTransfer->uTimeoutMs, &rcEvent, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
                     Assert(pPayload->cbData == sizeof(SHCLREPLY));
@@ -618,6 +638,8 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHObjOpen(PSHCLTXPROVIDERCTX pCtx, PSHCLOB
 
                     ShClPayloadFree(pPayload);
                 }
+                else
+                    rc = rcEvent;
             }
 
             ShClEventRelease(pEvent);
@@ -666,8 +688,9 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHObjClose(PSHCLTXPROVIDERCTX pCtx, SHCLOB
 
             if (RT_SUCCESS(rc))
             {
+                int               rcEvent;
                 PSHCLEVENTPAYLOAD pPayload;
-                rc = ShClEventWait(pEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
+                rc = ShClEventWaitEx(pEvent, pCtx->pTransfer->uTimeoutMs, &rcEvent, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
                     Assert(pPayload->cbData == sizeof(SHCLREPLY));
@@ -681,6 +704,8 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHObjClose(PSHCLTXPROVIDERCTX pCtx, SHCLOB
 #endif
                     ShClPayloadFree(pPayload);
                 }
+                else
+                    rc = rcEvent;
             }
 
             ShClEventRelease(pEvent);
@@ -733,7 +758,8 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHObjRead(PSHCLTXPROVIDERCTX pCtx, SHCLOBJ
             if (RT_SUCCESS(rc))
             {
                 PSHCLEVENTPAYLOAD pPayload;
-                rc = ShClEventWait(pEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
+                int               rcEvent;
+                rc = ShClEventWaitEx(pEvent, pCtx->pTransfer->uTimeoutMs, &rcEvent, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
                     Assert(pPayload->cbData == sizeof(SHCLOBJDATACHUNK));
@@ -750,6 +776,8 @@ DECLCALLBACK(int) shClSvcTransferIfaceGHObjRead(PSHCLTXPROVIDERCTX pCtx, SHCLOBJ
 
                     ShClPayloadFree(pPayload);
                 }
+                else
+                    rc = rcEvent;
             }
 
             ShClEventRelease(pEvent);
@@ -801,8 +829,9 @@ DECLCALLBACK(int) shClSvcTransferIfaceHGObjWrite(PSHCLTXPROVIDERCTX pCtx, SHCLOB
 
             if (RT_SUCCESS(rc))
             {
+                int               rcEvent;
                 PSHCLEVENTPAYLOAD pPayload;
-                rc = ShClEventWait(pEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
+                rc = ShClEventWaitEx(pEvent, pCtx->pTransfer->uTimeoutMs, &rcEvent, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
                     const uint32_t cbRead = RT_MIN(cbData, pPayload->cbData);
@@ -814,6 +843,8 @@ DECLCALLBACK(int) shClSvcTransferIfaceHGObjWrite(PSHCLTXPROVIDERCTX pCtx, SHCLOB
 
                     ShClPayloadFree(pPayload);
                 }
+                else
+                    rc = rcEvent;
             }
 
             ShClEventRelease(pEvent);
