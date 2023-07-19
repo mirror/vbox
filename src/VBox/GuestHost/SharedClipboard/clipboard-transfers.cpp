@@ -2226,7 +2226,8 @@ int ShClTransferComplete(PSHCLTRANSFER pTransfer)
 
     shClTransferLock(pTransfer);
 
-    AssertMsgReturnStmt(pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_STARTED,
+    AssertMsgReturnStmt(   pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_INITIALIZED
+                        || pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_STARTED,
                         ("Wrong status (currently is %s)\n", ShClTransferStatusToStr(pTransfer->State.enmStatus)),
                         shClTransferUnlock(pTransfer), VERR_WRONG_ORDER);
 
@@ -2259,7 +2260,8 @@ static int shClTransferCancelOrError(PSHCLTRANSFER pTransfer, int rc)
 
     int rc2;
 
-    if (pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_STARTED)
+    if (   pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_INITIALIZED
+        || pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_STARTED)
     {
         if (rc == VERR_CANCELLED)
         {
