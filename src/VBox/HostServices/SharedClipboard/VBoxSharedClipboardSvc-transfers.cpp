@@ -1432,7 +1432,7 @@ static int shClSvcTransferHandleReply(PSHCLCLIENT pClient, PSHCLTRANSFER pTransf
                 pPayload->pvData = pReply;
                 pPayload->cbData = cbReply;
 
-                SHCLTRANSFERID const idTransfer = ShClTransferGetID(pTransfer);
+                SHCLTRANSFERID const idTransfer = pTransfer ? ShClTransferGetID(pTransfer) : NIL_SHCLTRANSFERID;
 
                 switch (pReply->uType)
                 {
