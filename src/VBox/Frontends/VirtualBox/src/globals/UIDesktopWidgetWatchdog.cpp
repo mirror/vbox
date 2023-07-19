@@ -701,7 +701,7 @@ void UIDesktopWidgetWatchdog::centerWidget(QWidget *pWidget,
      * pWidget will be centered relative to the available desktop area. */
 
     AssertReturnVoid(pWidget);
-    AssertReturnVoid(pWidget->isTopLevel());
+    AssertReturnVoid(pWidget->isWindow());
 
     QRect deskGeo, parentGeo;
     if (pRelative)
