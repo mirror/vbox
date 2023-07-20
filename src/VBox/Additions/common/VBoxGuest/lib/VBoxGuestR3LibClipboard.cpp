@@ -2121,7 +2121,7 @@ static int vbglR3ClipboardTransferDestroy(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSF
 
     LogFlowFuncEnter();
 
-    int rc;
+    int rc = VINF_SUCCESS;
 
     PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransferById(pTransferCtx, idTransfer);
     if (pTransfer)
@@ -2132,25 +2132,11 @@ static int vbglR3ClipboardTransferDestroy(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSF
 
         if (RT_SUCCESS(rc))
         {
-            LogRel(("Shared Clipboard: Transfer %RU32 successfully uninitialized\n", idTransfer));
+            LogRel(("Shared Clipboard: Transfer %RU16 successfully uninitialized\n", idTransfer));
         }
         else
-            LogRel(("Shared Clipboard: Unable to uninitialized transfer %RU32, rc=%Rrc\n", idTransfer, rc));
+            LogRel(("Shared Clipboard: Unable to uninitialized transfer %RU16, rc=%Rrc\n", idTransfer, rc));
     }
-    else
-        rc = VERR_SHCLPB_TRANSFER_ID_NOT_FOUND;
-
-    /* Send a reply in any case. */
-    int rc2 = VbglR3ClipboardTransferSendStatus(pCmdCtx, pTransfer,
-                                                  RT_SUCCESS(rc)
-                                                ? SHCLTRANSFERSTATUS_UNINITIALIZED : SHCLTRANSFERSTATUS_ERROR, rc);
-
-    /* The host might not have the transfer around anymore at this time, so simply ignore this error. */
-    if (rc2 == VERR_SHCLPB_TRANSFER_ID_NOT_FOUND)
-        rc2 = VINF_SUCCESS;
-
-    if (RT_SUCCESS(rc))
-        rc = rc2;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -2212,46 +2198,6 @@ static int vbglR3ClipboardTransferStart(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFER
     int rc2 = VbglR3ClipboardTransferSendStatus(pCmdCtx, pTransfer,
                                                   RT_SUCCESS(rc)
                                                 ? SHCLTRANSFERSTATUS_STARTED : SHCLTRANSFERSTATUS_ERROR, rc);
-    if (RT_SUCCESS(rc))
-        rc = rc2;
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Stops a transfer on the guest side.
- *
- * @returns VBox status code, or VERR_NOT_FOUND if transfer has not been found.
- * @param   pCmdCtx             Command context to use.
- * @param   pTransferCtx        Transfer context to stop transfer for.
- * @param   uTransferID         ID of transfer to stop.
- */
-static int vbglR3ClipboardTransferStop(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFERCTX pTransferCtx,
-                                       SHCLTRANSFERID uTransferID)
-{
-    LogFlowFuncEnter();
-
-    int rc;
-
-    PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransferById(pTransferCtx, uTransferID);
-    if (pTransfer)
-    {
-        rc = ShClTransferCtxUnregisterById(pTransferCtx, uTransferID);
-        if (RT_SUCCESS(rc))
-        {
-            LogRel(("Shared Clipboard: Transfer %RU32 successfully stopped\n", uTransferID));
-        }
-        else
-            LogRel(("Shared Clipboard: Unable to stop transfer %RU32, rc=%Rrc\n", uTransferID, rc));
-    }
-    else
-        rc = VERR_SHCLPB_TRANSFER_ID_NOT_FOUND;
-
-    /* Send a reply in any case. */
-    int rc2 = VbglR3ClipboardTransferSendStatus(pCmdCtx, pTransfer,
-                                                  RT_SUCCESS(rc)
-                                                ? SHCLTRANSFERSTATUS_COMPLETED : SHCLTRANSFERSTATUS_ERROR, rc);
     if (RT_SUCCESS(rc))
         rc = rc2;
 
@@ -2375,18 +2321,14 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                             break;
                         }
 
-                        case SHCLTRANSFERSTATUS_UNINITIALIZED:
-                        {
-                            rc = vbglR3ClipboardTransferDestroy(pCmdCtx, pTransferCtx, idTransfer);
-                            break;
-                        }
-
                         case SHCLTRANSFERSTATUS_STARTED:
                         {
                             rc = vbglR3ClipboardTransferStart(pCmdCtx, pTransferCtx, idTransfer);
                             break;
                         }
 
+                        case SHCLTRANSFERSTATUS_UNINITIALIZED:
+                            RT_FALL_THROUGH();
                         case SHCLTRANSFERSTATUS_COMPLETED:
                             RT_FALL_THROUGH();
                         case SHCLTRANSFERSTATUS_CANCELED:
@@ -2395,7 +2337,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                             RT_FALL_THROUGH();
                         case SHCLTRANSFERSTATUS_ERROR:
                         {
-                            rc = vbglR3ClipboardTransferStop(pCmdCtx, pTransferCtx, idTransfer);
+                            rc = vbglR3ClipboardTransferDestroy(pCmdCtx, pTransferCtx, idTransfer);
                             break;
                         }
 
