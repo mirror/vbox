@@ -379,7 +379,7 @@ static DECLCALLBACK(void) vbtrShClTransferCompletedCallback(PSHCLTRANSFERCALLBAC
             break;
     }
 
-    int rc = VbglR3ClipboardTransferStatusReply(&pCtx->CmdCtx, pCbCtx->pTransfer, enmSts, rcCompletion);
+    int rc = VbglR3ClipboardTransferSendStatus(&pCtx->CmdCtx, pCbCtx->pTransfer, enmSts, rcCompletion);
     LogFlowFuncLeaveRC(rc);
 }
 
@@ -406,7 +406,7 @@ static DECLCALLBACK(void) vbtrShClTransferErrorCallback(PSHCLTRANSFERCALLBACKCTX
                           5000 /* Time to display in msec */, NIIF_INFO);
     }
 
-    int rc = VbglR3ClipboardTransferStatusReply(&pCtx->CmdCtx, pCbCtx->pTransfer, SHCLTRANSFERSTATUS_ERROR, rcError);
+    int rc = VbglR3ClipboardTransferSendStatus(&pCtx->CmdCtx, pCbCtx->pTransfer, SHCLTRANSFERSTATUS_ERROR, rcError);
     LogFlowFuncLeaveRC(rc);
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */

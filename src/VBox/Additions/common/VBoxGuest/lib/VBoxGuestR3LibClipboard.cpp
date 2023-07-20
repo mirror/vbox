@@ -955,7 +955,7 @@ static int vbglR3ClipboardTransferStatusReplyEx(PVBGLR3SHCLCMDCTX pCtx, uint64_t
 }
 
 /**
- * Replies to a transfer report from the host.
+ * Sends a transfer status to the host.
  *
  * @returns VBox status code.
  * @param   pCtx                Shared Clipboard command context to use for the connection.
@@ -963,8 +963,8 @@ static int vbglR3ClipboardTransferStatusReplyEx(PVBGLR3SHCLCMDCTX pCtx, uint64_t
  * @param   uStatus             Tranfer status to reply.
  * @param   rcTransfer          Result code (rc) to reply.
  */
-VBGLR3DECL(int) VbglR3ClipboardTransferStatusReply(PVBGLR3SHCLCMDCTX pCtx, PSHCLTRANSFER pTransfer,
-                                                   SHCLTRANSFERSTATUS uStatus, int rcTransfer)
+VBGLR3DECL(int) VbglR3ClipboardTransferSendStatus(PVBGLR3SHCLCMDCTX pCtx, PSHCLTRANSFER pTransfer,
+                                                  SHCLTRANSFERSTATUS uStatus, int rcTransfer)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     RT_NOREF(pTransfer); /* Currently not used (yet). */
@@ -2141,9 +2141,9 @@ static int vbglR3ClipboardTransferDestroy(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSF
         rc = VERR_SHCLPB_TRANSFER_ID_NOT_FOUND;
 
     /* Send a reply in any case. */
-    int rc2 = VbglR3ClipboardTransferStatusReply(pCmdCtx, pTransfer,
-                                                   RT_SUCCESS(rc)
-                                                 ? SHCLTRANSFERSTATUS_UNINITIALIZED : SHCLTRANSFERSTATUS_ERROR, rc);
+    int rc2 = VbglR3ClipboardTransferSendStatus(pCmdCtx, pTransfer,
+                                                  RT_SUCCESS(rc)
+                                                ? SHCLTRANSFERSTATUS_UNINITIALIZED : SHCLTRANSFERSTATUS_ERROR, rc);
 
     /* The host might not have the transfer around anymore at this time, so simply ignore this error. */
     if (rc2 == VERR_SHCLPB_TRANSFER_ID_NOT_FOUND)
@@ -2209,9 +2209,9 @@ static int vbglR3ClipboardTransferStart(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFER
         rc = VERR_SHCLPB_TRANSFER_ID_NOT_FOUND;
 
     /* Send a reply in any case. */
-    int rc2 = VbglR3ClipboardTransferStatusReply(pCmdCtx, pTransfer,
-                                                   RT_SUCCESS(rc)
-                                                 ? SHCLTRANSFERSTATUS_STARTED : SHCLTRANSFERSTATUS_ERROR, rc);
+    int rc2 = VbglR3ClipboardTransferSendStatus(pCmdCtx, pTransfer,
+                                                  RT_SUCCESS(rc)
+                                                ? SHCLTRANSFERSTATUS_STARTED : SHCLTRANSFERSTATUS_ERROR, rc);
     if (RT_SUCCESS(rc))
         rc = rc2;
 
@@ -2249,9 +2249,9 @@ static int vbglR3ClipboardTransferStop(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFERC
         rc = VERR_SHCLPB_TRANSFER_ID_NOT_FOUND;
 
     /* Send a reply in any case. */
-    int rc2 = VbglR3ClipboardTransferStatusReply(pCmdCtx, pTransfer,
-                                                   RT_SUCCESS(rc)
-                                                 ? SHCLTRANSFERSTATUS_COMPLETED : SHCLTRANSFERSTATUS_ERROR, rc);
+    int rc2 = VbglR3ClipboardTransferSendStatus(pCmdCtx, pTransfer,
+                                                  RT_SUCCESS(rc)
+                                                ? SHCLTRANSFERSTATUS_COMPLETED : SHCLTRANSFERSTATUS_ERROR, rc);
     if (RT_SUCCESS(rc))
         rc = rc2;
 
@@ -2308,9 +2308,9 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                             /* As soon as we've created our transfer locally, report back INITIALIZED to the host.
                              * This will initialize the transfer on the host, so that in turn reports INITIALIZED
                              * back to us (see case down below).*/
-                            int rc2 = VbglR3ClipboardTransferStatusReply(pCmdCtx, pTransfer,
-                                                                           RT_SUCCESS(rc)
-                                                                         ? SHCLTRANSFERSTATUS_INITIALIZED : SHCLTRANSFERSTATUS_ERROR, rc);
+                            int rc2 = VbglR3ClipboardTransferSendStatus(pCmdCtx, pTransfer,
+                                                                          RT_SUCCESS(rc)
+                                                                        ? SHCLTRANSFERSTATUS_INITIALIZED : SHCLTRANSFERSTATUS_ERROR, rc);
                             if (RT_SUCCESS(rc))
                                 rc = rc2;
                             break;
@@ -2345,8 +2345,8 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                                      * in the case SHCLTRANSFERSTATUS_REQUESTED above. */
                                     if (RT_FAILURE(rc))
                                     {
-                                        int rc2 = VbglR3ClipboardTransferStatusReply(pCmdCtx, pTransfer,
-                                                                                     SHCLTRANSFERSTATUS_ERROR, rc);
+                                        int rc2 = VbglR3ClipboardTransferSendStatus(pCmdCtx, pTransfer,
+                                                                                    SHCLTRANSFERSTATUS_ERROR, rc);
                                         AssertRC(rc2);
                                     }
                                 }
@@ -2363,9 +2363,9 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                                     rc = vbglR3ClipboardTransferInit(pCmdCtx, pTransfer);
 
                                 /* Send a reply in any case. */
-                                int rc2 = VbglR3ClipboardTransferStatusReply(pCmdCtx, pTransfer,
-                                                                               RT_SUCCESS(rc)
-                                                                             ? SHCLTRANSFERSTATUS_INITIALIZED : SHCLTRANSFERSTATUS_ERROR, rc);
+                                int rc2 = VbglR3ClipboardTransferSendStatus(pCmdCtx, pTransfer,
+                                                                              RT_SUCCESS(rc)
+                                                                            ? SHCLTRANSFERSTATUS_INITIALIZED : SHCLTRANSFERSTATUS_ERROR, rc);
                                 if (RT_SUCCESS(rc))
                                     rc = rc2;
                             }

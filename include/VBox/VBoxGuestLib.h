@@ -725,7 +725,7 @@ VBGLR3DECL(int)     VbglR3ClipboardWriteError(HGCMCLIENTID idClient, int rcErr);
 VBGLR3DECL(int)     VbglR3ClipboardTransferRequest(PVBGLR3SHCLCMDCTX pCmdCtx);
 VBGLR3DECL(int)     VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms, PVBGLR3SHCLCMDCTX pCtx, PSHCLTRANSFERCTX pTransferCtx, PVBGLR3CLIPBOARDEVENT pEvent);
 
-VBGLR3DECL(int)     VbglR3ClipboardTransferStatusReply(PVBGLR3SHCLCMDCTX pCtx, PSHCLTRANSFER pTransfer, SHCLTRANSFERSTATUS uStatus, int rcTransfer);
+VBGLR3DECL(int)     VbglR3ClipboardTransferSendStatus(PVBGLR3SHCLCMDCTX pCtx, PSHCLTRANSFER pTransfer, SHCLTRANSFERSTATUS uStatus, int rcTransfer);
 
 VBGLR3DECL(int)     VbglR3ClipboardTransferRootListRead(PVBGLR3SHCLCMDCTX pCtx, PSHCLLIST *ppRootList);
 
