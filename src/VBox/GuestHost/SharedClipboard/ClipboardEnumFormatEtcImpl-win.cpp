@@ -39,11 +39,30 @@
 #include <VBox/log.h>
 
 
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+
+
+
+/*********************************************************************************************************************************
+*   Static variables                                                                                                             *
+*********************************************************************************************************************************/
+#ifdef VBOX_SHARED_CLIPBOARD_DEBUG_OBJECT_COUNTS
+ extern int g_cDbgDataObj;
+ extern int g_cDbgStreamObj;
+ extern int g_cDbgEnumFmtObj;
+#endif
+
 
 SharedClipboardWinEnumFormatEtc::SharedClipboardWinEnumFormatEtc(void)
     : m_lRefCount(1),
       m_nIndex(0)
 {
+#ifdef VBOX_SHARED_CLIPBOARD_DEBUG_OBJECT_COUNTS
+    g_cDbgEnumFmtObj++;
+    LogFlowFunc(("g_cDataObj=%d, g_cStreamObj=%d, g_cEnumFmtObj=%d\n", g_cDbgDataObj, g_cDbgStreamObj, g_cDbgEnumFmtObj));
+#endif
 }
 
 SharedClipboardWinEnumFormatEtc::~SharedClipboardWinEnumFormatEtc(void)
@@ -51,6 +70,11 @@ SharedClipboardWinEnumFormatEtc::~SharedClipboardWinEnumFormatEtc(void)
     Destroy();
 
     LogFlowFunc(("m_lRefCount=%RI32\n", m_lRefCount));
+
+#ifdef VBOX_SHARED_CLIPBOARD_DEBUG_OBJECT_COUNTS
+    g_cDbgEnumFmtObj--;
+    LogFlowFunc(("g_cDataObj=%d, g_cStreamObj=%d, g_cEnumFmtObj=%d\n", g_cDbgDataObj, g_cDbgStreamObj, g_cDbgEnumFmtObj));
+#endif
 }
 
 /**

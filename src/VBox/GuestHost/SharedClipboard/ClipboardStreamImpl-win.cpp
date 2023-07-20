@@ -51,7 +51,11 @@
 /*********************************************************************************************************************************
 *   Static variables                                                                                                             *
 *********************************************************************************************************************************/
-
+#ifdef VBOX_SHARED_CLIPBOARD_DEBUG_OBJECT_COUNTS
+ extern int g_cDbgDataObj;
+ extern int g_cDbgStreamObj;
+ extern int g_cDbgEnumFmtObj;
+#endif
 
 
 SharedClipboardWinStreamImpl::SharedClipboardWinStreamImpl(SharedClipboardWinDataObject *pParent, PSHCLTRANSFER pTransfer,
@@ -68,11 +72,21 @@ SharedClipboardWinStreamImpl::SharedClipboardWinStreamImpl(SharedClipboardWinDat
     AssertPtr(m_pTransfer);
 
     LogFunc(("m_strPath=%s\n", m_strPath.c_str()));
+
+#ifdef VBOX_SHARED_CLIPBOARD_DEBUG_OBJECT_COUNTS
+    g_cDbgStreamObj++;
+    LogFlowFunc(("g_cDataObj=%d, g_cStreamObj=%d, g_cEnumFmtObj=%d\n", g_cDbgDataObj, g_cDbgStreamObj, g_cDbgEnumFmtObj));
+#endif
 }
 
 SharedClipboardWinStreamImpl::~SharedClipboardWinStreamImpl(void)
 {
     LogFlowThisFuncEnter();
+
+#ifdef VBOX_SHARED_CLIPBOARD_DEBUG_OBJECT_COUNTS
+    g_cDbgStreamObj--;
+    LogFlowFunc(("g_cDataObj=%d, g_cStreamObj=%d, g_cEnumFmtObj=%d\n", g_cDbgDataObj, g_cDbgStreamObj, g_cDbgEnumFmtObj));
+#endif
 }
 
 /*
@@ -375,8 +389,6 @@ HRESULT SharedClipboardWinStreamImpl::Create(SharedClipboardWinDataObject *pPare
     SharedClipboardWinStreamImpl *pStream = new SharedClipboardWinStreamImpl(pParent, pTransfer, strPath, pObjInfo);
     if (pStream)
     {
-        pStream->AddRef();
-
         *ppStream = pStream;
         return S_OK;
     }

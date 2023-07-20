@@ -49,6 +49,14 @@
 #include <iprt/errcore.h>
 #include <VBox/log.h>
 
+/** Enable this to track the current counts of the data / stream / enum object we create + supply to the Windows clipboard.
+ *  Helps finding refcount issues or tracking down memory leaks. */
+#ifdef VBOX_SHARED_CLIPBOARD_DEBUG_OBJECT_COUNTS
+ int g_cDbgDataObj;
+ int g_cDbgStreamObj;
+ int g_cDbgEnumFmtObj;
+#endif
+
 /** @todo Also handle Unicode entries.
  *        !!! WARNING: Buggy, doesn't work yet (some memory corruption / garbage in the file name descriptions) !!! */
 //#define VBOX_CLIPBOARD_WITH_UNICODE_SUPPORT 1
@@ -65,11 +73,20 @@ SharedClipboardWinDataObject::SharedClipboardWinDataObject(void)
     , m_EventListComplete(NIL_RTSEMEVENT)
     , m_EventStatusChanged(NIL_RTSEMEVENT)
 {
+#ifdef VBOX_SHARED_CLIPBOARD_DEBUG_OBJECT_COUNTS
+    g_cDbgDataObj++;
+    LogFlowFunc(("g_cDataObj=%d, g_cStreamObj=%d, g_cEnumFmtObj=%d\n", g_cDbgDataObj, g_cDbgStreamObj, g_cDbgEnumFmtObj));
+#endif
 }
 
 SharedClipboardWinDataObject::~SharedClipboardWinDataObject(void)
 {
     Destroy();
+
+#ifdef VBOX_SHARED_CLIPBOARD_DEBUG_OBJECT_COUNTS
+    g_cDbgDataObj--;
+    LogFlowFunc(("g_cDataObj=%d, g_cStreamObj=%d, g_cEnumFmtObj=%d\n", g_cDbgDataObj, g_cDbgStreamObj, g_cDbgEnumFmtObj));
+#endif
 
     LogFlowFunc(("mRefCount=%RI32\n", m_lRefCount));
 }
@@ -249,10 +266,7 @@ void SharedClipboardWinDataObject::Destroy(void)
     }
 
     if (m_pStream)
-    {
-        m_pStream->Release();
         m_pStream = NULL;
-    }
 
     if (m_pFormatEtc)
     {
