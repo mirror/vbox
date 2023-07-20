@@ -1239,13 +1239,13 @@ static int rtHttpServerProcessRequest(PRTHTTPSERVERCLIENT pClient, char *pszReq,
     else
         enmSts = RTHTTPSTATUS_BADREQUEST;
 
-    /* Make sure to return at least *something* to the client, to prevent hangs. */
-    if (enmSts == RTHTTPSTATUS_INTERNAL_NOT_SET)
-        enmSts = rtHttpServerRcToStatus(VERR_INTERNAL_ERROR);
-
-    int rc2 = rtHttpServerSendResponseSimple(pClient, enmSts);
-    if (RT_SUCCESS(rc))
-        rc = rc2;
+    /* If a status was set here explicitly, return it to prevent client hangs. */
+    if (enmSts != RTHTTPSTATUS_INTERNAL_NOT_SET)
+    {
+        int rc2 = rtHttpServerSendResponseSimple(pClient, enmSts);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
