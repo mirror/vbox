@@ -1422,7 +1422,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             'dir_create', 'dir_create_temp', 'dir_read',
             'file_open', 'file_remove', 'file_stat', 'file_read', 'file_write',
             'copy_to', 'copy_from',
-            'update_additions'
+            'update_additions',
+            '3d'
         ];
         self.asTests                = self.asTestsDef;
         self.fSkipKnownBugs         = False;
@@ -5487,7 +5488,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests for VMSVGA device.
         """
 
-        if oTestVm.sKind not in ('Windows7', 'Windows7_64', 'Windows8_64', 'Windows10', 'Windows10_64', 'Windows11_64'):
+        if oTestVm.sKind not in ('Windows8_64', 'Windows10', 'Windows10_64', 'Windows11_64'):
             return (True, oTxsSession);
 
         sPnpUtil = os.path.join(self.oTstDrv.getGuestSystemDir(oTestVm), 'pnputil.exe');
