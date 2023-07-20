@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
                 case 4:
                     RT_FALL_THROUGH();
                 default:
-                    rc = RTLogGroupSettings(g_pRelLogger, "shared_clipboard.e.l.l2.l3.l4+http.e.l.l2.l3.l4");
+                    rc = RTLogGroupSettings(g_pRelLogger, "shared_clipboard.e.l.l2.l3.l4.f+http.e.l.l2.l3.l4.f");
                     break;
             }
             if (RT_FAILURE(rc))
