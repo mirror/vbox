@@ -2200,7 +2200,7 @@ static int shClSvcTransferSendStatusExAsync(PSHCLCLIENT pClient, SHCLTRANSFERID 
         rc = shClSvcClientWakeup(pClient);
         if (RT_SUCCESS(rc))
         {
-            LogRel2(("Shared Clipboard: Reported status %s (rc=%Rrc) of transfer %RU32 to guest\n",
+            LogRel2(("Shared Clipboard: Reported status %s (rc=%Rrc) of transfer %RU16 to guest\n",
                      ShClTransferStatusToStr(enmSts), rcTransfer, idTransfer));
 
             if (ppEvent)
@@ -2217,7 +2217,7 @@ static int shClSvcTransferSendStatusExAsync(PSHCLCLIENT pClient, SHCLTRANSFERID 
         rc = VERR_SHCLPB_MAX_EVENTS_REACHED;
 
     if (RT_FAILURE(rc))
-        LogRel(("Shared Clipboard: Reporting status %s (%Rrc) for transfer %RU32 to guest failed with %Rrc\n",
+        LogRel(("Shared Clipboard: Reporting status %s (%Rrc) for transfer %RU16 to guest failed with %Rrc\n",
                 ShClTransferStatusToStr(enmSts), rcTransfer, idTransfer, rc));
 
     LogFlowFuncLeaveRC(rc);
@@ -2457,7 +2457,7 @@ int ShClSvcTransferInit(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
  */
 int ShClSvcTransferStart(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
-    LogRel2(("Shared Clipboard: Starting transfer %RU32 ...\n", pTransfer->State.uID));
+    LogRel2(("Shared Clipboard: Starting transfer %RU16 ...\n", pTransfer->State.uID));
 
     shClSvcClientLock(pClient);
 
@@ -2486,7 +2486,7 @@ int ShClSvcTransferStart(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
  */
 int ShClSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, bool fWaitForGuest)
 {
-    LogRel2(("Shared Clipboard: Stopping transfer %RU32 ...\n", pTransfer->State.uID));
+    LogRel2(("Shared Clipboard: Stopping transfer %RU16 ...\n", pTransfer->State.uID));
 
     shClSvcClientLock(pClient);
 
@@ -2496,13 +2496,13 @@ int ShClSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, bool fWait
     if (   RT_SUCCESS(rc)
         && fWaitForGuest)
     {
-        LogRel2(("Shared Clipboard: Waiting for stop of transfer %RU32 on guest ...\n", pTransfer->State.uID));
+        LogRel2(("Shared Clipboard: Waiting for stop of transfer %RU16 on guest ...\n", pTransfer->State.uID));
 
         shClSvcClientUnlock(pClient);
 
         rc = ShClEventWait(pEvent, pTransfer->uTimeoutMs, NULL /* ppPayload */);
         if (RT_SUCCESS(rc))
-            LogRel2(("Shared Clipboard: Stopped transfer %RU32 on guest\n", pTransfer->State.uID));
+            LogRel2(("Shared Clipboard: Stopped transfer %RU16 on guest\n", pTransfer->State.uID));
 
         ShClEventRelease(pEvent);
 
@@ -2510,7 +2510,7 @@ int ShClSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, bool fWait
     }
 
     if (RT_FAILURE(rc))
-        LogRel(("Shared Clipboard: Unable to stop transfer %RU32 on guest, rc=%Rrc\n",
+        LogRel(("Shared Clipboard: Unable to stop transfer %RU16 on guest, rc=%Rrc\n",
                 pTransfer->State.uID, rc));
 
     shClSvcClientUnlock(pClient);
