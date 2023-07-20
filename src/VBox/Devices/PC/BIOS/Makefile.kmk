@@ -93,7 +93,7 @@ ifdef VBOX_WITH_OPEN_WATCOM
  VBoxPcBios386_CFLAGS  = -3
  VBoxPcBios386_BSFLAGS = -3 -p -s
  VBoxPcBios386_DEFS    = $(VBoxPcBiosAll_DEFS) VBOX_BIOS_CPU=80386 \
-  	VBOX_WITH_AHCI \
+ 	VBOX_WITH_AHCI \
  	VBOX_WITH_SCSI \
  	VBOX_WITH_VIRTIO_SCSI
  VBoxPcBios386_SOURCES = $(VBoxPcBiosAll_SOURCES) \
@@ -107,7 +107,7 @@ ifdef VBOX_WITH_OPEN_WATCOM
  	vds.c \
  	apm_pm.asm \
  	pcibio32.asm \
-	$(VBoxPcBios32_0_OUTDIR)/VBoxPcBios32.lib
+ 	$(VBoxPcBios32_0_OUTDIR)/VBoxPcBios32.lib
 
  MISCBINS += VBoxPcBios286
  VBoxPcBios286_EXTENDS = VBoxPcBiosAll
