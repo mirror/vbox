@@ -57,9 +57,9 @@ VBOX_PATH_VMSVGA_DEVICE_INC := $(VBOX_PATH_DEVICES_SRC)/Graphics/vmsvga_include
 #   -d1+  Only do line numbers and a bit more, keeping things easily parsable for VBoxDbg.
 #
 # Disabled linker warnings:
-#   W1014: ?
-#   W1023: ?
-#   W2120: ?
+#   W1014: stack segment not found
+#   W1023: no starting address found, using xxx
+#   W2120: application too large to run under DOS
 #   W1080: file F:\tinderbox\win-rel\out\win.amd64\release\obj\VBoxVgaBios386\vberom.obj is a 32-bit object file
 TEMPLATE_VBoxBios = ROM
 TEMPLATE_VBoxBios_INSTTYPE     = none
@@ -84,7 +84,7 @@ TEMPLATE_VBoxBios_LNK_DEPS = $(VBOX_BIOSSUMS) $(VBOX_PATH_DEVICES_SRC)/BiosCommo
 TEMPLATE_VBoxBios_POST_CMDS = \
 	$(QUIET)$(SED_EXT) -n -f $(VBOX_PATH_DEVICES_SRC)/BiosCommonCode/biosorg_check.sed $(outbase).map \
 	&& $(MV_EXT) -f $(out) $(out).tmp \
-	&& $(VBOX_BIOSSUMS) $(out).tmp $(out) \
+	&& $(VBOX_BIOSSUMS) -s $(out).tmp $(out) \
 	&& $(RM_EXT) -f $(out).tmp
 
 #

@@ -251,6 +251,7 @@ void BIOSCALL inv_op_handler(uint16_t ds, uint16_t es, pusha_regs_t gr, volatile
     if (*(uint8_t __far *)ins == 0xF0) {
          /* LOCK prefix - skip over it and try again. */
         ++ra.ip;
+#if VBOX_BIOS_CPU >= 80386
     } else if (*(uint16_t __far *)ins == 0x050F) {
         /* 286 LOADALL. NB: Same opcode as SYSCALL. */
         ldall_286_s __far   *ldbuf = 0 :> 0x800;
@@ -349,6 +350,7 @@ void BIOSCALL inv_op_handler(uint16_t ds, uint16_t es, pusha_regs_t gr, volatile
         load_rm_seg3(es, seg_flags);
         load_pm_segs();
         ldal3_finish();
+#endif
 #endif
     } else {
         /* There isn't much point in executing the invalid opcode handler

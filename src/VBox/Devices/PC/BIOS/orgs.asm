@@ -137,27 +137,29 @@ extrn           _int16_function:near
 extrn           _int17_function:near
 extrn           _int19_function:near
 extrn           _int1a_function:near
-extrn           _pci16_function:near
 extrn           _int70_function:near
 extrn           _int74_function:near
 extrn           _apm_function:near
 extrn           _ata_init:near
+ifdef VBOX_WITH_SCSI
 extrn           _scsi_init:near
+endif
 extrn           _ata_detect:near
 extrn           _cdemu_init:near
 extrn           _keyboard_init:near
 extrn           _print_bios_banner:near
-extrn           _inv_op_handler:near
 extrn           rom_scan_:near
 ifdef VBOX_WITH_AHCI
 extrn           _ahci_init:near
 endif
 if VBOX_BIOS_CPU ge 80286
 extrn           _int15_blkmove:near
+extrn           _inv_op_handler:near
 endif
 if VBOX_BIOS_CPU ge 80386
 extrn           _int15_function32:near
 extrn           _apic_setup:near
+extrn           _pci16_function:near
 endif
 
 
@@ -469,7 +471,9 @@ endif
 
                 ;; set up various service vectors
                 ;; TODO: This should use the table at FEF3h instead
+if VBOX_BIOS_CPU ge 80286
                 SET_INT_VECTOR 06h, BIOSSEG, int06_handler
+endif
                 SET_INT_VECTOR 11h, BIOSSEG, int11_handler
                 SET_INT_VECTOR 12h, BIOSSEG, int12_handler
                 SET_INT_VECTOR 15h, BIOSSEG, int15_handler
@@ -1072,6 +1076,8 @@ int09_done:
                 iret
 
 
+if VBOX_BIOS_CPU ge 80286
+
 ;; --------------------------------------------------------
 ;; INT 06h handler - Invalid Opcode Exception
 ;; --------------------------------------------------------
@@ -1086,6 +1092,8 @@ int06_handler:
                 pop     es
                 DO_popa
                 iret
+
+endif
 
 ;; --------------------------------------------------------
 ;; INT 13h handler - Diskette service
@@ -1199,16 +1207,7 @@ int13_notfloppy:
                 cmp     dl, 0E0h
                 jb      int13_notcdrom
 
-                ;; ebx may be modified, save here
-                ;; TODO: check/review 32-bit register use
-                ;; @todo figure if 80286/8086 variant is applicable.
-                .386
-                shr     ebx, 16
-                push    bx
                 call    _int13_cdrom
-                pop     bx
-                shl     ebx, 16
-                SET_DEFAULT_CPU_286
                 jmp     int13_out
 
 int13_notcdrom:
@@ -1708,10 +1707,14 @@ endif
                 pop     bp              ; TODO: why'd we just zero it??
                 iret                    ; beam me up scotty
 
+if VBOX_BIOS_CPU ge 80386
+
 ;; PCI BIOS
 
 include pcibios.inc
 include pirq.inc
+
+endif
 
 if 0    ; Sample VPD table
 

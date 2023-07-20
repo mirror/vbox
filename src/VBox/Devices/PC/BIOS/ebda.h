@@ -85,6 +85,7 @@
     #define VBOX_GET_SCSI_DEVICE(device_id) (device_id - BX_MAX_ATA_DEVICES)
 #else
     #define BX_MAX_SCSI_DEVICES 0
+    #define VBOX_IS_SCSI_DEVICE(device_id) (1 == 0)
 #endif
 
 #ifdef VBOX_WITH_AHCI

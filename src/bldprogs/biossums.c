@@ -126,9 +126,27 @@ int main(int argc, char **argv)
 {
     FILE    *pIn, *pOut;
     size_t  cbIn, cbOut;
-    int     fAdapterBios = 0;
+    int     fAdapterBios    = 0;
+    int     fPIRQRequired   = 0;
+    int     fBIOS32Required = 0;
+    int     fSMBIOSRequired = 0;
 
     g_argv0 = argv[0];
+
+    while ((argc > 1) && (argv[1][0] == '-'))
+    {
+        if (!strcmp(argv[1], "-3"))
+            fBIOS32Required = 1;
+        else if (!strcmp(argv[1], "-p"))
+            fPIRQRequired = 1;
+        else if (!strcmp(argv[1], "-s"))
+            fSMBIOSRequired = 1;
+        else
+            return fatal("Invalid parameter: %s\n", argv[1]);
+
+        argc--;
+        argv++;
+    }
 
     if (argc != 3)
         return fatal("Input file name and output file name required.\n");
@@ -178,7 +196,10 @@ int main(int argc, char **argv)
         switch (searchHeader(abBios, cbIn, "_32_", &pbHeader))
         {
             case 0:
-                return fatal("No BIOS32 header not found!\n");
+                if (fBIOS32Required)
+                    return fatal("No BIOS32 header found!\n");
+                else
+                    break;
             case 2:
                 return fatal("More than one BIOS32 header found!\n");
             case 1:
@@ -193,7 +214,10 @@ int main(int argc, char **argv)
         switch (searchHeader(abBios, cbIn, "$PIR", &pbHeader))
         {
             case 0:
-                return fatal("No PCI IRQ routing table found!\n");
+                if (fPIRQRequired)
+                    return fatal("No PCI IRQ routing table found!\n");
+                else
+                    break;
             case 2:
                 return fatal("More than one PCI IRQ routing table found!\n");
             case 1:
@@ -208,7 +232,10 @@ int main(int argc, char **argv)
         switch (searchHeader(abBios, cbIn, "_SM_", &pbHeader))
         {
             case 0:
-                return fatal("No SMBIOS header found!\n");
+                if (fBIOS32Required)
+                    return fatal("No SMBIOS header found!\n");
+                else
+                    break;
             case 2:
                 return fatal("More than one SMBIOS header found!\n");
             case 1:

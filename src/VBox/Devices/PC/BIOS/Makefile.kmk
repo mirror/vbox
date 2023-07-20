@@ -34,19 +34,15 @@ ifdef VBOX_WITH_OPEN_WATCOM
  #
  # VBoxPcBios - The PC BIOS.
  #
- MISCBINS += VBoxPcBios386
- VBoxPcBios386_TEMPLATE = VBoxBios
- VBoxPcBios386_BLD_TYPE = release
- VBoxPcBios386_CFLAGS = -3
- VBoxPcBios386_DEFS = \
+
+ # Generic flags/modules for 8088/286/386 variants
+ VBoxPcBiosAll_TEMPLATE = VBoxBios
+ VBoxPcBiosAll_BLD_TYPE = release
+ VBoxPcBiosAll_DEFS = \
  	VBOX_PC_BIOS \
- 	VBOX_LANBOOT_SEG=0xE200 \
- 	VBOX_WITH_SCSI \
- 	VBOX_WITH_AHCI \
- 	VBOX_WITH_VIRTIO_SCSI \
- 	VBOX_BIOS_CPU=80386
- #VBoxPcBios386_DEFS.debug = DEBUG_ATA DEBUG_POST DEBUG_INT13
- VBoxPcBios386_LDFLAGS = \
+ 	VBOX_LANBOOT_SEG=0xE200
+ #VBoxPcBiosAll_DEFS.debug = DEBUG_ATA DEBUG_POST DEBUG_INT13
+ VBoxPcBiosAll_LDFLAGS = \
  	output raw offset=0xF0000 \
  	order \
  	clname DATA segaddr=0xF000 \
@@ -55,7 +51,7 @@ ifdef VBOX_WITH_OPEN_WATCOM
  	segment _TEXT   segaddr=0xF000 offset=0x1600 \
  	segment BIOS32  segaddr=0xF000 offset=0xDA00 \
  	segment BIOSSEG segaddr=0xF000 offset=0xE000
- VBoxPcBios386_SOURCES = \
+ VBoxPcBiosAll_SOURCES = \
  	post.c \
  	bios.c \
  	print.c \
@@ -73,24 +69,13 @@ ifdef VBOX_WITH_OPEN_WATCOM
  	ps2mouse.c \
  	parallel.c \
  	logo.c \
- 	scsi.c \
- 	ahci.c \
- 	virtio.c \
- 	buslogic.c \
- 	lsilogic.c \
  	apm.c \
- 	pcibios.c \
- 	pciutil.c \
- 	vds.c \
  	../../BiosCommonCode/__U4M.asm \
  	../../BiosCommonCode/__U4D.asm \
  	../../BiosCommonCode/__U8RS.asm \
  	../../BiosCommonCode/__U8LS.asm \
  	../../BiosCommonCode/fmemset.asm \
  	../../BiosCommonCode/fmemcpy.asm \
- 	pcibio32.asm \
- 	apm_pm.asm \
- 	$(VBoxPcBios32_0_OUTDIR)/VBoxPcBios32.lib \
  	orgs.asm
 
  #$(VBoxPcBios32_1_TARGET) - reference is lost when extending the target. weird.
@@ -103,19 +88,42 @@ ifdef VBOX_WITH_OPEN_WATCOM
 
  ../../BiosCommonCode/DoUInt32Div.c_CFLAGS = -mc # asm.h and uint32.h both require far data pointers by default.
 
+ MISCBINS += VBoxPcBios386
+ VBoxPcBios386_EXTENDS = VBoxPcBiosAll
+ VBoxPcBios386_CFLAGS  = -3
+ VBoxPcBios386_BSFLAGS = -3 -p -s
+ VBoxPcBios386_DEFS    = $(VBoxPcBiosAll_DEFS) VBOX_BIOS_CPU=80386 \
+  	VBOX_WITH_AHCI \
+ 	VBOX_WITH_SCSI \
+ 	VBOX_WITH_VIRTIO_SCSI
+ VBoxPcBios386_SOURCES = $(VBoxPcBiosAll_SOURCES) \
+ 	pcibios.c \
+ 	pciutil.c \
+ 	ahci.c \
+ 	scsi.c \
+ 	buslogic.c \
+ 	lsilogic.c \
+ 	virtio.c \
+ 	vds.c \
+ 	apm_pm.asm \
+ 	pcibio32.asm \
+	$(VBoxPcBios32_0_OUTDIR)/VBoxPcBios32.lib
+
  MISCBINS += VBoxPcBios286
- VBoxPcBios286_EXTENDS = VBoxPcBios386
+ VBoxPcBios286_EXTENDS = VBoxPcBiosAll
  VBoxPcBios286_CFLAGS  = -2
- VBoxPcBios286_DEFS    = $(filter-out VBOX_BIOS_CPU=80386,$(VBoxPcBios386_DEFS)) VBOX_BIOS_CPU=80286
- VBoxPcBios286_SOURCES = $(VBoxPcBios386_SOURCES) \
+ VBoxPcBios286_DEFS    = $(VBoxPcBiosAll_DEFS) VBOX_BIOS_CPU=80286
+ VBoxPcBios286_SOURCES = $(VBoxPcBiosAll_SOURCES) \
+ 	apm_pm.asm \
  	../../BiosCommonCode/DoUInt32Div.c \
  	../../BiosCommonCode/ASMBitLastSetU16.asm
 
  MISCBINS += VBoxPcBios8086
- VBoxPcBios8086_EXTENDS = VBoxPcBios386
+ VBoxPcBios8086_EXTENDS = VBoxPcBiosAll
  VBoxPcBios8086_CFLAGS  = -0
- VBoxPcBios8086_DEFS    = $(filter-out VBOX_BIOS_CPU=80386,$(VBoxPcBios386_DEFS)) VBOX_BIOS_CPU=8086
- VBoxPcBios8086_SOURCES = $(VBoxPcBios386_SOURCES) \
+ VBoxPcBios8086_DEFS    = $(VBoxPcBiosAll_DEFS) VBOX_BIOS_CPU=8086
+ VBoxPcBios8086_BSFLAGS = -3 -p -s
+ VBoxPcBios8086_SOURCES = $(VBoxPcBiosAll_SOURCES) \
  	../../BiosCommonCode/DoUInt32Div.c \
  	../../BiosCommonCode/ASMBitLastSetU16.asm
 
