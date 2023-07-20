@@ -185,11 +185,28 @@ void SharedClipboardWinDataObject::uninitInternal(void)
 {
     LogFlowFuncEnter();
 
-    /* Let waiters know. */
-    setStatusLocked(Uninitialized, VINF_SUCCESS);
+    lock();
 
-    /* Make sure to release the transfer. */
-    setTransferLocked(NULL);
+    if (m_enmStatus != Uninitialized)
+    {
+
+        /* Let the read thread know. */
+        setStatusLocked(Uninitialized, VINF_SUCCESS);
+
+        /* Make sure to unlock before stopping the read thread. */
+        unlock();
+
+        /* Stop the read thread. */
+        if (m_pTransfer)
+            ShClTransferStop(m_pTransfer);
+
+        lock();
+
+        /* Make sure to release the transfer. */
+        setTransferLocked(NULL);
+    }
+
+    unlock();
 }
 
 /**
@@ -199,11 +216,7 @@ void SharedClipboardWinDataObject::Uninit(void)
 {
     LogFlowFuncEnter();
 
-    lock();
-
     uninitInternal();
-
-    unlock();
 }
 
 /**
@@ -216,11 +229,7 @@ void SharedClipboardWinDataObject::Destroy(void)
     if (m_enmStatus == Uninitialized) /* Crit sect not available anymore. */
         return;
 
-    lock();
-
     uninitInternal();
-
-    unlock();
 
     int rc = RTCritSectDelete(&m_CritSect);
     AssertRC(rc);
@@ -551,6 +560,9 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(PSHCLTRANSFER pTransf
 
                 for (;;)
                 {
+                    if (ASMAtomicReadBool(&pTransfer->Thread.fStop))
+                        break;
+
                     pThis->unlock();
 
                     /* Transferring stuff can take a while, so don't use any timeout here. */
@@ -1314,8 +1326,8 @@ int SharedClipboardWinDataObject::setStatusLocked(Status enmStatus, int rc /* = 
     if (RT_FAILURE(rc))
         LogRel(("Shared Clipboard: Data object received error %Rrc (status %#x)\n", rc, enmStatus));
 
-    if (m_EventStatusChanged != NIL_RTSEMEVENT)
-        rc2 = RTSemEventSignal(m_EventStatusChanged);
+    rc2 = RTSemEventSignal(m_EventStatusChanged);
 
+    LogFlowFuncLeaveRC(rc2);
     return rc2;
 }
