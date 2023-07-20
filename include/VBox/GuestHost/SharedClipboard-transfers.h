@@ -1128,6 +1128,7 @@ bool ShClTransferIsAborted(PSHCLTRANSFER pTransfer);
 
 int ShClTransferRun(PSHCLTRANSFER pTransfer, PFNSHCLTRANSFERTHREAD pfnThreadFunc, void *pvUser);
 int ShClTransferStart(PSHCLTRANSFER pTransfer);
+int ShClTransferStop(PSHCLTRANSFER pTransfer);
 int ShClTransferComplete(PSHCLTRANSFER pTransfer);
 int ShClTransferCancel(PSHCLTRANSFER pTransfer);
 int ShClTransferKill(PSHCLTRANSFER pTransfer);

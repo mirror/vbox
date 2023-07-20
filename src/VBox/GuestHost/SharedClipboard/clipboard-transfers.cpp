@@ -1224,6 +1224,10 @@ int ShClTransferInit(PSHCLTRANSFER pTransfer)
     pTransfer->cObjHandles     = 0;
     pTransfer->uObjHandleNext  = 1;
 
+    pTransfer->Thread.fStarted   = false;
+    pTransfer->Thread.fStop      = false;
+    pTransfer->Thread.fCancelled = false;
+
     int rc = shClTransferSetStatus(pTransfer, SHCLTRANSFERSTATUS_INITIALIZED);
 
     shClTransferUnlock(pTransfer);
@@ -2213,6 +2217,24 @@ int ShClTransferStart(PSHCLTRANSFER pTransfer)
 }
 
 /**
+ * Stops a started transfer.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           Clipboard transfer to stop.
+ */
+int ShClTransferStop(PSHCLTRANSFER pTransfer)
+{
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
+
+    int rc = shClTransferThreadDestroy(pTransfer, SHCL_TIMEOUT_DEFAULT_MS);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
  * Completes a transfer (as successful).
  *
  * @returns VBox status code.
@@ -2430,7 +2452,7 @@ static int shClTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNSHCLTRANSFERTHRE
 /**
  * Destroys the thread of a clipboard transfer.
  *
- * @returns VBox status code.
+ * @returns VBox status code. Will return thread rc.
  * @param   pTransfer           Clipboard transfer to destroy thread for.
  * @param   uTimeoutMs          Timeout (in ms) to wait for thread destruction.
  */
@@ -2440,7 +2462,7 @@ static int shClTransferThreadDestroy(PSHCLTRANSFER pTransfer, RTMSINTERVAL uTime
 
     shClTransferLock(pTransfer);
 
-    if (pTransfer->Thread.hThread == NIL_RTTHREAD)
+    if (!pTransfer->Thread.fStarted)
     {
         shClTransferUnlock(pTransfer);
         return VINF_SUCCESS;
@@ -2454,10 +2476,22 @@ static int shClTransferThreadDestroy(PSHCLTRANSFER pTransfer, RTMSINTERVAL uTime
     shClTransferUnlock(pTransfer); /* Leave lock while waiting. */
 
     int rcThread = VERR_IPE_UNINITIALIZED_STATUS;
+    Assert(pTransfer->Thread.hThread != NIL_RTTHREAD);
     int rc = RTThreadWait(pTransfer->Thread.hThread, uTimeoutMs, &rcThread);
 
     LogFlowFunc(("Waiting for thread resulted in %Rrc (thread exited with %Rrc)\n", rc, rcThread));
 
+    if (RT_SUCCESS(rc))
+    {
+        pTransfer->Thread.fStarted = false;
+        pTransfer->Thread.hThread  = NIL_RTTHREAD;
+
+        rc = rcThread; /* Return the thread rc to the caller. */
+    }
+    else
+        LogRel(("Shared Clipboard: Waiting for thread of transfer %RU16 failed with %Rrc\n", pTransfer->State.uID, rc));
+
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
