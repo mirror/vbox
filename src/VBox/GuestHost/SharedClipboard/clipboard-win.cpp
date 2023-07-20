@@ -1173,7 +1173,10 @@ void SharedClipboardWinTransferDestroy(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTrans
         /* If the transfer has a data object assigned, uninitialize it here.
          * Note: We don't free the object here, as other processes like the Windows Explorer still might refer to it. */
         if (pWinURITransferCtx->pDataObj)
+        {
             pWinURITransferCtx->pDataObj->Uninit();
+            pWinURITransferCtx->pDataObj = NULL;
+        }
 
         delete pWinURITransferCtx;
         pWinURITransferCtx = NULL;
