@@ -633,6 +633,11 @@ typedef enum RTLOGDEST
 # define LogIsItEnabled(a_fFlags, a_iGroup) (false)
 #endif
 
+/** @def LogIsEnabledOnly
+ * Checks whether the group is enabled w/o reference to any specific level.
+ */
+#define LogIsEnabledOnly()  LogIsItEnabled(RTLOGGRPFLAGS_ENABLED, LOG_GROUP)
+
 /** @def LogIsEnabled
  * Checks whether level 1 logging is enabled.
  */

@@ -308,6 +308,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_IEM_RE_THREADED,
     /** IEM AMD-V group. */
     LOG_GROUP_IEM_SVM,
+    /** IEM syscall decoding group (log levels for individual OSes). */
+    LOG_GROUP_IEM_SYSCALL,
     /** IEM VT-x group. */
     LOG_GROUP_IEM_VMX,
     /** I/O buffer management group. */
@@ -971,6 +973,7 @@ typedef enum VBOXLOGGROUP
     "IEM_RE_NATIVE", \
     "IEM_RE_THREADED", \
     "IEM_SVM", \
+    "IEM_SYSCALL", \
     "IEM_VMX", \
     "IOBUFMGMT", \
     "IOM", \

@@ -87,6 +87,11 @@
  *      - Level 1  (Log)  : Errors and other major events.
  *      - Flow (LogFlow)  : Misc flow stuff (cleanup?)
  *      - Level 2  (Log2) : VM exits.
+ *
+ * The syscall logging level assignments:
+ *      - Level 1: DOS and BIOS.
+ *      - Level 2: Windows 3.x
+ *      - Level 3: Linux.
  */
 
 /* Disabled warning C4505: 'iemRaisePageFaultJmp' : unreferenced local function has been removed */
@@ -3250,6 +3255,13 @@ iemRaiseXcptOrIntInProtMode(PVMCPUCC    pVCpu,
         Log(("RaiseXcptOrIntInProtMode %#x - CS=%#x - segment not present -> #NP\n", u8Vector, NewCS));
         return iemRaiseSelectorNotPresentBySelector(pVCpu, NewCS);
     }
+
+#ifdef LOG_ENABLED
+    /* If software interrupt, try decode it if logging is enabled and such. */
+    if (   (fFlags & IEM_XCPT_FLAGS_T_SOFT_INT)
+        && LogIsItEnabled(RTLOGGRPFLAGS_ENABLED, LOG_GROUP_IEM_SYSCALL))
+        iemLogSyscallProtModeInt(pVCpu, u8Vector, cbInstr);
+#endif
 
     /* Check the new EIP against the new CS limit. */
     uint32_t const uNewEip =    Idte.Gate.u4Type == X86_SEL_TYPE_SYS_286_INT_GATE
