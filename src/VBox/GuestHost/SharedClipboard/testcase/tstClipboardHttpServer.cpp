@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
                 PSHCLTRANSFER pTx = ShClTransferCtxGetTransferByIndex(&TxCtx, i);
 
                 uint16_t const uID    = ShClTransferGetID(pTx);
-                char          *pszURL = ShClTransferHttpServerGetUrlA(&HttpSrv, uID);
+                char          *pszURL = ShClTransferHttpServerGetUrlA(&HttpSrv, uID, 0 /* Entry index */);
                 RTTEST_CHECK(hTest, pszURL != NULL);
                 RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "URL #%02RU32: %s\n", i, pszURL);
                 RTStrFree(pszURL);
@@ -274,7 +274,7 @@ int main(int argc, char *argv[])
                         PSHCLTRANSFER pTx = ShClTransferCtxGetTransferByIndex(&TxCtx, i);
 
                         uint16_t const uID    = ShClTransferGetID(pTx);
-                        char          *pszURL = ShClTransferHttpServerGetUrlA(&HttpSrv, uID);
+                        char          *pszURL = ShClTransferHttpServerGetUrlA(&HttpSrv, uID, 0 /* Entry index */);
                         RTTEST_CHECK(hTest, pszURL != NULL);
                         RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Downloading: %s -> %s\n", pszURL, szFileTemp);
                         RTTEST_CHECK_RC_BREAK(hTest, RTHttpGetFile(hClient, pszURL, szFileTemp), VINF_SUCCESS);

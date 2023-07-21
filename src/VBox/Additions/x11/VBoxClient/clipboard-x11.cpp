@@ -94,7 +94,8 @@ static DECLCALLBACK(void) vbclX11OnTransferInitializedCallback(PSHCLTRANSFERCALL
                             Assert(pPayload->cbData == sizeof(SHCLX11RESPONSE));
                             PSHCLX11RESPONSE pResp = (PSHCLX11RESPONSE)pPayload->pvData;
 
-                            rc = ShClTransferRootsInitFromStringList(pTransfer, (const char *)pResp->Read.pvData, pResp->Read.cbData);
+                            rc = ShClTransferRootsInitFromStringListEx(pTransfer, (const char *)pResp->Read.pvData, pResp->Read.cbData,
+                                                                       "\n" /* X11-based Desktop environments separate entries with "\n" */);
 
                             RTMemFree(pResp->Read.pvData);
                             pResp->Read.cbData = 0;
@@ -328,8 +329,27 @@ static DECLCALLBACK(int) vbclX11OnRequestDataFromSourceCallback(PSHCLCONTEXT pCt
                         rc = ShClTransferWaitForStatus(pTransfer, SHCL_TIMEOUT_DEFAULT_MS, SHCLTRANSFERSTATUS_INITIALIZED);
                         if (RT_SUCCESS(rc))
                         {
-                            char *pszURL = ShClTransferHttpServerGetUrlA(pSrv, pTransfer->State.uID);
-                            if (pszURL)
+                            char *pszURL = NULL;
+
+                            uint64_t const cRoots = ShClTransferRootsCount(pTransfer);
+                            for (uint32_t i = 0; i < cRoots; i++)
+                            {
+                                char *pszEntry = ShClTransferHttpServerGetUrlA(pSrv, ShClTransferGetID(pTransfer), i /* Entry index */);
+                                AssertPtrBreakStmt(pszEntry, rc = VERR_NO_MEMORY);
+
+                                if (i > 0)
+                                {
+                                    rc = RTStrAAppend(&pszURL, "\n"); /* Separate entries with a newline. */
+                                    AssertRCBreak(rc);
+                                }
+
+                                rc = RTStrAAppend(&pszURL, pszEntry);
+                                AssertRCBreak(rc);
+
+                                RTStrFree(pszEntry);
+                            }
+
+                            if (RT_SUCCESS(rc))
                             {
                                 *ppv = pszURL;
                                 *pcb = strlen(pszURL) + 1 /* Include terminator */;
@@ -338,8 +358,6 @@ static DECLCALLBACK(int) vbclX11OnRequestDataFromSourceCallback(PSHCLCONTEXT pCt
 
                                 /* ppv has ownership of pszURL. */
                             }
-                            else
-                                rc = VERR_NO_MEMORY;
                         }
                     }
                     else

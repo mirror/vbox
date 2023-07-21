@@ -1810,21 +1810,23 @@ int ShClTransferRootListRead(PSHCLTRANSFER pTransfer)
 }
 
 /**
- * Initializes the root list entries for a given clipboard transfer.
+ * Initializes the root list entries for a given clipboard transfer, extended version.
  *
  * @returns VBox status code.
  * @param   pTransfer           Transfer to set transfer list entries for.
- * @param   pszRoots            String list (separated by CRLF) of root entries to set.
+ * @param   pszRoots            String list (separated by \a pszSep) of root entries to set.
  *                              All entries must have the same root path.
  * @param   cbRoots             Size (in bytes) of string list. Includes zero terminator.
+ * @param   pszSep              String separator to use for splitting up the root entries.
  *
  * @note    Accepts local paths or URI string lists (absolute only).
  */
-int ShClTransferRootsInitFromStringList(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots)
+int ShClTransferRootsInitFromStringListEx(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots, const char *pszSep)
 {
     AssertPtrReturn(pTransfer,      VERR_INVALID_POINTER);
     AssertPtrReturn(pszRoots,       VERR_INVALID_POINTER);
     AssertReturn(cbRoots,           VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszSep,         VERR_INVALID_POINTER);
 
 #ifdef DEBUG_andy
     LogFlowFunc(("Data:\n%.*Rhxd\n", cbRoots, pszRoots));
@@ -1842,7 +1844,7 @@ int ShClTransferRootsInitFromStringList(PSHCLTRANSFER pTransfer, const char *psz
     PSHCLLIST pLstRoots      = &pTransfer->lstRoots;
     char     *pszPathRootAbs = NULL;
 
-    RTCList<RTCString> lstRootEntries = RTCString(pszRoots, cbRoots).split(SHCL_TRANSFER_URI_LIST_SEP_STR);
+    RTCList<RTCString> lstRootEntries = RTCString(pszRoots, cbRoots).split(pszSep);
     if (!lstRootEntries.size())
     {
         shClTransferUnlock(pTransfer);
@@ -1970,6 +1972,22 @@ int ShClTransferRootsInitFromStringList(PSHCLTRANSFER pTransfer, const char *psz
 
     LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+/**
+ * Initializes the root list entries for a given clipboard transfer.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           Transfer to set transfer list entries for.
+ * @param   pszRoots            String list (separated by SHCL_TRANSFER_URI_LIST_SEP_STR) of root entries to set.
+ *                              All entries must have the same root path.
+ * @param   cbRoots             Size (in bytes) of string list. Includes zero terminator.
+ *
+ * @note    Accepts local paths or URI string lists (absolute only).
+ */
+int ShClTransferRootsInitFromStringList(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots)
+{
+    return ShClTransferRootsInitFromStringListEx(pTransfer, pszRoots, cbRoots, SHCL_TRANSFER_URI_LIST_SEP_STR);
 }
 
 /**
