@@ -159,7 +159,11 @@ char __far *rep_insb(char __far *buffer, unsigned nbytes, unsigned port);
 #pragma aux rep_insb = ".286" "rep insb" parm [es di] [cx] [dx] value [es di] modify exact [cx di];
 
 char __far *rep_insw(char __far *buffer, unsigned nwords, unsigned port);
+#if VBOX_BIOS_CPU >= 80286
 #pragma aux rep_insw = ".286" "rep insw" parm [es di] [cx] [dx] value [es di] modify exact [cx di];
+#else
+#pragma aux rep_insw = "next:" "in ax,dx" "stosw" "loop next" parm [es di] [cx] [dx] value [es di] modify exact [cx di];
+#endif
 
 # if VBOX_BIOS_CPU >= 80386
 char __far *rep_insd(char __far *buffer, unsigned ndwords, unsigned port);
@@ -170,7 +174,11 @@ char __far *rep_outsb(char __far *buffer, unsigned nbytes, unsigned port);
 #pragma aux rep_outsb = ".286" "rep outs dx,byte ptr es:[si]" parm [es si] [cx] [dx] value [es si] modify exact [cx si];
 
 char __far *rep_outsw(char __far *buffer, unsigned nwords, unsigned port);
+#if VBOX_BIOS_CPU >= 80286
 #pragma aux rep_outsw = ".286" "rep outs dx,word ptr es:[si]" parm [es si] [cx] [dx] value [es si] modify exact [cx si];
+#else
+#pragma aux rep_outsw = "next:" "lods word ptr es:[si]" "out dx,ax" "loop next" parm [es si] [cx] [dx] value [es si] modify exact [cx si];
+#endif
 
 # if VBOX_BIOS_CPU >= 80386
 char __far *rep_outsd(char __far *buffer, unsigned ndwords, unsigned port);
