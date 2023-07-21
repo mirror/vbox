@@ -37,7 +37,7 @@
 #include "IEMInternal.h"
 #include <VBox/vmm/vmcc.h>
 #include <VBox/log.h>
-#include <VBox/errcore.h>
+#include <iprt/errcore.h>
 
 
 /*********************************************************************************************************************************
