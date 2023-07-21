@@ -461,6 +461,7 @@
 
 !ifdef $(VBOX)
   OvmfPkg/SataControllerDxe/SataControllerDxe.inf
+  VBoxPkg/VmwSvga3Dxe/VmwSvga3VideoDxe.inf
 !endif
 
   #
