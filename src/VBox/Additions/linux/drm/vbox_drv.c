@@ -52,7 +52,7 @@
 
 /** Detect whether kernel mode setting is OFF. */
 #if defined(CONFIG_VGA_CONSOLE)
-# if RTLNX_VER_MIN(5,17,0) || RTLNX_RHEL_RANGE(8,7, 8,99) || RTLNX_RHEL_MIN(9,1)
+# if RTLNX_VER_MIN(5,17,0) || RTLNX_RHEL_RANGE(8,7, 8,99) || RTLNX_RHEL_MIN(9,1) || RTLNX_SUSE_MAJ_PREREQ(15,5)
 #  define VBOX_VIDEO_NOMODESET() drm_firmware_drivers_only() && vbox_modeset == -1
 # elif RTLNX_VER_MIN(4,7,0)
 #  define VBOX_VIDEO_NOMODESET() vgacon_text_force() && vbox_modeset == -1
@@ -367,7 +367,7 @@ static struct drm_driver driver = {
 #endif
 
 	.fops = &vbox_fops,
-#if RTLNX_VER_MAX(5,15,0) && !RTLNX_RHEL_RANGE(8,7, 8,99) && !RTLNX_RHEL_MAJ_PREREQ(9,1)
+#if RTLNX_VER_MAX(5,15,0) && !RTLNX_RHEL_RANGE(8,7, 8,99) && !RTLNX_RHEL_MAJ_PREREQ(9,1) && !RTLNX_SUSE_MAJ_PREREQ(15,5)
 	.irq_handler = vbox_irq_handler,
 #endif
 	.name = DRIVER_NAME,

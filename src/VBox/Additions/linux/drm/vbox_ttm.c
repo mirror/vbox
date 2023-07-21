@@ -321,7 +321,7 @@ static struct ttm_tt *vbox_ttm_tt_create(struct ttm_buffer_object *bo,
 #if RTLNX_VER_MAX(5,10,0) && !RTLNX_RHEL_RANGE(8,5, 8,99)
 	tt->func = &vbox_tt_backend_func;
 #endif
-#if RTLNX_VER_MIN(5,19,0) || RTLNX_RHEL_RANGE(8,8, 8,99) || RTLNX_RHEL_MAJ_PREREQ(9,2)
+#if RTLNX_VER_MIN(5,19,0) || RTLNX_RHEL_RANGE(8,8, 8,99) || RTLNX_RHEL_MAJ_PREREQ(9,2) || RTLNX_SUSE_MAJ_PREREQ(15,5)
 	if (ttm_tt_init(tt, bo, page_flags, ttm_write_combined, 0)) {
 #elif RTLNX_VER_MIN(5,11,0) || RTLNX_RHEL_RANGE(8,5, 8,99)
 	if (ttm_tt_init(tt, bo, page_flags, ttm_write_combined)) {
@@ -628,7 +628,7 @@ int vbox_bo_create(struct drm_device *dev, int size, int align,
 	drm_vma_node_reset(&vboxbo->bo.base.vma_node);
 #endif
 
-#if RTLNX_VER_MIN(6,1,0) || RTLNX_RHEL_MAJ_PREREQ(9,3)
+#if RTLNX_VER_MIN(6,1,0) || RTLNX_RHEL_MAJ_PREREQ(9,3) || RTLNX_SUSE_MAJ_PREREQ(15,5)
 	ret = ttm_bo_init_validate(&vbox->ttm.bdev, &vboxbo->bo,
 #else
 	ret = ttm_bo_init(&vbox->ttm.bdev, &vboxbo->bo, size,
