@@ -94,7 +94,7 @@ static void tstOpenExTest(unsigned uLine, int cbExist, int cbNext, const char *p
                 RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
             }
             else
-                RTTestIFailed("%u: RTFileDelete(%s) -> %Rrc\n", uLine, pszFilename, rc);
+                RTTestIFailed("%u: RTFileOpen(%s) -> %Rrc\n", uLine, pszFilename, rc);
 
         }
         else
