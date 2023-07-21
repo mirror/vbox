@@ -223,6 +223,7 @@ int ShClX11ThreadStartEx(PSHCLX11CTX pCtx, const char *pszName, bool fGrab);
 int ShClX11ThreadStop(PSHCLX11CTX pCtx);
 int ShClX11ReportFormatsToX11Async(PSHCLX11CTX pCtx, SHCLFORMATS vboxFormats);
 int ShClX11ReadDataFromX11Async(PSHCLX11CTX pCtx, SHCLFORMAT uFmt, uint32_t cbMax, PSHCLEVENT pEvent);
+int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEventSource, RTMSINTERVAL msTimeout, SHCLFORMAT uFmt, void *pvBuf, uint32_t cbBuf, uint32_t *pcbBuf);
 void ShClX11SetCallbacks(PSHCLX11CTX pCtx, PSHCLCALLBACKS pCallbacks);
 /** @} */
 

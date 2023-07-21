@@ -2584,3 +2584,58 @@ int ShClX11ReadDataFromX11Async(PSHCLX11CTX pCtx, SHCLFORMAT uFmt, uint32_t cbMa
     return rc;
 }
 
+/**
+ * Reads the X11 clipboard.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_NO_DATA if format is supported but no data is available currently.
+ * @retval  VERR_NOT_IMPLEMENTED if the format is not implemented.
+ * @param   pCtx                Context data for the clipboard backend.
+ * @param   pEventSource        Event source to use.
+ * @param   msTimeout           Timeout (in ms) for waiting.
+ * @param   uFmt                The format that the VBox would like to receive the data in.
+ * @param   pvBuf               Where to store the received data on success.
+ * @param   cbBuf               Size (in bytes) of \a pvBuf. Also marks maximum data to read (in bytes).
+ * @param   pcbRead             Where to return the read bytes on success.
+ */
+int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, PSHCLEVENTSOURCE pEventSource, RTMSINTERVAL msTimeout,
+                           SHCLFORMAT uFmt, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pEventSource, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcbRead, VERR_INVALID_POINTER);
+
+    PSHCLEVENT pEvent;
+    int rc = ShClEventSourceGenerateAndRegisterEvent(pEventSource, &pEvent);
+    if (RT_SUCCESS(rc))
+    {
+        rc = ShClX11ReadDataFromX11Async(pCtx, uFmt, cbBuf, pEvent);
+        if (RT_SUCCESS(rc))
+        {
+            PSHCLEVENTPAYLOAD pPayload;
+            rc = ShClEventWait(pEvent, msTimeout, &pPayload);
+            if (RT_SUCCESS(rc))
+            {
+                if (pPayload)
+                {
+                    Assert(pPayload->cbData == sizeof(SHCLX11RESPONSE));
+                    PSHCLX11RESPONSE pResp = (PSHCLX11RESPONSE)pPayload->pvData;
+
+                    memcpy(pvBuf, pResp->Read.pvData, RT_MIN(cbBuf, pResp->Read.cbData));
+                    *pcbRead = pResp->Read.cbData;
+
+                    RTMemFree(pResp->Read.pvData);
+                    pResp->Read.cbData = 0;
+
+                    ShClPayloadFree(pPayload);
+                }
+            }
+        }
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
