@@ -80,8 +80,6 @@ typedef struct _SHCLHTTPSERVERTRANSFER
     RTLISTNODE          Node;
     /** Pointer to associated transfer. */
     PSHCLTRANSFER       pTransfer;
-    /** The (cached) root list of the transfer. NULL if not cached yet. */
-    PSHCLLIST           pRootList;
     /** Critical section for serializing access. */
     RTCRITSECT          CritSect;
     /** The handle we're going to use for this HTTP transfer. */
@@ -921,7 +919,6 @@ int ShClTransferHttpServerRegisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER p
                 AssertRCReturn(rc, rc);
 
                 pSrvTx->pTransfer = pTransfer;
-                pSrvTx->pRootList = NULL;
                 pSrvTx->hObj      = NIL_SHCLOBJHANDLE;
 
                 RTListAppend(&pSrv->lstTransfers, &pSrvTx->Node);
