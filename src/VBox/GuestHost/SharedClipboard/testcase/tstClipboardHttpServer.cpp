@@ -32,6 +32,7 @@
 #include <iprt/http.h>
 #include <iprt/message.h>
 #include <iprt/path.h>
+#include <iprt/rand.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
 
@@ -67,6 +68,18 @@ static DECLCALLBACK(int) tstSrvWorker(RTTHREAD hThread, void *pvUser)
     }
 
     return RTTimeMilliTS() - msStartTS <= g_msRuntime ? VINF_SUCCESS : VERR_TIMEOUT;
+}
+
+static void tstCreateTransferSingle(RTTEST hTest, PSHCLTRANSFERCTX pTransferCtx, PSHCLHTTPSERVER pSrv,
+                                    const char *pszFile, PSHCLTXPROVIDER pProvider)
+{
+    PSHCLTRANSFER pTx;
+    RTTEST_CHECK_RC_OK(hTest, ShClTransferCreate(SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL, NULL /* Callbacks */, &pTx));
+    RTTEST_CHECK_RC_OK(hTest, ShClTransferSetProvider(pTx, pProvider));
+    RTTEST_CHECK_RC_OK(hTest, ShClTransferInit(pTx));
+    RTTEST_CHECK_RC_OK(hTest, ShClTransferRootsInitFromFile(pTx, pszFile));
+    RTTEST_CHECK_RC_OK(hTest, ShClTransferCtxRegister(pTransferCtx, pTx, NULL));
+    RTTEST_CHECK_RC_OK(hTest, ShClTransferHttpServerRegisterTransfer(pSrv, pTx));
 }
 
 int main(int argc, char *argv[])
@@ -210,13 +223,7 @@ int main(int argc, char *argv[])
         {
             case VINF_GETOPT_NOT_OPTION:
             {
-                PSHCLTRANSFER pTx;
-                RTTEST_CHECK_RC_OK(hTest, ShClTransferCreate(SHCLTRANSFERDIR_TO_REMOTE, SHCLSOURCE_LOCAL, NULL /* Callbacks */, &pTx));
-                RTTEST_CHECK_RC_OK(hTest, ShClTransferSetProvider(pTx, &Provider));
-                RTTEST_CHECK_RC_OK(hTest, ShClTransferInit(pTx));
-                RTTEST_CHECK_RC_OK(hTest, ShClTransferRootsInitFromFile(pTx, ValueUnion.psz));
-                RTTEST_CHECK_RC_OK(hTest, ShClTransferCtxRegister(&TxCtx, pTx, NULL));
-                RTTEST_CHECK_RC_OK(hTest, ShClTransferHttpServerRegisterTransfer(&HttpSrv, pTx));
+                tstCreateTransferSingle(hTest, &TxCtx, &HttpSrv, ValueUnion.psz, &Provider);
                 break;
             }
 
@@ -225,9 +232,52 @@ int main(int argc, char *argv[])
         }
     }
 
+    char szRandomTestFile[RTPATH_MAX] = { 0 };
+
     uint32_t const cTx = ShClTransferCtxGetTotalTransfers(&TxCtx);
     if (!cTx)
-        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No files to serve specified!\n");
+    {
+        RTTEST_CHECK_RC_OK(hTest, RTPathTemp(szRandomTestFile, sizeof(szRandomTestFile)));
+        RTTEST_CHECK_RC_OK(hTest, RTPathAppend(szRandomTestFile, sizeof(szRandomTestFile), "tstClipboardHttpServer-XXXXXX"));
+        RTTEST_CHECK_RC_OK(hTest, RTFileCreateTemp(szRandomTestFile, 0600));
+
+        size_t cbExist = RTRandU32Ex(0, _256M);
+
+        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Random test file (%zu bytes): %s\n", cbExist, szRandomTestFile);
+
+        RTFILE hFile;
+        rc = RTFileOpen(&hFile, szRandomTestFile, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE);
+        if (RT_SUCCESS(rc))
+        {
+            uint8_t abBuf[_64K] = { 42 };
+
+            while (cbExist > 0)
+            {
+                size_t cbToWrite = sizeof(abBuf);
+                if (cbToWrite > cbExist)
+                    cbToWrite = cbExist;
+                rc = RTFileWrite(hFile, abBuf, cbToWrite, NULL);
+                if (RT_FAILURE(rc))
+                {
+                    RTTestIFailed("RTFileWrite(%#x) -> %Rrc\n", cbToWrite, rc);
+                    break;
+                }
+                cbExist -= cbToWrite;
+            }
+
+            RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
+
+            if (RT_SUCCESS(rc))
+            {
+                tstCreateTransferSingle(hTest, &TxCtx, &HttpSrv, szRandomTestFile, &Provider);
+            }
+        }
+        else
+            RTTestIFailed("RTFileOpen(%s) -> %Rrc\n", szRandomTestFile, rc);
+    }
+
+    if (RTTestErrorCount(hTest))
+        return RTTestSummaryAndDestroy(hTest);
 
     /* Create  thread for our HTTP server. */
     RTTHREAD hThread;
@@ -239,7 +289,6 @@ int main(int argc, char *argv[])
         rc = RTThreadUserWait(hThread, RT_MS_30SEC);
         RTTEST_CHECK_RC_OK(hTest, rc);
     }
-
 
     if (RT_SUCCESS(rc))
     {
@@ -269,7 +318,7 @@ int main(int argc, char *argv[])
 
                 for (unsigned a = 0; a < 3; a++) /* Repeat downloads to stress things. */
                 {
-                    for (uint32_t i = 0; i < cTx; i++)
+                    for (uint32_t i = 0; i < ShClTransferCtxGetTotalTransfers(&TxCtx); i++)
                     {
                         PSHCLTRANSFER pTx = ShClTransferCtxGetTransferByIndex(&TxCtx, i);
 
@@ -297,6 +346,9 @@ int main(int argc, char *argv[])
 
     RTTEST_CHECK_RC_OK(hTest, ShClTransferHttpServerDestroy(&HttpSrv));
     ShClTransferCtxDestroy(&TxCtx);
+
+    if (strlen(szRandomTestFile))
+        RTTEST_CHECK_RC_OK(hTest, RTFileDelete(szRandomTestFile));
 
     /*
      * Summary
