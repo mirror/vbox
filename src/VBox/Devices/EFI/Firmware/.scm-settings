@@ -176,6 +176,7 @@
 /VBoxPkg/VBoxFsDxe/test/*: --external-copyright --no-strip-trailing-blanks --no-fix-todos --strip-no-trailing-lines
 /VBoxPkg/VBoxVgaMiniPortDxe/VBoxVgaFont*.h: --external-copyright
 /VBoxPkg/E1kNetDxe/*.*: --external-copyright
+/VBoxPkg/VmwSvga3Dxe/*.*: --external-copyright
 /VBoxPkg/VBoxMisc/efi-app/Readme.txt: --treat-as .scm-settings
 
 #/src/VBox/Devices/EFI/Firmware2/VBoxPkg/VBoxVgaDxe/Edid.c: --no-convert-tabs
