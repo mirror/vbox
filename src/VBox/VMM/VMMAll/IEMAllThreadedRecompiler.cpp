@@ -1107,9 +1107,11 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
  */
 static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb)
 {
-    if (memcmp(pTb->pabOpcodes, &pVCpu->iem.s.pbInstrBuf[pVCpu->iem.s.offInstrNextByte],
-               RT_MIN(pTb->cbOpcodes, pVCpu->iem.s.cbInstrBuf - pVCpu->iem.s.offInstrNextByte)) == 0)
-    { /* likely */ }
+    /* Check the opcodes in the first page before starting execution. */
+    uint32_t const cbLeadOpcodes = RT_MIN(pTb->cbOpcodes, pVCpu->iem.s.cbInstrBufTotal - pVCpu->iem.s.offInstrNextByte);
+    if (memcmp(pTb->pabOpcodes, &pVCpu->iem.s.pbInstrBuf[pVCpu->iem.s.offInstrNextByte], cbLeadOpcodes) == 0)
+        Assert(   pTb->cbOpcodes == cbLeadOpcodes
+               || cbLeadOpcodes == (GUEST_PAGE_SIZE - (pTb->GCPhysPc & GUEST_PAGE_OFFSET_MASK)));
     else
     {
         Log11(("TB obsolete: %p GCPhys=%RGp\n", pTb, pTb->GCPhysPc));
