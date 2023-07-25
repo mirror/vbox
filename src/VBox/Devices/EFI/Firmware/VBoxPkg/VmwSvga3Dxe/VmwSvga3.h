@@ -163,7 +163,7 @@ extern EFI_COMPONENT_NAME2_PROTOCOL  gVmwSvga3VideoComponentName2;
 #define VMWSVGA3_REG_IRQMASK         132
 #define VMWSVGA3_REG_COMMAND_LOW     192
 #define VMWSVGA3_REG_COMMAND_HIGH    196
-#define VMWSVGA3_REG_IRQ_STATUS      328 
+#define VMWSVGA3_REG_IRQ_STATUS      328
 
 //
 // Graphics Output Hardware abstraction internal worker functions
