@@ -458,7 +458,7 @@ static void vmsvgaR3PowerOnDevice(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATE
  */
 static const char *vmsvgaIndexToString(PVGASTATE pThis, uint32_t idxReg)
 {
-    AssertCompile(SVGA_REG_TOP == 77); /* Ensure that the correct headers are used. */
+    AssertCompile(SVGA_REG_TOP == 84); /* Ensure that the correct headers are used. */
     switch (idxReg)
     {
         SVGA_CASE_ID2STR(SVGA_REG_ID);
@@ -544,6 +544,13 @@ static const char *vmsvgaIndexToString(PVGASTATE pThis, uint32_t idxReg)
         SVGA_CASE_ID2STR(SVGA_REG_RESERVED5);
         SVGA_CASE_ID2STR(SVGA_REG_SCREENDMA);
         SVGA_CASE_ID2STR(SVGA_REG_GBOBJECT_MEM_SIZE_KB);
+        SVGA_CASE_ID2STR(SVGA_REG_REGS_START_HIGH32);
+        SVGA_CASE_ID2STR(SVGA_REG_REGS_START_LOW32);
+        SVGA_CASE_ID2STR(SVGA_REG_FB_START_HIGH32);
+        SVGA_CASE_ID2STR(SVGA_REG_FB_START_LOW32);
+        SVGA_CASE_ID2STR(SVGA_REG_MSHINT);
+        SVGA_CASE_ID2STR(SVGA_REG_IRQ_STATUS);
+        SVGA_CASE_ID2STR(SVGA_REG_DIRTY_TRACKING);
         SVGA_CASE_ID2STR(SVGA_REG_TOP);                /* Must be 1 more than the last register */
 
         default:
@@ -1001,9 +1008,10 @@ DECLCALLBACK(void) vmsvgaR3PortReportMonitorPositions(PPDMIDISPLAYPORT pInterfac
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pThis       The shared VGA/VMSVGA state.
+ * @param   idxReg      The register index being read.
  * @param   pu32        Where to store the read value
  */
-static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
+static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t idxReg, uint32_t *pu32)
 {
 #ifdef IN_RING3
     PVGASTATER3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC);
@@ -1011,24 +1019,12 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
     int rc = VINF_SUCCESS;
     *pu32 = 0;
 
-    /* Rough index register validation. */
-    uint32_t idxReg = pThis->svga.u32IndexReg;
-#if !defined(IN_RING3) && defined(VBOX_STRICT)
-    ASSERT_GUEST_MSG_RETURN(idxReg < SVGA_SCRATCH_BASE + pThis->svga.cScratchRegion, ("idxReg=%#x\n", idxReg),
-                            VINF_IOM_R3_IOPORT_READ);
-#else
-    ASSERT_GUEST_MSG_STMT_RETURN(idxReg < SVGA_SCRATCH_BASE + pThis->svga.cScratchRegion, ("idxReg=%#x\n", idxReg),
-                                 STAM_REL_COUNTER_INC(&pThis->svga.StatRegUnknownRd),
-                                 VINF_SUCCESS);
-#endif
-    RT_UNTRUSTED_VALIDATED_FENCE();
-
     /* We must adjust the register number if we're in SVGA_ID_0 mode because the PALETTE range moved. */
     if (   idxReg >= SVGA_REG_ID_0_TOP
         && pThis->svga.u32SVGAId == SVGA_ID_0)
     {
         idxReg += SVGA_PALETTE_BASE - SVGA_REG_ID_0_TOP;
-        Log(("vmsvgaWritePort: SVGA_ID_0 reg adj %#x -> %#x\n", pThis->svga.u32IndexReg, idxReg));
+        Log(("vmsvgaReadPort: SVGA_ID_0 reg adj %#x -> %#x\n", pThis->svga.u32IndexReg, idxReg));
     }
 
     switch (idxReg)
@@ -1572,7 +1568,28 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
             break;
 
         case SVGA_REG_FIFO_CAPS:
-        case SVGA_REG_FENCE: /* Same as SVGA_FIFO_FENCE for PCI_ID_SVGA3. Our device is PCI_ID_SVGA2 so not supported. */
+        {
+            if (pThis->fVmSvga3)
+                *pu32 =   SVGA_FIFO_CAP_FENCE
+                        | SVGA_FIFO_CAP_PITCHLOCK
+                        | SVGA_FIFO_CAP_CURSOR_BYPASS_3
+                        | SVGA_FIFO_CAP_RESERVE
+                        | SVGA_FIFO_CAP_GMR2
+                        | SVGA_FIFO_CAP_3D_HWVERSION_REVISED
+                        | SVGA_FIFO_CAP_SCREEN_OBJECT_2;
+            else
+                *pu32 = 0;
+            break;
+        }
+        case SVGA_REG_FENCE:
+        {
+            if (pThis->fVmSvga3)
+                *pu32 = pThis->svga.u32FenceLast;
+            else
+                *pu32 = 0;
+            break;
+        }
+
         case SVGA_REG_RESERVED1: /* SVGA_REG_RESERVED* correspond to SVGA_REG_CURSOR4_*. Require SVGA_CAP2_EXTRA_REGS. */
         case SVGA_REG_RESERVED2:
         case SVGA_REG_RESERVED3:
@@ -1586,6 +1603,15 @@ static int vmsvgaReadPort(PPDMDEVINS pDevIns, PVGASTATE pThis, uint32_t *pu32)
             /** @todo "The maximum amount of guest-backed objects that the device can have resident at a time" */
             *pu32 = _1G / _1K;
             break;
+
+        case SVGA_REG_IRQ_STATUS:
+        {
+            if (pThis->fVmSvga3)
+                *pu32 = pThis->svga.u32IrqStatus;
+            else
+                *pu32 = 0;
+            break;
+        }
 
         default:
         {
@@ -1770,9 +1796,9 @@ DECLINLINE(void) vmsvgaHCSafeFifoBusyRegUpdate(PVGASTATE pThis, PVGASTATECC pThi
 DECLINLINE(void) vmsvgaHCUpdatePitch(PVGASTATE pThis, PVGASTATECC pThisCC)
 {
     uint32_t RT_UNTRUSTED_VOLATILE_GUEST *pFIFO = pThisCC->svga.pau32FIFO;
-    uint32_t uFifoPitchLock = pFIFO[SVGA_FIFO_PITCHLOCK];
+    uint32_t uFifoPitchLock = pThis->fVmSvga3 ? 0 : pFIFO[SVGA_FIFO_PITCHLOCK];
     uint32_t uRegPitchLock  = pThis->svga.u32PitchLock;
-    uint32_t uFifoMin       = pFIFO[SVGA_FIFO_MIN];
+    uint32_t uFifoMin       = pThis->fVmSvga3 ? 0 : pFIFO[SVGA_FIFO_MIN];
 
     /* The SVGA_FIFO_PITCHLOCK register is only valid if SVGA_FIFO_MIN points past
      * it. If SVGA_FIFO_MIN is small, there may well be data at the SVGA_FIFO_PITCHLOCK
@@ -1852,27 +1878,16 @@ static void vmsvgaR3RegUpdateCursor(PVGASTATECC pThisCC, PVGASTATE pThis, uint32
  * @param   pDevIns     The device instance.
  * @param   pThis       The shared VGA/VMSVGA state.
  * @param   pThisCC     The VGA/VMSVGA state for the current context.
+ * @param   idxReg      Rge register index being written.
  * @param   u32         Value to write
  */
-static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t u32)
+static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t idxReg, uint32_t u32)
 {
 #ifdef IN_RING3
     PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
 #endif
     VBOXSTRICTRC rc = VINF_SUCCESS;
     RT_NOREF(pThisCC);
-
-    /* Rough index register validation. */
-    uint32_t idxReg = pThis->svga.u32IndexReg;
-#if !defined(IN_RING3) && defined(VBOX_STRICT)
-    ASSERT_GUEST_MSG_RETURN(idxReg < SVGA_SCRATCH_BASE + pThis->svga.cScratchRegion, ("idxReg=%#x\n", idxReg),
-                            VINF_IOM_R3_IOPORT_WRITE);
-#else
-    ASSERT_GUEST_MSG_STMT_RETURN(idxReg < SVGA_SCRATCH_BASE + pThis->svga.cScratchRegion, ("idxReg=%#x\n", idxReg),
-                                 STAM_REL_COUNTER_INC(&pThis->svga.StatRegUnknownWr),
-                                 VINF_SUCCESS);
-#endif
-    RT_UNTRUSTED_VALIDATED_FENCE();
 
     /* We must adjust the register number if we're in SVGA_ID_0 mode because the PALETTE range moved. */
     if (   idxReg >= SVGA_REG_ID_0_TOP
@@ -1906,7 +1921,8 @@ static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegIdWr);
             if (   u32 == SVGA_ID_0
                 || u32 == SVGA_ID_1
-                || u32 == SVGA_ID_2)
+                || u32 == SVGA_ID_2
+                || u32 == SVGA_ID_3)
                 pThis->svga.u32SVGAId = u32;
             else
                 PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "Trying to set SVGA_REG_ID to %#x (%d)\n", u32, u32);
@@ -1941,9 +1957,12 @@ static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
                     &&  pThis->svga.uHeight != VMSVGA_VAL_UNINITIALIZED)
                     ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
 # ifdef LOG_ENABLED
-                uint32_t *pFIFO = pThisCC->svga.pau32FIFO;
-                Log(("configured=%d busy=%d\n", pThis->svga.fConfigured, pFIFO[SVGA_FIFO_BUSY]));
-                Log(("next %x stop %x\n", pFIFO[SVGA_FIFO_NEXT_CMD], pFIFO[SVGA_FIFO_STOP]));
+                if (!pThis->fVmSvga3)
+                {
+                    uint32_t *pFIFO = pThisCC->svga.pau32FIFO;
+                    Log(("configured=%d busy=%d\n", pThis->svga.fConfigured, pFIFO[SVGA_FIFO_BUSY]));
+                    Log(("next %x stop %x\n", pFIFO[SVGA_FIFO_NEXT_CMD], pFIFO[SVGA_FIFO_STOP]));
+                }
 # endif
 
                 /* Disable or enable dirty page tracking according to the current fTraces value. */
@@ -2393,6 +2412,22 @@ static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegReadOnlyWr);
             break;
 
+        case SVGA_REG_IRQ_STATUS:
+        {
+            if (pThis->fVmSvga3)
+            {
+                LogFlow(("vmsvga3MmioWrite SVGA_IRQSTATUS_PORT %x: status %x -> %x\n", u32, pThis->svga.u32IrqStatus, pThis->svga.u32IrqStatus & ~u32));
+                ASMAtomicAndU32(&pThis->svga.u32IrqStatus, ~u32);
+                /* Clear the irq in case all events have been cleared. */
+                if (!(pThis->svga.u32IrqStatus & pThis->svga.u32IrqMask))
+                {
+                    Log(("vmsvga3MmioWrite SVGA_IRQSTATUS_PORT: clearing IRQ\n"));
+                    PDMDevHlpPCISetIrqNoWait(pDevIns, 0, 0);
+                }
+            }
+            break;
+        }
+
         default:
         {
             uint32_t offReg;
@@ -2451,7 +2486,21 @@ DECLCALLBACK(VBOXSTRICTRC) vmsvgaIORead(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                 break;
 
             case SVGA_VALUE_PORT:
-                return vmsvgaReadPort(pDevIns, pThis, pu32);
+            {
+                /* Rough index register validation. */
+                uint32_t idxReg = pThis->svga.u32IndexReg;
+#if !defined(IN_RING3) && defined(VBOX_STRICT)
+                ASSERT_GUEST_MSG_RETURN(idxReg < SVGA_SCRATCH_BASE + pThis->svga.cScratchRegion, ("idxReg=%#x\n", idxReg),
+                                        VINF_IOM_R3_IOPORT_READ);
+#else
+                ASSERT_GUEST_MSG_STMT_RETURN(idxReg < SVGA_SCRATCH_BASE + pThis->svga.cScratchRegion, ("idxReg=%#x\n", idxReg),
+                                             STAM_REL_COUNTER_INC(&pThis->svga.StatRegUnknownRd),
+                                             VINF_SUCCESS);
+#endif
+                RT_UNTRUSTED_VALIDATED_FENCE();
+
+                return vmsvgaReadPort(pDevIns, pThis, idxReg, pu32);
+            }
 
             case SVGA_BIOS_PORT:
                 Log(("Ignoring BIOS port read\n"));
@@ -2495,7 +2544,21 @@ DECLCALLBACK(VBOXSTRICTRC) vmsvgaIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 break;
 
             case SVGA_VALUE_PORT:
-                return vmsvgaWritePort(pDevIns, pThis, pThisCC, u32);
+            {
+                /* Rough index register validation. */
+                uint32_t idxReg = pThis->svga.u32IndexReg;
+#if !defined(IN_RING3) && defined(VBOX_STRICT)
+                ASSERT_GUEST_MSG_RETURN(idxReg < SVGA_SCRATCH_BASE + pThis->svga.cScratchRegion, ("idxReg=%#x\n", idxReg),
+                                        VINF_IOM_R3_IOPORT_WRITE);
+#else
+                ASSERT_GUEST_MSG_STMT_RETURN(idxReg < SVGA_SCRATCH_BASE + pThis->svga.cScratchRegion, ("idxReg=%#x\n", idxReg),
+                                             STAM_REL_COUNTER_INC(&pThis->svga.StatRegUnknownWr),
+                                             VINF_SUCCESS);
+#endif
+                RT_UNTRUSTED_VALIDATED_FENCE();
+
+                return vmsvgaWritePort(pDevIns, pThis, pThisCC, idxReg, u32);
+            }
 
             case SVGA_BIOS_PORT:
                 Log(("Ignoring BIOS port write (val=%x)\n", u32));
@@ -2520,6 +2583,56 @@ DECLCALLBACK(VBOXSTRICTRC) vmsvgaIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
         Log(("Ignoring non-dword write at %x val=%x cb=%d\n", offPort, u32, cb));
 
     return VINF_SUCCESS;
+}
+
+/**
+ * @callback_method_impl{FNIOMMMIONEWREAD}
+ */
+DECLCALLBACK(VBOXSTRICTRC) vmsvga3MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
+{
+    PVGASTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
+    RT_NOREF_PV(pvUser);
+
+    /* Only dword accesses. */
+    VBOXSTRICTRC rcStrict;
+    if (cb == sizeof(uint32_t))
+    {
+        rcStrict = vmsvgaReadPort(pDevIns, pThis, (uint32_t)(off / sizeof(uint32_t)), (uint32_t *)pv);
+        if (rcStrict == VINF_IOM_R3_IOPORT_READ)
+            rcStrict = VINF_IOM_R3_MMIO_READ;
+    }
+    else
+    {
+        Log(("Ignoring non-dword I/O port read at %x cb=%d\n", off, cb));
+        rcStrict = VINF_IOM_MMIO_UNUSED_00;
+    }
+    return rcStrict;
+}
+
+/**
+ * @callback_method_impl{FNIOMMMIONEWWRITE}
+ */
+DECLCALLBACK(VBOXSTRICTRC) vmsvga3MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
+{
+    PVGASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC);
+    RT_NOREF_PV(pvUser);
+
+    /* Only dword accesses. */
+    VBOXSTRICTRC rcStrict;
+    if (cb == sizeof(uint32_t))
+    {
+        rcStrict = vmsvgaWritePort(pDevIns, pThis, pThisCC, (uint32_t)(off / sizeof(uint32_t)), *(uint32_t *)pv);
+        if (rcStrict == VINF_IOM_R3_IOPORT_WRITE)
+            rcStrict = VINF_IOM_R3_MMIO_WRITE;
+    }
+    else
+    {
+        Log(("Ignoring non-dword write at %x cb=%d\n", off, cb));
+        rcStrict = VINF_SUCCESS;
+    }
+
+    return rcStrict;
 }
 
 #ifdef IN_RING3
@@ -3627,6 +3740,7 @@ static SVGACBStatus vmsvgaR3CmdBufProcessCommands(PPDMDEVINS pDevIns, PVGASTATE 
          * the cbCmd value is ignored (and pu8Cmd still points to the failed command).
          */
         /** @todo This code is very similar to the FIFO loop command processing. Think about merging. */
+        LogFlow(("cmdId=%u\n", cmdId));
         switch (cmdId)
         {
             case SVGA_CMD_INVALID_CMD:
@@ -3643,26 +3757,44 @@ static SVGACBStatus vmsvgaR3CmdBufProcessCommands(PPDMDEVINS pDevIns, PVGASTATE 
                 STAM_REL_COUNTER_INC(&pSvgaR3State->StatR3CmdFence);
                 Log(("SVGA_CMD_FENCE %#x\n", pCmd->fence));
 
-                uint32_t const offFifoMin = pFIFO[SVGA_FIFO_MIN];
-                if (VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_FENCE, offFifoMin))
+                if (pThis->fVmSvga3)
                 {
-                    pFIFO[SVGA_FIFO_FENCE] = pCmd->fence;
+                    pThis->svga.u32FenceLast = pCmd->fence;
 
                     if (pThis->svga.u32IrqMask & SVGA_IRQFLAG_ANY_FENCE)
                     {
                         Log(("any fence irq\n"));
                         *pu32IrqStatus |= SVGA_IRQFLAG_ANY_FENCE;
                     }
-                    else if (    VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_FENCE_GOAL, offFifoMin)
-                             &&  (pThis->svga.u32IrqMask & SVGA_IRQFLAG_FENCE_GOAL)
-                             &&  pFIFO[SVGA_FIFO_FENCE_GOAL] == pCmd->fence)
+                    else if (pThis->svga.u32IrqMask & SVGA_IRQFLAG_FENCE_GOAL)
                     {
                         Log(("fence goal reached irq (fence=%#x)\n", pCmd->fence));
                         *pu32IrqStatus |= SVGA_IRQFLAG_FENCE_GOAL;
                     }
                 }
                 else
-                    Log(("SVGA_CMD_FENCE is bogus when offFifoMin is %#x!\n", offFifoMin));
+                {
+                    uint32_t const offFifoMin = pFIFO[SVGA_FIFO_MIN];
+                    if (VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_FENCE, offFifoMin))
+                    {
+                        pFIFO[SVGA_FIFO_FENCE] = pCmd->fence;
+
+                        if (pThis->svga.u32IrqMask & SVGA_IRQFLAG_ANY_FENCE)
+                        {
+                            Log(("any fence irq\n"));
+                            *pu32IrqStatus |= SVGA_IRQFLAG_ANY_FENCE;
+                        }
+                        else if (    VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_FENCE_GOAL, offFifoMin)
+                                 &&  (pThis->svga.u32IrqMask & SVGA_IRQFLAG_FENCE_GOAL)
+                                 &&  pFIFO[SVGA_FIFO_FENCE_GOAL] == pCmd->fence)
+                        {
+                            Log(("fence goal reached irq (fence=%#x)\n", pCmd->fence));
+                            *pu32IrqStatus |= SVGA_IRQFLAG_FENCE_GOAL;
+                        }
+                    }
+                    else
+                        Log(("SVGA_CMD_FENCE is bogus when offFifoMin is %#x!\n", offFifoMin));
+                }
                 break;
             }
 
@@ -4544,7 +4676,7 @@ void vmsvgaR3FifoWatchdogTimer(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC 
 {
     /* Caller already checked pThis->svga.fFIFOThreadSleeping, so we only have
        to recheck it before doing the signalling. */
-    if (   vmsvgaR3FifoHasWork(pThisCC, ASMAtomicReadU32(&pThis->svga.uLastCursorUpdateCount))
+    if (   (pThis->fVmSvga3 || vmsvgaR3FifoHasWork(pThisCC, ASMAtomicReadU32(&pThis->svga.uLastCursorUpdateCount)))
         && pThis->svga.fFIFOThreadSleeping
         && !ASMAtomicReadBool(&pThis->svga.fBadGuest))
     {
@@ -5247,6 +5379,135 @@ static DECLCALLBACK(int) vmsvgaR3FifoLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread
 #undef VMSVGAFIFO_GET_CMD_BUFFER_BREAK
 
 /**
+ * @callback_method_impl{PFNPDMTHREADDEV, The async FIFO handling thread.}
+ */
+static DECLCALLBACK(int) vmsvgaR3CmdBufLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+{
+    PVGASTATE       pThis      = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATER3     pThisCC    = PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC);
+    PVMSVGAR3STATE  pSVGAState = pThisCC->svga.pSvgaR3State;
+    int             rc;
+
+    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
+        return VINF_SUCCESS;
+
+    /*
+     * Special mode where we only execute an external command and the go back
+     * to being suspended.  Currently, all ext cmds ends up here, with the reset
+     * one also being eligble for runtime execution further down as well.
+     */
+    if (pThis->svga.fFifoExtCommandWakeup)
+    {
+        vmsvgaR3FifoHandleExtCmd(pDevIns, pThis, pThisCC);
+        while (pThread->enmState == PDMTHREADSTATE_RUNNING)
+            if (pThis->svga.u8FIFOExtCommand == VMSVGA_FIFO_EXTCMD_NONE)
+                PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->svga.hFIFORequestSem, RT_MS_1MIN);
+            else
+                vmsvgaR3FifoHandleExtCmd(pDevIns, pThis, pThisCC);
+        return VINF_SUCCESS;
+    }
+
+
+    /*
+     * Signal the semaphore to make sure we don't wait for 250ms after a
+     * suspend & resume scenario (see vmsvgaR3FifoGetCmdPayload).
+     */
+    PDMDevHlpSUPSemEventSignal(pDevIns, pThis->svga.hFIFORequestSem);
+
+    /*
+     * Polling/sleep interval config.
+     *
+     * We wait for an a short interval if the guest has recently given us work
+     * to do, but the interval increases the longer we're kept idle.  Once we've
+     * reached the refresh timer interval, we'll switch to extended waits,
+     * depending on it or the guest to kick us into action when needed.
+     *
+     * Should the refresh time go fishing, we'll just continue increasing the
+     * sleep length till we reaches the 250 ms max after about 16 seconds.
+     */
+    RTMSINTERVAL const  cMsMinSleep           = 16;
+    RTMSINTERVAL const  cMsMaxSleep           = 250;
+    RTMSINTERVAL const  cMsExtendedSleep      = 15 * RT_MS_1SEC; /* Regular paranoia dictates that this cannot be indefinite. */
+    RTMSINTERVAL        cMsSleep              = cMsMaxSleep;
+
+    /*
+     * The FIFO loop.
+     */
+    LogFlow(("vmsvgaR3CmdBufLoop: started loop\n"));
+    bool fBadOrDisabledFifo = ASMAtomicReadBool(&pThis->svga.fBadGuest);
+    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
+    {
+        /* First check any pending actions. */
+        vmsvgaR3FifoPendingActions(pDevIns, pThis, pThisCC);
+
+        /*
+         * Unless there's already work pending, go to sleep for a short while.
+         * (See polling/sleep interval config above.)
+         */
+        ASMAtomicWriteBool(&pThis->svga.fFIFOThreadSleeping, true);
+        Assert(pThis->cMilliesRefreshInterval > 0);
+        if (cMsSleep < pThis->cMilliesRefreshInterval)
+            rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->svga.hFIFORequestSem, cMsSleep);
+        else
+        {
+            STAM_REL_PROFILE_START(&pSVGAState->StatFifoExtendedSleep, Acc);
+            rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->svga.hFIFORequestSem, cMsExtendedSleep);
+            STAM_REL_PROFILE_STOP(&pSVGAState->StatFifoExtendedSleep, Acc);
+        }
+        ASMAtomicWriteBool(&pThis->svga.fFIFOThreadSleeping, false);
+        AssertBreak(RT_SUCCESS(rc) || rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED);
+        if (pThread->enmState != PDMTHREADSTATE_RUNNING)
+        {
+            LogFlow(("vmsvgaR3CmdBufLoop: thread state %x\n", pThread->enmState));
+            break;
+        }
+
+        fBadOrDisabledFifo = ASMAtomicReadBool(&pThis->svga.fBadGuest);
+        cMsSleep = cMsMinSleep;
+
+        Log(("vmsvgaR3CmdBufLoop: enabled=%d configured=%d busy=%d\n", pThis->svga.fEnabled, pThis->svga.fConfigured));
+
+        /*
+         * Handle external commands (currently only reset).
+         */
+        if (pThis->svga.u8FIFOExtCommand != VMSVGA_FIFO_EXTCMD_NONE)
+        {
+            vmsvgaR3FifoHandleExtCmd(pDevIns, pThis, pThisCC);
+            continue;
+        }
+
+        /*
+         * If guest misbehaves, then do nothing.
+         */
+        if (ASMAtomicReadBool(&pThis->svga.fBadGuest))
+        {
+            cMsSleep = cMsExtendedSleep;
+            LogRelMax(1, ("VMSVGA: FIFO processing stopped because of the guest misbehavior\n"));
+            continue;
+        }
+
+        /*
+         * The device must be enabled and configured.
+         */
+        if (   !pThis->svga.fEnabled
+            || !pThis->svga.fConfigured)
+        {
+            fBadOrDisabledFifo = true;
+            cMsSleep           = cMsMaxSleep; /* cheat */
+            continue;
+        }
+
+        /*
+         * Process all submitted command buffers.
+         */
+        vmsvgaR3CmdBufProcessBuffers(pDevIns, pThis, pThisCC, pThread);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * @callback_method_impl{PFNPDMTHREADWAKEUPDEV,
  * Unblock the FIFO I/O thread so it can respond to a state change.}
  */
@@ -5284,7 +5545,7 @@ static void vmsvgaR3SetTraces(PPDMDEVINS pDevIns, PVGASTATE pThis, bool fTraces)
         /** @todo How does this work with screens? */
         if (pThis->svga.uHeight != VMSVGA_VAL_UNINITIALIZED)
         {
-# ifndef DEBUG_bird /* BB-10.3.1 triggers this as it initializes everything to zero. Better just ignore it. */
+# if 0 //ifndef DEBUG_bird /* BB-10.3.1 triggers this as it initializes everything to zero. Better just ignore it. */
             Assert(pThis->svga.cbScanline);
 # endif
             /* Hardware enabled; return real framebuffer size .*/
@@ -6468,13 +6729,14 @@ static void vmsvgaR3GetCaps(PVGASTATE pThis, PVGASTATECC pThisCC, uint32_t *pu32
 # endif
 
     /* FIFO capabilities. */
-    *pu32FIFOCaps = SVGA_FIFO_CAP_FENCE
-                  | SVGA_FIFO_CAP_PITCHLOCK
-                  | SVGA_FIFO_CAP_CURSOR_BYPASS_3
-                  | SVGA_FIFO_CAP_RESERVE
-                  | SVGA_FIFO_CAP_GMR2
-                  | SVGA_FIFO_CAP_3D_HWVERSION_REVISED
-                  | SVGA_FIFO_CAP_SCREEN_OBJECT_2;
+    if (!pThis->fVmSvga3)
+        *pu32FIFOCaps = SVGA_FIFO_CAP_FENCE
+                      | SVGA_FIFO_CAP_PITCHLOCK
+                      | SVGA_FIFO_CAP_CURSOR_BYPASS_3
+                      | SVGA_FIFO_CAP_RESERVE
+                      | SVGA_FIFO_CAP_GMR2
+                      | SVGA_FIFO_CAP_3D_HWVERSION_REVISED
+                      | SVGA_FIFO_CAP_SCREEN_OBJECT_2;
 }
 
 /** Initialize the FIFO on power on and reset.
@@ -6586,8 +6848,11 @@ int vmsvgaR3Reset(PPDMDEVINS pDevIns)
 
     Log(("vmsvgaR3Reset\n"));
 
-    /* Reset the FIFO processing as well as the 3d state (if we have one). */
-    pThisCC->svga.pau32FIFO[SVGA_FIFO_NEXT_CMD] = pThisCC->svga.pau32FIFO[SVGA_FIFO_STOP] = 0; /** @todo should probably let the FIFO thread do this ... */
+    if (!pThis->fVmSvga3)
+    {
+        /* Reset the FIFO processing as well as the 3d state (if we have one). */
+        pThisCC->svga.pau32FIFO[SVGA_FIFO_NEXT_CMD] = pThisCC->svga.pau32FIFO[SVGA_FIFO_STOP] = 0; /** @todo should probably let the FIFO thread do this ... */
+    }
 
     PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect); /* Hack around lock order issue. FIFO thread might take the lock. */
 
@@ -6608,13 +6873,15 @@ int vmsvgaR3Reset(PPDMDEVINS pDevIns)
 
     RT_BZERO(pThisCC->svga.pbVgaFrameBufferR3, VMSVGA_VGA_FB_BACKUP_SIZE);
 
-    vmsvgaR3InitFIFO(pThis, pThisCC);
+    if (!pThis->fVmSvga3)
+        vmsvgaR3InitFIFO(pThis, pThisCC);
 
     /* Initialize FIFO and register capabilities. */
     vmsvgaR3GetCaps(pThis, pThisCC, &pThis->svga.u32DeviceCaps, &pThis->svga.u32DeviceCaps2, &pThisCC->svga.pau32FIFO[SVGA_FIFO_CAPABILITIES]);
 
 # ifdef VBOX_WITH_VMSVGA3D
-    if (pThis->svga.f3DEnabled)
+    if (   pThis->svga.f3DEnabled
+        && !pThis->fVmSvga3)
         vmsvgaR3InitFifo3DCaps(pThis, pThisCC);
 # endif
 
@@ -6794,8 +7061,18 @@ int vmsvgaR3Init(PPDMDEVINS pDevIns)
 # endif
 
     /* Create the async IO thread. */
-    rc = PDMDevHlpThreadCreate(pDevIns, &pThisCC->svga.pFIFOIOThread, pThis, vmsvgaR3FifoLoop, vmsvgaR3FifoLoopWakeUp, 0,
-                               RTTHREADTYPE_IO, "VMSVGA FIFO");
+    if (pThis->fVmSvga3)
+    {
+        /*
+         * For SVGA 3 we use a different command processing loop because the standard FIFO loop would get riddled with
+         * if (pThis->fVmsvga3) otherwise
+         */
+        rc = PDMDevHlpThreadCreate(pDevIns, &pThisCC->svga.pFIFOIOThread, pThis, vmsvgaR3CmdBufLoop, vmsvgaR3FifoLoopWakeUp, 0,
+                                   RTTHREADTYPE_IO, "VMSVGA CMD");
+    }
+    else
+        rc = PDMDevHlpThreadCreate(pDevIns, &pThisCC->svga.pFIFOIOThread, pThis, vmsvgaR3FifoLoop, vmsvgaR3FifoLoopWakeUp, 0,
+                                   RTTHREADTYPE_IO, "VMSVGA FIFO");
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("%s: Async IO Thread creation for FIFO handling failed rc=%d\n", __FUNCTION__, rc));
@@ -7052,7 +7329,8 @@ static void vmsvgaR3PowerOnDevice(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATE
 
     if (!fLoadState)
     {
-        vmsvgaR3InitFIFO(pThis, pThisCC);
+        if (!pThis->fVmSvga3)
+            vmsvgaR3InitFIFO(pThis, pThisCC);
         vmsvgaR3GetCaps(pThis, pThisCC, &pThis->svga.u32DeviceCaps, &pThis->svga.u32DeviceCaps2, &pThisCC->svga.pau32FIFO[SVGA_FIFO_CAPABILITIES]);
     }
 # ifdef DEBUG
@@ -7069,12 +7347,14 @@ static void vmsvgaR3PowerOnDevice(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATE
          */
         Assert(   (pThis->svga.u32DeviceCaps & u32DeviceCaps) == pThis->svga.u32DeviceCaps
                && (pThis->svga.u32DeviceCaps2 & u32DeviceCaps2) == pThis->svga.u32DeviceCaps2
-               && (pThisCC->svga.pau32FIFO[SVGA_FIFO_CAPABILITIES] & u32FIFOCaps) == pThisCC->svga.pau32FIFO[SVGA_FIFO_CAPABILITIES]);
+               && (   !pThis->fVmSvga3
+                   || (pThisCC->svga.pau32FIFO[SVGA_FIFO_CAPABILITIES] & u32FIFOCaps) == pThisCC->svga.pau32FIFO[SVGA_FIFO_CAPABILITIES]));
     }
 #endif
 
 # ifdef VBOX_WITH_VMSVGA3D
-    if (pThis->svga.f3DEnabled)
+    if (   pThis->svga.f3DEnabled
+        && !pThis->fVmSvga3)
     {
         PVMSVGAR3STATE pSVGAState = pThisCC->svga.pSvgaR3State;
         int rc = pSVGAState->pFuncs3D->pfnPowerOn(pDevIns, pThis, pThisCC);

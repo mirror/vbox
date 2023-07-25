@@ -369,23 +369,24 @@ typedef struct VGAState
 
     /** Flag indicating that there are dirty bits. This is used to optimize the handler resetting. */
     bool                        fHasDirtyBits;
-    /** Flag indicating that the VGA memory in the 0xa0000-0xbffff region has been remapped to allow direct access.
-     * @todo This is just an unnecessary summmary of bmPageMapBitmap.  */
-    bool                        fRemappedVGA;
     /** Whether to render the guest VRAM to the framebuffer memory. False only for some LFB modes. */
     bool                        fRenderVRAM;
     /** Whether 3D is enabled for the VM. */
     bool                        f3DEnabled;
     /** Set if state has been restored. */
     bool                        fStateLoaded;
+    /** Flag whether to expose the legacy VGA interface to the guest. */
+    bool                        fLegacyVgaEnabled;
 #ifdef VBOX_WITH_VMSVGA
     /* Whether the SVGA emulation is enabled or not. */
     bool                        fVMSVGAEnabled;
     bool                        fVMSVGA10;
     bool                        fVMSVGAPciId;
     bool                        fVMSVGAPciBarLayout;
+    /** Flag whether the SVGA3 interface is exposed to the guest. */
+    bool                        fVmSvga3;
 #else
-    bool                        afPadding4[4];
+    bool                        afPadding4[5];
 #endif
 
     struct {
@@ -515,6 +516,8 @@ typedef struct VGAState
 #ifdef VBOX_WITH_VMSVGA
     /** VMSVGA: I/O port PCI region. */
     IOMIOPORTHANDLE             hIoPortVmSvga;
+    /** VMSVGA3: MMIO PCI region for the registers. */
+    IOMMMIOHANDLE               hMmioSvga3;
     /** VMSVGA: The MMIO2 handle of the FIFO PCI region. */
     PGMMMIO2HANDLE              hMmio2VmSvgaFifo;
 #endif
