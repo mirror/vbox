@@ -225,7 +225,9 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb);
     } while (0)
 
 #define IEM_MC2_END_EMIT_CALLS() \
-        pTb->cInstructions++; \
+        Assert(pTb->cInstructions <= pTb->Thrd.cCalls); \
+        if (pTb->cInstructions < 255) \
+            pTb->cInstructions++; \
     } while (0)
 
 
@@ -623,6 +625,7 @@ static PIEMTB iemThreadedTbAlloc(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPc, u
                 pTb->GCPhysPc               = GCPhysPc;
                 pTb->x86.fAttr              = (uint16_t)pVCpu->cpum.GstCtx.cs.Attr.u;
                 pTb->fFlags                 = (pVCpu->iem.s.fExec & IEMTB_F_IEM_F_MASK) | fExtraFlags;
+                pTb->cInstructions          = 0;
 
                 /* Init the first opcode range. */
                 pTb->cRanges                = 1;
