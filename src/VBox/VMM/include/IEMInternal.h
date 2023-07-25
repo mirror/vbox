@@ -1147,6 +1147,10 @@ typedef struct IEMCPU
     bool                    fEndTb;
     /** Spaced reserved for recompiler data / alignment. */
     bool                    afRecompilerStuff1[4];
+    /** Threaded TB statistics: Number of instructions per TB. */
+    STAMPROFILE             StatTbThreadedInstr;
+    /** Threaded TB statistics: Number of calls per TB. */
+    STAMPROFILE             StatTbThreadedCalls;
     /** @} */
 
     /** Data TLB.

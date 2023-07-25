@@ -207,6 +207,8 @@ typedef enum STAMUNIT
     STAMUNIT_NONE,
     /** Number of calls. */
     STAMUNIT_CALLS,
+    /** Number of calls per translation block. */
+    STAMUNIT_CALLS_PER_TB,
     /** Count of whatever. */
     STAMUNIT_COUNT,
     /** Count of bytes. */
@@ -241,6 +243,10 @@ typedef enum STAMUNIT
     STAMUNIT_PCT,
     /** Hertz. */
     STAMUNIT_HZ,
+    /** Instructions. */
+    STAMUNIT_INSTR,
+    /** Instructions per translation block. */
+    STAMUNIT_INSTR_PER_TB,
     /** The end (exclusive). */
     STAMUNIT_END
 } STAMUNIT;

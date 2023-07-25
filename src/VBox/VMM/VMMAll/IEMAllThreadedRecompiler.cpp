@@ -740,8 +740,10 @@ static void iemThreadedTbAdd(PVMCC pVM, PVMCPUCC pVCpu, PIEMTB pTb)
     uint32_t const idxHash = IEMTBCACHE_HASH(&g_TbCache, pTb->fFlags, pTb->GCPhysPc);
     pTb->pNext = g_TbCache.apHash[idxHash];
     g_TbCache.apHash[idxHash] = pTb;
+    STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->iem.s.StatTbThreadedInstr, pTb->cInstructions);
+    STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->iem.s.StatTbThreadedCalls, pTb->Thrd.cCalls);
     Log12(("TB added: %p %RGp LB %#x fl=%#x idxHash=%#x\n", pTb, pTb->GCPhysPc, pTb->cbOpcodes, pTb->fFlags, idxHash));
-    RT_NOREF(pVM, pVCpu);
+    RT_NOREF(pVM);
 }
 
 
