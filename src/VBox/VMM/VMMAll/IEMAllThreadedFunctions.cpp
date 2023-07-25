@@ -609,39 +609,6 @@ static RTGCPTR iemOpHlpCalcRmEffAddrThreadedAddr64(PVMCPUCC pVCpu, uint8_t bRmEx
 }
 
 
-
-/**
- * Built-in function that compares the fExec mask against uParam0.
- */
-static IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckMode,
-                         (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
-{
-    uint32_t const fExpectedExec = (uint32_t)uParam0;
-    if (pVCpu->iem.s.fExec == fExpectedExec)
-        return VINF_SUCCESS;
-    Log12(("Mode changed at %04x:%08RX64: %#x -> %#x (xor: %#x)\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
-           fExpectedExec, pVCpu->iem.s.fExec, fExpectedExec ^ pVCpu->iem.s.fExec));
-    RT_NOREF(uParam1, uParam2);
-    return VINF_IEM_REEXEC_MODE_CHANGED;
-}
-
-
-/**
- * Built-in function that checks the EIP/IP + uParam0 is within CS.LIM,
- * raising a \#GP(0) if this isn't the case.
- */
-static IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLim,
-                         (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
-{
-    uint32_t const cbInstr = (uint32_t)uParam0;
-    if (pVCpu->cpum.GstCtx.eip - pVCpu->cpum.GstCtx.cs.u32Limit >= cbInstr)
-        return VINF_SUCCESS;
-    Log(("EIP out of bounds at %04x:%08RX32 LB %u - CS.LIM=%#RX32\n",
-         pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.eip, cbInstr, pVCpu->cpum.GstCtx.cs.u32Limit));
-    RT_NOREF(uParam1, uParam2);
-    return iemRaiseGeneralProtectionFault0(pVCpu);
-}
-
 /*
  * The threaded functions.
  */

@@ -38,6 +38,7 @@
 #include <VBox/param.h>
 
 #include <iprt/setjmp-without-sigmask.h>
+#include <iprt/list.h>
 
 
 RT_C_DECLS_BEGIN
@@ -535,9 +536,6 @@ AssertCompileSizeAlignment(IEMTLB, 64);
 #define IEMTLB_TAG_TO_ENTRY(a_pTlb, a_uTag) ( &(a_pTlb)->aEntries[IEMTLB_TAG_TO_INDEX(a_uTag)] )
 
 
-/** Pointer to a translation block. */
-typedef struct IEMTB *PIEMTB;
-
 /** @name IEM_F_XXX - Execution mode flags (IEMCPU::fExec, IEMTB::fFlags).
  *
  * These flags are set when entering IEM and adjusted as code is executed, such
@@ -719,6 +717,130 @@ AssertCompile(  IEM_F_MODE_X86_32BIT_PROT_FLAT    & IEM_F_MODE_X86_PROT_MASK);
 AssertCompile( (IEM_F_MODE_X86_64BIT              & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_64BIT);
 AssertCompile(  IEM_F_MODE_X86_64BIT              & IEM_F_MODE_X86_PROT_MASK);
 AssertCompile(!(IEM_F_MODE_X86_64BIT              & IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK));
+
+/**
+ * A call for the threaded call table.
+ */
+typedef struct IEMTHRDEDCALLENTRY
+{
+    /** The function to call (IEMTHREADEDFUNCS). */
+    uint16_t    enmFunction;
+    uint16_t    uUnused0;
+
+    /** Offset into IEMTB::pabOpcodes. */
+    uint16_t    offOpcode;
+    /** The opcode length. */
+    uint8_t     cbOpcode;
+    /** Index in to IEMTB::aRanges. */
+    uint8_t     idxRange;
+
+    /** Generic parameters. */
+    uint64_t    auParams[3];
+} IEMTHRDEDCALLENTRY;
+AssertCompileSize(IEMTHRDEDCALLENTRY, sizeof(uint64_t) * 4);
+/** Pointer to a threaded call entry. */
+typedef struct IEMTHRDEDCALLENTRY *PIEMTHRDEDCALLENTRY;
+/** Pointer to a const threaded call entry. */
+typedef IEMTHRDEDCALLENTRY const *PCIEMTHRDEDCALLENTRY;
+
+/**
+ * Translation block.
+ */
+#pragma pack(2) /* to prevent the Thrd structure from being padded unnecessarily */
+typedef struct IEMTB
+{
+    /** Next block with the same hash table entry. */
+    struct IEMTB * volatile pNext;
+    /** List on the local VCPU for blocks. */
+    RTLISTNODE          LocalList;
+
+    /** @name What uniquely identifies the block.
+     * @{ */
+    RTGCPHYS            GCPhysPc;
+    /** IEMTB_F_XXX (i.e. IEM_F_XXX ++). */
+    uint32_t            fFlags;
+    union
+    {
+        struct
+        {
+            /**< Relevant CS X86DESCATTR_XXX bits. */
+            uint16_t    fAttr;
+        } x86;
+    };
+    /** @} */
+
+    /** Number of opcode ranges. */
+    uint8_t             cRanges;
+    /** Statistics: Number of instructions in the block. */
+    uint8_t             cInstructions;
+
+    /** Type specific info. */
+    union
+    {
+        struct
+        {
+            /** The call sequence table. */
+            PIEMTHRDEDCALLENTRY paCalls;
+            /** Number of calls in paCalls. */
+            uint16_t            cCalls;
+            /** Number of calls allocated. */
+            uint16_t            cAllocated;
+        } Thrd;
+    };
+
+    /** Number of bytes of opcodes stored in pabOpcodes. */
+    uint16_t            cbOpcodes;
+    /** The max storage available in the pabOpcodes block. */
+    uint16_t            cbOpcodesAllocated;
+    /** Pointer to the opcode bytes this block was recompiled from. */
+    uint8_t            *pabOpcodes;
+
+    /* --- 64 byte cache line end --- */
+
+    /** Opcode ranges.
+     *
+     * The opcode checkers and maybe TLB loading functions will use this to figure
+     * out what to do.  The parameter will specify an entry and the opcode offset to
+     * start at and the minimum number of bytes to verify (instruction length).
+     *
+     * When VT-x and AMD-V looks up the opcode bytes for an exitting instruction,
+     * they'll first translate RIP (+ cbInstr - 1) to a physical address using the
+     * code TLB (must have a valid entry for that address) and scan the ranges to
+     * locate the corresponding opcodes. Probably.
+     */
+    struct IEMTBOPCODERANGE
+    {
+        /** Offset within pabOpcodes. */
+        uint16_t        offOpcodes;
+        /** Number of bytes. */
+        uint16_t        cbOpcodes;
+        /** The page offset. */
+        RT_GCC_EXTENSION
+        uint16_t        offPhysPage : 12;
+        /** Unused bits. */
+        RT_GCC_EXTENSION
+        uint16_t        u2Unused    :  2;
+        /** Index into GCPhysPc + aGCPhysPages for the physical page address. */
+        RT_GCC_EXTENSION
+        uint16_t        idxPhysPage :  2;
+    } aRanges[8];
+
+    /** Physical pages that this TB covers.
+     * The GCPhysPc w/o page offset is element zero, so starting here with 1. */
+    RTGCPHYS            aGCPhysPages[2];
+} IEMTB;
+#pragma pack()
+AssertCompileMemberOffset(IEMTB, x86, 36);
+AssertCompileMemberOffset(IEMTB, cRanges, 38);
+AssertCompileMemberOffset(IEMTB, Thrd, 40);
+AssertCompileMemberOffset(IEMTB, Thrd.cCalls, 48);
+AssertCompileMemberOffset(IEMTB, cbOpcodes, 52);
+AssertCompileMemberSize(IEMTB, aRanges[0], 6);
+AssertCompileSize(IEMTB, 128);
+/** Pointer to a translation block. */
+typedef IEMTB *PIEMTB;
+/** Pointer to a const translation block. */
+typedef IEMTB const *PCIEMTB;
 
 
 /**
@@ -1013,10 +1135,18 @@ typedef struct IEMCPU
     uint64_t                cTbLookupHits;
     /** Number of TBs executed. */
     uint64_t                cTbExec;
+    /** Whether we need to check the opcode bytes for the current instruction.
+     * This is set by a previous instruction if it modified memory or similar.  */
+    bool                    fTbCheckOpcodes;
+    /** Whether we just branched and need to start a new opcode range and emit code
+     * to do a TLB load and check them again. */
+    bool                    fTbBranched;
+    /** Set when GCPhysInstrBuf is updated because of a page crossing. */
+    bool                    fTbCrossedPage;
     /** Whether to end the current TB. */
     bool                    fEndTb;
     /** Spaced reserved for recompiler data / alignment. */
-    bool                    afRecompilerStuff1[7];
+    bool                    afRecompilerStuff1[4];
     /** @} */
 
     /** Data TLB.
@@ -4762,6 +4892,28 @@ IEM_CIMPL_PROTO_0(iemCImpl_svm_pause);
 IEM_CIMPL_PROTO_0(iemCImpl_vmcall);  /* vmx */
 IEM_CIMPL_PROTO_0(iemCImpl_vmmcall); /* svm */
 IEM_CIMPL_PROTO_1(iemCImpl_Hypercall, uint16_t, uDisOpcode); /* both */
+
+void            iemThreadedTbObsolete(PVMCPUCC pVCpu, PIEMTB pTb);
+IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckMode,
+                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLim,
+                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodes,
+                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb,
+                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb,
+                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb,
+                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodes,
+                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoadingTlb,
+                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesLoadingTlb,
+                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoadingTlb,
+                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
 
 
 extern const PFNIEMOP g_apfnIemInterpretOnlyOneByteMap[256];

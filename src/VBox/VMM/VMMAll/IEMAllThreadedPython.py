@@ -1255,11 +1255,19 @@ class IEMThreadedGenerator(object):
             '{',
             '    kIemThreadedFunc_Invalid = 0,',
             '',
-            '    /*'
-            '     * Predefined'
-            '     */'
+            '    /*',
+            '     * Predefined',
+            '     */',
             '    kIemThreadedFunc_CheckMode,',
             '    kIemThreadedFunc_CheckCsLim,',
+            '    kIemThreadedFunc_CheckCsLimAndOpcodes,',
+            '    kIemThreadedFunc_CheckCsLimAndOpcodesAcrossPageLoadingTlb,',
+            '    kIemThreadedFunc_CheckCsLimAndOpcodesLoadingTlb,',
+            '    kIemThreadedFunc_CheckCsLimAndOpcodesOnNextPageLoadingTlb,',
+            '    kIemThreadedFunc_CheckOpcodes,',
+            '    kIemThreadedFunc_CheckOpcodesAcrossPageLoadingTlb,',
+            '    kIemThreadedFunc_CheckOpcodesLoadingTlb,',
+            '    kIemThreadedFunc_CheckOpcodesOnNextPageLoadingTlb,',
         ];
         iThreadedFunction = 1;
         for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
@@ -1419,6 +1427,14 @@ class IEMThreadedGenerator(object):
                    + '     */'
                    + '    iemThreadedFunc_BltIn_CheckMode,\n'
                    + '    iemThreadedFunc_BltIn_CheckCsLim,\n'
+                   + '    iemThreadedFunc_BltIn_CheckCsLimAndOpcodes,\n'
+                   + '    iemThreadedFunc_BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb,\n'
+                   + '    iemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb,\n'
+                   + '    iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb,\n'
+                   + '    iemThreadedFunc_BltIn_CheckOpcodes,\n'
+                   + '    iemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoadingTlb,\n'
+                   + '    iemThreadedFunc_BltIn_CheckOpcodesLoadingTlb,\n'
+                   + '    iemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoadingTlb,\n'
                    );
         iThreadedFunction = 1;
         for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
@@ -1452,6 +1468,14 @@ class IEMThreadedGenerator(object):
                    + '     */'
                    + '    "BltIn_CheckMode",\n'
                    + '    "BltIn_CheckCsLim",\n'
+                   + '    "BltIn_CheckCsLimAndOpcodes",\n'
+                   + '    "BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb",\n'
+                   + '    "BltIn_CheckCsLimAndOpcodesLoadingTlb",\n'
+                   + '    "BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb",\n'
+                   + '    "BltIn_CheckOpcodes",\n'
+                   + '    "BltIn_CheckOpcodesAcrossPageLoadingTlb",\n'
+                   + '    "BltIn_CheckOpcodesLoadingTlb",\n'
+                   + '    "BltIn_CheckOpcodesOnNextPageLoadingTlb",\n'
                    );
         iThreadedFunction = 1;
         for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:

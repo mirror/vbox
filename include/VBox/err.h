@@ -2502,6 +2502,9 @@
 #define VERR_IEM_TB_ALLOC_FAILED                    (-5309)
 /** Recompiled execution: Stop execution TB - Mode (fExec) changed. */
 #define VINF_IEM_REEXEC_MODE_CHANGED                (5310)
+/** Recompilation: End translation block. */
+#define VINF_IEM_RECOMPILE_END_TB                   (5311)
+
 /** Restart the current instruction. For testing only. */
 #define VERR_IEM_RESTART_INSTRUCTION                (-5389)
 /** This particular aspect of the instruction is not yet implemented by IEM. */

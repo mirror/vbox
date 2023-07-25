@@ -996,7 +996,7 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
                 else
                 {
                     Log(("iemOpcodeFetchMoreBytes: %04x:%08RX64 LB %#x + %#zx -> #GP(0)\n",
-                         pVCpu->cpum.GstCtx.cs, pVCpu->cpum.GstCtx.rip, cbInstr, cbDst));
+                         pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, cbInstr, cbDst));
                     iemRaiseGeneralProtectionFault0Jmp(pVCpu);
                 }
             }
@@ -1006,6 +1006,7 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
                 pVCpu->iem.s.uInstrBufPc      = GCPtrFirst & ~(RTGCPTR)X86_PAGE_OFFSET_MASK;
                 pVCpu->iem.s.GCPhysInstrBuf   = pTlbe->GCPhys;
                 pVCpu->iem.s.pbInstrBuf       = pTlbe->pbMappingR3;
+                pVCpu->iem.s.fTbCrossedPage  |= offPg == 0;
                 memcpy(pvDst, &pTlbe->pbMappingR3[offPg], cbDst);
                 return;
             }
@@ -1059,7 +1060,7 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
             else
             {
                 Log(("iemOpcodeFetchMoreBytes: %04x:%08RX64 LB %#x + %#zx -> #GP(0) [slow]\n",
-                     pVCpu->cpum.GstCtx.cs, pVCpu->cpum.GstCtx.rip, cbInstr, cbDst));
+                     pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, cbInstr, cbDst));
                 iemRaiseGeneralProtectionFault0Jmp(pVCpu);
             }
 
@@ -1097,6 +1098,7 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
             pVCpu->iem.s.GCPhysInstrBuf   = pTlbe->GCPhys;
             pVCpu->iem.s.uInstrBufPc      = GCPtrFirst & ~(RTGCPTR)X86_PAGE_OFFSET_MASK;
             pVCpu->iem.s.pbInstrBuf       = NULL;
+            pVCpu->iem.s.fTbCrossedPage  |= offPg == 0;
             if (cbToRead == cbDst)
                 return;
         }
@@ -1184,7 +1186,7 @@ VBOXSTRICTRC iemOpcodeFetchMoreBytes(PVMCPUCC pVCpu, size_t cbMin) RT_NOEXCEPT
     else
     {
         Log(("iemOpcodeFetchMoreBytes: %04x:%08RX64 LB %#x + %#zx -> #GP(0)\n",
-             pVCpu->cpum.GstCtx.cs, pVCpu->cpum.GstCtx.rip, offOpcode, cbMin));
+             pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, offOpcode, cbMin));
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
 

@@ -10,11 +10,11 @@
  *      - Level 4  (Log4) : Decoding mnemonics w/ EIP. [same as IEM]
  *      - Level 5  (Log5) : Decoding details. [same as IEM]
  *      - Level 6  (Log6) :
- *      - Level 7  (Log7) :
+ *      - Level 7  (Log7) : TB obsoletion.
  *      - Level 8  (Log8) : TB compilation.
  *      - Level 9  (Log9) : TB exec.
  *      - Level 10 (Log10): TB block lookup.
- *      - Level 11 (Log11): TB block lookup.
+ *      - Level 11 (Log11): TB block lookup details.
  *      - Level 12 (Log12): TB insertion.
  */
 
@@ -113,95 +113,13 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-/**
- * A call for the threaded call table.
- */
-typedef struct IEMTHRDEDCALLENTRY
-{
-    /** The function to call (IEMTHREADEDFUNCS). */
-    uint16_t    enmFunction;
-    uint16_t    uUnused0;
 
-    /** Offset into IEMTB::pabOpcodes. */
-    uint16_t    offOpcode;
-    /** The opcode length. */
-    uint8_t     cbOpcode;
-    uint8_t     uUnused1;
-
-    /** Generic parameters. */
-    uint64_t    auParams[3];
-} IEMTHRDEDCALLENTRY;
-AssertCompileSize(IEMTHRDEDCALLENTRY, sizeof(uint64_t) * 4);
-/** Pointer to a threaded call entry. */
-typedef IEMTHRDEDCALLENTRY       *PIEMTHRDEDCALLENTRY;
-/** Pointer to a const threaded call entry. */
-typedef IEMTHRDEDCALLENTRY const *PCIEMTHRDEDCALLENTRY;
-
-
-
-/**
- * Translation block.
- */
-typedef struct IEMTB
-{
-    /** Next block with the same hash table entry. */
-    PIEMTB volatile     pNext;
-    /** List on the local VCPU for blocks. */
-    RTLISTNODE          LocalList;
-
-    /** @name What uniquely identifies the block.
-     * @{ */
-    RTGCPHYS            GCPhysPc;
-    /** IEMTB_F_XXX (i.e. IEM_F_XXX ++). */
-    uint32_t            fFlags;
-    union
-    {
-        struct
-        {
-            /**< Relevant CS X86DESCATTR_XXX bits. */
-            uint16_t    fAttr;
-        } x86;
-    };
-    /** @} */
-
-    union
-    {
-        struct
-        {
-            /** The call sequence table. */
-            PIEMTHRDEDCALLENTRY paCalls;
-            /** Number of calls in paCalls. */
-            uint16_t            cCalls;
-            /** Number of calls allocated. */
-            uint16_t            cAllocated;
-        } Thrd;
-    };
-
-
-    /** Number of bytes of opcodes stored in pabOpcodes. */
-    uint16_t            cbOpcodes;
-    /** The max storage available in the pabOpcodes block. */
-    uint16_t            cbOpcodesAllocated;
-    /** Pointer to the opcode bytes this block was recompiled from. */
-    uint8_t            *pabOpcodes;
-
-#if 0
-    struct
-    {
-        uint16_t        offOpcodes;
-        uint16_t        cbOpcodes;
-    } aRanges;
-
-    /** Physical pages that the .    */
-    RTGCPHYS            aGCPhysPgs[2];
-#endif
-
-} IEMTB;
 
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+static bool         iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb);
 static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb);
 
 
@@ -224,22 +142,31 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb);
 
 #define IEM_MC2_BEGIN_EMIT_CALLS() \
     { \
-        PIEMTB const pTb = pVCpu->iem.s.pCurTbR3; \
-        AssertMsg(pVCpu->iem.s.offOpcode == IEM_GET_INSTR_LEN(pVCpu), \
-                  ("%u vs %u (%04x:%08RX64)\n", pVCpu->iem.s.offOpcode, IEM_GET_INSTR_LEN(pVCpu), \
+        PIEMTB const  pTb = pVCpu->iem.s.pCurTbR3; \
+        uint8_t const cbInstrMc2 = IEM_GET_INSTR_LEN(pVCpu); \
+        AssertMsg(pVCpu->iem.s.offOpcode == cbInstrMc2, \
+                  ("%u vs %u (%04x:%08RX64)\n", pVCpu->iem.s.offOpcode, cbInstrMc2, \
                   pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip)); \
-        /** @todo check for cross page stuff */ \
-        if (!(pTb->fFlags & IEMTB_F_CS_LIM_CHECKS)) \
+        \
+        /* No page crossing, right? */ \
+        uint16_t const offOpcodeMc2 = pTb->cbOpcodes; \
+        uint8_t const  idxRangeMc2  = pTb->cRanges - 1; \
+        if (   !pVCpu->iem.s.fTbCrossedPage \
+            && !pVCpu->iem.s.fTbCheckOpcodes \
+            && !pVCpu->iem.s.fTbBranched \
+            && !(pTb->fFlags & IEMTB_F_CS_LIM_CHECKS)) \
+        { \
+            /** @todo Custom copy function, given range is 1 thru 15 bytes. */ \
+            memcpy(&pTb->pabOpcodes[offOpcodeMc2], pVCpu->iem.s.abOpcode, pVCpu->iem.s.offOpcode); \
+            pTb->cbOpcodes                       = offOpcodeMc2 + pVCpu->iem.s.offOpcode; \
+            pTb->aRanges[idxRangeMc2].cbOpcodes += cbInstrMc2; \
+            Assert(pTb->cbOpcodes <= pTb->cbOpcodesAllocated); \
+        } \
+        else if (iemThreadedCompileBeginEmitCallsComplications(pVCpu, pTb)) \
         { /* likely */ } \
         else \
-        { \
-            PIEMTHRDEDCALLENTRY const pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++]; \
-            pCall->enmFunction = kIemThreadedFunc_CheckCsLim; \
-            pCall->offOpcode   = pTb->cbOpcodes; \
-            pCall->auParams[0] = pCall->cbOpcode = IEM_GET_INSTR_LEN(pVCpu); \
-            pCall->auParams[1] = 0; \
-            pCall->auParams[2] = 0; \
-        } \
+            return VINF_IEM_RECOMPILE_END_TB; \
+        \
         do { } while (0)
 
 #define IEM_MC2_EMIT_CALL_0(a_enmFunction) do { \
@@ -247,8 +174,9 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb);
         \
         PIEMTHRDEDCALLENTRY const pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++]; \
         pCall->enmFunction = a_enmFunction; \
-        pCall->offOpcode   = pTb->cbOpcodes; \
-        pCall->cbOpcode    = IEM_GET_INSTR_LEN(pVCpu); \
+        pCall->offOpcode   = offOpcodeMc2; \
+        pCall->cbOpcode    = cbInstrMc2; \
+        pCall->idxRange    = idxRangeMc2; \
         pCall->auParams[0] = 0; \
         pCall->auParams[1] = 0; \
         pCall->auParams[2] = 0; \
@@ -259,8 +187,9 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb);
         \
         PIEMTHRDEDCALLENTRY const pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++]; \
         pCall->enmFunction = a_enmFunction; \
-        pCall->offOpcode   = pTb->cbOpcodes; \
-        pCall->cbOpcode    = IEM_GET_INSTR_LEN(pVCpu); \
+        pCall->offOpcode   = offOpcodeMc2; \
+        pCall->cbOpcode    = cbInstrMc2; \
+        pCall->idxRange    = idxRangeMc2; \
         pCall->auParams[0] = a_uArg0; \
         pCall->auParams[1] = 0; \
         pCall->auParams[2] = 0; \
@@ -272,8 +201,9 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb);
         \
         PIEMTHRDEDCALLENTRY const pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++]; \
         pCall->enmFunction = a_enmFunction; \
-        pCall->offOpcode   = pTb->cbOpcodes; \
-        pCall->cbOpcode    = IEM_GET_INSTR_LEN(pVCpu); \
+        pCall->offOpcode   = offOpcodeMc2; \
+        pCall->cbOpcode    = cbInstrMc2; \
+        pCall->idxRange    = idxRangeMc2; \
         pCall->auParams[0] = a_uArg0; \
         pCall->auParams[1] = a_uArg1; \
         pCall->auParams[2] = 0; \
@@ -286,14 +216,16 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb);
         \
         PIEMTHRDEDCALLENTRY const pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++]; \
         pCall->enmFunction = a_enmFunction; \
-        pCall->offOpcode   = pTb->cbOpcodes; \
-        pCall->cbOpcode    = IEM_GET_INSTR_LEN(pVCpu); \
+        pCall->offOpcode   = offOpcodeMc2; \
+        pCall->cbOpcode    = cbInstrMc2; \
+        pCall->idxRange    = idxRangeMc2; \
         pCall->auParams[0] = a_uArg0; \
         pCall->auParams[1] = a_uArg1; \
         pCall->auParams[2] = a_uArg2; \
     } while (0)
 
 #define IEM_MC2_END_EMIT_CALLS() \
+        pTb->cInstructions++; \
     } while (0)
 
 
@@ -682,15 +614,26 @@ static PIEMTB iemThreadedTbAlloc(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPc, u
             pTb->pabOpcodes = (uint8_t *)RTMemAlloc(cCalls * 16); /* This will be reallocated later. */
             if (pTb->pabOpcodes)
             {
-                pTb->Thrd.cAllocated    = cCalls;
-                pTb->cbOpcodesAllocated = cCalls * 16;
-                pTb->Thrd.cCalls        = 0;
-                pTb->cbOpcodes          = 0;
-                pTb->pNext              = NULL;
+                pTb->Thrd.cAllocated        = cCalls;
+                pTb->cbOpcodesAllocated     = cCalls * 16;
+                pTb->Thrd.cCalls            = 0;
+                pTb->cbOpcodes              = 0;
+                pTb->pNext                  = NULL;
                 RTListInit(&pTb->LocalList);
-                pTb->GCPhysPc           = GCPhysPc;
-                pTb->x86.fAttr          = (uint16_t)pVCpu->cpum.GstCtx.cs.Attr.u;
-                pTb->fFlags             = (pVCpu->iem.s.fExec & IEMTB_F_IEM_F_MASK) | fExtraFlags;
+                pTb->GCPhysPc               = GCPhysPc;
+                pTb->x86.fAttr              = (uint16_t)pVCpu->cpum.GstCtx.cs.Attr.u;
+                pTb->fFlags                 = (pVCpu->iem.s.fExec & IEMTB_F_IEM_F_MASK) | fExtraFlags;
+
+                /* Init the first opcode range. */
+                pTb->cRanges                = 1;
+                pTb->aRanges[0].cbOpcodes   = 0;
+                pTb->aRanges[0].offOpcodes  = 0;
+                pTb->aRanges[0].offPhysPage = GCPhysPc & GUEST_PAGE_OFFSET_MASK;
+                pTb->aRanges[0].u2Unused    = 0;
+                pTb->aRanges[0].idxPhysPage = 0;
+                pTb->aGCPhysPages[0]        = NIL_RTGCPHYS;
+                pTb->aGCPhysPages[1]        = NIL_RTGCPHYS;
+
                 pVCpu->iem.s.cTbAllocs++;
                 return pTb;
             }
@@ -745,6 +688,15 @@ static void iemThreadedTbFree(PVMCC pVM, PVMCPUCC pVCpu, PIEMTB pTb)
 
     RTMemFree(pTb);
     pVCpu->iem.s.cTbFrees++;
+}
+
+
+/**
+ * Called by opcode verifier functions when they detect a problem.
+ */
+void iemThreadedTbObsolete(PVMCPUCC pVCpu, PIEMTB pTb)
+{
+    iemThreadedTbFree(pVCpu->CTX_SUFF(pVM), pVCpu, pTb);
 }
 
 
@@ -900,12 +852,16 @@ DECL_FORCE_INLINE(void) iemThreadedCompileInitDecoder(PVMCPUCC pVCpu, bool const
         pVCpu->iem.s.cActiveMappings        = 0;
         pVCpu->iem.s.rcPassUp               = VINF_SUCCESS;
         pVCpu->iem.s.fEndTb                 = false;
+        pVCpu->iem.s.fTbCheckOpcodes        = false;
+        pVCpu->iem.s.fTbBranched            = false;
+        pVCpu->iem.s.fTbCrossedPage         = false;
     }
     else
     {
         Assert(pVCpu->iem.s.cActiveMappings == 0);
         Assert(pVCpu->iem.s.rcPassUp        == VINF_SUCCESS);
         Assert(pVCpu->iem.s.fEndTb          == false);
+        Assert(pVCpu->iem.s.fTbCrossedPage  == false);
     }
 
 #ifdef DBGFTRACE_ENABLED
@@ -991,6 +947,310 @@ DECL_FORCE_INLINE(void) iemThreadedCompileReInitOpcodeFetching(PVMCPUCC pVCpu)
 }
 
 
+DECLINLINE(void) iemThreadedCopyOpcodeBytesInline(PCVMCPUCC pVCpu, uint8_t *pbDst, uint8_t cbInstr)
+{
+    switch (cbInstr)
+    {
+        default: AssertMsgFailed(("%#x\n", cbInstr)); RT_FALL_THROUGH();
+        case 15:    pbDst[14] = pVCpu->iem.s.abOpcode[14]; RT_FALL_THROUGH();
+        case 14:    pbDst[13] = pVCpu->iem.s.abOpcode[13]; RT_FALL_THROUGH();
+        case 13:    pbDst[12] = pVCpu->iem.s.abOpcode[12]; RT_FALL_THROUGH();
+        case 12:    pbDst[11] = pVCpu->iem.s.abOpcode[11]; RT_FALL_THROUGH();
+        case 11:    pbDst[10] = pVCpu->iem.s.abOpcode[10]; RT_FALL_THROUGH();
+        case 10:    pbDst[9]  = pVCpu->iem.s.abOpcode[9];  RT_FALL_THROUGH();
+        case 9:     pbDst[8]  = pVCpu->iem.s.abOpcode[8];  RT_FALL_THROUGH();
+        case 8:     pbDst[7]  = pVCpu->iem.s.abOpcode[7];  RT_FALL_THROUGH();
+        case 7:     pbDst[6]  = pVCpu->iem.s.abOpcode[6];  RT_FALL_THROUGH();
+        case 6:     pbDst[5]  = pVCpu->iem.s.abOpcode[5];  RT_FALL_THROUGH();
+        case 5:     pbDst[4]  = pVCpu->iem.s.abOpcode[4];  RT_FALL_THROUGH();
+        case 4:     pbDst[3]  = pVCpu->iem.s.abOpcode[3];  RT_FALL_THROUGH();
+        case 3:     pbDst[2]  = pVCpu->iem.s.abOpcode[2];  RT_FALL_THROUGH();
+        case 2:     pbDst[1]  = pVCpu->iem.s.abOpcode[1];  RT_FALL_THROUGH();
+        case 1:     pbDst[0]  = pVCpu->iem.s.abOpcode[0];  break;
+    }
+}
+
+
+/**
+ * Called by IEM_MC2_BEGIN_EMIT_CALLS() under one of these conditions:
+ *
+ *      - CS LIM check required.
+ *      - Must recheck opcode bytes.
+ *      - Previous instruction branched.
+ *      - TLB load detected, probably due to page crossing.
+ *
+ * @returns true if everything went well, false if we're out of space in the TB
+ *          (e.g. opcode ranges).
+ * @param   pVCpu       The cross context virtual CPU structure of the calling
+ *                      thread.
+ * @param   pTb         The translation block being compiled.
+ */
+static bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
+{
+    Assert((pVCpu->iem.s.GCPhysInstrBuf & GUEST_PAGE_OFFSET_MASK) == 0);
+
+    /*
+     * Prepare call now, even before we know if can accept the instruction in this TB.
+     * This allows us amending parameters w/o making every case suffer.
+     */
+    uint8_t const             cbInstr   = IEM_GET_INSTR_LEN(pVCpu);
+    uint16_t const            offOpcode = pTb->cbOpcodes;
+    uint8_t                   idxRange  = pTb->cRanges - 1;
+
+    PIEMTHRDEDCALLENTRY const pCall     = &pTb->Thrd.paCalls[pTb->Thrd.cCalls];
+    pCall->offOpcode   = offOpcode;
+    pCall->idxRange    = idxRange;
+    pCall->cbOpcode    = cbInstr;
+    pCall->auParams[0] = cbInstr;
+    pCall->auParams[1] = idxRange;
+    pCall->auParams[2] = offOpcode - pTb->aRanges[idxRange].offOpcodes;
+
+/** @todo check if we require IEMTB_F_CS_LIM_CHECKS for any new page we've
+ *        gotten onto.  If we do, stop */
+
+    /*
+     * Case 1: We've branched (RIP changed).
+     *
+     * Sub-case 1a: Same page, no TLB load, so fTbCrossedPage is false.
+     *         Req: 1 extra range, no extra phys.
+     *
+     * Sub-case 1b: Different page, so TLB load necessary and fTbCrossedPage is true.
+     *         Req: 1 extra range, probably 1 extra phys page entry.
+     *
+     * Sub-case 1c: Different page, so TLB load necessary and fTbCrossedPage is true,
+     *              but in addition we cross into the following page and require
+     *              another TLB load.
+     *         Req: 2 extra ranges, probably 2 extra phys page entries.
+     *
+     * Sub-case 1d: Same page, so no initial TLB load necessary, but we cross into
+     *              the following page and thus fTbCrossedPage is true.
+     *         Req: 2 extra ranges, probably 1 extra phys page entry.
+     *
+     * Note! We do not currently optimize branching to the next instruction (sorry
+     *       32-bit PIC code).  We could maybe do that in the branching code that sets (or not) fTbBranched.
+     */
+    if (pVCpu->iem.s.fTbBranched)
+    {
+AssertFailed(); /** @todo enable including branches in TBs and debug this code. */
+        if (   !pVCpu->iem.s.fTbCrossedPage       /* 1a */
+            || pVCpu->iem.s.offCurInstrStart >= 0 /* 1b */ )
+        {
+            /* 1a + 1b - instruction fully within the branched to page. */
+            Assert(pVCpu->iem.s.offCurInstrStart >= 0);
+            Assert(pVCpu->iem.s.offCurInstrStart + cbInstr <= GUEST_PAGE_SIZE);
+
+            /* Check that we've got a free range. */
+            idxRange += 1;
+            if (idxRange < RT_ELEMENTS(pTb->aRanges))
+            { /* likely */ }
+            else
+                return false;
+            pCall->idxRange    = idxRange;
+            pCall->auParams[1] = idxRange;
+            pCall->auParams[2] = 0;
+
+            /* Check that we've got a free page slot. */
+            AssertCompile(RT_ELEMENTS(pTb->aGCPhysPages) == 2);
+            RTGCPHYS const GCPhysNew = pVCpu->iem.s.GCPhysInstrBuf & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
+            if ((pTb->GCPhysPc & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK) == GCPhysNew)
+                pTb->aRanges[idxRange].idxPhysPage = 0;
+            else if (   pTb->aGCPhysPages[0] == NIL_RTGCPHYS
+                     || pTb->aGCPhysPages[0] == GCPhysNew)
+            {
+                pTb->aGCPhysPages[0] = GCPhysNew;
+                pTb->aRanges[idxRange].idxPhysPage = 1;
+            }
+            else if (   pTb->aGCPhysPages[1] == NIL_RTGCPHYS
+                     || pTb->aGCPhysPages[1] == GCPhysNew)
+            {
+                pTb->aGCPhysPages[1] = GCPhysNew;
+                pTb->aRanges[idxRange].idxPhysPage = 2;
+            }
+            else
+                return false;
+
+            /* Finish setting up the new range. */
+            pTb->aRanges[idxRange].offPhysPage = pVCpu->iem.s.offCurInstrStart;
+            pTb->aRanges[idxRange].offOpcodes  = offOpcode;
+            pTb->aRanges[idxRange].cbOpcodes   = cbInstr;
+            pTb->cRanges++;
+
+            /* Determin which function we need to load & check.
+               Note! For jumps to a new page, we'll set both fTbBranched and
+                     fTbCrossedPage to avoid unnecessary TLB work for intra
+                     page branching */
+            if (pVCpu->iem.s.fTbCrossedPage)
+                pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
+                                   ? kIemThreadedFunc_CheckCsLimAndOpcodesLoadingTlb
+                                   : kIemThreadedFunc_CheckOpcodesLoadingTlb;
+            else
+                pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
+                                   ? kIemThreadedFunc_CheckCsLimAndOpcodes
+                                   : kIemThreadedFunc_CheckOpcodes;
+        }
+        else
+        {
+            /* 1c + 1d - instruction crosses pages. */
+            Assert(pVCpu->iem.s.offCurInstrStart < 0);
+            Assert(pVCpu->iem.s.offCurInstrStart + cbInstr > 0);
+
+            /* Lazy bird: Check that this isn't case 1c, since we've already
+                          load the first physical address.  End the TB and
+                          make it a case 2b instead.
+
+                          Hmm. Too much bother to detect, so just do the same
+                          with case 1d as well. */
+#if 0       /** @todo get back to this later when we've got the actual branch code in
+             *        place. */
+            uint8_t const cbStartPage = (uint8_t)-pVCpu->iem.s.offCurInstrStart;
+
+            /* Check that we've got two free ranges. */
+            if (idxRange + 2 < RT_ELEMENTS(pTb->aRanges))
+            { /* likely */ }
+            else
+                return false;
+            idxRange += 1;
+            pCall->idxRange    = idxRange;
+            pCall->auParams[1] = idxRange;
+            pCall->auParams[2] = 0;
+
+            /* ... */
+
+#else
+            return false;
+#endif
+        }
+    }
+
+    /*
+     * Case 2: Page crossing.
+     *
+     * Sub-case 2a: The instruction starts on the first byte in the next page.
+     *
+     * Sub-case 2b: The instruction has opcode bytes in both the current and
+     *              following page.
+     *
+     * Both cases requires a new range table entry and probably a new physical
+     * page entry.  The difference is in which functions to emit and whether to
+     * add bytes to the current range.
+     */
+    else if (pVCpu->iem.s.fTbCrossedPage)
+    {
+        /* Check that we've got a free range. */
+        idxRange += 1;
+        if (idxRange < RT_ELEMENTS(pTb->aRanges))
+        { /* likely */ }
+        else
+            return false;
+
+        /* Check that we've got a free page slot. */
+        AssertCompile(RT_ELEMENTS(pTb->aGCPhysPages) == 2);
+        RTGCPHYS const GCPhysNew = pVCpu->iem.s.GCPhysInstrBuf & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
+        if ((pTb->GCPhysPc & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK) == GCPhysNew)
+            pTb->aRanges[idxRange].idxPhysPage = 0;
+        else if (   pTb->aGCPhysPages[0] == NIL_RTGCPHYS
+                 || pTb->aGCPhysPages[0] == GCPhysNew)
+        {
+            pTb->aGCPhysPages[0] = GCPhysNew;
+            pTb->aRanges[idxRange].idxPhysPage = 1;
+        }
+        else if (   pTb->aGCPhysPages[1] == NIL_RTGCPHYS
+                 || pTb->aGCPhysPages[1] == GCPhysNew)
+        {
+            pTb->aGCPhysPages[1] = GCPhysNew;
+            pTb->aRanges[idxRange].idxPhysPage = 2;
+        }
+        else
+            return false;
+
+        if (((pTb->aRanges[idxRange - 1].offPhysPage + pTb->aRanges[idxRange - 1].cbOpcodes) & GUEST_PAGE_OFFSET_MASK) == 0)
+        {
+            Assert(pVCpu->iem.s.offCurInstrStart == 0);
+            pCall->idxRange    = idxRange;
+            pCall->auParams[1] = idxRange;
+            pCall->auParams[2] = 0;
+
+            /* Finish setting up the new range. */
+            pTb->aRanges[idxRange].offPhysPage = pVCpu->iem.s.offCurInstrStart;
+            pTb->aRanges[idxRange].offOpcodes  = offOpcode;
+            pTb->aRanges[idxRange].cbOpcodes   = cbInstr;
+            pTb->cRanges++;
+
+            /* Determin which function we need to load & check. */
+            pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
+                               ? kIemThreadedFunc_CheckCsLimAndOpcodesLoadingTlb
+                               : kIemThreadedFunc_CheckOpcodesLoadingTlb;
+        }
+        else
+        {
+            Assert(pVCpu->iem.s.offCurInstrStart < 0);
+            Assert(pVCpu->iem.s.offCurInstrStart + cbInstr > 0);
+            uint8_t const cbStartPage = (uint8_t)-pVCpu->iem.s.offCurInstrStart;
+            pCall->auParams[0] |= (uint64_t)cbStartPage << 32;
+
+            /* We've good. Split the instruction over the old and new range table entries. */
+            pTb->aRanges[idxRange - 1].cbOpcodes += cbStartPage;
+
+            pTb->aRanges[idxRange].offPhysPage    = 0;
+            pTb->aRanges[idxRange].offOpcodes     = offOpcode + cbStartPage;
+            pTb->aRanges[idxRange].cbOpcodes      = cbInstr   - cbStartPage;
+            pTb->cRanges++;
+
+            /* Determin which function we need to load & check. */
+            if (pVCpu->iem.s.fTbCheckOpcodes)
+                pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
+                                   ? kIemThreadedFunc_CheckCsLimAndOpcodesAcrossPageLoadingTlb
+                                   : kIemThreadedFunc_CheckOpcodesAcrossPageLoadingTlb;
+            else
+                pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
+                                   ? kIemThreadedFunc_CheckCsLimAndOpcodesOnNextPageLoadingTlb
+                                   : kIemThreadedFunc_CheckOpcodesOnNextPageLoadingTlb;
+        }
+    }
+
+    /*
+     * Regular case: No new range required.
+     */
+    else
+    {
+        Assert(pVCpu->iem.s.fTbCheckOpcodes || (pTb->fFlags & IEMTB_F_CS_LIM_CHECKS));
+        if (pVCpu->iem.s.fTbCheckOpcodes)
+            pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
+                               ? kIemThreadedFunc_CheckCsLimAndOpcodes
+                               : kIemThreadedFunc_CheckOpcodes;
+        else
+            pCall->enmFunction = kIemThreadedFunc_CheckCsLim;
+
+        iemThreadedCopyOpcodeBytesInline(pVCpu, &pTb->pabOpcodes[offOpcode], cbInstr);
+        pTb->cbOpcodes                    = offOpcode + cbInstr;
+        pTb->aRanges[idxRange].cbOpcodes += cbInstr;
+        Assert(pTb->cbOpcodes <= pTb->cbOpcodesAllocated);
+    }
+
+    /*
+     * Commit the call.
+     */
+    pTb->Thrd.cCalls++;
+
+    /*
+     * Clear state.
+     */
+    pVCpu->iem.s.fTbBranched     = false;
+    pVCpu->iem.s.fTbCrossedPage  = false;
+    pVCpu->iem.s.fTbCheckOpcodes = false;
+
+    /*
+     * Copy opcode bytes.
+     */
+    iemThreadedCopyOpcodeBytesInline(pVCpu, &pTb->pabOpcodes[offOpcode], cbInstr);
+    pTb->cbOpcodes = offOpcode + cbInstr;
+    Assert(pTb->cbOpcodes <= pTb->cbOpcodesAllocated);
+
+    return true;
+}
+
+
+
 /**
  * Compiles a new TB and executes it.
  *
@@ -1044,38 +1304,35 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
             Assert(pTb->Thrd.cCalls > cCallsPrev);
             Assert(cCallsPrev - pTb->Thrd.cCalls < 5);
 
-            memcpy(&pTb->pabOpcodes[pTb->cbOpcodes], pVCpu->iem.s.abOpcode, pVCpu->iem.s.offOpcode);
-            pTb->cbOpcodes += pVCpu->iem.s.offOpcode;
-            Assert(pTb->cbOpcodes <= pTb->cbOpcodesAllocated);
             pVCpu->iem.s.cInstructions++;
-        }
-        else if (pTb->Thrd.cCalls > 0)
-        {
-            Log8(("%04x:%08RX64: End TB - %u calls, rc=%d\n", uCsLog, uRipLog, pTb->Thrd.cCalls, VBOXSTRICTRC_VAL(rcStrict)));
-
-            if (cCallsPrev != pTb->Thrd.cCalls)
-            {
-                memcpy(&pTb->pabOpcodes[pTb->cbOpcodes], pVCpu->iem.s.abOpcode, pVCpu->iem.s.offOpcode);
-                pTb->cbOpcodes += pVCpu->iem.s.offOpcode;
-                Assert(pTb->cbOpcodes <= pTb->cbOpcodesAllocated);
-                pVCpu->iem.s.cInstructions++;
-            }
-            break;
         }
         else
         {
-            Log8(("%04x:%08RX64: End TB - 0 calls, rc=%d\n", uCsLog, uRipLog, VBOXSTRICTRC_VAL(rcStrict)));
+            Log8(("%04x:%08RX64: End TB - %u instr, %u calls, rc=%d\n",
+                  uCsLog, uRipLog, pTb->cInstructions, pTb->Thrd.cCalls, VBOXSTRICTRC_VAL(rcStrict)));
+            if (rcStrict == VINF_IEM_RECOMPILE_END_TB)
+                rcStrict = VINF_SUCCESS;
+
+            if (pTb->Thrd.cCalls > 0)
+            {
+                if (cCallsPrev != pTb->Thrd.cCalls)
+                    pVCpu->iem.s.cInstructions++;
+                break;
+            }
+
             pVCpu->iem.s.pCurTbR3 = NULL;
             iemThreadedTbFree(pVM, pVCpu, pTb);
             return iemExecStatusCodeFiddling(pVCpu, rcStrict);
         }
 
         /* Still space in the TB? */
-        if (pTb->Thrd.cCalls + 5 < pTb->Thrd.cAllocated)
+        if (   pTb->Thrd.cCalls + 5 < pTb->Thrd.cAllocated
+            && pTb->cbOpcodes + 16 <= pTb->cbOpcodesAllocated)
             iemThreadedCompileInitDecoder(pVCpu, true /*fReInit*/);
         else
         {
-            Log8(("%04x:%08RX64: End TB - %u calls - full\n", uCsLog, uRipLog, pTb->Thrd.cCalls));
+            Log8(("%04x:%08RX64: End TB - %u instr, %u calls, %u opcode bytes - full\n",
+                  uCsLog, uRipLog, pTb->cInstructions, pTb->Thrd.cCalls, pTb->cbOpcodes));
             break;
         }
         iemThreadedCompileReInitOpcodeFetching(pVCpu);
@@ -1114,7 +1371,7 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb)
                || cbLeadOpcodes == (GUEST_PAGE_SIZE - (pTb->GCPhysPc & GUEST_PAGE_OFFSET_MASK)));
     else
     {
-        Log11(("TB obsolete: %p GCPhys=%RGp\n", pTb, pTb->GCPhysPc));
+        Log7(("TB obsolete: %p GCPhys=%RGp\n", pTb, pTb->GCPhysPc));
         iemThreadedTbFree(pVCpu->pVMR3, pVCpu, pTb);
         return VINF_SUCCESS;
     }
