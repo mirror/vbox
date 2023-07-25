@@ -362,6 +362,14 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         Installs the Windows guest additions using the test execution service.
         Since this involves rebooting the guest, we will have to create a new TXS session.
         """
+        if oTestVm.sKind not in ('WindowsNT4', 'Windows2000',):
+            fGuestRequiresReboot = False;
+            sRegExe = oTestVm.pathJoin(self.getGuestSystemDir(oTestVm), 'reg.exe');
+            fGuestRequiresReboot = self.txsRunTest(oTxsSession, 'Check if reboot is required', 30 * 1000,
+                                                    sRegExe,
+                                                    (sRegExe, 'query',
+                                                    '"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\WindowsUpdate\\Auto Update\\RebootRequired"'));
+            reporter.log('Status of RebootRequired query is %s' % fGuestRequiresReboot);
 
         # Set system-wide env vars to enable release logging on some applications.
         self.setGuestEnvVar(oSession, oTxsSession, oTestVm, 'VBOXTRAY_RELEASE_LOG', 'all.e.l.l2.l3.f');
