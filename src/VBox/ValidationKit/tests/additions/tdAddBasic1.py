@@ -368,7 +368,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             fGuestRequiresReboot = self.txsRunTest(oTxsSession, 'Check if reboot is required', 30 * 1000,
                                                     sRegExe,
                                                     (sRegExe, 'query',
-                                                    '"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\WindowsUpdate\\Auto Update\\RebootRequired"'));
+                                                    '"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\WindowsUpdate\\Auto Update\\RebootRequired"'));   # pylint: disable=line-too-long
             reporter.log('Status of RebootRequired query is %s' % fGuestRequiresReboot);
 
         # Set system-wide env vars to enable release logging on some applications.
