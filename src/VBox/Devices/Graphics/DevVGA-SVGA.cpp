@@ -5465,7 +5465,7 @@ static DECLCALLBACK(int) vmsvgaR3CmdBufLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThre
         fBadOrDisabledFifo = ASMAtomicReadBool(&pThis->svga.fBadGuest);
         cMsSleep = cMsMinSleep;
 
-        Log(("vmsvgaR3CmdBufLoop: enabled=%d configured=%d busy=%d\n", pThis->svga.fEnabled, pThis->svga.fConfigured));
+        Log(("vmsvgaR3CmdBufLoop: enabled=%d configured=%d\n", pThis->svga.fEnabled, pThis->svga.fConfigured));
 
         /*
          * Handle external commands (currently only reset).
