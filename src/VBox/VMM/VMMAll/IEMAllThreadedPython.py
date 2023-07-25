@@ -198,7 +198,9 @@ class ThreadedFunctionVariation(object):
     ## IEM_CIMPL_F_XXX flags that we know.
     kdCImplFlags = {
         'IEM_CIMPL_F_MODE':             True,
-        'IEM_CIMPL_F_BRANCH':           False,
+        'IEM_CIMPL_F_BRANCH_UNCOND':    False,
+        'IEM_CIMPL_F_BRANCH_COND':      False,
+        'IEM_CIMPL_F_BRANCH_INDIR':     True,
         'IEM_CIMPL_F_RFLAGS':           False,
         'IEM_CIMPL_F_STATUS_FLAGS':     False,
         'IEM_CIMPL_F_VMEXIT':           False,
@@ -510,6 +512,7 @@ class ThreadedFunctionVariation(object):
         Currently this is simply looking for any IEM_IMPL_C_F_XXX flags and
         collecting these in self.dsCImplFlags.
         """
+        fSeenConditional = False;
         for oStmt in aoStmts:
             # Pick up hints from CIMPL calls and deferals.
             if oStmt.sName.startswith('IEM_MC_CALL_CIMPL_') or oStmt.sName.startswith('IEM_MC_DEFER_TO_CIMPL_'):
@@ -522,10 +525,20 @@ class ThreadedFunctionVariation(object):
                         else:
                             self.raiseProblem('Unknown CIMPL flag value: %s' % (sFlag,));
 
+            # Check for conditional so we can categorize any branches correctly.
+            if (   oStmt.sName.startswith('IEM_MC_IF_')
+                or oStmt.sName == 'IEM_MC_ENDIF'):
+                fSeenConditional = True;
+
             # Set IEM_IMPL_C_F_BRANCH if we see any branching MCs.
-            if (   oStmt.sName.startswith('IEM_MC_SET_RIP')
-                or oStmt.sName.startswith('IEM_MC_REL_JMP')):
-                self.dsCImplFlags['IEM_CIMPL_F_BRANCH'] = True;
+            elif oStmt.sName.startswith('IEM_MC_SET_RIP'):
+                assert not fSeenConditional;
+                self.dsCImplFlags['IEM_CIMPL_F_BRANCH_INDIR'] = True;
+            elif oStmt.sName.startswith('IEM_MC_REL_JMP'):
+                if fSeenConditional:
+                    self.dsCImplFlags['IEM_CIMPL_F_BRANCH_COND'] = True;
+                else:
+                    self.dsCImplFlags['IEM_CIMPL_F_BRANCH_UNCOND'] = True;
 
             # Process branches of conditionals recursively.
             if isinstance(oStmt, iai.McStmtCond):
@@ -883,6 +896,10 @@ class ThreadedFunctionVariation(object):
             sCode += ', ' + ' | '.join(asFrags);
         sCode += ');';
 
+        sCImplFlags = ' | '.join(self.dsCImplFlags.keys());
+        if not sCImplFlags:
+            sCImplFlags = '0'
+
         aoStmts = [
             iai.McCppGeneric('IEM_MC2_BEGIN_EMIT_CALLS();', cchIndent = cchIndent), # Scope and a hook for various stuff.
             iai.McCppGeneric(sCode, cchIndent = cchIndent),
@@ -894,7 +911,8 @@ class ThreadedFunctionVariation(object):
             aoStmts.append(iai.McCppGeneric('IEM_MC2_EMIT_CALL_1(kIemThreadedFunc_CheckMode, pVCpu->iem.s.fExec);',
                                             cchIndent = cchIndent));
 
-        aoStmts.append(iai.McCppGeneric('IEM_MC2_END_EMIT_CALLS();', cchIndent = cchIndent)); # For closing the scope.
+        aoStmts.append(iai.McCppGeneric('IEM_MC2_END_EMIT_CALLS(' + sCImplFlags + ');',
+                                        cchIndent = cchIndent)); # For closing the scope.
         return aoStmts;
 
 
@@ -1083,9 +1101,11 @@ class ThreadedFunction(object):
             dsCImplFlags = {};
             for oVar in self.aoVariations:
                 dsCImplFlags.update(oVar.dsCImplFlags);
-            if (   'IEM_CIMPL_F_BRANCH' in dsCImplFlags
-                or 'IEM_CIMPL_F_MODE'   in dsCImplFlags
-                or 'IEM_CIMPL_F_REP'    in dsCImplFlags):
+            if (   'IEM_CIMPL_F_BRANCH_UNCOND' in dsCImplFlags
+                or 'IEM_CIMPL_F_BRANCH_COND'   in dsCImplFlags
+                or 'IEM_CIMPL_F_BRANCH_INDIR'  in dsCImplFlags
+                or 'IEM_CIMPL_F_MODE'          in dsCImplFlags
+                or 'IEM_CIMPL_F_REP'           in dsCImplFlags):
                 aoDecoderStmts.append(iai.McCppGeneric('pVCpu->iem.s.fEndTb = true;'));
 
         for oStmt in aoStmts:

@@ -1229,19 +1229,48 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 
 /** @name IEM_CIMPL_F_XXX - State change clues for CIMPL calls.
  *
- * These clues are mainly for the recompiler, so that it can
+ * These clues are mainly for the recompiler, so that it can emit correct code.
+ *
+ * They are processed by the python script and which also automatically
+ * calculates flags for MC blocks based on the statements, extending the use of
+ * these flags to describe MC block behavior to the recompiler core.  The python
+ * script pass the flags to the IEM_MC2_END_EMIT_CALLS macro, but mainly for
+ * error checking purposes.  The script emits the necessary fEndTb = true and
+ * similar statements as this reduces compile time a tiny bit.
  *
  * @{ */
-#define IEM_CIMPL_F_MODE            RT_BIT_32(0)    /**< Execution flags may change (IEMCPU::fExec). */
-#define IEM_CIMPL_F_BRANCH          RT_BIT_32(1)    /**< Branches (changes RIP, maybe CS). */
-#define IEM_CIMPL_F_RFLAGS          RT_BIT_32(2)    /**< May change significant portions of RFLAGS. */
-#define IEM_CIMPL_F_STATUS_FLAGS    RT_BIT_32(3)    /**< May change the status bits (X86_EFL_STATUS_BITS) in RFLAGS . */
-#define IEM_CIMPL_F_VMEXIT          RT_BIT_32(4)    /**< May trigger a VM exit. */
-#define IEM_CIMPL_F_FPU             RT_BIT_32(5)    /**< May modify FPU state. */
-#define IEM_CIMPL_F_REP             RT_BIT_32(6)    /**< REP prefixed instruction which may yield before updating PC. */
-#define IEM_CIMPL_F_END_TB          RT_BIT_32(7)
+/** Execution flags may change (IEMCPU::fExec). */
+#define IEM_CIMPL_F_MODE            RT_BIT_32(0)
+/** Unconditional direct branches (changes RIP, maybe CS). */
+#define IEM_CIMPL_F_BRANCH_UNCOND   RT_BIT_32(1)
+/** Conditional direct branch (may change RIP, maybe CS). */
+#define IEM_CIMPL_F_BRANCH_COND     RT_BIT_32(2)
+/** Indirect unconditional branch (changes RIP, maybe CS).
+ *
+ * This is used for all system control transfers (SYSCALL, SYSRET, INT, ++) as
+ * well as for return instructions (RET, IRET, RETF).
+ *
+ * Since the INTO instruction is currently the only indirect branch instruction
+ * that is conditional (depends on the overflow flag), that instruction will
+ * have both IEM_CIMPL_F_BRANCH_INDIR and IEM_CIMPL_F_BRANCH_COND set.  All
+ * other branch instructions will have exactly one of the branch flags set. */
+#define IEM_CIMPL_F_BRANCH_INDIR    RT_BIT_32(3)
+/** May change significant portions of RFLAGS. */
+#define IEM_CIMPL_F_RFLAGS          RT_BIT_32(4)
+/** May change the status bits (X86_EFL_STATUS_BITS) in RFLAGS . */
+#define IEM_CIMPL_F_STATUS_FLAGS    RT_BIT_32(5)
+/** May trigger a VM exit. */
+#define IEM_CIMPL_F_VMEXIT          RT_BIT_32(6)
+/** May modify FPU state. */
+#define IEM_CIMPL_F_FPU             RT_BIT_32(7)
+/** REP prefixed instruction which may yield before updating PC. */
+#define IEM_CIMPL_F_REP             RT_BIT_32(8)
+/** Force end of TB after the instruction.    */
+#define IEM_CIMPL_F_END_TB          RT_BIT_32(9)
 /** Convenience: Raise exception (technically unnecessary, since it shouldn't return VINF_SUCCESS). */
-#define IEM_CIMPL_F_XCPT            (IEM_CIMPL_F_MODE | IEM_CIMPL_F_BRANCH | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT)
+#define IEM_CIMPL_F_XCPT            (IEM_CIMPL_F_MODE | IEM_CIMPL_F_BRANCH_UNCOND | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT)
+/** Convenience: Testing any kind of branch. */
+#define IEM_CIMPL_F_BRANCH_ANY      (IEM_CIMPL_F_BRANCH_UNCOND | IEM_CIMPL_F_BRANCH_COND | IEM_CIMPL_F_BRANCH_INDIR)
 /** @} */
 
 /** @def IEM_MC_CALL_CIMPL_HLP_RET
@@ -1258,7 +1287,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
         VBOXSTRICTRC const rcStrictHlp = a_CallExpr; \
         if (rcStrictHlp == VINF_SUCCESS) \
         { \
-            AssertMsg(   ((a_fFlags) & IEM_CIMPL_F_BRANCH) \
+            AssertMsg(   ((a_fFlags) & IEM_CIMPL_F_BRANCH_ANY) \
                       || (   uRipBefore + cbInstr == pVCpu->cpum.GstCtx.rip \
                           && uCsBefore            == pVCpu->cpum.GstCtx.cs.Sel) \
                       || (   ((a_fFlags) & IEM_CIMPL_F_REP) \
