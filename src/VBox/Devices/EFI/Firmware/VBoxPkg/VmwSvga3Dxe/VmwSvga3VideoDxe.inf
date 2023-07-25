@@ -31,6 +31,7 @@
   ComponentName.c
   Driver.c
   Gop.c
+  Hardware.c
   VmwSvga3.h
 
 [Packages]

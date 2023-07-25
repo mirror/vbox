@@ -461,7 +461,11 @@
 
 !ifdef $(VBOX)
   OvmfPkg/SataControllerDxe/SataControllerDxe.inf
-  VBoxPkg/VmwSvga3Dxe/VmwSvga3VideoDxe.inf
+  VBoxPkg/VmwSvga3Dxe/VmwSvga3VideoDxe.inf {
+    <LibraryClasses>
+      # Optimized SetMem doesn't work on VGA framebuffer.
+      BaseMemoryLib|MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf
+  }
 !endif
 
   #

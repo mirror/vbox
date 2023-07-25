@@ -21,6 +21,7 @@ EFI_DRIVER_BINDING_PROTOCOL  gVmwSvga3VideoDriverBinding = {
   NULL
 };
 
+
 /**
   Check if this device is supported.
 
@@ -203,14 +204,21 @@ VmwSvga3VideoControllerDriverStart (
   Status = Private->PciIo->Attributes (
                              Private->PciIo,
                              EfiPciIoAttributeOperationEnable,
-                             EFI_PCI_DEVICE_ENABLE | EFI_PCI_IO_ATTRIBUTE_VGA_MEMORY,
+                             (EFI_PCI_DEVICE_ENABLE |
+                              EFI_PCI_IO_ATTRIBUTE_BUS_MASTER),
                              NULL
                              );
   if (EFI_ERROR (Status)) {
     goto ClosePciIo;
   }
 
-  /** @todo Set up device */
+  //
+  // Initialize the device.
+  //
+  Status = VmwSvga3DeviceInit(Private);
+  if (EFI_ERROR (Status)) {
+    goto RestoreAttributes;
+  }
 
   //
   // Get ParentDevicePath
@@ -253,15 +261,6 @@ VmwSvga3VideoControllerDriverStart (
                   );
   if (EFI_ERROR (Status)) {
     goto FreeGopDevicePath;
-  }
-
-  //
-  // Construct video mode buffer
-  //
-  /** @todo */
-
-  if (EFI_ERROR (Status)) {
-    goto UninstallGopDevicePath;
   }
 
   //
@@ -418,6 +417,14 @@ VmwSvga3VideoControllerDriverStop (
                   NULL
                   );
 
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  //
+  // Teardown the device.
+  //
+  Status = VmwSvga3DeviceUninit (Private);
   if (EFI_ERROR (Status)) {
     return Status;
   }

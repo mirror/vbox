@@ -68,6 +68,25 @@ VmwSvga3VideoCompleteModeInfo (
 
 STATIC
 EFI_STATUS
+VmwSvga3VideoUpdate (
+  IN  VMWSVGA3_VIDEO_PRIVATE_DATA        *Private,
+  IN  UINT32                             Width,
+  IN  UINT32                             Height
+  )
+{
+    VMWSVGA3_CTX_CMD_UPDATE *CmdUpdate   = (VMWSVGA3_CTX_CMD_UPDATE *)Private->CmdBuf;
+
+    CmdUpdate->CmdId     = VMWSVGA3_CMD_UPDATE;
+    CmdUpdate->x         = 0;
+    CmdUpdate->y         = 0;
+    CmdUpdate->Width     = Width;
+    CmdUpdate->Height    = Height;
+
+    return VmwSvga3CmdBufProcess(Private, sizeof(VMWSVGA3_CTX_CMD_UPDATE), VMWSVGA3_CB_CTX_0);
+}
+
+STATIC
+EFI_STATUS
 VmwSvga3VideoCompleteModeData (
   IN  VMWSVGA3_VIDEO_PRIVATE_DATA        *Private,
   OUT EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE  *Mode
@@ -188,8 +207,6 @@ Routine Description:
     return EFI_UNSUPPORTED;
   }
 
-  /** @todo */
-
   This->Mode->Mode                       = ModeNumber;
   This->Mode->Info->HorizontalResolution = mVmwSvga3ModeInfo[ModeNumber].HorizontalResolution;
   This->Mode->Info->VerticalResolution   = mVmwSvga3ModeInfo[ModeNumber].VerticalResolution;
@@ -197,11 +214,22 @@ Routine Description:
 
   VmwSvga3VideoCompleteModeData (Private, This->Mode);
 
+  VmwSvga3WriteReg(Private, VMWSVGA3_REG_ENABLE,      0);
+  VmwSvga3WriteReg(Private, VMWSVGA3_REG_CONFIG_DONE, 0);
+
+  VmwSvga3WriteReg(Private, VMWSVGA3_REG_WIDTH,          mVmwSvga3ModeInfo[ModeNumber].HorizontalResolution);
+  VmwSvga3WriteReg(Private, VMWSVGA3_REG_HEIGHT,         mVmwSvga3ModeInfo[ModeNumber].VerticalResolution);
+  VmwSvga3WriteReg(Private, VMWSVGA3_REG_BITS_PER_PIXEL, 32);
+
+  VmwSvga3WriteReg(Private, VMWSVGA3_REG_ENABLE,      1);
+  VmwSvga3WriteReg(Private, VMWSVGA3_REG_CONFIG_DONE, 1);
+
   //
   // Re-initialize the frame buffer configure when mode changes.
   //
+  DEBUG ((DEBUG_INFO, "VmwSvga3: Configuring framebuffer\n"));
   Status = FrameBufferBltConfigure (
-             (VOID *)(UINTN)This->Mode->FrameBufferBase,
+             (VOID *)This->Mode->FrameBufferBase,
              This->Mode->Info,
              Private->FrameBufferBltConfigure,
              &Private->FrameBufferBltConfigureSize
@@ -222,7 +250,7 @@ Routine Description:
     // Create the configuration for FrameBufferBltLib
     //
     Status = FrameBufferBltConfigure (
-               (VOID *)(UINTN)This->Mode->FrameBufferBase,
+               (VOID *)This->Mode->FrameBufferBase,
                This->Mode->Info,
                Private->FrameBufferBltConfigure,
                &Private->FrameBufferBltConfigureSize
@@ -249,7 +277,11 @@ Routine Description:
              );
   ASSERT_RETURN_ERROR (Status);
 
-  return EFI_SUCCESS;
+  return VmwSvga3VideoUpdate (
+                              Private,
+                              This->Mode->Info->HorizontalResolution,
+                              This->Mode->Info->VerticalResolution
+                             );
 }
 
 EFI_STATUS
@@ -332,7 +364,12 @@ Returns:
       break;
   }
 
-  /** @todo Update screen. */
+  if (!EFI_ERROR(Status))
+    Status = VmwSvga3VideoUpdate(
+                                 Private,
+                                 This->Mode->Info->HorizontalResolution,
+                                 This->Mode->Info->VerticalResolution
+                                );
 
   gBS->RestoreTPL (OriginalTPL);
 
@@ -378,9 +415,6 @@ VmwSvga3VideoGraphicsOutputConstructor (
   Private->FrameBufferBltConfigure      = NULL;
   Private->FrameBufferBltConfigureSize  = 0;
 
-  //
-  // Initialize the hardware
-  //
   Status = GraphicsOutput->SetMode (GraphicsOutput, 0);
   if (EFI_ERROR (Status)) {
     goto FreeInfo;

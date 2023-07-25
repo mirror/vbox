@@ -41,6 +41,70 @@
 #define PCI_DEVICE_ID_VMWARE_SVGA3      0x0406
 
 //
+// Used commands
+//
+#define VMWSVGA3_CMD_UPDATE             1
+
+//
+// Command buffer context definitions
+//
+#define VMWSVGA3_CB_CTX_DEVICE          0x3f
+#define VMWSVGA3_CB_CTX_0               0
+
+//
+// Command buffer status definitions
+//
+#define VMWSVGA3_CB_STATUS_NONE         0
+#define VMWSVGA3_CB_STATUS_COMPLETED    1
+
+//
+// Command buffer flags
+//
+#define VMWSVGA3_CB_FLAG_NONE           0
+#define VMWSVGA3_CB_FLAG_NO_IRQ         (1 << 0)
+
+//
+// Device context commands
+//
+#define VMWSVGA3_CMD_DC_START_STOP_CTX  1
+
+//
+// Command buffer header
+//
+typedef struct
+{
+   volatile UINT32  Status;       // Modified by device
+   volatile UINT32  ErrorOffset;  // Modified by device
+   UINT64           Id;
+   UINT32           Flags;
+   UINT32           Length;
+   UINT64           PhysicalAddress;
+   UINT32           Offset;
+   UINT32           DxContext;    // Valid if DX_CONTEXT flag set, must be zero otherwise
+   UINT32           Reserved[6];
+} VMWSVGA3_CB_HDR;
+
+//
+// Update command definition
+//
+typedef struct {
+   UINT32           CmdId;
+   UINT32           x;
+   UINT32           y;
+   UINT32           Width;
+   UINT32           Height;
+} VMWSVGA3_CTX_CMD_UPDATE;
+
+//
+// Start/Stop context command definition
+//
+typedef struct {
+   UINT32           CmdId;
+   UINT32           Enable;
+   UINT32           Context;
+} VMWSVGA3_DC_CMD_START_STOP_CTX;
+
+//
 // VMware SVGA 3 Video Private Data Structure
 //
 #define VMWSVGA3_VIDEO_PRIVATE_DATA_SIGNATURE  SIGNATURE_32 ('V', 'M', 'W', '3')
@@ -58,19 +122,14 @@ typedef struct {
   UINTN                           FrameBufferBltConfigureSize;
   UINT8                           FrameBufferVramBarIndex;
 
-} VMWSVGA3_VIDEO_PRIVATE_DATA;
+  VMWSVGA3_CB_HDR                 *CmdBufHdr;
+  VOID                            *CmdBuf;
 
-///
-/// Card-specific Video Mode structures
-///
-typedef struct {
-  UINT32    Width;
-  UINT32    Height;
-  UINT32    ColorDepth;
-  UINT8     *CrtcSettings;
-  UINT16    *SeqSettings;
-  UINT8     MiscSetting;
-} QEMU_VIDEO_CIRRUS_MODES;
+  EFI_PHYSICAL_ADDRESS            PhysicalAddressCmdBufHdr;
+  EFI_PHYSICAL_ADDRESS            PhysicalAddressCmdBuf;
+
+  VOID                            *CmdBufMapping;
+} VMWSVGA3_VIDEO_PRIVATE_DATA;
 
 #define VMWSVGA3_VIDEO_PRIVATE_DATA_FROM_GRAPHICS_OUTPUT_THIS(a) \
   CR(a, VMWSVGA3_VIDEO_PRIVATE_DATA, GraphicsOutput, VMWSVGA3_VIDEO_PRIVATE_DATA_SIGNATURE)
@@ -80,15 +139,31 @@ typedef struct {
 //
 extern UINT8                         AttributeController[];
 extern UINT8                         GraphicsController[];
-extern QEMU_VIDEO_CIRRUS_MODES       VmwSvga3VideoModes[];
 extern EFI_DRIVER_BINDING_PROTOCOL   gVmwSvga3VideoDriverBinding;
 extern EFI_COMPONENT_NAME_PROTOCOL   gVmwSvga3VideoComponentName;
 extern EFI_COMPONENT_NAME2_PROTOCOL  gVmwSvga3VideoComponentName2;
 
 //
+// PCI BARs defined by SVGA3
+//
+#define VMWSVGA3_MMIO_BAR            0
+#define VMWSVGA3_VRAM_BAR            2
+
+//
 // MMIO Registers defined by SVGA3
 //
-/** @todo */
+#define VMWSVGA3_REG_ID              0
+# define VMWSVGA3_REG_ID_SVGA3       0x90000003
+#define VMWSVGA3_REG_ENABLE          4
+#define VMWSVGA3_REG_WIDTH           8
+#define VMWSVGA3_REG_HEIGHT          12
+#define VMWSVGA3_REG_DEPTH           24
+#define VMWSVGA3_REG_BITS_PER_PIXEL  28
+#define VMWSVGA3_REG_CONFIG_DONE     80
+#define VMWSVGA3_REG_IRQMASK         132
+#define VMWSVGA3_REG_COMMAND_LOW     192
+#define VMWSVGA3_REG_COMMAND_HIGH    196
+#define VMWSVGA3_REG_IRQ_STATUS      328 
 
 //
 // Graphics Output Hardware abstraction internal worker functions
@@ -295,15 +370,39 @@ VmwSvga3VideoComponentNameGetControllerName (
 //
 // Local Function Prototypes
 //
-VOID
-VmwSvga3InitializeGraphicsMode (
-  VMWSVGA3_VIDEO_PRIVATE_DATA  *Private,
-  QEMU_VIDEO_CIRRUS_MODES  *ModeData
-  );
-
 EFI_STATUS
 VmwSvga3VideoModeSetup (
   VMWSVGA3_VIDEO_PRIVATE_DATA  *Private
+  );
+
+UINT32
+VmwSvga3ReadReg (
+  IN  VMWSVGA3_VIDEO_PRIVATE_DATA  *VmwSvga3,
+  IN  UINT32                       Offset
+  );
+
+VOID
+VmwSvga3WriteReg (
+  IN  VMWSVGA3_VIDEO_PRIVATE_DATA  *VmwSvga3,
+  IN UINT32                        Offset,
+  IN UINT32                        Data
+  );
+
+EFI_STATUS
+VmwSvga3DeviceInit (
+  IN  VMWSVGA3_VIDEO_PRIVATE_DATA  *This
+  );
+
+EFI_STATUS
+VmwSvga3DeviceUninit (
+  IN  VMWSVGA3_VIDEO_PRIVATE_DATA  *This
+  );
+
+EFI_STATUS
+VmwSvga3CmdBufProcess (
+  IN  VMWSVGA3_VIDEO_PRIVATE_DATA  *This,
+  IN  UINTN                        NumberOfBytes,
+  IN  UINT32                       Context
   );
 
 #endif
