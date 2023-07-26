@@ -35,6 +35,7 @@
 #include "ConsoleImpl.h"
 #include "ResourceStoreImpl.h"
 #include "Global.h"
+#include "VMMDev.h"
 
 // generated header
 #include "SchemaDefs.h"
@@ -63,6 +64,13 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/version.h>
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
+# include <VBox/HostServices/VBoxClipboardSvc.h>
+#endif
+#ifdef VBOX_WITH_DRAG_AND_DROP
+# include "GuestImpl.h"
+# include "GuestDnDPrivate.h"
+#endif
 
 #ifdef VBOX_WITH_EXTPACK
 # include "ExtPackManagerImpl.h"
@@ -94,7 +102,7 @@
 int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, AutoWriteLock *pAlock)
 {
     RT_NOREF(pVM /* when everything is disabled */);
-    VMMDev         *pVMMDev   = m_pVMMDev; Assert(pVMMDev); RT_NOREF(pVMMDev); /** @todo Comes later. */
+    VMMDev         *pVMMDev   = m_pVMMDev; Assert(pVMMDev);
     ComPtr<IMachine> pMachine = i_machine();
 
     HRESULT         hrc;
@@ -459,7 +467,7 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         InsertConfigInteger(pCfg,  "MmioSize",       4096);
         InsertConfigInteger(pCfg,  "MmioBase", 0x09020000);
         InsertConfigInteger(pCfg,  "DmaEnabled",        1);
-        InsertConfigInteger(pCfg,  "QemuRamfbSupport",  1);
+        InsertConfigInteger(pCfg,  "QemuRamfbSupport",  0);
         InsertConfigNode(pInst,    "LUN#0",           &pLunL0);
         InsertConfigString(pLunL0, "Driver",          "MainDisplay");
 
@@ -614,11 +622,129 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         vrc = RTFdtNodePropertyAddString(  hFdt, "compatible", "pci-host-ecam-generic");    VRC();
         vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
+        InsertConfigNode(pDevices, "vga", &pDev);
+        InsertConfigNode(pDev,     "0", &pInst);
+        InsertConfigInteger(pInst, "Trusted",           1);
+        InsertConfigInteger(pInst, "PCIBusNo",          0);
+        InsertConfigInteger(pInst, "PCIDeviceNo",       2);
+        InsertConfigInteger(pInst, "PCIFunctionNo",     0);
+        InsertConfigNode(pInst,    "Config", &pCfg);
+        InsertConfigInteger(pCfg,  "VRamSize",          32 * _1M);
+        InsertConfigInteger(pCfg,  "MonitorCount",         1);
+        i_attachStatusDriver(pInst, DeviceType_Graphics3D);
+        InsertConfigInteger(pCfg, "VMSVGAEnabled", true);
+        InsertConfigInteger(pCfg, "VMSVGAPciBarLayout", true);
+        InsertConfigInteger(pCfg, "VMSVGAPciId", true);
+        InsertConfigInteger(pCfg, "VMSVGA3dEnabled", false);
+        InsertConfigInteger(pCfg, "VmSvga3", true);
+        InsertConfigInteger(pCfg, "VmSvgaExposeLegacyVga", false);
+
+        /* Attach the display. */
+        InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+        InsertConfigString(pLunL0, "Driver",               "MainDisplay");
+        InsertConfigNode(pLunL0,   "Config", &pCfg);
+
+
+        InsertConfigNode(pDevices, "VMMDev",          &pDev);
+        InsertConfigNode(pDev,     "0",              &pInst);
+        InsertConfigInteger(pInst, "Trusted",             1);
+        InsertConfigInteger(pInst, "PCIBusNo",            0);
+        InsertConfigInteger(pInst, "PCIDeviceNo",         0);
+        InsertConfigInteger(pInst, "PCIFunctionNo",       0);
+        InsertConfigNode(pInst,    "Config",          &pCfg);
+        InsertConfigInteger(pCfg,  "MmioReq",             1);
+
+        /* the VMM device's Main driver */
+        InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+        InsertConfigString(pLunL0, "Driver",               "HGCM");
+        InsertConfigNode(pLunL0,   "Config", &pCfg);
+
+        /*
+         * Attach the status driver.
+         */
+        i_attachStatusDriver(pInst, DeviceType_SharedFolder);
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
+        /*
+         * Shared Clipboard.
+         */
+        {
+            ClipboardMode_T enmClipboardMode = ClipboardMode_Disabled;
+            hrc = pMachine->COMGETTER(ClipboardMode)(&enmClipboardMode); H();
+#  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+            BOOL fFileTransfersEnabled;
+            hrc = pMachine->COMGETTER(ClipboardFileTransfersEnabled)(&fFileTransfersEnabled); H();
+#  endif
+
+            /* Load the service */
+            vrc = pVMMDev->hgcmLoadService("VBoxSharedClipboard", "VBoxSharedClipboard");
+            if (RT_SUCCESS(vrc))
+            {
+                LogRel(("Shared Clipboard: Service loaded\n"));
+
+                /* Set initial clipboard mode. */
+                vrc = i_changeClipboardMode(enmClipboardMode);
+                AssertLogRelMsg(RT_SUCCESS(vrc), ("Shared Clipboard: Failed to set initial clipboard mode (%d): vrc=%Rrc\n",
+                                                 enmClipboardMode, vrc));
+
+                /* Setup the service. */
+                VBOXHGCMSVCPARM parm;
+                HGCMSvcSetU32(&parm, !i_useHostClipboard());
+                vrc = pVMMDev->hgcmHostCall("VBoxSharedClipboard", VBOX_SHCL_HOST_FN_SET_HEADLESS, 1, &parm);
+                AssertLogRelMsg(RT_SUCCESS(vrc), ("Shared Clipboard: Failed to set initial headless mode (%RTbool): vrc=%Rrc\n",
+                                                 !i_useHostClipboard(), vrc));
+
+#  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+                vrc = i_changeClipboardFileTransferMode(RT_BOOL(fFileTransfersEnabled));
+                AssertLogRelMsg(RT_SUCCESS(vrc), ("Shared Clipboard: Failed to set initial file transfers mode (%u): vrc=%Rrc\n",
+                                                 fFileTransfersEnabled, vrc));
+
+                /** @todo Register area callbacks? (See also deregistration todo in Console::i_powerDown.) */
+#  endif
+            }
+            else
+                LogRel(("Shared Clipboard: Not available, vrc=%Rrc\n", vrc));
+            vrc = VINF_SUCCESS;  /* None of the potential failures above are fatal. */
+        }
+#endif /* VBOX_WITH_SHARED_CLIPBOARD */
+
+#ifdef VBOX_WITH_DRAG_AND_DROP
+        /*
+         * Drag and Drop.
+         */
+        {
+            DnDMode_T enmMode = DnDMode_Disabled;
+            hrc = pMachine->COMGETTER(DnDMode)(&enmMode);                                   H();
+
+            /* Load the service */
+            vrc = pVMMDev->hgcmLoadService("VBoxDragAndDropSvc", "VBoxDragAndDropSvc");
+            if (RT_FAILURE(vrc))
+            {
+                LogRel(("Drag and drop service is not available, vrc=%Rrc\n", vrc));
+                /* That is not a fatal failure. */
+                vrc = VINF_SUCCESS;
+            }
+            else
+            {
+                vrc = HGCMHostRegisterServiceExtension(&m_hHgcmSvcExtDragAndDrop, "VBoxDragAndDropSvc",
+                                                       &GuestDnD::notifyDnDDispatcher,
+                                                       GuestDnDInst());
+                if (RT_FAILURE(vrc))
+                    Log(("Cannot register VBoxDragAndDropSvc extension, vrc=%Rrc\n", vrc));
+                else
+                {
+                    LogRel(("Drag and drop service loaded\n"));
+                    vrc = i_changeDnDMode(enmMode);
+                }
+            }
+        }
+#endif /* VBOX_WITH_DRAG_AND_DROP */
+
         InsertConfigNode(pDevices, "usb-xhci",      &pDev);
         InsertConfigNode(pDev,     "0",            &pInst);
         InsertConfigInteger(pInst, "Trusted",           1);
         InsertConfigInteger(pInst, "PCIBusNo",          0);
-        InsertConfigInteger(pInst, "PCIDeviceNo",       2);
+        InsertConfigInteger(pInst, "PCIDeviceNo",       1);
         InsertConfigInteger(pInst, "PCIFunctionNo",     0);
         InsertConfigNode(pInst,    "Config",        &pCfg);
         InsertConfigNode(pInst,    "LUN#0",       &pLunL0);
@@ -626,16 +752,33 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         InsertConfigNode(pInst,    "LUN#1",       &pLunL0);
         InsertConfigString(pLunL0, "Driver","VUSBRootHub");
 
+#if 0
         InsertConfigNode(pDevices, "e1000",         &pDev);
         InsertConfigNode(pDev,     "0",            &pInst);
         InsertConfigInteger(pInst, "Trusted",           1);
         InsertConfigInteger(pInst, "PCIBusNo",          0);
-        InsertConfigInteger(pInst, "PCIDeviceNo",       1);
+        InsertConfigInteger(pInst, "PCIDeviceNo",       2);
         InsertConfigInteger(pInst, "PCIFunctionNo",     0);
         InsertConfigNode(pInst,    "Config",        &pCfg);
         InsertConfigInteger(pCfg,  "CableConnected",    1);
         InsertConfigInteger(pCfg,  "LineSpeed",         0);
         InsertConfigInteger(pCfg,  "AdapterType",       0);
+#else
+        InsertConfigNode(pDevices, "virtio-net",    &pDev);
+        InsertConfigNode(pDev,     "0",            &pInst);
+        InsertConfigInteger(pInst, "Trusted",           1);
+        InsertConfigNode(pInst,    "Config",        &pCfg);
+        InsertConfigInteger(pCfg,  "CableConnected",    1);
+        InsertConfigInteger(pCfg,  "MmioBase",          0x0a000000);
+        InsertConfigInteger(pCfg,  "Irq",               16);
+
+        vrc = RTFdtNodeAddF(hFdt, "virtio_mmio@%RX32", 0x0a000000);                         VRC();
+        vrc = RTFdtNodePropertyAddEmpty(  hFdt, "dma-coherent");                            VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupts", 3, 0x00, 16, 0x04);          VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 4, 0, 0x0a000000, 0, 0x200);        VRC();
+        vrc = RTFdtNodePropertyAddString(hFdt, "compatible", "virtio,mmio");                VRC();
+        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
+#endif
 
         const char *pszMac = "080027ede92c";
         Assert(strlen(pszMac) == 12);
@@ -795,6 +938,18 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                     break;
                 }
 
+                case StorageControllerType_NVMe:
+                {
+                    InsertConfigInteger(pCtlInst, "PCIBusNo",          0);
+                    InsertConfigInteger(pCtlInst, "PCIDeviceNo",       3);
+                    InsertConfigInteger(pCtlInst, "PCIFunctionNo",     0);
+
+                    /* Attach the status driver */
+                    i_attachStatusDriver(pCtlInst, RT_BIT_32(DeviceType_HardDisk) | RT_BIT_32(DeviceType_DVD) /*?*/,
+                                         1, &paLedDevType, &mapMediumAttachments, pszCtrlDev, ulInstance);
+                    break;
+                }
+
                 case StorageControllerType_LsiLogic:
                 case StorageControllerType_BusLogic:
                 case StorageControllerType_PIIX3:
@@ -802,7 +957,6 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                 case StorageControllerType_ICH6:
                 case StorageControllerType_I82078:
                 case StorageControllerType_LsiLogicSas:
-                case StorageControllerType_NVMe:
 
                 default:
                     AssertLogRelMsgFailedReturn(("invalid storage controller type: %d\n", enmCtrlType), VERR_MAIN_CONFIG_CONSTRUCTOR_IPE);
@@ -900,6 +1054,11 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         pAlock->acquire();
     }
 #endif
+
+    vrc = RTFdtNodeAdd(hFdt, "chosen");                                                 VRC();
+    vrc = RTFdtNodePropertyAddString(  hFdt, "stdout-path", "pl011@9000000");           VRC();
+    vrc = RTFdtNodePropertyAddString(  hFdt, "stdin-path", "pl011@9000000");            VRC();
+    vrc = RTFdtNodeFinalize(hFdt);    
 
     /* Finalize the FDT and add it to the resource store. */
     vrc = RTFdtFinalize(hFdt);
