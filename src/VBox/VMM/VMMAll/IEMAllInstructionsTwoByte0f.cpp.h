@@ -12193,10 +12193,11 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg8b_Mq, uint8_t, bRm)
     IEM_MC_REF_LOCAL(pu64EbxEcx, u64EbxEcx);
 
     IEM_MC_FETCH_EFLAGS(EFlags);
-    if (!(pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK))
-        IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg8b, pu64MemDst, pu64EaxEdx, pu64EbxEcx, pEFlags);
-    else
+    if (   !(pVCpu->iem.s.fExec & IEM_F_X86_DISREGARD_LOCK)
+        && (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK))
         IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg8b_locked, pu64MemDst, pu64EaxEdx, pu64EbxEcx, pEFlags);
+    else
+        IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg8b, pu64MemDst, pu64EaxEdx, pu64EbxEcx, pEFlags);
 
     IEM_MC_MEM_COMMIT_AND_UNMAP(pu64MemDst, IEM_ACCESS_DATA_RW);
     IEM_MC_COMMIT_EFLAGS(EFlags);
@@ -12243,10 +12244,11 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg16b_Mdq, uint8_t, bRm)
 #ifdef RT_ARCH_AMD64 /* some code duplication here because IEMAllInstructionsPython.py cannot parse if/else/#if spaghetti. */
         if (IEM_GET_HOST_CPU_FEATURES(pVCpu)->fMovCmpXchg16b)
         {
-            if (!(pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK))
-                IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg16b, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
-            else
+            if (   !(pVCpu->iem.s.fExec & IEM_F_X86_DISREGARD_LOCK)
+                && (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK))
                 IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg16b_locked, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
+            else
+                IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg16b, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
         }
         else
         {   /* (see comments in #else case below) */
