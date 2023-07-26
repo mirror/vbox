@@ -139,6 +139,24 @@ typedef unsigned hv_vm_space_t;
 /** The CPUMCTX_EXTRN_XXX mask for IEM when raising exceptions. */
 # define NEM_DARWIN_CPUMCTX_EXTRN_MASK_FOR_IEM_XCPT (IEM_CPUMCTX_EXTRN_XCPT_MASK | NEM_DARWIN_CPUMCTX_EXTRN_MASK_FOR_IEM)
 
+
+# if defined(VBOX_VMM_TARGET_ARMV8)
+/**
+ * MMIO2 tracking region.
+ */
+typedef struct
+{
+    /* Start of the region. */
+    RTGCPHYS                    GCPhysStart;
+    /** End of the region. */
+    RTGCPHYS                    GCPhysLast;
+    /** Whether the region was accessed since last time. */
+    bool                        fDirty;
+} NEMHVMMIO2REGION;
+/** Pointer to a MMIO2 tracking region. */
+typedef NEMHVMMIO2REGION *PNEMHVMMIO2REGION;
+# endif
+
 #endif
 
 
@@ -292,6 +310,8 @@ typedef struct NEM
     uint64_t                    u64CntFrqHz;
     /** The vTimer offset programmed. */
     uint64_t                    u64VTimerOff;
+    /** Dirty tracking slots. */
+    NEMHVMMIO2REGION            aMmio2DirtyTracking[8];
     /** @} */
 # else
     /** Set if hv_vm_space_create() was called successfully. */
