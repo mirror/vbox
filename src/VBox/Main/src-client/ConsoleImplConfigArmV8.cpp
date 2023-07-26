@@ -1058,7 +1058,7 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
     vrc = RTFdtNodeAdd(hFdt, "chosen");                                                 VRC();
     vrc = RTFdtNodePropertyAddString(  hFdt, "stdout-path", "pl011@9000000");           VRC();
     vrc = RTFdtNodePropertyAddString(  hFdt, "stdin-path", "pl011@9000000");            VRC();
-    vrc = RTFdtNodeFinalize(hFdt);    
+    vrc = RTFdtNodeFinalize(hFdt);
 
     /* Finalize the FDT and add it to the resource store. */
     vrc = RTFdtFinalize(hFdt);
