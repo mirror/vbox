@@ -191,6 +191,25 @@ static const struct
     { HV_SYS_REG_TTBR1_EL1, CPUMCTX_EXTRN_SCTLR_TCR_TTBR,   RT_UOFFSETOF(CPUMCTX, Ttbr1.u64)        },
     { HV_SYS_REG_VBAR_EL1,  CPUMCTX_EXTRN_SYSREG,           RT_UOFFSETOF(CPUMCTX, VBar.u64)         },
 };
+/** ID registers. */
+static const struct
+{
+    hv_feature_reg_t enmHvReg;
+    uint32_t         offIdStruct;
+} s_aIdRegs[] =
+{
+    { HV_FEATURE_REG_ID_AA64DFR0_EL1,       RT_UOFFSETOF(HVIDREGS, u64IdDfReg0El1)  },
+    { HV_FEATURE_REG_ID_AA64DFR1_EL1,       RT_UOFFSETOF(HVIDREGS, u64IdDfReg1El1)  },
+    { HV_FEATURE_REG_ID_AA64ISAR0_EL1,      RT_UOFFSETOF(HVIDREGS, u64IdIsaReg0El1) },
+    { HV_FEATURE_REG_ID_AA64ISAR1_EL1,      RT_UOFFSETOF(HVIDREGS, u64IdIsaReg1El1) },
+    { HV_FEATURE_REG_ID_AA64MMFR0_EL1,      RT_UOFFSETOF(HVIDREGS, u64IdMmfReg0El1) },
+    { HV_FEATURE_REG_ID_AA64MMFR1_EL1,      RT_UOFFSETOF(HVIDREGS, u64IdMmfReg1El1) },
+    { HV_FEATURE_REG_ID_AA64MMFR2_EL1,      RT_UOFFSETOF(HVIDREGS, u64IdPfReg0El1)  },
+    { HV_FEATURE_REG_ID_AA64PFR0_EL1,       RT_UOFFSETOF(HVIDREGS, u64IdPfReg1El1)  },
+    { HV_FEATURE_REG_ID_AA64PFR1_EL1,       RT_UOFFSETOF(HVIDREGS, u64ClidrEl1)     },
+    { HV_FEATURE_REG_CLIDR_EL1,             RT_UOFFSETOF(HVIDREGS, u64CtrEl0)       },
+    { HV_FEATURE_REG_CTR_EL0,               RT_UOFFSETOF(HVIDREGS, u64DczidEl1)     },
+};
 
 
 /*********************************************************************************************************************************
@@ -656,7 +675,27 @@ if (RTErrInfoIsSet(pErrInfo))
  */
 static DECLCALLBACK(int) nemR3DarwinNativeInitVCpuOnEmt(PVM pVM, PVMCPU pVCpu, VMCPUID idCpu)
 {
-    hv_return_t hrc = hv_vcpu_create(&pVCpu->nem.s.hVCpu, &pVCpu->nem.s.pHvExit, NULL);
+    if (idCpu == 0)
+    {
+        Assert(pVM->nem.s.hVCpuCfg == NULL);
+
+        /* Create a new vCPU config and query the ID registers. */
+        pVM->nem.s.hVCpuCfg = hv_vcpu_config_create();
+        if (!pVM->nem.s.hVCpuCfg)
+            return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
+                              "Call to hv_vcpu_config_create failed on vCPU %u", idCpu);
+
+        for (uint32_t i = 0; i < RT_ELEMENTS(s_aIdRegs); i++)
+        {
+            uint64_t *pu64 = (uint64_t *)((uint8_t *)&pVM->nem.s.IdRegs + s_aIdRegs[i].offIdStruct);
+            hv_return_t hrc = hv_vcpu_config_get_feature_reg(pVM->nem.s.hVCpuCfg, s_aIdRegs[i].enmHvReg, pu64);
+            if (hrc != HV_SUCCESS)
+                return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
+                                  "Call to hv_vcpu_get_feature_reg(, %#x, ) failed: %#x (%Rrc)", hrc, nemR3DarwinHvSts2Rc(hrc));
+        }
+    }
+
+    hv_return_t hrc = hv_vcpu_create(&pVCpu->nem.s.hVCpu, &pVCpu->nem.s.pHvExit, pVM->nem.s.hVCpuCfg);
     if (hrc != HV_SUCCESS)
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                           "Call to hv_vcpu_create failed on vCPU %u: %#x (%Rrc)", idCpu, hrc, nemR3DarwinHvSts2Rc(hrc));
@@ -666,11 +705,6 @@ static DECLCALLBACK(int) nemR3DarwinNativeInitVCpuOnEmt(PVM pVM, PVMCPU pVCpu, V
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                           "Setting MPIDR_EL1 failed on vCPU %u: %#x (%Rrc)", idCpu, hrc, nemR3DarwinHvSts2Rc(hrc));
 
-    if (idCpu == 0)
-    {
-        /** @todo */
-    }
-
     return VINF_SUCCESS;
 }
 
@@ -678,13 +712,20 @@ static DECLCALLBACK(int) nemR3DarwinNativeInitVCpuOnEmt(PVM pVM, PVMCPU pVCpu, V
 /**
  * Worker to destroy the vCPU handle on the EMT running it later on (as required by HV).
  *
- * @returns VBox status code
+ * @returns VBox status code.
+ * @param   pVM                 The VM handle.
  * @param   pVCpu               The vCPU handle.
  */
-static DECLCALLBACK(int) nemR3DarwinNativeTermVCpuOnEmt(PVMCPU pVCpu)
+static DECLCALLBACK(int) nemR3DarwinNativeTermVCpuOnEmt(PVM pVM, PVMCPU pVCpu)
 {
     hv_return_t hrc = hv_vcpu_destroy(pVCpu->nem.s.hVCpu);
     Assert(hrc == HV_SUCCESS); RT_NOREF(hrc);
+
+    if (pVCpu->idCpu == 0)
+    {
+        os_release(pVM->nem.s.hVCpuCfg);
+        pVM->nem.s.hVCpuCfg = NULL;
+    }
     return VINF_SUCCESS;
 }
 
@@ -715,7 +756,7 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
         {
             /* Rollback. */
             while (idCpu--)
-                VMR3ReqCallWait(pVM, idCpu, (PFNRT)nemR3DarwinNativeTermVCpuOnEmt, 1, pVCpu);
+                VMR3ReqCallWait(pVM, idCpu, (PFNRT)nemR3DarwinNativeTermVCpuOnEmt, 2, pVM, pVCpu);
 
             return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS, "Call to hv_vcpu_create failed: %Rrc", rc);
         }

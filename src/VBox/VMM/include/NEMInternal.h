@@ -155,6 +155,28 @@ typedef struct
 } NEMHVMMIO2REGION;
 /** Pointer to a MMIO2 tracking region. */
 typedef NEMHVMMIO2REGION *PNEMHVMMIO2REGION;
+
+/**
+ * Hypervisor.framework ARMv8 ID registers.
+ */
+typedef struct HVIDREGS
+{
+    uint64_t                    u64IdDfReg0El1;
+    uint64_t                    u64IdDfReg1El1;
+    uint64_t                    u64IdIsaReg0El1;
+    uint64_t                    u64IdIsaReg1El1;
+    uint64_t                    u64IdMmfReg0El1;
+    uint64_t                    u64IdMmfReg1El1;
+    uint64_t                    u64IdPfReg0El1;
+    uint64_t                    u64IdPfReg1El1;
+    uint64_t                    u64ClidrEl1;
+    uint64_t                    u64CtrEl0;
+    uint64_t                    u64DczidEl1;
+} HVIDREGS;
+/** Pointer to the ID registers struct. */
+typedef HVIDREGS *PHVIDREGS;
+/** Pointer to the const ID registers struct. */
+typedef const HVIDREGS *PCHVIDREGS;
 # endif
 
 #endif
@@ -312,6 +334,10 @@ typedef struct NEM
     uint64_t                    u64VTimerOff;
     /** Dirty tracking slots. */
     NEMHVMMIO2REGION            aMmio2DirtyTracking[8];
+    /** The vCPU config. */
+    hv_vcpu_config_t            hVCpuCfg;
+    /** The ID registers. */
+    HVIDREGS                    IdRegs;
     /** @} */
 # else
     /** Set if hv_vm_space_create() was called successfully. */
