@@ -1681,10 +1681,10 @@ int vmsvgaR3ChangeMode(PVGASTATE pThis, PVGASTATECC pThisCC)
          */
 
         VMSVGASCREENOBJECT *pScreen = &pSVGAState->aScreens[0];
+        Assert(pScreen->idScreen == 0);
         pScreen->fDefined  = true;
         pScreen->fModified = true;
         pScreen->fuScreen  = SVGA_SCREEN_MUST_BE_SET | SVGA_SCREEN_IS_PRIMARY;
-        pScreen->idScreen  = 0;
         pScreen->xOrigin   = 0;
         pScreen->yOrigin   = 0;
         pScreen->offVRAM   = 0;
@@ -6017,10 +6017,10 @@ static int vmsvgaR3LoadExecFifo(PCPDMDEVHLPR3 pHlp, PVGASTATE pThis, PVGASTATECC
     {
         /* Try to setup at least the first screen. */
         VMSVGASCREENOBJECT *pScreen = &pSVGAState->aScreens[0];
+        Assert(pScreen->idScreen == 0);
         pScreen->fDefined  = true;
         pScreen->fModified = true;
         pScreen->fuScreen  = SVGA_SCREEN_MUST_BE_SET | SVGA_SCREEN_IS_PRIMARY;
-        pScreen->idScreen  = 0;
         pScreen->xOrigin   = 0;
         pScreen->yOrigin   = 0;
         pScreen->offVRAM   = pThis->svga.uScreenOffset;
@@ -6559,6 +6559,10 @@ static int vmsvgaR3StateInit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVMSVGAR3STATE
 
     rc = RTCritSectInit(&pSVGAState->CritSectCmdBuf);
     AssertRCReturn(rc, rc);
+
+    /* Init screen ids which are constant and allow to use a pointer to aScreens element and know its index. */
+    for (uint32_t i = 0; i < RT_ELEMENTS(pSVGAState->aScreens); ++i)
+        pSVGAState->aScreens[i].idScreen = i;
 
     vmsvgaR3CmdBufCtxInit(&pSVGAState->CmdBufCtxDC);
 

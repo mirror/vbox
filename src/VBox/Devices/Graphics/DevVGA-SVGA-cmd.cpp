@@ -1010,6 +1010,7 @@ VMSVGASCREENOBJECT *vmsvgaR3GetScreenObject(PVGASTATECC pThisCC, uint32_t idScre
         && pSVGAState
         && pSVGAState->aScreens[idScreen].fDefined)
     {
+        Assert(pSVGAState->aScreens[idScreen].idScreen == idScreen);
         return &pSVGAState->aScreens[idScreen];
     }
     return NULL;
@@ -1843,11 +1844,11 @@ static void vmsvga3dCmdDefineGBScreenTarget(PVGASTATE pThis, PVGASTATECC pThisCC
         /* Screen objects and screen targets are similar, therefore we will use the same for both. */
         /** @todo Generic screen object/target interface. */
         VMSVGASCREENOBJECT *pScreen = &pSvgaR3State->aScreens[pCmd->stid];
+        Assert(pScreen->idScreen == pCmd->stid);
         pScreen->fDefined  = true;
         pScreen->fModified = true;
         pScreen->fuScreen  = SVGA_SCREEN_MUST_BE_SET
                            | (RT_BOOL(pCmd->flags & SVGA_STFLAG_PRIMARY) ? SVGA_SCREEN_IS_PRIMARY : 0);
-        pScreen->idScreen  = pCmd->stid;
 
         pScreen->xOrigin = pCmd->xRoot;
         pScreen->yOrigin = pCmd->yRoot;
@@ -6755,10 +6756,10 @@ void vmsvgaR3CmdDefineScreen(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifoCmdDe
     RT_UNTRUSTED_VALIDATED_FENCE();
 
     VMSVGASCREENOBJECT *pScreen = &pSvgaR3State->aScreens[idScreen];
+    Assert(pScreen->idScreen == idScreen);
     pScreen->fDefined  = true;
     pScreen->fModified = true;
     pScreen->fuScreen  = pCmd->screen.flags;
-    pScreen->idScreen  = idScreen;
     if (!RT_BOOL(pCmd->screen.flags & (SVGA_SCREEN_DEACTIVATE | SVGA_SCREEN_BLANKING)))
     {
         /* Not blanked. */
@@ -6801,6 +6802,7 @@ void vmsvgaR3CmdDestroyScreen(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifoCmdD
     RT_UNTRUSTED_VALIDATED_FENCE();
 
     VMSVGASCREENOBJECT *pScreen = &pSvgaR3State->aScreens[idScreen];
+    Assert(pScreen->idScreen == idScreen);
     vmsvgaR3DestroyScreen(pThis, pThisCC, pScreen);
 }
 
