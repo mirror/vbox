@@ -223,6 +223,11 @@ Routine Description:
 
   VmwSvga3WriteReg(Private, VMWSVGA3_REG_ENABLE,      1);
   VmwSvga3WriteReg(Private, VMWSVGA3_REG_CONFIG_DONE, 1);
+  //
+  // Need to update the screen on refresh intervals or we don't get screen output
+  // when the operating system accesses the framebuffer.
+  //
+  VmwSvga3WriteReg(Private, VMWSVGA3_REG_TRACES,      1);
 
   //
   // Re-initialize the frame buffer configure when mode changes.
