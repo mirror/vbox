@@ -477,6 +477,16 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #  endif
 # endif
+#else
+# ifdef VBOX_WS_NIX
+        // WORKAROUND:
+        // Some Desktop Environments forcing this variable which was useful in Qt5 case.
+        // But in Qt6 case this variable is additional multiplier to scale-factor
+        // calculated automatic way, which means for x2 the effective factor will be 2x2=4.
+        // No idea how to proceed, probably we will ignore this variable for now, by
+        // setting it to be always equal to 1.
+        qputenv("QT_SCALE_FACTOR", "1");
+# endif
 #endif
 
         /* Create application: */
