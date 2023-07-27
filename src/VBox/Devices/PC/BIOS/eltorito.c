@@ -802,7 +802,7 @@ int13_success_noah:
 // Start of int13 for cdrom
 // ---------------------------------------------------------------------------
 
-void BIOSCALL int13_cdrom(uint16_t EHBX, disk_regs_t r)
+void BIOSCALL int13_cdrom(disk_regs_t r)
 {
     uint16_t            ebda_seg = read_word(0x0040,0x000E);
     uint8_t             device, status, locks;
