@@ -862,13 +862,13 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                     break;
                 case NetworkAdapterType_Virtio:
                 {
-                    uint32_t GCPhysMmioBase = 0x0a000000 + uInstance * 512;
+                    uint32_t GCPhysMmioBase = 0x0a000000 + uInstance * GUEST_PAGE_SIZE;
                     uint32_t uIrq = 16 + uInstance;
 
                     InsertConfigInteger(pCfg,  "MmioBase",          GCPhysMmioBase);
                     InsertConfigInteger(pCfg,  "Irq",               uIrq);
 
-                    vrc = RTFdtNodeAddF(hFdt, "virtio_mmio@%RX32", 0x0a000000);                         VRC();
+                    vrc = RTFdtNodeAddF(hFdt, "virtio_mmio@%RX32", GCPhysMmioBase);                         VRC();
                     vrc = RTFdtNodePropertyAddEmpty(  hFdt, "dma-coherent");                            VRC();
                     vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupts", 3, 0x00, uIrq, 0x04);        VRC();
                     vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 4, 0, GCPhysMmioBase, 0, 0x200);    VRC();
