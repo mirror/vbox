@@ -70,13 +70,12 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
      */ \
     if (IEM_IS_MODRM_REG_MODE(bRm)) \
     { \
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
-        \
         IEM_MC_BEGIN(3, 0); \
         IEM_MC_ARG(uint8_t *,  pu8Dst,  0); \
         IEM_MC_ARG(uint8_t,    u8Src,   1); \
         IEM_MC_ARG(uint32_t *, pEFlags, 2); \
          \
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
         IEM_MC_FETCH_GREG_U8(u8Src, IEM_GET_MODRM_REG(pVCpu, bRm)); \
         IEM_MC_REF_GREG_U8(pu8Dst, IEM_GET_MODRM_RM(pVCpu, bRm)); \
         IEM_MC_REF_EFLAGS(pEFlags); \
@@ -157,8 +156,8 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
      */ \
     if (IEM_IS_MODRM_REG_MODE(bRm)) \
     { \
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
         IEM_MC_BEGIN(3, 0); \
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
         IEM_MC_ARG(uint8_t *,  pu8Dst,  0); \
         IEM_MC_ARG(uint8_t,    u8Src,   1); \
         IEM_MC_ARG(uint32_t *, pEFlags, 2); \
@@ -207,11 +206,11 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
      */ \
     if (IEM_IS_MODRM_REG_MODE(bRm)) \
     { \
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
         switch (pVCpu->iem.s.enmEffOpSize) \
         { \
             case IEMMODE_16BIT: \
                 IEM_MC_BEGIN(3, 0); \
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint16_t *, pu16Dst, 0); \
                 IEM_MC_ARG(uint16_t,   u16Src,  1); \
                 IEM_MC_ARG(uint32_t *, pEFlags, 2); \
@@ -227,6 +226,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
             \
             case IEMMODE_32BIT: \
                 IEM_MC_BEGIN(3, 0); \
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint32_t *, pu32Dst, 0); \
                 IEM_MC_ARG(uint32_t,   u32Src,  1); \
                 IEM_MC_ARG(uint32_t *, pEFlags, 2); \
@@ -244,6 +244,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
             \
             case IEMMODE_64BIT: \
                 IEM_MC_BEGIN(3, 0); \
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint64_t *, pu64Dst, 0); \
                 IEM_MC_ARG(uint64_t,   u64Src,  1); \
                 IEM_MC_ARG(uint32_t *, pEFlags, 2); \
@@ -421,9 +422,9 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
  */
 #define IEMOP_BODY_BINARY_AL_Ib(a_fnNormalU8) \
     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm); \
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
     \
     IEM_MC_BEGIN(3, 0); \
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
     IEM_MC_ARG(uint8_t *,       pu8Dst,             0); \
     IEM_MC_ARG_CONST(uint8_t,   u8Src,/*=*/ u8Imm,  1); \
     IEM_MC_ARG(uint32_t *,      pEFlags,            2); \
@@ -445,9 +446,9 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
         case IEMMODE_16BIT: \
         { \
             uint16_t u16Imm; IEM_OPCODE_GET_NEXT_U16(&u16Imm); \
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
             \
             IEM_MC_BEGIN(3, 0); \
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
             IEM_MC_ARG(uint16_t *,      pu16Dst,                0); \
             IEM_MC_ARG_CONST(uint16_t,  u16Src,/*=*/ u16Imm,    1); \
             IEM_MC_ARG(uint32_t *,      pEFlags,                2); \
@@ -463,9 +464,9 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
         case IEMMODE_32BIT: \
         { \
             uint32_t u32Imm; IEM_OPCODE_GET_NEXT_U32(&u32Imm); \
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
             \
             IEM_MC_BEGIN(3, 0); \
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
             IEM_MC_ARG(uint32_t *,      pu32Dst,                0); \
             IEM_MC_ARG_CONST(uint32_t,  u32Src,/*=*/ u32Imm,    1); \
             IEM_MC_ARG(uint32_t *,      pEFlags,                2); \
@@ -483,9 +484,9 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
         case IEMMODE_64BIT: \
         { \
             uint64_t u64Imm; IEM_OPCODE_GET_NEXT_S32_SX_U64(&u64Imm); \
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
             \
             IEM_MC_BEGIN(3, 0); \
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
             IEM_MC_ARG(uint64_t *,      pu64Dst,                0); \
             IEM_MC_ARG_CONST(uint64_t,  u64Src,/*=*/ u64Imm,    1); \
             IEM_MC_ARG(uint32_t *,      pEFlags,                2); \
@@ -1553,11 +1554,11 @@ FNIEMOP_DEF(iemOp_aas)
  * Not for 64-bit code, only for what became the rex prefixes.
  */
 #define IEMOP_BODY_UNARY_GReg(a_fnNormalU16, a_fnNormalU32, a_iReg) \
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
     switch (pVCpu->iem.s.enmEffOpSize) \
     { \
         case IEMMODE_16BIT: \
             IEM_MC_BEGIN(2, 0); \
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
             IEM_MC_ARG(uint16_t *,  pu16Dst, 0); \
             IEM_MC_ARG(uint32_t *,  pEFlags, 1); \
             IEM_MC_REF_GREG_U16(pu16Dst, a_iReg); \
@@ -1569,6 +1570,7 @@ FNIEMOP_DEF(iemOp_aas)
             \
         case IEMMODE_32BIT: \
             IEM_MC_BEGIN(2, 0); \
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
             IEM_MC_ARG(uint32_t *,  pu32Dst, 0); \
             IEM_MC_ARG(uint32_t *,  pEFlags, 1); \
             IEM_MC_REF_GREG_U32(pu32Dst, a_iReg); \
@@ -1972,7 +1974,6 @@ FNIEMOP_DEF(iemOp_dec_eDI)
  */
 FNIEMOP_DEF_1(iemOpCommonPushGReg, uint8_t, iReg)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     if (IEM_IS_64BIT_CODE(pVCpu))
     {
         iReg |= pVCpu->iem.s.uRexB;
@@ -1984,6 +1985,7 @@ FNIEMOP_DEF_1(iemOpCommonPushGReg, uint8_t, iReg)
     {
         case IEMMODE_16BIT:
             IEM_MC_BEGIN(0, 1);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint16_t, u16Value);
             IEM_MC_FETCH_GREG_U16(u16Value, iReg);
             IEM_MC_PUSH_U16(u16Value);
@@ -1993,6 +1995,7 @@ FNIEMOP_DEF_1(iemOpCommonPushGReg, uint8_t, iReg)
 
         case IEMMODE_32BIT:
             IEM_MC_BEGIN(0, 1);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint32_t, u32Value);
             IEM_MC_FETCH_GREG_U32(u32Value, iReg);
             IEM_MC_PUSH_U32(u32Value);
@@ -2002,6 +2005,7 @@ FNIEMOP_DEF_1(iemOpCommonPushGReg, uint8_t, iReg)
 
         case IEMMODE_64BIT:
             IEM_MC_BEGIN(0, 1);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint64_t, u64Value);
             IEM_MC_FETCH_GREG_U64(u64Value, iReg);
             IEM_MC_PUSH_U64(u64Value);
@@ -2063,6 +2067,7 @@ FNIEMOP_DEF(iemOp_push_eSP)
     if (IEM_GET_TARGET_CPU(pVCpu) == IEMTARGETCPU_8086)
     {
         IEM_MC_BEGIN(0, 1);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_LOCAL(uint16_t, u16Value);
         IEM_MC_FETCH_GREG_U16(u16Value, X86_GREG_xSP);
         IEM_MC_SUB_LOCAL_U16(u16Value, 2);
@@ -2109,7 +2114,6 @@ FNIEMOP_DEF(iemOp_push_eDI)
  */
 FNIEMOP_DEF_1(iemOpCommonPopGReg, uint8_t, iReg)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     if (IEM_IS_64BIT_CODE(pVCpu))
     {
         iReg |= pVCpu->iem.s.uRexB;
@@ -2121,6 +2125,7 @@ FNIEMOP_DEF_1(iemOpCommonPopGReg, uint8_t, iReg)
     {
         case IEMMODE_16BIT:
             IEM_MC_BEGIN(0, 1);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint16_t *, pu16Dst);
             IEM_MC_REF_GREG_U16(pu16Dst, iReg);
             IEM_MC_POP_U16(pu16Dst);
@@ -2130,6 +2135,7 @@ FNIEMOP_DEF_1(iemOpCommonPopGReg, uint8_t, iReg)
 
         case IEMMODE_32BIT:
             IEM_MC_BEGIN(0, 1);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint32_t *, pu32Dst);
             IEM_MC_REF_GREG_U32(pu32Dst, iReg);
             IEM_MC_POP_U32(pu32Dst);
@@ -2140,6 +2146,7 @@ FNIEMOP_DEF_1(iemOpCommonPopGReg, uint8_t, iReg)
 
         case IEMMODE_64BIT:
             IEM_MC_BEGIN(0, 1);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint64_t *, pu64Dst);
             IEM_MC_REF_GREG_U64(pu64Dst, iReg);
             IEM_MC_POP_U64(pu64Dst);
@@ -2206,13 +2213,13 @@ FNIEMOP_DEF(iemOp_pop_eSP)
         pVCpu->iem.s.enmEffOpSize = !(pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_OP) ? IEMMODE_64BIT : IEMMODE_16BIT;
     }
 
-    IEMOP_HLP_DECODED_NL_1(OP_POP, IEMOPFORM_FIXED, OP_PARM_REG_ESP,
-                           DISOPTYPE_HARMLESS | DISOPTYPE_X86_DEFAULT_64_OP_SIZE | DISOPTYPE_X86_REXB_EXTENDS_OPREG);
     /** @todo add testcase for this instruction. */
     switch (pVCpu->iem.s.enmEffOpSize)
     {
         case IEMMODE_16BIT:
             IEM_MC_BEGIN(0, 1);
+            IEMOP_HLP_DECODED_NL_1(OP_POP, IEMOPFORM_FIXED, OP_PARM_REG_ESP,
+                                   DISOPTYPE_HARMLESS | DISOPTYPE_X86_DEFAULT_64_OP_SIZE | DISOPTYPE_X86_REXB_EXTENDS_OPREG);
             IEM_MC_LOCAL(uint16_t, u16Dst);
             IEM_MC_POP_U16(&u16Dst); /** @todo not correct MC, fix later. */
             IEM_MC_STORE_GREG_U16(X86_GREG_xSP, u16Dst);
@@ -2222,6 +2229,8 @@ FNIEMOP_DEF(iemOp_pop_eSP)
 
         case IEMMODE_32BIT:
             IEM_MC_BEGIN(0, 1);
+            IEMOP_HLP_DECODED_NL_1(OP_POP, IEMOPFORM_FIXED, OP_PARM_REG_ESP,
+                                   DISOPTYPE_HARMLESS | DISOPTYPE_X86_DEFAULT_64_OP_SIZE | DISOPTYPE_X86_REXB_EXTENDS_OPREG);
             IEM_MC_LOCAL(uint32_t, u32Dst);
             IEM_MC_POP_U32(&u32Dst);
             IEM_MC_STORE_GREG_U32(X86_GREG_xSP, u32Dst);
@@ -2231,6 +2240,8 @@ FNIEMOP_DEF(iemOp_pop_eSP)
 
         case IEMMODE_64BIT:
             IEM_MC_BEGIN(0, 1);
+            IEMOP_HLP_DECODED_NL_1(OP_POP, IEMOPFORM_FIXED, OP_PARM_REG_ESP,
+                                   DISOPTYPE_HARMLESS | DISOPTYPE_X86_DEFAULT_64_OP_SIZE | DISOPTYPE_X86_REXB_EXTENDS_OPREG);
             IEM_MC_LOCAL(uint64_t, u64Dst);
             IEM_MC_POP_U64(&u64Dst);
             IEM_MC_STORE_GREG_U64(X86_GREG_xSP, u64Dst);
@@ -2461,8 +2472,8 @@ FNIEMOP_DEF(iemOp_arpl_Ew_Gw)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /* Register */
-        IEMOP_HLP_DECODED_NL_2(OP_ARPL, IEMOPFORM_MR_REG, OP_PARM_Ew, OP_PARM_Gw, DISOPTYPE_HARMLESS);
         IEM_MC_BEGIN(3, 0);
+        IEMOP_HLP_DECODED_NL_2(OP_ARPL, IEMOPFORM_MR_REG, OP_PARM_Ew, OP_PARM_Gw, DISOPTYPE_HARMLESS);
         IEM_MC_ARG(uint16_t *,      pu16Dst,    0);
         IEM_MC_ARG(uint16_t,        u16Src,     1);
         IEM_MC_ARG(uint32_t *,      pEFlags,    2);
@@ -2519,8 +2530,8 @@ FNIEMOP_DEF(iemOp_movsxd_Gv_Ev)
             /*
              * Register to register.
              */
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_BEGIN(0, 1);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint64_t, u64Value);
             IEM_MC_FETCH_GREG_U32_SX_U64(u64Value, IEM_GET_MODRM_RM(pVCpu, bRm));
             IEM_MC_STORE_GREG_U64(IEM_GET_MODRM_REG(pVCpu, bRm), u64Value);
@@ -2652,8 +2663,8 @@ FNIEMOP_DEF(iemOp_push_Iz)
         case IEMMODE_16BIT:
         {
             uint16_t u16Imm; IEM_OPCODE_GET_NEXT_U16(&u16Imm);
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_BEGIN(0,0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_PUSH_U16(u16Imm);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
@@ -2663,8 +2674,8 @@ FNIEMOP_DEF(iemOp_push_Iz)
         case IEMMODE_32BIT:
         {
             uint32_t u32Imm; IEM_OPCODE_GET_NEXT_U32(&u32Imm);
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_BEGIN(0,0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_PUSH_U32(u32Imm);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
@@ -2674,8 +2685,8 @@ FNIEMOP_DEF(iemOp_push_Iz)
         case IEMMODE_64BIT:
         {
             uint64_t u64Imm; IEM_OPCODE_GET_NEXT_S32_SX_U64(&u64Imm);
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_BEGIN(0,0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_PUSH_U64(u64Imm);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
@@ -2706,9 +2717,8 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev_Iz)
             {
                 /* register operand */
                 uint16_t u16Imm; IEM_OPCODE_GET_NEXT_U16(&u16Imm);
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
                 IEM_MC_BEGIN(3, 1);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint16_t *,      pu16Dst,            0);
                 IEM_MC_ARG_CONST(uint16_t,  u16Src,/*=*/ u16Imm,1);
                 IEM_MC_ARG(uint32_t *,      pEFlags,            2);
@@ -2756,9 +2766,8 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev_Iz)
             {
                 /* register operand */
                 uint32_t u32Imm; IEM_OPCODE_GET_NEXT_U32(&u32Imm);
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
                 IEM_MC_BEGIN(3, 1);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint32_t *,      pu32Dst,            0);
                 IEM_MC_ARG_CONST(uint32_t,  u32Src,/*=*/ u32Imm,1);
                 IEM_MC_ARG(uint32_t *,      pEFlags,            2);
@@ -2806,9 +2815,8 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev_Iz)
             {
                 /* register operand */
                 uint64_t u64Imm; IEM_OPCODE_GET_NEXT_S32_SX_U64(&u64Imm);
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
                 IEM_MC_BEGIN(3, 1);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint64_t *,      pu64Dst,            0);
                 IEM_MC_ARG_CONST(uint64_t,  u64Src,/*=*/ u64Imm,1);
                 IEM_MC_ARG(uint32_t *,      pEFlags,            2);
@@ -2862,25 +2870,27 @@ FNIEMOP_DEF(iemOp_push_Ib)
     IEMOP_MNEMONIC(push_Ib, "push Ib");
     IEMOP_HLP_MIN_186();
     int8_t i8Imm; IEM_OPCODE_GET_NEXT_S8(&i8Imm);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
 
     switch (pVCpu->iem.s.enmEffOpSize)
     {
         case IEMMODE_16BIT:
             IEM_MC_BEGIN(0,0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_PUSH_U16(i8Imm);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
             break;
         case IEMMODE_32BIT:
             IEM_MC_BEGIN(0,0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_PUSH_U32(i8Imm);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
             break;
         case IEMMODE_64BIT:
             IEM_MC_BEGIN(0,0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_PUSH_U64(i8Imm);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
@@ -2909,9 +2919,8 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev_Ib)
             {
                 /* register operand */
                 uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
                 IEM_MC_BEGIN(3, 1);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint16_t *,      pu16Dst,                    0);
                 IEM_MC_ARG_CONST(uint16_t,  u16Src,/*=*/ (int8_t)u8Imm, 1);
                 IEM_MC_ARG(uint32_t *,      pEFlags,                    2);
@@ -2959,9 +2968,8 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev_Ib)
             {
                 /* register operand */
                 uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
                 IEM_MC_BEGIN(3, 1);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint32_t *,      pu32Dst,                    0);
                 IEM_MC_ARG_CONST(uint32_t,  u32Src,/*=*/ (int8_t)u8Imm, 1);
                 IEM_MC_ARG(uint32_t *,      pEFlags,                    2);
@@ -3009,9 +3017,8 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev_Ib)
             {
                 /* register operand */
                 uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
                 IEM_MC_BEGIN(3, 1);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint64_t *,      pu64Dst,                    0);
                 IEM_MC_ARG_CONST(uint64_t,  u64Src,/*=*/ (int8_t)u8Imm, 1);
                 IEM_MC_ARG(uint32_t *,      pEFlags,                    2);
@@ -3256,10 +3263,10 @@ FNIEMOP_DEF(iemOp_jo_Jb)
 {
     IEMOP_MNEMONIC(jo_Jb, "jo  Jb");
     int8_t i8Imm; IEM_OPCODE_GET_NEXT_S8(&i8Imm);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
 
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_IF_EFL_BIT_SET(X86_EFL_OF) {
         IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
     } IEM_MC_ELSE() {
@@ -3276,10 +3283,10 @@ FNIEMOP_DEF(iemOp_jno_Jb)
 {
     IEMOP_MNEMONIC(jno_Jb, "jno Jb");
     int8_t i8Imm; IEM_OPCODE_GET_NEXT_S8(&i8Imm);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
 
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_IF_EFL_BIT_SET(X86_EFL_OF) {
         IEM_MC_ADVANCE_RIP_AND_FINISH();
     } IEM_MC_ELSE() {
@@ -3295,10 +3302,10 @@ FNIEMOP_DEF(iemOp_jc_Jb)
 {
     IEMOP_MNEMONIC(jc_Jb, "jc/jnae Jb");
     int8_t i8Imm; IEM_OPCODE_GET_NEXT_S8(&i8Imm);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
 
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_IF_EFL_BIT_SET(X86_EFL_CF) {
         IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
     } IEM_MC_ELSE() {
@@ -3315,10 +3322,10 @@ FNIEMOP_DEF(iemOp_jnc_Jb)
 {
     IEMOP_MNEMONIC(jnc_Jb, "jnc/jnb Jb");
     int8_t i8Imm; IEM_OPCODE_GET_NEXT_S8(&i8Imm);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
 
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_IF_EFL_BIT_SET(X86_EFL_CF) {
         IEM_MC_ADVANCE_RIP_AND_FINISH();
     } IEM_MC_ELSE() {
@@ -3335,10 +3342,10 @@ FNIEMOP_DEF(iemOp_je_Jb)
 {
     IEMOP_MNEMONIC(je_Jb, "je/jz   Jb");
     int8_t i8Imm; IEM_OPCODE_GET_NEXT_S8(&i8Imm);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
 
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_IF_EFL_BIT_SET(X86_EFL_ZF) {
         IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
     } IEM_MC_ELSE() {
@@ -3355,10 +3362,10 @@ FNIEMOP_DEF(iemOp_jne_Jb)
 {
     IEMOP_MNEMONIC(jne_Jb, "jne/jnz Jb");
     int8_t i8Imm; IEM_OPCODE_GET_NEXT_S8(&i8Imm);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
 
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_IF_EFL_BIT_SET(X86_EFL_ZF) {
         IEM_MC_ADVANCE_RIP_AND_FINISH();
     } IEM_MC_ELSE() {
@@ -3375,10 +3382,10 @@ FNIEMOP_DEF(iemOp_jbe_Jb)
 {
     IEMOP_MNEMONIC(jbe_Jb, "jbe/jna Jb");
     int8_t i8Imm; IEM_OPCODE_GET_NEXT_S8(&i8Imm);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
 
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_IF_EFL_ANY_BITS_SET(X86_EFL_CF | X86_EFL_ZF) {
         IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
     } IEM_MC_ELSE() {
@@ -3395,10 +3402,10 @@ FNIEMOP_DEF(iemOp_jnbe_Jb)
 {
     IEMOP_MNEMONIC(ja_Jb, "ja/jnbe Jb");
     int8_t i8Imm; IEM_OPCODE_GET_NEXT_S8(&i8Imm);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
 
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_IF_EFL_ANY_BITS_SET(X86_EFL_CF | X86_EFL_ZF) {
         IEM_MC_ADVANCE_RIP_AND_FINISH();
     } IEM_MC_ELSE() {
@@ -3415,10 +3422,10 @@ FNIEMOP_DEF(iemOp_js_Jb)
 {
     IEMOP_MNEMONIC(js_Jb, "js  Jb");
     int8_t i8Imm; IEM_OPCODE_GET_NEXT_S8(&i8Imm);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
 
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_IF_EFL_BIT_SET(X86_EFL_SF) {
         IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
     } IEM_MC_ELSE() {
@@ -3435,10 +3442,10 @@ FNIEMOP_DEF(iemOp_jns_Jb)
 {
     IEMOP_MNEMONIC(jns_Jb, "jns Jb");
     int8_t i8Imm; IEM_OPCODE_GET_NEXT_S8(&i8Imm);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
 
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_IF_EFL_BIT_SET(X86_EFL_SF) {
         IEM_MC_ADVANCE_RIP_AND_FINISH();
     } IEM_MC_ELSE() {
@@ -3455,10 +3462,10 @@ FNIEMOP_DEF(iemOp_jp_Jb)
 {
     IEMOP_MNEMONIC(jp_Jb, "jp  Jb");
     int8_t i8Imm; IEM_OPCODE_GET_NEXT_S8(&i8Imm);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
 
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_IF_EFL_BIT_SET(X86_EFL_PF) {
         IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
     } IEM_MC_ELSE() {
@@ -3475,10 +3482,10 @@ FNIEMOP_DEF(iemOp_jnp_Jb)
 {
     IEMOP_MNEMONIC(jnp_Jb, "jnp Jb");
     int8_t i8Imm; IEM_OPCODE_GET_NEXT_S8(&i8Imm);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
 
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_IF_EFL_BIT_SET(X86_EFL_PF) {
         IEM_MC_ADVANCE_RIP_AND_FINISH();
     } IEM_MC_ELSE() {
@@ -3495,10 +3502,10 @@ FNIEMOP_DEF(iemOp_jl_Jb)
 {
     IEMOP_MNEMONIC(jl_Jb, "jl/jnge Jb");
     int8_t i8Imm; IEM_OPCODE_GET_NEXT_S8(&i8Imm);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
 
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_IF_EFL_BITS_NE(X86_EFL_SF, X86_EFL_OF) {
         IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
     } IEM_MC_ELSE() {
@@ -3515,10 +3522,10 @@ FNIEMOP_DEF(iemOp_jnl_Jb)
 {
     IEMOP_MNEMONIC(jge_Jb, "jnl/jge Jb");
     int8_t i8Imm; IEM_OPCODE_GET_NEXT_S8(&i8Imm);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
 
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_IF_EFL_BITS_NE(X86_EFL_SF, X86_EFL_OF) {
         IEM_MC_ADVANCE_RIP_AND_FINISH();
     } IEM_MC_ELSE() {
@@ -3535,10 +3542,10 @@ FNIEMOP_DEF(iemOp_jle_Jb)
 {
     IEMOP_MNEMONIC(jle_Jb, "jle/jng Jb");
     int8_t i8Imm; IEM_OPCODE_GET_NEXT_S8(&i8Imm);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
 
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_IF_EFL_BIT_SET_OR_BITS_NE(X86_EFL_ZF, X86_EFL_SF, X86_EFL_OF) {
         IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
     } IEM_MC_ELSE() {
@@ -3555,10 +3562,10 @@ FNIEMOP_DEF(iemOp_jnle_Jb)
 {
     IEMOP_MNEMONIC(jg_Jb, "jnle/jg Jb");
     int8_t i8Imm; IEM_OPCODE_GET_NEXT_S8(&i8Imm);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
 
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_IF_EFL_BIT_SET_OR_BITS_NE(X86_EFL_ZF, X86_EFL_SF, X86_EFL_OF) {
         IEM_MC_ADVANCE_RIP_AND_FINISH();
     } IEM_MC_ELSE() {
@@ -3577,8 +3584,8 @@ FNIEMOP_DEF(iemOp_jnle_Jb)
     { \
         /* register target */ \
         uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm); \
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
         IEM_MC_BEGIN(3, 0); \
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
         IEM_MC_ARG(uint8_t *,       pu8Dst,                 0); \
         IEM_MC_ARG_CONST(uint8_t,   u8Src, /*=*/ u8Imm,     1); \
         IEM_MC_ARG(uint32_t *,      pEFlags,                2); \
@@ -3778,8 +3785,8 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_80)
             case IEMMODE_16BIT: \
             { \
                 uint16_t u16Imm; IEM_OPCODE_GET_NEXT_U16(&u16Imm); \
-                IEMOP_HLP_DONE_DECODING(); \
                 IEM_MC_BEGIN(3, 0); \
+                IEMOP_HLP_DONE_DECODING(); \
                 IEM_MC_ARG(uint16_t *,      pu16Dst,                0); \
                 IEM_MC_ARG_CONST(uint16_t,  u16Src, /*=*/ u16Imm,   1); \
                 IEM_MC_ARG(uint32_t *,      pEFlags,                2); \
@@ -3796,8 +3803,8 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_80)
             case IEMMODE_32BIT: \
             { \
                 uint32_t u32Imm; IEM_OPCODE_GET_NEXT_U32(&u32Imm); \
-                IEMOP_HLP_DONE_DECODING(); \
                 IEM_MC_BEGIN(3, 0); \
+                IEMOP_HLP_DONE_DECODING(); \
                 IEM_MC_ARG(uint32_t *,      pu32Dst,                0); \
                 IEM_MC_ARG_CONST(uint32_t,  u32Src, /*=*/ u32Imm,   1); \
                 IEM_MC_ARG(uint32_t *,      pEFlags,                2); \
@@ -3816,8 +3823,8 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_80)
             case IEMMODE_64BIT: \
             { \
                 uint64_t u64Imm; IEM_OPCODE_GET_NEXT_S32_SX_U64(&u64Imm); \
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_BEGIN(3, 0); \
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint64_t *,      pu64Dst,                0); \
                 IEM_MC_ARG_CONST(uint64_t,  u64Src, /*=*/ u64Imm,   1); \
                 IEM_MC_ARG(uint32_t *,      pEFlags,                2); \
@@ -4142,13 +4149,13 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_82)
         /* \
          * Register target \
          */ \
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
         uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm); \
         switch (pVCpu->iem.s.enmEffOpSize) \
         { \
             case IEMMODE_16BIT: \
             { \
                 IEM_MC_BEGIN(3, 0); \
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint16_t *,      pu16Dst,                    0); \
                 IEM_MC_ARG_CONST(uint16_t,  u16Src, /*=*/ (int8_t)u8Imm,1); \
                 IEM_MC_ARG(uint32_t *,      pEFlags,                    2); \
@@ -4165,6 +4172,7 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_82)
             case IEMMODE_32BIT: \
             { \
                 IEM_MC_BEGIN(3, 0); \
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint32_t *,      pu32Dst,                    0); \
                 IEM_MC_ARG_CONST(uint32_t,  u32Src, /*=*/ (int8_t)u8Imm,1); \
                 IEM_MC_ARG(uint32_t *,      pEFlags,                    2); \
@@ -4183,6 +4191,7 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_82)
             case IEMMODE_64BIT: \
             { \
                 IEM_MC_BEGIN(3, 0); \
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint64_t *,      pu64Dst,                    0); \
                 IEM_MC_ARG_CONST(uint64_t,  u64Src, /*=*/ (int8_t)u8Imm,1); \
                 IEM_MC_ARG(uint32_t *,      pEFlags,                    2); \
@@ -4526,9 +4535,8 @@ FNIEMOP_DEF(iemOp_xchg_Eb_Gb)
      */
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
         IEM_MC_BEGIN(0, 2);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_LOCAL(uint8_t, uTmp1);
         IEM_MC_LOCAL(uint8_t, uTmp2);
 
@@ -4552,6 +4560,7 @@ FNIEMOP_DEF(iemOp_xchg_Eb_Gb)
         IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
 
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_MEM_MAP(pu8Mem, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/);
         IEM_MC_REF_GREG_U8(pu8Reg, IEM_GET_MODRM_REG(pVCpu, bRm));
         if (!(pVCpu->iem.s.fExec & IEM_F_X86_DISREGARD_LOCK))
@@ -4579,12 +4588,11 @@ FNIEMOP_DEF(iemOp_xchg_Ev_Gv)
      */
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
         switch (pVCpu->iem.s.enmEffOpSize)
         {
             case IEMMODE_16BIT:
                 IEM_MC_BEGIN(0, 2);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_LOCAL(uint16_t, uTmp1);
                 IEM_MC_LOCAL(uint16_t, uTmp2);
 
@@ -4599,6 +4607,7 @@ FNIEMOP_DEF(iemOp_xchg_Ev_Gv)
 
             case IEMMODE_32BIT:
                 IEM_MC_BEGIN(0, 2);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_LOCAL(uint32_t, uTmp1);
                 IEM_MC_LOCAL(uint32_t, uTmp2);
 
@@ -4613,6 +4622,7 @@ FNIEMOP_DEF(iemOp_xchg_Ev_Gv)
 
             case IEMMODE_64BIT:
                 IEM_MC_BEGIN(0, 2);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_LOCAL(uint64_t, uTmp1);
                 IEM_MC_LOCAL(uint64_t, uTmp2);
 
@@ -4643,6 +4653,7 @@ FNIEMOP_DEF(iemOp_xchg_Ev_Gv)
                 IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
 
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_MEM_MAP(pu16Mem, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/);
                 IEM_MC_REF_GREG_U16(pu16Reg, IEM_GET_MODRM_REG(pVCpu, bRm));
                 if (!(pVCpu->iem.s.fExec & IEM_F_X86_DISREGARD_LOCK))
@@ -4662,6 +4673,7 @@ FNIEMOP_DEF(iemOp_xchg_Ev_Gv)
                 IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
 
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_MEM_MAP(pu32Mem, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/);
                 IEM_MC_REF_GREG_U32(pu32Reg, IEM_GET_MODRM_REG(pVCpu, bRm));
                 if (!(pVCpu->iem.s.fExec & IEM_F_X86_DISREGARD_LOCK))
@@ -4682,6 +4694,7 @@ FNIEMOP_DEF(iemOp_xchg_Ev_Gv)
                 IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
 
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_MEM_MAP(pu64Mem, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/);
                 IEM_MC_REF_GREG_U64(pu64Reg, IEM_GET_MODRM_REG(pVCpu, bRm));
                 if (!(pVCpu->iem.s.fExec & IEM_F_X86_DISREGARD_LOCK))
@@ -4715,8 +4728,8 @@ FNIEMOP_DEF(iemOp_mov_Eb_Gb)
      */
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(0, 1);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_LOCAL(uint8_t, u8Value);
         IEM_MC_FETCH_GREG_U8(u8Value, IEM_GET_MODRM_REG(pVCpu, bRm));
         IEM_MC_STORE_GREG_U8(IEM_GET_MODRM_RM(pVCpu, bRm), u8Value);
@@ -4755,11 +4768,11 @@ FNIEMOP_DEF(iemOp_mov_Ev_Gv)
      */
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffOpSize)
         {
             case IEMMODE_16BIT:
                 IEM_MC_BEGIN(0, 1);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_LOCAL(uint16_t, u16Value);
                 IEM_MC_FETCH_GREG_U16(u16Value, IEM_GET_MODRM_REG(pVCpu, bRm));
                 IEM_MC_STORE_GREG_U16(IEM_GET_MODRM_RM(pVCpu, bRm), u16Value);
@@ -4769,6 +4782,7 @@ FNIEMOP_DEF(iemOp_mov_Ev_Gv)
 
             case IEMMODE_32BIT:
                 IEM_MC_BEGIN(0, 1);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_LOCAL(uint32_t, u32Value);
                 IEM_MC_FETCH_GREG_U32(u32Value, IEM_GET_MODRM_REG(pVCpu, bRm));
                 IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_RM(pVCpu, bRm), u32Value);
@@ -4778,6 +4792,7 @@ FNIEMOP_DEF(iemOp_mov_Ev_Gv)
 
             case IEMMODE_64BIT:
                 IEM_MC_BEGIN(0, 1);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_LOCAL(uint64_t, u64Value);
                 IEM_MC_FETCH_GREG_U64(u64Value, IEM_GET_MODRM_REG(pVCpu, bRm));
                 IEM_MC_STORE_GREG_U64(IEM_GET_MODRM_RM(pVCpu, bRm), u64Value);
@@ -4851,8 +4866,8 @@ FNIEMOP_DEF(iemOp_mov_Gb_Eb)
      */
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(0, 1);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_LOCAL(uint8_t, u8Value);
         IEM_MC_FETCH_GREG_U8(u8Value, IEM_GET_MODRM_RM(pVCpu, bRm));
         IEM_MC_STORE_GREG_U8(IEM_GET_MODRM_REG(pVCpu, bRm), u8Value);
@@ -4891,11 +4906,11 @@ FNIEMOP_DEF(iemOp_mov_Gv_Ev)
      */
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffOpSize)
         {
             case IEMMODE_16BIT:
                 IEM_MC_BEGIN(0, 1);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_LOCAL(uint16_t, u16Value);
                 IEM_MC_FETCH_GREG_U16(u16Value, IEM_GET_MODRM_RM(pVCpu, bRm));
                 IEM_MC_STORE_GREG_U16(IEM_GET_MODRM_REG(pVCpu, bRm), u16Value);
@@ -4905,6 +4920,7 @@ FNIEMOP_DEF(iemOp_mov_Gv_Ev)
 
             case IEMMODE_32BIT:
                 IEM_MC_BEGIN(0, 1);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_LOCAL(uint32_t, u32Value);
                 IEM_MC_FETCH_GREG_U32(u32Value, IEM_GET_MODRM_RM(pVCpu, bRm));
                 IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), u32Value);
@@ -4914,6 +4930,7 @@ FNIEMOP_DEF(iemOp_mov_Gv_Ev)
 
             case IEMMODE_64BIT:
                 IEM_MC_BEGIN(0, 1);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_LOCAL(uint64_t, u64Value);
                 IEM_MC_FETCH_GREG_U64(u64Value, IEM_GET_MODRM_RM(pVCpu, bRm));
                 IEM_MC_STORE_GREG_U64(IEM_GET_MODRM_REG(pVCpu, bRm), u64Value);
@@ -5010,11 +5027,11 @@ FNIEMOP_DEF(iemOp_mov_Ev_Sw)
      */
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffOpSize)
         {
             case IEMMODE_16BIT:
                 IEM_MC_BEGIN(0, 1);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_LOCAL(uint16_t, u16Value);
                 IEM_MC_FETCH_SREG_U16(u16Value, iSegReg);
                 IEM_MC_STORE_GREG_U16(IEM_GET_MODRM_RM(pVCpu, bRm), u16Value);
@@ -5024,6 +5041,7 @@ FNIEMOP_DEF(iemOp_mov_Ev_Sw)
 
             case IEMMODE_32BIT:
                 IEM_MC_BEGIN(0, 1);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_LOCAL(uint32_t, u32Value);
                 IEM_MC_FETCH_SREG_ZX_U32(u32Value, iSegReg);
                 IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_RM(pVCpu, bRm), u32Value);
@@ -5033,6 +5051,7 @@ FNIEMOP_DEF(iemOp_mov_Ev_Sw)
 
             case IEMMODE_64BIT:
                 IEM_MC_BEGIN(0, 1);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_LOCAL(uint64_t, u64Value);
                 IEM_MC_FETCH_SREG_ZX_U64(u64Value, iSegReg);
                 IEM_MC_STORE_GREG_U64(IEM_GET_MODRM_RM(pVCpu, bRm), u64Value);
@@ -5148,8 +5167,8 @@ FNIEMOP_DEF(iemOp_mov_Sw_Ev)
      */
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(2, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_ARG_CONST(uint8_t, iSRegArg, iSegReg, 0);
         IEM_MC_ARG(uint16_t,      u16Value,          1);
         IEM_MC_FETCH_GREG_U16(u16Value, IEM_GET_MODRM_RM(pVCpu, bRm));
@@ -5389,13 +5408,12 @@ FNIEMOP_DEF(iemOp_Grp1A__xop)
  */
 FNIEMOP_DEF_1(iemOpCommonXchgGRegRax, uint8_t, iReg)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     iReg |= pVCpu->iem.s.uRexB;
     switch (pVCpu->iem.s.enmEffOpSize)
     {
         case IEMMODE_16BIT:
             IEM_MC_BEGIN(0, 2);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint16_t, u16Tmp1);
             IEM_MC_LOCAL(uint16_t, u16Tmp2);
             IEM_MC_FETCH_GREG_U16(u16Tmp1, iReg);
@@ -5408,6 +5426,7 @@ FNIEMOP_DEF_1(iemOpCommonXchgGRegRax, uint8_t, iReg)
 
         case IEMMODE_32BIT:
             IEM_MC_BEGIN(0, 2);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint32_t, u32Tmp1);
             IEM_MC_LOCAL(uint32_t, u32Tmp2);
             IEM_MC_FETCH_GREG_U32(u32Tmp1, iReg);
@@ -5420,6 +5439,7 @@ FNIEMOP_DEF_1(iemOpCommonXchgGRegRax, uint8_t, iReg)
 
         case IEMMODE_64BIT:
             IEM_MC_BEGIN(0, 2);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint64_t, u64Tmp1);
             IEM_MC_LOCAL(uint64_t, u64Tmp2);
             IEM_MC_FETCH_GREG_U64(u64Tmp1, iReg);
@@ -5465,7 +5485,9 @@ FNIEMOP_DEF(iemOp_nop)
     }
     else
         IEMOP_MNEMONIC(nop, "nop");
+    /** @todo testcase: lock nop; lock pause */
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
     IEM_MC_END();
 }
@@ -5546,12 +5568,12 @@ FNIEMOP_DEF(iemOp_xchg_eDI_eAX)
  */
 FNIEMOP_DEF(iemOp_cbw)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     switch (pVCpu->iem.s.enmEffOpSize)
     {
         case IEMMODE_16BIT:
             IEMOP_MNEMONIC(cbw, "cbw");
             IEM_MC_BEGIN(0, 1);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_IF_GREG_BIT_SET(X86_GREG_xAX, 7) {
                 IEM_MC_OR_GREG_U16(X86_GREG_xAX, UINT16_C(0xff00));
             } IEM_MC_ELSE() {
@@ -5564,6 +5586,7 @@ FNIEMOP_DEF(iemOp_cbw)
         case IEMMODE_32BIT:
             IEMOP_MNEMONIC(cwde, "cwde");
             IEM_MC_BEGIN(0, 1);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_IF_GREG_BIT_SET(X86_GREG_xAX, 15) {
                 IEM_MC_OR_GREG_U32(X86_GREG_xAX, UINT32_C(0xffff0000));
             } IEM_MC_ELSE() {
@@ -5576,6 +5599,7 @@ FNIEMOP_DEF(iemOp_cbw)
         case IEMMODE_64BIT:
             IEMOP_MNEMONIC(cdqe, "cdqe");
             IEM_MC_BEGIN(0, 1);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_IF_GREG_BIT_SET(X86_GREG_xAX, 31) {
                 IEM_MC_OR_GREG_U64(X86_GREG_xAX, UINT64_C(0xffffffff00000000));
             } IEM_MC_ELSE() {
@@ -5595,12 +5619,12 @@ FNIEMOP_DEF(iemOp_cbw)
  */
 FNIEMOP_DEF(iemOp_cwd)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     switch (pVCpu->iem.s.enmEffOpSize)
     {
         case IEMMODE_16BIT:
             IEMOP_MNEMONIC(cwd, "cwd");
             IEM_MC_BEGIN(0, 1);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_IF_GREG_BIT_SET(X86_GREG_xAX, 15) {
                 IEM_MC_STORE_GREG_U16_CONST(X86_GREG_xDX, UINT16_C(0xffff));
             } IEM_MC_ELSE() {
@@ -5613,6 +5637,7 @@ FNIEMOP_DEF(iemOp_cwd)
         case IEMMODE_32BIT:
             IEMOP_MNEMONIC(cdq, "cdq");
             IEM_MC_BEGIN(0, 1);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_IF_GREG_BIT_SET(X86_GREG_xAX, 31) {
                 IEM_MC_STORE_GREG_U32_CONST(X86_GREG_xDX, UINT32_C(0xffffffff));
             } IEM_MC_ELSE() {
@@ -5625,6 +5650,7 @@ FNIEMOP_DEF(iemOp_cwd)
         case IEMMODE_64BIT:
             IEMOP_MNEMONIC(cqo, "cqo");
             IEM_MC_BEGIN(0, 1);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_IF_GREG_BIT_SET(X86_GREG_xAX, 63) {
                 IEM_MC_STORE_GREG_U64_CONST(X86_GREG_xDX, UINT64_C(0xffffffffffffffff));
             } IEM_MC_ELSE() {
@@ -5664,9 +5690,8 @@ FNIEMOP_DEF(iemOp_call_Ap)
 FNIEMOP_DEF(iemOp_wait)
 {
     IEMOP_MNEMONIC(wait, "wait");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_WAIT_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -5704,11 +5729,11 @@ FNIEMOP_DEF(iemOp_popf_Fv)
 FNIEMOP_DEF(iemOp_sahf)
 {
     IEMOP_MNEMONIC(sahf, "sahf");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     if (   IEM_IS_64BIT_CODE(pVCpu)
         && !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLahfSahf)
         IEMOP_RAISE_INVALID_OPCODE_RET();
     IEM_MC_BEGIN(0, 2);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(uint32_t, u32Flags);
     IEM_MC_LOCAL(uint32_t, EFlags);
     IEM_MC_FETCH_EFLAGS(EFlags);
@@ -5729,11 +5754,11 @@ FNIEMOP_DEF(iemOp_sahf)
 FNIEMOP_DEF(iemOp_lahf)
 {
     IEMOP_MNEMONIC(lahf, "lahf");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     if (   IEM_IS_64BIT_CODE(pVCpu)
         && !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLahfSahf)
         IEMOP_RAISE_INVALID_OPCODE_RET();
     IEM_MC_BEGIN(0, 1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(uint8_t, u8Flags);
     IEM_MC_FETCH_EFLAGS_U8(u8Flags);
     IEM_MC_STORE_GREG_U8(X86_GREG_xSP/*=AH*/, u8Flags);
@@ -5744,8 +5769,8 @@ FNIEMOP_DEF(iemOp_lahf)
 
 /**
  * Macro used by iemOp_mov_AL_Ob, iemOp_mov_rAX_Ov, iemOp_mov_Ob_AL and
- * iemOp_mov_Ov_rAX to fetch the moffsXX bit of the opcode and fend off lock
- * prefixes.  Will return on failures.
+ * iemOp_mov_Ov_rAX to fetch the moffsXX bit of the opcode.
+ * Will return/throw on failures.
  * @param   a_GCPtrMemOff   The variable to store the offset in.
  */
 #define IEMOP_FETCH_MOFFS_XX(a_GCPtrMemOff) \
@@ -5764,7 +5789,6 @@ FNIEMOP_DEF(iemOp_lahf)
                 break; \
             IEM_NOT_REACHED_DEFAULT_CASE_RET(); \
         } \
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
     } while (0)
 
 /**
@@ -5773,7 +5797,7 @@ FNIEMOP_DEF(iemOp_lahf)
 FNIEMOP_DEF(iemOp_mov_AL_Ob)
 {
     /*
-     * Get the offset and fend off lock prefixes.
+     * Get the offset.
      */
     IEMOP_MNEMONIC(mov_AL_Ob, "mov AL,Ob");
     RTGCPTR GCPtrMemOff;
@@ -5783,6 +5807,7 @@ FNIEMOP_DEF(iemOp_mov_AL_Ob)
      * Fetch AL.
      */
     IEM_MC_BEGIN(0,1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(uint8_t, u8Tmp);
     IEM_MC_FETCH_MEM_U8(u8Tmp, pVCpu->iem.s.iEffSeg, GCPtrMemOff);
     IEM_MC_STORE_GREG_U8(X86_GREG_xAX, u8Tmp);
@@ -5797,7 +5822,7 @@ FNIEMOP_DEF(iemOp_mov_AL_Ob)
 FNIEMOP_DEF(iemOp_mov_rAX_Ov)
 {
     /*
-     * Get the offset and fend off lock prefixes.
+     * Get the offset.
      */
     IEMOP_MNEMONIC(mov_rAX_Ov, "mov rAX,Ov");
     RTGCPTR GCPtrMemOff;
@@ -5810,6 +5835,7 @@ FNIEMOP_DEF(iemOp_mov_rAX_Ov)
     {
         case IEMMODE_16BIT:
             IEM_MC_BEGIN(0,1);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint16_t, u16Tmp);
             IEM_MC_FETCH_MEM_U16(u16Tmp, pVCpu->iem.s.iEffSeg, GCPtrMemOff);
             IEM_MC_STORE_GREG_U16(X86_GREG_xAX, u16Tmp);
@@ -5819,6 +5845,7 @@ FNIEMOP_DEF(iemOp_mov_rAX_Ov)
 
         case IEMMODE_32BIT:
             IEM_MC_BEGIN(0,1);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint32_t, u32Tmp);
             IEM_MC_FETCH_MEM_U32(u32Tmp, pVCpu->iem.s.iEffSeg, GCPtrMemOff);
             IEM_MC_STORE_GREG_U32(X86_GREG_xAX, u32Tmp);
@@ -5828,6 +5855,7 @@ FNIEMOP_DEF(iemOp_mov_rAX_Ov)
 
         case IEMMODE_64BIT:
             IEM_MC_BEGIN(0,1);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint64_t, u64Tmp);
             IEM_MC_FETCH_MEM_U64(u64Tmp, pVCpu->iem.s.iEffSeg, GCPtrMemOff);
             IEM_MC_STORE_GREG_U64(X86_GREG_xAX, u64Tmp);
@@ -5846,7 +5874,7 @@ FNIEMOP_DEF(iemOp_mov_rAX_Ov)
 FNIEMOP_DEF(iemOp_mov_Ob_AL)
 {
     /*
-     * Get the offset and fend off lock prefixes.
+     * Get the offset.
      */
     IEMOP_MNEMONIC(mov_Ob_AL, "mov Ob,AL");
     RTGCPTR GCPtrMemOff;
@@ -5856,6 +5884,7 @@ FNIEMOP_DEF(iemOp_mov_Ob_AL)
      * Store AL.
      */
     IEM_MC_BEGIN(0,1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(uint8_t, u8Tmp);
     IEM_MC_FETCH_GREG_U8(u8Tmp, X86_GREG_xAX);
     IEM_MC_STORE_MEM_U8(pVCpu->iem.s.iEffSeg, GCPtrMemOff, u8Tmp);
@@ -5870,7 +5899,7 @@ FNIEMOP_DEF(iemOp_mov_Ob_AL)
 FNIEMOP_DEF(iemOp_mov_Ov_rAX)
 {
     /*
-     * Get the offset and fend off lock prefixes.
+     * Get the offset.
      */
     IEMOP_MNEMONIC(mov_Ov_rAX, "mov Ov,rAX");
     RTGCPTR GCPtrMemOff;
@@ -5883,6 +5912,7 @@ FNIEMOP_DEF(iemOp_mov_Ov_rAX)
     {
         case IEMMODE_16BIT:
             IEM_MC_BEGIN(0,1);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint16_t, u16Tmp);
             IEM_MC_FETCH_GREG_U16(u16Tmp, X86_GREG_xAX);
             IEM_MC_STORE_MEM_U16(pVCpu->iem.s.iEffSeg, GCPtrMemOff, u16Tmp);
@@ -5892,6 +5922,7 @@ FNIEMOP_DEF(iemOp_mov_Ov_rAX)
 
         case IEMMODE_32BIT:
             IEM_MC_BEGIN(0,1);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint32_t, u32Tmp);
             IEM_MC_FETCH_GREG_U32(u32Tmp, X86_GREG_xAX);
             IEM_MC_STORE_MEM_U32(pVCpu->iem.s.iEffSeg, GCPtrMemOff, u32Tmp);
@@ -5901,6 +5932,7 @@ FNIEMOP_DEF(iemOp_mov_Ov_rAX)
 
         case IEMMODE_64BIT:
             IEM_MC_BEGIN(0,1);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint64_t, u64Tmp);
             IEM_MC_FETCH_GREG_U64(u64Tmp, X86_GREG_xAX);
             IEM_MC_STORE_MEM_U64(pVCpu->iem.s.iEffSeg, GCPtrMemOff, u64Tmp);
@@ -5915,6 +5947,7 @@ FNIEMOP_DEF(iemOp_mov_Ov_rAX)
 /** Macro used by iemOp_movsb_Xb_Yb and iemOp_movswd_Xv_Yv */
 #define IEM_MOVS_CASE(ValBits, AddrBits) \
         IEM_MC_BEGIN(0, 2); \
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
         IEM_MC_LOCAL(uint##ValBits##_t, uValue); \
         IEM_MC_LOCAL(RTGCPTR,           uAddr); \
         IEM_MC_FETCH_GREG_U##AddrBits##_ZX_U64(uAddr, X86_GREG_xSI); \
@@ -5936,14 +5969,13 @@ FNIEMOP_DEF(iemOp_mov_Ov_rAX)
  */
 FNIEMOP_DEF(iemOp_movsb_Xb_Yb)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     /*
      * Use the C implementation if a repeat prefix is encountered.
      */
     if (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ))
     {
         IEMOP_MNEMONIC(rep_movsb_Xb_Yb, "rep movsb Xb,Yb");
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffAddrMode)
         {
             case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_rep_movs_op8_addr16, pVCpu->iem.s.iEffSeg);
@@ -5952,11 +5984,11 @@ FNIEMOP_DEF(iemOp_movsb_Xb_Yb)
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
-    IEMOP_MNEMONIC(movsb_Xb_Yb, "movsb Xb,Yb");
 
     /*
      * Sharing case implementation with movs[wdq] below.
      */
+    IEMOP_MNEMONIC(movsb_Xb_Yb, "movsb Xb,Yb");
     switch (pVCpu->iem.s.enmEffAddrMode)
     {
         case IEMMODE_16BIT: IEM_MOVS_CASE(8, 16); break;
@@ -5972,7 +6004,6 @@ FNIEMOP_DEF(iemOp_movsb_Xb_Yb)
  */
 FNIEMOP_DEF(iemOp_movswd_Xv_Yv)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
 
     /*
      * Use the C implementation if a repeat prefix is encountered.
@@ -5980,6 +6011,7 @@ FNIEMOP_DEF(iemOp_movswd_Xv_Yv)
     if (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ))
     {
         IEMOP_MNEMONIC(rep_movs_Xv_Yv, "rep movs Xv,Yv");
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffOpSize)
         {
             case IEMMODE_16BIT:
@@ -6010,12 +6042,12 @@ FNIEMOP_DEF(iemOp_movswd_Xv_Yv)
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
-    IEMOP_MNEMONIC(movs_Xv_Yv, "movs Xv,Yv");
 
     /*
      * Annoying double switch here.
      * Using ugly macro for implementing the cases, sharing it with movsb.
      */
+    IEMOP_MNEMONIC(movs_Xv_Yv, "movs Xv,Yv");
     switch (pVCpu->iem.s.enmEffOpSize)
     {
         case IEMMODE_16BIT:
@@ -6056,6 +6088,7 @@ FNIEMOP_DEF(iemOp_movswd_Xv_Yv)
 /** Macro used by iemOp_cmpsb_Xb_Yb and iemOp_cmpswd_Xv_Yv */
 #define IEM_CMPS_CASE(ValBits, AddrBits) \
         IEM_MC_BEGIN(3, 3); \
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
         IEM_MC_ARG(uint##ValBits##_t *, puValue1, 0); \
         IEM_MC_ARG(uint##ValBits##_t,   uValue2,  1); \
         IEM_MC_ARG(uint32_t *,          pEFlags,  2); \
@@ -6085,7 +6118,6 @@ FNIEMOP_DEF(iemOp_movswd_Xv_Yv)
  */
 FNIEMOP_DEF(iemOp_cmpsb_Xb_Yb)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
 
     /*
      * Use the C implementation if a repeat prefix is encountered.
@@ -6093,6 +6125,7 @@ FNIEMOP_DEF(iemOp_cmpsb_Xb_Yb)
     if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_REPZ)
     {
         IEMOP_MNEMONIC(repz_cmps_Xb_Yb, "repz cmps Xb,Yb");
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffAddrMode)
         {
             case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_cmps_op8_addr16, pVCpu->iem.s.iEffSeg);
@@ -6104,6 +6137,7 @@ FNIEMOP_DEF(iemOp_cmpsb_Xb_Yb)
     if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_REPNZ)
     {
         IEMOP_MNEMONIC(repnz_cmps_Xb_Yb, "repnz cmps Xb,Yb");
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffAddrMode)
         {
             case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_cmps_op8_addr16, pVCpu->iem.s.iEffSeg);
@@ -6112,11 +6146,11 @@ FNIEMOP_DEF(iemOp_cmpsb_Xb_Yb)
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
-    IEMOP_MNEMONIC(cmps_Xb_Yb, "cmps Xb,Yb");
 
     /*
      * Sharing case implementation with cmps[wdq] below.
      */
+    IEMOP_MNEMONIC(cmps_Xb_Yb, "cmps Xb,Yb");
     switch (pVCpu->iem.s.enmEffAddrMode)
     {
         case IEMMODE_16BIT: IEM_CMPS_CASE(8, 16); break;
@@ -6132,14 +6166,13 @@ FNIEMOP_DEF(iemOp_cmpsb_Xb_Yb)
  */
 FNIEMOP_DEF(iemOp_cmpswd_Xv_Yv)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     /*
      * Use the C implementation if a repeat prefix is encountered.
      */
     if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_REPZ)
     {
         IEMOP_MNEMONIC(repe_cmps_Xv_Yv, "repe cmps Xv,Yv");
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffOpSize)
         {
             case IEMMODE_16BIT:
@@ -6174,6 +6207,7 @@ FNIEMOP_DEF(iemOp_cmpswd_Xv_Yv)
     if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_REPNZ)
     {
         IEMOP_MNEMONIC(repne_cmps_Xv_Yv, "repne cmps Xv,Yv");
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffOpSize)
         {
             case IEMMODE_16BIT:
@@ -6205,12 +6239,11 @@ FNIEMOP_DEF(iemOp_cmpswd_Xv_Yv)
         }
     }
 
-    IEMOP_MNEMONIC(cmps_Xv_Yv, "cmps Xv,Yv");
-
     /*
      * Annoying double switch here.
      * Using ugly macro for implementing the cases, sharing it with cmpsb.
      */
+    IEMOP_MNEMONIC(cmps_Xv_Yv, "cmps Xv,Yv");
     switch (pVCpu->iem.s.enmEffOpSize)
     {
         case IEMMODE_16BIT:
@@ -6273,6 +6306,7 @@ FNIEMOP_DEF(iemOp_test_eAX_Iz)
 /** Macro used by iemOp_stosb_Yb_AL and iemOp_stoswd_Yv_eAX */
 #define IEM_STOS_CASE(ValBits, AddrBits) \
         IEM_MC_BEGIN(0, 2); \
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
         IEM_MC_LOCAL(uint##ValBits##_t, uValue); \
         IEM_MC_LOCAL(RTGCPTR, uAddr); \
         IEM_MC_FETCH_GREG_U##ValBits(uValue, X86_GREG_xAX); \
@@ -6291,14 +6325,13 @@ FNIEMOP_DEF(iemOp_test_eAX_Iz)
  */
 FNIEMOP_DEF(iemOp_stosb_Yb_AL)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     /*
      * Use the C implementation if a repeat prefix is encountered.
      */
     if (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ))
     {
         IEMOP_MNEMONIC(rep_stos_Yb_al, "rep stos Yb,al");
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffAddrMode)
         {
             case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP, iemCImpl_stos_al_m16);
@@ -6307,11 +6340,11 @@ FNIEMOP_DEF(iemOp_stosb_Yb_AL)
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
-    IEMOP_MNEMONIC(stos_Yb_al, "stos Yb,al");
 
     /*
      * Sharing case implementation with stos[wdq] below.
      */
+    IEMOP_MNEMONIC(stos_Yb_al, "stos Yb,al");
     switch (pVCpu->iem.s.enmEffAddrMode)
     {
         case IEMMODE_16BIT: IEM_STOS_CASE(8, 16); break;
@@ -6327,14 +6360,13 @@ FNIEMOP_DEF(iemOp_stosb_Yb_AL)
  */
 FNIEMOP_DEF(iemOp_stoswd_Yv_eAX)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     /*
      * Use the C implementation if a repeat prefix is encountered.
      */
     if (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ))
     {
         IEMOP_MNEMONIC(rep_stos_Yv_rAX, "rep stos Yv,rAX");
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffOpSize)
         {
             case IEMMODE_16BIT:
@@ -6365,12 +6397,12 @@ FNIEMOP_DEF(iemOp_stoswd_Yv_eAX)
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
-    IEMOP_MNEMONIC(stos_Yv_rAX, "stos Yv,rAX");
 
     /*
      * Annoying double switch here.
      * Using ugly macro for implementing the cases, sharing it with stosb.
      */
+    IEMOP_MNEMONIC(stos_Yv_rAX, "stos Yv,rAX");
     switch (pVCpu->iem.s.enmEffOpSize)
     {
         case IEMMODE_16BIT:
@@ -6411,6 +6443,7 @@ FNIEMOP_DEF(iemOp_stoswd_Yv_eAX)
 /** Macro used by iemOp_lodsb_AL_Xb and iemOp_lodswd_eAX_Xv */
 #define IEM_LODS_CASE(ValBits, AddrBits) \
         IEM_MC_BEGIN(0, 2); \
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
         IEM_MC_LOCAL(uint##ValBits##_t, uValue); \
         IEM_MC_LOCAL(RTGCPTR, uAddr); \
         IEM_MC_FETCH_GREG_U##AddrBits##_ZX_U64(uAddr, X86_GREG_xSI); \
@@ -6429,14 +6462,13 @@ FNIEMOP_DEF(iemOp_stoswd_Yv_eAX)
  */
 FNIEMOP_DEF(iemOp_lodsb_AL_Xb)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     /*
      * Use the C implementation if a repeat prefix is encountered.
      */
     if (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ))
     {
         IEMOP_MNEMONIC(rep_lodsb_AL_Xb, "rep lodsb AL,Xb");
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffAddrMode)
         {
             case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_lods_al_m16, pVCpu->iem.s.iEffSeg);
@@ -6445,11 +6477,11 @@ FNIEMOP_DEF(iemOp_lodsb_AL_Xb)
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
-    IEMOP_MNEMONIC(lodsb_AL_Xb, "lodsb AL,Xb");
 
     /*
      * Sharing case implementation with stos[wdq] below.
      */
+    IEMOP_MNEMONIC(lodsb_AL_Xb, "lodsb AL,Xb");
     switch (pVCpu->iem.s.enmEffAddrMode)
     {
         case IEMMODE_16BIT: IEM_LODS_CASE(8, 16); break;
@@ -6465,14 +6497,13 @@ FNIEMOP_DEF(iemOp_lodsb_AL_Xb)
  */
 FNIEMOP_DEF(iemOp_lodswd_eAX_Xv)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     /*
      * Use the C implementation if a repeat prefix is encountered.
      */
     if (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ))
     {
         IEMOP_MNEMONIC(rep_lods_rAX_Xv, "rep lods rAX,Xv");
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffOpSize)
         {
             case IEMMODE_16BIT:
@@ -6503,12 +6534,12 @@ FNIEMOP_DEF(iemOp_lodswd_eAX_Xv)
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
-    IEMOP_MNEMONIC(lods_rAX_Xv, "lods rAX,Xv");
 
     /*
      * Annoying double switch here.
      * Using ugly macro for implementing the cases, sharing it with lodsb.
      */
+    IEMOP_MNEMONIC(lods_rAX_Xv, "lods rAX,Xv");
     switch (pVCpu->iem.s.enmEffOpSize)
     {
         case IEMMODE_16BIT:
@@ -6549,6 +6580,7 @@ FNIEMOP_DEF(iemOp_lodswd_eAX_Xv)
 /** Macro used by iemOp_scasb_AL_Xb and iemOp_scaswd_eAX_Xv */
 #define IEM_SCAS_CASE(ValBits, AddrBits) \
         IEM_MC_BEGIN(3, 2); \
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
         IEM_MC_ARG(uint##ValBits##_t *, puRax,   0); \
         IEM_MC_ARG(uint##ValBits##_t,   uValue,  1); \
         IEM_MC_ARG(uint32_t *,          pEFlags, 2); \
@@ -6573,14 +6605,13 @@ FNIEMOP_DEF(iemOp_lodswd_eAX_Xv)
  */
 FNIEMOP_DEF(iemOp_scasb_AL_Xb)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     /*
      * Use the C implementation if a repeat prefix is encountered.
      */
     if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_REPZ)
     {
         IEMOP_MNEMONIC(repe_scasb_AL_Xb, "repe scasb AL,Xb");
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffAddrMode)
         {
             case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_scas_al_m16);
@@ -6592,6 +6623,7 @@ FNIEMOP_DEF(iemOp_scasb_AL_Xb)
     if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_REPNZ)
     {
         IEMOP_MNEMONIC(repone_scasb_AL_Xb, "repne scasb AL,Xb");
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffAddrMode)
         {
             case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_scas_al_m16);
@@ -6600,11 +6632,11 @@ FNIEMOP_DEF(iemOp_scasb_AL_Xb)
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
-    IEMOP_MNEMONIC(scasb_AL_Xb, "scasb AL,Xb");
 
     /*
      * Sharing case implementation with stos[wdq] below.
      */
+    IEMOP_MNEMONIC(scasb_AL_Xb, "scasb AL,Xb");
     switch (pVCpu->iem.s.enmEffAddrMode)
     {
         case IEMMODE_16BIT: IEM_SCAS_CASE(8, 16); break;
@@ -6620,14 +6652,13 @@ FNIEMOP_DEF(iemOp_scasb_AL_Xb)
  */
 FNIEMOP_DEF(iemOp_scaswd_eAX_Xv)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     /*
      * Use the C implementation if a repeat prefix is encountered.
      */
     if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_REPZ)
     {
         IEMOP_MNEMONIC(repe_scas_rAX_Xv, "repe scas rAX,Xv");
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffOpSize)
         {
             case IEMMODE_16BIT:
@@ -6661,6 +6692,7 @@ FNIEMOP_DEF(iemOp_scaswd_eAX_Xv)
     if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_REPNZ)
     {
         IEMOP_MNEMONIC(repne_scas_rAX_Xv, "repne scas rAX,Xv");
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffOpSize)
         {
             case IEMMODE_16BIT:
@@ -6691,12 +6723,12 @@ FNIEMOP_DEF(iemOp_scaswd_eAX_Xv)
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
-    IEMOP_MNEMONIC(scas_rAX_Xv, "scas rAX,Xv");
 
     /*
      * Annoying double switch here.
      * Using ugly macro for implementing the cases, sharing it with scasb.
      */
+    IEMOP_MNEMONIC(scas_rAX_Xv, "scas rAX,Xv");
     switch (pVCpu->iem.s.enmEffOpSize)
     {
         case IEMMODE_16BIT:
@@ -6740,9 +6772,8 @@ FNIEMOP_DEF(iemOp_scaswd_eAX_Xv)
 FNIEMOP_DEF_1(iemOpCommonMov_r8_Ib, uint8_t, iFixedReg)
 {
     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(0, 1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL_CONST(uint8_t, u8Value,/*=*/ u8Imm);
     IEM_MC_STORE_GREG_U8(iFixedReg, u8Value);
     IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -6840,9 +6871,8 @@ FNIEMOP_DEF_1(iemOpCommonMov_Rv_Iv, uint8_t, iFixedReg)
         case IEMMODE_16BIT:
         {
             uint16_t u16Imm; IEM_OPCODE_GET_NEXT_U16(&u16Imm);
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
             IEM_MC_BEGIN(0, 1);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL_CONST(uint16_t, u16Value,/*=*/ u16Imm);
             IEM_MC_STORE_GREG_U16(iFixedReg, u16Value);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -6853,9 +6883,8 @@ FNIEMOP_DEF_1(iemOpCommonMov_Rv_Iv, uint8_t, iFixedReg)
         case IEMMODE_32BIT:
         {
             uint32_t u32Imm; IEM_OPCODE_GET_NEXT_U32(&u32Imm);
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
             IEM_MC_BEGIN(0, 1);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL_CONST(uint32_t, u32Value,/*=*/ u32Imm);
             IEM_MC_STORE_GREG_U32(iFixedReg, u32Value);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -6865,9 +6894,8 @@ FNIEMOP_DEF_1(iemOpCommonMov_Rv_Iv, uint8_t, iFixedReg)
         case IEMMODE_64BIT:
         {
             uint64_t u64Imm; IEM_OPCODE_GET_NEXT_U64(&u64Imm); /* 64-bit immediate! */
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
             IEM_MC_BEGIN(0, 1);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL_CONST(uint64_t, u64Value,/*=*/ u64Imm);
             IEM_MC_STORE_GREG_U64(iFixedReg, u64Value);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -6985,8 +7013,8 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_Ib)
     {
         /* register */
         uint8_t cShift; IEM_OPCODE_GET_NEXT_U8(&cShift);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(3, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_ARG(uint8_t *,       pu8Dst,            0);
         IEM_MC_ARG_CONST(uint8_t,   cShiftArg, cShift, 1);
         IEM_MC_ARG(uint32_t *,      pEFlags,           2);
@@ -7047,11 +7075,11 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_Ib)
     {
         /* register */
         uint8_t cShift; IEM_OPCODE_GET_NEXT_U8(&cShift);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffOpSize)
         {
             case IEMMODE_16BIT:
                 IEM_MC_BEGIN(3, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint16_t *,      pu16Dst,           0);
                 IEM_MC_ARG_CONST(uint8_t,   cShiftArg, cShift, 1);
                 IEM_MC_ARG(uint32_t *,      pEFlags,           2);
@@ -7064,6 +7092,7 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_Ib)
 
             case IEMMODE_32BIT:
                 IEM_MC_BEGIN(3, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint32_t *,      pu32Dst,           0);
                 IEM_MC_ARG_CONST(uint8_t,   cShiftArg, cShift, 1);
                 IEM_MC_ARG(uint32_t *,      pEFlags,           2);
@@ -7077,6 +7106,7 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_Ib)
 
             case IEMMODE_64BIT:
                 IEM_MC_BEGIN(3, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint64_t *,      pu64Dst,           0);
                 IEM_MC_ARG_CONST(uint8_t,   cShiftArg, cShift, 1);
                 IEM_MC_ARG(uint32_t *,      pEFlags,           2);
@@ -7337,8 +7367,8 @@ FNIEMOP_DEF(iemOp_Grp11_Eb_Ib)
     {
         /* register access */
         uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(0, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_STORE_GREG_U8(IEM_GET_MODRM_RM(pVCpu, bRm), u8Imm);
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
@@ -7573,8 +7603,8 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_1)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /* register */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(3, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_ARG(uint8_t *,       pu8Dst,             0);
         IEM_MC_ARG_CONST(uint8_t,   cShiftArg,/*=*/1,   1);
         IEM_MC_ARG(uint32_t *,      pEFlags,            2);
@@ -7632,11 +7662,11 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_1)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /* register */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffOpSize)
         {
             case IEMMODE_16BIT:
                 IEM_MC_BEGIN(3, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint16_t *,      pu16Dst,           0);
                 IEM_MC_ARG_CONST(uint8_t,   cShiftArg,/*=1*/1, 1);
                 IEM_MC_ARG(uint32_t *,      pEFlags,           2);
@@ -7649,6 +7679,7 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_1)
 
             case IEMMODE_32BIT:
                 IEM_MC_BEGIN(3, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint32_t *,      pu32Dst,           0);
                 IEM_MC_ARG_CONST(uint8_t,   cShiftArg,/*=1*/1, 1);
                 IEM_MC_ARG(uint32_t *,      pEFlags,           2);
@@ -7662,6 +7693,7 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_1)
 
             case IEMMODE_64BIT:
                 IEM_MC_BEGIN(3, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint64_t *,      pu64Dst,           0);
                 IEM_MC_ARG_CONST(uint8_t,   cShiftArg,/*=1*/1, 1);
                 IEM_MC_ARG(uint32_t *,      pEFlags,           2);
@@ -7767,8 +7799,8 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_CL)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /* register */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(3, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_ARG(uint8_t *,   pu8Dst,     0);
         IEM_MC_ARG(uint8_t,     cShiftArg,  1);
         IEM_MC_ARG(uint32_t *,  pEFlags,    2);
@@ -7827,11 +7859,11 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_CL)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /* register */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffOpSize)
         {
             case IEMMODE_16BIT:
                 IEM_MC_BEGIN(3, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint16_t *,      pu16Dst,    0);
                 IEM_MC_ARG(uint8_t,         cShiftArg,  1);
                 IEM_MC_ARG(uint32_t *,      pEFlags,    2);
@@ -7845,6 +7877,7 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_CL)
 
             case IEMMODE_32BIT:
                 IEM_MC_BEGIN(3, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint32_t *,      pu32Dst,    0);
                 IEM_MC_ARG(uint8_t,         cShiftArg,  1);
                 IEM_MC_ARG(uint32_t *,      pEFlags,    2);
@@ -7859,6 +7892,7 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_CL)
 
             case IEMMODE_64BIT:
                 IEM_MC_BEGIN(3, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint64_t *,      pu64Dst,    0);
                 IEM_MC_ARG(uint8_t,         cShiftArg,  1);
                 IEM_MC_ARG(uint32_t *,      pEFlags,    2);
@@ -7977,10 +8011,10 @@ FNIEMOP_DEF(iemOp_aad_Ib)
 FNIEMOP_DEF(iemOp_salc)
 {
     IEMOP_MNEMONIC(salc, "salc");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_NO_64BIT();
 
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_IF_EFL_BIT_SET(X86_EFL_CF) {
         IEM_MC_STORE_GREG_U8_CONST(X86_GREG_xAX, 0xff);
     } IEM_MC_ELSE() {
@@ -7997,11 +8031,11 @@ FNIEMOP_DEF(iemOp_salc)
 FNIEMOP_DEF(iemOp_xlat)
 {
     IEMOP_MNEMONIC(xlat, "xlat");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     switch (pVCpu->iem.s.enmEffAddrMode)
     {
         case IEMMODE_16BIT:
             IEM_MC_BEGIN(2, 0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint8_t,  u8Tmp);
             IEM_MC_LOCAL(uint16_t, u16Addr);
             IEM_MC_FETCH_GREG_U8_ZX_U16(u16Addr, X86_GREG_xAX);
@@ -8014,6 +8048,7 @@ FNIEMOP_DEF(iemOp_xlat)
 
         case IEMMODE_32BIT:
             IEM_MC_BEGIN(2, 0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint8_t,  u8Tmp);
             IEM_MC_LOCAL(uint32_t, u32Addr);
             IEM_MC_FETCH_GREG_U8_ZX_U32(u32Addr, X86_GREG_xAX);
@@ -8026,6 +8061,7 @@ FNIEMOP_DEF(iemOp_xlat)
 
         case IEMMODE_64BIT:
             IEM_MC_BEGIN(2, 0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint8_t,  u8Tmp);
             IEM_MC_LOCAL(uint64_t, u64Addr);
             IEM_MC_FETCH_GREG_U8_ZX_U64(u64Addr, X86_GREG_xAX);
@@ -8050,9 +8086,8 @@ FNIEMOP_DEF(iemOp_xlat)
  */
 FNIEMOP_DEF_2(iemOpHlpFpu_st0_stN, uint8_t, bRm, PFNIEMAIMPLFPUR80, pfnAImpl)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(3, 1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
     IEM_MC_ARG_LOCAL_REF(PIEMFPURESULT, pFpuRes,        FpuRes,     0);
     IEM_MC_ARG(PCRTFLOAT80U,            pr80Value1,                 1);
@@ -8082,9 +8117,8 @@ FNIEMOP_DEF_2(iemOpHlpFpu_st0_stN, uint8_t, bRm, PFNIEMAIMPLFPUR80, pfnAImpl)
  */
 FNIEMOP_DEF_2(iemOpHlpFpuNoStore_st0_stN, uint8_t, bRm, PFNIEMAIMPLFPUR80FSW, pfnAImpl)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(3, 1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(uint16_t,              u16Fsw);
     IEM_MC_ARG_LOCAL_REF(uint16_t *,    pu16Fsw,        u16Fsw,     0);
     IEM_MC_ARG(PCRTFLOAT80U,            pr80Value1,                 1);
@@ -8114,9 +8148,8 @@ FNIEMOP_DEF_2(iemOpHlpFpuNoStore_st0_stN, uint8_t, bRm, PFNIEMAIMPLFPUR80FSW, pf
  */
 FNIEMOP_DEF_2(iemOpHlpFpuNoStore_st0_stN_pop, uint8_t, bRm, PFNIEMAIMPLFPUR80FSW, pfnAImpl)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(3, 1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(uint16_t,              u16Fsw);
     IEM_MC_ARG_LOCAL_REF(uint16_t *,    pu16Fsw,        u16Fsw,     0);
     IEM_MC_ARG(PCRTFLOAT80U,            pr80Value1,                 1);
@@ -8570,9 +8603,8 @@ FNIEMOP_DEF_1(iemOp_fnstcw, uint8_t, bRm)
 FNIEMOP_DEF(iemOp_fnop)
 {
     IEMOP_MNEMONIC(fnop, "fnop");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
@@ -8588,11 +8620,10 @@ FNIEMOP_DEF(iemOp_fnop)
 FNIEMOP_DEF_1(iemOp_fld_stN, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fld_stN, "fld stN");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     /** @todo Testcase: Check if this raises \#MF?  Intel mentioned it not. AMD
      *        indicates that it does. */
     IEM_MC_BEGIN(0, 2);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(PCRTFLOAT80U,          pr80Value);
     IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
@@ -8615,11 +8646,10 @@ FNIEMOP_DEF_1(iemOp_fld_stN, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_fxch_stN, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fxch_stN, "fxch stN");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     /** @todo Testcase: Check if this raises \#MF?  Intel mentioned it not. AMD
      *        indicates that it does. */
     IEM_MC_BEGIN(2, 3);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(PCRTFLOAT80U,          pr80Value1);
     IEM_MC_LOCAL(PCRTFLOAT80U,          pr80Value2);
     IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
@@ -8646,13 +8676,13 @@ FNIEMOP_DEF_1(iemOp_fxch_stN, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_fstp_stN, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fstp_st0_stN, "fstp st0,stN");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
 
     /* fstp st0, st0 is frequently used as an official 'ffreep st0' sequence. */
     uint8_t const iDstReg = IEM_GET_MODRM_RM_8(bRm);
     if (!iDstReg)
     {
         IEM_MC_BEGIN(0, 1);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_LOCAL_CONST(uint16_t,        u16Fsw, /*=*/ 0);
         IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
         IEM_MC_MAYBE_RAISE_FPU_XCPT();
@@ -8670,6 +8700,7 @@ FNIEMOP_DEF_1(iemOp_fstp_stN, uint8_t, bRm)
     else
     {
         IEM_MC_BEGIN(0, 2);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_LOCAL(PCRTFLOAT80U,          pr80Value);
         IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
         IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
@@ -8697,9 +8728,8 @@ FNIEMOP_DEF_1(iemOp_fstp_stN, uint8_t, bRm)
  */
 FNIEMOP_DEF_1(iemOpHlpFpu_st0, PFNIEMAIMPLFPUR80UNARY, pfnAImpl)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(2, 1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
     IEM_MC_ARG_LOCAL_REF(PIEMFPURESULT, pFpuRes,    FpuRes, 0);
     IEM_MC_ARG(PCRTFLOAT80U,            pr80Value,          1);
@@ -8739,9 +8769,8 @@ FNIEMOP_DEF(iemOp_fabs)
 FNIEMOP_DEF(iemOp_ftst)
 {
     IEMOP_MNEMONIC(ftst_st0, "ftst st0");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(2, 1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(uint16_t,              u16Fsw);
     IEM_MC_ARG_LOCAL_REF(uint16_t *,    pu16Fsw,    u16Fsw, 0);
     IEM_MC_ARG(PCRTFLOAT80U,            pr80Value,          1);
@@ -8765,9 +8794,8 @@ FNIEMOP_DEF(iemOp_ftst)
 FNIEMOP_DEF(iemOp_fxam)
 {
     IEMOP_MNEMONIC(fxam_st0, "fxam st0");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(2, 1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(uint16_t,              u16Fsw);
     IEM_MC_ARG_LOCAL_REF(uint16_t *,    pu16Fsw,    u16Fsw, 0);
     IEM_MC_ARG(PCRTFLOAT80U,            pr80Value,          1);
@@ -8791,9 +8819,8 @@ FNIEMOP_DEF(iemOp_fxam)
  */
 FNIEMOP_DEF_1(iemOpHlpFpuPushConstant, PFNIEMAIMPLFPUR80LDCONST, pfnAImpl)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(1, 1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
     IEM_MC_ARG_LOCAL_REF(PIEMFPURESULT, pFpuRes,    FpuRes, 0);
 
@@ -8890,9 +8917,8 @@ FNIEMOP_DEF(iemOp_f2xm1)
  */
 FNIEMOP_DEF_2(iemOpHlpFpu_stN_st0_pop, uint8_t, bRm, PFNIEMAIMPLFPUR80, pfnAImpl)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(3, 1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
     IEM_MC_ARG_LOCAL_REF(PIEMFPURESULT, pFpuRes,        FpuRes,     0);
     IEM_MC_ARG(PCRTFLOAT80U,            pr80Value1,                 1);
@@ -8930,9 +8956,8 @@ FNIEMOP_DEF(iemOp_fyl2x)
  */
 FNIEMOP_DEF_1(iemOpHlpFpuReplace_st0_push, PFNIEMAIMPLFPUR80UNARYTWO, pfnAImpl)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(2, 1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(IEMFPURESULTTWO,           FpuResTwo);
     IEM_MC_ARG_LOCAL_REF(PIEMFPURESULTTWO,  pFpuResTwo, FpuResTwo,  0);
     IEM_MC_ARG(PCRTFLOAT80U,                pr80Value,              1);
@@ -8988,12 +9013,11 @@ FNIEMOP_DEF(iemOp_fprem1)
 FNIEMOP_DEF(iemOp_fdecstp)
 {
     IEMOP_MNEMONIC(fdecstp, "fdecstp");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     /* Note! C0, C2 and C3 are documented as undefined, we clear them. */
     /** @todo Testcase: Check whether FOP, FPUIP and FPUCS are affected by
      *        FINCSTP and FDECSTP. */
-
     IEM_MC_BEGIN(0,0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
 
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
@@ -9011,12 +9035,11 @@ FNIEMOP_DEF(iemOp_fdecstp)
 FNIEMOP_DEF(iemOp_fincstp)
 {
     IEMOP_MNEMONIC(fincstp, "fincstp");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     /* Note! C0, C2 and C3 are documented as undefined, we clear them. */
     /** @todo Testcase: Check whether FOP, FPUIP and FPUCS are affected by
      *        FINCSTP and FDECSTP. */
-
     IEM_MC_BEGIN(0,0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
 
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
@@ -9182,9 +9205,8 @@ FNIEMOP_DEF(iemOp_EscF1)
 FNIEMOP_DEF_1(iemOp_fcmovb_stN,  uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fcmovb_st0_stN, "fcmovb st0,stN");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(0, 1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(PCRTFLOAT80U,      pr80ValueN);
 
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
@@ -9209,9 +9231,8 @@ FNIEMOP_DEF_1(iemOp_fcmovb_stN,  uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_fcmove_stN,  uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fcmove_st0_stN, "fcmove st0,stN");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(0, 1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(PCRTFLOAT80U,      pr80ValueN);
 
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
@@ -9236,9 +9257,8 @@ FNIEMOP_DEF_1(iemOp_fcmove_stN,  uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_fcmovbe_stN, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fcmovbe_st0_stN, "fcmovbe st0,stN");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(0, 1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(PCRTFLOAT80U,      pr80ValueN);
 
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
@@ -9263,9 +9283,8 @@ FNIEMOP_DEF_1(iemOp_fcmovbe_stN, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_fcmovu_stN,  uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fcmovu_st0_stN, "fcmovu st0,stN");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(0, 1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(PCRTFLOAT80U,      pr80ValueN);
 
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
@@ -9294,9 +9313,8 @@ FNIEMOP_DEF_1(iemOp_fcmovu_stN,  uint8_t, bRm)
  */
 FNIEMOP_DEF_1(iemOpHlpFpuNoStore_st0_st1_pop_pop, PFNIEMAIMPLFPUR80FSW, pfnAImpl)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(3, 1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(uint16_t,              u16Fsw);
     IEM_MC_ARG_LOCAL_REF(uint16_t *,    pu16Fsw,        u16Fsw,     0);
     IEM_MC_ARG(PCRTFLOAT80U,            pr80Value1,                 1);
@@ -9728,9 +9746,8 @@ FNIEMOP_DEF_1(iemOp_fstp_m80r, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_fcmovnb_stN,  uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fcmovnb_st0_stN, "fcmovnb st0,stN");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(0, 1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(PCRTFLOAT80U,      pr80ValueN);
 
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
@@ -9755,9 +9772,8 @@ FNIEMOP_DEF_1(iemOp_fcmovnb_stN,  uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_fcmovne_stN,  uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fcmovne_st0_stN, "fcmovne st0,stN");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(0, 1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(PCRTFLOAT80U,      pr80ValueN);
 
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
@@ -9782,9 +9798,8 @@ FNIEMOP_DEF_1(iemOp_fcmovne_stN,  uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_fcmovnbe_stN, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fcmovnbe_st0_stN, "fcmovnbe st0,stN");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(0, 1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(PCRTFLOAT80U,      pr80ValueN);
 
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
@@ -9809,9 +9824,8 @@ FNIEMOP_DEF_1(iemOp_fcmovnbe_stN, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_fcmovnnu_stN, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fcmovnnu_st0_stN, "fcmovnnu st0,stN");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(0, 1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(PCRTFLOAT80U,      pr80ValueN);
 
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
@@ -9836,8 +9850,8 @@ FNIEMOP_DEF_1(iemOp_fcmovnnu_stN, uint8_t, bRm)
 FNIEMOP_DEF(iemOp_fneni)
 {
     IEMOP_MNEMONIC(fneni, "fneni (8087/ign)");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_BEGIN(0,0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
     IEM_MC_END();
@@ -9848,8 +9862,8 @@ FNIEMOP_DEF(iemOp_fneni)
 FNIEMOP_DEF(iemOp_fndisi)
 {
     IEMOP_MNEMONIC(fndisi, "fndisi (8087/ign)");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_BEGIN(0,0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
     IEM_MC_END();
@@ -9860,9 +9874,8 @@ FNIEMOP_DEF(iemOp_fndisi)
 FNIEMOP_DEF(iemOp_fnclex)
 {
     IEMOP_MNEMONIC(fnclex, "fnclex");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(0,0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
     IEM_MC_CLEAR_FSW_EX();
@@ -9884,8 +9897,8 @@ FNIEMOP_DEF(iemOp_fninit)
 FNIEMOP_DEF(iemOp_fnsetpm)
 {
     IEMOP_MNEMONIC(fnsetpm, "fnsetpm (80287/ign)");   /* set protected mode on fpu. */
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_BEGIN(0,0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
     IEM_MC_END();
@@ -9897,8 +9910,8 @@ FNIEMOP_DEF(iemOp_frstpm)
 {
     IEMOP_MNEMONIC(frstpm, "frstpm (80287XL/ign)"); /* reset pm, back to real mode. */
 #if 0 /* #UDs on newer CPUs */
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_BEGIN(0,0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
     IEM_MC_END();
@@ -9991,9 +10004,8 @@ FNIEMOP_DEF(iemOp_EscF3)
  */
 FNIEMOP_DEF_2(iemOpHlpFpu_stN_st0, uint8_t, bRm, PFNIEMAIMPLFPUR80, pfnAImpl)
 {
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(3, 1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
     IEM_MC_ARG_LOCAL_REF(PIEMFPURESULT, pFpuRes,        FpuRes,     0);
     IEM_MC_ARG(PCRTFLOAT80U,            pr80Value1,                 1);
@@ -10456,11 +10468,10 @@ FNIEMOP_DEF_1(iemOp_fnstsw,      uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_ffree_stN,   uint8_t, bRm)
 {
     IEMOP_MNEMONIC(ffree_stN, "ffree stN");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     /* Note! C0, C1, C2 and C3 are documented as undefined, we leave the
              unmodified. */
-
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
 
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
@@ -10478,9 +10489,8 @@ FNIEMOP_DEF_1(iemOp_ffree_stN,   uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_fst_stN,     uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fst_st0_stN, "fst st0,stN");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(0, 2);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(PCRTFLOAT80U,          pr80Value);
     IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
@@ -10809,9 +10819,8 @@ FNIEMOP_DEF(iemOp_EscF6)
 FNIEMOP_DEF_1(iemOp_ffreep_stN, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(ffreep_stN, "ffreep stN");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
 
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
@@ -10830,9 +10839,8 @@ FNIEMOP_DEF_1(iemOp_ffreep_stN, uint8_t, bRm)
 FNIEMOP_DEF(iemOp_fnstsw_ax)
 {
     IEMOP_MNEMONIC(fnstsw_ax, "fnstsw ax");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
     IEM_MC_BEGIN(0, 1);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(uint16_t, u16Tmp);
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ();
@@ -11183,13 +11191,13 @@ FNIEMOP_DEF(iemOp_loopne_Jb)
 {
     IEMOP_MNEMONIC(loopne_Jb, "loopne Jb");
     int8_t i8Imm; IEM_OPCODE_GET_NEXT_S8(&i8Imm);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
 
     switch (pVCpu->iem.s.enmEffAddrMode)
     {
         case IEMMODE_16BIT:
             IEM_MC_BEGIN(0,0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_SUB_GREG_U16(X86_GREG_xCX, 1);
             IEM_MC_IF_CX_IS_NZ_AND_EFL_BIT_NOT_SET(X86_EFL_ZF) {
                 IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
@@ -11201,6 +11209,7 @@ FNIEMOP_DEF(iemOp_loopne_Jb)
 
         case IEMMODE_32BIT:
             IEM_MC_BEGIN(0,0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_SUB_GREG_U32(X86_GREG_xCX, 1);
             IEM_MC_IF_ECX_IS_NZ_AND_EFL_BIT_NOT_SET(X86_EFL_ZF) {
                 IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
@@ -11212,6 +11221,7 @@ FNIEMOP_DEF(iemOp_loopne_Jb)
 
         case IEMMODE_64BIT:
             IEM_MC_BEGIN(0,0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_SUB_GREG_U64(X86_GREG_xCX, 1);
             IEM_MC_IF_RCX_IS_NZ_AND_EFL_BIT_NOT_SET(X86_EFL_ZF) {
                 IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
@@ -11233,13 +11243,13 @@ FNIEMOP_DEF(iemOp_loope_Jb)
 {
     IEMOP_MNEMONIC(loope_Jb, "loope Jb");
     int8_t i8Imm; IEM_OPCODE_GET_NEXT_S8(&i8Imm);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
 
     switch (pVCpu->iem.s.enmEffAddrMode)
     {
         case IEMMODE_16BIT:
             IEM_MC_BEGIN(0,0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_SUB_GREG_U16(X86_GREG_xCX, 1);
             IEM_MC_IF_CX_IS_NZ_AND_EFL_BIT_SET(X86_EFL_ZF) {
                 IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
@@ -11251,6 +11261,7 @@ FNIEMOP_DEF(iemOp_loope_Jb)
 
         case IEMMODE_32BIT:
             IEM_MC_BEGIN(0,0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_SUB_GREG_U32(X86_GREG_xCX, 1);
             IEM_MC_IF_ECX_IS_NZ_AND_EFL_BIT_SET(X86_EFL_ZF) {
                 IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
@@ -11262,6 +11273,7 @@ FNIEMOP_DEF(iemOp_loope_Jb)
 
         case IEMMODE_64BIT:
             IEM_MC_BEGIN(0,0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_SUB_GREG_U64(X86_GREG_xCX, 1);
             IEM_MC_IF_RCX_IS_NZ_AND_EFL_BIT_SET(X86_EFL_ZF) {
                 IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
@@ -11283,7 +11295,6 @@ FNIEMOP_DEF(iemOp_loop_Jb)
 {
     IEMOP_MNEMONIC(loop_Jb, "loop Jb");
     int8_t i8Imm; IEM_OPCODE_GET_NEXT_S8(&i8Imm);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
 
     /** @todo Check out the \#GP case if EIP < CS.Base or EIP > CS.Limit when
@@ -11300,6 +11311,7 @@ FNIEMOP_DEF(iemOp_loop_Jb)
         {
             case IEMMODE_16BIT:
                 IEM_MC_BEGIN(0,0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_STORE_GREG_U16_CONST(X86_GREG_xCX, 0);
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
@@ -11307,6 +11319,7 @@ FNIEMOP_DEF(iemOp_loop_Jb)
 
             case IEMMODE_32BIT:
                 IEM_MC_BEGIN(0,0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_STORE_GREG_U32_CONST(X86_GREG_xCX, 0);
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
@@ -11314,6 +11327,7 @@ FNIEMOP_DEF(iemOp_loop_Jb)
 
             case IEMMODE_64BIT:
                 IEM_MC_BEGIN(0,0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_STORE_GREG_U64_CONST(X86_GREG_xCX, 0);
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
@@ -11327,7 +11341,7 @@ FNIEMOP_DEF(iemOp_loop_Jb)
     {
         case IEMMODE_16BIT:
             IEM_MC_BEGIN(0,0);
-
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_SUB_GREG_U16(X86_GREG_xCX, 1);
             IEM_MC_IF_CX_IS_NZ() {
                 IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
@@ -11339,6 +11353,7 @@ FNIEMOP_DEF(iemOp_loop_Jb)
 
         case IEMMODE_32BIT:
             IEM_MC_BEGIN(0,0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_SUB_GREG_U32(X86_GREG_xCX, 1);
             IEM_MC_IF_ECX_IS_NZ() {
                 IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
@@ -11350,6 +11365,7 @@ FNIEMOP_DEF(iemOp_loop_Jb)
 
         case IEMMODE_64BIT:
             IEM_MC_BEGIN(0,0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_SUB_GREG_U64(X86_GREG_xCX, 1);
             IEM_MC_IF_RCX_IS_NZ() {
                 IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
@@ -11371,13 +11387,13 @@ FNIEMOP_DEF(iemOp_jecxz_Jb)
 {
     IEMOP_MNEMONIC(jecxz_Jb, "jecxz Jb");
     int8_t i8Imm; IEM_OPCODE_GET_NEXT_S8(&i8Imm);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
 
     switch (pVCpu->iem.s.enmEffAddrMode)
     {
         case IEMMODE_16BIT:
             IEM_MC_BEGIN(0,0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_IF_CX_IS_NZ() {
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
             } IEM_MC_ELSE() {
@@ -11388,6 +11404,7 @@ FNIEMOP_DEF(iemOp_jecxz_Jb)
 
         case IEMMODE_32BIT:
             IEM_MC_BEGIN(0,0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_IF_ECX_IS_NZ() {
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
             } IEM_MC_ELSE() {
@@ -11398,6 +11415,7 @@ FNIEMOP_DEF(iemOp_jecxz_Jb)
 
         case IEMMODE_64BIT:
             IEM_MC_BEGIN(0,0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_IF_RCX_IS_NZ() {
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
             } IEM_MC_ELSE() {
@@ -11498,6 +11516,7 @@ FNIEMOP_DEF(iemOp_jmp_Jv)
         {
             int16_t i16Imm; IEM_OPCODE_GET_NEXT_S16(&i16Imm);
             IEM_MC_BEGIN(0, 0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_REL_JMP_S16_AND_FINISH(i16Imm);
             IEM_MC_END();
             break;
@@ -11508,6 +11527,7 @@ FNIEMOP_DEF(iemOp_jmp_Jv)
         {
             int32_t i32Imm; IEM_OPCODE_GET_NEXT_S32(&i32Imm);
             IEM_MC_BEGIN(0, 0);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_REL_JMP_S32_AND_FINISH(i32Imm);
             IEM_MC_END();
             break;
@@ -11546,10 +11566,10 @@ FNIEMOP_DEF(iemOp_jmp_Jb)
 {
     IEMOP_MNEMONIC(jmp_Jb, "jmp Jb");
     int8_t i8Imm; IEM_OPCODE_GET_NEXT_S8(&i8Imm);
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE_AND_INTEL_IGNORES_OP_SIZE_PREFIX();
 
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_REL_JMP_S8_AND_FINISH(i8Imm);
     IEM_MC_END();
 }
@@ -11680,8 +11700,8 @@ FNIEMOP_DEF(iemOp_hlt)
 FNIEMOP_DEF(iemOp_cmc)
 {
     IEMOP_MNEMONIC(cmc, "cmc");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_FLIP_EFL_BIT(X86_EFL_CF);
     IEM_MC_ADVANCE_RIP_AND_FINISH();
     IEM_MC_END();
@@ -11695,8 +11715,8 @@ FNIEMOP_DEF(iemOp_cmc)
     if (IEM_IS_MODRM_REG_MODE(a_bRm)) \
     { \
         /* register access */ \
-        IEMOP_HLP_DONE_DECODING(); \
         IEM_MC_BEGIN(2, 0); \
+        IEMOP_HLP_DONE_DECODING(); \
         IEM_MC_ARG(uint8_t *,   pu8Dst, 0); \
         IEM_MC_ARG(uint32_t *,  pEFlags, 1); \
         IEM_MC_REF_GREG_U8(pu8Dst, IEM_GET_MODRM_RM(pVCpu, a_bRm)); \
@@ -11757,11 +11777,11 @@ FNIEMOP_DEF(iemOp_cmc)
         /* \
          * Register target \
          */ \
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
         switch (pVCpu->iem.s.enmEffOpSize) \
         { \
             case IEMMODE_16BIT: \
                 IEM_MC_BEGIN(2, 0); \
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint16_t *,  pu16Dst, 0); \
                 IEM_MC_ARG(uint32_t *,  pEFlags, 1); \
                 IEM_MC_REF_GREG_U16(pu16Dst, IEM_GET_MODRM_RM(pVCpu, bRm)); \
@@ -11773,6 +11793,7 @@ FNIEMOP_DEF(iemOp_cmc)
             \
             case IEMMODE_32BIT: \
                 IEM_MC_BEGIN(2, 0); \
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint32_t *,  pu32Dst, 0); \
                 IEM_MC_ARG(uint32_t *,  pEFlags, 1); \
                 IEM_MC_REF_GREG_U32(pu32Dst, IEM_GET_MODRM_RM(pVCpu, bRm)); \
@@ -11785,6 +11806,7 @@ FNIEMOP_DEF(iemOp_cmc)
             \
             case IEMMODE_64BIT: \
                 IEM_MC_BEGIN(2, 0); \
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint64_t *,  pu64Dst, 0); \
                 IEM_MC_ARG(uint32_t *,  pEFlags, 1); \
                 IEM_MC_REF_GREG_U64(pu64Dst, IEM_GET_MODRM_RM(pVCpu, bRm)); \
@@ -11813,6 +11835,7 @@ FNIEMOP_DEF(iemOp_cmc)
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
                     \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0); \
+                    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                     IEM_MC_MEM_MAP(pu16Dst, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_2(a_fnNormalU16, pu16Dst, pEFlags); \
@@ -11830,6 +11853,7 @@ FNIEMOP_DEF(iemOp_cmc)
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
                     \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0); \
+                    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                     IEM_MC_MEM_MAP(pu32Dst, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_2(a_fnNormalU32, pu32Dst, pEFlags); \
@@ -11847,6 +11871,7 @@ FNIEMOP_DEF(iemOp_cmc)
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
                     \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0); \
+                    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                     IEM_MC_MEM_MAP(pu64Dst, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_2(a_fnNormalU64, pu64Dst, pEFlags); \
@@ -11874,6 +11899,7 @@ FNIEMOP_DEF(iemOp_cmc)
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
                     \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0); \
+                    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                     IEM_MC_MEM_MAP(pu16Dst, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_2(a_fnLockedU16, pu16Dst, pEFlags); \
@@ -11891,6 +11917,7 @@ FNIEMOP_DEF(iemOp_cmc)
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
                     \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0); \
+                    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                     IEM_MC_MEM_MAP(pu32Dst, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_2(a_fnLockedU32, pu32Dst, pEFlags); \
@@ -11908,6 +11935,7 @@ FNIEMOP_DEF(iemOp_cmc)
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
                     \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0); \
+                    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                     IEM_MC_MEM_MAP(pu64Dst, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_2(a_fnLockedU64, pu64Dst, pEFlags); \
@@ -11939,9 +11967,8 @@ FNIEMOP_DEF_1(iemOp_grp3_test_Eb, uint8_t, bRm)
     {
         /* register access */
         uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
         IEM_MC_BEGIN(3, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_ARG(uint8_t *,       pu8Dst,             0);
         IEM_MC_ARG_CONST(uint8_t,   u8Src,/*=*/u8Imm,   1);
         IEM_MC_ARG(uint32_t *,      pEFlags,            2);
@@ -11982,8 +12009,8 @@ FNIEMOP_DEF_2(iemOpCommonGrp3MulDivEb, uint8_t, bRm, PFNIEMAIMPLMULDIVU8, pfnU8)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /* register access */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_BEGIN(3, 1);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_ARG(uint16_t *,      pu16AX,     0);
         IEM_MC_ARG(uint8_t,         u8Value,    1);
         IEM_MC_ARG(uint32_t *,      pEFlags,    2);
@@ -12036,13 +12063,12 @@ FNIEMOP_DEF_2(iemOpCommonGrp3MulDivEv, uint8_t, bRm, PCIEMOPMULDIVSIZES, pImpl)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /* register access */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffOpSize)
         {
             case IEMMODE_16BIT:
             {
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_BEGIN(4, 1);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint16_t *,      pu16AX,     0);
                 IEM_MC_ARG(uint16_t *,      pu16DX,     1);
                 IEM_MC_ARG(uint16_t,        u16Value,   2);
@@ -12066,8 +12092,8 @@ FNIEMOP_DEF_2(iemOpCommonGrp3MulDivEv, uint8_t, bRm, PCIEMOPMULDIVSIZES, pImpl)
 
             case IEMMODE_32BIT:
             {
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_BEGIN(4, 1);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint32_t *,      pu32AX,     0);
                 IEM_MC_ARG(uint32_t *,      pu32DX,     1);
                 IEM_MC_ARG(uint32_t,        u32Value,   2);
@@ -12093,8 +12119,8 @@ FNIEMOP_DEF_2(iemOpCommonGrp3MulDivEv, uint8_t, bRm, PCIEMOPMULDIVSIZES, pImpl)
 
             case IEMMODE_64BIT:
             {
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_BEGIN(4, 1);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint64_t *,      pu64AX,     0);
                 IEM_MC_ARG(uint64_t *,      pu64DX,     1);
                 IEM_MC_ARG(uint64_t,        u64Value,   2);
@@ -12277,13 +12303,13 @@ FNIEMOP_DEF_1(iemOp_grp3_test_Ev, uint8_t, bRm)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /* register access */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffOpSize)
         {
             case IEMMODE_16BIT:
             {
                 uint16_t u16Imm; IEM_OPCODE_GET_NEXT_U16(&u16Imm);
                 IEM_MC_BEGIN(3, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint16_t *,      pu16Dst,                0);
                 IEM_MC_ARG_CONST(uint16_t,  u16Src,/*=*/u16Imm,     1);
                 IEM_MC_ARG(uint32_t *,      pEFlags,                2);
@@ -12299,6 +12325,7 @@ FNIEMOP_DEF_1(iemOp_grp3_test_Ev, uint8_t, bRm)
             {
                 uint32_t u32Imm; IEM_OPCODE_GET_NEXT_U32(&u32Imm);
                 IEM_MC_BEGIN(3, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint32_t *,      pu32Dst,                0);
                 IEM_MC_ARG_CONST(uint32_t,  u32Src,/*=*/u32Imm,     1);
                 IEM_MC_ARG(uint32_t *,      pEFlags,                2);
@@ -12315,6 +12342,7 @@ FNIEMOP_DEF_1(iemOp_grp3_test_Ev, uint8_t, bRm)
             {
                 uint64_t u64Imm; IEM_OPCODE_GET_NEXT_S32_SX_U64(&u64Imm);
                 IEM_MC_BEGIN(3, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint64_t *,      pu64Dst,                0);
                 IEM_MC_ARG_CONST(uint64_t,  u64Src,/*=*/u64Imm,     1);
                 IEM_MC_ARG(uint32_t *,      pEFlags,                2);
@@ -12466,8 +12494,8 @@ FNIEMOP_DEF(iemOp_Grp3_Ev)
 FNIEMOP_DEF(iemOp_clc)
 {
     IEMOP_MNEMONIC(clc, "clc");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_CLEAR_EFL_BIT(X86_EFL_CF);
     IEM_MC_ADVANCE_RIP_AND_FINISH();
     IEM_MC_END();
@@ -12480,8 +12508,8 @@ FNIEMOP_DEF(iemOp_clc)
 FNIEMOP_DEF(iemOp_stc)
 {
     IEMOP_MNEMONIC(stc, "stc");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_SET_EFL_BIT(X86_EFL_CF);
     IEM_MC_ADVANCE_RIP_AND_FINISH();
     IEM_MC_END();
@@ -12513,8 +12541,8 @@ FNIEMOP_DEF(iemOp_sti)
 FNIEMOP_DEF(iemOp_cld)
 {
     IEMOP_MNEMONIC(cld, "cld");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_CLEAR_EFL_BIT(X86_EFL_DF);
     IEM_MC_ADVANCE_RIP_AND_FINISH();
     IEM_MC_END();
@@ -12527,8 +12555,8 @@ FNIEMOP_DEF(iemOp_cld)
 FNIEMOP_DEF(iemOp_std)
 {
     IEMOP_MNEMONIC(std, "std");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_BEGIN(0, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_SET_EFL_BIT(X86_EFL_DF);
     IEM_MC_ADVANCE_RIP_AND_FINISH();
     IEM_MC_END();
@@ -12604,11 +12632,11 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /* The new RIP is taken from a register. */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffOpSize)
         {
             case IEMMODE_16BIT:
                 IEM_MC_BEGIN(1, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint16_t, u16Target, 0);
                 IEM_MC_FETCH_GREG_U16(u16Target, IEM_GET_MODRM_RM(pVCpu, bRm));
                 IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_BRANCH_INDIR, iemCImpl_call_16, u16Target);
@@ -12617,6 +12645,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
 
             case IEMMODE_32BIT:
                 IEM_MC_BEGIN(1, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint32_t, u32Target, 0);
                 IEM_MC_FETCH_GREG_U32(u32Target, IEM_GET_MODRM_RM(pVCpu, bRm));
                 IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_BRANCH_INDIR, iemCImpl_call_32, u32Target);
@@ -12625,6 +12654,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
 
             case IEMMODE_64BIT:
                 IEM_MC_BEGIN(1, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint64_t, u64Target, 0);
                 IEM_MC_FETCH_GREG_U64(u64Target, IEM_GET_MODRM_RM(pVCpu, bRm));
                 IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_BRANCH_INDIR, iemCImpl_call_64, u64Target);
@@ -12767,11 +12797,11 @@ FNIEMOP_DEF_1(iemOp_Grp5_jmpn_Ev, uint8_t, bRm)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /* The new RIP is taken from a register. */
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffOpSize)
         {
             case IEMMODE_16BIT:
                 IEM_MC_BEGIN(0, 1);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_LOCAL(uint16_t, u16Target);
                 IEM_MC_FETCH_GREG_U16(u16Target, IEM_GET_MODRM_RM(pVCpu, bRm));
                 IEM_MC_SET_RIP_U16_AND_FINISH(u16Target);
@@ -12780,6 +12810,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_jmpn_Ev, uint8_t, bRm)
 
             case IEMMODE_32BIT:
                 IEM_MC_BEGIN(0, 1);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_LOCAL(uint32_t, u32Target);
                 IEM_MC_FETCH_GREG_U32(u32Target, IEM_GET_MODRM_RM(pVCpu, bRm));
                 IEM_MC_SET_RIP_U32_AND_FINISH(u32Target);
@@ -12788,6 +12819,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_jmpn_Ev, uint8_t, bRm)
 
             case IEMMODE_64BIT:
                 IEM_MC_BEGIN(0, 1);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_LOCAL(uint64_t, u64Target);
                 IEM_MC_FETCH_GREG_U64(u64Target, IEM_GET_MODRM_RM(pVCpu, bRm));
                 IEM_MC_SET_RIP_U64_AND_FINISH(u64Target);

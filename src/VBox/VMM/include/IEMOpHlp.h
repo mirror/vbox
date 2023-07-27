@@ -326,6 +326,10 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
  * non-root mode).
  *
  *  @note Update IEM_VMX_IN_VMX_OPERATION if changes are made here.
+ *
+ * @todo r=bird: This is absolutely *INCORRECT* since IEM_VMX_IS_ROOT_MODE
+ *       is a complicated runtime state (calls CPUMIsGuestInVmxRootMode), and
+ *       not something we can decide while decoding.  Convert to an IEM_MC!
  */
 # define IEMOP_HLP_IN_VMX_OPERATION(a_szInstr, a_InsDiagPrefix) \
     do \

@@ -46,11 +46,11 @@
      */ \
     if (IEM_IS_MODRM_REG_MODE(bRm)) \
     { \
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
         switch (pVCpu->iem.s.enmEffOpSize) \
         { \
             case IEMMODE_16BIT: \
                 IEM_MC_BEGIN(3, 0); \
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint16_t *, pu16Dst, 0); \
                 IEM_MC_ARG(uint16_t,   u16Src,  1); \
                 IEM_MC_ARG(uint32_t *, pEFlags, 2); \
@@ -66,6 +66,7 @@
             \
             case IEMMODE_32BIT: \
                 IEM_MC_BEGIN(3, 0); \
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint32_t *, pu32Dst, 0); \
                 IEM_MC_ARG(uint32_t,   u32Src,  1); \
                 IEM_MC_ARG(uint32_t *, pEFlags, 2); \
@@ -83,6 +84,7 @@
             \
             case IEMMODE_64BIT: \
                 IEM_MC_BEGIN(3, 0); \
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint64_t *, pu64Dst, 0); \
                 IEM_MC_ARG(uint64_t,   u64Src,  1); \
                 IEM_MC_ARG(uint32_t *, pEFlags, 2); \

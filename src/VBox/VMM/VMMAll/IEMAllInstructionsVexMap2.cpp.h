@@ -220,8 +220,8 @@ FNIEMOP_DEF(iemOp_vptest_Vx_Wx)
          */
         if (pVCpu->iem.s.uVexLength)
         {
-            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx2);
             IEM_MC_BEGIN(3, 2);
+            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx2);
             IEM_MC_LOCAL(RTUINT256U,            uSrc1);
             IEM_MC_LOCAL(RTUINT256U,            uSrc2);
             IEM_MC_ARG_LOCAL_REF(PCRTUINT256U,  puSrc1, uSrc1, 0);
@@ -239,8 +239,8 @@ FNIEMOP_DEF(iemOp_vptest_Vx_Wx)
         }
         else
         {
-            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx);
             IEM_MC_BEGIN(3, 0);
+            IEMOP_HLP_DONE_VEX_DECODING_EX(fAvx);
             IEM_MC_ARG(PCRTUINT128U,            puSrc1,  0);
             IEM_MC_ARG(PCRTUINT128U,            puSrc2,  1);
             IEM_MC_ARG(uint32_t *,              pEFlags, 2);
@@ -322,10 +322,10 @@ FNIEMOP_DEF(iemOp_vbroadcastss_Vx_Wd)
         /*
          * Register, register.
          */
-        IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx2);
         if (pVCpu->iem.s.uVexLength)
         {
             IEM_MC_BEGIN(0, 1);
+            IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx2);
             IEM_MC_LOCAL(uint32_t,              uSrc);
 
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
@@ -340,6 +340,7 @@ FNIEMOP_DEF(iemOp_vbroadcastss_Vx_Wd)
         else
         {
             IEM_MC_BEGIN(0, 1);
+            IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx2);
             IEM_MC_LOCAL(uint32_t,              uSrc);
 
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
@@ -407,10 +408,10 @@ FNIEMOP_DEF(iemOp_vbroadcastsd_Vqq_Wq)
         /*
          * Register, register.
          */
-        IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx2);
         if (pVCpu->iem.s.uVexLength)
         {
             IEM_MC_BEGIN(0, 1);
+            IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx2);
             IEM_MC_LOCAL(uint64_t,              uSrc);
 
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
@@ -425,6 +426,7 @@ FNIEMOP_DEF(iemOp_vbroadcastsd_Vqq_Wq)
         else
         {
             IEM_MC_BEGIN(0, 1);
+            IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx2);
             IEM_MC_LOCAL(uint64_t,              uSrc);
 
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
@@ -548,8 +550,8 @@ FNIEMOP_DEF(iemOp_vpabsd_Vx_Wx)
          */ \
         if (pVCpu->iem.s.uVexLength) \
         { \
-            IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx2); \
             IEM_MC_BEGIN(2, 1); \
+            IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx2); \
             IEM_MC_LOCAL(RTUINT256U,            uDst); \
             IEM_MC_ARG_LOCAL_REF(PRTUINT256U,   puDst, uDst, 0); \
             IEM_MC_ARG(PCRTUINT128U,            puSrc,       1); \
@@ -565,8 +567,8 @@ FNIEMOP_DEF(iemOp_vpabsd_Vx_Wx)
         } \
         else \
         { \
-            IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx); \
             IEM_MC_BEGIN(2, 0); \
+            IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx); \
             IEM_MC_ARG(PRTUINT128U,          puDst,  0); \
             IEM_MC_ARG(uint64_t,             uSrc,   1); \
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT(); \
@@ -965,8 +967,8 @@ FNIEMOP_DEF(iemOp_vphminposuw_Vdq_Wdq)
         /*
          * Register, register.
          */
-        IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fAvx);
         IEM_MC_BEGIN(2, 0);
+        IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fAvx);
         IEM_MC_ARG(PRTUINT128U,          puDst,  0);
         IEM_MC_ARG(PCRTUINT128U,         puSrc,  1);
         IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
@@ -1640,10 +1642,10 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
         /*
          * Register, register.
          */
-        IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fBmi1);
         if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W)
         {
             IEM_MC_BEGIN(4, 0);
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fBmi1);
             IEM_MC_ARG(uint64_t *,          pDst,    0);
             IEM_MC_ARG(uint64_t,            uSrc1,   1);
             IEM_MC_ARG(uint64_t,            uSrc2,   2);
@@ -1660,6 +1662,7 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
         else
         {
             IEM_MC_BEGIN(4, 0);
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fBmi1);
             IEM_MC_ARG(uint32_t *,          pDst,    0);
             IEM_MC_ARG(uint32_t,            uSrc1,   1);
             IEM_MC_ARG(uint32_t,            uSrc2,   2);
@@ -1740,10 +1743,10 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
         /* \
          * Register, register. \
          */ \
-        IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fBmi1); \
         if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W) \
         { \
             IEM_MC_BEGIN(3, 0); \
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fBmi1); \
             IEM_MC_ARG(uint64_t *,          pDst,    0); \
             IEM_MC_ARG(uint64_t,            uSrc,    1); \
             IEM_MC_ARG(uint32_t *,          pEFlags, 2); \
@@ -1758,6 +1761,7 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
         else \
         { \
             IEM_MC_BEGIN(3, 0); \
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fBmi1); \
             IEM_MC_ARG(uint32_t *,          pDst,    0); \
             IEM_MC_ARG(uint32_t,            uSrc,    1); \
             IEM_MC_ARG(uint32_t *,          pEFlags, 2); \
@@ -1890,10 +1894,10 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
         /* \
          * Register, register. \
          */ \
-        IEMOP_HLP_DONE_VEX_DECODING_L0_EX(a_fFeatureMember); \
         if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W) \
         { \
             IEM_MC_BEGIN(4, 0); \
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(a_fFeatureMember); \
             IEM_MC_ARG(uint64_t *,          pDst,    0); \
             IEM_MC_ARG(uint64_t,            uSrc1,   1); \
             IEM_MC_ARG(uint64_t,            uSrc2,   2); \
@@ -1911,6 +1915,7 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
         else \
         { \
             IEM_MC_BEGIN(4, 0); \
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(a_fFeatureMember); \
             IEM_MC_ARG(uint32_t *,          pDst,    0); \
             IEM_MC_ARG(uint32_t,            uSrc1,   1); \
             IEM_MC_ARG(uint32_t,            uSrc2,   2); \
@@ -1985,10 +1990,10 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
         /* \
          * Register, register. \
          */ \
-        IEMOP_HLP_DONE_VEX_DECODING_L0_EX(a_fFeatureMember); \
         if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W) \
         { \
             IEM_MC_BEGIN(3, 0); \
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(a_fFeatureMember); \
             IEM_MC_ARG(uint64_t *,          pDst,    0); \
             IEM_MC_ARG(uint64_t,            uSrc1,   1); \
             IEM_MC_ARG(uint64_t,            uSrc2,   2); \
@@ -2003,6 +2008,7 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
         else \
         { \
             IEM_MC_BEGIN(3, 0); \
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(a_fFeatureMember); \
             IEM_MC_ARG(uint32_t *,          pDst,    0); \
             IEM_MC_ARG(uint32_t,            uSrc1,   1); \
             IEM_MC_ARG(uint32_t,            uSrc2,   2); \
@@ -2076,10 +2082,10 @@ FNIEMOP_DEF(iemOp_bzhi_Gy_Ey_By)
         /* \
          * Register, register. \
          */ \
-        IEMOP_HLP_DONE_VEX_DECODING_L0_EX(a_fFeatureMember); \
         if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W) \
         { \
             IEM_MC_BEGIN(3, 0); \
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(a_fFeatureMember); \
             IEM_MC_ARG(uint64_t *,          pDst,    0); \
             IEM_MC_ARG(uint64_t,            uSrc1,   1); \
             IEM_MC_ARG(uint64_t,            uSrc2,   2); \
@@ -2095,6 +2101,7 @@ FNIEMOP_DEF(iemOp_bzhi_Gy_Ey_By)
         else \
         { \
             IEM_MC_BEGIN(3, 0); \
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(a_fFeatureMember); \
             IEM_MC_ARG(uint32_t *,          pDst,    0); \
             IEM_MC_ARG(uint32_t,            uSrc1,   1); \
             IEM_MC_ARG(uint32_t,            uSrc2,   2); \
@@ -2186,10 +2193,10 @@ FNIEMOP_DEF(iemOp_mulx_By_Gy_rDX_Ey)
         /*
          * Register, register.
          */
-        IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fBmi2);
         if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_SIZE_REX_W)
         {
             IEM_MC_BEGIN(4, 0);
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fBmi2);
             IEM_MC_ARG(uint64_t *,          pDst1,   0);
             IEM_MC_ARG(uint64_t *,          pDst2,   1);
             IEM_MC_ARG(uint64_t,            uSrc1,   2);
@@ -2206,6 +2213,7 @@ FNIEMOP_DEF(iemOp_mulx_By_Gy_rDX_Ey)
         else
         {
             IEM_MC_BEGIN(4, 0);
+            IEMOP_HLP_DONE_VEX_DECODING_L0_EX(fBmi2);
             IEM_MC_ARG(uint32_t *,          pDst1,   0);
             IEM_MC_ARG(uint32_t *,          pDst2,   1);
             IEM_MC_ARG(uint32_t,            uSrc1,   2);
