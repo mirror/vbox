@@ -47,6 +47,9 @@
 #include <iprt/time.h>
 
 static syncobj_t vbox_syncobj = {
+#if __NetBSD_Prereq__(10,99,6)
+        "VBox",
+#endif
         SOBJ_SLEEPQ_SORTED,
         sleepq_unsleep,
         sleepq_changepri,
