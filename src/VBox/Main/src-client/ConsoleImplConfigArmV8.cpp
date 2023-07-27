@@ -144,6 +144,10 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
     hrc = pMachine->COMGETTER(MemorySize)(&cRamMBs);                                        H();
     uint64_t const cbRam   = cRamMBs * (uint64_t)_1M;
 
+    /** @todo This will be 100% wrong but is required for getting the maximum number of network adapters. */
+    ChipsetType_T chipsetType;
+    hrc = pMachine->COMGETTER(ChipsetType)(&chipsetType);                                   H();
+
     ULONG cCpus = 1;
     hrc = pMachine->COMGETTER(CPUCount)(&cCpus);                                            H();
 
@@ -153,6 +157,9 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
     Bstr osTypeId;
     hrc = pMachine->COMGETTER(OSTypeId)(osTypeId.asOutParam());                             H();
     LogRel(("Guest OS type: '%s'\n", Utf8Str(osTypeId).c_str()));
+
+    ULONG maxNetworkAdapters;
+    hrc = systemProperties->GetMaxNetworkAdapters(chipsetType, &maxNetworkAdapters);        H();
 
     /*
      * Get root node first.
@@ -405,7 +412,6 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         PCFGMNODE pCfg = NULL;          /* /Devices/Dev/.../Config/ */
         PCFGMNODE pLunL0 = NULL;        /* /Devices/Dev/0/LUN#0/ */
         PCFGMNODE pLunL1 = NULL;        /* /Devices/Dev/0/LUN#0/AttachedDriver/ */
-        PCFGMNODE pLunL1Cfg = NULL;     /* /Devices/Dev/0/LUN#0/AttachedDriver/Config */
 
         InsertConfigNode(pRoot, "Devices", &pDevices);
 
@@ -752,61 +758,221 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         InsertConfigNode(pInst,    "LUN#1",       &pLunL0);
         InsertConfigString(pLunL0, "Driver","VUSBRootHub");
 
-#if 0
-        InsertConfigNode(pDevices, "e1000",         &pDev);
-        InsertConfigNode(pDev,     "0",            &pInst);
-        InsertConfigInteger(pInst, "Trusted",           1);
-        InsertConfigInteger(pInst, "PCIBusNo",          0);
-        InsertConfigInteger(pInst, "PCIDeviceNo",       2);
-        InsertConfigInteger(pInst, "PCIFunctionNo",     0);
-        InsertConfigNode(pInst,    "Config",        &pCfg);
-        InsertConfigInteger(pCfg,  "CableConnected",    1);
-        InsertConfigInteger(pCfg,  "LineSpeed",         0);
-        InsertConfigInteger(pCfg,  "AdapterType",       0);
-#else
-        InsertConfigNode(pDevices, "virtio-net",    &pDev);
-        InsertConfigNode(pDev,     "0",            &pInst);
-        InsertConfigInteger(pInst, "Trusted",           1);
-        InsertConfigNode(pInst,    "Config",        &pCfg);
-        InsertConfigInteger(pCfg,  "CableConnected",    1);
-        InsertConfigInteger(pCfg,  "MmioBase",          0x0a000000);
-        InsertConfigInteger(pCfg,  "Irq",               16);
+        /*
+         * Network adapters
+         */
+        PCFGMNODE pDevE1000 = NULL;          /* E1000-type devices */
+        InsertConfigNode(pDevices, "e1000", &pDevE1000);
+        PCFGMNODE pDevVirtioNet = NULL;          /* Virtio network devices */
+        InsertConfigNode(pDevices, "virtio-net", &pDevVirtioNet);
 
-        vrc = RTFdtNodeAddF(hFdt, "virtio_mmio@%RX32", 0x0a000000);                         VRC();
-        vrc = RTFdtNodePropertyAddEmpty(  hFdt, "dma-coherent");                            VRC();
-        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupts", 3, 0x00, 16, 0x04);          VRC();
-        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 4, 0, 0x0a000000, 0, 0x200);        VRC();
-        vrc = RTFdtNodePropertyAddString(hFdt, "compatible", "virtio,mmio");                VRC();
-        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
-#endif
-
-        const char *pszMac = "080027ede92c";
-        Assert(strlen(pszMac) == 12);
-        RTMAC Mac;
-        RT_ZERO(Mac);
-        char *pMac = (char*)&Mac;
-        for (uint32_t i = 0; i < 6; ++i)
+        for (ULONG uInstance = 0; uInstance < maxNetworkAdapters; ++uInstance)
         {
-            int c1 = *pszMac++ - '0';
-            if (c1 > 9)
-                c1 -= 7;
-            int c2 = *pszMac++ - '0';
-            if (c2 > 9)
-                c2 -= 7;
-            *pMac++ = (char)(((c1 & 0x0f) << 4) | (c2 & 0x0f));
+            ComPtr<INetworkAdapter> networkAdapter;
+            hrc = pMachine->GetNetworkAdapter(uInstance, networkAdapter.asOutParam());      H();
+            BOOL fEnabledNetAdapter = FALSE;
+            hrc = networkAdapter->COMGETTER(Enabled)(&fEnabledNetAdapter);                  H();
+            if (!fEnabledNetAdapter)
+                continue;
+
+            /*
+             * The virtual hardware type. Create appropriate device first.
+             */
+            const char *pszAdapterName = "pcnet";
+            NetworkAdapterType_T adapterType;
+            hrc = networkAdapter->COMGETTER(AdapterType)(&adapterType);                     H();
+            switch (adapterType)
+            {
+#ifdef VBOX_WITH_E1000
+                case NetworkAdapterType_I82540EM:
+                case NetworkAdapterType_I82543GC:
+                case NetworkAdapterType_I82545EM:
+                    pDev = pDevE1000;
+                    pszAdapterName = "e1000";
+                    break;
+#endif
+#ifdef VBOX_WITH_VIRTIO
+                case NetworkAdapterType_Virtio:
+                    pDev = pDevVirtioNet;
+                    pszAdapterName = "virtio-net";
+                    break;
+#endif /* VBOX_WITH_VIRTIO */
+                case NetworkAdapterType_Am79C970A:
+                case NetworkAdapterType_Am79C973:
+                case NetworkAdapterType_Am79C960:
+                case NetworkAdapterType_NE1000:
+                case NetworkAdapterType_NE2000:
+                case NetworkAdapterType_WD8003:
+                case NetworkAdapterType_WD8013:
+                case NetworkAdapterType_ELNK2:
+                case NetworkAdapterType_ELNK1:
+                default:
+                    AssertMsgFailed(("Invalid/Unsupported network adapter type '%d' for slot '%d'", adapterType, uInstance));
+                    return pVMM->pfnVMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                                 N_("Invalid/Unsupported network adapter type '%d' for slot '%d'"), adapterType, uInstance);
+            }
+
+            InsertConfigNode(pDev, Utf8StrFmt("%u", uInstance).c_str(), &pInst);
+            InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
+            /* the first network card gets the PCI ID 3, the next 3 gets 8..10,
+             * next 4 get 16..19. */
+            int iPCIDeviceNo;
+            switch (uInstance)
+            {
+                case 0:
+                    iPCIDeviceNo = 3;
+                    break;
+                case 1: case 2: case 3:
+                    iPCIDeviceNo = uInstance - 1 + 8;
+                    break;
+                case 4: case 5: case 6: case 7:
+                    iPCIDeviceNo = uInstance - 4 + 16;
+                    break;
+                default:
+                    /* auto assignment */
+                    iPCIDeviceNo = -1;
+                    break;
+            }
+
+            InsertConfigNode(pInst, "Config", &pCfg);
+
+            /*
+             * The virtual hardware type. PCNet supports three types, E1000 three,
+             * but VirtIO only one.
+             */
+            switch (adapterType)
+            {
+                case NetworkAdapterType_Am79C970A:
+                    InsertConfigString(pCfg, "ChipType", "Am79C970A");
+                    break;
+                case NetworkAdapterType_Am79C973:
+                    InsertConfigString(pCfg, "ChipType", "Am79C973");
+                    break;
+                case NetworkAdapterType_Am79C960:
+                    InsertConfigString(pCfg, "ChipType", "Am79C960");
+                    break;
+                case NetworkAdapterType_I82540EM:
+                    InsertConfigInteger(pCfg, "AdapterType", 0);
+                    break;
+                case NetworkAdapterType_I82543GC:
+                    InsertConfigInteger(pCfg, "AdapterType", 1);
+                    break;
+                case NetworkAdapterType_I82545EM:
+                    InsertConfigInteger(pCfg, "AdapterType", 2);
+                    break;
+                case NetworkAdapterType_Virtio:
+                {
+                    uint32_t GCPhysMmioBase = 0x0a000000 + uInstance * 512;
+                    uint32_t uIrq = 16 + uInstance;
+
+                    InsertConfigInteger(pCfg,  "MmioBase",          GCPhysMmioBase);
+                    InsertConfigInteger(pCfg,  "Irq",               uIrq);
+
+                    vrc = RTFdtNodeAddF(hFdt, "virtio_mmio@%RX32", 0x0a000000);                         VRC();
+                    vrc = RTFdtNodePropertyAddEmpty(  hFdt, "dma-coherent");                            VRC();
+                    vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupts", 3, 0x00, uIrq, 0x04);        VRC();
+                    vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 4, 0, GCPhysMmioBase, 0, 0x200);    VRC();
+                    vrc = RTFdtNodePropertyAddString(hFdt, "compatible", "virtio,mmio");                VRC();
+                    vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
+                    break;
+                }
+                case NetworkAdapterType_NE1000:
+                    InsertConfigString(pCfg, "DeviceType", "NE1000");
+                    break;
+                case NetworkAdapterType_NE2000:
+                    InsertConfigString(pCfg, "DeviceType", "NE2000");
+                    break;
+                case NetworkAdapterType_WD8003:
+                    InsertConfigString(pCfg, "DeviceType", "WD8003");
+                    break;
+                case NetworkAdapterType_WD8013:
+                    InsertConfigString(pCfg, "DeviceType", "WD8013");
+                    break;
+                case NetworkAdapterType_ELNK2:
+                    InsertConfigString(pCfg, "DeviceType", "3C503");
+                    break;
+                case NetworkAdapterType_ELNK1:
+                    break;
+                case NetworkAdapterType_Null:      AssertFailedBreak(); /* (compiler warnings) */
+#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
+                case NetworkAdapterType_32BitHack: AssertFailedBreak(); /* (compiler warnings) */
+#endif
+            }
+
+            /*
+             * Get the MAC address and convert it to binary representation
+             */
+            Bstr macAddr;
+            hrc = networkAdapter->COMGETTER(MACAddress)(macAddr.asOutParam());              H();
+            Assert(!macAddr.isEmpty());
+            Utf8Str macAddrUtf8 = macAddr;
+#ifdef VBOX_WITH_CLOUD_NET
+            NetworkAttachmentType_T eAttachmentType;
+            hrc = networkAdapter->COMGETTER(AttachmentType)(&eAttachmentType);                 H();
+            if (eAttachmentType == NetworkAttachmentType_Cloud)
+            {
+                mGateway.setLocalMacAddress(macAddrUtf8);
+                /* We'll insert cloud MAC later, when it becomes known. */
+            }
+            else
+            {
+#endif
+            char *macStr = (char*)macAddrUtf8.c_str();
+            Assert(strlen(macStr) == 12);
+            RTMAC Mac;
+            RT_ZERO(Mac);
+            char *pMac = (char*)&Mac;
+            for (uint32_t i = 0; i < 6; ++i)
+            {
+                int c1 = *macStr++ - '0';
+                if (c1 > 9)
+                    c1 -= 7;
+                int c2 = *macStr++ - '0';
+                if (c2 > 9)
+                    c2 -= 7;
+                *pMac++ = (char)(((c1 & 0x0f) << 4) | (c2 & 0x0f));
+            }
+            InsertConfigBytes(pCfg, "MAC", &Mac, sizeof(Mac));
+#ifdef VBOX_WITH_CLOUD_NET
+            }
+#endif
+            /*
+             * Check if the cable is supposed to be unplugged
+             */
+            BOOL fCableConnected;
+            hrc = networkAdapter->COMGETTER(CableConnected)(&fCableConnected);              H();
+            InsertConfigInteger(pCfg, "CableConnected", fCableConnected ? 1 : 0);
+
+            /*
+             * Line speed to report from custom drivers
+             */
+            ULONG ulLineSpeed;
+            hrc = networkAdapter->COMGETTER(LineSpeed)(&ulLineSpeed);                       H();
+            InsertConfigInteger(pCfg, "LineSpeed", ulLineSpeed);
+
+            /*
+             * Attach the status driver.
+             */
+            i_attachStatusDriver(pInst, DeviceType_Network);
+
+            /*
+             * Configure the network card now
+             */
+            bool fIgnoreConnectFailure = mMachineState == MachineState_Restoring;
+            vrc = i_configNetwork(pszAdapterName,
+                                  uInstance,
+                                  0,
+                                  networkAdapter,
+                                  pCfg,
+                                  pLunL0,
+                                  pInst,
+                                  false /*fAttachDetach*/,
+                                  fIgnoreConnectFailure,
+                                  pUVM,
+                                  pVMM);
+            if (RT_FAILURE(vrc))
+                return vrc;
         }
-        InsertConfigBytes(pCfg,    "MAC",   &Mac, sizeof(Mac));
-        InsertConfigNode(pInst,    "LUN#0",       &pLunL0);
-        InsertConfigString(pLunL0, "Driver",        "NAT");
-        InsertConfigNode(pLunL0,    "Config",  &pLunL1Cfg);
-        InsertConfigString(pLunL1Cfg, "Network", "10.0.2.0/24");
-        InsertConfigString(pLunL1Cfg, "TFTPPrefix", "/Users/vbox/Library/VirtualBox/TFTP");
-        InsertConfigString(pLunL1Cfg, "BootFile", "default.pxe");
-        InsertConfigInteger(pLunL1Cfg,  "AliasMode",         0);
-        InsertConfigInteger(pLunL1Cfg,  "DNSProxy",          0);
-        InsertConfigInteger(pLunL1Cfg,  "LocalhostReachable", 1);
-        InsertConfigInteger(pLunL1Cfg,  "PassDomain",         1);
-        InsertConfigInteger(pLunL1Cfg,  "UseHostResolver",    0);
 
         PCFGMNODE pUsb = NULL;
         InsertConfigNode(pRoot,    "USB",           &pUsb);
