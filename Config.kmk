@@ -1728,7 +1728,7 @@ ifeq ($(KBUILD_TARGET),darwin)
   ifeq ($(KBUILD_TARGET_ARCH),arm64)
    VBOX_DARWIN_ENTITLEMENTS_LIST += \
    	com.apple.security.hypervisor
-   endif
+  endif
  endif
 
  # Where the dynamic generated entitlements can be found.
