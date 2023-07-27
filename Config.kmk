@@ -7760,8 +7760,10 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
     VBOX_QT_MOD += Qt6DBus Qt6Xml Qt6XcbQpa Qt6Help Qt6Network Qt6Sql
     VBOX_QT_PLUGINS = \
     	plugins/platforms/libqxcbVBox.so \
+    	plugins/platformthemes/libqgtk2VBox.so \
     	plugins/platformthemes/libqgtk3VBox.so \
     	plugins/sqldrivers/libqsqliteVBox.so \
+    	plugins/styles/libqgtk2styleVBox.so \
     	plugins/xcbglintegrations/libqxcb-glx-integrationVBox.so
    endif # qt6
   else ifeq ($(KBUILD_TARGET),win)
