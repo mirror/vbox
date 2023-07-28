@@ -194,6 +194,8 @@ typedef struct CPUMCTX
     CPUMCTXSYSREGDBG    aBp[16];
     /** Watchpoint registers, DBGW{C,V}n_EL1. */
     CPUMCTXSYSREGDBG    aWp[16];
+    /** The MDSCR_EL1 register. */
+    CPUMCTXSYSREG       Mdscr;
     /** APDA key register state. */
     CPUMCTXSYSREGPAKEY  Apda;
     /** APDB key register state. */
@@ -204,6 +206,34 @@ typedef struct CPUMCTX
     CPUMCTXSYSREGPAKEY  Apia;
     /** APIB key register state. */
     CPUMCTXSYSREGPAKEY  Apib;
+    /** The AFSR0_EL1 register. */
+    CPUMCTXSYSREG       Afsr0;
+    /** The AFSR1_EL1 register. */
+    CPUMCTXSYSREG       Afsr1;
+    /** The AMAIR_EL1 register. */
+    CPUMCTXSYSREG       Amair;
+    /** The CNTKCTL_EL1 register. */
+    CPUMCTXSYSREG       CntKCtl;
+    /** The CONTEXTIDR_EL1 register. */
+    CPUMCTXSYSREG       ContextIdr;
+    /** The CPACR_EL1 register. */
+    CPUMCTXSYSREG       Cpacr;
+    /** The CSSELR_EL1 register. */
+    CPUMCTXSYSREG       Csselr;
+    /** The ESR_EL1 register. */
+    CPUMCTXSYSREG       Esr;
+    /** The FAR_EL1 register. */
+    CPUMCTXSYSREG       Far;
+    /** The MAIR_EL1 register. */
+    CPUMCTXSYSREG       Mair;
+    /** The PAR_EL1 register. */
+    CPUMCTXSYSREG       Par;
+    /** The TPIDRRO_EL0 register. */
+    CPUMCTXSYSREG       TpIdrRoEl0;
+    /** The TPIDR_ELn registers. */
+    CPUMCTXSYSREG       aTpIdr[2];
+    /** TheMDCCINT_EL1 register. */
+    CPUMCTXSYSREG       MDccInt;   
 
     /** Floating point control register. */
     uint64_t            fpcr;
