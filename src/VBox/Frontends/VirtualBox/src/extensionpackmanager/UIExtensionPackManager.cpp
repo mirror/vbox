@@ -44,6 +44,7 @@
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
+#include "UIVirtualBoxEventHandler.h"
 
 /* COM includes: */
 #include "CExtPack.h"
@@ -385,6 +386,8 @@ void UIExtensionPackManagerWidget::prepare()
     /* Prepare self: */
     uiCommon().setHelpKeyword(this, "ext-pack-manager");
     connect(&uiCommon(), &UICommon::sigExtensionPackInstalled,
+            this, &UIExtensionPackManagerWidget::sltHandleExtensionPackInstalled);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigExtensionPackInstalled,
             this, &UIExtensionPackManagerWidget::sltHandleExtensionPackInstalled);
 
     /* Prepare stuff: */

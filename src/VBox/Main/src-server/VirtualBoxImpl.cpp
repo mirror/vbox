@@ -3791,9 +3791,9 @@ void VirtualBox::i_onUpdateAgentSettingsChanged(IUpdateAgent *aAgent, const Utf8
 #endif /* VBOX_WITH_UPDATE_AGENT */
 
 #ifdef VBOX_WITH_EXTPACK
-void VirtualBox::i_onExtPackInstalled(const Utf8Str &aExtPackInstallFile)
+void VirtualBox::i_onExtPackInstalled(const Utf8Str &aExtPackName)
 {
-    ::FireExtPackInstalledEvent(m->pEventSource, aExtPackInstallFile);
+    ::FireExtPackInstalledEvent(m->pEventSource, aExtPackName);
 }
 #endif
 

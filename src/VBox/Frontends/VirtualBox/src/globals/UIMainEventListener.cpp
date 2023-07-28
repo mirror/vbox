@@ -629,7 +629,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
         case KVBoxEventType_OnExtPackInstalled:
         {
             CExtPackInstalledEvent comEventSpecific(pEvent);
-            //printf("Ext. pack installed from the file: %s\n", qPrintable(comEventSpecific.GetFilename()));
+            emit sigExtensionPackInstalled(comEventSpecific.GetName());
         };
         default: break;
     }

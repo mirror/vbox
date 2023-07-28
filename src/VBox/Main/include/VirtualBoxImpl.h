@@ -227,7 +227,7 @@ public:
 #endif /* VBOX_WITH_UPDATE_AGENT */
 
 #ifdef VBOX_WITH_EXTPACK
-    void i_onExtPackInstalled(const Utf8Str &aExtPackInstallFile);
+    void i_onExtPackInstalled(const Utf8Str &aExtPackName);
 #endif
 
 #ifdef VBOX_WITH_CLOUD_NET

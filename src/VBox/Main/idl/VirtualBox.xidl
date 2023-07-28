@@ -26918,7 +26918,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </const>
     <const name="OnExtPackInstalled" value="123">
       <desc>
-        See <link to="IClipboardErrorEvent">IClipboardErrorEvent</link>.
+        See <link to="IExtPackInstalledEvent">IExtPackInstalledEvent</link>.
       </desc>
     </const>
     <!-- End event marker -->
@@ -27280,9 +27280,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="managed" autogen="VBoxEvent" id="OnExtPackInstalled"
     >
     <desc>Extension pack installed event.</desc>
-    <attribute name="filename" readonly="yes" type="wstring">
+    <attribute name="name" readonly="yes" type="wstring">
       <desc>
-        Name of the extension pack install file.
+        Name of the extension pack.
       </desc>
     </attribute>
 

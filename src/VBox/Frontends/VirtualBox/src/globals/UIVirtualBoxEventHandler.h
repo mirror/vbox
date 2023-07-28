@@ -97,6 +97,9 @@ signals:
       * @param  enmMediumType  Brings corresponding medium type.
       * @param  fRegistered    Brings whether medium is registered or unregistered. */
     void sigMediumRegistered(const QUuid &uMediumId, KDeviceType enmMediumType, bool fRegistered);
+    /** Notifies extension pack. install.
+     *  @param  strName      Passes extension pack name. */
+    void sigExtensionPackInstalled(const QString &strName);
 
 public:
 

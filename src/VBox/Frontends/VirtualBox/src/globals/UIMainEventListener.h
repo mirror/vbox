@@ -122,6 +122,8 @@ signals:
         void sigCloudProfileRegistered(const QUuid &uProviderId, const QString &strName, bool fRegistered);
         /** Notifies about cloud profile with specified @a strName of provider with specified @a uProviderId is changed. */
         void sigCloudProfileChanged(const QUuid &uProviderId, const QString &strName);
+        /** Notifies about ext.pack installation @a strname is the name of the installed ext. pack. */
+        void sigExtensionPackInstalled(const QString &strName);
     /** @} */
 
     /** @name VirtualBox Extra-data related signals

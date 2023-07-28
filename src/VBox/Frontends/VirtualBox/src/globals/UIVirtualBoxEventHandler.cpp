@@ -89,6 +89,9 @@ signals:
       * @param  enmMediumType  Brings corresponding medium type.
       * @param  fRegistered    Brings whether medium is registered or unregistered. */
     void sigMediumRegistered(const QUuid &uMediumId, KDeviceType enmMediumType, bool fRegistered);
+    /** Notifies extension pack. install.
+     *  @param  strName      Passes extension pack name. */
+    void sigExtensionPackInstalled(const QString &strName);
 
 public:
 
@@ -255,6 +258,9 @@ void UIVirtualBoxEventHandlerProxy::prepareConnections()
     connect(m_pQtListener->getWrapped(), SIGNAL(sigMediumRegistered(QUuid, KDeviceType, bool)),
             this, SIGNAL(sigMediumRegistered(QUuid, KDeviceType, bool)),
             Qt::DirectConnection);
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigExtensionPackInstalled(QString)),
+            this, SIGNAL(sigExtensionPackInstalled(QString)),
+            Qt::DirectConnection);
 }
 
 void UIVirtualBoxEventHandlerProxy::cleanupConnections()
@@ -375,6 +381,9 @@ void UIVirtualBoxEventHandler::prepareConnections()
             Qt::QueuedConnection);
     connect(m_pProxy, SIGNAL(sigMediumRegistered(QUuid, KDeviceType, bool)),
             this, SIGNAL(sigMediumRegistered(QUuid, KDeviceType, bool)),
+            Qt::QueuedConnection);
+    connect(m_pProxy, SIGNAL(sigExtensionPackInstalled(QString)),
+            this, SIGNAL(sigExtensionPackInstalled(QString)),
             Qt::QueuedConnection);
 }
 
