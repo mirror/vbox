@@ -233,7 +233,7 @@ typedef struct CPUMCTX
     /** The TPIDR_ELn registers. */
     CPUMCTXSYSREG       aTpIdr[2];
     /** TheMDCCINT_EL1 register. */
-    CPUMCTXSYSREG       MDccInt;   
+    CPUMCTXSYSREG       MDccInt;
 
     /** Floating point control register. */
     uint64_t            fpcr;
