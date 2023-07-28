@@ -118,6 +118,7 @@ typedef union CPUMCTXSYSREG
 } CPUMCTXSYSREG;
 #ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSize(CPUMCTXSYSREG, 8);
+#endif
 
 
 /**
@@ -136,6 +137,29 @@ typedef struct CPUMCTXSYSREGDBG
 typedef CPUMCTXSYSREGDBG *PCPUMCTXSYSREGDBG;
 /** Pointer to a const debug register state. */
 typedef const CPUMCTXSYSREGDBG *PCCPUMCTXSYSREGDBG;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(CPUMCTXSYSREGDBG, 16);
+#endif
+
+
+/**
+ * A pointer authentication key register state (low and high), these are held together
+ * because they will be accessed together very often and thus minimizes
+ * stress on the cache.
+ */
+typedef struct CPUMCTXSYSREGPAKEY
+{
+    /** The low key register. */
+    CPUMCTXSYSREG   Low;
+    /** The high key register. */
+    CPUMCTXSYSREG   High;
+} CPUMCTXSYSREGPAKEY;
+/** Pointer to a pointer authentication key register state. */
+typedef CPUMCTXSYSREGPAKEY *PCPUMCTXSYSREGPAKEY;
+/** Pointer to a const pointer authentication key register state. */
+typedef const CPUMCTXSYSREGPAKEY *PCCPUMCTXSYSREGPAKEY;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(CPUMCTXSYSREGPAKEY, 16);
 #endif
 
 
@@ -166,10 +190,20 @@ typedef struct CPUMCTX
     CPUMCTXSYSREG       Ttbr1;
     /** The VBAR_EL1 register. */
     CPUMCTXSYSREG       VBar;
-    /** Breakpoint registers, DBGB{C,V}<n>_EL1. */
+    /** Breakpoint registers, DBGB{C,V}n_EL1. */
     CPUMCTXSYSREGDBG    aBp[16];
-    /** Watchpoint registers, DBGW{C,V}<n>_EL1. */
+    /** Watchpoint registers, DBGW{C,V}n_EL1. */
     CPUMCTXSYSREGDBG    aWp[16];
+    /** APDA key register state. */
+    CPUMCTXSYSREGPAKEY  Apda;
+    /** APDB key register state. */
+    CPUMCTXSYSREGPAKEY  Apdb;
+    /** APGA key register state. */
+    CPUMCTXSYSREGPAKEY  Apga;
+    /** APIA key register state. */
+    CPUMCTXSYSREGPAKEY  Apia;
+    /** APIB key register state. */
+    CPUMCTXSYSREGPAKEY  Apib;
 
     /** Floating point control register. */
     uint64_t            fpcr;
@@ -193,7 +227,7 @@ typedef struct CPUMCTX
     /** The CNTV_CVAL_EL0 register, always synced during VM-exit. */
     uint64_t            CntvCValEl0;
 
-    uint64_t            au64Padding2[6];
+    uint64_t            au64Padding2[4];
 } CPUMCTX;
 
 
@@ -256,8 +290,10 @@ AssertCompileSizeAlignment(CPUMCTX, 8);
 
 /** Debug system registers are kept externally. */
 #define CPUMCTX_EXTRN_SYSREG_DEBUG              UINT64_C(0x0000000000010000)
+/** PAuth key system registers are kept externally. */
+#define CPUMCTX_EXTRN_SYSREG_PAUTH_KEYS         UINT64_C(0x0000000000020000)
 /** Various system registers (rarely accessed) are kept externally. */
-#define CPUMCTX_EXTRN_SYSREG_MISC               UINT64_C(0x0000000000020000)
+#define CPUMCTX_EXTRN_SYSREG_MISC               UINT64_C(0x0000000000040000)
 
 /** Mask of bits the keepers can use for state tracking. */
 #define CPUMCTX_EXTRN_KEEPER_STATE_MASK         UINT64_C(0xffff000000000000)

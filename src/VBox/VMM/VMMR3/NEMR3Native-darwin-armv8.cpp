@@ -219,6 +219,24 @@ static const struct
     CPUM_DBGREG_EMIT(W, 15)
 #undef CPUM_DBGREG_EMIT
 };
+/** PAuth key system registers. */
+static const struct
+{
+    hv_sys_reg_t        enmHvReg;
+    uint32_t            offCpumCtx;
+} s_aCpumPAuthKeyRegs[] =
+{
+    { HV_SYS_REG_APDAKEYLO_EL1, RT_UOFFSETOF(CPUMCTX, Apda.Low.u64)  },
+    { HV_SYS_REG_APDAKEYHI_EL1, RT_UOFFSETOF(CPUMCTX, Apda.High.u64) },
+    { HV_SYS_REG_APDBKEYLO_EL1, RT_UOFFSETOF(CPUMCTX, Apdb.Low.u64)  },
+    { HV_SYS_REG_APDBKEYHI_EL1, RT_UOFFSETOF(CPUMCTX, Apdb.High.u64) },
+    { HV_SYS_REG_APGAKEYLO_EL1, RT_UOFFSETOF(CPUMCTX, Apga.Low.u64)  },
+    { HV_SYS_REG_APGAKEYHI_EL1, RT_UOFFSETOF(CPUMCTX, Apga.High.u64) },
+    { HV_SYS_REG_APIAKEYLO_EL1, RT_UOFFSETOF(CPUMCTX, Apia.Low.u64)  },
+    { HV_SYS_REG_APIAKEYHI_EL1, RT_UOFFSETOF(CPUMCTX, Apia.High.u64) },
+    { HV_SYS_REG_APIBKEYLO_EL1, RT_UOFFSETOF(CPUMCTX, Apib.Low.u64)  },
+    { HV_SYS_REG_APIBKEYHI_EL1, RT_UOFFSETOF(CPUMCTX, Apib.High.u64) }
+};
 /** System registers. */
 static const struct
 {
@@ -568,6 +586,17 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
     }
 
     if (   hrc == HV_SUCCESS
+        && (fWhat & CPUMCTX_EXTRN_SYSREG_PAUTH_KEYS))
+    {
+        /* Debug registers. */
+        for (uint32_t i = 0; i < RT_ELEMENTS(s_aCpumPAuthKeyRegs); i++)
+        {
+            uint64_t *pu64 = (uint64_t *)((uint8_t *)&pVCpu->cpum.GstCtx + s_aCpumPAuthKeyRegs[i].offCpumCtx);
+            hrc |= hv_vcpu_get_sys_reg(pVCpu->nem.s.hVCpu, s_aCpumPAuthKeyRegs[i].enmHvReg, pu64);
+        }
+    }
+
+    if (   hrc == HV_SUCCESS
         && (fWhat & (CPUMCTX_EXTRN_SPSR | CPUMCTX_EXTRN_ELR | CPUMCTX_EXTRN_SP | CPUMCTX_EXTRN_SCTLR_TCR_TTBR | CPUMCTX_EXTRN_SYSREG_MISC)))
     {
         /* System registers. */
@@ -644,6 +673,17 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu)
         {
             uint64_t *pu64 = (uint64_t *)((uint8_t *)&pVCpu->cpum.GstCtx + s_aCpumDbgRegs[i].offCpumCtx);
             hrc |= hv_vcpu_set_sys_reg(pVCpu->nem.s.hVCpu, s_aCpumDbgRegs[i].enmHvReg, *pu64);
+        }
+    }
+
+    if (   hrc == HV_SUCCESS
+        && !(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_SYSREG_PAUTH_KEYS))
+    {
+        /* Debug registers. */
+        for (uint32_t i = 0; i < RT_ELEMENTS(s_aCpumPAuthKeyRegs); i++)
+        {
+            uint64_t *pu64 = (uint64_t *)((uint8_t *)&pVCpu->cpum.GstCtx + s_aCpumPAuthKeyRegs[i].offCpumCtx);
+            hrc |= hv_vcpu_set_sys_reg(pVCpu->nem.s.hVCpu, s_aCpumPAuthKeyRegs[i].enmHvReg, *pu64);
         }
     }
 
