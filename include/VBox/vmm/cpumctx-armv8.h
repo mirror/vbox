@@ -118,6 +118,24 @@ typedef union CPUMCTXSYSREG
 } CPUMCTXSYSREG;
 #ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSize(CPUMCTXSYSREG, 8);
+
+
+/**
+ * A debug register state (control and value), these are held together
+ * because they will be accessed together very often and thus minimizes
+ * stress on the cache.
+ */
+typedef struct CPUMCTXSYSREGDBG
+{
+    /** The control register. */
+    CPUMCTXSYSREG   Ctrl;
+    /** The value register. */
+    CPUMCTXSYSREG   Value;
+} CPUMCTXSYSREGDBG;
+/** Pointer to a debug register state. */
+typedef CPUMCTXSYSREGDBG *PCPUMCTXSYSREGDBG;
+/** Pointer to a const debug register state. */
+typedef const CPUMCTXSYSREGDBG *PCCPUMCTXSYSREGDBG;
 #endif
 
 
@@ -127,51 +145,55 @@ AssertCompileSize(CPUMCTXSYSREG, 8);
 typedef struct CPUMCTX
 {
     /** The general purpose register array view. */
-    CPUMCTXGREG     aGRegs[31];
+    CPUMCTXGREG         aGRegs[31];
     /** The NEON SIMD & FP register array view. */
-    CPUMCTXVREG     aVRegs[32];
+    CPUMCTXVREG         aVRegs[32];
     /** The stack registers (EL0, EL1). */
-    CPUMCTXSYSREG   aSpReg[2];
+    CPUMCTXSYSREG       aSpReg[2];
     /** The program counter. */
-    CPUMCTXSYSREG   Pc;
+    CPUMCTXSYSREG       Pc;
     /** The SPSR (Saved Program Status Register) (EL1 only). */
-    CPUMCTXSYSREG   Spsr;
+    CPUMCTXSYSREG       Spsr;
     /** The ELR (Exception Link Register) (EL1 only). */
-    CPUMCTXSYSREG   Elr;
+    CPUMCTXSYSREG       Elr;
     /** The SCTLR_EL1 register. */
-    CPUMCTXSYSREG   Sctlr;
+    CPUMCTXSYSREG       Sctlr;
     /** THe TCR_EL1 register. */
-    CPUMCTXSYSREG   Tcr;
+    CPUMCTXSYSREG       Tcr;
     /** The TTBR0_EL1 register. */
-    CPUMCTXSYSREG   Ttbr0;
+    CPUMCTXSYSREG       Ttbr0;
     /** The TTBR1_EL1 register. */
-    CPUMCTXSYSREG   Ttbr1;
+    CPUMCTXSYSREG       Ttbr1;
     /** The VBAR_EL1 register. */
-    CPUMCTXSYSREG   VBar;
+    CPUMCTXSYSREG       VBar;
+    /** Breakpoint registers, DBGB{C,V}<n>_EL1. */
+    CPUMCTXSYSREGDBG    aBp[16];
+    /** Watchpoint registers, DBGW{C,V}<n>_EL1. */
+    CPUMCTXSYSREGDBG    aWp[16];
 
     /** Floating point control register. */
-    uint64_t        fpcr;
+    uint64_t            fpcr;
     /** Floating point status register. */
-    uint64_t        fpsr;
+    uint64_t            fpsr;
     /** The internal PSTATE state (as given from SPSR_EL2). */
-    uint64_t        fPState;
+    uint64_t            fPState;
 
-    uint32_t        fPadding0;
+    uint32_t            fPadding0;
 
     /** OS lock status accessed through OSLAR_EL1 and OSLSR_EL1. */
-    bool            fOsLck;
+    bool                fOsLck;
 
-    uint8_t         afPadding1[7];
+    uint8_t             afPadding1[7];
 
     /** Externalized state tracker, CPUMCTX_EXTRN_XXX. */
-    uint64_t        fExtrn;
+    uint64_t            fExtrn;
 
     /** The CNTV_CTL_EL0 register, always synced during VM-exit. */
-    uint64_t        CntvCtlEl0;
+    uint64_t            CntvCtlEl0;
     /** The CNTV_CVAL_EL0 register, always synced during VM-exit. */
-    uint64_t        CntvCValEl0;
+    uint64_t            CntvCValEl0;
 
-    uint64_t        au64Padding2[6];
+    uint64_t            au64Padding2[6];
 } CPUMCTX;
 
 
@@ -232,8 +254,10 @@ AssertCompileSizeAlignment(CPUMCTX, 8);
 /** The FPSR (Floating Point Status Register) is kept externally. */
 #define CPUMCTX_EXTRN_FPSR                      UINT64_C(0x0000000000008000)
 
+/** Debug system registers are kept externally. */
+#define CPUMCTX_EXTRN_SYSREG_DEBUG              UINT64_C(0x0000000000010000)
 /** Various system registers (rarely accessed) are kept externally. */
-#define CPUMCTX_EXTRN_SYSREG                    UINT64_C(0x0000000000010000)
+#define CPUMCTX_EXTRN_SYSREG_MISC               UINT64_C(0x0000000000020000)
 
 /** Mask of bits the keepers can use for state tracking. */
 #define CPUMCTX_EXTRN_KEEPER_STATE_MASK         UINT64_C(0xffff000000000000)

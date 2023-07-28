@@ -173,6 +173,52 @@ static const struct
     CPUM_VREG_EMIT(31)
 #undef CPUM_VREG_EMIT
 };
+/** Debug system registers. */
+static const struct
+{
+    hv_sys_reg_t        enmHvReg;
+    uint32_t            offCpumCtx;
+} s_aCpumDbgRegs[] =
+{
+#define CPUM_DBGREG_EMIT(a_BorW, a_Idx) \
+    { HV_SYS_REG_DBG ## a_BorW ## CR ## a_Idx ## _EL1, RT_UOFFSETOF(CPUMCTX, a ## a_BorW ## p[a_Idx].Ctrl.u64) }, \
+    { HV_SYS_REG_DBG ## a_BorW ## VR ## a_Idx ## _EL1, RT_UOFFSETOF(CPUMCTX, a ## a_BorW ## p[a_Idx].Value.u64) }
+    /* Breakpoint registers. */
+    CPUM_DBGREG_EMIT(B, 0),
+    CPUM_DBGREG_EMIT(B, 1),
+    CPUM_DBGREG_EMIT(B, 2),
+    CPUM_DBGREG_EMIT(B, 3),
+    CPUM_DBGREG_EMIT(B, 4),
+    CPUM_DBGREG_EMIT(B, 5),
+    CPUM_DBGREG_EMIT(B, 6),
+    CPUM_DBGREG_EMIT(B, 7),
+    CPUM_DBGREG_EMIT(B, 8),
+    CPUM_DBGREG_EMIT(B, 9),
+    CPUM_DBGREG_EMIT(B, 10),
+    CPUM_DBGREG_EMIT(B, 11),
+    CPUM_DBGREG_EMIT(B, 12),
+    CPUM_DBGREG_EMIT(B, 13),
+    CPUM_DBGREG_EMIT(B, 14),
+    CPUM_DBGREG_EMIT(B, 15),
+    /* Watchpoint registers. */
+    CPUM_DBGREG_EMIT(W, 0),
+    CPUM_DBGREG_EMIT(W, 1),
+    CPUM_DBGREG_EMIT(W, 2),
+    CPUM_DBGREG_EMIT(W, 3),
+    CPUM_DBGREG_EMIT(W, 4),
+    CPUM_DBGREG_EMIT(W, 5),
+    CPUM_DBGREG_EMIT(W, 6),
+    CPUM_DBGREG_EMIT(W, 7),
+    CPUM_DBGREG_EMIT(W, 8),
+    CPUM_DBGREG_EMIT(W, 9),
+    CPUM_DBGREG_EMIT(W, 10),
+    CPUM_DBGREG_EMIT(W, 11),
+    CPUM_DBGREG_EMIT(W, 12),
+    CPUM_DBGREG_EMIT(W, 13),
+    CPUM_DBGREG_EMIT(W, 14),
+    CPUM_DBGREG_EMIT(W, 15)
+#undef CPUM_DBGREG_EMIT
+};
 /** System registers. */
 static const struct
 {
@@ -189,7 +235,7 @@ static const struct
     { HV_SYS_REG_TCR_EL1,   CPUMCTX_EXTRN_SCTLR_TCR_TTBR,   RT_UOFFSETOF(CPUMCTX, Tcr.u64)          },
     { HV_SYS_REG_TTBR0_EL1, CPUMCTX_EXTRN_SCTLR_TCR_TTBR,   RT_UOFFSETOF(CPUMCTX, Ttbr0.u64)        },
     { HV_SYS_REG_TTBR1_EL1, CPUMCTX_EXTRN_SCTLR_TCR_TTBR,   RT_UOFFSETOF(CPUMCTX, Ttbr1.u64)        },
-    { HV_SYS_REG_VBAR_EL1,  CPUMCTX_EXTRN_SYSREG,           RT_UOFFSETOF(CPUMCTX, VBar.u64)         },
+    { HV_SYS_REG_VBAR_EL1,  CPUMCTX_EXTRN_SYSREG_MISC,      RT_UOFFSETOF(CPUMCTX, VBar.u64)         },
 };
 /** ID registers. */
 static const struct
@@ -511,7 +557,18 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
     }
 
     if (   hrc == HV_SUCCESS
-        && (fWhat & (CPUMCTX_EXTRN_SPSR | CPUMCTX_EXTRN_ELR | CPUMCTX_EXTRN_SP | CPUMCTX_EXTRN_SCTLR_TCR_TTBR | CPUMCTX_EXTRN_SYSREG)))
+        && (fWhat & CPUMCTX_EXTRN_SYSREG_DEBUG))
+    {
+        /* Debug registers. */
+        for (uint32_t i = 0; i < RT_ELEMENTS(s_aCpumDbgRegs); i++)
+        {
+            uint64_t *pu64 = (uint64_t *)((uint8_t *)&pVCpu->cpum.GstCtx + s_aCpumDbgRegs[i].offCpumCtx);
+            hrc |= hv_vcpu_get_sys_reg(pVCpu->nem.s.hVCpu, s_aCpumDbgRegs[i].enmHvReg, pu64);
+        }
+    }
+
+    if (   hrc == HV_SUCCESS
+        && (fWhat & (CPUMCTX_EXTRN_SPSR | CPUMCTX_EXTRN_ELR | CPUMCTX_EXTRN_SP | CPUMCTX_EXTRN_SCTLR_TCR_TTBR | CPUMCTX_EXTRN_SYSREG_MISC)))
     {
         /* System registers. */
         for (uint32_t i = 0; i < RT_ELEMENTS(s_aCpumSysRegs); i++)
@@ -580,8 +637,19 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu)
     }
 
     if (   hrc == HV_SUCCESS
-        &&     (pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_SPSR | CPUMCTX_EXTRN_ELR | CPUMCTX_EXTRN_SP | CPUMCTX_EXTRN_SCTLR_TCR_TTBR | CPUMCTX_EXTRN_SYSREG))
-            !=                              (CPUMCTX_EXTRN_SPSR | CPUMCTX_EXTRN_ELR | CPUMCTX_EXTRN_SP | CPUMCTX_EXTRN_SCTLR_TCR_TTBR | CPUMCTX_EXTRN_SYSREG))
+        && !(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_SYSREG_DEBUG))
+    {
+        /* Debug registers. */
+        for (uint32_t i = 0; i < RT_ELEMENTS(s_aCpumDbgRegs); i++)
+        {
+            uint64_t *pu64 = (uint64_t *)((uint8_t *)&pVCpu->cpum.GstCtx + s_aCpumDbgRegs[i].offCpumCtx);
+            hrc |= hv_vcpu_set_sys_reg(pVCpu->nem.s.hVCpu, s_aCpumDbgRegs[i].enmHvReg, *pu64);
+        }
+    }
+
+    if (   hrc == HV_SUCCESS
+        &&     (pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_SPSR | CPUMCTX_EXTRN_ELR | CPUMCTX_EXTRN_SP | CPUMCTX_EXTRN_SCTLR_TCR_TTBR | CPUMCTX_EXTRN_SYSREG_MISC))
+            !=                              (CPUMCTX_EXTRN_SPSR | CPUMCTX_EXTRN_ELR | CPUMCTX_EXTRN_SP | CPUMCTX_EXTRN_SCTLR_TCR_TTBR | CPUMCTX_EXTRN_SYSREG_MISC))
     {
         /* System registers. */
         for (uint32_t i = 0; i < RT_ELEMENTS(s_aCpumSysRegs); i++)
