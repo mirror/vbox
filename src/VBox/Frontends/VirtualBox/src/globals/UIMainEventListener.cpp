@@ -50,6 +50,7 @@
 #include "CEventListener.h"
 #include "CExtraDataCanChangeEvent.h"
 #include "CExtraDataChangedEvent.h"
+#include "CExtPackInstalledEvent.h"
 #include "CGuestMonitorChangedEvent.h"
 #include "CGuestProcessIOEvent.h"
 #include "CGuestProcessRegisteredEvent.h"
@@ -625,6 +626,11 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
             emit sigDnDModeChange(comEventSpecific.GetDndMode());
             break;
         }
+        case KVBoxEventType_OnExtPackInstalled:
+        {
+            CExtPackInstalledEvent comEventSpecific(pEvent);
+            //printf("Ext. pack installed from the file: %s\n", qPrintable(comEventSpecific.GetFilename()));
+        };
         default: break;
     }
 

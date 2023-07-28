@@ -3163,7 +3163,10 @@ HRESULT ExtPackManager::i_doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace
                     RTErrInfoInitStatic(&ErrInfo);
                     pExtPack->i_callInstalledHook(m->pVirtualBox, &autoLock, &ErrInfo.Core);
                     if (RT_SUCCESS(ErrInfo.Core.rc))
+                    {
                         LogRel(("ExtPackManager: Successfully installed extension pack '%s'.\n", pStrName->c_str()));
+                        m->pVirtualBox->i_onExtPackInstalled(*pStrName);
+                    }
                     else
                     {
                         LogRel(("ExtPackManager: Installed hook for '%s' failed: %Rrc - %s\n",

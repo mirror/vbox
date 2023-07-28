@@ -26916,8 +26916,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IClipboardErrorEvent">IClipboardErrorEvent</link>.
       </desc>
     </const>
+    <const name="OnExtPackInstalled" value="123">
+      <desc>
+        See <link to="IClipboardErrorEvent">IClipboardErrorEvent</link>.
+      </desc>
+    </const>
     <!-- End event marker -->
-    <const name="End" value="123">
+    <const name="End" value="124">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -27267,6 +27272,20 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="state" readonly="yes" type="MachineState">
       <desc>New execution state.</desc>
     </attribute>
+  </interface>
+
+  <interface
+    name="IExtPackInstalledEvent" extends="IEvent"
+    uuid="29059fea-2c99-11ee-be56-0242ac120002"
+    wsmap="managed" autogen="VBoxEvent" id="OnExtPackInstalled"
+    >
+    <desc>Extension pack installed event.</desc>
+    <attribute name="filename" readonly="yes" type="wstring">
+      <desc>
+        Name of the extension pack install file.
+      </desc>
+    </attribute>
+
   </interface>
 
   <interface

@@ -226,6 +226,10 @@ public:
     void i_onUpdateAgentSettingsChanged(IUpdateAgent *aAgent, const Utf8Str &aAttributeHint);
 #endif /* VBOX_WITH_UPDATE_AGENT */
 
+#ifdef VBOX_WITH_EXTPACK
+    void i_onExtPackInstalled(const Utf8Str &aExtPackInstallFile);
+#endif
+
 #ifdef VBOX_WITH_CLOUD_NET
     HRESULT i_findCloudNetworkByName(const com::Utf8Str &aNetworkName,
                                      ComObjPtr<CloudNetwork> *aNetwork = NULL);
@@ -499,4 +503,3 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 #endif /* !MAIN_INCLUDED_VirtualBoxImpl_h */
-

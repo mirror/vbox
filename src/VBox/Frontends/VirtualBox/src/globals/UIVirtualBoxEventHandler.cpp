@@ -186,7 +186,8 @@ void UIVirtualBoxEventHandlerProxy::prepareListener()
         << KVBoxEventType_OnStorageDeviceChanged
         << KVBoxEventType_OnMediumChanged
         << KVBoxEventType_OnMediumConfigChanged
-        << KVBoxEventType_OnMediumRegistered;
+        << KVBoxEventType_OnMediumRegistered
+        << KVBoxEventType_OnExtPackInstalled;
 
     /* Register event listener for event source aggregator: */
     m_comEventSource.RegisterListener(m_comEventListener, eventTypes, FALSE /* active? */);
@@ -379,4 +380,3 @@ void UIVirtualBoxEventHandler::prepareConnections()
 
 
 #include "UIVirtualBoxEventHandler.moc"
-
