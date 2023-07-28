@@ -138,7 +138,6 @@ static CPUMSYSREGRANGE const g_aSysRegRanges[] =
 };
 
 
-#if 0 /** @todo Will come later. */
 /** Saved state field descriptors for CPUMCTX. */
 static const SSMFIELD g_aCpumCtxFields[] =
 {
@@ -210,13 +209,109 @@ static const SSMFIELD g_aCpumCtxFields[] =
     SSMFIELD_ENTRY(         CPUMCTX, Pc.u64),
     SSMFIELD_ENTRY(         CPUMCTX, Spsr.u64),
     SSMFIELD_ENTRY(         CPUMCTX, Elr.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Sctlr.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Tcr.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Ttbr0.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Ttbr1.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, VBar.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[0].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[0].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[1].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[1].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[2].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[2].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[3].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[3].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[4].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[4].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[5].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[5].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[6].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[6].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[7].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[7].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[8].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[8].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[9].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[9].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[10].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[10].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[11].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[11].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[12].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[12].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[13].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[13].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[14].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[14].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[15].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aBp[15].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[0].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[0].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[1].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[1].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[2].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[2].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[3].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[3].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[4].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[4].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[5].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[5].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[6].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[6].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[7].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[7].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[8].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[8].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[9].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[9].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[10].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[10].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[11].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[11].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[12].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[12].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[13].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[13].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[14].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[14].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[15].Ctrl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aWp[15].Value.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Mdscr.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Apda.Low.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Apda.High.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Apdb.Low.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Apdb.High.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Apga.Low.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Apga.High.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Apia.Low.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Apia.High.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Apib.Low.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Apib.High.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Afsr0.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Afsr1.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Amair.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, CntKCtl.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, ContextIdr.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Cpacr.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Csselr.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Esr.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Far.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Mair.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, Par.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, TpIdrRoEl0.u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aTpIdr[0].u64),
+    SSMFIELD_ENTRY(         CPUMCTX, aTpIdr[1].u64),
+    SSMFIELD_ENTRY(         CPUMCTX, MDccInt.u64),
     SSMFIELD_ENTRY(         CPUMCTX, fpcr),
     SSMFIELD_ENTRY(         CPUMCTX, fpsr),
     SSMFIELD_ENTRY(         CPUMCTX, fPState),
-    /** @todo */
+    SSMFIELD_ENTRY(         CPUMCTX, fOsLck),
+    SSMFIELD_ENTRY(         CPUMCTX, CntvCtlEl0),
+    SSMFIELD_ENTRY(         CPUMCTX, CntvCValEl0),
     SSMFIELD_ENTRY_TERM()
 };
-#endif
 
 
 /**
@@ -410,7 +505,15 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
      * Save.
      */
     SSMR3PutU32(pSSM, pVM->cCpus);
-    /** @todo */
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPU const   pVCpu   = pVM->apCpusR3[idCpu];
+        PCPUMCTX const pGstCtx = &pVCpu->cpum.s.Guest;
+
+        SSMR3PutStructEx(pSSM, pGstCtx, sizeof(*pGstCtx), 0, g_aCpumCtxFields, NULL);
+
+        SSMR3PutU32(pSSM, pVCpu->cpum.s.fChanged);
+    }
     return VINF_SUCCESS;
 }
 
@@ -434,11 +537,33 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
     /*
      * Validate version.
      */
-    /** @todo */ RT_NOREF(pSSM, uVersion);
+    if (uVersion != CPUM_SAVED_STATE_VERSION)
+    {
+        AssertMsgFailed(("cpumR3LoadExec: Invalid version uVersion=%d!\n", uVersion));
+        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+    }
 
     if (uPass == SSM_PASS_FINAL)
     {
-        /** @todo */
+        /*
+         * Do the per-CPU restoring.
+         */
+        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+        {
+            PVMCPU   pVCpu   = pVM->apCpusR3[idCpu];
+            PCPUMCTX pGstCtx = &pVCpu->cpum.s.Guest;
+
+            /*
+             * Start by restoring the CPUMCTX structure and the X86FXSAVE bits of the extended state.
+             */
+            int rc = SSMR3GetStructEx(pSSM, pGstCtx,                  sizeof(*pGstCtx),                0, g_aCpumCtxFields, NULL);
+            AssertRCReturn(rc, rc);
+
+            /*
+             * Restore a couple of flags.
+             */
+            SSMR3GetU32(pSSM, &pVCpu->cpum.s.fChanged);
+        }
     }
 
     pVM->cpum.s.fPendingRestore = false;
@@ -495,7 +620,17 @@ static void cpumR3InfoFormatPState(char *pszPState, uint32_t fPState)
         const char *pszSet; const char *pszClear; uint32_t fFlag;
     }   s_aFlags[] =
     {
-        { NULL, NULL, 0 }, /** @todo */
+        { "SP", "nSP", ARMV8_SPSR_EL2_AARCH64_SP },
+        { "M4", "nM4", ARMV8_SPSR_EL2_AARCH64_M4 },
+        { "T",  "nT",  ARMV8_SPSR_EL2_AARCH64_T  },
+        { "nF", "F",   ARMV8_SPSR_EL2_AARCH64_F  },
+        { "nI", "I",   ARMV8_SPSR_EL2_AARCH64_I  },
+        { "nA", "A",   ARMV8_SPSR_EL2_AARCH64_A  },
+        { "nD", "D",   ARMV8_SPSR_EL2_AARCH64_D  },
+        { "V",  "nV",  ARMV8_SPSR_EL2_AARCH64_V  },
+        { "C",  "nC",  ARMV8_SPSR_EL2_AARCH64_C  },
+        { "Z",  "nZ",  ARMV8_SPSR_EL2_AARCH64_Z  },
+        { "N",  "nN",  ARMV8_SPSR_EL2_AARCH64_N  },
     };
     char *psz = pszPState;
     for (unsigned i = 0; i < RT_ELEMENTS(s_aFlags); i++)
@@ -519,11 +654,10 @@ static void cpumR3InfoFormatPState(char *pszPState, uint32_t fPState)
  * @param   pCtx        The context to format.
  * @param   pHlp        Output functions.
  * @param   enmType     The dump type.
- * @param   pszPrefix   Register name prefix.
  */
-static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCDBGFINFOHLP pHlp, CPUMDUMPTYPE enmType, const char *pszPrefix)
+static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCDBGFINFOHLP pHlp, CPUMDUMPTYPE enmType)
 {
-    RT_NOREF(pVM, pHlp, enmType, pszPrefix);
+    RT_NOREF(pVM);
 
     /*
      * Format the PSTATE.
@@ -531,7 +665,144 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCDBGFINFOHLP pHlp, CPUMDUMPTY
     char szPState[80];
     cpumR3InfoFormatPState(&szPState[0], pCtx->fPState);
 
-    /** @todo */
+    /*
+     * Format the registers.
+     */
+    switch (enmType)
+    {
+        case CPUMDUMPTYPE_TERSE:
+            if (CPUMIsGuestIn64BitCodeEx(pCtx))
+                pHlp->pfnPrintf(pHlp,
+                    "x0=%016RX64 x1=%016RX64 x2=%016RX64 x3=%016RX64\n"
+                    "x4=%016RX64 x5=%016RX64 x6=%016RX64 x7=%016RX64\n"
+                    "x8=%016RX64 x9=%016RX64 x10=%016RX64 x11=%016RX64\n"
+                    "x12=%016RX64 x13=%016RX64 x14=%016RX64 x15=%016RX64\n"
+                    "x16=%016RX64 x17=%016RX64 x18=%016RX64 x19=%016RX64\n"
+                    "x20=%016RX64 x21=%016RX64 x22=%016RX64 x23=%016RX64\n"
+                    "x24=%016RX64 x25=%016RX64 x26=%016RX64 x27=%016RX64\n"
+                    "x28=%016RX64 x29=%016RX64 x30=%016RX64\n"
+                    "pc=%016RX64 pstate=%016RX64 %s\n"
+                    "sp_el0=%016RX64 sp_el1=%016RX64\n",
+                    pCtx->aGRegs[0],  pCtx->aGRegs[1],  pCtx->aGRegs[2],  pCtx->aGRegs[3],
+                    pCtx->aGRegs[4],  pCtx->aGRegs[5],  pCtx->aGRegs[6],  pCtx->aGRegs[7],
+                    pCtx->aGRegs[8],  pCtx->aGRegs[9],  pCtx->aGRegs[10], pCtx->aGRegs[11],
+                    pCtx->aGRegs[12], pCtx->aGRegs[13], pCtx->aGRegs[14], pCtx->aGRegs[15],
+                    pCtx->aGRegs[16], pCtx->aGRegs[17], pCtx->aGRegs[18], pCtx->aGRegs[19],
+                    pCtx->aGRegs[20], pCtx->aGRegs[21], pCtx->aGRegs[22], pCtx->aGRegs[23],
+                    pCtx->aGRegs[24], pCtx->aGRegs[25], pCtx->aGRegs[26], pCtx->aGRegs[27],
+                    pCtx->aGRegs[28], pCtx->aGRegs[29], pCtx->aGRegs[30],
+                    pCtx->Pc.u64, pCtx->fPState, szPState,
+                    pCtx->aSpReg[0].u64, pCtx->aSpReg[1].u64);
+            else
+                AssertFailed();
+            break;
+
+        case CPUMDUMPTYPE_DEFAULT:
+            if (CPUMIsGuestIn64BitCodeEx(pCtx))
+                pHlp->pfnPrintf(pHlp,
+                    "x0=%016RX64 x1=%016RX64 x2=%016RX64 x3=%016RX64\n"
+                    "x4=%016RX64 x5=%016RX64 x6=%016RX64 x7=%016RX64\n"
+                    "x8=%016RX64 x9=%016RX64 x10=%016RX64 x11=%016RX64\n"
+                    "x12=%016RX64 x13=%016RX64 x14=%016RX64 x15=%016RX64\n"
+                    "x16=%016RX64 x17=%016RX64 x18=%016RX64 x19=%016RX64\n"
+                    "x20=%016RX64 x21=%016RX64 x22=%016RX64 x23=%016RX64\n"
+                    "x24=%016RX64 x25=%016RX64 x26=%016RX64 x27=%016RX64\n"
+                    "x28=%016RX64 x29=%016RX64 x30=%016RX64\n"
+                    "pc=%016RX64 pstate=%016RX64 %s\n"
+                    "sp_el0=%016RX64 sp_el1=%016RX64 sctlr_el1=%016RX64\n"
+                    "tcr_el1=%016RX64 ttbr0_el1=%016RX64 ttbr1_el1=%016RX64\n"
+                    "vbar_el1=%016RX64 elr_el1=%016RX64 esr_el1=%016RX64\n",
+                    pCtx->aGRegs[0],  pCtx->aGRegs[1],  pCtx->aGRegs[2],  pCtx->aGRegs[3],
+                    pCtx->aGRegs[4],  pCtx->aGRegs[5],  pCtx->aGRegs[6],  pCtx->aGRegs[7],
+                    pCtx->aGRegs[8],  pCtx->aGRegs[9],  pCtx->aGRegs[10], pCtx->aGRegs[11],
+                    pCtx->aGRegs[12], pCtx->aGRegs[13], pCtx->aGRegs[14], pCtx->aGRegs[15],
+                    pCtx->aGRegs[16], pCtx->aGRegs[17], pCtx->aGRegs[18], pCtx->aGRegs[19],
+                    pCtx->aGRegs[20], pCtx->aGRegs[21], pCtx->aGRegs[22], pCtx->aGRegs[23],
+                    pCtx->aGRegs[24], pCtx->aGRegs[25], pCtx->aGRegs[26], pCtx->aGRegs[27],
+                    pCtx->aGRegs[28], pCtx->aGRegs[29], pCtx->aGRegs[30],
+                    pCtx->Pc.u64, pCtx->fPState, szPState,
+                    pCtx->aSpReg[0].u64, pCtx->aSpReg[1].u64, pCtx->Sctlr.u64,
+                    pCtx->Tcr.u64, pCtx->Ttbr0.u64, pCtx->Ttbr1.u64,
+                    pCtx->VBar.u64, pCtx->Elr.u64, pCtx->Esr.u64);
+            else
+                AssertFailed();
+            break;
+
+        case CPUMDUMPTYPE_VERBOSE:
+            if (CPUMIsGuestIn64BitCodeEx(pCtx))
+                pHlp->pfnPrintf(pHlp,
+                    "x0=%016RX64 x1=%016RX64 x2=%016RX64 x3=%016RX64\n"
+                    "x4=%016RX64 x5=%016RX64 x6=%016RX64 x7=%016RX64\n"
+                    "x8=%016RX64 x9=%016RX64 x10=%016RX64 x11=%016RX64\n"
+                    "x12=%016RX64 x13=%016RX64 x14=%016RX64 x15=%016RX64\n"
+                    "x16=%016RX64 x17=%016RX64 x18=%016RX64 x19=%016RX64\n"
+                    "x20=%016RX64 x21=%016RX64 x22=%016RX64 x23=%016RX64\n"
+                    "x24=%016RX64 x25=%016RX64 x26=%016RX64 x27=%016RX64\n"
+                    "x28=%016RX64 x29=%016RX64 x30=%016RX64\n"
+                    "pc=%016RX64 pstate=%016RX64 %s\n"
+                    "sp_el0=%016RX64 sp_el1=%016RX64 sctlr_el1=%016RX64\n"
+                    "tcr_el1=%016RX64 ttbr0_el1=%016RX64 ttbr1_el1=%016RX64\n"
+                    "vbar_el1=%016RX64 elr_el1=%016RX64 esr_el1=%016RX64\n"
+                    "contextidr_el1=%016RX64 tpidrr0_el0=%016RX64\n"
+                    "tpidr_el0=%016RX64 tpidr_el1=%016RX64\n"
+                    "far_el1=%016RX64 mair_el1=%016RX64 par_el1=%016RX64\n"
+                    "cntv_ctl_el0=%016RX64 cntv_val_el0=%016RX64\n"
+                    "afsr0_el1=%016RX64 afsr0_el1=%016RX64 amair_el1=%016RX64\n"
+                    "cntkctl_el1=%016RX64 cpacr_el1=%016RX64 csselr_el1=%016RX64\n"
+                    "mdccint_el1=%016RX64\n",
+                    pCtx->aGRegs[0],  pCtx->aGRegs[1],  pCtx->aGRegs[2],  pCtx->aGRegs[3],
+                    pCtx->aGRegs[4],  pCtx->aGRegs[5],  pCtx->aGRegs[6],  pCtx->aGRegs[7],
+                    pCtx->aGRegs[8],  pCtx->aGRegs[9],  pCtx->aGRegs[10], pCtx->aGRegs[11],
+                    pCtx->aGRegs[12], pCtx->aGRegs[13], pCtx->aGRegs[14], pCtx->aGRegs[15],
+                    pCtx->aGRegs[16], pCtx->aGRegs[17], pCtx->aGRegs[18], pCtx->aGRegs[19],
+                    pCtx->aGRegs[20], pCtx->aGRegs[21], pCtx->aGRegs[22], pCtx->aGRegs[23],
+                    pCtx->aGRegs[24], pCtx->aGRegs[25], pCtx->aGRegs[26], pCtx->aGRegs[27],
+                    pCtx->aGRegs[28], pCtx->aGRegs[29], pCtx->aGRegs[30],
+                    pCtx->Pc.u64, pCtx->fPState, szPState,
+                    pCtx->aSpReg[0].u64, pCtx->aSpReg[1].u64, pCtx->Sctlr.u64,
+                    pCtx->Tcr.u64, pCtx->Ttbr0.u64, pCtx->Ttbr1.u64,
+                    pCtx->VBar.u64, pCtx->Elr.u64, pCtx->Esr.u64,
+                    pCtx->ContextIdr.u64, pCtx->TpIdrRoEl0.u64,
+                    pCtx->aTpIdr[0].u64, pCtx->aTpIdr[1].u64,
+                    pCtx->Far.u64, pCtx->Mair.u64, pCtx->Par.u64,
+                    pCtx->CntvCtlEl0, pCtx->CntvCValEl0,
+                    pCtx->Afsr0.u64, pCtx->Afsr1.u64, pCtx->Amair.u64,
+                    pCtx->CntKCtl.u64, pCtx->Cpacr.u64, pCtx->Csselr.u64,
+                    pCtx->MDccInt.u64);
+            else
+                AssertFailed();
+
+            pHlp->pfnPrintf(pHlp, "fpcr=%016RX64 fpsr=%016RX64\n", pCtx->fpcr, pCtx->fpsr);
+            for (unsigned i = 0; i < RT_ELEMENTS(pCtx->aVRegs); i++)
+                pHlp->pfnPrintf(pHlp,
+                                i & 1
+                                ? "q%u%s=%08RX32'%08RX32'%08RX32'%08RX32\n"
+                                : "q%u%s=%08RX32'%08RX32'%08RX32'%08RX32  ",
+                                i, i < 10 ? " " : "",
+                                pCtx->aVRegs[i].au32[3],
+                                pCtx->aVRegs[i].au32[2],
+                                pCtx->aVRegs[i].au32[1],
+                                pCtx->aVRegs[i].au32[0]);
+
+            pHlp->pfnPrintf(pHlp, "mdscr_el1=%016RX64\n", pCtx->Mdscr.u64);
+            for (unsigned i = 0; i < RT_ELEMENTS(pCtx->aBp); i++)
+                pHlp->pfnPrintf(pHlp, "DbgBp%u%s: Control=%016RX64 Value=%016RX64\n",
+                                i, i < 10 ? " " : "",
+                                pCtx->aBp[i].Ctrl, pCtx->aBp[i].Value);
+
+            for (unsigned i = 0; i < RT_ELEMENTS(pCtx->aWp); i++)
+                pHlp->pfnPrintf(pHlp, "DbgWp%u%s: Control=%016RX64 Value=%016RX64\n",
+                                i, i < 10 ? " " : "",
+                                pCtx->aWp[i].Ctrl, pCtx->aWp[i].Value);
+
+            pHlp->pfnPrintf(pHlp, "APDAKey=%016RX64'%016RX64\n", pCtx->Apda.High.u64, pCtx->Apda.Low.u64);
+            pHlp->pfnPrintf(pHlp, "APDBKey=%016RX64'%016RX64\n", pCtx->Apdb.High.u64, pCtx->Apdb.Low.u64);
+            pHlp->pfnPrintf(pHlp, "APGAKey=%016RX64'%016RX64\n", pCtx->Apga.High.u64, pCtx->Apga.Low.u64);
+            pHlp->pfnPrintf(pHlp, "APIAKey=%016RX64'%016RX64\n", pCtx->Apia.High.u64, pCtx->Apia.Low.u64);
+            pHlp->pfnPrintf(pHlp, "APIBKey=%016RX64'%016RX64\n", pCtx->Apib.High.u64, pCtx->Apib.Low.u64);
+
+            break;
+    }
 }
 
 
@@ -610,7 +881,7 @@ static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     pHlp->pfnPrintf(pHlp, "Guest CPUM (VCPU %d) state: %s\n", pVCpu->idCpu, pszComment);
 
     PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
-    cpumR3InfoOne(pVM, pCtx, pHlp, enmType, "");
+    cpumR3InfoOne(pVM, pCtx, pHlp, enmType);
 }
 
 
