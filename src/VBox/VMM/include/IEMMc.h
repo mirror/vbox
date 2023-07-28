@@ -1239,38 +1239,38 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * similar statements as this reduces compile time a tiny bit.
  *
  * @{ */
-/** Execution flags may change (IEMCPU::fExec). */
-#define IEM_CIMPL_F_MODE            RT_BIT_32(0)
-/** Unconditional direct branches (changes RIP, maybe CS). */
-#define IEM_CIMPL_F_BRANCH_UNCOND   RT_BIT_32(1)
-/** Conditional direct branch (may change RIP, maybe CS). */
-#define IEM_CIMPL_F_BRANCH_COND     RT_BIT_32(2)
-/** Indirect unconditional branch (changes RIP, maybe CS).
- *
- * This is used for all system control transfers (SYSCALL, SYSRET, INT, ++) as
- * well as for return instructions (RET, IRET, RETF).
- *
- * Since the INTO instruction is currently the only indirect branch instruction
- * that is conditional (depends on the overflow flag), that instruction will
- * have both IEM_CIMPL_F_BRANCH_INDIR and IEM_CIMPL_F_BRANCH_COND set.  All
- * other branch instructions will have exactly one of the branch flags set. */
-#define IEM_CIMPL_F_BRANCH_INDIR    RT_BIT_32(3)
-/** May change significant portions of RFLAGS. */
-#define IEM_CIMPL_F_RFLAGS          RT_BIT_32(4)
-/** May change the status bits (X86_EFL_STATUS_BITS) in RFLAGS . */
-#define IEM_CIMPL_F_STATUS_FLAGS    RT_BIT_32(5)
-/** May trigger a VM exit. */
-#define IEM_CIMPL_F_VMEXIT          RT_BIT_32(6)
-/** May modify FPU state. */
-#define IEM_CIMPL_F_FPU             RT_BIT_32(7)
-/** REP prefixed instruction which may yield before updating PC. */
-#define IEM_CIMPL_F_REP             RT_BIT_32(8)
-/** Force end of TB after the instruction.    */
-#define IEM_CIMPL_F_END_TB          RT_BIT_32(9)
-/** Convenience: Raise exception (technically unnecessary, since it shouldn't return VINF_SUCCESS). */
-#define IEM_CIMPL_F_XCPT            (IEM_CIMPL_F_MODE | IEM_CIMPL_F_BRANCH_UNCOND | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT)
+/** Flag set if direct branch, clear if absolute or indirect. */
+#define IEM_CIMPL_F_BRANCH_DIRECT        RT_BIT_32(0)
+/** Flag set if indirect branch, clear if direct or relative.
+ * This is also used for all system control transfers (SYSCALL, SYSRET, INT, ++)
+ * as well as for return instructions (RET, IRET, RETF). */
+#define IEM_CIMPL_F_BRANCH_INDIRECT      RT_BIT_32(1)
+/** Flag set if relative branch, clear if absolute or indirect. */
+#define IEM_CIMPL_F_BRANCH_RELATIVE      RT_BIT_32(2)
+/** Flag set if conditional branch, clear if unconditional. */
+#define IEM_CIMPL_F_BRANCH_CONDITIONAL   RT_BIT_32(3)
+/** Flag set if it's a far branch (changes CS). */
+#define IEM_CIMPL_F_BRANCH_FAR           RT_BIT_32(4)
 /** Convenience: Testing any kind of branch. */
-#define IEM_CIMPL_F_BRANCH_ANY      (IEM_CIMPL_F_BRANCH_UNCOND | IEM_CIMPL_F_BRANCH_COND | IEM_CIMPL_F_BRANCH_INDIR)
+#define IEM_CIMPL_F_BRANCH_ANY          (IEM_CIMPL_F_BRANCH_DIRECT | IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_RELATIVE)
+
+/** Execution flags may change (IEMCPU::fExec). */
+#define IEM_CIMPL_F_MODE                RT_BIT_32(5)
+/** May change significant portions of RFLAGS. */
+#define IEM_CIMPL_F_RFLAGS              RT_BIT_32(6)
+/** May change the status bits (X86_EFL_STATUS_BITS) in RFLAGS . */
+#define IEM_CIMPL_F_STATUS_FLAGS        RT_BIT_32(7)
+/** May trigger a VM exit. */
+#define IEM_CIMPL_F_VMEXIT              RT_BIT_32(8)
+/** May modify FPU state. */
+#define IEM_CIMPL_F_FPU                 RT_BIT_32(9)
+/** REP prefixed instruction which may yield before updating PC. */
+#define IEM_CIMPL_F_REP                 RT_BIT_32(10)
+/** Force end of TB after the instruction.    */
+#define IEM_CIMPL_F_END_TB              RT_BIT_32(11)
+/** Convenience: Raise exception (technically unnecessary, since it shouldn't return VINF_SUCCESS). */
+#define IEM_CIMPL_F_XCPT \
+    (IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT)
 /** @} */
 
 /** @def IEM_MC_CALL_CIMPL_HLP_RET

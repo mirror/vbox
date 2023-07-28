@@ -798,7 +798,8 @@ void iemOpcodeFlushHeavy(PVMCPUCC pVCpu, uint8_t cbInstr)
 #ifndef IEM_WITH_CODE_TLB
     pVCpu->iem.s.cbOpcode = cbInstr; /* Note! SVM and VT-x may set this to zero on exit, rather than the instruction length. */
 #elif 1
-    pVCpu->iem.s.pbInstrBuf = NULL;
+    pVCpu->iem.s.pbInstrBuf      = NULL;
+    pVCpu->iem.s.cbInstrBufTotal = 0;
     RT_NOREF(cbInstr);
 #else
     RT_NOREF(pVCpu, cbInstr);
@@ -1002,11 +1003,13 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
             }
             if (cbDst <= cbMaxRead)
             {
+                pVCpu->iem.s.fTbCrossedPage     |= offPg == 0 || pVCpu->iem.s.fTbBranched != 0; /** @todo Spurious load effect on branch handling? */
+                pVCpu->iem.s.GCPhysInstrBufPrev  = pVCpu->iem.s.GCPhysInstrBuf;
+
                 pVCpu->iem.s.offInstrNextByte = offPg + (uint32_t)cbDst;
                 pVCpu->iem.s.uInstrBufPc      = GCPtrFirst & ~(RTGCPTR)X86_PAGE_OFFSET_MASK;
                 pVCpu->iem.s.GCPhysInstrBuf   = pTlbe->GCPhys;
                 pVCpu->iem.s.pbInstrBuf       = pTlbe->pbMappingR3;
-                pVCpu->iem.s.fTbCrossedPage  |= offPg == 0;
                 memcpy(pvDst, &pTlbe->pbMappingR3[offPg], cbDst);
                 return;
             }
@@ -1091,14 +1094,16 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
 
             /* Update the state and probably return. */
             uint32_t const offPg = (GCPtrFirst & X86_PAGE_OFFSET_MASK);
+            pVCpu->iem.s.fTbCrossedPage     |= offPg == 0 || pVCpu->iem.s.fTbBranched != 0;
+            pVCpu->iem.s.GCPhysInstrBufPrev  = pVCpu->iem.s.GCPhysInstrBuf;
+
             pVCpu->iem.s.offCurInstrStart = (int16_t)(offPg - cbInstr);
             pVCpu->iem.s.offInstrNextByte = offPg + cbInstr + cbToRead;
             pVCpu->iem.s.cbInstrBuf       = offPg + RT_MIN(15, cbMaxRead + cbInstr) - cbToRead - cbInstr;
-            pVCpu->iem.s.cbInstrBufTotal  = X86_PAGE_SIZE;
+            pVCpu->iem.s.cbInstrBufTotal  = X86_PAGE_SIZE; /** @todo ??? */
             pVCpu->iem.s.GCPhysInstrBuf   = pTlbe->GCPhys;
             pVCpu->iem.s.uInstrBufPc      = GCPtrFirst & ~(RTGCPTR)X86_PAGE_OFFSET_MASK;
             pVCpu->iem.s.pbInstrBuf       = NULL;
-            pVCpu->iem.s.fTbCrossedPage  |= offPg == 0;
             if (cbToRead == cbDst)
                 return;
         }
@@ -4068,11 +4073,7 @@ iemRaiseXcptOrInt(PVMCPUCC    pVCpu,
         rcStrict = iemRaiseXcptOrIntInProtMode(pVCpu, cbInstr, u8Vector, fFlags, uErr, uCr2);
 
     /* Flush the prefetch buffer. */
-#ifdef IEM_WITH_CODE_TLB
-    pVCpu->iem.s.pbInstrBuf = NULL;
-#else
-    pVCpu->iem.s.cbOpcode = IEM_GET_INSTR_LEN(pVCpu);
-#endif
+    iemOpcodeFlushHeavy(pVCpu, IEM_GET_INSTR_LEN(pVCpu));
 
     /*
      * Unwind.

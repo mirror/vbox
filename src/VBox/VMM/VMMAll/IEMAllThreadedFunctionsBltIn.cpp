@@ -125,7 +125,7 @@ DECL_FORCE_INLINE(RTGCPHYS) iemTbGetRangePhysPageAddr(PCIEMTB pTb, uint8_t idxRa
  * Macro that implements opcode (re-)checking.
  */
 #define BODY_CHECK_OPCODES(a_pTb, a_idxRange, a_offRange, a_cbInstr) do { \
-        Assert((a_idxRange) < (a_pTb)->cRanges && (a_pTb)->cRanges < RT_ELEMENTS((a_pTb)->aRanges)); \
+        Assert((a_idxRange) < (a_pTb)->cRanges && (a_pTb)->cRanges <= RT_ELEMENTS((a_pTb)->aRanges)); \
         Assert((a_offRange) < (a_pTb)->aRanges[(a_idxRange)].cbOpcodes); \
         /* We can use pbInstrBuf here as it will be updated when branching (and prior to executing a TB). */ \
         if (RT_LIKELY(memcmp(&pVCpu->iem.s.pbInstrBuf[(a_pTb)->aRanges[(a_idxRange)].offPhysPage + (a_offRange)], \
@@ -173,17 +173,40 @@ DECL_FORCE_INLINE(RTGCPHYS) iemTbGetRangePhysPageAddr(PCIEMTB pTb, uint8_t idxRa
  * branching or when crossing a page on an instruction boundrary.
  *
  * This differs from BODY_LOAD_TLB_FOR_NEW_PAGE in that it will first check if
- * it is an inter-page branch.
+ * it is an inter-page branch and also check the page offset.
  *
  * This may long jump if we're raising a \#PF, \#GP or similar trouble.
  */
-#define BODY_LOAD_TLB_FOR_BRANCH(a_pTb, a_idxRange, a_cbInstr) do { \
+#define BODY_LOAD_TLB_AFTER_BRANCH(a_pTb, a_idxRange, a_cbInstr) do { \
         /* Is RIP within the current code page? */ \
         Assert(pVCpu->cpum.GstCtx.cs.u64Base == 0 || !IEM_IS_64BIT_CODE(pVCpu)); \
         uint64_t const uPc = pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base; \
         uint64_t const off = uPc - pVCpu->iem.s.uInstrBufPc; \
         if (off < pVCpu->iem.s.cbInstrBufTotal) \
+        { \
             Assert(!(pVCpu->iem.s.GCPhysInstrBuf & GUEST_PAGE_OFFSET_MASK)); \
+            Assert(pVCpu->iem.s.pbInstrBuf); \
+            RTGCPHYS const GCPhysRangePageWithOffset = iemTbGetRangePhysPageAddr(a_pTb, a_idxRange) \
+                                                     | pTb->aRanges[(a_idxRange)].offPhysPage; \
+            if (GCPhysRangePageWithOffset == pVCpu->iem.s.GCPhysInstrBuf + off) \
+            { /* we're good */ } \
+            else if (pTb->aRanges[(a_idxRange)].offPhysPage != off) \
+            { \
+                Log7(("TB jmp miss: %p at %04x:%08RX64 LB %u; branching/1; GCPhysWithOffset=%RGp expected %RGp, pbInstrBuf=%p - #%u\n", \
+                      (a_pTb), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (a_cbInstr), \
+                      pVCpu->iem.s.GCPhysInstrBuf + off, GCPhysRangePageWithOffset, pVCpu->iem.s.pbInstrBuf, __LINE__)); \
+                RT_NOREF(a_cbInstr); \
+                return VINF_IEM_REEXEC_MODE_CHANGED; /** @todo new status code? */ \
+            } \
+            else \
+            { \
+                Log7(("TB obsolete: %p at %04x:%08RX64 LB %u; branching/1; GCPhysWithOffset=%RGp expected %RGp, pbInstrBuf=%p - #%u\n", \
+                      (a_pTb), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (a_cbInstr), \
+                      pVCpu->iem.s.GCPhysInstrBuf + off, GCPhysRangePageWithOffset, pVCpu->iem.s.pbInstrBuf, __LINE__)); \
+                RT_NOREF(a_cbInstr); \
+                return iemThreadeFuncWorkerObsoleteTb(pVCpu); \
+            } \
+        } \
         else \
         { \
             /* Must translate new RIP. */ \
@@ -191,19 +214,55 @@ DECL_FORCE_INLINE(RTGCPHYS) iemTbGetRangePhysPageAddr(PCIEMTB pTb, uint8_t idxRa
             pVCpu->iem.s.offCurInstrStart = 0; \
             pVCpu->iem.s.offInstrNextByte = 0; \
             iemOpcodeFetchBytesJmp(pVCpu, 0, NULL); \
+            Assert(!(pVCpu->iem.s.GCPhysInstrBuf & GUEST_PAGE_OFFSET_MASK) || !pVCpu->iem.s.pbInstrBuf); \
             \
-            RTGCPHYS const GCPhysNewPage = iemTbGetRangePhysPageAddr(a_pTb, a_idxRange); \
-            if (RT_LIKELY(   pVCpu->iem.s.GCPhysInstrBuf == GCPhysNewPage \
-                          && pVCpu->iem.s.pbInstrBuf)) \
+            RTGCPHYS const GCPhysRangePageWithOffset = iemTbGetRangePhysPageAddr(a_pTb, a_idxRange) \
+                                                     | pTb->aRanges[(a_idxRange)].offPhysPage; \
+            uint64_t const offNew                    = uPc - pVCpu->iem.s.uInstrBufPc; \
+            if (   GCPhysRangePageWithOffset == pVCpu->iem.s.GCPhysInstrBuf + offNew \
+                && pVCpu->iem.s.pbInstrBuf) \
             { /* likely */ } \
+            else if (   pTb->aRanges[(a_idxRange)].offPhysPage != offNew \
+                     && pVCpu->iem.s.pbInstrBuf) \
+            { \
+                Log7(("TB jmp miss: %p at %04x:%08RX64 LB %u; branching/2; GCPhysWithOffset=%RGp expected %RGp, pbInstrBuf=%p - #%u\n", \
+                      (a_pTb), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (a_cbInstr), \
+                      pVCpu->iem.s.GCPhysInstrBuf + offNew, GCPhysRangePageWithOffset, pVCpu->iem.s.pbInstrBuf, __LINE__)); \
+                RT_NOREF(a_cbInstr); \
+                return VINF_IEM_REEXEC_MODE_CHANGED; /** @todo new status code? */ \
+            } \
             else \
             { \
-                Log7(("TB obsolete: %p at %04x:%08RX64 LB %u; branching; GCPhys=%RGp expected %RGp, pbInstrBuf=%p - #%u\n", \
+                Log7(("TB obsolete: %p at %04x:%08RX64 LB %u; branching/2; GCPhysWithOffset=%RGp expected %RGp, pbInstrBuf=%p - #%u\n", \
                       (a_pTb), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (a_cbInstr), \
-                      pVCpu->iem.s.GCPhysInstrBuf, GCPhysNewPage, pVCpu->iem.s.pbInstrBuf, __LINE__)); \
+                      pVCpu->iem.s.GCPhysInstrBuf + offNew, GCPhysRangePageWithOffset, pVCpu->iem.s.pbInstrBuf, __LINE__)); \
                 RT_NOREF(a_cbInstr); \
                 return iemThreadeFuncWorkerObsoleteTb(pVCpu); \
             } \
+        } \
+    } while(0)
+
+/**
+ * Macro that implements PC check after a conditional branch.
+ */
+#define BODY_CHECK_PC_AFTER_BRANCH(a_pTb, a_idxRange, a_cbInstr) do { \
+        /* Is RIP within the current code page? */ \
+        Assert(pVCpu->cpum.GstCtx.cs.u64Base == 0 || !IEM_IS_64BIT_CODE(pVCpu)); \
+        uint64_t const uPc = pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base; \
+        uint64_t const off = uPc - pVCpu->iem.s.uInstrBufPc; \
+        Assert(!(pVCpu->iem.s.GCPhysInstrBuf & GUEST_PAGE_OFFSET_MASK)); \
+        RTGCPHYS const GCPhysRangePageWithOffset = iemTbGetRangePhysPageAddr(a_pTb, a_idxRange) \
+                                                 | pTb->aRanges[(a_idxRange)].offPhysPage; \
+        if (   GCPhysRangePageWithOffset == pVCpu->iem.s.GCPhysInstrBuf + off \
+            && off < pVCpu->iem.s.cbInstrBufTotal) \
+        { /* we're good */ } \
+        else \
+        { \
+            Log7(("TB jmp miss: %p at %04x:%08RX64 LB %u; GCPhysWithOffset=%RGp hoped for %RGp, pbInstrBuf=%p - #%u\n", \
+                  (a_pTb), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (a_cbInstr), \
+                  pVCpu->iem.s.GCPhysInstrBuf + off, GCPhysRangePageWithOffset, pVCpu->iem.s.pbInstrBuf, __LINE__)); \
+            RT_NOREF(a_cbInstr); \
+            return VINF_IEM_REEXEC_MODE_CHANGED; /** @todo new status code? */ \
         } \
     } while(0)
 
@@ -254,6 +313,107 @@ IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodes,
     return VINF_SUCCESS;
 }
 
+
+/*
+ * Post-branching checkers.
+ */
+
+/**
+ * Built-in function for checking CS.LIM, checking the PC and checking opcodes
+ * after conditional branching within the same page.
+ *
+ * @see iemThreadedFunc_BltIn_CheckPcAndOpcodes
+ */
+IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndPcAndOpcodes,
+                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
+{
+    PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
+    uint32_t const cbInstr  = (uint32_t)uParam0;
+    uint32_t const idxRange = (uint32_t)uParam1;
+    uint32_t const offRange = (uint32_t)uParam2;
+    //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
+    BODY_CHECK_CS_LIM(cbInstr);
+    BODY_CHECK_PC_AFTER_BRANCH(pTb, idxRange, cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
+    //LogFunc(("okay\n"));
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Built-in function for checking the PC and checking opcodes after conditional
+ * branching within the same page.
+ *
+ * @see iemThreadedFunc_BltIn_CheckCsLimAndPcAndOpcodes
+ */
+IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckPcAndOpcodes,
+                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
+{
+    PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
+    uint32_t const cbInstr  = (uint32_t)uParam0;
+    uint32_t const idxRange = (uint32_t)uParam1;
+    uint32_t const offRange = (uint32_t)uParam2;
+    //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
+    BODY_CHECK_PC_AFTER_BRANCH(pTb, idxRange, cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
+    //LogFunc(("okay\n"));
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Built-in function for checking CS.LIM, loading TLB and checking opcodes when
+ * transitioning to a different code page.
+ *
+ * The code page transition can either be natural over onto the next page (with
+ * the instruction starting at page offset zero) or by means of branching.
+ *
+ * @see iemThreadedFunc_BltIn_CheckOpcodesLoadingTlb
+ */
+IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb,
+                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
+{
+    PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
+    uint32_t const cbInstr  = (uint32_t)uParam0;
+    uint32_t const idxRange = (uint32_t)uParam1;
+    uint32_t const offRange = (uint32_t)uParam2;
+    //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
+    BODY_CHECK_CS_LIM(cbInstr);
+    BODY_LOAD_TLB_AFTER_BRANCH(pTb, idxRange, cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
+    //LogFunc(("okay\n"));
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Built-in function for loading TLB and checking opcodes when transitioning to
+ * a different code page.
+ *
+ * The code page transition can either be natural over onto the next page (with
+ * the instruction starting at page offset zero) or by means of branching.
+ *
+ * @see iemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb
+ */
+IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesLoadingTlb,
+                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
+{
+    PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
+    uint32_t const cbInstr  = (uint32_t)uParam0;
+    uint32_t const idxRange = (uint32_t)uParam1;
+    uint32_t const offRange = (uint32_t)uParam2;
+    //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
+    BODY_LOAD_TLB_AFTER_BRANCH(pTb, idxRange, cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
+    //LogFunc(("okay\n"));
+    return VINF_SUCCESS;
+}
+
+
+
+/*
+ * Natural page crossing checkers.
+ */
 
 /**
  * Built-in function for checking CS.LIM, loading TLB and checking opcodes on
@@ -310,51 +470,6 @@ IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoad
 
 /**
  * Built-in function for checking CS.LIM, loading TLB and checking opcodes when
- * transitioning to a different code page.
- *
- * The code page transition can either be natural over onto the next page (with
- * the instruction starting at page offset zero) or by means of branching.
- *
- * @see iemThreadedFunc_BltIn_CheckOpcodesLoadingTlb
- */
-IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb,
-                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
-{
-    PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
-    uint32_t const cbInstr  = (uint32_t)uParam0;
-    uint32_t const idxRange = (uint32_t)uParam1;
-    uint32_t const offRange = (uint32_t)uParam2;
-    BODY_CHECK_CS_LIM(cbInstr);
-    BODY_LOAD_TLB_FOR_BRANCH(pTb, idxRange, cbInstr);
-    BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Built-in function for loading TLB and checking opcodes when transitioning to
- * a different code page.
- *
- * The code page transition can either be natural over onto the next page (with
- * the instruction starting at page offset zero) or by means of branching.
- *
- * @see iemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb
- */
-IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesLoadingTlb,
-                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
-{
-    PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
-    uint32_t const cbInstr  = (uint32_t)uParam0;
-    uint32_t const idxRange = (uint32_t)uParam1;
-    uint32_t const offRange = (uint32_t)uParam2;
-    BODY_LOAD_TLB_FOR_BRANCH(pTb, idxRange, cbInstr);
-    BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Built-in function for checking CS.LIM, loading TLB and checking opcodes when
  * advancing naturally to a different code page.
  *
  * Only opcodes on the new page is checked.
@@ -398,6 +513,47 @@ IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoad
     BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, cbStartPage, idxRange2, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange2, 0, cbInstr);
     RT_NOREF(uParam2);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Built-in function for checking CS.LIM, loading TLB and checking opcodes when
+ * advancing naturally to a different code page with first instr at byte 0.
+ *
+ * @see iemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingTlb
+ */
+IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb,
+                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
+{
+    PCIEMTB const  pTb         = pVCpu->iem.s.pCurTbR3;
+    uint32_t const cbInstr     = (uint32_t)uParam0;
+    uint32_t const idxRange    = (uint32_t)uParam1;
+    Assert(uParam2 == 0 /*offRange*/); RT_NOREF(uParam2);
+    BODY_CHECK_CS_LIM(cbInstr);
+    BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, 0, idxRange, cbInstr);
+    Assert(pVCpu->iem.s.offCurInstrStart == 0);
+    BODY_CHECK_OPCODES(pTb, idxRange, 0, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Built-in function for loading TLB and checking opcodes when advancing
+ * naturally to a different code page with first instr at byte 0.
+ *
+ * @see iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb
+ */
+IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingTlb,
+                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
+{
+    PCIEMTB const  pTb         = pVCpu->iem.s.pCurTbR3;
+    uint32_t const cbInstr     = (uint32_t)uParam0;
+    uint32_t const idxRange    = (uint32_t)uParam1;
+    Assert(uParam2 == 0 /*offRange*/); RT_NOREF(uParam2);
+    BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, 0, idxRange, cbInstr);
+    Assert(pVCpu->iem.s.offCurInstrStart == 0);
+    BODY_CHECK_OPCODES(pTb, idxRange, 0, cbInstr);
     return VINF_SUCCESS;
 }
 

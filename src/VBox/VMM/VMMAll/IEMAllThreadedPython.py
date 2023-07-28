@@ -196,18 +196,22 @@ class ThreadedFunctionVariation(object):
     ## @}
 
     ## IEM_CIMPL_F_XXX flags that we know.
+    ## The value indicates whether it terminates the TB or not. The goal is to
+    ## improve the recompiler so all but END_TB will be False.
     kdCImplFlags = {
-        'IEM_CIMPL_F_MODE':             True,
-        'IEM_CIMPL_F_BRANCH_UNCOND':    False,
-        'IEM_CIMPL_F_BRANCH_COND':      False,
-        'IEM_CIMPL_F_BRANCH_INDIR':     True,
-        'IEM_CIMPL_F_RFLAGS':           False,
-        'IEM_CIMPL_F_STATUS_FLAGS':     False,
-        'IEM_CIMPL_F_VMEXIT':           False,
-        'IEM_CIMPL_F_FPU':              False,
-        'IEM_CIMPL_F_REP':              False,
-        'IEM_CIMPL_F_END_TB':           False,
-        'IEM_CIMPL_F_XCPT':             True,
+        'IEM_CIMPL_F_MODE':                 True,
+        'IEM_CIMPL_F_BRANCH_DIRECT':        False,
+        'IEM_CIMPL_F_BRANCH_INDIRECT':      False,
+        'IEM_CIMPL_F_BRANCH_RELATIVE':      False,
+        'IEM_CIMPL_F_BRANCH_FAR':           True,
+        'IEM_CIMPL_F_BRANCH_CONDITIONAL':   False,
+        'IEM_CIMPL_F_RFLAGS':               False,
+        'IEM_CIMPL_F_STATUS_FLAGS':         False,
+        'IEM_CIMPL_F_VMEXIT':               True,
+        'IEM_CIMPL_F_FPU':                  False,
+        'IEM_CIMPL_F_REP':                  True,
+        'IEM_CIMPL_F_END_TB':               True,
+        'IEM_CIMPL_F_XCPT':                 True,
     };
 
     def __init__(self, oThreadedFunction, sVariation = ksVariation_Default):
@@ -505,14 +509,13 @@ class ThreadedFunctionVariation(object):
         return (aoThreadedStmts, iParamRef);
 
 
-    def analyzeCodeOperation(self, aoStmts):
+    def analyzeCodeOperation(self, aoStmts, fSeenConditional = False):
         """
         Analyzes the code looking clues as to additional side-effects.
 
         Currently this is simply looking for any IEM_IMPL_C_F_XXX flags and
         collecting these in self.dsCImplFlags.
         """
-        fSeenConditional = False;
         for oStmt in aoStmts:
             # Pick up hints from CIMPL calls and deferals.
             if oStmt.sName.startswith('IEM_MC_CALL_CIMPL_') or oStmt.sName.startswith('IEM_MC_DEFER_TO_CIMPL_'):
@@ -525,26 +528,20 @@ class ThreadedFunctionVariation(object):
                         else:
                             self.raiseProblem('Unknown CIMPL flag value: %s' % (sFlag,));
 
-            # Check for conditional so we can categorize any branches correctly.
-            if (   oStmt.sName.startswith('IEM_MC_IF_')
-                or oStmt.sName == 'IEM_MC_ENDIF'):
-                fSeenConditional = True;
-
             # Set IEM_IMPL_C_F_BRANCH if we see any branching MCs.
             elif oStmt.sName.startswith('IEM_MC_SET_RIP'):
                 assert not fSeenConditional;
-                self.dsCImplFlags['IEM_CIMPL_F_BRANCH_INDIR'] = True;
+                self.dsCImplFlags['IEM_CIMPL_F_BRANCH_INDIRECT'] = True;
             elif oStmt.sName.startswith('IEM_MC_REL_JMP'):
+                self.dsCImplFlags['IEM_CIMPL_F_BRANCH_RELATIVE'] = True;
                 if fSeenConditional:
-                    self.dsCImplFlags['IEM_CIMPL_F_BRANCH_COND'] = True;
-                else:
-                    self.dsCImplFlags['IEM_CIMPL_F_BRANCH_UNCOND'] = True;
+                    self.dsCImplFlags['IEM_CIMPL_F_BRANCH_CONDITIONAL'] = True;
 
             # Process branches of conditionals recursively.
             if isinstance(oStmt, iai.McStmtCond):
-                self.analyzeCodeOperation(oStmt.aoIfBranch);
+                self.analyzeCodeOperation(oStmt.aoIfBranch, True);
                 if oStmt.aoElseBranch:
-                    self.analyzeCodeOperation(oStmt.aoElseBranch);
+                    self.analyzeCodeOperation(oStmt.aoElseBranch, True);
 
         return True;
 
@@ -913,6 +910,31 @@ class ThreadedFunctionVariation(object):
 
         aoStmts.append(iai.McCppGeneric('IEM_MC2_END_EMIT_CALLS(' + sCImplFlags + ');',
                                         cchIndent = cchIndent)); # For closing the scope.
+
+        # Emit fEndTb = true or fTbBranched = true if any of the CIMPL flags
+        # indicates we should do so.
+        asEndTbFlags      = [];
+        asTbBranchedFlags = [];
+        for sFlag in self.dsCImplFlags:
+            if self.kdCImplFlags[sFlag] is True:
+                asEndTbFlags.append(sFlag);
+            elif sFlag.startswith('IEM_CIMPL_F_BRANCH_'):
+                asTbBranchedFlags.append(sFlag);
+        if asTbBranchedFlags:
+            aoStmts.extend([
+                iai.McCppGeneric('iemThreadedSetBranched(pVCpu, %s);'
+                                 % ((' | '.join(asTbBranchedFlags)).replace('IEM_CIMPL_F_BRANCH', 'IEMBRANCHED_F'),),
+                                 cchIndent = cchIndent), # Using the inline fn saves ~2 seconds for gcc 13/dbg (1m13s vs 1m15s).
+                #iai.McCppGeneric('pVCpu->iem.s.fTbBranched = %s;'
+                #                 % ((' | '.join(asTbBranchedFlags)).replace('IEM_CIMPL_F_BRANCH', 'IEMBRANCHED_F'),),
+                #                 cchIndent = cchIndent),
+                #iai.McCppGeneric('pVCpu->iem.s.GCPhysTbBranchSrcBuf = pVCpu->iem.s.GCPhysInstrBuf;', cchIndent = cchIndent),
+                #iai.McCppGeneric('pVCpu->iem.s.GCVirtTbBranchSrcBuf = pVCpu->iem.s.uInstrBufPc;', cchIndent = cchIndent),
+            ]);
+        if asEndTbFlags:
+            aoStmts.append(iai.McCppGeneric('pVCpu->iem.s.fEndTb = true; /* %s */' % (','.join(asEndTbFlags),),
+                                            cchIndent = cchIndent));
+
         return aoStmts;
 
 
@@ -1096,18 +1118,6 @@ class ThreadedFunction(object):
         #print('McBlock at %s:%s' % (os.path.split(self.oMcBlock.sSrcFile)[1], self.oMcBlock.iBeginLine,));
         aoDecoderStmts = [];
 
-        # Take a very simple approach to problematic instructions for now.
-        if cDepth == 0:
-            dsCImplFlags = {};
-            for oVar in self.aoVariations:
-                dsCImplFlags.update(oVar.dsCImplFlags);
-            if (   'IEM_CIMPL_F_BRANCH_UNCOND' in dsCImplFlags
-                or 'IEM_CIMPL_F_BRANCH_COND'   in dsCImplFlags
-                or 'IEM_CIMPL_F_BRANCH_INDIR'  in dsCImplFlags
-                or 'IEM_CIMPL_F_MODE'          in dsCImplFlags
-                or 'IEM_CIMPL_F_REP'           in dsCImplFlags):
-                aoDecoderStmts.append(iai.McCppGeneric('pVCpu->iem.s.fEndTb = true;'));
-
         for oStmt in aoStmts:
             # Copy the statement. Make a deep copy to make sure we've got our own
             # copies of all instance variables, even if a bit overkill at the moment.
@@ -1281,13 +1291,17 @@ class IEMThreadedGenerator(object):
             '    kIemThreadedFunc_CheckMode,',
             '    kIemThreadedFunc_CheckCsLim,',
             '    kIemThreadedFunc_CheckCsLimAndOpcodes,',
-            '    kIemThreadedFunc_CheckCsLimAndOpcodesAcrossPageLoadingTlb,',
-            '    kIemThreadedFunc_CheckCsLimAndOpcodesLoadingTlb,',
-            '    kIemThreadedFunc_CheckCsLimAndOpcodesOnNextPageLoadingTlb,',
             '    kIemThreadedFunc_CheckOpcodes,',
+            '    kIemThreadedFunc_CheckCsLimAndPcAndOpcodes,',
+            '    kIemThreadedFunc_CheckPcAndOpcodes,',
+            '    kIemThreadedFunc_CheckCsLimAndOpcodesAcrossPageLoadingTlb,',
             '    kIemThreadedFunc_CheckOpcodesAcrossPageLoadingTlb,',
+            '    kIemThreadedFunc_CheckCsLimAndOpcodesLoadingTlb,',
             '    kIemThreadedFunc_CheckOpcodesLoadingTlb,',
+            '    kIemThreadedFunc_CheckCsLimAndOpcodesOnNextPageLoadingTlb,',
             '    kIemThreadedFunc_CheckOpcodesOnNextPageLoadingTlb,',
+            '    kIemThreadedFunc_CheckCsLimAndOpcodesOnNewPageLoadingTlb,',
+            '    kIemThreadedFunc_CheckOpcodesOnNewPageLoadingTlb,',
         ];
         iThreadedFunction = 1;
         for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
@@ -1448,13 +1462,17 @@ class IEMThreadedGenerator(object):
                    + '    iemThreadedFunc_BltIn_CheckMode,\n'
                    + '    iemThreadedFunc_BltIn_CheckCsLim,\n'
                    + '    iemThreadedFunc_BltIn_CheckCsLimAndOpcodes,\n'
-                   + '    iemThreadedFunc_BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb,\n'
-                   + '    iemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb,\n'
-                   + '    iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb,\n'
                    + '    iemThreadedFunc_BltIn_CheckOpcodes,\n'
+                   + '    iemThreadedFunc_BltIn_CheckCsLimAndPcAndOpcodes,\n'
+                   + '    iemThreadedFunc_BltIn_CheckPcAndOpcodes,\n'
+                   + '    iemThreadedFunc_BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb,\n'
                    + '    iemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoadingTlb,\n'
+                   + '    iemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb,\n'
                    + '    iemThreadedFunc_BltIn_CheckOpcodesLoadingTlb,\n'
+                   + '    iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb,\n'
                    + '    iemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoadingTlb,\n'
+                   + '    iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb,\n'
+                   + '    iemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingTlb,\n'
                    );
         iThreadedFunction = 1;
         for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
@@ -1489,13 +1507,17 @@ class IEMThreadedGenerator(object):
                    + '    "BltIn_CheckMode",\n'
                    + '    "BltIn_CheckCsLim",\n'
                    + '    "BltIn_CheckCsLimAndOpcodes",\n'
-                   + '    "BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb",\n'
-                   + '    "BltIn_CheckCsLimAndOpcodesLoadingTlb",\n'
-                   + '    "BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb",\n'
                    + '    "BltIn_CheckOpcodes",\n'
+                   + '    "BltIn_CheckCsLimAndPcAndOpcodes",\n'
+                   + '    "BltIn_CheckPcAndOpcodes",\n'
+                   + '    "BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb",\n'
                    + '    "BltIn_CheckOpcodesAcrossPageLoadingTlb",\n'
+                   + '    "BltIn_CheckCsLimAndOpcodesLoadingTlb",\n'
                    + '    "BltIn_CheckOpcodesLoadingTlb",\n'
+                   + '    "BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb",\n'
                    + '    "BltIn_CheckOpcodesOnNextPageLoadingTlb",\n'
+                   + '    "BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb",\n'
+                   + '    "BltIn_CheckOpcodesOnNewPageLoadingTlb",\n'
                    );
         iThreadedFunction = 1;
         for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:

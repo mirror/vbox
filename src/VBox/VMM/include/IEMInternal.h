@@ -80,7 +80,7 @@ RT_C_DECLS_BEGIN
  * the MMIO and CPUID tests ran noticeably faster. Variation is greater than on
  * Linux, but it should be quite a bit faster for normal code.
  */
-#if (defined(IEM_WITH_SETJMP) && defined(IN_RING3) && (defined(__GNUC__) || defined(_MSC_VER))) \
+#if (defined(__cplusplus) && defined(IEM_WITH_SETJMP) && defined(IN_RING3) && (defined(__GNUC__) || defined(_MSC_VER))) \
  || defined(DOXYGEN_RUNNING)
 # define IEM_WITH_THROW_CATCH
 #endif
@@ -842,6 +842,27 @@ typedef IEMTB *PIEMTB;
 /** Pointer to a const translation block. */
 typedef IEMTB const *PCIEMTB;
 
+/** @name IEMBRANCHED_F_XXX - Branched indicator (IEMCPU::fTbBranched).
+ *
+ * These flags parallels IEM_CIMPL_F_BRANCH_XXX.
+ *
+ * @{ */
+/** Value if no branching happened recently. */
+#define IEMBRANCHED_F_NO            UINT8_C(0x00)
+/** Flag set if direct branch, clear if absolute or indirect. */
+#define IEMBRANCHED_F_DIRECT        UINT8_C(0x01)
+/** Flag set if indirect branch, clear if direct or relative. */
+#define IEMBRANCHED_F_INDIRECT      UINT8_C(0x02)
+/** Flag set if relative branch, clear if absolute or indirect. */
+#define IEMBRANCHED_F_RELATIVE      UINT8_C(0x04)
+/** Flag set if conditional branch, clear if unconditional. */
+#define IEMBRANCHED_F_CONDITIONAL   UINT8_C(0x08)
+/** Flag set if it's a far branch. */
+#define IEMBRANCHED_F_FAR           UINT8_C(0x10)
+/** Flag set (by IEM_MC_REL_JMP_XXX) if it's a zero bytes relative jump. */
+#define IEMBRANCHED_F_ZERO          UINT8_C(0x20)
+/** @} */
+
 
 /**
  * The per-CPU IEM state.
@@ -1138,15 +1159,25 @@ typedef struct IEMCPU
     /** Whether we need to check the opcode bytes for the current instruction.
      * This is set by a previous instruction if it modified memory or similar.  */
     bool                    fTbCheckOpcodes;
-    /** Whether we just branched and need to start a new opcode range and emit code
-     * to do a TLB load and check them again. */
-    bool                    fTbBranched;
+    /** Indicates whether and how we just branched - IEMBRANCHED_F_XXX. */
+    uint8_t                 fTbBranched;
     /** Set when GCPhysInstrBuf is updated because of a page crossing. */
     bool                    fTbCrossedPage;
     /** Whether to end the current TB. */
     bool                    fEndTb;
     /** Spaced reserved for recompiler data / alignment. */
     bool                    afRecompilerStuff1[4];
+    /** Previous GCPhysInstrBuf value - only valid if fTbCrossedPage is set.   */
+    RTGCPHYS                GCPhysInstrBufPrev;
+    /** Copy of IEMCPU::GCPhysInstrBuf after decoding a branch instruction.
+     * This is used together with fTbBranched and GCVirtTbBranchSrcBuf to determin
+     * whether a branch instruction jumps to a new page or stays within the
+     * current one. */
+    RTGCPHYS                GCPhysTbBranchSrcBuf;
+    /** Copy of IEMCPU::uInstrBufPc after decoding a branch instruction.  */
+    uint64_t                GCVirtTbBranchSrcBuf;
+    /* Alignment. */
+    uint64_t                au64RecompilerStuff2[5];
     /** Threaded TB statistics: Number of instructions per TB. */
     STAMPROFILE             StatTbThreadedInstr;
     /** Threaded TB statistics: Number of calls per TB. */
@@ -4385,14 +4416,26 @@ IEM_CIMPL_DEF_0(iemCImplRaiseInvalidOpcode);
 #define IEMOP_RAISE_INVALID_LOCK_PREFIX_RET() IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_XCPT, iemCImplRaiseInvalidLockPrefix)
 
 /**
- * Macro for calling iemCImplRaiseInvalidOpcode().
+ * Macro for calling iemCImplRaiseInvalidOpcode() for decode/static \#UDs.
  *
- * This enables us to add/remove arguments and force different levels of
- * inlining as we wish.
+ * This is for things that will _always_ decode to an \#UD, taking the
+ * recompiler into consideration and everything.
  *
  * @return  Strict VBox status code.
  */
 #define IEMOP_RAISE_INVALID_OPCODE_RET()    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_XCPT, iemCImplRaiseInvalidOpcode)
+
+/**
+ * Macro for calling iemCImplRaiseInvalidOpcode() for runtime-style \#UDs.
+ *
+ * Using this macro means you've got _buggy_ _code_ and are doing things that
+ * belongs exclusively in IEMAllCImpl.cpp during decoding.
+ *
+ * @return  Strict VBox status code.
+ * @see     IEMOP_RAISE_INVALID_OPCODE_RET
+ */
+#define IEMOP_RAISE_INVALID_OPCODE_RUNTIME_RET()   IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_XCPT, iemCImplRaiseInvalidOpcode)
+
 /** @} */
 
 /** @name Register Access.
@@ -4898,26 +4941,44 @@ IEM_CIMPL_PROTO_0(iemCImpl_vmmcall); /* svm */
 IEM_CIMPL_PROTO_1(iemCImpl_Hypercall, uint16_t, uDisOpcode); /* both */
 
 void            iemThreadedTbObsolete(PVMCPUCC pVCpu, PIEMTB pTb);
+
 IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckMode,
                     (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
 IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLim,
                     (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+
 IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodes,
-                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
-IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb,
-                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
-IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb,
-                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
-IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb,
                     (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
 IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodes,
                     (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
-IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoadingTlb,
+
+/* Branching: */
+IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndPcAndOpcodes,
+                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckPcAndOpcodes,
+                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+
+IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb,
                     (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
 IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesLoadingTlb,
                     (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+
+/* Natural page crossing: */
+IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb,
+                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoadingTlb,
+                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+
+IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb,
+                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
 IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoadingTlb,
                     (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+
+IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb,
+                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingTlb,
+                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+
 
 
 extern const PFNIEMOP g_apfnIemInterpretOnlyOneByteMap[256];

@@ -5,8 +5,8 @@
  * Logging group IEM_RE_THREADED assignments:
  *      - Level 1  (Log)  : Errors, exceptions, interrupts and such major events. [same as IEM]
  *      - Flow  (LogFlow) :
- *      - Level 2  (Log2) :
- *      - Level 3  (Log3) : More detailed enter/exit IEM state info. [same as IEM]
+ *      - Level 2  (Log2) : Basic instruction execution state info. [same as IEM]
+ *      - Level 3  (Log3) : More detailed execution state info. [same as IEM]
  *      - Level 4  (Log4) : Decoding mnemonics w/ EIP. [same as IEM]
  *      - Level 5  (Log5) : Decoding details. [same as IEM]
  *      - Level 6  (Log6) :
@@ -111,12 +111,6 @@
 
 
 /*********************************************************************************************************************************
-*   Structures and Typedefs                                                                                                      *
-*********************************************************************************************************************************/
-
-
-
-/*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static bool         iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb);
@@ -129,6 +123,9 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb);
 #define g_apfnOneByteMap    g_apfnIemThreadedRecompilerOneByteMap
 
 
+/*
+ * Override IEM_MC_CALC_RM_EFF_ADDR to use iemOpHlpCalcRmEffAddrJmpEx and produce uEffAddrInfo.
+ */
 #undef IEM_MC_CALC_RM_EFF_ADDR
 #ifndef IEM_WITH_SETJMP
 # define IEM_MC_CALC_RM_EFF_ADDR(a_GCPtrEff, a_bRm, a_cbImmAndRspOffset) \
@@ -140,6 +137,37 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb);
     ((a_GCPtrEff) = iemOpHlpCalcRmEffAddrJmpEx(pVCpu, (a_bRm), (a_cbImmAndRspOffset), &uEffAddrInfo))
 #endif
 
+/*
+ * Override the IEM_MC_REL_JMP_S*_AND_FINISH macros to check for zero byte jumps.
+ */
+#undef IEM_MC_REL_JMP_S8_AND_FINISH
+#define IEM_MC_REL_JMP_S8_AND_FINISH(a_i8) do { \
+        Assert(pVCpu->iem.s.fTbBranched != 0); \
+        if ((a_i8) == 0) \
+            pVCpu->iem.s.fTbBranched |= IEMBRANCHED_F_ZERO; \
+        return iemRegRipRelativeJumpS8AndFinishClearingRF(pVCpu, IEM_GET_INSTR_LEN(pVCpu), (a_i8), pVCpu->iem.s.enmEffOpSize); \
+    } while (0)
+
+#undef IEM_MC_REL_JMP_S16_AND_FINISH
+#define IEM_MC_REL_JMP_S16_AND_FINISH(a_i16) do { \
+        Assert(pVCpu->iem.s.fTbBranched != 0); \
+        if ((a_i16) == 0) \
+            pVCpu->iem.s.fTbBranched |= IEMBRANCHED_F_ZERO; \
+        return iemRegRipRelativeJumpS16AndFinishClearingRF(pVCpu, IEM_GET_INSTR_LEN(pVCpu), (a_i16)); \
+    } while (0)
+
+#undef IEM_MC_REL_JMP_S32_AND_FINISH
+#define IEM_MC_REL_JMP_S32_AND_FINISH(a_i32) do { \
+        Assert(pVCpu->iem.s.fTbBranched != 0); \
+        if ((a_i32) == 0) \
+            pVCpu->iem.s.fTbBranched |= IEMBRANCHED_F_ZERO; \
+        return iemRegRipRelativeJumpS32AndFinishClearingRF(pVCpu, IEM_GET_INSTR_LEN(pVCpu), (a_i32), pVCpu->iem.s.enmEffOpSize); \
+    } while (0)
+
+
+/*
+ * Emit call macros.
+ */
 #define IEM_MC2_BEGIN_EMIT_CALLS() \
     { \
         PIEMTB const  pTb = pVCpu->iem.s.pCurTbR3; \
@@ -168,7 +196,6 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb);
             return VINF_IEM_RECOMPILE_END_TB; \
         \
         do { } while (0)
-
 #define IEM_MC2_EMIT_CALL_0(a_enmFunction) do { \
         IEMTHREADEDFUNCS const enmFunctionCheck = a_enmFunction; RT_NOREF(enmFunctionCheck); \
         \
@@ -223,7 +250,6 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb);
         pCall->auParams[1] = a_uArg1; \
         pCall->auParams[2] = a_uArg2; \
     } while (0)
-
 #define IEM_MC2_END_EMIT_CALLS(a_fCImplFlags) \
         Assert(pTb->cInstructions <= pTb->Thrd.cCalls); \
         if (pTb->cInstructions < 255) \
@@ -571,6 +597,17 @@ RTGCPTR iemOpHlpCalcRmEffAddrJmpEx(PVMCPUCC pVCpu, uint8_t bRm, uint32_t cbImmAn
 }
 
 
+/**
+ * Helper for indicating that we've branched.
+ */
+DECL_FORCE_INLINE(void) iemThreadedSetBranched(PVMCPUCC pVCpu, uint8_t fTbBranched)
+{
+    pVCpu->iem.s.fTbBranched          = fTbBranched;
+    pVCpu->iem.s.GCPhysTbBranchSrcBuf = pVCpu->iem.s.GCPhysInstrBuf;
+    pVCpu->iem.s.GCVirtTbBranchSrcBuf = pVCpu->iem.s.uInstrBufPc;
+}
+
+
 /*
  * Include the "annotated" IEMAllInstructions*.cpp.h files.
  */
@@ -747,7 +784,17 @@ static void iemThreadedTbAdd(PVMCC pVM, PVMCPUCC pVCpu, PIEMTB pTb)
     g_TbCache.apHash[idxHash] = pTb;
     STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->iem.s.StatTbThreadedInstr, pTb->cInstructions);
     STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->iem.s.StatTbThreadedCalls, pTb->Thrd.cCalls);
-    Log12(("TB added: %p %RGp LB %#x fl=%#x idxHash=%#x\n", pTb, pTb->GCPhysPc, pTb->cbOpcodes, pTb->fFlags, idxHash));
+    if (LogIs12Enabled())
+    {
+        Log12(("TB added: %p %RGp LB %#x fl=%#x idxHash=%#x cRanges=%u cInstr=%u cCalls=%u\n",
+               pTb, pTb->GCPhysPc, pTb->cbOpcodes, pTb->fFlags, idxHash, pTb->cRanges, pTb->cInstructions, pTb->Thrd.cCalls));
+        for (uint8_t idxRange = 0; idxRange < pTb->cRanges; idxRange++)
+            Log12((" range#%u: offPg=%#05x offOp=%#04x LB %#04x pg#%u=%RGp\n", idxRange, pTb->aRanges[idxRange].offPhysPage,
+                   pTb->aRanges[idxRange].offOpcodes, pTb->aRanges[idxRange].cbOpcodes, pTb->aRanges[idxRange].idxPhysPage,
+                   pTb->aRanges[idxRange].idxPhysPage == 0
+                   ? pTb->GCPhysPc & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK
+                   : pTb->aGCPhysPages[pTb->aRanges[idxRange].idxPhysPage - 1]));
+    }
     RT_NOREF(pVM);
 }
 
@@ -860,7 +907,7 @@ DECL_FORCE_INLINE(void) iemThreadedCompileInitDecoder(PVMCPUCC pVCpu, bool const
         pVCpu->iem.s.rcPassUp               = VINF_SUCCESS;
         pVCpu->iem.s.fEndTb                 = false;
         pVCpu->iem.s.fTbCheckOpcodes        = false;
-        pVCpu->iem.s.fTbBranched            = false;
+        pVCpu->iem.s.fTbBranched            = IEMBRANCHED_F_NO;
         pVCpu->iem.s.fTbCrossedPage         = false;
     }
     else
@@ -1018,27 +1065,40 @@ static bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB
     /*
      * Case 1: We've branched (RIP changed).
      *
-     * Sub-case 1a: Same page, no TLB load, so fTbCrossedPage is false.
+     * Sub-case 1a: Same page, no TLB load (fTbCrossedPage is false).
      *         Req: 1 extra range, no extra phys.
      *
-     * Sub-case 1b: Different page, so TLB load necessary and fTbCrossedPage is true.
+     * Sub-case 1b: Different page but no page boundrary crossing, so TLB load
+     *              necessary (fTbCrossedPage is true).
      *         Req: 1 extra range, probably 1 extra phys page entry.
      *
-     * Sub-case 1c: Different page, so TLB load necessary and fTbCrossedPage is true,
+     * Sub-case 1c: Different page, so TLB load necessary (fTbCrossedPage is true),
      *              but in addition we cross into the following page and require
      *              another TLB load.
      *         Req: 2 extra ranges, probably 2 extra phys page entries.
      *
      * Sub-case 1d: Same page, so no initial TLB load necessary, but we cross into
-     *              the following page and thus fTbCrossedPage is true.
+     *              the following page (thus fTbCrossedPage is true).
      *         Req: 2 extra ranges, probably 1 extra phys page entry.
      *
+     * Note! The setting fTbCrossedPage is done by the iemOpcodeFetchBytesJmp, but
+     *       it may trigger "spuriously" from the CPU point of view because of
+     *       physical page changes that'll invalid the physical TLB and trigger a
+     *       call to the function.  In theory this be a big deal, just a bit
+     *       performance loss as we'll pick the LoadingTlb variants.
+     *
      * Note! We do not currently optimize branching to the next instruction (sorry
-     *       32-bit PIC code).  We could maybe do that in the branching code that sets (or not) fTbBranched.
+     *       32-bit PIC code).  We could maybe do that in the branching code that
+     *       sets (or not) fTbBranched.
      */
-    if (pVCpu->iem.s.fTbBranched)
+    /** @todo Optimize 'jmp .next_instr' and 'call .next_instr'. Seen the jmp
+     *        variant in win 3.1 code and the call variant in 32-bit linux PIC
+     *        code.  This'll require filtering out far jmps and calls, as they
+     *        load CS which should technically be considered indirect since the
+     *        GDT/LDT entry's base address can be modified independently from
+     *        the code. */
+    if (pVCpu->iem.s.fTbBranched != 0)
     {
-AssertFailed(); /** @todo enable including branches in TBs and debug this code. */
         if (   !pVCpu->iem.s.fTbCrossedPage       /* 1a */
             || pVCpu->iem.s.offCurInstrStart >= 0 /* 1b */ )
         {
@@ -1046,55 +1106,77 @@ AssertFailed(); /** @todo enable including branches in TBs and debug this code. 
             Assert(pVCpu->iem.s.offCurInstrStart >= 0);
             Assert(pVCpu->iem.s.offCurInstrStart + cbInstr <= GUEST_PAGE_SIZE);
 
-            /* Check that we've got a free range. */
-            idxRange += 1;
-            if (idxRange < RT_ELEMENTS(pTb->aRanges))
-            { /* likely */ }
-            else
-                return false;
-            pCall->idxRange    = idxRange;
-            pCall->auParams[1] = idxRange;
-            pCall->auParams[2] = 0;
-
-            /* Check that we've got a free page slot. */
-            AssertCompile(RT_ELEMENTS(pTb->aGCPhysPages) == 2);
-            RTGCPHYS const GCPhysNew = pVCpu->iem.s.GCPhysInstrBuf & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
-            if ((pTb->GCPhysPc & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK) == GCPhysNew)
-                pTb->aRanges[idxRange].idxPhysPage = 0;
-            else if (   pTb->aGCPhysPages[0] == NIL_RTGCPHYS
-                     || pTb->aGCPhysPages[0] == GCPhysNew)
+            if (!(pVCpu->iem.s.fTbBranched & IEMBRANCHED_F_ZERO))
             {
-                pTb->aGCPhysPages[0] = GCPhysNew;
-                pTb->aRanges[idxRange].idxPhysPage = 1;
-            }
-            else if (   pTb->aGCPhysPages[1] == NIL_RTGCPHYS
-                     || pTb->aGCPhysPages[1] == GCPhysNew)
-            {
-                pTb->aGCPhysPages[1] = GCPhysNew;
-                pTb->aRanges[idxRange].idxPhysPage = 2;
+                /* Check that we've got a free range. */
+                idxRange += 1;
+                if (idxRange < RT_ELEMENTS(pTb->aRanges))
+                { /* likely */ }
+                else
+                {
+                    Log8(("%04x:%08RX64: out of ranges after branch\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
+                    return false;
+                }
+                pCall->idxRange    = idxRange;
+                pCall->auParams[1] = idxRange;
+                pCall->auParams[2] = 0;
+
+                /* Check that we've got a free page slot. */
+                AssertCompile(RT_ELEMENTS(pTb->aGCPhysPages) == 2);
+                RTGCPHYS const GCPhysNew = pVCpu->iem.s.GCPhysInstrBuf & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
+                if ((pTb->GCPhysPc & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK) == GCPhysNew)
+                    pTb->aRanges[idxRange].idxPhysPage = 0;
+                else if (   pTb->aGCPhysPages[0] == NIL_RTGCPHYS
+                         || pTb->aGCPhysPages[0] == GCPhysNew)
+                {
+                    pTb->aGCPhysPages[0] = GCPhysNew;
+                    pTb->aRanges[idxRange].idxPhysPage = 1;
+                }
+                else if (   pTb->aGCPhysPages[1] == NIL_RTGCPHYS
+                         || pTb->aGCPhysPages[1] == GCPhysNew)
+                {
+                    pTb->aGCPhysPages[1] = GCPhysNew;
+                    pTb->aRanges[idxRange].idxPhysPage = 2;
+                }
+                else
+                {
+                    Log8(("%04x:%08RX64: out of aGCPhysPages entires after branch\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
+                    return false;
+                }
+
+                /* Finish setting up the new range. */
+                pTb->aRanges[idxRange].offPhysPage = pVCpu->iem.s.offCurInstrStart;
+                pTb->aRanges[idxRange].offOpcodes  = offOpcode;
+                pTb->aRanges[idxRange].cbOpcodes   = cbInstr;
+                pTb->aRanges[idxRange].u2Unused    = 0;
+                pTb->cRanges++;
             }
             else
-                return false;
-
-            /* Finish setting up the new range. */
-            pTb->aRanges[idxRange].offPhysPage = pVCpu->iem.s.offCurInstrStart;
-            pTb->aRanges[idxRange].offOpcodes  = offOpcode;
-            pTb->aRanges[idxRange].cbOpcodes   = cbInstr;
-            pTb->aRanges[idxRange].u2Unused    = 0;
-            pTb->cRanges++;
+            {
+                Log8(("%04x:%08RX64: zero byte jump\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
+                pTb->aRanges[idxRange].cbOpcodes += cbInstr;
+            }
 
             /* Determin which function we need to load & check.
                Note! For jumps to a new page, we'll set both fTbBranched and
                      fTbCrossedPage to avoid unnecessary TLB work for intra
                      page branching */
-            if (pVCpu->iem.s.fTbCrossedPage)
+            if (   (pVCpu->iem.s.fTbBranched & (IEMBRANCHED_F_INDIRECT | IEMBRANCHED_F_FAR)) /* Far is basically indirect. */
+                || pVCpu->iem.s.fTbCrossedPage)
                 pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
                                    ? kIemThreadedFunc_CheckCsLimAndOpcodesLoadingTlb
                                    : kIemThreadedFunc_CheckOpcodesLoadingTlb;
+            else if (pVCpu->iem.s.fTbBranched & (IEMBRANCHED_F_CONDITIONAL | /* paranoia: */ IEMBRANCHED_F_DIRECT))
+                pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
+                                   ? kIemThreadedFunc_CheckCsLimAndPcAndOpcodes
+                                   : kIemThreadedFunc_CheckPcAndOpcodes;
             else
+            {
+                Assert(pVCpu->iem.s.fTbBranched & IEMBRANCHED_F_RELATIVE);
                 pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
                                    ? kIemThreadedFunc_CheckCsLimAndOpcodes
                                    : kIemThreadedFunc_CheckOpcodes;
+            }
         }
         else
         {
@@ -1125,6 +1207,7 @@ AssertFailed(); /** @todo enable including branches in TBs and debug this code. 
             /* ... */
 
 #else
+            Log8(("%04x:%08RX64: complicated post-branch condition, ending TB.\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
             return false;
 #endif
         }
@@ -1149,7 +1232,10 @@ AssertFailed(); /** @todo enable including branches in TBs and debug this code. 
         if (idxRange < RT_ELEMENTS(pTb->aRanges))
         { /* likely */ }
         else
+        {
+            Log8(("%04x:%08RX64: out of ranges while crossing page\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
             return false;
+        }
 
         /* Check that we've got a free page slot. */
         AssertCompile(RT_ELEMENTS(pTb->aGCPhysPages) == 2);
@@ -1169,7 +1255,10 @@ AssertFailed(); /** @todo enable including branches in TBs and debug this code. 
             pTb->aRanges[idxRange].idxPhysPage = 2;
         }
         else
+        {
+            Log8(("%04x:%08RX64: out of aGCPhysPages entires while crossing page\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
             return false;
+        }
 
         if (((pTb->aRanges[idxRange - 1].offPhysPage + pTb->aRanges[idxRange - 1].cbOpcodes) & GUEST_PAGE_OFFSET_MASK) == 0)
         {
@@ -1187,8 +1276,8 @@ AssertFailed(); /** @todo enable including branches in TBs and debug this code. 
 
             /* Determin which function we need to load & check. */
             pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
-                               ? kIemThreadedFunc_CheckCsLimAndOpcodesLoadingTlb
-                               : kIemThreadedFunc_CheckOpcodesLoadingTlb;
+                               ? kIemThreadedFunc_CheckCsLimAndOpcodesOnNewPageLoadingTlb
+                               : kIemThreadedFunc_CheckOpcodesOnNewPageLoadingTlb;
         }
         else
         {
@@ -1245,7 +1334,7 @@ AssertFailed(); /** @todo enable including branches in TBs and debug this code. 
     /*
      * Clear state.
      */
-    pVCpu->iem.s.fTbBranched     = false;
+    pVCpu->iem.s.fTbBranched     = IEMBRANCHED_F_NO;
     pVCpu->iem.s.fTbCrossedPage  = false;
     pVCpu->iem.s.fTbCheckOpcodes = false;
 
@@ -1375,10 +1464,10 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
 static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb)
 {
     /* Check the opcodes in the first page before starting execution. */
-    uint32_t const cbLeadOpcodes = RT_MIN(pTb->cbOpcodes, pVCpu->iem.s.cbInstrBufTotal - pVCpu->iem.s.offInstrNextByte);
-    if (memcmp(pTb->pabOpcodes, &pVCpu->iem.s.pbInstrBuf[pVCpu->iem.s.offInstrNextByte], cbLeadOpcodes) == 0)
-        Assert(   pTb->cbOpcodes == cbLeadOpcodes
-               || cbLeadOpcodes == (GUEST_PAGE_SIZE - (pTb->GCPhysPc & GUEST_PAGE_OFFSET_MASK)));
+    Assert(!(pVCpu->iem.s.GCPhysInstrBuf & (RTGCPHYS)GUEST_PAGE_OFFSET_MASK));
+    Assert(pTb->aRanges[0].cbOpcodes <= pVCpu->iem.s.cbInstrBufTotal - pVCpu->iem.s.offInstrNextByte);
+    if (memcmp(pTb->pabOpcodes, &pVCpu->iem.s.pbInstrBuf[pTb->aRanges[0].offPhysPage], pTb->aRanges[0].cbOpcodes) == 0)
+    { /* likely */ }
     else
     {
         Log7(("TB obsolete: %p GCPhys=%RGp\n", pTb, pTb->GCPhysPc));

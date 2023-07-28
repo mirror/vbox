@@ -295,10 +295,13 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 /** This instruction raises an \#UD in real and V8086 mode or when not using a
- *  64-bit code segment when in long mode (applicable to all VMX instructions
- *  except VMCALL).
+ * 64-bit code segment when in long mode (applicable to all VMX instructions
+ * except VMCALL).
+ *
+ * @todo r=bird: This is not recompiler friendly. The scenario with
+ *       16-bit/32-bit code running in long mode doesn't fit at all.
  */
-#define IEMOP_HLP_VMX_INSTR(a_szInstr, a_InsDiagPrefix) \
+# define IEMOP_HLP_VMX_INSTR(a_szInstr, a_InsDiagPrefix) \
     do \
     { \
         if (   !IEM_IS_REAL_OR_V86_MODE(pVCpu) \
@@ -317,7 +320,7 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
             { \
                 pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = a_InsDiagPrefix##_LongModeCS; \
                 Log5((a_szInstr ": Long mode without 64-bit code segment -> #UD\n")); \
-                IEMOP_RAISE_INVALID_OPCODE_RET(); \
+                IEMOP_RAISE_INVALID_OPCODE_RUNTIME_RET(); /** @todo This doesn't work. */ \
             } \
         } \
     } while (0)
@@ -339,7 +342,7 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
         { \
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = a_InsDiagPrefix##_VmxRoot; \
             Log5((a_szInstr ": Not in VMX operation (root mode) -> #UD\n")); \
-            IEMOP_RAISE_INVALID_OPCODE_RET(); \
+            IEMOP_RAISE_INVALID_OPCODE_RUNTIME_RET(); /** @todo This doesn't work. */ \
         } \
     } while (0)
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
