@@ -247,9 +247,9 @@ endif
 
 ifdef VBOX_WITH_IEM_RECOMPILER
  VBoxVMM_SOURCES += \
- 	VMMAll/IEMAllThreadedRecompiler.cpp \
- 	VMMAll/IEMAllThreadedFunctions.cpp \
- 	VMMAll/IEMAllThreadedFunctionsBltIn.cpp
+ 	VMMAll/IEMAllThrdRecompiler.cpp \
+ 	VMMAll/IEMAllThrdFuncs.cpp \
+ 	VMMAll/IEMAllThrdFuncsBltIn.cpp
 endif
 
 ifdef VBOX_WITH_NATIVE_NEM
@@ -569,7 +569,7 @@ ifdef VBOX_WITH_IEM_RECOMPILER
  +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h \
  +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp.h \
  +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions.cpp.h: \
- 		$(PATH_SUB_CURRENT)/VMMAll/IEMAllThreadedPython.py \
+ 		$(PATH_SUB_CURRENT)/VMMAll/IEMAllThrdPython.py \
  		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsPython.py \
  		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsCommon.cpp.h \
  		$(if-expr !defined(IEM_WITHOUT_3DNOW)      ,$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructions3DNow.cpp.h,) \
@@ -1021,7 +1021,7 @@ define def_vbox_vmm_py_check
  TESTING += $(name)-py-phony.o
 endef # def_vbox_vmm_py_check
 
-$(foreach py, $(addprefix $(PATH_SUB_CURRENT)/VMMAll/, IEMAllInstructionsPython.py IEMAllThreadedPython.py ) \
+$(foreach py, $(addprefix $(PATH_SUB_CURRENT)/VMMAll/, IEMAllInstructionsPython.py IEMAllThrdPython.py ) \
 , $(eval $(def_vbox_vmm_py_check)))
 
 
