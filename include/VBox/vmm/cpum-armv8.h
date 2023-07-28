@@ -40,6 +40,8 @@
 #endif
 
 #include <VBox/types.h>
+#include <iprt/armv8.h>
+
 
 RT_C_DECLS_BEGIN
 
@@ -260,6 +262,25 @@ typedef CPUMDBENTRY const *PCCPUMDBENTRY;
 #define CPUM_CHANGED_GLOBAL_TLB_FLUSH           RT_BIT(0)
 #define CPUM_CHANGED_ALL                        ( CPUM_CHANGED_GLOBAL_TLB_FLUSH )
 /** @} */
+
+
+#if !defined(IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS) || defined(DOXYGEN_RUNNING)
+/** @name Inlined Guest Getters and predicates Functions.
+ * @{ */
+
+/**
+ * Tests if the guest is running in 64 bits mode or not.
+ *
+ * @returns true if in 64 bits mode, otherwise false.
+ * @param   pCtx    Current CPU context.
+ */
+DECLINLINE(bool) CPUMIsGuestIn64BitCodeEx(PCPUMCTX pCtx)
+{
+    return !RT_BOOL(pCtx->fPState & ARMV8_SPSR_EL2_AARCH64_M4);
+}
+
+/** @} */
+#endif /* !IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS || DOXYGEN_RUNNING */
 
 
 #ifndef VBOX_FOR_DTRACE_LIB
