@@ -5258,7 +5258,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
                       self.cTotalMcBlocks, os.path.basename(self.sSrcFile),));
         return self.printErrors();
 
-## The parsed content of IEMAllInstructionsCommonBodyMacros.h.
+## The parsed content of IEMAllInstCommonBodyMacros.h.
 g_oParsedCommonBodyMacros = None # type: SimpleParser
 
 def __parseFileByName(sSrcFile, sDefaultMap):
@@ -5280,15 +5280,15 @@ def __parseFileByName(sSrcFile, sDefaultMap):
         oFile.close();
 
     #
-    # On the first call, we parse IEMAllInstructionsCommonBodyMacros.h so we
+    # On the first call, we parse IEMAllInstCommonBodyMacros.h so we
     # can use the macros from it when processing the other files.
     #
     global g_oParsedCommonBodyMacros;
     if g_oParsedCommonBodyMacros is None:
         # Locate the file.
-        sCommonBodyMacros = os.path.join(os.path.split(sSrcFile)[0], 'IEMAllInstructionsCommonBodyMacros.h');
+        sCommonBodyMacros = os.path.join(os.path.split(sSrcFile)[0], 'IEMAllInstCommonBodyMacros.h');
         if not os.path.isfile(sCommonBodyMacros):
-            sCommonBodyMacros = os.path.join(os.path.split(__file__)[0], 'IEMAllInstructionsCommonBodyMacros.h');
+            sCommonBodyMacros = os.path.join(os.path.split(__file__)[0], 'IEMAllInstCommonBodyMacros.h');
 
         # Read it.
         try:
@@ -5367,15 +5367,15 @@ def __applyOnlyTest():
 
 ## List of all main instruction files and their default maps.
 g_aasAllInstrFilesAndDefaultMap = (
-    ( 'IEMAllInstructionsCommon.cpp.h',    'one',        ),
-    ( 'IEMAllInstructionsOneByte.cpp.h',   'one',        ),
-    ( 'IEMAllInstructionsTwoByte0f.cpp.h', 'two0f',      ),
-    ( 'IEMAllInstructionsThree0f38.cpp.h', 'three0f38',  ),
-    ( 'IEMAllInstructionsThree0f3a.cpp.h', 'three0f3a',  ),
-    ( 'IEMAllInstructionsVexMap1.cpp.h',   'vexmap1',    ),
-    ( 'IEMAllInstructionsVexMap2.cpp.h',   'vexmap2',    ),
-    ( 'IEMAllInstructionsVexMap3.cpp.h',   'vexmap3',    ),
-    ( 'IEMAllInstructions3DNow.cpp.h',     '3dnow',      ),
+    ( 'IEMAllInstCommon.cpp.h',    'one',        ),
+    ( 'IEMAllInstOneByte.cpp.h',   'one',        ),
+    ( 'IEMAllInstTwoByte0f.cpp.h', 'two0f',      ),
+    ( 'IEMAllInstThree0f38.cpp.h', 'three0f38',  ),
+    ( 'IEMAllInstThree0f3a.cpp.h', 'three0f3a',  ),
+    ( 'IEMAllInstVexMap1.cpp.h',   'vexmap1',    ),
+    ( 'IEMAllInstVexMap2.cpp.h',   'vexmap2',    ),
+    ( 'IEMAllInstVexMap3.cpp.h',   'vexmap3',    ),
+    ( 'IEMAllInst3DNow.cpp.h',     '3dnow',      ),
 );
 
 def __parseFilesWorker(asFilesAndDefaultMap):

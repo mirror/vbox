@@ -2,7 +2,7 @@
 /** @file
  * IEM - Instruction Decoding and Emulation.
  *
- * @remarks IEMAllInstructionsVexMap2.cpp.h is a VEX mirror of this file.
+ * @remarks IEMAllInstVexMap2.cpp.h is a VEX mirror of this file.
  *          Any update here is likely needed in that file too.
  */
 

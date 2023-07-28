@@ -52,7 +52,7 @@ g_ksValidationKitDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 g_ksVmmAllDir = os.path.join(os.path.dirname(g_ksValidationKitDir), 'VMM', 'VMMAll')
 sys.path.append(g_ksVmmAllDir);
 
-import IEMAllInstructionsPython as iai; # pylint: disable=import-error
+import IEMAllInstPython as iai; # pylint: disable=import-error
 
 
 # Python 3 hacks:

@@ -4,7 +4,7 @@
 # pylint: disable=invalid-name
 
 """
-Annotates and generates threaded functions from IEMAllInstructions*.cpp.h.
+Annotates and generates threaded functions from IEMAllInst*.cpp.h.
 """
 
 from __future__ import print_function;
@@ -41,7 +41,7 @@ import re;
 import sys;
 import argparse;
 
-import IEMAllInstructionsPython as iai;
+import IEMAllInstPython as iai;
 
 
 # Python 3 hacks:
@@ -944,7 +944,7 @@ class ThreadedFunction(object):
     """
 
     def __init__(self, oMcBlock):
-        self.oMcBlock       = oMcBlock      # type: IEMAllInstructionsPython.McBlock
+        self.oMcBlock       = oMcBlock      # type: IEMAllInstPython.McBlock
         ## Variations for this block. There is at least one.
         self.aoVariations   = []            # type: list(ThreadedFunctionVariation)
         ## Variation dictionary containing the same as aoVariations.
@@ -1188,7 +1188,7 @@ class IEMThreadedGenerator(object):
     def __init__(self):
         self.aoThreadedFuncs = []       # type: list(ThreadedFunction)
         self.oOptions        = None     # type: argparse.Namespace
-        self.aoParsers       = []       # type: list(IEMAllInstructionsPython.SimpleParser)
+        self.aoParsers       = []       # type: list(IEMAllInstPython.SimpleParser)
 
     #
     # Processing.
@@ -1565,7 +1565,7 @@ class IEMThreadedGenerator(object):
         #
         iThreadedFunction = 0;
         oThreadedFunction = self.getThreadedFunctionByIndex(0);
-        for oParser in self.aoParsers: # type: IEMAllInstructionsPython.SimpleParser
+        for oParser in self.aoParsers: # type: IEMAllInstPython.SimpleParser
             oOut.write("\n\n/* ****** BEGIN %s ******* */\n" % (oParser.sSrcFile,));
 
             iLine = 0;
@@ -1640,7 +1640,7 @@ class IEMThreadedGenerator(object):
         oParser = argparse.ArgumentParser(add_help = False);
         oParser.add_argument('asInFiles',       metavar = 'input.cpp.h',        nargs = '*',
                              default = [os.path.join(sScriptDir, asFM[0]) for asFM in iai.g_aasAllInstrFilesAndDefaultMap],
-                             help = "Selection of VMMAll/IEMAllInstructions*.cpp.h files to use as input.");
+                             help = "Selection of VMMAll/IEMAllInst*.cpp.h files to use as input.");
         oParser.add_argument('--out-funcs-hdr', metavar = 'file-funcs.h',       dest = 'sOutFileFuncsHdr', action = 'store',
                              default = '-', help = 'The output header file for the functions.');
         oParser.add_argument('--out-funcs-cpp', metavar = 'file-funcs.cpp',     dest = 'sOutFileFuncsCpp', action = 'store',
@@ -1649,7 +1649,7 @@ class IEMThreadedGenerator(object):
                              default = '-', help = 'The output C++/header file for the modified input instruction files.');
         oParser.add_argument('--help', '-h', '-?', action = 'help', help = 'Display help and exit.');
         oParser.add_argument('--version', '-V', action = 'version',
-                             version = 'r%s (IEMAllThreadedPython.py), r%s (IEMAllInstructionsPython.py)'
+                             version = 'r%s (IEMAllThreadedPython.py), r%s (IEMAllInstPython.py)'
                                      % (__version__.split()[1], iai.__version__.split()[1],),
                              help = 'Displays the version/revision of the script and exit.');
         self.oOptions = oParser.parse_args(asArgs[1:]);

@@ -191,7 +191,7 @@ VBoxVMM_SOURCES  = \
 	VMMAll/HMSVMAll.cpp \
 	VMMAll/HMVMXAll.cpp \
 	VMMAll/IEMAll.cpp \
-	VMMAll/IEMAllInstructionsInterpretOnly.cpp \
+	VMMAll/IEMAllInstInterpretOnly.cpp \
 	VMMAll/IEMAllAImplC.cpp \
 	VMMAll/IEMAllCImpl.cpp \
 	VMMAll/IEMAllCImplSvmInstr.cpp \
@@ -307,12 +307,12 @@ endif
 #endif
 
 if "$(USERNAME)" == "bird" && "$(KBUILD_TARGET)" == "win"
- VBoxVMM_VMMAll/IEMAll.cpp_CXXFLAGS                         = /FAcs /Fa$(subst /,\\,$(outbase).cod)
- VBoxVMM_VMMAll/IEMAllInstructionsInterpretOnly.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
- VBoxVMM_VMMAll/IEMAllAImplC.cpp_CXXFLAGS                   = /FAcs /Fa$(subst /,\\,$(outbase).cod)
- VBoxVMM_VMMAll/PGMAll.cpp_CXXFLAGS                         = /FAcs /Fa$(subst /,\\,$(outbase).cod)
- VBoxVMM_VMMAll/PDMAllCritSect.cpp_CXXFLAGS                 = /FAcs /Fa$(subst /,\\,$(outbase).cod)
- VBoxVMM_CLEAN += $(addprefix $(VBoxVMM_0_OUTDIR)/VMMAll/, IEMAll.cod IEMAllAImplC.cod IEMAllInstructionsInterpretOnly.cod PGMAll.cod PDMAllCritSect.cod)
+ VBoxVMM_VMMAll/IEMAll.cpp_CXXFLAGS                  = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+ VBoxVMM_VMMAll/IEMAllInstInterpretOnly.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+ VBoxVMM_VMMAll/IEMAllAImplC.cpp_CXXFLAGS            = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+ VBoxVMM_VMMAll/PGMAll.cpp_CXXFLAGS                  = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+ VBoxVMM_VMMAll/PDMAllCritSect.cpp_CXXFLAGS          = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+ VBoxVMM_CLEAN += $(addprefix $(VBoxVMM_0_OUTDIR)/VMMAll/, IEMAll.cod IEMAllAImplC.cod IEMAllInstInterpretOnly.cod PGMAll.cod PDMAllCritSect.cod)
 endif
 
 $(call VBOX_SET_VER_INFO_DLL,VBoxVMM,VirtualBox VMM) # Version info / description.
@@ -491,16 +491,16 @@ VBoxVMM_CLEAN         += \
 $(call KB_FN_AUTO_CMD_DEPS,$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h.ts)
 $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h.ts \
 +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h: \
-		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsCommon.cpp.h \
-		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsOneByte.cpp.h \
-		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsTwoByte0f.cpp.h \
-		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsThree0f38.cpp.h \
-		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsThree0f3a.cpp.h \
-		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsVexMap1.cpp.h \
-		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsVexMap2.cpp.h \
-		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsVexMap3.cpp.h \
-		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructions3DNow.cpp.h
-	$(QUIET)$(call MSG_GENERATE,VBoxVMM,$@,VMMAll/IEMAllInstructions*.cpp.h)
+		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstCommon.cpp.h \
+		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstOneByte.cpp.h \
+		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstTwoByte0f.cpp.h \
+		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstThree0f38.cpp.h \
+		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstThree0f3a.cpp.h \
+		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstVexMap1.cpp.h \
+		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstVexMap2.cpp.h \
+		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstVexMap3.cpp.h \
+		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInst3DNow.cpp.h
+	$(QUIET)$(call MSG_GENERATE,VBoxVMM,$@,VMMAll/IEMAllInst*.cpp.h)
 	$(QUIET)$(RM) -f -- "$@.tmp" "$@.tmp" "$@.sorted"
 	$(QUIET)$(MKDIR) -p -- "$(dir $@)"
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
@@ -570,18 +570,18 @@ ifdef VBOX_WITH_IEM_RECOMPILER
  +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp.h \
  +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions.cpp.h: \
  		$(PATH_SUB_CURRENT)/VMMAll/IEMAllThrdPython.py \
- 		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsPython.py \
- 		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsCommon.cpp.h \
- 		$(if-expr !defined(IEM_WITHOUT_3DNOW)      ,$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructions3DNow.cpp.h,) \
- 		$(if-expr !defined(IEM_WITHOUT_THREE_0F_38),$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsThree0f38.cpp.h,) \
- 		$(if-expr !defined(IEM_WITHOUT_THREE_0F_3A),$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsThree0f3a.cpp.h,) \
- 		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsTwoByte0f.cpp.h \
+ 		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstPython.py \
+ 		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstCommon.cpp.h \
+ 		$(if-expr !defined(IEM_WITHOUT_3DNOW)      ,$(PATH_SUB_CURRENT)/VMMAll/IEMAllInst3DNow.cpp.h,) \
+ 		$(if-expr !defined(IEM_WITHOUT_THREE_0F_38),$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstThree0f38.cpp.h,) \
+ 		$(if-expr !defined(IEM_WITHOUT_THREE_0F_3A),$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstThree0f3a.cpp.h,) \
+ 		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstTwoByte0f.cpp.h \
  		$(if-expr !defined(IEM_WITHOUT_VEX), \
- 			$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsVexMap1.cpp.h \
- 			$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsVexMap2.cpp.h \
- 			$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsVexMap3.cpp.h,) \
- 		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsOneByte.cpp.h
-	$(QUIET)$(call MSG_GENERATE,VBoxVMM,$@,VMMAll/IEMAllInstructions*.cpp.h)
+ 			$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstVexMap1.cpp.h \
+ 			$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstVexMap2.cpp.h \
+ 			$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstVexMap3.cpp.h,) \
+ 		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstOneByte.cpp.h
+	$(QUIET)$(call MSG_GENERATE,VBoxVMM,$@,VMMAll/IEMAllInst*.cpp.h)
 	$(QUIET)$(RM) -f -- \
 		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions.cpp.h.ts" \
 		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp.h.ts" \
@@ -771,7 +771,7 @@ if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMAll/HMSVMAll.cpp \
  	VMMAll/HMVMXAll.cpp \
  	VMMAll/IEMAll.cpp \
- 	VMMAll/IEMAllInstructionsInterpretOnly.cpp \
+ 	VMMAll/IEMAllInstInterpretOnly.cpp \
  	$(if-expr !defined(IEM_WITHOUT_ASSEMBLY),VMMAll/IEMAllAImpl.asm,) \
  	VMMAll/IEMAllAImplC.cpp \
  	VMMAll/IEMAllCImpl.cpp \
@@ -983,14 +983,14 @@ if "$(KBUILD_TYPE)" == "release" || ($(USERNAME) != "aeichner")
   VMMAll/IEMAllCImpl.cpp_CXXFLAGS                   += -noover -O2xy
   VMMAll/IEMAllCImplSvmInstr.cpp_CXXFLAGS           += -noover -O2xy
   VMMAll/IEMAllCImplVmxInstr.cpp_CXXFLAGS           += -noover -O2xy
-  VMMAll/IEMAllInstructionsInterpretOnly.cpp_CXXFLAGS += -noover -O2xy
+  VMMAll/IEMAllInstInterpretOnly.cpp_CXXFLAGS       += -noover -O2xy
  else
   # Omitting the frame pointer results in larger code, but it might be worth it. (esp addressing vs ebp?)
   VMMAll/IEMAll.cpp_CXXFLAGS                        += -O2 -fomit-frame-pointer
   VMMAll/IEMAllCImpl.cpp_CXXFLAGS                   += -O2 -fomit-frame-pointer
   VMMAll/IEMAllCImplSvmInstr.cpp_CXXFLAGS           += -O2 -fomit-frame-pointer
   VMMAll/IEMAllCImplVmxInstr.cpp_CXXFLAGS           += -O2 -fomit-frame-pointer
-  VMMAll/IEMAllInstructionsInterpretOnly.cpp_CXXFLAGS += -O2 -fomit-frame-pointer
+  VMMAll/IEMAllInstInterpretOnly.cpp_CXXFLAGS       += -O2 -fomit-frame-pointer
  endif
 endif # bird wants good stacks (aeichner as well)
 
@@ -1021,7 +1021,7 @@ define def_vbox_vmm_py_check
  TESTING += $(name)-py-phony.o
 endef # def_vbox_vmm_py_check
 
-$(foreach py, $(addprefix $(PATH_SUB_CURRENT)/VMMAll/, IEMAllInstructionsPython.py IEMAllThrdPython.py ) \
+$(foreach py, $(addprefix $(PATH_SUB_CURRENT)/VMMAll/, IEMAllInstPython.py IEMAllThrdPython.py ) \
 , $(eval $(def_vbox_vmm_py_check)))
 
 
@@ -1042,16 +1042,16 @@ PGMPhysRWTmpl.o PGMPhysRWTmpl.obj: PGMPhys.o
 PGMInline.o PGMInline.obj: PGMDbg.o
 
 # Alias the IEM templates to the object in which they are instantiated.
-IEMAllInstructions.cpp.o IEMAllInstructions.cpp.obj \
-IEMAllInstructionsCommon.cpp.o IEMAllInstructionsCommon.cpp.obj \
-IEMAllInstructionsOneByte.cpp.o IEMAllInstructionsOneByte.cpp.obj \
-IEMAllInstructionsTwoByte0f.cpp.o IEMAllInstructionsTwoByte0f.cpp.obj \
-IEMAllInstructionsThree0f38.cpp.o IEMAllInstructionsThree0f38.cpp.obj \
-IEMAllInstructionsThree0f3a.cpp.o IEMAllInstructionsThree0f3a.cpp.obj \
-IEMAllInstructionsVexMap1.cpp.o IEMAllInstructionsVexMap1.cpp.obj \
-IEMAllInstructionsVexMap2.cpp.o IEMAllInstructionsVexMap2.cpp.obj \
-IEMAllInstructionsVexMap3.cpp.o IEMAllInstructionsVexMap3.cpp.obj \
-IEMAllInstructions3DNow.cpp.o IEMAllInstructions3DNow.cpp.obj: IEMAllInstructionsInterpretOnly.o
+IEMAllInst.cpp.o IEMAllInst.cpp.obj \
+IEMAllInstCommon.cpp.o IEMAllInstCommon.cpp.obj \
+IEMAllInstOneByte.cpp.o IEMAllInstOneByte.cpp.obj \
+IEMAllInstTwoByte0f.cpp.o IEMAllInstTwoByte0f.cpp.obj \
+IEMAllInstThree0f38.cpp.o IEMAllInstThree0f38.cpp.obj \
+IEMAllInstThree0f3a.cpp.o IEMAllInstThree0f3a.cpp.obj \
+IEMAllInstVexMap1.cpp.o IEMAllInstVexMap1.cpp.obj \
+IEMAllInstVexMap2.cpp.o IEMAllInstVexMap2.cpp.obj \
+IEMAllInstVexMap3.cpp.o IEMAllInstVexMap3.cpp.obj \
+IEMAllInst3DNow.cpp.o IEMAllInst3DNow.cpp.obj: IEMAllInstInterpretOnly.o
 
 IEMInternal.o IEMInternal.obj: IEMAll.o
 

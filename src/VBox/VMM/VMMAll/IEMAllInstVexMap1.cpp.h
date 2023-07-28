@@ -2,7 +2,7 @@
 /** @file
  * IEM - Instruction Decoding and Emulation.
  *
- * @remarks IEMAllInstructionsTwoByte0f.cpp.h is a legacy mirror of this file.
+ * @remarks IEMAllInstTwoByte0f.cpp.h is a legacy mirror of this file.
  *          Any update here is likely needed in that file too.
  */
 

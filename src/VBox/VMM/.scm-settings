@@ -26,7 +26,7 @@
 #
 
 
-/VMMAll/IEMAllInstructionsPython.py: --license-ose-dual
+/VMMAll/IEMAllInstPython.py: --license-ose-dual
 
 --filter-out-files /testcase/dev.tar.gz
 
@@ -40,7 +40,7 @@
 /VMMAll/PGMAllBth.h: --no-fix-header-guards
 /VMMAll/PGMAllGst.h: --no-fix-header-guards
 /VMMAll/PGMAllShw.h: --no-fix-header-guards
-/VMMAll/IEMAllInstructionsCommonBodyMacros.h: --no-fix-header-guards
+/VMMAll/IEMAllInstCommonBodyMacros.h: --no-fix-header-guards
 /testcase/tstVMStruct.h: --no-fix-header-guards
 /testcase/tstIEMAImplData.h: --no-fix-header-guards
 

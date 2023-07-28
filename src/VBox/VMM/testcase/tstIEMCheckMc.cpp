@@ -1022,7 +1022,7 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 
 /** @}  */
 
-#include "../VMMAll/IEMAllInstructionsInterpretOnly.cpp"
+#include "../VMMAll/IEMAllInstInterpretOnly.cpp"
 
 
 

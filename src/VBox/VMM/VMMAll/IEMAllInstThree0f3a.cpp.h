@@ -2,7 +2,7 @@
 /** @file
  * IEM - Instruction Decoding and Emulation, 0x0f 0x3a map.
  *
- * @remarks IEMAllInstructionsVexMap3.cpp.h is a VEX mirror of this file.
+ * @remarks IEMAllInstVexMap3.cpp.h is a VEX mirror of this file.
  *          Any update here is likely needed in that file too.
  */
 

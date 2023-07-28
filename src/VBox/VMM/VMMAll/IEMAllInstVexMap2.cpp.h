@@ -2,7 +2,7 @@
 /** @file
  * IEM - Instruction Decoding and Emulation.
  *
- * @remarks IEMAllInstructionsThree0f38.cpp.h is a VEX mirror of this file.
+ * @remarks IEMAllInstThree0f38.cpp.h is a VEX mirror of this file.
  *          Any update here is likely needed in that file too.
  */
 

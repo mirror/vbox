@@ -609,7 +609,7 @@ DECL_FORCE_INLINE(void) iemThreadedSetBranched(PVMCPUCC pVCpu, uint8_t fTbBranch
 
 
 /*
- * Include the "annotated" IEMAllInstructions*.cpp.h files.
+ * Include the "annotated" IEMAllInst*.cpp.h files.
  */
 #include "IEMThreadedInstructions.cpp.h"
 

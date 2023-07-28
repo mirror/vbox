@@ -83,32 +83,32 @@
 /*
  * Include common bits.
  */
-#include "IEMAllInstructionsCommonBodyMacros.h"
-#include "IEMAllInstructionsCommon.cpp.h"
+#include "IEMAllInstCommonBodyMacros.h"
+#include "IEMAllInstCommon.cpp.h"
 
 
 /*
  * Include the tables.
  */
 #ifdef IEM_WITH_3DNOW
-# include "IEMAllInstructions3DNow.cpp.h"
+# include "IEMAllInst3DNow.cpp.h"
 #endif
 
 #ifdef IEM_WITH_THREE_0F_38
-# include "IEMAllInstructionsThree0f38.cpp.h"
+# include "IEMAllInstThree0f38.cpp.h"
 #endif
 
 #ifdef IEM_WITH_THREE_0F_3A
-# include "IEMAllInstructionsThree0f3a.cpp.h"
+# include "IEMAllInstThree0f3a.cpp.h"
 #endif
 
-#include "IEMAllInstructionsTwoByte0f.cpp.h"
+#include "IEMAllInstTwoByte0f.cpp.h"
 
 #ifdef IEM_WITH_VEX
-# include "IEMAllInstructionsVexMap1.cpp.h"
-# include "IEMAllInstructionsVexMap2.cpp.h"
-# include "IEMAllInstructionsVexMap3.cpp.h"
+# include "IEMAllInstVexMap1.cpp.h"
+# include "IEMAllInstVexMap2.cpp.h"
+# include "IEMAllInstVexMap3.cpp.h"
 #endif
 
-#include "IEMAllInstructionsOneByte.cpp.h"
+#include "IEMAllInstOneByte.cpp.h"
 
