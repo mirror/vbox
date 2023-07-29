@@ -143,6 +143,7 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEM_OPCODE_GET_NEXT_S32(a_pi32)                     do { *(a_pi32) = g_bRandom; CHK_PTYPE(int32_t  *, a_pi32); } while (0)
 #define IEM_OPCODE_GET_NEXT_S32_SX_U64(a_pu64)              do { *(a_pu64) = g_bRandom; CHK_PTYPE(uint64_t *, a_pu64); } while (0)
 #define IEM_OPCODE_GET_NEXT_U64(a_pu64)                     do { *(a_pu64) = g_bRandom; CHK_PTYPE(uint64_t *, a_pu64); } while (0)
+#define IEM_OPCODE_SKIP_RM_EFF_ADDR_BYTES(a_bRm)            do { RT_NOREF(a_bRm); } while (0)
 #define IEMOP_HLP_MIN_186()                                 do { } while (0)
 #define IEMOP_HLP_MIN_286()                                 do { } while (0)
 #define IEMOP_HLP_MIN_386()                                 do { } while (0)

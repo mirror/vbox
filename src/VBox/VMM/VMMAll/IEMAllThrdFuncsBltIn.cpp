@@ -77,6 +77,18 @@ static VBOXSTRICTRC iemThreadeFuncWorkerObsoleteTb(PVMCPUCC pVCpu)
 }
 
 
+/**
+ * Built-in function that calls a C-implemention function taking zero arguments.
+ */
+IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_DeferToCImpl0,
+                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
+{
+    PFNIEMCIMPL0 const pfnCImpl = (PFNIEMCIMPL0)(uintptr_t)uParam0;
+    uint8_t const      cbInstr  = (uint8_t)uParam1;
+    RT_NOREF(uParam2);
+    return pfnCImpl(pVCpu, cbInstr);
+}
+
 
 /**
  * Built-in function that compares the fExec mask against uParam0.

@@ -138,6 +138,15 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb);
 #endif
 
 /*
+ * Likewise override IEM_OPCODE_SKIP_RM_EFF_ADDR_BYTES so we fetch all the opcodes.
+ */
+#undef IEM_OPCODE_SKIP_RM_EFF_ADDR_BYTES
+#define IEM_OPCODE_SKIP_RM_EFF_ADDR_BYTES(a_bRm) do { \
+        uint64_t uEffAddrInfo; \
+        (void)iemOpHlpCalcRmEffAddrJmpEx(pVCpu, bRm, 0, &uEffAddrInfo); \
+    } while (0)
+
+/*
  * Override the IEM_MC_REL_JMP_S*_AND_FINISH macros to check for zero byte jumps.
  */
 #undef IEM_MC_REL_JMP_S8_AND_FINISH
@@ -266,13 +275,31 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb);
  * IEMOP_RAISE_INVALID_OPCODE and their users.
  */
 #undef IEM_MC_DEFER_TO_CIMPL_0_RET
-#define IEM_MC_DEFER_TO_CIMPL_0_RET(a_fFlags, a_pfnCImpl) return iemThreadedRecompilerMcDeferToCImpl0(pVCpu, a_pfnCImpl)
+#define IEM_MC_DEFER_TO_CIMPL_0_RET(a_fFlags, a_pfnCImpl) \
+    return iemThreadedRecompilerMcDeferToCImpl0(pVCpu, a_fFlags, a_pfnCImpl)
 
-typedef IEM_CIMPL_DECL_TYPE_0(FNIEMCIMPL0);
-typedef FNIEMCIMPL0 *PFNIEMCIMPL0;
-
-DECLINLINE(VBOXSTRICTRC) iemThreadedRecompilerMcDeferToCImpl0(PVMCPUCC pVCpu, PFNIEMCIMPL0 pfnCImpl)
+DECLINLINE(VBOXSTRICTRC) iemThreadedRecompilerMcDeferToCImpl0(PVMCPUCC pVCpu, uint32_t fFlags, PFNIEMCIMPL0 pfnCImpl)
 {
+    Log8(("CImpl0: %04x:%08RX64 LB %#x: %#x %p\n",
+          pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, IEM_GET_INSTR_LEN(pVCpu), fFlags, pfnCImpl));
+
+    IEM_MC2_BEGIN_EMIT_CALLS();
+    IEM_MC2_EMIT_CALL_2(kIemThreadedFunc_DeferToCImpl0, (uintptr_t)pfnCImpl, IEM_GET_INSTR_LEN(pVCpu));
+    IEM_MC2_END_EMIT_CALLS(fFlags);
+
+    /* We have to repeat work normally done by kdCImplFlags and
+       ThreadedFunctionVariation.emitThreadedCallStmts here. */
+    if (fFlags & (IEM_CIMPL_F_END_TB | IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_REP))
+        pVCpu->iem.s.fEndTb = true;
+
+    AssertCompile(IEM_CIMPL_F_BRANCH_DIRECT      == IEMBRANCHED_F_DIRECT);
+    AssertCompile(IEM_CIMPL_F_BRANCH_INDIRECT    == IEMBRANCHED_F_INDIRECT);
+    AssertCompile(IEM_CIMPL_F_BRANCH_RELATIVE    == IEMBRANCHED_F_RELATIVE);
+    AssertCompile(IEM_CIMPL_F_BRANCH_CONDITIONAL == IEMBRANCHED_F_CONDITIONAL);
+    AssertCompile(IEM_CIMPL_F_BRANCH_FAR         == IEMBRANCHED_F_FAR);
+    if (fFlags & IEM_CIMPL_F_BRANCH_ANY)
+        pVCpu->iem.s.fTbBranched = fFlags & (IEM_CIMPL_F_BRANCH_ANY | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_CONDITIONAL);
+
     return pfnCImpl(pVCpu, IEM_GET_INSTR_LEN(pVCpu));
 }
 

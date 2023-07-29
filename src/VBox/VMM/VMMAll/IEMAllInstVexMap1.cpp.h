@@ -5409,18 +5409,15 @@ FNIEMOP_DEF(iemOp_vpaddd_Vx_Hx_Wx)
 /** Opcode **** 0x0f 0xff - UD0 */
 FNIEMOP_DEF(iemOp_vud0)
 {
+/** @todo testcase: vud0 */
     IEMOP_MNEMONIC(vud0, "vud0");
     if (pVCpu->iem.s.enmCpuVendor == CPUMCPUVENDOR_INTEL)
     {
         uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); RT_NOREF(bRm);
-#ifndef TST_IEM_CHECK_MC
-        RTGCPTR      GCPtrEff;
-        VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
-        if (rcStrict != VINF_SUCCESS)
-            return rcStrict;
-#endif
-        IEMOP_HLP_DONE_DECODING();
+        if (IEM_IS_MODRM_MEM_MODE(bRm))
+            IEM_OPCODE_SKIP_RM_EFF_ADDR_BYTES(bRm);
     }
+    IEMOP_HLP_DONE_DECODING();
     IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 

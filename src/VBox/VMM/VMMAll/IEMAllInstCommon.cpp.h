@@ -729,18 +729,8 @@ FNIEMOPRM_DEF(iemOp_InvalidWithRM)
 FNIEMOPRM_DEF(iemOp_InvalidWithRMNeedDecode)
 {
     IEMOP_MNEMONIC(InvalidWithRMNeedDecode, "InvalidWithRMNeedDecode");
-    if (pVCpu->iem.s.enmCpuVendor == CPUMCPUVENDOR_INTEL)
-    {
-#ifndef TST_IEM_CHECK_MC
-        if (IEM_IS_MODRM_MEM_MODE(bRm))
-        {
-            RTGCPTR      GCPtrEff;
-            VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
-            if (rcStrict != VINF_SUCCESS)
-                return rcStrict;
-        }
-#endif
-    }
+    if (pVCpu->iem.s.enmCpuVendor == CPUMCPUVENDOR_INTEL && IEM_IS_MODRM_MEM_MODE(bRm))
+        IEM_OPCODE_SKIP_RM_EFF_ADDR_BYTES(bRm);
     IEMOP_HLP_DONE_DECODING();
     IEMOP_RAISE_INVALID_OPCODE_RET();
 }
@@ -751,15 +741,8 @@ FNIEMOPRM_DEF(iemOp_InvalidWithRMNeedDecode)
 FNIEMOPRM_DEF(iemOp_InvalidWithRMAllNeeded)
 {
     IEMOP_MNEMONIC(InvalidWithRMAllNeeded, "InvalidWithRMAllNeeded");
-#ifndef TST_IEM_CHECK_MC
     if (IEM_IS_MODRM_MEM_MODE(bRm))
-    {
-        RTGCPTR      GCPtrEff;
-        VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
-        if (rcStrict != VINF_SUCCESS)
-            return rcStrict;
-    }
-#endif
+        IEM_OPCODE_SKIP_RM_EFF_ADDR_BYTES(bRm);
     IEMOP_HLP_DONE_DECODING();
     IEMOP_RAISE_INVALID_OPCODE_RET();
 }
@@ -772,16 +755,9 @@ FNIEMOPRM_DEF(iemOp_InvalidWithRMNeedImm8)
     IEMOP_MNEMONIC(InvalidWithRMNeedImm8, "InvalidWithRMNeedImm8");
     if (pVCpu->iem.s.enmCpuVendor == CPUMCPUVENDOR_INTEL)
     {
-#ifndef TST_IEM_CHECK_MC
         if (IEM_IS_MODRM_MEM_MODE(bRm))
-        {
-            RTGCPTR      GCPtrEff;
-            VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
-            if (rcStrict != VINF_SUCCESS)
-                return rcStrict;
-        }
-#endif
-        uint8_t bImm8;  IEM_OPCODE_GET_NEXT_U8(&bImm8);  RT_NOREF(bRm);
+            IEM_OPCODE_SKIP_RM_EFF_ADDR_BYTES(bRm);
+        uint8_t bImm8;  IEM_OPCODE_GET_NEXT_U8(&bImm8);  RT_NOREF(bImm8);
     }
     IEMOP_HLP_DONE_DECODING();
     IEMOP_RAISE_INVALID_OPCODE_RET();
@@ -793,16 +769,9 @@ FNIEMOPRM_DEF(iemOp_InvalidWithRMNeedImm8)
 FNIEMOPRM_DEF(iemOp_InvalidWithRMAllNeedImm8)
 {
     IEMOP_MNEMONIC(InvalidWithRMAllNeedImm8, "InvalidWithRMAllNeedImm8");
-#ifndef TST_IEM_CHECK_MC
     if (IEM_IS_MODRM_MEM_MODE(bRm))
-    {
-        RTGCPTR      GCPtrEff;
-        VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
-        if (rcStrict != VINF_SUCCESS)
-            return rcStrict;
-    }
-#endif
-    uint8_t bImm8;  IEM_OPCODE_GET_NEXT_U8(&bImm8);  RT_NOREF(bRm);
+        IEM_OPCODE_SKIP_RM_EFF_ADDR_BYTES(bRm);
+    uint8_t bImm8;  IEM_OPCODE_GET_NEXT_U8(&bImm8);  RT_NOREF(bImm8);
     IEMOP_HLP_DONE_DECODING();
     IEMOP_RAISE_INVALID_OPCODE_RET();
 }
@@ -815,15 +784,8 @@ FNIEMOP_DEF(iemOp_InvalidNeedRM)
     if (pVCpu->iem.s.enmCpuVendor == CPUMCPUVENDOR_INTEL)
     {
         uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); RT_NOREF(bRm);
-#ifndef TST_IEM_CHECK_MC
         if (IEM_IS_MODRM_MEM_MODE(bRm))
-        {
-            RTGCPTR      GCPtrEff;
-            VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
-            if (rcStrict != VINF_SUCCESS)
-                return rcStrict;
-        }
-#endif
+            IEM_OPCODE_SKIP_RM_EFF_ADDR_BYTES(bRm);
     }
     IEMOP_HLP_DONE_DECODING();
     IEMOP_RAISE_INVALID_OPCODE_RET();
@@ -835,15 +797,8 @@ FNIEMOP_DEF(iemOp_InvalidAllNeedRM)
 {
     IEMOP_MNEMONIC(InvalidAllNeedRM, "InvalidAllNeedRM");
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); RT_NOREF(bRm);
-#ifndef TST_IEM_CHECK_MC
     if (IEM_IS_MODRM_MEM_MODE(bRm))
-    {
-        RTGCPTR      GCPtrEff;
-        VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
-        if (rcStrict != VINF_SUCCESS)
-            return rcStrict;
-    }
-#endif
+        IEM_OPCODE_SKIP_RM_EFF_ADDR_BYTES(bRm);
     IEMOP_HLP_DONE_DECODING();
     IEMOP_RAISE_INVALID_OPCODE_RET();
 }
@@ -857,15 +812,8 @@ FNIEMOP_DEF(iemOp_InvalidNeedRMImm8)
     if (pVCpu->iem.s.enmCpuVendor == CPUMCPUVENDOR_INTEL)
     {
         uint8_t bRm;  IEM_OPCODE_GET_NEXT_U8(&bRm);  RT_NOREF(bRm);
-#ifndef TST_IEM_CHECK_MC
         if (IEM_IS_MODRM_MEM_MODE(bRm))
-        {
-            RTGCPTR      GCPtrEff;
-            VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
-            if (rcStrict != VINF_SUCCESS)
-                return rcStrict;
-        }
-#endif
+            IEM_OPCODE_SKIP_RM_EFF_ADDR_BYTES(bRm);
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm); RT_NOREF(bImm);
     }
     IEMOP_HLP_DONE_DECODING();
@@ -882,15 +830,8 @@ FNIEMOP_DEF(iemOp_InvalidNeed3ByteEscRM)
     {
         uint8_t b3rd; IEM_OPCODE_GET_NEXT_U8(&b3rd); RT_NOREF(b3rd);
         uint8_t bRm;  IEM_OPCODE_GET_NEXT_U8(&bRm);  RT_NOREF(bRm);
-#ifndef TST_IEM_CHECK_MC
         if (IEM_IS_MODRM_MEM_MODE(bRm))
-        {
-            RTGCPTR      GCPtrEff;
-            VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
-            if (rcStrict != VINF_SUCCESS)
-                return rcStrict;
-        }
-#endif
+            IEM_OPCODE_SKIP_RM_EFF_ADDR_BYTES(bRm);
     }
     IEMOP_HLP_DONE_DECODING();
     IEMOP_RAISE_INVALID_OPCODE_RET();
@@ -906,18 +847,11 @@ FNIEMOP_DEF(iemOp_InvalidNeed3ByteEscRMImm8)
     {
         uint8_t b3rd; IEM_OPCODE_GET_NEXT_U8(&b3rd); RT_NOREF(b3rd);
         uint8_t bRm;  IEM_OPCODE_GET_NEXT_U8(&bRm);  RT_NOREF(bRm);
-#ifndef TST_IEM_CHECK_MC
         if (IEM_IS_MODRM_MEM_MODE(bRm))
-        {
-            RTGCPTR      GCPtrEff;
-            VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 1, &GCPtrEff);
-            if (rcStrict != VINF_SUCCESS)
-                return rcStrict;
-        }
-#endif
+            IEM_OPCODE_SKIP_RM_EFF_ADDR_BYTES(bRm);
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm); RT_NOREF(bImm);
-        IEMOP_HLP_DONE_DECODING();
     }
+    IEMOP_HLP_DONE_DECODING();
     IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 

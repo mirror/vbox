@@ -198,6 +198,8 @@ class ThreadedFunctionVariation(object):
     ## IEM_CIMPL_F_XXX flags that we know.
     ## The value indicates whether it terminates the TB or not. The goal is to
     ## improve the recompiler so all but END_TB will be False.
+    ##
+    ## @note iemThreadedRecompilerMcDeferToCImpl0 duplicates info found here.
     kdCImplFlags = {
         'IEM_CIMPL_F_MODE':                 True,
         'IEM_CIMPL_F_BRANCH_DIRECT':        False,
@@ -913,6 +915,7 @@ class ThreadedFunctionVariation(object):
 
         # Emit fEndTb = true or fTbBranched = true if any of the CIMPL flags
         # indicates we should do so.
+        # Note! iemThreadedRecompilerMcDeferToCImpl0 duplicates work done here.
         asEndTbFlags      = [];
         asTbBranchedFlags = [];
         for sFlag in self.dsCImplFlags:
@@ -921,16 +924,9 @@ class ThreadedFunctionVariation(object):
             elif sFlag.startswith('IEM_CIMPL_F_BRANCH_'):
                 asTbBranchedFlags.append(sFlag);
         if asTbBranchedFlags:
-            aoStmts.extend([
-                iai.McCppGeneric('iemThreadedSetBranched(pVCpu, %s);'
-                                 % ((' | '.join(asTbBranchedFlags)).replace('IEM_CIMPL_F_BRANCH', 'IEMBRANCHED_F'),),
-                                 cchIndent = cchIndent), # Using the inline fn saves ~2 seconds for gcc 13/dbg (1m13s vs 1m15s).
-                #iai.McCppGeneric('pVCpu->iem.s.fTbBranched = %s;'
-                #                 % ((' | '.join(asTbBranchedFlags)).replace('IEM_CIMPL_F_BRANCH', 'IEMBRANCHED_F'),),
-                #                 cchIndent = cchIndent),
-                #iai.McCppGeneric('pVCpu->iem.s.GCPhysTbBranchSrcBuf = pVCpu->iem.s.GCPhysInstrBuf;', cchIndent = cchIndent),
-                #iai.McCppGeneric('pVCpu->iem.s.GCVirtTbBranchSrcBuf = pVCpu->iem.s.uInstrBufPc;', cchIndent = cchIndent),
-            ]);
+            aoStmts.append(iai.McCppGeneric('iemThreadedSetBranched(pVCpu, %s);'
+                                            % ((' | '.join(asTbBranchedFlags)).replace('IEM_CIMPL_F_BRANCH', 'IEMBRANCHED_F'),),
+                                            cchIndent = cchIndent)); # Inline fn saves ~2 seconds for gcc 13/dbg (1m13s vs 1m15s).
         if asEndTbFlags:
             aoStmts.append(iai.McCppGeneric('pVCpu->iem.s.fEndTb = true; /* %s */' % (','.join(asEndTbFlags),),
                                             cchIndent = cchIndent));
@@ -1288,6 +1284,7 @@ class IEMThreadedGenerator(object):
             '    /*',
             '     * Predefined',
             '     */',
+            '    kIemThreadedFunc_DeferToCImpl0,',
             '    kIemThreadedFunc_CheckMode,',
             '    kIemThreadedFunc_CheckCsLim,',
             '    kIemThreadedFunc_CheckCsLimAndOpcodes,',
@@ -1459,6 +1456,7 @@ class IEMThreadedGenerator(object):
                    + '    /*\n'
                    + '     * Predefined.\n'
                    + '     */'
+                   + '    iemThreadedFunc_BltIn_DeferToCImpl0,\n'
                    + '    iemThreadedFunc_BltIn_CheckMode,\n'
                    + '    iemThreadedFunc_BltIn_CheckCsLim,\n'
                    + '    iemThreadedFunc_BltIn_CheckCsLimAndOpcodes,\n'
@@ -1504,6 +1502,7 @@ class IEMThreadedGenerator(object):
                    + '    /*\n'
                    + '     * Predefined.\n'
                    + '     */'
+                   + '    "BltIn_DeferToCImpl0",\n'
                    + '    "BltIn_CheckMode",\n'
                    + '    "BltIn_CheckCsLim",\n'
                    + '    "BltIn_CheckCsLimAndOpcodes",\n'

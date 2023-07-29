@@ -3491,6 +3491,13 @@ FNIEMAIMPLFPAVXF3U256 iemAImpl_vcvtps2pd_u256, iemAImpl_vcvtps2pd_u256_fallback;
  */
 # define IEM_CIMPL_CALL_0(a_fn)            a_fn(pVCpu, cbInstr)
 
+/** Type for a C instruction implementation function taking no extra
+ *  arguments. */
+typedef IEM_CIMPL_DECL_TYPE_0(FNIEMCIMPL0);
+/** Function pointer type for a C instruction implementation function taking
+ *  no extra arguments. */
+typedef FNIEMCIMPL0 *PFNIEMCIMPL0;
+
 /**
  * For typedef'ing or declaring a C instruction implementation function taking
  * one extra argument.
@@ -4398,8 +4405,8 @@ IEM_CIMPL_DEF_0(iemCImplRaiseInvalidOpcode);
 /**
  * Macro for calling iemCImplRaiseDivideError().
  *
- * This enables us to add/remove arguments and force different levels of
- * inlining as we wish.
+ * This is for things that will _always_ decode to an \#DE, taking the
+ * recompiler into consideration and everything.
  *
  * @return  Strict VBox status code.
  */
@@ -4408,8 +4415,8 @@ IEM_CIMPL_DEF_0(iemCImplRaiseInvalidOpcode);
 /**
  * Macro for calling iemCImplRaiseInvalidLockPrefix().
  *
- * This enables us to add/remove arguments and force different levels of
- * inlining as we wish.
+ * This is for things that will _always_ decode to an \#UD, taking the
+ * recompiler into consideration and everything.
  *
  * @return  Strict VBox status code.
  */
@@ -4941,6 +4948,9 @@ IEM_CIMPL_PROTO_0(iemCImpl_vmmcall); /* svm */
 IEM_CIMPL_PROTO_1(iemCImpl_Hypercall, uint16_t, uDisOpcode); /* both */
 
 void            iemThreadedTbObsolete(PVMCPUCC pVCpu, PIEMTB pTb);
+
+IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_DeferToCImpl0,
+                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
 
 IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckMode,
                     (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));

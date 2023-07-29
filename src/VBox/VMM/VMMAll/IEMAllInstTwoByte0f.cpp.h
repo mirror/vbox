@@ -13842,17 +13842,10 @@ FNIEMOP_DEF(iemOp_ud0)
     if (pVCpu->iem.s.enmCpuVendor == CPUMCPUVENDOR_INTEL)
     {
         uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); RT_NOREF(bRm);
-#ifndef TST_IEM_CHECK_MC
         if (IEM_IS_MODRM_MEM_MODE(bRm))
-        {
-            RTGCPTR      GCPtrEff;
-            VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
-            if (rcStrict != VINF_SUCCESS)
-                return rcStrict;
-        }
-#endif
-        IEMOP_HLP_DONE_DECODING();
+            IEM_OPCODE_SKIP_RM_EFF_ADDR_BYTES(bRm);
     }
+    IEMOP_HLP_DONE_DECODING();
     IEMOP_RAISE_INVALID_OPCODE_RET();
 }
 
