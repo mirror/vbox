@@ -3787,7 +3787,7 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_80)
             { \
                 uint16_t u16Imm; IEM_OPCODE_GET_NEXT_U16(&u16Imm); \
                 IEM_MC_BEGIN(3, 0); \
-                IEMOP_HLP_DONE_DECODING(); \
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint16_t *,      pu16Dst,                0); \
                 IEM_MC_ARG_CONST(uint16_t,  u16Src, /*=*/ u16Imm,   1); \
                 IEM_MC_ARG(uint32_t *,      pEFlags,                2); \
@@ -3805,7 +3805,7 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_80)
             { \
                 uint32_t u32Imm; IEM_OPCODE_GET_NEXT_U32(&u32Imm); \
                 IEM_MC_BEGIN(3, 0); \
-                IEMOP_HLP_DONE_DECODING(); \
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint32_t *,      pu32Dst,                0); \
                 IEM_MC_ARG_CONST(uint32_t,  u32Src, /*=*/ u32Imm,   1); \
                 IEM_MC_ARG(uint32_t *,      pEFlags,                2); \
@@ -11910,7 +11910,7 @@ FNIEMOP_DEF(iemOp_cmc)
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
                     \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0); \
-                    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
+                    IEMOP_HLP_DONE_DECODING(); \
                     IEM_MC_MEM_MAP(pu16Dst, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_2(a_fnLockedU16, pu16Dst, pEFlags); \
@@ -11928,7 +11928,7 @@ FNIEMOP_DEF(iemOp_cmc)
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
                     \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0); \
-                    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
+                    IEMOP_HLP_DONE_DECODING(); \
                     IEM_MC_MEM_MAP(pu32Dst, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_2(a_fnLockedU32, pu32Dst, pEFlags); \
@@ -11946,7 +11946,7 @@ FNIEMOP_DEF(iemOp_cmc)
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
                     \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0); \
-                    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
+                    IEMOP_HLP_DONE_DECODING(); \
                     IEM_MC_MEM_MAP(pu64Dst, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_2(a_fnLockedU64, pu64Dst, pEFlags); \
