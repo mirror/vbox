@@ -26921,8 +26921,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IExtPackInstalledEvent">IExtPackInstalledEvent</link>.
       </desc>
     </const>
+    <const name="OnExtPackUninstalled" value="124">
+      <desc>
+        See <link to="IExtPackUninstalledEvent">IExtPackUninstalledEvent</link>.
+      </desc>
+    </const>
     <!-- End event marker -->
-    <const name="End" value="124">
+    <const name="End" value="125">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -27285,7 +27290,19 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Name of the extension pack.
       </desc>
     </attribute>
+  </interface>
 
+  <interface
+    name="IExtPackUninstalledEvent" extends="IEvent"
+    uuid="31aab263-95ef-48a4-9ce7-eaf0d3ae150f"
+    wsmap="managed" autogen="VBoxEvent" id="OnExtPackUninstalled"
+    >
+    <desc>Extension pack uninstalled event.</desc>
+    <attribute name="name" readonly="yes" type="wstring">
+      <desc>
+        Name of the extension pack.
+      </desc>
+    </attribute>
   </interface>
 
   <interface

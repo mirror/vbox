@@ -3795,6 +3795,11 @@ void VirtualBox::i_onExtPackInstalled(const Utf8Str &aExtPackName)
 {
     ::FireExtPackInstalledEvent(m->pEventSource, aExtPackName);
 }
+
+void VirtualBox::i_onExtPackUninstalled(const Utf8Str &aExtPackName)
+{
+    ::FireExtPackUninstalledEvent(m->pEventSource, aExtPackName);
+}
 #endif
 
 /**

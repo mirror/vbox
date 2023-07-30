@@ -124,6 +124,8 @@ signals:
         void sigCloudProfileChanged(const QUuid &uProviderId, const QString &strName);
         /** Notifies about ext.pack installation @a strname is the name of the installed ext. pack. */
         void sigExtensionPackInstalled(const QString &strName);
+        /** Notifies about ext.pack uninstallation @a strname is the name of the installed ext. pack. */
+        void sigExtensionPackUninstalled(const QString &strName);
     /** @} */
 
     /** @name VirtualBox Extra-data related signals

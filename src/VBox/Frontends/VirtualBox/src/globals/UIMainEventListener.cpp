@@ -51,6 +51,7 @@
 #include "CExtraDataCanChangeEvent.h"
 #include "CExtraDataChangedEvent.h"
 #include "CExtPackInstalledEvent.h"
+#include "CExtPackUninstalledEvent.h"
 #include "CGuestMonitorChangedEvent.h"
 #include "CGuestProcessIOEvent.h"
 #include "CGuestProcessRegisteredEvent.h"
@@ -630,7 +631,14 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
         {
             CExtPackInstalledEvent comEventSpecific(pEvent);
             emit sigExtensionPackInstalled(comEventSpecific.GetName());
-        };
+            break;
+        }
+        case KVBoxEventType_OnExtPackUninstalled:
+        {
+            CExtPackInstalledEvent comEventSpecific(pEvent);
+            emit sigExtensionPackUninstalled(comEventSpecific.GetName());
+            break;
+        }
         default: break;
     }
 

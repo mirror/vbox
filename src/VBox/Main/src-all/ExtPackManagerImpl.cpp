@@ -3286,7 +3286,10 @@ HRESULT ExtPackManager::i_doUninstall(Utf8Str const *a_pstrName, bool a_fForcedR
                                 if (SUCCEEDED(hrc))
                                 {
                                     if (!pExtPack)
+                                    {
                                         LogRel(("ExtPackManager: Successfully uninstalled extension pack '%s'.\n", a_pstrName->c_str()));
+                                        m->pVirtualBox->i_onExtPackInstalled(*a_pstrName);
+                                    }
                                     else
                                         hrc = setError(E_FAIL,
                                                        tr("Uninstall extension pack '%s' failed under mysterious circumstances"),

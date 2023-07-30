@@ -100,6 +100,9 @@ signals:
     /** Notifies extension pack. install.
      *  @param  strName      Passes extension pack name. */
     void sigExtensionPackInstalled(const QString &strName);
+    /** Notifies extension pack. uninstall.
+     *  @param  strName      Passes extension pack name. */
+    void sigExtensionPackUninstalled(const QString &strName);
 
 public:
 

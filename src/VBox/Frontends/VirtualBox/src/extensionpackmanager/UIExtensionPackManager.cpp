@@ -389,6 +389,8 @@ void UIExtensionPackManagerWidget::prepare()
             this, &UIExtensionPackManagerWidget::sltHandleExtensionPackInstalled);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigExtensionPackInstalled,
             this, &UIExtensionPackManagerWidget::sltHandleExtensionPackInstalled);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigExtensionPackUninstalled,
+            this, &UIExtensionPackManagerWidget::sltHandleExtensionPackUninstalled);
 
     /* Prepare stuff: */
     prepareActions();

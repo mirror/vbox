@@ -228,6 +228,7 @@ public:
 
 #ifdef VBOX_WITH_EXTPACK
     void i_onExtPackInstalled(const Utf8Str &aExtPackName);
+    void i_onExtPackUninstalled(const Utf8Str &aExtPackName);
 #endif
 
 #ifdef VBOX_WITH_CLOUD_NET

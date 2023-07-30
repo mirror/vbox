@@ -92,6 +92,9 @@ signals:
     /** Notifies extension pack. install.
      *  @param  strName      Passes extension pack name. */
     void sigExtensionPackInstalled(const QString &strName);
+    /** Notifies extension pack. unnstall.
+     *  @param  strName      Passes extension pack name. */
+    void sigExtensionPackUninstalled(const QString &strName);
 
 public:
 
@@ -261,6 +264,9 @@ void UIVirtualBoxEventHandlerProxy::prepareConnections()
     connect(m_pQtListener->getWrapped(), SIGNAL(sigExtensionPackInstalled(QString)),
             this, SIGNAL(sigExtensionPackInstalled(QString)),
             Qt::DirectConnection);
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigExtensionPackUninstalled(QString)),
+            this, SIGNAL(sigExtensionPackUninstalled(QString)),
+            Qt::DirectConnection);
 }
 
 void UIVirtualBoxEventHandlerProxy::cleanupConnections()
@@ -384,6 +390,9 @@ void UIVirtualBoxEventHandler::prepareConnections()
             Qt::QueuedConnection);
     connect(m_pProxy, SIGNAL(sigExtensionPackInstalled(QString)),
             this, SIGNAL(sigExtensionPackInstalled(QString)),
+            Qt::QueuedConnection);
+    connect(m_pProxy, SIGNAL(sigExtensionPackUninstalled(QString)),
+            this, SIGNAL(sigExtensionPackUninstalled(QString)),
             Qt::QueuedConnection);
 }
 
