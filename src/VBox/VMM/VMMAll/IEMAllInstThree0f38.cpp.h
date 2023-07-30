@@ -2214,7 +2214,7 @@ FNIEMOP_DEF(iemOp_adox_Gy_Ey)
  * Three byte opcode map, first two bytes are 0x0f 0x38.
  * @sa      g_apfnVexMap2
  */
-IEM_STATIC const PFNIEMOP g_apfnThreeByte0f38[] =
+const PFNIEMOP g_apfnThreeByte0f38[] =
 {
     /*          no prefix,                  066h prefix                 f3h prefix,                 f2h prefix */
     /* 0x00 */  iemOp_pshufb_Pq_Qq,         iemOp_pshufb_Vx_Wx,         iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,

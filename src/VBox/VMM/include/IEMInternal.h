@@ -4948,6 +4948,12 @@ IEM_CIMPL_PROTO_0(iemCImpl_vmmcall); /* svm */
 IEM_CIMPL_PROTO_1(iemCImpl_Hypercall, uint16_t, uDisOpcode); /* both */
 
 extern const PFNIEMOP g_apfnIemInterpretOnlyOneByteMap[256];
+extern const PFNIEMOP g_apfnIemInterpretOnlyTwoByteMap[1024];
+extern const PFNIEMOP g_apfnIemInterpretOnlyThreeByte0f3a[1024];
+extern const PFNIEMOP g_apfnIemInterpretOnlyThreeByte0f38[1024];
+extern const PFNIEMOP g_apfnIemInterpretOnlyVecMap1[1024];
+extern const PFNIEMOP g_apfnIemInterpretOnlyVecMap2[1024];
+extern const PFNIEMOP g_apfnIemInterpretOnlyVecMap3[1024];
 
 /*
  * Recompiler related stuff.

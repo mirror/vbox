@@ -762,7 +762,7 @@ FNIEMOP_DEF(iemOp_push_CS)
  */
 FNIEMOP_DEF(iemOp_2byteEscape)
 {
-#ifdef VBOX_STRICT
+#if 0 /// @todo def VBOX_STRICT
     /* Sanity check the table the first time around. */
     static bool s_fTested = false;
     if (RT_LIKELY(s_fTested)) { /* likely */  }

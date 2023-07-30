@@ -1665,7 +1665,7 @@ FNIEMOP_DEF(iemOp_aeskeygen_Vdq_Wdq_Ib)
  * Three byte opcode map, first two bytes are 0x0f 0x3a.
  * @sa      g_apfnVexMap2
  */
-IEM_STATIC const PFNIEMOP g_apfnThreeByte0f3a[] =
+const PFNIEMOP g_apfnThreeByte0f3a[] =
 {
     /*          no prefix,                  066h prefix                 f3h prefix,                 f2h prefix */
     /* 0x00 */  IEMOP_X4(iemOp_InvalidNeedRMImm8),

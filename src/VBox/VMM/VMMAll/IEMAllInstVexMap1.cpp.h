@@ -5428,7 +5428,7 @@ FNIEMOP_DEF(iemOp_vud0)
  *
  * @sa  g_apfnTwoByteMap
  */
-IEM_STATIC const PFNIEMOP g_apfnVexMap1[] =
+const PFNIEMOP g_apfnVexMap1[] =
 {
     /*          no prefix,                  066h prefix                 f3h prefix,                 f2h prefix */
     /* 0x00 */  IEMOP_X4(iemOp_InvalidNeedRM),

@@ -191,7 +191,10 @@ VBoxVMM_SOURCES  = \
 	VMMAll/HMSVMAll.cpp \
 	VMMAll/HMVMXAll.cpp \
 	VMMAll/IEMAll.cpp \
-	VMMAll/IEMAllInstInterpretOnly.cpp \
+	VMMAll/IEMAllIntprTables1.cpp \
+	VMMAll/IEMAllIntprTables2.cpp \
+	VMMAll/IEMAllIntprTables3.cpp \
+	VMMAll/IEMAllIntprTables4.cpp \
 	VMMAll/IEMAllAImplC.cpp \
 	VMMAll/IEMAllCImpl.cpp \
 	VMMAll/IEMAllCImplSvmInstr.cpp \
@@ -309,7 +312,10 @@ endif
 
 if "$(USERNAME)" == "bird" && "$(KBUILD_TARGET)" == "win"
  VBoxVMM_VMMAll/IEMAll.cpp_CXXFLAGS                  = /FAcs /Fa$(subst /,\\,$(outbase).cod)
- VBoxVMM_VMMAll/IEMAllInstInterpretOnly.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+ VBoxVMM_VMMAll/IEMAllIntprTables1.cpp_CXXFLAGS      = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+ VBoxVMM_VMMAll/IEMAllIntprTables2.cpp_CXXFLAGS      = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+ VBoxVMM_VMMAll/IEMAllIntprTables3.cpp_CXXFLAGS      = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+ VBoxVMM_VMMAll/IEMAllIntprTables4.cpp_CXXFLAGS      = /FAcs /Fa$(subst /,\\,$(outbase).cod)
  VBoxVMM_VMMAll/IEMAllAImplC.cpp_CXXFLAGS            = /FAcs /Fa$(subst /,\\,$(outbase).cod)
  VBoxVMM_VMMAll/PGMAll.cpp_CXXFLAGS                  = /FAcs /Fa$(subst /,\\,$(outbase).cod)
  VBoxVMM_VMMAll/PDMAllCritSect.cpp_CXXFLAGS          = /FAcs /Fa$(subst /,\\,$(outbase).cod)
@@ -772,7 +778,10 @@ if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMAll/HMSVMAll.cpp \
  	VMMAll/HMVMXAll.cpp \
  	VMMAll/IEMAll.cpp \
- 	VMMAll/IEMAllInstInterpretOnly.cpp \
+ 	VMMAll/IEMAllIntprTables1.cpp \
+ 	VMMAll/IEMAllIntprTables2.cpp \
+ 	VMMAll/IEMAllIntprTables3.cpp \
+ 	VMMAll/IEMAllIntprTables4.cpp \
  	$(if-expr !defined(IEM_WITHOUT_ASSEMBLY),VMMAll/IEMAllAImpl.asm,) \
  	VMMAll/IEMAllAImplC.cpp \
  	VMMAll/IEMAllCImpl.cpp \
@@ -984,14 +993,20 @@ if "$(KBUILD_TYPE)" == "release" || ($(USERNAME) != "aeichner")
   VMMAll/IEMAllCImpl.cpp_CXXFLAGS                   += -noover -O2xy
   VMMAll/IEMAllCImplSvmInstr.cpp_CXXFLAGS           += -noover -O2xy
   VMMAll/IEMAllCImplVmxInstr.cpp_CXXFLAGS           += -noover -O2xy
-  VMMAll/IEMAllInstInterpretOnly.cpp_CXXFLAGS       += -noover -O2xy
+  VMMAll/IEMAllIntprTables1.cpp_CXXFLAGS            += -noover -O2xy
+  VMMAll/IEMAllIntprTables2.cpp_CXXFLAGS            += -noover -O2xy
+  VMMAll/IEMAllIntprTables3.cpp_CXXFLAGS            += -noover -O2xy
+  VMMAll/IEMAllIntprTables4.cpp_CXXFLAGS            += -noover -O2xy
  else
   # Omitting the frame pointer results in larger code, but it might be worth it. (esp addressing vs ebp?)
   VMMAll/IEMAll.cpp_CXXFLAGS                        += -O2 -fomit-frame-pointer
   VMMAll/IEMAllCImpl.cpp_CXXFLAGS                   += -O2 -fomit-frame-pointer
   VMMAll/IEMAllCImplSvmInstr.cpp_CXXFLAGS           += -O2 -fomit-frame-pointer
   VMMAll/IEMAllCImplVmxInstr.cpp_CXXFLAGS           += -O2 -fomit-frame-pointer
-  VMMAll/IEMAllInstInterpretOnly.cpp_CXXFLAGS       += -O2 -fomit-frame-pointer
+  VMMAll/IEMAllIntprTables1.cpp_CXXFLAGS            += -O2 -fomit-frame-pointer
+  VMMAll/IEMAllIntprTables2.cpp_CXXFLAGS            += -O2 -fomit-frame-pointer
+  VMMAll/IEMAllIntprTables3.cpp_CXXFLAGS            += -O2 -fomit-frame-pointer
+  VMMAll/IEMAllIntprTables4.cpp_CXXFLAGS            += -O2 -fomit-frame-pointer
  endif
 endif # bird wants good stacks (aeichner as well)
 

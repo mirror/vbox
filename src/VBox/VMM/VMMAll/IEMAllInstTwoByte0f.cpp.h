@@ -8892,51 +8892,6 @@ FNIEMOP_DEF(iemOp_setnle_Eb)
 }
 
 
-/**
- * Common 'push segment-register' helper.
- */
-FNIEMOP_DEF_1(iemOpCommonPushSReg, uint8_t, iReg)
-{
-    Assert(iReg < X86_SREG_FS || !IEM_IS_64BIT_CODE(pVCpu));
-    IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
-
-    switch (pVCpu->iem.s.enmEffOpSize)
-    {
-        case IEMMODE_16BIT:
-            IEM_MC_BEGIN(0, 1);
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_LOCAL(uint16_t, u16Value);
-            IEM_MC_FETCH_SREG_U16(u16Value, iReg);
-            IEM_MC_PUSH_U16(u16Value);
-            IEM_MC_ADVANCE_RIP_AND_FINISH();
-            IEM_MC_END();
-            break;
-
-        case IEMMODE_32BIT:
-            IEM_MC_BEGIN(0, 1);
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_LOCAL(uint32_t, u32Value);
-            IEM_MC_FETCH_SREG_ZX_U32(u32Value, iReg);
-            IEM_MC_PUSH_U32_SREG(u32Value);
-            IEM_MC_ADVANCE_RIP_AND_FINISH();
-            IEM_MC_END();
-            break;
-
-        case IEMMODE_64BIT:
-            IEM_MC_BEGIN(0, 1);
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_LOCAL(uint64_t, u64Value);
-            IEM_MC_FETCH_SREG_ZX_U64(u64Value, iReg);
-            IEM_MC_PUSH_U64(u64Value);
-            IEM_MC_ADVANCE_RIP_AND_FINISH();
-            IEM_MC_END();
-            break;
-
-        IEM_NOT_REACHED_DEFAULT_CASE_RET();
-    }
-}
-
-
 /** Opcode 0x0f 0xa0. */
 FNIEMOP_DEF(iemOp_push_fs)
 {
@@ -10328,72 +10283,6 @@ FNIEMOP_DEF(iemOp_cmpxchg_Ev_Gv)
 
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
-    }
-}
-
-
-FNIEMOP_DEF_2(iemOpCommonLoadSRegAndGreg, uint8_t, iSegReg, uint8_t, bRm)
-{
-    Assert(IEM_IS_MODRM_MEM_MODE(bRm)); /* Caller checks this */
-    uint8_t const iGReg = IEM_GET_MODRM_REG(pVCpu, bRm);
-
-    switch (pVCpu->iem.s.enmEffOpSize)
-    {
-        case IEMMODE_16BIT:
-            IEM_MC_BEGIN(5, 1);
-            IEM_MC_ARG(uint16_t,        uSel,                                    0);
-            IEM_MC_ARG(uint16_t,        offSeg,                                  1);
-            IEM_MC_ARG_CONST(uint8_t,   iSegRegArg,/*=*/iSegReg,                 2);
-            IEM_MC_ARG_CONST(uint8_t,   iGRegArg,  /*=*/iGReg,                   3);
-            IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pVCpu->iem.s.enmEffOpSize, 4);
-            IEM_MC_LOCAL(RTGCPTR,       GCPtrEff);
-            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_FETCH_MEM_U16(offSeg, pVCpu->iem.s.iEffSeg, GCPtrEff);
-            IEM_MC_FETCH_MEM_U16_DISP(uSel, pVCpu->iem.s.iEffSeg, GCPtrEff, 2);
-            if (iSegReg >= X86_SREG_FS || !IEM_IS_32BIT_CODE(pVCpu))
-                IEM_MC_CALL_CIMPL_5(               0, iemCImpl_load_SReg_Greg, uSel, offSeg, iSegRegArg, iGRegArg, enmEffOpSize);
-            else
-                IEM_MC_CALL_CIMPL_5(IEM_CIMPL_F_MODE, iemCImpl_load_SReg_Greg, uSel, offSeg, iSegRegArg, iGRegArg, enmEffOpSize);
-            IEM_MC_END();
-
-        case IEMMODE_32BIT:
-            IEM_MC_BEGIN(5, 1);
-            IEM_MC_ARG(uint16_t,        uSel,                                    0);
-            IEM_MC_ARG(uint32_t,        offSeg,                                  1);
-            IEM_MC_ARG_CONST(uint8_t,   iSegRegArg,/*=*/iSegReg,                 2);
-            IEM_MC_ARG_CONST(uint8_t,   iGRegArg,  /*=*/iGReg,                   3);
-            IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pVCpu->iem.s.enmEffOpSize, 4);
-            IEM_MC_LOCAL(RTGCPTR,       GCPtrEff);
-            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_FETCH_MEM_U32(offSeg, pVCpu->iem.s.iEffSeg, GCPtrEff);
-            IEM_MC_FETCH_MEM_U16_DISP(uSel, pVCpu->iem.s.iEffSeg, GCPtrEff, 4);
-            if (iSegReg >= X86_SREG_FS || !IEM_IS_32BIT_CODE(pVCpu))
-                IEM_MC_CALL_CIMPL_5(               0, iemCImpl_load_SReg_Greg, uSel, offSeg, iSegRegArg, iGRegArg, enmEffOpSize);
-            else
-                IEM_MC_CALL_CIMPL_5(IEM_CIMPL_F_MODE, iemCImpl_load_SReg_Greg, uSel, offSeg, iSegRegArg, iGRegArg, enmEffOpSize);
-            IEM_MC_END();
-
-        case IEMMODE_64BIT:
-            IEM_MC_BEGIN(5, 1);
-            IEM_MC_ARG(uint16_t,        uSel,                                    0);
-            IEM_MC_ARG(uint64_t,        offSeg,                                  1);
-            IEM_MC_ARG_CONST(uint8_t,   iSegRegArg,/*=*/iSegReg,                 2);
-            IEM_MC_ARG_CONST(uint8_t,   iGRegArg,  /*=*/iGReg,                   3);
-            IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pVCpu->iem.s.enmEffOpSize, 4);
-            IEM_MC_LOCAL(RTGCPTR,       GCPtrEff);
-            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            if (IEM_IS_GUEST_CPU_AMD(pVCpu)) /** @todo testcase: rev 3.15 of the amd manuals claims it only loads a 32-bit greg. */
-                IEM_MC_FETCH_MEM_U32_SX_U64(offSeg, pVCpu->iem.s.iEffSeg, GCPtrEff);
-            else
-                IEM_MC_FETCH_MEM_U64(offSeg, pVCpu->iem.s.iEffSeg, GCPtrEff);
-            IEM_MC_FETCH_MEM_U16_DISP(uSel, pVCpu->iem.s.iEffSeg, GCPtrEff, 8);
-            IEM_MC_CALL_CIMPL_5(0, iemCImpl_load_SReg_Greg, uSel, offSeg, iSegRegArg, iGRegArg, enmEffOpSize);
-            IEM_MC_END();
-
-        IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
 }
 
@@ -13857,7 +13746,7 @@ FNIEMOP_DEF(iemOp_ud0)
  * @remarks The g_apfnVexMap1 table is currently a subset of this one, so please
  *          check if it needs updating as well when making changes.
  */
-IEM_STATIC const PFNIEMOP g_apfnTwoByteMap[] =
+const PFNIEMOP g_apfnTwoByteMap[] =
 {
     /*          no prefix,                  066h prefix                 f3h prefix,                 f2h prefix */
     /* 0x00 */  IEMOP_X4(iemOp_Grp6),
