@@ -385,12 +385,17 @@ void UIExtensionPackManagerWidget::prepare()
 {
     /* Prepare self: */
     uiCommon().setHelpKeyword(this, "ext-pack-manager");
+    /* Connect un/install event we get from IVirtualBox to UICommon since all
+     * ext pack installation events should go through its signal. Several
+     * other objects listen to those signals for menu update etc: */
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigExtensionPackInstalled,
+            &uiCommon(), &UICommon::sigExtensionPackInstalled);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigExtensionPackUninstalled,
+            &uiCommon(), &UICommon::sigExtensionPackUninstalled);
+
+
     connect(&uiCommon(), &UICommon::sigExtensionPackInstalled,
             this, &UIExtensionPackManagerWidget::sltHandleExtensionPackInstalled);
-    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigExtensionPackInstalled,
-            this, &UIExtensionPackManagerWidget::sltHandleExtensionPackInstalled);
-    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigExtensionPackUninstalled,
-            this, &UIExtensionPackManagerWidget::sltHandleExtensionPackUninstalled);
 
     /* Prepare stuff: */
     prepareActions();
