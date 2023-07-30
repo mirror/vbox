@@ -99,6 +99,12 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 #define g_apfnOneByteMap    g_apfnIemThreadedRecompilerOneByteMap
+#define g_apfnTwoByteMap    g_apfnIemThreadedRecompilerTwoByteMap
+#define g_apfnThreeByte0f3a g_apfnIemThreadedRecompilerThreeByte0f3a
+#define g_apfnThreeByte0f38 g_apfnIemThreadedRecompilerThreeByte0f38
+#define g_apfnVexMap1       g_apfnIemThreadedRecompilerVecMap1
+#define g_apfnVexMap2       g_apfnIemThreadedRecompilerVecMap2
+#define g_apfnVexMap3       g_apfnIemThreadedRecompilerVecMap3
 
 
 /*
@@ -296,5 +302,10 @@ DECL_FORCE_INLINE(void) iemThreadedSetBranched(PVMCPUCC pVCpu, uint8_t fTbBranch
 /*
  * Include the "annotated" IEMAllInst*.cpp.h files.
  */
+#define IEM_WITH_ONE_BYTE_TABLE
+#define IEM_WITH_TWO_BYTE_TABLE
+#define IEM_WITH_THREE_BYTE_TABLES
+#define IEM_WITH_3DNOW_BYTE_TABLE
+#define IEM_WITH_VEX_TABLES
 #include "IEMThreadedInstructions.cpp.h"
 

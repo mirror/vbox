@@ -4959,6 +4959,12 @@ extern const PFNIEMOP g_apfnIemInterpretOnlyVecMap3[1024];
  * Recompiler related stuff.
  */
 extern const PFNIEMOP g_apfnIemThreadedRecompilerOneByteMap[256];
+extern const PFNIEMOP g_apfnIemThreadedRecompilerTwoByteMap[1024];
+extern const PFNIEMOP g_apfnIemThreadedRecompilerThreeByte0f3a[1024];
+extern const PFNIEMOP g_apfnIemThreadedRecompilerThreeByte0f38[1024];
+extern const PFNIEMOP g_apfnIemThreadedRecompilerVecMap1[1024];
+extern const PFNIEMOP g_apfnIemThreadedRecompilerVecMap2[1024];
+extern const PFNIEMOP g_apfnIemThreadedRecompilerVecMap3[1024];
 
 void            iemThreadedTbObsolete(PVMCPUCC pVCpu, PIEMTB pTb);
 
