@@ -1185,6 +1185,7 @@ class IEMThreadedGenerator(object):
         self.aoThreadedFuncs = []       # type: list(ThreadedFunction)
         self.oOptions        = None     # type: argparse.Namespace
         self.aoParsers       = []       # type: list(IEMAllInstPython.SimpleParser)
+        self.aidxFirstFunctions = []    # type: list(int) ##< Runs parallel to aoParser giving the index of the first function.
 
     #
     # Processing.
@@ -1214,6 +1215,18 @@ class IEMThreadedGenerator(object):
             print('debug:     %s params: %4s raw, %4s min'
                   % (cCount, dRawParamCounts.get(cCount, 0), dMinParamCounts.get(cCount, 0)),
                   file = sys.stderr);
+
+        # Populate aidxFirstFunctions.  This is ASSUMING that
+        # g_aoMcBlocks/self.aoThreadedFuncs are in self.aoParsers order.
+        iThreadedFunction       = 0;
+        oThreadedFunction       = self.getThreadedFunctionByIndex(0);
+        self.aidxFirstFunctions = [];
+        for oParser in self.aoParsers:
+            self.aidxFirstFunctions.append(iThreadedFunction);
+
+            while oThreadedFunction.oMcBlock.sSrcFile == oParser.sSrcFile:
+                iThreadedFunction += 1;
+                oThreadedFunction  = self.getThreadedFunctionByIndex(iThreadedFunction);
 
         return True;
 
@@ -1547,7 +1560,7 @@ class IEMThreadedGenerator(object):
             return self.aoThreadedFuncs[idx];
         return ThreadedFunction.dummyInstance();
 
-    def generateModifiedInput(self, oOut):
+    def generateModifiedInput(self, oOut, idxFile):
         """
         Generates the combined modified input source/header file.
         Returns success indicator.
@@ -1558,16 +1571,27 @@ class IEMThreadedGenerator(object):
         oOut.write('\n'.join(self.generateLicenseHeader()));
 
         #
-        # ASSUMING that g_aoMcBlocks/self.aoThreadedFuncs are in self.aoParsers
-        # order, we iterate aoThreadedFuncs in parallel to the lines from the
-        # parsers and apply modifications where required.
+        # Iterate all parsers (input files) and output the ones related to the
+        # file set given by idxFile.
         #
-        iThreadedFunction = 0;
-        oThreadedFunction = self.getThreadedFunctionByIndex(0);
-        for oParser in self.aoParsers: # type: IEMAllInstPython.SimpleParser
+        for idxParser, oParser in enumerate(self.aoParsers): # type: int, IEMAllInstPython.SimpleParser
+            # Is this included in the file set?
+            sSrcBaseFile = os.path.basename(oParser.sSrcFile).lower();
+            fInclude     = -1;
+            for aoInfo in iai.g_aaoAllInstrFilesAndDefaultMapAndSet:
+                if sSrcBaseFile == aoInfo[0].lower():
+                    fInclude = aoInfo[2] in (-1, idxFile);
+                    break;
+            if fInclude is not True:
+                assert fInclude is False;
+                continue;
+
+            # Output it.
             oOut.write("\n\n/* ****** BEGIN %s ******* */\n" % (oParser.sSrcFile,));
 
-            iLine = 0;
+            iThreadedFunction = self.aidxFirstFunctions[idxParser];
+            oThreadedFunction = self.getThreadedFunctionByIndex(iThreadedFunction);
+            iLine             = 0;
             while iLine < len(oParser.asLines):
                 sLine = oParser.asLines[iLine];
                 iLine += 1;                 # iBeginLine and iEndLine are 1-based.
@@ -1622,6 +1646,35 @@ class IEMThreadedGenerator(object):
 
         return True;
 
+    def generateModifiedInput1(self, oOut):
+        """
+        Generates the combined modified input source/header file, part 1.
+        Returns success indicator.
+        """
+        return self.generateModifiedInput(oOut, 1);
+
+    def generateModifiedInput2(self, oOut):
+        """
+        Generates the combined modified input source/header file, part 2.
+        Returns success indicator.
+        """
+        return self.generateModifiedInput(oOut, 2);
+
+    def generateModifiedInput3(self, oOut):
+        """
+        Generates the combined modified input source/header file, part 3.
+        Returns success indicator.
+        """
+        return self.generateModifiedInput(oOut, 3);
+
+    def generateModifiedInput4(self, oOut):
+        """
+        Generates the combined modified input source/header file, part 4.
+        Returns success indicator.
+        """
+        return self.generateModifiedInput(oOut, 4);
+
+
     #
     # Main
     #
@@ -1638,14 +1691,21 @@ class IEMThreadedGenerator(object):
         sScriptDir = os.path.dirname(__file__);
         oParser = argparse.ArgumentParser(add_help = False);
         oParser.add_argument('asInFiles',       metavar = 'input.cpp.h',        nargs = '*',
-                             default = [os.path.join(sScriptDir, asFM[0]) for asFM in iai.g_aasAllInstrFilesAndDefaultMap],
+                             default = [os.path.join(sScriptDir, aoInfo[0])
+                                        for aoInfo in iai.g_aaoAllInstrFilesAndDefaultMapAndSet],
                              help = "Selection of VMMAll/IEMAllInst*.cpp.h files to use as input.");
         oParser.add_argument('--out-funcs-hdr', metavar = 'file-funcs.h',       dest = 'sOutFileFuncsHdr', action = 'store',
                              default = '-', help = 'The output header file for the functions.');
         oParser.add_argument('--out-funcs-cpp', metavar = 'file-funcs.cpp',     dest = 'sOutFileFuncsCpp', action = 'store',
                              default = '-', help = 'The output C++ file for the functions.');
-        oParser.add_argument('--out-mod-input', metavar = 'file-instr.cpp.h',   dest = 'sOutFileModInput', action = 'store',
-                             default = '-', help = 'The output C++/header file for the modified input instruction files.');
+        oParser.add_argument('--out-mod-input1', metavar = 'file-instr.cpp.h',   dest = 'sOutFileModInput1', action = 'store',
+                             default = '-', help = 'The output C++/header file for modified input instruction files part 1.');
+        oParser.add_argument('--out-mod-input2', metavar = 'file-instr.cpp.h',   dest = 'sOutFileModInput2', action = 'store',
+                             default = '-', help = 'The output C++/header file for modified input instruction files part 2.');
+        oParser.add_argument('--out-mod-input3', metavar = 'file-instr.cpp.h',   dest = 'sOutFileModInput3', action = 'store',
+                             default = '-', help = 'The output C++/header file for modified input instruction files part 3.');
+        oParser.add_argument('--out-mod-input4', metavar = 'file-instr.cpp.h',   dest = 'sOutFileModInput4', action = 'store',
+                             default = '-', help = 'The output C++/header file for modified input instruction files part 4.');
         oParser.add_argument('--help', '-h', '-?', action = 'help', help = 'Display help and exit.');
         oParser.add_argument('--version', '-V', action = 'version',
                              version = 'r%s (IEMAllThreadedPython.py), r%s (IEMAllInstPython.py)'
@@ -1662,9 +1722,12 @@ class IEMThreadedGenerator(object):
             # Generate the output files.
             #
             aaoOutputFiles = (
-                 ( self.oOptions.sOutFileFuncsHdr, self.generateThreadedFunctionsHeader ),
-                 ( self.oOptions.sOutFileFuncsCpp, self.generateThreadedFunctionsSource ),
-                 ( self.oOptions.sOutFileModInput, self.generateModifiedInput ),
+                 ( self.oOptions.sOutFileFuncsHdr,  self.generateThreadedFunctionsHeader ),
+                 ( self.oOptions.sOutFileFuncsCpp,  self.generateThreadedFunctionsSource ),
+                 ( self.oOptions.sOutFileModInput1, self.generateModifiedInput1 ),
+                 ( self.oOptions.sOutFileModInput2, self.generateModifiedInput2 ),
+                 ( self.oOptions.sOutFileModInput3, self.generateModifiedInput3 ),
+                 ( self.oOptions.sOutFileModInput4, self.generateModifiedInput4 ),
             );
             fRc = True;
             for sOutFile, fnGenMethod in aaoOutputFiles:

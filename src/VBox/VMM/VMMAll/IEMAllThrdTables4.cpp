@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IEM - Instruction Decoding and Threaded Recompilation, Instruction Tables.
+ * IEM - Instruction Decoding and Threaded Recompilation, Instruction Tables - VEX.
  */
 
 /*
@@ -30,10 +30,6 @@
 /*
  * Include the "annotated" IEMAllInst*.cpp.h files.
  */
-#define IEM_WITH_ONE_BYTE_TABLE
-#define IEM_WITH_TWO_BYTE_TABLE
-#define IEM_WITH_THREE_BYTE_TABLES
-#define IEM_WITH_3DNOW_BYTE_TABLE
 #define IEM_WITH_VEX_TABLES
-#include "IEMThreadedInstructions.cpp.h"
+#include "IEMThreadedInstructions4.cpp.h"
 

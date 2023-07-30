@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IEM - Instruction Decoding and Emulation - Interpreter Tables - One-Byte.
+ * IEM - Instruction Decoding and Threaded Recompilation, Instruction Tables - Three-Byte.
  */
 
 /*
@@ -25,7 +25,11 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#define IEM_WITH_ONE_BYTE_TABLE
-#include "IEMAllIntprTables.h"
-#include "IEMAllInstOneByte.cpp.h"
+#include "IEMAllThrdTables.h"
+
+/*
+ * Include the "annotated" IEMAllInst*.cpp.h files.
+ */
+#define IEM_WITH_THREE_BYTE_TABLES
+#include "IEMThreadedInstructions3.cpp.h"
 

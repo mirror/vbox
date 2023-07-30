@@ -251,7 +251,10 @@ endif
 ifdef VBOX_WITH_IEM_RECOMPILER
  VBoxVMM_SOURCES += \
  	VMMAll/IEMAllThrdRecompiler.cpp \
- 	VMMAll/IEMAllThrdTables.cpp \
+ 	VMMAll/IEMAllThrdTables1.cpp \
+ 	VMMAll/IEMAllThrdTables2.cpp \
+ 	VMMAll/IEMAllThrdTables3.cpp \
+ 	VMMAll/IEMAllThrdTables4.cpp \
  	VMMAll/IEMAllThrdFuncs.cpp \
  	VMMAll/IEMAllThrdFuncsBltIn.cpp
 endif
@@ -575,7 +578,10 @@ ifdef VBOX_WITH_IEM_RECOMPILER
  $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h.ts \
  +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h \
  +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp.h \
- +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions.cpp.h: \
+ +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions1.cpp.h \
+ +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions2.cpp.h \
+ +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions3.cpp.h \
+ +| $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions4.cpp.h: \
  		$(PATH_SUB_CURRENT)/VMMAll/IEMAllThrdPython.py \
  		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstPython.py \
  		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstCommon.cpp.h \
@@ -598,10 +604,22 @@ ifdef VBOX_WITH_IEM_RECOMPILER
 	$(REDIRECT) -0 /dev/null -- $(VBOX_BLD_PYTHON) $< $(filter %.cpp.h,$^) \
        	--out-funcs-hdr "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h.ts" \
        	--out-funcs-cpp "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp.h.ts" \
-       	--out-mod-input "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions.cpp.h.ts"
+       	--out-mod-input1 "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions1.cpp.h.ts" \
+       	--out-mod-input2 "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions2.cpp.h.ts" \
+       	--out-mod-input3 "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions3.cpp.h.ts" \
+       	--out-mod-input4 "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions4.cpp.h.ts"
 	$(QUIET)$(CP) -v -f --changed -- \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions.cpp.h.ts" \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions.cpp.h"
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions1.cpp.h.ts" \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions1.cpp.h"
+	$(QUIET)$(CP) -v -f --changed -- \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions2.cpp.h.ts" \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions2.cpp.h"
+	$(QUIET)$(CP) -v -f --changed -- \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions3.cpp.h.ts" \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions3.cpp.h"
+	$(QUIET)$(CP) -v -f --changed -- \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions4.cpp.h.ts" \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions4.cpp.h"
 	$(QUIET)$(CP) -v -f --changed -- \
 		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp.h.ts" \
 		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp.h"
@@ -609,7 +627,10 @@ ifdef VBOX_WITH_IEM_RECOMPILER
 		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h.ts" \
 		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h"
 	$(QUIET)$(RM) -f -- \
-		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions.cpp.h.ts" \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions1.cpp.h.ts" \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions2.cpp.h.ts" \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions3.cpp.h.ts" \
+		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions4.cpp.h.ts" \
 		"$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp.h.ts"
 
  foobared: $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h.ts

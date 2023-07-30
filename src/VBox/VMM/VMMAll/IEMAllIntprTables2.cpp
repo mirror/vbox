@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IEM - Instruction Decoding and Emulation - Interpreter Tables - Two byte & 3DNow!
+ * IEM - Instruction Decoding and Emulation - Interpreter Tables - Two-Byte & 3DNow!
  */
 
 /*
