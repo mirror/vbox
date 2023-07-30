@@ -248,6 +248,7 @@ endif
 ifdef VBOX_WITH_IEM_RECOMPILER
  VBoxVMM_SOURCES += \
  	VMMAll/IEMAllThrdRecompiler.cpp \
+ 	VMMAll/IEMAllThrdTables.cpp \
  	VMMAll/IEMAllThrdFuncs.cpp \
  	VMMAll/IEMAllThrdFuncsBltIn.cpp
 endif
