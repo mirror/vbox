@@ -1451,7 +1451,7 @@ static DECLCALLBACK(int) pl011R3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
     rc = pHlp->pfnSSMGetGCPhys(pSSM, &GCPhysMmioBase);
     AssertRCReturn(rc, rc);
     if (GCPhysMmioBase != pThis->GCPhysMmioBase)
-        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - GCPhysMmioBase: saved=%RTiop config=%RTiop"), GCPhysMmioBase, pThis->GCPhysMmioBase);
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - GCPhysMmioBase: saved=%RGp config=%RGp"), GCPhysMmioBase, pThis->GCPhysMmioBase);
 
     if (uPass != SSM_PASS_FINAL)
         return VINF_SUCCESS;
