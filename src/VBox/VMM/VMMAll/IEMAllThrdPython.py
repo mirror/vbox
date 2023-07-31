@@ -872,13 +872,15 @@ class ThreadedFunctionVariation(object):
 
         return True;
 
-    def emitThreadedCallStmts(self, cchIndent):
+    def emitThreadedCallStmts(self, cchIndent, sCallVarNm = None):
         """
         Produces generic C++ statments that emits a call to the thread function
         variation and any subsequent checks that may be necessary after that.
+
+        The sCallVarNm is for emitting
         """
         # The call to the threaded function.
-        sCode = 'IEM_MC2_EMIT_CALL_%s(%s' % (self.cMinParams, self.getIndexName(), );
+        asCallArgs = [ self.getIndexName() if not sCallVarNm else sCallVarNm, ];
         for iParam in range(self.cMinParams):
             asFrags = [];
             for aoRefs in self.dParamRefs.values():
@@ -892,26 +894,24 @@ class ThreadedFunctionVariation(object):
                     else:
                         asFrags.append('(%s(%s) << %s)' % (sCast, oRef.sOrgRef, oRef.offNewParam));
             assert asFrags;
-            sCode += ', ' + ' | '.join(asFrags);
-        sCode += ');';
+            asCallArgs.append(' | '.join(asFrags));
 
         sCImplFlags = ' | '.join(self.dsCImplFlags.keys());
         if not sCImplFlags:
             sCImplFlags = '0'
 
         aoStmts = [
-            iai.McCppGeneric('IEM_MC2_BEGIN_EMIT_CALLS();', cchIndent = cchIndent), # Scope and a hook for various stuff.
-            iai.McCppGeneric(sCode, cchIndent = cchIndent),
+            iai.McCppCall('IEM_MC2_BEGIN_EMIT_CALLS', [], cchIndent = cchIndent), # Scope and a hook for various stuff.
+            iai.McCppCall('IEM_MC2_EMIT_CALL_%s' % (len(asCallArgs) - 1,), asCallArgs, cchIndent = cchIndent),
         ];
 
         # For CIMPL stuff, we need to consult the associated IEM_CIMPL_F_XXX
         # mask and maybe emit additional checks.
         if 'IEM_CIMPL_F_MODE' in self.dsCImplFlags or 'IEM_CIMPL_F_XCPT' in self.dsCImplFlags:
-            aoStmts.append(iai.McCppGeneric('IEM_MC2_EMIT_CALL_1(kIemThreadedFunc_CheckMode, pVCpu->iem.s.fExec);',
-                                            cchIndent = cchIndent));
+            aoStmts.append(iai.McCppCall('IEM_MC2_EMIT_CALL_1', ( 'kIemThreadedFunc_CheckMode', 'pVCpu->iem.s.fExec', ),
+                                         cchIndent = cchIndent));
 
-        aoStmts.append(iai.McCppGeneric('IEM_MC2_END_EMIT_CALLS(' + sCImplFlags + ');',
-                                        cchIndent = cchIndent)); # For closing the scope.
+        aoStmts.append(iai.McCppCall('IEM_MC2_END_EMIT_CALLS', ( sCImplFlags, ), cchIndent = cchIndent)); # For closing the scope.
 
         # Emit fEndTb = true or fTbBranched = true if any of the CIMPL flags
         # indicates we should do so.
@@ -1033,10 +1033,18 @@ class ThreadedFunction(object):
             assert  self.aoVariations[0].sVariation == ThreadedFunctionVariation.ksVariation_Default;
             return self.aoVariations[0].emitThreadedCallStmts(0);
 
+        #
+        # Case statement sub-class.
+        #
+        dByVari = self.dVariations;
+        #fDbg = self.oMcBlock.sFunction == 'iemOpCommonPushSReg';
         class Case:
-            def __init__(self, sCond, aoBody = None):
+            def __init__(self, sCond, sVarNm = None):
                 self.sCond  = sCond;
-                self.aoBody = aoBody  # type: list(iai.McCppGeneric)
+                self.sVarNm = sVarNm;
+                self.oVar   = dByVari[sVarNm] if sVarNm else None;
+                self.aoBody = self.oVar.emitThreadedCallStmts(8) if sVarNm else None;
+
             def toCode(self):
                 aoStmts = [ iai.McCppGeneric('case %s:' % (self.sCond), cchIndent = 4), ];
                 if self.aoBody:
@@ -1044,10 +1052,50 @@ class ThreadedFunction(object):
                     aoStmts.append(iai.McCppGeneric('break;', cchIndent = 8));
                 return aoStmts;
 
-        dByVari = self.dVariations;
+            def toFunctionAssignment(self):
+                aoStmts = [ iai.McCppGeneric('case %s:' % (self.sCond), cchIndent = 4), ];
+                if self.aoBody:
+                    aoStmts.extend([
+                        iai.McCppGeneric('enmFunction = %s;' % (self.oVar.getIndexName(),), cchIndent = 8),
+                        iai.McCppGeneric('break;', cchIndent = 8),
+                    ]);
+                return aoStmts;
 
+            def isSame(self, oThat):
+                if not self.aoBody:                 # fall thru always matches.
+                    return True;
+                if len(self.aoBody) != len(oThat.aoBody):
+                    #if fDbg: print('dbg: body len diff: %s vs %s' % (len(self.aoBody), len(oThat.aoBody),));
+                    return False;
+                for iStmt, oStmt in enumerate(self.aoBody):
+                    oThatStmt = oThat.aoBody[iStmt] # type: iai.McStmt
+                    assert isinstance(oStmt, iai.McCppGeneric);
+                    assert not isinstance(oStmt, iai.McStmtCond);
+                    if isinstance(oStmt, iai.McStmtCond):
+                        return False;
+                    if oStmt.sName != oThatStmt.sName:
+                        #if fDbg: print('dbg: stmt #%s name: %s vs %s' % (iStmt, oStmt.sName, oThatStmt.sName,));
+                        return False;
+                    if len(oStmt.asParams) != len(oThatStmt.asParams):
+                        #if fDbg: print('dbg: stmt #%s param count: %s vs %s'
+                        #               % (iStmt, len(oStmt.asParams), len(oThatStmt.asParams),));
+                        return False;
+                    for iParam, sParam in enumerate(oStmt.asParams):
+                        if (    sParam != oThatStmt.asParams[iParam]
+                            and (   iParam != 1
+                                 or not isinstance(oStmt, iai.McCppCall)
+                                 or not oStmt.asParams[0].startswith('IEM_MC2_EMIT_CALL_')
+                                 or sParam != self.oVar.getIndexName()
+                                 or oThatStmt.asParams[iParam] != oThat.oVar.getIndexName() )):
+                            #if fDbg: print('dbg: stmt #%s, param #%s: %s vs %s'
+                            #               % (iStmt, iParam, sParam, oThatStmt.asParams[iParam],));
+                            return False;
+                return True;
+
+        #
         # Determine what we're switch on.
         # This ASSUMES that (IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | IEM_F_MODE_CPUMODE_MASK) == 7!
+        #
         fSimple = True;
         sSwitchValue = 'pVCpu->iem.s.fExec & IEM_F_MODE_CPUMODE_MASK';
         if (   ThrdFnVar.ksVariation_64_Addr32 in dByVari
@@ -1058,59 +1106,83 @@ class ThreadedFunction(object):
             sSwitchValue += ' | (pVCpu->iem.s.enmEffAddrMode == (pVCpu->iem.s.fExec & IEM_F_MODE_CPUMODE_MASK) ? 0 : 8)';
             fSimple       = False;
 
+        #
         # Generate the case statements.
+        #
         # pylintx: disable=x
         aoCases = [];
         if ThreadedFunctionVariation.ksVariation_64_Addr32 in dByVari:
             assert not fSimple;
             aoCases.extend([
-                Case('IEMMODE_64BIT',     dByVari[ThrdFnVar.ksVariation_64].emitThreadedCallStmts(8)),
-                Case('IEMMODE_64BIT | 8', dByVari[ThrdFnVar.ksVariation_64_Addr32].emitThreadedCallStmts(8)),
+                Case('IEMMODE_64BIT',     ThrdFnVar.ksVariation_64),
+                Case('IEMMODE_64BIT | 8', ThrdFnVar.ksVariation_64_Addr32),
             ]);
         elif ThrdFnVar.ksVariation_64 in dByVari:
             assert fSimple;
-            aoCases.append(Case('IEMMODE_64BIT', dByVari[ThrdFnVar.ksVariation_64].emitThreadedCallStmts(8)));
+            aoCases.append(Case('IEMMODE_64BIT', ThrdFnVar.ksVariation_64));
 
         if ThrdFnVar.ksVariation_32_Addr16 in dByVari:
             assert not fSimple;
             aoCases.extend([
-                Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK',
-                     dByVari[ThrdFnVar.ksVariation_32_Flat].emitThreadedCallStmts(8)),
-                Case('IEMMODE_32BIT',
-                     dByVari[ThrdFnVar.ksVariation_32].emitThreadedCallStmts(8)),
-                Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 8'), # fall thru
-                Case('IEMMODE_32BIT | 8',
-                     dByVari[ThrdFnVar.ksVariation_32_Addr16].emitThreadedCallStmts(8)),
+                Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK', ThrdFnVar.ksVariation_32_Flat),
+                Case('IEMMODE_32BIT', ThrdFnVar.ksVariation_32),
+                Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 8', None), # fall thru
+                Case('IEMMODE_32BIT | 8', ThrdFnVar.ksVariation_32_Addr16),
             ]);
         elif ThrdFnVar.ksVariation_32 in dByVari:
             assert fSimple;
-            aoCases.append(Case('IEMMODE_32BIT', dByVari[ThrdFnVar.ksVariation_32].emitThreadedCallStmts(8)));
+            aoCases.append(Case('IEMMODE_32BIT', ThrdFnVar.ksVariation_32));
 
         if ThrdFnVar.ksVariation_16_Addr32 in dByVari:
             assert not fSimple;
             aoCases.extend([
-                Case('IEMMODE_16BIT',     dByVari[ThrdFnVar.ksVariation_16].emitThreadedCallStmts(8)),
-                Case('IEMMODE_16BIT | 8', dByVari[ThrdFnVar.ksVariation_16_Addr32].emitThreadedCallStmts(8)),
+                Case('IEMMODE_16BIT',     ThrdFnVar.ksVariation_16),
+                Case('IEMMODE_16BIT | 8', ThrdFnVar.ksVariation_16_Addr32),
             ]);
         elif ThrdFnVar.ksVariation_16 in dByVari:
             assert fSimple;
-            aoCases.append(Case('IEMMODE_16BIT', dByVari[ThrdFnVar.ksVariation_16].emitThreadedCallStmts(8)));
+            aoCases.append(Case('IEMMODE_16BIT', ThrdFnVar.ksVariation_16));
 
         if ThrdFnVar.ksVariation_16_Pre386 in dByVari:
-            aoCases.append(Case('IEMMODE_16BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK',
-                                dByVari[ThrdFnVar.ksVariation_16_Pre386].emitThreadedCallStmts(8)));
+            aoCases.append(Case('IEMMODE_16BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK', ThrdFnVar.ksVariation_16_Pre386));
 
-        # Generate the switch statement.
-        aoStmts = [
-            iai.McCppGeneric('switch (%s)' % (sSwitchValue,)),
-            iai.McCppGeneric('{'),
-        ];
-        for oCase in aoCases:
-            aoStmts.extend(oCase.toCode());
-        aoStmts.extend([
-            iai.McCppGeneric('IEM_NOT_REACHED_DEFAULT_CASE_RET();', cchIndent = 4),
-            iai.McCppGeneric('}'),
-        ]);
+        #
+        # If the case bodies are all the same, except for the function called,
+        # we can reduce the code size and hopefully compile time.
+        #
+        assert aoCases[0].aoBody;
+        fAllSameCases = True
+        for iCase in range(1, len(aoCases)):
+            fAllSameCases = fAllSameCases and aoCases[iCase].isSame(aoCases[0]);
+        #if fDbg: print('fAllSameCases=%s %s' % (fAllSameCases, self.oMcBlock.sFunction,));
+        if fAllSameCases:
+            aoStmts = [
+                iai.McCppGeneric('IEMTHREADEDFUNCS enmFunction;'),
+                iai.McCppGeneric('switch (%s)' % (sSwitchValue,)),
+                iai.McCppGeneric('{'),
+            ];
+            for oCase in aoCases:
+                aoStmts.extend(oCase.toFunctionAssignment());
+            aoStmts.extend([
+                iai.McCppGeneric('IEM_NOT_REACHED_DEFAULT_CASE_RET();', cchIndent = 4),
+                iai.McCppGeneric('}'),
+            ]);
+            aoStmts.extend(dByVari[aoCases[0].sVarNm].emitThreadedCallStmts(0, 'enmFunction'));
+
+        else:
+            #
+            # Generate the generic switch statement.
+            #
+            aoStmts = [
+                iai.McCppGeneric('switch (%s)' % (sSwitchValue,)),
+                iai.McCppGeneric('{'),
+            ];
+            for oCase in aoCases:
+                aoStmts.extend(oCase.toCode());
+            aoStmts.extend([
+                iai.McCppGeneric('IEM_NOT_REACHED_DEFAULT_CASE_RET();', cchIndent = 4),
+                iai.McCppGeneric('}'),
+            ]);
 
         return aoStmts;
 

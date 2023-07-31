@@ -1881,6 +1881,26 @@ class McCppGeneric(McStmt):
             sRet = sRet.replace('\n', ' // C++ normal\n');
         return sRet;
 
+class McCppCall(McCppGeneric):
+    """
+    A generic C++/C call statement.
+
+    The sName is still 'C++', so the function name is in the first parameter
+    and the the arguments in the subsequent ones.
+    """
+    def __init__(self, sFnName, asArgs, fDecode = True, cchIndent = 0):
+        McCppGeneric.__init__(self, sFnName, fDecode = fDecode, cchIndent = cchIndent);
+        self.asParams.extend(asArgs);
+
+    def renderCode(self, cchIndent = 0):
+        cchIndent += self.cchIndent;
+        sRet = ' ' * cchIndent + self.asParams[0] + '(' + ','.join(self.asParams[1:]) + ');';
+        if self.fDecode:
+            sRet += ' // C++ decode\n';
+        else:
+            sRet += ' // C++ normal\n';
+        return sRet;
+
 class McCppCond(McStmtCond):
     """
     C++/C 'if' statement.
