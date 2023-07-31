@@ -49,6 +49,9 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+/** Some ancient version... */
+#define GIC_SAVED_STATE_VERSION                     1
+
 # define GIC_SYSREGRANGE(a_uFirst, a_uLast, a_szName) \
     { (a_uFirst), (a_uLast), kCpumSysRegRdFn_GicV3Icc, kCpumSysRegWrFn_GicV3Icc, 0, 0, 0, 0, 0, 0, a_szName, { 0 }, { 0 }, { 0 }, { 0 } }
 
@@ -148,6 +151,180 @@ static DECLCALLBACK(void) gicR3InfoReDist(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     pHlp->pfnPrintf(pHlp, "  bBinaryPointGrp1   = %u\n",      pGicVCpu->bBinaryPointGrp1);
     pHlp->pfnPrintf(pHlp, "  idxRunningPriority = %u\n",      pGicVCpu->idxRunningPriority);
     pHlp->pfnPrintf(pHlp, "  Running priority   = %u\n",      pGicVCpu->abRunningPriorities[pGicVCpu->idxRunningPriority]);
+}
+
+
+/**
+ * Worker for saving per-VM GIC data.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   pVM     The cross context VM structure.
+ * @param   pSSM    The SSM handle.
+ */
+static int gicR3SaveVMData(PPDMDEVINS pDevIns, PVM pVM, PSSMHANDLE pSSM)
+{
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
+    PGICDEV         pGicDev = PDMDEVINS_2_DATA(pDevIns, PGICDEV);
+
+    pHlp->pfnSSMPutU32( pSSM, pVM->cCpus);
+    pHlp->pfnSSMPutU32( pSSM, GIC_SPI_MAX);
+    pHlp->pfnSSMPutU32( pSSM, pGicDev->u32RegIGrp0);
+    pHlp->pfnSSMPutU32( pSSM, pGicDev->u32RegICfg0);
+    pHlp->pfnSSMPutU32( pSSM, pGicDev->u32RegICfg1);
+    pHlp->pfnSSMPutU32( pSSM, pGicDev->bmIntEnabled);
+    pHlp->pfnSSMPutU32( pSSM, pGicDev->bmIntPending);
+    pHlp->pfnSSMPutU32( pSSM, pGicDev->bmIntActive);
+    pHlp->pfnSSMPutMem( pSSM, (void *)&pGicDev->abIntPriority[0], sizeof(pGicDev->abIntPriority));
+    pHlp->pfnSSMPutBool(pSSM, pGicDev->fIrqGrp0Enabled);
+
+    return pHlp->pfnSSMPutBool(pSSM, pGicDev->fIrqGrp1Enabled);
+}
+
+
+/**
+ * Worker for loading per-VM GIC data.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   pVM     The cross context VM structure.
+ * @param   pSSM    The SSM handle.
+ */
+static int gicR3LoadVMData(PPDMDEVINS pDevIns, PVM pVM, PSSMHANDLE pSSM)
+{
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
+    PGICDEV         pGicDev = PDMDEVINS_2_DATA(pDevIns, PGICDEV);
+
+    /* Load and verify number of CPUs. */
+    uint32_t cCpus;
+    int rc = pHlp->pfnSSMGetU32(pSSM, &cCpus);
+    AssertRCReturn(rc, rc);
+    if (cCpus != pVM->cCpus)
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - cCpus: saved=%u config=%u"), cCpus, pVM->cCpus);
+
+    /* Load and verify maximum number of SPIs. */
+    uint32_t cSpisMax;
+    rc = pHlp->pfnSSMGetU32(pSSM, &cSpisMax);
+    AssertRCReturn(rc, rc);
+    if (cSpisMax != GIC_SPI_MAX)
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - cSpisMax: saved=%u config=%u"),
+                                       cSpisMax, GIC_SPI_MAX);
+
+    /* Load the state. */
+    pHlp->pfnSSMGetU32V( pSSM, &pGicDev->u32RegIGrp0);
+    pHlp->pfnSSMGetU32V( pSSM, &pGicDev->u32RegICfg0);
+    pHlp->pfnSSMGetU32V( pSSM, &pGicDev->u32RegICfg1);
+    pHlp->pfnSSMGetU32V( pSSM, &pGicDev->bmIntEnabled);
+    pHlp->pfnSSMGetU32V( pSSM, &pGicDev->bmIntPending);
+    pHlp->pfnSSMGetU32V( pSSM, &pGicDev->bmIntActive);
+    pHlp->pfnSSMGetMem(  pSSM, (void *)&pGicDev->abIntPriority[0], sizeof(pGicDev->abIntPriority));
+    pHlp->pfnSSMGetBoolV(pSSM, &pGicDev->fIrqGrp0Enabled);
+    pHlp->pfnSSMGetBoolV(pSSM, &pGicDev->fIrqGrp1Enabled);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @copydoc FNSSMDEVSAVEEXEC
+ */
+static DECLCALLBACK(int) gicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    PVM             pVM  = PDMDevHlpGetVM(pDevIns);
+    PCPDMDEVHLPR3   pHlp = pDevIns->pHlpR3;
+
+    AssertReturn(pVM, VERR_INVALID_VM_HANDLE);
+
+    LogFlow(("GIC: gicR3SaveExec\n"));
+
+    /* Save per-VM data. */
+    int rc = gicR3SaveVMData(pDevIns, pVM, pSSM);
+    AssertRCReturn(rc, rc);
+
+    /* Save per-VCPU data.*/
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+        PGICCPU pGicVCpu = VMCPU_TO_GICCPU(pVCpu);
+
+        /* Load the redistributor state. */
+        pHlp->pfnSSMPutU32(pSSM, pGicVCpu->u32RegIGrp0);
+        pHlp->pfnSSMPutU32(pSSM, pGicVCpu->u32RegICfg0);
+        pHlp->pfnSSMPutU32(pSSM, pGicVCpu->u32RegICfg1);
+        pHlp->pfnSSMPutU32(pSSM, pGicVCpu->bmIntEnabled);
+        pHlp->pfnSSMPutU32(pSSM, pGicVCpu->bmIntPending);
+        pHlp->pfnSSMPutU32(pSSM, pGicVCpu->bmIntActive);
+        pHlp->pfnSSMPutMem(pSSM, (void *)&pGicVCpu->abIntPriority[0], sizeof(pGicVCpu->abIntPriority));
+
+        pHlp->pfnSSMPutU32(pSSM, pGicVCpu->fIrqGrp0Enabled);
+        pHlp->pfnSSMPutU32(pSSM, pGicVCpu->fIrqGrp1Enabled);
+        pHlp->pfnSSMPutU8( pSSM, pGicVCpu->bInterruptPriority);
+        pHlp->pfnSSMPutU8( pSSM, pGicVCpu->bBinaryPointGrp0);
+        pHlp->pfnSSMPutU8( pSSM, pGicVCpu->bBinaryPointGrp1);
+        pHlp->pfnSSMPutMem(pSSM, (void *)&pGicVCpu->abRunningPriorities[0], sizeof(pGicVCpu->abRunningPriorities));
+        pHlp->pfnSSMPutU8( pSSM, pGicVCpu->idxRunningPriority);
+    }
+
+    return rc;
+}
+
+
+/**
+ * @copydoc FNSSMDEVLOADEXEC
+ */
+static DECLCALLBACK(int) gicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+{
+    PVM             pVM  = PDMDevHlpGetVM(pDevIns);
+    PCPDMDEVHLPR3   pHlp = pDevIns->pHlpR3;
+
+    AssertReturn(pVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(uPass == SSM_PASS_FINAL, VERR_WRONG_ORDER);
+
+    LogFlow(("GIC: gicR3LoadExec: uVersion=%u uPass=%#x\n", uVersion, uPass));
+
+    /* Weed out invalid versions. */
+    if (uVersion != GIC_SAVED_STATE_VERSION)
+    {
+        LogRel(("GIC: gicR3LoadExec: Invalid/unrecognized saved-state version %u (%#x)\n", uVersion, uVersion));
+        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+    }
+
+    int rc = gicR3LoadVMData(pDevIns, pVM, pSSM);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Restore per CPU state.
+     *
+     * Note! PDM will restore the VMCPU_FF_INTERRUPT_IRQ and VMCPU_FF_INTERRUPT_FIQ flags for us.
+     *       This code doesn't touch it.  No devices should make us touch
+     *       it later during the restore either, only during the 'done' phase.
+     */
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPU  pVCpu    = pVM->apCpusR3[idCpu];
+        PGICCPU pGicVCpu = VMCPU_TO_GICCPU(pVCpu);
+
+        /* Load the redistributor state. */
+        pHlp->pfnSSMGetU32V(    pSSM, &pGicVCpu->u32RegIGrp0);
+        pHlp->pfnSSMGetU32V(    pSSM, &pGicVCpu->u32RegICfg0);
+        pHlp->pfnSSMGetU32V(    pSSM, &pGicVCpu->u32RegICfg1);
+        pHlp->pfnSSMGetU32V(    pSSM, &pGicVCpu->bmIntEnabled);
+        pHlp->pfnSSMGetU32V(    pSSM, &pGicVCpu->bmIntPending);
+        pHlp->pfnSSMGetU32V(    pSSM, &pGicVCpu->bmIntActive);
+        pHlp->pfnSSMGetMem(     pSSM, (void *)&pGicVCpu->abIntPriority[0], sizeof(pGicVCpu->abIntPriority));
+
+        pHlp->pfnSSMGetBoolV(   pSSM, &pGicVCpu->fIrqGrp0Enabled);
+        pHlp->pfnSSMGetBoolV(   pSSM, &pGicVCpu->fIrqGrp1Enabled);
+        pHlp->pfnSSMGetU8V(     pSSM, &pGicVCpu->bInterruptPriority);
+        pHlp->pfnSSMGetU8(      pSSM, &pGicVCpu->bBinaryPointGrp0);
+        pHlp->pfnSSMGetU8(      pSSM, &pGicVCpu->bBinaryPointGrp1);
+        pHlp->pfnSSMGetMem(     pSSM, (void *)&pGicVCpu->abRunningPriorities[0], sizeof(pGicVCpu->abRunningPriorities));
+        rc = pHlp->pfnSSMGetU8V(pSSM, &pGicVCpu->idxRunningPriority);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    return rc;
 }
 
 
@@ -279,6 +456,12 @@ DECLCALLBACK(int) gicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pC
     RTGCPHYS cbRegion = pVM->cCpus * (GIC_REDIST_REG_FRAME_SIZE + GIC_REDIST_SGI_PPI_REG_FRAME_SIZE); /* Adjacent and per vCPU. */
     rc = PDMDevHlpMmioCreateAndMap(pDevIns, GCPhysMmioBase, cbRegion, gicReDistMmioWrite, gicReDistMmioRead,
                                    IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED, "GICv3_ReDist", &pGicDev->hMmioReDist);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Register saved state callbacks.
+     */
+    rc = PDMDevHlpSSMRegister(pDevIns, GIC_SAVED_STATE_VERSION, 0, gicR3SaveExec, gicR3LoadExec);
     AssertRCReturn(rc, rc);
 
     /*
