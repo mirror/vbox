@@ -1039,8 +1039,9 @@ class ThreadedFunction(object):
                 self.aoBody = aoBody  # type: list(iai.McCppGeneric)
             def toCode(self):
                 aoStmts = [ iai.McCppGeneric('case %s:' % (self.sCond), cchIndent = 4), ];
-                aoStmts.extend(self.aoBody);
-                aoStmts.append(iai.McCppGeneric('break;', cchIndent = 8));
+                if self.aoBody:
+                    aoStmts.extend(self.aoBody);
+                    aoStmts.append(iai.McCppGeneric('break;', cchIndent = 8));
                 return aoStmts;
 
         dByVari = self.dVariations;
@@ -1077,8 +1078,7 @@ class ThreadedFunction(object):
                      dByVari[ThrdFnVar.ksVariation_32_Flat].emitThreadedCallStmts(8)),
                 Case('IEMMODE_32BIT',
                      dByVari[ThrdFnVar.ksVariation_32].emitThreadedCallStmts(8)),
-                Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 8',
-                     dByVari[ThrdFnVar.ksVariation_32_Addr16].emitThreadedCallStmts(8)),
+                Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 8'), # fall thru
                 Case('IEMMODE_32BIT | 8',
                      dByVari[ThrdFnVar.ksVariation_32_Addr16].emitThreadedCallStmts(8)),
             ]);
