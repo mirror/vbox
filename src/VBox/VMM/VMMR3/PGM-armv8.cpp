@@ -768,9 +768,9 @@ VMMDECL(int) PGMShwMakePageNotPresent(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t fO
 
 VMM_INT_DECL(int) PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMode, bool fForce)
 {
-    AssertReleaseFailed();
+    //AssertReleaseFailed(); /** @todo Called by the PGM saved state code. */
     RT_NOREF(pVM, pVCpu, enmGuestMode, fForce);
-    return VERR_NOT_SUPPORTED;
+    return VINF_SUCCESS;
 }
 
 
