@@ -545,6 +545,11 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
 
     if (uPass == SSM_PASS_FINAL)
     {
+        uint32_t cCpus;
+        int rc = SSMR3GetU32(pSSM, &cCpus); AssertRCReturn(rc, rc);
+        AssertLogRelMsgReturn(cCpus == pVM->cCpus, ("Mismatching CPU counts: saved: %u; configured: %u \n", cCpus, pVM->cCpus),
+                              VERR_SSM_UNEXPECTED_DATA);
+
         /*
          * Do the per-CPU restoring.
          */
@@ -554,9 +559,9 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
             PCPUMCTX pGstCtx = &pVCpu->cpum.s.Guest;
 
             /*
-             * Start by restoring the CPUMCTX structure and the X86FXSAVE bits of the extended state.
+             * Restore the CPUMCTX structure.
              */
-            int rc = SSMR3GetStructEx(pSSM, pGstCtx,                  sizeof(*pGstCtx),                0, g_aCpumCtxFields, NULL);
+            rc = SSMR3GetStructEx(pSSM, pGstCtx, sizeof(*pGstCtx), 0, g_aCpumCtxFields, NULL);
             AssertRCReturn(rc, rc);
 
             /*
