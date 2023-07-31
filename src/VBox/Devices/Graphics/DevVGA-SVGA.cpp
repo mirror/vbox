@@ -7354,7 +7354,7 @@ static void vmsvgaR3PowerOnDevice(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATE
          */
         Assert(   (pThis->svga.u32DeviceCaps & u32DeviceCaps) == pThis->svga.u32DeviceCaps
                && (pThis->svga.u32DeviceCaps2 & u32DeviceCaps2) == pThis->svga.u32DeviceCaps2
-               && (   !pThis->fVmSvga3
+               && (   pThis->fVmSvga3
                    || (pThisCC->svga.pau32FIFO[SVGA_FIFO_CAPABILITIES] & u32FIFOCaps) == pThisCC->svga.pau32FIFO[SVGA_FIFO_CAPABILITIES]));
     }
 #endif
