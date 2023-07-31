@@ -308,8 +308,9 @@ def getHostOsVersion():
             codenames_afterCatalina = {"11": "Big Sur",
                                        "12": "Monterey",
                                        "13": "Ventura",
-                                       "14": "Unknown 14",
-                                       "15": "Unknown 15"}
+                                       "14": "Sonoma",
+                                       "15": "Unknown 15",
+                                       "16": "Unknown 16"}
 
             if aOsVersion[0] == '10':
                 sResult = codenames[aOsVersion[1]]
