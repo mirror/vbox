@@ -45,7 +45,7 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_cpum      The CPU Monitor / Manager API
+/** @defgroup grp_cpum_armv8      The CPU Monitor / Manager API
  * @ingroup grp_vmm
  * @{
  */
