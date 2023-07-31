@@ -1043,42 +1043,57 @@ class ThreadedFunction(object):
                 aoStmts.append(iai.McCppGeneric('break;', cchIndent = 8));
                 return aoStmts;
 
+        dByVari = self.dVariations;
+
+        # Determine what we're switch on.
+        # This ASSUMES that (IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | IEM_F_MODE_CPUMODE_MASK) == 7!
+        fSimple = True;
+        sSwitchValue = 'pVCpu->iem.s.fExec & IEM_F_MODE_CPUMODE_MASK';
+        if (   ThrdFnVar.ksVariation_64_Addr32 in dByVari
+            or ThrdFnVar.ksVariation_32_Addr16 in dByVari
+            or ThrdFnVar.ksVariation_32_Flat   in dByVari
+            or ThrdFnVar.ksVariation_16_Addr32 in dByVari):
+            sSwitchValue  = '(pVCpu->iem.s.fExec & (IEM_F_MODE_CPUMODE_MASK | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK))';
+            sSwitchValue += ' | (pVCpu->iem.s.enmEffAddrMode == (pVCpu->iem.s.fExec & IEM_F_MODE_CPUMODE_MASK) ? 0 : 8)';
+            fSimple       = False;
+
         # Generate the case statements.
         # pylintx: disable=x
-        dByVari = self.dVariations;
         aoCases = [];
         if ThreadedFunctionVariation.ksVariation_64_Addr32 in dByVari:
-            aoCases.append(Case('IEMMODE_64BIT', [
-                iai.McCppCond('RT_LIKELY(pVCpu->iem.s.enmEffAddrMode == IEMMODE_64BIT)', fDecode = True, cchIndent = 8,
-                              aoIfBranch   = dByVari[ThrdFnVar.ksVariation_64].emitThreadedCallStmts(0),
-                              aoElseBranch = dByVari[ThrdFnVar.ksVariation_64_Addr32].emitThreadedCallStmts(0)),
-            ]));
+            assert not fSimple;
+            aoCases.extend([
+                Case('IEMMODE_64BIT',     dByVari[ThrdFnVar.ksVariation_64].emitThreadedCallStmts(8)),
+                Case('IEMMODE_64BIT | 8', dByVari[ThrdFnVar.ksVariation_64_Addr32].emitThreadedCallStmts(8)),
+            ]);
         elif ThrdFnVar.ksVariation_64 in dByVari:
+            assert fSimple;
             aoCases.append(Case('IEMMODE_64BIT', dByVari[ThrdFnVar.ksVariation_64].emitThreadedCallStmts(8)));
 
         if ThrdFnVar.ksVariation_32_Addr16 in dByVari:
+            assert not fSimple;
             aoCases.extend([
-                Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK', [
-                    iai.McCppCond('RT_LIKELY(pVCpu->iem.s.enmEffAddrMode == IEMMODE_32BIT)', fDecode = True, cchIndent = 8,
-                                  aoIfBranch   = dByVari[ThrdFnVar.ksVariation_32_Flat].emitThreadedCallStmts(0),
-                                  aoElseBranch = dByVari[ThrdFnVar.ksVariation_32_Addr16].emitThreadedCallStmts(0)),
-                ]),
-                Case('IEMMODE_32BIT', [
-                    iai.McCppCond('RT_LIKELY(pVCpu->iem.s.enmEffAddrMode == IEMMODE_32BIT)', fDecode = True, cchIndent = 8,
-                                  aoIfBranch   = dByVari[ThrdFnVar.ksVariation_32].emitThreadedCallStmts(0),
-                                  aoElseBranch = dByVari[ThrdFnVar.ksVariation_32_Addr16].emitThreadedCallStmts(0)),
-                ]),
+                Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK',
+                     dByVari[ThrdFnVar.ksVariation_32_Flat].emitThreadedCallStmts(8)),
+                Case('IEMMODE_32BIT',
+                     dByVari[ThrdFnVar.ksVariation_32].emitThreadedCallStmts(8)),
+                Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 8',
+                     dByVari[ThrdFnVar.ksVariation_32_Addr16].emitThreadedCallStmts(8)),
+                Case('IEMMODE_32BIT | 8',
+                     dByVari[ThrdFnVar.ksVariation_32_Addr16].emitThreadedCallStmts(8)),
             ]);
         elif ThrdFnVar.ksVariation_32 in dByVari:
+            assert fSimple;
             aoCases.append(Case('IEMMODE_32BIT', dByVari[ThrdFnVar.ksVariation_32].emitThreadedCallStmts(8)));
 
         if ThrdFnVar.ksVariation_16_Addr32 in dByVari:
-            aoCases.append(Case('IEMMODE_16BIT', [
-                iai.McCppCond('RT_LIKELY(pVCpu->iem.s.enmEffAddrMode == IEMMODE_16BIT)', fDecode = True, cchIndent = 8,
-                              aoIfBranch   = dByVari[ThrdFnVar.ksVariation_16].emitThreadedCallStmts(0),
-                              aoElseBranch = dByVari[ThrdFnVar.ksVariation_16_Addr32].emitThreadedCallStmts(0)),
-            ]));
+            assert not fSimple;
+            aoCases.extend([
+                Case('IEMMODE_16BIT',     dByVari[ThrdFnVar.ksVariation_16].emitThreadedCallStmts(8)),
+                Case('IEMMODE_16BIT | 8', dByVari[ThrdFnVar.ksVariation_16_Addr32].emitThreadedCallStmts(8)),
+            ]);
         elif ThrdFnVar.ksVariation_16 in dByVari:
+            assert fSimple;
             aoCases.append(Case('IEMMODE_16BIT', dByVari[ThrdFnVar.ksVariation_16].emitThreadedCallStmts(8)));
 
         if ThrdFnVar.ksVariation_16_Pre386 in dByVari:
@@ -1086,15 +1101,8 @@ class ThreadedFunction(object):
                                 dByVari[ThrdFnVar.ksVariation_16_Pre386].emitThreadedCallStmts(8)));
 
         # Generate the switch statement.
-        sExecMask = 'IEM_F_MODE_CPUMODE_MASK';
-        if (   ThrdFnVar.ksVariation_64_Addr32 in dByVari
-            or ThrdFnVar.ksVariation_32_Addr16 in dByVari
-            or ThrdFnVar.ksVariation_32_Flat   in dByVari
-            or ThrdFnVar.ksVariation_16_Addr32 in dByVari):
-            sExecMask = '(IEM_F_MODE_CPUMODE_MASK | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK)';
-
         aoStmts = [
-            iai.McCppGeneric('switch (pVCpu->iem.s.fExec & %s)' % (sExecMask,)),
+            iai.McCppGeneric('switch (%s)' % (sSwitchValue,)),
             iai.McCppGeneric('{'),
         ];
         for oCase in aoCases:
@@ -1572,9 +1580,10 @@ class IEMThreadedGenerator(object):
         Returns success indicator.
         """
         #
-        # File header.
+        # File header and assert assumptions.
         #
         oOut.write('\n'.join(self.generateLicenseHeader()));
+        oOut.write('AssertCompile((IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | IEM_F_MODE_CPUMODE_MASK) == 7);\n');
 
         #
         # Iterate all parsers (input files) and output the ones related to the
