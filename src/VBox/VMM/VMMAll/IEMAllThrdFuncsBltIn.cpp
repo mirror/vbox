@@ -80,8 +80,7 @@ static VBOXSTRICTRC iemThreadeFuncWorkerObsoleteTb(PVMCPUCC pVCpu)
 /**
  * Built-in function that calls a C-implemention function taking zero arguments.
  */
-IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_DeferToCImpl0,
-                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_DeferToCImpl0)
 {
     PFNIEMCIMPL0 const pfnCImpl = (PFNIEMCIMPL0)(uintptr_t)uParam0;
     uint8_t const      cbInstr  = (uint8_t)uParam1;
@@ -93,8 +92,7 @@ IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_DeferToCImpl0,
 /**
  * Built-in function that compares the fExec mask against uParam0.
  */
-IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckMode,
-                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckMode)
 {
     uint32_t const fExpectedExec = (uint32_t)uParam0;
     if (pVCpu->iem.s.fExec == fExpectedExec)
@@ -283,8 +281,7 @@ DECL_FORCE_INLINE(RTGCPHYS) iemTbGetRangePhysPageAddr(PCIEMTB pTb, uint8_t idxRa
  * Built-in function that checks the EIP/IP + uParam0 is within CS.LIM,
  * raising a \#GP(0) if this isn't the case.
  */
-IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLim,
-                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckCsLim)
 {
     uint32_t const cbInstr = (uint32_t)uParam0;
     RT_NOREF(uParam1, uParam2);
@@ -297,8 +294,7 @@ IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLim,
  * Built-in function for re-checking opcodes and CS.LIM after an instruction
  * that may have modified them.
  */
-IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodes,
-                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckCsLimAndOpcodes)
 {
     PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
     uint32_t const cbInstr  = (uint32_t)uParam0;
@@ -314,8 +310,7 @@ IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodes,
  * Built-in function for re-checking opcodes after an instruction that may have
  * modified them.
  */
-IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodes,
-                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodes)
 {
     PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
     uint32_t const cbInstr  = (uint32_t)uParam0;
@@ -336,8 +331,7 @@ IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodes,
  *
  * @see iemThreadedFunc_BltIn_CheckPcAndOpcodes
  */
-IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndPcAndOpcodes,
-                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckCsLimAndPcAndOpcodes)
 {
     PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
     uint32_t const cbInstr  = (uint32_t)uParam0;
@@ -358,8 +352,7 @@ IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndPcAndOpcodes,
  *
  * @see iemThreadedFunc_BltIn_CheckCsLimAndPcAndOpcodes
  */
-IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckPcAndOpcodes,
-                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckPcAndOpcodes)
 {
     PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
     uint32_t const cbInstr  = (uint32_t)uParam0;
@@ -382,8 +375,7 @@ IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckPcAndOpcodes,
  *
  * @see iemThreadedFunc_BltIn_CheckOpcodesLoadingTlb
  */
-IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb,
-                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb)
 {
     PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
     uint32_t const cbInstr  = (uint32_t)uParam0;
@@ -407,8 +399,7 @@ IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadin
  *
  * @see iemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb
  */
-IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesLoadingTlb,
-                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesLoadingTlb)
 {
     PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
     uint32_t const cbInstr  = (uint32_t)uParam0;
@@ -437,8 +428,7 @@ IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesLoadingTlb,
  *
  * @see iemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoadingTlb
  */
-IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb,
-                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb)
 {
     PCIEMTB const  pTb         = pVCpu->iem.s.pCurTbR3;
     uint32_t const cbInstr     = (uint32_t)uParam0;
@@ -464,8 +454,7 @@ IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesAcross
  *
  * @see iemThreadedFunc_BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb
  */
-IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoadingTlb,
-                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoadingTlb)
 {
     PCIEMTB const  pTb         = pVCpu->iem.s.pCurTbR3;
     uint32_t const cbInstr     = (uint32_t)uParam0;
@@ -488,8 +477,7 @@ IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoad
  *
  * @see iemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoadingTlb
  */
-IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb,
-                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb)
 {
     PCIEMTB const  pTb         = pVCpu->iem.s.pCurTbR3;
     uint32_t const cbInstr     = (uint32_t)uParam0;
@@ -513,8 +501,7 @@ IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNext
  *
  * @see iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb
  */
-IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoadingTlb,
-                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoadingTlb)
 {
     PCIEMTB const  pTb         = pVCpu->iem.s.pCurTbR3;
     uint32_t const cbInstr     = (uint32_t)uParam0;
@@ -535,8 +522,7 @@ IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoad
  *
  * @see iemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingTlb
  */
-IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb,
-                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb)
 {
     PCIEMTB const  pTb         = pVCpu->iem.s.pCurTbR3;
     uint32_t const cbInstr     = (uint32_t)uParam0;
@@ -556,8 +542,7 @@ IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNewP
  *
  * @see iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb
  */
-IEM_DECL_IMPL_DEF(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingTlb,
-                  (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2))
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingTlb)
 {
     PCIEMTB const  pTb         = pVCpu->iem.s.pCurTbR3;
     uint32_t const cbInstr     = (uint32_t)uParam0;

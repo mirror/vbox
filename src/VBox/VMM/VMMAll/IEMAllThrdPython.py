@@ -1420,15 +1420,7 @@ class IEMThreadedGenerator(object):
         ];
 
         # Prototype the function table.
-        sFnType = 'typedef IEM_DECL_IMPL_TYPE(VBOXSTRICTRC, FNIEMTHREADEDFUNC, (PVMCPU pVCpu';
-        for iParam in range(g_kcThreadedParams):
-            sFnType += ', uint64_t uParam' + str(iParam);
-        sFnType += '));'
-
         asLines += [
-            sFnType,
-            'typedef FNIEMTHREADEDFUNC *PFNIEMTHREADEDFUNC;',
-            '',
             'extern const PFNIEMTHREADEDFUNC g_apfnIemThreadedFunctions[kIemThreadedFunc_End];',
             '#if defined(IN_RING3) || defined(LOG_ENABLED)',
             'extern const char * const       g_apszIemThreadedFunctions[kIemThreadedFunc_End];',
@@ -1454,12 +1446,6 @@ class IEMThreadedGenerator(object):
 
         asLines = self.generateLicenseHeader();
         oOut.write('\n'.join(asLines));
-
-        # Prepare the fixed bits.
-        sParamList = '(PVMCPU pVCpu';
-        for iParam in range(g_kcThreadedParams):
-            sParamList += ', uint64_t uParam' + str(iParam);
-        sParamList += '))\n';
 
         #
         # Emit the function definitions.
@@ -1488,8 +1474,7 @@ class IEMThreadedGenerator(object):
                                      os.path.split(oMcBlock.sSrcFile)[1],
                                      ' (macro expansion)' if oMcBlock.iBeginLine == oMcBlock.iEndLine else '')
                                + ' */\n'
-                               + 'static IEM_DECL_IMPL_DEF(VBOXSTRICTRC, ' + oVariation.getFunctionName() + ',\n'
-                               + '                         ' + sParamList
+                               + 'static IEM_DECL_IEMTHREADEDFUNC_DEF(' + oVariation.getFunctionName() + ')\n'
                                + '{\n');
 
                     aasVars = [];

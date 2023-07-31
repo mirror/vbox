@@ -4968,45 +4968,49 @@ extern const PFNIEMOP g_apfnIemThreadedRecompilerVecMap3[1024];
 
 void            iemThreadedTbObsolete(PVMCPUCC pVCpu, PIEMTB pTb);
 
-IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_DeferToCImpl0,
-                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+/** @todo FNIEMTHREADEDFUNC and friends may need more work... */
+#if defined(__GNUC__) && !defined(IEM_WITH_THROW_CATCH)
+typedef VBOXSTRICTRC __attribute__((__nothrow__)) FNIEMRECOMP(PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2);
+typedef FNIEMTHREADEDFUNC *PFNIEMTHREADEDFUNC;
+# define IEM_DECL_IEMTHREADEDFUNC_DEF(a_Name) \
+    VBOXSTRICTRC __attribute__((__nothrow__)) a_Name(PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2)
+# define IEM_DECL_IEMTHREADEDFUNC_PROTO(a_Name) \
+    VBOXSTRICTRC __attribute__((__nothrow__)) a_Name(PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2)
 
-IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckMode,
-                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
-IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLim,
-                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+#else
+typedef VBOXSTRICTRC (FNIEMTHREADEDFUNC)(PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2);
+typedef FNIEMTHREADEDFUNC *PFNIEMTHREADEDFUNC;
+# define IEM_DECL_IEMTHREADEDFUNC_DEF(a_Name) \
+    VBOXSTRICTRC a_Name(PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2) IEM_NOEXCEPT_MAY_LONGJMP
+# define IEM_DECL_IEMTHREADEDFUNC_PROTO(a_Name) \
+    VBOXSTRICTRC a_Name(PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2) IEM_NOEXCEPT_MAY_LONGJMP
+#endif
 
-IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodes,
-                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
-IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodes,
-                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+
+IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_DeferToCImpl0);
+
+IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckMode);
+IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckCsLim);
+
+IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckCsLimAndOpcodes);
+IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckOpcodes);
 
 /* Branching: */
-IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndPcAndOpcodes,
-                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
-IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckPcAndOpcodes,
-                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckCsLimAndPcAndOpcodes);
+IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckPcAndOpcodes);
 
-IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb,
-                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
-IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesLoadingTlb,
-                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb);
+IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckOpcodesLoadingTlb);
 
 /* Natural page crossing: */
-IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb,
-                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
-IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoadingTlb,
-                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb);
+IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoadingTlb);
 
-IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb,
-                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
-IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoadingTlb,
-                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb);
+IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoadingTlb);
 
-IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb,
-                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
-IEM_DECL_IMPL_PROTO(VBOXSTRICTRC, iemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingTlb,
-                    (PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2));
+IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb);
+IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingTlb);
 
 bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb);
 
