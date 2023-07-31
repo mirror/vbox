@@ -1894,7 +1894,7 @@ class McCppCall(McCppGeneric):
 
     def renderCode(self, cchIndent = 0):
         cchIndent += self.cchIndent;
-        sRet = ' ' * cchIndent + self.asParams[0] + '(' + ','.join(self.asParams[1:]) + ');';
+        sRet = ' ' * cchIndent + self.asParams[0] + '(' + ', '.join(self.asParams[1:]) + ');';
         if self.fDecode:
             sRet += ' // C++ decode\n';
         else:
