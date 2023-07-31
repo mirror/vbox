@@ -121,7 +121,7 @@ typedef struct DEVPL031
     RTGCPHYS                        GCPhysMmioBase;
     /** The IRQ value. */
     uint16_t                        u16Irq;
-    /** Flag whether to preload the load rgeister with the current time. */
+    /** Flag whether to preload the load register with the current time. */
     bool                            fLoadTime;
     /** Flag whether to use UTC for the time offset. */
     bool                            fUtcOffset;
@@ -378,8 +378,9 @@ static DECLCALLBACK(int) pl031R3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
     PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
     RT_NOREF(uPass);
 
-    pHlp->pfnSSMPutU16(pSSM, pThis->u16Irq);
+    pHlp->pfnSSMPutU16(   pSSM, pThis->u16Irq);
     pHlp->pfnSSMPutGCPhys(pSSM, pThis->GCPhysMmioBase);
+    pHlp->pfnSSMPutBool(  pSSM, pThis->fUtcOffset);
     return VINF_SSM_DONT_CALL_AGAIN;
 }
 
@@ -392,8 +393,16 @@ static DECLCALLBACK(int) pl031R3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     PDEVPL031       pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPL031);
     PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
 
-    pHlp->pfnSSMPutU16(pSSM, pThis->u16Irq);
-    pHlp->pfnSSMPutGCPhys(pSSM, pThis->GCPhysMmioBase);
+    /* The config. */
+    pl031R3LiveExec(pDevIns, pSSM, SSM_PASS_FINAL);
+
+    /* The state. */
+    pHlp->pfnSSMPutU32( pSSM, pThis->u32RtcDr);
+    pHlp->pfnSSMPutU32( pSSM, pThis->u32RtcMr);
+    pHlp->pfnSSMPutU32( pSSM, pThis->u32RtcLr);
+    pHlp->pfnSSMPutBool(pSSM, pThis->fRtcStarted);
+    pHlp->pfnSSMPutBool(pSSM, pThis->fRtcIrqMasked);
+    pHlp->pfnSSMPutBool(pSSM, pThis->fRtcIrqSts);
 
     return pHlp->pfnSSMPutU32(pSSM, UINT32_MAX); /* sanity/terminator */
 }
@@ -406,37 +415,46 @@ static DECLCALLBACK(int) pl031R3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
 {
     PDEVPL031       pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPL031);
     PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
-    uint16_t        u16Irq;
-    RTGCPHYS        GCPhysMmioBase;
     int rc;
 
-    RT_NOREF(uVersion);
+    if (uVersion != PL031_SAVED_STATE_VERSION)
+        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
-    pHlp->pfnSSMGetU16(   pSSM, &u16Irq);
-    pHlp->pfnSSMGetGCPhys(pSSM, &GCPhysMmioBase);
-    if (uPass == SSM_PASS_FINAL)
-    {
-        rc = VERR_NOT_IMPLEMENTED;
-        AssertRCReturn(rc, rc);
-    }
+    /* The config. */
+    uint16_t u16Irq;
+    rc = pHlp->pfnSSMGetU16(pSSM, &u16Irq);
+    AssertRCReturn(rc, rc);
+    if (u16Irq != pThis->u16Irq)
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - u16Irq: saved=%#x config=%#x"), u16Irq, pThis->u16Irq);
 
-    if (uPass == SSM_PASS_FINAL)
-    {
-        /* The marker. */
-        uint32_t u32;
-        rc = pHlp->pfnSSMGetU32(pSSM, &u32);
-        AssertRCReturn(rc, rc);
-        AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
-    }
+    RTGCPHYS GCPhysMmioBase;
+    rc = pHlp->pfnSSMGetGCPhys(pSSM, &GCPhysMmioBase);
+    AssertRCReturn(rc, rc);
+    if (GCPhysMmioBase != pThis->GCPhysMmioBase)
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - GCPhysMmioBase: saved=%RTiop config=%RTiop"), GCPhysMmioBase, pThis->GCPhysMmioBase);
 
-    /*
-     * Check the config.
-     */
-    if (   pThis->u16Irq         != u16Irq
-        || pThis->GCPhysMmioBase != GCPhysMmioBase)
-        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS,
-                                       N_("Config mismatch - saved Irq=%#x GCPhysMmioBase=%#RGp; configured Irq=%#x GCPhysMmioBase=%#RGp"),
-                                       u16Irq, GCPhysMmioBase, pThis->u16Irq, pThis->GCPhysMmioBase);
+    bool fUtcOffset;
+    rc = pHlp->pfnSSMGetBool(pSSM, &fUtcOffset);
+    AssertRCReturn(rc, rc);
+    if (fUtcOffset != pThis->fUtcOffset)
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - fUtcOffset: saved=%RTbool config=%RTbool"), fUtcOffset, pThis->fUtcOffset);
+
+    if (uPass != SSM_PASS_FINAL)
+        return VINF_SUCCESS;
+
+    /* The state. */
+    pHlp->pfnSSMGetU32( pSSM, &pThis->u32RtcDr);
+    pHlp->pfnSSMGetU32( pSSM, &pThis->u32RtcMr);
+    pHlp->pfnSSMGetU32( pSSM, &pThis->u32RtcLr);
+    pHlp->pfnSSMGetBool(pSSM, &pThis->fRtcStarted);
+    pHlp->pfnSSMGetBool(pSSM, &pThis->fRtcIrqMasked);
+    pHlp->pfnSSMGetBool(pSSM, &pThis->fRtcIrqSts);
+
+    /* The marker. */
+    uint32_t u32;
+    rc = pHlp->pfnSSMGetU32(pSSM, &u32);
+    AssertRCReturn(rc, rc);
+    AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
     return VINF_SUCCESS;
 }
@@ -447,11 +465,20 @@ static DECLCALLBACK(int) pl031R3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
  */
 static DECLCALLBACK(int) pl031R3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PDEVPL031   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVPL031);
-    PDEVPL031CC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVPL031CC);
+    PDEVPL031 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPL031);
 
-    RT_NOREF(pThis, pThisCC, pSSM);
-    return VERR_NOT_IMPLEMENTED;
+    RT_NOREF(pSSM);
+    int rc = VINF_SUCCESS;
+    if (pThis->fRtcStarted)
+    {
+        PDMDevHlpTimerLockClock(pDevIns, pThis->hTimerSecond, VERR_IGNORED);
+        rc = PDMDevHlpTimerSetMillies(pDevIns, pThis->hTimerSecond, RT_MS_1SEC);
+        PDMDevHlpTimerUnlockClock(pDevIns, pThis->hTimerSecond);
+    }
+    else
+        PDMDevHlpTimerStop(pDevIns, pThis->hTimerSecond);
+
+    return rc;
 }
 
 
@@ -470,6 +497,7 @@ static DECLCALLBACK(void) pl031R3Reset(PPDMDEVINS pDevIns)
     pThis->fRtcStarted      = false;
     pThis->fRtcIrqMasked    = false;
     pThis->fRtcIrqSts       = false;
+    PDMDevHlpTimerStop(pDevIns, pThis->hTimerSecond);
 
     if (pThis->fLoadTime)
     {
