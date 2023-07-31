@@ -1346,6 +1346,54 @@ static DECLCALLBACK(int) pl011R3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
 
 
 /**
+ * Saves the given FIFO.
+ *
+ * @returns VBox status code.
+ * @param   pHlp                The device helper table.
+ * @param   pFifo               The FIFO to save.
+ * @param   pSSM                The saved state handle to save the state to.
+ */
+static int pl011R3FifoSaveExec(PCPDMDEVHLPR3 pHlp, PPL011FIFO pFifo, PSSMHANDLE pSSM)
+{
+    pHlp->pfnSSMPutU8(pSSM, pFifo->cbMax);
+    pHlp->pfnSSMPutU8(pSSM, pFifo->cbUsed);
+    pHlp->pfnSSMPutU8(pSSM, pFifo->offWrite);
+    pHlp->pfnSSMPutU8(pSSM, pFifo->offRead);
+    pHlp->pfnSSMPutU8(pSSM, pFifo->cbItl);
+    return pHlp->pfnSSMPutMem(pSSM, &pFifo->abBuf[0], sizeof(pFifo->abBuf));
+}
+
+
+/**
+ * Loads the given FIFO.
+ *
+ * @returns VBox status code.
+ * @param   pHlp                The device helper table.
+ * @param   pFifo               The FIFO to load.
+ * @param   pSSM                The saved state handle to load the state from.
+ */
+static int pl011R3FifoLoadExec(PCPDMDEVHLPR3 pHlp, PPL011FIFO pFifo, PSSMHANDLE pSSM)
+{
+    pHlp->pfnSSMGetU8(pSSM, &pFifo->cbMax);
+    pHlp->pfnSSMGetU8(pSSM, &pFifo->cbUsed);
+    pHlp->pfnSSMGetU8(pSSM, &pFifo->offWrite);
+    pHlp->pfnSSMGetU8(pSSM, &pFifo->offRead);
+    pHlp->pfnSSMGetU8(pSSM, &pFifo->cbItl);
+    int rc = pHlp->pfnSSMGetMem(pSSM, &pFifo->abBuf[0], sizeof(pFifo->abBuf));
+    if (RT_FAILURE(rc))
+        return rc;
+
+    AssertReturn (   pFifo->cbMax    <= sizeof(pFifo->abBuf)
+                  && pFifo->cbUsed   <= sizeof(pFifo->abBuf)
+                  && pFifo->offWrite <  sizeof(pFifo->abBuf)
+                  && pFifo->offRead  <  sizeof(pFifo->abBuf)
+                  && pFifo->cbItl    <= sizeof(pFifo->abBuf),
+                  VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * @callback_method_impl{FNSSMDEVSAVEEXEC}
  */
 static DECLCALLBACK(int) pl011R3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
@@ -1353,8 +1401,29 @@ static DECLCALLBACK(int) pl011R3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     PDEVPL011       pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPL011);
     PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
 
-    pHlp->pfnSSMPutU16(pSSM, pThis->u16Irq);
-    pHlp->pfnSSMPutGCPhys(pSSM, pThis->GCPhysMmioBase);
+    /* The config. */
+    pl011R3LiveExec(pDevIns, pSSM, SSM_PASS_FINAL);
+
+    /* The state. */
+    pHlp->pfnSSMPutU8( pSSM, pThis->uRegDr);
+    pHlp->pfnSSMPutU8( pSSM, pThis->uRegDrRd);
+    pHlp->pfnSSMPutU16(pSSM, pThis->uRegCr);
+    pHlp->pfnSSMPutU16(pSSM, pThis->uRegFr);
+    pHlp->pfnSSMPutU16(pSSM, pThis->uRegIbrd);
+    pHlp->pfnSSMPutU16(pSSM, pThis->uRegFbrd);
+    pHlp->pfnSSMPutU16(pSSM, pThis->uRegLcrH);
+    pHlp->pfnSSMPutU16(pSSM, pThis->uRegFifoLvlSel);
+    pHlp->pfnSSMPutU16(pSSM, pThis->uRegIrqMask);
+    pHlp->pfnSSMPutU16(pSSM, pThis->uRegIrqSts);
+
+    int rc = pl011R3FifoSaveExec(pHlp, &pThis->FifoXmit, pSSM);
+    if (RT_SUCCESS(rc))
+        rc =pl011R3FifoSaveExec(pHlp, &pThis->FifoRecv, pSSM);
+    if (RT_SUCCESS(rc))
+        rc = PDMDevHlpTimerSave(pDevIns, pThis->hTimerTxUnconnected, pSSM);
+
+    if (RT_FAILURE(rc))
+        return rc;
 
     return pHlp->pfnSSMPutU32(pSSM, UINT32_MAX); /* sanity/terminator */
 }
@@ -1367,37 +1436,49 @@ static DECLCALLBACK(int) pl011R3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
 {
     PDEVPL011       pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPL011);
     PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
-    uint16_t        u16Irq;
-    RTGCPHYS        GCPhysMmioBase;
-    int rc;
 
-    RT_NOREF(uVersion);
+    if (uVersion != PL011_SAVED_STATE_VERSION)
+        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
-    pHlp->pfnSSMGetU16(   pSSM, &u16Irq);
-    pHlp->pfnSSMGetGCPhys(pSSM, &GCPhysMmioBase);
-    if (uPass == SSM_PASS_FINAL)
-    {
-        rc = VERR_NOT_IMPLEMENTED;
-        AssertRCReturn(rc, rc);
-    }
+    /* The config. */
+    uint16_t u16Irq;
+    int rc = pHlp->pfnSSMGetU16(pSSM, &u16Irq);
+    AssertRCReturn(rc, rc);
+    if (u16Irq != pThis->u16Irq)
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - u16Irq: saved=%#x config=%#x"), u16Irq, pThis->u16Irq);
 
-    if (uPass == SSM_PASS_FINAL)
-    {
-        /* The marker. */
-        uint32_t u32;
-        rc = pHlp->pfnSSMGetU32(pSSM, &u32);
-        AssertRCReturn(rc, rc);
-        AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
-    }
+    RTGCPHYS GCPhysMmioBase;
+    rc = pHlp->pfnSSMGetGCPhys(pSSM, &GCPhysMmioBase);
+    AssertRCReturn(rc, rc);
+    if (GCPhysMmioBase != pThis->GCPhysMmioBase)
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - GCPhysMmioBase: saved=%RTiop config=%RTiop"), GCPhysMmioBase, pThis->GCPhysMmioBase);
 
-    /*
-     * Check the config.
-     */
-    if (   pThis->u16Irq         != u16Irq
-        || pThis->GCPhysMmioBase != GCPhysMmioBase)
-        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS,
-                                       N_("Config mismatch - saved Irq=%#x GCPhysMmioBase=%#RGp; configured Irq=%#x GCPhysMmioBase=%#RGp"),
-                                       u16Irq, GCPhysMmioBase, pThis->u16Irq, pThis->GCPhysMmioBase);
+    if (uPass != SSM_PASS_FINAL)
+        return VINF_SUCCESS;
+
+    /* The state. */
+    pHlp->pfnSSMGetU8( pSSM, &pThis->uRegDr);
+    pHlp->pfnSSMGetU8( pSSM, &pThis->uRegDrRd);
+    pHlp->pfnSSMGetU16(pSSM, &pThis->uRegCr);
+    pHlp->pfnSSMGetU16(pSSM, &pThis->uRegFr);
+    pHlp->pfnSSMGetU16(pSSM, &pThis->uRegIbrd);
+    pHlp->pfnSSMGetU16(pSSM, &pThis->uRegFbrd);
+    pHlp->pfnSSMGetU16(pSSM, &pThis->uRegLcrH);
+    pHlp->pfnSSMGetU16(pSSM, &pThis->uRegFifoLvlSel);
+    pHlp->pfnSSMGetU16(pSSM, &pThis->uRegIrqMask);
+    pHlp->pfnSSMGetU16(pSSM, &pThis->uRegIrqSts);
+
+    rc = pl011R3FifoLoadExec(pHlp, &pThis->FifoXmit, pSSM);
+    if (RT_SUCCESS(rc))
+        rc = pl011R3FifoLoadExec(pHlp, &pThis->FifoRecv, pSSM);
+    if (RT_SUCCESS(rc))
+        rc = PDMDevHlpTimerLoad(pDevIns, pThis->hTimerTxUnconnected, pSSM);
+
+    /* The marker. */
+    uint32_t u32;
+    rc = pHlp->pfnSSMGetU32(pSSM, &u32);
+    AssertRCReturn(rc, rc);
+    AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
     return VINF_SUCCESS;
 }
@@ -1411,8 +1492,32 @@ static DECLCALLBACK(int) pl011R3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     PDEVPL011   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVPL011);
     PDEVPL011CC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVPL011CC);
 
-    RT_NOREF(pThis, pThisCC, pSSM);
-    return VERR_NOT_IMPLEMENTED;
+    RT_NOREF(pSSM);
+
+    pl011R3ParamsUpdate(pDevIns, pThis, pThisCC);
+    pl011IrqUpdate(pDevIns, pThis, pThisCC);
+
+    if (pThisCC->pDrvSerial)
+    {
+        /* Set the modem lines to reflect the current state. */
+        /** @todo */
+        int rc = VINF_SUCCESS;  //pThisCC->pDrvSerial->pfnChgModemLines(pThisCC->pDrvSerial,
+                                //                       RT_BOOL(pThis->uRegMcr & UART_REG_MCR_RTS),
+                                //                       RT_BOOL(pThis->uRegMcr & UART_REG_MCR_DTR));
+        if (RT_FAILURE(rc))
+            LogRel(("PL011#%d: Failed to set modem lines with %Rrc during saved state load\n",
+                    pDevIns->iInstance, rc));
+
+        uint32_t fStsLines = 0;
+        rc = pThisCC->pDrvSerial->pfnQueryStsLines(pThisCC->pDrvSerial, &fStsLines);
+        if (RT_SUCCESS(rc))
+            ;//uartR3StsLinesUpdate(pDevIns, pThis, pThisCC, fStsLines);
+        else
+            LogRel(("PL011#%d: Failed to query status line status with %Rrc during reset\n",
+                    pDevIns->iInstance, rc));
+    }
+
+    return VINF_SUCCESS;
 }
 
 
