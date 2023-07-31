@@ -248,21 +248,21 @@ static DECLCALLBACK(int) gicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         PGICCPU pGicVCpu = VMCPU_TO_GICCPU(pVCpu);
 
         /* Load the redistributor state. */
-        pHlp->pfnSSMPutU32(pSSM, pGicVCpu->u32RegIGrp0);
-        pHlp->pfnSSMPutU32(pSSM, pGicVCpu->u32RegICfg0);
-        pHlp->pfnSSMPutU32(pSSM, pGicVCpu->u32RegICfg1);
-        pHlp->pfnSSMPutU32(pSSM, pGicVCpu->bmIntEnabled);
-        pHlp->pfnSSMPutU32(pSSM, pGicVCpu->bmIntPending);
-        pHlp->pfnSSMPutU32(pSSM, pGicVCpu->bmIntActive);
-        pHlp->pfnSSMPutMem(pSSM, (void *)&pGicVCpu->abIntPriority[0], sizeof(pGicVCpu->abIntPriority));
+        pHlp->pfnSSMPutU32( pSSM, pGicVCpu->u32RegIGrp0);
+        pHlp->pfnSSMPutU32( pSSM, pGicVCpu->u32RegICfg0);
+        pHlp->pfnSSMPutU32( pSSM, pGicVCpu->u32RegICfg1);
+        pHlp->pfnSSMPutU32( pSSM, pGicVCpu->bmIntEnabled);
+        pHlp->pfnSSMPutU32( pSSM, pGicVCpu->bmIntPending);
+        pHlp->pfnSSMPutU32( pSSM, pGicVCpu->bmIntActive);
+        pHlp->pfnSSMPutMem( pSSM, (void *)&pGicVCpu->abIntPriority[0], sizeof(pGicVCpu->abIntPriority));
 
-        pHlp->pfnSSMPutU32(pSSM, pGicVCpu->fIrqGrp0Enabled);
-        pHlp->pfnSSMPutU32(pSSM, pGicVCpu->fIrqGrp1Enabled);
-        pHlp->pfnSSMPutU8( pSSM, pGicVCpu->bInterruptPriority);
-        pHlp->pfnSSMPutU8( pSSM, pGicVCpu->bBinaryPointGrp0);
-        pHlp->pfnSSMPutU8( pSSM, pGicVCpu->bBinaryPointGrp1);
-        pHlp->pfnSSMPutMem(pSSM, (void *)&pGicVCpu->abRunningPriorities[0], sizeof(pGicVCpu->abRunningPriorities));
-        pHlp->pfnSSMPutU8( pSSM, pGicVCpu->idxRunningPriority);
+        pHlp->pfnSSMPutBool(pSSM, pGicVCpu->fIrqGrp0Enabled);
+        pHlp->pfnSSMPutBool(pSSM, pGicVCpu->fIrqGrp1Enabled);
+        pHlp->pfnSSMPutU8(  pSSM, pGicVCpu->bInterruptPriority);
+        pHlp->pfnSSMPutU8(  pSSM, pGicVCpu->bBinaryPointGrp0);
+        pHlp->pfnSSMPutU8(  pSSM, pGicVCpu->bBinaryPointGrp1);
+        pHlp->pfnSSMPutMem( pSSM, (void *)&pGicVCpu->abRunningPriorities[0], sizeof(pGicVCpu->abRunningPriorities));
+        pHlp->pfnSSMPutU8(  pSSM, pGicVCpu->idxRunningPriority);
     }
 
     return rc;
