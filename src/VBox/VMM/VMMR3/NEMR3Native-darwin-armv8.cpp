@@ -1538,6 +1538,12 @@ static VBOXSTRICTRC nemR3DarwinRunGuestNormal(PVM pVM, PVMCPU pVCpu)
             return nemR3DarwinHvSts2Rc(hrc);
 
         pVCpu->nem.s.fVTimerOffUpdate = false;
+
+        hrc = hv_vcpu_set_sys_reg(pVCpu->nem.s.hVCpu, HV_SYS_REG_CNTV_CTL_EL0, pVCpu->cpum.GstCtx.CntvCtlEl0);
+        if (hrc == HV_SUCCESS)
+            hrc = hv_vcpu_set_sys_reg(pVCpu->nem.s.hVCpu, HV_SYS_REG_CNTV_CVAL_EL0, pVCpu->cpum.GstCtx.CntvCValEl0);
+        if (hrc != HV_SUCCESS)
+            return nemR3DarwinHvSts2Rc(hrc);
     }
 
     /*
