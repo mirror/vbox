@@ -48,6 +48,10 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+
+/** Saved state version. */
+#define FLASH_SAVED_STATE_VERSION               1
+
 /** @name CFI (Command User Interface) Commands.
  *  @{ */
 /** Block erase setup */
@@ -318,32 +322,156 @@ static DECLCALLBACK(void *) flashR3QueryInterface(PPDMIBASE pInterface, const ch
 }
 
 
-#if 0 /** @todo Later */
+/**
+ * Saves the flash content to NVRAM storage.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns             The device instance.
+ */
+static int flashR3SaveToNvram(PPDMDEVINS pDevIns)
+{
+    PDEVFLASHCFI pThis = PDMDEVINS_2_DATA(pDevIns, PDEVFLASHCFI);
+    int          rc    = VINF_SUCCESS;
+
+    if (!pThis->fStateSaved)
+    {
+        if (pThis->Lun0.pDrvVfs)
+        {
+            AssertPtr(pThis->pszFlashFile);
+            rc = pThis->Lun0.pDrvVfs->pfnWriteAll(pThis->Lun0.pDrvVfs, FLASH_CFI_VFS_NAMESPACE, pThis->pszFlashFile,
+                                                  pThis->pbFlash, pThis->cbFlashSize);
+            if (RT_FAILURE(rc))
+                LogRel(("FlashCFI: Failed to save flash file to NVRAM store: %Rrc\n", rc));
+        }
+        else if (pThis->pszFlashFile)
+        {
+            RTFILE hFlashFile = NIL_RTFILE;
+
+            rc = RTFileOpen(&hFlashFile, pThis->pszFlashFile, RTFILE_O_READWRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTFileWrite(hFlashFile, pThis->pbFlash, pThis->cbFlashSize, NULL);
+                RTFileClose(hFlashFile);
+                if (RT_FAILURE(rc))
+                    PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to write flash file"));
+            }
+            else
+                PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to open flash file"));
+        }
+    }
+
+    return rc;
+}
+
+
+/* -=-=-=-=-=-=-=-=- Saved State -=-=-=-=-=-=-=-=- */
+
+/**
+ * @callback_method_impl{FNSSMDEVLIVEEXEC}
+ */
+static DECLCALLBACK(int) flashR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
+{
+    PDEVFLASHCFI    pThis = PDMDEVINS_2_DATA(pDevIns, PDEVFLASHCFI);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    RT_NOREF(uPass);
+
+    pHlp->pfnSSMPutGCPhys(pSSM, pThis->GCPhysFlashBase);
+    pHlp->pfnSSMPutU32(   pSSM, pThis->cbFlashSize);
+    pHlp->pfnSSMPutU16(   pSSM, pThis->u16FlashId);
+    pHlp->pfnSSMPutU16(   pSSM, pThis->cbBlockSize);
+    return VINF_SSM_DONT_CALL_AGAIN;
+}
+
+
 /**
  * @callback_method_impl{FNSSMDEVSAVEEXEC}
  */
-static DECLCALLBACK(int) flashSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) flashR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PDEVFLASH pThis = PDMDEVINS_2_DATA(pDevIns, PDEVFLASH);
-    return flashR3SaveExec(&pThis->Core, pDevIns, pSSM);
+    PDEVFLASHCFI    pThis = PDMDEVINS_2_DATA(pDevIns, PDEVFLASHCFI);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+
+    /* The config. */
+    flashR3LiveExec(pDevIns, pSSM, SSM_PASS_FINAL);
+
+    /* The state. */
+    pHlp->pfnSSMPutU16(pSSM, pThis->u16Cmd);
+    pHlp->pfnSSMPutU8( pSSM, pThis->bStatus);
+    pHlp->pfnSSMPutU8( pSSM, pThis->cBusCycle);
+    pHlp->pfnSSMPutU8( pSSM, pThis->cWordsTransfered);
+    pHlp->pfnSSMPutMem(pSSM, pThis->pbFlash, pThis->cbFlashSize);
+    pHlp->pfnSSMPutU32(pSSM, pThis->offBlock);
+    pHlp->pfnSSMPutU32(pSSM, pThis->cbWrite);
+    pHlp->pfnSSMPutMem(pSSM, &pThis->abProgramBuf[0], sizeof(pThis->abProgramBuf));
+
+    pThis->fStateSaved = true;
+    return pHlp->pfnSSMPutU32(pSSM, UINT32_MAX); /* sanity/terminator */
 }
 
 
 /**
  * @callback_method_impl{FNSSMDEVLOADEXEC}
  */
-static DECLCALLBACK(int) flashLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) flashR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PDEVFLASH pThis = PDMDEVINS_2_DATA(pDevIns, PDEVFLASH);
-    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
+    PDEVFLASHCFI    pThis = PDMDEVINS_2_DATA(pDevIns, PDEVFLASHCFI);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
 
     /* Fend off unsupported versions. */
     if (uVersion != FLASH_SAVED_STATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
-    return flashR3LoadExec(&pThis->Core, pDevIns, pSSM);
+    /* The config. */
+    RTGCPHYS GCPhysFlashBase;
+    int rc = pHlp->pfnSSMGetGCPhys(pSSM, &GCPhysFlashBase);
+    AssertRCReturn(rc, rc);
+    if (GCPhysFlashBase != pThis->GCPhysFlashBase)
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - GCPhysFlashBase: saved=%RGp config=%RGp"),
+                                       GCPhysFlashBase, pThis->GCPhysFlashBase);
+
+    uint32_t cbFlashSize;
+    rc = pHlp->pfnSSMGetU32(pSSM, &cbFlashSize);
+    AssertRCReturn(rc, rc);
+    if (cbFlashSize != pThis->cbFlashSize)
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - cbFlashSize: saved=%#x config=%#x"),
+                                       cbFlashSize, pThis->cbFlashSize);
+
+    uint16_t u16FlashId;
+    rc = pHlp->pfnSSMGetU16(pSSM, &u16FlashId);
+    AssertRCReturn(rc, rc);
+    if (u16FlashId != pThis->u16FlashId)
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - u16FlashId: saved=%#x config=%#x"),
+                                       u16FlashId, pThis->u16FlashId);
+
+    uint16_t cbBlockSize;
+    rc = pHlp->pfnSSMGetU16(pSSM, &cbBlockSize);
+    AssertRCReturn(rc, rc);
+    if (cbBlockSize != pThis->cbBlockSize)
+        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - cbBlockSize: saved=%#x config=%#x"),
+                                       cbBlockSize, pThis->cbBlockSize);
+
+    if (uPass != SSM_PASS_FINAL)
+        return VINF_SUCCESS;
+
+    /* The state. */
+    pHlp->pfnSSMGetU16(pSSM, &pThis->u16Cmd);
+    pHlp->pfnSSMGetU8( pSSM, &pThis->bStatus);
+    pHlp->pfnSSMGetU8( pSSM, &pThis->cBusCycle);
+    pHlp->pfnSSMGetU8( pSSM, &pThis->cWordsTransfered);
+    pHlp->pfnSSMGetMem(pSSM, pThis->pbFlash, pThis->cbFlashSize);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->offBlock);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->cbWrite);
+    pHlp->pfnSSMGetMem(pSSM, &pThis->abProgramBuf[0], sizeof(pThis->abProgramBuf));
+
+    /* The marker. */
+    uint32_t u32;
+    rc = pHlp->pfnSSMGetU32(pSSM, &u32);
+    AssertRCReturn(rc, rc);
+    AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+
+    return VINF_SUCCESS;
 }
-#endif
+
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnReset}
@@ -366,31 +494,8 @@ static DECLCALLBACK(void) flashR3Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) flashR3PowerOff(PPDMDEVINS pDevIns)
 {
-    PDEVFLASHCFI pThis = PDMDEVINS_2_DATA(pDevIns, PDEVFLASHCFI);
-
-    if (pThis->Lun0.pDrvVfs)
-    {
-        AssertPtr(pThis->pszFlashFile);
-        int rc = pThis->Lun0.pDrvVfs->pfnWriteAll(pThis->Lun0.pDrvVfs, FLASH_CFI_VFS_NAMESPACE, pThis->pszFlashFile,
-                                                  pThis->pbFlash, pThis->cbFlashSize);
-        if (RT_FAILURE(rc))
-            LogRel(("EFI: Failed to save flash file to NVRAM store: %Rrc\n", rc));
-    }
-    else if (pThis->pszFlashFile)
-    {
-        RTFILE hFlashFile = NIL_RTFILE;
-
-        int rc = RTFileOpen(&hFlashFile, pThis->pszFlashFile, RTFILE_O_READWRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE);
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTFileWrite(hFlashFile, pThis->pbFlash, pThis->cbFlashSize, NULL);
-            RTFileClose(hFlashFile);
-            if (RT_FAILURE(rc))
-                PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to write flash file"));
-        }
-        else
-            PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to open flash file"));
-    }
+    int rc = flashR3SaveToNvram(pDevIns);
+    AssertRC(rc);
 }
 
 
@@ -402,22 +507,8 @@ static DECLCALLBACK(int) flashR3Destruct(PPDMDEVINS pDevIns)
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
     PDEVFLASHCFI pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVFLASHCFI);
 
-    if (pThis->pszFlashFile)
-    {
-        RTFILE hFlashFile = NIL_RTFILE;
-
-        int rc = RTFileOpen(&hFlashFile, pThis->pszFlashFile, RTFILE_O_READWRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE);
-        if (RT_FAILURE(rc))
-            return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to open flash file"));
-
-        rc = RTFileWrite(hFlashFile, pThis->pbFlash, pThis->cbFlashSize, NULL);
-        RTFileClose(hFlashFile);
-        if (RT_FAILURE(rc))
-            return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to write flash file"));
-
-        PDMDevHlpMMHeapFree(pDevIns, pThis->pszFlashFile);
-        pThis->pszFlashFile = NULL;
-    }
+    int rc = flashR3SaveToNvram(pDevIns);
+    AssertRCReturn(rc, rc);
 
     if (pThis->pbFlash)
     {
@@ -557,13 +648,14 @@ static DECLCALLBACK(int) flashR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     AssertRCReturn(rc, rc);
     LogRel(("Registered %uKB flash at %RGp\n", pThis->cbFlashSize / _1K, pThis->GCPhysFlashBase));
 
-#if 0 /** @todo Later */
     /*
      * Register saved state.
      */
-    rc = PDMDevHlpSSMRegister(pDevIns, FLASH_SAVED_STATE_VERSION, sizeof(*pThis), flashSaveExec, flashLoadExec);
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, FLASH_SAVED_STATE_VERSION, sizeof(*pThis), NULL,
+                                NULL, flashR3LiveExec, NULL,
+                                NULL, flashR3SaveExec, NULL,
+                                NULL, flashR3LoadExec, NULL);
     AssertRCReturn(rc, rc);
-#endif
 
     return VINF_SUCCESS;
 }
