@@ -322,48 +322,6 @@ static DECLCALLBACK(void *) flashR3QueryInterface(PPDMIBASE pInterface, const ch
 }
 
 
-/**
- * Saves the flash content to NVRAM storage.
- *
- * @returns VBox status code.
- * @param   pDevIns             The device instance.
- */
-static int flashR3SaveToNvram(PPDMDEVINS pDevIns)
-{
-    PDEVFLASHCFI pThis = PDMDEVINS_2_DATA(pDevIns, PDEVFLASHCFI);
-    int          rc    = VINF_SUCCESS;
-
-    if (!pThis->fStateSaved)
-    {
-        if (pThis->Lun0.pDrvVfs)
-        {
-            AssertPtr(pThis->pszFlashFile);
-            rc = pThis->Lun0.pDrvVfs->pfnWriteAll(pThis->Lun0.pDrvVfs, FLASH_CFI_VFS_NAMESPACE, pThis->pszFlashFile,
-                                                  pThis->pbFlash, pThis->cbFlashSize);
-            if (RT_FAILURE(rc))
-                LogRel(("FlashCFI: Failed to save flash file to NVRAM store: %Rrc\n", rc));
-        }
-        else if (pThis->pszFlashFile)
-        {
-            RTFILE hFlashFile = NIL_RTFILE;
-
-            rc = RTFileOpen(&hFlashFile, pThis->pszFlashFile, RTFILE_O_READWRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE);
-            if (RT_SUCCESS(rc))
-            {
-                rc = RTFileWrite(hFlashFile, pThis->pbFlash, pThis->cbFlashSize, NULL);
-                RTFileClose(hFlashFile);
-                if (RT_FAILURE(rc))
-                    PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to write flash file"));
-            }
-            else
-                PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to open flash file"));
-        }
-    }
-
-    return rc;
-}
-
-
 /* -=-=-=-=-=-=-=-=- Saved State -=-=-=-=-=-=-=-=- */
 
 /**
@@ -494,8 +452,35 @@ static DECLCALLBACK(void) flashR3Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) flashR3PowerOff(PPDMDEVINS pDevIns)
 {
-    int rc = flashR3SaveToNvram(pDevIns);
-    AssertRC(rc);
+    PDEVFLASHCFI pThis = PDMDEVINS_2_DATA(pDevIns, PDEVFLASHCFI);
+    int          rc    = VINF_SUCCESS;
+
+    if (!pThis->fStateSaved)
+    {
+        if (pThis->Lun0.pDrvVfs)
+        {
+            AssertPtr(pThis->pszFlashFile);
+            rc = pThis->Lun0.pDrvVfs->pfnWriteAll(pThis->Lun0.pDrvVfs, FLASH_CFI_VFS_NAMESPACE, pThis->pszFlashFile,
+                                                  pThis->pbFlash, pThis->cbFlashSize);
+            if (RT_FAILURE(rc))
+                LogRel(("FlashCFI: Failed to save flash file to NVRAM store: %Rrc\n", rc));
+        }
+        else if (pThis->pszFlashFile)
+        {
+            RTFILE hFlashFile = NIL_RTFILE;
+
+            rc = RTFileOpen(&hFlashFile, pThis->pszFlashFile, RTFILE_O_READWRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTFileWrite(hFlashFile, pThis->pbFlash, pThis->cbFlashSize, NULL);
+                RTFileClose(hFlashFile);
+                if (RT_FAILURE(rc))
+                    PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to write flash file"));
+            }
+            else
+                PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to open flash file"));
+        }
+    }
 }
 
 
@@ -506,9 +491,6 @@ static DECLCALLBACK(int) flashR3Destruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
     PDEVFLASHCFI pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVFLASHCFI);
-
-    int rc = flashR3SaveToNvram(pDevIns);
-    AssertRCReturn(rc, rc);
 
     if (pThis->pbFlash)
     {
