@@ -1482,7 +1482,7 @@ static DECLCALLBACK(void) vusbR3RhLoadReattachDevices(PPDMDRVINS pDrvIns, TMTIME
     PVUSBROOTHUBLOAD    pLoad = pThis->pLoad;
     AssertPtrReturnVoid(pLoad);
     LogFlow(("vusbR3RhLoadReattachDevices:\n"));
-    Assert(hTimer == pLoad->hTimer); RT_NOREF(pvUser);
+    Assert(hTimer == pLoad->hTimer); RT_NOREF(hTime, pvUser);
 
     /*
      * Reattach devices.
