@@ -403,9 +403,6 @@
         <?if $(env.VBOX_WITH_QT6) != "yes" ?>
             <File Id="file_Qt5OpenGL$(var.VBOX_QT_INFIX).dll" Name="Qt5OpenGL$(var.VBOX_QT_INFIX).dll"
                   Source="$(env.PATH_OUT)\bin\Qt5OpenGL$(var.VBOX_QT_INFIX).dll" />
-        <?else?>
-            <File Id="file_Qt6OpenGL$(var.VBOX_QT_INFIX).dll" Name="Qt6OpenGL$(var.VBOX_QT_INFIX).dll"
-                  Source="$(env.PATH_OUT)\bin\Qt6OpenGL$(var.VBOX_QT_INFIX).dll" />
         <?endif ?>
 <?endif?>
 
