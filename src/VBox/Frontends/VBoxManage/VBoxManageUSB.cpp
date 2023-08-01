@@ -454,6 +454,8 @@ RTEXITCODE handleUSBFilter(HandlerArg *a)
                     CHECK_ERROR_BREAK(flt, COMSETTER(Revision)(f.mRevision.raw()));
                 if (!f.mManufacturer.isEmpty())
                     CHECK_ERROR_BREAK(flt, COMSETTER(Manufacturer)(f.mManufacturer.raw()));
+                if (!f.mProduct.isEmpty())
+                    CHECK_ERROR_BREAK(flt, COMSETTER(Product)(f.mProduct.raw()));
                 if (!f.mPort.isEmpty())
                     CHECK_ERROR_BREAK(flt, COMSETTER(Port)(f.mPort.raw()));
                 if (!f.mSerialNumber.isEmpty())
@@ -482,6 +484,8 @@ RTEXITCODE handleUSBFilter(HandlerArg *a)
                     CHECK_ERROR_BREAK(flt, COMSETTER(Revision)(f.mRevision.raw()));
                 if (!f.mManufacturer.isEmpty())
                     CHECK_ERROR_BREAK(flt, COMSETTER(Manufacturer)(f.mManufacturer.raw()));
+                if (!f.mProduct.isEmpty())
+                    CHECK_ERROR_BREAK(flt, COMSETTER(Product)(f.mProduct.raw()));
                 if (!f.mPort.isEmpty())
                     CHECK_ERROR_BREAK(flt, COMSETTER(Port)(f.mPort.raw()));
                 if (!f.mRemote.isEmpty())
@@ -516,6 +520,8 @@ RTEXITCODE handleUSBFilter(HandlerArg *a)
                     CHECK_ERROR_BREAK(flt, COMSETTER(Revision)(f.mRevision.raw()));
                 if (!f.mManufacturer.isEmpty())
                     CHECK_ERROR_BREAK(flt, COMSETTER(Manufacturer)(f.mManufacturer.raw()));
+                if (!f.mProduct.isEmpty())
+                    CHECK_ERROR_BREAK(flt, COMSETTER(Product)(f.mProduct.raw()));
                 if (!f.mPort.isEmpty())
                     CHECK_ERROR_BREAK(flt, COMSETTER(Port)(f.mPort.raw()));
                 if (!f.mSerialNumber.isEmpty())
@@ -545,6 +551,8 @@ RTEXITCODE handleUSBFilter(HandlerArg *a)
                     CHECK_ERROR_BREAK(flt, COMSETTER(Revision)(f.mRevision.raw()));
                 if (!f.mManufacturer.isEmpty())
                     CHECK_ERROR_BREAK(flt, COMSETTER(Manufacturer)(f.mManufacturer.raw()));
+                if (!f.mProduct.isEmpty())
+                    CHECK_ERROR_BREAK(flt, COMSETTER(Product)(f.mProduct.raw()));
                 if (!f.mPort.isEmpty())
                     CHECK_ERROR_BREAK(flt, COMSETTER(Port)(f.mPort.raw()));
                 if (!f.mRemote.isEmpty())

@@ -225,18 +225,21 @@ static int usbfilterValidateNumExpression(const char *pszExpr)
         return VINF_SUCCESS;
 
     /*
-     * The string format is: "(<m>|([<m>]-[<n>]))|(<m>|([<m>]-[<n>]))+"
-     * where <m> and <n> are numbers in the decimal, hex (0xNNN) or octal (0NNN)
-     * form. Spaces are allowed around <m> and <n>.
+     * The string format is: "int:((<m>)|([<m>]-[<n>]))(,(<m>)|([<m>]-[<n>]))*"
+     * where <m> and <n> are numbers in decimal, hex (0xNNN) or octal (0NNN).
+     * Spaces are allowed around <m> and <n>.
      */
     unsigned cSubExpressions = 0;
     while (*pszExpr)
     {
+        if (!strncmp(pszExpr, RT_STR_TUPLE("int:")))
+            pszExpr += strlen("int:");
+
         /*
          * Skip remnants of the previous expression and any empty expressions.
          * ('|' is the expression separator.)
          */
-        while (*pszExpr == '|' || RT_C_IS_BLANK(*pszExpr))
+        while (*pszExpr == '|' || RT_C_IS_BLANK(*pszExpr) || *pszExpr == '(' || *pszExpr == ')')
             pszExpr++;
         if (!*pszExpr)
             break;
@@ -255,13 +258,22 @@ static int usbfilterValidateNumExpression(const char *pszExpr)
         }
         else
         {
-            /* M or M-N */
+            /* M or M,N or M-N or M- */
             rc = usbfilterReadNumber(&pszExpr, &u16First);
             if (RT_SUCCESS(rc))
             {
+                pszExpr = usbfilterSkipBlanks(pszExpr);
                 if (*pszExpr == '-')
                 {
-                    /* M-N */
+                    pszExpr++;
+                    if (*pszExpr) /* M-N */
+                        rc = usbfilterReadNumber(&pszExpr, &u16Last);
+                    else /* M- */
+                        u16Last = UINT16_MAX;
+                }
+                else if (*pszExpr == ',')
+                {
+                    /* M,N */
                     pszExpr++;
                     rc = usbfilterReadNumber(&pszExpr, &u16Last);
                 }
@@ -276,10 +288,10 @@ static int usbfilterValidateNumExpression(const char *pszExpr)
             return rc;
 
         /*
-         * We should either be at the end of the string or at
-         * an expression separator (|).
+         * We should either be at the end of the string, at an expression separator (|),
+         * or at the end of an interval filter (')').
          */
-        if (*pszExpr && *pszExpr != '|' )
+        if (*pszExpr && *pszExpr != '|' && *pszExpr != ')')
             return VERR_INVALID_PARAMETER;
 
         cSubExpressions++;
@@ -589,17 +601,20 @@ DECLINLINE(int) usbfilterGetNum(PCUSBFILTER pFilter, USBFILTERIDX enmFieldIdx)
 static bool usbfilterMatchNumExpression(const char *pszExpr, uint16_t u16Value)
 {
     /*
-     * The string format is: "(<m>|([<m>]-[<n>]))|(<m>|([<m>]-[<n>]))+"
-     * where <m> and <n> are numbers in the decimal, hex (0xNNN) or octal (0NNN)
-     * form. Spaces are allowed around <m> and <n>.
+     * The string format is: "int:((<m>)|([<m>]-[<n>]))(,(<m>)|([<m>]-[<n>]))*"
+     * where <m> and <n> are numbers in decimal, hex (0xNNN) or octal (0NNN).
+     * Spaces are allowed around <m> and <n>.
      */
     while (*pszExpr)
     {
+        if (!strncmp(pszExpr, RT_STR_TUPLE("int:")))
+            pszExpr += strlen("int:");
+
         /*
          * Skip remnants of the previous expression and any empty expressions.
          * ('|' is the expression separator.)
          */
-        while (*pszExpr == '|' || RT_C_IS_BLANK(*pszExpr))
+        while (*pszExpr == '|' || RT_C_IS_BLANK(*pszExpr) || *pszExpr == '(' || *pszExpr == ')')
             pszExpr++;
         if (!*pszExpr)
             break;
@@ -618,14 +633,22 @@ static bool usbfilterMatchNumExpression(const char *pszExpr, uint16_t u16Value)
         }
         else
         {
-            /* M or M-N */
+            /* M or M,N or M-N or M- */
             rc = usbfilterReadNumber(&pszExpr, &u16First);
             if (RT_SUCCESS(rc))
             {
                 pszExpr = usbfilterSkipBlanks(pszExpr);
                 if (*pszExpr == '-')
                 {
-                    /* M-N */
+                    pszExpr++;
+                    if (*pszExpr) /* M-N */
+                        rc = usbfilterReadNumber(&pszExpr, &u16Last);
+                    else /* M- */
+                        u16Last = UINT16_MAX;
+                }
+                else if (*pszExpr == ',')
+                {
+                    /* M,N */
                     pszExpr++;
                     rc = usbfilterReadNumber(&pszExpr, &u16Last);
                 }
@@ -637,9 +660,10 @@ static bool usbfilterMatchNumExpression(const char *pszExpr, uint16_t u16Value)
             }
         }
 
-        /* On success, we should either be at the end of the string or
-           at an expression separator (|). */
-        if (RT_SUCCESS(rc) && *pszExpr && *pszExpr != '|' )
+        /* On success, we should either be at the end of the string, at an expression
+         * separator (|), or at the end of an interval filter (')').
+         */
+        if (RT_SUCCESS(rc) && *pszExpr && *pszExpr != '|' && *pszExpr != ')')
             rc = VERR_INVALID_PARAMETER;
         if (RT_SUCCESS(rc))
         {

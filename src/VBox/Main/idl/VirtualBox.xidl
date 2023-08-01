@@ -7430,7 +7430,7 @@
 
     <attribute name="USBProxyAvailable" type="boolean" readonly="yes">
       <desc>
-        Returns whether there is an USB proxy available.
+        Returns whether there is a USB proxy available.
       </desc>
     </attribute>
 
@@ -10954,7 +10954,7 @@
     <method name="detachUSBDevice">
       <rest request="post" path="/vms/{vmid}/configuration/"/>
       <desc>
-        Detaches an USB device with the given UUID from the USB controller
+        Detaches a USB device with the given UUID from the USB controller
         of the virtual machine.
 
         After this method succeeds, the VirtualBox server re-initiates
@@ -23082,37 +23082,35 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     reservedAttributes="8"
     >
     <desc>
-      The IUSBDeviceFilter interface represents an USB device filter used
-      to perform actions on a group of USB devices.
+      The IUSBDeviceFilter interface represents a USB device filter used
+      to perform actions on one or more USB devices.
 
-      This type of filters is used by running virtual machines to
+      USB device filters are used by running virtual machines to
       automatically capture selected USB devices once they are physically
       attached to the host computer.
 
-      A USB device is matched to the given device filter if and only if all
-      attributes of the device match the corresponding attributes of the
-      filter (that is, attributes are joined together using the logical AND
-      operation). On the other hand, all together, filters in the list of
-      filters carry the semantics of the logical OR operation. So if it is
-      desirable to create a match like "this vendor id OR this product id",
-      one needs to create two filters and specify "any match" (see below)
-      for unused attributes.
+      A USB device is matched to a specific device filter if and only if all
+      attributes of the device filter match the corresponding attributes of the
+      device (that is, attributes are joined together using a logical AND
+      operation). On the other hand filter attributes in separate USB
+      device filters are applied as a logical OR operation. So if one
+      would like to create a match such as "this vendor id OR this product id",
+      then one would need to create two filters and specify "any match" (see below)
+      for the other unused attributes.
 
-      All filter attributes used for matching are strings. Each string
-      is an expression representing a set of values of the corresponding
-      device attribute, that will match the given filter. Currently, the
-      following filtering expressions are supported:
+      All filter attributes used for matching are strings.  The following
+      filtering expressions are currently supported:
 
       <ul>
         <li><i>Interval filters</i>. Used to specify valid intervals for
-          integer device attributes (Vendor ID, Product ID and Revision).
+          integer device attributes (Vendor ID, Product ID, Revision and Port).
           The format of the string is:
 
           <tt>int:((m)|([m]-[n]))(,(m)|([m]-[n]))*</tt>
 
           where <tt>m</tt> and <tt>n</tt> are integer numbers, either in octal
-          (starting from <tt>0</tt>), hexadecimal (starting from <tt>0x</tt>)
-          or decimal (otherwise) form, so that <tt>m &lt; n</tt>. If <tt>m</tt>
+          (starting with <tt>0</tt>), hexadecimal (starting with <tt>0x</tt>)
+          or decimal (otherwise), so that <tt>m &lt; n</tt>. If <tt>m</tt>
           is omitted before a dash (<tt>-</tt>), the minimum possible integer
           is assumed; if <tt>n</tt> is omitted after a dash, the maximum
           possible integer is assumed.
@@ -23125,10 +23123,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </li>
         <li><i>Exact match</i>. Used to specify a single value for the given
           device attribute. Any string that doesn't start with <tt>int:</tt>
-          represents the exact match. String device attributes are compared to
-          this string including case of symbols. Integer attributes are first
+          represents an exact match. String device attributes are compared to
+          this string in a case-sensitive manner. Integer attributes are first
           converted to a string (see individual filter attributes) and then
-          compared ignoring case.
+          compared in a case-insensitive manner.
 
         </li>
         <li><i>Any match</i>. Any value of the corresponding device attribute
@@ -23139,8 +23137,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </ul>
 
       <note>
-        On the Windows host platform, interval filters are not currently
-        available. Also all string filter attributes
+        On Windows hosts, interval filters are not currently available.
+        Also all string filter attributes
         (<link to="#manufacturer"/>, <link to="#product"/>,
         <link to="#serialNumber"/>) are ignored, so they behave as
         <i>any match</i> no matter what string expression is specified.

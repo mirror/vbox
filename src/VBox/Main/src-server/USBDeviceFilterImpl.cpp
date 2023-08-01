@@ -975,8 +975,6 @@ void HostUSBDeviceFilter::uninit()
 
     bd.free();
 
-    mParent->i_removeChild(this);
-
     unconst(mParent) = NULL;
 }
 

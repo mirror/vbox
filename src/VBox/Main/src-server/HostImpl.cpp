@@ -216,7 +216,7 @@ struct Host::Data
     HostNetworkInterfaceList llNetIfs;                  // list of network interfaces
 
 #ifdef VBOX_WITH_USB
-    USBDeviceFilterList     llChildren;                 // all USB device filters
+    USBDeviceFilterList     llChildren;                 // all global USB device filters
     USBDeviceFilterList     llUSBDeviceFilters;         // USB device filters in use by the USB proxy service
 
     /** Pointer to the USBProxyService object. */
@@ -534,14 +534,22 @@ void Host::uninit()
     delete m->pHostPowerService;
 
 #ifdef VBOX_WITH_USB
-    /* uninit all USB device filters still referenced by clients
-     * Note! HostUSBDeviceFilter::uninit() will modify llChildren.
-     * This list should be already empty, but better be safe than sorry. */
-    while (!m->llChildren.empty())
+    /* Clean up the list of global USB device filters. */
+    if (!m->llChildren.empty())
     {
-        ComObjPtr<HostUSBDeviceFilter> &pChild = m->llChildren.front();
-        pChild->uninit();
-        m->llChildren.pop_front();
+        /*
+         * i_removeChild() modifies llChildren so we make a copy to traverse here. The
+         * removal of a global USB device filter from the llChildren list at this point
+         * in Host:uninit() will trigger HostUSBDeviceFilter::FinalRelease() ->
+         * HostUSBDeviceFilter::uninit() which will complete the remainder of the clean-up
+         * for each global USB device filter and thus we don't need to call
+         * HostUSBDeviceFilter::uninit() directly here ourselves.
+         */
+        USBDeviceFilterList llChildrenCopy(m->llChildren);
+        for (USBDeviceFilterList::iterator it = llChildrenCopy.begin();
+            it != llChildrenCopy.end();
+            ++it)
+            i_removeChild(*it);
     }
 
     /* No need to uninit these, as either Machine::uninit() or the above loop

@@ -72,14 +72,8 @@ typedef enum USBFILTERMATCH
     USBFILTERMATCH_NUM_EXACT = USBFILTERMATCH_NUM_FIRST,
     /** Numeric Field: Exact match or not present. */
     USBFILTERMATCH_NUM_EXACT_NP,
-    /** Numeric Field: Expression match, required to be present.
-     * The expression is represented as a string. */
-    USBFILTERMATCH_NUM_EXPRESSION,
-    /** Numeric Field: Expression match or not present.
-     * The expression is represented as a string. */
-    USBFILTERMATCH_NUM_EXPRESSION_NP,
     /** Numeric Field: The last numeric field matching method (inclusive). */
-    USBFILTERMATCH_NUM_LAST = USBFILTERMATCH_NUM_EXPRESSION_NP,
+    USBFILTERMATCH_NUM_LAST = USBFILTERMATCH_NUM_EXACT_NP,
 
     /** String Field: The first string field matching method. */
     USBFILTERMATCH_STR_FIRST,
@@ -91,8 +85,12 @@ typedef enum USBFILTERMATCH
     USBFILTERMATCH_STR_PATTERN,
     /** String Field: Pattern match or not present.*/
     USBFILTERMATCH_STR_PATTERN_NP,
+    /** String Field: Numerical expression match, required to be present. */
+    USBFILTERMATCH_NUM_EXPRESSION,
+    /** String Field: Numerical expression match or not present. */
+    USBFILTERMATCH_NUM_EXPRESSION_NP,
     /** String Field: The last string field matching method (inclusive). */
-    USBFILTERMATCH_STR_LAST = USBFILTERMATCH_STR_PATTERN_NP,
+    USBFILTERMATCH_STR_LAST = USBFILTERMATCH_NUM_EXPRESSION_NP,
 
     /** The end of valid matching methods (exclusive). */
     USBFILTERMATCH_END

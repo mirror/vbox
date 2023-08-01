@@ -711,7 +711,9 @@ static HRESULT listUsbFilters(const ComPtr<IVirtualBox> &pVirtualBox)
             CHECK_ERROR_RET(flt, COMGETTER(Product)(bstr.asOutParam()), 1);
             RTPrintf(List::tr("Product:          %ls\n"), bstr.raw());
             CHECK_ERROR_RET(flt, COMGETTER(SerialNumber)(bstr.asOutParam()), 1);
-            RTPrintf(List::tr("Serial Number:    %ls\n\n"), bstr.raw());
+            RTPrintf(List::tr("Serial Number:    %ls\n"), bstr.raw());
+            CHECK_ERROR_RET(flt, COMGETTER(Port)(bstr.asOutParam()), 1);
+            RTPrintf(List::tr("Port:             %ls\n\n"), bstr.raw());
         }
     }
     return hrc;

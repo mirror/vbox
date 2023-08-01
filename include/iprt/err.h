@@ -210,9 +210,9 @@
 #define VERR_NUMBER_TOO_BIG                 (-55)
 /** A numeric conversion encountered a value which was too big for the target. */
 #define VWRN_NUMBER_TOO_BIG                 55
-/** The number begin converted (string) contained no digits. */
+/** The number being converted (string) contained no digits. */
 #define VERR_NO_DIGITS                      (-56)
-/** The number begin converted (string) contained no digits. */
+/** The number being converted (string) contained no digits. */
 #define VWRN_NO_DIGITS                      56
 /** Encountered a '-' during conversion to an unsigned value. */
 #define VERR_NEGATIVE_UNSIGNED              (-57)

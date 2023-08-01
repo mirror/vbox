@@ -285,6 +285,20 @@ int main()
     TST_CHECK_RC(USBFilterSetNumExpression(&Flt1, USBFILTERIDX_VENDOR_ID, "0x1112|42|1", true));
     TST_CHECK_EXPR(!USBFilterMatch(&Flt1, &Dev));
 
+    /* numeric patterns - interval filters */
+    TST_CHECK_RC(USBFilterSetNumExpression(&Flt1, USBFILTERIDX_VENDOR_ID, "int:0x0-0xffff", true));
+    TST_CHECK_EXPR(USBFilterMatch(&Flt1, &Dev));
+    TST_CHECK_RC(USBFilterSetNumExpression(&Flt1, USBFILTERIDX_VENDOR_ID, "int: 0x0 - 0xffff ", true));
+    TST_CHECK_EXPR(USBFilterMatch(&Flt1, &Dev));
+    TST_CHECK_RC(USBFilterSetNumExpression(&Flt1, USBFILTERIDX_PRODUCT_ID, "int:0x0028-", true));
+    TST_CHECK_EXPR(USBFilterMatch(&Flt1, &Dev));
+    TST_CHECK_RC(USBFilterSetNumExpression(&Flt1, USBFILTERIDX_DEVICE_REV, "int:-0x0045", true));
+    TST_CHECK_EXPR(USBFilterMatch(&Flt1, &Dev));
+    TST_CHECK_RC(USBFilterSetNumExpression(&Flt1, USBFILTERIDX_PORT, "int:1,4", true));
+    TST_CHECK_EXPR(USBFilterMatch(&Flt1, &Dev));
+    TST_CHECK_RC(USBFilterSetNumExpression(&Flt1, USBFILTERIDX_PORT, "int:( 1, 3 )", true));
+    TST_CHECK_EXPR(USBFilterMatch(&Flt1, &Dev));
+
     TST_CHECK_RC(USBFilterSetNumExpression(&Flt1, USBFILTERIDX_VENDOR_ID, "39-59|0x256-0x101f|0xfffff-0xf000|0x1000-0x2000", true));
     TST_CHECK_EXPR(USBFilterMatch(&Flt1, &Dev));
     TST_CHECK_RC(USBFilterSetNumExpression(&Flt1, USBFILTERIDX_VENDOR_ID, "0x000256-0x0101f|0xf000-0xfffff|0x000008000-0x2000|39-59", true));
