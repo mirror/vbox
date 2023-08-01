@@ -44,11 +44,11 @@ depend fmri=pkg:/system/font/truetype/dejavu type=require
 <transform file path=opt/VirtualBox/VBoxPython2_7.*\.so.*$ -> set pkg.depend.bypass-generate .*/libpython2\\.7\\.so.*>
 
 # Tweak: do not try to get the dependencies for libGL.so which is needed by Qt
-<transform file path=opt/VirtualBox/amd64/libQt5GuiVBox\.so\.5$ -> set pkg.depend.runpath /usr/lib/mesa/amd64:$PKGDEPEND_RUNPATH>
-<transform file path=opt/VirtualBox/amd64/libQt5PrintSupportVBox\.so\.5$ -> set pkg.depend.runpath /usr/lib/mesa/amd64:$PKGDEPEND_RUNPATH>
-<transform file path=opt/VirtualBox/amd64/libQt5WidgetsVBox\.so\.5$ -> set pkg.depend.runpath /usr/lib/mesa/amd64:$PKGDEPEND_RUNPATH>
-<transform file path=opt/VirtualBox/amd64/libQt5X11ExtrasVBox\.so\.5$ -> set pkg.depend.runpath /usr/lib/mesa/amd64:$PKGDEPEND_RUNPATH>
-<transform file path=opt/VirtualBox/amd64/libQt5XcbQpaVBox\.so\.5$ -> set pkg.depend.runpath /usr/lib/mesa/amd64:$PKGDEPEND_RUNPATH>
+<transform file path=opt/VirtualBox/amd64/libQt*GuiVBox\.so\.*$ -> set pkg.depend.runpath /usr/lib/mesa/amd64:$PKGDEPEND_RUNPATH>
+<transform file path=opt/VirtualBox/amd64/libQt*PrintSupportVBox\.so\.*$ -> set pkg.depend.runpath /usr/lib/mesa/amd64:$PKGDEPEND_RUNPATH>
+<transform file path=opt/VirtualBox/amd64/libQt*WidgetsVBox\.so\.*$ -> set pkg.depend.runpath /usr/lib/mesa/amd64:$PKGDEPEND_RUNPATH>
+<transform file path=opt/VirtualBox/amd64/libQt*X11ExtrasVBox\.so\.*$ -> set pkg.depend.runpath /usr/lib/mesa/amd64:$PKGDEPEND_RUNPATH>
+<transform file path=opt/VirtualBox/amd64/libQt*XcbQpaVBox\.so\.*$ -> set pkg.depend.runpath /usr/lib/mesa/amd64:$PKGDEPEND_RUNPATH>
 <transform file path=opt/VirtualBox/amd64/plugins/platforms/libqxcb\.so$ -> set pkg.depend.runpath /usr/lib/mesa/amd64:$PKGDEPEND_RUNPATH>
 <transform file path=opt/VirtualBox/amd64/plugins/xcbglintegrations/libqxcb-glx-integration\.so$ -> set pkg.depend.runpath /usr/lib/mesa/amd64:$PKGDEPEND_RUNPATH>
 
