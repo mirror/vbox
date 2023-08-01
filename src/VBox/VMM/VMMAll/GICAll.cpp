@@ -51,6 +51,54 @@
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 
+#ifdef LOG_ENABLED
+/**
+ * Returns a human readable string of the given exception class.
+ *
+ * @returns Pointer to the string matching the given EC.
+ * @param   u32Ec           The exception class to return the string for.
+ */
+static const char *gicIccRegisterStringify(uint32_t u32Reg)
+{
+    switch (u32Reg)
+    {
+#define GIC_ICC_REG_CASE(a_Reg) case ARMV8_AARCH64_SYSREG_ ## a_Reg: return #a_Reg
+        GIC_ICC_REG_CASE(ICC_PMR_EL1);
+        GIC_ICC_REG_CASE(ICC_IAR0_EL1);
+        GIC_ICC_REG_CASE(ICC_EOIR0_EL1);
+        GIC_ICC_REG_CASE(ICC_HPPIR0_EL1);
+        GIC_ICC_REG_CASE(ICC_BPR0_EL1);
+        GIC_ICC_REG_CASE(ICC_AP0R0_EL1);
+        GIC_ICC_REG_CASE(ICC_AP0R1_EL1);
+        GIC_ICC_REG_CASE(ICC_AP0R2_EL1);
+        GIC_ICC_REG_CASE(ICC_AP0R3_EL1);
+        GIC_ICC_REG_CASE(ICC_AP1R0_EL1);
+        GIC_ICC_REG_CASE(ICC_AP1R1_EL1);
+        GIC_ICC_REG_CASE(ICC_AP1R2_EL1);
+        GIC_ICC_REG_CASE(ICC_AP1R3_EL1);
+        GIC_ICC_REG_CASE(ICC_DIR_EL1);
+        GIC_ICC_REG_CASE(ICC_RPR_EL1);
+        GIC_ICC_REG_CASE(ICC_SGI1R_EL1);
+        GIC_ICC_REG_CASE(ICC_ASGI1R_EL1);
+        GIC_ICC_REG_CASE(ICC_SGI0R_EL1);
+        GIC_ICC_REG_CASE(ICC_IAR1_EL1);
+        GIC_ICC_REG_CASE(ICC_EOIR1_EL1);
+        GIC_ICC_REG_CASE(ICC_HPPIR1_EL1);
+        GIC_ICC_REG_CASE(ICC_BPR1_EL1);
+        GIC_ICC_REG_CASE(ICC_CTLR_EL1);
+        GIC_ICC_REG_CASE(ICC_SRE_EL1);
+        GIC_ICC_REG_CASE(ICC_IGRPEN0_EL1);
+        GIC_ICC_REG_CASE(ICC_IGRPEN1_EL1);
+#undef GIC_ICC_REG_CASE
+        default:
+            break;
+    }
+
+    return "<UNKNOWN>";
+}
+#endif
+
+
 /**
  * Sets the interrupt pending force-flag and pokes the EMT if required.
  *
@@ -234,8 +282,8 @@ DECLINLINE(void) gicDistHasIrqPendingForVCpu(PGICDEV pThis, PGICCPU pGicVCpu, bo
         *pfFiq = false;
     }
 
-    LogFlowFunc(("pThis=%p fIrq=%RTbool fFiq=%RTbool\n",
-                 pThis, *pfIrq, *pfFiq));
+    LogFlowFunc(("pThis=%p bPriority=%u bmIntEnabled=%#x bmIntPending=%#x bmIntActive=%#x fIrq=%RTbool fFiq=%RTbool\n",
+                 pThis, bPriority, bmIntEnabled, bmIntPending, bmIntActive, *pfIrq, *pfFiq));
 }
 
 
@@ -983,7 +1031,7 @@ VMM_INT_DECL(VBOXSTRICTRC) GICReadSysReg(PVMCPUCC pVCpu, uint32_t u32Reg, uint64
 
     PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
 
-    LogFlowFunc(("pVCpu=%p u32Reg=%#x pu64Value=%RX64\n", pVCpu, u32Reg, *pu64Value));
+    LogFlowFunc(("pVCpu=%p u32Reg=%#x{%s} pu64Value=%RX64\n", pVCpu, u32Reg, gicIccRegisterStringify(u32Reg), *pu64Value));
     return VINF_SUCCESS;
 }
 
@@ -1002,7 +1050,7 @@ VMM_INT_DECL(VBOXSTRICTRC) GICWriteSysReg(PVMCPUCC pVCpu, uint32_t u32Reg, uint6
      * Validate.
      */
     VMCPU_ASSERT_EMT(pVCpu);
-    LogFlowFunc(("pVCpu=%p u32Reg=%#x u64Value=%RX64\n", pVCpu, u32Reg, u64Value));
+    LogFlowFunc(("pVCpu=%p u32Reg=%#x{%s} u64Value=%RX64\n", pVCpu, u32Reg, gicIccRegisterStringify(u32Reg), u64Value));
 
     PGICCPU pThis = VMCPU_TO_GICCPU(pVCpu);
     PPDMDEVINS pDevIns = VMCPU_TO_DEVINS(pVCpu);
