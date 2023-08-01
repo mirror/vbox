@@ -6930,6 +6930,7 @@ VBOXSTRICTRC iemMemFetchDataU8(PVMCPUCC pVCpu, uint8_t *pu8Dst, uint8_t iSegReg,
     {
         *pu8Dst = *pu8Src;
         rc = iemMemCommitAndUnmap(pVCpu, (void *)pu8Src, IEM_ACCESS_DATA_R);
+        Log9(("IEM RD byte %d|%RGv: %#04x\n", iSegReg, GCPtrMem, *pu8Dst));
     }
     return rc;
 }
@@ -6951,6 +6952,7 @@ uint8_t iemMemFetchDataU8Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem) 
     uint8_t const *pu8Src = (uint8_t const *)iemMemMapJmp(pVCpu, sizeof(*pu8Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R, 0);
     uint8_t const  bRet   = *pu8Src;
     iemMemCommitAndUnmapJmp(pVCpu, (void *)pu8Src, IEM_ACCESS_DATA_R);
+    Log9(("IEM RD byte %d|%RGv: %#04x\n", iSegReg, GCPtrMem, bRet));
     return bRet;
 }
 #endif /* IEM_WITH_SETJMP */
@@ -6976,6 +6978,7 @@ VBOXSTRICTRC iemMemFetchDataU16(PVMCPUCC pVCpu, uint16_t *pu16Dst, uint8_t iSegR
     {
         *pu16Dst = *pu16Src;
         rc = iemMemCommitAndUnmap(pVCpu, (void *)pu16Src, IEM_ACCESS_DATA_R);
+        Log9(("IEM RD word %d|%RGv: %#06x\n", iSegReg, GCPtrMem, *pu16Dst));
     }
     return rc;
 }
@@ -6998,6 +7001,7 @@ uint16_t iemMemFetchDataU16Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem
                                                              sizeof(*pu16Src) - 1);
     uint16_t const u16Ret = *pu16Src;
     iemMemCommitAndUnmapJmp(pVCpu, (void *)pu16Src, IEM_ACCESS_DATA_R);
+    Log9(("IEM RD word %d|%RGv: %#06x\n", iSegReg, GCPtrMem, u16Ret));
     return u16Ret;
 }
 #endif
@@ -7023,6 +7027,7 @@ VBOXSTRICTRC iemMemFetchDataU32(PVMCPUCC pVCpu, uint32_t *pu32Dst, uint8_t iSegR
     {
         *pu32Dst = *pu32Src;
         rc = iemMemCommitAndUnmap(pVCpu, (void *)pu32Src, IEM_ACCESS_DATA_R);
+        Log9(("IEM RD dword %d|%RGv: %#010x\n", iSegReg, GCPtrMem, *pu32Dst));
     }
     return rc;
 }
@@ -7048,6 +7053,7 @@ VBOXSTRICTRC iemMemFetchDataU32_ZX_U64(PVMCPUCC pVCpu, uint64_t *pu64Dst, uint8_
     {
         *pu64Dst = *pu32Src;
         rc = iemMemCommitAndUnmap(pVCpu, (void *)pu32Src, IEM_ACCESS_DATA_R);
+        Log9(("IEM RD dword %d|%RGv: %#010RX64\n", iSegReg, GCPtrMem, *pu64Dst));
     }
     return rc;
 }
@@ -7070,6 +7076,7 @@ uint32_t iemMemFetchDataU32SafeJmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPt
                                                              sizeof(*pu32Src) - 1);
     uint32_t const  u32Ret  = *pu32Src;
     iemMemCommitAndUnmapJmp(pVCpu, (void *)pu32Src, IEM_ACCESS_DATA_R);
+    Log9(("IEM RD dword %d|%RGv: %#010x\n", iSegReg, GCPtrMem, u32Ret));
     return u32Ret;
 }
 
@@ -7123,7 +7130,9 @@ uint32_t iemMemFetchDataU32Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem
                      */
                     Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                     Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
-                    return *(uint32_t const *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
+                    uint32_t const u32Ret = *(uint32_t const *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
+                    Log9(("IEM RD dword %d|%RGv: %#010x\n", iSegReg, GCPtrMem, u32Ret));
+                    return u32Ret;
                 }
                 Log10(("iemMemFetchDataU32Jmp: Raising #AC for %RGv\n", GCPtrEff));
                 iemRaiseAlignmentCheckExceptionJmp(pVCpu);
@@ -7141,6 +7150,7 @@ uint32_t iemMemFetchDataU32Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem
                                                              IEM_ACCESS_DATA_R, sizeof(*pu32Src) - 1);
     uint32_t const  u32Ret  = *pu32Src;
     iemMemCommitAndUnmapJmp(pVCpu, (void *)pu32Src, IEM_ACCESS_DATA_R);
+    Log9(("IEM RD dword %d|%RGv: %#010x\n", iSegReg, GCPtrMem, u32Ret));
     return u32Ret;
 # endif
 }
@@ -7168,6 +7178,7 @@ VBOXSTRICTRC iemMemFetchDataS32SxU64(PVMCPUCC pVCpu, uint64_t *pu64Dst, uint8_t 
     {
         *pu64Dst = *pi32Src;
         rc = iemMemCommitAndUnmap(pVCpu, (void *)pi32Src, IEM_ACCESS_DATA_R);
+        Log9(("IEM RD dword %d|%RGv: %#010x\n", iSegReg, GCPtrMem, (uint32_t)*pu64Dst));
     }
 #ifdef __GNUC__ /* warning: GCC may be a royal pain */
     else
@@ -7198,6 +7209,7 @@ VBOXSTRICTRC iemMemFetchDataU64(PVMCPUCC pVCpu, uint64_t *pu64Dst, uint8_t iSegR
     {
         *pu64Dst = *pu64Src;
         rc = iemMemCommitAndUnmap(pVCpu, (void *)pu64Src, IEM_ACCESS_DATA_R);
+        Log9(("IEM RD qword %d|%RGv: %#018RX64\n", iSegReg, GCPtrMem, *pu64Dst));
     }
     return rc;
 }
@@ -7220,6 +7232,7 @@ uint64_t iemMemFetchDataU64Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem
                                                              IEM_ACCESS_DATA_R, sizeof(*pu64Src) - 1);
     uint64_t const u64Ret = *pu64Src;
     iemMemCommitAndUnmapJmp(pVCpu, (void *)pu64Src, IEM_ACCESS_DATA_R);
+    Log9(("IEM RD qword %d|%RGv: %#018RX64\n", iSegReg, GCPtrMem, u64Ret));
     return u64Ret;
 }
 #endif
@@ -7245,6 +7258,7 @@ VBOXSTRICTRC iemMemFetchDataU64AlignedU128(PVMCPUCC pVCpu, uint64_t *pu64Dst, ui
     {
         *pu64Dst = *pu64Src;
         rc = iemMemCommitAndUnmap(pVCpu, (void *)pu64Src, IEM_ACCESS_DATA_R);
+        Log9(("IEM RD qword %d|%RGv: %#018RX64\n", iSegReg, GCPtrMem, *pu64Dst));
     }
     return rc;
 }
@@ -7267,6 +7281,7 @@ uint64_t iemMemFetchDataU64AlignedU128Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCP
                                                              15 | IEM_MEMMAP_F_ALIGN_GP | IEM_MEMMAP_F_ALIGN_SSE);
     uint64_t const u64Ret = *pu64Src;
     iemMemCommitAndUnmapJmp(pVCpu, (void *)pu64Src, IEM_ACCESS_DATA_R);
+    Log9(("IEM RD qword %d|%RGv: %#018RX64\n", iSegReg, GCPtrMem, u64Ret));
     return u64Ret;
 }
 #endif
@@ -7291,6 +7306,7 @@ VBOXSTRICTRC iemMemFetchDataR80(PVMCPUCC pVCpu, PRTFLOAT80U pr80Dst, uint8_t iSe
     {
         *pr80Dst = *pr80Src;
         rc = iemMemCommitAndUnmap(pVCpu, (void *)pr80Src, IEM_ACCESS_DATA_R);
+        Log9(("IEM RD tword %d|%RGv: %.10Rhxs\n", iSegReg, GCPtrMem, pr80Dst));
     }
     return rc;
 }
@@ -7312,6 +7328,7 @@ void iemMemFetchDataR80Jmp(PVMCPUCC pVCpu, PRTFLOAT80U pr80Dst, uint8_t iSegReg,
     PCRTFLOAT80U pr80Src = (PCRTFLOAT80U)iemMemMapJmp(pVCpu, sizeof(*pr80Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R, 7);
     *pr80Dst = *pr80Src;
     iemMemCommitAndUnmapJmp(pVCpu, (void *)pr80Src, IEM_ACCESS_DATA_R);
+    Log9(("IEM RD tword %d|%RGv: %.10Rhxs\n", iSegReg, GCPtrMem, pr80Dst));
 }
 #endif
 
@@ -7336,6 +7353,7 @@ VBOXSTRICTRC iemMemFetchDataD80(PVMCPUCC pVCpu, PRTPBCD80U pd80Dst, uint8_t iSeg
     {
         *pd80Dst = *pd80Src;
         rc = iemMemCommitAndUnmap(pVCpu, (void *)pd80Src, IEM_ACCESS_DATA_R);
+        Log9(("IEM RD tword %d|%RGv: %.10Rhxs\n", iSegReg, GCPtrMem, pd80Dst));
     }
     return rc;
 }
@@ -7358,6 +7376,7 @@ void iemMemFetchDataD80Jmp(PVMCPUCC pVCpu, PRTPBCD80U pd80Dst, uint8_t iSegReg, 
                                                     IEM_ACCESS_DATA_R, 7 /** @todo FBSTP alignment check */);
     *pd80Dst = *pd80Src;
     iemMemCommitAndUnmapJmp(pVCpu, (void *)pd80Src, IEM_ACCESS_DATA_R);
+    Log9(("IEM RD tword %d|%RGv: %.10Rhxs\n", iSegReg, GCPtrMem, pd80Dst));
 }
 #endif
 
@@ -7383,6 +7402,7 @@ VBOXSTRICTRC iemMemFetchDataU128(PVMCPUCC pVCpu, PRTUINT128U pu128Dst, uint8_t i
         pu128Dst->au64[0] = pu128Src->au64[0];
         pu128Dst->au64[1] = pu128Src->au64[1];
         rc = iemMemCommitAndUnmap(pVCpu, (void *)pu128Src, IEM_ACCESS_DATA_R);
+        Log9(("IEM RD dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
     }
     return rc;
 }
@@ -7406,6 +7426,7 @@ void iemMemFetchDataU128Jmp(PVMCPUCC pVCpu, PRTUINT128U pu128Dst, uint8_t iSegRe
     pu128Dst->au64[0] = pu128Src->au64[0];
     pu128Dst->au64[1] = pu128Src->au64[1];
     iemMemCommitAndUnmapJmp(pVCpu, (void *)pu128Src, IEM_ACCESS_DATA_R);
+    Log9(("IEM RD dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
 }
 #endif
 
@@ -7434,6 +7455,7 @@ VBOXSTRICTRC iemMemFetchDataU128AlignedSse(PVMCPUCC pVCpu, PRTUINT128U pu128Dst,
         pu128Dst->au64[0] = pu128Src->au64[0];
         pu128Dst->au64[1] = pu128Src->au64[1];
         rc = iemMemCommitAndUnmap(pVCpu, (void *)pu128Src, IEM_ACCESS_DATA_R);
+        Log9(("IEM RD dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
     }
     return rc;
 }
@@ -7461,6 +7483,7 @@ void iemMemFetchDataU128AlignedSseJmp(PVMCPUCC pVCpu, PRTUINT128U pu128Dst, uint
     pu128Dst->au64[0] = pu128Src->au64[0];
     pu128Dst->au64[1] = pu128Src->au64[1];
     iemMemCommitAndUnmapJmp(pVCpu, (void *)pu128Src, IEM_ACCESS_DATA_R);
+    Log9(("IEM RD dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
 }
 #endif
 
@@ -7488,6 +7511,7 @@ VBOXSTRICTRC iemMemFetchDataU256(PVMCPUCC pVCpu, PRTUINT256U pu256Dst, uint8_t i
         pu256Dst->au64[2] = pu256Src->au64[2];
         pu256Dst->au64[3] = pu256Src->au64[3];
         rc = iemMemCommitAndUnmap(pVCpu, (void *)pu256Src, IEM_ACCESS_DATA_R);
+        Log9(("IEM RD qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
     }
     return rc;
 }
@@ -7513,6 +7537,7 @@ void iemMemFetchDataU256Jmp(PVMCPUCC pVCpu, PRTUINT256U pu256Dst, uint8_t iSegRe
     pu256Dst->au64[2] = pu256Src->au64[2];
     pu256Dst->au64[3] = pu256Src->au64[3];
     iemMemCommitAndUnmapJmp(pVCpu, (void *)pu256Src, IEM_ACCESS_DATA_R);
+    Log9(("IEM RD qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
 }
 #endif
 
@@ -7543,6 +7568,7 @@ VBOXSTRICTRC iemMemFetchDataU256AlignedSse(PVMCPUCC pVCpu, PRTUINT256U pu256Dst,
         pu256Dst->au64[2] = pu256Src->au64[2];
         pu256Dst->au64[3] = pu256Src->au64[3];
         rc = iemMemCommitAndUnmap(pVCpu, (void *)pu256Src, IEM_ACCESS_DATA_R);
+        Log9(("IEM RD qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
     }
     return rc;
 }
@@ -7572,6 +7598,7 @@ void iemMemFetchDataU256AlignedSseJmp(PVMCPUCC pVCpu, PRTUINT256U pu256Dst, uint
     pu256Dst->au64[2] = pu256Src->au64[2];
     pu256Dst->au64[3] = pu256Src->au64[3];
     iemMemCommitAndUnmapJmp(pVCpu, (void *)pu256Src, IEM_ACCESS_DATA_R);
+    Log9(("IEM RD qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
 }
 #endif
 
@@ -7668,6 +7695,7 @@ VBOXSTRICTRC iemMemStoreDataU8(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem
     {
         *pu8Dst = u8Value;
         rc = iemMemCommitAndUnmap(pVCpu, pu8Dst, IEM_ACCESS_DATA_W);
+        Log8(("IEM WR byte %d|%RGv: %#04x\n", iSegReg, GCPtrMem, u8Value));
     }
     return rc;
 }
@@ -7686,6 +7714,7 @@ VBOXSTRICTRC iemMemStoreDataU8(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem
 void iemMemStoreDataU8Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, uint8_t u8Value) IEM_NOEXCEPT_MAY_LONGJMP
 {
     /* The lazy approach for now... */
+    Log8(("IEM WR byte %d|%RGv: %#04x\n", iSegReg, GCPtrMem, u8Value));
     uint8_t *pu8Dst = (uint8_t *)iemMemMapJmp(pVCpu, sizeof(*pu8Dst), iSegReg, GCPtrMem, IEM_ACCESS_DATA_W, 0);
     *pu8Dst = u8Value;
     iemMemCommitAndUnmapJmp(pVCpu, pu8Dst, IEM_ACCESS_DATA_W);
@@ -7713,6 +7742,7 @@ VBOXSTRICTRC iemMemStoreDataU16(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMe
     {
         *pu16Dst = u16Value;
         rc = iemMemCommitAndUnmap(pVCpu, pu16Dst, IEM_ACCESS_DATA_W);
+        Log8(("IEM WR word %d|%RGv: %#06x\n", iSegReg, GCPtrMem, u16Value));
     }
     return rc;
 }
@@ -7735,6 +7765,7 @@ void iemMemStoreDataU16Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, ui
                                                  IEM_ACCESS_DATA_W, sizeof(*pu16Dst) - 1);
     *pu16Dst = u16Value;
     iemMemCommitAndUnmapJmp(pVCpu, pu16Dst, IEM_ACCESS_DATA_W);
+    Log8(("IEM WR word %d|%RGv: %#06x\n", iSegReg, GCPtrMem, u16Value));
 }
 #endif
 
@@ -7759,6 +7790,7 @@ VBOXSTRICTRC iemMemStoreDataU32(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMe
     {
         *pu32Dst = u32Value;
         rc = iemMemCommitAndUnmap(pVCpu, pu32Dst, IEM_ACCESS_DATA_W);
+        Log8(("IEM WR dword %d|%RGv: %#010x\n", iSegReg, GCPtrMem, u32Value));
     }
     return rc;
 }
@@ -7782,6 +7814,7 @@ void iemMemStoreDataU32Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, ui
                                                  IEM_ACCESS_DATA_W, sizeof(*pu32Dst) - 1);
     *pu32Dst = u32Value;
     iemMemCommitAndUnmapJmp(pVCpu, pu32Dst, IEM_ACCESS_DATA_W);
+    Log8(("IEM WR dword %d|%RGv: %#010x\n", iSegReg, GCPtrMem, u32Value));
 }
 #endif
 
@@ -7806,6 +7839,7 @@ VBOXSTRICTRC iemMemStoreDataU64(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMe
     {
         *pu64Dst = u64Value;
         rc = iemMemCommitAndUnmap(pVCpu, pu64Dst, IEM_ACCESS_DATA_W);
+        Log8(("IEM WR qword %d|%RGv: %#018RX64\n", iSegReg, GCPtrMem, u64Value));
     }
     return rc;
 }
@@ -7828,6 +7862,7 @@ void iemMemStoreDataU64Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, ui
                                                  IEM_ACCESS_DATA_W, sizeof(*pu64Dst) - 1);
     *pu64Dst = u64Value;
     iemMemCommitAndUnmapJmp(pVCpu, pu64Dst, IEM_ACCESS_DATA_W);
+    Log8(("IEM WR qword %d|%RGv: %#018RX64\n", iSegReg, GCPtrMem, u64Value));
 }
 #endif
 
@@ -7853,6 +7888,7 @@ VBOXSTRICTRC iemMemStoreDataU128(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrM
         pu128Dst->au64[0] = u128Value.au64[0];
         pu128Dst->au64[1] = u128Value.au64[1];
         rc = iemMemCommitAndUnmap(pVCpu, pu128Dst, IEM_ACCESS_DATA_W);
+        Log8(("IEM WR dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
     }
     return rc;
 }
@@ -7876,6 +7912,7 @@ void iemMemStoreDataU128Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, R
     pu128Dst->au64[0] = u128Value.au64[0];
     pu128Dst->au64[1] = u128Value.au64[1];
     iemMemCommitAndUnmapJmp(pVCpu, pu128Dst, IEM_ACCESS_DATA_W);
+    Log8(("IEM WR dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
 }
 #endif
 
@@ -7901,6 +7938,7 @@ VBOXSTRICTRC iemMemStoreDataU128AlignedSse(PVMCPUCC pVCpu, uint8_t iSegReg, RTGC
         pu128Dst->au64[0] = u128Value.au64[0];
         pu128Dst->au64[1] = u128Value.au64[1];
         rc = iemMemCommitAndUnmap(pVCpu, pu128Dst, IEM_ACCESS_DATA_W);
+        Log8(("IEM WR dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
     }
     return rc;
 }
@@ -7926,6 +7964,7 @@ void iemMemStoreDataU128AlignedSseJmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR G
     pu128Dst->au64[0] = u128Value.au64[0];
     pu128Dst->au64[1] = u128Value.au64[1];
     iemMemCommitAndUnmapJmp(pVCpu, pu128Dst, IEM_ACCESS_DATA_W);
+    Log8(("IEM WR dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
 }
 #endif
 
@@ -7953,6 +7992,7 @@ VBOXSTRICTRC iemMemStoreDataU256(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrM
         pu256Dst->au64[2] = pu256Value->au64[2];
         pu256Dst->au64[3] = pu256Value->au64[3];
         rc = iemMemCommitAndUnmap(pVCpu, pu256Dst, IEM_ACCESS_DATA_W);
+        Log8(("IEM WR qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
     }
     return rc;
 }
@@ -7978,6 +8018,7 @@ void iemMemStoreDataU256Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, P
     pu256Dst->au64[2] = pu256Value->au64[2];
     pu256Dst->au64[3] = pu256Value->au64[3];
     iemMemCommitAndUnmapJmp(pVCpu, pu256Dst, IEM_ACCESS_DATA_W);
+    Log8(("IEM WR qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
 }
 #endif
 
@@ -8005,6 +8046,7 @@ VBOXSTRICTRC iemMemStoreDataU256AlignedAvx(PVMCPUCC pVCpu, uint8_t iSegReg, RTGC
         pu256Dst->au64[2] = pu256Value->au64[2];
         pu256Dst->au64[3] = pu256Value->au64[3];
         rc = iemMemCommitAndUnmap(pVCpu, pu256Dst, IEM_ACCESS_DATA_W);
+        Log8(("IEM WR qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
     }
     return rc;
 }
@@ -8032,6 +8074,7 @@ void iemMemStoreDataU256AlignedAvxJmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR G
     pu256Dst->au64[2] = pu256Value->au64[2];
     pu256Dst->au64[3] = pu256Value->au64[3];
     iemMemCommitAndUnmapJmp(pVCpu, pu256Dst, IEM_ACCESS_DATA_W);
+    Log8(("IEM WR qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
 }
 #endif
 
