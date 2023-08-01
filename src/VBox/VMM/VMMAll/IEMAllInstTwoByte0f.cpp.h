@@ -11353,7 +11353,7 @@ FNIEMOP_DEF(iemOp_xadd_Ev_Gv)
                 IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
 
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEMOP_HLP_DONE_DECODING();
                 IEM_MC_MEM_MAP(pu16Dst, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/);
                 IEM_MC_FETCH_GREG_U16(u16RegCopy, IEM_GET_MODRM_REG(pVCpu, bRm));
                 IEM_MC_REF_LOCAL(pu16Reg, u16RegCopy);
@@ -11379,7 +11379,7 @@ FNIEMOP_DEF(iemOp_xadd_Ev_Gv)
                 IEM_MC_LOCAL(RTGCPTR,   GCPtrEffDst);
 
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEMOP_HLP_DONE_DECODING();
                 IEM_MC_MEM_MAP(pu32Dst, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/);
                 IEM_MC_FETCH_GREG_U32(u32RegCopy, IEM_GET_MODRM_REG(pVCpu, bRm));
                 IEM_MC_REF_LOCAL(pu32Reg, u32RegCopy);
@@ -11405,7 +11405,7 @@ FNIEMOP_DEF(iemOp_xadd_Ev_Gv)
                 IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
 
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEMOP_HLP_DONE_DECODING();
                 IEM_MC_MEM_MAP(pu64Dst, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/);
                 IEM_MC_FETCH_GREG_U64(u64RegCopy, IEM_GET_MODRM_REG(pVCpu, bRm));
                 IEM_MC_REF_LOCAL(pu64Reg, u64RegCopy);
