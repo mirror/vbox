@@ -208,6 +208,8 @@ class ThreadedFunctionVariation(object):
         'IEM_CIMPL_F_BRANCH_FAR':           True,
         'IEM_CIMPL_F_BRANCH_CONDITIONAL':   False,
         'IEM_CIMPL_F_RFLAGS':               False,
+        'IEM_CIMPL_F_CHECK_IRQ':            False,
+        'IEM_CIMPL_F_CHECK_IRQ_DELAYED':    False,
         'IEM_CIMPL_F_STATUS_FLAGS':         False,
         'IEM_CIMPL_F_VMEXIT':               True,
         'IEM_CIMPL_F_FPU':                  False,
@@ -908,7 +910,7 @@ class ThreadedFunctionVariation(object):
         # For CIMPL stuff, we need to consult the associated IEM_CIMPL_F_XXX
         # mask and maybe emit additional checks.
         if 'IEM_CIMPL_F_MODE' in self.dsCImplFlags or 'IEM_CIMPL_F_XCPT' in self.dsCImplFlags:
-            aoStmts.append(iai.McCppCall('IEM_MC2_EMIT_CALL_1', ( 'kIemThreadedFunc_CheckMode', 'pVCpu->iem.s.fExec', ),
+            aoStmts.append(iai.McCppCall('IEM_MC2_EMIT_CALL_1', ( 'kIemThreadedFunc_BltIn_CheckMode', 'pVCpu->iem.s.fExec', ),
                                          cchIndent = cchIndent));
 
         aoStmts.append(iai.McCppCall('IEM_MC2_END_EMIT_CALLS', ( sCImplFlags, ), cchIndent = cchIndent)); # For closing the scope.
@@ -930,6 +932,11 @@ class ThreadedFunctionVariation(object):
         if asEndTbFlags:
             aoStmts.append(iai.McCppGeneric('pVCpu->iem.s.fEndTb = true; /* %s */' % (','.join(asEndTbFlags),),
                                             cchIndent = cchIndent));
+
+        if 'IEM_CIMPL_F_CHECK_IRQ' in self.dsCImplFlags:
+            aoStmts.append(iai.McCppGeneric('pVCpu->iem.s.cInstrTillIrqCheck = 0;', cchIndent = cchIndent));
+        elif 'IEM_CIMPL_F_CHECK_IRQ_DELAYED' in self.dsCImplFlags:
+            aoStmts.append(iai.McCppGeneric('pVCpu->iem.s.cInstrTillIrqCheck = 1;', cchIndent = cchIndent));
 
         return aoStmts;
 
@@ -1365,6 +1372,25 @@ class IEMThreadedGenerator(object):
             '',
         ];
 
+    ## List of built-in threaded functions.
+    kasBltIns = (
+        'DeferToCImpl0',
+        'CheckIrq',
+        'CheckMode',
+        'CheckCsLim',
+        'CheckCsLimAndOpcodes',
+        'CheckOpcodes',
+        'CheckCsLimAndPcAndOpcodes',
+        'CheckPcAndOpcodes',
+        'CheckCsLimAndOpcodesAcrossPageLoadingTlb',
+        'CheckOpcodesAcrossPageLoadingTlb',
+        'CheckCsLimAndOpcodesLoadingTlb',
+        'CheckOpcodesLoadingTlb',
+        'CheckCsLimAndOpcodesOnNextPageLoadingTlb',
+        'CheckOpcodesOnNextPageLoadingTlb',
+        'CheckCsLimAndOpcodesOnNewPageLoadingTlb',
+        'CheckOpcodesOnNewPageLoadingTlb',
+    );
 
     def generateThreadedFunctionsHeader(self, oOut):
         """
@@ -1383,22 +1409,9 @@ class IEMThreadedGenerator(object):
             '    /*',
             '     * Predefined',
             '     */',
-            '    kIemThreadedFunc_DeferToCImpl0,',
-            '    kIemThreadedFunc_CheckMode,',
-            '    kIemThreadedFunc_CheckCsLim,',
-            '    kIemThreadedFunc_CheckCsLimAndOpcodes,',
-            '    kIemThreadedFunc_CheckOpcodes,',
-            '    kIemThreadedFunc_CheckCsLimAndPcAndOpcodes,',
-            '    kIemThreadedFunc_CheckPcAndOpcodes,',
-            '    kIemThreadedFunc_CheckCsLimAndOpcodesAcrossPageLoadingTlb,',
-            '    kIemThreadedFunc_CheckOpcodesAcrossPageLoadingTlb,',
-            '    kIemThreadedFunc_CheckCsLimAndOpcodesLoadingTlb,',
-            '    kIemThreadedFunc_CheckOpcodesLoadingTlb,',
-            '    kIemThreadedFunc_CheckCsLimAndOpcodesOnNextPageLoadingTlb,',
-            '    kIemThreadedFunc_CheckOpcodesOnNextPageLoadingTlb,',
-            '    kIemThreadedFunc_CheckCsLimAndOpcodesOnNewPageLoadingTlb,',
-            '    kIemThreadedFunc_CheckOpcodesOnNewPageLoadingTlb,',
         ];
+        asLines += ['    kIemThreadedFunc_BltIn_%s,' % (sFuncNm,) for sFuncNm in self.kasBltIns];
+
         iThreadedFunction = 1;
         for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
             asLines += [
@@ -1539,23 +1552,10 @@ class IEMThreadedGenerator(object):
                    + '\n'
                    + '    /*\n'
                    + '     * Predefined.\n'
-                   + '     */'
-                   + '    iemThreadedFunc_BltIn_DeferToCImpl0,\n'
-                   + '    iemThreadedFunc_BltIn_CheckMode,\n'
-                   + '    iemThreadedFunc_BltIn_CheckCsLim,\n'
-                   + '    iemThreadedFunc_BltIn_CheckCsLimAndOpcodes,\n'
-                   + '    iemThreadedFunc_BltIn_CheckOpcodes,\n'
-                   + '    iemThreadedFunc_BltIn_CheckCsLimAndPcAndOpcodes,\n'
-                   + '    iemThreadedFunc_BltIn_CheckPcAndOpcodes,\n'
-                   + '    iemThreadedFunc_BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb,\n'
-                   + '    iemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoadingTlb,\n'
-                   + '    iemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb,\n'
-                   + '    iemThreadedFunc_BltIn_CheckOpcodesLoadingTlb,\n'
-                   + '    iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb,\n'
-                   + '    iemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoadingTlb,\n'
-                   + '    iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb,\n'
-                   + '    iemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingTlb,\n'
-                   );
+                   + '     */\n');
+        for sFuncNm in self.kasBltIns:
+            oOut.write('    iemThreadedFunc_BltIn_%s,\n' % (sFuncNm,));
+
         iThreadedFunction = 1;
         for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
             oOut.write(  '\n'
@@ -1585,23 +1585,10 @@ class IEMThreadedGenerator(object):
                    + '\n'
                    + '    /*\n'
                    + '     * Predefined.\n'
-                   + '     */'
-                   + '    "BltIn_DeferToCImpl0",\n'
-                   + '    "BltIn_CheckMode",\n'
-                   + '    "BltIn_CheckCsLim",\n'
-                   + '    "BltIn_CheckCsLimAndOpcodes",\n'
-                   + '    "BltIn_CheckOpcodes",\n'
-                   + '    "BltIn_CheckCsLimAndPcAndOpcodes",\n'
-                   + '    "BltIn_CheckPcAndOpcodes",\n'
-                   + '    "BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb",\n'
-                   + '    "BltIn_CheckOpcodesAcrossPageLoadingTlb",\n'
-                   + '    "BltIn_CheckCsLimAndOpcodesLoadingTlb",\n'
-                   + '    "BltIn_CheckOpcodesLoadingTlb",\n'
-                   + '    "BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb",\n'
-                   + '    "BltIn_CheckOpcodesOnNextPageLoadingTlb",\n'
-                   + '    "BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb",\n'
-                   + '    "BltIn_CheckOpcodesOnNewPageLoadingTlb",\n'
-                   );
+                   + '     */\n');
+        for sFuncNm in self.kasBltIns:
+            oOut.write('    "BltIn_%s",\n' % (sFuncNm,));
+
         iThreadedFunction = 1;
         for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
             oOut.write(  '\n'

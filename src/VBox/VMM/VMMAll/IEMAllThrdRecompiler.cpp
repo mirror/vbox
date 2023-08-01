@@ -445,10 +445,10 @@ typedef struct IEMTBCACHE
 {
     uint32_t cHash;
     uint32_t uHashMask;
-    PIEMTB   apHash[_64K];
+    PIEMTB   apHash[_1M];
 } IEMTBCACHE;
 
-static IEMTBCACHE g_TbCache = { _64K, 0xffff, }; /**< Quick and dirty. */
+static IEMTBCACHE g_TbCache = { _1M, _1M - 1, }; /**< Quick and dirty. */
 
 #define IEMTBCACHE_HASH(a_paCache, a_fTbFlags, a_GCPhysPc) \
     ( ((uint32_t)(a_GCPhysPc) ^ (a_fTbFlags)) & (a_paCache)->uHashMask)
@@ -734,6 +734,7 @@ DECL_FORCE_INLINE(void) iemThreadedCompileInitDecoder(PVMCPUCC pVCpu, bool const
         pVCpu->iem.s.fTbCheckOpcodes        = false;
         pVCpu->iem.s.fTbBranched            = IEMBRANCHED_F_NO;
         pVCpu->iem.s.fTbCrossedPage         = false;
+        pVCpu->iem.s.cInstrTillIrqCheck     = 32;
     }
     else
     {
@@ -867,8 +868,10 @@ DECLINLINE(void) iemThreadedCopyOpcodeBytesInline(PCVMCPUCC pVCpu, uint8_t *pbDs
 bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
 {
     Assert((pVCpu->iem.s.GCPhysInstrBuf & GUEST_PAGE_OFFSET_MASK) == 0);
+#if 0
     if (pVCpu->cpum.GstCtx.rip >= 0xc0000000 && !LogIsEnabled())
         RTLogChangeFlags(NULL, 0, RTLOGFLAGS_DISABLED);
+#endif
 
     /*
      * Prepare call now, even before we know if can accept the instruction in this TB.
@@ -991,18 +994,18 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
             if (   (pVCpu->iem.s.fTbBranched & (IEMBRANCHED_F_INDIRECT | IEMBRANCHED_F_FAR)) /* Far is basically indirect. */
                 || pVCpu->iem.s.fTbCrossedPage)
                 pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
-                                   ? kIemThreadedFunc_CheckCsLimAndOpcodesLoadingTlb
-                                   : kIemThreadedFunc_CheckOpcodesLoadingTlb;
+                                   ? kIemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb
+                                   : kIemThreadedFunc_BltIn_CheckOpcodesLoadingTlb;
             else if (pVCpu->iem.s.fTbBranched & (IEMBRANCHED_F_CONDITIONAL | /* paranoia: */ IEMBRANCHED_F_DIRECT))
                 pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
-                                   ? kIemThreadedFunc_CheckCsLimAndPcAndOpcodes
-                                   : kIemThreadedFunc_CheckPcAndOpcodes;
+                                   ? kIemThreadedFunc_BltIn_CheckCsLimAndPcAndOpcodes
+                                   : kIemThreadedFunc_BltIn_CheckPcAndOpcodes;
             else
             {
                 Assert(pVCpu->iem.s.fTbBranched & IEMBRANCHED_F_RELATIVE);
                 pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
-                                   ? kIemThreadedFunc_CheckCsLimAndOpcodes
-                                   : kIemThreadedFunc_CheckOpcodes;
+                                   ? kIemThreadedFunc_BltIn_CheckCsLimAndOpcodes
+                                   : kIemThreadedFunc_BltIn_CheckOpcodes;
             }
         }
         else
@@ -1103,8 +1106,8 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
 
             /* Determin which function we need to load & check. */
             pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
-                               ? kIemThreadedFunc_CheckCsLimAndOpcodesOnNewPageLoadingTlb
-                               : kIemThreadedFunc_CheckOpcodesOnNewPageLoadingTlb;
+                               ? kIemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb
+                               : kIemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingTlb;
         }
         else
         {
@@ -1125,12 +1128,12 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
             /* Determin which function we need to load & check. */
             if (pVCpu->iem.s.fTbCheckOpcodes)
                 pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
-                                   ? kIemThreadedFunc_CheckCsLimAndOpcodesAcrossPageLoadingTlb
-                                   : kIemThreadedFunc_CheckOpcodesAcrossPageLoadingTlb;
+                                   ? kIemThreadedFunc_BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb
+                                   : kIemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoadingTlb;
             else
                 pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
-                                   ? kIemThreadedFunc_CheckCsLimAndOpcodesOnNextPageLoadingTlb
-                                   : kIemThreadedFunc_CheckOpcodesOnNextPageLoadingTlb;
+                                   ? kIemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb
+                                   : kIemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoadingTlb;
         }
     }
 
@@ -1142,10 +1145,10 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
         Assert(pVCpu->iem.s.fTbCheckOpcodes || (pTb->fFlags & IEMTB_F_CS_LIM_CHECKS));
         if (pVCpu->iem.s.fTbCheckOpcodes)
             pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
-                               ? kIemThreadedFunc_CheckCsLimAndOpcodes
-                               : kIemThreadedFunc_CheckOpcodes;
+                               ? kIemThreadedFunc_BltIn_CheckCsLimAndOpcodes
+                               : kIemThreadedFunc_BltIn_CheckOpcodes;
         else
-            pCall->enmFunction = kIemThreadedFunc_CheckCsLim;
+            pCall->enmFunction = kIemThreadedFunc_BltIn_CheckCsLim;
 
         iemThreadedCopyOpcodeBytesInline(pVCpu, &pTb->pabOpcodes[offOpcode], cbInstr);
         pTb->cbOpcodes                    = offOpcode + cbInstr;
@@ -1175,6 +1178,45 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
     return true;
 }
 
+
+/**
+ * Emits an IRQ check call and checks for pending IRQs.
+ *
+ * @returns true if IRQs are pending and can be dispatched, false if not.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling
+ *                      thread.
+ * @param   pTb         The transation block.
+ */
+static bool iemThreadedCompileCheckIrq(PVMCPUCC pVCpu, PIEMTB pTb)
+{
+    pVCpu->iem.s.cInstrTillIrqCheck = 32;
+
+    /*
+     * Emit the call first.
+     */
+    AssertReturn(pTb->Thrd.cCalls < pTb->Thrd.cAllocated, true);
+    PIEMTHRDEDCALLENTRY pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++];
+    pCall->enmFunction = kIemThreadedFunc_BltIn_CheckIrq;
+    pCall->uUnused0    = 0;
+    pCall->offOpcode   = 0;
+    pCall->cbOpcode    = 0;
+    pCall->idxRange    = 0;
+    pCall->auParams[0] = 0;
+    pCall->auParams[1] = 0;
+    pCall->auParams[2] = 0;
+
+
+    /*
+     * Check for IRQs.
+     */
+    uint64_t fCpu = pVCpu->fLocalForcedActions;
+    fCpu &= VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_INTERRUPT_NMI | VMCPU_FF_INTERRUPT_SMI;
+    if (RT_LIKELY(   !fCpu
+                  || (   !(fCpu & ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+                      && !pVCpu->cpum.GstCtx.rflags.Bits.u1IF)))
+        return false;
+    return true;
+}
 
 
 /**
@@ -1250,6 +1292,12 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
             iemThreadedTbFree(pVM, pVCpu, pTb);
             return iemExecStatusCodeFiddling(pVCpu, rcStrict);
         }
+
+        /* Check for IRQs? */
+        if (pVCpu->iem.s.cInstrTillIrqCheck-- > 0)
+        { /* likely */ }
+        else if (iemThreadedCompileCheckIrq(pVCpu, pTb))
+            break;
 
         /* Still space in the TB? */
         if (   pTb->Thrd.cCalls + 5 < pTb->Thrd.cAllocated

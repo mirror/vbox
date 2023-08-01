@@ -1165,8 +1165,13 @@ typedef struct IEMCPU
     bool                    fTbCrossedPage;
     /** Whether to end the current TB. */
     bool                    fEndTb;
+    /** Number of instructions before we need emit an IRQ check call again.
+     * This helps making sure we don't execute too long w/o checking for
+     * interrupts and that we can forcedly perform IRQ checks one instruction
+     * after an STI and immediately following POPF, IRETF and similar. */
+    uint8_t                 cInstrTillIrqCheck;
     /** Spaced reserved for recompiler data / alignment. */
-    bool                    afRecompilerStuff1[4];
+    bool                    afRecompilerStuff1[3];
     /** Previous GCPhysInstrBuf value - only valid if fTbCrossedPage is set.   */
     RTGCPHYS                GCPhysInstrBufPrev;
     /** Copy of IEMCPU::GCPhysInstrBuf after decoding a branch instruction.
@@ -4989,6 +4994,7 @@ typedef FNIEMTHREADEDFUNC *PFNIEMTHREADEDFUNC;
 
 IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_DeferToCImpl0);
 
+IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckIrq);
 IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckMode);
 IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckCsLim);
 

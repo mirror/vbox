@@ -90,6 +90,39 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_DeferToCImpl0)
 
 
 /**
+ * Built-in function that checks for pending interrupts that can be delivered.
+ *
+ * This triggers after the completion of an instruction, so EIP is already at
+ * the next instruction.  If an IRQ or important FF is pending, this will return
+ * a non-zero status that stops TB execution.
+ */
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckIrq)
+{
+    RT_NOREF(uParam0, uParam1, uParam2);
+
+    /*
+     * Check for IRQs and other FFs that needs servicing.
+     */
+    uint64_t fCpu = pVCpu->fLocalForcedActions;
+    fCpu &= VMCPU_FF_ALL_MASK & ~(  VMCPU_FF_PGM_SYNC_CR3
+                                  | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
+                                  | VMCPU_FF_TLB_FLUSH
+                                  | VMCPU_FF_UNHALT );
+    if (RT_LIKELY(   (   !fCpu
+                      || (   !(fCpu & ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+                          && !pVCpu->cpum.GstCtx.rflags.Bits.u1IF) )
+                  && !VM_FF_IS_ANY_SET(pVCpu->CTX_SUFF(pVM), VM_FF_ALL_MASK) ))
+        return VINF_SUCCESS;
+
+    Log(("%04x:%08RX32: Pending IRQ and/or FF: fCpu=%#RX64 fVm=%#RX32 IF=%d\n",
+         pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.eip, fCpu,
+         pVCpu->CTX_SUFF(pVM)->fGlobalForcedActions & VM_FF_ALL_MASK, pVCpu->cpum.GstCtx.rflags.Bits.u1IF));
+    return VINF_IEM_REEXEC_MODE_CHANGED;
+}
+
+
+
+/**
  * Built-in function that compares the fExec mask against uParam0.
  */
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckMode)

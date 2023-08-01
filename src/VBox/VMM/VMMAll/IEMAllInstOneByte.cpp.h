@@ -2311,9 +2311,9 @@ FNIEMOP_DEF(iemOp_popa__mvex)
         IEMOP_HLP_MIN_186();
         IEMOP_HLP_NO_64BIT();
         if (pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT)
-            IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_RFLAGS, iemCImpl_popa_16);
+            IEM_MC_DEFER_TO_CIMPL_0_RET(0, iemCImpl_popa_16);
         Assert(pVCpu->iem.s.enmEffOpSize == IEMMODE_32BIT);
-        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_RFLAGS, iemCImpl_popa_32);
+        IEM_MC_DEFER_TO_CIMPL_0_RET(0, iemCImpl_popa_32);
     }
     IEMOP_MNEMONIC(mvex, "mvex");
     Log(("mvex prefix is not supported!\n"));
@@ -5722,7 +5722,8 @@ FNIEMOP_DEF(iemOp_popf_Fv)
     IEMOP_MNEMONIC(popf_Fv, "popf Fv");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
-    IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_RFLAGS, iemCImpl_popf, pVCpu->iem.s.enmEffOpSize);
+    IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_CHECK_IRQ,
+                                iemCImpl_popf, pVCpu->iem.s.enmEffOpSize);
 }
 
 
@@ -7583,7 +7584,7 @@ FNIEMOP_DEF(iemOp_iret)
     IEMOP_MNEMONIC(iret, "iret");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR
-                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT,
+                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_CHECK_IRQ | IEM_CIMPL_F_VMEXIT,
                                 iemCImpl_iret, pVCpu->iem.s.enmEffOpSize);
 }
 
@@ -12542,7 +12543,7 @@ FNIEMOP_DEF(iemOp_sti)
 {
     IEMOP_MNEMONIC(sti, "sti");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT, iemCImpl_sti);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_CHECK_IRQ_DELAYED | IEM_CIMPL_F_VMEXIT, iemCImpl_sti);
 }
 
 

@@ -1260,14 +1260,19 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_CIMPL_F_RFLAGS              RT_BIT_32(6)
 /** May change the status bits (X86_EFL_STATUS_BITS) in RFLAGS . */
 #define IEM_CIMPL_F_STATUS_FLAGS        RT_BIT_32(7)
+/** May enable interrupts, so recheck IRQ immediately afterwards. */
+#define IEM_CIMPL_F_CHECK_IRQ           RT_BIT_32(8)
+/** May enable interrupts, but actual enabling may be delayed one instruction
+ *  to do interrupt inhibiting, so recheck IRQ after the next instruction. */
+#define IEM_CIMPL_F_CHECK_IRQ_DELAYED   RT_BIT_32(9)
 /** May trigger a VM exit. */
-#define IEM_CIMPL_F_VMEXIT              RT_BIT_32(8)
+#define IEM_CIMPL_F_VMEXIT              RT_BIT_32(10)
 /** May modify FPU state. */
-#define IEM_CIMPL_F_FPU                 RT_BIT_32(9)
+#define IEM_CIMPL_F_FPU                 RT_BIT_32(11)
 /** REP prefixed instruction which may yield before updating PC. */
-#define IEM_CIMPL_F_REP                 RT_BIT_32(10)
+#define IEM_CIMPL_F_REP                 RT_BIT_32(12)
 /** Force end of TB after the instruction.    */
-#define IEM_CIMPL_F_END_TB              RT_BIT_32(11)
+#define IEM_CIMPL_F_END_TB              RT_BIT_32(13)
 /** Convenience: Raise exception (technically unnecessary, since it shouldn't return VINF_SUCCESS). */
 #define IEM_CIMPL_F_XCPT \
     (IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT)

@@ -274,21 +274,28 @@ DECLINLINE(VBOXSTRICTRC) iemThreadedRecompilerMcDeferToCImpl0(PVMCPUCC pVCpu, ui
           pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, IEM_GET_INSTR_LEN(pVCpu), fFlags, pfnCImpl));
 
     IEM_MC2_BEGIN_EMIT_CALLS();
-    IEM_MC2_EMIT_CALL_2(kIemThreadedFunc_DeferToCImpl0, (uintptr_t)pfnCImpl, IEM_GET_INSTR_LEN(pVCpu));
+    IEM_MC2_EMIT_CALL_2(kIemThreadedFunc_BltIn_DeferToCImpl0, (uintptr_t)pfnCImpl, IEM_GET_INSTR_LEN(pVCpu));
     IEM_MC2_END_EMIT_CALLS(fFlags);
 
-    /* We have to repeat work normally done by kdCImplFlags and
-       ThreadedFunctionVariation.emitThreadedCallStmts here. */
-    if (fFlags & (IEM_CIMPL_F_END_TB | IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_REP))
-        pVCpu->iem.s.fEndTb = true;
-
+    /*
+     * We have to repeat work normally done by kdCImplFlags and
+     * ThreadedFunctionVariation.emitThreadedCallStmts here.
+     */
     AssertCompile(IEM_CIMPL_F_BRANCH_DIRECT      == IEMBRANCHED_F_DIRECT);
     AssertCompile(IEM_CIMPL_F_BRANCH_INDIRECT    == IEMBRANCHED_F_INDIRECT);
     AssertCompile(IEM_CIMPL_F_BRANCH_RELATIVE    == IEMBRANCHED_F_RELATIVE);
     AssertCompile(IEM_CIMPL_F_BRANCH_CONDITIONAL == IEMBRANCHED_F_CONDITIONAL);
     AssertCompile(IEM_CIMPL_F_BRANCH_FAR         == IEMBRANCHED_F_FAR);
-    if (fFlags & IEM_CIMPL_F_BRANCH_ANY)
+
+    if (fFlags & (IEM_CIMPL_F_END_TB | IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_REP))
+        pVCpu->iem.s.fEndTb = true;
+    else if (fFlags & IEM_CIMPL_F_BRANCH_ANY)
         pVCpu->iem.s.fTbBranched = fFlags & (IEM_CIMPL_F_BRANCH_ANY | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_CONDITIONAL);
+
+    if (fFlags & IEM_CIMPL_F_CHECK_IRQ)
+        pVCpu->iem.s.cInstrTillIrqCheck = 0;
+    else if (fFlags & IEM_CIMPL_F_CHECK_IRQ_DELAYED)
+        pVCpu->iem.s.cInstrTillIrqCheck = 1;
 
     return pfnCImpl(pVCpu, IEM_GET_INSTR_LEN(pVCpu));
 }
