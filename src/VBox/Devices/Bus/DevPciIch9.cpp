@@ -1162,8 +1162,18 @@ DECL_HIDDEN_CALLBACK(int) devpciR3CommonSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE 
     /*
      * Save IRQ states.
      */
-    for (unsigned i = 0; i < RT_ELEMENTS(pThis->auPciApicIrqLevels); i++)
-        pHlp->pfnSSMPutU32(pSSM, pThis->auPciApicIrqLevels[i]);
+    if (pThis->PciBus.enmType == DEVPCIBUSTYPE_ICH9)
+    {
+        for (unsigned i = 0; i < RT_ELEMENTS(pThis->auPciApicIrqLevels); i++)
+            pHlp->pfnSSMPutU32(pSSM, pThis->auPciApicIrqLevels[i]);
+    }
+    else if (pThis->PciBus.enmType == DEVPCIBUSTYPE_GENERIC_ECAM)
+    {
+        for (unsigned i = 0; i < RT_ELEMENTS(pThis->u.GenericEcam.auPciIrqLevels); i++)
+            pHlp->pfnSSMPutU32(pSSM, pThis->u.GenericEcam.auPciIrqLevels[i]);
+    }
+    else
+        AssertReleaseFailed();
 
     pHlp->pfnSSMPutU32(pSSM, UINT32_MAX);  /* separator */
 
@@ -1744,8 +1754,18 @@ DECL_HIDDEN_CALLBACK(int) devpciR3CommonLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE 
     /*
      * Load IRQ states.
      */
-    for (unsigned i = 0; i < RT_ELEMENTS(pThis->auPciApicIrqLevels); i++)
-        pHlp->pfnSSMGetU32V(pSSM, &pThis->auPciApicIrqLevels[i]);
+    if (pThis->PciBus.enmType == DEVPCIBUSTYPE_ICH9)
+    {
+        for (unsigned i = 0; i < RT_ELEMENTS(pThis->auPciApicIrqLevels); i++)
+            pHlp->pfnSSMGetU32V(pSSM, &pThis->auPciApicIrqLevels[i]);
+    }
+    else if (pThis->PciBus.enmType == DEVPCIBUSTYPE_GENERIC_ECAM)
+    {
+        for (unsigned i = 0; i < RT_ELEMENTS(pThis->u.GenericEcam.auPciIrqLevels); i++)
+            pHlp->pfnSSMGetU32V(pSSM, &pThis->u.GenericEcam.auPciIrqLevels[i]);
+    }
+    else
+        AssertReleaseFailed();
 
     /* separator */
     rc = pHlp->pfnSSMGetU32(pSSM, &u32);

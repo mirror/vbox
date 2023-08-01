@@ -59,8 +59,11 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+/** @todo As this shares a lot of code with the ICH9 PCI device we have to also keep the saved state version in sync. */
 /** Saved state version of the generic ECAM PCI bus device. */
-#define VBOX_PCIGENECAM_SAVED_STATE_VERSION             1
+#define VBOX_PCIGENECAM_SAVED_STATE_VERSION             VBOX_ICH9PCI_SAVED_STATE_VERSION_4KB_CFG_SPACE
+/** 4KB config space */
+#define VBOX_ICH9PCI_SAVED_STATE_VERSION_4KB_CFG_SPACE  4
 
 
 /*********************************************************************************************************************************
