@@ -385,10 +385,11 @@ class ThreadedFunctionVariation(object):
             idxReg = 1;
 
         sRegRef = oStmt.asParams[idxReg];
-        if sRegRef.startswith('IEM_GET_MODRM_RM') >= 0:
-            sOrgExpr = 'IEM_GET_MODRM_RM_EX8(pVCpu, %s)' % (sRegRef,);
-        elif sRegRef.startswith('IEM_GET_MODRM_REG') >= 0:
-            sOrgExpr = 'IEM_GET_MODRM_REG_EX8(pVCpu, %s)' % (sRegRef,);
+        if sRegRef.startswith('IEM_GET_MODRM_RM') or sRegRef.startswith('IEM_GET_MODRM_REG'):
+            asBits = [sBit.strip() for sBit in sRegRef.replace('(', ',').replace(')', '').split(',')];
+            if len(asBits) != 3 or asBits[1] != 'pVCpu' or (asBits[0] != 'IEM_GET_MODRM_RM' and asBits[0] != 'IEM_GET_MODRM_REG'):
+                self.raiseProblem('Unexpected reference: %s (asBits=%s)' % (sRegRef, asBits));
+            sOrgExpr = asBits[0] + '_EX8(pVCpu, ' + asBits[2] + ')';
         else:
             sOrgExpr = '((%s) < 4 || (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_REX) ? (%s) : (%s) + 12)' % (sRegRef, sRegRef, sRegRef);
 
