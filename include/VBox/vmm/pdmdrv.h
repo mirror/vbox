@@ -1826,6 +1826,22 @@ DECLINLINE(int) PDMDrvHlpSSMRegisterLoadDone(PPDMDRVINS pDrvIns, PFNSSMDRVLOADDO
 }
 
 /**
+ * Get the status of an saved state operation.
+ *
+ * This can sometimes be useful in FNSSMDRVLOADDONE implementations to determine
+ * whether the load succeeded or not.
+ *
+ * @returns VBox status.
+ * @param   pDrvIns         Driver instance.
+ * @param   pSSM            The saved state handle.
+ * @sa      SSMR3HandleGetStatus
+ */
+DECLINLINE(int) PDMDrvHlpSSMHandleGetStatus(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
+{
+    return pDrvIns->pHlpR3->pfnSSMHandleGetStatus(pSSM);
+}
+
+/**
  * @copydoc PDMDRVHLPR3::pfnMMHeapFree
  */
 DECLINLINE(void) PDMDrvHlpMMHeapFree(PPDMDRVINS pDrvIns, void *pv)
