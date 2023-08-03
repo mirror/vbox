@@ -1648,6 +1648,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          *
          * Note! This used to be a force action flag. Can probably ditch this code.
          */
+        /** @todo r=bird: the clearing case will *never* be taken here as
+         *        CPUMIsInInterruptShadow already makes sure the RIPs matches. */
         if (   CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx)
             && !VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY))
         {
