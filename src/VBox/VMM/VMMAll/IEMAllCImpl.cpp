@@ -4535,7 +4535,7 @@ IEM_CIMPL_DEF_0(iemCImpl_sysenter)
     uint16_t uNewCs = pVCpu->cpum.GstCtx.SysEnter.cs;
     if ((uNewCs & X86_SEL_MASK_OFF_RPL) == 0)
     {
-        Log(("sysenter: SYSENTER_CS = %#x -> #GP(0)\n", uNewCs));
+        LogRel(("sysenter: SYSENTER_CS = %#x -> #GP(0)\n", uNewCs));
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
 
@@ -4559,7 +4559,7 @@ IEM_CIMPL_DEF_0(iemCImpl_sysenter)
      */
     if (fIsLongMode)
     {
-        Log(("sysenter: %04x:%016RX64 [efl=%#llx] -> %04x:%016RX64\n", pVCpu->cpum.GstCtx.cs, pVCpu->cpum.GstCtx.rip,
+        Log(("sysenter: %04x:%016RX64 [efl=%#llx] -> %04x:%016RX64\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
              pVCpu->cpum.GstCtx.rflags.u, uNewCs & X86_SEL_MASK_OFF_RPL, pVCpu->cpum.GstCtx.SysEnter.eip));
         pVCpu->cpum.GstCtx.rip          = pVCpu->cpum.GstCtx.SysEnter.eip;
         pVCpu->cpum.GstCtx.rsp          = pVCpu->cpum.GstCtx.SysEnter.esp;
@@ -4570,14 +4570,14 @@ IEM_CIMPL_DEF_0(iemCImpl_sysenter)
     }
     else
     {
-        Log(("sysenter: %04x:%08RX32 [efl=%#llx] -> %04x:%08RX32\n", pVCpu->cpum.GstCtx.cs, (uint32_t)pVCpu->cpum.GstCtx.rip,
+        Log(("sysenter: %04x:%08RX32 [efl=%#llx] -> %04x:%08RX32\n", pVCpu->cpum.GstCtx.cs.Sel, (uint32_t)pVCpu->cpum.GstCtx.rip,
              pVCpu->cpum.GstCtx.rflags.u, uNewCs & X86_SEL_MASK_OFF_RPL, (uint32_t)pVCpu->cpum.GstCtx.SysEnter.eip));
         pVCpu->cpum.GstCtx.rip          = (uint32_t)pVCpu->cpum.GstCtx.SysEnter.eip;
         pVCpu->cpum.GstCtx.rsp          = (uint32_t)pVCpu->cpum.GstCtx.SysEnter.esp;
         pVCpu->cpum.GstCtx.cs.Attr.u    = X86DESCATTR_D | X86DESCATTR_G | X86DESCATTR_P | X86DESCATTR_DT
                                         | X86DESCATTR_LIMIT_HIGH | X86_SEL_TYPE_ER_ACC;
         pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK))
-                           | IEM_F_MODE_X86_32BIT
+                           | IEM_F_MODE_X86_32BIT_PROT
                            | iemCalc32BitFlatIndicatorEsDs(pVCpu);
     }
     pVCpu->cpum.GstCtx.cs.Sel           = uNewCs & X86_SEL_MASK_OFF_RPL;
@@ -4656,7 +4656,7 @@ IEM_CIMPL_DEF_1(iemCImpl_sysexit, IEMMODE, enmEffOpSize)
      */
     if (enmEffOpSize == IEMMODE_64BIT)
     {
-        Log(("sysexit: %04x:%016RX64 [efl=%#llx] -> %04x:%016RX64\n", pVCpu->cpum.GstCtx.cs, pVCpu->cpum.GstCtx.rip,
+        Log(("sysexit: %04x:%016RX64 [efl=%#llx] -> %04x:%016RX64\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
              pVCpu->cpum.GstCtx.rflags.u, (uNewCs | 3) + 32, pVCpu->cpum.GstCtx.rcx));
         pVCpu->cpum.GstCtx.rip          = pVCpu->cpum.GstCtx.rdx;
         pVCpu->cpum.GstCtx.rsp          = pVCpu->cpum.GstCtx.rcx;
@@ -4673,7 +4673,7 @@ IEM_CIMPL_DEF_1(iemCImpl_sysexit, IEMMODE, enmEffOpSize)
     }
     else
     {
-        Log(("sysexit: %04x:%08RX64 [efl=%#llx] -> %04x:%08RX32\n", pVCpu->cpum.GstCtx.cs, pVCpu->cpum.GstCtx.rip,
+        Log(("sysexit: %04x:%08RX64 [efl=%#llx] -> %04x:%08RX32\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
              pVCpu->cpum.GstCtx.rflags.u, (uNewCs | 3) + 16, (uint32_t)pVCpu->cpum.GstCtx.edx));
         pVCpu->cpum.GstCtx.rip          = pVCpu->cpum.GstCtx.edx;
         pVCpu->cpum.GstCtx.rsp          = pVCpu->cpum.GstCtx.ecx;
@@ -4686,7 +4686,7 @@ IEM_CIMPL_DEF_1(iemCImpl_sysexit, IEMMODE, enmEffOpSize)
 
         pVCpu->iem.s.fExec = (pVCpu->iem.s.fExec & ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_MASK))
                            | (3 << IEM_F_X86_CPL_SHIFT)
-                           | IEM_F_MODE_X86_32BIT
+                           | IEM_F_MODE_X86_32BIT_PROT
                            | iemCalc32BitFlatIndicatorEsDs(pVCpu);
     }
     pVCpu->cpum.GstCtx.cs.u64Base       = 0;
