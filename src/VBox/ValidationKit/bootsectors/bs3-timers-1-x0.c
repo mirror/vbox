@@ -44,7 +44,44 @@
 #include <iprt/asm-amd64-x86.h>
 
 
-static uint8_t bs3Timers1_Pit(uint8_t bMode, uint16_t uHz, uint32_t cNsMaxDiviation)
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+typedef enum BS3TIMERSIRQLOOP
+{
+    BS3TIMERSIRQLOOP_INVALID = 0,
+    BS3TIMERSIRQLOOP_SIMPLE,
+    BS3TIMERSIRQLOOP_STI_HLT_CLI,
+    BS3TIMERSIRQLOOP_STI_STI_CLI,
+    BS3TIMERSIRQLOOP_POPF_CLI,
+    BS3TIMERSIRQLOOP_END
+} BS3TIMERSIRQLOOP;
+
+
+typedef enum BS3TIMERSNOIRQLOOP
+{
+    BS3TIMERSNOIRQLOOP_INVALID = 0,
+    BS3TIMERSNOIRQLOOP_SIMPLE,
+    BS3TIMERSNOIRQLOOP_STI_CLI,
+    BS3TIMERSNOIRQLOOP_END
+} BS3TIMERSNOIRQLOOP;
+
+
+/*********************************************************************************************************************************
+*   External Assembly Functions                                                                                                  *
+*********************************************************************************************************************************/
+extern FNBS3NEAR bs3Timers1StiHltCli;
+extern FNBS3NEAR bs3Timers1StiHltCli_IrqPc;
+extern FNBS3NEAR bs3Timers1StiStiCli;
+extern FNBS3NEAR bs3Timers1StiStiCli_IrqPc;
+extern FNBS3NEAR bs3Timers1PopfCli;
+extern FNBS3NEAR bs3Timers1PopfCli_IrqPc;
+
+extern FNBS3NEAR bs3Timers1StiCli;
+
+
+
+static uint8_t bs3Timers1_Pit(uint8_t bMode, uint16_t uHz, uint32_t cNsMaxDiviation, BS3TIMERSIRQLOOP enmIrqLoop)
 {
     uint32_t const  cTargetTicks = uHz * 3;
     uint16_t        uActualHz;
@@ -52,13 +89,70 @@ static uint8_t bs3Timers1_Pit(uint8_t bMode, uint16_t uHz, uint32_t cNsMaxDiviat
     int64_t         cNsDelta;
     uint64_t        cNsDeltaAbs;
 
+    ASMIntEnable();
+    ASMNopPause();
+    ASMIntDisable();
+
+
+    ASMIntDisable(); /* paranoia */
     Bs3PitSetupAndEnablePeriodTimer(uHz);
     cNsElapsed = Bs3TestNow();
-    ASMIntEnable();
     uActualHz  = g_cBs3PitIntervalHz;
 
-    while (g_cBs3PitTicks < cTargetTicks)
-        ASMHalt();
+    switch (enmIrqLoop)
+    {
+        default:
+        case BS3TIMERSIRQLOOP_SIMPLE:
+            ASMIntEnable();
+            while (g_cBs3PitTicks < cTargetTicks)
+                ASMHalt();
+            break;
+
+        /* This variant enabls interrupt like this: sti; hlt; cli */
+        case BS3TIMERSIRQLOOP_STI_HLT_CLI:
+            while (g_cBs3PitTicks < cTargetTicks)
+            {
+                uint32_t const uIrqPc = g_Bs3PitIrqRip.u32;
+                if (uIrqPc == (uint16_t)&bs3Timers1StiHltCli_IrqPc || uIrqPc == 0)
+                    bs3Timers1StiHltCli();
+                else
+                {
+                    Bs3TestFailedF("IrqPC = %#RX32, expected %#RX16!\n", uIrqPc, (uint16_t)&bs3Timers1StiHltCli_IrqPc);
+                    break;
+                }
+            }
+            break;
+
+        /* This variant enabls interrupt like this: sti; sti; cli */
+        case BS3TIMERSIRQLOOP_STI_STI_CLI:
+            while (g_cBs3PitTicks < cTargetTicks)
+            {
+                uint32_t const uIrqPc = g_Bs3PitIrqRip.u32;
+                if (uIrqPc == (uint16_t)&bs3Timers1StiStiCli_IrqPc || uIrqPc == 0)
+                    bs3Timers1StiStiCli();
+                else
+                {
+                    Bs3TestFailedF("IrqPC = %#RX32, expected %#RX16!\n", uIrqPc, (uint16_t)&bs3Timers1StiStiCli_IrqPc);
+                    break;
+                }
+            }
+            break;
+
+        /* This variant enabls interrupt like this: enabling-if-popf; cli */
+        case BS3TIMERSIRQLOOP_POPF_CLI:
+            while (g_cBs3PitTicks < cTargetTicks)
+            {
+                uint32_t const uIrqPc = g_Bs3PitIrqRip.u32;
+                if (uIrqPc == (uint16_t)&bs3Timers1PopfCli_IrqPc || uIrqPc == 0)
+                    bs3Timers1PopfCli();
+                else
+                {
+                    Bs3TestFailedF("IrqPC = %#RX32, expected %#RX16!\n", uIrqPc, (uint16_t)&bs3Timers1PopfCli_IrqPc);
+                    break;
+                }
+            }
+            break;
+    }
 
     Bs3PitDisable();
     ASMIntDisable();
@@ -72,6 +166,8 @@ static uint8_t bs3Timers1_Pit(uint8_t bMode, uint16_t uHz, uint32_t cNsMaxDiviat
     if (cNsDeltaAbs > cNsMaxDiviation)
         Bs3TestFailedF("delta %c%RU64 ns (%RI32 ms), max %RU32 ns", cNsDelta < 0 ? '-' : '+', cNsDeltaAbs,
                        (int32_t)((uint64_t)cNsDelta / RT_NS_1MS), cNsMaxDiviation);
+    else if (g_Bs3PitIrqRip.u32 == 0)
+        Bs3TestFailedF("g_Bs3PitIrqRip.u32 is zero!\n");
 
     return 0;
 }
@@ -79,24 +175,94 @@ static uint8_t bs3Timers1_Pit(uint8_t bMode, uint16_t uHz, uint32_t cNsMaxDiviat
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3Timers1_Pit_100Hz)(uint8_t bMode)
 {
-    return bs3Timers1_Pit(bMode, 100, RT_NS_10MS);
+    return bs3Timers1_Pit(bMode, 100, RT_NS_10MS, BS3TIMERSIRQLOOP_SIMPLE);
 }
 
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3Timers1_Pit_1000Hz)(uint8_t bMode)
 {
-    return bs3Timers1_Pit(bMode, 1000, RT_NS_10MS);
+    return bs3Timers1_Pit(bMode, 1000, RT_NS_10MS, BS3TIMERSIRQLOOP_SIMPLE);
 }
 
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3Timers1_Pit_2000Hz)(uint8_t bMode)
 {
-    return bs3Timers1_Pit(bMode, 2000, RT_NS_10MS*2);
+    return bs3Timers1_Pit(bMode, 2000, RT_NS_10MS*2, BS3TIMERSIRQLOOP_SIMPLE);
 }
 
 
 BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3Timers1_Pit_4000Hz)(uint8_t bMode)
 {
-    return bs3Timers1_Pit(bMode, 4000, RT_NS_10MS*4);
+    return bs3Timers1_Pit(bMode, 4000, RT_NS_10MS*4, BS3TIMERSIRQLOOP_SIMPLE);
+}
+
+
+BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3Timers1_Pit_100Hz_wait1)(uint8_t bMode)
+{
+    return bs3Timers1_Pit(bMode, 100, RT_NS_10MS, BS3TIMERSIRQLOOP_STI_HLT_CLI);
+}
+
+
+BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3Timers1_Pit_100Hz_wait2)(uint8_t bMode)
+{
+    return bs3Timers1_Pit(bMode, 100, RT_NS_10MS, BS3TIMERSIRQLOOP_STI_STI_CLI);
+}
+
+
+BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3Timers1_Pit_100Hz_wait3)(uint8_t bMode)
+{
+    return bs3Timers1_Pit(bMode, 100, RT_NS_10MS, BS3TIMERSIRQLOOP_POPF_CLI);
+}
+
+
+/**
+ * Negative test loop, i.e. no interrupts delivered.
+ *
+ * This is for testing interrupt disabling and inhibition
+ */
+static uint8_t bs3Timers1_PitNegative(uint8_t bMode, uint16_t uHz, BS3TIMERSNOIRQLOOP enmLoop)
+{
+    uint64_t uNsStart;
+
+    ASMIntDisable(); /* paranoia */
+    Bs3PitSetupAndEnablePeriodTimer(uHz);
+    uNsStart  = Bs3TestNow();
+
+    switch (enmLoop)
+    {
+        default:
+        case BS3TIMERSNOIRQLOOP_SIMPLE:
+            while (Bs3TestNow() - uNsStart < RT_NS_1SEC * 2)
+                ASMNopPause();
+            break;
+
+        case BS3TIMERSNOIRQLOOP_STI_CLI:
+            while (Bs3TestNow() - uNsStart < RT_NS_1SEC * 2)
+                bs3Timers1StiCli();
+            break;
+    }
+
+    Bs3PitDisable();
+
+    if (g_cBs3PitTicks > 0)
+        Bs3TestFailedF("g_cBs3PitTicks=%RU32, expected zero!\n", g_cBs3PitTicks);
+
+    ASMIntEnable();
+    ASMNopPause();
+    ASMIntDisable();
+
+    return 0;
+}
+
+
+BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3Timers1_Pit_100Hz_negative1)(uint8_t bMode)
+{
+    return bs3Timers1_PitNegative(bMode, 100, BS3TIMERSNOIRQLOOP_SIMPLE);
+}
+
+
+BS3_DECL_FAR(uint8_t) BS3_CMN_FAR_NM(bs3Timers1_Pit_100Hz_negative2)(uint8_t bMode)
+{
+    return bs3Timers1_PitNegative(bMode, 100, BS3TIMERSNOIRQLOOP_STI_CLI);
 }
 

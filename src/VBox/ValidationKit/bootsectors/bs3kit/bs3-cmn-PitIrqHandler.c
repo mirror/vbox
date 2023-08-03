@@ -46,6 +46,8 @@
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 #if ARCH_BITS == 16
+/** The RIP/EIP value of where the PIT IRQ handle will return to. */
+BS3REG volatile     g_Bs3PitIrqRip;
 /** Nano seconds (approx) since last the PIT timer was started. */
 uint64_t volatile   g_cBs3PitNs    = 0;
 /** Milliseconds seconds (very approx) since last the PIT timer was started. */
@@ -69,6 +71,7 @@ BS3_DECL_NEAR_CALLBACK(void) BS3_CMN_NM(bs3PitIrqHandler)(PBS3TRAPFRAME pTrapFra
         g_cBs3PitMs += g_cBs3PitIntervalMs;
         g_cBs3PitNs += g_cBs3PitIntervalNs;
         g_cBs3PitTicks++;
+        g_Bs3PitIrqRip.u = pTrapFrame->Ctx.rip.u;
     }
     NOREF(pTrapFrame);
     ASMOutU8(0x20, 0x20); /** @todo function! */

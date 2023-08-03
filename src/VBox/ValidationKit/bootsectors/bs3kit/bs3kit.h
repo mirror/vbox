@@ -2515,94 +2515,6 @@ extern uint16_t g_cbBs3PagingOneCanonicalTrap;
  */
 BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3PagingSetupCanonicalTraps,(void));
 
-/**
- * Waits for the keyboard controller to become ready.
- */
-BS3_CMN_PROTO_NOSB(void, Bs3KbdWait,(void));
-
-/**
- * Sends a read command to the keyboard controller and gets the result.
- *
- * The caller is responsible for making sure the keyboard controller is ready
- * for a command (call #Bs3KbdWait if unsure).
- *
- * @returns The value read is returned (in al).
- * @param   bCmd            The read command.
- */
-BS3_CMN_PROTO_NOSB(uint8_t, Bs3KbdRead,(uint8_t bCmd));
-
-/**
- * Sends a write command to the keyboard controller and then sends the data.
- *
- * The caller is responsible for making sure the keyboard controller is ready
- * for a command (call #Bs3KbdWait if unsure).
- *
- * @param   bCmd           The write command.
- * @param   bData          The data to write.
- */
-BS3_CMN_PROTO_NOSB(void, Bs3KbdWrite,(uint8_t bCmd, uint8_t bData));
-
-
-/**
- * Configures the PIC, once only.
- *
- * Subsequent calls to this function will not do anything.
- *
- * The PIC will be programmed to use IDT/IVT vectors 0x70 thru 0x7f, auto
- * end-of-interrupt, and all IRQs masked.  The individual PIC users will have to
- * use #Bs3PicUpdateMask unmask their IRQ once they've got all the handlers
- * installed.
- *
- * @param   fForcedReInit   Force a reinitialization.
- */
-BS3_CMN_PROTO_STUB(void, Bs3PicSetup,(bool fForcedReInit));
-
-/**
- * Updates the PIC masks.
- *
- * @returns The new mask - master in low, slave in high byte.
- * @param   fAndMask    Things to keep as-is. Master in low, slave in high byte.
- * @param   fOrMask     Things to start masking. Ditto wrt bytes.
- */
-BS3_CMN_PROTO_STUB(uint16_t, Bs3PicUpdateMask,(uint16_t fAndMask, uint16_t fOrMask));
-
-/**
- * Disables all IRQs on the PIC.
- */
-BS3_CMN_PROTO_STUB(void, Bs3PicMaskAll,(void));
-
-
-/**
- * Sets up the PIT for periodic callback.
- *
- * @param   cHzDesired      The desired Hz.  Zero means max interval length
- *                          (18.2Hz).  Plase check the various PIT globals for
- *                          the actual interval length.
- */
-BS3_CMN_PROTO_STUB(void, Bs3PitSetupAndEnablePeriodTimer,(uint16_t cHzDesired));
-
-/**
- * Disables the PIT if active.
- */
-BS3_CMN_PROTO_STUB(void, Bs3PitDisable,(void));
-
-/** Nanoseconds (approx) since last the PIT timer was started. */
-extern uint64_t volatile    g_cBs3PitNs;
-/** Milliseconds seconds (very approx) since last the PIT timer was started. */
-extern uint64_t volatile    g_cBs3PitMs;
-/** Number of ticks since last the PIT timer was started.  */
-extern uint32_t volatile    g_cBs3PitTicks;
-/** The current interval in nanoseconds.
- * This is 0 if not yet started (cleared by Bs3PitDisable). */
-extern uint32_t             g_cBs3PitIntervalNs;
-/** The current interval in milliseconds (approximately).
- * This is 0 if not yet started (cleared by Bs3PitDisable). */
-extern uint16_t             g_cBs3PitIntervalMs;
-/** The current PIT frequency (approximately).
- * 0 if not yet started (cleared by Bs3PitDisable; used for checking the
- * state internally). */
-extern uint16_t volatile    g_cBs3PitIntervalHz;
-
 
 /**
  * Call 16-bit prot mode function from v8086 mode.
@@ -4499,6 +4411,115 @@ BS3_DECL(uint32_t) Bs3BiosInt15h88(void);
     value [ax dx] \
     modify exact [ax bx cx dx es];
 #endif
+
+/** @} */
+
+
+/** @defgroup grp_bs3kit_kbd    Keyboard
+ * @{
+ */
+
+/**
+ * Waits for the keyboard controller to become ready.
+ */
+BS3_CMN_PROTO_NOSB(void, Bs3KbdWait,(void));
+
+/**
+ * Sends a read command to the keyboard controller and gets the result.
+ *
+ * The caller is responsible for making sure the keyboard controller is ready
+ * for a command (call #Bs3KbdWait if unsure).
+ *
+ * @returns The value read is returned (in al).
+ * @param   bCmd            The read command.
+ */
+BS3_CMN_PROTO_NOSB(uint8_t, Bs3KbdRead,(uint8_t bCmd));
+
+/**
+ * Sends a write command to the keyboard controller and then sends the data.
+ *
+ * The caller is responsible for making sure the keyboard controller is ready
+ * for a command (call #Bs3KbdWait if unsure).
+ *
+ * @param   bCmd           The write command.
+ * @param   bData          The data to write.
+ */
+BS3_CMN_PROTO_NOSB(void, Bs3KbdWrite,(uint8_t bCmd, uint8_t bData));
+
+/** @} */
+
+
+/** @defgroup grp_bs3kit_pic    PIC
+ * @{
+ */
+
+/**
+ * Configures the PIC, once only.
+ *
+ * Subsequent calls to this function will not do anything.
+ *
+ * The PIC will be programmed to use IDT/IVT vectors 0x70 thru 0x7f, auto
+ * end-of-interrupt, and all IRQs masked.  The individual PIC users will have to
+ * use #Bs3PicUpdateMask unmask their IRQ once they've got all the handlers
+ * installed.
+ *
+ * @param   fForcedReInit   Force a reinitialization.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3PicSetup,(bool fForcedReInit));
+
+/**
+ * Updates the PIC masks.
+ *
+ * @returns The new mask - master in low, slave in high byte.
+ * @param   fAndMask    Things to keep as-is. Master in low, slave in high byte.
+ * @param   fOrMask     Things to start masking. Ditto wrt bytes.
+ */
+BS3_CMN_PROTO_STUB(uint16_t, Bs3PicUpdateMask,(uint16_t fAndMask, uint16_t fOrMask));
+
+/**
+ * Disables all IRQs on the PIC.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3PicMaskAll,(void));
+
+/** @} */
+
+
+/** @defgroup grp_bs3kit_pit    PIT
+ * @{
+ */
+
+/**
+ * Sets up the PIT for periodic callback.
+ *
+ * @param   cHzDesired      The desired Hz.  Zero means max interval length
+ *                          (18.2Hz).  Plase check the various PIT globals for
+ *                          the actual interval length.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3PitSetupAndEnablePeriodTimer,(uint16_t cHzDesired));
+
+/**
+ * Disables the PIT if active.
+ */
+BS3_CMN_PROTO_STUB(void, Bs3PitDisable,(void));
+
+/** The RIP/EIP value of where the PIT IRQ handle will return to. */
+extern BS3REG volatile      g_Bs3PitIrqRip;
+/** Nanoseconds (approx) since last the PIT timer was started. */
+extern uint64_t volatile    g_cBs3PitNs;
+/** Milliseconds seconds (very approx) since last the PIT timer was started. */
+extern uint64_t volatile    g_cBs3PitMs;
+/** Number of ticks since last the PIT timer was started.  */
+extern uint32_t volatile    g_cBs3PitTicks;
+/** The current interval in nanoseconds.
+ * This is 0 if not yet started (cleared by Bs3PitDisable). */
+extern uint32_t             g_cBs3PitIntervalNs;
+/** The current interval in milliseconds (approximately).
+ * This is 0 if not yet started (cleared by Bs3PitDisable). */
+extern uint16_t             g_cBs3PitIntervalMs;
+/** The current PIT frequency (approximately).
+ * 0 if not yet started (cleared by Bs3PitDisable; used for checking the
+ * state internally). */
+extern uint16_t volatile    g_cBs3PitIntervalHz;
 
 /** @} */
 

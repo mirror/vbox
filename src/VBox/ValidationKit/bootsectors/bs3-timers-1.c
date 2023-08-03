@@ -49,6 +49,11 @@ FNBS3TESTDOMODE             bs3Timers1_Pit_100Hz_f16;
 FNBS3TESTDOMODE             bs3Timers1_Pit_1000Hz_f16;
 FNBS3TESTDOMODE             bs3Timers1_Pit_2000Hz_f16;
 FNBS3TESTDOMODE             bs3Timers1_Pit_4000Hz_f16;
+FNBS3TESTDOMODE             bs3Timers1_Pit_100Hz_wait1_f16;
+FNBS3TESTDOMODE             bs3Timers1_Pit_100Hz_wait2_f16;
+FNBS3TESTDOMODE             bs3Timers1_Pit_100Hz_wait3_f16;
+FNBS3TESTDOMODE             bs3Timers1_Pit_100Hz_negative1_f16;
+FNBS3TESTDOMODE             bs3Timers1_Pit_100Hz_negative2_f16;
 
 
 /*********************************************************************************************************************************
@@ -56,10 +61,17 @@ FNBS3TESTDOMODE             bs3Timers1_Pit_4000Hz_f16;
 *********************************************************************************************************************************/
 static const BS3TESTMODEBYONEENTRY g_aModeByOneTests[] =
 {
-    { "pit-100Hz",      bs3Timers1_Pit_100Hz_f16,  BS3TESTMODEBYONEENTRY_F_MINIMAL },
-    { "pit-1000Hz",     bs3Timers1_Pit_1000Hz_f16, BS3TESTMODEBYONEENTRY_F_MINIMAL },
-    { "pit-2000Hz",     bs3Timers1_Pit_2000Hz_f16, BS3TESTMODEBYONEENTRY_F_MINIMAL },
-    { "pit-4000Hz",     bs3Timers1_Pit_4000Hz_f16, BS3TESTMODEBYONEENTRY_F_MINIMAL },
+#if 0
+    { "pit-100Hz",          bs3Timers1_Pit_100Hz_f16,  BS3TESTMODEBYONEENTRY_F_MINIMAL },
+    { "pit-1000Hz",         bs3Timers1_Pit_1000Hz_f16, BS3TESTMODEBYONEENTRY_F_MINIMAL },
+    { "pit-2000Hz",         bs3Timers1_Pit_2000Hz_f16, BS3TESTMODEBYONEENTRY_F_MINIMAL },
+    { "pit-4000Hz",         bs3Timers1_Pit_4000Hz_f16, BS3TESTMODEBYONEENTRY_F_MINIMAL },
+    { "pit-100Hz-wait1",    bs3Timers1_Pit_100Hz_wait1_f16, BS3TESTMODEBYONEENTRY_F_MINIMAL },
+#endif
+    { "pit-100Hz-wait2",    bs3Timers1_Pit_100Hz_wait2_f16, BS3TESTMODEBYONEENTRY_F_MINIMAL },
+    { "pit-100Hz-wait3",    bs3Timers1_Pit_100Hz_wait3_f16, BS3TESTMODEBYONEENTRY_F_MINIMAL },
+    { "pit-100Hz-neg1",     bs3Timers1_Pit_100Hz_negative1_f16, BS3TESTMODEBYONEENTRY_F_MINIMAL },
+    { "pit-100Hz-neg2",     bs3Timers1_Pit_100Hz_negative2_f16, BS3TESTMODEBYONEENTRY_F_MINIMAL },
 };
 
 

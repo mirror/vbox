@@ -425,7 +425,8 @@ ifdef VBOX_WITH_BS3KIT
  bs3-timers-1_SOURCES = \
  	bs3kit/bs3-first-rm.asm \
  	bs3-timers-1.c \
- 	bs3-timers-1-x0.c
+ 	bs3-timers-1-x0.c \
+ 	bs3-timers-1-asm.asm
 
  #
  # Timing

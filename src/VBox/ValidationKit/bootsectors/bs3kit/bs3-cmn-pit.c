@@ -74,11 +74,12 @@ BS3_CMN_DEF(void, Bs3PitSetupAndEnablePeriodTimer,(uint16_t cHzDesired))
     Bs3TrapSetHandlerEx(0x70, bs3PitIrqHandler_c16, bs3PitIrqHandler_c32, bs3PitIrqHandler_c64);
 
     /*
-     * Reset the counters.
+     * Reset the counters and IRQ PC.
      */
     g_cBs3PitNs         = 0;
     g_cBs3PitMs         = 0;
     g_cBs3PitTicks      = 0;
+    g_Bs3PitIrqRip.u    = 0;
 
     /*
      * Calculate an interval.
