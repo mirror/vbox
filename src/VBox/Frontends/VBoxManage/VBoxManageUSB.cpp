@@ -184,13 +184,9 @@ RTEXITCODE handleUSBFilter(HandlerArg *a)
     HRESULT hrc = S_OK;
     USBFilterCmd cmd;
 
-    /* at least: 0: command, 1: index, 2: --target, 3: <target value> */
-    if (a->argc < 4)
-        return errorSyntax(Usb::tr("Not enough parameters"));
-
     /* which command? */
     cmd.mAction = USBFilterCmd::Invalid;
-    if      (!strcmp(a->argv[0], "add"))
+    if (!strcmp(a->argv[0], "add"))
     {
         cmd.mAction = USBFilterCmd::Add;
         setCurrentSubcommand(HELP_SCOPE_USBFILTER_ADD);
@@ -207,215 +203,149 @@ RTEXITCODE handleUSBFilter(HandlerArg *a)
     }
 
     if (cmd.mAction == USBFilterCmd::Invalid)
-        return errorSyntax(Usb::tr("Invalid parameter '%s'"), a->argv[0]);
+        return errorUnknownSubcommand(a->argv[0]);
 
     /* which index? */
-    if (VINF_SUCCESS !=  RTStrToUInt32Full(a->argv[1], 10, &cmd.mIndex))
+    if (VINF_SUCCESS != RTStrToUInt32Full(a->argv[1], 10, &cmd.mIndex))
         return errorSyntax(Usb::tr("Invalid index '%s'"), a->argv[1]);
 
-    switch (cmd.mAction)
+    if (cmd.mAction == USBFilterCmd::Add || cmd.mAction == USBFilterCmd::Modify)
     {
-        case USBFilterCmd::Add:
-        case USBFilterCmd::Modify:
+        // set Active to true by default
+        // (assuming that the user sets up all necessary attributes
+        // at once and wants the filter to be active immediately)
+        if (cmd.mAction == USBFilterCmd::Add)
+            cmd.mFilter.mActive = true;
+
+        RTGETOPTSTATE               GetState;
+        RTGETOPTUNION               ValueUnion;
+        static const RTGETOPTDEF    s_aOptions[] =
         {
-            /* at least: 0: command, 1: index, 2: --target, 3: <target value>, 4: --name, 5: <name value> */
-            if (a->argc < 6)
+            { "--target",               't',    RTGETOPT_REQ_STRING },
+            { "--name",                 'n',    RTGETOPT_REQ_STRING },
+            { "--active",               'a',    RTGETOPT_REQ_STRING },
+            { "--vendorid",             'v',    RTGETOPT_REQ_STRING },
+            { "--productid",            'p',    RTGETOPT_REQ_STRING },
+            { "--revision",             'r',    RTGETOPT_REQ_STRING },
+            { "--manufacturer",         'm',    RTGETOPT_REQ_STRING },
+            { "--product",              'P',    RTGETOPT_REQ_STRING },
+            { "--serialnumber",         's',    RTGETOPT_REQ_STRING },
+            { "--port",                 'o',    RTGETOPT_REQ_STRING },
+            { "--remote",               'R',    RTGETOPT_REQ_STRING },
+            { "--maskedinterfaces",     'M',    RTGETOPT_REQ_UINT32 },
+            { "--action",               'A',    RTGETOPT_REQ_STRING }
+        };
+
+        int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, 0 /*fFlags*/);
+        AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+        while ((vrc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+        {
+            switch (vrc)
             {
-                if (cmd.mAction == USBFilterCmd::Add)
-                    return errorSyntax(Usb::tr("Not enough parameters"));
-
-                return errorSyntax(Usb::tr("Not enough parameters"));
-            }
-
-            // set Active to true by default
-            // (assuming that the user sets up all necessary attributes
-            // at once and wants the filter to be active immediately)
-            if (cmd.mAction == USBFilterCmd::Add)
-                cmd.mFilter.mActive = true;
-
-            for (int i = 2; i < a->argc; i++)
-            {
-                if (   !strcmp(a->argv[i], "--target")
-                    || !strcmp(a->argv[i], "-target"))
-                {
-                    if (a->argc <= i + 1 || !*a->argv[i+1])
-                        return errorArgument(Usb::tr("Missing argument to '%s'"), a->argv[i]);
-                    i++;
-                    if (!strcmp(a->argv[i], "global"))
+                case 't':   // --target
+                    if (!strcmp(ValueUnion.psz, "global"))
                         cmd.mGlobal = true;
                     else
-                    {
-                        /* assume it's a UUID of a machine */
-                        CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(a->argv[i]).raw(),
+                        CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(ValueUnion.psz).raw(),
                                                                    cmd.mMachine.asOutParam()), RTEXITCODE_FAILURE);
-                    }
-                }
-                else if (   !strcmp(a->argv[i], "--name")
-                         || !strcmp(a->argv[i], "-name"))
-                {
-                    if (a->argc <= i + 1 || !*a->argv[i+1])
-                        return errorArgument(Usb::tr("Missing argument to '%s'"), a->argv[i]);
-                    i++;
-                    cmd.mFilter.mName = a->argv[i];
-                }
-                else if (   !strcmp(a->argv[i], "--active")
-                         || !strcmp(a->argv[i], "-active"))
-                {
-                    if (a->argc <= i + 1)
-                        return errorArgument(Usb::tr("Missing argument to '%s'"), a->argv[i]);
-                    i++;
-                    if (!strcmp(a->argv[i], "yes"))
+                    break;
+                case 'n':   // --name
+                    cmd.mFilter.mName = ValueUnion.psz;
+                    break;
+                case 'a':   // --active
+                    if (!strcmp(ValueUnion.psz, "yes"))
                         cmd.mFilter.mActive = true;
-                    else if (!strcmp(a->argv[i], "no"))
+                    else if (!strcmp(ValueUnion.psz, "no"))
                         cmd.mFilter.mActive = false;
-                    else
-                        return errorArgument(Usb::tr("Invalid --active argument '%s'"), a->argv[i]);
-                }
-                else if (   !strcmp(a->argv[i], "--vendorid")
-                         || !strcmp(a->argv[i], "-vendorid"))
-                {
-                    if (a->argc <= i + 1)
-                        return errorArgument(Usb::tr("Missing argument to '%s'"), a->argv[i]);
-                    i++;
-                    cmd.mFilter.mVendorId = a->argv[i];
-                }
-                else if (   !strcmp(a->argv[i], "--productid")
-                         || !strcmp(a->argv[i], "-productid"))
-                {
-                    if (a->argc <= i + 1)
-                        return errorArgument(Usb::tr("Missing argument to '%s'"), a->argv[i]);
-                    i++;
-                    cmd.mFilter.mProductId = a->argv[i];
-                }
-                else if (   !strcmp(a->argv[i], "--revision")
-                         || !strcmp(a->argv[i], "-revision"))
-                {
-                    if (a->argc <= i + 1)
-                        return errorArgument(Usb::tr("Missing argument to '%s'"), a->argv[i]);
-                    i++;
-                    cmd.mFilter.mRevision = a->argv[i];
-                }
-                else if (   !strcmp(a->argv[i], "--manufacturer")
-                         || !strcmp(a->argv[i], "-manufacturer"))
-                {
-                    if (a->argc <= i + 1)
-                        return errorArgument(Usb::tr("Missing argument to '%s'"), a->argv[i]);
-                    i++;
-                    cmd.mFilter.mManufacturer = a->argv[i];
-                }
-                else if (!strcmp(a->argv[i], "--port"))
-                {
-                    if (a->argc <= i + 1)
-                        return errorArgument(Usb::tr("Missing argument to '%s'"), a->argv[i]);
-                    i++;
-                    cmd.mFilter.mPort = a->argv[i];
-                }
-                else if (   !strcmp(a->argv[i], "--product")
-                         || !strcmp(a->argv[i], "-product"))
-                {
-                    if (a->argc <= i + 1)
-                        return errorArgument(Usb::tr("Missing argument to '%s'"), a->argv[i]);
-                    i++;
-                    cmd.mFilter.mProduct = a->argv[i];
-                }
-                else if (   !strcmp(a->argv[i], "--remote")
-                         || !strcmp(a->argv[i], "-remote"))
-                {
-                    if (a->argc <= i + 1)
-                        return errorArgument(Usb::tr("Missing argument to '%s'"), a->argv[i]);
-                    i++;
-                    cmd.mFilter.mRemote = a->argv[i];
-                }
-                else if (   !strcmp(a->argv[i], "--serialnumber")
-                         || !strcmp(a->argv[i], "-serialnumber"))
-                {
-                    if (a->argc <= i + 1)
-                        return errorArgument(Usb::tr("Missing argument to '%s'"), a->argv[i]);
-                    i++;
-                    cmd.mFilter.mSerialNumber = a->argv[i];
-                }
-                else if (   !strcmp(a->argv[i], "--maskedinterfaces")
-                         || !strcmp(a->argv[i], "-maskedinterfaces"))
-                {
-                    if (a->argc <= i + 1)
-                        return errorArgument(Usb::tr("Missing argument to '%s'"), a->argv[i]);
-                    i++;
-                    uint32_t u32;
-                    int vrc = RTStrToUInt32Full(a->argv[i], 0, &u32);
-                    if (RT_FAILURE(vrc))
-                        return errorArgument(Usb::tr("Failed to convert the --maskedinterfaces value '%s' to a number, vrc=%Rrc"),
-                                             a->argv[i], vrc);
-                    cmd.mFilter.mMaskedInterfaces = u32;
-                }
-                else if (   !strcmp(a->argv[i], "--action")
-                         || !strcmp(a->argv[i], "-action"))
-                {
-                    if (a->argc <= i + 1)
-                        return errorArgument(Usb::tr("Missing argument to '%s'"), a->argv[i]);
-                    i++;
-                    if (!strcmp(a->argv[i], "ignore"))
+                   else
+                        return errorArgument(Usb::tr("Invalid --active argument '%s'"), ValueUnion.psz);
+                    break;
+                case 'v':   // --vendorid
+                    cmd.mFilter.mVendorId = ValueUnion.psz;
+                    break;
+                case 'p':   // --productid
+                    cmd.mFilter.mProductId = ValueUnion.psz;
+                    break;
+                case 'r':   // --revision
+                    cmd.mFilter.mRevision = ValueUnion.psz;
+                    break;
+                case 'm':   // --manufacturer
+                    cmd.mFilter.mManufacturer = ValueUnion.psz;
+                    break;
+                case 'P':   // --product
+                    cmd.mFilter.mProduct = ValueUnion.psz;
+                    break;
+                case 's':   // --serialnumber
+                    cmd.mFilter.mSerialNumber = ValueUnion.psz;
+                    break;
+                case 'o':   // --port
+                    cmd.mFilter.mPort = ValueUnion.psz;
+                    break;
+                case 'R':   // --remote
+                    cmd.mFilter.mRemote = ValueUnion.psz;
+                    break;
+                case 'M':   // --maskedinterfaces
+                    cmd.mFilter.mMaskedInterfaces = ValueUnion.u32;
+                    break;
+                case 'A':   // --action
+                    if (!strcmp(ValueUnion.psz, "ignore"))
                         cmd.mFilter.mAction = USBDeviceFilterAction_Ignore;
-                    else if (!strcmp(a->argv[i], "hold"))
+                    else if (!strcmp(ValueUnion.psz, "hold"))
                         cmd.mFilter.mAction = USBDeviceFilterAction_Hold;
                     else
-                        return errorArgument(Usb::tr("Invalid USB filter action '%s'"), a->argv[i]);
-                }
-                else
-                    return errorSyntax(Usb::tr("Unknown option '%s'"), a->argv[i]);
+                        return errorArgument(Usb::tr("Invalid USB filter action '%s'"), ValueUnion.psz);
+                    break;
+                default:
+                    return errorGetOpt(vrc, &ValueUnion);
             }
-
-            if (cmd.mAction == USBFilterCmd::Add)
-            {
-                // mandatory/forbidden options
-                if (   cmd.mFilter.mName.isEmpty()
-                    ||
-                       (   cmd.mGlobal
-                        && cmd.mFilter.mAction == USBDeviceFilterAction_Null
-                       )
-                    || (   !cmd.mGlobal
-                        && !cmd.mMachine)
-                    || (   cmd.mGlobal
-                        && !cmd.mFilter.mRemote.isEmpty())
-                   )
-                {
-                    return errorSyntax(Usb::tr("Mandatory options not supplied"));
-                }
-            }
-            break;
         }
 
-        case USBFilterCmd::Remove:
-        {
-            /* at least: 0: command, 1: index, 2: --target, 3: <target value> */
-            if (a->argc < 4)
-                return errorSyntax(Usb::tr("Not enough parameters"));
+        // mandatory/forbidden options
+        if (!cmd.mGlobal && !cmd.mMachine)
+            return errorSyntax(Usb::tr("Missing required option: --target"));
 
-            for (int i = 2; i < a->argc; i++)
+        if (cmd.mAction == USBFilterCmd::Add)
+        {
+            if (cmd.mFilter.mName.isEmpty())
+                return errorSyntax(Usb::tr("Missing required option: --name"));
+
+            if (cmd.mGlobal && cmd.mFilter.mAction == USBDeviceFilterAction_Null)
+                return errorSyntax(Usb::tr("Missing required option: --action"));
+
+            if (cmd.mGlobal && !cmd.mFilter.mRemote.isEmpty())
+                return errorSyntax(Usb::tr("Option --remote applies to VM filters only (--target=<uuid|vmname>)"));
+        }
+    }
+    else if (cmd.mAction == USBFilterCmd::Remove)
+    {
+        RTGETOPTSTATE               GetState;
+        RTGETOPTUNION               ValueUnion;
+        static const RTGETOPTDEF    s_aOptions[] =
+        {
+                { "--target",    't',    RTGETOPT_REQ_STRING }
+        };
+        int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, 0 /*fFlags*/);
+        AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+        while ((vrc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+        {
+            switch (vrc)
             {
-                if (   !strcmp(a->argv[i], "--target")
-                    || !strcmp(a->argv[i], "-target"))
-                {
-                    if (a->argc <= i + 1 || !*a->argv[i+1])
-                        return errorArgument(Usb::tr("Missing argument to '%s'"), a->argv[i]);
-                    i++;
-                    if (!strcmp(a->argv[i], "global"))
+                case 't':   // --target
+                    if (!strcmp(ValueUnion.psz, "global"))
                         cmd.mGlobal = true;
                     else
-                    {
-                        CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(a->argv[i]).raw(),
+                        CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(ValueUnion.psz).raw(),
                                                                    cmd.mMachine.asOutParam()), RTEXITCODE_FAILURE);
-                    }
-                }
+                    break;
+                default:
+                    return errorGetOpt(vrc, &ValueUnion);
             }
-
-            // mandatory options
-            if (!cmd.mGlobal && !cmd.mMachine)
-                return errorSyntax(Usb::tr("Mandatory options not supplied"));
-
-            break;
         }
-
-        default: break;
+        // mandatory options
+        if (!cmd.mGlobal && !cmd.mMachine)
+            return errorSyntax(Usb::tr("Missing required option: --target"));
     }
 
     USBFilterCmd::USBFilter &f = cmd.mFilter;
