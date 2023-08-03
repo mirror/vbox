@@ -208,10 +208,10 @@ class ThreadedFunctionVariation(object):
         'IEM_CIMPL_F_BRANCH_FAR':           True,
         'IEM_CIMPL_F_BRANCH_CONDITIONAL':   False,
         'IEM_CIMPL_F_RFLAGS':               False,
-        'IEM_CIMPL_F_CHECK_IRQ':            False,
-        'IEM_CIMPL_F_CHECK_IRQ_DELAYED':    False,
+        'IEM_CIMPL_F_CHECK_IRQ_AFTER':      False,
+        'IEM_CIMPL_F_CHECK_IRQ_BEFORE':     False,
         'IEM_CIMPL_F_STATUS_FLAGS':         False,
-        'IEM_CIMPL_F_VMEXIT':               True,
+        'IEM_CIMPL_F_VMEXIT':               False,
         'IEM_CIMPL_F_FPU':                  False,
         'IEM_CIMPL_F_REP':                  True,
         'IEM_CIMPL_F_END_TB':               True,
@@ -530,6 +530,9 @@ class ThreadedFunctionVariation(object):
                     if sFlag != '0':
                         if sFlag in self.kdCImplFlags:
                             self.dsCImplFlags[sFlag] = True;
+                        elif sFlag == 'IEM_CIMPL_F_CHECK_IRQ_BEFORE_AND_AFTER':
+                            self.dsCImplFlags['IEM_CIMPL_F_CHECK_IRQ_BEFORE'] = True;
+                            self.dsCImplFlags['IEM_CIMPL_F_CHECK_IRQ_AFTER']  = True;
                         else:
                             self.raiseProblem('Unknown CIMPL flag value: %s' % (sFlag,));
 
@@ -882,6 +885,11 @@ class ThreadedFunctionVariation(object):
 
         The sCallVarNm is for emitting
         """
+        aoStmts = [
+            iai.McCppCall('IEM_MC2_BEGIN_EMIT_CALLS', ['1' if 'IEM_CIMPL_F_CHECK_IRQ_BEFORE' in self.dsCImplFlags else '0'],
+                          cchIndent = cchIndent), # Scope and a hook for various stuff.
+        ];
+
         # The call to the threaded function.
         asCallArgs = [ self.getIndexName() if not sCallVarNm else sCallVarNm, ];
         for iParam in range(self.cMinParams):
@@ -899,14 +907,7 @@ class ThreadedFunctionVariation(object):
             assert asFrags;
             asCallArgs.append(' | '.join(asFrags));
 
-        sCImplFlags = ' | '.join(self.dsCImplFlags.keys());
-        if not sCImplFlags:
-            sCImplFlags = '0'
-
-        aoStmts = [
-            iai.McCppCall('IEM_MC2_BEGIN_EMIT_CALLS', [], cchIndent = cchIndent), # Scope and a hook for various stuff.
-            iai.McCppCall('IEM_MC2_EMIT_CALL_%s' % (len(asCallArgs) - 1,), asCallArgs, cchIndent = cchIndent),
-        ];
+        aoStmts.append(iai.McCppCall('IEM_MC2_EMIT_CALL_%s' % (len(asCallArgs) - 1,), asCallArgs, cchIndent = cchIndent));
 
         # For CIMPL stuff, we need to consult the associated IEM_CIMPL_F_XXX
         # mask and maybe emit additional checks.
@@ -914,6 +915,9 @@ class ThreadedFunctionVariation(object):
             aoStmts.append(iai.McCppCall('IEM_MC2_EMIT_CALL_1', ( 'kIemThreadedFunc_BltIn_CheckMode', 'pVCpu->iem.s.fExec', ),
                                          cchIndent = cchIndent));
 
+        sCImplFlags = ' | '.join(self.dsCImplFlags.keys());
+        if not sCImplFlags:
+            sCImplFlags = '0'
         aoStmts.append(iai.McCppCall('IEM_MC2_END_EMIT_CALLS', ( sCImplFlags, ), cchIndent = cchIndent)); # For closing the scope.
 
         # Emit fEndTb = true or fTbBranched = true if any of the CIMPL flags
@@ -934,10 +938,8 @@ class ThreadedFunctionVariation(object):
             aoStmts.append(iai.McCppGeneric('pVCpu->iem.s.fEndTb = true; /* %s */' % (','.join(asEndTbFlags),),
                                             cchIndent = cchIndent));
 
-        if 'IEM_CIMPL_F_CHECK_IRQ' in self.dsCImplFlags:
+        if 'IEM_CIMPL_F_CHECK_IRQ_AFTER' in self.dsCImplFlags:
             aoStmts.append(iai.McCppGeneric('pVCpu->iem.s.cInstrTillIrqCheck = 0;', cchIndent = cchIndent));
-        elif 'IEM_CIMPL_F_CHECK_IRQ_DELAYED' in self.dsCImplFlags:
-            aoStmts.append(iai.McCppGeneric('pVCpu->iem.s.cInstrTillIrqCheck = 1;', cchIndent = cchIndent));
 
         return aoStmts;
 

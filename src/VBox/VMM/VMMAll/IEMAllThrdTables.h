@@ -12,7 +12,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation, in version 3 of the
- * License.
+ * License.                     8
  *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -167,13 +167,25 @@
 /*
  * Emit call macros.
  */
-#define IEM_MC2_BEGIN_EMIT_CALLS() \
+#define IEM_MC2_BEGIN_EMIT_CALLS(a_fCheckIrqBefore) \
     { \
         PIEMTB const  pTb = pVCpu->iem.s.pCurTbR3; \
         uint8_t const cbInstrMc2 = IEM_GET_INSTR_LEN(pVCpu); \
         AssertMsg(pVCpu->iem.s.offOpcode == cbInstrMc2, \
                   ("%u vs %u (%04x:%08RX64)\n", pVCpu->iem.s.offOpcode, cbInstrMc2, \
                   pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip)); \
+        \
+        /* If we need to check for IRQs before the instruction, we do that before \
+           adding any opcodes as it may abort the instruction. \
+           Note! During compilation, we may swap IRQ and #PF exceptions here \
+                 in a manner that a real CPU would not do.  However it shouldn't \
+                 be something that is easy (if at all possible) to observe in the \
+                 guest, so fine.  The unexpected end-of-tb below have the same \
+                 potential "issue". */ \
+        if (!(a_fCheckIrqBefore) || iemThreadedCompileEmitIrqCheckBefore(pVCpu, pTb)) \
+        { /* likely */ } \
+        else \
+            return VINF_IEM_RECOMPILE_END_TB; \
         \
         /* No page crossing, right? */ \
         uint16_t const offOpcodeMc2 = pTb->cbOpcodes; \
@@ -273,7 +285,7 @@ DECLINLINE(VBOXSTRICTRC) iemThreadedRecompilerMcDeferToCImpl0(PVMCPUCC pVCpu, ui
     Log8(("CImpl0: %04x:%08RX64 LB %#x: %#x %p\n",
           pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, IEM_GET_INSTR_LEN(pVCpu), fFlags, pfnCImpl));
 
-    IEM_MC2_BEGIN_EMIT_CALLS();
+    IEM_MC2_BEGIN_EMIT_CALLS(fFlags & IEM_CIMPL_F_CHECK_IRQ_BEFORE);
     IEM_MC2_EMIT_CALL_2(kIemThreadedFunc_BltIn_DeferToCImpl0, (uintptr_t)pfnCImpl, IEM_GET_INSTR_LEN(pVCpu));
     IEM_MC2_END_EMIT_CALLS(fFlags);
 
@@ -287,15 +299,13 @@ DECLINLINE(VBOXSTRICTRC) iemThreadedRecompilerMcDeferToCImpl0(PVMCPUCC pVCpu, ui
     AssertCompile(IEM_CIMPL_F_BRANCH_CONDITIONAL == IEMBRANCHED_F_CONDITIONAL);
     AssertCompile(IEM_CIMPL_F_BRANCH_FAR         == IEMBRANCHED_F_FAR);
 
-    if (fFlags & (IEM_CIMPL_F_END_TB | IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_REP))
+    if (fFlags & (IEM_CIMPL_F_END_TB | IEM_CIMPL_F_MODE | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_REP))
         pVCpu->iem.s.fEndTb = true;
     else if (fFlags & IEM_CIMPL_F_BRANCH_ANY)
         pVCpu->iem.s.fTbBranched = fFlags & (IEM_CIMPL_F_BRANCH_ANY | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_CONDITIONAL);
 
-    if (fFlags & IEM_CIMPL_F_CHECK_IRQ)
+    if (fFlags & IEM_CIMPL_F_CHECK_IRQ_BEFORE)
         pVCpu->iem.s.cInstrTillIrqCheck = 0;
-    else if (fFlags & IEM_CIMPL_F_CHECK_IRQ_DELAYED)
-        pVCpu->iem.s.cInstrTillIrqCheck = 1;
 
     return pfnCImpl(pVCpu, IEM_GET_INSTR_LEN(pVCpu));
 }

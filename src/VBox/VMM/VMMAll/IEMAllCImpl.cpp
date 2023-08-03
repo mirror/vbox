@@ -7842,6 +7842,7 @@ IEM_CIMPL_DEF_0(iemCImpl_sti)
         /** @todo only set it the shadow flag if it was clear before? */
         CPUMSetInInterruptShadowSti(&pVCpu->cpum.GstCtx);
     }
+    pVCpu->iem.s.fTbCurInstrIsSti = true;
     Log2(("STI: %#x -> %#x\n", fEflOld, fEfl));
     return rcStrict;
 }

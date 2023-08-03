@@ -735,6 +735,7 @@ DECL_FORCE_INLINE(void) iemThreadedCompileInitDecoder(PVMCPUCC pVCpu, bool const
         pVCpu->iem.s.fTbBranched            = IEMBRANCHED_F_NO;
         pVCpu->iem.s.fTbCrossedPage         = false;
         pVCpu->iem.s.cInstrTillIrqCheck     = 32;
+        pVCpu->iem.s.fTbCurInstrIsSti       = CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx); /** @todo this'll be a IEM_TB_F_XXX flag */
     }
     else
     {
@@ -1180,21 +1181,107 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
 
 
 /**
+ * Worker for iemThreadedCompileBeginEmitCallsComplications and
+ * iemThreadedCompileCheckIrq that checks for pending delivarable events.
+ *
+ * @returns true if anything is pending, false if not.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling
+ *                      thread.
+ */
+DECL_FORCE_INLINE(bool) iemThreadedCompileIsIrqOrForceFlagPending(PVMCPUCC pVCpu)
+{
+    uint64_t fCpu = pVCpu->fLocalForcedActions;
+    fCpu &= VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_INTERRUPT_NMI | VMCPU_FF_INTERRUPT_SMI;
+#if 1
+    if (RT_LIKELY(   !fCpu
+                  || (   !(fCpu & ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+                      && (   !pVCpu->cpum.GstCtx.rflags.Bits.u1IF
+                          || CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx))) ))
+        return false;
+    return true;
+#else
+    return false;
+#endif
+
+}
+
+
+/**
+ * Called by IEM_MC2_BEGIN_EMIT_CALLS() when IEM_CIMPL_F_CHECK_IRQ_BEFORE is
+ * set.
+ *
+ * @returns true if we should continue, false if an IRQ is deliverable or a
+ *          relevant force flag is pending.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling
+ *                      thread.
+ * @param   pTb         The translation block being compiled.
+ * @sa      iemThreadedCompileCheckIrq
+ */
+bool iemThreadedCompileEmitIrqCheckBefore(PVMCPUCC pVCpu, PIEMTB pTb)
+{
+    /*
+     * Skip this we've already emitted a call after the previous instruction.
+     */
+    uint32_t const idxCall = pTb->Thrd.cCalls;
+    if (   idxCall == 0
+        || pTb->Thrd.paCalls[idxCall - 1].enmFunction != kIemThreadedFunc_BltIn_CheckIrq)
+    {
+        /* Emit the call. */
+        AssertReturn(idxCall < pTb->Thrd.cAllocated, false);
+        PIEMTHRDEDCALLENTRY pCall = &pTb->Thrd.paCalls[idxCall];
+        pTb->Thrd.cCalls = (uint16_t)(idxCall + 1);
+        pCall->enmFunction = kIemThreadedFunc_BltIn_CheckIrq;
+        pCall->uUnused0    = 0;
+        pCall->offOpcode   = 0;
+        pCall->cbOpcode    = 0;
+        pCall->idxRange    = 0;
+        pCall->auParams[0] = 0;
+        pCall->auParams[1] = 0;
+        pCall->auParams[2] = 0;
+        LogFunc(("%04x:%08RX64\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
+
+        /* Reset the IRQ check value. */
+        pVCpu->iem.s.cInstrTillIrqCheck = !CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx) ? 32 : 0;
+
+        /*
+         * Check for deliverable IRQs and pending force flags.
+         */
+        return !iemThreadedCompileIsIrqOrForceFlagPending(pVCpu);
+    }
+    return true; /* continue */
+}
+
+
+/**
  * Emits an IRQ check call and checks for pending IRQs.
  *
- * @returns true if IRQs are pending and can be dispatched, false if not.
+ * @returns true if we should continue, false if an IRQ is deliverable or a
+ *          relevant force flag is pending.
  * @param   pVCpu       The cross context virtual CPU structure of the calling
  *                      thread.
  * @param   pTb         The transation block.
+ * @sa      iemThreadedCompileBeginEmitCallsComplications
  */
-static bool iemThreadedCompileCheckIrq(PVMCPUCC pVCpu, PIEMTB pTb)
+static bool iemThreadedCompileCheckIrqAfter(PVMCPUCC pVCpu, PIEMTB pTb)
 {
-    pVCpu->iem.s.cInstrTillIrqCheck = 32;
+    /* Check again in a little bit, unless it is immediately following an STI
+       in which case we *must* check immediately after the next instruction
+       as well in case it's executed with interrupt inhibition.  We could
+       otherwise miss the interrupt window. See the irq2 wait2 varaiant in
+       bs3-timers-1 which is doing sti + sti + cli. */
+    if (!pVCpu->iem.s.fTbCurInstrIsSti)
+        pVCpu->iem.s.cInstrTillIrqCheck = 32;
+    else
+    {
+        pVCpu->iem.s.fTbCurInstrIsSti   = false;
+        pVCpu->iem.s.cInstrTillIrqCheck = 0;
+    }
+    LogFunc(("%04x:%08RX64\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
 
     /*
-     * Emit the call first.
+     * Emit the call.
      */
-    AssertReturn(pTb->Thrd.cCalls < pTb->Thrd.cAllocated, true);
+    AssertReturn(pTb->Thrd.cCalls < pTb->Thrd.cAllocated, false);
     PIEMTHRDEDCALLENTRY pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++];
     pCall->enmFunction = kIemThreadedFunc_BltIn_CheckIrq;
     pCall->uUnused0    = 0;
@@ -1205,17 +1292,10 @@ static bool iemThreadedCompileCheckIrq(PVMCPUCC pVCpu, PIEMTB pTb)
     pCall->auParams[1] = 0;
     pCall->auParams[2] = 0;
 
-
     /*
-     * Check for IRQs.
+     * Check for deliverable IRQs and pending force flags.
      */
-    uint64_t fCpu = pVCpu->fLocalForcedActions;
-    fCpu &= VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_INTERRUPT_NMI | VMCPU_FF_INTERRUPT_SMI;
-    if (RT_LIKELY(   !fCpu
-                  || (   !(fCpu & ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
-                      && !pVCpu->cpum.GstCtx.rflags.Bits.u1IF)))
-        return false;
-    return true;
+    return !iemThreadedCompileIsIrqOrForceFlagPending(pVCpu);
 }
 
 
@@ -1294,9 +1374,9 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
         }
 
         /* Check for IRQs? */
-        if (pVCpu->iem.s.cInstrTillIrqCheck-- > 0)
-        { /* likely */ }
-        else if (iemThreadedCompileCheckIrq(pVCpu, pTb))
+        if (pVCpu->iem.s.cInstrTillIrqCheck > 0)
+            pVCpu->iem.s.cInstrTillIrqCheck--;
+        else if (!iemThreadedCompileCheckIrqAfter(pVCpu, pTb))
             break;
 
         /* Still space in the TB? */
@@ -1355,12 +1435,19 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_M
     pVCpu->iem.s.cTbExec++;
 
     /* The execution loop. */
+#ifdef LOG_ENABLED
+    uint64_t             uRipPrev   = UINT64_MAX;
+#endif
     PCIEMTHRDEDCALLENTRY pCallEntry = pTb->Thrd.paCalls;
     uint32_t             cCallsLeft = pTb->Thrd.cCalls;
     while (cCallsLeft-- > 0)
     {
 #ifdef LOG_ENABLED
-        iemThreadedLogCurInstr(pVCpu, "EX");
+        if (pVCpu->cpum.GstCtx.rip != uRipPrev)
+        {
+            uRipPrev = pVCpu->cpum.GstCtx.rip;
+            iemThreadedLogCurInstr(pVCpu, "EX");
+        }
         Log9(("%04x:%08RX64: #%d - %d %s\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
               pTb->Thrd.cCalls - cCallsLeft - 1, pCallEntry->enmFunction, g_apszIemThreadedFunctions[pCallEntry->enmFunction]));
 #endif
@@ -1452,6 +1539,7 @@ DECL_FORCE_INLINE(uint32_t) iemGetTbFlagsForCurrentPc(PVMCPUCC pVCpu)
      * Return IEMTB_F_RIP_CHECKS if the current PC is invalid or if it is
      * likely to go invalid before the end of the translation block.
      */
+/** @todo must take interrupt inhibiting (shadowing) into account here! */
     if (IEM_IS_64BIT_CODE(pVCpu))
         return IEMTB_F_TYPE_THREADED;
 

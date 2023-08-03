@@ -1260,11 +1260,14 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_CIMPL_F_RFLAGS              RT_BIT_32(6)
 /** May change the status bits (X86_EFL_STATUS_BITS) in RFLAGS . */
 #define IEM_CIMPL_F_STATUS_FLAGS        RT_BIT_32(7)
-/** May enable interrupts, so recheck IRQ immediately afterwards. */
-#define IEM_CIMPL_F_CHECK_IRQ           RT_BIT_32(8)
-/** May enable interrupts, but actual enabling may be delayed one instruction
- *  to do interrupt inhibiting, so recheck IRQ after the next instruction. */
-#define IEM_CIMPL_F_CHECK_IRQ_DELAYED   RT_BIT_32(9)
+/** May enable interrupts, so recheck IRQ immediately afterwards executing
+ *  the instruction. */
+#define IEM_CIMPL_F_CHECK_IRQ_AFTER     RT_BIT_32(8)
+/** May disable interrupts, so recheck IRQ immediately before executing the
+ *  instruction. */
+#define IEM_CIMPL_F_CHECK_IRQ_BEFORE    RT_BIT_32(9)
+/** Convenience: Check for IRQ both before and after an instruction. */
+#define IEM_CIMPL_F_CHECK_IRQ_BEFORE_AND_AFTER (IEM_CIMPL_F_CHECK_IRQ_BEFORE | IEM_CIMPL_F_CHECK_IRQ_AFTER)
 /** May trigger a VM exit. */
 #define IEM_CIMPL_F_VMEXIT              RT_BIT_32(10)
 /** May modify FPU state. */

@@ -1167,11 +1167,16 @@ typedef struct IEMCPU
     bool                    fEndTb;
     /** Number of instructions before we need emit an IRQ check call again.
      * This helps making sure we don't execute too long w/o checking for
-     * interrupts and that we can forcedly perform IRQ checks one instruction
-     * after an STI and immediately following POPF, IRETF and similar. */
+     * interrupts and immediately following instructions that may enable
+     * interrupts (e.g. POPF, IRET, STI).  With STI an additional hack is
+     * required to make sure we check following the next instruction as well, see
+     * fTbCurInstrIsSti. */
     uint8_t                 cInstrTillIrqCheck;
+    /** Indicates that the current instruction is an STI.  This is set by the
+     * iemCImpl_sti code and subsequently cleared by the recompiler. */
+    bool                    fTbCurInstrIsSti;
     /** Spaced reserved for recompiler data / alignment. */
-    bool                    afRecompilerStuff1[3];
+    bool                    afRecompilerStuff1[2];
     /** Previous GCPhysInstrBuf value - only valid if fTbCrossedPage is set.   */
     RTGCPHYS                GCPhysInstrBufPrev;
     /** Copy of IEMCPU::GCPhysInstrBuf after decoding a branch instruction.
@@ -5018,6 +5023,7 @@ IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoadi
 IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb);
 IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingTlb);
 
+bool iemThreadedCompileEmitIrqCheckBefore(PVMCPUCC pVCpu, PIEMTB pTb);
 bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb);
 
 
