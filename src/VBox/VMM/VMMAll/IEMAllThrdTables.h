@@ -12,7 +12,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation, in version 3 of the
- * License.                     8
+ * License.
  *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -287,6 +287,9 @@ DECLINLINE(VBOXSTRICTRC) iemThreadedRecompilerMcDeferToCImpl0(PVMCPUCC pVCpu, ui
 
     IEM_MC2_BEGIN_EMIT_CALLS(fFlags & IEM_CIMPL_F_CHECK_IRQ_BEFORE);
     IEM_MC2_EMIT_CALL_2(kIemThreadedFunc_BltIn_DeferToCImpl0, (uintptr_t)pfnCImpl, IEM_GET_INSTR_LEN(pVCpu));
+    if (   (fFlags & (IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT))
+        && !(fFlags & (IEM_CIMPL_F_END_TB | IEM_CIMPL_F_BRANCH_FAR)))
+        IEM_MC2_EMIT_CALL_1(kIemThreadedFunc_BltIn_CheckMode, pVCpu->iem.s.fExec);
     IEM_MC2_END_EMIT_CALLS(fFlags);
 
     /*

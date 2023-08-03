@@ -125,6 +125,9 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckIrq)
 
 /**
  * Built-in function that compares the fExec mask against uParam0.
+ *
+ * This is used both for IEM_CIMPL_F_MODE and IEM_CIMPL_F_VMEXIT after executing
+ * an instruction.
  */
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckMode)
 {

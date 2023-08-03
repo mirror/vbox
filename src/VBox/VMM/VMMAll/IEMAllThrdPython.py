@@ -911,7 +911,9 @@ class ThreadedFunctionVariation(object):
 
         # For CIMPL stuff, we need to consult the associated IEM_CIMPL_F_XXX
         # mask and maybe emit additional checks.
-        if 'IEM_CIMPL_F_MODE' in self.dsCImplFlags or 'IEM_CIMPL_F_XCPT' in self.dsCImplFlags:
+        if (   'IEM_CIMPL_F_MODE'   in self.dsCImplFlags
+            or 'IEM_CIMPL_F_XCPT'   in self.dsCImplFlags
+            or 'IEM_CIMPL_F_VMEXIT' in self.dsCImplFlags):
             aoStmts.append(iai.McCppCall('IEM_MC2_EMIT_CALL_1', ( 'kIemThreadedFunc_BltIn_CheckMode', 'pVCpu->iem.s.fExec', ),
                                          cchIndent = cchIndent));
 

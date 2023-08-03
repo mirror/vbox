@@ -1268,7 +1268,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_CIMPL_F_CHECK_IRQ_BEFORE    RT_BIT_32(9)
 /** Convenience: Check for IRQ both before and after an instruction. */
 #define IEM_CIMPL_F_CHECK_IRQ_BEFORE_AND_AFTER (IEM_CIMPL_F_CHECK_IRQ_BEFORE | IEM_CIMPL_F_CHECK_IRQ_AFTER)
-/** May trigger a VM exit. */
+/** May trigger a VM exit (treated like IEM_CIMPL_F_MODE atm). */
 #define IEM_CIMPL_F_VMEXIT              RT_BIT_32(10)
 /** May modify FPU state. */
 #define IEM_CIMPL_F_FPU                 RT_BIT_32(11)
