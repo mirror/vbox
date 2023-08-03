@@ -1536,7 +1536,7 @@ DECL_FORCE_INLINE_THROW(RTGCPHYS) iemGetPcWithPhysAndCode(PVMCPUCC pVCpu)
 DECL_FORCE_INLINE(uint32_t) iemGetTbFlagsForCurrentPc(PVMCPUCC pVCpu)
 {
     /*
-     * Return IEMTB_F_RIP_CHECKS if the current PC is invalid or if it is
+     * Return IEMTB_F_CS_LIM_CHECKS if the current PC is invalid or if it is
      * likely to go invalid before the end of the translation block.
      */
 /** @todo must take interrupt inhibiting (shadowing) into account here! */
@@ -1544,7 +1544,7 @@ DECL_FORCE_INLINE(uint32_t) iemGetTbFlagsForCurrentPc(PVMCPUCC pVCpu)
         return IEMTB_F_TYPE_THREADED;
 
     if (RT_LIKELY(   pVCpu->cpum.GstCtx.eip < pVCpu->cpum.GstCtx.cs.u32Limit
-                  && pVCpu->cpum.GstCtx.eip - pVCpu->cpum.GstCtx.cs.u32Limit >= X86_PAGE_SIZE))
+                  && pVCpu->cpum.GstCtx.cs.u32Limit - pVCpu->cpum.GstCtx.eip >= X86_PAGE_SIZE))
         return IEMTB_F_TYPE_THREADED;
 
     return IEMTB_F_TYPE_THREADED | IEMTB_F_CS_LIM_CHECKS;
