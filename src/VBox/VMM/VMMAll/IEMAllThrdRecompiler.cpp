@@ -864,7 +864,7 @@ DECLINLINE(void) iemThreadedCopyOpcodeBytesInline(PCVMCPUCC pVCpu, uint8_t *pbDs
  *      - TLB load detected, probably due to page crossing.
  *
  * @returns true if everything went well, false if we're out of space in the TB
- *          (e.g. opcode ranges).
+ *          (e.g. opcode ranges) or needs to start doing CS.LIM checks.
  * @param   pVCpu       The cross context virtual CPU structure of the calling
  *                      thread.
  * @param   pTb         The translation block being compiled.
@@ -876,6 +876,29 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
     if (pVCpu->cpum.GstCtx.rip >= 0xc0000000 && !LogIsEnabled())
         RTLogChangeFlags(NULL, 0, RTLOGFLAGS_DISABLED);
 #endif
+
+    /*
+     * If we're not in 64-bit mode and not already checking CS.LIM we need to
+     * see if it's needed to start checking.
+     */
+    bool           fConsiderCsLimChecking;
+    uint32_t const fMode = pVCpu->iem.s.fExec & IEM_F_MODE_MASK;
+    if (   fMode == IEM_F_MODE_X86_64BIT
+        || (pTb->fFlags & IEMTB_F_CS_LIM_CHECKS)
+        || fMode == IEM_F_MODE_X86_32BIT_PROT_FLAT
+        || fMode == IEM_F_MODE_X86_32BIT_FLAT)
+        fConsiderCsLimChecking = false; /* already enabled or not needed */
+    else
+    {
+        int64_t const offFromLim = (int64_t)pVCpu->cpum.GstCtx.cs.u32Limit - (int64_t)pVCpu->cpum.GstCtx.eip;
+        if (offFromLim >= GUEST_PAGE_SIZE + 16 - (int32_t)(pVCpu->cpum.GstCtx.cs.u64Base & GUEST_PAGE_OFFSET_MASK))
+            fConsiderCsLimChecking = true; /* likely */
+        else
+        {
+            Log8(("%04x:%08RX64: Needs CS.LIM checks (%#RX64)\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, offFromLim));
+            return false;
+        }
+    }
 
     /*
      * Prepare call now, even before we know if can accept the instruction in this TB.
@@ -999,17 +1022,23 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
                 || pVCpu->iem.s.fTbCrossedPage)
                 pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
                                    ? kIemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb
-                                   : kIemThreadedFunc_BltIn_CheckOpcodesLoadingTlb;
+                                   : !fConsiderCsLimChecking
+                                   ? kIemThreadedFunc_BltIn_CheckOpcodesLoadingTlb
+                                   : kIemThreadedFunc_BltIn_CheckOpcodesLoadingTlbConsiderCsLim;
             else if (pVCpu->iem.s.fTbBranched & (IEMBRANCHED_F_CONDITIONAL | /* paranoia: */ IEMBRANCHED_F_DIRECT))
                 pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
                                    ? kIemThreadedFunc_BltIn_CheckCsLimAndPcAndOpcodes
-                                   : kIemThreadedFunc_BltIn_CheckPcAndOpcodes;
+                                   : !fConsiderCsLimChecking
+                                   ? kIemThreadedFunc_BltIn_CheckPcAndOpcodes
+                                   : kIemThreadedFunc_BltIn_CheckPcAndOpcodesConsiderCsLim;
             else
             {
                 Assert(pVCpu->iem.s.fTbBranched & IEMBRANCHED_F_RELATIVE);
                 pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
                                    ? kIemThreadedFunc_BltIn_CheckCsLimAndOpcodes
-                                   : kIemThreadedFunc_BltIn_CheckOpcodes;
+                                   : !fConsiderCsLimChecking
+                                   ? kIemThreadedFunc_BltIn_CheckOpcodes
+                                   : kIemThreadedFunc_BltIn_CheckOpcodesConsiderCsLim;
             }
         }
         else
@@ -1111,7 +1140,9 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
             /* Determin which function we need to load & check. */
             pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
                                ? kIemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb
-                               : kIemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingTlb;
+                               : !fConsiderCsLimChecking
+                               ? kIemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingTlb
+                               : kIemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingTlbConsiderCsLim;
         }
         else
         {
@@ -1133,11 +1164,15 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
             if (pVCpu->iem.s.fTbCheckOpcodes)
                 pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
                                    ? kIemThreadedFunc_BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb
-                                   : kIemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoadingTlb;
+                                   : !fConsiderCsLimChecking
+                                   ? kIemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoadingTlb
+                                   : kIemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoadingTlbConsiderCsLim;
             else
                 pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
                                    ? kIemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb
-                                   : kIemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoadingTlb;
+                                   : !fConsiderCsLimChecking
+                                   ? kIemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoadingTlb
+                                   : kIemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoadingTlbConsiderCsLim;
         }
     }
 
@@ -1568,13 +1603,12 @@ DECL_FORCE_INLINE(uint32_t) iemGetTbFlagsForCurrentPc(PVMCPUCC pVCpu)
      * likely to go invalid before the end of the translation block.
      */
     if (IEM_IS_64BIT_CODE(pVCpu))
-    { /* done */ }
-    else if (RT_LIKELY(   pVCpu->cpum.GstCtx.eip < pVCpu->cpum.GstCtx.cs.u32Limit
-                       && pVCpu->cpum.GstCtx.cs.u32Limit - pVCpu->cpum.GstCtx.eip >= X86_PAGE_SIZE))
-    { /* done */ }
-    else
-        fRet |= IEMTB_F_CS_LIM_CHECKS;
-    return fRet;
+        return fRet;
+
+    int64_t const offFromLim = (int64_t)pVCpu->cpum.GstCtx.cs.u32Limit - (int64_t)pVCpu->cpum.GstCtx.eip;
+    if (offFromLim >= X86_PAGE_SIZE + 16 - (int32_t)(pVCpu->cpum.GstCtx.cs.u64Base & GUEST_PAGE_OFFSET_MASK))
+        return fRet;
+    return fRet | IEMTB_F_CS_LIM_CHECKS;
 }
 
 

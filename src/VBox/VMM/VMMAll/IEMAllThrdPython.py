@@ -1383,18 +1383,30 @@ class IEMThreadedGenerator(object):
         'CheckIrq',
         'CheckMode',
         'CheckCsLim',
+
         'CheckCsLimAndOpcodes',
         'CheckOpcodes',
+        'CheckOpcodesConsiderCsLim',
+
         'CheckCsLimAndPcAndOpcodes',
         'CheckPcAndOpcodes',
+        'CheckPcAndOpcodesConsiderCsLim',
+
         'CheckCsLimAndOpcodesAcrossPageLoadingTlb',
         'CheckOpcodesAcrossPageLoadingTlb',
+        'CheckOpcodesAcrossPageLoadingTlbConsiderCsLim',
+
         'CheckCsLimAndOpcodesLoadingTlb',
         'CheckOpcodesLoadingTlb',
+        'CheckOpcodesLoadingTlbConsiderCsLim',
+
         'CheckCsLimAndOpcodesOnNextPageLoadingTlb',
         'CheckOpcodesOnNextPageLoadingTlb',
+        'CheckOpcodesOnNextPageLoadingTlbConsiderCsLim',
+
         'CheckCsLimAndOpcodesOnNewPageLoadingTlb',
         'CheckOpcodesOnNewPageLoadingTlb',
+        'CheckOpcodesOnNewPageLoadingTlbConsiderCsLim',
     );
 
     def generateThreadedFunctionsHeader(self, oOut):

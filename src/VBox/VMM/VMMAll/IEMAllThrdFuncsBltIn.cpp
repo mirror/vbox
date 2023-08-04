@@ -314,6 +314,27 @@ DECL_FORCE_INLINE(RTGCPHYS) iemTbGetRangePhysPageAddr(PCIEMTB pTb, uint8_t idxRa
         } \
     } while(0)
 
+/**
+ * Macro that considers whether we need CS.LIM checking after a branch or
+ * crossing over to a new page.
+ *
+ * This may long jump if we're raising a \#PF, \#GP or similar trouble.
+ */
+#define BODY_CONSIDER_CS_LIM_CHECKING(a_pTb, a_cbInstr) do { \
+        int64_t const offFromLim = (int64_t)pVCpu->cpum.GstCtx.cs.u32Limit - (int64_t)pVCpu->cpum.GstCtx.eip; \
+        if (offFromLim >= GUEST_PAGE_SIZE + 16 - (int32_t)(pVCpu->cpum.GstCtx.cs.u64Base & GUEST_PAGE_OFFSET_MASK)) \
+        { /* likely */ } \
+        else \
+        { \
+            Log7(("TB need CS.LIM: %p at %04x:%08RX64 LB %u; #%u offFromLim=%#RX64 CS.LIM=%#RX32 CS.BASE=%#RX64\n", \
+                  (a_pTb), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (a_cbInstr), offFromLim, \
+                  pVCpu->cpum.GstCtx.cs.u32Limit, pVCpu->cpum.GstCtx.cs.u64Base, __LINE__)); \
+            RT_NOREF(a_pTb, a_cbInstr); \
+            return iemThreadeFuncWorkerObsoleteTb(pVCpu); \
+        } \
+    } while(0)
+
+
 
 /**
  * Built-in function that checks the EIP/IP + uParam0 is within CS.LIM,
@@ -354,6 +375,22 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodes)
     uint32_t const cbInstr  = (uint32_t)uParam0;
     uint32_t const idxRange = (uint32_t)uParam1;
     uint32_t const offRange = (uint32_t)uParam2;
+    BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Built-in function for re-checking opcodes and considering the need for CS.LIM
+ * checking after an instruction that may have modified them.
+ */
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesConsiderCsLim)
+{
+    PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
+    uint32_t const cbInstr  = (uint32_t)uParam0;
+    uint32_t const idxRange = (uint32_t)uParam1;
+    uint32_t const offRange = (uint32_t)uParam2;
+    BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
     return VINF_SUCCESS;
 }
@@ -405,6 +442,28 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckPcAndOpcodes)
 
 
 /**
+ * Built-in function for checking the PC and checking opcodes and considering
+ * the need for CS.LIM checking after conditional branching within the same
+ * page.
+ *
+ * @see iemThreadedFunc_BltIn_CheckCsLimAndPcAndOpcodes
+ */
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckPcAndOpcodesConsiderCsLim)
+{
+    PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
+    uint32_t const cbInstr  = (uint32_t)uParam0;
+    uint32_t const idxRange = (uint32_t)uParam1;
+    uint32_t const offRange = (uint32_t)uParam2;
+    //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
+    BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);
+    BODY_CHECK_PC_AFTER_BRANCH(pTb, idxRange, cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
+    //LogFunc(("okay\n"));
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Built-in function for checking CS.LIM, loading TLB and checking opcodes when
  * transitioning to a different code page.
  *
@@ -444,6 +503,30 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesLoadingTlb)
     uint32_t const idxRange = (uint32_t)uParam1;
     uint32_t const offRange = (uint32_t)uParam2;
     //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
+    BODY_LOAD_TLB_AFTER_BRANCH(pTb, idxRange, cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
+    //LogFunc(("okay\n"));
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Built-in function for loading TLB and checking opcodes and considering the
+ * need for CS.LIM checking when transitioning to a different code page.
+ *
+ * The code page transition can either be natural over onto the next page (with
+ * the instruction starting at page offset zero) or by means of branching.
+ *
+ * @see iemThreadedFunc_BltIn_CheckCsLimAndOpcodesLoadingTlb
+ */
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesLoadingTlbConsiderCsLim)
+{
+    PCIEMTB const  pTb      = pVCpu->iem.s.pCurTbR3;
+    uint32_t const cbInstr  = (uint32_t)uParam0;
+    uint32_t const idxRange = (uint32_t)uParam1;
+    uint32_t const offRange = (uint32_t)uParam2;
+    //LogFunc(("idxRange=%u @ %#x LB %#x: offPhysPage=%#x LB %#x\n", idxRange, offRange, cbInstr, pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].cbOpcodes));
+    BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);
     BODY_LOAD_TLB_AFTER_BRANCH(pTb, idxRange, cbInstr);
     BODY_CHECK_OPCODES(pTb, idxRange, offRange, cbInstr);
     //LogFunc(("okay\n"));
@@ -508,6 +591,33 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoading
 
 
 /**
+ * Built-in function for loading TLB and checking opcodes on both pages and
+ * considering the need for CS.LIM checking when transitioning to a different
+ * code page.
+ *
+ * This is used when the previous instruction requires revalidation of opcodes
+ * bytes and the current instruction stries a page boundrary with opcode bytes
+ * in both the old and new page.
+ *
+ * @see iemThreadedFunc_BltIn_CheckCsLimAndOpcodesAcrossPageLoadingTlb
+ */
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesAcrossPageLoadingTlbConsiderCsLim)
+{
+    PCIEMTB const  pTb         = pVCpu->iem.s.pCurTbR3;
+    uint32_t const cbInstr     = (uint32_t)uParam0;
+    uint32_t const cbStartPage = (uint32_t)(uParam0 >> 32);
+    uint32_t const idxRange1   = (uint32_t)uParam1;
+    uint32_t const offRange1   = (uint32_t)uParam2;
+    uint32_t const idxRange2   = idxRange1 + 1;
+    BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange1, offRange1, cbInstr);
+    BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, cbStartPage, idxRange2, cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange2, 0, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Built-in function for checking CS.LIM, loading TLB and checking opcodes when
  * advancing naturally to a different code page.
  *
@@ -555,6 +665,30 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoading
 
 
 /**
+ * Built-in function for loading TLB and checking opcodes and considering the
+ * need for CS.LIM checking when advancing naturally to a different code page.
+ *
+ * Only opcodes on the new page is checked.
+ *
+ * @see iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNextPageLoadingTlb
+ */
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesOnNextPageLoadingTlbConsiderCsLim)
+{
+    PCIEMTB const  pTb         = pVCpu->iem.s.pCurTbR3;
+    uint32_t const cbInstr     = (uint32_t)uParam0;
+    uint32_t const cbStartPage = (uint32_t)(uParam0 >> 32);
+    uint32_t const idxRange1   = (uint32_t)uParam1;
+    //uint32_t const offRange1   = (uint32_t)uParam2;
+    uint32_t const idxRange2   = idxRange1 + 1;
+    BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);
+    BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, cbStartPage, idxRange2, cbInstr);
+    BODY_CHECK_OPCODES(pTb, idxRange2, 0, cbInstr);
+    RT_NOREF(uParam2);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Built-in function for checking CS.LIM, loading TLB and checking opcodes when
  * advancing naturally to a different code page with first instr at byte 0.
  *
@@ -586,6 +720,27 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingT
     uint32_t const cbInstr     = (uint32_t)uParam0;
     uint32_t const idxRange    = (uint32_t)uParam1;
     Assert(uParam2 == 0 /*offRange*/); RT_NOREF(uParam2);
+    BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, 0, idxRange, cbInstr);
+    Assert(pVCpu->iem.s.offCurInstrStart == 0);
+    BODY_CHECK_OPCODES(pTb, idxRange, 0, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Built-in function for loading TLB and checking opcodes and considering the
+ * need for CS.LIM checking when advancing naturally to a different code page
+ * with first instr at byte 0.
+ *
+ * @see iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNewPageLoadingTlb
+ */
+IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingTlbConsiderCsLim)
+{
+    PCIEMTB const  pTb         = pVCpu->iem.s.pCurTbR3;
+    uint32_t const cbInstr     = (uint32_t)uParam0;
+    uint32_t const idxRange    = (uint32_t)uParam1;
+    Assert(uParam2 == 0 /*offRange*/); RT_NOREF(uParam2);
+    BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);
     BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, 0, idxRange, cbInstr);
     Assert(pVCpu->iem.s.offCurInstrStart == 0);
     BODY_CHECK_OPCODES(pTb, idxRange, 0, cbInstr);
