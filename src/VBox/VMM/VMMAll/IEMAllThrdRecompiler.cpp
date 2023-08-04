@@ -1193,6 +1193,7 @@ DECL_FORCE_INLINE(bool) iemThreadedCompileIsIrqOrForceFlagPending(PVMCPUCC pVCpu
     uint64_t fCpu = pVCpu->fLocalForcedActions;
     fCpu &= VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_INTERRUPT_NMI | VMCPU_FF_INTERRUPT_SMI;
 #if 1
+    /** @todo this isn't even close to the NMI/IRQ conditions in EM. */
     if (RT_LIKELY(   !fCpu
                   || (   !(fCpu & ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
                       && (   !pVCpu->cpum.GstCtx.rflags.Bits.u1IF
@@ -1220,11 +1221,12 @@ DECL_FORCE_INLINE(bool) iemThreadedCompileIsIrqOrForceFlagPending(PVMCPUCC pVCpu
 bool iemThreadedCompileEmitIrqCheckBefore(PVMCPUCC pVCpu, PIEMTB pTb)
 {
     /*
-     * Skip this we've already emitted a call after the previous instruction.
+     * Skip this we've already emitted a call after the previous instruction
+     * or if it's the first call, as we're always checking FFs between blocks.
      */
     uint32_t const idxCall = pTb->Thrd.cCalls;
-    if (   idxCall == 0
-        || pTb->Thrd.paCalls[idxCall - 1].enmFunction != kIemThreadedFunc_BltIn_CheckIrq)
+    if (   idxCall > 0
+        && pTb->Thrd.paCalls[idxCall - 1].enmFunction != kIemThreadedFunc_BltIn_CheckIrq)
     {
         /* Emit the call. */
         AssertReturn(idxCall < pTb->Thrd.cAllocated, false);
@@ -1327,6 +1329,14 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
        functions may get at it. */
     pVCpu->iem.s.pCurTbR3 = pTb;
 
+#if 0
+    /* Make sure the CheckIrq condition matches the one in EM. */
+    iemThreadedCompileCheckIrqAfter(pVCpu, pTb);
+    const uint32_t cZeroCalls = 1;
+#else
+    const uint32_t cZeroCalls = 0;
+#endif
+
     /*
      * Now for the recomplication. (This mimicks IEMExecLots in many ways.)
      */
@@ -1361,7 +1371,7 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
             if (rcStrict == VINF_IEM_RECOMPILE_END_TB)
                 rcStrict = VINF_SUCCESS;
 
-            if (pTb->Thrd.cCalls > 0)
+            if (pTb->Thrd.cCalls > cZeroCalls)
             {
                 if (cCallsPrev != pTb->Thrd.cCalls)
                     pVCpu->iem.s.cInstructions++;
@@ -1455,7 +1465,6 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_M
                                                                                           pCallEntry->auParams[0],
                                                                                           pCallEntry->auParams[1],
                                                                                           pCallEntry->auParams[2]);
-
         if (RT_LIKELY(   rcStrict == VINF_SUCCESS
                       && pVCpu->iem.s.rcPassUp == VINF_SUCCESS /** @todo this isn't great. */))
             pCallEntry++;
@@ -1471,6 +1480,7 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_M
         }
     }
 
+    pVCpu->iem.s.cInstructions += pTb->cInstructions;
     pVCpu->iem.s.pCurTbR3 = NULL;
     return VINF_SUCCESS;
 }
@@ -1605,9 +1615,11 @@ VMMDECL(VBOXSTRICTRC) IEMExecRecompilerThreaded(PVMCC pVM, PVMCPUCC pVCpu)
                                                   | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
                                                   | VMCPU_FF_TLB_FLUSH
                                                   | VMCPU_FF_UNHALT );
+                    /** @todo this isn't even close to the NMI/IRQ conditions in EM. */
                     if (RT_LIKELY(   (   !fCpu
                                       || (   !(fCpu & ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
-                                          && !pVCpu->cpum.GstCtx.rflags.Bits.u1IF) )
+                                          && (   !pVCpu->cpum.GstCtx.rflags.Bits.u1IF
+                                              || CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx) )) )
                                   && !VM_FF_IS_ANY_SET(pVM, VM_FF_ALL_MASK) ))
                     {
                         if (RT_LIKELY(   (iIterations & cPollRate) != 0

@@ -108,6 +108,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckIrq)
                                   | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
                                   | VMCPU_FF_TLB_FLUSH
                                   | VMCPU_FF_UNHALT );
+    /** @todo this isn't even close to the NMI and interrupt conditions in EM! */
     if (RT_LIKELY(   (   !fCpu
                       || (   !(fCpu & ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
                           && (   !pVCpu->cpum.GstCtx.rflags.Bits.u1IF
