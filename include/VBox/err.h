@@ -2500,8 +2500,8 @@
 #define VINF_IEM_SELECTOR_NOT_OK                    (5305)
 /** Recompiler: Translation block allocation failed. */
 #define VERR_IEM_TB_ALLOC_FAILED                    (-5309)
-/** Recompiled execution: Stop execution TB - Mode (fExec) changed. */
-#define VINF_IEM_REEXEC_MODE_CHANGED                (5310)
+/** Recompiled execution: Break out of current TB execution. */
+#define VINF_IEM_REEXEC_BREAK                       (5310)
 /** Recompilation: End translation block. */
 #define VINF_IEM_RECOMPILE_END_TB                   (5311)
 

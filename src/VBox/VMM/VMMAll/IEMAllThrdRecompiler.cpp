@@ -1474,7 +1474,7 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_M
 
             /* Some status codes are just to get us out of this loop and
                continue in a different translation block. */
-            if (rcStrict == VINF_IEM_REEXEC_MODE_CHANGED)
+            if (rcStrict == VINF_IEM_REEXEC_BREAK)
                 return iemExecStatusCodeFiddling(pVCpu, VINF_SUCCESS);
             return iemExecStatusCodeFiddling(pVCpu, rcStrict);
         }
