@@ -58,6 +58,14 @@
 # define SEEK_END 2
 #endif
 
+#if RTLNX_VER_MIN(6,4,0)
+# define VBOX_ITER_IOV_ADDR(a_iter)  iter_iov_addr(a_iter)
+#elif RTLNX_VER_MIN(3,19,0)
+# define VBOX_ITER_IOV_ADDR(a_iter)  (a_iter->kvec->iov_base + a_iter->iov_offset)
+#else
+# define VBOX_ITER_IOV_ADDR(a_iter)  (a_iter->iov->iov_base  + a_iter->iov_offset)
+#endif
+
 #if RTLNX_VER_MAX(3,16,0)
 # define iter_is_iovec(a_pIter) ( !((a_pIter)->type & ITER_KVEC) )
 #elif RTLNX_VER_MAX(3,19,0)
@@ -94,6 +102,14 @@
 # define VBSF_GET_ITER_IOV(_iter) iter_iov(_iter)
 #else
 # define VBSF_GET_ITER_IOV(_iter) iter->iov
+#endif
+
+/** @def  VBOX_IOV_ITER_IS_KVEC
+ * Test if iov iter type is ITER_KVEC. */
+#if RTLNX_VER_MIN(4,20,0)
+# define VBOX_IOV_ITER_IS_KVEC(a_iter)  iov_iter_is_kvec(a_iter)
+#else
+# define VBOX_IOV_ITER_IS_KVEC(a_iter)  (VBSF_GET_ITER_TYPE(iter) & ITER_KVEC)
 #endif
 
 
@@ -367,8 +383,8 @@ static size_t copy_from_iter(uint8_t *pbDst, size_t cbToCopy, struct iov_iter *p
                 if (cbThisCopy > cbToCopy)
                     cbThisCopy = cbToCopy;
                 if (pSrcIter->type & ITER_KVEC)
-                    memcpy(pbDst, (void *)pSrcIter->iov->iov_base + pSrcIter->iov_offset, cbThisCopy);
-                else if (copy_from_user(pbDst, pSrcIter->iov->iov_base + pSrcIter->iov_offset, cbThisCopy) != 0)
+                    memcpy(pbDst, (void *)VBOX_ITER_IOV_ADDR(pSrcIter), cbThisCopy);
+                else if (copy_from_user(pbDst, VBOX_ITER_IOV_ADDR(pSrcIter), cbThisCopy) != 0)
                     break;
                 pbDst    += cbThisCopy;
                 cbToCopy -= cbThisCopy;
@@ -406,8 +422,8 @@ static size_t copy_to_iter(uint8_t const *pbSrc, size_t cbToCopy, struct iov_ite
                 if (cbThisCopy > cbToCopy)
                     cbThisCopy = cbToCopy;
                 if (pDstIter->type & ITER_KVEC)
-                    memcpy((void *)pDstIter->iov->iov_base + pDstIter->iov_offset, pbSrc, cbThisCopy);
-                else if (copy_to_user(pDstIter->iov->iov_base + pDstIter->iov_offset, pbSrc, cbThisCopy) != 0) {
+                    memcpy((void *)VBOX_ITER_IOV_ADDR(pDstIter), pbSrc, cbThisCopy);
+                else if (copy_to_user(VBOX_ITER_IOV_ADDR(pDstIter), pbSrc, cbThisCopy) != 0) {
                     break;
                 }
                 pbSrc    += cbThisCopy;
@@ -2152,7 +2168,8 @@ static int vbsf_iter_lock_pages(struct iov_iter *iter, bool fWrite, struct vbsf_
     int    rc       = 0;
 
     Assert(iov_iter_count(iter) + pStash->cb > 0);
-    if (!(VBSF_GET_ITER_TYPE(iter) & ITER_KVEC)) {
+    if (!VBOX_IOV_ITER_IS_KVEC(iter))
+    {
         /*
          * Do we have a stashed page?
          */
@@ -2309,11 +2326,7 @@ static int vbsf_iter_lock_pages(struct iov_iter *iter, bool fWrite, struct vbsf_
                 cbSeg = iov_iter_single_seg_count(iter);
             }
 
-# if RTLNX_VER_MIN(3,19,0)
-            pbBuf    = iter->kvec->iov_base + iter->iov_offset;
-# else
-            pbBuf    = iter->iov->iov_base  + iter->iov_offset;
-# endif
+            pbBuf = VBOX_ITER_IOV_ADDR(iter);
             offStart = (uintptr_t)pbBuf & PAGE_OFFSET_MASK;
             if (!cPages)
                 offPage0 = offStart;
