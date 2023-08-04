@@ -27,10 +27,15 @@
 
 /* Qt includes: */
 #include <QComboBox>
+#include <QHBoxLayout>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QPainter>
-#include <QHBoxLayout>
+#ifdef VBOX_IS_QT6_OR_LATER /* fromWildcard is available since 6.0 */
+# include <QRegularExpression>
+#else
+# include <QRegExp>
+#endif
 
 /* GUI includes: */
 #include "QIToolButton.h"
@@ -68,13 +73,22 @@ public:
         UIMediumItem *pMediumItem = dynamic_cast<UIMediumItem*>(pItem);
         if (!pMediumItem)
             return false;
-        if (m_enmSearchType == UIMediumSearchWidget::SearchByUUID &&
-            !pMediumItem->id().toString().contains(m_strSearchTerm, Qt::CaseInsensitive))
+        QString strValue;
+        if (m_enmSearchType == UIMediumSearchWidget::SearchByUUID)
+            strValue = pMediumItem->id().toString();
+        else if (m_enmSearchType == UIMediumSearchWidget::SearchByName)
+            strValue = pMediumItem->name();
+        else
             return false;
-        if (m_enmSearchType == UIMediumSearchWidget::SearchByName &&
-            !pMediumItem->name().contains(m_strSearchTerm, Qt::CaseInsensitive))
-            return false;
-        return true;
+#ifdef VBOX_IS_QT6_OR_LATER /* fromWildcard is available since 6.0 */
+        QRegularExpression searchRegEx = QRegularExpression::fromWildcard(m_strSearchTerm, Qt::CaseInsensitive,
+                                                                          QRegularExpression::UnanchoredWildcardConversion);
+#else
+        QRegExp searchRegEx(m_strSearchTerm, Qt::CaseInsensitive, QRegExp::Wildcard);
+#endif
+        if (strValue.contains(searchRegEx))
+            return true;
+        return false;
     }
 
 private:
