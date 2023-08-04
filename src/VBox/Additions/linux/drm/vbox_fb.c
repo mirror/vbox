@@ -197,7 +197,7 @@ static struct fb_ops vboxfb_ops = {
 	.fb_check_var = drm_fb_helper_check_var,
 	.fb_set_par = drm_fb_helper_set_par,
 #if RTLNX_VER_MIN(6,5,0)
-	__FB_DEFAULT_SYS_OPS_DRAW,
+	FB_DEFAULT_SYS_OPS,
 #else
 	.fb_fillrect = drm_fb_helper_sys_fillrect,
 	.fb_copyarea = drm_fb_helper_sys_copyarea,
@@ -374,6 +374,10 @@ static int vboxfb_create(struct drm_fb_helper *helper,
 			       sizes->fb_height);
 #endif
 
+#if RTLNX_VER_MIN(6,5,0)
+	info->screen_buffer = (char *)bo->kmap.virtual;
+	info->fix.smem_start = page_to_phys(vmalloc_to_page(bo->kmap.virtual));
+#endif
 	info->screen_base = (char __iomem *)bo->kmap.virtual;
 	info->screen_size = size;
 
@@ -382,6 +386,14 @@ static int vboxfb_create(struct drm_fb_helper *helper,
 	info->fix.smem_len = info->screen_size;
 # endif
 	info->fbdefio = &vbox_defio;
+# if RTLNX_VER_MIN(5,19,0)
+	ret = fb_deferred_io_init(info);
+	if (ret)
+	{
+		DRM_ERROR("failed to initialize deferred io: %d\n", ret);
+		return ret;
+	}
+# endif
 	fb_deferred_io_init(info);
 #endif
 
@@ -512,8 +524,7 @@ void vbox_fbdev_set_base(struct vbox_private *vbox, unsigned long gpu_addr)
 	struct fb_info *fbdev = VBOX_FBDEV_INFO(vbox->fbdev->helper);
 
 #if RTLNX_VER_MIN(6,3,0) || RTLNX_RHEL_MAJ_PREREQ(9,3)
-    fbdev->fix.smem_start =
-pci_resource_start(VBOX_DRM_TO_PCI_DEV(vbox->fbdev->helper.dev), 0) + gpu_addr;
+	fbdev->fix.smem_start = pci_resource_start(VBOX_DRM_TO_PCI_DEV(vbox->fbdev->helper.dev), 0) + gpu_addr;
 #else
 	fbdev->fix.smem_start = fbdev->apertures->ranges[0].base + gpu_addr;
 #endif

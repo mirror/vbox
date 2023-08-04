@@ -363,6 +363,19 @@ static int vbox_bo_move(struct ttm_buffer_object *bo, bool evict,
 	struct ttm_operation_ctx *ctx, struct ttm_resource *new_mem,
 	struct ttm_place *hop)
 {
+# if RTLNX_VER_MIN(6,4,0)
+	if (!bo->resource)
+	{
+		if (new_mem->mem_type != TTM_PL_SYSTEM)
+		{
+			hop->mem_type = TTM_PL_SYSTEM;
+			hop->flags = TTM_PL_FLAG_TEMPORARY;
+			return -EMULTIHOP;
+		}
+		ttm_bo_move_null(bo, new_mem);
+		return 0;
+	}
+# endif
 	return ttm_bo_move_memcpy(bo, ctx, new_mem);
 }
 #endif
@@ -576,6 +589,10 @@ void vbox_ttm_placement(struct vbox_bo *bo, u32 mem_type)
 static const struct drm_gem_object_funcs vbox_drm_gem_object_funcs = {
 	.free   = vbox_gem_free_object,
 	.print_info = drm_gem_ttm_print_info,
+# if RTLNX_VER_MIN(6,5,0)
+	.vmap   = drm_gem_ttm_vmap,
+	.vunmap = drm_gem_ttm_vunmap,
+# endif
 # if RTLNX_VER_MIN(5,14,0) || RTLNX_RHEL_RANGE(8,6, 8,99)
 	.mmap = drm_gem_ttm_mmap,
 # endif

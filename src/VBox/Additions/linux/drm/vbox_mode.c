@@ -869,6 +869,16 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
 	vbox->cursor_data_size = data_size;
 	dst = vbox->cursor_data;
 
+#if RTLNX_VER_MIN(6,4,0)
+	/* Make sure bo is in SYSTEM (main) memory, so we can access it directly. */
+	ret = vbox_bo_pin(bo, VBOX_MEM_TYPE_SYSTEM, NULL);
+	if (ret)
+	{
+		DRM_ERROR("cannot pin bo to main memory\n");
+		goto out_bo_unpin;
+	}
+#endif
+
 #if RTLNX_VER_MIN(5,14,0) || RTLNX_RHEL_RANGE(8,6, 8,99)
 	ret = ttm_bo_kmap(&bo->bo, 0, VBOX_BO_RESOURCE_NUM_PAGES(bo->bo.resource), &uobj_map);
 #elif RTLNX_VER_MIN(5,12,0) || RTLNX_RHEL_MAJ_PREREQ(8,5)
@@ -900,6 +910,10 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
 
 out_unmap_bo:
 	ttm_bo_kunmap(&uobj_map);
+#if RTLNX_VER_MIN(6,4,0)
+out_bo_unpin:
+	vbox_bo_unpin(bo);
+#endif
 out_unreserve_bo:
 	vbox_bo_unreserve(bo);
 out_unref_obj:
