@@ -2083,7 +2083,7 @@ class TestVmManager(object):
 
         # W11
         TestVm('tst-win11-64-efi',           kfGrpStdSmoke,       sHd = '7.0/win11/win11-64-edited.vdi',
-               sKind = 'Windows11_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi', 
+               sKind = 'Windows11_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
                sHddControllerType = 'SATA Controller'),
 
         # Nested hardware-virtualization
