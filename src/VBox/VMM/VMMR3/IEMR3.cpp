@@ -169,20 +169,31 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 
 #ifdef VBOX_WITH_IEM_RECOMPILER
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.cTbExec,             STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
-                        "Executed translation block",                   "/IEM/CPU%u/cTbExec", idCpu);
+                        "Executed translation block",                   "/IEM/CPU%u/re/cTbExec", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTbExecBreaks,    STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Times TB execution was interrupted/broken off", "/IEM/CPU%u/re/cTbExecBreaks", idCpu);
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.cTbAllocs,           STAMTYPE_U64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
-                        "Translation block allocations",                "/IEM/CPU%u/cTbAllocs", idCpu);
+                        "Translation block allocations",                "/IEM/CPU%u/re/cTbAllocs", idCpu);
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.cTbFrees,            STAMTYPE_U64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
-                        "Translation block frees",                      "/IEM/CPU%u/cTbFrees", idCpu);
+                        "Translation block frees",                      "/IEM/CPU%u/re/cTbFrees", idCpu);
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.cTbLookupHits,       STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
-                        "Translation block lookup hits",                "/IEM/CPU%u/cTbLookupHits", idCpu);
+                        "Translation block lookup hits",                "/IEM/CPU%u/re/cTbLookupHits", idCpu);
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.cTbLookupMisses,     STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
-                        "Translation block lookup misses",              "/IEM/CPU%u/cTbLookupMisses", idCpu);
+                        "Translation block lookup misses",              "/IEM/CPU%u/re/cTbLookupMisses", idCpu);
 
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTbThreadedCalls, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS_PER_TB,
-                        "Calls per threaded translation block",         "/IEM/CPU%u/ThrdCallsPerTb", idCpu);
+                        "Calls per threaded translation block",         "/IEM/CPU%u/re/ThrdCallsPerTb", idCpu);
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTbThreadedInstr, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_INSTR_PER_TB,
-                        "Instruction per threaded translation block",   "/IEM/CPU%u/ThrdInstrPerTb", idCpu);
+                        "Instruction per threaded translation block",   "/IEM/CPU%u/re/ThrdInstrPerTb", idCpu);
+
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatCheckIrqBreaks,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "TB breaks by CheckIrq",                        "/IEM/CPU%u/re/CheckIrqBreaks", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatCheckModeBreaks, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "TB breaks by CheckMode",                       "/IEM/CPU%u/re/CheckModeBreaks", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatCheckBranchMisses, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Branch target misses",                         "/IEM/CPU%u/re/CheckTbJmpMisses", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatCheckNeedCsLimChecking, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Needing CS.LIM checking TB after branch or on page crossing", "/IEM/CPU%u/re/CheckTbNeedCsLimChecking", idCpu);
 #endif
 
         for (uint32_t i = 0; i < RT_ELEMENTS(pVCpu->iem.s.aStatXcpts); i++)

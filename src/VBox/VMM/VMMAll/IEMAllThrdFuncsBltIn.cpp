@@ -90,7 +90,8 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_DeferToCImpl0)
 
 
 /**
- * Built-in function that checks for pending interrupts that can be delivered.
+ * Built-in function that checks for pending interrupts that can be delivered or
+ * forced action flags.
  *
  * This triggers after the completion of an instruction, so EIP is already at
  * the next instruction.  If an IRQ or important FF is pending, this will return
@@ -119,6 +120,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckIrq)
     Log(("%04x:%08RX32: Pending IRQ and/or FF: fCpu=%#RX64 fVm=%#RX32 IF=%d\n",
          pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.eip, fCpu,
          pVCpu->CTX_SUFF(pVM)->fGlobalForcedActions & VM_FF_ALL_MASK, pVCpu->cpum.GstCtx.rflags.Bits.u1IF));
+    STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckIrqBreaks);
     return VINF_IEM_REEXEC_BREAK;
 }
 
@@ -138,6 +140,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckMode)
     LogFlow(("Mode changed at %04x:%08RX64: %#x -> %#x (xor: %#x)\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
              fExpectedExec, pVCpu->iem.s.fExec, fExpectedExec ^ pVCpu->iem.s.fExec));
     RT_NOREF(uParam1, uParam2);
+    STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckModeBreaks);
     return VINF_IEM_REEXEC_BREAK;
 }
 
@@ -244,6 +247,7 @@ DECL_FORCE_INLINE(RTGCPHYS) iemTbGetRangePhysPageAddr(PCIEMTB pTb, uint8_t idxRa
                       (a_pTb), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (a_cbInstr), \
                       pVCpu->iem.s.GCPhysInstrBuf + off, GCPhysRangePageWithOffset, pVCpu->iem.s.pbInstrBuf, __LINE__)); \
                 RT_NOREF(a_cbInstr); \
+                STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckBranchMisses); \
                 return VINF_IEM_REEXEC_BREAK; \
             } \
             else \
@@ -277,6 +281,7 @@ DECL_FORCE_INLINE(RTGCPHYS) iemTbGetRangePhysPageAddr(PCIEMTB pTb, uint8_t idxRa
                       (a_pTb), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (a_cbInstr), \
                       pVCpu->iem.s.GCPhysInstrBuf + offNew, GCPhysRangePageWithOffset, pVCpu->iem.s.pbInstrBuf, __LINE__)); \
                 RT_NOREF(a_cbInstr); \
+                STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckBranchMisses); \
                 return VINF_IEM_REEXEC_BREAK; \
             } \
             else \
@@ -310,6 +315,7 @@ DECL_FORCE_INLINE(RTGCPHYS) iemTbGetRangePhysPageAddr(PCIEMTB pTb, uint8_t idxRa
                   (a_pTb), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (a_cbInstr), \
                   pVCpu->iem.s.GCPhysInstrBuf + off, GCPhysRangePageWithOffset, pVCpu->iem.s.pbInstrBuf, __LINE__)); \
             RT_NOREF(a_cbInstr); \
+            STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckBranchMisses); \
             return VINF_IEM_REEXEC_BREAK; \
         } \
     } while(0)
@@ -330,6 +336,7 @@ DECL_FORCE_INLINE(RTGCPHYS) iemTbGetRangePhysPageAddr(PCIEMTB pTb, uint8_t idxRa
                   (a_pTb), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (a_cbInstr), offFromLim, \
                   pVCpu->cpum.GstCtx.cs.u32Limit, pVCpu->cpum.GstCtx.cs.u64Base, __LINE__)); \
             RT_NOREF(a_pTb, a_cbInstr); \
+            STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckNeedCsLimChecking); \
             return VINF_IEM_REEXEC_BREAK; \
         } \
     } while(0)

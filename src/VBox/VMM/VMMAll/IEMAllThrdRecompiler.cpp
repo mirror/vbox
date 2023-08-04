@@ -909,6 +909,7 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
     uint8_t                   idxRange  = pTb->cRanges - 1;
 
     PIEMTHRDEDCALLENTRY const pCall     = &pTb->Thrd.paCalls[pTb->Thrd.cCalls];
+    pCall->idxInstr    = pTb->cInstructions;
     pCall->offOpcode   = offOpcode;
     pCall->idxRange    = idxRange;
     pCall->cbOpcode    = cbInstr;
@@ -1271,6 +1272,7 @@ bool iemThreadedCompileEmitIrqCheckBefore(PVMCPUCC pVCpu, PIEMTB pTb)
         PIEMTHRDEDCALLENTRY pCall = &pTb->Thrd.paCalls[idxCall];
         pTb->Thrd.cCalls = (uint16_t)(idxCall + 1);
         pCall->enmFunction = kIemThreadedFunc_BltIn_CheckIrq;
+        pCall->idxInstr    = pTb->cInstructions;
         pCall->uUnused0    = 0;
         pCall->offOpcode   = 0;
         pCall->cbOpcode    = 0;
@@ -1324,6 +1326,7 @@ static bool iemThreadedCompileCheckIrqAfter(PVMCPUCC pVCpu, PIEMTB pTb)
     AssertReturn(pTb->Thrd.cCalls < pTb->Thrd.cAllocated, false);
     PIEMTHRDEDCALLENTRY pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++];
     pCall->enmFunction = kIemThreadedFunc_BltIn_CheckIrq;
+    pCall->idxInstr    = pTb->cInstructions;
     pCall->uUnused0    = 0;
     pCall->offOpcode   = 0;
     pCall->cbOpcode    = 0;
@@ -1496,8 +1499,9 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_M
             uRipPrev = pVCpu->cpum.GstCtx.rip;
             iemThreadedLogCurInstr(pVCpu, "EX");
         }
-        Log9(("%04x:%08RX64: #%d - %d %s\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
-              pTb->Thrd.cCalls - cCallsLeft - 1, pCallEntry->enmFunction, g_apszIemThreadedFunctions[pCallEntry->enmFunction]));
+        Log9(("%04x:%08RX64: #%d/%d - %d %s\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
+              pTb->Thrd.cCalls - cCallsLeft - 1, pCallEntry->idxInstr, pCallEntry->enmFunction,
+              g_apszIemThreadedFunctions[pCallEntry->enmFunction]));
 #endif
         VBOXSTRICTRC const rcStrict = g_apfnIemThreadedFunctions[pCallEntry->enmFunction](pVCpu,
                                                                                           pCallEntry->auParams[0],
@@ -1508,7 +1512,9 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_M
             pCallEntry++;
         else
         {
-            pVCpu->iem.s.pCurTbR3 = NULL;
+            pVCpu->iem.s.cInstructions += pCallEntry->idxInstr; /* This may be one short, but better than zero. */
+            pVCpu->iem.s.pCurTbR3       = NULL;
+            STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatTbExecBreaks);
 
             /* Some status codes are just to get us out of this loop and
                continue in a different translation block. */
