@@ -686,13 +686,16 @@ static VBOXSTRICTRC iemThreadedCompileLongJumped(PVMCC pVM, PVMCPUCC pVCpu, VBOX
  * This is very similar to iemInitDecoder() and iemReInitDecoder(), so may need
  * to apply fixes to them as well.
  *
- * @param   pVCpu   The cross context virtual CPU structure of the calling
- *                  thread.
- * @param   fReInit Clear for the first call for a TB, set for subsequent calls
- *                  from inside the compile loop where we can skip a couple of
- *                  things.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling
+ *                      thread.
+ * @param   fReInit     Clear for the first call for a TB, set for subsequent
+ *                      calls from inside the compile loop where we can skip a
+ *                      couple of things.
+ * @param   fExtraFlags The extra translation block flags when @a fReInit is
+ *                      true, otherwise ignored.  Only IEMTB_F_INHIBIT_SHADOW is
+ *                      checked.
  */
-DECL_FORCE_INLINE(void) iemThreadedCompileInitDecoder(PVMCPUCC pVCpu, bool const fReInit)
+DECL_FORCE_INLINE(void) iemThreadedCompileInitDecoder(PVMCPUCC pVCpu, bool const fReInit, uint32_t const fExtraFlags)
 {
     /* ASSUMES: That iemInitExec was already called and that anyone changing
        CPU state affecting the fExec bits since then will have updated fExec!  */
@@ -734,8 +737,8 @@ DECL_FORCE_INLINE(void) iemThreadedCompileInitDecoder(PVMCPUCC pVCpu, bool const
         pVCpu->iem.s.fTbCheckOpcodes        = false;
         pVCpu->iem.s.fTbBranched            = IEMBRANCHED_F_NO;
         pVCpu->iem.s.fTbCrossedPage         = false;
-        pVCpu->iem.s.cInstrTillIrqCheck     = 32;
-        pVCpu->iem.s.fTbCurInstrIsSti       = CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx); /** @todo this'll be a IEM_TB_F_XXX flag */
+        pVCpu->iem.s.cInstrTillIrqCheck     = !(fExtraFlags & IEMTB_F_INHIBIT_SHADOW) ? 32 : 0;
+        pVCpu->iem.s.fTbCurInstrIsSti       = false;
     }
     else
     {
@@ -1340,7 +1343,7 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
     /*
      * Now for the recomplication. (This mimicks IEMExecLots in many ways.)
      */
-    iemThreadedCompileInitDecoder(pVCpu, false /*fReInit*/);
+    iemThreadedCompileInitDecoder(pVCpu, false /*fReInit*/, fExtraFlags);
     iemThreadedCompileInitOpcodeFetching(pVCpu);
     VBOXSTRICTRC rcStrict;
     for (;;)
@@ -1392,7 +1395,7 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
         /* Still space in the TB? */
         if (   pTb->Thrd.cCalls + 5 < pTb->Thrd.cAllocated
             && pTb->cbOpcodes + 16 <= pTb->cbOpcodesAllocated)
-            iemThreadedCompileInitDecoder(pVCpu, true /*fReInit*/);
+            iemThreadedCompileInitDecoder(pVCpu, true /*fReInit*/, 0);
         else
         {
             Log8(("%04x:%08RX64: End TB - %u instr, %u calls, %u opcode bytes - full\n",
@@ -1545,19 +1548,33 @@ DECL_FORCE_INLINE_THROW(RTGCPHYS) iemGetPcWithPhysAndCode(PVMCPUCC pVCpu)
  */
 DECL_FORCE_INLINE(uint32_t) iemGetTbFlagsForCurrentPc(PVMCPUCC pVCpu)
 {
+    uint32_t fRet = IEMTB_F_TYPE_THREADED;
+
+    /*
+     * Determine the inhibit bits.
+     */
+    if (!(pVCpu->cpum.GstCtx.rflags.uBoth & (IEMTB_F_INHIBIT_SHADOW | IEMTB_F_INHIBIT_NMI)))
+    { /* typical */ }
+    else
+    {
+        if (CPUMIsInInterruptShadow(&pVCpu->cpum.GstCtx))
+            fRet |= IEMTB_F_INHIBIT_SHADOW;
+        if (CPUMAreInterruptsInhibitedByNmiEx(&pVCpu->cpum.GstCtx))
+            fRet |= IEMTB_F_INHIBIT_NMI;
+    }
+
     /*
      * Return IEMTB_F_CS_LIM_CHECKS if the current PC is invalid or if it is
      * likely to go invalid before the end of the translation block.
      */
-/** @todo must take interrupt inhibiting (shadowing) into account here! */
     if (IEM_IS_64BIT_CODE(pVCpu))
-        return IEMTB_F_TYPE_THREADED;
-
-    if (RT_LIKELY(   pVCpu->cpum.GstCtx.eip < pVCpu->cpum.GstCtx.cs.u32Limit
-                  && pVCpu->cpum.GstCtx.cs.u32Limit - pVCpu->cpum.GstCtx.eip >= X86_PAGE_SIZE))
-        return IEMTB_F_TYPE_THREADED;
-
-    return IEMTB_F_TYPE_THREADED | IEMTB_F_CS_LIM_CHECKS;
+    { /* done */ }
+    else if (RT_LIKELY(   pVCpu->cpum.GstCtx.eip < pVCpu->cpum.GstCtx.cs.u32Limit
+                       && pVCpu->cpum.GstCtx.cs.u32Limit - pVCpu->cpum.GstCtx.eip >= X86_PAGE_SIZE))
+    { /* done */ }
+    else
+        fRet |= IEMTB_F_CS_LIM_CHECKS;
+    return fRet;
 }
 
 
