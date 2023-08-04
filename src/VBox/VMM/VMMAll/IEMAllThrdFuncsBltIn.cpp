@@ -330,7 +330,7 @@ DECL_FORCE_INLINE(RTGCPHYS) iemTbGetRangePhysPageAddr(PCIEMTB pTb, uint8_t idxRa
                   (a_pTb), pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, (a_cbInstr), offFromLim, \
                   pVCpu->cpum.GstCtx.cs.u32Limit, pVCpu->cpum.GstCtx.cs.u64Base, __LINE__)); \
             RT_NOREF(a_pTb, a_cbInstr); \
-            return iemThreadeFuncWorkerObsoleteTb(pVCpu); \
+            return VINF_IEM_REEXEC_BREAK; \
         } \
     } while(0)
 
