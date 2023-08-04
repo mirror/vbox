@@ -128,8 +128,7 @@ ifneq ($(MAKECMDGOALS),clean)
  debrel  := $(if $(shell which lsb_release),_$(shell lsb_release -si)_$(shell lsb_release -sc),unknown)
  debdist  := $(strip $(shell grep $(debrel) $(debroot)/distributions_deb | cut -d'=' -f2))
  ifeq ($(debdist),)
-  debdist := $(if $(shell which lsb_release),_$(shell lsb_release -si | tr a-z A-Z)_$(shell lsb_release -sr | sed -e 's/\./_/g' -e 's/\([^_]*\)\(_[^_]*\).*/\1\2/'),unknown)
-  # $(error package distribution not detected (debrel=$(debrel)))
+  $(error package distribution not detected (debrel=$(debrel)))
  endif
 endif
 
