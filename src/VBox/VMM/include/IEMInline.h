@@ -45,7 +45,25 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PVMCPUCC pVCpu, VBOXST
 {
     if (rcStrict != VINF_SUCCESS)
     {
-        if (RT_SUCCESS(rcStrict))
+        /* Deal with the cases that should be treated as VINF_SUCCESS first. */
+        if (   rcStrict == VINF_IEM_YIELD_PENDING_FF
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX /** @todo r=bird: Why do we need TWO status codes here? */
+            || rcStrict == VINF_VMX_VMEXIT
+#endif
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+            || rcStrict == VINF_SVM_VMEXIT
+#endif
+            )
+        {
+            if (pVCpu->iem.s.rcPassUp == VINF_SUCCESS)
+                rcStrict = VINF_SUCCESS;
+            else
+            {
+                pVCpu->iem.s.cRetPassUpStatus++;
+                rcStrict = pVCpu->iem.s.rcPassUp;
+            }
+        }
+        else if (RT_SUCCESS(rcStrict))
         {
             AssertMsg(   (rcStrict >= VINF_EM_FIRST && rcStrict <= VINF_EM_LAST)
                       || rcStrict == VINF_IOM_R3_IOPORT_READ
@@ -70,25 +88,11 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PVMCPUCC pVCpu, VBOXST
                       || rcStrict == VINF_CSAM_PENDING_ACTION
                       || rcStrict == VINF_PATM_CHECK_PATCH_PAGE
                       /* nested hw.virt codes: */
-                      || rcStrict == VINF_VMX_VMEXIT
                       || rcStrict == VINF_VMX_INTERCEPT_NOT_ACTIVE
                       || rcStrict == VINF_VMX_MODIFIES_BEHAVIOR
-                      || rcStrict == VINF_SVM_VMEXIT
                       , ("rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
 /** @todo adjust for VINF_EM_RAW_EMULATE_INSTR. */
             int32_t const rcPassUp = pVCpu->iem.s.rcPassUp;
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-            if (   rcStrict == VINF_VMX_VMEXIT
-                && rcPassUp == VINF_SUCCESS)
-                rcStrict = VINF_SUCCESS;
-            else
-#endif
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-            if (   rcStrict == VINF_SVM_VMEXIT
-                && rcPassUp == VINF_SUCCESS)
-                rcStrict = VINF_SUCCESS;
-            else
-#endif
             if (rcPassUp == VINF_SUCCESS)
                 pVCpu->iem.s.cRetInfStatuses++;
             else if (   rcPassUp < VINF_EM_FIRST

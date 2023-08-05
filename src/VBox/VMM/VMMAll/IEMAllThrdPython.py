@@ -213,7 +213,8 @@ class ThreadedFunctionVariation(object):
         'IEM_CIMPL_F_STATUS_FLAGS':         False,
         'IEM_CIMPL_F_VMEXIT':               False,
         'IEM_CIMPL_F_FPU':                  False,
-        'IEM_CIMPL_F_REP':                  True,
+        'IEM_CIMPL_F_REP':                  False,
+        'IEM_CIMPL_F_IO':                   False,
         'IEM_CIMPL_F_END_TB':               True,
         'IEM_CIMPL_F_XCPT':                 True,
     };

@@ -205,7 +205,7 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
 #ifdef VBOX_WITH_IEM_RECOMPILER
     /** @cfgm{/EM/IemRecompiled, bool, true}
      * Whether IEM bulk execution is recompiled or interpreted. */
-    rc = CFGMR3QueryBoolDef(pCfgEM, "IemRecompiled", &pVM->em.s.fIemRecompiled, true);
+    rc = CFGMR3QueryBoolDef(pCfgEM, "IemRecompiled", &pVM->em.s.fIemRecompiled, false);
     AssertLogRelRCReturn(rc, rc);
 #endif
 

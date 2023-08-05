@@ -1270,12 +1270,18 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_CIMPL_F_CHECK_IRQ_BEFORE_AND_AFTER (IEM_CIMPL_F_CHECK_IRQ_BEFORE | IEM_CIMPL_F_CHECK_IRQ_AFTER)
 /** May trigger a VM exit (treated like IEM_CIMPL_F_MODE atm). */
 #define IEM_CIMPL_F_VMEXIT              RT_BIT_32(10)
-/** May modify FPU state. */
+/** May modify FPU state.
+ * @todo Not sure if this is useful yet.  */
 #define IEM_CIMPL_F_FPU                 RT_BIT_32(11)
-/** REP prefixed instruction which may yield before updating PC. */
+/** REP prefixed instruction which may yield before updating PC.
+ * @todo Not sure if this is useful, REP functions now return non-zero
+ *       status if they don't update the PC. */
 #define IEM_CIMPL_F_REP                 RT_BIT_32(12)
-/** Force end of TB after the instruction.    */
-#define IEM_CIMPL_F_END_TB              RT_BIT_32(13)
+/** I/O instruction.
+ * @todo Not sure if this is useful yet.  */
+#define IEM_CIMPL_F_IO                  RT_BIT_32(13)
+/** Force end of TB after the instruction. */
+#define IEM_CIMPL_F_END_TB              RT_BIT_32(14)
 /** Convenience: Raise exception (technically unnecessary, since it shouldn't return VINF_SUCCESS). */
 #define IEM_CIMPL_F_XCPT \
     (IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT)

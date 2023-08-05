@@ -91,7 +91,7 @@
         { \
             LogFlow(("%s: Leaving early (outer)! ffcpu=%#RX64 ffvm=%#x\n", \
                      __FUNCTION__, (uint64_t)(a_pVCpu)->fLocalForcedActions, (a_pVM)->fGlobalForcedActions)); \
-            return VINF_SUCCESS; \
+            return VINF_IEM_YIELD_PENDING_FF; \
         } \
     } while (0)
 
@@ -110,7 +110,7 @@
         { \
             LogFlow(("%s: Leaving early (inner)! ffcpu=%#RX64 ffvm=%#x\n", \
                      __FUNCTION__, (uint64_t)(a_pVCpu)->fLocalForcedActions, (a_pVM)->fGlobalForcedActions)); \
-            return VINF_SUCCESS; \
+            return VINF_IEM_YIELD_PENDING_FF; \
         } \
     } while (0)
 
@@ -130,7 +130,7 @@
         { \
             LogFlow(("%s: Leaving early (inner)! ffcpu=%#RX64 (ffvm=%#x)\n", \
                      __FUNCTION__, (uint64_t)(a_pVCpu)->fLocalForcedActions, (a_pVM)->fGlobalForcedActions)); \
-            return VINF_SUCCESS; \
+            return VINF_IEM_YIELD_PENDING_FF; \
         } \
     } while (0)
 
