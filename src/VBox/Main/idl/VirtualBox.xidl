@@ -29976,7 +29976,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="ICloudClient" extends="$unknown"
     uuid="c2db178a-7485-11ec-aec4-2fbf90681a84"
     wsmap="managed"
-    reservedMethods="15" reservedAttributes="8"
+    reservedMethods="14" reservedAttributes="8"
     >
 
     <method name="getExportDescriptionForm">
@@ -30360,6 +30360,36 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="cloneInstance">
+      <desc>
+        Clone cloud virtual machine.
+      </desc>
+      <param name="uid" type="wstring" dir="in">
+        <desc>
+          The id of instance in the Cloud that should be cloned.
+          Prerequisities:
+            The instance must be in the list of VirtualBox cloud machines.
+            VirtualBox operates only with those machines which are already
+            known.
+        </desc>
+      </param>
+      <param name="newName" type="wstring" dir="in">
+        <desc>
+          Name for a cloud machine.
+        </desc>
+      </param>
+      <param name="clone" type="ICloudMachine" dir="out">
+        <desc>
+          Object that represents a cloned cloud machine.
+        </desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
       </param>
     </method>
 
