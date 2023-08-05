@@ -147,6 +147,15 @@
        <arg choice="plain">instance reset</arg>
        <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
      </cmdsynopsis>
+     <cmdsynopsis id="synopsis-vboxmanage-cloud-instance-clone" sepchar=" ">
+       <command moreinfo="none">VBoxManage cloud</command>
+       <arg choice="req">--provider=<replaceable>name</replaceable></arg>
+       <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+       <sbr/>
+       <arg choice="plain">instance clone</arg>
+       <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
+       <arg>--clone-name=<replaceable>name for a clone instance</replaceable></arg>
+     </cmdsynopsis>
 
      <!-- Cloud image commands -->
       <cmdsynopsis id="synopsis-vboxmanage-cloud-image-create" sepchar=" "> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
@@ -472,6 +481,22 @@
       <variablelist>
         <varlistentry>
           <term><option>--id</option></term><listitem><para>Unique identifier which fully identify the instance in the Cloud.</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-cloud-instance-clone">
+      <title>cloud instance clone</title>
+      <para>
+        Clone a cloud instance with a specified id. Only works for the instances accessible through VirtualBox.
+        I.e. Not every instance in the cloud may be cloned.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--id</option></term><listitem><para>Unique identifier which fully identify the instance in the Cloud.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--clone-name</option></term><listitem><para>Name for a clone instance</para></listitem>
         </varlistentry>
       </variablelist>
     </refsect2>

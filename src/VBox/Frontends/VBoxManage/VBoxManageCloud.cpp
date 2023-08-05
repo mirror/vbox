@@ -1554,7 +1554,7 @@ static RTEXITCODE handleCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
                 return resetCloudInstance(a, GetState.iNext, pCommonOpts);
 
             case kCloudInstance_Clone:
-//              setCurrentSubcommand(HELP_SCOPE_CLOUD_INSTANCE_CLONE);
+                setCurrentSubcommand(HELP_SCOPE_CLOUD_INSTANCE_CLONE);
                 return cloneCloudInstance(a, GetState.iNext, pCommonOpts);
 
             case 'h':
