@@ -122,6 +122,9 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PVMCPUCC pVCpu, VBOXST
         rcStrict = pVCpu->iem.s.rcPassUp;
     }
 
+    /* Just clear it here as well. */
+    pVCpu->iem.s.rcPassUp = VINF_SUCCESS;
+
     return rcStrict;
 }
 
@@ -183,12 +186,12 @@ DECLINLINE(int) iemSetPassUpStatus(PVMCPUCC pVCpu, VBOXSTRICTRC rcPassUp) RT_NOE
 DECL_FORCE_INLINE(uint32_t) iemCalc32BitFlatIndicator(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     AssertCompile(X86_SEL_TYPE_DOWN == X86_SEL_TYPE_CONF);
-    return (  (  pVCpu->cpum.GstCtx.es.Attr.u
+    return (  (    pVCpu->cpum.GstCtx.es.Attr.u
                  | pVCpu->cpum.GstCtx.cs.Attr.u
                  | pVCpu->cpum.GstCtx.ss.Attr.u
                  | pVCpu->cpum.GstCtx.ds.Attr.u)
-              & (X86_SEL_TYPE_ACCESSED | X86_SEL_TYPE_DOWN | X86DESCATTR_UNUSABLE | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_P))
-           ==   (X86_SEL_TYPE_ACCESSED | X86_SEL_TYPE_DOWN | X86DESCATTR_UNUSABLE | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_P)
+              & (X86_SEL_TYPE_ACCESSED | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_P | X86_SEL_TYPE_DOWN | X86DESCATTR_UNUSABLE))
+           ==   (X86_SEL_TYPE_ACCESSED | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_P)
         &&    (  (pVCpu->cpum.GstCtx.es.u32Limit + 1)
                | (pVCpu->cpum.GstCtx.cs.u32Limit + 1)
                | (pVCpu->cpum.GstCtx.ss.u32Limit + 1)
@@ -218,10 +221,10 @@ DECL_FORCE_INLINE(uint32_t) iemCalc32BitFlatIndicator(PVMCPUCC pVCpu) RT_NOEXCEP
 DECL_FORCE_INLINE(uint32_t) iemCalc32BitFlatIndicatorEsDs(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
     AssertCompile(X86_SEL_TYPE_DOWN == X86_SEL_TYPE_CONF);
-    return (  (  pVCpu->cpum.GstCtx.es.Attr.u
+    return (  (    pVCpu->cpum.GstCtx.es.Attr.u
                  | pVCpu->cpum.GstCtx.ds.Attr.u)
-              & (X86_SEL_TYPE_ACCESSED | X86_SEL_TYPE_DOWN | X86DESCATTR_UNUSABLE | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_P))
-           ==   (X86_SEL_TYPE_ACCESSED | X86_SEL_TYPE_DOWN | X86DESCATTR_UNUSABLE | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_P)
+              & (X86_SEL_TYPE_ACCESSED | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_P | X86_SEL_TYPE_DOWN | X86DESCATTR_UNUSABLE))
+           ==   (X86_SEL_TYPE_ACCESSED | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_P)
         &&    (  (pVCpu->cpum.GstCtx.es.u32Limit + 1)
                | (pVCpu->cpum.GstCtx.ds.u32Limit + 1))
            == 0
