@@ -135,10 +135,11 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckIrq)
 IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckMode)
 {
     uint32_t const fExpectedExec = (uint32_t)uParam0;
-    if (pVCpu->iem.s.fExec == fExpectedExec)
+    if ((pVCpu->iem.s.fExec & IEMTB_F_KEY_MASK) == (fExpectedExec & IEMTB_F_KEY_MASK))
         return VINF_SUCCESS;
-    LogFlow(("Mode changed at %04x:%08RX64: %#x -> %#x (xor: %#x)\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
-             fExpectedExec, pVCpu->iem.s.fExec, fExpectedExec ^ pVCpu->iem.s.fExec));
+    LogFlow(("Mode changed at %04x:%08RX64: %#x -> %#x (xor: %#x, xor-key: %#x)\n",
+             pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, fExpectedExec,
+             pVCpu->iem.s.fExec, fExpectedExec ^ pVCpu->iem.s.fExec, (fExpectedExec ^ pVCpu->iem.s.fExec) & IEMTB_F_KEY_MASK));
     RT_NOREF(uParam1, uParam2);
     STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckModeBreaks);
     return VINF_IEM_REEXEC_BREAK;

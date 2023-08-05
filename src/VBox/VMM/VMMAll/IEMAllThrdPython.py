@@ -201,7 +201,7 @@ class ThreadedFunctionVariation(object):
     ##
     ## @note iemThreadedRecompilerMcDeferToCImpl0 duplicates info found here.
     kdCImplFlags = {
-        'IEM_CIMPL_F_MODE':                 True,
+        'IEM_CIMPL_F_MODE':                 False,
         'IEM_CIMPL_F_BRANCH_DIRECT':        False,
         'IEM_CIMPL_F_BRANCH_INDIRECT':      False,
         'IEM_CIMPL_F_BRANCH_RELATIVE':      False,
