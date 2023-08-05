@@ -887,6 +887,104 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
     return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
+
+static RTEXITCODE cloneCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
+{
+    HRESULT hrc = S_OK;
+
+    enum
+    {
+        kInstanceIota = 1000,
+        kInstance_ShapeCpu,
+        kInstance_ShapeMemory,
+    };
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--id",           'i', RTGETOPT_REQ_STRING },
+        { "--clone-name",   'n', RTGETOPT_REQ_STRING },
+
+        { "help",           'h', RTGETOPT_REQ_NOTHING },
+        { "--help",         'h', RTGETOPT_REQ_NOTHING }
+    };
+    RTGETOPTSTATE GetState;
+    RTGETOPTUNION ValueUnion;
+    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+    if (a->argc == iFirst)
+    {
+        RTPrintf(Cloud::tr("Empty command parameter list, show help.\n"));
+        printHelp(g_pStdOut);
+        return RTEXITCODE_SUCCESS;
+    }
+
+    Utf8Str strCloneName, strInstanceId;
+    int c;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (c)
+        {
+            case 'i':
+                strInstanceId = ValueUnion.psz;
+
+                break;
+            case 'n':
+                strCloneName = ValueUnion.psz;
+                break;
+            case 'h':
+                printHelp(g_pStdOut);
+                return RTEXITCODE_SUCCESS;
+            case VINF_GETOPT_NOT_OPTION:
+                return errorUnknownSubcommand(ValueUnion.psz);
+            default:
+                return errorGetOpt(c, &ValueUnion);
+        }
+    }
+
+    /* Delayed check. It allows us to print help information.*/
+    hrc = checkAndSetCommonOptions(a, pCommonOpts);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
+
+    if (strInstanceId.isEmpty())
+        return errorArgument(Cloud::tr("Missing parameter --id."));
+
+//  if (strCloneName.isEmpty())
+//      return errorArgument(Cloud::tr("Missing parameter --clone-name."));
+
+    ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
+
+    ComObjPtr<ICloudClient> oCloudClient;
+    CHECK_ERROR2_RET(hrc, pCloudProfile,
+                     CreateCloudClient(oCloudClient.asOutParam()),
+                     RTEXITCODE_FAILURE);
+
+    ComPtr<IProgress> pProgress;
+    ComPtr<ICloudMachine> pClonedMachine;
+
+    RTPrintf(Cloud::tr("Cloning cloud instance with Id \'%s\'...\n"), strInstanceId.c_str());
+
+    CHECK_ERROR2_RET(hrc, oCloudClient, CloneInstance(Bstr(strInstanceId).raw(),
+                                                      Bstr(strCloneName).raw(),
+                                                      pClonedMachine.asOutParam(),
+                                                      pProgress.asOutParam()), RTEXITCODE_FAILURE);
+
+    hrc = showProgress(pProgress);
+    CHECK_PROGRESS_ERROR_RET(pProgress, (Cloud::tr("Cloning cloud instance failed")), RTEXITCODE_FAILURE);
+
+    Bstr strAttr;
+    pClonedMachine->COMGETTER(Id)(strAttr.asOutParam());
+    RTPrintf(Cloud::tr("Cloned instance UUID in VirtualBox: %ls\n"), strAttr.raw());
+    strAttr.setNull();
+    pClonedMachine->COMGETTER(Name)(strAttr.asOutParam());
+    RTPrintf(Cloud::tr("Cloned instance name: %ls\n"), strAttr.raw());
+
+    if (SUCCEEDED(hrc))
+        RTPrintf(Cloud::tr("Cloud instance was cloned successfully\n"));
+
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
 static RTEXITCODE updateCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
     RT_NOREF(a);
@@ -1389,6 +1487,7 @@ static RTEXITCODE handleCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
         kCloudInstance_Terminate,
         kCloudInstance_Update,
         kCloudInstance_Reset,
+        kCloudInstance_Clone,
     };
 
     static const RTGETOPTDEF s_aOptions[] =
@@ -1400,6 +1499,7 @@ static RTEXITCODE handleCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
         { "terminate",      kCloudInstance_Terminate, RTGETOPT_REQ_NOTHING },
         { "update",         kCloudInstance_Update,    RTGETOPT_REQ_NOTHING },
         { "reset",          kCloudInstance_Reset,     RTGETOPT_REQ_NOTHING },
+        { "clone",          kCloudInstance_Clone,     RTGETOPT_REQ_NOTHING },
 
         { "help",           'h',                      RTGETOPT_REQ_NOTHING },
         { "-?",             'h',                      RTGETOPT_REQ_NOTHING },
@@ -1452,6 +1552,10 @@ static RTEXITCODE handleCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
             case kCloudInstance_Reset:
                 setCurrentSubcommand(HELP_SCOPE_CLOUD_INSTANCE_RESET);
                 return resetCloudInstance(a, GetState.iNext, pCommonOpts);
+
+            case kCloudInstance_Clone:
+//              setCurrentSubcommand(HELP_SCOPE_CLOUD_INSTANCE_CLONE);
+                return cloneCloudInstance(a, GetState.iNext, pCommonOpts);
 
             case 'h':
                 printHelp(g_pStdOut);
