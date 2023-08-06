@@ -410,7 +410,11 @@ void UIVisoCreatorWidget::sltSettingsChanged()
     if (m_settings.m_customOptions != settings.m_customOptions)
         m_settings.m_customOptions = settings.m_customOptions;
     if (m_settings.m_fShowHiddenObjects != settings.m_fShowHiddenObjects)
+    {
         m_settings.m_fShowHiddenObjects = settings.m_fShowHiddenObjects;
+        if (m_pHostBrowser)
+            m_pHostBrowser->showHideHiddenObjects(settings.m_fShowHiddenObjects);
+    }
 }
 
 void UIVisoCreatorWidget::prepareWidgets()
@@ -604,7 +608,11 @@ void UIVisoCreatorWidget::toggleSettingsWidget(bool fShown)
     m_fShowSettingsDialog = fShown;
 
     if (fShown)
+    {
+        m_pSettingsWidget->blockSignals(true);
         m_pSettingsWidget->setSettings(m_settings);
+        m_pSettingsWidget->blockSignals(false);
+    }
 
     emit sigSettingDialogToggle(fShown);
 }
@@ -883,7 +891,6 @@ bool UIVisoCreatorDialog::saveVISOFile()
         {
             stream << "\n";
             stream << customOptions().join("\n");
-            printf("%s\n", qPrintable(customOptions().join("\n")));
         }
         file.close();
     }
