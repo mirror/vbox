@@ -43,9 +43,7 @@
 
 /* Forward declarations: */
 class QGridLayout;
-class QGraphicsBlurEffect;
 class QLabel;
-class QStackedLayout;
 class QVBoxLayout;
 class QILabel;
 class QMenu;
@@ -107,14 +105,11 @@ public:
 protected:
 
     virtual void retranslateUi() final override;
-    virtual void resizeEvent(QResizeEvent *pEvent) final override;
 
 private slots:
 
     void sltAddObjectsToViso(QStringList pathList);
     void sltSettingsActionToggled(bool fChecked);
-    void sltSettingsDialogClosed(bool fAccepted);
-    void sltBrowserTreeViewVisibilityChanged(bool fVisible);
     void sltHostBrowserTableSelectionChanged(QStringList pathList);
     void sltContentBrowserTableSelectionChanged(bool fIsSelectionEmpty);
     void sltOpenAction();
@@ -122,12 +117,15 @@ private slots:
     void sltISOImportAction();
     void sltISORemoveAction();
     void sltISOContentImportedOrRemoved(bool fImported);
+    void sltSettingsChanged();
 
 private:
 
     void prepareWidgets();
     void prepareConnections();
     void prepareActions();
+    void setVisoName(const QString& strName);
+
     /** Creates and configures the vertical toolbar. Should be called after prepareActions() */
     void prepareVerticalToolBar();
     /* Populates the main menu and toolbard with already created actions.
@@ -136,7 +134,6 @@ private:
 
     void toggleSettingsWidget(bool fShown);
     QStringList findISOFiles(const QStringList &pathList) const;
-    void setVisoName(const QString& strName);
     void setVisoFilePath(const QString& strPath);
 
     /** @name Main toolbar (and main menu) actions
@@ -159,17 +156,14 @@ private:
 
     QIToolBar             *m_pToolBar;
     QIToolBar             *m_pVerticalToolBar;
-    Settings            m_visoOptions;
+    Settings               m_settings;
     QMenu                 *m_pMainMenu;
     QPointer<UIActionPool> m_pActionPool;
     bool                   m_fShowToolBar;
-    bool                   m_fShowSettingsDialog;
     UIVisoSettingWidget   *m_pSettingsWidget;
     QWidget               *m_pBrowserContainerWidget;
-    QLabel                *m_pOverlayWidget;
-    QGraphicsBlurEffect   *m_pOverlayBlurEffect;
-    QStackedLayout        *m_pStackedLayout;
     QString                m_strVisoFilePath;
+    bool                   m_fShowSettingsDialog;
 };
 
 
@@ -206,7 +200,6 @@ private slots:
     void sltSetCancelButtonShortCut(QKeySequence keySequence);
     void sltVisoNameChanged(const QString &strName);
     void sltVisoFilePathChanged(const QString &strPath);
-    void sltSettingDialogToggle(bool fIsShown);
     void sltSave();
 
 private:
