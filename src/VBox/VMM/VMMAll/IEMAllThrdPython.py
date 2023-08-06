@@ -142,6 +142,7 @@ class ThreadedFunctionVariation(object):
     ksVariation_32_Flat     = '_32_Flat';       ##< 32-bit mode code (386+) with CS, DS, E,S and SS flat and 4GB wide.
     ksVariation_32_Addr16   = '_32_Addr16';     ##< 32-bit mode code (386+), address size prefixed to 16-bit addressing.
     ksVariation_64          = '_64';            ##< 64-bit mode code.
+    ksVariation_64_FsGs     = '_64_FsGs';       ##< 64-bit mode code, with memory accesses via FS or GS.
     ksVariation_64_Addr32   = '_64_Addr32';     ##< 64-bit mode code, address size prefixed to 32-bit addressing.
     kasVariations           = (
         ksVariation_Default,
@@ -152,6 +153,7 @@ class ThreadedFunctionVariation(object):
         ksVariation_32_Flat,
         ksVariation_32_Addr16,
         ksVariation_64,
+        ksVariation_64_FsGs,
         ksVariation_64_Addr32,
     );
     kasVariationsWithoutAddress = (
@@ -168,11 +170,13 @@ class ThreadedFunctionVariation(object):
         ksVariation_32_Flat,
         ksVariation_32_Addr16,
         ksVariation_64,
+        ksVariation_64_FsGs,
         ksVariation_64_Addr32,
     );
     kasVariationsEmitOrder = (
         ksVariation_Default,
         ksVariation_64,
+        ksVariation_64_FsGs,
         ksVariation_32_Flat,
         ksVariation_32,
         ksVariation_16,
@@ -190,6 +194,7 @@ class ThreadedFunctionVariation(object):
         ksVariation_32_Flat:    '32-bit flat and wide open CS, SS, DS and ES',
         ksVariation_32_Addr16:  '32-bit w/ address prefix (Addr16)',
         ksVariation_64:         '64-bit',
+        ksVariation_64_FsGs:    '64-bit with memory accessed via FS or GS',
         ksVariation_64_Addr32:  '64-bit w/ address prefix (Addr32)',
 
     };
@@ -410,6 +415,82 @@ class ThreadedFunctionVariation(object):
         return (idxReg, sOrgExpr, sStdRef);
 
 
+    ## Maps memory related MCs to info for FLAT conversion.
+    ## This is used in 64-bit and flat 32-bit variants to skip the unnecessary
+    ## segmentation checking for every memory access.  Only applied to access
+    ## via ES, DS and SS.  FS, GS and CS gets the full segmentation threatment,
+    ## the latter (CS) is just to keep things simple (we could safely fetch via
+    ## it, but only in 64-bit mode could we safely write via it, IIRC).
+    kdMemMcToFlatInfo = {
+        'IEM_MC_FETCH_MEM_U8':                    (  1, 'IEM_MC_FETCH_MEM_FLAT_U8' ),
+        'IEM_MC_FETCH_MEM16_U8':                  (  1, 'IEM_MC_FETCH_MEM16_FLAT_U8' ),
+        'IEM_MC_FETCH_MEM32_U8':                  (  1, 'IEM_MC_FETCH_MEM32_FLAT_U8' ),
+        'IEM_MC_FETCH_MEM_U16':                   (  1, 'IEM_MC_FETCH_MEM_FLAT_U16' ),
+        'IEM_MC_FETCH_MEM_U16_DISP':              (  1, 'IEM_MC_FETCH_MEM_FLAT_U16_DISP' ),
+        'IEM_MC_FETCH_MEM_I16':                   (  1, 'IEM_MC_FETCH_MEM_FLAT_I16' ),
+        'IEM_MC_FETCH_MEM_U32':                   (  1, 'IEM_MC_FETCH_MEM_FLAT_U32' ),
+        'IEM_MC_FETCH_MEM_U32_DISP':              (  1, 'IEM_MC_FETCH_MEM_FLAT_U32_DISP' ),
+        'IEM_MC_FETCH_MEM_I32':                   (  1, 'IEM_MC_FETCH_MEM_FLAT_I32' ),
+        'IEM_MC_FETCH_MEM_U64':                   (  1, 'IEM_MC_FETCH_MEM_FLAT_U64' ),
+        'IEM_MC_FETCH_MEM_U64_DISP':              (  1, 'IEM_MC_FETCH_MEM_FLAT_U64_DISP' ),
+        'IEM_MC_FETCH_MEM_U64_ALIGN_U128':        (  1, 'IEM_MC_FETCH_MEM_FLAT_U64_ALIGN_U128' ),
+        'IEM_MC_FETCH_MEM_I64':                   (  1, 'IEM_MC_FETCH_MEM_FLAT_I64' ),
+        'IEM_MC_FETCH_MEM_R32':                   (  1, 'IEM_MC_FETCH_MEM_FLAT_R32' ),
+        'IEM_MC_FETCH_MEM_R64':                   (  1, 'IEM_MC_FETCH_MEM_FLAT_R64' ),
+        'IEM_MC_FETCH_MEM_R80':                   (  1, 'IEM_MC_FETCH_MEM_FLAT_R80' ),
+        'IEM_MC_FETCH_MEM_D80':                   (  1, 'IEM_MC_FETCH_MEM_FLAT_D80' ),
+        'IEM_MC_FETCH_MEM_U128':                  (  1, 'IEM_MC_FETCH_MEM_FLAT_U128' ),
+        'IEM_MC_FETCH_MEM_U128_NO_AC':            (  1, 'IEM_MC_FETCH_MEM_FLAT_U128_NO_AC' ),
+        'IEM_MC_FETCH_MEM_U128_ALIGN_SSE':        (  1, 'IEM_MC_FETCH_MEM_FLAT_U128_ALIGN_SSE' ),
+        'IEM_MC_FETCH_MEM_XMM':                   (  1, 'IEM_MC_FETCH_MEM_FLAT_XMM' ),
+        'IEM_MC_FETCH_MEM_XMM_NO_AC':             (  1, 'IEM_MC_FETCH_MEM_FLAT_XMM_NO_AC' ),
+        'IEM_MC_FETCH_MEM_XMM_ALIGN_SSE':         (  1, 'IEM_MC_FETCH_MEM_FLAT_XMM_ALIGN_SSE' ),
+        'IEM_MC_FETCH_MEM_XMM_U32':               (  2, 'IEM_MC_FETCH_MEM_FLAT_XMM_U32' ),
+        'IEM_MC_FETCH_MEM_XMM_U64':               (  2, 'IEM_MC_FETCH_MEM_FLAT_XMM_U64' ),
+        'IEM_MC_FETCH_MEM_U256':                  (  1, 'IEM_MC_FETCH_MEM_FLAT_U256' ),
+        'IEM_MC_FETCH_MEM_U256_NO_AC':            (  1, 'IEM_MC_FETCH_MEM_FLAT_U256_NO_AC' ),
+        'IEM_MC_FETCH_MEM_U256_ALIGN_AVX':        (  1, 'IEM_MC_FETCH_MEM_FLAT_U256_ALIGN_AVX' ),
+        'IEM_MC_FETCH_MEM_YMM':                   (  1, 'IEM_MC_FETCH_MEM_FLAT_YMM' ),
+        'IEM_MC_FETCH_MEM_YMM_NO_AC':             (  1, 'IEM_MC_FETCH_MEM_FLAT_YMM_NO_AC' ),
+        'IEM_MC_FETCH_MEM_YMM_ALIGN_AVX':         (  1, 'IEM_MC_FETCH_MEM_FLAT_YMM_ALIGN_AVX' ),
+        'IEM_MC_FETCH_MEM_U8_ZX_U16':             (  1, 'IEM_MC_FETCH_MEM_FLAT_U8_ZX_U16' ),
+        'IEM_MC_FETCH_MEM_U8_ZX_U32':             (  1, 'IEM_MC_FETCH_MEM_FLAT_U8_ZX_U32' ),
+        'IEM_MC_FETCH_MEM_U8_ZX_U64':             (  1, 'IEM_MC_FETCH_MEM_FLAT_U8_ZX_U64' ),
+        'IEM_MC_FETCH_MEM_U16_ZX_U32':            (  1, 'IEM_MC_FETCH_MEM_FLAT_U16_ZX_U32' ),
+        'IEM_MC_FETCH_MEM_U16_ZX_U64':            (  1, 'IEM_MC_FETCH_MEM_FLAT_U16_ZX_U64' ),
+        'IEM_MC_FETCH_MEM_U32_ZX_U64':            (  1, 'IEM_MC_FETCH_MEM_FLAT_U32_ZX_U64' ),
+        'IEM_MC_FETCH_MEM_U8_SX_U16':             (  1, 'IEM_MC_FETCH_MEM_FLAT_U8_SX_U16' ),
+        'IEM_MC_FETCH_MEM_U8_SX_U32':             (  1, 'IEM_MC_FETCH_MEM_FLAT_U8_SX_U32' ),
+        'IEM_MC_FETCH_MEM_U8_SX_U64':             (  1, 'IEM_MC_FETCH_MEM_FLAT_U8_SX_U64' ),
+        'IEM_MC_FETCH_MEM_U16_SX_U32':            (  1, 'IEM_MC_FETCH_MEM_FLAT_U16_SX_U32' ),
+        'IEM_MC_FETCH_MEM_U16_SX_U64':            (  1, 'IEM_MC_FETCH_MEM_FLAT_U16_SX_U64' ),
+        'IEM_MC_FETCH_MEM_U32_SX_U64':            (  1, 'IEM_MC_FETCH_MEM_FLAT_U32_SX_U64' ),
+        'IEM_MC_STORE_MEM_U8':                    (  0, 'IEM_MC_STORE_MEM_FLAT_U8' ),
+        'IEM_MC_STORE_MEM_U16':                   (  0, 'IEM_MC_STORE_MEM_FLAT_U16' ),
+        'IEM_MC_STORE_MEM_U32':                   (  0, 'IEM_MC_STORE_MEM_FLAT_U32' ),
+        'IEM_MC_STORE_MEM_U64':                   (  0, 'IEM_MC_STORE_MEM_FLAT_U64' ),
+        'IEM_MC_STORE_MEM_U8_CONST':              (  0, 'IEM_MC_STORE_MEM_FLAT_U8_CONST' ),
+        'IEM_MC_STORE_MEM_U16_CONST':             (  0, 'IEM_MC_STORE_MEM_FLAT_U16_CONST' ),
+        'IEM_MC_STORE_MEM_U32_CONST':             (  0, 'IEM_MC_STORE_MEM_FLAT_U32_CONST' ),
+        'IEM_MC_STORE_MEM_U64_CONST':             (  0, 'IEM_MC_STORE_MEM_FLAT_U64_CONST' ),
+        'IEM_MC_STORE_MEM_U128':                  (  0, 'IEM_MC_STORE_MEM_FLAT_U128' ),
+        'IEM_MC_STORE_MEM_U128_ALIGN_SSE':        (  0, 'IEM_MC_STORE_MEM_FLAT_U128_ALIGN_SSE' ),
+        'IEM_MC_STORE_MEM_U256':                  (  0, 'IEM_MC_STORE_MEM_FLAT_U256' ),
+        'IEM_MC_STORE_MEM_U256_ALIGN_AVX':        (  0, 'IEM_MC_STORE_MEM_FLAT_U256_ALIGN_AVX' ),
+        'IEM_MC_PUSH_U16':                        ( -1, 'IEM_MC_FLAT_PUSH_U16' ),
+        'IEM_MC_PUSH_U32':                        ( -1, 'IEM_MC_FLAT_PUSH_U32' ),
+        'IEM_MC_PUSH_U32_SREG':                   ( -1, 'IEM_MC_FLAT_PUSH_U32_SREG' ),
+        'IEM_MC_PUSH_U64':                        ( -1, 'IEM_MC_FLAT_PUSH_U64' ),
+        'IEM_MC_POP_U16':                         ( -1, 'IEM_MC_FLAT_POP_U16' ),
+        'IEM_MC_POP_U32':                         ( -1, 'IEM_MC_FLAT_POP_U32' ),
+        'IEM_MC_POP_U64':                         ( -1, 'IEM_MC_FLAT_POP_U64' ),
+        'IEM_MC_POP_EX_U16':                      ( -1, 'IEM_MC_FLAT_POP_EX_U16' ),
+        'IEM_MC_POP_EX_U32':                      ( -1, 'IEM_MC_FLAT_POP_EX_U32' ),
+        'IEM_MC_POP_EX_U64':                      ( -1, 'IEM_MC_FLAT_POP_EX_U64' ),
+        'IEM_MC_MEM_MAP':                         (  2, 'IEM_MC_MEM_FLAT_MAP' ),
+        'IEM_MC_MEM_MAP_EX':                      (  3, 'IEM_MC_MEM_FLAT_MAP_EX' ),
+    };
+
     def analyzeMorphStmtForThreaded(self, aoStmts, iParamRef = 0):
         """
         Transforms (copy) the statements into those for the threaded function.
@@ -488,7 +569,7 @@ class ThreadedFunctionVariation(object):
                         and self.sVariation != self.ksVariation_16_Pre386):
                         oNewStmt.asParams.append(self.dParamRefs['pVCpu->iem.s.enmEffOpSize'][0].sNewName);
                     oNewStmt.sName += '_THREADED';
-                    if self.sVariation in (self.ksVariation_64, self.ksVariation_64_Addr32):
+                    if self.sVariation in (self.ksVariation_64, self.ksVariation_64_FsGs, self.ksVariation_64_Addr32):
                         oNewStmt.sName += '_PC64';
                     elif self.sVariation == self.ksVariation_16_Pre386:
                         oNewStmt.sName += '_PC16';
@@ -505,6 +586,22 @@ class ThreadedFunctionVariation(object):
                 elif oNewStmt.sName.startswith('IEM_MC_CALL_CIMPL_') or oNewStmt.sName.startswith('IEM_MC_DEFER_TO_CIMPL_'):
                     oNewStmt.sName += '_THREADED';
                     oNewStmt.asParams.insert(0, self.dParamRefs['cbInstr'][0].sNewName);
+
+                # ... and in FLAT modes we must morph memory access into FLAT accesses ...
+                elif (    self.sVariation in (self.ksVariation_64, self.ksVariation_32_Flat,)
+                      and (   oNewStmt.sName.startswith('IEM_MC_FETCH_MEM')
+                           or (oNewStmt.sName.startswith('IEM_MC_STORE_MEM_') and oNewStmt.sName.find('_BY_REF') < 0)
+                           or oNewStmt.sName.startswith('IEM_MC_MEM_MAP')
+                           or (oNewStmt.sName.startswith('IEM_MC_PUSH') and oNewStmt.sName.find('_FPU') < 0)
+                           or oNewStmt.sName.startswith('IEM_MC_POP') )):
+                    idxEffSeg = self.kdMemMcToFlatInfo[oNewStmt.sName][0];
+                    if idxEffSeg != -1:
+                        if (    oNewStmt.asParams[idxEffSeg].find('iEffSeg') < 0
+                            and oNewStmt.asParams[idxEffSeg] not in ('X86_SREG_ES', ) ):
+                            self.raiseProblem('Expected iEffSeg as param #%d to %s: %s'
+                                              % (idxEffSeg + 1, oNewStmt.sName, oNewStmt.asParams[idxEffSeg],));
+                        oNewStmt.asParams.pop(idxEffSeg);
+                    oNewStmt.sName = self.kdMemMcToFlatInfo[oNewStmt.sName][1];
 
                 # Process branches of conditionals recursively.
                 if isinstance(oStmt, iai.McStmtCond):
@@ -681,7 +778,7 @@ class ThreadedFunctionVariation(object):
                     self.aoParamRefs.append(ThreadedParamRef('(uint32_t)uEffAddrInfo',
                                                              'uint32_t', oStmt, sStdRef = 'u32Disp'));
                 else:
-                    assert self.sVariation in (self.ksVariation_64, self.ksVariation_64_Addr32);
+                    assert self.sVariation in (self.ksVariation_64, self.ksVariation_64_FsGs, self.ksVariation_64_Addr32);
                     self.aoParamRefs.append(ThreadedParamRef('IEM_GET_MODRM_EX(pVCpu, bRm)',
                                                              'uint8_t',  oStmt, sStdRef = 'bRmEx'));
                     self.aoParamRefs.append(ThreadedParamRef('(uint8_t)(uEffAddrInfo >> 32)',
@@ -697,6 +794,12 @@ class ThreadedFunctionVariation(object):
                 (idxReg, sOrgRef, sStdRef) = self.analyze8BitGRegStmt(oStmt);
                 self.aoParamRefs.append(ThreadedParamRef(sOrgRef, 'uint16_t', oStmt, idxReg, sStdRef = sStdRef));
                 aiSkipParams[idxReg] = True; # Skip the parameter below.
+
+            # If in flat mode variation, ignore the effective segment parameter to memory MCs.
+            if (    self.sVariation in (self.ksVariation_64, self.ksVariation_32_Flat,)
+                and oStmt.sName in self.kdMemMcToFlatInfo
+                and self.kdMemMcToFlatInfo[oStmt.sName][0] != -1):
+                aiSkipParams[self.kdMemMcToFlatInfo[oStmt.sName][0]] = True;
 
             # Inspect the target of calls to see if we need to pass down a
             # function pointer or function table pointer for it to work.
@@ -1112,12 +1215,17 @@ class ThreadedFunction(object):
         fSimple = True;
         sSwitchValue = 'pVCpu->iem.s.fExec & IEM_F_MODE_CPUMODE_MASK';
         if (   ThrdFnVar.ksVariation_64_Addr32 in dByVari
+            or ThrdFnVar.ksVariation_64_FsGs   in dByVari
             or ThrdFnVar.ksVariation_32_Addr16 in dByVari
             or ThrdFnVar.ksVariation_32_Flat   in dByVari
             or ThrdFnVar.ksVariation_16_Addr32 in dByVari):
             sSwitchValue  = '(pVCpu->iem.s.fExec & (IEM_F_MODE_CPUMODE_MASK | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK))';
             sSwitchValue += ' | (pVCpu->iem.s.enmEffAddrMode == (pVCpu->iem.s.fExec & IEM_F_MODE_CPUMODE_MASK) ? 0 : 8)';
-            fSimple       = False;
+            # Accesses via FS and GS and CS goes thru non-FLAT functions. (CS
+            # is not writable in 32-bit mode (at least), thus the penalty mode
+            # for any accesses via it (simpler this way).)
+            sSwitchValue += ' | (pVCpu->iem.s.iEffSeg < X86_SREG_FS && pVCpu->iem.s.iEffSeg != X86_SREG_CS ? 0 : 16)';
+            fSimple       = False;                                              # threaded functions.
 
         #
         # Generate the case statements.
@@ -1127,8 +1235,10 @@ class ThreadedFunction(object):
         if ThreadedFunctionVariation.ksVariation_64_Addr32 in dByVari:
             assert not fSimple;
             aoCases.extend([
-                Case('IEMMODE_64BIT',     ThrdFnVar.ksVariation_64),
-                Case('IEMMODE_64BIT | 8', ThrdFnVar.ksVariation_64_Addr32),
+                Case('IEMMODE_64BIT',       ThrdFnVar.ksVariation_64),
+                Case('IEMMODE_64BIT | 16',  ThrdFnVar.ksVariation_64_FsGs),
+                Case('IEMMODE_64BIT | 8 | 16', None), # fall thru
+                Case('IEMMODE_64BIT | 8',   ThrdFnVar.ksVariation_64_Addr32),
             ]);
         elif ThrdFnVar.ksVariation_64 in dByVari:
             assert fSimple;
@@ -1137,10 +1247,14 @@ class ThreadedFunction(object):
         if ThrdFnVar.ksVariation_32_Addr16 in dByVari:
             assert not fSimple;
             aoCases.extend([
-                Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK', ThrdFnVar.ksVariation_32_Flat),
-                Case('IEMMODE_32BIT', ThrdFnVar.ksVariation_32),
-                Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 8', None), # fall thru
-                Case('IEMMODE_32BIT | 8', ThrdFnVar.ksVariation_32_Addr16),
+                Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK',         ThrdFnVar.ksVariation_32_Flat),
+                Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 16',    None), # fall thru
+                Case('IEMMODE_32BIT | 16',                                          None), # fall thru
+                Case('IEMMODE_32BIT',                                               ThrdFnVar.ksVariation_32),
+                Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 8',     None), # fall thru
+                Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 8 | 16',None), # fall thru
+                Case('IEMMODE_32BIT                                       | 8 | 16',None), # fall thru
+                Case('IEMMODE_32BIT                                       | 8',     ThrdFnVar.ksVariation_32_Addr16),
             ]);
         elif ThrdFnVar.ksVariation_32 in dByVari:
             assert fSimple;
@@ -1149,8 +1263,10 @@ class ThreadedFunction(object):
         if ThrdFnVar.ksVariation_16_Addr32 in dByVari:
             assert not fSimple;
             aoCases.extend([
-                Case('IEMMODE_16BIT',     ThrdFnVar.ksVariation_16),
-                Case('IEMMODE_16BIT | 8', ThrdFnVar.ksVariation_16_Addr32),
+                Case('IEMMODE_16BIT | 16',      None), # fall thru
+                Case('IEMMODE_16BIT',           ThrdFnVar.ksVariation_16),
+                Case('IEMMODE_16BIT | 8 | 16',  None), # fall thru
+                Case('IEMMODE_16BIT | 8',       ThrdFnVar.ksVariation_16_Addr32),
             ]);
         elif ThrdFnVar.ksVariation_16 in dByVari:
             assert fSimple;

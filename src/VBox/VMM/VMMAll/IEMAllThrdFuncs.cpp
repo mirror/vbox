@@ -180,6 +180,10 @@
 #define IEM_MC_CALC_RM_EFF_ADDR_THREADED_64(a_GCPtrEff, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm) \
     (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr64(pVCpu, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm)
 
+/** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters. */
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_64_FSGS(a_GCPtrEff, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm) \
+    (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr64(pVCpu, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm)
+
 /** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters.
  * @todo How did that address prefix thing work for 64-bit code again? */
 #define IEM_MC_CALC_RM_EFF_ADDR_THREADED_64_ADDR32(a_GCPtrEff, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm) \

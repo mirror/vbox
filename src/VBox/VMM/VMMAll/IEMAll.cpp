@@ -7154,7 +7154,80 @@ uint32_t iemMemFetchDataU32Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem
     return u32Ret;
 # endif
 }
-#endif
+
+/**
+ * Fetches a data dword from a FLAT address, longjmp on error.
+ *
+ * @returns The dword
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   GCPtrMem            The address of the guest memory.
+ */
+uint32_t iemMemFlatFetchDataU32Jmp(PVMCPUCC pVCpu, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
+{
+# if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3)
+    /*
+     * Convert from segmented to flat address and check that it doesn't cross a page boundrary.
+     */
+    RTGCPTR GCPtrEff = GCPtrMem;
+    if (RT_LIKELY((GCPtrEff & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(uint32_t)))
+    {
+        /*
+         * TLB lookup.
+         */
+        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrEff);
+        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
+        if (pTlbe->uTag == uTag)
+        {
+            /*
+             * Check TLB page table level access flags.
+             */
+            uint64_t const fNoUser = IEM_GET_CPL(pVCpu) == 3 ? IEMTLBE_F_PT_NO_USER : 0;
+            if (   (pTlbe->fFlagsAndPhysRev & (  IEMTLBE_F_PHYS_REV       | IEMTLBE_F_PG_UNASSIGNED | IEMTLBE_F_PG_NO_READ
+                                               | IEMTLBE_F_PT_NO_ACCESSED | IEMTLBE_F_NO_MAPPINGR3  | fNoUser))
+                == pVCpu->iem.s.DataTlb.uTlbPhysRev)
+            {
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+
+                /*
+                 * Alignment check:
+                 */
+                /** @todo check priority \#AC vs \#PF */
+                if (   !(GCPtrEff & (sizeof(uint32_t) - 1))
+                    || !(pVCpu->cpum.GstCtx.cr0 & X86_CR0_AM)
+                    || !pVCpu->cpum.GstCtx.eflags.Bits.u1AC
+                    || IEM_GET_CPL(pVCpu) != 3)
+                {
+                    /*
+                     * Fetch and return the dword
+                     */
+                    Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                    Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                    uint32_t const u32Ret = *(uint32_t const *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
+                    Log9(("IEM RD dword %RGv: %#010x\n", GCPtrMem, u32Ret));
+                    return u32Ret;
+                }
+                Log10(("iemMemFlatFetchDataU32Jmp: Raising #AC for %RGv\n", GCPtrEff));
+                iemRaiseAlignmentCheckExceptionJmp(pVCpu);
+            }
+        }
+    }
+
+    /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
+       outdated page pointer, or other troubles. */
+    Log10(("iemMemFlatFetchDataU32Jmp: %RGv fallback\n", GCPtrMem));
+    return iemMemFetchDataU32SafeJmp(pVCpu, UINT8_MAX, GCPtrMem);
+
+# else
+    uint32_t const *pu32Src = (uint32_t const *)iemMemMapJmp(pVCpu, sizeof(*pu32Src), UINT8_MAX, GCPtrMem,
+                                                             IEM_ACCESS_DATA_R, sizeof(*pu32Src) - 1);
+    uint32_t const  u32Ret  = *pu32Src;
+    iemMemCommitAndUnmapJmp(pVCpu, (void *)pu32Src, IEM_ACCESS_DATA_R);
+    Log9(("IEM RD dword %RGv: %#010x\n", GCPtrMem, u32Ret));
+    return u32Ret;
+# endif
+}
+
+#endif /* IEM_WITH_SETJMP */
 
 
 #ifdef SOME_UNUSED_FUNCTION

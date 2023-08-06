@@ -813,6 +813,13 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     ((a_u8Dst) = iemMemFetchDataU8Jmp(pVCpu, (a_iSeg), (a_GCPtrMem16)))
 # define IEM_MC_FETCH_MEM32_U8(a_u8Dst, a_iSeg, a_GCPtrMem32) \
     ((a_u8Dst) = iemMemFetchDataU8Jmp(pVCpu, (a_iSeg), (a_GCPtrMem32)))
+
+# define IEM_MC_FETCH_MEM_FLAT_U8(a_u8Dst, a_GCPtrMem) \
+    ((a_u8Dst) = iemMemFetchDataU8Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+# define IEM_MC_FETCH_MEM16_FLAT_U8(a_u8Dst, a_GCPtrMem16) \
+    ((a_u8Dst) = iemMemFetchDataU8Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem16)))
+# define IEM_MC_FETCH_MEM32_FLAT_U8(a_u8Dst, a_GCPtrMem32) \
+    ((a_u8Dst) = iemMemFetchDataU8Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem32)))
 #endif
 
 #ifndef IEM_WITH_SETJMP
@@ -829,6 +836,13 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     ((a_u16Dst) = iemMemFetchDataU16Jmp(pVCpu, (a_iSeg), (a_GCPtrMem) + (a_offDisp)))
 # define IEM_MC_FETCH_MEM_I16(a_i16Dst, a_iSeg, a_GCPtrMem) \
     ((a_i16Dst) = (int16_t)iemMemFetchDataU16Jmp(pVCpu, (a_iSeg), (a_GCPtrMem)))
+
+# define IEM_MC_FETCH_MEM_FLAT_U16(a_u16Dst, a_GCPtrMem) \
+    ((a_u16Dst) = iemMemFetchDataU16Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+# define IEM_MC_FETCH_MEM_FLAT_U16_DISP(a_u16Dst, a_GCPtrMem, a_offDisp) \
+    ((a_u16Dst) = iemMemFetchDataU16Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem) + (a_offDisp)))
+# define IEM_MC_FETCH_MEM_FLAT_I16(a_i16Dst, a_GCPtrMem) \
+    ((a_i16Dst) = (int16_t)iemMemFetchDataU16Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
 #endif
 
 #ifndef IEM_WITH_SETJMP
@@ -845,6 +859,13 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     ((a_u32Dst) = iemMemFetchDataU32Jmp(pVCpu, (a_iSeg), (a_GCPtrMem) + (a_offDisp)))
 # define IEM_MC_FETCH_MEM_I32(a_i32Dst, a_iSeg, a_GCPtrMem) \
     ((a_i32Dst) = (int32_t)iemMemFetchDataU32Jmp(pVCpu, (a_iSeg), (a_GCPtrMem)))
+
+# define IEM_MC_FETCH_MEM_FLAT_U32(a_u32Dst, a_GCPtrMem) \
+    ((a_u32Dst) = iemMemFlatFetchDataU32Jmp(pVCpu, (a_GCPtrMem)))
+# define IEM_MC_FETCH_MEM_FLAT_U32_DISP(a_u32Dst, a_GCPtrMem, a_offDisp) \
+    ((a_u32Dst) = iemMemFlatFetchDataU32Jmp(pVCpu, (a_GCPtrMem) + (a_offDisp)))
+# define IEM_MC_FETCH_MEM_FLAT_I32(a_i32Dst, a_GCPtrMem) \
+    ((a_i32Dst) = (int32_t)iemMemFlatFetchDataU32Jmp(pVCpu, (a_GCPtrMem)))
 #endif
 
 #ifdef SOME_UNUSED_FUNCTION
@@ -870,6 +891,15 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     ((a_u64Dst) = iemMemFetchDataU64AlignedU128Jmp(pVCpu, (a_iSeg), (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_I64(a_i64Dst, a_iSeg, a_GCPtrMem) \
     ((a_i64Dst) = (int64_t)iemMemFetchDataU64Jmp(pVCpu, (a_iSeg), (a_GCPtrMem)))
+
+# define IEM_MC_FETCH_MEM_FLAT_U64(a_u64Dst, a_GCPtrMem) \
+    ((a_u64Dst) = iemMemFetchDataU64Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+# define IEM_MC_FETCH_MEM_FLAT_U64_DISP(a_u64Dst, a_GCPtrMem, a_offDisp) \
+    ((a_u64Dst) = iemMemFetchDataU64Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem) + (a_offDisp)))
+# define IEM_MC_FETCH_MEM_FLAT_U64_ALIGN_U128(a_u64Dst, a_GCPtrMem) \
+    ((a_u64Dst) = iemMemFetchDataU64AlignedU128Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+# define IEM_MC_FETCH_MEM_FLAT_I64(a_i64Dst, a_GCPtrMem) \
+    ((a_i64Dst) = (int64_t)iemMemFetchDataU64Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
 #endif
 
 #ifndef IEM_WITH_SETJMP
@@ -890,6 +920,15 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     iemMemFetchDataR80Jmp(pVCpu, &(a_r80Dst), (a_iSeg), (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_D80(a_d80Dst, a_iSeg, a_GCPtrMem) \
     iemMemFetchDataD80Jmp(pVCpu, &(a_d80Dst), (a_iSeg), (a_GCPtrMem))
+
+# define IEM_MC_FETCH_MEM_FLAT_R32(a_r32Dst, a_GCPtrMem) \
+    ((a_r32Dst).u = iemMemFlatFetchDataU32Jmp(pVCpu, (a_GCPtrMem)))
+# define IEM_MC_FETCH_MEM_FLAT_R64(a_r64Dst, a_GCPtrMem) \
+    ((a_r64Dst).u = iemMemFetchDataU64Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+# define IEM_MC_FETCH_MEM_FLAT_R80(a_r80Dst, a_GCPtrMem) \
+    iemMemFetchDataR80Jmp(pVCpu, &(a_r80Dst), UINT8_MAX, (a_GCPtrMem))
+# define IEM_MC_FETCH_MEM_FLAT_D80(a_d80Dst, a_GCPtrMem) \
+    iemMemFetchDataD80Jmp(pVCpu, &(a_d80Dst), UINT8_MAX, (a_GCPtrMem))
 #endif
 
 #ifndef IEM_WITH_SETJMP
@@ -928,6 +967,24 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     (a_XmmDst).au32[(a_iDWord)] = iemMemFetchDataU32Jmp(pVCpu, (a_iSeg), (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_XMM_U64(a_XmmDst, a_iQWord, a_iSeg, a_GCPtrMem) \
     (a_XmmDst).au64[(a_iQWord)] = iemMemFetchDataU64Jmp(pVCpu, (a_iSeg), (a_GCPtrMem))
+
+# define IEM_MC_FETCH_MEM_FLAT_U128(a_u128Dst, a_GCPtrMem) \
+    iemMemFetchDataU128Jmp(pVCpu, &(a_u128Dst), UINT8_MAX, (a_GCPtrMem))
+# define IEM_MC_FETCH_MEM_FLAT_U128_NO_AC(a_u128Dst, a_GCPtrMem) \
+    iemMemFetchDataU128Jmp(pVCpu, &(a_u128Dst), UINT8_MAX, (a_GCPtrMem))
+# define IEM_MC_FETCH_MEM_FLAT_U128_ALIGN_SSE(a_u128Dst, a_GCPtrMem) \
+    iemMemFetchDataU128AlignedSseJmp(pVCpu, &(a_u128Dst), UINT8_MAX, (a_GCPtrMem))
+
+# define IEM_MC_FETCH_MEM_FLAT_XMM(a_XmmDst, a_GCPtrMem) \
+    iemMemFetchDataU128Jmp(pVCpu, &(a_XmmDst).uXmm, UINT8_MAX, (a_GCPtrMem))
+# define IEM_MC_FETCH_MEM_FLAT_XMM_NO_AC(a_XmmDst, a_GCPtrMem) \
+    iemMemFetchDataU128Jmp(pVCpu, &(a_XmmDst).uXmm, UINT8_MAX, (a_GCPtrMem))
+# define IEM_MC_FETCH_MEM_FLAT_XMM_ALIGN_SSE(a_XmmDst, a_GCPtrMem) \
+    iemMemFetchDataU128AlignedSseJmp(pVCpu, &(a_XmmDst).uXmm, UINT8_MAX, (a_GCPtrMem))
+# define IEM_MC_FETCH_MEM_FLAT_XMM_U32(a_XmmDst, a_iDWord, a_GCPtrMem) \
+    (a_XmmDst).au32[(a_iDWord)] = iemMemFlatFetchDataU32Jmp(pVCpu, (a_GCPtrMem))
+# define IEM_MC_FETCH_MEM_FLAT_XMM_U64(a_XmmDst, a_iQWord, a_GCPtrMem) \
+    (a_XmmDst).au64[(a_iQWord)] = iemMemFetchDataU64Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem))
 #endif
 
 #ifndef IEM_WITH_SETJMP
@@ -958,6 +1015,20 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     iemMemFetchDataU256Jmp(pVCpu, &(a_YmmDst).ymm, (a_iSeg), (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_YMM_ALIGN_AVX(a_YmmDst, a_iSeg, a_GCPtrMem) \
     iemMemFetchDataU256AlignedSseJmp(pVCpu, &(a_YmmDst).ymm, (a_iSeg), (a_GCPtrMem))
+
+# define IEM_MC_FETCH_MEM_FLAT_U256(a_u256Dst, a_GCPtrMem) \
+    iemMemFetchDataU256Jmp(pVCpu, &(a_u256Dst), UINT8_MAX, (a_GCPtrMem))
+# define IEM_MC_FETCH_MEM_FLAT_U256_NO_AC(a_u256Dst, a_GCPtrMem) \
+    iemMemFetchDataU256Jmp(pVCpu, &(a_u256Dst), UINT8_MAX, (a_GCPtrMem))
+# define IEM_MC_FETCH_MEM_FLAT_U256_ALIGN_AVX(a_u256Dst, a_GCPtrMem) \
+    iemMemFetchDataU256AlignedSseJmp(pVCpu, &(a_u256Dst), UINT8_MAX, (a_GCPtrMem))
+
+# define IEM_MC_FETCH_MEM_FLAT_YMM(a_YmmDst, a_GCPtrMem) \
+    iemMemFetchDataU256Jmp(pVCpu, &(a_YmmDst).ymm, UINT8_MAX, (a_GCPtrMem))
+# define IEM_MC_FETCH_MEM_FLAT_YMM_NO_AC(a_YmmDst, a_GCPtrMem) \
+    iemMemFetchDataU256Jmp(pVCpu, &(a_YmmDst).ymm, UINT8_MAX, (a_GCPtrMem))
+# define IEM_MC_FETCH_MEM_FLAT_YMM_ALIGN_AVX(a_YmmDst, a_GCPtrMem) \
+    iemMemFetchDataU256AlignedSseJmp(pVCpu, &(a_YmmDst).ymm, UINT8_MAX, (a_GCPtrMem))
 #endif
 
 
@@ -1012,6 +1083,19 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     ((a_u64Dst) = iemMemFetchDataU16Jmp(pVCpu, (a_iSeg), (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_U32_ZX_U64(a_u64Dst, a_iSeg, a_GCPtrMem) \
     ((a_u64Dst) = iemMemFetchDataU32Jmp(pVCpu, (a_iSeg), (a_GCPtrMem)))
+
+# define IEM_MC_FETCH_MEM_FLAT_U8_ZX_U16(a_u16Dst, a_GCPtrMem) \
+    ((a_u16Dst) = iemMemFetchDataU8Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+# define IEM_MC_FETCH_MEM_FLAT_U8_ZX_U32(a_u32Dst, a_GCPtrMem) \
+    ((a_u32Dst) = iemMemFetchDataU8Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+# define IEM_MC_FETCH_MEM_FLAT_U8_ZX_U64(a_u64Dst, a_GCPtrMem) \
+    ((a_u64Dst) = iemMemFetchDataU8Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+# define IEM_MC_FETCH_MEM_FLAT_U16_ZX_U32(a_u32Dst, a_GCPtrMem) \
+    ((a_u32Dst) = iemMemFetchDataU16Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+# define IEM_MC_FETCH_MEM_FLAT_U16_ZX_U64(a_u64Dst, a_GCPtrMem) \
+    ((a_u64Dst) = iemMemFetchDataU16Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+# define IEM_MC_FETCH_MEM_FLAT_U32_ZX_U64(a_u64Dst, a_GCPtrMem) \
+    ((a_u64Dst) = iemMemFlatFetchDataU32Jmp(pVCpu, (a_GCPtrMem)))
 #endif /* IEM_WITH_SETJMP */
 
 #ifndef IEM_WITH_SETJMP
@@ -1064,6 +1148,19 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     ((a_u64Dst) = (int16_t)iemMemFetchDataU16Jmp(pVCpu, (a_iSeg), (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_U32_SX_U64(a_u64Dst, a_iSeg, a_GCPtrMem) \
     ((a_u64Dst) = (int32_t)iemMemFetchDataU32Jmp(pVCpu, (a_iSeg), (a_GCPtrMem)))
+
+# define IEM_MC_FETCH_MEM_FLAT_U8_SX_U16(a_u16Dst, a_GCPtrMem) \
+    ((a_u16Dst) = (int8_t)iemMemFetchDataU8Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+# define IEM_MC_FETCH_MEM_FLAT_U8_SX_U32(a_u32Dst, a_GCPtrMem) \
+    ((a_u32Dst) = (int8_t)iemMemFetchDataU8Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+# define IEM_MC_FETCH_MEM_FLAT_U8_SX_U64(a_u64Dst, a_GCPtrMem) \
+    ((a_u64Dst) = (int8_t)iemMemFetchDataU8Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+# define IEM_MC_FETCH_MEM_FLAT_U16_SX_U32(a_u32Dst, a_GCPtrMem) \
+    ((a_u32Dst) = (int16_t)iemMemFetchDataU16Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+# define IEM_MC_FETCH_MEM_FLAT_U16_SX_U64(a_u64Dst, a_GCPtrMem) \
+    ((a_u64Dst) = (int16_t)iemMemFetchDataU16Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+# define IEM_MC_FETCH_MEM_FLAT_U32_SX_U64(a_u64Dst, a_GCPtrMem) \
+    ((a_u64Dst) = (int32_t)iemMemFlatFetchDataU32Jmp(pVCpu, (a_GCPtrMem)))
 #endif /* IEM_WITH_SETJMP */
 
 #ifndef IEM_WITH_SETJMP
@@ -1084,6 +1181,15 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     iemMemStoreDataU32Jmp(pVCpu, (a_iSeg), (a_GCPtrMem), (a_u32Value))
 # define IEM_MC_STORE_MEM_U64(a_iSeg, a_GCPtrMem, a_u64Value) \
     iemMemStoreDataU64Jmp(pVCpu, (a_iSeg), (a_GCPtrMem), (a_u64Value))
+
+# define IEM_MC_STORE_MEM_FLAT_U8(a_GCPtrMem, a_u8Value) \
+    iemMemStoreDataU8Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem), (a_u8Value))
+# define IEM_MC_STORE_MEM_FLAT_U16(a_GCPtrMem, a_u16Value) \
+    iemMemStoreDataU16Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem), (a_u16Value))
+# define IEM_MC_STORE_MEM_FLAT_U32(a_GCPtrMem, a_u32Value) \
+    iemMemStoreDataU32Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem), (a_u32Value))
+# define IEM_MC_STORE_MEM_FLAT_U64(a_GCPtrMem, a_u64Value) \
+    iemMemStoreDataU64Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem), (a_u64Value))
 #endif
 
 #ifndef IEM_WITH_SETJMP
@@ -1104,6 +1210,15 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     iemMemStoreDataU32Jmp(pVCpu, (a_iSeg), (a_GCPtrMem), (a_u32C))
 # define IEM_MC_STORE_MEM_U64_CONST(a_iSeg, a_GCPtrMem, a_u64C) \
     iemMemStoreDataU64Jmp(pVCpu, (a_iSeg), (a_GCPtrMem), (a_u64C))
+
+# define IEM_MC_STORE_MEM_FLAT_U8_CONST(a_GCPtrMem, a_u8C) \
+    iemMemStoreDataU8Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem), (a_u8C))
+# define IEM_MC_STORE_MEM_FLAT_U16_CONST(a_GCPtrMem, a_u16C) \
+    iemMemStoreDataU16Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem), (a_u16C))
+# define IEM_MC_STORE_MEM_FLAT_U32_CONST(a_GCPtrMem, a_u32C) \
+    iemMemStoreDataU32Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem), (a_u32C))
+# define IEM_MC_STORE_MEM_FLAT_U64_CONST(a_GCPtrMem, a_u64C) \
+    iemMemStoreDataU64Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem), (a_u64C))
 #endif
 
 #define IEM_MC_STORE_MEM_I8_CONST_BY_REF( a_pi8Dst,  a_i8C)     *(a_pi8Dst)  = (a_i8C)
@@ -1133,6 +1248,11 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     iemMemStoreDataU128Jmp(pVCpu, (a_iSeg), (a_GCPtrMem), (a_u128Value))
 # define IEM_MC_STORE_MEM_U128_ALIGN_SSE(a_iSeg, a_GCPtrMem, a_u128Value) \
     iemMemStoreDataU128AlignedSseJmp(pVCpu, (a_iSeg), (a_GCPtrMem), (a_u128Value))
+
+# define IEM_MC_STORE_MEM_FLAT_U128(a_GCPtrMem, a_u128Value) \
+    iemMemStoreDataU128Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem), (a_u128Value))
+# define IEM_MC_STORE_MEM_FLAT_U128_ALIGN_SSE(a_GCPtrMem, a_u128Value) \
+    iemMemStoreDataU128AlignedSseJmp(pVCpu, UINT8_MAX, (a_GCPtrMem), (a_u128Value))
 #endif
 
 #ifndef IEM_WITH_SETJMP
@@ -1145,9 +1265,14 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     iemMemStoreDataU256Jmp(pVCpu, (a_iSeg), (a_GCPtrMem), &(a_u256Value))
 # define IEM_MC_STORE_MEM_U256_ALIGN_AVX(a_iSeg, a_GCPtrMem, a_u256Value) \
     iemMemStoreDataU256AlignedAvxJmp(pVCpu, (a_iSeg), (a_GCPtrMem), &(a_u256Value))
+
+# define IEM_MC_STORE_MEM_FLAT_U256(a_GCPtrMem, a_u256Value) \
+    iemMemStoreDataU256Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem), &(a_u256Value))
+# define IEM_MC_STORE_MEM_FLAT_U256_ALIGN_AVX(a_GCPtrMem, a_u256Value) \
+    iemMemStoreDataU256AlignedAvxJmp(pVCpu, UINT8_MAX, (a_GCPtrMem), &(a_u256Value))
 #endif
 
-
+/* Regular stack push and pop: */
 #define IEM_MC_PUSH_U16(a_u16Value) \
     IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU16(pVCpu, (a_u16Value)))
 #define IEM_MC_PUSH_U32(a_u32Value) \
@@ -1171,6 +1296,31 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_MC_POP_EX_U64(a_pu64Value) \
     IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU64(pVCpu, (a_pu64Value)))
 
+/* Flat stack push and pop: */
+#define IEM_MC_FLAT_PUSH_U16(a_u16Value) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU16(pVCpu, (a_u16Value)))
+#define IEM_MC_FLAT_PUSH_U32(a_u32Value) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU32(pVCpu, (a_u32Value)))
+#define IEM_MC_FLAT_PUSH_U32_SREG(a_u32Value) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU32SReg(pVCpu, (a_u32Value)))
+#define IEM_MC_FLAT_PUSH_U64(a_u64Value) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU64(pVCpu, (a_u64Value)))
+
+#define IEM_MC_FLAT_POP_U16(a_pu16Value) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU16(pVCpu, (a_pu16Value)))
+#define IEM_MC_FLAT_POP_U32(a_pu32Value) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU32(pVCpu, (a_pu32Value)))
+#define IEM_MC_FLAT_POP_U64(a_pu64Value) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU64(pVCpu, (a_pu64Value)))
+
+#define IEM_MC_FLAT_POP_EX_U16(a_pu16Value, a_) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU16Ex(pVCpu, (a_pu16Value), (a_pNewRsp)))
+#define IEM_MC_FLAT_POP_EX_U32(a_pu32Value) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU32(pVCpu, (a_pu32Value)))
+#define IEM_MC_FLAT_POP_EX_U64(a_pu64Value) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU64(pVCpu, (a_pu64Value)))
+
+
 /** Maps guest memory for direct or bounce buffered access.
  * The purpose is to pass it to an operand implementation, thus the a_iArg.
  * @remarks     May return.
@@ -1179,12 +1329,22 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pMem), sizeof(*(a_pMem)), (a_iSeg), \
                                        (a_GCPtrMem), (a_fAccess), sizeof(*(a_pMem)) - 1))
 
+/** Flat variant of IEM_MC_MEM_MAP. */
+#define IEM_MC_MEM_FLAT_MAP(a_pMem, a_fAccess, a_GCPtrMem, a_iArg) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pMem), sizeof(*(a_pMem)), UINT8_MAX, \
+                                       (a_GCPtrMem), (a_fAccess), sizeof(*(a_pMem)) - 1))
+
 /** Maps guest memory for direct or bounce buffered access.
  * The purpose is to pass it to an operand implementation, thus the a_iArg.
  * @remarks     May return.
  */
 #define IEM_MC_MEM_MAP_EX(a_pvMem, a_fAccess, a_cbMem, a_iSeg, a_GCPtrMem, a_cbAlign, a_iArg) \
     IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pvMem), (a_cbMem), (a_iSeg), \
+                                       (a_GCPtrMem), (a_fAccess), (a_cbAlign)))
+
+/** Flat variant of IEM_MC_MEM_MAP_EX. */
+#define IEM_MC_MEM_FLAT_MAP_EX(a_pvMem, a_fAccess, a_cbMem, a_GCPtrMem, a_cbAlign, a_iArg) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pvMem), (a_cbMem), UINT8_MAX, \
                                        (a_GCPtrMem), (a_fAccess), (a_cbAlign)))
 
 /** Commits the memory and unmaps the guest memory.
