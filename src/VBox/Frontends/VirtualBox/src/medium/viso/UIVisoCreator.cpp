@@ -75,6 +75,7 @@ public:
 
     UIVisoSettingWidget(QWidget *pParent);
     virtual void retranslateUi();
+    void setVisoName(const QString &strName);
     void setSettings(const UIVisoCreatorWidget::Settings &settings);
     UIVisoCreatorWidget::Settings settings() const;
 
@@ -201,6 +202,12 @@ void UIVisoSettingWidget::prepareConnections()
         connect(m_pShowHiddenObjectsCheckBox, &QCheckBox::toggled, this, &UIVisoSettingWidget::sigSettingsChanged);
 }
 
+void UIVisoSettingWidget::setVisoName(const QString &strName)
+{
+    if (m_pVisoNameLineEdit)
+        m_pVisoNameLineEdit->setText(strName);
+}
+
 void UIVisoSettingWidget::setSettings(const UIVisoCreatorWidget::Settings &settings)
 {
     if (m_pVisoNameLineEdit)
@@ -284,6 +291,12 @@ void UIVisoCreatorWidget::setVisoName(const QString& strName)
         return;
     m_settings.m_strVisoName = strName;
     emit sigVisoNameChanged(m_settings.m_strVisoName);
+    if (m_pSettingsWidget)
+    {
+        m_pSettingsWidget->blockSignals(true);
+        m_pSettingsWidget->setVisoName(strName);
+        m_pSettingsWidget->blockSignals(false);
+    }
 }
 
 void UIVisoCreatorWidget::setVisoFilePath(const QString& strPath)
