@@ -32,6 +32,7 @@
 #endif
 
 /* Qt includes: */
+#include <QObject>
 #include <QPointer>
 #include <QUrl>
 
