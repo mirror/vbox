@@ -91,7 +91,7 @@ WITH_PYTHON=1
 WITH_JAVA=1
 WITH_VMMRAW=1
 WITH_LIBIDL=1
-WITH_QT5=1
+WITH_QT6=1
 WITH_SDL=1
 WITH_SDL_TTF=1
 WITH_X11=1
@@ -172,10 +172,10 @@ INCVPX=""
 LIBVPX="-lvpx"
 PKGCONFIG="`which_wrapper pkg-config`"
 PYTHONDIR="/usr /usr/local"
-QT5DIR="/usr/lib/qt5 /usr/share/qt5 /usr/lib64/qt5 /usr /usr/local"
-QT5DIR_PKGCONFIG=1
-QT5MAJ=5
-QT5MIN=9
+QT6DIR="/usr/lib/qt6 /usr/share/qt6 /usr/lib64/qt6 /usr /usr/local"
+QT6DIR_PKGCONFIG=1
+QT6MAJ=6
+QT6MIN=3
 KBUILDDIR="`cd \`dirname $0\`; pwd`/kBuild"
 DEVDIR="`cd \`dirname $0\`; pwd`/tools"
 if [ -d "/lib/modules/`uname -r`/build" ]; then
@@ -1542,20 +1542,20 @@ EOF
 
 
 #
-# Check for the Qt5 library, needed by the VirtualBox frontend
+# Check for the Qt6 library, needed by the VirtualBox frontend
 #
 # Currently not fatal.
 #
-check_qt5()
+check_qt6()
 {
-  foundqt5=
-  test_header Qt5
+  foundqt6=
+  test_header Qt6
   cat > $ODIR.tmp_src.cc << EOF
 #include <QtGlobal>
 extern "C" int main(void)
 {
 EOF
-  echo "#if QT_VERSION >= $(($QT5MAJ*65536+$QT5MIN*256))" >> $ODIR.tmp_src.cc
+  echo "#if QT_VERSION >= $(($QT6MAJ*65536+$QT6MIN*256))" >> $ODIR.tmp_src.cc
   cat >> $ODIR.tmp_src.cc << EOF
   return 0;
 #else
@@ -1575,48 +1575,49 @@ EOF
       fi
     done
     # Now try the user provided directory and some of the standard directories.
-    QT_TRIES="$QT5DIR /System/Library /Library"
+    QT_TRIES="$QT6DIR /System/Library /Library"
     for t in $QT_TRIES; do
       if [ -f "$t/Frameworks/QtCore.framework/QtCore" -o -f "$t/clang_64/lib/QtCore.framework/QtCore" ]; then
-        PATH_SDK_QT5="$t"
-        foundqt5=1
+        PATH_SDK_QT6="$t"
+        foundqt6=1
         break
       fi
     done
     # Add the necessary params for building the test application
-    if [ -n "$PATH_SDK_QT5" ]; then
+    if [ -n "$PATH_SDK_QT6" ]; then
       if [ -f "$t/clang_64/lib/QtCore.framework/QtCore" ]; then
-        INCQT5=-I$PATH_SDK_QT5/clang_64/lib/QtCore.framework/Headers
-        LIBQT5=-F$PATH_SDK_QT5/clang_64/lib
-        SDKQT5=$PATH_SDK_QT5/clang_64
+        INCQT6=-I$PATH_SDK_QT6/clang_64/lib/QtCore.framework/Headers
+        LIBQT6=-F$PATH_SDK_QT6/clang_64/lib
+        SDKQT6=$PATH_SDK_QT6/clang_64
       else
-        INCQT5=-I$PATH_SDK_QT5/Frameworks/QtCore.framework/Headers
-        LIBQT5=-F$PATH_SDK_QT5/Frameworks
-        SDKQT5=$PATH_SDK_QT5
+        INCQT6=-I$PATH_SDK_QT6/Frameworks/QtCore.framework/Headers
+        LIBQT6=-F$PATH_SDK_QT6/Frameworks
+        SDKQT6=$PATH_SDK_QT6
       fi
-      FLGQT5="-framework QtCore -std=c++11 -Wl,-rpath,`L_to_PATH "$LIBQT5"`"
+      FLGQT6="-framework QtCore -std=c++17 -Wl,-rpath,`L_to_PATH "$LIBQT6"`"
     else
-      log_failure "Qt5 framework not found (can be disabled using --disable-qt)"
+      log_failure "Qt6 framework not found (can be disabled using --disable-qt)"
       fail
     fi
   else # !darwin
-    if [ $QT5DIR_PKGCONFIG -eq 1 ]; then
+    if [ $QT6DIR_PKGCONFIG -eq 1 ]; then
       # Default is to use pkg-config:
       if which_wrapper pkg-config > /dev/null; then
-        qt5_ver=`pkg-config Qt5Core --modversion 2>> $LOG`
+        qt6_ver=`pkg-config Qt6Core --modversion 2>> $LOG`
         if [ $? -eq 0 ]; then
-          echo "(Qt5 from pkg-config)" >> $LOG
-          FLGQT5=`pkg-config Qt5Core --cflags`
-          # gcc 4.8 is able to compile with C++11 (see also VBOX_GCC_std in Config.kmk)
-          [ $(($cc_maj * 100 + $cc_min)) -ge 408 ] && FLGQT5="$FLGQT5 -std=c++11"
-          INCQT5=`strip_I "$FLGQT5"`
-          LIBDIR5=`pkg-config Qt5Core --variable=libdir`
-          LIBQT5=`pkg-config Qt5Core Qt5Gui --libs`
-          LIBQT5="-L$LIBDIR5 $LIBQT5"
-          TOOLQT5=`pkg-config Qt5Core --variable=prefix`
-          TOOLQT5BIN=`pkg-config Qt5Core --variable=host_bins`
-          if test_compile "$LIBQT5 $LIBPTHREAD $FLGQT5" qt5 qt5 nofatal; then
-            test_execute_path "`L_to_PATH "$LIBQT5"`" nofatal && foundqt5=3 # pkg-config
+          echo "(Qt6 from pkg-config)" >> $LOG
+          FLGQT6=`pkg-config Qt6Core --cflags`
+          # gcc 8.0 is able to compile with C++17 (see also VBOX_GCC_std in Config.kmk)
+          [ $(($cc_maj * 100 + $cc_min)) -ge 408 ] && FLGQT6="$FLGQT6 -std=c++17"
+          INCQT6=`strip_I "$FLGQT6"`
+          LIBDIR5=`pkg-config Qt6Core --variable=libdir`
+          LIBQT6=`pkg-config Qt6Core Qt6Gui --libs`
+          LIBQT6="-L$LIBDIR5 $LIBQT6"
+          TOOLQT6=`pkg-config Qt6Core --variable=prefix`
+          TOOLQT6BIN=`pkg-config Qt6Core --variable=bindir`
+          TOOLQT6LIBEXEC=`pkg-config Qt6Core --variable=libexecdir`
+          if test_compile "$LIBQT6 $LIBPTHREAD $FLGQT6" qt6 qt6 nofatal; then
+            test_execute_path "`L_to_PATH "$LIBQT6"`" nofatal && foundqt6=3 # pkg-config
           fi
         fi
       else
@@ -1624,30 +1625,30 @@ EOF
         fail
       fi
     fi
-    if [ -z "$foundqt5" ]; then
-      # Do it the old way (e.g. user has specified QT5DIR):
-      for q in $QT5DIR "$DEVDIR/linux.$TARGET_MACHINE"/qt/v5.*; do
-        echo "(Qt5 from '$q')" >> $LOG
-        INCQT5="$q/include $q/include/QtCore"
-        FLGQT5="-DQT_SHARED -std=c++11"
-        I_INCQT5=`prefix_I "$INCQT5"`
-        LIBQT5="-L$q/lib -lQt5CoreVBox -lQt5GuiVBox"
-        TOOLQT5="$q"
-        if test_compile "$LIBQT5 $LIBPTHREAD $I_INCQT5 $FLGQT5" qt5 qt5 nofatal &&
-            test_execute_path "`L_to_PATH "$LIBQT5"`" nofatal; then
-          foundqt5=2 # internal
+    if [ -z "$foundqt6" ]; then
+      # Do it the old way (e.g. user has specified QT6DIR):
+      for q in $QT6DIR "$DEVDIR/linux.$TARGET_MACHINE"/qt/v6.*; do
+        echo "(Qt6 from '$q')" >> $LOG
+        INCQT6="$q/include $q/include/QtCore"
+        FLGQT6="-DQT_SHARED -std=c++17"
+        I_INCQT6=`prefix_I "$INCQT6"`
+        LIBQT6="-L$q/lib -lQt6CoreVBox -lQt6GuiVBox"
+        TOOLQT6="$q"
+        if test_compile "$LIBQT6 $LIBPTHREAD $I_INCQT6 $FLGQT6" qt6 qt6 nofatal &&
+            test_execute_path "`L_to_PATH "$LIBQT6"`" nofatal; then
+          foundqt6=2 # internal
           break;
         fi
-        LIBQT5="-L$q/lib -lQt5Core -lQt5Gui"
-        if test_compile "$LIBQT5 $LIBPTHREAD $I_INCQT5 $FLGQT5" qt5 qt5 nofatal &&
-            test_execute_path "`L_to_PATH "$LIBQT5"`" nofatal; then
-          foundqt5=1 # no pkg-config, Qt directory
+        LIBQT6="-L$q/lib -lQt6Core -lQt6Gui"
+        if test_compile "$LIBQT6 $LIBPTHREAD $I_INCQT6 $FLGQT6" qt6 qt6 nofatal &&
+            test_execute_path "`L_to_PATH "$LIBQT6"`" nofatal; then
+          foundqt6=1 # no pkg-config, Qt directory
           break;
         fi
       done
     fi
   fi
-  if [ -n "$foundqt5" ]; then
+  if [ -n "$foundqt6" ]; then
     # We decided which version of Qt to use, now enforce the version requirement:
     cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
@@ -1656,76 +1657,81 @@ extern "C" int main(void)
 {
   printf("found version %s", QT_VERSION_STR);
 EOF
-  echo "#if QT_VERSION >= $(($QT5MAJ*65536+$QT5MIN*256))" >> $ODIR.tmp_src.cc
+  echo "#if QT_VERSION >= $(($QT6MAJ*65536+$QT6MIN*256))" >> $ODIR.tmp_src.cc
     cat >> $ODIR.tmp_src.cc << EOF
   printf(", OK.\n");
   return 0;
 #else
 EOF
-echo "  printf(\", expected version $QT5MAJ.$QT5MIN or higher\\\\n\");" >> $ODIR.tmp_src.cc
+echo "  printf(\", expected version $QT6MAJ.$QT6MIN or higher\\\\n\");" >> $ODIR.tmp_src.cc
     cat >> $ODIR.tmp_src.cc << EOF
   return 1;
 #endif
 }
 EOF
-    [ -n "$INCQT5" ] && I_INCQT5=`prefix_I "$INCQT5"`
-    if test_compile "$LIBQT5 $LIBPTHREAD $I_INCQT5 $FLGQT5" qt5 qt5 nofatal; then
-      if test_execute_path "`L_to_PATH "$LIBQT5"`"; then
+    [ -n "$INCQT6" ] && I_INCQT6=`prefix_I "$INCQT6"`
+    if test_compile "$LIBQT6 $LIBPTHREAD $I_INCQT6 $FLGQT6" qt6 qt6 nofatal; then
+      if test_execute_path "`L_to_PATH "$LIBQT6"`"; then
         if [ "$OS" = "darwin" ]; then
           # Successful build & run the test application so add the necessary
           # params to AutoConfig.kmk:
-          cnf_append "PATH_SDK_QT5_INC" "`L_to_PATH "$LIBQT5"`"
-          cnf_append "PATH_SDK_QT5_LIB" "`L_to_PATH "$LIBQT5"`"
-          cnf_append "PATH_SDK_QT5" "$SDKQT5"
+          cnf_append "PATH_SDK_QT6_INC" "`L_to_PATH "$LIBQT6"`"
+          cnf_append "PATH_SDK_QT6_LIB" "`L_to_PATH "$LIBQT6"`"
+          cnf_append "PATH_SDK_QT6" "$SDKQT6"
           # Check for the moc tool in the Qt directory found & some standard
           # directories.
-          for q in $PATH_SDK_QT5 $PATH_SDK_QT5/clang_64 /usr /Developer/Tools/Qt; do
-            if which_wrapper "$q/bin/moc" > /dev/null; then
-              cnf_append "PATH_TOOL_QT5_BIN" "$q/bin"
+          for q in $PATH_SDK_QT6 $PATH_SDK_QT6/clang_64 /usr /Developer/Tools/Qt; do
+            if which_wrapper "$q/bin/lrelease" > /dev/null; then
+              cnf_append "PATH_TOOL_QT6_BIN" "$q/bin"
+            fi
+            if which_wrapper "$q/libexec/moc" > /dev/null; then
+              cnf_append "PATH_TOOL_QT6_LIBEXEC" "$q/libexec"
             fi
           done
         else
           # Strip .../QtCore as we add components ourself:
-          INCQT5=`echo "$INCQT5"|$KBUILD_SED 's|\([^ ]*\)/QtCore|\1|g; s| $||g'`
+          INCQT6=`echo "$INCQT6"|$KBUILD_SED 's|\([^ ]*\)/QtCore|\1|g; s| $||g'`
           # store only the first path, remove all other paths
-          # most likely pkg-config gave us -I/usr/include/qt5 -I/usr/include/qt5/QtCore
-          INCQT5=`echo "$INCQT5"|$KBUILD_SED 's|\([^ ]*\) .*|\1|'`
-          cnf_append "VBOX_PATH_QT_LIB" "`strip_L "$LIBQT5"`"
-          cnf_append "PATH_SDK_QT5_INC" "$INCQT5"
+          # most likely pkg-config gave us -I/usr/include/qt6 -I/usr/include/qt6/QtCore
+          INCQT6=`echo "$INCQT6"|$KBUILD_SED 's|\([^ ]*\) .*|\1|'`
+          cnf_append "VBOX_PATH_QT_LIB" "`strip_L "$LIBQT6"`"
+          cnf_append "PATH_SDK_QT6_INC" "$INCQT6"
           # This is not quite right since the qt libpath does not have to be first...
-          cnf_append "PATH_SDK_QT5_LIB" '$'"(firstword `strip_L "$LIBQT5"`)"
-          if [ "$foundqt5" = "2" ]; then
+          cnf_append "PATH_SDK_QT6_LIB" '$'"(firstword `strip_L "$LIBQT6"`)"
+          if [ "$foundqt6" = "2" ]; then
             cnf_append "VBOX_WITH_ORACLE_QT" "1"
           fi
-          if [ "$foundqt5" != "3" ]; then
-            TOOLQT5BIN="$TOOLQT5/bin"
+          if [ "$foundqt6" != "3" ]; then
+            TOOLQT6BIN="$TOOLQT6/bin"
+            TOOLQT6LIBEXEC="$TOOLQT6/libexec"
           fi
-          test_header "Qt5 devtools"
+          test_header "Qt6 devtools"
           # Try it with a suffix, some platforms use that
-          if which_wrapper "$TOOLQT5BIN/moc-qt5" > /dev/null; then
-            QT5BINSUFF="-qt5"
+          if which_wrapper "$TOOLQT6LIBEXEC/moc-qt6" > /dev/null; then
+            QT6BINSUFF="-qt6"
           else
-            QT5BINSUFF=""
+            QT6BINSUFF=""
           fi
-          moc_ver=`$TOOLQT5BIN/moc$QT5BINSUFF -v 2>&1|sed 's+^.*(Qt \(.*\))+\1+'`
+          moc_ver=`$TOOLQT6LIBEXEC/moc$QT6BINSUFF -v 2>&1|sed 's+^.*(Qt \(.*\))+\1+'`
           if [ $? -ne 0 ]; then
-            log_failure "moc$QT5BINSUFF not working"
+            log_failure "moc$QT6BINSUFF not working"
             fail
           else
             log_success "found version $moc_ver"
-            cnf_append "VBOX_PATH_QT" "$TOOLQT5"
-            cnf_append "PATH_SDK_QT5" "$TOOLQT5"
-            cnf_append "PATH_TOOL_QT5_BIN" "$TOOLQT5BIN"
-            [ -n "$QT5BINSUFF" ] && cnf_append "TOOL_QT5_BIN_SUFF" "$QT5BINSUFF"
+            cnf_append "VBOX_PATH_QT" "$TOOLQT6"
+            cnf_append "PATH_SDK_QT6" "$TOOLQT6"
+            cnf_append "PATH_TOOL_QT6_BIN" "$TOOLQT6BIN"
+            cnf_append "PATH_TOOL_QT6_LIBEXEC" "$TOOLQT6LIBEXEC"
+            [ -n "$QT6BINSUFF" ] && cnf_append "TOOL_QT6_BIN_SUFF" "$QT6BINSUFF"
           fi
         fi
       fi
     else
-      log_failure "qt5 not working"
+      log_failure "qt6 not working"
       fail
     fi
   else
-    log_failure "qt5 not found"
+    log_failure "qt6 not found"
     fail
   fi
 }
@@ -2509,13 +2515,13 @@ EOF
 [ $WITH_JAVA    -eq 1 ] && echo "  --disable-java           disable java bindings"
 [ $WITH_VMMRAW  -eq 1 ] && echo "  --disable-vmmraw         disable VMM raw mode (VT-x/AMD-V mandatory!)"
 [ $WITH_SDL_TTF -eq 1 ] && echo "  --disable-sdl-ttf        disable SDL_ttf detection"
-[ $WITH_QT5     -eq 1 ] && echo "  --disable-qt             disable Qt detection"
+[ $WITH_QT6     -eq 1 ] && echo "  --disable-qt             disable Qt detection"
 [ $WITH_ALSA    -eq 1 ] && echo "  --disable-alsa           disable the ALSA sound backend"
 [ $WITH_PULSE   -eq 1 ] && echo "  --disable-pulse          disable the PulseAudio backend"
 [ $WITH_DBUS    -eq 1 ] && echo "  --disable-dbus           don't use DBus and hal for hardware detection"
 [ $WITH_KMODS   -eq 1 ] && echo "  --disable-kmods          don't build Linux kernel modules (host and guest)"
 [ $WITH_OPENGL  -eq 1 ] && echo "  --disable-opengl         disable OpenGL support (2D & 3D)"
-[ $WITH_QT5     -eq 0 ] && echo "  --enable-qt5             enable Qt5 detection"
+[ $WITH_QT6     -eq 0 ] && echo "  --enable-qt6             enable Qt6 detection"
 [ $OSE          -eq 1 ] && echo "  --enable-vnc             enable the VNC server"
 [ $OSE          -eq 0 ] && echo "  --disable-extpack        don't build the extpack"
 [ $WITH_DOCS    -eq 1 ] && echo "  --disable-docs           don't build the documentation"
@@ -2554,7 +2560,7 @@ EOF
 [ "$OS"   = "darwin" ] && echo "                           contains OS X 10.6 SDK (required for Mountain Lion and newer hosts"
 [ "$OS"   = "darwin" ] && echo "                           only, ignored for the rest)"
 [ "$OS"    = "linux" ] && echo "  --with-linux=DIR         Linux kernel source directory [$LINUX]"
-[ $WITH_QT5    -eq 1 ] && echo "  --with-qt-dir=DIR        directory for Qt headers/libraries [pkgconfig]"
+[ $WITH_QT6    -eq 1 ] && echo "  --with-qt-dir=DIR        directory for Qt headers/libraries [pkgconfig]"
 cat << EOF
   --with-gsoap-dir=PATH    directory for gSOAP compiler/headers/libraries
                            (soapcpp2 and wsdl2h, soapstd2.h, libgsoap++.a/so)
@@ -2653,14 +2659,14 @@ for option in "$@"; do
       fi
       ;;
     --with-qt-dir=*)
-      [ $WITH_QT5 -eq 1 ] && QT5DIR=`echo $option | cut -d'=' -f2`
-      [ $WITH_QT5 -eq 1 ] && QT5DIR_PKGCONFIG=0
+      [ $WITH_QT6 -eq 1 ] && QT6DIR=`echo $option | cut -d'=' -f2`
+      [ $WITH_QT6 -eq 1 ] && QT6DIR_PKGCONFIG=0
       ;;
-    --with-qt5-minor=*)
-      QT5MIN=`echo $option | cut -d'=' -f2`
+    --with-qt6-minor=*)
+      QT6MIN=`echo $option | cut -d'=' -f2`
       ;;
-    --with-qt5-major=*)
-      QT5MAJ=`echo $option | cut -d'=' -f2`
+    --with-qt6-major=*)
+      QT6MAJ=`echo $option | cut -d'=' -f2`
       ;;
     --with-openssl-dir=*)
       OPENSSLDIR=`echo $option | cut -d'=' -f2`
@@ -2714,10 +2720,10 @@ for option in "$@"; do
       [ $WITH_SDL_TTF -eq 1 ] && WITH_SDL_TTF=0
       ;;
     --disable-qt)
-      [ $WITH_QT5 -eq 1 ] && WITH_QT5=0
+      [ $WITH_QT6 -eq 1 ] && WITH_QT6=0
       ;;
-    --enable-qt5)
-      [ $WITH_QT5 -eq 0 ] && WITH_QT5=1
+    --enable-qt6)
+      [ $WITH_QT6 -eq 0 ] && WITH_QT6=1
       ;;
     --passive-mesa)
       PASSIVE_MESA=1
@@ -2814,7 +2820,7 @@ for option in "$@"; do
       WITH_SDL_TTF=0
       WITH_X11=0
       WITH_OPENGL=0
-      WITH_QT5=0
+      WITH_QT6=0
       ;;
     --ose)
       OSE=2
@@ -2966,7 +2972,7 @@ if [ $WITH_OPENGL -eq 0 ]; then
   cnf_append "VBOX_GUI_USE_QGL" ""
 fi
 [ $WITH_XPCOM     -eq 0 ] && cnf_append "VBOX_WITH_MAIN" ""
-[ $WITH_QT5       -eq 0 ] && cnf_append "VBOX_WITH_QTGUI" ""
+[ $WITH_QT6       -eq 0 ] && cnf_append "VBOX_WITH_QTGUI" ""
 [ $WITH_SDL_TTF   -eq 0 ] && cnf_append "VBOX_WITH_SECURELABEL" ""
 [ $WITH_PYTHON    -eq 0 ] && cnf_append "VBOX_WITH_PYTHON" ""
 [ $WITH_JAVA      -eq 0 ] && cnf_append "VBOX_WITH_JXPCOM" ""
@@ -3027,7 +3033,7 @@ if [ $ONLY_ADDITIONS -eq 0 ]; then
   [ $WITH_X11    -eq 1 ] && check_xinerama
   [ $WITH_X11    -eq 1 ] && check_xrandr
   [ $WITH_OPENGL -eq 1 ] && check_opengl
-  [ $WITH_QT5    -eq 1 ] && check_qt5
+  [ $WITH_QT6    -eq 1 ] && check_qt6
   [ $WITH_PYTHON -eq 1 ] && check_python
   [ $WITH_JAVA   -eq 1 ] && check_java
 
