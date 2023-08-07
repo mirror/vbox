@@ -803,9 +803,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  VBOX_WITH_COCOA_QT = 1
 endif
 # Use Qt6 instead of Qt5.
-if1of ($(KBUILD_TARGET), darwin win solaris)
- VBOX_WITH_QT6 := 1
-endif
+VBOX_WITH_QT6 := 1
 
 # VBox Ballooning Control frontend.
 VBOX_WITH_FE_BALLOONCTRL = 1
