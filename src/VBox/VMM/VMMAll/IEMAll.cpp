@@ -7109,7 +7109,8 @@ uint32_t iemMemFetchDataU32Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem
             /*
              * Check TLB page table level access flags.
              */
-            uint64_t const fNoUser = IEM_GET_CPL(pVCpu) == 3 ? IEMTLBE_F_PT_NO_USER : 0;
+            AssertCompile(IEMTLBE_F_PT_NO_USER == 4);
+            uint64_t const fNoUser = (IEM_GET_CPL(pVCpu) + 1) & IEMTLBE_F_PT_NO_USER;
             if (   (pTlbe->fFlagsAndPhysRev & (  IEMTLBE_F_PHYS_REV       | IEMTLBE_F_PG_UNASSIGNED | IEMTLBE_F_PG_NO_READ
                                                | IEMTLBE_F_PT_NO_ACCESSED | IEMTLBE_F_NO_MAPPINGR3  | fNoUser))
                 == pVCpu->iem.s.DataTlb.uTlbPhysRev)
@@ -7181,7 +7182,8 @@ uint32_t iemMemFlatFetchDataU32Jmp(PVMCPUCC pVCpu, RTGCPTR GCPtrMem) IEM_NOEXCEP
             /*
              * Check TLB page table level access flags.
              */
-            uint64_t const fNoUser = IEM_GET_CPL(pVCpu) == 3 ? IEMTLBE_F_PT_NO_USER : 0;
+            AssertCompile(IEMTLBE_F_PT_NO_USER == 4);
+            uint64_t const fNoUser = (IEM_GET_CPL(pVCpu) + 1) & IEMTLBE_F_PT_NO_USER;
             if (   (pTlbe->fFlagsAndPhysRev & (  IEMTLBE_F_PHYS_REV       | IEMTLBE_F_PG_UNASSIGNED | IEMTLBE_F_PG_NO_READ
                                                | IEMTLBE_F_PT_NO_ACCESSED | IEMTLBE_F_NO_MAPPINGR3  | fNoUser))
                 == pVCpu->iem.s.DataTlb.uTlbPhysRev)
