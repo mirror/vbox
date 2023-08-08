@@ -282,6 +282,8 @@ DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmu
         timeout_id_t    idTom;
     } u;
 
+    u.idCo = 0; /* Silence a spurious gcc [-Wmaybe-uninitialized] warning. */
+
     /*
      * Arm the timeout callback.
      *
