@@ -3412,24 +3412,32 @@ DECLINLINE(void) iemMemFakeStackSelDesc(PIEMSELDESC pDescSs, uint32_t uDpl) RT_N
  * Instantiate R/W inline templates.
  */
 #define TMPL_MEM_TYPE       uint8_t
+#define TMPL_MEM_TYPE_ALIGN 0
+#define TMPL_MEM_TYPE_SIZE  1
 #define TMPL_MEM_FN_SUFF    U8
 #define TMPL_MEM_FMT_TYPE   "%#04x"
 #define TMPL_MEM_FMT_DESC   "byte"
 #include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
 
 #define TMPL_MEM_TYPE       uint16_t
+#define TMPL_MEM_TYPE_ALIGN 1
+#define TMPL_MEM_TYPE_SIZE  2
 #define TMPL_MEM_FN_SUFF    U16
 #define TMPL_MEM_FMT_TYPE   "%#06x"
 #define TMPL_MEM_FMT_DESC   "word"
 #include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
 
 #define TMPL_MEM_TYPE       uint32_t
+#define TMPL_MEM_TYPE_ALIGN 3
+#define TMPL_MEM_TYPE_SIZE  4
 #define TMPL_MEM_FN_SUFF    U32
 #define TMPL_MEM_FMT_TYPE   "%#010x"
 #define TMPL_MEM_FMT_DESC   "dword"
 #include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
 
 #define TMPL_MEM_TYPE       uint64_t
+#define TMPL_MEM_TYPE_ALIGN 7
+#define TMPL_MEM_TYPE_SIZE  8
 #define TMPL_MEM_FN_SUFF    U64
 #define TMPL_MEM_FMT_TYPE   "%#018RX64"
 #define TMPL_MEM_FMT_DESC   "qword"
@@ -3437,12 +3445,12 @@ DECLINLINE(void) iemMemFakeStackSelDesc(PIEMSELDESC pDescSs, uint32_t uDpl) RT_N
 
 #define TMPL_MEM_NO_STORE
 #define TMPL_MEM_TYPE       uint64_t
-#define TMPL_MEM_TYPE_ALIGN (sizeof(uint64_t) * 2 - 1)
+#define TMPL_MEM_TYPE_ALIGN 15
+#define TMPL_MEM_TYPE_SIZE  8
 #define TMPL_MEM_FN_SUFF    U64AlignedU128
 #define TMPL_MEM_FMT_TYPE   "%#018RX64"
 #define TMPL_MEM_FMT_DESC   "qword"
 #include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
-#undef  TMPL_MEM_NO_STORE
 
 /** @} */
 

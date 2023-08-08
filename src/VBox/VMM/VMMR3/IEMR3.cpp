@@ -161,6 +161,10 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 
         STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbMisses,          STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Data TLB misses",                          "/IEM/CPU%u/DataTlb-Misses", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbSafeReadPath,    STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Data TLB safe read path",                  "/IEM/CPU%u/DataTlb-SafeReads", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbSafeWritePath,   STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Data TLB safe write path",                 "/IEM/CPU%u/DataTlb-SafeWrites", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.uTlbRevision,        STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
                         "Data TLB revision",                        "/IEM/CPU%u/DataTlb-Revision", idCpu);
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.DataTlb.uTlbPhysRev, STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,

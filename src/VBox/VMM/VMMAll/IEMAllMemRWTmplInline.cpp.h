@@ -30,8 +30,11 @@
 #ifndef TMPL_MEM_TYPE
 # error "TMPL_MEM_TYPE is undefined"
 #endif
+#ifndef TMPL_MEM_TYPE_SIZE
+# error "TMPL_MEM_TYPE_SIZE is undefined"
+#endif
 #ifndef TMPL_MEM_TYPE_ALIGN
-# define TMPL_MEM_TYPE_ALIGN     (sizeof(TMPL_MEM_TYPE) - 1)
+# error "TMPL_MEM_TYPE_ALIGN is undefined"
 #endif
 #ifndef TMPL_MEM_FN_SUFF
 # error "TMPL_MEM_FN_SUFF is undefined"
@@ -55,12 +58,15 @@
 DECL_INLINE_THROW(TMPL_MEM_TYPE)
 RT_CONCAT3(iemMemFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
 {
+    AssertCompile(sizeof(TMPL_MEM_TYPE) == TMPL_MEM_TYPE_SIZE);
 # if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
     /*
      * Convert from segmented to flat address and check that it doesn't cross a page boundrary.
      */
     RTGCPTR GCPtrEff = iemMemApplySegmentToReadJmp(pVCpu, iSegReg, sizeof(TMPL_MEM_TYPE), GCPtrMem);
+#  if TMPL_MEM_TYPE_SIZE > 1
     if (RT_LIKELY((GCPtrEff & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(TMPL_MEM_TYPE)))
+#  endif
     {
         /*
          * TLB lookup.
@@ -80,14 +86,19 @@ RT_CONCAT3(iemMemFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg
             {
                 STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
 
+#  if TMPL_MEM_TYPE_ALIGN != 0
                 /*
                  * Alignment check:
                  */
                 /** @todo check priority \#AC vs \#PF */
                 AssertCompile(X86_CR0_AM == X86_EFL_AC);
+                AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
                 if (   !(GCPtrEff & TMPL_MEM_TYPE_ALIGN)
-                    || !((uint32_t)pVCpu->cpum.GstCtx.cr0 & pVCpu->cpum.GstCtx.eflags.u & X86_CR0_AM)
-                    || IEM_GET_CPL(pVCpu) != 3)
+                    || !(  (uint32_t)pVCpu->cpum.GstCtx.cr0
+                         & pVCpu->cpum.GstCtx.eflags.u
+                         & ((IEM_GET_CPL(pVCpu) + 1U) << 16) /* IEM_GET_CPL(pVCpu) == 3 ? X86_CR0_AM : 0 */
+                         & X86_CR0_AM))
+#  endif
                 {
                     /*
                      * Fetch and return the dword
@@ -98,8 +109,10 @@ RT_CONCAT3(iemMemFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg
                     Log9(("IEM RD " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, uRet));
                     return uRet;
                 }
+#  if TMPL_MEM_TYPE_ALIGN != 0
                 Log10Func(("Raising #AC for %RGv\n", GCPtrEff));
                 iemRaiseAlignmentCheckExceptionJmp(pVCpu);
+#  endif
             }
         }
     }
@@ -122,7 +135,9 @@ RT_CONCAT3(iemMemFlatFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCP
     /*
      * Check that it doesn't cross a page boundrary.
      */
+#  if TMPL_MEM_TYPE_SIZE > 1
     if (RT_LIKELY((GCPtrMem & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(TMPL_MEM_TYPE)))
+#  endif
     {
         /*
          * TLB lookup.
@@ -142,14 +157,19 @@ RT_CONCAT3(iemMemFlatFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCP
             {
                 STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
 
+#  if TMPL_MEM_TYPE_ALIGN != 0
                 /*
                  * Alignment check:
                  */
                 /** @todo check priority \#AC vs \#PF */
                 AssertCompile(X86_CR0_AM == X86_EFL_AC);
+                AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
                 if (   !(GCPtrMem & TMPL_MEM_TYPE_ALIGN)
-                    || !((uint32_t)pVCpu->cpum.GstCtx.cr0 & pVCpu->cpum.GstCtx.eflags.u & X86_CR0_AM)
-                    || IEM_GET_CPL(pVCpu) != 3)
+                    || !(  (uint32_t)pVCpu->cpum.GstCtx.cr0
+                         & pVCpu->cpum.GstCtx.eflags.u
+                         & ((IEM_GET_CPL(pVCpu) + 1U) << 16) /* IEM_GET_CPL(pVCpu) == 3 ? X86_CR0_AM : 0 */
+                         & X86_CR0_AM))
+#  endif
                 {
                     /*
                      * Fetch and return the dword
@@ -160,8 +180,10 @@ RT_CONCAT3(iemMemFlatFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCP
                     Log9(("IEM RD " TMPL_MEM_FMT_DESC " %RGv: " TMPL_MEM_FMT_TYPE "\n", GCPtrMem, uRet));
                     return uRet;
                 }
+#  if TMPL_MEM_TYPE_ALIGN != 0
                 Log10Func(("Raising #AC for %RGv\n", GCPtrMem));
                 iemRaiseAlignmentCheckExceptionJmp(pVCpu);
+#  endif
             }
         }
     }
@@ -189,7 +211,9 @@ RT_CONCAT3(iemMemStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg
      * Convert from segmented to flat address and check that it doesn't cross a page boundrary.
      */
     RTGCPTR GCPtrEff = iemMemApplySegmentToWriteJmp(pVCpu, iSegReg, sizeof(TMPL_MEM_TYPE), GCPtrMem);
+#  if TMPL_MEM_TYPE_SIZE > 1
     if (RT_LIKELY((GCPtrEff & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(TMPL_MEM_TYPE)))
+#  endif
     {
         /*
          * TLB lookup.
@@ -210,14 +234,19 @@ RT_CONCAT3(iemMemStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg
             {
                 STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
 
+#   if TMPL_MEM_TYPE_ALIGN != 0
                 /*
                  * Alignment check:
                  */
                 /** @todo check priority \#AC vs \#PF */
                 AssertCompile(X86_CR0_AM == X86_EFL_AC);
+                AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
                 if (   !(GCPtrEff & TMPL_MEM_TYPE_ALIGN)
-                    || !((uint32_t)pVCpu->cpum.GstCtx.cr0 & pVCpu->cpum.GstCtx.eflags.u & X86_CR0_AM)
-                    || IEM_GET_CPL(pVCpu) != 3)
+                    || !(  (uint32_t)pVCpu->cpum.GstCtx.cr0
+                         & pVCpu->cpum.GstCtx.eflags.u
+                         & ((IEM_GET_CPL(pVCpu) + 1U) << 16) /* IEM_GET_CPL(pVCpu) == 3 ? X86_CR0_AM : 0 */
+                         & X86_CR0_AM))
+#   endif
                 {
                     /*
                      * Store the dword and return.
@@ -228,8 +257,10 @@ RT_CONCAT3(iemMemStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg
                     Log9(("IEM WR " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, uValue));
                     return;
                 }
+#   if TMPL_MEM_TYPE_ALIGN != 0
                 Log10Func(("Raising #AC for %RGv\n", GCPtrEff));
                 iemRaiseAlignmentCheckExceptionJmp(pVCpu);
+#   endif
             }
         }
     }
@@ -253,7 +284,9 @@ RT_CONCAT3(iemMemFlatStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCP
     /*
      * Check that it doesn't cross a page boundrary.
      */
+#  if TMPL_MEM_TYPE_SIZE > 1
     if (RT_LIKELY((GCPtrMem & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(TMPL_MEM_TYPE)))
+#  endif
     {
         /*
          * TLB lookup.
@@ -274,14 +307,19 @@ RT_CONCAT3(iemMemFlatStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCP
             {
                 STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
 
+#   if TMPL_MEM_TYPE_ALIGN != 0
                 /*
                  * Alignment check:
                  */
                 /** @todo check priority \#AC vs \#PF */
                 AssertCompile(X86_CR0_AM == X86_EFL_AC);
+                AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
                 if (   !(GCPtrMem & TMPL_MEM_TYPE_ALIGN)
-                    || !((uint32_t)pVCpu->cpum.GstCtx.cr0 & pVCpu->cpum.GstCtx.eflags.u & X86_CR0_AM)
-                    || IEM_GET_CPL(pVCpu) != 3)
+                    || !(  (uint32_t)pVCpu->cpum.GstCtx.cr0
+                         & pVCpu->cpum.GstCtx.eflags.u
+                         & ((IEM_GET_CPL(pVCpu) + 1U) << 16) /* IEM_GET_CPL(pVCpu) == 3 ? X86_CR0_AM : 0 */
+                         & X86_CR0_AM))
+#   endif
                 {
                     /*
                      * Store the dword and return.
@@ -292,8 +330,10 @@ RT_CONCAT3(iemMemFlatStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCP
                     Log9(("IEM WR " TMPL_MEM_FMT_DESC " %RGv: " TMPL_MEM_FMT_TYPE "\n", GCPtrMem, uValue));
                     return;
                 }
+#   if TMPL_MEM_TYPE_ALIGN != 0
                 Log10Func(("Raising #AC for %RGv\n", GCPtrMem));
                 iemRaiseAlignmentCheckExceptionJmp(pVCpu);
+#   endif
             }
         }
     }
@@ -311,7 +351,9 @@ RT_CONCAT3(iemMemFlatStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCP
 
 #undef TMPL_MEM_TYPE
 #undef TMPL_MEM_TYPE_ALIGN
+#undef TMPL_MEM_TYPE_SIZE
 #undef TMPL_MEM_FN_SUFF
 #undef TMPL_MEM_FMT_TYPE
 #undef TMPL_MEM_FMT_DESC
+#undef TMPL_MEM_NO_STORE
 

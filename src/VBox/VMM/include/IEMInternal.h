@@ -483,6 +483,10 @@ typedef struct IEMTLB
     uint32_t            cTlbMisses;
     /** Slow read path.  */
     uint32_t            cTlbSlowReadPath;
+    /** Safe read path.  */
+    uint32_t            cTlbSafeReadPath;
+    /** Safe write path.  */
+    uint32_t            cTlbSafeWritePath;
 #if 0
     /** TLB misses because of tag mismatch. */
     uint32_t            cTlbMissesTag;
@@ -498,7 +502,7 @@ typedef struct IEMTLB
     uint32_t            cTlbMissesMapping;
 #endif
     /** Alignment padding. */
-    uint32_t            au32Padding[3+5];
+    uint32_t            au32Padding[6];
 } IEMTLB;
 AssertCompileSizeAlignment(IEMTLB, 64);
 /** IEMTLB::uTlbRevision increment.  */
