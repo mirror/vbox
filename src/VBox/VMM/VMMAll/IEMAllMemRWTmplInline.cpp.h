@@ -52,7 +52,7 @@
  *
  * @note The @a iSegRef is not allowed to be UINT8_MAX!
  */
-DECLINLINE(TMPL_MEM_TYPE)
+DECL_INLINE_THROW(TMPL_MEM_TYPE)
 RT_CONCAT3(iemMemFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
 {
 # if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
@@ -115,7 +115,7 @@ RT_CONCAT3(iemMemFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg
 /**
  * Inlined flat addressing fetch function that longjumps on error.
  */
-DECLINLINE(TMPL_MEM_TYPE)
+DECL_INLINE_THROW(TMPL_MEM_TYPE)
 RT_CONCAT3(iemMemFlatFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
 {
 # if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
@@ -180,7 +180,7 @@ RT_CONCAT3(iemMemFlatFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCP
  *
  * @note The @a iSegRef is not allowed to be UINT8_MAX!
  */
-DECLINLINE(void)
+DECL_INLINE_THROW(void)
 RT_CONCAT3(iemMemStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem,
                                                  TMPL_MEM_TYPE uValue) IEM_NOEXCEPT_MAY_LONGJMP
 {
@@ -245,7 +245,7 @@ RT_CONCAT3(iemMemStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg
 /**
  * Inlined flat addressing store function that longjumps on error.
  */
-DECLINLINE(void)
+DECL_INLINE_THROW(void)
 RT_CONCAT3(iemMemFlatStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCPtrMem,
                                                      TMPL_MEM_TYPE uValue) IEM_NOEXCEPT_MAY_LONGJMP
 {
