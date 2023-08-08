@@ -3355,30 +3355,36 @@ DECL_INLINE_THROW(RTGCPTR) iemMemApplySegmentToWriteJmp(PVMCPUCC pVCpu, uint8_t 
      */
     else
     {
+        Assert(GCPtrMem <= UINT32_MAX);
         IEM_CTX_IMPORT_JMP(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iSegReg));
         PCPUMSELREGHID pSel           = iemSRegGetHid(pVCpu, iSegReg);
         uint32_t const fRelevantAttrs = pSel->Attr.u & (  X86DESCATTR_P     | X86DESCATTR_UNUSABLE
                                                         | X86_SEL_TYPE_CODE | X86_SEL_TYPE_WRITE | X86_SEL_TYPE_DOWN);
-        if (fRelevantAttrs == (X86DESCATTR_P | X86_SEL_TYPE_WRITE)) /* data, expand up */
+        if (   fRelevantAttrs == (X86DESCATTR_P | X86_SEL_TYPE_WRITE) /* data, expand up */
+               /** @todo explore exactly how the CS stuff works in real mode. See also
+                *        http://www.rcollins.org/Productivity/DescriptorCache.html and
+                *        http://www.rcollins.org/ddj/Aug98/Aug98.html for some insight. */
+            || (iSegReg == X86_SREG_CS && IEM_IS_REAL_OR_V86_MODE(pVCpu)) ) /* Ignored for CS. */ /** @todo testcase! */
         {
             /* expand up */
-            uint32_t GCPtrLast32 = (uint32_t)GCPtrMem + (uint32_t)cbMem;
-            if (RT_LIKELY(   GCPtrLast32 > pSel->u32Limit
-                          && GCPtrLast32 > (uint32_t)GCPtrMem))
+            uint32_t const GCPtrLast32 = (uint32_t)GCPtrMem + (uint32_t)cbMem - 1;
+            if (RT_LIKELY(   GCPtrLast32 <= pSel->u32Limit
+                          && GCPtrLast32 >= (uint32_t)GCPtrMem))
                 return (uint32_t)GCPtrMem + (uint32_t)pSel->u64Base;
+            iemRaiseSelectorBoundsJmp(pVCpu, iSegReg, IEM_ACCESS_DATA_W);
         }
         else if (fRelevantAttrs == (X86DESCATTR_P | X86_SEL_TYPE_WRITE | X86_SEL_TYPE_DOWN)) /* data, expand up */
         {
-            /* expand down */
-            uint32_t GCPtrLast32 = (uint32_t)GCPtrMem + (uint32_t)cbMem;
-            if (RT_LIKELY(   (uint32_t)GCPtrMem >  pSel->u32Limit
-                          && GCPtrLast32        <= (pSel->Attr.n.u1DefBig ? UINT32_MAX : UINT32_C(0xffff))
-                          && GCPtrLast32 > (uint32_t)GCPtrMem))
+            /* expand down - the uppger boundary is defined by the B bit, not G. */
+            uint32_t GCPtrLast32 = (uint32_t)GCPtrMem + (uint32_t)cbMem - 1;
+            if (RT_LIKELY(   (uint32_t)GCPtrMem >= pSel->u32Limit
+                          && (pSel->Attr.n.u1DefBig || GCPtrLast32 <= UINT32_C(0xffff))
+                          && GCPtrLast32 >= (uint32_t)GCPtrMem))
                 return (uint32_t)GCPtrMem + (uint32_t)pSel->u64Base;
+            iemRaiseSelectorBoundsJmp(pVCpu, iSegReg, IEM_ACCESS_DATA_W);
         }
         else
             iemRaiseSelectorInvalidAccessJmp(pVCpu, iSegReg, IEM_ACCESS_DATA_W);
-        iemRaiseSelectorBoundsJmp(pVCpu, iSegReg, IEM_ACCESS_DATA_W);
     }
     iemRaiseGeneralProtectionFault0Jmp(pVCpu);
 }
@@ -3401,6 +3407,42 @@ DECLINLINE(void) iemMemFakeStackSelDesc(PIEMSELDESC pDescSs, uint32_t uDpl) RT_N
     pDescSs->Long.Gen.u1Present  = 1;
     pDescSs->Long.Gen.u1Long     = 1;
 }
+
+/*
+ * Instantiate R/W inline templates.
+ */
+#define TMPL_MEM_TYPE       uint8_t
+#define TMPL_MEM_FN_SUFF    U8
+#define TMPL_MEM_FMT_TYPE   "%#04x"
+#define TMPL_MEM_FMT_DESC   "byte"
+#include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
+
+#define TMPL_MEM_TYPE       uint16_t
+#define TMPL_MEM_FN_SUFF    U16
+#define TMPL_MEM_FMT_TYPE   "%#06x"
+#define TMPL_MEM_FMT_DESC   "word"
+#include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
+
+#define TMPL_MEM_TYPE       uint32_t
+#define TMPL_MEM_FN_SUFF    U32
+#define TMPL_MEM_FMT_TYPE   "%#010x"
+#define TMPL_MEM_FMT_DESC   "dword"
+#include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
+
+#define TMPL_MEM_TYPE       uint64_t
+#define TMPL_MEM_FN_SUFF    U64
+#define TMPL_MEM_FMT_TYPE   "%#018RX64"
+#define TMPL_MEM_FMT_DESC   "qword"
+#include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
+
+#define TMPL_MEM_NO_STORE
+#define TMPL_MEM_TYPE       uint64_t
+#define TMPL_MEM_TYPE_ALIGN (sizeof(uint64_t) * 2 - 1)
+#define TMPL_MEM_FN_SUFF    U64AlignedU128
+#define TMPL_MEM_FMT_TYPE   "%#018RX64"
+#define TMPL_MEM_FMT_DESC   "qword"
+#include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
+#undef  TMPL_MEM_NO_STORE
 
 /** @} */
 

@@ -815,11 +815,11 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     ((a_u8Dst) = iemMemFetchDataU8Jmp(pVCpu, (a_iSeg), (a_GCPtrMem32)))
 
 # define IEM_MC_FETCH_MEM_FLAT_U8(a_u8Dst, a_GCPtrMem) \
-    ((a_u8Dst) = iemMemFetchDataU8Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+    ((a_u8Dst) = iemMemFlatFetchDataU8Jmp(pVCpu, (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM16_FLAT_U8(a_u8Dst, a_GCPtrMem16) \
-    ((a_u8Dst) = iemMemFetchDataU8Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem16)))
+    ((a_u8Dst) = iemMemFlatFetchDataU8Jmp(pVCpu, (a_GCPtrMem16)))
 # define IEM_MC_FETCH_MEM32_FLAT_U8(a_u8Dst, a_GCPtrMem32) \
-    ((a_u8Dst) = iemMemFetchDataU8Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem32)))
+    ((a_u8Dst) = iemMemFlatFetchDataU8Jmp(pVCpu, (a_GCPtrMem32)))
 #endif
 
 #ifndef IEM_WITH_SETJMP
@@ -838,11 +838,11 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     ((a_i16Dst) = (int16_t)iemMemFetchDataU16Jmp(pVCpu, (a_iSeg), (a_GCPtrMem)))
 
 # define IEM_MC_FETCH_MEM_FLAT_U16(a_u16Dst, a_GCPtrMem) \
-    ((a_u16Dst) = iemMemFetchDataU16Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+    ((a_u16Dst) = iemMemFlatFetchDataU16Jmp(pVCpu, (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_FLAT_U16_DISP(a_u16Dst, a_GCPtrMem, a_offDisp) \
-    ((a_u16Dst) = iemMemFetchDataU16Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem) + (a_offDisp)))
+    ((a_u16Dst) = iemMemFlatFetchDataU16Jmp(pVCpu, (a_GCPtrMem) + (a_offDisp)))
 # define IEM_MC_FETCH_MEM_FLAT_I16(a_i16Dst, a_GCPtrMem) \
-    ((a_i16Dst) = (int16_t)iemMemFetchDataU16Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+    ((a_i16Dst) = (int16_t)iemMemFlatFetchDataU16Jmp(pVCpu, (a_GCPtrMem)))
 #endif
 
 #ifndef IEM_WITH_SETJMP
@@ -893,13 +893,13 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     ((a_i64Dst) = (int64_t)iemMemFetchDataU64Jmp(pVCpu, (a_iSeg), (a_GCPtrMem)))
 
 # define IEM_MC_FETCH_MEM_FLAT_U64(a_u64Dst, a_GCPtrMem) \
-    ((a_u64Dst) = iemMemFetchDataU64Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+    ((a_u64Dst) = iemMemFlatFetchDataU64Jmp(pVCpu, (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_FLAT_U64_DISP(a_u64Dst, a_GCPtrMem, a_offDisp) \
-    ((a_u64Dst) = iemMemFetchDataU64Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem) + (a_offDisp)))
+    ((a_u64Dst) = iemMemFlatFetchDataU64Jmp(pVCpu, (a_GCPtrMem) + (a_offDisp)))
 # define IEM_MC_FETCH_MEM_FLAT_U64_ALIGN_U128(a_u64Dst, a_GCPtrMem) \
-    ((a_u64Dst) = iemMemFetchDataU64AlignedU128Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+    ((a_u64Dst) = iemMemFlatFetchDataU64AlignedU128Jmp(pVCpu, (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_FLAT_I64(a_i64Dst, a_GCPtrMem) \
-    ((a_i64Dst) = (int64_t)iemMemFetchDataU64Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+    ((a_i64Dst) = (int64_t)iemMemFlatFetchDataU64Jmp(pVCpu, (a_GCPtrMem)))
 #endif
 
 #ifndef IEM_WITH_SETJMP
@@ -924,7 +924,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 # define IEM_MC_FETCH_MEM_FLAT_R32(a_r32Dst, a_GCPtrMem) \
     ((a_r32Dst).u = iemMemFlatFetchDataU32Jmp(pVCpu, (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_FLAT_R64(a_r64Dst, a_GCPtrMem) \
-    ((a_r64Dst).u = iemMemFetchDataU64Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+    ((a_r64Dst).u = iemMemFlatFetchDataU64Jmp(pVCpu, (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_FLAT_R80(a_r80Dst, a_GCPtrMem) \
     iemMemFetchDataR80Jmp(pVCpu, &(a_r80Dst), UINT8_MAX, (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_FLAT_D80(a_d80Dst, a_GCPtrMem) \
@@ -1085,15 +1085,15 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     ((a_u64Dst) = iemMemFetchDataU32Jmp(pVCpu, (a_iSeg), (a_GCPtrMem)))
 
 # define IEM_MC_FETCH_MEM_FLAT_U8_ZX_U16(a_u16Dst, a_GCPtrMem) \
-    ((a_u16Dst) = iemMemFetchDataU8Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+    ((a_u16Dst) = iemMemFlatFetchDataU8Jmp(pVCpu, (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_FLAT_U8_ZX_U32(a_u32Dst, a_GCPtrMem) \
-    ((a_u32Dst) = iemMemFetchDataU8Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+    ((a_u32Dst) = iemMemFlatFetchDataU8Jmp(pVCpu, (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_FLAT_U8_ZX_U64(a_u64Dst, a_GCPtrMem) \
-    ((a_u64Dst) = iemMemFetchDataU8Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+    ((a_u64Dst) = iemMemFlatFetchDataU8Jmp(pVCpu, (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_FLAT_U16_ZX_U32(a_u32Dst, a_GCPtrMem) \
-    ((a_u32Dst) = iemMemFetchDataU16Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+    ((a_u32Dst) = iemMemFlatFetchDataU16Jmp(pVCpu, (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_FLAT_U16_ZX_U64(a_u64Dst, a_GCPtrMem) \
-    ((a_u64Dst) = iemMemFetchDataU16Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+    ((a_u64Dst) = iemMemFlatFetchDataU16Jmp(pVCpu, (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_FLAT_U32_ZX_U64(a_u64Dst, a_GCPtrMem) \
     ((a_u64Dst) = iemMemFlatFetchDataU32Jmp(pVCpu, (a_GCPtrMem)))
 #endif /* IEM_WITH_SETJMP */
@@ -1150,15 +1150,15 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     ((a_u64Dst) = (int32_t)iemMemFetchDataU32Jmp(pVCpu, (a_iSeg), (a_GCPtrMem)))
 
 # define IEM_MC_FETCH_MEM_FLAT_U8_SX_U16(a_u16Dst, a_GCPtrMem) \
-    ((a_u16Dst) = (int8_t)iemMemFetchDataU8Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+    ((a_u16Dst) = (int8_t)iemMemFlatFetchDataU8Jmp(pVCpu, (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_FLAT_U8_SX_U32(a_u32Dst, a_GCPtrMem) \
-    ((a_u32Dst) = (int8_t)iemMemFetchDataU8Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+    ((a_u32Dst) = (int8_t)iemMemFlatFetchDataU8Jmp(pVCpu, (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_FLAT_U8_SX_U64(a_u64Dst, a_GCPtrMem) \
-    ((a_u64Dst) = (int8_t)iemMemFetchDataU8Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+    ((a_u64Dst) = (int8_t)iemMemFlatFetchDataU8Jmp(pVCpu, (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_FLAT_U16_SX_U32(a_u32Dst, a_GCPtrMem) \
-    ((a_u32Dst) = (int16_t)iemMemFetchDataU16Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+    ((a_u32Dst) = (int16_t)iemMemFlatFetchDataU16Jmp(pVCpu, (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_FLAT_U16_SX_U64(a_u64Dst, a_GCPtrMem) \
-    ((a_u64Dst) = (int16_t)iemMemFetchDataU16Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem)))
+    ((a_u64Dst) = (int16_t)iemMemFlatFetchDataU16Jmp(pVCpu, (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_FLAT_U32_SX_U64(a_u64Dst, a_GCPtrMem) \
     ((a_u64Dst) = (int32_t)iemMemFlatFetchDataU32Jmp(pVCpu, (a_GCPtrMem)))
 #endif /* IEM_WITH_SETJMP */
@@ -1183,13 +1183,13 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     iemMemStoreDataU64Jmp(pVCpu, (a_iSeg), (a_GCPtrMem), (a_u64Value))
 
 # define IEM_MC_STORE_MEM_FLAT_U8(a_GCPtrMem, a_u8Value) \
-    iemMemStoreDataU8Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem), (a_u8Value))
+    iemMemFlatStoreDataU8Jmp(pVCpu, (a_GCPtrMem), (a_u8Value))
 # define IEM_MC_STORE_MEM_FLAT_U16(a_GCPtrMem, a_u16Value) \
-    iemMemStoreDataU16Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem), (a_u16Value))
+    iemMemFlatStoreDataU16Jmp(pVCpu, (a_GCPtrMem), (a_u16Value))
 # define IEM_MC_STORE_MEM_FLAT_U32(a_GCPtrMem, a_u32Value) \
-    iemMemStoreDataU32Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem), (a_u32Value))
+    iemMemFlatStoreDataU32Jmp(pVCpu, (a_GCPtrMem), (a_u32Value))
 # define IEM_MC_STORE_MEM_FLAT_U64(a_GCPtrMem, a_u64Value) \
-    iemMemStoreDataU64Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem), (a_u64Value))
+    iemMemFlatStoreDataU64Jmp(pVCpu, (a_GCPtrMem), (a_u64Value))
 #endif
 
 #ifndef IEM_WITH_SETJMP
@@ -1212,13 +1212,13 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     iemMemStoreDataU64Jmp(pVCpu, (a_iSeg), (a_GCPtrMem), (a_u64C))
 
 # define IEM_MC_STORE_MEM_FLAT_U8_CONST(a_GCPtrMem, a_u8C) \
-    iemMemStoreDataU8Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem), (a_u8C))
+    iemMemFlatStoreDataU8Jmp(pVCpu, (a_GCPtrMem), (a_u8C))
 # define IEM_MC_STORE_MEM_FLAT_U16_CONST(a_GCPtrMem, a_u16C) \
-    iemMemStoreDataU16Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem), (a_u16C))
+    iemMemFlatStoreDataU16Jmp(pVCpu, (a_GCPtrMem), (a_u16C))
 # define IEM_MC_STORE_MEM_FLAT_U32_CONST(a_GCPtrMem, a_u32C) \
-    iemMemStoreDataU32Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem), (a_u32C))
+    iemMemFlatStoreDataU32Jmp(pVCpu, (a_GCPtrMem), (a_u32C))
 # define IEM_MC_STORE_MEM_FLAT_U64_CONST(a_GCPtrMem, a_u64C) \
-    iemMemStoreDataU64Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem), (a_u64C))
+    iemMemFlatStoreDataU64Jmp(pVCpu, (a_GCPtrMem), (a_u64C))
 #endif
 
 #define IEM_MC_STORE_MEM_I8_CONST_BY_REF( a_pi8Dst,  a_i8C)     *(a_pi8Dst)  = (a_i8C)
