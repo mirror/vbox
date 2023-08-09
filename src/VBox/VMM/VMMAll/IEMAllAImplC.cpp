@@ -1011,7 +1011,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_andn_u32,(uint32_t *puDst, uint32_t uSrc1, uint
  * CMP
  */
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_cmp_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmp_u64,(uint64_t const *puDst, uint64_t uSrc, uint32_t *pfEFlags))
 {
     uint64_t uDstTmp = *puDst;
     iemAImpl_sub_u64(&uDstTmp, uSrc, pfEFlags);
@@ -1019,14 +1019,14 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmp_u64,(uint64_t *puDst, uint64_t uSrc, uint32
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_cmp_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmp_u32,(uint32_t const *puDst, uint32_t uSrc, uint32_t *pfEFlags))
 {
     uint32_t uDstTmp = *puDst;
     iemAImpl_sub_u32(&uDstTmp, uSrc, pfEFlags);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_cmp_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmp_u16,(uint16_t const *puDst, uint16_t uSrc, uint32_t *pfEFlags))
 {
     uint16_t uDstTmp = *puDst;
     iemAImpl_sub_u16(&uDstTmp, uSrc, pfEFlags);
@@ -1045,7 +1045,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmp_u8,(uint8_t const *puDst, uint8_t uSrc, uin
  * TEST
  */
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_test_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(void, iemAImpl_test_u64,(uint64_t const *puDst, uint64_t uSrc, uint32_t *pfEFlags))
 {
     uint64_t uResult = *puDst & uSrc;
     IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uResult, 64, 0);
@@ -1053,14 +1053,14 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_test_u64,(uint64_t *puDst, uint64_t uSrc, uint3
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_test_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(void, iemAImpl_test_u32,(uint32_t const *puDst, uint32_t uSrc, uint32_t *pfEFlags))
 {
     uint32_t uResult = *puDst & uSrc;
     IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uResult, 32, 0);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_test_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(void, iemAImpl_test_u16,(uint16_t const *puDst, uint16_t uSrc, uint32_t *pfEFlags))
 {
     uint16_t uResult = *puDst & uSrc;
     IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uResult, 16, 0);

@@ -1820,17 +1820,17 @@ typedef FNIEMAIMPLBINROU64 *PFNIEMAIMPLBINROU64;
 /** @name Compare operations (thrown in with the binary ops).
  * @{ */
 FNIEMAIMPLBINROU8  iemAImpl_cmp_u8;
-FNIEMAIMPLBINU16 iemAImpl_cmp_u16;
-FNIEMAIMPLBINU32 iemAImpl_cmp_u32;
-FNIEMAIMPLBINU64 iemAImpl_cmp_u64;
+FNIEMAIMPLBINROU16 iemAImpl_cmp_u16;
+FNIEMAIMPLBINROU32 iemAImpl_cmp_u32;
+FNIEMAIMPLBINROU64 iemAImpl_cmp_u64;
 /** @}  */
 
 /** @name Test operations (thrown in with the binary ops).
  * @{ */
 FNIEMAIMPLBINROU8  iemAImpl_test_u8;
-FNIEMAIMPLBINU16 iemAImpl_test_u16;
-FNIEMAIMPLBINU32 iemAImpl_test_u32;
-FNIEMAIMPLBINU64 iemAImpl_test_u64;
+FNIEMAIMPLBINROU16 iemAImpl_test_u16;
+FNIEMAIMPLBINROU32 iemAImpl_test_u32;
+FNIEMAIMPLBINROU64 iemAImpl_test_u64;
 /** @}  */
 
 /** @name Bit operations operations (thrown in with the binary ops).
