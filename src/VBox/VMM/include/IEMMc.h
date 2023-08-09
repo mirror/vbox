@@ -47,7 +47,9 @@
     do \
     { \
         VBOXSTRICTRC rcStrict2 = a_Expr; \
-        if (rcStrict2 != VINF_SUCCESS) \
+        if (rcStrict2 == VINF_SUCCESS) \
+        { /* likely */ } \
+        else \
             return rcStrict2; \
     } while (0)
 
@@ -1886,26 +1888,41 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 /** Commits the memory and unmaps guest memory previously mapped RW.
  * @remarks     May return.
  */
-#define IEM_MC_MEM_COMMIT_AND_UNMAP_RW(a_pvMem, a_bMapInfo) do { \
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_COMMIT_AND_UNMAP_RW(a_pvMem, a_bMapInfo) do { \
         RT_NOREF_PV(a_bMapInfo); Assert(a_bMapInfo == (1 | ((IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE) << 4)) ); \
         IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, (a_pvMem), IEM_ACCESS_DATA_RW)); \
     } while (0)
+#else
+# define IEM_MC_MEM_COMMIT_AND_UNMAP_RW(a_pvMem, a_bMapInfo) \
+    iemMemCommitAndUnmapRwJmp(pVCpu, (a_pvMem), (a_bMapInfo))
+#endif
 
 /** Commits the memory and unmaps guest memory previously mapped W.
  * @remarks     May return.
  */
-#define IEM_MC_MEM_COMMIT_AND_UNMAP_WO(a_pvMem, a_bMapInfo) do { \
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_COMMIT_AND_UNMAP_WO(a_pvMem, a_bMapInfo) do { \
         RT_NOREF_PV(a_bMapInfo); Assert(a_bMapInfo == (1 | (IEM_ACCESS_TYPE_WRITE << 4)) ); \
         IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, (a_pvMem), IEM_ACCESS_DATA_W)); \
     } while (0)
+#else
+# define IEM_MC_MEM_COMMIT_AND_UNMAP_WO(a_pvMem, a_bMapInfo) \
+    iemMemCommitAndUnmapWoJmp(pVCpu, (a_pvMem), (a_bMapInfo))
+#endif
 
 /** Commits the memory and unmaps guest memory previously mapped R.
  * @remarks     May return.
  */
-#define IEM_MC_MEM_COMMIT_AND_UNMAP_RO(a_pvMem, a_bMapInfo) do { \
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_COMMIT_AND_UNMAP_RO(a_pvMem, a_bMapInfo) do { \
         RT_NOREF_PV(a_bMapInfo); Assert(a_bMapInfo == (1 | (IEM_ACCESS_TYPE_READ << 4)) ); \
         IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, (void *)(a_pvMem), IEM_ACCESS_DATA_R)); \
     } while (0)
+#else
+# define IEM_MC_MEM_COMMIT_AND_UNMAP_RO(a_pvMem, a_bMapInfo) \
+    iemMemCommitAndUnmapRoJmp(pVCpu, (a_pvMem), (a_bMapInfo))
+#endif
 
 
 /** Commits the memory and unmaps the guest memory unless the FPU status word

@@ -4674,6 +4674,10 @@ uint32_t const *iemMemMapDataU32RoSafeJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, 
 uint64_t       *iemMemMapDataU64RwSafeJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP;
 uint64_t       *iemMemMapDataU64WoSafeJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP;
 uint64_t const *iemMemMapDataU64RoSafeJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP;
+
+void            iemMemCommitAndUnmapRwSafeJmp(PVMCPUCC pVCpu, void *pvMem, uint8_t bMapInfo) IEM_NOEXCEPT_MAY_LONGJMP;
+void            iemMemCommitAndUnmapWoSafeJmp(PVMCPUCC pVCpu, void *pvMem, uint8_t bMapInfo) IEM_NOEXCEPT_MAY_LONGJMP;
+void            iemMemCommitAndUnmapRoSafeJmp(PVMCPUCC pVCpu, const void *pvMem, uint8_t bMapInfo) IEM_NOEXCEPT_MAY_LONGJMP;
 #endif
 
 VBOXSTRICTRC    iemMemStackPushBeginSpecial(PVMCPUCC pVCpu, size_t cbMem, uint32_t cbAlign,

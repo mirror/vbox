@@ -3411,6 +3411,33 @@ DECLINLINE(void) iemMemFakeStackSelDesc(PIEMSELDESC pDescSs, uint32_t uDpl) RT_N
     pDescSs->Long.Gen.u1Long     = 1;
 }
 
+
+/*
+ * Unmap helpers.
+ */
+
+#ifdef IEM_WITH_SETJMP
+
+DECL_INLINE_THROW(void) iemMemCommitAndUnmapRwJmp(PVMCPUCC pVCpu, void *pvMem, uint8_t bMapInfo) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    iemMemCommitAndUnmapRwSafeJmp(pVCpu, pvMem, bMapInfo);
+}
+
+
+DECL_INLINE_THROW(void) iemMemCommitAndUnmapWoJmp(PVMCPUCC pVCpu, void *pvMem, uint8_t bMapInfo) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    iemMemCommitAndUnmapWoSafeJmp(pVCpu, pvMem, bMapInfo);
+}
+
+
+DECL_INLINE_THROW(void) iemMemCommitAndUnmapRoJmp(PVMCPUCC pVCpu, const void *pvMem, uint8_t bMapInfo) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    iemMemCommitAndUnmapRoSafeJmp(pVCpu, pvMem, bMapInfo);
+}
+
+#endif /* IEM_WITH_SETJMP */
+
+
 /*
  * Instantiate R/W inline templates.
  */

@@ -6840,6 +6840,30 @@ void iemMemCommitAndUnmapJmp(PVMCPUCC pVCpu, void *pvMem, uint32_t fAccess) IEM_
     pVCpu->iem.s.cActiveMappings--;
 }
 
+
+/** Fallback for iemMemCommitAndUnmapRwJmp.  */
+void iemMemCommitAndUnmapRwSafeJmp(PVMCPUCC pVCpu, void *pvMem, uint8_t bMapInfo) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    Assert(bMapInfo == (1 | ((IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE) << 4)) ); RT_NOREF_PV(bMapInfo);
+    iemMemCommitAndUnmapJmp(pVCpu, pvMem, IEM_ACCESS_DATA_RW);
+}
+
+
+/** Fallback for iemMemCommitAndUnmapWoJmp.  */
+void iemMemCommitAndUnmapWoSafeJmp(PVMCPUCC pVCpu, void *pvMem, uint8_t bMapInfo) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    Assert(bMapInfo == (1 | (IEM_ACCESS_TYPE_WRITE << 4)) ); RT_NOREF_PV(bMapInfo);
+    iemMemCommitAndUnmapJmp(pVCpu, pvMem, IEM_ACCESS_DATA_W);
+}
+
+
+/** Fallback for iemMemCommitAndUnmapRoJmp.  */
+void iemMemCommitAndUnmapRoSafeJmp(PVMCPUCC pVCpu, const void *pvMem, uint8_t bMapInfo) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    Assert(bMapInfo == (1 | (IEM_ACCESS_TYPE_READ << 4)) ); RT_NOREF_PV(bMapInfo);
+    iemMemCommitAndUnmapJmp(pVCpu, (void *)pvMem, IEM_ACCESS_DATA_R);
+}
+
 #endif /* IEM_WITH_SETJMP */
 
 #ifndef IN_RING3
