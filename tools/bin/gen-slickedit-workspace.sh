@@ -583,16 +583,19 @@ EOF
 #define PGM_BTH_NAME_EPT_AMD64(name)    pgmBth##name
 #define PGM_BTH_DECL(type, name)        type PGM_BTH_NAME(name)
 
-#define FNIEMOP_STUB(a_Name)               VBOXSTRICTRC a_Name(PIEMCPU pIemCpu) { return VERR_NOT_IMPLEMENTED; }
-#define FNIEMOP_DEF(a_Name)                VBOXSTRICTRC a_Name(PIEMCPU pIemCpu)
+#define FNIEMOP_STUB(a_Name)            VBOXSTRICTRC a_Name(PIEMCPU pIemCpu) { return VERR_NOT_IMPLEMENTED; }
+#define FNIEMOP_DEF(a_Name)             VBOXSTRICTRC a_Name(PIEMCPU pIemCpu)
 #define FNIEMOP_DEF_1(a_Name, a_Type0, a_Name0) static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu, a_Type0 a_Name0)
 #define FNIEMOP_DEF_2(a_Name, a_Type0, a_Name0, a_Type1, a_Name1) static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu, a_Type0 a_Name0, a_Type1 a_Name1)
-#define FNIEMOPRM_DEF(a_Name)               static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu, uint8_t bBm)
+#define FNIEMOPRM_DEF(a_Name)           static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu, uint8_t bBm)
 #define IEM_CIMPL_DEF_0(a_Name)         static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu)
 #define IEM_CIMPL_DEF_1(a_Name, a_Type0, a_Name0) static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu, , a_Type0 a_Name0)
-#define IEM_CIMPL_DEF_2(a_Name, a_Type0, a_Name0, a_Type1, a_Name1) static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu, , a_Type0 a_Name0, a_Type1 a_Name1)
-#define IEM_CIMPL_DEF_3(a_Name, a_Type0, a_Name0, a_Type1, a_Name1, a_Type2, a_Name2)  static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu, , a_Type0 a_Name0, a_Type1 a_Name1, , a_Type2 a_Name2)
+#define IEM_CIMPL_DEF_2(a_Name, a_Type0, a_Name0, a_Type1, a_Name1) static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu, a_Type0 a_Name0, a_Type1 a_Name1)
+#define IEM_CIMPL_DEF_3(a_Name, a_Type0, a_Name0, a_Type1, a_Name1, a_Type2, a_Name2)  static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu, a_Type0 a_Name0, a_Type1 a_Name1, a_Type2 a_Name2)
+#define IEM_CIMPL_DEF_4(a_Name, a_Type0, a_Name0, a_Type1, a_Name1, a_Type2, a_Name2, a_Type3, a_Name3)  static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu, a_Type0 a_Name0, a_Type1 a_Name1, a_Type2 a_Name2, a_Type3 a_Name3)
 #define IEM_DECL_IMPL_DEF(a_RetType, a_Name, a_ArgList)   a_RetType a_Name a_ArgList
+#define IEM_DECL_IEMTHREADEDFUNC_DEF(a_Name)   VBOXSTRICTRC a_Name(PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2)
+#define IEM_DECL_IEMTHREADEDFUNC_PROTO(a_Name) VBOXSTRICTRC a_Name(PVMCPU pVCpu, uint64_t uParam0, uint64_t uParam1, uint64_t uParam2)
 #define IEM_MC_LOCAL(a_Type, a_Name)                       a_Type a_Name
 #define IEM_MC_ARG(a_Type, a_Name, a_iArg)                 a_Type a_Name
 #define IEM_MC_ARG_CONST(a_Type, a_Name, a_Value, a_iArg)  a_Type const a_Name = a_Value
