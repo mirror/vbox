@@ -1835,9 +1835,9 @@ FNIEMAIMPLBINROU64 iemAImpl_test_u64;
 
 /** @name Bit operations operations (thrown in with the binary ops).
  * @{ */
-FNIEMAIMPLBINU16 iemAImpl_bt_u16;
-FNIEMAIMPLBINU32 iemAImpl_bt_u32;
-FNIEMAIMPLBINU64 iemAImpl_bt_u64;
+FNIEMAIMPLBINROU16 iemAImpl_bt_u16;
+FNIEMAIMPLBINROU32 iemAImpl_bt_u32;
+FNIEMAIMPLBINROU64 iemAImpl_bt_u64;
 FNIEMAIMPLBINU16 iemAImpl_btc_u16, iemAImpl_btc_u16_locked;
 FNIEMAIMPLBINU32 iemAImpl_btc_u32, iemAImpl_btc_u32_locked;
 FNIEMAIMPLBINU64 iemAImpl_btc_u64, iemAImpl_btc_u64_locked;

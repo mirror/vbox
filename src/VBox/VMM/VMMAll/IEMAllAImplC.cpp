@@ -1146,7 +1146,7 @@ EMIT_LOCKED_BIN_OP(and, 8)
  * BT
  */
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_bt_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(void, iemAImpl_bt_u64,(uint64_t const *puDst, uint64_t uSrc, uint32_t *pfEFlags))
 {
     /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  However, it seems they're
              not modified by either AMD (3990x) or Intel (i9-9980HK). */
@@ -1160,7 +1160,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bt_u64,(uint64_t *puDst, uint64_t uSrc, uint32_
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_bt_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(void, iemAImpl_bt_u32,(uint32_t const *puDst, uint32_t uSrc, uint32_t *pfEFlags))
 {
     /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  However, it seems they're
              not modified by either AMD (3990x) or Intel (i9-9980HK). */
@@ -1172,7 +1172,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bt_u32,(uint32_t *puDst, uint32_t uSrc, uint32_
         *pfEFlags &= ~X86_EFL_CF;
 }
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_bt_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(void, iemAImpl_bt_u16,(uint16_t const *puDst, uint16_t uSrc, uint32_t *pfEFlags))
 {
     /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  However, it seems they're
              not modified by either AMD (3990x) or Intel (i9-9980HK). */

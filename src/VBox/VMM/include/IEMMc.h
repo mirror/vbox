@@ -270,15 +270,19 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 
 
 #define IEM_MC_REF_GREG_U8(a_pu8Dst, a_iGReg)           (a_pu8Dst)  = iemGRegRefU8( pVCpu, (a_iGReg))
+#define IEM_MC_REF_GREG_U8_CONST(a_pu8Dst, a_iGReg)     (a_pu8Dst)  = (uint8_t  const *)iemGRegRefU8( pVCpu, (a_iGReg))
 #define IEM_MC_REF_GREG_U16(a_pu16Dst, a_iGReg)         (a_pu16Dst) = iemGRegRefU16(pVCpu, (a_iGReg))
+#define IEM_MC_REF_GREG_U16_CONST(a_pu16Dst, a_iGReg)   (a_pu16Dst) = (uint16_t const *)iemGRegRefU16(pVCpu, (a_iGReg))
 /** @todo User of IEM_MC_REF_GREG_U32 needs to clear the high bits on commit.
  *        Use IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF! */
 #define IEM_MC_REF_GREG_U32(a_pu32Dst, a_iGReg)         (a_pu32Dst) = iemGRegRefU32(pVCpu, (a_iGReg))
-#define IEM_MC_REF_GREG_I32(a_pi32Dst, a_iGReg)         (a_pi32Dst) = (int32_t *)iemGRegRefU32(pVCpu, (a_iGReg))
-#define IEM_MC_REF_GREG_I32_CONST(a_pi32Dst, a_iGReg)   (a_pi32Dst) = (int32_t const *)iemGRegRefU32(pVCpu, (a_iGReg))
+#define IEM_MC_REF_GREG_U32_CONST(a_pu32Dst, a_iGReg)   (a_pu32Dst) = (uint32_t const *)iemGRegRefU32(pVCpu, (a_iGReg))
+#define IEM_MC_REF_GREG_I32(a_pi32Dst, a_iGReg)         (a_pi32Dst) = (int32_t        *)iemGRegRefU32(pVCpu, (a_iGReg))
+#define IEM_MC_REF_GREG_I32_CONST(a_pi32Dst, a_iGReg)   (a_pi32Dst) = (int32_t  const *)iemGRegRefU32(pVCpu, (a_iGReg))
 #define IEM_MC_REF_GREG_U64(a_pu64Dst, a_iGReg)         (a_pu64Dst) = iemGRegRefU64(pVCpu, (a_iGReg))
-#define IEM_MC_REF_GREG_I64(a_pi64Dst, a_iGReg)         (a_pi64Dst) = (int64_t *)iemGRegRefU64(pVCpu, (a_iGReg))
-#define IEM_MC_REF_GREG_I64_CONST(a_pi64Dst, a_iGReg)   (a_pi64Dst) = (int64_t const *)iemGRegRefU64(pVCpu, (a_iGReg))
+#define IEM_MC_REF_GREG_U64_CONST(a_pu64Dst, a_iGReg)   (a_pu64Dst) = (uint64_t const *)iemGRegRefU64(pVCpu, (a_iGReg))
+#define IEM_MC_REF_GREG_I64(a_pi64Dst, a_iGReg)         (a_pi64Dst) = (int64_t        *)iemGRegRefU64(pVCpu, (a_iGReg))
+#define IEM_MC_REF_GREG_I64_CONST(a_pi64Dst, a_iGReg)   (a_pi64Dst) = (int64_t  const *)iemGRegRefU64(pVCpu, (a_iGReg))
 /** @note Not for IOPL or IF testing or modification.
  * @note Must preserve any undefined bits, see CPUMX86EFLAGS! */
 #define IEM_MC_REF_EFLAGS(a_pEFlags)                    (a_pEFlags) = &pVCpu->cpum.GstCtx.eflags.uBoth
