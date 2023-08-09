@@ -544,10 +544,13 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetFirstU8(PVMCPUCC pVCpu, uint8_t *pu8) RT_NO
                                                        pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base);
         if (RT_LIKELY(rcStrict == VINF_SUCCESS))
         { /* likely */ }
-        else if (rcStrict == VINF_EM_RAW_GUEST_TRAP)
-            return iemRaiseDebugException(pVCpu);
         else
+        {
+            *pu8 = 0xff; /* shut up gcc. sigh */
+            if (rcStrict == VINF_EM_RAW_GUEST_TRAP)
+                return iemRaiseDebugException(pVCpu);
             return rcStrict;
+        }
     }
 
     /*
