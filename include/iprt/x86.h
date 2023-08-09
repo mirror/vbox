@@ -49,11 +49,12 @@
 #endif
 
 /** Workaround for Solaris sys/regset.h defining CS, DS and sys/controlregs.h
- * defining MSR_IA32_FLUSH_CMD */
+ * defining MSR_IA32_FLUSH_CMD and MSR_AMD_VIRT_SPEC_CTL */
 #ifdef RT_OS_SOLARIS
 # undef CS
 # undef DS
 # undef MSR_IA32_FLUSH_CMD
+# undef MSR_AMD_VIRT_SPEC_CTL
 #endif
 
 /** @defgroup grp_rt_x86   x86 Types and Definitions
