@@ -165,7 +165,7 @@ DECL_FORCE_INLINE(RTGCPHYS) iemTbGetRangePhysPageAddr(PCIEMTB pTb, uint8_t idxRa
 /** @todo consider 32-bit EIP mid-instruction wrap-around... Difficult to
  *        test, since it would require replacing the default firmware. */
 #define BODY_CHECK_CS_LIM(a_cbInstr) do { \
-        if (RT_LIKELY((uint32_t)(pVCpu->cpum.GstCtx.eip + cbInstr) <= pVCpu->cpum.GstCtx.cs.u32Limit)) \
+        if (RT_LIKELY((uint32_t)(pVCpu->cpum.GstCtx.eip + cbInstr - 1U) <= pVCpu->cpum.GstCtx.cs.u32Limit)) \
         { /* likely */ } \
         else \
         { \
