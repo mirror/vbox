@@ -5313,7 +5313,6 @@ FNIEMOP_DEF(iemOp_xchg_Ev_Gv)
                 IEM_MC_MEM_COMMIT_AND_UNMAP_RW(pu32Mem, bUnmapInfo);
                 IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), uTmpReg);
 
-                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Reg);
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
