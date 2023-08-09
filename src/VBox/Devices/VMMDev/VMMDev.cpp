@@ -231,6 +231,7 @@ static void vmmdevLogGuestOsInfo(VBoxGuestInfo *pGuestInfo)
         case VBOXOSTYPE_Debian9:                          pszOs = "Debian 9";       break;
         case VBOXOSTYPE_Debian10:                         pszOs = "Debian 10";      break;
         case VBOXOSTYPE_Debian11:                         pszOs = "Debian 11";      break;
+        case VBOXOSTYPE_Debian12:                         pszOs = "Debian 12";      break;
         case VBOXOSTYPE_OpenSUSE:                         pszOs = "openSUSE";       break;
         case VBOXOSTYPE_OpenSUSE_Leap_x64 & ~VBOXOSTYPE_x64: pszOs = "openSUSE Leap";      break;
         case VBOXOSTYPE_OpenSUSE_Tumbleweed:              pszOs = "openSUSE Tumbleweed";   break;
@@ -270,6 +271,7 @@ static void vmmdevLogGuestOsInfo(VBoxGuestInfo *pGuestInfo)
         case VBOXOSTYPE_Ubuntu21_x64 & ~VBOXOSTYPE_x64:   pszOs = "Ubuntu 21.x";    break;
         case VBOXOSTYPE_Ubuntu22_LTS_x64 & ~VBOXOSTYPE_x64: pszOs = "Ubuntu 22.04 LTS"; break;
         case VBOXOSTYPE_Ubuntu22_x64 & ~VBOXOSTYPE_x64:   pszOs = "Ubuntu 22.10";   break;
+        case VBOXOSTYPE_Ubuntu23_x64 & ~VBOXOSTYPE_x64:   pszOs = "Ubuntu 23.04";   break;
         case VBOXOSTYPE_Lubuntu:                          pszOs = "Lubuntu";        break;
         case VBOXOSTYPE_Xubuntu:                          pszOs = "Xubuntu";        break;
         case VBOXOSTYPE_Xandros:                          pszOs = "Xandros";        break;

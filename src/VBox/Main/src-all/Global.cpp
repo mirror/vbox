@@ -314,6 +314,8 @@ const Global::OSType Global::sOSTypes[] =
     VBOX_LINUX_SUBTYPE_A_64(Debian10, "Debian 10 Buster (64-bit)",   2048, 16, 20),
     VBOX_LINUX_SUBTYPE_A_32(Debian11, "Debian 11 Bullseye (32-bit)", 2048, 16, 20),
     VBOX_LINUX_SUBTYPE_A_64(Debian11, "Debian 11 Bullseye (64-bit)", 2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_32(Debian12, "Debian 12 Bookworm (32-bit)", 2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_64(Debian12, "Debian 12 Bookworm (64-bit)", 2048, 16, 20),
 
     VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_32(Fedora, "Fedora (32-bit)", FedoraCore, 2048, 16, 15),
     VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_64(Fedora, "Fedora (64-bit)", FedoraCore, 2048, 16, 15),
@@ -403,6 +405,8 @@ const Global::OSType Global::sOSTypes[] =
     VBOX_LINUX_SUBTYPE_A_64(Ubuntu20,     "Ubuntu 20.10 (Groovy Gorilla) (64-bit)",      2048, 16, 25),  // 64-bit only
     VBOX_LINUX_SUBTYPE_A_64(Ubuntu21,     "Ubuntu 21.04 (Hirsute Hippo) / 21.10 (Impish Indri) (64-bit)",  2048, 16, 25), // 64-bit only
     VBOX_LINUX_SUBTYPE_A_64(Ubuntu22_LTS, "Ubuntu 22.04 LTS (Jammy Jellyfish) (64-bit)", 2048, 16, 25), // 64-bit only
+    VBOX_LINUX_SUBTYPE_A_64(Ubuntu22,     "Ubuntu 22.10 (Kinetic Kudu) (64-bit)", 2048, 16, 25), // 64-bit only
+    VBOX_LINUX_SUBTYPE_A_64(Ubuntu23,     "Ubuntu 23.04 (Lunar Lobster) (64-bit)", 2048, 16, 25), // 64-bit only
     VBOX_LINUX_SUBTYPE_A_32(Lubuntu,      "Lubuntu (32-bit)",  1024, 16, 10),
     VBOX_LINUX_SUBTYPE_A_64(Lubuntu,      "Lubuntu (64-bit)",  1024, 16, 10),
     VBOX_LINUX_SUBTYPE_A_32(Xubuntu,      "Xubuntu (32-bit)",  1024, 16, 10),
