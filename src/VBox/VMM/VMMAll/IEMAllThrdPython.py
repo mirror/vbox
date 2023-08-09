@@ -1511,6 +1511,7 @@ class IEMThreadedGenerator(object):
         'DeferToCImpl0',
         'CheckIrq',
         'CheckMode',
+        'CheckHwInstrBps',
         'CheckCsLim',
 
         'CheckCsLimAndOpcodes',

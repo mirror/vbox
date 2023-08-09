@@ -207,7 +207,13 @@
             return VINF_IEM_RECOMPILE_END_TB; \
         \
         uint8_t const idxInstrMc2 = pTb->cInstructions; \
-        do { } while (0)
+        \
+        /* Emit hardware instruction breakpoint check if enabled. */ \
+        if (!(pTb->fFlags & IEM_F_PENDING_BRK_INSTR)) \
+        { /* likely */ } \
+        else \
+            IEM_MC2_EMIT_CALL_0(kIemThreadedFunc_BltIn_CheckHwInstrBps)
+
 #define IEM_MC2_EMIT_CALL_0(a_enmFunction) do { \
         IEMTHREADEDFUNCS const enmFunctionCheck = a_enmFunction; RT_NOREF(enmFunctionCheck); \
         \
