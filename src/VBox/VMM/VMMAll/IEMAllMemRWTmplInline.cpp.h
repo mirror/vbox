@@ -50,6 +50,10 @@
 
 #ifdef IEM_WITH_SETJMP
 
+/*********************************************************************************************************************************
+*   Fetches                                                                                                                      *
+*********************************************************************************************************************************/
+
 /**
  * Inlined fetch function that longjumps on error.
  *
@@ -195,6 +199,10 @@ RT_CONCAT3(iemMemFlatFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCP
     return RT_CONCAT3(iemMemFetchData,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu, UINT8_MAX, GCPtrMem);
 }
 
+
+/*********************************************************************************************************************************
+*   Stores                                                                                                                       *
+*********************************************************************************************************************************/
 # ifndef TMPL_MEM_NO_STORE
 
 /**
@@ -346,6 +354,80 @@ RT_CONCAT3(iemMemFlatStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCP
 }
 
 # endif /* !TMPL_MEM_NO_STORE */
+
+
+/*********************************************************************************************************************************
+*   Mapping / Direct Memory Access                                                                                               *
+*********************************************************************************************************************************/
+# ifndef TMPL_MEM_NO_MAPPING
+
+/**
+ * Inlined read-write memory mapping function that longjumps on error.
+ */
+DECL_INLINE_THROW(TMPL_MEM_TYPE *)
+RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RwJmp)(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                 uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    return RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RwSafeJmp)(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+}
+
+
+/**
+ * Inlined flat read-write memory mapping function that longjumps on error.
+ */
+DECL_INLINE_THROW(TMPL_MEM_TYPE *)
+RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,RwJmp)(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                     RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    return RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RwSafeJmp)(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
+}
+
+
+/**
+ * Inlined write-only memory mapping function that longjumps on error.
+ */
+DECL_INLINE_THROW(TMPL_MEM_TYPE *)
+RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,WoJmp)(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                 uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    return RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,WoSafeJmp)(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+}
+
+
+/**
+ * Inlined flat write-only memory mapping function that longjumps on error.
+ */
+DECL_INLINE_THROW(TMPL_MEM_TYPE *)
+RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,WoJmp)(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                     RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    return RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,WoSafeJmp)(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
+}
+
+
+/**
+ * Inlined read-only memory mapping function that longjumps on error.
+ */
+DECL_INLINE_THROW(TMPL_MEM_TYPE const *)
+RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RoJmp)(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                 uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    return RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RoSafeJmp)(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
+}
+
+
+/**
+ * Inlined read-only memory mapping function that longjumps on error.
+ */
+DECL_INLINE_THROW(TMPL_MEM_TYPE const *)
+RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,RoJmp)(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                     RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    return RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RoSafeJmp)(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
+}
+
+# endif /* !TMPL_MEM_NO_MAPPING */
+
 
 #endif /* IEM_WITH_SETJMP */
 

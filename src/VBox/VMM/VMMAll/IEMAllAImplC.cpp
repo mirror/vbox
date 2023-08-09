@@ -1033,7 +1033,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmp_u16,(uint16_t *puDst, uint16_t uSrc, uint32
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_cmp_u8,(uint8_t *puDst, uint8_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmp_u8,(uint8_t const *puDst, uint8_t uSrc, uint32_t *pfEFlags))
 {
     uint8_t uDstTmp = *puDst;
     iemAImpl_sub_u8(&uDstTmp, uSrc, pfEFlags);
@@ -1067,7 +1067,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_test_u16,(uint16_t *puDst, uint16_t uSrc, uint3
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_test_u8,(uint8_t *puDst, uint8_t uSrc, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(void, iemAImpl_test_u8,(uint8_t const *puDst, uint8_t uSrc, uint32_t *pfEFlags))
 {
     uint8_t uResult = *puDst & uSrc;
     IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uResult, 8, 0);

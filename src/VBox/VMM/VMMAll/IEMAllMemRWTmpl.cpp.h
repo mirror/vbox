@@ -99,7 +99,7 @@ VBOXSTRICTRC RT_CONCAT(iemMemStoreData,TMPL_MEM_FN_SUFF)(PVMCPUCC pVCpu, uint8_t
 {
     /* The lazy approach for now... */
     TMPL_MEM_TYPE *puDst;
-    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&puDst, sizeof(*puDst), iSegReg, GCPtrMem, IEM_ACCESS_DATA_W, 0);
+    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&puDst, sizeof(*puDst), iSegReg, GCPtrMem, IEM_ACCESS_DATA_W, TMPL_MEM_TYPE_ALIGN);
     if (rc == VINF_SUCCESS)
     {
         *puDst = uValue;
@@ -127,10 +127,84 @@ void RT_CONCAT3(iemMemStoreData,TMPL_MEM_FN_SUFF,SafeJmp)(PVMCPUCC pVCpu, uint8_
     pVCpu->iem.s.DataTlb.cTlbSafeWritePath++;
 # endif
     Log8(("IEM WR " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, uValue));
-    TMPL_MEM_TYPE *puDst = (TMPL_MEM_TYPE *)iemMemMapJmp(pVCpu, sizeof(*puDst), iSegReg, GCPtrMem, IEM_ACCESS_DATA_W, 0);
+    TMPL_MEM_TYPE *puDst = (TMPL_MEM_TYPE *)iemMemMapJmp(pVCpu, sizeof(*puDst), iSegReg, GCPtrMem,
+                                                         IEM_ACCESS_DATA_W, TMPL_MEM_TYPE_ALIGN);
     *puDst = uValue;
     iemMemCommitAndUnmapJmp(pVCpu, puDst, IEM_ACCESS_DATA_W);
 }
+#endif /* IEM_WITH_SETJMP */
+
+
+#ifdef IEM_WITH_SETJMP
+
+/**
+ * Maps a data buffer for read+write direct access (or via a bounce buffer),
+ * longjmp on error.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   pbUnmapInfo         Pointer to unmap info variable.
+ * @param   iSegReg             The index of the segment register to use for
+ *                              this access.  The base and limits are checked.
+ * @param   GCPtrMem            The address of the guest memory.
+ */
+TMPL_MEM_TYPE *
+RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RwSafeJmp)(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                     uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
+{
+# if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3)
+    pVCpu->iem.s.DataTlb.cTlbSafeWritePath++;
+# endif
+    Log8(("IEM RW/map " TMPL_MEM_FMT_DESC " %d|%RGv\n", iSegReg, GCPtrMem));
+    *pbUnmapInfo = 1 | ((IEM_ACCESS_TYPE_READ  | IEM_ACCESS_TYPE_WRITE) << 4); /* zero is for the TLB hit */
+    return (TMPL_MEM_TYPE *)iemMemMapJmp(pVCpu, sizeof(TMPL_MEM_TYPE), iSegReg, GCPtrMem, IEM_ACCESS_DATA_RW, TMPL_MEM_TYPE_ALIGN);
+}
+
+
+/**
+ * Maps a data buffer for writeonly direct access (or via a bounce buffer),
+ * longjmp on error.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   pbUnmapInfo         Pointer to unmap info variable.
+ * @param   iSegReg             The index of the segment register to use for
+ *                              this access.  The base and limits are checked.
+ * @param   GCPtrMem            The address of the guest memory.
+ */
+TMPL_MEM_TYPE *
+RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,WoSafeJmp)(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                     uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
+{
+# if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3)
+    pVCpu->iem.s.DataTlb.cTlbSafeWritePath++;
+# endif
+    Log8(("IEM WO/map " TMPL_MEM_FMT_DESC " %d|%RGv\n", iSegReg, GCPtrMem));
+    *pbUnmapInfo = 1 | (IEM_ACCESS_TYPE_WRITE << 4); /* zero is for the TLB hit */
+    return (TMPL_MEM_TYPE *)iemMemMapJmp(pVCpu, sizeof(TMPL_MEM_TYPE), iSegReg, GCPtrMem, IEM_ACCESS_DATA_W, TMPL_MEM_TYPE_ALIGN);
+}
+
+
+/**
+ * Maps a data buffer for readonly direct access (or via a bounce buffer),
+ * longjmp on error.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   pbUnmapInfo         Pointer to unmap info variable.
+ * @param   iSegReg             The index of the segment register to use for
+ *                              this access.  The base and limits are checked.
+ * @param   GCPtrMem            The address of the guest memory.
+ */
+TMPL_MEM_TYPE const *
+RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RoSafeJmp)(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
+                                                     uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
+{
+# if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3)
+    pVCpu->iem.s.DataTlb.cTlbSafeWritePath++;
+# endif
+    Log8(("IEM WO/map " TMPL_MEM_FMT_DESC " %d|%RGv\n", iSegReg, GCPtrMem));
+    *pbUnmapInfo = 1 | (IEM_ACCESS_TYPE_READ << 4); /* zero is for the TLB hit */
+    return (TMPL_MEM_TYPE *)iemMemMapJmp(pVCpu, sizeof(TMPL_MEM_TYPE), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R, TMPL_MEM_TYPE_ALIGN);
+}
+
 #endif /* IEM_WITH_SETJMP */
 
 

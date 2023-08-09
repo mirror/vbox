@@ -1808,9 +1808,18 @@ FNIEMAIMPLBINU64 iemAImpl_blsr_u64, iemAImpl_blsr_u64_fallback;
 FNIEMAIMPLBINU64 iemAImpl_blsmsk_u64, iemAImpl_blsmsk_u64_fallback;
 /** @}  */
 
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINROU8,(uint8_t const *pu8Dst, uint8_t u8Src, uint32_t *pEFlags));
+typedef FNIEMAIMPLBINROU8 *PFNIEMAIMPLBINROU8;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINROU16,(uint16_t const *pu16Dst, uint16_t u16Src, uint32_t *pEFlags));
+typedef FNIEMAIMPLBINROU16 *PFNIEMAIMPLBINROU16;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINROU32,(uint32_t const *pu32Dst, uint32_t u32Src, uint32_t *pEFlags));
+typedef FNIEMAIMPLBINROU32 *PFNIEMAIMPLBINROU32;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINROU64,(uint64_t const *pu64Dst, uint64_t u64Src, uint32_t *pEFlags));
+typedef FNIEMAIMPLBINROU64 *PFNIEMAIMPLBINROU64;
+
 /** @name Compare operations (thrown in with the binary ops).
  * @{ */
-FNIEMAIMPLBINU8  iemAImpl_cmp_u8;
+FNIEMAIMPLBINROU8  iemAImpl_cmp_u8;
 FNIEMAIMPLBINU16 iemAImpl_cmp_u16;
 FNIEMAIMPLBINU32 iemAImpl_cmp_u32;
 FNIEMAIMPLBINU64 iemAImpl_cmp_u64;
@@ -1818,7 +1827,7 @@ FNIEMAIMPLBINU64 iemAImpl_cmp_u64;
 
 /** @name Test operations (thrown in with the binary ops).
  * @{ */
-FNIEMAIMPLBINU8  iemAImpl_test_u8;
+FNIEMAIMPLBINROU8  iemAImpl_test_u8;
 FNIEMAIMPLBINU16 iemAImpl_test_u16;
 FNIEMAIMPLBINU32 iemAImpl_test_u32;
 FNIEMAIMPLBINU64 iemAImpl_test_u64;
@@ -4650,6 +4659,21 @@ void            iemMemStoreDataU128Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR 
 void            iemMemStoreDataU128AlignedSseJmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, RTUINT128U u128Value) IEM_NOEXCEPT_MAY_LONGJMP;
 void            iemMemStoreDataU256Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, PCRTUINT256U pu256Value) IEM_NOEXCEPT_MAY_LONGJMP;
 void            iemMemStoreDataU256AlignedAvxJmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, PCRTUINT256U pu256Value) IEM_NOEXCEPT_MAY_LONGJMP;
+#endif
+
+#ifdef IEM_WITH_SETJMP
+uint8_t        *iemMemMapDataU8RwSafeJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP;
+uint8_t        *iemMemMapDataU8WoSafeJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP;
+uint8_t const  *iemMemMapDataU8RoSafeJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP;
+uint16_t       *iemMemMapDataU16RwSafeJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP;
+uint16_t       *iemMemMapDataU16WoSafeJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP;
+uint16_t const *iemMemMapDataU16RoSafeJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP;
+uint32_t       *iemMemMapDataU32RwSafeJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP;
+uint32_t       *iemMemMapDataU32WoSafeJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP;
+uint32_t const *iemMemMapDataU32RoSafeJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP;
+uint64_t       *iemMemMapDataU64RwSafeJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP;
+uint64_t       *iemMemMapDataU64WoSafeJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP;
+uint64_t const *iemMemMapDataU64RoSafeJmp(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo, uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP;
 #endif
 
 VBOXSTRICTRC    iemMemStackPushBeginSpecial(PVMCPUCC pVCpu, size_t cbMem, uint32_t cbAlign,

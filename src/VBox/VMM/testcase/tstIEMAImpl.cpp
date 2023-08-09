@@ -57,6 +57,12 @@
       g_aTests_ ## a_Name, &g_cTests_ ## a_Name, \
       a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */ }
 
+#define ENTRY_PFN_CAST(a_Name, a_pfnType)  ENTRY_PFN_CAST_EX(a_Name, a_pfnType, 0)
+#define ENTRY_PFN_CAST_EX(a_Name, a_pfnType, a_uExtra) \
+    { RT_XSTR(a_Name), (a_pfnType)iemAImpl_ ## a_Name, NULL, \
+      g_aTests_ ## a_Name, &g_cTests_ ## a_Name, \
+      a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */ }
+
 #define ENTRY_BIN(a_Name)       ENTRY_EX_BIN(a_Name, 0)
 #define ENTRY_EX_BIN(a_Name, a_uExtra) \
     { RT_XSTR(a_Name), iemAImpl_ ## a_Name, NULL, \
@@ -1408,8 +1414,8 @@ static const BINU8_T g_aBinU8[] =
     ENTRY(xor_u8_locked),
     ENTRY(and_u8),
     ENTRY(and_u8_locked),
-    ENTRY(cmp_u8),
-    ENTRY(test_u8),
+    ENTRY_PFN_CAST(cmp_u8, PFNIEMAIMPLBINU8),
+    ENTRY_PFN_CAST(test_u8, PFNIEMAIMPLBINU8),
 };
 TEST_BINARY_OPS(8, uint8_t, "%#04x", BINU8_TEST_T, g_aBinU8)
 

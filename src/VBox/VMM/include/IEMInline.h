@@ -3444,6 +3444,7 @@ DECLINLINE(void) iemMemFakeStackSelDesc(PIEMSELDESC pDescSs, uint32_t uDpl) RT_N
 #include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
 
 #define TMPL_MEM_NO_STORE
+#define TMPL_MEM_NO_MAPPING
 #define TMPL_MEM_TYPE       uint64_t
 #define TMPL_MEM_TYPE_ALIGN 15
 #define TMPL_MEM_TYPE_SIZE  8

@@ -488,6 +488,18 @@ class ThreadedFunctionVariation(object):
         'IEM_MC_POP_EX_U32':                      ( -1, 'IEM_MC_FLAT_POP_EX_U32' ),
         'IEM_MC_POP_EX_U64':                      ( -1, 'IEM_MC_FLAT_POP_EX_U64' ),
         'IEM_MC_MEM_MAP':                         (  2, 'IEM_MC_MEM_FLAT_MAP' ),
+        'IEM_MC_MEM_MAP_U8_RW':                   (  2, 'IEM_MC_MEM_FLAT_MAP_U8_RW' ),
+        'IEM_MC_MEM_MAP_U8_RO':                   (  2, 'IEM_MC_MEM_FLAT_MAP_U8_RO' ),
+        'IEM_MC_MEM_MAP_U8_WO':                   (  2, 'IEM_MC_MEM_FLAT_MAP_U8_WO' ),
+        'IEM_MC_MEM_MAP_U16_RW':                  (  2, 'IEM_MC_MEM_FLAT_MAP_U16_RW' ),
+        'IEM_MC_MEM_MAP_U16_RO':                  (  2, 'IEM_MC_MEM_FLAT_MAP_U16_RO' ),
+        'IEM_MC_MEM_MAP_U16_WO':                  (  2, 'IEM_MC_MEM_FLAT_MAP_U16_WO' ),
+        'IEM_MC_MEM_MAP_U32_RW':                  (  2, 'IEM_MC_MEM_FLAT_MAP_U32_RW' ),
+        'IEM_MC_MEM_MAP_U32_RO':                  (  2, 'IEM_MC_MEM_FLAT_MAP_U32_RO' ),
+        'IEM_MC_MEM_MAP_U32_WO':                  (  2, 'IEM_MC_MEM_FLAT_MAP_U32_WO' ),
+        'IEM_MC_MEM_MAP_U64_RW':                  (  2, 'IEM_MC_MEM_FLAT_MAP_U64_RW' ),
+        'IEM_MC_MEM_MAP_U64_RO':                  (  2, 'IEM_MC_MEM_FLAT_MAP_U64_RO' ),
+        'IEM_MC_MEM_MAP_U64_WO':                  (  2, 'IEM_MC_MEM_FLAT_MAP_U64_WO' ),
         'IEM_MC_MEM_MAP_EX':                      (  3, 'IEM_MC_MEM_FLAT_MAP_EX' ),
     };
 
