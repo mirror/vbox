@@ -1301,9 +1301,9 @@ status-kernel)
     check_root
     check_status_kernel
     if [ $? -eq 0 ]; then
-        info "kernel modules are loaded"
+        info "kernel modules $VBOX_VERSION $VBOX_REVISION are loaded"
     else
-        info "kernel modules were not loaded"
+        info "kernel modules $VBOX_VERSION $VBOX_REVISION were not loaded"
         false
     fi
     ;;
@@ -1311,9 +1311,9 @@ status-user)
     check_root
     check_status_user
     if [ $? -eq 0 ]; then
-        info "user-land services are running"
+        info "user-land services $VBOX_VERSION $VBOX_REVISION are running"
     else
-        info "user-land services are not running"
+        info "user-land services $VBOX_VERSION $VBOX_REVISION are not running"
         false
     fi
     ;;
