@@ -368,6 +368,71 @@ DECL_INLINE_THROW(TMPL_MEM_TYPE *)
 RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RwJmp)(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
                                                  uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
 {
+#  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+    /*
+     * Convert from segmented to flat address and check that it doesn't cross a page boundrary.
+     */
+    RTGCPTR GCPtrEff = iemMemApplySegmentToWriteJmp(pVCpu, iSegReg, sizeof(TMPL_MEM_TYPE), GCPtrMem);
+#  if TMPL_MEM_TYPE_SIZE > 1
+    if (RT_LIKELY((GCPtrEff & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(TMPL_MEM_TYPE)))
+#  endif
+    {
+        /*
+         * TLB lookup.
+         */
+        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrEff);
+        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
+        if (pTlbe->uTag == uTag)
+        {
+            /*
+             * Check TLB page table level access flags.
+             */
+            AssertCompile(IEMTLBE_F_PT_NO_USER == 4);
+            uint64_t const fNoUser = (IEM_GET_CPL(pVCpu) + 1) & IEMTLBE_F_PT_NO_USER;
+            if (   (pTlbe->fFlagsAndPhysRev & (  IEMTLBE_F_PHYS_REV       | IEMTLBE_F_NO_MAPPINGR3
+                                               | IEMTLBE_F_PG_UNASSIGNED  | IEMTLBE_F_PG_NO_WRITE   | IEMTLBE_F_PG_NO_READ
+                                               | IEMTLBE_F_PT_NO_ACCESSED | IEMTLBE_F_PT_NO_DIRTY   | IEMTLBE_F_PT_NO_WRITE
+                                               | fNoUser))
+                == pVCpu->iem.s.DataTlb.uTlbPhysRev)
+            {
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+
+#   if TMPL_MEM_TYPE_ALIGN != 0
+                /*
+                 * Alignment check:
+                 */
+                /** @todo check priority \#AC vs \#PF */
+                AssertCompile(X86_CR0_AM == X86_EFL_AC);
+                AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
+                if (   !(GCPtrEff & TMPL_MEM_TYPE_ALIGN)
+                    || !(  (uint32_t)pVCpu->cpum.GstCtx.cr0
+                         & pVCpu->cpum.GstCtx.eflags.u
+                         & ((IEM_GET_CPL(pVCpu) + 1U) << 16) /* IEM_GET_CPL(pVCpu) == 3 ? X86_CR0_AM : 0 */
+                         & X86_CR0_AM))
+#   endif
+                {
+                    /*
+                     * Return the address.
+                     */
+                    Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                    Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                    *pbUnmapInfo = 0;
+                    Log8(("IEM RW/map " TMPL_MEM_FMT_DESC " %d|%RGv: %p\n",
+                          iSegReg, GCPtrMem, &pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK]));
+                    return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
+                }
+#   if TMPL_MEM_TYPE_ALIGN != 0
+                Log10Func(("Raising #AC for %RGv\n", GCPtrEff));
+                iemRaiseAlignmentCheckExceptionJmp(pVCpu);
+#   endif
+            }
+        }
+    }
+
+    /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
+       outdated page pointer, or other troubles.  (This will do a TLB load.) */
+    Log10Func(("%u:%RGv falling back\n", iSegReg, GCPtrMem));
+#  endif
     return RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RwSafeJmp)(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
 }
 
@@ -379,6 +444,70 @@ DECL_INLINE_THROW(TMPL_MEM_TYPE *)
 RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,RwJmp)(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
                                                      RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
 {
+#  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+    /*
+     * Check that the address doesn't cross a page boundrary.
+     */
+#  if TMPL_MEM_TYPE_SIZE > 1
+    if (RT_LIKELY((GCPtrMem & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(TMPL_MEM_TYPE)))
+#  endif
+    {
+        /*
+         * TLB lookup.
+         */
+        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrMem);
+        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
+        if (pTlbe->uTag == uTag)
+        {
+            /*
+             * Check TLB page table level access flags.
+             */
+            AssertCompile(IEMTLBE_F_PT_NO_USER == 4);
+            uint64_t const fNoUser = (IEM_GET_CPL(pVCpu) + 1) & IEMTLBE_F_PT_NO_USER;
+            if (   (pTlbe->fFlagsAndPhysRev & (  IEMTLBE_F_PHYS_REV       | IEMTLBE_F_NO_MAPPINGR3
+                                               | IEMTLBE_F_PG_UNASSIGNED  | IEMTLBE_F_PG_NO_WRITE   | IEMTLBE_F_PG_NO_READ
+                                               | IEMTLBE_F_PT_NO_ACCESSED | IEMTLBE_F_PT_NO_DIRTY   | IEMTLBE_F_PT_NO_WRITE
+                                               | fNoUser))
+                == pVCpu->iem.s.DataTlb.uTlbPhysRev)
+            {
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+
+#   if TMPL_MEM_TYPE_ALIGN != 0
+                /*
+                 * Alignment check:
+                 */
+                /** @todo check priority \#AC vs \#PF */
+                AssertCompile(X86_CR0_AM == X86_EFL_AC);
+                AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
+                if (   !(GCPtrMem & TMPL_MEM_TYPE_ALIGN)
+                    || !(  (uint32_t)pVCpu->cpum.GstCtx.cr0
+                         & pVCpu->cpum.GstCtx.eflags.u
+                         & ((IEM_GET_CPL(pVCpu) + 1U) << 16) /* IEM_GET_CPL(pVCpu) == 3 ? X86_CR0_AM : 0 */
+                         & X86_CR0_AM))
+#   endif
+                {
+                    /*
+                     * Return the address.
+                     */
+                    Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                    Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                    *pbUnmapInfo = 0;
+                    Log8(("IEM RW/map " TMPL_MEM_FMT_DESC " %RGv: %p\n",
+                          GCPtrMem, &pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK]));
+                    return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK];
+                }
+#   if TMPL_MEM_TYPE_ALIGN != 0
+                Log10Func(("Raising #AC for %RGv\n", GCPtrMem));
+                iemRaiseAlignmentCheckExceptionJmp(pVCpu);
+#   endif
+            }
+        }
+    }
+
+    /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
+       outdated page pointer, or other troubles.  (This will do a TLB load.) */
+    Log10Func(("%RGv falling back\n", GCPtrMem));
+#  endif
     return RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RwSafeJmp)(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
 }
 
@@ -390,6 +519,71 @@ DECL_INLINE_THROW(TMPL_MEM_TYPE *)
 RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,WoJmp)(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
                                                  uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
 {
+#  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+    /*
+     * Convert from segmented to flat address and check that it doesn't cross a page boundrary.
+     */
+    RTGCPTR GCPtrEff = iemMemApplySegmentToWriteJmp(pVCpu, iSegReg, sizeof(TMPL_MEM_TYPE), GCPtrMem);
+#  if TMPL_MEM_TYPE_SIZE > 1
+    if (RT_LIKELY((GCPtrEff & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(TMPL_MEM_TYPE)))
+#  endif
+    {
+        /*
+         * TLB lookup.
+         */
+        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrEff);
+        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
+        if (pTlbe->uTag == uTag)
+        {
+            /*
+             * Check TLB page table level access flags.
+             */
+            AssertCompile(IEMTLBE_F_PT_NO_USER == 4);
+            uint64_t const fNoUser = (IEM_GET_CPL(pVCpu) + 1) & IEMTLBE_F_PT_NO_USER;
+            if (   (pTlbe->fFlagsAndPhysRev & (  IEMTLBE_F_PHYS_REV       | IEMTLBE_F_NO_MAPPINGR3
+                                               | IEMTLBE_F_PG_UNASSIGNED  | IEMTLBE_F_PG_NO_WRITE
+                                               | IEMTLBE_F_PT_NO_ACCESSED | IEMTLBE_F_PT_NO_DIRTY   | IEMTLBE_F_PT_NO_WRITE
+                                               | fNoUser))
+                == pVCpu->iem.s.DataTlb.uTlbPhysRev)
+            {
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+
+#   if TMPL_MEM_TYPE_ALIGN != 0
+                /*
+                 * Alignment check:
+                 */
+                /** @todo check priority \#AC vs \#PF */
+                AssertCompile(X86_CR0_AM == X86_EFL_AC);
+                AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
+                if (   !(GCPtrEff & TMPL_MEM_TYPE_ALIGN)
+                    || !(  (uint32_t)pVCpu->cpum.GstCtx.cr0
+                         & pVCpu->cpum.GstCtx.eflags.u
+                         & ((IEM_GET_CPL(pVCpu) + 1U) << 16) /* IEM_GET_CPL(pVCpu) == 3 ? X86_CR0_AM : 0 */
+                         & X86_CR0_AM))
+#   endif
+                {
+                    /*
+                     * Return the address.
+                     */
+                    Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                    Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                    *pbUnmapInfo = 0;
+                    Log8(("IEM WO/map " TMPL_MEM_FMT_DESC " %d|%RGv: %p\n",
+                          iSegReg, GCPtrMem, &pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK]));
+                    return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
+                }
+#   if TMPL_MEM_TYPE_ALIGN != 0
+                Log10Func(("Raising #AC for %RGv\n", GCPtrEff));
+                iemRaiseAlignmentCheckExceptionJmp(pVCpu);
+#   endif
+            }
+        }
+    }
+
+    /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
+       outdated page pointer, or other troubles.  (This will do a TLB load.) */
+    Log10Func(("%u:%RGv falling back\n", iSegReg, GCPtrMem));
+#  endif
     return RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,WoSafeJmp)(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
 }
 
@@ -401,6 +595,70 @@ DECL_INLINE_THROW(TMPL_MEM_TYPE *)
 RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,WoJmp)(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
                                                      RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
 {
+#  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+    /*
+     * Check that the address doesn't cross a page boundrary.
+     */
+#  if TMPL_MEM_TYPE_SIZE > 1
+    if (RT_LIKELY((GCPtrMem & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(TMPL_MEM_TYPE)))
+#  endif
+    {
+        /*
+         * TLB lookup.
+         */
+        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrMem);
+        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
+        if (pTlbe->uTag == uTag)
+        {
+            /*
+             * Check TLB page table level access flags.
+             */
+            AssertCompile(IEMTLBE_F_PT_NO_USER == 4);
+            uint64_t const fNoUser = (IEM_GET_CPL(pVCpu) + 1) & IEMTLBE_F_PT_NO_USER;
+            if (   (pTlbe->fFlagsAndPhysRev & (  IEMTLBE_F_PHYS_REV       | IEMTLBE_F_NO_MAPPINGR3
+                                               | IEMTLBE_F_PG_UNASSIGNED  | IEMTLBE_F_PG_NO_WRITE
+                                               | IEMTLBE_F_PT_NO_ACCESSED | IEMTLBE_F_PT_NO_DIRTY   | IEMTLBE_F_PT_NO_WRITE
+                                               | fNoUser))
+                == pVCpu->iem.s.DataTlb.uTlbPhysRev)
+            {
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+
+#   if TMPL_MEM_TYPE_ALIGN != 0
+                /*
+                 * Alignment check:
+                 */
+                /** @todo check priority \#AC vs \#PF */
+                AssertCompile(X86_CR0_AM == X86_EFL_AC);
+                AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
+                if (   !(GCPtrMem & TMPL_MEM_TYPE_ALIGN)
+                    || !(  (uint32_t)pVCpu->cpum.GstCtx.cr0
+                         & pVCpu->cpum.GstCtx.eflags.u
+                         & ((IEM_GET_CPL(pVCpu) + 1U) << 16) /* IEM_GET_CPL(pVCpu) == 3 ? X86_CR0_AM : 0 */
+                         & X86_CR0_AM))
+#   endif
+                {
+                    /*
+                     * Return the address.
+                     */
+                    Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                    Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                    *pbUnmapInfo = 0;
+                    Log8(("IEM WO/map " TMPL_MEM_FMT_DESC " %RGv: %p\n",
+                          GCPtrMem, &pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK]));
+                    return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK];
+                }
+#   if TMPL_MEM_TYPE_ALIGN != 0
+                Log10Func(("Raising #AC for %RGv\n", GCPtrMem));
+                iemRaiseAlignmentCheckExceptionJmp(pVCpu);
+#   endif
+            }
+        }
+    }
+
+    /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
+       outdated page pointer, or other troubles.  (This will do a TLB load.) */
+    Log10Func(("%RGv falling back\n", GCPtrMem));
+#  endif
     return RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,WoSafeJmp)(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
 }
 
@@ -412,6 +670,70 @@ DECL_INLINE_THROW(TMPL_MEM_TYPE const *)
 RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RoJmp)(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
                                                  uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
 {
+#  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+    /*
+     * Convert from segmented to flat address and check that it doesn't cross a page boundrary.
+     */
+    RTGCPTR GCPtrEff = iemMemApplySegmentToReadJmp(pVCpu, iSegReg, sizeof(TMPL_MEM_TYPE), GCPtrMem);
+#  if TMPL_MEM_TYPE_SIZE > 1
+    if (RT_LIKELY((GCPtrEff & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(TMPL_MEM_TYPE)))
+#  endif
+    {
+        /*
+         * TLB lookup.
+         */
+        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrEff);
+        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
+        if (pTlbe->uTag == uTag)
+        {
+            /*
+             * Check TLB page table level access flags.
+             */
+            AssertCompile(IEMTLBE_F_PT_NO_USER == 4);
+            uint64_t const fNoUser = (IEM_GET_CPL(pVCpu) + 1) & IEMTLBE_F_PT_NO_USER;
+            if (   (pTlbe->fFlagsAndPhysRev & (  IEMTLBE_F_PHYS_REV       | IEMTLBE_F_NO_MAPPINGR3
+                                               | IEMTLBE_F_PG_UNASSIGNED  | IEMTLBE_F_PG_NO_READ
+                                               | IEMTLBE_F_PT_NO_ACCESSED | fNoUser))
+                == pVCpu->iem.s.DataTlb.uTlbPhysRev)
+            {
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+
+#   if TMPL_MEM_TYPE_ALIGN != 0
+                /*
+                 * Alignment check:
+                 */
+                /** @todo check priority \#AC vs \#PF */
+                AssertCompile(X86_CR0_AM == X86_EFL_AC);
+                AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
+                if (   !(GCPtrEff & TMPL_MEM_TYPE_ALIGN)
+                    || !(  (uint32_t)pVCpu->cpum.GstCtx.cr0
+                         & pVCpu->cpum.GstCtx.eflags.u
+                         & ((IEM_GET_CPL(pVCpu) + 1U) << 16) /* IEM_GET_CPL(pVCpu) == 3 ? X86_CR0_AM : 0 */
+                         & X86_CR0_AM))
+#   endif
+                {
+                    /*
+                     * Return the address.
+                     */
+                    Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                    Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                    *pbUnmapInfo = 0;
+                    Log9(("IEM RO/map " TMPL_MEM_FMT_DESC " %d|%RGv: %p\n",
+                          iSegReg, GCPtrMem, &pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK]));
+                    return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
+                }
+#   if TMPL_MEM_TYPE_ALIGN != 0
+                Log10Func(("Raising #AC for %RGv\n", GCPtrEff));
+                iemRaiseAlignmentCheckExceptionJmp(pVCpu);
+#   endif
+            }
+        }
+    }
+
+    /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
+       outdated page pointer, or other troubles.  (This will do a TLB load.) */
+    Log10Func(("%u:%RGv falling back\n", iSegReg, GCPtrMem));
+#  endif
     return RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RoSafeJmp)(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
 }
 
@@ -423,6 +745,69 @@ DECL_INLINE_THROW(TMPL_MEM_TYPE const *)
 RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,RoJmp)(PVMCPUCC pVCpu, uint8_t *pbUnmapInfo,
                                                      RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
 {
+#  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+    /*
+     * Check that the address doesn't cross a page boundrary.
+     */
+#  if TMPL_MEM_TYPE_SIZE > 1
+    if (RT_LIKELY((GCPtrMem & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(TMPL_MEM_TYPE)))
+#  endif
+    {
+        /*
+         * TLB lookup.
+         */
+        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, GCPtrMem);
+        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
+        if (pTlbe->uTag == uTag)
+        {
+            /*
+             * Check TLB page table level access flags.
+             */
+            AssertCompile(IEMTLBE_F_PT_NO_USER == 4);
+            uint64_t const fNoUser = (IEM_GET_CPL(pVCpu) + 1) & IEMTLBE_F_PT_NO_USER;
+            if (   (pTlbe->fFlagsAndPhysRev & (  IEMTLBE_F_PHYS_REV       | IEMTLBE_F_NO_MAPPINGR3
+                                               | IEMTLBE_F_PG_UNASSIGNED  | IEMTLBE_F_PG_NO_READ
+                                               | IEMTLBE_F_PT_NO_ACCESSED | fNoUser))
+                == pVCpu->iem.s.DataTlb.uTlbPhysRev)
+            {
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+
+#   if TMPL_MEM_TYPE_ALIGN != 0
+                /*
+                 * Alignment check:
+                 */
+                /** @todo check priority \#AC vs \#PF */
+                AssertCompile(X86_CR0_AM == X86_EFL_AC);
+                AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
+                if (   !(GCPtrMem & TMPL_MEM_TYPE_ALIGN)
+                    || !(  (uint32_t)pVCpu->cpum.GstCtx.cr0
+                         & pVCpu->cpum.GstCtx.eflags.u
+                         & ((IEM_GET_CPL(pVCpu) + 1U) << 16) /* IEM_GET_CPL(pVCpu) == 3 ? X86_CR0_AM : 0 */
+                         & X86_CR0_AM))
+#   endif
+                {
+                    /*
+                     * Return the address.
+                     */
+                    Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                    Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                    *pbUnmapInfo = 0;
+                    Log8(("IEM RO/map " TMPL_MEM_FMT_DESC " %RGv: %p\n",
+                          GCPtrMem, &pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK]));
+                    return (TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK];
+                }
+#   if TMPL_MEM_TYPE_ALIGN != 0
+                Log10Func(("Raising #AC for %RGv\n", GCPtrMem));
+                iemRaiseAlignmentCheckExceptionJmp(pVCpu);
+#   endif
+            }
+        }
+    }
+
+    /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
+       outdated page pointer, or other troubles.  (This will do a TLB load.) */
+    Log10Func(("%RGv falling back\n", GCPtrMem));
+#  endif
     return RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RoSafeJmp)(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
 }
 

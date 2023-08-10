@@ -200,7 +200,7 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RoSafeJmp)(PVMCPUCC pVCpu, uint8_t *pb
 # if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3)
     pVCpu->iem.s.DataTlb.cTlbSafeWritePath++;
 # endif
-    Log8(("IEM WO/map " TMPL_MEM_FMT_DESC " %d|%RGv\n", iSegReg, GCPtrMem));
+    Log9(("IEM RO/map " TMPL_MEM_FMT_DESC " %d|%RGv\n", iSegReg, GCPtrMem));
     *pbUnmapInfo = 1 | (IEM_ACCESS_TYPE_READ << 4); /* zero is for the TLB hit */
     return (TMPL_MEM_TYPE *)iemMemMapJmp(pVCpu, sizeof(TMPL_MEM_TYPE), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R, TMPL_MEM_TYPE_ALIGN);
 }
