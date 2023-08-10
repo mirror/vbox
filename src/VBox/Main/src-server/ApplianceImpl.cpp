@@ -153,6 +153,7 @@ static struct
     { ovf::CIMOSType_CIMOS_RedHatEnterpriseLinux_64,             VBOXOSTYPE_RedHat6_x64 },
     { ovf::CIMOSType_CIMOS_RedHatEnterpriseLinux_64,             VBOXOSTYPE_RedHat7_x64 }, // 64-bit only
     { ovf::CIMOSType_CIMOS_RedHatEnterpriseLinux_64,             VBOXOSTYPE_RedHat8_x64 }, // 64-bit only
+    { ovf::CIMOSType_CIMOS_RedHatEnterpriseLinux_64,             VBOXOSTYPE_RedHat9_x64 }, // 64-bit only
     { ovf::CIMOSType_CIMOS_SUSE,                                 VBOXOSTYPE_OpenSUSE },
     { ovf::CIMOSType_CIMOS_SLES,                                 VBOXOSTYPE_SUSE_LE },
     { ovf::CIMOSType_CIMOS_NovellLinuxDesktop,                   VBOXOSTYPE_OpenSUSE },
@@ -273,6 +274,7 @@ static struct
     { ovf::CIMOSType_CIMOS_OracleLinux_64,                       VBOXOSTYPE_Oracle6_x64 },
     { ovf::CIMOSType_CIMOS_OracleLinux_64,                       VBOXOSTYPE_Oracle7_x64 }, // 64-bit only
     { ovf::CIMOSType_CIMOS_OracleLinux_64,                       VBOXOSTYPE_Oracle8_x64 }, // 64-bit only
+    { ovf::CIMOSType_CIMOS_OracleLinux_64,                       VBOXOSTYPE_Oracle9_x64 }, // 64-bit only
     { ovf::CIMOSType_CIMOS_eComStation,                          VBOXOSTYPE_ECS },
 
     { ovf::CIMOSType_CIMOS_WindowsServer2011,                    VBOXOSTYPE_Win2k8_x64 },       // no 1:1 match on the VBox side
