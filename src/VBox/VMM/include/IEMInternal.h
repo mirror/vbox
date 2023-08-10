@@ -1714,9 +1714,9 @@ DECLCALLBACK(FNPGMRZPHYSPFHANDLER)  iemVmxApicAccessPagePfHandler;
 # define IEM_DECL_IMPL_TYPE(a_RetType, a_Name, a_ArgList) \
     __attribute__((__fastcall__)) a_RetType (a_Name) a_ArgList
 # define IEM_DECL_IMPL_DEF(a_RetType, a_Name, a_ArgList) \
-    __attribute__((__fastcall__, __nothrow__)) a_RetType a_Name a_ArgList
+    __attribute__((__fastcall__, __nothrow__)) DECL_HIDDEN_ONLY(a_RetType) a_Name a_ArgList
 # define IEM_DECL_IMPL_PROTO(a_RetType, a_Name, a_ArgList) \
-    __attribute__((__fastcall__, __nothrow__)) a_RetType a_Name a_ArgList
+    __attribute__((__fastcall__, __nothrow__)) DECL_HIDDEN_ONLY(a_RetType) a_Name a_ArgList
 
 #elif defined(_MSC_VER) && defined(RT_ARCH_X86)
 # define IEM_DECL_IMPL_TYPE(a_RetType, a_Name, a_ArgList) \
@@ -1730,17 +1730,17 @@ DECLCALLBACK(FNPGMRZPHYSPFHANDLER)  iemVmxApicAccessPagePfHandler;
 # define IEM_DECL_IMPL_TYPE(a_RetType, a_Name, a_ArgList) \
     a_RetType (VBOXCALL a_Name) a_ArgList RT_NOEXCEPT
 # define IEM_DECL_IMPL_DEF(a_RetType, a_Name, a_ArgList) \
-    a_RetType VBOXCALL a_Name a_ArgList RT_NOEXCEPT
+    DECL_HIDDEN_ONLY(a_RetType) VBOXCALL a_Name a_ArgList RT_NOEXCEPT
 # define IEM_DECL_IMPL_PROTO(a_RetType, a_Name, a_ArgList) \
-    a_RetType VBOXCALL a_Name a_ArgList RT_NOEXCEPT
+    DECL_HIDDEN_ONLY(a_RetType) VBOXCALL a_Name a_ArgList RT_NOEXCEPT
 
 #else
 # define IEM_DECL_IMPL_TYPE(a_RetType, a_Name, a_ArgList) \
     a_RetType (VBOXCALL a_Name) a_ArgList
 # define IEM_DECL_IMPL_DEF(a_RetType, a_Name, a_ArgList) \
-    a_RetType VBOXCALL a_Name a_ArgList
+    DECL_HIDDEN_ONLY(a_RetType) VBOXCALL a_Name a_ArgList
 # define IEM_DECL_IMPL_PROTO(a_RetType, a_Name, a_ArgList) \
-    a_RetType VBOXCALL a_Name a_ArgList
+    DECL_HIDDEN_ONLY(a_RetType) VBOXCALL a_Name a_ArgList
 
 #endif
 
