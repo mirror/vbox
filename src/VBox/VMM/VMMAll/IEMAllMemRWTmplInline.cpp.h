@@ -46,6 +46,10 @@
 # error "TMPL_MEM_FMT_DESC is undefined"
 #endif
 
+#if TMPL_MEM_TYPE_ALIGN + 1 < TMPL_MEM_TYPE_SIZE
+# error Have not implemented TMPL_MEM_TYPE_ALIGN smaller than TMPL_MEM_TYPE_SIZE - 1.
+#endif
+
 /** @todo fix logging   */
 
 #ifdef IEM_WITH_SETJMP
@@ -70,7 +74,8 @@ RT_CONCAT3(iemMemFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg
      */
     RTGCPTR GCPtrEff = iemMemApplySegmentToReadJmp(pVCpu, iSegReg, sizeof(TMPL_MEM_TYPE), GCPtrMem);
 #  if TMPL_MEM_TYPE_SIZE > 1
-    if (RT_LIKELY((GCPtrEff & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(TMPL_MEM_TYPE)))
+    if (RT_LIKELY(   !(GCPtrEff & TMPL_MEM_TYPE_ALIGN) /* If aligned, it will be within the page. */
+                  || TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(pVCpu, GCPtrEff, TMPL_MEM_TYPE) ))
 #  endif
     {
         /*
@@ -89,30 +94,15 @@ RT_CONCAT3(iemMemFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg
                                                          | IEMTLBE_F_PT_NO_ACCESSED | IEMTLBE_F_NO_MAPPINGR3  | fNoUser))
                           == pVCpu->iem.s.DataTlb.uTlbPhysRev))
             {
-#  if TMPL_MEM_TYPE_ALIGN != 0
                 /*
-                 * Alignment check:
+                 * Fetch and return the data.
                  */
-                /** @todo check priority \#AC vs \#PF */
-                AssertCompile(X86_CR0_AM == X86_EFL_AC);
-                AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
-                if (RT_LIKELY(   !(GCPtrEff & TMPL_MEM_TYPE_ALIGN)
-                              || !(  (uint32_t)pVCpu->cpum.GstCtx.cr0
-                                   & pVCpu->cpum.GstCtx.eflags.u
-                                   & ((IEM_GET_CPL(pVCpu) + 1U) << 16) /* IEM_GET_CPL(pVCpu) == 3 ? X86_CR0_AM : 0 */
-                                   & X86_CR0_AM) ))
-#  endif
-                {
-                    /*
-                     * Fetch and return the dword
-                     */
-                    STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
-                    Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
-                    Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
-                    TMPL_MEM_TYPE const uRet = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
-                    Log9(("IEM RD " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, uRet));
-                    return uRet;
-                }
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+                Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                TMPL_MEM_TYPE const uRet = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
+                Log9(("IEM RD " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, uRet));
+                return uRet;
             }
         }
     }
@@ -136,7 +126,10 @@ RT_CONCAT3(iemMemFlatFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCP
      * Check that it doesn't cross a page boundrary.
      */
 #  if TMPL_MEM_TYPE_SIZE > 1
-    if (RT_LIKELY((GCPtrMem & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(TMPL_MEM_TYPE)))
+    AssertCompile(X86_CR0_AM == X86_EFL_AC);
+    AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
+    if (RT_LIKELY(   !(GCPtrMem & TMPL_MEM_TYPE_ALIGN) /* If aligned, it will be within the page. */
+                  || TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(pVCpu, GCPtrMem, TMPL_MEM_TYPE) ))
 #  endif
     {
         /*
@@ -155,30 +148,15 @@ RT_CONCAT3(iemMemFlatFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCP
                                                          | IEMTLBE_F_PT_NO_ACCESSED | IEMTLBE_F_NO_MAPPINGR3  | fNoUser))
                           == pVCpu->iem.s.DataTlb.uTlbPhysRev))
             {
-#  if TMPL_MEM_TYPE_ALIGN != 0
                 /*
-                 * Alignment check:
+                 * Fetch and return the dword
                  */
-                /** @todo check priority \#AC vs \#PF */
-                AssertCompile(X86_CR0_AM == X86_EFL_AC);
-                AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
-                if (RT_LIKELY(   !(GCPtrMem & TMPL_MEM_TYPE_ALIGN)
-                              || !(  (uint32_t)pVCpu->cpum.GstCtx.cr0
-                                   & pVCpu->cpum.GstCtx.eflags.u
-                                   & ((IEM_GET_CPL(pVCpu) + 1U) << 16) /* IEM_GET_CPL(pVCpu) == 3 ? X86_CR0_AM : 0 */
-                                   & X86_CR0_AM) ))
-#  endif
-                {
-                    /*
-                     * Fetch and return the dword
-                     */
-                    STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
-                    Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
-                    Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
-                    TMPL_MEM_TYPE const uRet = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK];
-                    Log9(("IEM RD " TMPL_MEM_FMT_DESC " %RGv: " TMPL_MEM_FMT_TYPE "\n", GCPtrMem, uRet));
-                    return uRet;
-                }
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+                Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                TMPL_MEM_TYPE const uRet = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK];
+                Log9(("IEM RD " TMPL_MEM_FMT_DESC " %RGv: " TMPL_MEM_FMT_TYPE "\n", GCPtrMem, uRet));
+                return uRet;
             }
         }
     }
@@ -211,7 +189,10 @@ RT_CONCAT3(iemMemStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg
      */
     RTGCPTR GCPtrEff = iemMemApplySegmentToWriteJmp(pVCpu, iSegReg, sizeof(TMPL_MEM_TYPE), GCPtrMem);
 #  if TMPL_MEM_TYPE_SIZE > 1
-    if (RT_LIKELY((GCPtrEff & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(TMPL_MEM_TYPE)))
+    AssertCompile(X86_CR0_AM == X86_EFL_AC);
+    AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
+    if (RT_LIKELY(   !(GCPtrEff & TMPL_MEM_TYPE_ALIGN) /* If aligned, it will be within the page. */
+                  || TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(pVCpu, GCPtrEff, TMPL_MEM_TYPE) ))
 #  endif
     {
         /*
@@ -231,30 +212,15 @@ RT_CONCAT3(iemMemStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg
                                                          | IEMTLBE_F_NO_MAPPINGR3   | fNoUser))
                           == pVCpu->iem.s.DataTlb.uTlbPhysRev))
             {
-#   if TMPL_MEM_TYPE_ALIGN != 0
                 /*
-                 * Alignment check:
+                 * Store the dword and return.
                  */
-                /** @todo check priority \#AC vs \#PF */
-                AssertCompile(X86_CR0_AM == X86_EFL_AC);
-                AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
-                if (RT_LIKELY(   !(GCPtrEff & TMPL_MEM_TYPE_ALIGN)
-                              || !(  (uint32_t)pVCpu->cpum.GstCtx.cr0
-                                   & pVCpu->cpum.GstCtx.eflags.u
-                                   & ((IEM_GET_CPL(pVCpu) + 1U) << 16) /* IEM_GET_CPL(pVCpu) == 3 ? X86_CR0_AM : 0 */
-                              & X86_CR0_AM) ))
-#   endif
-                {
-                    /*
-                     * Store the dword and return.
-                     */
-                    STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
-                    Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
-                    Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
-                    *(TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK] = uValue;
-                    Log9(("IEM WR " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, uValue));
-                    return;
-                }
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+                Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                *(TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK] = uValue;
+                Log9(("IEM WR " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, uValue));
+                return;
             }
         }
     }
@@ -279,7 +245,8 @@ RT_CONCAT3(iemMemFlatStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCP
      * Check that it doesn't cross a page boundrary.
      */
 #  if TMPL_MEM_TYPE_SIZE > 1
-    if (RT_LIKELY((GCPtrMem & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(TMPL_MEM_TYPE)))
+    if (RT_LIKELY(   !(GCPtrMem & TMPL_MEM_TYPE_ALIGN)
+                  || TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(pVCpu, GCPtrMem, TMPL_MEM_TYPE) ))
 #  endif
     {
         /*
@@ -299,30 +266,15 @@ RT_CONCAT3(iemMemFlatStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCP
                                                          | IEMTLBE_F_NO_MAPPINGR3   | fNoUser))
                           == pVCpu->iem.s.DataTlb.uTlbPhysRev))
             {
-#   if TMPL_MEM_TYPE_ALIGN != 0
                 /*
-                 * Alignment check:
+                 * Store the dword and return.
                  */
-                /** @todo check priority \#AC vs \#PF */
-                AssertCompile(X86_CR0_AM == X86_EFL_AC);
-                AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
-                if (RT_LIKELY(   !(GCPtrMem & TMPL_MEM_TYPE_ALIGN)
-                              || !(  (uint32_t)pVCpu->cpum.GstCtx.cr0
-                                   & pVCpu->cpum.GstCtx.eflags.u
-                                   & ((IEM_GET_CPL(pVCpu) + 1U) << 16) /* IEM_GET_CPL(pVCpu) == 3 ? X86_CR0_AM : 0 */
-                                   & X86_CR0_AM) ))
-#   endif
-                {
-                    /*
-                     * Store the dword and return.
-                     */
-                    STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
-                    Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
-                    Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
-                    *(TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK] = uValue;
-                    Log9(("IEM WR " TMPL_MEM_FMT_DESC " %RGv: " TMPL_MEM_FMT_TYPE "\n", GCPtrMem, uValue));
-                    return;
-                }
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+                Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                *(TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK] = uValue;
+                Log9(("IEM WR " TMPL_MEM_FMT_DESC " %RGv: " TMPL_MEM_FMT_TYPE "\n", GCPtrMem, uValue));
+                return;
             }
         }
     }
@@ -355,7 +307,8 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RwJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
      */
     RTGCPTR GCPtrEff = iemMemApplySegmentToWriteJmp(pVCpu, iSegReg, sizeof(TMPL_MEM_TYPE), GCPtrMem);
 #  if TMPL_MEM_TYPE_SIZE > 1
-    if (RT_LIKELY((GCPtrEff & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(TMPL_MEM_TYPE)))
+    if (RT_LIKELY(   !(GCPtrEff & TMPL_MEM_TYPE_ALIGN)
+                  || TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(pVCpu, GCPtrEff, TMPL_MEM_TYPE) ))
 #  endif
     {
         /*
@@ -376,31 +329,16 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RwJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
                                                          | fNoUser))
                           == pVCpu->iem.s.DataTlb.uTlbPhysRev))
             {
-#   if TMPL_MEM_TYPE_ALIGN != 0
                 /*
-                 * Alignment check:
+                 * Return the address.
                  */
-                /** @todo check priority \#AC vs \#PF */
-                AssertCompile(X86_CR0_AM == X86_EFL_AC);
-                AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
-                if (RT_LIKELY(   !(GCPtrEff & TMPL_MEM_TYPE_ALIGN)
-                              || !(  (uint32_t)pVCpu->cpum.GstCtx.cr0
-                                   & pVCpu->cpum.GstCtx.eflags.u
-                                   & ((IEM_GET_CPL(pVCpu) + 1U) << 16) /* IEM_GET_CPL(pVCpu) == 3 ? X86_CR0_AM : 0 */
-                                   & X86_CR0_AM) ))
-#   endif
-                {
-                    /*
-                     * Return the address.
-                     */
-                    STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
-                    Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
-                    Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
-                    *pbUnmapInfo = 0;
-                    Log8(("IEM RW/map " TMPL_MEM_FMT_DESC " %d|%RGv: %p\n",
-                          iSegReg, GCPtrMem, &pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK]));
-                    return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
-                }
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+                Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                *pbUnmapInfo = 0;
+                Log8(("IEM RW/map " TMPL_MEM_FMT_DESC " %d|%RGv: %p\n",
+                      iSegReg, GCPtrMem, &pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK]));
+                return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
             }
         }
     }
@@ -425,7 +363,8 @@ RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,RwJmp)(PVMCPUCC pVCpu, uint8_t *pb
      * Check that the address doesn't cross a page boundrary.
      */
 #  if TMPL_MEM_TYPE_SIZE > 1
-    if (RT_LIKELY((GCPtrMem & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(TMPL_MEM_TYPE)))
+    if (RT_LIKELY(   !(GCPtrMem & TMPL_MEM_TYPE_ALIGN)
+                  || TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(pVCpu, GCPtrMem, TMPL_MEM_TYPE) ))
 #  endif
     {
         /*
@@ -446,31 +385,16 @@ RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,RwJmp)(PVMCPUCC pVCpu, uint8_t *pb
                                                          | fNoUser))
                           == pVCpu->iem.s.DataTlb.uTlbPhysRev))
             {
-#   if TMPL_MEM_TYPE_ALIGN != 0
                 /*
-                 * Alignment check:
+                 * Return the address.
                  */
-                /** @todo check priority \#AC vs \#PF */
-                AssertCompile(X86_CR0_AM == X86_EFL_AC);
-                AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
-                if (RT_LIKELY(   !(GCPtrMem & TMPL_MEM_TYPE_ALIGN)
-                              || !(  (uint32_t)pVCpu->cpum.GstCtx.cr0
-                                   & pVCpu->cpum.GstCtx.eflags.u
-                                   & ((IEM_GET_CPL(pVCpu) + 1U) << 16) /* IEM_GET_CPL(pVCpu) == 3 ? X86_CR0_AM : 0 */
-                                   & X86_CR0_AM) ))
-#   endif
-                {
-                    /*
-                     * Return the address.
-                     */
-                    STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
-                    Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
-                    Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
-                    *pbUnmapInfo = 0;
-                    Log8(("IEM RW/map " TMPL_MEM_FMT_DESC " %RGv: %p\n",
-                          GCPtrMem, &pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK]));
-                    return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK];
-                }
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+                Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                *pbUnmapInfo = 0;
+                Log8(("IEM RW/map " TMPL_MEM_FMT_DESC " %RGv: %p\n",
+                      GCPtrMem, &pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK]));
+                return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK];
             }
         }
     }
@@ -496,7 +420,8 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,WoJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
      */
     RTGCPTR GCPtrEff = iemMemApplySegmentToWriteJmp(pVCpu, iSegReg, sizeof(TMPL_MEM_TYPE), GCPtrMem);
 #  if TMPL_MEM_TYPE_SIZE > 1
-    if (RT_LIKELY((GCPtrEff & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(TMPL_MEM_TYPE)))
+    if (RT_LIKELY(   !(GCPtrEff & TMPL_MEM_TYPE_ALIGN)
+                  || TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(pVCpu, GCPtrEff, TMPL_MEM_TYPE) ))
 #  endif
     {
         /*
@@ -517,31 +442,16 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,WoJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
                                                          | fNoUser))
                           == pVCpu->iem.s.DataTlb.uTlbPhysRev))
             {
-#   if TMPL_MEM_TYPE_ALIGN != 0
                 /*
-                 * Alignment check:
+                 * Return the address.
                  */
-                /** @todo check priority \#AC vs \#PF */
-                AssertCompile(X86_CR0_AM == X86_EFL_AC);
-                AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
-                if (RT_LIKELY(   !(GCPtrEff & TMPL_MEM_TYPE_ALIGN)
-                              || !(  (uint32_t)pVCpu->cpum.GstCtx.cr0
-                                   & pVCpu->cpum.GstCtx.eflags.u
-                                   & ((IEM_GET_CPL(pVCpu) + 1U) << 16) /* IEM_GET_CPL(pVCpu) == 3 ? X86_CR0_AM : 0 */
-                                   & X86_CR0_AM) ))
-#   endif
-                {
-                    /*
-                     * Return the address.
-                     */
-                    STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
-                    Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
-                    Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
-                    *pbUnmapInfo = 0;
-                    Log8(("IEM WO/map " TMPL_MEM_FMT_DESC " %d|%RGv: %p\n",
-                          iSegReg, GCPtrMem, &pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK]));
-                    return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
-                }
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+                Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                *pbUnmapInfo = 0;
+                Log8(("IEM WO/map " TMPL_MEM_FMT_DESC " %d|%RGv: %p\n",
+                      iSegReg, GCPtrMem, &pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK]));
+                return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
             }
         }
     }
@@ -566,7 +476,8 @@ RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,WoJmp)(PVMCPUCC pVCpu, uint8_t *pb
      * Check that the address doesn't cross a page boundrary.
      */
 #  if TMPL_MEM_TYPE_SIZE > 1
-    if (RT_LIKELY((GCPtrMem & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(TMPL_MEM_TYPE)))
+    if (RT_LIKELY(   !(GCPtrMem & TMPL_MEM_TYPE_ALIGN)
+                  || TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(pVCpu, GCPtrMem, TMPL_MEM_TYPE) ))
 #  endif
     {
         /*
@@ -587,31 +498,16 @@ RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,WoJmp)(PVMCPUCC pVCpu, uint8_t *pb
                                                          | fNoUser))
                           == pVCpu->iem.s.DataTlb.uTlbPhysRev))
             {
-#   if TMPL_MEM_TYPE_ALIGN != 0
                 /*
-                 * Alignment check:
+                 * Return the address.
                  */
-                /** @todo check priority \#AC vs \#PF */
-                AssertCompile(X86_CR0_AM == X86_EFL_AC);
-                AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
-                if (RT_LIKELY(   !(GCPtrMem & TMPL_MEM_TYPE_ALIGN)
-                              || !(  (uint32_t)pVCpu->cpum.GstCtx.cr0
-                                   & pVCpu->cpum.GstCtx.eflags.u
-                                   & ((IEM_GET_CPL(pVCpu) + 1U) << 16) /* IEM_GET_CPL(pVCpu) == 3 ? X86_CR0_AM : 0 */
-                                   & X86_CR0_AM) ))
-#   endif
-                {
-                    /*
-                     * Return the address.
-                     */
-                    STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
-                    Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
-                    Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
-                    *pbUnmapInfo = 0;
-                    Log8(("IEM WO/map " TMPL_MEM_FMT_DESC " %RGv: %p\n",
-                          GCPtrMem, &pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK]));
-                    return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK];
-                }
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+                Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                *pbUnmapInfo = 0;
+                Log8(("IEM WO/map " TMPL_MEM_FMT_DESC " %RGv: %p\n",
+                      GCPtrMem, &pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK]));
+                return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK];
             }
         }
     }
@@ -637,7 +533,8 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RoJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
      */
     RTGCPTR GCPtrEff = iemMemApplySegmentToReadJmp(pVCpu, iSegReg, sizeof(TMPL_MEM_TYPE), GCPtrMem);
 #  if TMPL_MEM_TYPE_SIZE > 1
-    if (RT_LIKELY((GCPtrEff & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(TMPL_MEM_TYPE)))
+    if (RT_LIKELY(   !(GCPtrEff & TMPL_MEM_TYPE_ALIGN)
+                  || TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(pVCpu, GCPtrEff, TMPL_MEM_TYPE) ))
 #  endif
     {
         /*
@@ -657,31 +554,16 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RoJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
                                                          | IEMTLBE_F_PT_NO_ACCESSED | fNoUser))
                           == pVCpu->iem.s.DataTlb.uTlbPhysRev))
             {
-#   if TMPL_MEM_TYPE_ALIGN != 0
                 /*
-                 * Alignment check:
+                 * Return the address.
                  */
-                /** @todo check priority \#AC vs \#PF */
-                AssertCompile(X86_CR0_AM == X86_EFL_AC);
-                AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
-                if (RT_LIKELY(   !(GCPtrEff & TMPL_MEM_TYPE_ALIGN)
-                              || !(  (uint32_t)pVCpu->cpum.GstCtx.cr0
-                                   & pVCpu->cpum.GstCtx.eflags.u
-                                   & ((IEM_GET_CPL(pVCpu) + 1U) << 16) /* IEM_GET_CPL(pVCpu) == 3 ? X86_CR0_AM : 0 */
-                                   & X86_CR0_AM) ))
-#   endif
-                {
-                    /*
-                     * Return the address.
-                     */
-                    STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
-                    Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
-                    Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
-                    *pbUnmapInfo = 0;
-                    Log9(("IEM RO/map " TMPL_MEM_FMT_DESC " %d|%RGv: %p\n",
-                          iSegReg, GCPtrMem, &pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK]));
-                    return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
-                }
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+                Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                *pbUnmapInfo = 0;
+                Log9(("IEM RO/map " TMPL_MEM_FMT_DESC " %d|%RGv: %p\n",
+                      iSegReg, GCPtrMem, &pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK]));
+                return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
             }
         }
     }
@@ -706,7 +588,8 @@ RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,RoJmp)(PVMCPUCC pVCpu, uint8_t *pb
      * Check that the address doesn't cross a page boundrary.
      */
 #  if TMPL_MEM_TYPE_SIZE > 1
-    if (RT_LIKELY((GCPtrMem & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(TMPL_MEM_TYPE)))
+    if (RT_LIKELY(   !(GCPtrMem & TMPL_MEM_TYPE_ALIGN)
+                  || TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(pVCpu, GCPtrMem, TMPL_MEM_TYPE) ))
 #  endif
     {
         /*
@@ -726,31 +609,16 @@ RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,RoJmp)(PVMCPUCC pVCpu, uint8_t *pb
                                                          | IEMTLBE_F_PT_NO_ACCESSED | fNoUser))
                           == pVCpu->iem.s.DataTlb.uTlbPhysRev))
             {
-#   if TMPL_MEM_TYPE_ALIGN != 0
                 /*
-                 * Alignment check:
+                 * Return the address.
                  */
-                /** @todo check priority \#AC vs \#PF */
-                AssertCompile(X86_CR0_AM == X86_EFL_AC);
-                AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
-                if (RT_LIKELY(   !(GCPtrMem & TMPL_MEM_TYPE_ALIGN)
-                              || !(  (uint32_t)pVCpu->cpum.GstCtx.cr0
-                                   & pVCpu->cpum.GstCtx.eflags.u
-                                   & ((IEM_GET_CPL(pVCpu) + 1U) << 16) /* IEM_GET_CPL(pVCpu) == 3 ? X86_CR0_AM : 0 */
-                                   & X86_CR0_AM) ))
-#   endif
-                {
-                    /*
-                     * Return the address.
-                     */
-                    STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
-                    Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
-                    Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
-                    *pbUnmapInfo = 0;
-                    Log8(("IEM RO/map " TMPL_MEM_FMT_DESC " %RGv: %p\n",
-                          GCPtrMem, &pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK]));
-                    return (TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK];
-                }
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+                Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                *pbUnmapInfo = 0;
+                Log8(("IEM RO/map " TMPL_MEM_FMT_DESC " %RGv: %p\n",
+                      GCPtrMem, &pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK]));
+                return (TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK];
             }
         }
     }

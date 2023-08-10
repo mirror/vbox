@@ -3453,6 +3453,28 @@ DECL_INLINE_THROW(void) iemMemCommitAndUnmapRoJmp(PVMCPUCC pVCpu, const void *pv
 /*
  * Instantiate R/W inline templates.
  */
+
+/** @def TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK
+ * Used to check if an unaligned access is if within the page and won't
+ * trigger an #AC.
+ *
+ * This can be used to deal with misaligned accesses on platforms that are
+ * senstive to such if desires.
+ */
+AssertCompile(X86_CR0_AM == X86_EFL_AC);
+AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
+#if 1
+# define TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(a_pVCpu, a_GCPtrEff, a_TmplMemType) \
+    (   ((a_GCPtrEff) & GUEST_PAGE_OFFSET_MASK) <= GUEST_PAGE_SIZE - sizeof(a_TmplMemType) \
+     && !(  (uint32_t)(a_pVCpu)->cpum.GstCtx.cr0 \
+          & (a_pVCpu)->cpum.GstCtx.eflags.u \
+          & ((IEM_GET_CPL((a_pVCpu)) + 1U) << 16) /* IEM_GET_CPL(a_pVCpu) == 3 ? X86_CR0_AM : 0 */ \
+          & X86_CR0_AM) )
+#else
+# define TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(a_pVCpu, a_GCPtrEff, a_TmplMemType) 0
+#endif
+
+
 #define TMPL_MEM_TYPE       uint8_t
 #define TMPL_MEM_TYPE_ALIGN 0
 #define TMPL_MEM_TYPE_SIZE  1
@@ -3495,6 +3517,7 @@ DECL_INLINE_THROW(void) iemMemCommitAndUnmapRoJmp(PVMCPUCC pVCpu, const void *pv
 #define TMPL_MEM_FMT_DESC   "qword"
 #include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
 
+#undef TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK
 /** @} */
 
 
