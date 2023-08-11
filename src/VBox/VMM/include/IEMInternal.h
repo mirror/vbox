@@ -516,13 +516,17 @@ AssertCompileSizeAlignment(IEMTLB, 64);
  * Calculates the TLB tag for a virtual address.
  * @returns Tag value for indexing and comparing with IEMTLB::uTag.
  * @param   a_pTlb      The TLB.
- * @param   a_GCPtr     The virtual address.
+ * @param   a_GCPtr     The virtual address.  Must be RTGCPTR or same size or
+ *                      the clearing of the top 16 bits won't work (if 32-bit
+ *                      we'll end up with mostly zeros).
  */
 #define IEMTLB_CALC_TAG(a_pTlb, a_GCPtr)    ( IEMTLB_CALC_TAG_NO_REV(a_GCPtr) | (a_pTlb)->uTlbRevision )
 /**
  * Calculates the TLB tag for a virtual address but without TLB revision.
  * @returns Tag value for indexing and comparing with IEMTLB::uTag.
- * @param   a_GCPtr     The virtual address.
+ * @param   a_GCPtr     The virtual address.  Must be RTGCPTR or same size or
+ *                      the clearing of the top 16 bits won't work (if 32-bit
+ *                      we'll end up with mostly zeros).
  */
 #define IEMTLB_CALC_TAG_NO_REV(a_GCPtr)     ( (((a_GCPtr) << 16) >> (GUEST_PAGE_SHIFT + 16)) )
 /**
