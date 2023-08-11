@@ -3375,7 +3375,8 @@ FNIEMOP_DEF(iemOp_mov_Dd_Rd)
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_REX_R)
         IEMOP_RAISE_INVALID_OPCODE_RET();
-    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_mov_Dd_Rd, IEM_GET_MODRM_REG_8(bRm), IEM_GET_MODRM_RM(pVCpu, bRm));
+    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT,
+                                iemCImpl_mov_Dd_Rd, IEM_GET_MODRM_REG_8(bRm), IEM_GET_MODRM_RM(pVCpu, bRm));
 }
 
 
