@@ -49,7 +49,7 @@ FNIEMOP_DEF_1(iemOpCommonMmx_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U64, pfnU64)
          */
         /** @todo testcase: REX.B / REX.R and MMX register indexing. Ignored? */
         /** @todo testcase: REX.B / REX.R and segment register indexing. Ignored? */
-        IEM_MC_BEGIN(2, 0, 0);
+        IEM_MC_BEGIN(2, 0, IEM_MC_F_NOT_286_OR_OLDER);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
         IEM_MC_ARG(uint64_t *,          pDst, 0);
         IEM_MC_ARG(uint64_t const *,    pSrc, 1);
@@ -70,7 +70,7 @@ FNIEMOP_DEF_1(iemOpCommonMmx_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U64, pfnU64)
         /*
          * MMX, [mem64].
          */
-        IEM_MC_BEGIN(2, 2, 0);
+        IEM_MC_BEGIN(2, 2, IEM_MC_F_NOT_286_OR_OLDER);
         IEM_MC_ARG(uint64_t *,                  pDst,       0);
         IEM_MC_LOCAL(uint64_t,                  uSrc);
         IEM_MC_ARG_LOCAL_REF(uint64_t const *,  pSrc, uSrc, 1);
@@ -111,7 +111,7 @@ FNIEMOP_DEF_1(iemOpCommonMmxOpt_FullFull_To_Full, PFNIEMAIMPLMEDIAOPTF2U64, pfnU
          */
         /** @todo testcase: REX.B / REX.R and MMX register indexing. Ignored? */
         /** @todo testcase: REX.B / REX.R and segment register indexing. Ignored? */
-        IEM_MC_BEGIN(2, 0, 0);
+        IEM_MC_BEGIN(2, 0, IEM_MC_F_NOT_286_OR_OLDER);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
         IEM_MC_ARG(uint64_t *,          pDst, 0);
         IEM_MC_ARG(uint64_t const *,    pSrc, 1);
@@ -132,7 +132,7 @@ FNIEMOP_DEF_1(iemOpCommonMmxOpt_FullFull_To_Full, PFNIEMAIMPLMEDIAOPTF2U64, pfnU
         /*
          * MMX, [mem64].
          */
-        IEM_MC_BEGIN(2, 2, 0);
+        IEM_MC_BEGIN(2, 2, IEM_MC_F_NOT_286_OR_OLDER);
         IEM_MC_ARG(uint64_t *,                  pDst,       0);
         IEM_MC_LOCAL(uint64_t,                  uSrc);
         IEM_MC_ARG_LOCAL_REF(uint64_t const *,  pSrc, uSrc, 1);
@@ -171,7 +171,7 @@ FNIEMOP_DEF_1(iemOpCommonMmxSse_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U64, pfnU64)
          */
         /** @todo testcase: REX.B / REX.R and MMX register indexing. Ignored? */
         /** @todo testcase: REX.B / REX.R and segment register indexing. Ignored? */
-        IEM_MC_BEGIN(2, 0, 0);
+        IEM_MC_BEGIN(2, 0, IEM_MC_F_NOT_286_OR_OLDER);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX_2_OR(fSse, fAmdMmxExts);
         IEM_MC_ARG(uint64_t *,          pDst, 0);
         IEM_MC_ARG(uint64_t const *,    pSrc, 1);
@@ -192,7 +192,7 @@ FNIEMOP_DEF_1(iemOpCommonMmxSse_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U64, pfnU64)
         /*
          * MMX, [mem64].
          */
-        IEM_MC_BEGIN(2, 2, 0);
+        IEM_MC_BEGIN(2, 2, IEM_MC_F_NOT_286_OR_OLDER);
         IEM_MC_ARG(uint64_t *,                  pDst,       0);
         IEM_MC_LOCAL(uint64_t,                  uSrc);
         IEM_MC_ARG_LOCAL_REF(uint64_t const *,  pSrc, uSrc, 1);
@@ -234,7 +234,7 @@ FNIEMOP_DEF_1(iemOpCommonMmxSseOpt_FullFull_To_Full, PFNIEMAIMPLMEDIAOPTF2U64, p
          */
         /** @todo testcase: REX.B / REX.R and MMX register indexing. Ignored? */
         /** @todo testcase: REX.B / REX.R and segment register indexing. Ignored? */
-        IEM_MC_BEGIN(2, 0, 0);
+        IEM_MC_BEGIN(2, 0, IEM_MC_F_NOT_286_OR_OLDER);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX_2_OR(fSse, fAmdMmxExts);
         IEM_MC_ARG(uint64_t *,          pDst, 0);
         IEM_MC_ARG(uint64_t const *,    pSrc, 1);
@@ -255,7 +255,7 @@ FNIEMOP_DEF_1(iemOpCommonMmxSseOpt_FullFull_To_Full, PFNIEMAIMPLMEDIAOPTF2U64, p
         /*
          * MMX, [mem64].
          */
-        IEM_MC_BEGIN(2, 2, 0);
+        IEM_MC_BEGIN(2, 2, IEM_MC_F_NOT_286_OR_OLDER);
         IEM_MC_ARG(uint64_t *,                  pDst,       0);
         IEM_MC_LOCAL(uint64_t,                  uSrc);
         IEM_MC_ARG_LOCAL_REF(uint64_t const *,  pSrc, uSrc, 1);
@@ -294,7 +294,7 @@ FNIEMOP_DEF_1(iemOpCommonMmx_FullFull_To_Full_Sse2, PFNIEMAIMPLMEDIAF2U64, pfnU6
          */
         /** @todo testcase: REX.B / REX.R and MMX register indexing. Ignored? */
         /** @todo testcase: REX.B / REX.R and segment register indexing. Ignored? */
-        IEM_MC_BEGIN(2, 0, 0);
+        IEM_MC_BEGIN(2, 0, IEM_MC_F_NOT_286_OR_OLDER);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse2);
         IEM_MC_ARG(uint64_t *,          pDst, 0);
         IEM_MC_ARG(uint64_t const *,    pSrc, 1);
@@ -315,7 +315,7 @@ FNIEMOP_DEF_1(iemOpCommonMmx_FullFull_To_Full_Sse2, PFNIEMAIMPLMEDIAF2U64, pfnU6
         /*
          * MMX, [mem64].
          */
-        IEM_MC_BEGIN(2, 2, 0);
+        IEM_MC_BEGIN(2, 2, IEM_MC_F_NOT_286_OR_OLDER);
         IEM_MC_ARG(uint64_t *,                  pDst,       0);
         IEM_MC_LOCAL(uint64_t,                  uSrc);
         IEM_MC_ARG_LOCAL_REF(uint64_t const *,  pSrc, uSrc, 1);
@@ -356,7 +356,7 @@ FNIEMOP_DEF_1(iemOpCommonSse_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128)
         /*
          * XMM, XMM.
          */
-        IEM_MC_BEGIN(2, 0, 0);
+        IEM_MC_BEGIN(2, 0, IEM_MC_F_NOT_286_OR_OLDER);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse);
         IEM_MC_ARG(PRTUINT128U,          pDst, 0);
         IEM_MC_ARG(PCRTUINT128U,         pSrc, 1);
@@ -373,7 +373,7 @@ FNIEMOP_DEF_1(iemOpCommonSse_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128)
         /*
          * XMM, [mem128].
          */
-        IEM_MC_BEGIN(2, 2, 0);
+        IEM_MC_BEGIN(2, 2, IEM_MC_F_NOT_286_OR_OLDER);
         IEM_MC_ARG(PRTUINT128U,                 pDst,       0);
         IEM_MC_LOCAL(RTUINT128U,                uSrc);
         IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      pSrc, uSrc, 1);
@@ -411,7 +411,7 @@ FNIEMOP_DEF_1(iemOpCommonSse2_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128)
         /*
          * XMM, XMM.
          */
-        IEM_MC_BEGIN(2, 0, 0);
+        IEM_MC_BEGIN(2, 0, IEM_MC_F_NOT_286_OR_OLDER);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse2);
         IEM_MC_ARG(PRTUINT128U,          pDst, 0);
         IEM_MC_ARG(PCRTUINT128U,         pSrc, 1);
@@ -428,7 +428,7 @@ FNIEMOP_DEF_1(iemOpCommonSse2_FullFull_To_Full, PFNIEMAIMPLMEDIAF2U128, pfnU128)
         /*
          * XMM, [mem128].
          */
-        IEM_MC_BEGIN(2, 2, 0);
+        IEM_MC_BEGIN(2, 2, IEM_MC_F_NOT_286_OR_OLDER);
         IEM_MC_ARG(PRTUINT128U,                 pDst,       0);
         IEM_MC_LOCAL(RTUINT128U,                uSrc);
         IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      pSrc, uSrc, 1);
@@ -469,7 +469,7 @@ FNIEMOP_DEF_1(iemOpCommonSse2Opt_FullFull_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pf
         /*
          * XMM, XMM.
          */
-        IEM_MC_BEGIN(2, 0, 0);
+        IEM_MC_BEGIN(2, 0, IEM_MC_F_NOT_286_OR_OLDER);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse2);
         IEM_MC_ARG(PRTUINT128U,          pDst, 0);
         IEM_MC_ARG(PCRTUINT128U,         pSrc, 1);
@@ -486,7 +486,7 @@ FNIEMOP_DEF_1(iemOpCommonSse2Opt_FullFull_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pf
         /*
          * XMM, [mem128].
          */
-        IEM_MC_BEGIN(2, 2, 0);
+        IEM_MC_BEGIN(2, 2, IEM_MC_F_NOT_286_OR_OLDER);
         IEM_MC_ARG(PRTUINT128U,                 pDst,       0);
         IEM_MC_LOCAL(RTUINT128U,                uSrc);
         IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      pSrc, uSrc, 1);
@@ -522,7 +522,7 @@ FNIEMOP_DEF_1(iemOpCommonMmx_LowLow_To_Full, PFNIEMAIMPLMEDIAOPTF2U64, pfnU64)
         /*
          * MMX, MMX.
          */
-        IEM_MC_BEGIN(2, 0, 0);
+        IEM_MC_BEGIN(2, 0, IEM_MC_F_NOT_286_OR_OLDER);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
         IEM_MC_ARG(uint64_t *,              puDst, 0);
         IEM_MC_ARG(uint64_t const *,        puSrc, 1);
@@ -543,7 +543,7 @@ FNIEMOP_DEF_1(iemOpCommonMmx_LowLow_To_Full, PFNIEMAIMPLMEDIAOPTF2U64, pfnU64)
         /*
          * MMX, [mem32].
          */
-        IEM_MC_BEGIN(2, 2, 0);
+        IEM_MC_BEGIN(2, 2, IEM_MC_F_NOT_286_OR_OLDER);
         IEM_MC_ARG(uint64_t *,                  puDst,       0);
         IEM_MC_LOCAL(uint64_t,                  uSrc);
         IEM_MC_ARG_LOCAL_REF(uint64_t const *,  puSrc, uSrc, 1);
@@ -584,7 +584,7 @@ FNIEMOP_DEF_1(iemOpCommonSse_LowLow_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pfnU128)
         /*
          * XMM, XMM.
          */
-        IEM_MC_BEGIN(2, 0, 0);
+        IEM_MC_BEGIN(2, 0, IEM_MC_F_NOT_286_OR_OLDER);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse);
         IEM_MC_ARG(PRTUINT128U,             puDst, 0);
         IEM_MC_ARG(PCRTUINT128U,            puSrc, 1);
@@ -601,7 +601,7 @@ FNIEMOP_DEF_1(iemOpCommonSse_LowLow_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pfnU128)
         /*
          * XMM, [mem128].
          */
-        IEM_MC_BEGIN(2, 2, 0);
+        IEM_MC_BEGIN(2, 2, IEM_MC_F_NOT_286_OR_OLDER);
         IEM_MC_ARG(PRTUINT128U,             puDst,       0);
         IEM_MC_LOCAL(RTUINT128U,            uSrc);
         IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,  puSrc, uSrc, 1);
@@ -644,7 +644,7 @@ FNIEMOP_DEF_1(iemOpCommonSse2_LowLow_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pfnU128
         /*
          * XMM, XMM.
          */
-        IEM_MC_BEGIN(2, 0, 0);
+        IEM_MC_BEGIN(2, 0, IEM_MC_F_NOT_286_OR_OLDER);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse2);
         IEM_MC_ARG(PRTUINT128U,             puDst, 0);
         IEM_MC_ARG(PCRTUINT128U,            puSrc, 1);
@@ -661,7 +661,7 @@ FNIEMOP_DEF_1(iemOpCommonSse2_LowLow_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pfnU128
         /*
          * XMM, [mem128].
          */
-        IEM_MC_BEGIN(2, 2, 0);
+        IEM_MC_BEGIN(2, 2, IEM_MC_F_NOT_286_OR_OLDER);
         IEM_MC_ARG(PRTUINT128U,             puDst,       0);
         IEM_MC_LOCAL(RTUINT128U,            uSrc);
         IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,  puSrc, uSrc, 1);
@@ -704,7 +704,7 @@ FNIEMOP_DEF_1(iemOpCommonMmx_HighHigh_To_Full, PFNIEMAIMPLMEDIAOPTF2U64, pfnU64)
          */
         /** @todo testcase: REX.B / REX.R and MMX register indexing. Ignored? */
         /** @todo testcase: REX.B / REX.R and segment register indexing. Ignored? */
-        IEM_MC_BEGIN(2, 0, 0);
+        IEM_MC_BEGIN(2, 0, IEM_MC_F_NOT_286_OR_OLDER);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fMmx);
         IEM_MC_ARG(uint64_t *,              puDst, 0);
         IEM_MC_ARG(uint64_t const *,        puSrc, 1);
@@ -725,7 +725,7 @@ FNIEMOP_DEF_1(iemOpCommonMmx_HighHigh_To_Full, PFNIEMAIMPLMEDIAOPTF2U64, pfnU64)
         /*
          * MMX, [mem64].
          */
-        IEM_MC_BEGIN(2, 2, 0);
+        IEM_MC_BEGIN(2, 2, IEM_MC_F_NOT_286_OR_OLDER);
         IEM_MC_ARG(uint64_t *,                  puDst,       0);
         IEM_MC_LOCAL(uint64_t,                  uSrc);
         IEM_MC_ARG_LOCAL_REF(uint64_t const *,  puSrc, uSrc, 1);
@@ -766,7 +766,7 @@ FNIEMOP_DEF_1(iemOpCommonSse_HighHigh_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pfnU12
         /*
          * XMM, XMM.
          */
-        IEM_MC_BEGIN(2, 0, 0);
+        IEM_MC_BEGIN(2, 0, IEM_MC_F_NOT_286_OR_OLDER);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse);
         IEM_MC_ARG(PRTUINT128U,             puDst, 0);
         IEM_MC_ARG(PCRTUINT128U,            puSrc, 1);
@@ -783,7 +783,7 @@ FNIEMOP_DEF_1(iemOpCommonSse_HighHigh_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pfnU12
         /*
          * XMM, [mem128].
          */
-        IEM_MC_BEGIN(2, 2, 0);
+        IEM_MC_BEGIN(2, 2, IEM_MC_F_NOT_286_OR_OLDER);
         IEM_MC_ARG(PRTUINT128U,                 puDst,       0);
         IEM_MC_LOCAL(RTUINT128U,                uSrc);
         IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc, uSrc, 1);
@@ -826,7 +826,7 @@ FNIEMOP_DEF_1(iemOpCommonSseFp_FullFull_To_Full, PFNIEMAIMPLFPSSEF2U128, pfnU128
         /*
          * XMM128, XMM128.
          */
-        IEM_MC_BEGIN(3, 1, 0);
+        IEM_MC_BEGIN(3, 1, IEM_MC_F_NOT_286_OR_OLDER);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse);
         IEM_MC_LOCAL(IEMSSERESULT,          SseRes);
         IEM_MC_ARG_LOCAL_REF(PIEMSSERESULT, pSseRes,        SseRes,     0);
@@ -848,7 +848,7 @@ FNIEMOP_DEF_1(iemOpCommonSseFp_FullFull_To_Full, PFNIEMAIMPLFPSSEF2U128, pfnU128
         /*
          * XMM128, [mem128].
          */
-        IEM_MC_BEGIN(3, 2, 0);
+        IEM_MC_BEGIN(3, 2, IEM_MC_F_NOT_286_OR_OLDER);
         IEM_MC_LOCAL(IEMSSERESULT,          SseRes);
         IEM_MC_LOCAL(X86XMMREG,             uSrc2);
         IEM_MC_ARG_LOCAL_REF(PIEMSSERESULT, pSseRes,        SseRes,     0);
@@ -890,7 +890,7 @@ FNIEMOP_DEF_1(iemOpCommonSseFp_FullR32_To_Full, PFNIEMAIMPLFPSSEF2U128R32, pfnU1
         /*
          * XMM128, XMM32.
          */
-        IEM_MC_BEGIN(3, 1, 0);
+        IEM_MC_BEGIN(3, 1, IEM_MC_F_NOT_286_OR_OLDER);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse);
         IEM_MC_LOCAL(IEMSSERESULT,          SseRes);
         IEM_MC_ARG_LOCAL_REF(PIEMSSERESULT, pSseRes,        SseRes,     0);
@@ -912,7 +912,7 @@ FNIEMOP_DEF_1(iemOpCommonSseFp_FullR32_To_Full, PFNIEMAIMPLFPSSEF2U128R32, pfnU1
         /*
          * XMM128, [mem32].
          */
-        IEM_MC_BEGIN(3, 2, 0);
+        IEM_MC_BEGIN(3, 2, IEM_MC_F_NOT_286_OR_OLDER);
         IEM_MC_LOCAL(IEMSSERESULT,          SseRes);
         IEM_MC_LOCAL(RTFLOAT32U,            r32Src2);
         IEM_MC_ARG_LOCAL_REF(PIEMSSERESULT, pSseRes,        SseRes,     0);
@@ -954,7 +954,7 @@ FNIEMOP_DEF_1(iemOpCommonSse2Fp_FullFull_To_Full, PFNIEMAIMPLFPSSEF2U128, pfnU12
         /*
          * XMM128, XMM128.
          */
-        IEM_MC_BEGIN(3, 1, 0);
+        IEM_MC_BEGIN(3, 1, IEM_MC_F_NOT_286_OR_OLDER);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse2);
         IEM_MC_LOCAL(IEMSSERESULT,          SseRes);
         IEM_MC_ARG_LOCAL_REF(PIEMSSERESULT, pSseRes,        SseRes,     0);
@@ -976,7 +976,7 @@ FNIEMOP_DEF_1(iemOpCommonSse2Fp_FullFull_To_Full, PFNIEMAIMPLFPSSEF2U128, pfnU12
         /*
          * XMM128, [mem128].
          */
-        IEM_MC_BEGIN(3, 2, 0);
+        IEM_MC_BEGIN(3, 2, IEM_MC_F_NOT_286_OR_OLDER);
         IEM_MC_LOCAL(IEMSSERESULT,          SseRes);
         IEM_MC_LOCAL(X86XMMREG,             uSrc2);
         IEM_MC_ARG_LOCAL_REF(PIEMSSERESULT, pSseRes,        SseRes,     0);
@@ -1018,7 +1018,7 @@ FNIEMOP_DEF_1(iemOpCommonSse2Fp_FullR64_To_Full, PFNIEMAIMPLFPSSEF2U128R64, pfnU
         /*
          * XMM, XMM.
          */
-        IEM_MC_BEGIN(3, 1, 0);
+        IEM_MC_BEGIN(3, 1, IEM_MC_F_NOT_286_OR_OLDER);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse2);
         IEM_MC_LOCAL(IEMSSERESULT,          SseRes);
         IEM_MC_ARG_LOCAL_REF(PIEMSSERESULT, pSseRes,        SseRes,     0);
@@ -1040,7 +1040,7 @@ FNIEMOP_DEF_1(iemOpCommonSse2Fp_FullR64_To_Full, PFNIEMAIMPLFPSSEF2U128R64, pfnU
         /*
          * XMM, [mem64].
          */
-        IEM_MC_BEGIN(3, 2, 0);
+        IEM_MC_BEGIN(3, 2, IEM_MC_F_NOT_286_OR_OLDER);
         IEM_MC_LOCAL(IEMSSERESULT,          SseRes);
         IEM_MC_LOCAL(RTFLOAT64U,            r64Src2);
         IEM_MC_ARG_LOCAL_REF(PIEMSSERESULT, pSseRes,        SseRes,     0);
@@ -1082,7 +1082,7 @@ FNIEMOP_DEF_1(iemOpCommonSse2_HighHigh_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pfnU1
         /*
          * XMM, XMM.
          */
-        IEM_MC_BEGIN(2, 0, 0);
+        IEM_MC_BEGIN(2, 0, IEM_MC_F_NOT_286_OR_OLDER);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse2);
         IEM_MC_ARG(PRTUINT128U,             puDst, 0);
         IEM_MC_ARG(PCRTUINT128U,            puSrc, 1);
@@ -1099,7 +1099,7 @@ FNIEMOP_DEF_1(iemOpCommonSse2_HighHigh_To_Full, PFNIEMAIMPLMEDIAOPTF2U128, pfnU1
         /*
          * XMM, [mem128].
          */
-        IEM_MC_BEGIN(2, 2, 0);
+        IEM_MC_BEGIN(2, 2, IEM_MC_F_NOT_286_OR_OLDER);
         IEM_MC_ARG(PRTUINT128U,                 puDst,       0);
         IEM_MC_LOCAL(RTUINT128U,                uSrc);
         IEM_MC_ARG_LOCAL_REF(PCRTUINT128U,      puSrc, uSrc, 1);
@@ -1142,7 +1142,7 @@ FNIEMOP_DEF_1(iemOpCommonSse3Fp_FullFull_To_Full, PFNIEMAIMPLFPSSEF2U128, pfnU12
         /*
          * XMM, XMM.
          */
-        IEM_MC_BEGIN(3, 1, 0);
+        IEM_MC_BEGIN(3, 1, IEM_MC_F_NOT_286_OR_OLDER);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse3);
         IEM_MC_LOCAL(IEMSSERESULT,          SseRes);
         IEM_MC_ARG_LOCAL_REF(PIEMSSERESULT, pSseRes,        SseRes,     0);
@@ -1164,7 +1164,7 @@ FNIEMOP_DEF_1(iemOpCommonSse3Fp_FullFull_To_Full, PFNIEMAIMPLFPSSEF2U128, pfnU12
         /*
          * XMM, [mem128].
          */
-        IEM_MC_BEGIN(3, 2, 0);
+        IEM_MC_BEGIN(3, 2, IEM_MC_F_NOT_286_OR_OLDER);
         IEM_MC_LOCAL(IEMSSERESULT,          SseRes);
         IEM_MC_LOCAL(X86XMMREG,             uSrc2);
         IEM_MC_ARG_LOCAL_REF(PIEMSSERESULT, pSseRes,        SseRes,     0);
@@ -1203,7 +1203,7 @@ FNIEMOPRM_DEF(iemOp_Grp6_sldt)
     }
 
     /* Ignore operand size here, memory refs are always 16-bit. */
-    IEM_MC_BEGIN(2, 0, 0);
+    IEM_MC_BEGIN(2, 0, IEM_MC_F_MIN_286);
     IEM_MC_ARG(uint16_t, iEffSeg,               0);
     IEM_MC_ARG(RTGCPTR,  GCPtrEffDst,           1);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
@@ -1229,7 +1229,7 @@ FNIEMOPRM_DEF(iemOp_Grp6_str)
     }
 
     /* Ignore operand size here, memory refs are always 16-bit. */
-    IEM_MC_BEGIN(2, 0, 0);
+    IEM_MC_BEGIN(2, 0, IEM_MC_F_MIN_286);
     IEM_MC_ARG(uint16_t, iEffSeg,               0);
     IEM_MC_ARG(RTGCPTR,  GCPtrEffDst,           1);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
@@ -1249,7 +1249,7 @@ FNIEMOPRM_DEF(iemOp_Grp6_lldt)
 
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
-        IEM_MC_BEGIN(1, 0, 0);
+        IEM_MC_BEGIN(1, 0, IEM_MC_F_MIN_286);
         IEMOP_HLP_DECODED_NL_1(OP_LLDT, IEMOPFORM_M_REG, OP_PARM_Ew, DISOPTYPE_DANGEROUS);
         IEM_MC_ARG(uint16_t, u16Sel, 0);
         IEM_MC_FETCH_GREG_U16(u16Sel, IEM_GET_MODRM_RM(pVCpu, bRm));
@@ -1258,7 +1258,7 @@ FNIEMOPRM_DEF(iemOp_Grp6_lldt)
     }
     else
     {
-        IEM_MC_BEGIN(1, 1, 0);
+        IEM_MC_BEGIN(1, 1, IEM_MC_F_MIN_286);
         IEM_MC_ARG(uint16_t, u16Sel, 0);
         IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
@@ -1280,7 +1280,7 @@ FNIEMOPRM_DEF(iemOp_Grp6_ltr)
 
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
-        IEM_MC_BEGIN(1, 0, 0);
+        IEM_MC_BEGIN(1, 0, IEM_MC_F_MIN_286);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_ARG(uint16_t, u16Sel, 0);
         IEM_MC_FETCH_GREG_U16(u16Sel, IEM_GET_MODRM_RM(pVCpu, bRm));
@@ -1289,7 +1289,7 @@ FNIEMOPRM_DEF(iemOp_Grp6_ltr)
     }
     else
     {
-        IEM_MC_BEGIN(1, 1, 0);
+        IEM_MC_BEGIN(1, 1, IEM_MC_F_MIN_286);
         IEM_MC_ARG(uint16_t, u16Sel, 0);
         IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
@@ -1310,7 +1310,7 @@ FNIEMOP_DEF_2(iemOpCommonGrp6VerX, uint8_t, bRm, bool, fWrite)
 
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
-        IEM_MC_BEGIN(2, 0, 0);
+        IEM_MC_BEGIN(2, 0, IEM_MC_F_MIN_286);
         IEMOP_HLP_DECODED_NL_1(fWrite ? OP_VERW : OP_VERR, IEMOPFORM_M_MEM, OP_PARM_Ew, DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP);
         IEM_MC_ARG(uint16_t,    u16Sel,            0);
         IEM_MC_ARG_CONST(bool,  fWriteArg, fWrite, 1);
@@ -1320,7 +1320,7 @@ FNIEMOP_DEF_2(iemOpCommonGrp6VerX, uint8_t, bRm, bool, fWrite)
     }
     else
     {
-        IEM_MC_BEGIN(2, 1, 0);
+        IEM_MC_BEGIN(2, 1, IEM_MC_F_MIN_286);
         IEM_MC_ARG(uint16_t,    u16Sel,            0);
         IEM_MC_ARG_CONST(bool,  fWriteArg, fWrite, 1);
         IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
@@ -1337,7 +1337,6 @@ FNIEMOP_DEF_2(iemOpCommonGrp6VerX, uint8_t, bRm, bool, fWrite)
 FNIEMOPRM_DEF(iemOp_Grp6_verr)
 {
     IEMOP_MNEMONIC(verr, "verr Ew");
-    IEMOP_HLP_MIN_286();
     return FNIEMOP_CALL_2(iemOpCommonGrp6VerX, bRm, false);
 }
 
@@ -1346,7 +1345,6 @@ FNIEMOPRM_DEF(iemOp_Grp6_verr)
 FNIEMOPRM_DEF(iemOp_Grp6_verw)
 {
     IEMOP_MNEMONIC(verw, "verw Ew");
-    IEMOP_HLP_MIN_286();
     return FNIEMOP_CALL_2(iemOpCommonGrp6VerX, bRm, true);
 }
 
@@ -1380,7 +1378,7 @@ FNIEMOP_DEF_1(iemOp_Grp7_sgdt, uint8_t, bRm)
     IEMOP_MNEMONIC(sgdt, "sgdt Ms");
     IEMOP_HLP_MIN_286();
     IEMOP_HLP_64BIT_OP_SIZE();
-    IEM_MC_BEGIN(2, 1, 0);
+    IEM_MC_BEGIN(2, 1, IEM_MC_F_MIN_286);
     IEM_MC_ARG(uint8_t,         iEffSeg,                                    0);
     IEM_MC_ARG(RTGCPTR,         GCPtrEffSrc,                                1);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
@@ -1472,7 +1470,7 @@ FNIEMOP_DEF_1(iemOp_Grp7_sidt, uint8_t, bRm)
     IEMOP_MNEMONIC(sidt, "sidt Ms");
     IEMOP_HLP_MIN_286();
     IEMOP_HLP_64BIT_OP_SIZE();
-    IEM_MC_BEGIN(2, 1, 0);
+    IEM_MC_BEGIN(2, 1, IEM_MC_F_MIN_286);
     IEM_MC_ARG(uint8_t,         iEffSeg,                                    0);
     IEM_MC_ARG(RTGCPTR,         GCPtrEffSrc,                                1);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
@@ -1691,7 +1689,7 @@ FNIEMOP_DEF_1(iemOp_Grp7_smsw, uint8_t, bRm)
     }
 
     /* Ignore operand size here, memory refs are always 16-bit. */
-    IEM_MC_BEGIN(2, 0, 0);
+    IEM_MC_BEGIN(2, 0, IEM_MC_F_MIN_286);
     IEM_MC_ARG(uint16_t, iEffSeg,               0);
     IEM_MC_ARG(RTGCPTR,  GCPtrEffDst,           1);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
@@ -1711,7 +1709,7 @@ FNIEMOP_DEF_1(iemOp_Grp7_lmsw, uint8_t, bRm)
     IEMOP_HLP_MIN_286();
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
-        IEM_MC_BEGIN(2, 0, 0);
+        IEM_MC_BEGIN(2, 0, IEM_MC_F_MIN_286);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         IEM_MC_ARG(uint16_t, u16Tmp,                         0);
         IEM_MC_ARG_CONST(RTGCPTR,  GCPtrEffDst, NIL_RTGCPTR, 1);
@@ -1721,7 +1719,7 @@ FNIEMOP_DEF_1(iemOp_Grp7_lmsw, uint8_t, bRm)
     }
     else
     {
-        IEM_MC_BEGIN(2, 0, 0);
+        IEM_MC_BEGIN(2, 0, IEM_MC_F_MIN_286);
         IEM_MC_ARG(uint16_t, u16Tmp,      0);
         IEM_MC_ARG(RTGCPTR,  GCPtrEffDst, 1);
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
@@ -10190,7 +10188,7 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev)
     IEMOP_HLP_MIN_386();
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF);
     const IEMOPBINSIZES * const pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_imul_two_eflags);
-    IEMOP_BODY_BINARY_rv_rm(pImpl->pfnNormalU16, pImpl->pfnNormalU32, pImpl->pfnNormalU64, 1);
+    IEMOP_BODY_BINARY_rv_rm(pImpl->pfnNormalU16, pImpl->pfnNormalU32, pImpl->pfnNormalU64, 1, IEM_MC_F_MIN_386);
 }
 
 
@@ -10693,7 +10691,7 @@ FNIEMOP_DEF(iemOp_popcnt_Gv_Ev)
     {   NULL, NULL, iemAImpl_popcnt_u16_fallback, NULL, iemAImpl_popcnt_u32_fallback, NULL, iemAImpl_popcnt_u64_fallback, NULL };
 #endif
     const IEMOPBINSIZES * const pImpl = IEM_SELECT_HOST_OR_FALLBACK(fPopCnt, &s_Native, &s_Fallback);
-    IEMOP_BODY_BINARY_rv_rm(pImpl->pfnNormalU16, pImpl->pfnNormalU32, pImpl->pfnNormalU64, 1);
+    IEMOP_BODY_BINARY_rv_rm(pImpl->pfnNormalU16, pImpl->pfnNormalU32, pImpl->pfnNormalU64, 1, IEM_MC_F_NOT_286_OR_OLDER);
 }
 
 
@@ -11319,7 +11317,7 @@ FNIEMOP_DEF(iemOp_tzcnt_Gv_Ev)
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_PF);
     const IEMOPBINSIZES * const pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT_EX(s_iemAImpl_tzcnt_eflags,
                                                                             IEM_GET_HOST_CPU_FEATURES(pVCpu)->fBmi1);
-    IEMOP_BODY_BINARY_rv_rm(pImpl->pfnNormalU16, pImpl->pfnNormalU32, pImpl->pfnNormalU64, 1);
+    IEMOP_BODY_BINARY_rv_rm(pImpl->pfnNormalU16, pImpl->pfnNormalU32, pImpl->pfnNormalU64, 1, IEM_MC_F_NOT_286_OR_OLDER);
 }
 
 
@@ -11356,7 +11354,7 @@ FNIEMOP_DEF(iemOp_lzcnt_Gv_Ev)
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_PF);
     const IEMOPBINSIZES * const pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT_EX(s_iemAImpl_lzcnt_eflags,
                                                                             IEM_GET_HOST_CPU_FEATURES(pVCpu)->fBmi1);
-    IEMOP_BODY_BINARY_rv_rm(pImpl->pfnNormalU16, pImpl->pfnNormalU32, pImpl->pfnNormalU64, 1);
+    IEMOP_BODY_BINARY_rv_rm(pImpl->pfnNormalU16, pImpl->pfnNormalU32, pImpl->pfnNormalU64, 1, IEM_MC_F_NOT_286_OR_OLDER);
 }
 
 

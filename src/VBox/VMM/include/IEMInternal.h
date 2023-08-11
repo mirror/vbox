@@ -543,6 +543,8 @@ AssertCompileSizeAlignment(IEMTLB, 64);
 /** @name IEM_MC_F_XXX - MC block flags/clues.
  * @{ */
 #define IEM_MC_F_ONLY_8086          RT_BIT_32(0)
+#define IEM_MC_F_MIN_186            RT_BIT_32(1)
+#define IEM_MC_F_MIN_286            RT_BIT_32(2)
 #define IEM_MC_F_NOT_286_OR_OLDER   IEM_MC_F_MIN_386
 #define IEM_MC_F_MIN_386            RT_BIT_32(3)
 #define IEM_MC_F_MIN_486            RT_BIT_32(4)

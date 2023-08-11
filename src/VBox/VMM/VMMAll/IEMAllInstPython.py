@@ -1937,15 +1937,17 @@ class McCppPreProc(McCppGeneric):
 
 ## IEM_MC_F_XXX values.
 g_kdMcFlags = {
-    'IEM_MC_F_ONLY_8086':           True,
-    'IEM_MC_F_NOT_286_OR_OLDER':    True,
-    'IEM_MC_F_MIN_386':             True,
-    'IEM_MC_F_MIN_486':             True,
-    'IEM_MC_F_MIN_PENTIUM':         True,
-    'IEM_MC_F_MIN_PENTIUM_II':      True,
-    'IEM_MC_F_MIN_CORE':            True,
-    'IEM_MC_F_64BIT':               True,
-    'IEM_MC_F_NOT_64BIT':           True,
+    'IEM_MC_F_ONLY_8086':           (),
+    'IEM_MC_F_MIN_186':             (),
+    'IEM_MC_F_MIN_286':             (),
+    'IEM_MC_F_NOT_286_OR_OLDER':    (),
+    'IEM_MC_F_MIN_386':             ('IEM_MC_F_NOT_286_OR_OLDER',),
+    'IEM_MC_F_MIN_486':             ('IEM_MC_F_NOT_286_OR_OLDER',),
+    'IEM_MC_F_MIN_PENTIUM':         ('IEM_MC_F_NOT_286_OR_OLDER',),
+    'IEM_MC_F_MIN_PENTIUM_II':      ('IEM_MC_F_NOT_286_OR_OLDER',),
+    'IEM_MC_F_MIN_CORE':            ('IEM_MC_F_NOT_286_OR_OLDER',),
+    'IEM_MC_F_64BIT':               ('IEM_MC_F_NOT_286_OR_OLDER',),
+    'IEM_MC_F_NOT_64BIT':           (),
 };
 class McBlock(object):
     """
@@ -2036,6 +2038,8 @@ class McBlock(object):
                 sFlag = sFlag.strip();
                 if sFlag in g_kdMcFlags:
                     oSelf.dMcFlags[sFlag] = True;
+                    for sFlag2 in g_kdMcFlags[sFlag]:
+                        oSelf.dMcFlags[sFlag2] = True;
                 else:
                     oSelf.raiseStmtError(sName, 'Unknown flag: %s' % (sFlag, ));
 

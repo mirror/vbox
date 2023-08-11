@@ -38,7 +38,7 @@
  *
  * @note Used both in OneByte and TwoByte0f.
  */
-#define IEMOP_BODY_BINARY_rv_rm(a_fnNormalU16, a_fnNormalU32, a_fnNormalU64, a_fModifiesDstReg) \
+#define IEMOP_BODY_BINARY_rv_rm(a_fnNormalU16, a_fnNormalU32, a_fnNormalU64, a_fModifiesDstReg, a_f16BitMcFlag) \
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); \
     \
     /* \
@@ -49,7 +49,7 @@
         switch (pVCpu->iem.s.enmEffOpSize) \
         { \
             case IEMMODE_16BIT: \
-                IEM_MC_BEGIN(3, 0, 0); \
+                IEM_MC_BEGIN(3, 0, a_f16BitMcFlag); \
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint16_t *, pu16Dst, 0); \
                 IEM_MC_ARG(uint16_t,   u16Src,  1); \
@@ -109,7 +109,7 @@
         switch (pVCpu->iem.s.enmEffOpSize) \
         { \
             case IEMMODE_16BIT: \
-                IEM_MC_BEGIN(3, 1, 0); \
+                IEM_MC_BEGIN(3, 1, a_f16BitMcFlag); \
                 IEM_MC_ARG(uint16_t *, pu16Dst, 0); \
                 IEM_MC_ARG(uint16_t,   u16Src,  1); \
                 IEM_MC_ARG(uint32_t *, pEFlags, 2); \

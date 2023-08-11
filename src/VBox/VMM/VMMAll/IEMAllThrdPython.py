@@ -129,10 +129,6 @@ class ThreadedFunctionVariation(object):
 
     ## @name Variations.
     ## These variations will match translation block selection/distinctions as well.
-    ## @note Effective operand size is generally handled in the decoder, at present
-    ##       we only do variations on addressing and memory accessing.
-    ## @todo Blocks without addressing should have 64-bit and 32-bit PC update
-    ##       variations to reduce code size (see iemRegAddToRip).
     ## @{
     ksVariation_Default     = '';               ##< No variations - only used by IEM_MC_DEFER_TO_CIMPL_X_RET.
     ksVariation_16          = '_16';            ##< 16-bit mode code (386+).
@@ -162,6 +158,23 @@ class ThreadedFunctionVariation(object):
         ksVariation_32,
         ksVariation_64,
     );
+    kasVariationsWithoutAddressNot286 = (
+        ksVariation_16,
+        ksVariation_32,
+        ksVariation_64,
+    );
+    kasVariationsWithoutAddressNot286Not64 = (
+        ksVariation_16,
+        ksVariation_32,
+    );
+    kasVariationsWithoutAddressNot64 = (
+        ksVariation_16,
+        ksVariation_16_Pre386,
+        ksVariation_32,
+    );
+    kasVariationsWithoutAddressOnly64 = (
+        ksVariation_64,
+    );
     kasVariationsWithAddress = (
         ksVariation_16,
         ksVariation_16_Addr32,
@@ -169,6 +182,36 @@ class ThreadedFunctionVariation(object):
         ksVariation_32,
         ksVariation_32_Flat,
         ksVariation_32_Addr16,
+        ksVariation_64,
+        ksVariation_64_FsGs,
+        ksVariation_64_Addr32,
+    );
+    kasVariationsWithAddressNot286 = (
+        ksVariation_16,
+        ksVariation_16_Addr32,
+        ksVariation_32,
+        ksVariation_32_Flat,
+        ksVariation_32_Addr16,
+        ksVariation_64,
+        ksVariation_64_FsGs,
+        ksVariation_64_Addr32,
+    );
+    kasVariationsWithAddressNot286Not64 = (
+        ksVariation_16,
+        ksVariation_16_Addr32,
+        ksVariation_32,
+        ksVariation_32_Flat,
+        ksVariation_32_Addr16,
+    );
+    kasVariationsWithAddressNot64 = (
+        ksVariation_16,
+        ksVariation_16_Addr32,
+        ksVariation_16_Pre386,
+        ksVariation_32,
+        ksVariation_32_Flat,
+        ksVariation_32_Addr16,
+    );
+    kasVariationsWithAddressOnly64 = (
         ksVariation_64,
         ksVariation_64_FsGs,
         ksVariation_64_Addr32,
@@ -1138,20 +1181,42 @@ class ThreadedFunction(object):
         # Scan the statements for local variables and call arguments (self.dVariables).
         self.analyzeFindVariablesAndCallArgs(aoStmts);
 
-        # Create variations if needed.
+        # Create variations as needed.
         if iai.McStmt.findStmtByNames(aoStmts,
                                       { 'IEM_MC_DEFER_TO_CIMPL_0_RET': True,
                                         'IEM_MC_DEFER_TO_CIMPL_1_RET': True,
                                         'IEM_MC_DEFER_TO_CIMPL_2_RET': True,
                                         'IEM_MC_DEFER_TO_CIMPL_3_RET': True, }):
-            self.aoVariations = [ThreadedFunctionVariation(self, ThreadedFunctionVariation.ksVariation_Default),];
+            asVariations = [ThreadedFunctionVariation.ksVariation_Default,];
 
         elif iai.McStmt.findStmtByNames(aoStmts, {'IEM_MC_CALC_RM_EFF_ADDR' : True,}):
-            self.aoVariations = [ThreadedFunctionVariation(self, sVar)
-                                 for sVar in ThreadedFunctionVariation.kasVariationsWithAddress];
+            if 'IEM_MC_F_64BIT' in self.oMcBlock.dMcFlags:
+                asVariations = ThreadedFunctionVariation.kasVariationsWithAddressOnly64;
+            elif 'IEM_MC_F_NOT_64BIT' in self.oMcBlock.dMcFlags and 'IEM_MC_F_NOT_286_OR_OLDER' in self.oMcBlock.dMcFlags:
+                asVariations = ThreadedFunctionVariation.kasVariationsWithAddressNot286Not64;
+            elif 'IEM_MC_F_NOT_286_OR_OLDER' in self.oMcBlock.dMcFlags:
+                asVariations = ThreadedFunctionVariation.kasVariationsWithAddressNot286;
+            elif 'IEM_MC_F_NOT_64BIT' in self.oMcBlock.dMcFlags:
+                asVariations = ThreadedFunctionVariation.kasVariationsWithAddressNot64;
+            elif 'IEM_MC_F_ONLY_8086' in self.oMcBlock.dMcFlags:
+                asVariations = [ThreadedFunctionVariation.ksVariation_16_Pre386,];
+            else:
+                asVariations = ThreadedFunctionVariation.kasVariationsWithAddress;
         else:
-            self.aoVariations = [ThreadedFunctionVariation(self, sVar)
-                                 for sVar in ThreadedFunctionVariation.kasVariationsWithoutAddress];
+            if 'IEM_MC_F_64BIT' in self.oMcBlock.dMcFlags:
+                asVariations = ThreadedFunctionVariation.kasVariationsWithoutAddressOnly64;
+            elif 'IEM_MC_F_NOT_64BIT' in self.oMcBlock.dMcFlags and 'IEM_MC_F_NOT_286_OR_OLDER' in self.oMcBlock.dMcFlags:
+                asVariations = ThreadedFunctionVariation.kasVariationsWithoutAddressNot286Not64;
+            elif 'IEM_MC_F_NOT_286_OR_OLDER' in self.oMcBlock.dMcFlags:
+                asVariations = ThreadedFunctionVariation.kasVariationsWithoutAddressNot286;
+            elif 'IEM_MC_F_NOT_64BIT' in self.oMcBlock.dMcFlags:
+                asVariations = ThreadedFunctionVariation.kasVariationsWithoutAddressNot64;
+            elif 'IEM_MC_F_ONLY_8086' in self.oMcBlock.dMcFlags:
+                asVariations = [ThreadedFunctionVariation.ksVariation_16_Pre386,];
+            else:
+                asVariations = ThreadedFunctionVariation.kasVariationsWithoutAddress;
+
+        self.aoVariations = [ThreadedFunctionVariation(self, sVar) for sVar in asVariations];
 
         # Dictionary variant of the list.
         self.dVariations = { oVar.sVariation: oVar for oVar in self.aoVariations };
@@ -1168,8 +1233,7 @@ class ThreadedFunction(object):
         the call to the threaded functions for the block.
         """
         # Special case for only default variation:
-        if len(self.aoVariations) == 1:
-            assert  self.aoVariations[0].sVariation == ThreadedFunctionVariation.ksVariation_Default;
+        if len(self.aoVariations) == 1  and  self.aoVariations[0].sVariation == ThreadedFunctionVariation.ksVariation_Default:
             return self.aoVariations[0].emitThreadedCallStmts(0);
 
         #
@@ -1236,13 +1300,12 @@ class ThreadedFunction(object):
         # This ASSUMES that (IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | IEM_F_MODE_CPUMODE_MASK) == 7!
         #
         fSimple = True;
-        sSwitchValue = 'pVCpu->iem.s.fExec & IEM_F_MODE_CPUMODE_MASK';
+        sSwitchValue  = '(pVCpu->iem.s.fExec & (IEM_F_MODE_CPUMODE_MASK | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK))';
         if (   ThrdFnVar.ksVariation_64_Addr32 in dByVari
             or ThrdFnVar.ksVariation_64_FsGs   in dByVari
             or ThrdFnVar.ksVariation_32_Addr16 in dByVari
             or ThrdFnVar.ksVariation_32_Flat   in dByVari
             or ThrdFnVar.ksVariation_16_Addr32 in dByVari):
-            sSwitchValue  = '(pVCpu->iem.s.fExec & (IEM_F_MODE_CPUMODE_MASK | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK))';
             sSwitchValue += ' | (pVCpu->iem.s.enmEffAddrMode == (pVCpu->iem.s.fExec & IEM_F_MODE_CPUMODE_MASK) ? 0 : 8)';
             # Accesses via FS and GS and CS goes thru non-FLAT functions. (CS
             # is not writable in 32-bit mode (at least), thus the penalty mode
@@ -1281,7 +1344,10 @@ class ThreadedFunction(object):
             ]);
         elif ThrdFnVar.ksVariation_32 in dByVari:
             assert fSimple;
-            aoCases.append(Case('IEMMODE_32BIT', ThrdFnVar.ksVariation_32));
+            aoCases.extend([
+                Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK', None), # fall thru
+                Case('IEMMODE_32BIT',                                       ThrdFnVar.ksVariation_32),
+            ]);
 
         if ThrdFnVar.ksVariation_16_Addr32 in dByVari:
             assert not fSimple;
@@ -1302,10 +1368,12 @@ class ThreadedFunction(object):
         # If the case bodies are all the same, except for the function called,
         # we can reduce the code size and hopefully compile time.
         #
-        assert aoCases[0].aoBody;
+        iFirstCaseWithBody = 0;
+        while not aoCases[iFirstCaseWithBody].aoBody:
+            iFirstCaseWithBody += 1
         fAllSameCases = True
-        for iCase in range(1, len(aoCases)):
-            fAllSameCases = fAllSameCases and aoCases[iCase].isSame(aoCases[0]);
+        for iCase in range(iFirstCaseWithBody + 1, len(aoCases)):
+            fAllSameCases = fAllSameCases and aoCases[iCase].isSame(aoCases[iFirstCaseWithBody]);
         #if fDbg: print('fAllSameCases=%s %s' % (fAllSameCases, self.oMcBlock.sFunction,));
         if fAllSameCases:
             aoStmts = [
@@ -1319,7 +1387,7 @@ class ThreadedFunction(object):
                 iai.McCppGeneric('IEM_NOT_REACHED_DEFAULT_CASE_RET();', cchIndent = 4),
                 iai.McCppGeneric('}'),
             ]);
-            aoStmts.extend(dByVari[aoCases[0].sVarNm].emitThreadedCallStmts(0, 'enmFunction'));
+            aoStmts.extend(dByVari[aoCases[iFirstCaseWithBody].sVarNm].emitThreadedCallStmts(0, 'enmFunction'));
 
         else:
             #
