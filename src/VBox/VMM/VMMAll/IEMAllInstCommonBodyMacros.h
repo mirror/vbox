@@ -49,7 +49,7 @@
         switch (pVCpu->iem.s.enmEffOpSize) \
         { \
             case IEMMODE_16BIT: \
-                IEM_MC_BEGIN(3, 0); \
+                IEM_MC_BEGIN(3, 0, 0); \
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint16_t *, pu16Dst, 0); \
                 IEM_MC_ARG(uint16_t,   u16Src,  1); \
@@ -65,7 +65,7 @@
                 break; \
             \
             case IEMMODE_32BIT: \
-                IEM_MC_BEGIN(3, 0); \
+                IEM_MC_BEGIN(3, 0, IEM_MC_F_MIN_386); \
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint32_t *, pu32Dst, 0); \
                 IEM_MC_ARG(uint32_t,   u32Src,  1); \
@@ -83,7 +83,7 @@
                 break; \
             \
             case IEMMODE_64BIT: \
-                IEM_MC_BEGIN(3, 0); \
+                IEM_MC_BEGIN(3, 0, IEM_MC_F_64BIT); \
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
                 IEM_MC_ARG(uint64_t *, pu64Dst, 0); \
                 IEM_MC_ARG(uint64_t,   u64Src,  1); \
@@ -109,7 +109,7 @@
         switch (pVCpu->iem.s.enmEffOpSize) \
         { \
             case IEMMODE_16BIT: \
-                IEM_MC_BEGIN(3, 1); \
+                IEM_MC_BEGIN(3, 1, 0); \
                 IEM_MC_ARG(uint16_t *, pu16Dst, 0); \
                 IEM_MC_ARG(uint16_t,   u16Src,  1); \
                 IEM_MC_ARG(uint32_t *, pEFlags, 2); \
@@ -127,7 +127,7 @@
                 break; \
             \
             case IEMMODE_32BIT: \
-                IEM_MC_BEGIN(3, 1); \
+                IEM_MC_BEGIN(3, 1, IEM_MC_F_MIN_386); \
                 IEM_MC_ARG(uint32_t *, pu32Dst, 0); \
                 IEM_MC_ARG(uint32_t,   u32Src,  1); \
                 IEM_MC_ARG(uint32_t *, pEFlags, 2); \
@@ -147,7 +147,7 @@
                 break; \
             \
             case IEMMODE_64BIT: \
-                IEM_MC_BEGIN(3, 1); \
+                IEM_MC_BEGIN(3, 1, IEM_MC_F_64BIT); \
                 IEM_MC_ARG(uint64_t *, pu64Dst, 0); \
                 IEM_MC_ARG(uint64_t,   u64Src,  1); \
                 IEM_MC_ARG(uint32_t *, pEFlags, 2); \

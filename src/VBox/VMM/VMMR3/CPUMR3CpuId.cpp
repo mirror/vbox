@@ -1392,7 +1392,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                            | X86_CPUID_FEATURE_ECX_SSSE3
                            //| X86_CPUID_FEATURE_ECX_CNTXID - no L1 context id (MSR++).
                            //| X86_CPUID_FEATURE_ECX_FMA   - not implemented yet.
-                           | PASSTHRU_FEATURE(pConfig->enmCmpXchg16b, pHstFeat->fMovCmpXchg16b, X86_CPUID_FEATURE_ECX_CX16)
+                           | PASSTHRU_FEATURE(pConfig->enmCmpXchg16b, pHstFeat->fCmpXchg16b, X86_CPUID_FEATURE_ECX_CX16)
                            /* ECX Bit 14 - xTPR Update Control. Processor supports changing IA32_MISC_ENABLES[bit 23]. */
                            //| X86_CPUID_FEATURE_ECX_TPRUPDATE
                            //| X86_CPUID_FEATURE_ECX_PDCM  - not implemented yet.

@@ -1935,6 +1935,18 @@ class McCppPreProc(McCppGeneric):
         return self.asParams[0] + '\n';
 
 
+## IEM_MC_F_XXX values.
+g_kdMcFlags = {
+    'IEM_MC_F_ONLY_8086':           True,
+    'IEM_MC_F_NOT_286_OR_OLDER':    True,
+    'IEM_MC_F_MIN_386':             True,
+    'IEM_MC_F_MIN_486':             True,
+    'IEM_MC_F_MIN_PENTIUM':         True,
+    'IEM_MC_F_MIN_PENTIUM_II':      True,
+    'IEM_MC_F_MIN_CORE':            True,
+    'IEM_MC_F_64BIT':               True,
+    'IEM_MC_F_NOT_64BIT':           True,
+};
 class McBlock(object):
     """
     Microcode block (IEM_MC_BEGIN ... IEM_MC_END, IEM_MC_DEFER_TO_CIMPL_x_RET).
@@ -1960,7 +1972,14 @@ class McBlock(object):
         ## The block number within the function.
         self.iInFunction  = iInFunction;
         self.cchIndent    = cchIndent if cchIndent else offBeginLine;
-        self.asLines      = []              # type: list(str)   ##< The raw lines the block is made up of.
+        ##< The raw lines the block is made up of.
+        self.asLines      = []              # type: list(str)
+        ## IEM_MC_BEGIN: Argument count.
+        self.cArgs        = -1;
+        ## IEM_MC_BEGIN: Locals count.
+        self.cLocals      = -1;
+        ## IEM_MC_BEGIN: IEM_MC_F_XXX dictionary
+        self.dMcFlags     = {}              # type: dict(str)
         ## Decoded statements in the block.
         self.aoStmts      = []              # type: list(McStmt)
 
@@ -2007,7 +2026,19 @@ class McBlock(object):
     @staticmethod
     def parseMcBegin(oSelf, sName, asParams):
         """ IEM_MC_BEGIN """
-        oSelf.checkStmtParamCount(sName, asParams, 2);
+        oSelf.checkStmtParamCount(sName, asParams, 3);
+        if oSelf.cArgs != -1  or  oSelf.cLocals != -1  or  oSelf.dMcFlags:
+            oSelf.raiseStmtError(sName, 'Used more than once!');
+        oSelf.cArgs   = int(asParams[0]);
+        oSelf.cLocals = int(asParams[1]);
+        if asParams[2] != '0':
+            for sFlag in asParams[2].split('|'):
+                sFlag = sFlag.strip();
+                if sFlag in g_kdMcFlags:
+                    oSelf.dMcFlags[sFlag] = True;
+                else:
+                    oSelf.raiseStmtError(sName, 'Unknown flag: %s' % (sFlag, ));
+
         return McBlock.parseMcGeneric(oSelf, sName, asParams);
 
     @staticmethod
@@ -2610,7 +2641,7 @@ g_dMcStmtParsers = {
     'IEM_MC_ASSIGN_TO_SMALLER':                                  (McBlock.parseMcGeneric,           False),
     'IEM_MC_ASSIGN_U8_SX_U64':                                   (McBlock.parseMcGeneric,           False),
     'IEM_MC_ASSIGN_U32_SX_U64':                                  (McBlock.parseMcGeneric,           False),
-    'IEM_MC_BEGIN':                                              (McBlock.parseMcGeneric,           False),
+    'IEM_MC_BEGIN':                                              (McBlock.parseMcBegin,             False),
     'IEM_MC_BROADCAST_XREG_U16_ZX_VLMAX':                        (McBlock.parseMcGeneric,           True),
     'IEM_MC_BROADCAST_XREG_U32_ZX_VLMAX':                        (McBlock.parseMcGeneric,           True),
     'IEM_MC_BROADCAST_XREG_U64_ZX_VLMAX':                        (McBlock.parseMcGeneric,           True),

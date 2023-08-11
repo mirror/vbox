@@ -39,7 +39,8 @@
  *
  * @{
  */
-#define IEM_MC_BEGIN(a_cArgs, a_cLocals)                {
+
+#define IEM_MC_BEGIN(a_cArgs, a_cLocals, a_fFlags)      {
 #define IEM_MC_END()                                    }
 
 /** Internal macro. */
@@ -141,6 +142,10 @@ AssertCompile(!((X86_CR0_EM | X86_CR0_TS) & X86_CR4_OSFXSR));
             return iemRaiseMathFault(pVCpu); \
     } while (0)
 AssertCompile(!((X86_CR0_EM | X86_CR0_TS) & X86_FSW_ES));
+/** @todo recomp: this one is slightly problematic as the recompiler doesn't
+ *        count the CPL into the TB key.  However it is safe enough for now, as
+ *        it calls iemRaiseGeneralProtectionFault0 directly so no calls will be
+ *        emitted for it. */
 #define IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO() \
     do { \
         if (RT_LIKELY(IEM_GET_CPL(pVCpu) == 0)) { /* probable */ } \

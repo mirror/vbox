@@ -419,6 +419,15 @@ void iemOpStubMsg2(PVMCPUCC pVCpu) RT_NOEXCEPT;
         /*nothing for now, maybe later... */ \
     } while (0)
 
+#define IEMOP_HLP_DONE_DECODING_EX(a_fFeature) \
+    do \
+    { \
+        if (RT_LIKELY(IEM_GET_GUEST_CPU_FEATURES(pVCpu)->a_fFeature)) \
+        { /* likely */ } \
+        else \
+            IEMOP_RAISE_INVALID_LOCK_PREFIX_RET(); \
+    } while (0)
+
 /**
  * Done decoding, raise \#UD exception if lock prefix present.
  */

@@ -540,6 +540,20 @@ AssertCompileSizeAlignment(IEMTLB, 64);
 #define IEMTLB_TAG_TO_ENTRY(a_pTlb, a_uTag) ( &(a_pTlb)->aEntries[IEMTLB_TAG_TO_INDEX(a_uTag)] )
 
 
+/** @name IEM_MC_F_XXX - MC block flags/clues.
+ * @{ */
+#define IEM_MC_F_ONLY_8086          RT_BIT_32(0)
+#define IEM_MC_F_NOT_286_OR_OLDER   IEM_MC_F_MIN_386
+#define IEM_MC_F_MIN_386            RT_BIT_32(3)
+#define IEM_MC_F_MIN_486            RT_BIT_32(4)
+#define IEM_MC_F_MIN_PENTIUM        RT_BIT_32(5)
+#define IEM_MC_F_MIN_PENTIUM_II     IEM_MC_F_MIN_PENTIUM
+#define IEM_MC_F_MIN_CORE           IEM_MC_F_MIN_PENTIUM
+#define IEM_MC_F_64BIT              RT_BIT_32(6)
+#define IEM_MC_F_NOT_64BIT          RT_BIT_32(7)
+/** @} */
+
+
 /** @name IEM_F_XXX - Execution mode flags (IEMCPU::fExec, IEMTB::fFlags).
  *
  * These flags are set when entering IEM and adjusted as code is executed, such

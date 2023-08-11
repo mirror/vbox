@@ -503,6 +503,15 @@ class ThreadedFunctionVariation(object):
         'IEM_MC_MEM_MAP_EX':                      (  3, 'IEM_MC_MEM_FLAT_MAP_EX' ),
     };
 
+    kdMemMcToFlatInfoStack = {
+        'IEM_MC_PUSH_U16':                        (  'IEM_MC_PUSH_FLAT32_U16', 'IEM_MC_PUSH_FLAT64_U16', ),
+        'IEM_MC_PUSH_U32':                        (  'IEM_MC_PUSH_FLAT32_U32', 'IEM_MC_PUSH_FLAT64_U32', ),
+        'IEM_MC_PUSH_U64':                        (  'IEM_MC_PUSH_U64',        'IEM_MC_PUSH_FLAT64_U64', ),
+        'IEM_MC_POP_U16':                         (  'IEM_MC_POP_FLAT32_U16',  'IEM_MC_POP_FLAT64_U16', ),
+        'IEM_MC_POP_U32':                         (  'IEM_MC_POP_FLAT32_U32',  'IEM_MC_POP_FLAT64_U32', ),
+        'IEM_MC_POP_U64':                         (  'IEM_MC_POP_U64',         'IEM_MC_POP_FLAT64_U64', ),
+    };
+
     def analyzeMorphStmtForThreaded(self, aoStmts, iParamRef = 0):
         """
         Transforms (copy) the statements into those for the threaded function.
@@ -753,6 +762,8 @@ class ThreadedFunctionVariation(object):
             if isinstance(oStmt, iai.McCppPreProc):
                 continue;
             if oStmt.isCppStmt() and oStmt.fDecode:
+                continue;
+            if oStmt.sName in ('IEM_MC_BEGIN',):
                 continue;
 
             if isinstance(oStmt, iai.McStmtVar):
@@ -1810,14 +1821,14 @@ class IEMThreadedGenerator(object):
                 # Single MC block.  Just extract it and insert the replacement.
                 #
                 elif oThreadedFunction.oMcBlock.iBeginLine != oThreadedFunction.oMcBlock.iEndLine:
-                    assert sLine.count('IEM_MC_') == 1;
+                    assert sLine.count('IEM_MC_') - sLine.count('IEM_MC_F_') == 1, 'sLine="%s"' % (sLine,);
                     oOut.write(sLine[:oThreadedFunction.oMcBlock.offBeginLine]);
                     sModified = oThreadedFunction.generateInputCode().strip();
                     oOut.write(sModified);
 
                     iLine = oThreadedFunction.oMcBlock.iEndLine;
                     sLine = oParser.asLines[iLine - 1];
-                    assert sLine.count('IEM_MC_') == 1 or len(oThreadedFunction.oMcBlock.aoStmts) == 1;
+                    assert sLine.count('IEM_MC_') - sLine.count('IEM_MC_F_') == 1 or len(oThreadedFunction.oMcBlock.aoStmts) == 1;
                     oOut.write(sLine[oThreadedFunction.oMcBlock.offAfterEnd : ]);
 
                     # Advance
