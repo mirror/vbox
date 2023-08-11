@@ -602,3 +602,22 @@ bool UICloudNetworkingStuff::applyCloudMachineSettingsForm(const CCloudMachine &
         new UINotificationProgressCloudMachineSettingsFormApply(comForm, strMachineName);
     return pParent->handleNow(pNotification);
 }
+
+void UICloudNetworkingStuff::createCloudMachineClone(const QString &strProviderShortName,
+                                                     const QString &strProfileName,
+                                                     const CCloudMachine &comCloudMachine,
+                                                     const QString &strCloneName,
+                                                     UINotificationCenter *pParent)
+{
+    /* Create cloud client: */
+    CCloudClient comCloudClient = cloudClientByName(strProviderShortName,
+                                                    strProfileName,
+                                                    pParent);
+    if (comCloudClient.isNotNull())
+    {
+        /* Clone specified cloud machine asynchronously: */
+        UINotificationProgressCloudMachineClone *pNotification =
+            new UINotificationProgressCloudMachineClone(comCloudClient, comCloudMachine, strCloneName);
+        pParent->append(pNotification);
+    }
+}

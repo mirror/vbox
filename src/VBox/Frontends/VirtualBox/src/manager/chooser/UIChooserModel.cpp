@@ -1563,6 +1563,7 @@ void UIChooserModel::prepareContextMenu()
     if (QMenu *pMenuMachine = m_cloudMenus.value(UIChooserNodeType_Machine))
     {
         pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Settings));
+        pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Clone));
         pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Remove));
         pMenuMachine->addSeparator();
         pMenuMachine->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow));

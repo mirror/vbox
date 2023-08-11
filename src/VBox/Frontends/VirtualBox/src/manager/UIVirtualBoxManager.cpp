@@ -49,6 +49,7 @@
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
 #include "QIFileDialog.h"
+#include "QILineEdit.h"
 #include "QIRichTextLabel.h"
 #include "UIActionPoolManager.h"
 #include "UICloudConsoleManager.h"
@@ -164,6 +165,46 @@ private:
     QIRichTextLabel   *m_pHelpViewer;
     /** Holds the text-editor instance. */
     QTextEdit         *m_pTextEditor;
+    /** Holds the button-box instance. */
+    QIDialogButtonBox *m_pButtonBox;
+};
+
+/** QDialog extension used to ask for a cloud machine clone name. */
+class UIAcquireCloudMachineCloneNameDialog : public QIWithRetranslateUI<QDialog>
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs dialog passing @a pParent to the base-class.
+      * @param  strName  Brings the clone name by default. */
+    UIAcquireCloudMachineCloneNameDialog(QWidget *pParent, const QString &strName);
+
+    /** Returns value. */
+    QString value() const;
+
+protected:
+
+    /** Handles translation event. */
+    virtual void retranslateUi() RT_OVERRIDE;
+
+private slots:
+
+    /** Performs revalidation. */
+    void sltRevalidate();
+
+private:
+
+    /** Prepares all. */
+    void prepare();
+    /** Prepares widgets. */
+    void prepareWidgets();
+
+    /** Holds the clone name by default. */
+    QString  m_strName;
+
+    /** Holds the text-editor instance. */
+    QILineEdit        *m_pEditor;
     /** Holds the button-box instance. */
     QIDialogButtonBox *m_pButtonBox;
 };
@@ -432,6 +473,80 @@ bool UIAcquirePublicKeyDialog::loadFileContents(const QString &strPath, bool fIg
     /* File opened and read, filling editor: */
     m_pTextEditor->setPlainText(file.readAll());
     return true;
+}
+
+
+/*********************************************************************************************************************************
+*   Class UIAcquireCloudMachineCloneNameDialog implementation.                                                                   *
+*********************************************************************************************************************************/
+
+UIAcquireCloudMachineCloneNameDialog::UIAcquireCloudMachineCloneNameDialog(QWidget *pParent, const QString &strName)
+    : QIWithRetranslateUI<QDialog>(pParent)
+    , m_strName(strName)
+    , m_pEditor(0)
+    , m_pButtonBox(0)
+{
+    prepare();
+    sltRevalidate();
+}
+
+QString UIAcquireCloudMachineCloneNameDialog::value() const
+{
+    return m_pEditor ? m_pEditor->text() : QString();
+}
+
+void UIAcquireCloudMachineCloneNameDialog::prepare()
+{
+    /* Prepare widgets: */
+    prepareWidgets();
+    /* Apply language settings: */
+    retranslateUi();
+
+    /* Resize to suitable size: */
+    const int iMinimumHeightHint = minimumSizeHint().height();
+    resize(iMinimumHeightHint * 1.618, iMinimumHeightHint);
+}
+
+void UIAcquireCloudMachineCloneNameDialog::prepareWidgets()
+{
+    /* Prepare layout: */
+    QVBoxLayout *pLayout = new QVBoxLayout(this);
+    if (pLayout)
+    {
+        /* Prepare editor: */
+        m_pEditor = new QILineEdit(this);
+        if (m_pEditor)
+        {
+            m_pEditor->setText(m_strName);
+            m_pEditor->setMinimumWidthByText(QString().fill('0', 20));
+            connect(m_pEditor, &QILineEdit::textChanged, this, &UIAcquireCloudMachineCloneNameDialog::sltRevalidate);
+            pLayout->addWidget(m_pEditor);
+        }
+
+        /* Intermediate stretch: */
+        pLayout->addStretch();
+
+        /* Prepare button-box: */
+        m_pButtonBox = new QIDialogButtonBox(this);
+        if (m_pButtonBox)
+        {
+            m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+            connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UIAcquireCloudMachineCloneNameDialog::accept);
+            connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIAcquireCloudMachineCloneNameDialog::reject);
+            pLayout->addWidget(m_pButtonBox);
+        }
+    }
+}
+
+void UIAcquireCloudMachineCloneNameDialog::retranslateUi()
+{
+    setWindowTitle(tr("Clone name"));
+    m_pEditor->setPlaceholderText(tr("Enter clone name"));
+}
+
+void UIAcquireCloudMachineCloneNameDialog::sltRevalidate()
+{
+    m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(!m_pEditor->text().isEmpty());
 }
 
 
@@ -1236,15 +1351,48 @@ void UIVirtualBoxManager::sltCloseSettingsDialog()
 
 void UIVirtualBoxManager::sltOpenCloneMachineWizard()
 {
-    /* Configure wizard variables: */
-    m_fSnapshotCloneByDefault = false;
-    QAction *pAction = qobject_cast<QAction*>(sender());
-    if (   pAction
-        && pAction == actionPool()->action(UIActionIndexMN_M_Snapshot_S_Clone))
-        m_fSnapshotCloneByDefault = true;
+    /* Get current items: */
+    QList<UIVirtualMachineItem*> items = currentItems();
 
-    /* Open Clone VM Wizard: */
-    sltOpenWizard(WizardType_CloneVM);
+    /* We are opening Clone VM wizard for local VMs only: */
+    if (isItemsLocal(items))
+    {
+        /* Configure wizard variables: */
+        m_fSnapshotCloneByDefault = false;
+        QAction *pAction = qobject_cast<QAction*>(sender());
+        if (   pAction
+            && pAction == actionPool()->action(UIActionIndexMN_M_Snapshot_S_Clone))
+            m_fSnapshotCloneByDefault = true;
+
+        /* Open Clone VM Wizard: */
+        sltOpenWizard(WizardType_CloneVM);
+    }
+    /* For cloud VMs we have no such wizard for now: */
+    else if (isItemsCloud(items))
+    {
+        /* Acquire item, propose clone name: */
+        UIVirtualMachineItem *pItem = items.first();
+        const QString strName = QString("%1_clone").arg(pItem->name());
+
+        /* Create Acquire Clone VM name dialog: */
+        QPointer<UIAcquireCloudMachineCloneNameDialog> pDialog = new UIAcquireCloudMachineCloneNameDialog(this, strName);
+        if (pDialog->exec() == QDialog::Accepted)
+        {
+            /* Parse current full group name: */
+            const QString strFullGroupName = m_pWidget->fullGroupName();
+            const QString strProviderShortName = strFullGroupName.section('/', 1, 1);
+            const QString strProfileName = strFullGroupName.section('/', 2, 2);
+
+            /* Acquire cloud machine: */
+            const CCloudMachine comMachine = pItem->toCloud()->machine();
+
+            /* Clone VM: */
+            createCloudMachineClone(strProviderShortName, strProfileName,
+                                    comMachine, pDialog->value(),
+                                    gpNotificationCenter);
+       }
+       delete pDialog;
+    }
 }
 
 void UIVirtualBoxManager::sltPerformMachineMove()
@@ -2997,6 +3145,7 @@ void UIVirtualBoxManager::updateMenuMachine(QMenu *pMenu)
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Add));
         pMenu->addSeparator();
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Settings));
+        pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Clone));
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Remove));
         pMenu->addSeparator();
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow));
@@ -3543,7 +3692,6 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         {
             return !isGroupSavingInProgress() &&
                    items.size() == 1 &&
-                   pItem->toLocal() &&
                    pItem->isItemEditable();
         }
         case UIActionIndexMN_M_Machine_S_ExportToOCI:

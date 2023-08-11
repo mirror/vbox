@@ -3187,6 +3187,62 @@ void UINotificationProgressCloudMachineRemove::sltHandleProgressFinished()
 
 
 /*********************************************************************************************************************************
+*   Class UINotificationProgressCloudMachineClone implementation.                                                                *
+*********************************************************************************************************************************/
+
+UINotificationProgressCloudMachineClone::UINotificationProgressCloudMachineClone(const CCloudClient &comClient,
+                                                                                 const CCloudMachine &comMachine,
+                                                                                 const QString &strCloneName)
+    : m_comClient(comClient)
+    , m_comMachine(comMachine)
+    , m_strCloneName(strCloneName)
+{
+}
+
+QString UINotificationProgressCloudMachineClone::name() const
+{
+    return UINotificationProgress::tr("Cloning cloud VM ...");
+}
+
+QString UINotificationProgressCloudMachineClone::details() const
+{
+    return UINotificationProgress::tr("<b>VM Name:</b> %1").arg(m_strName);
+}
+
+CProgress UINotificationProgressCloudMachineClone::createProgress(COMResult &comResult)
+{
+    // This is wrong, we need to acquire ocid, we have no one for now ..
+    m_uId = m_comMachine.GetId();
+    if (!m_comMachine.isOk())
+    {
+        /* Store COM result: */
+        comResult = m_comMachine;
+        /* Return progress-wrapper: */
+        return CProgress();
+    }
+    /* Acquire cloud VM name: */
+    m_strName = m_comMachine.GetName();
+    if (!m_comMachine.isOk())
+    {
+        /* Store COM result: */
+        comResult = m_comMachine;
+        /* Return progress-wrapper: */
+        return CProgress();
+    }
+
+    /* Initialize progress-wrapper: */
+    CCloudMachine comCloneMachine;
+    // This is wrong, we need to pass ocid, we have no one for now ..
+    const QString strId = m_uId.toString();
+    CProgress comProgress = m_comClient.CloneInstance(strId, m_strCloneName, comCloneMachine);
+    /* Store COM result: */
+    comResult = m_comMachine;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+
+/*********************************************************************************************************************************
 *   Class UINotificationProgressCloudMachineReset implementation.                                                                *
 *********************************************************************************************************************************/
 
