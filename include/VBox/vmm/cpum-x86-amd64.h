@@ -835,8 +835,10 @@ typedef struct CPUMFEATURES
     uint32_t        fMonitorMWait : 1;
     /** MWAIT Extensions present. */
     uint32_t        fMWaitExtensions : 1;
+    /** Supports CMPXCHG8B. */
+    uint32_t        fCmpXchg8b : 1;
     /** Supports CMPXCHG16B in 64-bit mode. */
-    uint32_t        fMovCmpXchg16b : 1;
+    uint32_t        fCmpXchg16b : 1;
     /** Supports CLFLUSH. */
     uint32_t        fClFlush : 1;
     /** Supports CLFLUSHOPT. */
@@ -947,7 +949,7 @@ typedef struct CPUMFEATURES
 
     /** Alignment padding / reserved for future use (96 bits total, plus 12 bytes
      *  prior to the bit fields -> total of 24 bytes) */
-    uint32_t        fPadding0 : 23;
+    uint32_t        fPadding0 : 22;
 
 
     /** @name SVM
