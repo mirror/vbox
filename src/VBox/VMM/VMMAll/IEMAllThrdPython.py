@@ -520,16 +520,6 @@ class ThreadedFunctionVariation(object):
         'IEM_MC_STORE_MEM_U128_ALIGN_SSE':        (  0, 'IEM_MC_STORE_MEM_FLAT_U128_ALIGN_SSE' ),
         'IEM_MC_STORE_MEM_U256':                  (  0, 'IEM_MC_STORE_MEM_FLAT_U256' ),
         'IEM_MC_STORE_MEM_U256_ALIGN_AVX':        (  0, 'IEM_MC_STORE_MEM_FLAT_U256_ALIGN_AVX' ),
-        'IEM_MC_PUSH_U16':                        ( -1, 'IEM_MC_FLAT_PUSH_U16' ),
-        'IEM_MC_PUSH_U32':                        ( -1, 'IEM_MC_FLAT_PUSH_U32' ),
-        'IEM_MC_PUSH_U32_SREG':                   ( -1, 'IEM_MC_FLAT_PUSH_U32_SREG' ),
-        'IEM_MC_PUSH_U64':                        ( -1, 'IEM_MC_FLAT_PUSH_U64' ),
-        'IEM_MC_POP_U16':                         ( -1, 'IEM_MC_FLAT_POP_U16' ),
-        'IEM_MC_POP_U32':                         ( -1, 'IEM_MC_FLAT_POP_U32' ),
-        'IEM_MC_POP_U64':                         ( -1, 'IEM_MC_FLAT_POP_U64' ),
-        'IEM_MC_POP_EX_U16':                      ( -1, 'IEM_MC_FLAT_POP_EX_U16' ),
-        'IEM_MC_POP_EX_U32':                      ( -1, 'IEM_MC_FLAT_POP_EX_U32' ),
-        'IEM_MC_POP_EX_U64':                      ( -1, 'IEM_MC_FLAT_POP_EX_U64' ),
         'IEM_MC_MEM_MAP':                         (  2, 'IEM_MC_MEM_FLAT_MAP' ),
         'IEM_MC_MEM_MAP_U8_RW':                   (  2, 'IEM_MC_MEM_FLAT_MAP_U8_RW' ),
         'IEM_MC_MEM_MAP_U8_RO':                   (  2, 'IEM_MC_MEM_FLAT_MAP_U8_RO' ),
@@ -547,12 +537,13 @@ class ThreadedFunctionVariation(object):
     };
 
     kdMemMcToFlatInfoStack = {
-        'IEM_MC_PUSH_U16':                        (  'IEM_MC_PUSH_FLAT32_U16', 'IEM_MC_PUSH_FLAT64_U16', ),
-        'IEM_MC_PUSH_U32':                        (  'IEM_MC_PUSH_FLAT32_U32', 'IEM_MC_PUSH_FLAT64_U32', ),
-        'IEM_MC_PUSH_U64':                        (  'IEM_MC_PUSH_U64',        'IEM_MC_PUSH_FLAT64_U64', ),
-        'IEM_MC_POP_U16':                         (  'IEM_MC_POP_FLAT32_U16',  'IEM_MC_POP_FLAT64_U16', ),
-        'IEM_MC_POP_U32':                         (  'IEM_MC_POP_FLAT32_U32',  'IEM_MC_POP_FLAT64_U32', ),
-        'IEM_MC_POP_U64':                         (  'IEM_MC_POP_U64',         'IEM_MC_POP_FLAT64_U64', ),
+        'IEM_MC_PUSH_U16':                        (  'IEM_MC_FLAT32_PUSH_U16',      'IEM_MC_FLAT64_PUSH_U16', ),
+        'IEM_MC_PUSH_U32':                        (  'IEM_MC_FLAT32_PUSH_U32',      'IEM_MC_PUSH_U32', ),
+        'IEM_MC_PUSH_U64':                        (  'IEM_MC_PUSH_U64',             'IEM_MC_FLAT64_PUSH_U64', ),
+        'IEM_MC_PUSH_U32_SREG':                   (  'IEM_MC_FLAT32_PUSH_U32_SREG', 'IEM_MC_PUSH_U32_SREG' ),
+        'IEM_MC_POP_U16':                         (  'IEM_MC_FLAT32_POP_U16',       'IEM_MC_FLAT64_POP_U16', ),
+        'IEM_MC_POP_U32':                         (  'IEM_MC_FLAT32_POP_U32',       'IEM_MC_POP_U32', ),
+        'IEM_MC_POP_U64':                         (  'IEM_MC_POP_U64',              'IEM_MC_FLAT64_POP_U64', ),
     };
 
     def analyzeMorphStmtForThreaded(self, aoStmts, iParamRef = 0):
@@ -655,9 +646,7 @@ class ThreadedFunctionVariation(object):
                 elif (    self.sVariation in (self.ksVariation_64, self.ksVariation_32_Flat,)
                       and (   oNewStmt.sName.startswith('IEM_MC_FETCH_MEM')
                            or (oNewStmt.sName.startswith('IEM_MC_STORE_MEM_') and oNewStmt.sName.find('_BY_REF') < 0)
-                           or oNewStmt.sName.startswith('IEM_MC_MEM_MAP')
-                           or (oNewStmt.sName.startswith('IEM_MC_PUSH') and oNewStmt.sName.find('_FPU') < 0)
-                           or oNewStmt.sName.startswith('IEM_MC_POP') )):
+                           or oNewStmt.sName.startswith('IEM_MC_MEM_MAP') )):
                     idxEffSeg = self.kdMemMcToFlatInfo[oNewStmt.sName][0];
                     if idxEffSeg != -1:
                         if (    oNewStmt.asParams[idxEffSeg].find('iEffSeg') < 0
@@ -666,6 +655,13 @@ class ThreadedFunctionVariation(object):
                                               % (idxEffSeg + 1, oNewStmt.sName, oNewStmt.asParams[idxEffSeg],));
                         oNewStmt.asParams.pop(idxEffSeg);
                     oNewStmt.sName = self.kdMemMcToFlatInfo[oNewStmt.sName][1];
+
+                # ... PUSH and POP also needs flat variants, but these differ a little.
+                elif (    self.sVariation in (self.ksVariation_64, self.ksVariation_32_Flat,)
+                      and (   (oNewStmt.sName.startswith('IEM_MC_PUSH') and oNewStmt.sName.find('_FPU') < 0)
+                           or oNewStmt.sName.startswith('IEM_MC_POP'))):
+                    oNewStmt.sName = self.kdMemMcToFlatInfoStack[oNewStmt.sName][int(self.sVariation == self.ksVariation_64)];
+
 
                 # Process branches of conditionals recursively.
                 if isinstance(oStmt, iai.McStmtCond):
