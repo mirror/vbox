@@ -3474,7 +3474,6 @@ AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
 # define TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(a_pVCpu, a_GCPtrEff, a_TmplMemType) 0
 #endif
 
-
 #define TMPL_MEM_TYPE       uint8_t
 #define TMPL_MEM_TYPE_ALIGN 0
 #define TMPL_MEM_TYPE_SIZE  1
@@ -3482,6 +3481,8 @@ AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
 #define TMPL_MEM_FMT_TYPE   "%#04x"
 #define TMPL_MEM_FMT_DESC   "byte"
 #include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
+
+#define TMPL_MEM_WITH_STACK
 
 #define TMPL_MEM_TYPE       uint16_t
 #define TMPL_MEM_TYPE_ALIGN 1
@@ -3491,6 +3492,7 @@ AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
 #define TMPL_MEM_FMT_DESC   "word"
 #include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
 
+#define TMPL_WITH_PUSH_SREG
 #define TMPL_MEM_TYPE       uint32_t
 #define TMPL_MEM_TYPE_ALIGN 3
 #define TMPL_MEM_TYPE_SIZE  4
@@ -3498,6 +3500,7 @@ AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
 #define TMPL_MEM_FMT_TYPE   "%#010x"
 #define TMPL_MEM_FMT_DESC   "dword"
 #include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
+#undef  TMPL_WITH_PUSH_SREG
 
 #define TMPL_MEM_TYPE       uint64_t
 #define TMPL_MEM_TYPE_ALIGN 7
@@ -3506,6 +3509,8 @@ AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
 #define TMPL_MEM_FMT_TYPE   "%#018RX64"
 #define TMPL_MEM_FMT_DESC   "qword"
 #include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
+
+#undef TMPL_MEM_WITH_STACK
 
 #define TMPL_MEM_NO_STORE
 #define TMPL_MEM_NO_MAPPING
@@ -3518,6 +3523,7 @@ AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
 #include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
 
 #undef TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK
+
 /** @} */
 
 

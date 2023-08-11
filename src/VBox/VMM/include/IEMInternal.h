@@ -4717,6 +4717,28 @@ VBOXSTRICTRC    iemMemStackPopU64(PVMCPUCC pVCpu, uint64_t *pu64Value) RT_NOEXCE
 VBOXSTRICTRC    iemMemStackPopU16Ex(PVMCPUCC pVCpu, uint16_t *pu16Value, PRTUINT64U pTmpRsp) RT_NOEXCEPT;
 VBOXSTRICTRC    iemMemStackPopU32Ex(PVMCPUCC pVCpu, uint32_t *pu32Value, PRTUINT64U pTmpRsp) RT_NOEXCEPT;
 VBOXSTRICTRC    iemMemStackPopU64Ex(PVMCPUCC pVCpu, uint64_t *pu64Value, PRTUINT64U pTmpRsp) RT_NOEXCEPT;
+
+#ifdef IEM_WITH_SETJMP
+void            iemMemStackPushU16SafeJmp(PVMCPUCC pVCpu, uint16_t uValue) IEM_NOEXCEPT_MAY_LONGJMP;
+void            iemMemStackPushU32SafeJmp(PVMCPUCC pVCpu, uint32_t uValue) IEM_NOEXCEPT_MAY_LONGJMP;
+void            iemMemStackPushU32SRegSafeJmp(PVMCPUCC pVCpu, uint32_t uValue) IEM_NOEXCEPT_MAY_LONGJMP;
+void            iemMemStackPushU64SafeJmp(PVMCPUCC pVCpu, uint64_t uValue) IEM_NOEXCEPT_MAY_LONGJMP;
+uint16_t        iemMemStackPopU16SafeJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP;
+uint32_t        iemMemStackPopU32SafeJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP;
+uint64_t        iemMemStackPopU64SafeJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP;
+
+void            iemMemFlat32StackPushU16SafeJmp(PVMCPUCC pVCpu, uint16_t uValue) IEM_NOEXCEPT_MAY_LONGJMP;
+void            iemMemFlat32StackPushU32SafeJmp(PVMCPUCC pVCpu, uint32_t uValue) IEM_NOEXCEPT_MAY_LONGJMP;
+void            iemMemFlat32StackPushU32SRegSafeJmp(PVMCPUCC pVCpu, uint32_t uValue) IEM_NOEXCEPT_MAY_LONGJMP;
+uint16_t        iemMemFlat32StackPopU16SafeJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP;
+uint32_t        iemMemFlat32StackPopU32SafeJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP;
+
+void            iemMemFlat64StackPushU16SafeJmp(PVMCPUCC pVCpu, uint16_t uValue) IEM_NOEXCEPT_MAY_LONGJMP;
+void            iemMemFlat64StackPushU64SafeJmp(PVMCPUCC pVCpu, uint64_t uValue) IEM_NOEXCEPT_MAY_LONGJMP;
+uint16_t        iemMemFlat64StackPopU16SafeJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP;
+uint64_t        iemMemFlat64StackPopU64SafeJmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP;
+#endif
+
 /** @} */
 
 /** @name IEMAllCImpl.cpp

@@ -1284,29 +1284,57 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #endif
 
 /* Regular stack push and pop: */
-#define IEM_MC_PUSH_U16(a_u16Value)             IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU16(pVCpu, (a_u16Value)))
-#define IEM_MC_PUSH_U32(a_u32Value)             IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU32(pVCpu, (a_u32Value)))
-#define IEM_MC_PUSH_U32_SREG(a_u32Value)        IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU32SReg(pVCpu, (a_u32Value)))
-#define IEM_MC_PUSH_U64(a_u64Value)             IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU64(pVCpu, (a_u64Value)))
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_PUSH_U16(a_u16Value)            IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU16(pVCpu, (a_u16Value)))
+# define IEM_MC_PUSH_U32(a_u32Value)            IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU32(pVCpu, (a_u32Value)))
+# define IEM_MC_PUSH_U32_SREG(a_uSegVal)        IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU32SReg(pVCpu, (a_uSegVal)))
+# define IEM_MC_PUSH_U64(a_u64Value)            IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU64(pVCpu, (a_u64Value)))
 
-#define IEM_MC_POP_U16(a_pu16Value)             IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU16(pVCpu, (a_pu16Value)))
-#define IEM_MC_POP_U32(a_pu32Value)             IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU32(pVCpu, (a_pu32Value)))
-#define IEM_MC_POP_U64(a_pu64Value)             IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU64(pVCpu, (a_pu64Value)))
+# define IEM_MC_POP_U16(a_pu16Value)            IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU16(pVCpu, (a_pu16Value)))
+# define IEM_MC_POP_U32(a_pu32Value)            IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU32(pVCpu, (a_pu32Value)))
+# define IEM_MC_POP_U64(a_pu64Value)            IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU64(pVCpu, (a_pu64Value)))
+#else
+# define IEM_MC_PUSH_U16(a_u16Value)            iemMemStackPushU16Jmp(pVCpu, (a_u16Value))
+# define IEM_MC_PUSH_U32(a_u32Value)            iemMemStackPushU32Jmp(pVCpu, (a_u32Value))
+# define IEM_MC_PUSH_U32_SREG(a_uSegVal)        iemMemStackPushU32SRegJmp(pVCpu, (a_uSegVal))
+# define IEM_MC_PUSH_U64(a_u64Value)            iemMemStackPushU64Jmp(pVCpu, (a_u64Value))
+
+# define IEM_MC_POP_U16(a_pu16Value)            (*(a_pu16Value) = iemMemStackPopU16Jmp(pVCpu))
+# define IEM_MC_POP_U32(a_pu32Value)            (*(a_pu32Value) = iemMemStackPopU32Jmp(pVCpu))
+# define IEM_MC_POP_U64(a_pu64Value)            (*(a_pu64Value) = iemMemStackPopU64Jmp(pVCpu))
+#endif
 
 /* 32-bit flat stack push and pop: */
-#define IEM_MC_FLAT32_PUSH_U16(a_u16Value)      IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU16(pVCpu, (a_u16Value)))
-#define IEM_MC_FLAT32_PUSH_U32(a_u32Value)      IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU32(pVCpu, (a_u32Value)))
-#define IEM_MC_FLAT32_PUSH_U32_SREG(a_u32Value) IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU32SReg(pVCpu, (a_u32Value)))
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_FLAT32_PUSH_U16(a_u16Value)     IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU16(pVCpu, (a_u16Value)))
+# define IEM_MC_FLAT32_PUSH_U32(a_u32Value)     IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU32(pVCpu, (a_u32Value)))
+# define IEM_MC_FLAT32_PUSH_U32_SREG(a_uSegVal) IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU32SReg(pVCpu, (a_uSegVal)))
 
-#define IEM_MC_FLAT32_POP_U16(a_pu16Value)      IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU16(pVCpu, (a_pu16Value)))
-#define IEM_MC_FLAT32_POP_U32(a_pu32Value)      IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU32(pVCpu, (a_pu32Value)))
+# define IEM_MC_FLAT32_POP_U16(a_pu16Value)     IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU16(pVCpu, (a_pu16Value)))
+# define IEM_MC_FLAT32_POP_U32(a_pu32Value)     IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU32(pVCpu, (a_pu32Value)))
+#else
+# define IEM_MC_FLAT32_PUSH_U16(a_u16Value)     iemMemFlat32StackPushU16Jmp(pVCpu, (a_u16Value))
+# define IEM_MC_FLAT32_PUSH_U32(a_u32Value)     iemMemFlat32StackPushU32Jmp(pVCpu, (a_u32Value))
+# define IEM_MC_FLAT32_PUSH_U32_SREG(a_uSegVal) iemMemFlat32StackPushU32SRegJmp(pVCpu, (a_uSegVal))
+
+# define IEM_MC_FLAT32_POP_U16(a_pu16Value)     (*(a_pu16Value) = iemMemFlat32StackPopU16Jmp(pVCpu))
+# define IEM_MC_FLAT32_POP_U32(a_pu32Value)     (*(a_pu32Value) = iemMemFlat32StackPopU32Jmp(pVCpu))
+#endif
 
 /* 64-bit flat stack push and pop: */
-#define IEM_MC_FLAT64_PUSH_U16(a_u16Value)      IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU16(pVCpu, (a_u16Value)))
-#define IEM_MC_FLAT64_PUSH_U64(a_u64Value)      IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU64(pVCpu, (a_u64Value)))
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_FLAT64_PUSH_U16(a_u16Value)     IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU16(pVCpu, (a_u16Value)))
+# define IEM_MC_FLAT64_PUSH_U64(a_u64Value)     IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU64(pVCpu, (a_u64Value)))
 
-#define IEM_MC_FLAT64_POP_U16(a_pu16Value)      IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU16(pVCpu, (a_pu16Value)))
-#define IEM_MC_FLAT64_POP_U64(a_pu64Value)      IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU64(pVCpu, (a_pu64Value)))
+# define IEM_MC_FLAT64_POP_U16(a_pu16Value)     IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU16(pVCpu, (a_pu16Value)))
+# define IEM_MC_FLAT64_POP_U64(a_pu64Value)     IEM_MC_RETURN_ON_FAILURE(iemMemStackPopU64(pVCpu, (a_pu64Value)))
+#else
+# define IEM_MC_FLAT64_PUSH_U16(a_u16Value)     iemMemFlat64StackPushU16Jmp(pVCpu, (a_u16Value))
+# define IEM_MC_FLAT64_PUSH_U64(a_u64Value)     iemMemFlat64StackPushU64Jmp(pVCpu, (a_u64Value))
+
+# define IEM_MC_FLAT64_POP_U16(a_pu16Value)     (*(a_pu16Value) = iemMemFlat64StackPopU16Jmp(pVCpu))
+# define IEM_MC_FLAT64_POP_U64(a_pu64Value)     (*(a_pu64Value) = iemMemFlat64StackPopU64Jmp(pVCpu))
+#endif
 
 
 /** Maps guest memory for direct or bounce buffered access.

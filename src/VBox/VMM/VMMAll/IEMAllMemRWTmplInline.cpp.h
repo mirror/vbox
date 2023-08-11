@@ -633,6 +633,99 @@ RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,RoJmp)(PVMCPUCC pVCpu, uint8_t *pb
 # endif /* !TMPL_MEM_NO_MAPPING */
 
 
+# ifdef TMPL_MEM_WITH_STACK
+#  ifdef IEM_WITH_SETJMP
+
+/**
+ * Stack push function that longjmps on error.
+ */
+DECL_INLINE_THROW(void)
+RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_TYPE uValue) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu, uValue);
+}
+
+
+/**
+ * Stack pop function that longjmps on error.
+ */
+DECL_INLINE_THROW(TMPL_MEM_TYPE)
+RT_CONCAT3(iemMemStackPop,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    return RT_CONCAT3(iemMemStackPop,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu);
+}
+
+#   ifdef TMPL_WITH_PUSH_SREG
+/**
+ * Stack segment push function that longjmps on error.
+ */
+DECL_INLINE_THROW(void)
+RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, TMPL_MEM_TYPE uValue) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SRegSafeJmp)(pVCpu, uValue);
+}
+
+#   endif
+#   if TMPL_MEM_TYPE_SIZE != 8
+
+/**
+ * 32-bit flat stack push function that longjmps on error.
+ */
+DECL_INLINE_THROW(void)
+RT_CONCAT3(iemMemFlat32StackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_TYPE uValue) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu, uValue);
+}
+
+
+/**
+ * 32-bit flat stack pop function that longjmps on error.
+ */
+DECL_INLINE_THROW(TMPL_MEM_TYPE)
+RT_CONCAT3(iemMemFlat32StackPop,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    return RT_CONCAT3(iemMemStackPop,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu);
+}
+
+#   endif /* TMPL_MEM_TYPE_SIZE != 8*/
+#   ifdef TMPL_WITH_PUSH_SREG
+/**
+ * 32-bit flat stack segment push function that longjmps on error.
+ */
+DECL_INLINE_THROW(void)
+RT_CONCAT3(iemMemFlat32StackPush,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, TMPL_MEM_TYPE uValue) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SRegSafeJmp)(pVCpu, uValue);
+}
+
+#   endif
+#   if TMPL_MEM_TYPE_SIZE != 4
+
+/**
+ * 64-bit flat stack push function that longjmps on error.
+ */
+DECL_INLINE_THROW(void)
+RT_CONCAT3(iemMemFlat64StackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_TYPE uValue) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu, uValue);
+}
+
+
+/**
+ * 64-bit flat stack pop function that longjmps on error.
+ */
+DECL_INLINE_THROW(TMPL_MEM_TYPE)
+RT_CONCAT3(iemMemFlat64StackPop,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    return RT_CONCAT3(iemMemStackPop,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu);
+}
+
+#endif /* TMPL_MEM_TYPE_SIZE != 4 */
+
+#  endif /* IEM_WITH_SETJMP */
+# endif /* TMPL_MEM_WITH_STACK */
+
+
 #endif /* IEM_WITH_SETJMP */
 
 #undef TMPL_MEM_TYPE
