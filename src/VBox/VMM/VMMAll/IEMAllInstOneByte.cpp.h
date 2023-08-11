@@ -2344,7 +2344,7 @@ FNIEMOP_DEF_1(iemOpCommonPopGReg, uint8_t, iReg)
             break;
 
         case IEMMODE_32BIT:
-            IEM_MC_BEGIN(0, 1, IEM_MC_F_MIN_386);
+            IEM_MC_BEGIN(0, 1, IEM_MC_F_MIN_386 | IEM_MC_F_NOT_64BIT);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint32_t *, pu32Dst);
             IEM_MC_REF_GREG_U32(pu32Dst, iReg);
@@ -2881,7 +2881,7 @@ FNIEMOP_DEF(iemOp_push_Iz)
             break;
 
         case IEMMODE_32BIT:
-            IEM_MC_BEGIN(0, 0, IEM_MC_F_MIN_386);
+            IEM_MC_BEGIN(0, 0, IEM_MC_F_MIN_386 | IEM_MC_F_NOT_64BIT);
             uint32_t u32Imm; IEM_OPCODE_GET_NEXT_U32(&u32Imm);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_PUSH_U32(u32Imm);
@@ -3087,7 +3087,7 @@ FNIEMOP_DEF(iemOp_push_Ib)
             IEM_MC_END();
             break;
         case IEMMODE_32BIT:
-            IEM_MC_BEGIN(0, 0, IEM_MC_F_MIN_386);
+            IEM_MC_BEGIN(0, 0, IEM_MC_F_MIN_386 | IEM_MC_F_NOT_64BIT);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_PUSH_U32(i8Imm);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -13517,7 +13517,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_push_Ev, uint8_t, bRm)
             break;
 
         case IEMMODE_32BIT:
-            IEM_MC_BEGIN(0, 2, IEM_MC_F_MIN_386);
+            IEM_MC_BEGIN(0, 2, IEM_MC_F_MIN_386 | IEM_MC_F_NOT_64BIT);
             IEM_MC_LOCAL(uint32_t,  u32Src);
             IEM_MC_LOCAL(RTGCPTR,   GCPtrEffSrc);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
