@@ -1007,6 +1007,53 @@ RT_CONCAT3(iemMemFlat32StackPush,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, TMPL_
 DECL_INLINE_THROW(void)
 RT_CONCAT3(iemMemFlat64StackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_TYPE uValue) IEM_NOEXCEPT_MAY_LONGJMP
 {
+#  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+    /*
+     * Calculate the new stack pointer and check that the item doesn't cross a page boundrary.
+     */
+    uint64_t const uNewRsp = pVCpu->cpum.GstCtx.rsp - sizeof(TMPL_MEM_TYPE);
+#  if TMPL_MEM_TYPE_SIZE > 1
+    if (RT_LIKELY(   !(uNewRsp & TMPL_MEM_TYPE_ALIGN)
+                  || TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(pVCpu, uNewRsp, TMPL_MEM_TYPE) ))
+#  endif
+    {
+        /*
+         * TLB lookup.
+         */
+        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, uNewRsp);
+        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
+        if (RT_LIKELY(pTlbe->uTag == uTag))
+        {
+            /*
+             * Check TLB page table level access flags.
+             */
+            AssertCompile(IEMTLBE_F_PT_NO_USER == 4);
+            uint64_t const fNoUser = (IEM_GET_CPL(pVCpu) + 1) & IEMTLBE_F_PT_NO_USER;
+            if (RT_LIKELY(   (pTlbe->fFlagsAndPhysRev & (  IEMTLBE_F_PHYS_REV       | IEMTLBE_F_NO_MAPPINGR3
+                                                         | IEMTLBE_F_PG_UNASSIGNED  | IEMTLBE_F_PG_NO_WRITE
+                                                         | IEMTLBE_F_PT_NO_ACCESSED | IEMTLBE_F_PT_NO_DIRTY
+                                                         | IEMTLBE_F_PT_NO_WRITE    | fNoUser))
+                          == pVCpu->iem.s.DataTlb.uTlbPhysRev))
+            {
+                /*
+                 * Do the push and return.
+                 */
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+                Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                Log8(("IEM WR " TMPL_MEM_FMT_DESC " SS|%RX64 (<-%RX64): " TMPL_MEM_FMT_TYPE "\n",
+                      uNewRsp, pVCpu->cpum.GstCtx.esp, uValue));
+                *(TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[uNewRsp & GUEST_PAGE_OFFSET_MASK] = uValue;
+                pVCpu->cpum.GstCtx.rsp = uNewRsp;
+                return;
+            }
+        }
+    }
+
+    /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
+       outdated page pointer, or other troubles.  (This will do a TLB load.) */
+    Log10Func(("%RX64 falling back\n", uNewRsp));
+#  endif
     RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu, uValue);
 }
 
@@ -1017,6 +1064,52 @@ RT_CONCAT3(iemMemFlat64StackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_
 DECL_INLINE_THROW(TMPL_MEM_TYPE)
 RT_CONCAT3(iemMemFlat64StackPop,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
 {
+#  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
+    /*
+     * Calculate the new stack pointer and check that the item doesn't cross a page boundrary.
+     */
+    uint64_t const uOldRsp = pVCpu->cpum.GstCtx.rsp;
+#  if TMPL_MEM_TYPE_SIZE > 1
+    if (RT_LIKELY(   !(uOldRsp & TMPL_MEM_TYPE_ALIGN)
+                  || TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK(pVCpu, uOldRsp, TMPL_MEM_TYPE) ))
+#  endif
+    {
+        /*
+         * TLB lookup.
+         */
+        uint64_t const uTag  = IEMTLB_CALC_TAG(    &pVCpu->iem.s.DataTlb, uOldRsp);
+        PIEMTLBENTRY   pTlbe = IEMTLB_TAG_TO_ENTRY(&pVCpu->iem.s.DataTlb, uTag);
+        if (RT_LIKELY(pTlbe->uTag == uTag))
+        {
+            /*
+             * Check TLB page table level access flags.
+             */
+            AssertCompile(IEMTLBE_F_PT_NO_USER == 4);
+            uint64_t const fNoUser = (IEM_GET_CPL(pVCpu) + 1) & IEMTLBE_F_PT_NO_USER;
+            if (RT_LIKELY(   (pTlbe->fFlagsAndPhysRev & (  IEMTLBE_F_PHYS_REV       | IEMTLBE_F_NO_MAPPINGR3
+                                                         | IEMTLBE_F_PG_UNASSIGNED  | IEMTLBE_F_PG_NO_READ
+                                                         | IEMTLBE_F_PT_NO_ACCESSED | fNoUser))
+                          == pVCpu->iem.s.DataTlb.uTlbPhysRev))
+            {
+                /*
+                 * Do the push and return.
+                 */
+                STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
+                Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
+                Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
+                TMPL_MEM_TYPE const uRet = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[uOldRsp & GUEST_PAGE_OFFSET_MASK];
+                pVCpu->cpum.GstCtx.rsp = uOldRsp + sizeof(TMPL_MEM_TYPE);
+                Log9(("IEM RD " TMPL_MEM_FMT_DESC " SS|%RX64 (->%RX64): " TMPL_MEM_FMT_TYPE "\n",
+                      uOldRsp, uOldRsp + sizeof(TMPL_MEM_TYPE), uRet));
+                return uRet;
+            }
+        }
+    }
+
+    /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
+       outdated page pointer, or other troubles.  (This will do a TLB load.) */
+    Log10Func(("%RX64 falling back\n", uOldRsp));
+#  endif
     return RT_CONCAT3(iemMemStackPop,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu);
 }
 
