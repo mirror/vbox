@@ -2082,7 +2082,7 @@ class TestVmManager(object):
         #       sKind = 'Windows10_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi', sChipsetType = 'ich9'),
 
         # W11
-        TestVm('tst-win11-64-efi',           kfGrpStdSmoke,       sHd = '7.0/win11/win11-64-edited.vdi',
+        TestVm('tst-win11-64-efi',           kfGrpStdSmoke,       sHd = '7.0/win11/t-win11-64-efi-2.vdi',
                sKind = 'Windows11_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
                sHddControllerType = 'SATA Controller', sDvdControllerType = 'SATA Controller'),
 
