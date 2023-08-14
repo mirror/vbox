@@ -50,7 +50,6 @@
 # error Have not implemented TMPL_MEM_TYPE_ALIGN smaller than TMPL_MEM_TYPE_SIZE - 1.
 #endif
 
-/** @todo fix logging   */
 
 #ifdef IEM_WITH_SETJMP
 
@@ -101,7 +100,7 @@ RT_CONCAT3(iemMemFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 TMPL_MEM_TYPE const uRet = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
-                Log9(("IEM RD " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, uRet));
+                LogEx(LOG_GROUP_IEM_MEM,("IEM RD " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, uRet));
                 return uRet;
             }
         }
@@ -109,7 +108,7 @@ RT_CONCAT3(iemMemFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg
 
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
-    Log10Func(("%u:%RGv falling back\n", iSegReg, GCPtrMem));
+    LogEx(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %u:%RGv falling back\n", LOG_FN_NAME, iSegReg, GCPtrMem));
 # endif
     return RT_CONCAT3(iemMemFetchData,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu, iSegReg, GCPtrMem);
 }
@@ -155,7 +154,7 @@ RT_CONCAT3(iemMemFlatFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCP
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 TMPL_MEM_TYPE const uRet = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK];
-                Log9(("IEM RD " TMPL_MEM_FMT_DESC " %RGv: " TMPL_MEM_FMT_TYPE "\n", GCPtrMem, uRet));
+                LogEx(LOG_GROUP_IEM_MEM,("IEM RD " TMPL_MEM_FMT_DESC " %RGv: " TMPL_MEM_FMT_TYPE "\n", GCPtrMem, uRet));
                 return uRet;
             }
         }
@@ -163,7 +162,7 @@ RT_CONCAT3(iemMemFlatFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCP
 
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
-    Log10Func(("%RGv falling back\n", GCPtrMem));
+    LogEx(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RGv falling back\n", LOG_FN_NAME, GCPtrMem));
 # endif
     return RT_CONCAT3(iemMemFetchData,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu, UINT8_MAX, GCPtrMem);
 }
@@ -219,7 +218,7 @@ RT_CONCAT3(iemMemStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 *(TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK] = uValue;
-                Log9(("IEM WR " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, uValue));
+                Log5Ex(LOG_GROUP_IEM_MEM,("IEM WR " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, uValue));
                 return;
             }
         }
@@ -227,7 +226,7 @@ RT_CONCAT3(iemMemStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg
 
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
-    Log10Func(("%u:%RGv falling back\n", iSegReg, GCPtrMem));
+    Log6Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %u:%RGv falling back\n", LOG_FN_NAME, iSegReg, GCPtrMem));
 #  endif
     RT_CONCAT3(iemMemStoreData,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu, iSegReg, GCPtrMem, uValue);
 }
@@ -273,7 +272,7 @@ RT_CONCAT3(iemMemFlatStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCP
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 *(TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK] = uValue;
-                Log9(("IEM WR " TMPL_MEM_FMT_DESC " %RGv: " TMPL_MEM_FMT_TYPE "\n", GCPtrMem, uValue));
+                Log5Ex(LOG_GROUP_IEM_MEM,("IEM WR " TMPL_MEM_FMT_DESC " %RGv: " TMPL_MEM_FMT_TYPE "\n", GCPtrMem, uValue));
                 return;
             }
         }
@@ -281,7 +280,7 @@ RT_CONCAT3(iemMemFlatStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCP
 
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
-    Log10Func(("%RGv falling back\n", GCPtrMem));
+    Log6Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RGv falling back\n", LOG_FN_NAME, GCPtrMem));
 #  endif
     RT_CONCAT3(iemMemStoreData,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu, UINT8_MAX, GCPtrMem, uValue);
 }
@@ -336,8 +335,8 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RwJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 *pbUnmapInfo = 0;
-                Log8(("IEM RW/map " TMPL_MEM_FMT_DESC " %d|%RGv: %p\n",
-                      iSegReg, GCPtrMem, &pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK]));
+                Log7Ex(LOG_GROUP_IEM_MEM,("IEM RW/map " TMPL_MEM_FMT_DESC " %d|%RGv: %p\n",
+                                          iSegReg, GCPtrMem, &pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK]));
                 return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
             }
         }
@@ -345,7 +344,7 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RwJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
 
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
-    Log10Func(("%u:%RGv falling back\n", iSegReg, GCPtrMem));
+    Log8Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %u:%RGv falling back\n", LOG_FN_NAME, iSegReg, GCPtrMem));
 #  endif
     return RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RwSafeJmp)(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
 }
@@ -392,8 +391,8 @@ RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,RwJmp)(PVMCPUCC pVCpu, uint8_t *pb
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 *pbUnmapInfo = 0;
-                Log8(("IEM RW/map " TMPL_MEM_FMT_DESC " %RGv: %p\n",
-                      GCPtrMem, &pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK]));
+                Log7Ex(LOG_GROUP_IEM_MEM,("IEM RW/map " TMPL_MEM_FMT_DESC " %RGv: %p\n",
+                                          GCPtrMem, &pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK]));
                 return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK];
             }
         }
@@ -401,7 +400,7 @@ RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,RwJmp)(PVMCPUCC pVCpu, uint8_t *pb
 
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
-    Log10Func(("%RGv falling back\n", GCPtrMem));
+    Log8Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RGv falling back\n", LOG_FN_NAME, GCPtrMem));
 #  endif
     return RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RwSafeJmp)(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
 }
@@ -449,8 +448,8 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,WoJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 *pbUnmapInfo = 0;
-                Log8(("IEM WO/map " TMPL_MEM_FMT_DESC " %d|%RGv: %p\n",
-                      iSegReg, GCPtrMem, &pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK]));
+                Log7Ex(LOG_GROUP_IEM_MEM,("IEM WO/map " TMPL_MEM_FMT_DESC " %d|%RGv: %p\n",
+                                          iSegReg, GCPtrMem, &pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK]));
                 return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
             }
         }
@@ -458,7 +457,7 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,WoJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
 
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
-    Log10Func(("%u:%RGv falling back\n", iSegReg, GCPtrMem));
+    Log8Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %u:%RGv falling back\n", LOG_FN_NAME, iSegReg, GCPtrMem));
 #  endif
     return RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,WoSafeJmp)(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
 }
@@ -505,8 +504,8 @@ RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,WoJmp)(PVMCPUCC pVCpu, uint8_t *pb
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 *pbUnmapInfo = 0;
-                Log8(("IEM WO/map " TMPL_MEM_FMT_DESC " %RGv: %p\n",
-                      GCPtrMem, &pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK]));
+                Log7Ex(LOG_GROUP_IEM_MEM,("IEM WO/map " TMPL_MEM_FMT_DESC " %RGv: %p\n",
+                                          GCPtrMem, &pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK]));
                 return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK];
             }
         }
@@ -514,7 +513,7 @@ RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,WoJmp)(PVMCPUCC pVCpu, uint8_t *pb
 
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
-    Log10Func(("%RGv falling back\n", GCPtrMem));
+    Log8Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RGv falling back\n", LOG_FN_NAME, GCPtrMem));
 #  endif
     return RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,WoSafeJmp)(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
 }
@@ -561,8 +560,8 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RoJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 *pbUnmapInfo = 0;
-                Log9(("IEM RO/map " TMPL_MEM_FMT_DESC " %d|%RGv: %p\n",
-                      iSegReg, GCPtrMem, &pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK]));
+                Log3Ex(LOG_GROUP_IEM_MEM,("IEM RO/map " TMPL_MEM_FMT_DESC " %d|%RGv: %p\n",
+                                          iSegReg, GCPtrMem, &pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK]));
                 return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
             }
         }
@@ -570,7 +569,7 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RoJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
 
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
-    Log10Func(("%u:%RGv falling back\n", iSegReg, GCPtrMem));
+    Log4Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %u:%RGv falling back\n", LOG_FN_NAME, iSegReg, GCPtrMem));
 #  endif
     return RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RoSafeJmp)(pVCpu, pbUnmapInfo, iSegReg, GCPtrMem);
 }
@@ -616,8 +615,8 @@ RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,RoJmp)(PVMCPUCC pVCpu, uint8_t *pb
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 *pbUnmapInfo = 0;
-                Log9(("IEM RO/map " TMPL_MEM_FMT_DESC " %RGv: %p\n",
-                      GCPtrMem, &pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK]));
+                Log3Ex(LOG_GROUP_IEM_MEM,("IEM RO/map " TMPL_MEM_FMT_DESC " %RGv: %p\n",
+                                          GCPtrMem, &pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK]));
                 return (TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[GCPtrMem & GUEST_PAGE_OFFSET_MASK];
             }
         }
@@ -625,7 +624,7 @@ RT_CONCAT3(iemMemFlatMapData,TMPL_MEM_FN_SUFF,RoJmp)(PVMCPUCC pVCpu, uint8_t *pb
 
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
-    Log10Func(("%RGv falling back\n", GCPtrMem));
+    Log4Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RGv falling back\n", LOG_FN_NAME, GCPtrMem));
 #  endif
     return RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RoSafeJmp)(pVCpu, pbUnmapInfo, UINT8_MAX, GCPtrMem);
 }
@@ -682,8 +681,8 @@ RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_TYPE u
                 STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
-                Log8(("IEM WR " TMPL_MEM_FMT_DESC " SS|%RGv (%RX64->%RX64): " TMPL_MEM_FMT_TYPE "\n",
-                      GCPtrEff, pVCpu->cpum.GstCtx.rsp, uNewRsp, uValue));
+                Log11Ex(LOG_GROUP_IEM_MEM,("IEM WR " TMPL_MEM_FMT_DESC " SS|%RGv (%RX64->%RX64): " TMPL_MEM_FMT_TYPE "\n",
+                                           GCPtrEff, pVCpu->cpum.GstCtx.rsp, uNewRsp, uValue));
                 *(TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK] = uValue;
                 pVCpu->cpum.GstCtx.rsp = uNewRsp;
                 return;
@@ -693,7 +692,7 @@ RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_TYPE u
 
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
-    Log10Func(("%RGv falling back\n", GCPtrEff));
+    Log12Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RGv falling back\n", LOG_FN_NAME, GCPtrEff));
 #  endif
     RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu, uValue);
 }
@@ -742,8 +741,8 @@ RT_CONCAT3(iemMemStackPop,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 TMPL_MEM_TYPE const uRet = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
-                Log9(("IEM RD " TMPL_MEM_FMT_DESC " SS|%RGv (%RX64->%RX64): " TMPL_MEM_FMT_TYPE "\n",
-                      GCPtrEff, pVCpu->cpum.GstCtx.rsp, uNewRsp, uRet));
+                Log9Ex(LOG_GROUP_IEM_MEM,("IEM RD " TMPL_MEM_FMT_DESC " SS|%RGv (%RX64->%RX64): " TMPL_MEM_FMT_TYPE "\n",
+                                          GCPtrEff, pVCpu->cpum.GstCtx.rsp, uNewRsp, uRet));
                 pVCpu->cpum.GstCtx.rsp = uNewRsp;
                 return uRet;
             }
@@ -752,7 +751,7 @@ RT_CONCAT3(iemMemStackPop,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY
 
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
-    Log10Func(("%RGv falling back\n", GCPtrEff));
+    Log10Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RGv falling back\n", LOG_FN_NAME, GCPtrEff));
 #  endif
     return RT_CONCAT3(iemMemStackPop,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu);
 }
@@ -804,8 +803,8 @@ RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, TMPL_MEM_TY
                 STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
-                Log8(("IEM WR " TMPL_MEM_FMT_DESC " SS|%RGv (%RX64->%RX64): " TMPL_MEM_FMT_TYPE " [sreg]\n",
-                      GCPtrEff, pVCpu->cpum.GstCtx.rsp, uNewRsp, uValue));
+                Log11Ex(LOG_GROUP_IEM_MEM,("IEM WR " TMPL_MEM_FMT_DESC " SS|%RGv (%RX64->%RX64): " TMPL_MEM_FMT_TYPE " [sreg]\n",
+                                           GCPtrEff, pVCpu->cpum.GstCtx.rsp, uNewRsp, uValue));
                 *(uint16_t *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK] = (uint16_t)uValue;
                 pVCpu->cpum.GstCtx.rsp = uNewRsp;
                 return;
@@ -815,7 +814,7 @@ RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, TMPL_MEM_TY
 
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
-    Log10Func(("%RGv falling back\n", GCPtrEff));
+    Log12Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RGv falling back\n", LOG_FN_NAME, GCPtrEff));
 #  endif
     RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SRegSafeJmp)(pVCpu, uValue);
 }
@@ -867,8 +866,8 @@ RT_CONCAT3(iemMemFlat32StackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_
                 STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
-                Log8(("IEM WR " TMPL_MEM_FMT_DESC " SS|%RX32 (<-%RX32): " TMPL_MEM_FMT_TYPE "\n",
-                      uNewEsp, pVCpu->cpum.GstCtx.esp, uValue));
+                Log11Ex(LOG_GROUP_IEM_MEM,("IEM WR " TMPL_MEM_FMT_DESC " SS|%RX32 (<-%RX32): " TMPL_MEM_FMT_TYPE "\n",
+                                           uNewEsp, pVCpu->cpum.GstCtx.esp, uValue));
                 *(TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[uNewEsp & GUEST_PAGE_OFFSET_MASK] = uValue;
                 pVCpu->cpum.GstCtx.rsp = uNewEsp;
                 return;
@@ -878,7 +877,7 @@ RT_CONCAT3(iemMemFlat32StackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_
 
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
-    Log10Func(("%RX32 falling back\n", uNewEsp));
+    Log12Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RX32 falling back\n", LOG_FN_NAME, uNewEsp));
 #  endif
     RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu, uValue);
 }
@@ -925,8 +924,8 @@ RT_CONCAT3(iemMemFlat32StackPop,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu) IEM_NOEXCE
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 TMPL_MEM_TYPE const uRet = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[uOldEsp & GUEST_PAGE_OFFSET_MASK];
                 pVCpu->cpum.GstCtx.rsp = uOldEsp + sizeof(TMPL_MEM_TYPE);
-                Log9(("IEM RD " TMPL_MEM_FMT_DESC " SS|%RX32 (->%RX32): " TMPL_MEM_FMT_TYPE "\n",
-                      uOldEsp, uOldEsp + sizeof(TMPL_MEM_TYPE), uRet));
+                Log9Ex(LOG_GROUP_IEM_MEM,("IEM RD " TMPL_MEM_FMT_DESC " SS|%RX32 (->%RX32): " TMPL_MEM_FMT_TYPE "\n",
+                                          uOldEsp, uOldEsp + sizeof(TMPL_MEM_TYPE), uRet));
                 return uRet;
             }
         }
@@ -934,7 +933,7 @@ RT_CONCAT3(iemMemFlat32StackPop,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu) IEM_NOEXCE
 
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
-    Log10Func(("%RX32 falling back\n", uOldEsp));
+    Log10Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RX32 falling back\n", LOG_FN_NAME, uOldEsp));
 #  endif
     return RT_CONCAT3(iemMemStackPop,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu);
 }
@@ -982,8 +981,8 @@ RT_CONCAT3(iemMemFlat32StackPush,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, TMPL_
                 STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
-                Log8(("IEM WR " TMPL_MEM_FMT_DESC " SS|%RX32 (<-%RX32): " TMPL_MEM_FMT_TYPE " [sreg]\n",
-                      uNewEsp, pVCpu->cpum.GstCtx.esp, uValue));
+                Log11Ex(LOG_GROUP_IEM_MEM,("IEM WR " TMPL_MEM_FMT_DESC " SS|%RX32 (<-%RX32): " TMPL_MEM_FMT_TYPE " [sreg]\n",
+                                           uNewEsp, pVCpu->cpum.GstCtx.esp, uValue));
                 *(uint16_t *)&pTlbe->pbMappingR3[uNewEsp & GUEST_PAGE_OFFSET_MASK] = (uint16_t)uValue;
                 pVCpu->cpum.GstCtx.rsp = uNewEsp;
                 return;
@@ -993,7 +992,7 @@ RT_CONCAT3(iemMemFlat32StackPush,TMPL_MEM_FN_SUFF,SRegJmp)(PVMCPUCC pVCpu, TMPL_
 
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
-    Log10Func(("%RX32 falling back\n", uNewEsp));
+    Log12Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RX32 falling back\n", LOG_FN_NAME, uNewEsp));
 #  endif
     RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SRegSafeJmp)(pVCpu, uValue);
 }
@@ -1041,8 +1040,8 @@ RT_CONCAT3(iemMemFlat64StackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_
                 STAM_STATS({pVCpu->iem.s.DataTlb.cTlbHits++;});
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
-                Log8(("IEM WR " TMPL_MEM_FMT_DESC " SS|%RX64 (<-%RX64): " TMPL_MEM_FMT_TYPE "\n",
-                      uNewRsp, pVCpu->cpum.GstCtx.esp, uValue));
+                Log11Ex(LOG_GROUP_IEM_MEM,("IEM WR " TMPL_MEM_FMT_DESC " SS|%RX64 (<-%RX64): " TMPL_MEM_FMT_TYPE "\n",
+                                           uNewRsp, pVCpu->cpum.GstCtx.esp, uValue));
                 *(TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[uNewRsp & GUEST_PAGE_OFFSET_MASK] = uValue;
                 pVCpu->cpum.GstCtx.rsp = uNewRsp;
                 return;
@@ -1052,7 +1051,7 @@ RT_CONCAT3(iemMemFlat64StackPush,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, TMPL_MEM_
 
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
-    Log10Func(("%RX64 falling back\n", uNewRsp));
+    Log12Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RX64 falling back\n", LOG_FN_NAME, uNewRsp));
 #  endif
     RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu, uValue);
 }
@@ -1099,8 +1098,8 @@ RT_CONCAT3(iemMemFlat64StackPop,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu) IEM_NOEXCE
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 TMPL_MEM_TYPE const uRet = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[uOldRsp & GUEST_PAGE_OFFSET_MASK];
                 pVCpu->cpum.GstCtx.rsp = uOldRsp + sizeof(TMPL_MEM_TYPE);
-                Log9(("IEM RD " TMPL_MEM_FMT_DESC " SS|%RX64 (->%RX64): " TMPL_MEM_FMT_TYPE "\n",
-                      uOldRsp, uOldRsp + sizeof(TMPL_MEM_TYPE), uRet));
+                Log9Ex(LOG_GROUP_IEM_MEM,("IEM RD " TMPL_MEM_FMT_DESC " SS|%RX64 (->%RX64): " TMPL_MEM_FMT_TYPE "\n",
+                                          uOldRsp, uOldRsp + sizeof(TMPL_MEM_TYPE), uRet));
                 return uRet;
             }
         }
@@ -1108,7 +1107,7 @@ RT_CONCAT3(iemMemFlat64StackPop,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu) IEM_NOEXCE
 
     /* Fall back on the slow careful approach in case of TLB miss, MMIO, exception
        outdated page pointer, or other troubles.  (This will do a TLB load.) */
-    Log10Func(("%RX64 falling back\n", uOldRsp));
+    Log10Ex(LOG_GROUP_IEM_MEM,(LOG_FN_FMT ": %RX64 falling back\n", LOG_FN_NAME, uOldRsp));
 #  endif
     return RT_CONCAT3(iemMemStackPop,TMPL_MEM_FN_SUFF,SafeJmp)(pVCpu);
 }

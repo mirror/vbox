@@ -99,13 +99,13 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PVMCPUCC pVCpu, VBOXST
                      || rcPassUp > VINF_EM_LAST
                      || rcPassUp < VBOXSTRICTRC_VAL(rcStrict))
             {
-                Log(("IEM: rcPassUp=%Rrc! rcStrict=%Rrc\n", rcPassUp, VBOXSTRICTRC_VAL(rcStrict)));
+                LogEx(LOG_GROUP_IEM,("IEM: rcPassUp=%Rrc! rcStrict=%Rrc\n", rcPassUp, VBOXSTRICTRC_VAL(rcStrict)));
                 pVCpu->iem.s.cRetPassUpStatus++;
                 rcStrict = rcPassUp;
             }
             else
             {
-                Log(("IEM: rcPassUp=%Rrc  rcStrict=%Rrc!\n", rcPassUp, VBOXSTRICTRC_VAL(rcStrict)));
+                LogEx(LOG_GROUP_IEM,("IEM: rcPassUp=%Rrc  rcStrict=%Rrc!\n", rcPassUp, VBOXSTRICTRC_VAL(rcStrict)));
                 pVCpu->iem.s.cRetInfStatuses++;
             }
         }
@@ -151,21 +151,21 @@ DECLINLINE(int) iemSetPassUpStatus(PVMCPUCC pVCpu, VBOXSTRICTRC rcPassUp) RT_NOE
     {
         if (rcPassUp < rcOldPassUp)
         {
-            Log(("IEM: rcPassUp=%Rrc! rcOldPassUp=%Rrc\n", VBOXSTRICTRC_VAL(rcPassUp), rcOldPassUp));
+            LogEx(LOG_GROUP_IEM,("IEM: rcPassUp=%Rrc! rcOldPassUp=%Rrc\n", VBOXSTRICTRC_VAL(rcPassUp), rcOldPassUp));
             pVCpu->iem.s.rcPassUp = VBOXSTRICTRC_VAL(rcPassUp);
         }
         else
-            Log(("IEM: rcPassUp=%Rrc  rcOldPassUp=%Rrc!\n", VBOXSTRICTRC_VAL(rcPassUp), rcOldPassUp));
+            LogEx(LOG_GROUP_IEM,("IEM: rcPassUp=%Rrc  rcOldPassUp=%Rrc!\n", VBOXSTRICTRC_VAL(rcPassUp), rcOldPassUp));
     }
     /* Override EM scheduling with specific status code. */
     else if (rcOldPassUp >= VINF_EM_FIRST && rcOldPassUp <= VINF_EM_LAST)
     {
-        Log(("IEM: rcPassUp=%Rrc! rcOldPassUp=%Rrc\n", VBOXSTRICTRC_VAL(rcPassUp), rcOldPassUp));
+        LogEx(LOG_GROUP_IEM,("IEM: rcPassUp=%Rrc! rcOldPassUp=%Rrc\n", VBOXSTRICTRC_VAL(rcPassUp), rcOldPassUp));
         pVCpu->iem.s.rcPassUp = VBOXSTRICTRC_VAL(rcPassUp);
     }
     /* Don't override specific status code, first come first served. */
     else
-        Log(("IEM: rcPassUp=%Rrc  rcOldPassUp=%Rrc!\n", VBOXSTRICTRC_VAL(rcPassUp), rcOldPassUp));
+        LogEx(LOG_GROUP_IEM,("IEM: rcPassUp=%Rrc  rcOldPassUp=%Rrc!\n", VBOXSTRICTRC_VAL(rcPassUp), rcOldPassUp));
     return VINF_SUCCESS;
 }
 
@@ -3145,7 +3145,7 @@ DECLINLINE(VBOXSTRICTRC) iemMemSegCheckWriteAccessEx(PVMCPUCC pVCpu, PCCPUMSELRE
         {
             uint16_t    uSel = iemSRegFetchU16(pVCpu, iSegReg);
             AssertRelease(uSel == 0);
-            Log(("iemMemSegCheckWriteAccessEx: %#x (index %u) - bad selector -> #GP\n", uSel, iSegReg));
+            LogEx(LOG_GROUP_IEM,("iemMemSegCheckWriteAccessEx: %#x (index %u) - bad selector -> #GP\n", uSel, iSegReg));
             return iemRaiseGeneralProtectionFault0(pVCpu);
         }
 
@@ -3185,7 +3185,7 @@ DECLINLINE(VBOXSTRICTRC) iemMemSegCheckReadAccessEx(PVMCPUCC pVCpu, PCCPUMSELREG
         {
             uint16_t    uSel = iemSRegFetchU16(pVCpu, iSegReg);
             AssertRelease(uSel == 0);
-            Log(("iemMemSegCheckReadAccessEx: %#x (index %u) - bad selector -> #GP\n", uSel, iSegReg));
+            LogEx(LOG_GROUP_IEM,("iemMemSegCheckReadAccessEx: %#x (index %u) - bad selector -> #GP\n", uSel, iSegReg));
             return iemRaiseGeneralProtectionFault0(pVCpu);
         }
 

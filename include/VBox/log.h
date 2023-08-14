@@ -302,6 +302,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_HM,
     /** IEM group. */
     LOG_GROUP_IEM,
+    /** IEM memory access group. */
+    LOG_GROUP_IEM_MEM,
     /** IEM native recompiler group. */
     LOG_GROUP_IEM_RE_NATIVE,
     /** IEM threaded recompiler group. */
@@ -970,6 +972,7 @@ typedef enum VBOXLOGGROUP
     "HGSMI", \
     "HM", \
     "IEM", \
+    "IEM_MEM", \
     "IEM_RE_NATIVE", \
     "IEM_RE_THREADED", \
     "IEM_SVM", \

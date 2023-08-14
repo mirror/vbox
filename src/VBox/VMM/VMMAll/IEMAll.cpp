@@ -78,10 +78,26 @@
  *      - Level 5  (Log5) : Decoding details.
  *      - Level 6  (Log6) : Enables/disables the lockstep comparison with REM.
  *      - Level 7  (Log7) : iret++ execution logging.
- *      - Level 8  (Log8) : Memory writes.
- *      - Level 9  (Log9) : Memory reads.
+ *      - Level 8  (Log8) :
+ *      - Level 9  (Log9) :
  *      - Level 10 (Log10): TLBs.
  *      - Level 11 (Log11): Unmasked FPU exceptions.
+ *
+ * The \"IEM_MEM\" log group covers most of memory related details logging,
+ * except for errors and exceptions:
+ *      - Level 1  (Log)  : Reads.
+ *      - Level 2  (Log2) : Read fallbacks.
+ *      - Level 3  (Log3) : MemMap read.
+ *      - Level 4  (Log4) : MemMap read fallbacks.
+ *      - Level 5  (Log5) : Writes
+ *      - Level 6  (Log6) : Write fallbacks.
+ *      - Level 7  (Log7) : MemMap writes and read-writes.
+ *      - Level 8  (Log8) : MemMap write and read-write fallbacks.
+ *      - Level 9  (Log9) : Stack reads.
+ *      - Level 10 (Log10): Stack read fallbacks.
+ *      - Level 11 (Log11): Stack writes.
+ *      - Level 12 (Log12): Stack write fallbacks.
+ *      - Flow  (LogFlow) :
  *
  * The SVM (AMD-V) and VMX (VT-x) code has the following assignments:
  *      - Level 1  (Log)  : Errors and other major events.
@@ -5462,6 +5478,8 @@ void iemSseUpdateMxcsr(PVMCPUCC pVCpu, uint32_t fMxcsr) RT_NOEXCEPT
  * @{
  */
 
+#undef  LOG_GROUP
+#define LOG_GROUP LOG_GROUP_IEM_MEM
 
 /**
  * Updates the IEMCPU::cbWritten counter if applicable.
@@ -5616,7 +5634,7 @@ VBOXSTRICTRC iemMemPageTranslateAndCheckAccess(PVMCPUCC pVCpu, RTGCPTR GCPtrMem,
     int rc = PGMGstGetPage(pVCpu, GCPtrMem, &Walk);
     if (RT_FAILURE(rc))
     {
-        Log(("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - failed to fetch page -> #PF\n", GCPtrMem));
+        LogEx(LOG_GROUP_IEM,("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - failed to fetch page -> #PF\n", GCPtrMem));
         /** @todo Check unassigned memory in unpaged mode. */
         /** @todo Reserved bits in page tables. Requires new PGM interface. */
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
@@ -5638,7 +5656,7 @@ VBOXSTRICTRC iemMemPageTranslateAndCheckAccess(PVMCPUCC pVCpu, RTGCPTR GCPtrMem,
                     && !(fAccess & IEM_ACCESS_WHAT_SYS))
                 || (pVCpu->cpum.GstCtx.cr0 & X86_CR0_WP)))
         {
-            Log(("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - read-only page -> #PF\n", GCPtrMem));
+            LogEx(LOG_GROUP_IEM,("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - read-only page -> #PF\n", GCPtrMem));
             *pGCPhysMem = NIL_RTGCPHYS;
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
             if (Walk.fFailed & PGM_WALKFAIL_EPT)
@@ -5652,7 +5670,7 @@ VBOXSTRICTRC iemMemPageTranslateAndCheckAccess(PVMCPUCC pVCpu, RTGCPTR GCPtrMem,
             && IEM_GET_CPL(pVCpu) == 3
             && !(fAccess & IEM_ACCESS_WHAT_SYS))
         {
-            Log(("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - user access to kernel page -> #PF\n", GCPtrMem));
+            LogEx(LOG_GROUP_IEM,("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - user access to kernel page -> #PF\n", GCPtrMem));
             *pGCPhysMem = NIL_RTGCPHYS;
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
             if (Walk.fFailed & PGM_WALKFAIL_EPT)
@@ -5666,7 +5684,7 @@ VBOXSTRICTRC iemMemPageTranslateAndCheckAccess(PVMCPUCC pVCpu, RTGCPTR GCPtrMem,
             && (Walk.fEffective & X86_PTE_PAE_NX)
             && (pVCpu->cpum.GstCtx.msrEFER & MSR_K6_EFER_NXE) )
         {
-            Log(("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - NX -> #PF\n", GCPtrMem));
+            LogEx(LOG_GROUP_IEM,("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - NX -> #PF\n", GCPtrMem));
             *pGCPhysMem = NIL_RTGCPHYS;
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
             if (Walk.fFailed & PGM_WALKFAIL_EPT)
@@ -5801,17 +5819,19 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PVMCPUCC pVCpu, unsigned iM
                     { /* nothing */ }
                     else if (PGM_PHYS_RW_IS_SUCCESS(rcStrict))
                     {
-                        Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x GCPhysSecond=%RGp/%#x %Rrc\n",
-                             pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst,
-                             pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, VBOXSTRICTRC_VAL(rcStrict) ));
+                        LogEx(LOG_GROUP_IEM,
+                              ("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x GCPhysSecond=%RGp/%#x %Rrc\n",
+                              pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst,
+                              pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, VBOXSTRICTRC_VAL(rcStrict) ));
                         rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
                     }
 #ifndef IN_RING3
                     else if (fPostponeFail)
                     {
-                        Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x GCPhysSecond=%RGp/%#x %Rrc (postponed)\n",
-                             pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst,
-                             pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, VBOXSTRICTRC_VAL(rcStrict) ));
+                        LogEx(LOG_GROUP_IEM,
+                              ("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x GCPhysSecond=%RGp/%#x %Rrc (postponed)\n",
+                               pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst,
+                               pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, VBOXSTRICTRC_VAL(rcStrict) ));
                         pVCpu->iem.s.aMemMappings[iMemMap].fAccess |= IEM_ACCESS_PENDING_R3_WRITE_2ND;
                         VMCPU_FF_SET(pVCpu, VMCPU_FF_IEM);
                         return iemSetPassUpStatus(pVCpu, rcStrict);
@@ -5819,9 +5839,10 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PVMCPUCC pVCpu, unsigned iM
 #endif
                     else
                     {
-                        Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x GCPhysSecond=%RGp/%#x %Rrc (!!)\n",
-                             pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst,
-                             pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, VBOXSTRICTRC_VAL(rcStrict) ));
+                        LogEx(LOG_GROUP_IEM,
+                              ("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x GCPhysSecond=%RGp/%#x %Rrc (!!)\n",
+                               pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst,
+                               pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, VBOXSTRICTRC_VAL(rcStrict) ));
                         return rcStrict;
                     }
                 }
@@ -5830,8 +5851,9 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PVMCPUCC pVCpu, unsigned iM
             {
                 if (!cbSecond)
                 {
-                    Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x %Rrc\n",
-                         pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst, VBOXSTRICTRC_VAL(rcStrict) ));
+                    LogEx(LOG_GROUP_IEM,
+                          ("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x %Rrc\n",
+                           pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst, VBOXSTRICTRC_VAL(rcStrict) ));
                     rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
                 }
                 else
@@ -5843,25 +5865,28 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PVMCPUCC pVCpu, unsigned iM
                                                           PGMACCESSORIGIN_IEM);
                     if (rcStrict2 == VINF_SUCCESS)
                     {
-                        Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x %Rrc GCPhysSecond=%RGp/%#x\n",
-                             pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst, VBOXSTRICTRC_VAL(rcStrict),
-                             pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond, cbSecond));
+                        LogEx(LOG_GROUP_IEM,
+                              ("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x %Rrc GCPhysSecond=%RGp/%#x\n",
+                               pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst, VBOXSTRICTRC_VAL(rcStrict),
+                               pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond, cbSecond));
                         rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
                     }
                     else if (PGM_PHYS_RW_IS_SUCCESS(rcStrict2))
                     {
-                        Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x %Rrc GCPhysSecond=%RGp/%#x %Rrc\n",
-                             pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst, VBOXSTRICTRC_VAL(rcStrict),
-                             pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, VBOXSTRICTRC_VAL(rcStrict2) ));
+                        LogEx(LOG_GROUP_IEM,
+                              ("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x %Rrc GCPhysSecond=%RGp/%#x %Rrc\n",
+                               pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst, VBOXSTRICTRC_VAL(rcStrict),
+                               pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, VBOXSTRICTRC_VAL(rcStrict2) ));
                         PGM_PHYS_RW_DO_UPDATE_STRICT_RC(rcStrict, rcStrict2);
                         rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
                     }
 #ifndef IN_RING3
                     else if (fPostponeFail)
                     {
-                        Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x GCPhysSecond=%RGp/%#x %Rrc (postponed)\n",
-                             pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst,
-                             pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, VBOXSTRICTRC_VAL(rcStrict) ));
+                        LogEx(LOG_GROUP_IEM,
+                              ("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x GCPhysSecond=%RGp/%#x %Rrc (postponed)\n",
+                               pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst,
+                               pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, VBOXSTRICTRC_VAL(rcStrict) ));
                         pVCpu->iem.s.aMemMappings[iMemMap].fAccess |= IEM_ACCESS_PENDING_R3_WRITE_2ND;
                         VMCPU_FF_SET(pVCpu, VMCPU_FF_IEM);
                         return iemSetPassUpStatus(pVCpu, rcStrict);
@@ -5869,9 +5894,10 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PVMCPUCC pVCpu, unsigned iM
 #endif
                     else
                     {
-                        Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x %Rrc GCPhysSecond=%RGp/%#x %Rrc (!!)\n",
-                             pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst, VBOXSTRICTRC_VAL(rcStrict),
-                             pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, VBOXSTRICTRC_VAL(rcStrict2) ));
+                        LogEx(LOG_GROUP_IEM,
+                              ("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x %Rrc GCPhysSecond=%RGp/%#x %Rrc (!!)\n",
+                               pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst, VBOXSTRICTRC_VAL(rcStrict),
+                               pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, VBOXSTRICTRC_VAL(rcStrict2) ));
                         return rcStrict2;
                     }
                 }
@@ -5879,9 +5905,10 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PVMCPUCC pVCpu, unsigned iM
 #ifndef IN_RING3
             else if (fPostponeFail)
             {
-                Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x GCPhysSecond=%RGp/%#x %Rrc (postponed)\n",
-                     pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst,
-                     pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, VBOXSTRICTRC_VAL(rcStrict) ));
+                LogEx(LOG_GROUP_IEM,
+                      ("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x GCPhysSecond=%RGp/%#x %Rrc (postponed)\n",
+                       pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst,
+                       pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, VBOXSTRICTRC_VAL(rcStrict) ));
                 if (!cbSecond)
                     pVCpu->iem.s.aMemMappings[iMemMap].fAccess |= IEM_ACCESS_PENDING_R3_WRITE_1ST;
                 else
@@ -5892,9 +5919,10 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PVMCPUCC pVCpu, unsigned iM
 #endif
             else
             {
-                Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x %Rrc [GCPhysSecond=%RGp/%#x] (!!)\n",
-                     pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst, VBOXSTRICTRC_VAL(rcStrict),
-                     pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond, cbSecond));
+                LogEx(LOG_GROUP_IEM,
+                      ("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x %Rrc [GCPhysSecond=%RGp/%#x] (!!)\n",
+                       pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst, VBOXSTRICTRC_VAL(rcStrict),
+                       pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond, cbSecond));
                 return rcStrict;
             }
         }
@@ -5913,30 +5941,32 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PVMCPUCC pVCpu, unsigned iM
                     { /* likely */ }
                     else
                     {
-                        Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysSimpleWriteGCPhys GCPhysFirst=%RGp/%#x GCPhysSecond=%RGp/%#x %Rrc (!!)\n",
-                             pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst,
-                             pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, rc));
+                        LogEx(LOG_GROUP_IEM,
+                              ("iemMemBounceBufferCommitAndUnmap: PGMPhysSimpleWriteGCPhys GCPhysFirst=%RGp/%#x GCPhysSecond=%RGp/%#x %Rrc (!!)\n",
+                               pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst,
+                               pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, rc));
                         return rc;
                     }
                 }
             }
             else
             {
-                Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysSimpleWriteGCPhys GCPhysFirst=%RGp/%#x %Rrc [GCPhysSecond=%RGp/%#x] (!!)\n",
-                     pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst, rc,
-                     pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond, cbSecond));
+                LogEx(LOG_GROUP_IEM,
+                      ("iemMemBounceBufferCommitAndUnmap: PGMPhysSimpleWriteGCPhys GCPhysFirst=%RGp/%#x %Rrc [GCPhysSecond=%RGp/%#x] (!!)\n",
+                       pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst, cbFirst, rc,
+                       pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond, cbSecond));
                 return rc;
             }
         }
     }
 
 #if defined(IEM_LOG_MEMORY_WRITES)
-    Log(("IEM Wrote %RGp: %.*Rhxs\n", pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst,
-         RT_MAX(RT_MIN(pVCpu->iem.s.aMemBbMappings[iMemMap].cbFirst, 64), 1), &pVCpu->iem.s.aBounceBuffers[iMemMap].ab[0]));
+    Log5(("IEM Wrote %RGp: %.*Rhxs\n", pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysFirst,
+          RT_MAX(RT_MIN(pVCpu->iem.s.aMemBbMappings[iMemMap].cbFirst, 64), 1), &pVCpu->iem.s.aBounceBuffers[iMemMap].ab[0]));
     if (pVCpu->iem.s.aMemBbMappings[iMemMap].cbSecond)
-        Log(("IEM Wrote %RGp: %.*Rhxs [2nd page]\n", pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond,
-             RT_MIN(pVCpu->iem.s.aMemBbMappings[iMemMap].cbSecond, 64),
-             &pVCpu->iem.s.aBounceBuffers[iMemMap].ab[pVCpu->iem.s.aMemBbMappings[iMemMap].cbFirst]));
+        Log5(("IEM Wrote %RGp: %.*Rhxs [2nd page]\n", pVCpu->iem.s.aMemBbMappings[iMemMap].GCPhysSecond,
+              RT_MIN(pVCpu->iem.s.aMemBbMappings[iMemMap].cbSecond, 64),
+              &pVCpu->iem.s.aBounceBuffers[iMemMap].ab[pVCpu->iem.s.aMemBbMappings[iMemMap].cbFirst]));
 
     size_t cbWrote = pVCpu->iem.s.aMemBbMappings[iMemMap].cbFirst + pVCpu->iem.s.aMemBbMappings[iMemMap].cbSecond;
     g_cbIemWrote = cbWrote;
@@ -6006,8 +6036,8 @@ iemMemBounceBufferMapCrossPage(PVMCPUCC pVCpu, int iMemMap, void **ppvMem, size_
                     rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
                 else
                 {
-                    Log(("iemMemBounceBufferMapPhys: PGMPhysRead GCPhysSecond=%RGp rcStrict2=%Rrc (!!)\n",
-                         GCPhysSecond, VBOXSTRICTRC_VAL(rcStrict) ));
+                    LogEx(LOG_GROUP_IEM, ("iemMemBounceBufferMapPhys: PGMPhysRead GCPhysSecond=%RGp rcStrict2=%Rrc (!!)\n",
+                                          GCPhysSecond, VBOXSTRICTRC_VAL(rcStrict) ));
                     return rcStrict;
                 }
             }
@@ -6021,15 +6051,16 @@ iemMemBounceBufferMapCrossPage(PVMCPUCC pVCpu, int iMemMap, void **ppvMem, size_
                 }
                 else
                 {
-                    Log(("iemMemBounceBufferMapPhys: PGMPhysRead GCPhysSecond=%RGp rcStrict2=%Rrc (rcStrict=%Rrc) (!!)\n",
-                         GCPhysSecond, VBOXSTRICTRC_VAL(rcStrict2), VBOXSTRICTRC_VAL(rcStrict2) ));
+                    LogEx(LOG_GROUP_IEM,
+                          ("iemMemBounceBufferMapPhys: PGMPhysRead GCPhysSecond=%RGp rcStrict2=%Rrc (rcStrict=%Rrc) (!!)\n",
+                           GCPhysSecond, VBOXSTRICTRC_VAL(rcStrict2), VBOXSTRICTRC_VAL(rcStrict2) ));
                     return rcStrict2;
                 }
             }
             else
             {
-                Log(("iemMemBounceBufferMapPhys: PGMPhysRead GCPhysFirst=%RGp rcStrict=%Rrc (!!)\n",
-                     GCPhysFirst, VBOXSTRICTRC_VAL(rcStrict) ));
+                LogEx(LOG_GROUP_IEM, ("iemMemBounceBufferMapPhys: PGMPhysRead GCPhysFirst=%RGp rcStrict=%Rrc (!!)\n",
+                                      GCPhysFirst, VBOXSTRICTRC_VAL(rcStrict) ));
                 return rcStrict;
             }
         }
@@ -6047,13 +6078,15 @@ iemMemBounceBufferMapCrossPage(PVMCPUCC pVCpu, int iMemMap, void **ppvMem, size_
                     Assert(rc == VINF_SUCCESS);
                 else
                 {
-                    Log(("iemMemBounceBufferMapPhys: PGMPhysSimpleReadGCPhys GCPhysSecond=%RGp rc=%Rrc (!!)\n", GCPhysSecond, rc));
+                    LogEx(LOG_GROUP_IEM,
+                          ("iemMemBounceBufferMapPhys: PGMPhysSimpleReadGCPhys GCPhysSecond=%RGp rc=%Rrc (!!)\n", GCPhysSecond, rc));
                     return rc;
                 }
             }
             else
             {
-                Log(("iemMemBounceBufferMapPhys: PGMPhysSimpleReadGCPhys GCPhysFirst=%RGp rc=%Rrc (!!)\n", GCPhysFirst, rc));
+                LogEx(LOG_GROUP_IEM,
+                      ("iemMemBounceBufferMapPhys: PGMPhysSimpleReadGCPhys GCPhysFirst=%RGp rc=%Rrc (!!)\n", GCPhysFirst, rc));
                 return rc;
             }
         }
@@ -6124,8 +6157,8 @@ static VBOXSTRICTRC iemMemBounceBufferMapPhys(PVMCPUCC pVCpu, unsigned iMemMap, 
                     rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
                 else
                 {
-                    Log(("iemMemBounceBufferMapPhys: PGMPhysRead GCPhysFirst=%RGp rcStrict=%Rrc (!!)\n",
-                         GCPhysFirst, VBOXSTRICTRC_VAL(rcStrict) ));
+                    LogEx(LOG_GROUP_IEM, ("iemMemBounceBufferMapPhys: PGMPhysRead GCPhysFirst=%RGp rcStrict=%Rrc (!!)\n",
+                                          GCPhysFirst, VBOXSTRICTRC_VAL(rcStrict) ));
                     return rcStrict;
                 }
             }
@@ -6136,8 +6169,8 @@ static VBOXSTRICTRC iemMemBounceBufferMapPhys(PVMCPUCC pVCpu, unsigned iMemMap, 
                 { /* likely */ }
                 else
                 {
-                    Log(("iemMemBounceBufferMapPhys: PGMPhysSimpleReadGCPhys GCPhysFirst=%RGp rcStrict=%Rrc (!!)\n",
-                         GCPhysFirst, rc));
+                    LogEx(LOG_GROUP_IEM, ("iemMemBounceBufferMapPhys: PGMPhysSimpleReadGCPhys GCPhysFirst=%RGp rcStrict=%Rrc (!!)\n",
+                                          GCPhysFirst, rc));
                     return rc;
                 }
             }
@@ -6296,7 +6329,7 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, size_t cbMem, uint8_t iSeg
         int rc = PGMGstGetPage(pVCpu, GCPtrMem, &Walk);
         if (RT_FAILURE(rc))
         {
-            Log(("iemMemMap: GCPtrMem=%RGv - failed to fetch page -> #PF\n", GCPtrMem));
+            LogEx(LOG_GROUP_IEM, ("iemMemMap: GCPtrMem=%RGv - failed to fetch page -> #PF\n", GCPtrMem));
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
             if (Walk.fFailed & PGM_WALKFAIL_EPT)
                 IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, fAccess, IEM_SLAT_FAIL_LINEAR_TO_PHYS_ADDR, 0 /* cbInstr */);
@@ -6325,7 +6358,7 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, size_t cbMem, uint8_t iSeg
                     && !(fAccess & IEM_ACCESS_WHAT_SYS))
                 || (pVCpu->cpum.GstCtx.cr0 & X86_CR0_WP)))
         {
-            Log(("iemMemMap: GCPtrMem=%RGv - read-only page -> #PF\n", GCPtrMem));
+            LogEx(LOG_GROUP_IEM, ("iemMemMap: GCPtrMem=%RGv - read-only page -> #PF\n", GCPtrMem));
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
             if (Walk.fFailed & PGM_WALKFAIL_EPT)
                 IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, fAccess, IEM_SLAT_FAIL_LINEAR_TO_PAGE_TABLE, 0 /* cbInstr */);
@@ -6338,7 +6371,7 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, size_t cbMem, uint8_t iSeg
             && IEM_GET_CPL(pVCpu) == 3
             && !(fAccess & IEM_ACCESS_WHAT_SYS))
         {
-            Log(("iemMemMap: GCPtrMem=%RGv - user access to kernel page -> #PF\n", GCPtrMem));
+            LogEx(LOG_GROUP_IEM, ("iemMemMap: GCPtrMem=%RGv - user access to kernel page -> #PF\n", GCPtrMem));
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
             if (Walk.fFailed & PGM_WALKFAIL_EPT)
                 IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, fAccess, IEM_SLAT_FAIL_LINEAR_TO_PAGE_TABLE, 0 /* cbInstr */);
@@ -6427,9 +6460,9 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, size_t cbMem, uint8_t iSeg
     void * const pvMem = pbMem;
 
     if (fAccess & IEM_ACCESS_TYPE_WRITE)
-        Log8(("IEM WR %RGv (%RGp) LB %#zx\n", GCPtrMem, pTlbe->GCPhys | (GCPtrMem & GUEST_PAGE_OFFSET_MASK), cbMem));
+        Log6(("IEM WR %RGv (%RGp) LB %#zx\n", GCPtrMem, pTlbe->GCPhys | (GCPtrMem & GUEST_PAGE_OFFSET_MASK), cbMem));
     if (fAccess & IEM_ACCESS_TYPE_READ)
-        Log9(("IEM RD %RGv (%RGp) LB %#zx\n", GCPtrMem, pTlbe->GCPhys | (GCPtrMem & GUEST_PAGE_OFFSET_MASK), cbMem));
+        Log2(("IEM RD %RGv (%RGp) LB %#zx\n", GCPtrMem, pTlbe->GCPhys | (GCPtrMem & GUEST_PAGE_OFFSET_MASK), cbMem));
 
 #else  /* !IEM_WITH_DATA_TLB */
 
@@ -6439,9 +6472,9 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, size_t cbMem, uint8_t iSeg
         return rcStrict;
 
     if (fAccess & IEM_ACCESS_TYPE_WRITE)
-        Log8(("IEM WR %RGv (%RGp) LB %#zx\n", GCPtrMem, GCPhysFirst, cbMem));
+        Log6(("IEM WR %RGv (%RGp) LB %#zx\n", GCPtrMem, GCPhysFirst, cbMem));
     if (fAccess & IEM_ACCESS_TYPE_READ)
-        Log9(("IEM RD %RGv (%RGp) LB %#zx\n", GCPtrMem, GCPhysFirst, cbMem));
+        Log2(("IEM RD %RGv (%RGp) LB %#zx\n", GCPtrMem, GCPhysFirst, cbMem));
 
     void *pvMem;
     rcStrict = iemMemPageMap(pVCpu, GCPhysFirst, fAccess, &pvMem, &pVCpu->iem.s.aMemMappingLocks[iMemMap].Lock);
@@ -6623,7 +6656,7 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
         int rc = PGMGstGetPage(pVCpu, GCPtrMem, &Walk);
         if (RT_FAILURE(rc))
         {
-            Log(("iemMemMap: GCPtrMem=%RGv - failed to fetch page -> #PF\n", GCPtrMem));
+            LogEx(LOG_GROUP_IEM, ("iemMemMap: GCPtrMem=%RGv - failed to fetch page -> #PF\n", GCPtrMem));
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
             if (Walk.fFailed & PGM_WALKFAIL_EPT)
                 IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, fAccess, IEM_SLAT_FAIL_LINEAR_TO_PHYS_ADDR, 0 /* cbInstr */);
@@ -6667,7 +6700,7 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
         /* Write to read only memory? */
         if (pTlbe->fFlagsAndPhysRev & fNoWriteNoDirty & IEMTLBE_F_PT_NO_WRITE)
         {
-            Log(("iemMemMapJmp: GCPtrMem=%RGv - read-only page -> #PF\n", GCPtrMem));
+            LogEx(LOG_GROUP_IEM, ("iemMemMapJmp: GCPtrMem=%RGv - read-only page -> #PF\n", GCPtrMem));
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
             if (Walk.fFailed & PGM_WALKFAIL_EPT)
                 IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, fAccess, IEM_SLAT_FAIL_LINEAR_TO_PAGE_TABLE, 0 /* cbInstr */);
@@ -6678,7 +6711,7 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
         /* Kernel memory accessed by userland? */
         if (pTlbe->fFlagsAndPhysRev & fNoUser & IEMTLBE_F_PT_NO_USER)
         {
-            Log(("iemMemMapJmp: GCPtrMem=%RGv - user access to kernel page -> #PF\n", GCPtrMem));
+            LogEx(LOG_GROUP_IEM, ("iemMemMapJmp: GCPtrMem=%RGv - user access to kernel page -> #PF\n", GCPtrMem));
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
             if (Walk.fFailed & PGM_WALKFAIL_EPT)
                 IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, fAccess, IEM_SLAT_FAIL_LINEAR_TO_PAGE_TABLE, 0 /* cbInstr */);
@@ -6763,9 +6796,9 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
     void * const pvMem = pbMem;
 
     if (fAccess & IEM_ACCESS_TYPE_WRITE)
-        Log8(("IEM WR %RGv (%RGp) LB %#zx\n", GCPtrMem, pTlbe->GCPhys | (GCPtrMem & GUEST_PAGE_OFFSET_MASK), cbMem));
+        Log6(("IEM WR %RGv (%RGp) LB %#zx\n", GCPtrMem, pTlbe->GCPhys | (GCPtrMem & GUEST_PAGE_OFFSET_MASK), cbMem));
     if (fAccess & IEM_ACCESS_TYPE_READ)
-        Log9(("IEM RD %RGv (%RGp) LB %#zx\n", GCPtrMem, pTlbe->GCPhys | (GCPtrMem & GUEST_PAGE_OFFSET_MASK), cbMem));
+        Log2(("IEM RD %RGv (%RGp) LB %#zx\n", GCPtrMem, pTlbe->GCPhys | (GCPtrMem & GUEST_PAGE_OFFSET_MASK), cbMem));
 
 #else  /* !IEM_WITH_DATA_TLB */
 
@@ -6776,9 +6809,9 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
     else IEM_DO_LONGJMP(pVCpu, VBOXSTRICTRC_VAL(rcStrict));
 
     if (fAccess & IEM_ACCESS_TYPE_WRITE)
-        Log8(("IEM WR %RGv (%RGp) LB %#zx\n", GCPtrMem, GCPhysFirst, cbMem));
+        Log6(("IEM WR %RGv (%RGp) LB %#zx\n", GCPtrMem, GCPhysFirst, cbMem));
     if (fAccess & IEM_ACCESS_TYPE_READ)
-        Log9(("IEM RD %RGv (%RGp) LB %#zx\n", GCPtrMem, GCPhysFirst, cbMem));
+        Log2(("IEM RD %RGv (%RGp) LB %#zx\n", GCPtrMem, GCPhysFirst, cbMem));
 
     void *pvMem;
     rcStrict = iemMemPageMap(pVCpu, GCPhysFirst, fAccess, &pvMem, &pVCpu->iem.s.aMemMappingLocks[iMemMap].Lock);
@@ -6996,7 +7029,7 @@ VBOXSTRICTRC iemMemFetchDataU32_ZX_U64(PVMCPUCC pVCpu, uint64_t *pu64Dst, uint8_
     {
         *pu64Dst = *pu32Src;
         rc = iemMemCommitAndUnmap(pVCpu, (void *)pu32Src, IEM_ACCESS_DATA_R);
-        Log9(("IEM RD dword %d|%RGv: %#010RX64\n", iSegReg, GCPtrMem, *pu64Dst));
+        Log(("IEM RD dword %d|%RGv: %#010RX64\n", iSegReg, GCPtrMem, *pu64Dst));
     }
     return rc;
 }
@@ -7023,7 +7056,7 @@ VBOXSTRICTRC iemMemFetchDataS32SxU64(PVMCPUCC pVCpu, uint64_t *pu64Dst, uint8_t 
     {
         *pu64Dst = *pi32Src;
         rc = iemMemCommitAndUnmap(pVCpu, (void *)pi32Src, IEM_ACCESS_DATA_R);
-        Log9(("IEM RD dword %d|%RGv: %#010x\n", iSegReg, GCPtrMem, (uint32_t)*pu64Dst));
+        Log(("IEM RD dword %d|%RGv: %#010x\n", iSegReg, GCPtrMem, (uint32_t)*pu64Dst));
     }
 #ifdef __GNUC__ /* warning: GCC may be a royal pain */
     else
@@ -7053,7 +7086,7 @@ VBOXSTRICTRC iemMemFetchDataR80(PVMCPUCC pVCpu, PRTFLOAT80U pr80Dst, uint8_t iSe
     {
         *pr80Dst = *pr80Src;
         rc = iemMemCommitAndUnmap(pVCpu, (void *)pr80Src, IEM_ACCESS_DATA_R);
-        Log9(("IEM RD tword %d|%RGv: %.10Rhxs\n", iSegReg, GCPtrMem, pr80Dst));
+        Log(("IEM RD tword %d|%RGv: %.10Rhxs\n", iSegReg, GCPtrMem, pr80Dst));
     }
     return rc;
 }
@@ -7075,7 +7108,7 @@ void iemMemFetchDataR80Jmp(PVMCPUCC pVCpu, PRTFLOAT80U pr80Dst, uint8_t iSegReg,
     PCRTFLOAT80U pr80Src = (PCRTFLOAT80U)iemMemMapJmp(pVCpu, sizeof(*pr80Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R, 7);
     *pr80Dst = *pr80Src;
     iemMemCommitAndUnmapJmp(pVCpu, (void *)pr80Src, IEM_ACCESS_DATA_R);
-    Log9(("IEM RD tword %d|%RGv: %.10Rhxs\n", iSegReg, GCPtrMem, pr80Dst));
+    Log(("IEM RD tword %d|%RGv: %.10Rhxs\n", iSegReg, GCPtrMem, pr80Dst));
 }
 #endif
 
@@ -7100,7 +7133,7 @@ VBOXSTRICTRC iemMemFetchDataD80(PVMCPUCC pVCpu, PRTPBCD80U pd80Dst, uint8_t iSeg
     {
         *pd80Dst = *pd80Src;
         rc = iemMemCommitAndUnmap(pVCpu, (void *)pd80Src, IEM_ACCESS_DATA_R);
-        Log9(("IEM RD tword %d|%RGv: %.10Rhxs\n", iSegReg, GCPtrMem, pd80Dst));
+        Log(("IEM RD tword %d|%RGv: %.10Rhxs\n", iSegReg, GCPtrMem, pd80Dst));
     }
     return rc;
 }
@@ -7123,7 +7156,7 @@ void iemMemFetchDataD80Jmp(PVMCPUCC pVCpu, PRTPBCD80U pd80Dst, uint8_t iSegReg, 
                                                     IEM_ACCESS_DATA_R, 7 /** @todo FBSTP alignment check */);
     *pd80Dst = *pd80Src;
     iemMemCommitAndUnmapJmp(pVCpu, (void *)pd80Src, IEM_ACCESS_DATA_R);
-    Log9(("IEM RD tword %d|%RGv: %.10Rhxs\n", iSegReg, GCPtrMem, pd80Dst));
+    Log(("IEM RD tword %d|%RGv: %.10Rhxs\n", iSegReg, GCPtrMem, pd80Dst));
 }
 #endif
 
@@ -7149,7 +7182,7 @@ VBOXSTRICTRC iemMemFetchDataU128(PVMCPUCC pVCpu, PRTUINT128U pu128Dst, uint8_t i
         pu128Dst->au64[0] = pu128Src->au64[0];
         pu128Dst->au64[1] = pu128Src->au64[1];
         rc = iemMemCommitAndUnmap(pVCpu, (void *)pu128Src, IEM_ACCESS_DATA_R);
-        Log9(("IEM RD dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
+        Log(("IEM RD dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
     }
     return rc;
 }
@@ -7173,7 +7206,7 @@ void iemMemFetchDataU128Jmp(PVMCPUCC pVCpu, PRTUINT128U pu128Dst, uint8_t iSegRe
     pu128Dst->au64[0] = pu128Src->au64[0];
     pu128Dst->au64[1] = pu128Src->au64[1];
     iemMemCommitAndUnmapJmp(pVCpu, (void *)pu128Src, IEM_ACCESS_DATA_R);
-    Log9(("IEM RD dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
+    Log(("IEM RD dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
 }
 #endif
 
@@ -7202,7 +7235,7 @@ VBOXSTRICTRC iemMemFetchDataU128AlignedSse(PVMCPUCC pVCpu, PRTUINT128U pu128Dst,
         pu128Dst->au64[0] = pu128Src->au64[0];
         pu128Dst->au64[1] = pu128Src->au64[1];
         rc = iemMemCommitAndUnmap(pVCpu, (void *)pu128Src, IEM_ACCESS_DATA_R);
-        Log9(("IEM RD dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
+        Log(("IEM RD dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
     }
     return rc;
 }
@@ -7230,7 +7263,7 @@ void iemMemFetchDataU128AlignedSseJmp(PVMCPUCC pVCpu, PRTUINT128U pu128Dst, uint
     pu128Dst->au64[0] = pu128Src->au64[0];
     pu128Dst->au64[1] = pu128Src->au64[1];
     iemMemCommitAndUnmapJmp(pVCpu, (void *)pu128Src, IEM_ACCESS_DATA_R);
-    Log9(("IEM RD dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
+    Log(("IEM RD dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
 }
 #endif
 
@@ -7258,7 +7291,7 @@ VBOXSTRICTRC iemMemFetchDataU256(PVMCPUCC pVCpu, PRTUINT256U pu256Dst, uint8_t i
         pu256Dst->au64[2] = pu256Src->au64[2];
         pu256Dst->au64[3] = pu256Src->au64[3];
         rc = iemMemCommitAndUnmap(pVCpu, (void *)pu256Src, IEM_ACCESS_DATA_R);
-        Log9(("IEM RD qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
+        Log(("IEM RD qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
     }
     return rc;
 }
@@ -7284,7 +7317,7 @@ void iemMemFetchDataU256Jmp(PVMCPUCC pVCpu, PRTUINT256U pu256Dst, uint8_t iSegRe
     pu256Dst->au64[2] = pu256Src->au64[2];
     pu256Dst->au64[3] = pu256Src->au64[3];
     iemMemCommitAndUnmapJmp(pVCpu, (void *)pu256Src, IEM_ACCESS_DATA_R);
-    Log9(("IEM RD qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
+    Log(("IEM RD qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
 }
 #endif
 
@@ -7315,7 +7348,7 @@ VBOXSTRICTRC iemMemFetchDataU256AlignedSse(PVMCPUCC pVCpu, PRTUINT256U pu256Dst,
         pu256Dst->au64[2] = pu256Src->au64[2];
         pu256Dst->au64[3] = pu256Src->au64[3];
         rc = iemMemCommitAndUnmap(pVCpu, (void *)pu256Src, IEM_ACCESS_DATA_R);
-        Log9(("IEM RD qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
+        Log(("IEM RD qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
     }
     return rc;
 }
@@ -7345,7 +7378,7 @@ void iemMemFetchDataU256AlignedSseJmp(PVMCPUCC pVCpu, PRTUINT256U pu256Dst, uint
     pu256Dst->au64[2] = pu256Src->au64[2];
     pu256Dst->au64[3] = pu256Src->au64[3];
     iemMemCommitAndUnmapJmp(pVCpu, (void *)pu256Src, IEM_ACCESS_DATA_R);
-    Log9(("IEM RD qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
+    Log(("IEM RD qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
 }
 #endif
 
@@ -7443,7 +7476,7 @@ VBOXSTRICTRC iemMemStoreDataU128(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrM
         pu128Dst->au64[0] = u128Value.au64[0];
         pu128Dst->au64[1] = u128Value.au64[1];
         rc = iemMemCommitAndUnmap(pVCpu, pu128Dst, IEM_ACCESS_DATA_W);
-        Log8(("IEM WR dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
+        Log5(("IEM WR dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
     }
     return rc;
 }
@@ -7467,7 +7500,7 @@ void iemMemStoreDataU128Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, R
     pu128Dst->au64[0] = u128Value.au64[0];
     pu128Dst->au64[1] = u128Value.au64[1];
     iemMemCommitAndUnmapJmp(pVCpu, pu128Dst, IEM_ACCESS_DATA_W);
-    Log8(("IEM WR dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
+    Log5(("IEM WR dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
 }
 #endif
 
@@ -7493,7 +7526,7 @@ VBOXSTRICTRC iemMemStoreDataU128AlignedSse(PVMCPUCC pVCpu, uint8_t iSegReg, RTGC
         pu128Dst->au64[0] = u128Value.au64[0];
         pu128Dst->au64[1] = u128Value.au64[1];
         rc = iemMemCommitAndUnmap(pVCpu, pu128Dst, IEM_ACCESS_DATA_W);
-        Log8(("IEM WR dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
+        Log5(("IEM WR dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
     }
     return rc;
 }
@@ -7519,7 +7552,7 @@ void iemMemStoreDataU128AlignedSseJmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR G
     pu128Dst->au64[0] = u128Value.au64[0];
     pu128Dst->au64[1] = u128Value.au64[1];
     iemMemCommitAndUnmapJmp(pVCpu, pu128Dst, IEM_ACCESS_DATA_W);
-    Log8(("IEM WR dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
+    Log5(("IEM WR dqword %d|%RGv: %.16Rhxs\n", iSegReg, GCPtrMem, pu128Dst));
 }
 #endif
 
@@ -7547,7 +7580,7 @@ VBOXSTRICTRC iemMemStoreDataU256(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrM
         pu256Dst->au64[2] = pu256Value->au64[2];
         pu256Dst->au64[3] = pu256Value->au64[3];
         rc = iemMemCommitAndUnmap(pVCpu, pu256Dst, IEM_ACCESS_DATA_W);
-        Log8(("IEM WR qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
+        Log5(("IEM WR qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
     }
     return rc;
 }
@@ -7573,7 +7606,7 @@ void iemMemStoreDataU256Jmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, P
     pu256Dst->au64[2] = pu256Value->au64[2];
     pu256Dst->au64[3] = pu256Value->au64[3];
     iemMemCommitAndUnmapJmp(pVCpu, pu256Dst, IEM_ACCESS_DATA_W);
-    Log8(("IEM WR qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
+    Log5(("IEM WR qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
 }
 #endif
 
@@ -7601,7 +7634,7 @@ VBOXSTRICTRC iemMemStoreDataU256AlignedAvx(PVMCPUCC pVCpu, uint8_t iSegReg, RTGC
         pu256Dst->au64[2] = pu256Value->au64[2];
         pu256Dst->au64[3] = pu256Value->au64[3];
         rc = iemMemCommitAndUnmap(pVCpu, pu256Dst, IEM_ACCESS_DATA_W);
-        Log8(("IEM WR qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
+        Log5(("IEM WR qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
     }
     return rc;
 }
@@ -7629,7 +7662,7 @@ void iemMemStoreDataU256AlignedAvxJmp(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR G
     pu256Dst->au64[2] = pu256Value->au64[2];
     pu256Dst->au64[3] = pu256Value->au64[3];
     iemMemCommitAndUnmapJmp(pVCpu, pu256Dst, IEM_ACCESS_DATA_W);
-    Log8(("IEM WR qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
+    Log5(("IEM WR qqword %d|%RGv: %.32Rhxs\n", iSegReg, GCPtrMem, pu256Dst));
 }
 #endif
 
@@ -7917,8 +7950,8 @@ static VBOXSTRICTRC iemMemFetchSelDescWithErr(PVMCPUCC pVCpu, PIEMSELDESC pDesc,
         if (   !pVCpu->cpum.GstCtx.ldtr.Attr.n.u1Present
             || (uSel | X86_SEL_RPL_LDT) > pVCpu->cpum.GstCtx.ldtr.u32Limit )
         {
-            Log(("iemMemFetchSelDesc: LDT selector %#x is out of bounds (%3x) or ldtr is NP (%#x)\n",
-                 uSel, pVCpu->cpum.GstCtx.ldtr.u32Limit, pVCpu->cpum.GstCtx.ldtr.Sel));
+            LogEx(LOG_GROUP_IEM, ("iemMemFetchSelDesc: LDT selector %#x is out of bounds (%3x) or ldtr is NP (%#x)\n",
+                   uSel, pVCpu->cpum.GstCtx.ldtr.u32Limit, pVCpu->cpum.GstCtx.ldtr.Sel));
             return iemRaiseXcptOrInt(pVCpu, 0, uXcpt, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR,
                                      uErrorCode, 0);
         }
@@ -7930,7 +7963,7 @@ static VBOXSTRICTRC iemMemFetchSelDescWithErr(PVMCPUCC pVCpu, PIEMSELDESC pDesc,
     {
         if ((uSel | X86_SEL_RPL_LDT) > pVCpu->cpum.GstCtx.gdtr.cbGdt)
         {
-            Log(("iemMemFetchSelDesc: GDT selector %#x is out of bounds (%3x)\n", uSel, pVCpu->cpum.GstCtx.gdtr.cbGdt));
+            LogEx(LOG_GROUP_IEM, ("iemMemFetchSelDesc: GDT selector %#x is out of bounds (%3x)\n", uSel, pVCpu->cpum.GstCtx.gdtr.cbGdt));
             return iemRaiseXcptOrInt(pVCpu, 0, uXcpt, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR,
                                      uErrorCode, 0);
         }
@@ -7967,7 +8000,7 @@ static VBOXSTRICTRC iemMemFetchSelDescWithErr(PVMCPUCC pVCpu, PIEMSELDESC pDesc,
             rcStrict = iemMemFetchSysU64(pVCpu, &pDesc->Long.au64[1], UINT8_MAX, GCPtrBase + (uSel | X86_SEL_RPL_LDT) + 1);
         else
         {
-            Log(("iemMemFetchSelDesc: system selector %#x is out of bounds\n", uSel));
+            LogEx(LOG_GROUP_IEM,("iemMemFetchSelDesc: system selector %#x is out of bounds\n", uSel));
             /** @todo is this the right exception? */
             return iemRaiseXcptOrInt(pVCpu, 0, uXcpt, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR, uErrorCode, 0);
         }
@@ -8044,6 +8077,10 @@ VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPUCC pVCpu, uint16_t uSel) RT_NOEXCEP
 
     return iemMemCommitAndUnmap(pVCpu, (void *)pu32, IEM_ACCESS_SYS_RW);
 }
+
+
+#undef  LOG_GROUP
+#define LOG_GROUP LOG_GROUP_IEM
 
 /** @} */
 
