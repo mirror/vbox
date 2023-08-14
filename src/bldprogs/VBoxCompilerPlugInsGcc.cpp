@@ -58,7 +58,7 @@ extern "C" {
 # include "context.h" /* for g */
 #endif
 #include "cp/cp-tree.h"
-#if RT_GNUC_PREREQ(10, 0)
+#if RT_GNUC_PREREQ(9, 4)
 # include "stringpool.h"
 # include "attribs.h"
 #endif
@@ -172,7 +172,7 @@ static const pass_data g_MyPassData =
 {
     type                    : GIMPLE_PASS,
     name                    : "*iprt-format-checks", /* asterisk = no dump */
-# if RT_GNUC_PREREQ(10, 0)
+# if RT_GNUC_PREREQ(9, 4)
     optinfo_flags           : OPTGROUP_NONE,
 # else
     optinfo_flags           : 0,
