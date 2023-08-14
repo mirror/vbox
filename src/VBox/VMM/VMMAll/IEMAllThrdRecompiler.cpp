@@ -457,6 +457,10 @@ static IEMTBCACHE g_TbCache = { _1M, _1M - 1, }; /**< Quick and dirty. */
 /**
  * Allocate a translation block for threadeded recompilation.
  *
+ * This is allocated with maxed out call table and storage for opcode bytes,
+ * because it's only supposed to be called once per EMT to allocate the TB
+ * pointed to by IEMCPU::pThrdCompileTbR3.
+ *
  * @returns Pointer to the translation block on success, NULL on failure.
  * @param   pVM         The cross context virtual machine structure.
  * @param   pVCpu       The cross context virtual CPU structure of the calling
@@ -466,18 +470,14 @@ static IEMTBCACHE g_TbCache = { _1M, _1M - 1, }; /**< Quick and dirty. */
  */
 static PIEMTB iemThreadedTbAlloc(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPc, uint32_t fExtraFlags)
 {
-    /*
-     * Just using the heap for now.  Will make this more efficient and
-     * complicated later, don't worry. :-)
-     */
     PIEMTB pTb = (PIEMTB)RTMemAlloc(sizeof(IEMTB));
     if (pTb)
     {
-        unsigned const cCalls = 128;
+        unsigned const cCalls = 256;
         pTb->Thrd.paCalls = (PIEMTHRDEDCALLENTRY)RTMemAlloc(sizeof(IEMTHRDEDCALLENTRY) * cCalls);
         if (pTb->Thrd.paCalls)
         {
-            pTb->pabOpcodes = (uint8_t *)RTMemAlloc(cCalls * 16); /* This will be reallocated later. */
+            pTb->pabOpcodes = (uint8_t *)RTMemAlloc(cCalls * 16);
             if (pTb->pabOpcodes)
             {
                 pTb->Thrd.cAllocated        = cCalls;
@@ -514,7 +514,116 @@ static PIEMTB iemThreadedTbAlloc(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPc, u
 
 
 /**
- * Frees pTb.
+ * Called on the TB that are dedicated for recompilation before it's reused.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure of the calling
+ *                      thread.
+ * @param   pTb         The translation block to reuse.
+ * @param   GCPhysPc    The physical address corresponding to RIP + CS.BASE.
+ * @param   fExtraFlags Extra flags (IEMTB_F_XXX).
+ */
+static void iemThreadedTbReuse(PVMCPUCC pVCpu, PIEMTB pTb, RTGCPHYS GCPhysPc, uint32_t fExtraFlags)
+{
+    pTb->GCPhysPc               = GCPhysPc;
+    pTb->fFlags                 = (pVCpu->iem.s.fExec & IEMTB_F_IEM_F_MASK) | fExtraFlags;
+    pTb->x86.fAttr              = (uint16_t)pVCpu->cpum.GstCtx.cs.Attr.u;
+    pTb->Thrd.cCalls            = 0;
+    pTb->cbOpcodes              = 0;
+    pTb->cInstructions          = 0;
+
+    /* Init the first opcode range. */
+    pTb->cRanges                = 1;
+    pTb->aRanges[0].cbOpcodes   = 0;
+    pTb->aRanges[0].offOpcodes  = 0;
+    pTb->aRanges[0].offPhysPage = GCPhysPc & GUEST_PAGE_OFFSET_MASK;
+    pTb->aRanges[0].u2Unused    = 0;
+    pTb->aRanges[0].idxPhysPage = 0;
+    pTb->aGCPhysPages[0]        = NIL_RTGCPHYS;
+    pTb->aGCPhysPages[1]        = NIL_RTGCPHYS;
+}
+
+
+/**
+ * Used to duplicate a threded translation block after recompilation is done.
+ *
+ * @returns Pointer to the translation block on success, NULL on failure.
+ * @param   pVM         The cross context virtual machine structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling
+ *                      thread.
+ * @param   pTbSrc      The TB to duplicate.
+ */
+static PIEMTB iemThreadedTbDuplicate(PVMCC pVM, PVMCPUCC pVCpu, PCIEMTB pTbSrc)
+{
+    /*
+     * Just using the heap for now.  Will make this more efficient and
+     * complicated later, don't worry. :-)
+     */
+    PIEMTB pTb = (PIEMTB)RTMemAlloc(sizeof(IEMTB));
+    if (pTb)
+    {
+        memcpy(pTb, pTbSrc, sizeof(*pTb));
+
+        unsigned const cCalls = pTbSrc->Thrd.cCalls;
+        Assert(cCalls > 0);
+        pTb->Thrd.paCalls = (PIEMTHRDEDCALLENTRY)RTMemDup(pTbSrc->Thrd.paCalls, sizeof(IEMTHRDEDCALLENTRY) * cCalls);
+        if (pTb->Thrd.paCalls)
+        {
+            unsigned const cbOpcodes = pTbSrc->cbOpcodes;
+            Assert(cbOpcodes > 0);
+            pTb->pabOpcodes = (uint8_t *)RTMemDup(pTbSrc->pabOpcodes, cbOpcodes);
+            if (pTb->pabOpcodes)
+            {
+                pTb->Thrd.cAllocated        = cCalls;
+                pTb->cbOpcodesAllocated     = cbOpcodes;
+                pTb->pNext                  = NULL;
+                RTListInit(&pTb->LocalList);
+                pTb->fFlags                 = (pTbSrc->fFlags & ~IEMTB_F_STATE_MASK) | IEMTB_F_STATE_READY;
+
+                pVCpu->iem.s.cTbAllocs++;
+                return pTb;
+            }
+            RTMemFree(pTb->Thrd.paCalls);
+        }
+        RTMemFree(pTb);
+    }
+    RT_NOREF(pVM);
+    return NULL;
+
+}
+
+
+/**
+ * Adds the given TB to the hash table.
+ *
+ * @param   pVM         The cross context virtual machine structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling
+ *                      thread.
+ * @param   pTb         The translation block to add.
+ */
+static void iemThreadedTbAdd(PVMCC pVM, PVMCPUCC pVCpu, PIEMTB pTb)
+{
+    uint32_t const idxHash = IEMTBCACHE_HASH(&g_TbCache, pTb->fFlags, pTb->GCPhysPc);
+    pTb->pNext = g_TbCache.apHash[idxHash];
+    g_TbCache.apHash[idxHash] = pTb;
+    STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->iem.s.StatTbThreadedInstr, pTb->cInstructions);
+    STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->iem.s.StatTbThreadedCalls, pTb->Thrd.cCalls);
+    if (LogIs12Enabled())
+    {
+        Log12(("TB added: %p %RGp LB %#x fl=%#x idxHash=%#x cRanges=%u cInstr=%u cCalls=%u\n",
+               pTb, pTb->GCPhysPc, pTb->cbOpcodes, pTb->fFlags, idxHash, pTb->cRanges, pTb->cInstructions, pTb->Thrd.cCalls));
+        for (uint8_t idxRange = 0; idxRange < pTb->cRanges; idxRange++)
+            Log12((" range#%u: offPg=%#05x offOp=%#04x LB %#04x pg#%u=%RGp\n", idxRange, pTb->aRanges[idxRange].offPhysPage,
+                   pTb->aRanges[idxRange].offOpcodes, pTb->aRanges[idxRange].cbOpcodes, pTb->aRanges[idxRange].idxPhysPage,
+                   pTb->aRanges[idxRange].idxPhysPage == 0
+                   ? pTb->GCPhysPc & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK
+                   : pTb->aGCPhysPages[pTb->aRanges[idxRange].idxPhysPage - 1]));
+    }
+    RT_NOREF(pVM);
+}
+
+
+/**
+ * Frees the given TB.
  *
  * @param   pVM     The cross context virtual machine structure.
  * @param   pVCpu   The cross context virtual CPU structure of the calling
@@ -599,28 +708,6 @@ static PIEMTB iemThreadedTbLookup(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPc, 
     RT_NOREF(pVM);
     pVCpu->iem.s.cTbLookupMisses++;
     return pTb;
-}
-
-
-static void iemThreadedTbAdd(PVMCC pVM, PVMCPUCC pVCpu, PIEMTB pTb)
-{
-    uint32_t const idxHash = IEMTBCACHE_HASH(&g_TbCache, pTb->fFlags, pTb->GCPhysPc);
-    pTb->pNext = g_TbCache.apHash[idxHash];
-    g_TbCache.apHash[idxHash] = pTb;
-    STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->iem.s.StatTbThreadedInstr, pTb->cInstructions);
-    STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->iem.s.StatTbThreadedCalls, pTb->Thrd.cCalls);
-    if (LogIs12Enabled())
-    {
-        Log12(("TB added: %p %RGp LB %#x fl=%#x idxHash=%#x cRanges=%u cInstr=%u cCalls=%u\n",
-               pTb, pTb->GCPhysPc, pTb->cbOpcodes, pTb->fFlags, idxHash, pTb->cRanges, pTb->cInstructions, pTb->Thrd.cCalls));
-        for (uint8_t idxRange = 0; idxRange < pTb->cRanges; idxRange++)
-            Log12((" range#%u: offPg=%#05x offOp=%#04x LB %#04x pg#%u=%RGp\n", idxRange, pTb->aRanges[idxRange].offPhysPage,
-                   pTb->aRanges[idxRange].offOpcodes, pTb->aRanges[idxRange].cbOpcodes, pTb->aRanges[idxRange].idxPhysPage,
-                   pTb->aRanges[idxRange].idxPhysPage == 0
-                   ? pTb->GCPhysPc & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK
-                   : pTb->aGCPhysPages[pTb->aRanges[idxRange].idxPhysPage - 1]));
-    }
-    RT_NOREF(pVM);
 }
 
 
@@ -1361,10 +1448,18 @@ static bool iemThreadedCompileCheckIrqAfter(PVMCPUCC pVCpu, PIEMTB pTb)
 static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPc, uint32_t fExtraFlags) IEM_NOEXCEPT_MAY_LONGJMP
 {
     /*
-     * Allocate a new translation block.
+     * Get the TB we use for the recompiling.  This is a maxed-out TB so
+     * that'll we'll make a more efficient copy of when we're done compiling.
      */
-    PIEMTB pTb = iemThreadedTbAlloc(pVM, pVCpu, GCPhysPc, fExtraFlags | IEMTB_F_STATE_COMPILING);
-    AssertReturn(pTb, VERR_IEM_TB_ALLOC_FAILED);
+    PIEMTB pTb = pVCpu->iem.s.pThrdCompileTbR3;
+    if (pTb)
+        iemThreadedTbReuse(pVCpu, pTb, GCPhysPc, fExtraFlags | IEMTB_F_STATE_COMPILING);
+    else
+    {
+        pTb = iemThreadedTbAlloc(pVM, pVCpu, GCPhysPc, fExtraFlags | IEMTB_F_STATE_COMPILING);
+        AssertReturn(pTb, VERR_IEM_TB_ALLOC_FAILED);
+        pVCpu->iem.s.pThrdCompileTbR3 = pTb;
+    }
 
     /* Set the current TB so iemThreadedCompileLongJumped and the CIMPL
        functions may get at it. */
@@ -1420,7 +1515,6 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
             }
 
             pVCpu->iem.s.pCurTbR3 = NULL;
-            iemThreadedTbFree(pVM, pVCpu, pTb);
             return iemExecStatusCodeFiddling(pVCpu, rcStrict);
         }
 
@@ -1444,9 +1538,11 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
     }
 
     /*
-     * Complete the TB and link it.
+     * Duplicate the TB into a completed one and link it.
      */
-    pTb->fFlags = (pTb->fFlags & ~IEMTB_F_STATE_MASK) | IEMTB_F_STATE_READY;
+    pTb = iemThreadedTbDuplicate(pVM, pVCpu, pTb);
+    AssertReturn(pTb, VERR_IEM_TB_ALLOC_FAILED);
+
     iemThreadedTbAdd(pVM, pVCpu, pTb);
 
 #ifdef IEM_COMPILE_ONLY_MODE

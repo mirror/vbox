@@ -1176,14 +1176,17 @@ typedef struct IEMCPU
     /** Pointer to the current translation block.
      * This can either be one being executed or one being compiled. */
     R3PTRTYPE(PIEMTB)       pCurTbR3;
+    /** Fixed TB used for threaded recompilation.
+     * This is allocated once with maxed-out sizes and re-used afterwards. */
+    R3PTRTYPE(PIEMTB)       pThrdCompileTbR3;
+    /** Fixed TB used for native recompilation.
+     * This is allocated once and re-used afterwards, growing individual
+     * components as needed. */
+    R3PTRTYPE(PIEMTB)       pNativeCompileTbR3;
     /** The PC (RIP) at the start of pCurTbR3/pCurTbR0.
      * The TBs are based on physical addresses, so this is needed to correleated
      * RIP to opcode bytes stored in the TB (AMD-V / VT-x). */
     uint64_t                uCurTbStartPc;
-    /** Statistics: Number of TB allocation calls. */
-    uint64_t                cTbAllocs;
-    /** Statistics: Number of TB free calls. */
-    uint64_t                cTbFrees;
     /** Statistics: Number of TB lookup misses. */
     uint64_t                cTbLookupMisses;
     /** Statistics: Number of TB lookup hits (debug only). */
@@ -1221,6 +1224,11 @@ typedef struct IEMCPU
     /** Copy of IEMCPU::uInstrBufPc after decoding a branch instruction.  */
     uint64_t                GCVirtTbBranchSrcBuf;
     /* Alignment. */
+    uint64_t                auAlignment10[6];
+    /** Statistics: Number of TB allocation calls. */
+    uint64_t                cTbAllocs;
+    /** Statistics: Number of TB free calls. */
+    uint64_t                cTbFrees;
     /** Statistics: Times TB execution was broken off before reaching the end. */
     STAMCOUNTER             StatTbExecBreaks;
     /** Statistics: Times BltIn_CheckIrq breaks out of the TB. */
