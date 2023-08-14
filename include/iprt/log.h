@@ -150,9 +150,18 @@ typedef enum RTLOGGROUP
 /** @def LOG_FN_FMT
  * You can use this to specify your desired way of printing __PRETTY_FUNCTION__
  * if you dislike the default one.
+ * @todo __PRETTY_FUNCTION__ is not optimal here.
  */
 #ifndef LOG_FN_FMT
 # define LOG_FN_FMT "%Rfn"
+#endif
+
+/** @def LOG_FN_NAME
+ * Alias for __PRETTY_FUNCTION__ or similar that goes the best with LOG_FN_FMT.
+ * @todo __PRETTY_FUNCTION__ is not optimal here.
+ */
+#ifndef LOG_FN_NAME
+# define LOG_FN_NAME RT_GCC_EXTENSION __PRETTY_FUNCTION__
 #endif
 
 #ifdef LOG_INSTANCE
@@ -493,7 +502,9 @@ typedef enum RTLOGFLAGS
  * Logger per group flags.
  *
  * @remarks We only use the lower 16 bits here.  We'll be combining it with the
- *          group number in a few places.
+ *          group number in a few places (e.g. RTLogDefaultInstanceEx,
+ *          RTLogGetDefaultInstanceEx, RTLogRelGetDefaultInstanceEx, ++) where
+ *          the high 16-bit word is used for the group number.
  */
 typedef enum RTLOGGRPFLAGS
 {
@@ -850,9 +861,9 @@ typedef enum RTLOGDEST
  * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
  */
 #ifdef LOG_USE_C99
-# define LogFunc(a)   _LogIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+# define LogFunc(a)   _LogIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": %M", LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define LogFunc(a)   do { Log((LOG_FN_FMT ": ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log(a); } while (0)
+# define LogFunc(a)   do { Log((LOG_FN_FMT ": ", LOG_FN_NAME)); Log(a); } while (0)
 #endif
 
 /** @def Log2Func
@@ -864,9 +875,9 @@ typedef enum RTLOGDEST
  * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
  */
 #ifdef LOG_USE_C99
-# define Log2Func(a)  _LogIt(RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+# define Log2Func(a)  _LogIt(RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP, LOG_FN_FMT ": %M", LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define Log2Func(a)  do { Log2((LOG_FN_FMT ": ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log2(a); } while (0)
+# define Log2Func(a)  do { Log2((LOG_FN_FMT ": ", LOG_FN_NAME)); Log2(a); } while (0)
 #endif
 
 /** @def Log3Func
@@ -878,9 +889,9 @@ typedef enum RTLOGDEST
  * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
  */
 #ifdef LOG_USE_C99
-# define Log3Func(a)  _LogIt(RTLOGGRPFLAGS_LEVEL_3, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+# define Log3Func(a)  _LogIt(RTLOGGRPFLAGS_LEVEL_3, LOG_GROUP, LOG_FN_FMT ": %M", LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define Log3Func(a)  do { Log3((LOG_FN_FMT ": ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log3(a); } while (0)
+# define Log3Func(a)  do { Log3((LOG_FN_FMT ": ", LOG_FN_NAME)); Log3(a); } while (0)
 #endif
 
 /** @def Log4Func
@@ -892,9 +903,9 @@ typedef enum RTLOGDEST
  * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
  */
 #ifdef LOG_USE_C99
-# define Log4Func(a)  _LogIt(RTLOGGRPFLAGS_LEVEL_4, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+# define Log4Func(a)  _LogIt(RTLOGGRPFLAGS_LEVEL_4, LOG_GROUP, LOG_FN_FMT ": %M", LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define Log4Func(a)  do { Log4((LOG_FN_FMT ": ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log4(a); } while (0)
+# define Log4Func(a)  do { Log4((LOG_FN_FMT ": ", LOG_FN_NAME)); Log4(a); } while (0)
 #endif
 
 /** @def Log5Func
@@ -906,9 +917,9 @@ typedef enum RTLOGDEST
  * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
  */
 #ifdef LOG_USE_C99
-# define Log5Func(a)  _LogIt(RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+# define Log5Func(a)  _LogIt(RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP, LOG_FN_FMT ": %M", LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define Log5Func(a)  do { Log5((LOG_FN_FMT ": ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log5(a); } while (0)
+# define Log5Func(a)  do { Log5((LOG_FN_FMT ": ", LOG_FN_NAME)); Log5(a); } while (0)
 #endif
 
 /** @def Log6Func
@@ -920,9 +931,9 @@ typedef enum RTLOGDEST
  * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
  */
 #ifdef LOG_USE_C99
-# define Log6Func(a)  _LogIt(RTLOGGRPFLAGS_LEVEL_6, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+# define Log6Func(a)  _LogIt(RTLOGGRPFLAGS_LEVEL_6, LOG_GROUP, LOG_FN_FMT ": %M", LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define Log6Func(a)  do { Log6((LOG_FN_FMT ": ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log6(a); } while (0)
+# define Log6Func(a)  do { Log6((LOG_FN_FMT ": ", LOG_FN_NAME)); Log6(a); } while (0)
 #endif
 
 /** @def Log7Func
@@ -934,9 +945,9 @@ typedef enum RTLOGDEST
  * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
  */
 #ifdef LOG_USE_C99
-# define Log7Func(a)  _LogIt(RTLOGGRPFLAGS_LEVEL_7, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+# define Log7Func(a)  _LogIt(RTLOGGRPFLAGS_LEVEL_7, LOG_GROUP, LOG_FN_FMT ": %M", LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define Log7Func(a)  do { Log7((LOG_FN_FMT ": ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log7(a); } while (0)
+# define Log7Func(a)  do { Log7((LOG_FN_FMT ": ", LOG_FN_NAME)); Log7(a); } while (0)
 #endif
 
 /** @def Log8Func
@@ -948,9 +959,9 @@ typedef enum RTLOGDEST
  * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
  */
 #ifdef LOG_USE_C99
-# define Log8Func(a)  _LogIt(RTLOGGRPFLAGS_LEVEL_8, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+# define Log8Func(a)  _LogIt(RTLOGGRPFLAGS_LEVEL_8, LOG_GROUP, LOG_FN_FMT ": %M", LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define Log8Func(a)  do { Log8((LOG_FN_FMT ": ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log8(a); } while (0)
+# define Log8Func(a)  do { Log8((LOG_FN_FMT ": ", LOG_FN_NAME)); Log8(a); } while (0)
 #endif
 
 /** @def Log9Func
@@ -962,9 +973,9 @@ typedef enum RTLOGDEST
  * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
  */
 #ifdef LOG_USE_C99
-# define Log9Func(a)  _LogIt(RTLOGGRPFLAGS_LEVEL_9, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+# define Log9Func(a)  _LogIt(RTLOGGRPFLAGS_LEVEL_9, LOG_GROUP, LOG_FN_FMT ": %M", LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define Log9Func(a)  do { Log9((LOG_FN_FMT ": ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log9(a); } while (0)
+# define Log9Func(a)  do { Log9((LOG_FN_FMT ": ", LOG_FN_NAME)); Log9(a); } while (0)
 #endif
 
 /** @def Log10Func
@@ -976,9 +987,9 @@ typedef enum RTLOGDEST
  * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
  */
 #ifdef LOG_USE_C99
-# define Log10Func(a) _LogIt(RTLOGGRPFLAGS_LEVEL_10, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+# define Log10Func(a) _LogIt(RTLOGGRPFLAGS_LEVEL_10, LOG_GROUP, LOG_FN_FMT ": %M", LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define Log10Func(a) do { Log10((LOG_FN_FMT ": ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log10(a); } while (0)
+# define Log10Func(a) do { Log10((LOG_FN_FMT ": ", LOG_FN_NAME)); Log10(a); } while (0)
 #endif
 
 /** @def Log11Func
@@ -990,9 +1001,9 @@ typedef enum RTLOGDEST
  * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
  */
 #ifdef LOG_USE_C99
-# define Log11Func(a) _LogIt(RTLOGGRPFLAGS_LEVEL_11, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+# define Log11Func(a) _LogIt(RTLOGGRPFLAGS_LEVEL_11, LOG_GROUP, LOG_FN_FMT ": %M", LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define Log11Func(a) do { Log11((LOG_FN_FMT ": ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log11(a); } while (0)
+# define Log11Func(a) do { Log11((LOG_FN_FMT ": ", LOG_FN_NAME)); Log11(a); } while (0)
 #endif
 
 /** @def Log12Func
@@ -1004,9 +1015,9 @@ typedef enum RTLOGDEST
  * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
  */
 #ifdef LOG_USE_C99
-# define Log12Func(a) _LogIt(RTLOGGRPFLAGS_LEVEL_12, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+# define Log12Func(a) _LogIt(RTLOGGRPFLAGS_LEVEL_12, LOG_GROUP, LOG_FN_FMT ": %M", LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define Log12Func(a) do { Log12((LOG_FN_FMT ": ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log12(a); } while (0)
+# define Log12Func(a) do { Log12((LOG_FN_FMT ": ", LOG_FN_NAME)); Log12(a); } while (0)
 #endif
 
 /** @def LogFlowFunc
@@ -1019,10 +1030,10 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define LogFlowFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_FLOW, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_FLOW, LOG_GROUP, LOG_FN_FMT ": %M", LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
 # define LogFlowFunc(a) \
-    do { LogFlow((LOG_FN_FMT ": ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); LogFlow(a); } while (0)
+    do { LogFlow((LOG_FN_FMT ": ", LOG_FN_NAME)); LogFlow(a); } while (0)
 #endif
 
 /** @def LogWarnFunc
@@ -1035,10 +1046,10 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define LogWarnFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_WARN, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_WARN, LOG_GROUP, LOG_FN_FMT ": %M", LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
 # define LogWarnFunc(a) \
-    do { LogFlow((LOG_FN_FMT ": ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); LogFlow(a); } while (0)
+    do { LogFlow((LOG_FN_FMT ": ", LOG_FN_NAME)); LogFlow(a); } while (0)
 #endif
 /** @} */
 
@@ -1053,9 +1064,9 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define LogThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define LogThisFunc(a) do { Log(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log(a); } while (0)
+# define LogThisFunc(a) do { Log(("{%p} " LOG_FN_FMT ": ", this, LOG_FN_NAME)); Log(a); } while (0)
 #endif
 
 /** @def Log2ThisFunc
@@ -1065,9 +1076,9 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define Log2ThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define Log2ThisFunc(a) do { Log2(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log2(a); } while (0)
+# define Log2ThisFunc(a) do { Log2(("{%p} " LOG_FN_FMT ": ", this, LOG_FN_NAME)); Log2(a); } while (0)
 #endif
 
 /** @def Log3ThisFunc
@@ -1077,9 +1088,9 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define Log3ThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_3, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_3, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define Log3ThisFunc(a) do { Log3(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log3(a); } while (0)
+# define Log3ThisFunc(a) do { Log3(("{%p} " LOG_FN_FMT ": ", this, LOG_FN_NAME)); Log3(a); } while (0)
 #endif
 
 /** @def Log4ThisFunc
@@ -1089,9 +1100,9 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define Log4ThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_4, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_4, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define Log4ThisFunc(a) do { Log4(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log4(a); } while (0)
+# define Log4ThisFunc(a) do { Log4(("{%p} " LOG_FN_FMT ": ", this, LOG_FN_NAME)); Log4(a); } while (0)
 #endif
 
 /** @def Log5ThisFunc
@@ -1101,9 +1112,9 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define Log5ThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define Log5ThisFunc(a) do { Log5(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log5(a); } while (0)
+# define Log5ThisFunc(a) do { Log5(("{%p} " LOG_FN_FMT ": ", this, LOG_FN_NAME)); Log5(a); } while (0)
 #endif
 
 /** @def Log6ThisFunc
@@ -1113,9 +1124,9 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define Log6ThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_6, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_6, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define Log6ThisFunc(a) do { Log6(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log6(a); } while (0)
+# define Log6ThisFunc(a) do { Log6(("{%p} " LOG_FN_FMT ": ", this, LOG_FN_NAME)); Log6(a); } while (0)
 #endif
 
 /** @def Log7ThisFunc
@@ -1125,9 +1136,9 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define Log7ThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_7, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_7, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define Log7ThisFunc(a) do { Log7(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log7(a); } while (0)
+# define Log7ThisFunc(a) do { Log7(("{%p} " LOG_FN_FMT ": ", this, LOG_FN_NAME)); Log7(a); } while (0)
 #endif
 
 /** @def Log8ThisFunc
@@ -1137,9 +1148,9 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define Log8ThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_8, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_8, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define Log8ThisFunc(a) do { Log8(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log8(a); } while (0)
+# define Log8ThisFunc(a) do { Log8(("{%p} " LOG_FN_FMT ": ", this, LOG_FN_NAME)); Log8(a); } while (0)
 #endif
 
 /** @def Log9ThisFunc
@@ -1149,9 +1160,9 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define Log9ThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_9, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_9, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define Log9ThisFunc(a) do { Log9(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log9(a); } while (0)
+# define Log9ThisFunc(a) do { Log9(("{%p} " LOG_FN_FMT ": ", this, LOG_FN_NAME)); Log9(a); } while (0)
 #endif
 
 /** @def Log10ThisFunc
@@ -1161,9 +1172,9 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define Log10ThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_10, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_10, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define Log10ThisFunc(a) do { Log10(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log10(a); } while (0)
+# define Log10ThisFunc(a) do { Log10(("{%p} " LOG_FN_FMT ": ", this, LOG_FN_NAME)); Log10(a); } while (0)
 #endif
 
 /** @def Log11ThisFunc
@@ -1173,9 +1184,9 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define Log11ThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_11, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_11, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define Log11ThisFunc(a) do { Log11(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log11(a); } while (0)
+# define Log11ThisFunc(a) do { Log11(("{%p} " LOG_FN_FMT ": ", this, LOG_FN_NAME)); Log11(a); } while (0)
 #endif
 
 /** @def Log12ThisFunc
@@ -1185,9 +1196,9 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define Log12ThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_12, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_12, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define Log12ThisFunc(a) do { Log12(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log12(a); } while (0)
+# define Log12ThisFunc(a) do { Log12(("{%p} " LOG_FN_FMT ": ", this, LOG_FN_NAME)); Log12(a); } while (0)
 #endif
 
 /** @def LogFlowThisFunc
@@ -1197,9 +1208,9 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define LogFlowThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_FLOW, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_FLOW, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define LogFlowThisFunc(a) do { LogFlow(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); LogFlow(a); } while (0)
+# define LogFlowThisFunc(a) do { LogFlow(("{%p} " LOG_FN_FMT ": ", this, LOG_FN_NAME)); LogFlow(a); } while (0)
 #endif
 
 /** @def LogWarnThisFunc
@@ -1209,9 +1220,9 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define LogWarnThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_WARN, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_WARN, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define LogWarnThisFunc(a) do { LogWarn(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); LogWarn(a); } while (0)
+# define LogWarnThisFunc(a) do { LogWarn(("{%p} " LOG_FN_FMT ": ", this, LOG_FN_NAME)); LogWarn(a); } while (0)
 #endif
 /** @} */
 
@@ -1237,10 +1248,10 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define Log1WarningFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": WARNING! %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": WARNING! %M", LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
 # define Log1WarningFunc(a) \
-    do { Log((LOG_FN_FMT ": WARNING! ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log(a); } while (0)
+    do { Log((LOG_FN_FMT ": WARNING! ", LOG_FN_NAME)); Log(a); } while (0)
 #endif
 
 /** @def Log1WarningThisFunc
@@ -1251,10 +1262,10 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define Log1WarningThisFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": WARNING! %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": WARNING! %M", this, LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
 # define Log1WarningThisFunc(a) \
-    do { Log(("{%p} " LOG_FN_FMT ": WARNING! ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); Log(a); } while (0)
+    do { Log(("{%p} " LOG_FN_FMT ": WARNING! ", this, LOG_FN_NAME)); Log(a); } while (0)
 #endif
 
 
@@ -1294,6 +1305,79 @@ typedef enum RTLOGDEST
 /** @} */
 
 
+/** @name Logging to specific group.
+ * @{ */
+/** @def LogEx
+ * Level 1 logging to specific group.
+ */
+#define LogEx(a_Grp, a)         LogIt(RTLOGGRPFLAGS_LEVEL_1, a_Grp, a)
+
+/** @def Log2Ex
+ * Level 2 logging to specific group.
+ */
+#define Log2Ex(a_Grp, a)        LogIt(RTLOGGRPFLAGS_LEVEL_2,  a_Grp, a)
+
+/** @def Log3Ex
+ * Level 3 logging to specific group.
+ */
+#define Log3Ex(a_Grp, a)        LogIt(RTLOGGRPFLAGS_LEVEL_3,  a_Grp, a)
+
+/** @def Log4Ex
+ * Level 4 logging to specific group.
+ */
+#define Log4Ex(a_Grp, a)        LogIt(RTLOGGRPFLAGS_LEVEL_4,  a_Grp, a)
+
+/** @def Log5Ex
+ * Level 5 logging to specific group.
+ */
+#define Log5Ex(a_Grp, a)        LogIt(RTLOGGRPFLAGS_LEVEL_5,  a_Grp, a)
+
+/** @def Log6Ex
+ * Level 6 logging to specific group.
+ */
+#define Log6Ex(a_Grp, a)        LogIt(RTLOGGRPFLAGS_LEVEL_6,  a_Grp, a)
+
+/** @def Log7Ex
+ * Level 7 logging to specific group.
+ */
+#define Log7Ex(a_Grp, a)        LogIt(RTLOGGRPFLAGS_LEVEL_7,  a_Grp, a)
+
+/** @def Log8Ex
+ * Level 8 logging to specific group.
+ */
+#define Log8Ex(a_Grp, a)        LogIt(RTLOGGRPFLAGS_LEVEL_8,  a_Grp, a)
+
+/** @def Log9Ex
+ * Level 9 logging to specific group.
+ */
+#define Log9Ex(a_Grp, a)        LogIt(RTLOGGRPFLAGS_LEVEL_9,  a_Grp, a)
+
+/** @def Log10Ex
+ * Level 10 logging to specific group.
+ */
+#define Log10Ex(a_Grp, a)       LogIt(RTLOGGRPFLAGS_LEVEL_10, a_Grp, a)
+
+/** @def Log11Ex
+ * Level 11 logging to specific group.
+ */
+#define Log11Ex(a_Grp, a)       LogIt(RTLOGGRPFLAGS_LEVEL_11, a_Grp, a)
+
+/** @def Log12Ex
+ * Level 12 logging to specific group.
+ */
+#define Log12Ex(a_Grp, a)       LogIt(RTLOGGRPFLAGS_LEVEL_12,  a_Grp, a)
+
+/** @def LogFlowEx
+ * Logging of execution flow to specific group.
+ */
+#define LogFlowEx(a_Grp, a)     LogIt(RTLOGGRPFLAGS_FLOW,      a_Grp, a)
+
+/** @def LogWarnEx
+ * Logging of warnings to specific group.
+ */
+#define LogWarnEx(a_Grp, a)     LogIt(RTLOGGRPFLAGS_WARN,      a_Grp, a)
+/** @} */
+
 
 /** @name Passing Function Call Position When Logging.
  *
@@ -1304,7 +1388,7 @@ typedef enum RTLOGDEST
  * @{  */
 /** Source position for passing to a function call. */
 #ifdef LOG_ENABLED
-# define RTLOG_COMMA_SRC_POS        , __FILE__, __LINE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__
+# define RTLOG_COMMA_SRC_POS        , __FILE__, __LINE__, LOG_FN_NAME
 #else
 # define RTLOG_COMMA_SRC_POS        RT_NOTHING
 #endif
@@ -1697,9 +1781,9 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define LogRelFunc(a) \
-    _LogRelItLikely(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogRelItLikely(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": %M", LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define LogRelFunc(a)      do { LogRel((LOG_FN_FMT ": ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); LogRel(a); } while (0)
+# define LogRelFunc(a)      do { LogRel((LOG_FN_FMT ": ", LOG_FN_NAME)); LogRel(a); } while (0)
 #endif
 
 /** @def LogRelFlowFunc
@@ -1711,9 +1795,9 @@ typedef enum RTLOGDEST
  * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
  */
 #ifdef LOG_USE_C99
-# define LogRelFlowFunc(a)  _LogRelIt(RTLOGGRPFLAGS_FLOW, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+# define LogRelFlowFunc(a)  _LogRelIt(RTLOGGRPFLAGS_FLOW, LOG_GROUP, LOG_FN_FMT ": %M", LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define LogRelFlowFunc(a)  do { LogRelFlow((LOG_FN_FMT ": ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); LogRelFlow(a); } while (0)
+# define LogRelFlowFunc(a)  do { LogRelFlow((LOG_FN_FMT ": ", LOG_FN_NAME)); LogRelFlow(a); } while (0)
 #endif
 
 /** @def LogRelMaxFunc
@@ -1722,10 +1806,10 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define LogRelMaxFunc(a_cMax, a) \
-    _LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": %M", LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
 # define LogRelMaxFunc(a_cMax, a) \
-    do { LogRelMax(a_cMax, (LOG_FN_FMT ": ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); LogRelMax(a_cMax, a); } while (0)
+    do { LogRelMax(a_cMax, (LOG_FN_FMT ": ", LOG_FN_NAME)); LogRelMax(a_cMax, a); } while (0)
 #endif
 
 /** @def LogRelMaxFlowFunc
@@ -1739,10 +1823,10 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define LogRelMaxFlowFunc(a_cMax, a) \
-    _LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_FLOW, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_FLOW, LOG_GROUP, LOG_FN_FMT ": %M", LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
 # define LogRelMaxFlowFunc(a_cMax, a) \
-    do { LogRelMaxFlow(a_cMax, (LOG_FN_FMT ": ", RT_GCC_EXTENSION __PRETTY_FUNCTION__)); LogRelFlow(a_cMax, a); } while (0)
+    do { LogRelMaxFlow(a_cMax, (LOG_FN_FMT ": ", LOG_FN_NAME)); LogRelFlow(a_cMax, a); } while (0)
 #endif
 
 /** @} */
@@ -1757,10 +1841,10 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define LogRelThisFunc(a) \
-    _LogRelItLikely(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogRelItLikely(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
 # define LogRelThisFunc(a) \
-    do { LogRel(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); LogRel(a); } while (0)
+    do { LogRel(("{%p} " LOG_FN_FMT ": ", this, LOG_FN_NAME)); LogRel(a); } while (0)
 #endif
 
 /** @def LogRelMaxThisFunc
@@ -1771,10 +1855,10 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define LogRelMaxThisFunc(a_cMax, a) \
-    _LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
 # define LogRelMaxThisFunc(a_cMax, a) \
-    do { LogRelMax(a_cMax, ("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); LogRelMax(a_cMax, a); } while (0)
+    do { LogRelMax(a_cMax, ("{%p} " LOG_FN_FMT ": ", this, LOG_FN_NAME)); LogRelMax(a_cMax, a); } while (0)
 #endif
 
 /** @def LogRelFlowThisFunc
@@ -1783,9 +1867,9 @@ typedef enum RTLOGDEST
  */
 #ifdef LOG_USE_C99
 # define LogRelFlowThisFunc(a) \
-    _LogRelIt(RTLOGGRPFLAGS_FLOW, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogRelIt(RTLOGGRPFLAGS_FLOW, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, LOG_FN_NAME, _LogRemoveParentheseis a )
 #else
-# define LogRelFlowThisFunc(a) do { LogRelFlow(("{%p} " LOG_FN_FMT ": ", this, RT_GCC_EXTENSION __PRETTY_FUNCTION__)); LogRelFlow(a); } while (0)
+# define LogRelFlowThisFunc(a) do { LogRelFlow(("{%p} " LOG_FN_FMT ": ", this, LOG_FN_NAME)); LogRelFlow(a); } while (0)
 #endif
 
 
