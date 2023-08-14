@@ -111,6 +111,17 @@ int QIDialog::execute(bool fShow /* = true */, bool fApplicationModal /* = false
     return iResultCode;
 }
 
+void QIDialog::done(int iResult)
+{
+    /* Call to base-class: */
+    QDialog::done(iResult);
+
+    /* Make sure event-loop exited even if no dialog visibility changed, s.a. QIDialog::setVisible above.
+     * That is necessary to exit event-loop if dialog was executed with fShow == false. */
+    if (m_pEventLoop && m_pEventLoop->isRunning() && !QDialog::isVisible())
+        m_pEventLoop->exit();
+}
+
 void QIDialog::showEvent(QShowEvent *pEvent)
 {
     /* Make sure we should polish dialog: */
