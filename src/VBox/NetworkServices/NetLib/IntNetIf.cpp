@@ -110,6 +110,8 @@ static int intnetR3IfCallSvc(PINTNETIFCTXINT pThis, uint32_t uOperation, PSUPVMM
         xpc_dictionary_set_uint64(hObj, "req-id", uOperation);
         xpc_dictionary_set_data(hObj, "req", pReqHdr, pReqHdr->cbReq);
         xpc_object_t hObjReply = xpc_connection_send_message_with_reply_sync(pThis->hXpcCon, hObj);
+        xpc_release(hObj);
+
         int rc = (int)xpc_dictionary_get_int64(hObjReply, "rc");
 
         size_t cbReply = 0;
