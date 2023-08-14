@@ -811,6 +811,22 @@ static void drvHostAudioWasCacheDestroyDevConfig(PDRVHOSTAUDIOWAS pThis, PDRVHOS
     RTMemFree(pDevCfg);
 }
 
+/**
+ * Invalidates device cache entry configurations.
+ *
+ * @param   pThis       The WASAPI host audio driver instance data.
+ * @param   pDevEntry   The device entry to invalidate.
+ */
+static void drvHostAudioWasCacheInvalidateDevEntryConfig(PDRVHOSTAUDIOWAS pThis, PDRVHOSTAUDIOWASCACHEDEV pDevEntry)
+{
+    RT_NOREF(pThis);
+
+    Log8Func(("Invalidating cache entry configurations: %p - '%ls'\n", pDevEntry, pDevEntry->wszDevId));
+
+    PDRVHOSTAUDIOWASCACHEDEVCFG pDevCfg, pDevCfgNext;
+    RTListForEachSafe(&pDevEntry->ConfigList, pDevCfg, pDevCfgNext, DRVHOSTAUDIOWASCACHEDEVCFG, ListEntry)
+        pDevCfg->pIAudioClient = NULL;
+}
 
 /**
  * Destroys a device cache entry.
@@ -1223,20 +1239,44 @@ static int drvHostAudioWasCacheLookupOrCreate(PDRVHOSTAUDIOWAS pThis, IMMDevice 
         /*
          * The cache has two levels, so first the device entry.
          */
-        PDRVHOSTAUDIOWASCACHEDEV pDevEntry;
+        PDRVHOSTAUDIOWASCACHEDEV pDevEntry, pDevEntryNext;
         RTCritSectEnter(&pThis->CritSectCache);
-        RTListForEach(&pThis->CacheHead, pDevEntry, DRVHOSTAUDIOWASCACHEDEV, ListEntry)
+        RTListForEachSafe(&pThis->CacheHead, pDevEntry, pDevEntryNext, DRVHOSTAUDIOWASCACHEDEV, ListEntry)
         {
             if (   pDevEntry->cwcDevId == cwcDevId
                 && pDevEntry->enmDir   == pCfgReq->enmDir
                 && RTUtf16Cmp(pDevEntry->wszDevId, pwszDevId) == 0)
             {
+                /*
+                 * Cache hit -- here we now need to also check if the device interface we want to look up
+                 * actually matches the one we have in the cache entry.
+                 *
+                 * If it doesn't, invalidate + remove the cache entry from the cache and bail out.
+                 * Add a new device entry to the cache with the new interface below then.
+                 *
+                 * This is needed when switching audio interfaces and the device interface becomes invalid via
+                 * AUDCLNT_E_DEVICE_INVALIDATED.  See @bugref{10503}
+                 */
+                if (pIDevice != pDevEntry->pIDevice)
+                {
+                    Log2Func(("Cache hit for device '%ls': Stale interface (new: %p, old: %p)\n",
+                              pDevEntry->wszDevId, pIDevice, pDevEntry->pIDevice));
+
+                    drvHostAudioWasCacheInvalidateDevEntryConfig(pThis, pDevEntry);
+                    RTListNodeRemove(&pDevEntry->ListEntry);
+                    drvHostAudioWasCacheDestroyDevEntry(pThis, pDevEntry);
+                    pDevEntry = NULL;
+                    break;
+                }
+
                 CoTaskMemFree(pwszDevId);
                 Log8Func(("Cache hit for device '%ls': %p\n", pDevEntry->wszDevId, pDevEntry));
                 return drvHostAudioWasCacheLookupOrCreateConfig(pThis, pDevEntry, pCfgReq, fOnWorker, ppDevCfg);
             }
         }
         RTCritSectLeave(&pThis->CritSectCache);
+
+        Log8Func(("Cache miss for device '%ls': %p\n", pDevEntry->wszDevId, pDevEntry));
 
         /*
          * Device not in the cache, add it.
