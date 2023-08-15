@@ -9,9 +9,7 @@
 
 #ifndef OSSL_INTERNAL_THREAD_ONCE_H
 # define OSSL_INTERNAL_THREAD_ONCE_H
-# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
-# endif                                                                                                 /* VBOX */
 
 # include <openssl/crypto.h>
 
@@ -22,7 +20,6 @@
  * module gets unloaded.
  */
 # if !defined(FIPS_MODULE) || defined(ALLOW_RUN_ONCE_IN_FIPS)
-#  ifndef VBOX
 /*
  * DEFINE_RUN_ONCE: Define an initialiser function that should be run exactly
  * once. It takes no arguments and returns an int result (1 for success or
@@ -118,50 +115,6 @@
     }                                             \
     static int initalt(void)
 
-#else /* VBOX */
-
-/*
- * PFNRTONCE returns an IPRT status code but the OpenSSL once functions
- * return 1 for success and 0 for failure. We need to translate between
- * these errors back (here) and force (in RUN_ONCE()).
- */
-#  define DEFINE_RUN_ONCE(init)                                       \
-    static int init(void);                                            \
-    int init##_ossl_ret_ = 0;                                         \
-    DECLCALLBACK(int) init##_ossl_(void *pvUser)               \
-    {                                                                 \
-        init##_ossl_ret_ = init();                                    \
-        return init##_ossl_ret_ ? VINF_SUCCESS : VERR_INTERNAL_ERROR; \
-    }                                                                 \
-    static int init(void)
-
-#  define DECLARE_RUN_ONCE(init)                \
-    extern int init##_ossl_ret_;                \
-    extern DECLCALLBACK(int) init##_ossl_(void *pvUser);
-
-#  undef DEFINE_RUN_ONCE_STATIC_ALT  /* currently unused */
-
-#  define DEFINE_RUN_ONCE_STATIC(init)            \
-    static int init(void);                                            \
-    static int init##_ossl_ret_ = 0;                                  \
-    static DECLCALLBACK(int) init##_ossl_(void *pvUser)               \
-    {                                                                 \
-        init##_ossl_ret_ = init();                                    \
-        return init##_ossl_ret_ ? VINF_SUCCESS : VERR_INTERNAL_ERROR; \
-    }                                                                 \
-    static int init(void)
-
-#  define DEFINE_RUN_ONCE_STATIC_ALT(initalt, init)            \
-    static int initalt(void);                                         \
-    static DECLCALLBACK(int) initalt##_ossl_(void *pvUser)            \
-    {                                                                 \
-        init##_ossl_ret_ = initalt();                                 \
-        return init##_ossl_ret_ ? VINF_SUCCESS : VERR_INTERNAL_ERROR; \
-    }                                                                 \
-    static int initalt(void)
-
-#endif /* VBOX */
-
 /*
  * RUN_ONCE - use CRYPTO_THREAD_run_once, and check if the init succeeded
  * @once: pointer to static object of type CRYPTO_ONCE
@@ -173,7 +126,6 @@
  *
  * (*) by convention, since the init function must return 1 on success.
  */
-#  ifndef VBOX
 #  define RUN_ONCE(once, init)                                            \
     (CRYPTO_THREAD_run_once(once, init##_ossl_) ? init##_ossl_ret_ : 0)
 
@@ -194,14 +146,6 @@
  */
 #  define RUN_ONCE_ALT(once, initalt, init)                               \
     (CRYPTO_THREAD_run_once(once, initalt##_ossl_) ? init##_ossl_ret_ : 0)
-#  else
-#  define RUN_ONCE(once, init)                                                 \
-    (RT_SUCCESS_NP(RTOnce(once, init##_ossl_, NULL)) ? init##_ossl_ret_ : 0)
-
-#  define RUN_ONCE_ALT(once, initalt, init)                               \
-    (RT_SUCCESS_NP(RTOnce(once, initalt##_ossl_, NULL)) ? init##_ossl_ret_ : 0)
-#  endif /* VBOX */
 
 # endif /* FIPS_MODULE */
 #endif /* OSSL_INTERNAL_THREAD_ONCE_H */
-

@@ -13,7 +13,7 @@
 # include <spt_extensions.h> /* timeval */
 #endif
 #include <stdio.h>
-#include "e_os.h"
+#include "internal/e_os.h"
 #include <openssl/rand.h>
 #include <openssl/engine.h>
 #include "internal/refcount.h"

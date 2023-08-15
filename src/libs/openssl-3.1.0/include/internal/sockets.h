@@ -9,9 +9,7 @@
 
 #ifndef OSSL_INTERNAL_SOCKETS_H
 # define OSSL_INTERNAL_SOCKETS_H
-# ifndef RT_WITHOUT_PRAGMA_ONCE                                                                         /* VBOX */
 # pragma once
-# endif                                                                                                 /* VBOX */
 
 # include <openssl/opensslconf.h>
 
@@ -113,11 +111,6 @@ struct servent *PASCAL getservbyname(const char *, const char *);
 #  ifndef INVALID_SOCKET
 #   define INVALID_SOCKET      (-1)
 #  endif
-
-#  ifdef RT_OS_OS2              /* VBOX */
-#   define socklen_t int        /* VBOX */
-#   undef AF_INET6              /* VBOX */
-#  endif                        /* VBOX */
 # endif
 
 /*

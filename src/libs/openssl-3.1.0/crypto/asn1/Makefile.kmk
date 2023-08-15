@@ -63,6 +63,7 @@ crypto_asn1_SOURCES = \
 	asn_pack.c \
 	bio_asn1.c \
 	bio_ndef.c \
+	d2i_param.c \
 	d2i_pr.c \
 	d2i_pu.c \
 	evp_asn1.c \

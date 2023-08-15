@@ -142,6 +142,18 @@ int CRYPTO_THREAD_compare_id(CRYPTO_THREAD_ID a, CRYPTO_THREAD_ID b)
     return (a == b);
 }
 
+int CRYPTO_THREAD_run_once(CRYPTO_ONCE *once, void (*init)(void))
+{
+/** @todo Implement function */
+/*    if (*once != 0)
+        return 1;
+
+    init();
+    *once = 1;
+*/
+    return 1;
+}
+
 int CRYPTO_atomic_add(int *val, int amount, int *ret, CRYPTO_RWLOCK *lock)
 {
     *ret = ASMAtomicAddS32((int32_t volatile*)val, amount) + amount;
