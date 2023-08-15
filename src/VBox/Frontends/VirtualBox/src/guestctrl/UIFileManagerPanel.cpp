@@ -35,6 +35,8 @@
 /* GUI includes: */
 #include "UIFileManagerPanel.h"
 
+/* Other VBox includes: */
+#include <iprt/assert.h>
 
 UIFileManagerPanel::UIFileManagerPanel(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)

@@ -42,7 +42,6 @@
 #include "UIIconPool.h"
 #include "UIFileManager.h"
 #include "UIFileManagerPanel.h"
-#include "UIFileManagerOptionsPanel.h"
 #include "UIFileManagerLogPanel.h"
 #include "UIFileManagerOperationsPanel.h"
 #include "UIFileManagerGuestTable.h"
@@ -135,7 +134,6 @@ UIFileManager::UIFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
     , m_enmEmbedding(enmEmbedding)
     , m_pActionPool(pActionPool)
     , m_fShowToolbar(fShowToolbar)
-    , m_pOptionsPanel(0)
     , m_pLogPanel(0)
     , m_pOperationsPanel(0)
     , m_pPanel(0)
@@ -237,9 +235,6 @@ void UIFileManager::prepareObjects()
     for (int i = 0; i < m_pFileTableSplitter->count(); ++i)
         m_pFileTableSplitter->setCollapsible(i, false);
 
-    /* Create options and session panels and insert them into pTopLayout: */
-    prepareOptionsAndSessionPanels(pTopLayout);
-
     /** Vertical splitter has 3 widgets. Log panel as bottom most one, operations panel on top of it,
      * and pTopWidget which contains everthing else: */
     m_pVerticalSplitter = new QSplitter;
@@ -318,15 +313,6 @@ void UIFileManager::prepareConnections()
             connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToGuest), &QAction::triggered,
                     this, &UIFileManager::sltCopyHostToGuest);
     }
-    if (m_pOptionsPanel)
-    {
-        connect(m_pOptionsPanel, &UIFileManagerOptionsPanel::sigHidePanel,
-                this, &UIFileManager::sltHandleHidePanel);
-        connect(m_pOptionsPanel, &UIFileManagerOptionsPanel::sigShowPanel,
-                this, &UIFileManager::sltHandleShowPanel);
-        connect(m_pOptionsPanel, &UIFileManagerOptionsPanel::sigOptionsChanged,
-                this, &UIFileManager::sltHandleOptionsUpdated);
-    }
     if (m_pLogPanel)
     {
         connect(m_pLogPanel, &UIFileManagerLogPanel::sigHidePanel,
@@ -346,8 +332,6 @@ void UIFileManager::prepareConnections()
     {
         connect(m_pHostFileTable, &UIFileManagerHostTable::sigLogOutput,
                 this, &UIFileManager::sltReceieveLogOutput);
-        connect(m_pHostFileTable, &UIFileManagerHostTable::sigDeleteConfirmationOptionChanged,
-                this, &UIFileManager::sltHandleOptionsUpdated);
         connect(m_pHostFileTable, &UIFileManagerGuestTable::sigSelectionChanged,
                 this, &UIFileManager::sltFileTableSelectionChanged);
     }
@@ -442,22 +426,6 @@ void UIFileManager::sltFileOperationComplete(QUuid progressId)
         if (pTable)
             pTable->refresh();
     }
-}
-
-void UIFileManager::sltHandleOptionsUpdated()
-{
-    if (m_pOptionsPanel)
-        m_pOptionsPanel->update();
-
-    for (int i = 0; i < m_pGuestTablesContainer->count(); ++i)
-    {
-        UIFileManagerGuestTable *pTable = qobject_cast<UIFileManagerGuestTable*>(m_pGuestTablesContainer->widget(i));
-        if (pTable)
-            pTable->optionsUpdated();
-    }
-    if (m_pHostFileTable)
-        m_pHostFileTable->optionsUpdated();
-    saveOptions();
 }
 
 void UIFileManager::sltHandleHidePanel(UIDialogPanel *pPanel)
@@ -573,20 +541,6 @@ void UIFileManager::copyToGuest()
         UIFileManagerGuestTable *pGuestFileTable = currentGuestTable();
         if (pGuestFileTable)
             pGuestFileTable->copyHostToGuest(m_pHostFileTable->selectedItemPathList());
-    }
-}
-
-void UIFileManager::prepareOptionsAndSessionPanels(QVBoxLayout *pLayout)
-{
-    if (!pLayout)
-        return;
-
-    m_pOptionsPanel = new UIFileManagerOptionsPanel(0 /*parent */, UIFileManagerOptions::instance());
-    if (m_pOptionsPanel)
-    {
-        m_pOptionsPanel->hide();
-        m_panelActionMap.insert(m_pOptionsPanel, m_pActionPool->action(UIActionIndex_M_FileManager_T_Options));
-        pLayout->addWidget(m_pOptionsPanel);
     }
 }
 
@@ -848,8 +802,6 @@ void UIFileManager::addTabs(const QVector<QUuid> &machineIdsToAdd)
                     this, &UIFileManager::sltFileTableSelectionChanged);
             connect(pGuestFileTable, &UIFileManagerGuestTable::sigNewFileOperation,
                     this, &UIFileManager::sltReceieveNewFileOperation);
-            connect(pGuestFileTable, &UIFileManagerGuestTable::sigDeleteConfirmationOptionChanged,
-                    this, &UIFileManager::sltHandleOptionsUpdated);
             connect(pGuestFileTable, &UIFileManagerGuestTable::sigStateChanged,
                     this, &UIFileManager::sltGuestFileTableStateChanged);
         }

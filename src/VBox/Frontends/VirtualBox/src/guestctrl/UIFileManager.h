@@ -55,7 +55,6 @@ class UIDialogPanel;
 class UIFileManagerLogPanel;
 class UIFileManagerPanel;
 class UIFileManagerOperationsPanel;
-class UIFileManagerOptionsPanel;
 class UIFileManagerGuestTable;
 class UIFileManagerHostTable;
 class UIVirtualMachineItem;
@@ -122,8 +121,6 @@ private slots:
     void sltPanelActionToggled(bool fChecked);
     void sltReceieveNewFileOperation(const CProgress &comProgress, const QString &strTableName);
     void sltFileOperationComplete(QUuid progressId);
-    /** Performs whatever necessary when some signal about option change has been receieved. */
-    void sltHandleOptionsUpdated();
     void sltHandleHidePanel(UIDialogPanel *pPanel);
     void sltHandleShowPanel(UIDialogPanel *pPanel);
     void sltCommitDataSignalReceived();
@@ -137,8 +134,6 @@ private:
     void prepareConnections();
     void prepareVerticalToolBar(QHBoxLayout *layout);
     void prepareToolBar();
-    /** Creates options and sessions panels and adds them to @p pLayout.  */
-    void prepareOptionsAndSessionPanels(QVBoxLayout *pLayout);
     void prepareOperationsAndLogPanels(QSplitter *pSplitter);
 
     /** Saves list of panels and file manager options to the extra data. */
@@ -184,7 +179,6 @@ private:
     const bool     m_fShowToolbar;
     QMap<UIDialogPanel*, QAction*> m_panelActionMap;
     QList<UIDialogPanel*>          m_visiblePanelsList;
-    UIFileManagerOptionsPanel     *m_pOptionsPanel;
     UIFileManagerLogPanel         *m_pLogPanel;
     UIFileManagerOperationsPanel  *m_pOperationsPanel;
     UIFileManagerPanel            *m_pPanel;
@@ -192,7 +186,6 @@ private:
 
     QVector<QUuid> m_machineIds;
 
-    friend class UIFileManagerOptionsPanel;
     friend class UIFileManagerDialog;
 };
 
