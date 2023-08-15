@@ -1582,10 +1582,16 @@ static int nemR3DarwinExportDebugState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
         pVCpu->nem.s.fUsingHyperDR7 = false;
     }
 
+    /** @todo The DRx handling is not quite correct breaking debugging inside the guest with gdb,
+     * see @ticketref{21413} and @ticketref{21546}, so this is disabled for now. See @bugref{10504}
+     * as well.
+     */
+#if 0
     if (fInterceptMovDRx)
         uProcCtls |= VMX_PROC_CTLS_MOV_DR_EXIT;
     else
         uProcCtls &= ~VMX_PROC_CTLS_MOV_DR_EXIT;
+#endif
 
     /*
      * Update the processor-based VM-execution controls with the MOV-DRx intercepts and the
@@ -1599,6 +1605,12 @@ static int nemR3DarwinExportDebugState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
     }
 
     /*
+     * Update guest DR7.
+     */
+    int rc = nemR3DarwinWriteVmcs64(pVCpu, VMX_VMCS_GUEST_DR7, u64GuestDr7);
+    AssertRC(rc);
+
+    /*
      * If we have forced EFLAGS.TF to be set because we're single-stepping in the hypervisor debugger,
      * we need to clear interrupt inhibition if any as otherwise it causes a VM-entry failure.
      *
@@ -1610,7 +1622,7 @@ static int nemR3DarwinExportDebugState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
         Assert(pVCpu->cpum.GstCtx.eflags.Bits.u1TF);
 
         uint32_t fIntrState = 0;
-        int rc = nemR3DarwinReadVmcs32(pVCpu, VMX_VMCS32_GUEST_INT_STATE, &fIntrState);
+        rc = nemR3DarwinReadVmcs32(pVCpu, VMX_VMCS32_GUEST_INT_STATE, &fIntrState);
         AssertRC(rc);
 
         if (fIntrState & (VMX_VMCS_GUEST_INT_STATE_BLOCK_STI | VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS))
@@ -2675,9 +2687,14 @@ static int nemR3DarwinVmxSetupVmcsProcCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInf
     uint32_t       fVal = g_HmMsrs.u.vmx.ProcCtls.n.allowed0;     /* Bits set here must be set in the VMCS. */
     uint32_t const fZap = g_HmMsrs.u.vmx.ProcCtls.n.allowed1;     /* Bits cleared here must be cleared in the VMCS. */
 
+    /** @todo The DRx handling is not quite correct breaking debugging inside the guest with gdb,
+     * see @ticketref{21413} and @ticketref{21546}, so intercepting mov drX is disabled for now. See @bugref{10504}
+     * as well. This will break the hypervisor debugger but only very few people use it and even less on macOS
+     * using the NEM backend.
+     */
     fVal |= VMX_PROC_CTLS_HLT_EXIT                                    /* HLT causes a VM-exit. */
 //         |  VMX_PROC_CTLS_USE_TSC_OFFSETTING                          /* Use TSC-offsetting. */
-         |  VMX_PROC_CTLS_MOV_DR_EXIT                                 /* MOV DRx causes a VM-exit. */
+//         |  VMX_PROC_CTLS_MOV_DR_EXIT                                 /* MOV DRx causes a VM-exit. */
          |  VMX_PROC_CTLS_UNCOND_IO_EXIT                              /* All IO instructions cause a VM-exit. */
          |  VMX_PROC_CTLS_RDPMC_EXIT                                  /* RDPMC causes a VM-exit. */
          |  VMX_PROC_CTLS_MONITOR_EXIT                                /* MONITOR causes a VM-exit. */
@@ -2782,8 +2799,13 @@ static void nemR3DarwinVmxSetupVmcsXcptBitmap(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcs
      * #DB - To maintain the DR6 state even when intercepting DRx reads/writes and
      *       recursive #DBs can cause a CPU hang.
      */
+    /** @todo The DRx handling is not quite correct breaking debugging inside the guest with gdb,
+     * see @ticketref{21413} and @ticketref{21546}, so intercepting #DB is disabled for now. See @bugref{10504}
+     * as well. This will break the hypervisor debugger but only very few people use it and even less on macOS
+     * using the NEM backend.
+     */
     uint32_t const uXcptBitmap = RT_BIT(X86_XCPT_AC)
-                               | RT_BIT(X86_XCPT_DB);
+                               /*| RT_BIT(X86_XCPT_DB)*/;
 
     /* Commit it to the VMCS. */
     int rc = nemR3DarwinWriteVmcs32(pVCpu, VMX_VMCS32_CTRL_EXCEPTION_BITMAP, uXcptBitmap);
