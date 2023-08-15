@@ -2800,7 +2800,7 @@ static void nemR3DarwinVmxSetupVmcsXcptBitmap(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcs
      *       recursive #DBs can cause a CPU hang.
      */
     /** @todo The DRx handling is not quite correct breaking debugging inside the guest with gdb,
-     * see @ticketref{21413} and @ticketref{21546}, so intercepting #DB is disabled for now. See @bugref{10504}
+     * see @ticketref{21413} and @ticketref{21546}, so intercepting \#DB is disabled for now. See @bugref{10504}
      * as well. This will break the hypervisor debugger but only very few people use it and even less on macOS
      * using the NEM backend.
      */
