@@ -92,7 +92,6 @@ private:
     QILineEdit   *m_pVisoNameLineEdit;
     QILineEdit   *m_pCustomOptionsLineEdit;
     QCheckBox    *m_pShowHiddenObjectsCheckBox;
-    QILabel      *m_pShowHiddenObjectsLabel;
     QGridLayout  *m_pVisoOptionsGridLayout;
 };
 
@@ -109,7 +108,6 @@ UIVisoSettingWidget::UIVisoSettingWidget(QWidget *pParent)
     , m_pVisoNameLineEdit(0)
     , m_pCustomOptionsLineEdit(0)
     , m_pShowHiddenObjectsCheckBox(0)
-    , m_pShowHiddenObjectsLabel(0)
     , m_pVisoOptionsGridLayout(0)
 {
     prepareObjects();
@@ -171,9 +169,6 @@ void UIVisoSettingWidget::prepareObjects()
     iRow = 0;
     QHBoxLayout *pShowHiddenObjectsLayout = new QHBoxLayout;
     m_pShowHiddenObjectsCheckBox = new QCheckBox;
-    m_pShowHiddenObjectsLabel = new QILabel(QApplication::translate("UIVisoCreatorWidget", "Show Hidden Objects:"));
-    m_pShowHiddenObjectsLabel->setBuddy(m_pShowHiddenObjectsCheckBox);
-    pShowHiddenObjectsLayout->addWidget(m_pShowHiddenObjectsLabel);
     pShowHiddenObjectsLayout->addWidget(m_pShowHiddenObjectsCheckBox);
     pShowHiddenObjectsLayout->addStretch(1);
     pDialogSettingsContainerLayout->addLayout(pShowHiddenObjectsLayout, iRow, 0, 1, 2, Qt::AlignTop);
@@ -201,11 +196,12 @@ void UIVisoSettingWidget::retranslateUi()
         m_pVisoNameLineEdit->setToolTip(QApplication::translate("UIVisoCreatorWidget", "Holds the name of the VISO medium."));
     if (m_pCustomOptionsLineEdit)
         m_pCustomOptionsLineEdit->setToolTip(QApplication::translate("UIVisoCreatorWidget", "The list of suctom options delimited with ';'."));
-    if (m_pShowHiddenObjectsLabel)
-        m_pShowHiddenObjectsLabel->setText(QApplication::translate("UIVisoCreatorWidget", "Show Hidden Objects:"));
     if (m_pShowHiddenObjectsCheckBox)
+    {
         m_pShowHiddenObjectsCheckBox->setToolTip(QApplication::translate("UIVisoCreatorWidget", "When checked, "
                                                                          "multiple hidden objects are shown in the file browser"));
+        m_pShowHiddenObjectsCheckBox->setText(QApplication::translate("UIVisoCreatorWidget", "Show Hidden Objects"));
+    }
 
     //m_pVisoOptionsGridLayout->setColumnMinimumWidth(0, iLabelWidth);
 }
