@@ -93,6 +93,7 @@ private:
     QILineEdit   *m_pCustomOptionsLineEdit;
     QCheckBox    *m_pShowHiddenObjectsCheckBox;
     QILabel      *m_pShowHiddenObjectsLabel;
+    QGridLayout  *m_pVisoOptionsGridLayout;
 };
 
 
@@ -109,6 +110,7 @@ UIVisoSettingWidget::UIVisoSettingWidget(QWidget *pParent)
     , m_pCustomOptionsLineEdit(0)
     , m_pShowHiddenObjectsCheckBox(0)
     , m_pShowHiddenObjectsLabel(0)
+    , m_pVisoOptionsGridLayout(0)
 {
     prepareObjects();
     prepareConnections();
@@ -124,8 +126,8 @@ void UIVisoSettingWidget::prepareObjects()
 
     QWidget *pVisoOptionsContainerWidget = new QWidget;
     AssertReturnVoid(pVisoOptionsContainerWidget);
-    QGridLayout *pVisoOptionsGridLayout = new QGridLayout(pVisoOptionsContainerWidget);
-    AssertReturnVoid(pVisoOptionsGridLayout);
+    m_pVisoOptionsGridLayout = new QGridLayout(pVisoOptionsContainerWidget);
+    AssertReturnVoid(m_pVisoOptionsGridLayout);
     //pVisoOptionsGridLayout->setSpacing(0);
     //pVisoOptionsGridLayout->setContentsMargins(0, 0, 0, 0);
 
@@ -135,12 +137,14 @@ void UIVisoSettingWidget::prepareObjects()
     m_pVisoNameLabel = new QILabel(QApplication::translate("UIVisoCreatorWidget", "VISO Name:"));
     m_pVisoNameLineEdit = new QILineEdit;
     int iRow = 0;
-    if (m_pVisoNameLabel && m_pVisoNameLineEdit)
-    {
-        m_pVisoNameLabel->setBuddy(m_pVisoNameLineEdit);
-        pVisoOptionsGridLayout->addWidget(m_pVisoNameLabel,    iRow, 0, 1, 1, Qt::AlignTop);
-        pVisoOptionsGridLayout->addWidget(m_pVisoNameLineEdit, iRow, 1, 1, 1, Qt::AlignTop);
-    }
+    AssertReturnVoid(m_pVisoNameLabel);
+    AssertReturnVoid(m_pVisoNameLineEdit);
+    m_pVisoNameLabel->setBuddy(m_pVisoNameLineEdit);
+    m_pVisoNameLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+    //m_pVisoNameLineEdit->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+    m_pVisoOptionsGridLayout->addWidget(m_pVisoNameLabel, iRow, 0, 1, 1, Qt::AlignTop);
+    m_pVisoOptionsGridLayout->addWidget(m_pVisoNameLineEdit, iRow, 1, 1, 1, Qt::AlignTop);
+    m_pVisoOptionsGridLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum), iRow, 2, 1, 3);
 
     /* Custom Viso options stuff: */
     m_pCustomOptionsLabel = new QILabel(QApplication::translate("UIVisoCreatorWidget", "Custom VISO options:"));
@@ -149,12 +153,14 @@ void UIVisoSettingWidget::prepareObjects()
     AssertReturnVoid(m_pCustomOptionsLabel);
     AssertReturnVoid(m_pCustomOptionsLineEdit);
     m_pCustomOptionsLabel->setBuddy(m_pCustomOptionsLineEdit);
-    pVisoOptionsGridLayout->addWidget(m_pCustomOptionsLabel,    iRow, 0, 1, 1, Qt::AlignTop);
-    pVisoOptionsGridLayout->addWidget(m_pCustomOptionsLineEdit, iRow, 1, 1, 1, Qt::AlignTop);
+    //m_pCustomOptionsLineEdit->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+    m_pCustomOptionsLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+    m_pVisoOptionsGridLayout->addWidget(m_pCustomOptionsLabel, iRow, 0, 1, 1, Qt::AlignTop);
+    m_pVisoOptionsGridLayout->addWidget(m_pCustomOptionsLineEdit, iRow, 1, 1, 1, Qt::AlignTop);
+    m_pVisoOptionsGridLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum), iRow, 2, 1, 3);
 
     ++iRow;
-    pVisoOptionsGridLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding), iRow, 0, 1, 2);
-
+    m_pVisoOptionsGridLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding), iRow, 0, 1, 2);
     QWidget *pDialogSettingsContainerWidget = new QWidget;
     AssertReturnVoid(pDialogSettingsContainerWidget);
     QGridLayout *pDialogSettingsContainerLayout = new QGridLayout(pDialogSettingsContainerWidget);
@@ -163,11 +169,14 @@ void UIVisoSettingWidget::prepareObjects()
     m_pTabWidget->addTab(pDialogSettingsContainerWidget, QApplication::translate("UIVisoCreatorWidget", "Dialog Settings"));
 
     iRow = 0;
+    QHBoxLayout *pShowHiddenObjectsLayout = new QHBoxLayout;
     m_pShowHiddenObjectsCheckBox = new QCheckBox;
     m_pShowHiddenObjectsLabel = new QILabel(QApplication::translate("UIVisoCreatorWidget", "Show Hidden Objects:"));
     m_pShowHiddenObjectsLabel->setBuddy(m_pShowHiddenObjectsCheckBox);
-    pDialogSettingsContainerLayout->addWidget(m_pShowHiddenObjectsLabel,    iRow, 0, 1, 1, Qt::AlignTop);
-    pDialogSettingsContainerLayout ->addWidget(m_pShowHiddenObjectsCheckBox, iRow, 1, 1, 1, Qt::AlignTop);
+    pShowHiddenObjectsLayout->addWidget(m_pShowHiddenObjectsLabel);
+    pShowHiddenObjectsLayout->addWidget(m_pShowHiddenObjectsCheckBox);
+    pShowHiddenObjectsLayout->addStretch(1);
+    pDialogSettingsContainerLayout->addLayout(pShowHiddenObjectsLayout, iRow, 0, 1, 2, Qt::AlignTop);
 
     ++iRow;
     pDialogSettingsContainerLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding), iRow, 0, 1, 2);
@@ -176,10 +185,17 @@ void UIVisoSettingWidget::prepareObjects()
 
 void UIVisoSettingWidget::retranslateUi()
 {
+    int iLabelWidth = 0;
     if (m_pVisoNameLabel)
+    {
         m_pVisoNameLabel->setText(QApplication::translate("UIVisoCreatorWidget", "VISO Name:"));
+        iLabelWidth = m_pVisoNameLabel->width();
+    }
     if (m_pCustomOptionsLabel)
+    {
         m_pCustomOptionsLabel->setText(QApplication::translate("UIVisoCreatorWidget", "Custom VISO options:"));
+        iLabelWidth = qMax(iLabelWidth, m_pCustomOptionsLabel->width());
+    }
 
     if (m_pVisoNameLineEdit)
         m_pVisoNameLineEdit->setToolTip(QApplication::translate("UIVisoCreatorWidget", "Holds the name of the VISO medium."));
@@ -190,6 +206,8 @@ void UIVisoSettingWidget::retranslateUi()
     if (m_pShowHiddenObjectsCheckBox)
         m_pShowHiddenObjectsCheckBox->setToolTip(QApplication::translate("UIVisoCreatorWidget", "When checked, "
                                                                          "multiple hidden objects are shown in the file browser"));
+
+    //m_pVisoOptionsGridLayout->setColumnMinimumWidth(0, iLabelWidth);
 }
 
 void UIVisoSettingWidget::prepareConnections()
