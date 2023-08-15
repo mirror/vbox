@@ -34,18 +34,8 @@
  * under src/VBox/GuestHost/SharedClipboard/.
  *
  * The service is split into a platform-independent core and platform-specific
- * backends.  The service defines two communication protocols - one to
- * communicate with the clipboard service running on the guest, and one to
- * communicate with the backend.  These will be described in a very skeletal
- * fashion here.
- *
- * r=bird: The "two communication protocols" does not seems to be factual, there
- * is only one protocol, the first one mentioned.  It cannot be backend
- * specific, because the guest/host protocol is platform and backend agnostic in
- * nature.  You may call it versions, but I take a great dislike to "protocol
- * versions" here, as you've just extended the existing protocol with a feature
- * that allows to transfer files and directories too.  See @bugref{9437#c39}.
- *
+ * backends. The backends also make use of the aforementioned shared guest/host
+ * clipboard code, to avoid code duplication.
  *
  * @section sec_hostclip_guest_proto  The guest communication protocol
  *
@@ -105,20 +95,18 @@
  *
  * @section sec_uri_intro               Transferring files
  *
- * Since VBox x.x.x transferring files via Shared Clipboard is supported.
+ * Since VBox 7.1 transferring files via Shared Clipboard is supported.
  * See the VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS define for supported / enabled
  * platforms. This is called "Shared Clipboard transfers".
  *
- * Copying files / directories from guest A to guest B requires the host
- * service to act as a proxy and cache, as we don't allow direct VM-to-VM
- * communication. Copying from / to the host also is taken into account.
- *
  * At the moment a transfer is a all-or-nothing operation, e.g. it either
- * completes or fails completely. There might be callbacks in the future
- * to e.g. skip failing entries.
+ * completes or fails completely.
  *
  * Known limitations:
  *
+ * - On Linux hosts / guests only single files per transfer is supported, as we
+ *   use a HTTP server to provide the files to the desktop file managers (Nemo,
+ *   Nautilus, Dolphin, ++).
  * - Support for VRDE (VRDP) is not implemented yet (see #9498).
  * - Unicode support on Windows hosts / guests is not enabled (yet).
  * - Symbolic links / Windows junctions are not allowed.
@@ -132,22 +120,28 @@
  * (via VBoxTray / VBoxClient) or on the host (host service) to avoid code
  * duplication where applicable.
  *
+ * The terms "source" and "destination" in the source code depend on the current
+ * context the code is being run, e.g. host -> guest (H->G) or guest -> host (G->H)
+ * directions.
+ *
  * Per HGCM client there is a so-called "transfer context", which in turn can
- * have one or mulitple so-called "Shared Clipboard transfer" objects. At the
- * moment we only support on concurrent Shared Clipboard transfer per transfer
- * context. It's being used for reading from a source or writing to destination,
- * depening on its direction. An Shared Clipboard transfer can have optional
- * callbacks which might be needed by various implementations. Also, transfers
- * optionally can run in an asynchronous thread to prevent blocking the UI while
- * running.
+ * have one or mulitple transfer objects. This is being used for reading from
+ * a source or writing to destination, depending on its direction.
  *
- * @section sec_transfer_providers        Transfer providers
+ * A transfer consists of the following mechanisms:
+ * - a general callback table for hooking into creation, initialization and so on.
+ * - a provider interface which performs the actual transfer operations.
  *
- * For certain implementations (for example on Windows guests / hosts, using
- * IDataObject and IStream objects) a more flexible approach reqarding reading /
- * writing is needed. For this so-called transfer providers abstract the way of how
- * data is being read / written in the current context (host / guest), while
- * the rest of the code stays the same.
+ * Involved components:
+ * - VBoxSharedClipboardSvc as host service
+ * - VBoxTray for Windows guests
+ * - VBoxClient for Linux guests
+ * - VbglR3 for common guest code used by VBoxTray / VBoxClient
+ * - Common code in GuestHost/SharedClipboard
+ * - Main for implementing event plumbing to API clients + controlling clipboard modes
+ *
+ * Also, transfers optionally can run in a separate thread to prevent blocking
+ * the UI while running.
  *
  * @section sec_transfer_protocol         Transfer protocol
  *
@@ -155,36 +149,58 @@
  * message to. The protocol itself is designed so that it has primitives to list
  * directories and open/close/read/write file system objects.
  *
- * Note that this is different from the DnD approach, as Shared Clipboard transfers
- * need to be deeper integrated within the host / guest OS (i.e. for progress UI),
- * and this might require non-monolithic / random access APIs to achieve.
+ * A transfer is identified (on a per-VM basis) through its transfer ID.
+ * This transfer ID is part of a so-called "context ID" (CID), which must be part of (almost) every transfer-related HGCM message.
+ * Transfer IDs always are created and communicated by the host.
  *
- * As there can be multiple file system objects (fs objects) selected for transfer,
+ * As there can be multiple file system objects (fs objects) selected to transfer,
  * a transfer can be queried for its root entries, which then contains the top-level
  * elements. Based on these elements, (a) (recursive) listing(s) can be performed
  * to (partially) walk down into directories and query fs object information. The
  * provider provides appropriate interface for this, even if not all implementations
  * might need this mechanism.
  *
+ * The following describes the protocol flow, where the source and destination depends on the transfer direction:
+ *
+ * - For host -> guest (H->G) transfers:
+ *      Source is the host, whereas the guest is the destination.
+ * - For guest -> host (G->H) transfers:
+ *      Source is the guest, whereas the host is the destination.
+ *
  * An Shared Clipboard transfer has three stages:
- *  - 1. Announcement: An Shared Clipboard transfer-compatible format (currently only one format available)
- *          has been announced, the destination side creates a transfer object, which then,
- *          depending on the actual implementation, can be used to tell the OS that
- *          there is transfer (file) data available.
- *          At this point this just acts as a (kind-of) promise to the OS that we
- *          can provide (file) data at some later point in time.
  *
- *  - 2. Initialization: As soon as the OS requests the (file) data, mostly triggered
- *          by the user starting a paste operation (CTRL + V), the transfer get initialized
- *          on the destination side, which in turn lets the source know that a transfer
- *          is going to happen.
+ * - Stage 1: Announcement (by the source)
+ * - Stage 2: Initialization (by the source + by the destination)
+ * - Stage 3: Start
  *
- *  - 3. Transfer: At this stage the actual transfer from source to the destination takes
- *          place. How the actual transfer is structurized (e.g. which files / directories
- *          are transferred in which order) depends on the destination implementation. This
- *          is necessary in order to fulfill requirements on the destination side with
- *          regards to ETA calculation or other dependencies.
- *          Both sides can abort or cancel the transfer at any time.
+ * Transfer statuses are handled by the VBOX_SHCL_HOST_MSG_TRANSFER_STATUS /
+ * VBOX_SHCL_GUEST_FN_REPLY + VBOX_SHCL_TX_REPLYMSGTYPE_TRANSFER_STATUS HGCM messages.
+ *
+ * Both sides can abort or cancel the transfer at any time via an ERROR transfer status.
+ *
+ * For host -> guest transfers:
+ *
+ * - Stage 1:
+ *   - A (possible) transfer gets announced by the host by announcing the format VBOX_SHCL_FMT_URI_LIST to the guest.
+ * - Stage 2:
+ *   - As soon as the guest wants to make use of the transfer ("pasting into file manager"),
+ *     it requests a transfer ID from the host via sending the transfer status REQUESTED to the host.
+ *   - The host received the REQUESTED status from the guest, creating a transfer locally and acknowledges the transfer ID
+ *     via the REQUESTED status to the guest. Reports ERROR status to the guest otherwise.
+ *   - The guest received the REQUESTED status from the host, then creating the transfer on its
+ *     side with the transfer ID received from the host.
+ *   - The guest sends back the INITIALIZED status to the host on success, or ERROR on error.
+ *   - The host sends the INITIALIZED status, telling the guest that the host is ready to operate on the transfer.
+ *
+ * For guest -> host transfers:
+ *
+ * - Stage 1:
+ *   - A (possible) transfer gets announced by the guest by announcing the format VBOX_SHCL_FMT_URI_LIST to the host.
+ * - Stage 2:
+ *   - As soon as the host wants to make use of the transfer ("pasting into file manager"),
+ *     it creates and initialized a transfer (with a transfer ID) locally and reports it to the guest with an INITIALIZED status.
+ *   - The guest receives the INITIALIZED status from the host and creates + initializes a transfer on its
+ *     side with the transfer ID received from the host.
  */
 
 
@@ -1472,10 +1488,15 @@ int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLF
 /**
  * Reports clipboard formats to the guest.
  *
+ * @note    Host backend callers must check if it's active (use
+ *          ShClSvcIsBackendActive) before calling to prevent mixing up the
+ *          VRDE clipboard.
+ *
  * @returns VBox status code.
  * @param   pClient             Client to report clipboard formats to.
- * @param   fFormats            The formats to report (VBOX_SHCL_FMT_XXX).
- *                              VBOX_SHCL_FMT_NONE will empty (clear) the clipboard.
+ * @param   fFormats            The formats to report (VBOX_SHCL_FMT_XXX), zero
+ *                              is okay (empty the clipboard).
+ *
  * @thread  Backend thread.
  */
 int ShClSvcReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
