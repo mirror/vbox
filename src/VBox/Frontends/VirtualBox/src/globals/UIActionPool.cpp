@@ -1640,15 +1640,15 @@ protected:
     }
 };
 
-/** Toggle action extension, used to toggle 'File Manager Options' panel in file manager. */
-class UIActionMenuFileManagerOptions : public UIActionToggle
+/** Toggle action extension, used to toggle 'File Manager Preferences' panel in file manager. */
+class UIActionMenuFileManagerPreferences : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuFileManagerOptions(UIActionPool *pParent)
+    UIActionMenuFileManagerPreferences(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -1673,10 +1673,10 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
-        setName(QApplication::translate("UIActionPool", "Options"));
+        setName(QApplication::translate("UIActionPool", "Preferences"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open panel with file manager options"));
-        setToolTip(  QApplication::translate("UIActionPool", "Open Options Pane")
+        setStatusTip(QApplication::translate("UIActionPool", "Open panel with file manager preferences"));
+        setToolTip(  QApplication::translate("UIActionPool", "Open Preferences Pane")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -3520,7 +3520,7 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_FileManager_M_GuestSubmenu] = new UIActionMenuFileManagerGuestSubmenu(this);
     m_pool[UIActionIndex_M_FileManager_S_CopyToGuest] = new  UIActionMenuFileManagerCopyToGuest(this);
     m_pool[UIActionIndex_M_FileManager_S_CopyToHost] = new  UIActionMenuFileManagerCopyToHost(this);
-    m_pool[UIActionIndex_M_FileManager_T_Options] = new UIActionMenuFileManagerOptions(this);
+    m_pool[UIActionIndex_M_FileManager_T_Preferences] = new UIActionMenuFileManagerPreferences(this);
     m_pool[UIActionIndex_M_FileManager_T_Log] = new UIActionMenuFileManagerLog(this);
     m_pool[UIActionIndex_M_FileManager_T_Operations] = new UIActionMenuFileManagerOperations(this);
     m_pool[UIActionIndex_M_FileManager_T_GuestSession] = new UIActionMenuFileManagerGuestSession(this);
@@ -4001,7 +4001,7 @@ void UIActionPool::updateMenuFileManager()
 
 void UIActionPool::updateMenuFileManagerWrapper(UIMenu *pMenu)
 {
-    addAction(pMenu, action(UIActionIndex_M_FileManager_T_Options));
+    addAction(pMenu, action(UIActionIndex_M_FileManager_T_Preferences));
     addAction(pMenu, action(UIActionIndex_M_FileManager_T_Operations));
     addAction(pMenu, action(UIActionIndex_M_FileManager_T_Log));
 

@@ -1002,7 +1002,7 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                 }
                 case UIToolType_FileManager:
                 {
-                    m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_Options));
+                    m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_Preferences));
                     m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_Operations));
                     m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_Log));
                     m_pToolBar->addSeparator();

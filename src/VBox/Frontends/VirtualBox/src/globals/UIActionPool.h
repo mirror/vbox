@@ -119,7 +119,7 @@ enum UIActionIndex
     UIActionIndex_M_FileManager_M_GuestSubmenu,
     UIActionIndex_M_FileManager_S_CopyToGuest,
     UIActionIndex_M_FileManager_S_CopyToHost,
-    UIActionIndex_M_FileManager_T_Options,
+    UIActionIndex_M_FileManager_T_Preferences,
     UIActionIndex_M_FileManager_T_Log,
     UIActionIndex_M_FileManager_T_Operations,
     UIActionIndex_M_FileManager_T_GuestSession,

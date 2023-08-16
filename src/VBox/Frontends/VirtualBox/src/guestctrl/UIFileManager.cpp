@@ -297,8 +297,8 @@ void UIFileManager::prepareConnections()
 {
     if (m_pActionPool)
     {
-        if (m_pActionPool->action(UIActionIndex_M_FileManager_T_Options))
-            connect(m_pActionPool->action(UIActionIndex_M_FileManager_T_Options), &QAction::toggled,
+        if (m_pActionPool->action(UIActionIndex_M_FileManager_T_Preferences))
+            connect(m_pActionPool->action(UIActionIndex_M_FileManager_T_Preferences), &QAction::toggled,
                     this, &UIFileManager::sltPanelActionToggled);
         if (m_pActionPool->action(UIActionIndex_M_FileManager_T_Log))
             connect(m_pActionPool->action(UIActionIndex_M_FileManager_T_Log), &QAction::toggled,
@@ -360,7 +360,7 @@ void UIFileManager::prepareToolBar()
         m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_Options));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_Preferences));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_Operations));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_Log));
 
