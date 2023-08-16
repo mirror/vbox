@@ -255,7 +255,7 @@ void UIFileManager::prepareObjects()
         m_pVerticalSplitter->setStretchFactor(2, 1);
     }
 
-    m_pPanel = new UIFileManagerPanel;
+    m_pPanel = new UIFileManagerPanel(this, UIFileManagerOptions::instance());
     AssertReturnVoid(m_pPanel);
     m_pVerticalSplitter->addWidget(m_pPanel);
 }
@@ -320,7 +320,11 @@ void UIFileManager::prepareConnections()
         connect(m_pLogPanel, &UIFileManagerLogPanel::sigShowPanel,
                 this, &UIFileManager::sltHandleShowPanel);
     }
-
+    if (m_pPanel)
+    {
+        connect(m_pPanel, &UIFileManagerPanel::sigOptionsChanged,
+                this, &UIFileManager::sltHandleOptionsUpdated);
+    }
     if (m_pOperationsPanel)
     {
         connect(m_pOperationsPanel, &UIFileManagerOperationsPanel::sigHidePanel,
@@ -332,6 +336,8 @@ void UIFileManager::prepareConnections()
     {
         connect(m_pHostFileTable, &UIFileManagerHostTable::sigLogOutput,
                 this, &UIFileManager::sltReceieveLogOutput);
+        connect(m_pHostFileTable, &UIFileManagerHostTable::sigDeleteConfirmationOptionChanged,
+                this, &UIFileManager::sltHandleOptionsUpdated);
         connect(m_pHostFileTable, &UIFileManagerGuestTable::sigSelectionChanged,
                 this, &UIFileManager::sltFileTableSelectionChanged);
     }
@@ -503,6 +509,22 @@ void UIFileManager::sltGuestFileTableStateChanged(bool fIsRunning)
 {
     if (m_pHostFileTable)
         m_pHostFileTable->setEnabled(fIsRunning);
+}
+
+void UIFileManager::sltHandleOptionsUpdated()
+{
+    if (m_pPanel)
+        m_pPanel->update();
+
+    for (int i = 0; i < m_pGuestTablesContainer->count(); ++i)
+    {
+        UIFileManagerGuestTable *pTable = qobject_cast<UIFileManagerGuestTable*>(m_pGuestTablesContainer->widget(i));
+        if (pTable)
+            pTable->optionsUpdated();
+    }
+    if (m_pHostFileTable)
+        m_pHostFileTable->optionsUpdated();
+    saveOptions();
 }
 
 void UIFileManager::setVerticalToolBarActionsEnabled()
@@ -804,6 +826,8 @@ void UIFileManager::addTabs(const QVector<QUuid> &machineIdsToAdd)
                     this, &UIFileManager::sltReceieveNewFileOperation);
             connect(pGuestFileTable, &UIFileManagerGuestTable::sigStateChanged,
                     this, &UIFileManager::sltGuestFileTableStateChanged);
+            connect(pGuestFileTable, &UIFileManagerGuestTable::sigDeleteConfirmationOptionChanged,
+                    this, &UIFileManager::sltHandleOptionsUpdated);
         }
     }
 }

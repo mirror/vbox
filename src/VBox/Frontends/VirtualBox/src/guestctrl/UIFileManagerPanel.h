@@ -35,8 +35,10 @@
 #include "UIGuestControlDefs.h"
 #include "QIWithRetranslateUI.h"
 /* Forward declarations: */
+
 class QTabWidget;
 class QCheckBox;
+class UIFileManagerOptions;
 
 class UIFileManagerPanel : public QIWithRetranslateUI<QWidget>
 {
@@ -44,14 +46,12 @@ class UIFileManagerPanel : public QIWithRetranslateUI<QWidget>
 
 signals:
 
-    void sigListDirectoryCheckBoxToogled(bool bChecked);
-    void sigDeleteConfirmationCheckBoxToogled(bool bChecked);
-    void sigHumanReabableSizesCheckBoxToogled(bool bChecked);
-    void sigShowHiddenObjectsCheckBoxToggled(bool bChecked);
+    void sigOptionsChanged();
 
 public:
 
-    UIFileManagerPanel(QWidget *pParent = 0);
+    UIFileManagerPanel(QWidget *pParent, UIFileManagerOptions *pFileManagerOptions);
+    void update();
 
 protected:
 
@@ -59,6 +59,10 @@ protected:
 
 private slots:
 
+    void sltListDirectoryCheckBoxToogled(bool bChecked);
+    void sltDeleteConfirmationCheckBoxToogled(bool bChecked);
+    void sltHumanReabableSizesCheckBoxToogled(bool bChecked);
+    void sltShowHiddenObjectsCheckBoxToggled(bool bChecked);
 
 private:
 
@@ -73,6 +77,7 @@ private:
         QCheckBox  *m_pDeleteConfirmationCheckBox;
         QCheckBox  *m_pHumanReabableSizesCheckBox;
         QCheckBox  *m_pShowHiddenObjectsCheckBox;
+        UIFileManagerOptions *m_pFileManagerOptions;
     /** @} */
 
 
