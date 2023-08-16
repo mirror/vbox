@@ -252,7 +252,7 @@ void QIToolBar::prepare()
         layout()->setContentsMargins(0, 0, 0, 0);
 
     /* Configure tool-bar' context-menu policy: */
-    setContextMenuPolicy(Qt::NoContextMenu);
+    setContextMenuPolicy(Qt::PreventContextMenu);
 }
 
 #ifdef VBOX_WS_MAC
