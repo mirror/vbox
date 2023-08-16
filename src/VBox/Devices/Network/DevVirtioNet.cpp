@@ -2372,7 +2372,7 @@ static uint8_t virtioNetR3CtrlMultiQueue(PVIRTIONET pThis, PVIRTIONETCC pThisCC,
     {
         case VIRTIONET_CTRL_MQ_VQ_PAIRS_SET:
         {
-            size_t cbRemaining = pVirtqBuf->cbPhysSend - sizeof(*pCtrlPktHdr);
+            size_t cbRemaining = pVirtqBuf->cbPhysSend;
 
             AssertMsgReturn(cbRemaining > sizeof(cVirtqPairs),
                 ("DESC chain too small for VIRTIONET_CTRL_MQ cmd processing"), VIRTIONET_ERROR);
@@ -2424,15 +2424,15 @@ static uint8_t virtioNetR3CtrlVlan(PVIRTIONET pThis, PVIRTIONET_CTRL_HDR_T pCtrl
     LogFunc(("[%s] Processing CTRL VLAN command\n", pThis->szInst));
 
     uint16_t uVlanId;
-    size_t cbRemaining = pVirtqBuf->cbPhysSend - sizeof(*pCtrlPktHdr);
+    size_t cbRemaining = pVirtqBuf->cbPhysSend;
 
-    AssertMsgReturn(cbRemaining > sizeof(uVlanId),
+    AssertMsgReturn(cbRemaining >= sizeof(uVlanId),
         ("DESC chain too small for VIRTIONET_CTRL_VLAN cmd processing"), VIRTIONET_ERROR);
 
     /* Fetch VLAN ID from guest buffer */
     virtioCoreR3VirtqBufDrain(&pThis->Virtio, pVirtqBuf, &uVlanId, sizeof(uVlanId));
 
-    AssertMsgReturn(uVlanId > VIRTIONET_MAX_VLAN_ID,
+    AssertMsgReturn(uVlanId < VIRTIONET_MAX_VLAN_ID,
         ("%s VLAN ID out of range (VLAN ID=%u)\n", pThis->szInst, uVlanId), VIRTIONET_ERROR);
 
     LogFunc(("[%s] uCommand=%u VLAN ID=%u\n", pThis->szInst, pCtrlPktHdr->uCmd, uVlanId));
@@ -2491,12 +2491,10 @@ static void virtioNetR3Ctrl(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONETCC p
     /*
      * Allocate buffer and read in the control command
      */
-    AssertMsgReturnVoid(pVirtqBuf->cbPhysSend >= sizeof(VIRTIONET_CTRL_HDR_T),
-                        ("DESC chain too small for CTRL pkt header"));
-
     VIRTIONET_CTRL_HDR_T CtrlPktHdr; RT_ZERO(CtrlPktHdr);
-    virtioCoreR3VirtqBufDrain(&pThis->Virtio, pVirtqBuf, &CtrlPktHdr,
-                              RT_MIN(pVirtqBuf->cbPhysSend, sizeof(CtrlPktHdr)));
+    AssertLogRelMsgReturnVoid(pVirtqBuf->cbPhysSend >= sizeof(CtrlPktHdr),
+                              ("DESC chain too small for CTRL pkt header"));
+    virtioCoreR3VirtqBufDrain(&pThis->Virtio, pVirtqBuf, &CtrlPktHdr, sizeof(CtrlPktHdr));
 
     Log7Func(("[%s] CTRL COMMAND: class=%d command=%d\n", pThis->szInst, CtrlPktHdr.uClass, CtrlPktHdr.uCmd));
 
