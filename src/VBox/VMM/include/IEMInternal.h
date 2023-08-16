@@ -1289,9 +1289,10 @@ typedef IEMCPU const *PCIEMCPU;
  * @param   a_pVCpu         The cross context virtual CPU structure of the calling thread.
  * @param   a_fExtrnMbz     The mask of CPUMCTX_EXTRN_XXX flags that must be zero.
  */
-#define IEM_CTX_ASSERT(a_pVCpu, a_fExtrnMbz)    AssertMsg(!((a_pVCpu)->cpum.GstCtx.fExtrn & (a_fExtrnMbz)), \
-                                                          ("fExtrn=%#RX64 fExtrnMbz=%#RX64\n", (a_pVCpu)->cpum.GstCtx.fExtrn, \
-                                                          (a_fExtrnMbz)))
+#define IEM_CTX_ASSERT(a_pVCpu, a_fExtrnMbz) \
+   AssertMsg(!((a_pVCpu)->cpum.GstCtx.fExtrn & (a_fExtrnMbz)), \
+             ("fExtrn=%#RX64 & fExtrnMbz=%#RX64 -> %#RX64\n", \
+             (a_pVCpu)->cpum.GstCtx.fExtrn, (a_fExtrnMbz), (a_pVCpu)->cpum.GstCtx.fExtrn & (a_fExtrnMbz) ))
 
 /** @def IEM_CTX_IMPORT_RET
  * Makes sure the CPU context bits given by @a a_fExtrnImport are imported.

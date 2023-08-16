@@ -2066,7 +2066,10 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
             if (!((a_fFlags) & IEM_CIMPL_F_MODE)) \
             { \
                 uint32_t fExecRecalc = iemCalcExecFlags(pVCpu) | (pVCpu->iem.s.fExec & IEM_F_USER_OPTS); \
-                AssertMsg(fExecBefore == fExecRecalc, \
+                AssertMsg(   fExecBefore == fExecRecalc \
+                             /* in case ES, DS or SS was external initially (happens alot with HM): */ \
+                          || (   fExecBefore == (fExecRecalc & ~IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK) \
+                              && (fExecRecalc & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_32BIT), \
                           ("fExec=%#x -> %#x (diff %#x)\n", fExecBefore, fExecRecalc, fExecBefore ^ fExecRecalc)); \
             } \
         } \

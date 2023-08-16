@@ -178,6 +178,10 @@ DECLINLINE(int) iemSetPassUpStatus(PVMCPUCC pVCpu, VBOXSTRICTRC rcPassUp) RT_NOE
  *
  * ASSUMES that the CPU is in 32-bit mode.
  *
+ * @note    Will return zero when if any of the segment register state is marked
+ *          external, this must be factored into assertions checking fExec
+ *          consistency.
+ *
  * @returns IEM_F_MODE_X86_32BIT_FLAT or zero.
  * @param   pVCpu               The cross context virtual CPU structure of the
  *                              calling thread.
@@ -212,6 +216,10 @@ DECL_FORCE_INLINE(uint32_t) iemCalc32BitFlatIndicator(PVMCPUCC pVCpu) RT_NOEXCEP
  * flat already.
  *
  * This is used by sysenter.
+ *
+ * @note    Will return zero when if any of the segment register state is marked
+ *          external, this must be factored into assertions checking fExec
+ *          consistency.
  *
  * @returns IEM_F_MODE_X86_32BIT_FLAT or zero.
  * @param   pVCpu               The cross context virtual CPU structure of the
