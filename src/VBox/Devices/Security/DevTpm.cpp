@@ -1637,10 +1637,7 @@ static DECLCALLBACK(void) tpmR3PowerOn(PPDMDEVINS pDevIns)
     PDEVTPMCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVTPMCC);
 
     if (pThisCC->pDrvTpm)
-    {
         pThis->fEstablishmentSet = pThisCC->pDrvTpm->pfnGetEstablishedFlag(pThisCC->pDrvTpm);
-        pThis->cbCmdResp         = RT_MIN(pThisCC->pDrvTpm->pfnGetBufferSize(pThisCC->pDrvTpm), TPM_DATA_BUFFER_SIZE_MAX);
-    }
 }
 
 
@@ -1654,10 +1651,7 @@ static DECLCALLBACK(void) tpmR3Reset(PPDMDEVINS pDevIns)
 
     tpmR3HwReset(pThis);
     if (pThisCC->pDrvTpm)
-    {
         pThis->fEstablishmentSet = pThisCC->pDrvTpm->pfnGetEstablishedFlag(pThisCC->pDrvTpm);
-        pThis->cbCmdResp         = RT_MIN(pThisCC->pDrvTpm->pfnGetBufferSize(pThisCC->pDrvTpm), TPM_DATA_BUFFER_SIZE_MAX);
-    }
 }
 
 
@@ -1749,6 +1743,7 @@ static DECLCALLBACK(int) tpmR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         pThisCC->pDrvTpm = PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMITPMCONNECTOR);
         AssertLogRelMsgReturn(pThisCC->pDrvTpm, ("TPM#%d: Driver is missing the TPM interface.\n", iInstance), VERR_PDM_MISSING_INTERFACE);
 
+        pThis->cbCmdResp     = RT_MIN(pThisCC->pDrvTpm->pfnGetBufferSize(pThisCC->pDrvTpm), TPM_DATA_BUFFER_SIZE_MAX);
         pThis->fLocChangeSup = pThisCC->pDrvTpm->pfnGetLocalityMax(pThisCC->pDrvTpm) > 0;
 
         pThis->enmTpmVers = pThisCC->pDrvTpm->pfnGetVersion(pThisCC->pDrvTpm);
