@@ -396,6 +396,7 @@ void UIFileManagerPanel::prepare()
     pMainLayout->addWidget(m_pTabWidget);
     preparePreferencesTab();
     prepareLogTab();
+    prepareOperationsTab();
 }
 
 void UIFileManagerPanel::preparePreferencesTab()
@@ -443,7 +444,7 @@ void UIFileManagerPanel::preparePreferencesTab()
     pPreferencesLayout->addWidget(m_pShowHiddenObjectsCheckBox,    1, 1, 1, 1);
     pPreferencesLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding), 2, 0, 1, 2);
 
-    m_pTabWidget->addTab(pPreferencesTab, QApplication::translate("UIFileManager", "Preferences"));
+    m_pTabWidget->insertTab(Page_Preferences, pPreferencesTab, QString());
 }
 
 void UIFileManagerPanel::prepareLogTab()
@@ -456,7 +457,7 @@ void UIFileManagerPanel::prepareLogTab()
     m_pLogTextEdit = new UIFileManagerLogViewer;
     if (m_pLogTextEdit)
         pLogLayout->addWidget(m_pLogTextEdit);
-    m_pTabWidget->addTab(pLogTab, QApplication::translate("UIFileManager", "Log"));
+    m_pTabWidget->insertTab(Page_Log, pLogTab, QString());
 }
 
 void UIFileManagerPanel::prepareOperationsTab()
@@ -484,7 +485,7 @@ void UIFileManagerPanel::prepareOperationsTab()
     m_pScrollArea->setWidget(pOperationsTab);
     pOperationsTab->setLayout(m_pOperationsTabLayout);
     m_pOperationsTabLayout->addStretch(4);
-    m_pTabWidget->addTab(m_pScrollArea, QApplication::translate("UIFileManager", "Operations"));
+    m_pTabWidget->insertTab(Page_Operations, m_pScrollArea, QString());
 }
 
 void UIFileManagerPanel::sltListDirectoryCheckBoxToogled(bool bChecked)
@@ -545,6 +546,12 @@ void UIFileManagerPanel::retranslateUi()
     {
         m_pShowHiddenObjectsCheckBox->setText(QApplication::translate("UIFileManager", "Show hidden objects"));
         m_pShowHiddenObjectsCheckBox->setToolTip(QApplication::translate("UIFileManager", "Show hidden files/directories"));
+    }
+    if (m_pTabWidget)
+    {
+        m_pTabWidget->setTabText(Page_Preferences, QApplication::translate("UIFileManager", "Preferences"));
+        m_pTabWidget->setTabText(Page_Log, QApplication::translate("UIFileManager", "Log"));
+        m_pTabWidget->setTabText(Page_Operations, QApplication::translate("UIFileManager", "Operations"));
     }
 }
 

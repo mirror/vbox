@@ -70,6 +70,15 @@ public:
     void appendLog(const QString &strLog, const QString &strMachineName, FileManagerLogType eLogType);
     void addNewProgress(const CProgress &comProgress, const QString &strSourceTableName);
 
+    enum Page
+    {
+        Page_Preferences = 0,
+        Page_Log,
+        Page_Operations,
+        Page_Max
+    };
+
+
 protected:
 
     virtual void retranslateUi() final override;
