@@ -2398,11 +2398,11 @@ quick: \
 run-parfait:
 ifdef VBOX_WITH_PARFAIT
  ifeq ($(KBUILD_TARGET),win)
-	- $(TIME) -- $(KMK) all -k
+	- $(REDIRECT) -E "PARFAIT_DUMP_PATH=$(PATH_OUT)" -- $(TIME) -- $(KMK) all -k
  else
-	+ $(TIME) -- $(KMK) all
+	+ $(REDIRECT) -E "PARFAIT_DUMP_PATH=$(PATH_OUT)" -- $(TIME) -- $(KMK) all
  endif
-	$(TIME) -- $(VBOX_PARFAIT) \
+	- $(REDIRECT) -E "PARFAIT_DUMP_PATH=$(PATH_OUT)" -- $(TIME) -- $(VBOX_PARFAIT) \
 	 -p \
 	 $(if-expr defined(VBOX_PARFAIT_SERVER),-s $(VBOX_PARFAIT_SERVER),) \
 	 $(if-expr defined(VBOX_PARFAIT_SERVER_BASELINE),-b $(VBOX_PARFAIT_SERVER_BASELINE),) \
@@ -2413,8 +2413,7 @@ ifdef VBOX_WITH_PARFAIT
 	 -e all -d misaligned-access \
 	 -z $(PATH_ROOT) \
 	 -r $(VBOX_SVN_REV) \
-	 $(PATH_OUT)/obj \
-   || test $$? -eq 1 || false
+	 $(PATH_OUT)/obj
 else
 	$(ECHO) This target requires VBOX_WITH_PARFAIT to be set.
 	exit 1
