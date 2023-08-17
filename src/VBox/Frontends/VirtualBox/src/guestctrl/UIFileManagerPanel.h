@@ -73,7 +73,7 @@ public:
 protected:
 
     virtual void retranslateUi() final override;
-    virtual void contextMenuEvent(QContextMenuEvent *pEvent) RT_OVERRIDE;
+    virtual void contextMenuEvent(QContextMenuEvent *pEvent) final override;
 
 private slots:
 
