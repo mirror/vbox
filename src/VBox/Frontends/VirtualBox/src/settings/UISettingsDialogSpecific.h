@@ -60,9 +60,6 @@ public:
                            const QString &strCategory = QString(),
                            const QString &strControl = QString());
 
-    /** Returns dialog type. */
-    virtual DialogType dialogType() const { return DialogType_Global; }
-
 protected:
 
     /** Handles translation event. */
@@ -108,9 +105,6 @@ public:
                             UIActionPool *pActionPool,
                             const QString &strCategory = QString(),
                             const QString &strControl = QString());
-
-    /** Returns dialog type. */
-    virtual DialogType dialogType() const { return DialogType_Machine; }
 
     /** Update machine stuff.
       * @param  uMachineId   Brings the machine ID.

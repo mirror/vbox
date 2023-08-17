@@ -71,7 +71,7 @@ signals:
 public:
 
     /** Dialog types. */
-    enum DialogType { DialogType_Global, DialogType_Machine };
+    enum DialogType { Type_Global, Type_Machine };
 
     /** Constructs settings dialog passing @a pParent to the base-class.
       * @param  strCategory  Brings the name of category to be opened.
@@ -81,9 +81,6 @@ public:
                      const QString &strControl);
     /** Destructs settings dialog. */
     virtual ~UISettingsDialog() RT_OVERRIDE;
-
-    /** Returns dialog type. */
-    virtual DialogType dialogType() const = 0;
 
     /** Loads the dialog data. */
     virtual void load() = 0;

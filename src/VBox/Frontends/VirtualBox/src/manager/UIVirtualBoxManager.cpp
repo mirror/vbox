@@ -885,11 +885,11 @@ void UIVirtualBoxManager::sltHandleChooserPaneIndexChange()
 
     /* Special handling for opened settings dialog: */
     if (   m_pWidget->isLocalMachineItemSelected()
-        && m_settings.contains(UISettingsDialog::DialogType_Machine))
+        && m_settings.contains(UISettingsDialog::Type_Machine))
     {
         /* Cast dialog to required type: */
         UISettingsDialogMachine *pDialog =
-            qobject_cast<UISettingsDialogMachine*>(m_settings.value(UISettingsDialog::DialogType_Machine));
+            qobject_cast<UISettingsDialogMachine*>(m_settings.value(UISettingsDialog::Type_Machine));
         AssertPtrReturnVoid(pDialog);
 
         /* Get current item: */
@@ -1098,22 +1098,22 @@ void UIVirtualBoxManager::sltOpenPreferencesDialog()
     m_fFirstMediumEnumerationHandled = true;
 
     /* Create instance if not yet created: */
-    if (!m_settings.contains(UISettingsDialog::DialogType_Global))
+    if (!m_settings.contains(UISettingsDialog::Type_Global))
     {
-        m_settings[UISettingsDialog::DialogType_Global] = new UISettingsDialogGlobal(this);
-        connect(m_settings[UISettingsDialog::DialogType_Global], &UISettingsDialogGlobal::sigClose,
+        m_settings[UISettingsDialog::Type_Global] = new UISettingsDialogGlobal(this);
+        connect(m_settings[UISettingsDialog::Type_Global], &UISettingsDialogGlobal::sigClose,
                 this, &UIVirtualBoxManager::sltClosePreferencesDialog);
-        m_settings.value(UISettingsDialog::DialogType_Global)->load();
+        m_settings.value(UISettingsDialog::Type_Global)->load();
     }
 
     /* Expose instance: */
-    UIDesktopWidgetWatchdog::restoreWidget(m_settings.value(UISettingsDialog::DialogType_Global));
+    UIDesktopWidgetWatchdog::restoreWidget(m_settings.value(UISettingsDialog::Type_Global));
 }
 
 void UIVirtualBoxManager::sltClosePreferencesDialog()
 {
     /* Remove instance if exist: */
-    delete m_settings.take(UISettingsDialog::DialogType_Global);
+    delete m_settings.take(UISettingsDialog::Type_Global);
 }
 
 void UIVirtualBoxManager::sltPerformExit()
@@ -1296,20 +1296,20 @@ void UIVirtualBoxManager::sltOpenSettingsDialog(QString strCategory /* = QString
             m_fFirstMediumEnumerationHandled = true;
 
             /* Create instance if not yet created: */
-            if (!m_settings.contains(UISettingsDialog::DialogType_Machine))
+            if (!m_settings.contains(UISettingsDialog::Type_Machine))
             {
-                m_settings[UISettingsDialog::DialogType_Machine] = new UISettingsDialogMachine(this,
-                                                                                               uID.isNull() ? pItem->id() : uID,
-                                                                                               actionPool(),
-                                                                                               strCategory,
-                                                                                               strControl);
-                connect(m_settings[UISettingsDialog::DialogType_Machine], &UISettingsDialogMachine::sigClose,
+                m_settings[UISettingsDialog::Type_Machine] = new UISettingsDialogMachine(this,
+                                                                                         uID.isNull() ? pItem->id() : uID,
+                                                                                         actionPool(),
+                                                                                         strCategory,
+                                                                                         strControl);
+                connect(m_settings[UISettingsDialog::Type_Machine], &UISettingsDialogMachine::sigClose,
                         this, &UIVirtualBoxManager::sltCloseSettingsDialog);
-                m_settings.value(UISettingsDialog::DialogType_Machine)->load();
+                m_settings.value(UISettingsDialog::Type_Machine)->load();
             }
 
             /* Expose instance: */
-            UIDesktopWidgetWatchdog::restoreWidget(m_settings.value(UISettingsDialog::DialogType_Machine));
+            UIDesktopWidgetWatchdog::restoreWidget(m_settings.value(UISettingsDialog::Type_Machine));
         }
     }
     /* For cloud machine: */
@@ -1344,7 +1344,7 @@ void UIVirtualBoxManager::sltCloseSettingsDialog()
 
     /* Remove requested instances: */
     if (enmType & Local)
-        delete m_settings.take(UISettingsDialog::DialogType_Machine);
+        delete m_settings.take(UISettingsDialog::Type_Machine);
     if (enmType & Cloud)
         delete m_pCloudSettings;
 }
