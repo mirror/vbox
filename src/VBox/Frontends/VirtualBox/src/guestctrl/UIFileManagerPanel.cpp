@@ -31,6 +31,8 @@
 #include <QMenu>
 #include <QSpinBox>
 #include <QTabWidget>
+#include <QTextEdit>
+#include <QTime>
 
 /* GUI includes: */
 #include "UIFileManagerPanel.h"
@@ -38,6 +40,59 @@
 
 /* Other VBox includes: */
 #include <iprt/assert.h>
+
+
+/*********************************************************************************************************************************
+*   UIFileManagerLogViewer definition.                                                                                   *
+*********************************************************************************************************************************/
+
+class UIFileManagerLogViewer : public QTextEdit
+{
+
+    Q_OBJECT;
+
+public:
+
+    UIFileManagerLogViewer(QWidget *pParent = 0);
+
+protected:
+
+    virtual void contextMenuEvent(QContextMenuEvent * event) RT_OVERRIDE;
+
+private slots:
+
+    void sltClear();
+};
+
+/*********************************************************************************************************************************
+*   UIFileManagerLogViewer implementation.                                                                                   *
+*********************************************************************************************************************************/
+
+UIFileManagerLogViewer::UIFileManagerLogViewer(QWidget *pParent /* = 0 */)
+    :QTextEdit(pParent)
+{
+    setUndoRedoEnabled(false);
+    setReadOnly(true);
+}
+
+void UIFileManagerLogViewer::contextMenuEvent(QContextMenuEvent *event)
+{
+    QMenu *menu = createStandardContextMenu();
+
+    QAction *pClearAction = menu->addAction(UIFileManager::tr("Clear"));
+    connect(pClearAction, &QAction::triggered, this, &UIFileManagerLogViewer::sltClear);
+    menu->exec(event->globalPos());
+    delete menu;
+}
+
+void UIFileManagerLogViewer::sltClear()
+{
+    clear();
+}
+
+/*********************************************************************************************************************************
+*   UIFileManagerPanel implementation.                                                                                   *
+*********************************************************************************************************************************/
 
 UIFileManagerPanel::UIFileManagerPanel(QWidget *pParent, UIFileManagerOptions *pFileManagerOptions)
     : QIWithRetranslateUI<QWidget>(pParent)
@@ -62,17 +117,18 @@ void UIFileManagerPanel::prepare()
     AssertReturnVoid(m_pTabWidget);
     pMainLayout->addWidget(m_pTabWidget);
     preparePreferencesTab();
+    prepareLogTab();
 }
 
 void UIFileManagerPanel::preparePreferencesTab()
 {
-    m_pPreferencesTab = new QWidget;
+    QWidget *pPreferencesTab = new QWidget;
     m_pListDirectoriesOnTopCheckBox = new QCheckBox;
     m_pDeleteConfirmationCheckBox = new QCheckBox;
     m_pHumanReabableSizesCheckBox = new QCheckBox;
     m_pShowHiddenObjectsCheckBox = new QCheckBox;
 
-    AssertReturnVoid(m_pPreferencesTab);
+    AssertReturnVoid(pPreferencesTab);
     AssertReturnVoid(m_pListDirectoriesOnTopCheckBox);
     AssertReturnVoid(m_pDeleteConfirmationCheckBox);
     AssertReturnVoid(m_pHumanReabableSizesCheckBox);
@@ -103,14 +159,30 @@ void UIFileManagerPanel::preparePreferencesTab()
     connect(m_pShowHiddenObjectsCheckBox, &QCheckBox::toggled,
             this, &UIFileManagerPanel::sltShowHiddenObjectsCheckBoxToggled);
 
-    QGridLayout *pPreferencesLayout = new QGridLayout(m_pPreferencesTab);
+    QGridLayout *pPreferencesLayout = new QGridLayout(pPreferencesTab);
     AssertReturnVoid(pPreferencesLayout);
+    pPreferencesLayout->setContentsMargins(0, 0, 0, 0);
+
     pPreferencesLayout->addWidget(m_pListDirectoriesOnTopCheckBox, 0, 0, 1, 1);
     pPreferencesLayout->addWidget(m_pDeleteConfirmationCheckBox,   1, 0, 1, 1);
     pPreferencesLayout->addWidget(m_pHumanReabableSizesCheckBox,   0, 1, 1, 1);
     pPreferencesLayout->addWidget(m_pShowHiddenObjectsCheckBox,    1, 1, 1, 1);
+    pPreferencesLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding), 2, 0, 1, 2);
 
-    m_pTabWidget->addTab(m_pPreferencesTab, QApplication::translate("UIFileManager", "Preferences"));
+    m_pTabWidget->addTab(pPreferencesTab, QApplication::translate("UIFileManager", "Preferences"));
+}
+
+void UIFileManagerPanel::prepareLogTab()
+{
+    QWidget *pLogTab = new QWidget;
+    AssertReturnVoid(pLogTab);
+    QHBoxLayout *pLogLayout = new QHBoxLayout(pLogTab);
+    AssertReturnVoid(pLogLayout);
+    pLogLayout->setContentsMargins(0, 0, 0, 0);
+    m_pLogTextEdit = new UIFileManagerLogViewer;
+    if (m_pLogTextEdit)
+        pLogLayout->addWidget(m_pLogTextEdit);
+    m_pTabWidget->addTab(pLogTab, QApplication::translate("UIFileManager", "Log"));
 }
 
 void UIFileManagerPanel::sltListDirectoryCheckBoxToogled(bool bChecked)
@@ -174,7 +246,7 @@ void UIFileManagerPanel::retranslateUi()
     }
 }
 
-void UIFileManagerPanel::update()
+void UIFileManagerPanel::updatePreferences()
 {
     if (!m_pFileManagerOptions)
         return;
@@ -208,5 +280,21 @@ void UIFileManagerPanel::update()
     }
 }
 
+void UIFileManagerPanel::appendLog(const QString &strLog, const QString &strMachineName, FileManagerLogType eLogType)
+{
+    if (!m_pLogTextEdit)
+        return;
+    QString strStartTag("<font color=\"Black\">");
+    QString strEndTag("</font>");
+    if (eLogType == FileManagerLogType_Error)
+    {
+        strStartTag = "<b><font color=\"Red\">";
+        strEndTag = "</font></b>";
+    }
+    QString strColoredLog = QString("%1 %2: %3 %4 %5").arg(strStartTag).arg(QTime::currentTime().toString("hh:mm:ss:z")).arg(strMachineName).arg(strLog).arg(strEndTag);
+    m_pLogTextEdit->append(strColoredLog);
+    m_pLogTextEdit->moveCursor(QTextCursor::End);
+    m_pLogTextEdit->ensureCursorVisible();
+}
 
 #include "UIFileManagerPanel.moc"

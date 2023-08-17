@@ -42,7 +42,6 @@
 #include "UIIconPool.h"
 #include "UIFileManager.h"
 #include "UIFileManagerPanel.h"
-#include "UIFileManagerLogPanel.h"
 #include "UIFileManagerOperationsPanel.h"
 #include "UIFileManagerGuestTable.h"
 #include "UIFileManagerHostTable.h"
@@ -313,13 +312,7 @@ void UIFileManager::prepareConnections()
             connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToGuest), &QAction::triggered,
                     this, &UIFileManager::sltCopyHostToGuest);
     }
-    if (m_pLogPanel)
-    {
-        connect(m_pLogPanel, &UIFileManagerLogPanel::sigHidePanel,
-                this, &UIFileManager::sltHandleHidePanel);
-        connect(m_pLogPanel, &UIFileManagerLogPanel::sigShowPanel,
-                this, &UIFileManager::sltHandleShowPanel);
-    }
+
     if (m_pPanel)
     {
         connect(m_pPanel, &UIFileManagerPanel::sigOptionsChanged,
@@ -514,7 +507,7 @@ void UIFileManager::sltGuestFileTableStateChanged(bool fIsRunning)
 void UIFileManager::sltHandleOptionsUpdated()
 {
     if (m_pPanel)
-        m_pPanel->update();
+        m_pPanel->updatePreferences();
 
     for (int i = 0; i < m_pGuestTablesContainer->count(); ++i)
     {
@@ -581,13 +574,6 @@ void UIFileManager::prepareOperationsAndLogPanels(QSplitter *pSplitter)
         m_panelActionMap.insert(m_pOperationsPanel, m_pActionPool->action(UIActionIndex_M_FileManager_T_Operations));
     }
     pSplitter->addWidget(m_pOperationsPanel);
-    m_pLogPanel = new UIFileManagerLogPanel;
-    if (m_pLogPanel)
-    {
-        m_pLogPanel->hide();
-        m_panelActionMap.insert(m_pLogPanel, m_pActionPool->action(UIActionIndex_M_FileManager_T_Log));
-    }
-    pSplitter->addWidget(m_pLogPanel);
 }
 
 
@@ -708,9 +694,8 @@ void UIFileManager::manageEscapeShortCut()
 
 void UIFileManager::appendLog(const QString &strLog, const QString &strMachineName, FileManagerLogType eLogType)
 {
-    if (!m_pLogPanel)
-        return;
-    m_pLogPanel->appendLog(strLog, strMachineName, eLogType);
+    if (m_pPanel)
+        m_pPanel->appendLog(strLog, strMachineName, eLogType);
 }
 
 void UIFileManager::savePanelVisibility()

@@ -38,6 +38,7 @@
 
 class QTabWidget;
 class QCheckBox;
+class UIFileManagerLogViewer;
 class UIFileManagerOptions;
 
 class UIFileManagerPanel : public QIWithRetranslateUI<QWidget>
@@ -51,7 +52,8 @@ signals:
 public:
 
     UIFileManagerPanel(QWidget *pParent, UIFileManagerOptions *pFileManagerOptions);
-    void update();
+    void updatePreferences();
+    void appendLog(const QString &strLog, const QString &strMachineName, FileManagerLogType eLogType);
 
 protected:
 
@@ -68,11 +70,12 @@ private:
 
     void prepare();
     void preparePreferencesTab();
+    void prepareLogTab();
+
     QTabWidget   *m_pTabWidget;
 
     /** @name Preferences tab
      * @{ */
-        QWidget    *m_pPreferencesTab;
         QCheckBox  *m_pListDirectoriesOnTopCheckBox;
         QCheckBox  *m_pDeleteConfirmationCheckBox;
         QCheckBox  *m_pHumanReabableSizesCheckBox;
@@ -80,6 +83,10 @@ private:
         UIFileManagerOptions *m_pFileManagerOptions;
     /** @} */
 
+    /** @name Log tab
+     * @{ */
+        UIFileManagerLogViewer *m_pLogTextEdit;
+    /** @} */
 
 };
 
