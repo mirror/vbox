@@ -38,6 +38,9 @@
 /* GUI includes: */
 #include "UIGuestControlDefs.h"
 #include "QIWithRetranslateUI.h"
+
+#include "CProgress.h"
+
 /* Forward declarations: */
 
 class QTabWidget;

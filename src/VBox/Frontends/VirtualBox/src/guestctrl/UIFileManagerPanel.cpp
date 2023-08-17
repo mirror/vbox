@@ -47,7 +47,6 @@
 #include "UIProgressEventHandler.h"
 
 /* Other VBox includes: */
-#include "CProgress.h"
 #include <iprt/assert.h>
 
 
