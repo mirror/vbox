@@ -3367,7 +3367,7 @@ static DECLCALLBACK(int) ich9pciR3Construct(PPDMDEVINS pDevIns, int iInstance, P
     pPciRoot->hIoPortData           = NIL_IOMIOPORTHANDLE;
     pPciRoot->hIoPortMagic          = NIL_IOMIOPORTHANDLE;
     pPciRoot->hMmioMcfg             = NIL_IOMMMIOHANDLE;
-    pPciRoot->PciBus.enmType        = DEVPCIBUSTYPE_GENERIC_ECAM;
+    pPciRoot->PciBus.enmType        = DEVPCIBUSTYPE_ICH9;
     pPciRoot->PciBus.fPureBridge    = false;
     pPciRoot->PciBus.papBridgesR3   = (PPDMPCIDEV *)PDMDevHlpMMHeapAllocZ(pDevIns, sizeof(PPDMPCIDEV) * RT_ELEMENTS(pPciRoot->PciBus.apDevices));
     AssertLogRelReturn(pPciRoot->PciBus.papBridgesR3, VERR_NO_MEMORY);
