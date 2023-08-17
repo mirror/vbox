@@ -148,8 +148,10 @@ bool UIVMLogViewerDialog::event(QEvent *pEvent)
 
 void UIVMLogViewerDialog::configure()
 {
-    /* Apply window icons: */
+#ifndef VBOX_WS_MAC
+    /* Assign window icon: */
     setWindowIcon(UIIconPool::iconSetFull(":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png"));
+#endif
 }
 
 void UIVMLogViewerDialog::configureCentralWidget()

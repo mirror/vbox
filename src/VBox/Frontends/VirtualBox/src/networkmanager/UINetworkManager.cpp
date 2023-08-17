@@ -2585,8 +2585,10 @@ void UINetworkManager::retranslateUi()
 
 void UINetworkManager::configure()
 {
-    /* Apply window icons: */
+#ifndef VBOX_WS_MAC
+    /* Assign window icon: */
     setWindowIcon(UIIconPool::iconSetFull(":/host_iface_manager_32px.png", ":/host_iface_manager_16px.png"));
+#endif
 }
 
 void UINetworkManager::configureCentralWidget()

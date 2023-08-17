@@ -290,8 +290,10 @@ void UIInputDialogCloudConsoleApplication::retranslateUi()
 
 void UIInputDialogCloudConsoleApplication::prepare()
 {
-    /* Configure self: */
-    setWindowIcon(UIIconPool::iconSet(":/cloud_console_application_add_16px.png"));
+#ifndef VBOX_WS_MAC
+    /* Assign window icon: */
+    setWindowIcon(UIIconPool::iconSetFull(":/cloud_console_application_add_32px.png" ,":/cloud_console_application_add_16px.png"));
+#endif
 
     /* Prepare main layout: */
     QGridLayout *pMainLayout = new QGridLayout(this);
@@ -398,8 +400,10 @@ void UIInputDialogCloudConsoleProfile::retranslateUi()
 
 void UIInputDialogCloudConsoleProfile::prepare()
 {
-    /* Configure self: */
-    setWindowIcon(UIIconPool::iconSet(":/cloud_console_profile_add_16px.png"));
+#ifndef VBOX_WS_MAC
+    /* Assign window icon: */
+    setWindowIcon(UIIconPool::iconSetFull(":/cloud_console_profile_add_32px.png", ":/cloud_console_profile_add_16px.png"));
+#endif
 
     /* Prepare main layout: */
     QGridLayout *pMainLayout = new QGridLayout(this);
@@ -1203,8 +1207,10 @@ void UICloudConsoleManager::retranslateUi()
 
 void UICloudConsoleManager::configure()
 {
-    /* Apply window icons: */
+#ifndef VBOX_WS_MAC
+    /* Assign window icon: */
     setWindowIcon(UIIconPool::iconSetFull(":/cloud_console_manager_32px.png", ":/cloud_console_manager_16px.png"));
+#endif
 }
 
 void UICloudConsoleManager::configureCentralWidget()

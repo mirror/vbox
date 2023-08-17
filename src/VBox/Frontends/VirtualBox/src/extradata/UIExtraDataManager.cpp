@@ -1370,10 +1370,9 @@ void UIExtraDataManagerWindow::prepare()
 void UIExtraDataManagerWindow::prepareThis()
 {
 #ifndef VBOX_WS_MAC
-    /* Apply window icons: */
-    setWindowIcon(UIIconPool::iconSetFull(":/edata_manager_32px.png",
-                                          ":/edata_manager_16px.png"));
-#endif /* !VBOX_WS_MAC */
+    /* Assign window icon: */
+    setWindowIcon(UIIconPool::iconSetFull(":/edata_manager_32px.png", ":/edata_manager_16px.png"));
+#endif
 
     /* Apply window title: */
     setWindowTitle("Extra-data Manager");

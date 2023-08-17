@@ -4422,7 +4422,11 @@ void UISoftKeyboard::loadSettings()
 
 void UISoftKeyboard::configure()
 {
-    setWindowIcon(UIIconPool::iconSet(":/soft_keyboard_16px.png"));
+#ifndef VBOX_WS_MAC
+    /* Assign window icon: */
+    setWindowIcon(UIIconPool::iconSetFull(":/soft_keyboard_32px.png", ":/soft_keyboard_16px.png"));
+#endif
+
     if (m_pKeyboardWidget && m_pSettingsWidget)
     {
         m_pSettingsWidget->setHideOSMenuKeys(m_pKeyboardWidget->hideOSMenuKeys());

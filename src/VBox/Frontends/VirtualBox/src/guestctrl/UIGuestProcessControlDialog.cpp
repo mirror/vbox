@@ -75,8 +75,10 @@ void UIGuestProcessControlDialog::retranslateUi()
 
 void UIGuestProcessControlDialog::configure()
 {
-    /* Apply window icons: */
-    setWindowIcon(UIIconPool::iconSetFull(":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png"));
+#ifndef VBOX_WS_MAC
+    /* Assign window icon: */
+    setWindowIcon(UIIconPool::iconSetFull(":/performance_monitor_32px.png" ,":/performance_monitor_16px.png"));
+#endif
 }
 
 void UIGuestProcessControlDialog::configureCentralWidget()

@@ -632,8 +632,10 @@ void UIExtensionPackManager::retranslateUi()
 
 void UIExtensionPackManager::configure()
 {
-    /* Apply window icons: */
-    setWindowIcon(UIIconPool::iconSetFull(":/extension_pack_manager_32px.png", ":/extension_pack_manager_16px.png"));
+#ifndef VBOX_WS_MAC
+    /* Assign window icon: */
+    setWindowIcon(UIIconPool::iconSetFull(":/extension_pack_manager_24px.png", ":/extension_pack_manager_16px.png"));
+#endif
 }
 
 void UIExtensionPackManager::configureCentralWidget()

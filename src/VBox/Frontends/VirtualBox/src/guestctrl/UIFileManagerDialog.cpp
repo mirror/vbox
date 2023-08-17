@@ -114,8 +114,10 @@ void UIFileManagerDialog::retranslateUi()
 
 void UIFileManagerDialog::configure()
 {
-    /* Apply window icons: */
+#ifndef VBOX_WS_MAC
+    /* Assign window icon: */
     setWindowIcon(UIIconPool::iconSetFull(":/file_manager_32px.png", ":/file_manager_16px.png"));
+#endif
 }
 
 void UIFileManagerDialog::configureCentralWidget()

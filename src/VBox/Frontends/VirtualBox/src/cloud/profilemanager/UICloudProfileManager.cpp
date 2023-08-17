@@ -348,7 +348,9 @@ void UICloudProfileManagerWidget::sltAddCloudProfile()
         QISafePointerInputDialog pDialog = new QIInputDialog(this);
         if (pDialog)
         {
-            pDialog->setWindowIcon(UIIconPool::iconSet(":/cloud_profile_add_16px.png"));
+#ifndef VBOX_WS_MAC
+            pDialog->setWindowIcon(UIIconPool::iconSetFull(":/cloud_profile_add_32px.png", ":/cloud_profile_add_16px.png"));
+#endif
             pDialog->setWindowTitle(UICloudProfileManager::tr("Add Profile"));
             if (pDialog->exec() == QDialog::Accepted)
             {
@@ -983,8 +985,10 @@ void UICloudProfileManager::retranslateUi()
 
 void UICloudProfileManager::configure()
 {
-    /* Apply window icons: */
+#ifndef VBOX_WS_MAC
+    /* Assign window icon: */
     setWindowIcon(UIIconPool::iconSetFull(":/cloud_profile_manager_32px.png", ":/cloud_profile_manager_16px.png"));
+#endif
 }
 
 void UICloudProfileManager::configureCentralWidget()

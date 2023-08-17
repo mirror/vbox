@@ -35,6 +35,7 @@
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
 #include "VBoxLicenseViewer.h"
+#include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
 
@@ -45,9 +46,9 @@ VBoxLicenseViewer::VBoxLicenseViewer(QWidget *pParent /* = 0 */)
     , m_pButtonAgree(0)
     , m_pButtonDisagree(0)
 {
-#if !(defined(VBOX_WS_WIN) || defined(VBOX_WS_MAC))
-    /* Assign application icon: */
-    setWindowIcon(QIcon(":/VirtualBox_48px.png"));
+#ifndef VBOX_WS_MAC
+    /* Assign window icon: */
+    setWindowIcon(UIIconPool::iconSetFull(":/log_viewer_find_32px.png", ":/log_viewer_find_16px.png"));
 #endif
 
     /* Create main layout: */

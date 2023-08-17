@@ -43,8 +43,10 @@ UIMachineSettingsPortForwardingDlg::UIMachineSettingsPortForwardingDlg(QWidget *
     , m_pTable(0)
     , m_pButtonBox(0)
 {
-    /* Set dialog icon: */
+#ifndef VBOX_WS_MAC
+    /* Assign window icon: */
     setWindowIcon(UIIconPool::iconSetFull(":/nw_32px.png", ":/nw_16px.png"));
+#endif
 
     /* Create layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);

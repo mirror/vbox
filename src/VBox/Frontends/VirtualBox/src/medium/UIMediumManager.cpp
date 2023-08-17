@@ -1758,8 +1758,10 @@ void UIMediumManager::retranslateUi()
 
 void UIMediumManager::configure()
 {
-    /* Apply window icons: */
+#ifndef VBOX_WS_MAC
+    /* Assign window icon: */
     setWindowIcon(UIIconPool::iconSetFull(":/media_manager_32px.png", ":/media_manager_16px.png"));
+#endif
 }
 
 void UIMediumManager::configureCentralWidget()

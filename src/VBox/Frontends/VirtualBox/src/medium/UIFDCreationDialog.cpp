@@ -37,6 +37,7 @@
 #include "UICommon.h"
 #include "UIFDCreationDialog.h"
 #include "UIFilePathSelector.h"
+#include "UIIconPool.h"
 #include "UIMedium.h"
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
@@ -197,7 +198,8 @@ void UIFDCreationDialog::sltHandleMediumCreated(const CMedium &comMedium)
 void UIFDCreationDialog::prepare()
 {
 #ifndef VBOX_WS_MAC
-    setWindowIcon(QIcon(":/fd_add_32px.png"));
+    /* Assign window icon: */
+    setWindowIcon(UIIconPool::iconSetFull(":/fd_add_32px.png", ":/fd_add_16px.png"));
 #endif
 
     setWindowModality(Qt::WindowModal);

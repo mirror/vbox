@@ -154,15 +154,13 @@ void UIVMInformationDialog::saveDialogGeometry()
 
 void UIVMInformationDialog::prepare()
 {
-    m_uMachineId = uiCommon().managedVMUuid();
-    m_strMachineName = gpMachine->machineName();
-#ifdef VBOX_WS_MAC
-    /* No window-icon on Mac OS X, because it acts as proxy icon which isn't necessary here. */
-    setWindowIcon(QIcon());
-#else
-    /* Assign window-icons: */
+#ifndef VBOX_WS_MAC
+    /* Assign window icon: */
     setWindowIcon(UIIconPool::iconSetFull(":/session_info_32px.png", ":/session_info_16px.png"));
 #endif
+
+    m_uMachineId = uiCommon().managedVMUuid();
+    m_strMachineName = gpMachine->machineName();
 
     /* Prepare stuff: */
     prepareCentralWidget();

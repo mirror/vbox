@@ -219,10 +219,10 @@ bool UIMediumSelector::event(QEvent *pEvent)
 void UIMediumSelector::configure()
 {
 #ifndef VBOX_WS_MAC
-    /* Apply window icon, not for macOS, since in Qt 5.6.x applying
-     * icon for non-top-level modal window (macOS Sheet) may cause crash: */
+    /* Assign window icon: */
     setWindowIcon(UIIconPool::iconSetFull(":/media_manager_32px.png", ":/media_manager_16px.png"));
-#endif /* !VBOX_WS_MAC */
+#endif
+
     setTitle();
     prepareWidgets();
     prepareActions();

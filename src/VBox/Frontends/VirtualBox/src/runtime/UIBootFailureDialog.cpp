@@ -118,7 +118,11 @@ void UIBootFailureDialog::retranslateUi()
 
 void UIBootFailureDialog::configure()
 {
+#ifndef VBOX_WS_MAC
+    /* Assign window icon: */
     setWindowIcon(UIIconPool::iconSetFull(":/media_manager_32px.png", ":/media_manager_16px.png"));
+#endif
+
     setTitle();
     prepareWidgets();
     prepareConnections();
