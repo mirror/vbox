@@ -844,7 +844,6 @@ UICommon_QT_MOCHDRS = \
 	src/guestctrl/UIFileManager.h \
 	src/guestctrl/UIFileManagerGuestTable.h \
 	src/guestctrl/UIFileManagerHostTable.h \
-	src/guestctrl/UIFileManagerOperationsPanel.h \
 	src/guestctrl/UIFileManagerPanel.h \
 	src/guestctrl/UIFileManagerTable.h \
 	src/helpbrowser/UIHelpBrowserDialog.h \
@@ -1059,7 +1058,6 @@ UICommon_QT_MOCSRCS = \
 	src/globals/UIVirtualBoxEventHandler.cpp \
 	src/globals/UIVirtualBoxClientEventHandler.cpp \
 	src/guestctrl/UIFileManager.cpp \
-	src/guestctrl/UIFileManagerOperationsPanel.cpp \
 	src/guestctrl/UIFileManagerPanel.cpp \
 	src/guestctrl/UIFileManagerTable.cpp \
 	src/guestctrl/UIFileManagerGuestTable.cpp \
@@ -1424,7 +1422,6 @@ UICommon_SOURCES = \
 	src/guestctrl/UIFileManagerGuestTable.cpp \
 	src/guestctrl/UIFileManagerHostTable.cpp \
 	src/guestctrl/UIFileManagerPanel.cpp \
-	src/guestctrl/UIFileManagerOperationsPanel.cpp \
 	src/guestctrl/UIFileManagerTable.cpp \
 	src/helpbrowser/UIHelpBrowserDialog.cpp \
 	src/helpbrowser/UIHelpViewer.cpp \

@@ -31,6 +31,10 @@
 # pragma once
 #endif
 
+/* Qt includes */
+#include <QWidget>
+#include <QSet>
+
 /* GUI includes: */
 #include "UIGuestControlDefs.h"
 #include "QIWithRetranslateUI.h"
@@ -40,6 +44,9 @@ class QTabWidget;
 class QCheckBox;
 class UIFileManagerLogViewer;
 class UIFileManagerOptions;
+class QScrollArea;
+class QSpacerItem;
+class QVBoxLayout;
 
 class UIFileManagerPanel : public QIWithRetranslateUI<QWidget>
 {
@@ -47,30 +54,50 @@ class UIFileManagerPanel : public QIWithRetranslateUI<QWidget>
 
 signals:
 
+    /* Signal(s) related to preferences tab. */
     void sigOptionsChanged();
+    /* Signal(s) related to operations tab. */
+    void sigFileOperationComplete(QUuid progressId);
+    void sigFileOperationFail(QString strErrorString, QString strSourceTableName, FileManagerLogType eLogType);
 
 public:
 
     UIFileManagerPanel(QWidget *pParent, UIFileManagerOptions *pFileManagerOptions);
     void updatePreferences();
     void appendLog(const QString &strLog, const QString &strMachineName, FileManagerLogType eLogType);
+    void addNewProgress(const CProgress &comProgress, const QString &strSourceTableName);
 
 protected:
 
     virtual void retranslateUi() final override;
+    virtual void contextMenuEvent(QContextMenuEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 
-    void sltListDirectoryCheckBoxToogled(bool bChecked);
-    void sltDeleteConfirmationCheckBoxToogled(bool bChecked);
-    void sltHumanReabableSizesCheckBoxToogled(bool bChecked);
-    void sltShowHiddenObjectsCheckBoxToggled(bool bChecked);
+    /** @name Preferences tab slots
+     * @{ */
+        void sltListDirectoryCheckBoxToogled(bool bChecked);
+        void sltDeleteConfirmationCheckBoxToogled(bool bChecked);
+        void sltHumanReabableSizesCheckBoxToogled(bool bChecked);
+        void sltShowHiddenObjectsCheckBoxToggled(bool bChecked);
+    /** @} */
+
+    /** @name Operations tab slots
+     * @{ */
+        void sltRemoveFinished();
+        void sltRemoveAll();
+        void sltRemoveSelected();
+        void sltHandleWidgetFocusIn(QWidget *pWidget);
+        void sltHandleWidgetFocusOut(QWidget *pWidget);
+        void sltScrollToBottom(int iMin, int iMax);
+    /** @} */
 
 private:
 
     void prepare();
     void preparePreferencesTab();
     void prepareLogTab();
+    void prepareOperationsTab();
 
     QTabWidget   *m_pTabWidget;
 
@@ -88,6 +115,14 @@ private:
         UIFileManagerLogViewer *m_pLogTextEdit;
     /** @} */
 
+    /** @name Operations tab
+     * @{ */
+        QScrollArea    *m_pScrollArea;
+        QVBoxLayout    *m_pOperationsTabLayout;
+        QSpacerItem    *m_pContainerSpaceItem;
+        QWidget        *m_pWidgetInFocus;
+        QSet<QWidget*>  m_widgetSet;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_guestctrl_UIFileManagerPanel_h */
