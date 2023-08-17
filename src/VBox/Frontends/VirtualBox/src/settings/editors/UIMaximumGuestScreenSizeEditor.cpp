@@ -156,10 +156,6 @@ void UIMaximumGuestScreenSizeEditor::sltHandleCurrentPolicyIndexChanged()
 {
     if (m_pComboPolicy)
     {
-        /* Get current size-combo tool-tip data: */
-        const QString strCurrentComboItemTip = m_pComboPolicy->currentData(Qt::ToolTipRole).toString();
-        m_pComboPolicy->setWhatsThis(strCurrentComboItemTip);
-
         /* Get current size-combo item data: */
         const MaximumGuestScreenSizePolicy enmPolicy = m_pComboPolicy->currentData().value<MaximumGuestScreenSizePolicy>();
         /* Should be combo-level widgets enabled? */

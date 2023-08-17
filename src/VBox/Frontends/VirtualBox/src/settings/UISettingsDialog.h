@@ -33,8 +33,6 @@
 
 /* Qt includes: */
 #include <QMainWindow>
-#include <QPointer>
-#include <QVariant>
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
@@ -47,7 +45,7 @@ class QLabel;
 class QProgressBar;
 class QShowEvent;
 class QStackedWidget;
-class QTimer;
+class QVariant;
 class QIDialogButtonBox;
 class UIPageValidator;
 class UISettingsPage;
@@ -114,8 +112,6 @@ protected slots:
 
 protected:
 
-    /** Preprocesses any Qt @a pEvent for passed @a pObject. */
-    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE;
     /** Handles show @a pEvent. */
@@ -195,11 +191,6 @@ private slots:
     /** Handles hover leave for warning pane specified by @a pValidator. */
     void sltHandleWarningPaneUnhovered(UIPageValidator *pValidator);
 
-    /** Updates watch this information depending on whether we have @a fGotFocus. */
-    void sltUpdateWhatsThis(bool fGotFocus);
-    /** Updates watch this information. */
-    void sltUpdateWhatsThisNoFocus() { sltUpdateWhatsThis(false); }
-
 private:
 
     /** Prepares all. */
@@ -238,11 +229,6 @@ private:
 
     /** Holds the warning hint. */
     QString  m_strWarningHint;
-
-    /** Holds the what's this hover timer instance. */
-    QTimer            *m_pWhatsThisTimer;
-    /** Holds the what's this hover timer instance. */
-    QPointer<QWidget>  m_pWhatsThisCandidate;
 
     /** Holds the map of settings pages. */
     QMap<int, int>      m_pages;

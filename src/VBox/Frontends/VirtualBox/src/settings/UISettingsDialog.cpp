@@ -32,7 +32,7 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QStackedWidget>
-#include <QTimer>
+#include <QVariant>
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
@@ -78,7 +78,6 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent,
     , m_pWarningPane(0)
     , m_fValid(true)
     , m_fSilent(true)
-    , m_pWhatsThisTimer(new QTimer(this))
     , m_pLabelTitle(0)
     , m_pButtonBox(0)
     , m_pWidgetStackHandler(0)
@@ -219,50 +218,8 @@ void UISettingsDialog::sltHandleProcessProgressChange(int iValue)
     }
 }
 
-bool UISettingsDialog::eventFilter(QObject *pObject, QEvent *pEvent)
-{
-    /* Ignore objects which are NOT widgets: */
-    if (!pObject->isWidgetType())
-        return QMainWindow::eventFilter(pObject, pEvent);
-
-    /* Ignore widgets which window is NOT settings window: */
-    QWidget *pWidget = static_cast<QWidget*>(pObject);
-    if (pWidget->window() != this)
-        return QMainWindow::eventFilter(pObject, pEvent);
-
-    /* Process different event-types: */
-    switch (pEvent->type())
-    {
-        /* Process enter/leave events to remember whats-this candidates: */
-        case QEvent::Enter:
-        case QEvent::Leave:
-        {
-            if (pEvent->type() == QEvent::Enter)
-                m_pWhatsThisCandidate = pWidget;
-            else
-                m_pWhatsThisCandidate = 0;
-
-            m_pWhatsThisTimer->start(100);
-            break;
-        }
-        /* Process focus-in event to update whats-this pane: */
-        case QEvent::FocusIn:
-        {
-            sltUpdateWhatsThis(true /* got focus? */);
-            break;
-        }
-        default:
-            break;
-    }
-
-    /* Base-class processing: */
-    return QMainWindow::eventFilter(pObject, pEvent);
-}
-
 void UISettingsDialog::retranslateUi()
 {
-    setWhatsThis(tr("<i>Select a settings category from the list on the left-hand side and move the mouse over a settings "
-                    "item to get more information.</i>"));
     m_pLabelTitle->setText(QString());
 
     /* Translate warning stuff: */
@@ -653,38 +610,6 @@ void UISettingsDialog::sltHandleWarningPaneUnhovered(UIPageValidator *pValidator
     popupCenter().recall(m_pStack, "SettingsDialogWarning");
 }
 
-void UISettingsDialog::sltUpdateWhatsThis(bool fGotFocus)
-{
-    QString strWhatsThisText;
-    QWidget *pWhatsThisWidget = 0;
-
-    /* If focus had NOT changed: */
-    if (!fGotFocus)
-    {
-        /* We will use the recommended candidate: */
-        if (m_pWhatsThisCandidate && m_pWhatsThisCandidate != this)
-            pWhatsThisWidget = m_pWhatsThisCandidate;
-    }
-    /* If focus had changed: */
-    else
-    {
-        /* We will use the focused widget instead: */
-        pWhatsThisWidget = QApplication::focusWidget();
-    }
-
-    /* If the given widget lacks the whats-this text, look at its parent: */
-    while (pWhatsThisWidget && pWhatsThisWidget != this)
-    {
-        strWhatsThisText = pWhatsThisWidget->whatsThis();
-        if (!strWhatsThisText.isEmpty())
-            break;
-        pWhatsThisWidget = pWhatsThisWidget->parentWidget();
-    }
-
-    if (pWhatsThisWidget && !strWhatsThisText.isEmpty())
-        pWhatsThisWidget->setToolTip(strWhatsThisText);
-}
-
 void UISettingsDialog::prepare()
 {
     prepareWidgets();
@@ -804,12 +729,6 @@ void UISettingsDialog::prepare()
             m_pButtonBox->addExtraWidget(m_pStatusBar);
         }
     }
-
-    /* Setup what's this stuff: */
-    qApp->installEventFilter(this);
-    m_pWhatsThisTimer->setSingleShot(true);
-    connect(m_pWhatsThisTimer, &QTimer::timeout,
-            this, &UISettingsDialog::sltUpdateWhatsThisNoFocus);
 
     /* Apply language settings: */
     retranslateUi();
