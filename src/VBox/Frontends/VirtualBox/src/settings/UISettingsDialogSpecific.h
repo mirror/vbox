@@ -137,10 +137,8 @@ protected slots:
     /** Handles category change to @a cId. */
     virtual void sltCategoryChanged(int cId) RT_OVERRIDE;
 
-    /** Marks dialog loaded. */
-    virtual void sltMarkLoaded() RT_OVERRIDE;
-    /** Marks dialog saved. */
-    virtual void sltMarkSaved() RT_OVERRIDE;
+    /** Handle serializartion finished. */
+    virtual void sltHandleSerializationFinished() RT_OVERRIDE;
 
 private slots:
 

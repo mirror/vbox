@@ -97,10 +97,8 @@ protected slots:
     /** Handles category change to @a cId. */
     virtual void sltCategoryChanged(int cId);
 
-    /** Marks dialog loaded. */
-    virtual void sltMarkLoaded();
-    /** Marks dialog saved. */
-    virtual void sltMarkSaved();
+    /** Handle serializartion finished. */
+    virtual void sltHandleSerializationFinished();
 
     /** Handles process start. */
     void sltHandleProcessStarted();

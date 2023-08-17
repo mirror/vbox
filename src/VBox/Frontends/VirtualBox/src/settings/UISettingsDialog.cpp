@@ -174,20 +174,7 @@ void UISettingsDialog::sltCategoryChanged(int cId)
 #endif
 }
 
-void UISettingsDialog::sltMarkLoaded()
-{
-    /* Delete serializer if exists: */
-    if (serializeProcess())
-    {
-        delete m_pSerializeProcess;
-        m_pSerializeProcess = 0;
-    }
-
-    /* Mark serialization finished: */
-    m_fSerializationIsInProgress = false;
-}
-
-void UISettingsDialog::sltMarkSaved()
+void UISettingsDialog::sltHandleSerializationFinished()
 {
     /* Delete serializer if exists: */
     if (serializeProcess())
@@ -383,7 +370,7 @@ void UISettingsDialog::loadData(QVariant &data)
         /* Configure settings loader: */
         connect(m_pSerializeProcess, &UISettingsSerializer::sigNotifyAboutProcessStarted, this, &UISettingsDialog::sltHandleProcessStarted);
         connect(m_pSerializeProcess, &UISettingsSerializer::sigNotifyAboutProcessProgressChanged, this, &UISettingsDialog::sltHandleProcessProgressChange);
-        connect(m_pSerializeProcess, &UISettingsSerializer::sigNotifyAboutProcessFinished, this, &UISettingsDialog::sltMarkLoaded);
+        connect(m_pSerializeProcess, &UISettingsSerializer::sigNotifyAboutProcessFinished, this, &UISettingsDialog::sltHandleSerializationFinished);
 
         /* Raise current page priority: */
         m_pSerializeProcess->raisePriorityOfPage(m_pSelector->currentId());

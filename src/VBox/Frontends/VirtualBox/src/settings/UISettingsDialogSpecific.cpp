@@ -168,8 +168,8 @@ void UISettingsDialogGlobal::save()
     if (!comNewProperties.isOk())
         msgCenter().cannotSetSystemProperties(comNewProperties, this);
 
-    /* Mark as saved: */
-    sltMarkSaved();
+    /* Handle serializartion finished: */
+    sltHandleSerializationFinished();
 }
 
 QString UISettingsDialogGlobal::titleExtension() const
@@ -483,8 +483,8 @@ void UISettingsDialogMachine::save()
     if (!m_machine.isOk())
         msgCenter().cannotSaveMachineSettings(m_machine, this);
 
-    /* Mark as saved: */
-    sltMarkSaved();
+    /* Handle serializartion finished: */
+    sltHandleSerializationFinished();
 }
 
 QString UISettingsDialogMachine::titleExtension() const
@@ -555,25 +555,10 @@ void UISettingsDialogMachine::sltCategoryChanged(int cId)
     UISettingsDialog::sltCategoryChanged(cId);
 }
 
-void UISettingsDialogMachine::sltMarkLoaded()
+void UISettingsDialogMachine::sltHandleSerializationFinished()
 {
-    /* Call for base-class: */
-    UISettingsDialog::sltMarkLoaded();
-
-    /* Unlock the session if exists: */
-    if (!m_session.isNull())
-    {
-        m_session.UnlockMachine();
-        m_session = CSession();
-        m_machine = CMachine();
-        m_console = CConsole();
-    }
-}
-
-void UISettingsDialogMachine::sltMarkSaved()
-{
-    /* Call for base-class: */
-    UISettingsDialog::sltMarkSaved();
+    /* Call to base-class: */
+    UISettingsDialog::sltHandleSerializationFinished();
 
     /* Unlock the session if exists: */
     if (!m_session.isNull())
