@@ -128,6 +128,7 @@ private slots:
     void sltCurrentTabChanged(int iIndex);
     void sltGuestFileTableStateChanged(bool fIsRunning);
     void sltHandleOptionsUpdated();
+    void sltPanelCurrentTabChanged(int iIndex);
 
 private:
 

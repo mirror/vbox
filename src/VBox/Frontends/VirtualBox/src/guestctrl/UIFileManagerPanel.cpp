@@ -368,8 +368,7 @@ void UIFileManagerLogViewer::sltClear()
 *********************************************************************************************************************************/
 
 UIFileManagerPanel::UIFileManagerPanel(QWidget *pParent, UIFileManagerOptions *pFileManagerOptions)
-    : QIWithRetranslateUI<QWidget>(pParent)
-    , m_pTabWidget(0)
+    : QIWithRetranslateUI<UIDialogPanelBase>(pParent)
     , m_pListDirectoriesOnTopCheckBox(0)
     , m_pDeleteConfirmationCheckBox(0)
     , m_pHumanReabableSizesCheckBox(0)
@@ -388,12 +387,6 @@ UIFileManagerPanel::UIFileManagerPanel(QWidget *pParent, UIFileManagerOptions *p
 
 void UIFileManagerPanel::prepare()
 {
-    QHBoxLayout *pMainLayout = new QHBoxLayout(this);
-    AssertReturnVoid(pMainLayout);
-
-    m_pTabWidget = new QTabWidget;
-    AssertReturnVoid(m_pTabWidget);
-    pMainLayout->addWidget(m_pTabWidget);
     preparePreferencesTab();
     prepareLogTab();
     prepareOperationsTab();
@@ -444,7 +437,7 @@ void UIFileManagerPanel::preparePreferencesTab()
     pPreferencesLayout->addWidget(m_pShowHiddenObjectsCheckBox,    1, 1, 1, 1);
     pPreferencesLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding), 2, 0, 1, 2);
 
-    m_pTabWidget->insertTab(Page_Preferences, pPreferencesTab, QString());
+    insertTab(Page_Preferences, pPreferencesTab, QString());
 }
 
 void UIFileManagerPanel::prepareLogTab()
@@ -457,7 +450,7 @@ void UIFileManagerPanel::prepareLogTab()
     m_pLogTextEdit = new UIFileManagerLogViewer;
     if (m_pLogTextEdit)
         pLogLayout->addWidget(m_pLogTextEdit);
-    m_pTabWidget->insertTab(Page_Log, pLogTab, QString());
+    insertTab(Page_Log, pLogTab, QString());
 }
 
 void UIFileManagerPanel::prepareOperationsTab()
@@ -485,7 +478,7 @@ void UIFileManagerPanel::prepareOperationsTab()
     m_pScrollArea->setWidget(pOperationsTab);
     pOperationsTab->setLayout(m_pOperationsTabLayout);
     m_pOperationsTabLayout->addStretch(4);
-    m_pTabWidget->insertTab(Page_Operations, m_pScrollArea, QString());
+    insertTab(Page_Operations, m_pScrollArea, QString());
 }
 
 void UIFileManagerPanel::sltListDirectoryCheckBoxToogled(bool bChecked)
@@ -547,12 +540,10 @@ void UIFileManagerPanel::retranslateUi()
         m_pShowHiddenObjectsCheckBox->setText(QApplication::translate("UIFileManager", "Show hidden objects"));
         m_pShowHiddenObjectsCheckBox->setToolTip(QApplication::translate("UIFileManager", "Show hidden files/directories"));
     }
-    if (m_pTabWidget)
-    {
-        m_pTabWidget->setTabText(Page_Preferences, QApplication::translate("UIFileManager", "Preferences"));
-        m_pTabWidget->setTabText(Page_Log, QApplication::translate("UIFileManager", "Log"));
-        m_pTabWidget->setTabText(Page_Operations, QApplication::translate("UIFileManager", "Operations"));
-    }
+
+    setTabText(Page_Preferences, QApplication::translate("UIFileManager", "Preferences"));
+    setTabText(Page_Log, QApplication::translate("UIFileManager", "Log"));
+    setTabText(Page_Operations, QApplication::translate("UIFileManager", "Operations"));
 }
 
 void UIFileManagerPanel::updatePreferences()
@@ -626,13 +617,6 @@ void UIFileManagerPanel::addNewProgress(const CProgress &comProgress, const QStr
             this, &UIFileManagerPanel::sltHandleWidgetFocusIn);
     connect(pOperationsWidget, &UIFileOperationProgressWidget::sigFocusOut,
             this, &UIFileManagerPanel::sltHandleWidgetFocusOut);
-}
-
-void UIFileManagerPanel::setCurrentIndex(int iIndex)
-{
-    if (!m_pTabWidget || iIndex >= m_pTabWidget->count() || iIndex < 0)
-        return;
-    m_pTabWidget->setCurrentIndex(iIndex);
 }
 
 void UIFileManagerPanel::contextMenuEvent(QContextMenuEvent *pEvent)

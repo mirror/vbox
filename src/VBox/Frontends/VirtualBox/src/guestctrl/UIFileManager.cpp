@@ -327,6 +327,8 @@ void UIFileManager::prepareConnections()
                 this, &UIFileManager::sltFileOperationComplete);
         connect(m_pPanel, &UIFileManagerPanel::sigFileOperationFail,
                 this, &UIFileManager::sltReceieveLogOutput);
+        connect(m_pPanel, &UIFileManagerPanel::sigCurrentTabChanged,
+                this, &UIFileManager::sltPanelCurrentTabChanged);
     }
 
     if (m_pHostFileTable)
@@ -410,7 +412,9 @@ void UIFileManager::sltPanelActionToggled(bool fChecked)
             pAction->setChecked(false);
             pAction->blockSignals(false);
         }
+        m_pPanel->blockSignals(true);
         m_pPanel->setCurrentIndex(pSenderAction->data().toInt());
+        m_pPanel->blockSignals(false);
     }
 
     // UIDialogPanel* pPanel = 0;
@@ -540,6 +544,37 @@ void UIFileManager::sltHandleOptionsUpdated()
     if (m_pHostFileTable)
         m_pHostFileTable->optionsUpdated();
     saveOptions();
+}
+
+void UIFileManager::sltPanelCurrentTabChanged(int iIndex)
+{
+    if (!m_pPanel || !m_pPanel->isVisible())
+        return;
+
+    for(QSet<QAction*>::iterator iter = m_panelActions.begin(); iter != m_panelActions.end(); ++iter)
+    {
+        QAction *pAction = *iter;
+
+        pAction->blockSignals(true);
+        pAction->setChecked(false);
+        pAction->blockSignals(false);
+    }
+
+    switch (static_cast<UIFileManagerPanel::Page>(iIndex))
+    {
+        case UIFileManagerPanel::Page_Preferences:
+            m_pActionPool->action(UIActionIndex_M_FileManager_T_Preferences)->setChecked(true);
+            break;
+        case UIFileManagerPanel::Page_Operations:
+            m_pActionPool->action(UIActionIndex_M_FileManager_T_Operations)->setChecked(true);
+            break;
+        case UIFileManagerPanel::Page_Log:
+            m_pActionPool->action(UIActionIndex_M_FileManager_T_Log)->setChecked(true);
+            break;
+        case UIFileManagerPanel::Page_Max:
+        default:
+            break;
+    }
 }
 
 void UIFileManager::setVerticalToolBarActionsEnabled()

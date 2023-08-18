@@ -41,6 +41,48 @@
 # include "VBoxUtils-darwin.h"
 #endif
 
+/* Other VBox includes: */
+#include <iprt/assert.h>
+
+
+
+UIDialogPanelBase::UIDialogPanelBase(QWidget *pParent /* = 0 */)
+    : QWidget(pParent)
+    , m_pTabWidget(0)
+{
+    prepare();
+}
+
+void UIDialogPanelBase::prepare()
+{
+    QHBoxLayout *pLayout = new QHBoxLayout(this);
+    AssertReturnVoid(pLayout);
+    pLayout->setContentsMargins(0, 0, 0, 0);
+    m_pTabWidget = new QTabWidget();
+    connect(m_pTabWidget, &QTabWidget::currentChanged, this, &UIDialogPanelBase::sigCurrentTabChanged);
+    AssertReturnVoid(m_pTabWidget);
+    pLayout->addWidget(m_pTabWidget);
+}
+
+void UIDialogPanelBase::insertTab(int iIndex, QWidget *pPage, const QString &strLabel)
+{
+    if (m_pTabWidget)
+        m_pTabWidget->insertTab(iIndex, pPage, strLabel);
+}
+
+void UIDialogPanelBase::setTabText(int iIndex, const QString &strText)
+{
+    if (!m_pTabWidget || iIndex < 0 || iIndex >= m_pTabWidget->count())
+        return;
+    m_pTabWidget->setTabText(iIndex, strText);
+}
+
+void UIDialogPanelBase::setCurrentIndex(int iIndex)
+{
+    if (!m_pTabWidget || iIndex >= m_pTabWidget->count() || iIndex < 0)
+        return;
+    m_pTabWidget->setCurrentIndex(iIndex);
+}
 
 UIDialogPanel::UIDialogPanel(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
