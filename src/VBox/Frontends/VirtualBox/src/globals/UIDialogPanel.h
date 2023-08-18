@@ -59,7 +59,7 @@ public:
 protected:
 
     virtual void prepare();
-    void insertTab(int iIndex, QWidget *pPage, const QString &strLabel);
+    void insertTab(int iIndex, QWidget *pPage, const QString &strLabel = QString());
     void setTabText(int iIndex, const QString &strText);
 
 private:

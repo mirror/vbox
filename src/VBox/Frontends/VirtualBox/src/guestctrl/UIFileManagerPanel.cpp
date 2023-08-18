@@ -437,7 +437,7 @@ void UIFileManagerPanel::preparePreferencesTab()
     pPreferencesLayout->addWidget(m_pShowHiddenObjectsCheckBox,    1, 1, 1, 1);
     pPreferencesLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding), 2, 0, 1, 2);
 
-    insertTab(Page_Preferences, pPreferencesTab, QString());
+    insertTab(Page_Preferences, pPreferencesTab);
 }
 
 void UIFileManagerPanel::prepareLogTab()
@@ -450,7 +450,7 @@ void UIFileManagerPanel::prepareLogTab()
     m_pLogTextEdit = new UIFileManagerLogViewer;
     if (m_pLogTextEdit)
         pLogLayout->addWidget(m_pLogTextEdit);
-    insertTab(Page_Log, pLogTab, QString());
+    insertTab(Page_Log, pLogTab);
 }
 
 void UIFileManagerPanel::prepareOperationsTab()
@@ -478,7 +478,7 @@ void UIFileManagerPanel::prepareOperationsTab()
     m_pScrollArea->setWidget(pOperationsTab);
     pOperationsTab->setLayout(m_pOperationsTabLayout);
     m_pOperationsTabLayout->addStretch(4);
-    insertTab(Page_Operations, m_pScrollArea, QString());
+    insertTab(Page_Operations, m_pScrollArea);
 }
 
 void UIFileManagerPanel::sltListDirectoryCheckBoxToogled(bool bChecked)

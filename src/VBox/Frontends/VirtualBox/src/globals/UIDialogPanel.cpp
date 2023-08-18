@@ -64,7 +64,7 @@ void UIDialogPanelBase::prepare()
     pLayout->addWidget(m_pTabWidget);
 }
 
-void UIDialogPanelBase::insertTab(int iIndex, QWidget *pPage, const QString &strLabel)
+void UIDialogPanelBase::insertTab(int iIndex, QWidget *pPage, const QString &strLabel /* = QString() */)
 {
     if (m_pTabWidget)
         m_pTabWidget->insertTab(iIndex, pPage, strLabel);

@@ -47,6 +47,7 @@
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
+#include "UIDialogPanel.h"
 #include "UIModalWindowManager.h"
 #include "UIVisoHostBrowser.h"
 #include "UIVisoCreator.h"
@@ -63,7 +64,7 @@
 *   UIVisoSettingWidget definition.                                                                                          *
 *********************************************************************************************************************************/
 
-class SHARED_LIBRARY_STUFF UIVisoSettingWidget : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF UIVisoSettingWidget : public QIWithRetranslateUI<UIDialogPanelBase>
 {
     Q_OBJECT;
 
@@ -83,10 +84,9 @@ private slots:
 
 private:
 
-    void prepareObjects();
+    void prepare();
     void prepareConnections();
 
-    QTabWidget   *m_pTabWidget;
     QILabel      *m_pVisoNameLabel;
     QILabel      *m_pCustomOptionsLabel;
     QILineEdit   *m_pVisoNameLineEdit;
@@ -101,8 +101,7 @@ private:
 *********************************************************************************************************************************/
 
 UIVisoSettingWidget::UIVisoSettingWidget(QWidget *pParent)
-    :QIWithRetranslateUI<QWidget>(pParent)
-    , m_pTabWidget(0)
+    :QIWithRetranslateUI<UIDialogPanelBase>(pParent)
     , m_pVisoNameLabel(0)
     , m_pCustomOptionsLabel(0)
     , m_pVisoNameLineEdit(0)
@@ -110,18 +109,12 @@ UIVisoSettingWidget::UIVisoSettingWidget(QWidget *pParent)
     , m_pShowHiddenObjectsCheckBox(0)
     , m_pVisoOptionsGridLayout(0)
 {
-    prepareObjects();
+    prepare();
     prepareConnections();
 }
 
-void UIVisoSettingWidget::prepareObjects()
+void UIVisoSettingWidget::prepare()
 {
-    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    AssertReturnVoid(pMainLayout);
-    m_pTabWidget = new QTabWidget;
-    AssertReturnVoid(m_pTabWidget);
-    pMainLayout->addWidget(m_pTabWidget);
-
     QWidget *pVisoOptionsContainerWidget = new QWidget;
     AssertReturnVoid(pVisoOptionsContainerWidget);
     m_pVisoOptionsGridLayout = new QGridLayout(pVisoOptionsContainerWidget);
@@ -129,7 +122,7 @@ void UIVisoSettingWidget::prepareObjects()
     //pVisoOptionsGridLayout->setSpacing(0);
     //pVisoOptionsGridLayout->setContentsMargins(0, 0, 0, 0);
 
-    m_pTabWidget->addTab(pVisoOptionsContainerWidget, QApplication::translate("UIVisoCreatorWidget", "VISO options"));
+    insertTab(0, pVisoOptionsContainerWidget);
 
     /* Name edit and and label: */
     m_pVisoNameLabel = new QILabel(QApplication::translate("UIVisoCreatorWidget", "VISO Name:"));
@@ -164,7 +157,7 @@ void UIVisoSettingWidget::prepareObjects()
     QGridLayout *pDialogSettingsContainerLayout = new QGridLayout(pDialogSettingsContainerWidget);
     AssertReturnVoid(pDialogSettingsContainerLayout);
 
-    m_pTabWidget->addTab(pDialogSettingsContainerWidget, QApplication::translate("UIVisoCreatorWidget", "Dialog Settings"));
+    insertTab(1, pDialogSettingsContainerWidget);
 
     iRow = 0;
     QHBoxLayout *pShowHiddenObjectsLayout = new QHBoxLayout;
@@ -202,6 +195,8 @@ void UIVisoSettingWidget::retranslateUi()
                                                                          "multiple hidden objects are shown in the file browser"));
         m_pShowHiddenObjectsCheckBox->setText(QApplication::translate("UIVisoCreatorWidget", "Show Hidden Objects"));
     }
+    setTabText(1, QApplication::translate("UIVisoCreatorWidget", "Dialog Settings"));
+    setTabText(0, QApplication::translate("UIVisoCreatorWidget", "VISO options"));
 
     //m_pVisoOptionsGridLayout->setColumnMinimumWidth(0, iLabelWidth);
 }
