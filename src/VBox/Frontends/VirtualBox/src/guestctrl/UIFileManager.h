@@ -135,7 +135,6 @@ private:
     void prepareConnections();
     void prepareVerticalToolBar(QHBoxLayout *layout);
     void prepareToolBar();
-    void prepareOperationsAndLogPanels(QSplitter *pSplitter);
 
     /** Saves list of panels and file manager options to the extra data. */
     void saveOptions();
@@ -178,7 +177,7 @@ private:
     const EmbedTo  m_enmEmbedding;
     QPointer<UIActionPool>  m_pActionPool;
     const bool     m_fShowToolbar;
-    QMap<UIDialogPanel*, QAction*> m_panelActionMap;
+    QSet<QAction*> m_panelActions;
     QList<UIDialogPanel*>          m_visiblePanelsList;
     UIFileManagerLogPanel         *m_pLogPanel;
     UIFileManagerOperationsPanel  *m_pOperationsPanel;

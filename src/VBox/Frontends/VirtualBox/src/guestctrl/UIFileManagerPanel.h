@@ -69,7 +69,7 @@ public:
     void updatePreferences();
     void appendLog(const QString &strLog, const QString &strMachineName, FileManagerLogType eLogType);
     void addNewProgress(const CProgress &comProgress, const QString &strSourceTableName);
-
+    void setCurrentIndex(int iIndex);
     enum Page
     {
         Page_Preferences = 0,

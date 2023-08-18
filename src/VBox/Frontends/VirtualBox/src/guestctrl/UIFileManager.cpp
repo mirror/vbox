@@ -242,8 +242,6 @@ void UIFileManager::prepareObjects()
         m_pVerticalSplitter->setHandleWidth(4);
 
         m_pVerticalSplitter->addWidget(pTopWidget);
-        /* Prepare operations and log panels and insert them into splitter: */
-        prepareOperationsAndLogPanels(m_pVerticalSplitter);
 
         for (int i = 0; i < m_pVerticalSplitter->count(); ++i)
             m_pVerticalSplitter->setCollapsible(i, false);
@@ -254,7 +252,17 @@ void UIFileManager::prepareObjects()
 
     m_pPanel = new UIFileManagerPanel(this, UIFileManagerOptions::instance());
     AssertReturnVoid(m_pPanel);
+
+    m_panelActions.insert(m_pActionPool->action(UIActionIndex_M_FileManager_T_Preferences));
+    m_panelActions.insert(m_pActionPool->action(UIActionIndex_M_FileManager_T_Log));
+    m_panelActions.insert(m_pActionPool->action(UIActionIndex_M_FileManager_T_Operations));
+
+    m_pActionPool->action(UIActionIndex_M_FileManager_T_Preferences)->setData(static_cast<int>(UIFileManagerPanel::Page_Preferences));
+    m_pActionPool->action(UIActionIndex_M_FileManager_T_Log)->setData(static_cast<int>(UIFileManagerPanel::Page_Log));
+    m_pActionPool->action(UIActionIndex_M_FileManager_T_Operations)->setData(static_cast<int>(UIFileManagerPanel::Page_Operations));
+
     m_pVerticalSplitter->addWidget(m_pPanel);
+    m_pPanel->hide();
 }
 
 void UIFileManager::prepareVerticalToolBar(QHBoxLayout *layout)
@@ -387,20 +395,38 @@ void UIFileManager::sltPanelActionToggled(bool fChecked)
     QAction *pSenderAction = qobject_cast<QAction*>(sender());
     if (!pSenderAction)
         return;
-    UIDialogPanel* pPanel = 0;
-    /* Look for the sender() within the m_panelActionMap's values: */
-    for (QMap<UIDialogPanel*, QAction*>::const_iterator iterator = m_panelActionMap.begin();
-        iterator != m_panelActionMap.end(); ++iterator)
-    {
-        if (iterator.value() == pSenderAction)
-            pPanel = iterator.key();
-    }
-    if (!pPanel)
-        return;
+
+    m_pPanel->setVisible(fChecked);
+
     if (fChecked)
-        showPanel(pPanel);
-    else
-        hidePanel(pPanel);
+    {
+        /* Make sure only pSenderAction is toggled on. */
+        for(QSet<QAction*>::iterator iter = m_panelActions.begin(); iter != m_panelActions.end(); ++iter)
+        {
+            QAction *pAction = *iter;
+            if (!pAction || pAction == pSenderAction)
+                continue;
+            pAction->blockSignals(true);
+            pAction->setChecked(false);
+            pAction->blockSignals(false);
+        }
+        m_pPanel->setCurrentIndex(pSenderAction->data().toInt());
+    }
+
+    // UIDialogPanel* pPanel = 0;
+    // /* Look for the sender() within the m_panelActionMap's values: */
+    // for (QMap<UIDialogPanel*, QAction*>::const_iterator iterator = m_panelActionMap.begin();
+    //     iterator != m_panelActionMap.end(); ++iterator)
+    // {
+    //     if (iterator.value() == pSenderAction)
+    //         pPanel = iterator.key();
+    // }
+    // if (!pPanel)
+    //     return;
+    // if (fChecked)
+    //     showPanel(pPanel);
+    // else
+    //     hidePanel(pPanel);
 }
 
 void UIFileManager::sltReceieveNewFileOperation(const CProgress &comProgress, const QString &strTableName)
@@ -554,23 +580,6 @@ void UIFileManager::copyToGuest()
             pGuestFileTable->copyHostToGuest(m_pHostFileTable->selectedItemPathList());
     }
 }
-
-void UIFileManager::prepareOperationsAndLogPanels(QSplitter *pSplitter)
-{
-    Q_UNUSED(pSplitter);
-    // if (!pSplitter)
-    //     return;
-    // m_pPanel = new UIFileManagerOperationsPanel;
-    // if (m_pPanel)
-    // {
-    //     m_pPanel->hide();
-    //     connect(m_pPanel, &UIFileManagerOperationsPanel::sigFileOperationComplete,
-    //             this, &UIFileManager::sltFileOperationComplete);
-    //     connect(m_pPanel, &UIFileManagerOperationsPanel::sigFileOperationFail,
-    //             this, &UIFileManager::sltReceieveLogOutput);
-    // }
-}
-
 
 template<typename T>
 QStringList UIFileManager::getFsObjInfoStringList(const T &fsObjectInfo) const

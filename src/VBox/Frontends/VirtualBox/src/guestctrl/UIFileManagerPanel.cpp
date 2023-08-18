@@ -626,7 +626,13 @@ void UIFileManagerPanel::addNewProgress(const CProgress &comProgress, const QStr
             this, &UIFileManagerPanel::sltHandleWidgetFocusIn);
     connect(pOperationsWidget, &UIFileOperationProgressWidget::sigFocusOut,
             this, &UIFileManagerPanel::sltHandleWidgetFocusOut);
-    //sigShowPanel(this);
+}
+
+void UIFileManagerPanel::setCurrentIndex(int iIndex)
+{
+    if (!m_pTabWidget || iIndex >= m_pTabWidget->count() || iIndex < 0)
+        return;
+    m_pTabWidget->setCurrentIndex(iIndex);
 }
 
 void UIFileManagerPanel::contextMenuEvent(QContextMenuEvent *pEvent)
