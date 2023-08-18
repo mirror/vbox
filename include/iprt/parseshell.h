@@ -40,7 +40,7 @@
 # pragma once
 #endif
 
-#include <iprt/types.h>
+#include <iprt/list.h>
 
 RT_C_DECLS_BEGIN
 
