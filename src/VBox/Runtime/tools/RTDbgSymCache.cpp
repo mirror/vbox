@@ -754,68 +754,13 @@ static int rtDbgSymCacheAddDebugPdb(const char *pszPath, const char *pszDstName,
         if (RT_SUCCESS(rc))
         {
             /*
-             * Get the version.
+             * The cache subdirectory name can be retrieved via RTVFSQIEX_VOL_LABEL,
+             * the primary volume label.  Then we just add it to the cache.
              */
-            char szPdbVer[16];
-            rc = RTVfsQueryLabel(hVfsPdb, true /*fAlternative*/, szPdbVer, sizeof(szPdbVer), NULL);
+            char szSubDir[64];
+            rc = RTVfsQueryLabel(hVfsPdb, false /*fAlternative*/, szSubDir, sizeof(szSubDir), NULL);
             if (RT_SUCCESS(rc))
-            {
-                /*
-                 * Read the PDB metadata header.
-                 */
-                RTVFSFILE hVfsFileHdr = NIL_RTVFSFILE;
-                rc = RTVfsFileOpen(hVfsPdb, "1", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, &hVfsFileHdr);
-                if (RT_SUCCESS(rc))
-                {
-                    union
-                    {
-                        uint8_t         abHdr[128];
-                        RTPDB70NAMES    Hdr70;
-                        RTPDB20NAMES    Hdr20;
-                    } uBuf = {{0}};
-                    size_t  cbHdr      = 0;
-                    rc = RTVfsFileRead(hVfsFileHdr, &uBuf, sizeof(uBuf), &cbHdr);
-                    RTVfsFileRelease(hVfsFileHdr);
-                    if (RT_SUCCESS(rc))
-                    {
-                        /*
-                         * Use the header to determine the subdirectory name.
-                         */
-                        char szSubDir[48];
-                        if (strcmp(szPdbVer, "pdb-v7") == 0)
-                            RTStrPrintf(szSubDir, sizeof(szSubDir), "%08X%04X%04X%02X%02X%02X%02X%02X%02X%02X%02X%x",
-                                        uBuf.Hdr70.Uuid.Gen.u32TimeLow,
-                                        uBuf.Hdr70.Uuid.Gen.u16TimeMid,
-                                        uBuf.Hdr70.Uuid.Gen.u16TimeHiAndVersion,
-                                        uBuf.Hdr70.Uuid.Gen.u8ClockSeqHiAndReserved,
-                                        uBuf.Hdr70.Uuid.Gen.u8ClockSeqLow,
-                                        uBuf.Hdr70.Uuid.Gen.au8Node[0],
-                                        uBuf.Hdr70.Uuid.Gen.au8Node[1],
-                                        uBuf.Hdr70.Uuid.Gen.au8Node[2],
-                                        uBuf.Hdr70.Uuid.Gen.au8Node[3],
-                                        uBuf.Hdr70.Uuid.Gen.au8Node[4],
-                                        uBuf.Hdr70.Uuid.Gen.au8Node[5],
-                                        uBuf.Hdr70.uAge);
-                        else if (strcmp(szPdbVer, "pdb-v2") == 0)
-                            RTStrPrintf(szSubDir, sizeof(szSubDir), "%08X%x", uBuf.Hdr20.uTimestamp, uBuf.Hdr20.uAge);
-                        else
-                        {
-                            szSubDir[0] = '\0';
-                            rc = RTMsgErrorRc(VERR_VERSION_MISMATCH, "Unsupported PDB version string: %s", szPdbVer);
-                        }
-
-                        /*
-                         * Add it to the symbol cache if that went well.
-                         */
-                        if (RT_SUCCESS(rc))
-                            rc = rtDbgSymCacheAddOneFile(pszPath, pszDstName, NULL, szSubDir, NULL, NULL, pCfg);
-                    }
-                    else
-                        RTMsgErrorRc(rc, "RTVfsFileRead('1',) failed on '%s': %Rrc", pszPath, rc);
-                }
-                else
-                    RTMsgErrorRc(rc, "RTVfsFileOpen('1',) failed on '%s': %Rrc", pszPath, rc);
-            }
+                rc = rtDbgSymCacheAddOneFile(pszPath, pszDstName, NULL, szSubDir, NULL, NULL, pCfg);
             else
                 RTMsgErrorRc(rc, "RTVfsQueryLabel failed on '%s': %Rrc", pszPath, rc);
             RTVfsRelease(hVfsPdb);

@@ -797,23 +797,70 @@ static DECLCALLBACK(int) rtFsPdbVol_QueryInfoEx(void *pvThis, RTVFSQIEX enmInfo,
     LogFlow(("rtFsPdbVol_QueryInfo(%p, %d,, %#zx,)\n", pThis, enmInfo, cbInfo));
     RT_NOREF(pThis, pvInfo, cbInfo, pcbRet);
 
+    ssize_t cchRet;
     switch (enmInfo)
     {
+        /* This is the same as the symbol chache subdir name: */
         case RTVFSQIEX_VOL_LABEL:
-            /** @todo return the UUID + age. */
-            return VERR_NOT_SUPPORTED;
+            if (   pThis->enmVersion == RTFSPDBVER_2
+                || RTUuidIsNull(&pThis->Uuid))
+                cchRet = RTStrPrintf2((char *)pvInfo, cbInfo, "%08X%x", pThis->uTimestamp, pThis->uAge);
+            else
+                cchRet = RTStrPrintf2((char *)pvInfo, cbInfo, "%08X%04X%04X%02X%02X%02X%02X%02X%02X%02X%02X%x",
+                                      pThis->Uuid.Gen.u32TimeLow,
+                                      pThis->Uuid.Gen.u16TimeMid,
+                                      pThis->Uuid.Gen.u16TimeHiAndVersion,
+                                      pThis->Uuid.Gen.u8ClockSeqHiAndReserved,
+                                      pThis->Uuid.Gen.u8ClockSeqLow,
+                                      pThis->Uuid.Gen.au8Node[0],
+                                      pThis->Uuid.Gen.au8Node[1],
+                                      pThis->Uuid.Gen.au8Node[2],
+                                      pThis->Uuid.Gen.au8Node[3],
+                                      pThis->Uuid.Gen.au8Node[4],
+                                      pThis->Uuid.Gen.au8Node[5],
+                                      pThis->uAge);
+            break;
 
+        /* This exposes the PDB and VC versions: */
         case RTVFSQIEX_VOL_LABEL_ALT:
-            return RTStrCopy((char *)pvInfo, cbInfo, pThis->enmVersion == RTFSPDBVER_2 ? "pdb-v2" : "pdb-v7");
+            cchRet = RTStrPrintf2((char *)pvInfo, cbInfo,
+                                  "pdb-v%u-%u", pThis->enmVersion == RTFSPDBVER_2 ? 2 : 7, pThis->uVcDate);
+            break;
 
         case RTVFSQIEX_VOL_SERIAL:
-            /** @todo return the UUID. */
-            return VERR_NOT_SUPPORTED;
+            if (cbInfo == sizeof(uint64_t) || cbInfo == sizeof(uint32_t))
+            {
+                *pcbRet = cbInfo;
+                ((uint32_t *)pvInfo)[0] = pThis->uTimestamp;
+                if (cbInfo == sizeof(uint64_t))
+                    ((uint32_t *)pvInfo)[1] = pThis->uAge;
+                return VINF_SUCCESS;
+            }
+            if (   pThis->enmVersion != RTFSPDBVER_2
+                && !RTUuidIsNull(&pThis->Uuid))
+            {
+                *pcbRet = sizeof(RTUUID);
+                if (cbInfo == sizeof(RTUUID))
+                {
+                    *(PRTUUID)pvInfo = pThis->Uuid;
+                    return VINF_SUCCESS;
+                }
+            }
+            else
+                *pcbRet = sizeof(uint64_t);
+            return cbInfo < *pcbRet ? VERR_BUFFER_OVERFLOW : VERR_BUFFER_UNDERFLOW;
 
         default:
             return VERR_NOT_SUPPORTED;
-
     }
+
+    if (cchRet > 0)
+    {
+        *pcbRet = (size_t)cchRet;
+        return VINF_SUCCESS;
+    }
+    *pcbRet = (size_t)-cchRet;
+    return VERR_BUFFER_OVERFLOW;
 }
 
 

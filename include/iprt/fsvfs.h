@@ -209,15 +209,25 @@ RTDECL(int) RTFsNtfsVolOpen(RTVFSFILE hVfsFileIn, uint32_t fMntFlags, uint32_t f
  * toolchain for storing debug information (.pdb), intermediate compiler state
  * (.idb) and possibly other things.  They are supposedly a win9x alternative to
  * using NTFS file streams, so the container contains "streams" rather than
- * "files".
+ * "files".  (There are some really old version of the PDB files (v1) which does
+ * not contain streams, just plain type/debug info.  That is not supported.)
  *
  * The streams are numbered and can all be opened by their number, e.g. "1" will
  * open the PDB metadata header stream.  If the stream is special or have an
- * name map entry, the name will be appended to the stream number together with
- * a dash. So, stream "1" can also be accessed as "1-Pdb".
+ * name table entry, the name will be appended to the stream number together
+ * with a dash. So, stream "1" can also be accessed as "1-pdb". Named streams
+ * will also be recognized by just the name w/o the stream prefix, so stream
+ * also be accessed as just "pdb".  The only caveat to this last naming
+ * variation is that it doesn't work of the name starts with a digit, as that is
+ * taken to mean a stream number.
+ *
+ * The RTVFSQIEX_VOL_LABEL returns the PDB cache subdirectory, i.e. UUID+Age or
+ * Timestamp+Age depending on the PDB version.
  *
  * The PDB version can be obtained by querying RTVFSQIEX_VOL_LABEL_ALT, which
- * will return "pdb-v2" or "pdb-v7"
+ * will return "pdb-v2-xxxxxx" or "pdb-v7-xxxxxxxx", where the 'x' sequences are
+ * digits making up a year-month-date figure for the visual C++ compiler
+ * creating the PDB. Version 2 may have both 6 and 8 digit variants.
  *
  * @returns IPRT status code.
  * @param   hVfsFileIn      The file or device backing the volume.
