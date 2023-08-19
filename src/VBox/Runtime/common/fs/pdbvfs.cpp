@@ -363,7 +363,7 @@ static DECLCALLBACK(int) rtFsPdbFile_Read(void *pvThis, RTFOFF off, PRTSGBUF pSg
         int rcRead = RTVfsFileReadAt(pPdb->hVfsBacking, offPageInFile + offInPage, pvDst, cbLeftInPage, NULL /*pcbRead*/);
         if (RT_SUCCESS(rcRead))
         {
-            size_t cbAssert = RTSgBufAdvance(pSgBuf, cbLeftInPage); Assert(cbAssert == cbLeftInPage); RT_NOREF(cbLeftInPage);
+            size_t cbAssert = RTSgBufAdvance(pSgBuf, cbLeftInPage); Assert(cbAssert == cbLeftInPage); RT_NOREF(cbAssert);
             offFile        += cbLeftInPage;
             cbToRead       -= cbLeftInPage;
         }
