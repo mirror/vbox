@@ -44,7 +44,7 @@
 #include <iprt/dbg.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
-#include <iprt/formats/mach-o.h>
+#include <iprt/fsvfs.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/ldr.h>
@@ -56,6 +56,9 @@
 #include <iprt/uuid.h>
 #include <iprt/vfs.h>
 #include <iprt/zip.h>
+#include <iprt/formats/mach-o.h>
+#include <iprt/formats/pecoff.h>
+#include <iprt/formats/pdb.h>
 
 
 /*********************************************************************************************************************************
@@ -419,7 +422,7 @@ static int rtDbgSymCacheAddCreateUuidMapping(const char *pszCacheFile, PRTUUID p
  *                          wanted, otherwise NULL.
  * @param   pCfg            The configuration.
  */
-static int rtDbgSymCacheAddOneFile(const char *pszSrcPath, const char *pszDstName, const char *pszExtraStuff,
+static int rtDbgSymCacheAddOneFile(const char *pszSrcPath, const char *pszDstName, const char *pszExtraSuff,
                                    const char *pszDstSubDir, PRTUUID pAddToUuidMap, const char *pszUuidMapDir,
                                    PCRTDBGSYMCACHEADDCFG pCfg)
 {
@@ -452,9 +455,9 @@ static int rtDbgSymCacheAddOneFile(const char *pszSrcPath, const char *pszDstNam
     rc = RTPathAppend(szDstPath, sizeof(szDstPath), pszDstName);
     if (RT_FAILURE(rc))
         return RTMsgErrorRc(rc, "Error constructing cache path for '%s': %Rrc", pszSrcPath, rc);
-    if (pszExtraStuff)
+    if (pszExtraSuff)
     {
-        rc = RTStrCat(szDstPath, sizeof(szDstPath), pszExtraStuff);
+        rc = RTStrCat(szDstPath, sizeof(szDstPath), pszExtraSuff);
         if (RT_FAILURE(rc))
             return RTMsgErrorRc(rc, "Error constructing cache path for '%s': %Rrc", pszSrcPath, rc);
     }
@@ -511,7 +514,7 @@ static int rtDbgSymCacheAddOneFile(const char *pszSrcPath, const char *pszDstNam
  *                              com.apple.DebugSymbols in the user defaults.
  */
 static int rtDbgSymCacheAddImageFileWorker(const char *pszPath, const char *pszDstName, PCRTDBGSYMCACHEADDCFG pCfg,
-                                           RTLDRMOD hLdrMod, const char *pszExtrSuff, const char *pszUuidMapDir)
+                                           RTLDRMOD hLdrMod, const char *pszExtraSuff, const char *pszUuidMapDir)
 {
     /*
      * Determine which subdirectory to put the files in.
@@ -564,7 +567,7 @@ static int rtDbgSymCacheAddImageFileWorker(const char *pszPath, const char *pszD
     /*
      * Now add it.
      */
-    return rtDbgSymCacheAddOneFile(pszPath, pszDstName, pszExtrSuff, szSubDir, pUuid, pszUuidMapDir, pCfg);
+    return rtDbgSymCacheAddOneFile(pszPath, pszDstName, pszExtraSuff, szSubDir, pUuid, pszUuidMapDir, pCfg);
 }
 
 
@@ -699,7 +702,34 @@ static int rtDbgSymCacheAddDebugMachO(const char *pszPath, const char *pszDstNam
 
 
 /**
- * Worker for rtDbgSymCacheAddDebugFile that adds PDBs to the cace.
+ * Worker for rtDbgSymCacheAddDebugFile that adds DBGs to the cache.
+ *
+ * @returns IPRT status code
+ * @param   pszPath             The path to the PDB file.
+ * @param   pszDstName          Add to the cache under this name.  Typically the
+ *                              filename part of @a pszPath.
+ * @param   pCfg                The configuration.
+ * @param   pHdr                The DBG file header.
+ */
+static int rtDbgSymCacheAddDebugDbg(const char *pszPath, const char *pszDstName, PCRTDBGSYMCACHEADDCFG pCfg,
+                                    PCIMAGE_SEPARATE_DEBUG_HEADER pHdr)
+{
+    if (   pHdr->SizeOfImage == 0
+        || pHdr->SizeOfImage >= UINT32_MAX / 2
+        || pHdr->TimeDateStamp < 16
+        || pHdr->TimeDateStamp >= UINT32_MAX - 16
+        || pHdr->NumberOfSections >= UINT16_MAX / 2)
+        return RTMsgErrorRc(VERR_OUT_OF_RANGE,
+                            "Bogus separate debug header in '%s': SizeOfImage=%#RX32 TimeDateStamp=%#RX32 NumberOfSections=%#RX16",
+                            pszPath, pHdr->SizeOfImage, pHdr->TimeDateStamp, pHdr->NumberOfSections);
+    char szSubDir[32];
+    RTStrPrintf(szSubDir, sizeof(szSubDir), "%08X%x", pHdr->TimeDateStamp, pHdr->SizeOfImage);
+    return rtDbgSymCacheAddOneFile(pszPath, pszDstName, NULL, szSubDir, NULL, NULL, pCfg);
+}
+
+
+/**
+ * Worker for rtDbgSymCacheAddDebugFile that adds v7 PDBs to the cache.
  *
  * @returns IPRT status code
  * @param   pszPath             The path to the PDB file.
@@ -710,8 +740,93 @@ static int rtDbgSymCacheAddDebugMachO(const char *pszPath, const char *pszDstNam
  */
 static int rtDbgSymCacheAddDebugPdb(const char *pszPath, const char *pszDstName, PCRTDBGSYMCACHEADDCFG pCfg, RTFILE hFile)
 {
-    RT_NOREF(pCfg, hFile, pszDstName);
-    return RTMsgErrorRc(VERR_NOT_IMPLEMENTED, "PDB support not implemented: '%s'", pszPath);
+    /*
+     * Open the PDB as a VFS.
+     */
+    RTVFSFILE hVfsFile = NIL_RTVFSFILE;
+    int rc = RTVfsFileFromRTFile(hFile, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, true /*fLeaveOpen*/, &hVfsFile);
+    if (RT_SUCCESS(rc))
+    {
+        RTERRINFOSTATIC ErrInfo;
+        RTVFS           hVfsPdb = NIL_RTVFS;
+        rc = RTFsPdbVolOpen(hVfsFile, 0, &hVfsPdb, RTErrInfoInitStatic(&ErrInfo));
+        RTVfsFileRelease(hVfsFile);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Get the version.
+             */
+            char szPdbVer[16];
+            rc = RTVfsQueryLabel(hVfsPdb, true /*fAlternative*/, szPdbVer, sizeof(szPdbVer), NULL);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Read the PDB metadata header.
+                 */
+                RTVFSFILE hVfsFileHdr = NIL_RTVFSFILE;
+                rc = RTVfsFileOpen(hVfsPdb, "1", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, &hVfsFileHdr);
+                if (RT_SUCCESS(rc))
+                {
+                    union
+                    {
+                        uint8_t         abHdr[128];
+                        RTPDB70NAMES    Hdr70;
+                        RTPDB20NAMES    Hdr20;
+                    } uBuf = {{0}};
+                    size_t  cbHdr      = 0;
+                    rc = RTVfsFileRead(hVfsFileHdr, &uBuf, sizeof(uBuf), &cbHdr);
+                    RTVfsFileRelease(hVfsFileHdr);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /*
+                         * Use the header to determine the subdirectory name.
+                         */
+                        char szSubDir[48];
+                        if (strcmp(szPdbVer, "pdb-v7") == 0)
+                            RTStrPrintf(szSubDir, sizeof(szSubDir), "%08X%04X%04X%02X%02X%02X%02X%02X%02X%02X%02X%x",
+                                        uBuf.Hdr70.Uuid.Gen.u32TimeLow,
+                                        uBuf.Hdr70.Uuid.Gen.u16TimeMid,
+                                        uBuf.Hdr70.Uuid.Gen.u16TimeHiAndVersion,
+                                        uBuf.Hdr70.Uuid.Gen.u8ClockSeqHiAndReserved,
+                                        uBuf.Hdr70.Uuid.Gen.u8ClockSeqLow,
+                                        uBuf.Hdr70.Uuid.Gen.au8Node[0],
+                                        uBuf.Hdr70.Uuid.Gen.au8Node[1],
+                                        uBuf.Hdr70.Uuid.Gen.au8Node[2],
+                                        uBuf.Hdr70.Uuid.Gen.au8Node[3],
+                                        uBuf.Hdr70.Uuid.Gen.au8Node[4],
+                                        uBuf.Hdr70.Uuid.Gen.au8Node[5],
+                                        uBuf.Hdr70.uAge);
+                        else if (strcmp(szPdbVer, "pdb-v2") == 0)
+                            RTStrPrintf(szSubDir, sizeof(szSubDir), "%08X%x", uBuf.Hdr20.uTimestamp, uBuf.Hdr20.uAge);
+                        else
+                        {
+                            szSubDir[0] = '\0';
+                            rc = RTMsgErrorRc(VERR_VERSION_MISMATCH, "Unsupported PDB version string: %s", szPdbVer);
+                        }
+
+                        /*
+                         * Add it to the symbol cache if that went well.
+                         */
+                        if (RT_SUCCESS(rc))
+                            rc = rtDbgSymCacheAddOneFile(pszPath, pszDstName, NULL, szSubDir, NULL, NULL, pCfg);
+                    }
+                    else
+                        RTMsgErrorRc(rc, "RTVfsFileRead('1',) failed on '%s': %Rrc", pszPath, rc);
+                }
+                else
+                    RTMsgErrorRc(rc, "RTVfsFileOpen('1',) failed on '%s': %Rrc", pszPath, rc);
+            }
+            else
+                RTMsgErrorRc(rc, "RTVfsQueryLabel failed on '%s': %Rrc", pszPath, rc);
+            RTVfsRelease(hVfsPdb);
+        }
+        else
+            RTMsgErrorRc(rc, "RTFsPdbVolOpen failed on '%s': %Rrc%#RTeim", pszPath, rc, &ErrInfo.Core);
+    }
+    else
+        RTMsgErrorRc(rc, "RTVfsFileFromRTFile failed on '%s': %Rrc", pszPath, rc);
+    return rc;
+
 }
 
 
@@ -739,33 +854,47 @@ static int rtDbgSymCacheAddDebugFile(const char *pszPath, const char *pszDstName
     if (RT_FAILURE(rc))
         return RTMsgErrorRc(rc, "Error opening '%s': %Rrc", pszPath, rc);
 
-    union
-    {
-        uint64_t au64[16];
-        uint32_t au32[16];
-        uint16_t au16[32];
-        uint8_t  ab[64];
-    } uBuf;
-    rc = RTFileRead(hFile, &uBuf, sizeof(uBuf), NULL);
+    uint64_t cbFile = 0;
+    rc = RTFileQuerySize(hFile, &cbFile);
     if (RT_SUCCESS(rc))
     {
-        /*
-         * Look for magics and call workers.
-         */
-        if (!memcmp(uBuf.ab, RT_STR_TUPLE("Microsoft C/C++ MSF 7.00")))
-            rc = rtDbgSymCacheAddDebugPdb(pszPath, pszDstName, pCfg, hFile);
-        else if (   uBuf.au32[0] == IMAGE_FAT_SIGNATURE
-                 || uBuf.au32[0] == IMAGE_FAT_SIGNATURE_OE
-                 || uBuf.au32[0] == IMAGE_MACHO32_SIGNATURE
-                 || uBuf.au32[0] == IMAGE_MACHO64_SIGNATURE
-                 || uBuf.au32[0] == IMAGE_MACHO32_SIGNATURE_OE
-                 || uBuf.au32[0] == IMAGE_MACHO64_SIGNATURE_OE)
-            rc = rtDbgSymCacheAddDebugMachO(pszPath, pszDstName, pCfg);
+
+        union
+        {
+            uint64_t au64[16];
+            uint32_t au32[16];
+            uint16_t au16[32];
+            uint8_t  ab[64];
+            RTPDB70HDR Pdb70Hdr;
+            RTPDB20HDR Pdb20Hdr;
+            IMAGE_SEPARATE_DEBUG_HEADER DbgHdr;
+        } uBuf;
+        rc = RTFileRead(hFile, &uBuf, sizeof(uBuf), NULL);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Look for magics and call workers.
+             */
+            if (   memcmp(uBuf.Pdb70Hdr.szSignature, RTPDB_SIGNATURE_700, sizeof(uBuf.Pdb70Hdr.szSignature)) == 0
+                || memcmp(uBuf.Pdb20Hdr.szSignature, RTPDB_SIGNATURE_200, sizeof(uBuf.Pdb20Hdr.szSignature)) == 0)
+                rc = rtDbgSymCacheAddDebugPdb(pszPath, pszDstName, pCfg, hFile);
+            else if (uBuf.au16[0] == IMAGE_SEPARATE_DEBUG_SIGNATURE)
+                rc = rtDbgSymCacheAddDebugDbg(pszPath, pszDstName, pCfg, &uBuf.DbgHdr);
+            else if (   uBuf.au32[0] == IMAGE_FAT_SIGNATURE
+                     || uBuf.au32[0] == IMAGE_FAT_SIGNATURE_OE
+                     || uBuf.au32[0] == IMAGE_MACHO32_SIGNATURE
+                     || uBuf.au32[0] == IMAGE_MACHO64_SIGNATURE
+                     || uBuf.au32[0] == IMAGE_MACHO32_SIGNATURE_OE
+                     || uBuf.au32[0] == IMAGE_MACHO64_SIGNATURE_OE)
+                rc = rtDbgSymCacheAddDebugMachO(pszPath, pszDstName, pCfg);
+            else
+                rc = RTMsgErrorRc(VERR_INVALID_MAGIC, "Unsupported debug file '%s' magic: %#010x", pszPath, uBuf.au32[0]);
+        }
         else
-            rc = RTMsgErrorRc(VERR_INVALID_MAGIC, "Unsupported debug file '%s' magic: %#010x", pszPath, uBuf.au32[0]);
+            rc = RTMsgErrorRc(rc, "Error reading '%s': %Rrc", pszPath, rc);
     }
     else
-        rc = RTMsgErrorRc(rc, "Error reading '%s': %Rrc", pszPath, rc);
+        rc = RTMsgErrorRc(rc, "Error query size of '%s': %Rrc", pszPath, rc);
 
     /* close the file. */
     int rc2 = RTFileClose(hFile);
