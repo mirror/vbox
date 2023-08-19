@@ -528,6 +528,7 @@ RuntimeBaseR3_SOURCES      := \
 	common/fs/isomakercmd.cpp \
 	common/fs/isomakerimport.cpp \
 	common/fs/ntfsvfs.cpp \
+	common/fs/pdbvfs.cpp \
 	common/fs/RTFsCmdLs.cpp \
 	common/ioqueue/ioqueuebase.cpp \
 	common/ioqueue/ioqueue-stdfile-provider.cpp \
