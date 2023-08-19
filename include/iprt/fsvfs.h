@@ -196,6 +196,37 @@ RTDECL(int) RTFsIso9660VolOpen(RTVFSFILE hVfsFileIn, uint32_t fFlags, PRTVFS phV
 RTDECL(int) RTFsNtfsVolOpen(RTVFSFILE hVfsFileIn, uint32_t fMntFlags, uint32_t fNtfsFlags, PRTVFS phVfs, PRTERRINFO pErrInfo);
 
 
+/** @name RTFSPDB_F_XXX - PDB mount flags.
+ * @{ */
+/** Don't provide module names, just plain stream numbering. */
+#define RTFSPDB_F_NO_NAMES          RT_BIT_32(0)
+/** @} */
+
+/**
+ * Opens an PDB container volume.
+ *
+ * The program database container files are used by the Microsoft Visual C++
+ * toolchain for storing debug information (.pdb), intermediate compiler state
+ * (.idb) and possibly other things.  They are supposedly a win9x alternative to
+ * using NTFS file streams, so the container contains "streams" rather than
+ * "files".
+ *
+ * The streams are numbered and can all be opened by their number, e.g. "1" will
+ * open the PDB metadata header stream.  If the stream is special or have an
+ * name map entry, the name will be appended to the stream number together with
+ * a dash. So, stream "1" can also be accessed as "1-Pdb".
+ *
+ * The PDB version can be obtained by querying RTVFSQIEX_VOL_LABEL_ALT, which
+ * will return "pdb-v2" or "pdb-v7"
+ *
+ * @returns IPRT status code.
+ * @param   hVfsFileIn      The file or device backing the volume.
+ * @param   fFlags          RTFSPDB_F_XXX.
+ * @param   phVfs           Where to return the virtual file system handle.
+ * @param   pErrInfo        Where to return additional error information.
+ */
+RTDECL(int) RTFsPdbVolOpen(RTVFSFILE hVfsFileIn, uint32_t fFlags, PRTVFS phVfs, PRTERRINFO pErrInfo);
+
 /** @} */
 
 RT_C_DECLS_END

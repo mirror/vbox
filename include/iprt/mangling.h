@@ -1114,6 +1114,7 @@
 # define RTFsIsoMakerCmd                                RT_MANGLER(RTFsIsoMakerCmd)
 # define RTFsIsoMakerCmdEx                              RT_MANGLER(RTFsIsoMakerCmdEx)
 # define RTFsNtfsVolOpen                                RT_MANGLER(RTFsNtfsVolOpen)
+# define RTFsPdbVolOpen                                 RT_MANGLER(RTFsPdbVolOpen)
 # define RTFtpServerCreate                              RT_MANGLER(RTFtpServerCreate)
 # define RTFtpServerDestroy                             RT_MANGLER(RTFtpServerDestroy)
 # define RTFuzzCmdMaster                                RT_MANGLER(RTFuzzCmdMaster)
