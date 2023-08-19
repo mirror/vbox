@@ -245,10 +245,9 @@ static DECLCALLBACK(int) rtDvmVfsFile_QueryInfo(void *pvThis, PRTFSOBJINFO pObjI
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
  */
-static DECLCALLBACK(int) rtDvmVfsFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+static DECLCALLBACK(int) rtDvmVfsFile_Read(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
-    PRTVFSDVMFILE pThis = (PRTVFSDVMFILE)pvThis;
-    int rc = VINF_SUCCESS;
+    PRTVFSDVMFILE const pThis = (PRTVFSDVMFILE)pvThis;
 
     Assert(pSgBuf->cSegs == 1);
     NOREF(fBlocking);
@@ -256,8 +255,9 @@ static DECLCALLBACK(int) rtDvmVfsFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF p
     /*
      * Find the current position and check if it's within the volume.
      */
+    uint64_t const cbVol = RTDvmVolumeGetSize(pThis->hVol);
     uint64_t offUnsigned = off < 0 ? pThis->offCurPos : (uint64_t)off;
-    if (offUnsigned >= RTDvmVolumeGetSize(pThis->hVol))
+    if (offUnsigned >= cbVol)
     {
         if (pcbRead)
         {
@@ -268,42 +268,52 @@ static DECLCALLBACK(int) rtDvmVfsFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF p
         return VERR_EOF;
     }
 
-    size_t cbLeftToRead;
-    if (offUnsigned + pSgBuf->paSegs[0].cbSeg > RTDvmVolumeGetSize(pThis->hVol))
+    size_t       cbSeg = 0;
+    void * const pvSeg = RTSgBufGetCurrentSegment(pSgBuf, ~(size_t)0, &cbSeg);
+
+    int    rcRet = VINF_SUCCESS;
+    size_t cbToRead;
+    if (cbSeg <= cbVol - offUnsigned)
+        cbToRead = cbSeg;
+    else if (pcbRead)
     {
-        if (!pcbRead)
-            return VERR_EOF;
-        *pcbRead = cbLeftToRead = (size_t)(RTDvmVolumeGetSize(pThis->hVol) - offUnsigned);
+        rcRet    = VINF_EOF;
+        cbToRead = (size_t)(cbVol - offUnsigned);
     }
     else
-    {
-        cbLeftToRead = pSgBuf->paSegs[0].cbSeg;
-        if (pcbRead)
-            *pcbRead = cbLeftToRead;
-    }
+        return VERR_EOF;
 
     /*
      * Ok, we've got a valid stretch within the file.  Do the reading.
      */
-    if (cbLeftToRead > 0)
+    if (cbToRead > 0)
     {
-        rc = RTDvmVolumeRead(pThis->hVol, offUnsigned, pSgBuf->paSegs[0].pvSeg, cbLeftToRead);
-        if (RT_SUCCESS(rc))
-            offUnsigned += cbLeftToRead;
+        int rc2 = RTDvmVolumeRead(pThis->hVol, offUnsigned, pvSeg, cbToRead);
+        if (RT_SUCCESS(rc2))
+        {
+            offUnsigned += cbToRead;
+            RTSgBufAdvance(pSgBuf, cbToRead);
+        }
+        else
+        {
+            cbToRead = 0;
+            rcRet = rc2;
+        }
     }
 
     pThis->offCurPos = offUnsigned;
-    return rc;
+    if (pcbRead)
+        *pcbRead = cbToRead;
+    return rcRet;
 }
 
 
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
  */
-static DECLCALLBACK(int) rtDvmVfsFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+static DECLCALLBACK(int) rtDvmVfsFile_Write(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
-    PRTVFSDVMFILE pThis = (PRTVFSDVMFILE)pvThis;
-    int rc = VINF_SUCCESS;
+    PRTVFSDVMFILE const pThis = (PRTVFSDVMFILE)pvThis;
 
     Assert(pSgBuf->cSegs == 1);
     NOREF(fBlocking);
@@ -312,42 +322,48 @@ static DECLCALLBACK(int) rtDvmVfsFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF 
      * Find the current position and check if it's within the volume.
      * Writing beyond the end of a volume is not supported.
      */
+    uint64_t const cbVol = RTDvmVolumeGetSize(pThis->hVol);
     uint64_t offUnsigned = off < 0 ? pThis->offCurPos : (uint64_t)off;
-    if (offUnsigned >= RTDvmVolumeGetSize(pThis->hVol))
+    if (offUnsigned >= cbVol)
     {
         if (pcbWritten)
         {
             *pcbWritten = 0;
             pThis->offCurPos = offUnsigned;
         }
-        return VERR_NOT_SUPPORTED;
+        return VERR_DISK_FULL; /** @todo VERR_DISK_FULL is not the best status code. */
     }
 
-    size_t cbLeftToWrite;
-    if (offUnsigned + pSgBuf->paSegs[0].cbSeg > RTDvmVolumeGetSize(pThis->hVol))
-    {
-        if (!pcbWritten)
-            return VERR_EOF;
-        *pcbWritten = cbLeftToWrite = (size_t)(RTDvmVolumeGetSize(pThis->hVol) - offUnsigned);
-    }
+    size_t       cbSeg = 0;
+    void * const pvSeg = RTSgBufGetCurrentSegment(pSgBuf, ~(size_t)0, &cbSeg);
+
+    size_t cbToWrite;
+    if (cbSeg <= cbVol - offUnsigned)
+        cbToWrite = cbSeg;
+    else if (pcbWritten)
+        cbToWrite = (size_t)(cbVol - offUnsigned);
     else
-    {
-        cbLeftToWrite = pSgBuf->paSegs[0].cbSeg;
-        if (pcbWritten)
-            *pcbWritten = cbLeftToWrite;
-    }
+        return VERR_EOF; /** @todo status to use above? or rather use VERR_DISK_FULL? */
 
     /*
      * Ok, we've got a valid stretch within the file.  Do the reading.
      */
-    if (cbLeftToWrite > 0)
+    int rc = VINF_SUCCESS;
+    if (cbToWrite > 0)
     {
-        rc = RTDvmVolumeWrite(pThis->hVol, offUnsigned, pSgBuf->paSegs[0].pvSeg, cbLeftToWrite);
+        rc = RTDvmVolumeWrite(pThis->hVol, offUnsigned, pvSeg, cbToWrite);
         if (RT_SUCCESS(rc))
-            offUnsigned += cbLeftToWrite;
+        {
+            offUnsigned += cbToWrite;
+            RTSgBufAdvance(pSgBuf, cbToWrite);
+        }
+        else
+            cbToWrite = 0;
     }
 
     pThis->offCurPos = offUnsigned;
+    if (pcbWritten)
+        *pcbWritten = cbToWrite;
     return rc;
 }
 

@@ -148,7 +148,7 @@ static DECLCALLBACK(int) rtVfsProgressFile_QueryInfo(void *pvThis, PRTFSOBJINFO 
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
  */
-static DECLCALLBACK(int) rtVfsProgressFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+static DECLCALLBACK(int) rtVfsProgressFile_Read(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
     PRTVFSPROGRESSFILE pThis = (PRTVFSPROGRESSFILE)pvThis;
 
@@ -165,10 +165,7 @@ static DECLCALLBACK(int) rtVfsProgressFile_Read(void *pvThis, RTFOFF off, PCRTSG
         }
 
         /* Calc the request before calling down the stack. */
-        size_t   cbReq = 0;
-        unsigned i = pSgBuf->cSegs;
-        while (i-- > 0)
-            cbReq += pSgBuf->paSegs[i].cbSeg;
+        size_t const cbReq = RTSgBufCalcLengthLeft(pSgBuf);
 
         /* Do the read. */
         rc = RTVfsIoStrmSgRead(pThis->hVfsIos, off, pSgBuf, fBlocking, pcbRead);
@@ -187,7 +184,7 @@ static DECLCALLBACK(int) rtVfsProgressFile_Read(void *pvThis, RTFOFF off, PCRTSG
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
  */
-static DECLCALLBACK(int) rtVfsProgressFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+static DECLCALLBACK(int) rtVfsProgressFile_Write(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
     PRTVFSPROGRESSFILE pThis = (PRTVFSPROGRESSFILE)pvThis;
 
@@ -204,10 +201,7 @@ static DECLCALLBACK(int) rtVfsProgressFile_Write(void *pvThis, RTFOFF off, PCRTS
         }
 
         /* Calc the request before calling down the stack. */
-        size_t   cbReq = 0;
-        unsigned i = pSgBuf->cSegs;
-        while (i-- > 0)
-            cbReq += pSgBuf->paSegs[i].cbSeg;
+        size_t const cbReq = RTSgBufCalcLengthLeft(pSgBuf);
 
         /* Do the read. */
         rc = RTVfsIoStrmSgWrite(pThis->hVfsIos, off, pSgBuf, fBlocking, pcbWritten);

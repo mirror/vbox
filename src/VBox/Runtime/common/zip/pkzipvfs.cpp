@@ -906,7 +906,7 @@ static DECLCALLBACK(int) rtZipPkzipFssIosReadHelper(void *pvThis, void *pvBuf, s
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
  */
-static DECLCALLBACK(int) rtZipPkzipFssIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+static DECLCALLBACK(int) rtZipPkzipFssIos_Read(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
     PRTZIPPKZIPIOSTREAM pThis = (PRTZIPPKZIPIOSTREAM)pvThis;
     Assert(pSgBuf->cSegs == 1);
@@ -985,6 +985,8 @@ static DECLCALLBACK(int) rtZipPkzipFssIos_Read(void *pvThis, RTFOFF off, PCRTSGB
         pcbRead = &cbReadStack;
     int rc = RTZipDecompress(pThis->pZip, pSgBuf->paSegs[0].pvSeg, cbToRead, pcbRead);
     pThis->offFile = off + *pcbRead;
+    RTSgBufAdvance(pSgBuf, *pcbRead);
+
     if (pThis->offFile >= pThis->cbFile)
     {
         Assert(pThis->offFile == pThis->cbFile);
@@ -994,7 +996,7 @@ static DECLCALLBACK(int) rtZipPkzipFssIos_Read(void *pvThis, RTFOFF off, PCRTSGB
     return rc;
 }
 
-static DECLCALLBACK(int) rtZipPkzipFssIos_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+static DECLCALLBACK(int) rtZipPkzipFssIos_Write(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
     RT_NOREF_PV(pvThis); RT_NOREF_PV(off); RT_NOREF_PV(pSgBuf); RT_NOREF_PV(fBlocking); RT_NOREF_PV(pcbWritten);
     return VERR_NOT_IMPLEMENTED;

@@ -438,7 +438,9 @@ RTDECL(size_t) RTSgBufAdvance(PRTSGBUF pSgBuf, size_t cbAdvance)
 
     size_t cbLeft = cbAdvance;
 
-    while (cbLeft)
+    while (    cbLeft
+           || (   pSgBuf->cbSegLeft == 0
+               && pSgBuf->idxSeg > pSgBuf->cSegs))
     {
         size_t cbThisAdvance = cbLeft;
         if (!rtSgBufGet(pSgBuf, &cbThisAdvance))

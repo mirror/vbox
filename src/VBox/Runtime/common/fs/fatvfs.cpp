@@ -2164,7 +2164,7 @@ static DECLCALLBACK(int) rtFsFatFile_QueryInfo(void *pvThis, PRTFSOBJINFO pObjIn
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
  */
-static DECLCALLBACK(int) rtFsFatFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+static DECLCALLBACK(int) rtFsFatFile_Read(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
     PRTFSFATFILE     pThis   = (PRTFSFATFILE)pvThis;
     PRTFSFATFILESHRD pShared = pThis->pShared;
@@ -2229,6 +2229,7 @@ static DECLCALLBACK(int) rtFsFatFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pS
     pThis->offFile = off;
     if (pcbRead)
         *pcbRead = cbRead;
+    RTSgBufAdvance(pSgBuf, cbRead);
     return rc;
 }
 
@@ -2326,7 +2327,7 @@ static int rtFsFatObj_SetSize(PRTFSFATOBJ pObj, uint32_t cbFile)
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
  */
-static DECLCALLBACK(int) rtFsFatFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+static DECLCALLBACK(int) rtFsFatFile_Write(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
     PRTFSFATFILE     pThis   = (PRTFSFATFILE)pvThis;
     PRTFSFATFILESHRD pShared = pThis->pShared;
@@ -2400,6 +2401,7 @@ static DECLCALLBACK(int) rtFsFatFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF p
     pThis->offFile = off;
     if (pcbWritten)
         *pcbWritten = cbWritten;
+    RTSgBufAdvance(pSgBuf, cbWritten);
     return rc;
 }
 

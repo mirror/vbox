@@ -1715,7 +1715,7 @@ static DECLCALLBACK(int) rtFsExtFile_QueryInfo(void *pvThis, PRTFSOBJINFO pObjIn
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
  */
-static DECLCALLBACK(int) rtFsExtFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+static DECLCALLBACK(int) rtFsExtFile_Read(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
     PRTFSEXTFILE pThis = (PRTFSEXTFILE)pvThis;
     AssertReturn(pSgBuf->cSegs == 1, VERR_INTERNAL_ERROR_3);
@@ -1732,7 +1732,10 @@ static DECLCALLBACK(int) rtFsExtFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pS
     {
         rc = rtFsExtInode_Read(pThis->pVol, pThis->pInode, (uint64_t)off, pSgBuf->paSegs[0].pvSeg, cbRead, NULL);
         if (RT_SUCCESS(rc))
+        {
             pThis->offFile = off + cbRead;
+            RTSgBufAdvance(pSgBuf, cbRead);
+        }
         Log6(("rtFsExtFile_Read: off=%#RX64 cbSeg=%#x -> %Rrc\n", off, pSgBuf->paSegs[0].cbSeg, rc));
     }
     else
@@ -1759,6 +1762,7 @@ static DECLCALLBACK(int) rtFsExtFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pS
             {
                 pThis->offFile = off + cbRead;
                 *pcbRead = cbRead;
+                RTSgBufAdvance(pSgBuf, cbRead);
             }
             else
                 *pcbRead = 0;
@@ -1773,7 +1777,7 @@ static DECLCALLBACK(int) rtFsExtFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pS
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
  */
-static DECLCALLBACK(int) rtFsExtFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+static DECLCALLBACK(int) rtFsExtFile_Write(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
     RT_NOREF(pvThis, off, pSgBuf, fBlocking, pcbWritten);
     return VERR_WRITE_PROTECT;

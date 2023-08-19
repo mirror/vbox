@@ -305,30 +305,35 @@ static DECLCALLBACK(int) rtManifestPtIos_QueryInfo(void *pvThis, PRTFSOBJINFO pO
  * Updates the hashes with a scather/gather buffer.
  *
  * @param   pThis               The passthru I/O stream instance data.
- * @param   pSgBuf              The scather/gather buffer.
+ * @param   pSgBuf              The scather/gather buffer (clone, can be
+ *                              updated).
  * @param   cbLeft              The number of bytes to take from the buffer.
  */
-static void rtManifestPtIos_UpdateHashes(PRTMANIFESTPTIOS pThis, PCRTSGBUF pSgBuf, size_t cbLeft)
+static void rtManifestPtIos_UpdateHashes(PRTMANIFESTPTIOS pThis, PRTSGBUF pSgBuf, size_t cbLeft)
 {
-    for (uint32_t iSeg = 0; iSeg < pSgBuf->cSegs; iSeg++)
+    while (cbLeft > 0)
     {
-        size_t cbSeg = pSgBuf->paSegs[iSeg].cbSeg;
-        if (cbSeg > cbLeft)
-            cbSeg = cbLeft;
-        rtManifestHashesUpdate(pThis->pHashes, pSgBuf->paSegs[iSeg].pvSeg, cbSeg);
+        Assert(!RTSgBufIsAtEnd(pSgBuf));
+        size_t             cbSeg = cbLeft;
+        void const * const pvSeg = RTSgBufGetNextSegment(pSgBuf, &cbSeg);
+        rtManifestHashesUpdate(pThis->pHashes, pvSeg, cbSeg);
         cbLeft -= cbSeg;
-        if (!cbLeft)
-            break;
     }
 }
 
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
  */
-static DECLCALLBACK(int) rtManifestPtIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+static DECLCALLBACK(int) rtManifestPtIos_Read(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
     PRTMANIFESTPTIOS pThis = (PRTMANIFESTPTIOS)pvThis;
     int rc;
+
+    /*
+     * Clone the buffer for the manifest pass.
+     */
+    RTSGBUF CloneSgBuf;
+    RTSgBufClone(&CloneSgBuf, pSgBuf);
 
     /*
      * To make sure we're continuing where we left off, we must have the exact
@@ -337,15 +342,12 @@ static DECLCALLBACK(int) rtManifestPtIos_Read(void *pvThis, RTFOFF off, PCRTSGBU
     RTFOFF offActual = off == -1 ? RTVfsIoStrmTell(pThis->hVfsIos) : off;
     if (offActual == pThis->offCurPos)
     {
+        size_t const cbReq = RTSgBufCalcLengthLeft(pSgBuf);
         rc = RTVfsIoStrmSgRead(pThis->hVfsIos, off, pSgBuf, fBlocking, pcbRead);
         if (RT_SUCCESS(rc))
         {
-            rtManifestPtIos_UpdateHashes(pThis, pSgBuf, pcbRead ? *pcbRead : ~(size_t)0);
-            if (!pcbRead)
-                for (uint32_t iSeg = 0; iSeg < pSgBuf->cSegs; iSeg++)
-                    pThis->offCurPos += pSgBuf->paSegs[iSeg].cbSeg;
-            else
-                pThis->offCurPos += *pcbRead;
+            rtManifestPtIos_UpdateHashes(pThis, &CloneSgBuf, pcbRead ? *pcbRead : cbReq);
+            pThis->offCurPos += pcbRead ? *pcbRead : cbReq;
         }
         Assert(RTVfsIoStrmTell(pThis->hVfsIos) == pThis->offCurPos);
     }
@@ -389,25 +391,22 @@ static DECLCALLBACK(int) rtManifestPtIos_Read(void *pvThis, RTFOFF off, PCRTSGBU
         if (RT_SUCCESS(rc))
         {
             /* See if there is anything to update the hash with. */
-            size_t cbLeft = pcbRead ? *pcbRead : ~(size_t)0;
-            for (uint32_t iSeg = 0; iSeg < pSgBuf->cSegs; iSeg++)
+            size_t cbLeft = pcbRead ? *pcbRead : RTSgBufCalcLengthLeft(&CloneSgBuf);
+            while (cbLeft > 0)
             {
-                size_t cbThis = pSgBuf->paSegs[iSeg].cbSeg;
-                if (cbThis > cbLeft)
-                    cbThis = cbLeft;
+                Assert(!RTSgBufIsAtEnd(&CloneSgBuf));
+                size_t         cbSeg = cbLeft;
+                const uint8_t *pbSeg = (uint8_t const *)RTSgBufGetNextSegment(&CloneSgBuf, &cbSeg);
 
                 if (   offActual >= pThis->offCurPos
-                    && pThis->offCurPos < offActual + (ssize_t)cbThis)
+                    && pThis->offCurPos < offActual + (ssize_t)cbSeg)
                 {
                     size_t offSeg = (size_t)(offActual - pThis->offCurPos);
-                    rtManifestHashesUpdate(pThis->pHashes, (uint8_t *)pSgBuf->paSegs[iSeg].pvSeg + offSeg, cbThis - offSeg);
-                    pThis->offCurPos += cbThis - offSeg;
+                    rtManifestHashesUpdate(pThis->pHashes, &pbSeg[offSeg], cbSeg - offSeg);
+                    pThis->offCurPos += cbSeg - offSeg;
                 }
 
-                cbLeft -= cbThis;
-                if (!cbLeft)
-                    break;
-                offActual += cbThis;
+                cbLeft -= cbSeg;
             }
         }
     }
@@ -418,7 +417,7 @@ static DECLCALLBACK(int) rtManifestPtIos_Read(void *pvThis, RTFOFF off, PCRTSGBU
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
  */
-static DECLCALLBACK(int) rtManifestPtIos_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+static DECLCALLBACK(int) rtManifestPtIos_Write(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
     PRTMANIFESTPTIOS pThis = (PRTMANIFESTPTIOS)pvThis;
     Assert(RTVfsIoStrmTell(pThis->hVfsIos) == pThis->offCurPos);
@@ -453,17 +452,20 @@ static DECLCALLBACK(int) rtManifestPtIos_Write(void *pvThis, RTFOFF off, PCRTSGB
     }
 
     /*
+     * Clone the buffer for the manifest pass.
+     */
+    RTSGBUF CloneSgBuf;
+    RTSgBufClone(&CloneSgBuf, pSgBuf);
+    size_t const cbReq = RTSgBufCalcLengthLeft(pSgBuf);
+
+    /*
      * Do the writing.
      */
     int rc = RTVfsIoStrmSgWrite(pThis->hVfsIos, -1 /*off*/, pSgBuf, fBlocking, pcbWritten);
     if (RT_SUCCESS(rc))
     {
-        rtManifestPtIos_UpdateHashes(pThis, pSgBuf, pcbWritten ? *pcbWritten : ~(size_t)0);
-        if (!pcbWritten)
-            for (uint32_t iSeg = 0; iSeg < pSgBuf->cSegs; iSeg++)
-                pThis->offCurPos += pSgBuf->paSegs[iSeg].cbSeg;
-        else
-            pThis->offCurPos += *pcbWritten;
+        rtManifestPtIos_UpdateHashes(pThis, &CloneSgBuf, pcbWritten ? *pcbWritten : cbReq);
+        pThis->offCurPos += pcbWritten ? *pcbWritten : cbReq;
     }
     return rc;
 }

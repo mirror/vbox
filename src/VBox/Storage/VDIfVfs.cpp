@@ -94,11 +94,14 @@ static DECLCALLBACK(int) vdIfVfsIos_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInf
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
  */
-static DECLCALLBACK(int) vdIfVfsIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+static DECLCALLBACK(int) vdIfVfsIos_Read(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
     PVDIFVFSIOSFILE pThis = (PVDIFVFSIOSFILE)pvThis;
     Assert(pSgBuf->cSegs == 1); NOREF(fBlocking);
     Assert(off >= -1);
+
+    size_t       cbSeg = 0;
+    void * const pvSeg = RTSgBufGetCurrentSegment(pSgBuf, ~(size_t)0, &cbSeg);
 
     /*
      * This may end up being a little more complicated, esp. wrt VERR_EOF.
@@ -107,17 +110,18 @@ static DECLCALLBACK(int) vdIfVfsIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSg
         off = pThis->offCurPos;
     int rc;
     if (pThis->pVDIfsIo)
-        rc = vdIfIoFileReadSync(pThis->pVDIfsIo, pThis->pStorage, off, pSgBuf[0].pvSegCur, pSgBuf->paSegs[0].cbSeg, pcbRead);
+        rc = vdIfIoFileReadSync(pThis->pVDIfsIo, pThis->pStorage, off, pvSeg, cbSeg, pcbRead);
     else
     {
-        rc = vdIfIoIntFileReadSync(pThis->pVDIfsIoInt, (PVDIOSTORAGE)pThis->pStorage, off, pSgBuf[0].pvSegCur, pSgBuf->paSegs[0].cbSeg);
+        rc = vdIfIoIntFileReadSync(pThis->pVDIfsIoInt, (PVDIOSTORAGE)pThis->pStorage, off, pvSeg, cbSeg);
         if (pcbRead)
-            *pcbRead = RT_SUCCESS(rc) ? pSgBuf->paSegs[0].cbSeg : 0;
+            *pcbRead = RT_SUCCESS(rc) ? cbSeg : 0;
     }
     if (RT_SUCCESS(rc))
     {
-        size_t cbAdvance = pcbRead ? *pcbRead : pSgBuf->paSegs[0].cbSeg;
+        size_t const cbAdvance = pcbRead ? *pcbRead : cbSeg;
         pThis->offCurPos = off + cbAdvance;
+        RTSgBufAdvance(pSgBuf, cbAdvance);
         if (pcbRead && !cbAdvance)
             rc = VINF_EOF;
     }
@@ -128,28 +132,35 @@ static DECLCALLBACK(int) vdIfVfsIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSg
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
  */
-static DECLCALLBACK(int) vdIfVfsIos_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+static DECLCALLBACK(int) vdIfVfsIos_Write(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
     PVDIFVFSIOSFILE pThis = (PVDIFVFSIOSFILE)pvThis;
     Assert(pSgBuf->cSegs == 1); NOREF(fBlocking);
     Assert(off >= -1);
 
+    size_t             cbSeg = 0;
+    void const * const pvSeg = RTSgBufGetCurrentSegment(pSgBuf, ~(size_t)0, &cbSeg);
+
     /*
-     * This may end up being a little more complicated, esp. wrt VERR_EOF.
+     * Do the writing.
      */
     if (off == -1)
         off = pThis->offCurPos;
     int rc;
     if (pThis->pVDIfsIo)
-        rc = vdIfIoFileWriteSync(pThis->pVDIfsIo, pThis->pStorage, off, pSgBuf[0].pvSegCur, pSgBuf->paSegs[0].cbSeg, pcbWritten);
+        rc = vdIfIoFileWriteSync(pThis->pVDIfsIo, pThis->pStorage, off, pvSeg, cbSeg, pcbWritten);
     else
     {
-        rc = vdIfIoIntFileWriteSync(pThis->pVDIfsIoInt, pThis->pStorage, off, pSgBuf[0].pvSegCur, pSgBuf->paSegs[0].cbSeg);
+        rc = vdIfIoIntFileWriteSync(pThis->pVDIfsIoInt, pThis->pStorage, off, pvSeg, cbSeg);
         if (pcbWritten)
-            *pcbWritten = RT_SUCCESS(rc) ? pSgBuf->paSegs[0].cbSeg : 0;
+            *pcbWritten = RT_SUCCESS(rc) ? cbSeg : 0;
     }
     if (RT_SUCCESS(rc))
-        pThis->offCurPos = off + (pcbWritten ? *pcbWritten : pSgBuf->paSegs[0].cbSeg);
+    {
+        size_t const cbAdvance = pcbWritten ? *pcbWritten : cbSeg;
+        pThis->offCurPos = off + cbAdvance;
+        RTSgBufAdvance(pSgBuf, cbAdvance);
+    }
     return rc;
 }
 

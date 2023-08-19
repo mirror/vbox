@@ -141,7 +141,7 @@ DECLINLINE(int) rtVfsStdFile_ReadFixRC(PRTVFSSTDFILE pThis, RTFOFF off, size_t c
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
  */
-static DECLCALLBACK(int) rtVfsStdFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+static DECLCALLBACK(int) rtVfsStdFile_Read(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
     PRTVFSSTDFILE pThis = (PRTVFSSTDFILE)pvThis;
     int           rc;
@@ -149,30 +149,33 @@ static DECLCALLBACK(int) rtVfsStdFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF p
     NOREF(fBlocking);
     if (pSgBuf->cSegs == 1)
     {
+        size_t       cbToRead = 0;
+        void * const pvDst    = RTSgBufGetCurrentSegment(pSgBuf, ~(size_t)0, &cbToRead);
+
         if (off < 0)
-            rc = RTFileRead(  pThis->hFile,      pSgBuf->paSegs[0].pvSeg, pSgBuf->paSegs[0].cbSeg, pcbRead);
+            rc = RTFileRead(pThis->hFile, pvDst, cbToRead, pcbRead);
         else
         {
-            rc = RTFileReadAt(pThis->hFile, off, pSgBuf->paSegs[0].pvSeg, pSgBuf->paSegs[0].cbSeg, pcbRead);
+            rc = RTFileReadAt(pThis->hFile, off, pvDst, cbToRead, pcbRead);
             if (RT_SUCCESS(rc)) /* RTFileReadAt() doesn't increment the file-position indicator on some platforms */
-                rc = RTFileSeek(pThis->hFile, off + (pcbRead ? *pcbRead : pSgBuf->paSegs[0].cbSeg), RTFILE_SEEK_BEGIN, NULL);
+                rc = RTFileSeek(pThis->hFile, off + (pcbRead ? *pcbRead : cbToRead), RTFILE_SEEK_BEGIN, NULL);
         }
         if (rc == VINF_SUCCESS && pcbRead)
-            rc = rtVfsStdFile_ReadFixRC(pThis, off, pSgBuf->paSegs[0].cbSeg, *pcbRead);
+            rc = rtVfsStdFile_ReadFixRC(pThis, off, cbToRead, *pcbRead);
+        if (RT_SUCCESS(rc))
+            RTSgBufAdvance(pSgBuf, pcbRead ? *pcbRead : cbToRead);
     }
     else
     {
-        size_t  cbSeg      = 0;
-        size_t  cbRead     = 0;
-        size_t  cbReadSeg  = 0;
+        size_t  cbSeg  = 0;
+        size_t  cbRead = 0;
         rc = VINF_SUCCESS;
 
-        for (uint32_t iSeg = 0; iSeg < pSgBuf->cSegs; iSeg++)
+        while (!RTSgBufIsAtEnd(pSgBuf))
         {
-            void *pvSeg = pSgBuf->paSegs[iSeg].pvSeg;
-            cbSeg       = pSgBuf->paSegs[iSeg].cbSeg;
+            void * const pvSeg = RTSgBufGetCurrentSegment(pSgBuf, ~(size_t)0, &cbSeg);
 
-            cbReadSeg = cbSeg;
+            size_t  cbReadSeg  = cbSeg;
             if (off < 0)
                 rc = RTFileRead(  pThis->hFile,      pvSeg, cbSeg, pcbRead ? &cbReadSeg : NULL);
             else
@@ -183,9 +186,12 @@ static DECLCALLBACK(int) rtVfsStdFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF p
             }
             if (RT_FAILURE(rc))
                 break;
+
             if (off >= 0)
                 off += cbReadSeg;
             cbRead  += cbReadSeg;
+            RTSgBufAdvance(pSgBuf, cbReadSeg);
+
             if ((pcbRead && cbReadSeg != cbSeg) || rc != VINF_SUCCESS)
                 break;
         }
@@ -194,7 +200,7 @@ static DECLCALLBACK(int) rtVfsStdFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF p
         {
             *pcbRead = cbRead;
             if (rc == VINF_SUCCESS)
-                rc = rtVfsStdFile_ReadFixRC(pThis, off, cbSeg, cbReadSeg);
+                rc = rtVfsStdFile_ReadFixRC(pThis, off, cbSeg, cbRead);
         }
     }
 
@@ -205,7 +211,7 @@ static DECLCALLBACK(int) rtVfsStdFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF p
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
  */
-static DECLCALLBACK(int) rtVfsStdFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+static DECLCALLBACK(int) rtVfsStdFile_Write(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
     PRTVFSSTDFILE pThis = (PRTVFSSTDFILE)pvThis;
     int           rc;
@@ -213,15 +219,19 @@ static DECLCALLBACK(int) rtVfsStdFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF 
     NOREF(fBlocking);
     if (pSgBuf->cSegs == 1)
     {
+        size_t             cbToWrite = 0;
+        void const * const pvSrc    = RTSgBufGetCurrentSegment(pSgBuf, ~(size_t)0, &cbToWrite);
+
         if (off < 0)
-            rc = RTFileWrite(pThis->hFile, pSgBuf->paSegs[0].pvSeg, pSgBuf->paSegs[0].cbSeg, pcbWritten);
+            rc = RTFileWrite(pThis->hFile, pvSrc, cbToWrite, pcbWritten);
         else
         {
-            rc = RTFileWriteAt(pThis->hFile, off, pSgBuf->paSegs[0].pvSeg, pSgBuf->paSegs[0].cbSeg, pcbWritten);
+            rc = RTFileWriteAt(pThis->hFile, off, pvSrc, cbToWrite, pcbWritten);
             if (RT_SUCCESS(rc)) /* RTFileWriteAt() doesn't increment the file-position indicator on some platforms */
-                rc = RTFileSeek(pThis->hFile, off + (pcbWritten ? *pcbWritten : pSgBuf->paSegs[0].cbSeg), RTFILE_SEEK_BEGIN,
-                                NULL);
+                rc = RTFileSeek(pThis->hFile, off + (pcbWritten ? *pcbWritten : cbToWrite), RTFILE_SEEK_BEGIN, NULL);
         }
+        if (RT_SUCCESS(rc))
+            RTSgBufAdvance(pSgBuf, pcbWritten ? *pcbWritten : cbToWrite);
     }
     else
     {
@@ -230,10 +240,10 @@ static DECLCALLBACK(int) rtVfsStdFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF 
         size_t *pcbWrittenSeg = pcbWritten ? &cbWrittenSeg : NULL;
         rc = VINF_SUCCESS;
 
-        for (uint32_t iSeg = 0; iSeg < pSgBuf->cSegs; iSeg++)
+        while (!RTSgBufIsAtEnd(pSgBuf))
         {
-            void   *pvSeg  = pSgBuf->paSegs[iSeg].pvSeg;
-            size_t  cbSeg  = pSgBuf->paSegs[iSeg].cbSeg;
+            size_t             cbSeg      = 0;
+            void const * const pvSeg = RTSgBufGetCurrentSegment(pSgBuf, ~(size_t)0, &cbSeg);
 
             cbWrittenSeg = 0;
             if (off < 0)
@@ -252,10 +262,13 @@ static DECLCALLBACK(int) rtVfsStdFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF 
                 break;
             if (pcbWritten)
             {
+                RTSgBufAdvance(pSgBuf, cbWrittenSeg);
                 cbWritten += cbWrittenSeg;
                 if (cbWrittenSeg != cbSeg)
                     break;
             }
+            else
+                RTSgBufAdvance(pSgBuf, cbSeg);
         }
 
         if (pcbWritten)

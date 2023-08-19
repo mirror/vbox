@@ -1132,7 +1132,7 @@ RTDECL(int)         RTVfsIoStrmWriteAt(RTVFSIOSTREAM hVfsIos, RTFOFF off, const 
  *                          read.  This can be NULL if @a fBlocking is true.
  * @sa      RTFileSgRead, RTSocketSgRead, RTPipeRead, RTPipeReadBlocking
  */
-RTDECL(int)         RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead);
+RTDECL(int)         RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead);
 
 /**
  * Write bytes to the I/O stream from a gather buffer.
@@ -1151,7 +1151,7 @@ RTDECL(int)         RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, RTFOFF off, PCRTSGB
  *                          written.  This can be NULL if @a fBlocking is true.
  * @sa      RTFileSgWrite, RTSocketSgWrite
  */
-RTDECL(int)         RTVfsIoStrmSgWrite(RTVFSIOSTREAM hVfsIos, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten);
+RTDECL(int)         RTVfsIoStrmSgWrite(RTVFSIOSTREAM hVfsIos, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten);
 
 /**
  * Flush any buffered data to the I/O stream.
@@ -1455,7 +1455,7 @@ RTDECL(int)         RTVfsFileWriteAt(RTVFSFILE hVfsFile, RTFOFF off, const void 
  *                          read.  This can be NULL if @a fBlocking is true.
  * @sa      RTFileSgRead, RTSocketSgRead, RTPipeRead, RTPipeReadBlocking
  */
-RTDECL(int)         RTVfsFileSgRead(RTVFSFILE hVfsFile, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead);
+RTDECL(int)         RTVfsFileSgRead(RTVFSFILE hVfsFile, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead);
 
 /**
  * Write bytes to the file from a gather buffer.
@@ -1474,7 +1474,7 @@ RTDECL(int)         RTVfsFileSgRead(RTVFSFILE hVfsFile, RTFOFF off, PCRTSGBUF pS
  *                          written.  This can be NULL if @a fBlocking is true.
  * @sa      RTFileSgWrite, RTSocketSgWrite
  */
-RTDECL(int)         RTVfsFileSgWrite(RTVFSFILE hVfsFile, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten);
+RTDECL(int)         RTVfsFileSgWrite(RTVFSFILE hVfsFile, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten);
 
 /**
  * Flush any buffered data to the file.

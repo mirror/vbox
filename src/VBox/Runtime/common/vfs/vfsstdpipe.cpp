@@ -96,7 +96,7 @@ static DECLCALLBACK(int) rtVfsStdPipe_QueryInfo(void *pvThis, PRTFSOBJINFO pObjI
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
  */
-static DECLCALLBACK(int) rtVfsStdPipe_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+static DECLCALLBACK(int) rtVfsStdPipe_Read(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
     PRTVFSSTDPIPE pThis = (PRTVFSSTDPIPE)pvThis;
     int           rc;
@@ -110,20 +110,23 @@ static DECLCALLBACK(int) rtVfsStdPipe_Read(void *pvThis, RTFOFF off, PCRTSGBUF p
         else
             rc = RTPipeRead(        pThis->hPipe, pSgBuf->paSegs[0].pvSeg, pSgBuf->paSegs[0].cbSeg, pcbRead);
         if (RT_SUCCESS(rc))
-            pThis->offFakePos += pcbRead ? *pcbRead : pSgBuf->paSegs[0].cbSeg;
+        {
+            size_t const cbAdv = pcbRead ? *pcbRead : pSgBuf->paSegs[0].cbSeg;
+            pThis->offFakePos += cbAdv;
+            RTSgBufAdvance(pSgBuf, cbAdv);
+        }
     }
     else
     {
-        size_t  cbSeg      = 0;
         size_t  cbRead     = 0;
         size_t  cbReadSeg  = 0;
         size_t *pcbReadSeg = pcbRead ? &cbReadSeg : NULL;
         rc = VINF_SUCCESS;
 
-        for (uint32_t iSeg = 0; iSeg < pSgBuf->cSegs; iSeg++)
+        while (!RTSgBufIsAtEnd(pSgBuf))
         {
-            void *pvSeg = pSgBuf->paSegs[iSeg].pvSeg;
-            cbSeg       = pSgBuf->paSegs[iSeg].cbSeg;
+            size_t cbSeg = 0;
+            void  *pvSeg = RTSgBufGetCurrentSegment(pSgBuf, ~(size_t)0, &cbSeg);
 
             cbReadSeg = cbSeg;
             if (fBlocking)
@@ -132,8 +135,10 @@ static DECLCALLBACK(int) rtVfsStdPipe_Read(void *pvThis, RTFOFF off, PCRTSGBUF p
                 rc = RTPipeRead(        pThis->hPipe, pvSeg, cbSeg, pcbReadSeg);
             if (RT_FAILURE(rc))
                 break;
-            pThis->offFakePos += pcbRead ? cbReadSeg : cbSeg;
-            cbRead += cbReadSeg;
+
+            pThis->offFakePos += cbReadSeg;
+            cbRead            += cbReadSeg;
+            RTSgBufAdvance(pSgBuf, cbReadSeg);
             if (rc != VINF_SUCCESS)
                 break;
             AssertBreakStmt(!pcbRead || cbReadSeg == cbSeg, rc = VINF_TRY_AGAIN);
@@ -150,7 +155,7 @@ static DECLCALLBACK(int) rtVfsStdPipe_Read(void *pvThis, RTFOFF off, PCRTSGBUF p
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
  */
-static DECLCALLBACK(int) rtVfsStdPipe_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+static DECLCALLBACK(int) rtVfsStdPipe_Write(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
     PRTVFSSTDPIPE pThis = (PRTVFSSTDPIPE)pvThis;
     int           rc;
@@ -163,7 +168,11 @@ static DECLCALLBACK(int) rtVfsStdPipe_Write(void *pvThis, RTFOFF off, PCRTSGBUF 
         else
             rc = RTPipeWrite(        pThis->hPipe, pSgBuf->paSegs[0].pvSeg, pSgBuf->paSegs[0].cbSeg, pcbWritten);
         if (RT_SUCCESS(rc))
-            pThis->offFakePos += pcbWritten ? *pcbWritten : pSgBuf->paSegs[0].cbSeg;
+        {
+            size_t const cbAdv = pcbWritten ? *pcbWritten : pSgBuf->paSegs[0].cbSeg;
+            pThis->offFakePos += cbAdv;
+            RTSgBufAdvance(pSgBuf, cbAdv);
+        }
     }
     else
     {
@@ -172,10 +181,10 @@ static DECLCALLBACK(int) rtVfsStdPipe_Write(void *pvThis, RTFOFF off, PCRTSGBUF 
         size_t *pcbWrittenSeg = pcbWritten ? &cbWrittenSeg : NULL;
         rc = VINF_SUCCESS;
 
-        for (uint32_t iSeg = 0; iSeg < pSgBuf->cSegs; iSeg++)
+        while (!RTSgBufIsAtEnd(pSgBuf))
         {
-            void   *pvSeg  = pSgBuf->paSegs[iSeg].pvSeg;
-            size_t  cbSeg  = pSgBuf->paSegs[iSeg].cbSeg;
+            size_t      cbSeg = 0;
+            void const *pvSeg = RTSgBufGetCurrentSegment(pSgBuf, ~(size_t)0, &cbSeg);
 
             cbWrittenSeg = 0;
             if (fBlocking)
@@ -184,7 +193,11 @@ static DECLCALLBACK(int) rtVfsStdPipe_Write(void *pvThis, RTFOFF off, PCRTSGBUF 
                 rc = RTPipeWrite(        pThis->hPipe, pvSeg, cbSeg, pcbWrittenSeg);
             if (RT_FAILURE(rc))
                 break;
-            pThis->offFakePos += pcbWritten ? cbWrittenSeg : cbSeg;
+
+            size_t const cbAdv = pcbWritten ? cbWrittenSeg : cbSeg;
+            pThis->offFakePos += cbAdv;
+            RTSgBufAdvance(pSgBuf, cbAdv);
+
             if (pcbWritten)
             {
                 cbWritten += cbWrittenSeg;

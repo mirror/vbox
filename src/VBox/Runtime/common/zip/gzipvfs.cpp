@@ -288,8 +288,10 @@ static DECLCALLBACK(int) rtZipGzip_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo
  * @param   cbToRead        The number of bytes to read.
  * @param   fBlocking       Whether to block or not.
  * @param   pcbRead         Where to store the number of bytes actually read.
+ * @param   pSgBuf          The segment buffer descriptor, for advancing.
  */
-static int rtZipGzip_ReadOneSeg(PRTZIPGZIPSTREAM pThis, void *pvBuf, size_t cbToRead, bool fBlocking, size_t *pcbRead)
+static int rtZipGzip_ReadOneSeg(PRTZIPGZIPSTREAM pThis, void *pvBuf, size_t cbToRead, bool fBlocking,
+                                size_t *pcbRead, PRTSGBUF pSgBuf)
 {
     /*
      * This simplifies life a wee bit below.
@@ -323,6 +325,7 @@ static int rtZipGzip_ReadOneSeg(PRTZIPGZIPSTREAM pThis, void *pvBuf, size_t cbTo
         if (pThis->Zlib.avail_in == 0)
         {
             size_t cbReadIn = ~(size_t)0;
+            RTSgBufReset(&pThis->SgBuf);
             rc = RTVfsIoStrmSgRead(pThis->hVfsIos, -1 /*off*/, &pThis->SgBuf, fBlocking, &cbReadIn);
             if (rc != VINF_SUCCESS)
             {
@@ -374,6 +377,7 @@ static int rtZipGzip_ReadOneSeg(PRTZIPGZIPSTREAM pThis, void *pvBuf, size_t cbTo
     pThis->offStream += cbRead;
     if (pcbRead)
         *pcbRead      = cbRead;
+    RTSgBufAdvance(pSgBuf, cbRead);
 
     return rc;
 }
@@ -382,7 +386,7 @@ static int rtZipGzip_ReadOneSeg(PRTZIPGZIPSTREAM pThis, void *pvBuf, size_t cbTo
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
  */
-static DECLCALLBACK(int) rtZipGzip_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+static DECLCALLBACK(int) rtZipGzip_Read(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
     PRTZIPGZIPSTREAM pThis = (PRTZIPGZIPSTREAM)pvThis;
 
@@ -391,7 +395,7 @@ static DECLCALLBACK(int) rtZipGzip_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgB
         return VERR_ACCESS_DENIED;
     AssertReturn(off == -1 || off == pThis->offStream , VERR_INVALID_PARAMETER);
 
-    return rtZipGzip_ReadOneSeg(pThis, pSgBuf->paSegs[0].pvSeg, pSgBuf->paSegs[0].cbSeg, fBlocking, pcbRead);
+    return rtZipGzip_ReadOneSeg(pThis, pSgBuf->paSegs[0].pvSeg, pSgBuf->paSegs[0].cbSeg, fBlocking, pcbRead, pSgBuf);
 }
 
 
@@ -516,7 +520,7 @@ static int rtZipGzip_CompressIt(PRTZIPGZIPSTREAM pThis, bool fBlocking)
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
  */
-static DECLCALLBACK(int) rtZipGzip_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+static DECLCALLBACK(int) rtZipGzip_Write(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
     PRTZIPGZIPSTREAM pThis = (PRTZIPGZIPSTREAM)pvThis;
 
@@ -553,6 +557,7 @@ static DECLCALLBACK(int) rtZipGzip_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSg
     pThis->offStream += cbWritten;
     if (pcbWritten)
         *pcbWritten = cbWritten;
+    RTSgBufAdvance(pSgBuf, cbWritten);
     return rc;
 }
 

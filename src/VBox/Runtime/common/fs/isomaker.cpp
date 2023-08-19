@@ -7279,7 +7279,7 @@ static size_t rtFsIsoMakerOutFile_ReadDirStructures(PRTFSISOMAKERNAMEDIR *ppDirH
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
  */
-static DECLCALLBACK(int) rtFsIsoMakerOutFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+static DECLCALLBACK(int) rtFsIsoMakerOutFile_Read(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
     PRTFSISOMAKEROUTPUTFILE pThis     = (PRTFSISOMAKEROUTPUTFILE)pvThis;
     PRTFSISOMAKERINT        pIsoMaker = pThis->pIsoMaker;
@@ -7395,6 +7395,7 @@ static DECLCALLBACK(int) rtFsIsoMakerOutFile_Read(void *pvThis, RTFOFF off, PCRT
 
     if (pcbRead)
         *pcbRead = cbRead;
+    RTSgBufAdvance(pSgBuf, cbRead);
     return rc;
 }
 

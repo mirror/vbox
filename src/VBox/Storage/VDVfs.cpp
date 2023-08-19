@@ -340,9 +340,9 @@ static DECLCALLBACK(int) vdVfsFile_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
  */
-static DECLCALLBACK(int) vdVfsFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+static DECLCALLBACK(int) vdVfsFile_Read(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
-    PVDVFSFILE pThis = (PVDVFSFILE)pvThis;
+    PVDVFSFILE const pThis = (PVDVFSFILE)pvThis;
 
     Assert(pSgBuf->cSegs == 1);
     NOREF(fBlocking);
@@ -363,44 +363,52 @@ static DECLCALLBACK(int) vdVfsFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgB
         return VERR_EOF;
     }
 
-    int rc = VINF_SUCCESS;
-    size_t cbLeftToRead = pSgBuf->paSegs[0].cbSeg;
-    if (offUnsigned + cbLeftToRead <= cbImage)
+    size_t       cbSeg = 0;
+    void * const pvSeg = RTSgBufGetCurrentSegment(pSgBuf, ~(size_t)0, &cbSeg);
+
+    int    rcRet = VINF_SUCCESS;
+    size_t cbToRead;
+    if (cbSeg <= cbImage - offUnsigned)
+        cbToRead = cbSeg;
+    else if (pcbRead)
     {
-        if (pcbRead)
-            *pcbRead = cbLeftToRead;
+        cbToRead = (size_t)(cbImage - offUnsigned);
+        rcRet = VINF_EOF;
     }
     else
-    {
-        if (!pcbRead)
-            return VERR_EOF;
-        *pcbRead = cbLeftToRead = (size_t)(cbImage - offUnsigned);
-        rc = VINF_EOF;
-    }
+        return VERR_EOF;
 
     /*
      * Ok, we've got a valid stretch within the file.  Do the reading.
      */
-    if (cbLeftToRead > 0)
+    if (cbToRead > 0)
     {
-        int rc2 = vdReadHelper(pThis->pDisk, offUnsigned, pSgBuf->paSegs[0].pvSeg, cbLeftToRead);
+        int rc2 = vdReadHelper(pThis->pDisk, offUnsigned, pvSeg, cbToRead);
         if (RT_SUCCESS(rc2))
-            offUnsigned += cbLeftToRead;
+        {
+            offUnsigned += cbToRead;
+            RTSgBufAdvance(pSgBuf, cbToRead);
+        }
         else
-            rc = rc2;
+        {
+            cbToRead = 0;
+            rcRet = rc2;
+        }
     }
 
     pThis->offCurPos = offUnsigned;
-    return rc;
+    if (pcbRead)
+        *pcbRead = cbToRead;
+    return rcRet;
 }
 
 
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
  */
-static DECLCALLBACK(int) vdVfsFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+static DECLCALLBACK(int) vdVfsFile_Write(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
-    PVDVFSFILE pThis = (PVDVFSFILE)pvThis;
+    PVDVFSFILE const pThis = (PVDVFSFILE)pvThis;
 
     Assert(pSgBuf->cSegs == 1);
     NOREF(fBlocking);
@@ -421,32 +429,36 @@ static DECLCALLBACK(int) vdVfsFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSg
         return VERR_EOF;
     }
 
-    size_t cbLeftToWrite;
-    if (offUnsigned + pSgBuf->paSegs[0].cbSeg <= cbImage)
-    {
-        cbLeftToWrite = pSgBuf->paSegs[0].cbSeg;
-        if (pcbWritten)
-            *pcbWritten = cbLeftToWrite;
-    }
+    size_t             cbSeg = 0;
+    void const * const pvSeg = RTSgBufGetCurrentSegment(pSgBuf, ~(size_t)0, &cbSeg);
+
+    size_t cbToWrite;
+    if (cbSeg <= cbImage - offUnsigned)
+        cbToWrite = cbSeg;
+    else if (pcbWritten)
+        cbToWrite = (size_t)(cbImage - offUnsigned);
     else
-    {
-        if (!pcbWritten)
-            return VERR_EOF;
-        *pcbWritten = cbLeftToWrite = (size_t)(cbImage - offUnsigned);
-    }
+        return VERR_EOF;
 
     /*
      * Ok, we've got a valid stretch within the file.  Do the reading.
      */
     int rc = VINF_SUCCESS;
-    if (cbLeftToWrite > 0)
+    if (cbToWrite > 0)
     {
-        rc = vdWriteHelper(pThis->pDisk, offUnsigned, pSgBuf->paSegs[0].pvSeg, cbLeftToWrite);
+        rc = vdWriteHelper(pThis->pDisk, offUnsigned, pvSeg, cbToWrite);
         if (RT_SUCCESS(rc))
-            offUnsigned += cbLeftToWrite;
+        {
+            offUnsigned += cbToWrite;
+            RTSgBufAdvance(pSgBuf, cbToWrite);
+        }
+        else
+            cbToWrite = 0;
     }
 
     pThis->offCurPos = offUnsigned;
+    if (pcbWritten)
+        *pcbWritten = cbToWrite;
     return rc;
 }
 

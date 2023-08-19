@@ -263,7 +263,7 @@ DECLINLINE(PRTVFSMEMEXTENT) rtVfsMemFile_LocateExtent(PRTVFSMEMFILE pThis, uint6
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
  */
-static DECLCALLBACK(int) rtVfsMemFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+static DECLCALLBACK(int) rtVfsMemFile_Read(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
     PRTVFSMEMFILE pThis = (PRTVFSMEMFILE)pvThis;
 
@@ -304,6 +304,8 @@ static DECLCALLBACK(int) rtVfsMemFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF p
      */
     if (cbLeftToRead > 0)
     {
+        RTSgBufAdvance(pSgBuf, cbLeftToRead);
+
         uint8_t        *pbDst   = (uint8_t *)pSgBuf->paSegs[0].pvSeg;
         bool            fHit;
         PRTVFSMEMEXTENT pExtent = rtVfsMemFile_LocateExtent(pThis, offUnsigned, &fHit);
@@ -457,7 +459,7 @@ static PRTVFSMEMEXTENT rtVfsMemFile_AllocExtent(PRTVFSMEMFILE pThis, uint64_t of
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
  */
-static DECLCALLBACK(int) rtVfsMemFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+static DECLCALLBACK(int) rtVfsMemFile_Write(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
     PRTVFSMEMFILE pThis = (PRTVFSMEMFILE)pvThis;
 
@@ -550,8 +552,10 @@ static DECLCALLBACK(int) rtVfsMemFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF 
     if ((uint64_t)pThis->Base.ObjInfo.cbObject < offUnsigned)
         pThis->Base.ObjInfo.cbObject = offUnsigned;
 
+    size_t const cbWritten = pSgBuf->paSegs[0].cbSeg - cbLeftToWrite;
     if (pcbWritten)
-        *pcbWritten = pSgBuf->paSegs[0].cbSeg - cbLeftToWrite;
+        *pcbWritten = cbWritten;
+    RTSgBufAdvance(pSgBuf, cbWritten);
     return rc;
 }
 

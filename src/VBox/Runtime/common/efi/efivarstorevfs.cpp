@@ -556,47 +556,53 @@ static int rtEfiVarStore_AddVarByGuid(PRTEFIVARSTORE pThis, PCRTUUID pUuid, uint
  *
  * @returns IPRT status code.
  * @param   pThis               The EFI variable file instance.
- * @param   pvData              Pointer to the start of the data.
+ * @param   pbData              Pointer to the start of the data.
  * @param   cbData              Size of the variable data in bytes.
  * @param   off                 Where to start reading relative from the data start offset.
  * @param   pSgBuf              Where to store the read data.
  * @param   pcbRead             Where to return the number of bytes read, optional.
  */
-static int rtEfiVarStoreFile_ReadMem(PRTEFIVARFILE pThis, const void *pvData, size_t cbData,
-                                     RTFOFF off, PCRTSGBUF pSgBuf, size_t *pcbRead)
+static int rtEfiVarStoreFile_ReadMem(PRTEFIVARFILE pThis, const uint8_t *pbData, size_t cbData,
+                                     RTFOFF off, PRTSGBUF pSgBuf, size_t *pcbRead)
 {
-    int rc = VINF_SUCCESS;
-    size_t cbRead = pSgBuf->paSegs[0].cbSeg;
-    size_t cbThisRead = RT_MIN(cbData - off, cbRead);
-    const uint8_t *pbData = (const uint8_t *)pvData;
+    int          rc;
+    size_t       cbSeg      = 0;
+    void * const pvSeg      = RTSgBufGetCurrentSegment(pSgBuf, ~(size_t)0, &cbSeg);
+    size_t const cbDataLeft = (uint64_t)off < cbData ? cbData - (size_t)off : 0;
     if (!pcbRead)
     {
-        if (cbThisRead == cbRead)
-            memcpy(pSgBuf->paSegs[0].pvSeg, &pbData[off], cbThisRead);
+        if (cbSeg <= cbDataLeft)
+        {
+            memcpy(pvSeg, &pbData[off], cbSeg);
+            pThis->offFile = off + cbSeg;
+            Log6(("rtEfiVarStoreFile_ReadMem: off=%#RX64 cbSeg=%#x -> VINF_SUCCESS\n", off, cbSeg));
+            RTSgBufAdvance(pSgBuf, cbSeg);
+            rc = VINF_SUCCESS;
+        }
         else
+        {
+            Log6(("rtEfiVarStoreFile_ReadMem: off=%#RX64 cbSeg=%#x -> VERR_EOF (cbDataLeft=%#x)\n", off, cbSeg, cbDataLeft));
             rc = VERR_EOF;
-
-        if (RT_SUCCESS(rc))
-            pThis->offFile = off + cbThisRead;
-        Log6(("rtEfiVarStoreFile_ReadMem: off=%#RX64 cbSeg=%#x -> %Rrc\n", off, pSgBuf->paSegs[0].cbSeg, rc));
+        }
+    }
+    else if (cbDataLeft == 0)
+    {
+        Log6(("rtEfiVarStoreFile_ReadMem: off=%#RX64 cbSeg=%#x -> VINF_EOF *pcbRead=0\n", off, cbSeg));
+        *pcbRead = 0;
+        rc = VINF_EOF;
     }
     else
     {
-        if ((uint64_t)off >= cbData)
-        {
-            *pcbRead = 0;
-            rc = VINF_EOF;
-        }
-        else
-        {
-            memcpy(pSgBuf->paSegs[0].pvSeg, &pbData[off], cbThisRead);
-            /* Return VINF_EOF if beyond end-of-file. */
-            if (cbThisRead < cbRead)
-                rc = VINF_EOF;
-            pThis->offFile = off + cbThisRead;
-            *pcbRead = cbThisRead;
-        }
-        Log6(("rtEfiVarStoreFile_ReadMem: off=%#RX64 cbSeg=%#x -> %Rrc *pcbRead=%#x\n", off, pSgBuf->paSegs[0].cbSeg, rc, *pcbRead));
+        size_t const cbThisRead = RT_MAX(cbSeg, cbDataLeft);
+        memcpy(pvSeg, &pbData[off], cbThisRead);
+
+        pThis->offFile = off + cbThisRead;
+        *pcbRead = cbThisRead;
+        RTSgBufAdvance(pSgBuf, cbThisRead);
+
+        /* Return VINF_EOF if beyond end-of-file. */
+        rc = cbThisRead == cbSeg ? VINF_SUCCESS : VINF_EOF;
+        Log6(("rtEfiVarStoreFile_ReadMem: off=%#RX64 cbSeg=%#x -> %Rrc *pcbRead=%#x\n", off, cbSeg, rc, cbThisRead));
     }
 
     return rc;
@@ -608,49 +614,54 @@ static int rtEfiVarStoreFile_ReadMem(PRTEFIVARFILE pThis, const void *pvData, si
  *
  * @returns IPRT status code.
  * @param   pThis               The EFI variable file instance.
- * @param   pvData              Pointer to the start of the data.
+ * @param   pbData              Pointer to the start of the data.
  * @param   cbData              Size of the variable data in bytes.
  * @param   off                 Where to start writing relative from the data start offset.
  * @param   pSgBuf              The data to write.
  * @param   pcbWritten          Where to return the number of bytes written, optional.
  */
-static int rtEfiVarStoreFile_WriteMem(PRTEFIVARFILE pThis, void *pvData, size_t cbData,
-                                      RTFOFF off, PCRTSGBUF pSgBuf, size_t *pcbWritten)
+static int rtEfiVarStoreFile_WriteMem(PRTEFIVARFILE pThis, uint8_t *pbData, size_t cbData,
+                                      RTFOFF off, PRTSGBUF pSgBuf, size_t *pcbWritten)
 {
-    int rc = VINF_SUCCESS;
-    size_t cbWrite = pSgBuf->paSegs[0].cbSeg;
-    size_t cbThisWrite = RT_MIN(cbData - off, cbWrite);
-    uint8_t *pbData = (uint8_t *)pvData;
+    int                rc;
+    size_t             cbSeg      = 0;
+    void const * const pvSeg      = RTSgBufGetCurrentSegment(pSgBuf, ~(size_t)0, &cbSeg);
+    size_t const       cbDataLeft = (uint64_t)off < cbData ? cbData - (size_t)off : 0;
     if (!pcbWritten)
     {
-        if (cbThisWrite == cbWrite)
-            memcpy(&pbData[off], pSgBuf->paSegs[0].pvSeg, cbThisWrite);
+        if (cbSeg <= cbDataLeft)
+        {
+            memcpy(&pbData[off], pvSeg, cbSeg);
+            pThis->offFile = off + cbSeg;
+            RTSgBufAdvance(pSgBuf, cbSeg);
+            Log6(("rtEfiVarStoreFile_WriteMem: off=%#RX64 cbSeg=%#x -> VINF_SUCCESS\n", off, cbSeg));
+            rc = VINF_SUCCESS;
+        }
         else
-            rc = VERR_EOF;
-
-        if (RT_SUCCESS(rc))
-            pThis->offFile = off + cbThisWrite;
-        Log6(("rtEfiVarStoreFile_WriteMem: off=%#RX64 cbSeg=%#x -> %Rrc\n", off, pSgBuf->paSegs[0].cbSeg, rc));
+        {
+            Log6(("rtEfiVarStoreFile_WriteMem: off=%#RX64 cbSeg=%#x -> VERR_EOF\n", off, cbSeg));
+            rc = VERR_EOF; /** @todo r=bird: This status seems bogus. Use VERR_FILE_TOO_BIG instead? */
+        }
+    }
+    else if (cbDataLeft == 0)
+    {
+        *pcbWritten = 0;
+        rc = VINF_EOF; /** @todo r=bird: This is weird. Implementing the read EOF protocol for a write... */
     }
     else
     {
-        if ((uint64_t)off >= cbData)
-        {
-            *pcbWritten = 0;
-            rc = VINF_EOF;
-        }
-        else
-        {
-            memcpy(&pbData[off], pSgBuf->paSegs[0].pvSeg, cbThisWrite);
-            /* Return VINF_EOF if beyond end-of-file. */
-            if (cbThisWrite < cbWrite)
-                rc = VINF_EOF;
-            pThis->offFile = off + cbThisWrite;
-            *pcbWritten = cbThisWrite;
-        }
-        Log6(("rtEfiVarStoreFile_WriteMem: off=%#RX64 cbSeg=%#x -> %Rrc *pcbWritten=%#x\n", off, pSgBuf->paSegs[0].cbSeg, rc, *pcbWritten));
-    }
+        size_t const cbThisWrite = RT_MAX(cbSeg, cbDataLeft);
+        memcpy(&pbData[off], pvSeg, cbThisWrite);
 
+        pThis->offFile = off + cbThisWrite;
+        *pcbWritten = cbThisWrite;
+        RTSgBufAdvance(pSgBuf, cbThisWrite);
+
+        /* Return VINF_EOF if beyond end-of-file. */
+        /** @todo r=bird: This is weird. Implementing the read EOF protocol for a write... */
+        rc = cbThisWrite == cbSeg ? VINF_SUCCESS : VINF_EOF;
+        Log6(("rtEfiVarStoreFile_WriteMem: off=%#RX64 cbSeg=%#x -> %Rrc *pcbWritten=%#x\n", off, cbSeg, rc, cbThisWrite));
+    }
     return rc;
 }
 
@@ -667,48 +678,52 @@ static int rtEfiVarStoreFile_WriteMem(PRTEFIVARFILE pThis, void *pvData, size_t 
  * @param   pcbRead             Where to return the number of bytes read, optional.
  */
 static int rtEfiVarStoreFile_ReadFile(PRTEFIVARFILE pThis, uint64_t offData, size_t cbData,
-                                      RTFOFF off, PCRTSGBUF pSgBuf, size_t *pcbRead)
+                                      RTFOFF off, PRTSGBUF pSgBuf, size_t *pcbRead)
 {
-    int rc;
-    PRTEFIVARSTORE pVarStore = pThis->pVarStore;
-    size_t cbRead = pSgBuf->paSegs[0].cbSeg;
-    size_t cbThisRead = RT_MIN(cbData - off, cbRead);
-    uint64_t offStart = offData + off;
+    int                  rc;
+    PRTEFIVARSTORE const pVarStore  = pThis->pVarStore;
+    size_t               cbSeg      = 0;
+    void * const         pvSeg      = RTSgBufGetCurrentSegment(pSgBuf, ~(size_t)0, &cbSeg);
+    size_t const         cbDataLeft = (uint64_t)off < cbData ? cbData - (size_t)off : 0;
+    uint64_t const       offBacking = offData + off;
     if (!pcbRead)
     {
-        if (cbThisRead == cbRead)
-            rc = RTVfsFileReadAt(pVarStore->hVfsBacking, offStart, pSgBuf->paSegs[0].pvSeg, cbThisRead, NULL);
+        if (cbSeg <= cbDataLeft)
+        {
+            rc = RTVfsFileSgRead(pVarStore->hVfsBacking, offBacking, pSgBuf, true /*fBlocking*/, NULL /*pcbRead*/);
+            if (RT_SUCCESS(rc))
+                pThis->offFile = off + cbSeg;
+            Log6(("rtEfiVarStoreFile_ReadFile: off=%#RX64 cbSeg=%#x -> %Rrc\n", off, cbSeg, rc));
+        }
         else
+        {
+            Log6(("rtEfiVarStoreFile_ReadFile: off=%#RX64 cbSeg=%#x cbDataLeft=%#zx -> VERR_EOF\n", off, cbSeg, cbDataLeft));
             rc = VERR_EOF;
-
-        if (RT_SUCCESS(rc))
-            pThis->offFile = off + cbThisRead;
-        Log6(("rtFsEfiVarStore_Read: off=%#RX64 cbSeg=%#x -> %Rrc\n", off, pSgBuf->paSegs[0].cbSeg, rc));
+        }
+    }
+    else if (cbDataLeft == 0)
+    {
+        Log6(("rtEfiVarStoreFile_ReadFile: off=%#RX64 cbSeg=%#x -> VINF_EOF\n", off, cbSeg));
+        *pcbRead = 0;
+        rc = VINF_EOF;
     }
     else
     {
-        if ((uint64_t)off >= cbData)
+        size_t const cbThisRead = RT_MAX(cbSeg, cbDataLeft);
+        rc = RTVfsFileReadAt(pVarStore->hVfsBacking, offBacking, pvSeg, cbThisRead, NULL /*pcbRead*/);
+        if (RT_SUCCESS(rc))
         {
-            *pcbRead = 0;
-            rc = VINF_EOF;
+            pThis->offFile = off + cbThisRead;
+            *pcbRead = cbThisRead;
+            RTSgBufAdvance(pSgBuf, cbThisRead);
+
+            /* Return VINF_EOF if beyond end-of-file. */
+            rc = cbThisRead == cbSeg ? VINF_SUCCESS : VINF_EOF;
         }
         else
-        {
-            rc = RTVfsFileReadAt(pVarStore->hVfsBacking, offStart, pSgBuf->paSegs[0].pvSeg, cbThisRead, NULL);
-            if (RT_SUCCESS(rc))
-            {
-                /* Return VINF_EOF if beyond end-of-file. */
-                if (cbThisRead < cbRead)
-                    rc = VINF_EOF;
-                pThis->offFile = off + cbThisRead;
-                *pcbRead = cbThisRead;
-            }
-            else
-                *pcbRead = 0;
-        }
-        Log6(("rtFsEfiVarStore_Read: off=%#RX64 cbSeg=%#x -> %Rrc *pcbRead=%#x\n", off, pSgBuf->paSegs[0].cbSeg, rc, *pcbRead));
+            *pcbRead = 0;
+        Log6(("rtFsEfiVarStore_Read: off=%#RX64 cbSeg=%#x -> %Rrc *pcbRead=%#x\n", off, cbSeg, rc, *pcbRead));
     }
-
     return rc;
 }
 
@@ -1064,7 +1079,7 @@ static DECLCALLBACK(int) rtEfiVarStoreFile_QueryInfo(void *pvThis, PRTFSOBJINFO 
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
  */
-static DECLCALLBACK(int) rtEfiVarStoreFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+static DECLCALLBACK(int) rtEfiVarStoreFile_Read(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
     PRTEFIVARFILE pThis = (PRTEFIVARFILE)pvThis;
     PRTEFIVAR pVar = pThis->pVar;
@@ -1078,12 +1093,13 @@ static DECLCALLBACK(int) rtEfiVarStoreFile_Read(void *pvThis, RTFOFF off, PCRTSG
 
     int rc;
     if (pThis->pEntry->cbObject)
-        rc = rtEfiVarStoreFile_ReadMem(pThis, (const uint8_t *)pVar + pThis->pEntry->offObject, pThis->pEntry->cbObject, off, pSgBuf, pcbRead);
+        rc = rtEfiVarStoreFile_ReadMem(pThis, (const uint8_t *)pVar + pThis->pEntry->offObject, pThis->pEntry->cbObject, off,
+                                       pSgBuf, pcbRead);
     else
     {
         /* Data section. */
         if (!pVar->offVarData)
-            rc = rtEfiVarStoreFile_ReadMem(pThis, pVar->pvData, pVar->cbData, off, pSgBuf, pcbRead);
+            rc = rtEfiVarStoreFile_ReadMem(pThis, (const uint8_t *)pVar->pvData, pVar->cbData, off, pSgBuf, pcbRead);
         else
             rc = rtEfiVarStoreFile_ReadFile(pThis, pVar->offVarData, pVar->cbData, off, pSgBuf, pcbRead);
     }
@@ -1095,7 +1111,7 @@ static DECLCALLBACK(int) rtEfiVarStoreFile_Read(void *pvThis, RTFOFF off, PCRTSG
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
  */
-static DECLCALLBACK(int) rtEfiVarStoreFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+static DECLCALLBACK(int) rtEfiVarStoreFile_Write(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
     PRTEFIVARFILE pThis = (PRTEFIVARFILE)pvThis;
     PRTEFIVARSTORE pVarStore = pThis->pVarStore;
@@ -1124,7 +1140,7 @@ static DECLCALLBACK(int) rtEfiVarStoreFile_Write(void *pvThis, RTFOFF off, PCRTS
             if (off + pSgBuf->paSegs[0].cbSeg > pVar->cbData)
                 rc = rtEfiVarStore_VarEnsureDataSz(pVar, off + pSgBuf->paSegs[0].cbSeg);
             if (RT_SUCCESS(rc))
-                rc = rtEfiVarStoreFile_WriteMem(pThis, pVar->pvData, pVar->cbData, off, pSgBuf, pcbWritten);
+                rc = rtEfiVarStoreFile_WriteMem(pThis, (uint8_t *)pVar->pvData, pVar->cbData, off, pSgBuf, pcbWritten);
         }
     }
 

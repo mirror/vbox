@@ -921,8 +921,7 @@ typedef struct RTVFSIOSTREAMOPS
      * @returns IPRT status code. See RTVfsIoStrmRead.
      * @param   pvThis      The implementation specific file data.
      * @param   off         Where to read at, -1 for the current position.
-     * @param   pSgBuf      Gather buffer describing the bytes that are to be
-     *                      written.
+     * @param   pSgBuf      Gather buffer for the bytes that are to be read.
      * @param   fBlocking   If @c true, the call is blocking, if @c false it
      *                      should not block.
      * @param   pcbRead     Where return the number of bytes actually read.
@@ -931,7 +930,7 @@ typedef struct RTVFSIOSTREAMOPS
      * @sa      RTVfsIoStrmRead, RTVfsIoStrmSgRead, RTVfsFileRead,
      *          RTVfsFileReadAt, RTFileRead, RTFileReadAt.
      */
-    DECLCALLBACKMEMBER(int, pfnRead,(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead));
+    DECLCALLBACKMEMBER(int, pfnRead,(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead));
 
     /**
      * Writes to the file/stream.
@@ -950,7 +949,7 @@ typedef struct RTVFSIOSTREAMOPS
      * @note    Optional, failing with VERR_WRITE_PROTECT if NULL.
      * @sa      RTFileWrite, RTFileWriteAt.
      */
-    DECLCALLBACKMEMBER(int, pfnWrite,(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten));
+    DECLCALLBACKMEMBER(int, pfnWrite,(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten));
 
     /**
      * Flushes any pending data writes to the stream.

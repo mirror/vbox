@@ -1473,7 +1473,7 @@ static DECLCALLBACK(int) rtFsXfsFile_QueryInfo(void *pvThis, PRTFSOBJINFO pObjIn
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
  */
-static DECLCALLBACK(int) rtFsXfsFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+static DECLCALLBACK(int) rtFsXfsFile_Read(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
     PRTFSXFSFILE pThis = (PRTFSXFSFILE)pvThis;
     AssertReturn(pSgBuf->cSegs == 1, VERR_INTERNAL_ERROR_3);
@@ -1490,7 +1490,10 @@ static DECLCALLBACK(int) rtFsXfsFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pS
     {
         rc = rtFsXfsInode_Read(pThis->pVol, pThis->pInode, (uint64_t)off, pSgBuf->paSegs[0].pvSeg, cbRead, NULL);
         if (RT_SUCCESS(rc))
+        {
             pThis->offFile = off + cbRead;
+            RTSgBufAdvance(pSgBuf, cbRead);
+        }
         Log6(("rtFsXfsFile_Read: off=%#RX64 cbSeg=%#x -> %Rrc\n", off, pSgBuf->paSegs[0].cbSeg, rc));
     }
     else
@@ -1517,6 +1520,7 @@ static DECLCALLBACK(int) rtFsXfsFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pS
             {
                 pThis->offFile = off + cbRead;
                 *pcbRead = cbRead;
+                RTSgBufAdvance(pSgBuf, cbRead);
             }
             else
                 *pcbRead = 0;
@@ -1531,7 +1535,7 @@ static DECLCALLBACK(int) rtFsXfsFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pS
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
  */
-static DECLCALLBACK(int) rtFsXfsFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+static DECLCALLBACK(int) rtFsXfsFile_Write(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
     RT_NOREF(pvThis, off, pSgBuf, fBlocking, pcbWritten);
     return VERR_WRITE_PROTECT;

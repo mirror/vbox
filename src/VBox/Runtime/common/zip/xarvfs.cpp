@@ -853,7 +853,7 @@ static DECLCALLBACK(int) rtZipXarFssIos_QueryInfo(void *pvThis, PRTFSOBJINFO pOb
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
  */
-static DECLCALLBACK(int) rtZipXarFssIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+static DECLCALLBACK(int) rtZipXarFssIos_Read(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
     PRTZIPXARIOSTREAM pThis = (PRTZIPXARIOSTREAM)pvThis;
     AssertReturn(off >= -1, VERR_INVALID_PARAMETER);
@@ -917,6 +917,7 @@ static DECLCALLBACK(int) rtZipXarFssIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF
 
     /* Update the file position. */
     pThis->offCurPos += cbActuallyRead;
+    RTSgBufAdvance(pSgBuf, cbActuallyRead);
 
     /*
      * Check for end of stream, also check the hash.
@@ -962,7 +963,7 @@ static DECLCALLBACK(int) rtZipXarFssIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
  */
-static DECLCALLBACK(int) rtZipXarFssIos_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+static DECLCALLBACK(int) rtZipXarFssIos_Write(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
     /* Cannot write to a read-only I/O stream. */
     NOREF(pvThis); NOREF(off); NOREF(pSgBuf); NOREF(fBlocking); NOREF(pcbWritten);
@@ -1225,7 +1226,7 @@ static DECLCALLBACK(int) rtZipXarFssDecompIos_QueryInfo(void *pvThis, PRTFSOBJIN
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
  */
-static DECLCALLBACK(int) rtZipXarFssDecompIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+static DECLCALLBACK(int) rtZipXarFssDecompIos_Read(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
     PRTZIPXARDECOMPIOS pThis = (PRTZIPXARDECOMPIOS)pvThis;
     AssertReturn(pSgBuf->cSegs == 1, VERR_INVALID_PARAMETER);
@@ -1242,17 +1243,20 @@ static DECLCALLBACK(int) rtZipXarFssDecompIos_Read(void *pvThis, RTFOFF off, PCR
      * ASSUMES the decompressor stream isn't seekable, so we don't have to
      * validate off wrt data digest updating.
      */
-    int rc = RTVfsIoStrmReadAt(pThis->hVfsIosDecompressor, off, pSgBuf->paSegs[0].pvSeg, pSgBuf->paSegs[0].cbSeg,
-                               fBlocking, pcbRead);
+    size_t       cbSeg = 0;
+    void * const pvSeg = RTSgBufGetCurrentSegment(pSgBuf, ~(size_t)0, &cbSeg);
+    int rc = RTVfsIoStrmReadAt(pThis->hVfsIosDecompressor, off, pvSeg, cbSeg, fBlocking, pcbRead);
     if (RT_FAILURE(rc))
         return rc;
 
     /*
      * Hash the data.  When reaching the end match against the expected digest.
      */
-    size_t cbActuallyRead = pcbRead ? *pcbRead : pSgBuf->paSegs[0].cbSeg;
+    size_t const cbActuallyRead = pcbRead ? *pcbRead : cbSeg;
     pThis->offCurPos += cbActuallyRead;
+    RTSgBufAdvance(pSgBuf, cbActuallyRead);
     rtZipXarHashUpdate(&pThis->CtxExtracted, pThis->uHashFunExtracted, pSgBuf->paSegs[0].pvSeg, cbActuallyRead);
+
     if (rc == VINF_EOF)
     {
         if (pThis->offCurPos == pThis->pIosRaw->DataAttr.cbDataExtracted)
@@ -1294,7 +1298,7 @@ static DECLCALLBACK(int) rtZipXarFssDecompIos_Read(void *pvThis, RTFOFF off, PCR
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
  */
-static DECLCALLBACK(int) rtZipXarFssDecompIos_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+static DECLCALLBACK(int) rtZipXarFssDecompIos_Write(void *pvThis, RTFOFF off, PRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
     /* Cannot write to a read-only I/O stream. */
     NOREF(pvThis); NOREF(off); NOREF(pSgBuf); NOREF(fBlocking); NOREF(pcbWritten);
