@@ -50,7 +50,8 @@ UIVMLogViewerOptionsPanel::UIVMLogViewerOptionsPanel(QWidget *pParent, UIVMLogVi
     , m_pResetToDefaultsButton(0)
     , m_iDefaultFontSize(9)
 {
-    prepare();
+    prepareWidgets();
+    prepareConnections();
 }
 
 void UIVMLogViewerOptionsPanel::setShowLineNumbers(bool bShowLineNumbers)
@@ -80,22 +81,16 @@ void UIVMLogViewerOptionsPanel::setFontSizeInPoints(int fontSizeInPoints)
     m_pFontSizeSpinBox->setValue(fontSizeInPoints);
 }
 
-QString UIVMLogViewerOptionsPanel::panelName() const
-{
-    return "OptionsPanel";
-}
-
 void UIVMLogViewerOptionsPanel::prepareWidgets()
 {
-    if (!mainLayout())
-        return;
+    QHBoxLayout *pMainLayout = new QHBoxLayout(this);
 
     /* Create line-number check-box: */
     m_pLineNumberCheckBox = new QCheckBox;
     if (m_pLineNumberCheckBox)
     {
         m_pLineNumberCheckBox->setChecked(true);
-        mainLayout()->addWidget(m_pLineNumberCheckBox, 0, Qt::AlignLeft);
+        pMainLayout->addWidget(m_pLineNumberCheckBox, 0, Qt::AlignLeft);
     }
 
     /* Create wrap-lines check-box: */
@@ -103,14 +98,14 @@ void UIVMLogViewerOptionsPanel::prepareWidgets()
     if (m_pWrapLinesCheckBox)
     {
         m_pWrapLinesCheckBox->setChecked(false);
-        mainLayout()->addWidget(m_pWrapLinesCheckBox, 0, Qt::AlignLeft);
+        pMainLayout->addWidget(m_pWrapLinesCheckBox, 0, Qt::AlignLeft);
     }
 
     /* Create font-size spin-box: */
     m_pFontSizeSpinBox = new QSpinBox;
     if (m_pFontSizeSpinBox)
     {
-        mainLayout()->addWidget(m_pFontSizeSpinBox, 0, Qt::AlignLeft);
+        pMainLayout->addWidget(m_pFontSizeSpinBox, 0, Qt::AlignLeft);
         m_pFontSizeSpinBox->setValue(m_iDefaultFontSize);
         m_pFontSizeSpinBox->setMaximum(44);
         m_pFontSizeSpinBox->setMinimum(6);
@@ -120,7 +115,7 @@ void UIVMLogViewerOptionsPanel::prepareWidgets()
     m_pFontSizeLabel = new QLabel;
     if (m_pFontSizeLabel)
     {
-        mainLayout()->addWidget(m_pFontSizeLabel, 0, Qt::AlignLeft);
+        pMainLayout->addWidget(m_pFontSizeLabel, 0, Qt::AlignLeft);
         if (m_pFontSizeSpinBox)
             m_pFontSizeLabel->setBuddy(m_pFontSizeSpinBox);
     }
@@ -148,10 +143,10 @@ void UIVMLogViewerOptionsPanel::prepareWidgets()
             m_pResetToDefaultsButton->setIcon(UIIconPool::iconSet(":/log_viewer_reset_font_16px.png"));
         }
 
-        mainLayout()->addLayout(pButtonLayout);
+        pMainLayout->addLayout(pButtonLayout);
     }
 
-    mainLayout()->addStretch(2);
+    pMainLayout->addStretch(2);
 }
 
 void UIVMLogViewerOptionsPanel::prepareConnections()

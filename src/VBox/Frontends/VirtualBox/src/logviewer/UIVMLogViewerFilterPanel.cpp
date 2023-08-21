@@ -271,13 +271,10 @@ UIVMLogViewerFilterPanel::UIVMLogViewerFilterPanel(QWidget *pParent, UIVMLogView
     , m_pResultLabel(0)
     , m_iUnfilteredLineCount(0)
     , m_iFilteredLineCount(0)
+    , m_pMainLayout(0)
 {
-    prepare();
-}
-
-QString UIVMLogViewerFilterPanel::panelName() const
-{
-    return "FilterPanel";
+    prepareWidgets();
+    prepareConnections();
 }
 
 void UIVMLogViewerFilterPanel::applyFilter()
@@ -433,8 +430,8 @@ void UIVMLogViewerFilterPanel::sltRemoveFilterTerm(const QString &termString)
 
 void UIVMLogViewerFilterPanel::prepareWidgets()
 {
-    if (!mainLayout())
-        return;
+    m_pMainLayout = new QHBoxLayout;
+    AssertReturnVoid(m_pMainLayout);
 
     prepareRadioButtonGroup();
 
@@ -471,7 +468,7 @@ void UIVMLogViewerFilterPanel::prepareWidgets()
             pComboButtonLayout->addWidget(m_pAddFilterTermButton);
         }
 
-        mainLayout()->addLayout(pComboButtonLayout, 1);
+        m_pMainLayout->addLayout(pComboButtonLayout, 1);
     }
 
     /* Create filter-term line-edit: */
@@ -479,7 +476,7 @@ void UIVMLogViewerFilterPanel::prepareWidgets()
     if (m_pFilterTermsLineEdit)
     {
         m_pFilterTermsLineEdit->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-        mainLayout()->addWidget(m_pFilterTermsLineEdit, 3);
+        m_pMainLayout->addWidget(m_pFilterTermsLineEdit, 3);
     }
 
     /* Create result label: */
@@ -487,7 +484,7 @@ void UIVMLogViewerFilterPanel::prepareWidgets()
     if (m_pResultLabel)
     {
         m_pResultLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-        mainLayout()->addWidget(m_pResultLabel, 0);
+        m_pMainLayout->addWidget(m_pResultLabel, 0);
     }
 }
 
@@ -547,7 +544,7 @@ void UIVMLogViewerFilterPanel::prepareRadioButtonGroup()
         }
 
         /* Add into layout: */
-        mainLayout()->addWidget(m_pRadioButtonContainer);
+        m_pMainLayout->addWidget(m_pRadioButtonContainer);
     }
 
     /* Initialize other related stuff: */

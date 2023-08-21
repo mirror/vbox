@@ -32,6 +32,7 @@
 # include <QFontDatabase>
 #endif
 #include <QHBoxLayout>
+#include <QVBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPlainTextEdit>
@@ -48,6 +49,8 @@
 # include "VBoxUtils-darwin.h"
 #endif
 
+/* Other VBox includes: */
+#include <iprt/assert.h>
 
 UIVMLogViewerSearchPanel::UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer)
     : UIVMLogViewerPanel(pParent, pViewer)
@@ -59,7 +62,9 @@ UIVMLogViewerSearchPanel::UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogView
     , m_pHighlightAllCheckBox(0)
 {
     /* Prepare: */
-    prepare();
+    prepareWidgets();
+    prepareConnections();
+    retranslateUi();
 }
 
 void UIVMLogViewerSearchPanel::refresh()
@@ -86,11 +91,6 @@ void UIVMLogViewerSearchPanel::reset()
 const QVector<float> &UIVMLogViewerSearchPanel::matchLocationVector() const
 {
     return m_matchLocationVector;
-}
-
-QString UIVMLogViewerSearchPanel::panelName() const
-{
-    return "SearchPanel";
 }
 
 int UIVMLogViewerSearchPanel::matchCount() const
@@ -186,78 +186,65 @@ void UIVMLogViewerSearchPanel::sltSelectNextPreviousMatch()
 
 void UIVMLogViewerSearchPanel::prepareWidgets()
 {
-    if (!mainLayout())
-        return;
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    AssertReturnVoid(pMainLayout);
 
     /* Create search field layout: */
     QHBoxLayout *pSearchFieldLayout = new QHBoxLayout;
-    if (pSearchFieldLayout)
-    {
-        pSearchFieldLayout->setContentsMargins(0, 0, 0, 0);
+    AssertReturnVoid(pSearchFieldLayout);
+    pSearchFieldLayout->setContentsMargins(0, 0, 0, 0);
 #ifdef VBOX_WS_MAC
-        pSearchFieldLayout->setSpacing(5);
+    pSearchFieldLayout->setSpacing(5);
 #else
-        pSearchFieldLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
+    pSearchFieldLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
 #endif
 
-        /* Create search-editor: */
-        m_pSearchEditor = new UISearchLineEdit(0 /* parent */);
-        if (m_pSearchEditor)
-        {
-            m_pSearchEditor->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            pSearchFieldLayout->addWidget(m_pSearchEditor);
-        }
+    /* Create search-editor: */
+    m_pSearchEditor = new UISearchLineEdit(0 /* parent */);
+    AssertReturnVoid(m_pSearchEditor);
+    m_pSearchEditor->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+    pSearchFieldLayout->addWidget(m_pSearchEditor);
 
-        /* Create search button layout: */
-        QHBoxLayout *pSearchButtonsLayout = new QHBoxLayout;
-        if (pSearchButtonsLayout)
-        {
-            pSearchButtonsLayout->setContentsMargins(0, 0, 0, 0);
-            pSearchButtonsLayout->setSpacing(0);
+    /* Create search button layout: */
+    QHBoxLayout *pSearchButtonsLayout = new QHBoxLayout;
+    AssertReturnVoid(pSearchButtonsLayout);
 
-            /* Create Previous button: */
-            m_pPreviousButton = new QIToolButton;
-            if (m_pPreviousButton)
-            {
-                m_pPreviousButton->setIcon(UIIconPool::iconSet(":/log_viewer_search_backward_16px.png"));
-                pSearchButtonsLayout->addWidget(m_pPreviousButton);
-            }
+    pSearchButtonsLayout->setContentsMargins(0, 0, 0, 0);
+    pSearchButtonsLayout->setSpacing(0);
 
-            /* Create Next button: */
-            m_pNextButton = new QIToolButton;
-            if (m_pNextButton)
-            {
-                m_pNextButton->setIcon(UIIconPool::iconSet(":/log_viewer_search_forward_16px.png"));
-                pSearchButtonsLayout->addWidget(m_pNextButton);
-            }
+    /* Create Previous button: */
+    m_pPreviousButton = new QIToolButton;
+    AssertReturnVoid(m_pPreviousButton);
+    m_pPreviousButton->setIcon(UIIconPool::iconSet(":/log_viewer_search_backward_16px.png"));
+    pSearchButtonsLayout->addWidget(m_pPreviousButton);
 
-            pSearchFieldLayout->addLayout(pSearchButtonsLayout);
-        }
+    /* Create Next button: */
+    m_pNextButton = new QIToolButton;
+    AssertReturnVoid(m_pNextButton);
+    m_pNextButton->setIcon(UIIconPool::iconSet(":/log_viewer_search_forward_16px.png"));
+    pSearchButtonsLayout->addWidget(m_pNextButton);
 
-        mainLayout()->addLayout(pSearchFieldLayout);
-    }
+    pSearchFieldLayout->addLayout(pSearchButtonsLayout);
+
+    pMainLayout->addLayout(pSearchFieldLayout);
 
     /* Create case-sensitive check-box: */
     m_pCaseSensitiveCheckBox = new QCheckBox;
-    if (m_pCaseSensitiveCheckBox)
-    {
-        mainLayout()->addWidget(m_pCaseSensitiveCheckBox);
-    }
+    AssertReturnVoid(m_pCaseSensitiveCheckBox);
+    pMainLayout->addWidget(m_pCaseSensitiveCheckBox);
 
     /* Create whole-word check-box: */
     m_pMatchWholeWordCheckBox = new QCheckBox;
-    if (m_pMatchWholeWordCheckBox)
-    {
-        setFocusProxy(m_pMatchWholeWordCheckBox);
-        mainLayout()->addWidget(m_pMatchWholeWordCheckBox);
-    }
+    AssertReturnVoid(m_pMatchWholeWordCheckBox);
+    setFocusProxy(m_pMatchWholeWordCheckBox);
+    pMainLayout->addWidget(m_pMatchWholeWordCheckBox);
 
     /* Create highlight-all check-box: */
     m_pHighlightAllCheckBox = new QCheckBox;
-    if (m_pHighlightAllCheckBox)
-    {
-        mainLayout()->addWidget(m_pHighlightAllCheckBox);
-    }
+    AssertReturnVoid(m_pHighlightAllCheckBox);
+    pMainLayout->addWidget(m_pHighlightAllCheckBox);
+
+    pMainLayout->addStretch(1);
 }
 
 void UIVMLogViewerSearchPanel::prepareConnections()
@@ -355,7 +342,7 @@ bool UIVMLogViewerSearchPanel::eventFilter(QObject *pObject, QEvent *pEvent)
                      pKeyEvent->key() == Qt::Key_F)
             {
                 /* Make sure current log-page is visible: */
-                emit sigShowPanel(this);
+                //emit sigShowPanel(this);
                 /* Set focus on search-editor: */
                 m_pSearchEditor->setFocus();
                 return true;
@@ -365,7 +352,7 @@ bool UIVMLogViewerSearchPanel::eventFilter(QObject *pObject, QEvent *pEvent)
                      pKeyEvent->key() >= Qt::Key_Exclam && pKeyEvent->key() <= Qt::Key_AsciiTilde)
             {
                 /* Make sure current log-page is visible: */
-                emit sigShowPanel(this);
+                //emit sigShowPanel(this);
                 /* Set focus on search-editor: */
                 m_pSearchEditor->setFocus();
                 /* Insert the text to search-editor, which triggers the search-operation for new text: */

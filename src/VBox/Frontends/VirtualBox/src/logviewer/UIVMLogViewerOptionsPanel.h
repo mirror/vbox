@@ -61,15 +61,14 @@ public:
     void setShowLineNumbers(bool bShowLineNumbers);
     void setWrapLines(bool bWrapLines);
     void setFontSizeInPoints(int fontSizeInPoints);
-    virtual QString panelName() const RT_OVERRIDE;
 
 public slots:
 
 
 protected:
 
-    virtual void prepareWidgets() RT_OVERRIDE;
-    virtual void prepareConnections() RT_OVERRIDE;
+    virtual void prepareWidgets();
+    virtual void prepareConnections();
 
     /** Handles the translation event. */
     void retranslateUi();

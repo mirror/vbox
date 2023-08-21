@@ -38,10 +38,29 @@
 class QPlainTextEdit;
 class QTextDocument;
 class UIVMLogViewerWidget;
+class UIVMLogViewerSearchPanel;
 
+class UIVMLogViewerPanelNew : public QIWithRetranslateUI<UIDialogPanelBase>
+{
+    Q_OBJECT;
+
+public:
+
+    UIVMLogViewerPanelNew(QWidget *pParent, UIVMLogViewerWidget *pViewer);
+
+private:
+
+    void retranslateUi() override;
+    void prepare();
+    void prepareSearchTab();
+
+    UIVMLogViewerSearchPanel *m_pSearchWidget;
+    UIVMLogViewerWidget *m_pViewer;
+
+};
 
 /** UIDialonPanel extension acting as the base class for UIVMLogViewerXXXPanel widgets. */
-class UIVMLogViewerPanel : public UIDialogPanel
+class UIVMLogViewerPanel : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -52,6 +71,9 @@ public:
 protected:
 
     virtual void retranslateUi() RT_OVERRIDE;
+
+    virtual void prepareWidgets() = 0;
+    virtual void prepareConnections()  = 0;
 
     /* Access functions for children classes. */
     UIVMLogViewerWidget        *viewer();

@@ -50,7 +50,8 @@ UIVMLogViewerBookmarksPanel::UIVMLogViewerBookmarksPanel(QWidget *pParent, UIVML
     , m_pNextButton(0)
     , m_pPreviousButton(0)
 {
-    prepare();
+    prepareWidgets();
+    prepareConnections();
 }
 
 void UIVMLogViewerBookmarksPanel::updateBookmarkList(const QVector<UIVMLogBookmark>& bookmarkList)
@@ -90,11 +91,6 @@ void UIVMLogViewerBookmarksPanel::disableEnableBookmarking(bool flag)
     m_pPreviousButton->setEnabled(flag);
 }
 
-QString UIVMLogViewerBookmarksPanel::panelName() const
-{
-    return "BookmarksPanel";
-}
-
 void UIVMLogViewerBookmarksPanel::setBookmarkIndex(int index)
 {
     if (!m_pBookmarksComboBox)
@@ -111,8 +107,7 @@ void UIVMLogViewerBookmarksPanel::setBookmarkIndex(int index)
 
 void UIVMLogViewerBookmarksPanel::prepareWidgets()
 {
-    if (!mainLayout())
-        return;
+    QHBoxLayout *pMainLayout = new QHBoxLayout(this);
 
     /* Create bookmark combo/button layout: */
     QHBoxLayout *pComboButtonLayout = new QHBoxLayout;
@@ -195,7 +190,7 @@ void UIVMLogViewerBookmarksPanel::prepareWidgets()
             pComboButtonLayout->addLayout(pButtonLayout2);
         }
 
-        mainLayout()->addLayout(pComboButtonLayout);
+        pMainLayout->addLayout(pComboButtonLayout);
     }
 }
 

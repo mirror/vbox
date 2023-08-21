@@ -65,7 +65,6 @@ public:
     /** Resets the search position and starts a new search. */
     void refresh();
     const QVector<float> &matchLocationVector() const;
-    virtual QString panelName() const RT_OVERRIDE;
     /** Returns the number of the matches to the current search. */
     int matchCount() const;
 

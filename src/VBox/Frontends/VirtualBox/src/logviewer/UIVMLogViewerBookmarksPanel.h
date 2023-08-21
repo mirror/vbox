@@ -59,7 +59,6 @@ public:
     void updateBookmarkList(const QVector<UIVMLogBookmark>& bookmarkList);
     /** Disable/enable all the widget except the close button */
     void disableEnableBookmarking(bool flag);
-    virtual QString panelName() const RT_OVERRIDE;
 
 signals:
 
