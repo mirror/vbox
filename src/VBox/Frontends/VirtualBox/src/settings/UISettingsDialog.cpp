@@ -70,7 +70,7 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent,
     , m_pSerializeProcess(0)
     , m_fPolished(false)
     , m_fSerializationIsInProgress(false)
-    , m_fSerializationClean(true)
+    , m_fSerializationClean(false)
     , m_fClosed(false)
     , m_pStatusBar(0)
     , m_pProcessBar(0)
@@ -95,20 +95,14 @@ void UISettingsDialog::accept()
     /* Save data: */
     save();
 
-    /* If serialization was clean: */
-    if (m_fSerializationClean)
-    {
-        /* Tell the listener to close us (once): */
-        if (!m_fClosed)
-        {
-            m_fClosed = true;
-            emit sigClose();
-        }
-    }
+    /* Close if theere is no ongoing serialization: */
+    if (!isSerializationInProgress())
+        close();
 }
 
 void UISettingsDialog::reject()
 {
+    /* Close if theere is no ongoing serialization: */
     if (!isSerializationInProgress())
         close();
 }
@@ -162,26 +156,13 @@ void UISettingsDialog::sltCategoryChanged(int cId)
 #endif
 }
 
-void UISettingsDialog::sltHandleSerializationFinished()
-{
-    /* Delete serializer if exists: */
-    if (serializeProcess())
-    {
-        delete m_pSerializeProcess;
-        m_pSerializeProcess = 0;
-    }
-
-    /* Mark serialization finished: */
-    m_fSerializationIsInProgress = false;
-}
-
-void UISettingsDialog::sltHandleProcessStarted()
+void UISettingsDialog::sltHandleSerializationStarted()
 {
     m_pProcessBar->setValue(0);
     m_pStatusBar->setCurrentWidget(m_pProcessBar);
 }
 
-void UISettingsDialog::sltHandleProcessProgressChange(int iValue)
+void UISettingsDialog::sltHandleSerializationProgressChange(int iValue)
 {
     m_pProcessBar->setValue(iValue);
     if (m_pProcessBar->value() == m_pProcessBar->maximum())
@@ -191,6 +172,16 @@ void UISettingsDialog::sltHandleProcessProgressChange(int iValue)
         else
             m_pStatusBar->setCurrentIndex(0);
     }
+}
+
+void UISettingsDialog::sltHandleSerializationFinished()
+{
+    /* Delete serializer if exists: */
+    delete m_pSerializeProcess;
+    m_pSerializeProcess = 0;
+
+    /* Mark serialization finished: */
+    m_fSerializationIsInProgress = false;
 }
 
 void UISettingsDialog::retranslateUi()
@@ -218,14 +209,14 @@ void UISettingsDialog::showEvent(QShowEvent *pEvent)
     if (!m_fPolished)
     {
         m_fPolished = true;
-        polishEvent(pEvent);
+        polishEvent();
     }
 
     /* Call to base-class: */
     QIWithRetranslateUI<QMainWindow>::showEvent(pEvent);
 }
 
-void UISettingsDialog::polishEvent(QShowEvent*)
+void UISettingsDialog::polishEvent()
 {
     /* Check what's the minimum selector size: */
     const int iMinWidth = m_pSelector->minWidth();
@@ -292,9 +283,10 @@ void UISettingsDialog::closeEvent(QCloseEvent *pEvent)
     /* Ignore event initially: */
     pEvent->ignore();
 
-    /* Check whether there are unsaved settings
-     * which will be lost in such case: */
-    if (   !isSettingsChanged()
+    /* Check whether serialization was clean (save)
+     * or there are no unsaved settings to be lost (cancel): */
+    if (   m_fSerializationClean
+        || !isSettingsChanged()
         || msgCenter().confirmSettingsDiscarding(this))
     {
         /* Tell the listener to close us (once): */
@@ -354,9 +346,12 @@ void UISettingsDialog::loadData(QVariant &data)
     AssertPtrReturnVoid(m_pSerializeProcess);
     {
         /* Configure settings loader: */
-        connect(m_pSerializeProcess, &UISettingsSerializer::sigNotifyAboutProcessStarted, this, &UISettingsDialog::sltHandleProcessStarted);
-        connect(m_pSerializeProcess, &UISettingsSerializer::sigNotifyAboutProcessProgressChanged, this, &UISettingsDialog::sltHandleProcessProgressChange);
-        connect(m_pSerializeProcess, &UISettingsSerializer::sigNotifyAboutProcessFinished, this, &UISettingsDialog::sltHandleSerializationFinished);
+        connect(m_pSerializeProcess, &UISettingsSerializer::sigNotifyAboutProcessStarted,
+                this, &UISettingsDialog::sltHandleSerializationStarted);
+        connect(m_pSerializeProcess, &UISettingsSerializer::sigNotifyAboutProcessProgressChanged,
+                this, &UISettingsDialog::sltHandleSerializationProgressChange);
+        connect(m_pSerializeProcess, &UISettingsSerializer::sigNotifyAboutProcessFinished,
+                this, &UISettingsDialog::sltHandleSerializationFinished);
 
         /* Raise current page priority: */
         m_pSerializeProcess->raisePriorityOfPage(m_pSelector->currentId());

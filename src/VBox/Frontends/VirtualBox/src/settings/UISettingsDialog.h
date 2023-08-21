@@ -98,13 +98,12 @@ protected slots:
     /** Handles category change to @a cId. */
     virtual void sltCategoryChanged(int cId);
 
+    /** Handles serializartion start. */
+    virtual void sltHandleSerializationStarted();
+    /** Handles serializartion progress change to @a iValue. */
+    virtual void sltHandleSerializationProgressChange(int iValue);
     /** Handle serializartion finished. */
     virtual void sltHandleSerializationFinished();
-
-    /** Handles process start. */
-    void sltHandleProcessStarted();
-    /** Handles process progress change to @a iValue. */
-    void sltHandleProcessProgressChange(int iValue);
 
 protected:
 
@@ -112,8 +111,8 @@ protected:
     virtual void retranslateUi() RT_OVERRIDE;
     /** Handles show @a pEvent. */
     virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
-    /** Handles first show @a pEvent. */
-    virtual void polishEvent(QShowEvent *pEvent);
+    /** Handles first show event. */
+    virtual void polishEvent();
     /** Handles close @a pEvent. */
     virtual void closeEvent(QCloseEvent *pEvent) RT_OVERRIDE;
 
