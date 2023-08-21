@@ -72,7 +72,7 @@ public:
         ;
 protected:
 
-    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) override;
 
 private:
 
