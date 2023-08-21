@@ -1065,7 +1065,7 @@ RTDECL(int)         RTVfsIoStrmReadAt(RTVFSIOSTREAM hVfsIos, RTFOFF off, void *p
 /**
  * Reads the remainder of the stream into a memory buffer.
  *
- * For simplifying string-style processing, there is a zero byte after the
+ * For simplifying string-style processing, the is a zero byte after the
  * returned buffer, making sure it can be used as a zero terminated string.
  *
  * @returns IPRT status code.
@@ -1073,7 +1073,6 @@ RTDECL(int)         RTVfsIoStrmReadAt(RTVFSIOSTREAM hVfsIos, RTFOFF off, void *p
  * @param   ppvBuf          Where to return the buffer.  Must pass to
  *                          RTVfsIoStrmReadAllFree for freeing, not RTMemFree!
  * @param   pcbBuf          Where to return the buffer size.
- * @sa      RTVfsFileReadAll
  */
 RTDECL(int)         RTVfsIoStrmReadAll(RTVFSIOSTREAM hVfsIos, void **ppvBuf, size_t *pcbBuf);
 
@@ -1082,7 +1081,6 @@ RTDECL(int)         RTVfsIoStrmReadAll(RTVFSIOSTREAM hVfsIos, void **ppvBuf, siz
  *
  * @param   pvBuf           What RTVfsIoStrmReadAll returned.
  * @param   cbBuf           What RTVfsIoStrmReadAll returned.
- * @sa      RTVfsFileReadAllFree
  */
 RTDECL(void)        RTVfsIoStrmReadAllFree(void *pvBuf, size_t cbBuf);
 
@@ -1409,30 +1407,6 @@ RTDECL(int)         RTVfsFileQueryInfo(RTVFSFILE hVfsFile, PRTFSOBJINFO pObjInfo
  */
 RTDECL(int)         RTVfsFileRead(RTVFSFILE hVfsFile, void *pvBuf, size_t cbToRead, size_t *pcbRead);
 RTDECL(int)         RTVfsFileReadAt(RTVFSFILE hVfsFile, RTFOFF off, void *pvBuf, size_t cbToRead, size_t *pcbRead);
-
-/**
- * Reads the remainder of the file into a memory buffer.
- *
- * For simplifying string-style processing, there is a zero byte after the
- * returned buffer, making sure it can be used as a zero terminated string.
- *
- * @returns IPRT status code.
- * @param   hVfsIos         The VFS I/O stream handle.
- * @param   ppvBuf          Where to return the buffer.  Must pass to
- *                          RTVfsFileReadAllFree for freeing, not RTMemFree!
- * @param   pcbBuf          Where to return the buffer size.
- * @sa      RTVfsIoStrmReadAll
- */
-RTDECL(int)         RTVfsFileReadAll(RTVFSFILE hVfsFile, void **ppvBuf, size_t *pcbBuf);
-
-/**
- * Free memory buffer returned by RTVfsFileReadAll.
- *
- * @param   pvBuf           What RTVfsFileReadAll returned.
- * @param   cbBuf           What RTVfsFileReadAll returned.
- * @sa      RTVfsIoStrmReadAllFree
- */
-RTDECL(void)        RTVfsFileReadAllFree(void *pvBuf, size_t cbBuf);
 
 /**
  * Write bytes to the file at the current position.
