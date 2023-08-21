@@ -236,3 +236,18 @@ RTDECL(void) RTVfsIoStrmReadAllFree(void *pvBuf, size_t cbBuf)
     RTMemFree(pvBuf);
 }
 
+
+RTDECL(int) RTVfsFileReadAll(RTVFSFILE hVfsFile, void **ppvBuf, size_t *pcbBuf)
+{
+    RTVFSIOSTREAM hVfsIos = RTVfsFileToIoStream(hVfsFile);
+    int rc = RTVfsIoStrmReadAll(hVfsIos, ppvBuf, pcbBuf);
+    RTVfsIoStrmRelease(hVfsIos);
+    return rc;
+}
+
+
+RTDECL(void) RTVfsFileReadAllFree(void *pvBuf, size_t cbBuf)
+{
+    RTVfsIoStrmReadAllFree(pvBuf, cbBuf);
+}
+
