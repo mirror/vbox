@@ -66,7 +66,6 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent,
     , m_strCategory(strCategory)
     , m_strControl(strControl)
     , m_pSelector(0)
-    , m_pStack(0)
     , m_enmConfigurationAccessLevel(ConfigurationAccessLevel_Null)
     , m_pSerializeProcess(0)
     , m_fPolished(false)
@@ -78,11 +77,11 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent,
     , m_pWarningPane(0)
     , m_fValid(true)
     , m_fSilent(true)
+    , m_pLayoutMain(0)
     , m_pLabelTitle(0)
+    , m_pStack(0)
     , m_pButtonBox(0)
-    , m_pWidgetStackHandler(0)
 {
-    /* Prepare: */
     prepare();
 }
 
@@ -207,17 +206,15 @@ void UISettingsDialog::sltHandleProcessProgressChange(int iValue)
 
 void UISettingsDialog::retranslateUi()
 {
-    m_pLabelTitle->setText(QString());
+#ifndef VBOX_GUI_WITH_TOOLBAR_SETTINGS
+    /* Retranslate current page headline: */
+    m_pLabelTitle->setText(m_pSelector->itemText(m_pSelector->currentId()));
+#endif
 
     /* Translate warning stuff: */
     m_strWarningHint = tr("Invalid settings detected");
     if (!m_fValid || !m_fSilent)
         m_pWarningPane->setWarningLabel(m_strWarningHint);
-
-#ifndef VBOX_GUI_WITH_TOOLBAR_SETTINGS
-    /* Retranslate current page headline: */
-    m_pLabelTitle->setText(m_pSelector->itemText(m_pSelector->currentId()));
-#endif
 
     /* Retranslate all validators: */
     foreach (UIPageValidator *pValidator, findChildren<UIPageValidator*>())
@@ -599,121 +596,18 @@ void UISettingsDialog::sltHandleWarningPaneUnhovered(UIPageValidator *pValidator
 
 void UISettingsDialog::prepare()
 {
-    prepareWidgets();
-
-    /* Configure title: */
-    if (m_pLabelTitle)
+    /* Prepare central-widget: */
+    setCentralWidget(new QWidget);
+    if (centralWidget())
     {
-        /* Page-title font is bold and larger but derived from the system font: */
-        QFont pageTitleFont = font();
-        pageTitleFont.setBold(true);
-        pageTitleFont.setPointSize(pageTitleFont.pointSize() + 2);
-        m_pLabelTitle->setFont(pageTitleFont);
-    }
-
-    /* Prepare selector: */
-    QGridLayout *pMainLayout = static_cast<QGridLayout*>(centralWidget()->layout());
-    if (pMainLayout)
-    {
-#ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
-
-        /* No page-title with tool-bar: */
-        m_pLabelTitle->hide();
-
-        /* Create modern tool-bar selector: */
-        m_pSelector = new UISettingsSelectorToolBar(this);
-        if (m_pSelector)
+        /* Prepare main layout: */
+        m_pLayoutMain = new QGridLayout(centralWidget());
+        if (m_pLayoutMain)
         {
-            /* Configure tool-bar: */
-            static_cast<QIToolBar*>(m_pSelector->widget())->enableMacToolbar();
-
-            /* Add tool-bar into page: */
-            addToolBar(qobject_cast<QToolBar*>(m_pSelector->widget()));
-        }
-
-        /* No title in this mode, we change the title of the window: */
-        pMainLayout->setColumnMinimumWidth(0, 0);
-        pMainLayout->setHorizontalSpacing(0);
-
-#else /* !VBOX_GUI_WITH_TOOLBAR_SETTINGS */
-
-        /* Create classical tree-view selector: */
-        m_pSelector = new UISettingsSelectorTreeView(this);
-        if (m_pSelector)
-        {
-            /* Add into layout: */
-            pMainLayout->addWidget(m_pSelector->widget(), 0, 0, 2, 1);
-
-            /* Set focus: */
-            m_pSelector->widget()->setFocus();
-        }
-
-#endif /* !VBOX_GUI_WITH_TOOLBAR_SETTINGS */
-
-        connect(m_pSelector, &UISettingsSelectorTreeView::sigCategoryChanged, this, &UISettingsDialog::sltCategoryChanged);
-    }
-
-    /* Prepare stack-handler: */
-    if (m_pWidgetStackHandler)
-    {
-        /* Create page-stack layout: */
-        QVBoxLayout *pStackLayout = new QVBoxLayout(m_pWidgetStackHandler);
-        if (pStackLayout)
-        {
-            /* Confugre page-stack layout: */
-            pStackLayout->setContentsMargins(0, 0, 0, 0);
-
-            /* Create page-stack: */
-            m_pStack = new QStackedWidget;
-            if (m_pStack)
-            {
-                /* Configure page-stack: */
-                popupCenter().setPopupStackOrientation(m_pStack, UIPopupStackOrientation_Bottom);
-
-                /* Add into layout: */
-                pStackLayout->addWidget(m_pStack);
-            }
-        }
-    }
-
-    /* Prepare button-box: */
-    if (m_pButtonBox)
-    {
-        /* Create status-bar: */
-        m_pStatusBar = new QStackedWidget;
-        if (m_pStatusBar)
-        {
-            /* Add empty widget: */
-            m_pStatusBar->addWidget(new QWidget);
-
-            /* Create process-bar: */
-            m_pProcessBar = new QProgressBar;
-            if (m_pProcessBar)
-            {
-                /* Configure process-bar: */
-                m_pProcessBar->setMinimum(0);
-                m_pProcessBar->setMaximum(100);
-
-                /* Add into status-bar: */
-                m_pStatusBar->addWidget(m_pProcessBar);
-            }
-
-            /* Create warning-pane: */
-            m_pWarningPane = new UIWarningPane;
-            if (m_pWarningPane)
-            {
-                /* Configure warning-pane: */
-                connect(m_pWarningPane, &UIWarningPane::sigHoverEnter,
-                        this, &UISettingsDialog::sltHandleWarningPaneHovered);
-                connect(m_pWarningPane, &UIWarningPane::sigHoverLeave,
-                        this, &UISettingsDialog::sltHandleWarningPaneUnhovered);
-
-                /* Add into status-bar: */
-                m_pStatusBar->addWidget(m_pWarningPane);
-            }
-
-            /* Add status-bar to button-box: */
-            m_pButtonBox->addExtraWidget(m_pStatusBar);
+            /* Prepare widgets: */
+            prepareSelector();
+            prepareStack();
+            prepareButtonBox();
         }
     }
 
@@ -721,71 +615,133 @@ void UISettingsDialog::prepare()
     retranslateUi();
 }
 
-void UISettingsDialog::prepareWidgets()
+void UISettingsDialog::prepareSelector()
 {
-    /* Prepare central-widget: */
-    setCentralWidget(new QWidget);
-    if (centralWidget())
+#ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
+    /* Prepare modern tool-bar selector: */
+    m_pSelector = new UISettingsSelectorToolBar(this);
+    if (m_pSelector)
     {
-        /* Prepare main layout: */
-        QGridLayout *pLayoutMain = new QGridLayout(centralWidget());
-        if (pLayoutMain)
-        {
-            /* Prepare title label: */
-            m_pLabelTitle = new QLabel(centralWidget());
-            if (m_pLabelTitle)
-            {
-                m_pLabelTitle->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed));
-                QPalette pal = QApplication::palette();
-                pal.setColor(QPalette::Active, QPalette::Window, pal.color(QPalette::Active, QPalette::Base));
-                m_pLabelTitle->setPalette(pal);
-                QFont fnt;
-                fnt.setFamily(QStringLiteral("Sans Serif"));
-                fnt.setPointSize(11);
-                fnt.setBold(true);
-                fnt.setWeight(QFont::ExtraBold);
-                m_pLabelTitle->setFont(fnt);
-                m_pLabelTitle->setAutoFillBackground(true);
-                m_pLabelTitle->setFrameShadow(QFrame::Sunken);
-                m_pLabelTitle->setMargin(9);
+        static_cast<QIToolBar*>(m_pSelector->widget())->enableMacToolbar();
+        addToolBar(qobject_cast<QToolBar*>(m_pSelector->widget()));
+    }
 
-                pLayoutMain->addWidget(m_pLabelTitle, 0, 1);
-            }
+    /* No title in this mode, we change the title of the window: */
+    m_pLayoutMain->setColumnMinimumWidth(0, 0);
+    m_pLayoutMain->setHorizontalSpacing(0);
 
-            /* Prepare widget stack handler: */
-            m_pWidgetStackHandler = new QWidget(centralWidget());
-            if (m_pWidgetStackHandler)
-            {
-                m_pWidgetStackHandler->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding));
-                pLayoutMain->addWidget(m_pWidgetStackHandler, 1, 1);
-            }
+#else /* !VBOX_GUI_WITH_TOOLBAR_SETTINGS */
 
-            /* Prepare button-box: */
-            m_pButtonBox = new QIDialogButtonBox(centralWidget());
-            if (m_pButtonBox)
-            {
+    /* Prepare classical tree-view selector: */
+    m_pSelector = new UISettingsSelectorTreeView(centralWidget());
+    if (m_pSelector)
+    {
+        m_pLayoutMain->addWidget(m_pSelector->widget(), 0, 0, 2, 1);
+        m_pSelector->widget()->setFocus();
+    }
+
+    /* Prepare title label: */
+    m_pLabelTitle = new QLabel(centralWidget());
+    if (m_pLabelTitle)
+    {
+        m_pLabelTitle->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed));
+        QPalette pal = QApplication::palette();
+        pal.setColor(QPalette::Active, QPalette::Window, pal.color(QPalette::Active, QPalette::Base));
+        m_pLabelTitle->setPalette(pal);
+        QFont fnt;
+        fnt.setFamily(QStringLiteral("Sans Serif"));
+//        fnt.setPointSize(11);
+        fnt.setPointSize(fnt.pointSize() + 2);
+        fnt.setBold(true);
+        fnt.setWeight(QFont::ExtraBold);
+        m_pLabelTitle->setFont(fnt);
+        m_pLabelTitle->setAutoFillBackground(true);
+        m_pLabelTitle->setFrameShadow(QFrame::Sunken);
+        m_pLabelTitle->setMargin(9);
+
+        /* Add title-label into main layout: */
+        m_pLayoutMain->addWidget(m_pLabelTitle, 0, 1);
+    }
+#endif /* !VBOX_GUI_WITH_TOOLBAR_SETTINGS */
+
+    /* Configure selector created above: */
+    if (m_pSelector)
+        connect(m_pSelector, &UISettingsSelectorTreeView::sigCategoryChanged,
+                this, &UISettingsDialog::sltCategoryChanged);
+}
+
+void UISettingsDialog::prepareStack()
+{
+    /* Prepare page-stack: */
+    m_pStack = new QStackedWidget(centralWidget());
+    if (m_pStack)
+    {
+        /* Configure page-stack: */
+        popupCenter().setPopupStackOrientation(m_pStack, UIPopupStackOrientation_Bottom);
+
+        /* Add page-stack into main layout: */
+        m_pLayoutMain->addWidget(m_pStack, 1, 1);
+    }
+}
+
+void UISettingsDialog::prepareButtonBox()
+{
+    /* Prepare button-box: */
+    m_pButtonBox = new QIDialogButtonBox(centralWidget());
+    if (m_pButtonBox)
+    {
 #ifndef VBOX_WS_MAC
-                m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel |
-                                                 QDialogButtonBox::NoButton | QDialogButtonBox::Help);
-                m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(QKeySequence::HelpContents);
+        m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel |
+                                         QDialogButtonBox::NoButton | QDialogButtonBox::Help);
+        m_pButtonBox->button(QDialogButtonBox::Help)->setShortcut(QKeySequence::HelpContents);
 #else
-                // WORKAROUND:
-                // No Help button on macOS for now, conflict with old Qt.
-                m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel |
-                                                 QDialogButtonBox::NoButton);
+        // WORKAROUND:
+        // No Help button on macOS for now, conflict with old Qt.
+        m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel |
+                                         QDialogButtonBox::NoButton);
 #endif
-                m_pButtonBox->button(QDialogButtonBox::Ok)->setShortcut(Qt::Key_Return);
-                m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
-                connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UISettingsDialog::close);
-                connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UISettingsDialog::accept);
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setShortcut(Qt::Key_Return);
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
+        connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UISettingsDialog::close);
+        connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UISettingsDialog::accept);
 #ifndef VBOX_WS_MAC
-                connect(m_pButtonBox->button(QDialogButtonBox::Help), &QAbstractButton::pressed,
-                        m_pButtonBox, &QIDialogButtonBox::sltHandleHelpRequest);
+        connect(m_pButtonBox->button(QDialogButtonBox::Help), &QAbstractButton::pressed,
+                m_pButtonBox, &QIDialogButtonBox::sltHandleHelpRequest);
 #endif
 
-                pLayoutMain->addWidget(m_pButtonBox, 2, 0, 1, 2);
+        /* Prepare status-bar: */
+        m_pStatusBar = new QStackedWidget(m_pButtonBox);
+        if (m_pStatusBar)
+        {
+            /* Add empty widget: */
+            m_pStatusBar->addWidget(new QWidget);
+
+            /* Prepare process-bar: */
+            m_pProcessBar = new QProgressBar(m_pStatusBar);
+            if (m_pProcessBar)
+            {
+                m_pProcessBar->setMinimum(0);
+                m_pProcessBar->setMaximum(100);
+                m_pStatusBar->addWidget(m_pProcessBar);
             }
+
+            /* Prepare warning-pane: */
+            m_pWarningPane = new UIWarningPane(m_pStatusBar);
+            if (m_pWarningPane)
+            {
+                connect(m_pWarningPane, &UIWarningPane::sigHoverEnter,
+                        this, &UISettingsDialog::sltHandleWarningPaneHovered);
+                connect(m_pWarningPane, &UIWarningPane::sigHoverLeave,
+                        this, &UISettingsDialog::sltHandleWarningPaneUnhovered);
+                m_pStatusBar->addWidget(m_pWarningPane);
+            }
+
+            /* Add status-bar to button-box: */
+            m_pButtonBox->addExtraWidget(m_pStatusBar);
         }
+
+        /* Add button-box into main layout: */
+        m_pLayoutMain->addWidget(m_pButtonBox, 2, 0, 1, 2);
     }
 }
 
