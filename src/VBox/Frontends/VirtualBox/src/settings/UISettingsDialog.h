@@ -197,6 +197,9 @@ private:
         void prepareStack();
         /** Prepare button-box. */
         void prepareButtonBox();
+
+        /** Cleanups all. */
+        void cleanup();
     /** @} */
 
     /** Assigns validater for passed @a pPage. */
