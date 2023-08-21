@@ -49,6 +49,9 @@
 # include "VBoxUtils-darwin.h"
 #endif
 
+/* Other VBox includes: */
+#include <iprt/assert.h>
+
 
 /*********************************************************************************************************************************
 *   UIVMFilterLineEdit definition.                                                                                               *

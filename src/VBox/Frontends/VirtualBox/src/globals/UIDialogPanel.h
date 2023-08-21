@@ -55,6 +55,7 @@ public:
 
     UIDialogPanelBase(QWidget *pParent = 0);
     void setCurrentIndex(int iIndex);
+    int currentIndex() const;
 
 protected:
 

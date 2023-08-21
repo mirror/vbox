@@ -47,12 +47,22 @@ class UIVMLogViewerPanelNew : public QIWithRetranslateUI<UIDialogPanelBase>
 public:
 
     UIVMLogViewerPanelNew(QWidget *pParent, UIVMLogViewerWidget *pViewer);
+    void refreshSearch();
+
+    enum Page
+    {
+        Page_Search = 0,
+        Page_Filter,
+        Page_Bookmark,
+        Page_Preferences,
+        Page_Max
+    };
+
 
 private:
 
     void retranslateUi() override;
     void prepare() override;
-    void prepareSearchTab();
 
     UIVMLogViewerSearchPanel *m_pSearchWidget;
     UIVMLogViewerWidget *m_pViewer;

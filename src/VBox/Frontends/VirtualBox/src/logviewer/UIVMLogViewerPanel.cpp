@@ -50,15 +50,15 @@ UIVMLogViewerPanelNew::UIVMLogViewerPanelNew(QWidget *pParent, UIVMLogViewerWidg
 
 void UIVMLogViewerPanelNew::prepare()
 {
-    prepareSearchTab();
+    m_pSearchWidget = new UIVMLogViewerSearchPanel(0, m_pViewer);
+    insertTab(0, m_pSearchWidget);
     retranslateUi();
 }
 
-void UIVMLogViewerPanelNew::prepareSearchTab()
+void UIVMLogViewerPanelNew::refreshSearch()
 {
-    //insertTab(0, new QPushButton("asdasda"));
-    m_pSearchWidget = new UIVMLogViewerSearchPanel(0, m_pViewer);
-    insertTab(0, m_pSearchWidget);
+    if (m_pSearchWidget)
+        m_pSearchWidget->refreshSearch();
 }
 
 void UIVMLogViewerPanelNew::retranslateUi()

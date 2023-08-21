@@ -84,6 +84,13 @@ void UIDialogPanelBase::setCurrentIndex(int iIndex)
     m_pTabWidget->setCurrentIndex(iIndex);
 }
 
+int UIDialogPanelBase::currentIndex() const
+{
+    if (!m_pTabWidget)
+        return -1;
+    return m_pTabWidget->currentIndex();
+}
+
 UIDialogPanel::UIDialogPanel(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pMainLayout(0)

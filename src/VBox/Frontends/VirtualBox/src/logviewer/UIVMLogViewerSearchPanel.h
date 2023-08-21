@@ -63,7 +63,7 @@ public:
       * @param  pViewer  Specifies instance of VM Log-Viewer. */
     UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer);
     /** Resets the search position and starts a new search. */
-    void refresh();
+    void refreshSearch();
     const QVector<float> &matchLocationVector() const;
     /** Returns the number of the matches to the current search. */
     int matchCount() const;
