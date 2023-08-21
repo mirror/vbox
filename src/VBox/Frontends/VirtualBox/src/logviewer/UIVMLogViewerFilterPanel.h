@@ -44,6 +44,7 @@ class QComboBox;
 class QFrame;
 class QLabel;
 class QLineEdit;
+class QVBoxLayout;
 class QIToolButton;
 class QRadioButton;
 class UIVMFilterLineEdit;
@@ -99,7 +100,7 @@ private:
         ButtonEnd
     };
 
-    void prepareRadioButtonGroup();
+    void prepareRadioButtonGroup(QVBoxLayout *pLayout);
 
     bool applyFilterTermsToString(const QString& string);
     void filter();
@@ -119,7 +120,6 @@ private:
     QLabel              *m_pResultLabel;
     int                  m_iUnfilteredLineCount;
     int                  m_iFilteredLineCount;
-    QHBoxLayout         *m_pMainLayout;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerFilterPanel_h */

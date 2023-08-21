@@ -274,7 +274,6 @@ UIVMLogViewerFilterPanel::UIVMLogViewerFilterPanel(QWidget *pParent, UIVMLogView
     , m_pResultLabel(0)
     , m_iUnfilteredLineCount(0)
     , m_iFilteredLineCount(0)
-    , m_pMainLayout(0)
 {
     prepareWidgets();
     prepareConnections();
@@ -433,10 +432,10 @@ void UIVMLogViewerFilterPanel::sltRemoveFilterTerm(const QString &termString)
 
 void UIVMLogViewerFilterPanel::prepareWidgets()
 {
-    m_pMainLayout = new QHBoxLayout;
-    AssertReturnVoid(m_pMainLayout);
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    AssertReturnVoid(pMainLayout);
 
-    prepareRadioButtonGroup();
+    prepareRadioButtonGroup(pMainLayout);
 
     /* Create combo/button layout: */
     QHBoxLayout *pComboButtonLayout = new QHBoxLayout;
@@ -471,7 +470,7 @@ void UIVMLogViewerFilterPanel::prepareWidgets()
             pComboButtonLayout->addWidget(m_pAddFilterTermButton);
         }
 
-        m_pMainLayout->addLayout(pComboButtonLayout, 1);
+        pMainLayout->addLayout(pComboButtonLayout, 1);
     }
 
     /* Create filter-term line-edit: */
@@ -479,7 +478,7 @@ void UIVMLogViewerFilterPanel::prepareWidgets()
     if (m_pFilterTermsLineEdit)
     {
         m_pFilterTermsLineEdit->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-        m_pMainLayout->addWidget(m_pFilterTermsLineEdit, 3);
+        pMainLayout->addWidget(m_pFilterTermsLineEdit, 3);
     }
 
     /* Create result label: */
@@ -487,11 +486,12 @@ void UIVMLogViewerFilterPanel::prepareWidgets()
     if (m_pResultLabel)
     {
         m_pResultLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-        m_pMainLayout->addWidget(m_pResultLabel, 0);
+        pMainLayout->addWidget(m_pResultLabel, 0);
     }
+    pMainLayout->addStretch(1);
 }
 
-void UIVMLogViewerFilterPanel::prepareRadioButtonGroup()
+void UIVMLogViewerFilterPanel::prepareRadioButtonGroup(QVBoxLayout *pLayout)
 {
     /* Create radio-button container: */
     m_pRadioButtonContainer = new QFrame;
@@ -547,7 +547,7 @@ void UIVMLogViewerFilterPanel::prepareRadioButtonGroup()
         }
 
         /* Add into layout: */
-        m_pMainLayout->addWidget(m_pRadioButtonContainer);
+        pLayout->addWidget(m_pRadioButtonContainer);
     }
 
     /* Initialize other related stuff: */

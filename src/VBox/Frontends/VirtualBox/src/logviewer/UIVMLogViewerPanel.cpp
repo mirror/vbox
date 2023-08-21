@@ -62,8 +62,8 @@ void UIVMLogViewerPanelNew::prepare()
             this, &UIVMLogViewerPanelNew::sigSearchUpdated);
 
     /* Filter tab: */
-    m_pSearchWidget = new UIVMLogViewerSearchPanel(0, m_pViewer);
-    insertTab(Page_Filter, m_pSearchWidget);
+    m_pFilterWidget = new UIVMLogViewerFilterPanel(0, m_pViewer);
+    insertTab(Page_Filter, m_pFilterWidget);
 
     connect(m_pFilterWidget, &UIVMLogViewerFilterPanel::sigFilterApplied,
             this, &UIVMLogViewerPanelNew::sigFilterApplied);
