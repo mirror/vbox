@@ -878,9 +878,9 @@ static DECLCALLBACK(int) rtDbgModContainer_Close(PRTDBGMODINT pMod)
 
 
 /** @copydoc RTDBGMODVTDBG::pfnTryOpen */
-static DECLCALLBACK(int) rtDbgModContainer_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch)
+static DECLCALLBACK(int) rtDbgModContainer_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch, RTDBGCFG hDbgCfg)
 {
-    NOREF(pMod); NOREF(enmArch);
+    NOREF(pMod); NOREF(enmArch); RT_NOREF_PV(hDbgCfg);
     return VERR_INTERNAL_ERROR_5;
 }
 

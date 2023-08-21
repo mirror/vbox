@@ -62,6 +62,7 @@
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
+#include <iprt/fsvfs.h>
 #include <iprt/latin1.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>
@@ -70,6 +71,7 @@
 #include <iprt/sort.h>
 #include <iprt/string.h>
 #include <iprt/strcache.h>
+#include <iprt/vfs.h>
 #include "internal/dbgmod.h"
 #include "internal/magics.h"
 
@@ -141,7 +143,7 @@ typedef struct RTDBGMODCV
     /** The image size, if we know it. This is 0 if we don't know it. */
     uint32_t        cbImage;
 
-    /** Indicates that we've loaded segments intot he container already. */
+    /** Indicates that we've loaded segments into the container already. */
     bool            fHaveLoadedSegments;
     /** Alternative address translation method for DOS frames. */
     bool            fHaveDosFrames;
@@ -414,8 +416,8 @@ static const char *rtDbgModCvSsSymTypeName(RTCVSYMTYPE enmSymType)
         CASE_RET_STR(V2_RegRel);
         CASE_RET_STR(V2_LThread);
         CASE_RET_STR(V2_GThread);
-        CASE_RET_STR(V2_Unknown_1010);
-        CASE_RET_STR(V2_Unknown_1011);
+        CASE_RET_STR(V2_LProcMips);
+        CASE_RET_STR(V2_GProcMips);
         CASE_RET_STR(V2_FrameInfo);
         CASE_RET_STR(V2_Compliand);
         CASE_RET_STR(V3_Compliand);
@@ -440,8 +442,9 @@ static const char *rtDbgModCvSsSymTypeName(RTCVSYMTYPE enmSymType)
         CASE_RET_STR(V3_Unknown_1114);
         CASE_RET_STR(V3_Unknown_1115);
         CASE_RET_STR(V3_MSTool);
-        CASE_RET_STR(V3_PubFunc1);
-        CASE_RET_STR(V3_PubFunc2);
+        CASE_RET_STR(V3_ProcRef);
+        CASE_RET_STR(V3_LProcRef);
+        CASE_RET_STR(V3_Unknown_1128);
         CASE_RET_STR(V3_SectInfo);
         CASE_RET_STR(V3_SubSectInfo);
         CASE_RET_STR(V3_Entrypoint);
@@ -641,6 +644,27 @@ static int rtDbgModCvAddSymbol(PRTDBGMODCV pThis, uint32_t iSeg, uint64_t off, c
     return rc;
 }
 
+/**
+ * Validates the a length prefixed string (aka pascal string).
+ *
+ * @returns String length if valid, UINT16_MAX if invalid.
+ * @param   pchString   The string to validate.
+ * @param   pvRec       The pointer to the record containing the string.
+ * @param   cbRec       The record length.
+ */
+static uint16_t rtDbgModCvValidatePascalString(uint8_t cchString, const char *pchString, void const *pvRec, uint16_t cbRec)
+{
+    size_t  offStrMember = (uintptr_t)pchString - (uintptr_t)pvRec;
+    AssertReturn(offStrMember <= cbRec, UINT16_MAX);
+    cbRec -= (uint16_t)offStrMember;
+    AssertReturn(cchString <= cbRec, UINT16_MAX);
+
+    int rc = RTStrValidateEncodingEx(pchString, cchString, RTSTR_VALIDATE_ENCODING_EXACT_LENGTH);
+    AssertRCReturn(rc, UINT16_MAX);
+
+    return cchString;
+}
+
 
 /**
  * Validates the a zero terminated string.
@@ -774,10 +798,25 @@ static int rtDbgModCvSsProcessV4PlusSymTab(PRTDBGMODCV pThis, void const *pvSymT
                     break;
                 }
 
+                case kCvSymType_V2_Pub:
+                case kCvSymType_V2_LData:
+                case kCvSymType_V2_GData:
+                {
+                    PCRTCVSYMV2TYPEDNAME pData = (PCRTCVSYMV2TYPEDNAME)uCursor.pv;
+                    RTDBGMODCV_CHECK_NOMSG_RET_BF(cbRec >= 2 + RT_UOFFSETOF(RTCVSYMV2TYPEDNAME, achName));
+                    uint16_t const cchName = rtDbgModCvValidatePascalString(pData->cchName, pData->achName, pData, cbRec);
+                    if (cchName != UINT16_MAX && cchName > 0)
+                        rc = rtDbgModCvAddSymbol(pThis, pData->iSection, pData->offSection, pData->achName, cchName, 0, 0);
+                    else
+                        Log3(("      cchName=%#x sec:off=%#x:%#x %.*Rhxs\n",
+                              cchName, pData->iSection, pData->offSection, cbRec, pData));
+                    break;
+                }
+
                 case kCvSymType_V3_Label:
                 {
                     PCRTCVSYMV3LABEL pLabel = (PCRTCVSYMV3LABEL)uCursor.pv;
-                    RTDBGMODCV_CHECK_NOMSG_RET_BF(cbRec >= sizeof(*pLabel));
+                    RTDBGMODCV_CHECK_NOMSG_RET_BF(cbRec >= 2 + sizeof(*pLabel));
                     uint16_t cchName = rtDbgModCvValidateZeroString(pLabel->szName, pLabel, cbRec);
                     if (cchName != UINT16_MAX && cchName > 0)
                         rc = rtDbgModCvAddSymbol(pThis, pLabel->iSection, pLabel->offSection, pLabel->szName, cchName, 0, 0);
@@ -1297,48 +1336,13 @@ rtDbgModCvSs_SrcModule(PRTDBGMODCV pThis, void const *pvSubSect, size_t cbSubSec
 }
 
 
-static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
+/**
+ * Processes a freshly loaded raw segment (section) map.
+ *
+ * This is used by both CV and PDB module types.
+ */
+static int rtDbgModCvProcessSegmentMap(PRTDBGMODCV pThis)
 {
-    /*
-     * Search for the segment map and segment names. They will be at the end of the directory.
-     */
-    uint32_t iSegMap   = UINT32_MAX;
-    uint32_t iSegNames = UINT32_MAX;
-    uint32_t i = pThis->cDirEnts;
-    while (i-- > 0)
-    {
-        if (   pThis->paDirEnts[i].iMod != 0xffff
-            && pThis->paDirEnts[i].iMod != 0x0000)
-            break;
-        if (pThis->paDirEnts[i].uSubSectType == kCvSst_SegMap)
-            iSegMap = i;
-        else if (pThis->paDirEnts[i].uSubSectType == kCvSst_SegName)
-            iSegNames = i;
-    }
-    if (iSegMap == UINT32_MAX)
-    {
-        Log(("RTDbgModCv: No segment map present, using segment indexes as is then...\n"));
-        return VINF_SUCCESS;
-    }
-    RTDBGMODCV_CHECK_RET_BF(pThis->paDirEnts[iSegMap].cb >= sizeof(RTCVSEGMAPHDR),
-                            ("Bad sstSegMap entry: cb=%#x\n", pThis->paDirEnts[iSegMap].cb));
-    RTDBGMODCV_CHECK_NOMSG_RET_BF(iSegNames == UINT32_MAX || pThis->paDirEnts[iSegNames].cb > 0);
-
-    /*
-     * Read them into memory.
-     */
-    int rc = rtDbgModCvReadAtAlloc(pThis, pThis->paDirEnts[iSegMap].off, (void **)&pThis->pSegMap,
-                                   pThis->paDirEnts[iSegMap].cb);
-    if (iSegNames != UINT32_MAX && RT_SUCCESS(rc))
-    {
-        pThis->cbSegNames = pThis->paDirEnts[iSegNames].cb;
-        rc = rtDbgModCvReadAtAlloc(pThis, pThis->paDirEnts[iSegNames].off, (void **)&pThis->pszzSegNames,
-                                   pThis->paDirEnts[iSegNames].cb);
-    }
-    if (RT_FAILURE(rc))
-        return rc;
-    RTDBGMODCV_CHECK_NOMSG_RET_BF(!pThis->pszzSegNames || !pThis->pszzSegNames[pThis->cbSegNames - 1]); /* must be terminated */
-
     /* Use local pointers to avoid lots of indirection and typing. */
     PCRTCVSEGMAPHDR  pHdr    = &pThis->pSegMap->Hdr;
     PRTCVSEGMAPDESC  paDescs = &pThis->pSegMap->aDescs[0];
@@ -1361,14 +1365,12 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
      * Validate and display it all.
      */
     Log2(("RTDbgModCv: SegMap: cSegs=%#x cLogSegs=%#x (cbSegNames=%#x)\n", pHdr->cSegs, pHdr->cLogSegs, pThis->cbSegNames));
-    RTDBGMODCV_CHECK_RET_BF(pThis->paDirEnts[iSegMap].cb >= sizeof(*pHdr) + pHdr->cSegs * sizeof(paDescs[0]),
-                            ("SegMap is out of bounds: cbSubSect=%#x cSegs=%#x\n", pThis->paDirEnts[iSegMap].cb, pHdr->cSegs));
     RTDBGMODCV_CHECK_NOMSG_RET_BF(pHdr->cSegs >= pHdr->cLogSegs);
 
     Log2(("Logical segment descriptors: %u\n", pHdr->cLogSegs));
 
     bool fHaveDosFrames = false;
-    for (i = 0; i < pHdr->cSegs; i++)
+    for (uint32_t i = 0; i < pHdr->cSegs; i++)
     {
         if (i == pHdr->cLogSegs)
             Log2(("Group/Physical descriptors: %u\n", pHdr->cSegs - pHdr->cLogSegs));
@@ -1423,7 +1425,8 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
                 && (paDescs[i].fFlags & (RTCVSEGMAPDESC_F_SEL | RTCVSEGMAPDESC_F_ABS))
                 && paDescs[i].iOverlay == 0
                 && enmImgFmt != RTLDRFMT_PE
-                && pThis->enmType != RTCVFILETYPE_DBG)
+                && pThis->enmType != RTCVFILETYPE_DBG
+                && pThis->enmType != RTCVFILETYPE_PDB)
                 fHaveDosFrames = true; /* BIOS, only groups with frames. */
         }
     }
@@ -1434,7 +1437,7 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
     if (fNoGroups)
     {
         if (fHaveDosFrames)
-            for (i = 0; i < pHdr->cSegs; i++)
+            for (uint32_t i = 0; i < pHdr->cSegs; i++)
             {
                 RTDBGMODCV_CHECK_NOMSG_RET_BF(paDescs[i].iOverlay == 0);
                 RTDBGMODCV_CHECK_NOMSG_RET_BF(      (paDescs[i].fFlags & (RTCVSEGMAPDESC_F_SEL | RTCVSEGMAPDESC_F_ABS))
@@ -1444,7 +1447,7 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
                 RTDBGMODCV_CHECK_NOMSG_RET_BF(!(paDescs[i].fFlags & RTCVSEGMAPDESC_F_ABS));
             }
         else
-            for (i = 0; i < pHdr->cSegs; i++)
+            for (uint32_t i = 0; i < pHdr->cSegs; i++)
                 RTDBGMODCV_CHECK_NOMSG_RET_BF(paDescs[i].off == 0);
     }
 
@@ -1459,7 +1462,7 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
     uint64_t    cbGroup0  = 0;
     if (!fNoGroups && !fHaveDosFrames)
     {
-        for (i = 0; i < pHdr->cSegs; i++)
+        for (uint32_t i = 0; i < pHdr->cSegs; i++)
             if (   !(paDescs[i].fFlags & (RTCVSEGMAPDESC_F_GROUP | RTCVSEGMAPDESC_F_ABS))
                 && paDescs[i].iGroup == 0)
             {
@@ -1477,6 +1480,7 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
     /** @todo Try see if we can figure something out from the frame value later. */
     if (!pThis->fHaveLoadedSegments)
     {
+        int      rc   = VINF_SUCCESS;
         uint16_t iSeg = 0;
         if (!fHaveDosFrames)
         {
@@ -1489,7 +1493,7 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
                 iSeg++;
             }
 
-            for (i = 0; RT_SUCCESS(rc) && i < pHdr->cSegs; i++)
+            for (uint32_t i = 0; RT_SUCCESS(rc) && i < pHdr->cSegs; i++)
                 if ((paDescs[i].fFlags & RTCVSEGMAPDESC_F_GROUP) || fNoGroups)
                 {
                     char szName[16];
@@ -1512,7 +1516,7 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
 
             /* Figure image base address. */
             uint64_t uImageBase = UINT64_MAX;
-            for (i = 0; RT_SUCCESS(rc) && i < pHdr->cSegs; i++)
+            for (uint32_t i = 0; RT_SUCCESS(rc) && i < pHdr->cSegs; i++)
             {
                 uint64_t uAddr = (uint64_t)paDescs[i].off + ((uint32_t)paDescs[i].iFrame << 4);
                 if (uAddr < uImageBase)
@@ -1521,7 +1525,7 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
 
             /* Add the segments. */
             uint64_t uMinAddr = uImageBase;
-            for (i = 0; RT_SUCCESS(rc) && i < pHdr->cSegs; i++)
+            for (uint32_t i = 0; RT_SUCCESS(rc) && i < pHdr->cSegs; i++)
             {
                 /* Figure out the next one. */
                 uint16_t cOverlaps = 0;
@@ -1647,9 +1651,9 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
     }
 
     /* Pass one: Fixate the group segment indexes. */
-    uint16_t iSeg0 = enmImgFmt == RTLDRFMT_PE || pThis->enmType == RTCVFILETYPE_DBG ? 1 : 0;
+    uint16_t iSeg0 = enmImgFmt == RTLDRFMT_PE || pThis->enmType == RTCVFILETYPE_DBG || pThis->enmType == RTCVFILETYPE_PDB ? 1 : 0;
     uint16_t iSeg = iSeg0 + (cbGroup0 > 0); /** @todo probably wrong... */
-    for (i = 0; i < pHdr->cSegs; i++)
+    for (uint32_t i = 0; i < pHdr->cSegs; i++)
         if (paDescs[i].fFlags & RTCVSEGMAPDESC_F_ABS)
             paDescs[i].iGroup = (uint16_t)(RTDBGSEGIDX_ABS & UINT16_MAX);
         else if ((paDescs[i].fFlags & RTCVSEGMAPDESC_F_GROUP) || fNoGroups)
@@ -1657,7 +1661,7 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
 
     /* Pass two: Resolve group references in to segment indexes. */
     Log2(("Mapped segments (both kinds):\n"));
-    for (i = 0; i < pHdr->cSegs; i++)
+    for (uint32_t i = 0; i < pHdr->cSegs; i++)
     {
         if (!fNoGroups && !(paDescs[i].fFlags & (RTCVSEGMAPDESC_F_GROUP | RTCVSEGMAPDESC_F_ABS)))
             paDescs[i].iGroup = paDescs[i].iGroup == 0 ? iSeg0 : paDescs[paDescs[i].iGroup].iGroup;
@@ -1669,6 +1673,63 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
 
     return VINF_SUCCESS;
 }
+
+
+/**
+ * Loads and processes the segment map.
+ */
+static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
+{
+    /*
+     * Search for the segment map and segment names. They will be at the end of the directory.
+     */
+    uint32_t iSegMap   = UINT32_MAX;
+    uint32_t iSegNames = UINT32_MAX;
+    uint32_t i = pThis->cDirEnts;
+    while (i-- > 0)
+    {
+        if (   pThis->paDirEnts[i].iMod != 0xffff
+            && pThis->paDirEnts[i].iMod != 0x0000)
+            break;
+        if (pThis->paDirEnts[i].uSubSectType == kCvSst_SegMap)
+            iSegMap = i;
+        else if (pThis->paDirEnts[i].uSubSectType == kCvSst_SegName)
+            iSegNames = i;
+    }
+    if (iSegMap == UINT32_MAX)
+    {
+        Log(("RTDbgModCv: No segment map present, using segment indexes as is then...\n"));
+        return VINF_SUCCESS;
+    }
+    RTDBGMODCV_CHECK_RET_BF(pThis->paDirEnts[iSegMap].cb >= sizeof(RTCVSEGMAPHDR),
+                            ("Bad sstSegMap entry: cb=%#x\n", pThis->paDirEnts[iSegMap].cb));
+    RTDBGMODCV_CHECK_NOMSG_RET_BF(iSegNames == UINT32_MAX || pThis->paDirEnts[iSegNames].cb > 0);
+
+    /*
+     * Read them into memory.
+     */
+    int rc = rtDbgModCvReadAtAlloc(pThis, pThis->paDirEnts[iSegMap].off, (void **)&pThis->pSegMap,
+                                   pThis->paDirEnts[iSegMap].cb);
+    if (iSegNames != UINT32_MAX && RT_SUCCESS(rc))
+    {
+        pThis->cbSegNames = pThis->paDirEnts[iSegNames].cb;
+        rc = rtDbgModCvReadAtAlloc(pThis, pThis->paDirEnts[iSegNames].off, (void **)&pThis->pszzSegNames,
+                                   pThis->paDirEnts[iSegNames].cb);
+    }
+    if (RT_FAILURE(rc))
+        return rc;
+    RTDBGMODCV_CHECK_NOMSG_RET_BF(!pThis->pszzSegNames || !pThis->pszzSegNames[pThis->cbSegNames - 1]); /* must be terminated */
+    RTDBGMODCV_CHECK_RET_BF(pThis->paDirEnts[iSegMap].cb >= RT_UOFFSETOF_DYN(RTCVSEGMAP, aDescs[pThis->pSegMap->Hdr.cSegs]),
+                            ("SegMap is out of bounds: cbSubSect=%#x cSegs=%#x\n",
+                             pThis->paDirEnts[iSegMap].cb, pThis->pSegMap->Hdr.cSegs));
+
+    /*
+     * Join paths with the PDB handling.
+     */
+    return rtDbgModCvProcessSegmentMap(pThis);
+}
+
+
 
 
 /**
@@ -2915,7 +2976,29 @@ static int rtDbgModCvProbeCommon(PRTDBGMODINT pDbgMod, PRTCVHDR pCvHdr, RTCVFILE
             }
         }
     }
-
+    /*
+     * The NB10 is used to link to a PDB file.
+     * This is the case with the windows 2000 DBG files.
+     */
+    else if (pCvHdr->u32Magic == RTCVHDR_MAGIC_NB10)
+    {
+        if (pCvHdr->off == 0)
+        {
+            if (cb >= sizeof(CVPDB20INFO) && cb < _64K)
+            {
+                PCVPDB20INFO pInfo = (PCVPDB20INFO)RTMemTmpAlloc(cb);
+                if (pInfo)
+                {
+                    int rc2 = RTFileReadAt(hFile, off, pInfo, cb, NULL);
+                    if (RT_SUCCESS(rc2))
+                    {
+                        Log2(("RTDbgModCv: Found external PDB (v2.0): TS=%#010RX32 uAge=%x '%.*s'\n",  pInfo->uTimestamp,
+                              pInfo->uAge, cb - RT_UOFFSETOF(CVPDB20INFO, szPdbFilename), &pInfo->szPdbFilename[0]));
+                    }
+                }
+            }
+        }
+    }
     return rc;
 }
 
@@ -2975,6 +3058,33 @@ static int rtDbgModCvProbeFile2(PRTDBGMODINT pThis, RTCVFILETYPE enmFileType, RT
     return rc;
 }
 
+#ifdef LOG_ENABLED
+/** Translate PE debug directory type value to string. */
+static const char *dbgPeDebugTypeName(uint32_t uType)
+{
+    switch (uType)
+    {
+        case IMAGE_DEBUG_TYPE_UNKNOWN:       return "UNKNOWN";
+        case IMAGE_DEBUG_TYPE_COFF:          return "COFF";
+        case IMAGE_DEBUG_TYPE_CODEVIEW:      return "CODEVIEW";
+        case IMAGE_DEBUG_TYPE_FPO:           return "FPO";
+        case IMAGE_DEBUG_TYPE_MISC:          return "MISC";
+        case IMAGE_DEBUG_TYPE_EXCEPTION:     return "EXCEPTION";
+        case IMAGE_DEBUG_TYPE_FIXUP:         return "FIXUP";
+        case IMAGE_DEBUG_TYPE_OMAP_TO_SRC:   return "OMAP_TO_SRC";
+        case IMAGE_DEBUG_TYPE_OMAP_FROM_SRC: return "OMAP_FROM_SRC";
+        case IMAGE_DEBUG_TYPE_BORLAND:       return "BORLAND";
+        case IMAGE_DEBUG_TYPE_RESERVED10:    return "RESERVED10";
+        case IMAGE_DEBUG_TYPE_CLSID:         return "CLSID";
+        case IMAGE_DEBUG_TYPE_VC_FEATURE:    return "VC_FEATURE";
+        case IMAGE_DEBUG_TYPE_POGO:          return "POGO";
+        case IMAGE_DEBUG_TYPE_ILTCG:         return "ILTCG";
+        case IMAGE_DEBUG_TYPE_MPX:           return "MPX";
+        case IMAGE_DEBUG_TYPE_REPRO:         return "REPRO";
+    }
+    return "??";
+}
+#endif
 
 /**
  * Probes an external file for CodeView information.
@@ -3053,6 +3163,9 @@ static int rtDbgModCvProbeFile(PRTDBGMODINT pDbgMod, const char *pszFilename, RT
             rc = RTFileReadAt(hFile, offDbgDir, &DbgDir, sizeof(DbgDir), NULL);
             if (RT_FAILURE(rc))
                 break;
+            Log2(("DbgDir[%u]: Type=%#x Char=%#x TS=%#010x Ver=%#x.%#x Size=%#010x Addr=%#010x Ptr=%#010x %s\n",
+                  i, DbgDir.Type, DbgDir.Characteristics, DbgDir.TimeDateStamp, DbgDir.MajorVersion, DbgDir.MinorVersion,
+                  DbgDir.SizeOfData, DbgDir.AddressOfRawData, DbgDir.PointerToRawData, dbgPeDebugTypeName(DbgDir.Type)));
             if (DbgDir.Type == IMAGE_DEBUG_TYPE_CODEVIEW)
                 rc = rtDbgModCvProbeFile2(pDbgMod, RTCVFILETYPE_DBG, hFile,
                                           DbgDir.PointerToRawData, DbgDir.SizeOfData,
@@ -3060,7 +3173,28 @@ static int rtDbgModCvProbeFile(PRTDBGMODINT pDbgMod, const char *pszFilename, RT
             else if (DbgDir.Type == IMAGE_DEBUG_TYPE_COFF)
                 rc = rtDbgModCvProbeCoff(pDbgMod, RTCVFILETYPE_DBG, hFile,
                                          DbgDir.PointerToRawData, DbgDir.SizeOfData, pszFilename);
+            else
+                continue;
+            Log2(("DbgDir[%u]: parsing -> %Rrc\n", i, rc));
         }
+
+#ifdef LOG_ENABLED
+        /*
+         * Dump the section table.
+         */
+        for (uint32_t i = 0, offSecHdr = sizeof(DbgHdr);
+             i < DbgHdr.NumberOfSections;
+             i++, offSecHdr += sizeof(IMAGE_SECTION_HEADER))
+        {
+            IMAGE_SECTION_HEADER Sh;
+            rc = RTFileReadAt(hFile, offSecHdr, &Sh, sizeof(Sh), NULL);
+            if (RT_FAILURE(rc))
+                break;
+            Log2(("SHdr[%02u]: VA=%#08RX32 LB %#08RX32 Char=%#010RX32 Ptr=%#08RX32 LB %#08RX32 PtrLines=%#RX32 L %#RX32 PtrReloc=%#RX32 L %#RX32 '%.8s'\n",
+                  i, Sh.VirtualAddress, Sh.Misc.VirtualSize, Sh.Characteristics, Sh.PointerToRawData, Sh.SizeOfRawData,
+                  Sh.PointerToLinenumbers, Sh.NumberOfLinenumbers, Sh.PointerToRelocations, Sh.NumberOfRelocations, &Sh.Name[0]));
+        }
+#endif
 
         /*
          * If we get down here with an instance, it prooves that we've found
@@ -3107,7 +3241,7 @@ static int rtDbgModCvProbeFile(PRTDBGMODINT pDbgMod, const char *pszFilename, RT
 
 
 /** @interface_method_impl{RTDBGMODVTDBG,pfnTryOpen} */
-static DECLCALLBACK(int) rtDbgModCv_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch)
+static DECLCALLBACK(int) rtDbgModCv_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch, RTDBGCFG hDbgCfg)
 {
     /*
      * Look for debug info.
@@ -3156,6 +3290,7 @@ static DECLCALLBACK(int) rtDbgModCv_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch
 
     Log(("RTDbgCv: Debug info load error %Rrc\n", rc));
     rtDbgModCv_Close(pMod);
+    RT_NOREF(hDbgCfg);
     return rc;
 }
 
@@ -3194,4 +3329,467 @@ DECL_HIDDEN_CONST(RTDBGMODVTDBG) const g_rtDbgModVtDbgCodeView =
 
     /*.u32EndMagic = */         RTDBGMODVTDBG_MAGIC
 };
+
+
+/*
+ *
+ * PDB Debug module implementation.
+ * PDB Debug module implementation.
+ * PDB Debug module implementation.
+ *
+ */
+
+
+/** @interface_method_impl{RTDBGMODVTDBG,pfnUnwindFrame} */
+static DECLCALLBACK(int) rtDbgModPdb_UnwindFrame(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, RTUINTPTR off, PRTDBGUNWINDSTATE pState)
+{
+    RT_NOREF(pMod, iSeg, off, pState);
+    return VERR_DBG_NO_UNWIND_INFO;
+}
+
+
+/** @interface_method_impl{RTDBGMODVTDBG,pfnLineByAddr} */
+static DECLCALLBACK(int) rtDbgModPdb_LineByAddr(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, RTUINTPTR off,
+                                                PRTINTPTR poffDisp, PRTDBGLINE pLineInfo)
+{
+    PRTDBGMODCV pThis = (PRTDBGMODCV)pMod->pvDbgPriv;
+    return RTDbgModLineByAddr(pThis->hCnt, iSeg, off, poffDisp, pLineInfo);
+}
+
+
+/** @interface_method_impl{RTDBGMODVTDBG,pfnLineByOrdinal} */
+static DECLCALLBACK(int) rtDbgModPdb_LineByOrdinal(PRTDBGMODINT pMod, uint32_t iOrdinal, PRTDBGLINE pLineInfo)
+{
+    PRTDBGMODCV pThis = (PRTDBGMODCV)pMod->pvDbgPriv;
+    return RTDbgModLineByOrdinal(pThis->hCnt, iOrdinal, pLineInfo);
+}
+
+
+/** @interface_method_impl{RTDBGMODVTDBG,pfnLineCount} */
+static DECLCALLBACK(uint32_t) rtDbgModPdb_LineCount(PRTDBGMODINT pMod)
+{
+    PRTDBGMODCV pThis = (PRTDBGMODCV)pMod->pvDbgPriv;
+    return RTDbgModLineCount(pThis->hCnt);
+}
+
+
+/** @interface_method_impl{RTDBGMODVTDBG,pfnLineAdd} */
+static DECLCALLBACK(int) rtDbgModPdb_LineAdd(PRTDBGMODINT pMod, const char *pszFile, size_t cchFile, uint32_t uLineNo,
+                                             uint32_t iSeg, RTUINTPTR off, uint32_t *piOrdinal)
+{
+    PRTDBGMODCV pThis = (PRTDBGMODCV)pMod->pvDbgPriv;
+    Assert(!pszFile[cchFile]); NOREF(cchFile);
+    return RTDbgModLineAdd(pThis->hCnt, pszFile, uLineNo, iSeg, off, piOrdinal);
+}
+
+
+/** @interface_method_impl{RTDBGMODVTDBG,pfnSymbolByAddr} */
+static DECLCALLBACK(int) rtDbgModPdb_SymbolByAddr(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, RTUINTPTR off, uint32_t fFlags,
+                                                  PRTINTPTR poffDisp, PRTDBGSYMBOL pSymInfo)
+{
+    PRTDBGMODCV pThis = (PRTDBGMODCV)pMod->pvDbgPriv;
+    return RTDbgModSymbolByAddr(pThis->hCnt, iSeg, off, fFlags, poffDisp, pSymInfo);
+}
+
+
+/** @interface_method_impl{RTDBGMODVTDBG,pfnSymbolByName} */
+static DECLCALLBACK(int) rtDbgModPdb_SymbolByName(PRTDBGMODINT pMod, const char *pszSymbol, size_t cchSymbol,
+                                                  PRTDBGSYMBOL pSymInfo)
+{
+    PRTDBGMODCV pThis = (PRTDBGMODCV)pMod->pvDbgPriv;
+    Assert(!pszSymbol[cchSymbol]); RT_NOREF_PV(cchSymbol);
+    return RTDbgModSymbolByName(pThis->hCnt, pszSymbol/*, cchSymbol*/, pSymInfo);
+}
+
+
+/** @interface_method_impl{RTDBGMODVTDBG,pfnSymbolByOrdinal} */
+static DECLCALLBACK(int) rtDbgModPdb_SymbolByOrdinal(PRTDBGMODINT pMod, uint32_t iOrdinal, PRTDBGSYMBOL pSymInfo)
+{
+    PRTDBGMODCV pThis = (PRTDBGMODCV)pMod->pvDbgPriv;
+    return RTDbgModSymbolByOrdinal(pThis->hCnt, iOrdinal, pSymInfo);
+}
+
+
+/** @interface_method_impl{RTDBGMODVTDBG,pfnSymbolCount} */
+static DECLCALLBACK(uint32_t) rtDbgModPdb_SymbolCount(PRTDBGMODINT pMod)
+{
+    PRTDBGMODCV pThis = (PRTDBGMODCV)pMod->pvDbgPriv;
+    return RTDbgModSymbolCount(pThis->hCnt);
+}
+
+
+/** @interface_method_impl{RTDBGMODVTDBG,pfnSymbolAdd} */
+static DECLCALLBACK(int) rtDbgModPdb_SymbolAdd(PRTDBGMODINT pMod, const char *pszSymbol, size_t cchSymbol,
+                                               RTDBGSEGIDX iSeg, RTUINTPTR off, RTUINTPTR cb, uint32_t fFlags,
+                                               uint32_t *piOrdinal)
+{
+    PRTDBGMODCV pThis = (PRTDBGMODCV)pMod->pvDbgPriv;
+    Assert(!pszSymbol[cchSymbol]); NOREF(cchSymbol);
+    return RTDbgModSymbolAdd(pThis->hCnt, pszSymbol, iSeg, off, cb, fFlags, piOrdinal);
+}
+
+
+/** @interface_method_impl{RTDBGMODVTDBG,pfnSegmentByIndex} */
+static DECLCALLBACK(int) rtDbgModPdb_SegmentByIndex(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, PRTDBGSEGMENT pSegInfo)
+{
+    PRTDBGMODCV pThis = (PRTDBGMODCV)pMod->pvDbgPriv;
+    return RTDbgModSegmentByIndex(pThis->hCnt, iSeg, pSegInfo);
+}
+
+
+/** @interface_method_impl{RTDBGMODVTDBG,pfnSegmentCount} */
+static DECLCALLBACK(RTDBGSEGIDX) rtDbgModPdb_SegmentCount(PRTDBGMODINT pMod)
+{
+    PRTDBGMODCV pThis = (PRTDBGMODCV)pMod->pvDbgPriv;
+    return RTDbgModSegmentCount(pThis->hCnt);
+}
+
+
+/** @interface_method_impl{RTDBGMODVTDBG,pfnSegmentAdd} */
+static DECLCALLBACK(int) rtDbgModPdb_SegmentAdd(PRTDBGMODINT pMod, RTUINTPTR uRva, RTUINTPTR cb, const char *pszName,
+                                                size_t cchName, uint32_t fFlags, PRTDBGSEGIDX piSeg)
+{
+    PRTDBGMODCV pThis = (PRTDBGMODCV)pMod->pvDbgPriv;
+    Assert(!pszName[cchName]); NOREF(cchName);
+    return RTDbgModSegmentAdd(pThis->hCnt, uRva, cb, pszName, fFlags, piSeg);
+}
+
+
+/** @interface_method_impl{RTDBGMODVTDBG,pfnImageSize} */
+static DECLCALLBACK(RTUINTPTR) rtDbgModPdb_ImageSize(PRTDBGMODINT pMod)
+{
+    PRTDBGMODCV pThis = (PRTDBGMODCV)pMod->pvDbgPriv;
+    if (pThis->cbImage)
+        return pThis->cbImage;
+    return RTDbgModImageSize(pThis->hCnt);
+}
+
+
+/** @interface_method_impl{RTDBGMODVTDBG,pfnRvaToSegOff} */
+static DECLCALLBACK(RTDBGSEGIDX) rtDbgModPdb_RvaToSegOff(PRTDBGMODINT pMod, RTUINTPTR uRva, PRTUINTPTR poffSeg)
+{
+    PRTDBGMODCV pThis = (PRTDBGMODCV)pMod->pvDbgPriv;
+    return RTDbgModRvaToSegOff(pThis->hCnt, uRva, poffSeg);
+}
+
+
+/** @interface_method_impl{RTDBGMODVTDBG,pfnClose} */
+static DECLCALLBACK(int) rtDbgModPdb_Close(PRTDBGMODINT pMod)
+{
+    PRTDBGMODCV pThis = (PRTDBGMODCV)pMod->pvDbgPriv;
+
+    RTDbgModRelease(pThis->hCnt);
+    if (pThis->hFile != NIL_RTFILE)
+        RTFileClose(pThis->hFile);
+    RTMemFree(pThis->paDirEnts);
+    RTMemFree(pThis);
+
+    pMod->pvDbgPriv = NULL; /* for internal use */
+    return VINF_SUCCESS;
+}
+
+
+/*
+ *
+ * Probing code used by rtDbgModPdb_TryOpen.
+ * Probing code used by rtDbgModPdb_TryOpen.
+ *
+ */
+
+static int rtDbgModPdb_ScanSymRecs(PRTDBGMODCV pThis, RTVFSFILE hVfsFileSymRecs)
+{
+    void    *pvSymRecs;
+    size_t   cbSymRecs;
+    int rc = RTVfsFileReadAll(hVfsFileSymRecs, &pvSymRecs, &cbSymRecs);
+    if (RT_SUCCESS(rc))
+    {
+        Log3(("rtDbgModPdb_ScanSymRecs: %p LB %#x\n", pvSymRecs, cbSymRecs));
+        rc = rtDbgModCvSsProcessV4PlusSymTab(pThis, pvSymRecs, cbSymRecs, 0 /*fFlags*/);
+
+        RTVfsFileReadAllFree(pvSymRecs, cbSymRecs);
+    }
+    else
+        Log(("rtDbgModPdb_ScanSymRecs: RTVfsFileReadAll failed - %Rrc\n", rc));
+    return rc;
+}
+
+
+static int rtDbgModPdb_LoadSegMap(PRTDBGMODCV pThis, RTVFS hVfsPdb)
+{
+    /*
+     * Open the DBI section map and read it into a regular heap block just like
+     * rtDbgModCvReadAtAlloc does for the other code path.
+     */
+    RTVFSFILE hVfsFile = NIL_RTVFSFILE;
+    int rc = RTVfsFileOpen(hVfsPdb, "dbi-section-map", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, &hVfsFile);
+    if (RT_SUCCESS(rc))
+    {
+        uint64_t cbSegMap;
+        rc = RTVfsFileQuerySize(hVfsFile, &cbSegMap);
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            if (   cbSegMap >= RT_UOFFSETOF(RTCVSEGMAP, aDescs)
+                && cbSegMap <= RT_UOFFSETOF_DYN(RTCVSEGMAP, aDescs[4096]))  /* random upper limit */
+            {
+                pThis->pSegMap = (PRTCVSEGMAP)RTMemAlloc((size_t)cbSegMap);
+                if (pThis->pSegMap)
+                {
+                    rc = RTVfsFileReadAt(hVfsFile, 0, pThis->pSegMap, cbSegMap, NULL);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /*
+                         * Join paths with the codeview module reader and process the map.
+                         */
+                        rc = rtDbgModCvProcessSegmentMap(pThis);
+
+                    }
+                    else
+                        Log(("rtDbgModPdb_LoadSegMap: Read error: %Rrc\n", rc));
+                }
+                else
+                    rc = VERR_NO_MEMORY;
+            }
+            else
+            {
+                Log(("rtDbgModPdb_LoadSegMap: Bogus section map size: %#RX64\n", cbSegMap));
+                rc = VERR_CV_BAD_FORMAT;
+            }
+        }
+        RTVfsFileRelease(hVfsFile);
+    }
+    else
+    {
+        Log(("rtDbgModPdb_LoadSegMap: Failed to open dbi-section-map: %Rrc\n", rc));
+        if (rc == VERR_PATH_NOT_FOUND || rc == VERR_FILE_NOT_FOUND)
+            rc = VINF_SUCCESS;
+    }
+    return rc;
+}
+
+
+
+DECLINLINE(uint32_t) rtDbgModPdb_AdjustSectionSizeByNextSection(PCIMAGE_SECTION_HEADER paSHdrs, size_t cSections,
+                                                                size_t iCur, uint32_t cbMapped)
+{
+    size_t iNext = iCur + 1;
+    while (iNext < cSections && (paSHdrs[iNext].Characteristics & IMAGE_SCN_TYPE_NOLOAD))
+        iNext++;
+    if (iNext < cSections)
+    {
+        uint32_t cbAvailable = paSHdrs[iNext].VirtualAddress - (iCur != ~(size_t)0 ? paSHdrs[iCur].VirtualAddress : 0);
+        Assert(cbMapped <= cbAvailable);
+        return cbAvailable;
+    }
+    return cbMapped;
+}
+
+
+/**
+ * Helper for rtDbgModPdb_TryOpen that loads the section/segments into the
+ * container.
+ */
+static int rtDbgModPdb_LoadSections(PRTDBGMODINT pMod, PRTDBGMODCV pThis, RTVFSFILE hVfsFileSectionHeaders)
+{
+    /*
+     * Use the info from the image if present.
+     */
+    int rc;
+    if (pMod->pImgVt)
+        rc = pMod->pImgVt->pfnEnumSegments(pMod, rtDbgModCvAddSegmentsCallback, pThis);
+    /*
+     * Otherwise use the copy of the section table from the PDB.
+     */
+    else
+    {
+        PIMAGE_SECTION_HEADER paSHdrs;
+        size_t                cbSHdrs;
+        rc = RTVfsFileReadAll(hVfsFileSectionHeaders, (void **)&paSHdrs, &cbSHdrs);
+        if (RT_SUCCESS(rc))
+        {
+            size_t const cSections = cbSHdrs / sizeof(IMAGE_SECTION_HEADER);
+
+            /** @todo sanity check headers first? */
+
+            /* The first section is a fake one covering the headers. */
+            uint32_t cbMapped = 0x80 /*MZ Stub*/ + sizeof(IMAGE_NT_HEADERS32) + (uint32_t)cbSHdrs;
+            cbMapped = rtDbgModPdb_AdjustSectionSizeByNextSection(paSHdrs, cSections, ~(size_t)0, cbMapped);
+            rc = RTDbgModSegmentAdd(pThis->hCnt, 0, cbMapped, "NtHdrs", 0 /*fFlags*/, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                /* Process the section headers.  This bears some resemblence of the code in rtldrPE_EnumSegments.  */
+                for (size_t i = 0; RT_SUCCESS(rc) && i < cSections; i++)
+                {
+                    Log(("Segment #%u: RVA=%#09RX32 cbVirt=%#09RX32 cbRaw=%#09RX32 Flags=%#010RX32 Name='%.8s'\n",
+                         i, paSHdrs[i].VirtualAddress, paSHdrs[i].Misc.VirtualSize, paSHdrs[i].SizeOfRawData,
+                         paSHdrs[i].Characteristics, paSHdrs[i].Name));
+                    char szName[9];
+                    memcpy(szName, paSHdrs[i].Name, sizeof(paSHdrs[i].Name));
+                    szName[sizeof(paSHdrs[i].Name)] = '\0';
+                    RTStrStripR(szName);
+
+                    /* If the segment doesn't have a mapping, just add a dummy so the indexing
+                       works out correctly (same as for the image). */
+                    uint32_t uRva = 0;
+                    cbMapped = 0;
+                    if (!(paSHdrs[i].Characteristics & IMAGE_SCN_TYPE_NOLOAD))
+                    {
+                        uint32_t cbAlign  = (paSHdrs[i].Characteristics & IMAGE_SCN_ALIGN_MASK) >> IMAGE_SCN_ALIGN_SHIFT;
+                        if (cbAlign > 0)
+                            cbAlign = RT_BIT_32(cbAlign);
+                        else
+                            cbAlign = 1; /** @todo missing file header w/ default section alignment.  */
+                        cbMapped = RT_ALIGN(paSHdrs[i].Misc.VirtualSize, cbAlign);
+
+                        size_t iNext = i + 1;
+                        while (iNext < cSections && (paSHdrs[iNext].Characteristics & IMAGE_SCN_TYPE_NOLOAD))
+                            iNext++;
+                        if (iNext < cSections)
+                            cbMapped = paSHdrs[iNext].VirtualAddress - paSHdrs[i].VirtualAddress;
+                        uRva = paSHdrs[i].VirtualAddress;
+                    }
+                    rc = RTDbgModSegmentAdd(pThis->hCnt, uRva, cbMapped, szName, 0 /*fFlags*/, NULL);
+                    if (RT_FAILURE(rc))
+                    {
+                        Log(("rtDbgModPdb_LoadSections: Failed on #%u: uRva=%#RX32 cbMapped=%#RX32 Flags=%#RX32 '%s' -> %Rrc\n",
+                             i + 1, uRva, cbMapped, szName, paSHdrs[i].Characteristics, rc));
+                        break;
+                    }
+                }
+            }
+            else
+                Log(("rtDbgModPdb_LoadSections: Failed on first: cbMapped=%#RX32 %Rrc\n", cbMapped, rc));
+            RTVfsFileReadAllFree(paSHdrs, cbSHdrs);
+        }
+        else
+            Log(("rtDbgModPdb_LoadSections: RTVfsFileReadAll failed - %Rrc\n", rc));
+    }
+    pThis->fHaveLoadedSegments = true;
+    return rc;
+}
+
+
+/** @interface_method_impl{RTDBGMODVTDBG,pfnTryOpen} */
+static DECLCALLBACK(int) rtDbgModPdb_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch, RTDBGCFG hDbgCfg)
+{
+    RT_NOREF(hDbgCfg); RT_NOREF(enmArch);
+
+    /*
+     * This only works for external files for now.
+     */
+    if (!pMod->pszDbgFile)
+        return VERR_DBG_NO_MATCHING_INTERPRETER;
+
+    /*
+     * Open the PDB as a VFS.
+     */
+    RTVFSFILE hVfsFilePdb = NIL_RTVFSFILE;
+    int rc = RTVfsFileOpenNormal(pMod->pszDbgFile, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, &hVfsFilePdb);
+    if (RT_SUCCESS(rc))
+    {
+        RTVFS           hVfsPdb = NIL_RTVFS;
+#ifdef LOG_ENABLED
+        RTERRINFOSTATIC ErrInfo;
+        rc = RTFsPdbVolOpen(hVfsFilePdb, 0, &hVfsPdb, RTErrInfoInitStatic(&ErrInfo));
+#else
+        rc = RTFsPdbVolOpen(hVfsFilePdb, 0, &hVfsPdb, NULL /*pErrInfo*/);
+#endif
+        RTVfsFileRelease(hVfsFilePdb);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Check if we've got the necessary bits present in the PDB.
+             */
+            /* We need section headers. We can get them from the image if we
+               have one, otherwise there is usally a copy of them in the PDB. */
+            RTVFSFILE hVfsFileSectionHeaders = NIL_RTVFSFILE;
+            /** @todo figure out how to deal with old PDBs w/o section headers...
+             *        (like w2ksp4 ones) */
+            if (!pMod->pImgVt)
+                rc = RTVfsFileOpen(hVfsPdb, "image-section-headers", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE,
+                                   &hVfsFileSectionHeaders);
+            if (RT_SUCCESS(rc))
+            {
+                /* We also need the symbol records. */
+                RTVFSFILE hVfsFileSymRecs = NIL_RTVFSFILE;
+                rc = RTVfsFileOpen(hVfsPdb, "symbol-records", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE,
+                                   &hVfsFileSymRecs);
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Create an instance and process the available information.
+                     */
+                    PRTDBGMODCV pThis;
+                    rc = rtDbgModCvCreateInstance(pMod, RTCVFILETYPE_PDB, NIL_RTFILE, &pThis);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = rtDbgModPdb_LoadSections(pMod, pThis, hVfsFileSectionHeaders);
+                        if (RT_SUCCESS(rc))
+                        {
+                            rc = rtDbgModPdb_LoadSegMap(pThis, hVfsPdb);
+                            if (RT_SUCCESS(rc))
+                            {
+                                rc = rtDbgModPdb_ScanSymRecs(pThis, hVfsFileSymRecs);
+                                if (RT_SUCCESS(rc))
+                                    Log(("rtDbgModPdb_TryOpen: Succeeded\n"));
+                                else
+                                    Log(("rtDbgModPdb_TryOpen: rtDbgModPdb_ScanSymRecs failed - %Rrc\n", rc));
+                            }
+                            else
+                                Log(("rtDbgModPdb_TryOpen: rtDbgModPdb_LoadSegMap failed - %Rrc\n", rc));
+                        }
+                        else
+                            Log(("rtDbgModPdb_TryOpen: rtDbgModPdb_LoadSections failed - %Rrc\n", rc));
+                    }
+                    RTVfsFileRelease(hVfsFileSymRecs);
+                }
+                else
+                    Log2(("rtDbgModPdb_TryOpen: Failed to open 'symbol-records' in '%s' -> %Rrc\n", pMod->pszDbgFile, rc));
+                RTVfsFileRelease(hVfsFileSectionHeaders);
+            }
+            else
+                Log2(("rtDbgModPdb_TryOpen: Failed to open 'image-section-headers' in '%s' -> %Rrc\n", pMod->pszDbgFile, rc));
+            RTVfsRelease(hVfsPdb);
+        }
+        else
+            Log2(("rtDbgModPdb_TryOpen: RTFsPdbVolOpen '%s' -> %Rrc%#RTeim\n", pMod->pszDbgFile, rc, &ErrInfo.Core));
+    }
+    else
+        Log2(("rtDbgModPdb_TryOpen: RTVfsFileOpenNormal '%s' -> %Rrc\n", pMod->pszDbgFile, rc));
+    return rc;
+}
+
+
+/** Virtual function table for the PDB debug info reader. */
+DECL_HIDDEN_CONST(RTDBGMODVTDBG) const g_rtDbgModVtDbgPdb =
+{
+    /*.u32Magic = */            RTDBGMODVTDBG_MAGIC,
+    /*.fSupports = */           RT_DBGTYPE_CODEVIEW,
+    /*.pszName = */             "pdb",
+    /*.pfnTryOpen = */          rtDbgModPdb_TryOpen,
+    /*.pfnClose = */            rtDbgModPdb_Close,
+
+    /*.pfnRvaToSegOff = */      rtDbgModPdb_RvaToSegOff,
+    /*.pfnImageSize = */        rtDbgModPdb_ImageSize,
+
+    /*.pfnSegmentAdd = */       rtDbgModPdb_SegmentAdd,
+    /*.pfnSegmentCount = */     rtDbgModPdb_SegmentCount,
+    /*.pfnSegmentByIndex = */   rtDbgModPdb_SegmentByIndex,
+
+    /*.pfnSymbolAdd = */        rtDbgModPdb_SymbolAdd,
+    /*.pfnSymbolCount = */      rtDbgModPdb_SymbolCount,
+    /*.pfnSymbolByOrdinal = */  rtDbgModPdb_SymbolByOrdinal,
+    /*.pfnSymbolByName = */     rtDbgModPdb_SymbolByName,
+    /*.pfnSymbolByAddr = */     rtDbgModPdb_SymbolByAddr,
+
+    /*.pfnLineAdd = */          rtDbgModPdb_LineAdd,
+    /*.pfnLineCount = */        rtDbgModPdb_LineCount,
+    /*.pfnLineByOrdinal = */    rtDbgModPdb_LineByOrdinal,
+    /*.pfnLineByAddr = */       rtDbgModPdb_LineByAddr,
+
+    /*.pfnUnwindFrame = */      rtDbgModPdb_UnwindFrame,
+
+    /*.u32EndMagic = */         RTDBGMODVTDBG_MAGIC
+};
+
 

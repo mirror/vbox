@@ -517,9 +517,9 @@ static int rtDbgModMapSymReadIt(RTDBGMOD hCnt, uint8_t const *pbFile, size_t cbF
 
 
 /** @interface_method_impl{RTDBGMODVTDBG,pfnTryOpen} */
-static DECLCALLBACK(int) rtDbgModMapSym_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch)
+static DECLCALLBACK(int) rtDbgModMapSym_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch, RTDBGCFG hDbgCfg)
 {
-    NOREF(enmArch);
+    NOREF(enmArch); RT_NOREF_PV(hDbgCfg);
 
     /*
      * Fend off images.
@@ -580,6 +580,8 @@ static DECLCALLBACK(int) rtDbgModMapSym_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enm
                     rc = VERR_DBG_NO_MATCHING_INTERPRETER;
             }
         }
+        else
+            rc = VERR_DBG_NO_MATCHING_INTERPRETER;
         RTFileClose(hFile);
     }
     Log(("rtDbgModMapSym_TryOpen: %s -> %Rrc, %p\n", pMod->pszDbgFile, rc, pMod->pvDbgPriv));

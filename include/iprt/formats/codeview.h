@@ -325,7 +325,8 @@ typedef struct RTCVSEGMAP
     /** The header. */
     RTCVSEGMAPHDR   Hdr;
     /** Descriptor array. */
-    RTCVSEGMAPDESC  aDescs[1];
+    RT_FLEXIBLE_ARRAY_EXTENSION
+    RTCVSEGMAPDESC  aDescs[RT_FLEXIBLE_ARRAY];
 } RTCVSEGMAP;
 /** Pointer to a segment map subsection. */
 typedef RTCVSEGMAP *PRTCVSEGMAP;
@@ -534,8 +535,8 @@ typedef enum RTCVSYMTYPE
     kCvSymType_V2_RegRel,
     kCvSymType_V2_LThread,
     kCvSymType_V2_GThread,
-    kCvSymType_V2_Unknown_1010,
-    kCvSymType_V2_Unknown_1011,
+    kCvSymType_V2_LProcMips,
+    kCvSymType_V2_GProcMips,
     kCvSymType_V2_FrameInfo,
     kCvSymType_V2_Compliand,
     /** @} */
@@ -566,8 +567,9 @@ typedef enum RTCVSYMTYPE
     kCvSymType_V3_Unknown_1115,
     kCvSymType_V3_MSTool,               /**< RTCVSYMV3MSTOOL */
 
-    kCvSymType_V3_PubFunc1 = 0x1125,
-    kCvSymType_V3_PubFunc2 = 0x1127,
+    kCvSymType_V3_ProcRef = 0x1125,
+    kCvSymType_V3_LProcRef = 0x1127,
+    kCvSymType_V3_Unknown_1128,
     kCvSymType_V3_SectInfo = 0x1136,
     kCvSymType_V3_SubSectInfo,
     kCvSymType_V3_Entrypoint,
@@ -635,6 +637,29 @@ typedef struct RTCVSYMV3LABEL
 AssertCompileSize(RTCVSYMV3LABEL, 8);
 typedef RTCVSYMV3LABEL *PRTCVSYMV3LABEL;
 typedef RTCVSYMV3LABEL const *PCRTCVSYMV3LABEL;
+
+/**
+ * kCvSymType_V2_LData, kCvSymType_V2_GData and kCvSymType_V2_Pub format.
+ *
+ * Same as RTCVSYMV3TYPEDNAME but with pascal string name, rather than C.
+ */
+typedef struct RTCVSYMV2TYPEDNAME
+{
+    /** The type ID. */
+    uint32_t        idType;
+    /** Offset into iSection of this symbol. */
+    uint32_t        offSection;
+    /** The index of the section where the symbol lives. */
+    uint16_t        iSection;
+    /** Name length. */
+    uint8_t         cchName;
+    /** Zero terminated symbol name (variable length). */
+    RT_FLEXIBLE_ARRAY_EXTENSION
+    char            achName[RT_FLEXIBLE_ARRAY];
+} RTCVSYMV2TYPEDNAME;
+AssertCompileMemberOffset(RTCVSYMV2TYPEDNAME, achName, 11);
+typedef RTCVSYMV2TYPEDNAME *PRTCVSYMV2TYPEDNAME;
+typedef RTCVSYMV2TYPEDNAME const *PCRTCVSYMV2TYPEDNAME;
 
 /**
  * kCvSymType_V3_LData and kCvSymType_V3_GData format.

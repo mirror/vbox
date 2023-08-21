@@ -2500,6 +2500,7 @@ RuntimeBldProg_SOURCES          = \
 	common/time/timesysalias.cpp \
 	common/vfs/vfsbase.cpp \
 	common/vfs/vfschain.cpp \
+	common/vfs/vfsiosmisc.cpp \
 	common/vfs/vfsmemory.cpp \
 	common/vfs/vfsmisc.cpp \
 	common/vfs/vfsmsg.cpp \

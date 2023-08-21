@@ -315,8 +315,14 @@ typedef struct RTDBGMODVTDBG
      *                      Upon successful return the method is expected to
      *                      initialize pDbgOps and pvDbgPriv.
      * @param   enmArch     The desired architecture.
+     * @param   hDbgCfg     Optional DBG configuration handle, for loading
+     *                      additional external files and later logging debug file
+     *                      errors during load.  Specifically this is to try deal
+     *                      with stuff like the Windows 2000 DBG files which
+     *                      contains a link to the PDB file with the actual symbol
+     *                      information.
      */
-    DECLCALLBACKMEMBER(int, pfnTryOpen,(PRTDBGMODINT pMod, RTLDRARCH enmArch));
+    DECLCALLBACKMEMBER(int, pfnTryOpen,(PRTDBGMODINT pMod, RTLDRARCH enmArch, RTDBGCFG hDbgCfg));
 
     /**
      * Close the interpreter, freeing all associated resources.
@@ -701,6 +707,7 @@ typedef RTDBGMODINT *PRTDBGMODINT;
 
 extern DECL_HIDDEN_DATA(RTSTRCACHE)             g_hDbgModStrCache;
 extern DECL_HIDDEN_DATA(RTDBGMODVTDBG const)    g_rtDbgModVtDbgCodeView;
+extern DECL_HIDDEN_DATA(RTDBGMODVTDBG const)    g_rtDbgModVtDbgPdb;
 extern DECL_HIDDEN_DATA(RTDBGMODVTDBG const)    g_rtDbgModVtDbgDwarf;
 extern DECL_HIDDEN_DATA(RTDBGMODVTDBG const)    g_rtDbgModVtDbgNm;
 extern DECL_HIDDEN_DATA(RTDBGMODVTDBG const)    g_rtDbgModVtDbgMapSym;

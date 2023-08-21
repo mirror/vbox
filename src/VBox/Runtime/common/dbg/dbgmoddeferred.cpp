@@ -431,9 +431,9 @@ static DECLCALLBACK(int) rtDbgModDeferredDbg_Close(PRTDBGMODINT pMod)
 
 
 /** @interface_method_impl{RTDBGMODVTDBG,pfnTryOpen} */
-static DECLCALLBACK(int) rtDbgModDeferredDbg_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch)
+static DECLCALLBACK(int) rtDbgModDeferredDbg_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch, RTDBGCFG hDbgCfg)
 {
-    NOREF(enmArch);
+    NOREF(enmArch); RT_NOREF_PV(hDbgCfg);
     return rtDbgModDeferredDoIt(pMod, true /*fForceRetry*/);
 }
 
