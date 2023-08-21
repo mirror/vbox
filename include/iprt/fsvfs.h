@@ -229,6 +229,34 @@ RTDECL(int) RTFsNtfsVolOpen(RTVFSFILE hVfsFileIn, uint32_t fMntFlags, uint32_t f
  * digits making up a year-month-date figure for the visual C++ compiler
  * creating the PDB. Version 2 may have both 6 and 8 digit variants.
  *
+ * Standard stream names:
+ *  - root                          - stream \#0, the root stream
+ *  - pdb                           - stream \#1, the PDB header
+ *  - tpi                           - stream \#2, the type info
+ *  - dbi                           - stream \#3, the DBI stream
+ *      - dbi-module-info           - Module info DBI substream.
+ *      - dbi-section-contributions - Section contribs DBI substream.
+ *      - dbi-section-map           - Section map DBI substream.
+ *      - dbi-source-info           - Source info DBI substream.
+ *      - dbi-type-server-map       - Type server map DBI substream.
+ *      - dbi-continue-and-edit     - Continue and edit DBI substream.
+ *      - dbi-optional-header       - Optional DBI header (substream).
+ *      - dbi-unknown               - Unkown DBI substream.
+ *  - global-symbol-hash            - RTPDBDBIHDR::idxGlobalStream
+ *  - public-symbol-hash            - RTPDBDBIHDR::idxPublicStream
+ *  - symbols-records               - RTPDBDBIHDR::idxSymRecStream
+ *  - image-fpo-masm-section        - RTPDBDBIOPT_IDX_FPO_MASM
+ *  - image-exception               - RTPDBDBIOPT_IDX_EXCEPTION
+ *  - image-fixup                   - RTPDBDBIOPT_IDX_FIXUP
+ *  - omap-to-src                   - RTPDBDBIOPT_IDX_OMAP_TO_SRC
+ *  - omap-from-src                 - RTPDBDBIOPT_IDX_OMAP_FROM_SRC
+ *  - image-section-headers         - RTPDBDBIOPT_IDX_SECTION_HEADERS
+ *  - clr-token-id-map              - RTPDBDBIOPT_IDX_CLR_TOKEN_ID_MAP
+ *  - image-xdata-section           - RTPDBDBIOPT_IDX_XDATA
+ *  - image-pdata-section           - RTPDBDBIOPT_IDX_PDATA
+ *  - image-fpo                     - RTPDBDBIOPT_IDX_FPO
+ *  - image-orginal-section-headers - RTPDBDBIOPT_IDX_ORG_SECTION_HEADERS
+ *
  * @returns IPRT status code.
  * @param   hVfsFileIn      The file or device backing the volume.
  * @param   fFlags          RTFSPDB_F_XXX.

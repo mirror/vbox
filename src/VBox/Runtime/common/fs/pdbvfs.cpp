@@ -66,6 +66,27 @@ typedef struct RTFSPDBVOL const *PCRTFSPDBVOL;
 
 
 /**
+ * Substream info.
+ */
+typedef struct RTFSPDBSUBSTREAM
+{
+    /** The parent stream. */
+    uint32_t    idxStream;
+    /** The substream index within the parent. */
+    uint8_t     idxSubstream;
+    /** The offset of the start of the substream within the parent. */
+    uint32_t    offSubstream;
+    /** The size of the substream. */
+    uint32_t    cbSubstream;
+    /** The name of the substream (including the parent one at the start).
+     * Readonly string constant, as substreams are all hardcoded. */
+    const char *pszName;
+} RTFSPDBSUBSTREAM;
+typedef RTFSPDBSUBSTREAM *PRTFSPDBSUBSTREAM;
+typedef RTFSPDBSUBSTREAM const *PCRTFSPDBSUBSTREAM;
+
+
+/**
  * Stream info.
  */
 typedef struct RTFSPDBSTREAMINFO
@@ -86,6 +107,10 @@ typedef struct RTFSPDBSTREAMINFO
         PCRTPDB20PAGE   pa20;
         PCRTPDB70PAGE   pa70;
     } PageMap;
+    /** Number of substreams. */
+    uint8_t             cSubstreams;
+    /** The index into RTFSPDBVOL::aSubstreams of the first one. */
+    uint8_t             idxFirstSubstream;
 } RTFSPDBSTREAMINFO;
 typedef RTFSPDBSTREAMINFO *PRTFSPDBSTREAMINFO;
 typedef RTFSPDBSTREAMINFO const *PCRTFSPDBSTREAMINFO;
@@ -100,11 +125,15 @@ typedef struct RTFSPDBFILEOBJ
     PRTFSPDBVOL         pPdb;
     /** The stream number (0 based). */
     uint32_t            idxStream;
-    /** Size of the stream. */
+    /** The start offset of the substream this file object represents. This is
+     * zero for full streams. */
+    uint32_t            offSubstream;
+    /** Size of the stream (or substream). */
     uint32_t            cbStream;
-    /** Number of pages in the stream. */
+    /** Number of pages in the stream (the whole stream, not just the substream). */
     uint32_t            cPages;
-    /** Pointer to the page map for the stream (within RTFSPDBVOL::pbRoot)(. */
+    /** Pointer to the page map for the stream (within RTFSPDBVOL::pbRoot)
+     * (again the whole stream, not just the substream). */
     union
     {
         void const     *pv;
@@ -123,8 +152,18 @@ typedef struct RTFSPDBDIROBJ
 {
     /** Pointer to the PDB volume data. */
     PRTFSPDBVOL         pPdb;
-    /** The next stream number to return info for when reading (0 based). */
-    uint32_t            idxNextStream;
+    /** The next stream and substream number to return info for when reading. */
+    union
+    {
+        uint32_t            idxNext;
+        struct
+        {
+            /** This is zero for the whole stream and non-zero for substreams. */
+            uint32_t        idxNextSubstream : 8;
+            /** The next stream number. */
+            uint32_t        idxNextStream    : 24;
+        } s;
+    } u;
 } RTFSPDBDIROBJ;
 typedef RTFSPDBDIROBJ *PRTFSPDBDIROBJ;
 
@@ -185,9 +224,17 @@ typedef struct RTFSPDBVOL
     char               *pszzNames;
     /** @} */
 
+    /** The DBI header from stream \#3. */
+    RTPDBDBIHDR         DbiHdr;
+
     /** Extra per-stream info.  We've do individual allocations here in case we
      * want to add write support. */
     PRTFSPDBSTREAMINFO *papStreamInfo;
+
+    /** Number of substreams in aSubstreams. */
+    uint8_t             cSubstreams;
+    /** Substreams (only from the DBI atm.). */
+    RTFSPDBSUBSTREAM    aSubstreams[8];
 } RTFSPDBVOL;
 
 
@@ -202,7 +249,7 @@ static DECLCALLBACK(int) rtFsPdbVol_OpenRoot(void *pvThis, PRTVFSDIR phVfsDir);
  * Helper for methods returning file information.
  */
 static void rtFsPdbPopulateObjInfo(PRTFSPDBVOL pPdb, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr,
-                                   uint32_t cbStream, uint32_t idxStream, bool fIsDir)
+                                   uint32_t cbStream, uint32_t idxStream, uint8_t idxSubstream, bool fIsDir)
 {
     RTTimeSpecSetNano(&pObjInfo->AccessTime, 0);
     RTTimeSpecSetNano(&pObjInfo->ModificationTime, 0);
@@ -225,7 +272,7 @@ static void rtFsPdbPopulateObjInfo(PRTFSPDBVOL pPdb, PRTFSOBJINFO pObjInfo, RTFS
             pObjInfo->Attr.u.Unix.gid           = NIL_RTGID;
             pObjInfo->Attr.u.Unix.cHardlinks    = 1 + fIsDir;
             pObjInfo->Attr.u.Unix.INodeIdDevice = 0;
-            pObjInfo->Attr.u.Unix.INodeId       = idxStream;
+            pObjInfo->Attr.u.Unix.INodeId       = idxStream | ((uint64_t)idxSubstream << 32);
             pObjInfo->Attr.u.Unix.fFlags        = 0;
             pObjInfo->Attr.u.Unix.GenerationId  = 0;
             pObjInfo->Attr.u.Unix.Device        = 0;
@@ -252,26 +299,33 @@ static void rtFsPdbPopulateObjInfo(PRTFSPDBVOL pPdb, PRTFSOBJINFO pObjInfo, RTFS
  * This is used internally w/o any associated RTVFSFILE handle for reading
  * stream \#1 containing PDB metadata.
  */
-static void rtFsPdbPopulateFileObj(PRTFSPDBFILEOBJ pNewFile, PRTFSPDBVOL pPdb,
-                                   uint32_t idxStream, uint32_t cbStream, void const *pvPageMap)
+static void rtFsPdbPopulateFileObj(PRTFSPDBFILEOBJ pNewFile, PRTFSPDBVOL pPdb, uint32_t idxStream,
+                                   uint32_t cbStream, void const *pvPageMap)
 {
-    pNewFile->pPdb       = pPdb;
-    pNewFile->idxStream  = idxStream;
-    pNewFile->cbStream   = cbStream;
-    pNewFile->PageMap.pv = pvPageMap;
-    pNewFile->cPages     = RTPdbSizeToPages(cbStream, pPdb->cbPage);
-    pNewFile->offFile    = 0;
+    pNewFile->pPdb          = pPdb;
+    pNewFile->idxStream     = idxStream;
+    pNewFile->offSubstream  = 0;
+    pNewFile->cbStream      = cbStream;
+    pNewFile->PageMap.pv    = pvPageMap;
+    pNewFile->cPages        = RTPdbSizeToPages(cbStream, pPdb->cbPage);
+    pNewFile->offFile       = 0;
 }
 
 
 /**
- * Helper methods for opening a stream.
+ * Helper methods for opening a stream or substream.
  */
-static void rtFsPdbPopulateFileObjFromInfo(PRTFSPDBFILEOBJ pNewFile, PRTFSPDBVOL pPdb, uint32_t idxStream)
+static void rtFsPdbPopulateFileObjFromInfo(PRTFSPDBFILEOBJ pNewFile, PRTFSPDBVOL pPdb,
+                                           uint32_t idxStream, PCRTFSPDBSUBSTREAM pSubstream)
 {
     PCRTFSPDBSTREAMINFO pInfo = pPdb->papStreamInfo[idxStream];
     rtFsPdbPopulateFileObj(pNewFile, pPdb, idxStream, pInfo->cbStream, pInfo->PageMap.pv);
     Assert(pInfo->cPages == pNewFile->cPages);
+    if (pSubstream)
+    {
+        pNewFile->offSubstream = pSubstream->offSubstream;
+        pNewFile->cbStream     = pSubstream->cbSubstream;
+    }
 }
 
 
@@ -293,7 +347,7 @@ static DECLCALLBACK(int) rtFsPdbFile_Close(void *pvThis)
 static DECLCALLBACK(int) rtFsPdbFile_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
 {
     PRTFSPDBFILEOBJ const pThis = (PRTFSPDBFILEOBJ)pvThis;
-    rtFsPdbPopulateObjInfo(pThis->pPdb, pObjInfo, enmAddAttr, pThis->cbStream, pThis->idxStream, false /*fIsDir*/);
+    rtFsPdbPopulateObjInfo(pThis->pPdb, pObjInfo, enmAddAttr, pThis->cbStream, pThis->idxStream, 0, false /*fIsDir*/);
     return VINF_SUCCESS;
 }
 
@@ -349,8 +403,8 @@ static DECLCALLBACK(int) rtFsPdbFile_Read(void *pvThis, RTFOFF off, PRTSGBUF pSg
     uint64_t const offStart = offFile;
     while (cbToRead > 0)
     {
-        uint32_t       iPageMap     = (uint32_t)(offFile / pPdb->cbPage);
-        uint32_t const offInPage    = (uint32_t)(offFile % pPdb->cbPage);
+        uint32_t       iPageMap     = (uint32_t)((offFile + pThis->offSubstream) / pPdb->cbPage);
+        uint32_t const offInPage    = (uint32_t)((offFile + pThis->offSubstream) % pPdb->cbPage);
         size_t         cbLeftInPage = pPdb->cbPage - offInPage;
         if (cbLeftInPage > cbToRead)
             cbLeftInPage = cbToRead;
@@ -515,8 +569,26 @@ static DECLCALLBACK(int) rtFsPdbDir_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInf
 {
     PRTFSPDBDIROBJ const pThis = (PRTFSPDBDIROBJ)pvThis;
     PRTFSPDBVOL    const pPdb  = pThis->pPdb;
-    rtFsPdbPopulateObjInfo(pPdb, pObjInfo, enmAddAttr, pPdb->cbRoot, 0 /* root dir is stream zero */, true /*fIsDir*/);
+    rtFsPdbPopulateObjInfo(pPdb, pObjInfo, enmAddAttr, pPdb->cbRoot, 0 /* root dir is stream zero */,
+                           0 /*idxSubstream*/, true /*fIsDir*/);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Helper for looping up a substream name.
+ */
+DECLINLINE(PCRTFSPDBSUBSTREAM) rtFsPdbDirLookupSubstream(PRTFSPDBVOL pPdb, uint32_t idxStream, const char *pszName)
+{
+    uint8_t const idxFirst = idxStream != UINT32_MAX ? pPdb->papStreamInfo[idxStream]->idxFirstSubstream : 0;
+    uint8_t       cLeft    = idxStream != UINT32_MAX ? pPdb->papStreamInfo[idxStream]->cSubstreams       : pPdb->cSubstreams;
+    while (cLeft-- > 0)
+    {
+        PCRTFSPDBSUBSTREAM pSubstream = &pPdb->aSubstreams[idxFirst + cLeft];
+        if (strcmp(pSubstream->pszName, pszName) == 0)
+            return pSubstream;
+    }
+    return NULL;
 }
 
 
@@ -568,7 +640,8 @@ static DECLCALLBACK(int) rtFsPdbDir_Open(void *pvThis, const char *pszEntry, uin
      *      - just the name provided it doesn't start with a digit: "pdb";
      *      - or the combination of the two: "1-pdb".
      */
-    uint32_t idxStream;
+    uint32_t           idxStream;
+    PCRTFSPDBSUBSTREAM pSubstream = NULL;
     if (RT_C_IS_DIGIT(*pszEntry))
     {
         char *pszNext;
@@ -583,9 +656,15 @@ static DECLCALLBACK(int) rtFsPdbDir_Open(void *pvThis, const char *pszEntry, uin
         if (   *pszNext == '-'
             && RTStrCmp(pszNext + 1, pPdb->papStreamInfo[idxStream]->pszName) != 0)
         {
-            Log2(("rtFsPdbDir_Open: idxStream=%#x name mismatch '%s', expected '%s'\n",
-                  idxStream, pszEntry, pPdb->papStreamInfo[idxStream]->pszName));
-            return VERR_PATH_NOT_FOUND;
+            pSubstream = rtFsPdbDirLookupSubstream(pPdb, idxStream, pszNext + 1);
+            if (pSubstream)
+                Assert(pSubstream->idxStream == idxStream);
+            else
+            {
+                Log2(("rtFsPdbDir_Open: idxStream=%#x name mismatch '%s', expected '%s'\n",
+                      idxStream, pszEntry, pPdb->papStreamInfo[idxStream]->pszName));
+                return VERR_PATH_NOT_FOUND;
+            }
         }
     }
     else
@@ -598,8 +677,14 @@ static DECLCALLBACK(int) rtFsPdbDir_Open(void *pvThis, const char *pszEntry, uin
         }
         if (idxStream >= pPdb->cStreams)
         {
-            Log2(("rtFsPdbDir_Open: '%s' not found in name table\n", pszEntry));
-            return VERR_PATH_NOT_FOUND;
+            pSubstream = rtFsPdbDirLookupSubstream(pPdb, UINT32_MAX, pszEntry);
+            if (pSubstream)
+                idxStream = pSubstream->idxStream;
+            else
+            {
+                Log2(("rtFsPdbDir_Open: '%s' not found in name table\n", pszEntry));
+                return VERR_PATH_NOT_FOUND;
+            }
         }
     }
 
@@ -614,7 +699,7 @@ static DECLCALLBACK(int) rtFsPdbDir_Open(void *pvThis, const char *pszEntry, uin
                           &hVfsFile, (void **)&pNewFile);
         if (RT_SUCCESS(rc))
         {
-            rtFsPdbPopulateFileObjFromInfo(pNewFile, pPdb, idxStream);
+            rtFsPdbPopulateFileObjFromInfo(pNewFile, pPdb, idxStream, pSubstream);
 
             /* Convert it to a file object. */
             *phVfsObj = RTVfsObjFromFile(hVfsFile);
@@ -636,7 +721,7 @@ static DECLCALLBACK(int) rtFsPdbDir_Open(void *pvThis, const char *pszEntry, uin
 static DECLCALLBACK(int) rtFsPdbDir_RewindDir(void *pvThis)
 {
     PRTFSPDBDIROBJ pThis = (PRTFSPDBDIROBJ)pvThis;
-    pThis->idxNextStream = 0;
+    pThis->u.idxNext = 0;
     return VINF_SUCCESS;
 }
 
@@ -647,11 +732,16 @@ static DECLCALLBACK(int) rtFsPdbDir_RewindDir(void *pvThis)
 static DECLCALLBACK(int) rtFsPdbDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry,
                                             RTFSOBJATTRADD enmAddAttr)
 {
-    PRTFSPDBDIROBJ const  pThis     = (PRTFSPDBDIROBJ)pvThis;
-    PRTFSPDBVOL    const  pPdb      = pThis->pPdb;
-    uint32_t const        idxStream = pThis->idxNextStream;
+    PRTFSPDBDIROBJ const  pThis        = (PRTFSPDBDIROBJ)pvThis;
+    PRTFSPDBVOL    const  pPdb         = pThis->pPdb;
+    uint32_t const        idxStream    = pThis->u.s.idxNextStream;
+    uint32_t const        idxSubstream = pThis->u.s.idxNextSubstream;
     if (idxStream < pPdb->cStreams)
     {
+        PCRTFSPDBSTREAMINFO const pStreamInfo    = pPdb->papStreamInfo[idxStream];
+        PCRTFSPDBSUBSTREAM const  pSubstreamInfo = !idxSubstream ? NULL
+                                                 : &pPdb->aSubstreams[pStreamInfo->idxFirstSubstream + idxSubstream - 1];
+
         /*
          * Do names first as they may cause overflows.
          */
@@ -660,7 +750,7 @@ static DECLCALLBACK(int) rtFsPdbDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEntr
         Assert(cchStreamNo > 0);
 
         /* Provide a more descriptive name if possible. */
-        const char   *pszOtherName = pPdb->papStreamInfo[idxStream]->pszName;
+        const char   *pszOtherName = !idxSubstream ? pStreamInfo->pszName : pSubstreamInfo->pszName;
         size_t const  cchOtherName = pszOtherName ? strlen(pszOtherName) : 0;
 
         /* Do the name stuff. */
@@ -681,7 +771,7 @@ static DECLCALLBACK(int) rtFsPdbDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEntr
         }
         pDirEntry->szName[cchName] = '\0';
 
-        if (cchOtherName)
+        if (cchOtherName && !idxSubstream)
         {
             Assert(cchStreamNo <= 8);
             pDirEntry->cwcShortName = cchStreamNo;
@@ -696,26 +786,23 @@ static DECLCALLBACK(int) rtFsPdbDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEntr
         }
 
         /* Provide the other info. */
-        if (pPdb->enmVersion == RTFSPDBVER_2)
-        {
-            PCRTPDB20ROOT const pRoot = (PCRTPDB20ROOT)pPdb->pbRoot;
-            rtFsPdbPopulateObjInfo(pPdb, &pDirEntry->Info, enmAddAttr,
-                                   pRoot->aStreams[idxStream].cbStream, idxStream, false /*fIsDir*/);
-        }
-        else
-        {
-            PCRTPDB70ROOT const pRoot = (PCRTPDB70ROOT)pPdb->pbRoot;
-            rtFsPdbPopulateObjInfo(pPdb, &pDirEntry->Info, enmAddAttr,
-                                   pRoot->aStreams[idxStream].cbStream, idxStream, false /*fIsDir*/);
-        }
+        rtFsPdbPopulateObjInfo(pPdb, &pDirEntry->Info, enmAddAttr,
+                               !pSubstreamInfo ? pStreamInfo->cbStream : pSubstreamInfo->cbSubstream,
+                               idxStream, idxSubstream, false /*fIsDir*/);
 
         /* Advance the directory location and return. */
-        pThis->idxNextStream = idxStream + 1;
+        if (idxSubstream >= pStreamInfo->cSubstreams)
+        {
+            pThis->u.s.idxNextSubstream = 0;
+            pThis->u.s.idxNextStream    = idxStream + 1;
+        }
+        else
+            pThis->u.s.idxNextSubstream = idxSubstream + 1;
 
         return VINF_SUCCESS;
     }
 
-    Log3(("rtFsPdbDir_ReadDir9660: idxNextStream=%#x: VERR_NO_MORE_FILES\n", pThis->idxNextStream));
+    Log3(("rtFsPdbDir_ReadDir9660: idxNext=%#x: VERR_NO_MORE_FILES\n", pThis->u.idxNext));
     return VERR_NO_MORE_FILES;
 }
 
@@ -773,6 +860,19 @@ static DECLCALLBACK(int) rtFsPdbVol_Close(void *pvThis)
 
     RTMemFree(pThis->pbRoot);
     pThis->pbRoot = NULL;
+
+    RTMemFree(pThis->pszzNames);
+    pThis->pszzNames = NULL;
+
+    if (pThis->papStreamInfo)
+    {
+        uint32_t idxStream = pThis->cStreams;
+        while (idxStream-- > 0)
+            RTMemFree(pThis->papStreamInfo[idxStream]);
+        RTMemFree(pThis->papStreamInfo);
+        pThis->papStreamInfo = NULL;
+    }
+    pThis->cStreams = 0;
 
     return VINF_SUCCESS;
 }
@@ -875,8 +975,8 @@ static DECLCALLBACK(int) rtFsPdbVol_OpenRoot(void *pvThis, PRTVFSDIR phVfsDir)
                          NIL_RTVFSLOCK /*use volume lock*/, phVfsDir, (void **)&pNewDir);
     if (RT_SUCCESS(rc))
     {
-        pNewDir->pPdb          = pThis;
-        pNewDir->idxNextStream = 0;
+        pNewDir->pPdb      = pThis;
+        pNewDir->u.idxNext = 0;
         return VINF_SUCCESS;
     }
     return rc;
@@ -911,6 +1011,12 @@ DECL_HIDDEN_CONST(const RTVFSOPS) g_rtFsPdbVolOps =
     RTVFSOPS_VERSION
 };
 
+
+/**
+ * Internal helper for reading an entire stream into a heap block.
+ *
+ * Use RTMemTmpFree to free the returned memory when done.
+ */
 static int rtFsPdbVolReadStreamToHeap(PRTFSPDBVOL pThis, uint32_t idxStream,
                                       uint8_t **ppbStream, uint32_t *pcbStream, PRTERRINFO pErrInfo)
 {
@@ -923,7 +1029,7 @@ static int rtFsPdbVolReadStreamToHeap(PRTFSPDBVOL pThis, uint32_t idxStream,
      * Fake a handle and reuse the file read code.
      */
     RTFSPDBFILEOBJ FileObj;
-    rtFsPdbPopulateFileObjFromInfo(&FileObj, pThis, idxStream);
+    rtFsPdbPopulateFileObjFromInfo(&FileObj, pThis, idxStream, NULL);
 
     size_t const    cbDst = (size_t)FileObj.cbStream + !FileObj.cbStream;
     uint8_t * const pbDst = (uint8_t *)RTMemTmpAllocZ(cbDst);
@@ -944,6 +1050,269 @@ static int rtFsPdbVolReadStreamToHeap(PRTFSPDBVOL pThis, uint32_t idxStream,
     else
         RTMemTmpFree(pbDst);
     return rc;
+}
+
+
+/**
+ * Internal helper for reading from a stream.
+ */
+static int rtFsPdbVolReadStreamAt(PRTFSPDBVOL pThis, uint32_t idxStream, uint32_t offStream,
+                                  void *pvBuf, size_t cbToRead, size_t *pcbRead)
+{
+    RTFSPDBFILEOBJ FileObj;
+    rtFsPdbPopulateFileObjFromInfo(&FileObj, pThis, idxStream, NULL);
+
+    RTSGSEG SgSeg = { pvBuf, cbToRead };
+    RTSGBUF SgBuf;
+    RTSgBufInit(&SgBuf, &SgSeg, 1);
+
+    return rtFsPdbFile_Read(&FileObj, offStream, &SgBuf, true /*fBlocking*/, pcbRead);
+}
+
+
+/**
+ * Adds a substream.
+ */
+static void rtFsPdbVolAddSubstream(PRTFSPDBVOL pThis, uint32_t idxStream, uint8_t idxSubstream,
+                                   uint32_t offSubstream, uint32_t cbSubstream, const char *pszName)
+{
+    /*
+     * Sanity checking.
+     */
+    Assert(idxSubstream > 0); /* zero is used for the parent stream when enumerating directories. */
+
+    AssertReturnVoid(idxStream < pThis->cStreams);
+    PRTFSPDBSTREAMINFO const pStreamInfo = pThis->papStreamInfo[idxStream];
+    Assert(RTStrStartsWith(pszName, pStreamInfo->pszName));
+    AssertReturnVoid(offSubstream < pStreamInfo->cbStream);
+    AssertStmt(cbSubstream <= pStreamInfo->cbStream - offSubstream, cbSubstream = pStreamInfo->cbStream - offSubstream);
+
+    AssertReturnVoid(pThis->cSubstreams < RT_ELEMENTS(pThis->aSubstreams));
+    PRTFSPDBSUBSTREAM const pSubstreamInfo = &pThis->aSubstreams[pThis->cSubstreams];
+    Assert(   pThis->cSubstreams == 0
+           || pSubstreamInfo[-1].idxStream < idxStream
+           || (   pSubstreamInfo[-1].idxStream == idxStream
+               && pSubstreamInfo[-1].idxSubstream < idxSubstream
+               && pSubstreamInfo[-1].offSubstream <= offSubstream));
+
+    /*
+     * Add it.
+     */
+    pSubstreamInfo->idxStream    = idxStream;
+    pSubstreamInfo->idxSubstream = idxSubstream;
+    pSubstreamInfo->offSubstream = offSubstream;
+    pSubstreamInfo->cbSubstream  = cbSubstream;
+    pSubstreamInfo->pszName      = pszName;
+
+    if (!pStreamInfo->cSubstreams)
+        pStreamInfo->idxFirstSubstream = pThis->cSubstreams;
+    pStreamInfo->cSubstreams++;
+
+    pThis->cSubstreams++;
+}
+
+
+/**
+ * Helper for rtFsPdbVolLoadStream3 to set standard stream names.
+ */
+static void rtFsPdbVolSetDefaultStreamName(PRTFSPDBVOL pThis, uint32_t idxStream, const char *pszDefaultName)
+{
+    if (idxStream < pThis->cStreams)
+    {
+        /* We override entries from the string table, as the standard stream
+           names must be assumed to work when the streams are present! */
+        if ((uintptr_t)pThis->papStreamInfo[idxStream]->pszName - (uintptr_t)pThis->pszzNames < pThis->cbNames)
+            Log(("rtFsPdbVolSetDefaultStreamName: Overriding string table name for stream %#x: %s -> %s\n",
+                 idxStream, pThis->papStreamInfo[idxStream]->pszName, pszDefaultName));
+        pThis->papStreamInfo[idxStream]->pszName = pszDefaultName;
+    }
+}
+
+
+/**
+ * Worker for rtFsPdbVolTryInit that extracts info from the DBI stream.
+ */
+static int rtFsPdbVolLoadStream3(PRTFSPDBVOL pThis, PRTERRINFO pErrInfo)
+{
+    /* On the offchance that the DBI stream is missing... */
+    if (3 >= pThis->cStreams)
+        return VINF_SUCCESS;
+
+    /*
+     * Read the header.
+     */
+    union
+    {
+        RTPDBDBIHDR     New;
+        RTPDBDBIHDROLD  Old;
+        uint16_t        aidxStream[32];
+    } Hdr;
+    size_t cbRead = 0;
+    int rc = rtFsPdbVolReadStreamAt(pThis, 3, 0, &Hdr, sizeof(Hdr.New), &cbRead);
+    if (RT_FAILURE(rc))
+        return RTERRINFO_LOG_SET_F(pErrInfo, rc, "Error eeading the DBI header");
+
+    if (Hdr.New.uSignature == RTPDBDBIHDR_SIGNATURE)
+    {
+        Log(("rtFsPdbVolLoadStream3: New DBI header\n"));
+        if (cbRead != sizeof(Hdr.New))
+            return RTERRINFO_LOG_SET_F(pErrInfo, rc, "Bogus DBI header size: cbRead=%#zx, expected %#zx",
+                                       cbRead, sizeof(Hdr.New));
+        if (Hdr.New.uVcVersion < RTPDBDBIHDR_VCVER_50)
+            return RTERRINFO_LOG_SET_F(pErrInfo, rc, "Bogus DBI header version: %u (%#x), expected min %u",
+                                       Hdr.New.uVcVersion, Hdr.New.uVcVersion, RTPDBDBIHDR_VCVER_50);
+        if (Hdr.New.uVcVersion < RTPDBDBIHDR_VCVER_60)
+            Hdr.New.cbEditContinueSubstream = 0;
+        pThis->DbiHdr = Hdr.New;
+    }
+    else
+    {
+        /* Convert old header to new to new. */
+        if (cbRead >= sizeof(Hdr.Old))
+            return RTERRINFO_LOG_SET_F(pErrInfo, rc, "Bogus DBI header size: cbRead=%#zx, expected %#zx",
+                                       cbRead, sizeof(Hdr.Old));
+        Log(("rtFsPdbVolLoadStream3: Old DBI header\n"));
+        RT_ZERO(pThis->DbiHdr);
+        pThis->DbiHdr.idxMFC                    = UINT16_MAX;
+        pThis->DbiHdr.idxGlobalStream           = Hdr.Old.idxGlobalStream;
+        pThis->DbiHdr.idxPublicStream           = Hdr.Old.idxPublicStream;
+        pThis->DbiHdr.idxSymRecStream           = Hdr.Old.idxSymRecStream;
+        pThis->DbiHdr.cbModInfoSubstream        = Hdr.Old.cbModInfoSubstream;
+        pThis->DbiHdr.cbSectContribSubstream    = Hdr.Old.cbSectContribSubstream;
+        pThis->DbiHdr.cbSrcInfoSubstream        = Hdr.Old.cbSrcInfoSubstream;
+        pThis->DbiHdr.uAge                      = pThis->uAge;
+    }
+
+    Log2(("  DBI Hdr uSignature               = %#x\n", pThis->DbiHdr.uSignature));
+    Log2(("  DBI Hdr uVcVersion               = %#x\n", pThis->DbiHdr.uVcVersion));
+    if (pThis->DbiHdr.uAge == pThis->uAge)
+        Log2(("  DBI Hdr uAge                     = %#x (same as PDB header)\n", pThis->DbiHdr.uAge));
+    else
+        Log2(("  DBI Hdr uAge                     = %#x - differs from DB.uAge %#x!\n", pThis->DbiHdr.uAge, pThis->uAge));
+    Log2(("  DBI Hdr idxGlobalStream          = %#x\n", pThis->DbiHdr.idxGlobalStream));
+    if (pThis->DbiHdr.PdbDllVer.New.fNewVerFmt)
+    {
+        Log2(("  DBI Hdr PdbDllVer.u16            = %#x - %u.%u (new)\n", pThis->DbiHdr.PdbDllVer.u16,
+              pThis->DbiHdr.PdbDllVer.New.uMajor, pThis->DbiHdr.PdbDllVer.New.uMinor));
+        Log2(("  DBI Hdr uPdbDllBuild             = %u (%#x)\n", pThis->DbiHdr.uPdbDllBuild, pThis->DbiHdr.uPdbDllBuild));
+        Log2(("  DBI Hdr uPdbDllRBuild            = %u (%#x)\n", pThis->DbiHdr.uPdbDllRBuild, pThis->DbiHdr.uPdbDllRBuild));
+    }
+    else
+    {
+        Log2(("  DBI Hdr PdbDllVer                = %#x - %u.%u.%u (old)\n", pThis->DbiHdr.PdbDllVer.u16,
+              pThis->DbiHdr.PdbDllVer.Old.uMajor, pThis->DbiHdr.PdbDllVer.Old.uMinor,
+              pThis->DbiHdr.PdbDllVer.Old.uRBuild));
+        if (pThis->DbiHdr.uPdbDllBuild)
+            Log2(("  DBI Hdr uPdbDllBuild             = %u (%#x)!!\n", pThis->DbiHdr.uPdbDllBuild, pThis->DbiHdr.uPdbDllBuild));
+        if (pThis->DbiHdr.uPdbDllRBuild)
+            Log2(("  DBI Hdr uPdbDllRBuild            = %u (%#x)!!\n", pThis->DbiHdr.uPdbDllRBuild, pThis->DbiHdr.uPdbDllRBuild));
+    }
+    Log2(("  DBI Hdr idxPublicStream          = %#x\n", pThis->DbiHdr.idxPublicStream));
+    Log2(("  DBI Hdr idxSymRecStream          = %#x\n", pThis->DbiHdr.idxSymRecStream));
+    Log2(("  DBI Hdr cbModInfoSubstream       = %#x\n", pThis->DbiHdr.cbModInfoSubstream));
+    Log2(("  DBI Hdr cbSectContribSubstream   = %#x\n", pThis->DbiHdr.cbSectContribSubstream));
+    Log2(("  DBI Hdr cbSectionMapSubstream    = %#x\n", pThis->DbiHdr.cbSectionMapSubstream));
+    Log2(("  DBI Hdr cbSrcInfoSubstream       = %#x\n", pThis->DbiHdr.cbSrcInfoSubstream));
+    Log2(("  DBI Hdr cbTypeServerMapSubstream = %#x\n", pThis->DbiHdr.cbTypeServerMapSubstream));
+    Log2(("  DBI Hdr idxMFC                   = %#x\n", pThis->DbiHdr.idxMFC));
+    Log2(("  DBI Hdr cbOptDbgHdr              = %#x\n", pThis->DbiHdr.cbOptDbgHdr));
+    Log2(("  DBI Hdr cbEditContinueSubstream  = %#x\n", pThis->DbiHdr.cbEditContinueSubstream));
+    Log2(("  DBI Hdr fFlags                   = %#x%s%s%s%s%s\n", pThis->DbiHdr.fFlags, pThis->DbiHdr.fFlags ? " -" : "",
+          pThis->DbiHdr.fFlags & RTPDBDBIHDR_F_INCREMENTAL_LINK      ? " IncrmentalLink" : "",
+          pThis->DbiHdr.fFlags & RTPDBDBIHDR_F_PRIVATE_SYMS_STRIPPED ? " PrivateSymsStripped" : "",
+          pThis->DbiHdr.fFlags & RTPDBDBIHDR_F_CONFLICTING_TYPES     ? " ConflictingTypes" : "",
+          pThis->DbiHdr.fFlags & RTPDBDBIHDR_F_RESERVED              ? " !ReservedFlagsSet!" : ""));
+    Log2(("  DBI Hdr uMachine                 = %#x\n", pThis->DbiHdr.uMachine));
+    Log2(("  DBI Hdr uReserved                = %#x\n", pThis->DbiHdr.uReserved));
+
+    /*
+     * Apply new standard stream names.
+     */
+    rtFsPdbVolSetDefaultStreamName(pThis, pThis->DbiHdr.idxGlobalStream, "global-symbol-hash");
+    rtFsPdbVolSetDefaultStreamName(pThis, pThis->DbiHdr.idxPublicStream, "public-symbol-hash");
+    rtFsPdbVolSetDefaultStreamName(pThis, pThis->DbiHdr.idxSymRecStream, "symbol-records");
+
+    /*
+     * Fill in substream info.
+     */
+    uint32_t offSubstream = sizeof(Hdr.New);
+    if (pThis->DbiHdr.cbModInfoSubstream)
+    {
+        rtFsPdbVolAddSubstream(pThis, 3, 1, offSubstream, pThis->DbiHdr.cbModInfoSubstream, "dbi-module-info");
+        offSubstream += pThis->DbiHdr.cbModInfoSubstream;
+    }
+    if (pThis->DbiHdr.cbSectContribSubstream)
+    {
+        rtFsPdbVolAddSubstream(pThis, 3, 2, offSubstream, pThis->DbiHdr.cbSectContribSubstream, "dbi-section-contributions");
+        offSubstream += pThis->DbiHdr.cbSectContribSubstream;
+    }
+    if (pThis->DbiHdr.cbSectionMapSubstream)
+    {
+        rtFsPdbVolAddSubstream(pThis, 3, 3, offSubstream, pThis->DbiHdr.cbSectionMapSubstream, "dbi-section-map");
+        offSubstream += pThis->DbiHdr.cbSectionMapSubstream;
+    }
+    if (pThis->DbiHdr.cbSrcInfoSubstream)
+    {
+        rtFsPdbVolAddSubstream(pThis, 3, 4, offSubstream, pThis->DbiHdr.cbSrcInfoSubstream, "dbi-source-info");
+        offSubstream += pThis->DbiHdr.cbSrcInfoSubstream;
+    }
+    if (pThis->DbiHdr.cbTypeServerMapSubstream)
+    {
+        rtFsPdbVolAddSubstream(pThis, 3, 5, offSubstream, pThis->DbiHdr.cbTypeServerMapSubstream, "dbi-type-server-map");
+        offSubstream += pThis->DbiHdr.cbTypeServerMapSubstream;
+    }
+    if (pThis->DbiHdr.cbEditContinueSubstream)
+    {
+        rtFsPdbVolAddSubstream(pThis, 3, 6, offSubstream, pThis->DbiHdr.cbEditContinueSubstream, "dbi-continue-and-edit");
+        offSubstream += pThis->DbiHdr.cbEditContinueSubstream;
+    }
+    uint32_t const offOptDbgHdr = offSubstream;
+    if (pThis->DbiHdr.cbOptDbgHdr)
+    {
+        rtFsPdbVolAddSubstream(pThis, 3, 7, offSubstream, pThis->DbiHdr.cbOptDbgHdr, "dbi-optional-header");
+        offSubstream += pThis->DbiHdr.cbOptDbgHdr;
+    }
+    if (offSubstream < pThis->papStreamInfo[3]->cbStream)
+        rtFsPdbVolAddSubstream(pThis, 3, 8, offSubstream, pThis->papStreamInfo[3]->cbStream - offSubstream, "dbi-unknown");
+
+    /*
+     * Read the optional header if present, it identifies a bunch of standard streams.
+     */
+    if (pThis->DbiHdr.cbOptDbgHdr > 1)
+    {
+        RT_ZERO(Hdr);
+        rc = rtFsPdbVolReadStreamAt(pThis, 3, offOptDbgHdr, &Hdr, RT_MIN(sizeof(Hdr), pThis->DbiHdr.cbOptDbgHdr), &cbRead);
+        if (RT_FAILURE(rc))
+            return RTERRINFO_LOG_SET_F(pErrInfo, rc, "Error eeading the DBI optional header at %#x LB %#x",
+                                       offOptDbgHdr, pThis->DbiHdr.cbOptDbgHdr);
+        static const char * const s_apszIdxNames[] =
+        {
+            /* [RTPDBDBIOPT_IDX_FPO_MASM] = */              "image-fpo-masm-section",
+            /* [RTPDBDBIOPT_IDX_EXCEPTION] = */             "image-exception",
+            /* [RTPDBDBIOPT_IDX_FIXUP] = */                 "image-fixup",
+            /* [RTPDBDBIOPT_IDX_OMAP_TO_SRC] = */           "omap-to-src",
+            /* [RTPDBDBIOPT_IDX_OMAP_FROM_SRC] = */         "omap-from-src",
+            /* [RTPDBDBIOPT_IDX_SECTION_HEADERS] = */       "image-section-headers",
+            /* [RTPDBDBIOPT_IDX_CLR_TOKEN_ID_MAP] = */      "clr-token-id-map",
+            /* [RTPDBDBIOPT_IDX_XDATA] = */                 "image-xdata-section",
+            /* [RTPDBDBIOPT_IDX_PDATA] = */                 "image-pdata-section",
+            /* [RTPDBDBIOPT_IDX_FPO] = */                   "image-fpo",
+            /* [RTPDBDBIOPT_IDX_ORG_SECTION_HEADERS] = */   "image-orginal-section-headers",
+        };
+        uint32_t idxName = pThis->DbiHdr.cbOptDbgHdr / 2;
+        if (idxName > RT_ELEMENTS(s_apszIdxNames))
+        {
+#ifdef LOG_ENABLED
+            while (idxName-- > RT_ELEMENTS(s_apszIdxNames))
+                Log(("Unknown DBI optional header entry %u: %#x\n", idxName, Hdr.aidxStream[idxName]));
+#endif
+            idxName = RT_ELEMENTS(s_apszIdxNames);
+        }
+        while (idxName-- > 0)
+            rtFsPdbVolSetDefaultStreamName(pThis, Hdr.aidxStream[idxName], s_apszIdxNames[idxName]);
+    }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -1131,10 +1500,10 @@ static int rtFsPdbVolLoadStream1(PRTFSPDBVOL pThis, PRTERRINFO pErrInfo)
         default:
         case 5:
             if (pThis->enmVersion == RTFSPDBVER_7) /** @todo condition? */
-                pThis->papStreamInfo[3]->pszName = "name-map";
+                pThis->papStreamInfo[4]->pszName = "name-map";
             RT_FALL_THRU();
         case 4:
-            pThis->papStreamInfo[3]->pszName = "dbi"; /** @todo conditional? */
+            pThis->papStreamInfo[3]->pszName = "dbi";
             RT_FALL_THRU();
         case 3:
             pThis->papStreamInfo[2]->pszName = "tpi";
@@ -1217,6 +1586,7 @@ static int rtFsPdbVolTryInit(PRTFSPDBVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
     pThis->cbNames          = 0;
     pThis->pszzNames        = NULL;
     pThis->papStreamInfo    = NULL;
+    pThis->cSubstreams      = 0;
 
     /*
      * Do init stuff that may fail.
@@ -1428,9 +1798,12 @@ static int rtFsPdbVolTryInit(PRTFSPDBVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
     }
 
     /*
-     * Load stream #1 if there.
+     * Load info from streams #1 (PDB & names) and #3 (DBI).
      */
-    return rtFsPdbVolLoadStream1(pThis, pErrInfo);
+    rc = rtFsPdbVolLoadStream1(pThis, pErrInfo);
+    if (RT_SUCCESS(rc))
+        rc = rtFsPdbVolLoadStream3(pThis, pErrInfo);
+    return rc;
 }
 
 

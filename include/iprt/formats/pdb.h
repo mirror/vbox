@@ -323,6 +323,171 @@ DECLINLINE(uint32_t) RTPdbSizeToPages(uint32_t cbStream, uint32_t cbPage)
     return (uint32_t)(((uint64_t)cbStream + cbPage - 1) / cbPage);
 }
 
+
+/**
+ * This is the old DBI stream header.
+ *
+ * @note Haven't found any examples of this yet, as it must predate VC60, quite
+ *       likely VC40 was the last to use it.  It may need padding adjusting as
+ *       well as a reality check...
+ */
+typedef struct RTPDBDBIHDROLD
+{
+    /** The global symbol records stream number. */
+    uint16_t    idxGlobalStream;
+    /** The public symbol records stream number. */
+    uint16_t    idxPublicStream;
+    /** The symbol records stream. */
+    uint16_t    idxSymRecStream;
+    /** Haven't seen the real thing yet... The struct could be misaligned by
+     *  pragma pack(1)... */
+    uint16_t    uUnusedPadding;
+    /** Size of the module info substream. */
+    uint32_t    cbModInfoSubstream;
+    /** Size of the section contribution substream. */
+    uint32_t    cbSectContribSubstream;
+    /** Size of the source info substream. */
+    uint32_t    cbSrcInfoSubstream;
+} RTPDBDBIHDROLD;
+
+
+/**
+ * The new DBI stream header.
+ */
+typedef struct RTPDBDBIHDR
+{
+    /** 0x00: Header signature, RTPDBDBIHDR_SIGNATURE.
+     * This has the value UINT32_MAX which probably to make sure it can be
+     * distinguished from the start of the old header, assuming the global and/or
+     * public stream indexes won't both be NIL (UINT16_MAX). */
+    uint32_t        uSignature;
+    /** 0x04: The header version signature, RTPDBDBIHDR_VCVER_XXX.
+     * This should be RTPDBDBIHDR_VCVER_50 or higher, even if Visual C++ 4.1 in
+     * the RTPDBDBIHDR_VCVER_XXX collection. */
+    uint32_t        uVcVersion;
+    /** 0x08: Same (copy) of RTPDB70NAMES::uAge / RTPDB20NAMES::uAge. */
+    uint32_t        uAge;
+    /** 0x0c: The global symbol records stream number. */
+    uint16_t        idxGlobalStream;
+    /** 0x0e: The MSPDB*.DLL version.
+     * This is a bitfield with two different layout.  If the new format is used,
+     * the RBuild is stored separately as uPdbDllRBuild
+     *
+     * @note In the w2ksp4 PDBs this is all zeros. So, was presumably added
+     *       after VC60.  Ditto for the two other version/build fields.
+     *
+     *       In a random 32-bit xp rtm kernel it's set to 0x8800 (8.0, new format),
+     *       and with uPdbDllBuild=0xc627 (50727) and uPdbDllRBuild=0x0048 (72).
+     *
+     *       For a VBoxRT.dll built with VC 2010 this is set to 0x8a00 (10.0, new
+     *       format), uPdbDllBuild=0x6f76 (28534) and uPdbDllRBuild=0x0001. */
+    union
+    {
+        uint16_t    u16;
+        struct
+        {
+            uint16_t    uMinor     : 8;
+            uint16_t    uMajor     : 7;
+            uint16_t    fNewVerFmt : 1;
+        } New;
+        struct
+        {
+            uint16_t    uRBuild    : 4;
+            uint16_t    uMinor     : 7;
+            uint16_t    uMajor     : 5;
+        } Old;
+    } PdbDllVer;
+    /** 0x10: The public symbol records stream number. */
+    uint16_t        idxPublicStream;
+    /** 0x12: The MSPDB*.DLL build number. */
+    uint16_t        uPdbDllBuild;
+    /** 0x14: The symbol records stream. */
+    uint16_t        idxSymRecStream;
+    /** 0x16: The MSPDB*.DLL rbuild number, whatever that is... (Release build
+     * number, perhaps?) */
+    uint16_t        uPdbDllRBuild;
+    /** 0x18: Size of the module info substream. */
+    uint32_t        cbModInfoSubstream;
+    /** 0x1c: Size of the section contribution substream. */
+    uint32_t        cbSectContribSubstream;
+    /** 0x20: Size of the section map substream. */
+    uint32_t        cbSectionMapSubstream;
+    /** 0x24: Size of the source info substream. */
+    uint32_t        cbSrcInfoSubstream;
+    /** 0x28: Size of the type server map substream. */
+    uint32_t        cbTypeServerMapSubstream;
+    /** 0x2c: Index of the MFC type server in the type server map substream. */
+    uint32_t        idxMFC;
+    /** 0x30: Size of the optional debug header at the end of the stream. */
+    uint32_t        cbOptDbgHdr;
+    /** 0x34: Size of the edit & continue substream. Added in VC60, can contain
+     *  garbage when uVcVersion is older. */
+    uint32_t        cbEditContinueSubstream;
+    /** 0x38: Flat, combination of RTPDBDBIHDR_F_XXX. */
+    uint16_t        fFlags;
+    /** 0x3a: The machine type (IMAGE_FILE_MACHINE_XXX from pecoff). */
+    uint16_t        uMachine;
+    /** 0x3c: Currently unused field.   */
+    uint32_t        uReserved;
+} RTPDBDBIHDR;
+AssertCompileSize(RTPDBDBIHDR,64);
+
+/** The value of RTPDBDBIHDR::uSignature. */
+#define RTPDBDBIHDR_SIGNATURE   UINT32_MAX
+
+/** @name RTPDBDBIHDR_VCVER_XXX - Possible RTPDBDBIHDR::uVcVersion values.
+ * @{ */
+#define RTPDBDBIHDR_VCVER       RTPDBDBIHDR_VCVER_70
+#define RTPDBDBIHDR_VCVER_41    UINT32_C(  930803)  /**< Apparently too old for the new header. Go figure. */
+#define RTPDBDBIHDR_VCVER_50    UINT32_C(19960307)
+#define RTPDBDBIHDR_VCVER_60    UINT32_C(19970606)  /**< Used by Windows 2000 SP4 PDBs.*/
+#define RTPDBDBIHDR_VCVER_70    UINT32_C(19990903)
+#define RTPDBDBIHDR_VCVER_110   UINT32_C(20091201)
+/** @} */
+
+/** @name RTPDBDBIHDR_F_XXX - DBI Header Flags.
+ * @{ */
+#define RTPDBDBIHDR_F_INCREMENTAL_LINK      UINT16_C(0x0001)
+#define RTPDBDBIHDR_F_PRIVATE_SYMS_STRIPPED UINT16_C(0x0002)
+#define RTPDBDBIHDR_F_CONFLICTING_TYPES     UINT16_C(0x0004)
+#define RTPDBDBIHDR_F_RESERVED              UINT16_C(0xfff8)
+/** @} */
+
+
+/** @name RTPDBDBIOPT_IDX_XXX - DBI Optional Header Indexes.
+ *
+ * The optional DBI header follows after the edit & continue substream and
+ * consists of an array of 16-bit stream indexes (uint16_t) that helps
+ * identifying streams in the PDB.
+ *
+ * @{ */
+/** Frame pointer optimization sections ('.debug$F' from MASM, apparently). */
+#define RTPDBDBIOPT_IDX_FPO_MASM            0
+/** Exception data - IMAGE_DEBUG_TYPE_EXCEPTION. */
+#define RTPDBDBIOPT_IDX_EXCEPTION           1
+/** Fixup data - IMAGE_DEBUG_TYPE_FIXUP. */
+#define RTPDBDBIOPT_IDX_FIXUP               2
+/** OMAP to source - IMAGE_DEBUG_TYPE_OMAP_TO_SRC. */
+#define RTPDBDBIOPT_IDX_OMAP_TO_SRC         3
+/** OMAP from source - IMAGE_DEBUG_TYPE_OMAP_FROM_SRC. */
+#define RTPDBDBIOPT_IDX_OMAP_FROM_SRC       4
+/** Section headers from the executable (array of IMAGE_SECTION_HEADER). */
+#define RTPDBDBIOPT_IDX_SECTION_HEADERS     5
+/** Something related to mapping CLR tokens to CLR record IDs. */
+#define RTPDBDBIOPT_IDX_CLR_TOKEN_ID_MAP    6
+/** Copy of the '.xdata' section. */
+#define RTPDBDBIOPT_IDX_XDATA               7
+/** Copy of the '.pdata' section. (Same purpose as RTPDBDBIOPT_IDX_EXCEPTION?) */
+#define RTPDBDBIOPT_IDX_PDATA               8
+/** Frame pointer optimization info - IMAGE_DEBUG_TYPE_FPO. */
+#define RTPDBDBIOPT_IDX_FPO                 9
+/** Original section headers from the executable (array of IMAGE_SECTION_HEADER). */
+#define RTPDBDBIOPT_IDX_ORG_SECTION_HEADERS 10
+
+/** End of known indexes. */
+#define RTPDBDBIOPT_IDX_END                 11
+/** @} */
+
 /** @} */
 
 #endif /* !IPRT_INCLUDED_formats_pdb_h */

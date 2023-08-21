@@ -71,7 +71,7 @@ typedef IMAGE_FILE_HEADER *PIMAGE_FILE_HEADER;
 typedef IMAGE_FILE_HEADER const *PCIMAGE_FILE_HEADER;
 
 
-/** @name PE & COFF machine types.
+/** @name IMAGE_FILE_MACHINE_XXX - PE & COFF machine types.
  * Used by IMAGE_FILE_HEADER::Machine and IMAGE_SEPARATE_DEBUG_HEADER::Machine.
  * @{ */
 /** X86 compatible CPU, 32-bit instructions. */

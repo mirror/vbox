@@ -2362,6 +2362,7 @@ RuntimeBldProg_SOURCES          = \
 	common/fs/isomakercmd.cpp \
 	common/fs/isomakerimport.cpp \
 	common/fs/isovfs.cpp \
+	common/fs/pdbvfs.cpp \
 	common/ldr/ldr.cpp \
 	common/ldr/ldrELF.cpp \
 	common/ldr/ldrEx.cpp \
@@ -2459,6 +2460,7 @@ RuntimeBldProg_SOURCES          = \
 	common/string/RTStrNICmpAscii.cpp \
 	common/string/RTStrNLen.cpp \
 	common/string/RTStrPrintHexBytes.cpp \
+	common/string/RTStrStartsWith.cpp \
 	common/string/RTStrStr.cpp \
 	common/string/simplepattern.cpp \
 	common/string/straprintf.cpp \
@@ -2480,6 +2482,7 @@ RuntimeBldProg_SOURCES          = \
 	common/string/unidata-flags.cpp \
 	common/string/unidata-lower.cpp \
 	common/string/unidata-upper.cpp \
+	common/string/RTUtf16CopyAscii.cpp \
 	common/string/utf-16-case.cpp \
 	common/string/utf-16.cpp \
 	common/string/utf-8-case.cpp \
