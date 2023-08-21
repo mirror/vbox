@@ -132,8 +132,6 @@ private slots:
     /* Handles the UIVMLogPage signal which is emitted when isFiltered property
        of UIVMLogPage is changed. */
     void sltLogPageFilteredChanged(bool isFiltered);
-    void sltHandleHidePanel(UIDialogPanel *pPanel);
-    void sltHandleShowPanel(UIDialogPanel *pPanel);
 
     /** @name Slots to handle signals from settings panel
      * @{ */
@@ -200,8 +198,6 @@ private:
 
     /** Resets document (of the current tab) and scrollbar highligthing */
     void resetHighlighthing();
-    void hidePanel(UIDialogPanel* panel);
-    void showPanel(UIDialogPanel* panel);
     /** Make sure escape key is assigned to only a single widget. This is done by checking
         several things in the following order:
         - when there are no more panels visible assign it to the parent dialog
@@ -233,7 +229,6 @@ private:
         UIVMLogViewerFilterPanel    *m_pFilterPanel;
         UIVMLogViewerBookmarksPanel *m_pBookmarksPanel;
         UIVMLogViewerOptionsPanel   *m_pOptionsPanel;
-        QMap<UIDialogPanel*, QAction*> m_panelActionMap;
         QList<UIDialogPanel*>          m_visiblePanelsList;
     /** @} */
     QVBoxLayout         *m_pMainLayout;

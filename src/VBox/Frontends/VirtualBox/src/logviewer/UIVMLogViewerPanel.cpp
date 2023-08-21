@@ -52,6 +52,12 @@ void UIVMLogViewerPanelNew::prepare()
 {
     m_pSearchWidget = new UIVMLogViewerSearchPanel(0, m_pViewer);
     insertTab(0, m_pSearchWidget);
+
+    connect(m_pSearchWidget, &UIVMLogViewerSearchPanel::sigHighlightingUpdated,
+            this, &UIVMLogViewerPanelNew::sigHighlightingUpdated);
+    connect(m_pSearchWidget, &UIVMLogViewerSearchPanel::sigSearchUpdated,
+            this, &UIVMLogViewerPanelNew::sigSearchUpdated);
+
     retranslateUi();
 }
 
@@ -59,6 +65,20 @@ void UIVMLogViewerPanelNew::refreshSearch()
 {
     if (m_pSearchWidget)
         m_pSearchWidget->refreshSearch();
+}
+
+QVector<float> UIVMLogViewerPanelNew::matchLocationVector() const
+{
+    if (!m_pSearchWidget)
+        return QVector<float>();
+    return m_pSearchWidget->matchLocationVector();
+}
+
+int UIVMLogViewerPanelNew::matchCount() const
+{
+    if (!m_pSearchWidget)
+        return 0;
+    return m_pSearchWidget->matchCount();
 }
 
 void UIVMLogViewerPanelNew::retranslateUi()
