@@ -599,7 +599,7 @@ static DECLCALLBACK(int) vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCT
     if (RT_SUCCESS(rc))
     {
         PVM pVM = pUVM->pVM;
-        AssertRelease(RT_VALID_PTR(pVM));
+        AssertReleaseMsg(RT_VALID_PTR(pVM), ("pVM=%p pVMR0=%p\n", pVM, pVMR0));
         AssertRelease(pVM->pVMR0ForCall == pVMR0);
         AssertRelease(pVM->pSession == pUVM->vm.s.pSession);
         AssertRelease(pVM->cCpus == cCpus);

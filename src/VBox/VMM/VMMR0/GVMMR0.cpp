@@ -1066,6 +1066,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PGVM *pp
                                 rc = rc2;
                             if (RT_SUCCESS_NP(rc))
                                 rc = rc3;
+                            AssertStmt(RT_FAILURE_NP(rc), rc = VERR_IPE_UNEXPECTED_STATUS);
                         }
                     }
                 }
