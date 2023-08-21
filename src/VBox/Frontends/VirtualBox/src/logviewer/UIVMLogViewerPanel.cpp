@@ -113,6 +113,7 @@ bool UIVMLogViewerPanelNew::eventFilter(QObject *pObject, QEvent *pEvent)
     return QIWithRetranslateUI<UIDialogPanelBase>::eventFilter(pObject, pEvent);
 }
 
+
 /*********************************************************************************************************************************
 *   UIVMLogViewerPanel implementation.                                                                                           *
 *********************************************************************************************************************************/
