@@ -36,27 +36,37 @@
 #include "UIVMLogViewerPanel.h"
 #include "UIVMLogViewerWidget.h"
 #include "UIVMLogViewerSearchPanel.h"
+#include "UIVMLogViewerFilterPanel.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
 
 UIVMLogViewerPanelNew::UIVMLogViewerPanelNew(QWidget *pParent, UIVMLogViewerWidget *pViewer)
     : QIWithRetranslateUI<UIDialogPanelBase>(pParent)
-    , m_pSearchWidget(0)
     , m_pViewer(pViewer)
+    , m_pSearchWidget(0)
+    , m_pFilterWidget(0)
 {
     prepare();
 }
 
 void UIVMLogViewerPanelNew::prepare()
 {
+    /* Search tab: */
     m_pSearchWidget = new UIVMLogViewerSearchPanel(0, m_pViewer);
-    insertTab(0, m_pSearchWidget);
+    insertTab(Page_Search, m_pSearchWidget);
 
     connect(m_pSearchWidget, &UIVMLogViewerSearchPanel::sigHighlightingUpdated,
             this, &UIVMLogViewerPanelNew::sigHighlightingUpdated);
     connect(m_pSearchWidget, &UIVMLogViewerSearchPanel::sigSearchUpdated,
             this, &UIVMLogViewerPanelNew::sigSearchUpdated);
+
+    /* Filter tab: */
+    m_pSearchWidget = new UIVMLogViewerSearchPanel(0, m_pViewer);
+    insertTab(Page_Filter, m_pSearchWidget);
+
+    connect(m_pFilterWidget, &UIVMLogViewerFilterPanel::sigFilterApplied,
+            this, &UIVMLogViewerPanelNew::sigFilterApplied);
 
     retranslateUi();
 }
@@ -81,9 +91,16 @@ int UIVMLogViewerPanelNew::matchCount() const
     return m_pSearchWidget->matchCount();
 }
 
+void UIVMLogViewerPanelNew::applyFilter()
+{
+    if (m_pFilterWidget)
+        m_pFilterWidget->applyFilter();
+}
+
 void UIVMLogViewerPanelNew::retranslateUi()
 {
-    setTabText(0, "Find");
+    setTabText(Page_Search, "Find");
+    setTabText(Page_Filter, "Filter");
 }
 
 bool UIVMLogViewerPanelNew::eventFilter(QObject *pObject, QEvent *pEvent)

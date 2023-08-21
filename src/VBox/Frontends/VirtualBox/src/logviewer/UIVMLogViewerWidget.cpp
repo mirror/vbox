@@ -59,7 +59,6 @@
 #include "UIVMLogPage.h"
 #include "UIVMLogViewerWidget.h"
 #include "UIVMLogViewerBookmarksPanel.h"
-#include "UIVMLogViewerFilterPanel.h"
 #include "UIVMLogViewerOptionsPanel.h"
 
 /* COM includes: */
@@ -212,7 +211,6 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
     , m_fShowToolbar(fShowToolbar)
     , m_fIsPolished(false)
     , m_pTabWidget(0)
-    , m_pFilterPanel(0)
     , m_pBookmarksPanel(0)
     , m_pOptionsPanel(0)
     , m_pMainLayout(0)
@@ -428,8 +426,8 @@ void UIVMLogViewerWidget::sltRefresh()
         m_pPanel->refreshSearch();
 
     /* Re-Apply the filter settings: */
-    if (m_pFilterPanel)
-        m_pFilterPanel->applyFilter();
+    if (m_pPanel)
+        m_pPanel->applyFilter();
 }
 
 void UIVMLogViewerWidget::sltReload()
@@ -444,8 +442,8 @@ void UIVMLogViewerWidget::sltReload()
     createLogViewerPages(m_machines);
 
     /* re-Apply the filter settings: */
-    if (m_pFilterPanel)
-        m_pFilterPanel->applyFilter();
+    if (m_pPanel)
+        m_pPanel->applyFilter();
 
     m_pTabWidget->blockSignals(false);
     markLabelTabs();
@@ -552,8 +550,8 @@ void UIVMLogViewerWidget::sltCurrentTabChanged(int tabIndex)
         return;
     /* Dont refresh the search here as it is refreshed by the filtering mechanism
        which is updated as tab current index changes (see sltFilterApplied): */
-    if (m_pFilterPanel)
-        m_pFilterPanel->applyFilter();
+    if (m_pPanel)
+        m_pPanel->applyFilter();
 
     /* We keep a separate QVector<LogBookmark> for each log page: */
     if (m_pBookmarksPanel && currentLogPage())
@@ -757,18 +755,16 @@ void UIVMLogViewerWidget::prepareWidgets()
     }
 
     /* Create VM Log-Viewer filter-panel: */
-    m_pFilterPanel = new UIVMLogViewerFilterPanel(0, this);
-    if (m_pFilterPanel)
-    {
-        /* Configure panel: */
-        //installEventFilter(m_pFilterPanel);
-        m_pFilterPanel->hide();
-        connect(m_pFilterPanel, &UIVMLogViewerFilterPanel::sigFilterApplied,
-                this, &UIVMLogViewerWidget::sltFilterApplied);
+    // m_pFilterPanel = new UIVMLogViewerFilterPanel(0, this);
+    // if (m_pFilterPanel)
+    // {
+    //     /* Configure panel: */
+    //     //installEventFilter(m_pFilterPanel);
+    //     m_pFilterPanel->hide();
 
-        /* Add into layout: */
-        m_pMainLayout->addWidget(m_pFilterPanel);
-    }
+    //     /* Add into layout: */
+    //     m_pMainLayout->addWidget(m_pFilterPanel);
+    // }
 
     /* Create VM Log-Viewer bookmarks-panel: */
     m_pBookmarksPanel = new UIVMLogViewerBookmarksPanel(0, this);
@@ -812,6 +808,8 @@ void UIVMLogViewerWidget::prepareWidgets()
             this, &UIVMLogViewerWidget::sltSearchResultHighLigting);
     connect(m_pPanel, &UIVMLogViewerPanelNew::sigSearchUpdated,
             this, &UIVMLogViewerWidget::sltHandleSearchUpdated);
+    connect(m_pPanel, &UIVMLogViewerPanelNew::sigFilterApplied,
+            this, &UIVMLogViewerWidget::sltFilterApplied);
 
     m_pMainLayout->addWidget(m_pPanel);
 
