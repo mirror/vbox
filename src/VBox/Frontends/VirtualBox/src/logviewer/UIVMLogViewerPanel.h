@@ -51,7 +51,7 @@ public:
 private:
 
     void retranslateUi() override;
-    void prepare();
+    void prepare() override;
     void prepareSearchTab();
 
     UIVMLogViewerSearchPanel *m_pSearchWidget;
