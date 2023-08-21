@@ -67,6 +67,8 @@ public:
     const QVector<float> &matchLocationVector() const;
     /** Returns the number of the matches to the current search. */
     int matchCount() const;
+    /** Handles Qt @a pEvent, used for keyboard processing. */
+    bool handleSearchRelatedEvents(QObject *pObject, QEvent *pEvent);
 
 protected:
 
@@ -75,8 +77,6 @@ protected:
     virtual void retranslateUi() RT_OVERRIDE;
     /** Handles Qt key-press @a pEevent. */
     virtual void keyPressEvent(QKeyEvent *pEvent) RT_OVERRIDE;
-    /** Handles Qt @a pEvent, used for keyboard processing. */
-    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
     virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
     virtual void hideEvent(QHideEvent* pEvent) RT_OVERRIDE;
 

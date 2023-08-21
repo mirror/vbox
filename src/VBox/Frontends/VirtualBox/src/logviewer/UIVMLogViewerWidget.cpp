@@ -761,7 +761,7 @@ void UIVMLogViewerWidget::prepareWidgets()
     if (m_pFilterPanel)
     {
         /* Configure panel: */
-        installEventFilter(m_pFilterPanel);
+        //installEventFilter(m_pFilterPanel);
         m_pFilterPanel->hide();
         connect(m_pFilterPanel, &UIVMLogViewerFilterPanel::sigFilterApplied,
                 this, &UIVMLogViewerWidget::sltFilterApplied);
@@ -807,7 +807,7 @@ void UIVMLogViewerWidget::prepareWidgets()
 
     m_pPanel = new UIVMLogViewerPanelNew(0, this);
     AssertReturnVoid(m_pPanel);
-    //     installEventFilter(m_pSearchPanel);
+    installEventFilter(m_pPanel);
     connect(m_pPanel, &UIVMLogViewerPanelNew::sigHighlightingUpdated,
             this, &UIVMLogViewerWidget::sltSearchResultHighLigting);
     connect(m_pPanel, &UIVMLogViewerPanelNew::sigSearchUpdated,

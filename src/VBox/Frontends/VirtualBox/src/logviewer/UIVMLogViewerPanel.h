@@ -61,8 +61,6 @@ public:
         int matchCount() const;
     /** @} */
 
-
-
     enum Page
     {
         Page_Search = 0,
@@ -70,8 +68,11 @@ public:
         Page_Bookmark,
         Page_Preferences,
         Page_Max
-    };
+    }
+        ;
+protected:
 
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
 
 private:
 
@@ -80,7 +81,6 @@ private:
 
     UIVMLogViewerSearchPanel *m_pSearchWidget;
     UIVMLogViewerWidget *m_pViewer;
-
 };
 
 /** UIDialonPanel extension acting as the base class for UIVMLogViewerXXXPanel widgets. */

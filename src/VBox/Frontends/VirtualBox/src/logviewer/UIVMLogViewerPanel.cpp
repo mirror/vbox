@@ -86,6 +86,15 @@ void UIVMLogViewerPanelNew::retranslateUi()
     setTabText(0, "Find");
 }
 
+bool UIVMLogViewerPanelNew::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+    if (currentIndex() == static_cast<Page>(Page_Search))
+    {
+        if (m_pSearchWidget->handleSearchRelatedEvents(pObject, pEvent))
+            return true;
+    }
+    return QIWithRetranslateUI<UIDialogPanelBase>::eventFilter(pObject, pEvent);
+}
 
 /*********************************************************************************************************************************
 *   UIVMLogViewerPanel implementation.                                                                                           *

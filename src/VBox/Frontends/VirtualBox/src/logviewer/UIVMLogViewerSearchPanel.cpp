@@ -304,11 +304,11 @@ void UIVMLogViewerSearchPanel::keyPressEvent(QKeyEvent *pEvent)
     UIVMLogViewerPanel::keyPressEvent(pEvent);
 }
 
-bool UIVMLogViewerSearchPanel::eventFilter(QObject *pObject, QEvent *pEvent)
+bool UIVMLogViewerSearchPanel::handleSearchRelatedEvents(QObject *pObject, QEvent *pEvent)
 {
     /* Handle only events sent to viewer(): */
     if (pObject != viewer())
-        return UIVMLogViewerPanel::eventFilter(pObject, pEvent);
+        return false;
 
     /* Depending on event-type: */
     switch (pEvent->type())
@@ -366,7 +366,7 @@ bool UIVMLogViewerSearchPanel::eventFilter(QObject *pObject, QEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return UIVMLogViewerPanel::eventFilter(pObject, pEvent);
+    return false;
 }
 
 void UIVMLogViewerSearchPanel::showEvent(QShowEvent *pEvent)
