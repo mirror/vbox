@@ -3792,4 +3792,3 @@ DECL_HIDDEN_CONST(RTDBGMODVTDBG) const g_rtDbgModVtDbgPdb =
     /*.u32EndMagic = */         RTDBGMODVTDBG_MAGIC
 };
 
-
