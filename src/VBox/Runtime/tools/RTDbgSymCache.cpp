@@ -1465,7 +1465,7 @@ static RTEXITCODE rtDbgSymCacheCmdAdd(const char *pszArg0, int cArgs, char **pap
                 else
                 {
                     RTEXITCODE rcExit = rtDbgSymCacheAddFileOrDir(ValueUnion.psz, pszCache, fRecursive, fOverwriteOnConflict);
-                    if (rcExit != RTEXITCODE_FAILURE)
+                    if (rcExit != RTEXITCODE_SUCCESS)
                         return rcExit;
                 }
                 break;
