@@ -703,7 +703,7 @@ void UIVMLogViewerWidget::prepareActions()
     addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Find));
     addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Filter));
     addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Bookmark));
-    addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Options));
+    addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Preferences));
     addAction(m_pActionPool->action(UIActionIndex_M_Log_S_Refresh));
     addAction(m_pActionPool->action(UIActionIndex_M_Log_S_Save));
 
@@ -714,7 +714,7 @@ void UIVMLogViewerWidget::prepareActions()
             this, &UIVMLogViewerWidget::sltPanelActionToggled);
     connect(m_pActionPool->action(UIActionIndex_M_Log_T_Bookmark), &QAction::toggled,
             this, &UIVMLogViewerWidget::sltPanelActionToggled);
-    connect(m_pActionPool->action(UIActionIndex_M_Log_T_Options), &QAction::toggled,
+    connect(m_pActionPool->action(UIActionIndex_M_Log_T_Preferences), &QAction::toggled,
             this, &UIVMLogViewerWidget::sltPanelActionToggled);
     connect(m_pActionPool->action(UIActionIndex_M_Log_S_Refresh), &QAction::triggered,
             this, &UIVMLogViewerWidget::sltRefresh);
@@ -805,7 +805,7 @@ void UIVMLogViewerWidget::prepareToolBar()
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Find));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Filter));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Bookmark));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Options));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Preferences));
         m_pToolBar->addSeparator();
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_Log_S_Refresh));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_Log_S_Reload));

@@ -1309,15 +1309,15 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Toggle Pane Options' action class. */
-class UIActionMenuSelectorLogTogglePaneOptions : public UIActionToggle
+/** Simple action extension, used as 'Toggle Pane Preferences' action class. */
+class UIActionMenuSelectorLogTogglePanePreferences : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorLogTogglePaneOptions(UIActionPool *pParent)
+    UIActionMenuSelectorLogTogglePanePreferences(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -1330,7 +1330,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
-        return QString("ToggleLogOptions");
+        return QString("ToggleLogPreferences");
     }
 
     /** Returns default shortcut. */
@@ -1342,10 +1342,10 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE
     {
-        setName(QApplication::translate("UIActionPool", "&Options"));
+        setName(QApplication::translate("UIActionPool", "&Preferences"));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open pane with log viewer options"));
-        setToolTip(  QApplication::translate("UIActionPool", "Open Options Pane")
+        setStatusTip(QApplication::translate("UIActionPool", "Open pane with log viewer preferences"));
+        setToolTip(  QApplication::translate("UIActionPool", "Open Preferences Pane")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -3504,7 +3504,7 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_Log_T_Find] = new UIActionMenuSelectorLogTogglePaneFind(this);
     m_pool[UIActionIndex_M_Log_T_Filter] = new UIActionMenuSelectorLogTogglePaneFilter(this);
     m_pool[UIActionIndex_M_Log_T_Bookmark] = new UIActionMenuSelectorLogTogglePaneBookmark(this);
-    m_pool[UIActionIndex_M_Log_T_Options] = new UIActionMenuSelectorLogTogglePaneOptions(this);
+    m_pool[UIActionIndex_M_Log_T_Preferences] = new UIActionMenuSelectorLogTogglePanePreferences(this);
     m_pool[UIActionIndex_M_Log_S_Refresh] = new UIActionMenuSelectorLogPerformRefresh(this);
     m_pool[UIActionIndex_M_Log_S_Reload] = new UIActionMenuSelectorLogPerformReload(this);
     m_pool[UIActionIndex_M_Log_S_Save] = new UIActionMenuSelectorLogPerformSave(this);
@@ -3960,8 +3960,8 @@ void UIActionPool::updateMenuLogViewerWrapper(UIMenu *pMenu)
     fSeparator = addAction(pMenu, action(UIActionIndex_M_Log_T_Filter)) || fSeparator;
     /* 'Bookmarks' action: */
     fSeparator = addAction(pMenu, action(UIActionIndex_M_Log_T_Bookmark)) || fSeparator;
-    /* 'Options' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndex_M_Log_T_Options)) || fSeparator;
+    /* 'Preferences' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndex_M_Log_T_Preferences)) || fSeparator;
 
     /* Separator? */
     if (fSeparator)

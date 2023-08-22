@@ -103,7 +103,7 @@ enum UIActionIndex
     UIActionIndex_M_Log_T_Find,
     UIActionIndex_M_Log_T_Filter,
     UIActionIndex_M_Log_T_Bookmark,
-    UIActionIndex_M_Log_T_Options,
+    UIActionIndex_M_Log_T_Preferences,
     UIActionIndex_M_Log_S_Refresh,
     UIActionIndex_M_Log_S_Reload,
     UIActionIndex_M_Log_S_Save,
