@@ -257,7 +257,7 @@ void UIVMFilterLineEdit::createButtons()
 
 
 /*********************************************************************************************************************************
-*   UIVMLogViewerFilterWidget implementation.                                                                                     *
+*   UIVMLogViewerFilterWidget implementation.                                                                                    *
 *********************************************************************************************************************************/
 
 UIVMLogViewerFilterWidget::UIVMLogViewerFilterWidget(QWidget *pParent, UIVMLogViewerWidget *pViewer)
