@@ -59,5 +59,13 @@ PROGRAMS.win += ntFlushVirtualMemory
 ntFlushVirtualMemory_TEMPLATE = VBoxValidationKitR3
 ntFlushVirtualMemory_SOURCES  = ntFlushVirtualMemory.cpp
 
+#
+# Test Display device and 3D rendering.
+#
+PROGRAMS.win += ntDisplay
+ntDisplay_TEMPLATE = VBoxValidationKitR3
+ntDisplay_SOURCES  = ntDisplay.cpp
+ntDisplay_VBOX_IMPORT_CHECKER.win.x86 = nt4
+
 include $(FILE_KBUILD_SUB_FOOTER)
 

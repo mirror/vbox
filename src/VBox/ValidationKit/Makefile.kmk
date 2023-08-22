@@ -278,7 +278,8 @@ endif
 ifdef VBOX_WITH_VALIDATIONKIT_PACKING.win.x86
  VBOX_VALIDATIONKIT_FILESPEC += \
  	$(VBOX_PATH_VALIDATIONKIT.win.x86)/ntSetFreq.exe \
- 	$(VBOX_PATH_VALIDATIONKIT.win.x86)/ntTimeSources.exe
+ 	$(VBOX_PATH_VALIDATIONKIT.win.x86)/ntTimeSources.exe \
+ 	$(VBOX_PATH_VALIDATIONKIT.win.x86)/ntDisplay.exe
  # Disabled for now; does not work without WinMM.dll export verification files.
  #ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
  # VBOX_VALIDATIONKIT_FILESPEC += \
@@ -288,7 +289,8 @@ endif
 ifdef VBOX_WITH_VALIDATIONKIT_PACKING.win.amd64
  VBOX_VALIDATIONKIT_FILESPEC += \
  	$(VBOX_PATH_VALIDATIONKIT.win.amd64)/ntSetFreq.exe \
- 	$(VBOX_PATH_VALIDATIONKIT.win.amd64)/ntTimeSources.exe
+ 	$(VBOX_PATH_VALIDATIONKIT.win.amd64)/ntTimeSources.exe \
+ 	$(VBOX_PATH_VALIDATIONKIT.win.amd64)/ntDisplay.exe
  # Disabled for now; does not work without WinMM.dll export verification files.
  #ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
  # VBOX_VALIDATIONKIT_FILESPEC += \
