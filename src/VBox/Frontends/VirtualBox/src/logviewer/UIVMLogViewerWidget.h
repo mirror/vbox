@@ -226,7 +226,6 @@ private:
 
     /** @name Panel instances and a QMap for mapping panel instances to related actions.
       * @{ */
-        UIVMLogViewerBookmarksPanel *m_pBookmarksPanel;
         UIVMLogViewerOptionsPanel   *m_pOptionsPanel;
         QList<UIDialogPanel*>          m_visiblePanelsList;
     /** @} */

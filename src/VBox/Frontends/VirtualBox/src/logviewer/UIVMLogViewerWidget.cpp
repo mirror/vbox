@@ -211,7 +211,6 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
     , m_fShowToolbar(fShowToolbar)
     , m_fIsPolished(false)
     , m_pTabWidget(0)
-    , m_pBookmarksPanel(0)
     , m_pOptionsPanel(0)
     , m_pMainLayout(0)
     , m_pToolBar(0)
@@ -494,8 +493,8 @@ void UIVMLogViewerWidget::sltDeleteBookmarkByIndex(int index)
     if (!pLogPage)
         return;
     pLogPage->deleteBookmarkByIndex(index);
-    if (m_pBookmarksPanel)
-        m_pBookmarksPanel->updateBookmarkList(pLogPage->bookmarkList());
+    if (m_pPanel)
+        m_pPanel->updateBookmarkList(pLogPage->bookmarkList());
 }
 
 void UIVMLogViewerWidget::sltDeleteAllBookmarks()
@@ -505,15 +504,15 @@ void UIVMLogViewerWidget::sltDeleteAllBookmarks()
         return;
     pLogPage->deleteAllBookmarks();
 
-    if (m_pBookmarksPanel)
-        m_pBookmarksPanel->updateBookmarkList(pLogPage->bookmarkList());
+    if (m_pPanel)
+        m_pPanel->updateBookmarkList(pLogPage->bookmarkList());
 }
 
 void UIVMLogViewerWidget::sltUpdateBookmarkPanel()
 {
-    if (!currentLogPage() || !m_pBookmarksPanel)
+    if (!currentLogPage() || !m_pPanel)
         return;
-    m_pBookmarksPanel->updateBookmarkList(currentLogPage()->bookmarkList());
+    m_pPanel->updateBookmarkList(currentLogPage()->bookmarkList());
 }
 
 void UIVMLogViewerWidget::gotoBookmark(int bookmarkIndex)
@@ -554,8 +553,8 @@ void UIVMLogViewerWidget::sltCurrentTabChanged(int tabIndex)
         m_pPanel->applyFilter();
 
     /* We keep a separate QVector<LogBookmark> for each log page: */
-    if (m_pBookmarksPanel && currentLogPage())
-        m_pBookmarksPanel->updateBookmarkList(currentLogPage()->bookmarkList());
+    if (m_pPanel && currentLogPage())
+        m_pPanel->updateBookmarkList(currentLogPage()->bookmarkList());
 
     m_pPreviousLogPage = currentLogPage();
     if (m_pPreviousLogPage)
@@ -573,8 +572,8 @@ void UIVMLogViewerWidget::sltLogPageFilteredChanged(bool isFiltered)
 {
     /* Disable bookmark panel since bookmarks are stored as line numbers within
        the original log text and does not mean much in a reduced/filtered one. */
-    if (m_pBookmarksPanel)
-        m_pBookmarksPanel->disableEnableBookmarking(!isFiltered);
+    if (m_pPanel)
+        m_pPanel->disableEnableBookmarking(!isFiltered);
 }
 
 void UIVMLogViewerWidget::sltShowLineNumbers(bool bShowLineNumbers)
@@ -767,20 +766,20 @@ void UIVMLogViewerWidget::prepareWidgets()
     // }
 
     /* Create VM Log-Viewer bookmarks-panel: */
-    m_pBookmarksPanel = new UIVMLogViewerBookmarksPanel(0, this);
-    if (m_pBookmarksPanel)
-    {
-        /* Configure panel: */
-        m_pBookmarksPanel->hide();
-        connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigDeleteBookmarkByIndex,
-                this, &UIVMLogViewerWidget::sltDeleteBookmarkByIndex);
-        connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigDeleteAllBookmarks,
-                this, &UIVMLogViewerWidget::sltDeleteAllBookmarks);
-        connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigBookmarkSelected,
-                this, &UIVMLogViewerWidget::gotoBookmark);
-        /* Add into layout: */
-        m_pMainLayout->addWidget(m_pBookmarksPanel);
-    }
+    // m_pBookmarksPanel = new UIVMLogViewerBookmarksPanel(0, this);
+    // if (m_pBookmarksPanel)
+    // {
+    //     /* Configure panel: */
+    //     m_pBookmarksPanel->hide();
+    //     connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigDeleteBookmarkByIndex,
+    //             this, &UIVMLogViewerWidget::sltDeleteBookmarkByIndex);
+    //     connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigDeleteAllBookmarks,
+    //             this, &UIVMLogViewerWidget::sltDeleteAllBookmarks);
+    //     connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigBookmarkSelected,
+    //             this, &UIVMLogViewerWidget::gotoBookmark);
+    //     /* Add into layout: */
+    //     m_pMainLayout->addWidget(m_pBookmarksPanel);
+    // }
 
     /* Create VM Log-Viewer options-panel: */
     m_pOptionsPanel = new UIVMLogViewerOptionsPanel(0, this);
@@ -810,6 +809,12 @@ void UIVMLogViewerWidget::prepareWidgets()
             this, &UIVMLogViewerWidget::sltHandleSearchUpdated);
     connect(m_pPanel, &UIVMLogViewerPanelNew::sigFilterApplied,
             this, &UIVMLogViewerWidget::sltFilterApplied);
+    connect(m_pPanel, &UIVMLogViewerPanelNew::sigDeleteBookmarkByIndex,
+            this, &UIVMLogViewerWidget::sltDeleteBookmarkByIndex);
+    connect(m_pPanel, &UIVMLogViewerPanelNew::sigDeleteAllBookmarks,
+            this, &UIVMLogViewerWidget::sltDeleteAllBookmarks);
+    connect(m_pPanel, &UIVMLogViewerPanelNew::sigBookmarkSelected,
+            this, &UIVMLogViewerWidget::gotoBookmark);
 
     m_pMainLayout->addWidget(m_pPanel);
 

@@ -33,6 +33,7 @@
 
 /* GUI includes: */
 #include "UIDialogPanel.h"
+#include "UIVMLogBookmark.h"
 
 /* Forward declarations: */
 class QPlainTextEdit;
@@ -40,6 +41,7 @@ class QTextDocument;
 class UIVMLogViewerWidget;
 class UIVMLogViewerSearchPanel;
 class UIVMLogViewerFilterPanel;
+class UIVMLogViewerBookmarksPanel;
 
 class UIVMLogViewerPanelNew : public QIWithRetranslateUI<UIDialogPanelBase>
 {
@@ -50,6 +52,9 @@ signals:
     void sigHighlightingUpdated();
     void sigSearchUpdated();
     void sigFilterApplied();
+    void sigDeleteBookmarkByIndex(int bookmarkIndex);
+    void sigDeleteAllBookmarks();
+    void sigBookmarkSelected(int index);
 
 public:
 
@@ -68,6 +73,11 @@ public:
         void applyFilter();
     /** @} */
 
+    /** @name Bookmark page pass through functions
+      * @{ */
+        void updateBookmarkList(const QVector<UIVMLogBookmark>& bookmarkList);
+        void disableEnableBookmarking(bool flag);
+    /** @} */
 
     enum Page
     {
@@ -91,6 +101,7 @@ private:
 
     UIVMLogViewerSearchPanel *m_pSearchWidget;
     UIVMLogViewerFilterPanel *m_pFilterWidget;
+    UIVMLogViewerBookmarksPanel *m_pBookmarksWidget;
 };
 
 /** UIDialonPanel extension acting as the base class for UIVMLogViewerXXXPanel widgets. */

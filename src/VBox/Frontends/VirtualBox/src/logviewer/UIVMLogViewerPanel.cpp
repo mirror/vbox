@@ -37,6 +37,8 @@
 #include "UIVMLogViewerWidget.h"
 #include "UIVMLogViewerSearchPanel.h"
 #include "UIVMLogViewerFilterPanel.h"
+#include "UIVMLogViewerBookmarksPanel.h"
+
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
@@ -46,6 +48,7 @@ UIVMLogViewerPanelNew::UIVMLogViewerPanelNew(QWidget *pParent, UIVMLogViewerWidg
     , m_pViewer(pViewer)
     , m_pSearchWidget(0)
     , m_pFilterWidget(0)
+    , m_pBookmarksWidget(0)
 {
     prepare();
 }
@@ -67,6 +70,17 @@ void UIVMLogViewerPanelNew::prepare()
 
     connect(m_pFilterWidget, &UIVMLogViewerFilterPanel::sigFilterApplied,
             this, &UIVMLogViewerPanelNew::sigFilterApplied);
+
+    /* Bookmark tab: */
+    m_pBookmarksWidget = new UIVMLogViewerBookmarksPanel(0, m_pViewer);
+    insertTab(Page_Bookmark, m_pBookmarksWidget);
+
+    connect(m_pBookmarksWidget, &UIVMLogViewerBookmarksPanel::sigDeleteBookmarkByIndex,
+            this, &UIVMLogViewerPanelNew::sigDeleteBookmarkByIndex);
+    connect(m_pBookmarksWidget, &UIVMLogViewerBookmarksPanel::sigDeleteAllBookmarks,
+            this, &UIVMLogViewerPanelNew::sigDeleteAllBookmarks);
+    connect(m_pBookmarksWidget, &UIVMLogViewerBookmarksPanel::sigBookmarkSelected,
+            this, &UIVMLogViewerPanelNew::sigBookmarkSelected);
 
     retranslateUi();
 }
@@ -97,10 +111,23 @@ void UIVMLogViewerPanelNew::applyFilter()
         m_pFilterWidget->applyFilter();
 }
 
+void UIVMLogViewerPanelNew::updateBookmarkList(const QVector<UIVMLogBookmark>& bookmarkList)
+{
+    if (m_pBookmarksWidget)
+        m_pBookmarksWidget->updateBookmarkList(bookmarkList);
+}
+
+void UIVMLogViewerPanelNew::disableEnableBookmarking(bool flag)
+{
+    if (m_pBookmarksWidget)
+        m_pBookmarksWidget->disableEnableBookmarking(flag);
+}
+
 void UIVMLogViewerPanelNew::retranslateUi()
 {
     setTabText(Page_Search, "Find");
     setTabText(Page_Filter, "Filter");
+    setTabText(Page_Bookmark, "Bookmarks");
 }
 
 bool UIVMLogViewerPanelNew::eventFilter(QObject *pObject, QEvent *pEvent)

@@ -39,6 +39,8 @@
 #include "UIVMLogViewerBookmarksPanel.h"
 #include "UIVMLogViewerWidget.h"
 
+/* Other VBox includes: */
+#include <iprt/assert.h>
 
 UIVMLogViewerBookmarksPanel::UIVMLogViewerBookmarksPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer)
     : UIVMLogViewerPanel(pParent, pViewer)
@@ -107,91 +109,75 @@ void UIVMLogViewerBookmarksPanel::setBookmarkIndex(int index)
 
 void UIVMLogViewerBookmarksPanel::prepareWidgets()
 {
-    QHBoxLayout *pMainLayout = new QHBoxLayout(this);
-
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    AssertReturnVoid(pMainLayout);
     /* Create bookmark combo/button layout: */
     QHBoxLayout *pComboButtonLayout = new QHBoxLayout;
-    if (pComboButtonLayout)
-    {
-        pComboButtonLayout->setContentsMargins(0, 0, 0, 0);
+    AssertReturnVoid(pComboButtonLayout);
+
+    pComboButtonLayout->setContentsMargins(0, 0, 0, 0);
 #ifdef VBOX_WS_MAC
-        pComboButtonLayout->setSpacing(5);
+    pComboButtonLayout->setSpacing(5);
 #else
-        pComboButtonLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
+    pComboButtonLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
 #endif
 
-        /* Create bookmark combo-box: */
-        m_pBookmarksComboBox = new QComboBox;
-        if (m_pBookmarksComboBox)
-        {
-            m_pBookmarksComboBox->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
-            /* Make sure we have 0th item in our combo-box. */
-            m_pBookmarksComboBox->insertItem(0, "");
-            pComboButtonLayout->addWidget(m_pBookmarksComboBox);
-        }
+    /* Create bookmark combo-box: */
+    m_pBookmarksComboBox = new QComboBox;
+    AssertReturnVoid(m_pBookmarksComboBox);
+    m_pBookmarksComboBox->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
+    /* Make sure we have 0th item in our combo-box. */
+    m_pBookmarksComboBox->insertItem(0, "");
+    pComboButtonLayout->addWidget(m_pBookmarksComboBox);
 
-        /* Create bookmark button layout 1: */
-        QHBoxLayout *pButtonLayout1 = new QHBoxLayout;
-        if (pButtonLayout1)
-        {
-            pButtonLayout1->setContentsMargins(0, 0, 0, 0);
-            pButtonLayout1->setSpacing(0);
+    /* Create bookmark button layout 1: */
+    QHBoxLayout *pButtonLayout1 = new QHBoxLayout;
+    AssertReturnVoid(pButtonLayout1);
+    pButtonLayout1->setContentsMargins(0, 0, 0, 0);
+    pButtonLayout1->setSpacing(0);
 
-            /* Create goto selected bookmark button: */
-            m_pGotoSelectedBookmark = new QIToolButton;
-            if (m_pGotoSelectedBookmark)
-            {
-                m_pGotoSelectedBookmark->setIcon(UIIconPool::iconSet(":/log_viewer_goto_selected_bookmark_16px.png"));
-                pButtonLayout1->addWidget(m_pGotoSelectedBookmark);
-            }
+    /* Create goto selected bookmark button: */
+    m_pGotoSelectedBookmark = new QIToolButton;
+    AssertReturnVoid(m_pGotoSelectedBookmark);
+    m_pGotoSelectedBookmark->setIcon(UIIconPool::iconSet(":/log_viewer_goto_selected_bookmark_16px.png"));
+    pButtonLayout1->addWidget(m_pGotoSelectedBookmark);
 
-            /* Create goto previous bookmark button: */
-            m_pPreviousButton = new QIToolButton;
-            if (m_pPreviousButton)
-            {
-                m_pPreviousButton->setIcon(UIIconPool::iconSet(":/log_viewer_goto_previous_bookmark_16px.png"));
-                pButtonLayout1->addWidget(m_pPreviousButton);
-            }
+    /* Create goto previous bookmark button: */
+    m_pPreviousButton = new QIToolButton;
+    AssertReturnVoid(m_pPreviousButton);
+    m_pPreviousButton->setIcon(UIIconPool::iconSet(":/log_viewer_goto_previous_bookmark_16px.png"));
+    pButtonLayout1->addWidget(m_pPreviousButton);
 
-            /* Create goto next bookmark button: */
-            m_pNextButton = new QIToolButton;
-            if (m_pNextButton)
-            {
-                m_pNextButton->setIcon(UIIconPool::iconSet(":/log_viewer_goto_next_bookmark_16px.png"));
-                pButtonLayout1->addWidget(m_pNextButton);
-            }
+    /* Create goto next bookmark button: */
+    m_pNextButton = new QIToolButton;
+    AssertReturnVoid(m_pNextButton);
+    m_pNextButton->setIcon(UIIconPool::iconSet(":/log_viewer_goto_next_bookmark_16px.png"));
+    pButtonLayout1->addWidget(m_pNextButton);
 
-            pComboButtonLayout->addLayout(pButtonLayout1);
-        }
+    pComboButtonLayout->addLayout(pButtonLayout1);
 
-        /* Create bookmark button layout 2: */
-        QHBoxLayout *pButtonLayout2 = new QHBoxLayout;
-        if (pButtonLayout2)
-        {
-            pButtonLayout2->setContentsMargins(0, 0, 0, 0);
-            pButtonLayout2->setSpacing(0);
+    /* Create bookmark button layout 2: */
+    QHBoxLayout *pButtonLayout2 = new QHBoxLayout;
+    AssertReturnVoid(pButtonLayout2);
+    pButtonLayout2->setContentsMargins(0, 0, 0, 0);
+    pButtonLayout2->setSpacing(0);
 
-            /* Create delete current bookmark button: */
-            m_pDeleteCurrentButton = new QIToolButton;
-            if (m_pDeleteCurrentButton)
-            {
-                m_pDeleteCurrentButton->setIcon(UIIconPool::iconSet(":/log_viewer_delete_current_bookmark_16px.png"));
-                pButtonLayout2->addWidget(m_pDeleteCurrentButton);
-            }
+    /* Create delete current bookmark button: */
+    m_pDeleteCurrentButton = new QIToolButton;
+    AssertReturnVoid(m_pDeleteCurrentButton);
+    m_pDeleteCurrentButton->setIcon(UIIconPool::iconSet(":/log_viewer_delete_current_bookmark_16px.png"));
+    pButtonLayout2->addWidget(m_pDeleteCurrentButton);
 
-            /* Create delete all bookmarks button: */
-            m_pDeleteAllButton = new QIToolButton;
-            if (m_pDeleteAllButton)
-            {
-                m_pDeleteAllButton->setIcon(UIIconPool::iconSet(":/log_viewer_delete_all_bookmarks_16px.png"));
-                pButtonLayout2->addWidget(m_pDeleteAllButton);
-            }
+    /* Create delete all bookmarks button: */
+    m_pDeleteAllButton = new QIToolButton;
+    AssertReturnVoid(m_pDeleteAllButton);
+    m_pDeleteAllButton->setIcon(UIIconPool::iconSet(":/log_viewer_delete_all_bookmarks_16px.png"));
+    pButtonLayout2->addWidget(m_pDeleteAllButton);
+    pComboButtonLayout->addLayout(pButtonLayout2);
 
-            pComboButtonLayout->addLayout(pButtonLayout2);
-        }
+    pMainLayout->addLayout(pComboButtonLayout);
 
-        pMainLayout->addLayout(pComboButtonLayout);
-    }
+    pMainLayout->addStretch(1);
 }
 
 void UIVMLogViewerBookmarksPanel::prepareConnections()
