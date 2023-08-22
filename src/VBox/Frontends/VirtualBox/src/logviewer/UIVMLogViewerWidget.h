@@ -35,6 +35,7 @@
 #include <QKeySequence>
 #include <QPair>
 #include <QPointer>
+#include <QSet>
 #include <QWidget>
 #include <QUuid>
 
@@ -249,7 +250,7 @@ private:
     bool m_fCommitDataSignalReceived;
     QPointer<UIVMLogPage> m_pPreviousLogPage;
     UIVMLogViewerPanelNew *m_pPanel;
-
+    QSet<QAction*> m_panelActions;
     friend class UIVMLogViewerFilterWidget;
     friend class UIVMLogViewerPanel;
     friend class UIVMLogViewerDialog;
