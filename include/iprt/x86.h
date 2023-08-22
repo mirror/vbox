@@ -1354,6 +1354,46 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 
 /** MTRR Capabilities. */
 #define MSR_IA32_MTRR_CAP                   0xFE
+/** Bits 0-7 - VCNT - Variable range registers count. */
+#define MSR_IA32_MTRR_CAP_VCNT_MASK         UINT64_C(0x00000000000000ff)
+/** Bit 8 - FIX - Fixed range registers supported. */
+#define MSR_IA32_MTRR_CAP_FIX               RT_BIT_64(8)
+/** Bit 10 - WC - Write-Combining memory type supported. */
+#define MSR_IA32_MTRR_CAP_WC                RT_BIT_64(10)
+/** Bit 11 - SMRR - System Management Range Register supported. */
+#define MSR_IA32_MTRR_CAP_SMRR              RT_BIT_64(11)
+/** Bit 12 - PRMRR - Processor Reserved Memory Range Register supported. */
+#define MSR_IA32_MTRR_CAP_PRMRR             RT_BIT_64(12)
+
+/**
+ * Variable-range MTRR MSR pair.
+ */
+typedef struct X86MTRRVAR
+{
+    uint64_t        MtrrPhysBase;           /**< IA32_MTRR_PHYSBASEn */
+    uint64_t        MtrrPhysMask;           /**< IA32_MTRR_PHYSMASKn */
+} X86MTRRVAR;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86MTRRVAR, 16);
+#endif
+/** Pointer to a variable-range MTRR MSR pair. */
+typedef X86MTRRVAR *PX86MTRRVAR;
+/** Pointer to a const variable-range MTRR MSR pair. */
+typedef const X86MTRRVAR *PCX86MTRRVAR;
+
+/** Memory types that can be encoded in MTRRs.
+ * @{ */
+/** Uncacheable. */
+#define X86_MTRR_MT_UC                      0
+/** Write Combining. */
+#define X86_MTRR_MT_WC                      1
+/** Write-through. */
+#define X86_MTRR_MT_WT                      4
+/** Write-protected. */
+#define X86_MTRR_MT_WP                      5
+/** Writeback. */
+#define X86_MTRR_MT_WB                      6
+/* @}*/
 
 /** Architecture capabilities (bugfixes). */
 #define MSR_IA32_ARCH_CAPABILITIES          UINT32_C(0x10a)
@@ -1668,8 +1708,19 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_IA32_MTRR_FIX4K_F8000           0x26f
 /** @} */
 
-/** MTRR Default Range. */
+/** MTRR Default Type.
+ * @{ */
 #define MSR_IA32_MTRR_DEF_TYPE              0x2FF
+#define MSR_IA32_MTRR_DEF_TYPE_DEF_MT_MASK  0xFF
+#define MSR_IA32_MTRR_DEF_TYPE_FIXED_EN     RT_BIT_64(10)
+#define MSR_IA32_MTRR_DEF_TYPE_MTRR_EN      RT_BIT_64(11)
+#define MSR_IA32_MTRR_DEF_TYPE_VALID_MASK   (  MSR_IA32_MTRR_DEF_TYPE_DEF_MT_MASK \
+                                             | MSR_IA32_MTRR_DEF_TYPE_FIXED_EN    \
+                                             | MSR_IA32_MTRR_DEF_TYPE_MTRR_EN)
+/** @} */
+
+/** Variable-range MTRR physical mask valid. */
+#define MSR_IA32_MTRR_PHYSMASK_VALID        RT_BIT_64(11)
 
 /** Global performance counter control facilities (Intel only). */
 #define MSR_IA32_PERF_GLOBAL_STATUS         0x38E

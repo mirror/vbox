@@ -825,6 +825,8 @@ typedef struct CPUMFEATURES
     uint32_t        fTsc : 1;
     /** Intel SYSENTER/SYSEXIT support */
     uint32_t        fSysEnter : 1;
+    /** Supports MTRR. */
+    uint32_t        fMtrr : 1;
     /** First generation APIC. */
     uint32_t        fApic : 1;
     /** Second generation APIC. */
@@ -949,7 +951,7 @@ typedef struct CPUMFEATURES
 
     /** Alignment padding / reserved for future use (96 bits total, plus 12 bytes
      *  prior to the bit fields -> total of 24 bytes) */
-    uint32_t        fPadding0 : 22;
+    uint32_t        fPadding0 : 21;
 
 
     /** @name SVM

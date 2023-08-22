@@ -438,19 +438,22 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32APerf(PVMCPUCC pVCpu, uint32_t i
  * @returns Fixed IA32_MTRR_CAP value.
  * @param   pVCpu           The cross context per CPU structure.
  */
-VMM_INT_DECL(uint64_t) CPUMGetGuestIa32MtrrCap(PCVMCPU pVCpu)
+VMM_INT_DECL(uint64_t) CPUMGetGuestIa32MtrrCap(PCVMCPUCC pVCpu)
 {
-    RT_NOREF_PV(pVCpu);
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.fMtrrRead)
+        return pVCpu->cpum.s.GuestMsrs.msr.MtrrCap;
 
     /* This is currently a bit weird. :-) */
     uint8_t const   cVariableRangeRegs              = 0;
     bool const      fSystemManagementRangeRegisters = false;
     bool const      fFixedRangeRegisters            = false;
     bool const      fWriteCombiningType             = false;
+    bool const      fProcRsvdRangeRegisters         = false;
     return cVariableRangeRegs
-         | (fFixedRangeRegisters            ? RT_BIT_64(8)  : 0)
-         | (fWriteCombiningType             ? RT_BIT_64(10) : 0)
-         | (fSystemManagementRangeRegisters ? RT_BIT_64(11) : 0);
+         | (fFixedRangeRegisters            ? MSR_IA32_MTRR_CAP_FIX   : 0)
+         | (fWriteCombiningType             ? MSR_IA32_MTRR_CAP_WC    : 0)
+         | (fSystemManagementRangeRegisters ? MSR_IA32_MTRR_CAP_SMRR  : 0)
+         | (fProcRsvdRangeRegisters         ? MSR_IA32_MTRR_CAP_PRMRR : 0);
 }
 
 /** @callback_method_impl{FNCPUMRDMSR} */
@@ -466,9 +469,19 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MtrrCap(PVMCPUCC pVCpu, uint32_t
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MtrrPhysBaseN(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    /** @todo Implement variable MTRR storage. */
-    Assert(pRange->uValue == (idMsr - 0x200) / 2);
-    *puValue = 0;
+    Assert(pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fMtrr);
+    Assert(pRange->uValue == (idMsr -  MSR_IA32_MTRR_PHYSBASE0) / 2);
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.fMtrrRead)
+    {
+        AssertLogRelMsgReturn(pRange->uValue < RT_ELEMENTS(pVCpu->cpum.s.GuestMsrs.msr.aMtrrVarMsrs),
+                              ("MTRR MSR (%#RX32) out-of-bounds, must be <= %#RX32\n", idMsr, CPUMCTX_MAX_MTRRVAR_COUNT),
+                              VERR_CPUM_RAISE_GP_0);
+        AssertLogRelMsgReturn(!(idMsr % 2),
+                              ("MTRR MSR (%#RX32) invalid, must be at even offset\n", idMsr), VERR_CPUM_RAISE_GP_0);
+        *puValue = pVCpu->cpum.s.GuestMsrs.msr.aMtrrVarMsrs[pRange->uValue].MtrrPhysBase;
+    }
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -479,8 +492,9 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MtrrPhysBaseN(PVMCPUCC pVCpu, ui
     /*
      * Validate the value.
      */
-    Assert(pRange->uValue == (idMsr - 0x200) / 2);
-    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(uRawValue); RT_NOREF_PV(pRange);
+    Assert(pRange->uValue == (idMsr - MSR_IA32_MTRR_PHYSBASE0) / 2);
+    RT_NOREF_PV(uRawValue);
+    Assert(pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fMtrr);
 
     uint8_t uType = uValue & 0xff;
     if ((uType >= 7) || (uType == 2) || (uType == 3))
@@ -500,7 +514,17 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MtrrPhysBaseN(PVMCPUCC pVCpu, ui
     /*
      * Store it.
      */
-    /** @todo Implement variable MTRR storage. */
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.fMtrrWrite)
+    {
+        AssertCompile(CPUMCTX_MAX_MTRRVAR_COUNT == RT_ELEMENTS(pVCpu->cpum.s.GuestMsrs.msr.aMtrrVarMsrs));
+        AssertLogRelMsgReturn(pRange->uValue < CPUMCTX_MAX_MTRRVAR_COUNT,
+                              ("MTRR MSR (%#RX32) out-of-bounds, must be <= %#RX32\n", idMsr, CPUMCTX_MAX_MTRRVAR_COUNT),
+                              VERR_CPUM_RAISE_GP_0);
+        AssertLogRelMsgReturn(!(idMsr % 2),
+                              ("MTRR MSR (%#RX32) invalid, must be at even offset\n", idMsr), VERR_CPUM_RAISE_GP_0);
+        pVCpu->cpum.s.GuestMsrs.msr.aMtrrVarMsrs[pRange->uValue].MtrrPhysBase = uValue;
+        /** @todo Act on the potential memory type change. */
+    }
     return VINF_SUCCESS;
 }
 
@@ -508,10 +532,20 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MtrrPhysBaseN(PVMCPUCC pVCpu, ui
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MtrrPhysMaskN(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    /** @todo Implement variable MTRR storage. */
-    Assert(pRange->uValue == (idMsr - 0x200) / 2);
-    *puValue = 0;
+    RT_NOREF_PV(idMsr);
+    Assert(pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fMtrr);
+    Assert(pRange->uValue == (idMsr - MSR_IA32_MTRR_PHYSBASE0) / 2);
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.fMtrrRead)
+    {
+        AssertLogRelMsgReturn(pRange->uValue < RT_ELEMENTS(pVCpu->cpum.s.GuestMsrs.msr.aMtrrVarMsrs),
+                              ("MTRR MSR (%#RX32) out-of-bounds, must be <= %#RX32\n", idMsr, CPUMCTX_MAX_MTRRVAR_COUNT),
+                              VERR_CPUM_RAISE_GP_0);
+        AssertLogRelMsgReturn(idMsr % 2,
+                              ("MTRR MSR (%#RX32) invalid, must be at odd offset\n", idMsr), VERR_CPUM_RAISE_GP_0);
+        *puValue = pVCpu->cpum.s.GuestMsrs.msr.aMtrrVarMsrs[pRange->uValue].MtrrPhysMask;
+    }
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -522,8 +556,9 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MtrrPhysMaskN(PVMCPUCC pVCpu, ui
     /*
      * Validate the value.
      */
-    Assert(pRange->uValue == (idMsr - 0x200) / 2);
+    Assert(pRange->uValue == (idMsr - MSR_IA32_MTRR_PHYSBASE0) / 2);
     RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(uRawValue); RT_NOREF_PV(pRange);
+    Assert(pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fMtrr);
 
     uint64_t fInvPhysMask = ~(RT_BIT_64(pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.cMaxPhysAddrWidth) - 1U);
     if (fInvPhysMask & uValue)
@@ -536,7 +571,16 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MtrrPhysMaskN(PVMCPUCC pVCpu, ui
     /*
      * Store it.
      */
-    /** @todo Implement variable MTRR storage. */
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.fMtrrWrite)
+    {
+        AssertLogRelMsgReturn(pRange->uValue < RT_ELEMENTS(pVCpu->cpum.s.GuestMsrs.msr.aMtrrVarMsrs),
+                              ("MTRR MSR (%#RX32) out-of-bounds, must be <= %#RX32\n", idMsr, CPUMCTX_MAX_MTRRVAR_COUNT),
+                              VERR_CPUM_RAISE_GP_0);
+        AssertLogRelMsgReturn(idMsr % 2,
+                              ("MTRR MSR (%#RX32) invalid, must be at odd offset\n", idMsr), VERR_CPUM_RAISE_GP_0);
+        pVCpu->cpum.s.GuestMsrs.msr.aMtrrVarMsrs[pRange->uValue].MtrrPhysMask = uValue;
+        /** @todo Act on the potential memory type change. */
+    }
     return VINF_SUCCESS;
 }
 
@@ -546,6 +590,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MtrrFixed(PVMCPUCC pVCpu, uint32
 {
     RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     CPUM_MSR_ASSERT_CPUMCPU_OFFSET_RETURN(pVCpu, pRange, uint64_t, puFixedMtrr);
+    Assert(pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fMtrr);
     *puValue = *puFixedMtrr;
     return VINF_SUCCESS;
 }
@@ -556,6 +601,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MtrrFixed(PVMCPUCC pVCpu, uint32
 {
     CPUM_MSR_ASSERT_CPUMCPU_OFFSET_RETURN(pVCpu, pRange, uint64_t, puFixedMtrr);
     RT_NOREF_PV(idMsr); RT_NOREF_PV(uRawValue);
+    Assert(pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fMtrr);
 
     for (uint32_t cShift = 0; cShift < 63; cShift += 8)
     {
@@ -576,6 +622,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MtrrFixed(PVMCPUCC pVCpu, uint32
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MtrrDefType(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    Assert(pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fMtrr);
     *puValue = pVCpu->cpum.s.GuestMsrs.msr.MtrrDefType;
     return VINF_SUCCESS;
 }
@@ -585,8 +632,9 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32MtrrDefType(PVMCPUCC pVCpu, uint
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32MtrrDefType(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
+    Assert(pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fMtrr);
 
-    uint8_t uType = uValue & 0xff;
+    uint8_t uType = uValue & MSR_IA32_MTRR_DEF_TYPE_DEF_MT_MASK;
     if ((uType >= 7) || (uType == 2) || (uType == 3))
     {
         Log(("CPUM: Invalid MTRR default type value on %s: %#llx (%#llx)\n", pRange->szName, uValue, uType));

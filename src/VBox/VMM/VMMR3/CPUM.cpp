@@ -3211,14 +3211,14 @@ static void cpumR3InfoFormatFlags(char *pszEFlags, uint32_t efl)
  * Formats a full register dump.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pCtx        The context to format.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pHlp        Output functions.
  * @param   enmType     The dump type.
  * @param   pszPrefix   Register name prefix.
  */
-static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCDBGFINFOHLP pHlp, CPUMDUMPTYPE enmType, const char *pszPrefix)
+static void cpumR3InfoOne(PVM pVM, PVMCPU pVCpu, PCDBGFINFOHLP pHlp, CPUMDUMPTYPE enmType, const char *pszPrefix)
 {
-    NOREF(pVM);
+    PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
 
     /*
      * Format the EFLAGS.
@@ -3527,6 +3527,66 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCDBGFINFOHLP pHlp, CPUMDUMPTY
             if (CPUMIsGuestInPAEModeEx(pCtx))
                 for (unsigned i = 0; i < RT_ELEMENTS(pCtx->aPaePdpes); i++)
                     pHlp->pfnPrintf(pHlp, "%sPAE PDPTE %u  =%016RX64\n", pszPrefix, i, pCtx->aPaePdpes[i]);
+
+            /*
+             * MTRRs.
+             */
+            if (pVM->cpum.s.GuestFeatures.fMtrr)
+            {
+                pHlp->pfnPrintf(pHlp,
+                    "%sMTRR_CAP          =%016RX64\n"
+                    "%sMTRR_DEF_TYPE     =%016RX64\n"
+                    "%sMtrrFix64K_00000  =%016RX64\n"
+                    "%sMtrrFix16K_80000  =%016RX64\n"
+                    "%sMtrrFix16K_A0000  =%016RX64\n"
+                    "%sMtrrFix4K_C0000   =%016RX64\n"
+                    "%sMtrrFix4K_C8000   =%016RX64\n"
+                    "%sMtrrFix4K_D0000   =%016RX64\n"
+                    "%sMtrrFix4K_D8000   =%016RX64\n"
+                    "%sMtrrFix4K_E0000   =%016RX64\n"
+                    "%sMtrrFix4K_E8000   =%016RX64\n"
+                    "%sMtrrFix4K_F0000   =%016RX64\n"
+                    "%sMtrrFix4K_F8000   =%016RX64\n",
+                    pszPrefix, pVCpu->cpum.s.GuestMsrs.msr.MtrrCap,
+                    pszPrefix, pVCpu->cpum.s.GuestMsrs.msr.MtrrDefType,
+                    pszPrefix, pVCpu->cpum.s.GuestMsrs.msr.MtrrFix64K_00000,
+                    pszPrefix, pVCpu->cpum.s.GuestMsrs.msr.MtrrFix16K_80000,
+                    pszPrefix, pVCpu->cpum.s.GuestMsrs.msr.MtrrFix16K_A0000,
+                    pszPrefix, pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_C0000,
+                    pszPrefix, pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_C8000,
+                    pszPrefix, pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_D0000,
+                    pszPrefix, pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_D8000,
+                    pszPrefix, pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_E0000,
+                    pszPrefix, pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_E8000,
+                    pszPrefix, pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_F0000,
+                    pszPrefix, pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_F8000);
+
+                for (uint8_t iRange = 0; iRange < RT_ELEMENTS(pVCpu->cpum.s.GuestMsrs.msr.aMtrrVarMsrs); iRange++)
+                {
+                    PCX86MTRRVAR pMtrrVar = &pVCpu->cpum.s.GuestMsrs.msr.aMtrrVarMsrs[iRange];
+                    bool const   fIsValid = RT_BOOL(pMtrrVar->MtrrPhysMask & MSR_IA32_MTRR_PHYSMASK_VALID);
+                    if (fIsValid)
+                    {
+                        uint64_t const fInvPhysMask = ~(RT_BIT_64(pVM->cpum.s.GuestFeatures.cMaxPhysAddrWidth) - 1U);
+                        RTGCPHYS const GCPhysMask   = pMtrrVar->MtrrPhysMask & X86_PAGE_BASE_MASK;
+                        RTGCPHYS const GCPhysFirst  = pMtrrVar->MtrrPhysBase & X86_PAGE_BASE_MASK;
+                        RTGCPHYS const GCPhysLast   = (GCPhysFirst | ~GCPhysMask) & ~fInvPhysMask;
+                        Assert((GCPhysLast & GCPhysMask)       == (GCPhysFirst & GCPhysMask));
+                        Assert(((GCPhysLast + 1) & GCPhysMask) != (GCPhysFirst & GCPhysMask));
+                        pHlp->pfnPrintf(pHlp,
+                                        "%sMTRR_PHYSBASE[%2u] =%016RX64 First=%016RX64\n"
+                                        "%sMTRR_PHYSMASK[%2u] =%016RX64 Last =%016RX64\n",
+                                        pszPrefix, iRange, pMtrrVar->MtrrPhysBase, GCPhysFirst,
+                                        pszPrefix, iRange, pMtrrVar->MtrrPhysMask, GCPhysLast);
+                    }
+                    else
+                        pHlp->pfnPrintf(pHlp,
+                                        "%sMTRR_PHYSBASE[%2u] =%016RX64\n"
+                                        "%sMTRR_PHYSMASK[%2u] =%016RX64\n",
+                                        pszPrefix, iRange, pMtrrVar->MtrrPhysBase,
+                                        pszPrefix, iRange, pMtrrVar->MtrrPhysMask);
+                }
+            }
             break;
     }
 }
@@ -3609,8 +3669,7 @@ static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const cha
 
     pHlp->pfnPrintf(pHlp, "Guest CPUM (VCPU %d) state: %s\n", pVCpu->idCpu, pszComment);
 
-    PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
-    cpumR3InfoOne(pVM, pCtx, pHlp, enmType, "");
+    cpumR3InfoOne(pVM, pVCpu, pHlp, enmType, "");
 }
 
 
@@ -4537,6 +4596,46 @@ VMMR3DECL(int) CPUMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
                                              TMTIMER_FLAGS_RING0, szName, &pVCpu->cpum.s.hNestedVmxPreemptTimer);
                     AssertLogRelRCReturn(rc, rc);
                 }
+            }
+
+            /*
+             * Initialize MTRRs.
+             */
+            if (pVM->cpum.s.fMtrrRead)
+            {
+                uint64_t cbRam;
+                CFGMR3QueryU64Def(CFGMR3GetRoot(pVM), "RamSize", &cbRam, 0);
+                AssertReturn(cbRam > _1M, VERR_CPUM_IPE_1);
+                RTGCPHYS const GCPhysFirst   = _1M;
+                RTGCPHYS const GCPhysLast    = cbRam - 1;
+                RTGCPHYS const GCPhysLength  = GCPhysLast - GCPhysFirst;
+                uint64_t const fInvPhysMask  = ~(RT_BIT_64(pVM->cpum.s.GuestFeatures.cMaxPhysAddrWidth) - 1U);
+                RTGCPHYS const GCPhysMask    = (~(GCPhysLength - 1) & ~fInvPhysMask) & X86_PAGE_BASE_MASK;
+                uint64_t const uMtrrPhysMask = GCPhysMask | MSR_IA32_MTRR_PHYSMASK_VALID;
+#ifdef VBOX_STRICT
+                /* Paranoia. */
+                Assert(GCPhysLast == ((GCPhysFirst | ~GCPhysMask) & ~fInvPhysMask));
+                Assert((GCPhysLast & GCPhysMask) == (GCPhysFirst & GCPhysMask));
+                Assert(((GCPhysLast + 1) & GCPhysMask) != (GCPhysFirst & GCPhysMask));
+#endif
+                for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+                {
+                    PCPUMCTXMSRS pCtxMsrs = &pVM->apCpusR3[idCpu]->cpum.s.GuestMsrs;
+                    pCtxMsrs->msr.MtrrFix64K_00000 = 0x0606060606060606;
+                    pCtxMsrs->msr.MtrrFix16K_80000 = 0x0606060606060606;
+                    pCtxMsrs->msr.MtrrFix16K_A0000 = 0;
+                    pCtxMsrs->msr.MtrrFix4K_C0000  = 0x0505050505050505;
+                    pCtxMsrs->msr.MtrrFix4K_C8000  = 0x0505050505050505;
+                    pCtxMsrs->msr.MtrrFix4K_D0000  = 0x0505050505050505;
+                    pCtxMsrs->msr.MtrrFix4K_D8000  = 0x0505050505050505;
+                    pCtxMsrs->msr.MtrrFix4K_E0000  = 0x0505050505050505;
+                    pCtxMsrs->msr.MtrrFix4K_E8000  = 0x0505050505050505;
+                    pCtxMsrs->msr.MtrrFix4K_F0000  = 0x0505050505050505;
+                    pCtxMsrs->msr.MtrrFix4K_F8000  = 0x0505050505050505;
+                    pCtxMsrs->msr.aMtrrVarMsrs[0].MtrrPhysBase = GCPhysFirst | X86_MTRR_MT_WB;
+                    pCtxMsrs->msr.aMtrrVarMsrs[0].MtrrPhysMask = uMtrrPhysMask;
+                }
+                LogRel(("CPUM: Initialized MTRRs (MtrrPhysMask=%RGp GCPhysLast=%RGp)\n", uMtrrPhysMask, GCPhysLast));
             }
             break;
         }

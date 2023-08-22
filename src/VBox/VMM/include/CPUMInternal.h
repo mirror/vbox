@@ -365,7 +365,10 @@ typedef struct CPUM
     /** Indicates that a state restore is pending.
      * This is used to verify load order dependencies (PGM). */
     bool                    fPendingRestore;
-    uint8_t                 abPadding0[2];
+    /** Whether MTRR reads report valid memory types for memory regions. */
+    bool                    fMtrrRead;
+    /** Whether the guest's writes to MTRRs are implemented. */
+    bool                    fMtrrWrite;
 
     /** XSAVE/XRTOR components we can expose to the guest mask. */
     uint64_t                fXStateGuestMask;

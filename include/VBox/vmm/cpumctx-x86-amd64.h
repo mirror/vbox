@@ -1047,6 +1047,16 @@ AssertCompile(CPUMCTX_INHIBIT_ALL_MASK < UINT32_MAX);
 AssertCompile((CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_DBG_DBGF_MASK) < UINT32_MAX);
 /** @}  */
 
+/** Maximum number of variable-range MTRR pairs supported.
+ *
+ *  Intel documents upto 10, see IA32_MTRR_PHYS[BASE|MASK](0..9).
+ *  AMD documents upto 8, see MTRR_phys[Base|Mask](0..7)
+ *  Hyper-V documents upto 16, see WHvX64RegisterMsrMtrrPhys[Base|Mask](0..F).
+ *
+ *  CPUs can in theory accomodate upto 39 pairs ([0x200,0x201]..[0x24e,0x24f])
+ *  unless AMD/Intel decides to put something else in this range.
+ */
+#define CPUMCTX_MAX_MTRRVAR_COUNT       16
 
 
 /**
@@ -1076,6 +1086,8 @@ typedef union CPUMCTXMSRS
         uint64_t    PkgCStateCfgCtrl;   /**< MSR_PKG_CST_CONFIG_CONTROL */
         uint64_t    SpecCtrl;           /**< IA32_SPEC_CTRL */
         uint64_t    ArchCaps;           /**< IA32_ARCH_CAPABILITIES */
+        uint64_t    MtrrCap;            /**< IA32_MTRR_CAP */
+        X86MTRRVAR  aMtrrVarMsrs[CPUMCTX_MAX_MTRRVAR_COUNT]; /**< IA32_MTRR_PHYSBASE, IA32_MTRR_PHYSMASK */
     } msr;
     uint64_t    au64[64];
 } CPUMCTXMSRS;

@@ -85,6 +85,8 @@ struc CPUM
     .CR4.OrMask                 resd    1
     .u8PortableCpuIdLevel       resb    1
     .fPendingRestore            resb    1
+    .fMtrrRead                  resb    1
+    .fMtrrWrite                 resb    1
 
     alignb 8
     .fXStateGuestMask           resq    1
