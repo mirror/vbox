@@ -746,63 +746,33 @@ void UIVMLogViewerWidget::prepareWidgets()
 
     /* Create VM Log-Viewer container: */
     m_pTabWidget = new UITabWidget;
-    if (m_pTabWidget)
-    {
-        /* Add into layout: */
-        m_pMainLayout->addWidget(m_pTabWidget);
-        connect(m_pTabWidget, &QITabWidget::currentChanged, this, &UIVMLogViewerWidget::sltCurrentTabChanged);
-    }
-
-    /* Create VM Log-Viewer filter-panel: */
-    // m_pFilterPanel = new UIVMLogViewerFilterPanel(0, this);
-    // if (m_pFilterPanel)
-    // {
-    //     /* Configure panel: */
-    //     //installEventFilter(m_pFilterPanel);
-    //     m_pFilterPanel->hide();
-
-    //     /* Add into layout: */
-    //     m_pMainLayout->addWidget(m_pFilterPanel);
-    // }
-
-    /* Create VM Log-Viewer bookmarks-panel: */
-    // m_pBookmarksPanel = new UIVMLogViewerBookmarksPanel(0, this);
-    // if (m_pBookmarksPanel)
-    // {
-    //     /* Configure panel: */
-    //     m_pBookmarksPanel->hide();
-    //     connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigDeleteBookmarkByIndex,
-    //             this, &UIVMLogViewerWidget::sltDeleteBookmarkByIndex);
-    //     connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigDeleteAllBookmarks,
-    //             this, &UIVMLogViewerWidget::sltDeleteAllBookmarks);
-    //     connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigBookmarkSelected,
-    //             this, &UIVMLogViewerWidget::gotoBookmark);
-    //     /* Add into layout: */
-    //     m_pMainLayout->addWidget(m_pBookmarksPanel);
-    // }
+    AssertReturnVoid(m_pTabWidget);
+    /* Add into layout: */
+    m_pMainLayout->addWidget(m_pTabWidget);
+    m_pTabWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    connect(m_pTabWidget, &QITabWidget::currentChanged, this, &UIVMLogViewerWidget::sltCurrentTabChanged);
 
     /* Create VM Log-Viewer options-panel: */
-    m_pOptionsPanel = new UIVMLogViewerOptionsPanel(0, this);
-    if (m_pOptionsPanel)
-    {
-        /* Configure panel: */
-        m_pOptionsPanel->hide();
-        m_pOptionsPanel->setShowLineNumbers(m_bShowLineNumbers);
-        m_pOptionsPanel->setWrapLines(m_bWrapLines);
-        m_pOptionsPanel->setFontSizeInPoints(m_font.pointSize());
-        connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigShowLineNumbers, this, &UIVMLogViewerWidget::sltShowLineNumbers);
-        connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigWrapLines, this, &UIVMLogViewerWidget::sltWrapLines);
-        connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigChangeFontSizeInPoints, this, &UIVMLogViewerWidget::sltFontSizeChanged);
-        connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigChangeFont, this, &UIVMLogViewerWidget::sltChangeFont);
-        connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigResetToDefaults, this, &UIVMLogViewerWidget::sltResetOptionsToDefault);
+    // m_pOptionsPanel = new UIVMLogViewerOptionsPanel(0, this);
+    // AssertReturnVoid(m_pOptionsPanel);
+    // /* Configure panel: */
+    // m_pOptionsPanel->hide();
+    // m_pOptionsPanel->setShowLineNumbers(m_bShowLineNumbers);
+    // m_pOptionsPanel->setWrapLines(m_bWrapLines);
+    // m_pOptionsPanel->setFontSizeInPoints(m_font.pointSize());
+    // connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigShowLineNumbers, this, &UIVMLogViewerWidget::sltShowLineNumbers);
+    // connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigWrapLines, this, &UIVMLogViewerWidget::sltWrapLines);
+    // connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigChangeFontSizeInPoints, this, &UIVMLogViewerWidget::sltFontSizeChanged);
+    // connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigChangeFont, this, &UIVMLogViewerWidget::sltChangeFont);
+    // connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigResetToDefaults, this, &UIVMLogViewerWidget::sltResetOptionsToDefault);
 
-        /* Add into layout: */
-        m_pMainLayout->addWidget(m_pOptionsPanel);
-    }
+    // m_pMainLayout->addWidget(m_pOptionsPanel);
 
     m_pPanel = new UIVMLogViewerPanelNew(0, this);
     AssertReturnVoid(m_pPanel);
     installEventFilter(m_pPanel);
+    m_pPanel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+
     connect(m_pPanel, &UIVMLogViewerPanelNew::sigHighlightingUpdated,
             this, &UIVMLogViewerWidget::sltSearchResultHighLigting);
     connect(m_pPanel, &UIVMLogViewerPanelNew::sigSearchUpdated,
