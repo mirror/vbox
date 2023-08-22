@@ -39,9 +39,10 @@
 class QPlainTextEdit;
 class QTextDocument;
 class UIVMLogViewerWidget;
-class UIVMLogViewerSearchPanel;
-class UIVMLogViewerFilterPanel;
-class UIVMLogViewerBookmarksPanel;
+class UIVMLogViewerSearchWidget;
+class UIVMLogViewerFilterWidget;
+class UIVMLogViewerBookmarksWidget;
+class UIVMLogViewerPreferencesWidget;
 
 class UIVMLogViewerPanelNew : public QIWithRetranslateUI<UIDialogPanelBase>
 {
@@ -55,6 +56,12 @@ signals:
     void sigDeleteBookmarkByIndex(int bookmarkIndex);
     void sigDeleteAllBookmarks();
     void sigBookmarkSelected(int index);
+
+    void sigShowLineNumbers(bool show);
+    void sigWrapLines(bool show);
+    void sigChangeFontSizeInPoints(int size);
+    void sigChangeFont(QFont font);
+    void sigResetToDefaults();
 
 public:
 
@@ -79,6 +86,13 @@ public:
         void disableEnableBookmarking(bool flag);
     /** @} */
 
+    /** @name Preferences page pass through functions
+      * @{ */
+        void setShowLineNumbers(bool bShowLineNumbers);
+        void setWrapLines(bool bWrapLines);
+        void setFontSizeInPoints(int fontSizeInPoints);
+    /** @} */
+
     enum Page
     {
         Page_Search = 0,
@@ -97,11 +111,11 @@ private:
     void retranslateUi() override;
     void prepare() override;
 
-    UIVMLogViewerWidget *m_pViewer;
-
-    UIVMLogViewerSearchPanel *m_pSearchWidget;
-    UIVMLogViewerFilterPanel *m_pFilterWidget;
-    UIVMLogViewerBookmarksPanel *m_pBookmarksWidget;
+    UIVMLogViewerWidget             *m_pViewer;
+    UIVMLogViewerSearchWidget        *m_pSearchWidget;
+    UIVMLogViewerFilterWidget       *m_pFilterWidget;
+    UIVMLogViewerBookmarksWidget     *m_pBookmarksWidget;
+    UIVMLogViewerPreferencesWidget  *m_pPreferencesWidget;
 };
 
 /** UIDialonPanel extension acting as the base class for UIVMLogViewerXXXPanel widgets. */

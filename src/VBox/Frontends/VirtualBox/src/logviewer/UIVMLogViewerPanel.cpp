@@ -35,9 +35,10 @@
 #include "UIVMLogPage.h"
 #include "UIVMLogViewerPanel.h"
 #include "UIVMLogViewerWidget.h"
-#include "UIVMLogViewerSearchPanel.h"
-#include "UIVMLogViewerFilterPanel.h"
-#include "UIVMLogViewerBookmarksPanel.h"
+#include "UIVMLogViewerSearchWidget.h"
+#include "UIVMLogViewerFilterWidget.h"
+#include "UIVMLogViewerBookmarksWidget.h"
+#include "UIVMLogViewerPreferencesWidget.h"
 
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
@@ -49,6 +50,7 @@ UIVMLogViewerPanelNew::UIVMLogViewerPanelNew(QWidget *pParent, UIVMLogViewerWidg
     , m_pSearchWidget(0)
     , m_pFilterWidget(0)
     , m_pBookmarksWidget(0)
+    , m_pPreferencesWidget(0)
 {
     prepare();
 }
@@ -56,31 +58,46 @@ UIVMLogViewerPanelNew::UIVMLogViewerPanelNew(QWidget *pParent, UIVMLogViewerWidg
 void UIVMLogViewerPanelNew::prepare()
 {
     /* Search tab: */
-    m_pSearchWidget = new UIVMLogViewerSearchPanel(0, m_pViewer);
+    m_pSearchWidget = new UIVMLogViewerSearchWidget(0, m_pViewer);
     insertTab(Page_Search, m_pSearchWidget);
 
-    connect(m_pSearchWidget, &UIVMLogViewerSearchPanel::sigHighlightingUpdated,
+    connect(m_pSearchWidget, &UIVMLogViewerSearchWidget::sigHighlightingUpdated,
             this, &UIVMLogViewerPanelNew::sigHighlightingUpdated);
-    connect(m_pSearchWidget, &UIVMLogViewerSearchPanel::sigSearchUpdated,
+    connect(m_pSearchWidget, &UIVMLogViewerSearchWidget::sigSearchUpdated,
             this, &UIVMLogViewerPanelNew::sigSearchUpdated);
 
     /* Filter tab: */
-    m_pFilterWidget = new UIVMLogViewerFilterPanel(0, m_pViewer);
+    m_pFilterWidget = new UIVMLogViewerFilterWidget(0, m_pViewer);
     insertTab(Page_Filter, m_pFilterWidget);
 
-    connect(m_pFilterWidget, &UIVMLogViewerFilterPanel::sigFilterApplied,
+    connect(m_pFilterWidget, &UIVMLogViewerFilterWidget::sigFilterApplied,
             this, &UIVMLogViewerPanelNew::sigFilterApplied);
 
     /* Bookmark tab: */
-    m_pBookmarksWidget = new UIVMLogViewerBookmarksPanel(0, m_pViewer);
+    m_pBookmarksWidget = new UIVMLogViewerBookmarksWidget(0, m_pViewer);
     insertTab(Page_Bookmark, m_pBookmarksWidget);
 
-    connect(m_pBookmarksWidget, &UIVMLogViewerBookmarksPanel::sigDeleteBookmarkByIndex,
+    connect(m_pBookmarksWidget, &UIVMLogViewerBookmarksWidget::sigDeleteBookmarkByIndex,
             this, &UIVMLogViewerPanelNew::sigDeleteBookmarkByIndex);
-    connect(m_pBookmarksWidget, &UIVMLogViewerBookmarksPanel::sigDeleteAllBookmarks,
+    connect(m_pBookmarksWidget, &UIVMLogViewerBookmarksWidget::sigDeleteAllBookmarks,
             this, &UIVMLogViewerPanelNew::sigDeleteAllBookmarks);
-    connect(m_pBookmarksWidget, &UIVMLogViewerBookmarksPanel::sigBookmarkSelected,
+    connect(m_pBookmarksWidget, &UIVMLogViewerBookmarksWidget::sigBookmarkSelected,
             this, &UIVMLogViewerPanelNew::sigBookmarkSelected);
+
+    /* Preferences tab: */
+    m_pPreferencesWidget = new UIVMLogViewerPreferencesWidget(0, m_pViewer);
+    insertTab(Page_Preferences, m_pPreferencesWidget);
+
+    connect(m_pPreferencesWidget, &UIVMLogViewerPreferencesWidget::sigShowLineNumbers,
+            this, &UIVMLogViewerPanelNew::sigShowLineNumbers);
+    connect(m_pPreferencesWidget, &UIVMLogViewerPreferencesWidget::sigWrapLines,
+            this, &UIVMLogViewerPanelNew::sigWrapLines);
+    connect(m_pPreferencesWidget, &UIVMLogViewerPreferencesWidget::sigChangeFontSizeInPoints,
+            this, &UIVMLogViewerPanelNew::sigChangeFontSizeInPoints);
+    connect(m_pPreferencesWidget, &UIVMLogViewerPreferencesWidget::sigChangeFont,
+            this, &UIVMLogViewerPanelNew::sigChangeFont);
+    connect(m_pPreferencesWidget, &UIVMLogViewerPreferencesWidget::sigResetToDefaults,
+            this, &UIVMLogViewerPanelNew::sigResetToDefaults);
 
     retranslateUi();
 }
@@ -123,11 +140,30 @@ void UIVMLogViewerPanelNew::disableEnableBookmarking(bool flag)
         m_pBookmarksWidget->disableEnableBookmarking(flag);
 }
 
+void UIVMLogViewerPanelNew::setShowLineNumbers(bool bShowLineNumbers)
+{
+    if (m_pPreferencesWidget)
+        m_pPreferencesWidget->setShowLineNumbers(bShowLineNumbers);
+}
+
+void UIVMLogViewerPanelNew::setWrapLines(bool bWrapLines)
+{
+    if (m_pPreferencesWidget)
+        m_pPreferencesWidget->setWrapLines(bWrapLines);
+}
+
+void UIVMLogViewerPanelNew::setFontSizeInPoints(int fontSizeInPoints)
+{
+    if (m_pPreferencesWidget)
+        m_pPreferencesWidget->setFontSizeInPoints(fontSizeInPoints);
+}
+
 void UIVMLogViewerPanelNew::retranslateUi()
 {
     setTabText(Page_Search, "Find");
     setTabText(Page_Filter, "Filter");
     setTabText(Page_Bookmark, "Bookmarks");
+    setTabText(Page_Preferences, "Preferences");
 }
 
 bool UIVMLogViewerPanelNew::eventFilter(QObject *pObject, QEvent *pEvent)

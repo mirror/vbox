@@ -25,8 +25,8 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerSearchPanel_h
-#define FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerSearchPanel_h
+#ifndef FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerSearchWidget_h
+#define FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerSearchWidget_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -48,7 +48,7 @@ class UIVMLogViewerWidget;
 
 /** UIVMLogViewerPanel extension
   * providing GUI for search-panel in VM Log-Viewer. */
-class UIVMLogViewerSearchPanel : public UIVMLogViewerPanel
+class UIVMLogViewerSearchWidget : public UIVMLogViewerPanel
 {
     Q_OBJECT;
 
@@ -61,7 +61,7 @@ public:
 
     /** Constructs search-panel by passing @a pParent to the QWidget base-class constructor.
       * @param  pViewer  Specifies instance of VM Log-Viewer. */
-    UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer);
+    UIVMLogViewerSearchWidget(QWidget *pParent, UIVMLogViewerWidget *pViewer);
     /** Resets the search position and starts a new search. */
     void refreshSearch();
     const QVector<float> &matchLocationVector() const;
@@ -132,4 +132,4 @@ private:
 };
 
 
-#endif /* !FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerSearchPanel_h */
+#endif /* !FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerSearchWidget_h */

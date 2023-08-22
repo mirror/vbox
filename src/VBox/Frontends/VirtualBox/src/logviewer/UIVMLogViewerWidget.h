@@ -56,7 +56,6 @@ class UIVMLogTab;
 class UIVMLogViewerBookmarksPanel;
 class UIVMLogViewerPanelNew;
 class UIVMLogViewerFilterPanel;
-class UIVMLogViewerOptionsPanel;
 class UIVMLogViewerPanel;
 class CMachine;
 
@@ -226,7 +225,6 @@ private:
 
     /** @name Panel instances and a QMap for mapping panel instances to related actions.
       * @{ */
-        UIVMLogViewerOptionsPanel   *m_pOptionsPanel;
         QList<UIDialogPanel*>          m_visiblePanelsList;
     /** @} */
     QVBoxLayout         *m_pMainLayout;
@@ -252,7 +250,7 @@ private:
     QPointer<UIVMLogPage> m_pPreviousLogPage;
     UIVMLogViewerPanelNew *m_pPanel;
 
-    friend class UIVMLogViewerFilterPanel;
+    friend class UIVMLogViewerFilterWidget;
     friend class UIVMLogViewerPanel;
     friend class UIVMLogViewerDialog;
 };

@@ -25,8 +25,8 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerBookmarksPanel_h
-#define FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerBookmarksPanel_h
+#ifndef FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerBookmarksWidget_h
+#define FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerBookmarksWidget_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -42,13 +42,13 @@ class QIToolButton;
 
 /** UIVMLogViewerPanel extension providing GUI for bookmark management. Show a list of bookmarks currently set
  *  for displayed log page. It has controls to navigate and clear bookmarks. */
-class UIVMLogViewerBookmarksPanel : public UIVMLogViewerPanel
+class UIVMLogViewerBookmarksWidget : public UIVMLogViewerPanel
 {
     Q_OBJECT;
 
 public:
 
-    UIVMLogViewerBookmarksPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer);
+    UIVMLogViewerBookmarksWidget(QWidget *pParent, UIVMLogViewerWidget *pViewer);
 
     /** Adds a single bookmark to an existing list of bookmarks. Possibly called
      *  by UIVMLogViewerWidget when user adds a bookmark thru context menu etc. */
@@ -96,4 +96,4 @@ private:
     QIToolButton *m_pPreviousButton;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerBookmarksPanel_h */
+#endif /* !FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerBookmarksWidget_h */

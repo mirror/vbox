@@ -36,11 +36,14 @@
 /* GUI includes: */
 #include "QIToolButton.h"
 #include "UIIconPool.h"
-#include "UIVMLogViewerOptionsPanel.h"
+#include "UIVMLogViewerPreferencesWidget.h"
 #include "UIVMLogViewerWidget.h"
 
+/* Other VBox includes: */
+#include <iprt/assert.h>
 
-UIVMLogViewerOptionsPanel::UIVMLogViewerOptionsPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer)
+
+UIVMLogViewerPreferencesWidget::UIVMLogViewerPreferencesWidget(QWidget *pParent, UIVMLogViewerWidget *pViewer)
     : UIVMLogViewerPanel(pParent, pViewer)
     , m_pLineNumberCheckBox(0)
     , m_pWrapLinesCheckBox(0)
@@ -52,9 +55,10 @@ UIVMLogViewerOptionsPanel::UIVMLogViewerOptionsPanel(QWidget *pParent, UIVMLogVi
 {
     prepareWidgets();
     prepareConnections();
+    retranslateUi();
 }
 
-void UIVMLogViewerOptionsPanel::setShowLineNumbers(bool bShowLineNumbers)
+void UIVMLogViewerPreferencesWidget::setShowLineNumbers(bool bShowLineNumbers)
 {
     if (!m_pLineNumberCheckBox)
         return;
@@ -63,7 +67,7 @@ void UIVMLogViewerOptionsPanel::setShowLineNumbers(bool bShowLineNumbers)
     m_pLineNumberCheckBox->setChecked(bShowLineNumbers);
 }
 
-void UIVMLogViewerOptionsPanel::setWrapLines(bool bWrapLines)
+void UIVMLogViewerPreferencesWidget::setWrapLines(bool bWrapLines)
 {
     if (!m_pWrapLinesCheckBox)
         return;
@@ -72,7 +76,7 @@ void UIVMLogViewerOptionsPanel::setWrapLines(bool bWrapLines)
     m_pWrapLinesCheckBox->setChecked(bWrapLines);
 }
 
-void UIVMLogViewerOptionsPanel::setFontSizeInPoints(int fontSizeInPoints)
+void UIVMLogViewerPreferencesWidget::setFontSizeInPoints(int fontSizeInPoints)
 {
     if (!m_pFontSizeSpinBox)
         return;
@@ -81,41 +85,40 @@ void UIVMLogViewerOptionsPanel::setFontSizeInPoints(int fontSizeInPoints)
     m_pFontSizeSpinBox->setValue(fontSizeInPoints);
 }
 
-void UIVMLogViewerOptionsPanel::prepareWidgets()
+void UIVMLogViewerPreferencesWidget::prepareWidgets()
 {
-    QHBoxLayout *pMainLayout = new QHBoxLayout(this);
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    AssertReturnVoid(pMainLayout);
+
+    QHBoxLayout *pContainerLayout = new QHBoxLayout;
 
     /* Create line-number check-box: */
     m_pLineNumberCheckBox = new QCheckBox;
-    if (m_pLineNumberCheckBox)
-    {
-        m_pLineNumberCheckBox->setChecked(true);
-        pMainLayout->addWidget(m_pLineNumberCheckBox, 0, Qt::AlignLeft);
-    }
+    AssertReturnVoid(m_pLineNumberCheckBox);
+    m_pLineNumberCheckBox->setChecked(true);
+    pContainerLayout->addWidget(m_pLineNumberCheckBox, 0, Qt::AlignLeft);
+
 
     /* Create wrap-lines check-box: */
     m_pWrapLinesCheckBox = new QCheckBox;
-    if (m_pWrapLinesCheckBox)
-    {
-        m_pWrapLinesCheckBox->setChecked(false);
-        pMainLayout->addWidget(m_pWrapLinesCheckBox, 0, Qt::AlignLeft);
-    }
+    AssertReturnVoid(m_pWrapLinesCheckBox);
+    m_pWrapLinesCheckBox->setChecked(false);
+    pContainerLayout->addWidget(m_pWrapLinesCheckBox, 0, Qt::AlignLeft);
 
     /* Create font-size spin-box: */
     m_pFontSizeSpinBox = new QSpinBox;
-    if (m_pFontSizeSpinBox)
-    {
-        pMainLayout->addWidget(m_pFontSizeSpinBox, 0, Qt::AlignLeft);
-        m_pFontSizeSpinBox->setValue(m_iDefaultFontSize);
-        m_pFontSizeSpinBox->setMaximum(44);
-        m_pFontSizeSpinBox->setMinimum(6);
-    }
+    AssertReturnVoid(m_pFontSizeSpinBox);
+    pContainerLayout->addWidget(m_pFontSizeSpinBox, 0, Qt::AlignLeft);
+    m_pFontSizeSpinBox->setValue(m_iDefaultFontSize);
+    m_pFontSizeSpinBox->setMaximum(44);
+    m_pFontSizeSpinBox->setMinimum(6);
+
 
     /* Create font-size label: */
     m_pFontSizeLabel = new QLabel;
     if (m_pFontSizeLabel)
     {
-        pMainLayout->addWidget(m_pFontSizeLabel, 0, Qt::AlignLeft);
+        pContainerLayout->addWidget(m_pFontSizeLabel, 0, Qt::AlignLeft);
         if (m_pFontSizeSpinBox)
             m_pFontSizeLabel->setBuddy(m_pFontSizeSpinBox);
     }
@@ -143,28 +146,30 @@ void UIVMLogViewerOptionsPanel::prepareWidgets()
             m_pResetToDefaultsButton->setIcon(UIIconPool::iconSet(":/log_viewer_reset_font_16px.png"));
         }
 
-        pMainLayout->addLayout(pButtonLayout);
+        pContainerLayout->addLayout(pButtonLayout);
     }
 
-    pMainLayout->addStretch(2);
+    pContainerLayout->addStretch(1);
+    pMainLayout->addLayout(pContainerLayout);
+    pMainLayout->addStretch(1);
 }
 
-void UIVMLogViewerOptionsPanel::prepareConnections()
+void UIVMLogViewerPreferencesWidget::prepareConnections()
 {
     if (m_pLineNumberCheckBox)
-        connect(m_pLineNumberCheckBox, &QCheckBox::toggled, this, &UIVMLogViewerOptionsPanel::sigShowLineNumbers);
+        connect(m_pLineNumberCheckBox, &QCheckBox::toggled, this, &UIVMLogViewerPreferencesWidget::sigShowLineNumbers);
     if (m_pWrapLinesCheckBox)
-        connect(m_pWrapLinesCheckBox, &QCheckBox::toggled, this, &UIVMLogViewerOptionsPanel::sigWrapLines);
+        connect(m_pWrapLinesCheckBox, &QCheckBox::toggled, this, &UIVMLogViewerPreferencesWidget::sigWrapLines);
     if (m_pFontSizeSpinBox)
         connect(m_pFontSizeSpinBox, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
-                this, &UIVMLogViewerOptionsPanel::sigChangeFontSizeInPoints);
+                this, &UIVMLogViewerPreferencesWidget::sigChangeFontSizeInPoints);
     if (m_pOpenFontDialogButton)
-        connect(m_pOpenFontDialogButton, &QIToolButton::clicked, this, &UIVMLogViewerOptionsPanel::sltOpenFontDialog);
+        connect(m_pOpenFontDialogButton, &QIToolButton::clicked, this, &UIVMLogViewerPreferencesWidget::sltOpenFontDialog);
     if (m_pResetToDefaultsButton)
-        connect(m_pResetToDefaultsButton, &QIToolButton::clicked, this, &UIVMLogViewerOptionsPanel::sigResetToDefaults);
+        connect(m_pResetToDefaultsButton, &QIToolButton::clicked, this, &UIVMLogViewerPreferencesWidget::sigResetToDefaults);
 }
 
-void UIVMLogViewerOptionsPanel::retranslateUi()
+void UIVMLogViewerPreferencesWidget::retranslateUi()
 {
     UIVMLogViewerPanel::retranslateUi();
 
@@ -181,7 +186,7 @@ void UIVMLogViewerOptionsPanel::retranslateUi()
     m_pResetToDefaultsButton->setToolTip(UIVMLogViewerWidget::tr("Reset options to application defaults"));
 }
 
-void UIVMLogViewerOptionsPanel::sltOpenFontDialog()
+void UIVMLogViewerPreferencesWidget::sltOpenFontDialog()
 {
     QFont currentFont;
     UIVMLogViewerWidget* parentWidget = qobject_cast<UIVMLogViewerWidget*>(parent());

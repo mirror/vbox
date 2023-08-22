@@ -43,7 +43,7 @@
 #include "QIToolButton.h"
 #include "UIIconPool.h"
 #include "UIVMLogPage.h"
-#include "UIVMLogViewerFilterPanel.h"
+#include "UIVMLogViewerFilterWidget.h"
 #include "UIVMLogViewerWidget.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
@@ -257,10 +257,10 @@ void UIVMFilterLineEdit::createButtons()
 
 
 /*********************************************************************************************************************************
-*   UIVMLogViewerFilterPanel implementation.                                                                                     *
+*   UIVMLogViewerFilterWidget implementation.                                                                                     *
 *********************************************************************************************************************************/
 
-UIVMLogViewerFilterPanel::UIVMLogViewerFilterPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer)
+UIVMLogViewerFilterWidget::UIVMLogViewerFilterWidget(QWidget *pParent, UIVMLogViewerWidget *pViewer)
     : UIVMLogViewerPanel(pParent, pViewer)
     , m_pFilterLabel(0)
     , m_pFilterComboBox(0)
@@ -279,7 +279,7 @@ UIVMLogViewerFilterPanel::UIVMLogViewerFilterPanel(QWidget *pParent, UIVMLogView
     prepareConnections();
 }
 
-void UIVMLogViewerFilterPanel::applyFilter()
+void UIVMLogViewerFilterWidget::applyFilter()
 {
     if (isVisible())
         filter();
@@ -289,7 +289,7 @@ void UIVMLogViewerFilterPanel::applyFilter()
     emit sigFilterApplied();
 }
 
-void UIVMLogViewerFilterPanel::filter()
+void UIVMLogViewerFilterWidget::filter()
 {
     if (!viewer())
         return;
@@ -336,7 +336,7 @@ void UIVMLogViewerFilterPanel::filter()
     logPage->scrollToEnd();
 }
 
-void UIVMLogViewerFilterPanel::resetFiltering()
+void UIVMLogViewerFilterWidget::resetFiltering()
 {
     UIVMLogPage *logPage = viewer()->currentLogPage();
     QTextDocument *document = textDocument();
@@ -349,7 +349,7 @@ void UIVMLogViewerFilterPanel::resetFiltering()
     logPage->scrollToEnd();
 }
 
-bool UIVMLogViewerFilterPanel::applyFilterTermsToString(const QString& string)
+bool UIVMLogViewerFilterWidget::applyFilterTermsToString(const QString& string)
 {
     /* Number of the filter terms contained with the @p string: */
     int hitCount = 0;
@@ -384,7 +384,7 @@ bool UIVMLogViewerFilterPanel::applyFilterTermsToString(const QString& string)
 }
 
 
-void UIVMLogViewerFilterPanel::sltAddFilterTerm()
+void UIVMLogViewerFilterWidget::sltAddFilterTerm()
 {
     if (!m_pFilterComboBox)
         return;
@@ -405,7 +405,7 @@ void UIVMLogViewerFilterPanel::sltAddFilterTerm()
     applyFilter();
 }
 
-void UIVMLogViewerFilterPanel::sltClearFilterTerms()
+void UIVMLogViewerFilterWidget::sltClearFilterTerms()
 {
     if (m_filterTermSet.empty())
         return;
@@ -415,7 +415,7 @@ void UIVMLogViewerFilterPanel::sltClearFilterTerms()
         m_pFilterTermsLineEdit->clearAll();
 }
 
-void UIVMLogViewerFilterPanel::sltOperatorButtonChanged(QAbstractButton *pButton)
+void UIVMLogViewerFilterWidget::sltOperatorButtonChanged(QAbstractButton *pButton)
 {
     int buttonId = m_pButtonGroup->id(pButton);
     if (buttonId < 0 || buttonId >= ButtonEnd)
@@ -424,13 +424,13 @@ void UIVMLogViewerFilterPanel::sltOperatorButtonChanged(QAbstractButton *pButton
     applyFilter();
 }
 
-void UIVMLogViewerFilterPanel::sltRemoveFilterTerm(const QString &termString)
+void UIVMLogViewerFilterWidget::sltRemoveFilterTerm(const QString &termString)
 {
     m_filterTermSet.remove(termString);
     applyFilter();
 }
 
-void UIVMLogViewerFilterPanel::prepareWidgets()
+void UIVMLogViewerFilterWidget::prepareWidgets()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     AssertReturnVoid(pMainLayout);
@@ -491,7 +491,7 @@ void UIVMLogViewerFilterPanel::prepareWidgets()
     pMainLayout->addStretch(1);
 }
 
-void UIVMLogViewerFilterPanel::prepareRadioButtonGroup(QVBoxLayout *pLayout)
+void UIVMLogViewerFilterWidget::prepareRadioButtonGroup(QVBoxLayout *pLayout)
 {
     /* Create radio-button container: */
     m_pRadioButtonContainer = new QFrame;
@@ -554,21 +554,21 @@ void UIVMLogViewerFilterPanel::prepareRadioButtonGroup(QVBoxLayout *pLayout)
     m_eFilterOperatorButton = OrButton;
 }
 
-void UIVMLogViewerFilterPanel::prepareConnections()
+void UIVMLogViewerFilterWidget::prepareConnections()
 {
-    connect(m_pAddFilterTermButton, &QIToolButton::clicked, this,  &UIVMLogViewerFilterPanel::sltAddFilterTerm);
+    connect(m_pAddFilterTermButton, &QIToolButton::clicked, this,  &UIVMLogViewerFilterWidget::sltAddFilterTerm);
     connect(m_pButtonGroup, static_cast<void (QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
-            this, &UIVMLogViewerFilterPanel::sltOperatorButtonChanged);
+            this, &UIVMLogViewerFilterWidget::sltOperatorButtonChanged);
     connect(m_pFilterComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &UIVMLogViewerFilterPanel::sltAddFilterTerm);
+            this, &UIVMLogViewerFilterWidget::sltAddFilterTerm);
     connect(m_pFilterTermsLineEdit, &UIVMFilterLineEdit::sigFilterTermRemoved,
-            this, &UIVMLogViewerFilterPanel::sltRemoveFilterTerm);
+            this, &UIVMLogViewerFilterWidget::sltRemoveFilterTerm);
     connect(m_pFilterTermsLineEdit, &UIVMFilterLineEdit::sigClearAll,
-            this, &UIVMLogViewerFilterPanel::sltClearFilterTerms);
+            this, &UIVMLogViewerFilterWidget::sltClearFilterTerms);
 }
 
 
-void UIVMLogViewerFilterPanel::retranslateUi()
+void UIVMLogViewerFilterWidget::retranslateUi()
 {
     UIVMLogViewerPanel::retranslateUi();
 
@@ -580,7 +580,7 @@ void UIVMLogViewerFilterPanel::retranslateUi()
     m_pRadioButtonContainer->setToolTip(UIVMLogViewerWidget::tr("The type of boolean operator for filter operation"));
 }
 
-bool UIVMLogViewerFilterPanel::eventFilter(QObject *pObject, QEvent *pEvent)
+bool UIVMLogViewerFilterWidget::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     /* Handle only events sent to viewer(): */
     if (pObject != viewer())
@@ -618,7 +618,7 @@ bool UIVMLogViewerFilterPanel::eventFilter(QObject *pObject, QEvent *pEvent)
 }
 
 /** Handles the Qt show @a pEvent. */
-void UIVMLogViewerFilterPanel::showEvent(QShowEvent *pEvent)
+void UIVMLogViewerFilterWidget::showEvent(QShowEvent *pEvent)
 {
     UIVMLogViewerPanel::showEvent(pEvent);
     /* Set focus to combo-box: */
@@ -626,10 +626,10 @@ void UIVMLogViewerFilterPanel::showEvent(QShowEvent *pEvent)
     applyFilter();
 }
 
-void UIVMLogViewerFilterPanel::hideEvent(QHideEvent *pEvent)
+void UIVMLogViewerFilterWidget::hideEvent(QHideEvent *pEvent)
 {
     UIVMLogViewerPanel::hideEvent(pEvent);
     applyFilter();
 }
 
-#include "UIVMLogViewerFilterPanel.moc"
+#include "UIVMLogViewerFilterWidget.moc"

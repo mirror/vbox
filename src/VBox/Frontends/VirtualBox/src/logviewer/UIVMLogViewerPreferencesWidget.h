@@ -25,8 +25,8 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerOptionsPanel_h
-#define FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerOptionsPanel_h
+#ifndef FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerPreferencesWidget_h
+#define FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerPreferencesWidget_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -42,7 +42,7 @@ class QIToolButton;
 class UIVMLogViewerWidget;
 
 /** UIVMLogViewerPanel extension providing GUI to manage logviewer options. */
-class UIVMLogViewerOptionsPanel : public UIVMLogViewerPanel
+class UIVMLogViewerPreferencesWidget : public UIVMLogViewerPanel
 {
     Q_OBJECT;
 
@@ -56,7 +56,7 @@ signals:
 
 public:
 
-    UIVMLogViewerOptionsPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer);
+    UIVMLogViewerPreferencesWidget(QWidget *pParent, UIVMLogViewerWidget *pViewer);
 
     void setShowLineNumbers(bool bShowLineNumbers);
     void setWrapLines(bool bWrapLines);
@@ -91,4 +91,4 @@ private:
 
 };
 
-#endif /* !FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerOptionsPanel_h */
+#endif /* !FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerPreferencesWidget_h */

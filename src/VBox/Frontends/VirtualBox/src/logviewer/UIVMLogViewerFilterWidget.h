@@ -25,8 +25,8 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerFilterPanel_h
-#define FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerFilterPanel_h
+#ifndef FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerFilterWidget_h
+#define FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerFilterWidget_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -52,7 +52,7 @@ class UIVMFilterLineEdit;
 
 /** QWidget extension
   * providing GUI for filter panel in VM Log Viewer. */
-class UIVMLogViewerFilterPanel : public UIVMLogViewerPanel
+class UIVMLogViewerFilterWidget : public UIVMLogViewerPanel
 {
     Q_OBJECT;
 
@@ -64,7 +64,7 @@ public:
 
     /** Constructs the filter-panel by passing @a pParent to the QWidget base-class constructor.
       * @param  pViewer  Specifies reference to the VM Log-Viewer this filter-panel belongs to. */
-    UIVMLogViewerFilterPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer);
+    UIVMLogViewerFilterWidget(QWidget *pParent, UIVMLogViewerWidget *pViewer);
 
 public slots:
 
@@ -122,4 +122,4 @@ private:
     int                  m_iFilteredLineCount;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerFilterPanel_h */
+#endif /* !FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerFilterWidget_h */

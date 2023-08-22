@@ -43,7 +43,7 @@
 #include "UIIconPool.h"
 #include "UISearchLineEdit.h"
 #include "UIVMLogPage.h"
-#include "UIVMLogViewerSearchPanel.h"
+#include "UIVMLogViewerSearchWidget.h"
 #include "UIVMLogViewerWidget.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
@@ -52,7 +52,7 @@
 /* Other VBox includes: */
 #include <iprt/assert.h>
 
-UIVMLogViewerSearchPanel::UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer)
+UIVMLogViewerSearchWidget::UIVMLogViewerSearchWidget(QWidget *pParent, UIVMLogViewerWidget *pViewer)
     : UIVMLogViewerPanel(pParent, pViewer)
     , m_pSearchEditor(0)
     , m_pNextButton(0)
@@ -67,7 +67,7 @@ UIVMLogViewerSearchPanel::UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogView
     retranslateUi();
 }
 
-void UIVMLogViewerSearchPanel::refreshSearch()
+void UIVMLogViewerSearchWidget::refreshSearch()
 {
     /* We start the search from the end of the doc. assuming log's end is more interesting: */
     if (isVisible())
@@ -78,7 +78,7 @@ void UIVMLogViewerSearchPanel::refreshSearch()
     emit sigHighlightingUpdated();
 }
 
-void UIVMLogViewerSearchPanel::reset()
+void UIVMLogViewerSearchWidget::reset()
 {
     m_iSelectedMatchIndex = 0;
     m_matchLocationVector.clear();
@@ -88,17 +88,17 @@ void UIVMLogViewerSearchPanel::reset()
     emit sigHighlightingUpdated();
 }
 
-const QVector<float> &UIVMLogViewerSearchPanel::matchLocationVector() const
+const QVector<float> &UIVMLogViewerSearchWidget::matchLocationVector() const
 {
     return m_matchLocationVector;
 }
 
-int UIVMLogViewerSearchPanel::matchCount() const
+int UIVMLogViewerSearchWidget::matchCount() const
 {
     return m_matchedCursorPosition.size();
 }
 
-void UIVMLogViewerSearchPanel::hideEvent(QHideEvent *pEvent)
+void UIVMLogViewerSearchWidget::hideEvent(QHideEvent *pEvent)
 {
     /* Get focus-widget: */
     QWidget *pFocus = QApplication::focusWidget();
@@ -111,7 +111,7 @@ void UIVMLogViewerSearchPanel::hideEvent(QHideEvent *pEvent)
     reset();
 }
 
-void UIVMLogViewerSearchPanel::sltSearchTextChanged(const QString &strSearchString)
+void UIVMLogViewerSearchWidget::sltSearchTextChanged(const QString &strSearchString)
 {
     /* Enable/disable Next-Previous buttons as per search-string validity: */
     m_pNextButton->setEnabled(!strSearchString.isEmpty());
@@ -147,7 +147,7 @@ void UIVMLogViewerSearchPanel::sltSearchTextChanged(const QString &strSearchStri
     emit sigSearchUpdated();
 }
 
-void UIVMLogViewerSearchPanel::sltHighlightAllCheckBox()
+void UIVMLogViewerSearchWidget::sltHighlightAllCheckBox()
 {
     if (!viewer())
         return;
@@ -169,22 +169,22 @@ void UIVMLogViewerSearchPanel::sltHighlightAllCheckBox()
     emit sigHighlightingUpdated();
 }
 
-void UIVMLogViewerSearchPanel::sltCaseSentitiveCheckBox()
+void UIVMLogViewerSearchWidget::sltCaseSentitiveCheckBox()
 {
     refreshSearch();
 }
 
-void UIVMLogViewerSearchPanel::sltMatchWholeWordCheckBox()
+void UIVMLogViewerSearchWidget::sltMatchWholeWordCheckBox()
 {
     refreshSearch();
 }
 
-void UIVMLogViewerSearchPanel::sltSelectNextPreviousMatch()
+void UIVMLogViewerSearchWidget::sltSelectNextPreviousMatch()
 {
     moveSelection(sender() == m_pNextButton);
 }
 
-void UIVMLogViewerSearchPanel::prepareWidgets()
+void UIVMLogViewerSearchWidget::prepareWidgets()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     AssertReturnVoid(pMainLayout);
@@ -247,21 +247,21 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
     pMainLayout->addStretch(1);
 }
 
-void UIVMLogViewerSearchPanel::prepareConnections()
+void UIVMLogViewerSearchWidget::prepareConnections()
 {
-    connect(m_pSearchEditor, &UISearchLineEdit::textChanged, this, &UIVMLogViewerSearchPanel::sltSearchTextChanged);
-    connect(m_pNextButton, &QIToolButton::clicked, this, &UIVMLogViewerSearchPanel::sltSelectNextPreviousMatch);
-    connect(m_pPreviousButton, &QIToolButton::clicked, this, &UIVMLogViewerSearchPanel::sltSelectNextPreviousMatch);
+    connect(m_pSearchEditor, &UISearchLineEdit::textChanged, this, &UIVMLogViewerSearchWidget::sltSearchTextChanged);
+    connect(m_pNextButton, &QIToolButton::clicked, this, &UIVMLogViewerSearchWidget::sltSelectNextPreviousMatch);
+    connect(m_pPreviousButton, &QIToolButton::clicked, this, &UIVMLogViewerSearchWidget::sltSelectNextPreviousMatch);
 
     connect(m_pHighlightAllCheckBox, &QCheckBox::stateChanged,
-            this, &UIVMLogViewerSearchPanel::sltHighlightAllCheckBox);
+            this, &UIVMLogViewerSearchWidget::sltHighlightAllCheckBox);
     connect(m_pCaseSensitiveCheckBox, &QCheckBox::stateChanged,
-            this, &UIVMLogViewerSearchPanel::sltCaseSentitiveCheckBox);
+            this, &UIVMLogViewerSearchWidget::sltCaseSentitiveCheckBox);
     connect(m_pMatchWholeWordCheckBox, &QCheckBox::stateChanged,
-            this, &UIVMLogViewerSearchPanel::sltMatchWholeWordCheckBox);
+            this, &UIVMLogViewerSearchWidget::sltMatchWholeWordCheckBox);
 }
 
-void UIVMLogViewerSearchPanel::retranslateUi()
+void UIVMLogViewerSearchWidget::retranslateUi()
 {
     UIVMLogViewerPanel::retranslateUi();
 
@@ -279,7 +279,7 @@ void UIVMLogViewerSearchPanel::retranslateUi()
     m_pHighlightAllCheckBox->setToolTip(UIVMLogViewerWidget::tr("When checked, all occurence of the search text are highlighted"));
 }
 
-void UIVMLogViewerSearchPanel::keyPressEvent(QKeyEvent *pEvent)
+void UIVMLogViewerSearchWidget::keyPressEvent(QKeyEvent *pEvent)
 {
     switch (pEvent->key())
     {
@@ -304,7 +304,7 @@ void UIVMLogViewerSearchPanel::keyPressEvent(QKeyEvent *pEvent)
     UIVMLogViewerPanel::keyPressEvent(pEvent);
 }
 
-bool UIVMLogViewerSearchPanel::handleSearchRelatedEvents(QObject *pObject, QEvent *pEvent)
+bool UIVMLogViewerSearchWidget::handleSearchRelatedEvents(QObject *pObject, QEvent *pEvent)
 {
     /* Handle only events sent to viewer(): */
     if (pObject != viewer())
@@ -369,7 +369,7 @@ bool UIVMLogViewerSearchPanel::handleSearchRelatedEvents(QObject *pObject, QEven
     return false;
 }
 
-void UIVMLogViewerSearchPanel::showEvent(QShowEvent *pEvent)
+void UIVMLogViewerSearchWidget::showEvent(QShowEvent *pEvent)
 {
     /* Call to base-class: */
     UIVMLogViewerPanel::showEvent(pEvent);
@@ -383,7 +383,7 @@ void UIVMLogViewerSearchPanel::showEvent(QShowEvent *pEvent)
     }
 }
 
-void UIVMLogViewerSearchPanel::performSearch(SearchDirection , bool )
+void UIVMLogViewerSearchWidget::performSearch(SearchDirection , bool )
 {
     QPlainTextEdit *pTextEdit = textEdit();
     if (!pTextEdit)
@@ -412,7 +412,7 @@ void UIVMLogViewerSearchPanel::performSearch(SearchDirection , bool )
         highlightAll(searchString);
 }
 
-void UIVMLogViewerSearchPanel::clearHighlighting()
+void UIVMLogViewerSearchWidget::clearHighlighting()
 {
     QPlainTextEdit *pTextEdit = textEdit();
     if (pTextEdit)
@@ -420,7 +420,7 @@ void UIVMLogViewerSearchPanel::clearHighlighting()
     emit sigHighlightingUpdated();
 }
 
-void UIVMLogViewerSearchPanel::highlightAll(const QString &searchString)
+void UIVMLogViewerSearchWidget::highlightAll(const QString &searchString)
 {
     clearHighlighting();
     QPlainTextEdit *pTextEdit = textEdit();
@@ -446,7 +446,7 @@ void UIVMLogViewerSearchPanel::highlightAll(const QString &searchString)
 
 }
 
-void UIVMLogViewerSearchPanel::findAll(QTextDocument *pDocument, const QString &searchString)
+void UIVMLogViewerSearchWidget::findAll(QTextDocument *pDocument, const QString &searchString)
 {
     if (!pDocument)
         return;
@@ -472,7 +472,7 @@ void UIVMLogViewerSearchPanel::findAll(QTextDocument *pDocument, const QString &
     }
 }
 
-void UIVMLogViewerSearchPanel::selectMatch(int iMatchIndex, const QString &searchString)
+void UIVMLogViewerSearchWidget::selectMatch(int iMatchIndex, const QString &searchString)
 {
     if (!textEdit())
         return;
@@ -490,7 +490,7 @@ void UIVMLogViewerSearchPanel::selectMatch(int iMatchIndex, const QString &searc
     textEdit()->setTextCursor(cursor);
 }
 
-void UIVMLogViewerSearchPanel::moveSelection(bool fForward)
+void UIVMLogViewerSearchWidget::moveSelection(bool fForward)
 {
     if (matchCount() == 0)
         return;
@@ -503,7 +503,7 @@ void UIVMLogViewerSearchPanel::moveSelection(bool fForward)
         m_pSearchEditor->setScrollToIndex(m_iSelectedMatchIndex);
 }
 
-int UIVMLogViewerSearchPanel::countMatches(QTextDocument *pDocument, const QString &searchString) const
+int UIVMLogViewerSearchWidget::countMatches(QTextDocument *pDocument, const QString &searchString) const
 {
     if (!pDocument)
         return 0;
@@ -522,7 +522,7 @@ int UIVMLogViewerSearchPanel::countMatches(QTextDocument *pDocument, const QStri
     return count;
 }
 
-QTextDocument::FindFlags UIVMLogViewerSearchPanel::constructFindFlags(SearchDirection eDirection) const
+QTextDocument::FindFlags UIVMLogViewerSearchWidget::constructFindFlags(SearchDirection eDirection) const
 {
    QTextDocument::FindFlags findFlags;
    if (eDirection == BackwardSearch)

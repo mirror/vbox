@@ -58,8 +58,7 @@
 #include "UIVirtualMachineItem.h"
 #include "UIVMLogPage.h"
 #include "UIVMLogViewerWidget.h"
-#include "UIVMLogViewerBookmarksPanel.h"
-#include "UIVMLogViewerOptionsPanel.h"
+#include "UIVMLogViewerPanel.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -211,7 +210,6 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
     , m_fShowToolbar(fShowToolbar)
     , m_fIsPolished(false)
     , m_pTabWidget(0)
-    , m_pOptionsPanel(0)
     , m_pMainLayout(0)
     , m_pToolBar(0)
     , m_bShowLineNumbers(true)
@@ -642,12 +640,12 @@ void UIVMLogViewerWidget::sltResetOptionsToDefault()
     sltWrapLines(false);
     sltChangeFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
 
-    if (m_pOptionsPanel)
-    {
-        m_pOptionsPanel->setShowLineNumbers(true);
-        m_pOptionsPanel->setWrapLines(false);
-        m_pOptionsPanel->setFontSizeInPoints(m_font.pointSize());
-    }
+    // if (m_pOptionsPanel)
+    // {
+    //     m_pOptionsPanel->setShowLineNumbers(true);
+    //     m_pOptionsPanel->setWrapLines(false);
+    //     m_pOptionsPanel->setFontSizeInPoints(m_font.pointSize());
+    // }
     saveOptions();
 }
 
@@ -757,14 +755,6 @@ void UIVMLogViewerWidget::prepareWidgets()
     // AssertReturnVoid(m_pOptionsPanel);
     // /* Configure panel: */
     // m_pOptionsPanel->hide();
-    // m_pOptionsPanel->setShowLineNumbers(m_bShowLineNumbers);
-    // m_pOptionsPanel->setWrapLines(m_bWrapLines);
-    // m_pOptionsPanel->setFontSizeInPoints(m_font.pointSize());
-    // connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigShowLineNumbers, this, &UIVMLogViewerWidget::sltShowLineNumbers);
-    // connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigWrapLines, this, &UIVMLogViewerWidget::sltWrapLines);
-    // connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigChangeFontSizeInPoints, this, &UIVMLogViewerWidget::sltFontSizeChanged);
-    // connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigChangeFont, this, &UIVMLogViewerWidget::sltChangeFont);
-    // connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigResetToDefaults, this, &UIVMLogViewerWidget::sltResetOptionsToDefault);
 
     // m_pMainLayout->addWidget(m_pOptionsPanel);
 
@@ -772,6 +762,14 @@ void UIVMLogViewerWidget::prepareWidgets()
     AssertReturnVoid(m_pPanel);
     installEventFilter(m_pPanel);
     m_pPanel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+    m_pPanel->setShowLineNumbers(m_bShowLineNumbers);
+    m_pPanel->setWrapLines(m_bWrapLines);
+    m_pPanel->setFontSizeInPoints(m_font.pointSize());
+    // connect(m_pPanel, &UIVMLogViewerPanelNew::sigShowLineNumbers, this, &UIVMLogViewerWidget::sltShowLineNumbers);
+    // connect(m_pPanel, &UIVMLogViewerPanelNew::sigWrapLines, this, &UIVMLogViewerWidget::sltWrapLines);
+    // connect(m_pPanel, &UIVMLogViewerPanelNew::sigChangeFontSizeInPoints, this, &UIVMLogViewerWidget::sltFontSizeChanged);
+    // connect(m_pPanel, &UIVMLogViewerPanelNew::sigChangeFont, this, &UIVMLogViewerWidget::sltChangeFont);
+    // connect(m_pPanel, &UIVMLogViewerPanelNew::sigResetToDefaults, this, &UIVMLogViewerWidget::sltResetOptionsToDefault);
 
     connect(m_pPanel, &UIVMLogViewerPanelNew::sigHighlightingUpdated,
             this, &UIVMLogViewerWidget::sltSearchResultHighLigting);

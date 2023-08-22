@@ -850,12 +850,12 @@ UICommon_QT_MOCHDRS = \
 	src/helpbrowser/UIHelpViewer.h \
 	src/helpbrowser/UIHelpBrowserWidget.h \
 	src/logviewer/UIVMLogPage.h \
-	src/logviewer/UIVMLogViewerBookmarksPanel.h \
+	src/logviewer/UIVMLogViewerBookmarksWidget.h \
 	src/logviewer/UIVMLogViewerDialog.h \
-	src/logviewer/UIVMLogViewerFilterPanel.h \
-	src/logviewer/UIVMLogViewerOptionsPanel.h \
+	src/logviewer/UIVMLogViewerFilterWidget.h \
+	src/logviewer/UIVMLogViewerPreferencesWidget.h \
 	src/logviewer/UIVMLogViewerPanel.h \
-	src/logviewer/UIVMLogViewerSearchPanel.h \
+	src/logviewer/UIVMLogViewerSearchWidget.h \
 	src/logviewer/UIVMLogViewerTextEdit.h \
 	src/logviewer/UIVMLogViewerWidget.h \
 	src/activity/vmactivity/UIVMActivityMonitor.h \
@@ -1064,7 +1064,7 @@ UICommon_QT_MOCSRCS = \
 	src/guestctrl/UIFileManagerHostTable.cpp \
 	src/helpbrowser/UIHelpViewer.cpp \
 	src/helpbrowser/UIHelpBrowserWidget.cpp \
-	src/logviewer/UIVMLogViewerFilterPanel.cpp \
+	src/logviewer/UIVMLogViewerFilterWidget.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/logviewer/UIVMLogViewerWidget.cpp \
 	src/activity/vmactivity/UIVMActivityMonitor.cpp \
@@ -1427,12 +1427,12 @@ UICommon_SOURCES = \
 	src/helpbrowser/UIHelpViewer.cpp \
 	src/helpbrowser/UIHelpBrowserWidget.cpp \
 	src/logviewer/UIVMLogPage.cpp \
-	src/logviewer/UIVMLogViewerBookmarksPanel.cpp \
+	src/logviewer/UIVMLogViewerBookmarksWidget.cpp \
 	src/logviewer/UIVMLogViewerDialog.cpp \
-	src/logviewer/UIVMLogViewerFilterPanel.cpp \
-	src/logviewer/UIVMLogViewerOptionsPanel.cpp \
+	src/logviewer/UIVMLogViewerFilterWidget.cpp \
+	src/logviewer/UIVMLogViewerPreferencesWidget.cpp \
 	src/logviewer/UIVMLogViewerPanel.cpp \
-	src/logviewer/UIVMLogViewerSearchPanel.cpp \
+	src/logviewer/UIVMLogViewerSearchWidget.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/logviewer/UIVMLogViewerWidget.cpp \
 	src/activity/UIMonitorCommon.cpp \
