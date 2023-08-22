@@ -133,6 +133,15 @@ typedef struct RTDBGMODCV
     IMAGE_COFF_SYMBOLS_HEADER CoffHdr;
     /** @} */
 
+    /** @name External PDB (v2) with a DBG file.
+     * @{ */
+    /** The resolved PDB path (RTStrFree). */
+    char           *pszPdbFilename;
+    /** The PDB VFS.  This is only valid between rtDbgModCvOpenPdb20Callback()
+     *  and the end of rtDbgModCv_TryOpen(). */
+    RTVFS           hVfsPdb;
+    /** @} */
+
     /** The file type. */
     RTCVFILETYPE    enmType;
     /** The file handle (if external).  */
@@ -234,6 +243,11 @@ typedef FNDBGMODCVSUBSECTCALLBACK *PFNDBGMODCVSUBSECTCALLBACK;
     } while (0)
 
 
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static int rtDbgModPdb_CommonOpenWorker(PRTDBGMODCV pThis, const char *pszFilename, RTVFS hVfsPdb, RTDBGCFG hDbgCfg);
 
 
 
@@ -2627,6 +2641,9 @@ static DECLCALLBACK(int) rtDbgModCv_Close(PRTDBGMODINT pMod)
     if (pThis->hFile != NIL_RTFILE)
         RTFileClose(pThis->hFile);
     RTMemFree(pThis->paDirEnts);
+    RTStrFree(pThis->pszPdbFilename);
+    RTVfsRelease(pThis->hVfsPdb);
+    pThis->hVfsPdb = NIL_RTVFS;
     RTMemFree(pThis);
 
     pMod->pvDbgPriv = NULL; /* for internal use */
@@ -2664,6 +2681,148 @@ static DECLCALLBACK(int) rtDbgModCvAddSegmentsCallback(RTLDRMOD hLdrMod, PCRTLDR
 
 
 /**
+ * Helper for rounding the section size up to the start of the start of the
+ * next section (e.g. RTLDRSEG::cbMapped approximation).
+ */
+DECLINLINE(uint32_t) rtDbgModCvAdjustSectionSizeByNext(PCIMAGE_SECTION_HEADER paShs, uint32_t cShs,
+                                                       uint32_t iCur, uint32_t cbMapped)
+{
+    size_t iNext = iCur + 1;
+    while (iNext < cShs && (paShs[iNext].Characteristics & IMAGE_SCN_TYPE_NOLOAD))
+        iNext++;
+    if (iNext < cShs)
+    {
+        uint32_t cbAvailable = paShs[iNext].VirtualAddress - (iCur != ~(size_t)0 ? paShs[iCur].VirtualAddress : 0);
+        Assert(cbMapped <= cbAvailable);
+        return cbAvailable;
+    }
+    return cbMapped;
+}
+
+
+/**
+ * Copies the sections over from the DBG file.
+ *
+ * Called if we don't have an associated executable image.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The CV module instance.
+ * @param   paShs               The section headers.
+ * @param   cShs                The number of section headers.
+ * @param   cbSectionAlign      The section alignment
+ *                              (IMAGE_SEPARATE_DEBUG_HEADER::SectionAlignment,
+ *                              IMAGE_OPTIONAL_HEADER32::SectionAlignment, ++).
+ * @param   cbImage             The image size (if not availble, UINT32_MAX).
+ * @param   pszFilename         The filename (for logging).
+ */
+static int rtDbgModCvAddSegmentsFromSectHdrs(PRTDBGMODCV pThis, PCIMAGE_SECTION_HEADER paShs, uint32_t cShs,
+                                             uint32_t cbSectionAlign, uint32_t cbImage, const char *pszFilename)
+{
+    RT_NOREF_PV(pszFilename);
+    Assert(RT_IS_POWER_OF_TWO(cbSectionAlign));
+
+    /*
+     * Do some basic validation of the section headers.
+     */
+    int      rc        = VINF_SUCCESS;
+    uint32_t cbHeaders = 0;
+    uint32_t uRvaPrev  = 0;
+    for (uint32_t i = 0; i < cShs; i++)
+    {
+        Log3(("RTDbgModCv: Section #%02u %#010x LB %#010x %.*s\n",
+              i, paShs[i].VirtualAddress, paShs[i].Misc.VirtualSize, sizeof(paShs[i].Name), paShs[i].Name));
+
+        if (paShs[i].Characteristics & IMAGE_SCN_TYPE_NOLOAD)
+            continue;
+
+        if (paShs[i].VirtualAddress < uRvaPrev)
+        {
+            Log(("RTDbgModCv: %s: Overlap or sorting error, VirtualAddress=%#x uRvaPrev=%#x - section #%d '%.*s'!!!\n",
+                 pszFilename, paShs[i].VirtualAddress, uRvaPrev, i, sizeof(paShs[i].Name), paShs[i].Name));
+            rc = VERR_CV_BAD_FORMAT;
+        }
+        else if (   paShs[i].VirtualAddress                             > cbImage
+                 || paShs[i].Misc.VirtualSize                           > cbImage
+                 || paShs[i].VirtualAddress + paShs[i].Misc.VirtualSize > cbImage)
+        {
+            Log(("RTDbgModCv: %s: VirtualAddress=%#x VirtualSize=%#x (total %x) - beyond image size (%#x) - section #%d '%.*s'!!!\n",
+                 pszFilename, paShs[i].VirtualAddress, paShs[i].Misc.VirtualSize,
+                 paShs[i].VirtualAddress + paShs[i].Misc.VirtualSize,
+                 pThis->cbImage, i, sizeof(paShs[i].Name), paShs[i].Name));
+            rc = VERR_CV_BAD_FORMAT;
+        }
+        else if (paShs[i].VirtualAddress & (cbSectionAlign - 1))
+        {
+            Log(("RTDbgModCv: %s: VirtualAddress=%#x misaligned (%#x) - section #%d '%.*s'!!!\n",
+                 pszFilename, paShs[i].VirtualAddress, cbSectionAlign, i, sizeof(paShs[i].Name), paShs[i].Name));
+            rc = VERR_CV_BAD_FORMAT;
+        }
+        else if (paShs[i].Characteristics & IMAGE_SCN_ALIGN_MASK)
+        {
+            uint32_t const cbAlign = RT_BIT_32((paShs[i].Characteristics & IMAGE_SCN_ALIGN_MASK) >> IMAGE_SCN_ALIGN_SHIFT);
+            if (RT_ALIGN_32(paShs[i].VirtualAddress, cbAlign) != paShs[i].VirtualAddress)
+            {
+                Log(("RTDbgModCv: %s: VirtualAddress=%#x misaligned by flags (%#x) - section #%d '%.*s'!!!\n",
+                     pszFilename, paShs[i].VirtualAddress, cbAlign, i, sizeof(paShs[i].Name), paShs[i].Name));
+                rc = VERR_CV_BAD_FORMAT;
+            }
+        }
+
+        if (uRvaPrev == 0)
+            cbHeaders = paShs[i].VirtualAddress;
+        uRvaPrev = paShs[i].VirtualAddress + paShs[i].Misc.VirtualSize;
+    }
+    if (uRvaPrev == 0)
+    {
+        Log(("RTDbgModCv: %s: No loadable sections.\n", pszFilename));
+        rc = VERR_CV_BAD_FORMAT;
+    }
+    if (cbHeaders == 0)
+    {
+        Log(("RTDbgModCv: %s: No space for PE headers.\n", pszFilename));
+        rc = VERR_CV_BAD_FORMAT;
+    }
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Add sections.
+         */
+        rc = RTDbgModSegmentAdd(pThis->hCnt, 0, cbHeaders, "NtHdrs", 0 /*fFlags*/, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            for (uint32_t i = 0; RT_SUCCESS(rc) && i < cShs; i++)
+            {
+                char szName[sizeof(paShs[i].Name) + 1];
+                memcpy(szName, paShs[i].Name, sizeof(paShs[i].Name));
+                szName[sizeof(szName) - 1] = '\0';
+                RTStrStripR(szName);
+
+                uint32_t uRva = paShs[i].VirtualAddress;
+                uint32_t cbMapped;
+                if (!(paShs[i].Characteristics & IMAGE_SCN_TYPE_NOLOAD))
+                    cbMapped = rtDbgModCvAdjustSectionSizeByNext(paShs, cShs, i, paShs[i].Misc.VirtualSize);
+                else
+                    uRva = cbMapped = 0;
+                rc = RTDbgModSegmentAdd(pThis->hCnt, paShs[i].VirtualAddress, cbMapped, szName, 0 /*fFlags*/, NULL);
+                if (RT_FAILURE(rc))
+                {
+                    Log(("RTDbgModCv: RTDbgModSegmentAdd failed on #%u: uRva=%#RX32 cbMapped=%#RX32 Flags=%#RX32 '%s' -> %Rrc\n",
+                         i + 1, uRva, cbMapped, szName, paShs[i].Characteristics, rc));
+                    break;
+                }
+
+            }
+            if (RT_SUCCESS(rc))
+                pThis->fHaveLoadedSegments = true;
+        }
+        else
+            Log(("RTDbgModCv: RTDbgModSegmentAdd on 'NtHdrs': cbHeaders=%#RX32 - %Rrc\n", cbHeaders, rc));
+    }
+    return rc;
+}
+
+
+/**
  * Copies the sections over from the DBG file.
  *
  * Called if we don't have an associated executable image.
@@ -2686,100 +2845,27 @@ static int rtDbgModCvAddSegmentsFromDbg(PRTDBGMODCV pThis, PCIMAGE_SEPARATE_DEBU
         Log(("RTDbgModCv: Bad NumberOfSections: %d\n", pDbgHdr->NumberOfSections));
         return VERR_CV_BAD_FORMAT;
     }
-    if (!RT_IS_POWER_OF_TWO(pDbgHdr->SectionAlignment))
-    {
-        Log(("RTDbgModCv: Bad SectionAlignment: %#x\n", pDbgHdr->SectionAlignment));
-        return VERR_CV_BAD_FORMAT;
-    }
 
     /*
      * Read the section table.
      */
-    size_t cbShs = pDbgHdr->NumberOfSections * sizeof(IMAGE_SECTION_HEADER);
-    PIMAGE_SECTION_HEADER paShs = (PIMAGE_SECTION_HEADER)RTMemAlloc(cbShs);
-    if (!paShs)
-        return VERR_NO_MEMORY;
-    int rc = RTFileReadAt(pThis->hFile, sizeof(*pDbgHdr), paShs, cbShs, NULL);
-    if (RT_SUCCESS(rc))
+    size_t const                cbShs = pDbgHdr->NumberOfSections * sizeof(IMAGE_SECTION_HEADER);
+    PIMAGE_SECTION_HEADER const paShs = (PIMAGE_SECTION_HEADER)RTMemTmpAlloc(cbShs);
+    if (paShs)
     {
-        /*
-         * Do some basic validation.
-         */
-        uint32_t cbHeaders = 0;
-        uint32_t uRvaPrev = 0;
-        for (uint32_t i = 0; i < pDbgHdr->NumberOfSections; i++)
-        {
-            Log3(("RTDbgModCv: Section #%02u %#010x LB %#010x %.*s\n",
-                  i, paShs[i].VirtualAddress, paShs[i].Misc.VirtualSize, sizeof(paShs[i].Name), paShs[i].Name));
-
-            if (paShs[i].Characteristics & IMAGE_SCN_TYPE_NOLOAD)
-                continue;
-
-            if (paShs[i].VirtualAddress < uRvaPrev)
-            {
-                Log(("RTDbgModCv: %s: Overlap or soring error, VirtualAddress=%#x uRvaPrev=%#x - section #%d '%.*s'!!!\n",
-                     pszFilename, paShs[i].VirtualAddress, uRvaPrev, i, sizeof(paShs[i].Name), paShs[i].Name));
-                rc = VERR_CV_BAD_FORMAT;
-            }
-            else if (   paShs[i].VirtualAddress > pDbgHdr->SizeOfImage
-                     || paShs[i].Misc.VirtualSize > pDbgHdr->SizeOfImage
-                     || paShs[i].VirtualAddress + paShs[i].Misc.VirtualSize > pDbgHdr->SizeOfImage)
-            {
-                Log(("RTDbgModCv: %s: VirtualAddress=%#x VirtualSize=%#x (total %x) - beyond image size (%#x) - section #%d '%.*s'!!!\n",
-                     pszFilename, paShs[i].VirtualAddress, paShs[i].Misc.VirtualSize,
-                     paShs[i].VirtualAddress + paShs[i].Misc.VirtualSize,
-                     pThis->cbImage, i, sizeof(paShs[i].Name), paShs[i].Name));
-                rc = VERR_CV_BAD_FORMAT;
-            }
-            else if (paShs[i].VirtualAddress & (pDbgHdr->SectionAlignment - 1))
-            {
-                Log(("RTDbgModCv: %s: VirtualAddress=%#x misaligned (%#x) - section #%d '%.*s'!!!\n",
-                     pszFilename, paShs[i].VirtualAddress, pDbgHdr->SectionAlignment, i, sizeof(paShs[i].Name), paShs[i].Name));
-                rc = VERR_CV_BAD_FORMAT;
-            }
-            else
-            {
-                if (uRvaPrev == 0)
-                    cbHeaders = paShs[i].VirtualAddress;
-                uRvaPrev = paShs[i].VirtualAddress + paShs[i].Misc.VirtualSize;
-                continue;
-            }
-        }
-        if (RT_SUCCESS(rc) && uRvaPrev == 0)
-        {
-            Log(("RTDbgModCv: %s: No loadable sections.\n", pszFilename));
-            rc = VERR_CV_BAD_FORMAT;
-        }
-        if (RT_SUCCESS(rc) && cbHeaders == 0)
-        {
-            Log(("RTDbgModCv: %s: No space for PE headers.\n", pszFilename));
-            rc = VERR_CV_BAD_FORMAT;
-        }
+        int rc = RTFileReadAt(pThis->hFile, sizeof(*pDbgHdr), paShs, cbShs, NULL);
         if (RT_SUCCESS(rc))
         {
             /*
-             * Add sections.
+             * Process them.
              */
-            rc = RTDbgModSegmentAdd(pThis->hCnt, 0, cbHeaders, "NtHdrs", 0 /*fFlags*/, NULL);
-            for (uint32_t i = 0; RT_SUCCESS(rc) && i < pDbgHdr->NumberOfSections; i++)
-            {
-                char szName[sizeof(paShs[i].Name) + 1];
-                memcpy(szName, paShs[i].Name, sizeof(paShs[i].Name));
-                szName[sizeof(szName) - 1] = '\0';
-
-                if (paShs[i].Characteristics & IMAGE_SCN_TYPE_NOLOAD)
-                    rc = RTDbgModSegmentAdd(pThis->hCnt, 0, 0, szName, 0 /*fFlags*/, NULL);
-                else
-                    rc = RTDbgModSegmentAdd(pThis->hCnt, paShs[i].VirtualAddress, paShs[i].Misc.VirtualSize, szName,
-                                            0 /*fFlags*/, NULL);
-            }
-            if (RT_SUCCESS(rc))
-                pThis->fHaveLoadedSegments = true;
+            rc = rtDbgModCvAddSegmentsFromSectHdrs(pThis, paShs, pDbgHdr->NumberOfSections, pDbgHdr->SectionAlignment,
+                                                   pDbgHdr->SizeOfImage, pszFilename);
         }
+        RTMemTmpFree(paShs);
+        return rc;
     }
-
-    RTMemFree(paShs);
-    return rc;
+    return VERR_NO_TMP_MEMORY;
 }
 
 
@@ -2823,6 +2909,7 @@ static int rtDbgModCvCreateInstance(PRTDBGMODINT pDbgMod, RTCVFILETYPE enmFileTy
         pThis->pMod             = pDbgMod;
         pThis->offBase          = UINT32_MAX;
         pThis->offCoffDbgInfo   = UINT32_MAX;
+        pThis->hVfsPdb          = NIL_RTVFS;
         *ppThis = pThis;
         return VINF_SUCCESS;
     }
@@ -2922,6 +3009,94 @@ static int rtDbgModCvProbeCoff(PRTDBGMODINT pDbgMod, RTCVFILETYPE enmFileType, R
     return rc;
 }
 
+/**
+ * Argument package for rtDbgModCvOpenPdb20Callback via pvUser2.
+ */
+typedef struct RTDBGMODCVOPENPDB20CALLBACK
+{
+    RTLDRARCH       enmArch;
+    RTFILE          hFile;
+    RTCVFILETYPE    enmFileType;
+    uint32_t        uTimestamp;
+    uint32_t        uAge;
+} RTDBGMODCVOPENPDB20CALLBACK;
+
+/** @callback_method_impl{FNRTDBGCFGOPEN,
+ *      For opening PDB linked in windows 2000 area DBG files.}
+ */
+static DECLCALLBACK(int) rtDbgModCvOpenPdb20Callback(RTDBGCFG hDbgCfg, const char *pszFilename, void *pvUser1, void *pvUser2)
+{
+    PRTDBGMODINT const                  pDbgMod = (PRTDBGMODINT)pvUser1;
+    RTDBGMODCVOPENPDB20CALLBACK * const pArgs   = (RTDBGMODCVOPENPDB20CALLBACK *)pvUser2;
+    RT_NOREF(hDbgCfg);
+
+    /*
+     * Open the file as a VFS and check that the timestamp and age matches
+     * what we're looking for.
+     */
+    Log2(("rtDbgModCvOpenPdb20Callback: Trying '%s'...\n", pszFilename));
+    RTVFSFILE hVfsFilePdb = NIL_RTVFSFILE;
+    int rc = RTVfsFileOpenNormal(pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, &hVfsFilePdb);
+    if (RT_SUCCESS(rc))
+    {
+        RTVFS           hVfsPdb = NIL_RTVFS;
+#ifdef LOG_ENABLED
+        RTERRINFOSTATIC ErrInfo;
+        rc = RTFsPdbVolOpen(hVfsFilePdb, 0, &hVfsPdb, RTErrInfoInitStatic(&ErrInfo));
+#else
+        rc = RTFsPdbVolOpen(hVfsFilePdb, 0, &hVfsPdb, NULL /*pErrInfo*/);
+#endif
+        RTVfsFileRelease(hVfsFilePdb);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * The timestamp + age is available as a string.
+             */
+            size_t cbRet;
+            char   szTimestampAndAge[64] = {0};
+            rc = RTVfsQueryLabel(hVfsPdb, false /*RTVFSQIEX_VOL_LABEL*/,
+                                 szTimestampAndAge, sizeof(szTimestampAndAge) - 1, &cbRet);
+            AssertRC(rc);
+            if (RT_SUCCESS(rc))
+            {
+                char szExpect[64];
+                RTStrPrintf(szExpect, sizeof(szExpect), "%08X%x", pArgs->uTimestamp, pArgs->uAge);
+                if (RTStrICmpAscii(szTimestampAndAge, szExpect) == 0)
+                {
+                    /** @todo check ARCH. It's usually in the DBI header.   */
+
+                    /*
+                     * Okay, we're good.
+                     */
+                    PRTDBGMODCV pThis;
+                    rc = rtDbgModCvCreateInstance(pDbgMod, pArgs->enmFileType, pArgs->hFile, &pThis);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pThis->u32CvMagic     = RTCVHDR_MAGIC_NB10;
+                        pThis->offBase        = UINT32_MAX;
+                        pThis->cbDbgInfo      = 0;
+                        pThis->offDir         = 0;
+                        pThis->pszPdbFilename = RTStrDup(pszFilename);
+                        if (pThis->pszPdbFilename)
+                        {
+                            pThis->hVfsPdb = hVfsPdb;
+                            return VINF_CALLBACK_RETURN;
+                        }
+                    }
+                }
+                else
+                    Log2(("RTFsPdbVolOpen: timestamp+age mismatch: %s, expected %s (for '%s')\n",
+                          szTimestampAndAge, szExpect, pszFilename));
+            }
+        }
+        else
+            Log2(("RTFsPdbVolOpen: RTVfsFileOpenNormal '%s' failed: %Rrc%#RTeim\n", pszFilename, rc, &ErrInfo.Core));
+    }
+    else
+        Log2(("rtDbgModCvOpenPdb20Callback: RTVfsFileOpenNormal '%s' failed: %Rrc\n", pszFilename, rc));
+    return rc;
+}
+
 
 /**
  * Common part of the CodeView probing.
@@ -2935,10 +3110,14 @@ static int rtDbgModCvProbeCoff(PRTDBGMODINT pDbgMod, RTCVFILETYPE enmFileType, R
  * @param   off                 The offset where to expect CV debug info.
  * @param   cb                  The number of bytes of debug info.
  * @param   enmArch             The desired image architecture.
+ * @param   cbImage             The image size, if available.
  * @param   pszFilename         The path to the file (for logging).
+ * @param   hDbgCfg             For dealing with external PDB found in windows
+ *                              2000 area DBG files.
  */
 static int rtDbgModCvProbeCommon(PRTDBGMODINT pDbgMod, PRTCVHDR pCvHdr, RTCVFILETYPE enmFileType, RTFILE hFile,
-                                 uint32_t off, uint32_t cb, RTLDRARCH enmArch, const char *pszFilename)
+                                 uint32_t off, uint32_t cb, RTLDRARCH enmArch, size_t cbImage,
+                                 const char *pszFilename, RTDBGCFG hDbgCfg)
 {
     int rc = VERR_DBG_NO_MATCHING_INTERPRETER;
     RT_NOREF_PV(enmArch); RT_NOREF_PV(pszFilename);
@@ -2984,29 +3163,78 @@ static int rtDbgModCvProbeCommon(PRTDBGMODINT pDbgMod, PRTCVHDR pCvHdr, RTCVFILE
     {
         if (pCvHdr->off == 0)
         {
-            if (cb >= sizeof(CVPDB20INFO) && cb < _64K)
+            if (cb > RT_UOFFSETOF(CVPDB20INFO, szPdbFilename) && cb < _64K)
             {
+                /*
+                 * Read it into memory and validate it.
+                 */
                 PCVPDB20INFO pInfo = (PCVPDB20INFO)RTMemTmpAlloc(cb);
                 if (pInfo)
                 {
                     int rc2 = RTFileReadAt(hFile, off, pInfo, cb, NULL);
                     if (RT_SUCCESS(rc2))
                     {
-                        Log2(("RTDbgModCv: Found external PDB (v2.0): TS=%#010RX32 uAge=%x '%.*s'\n",  pInfo->uTimestamp,
-                              pInfo->uAge, cb - RT_UOFFSETOF(CVPDB20INFO, szPdbFilename), &pInfo->szPdbFilename[0]));
+                        uint32_t const cbPdbFilename = cb - RT_UOFFSETOF(CVPDB20INFO, szPdbFilename);
+                        rc2 = RTStrValidateEncodingEx((char const *)&pInfo->szPdbFilename[0], cbPdbFilename,
+                                                      RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
+                        if (RT_SUCCESS(rc2))
+                        {
+                            Log2(("RTDbgModCv: Found external PDB (v2.0): TS=%#010RX32 uAge=%x '%.*s'\n",  pInfo->uTimestamp,
+                                  pInfo->uAge, cb - RT_UOFFSETOF(CVPDB20INFO, szPdbFilename), &pInfo->szPdbFilename[0]));
+                            if (   hDbgCfg != NIL_RTDBGCFG
+                                && enmFileType == RTCVFILETYPE_DBG)
+                            {
+                                /*
+                                 * Try open it. Need to figure the image size first if
+                                 * we can, though not actually used by the function.
+                                 *
+                                 * The callback will create an instance if a PDB is found,
+                                 * but it won't actually read it. That's done later by the
+                                 * RTDbgModCv_TryOpen code.
+                                 */
+                                RTDBGMODCVOPENPDB20CALLBACK Args = { enmArch, hFile, enmFileType, pInfo->uTimestamp, pInfo->uAge };
+                                rc = RTDbgCfgOpenPdb20(hDbgCfg, (const char *)&pInfo->szPdbFilename[0],
+                                                       cbImage, pInfo->uTimestamp, pInfo->uAge,
+                                                       rtDbgModCvOpenPdb20Callback, pDbgMod, &Args);
+                                Log(("RTDbgModCv: RTDbgCfgOpenPdb20 returns %Rrc\n", rc));
+                            }
+                        }
+                        else
+                            Log(("RTDbgModCv: Found external PDB (v2.0) w/ invalid filename encoding: TS=%#010RX32 uAge=%x %.*Rhxs rc2=%Rrc\n",
+                                 pInfo->uTimestamp, pInfo->uAge, cbPdbFilename, &pInfo->szPdbFilename[0], rc2));
                     }
+                    else
+                        Log(("RTDbgModCv: NB10 read error - %Rrc\n", rc2));
+                    RTMemTmpFree(pInfo);
                 }
+                else
+                    rc = VERR_NO_TMP_MEMORY;
             }
+            else
+                Log(("RTDbgModCv: NB10 with bogus size: %#x\n", cb));
         }
+        else
+            Log(("RTDbgModCv: NB10 with non-zero offset!\n"));
     }
     return rc;
 }
 
 
+/**
+ * Arguments passed to rtDbgModCvEnumCallback
+ */
+typedef struct RTDBGMODCVENUMCALLBACKARGS
+{
+    PRTDBGMODINT    pDbgMod;
+    RTDBGCFG        hDbgCfg;
+} RTDBGMODCVENUMCALLBACKARGS;
+
+
 /** @callback_method_impl{FNRTLDRENUMDBG} */
 static DECLCALLBACK(int) rtDbgModCvEnumCallback(RTLDRMOD hLdrMod, PCRTLDRDBGINFO pDbgInfo, void *pvUser)
 {
-    PRTDBGMODINT pDbgMod = (PRTDBGMODINT)pvUser;
+    RTDBGMODCVENUMCALLBACKARGS * const pArgs   = (RTDBGMODCVENUMCALLBACKARGS *)pvUser;
+    PRTDBGMODINT  const                pDbgMod = pArgs->pDbgMod;
     Assert(!pDbgMod->pvDbgPriv);
     RT_NOREF_PV(hLdrMod);
 
@@ -3023,7 +3251,8 @@ static DECLCALLBACK(int) rtDbgModCvEnumCallback(RTLDRMOD hLdrMod, PCRTLDRDBGINFO
         int rc = pDbgMod->pImgVt->pfnReadAt(pDbgMod, pDbgInfo->iDbgInfo, pDbgInfo->offFile, &CvHdr, sizeof(CvHdr));
         if (RT_SUCCESS(rc))
             rc = rtDbgModCvProbeCommon(pDbgMod, &CvHdr, RTCVFILETYPE_IMAGE, NIL_RTFILE, pDbgInfo->offFile, pDbgInfo->cb,
-                                       pDbgMod->pImgVt->pfnGetArch(pDbgMod), pDbgMod->pszImgFile);
+                                       pDbgMod->pImgVt->pfnGetArch(pDbgMod), pDbgMod->pImgVt->pfnImageSize(pDbgMod),
+                                       pDbgMod->pszImgFile, pArgs->hDbgCfg);
     }
     else if (pDbgInfo->enmType == RTLDRDBGINFOTYPE_COFF)
     {
@@ -3046,15 +3275,19 @@ static DECLCALLBACK(int) rtDbgModCvEnumCallback(RTLDRMOD hLdrMod, PCRTLDRDBGINFO
  * @param   off                 The offset where to expect CV debug info.
  * @param   cb                  The number of bytes of debug info.
  * @param   enmArch             The desired image architecture.
+ * @param   cbImage             The image size (for PDB lookup, see hDbgCfg).
  * @param   pszFilename         The path to the file (for logging).
+ * @param   hDbgCfg             Optional debug config handle for locating PDB
+ *                              linked to by NB10 records (in DBG and
+ *                              elsewhere).
  */
 static int rtDbgModCvProbeFile2(PRTDBGMODINT pThis, RTCVFILETYPE enmFileType, RTFILE hFile, uint32_t off, uint32_t cb,
-                                RTLDRARCH enmArch, const char *pszFilename)
+                                RTLDRARCH enmArch, size_t cbImage, const char *pszFilename, RTDBGCFG hDbgCfg)
 {
     RTCVHDR CvHdr;
     int rc = RTFileReadAt(hFile, off, &CvHdr, sizeof(CvHdr), NULL);
     if (RT_SUCCESS(rc))
-        rc = rtDbgModCvProbeCommon(pThis, &CvHdr, enmFileType, hFile, off, cb, enmArch, pszFilename);
+        rc = rtDbgModCvProbeCommon(pThis, &CvHdr, enmFileType, hFile, off, cb, enmArch, cbImage, pszFilename, hDbgCfg);
     return rc;
 }
 
@@ -3094,8 +3327,11 @@ static const char *dbgPeDebugTypeName(uint32_t uType)
  *                              will point to a valid RTDBGMODCV.
  * @param   pszFilename         The path to the file to probe.
  * @param   enmArch             The desired image architecture.
+ * @param   hDbgCfg             Optional debug config handle for locating PDB
+ *                              linked to by NB10 records (in DBG and
+ *                              elsewhere).
  */
-static int rtDbgModCvProbeFile(PRTDBGMODINT pDbgMod, const char *pszFilename, RTLDRARCH enmArch)
+static int rtDbgModCvProbeFile(PRTDBGMODINT pDbgMod, const char *pszFilename, RTLDRARCH enmArch, RTDBGCFG hDbgCfg)
 {
     RTFILE hFile;
     int rc = RTFileOpen(&hFile, pszFilename, RTFILE_O_READ | RTFILE_O_DENY_WRITE | RTFILE_O_OPEN);
@@ -3169,7 +3405,7 @@ static int rtDbgModCvProbeFile(PRTDBGMODINT pDbgMod, const char *pszFilename, RT
             if (DbgDir.Type == IMAGE_DEBUG_TYPE_CODEVIEW)
                 rc = rtDbgModCvProbeFile2(pDbgMod, RTCVFILETYPE_DBG, hFile,
                                           DbgDir.PointerToRawData, DbgDir.SizeOfData,
-                                          enmArch, pszFilename);
+                                          enmArch, DbgHdr.SizeOfImage, pszFilename, hDbgCfg);
             else if (DbgDir.Type == IMAGE_DEBUG_TYPE_COFF)
                 rc = rtDbgModCvProbeCoff(pDbgMod, RTCVFILETYPE_DBG, hFile,
                                          DbgDir.PointerToRawData, DbgDir.SizeOfData, pszFilename);
@@ -3230,7 +3466,9 @@ static int rtDbgModCvProbeFile(PRTDBGMODINT pDbgMod, const char *pszFilename, RT
         rc = RTFileRead(hFile, &CvHdr, sizeof(CvHdr), NULL);
         if (RT_SUCCESS(rc))
             rc = rtDbgModCvProbeFile2(pDbgMod, RTCVFILETYPE_OTHER_AT_END, hFile,
-                                      cbFile - CvHdr.off, CvHdr.off, enmArch, pszFilename);
+                                      cbFile - CvHdr.off, CvHdr.off, enmArch,
+                                      pDbgMod->pImgVt ? pDbgMod->pImgVt->pfnImageSize(pDbgMod) : 0 /*cbImage */,
+                                      pszFilename, hDbgCfg);
     }
 
     if (RT_FAILURE(rc))
@@ -3248,18 +3486,19 @@ static DECLCALLBACK(int) rtDbgModCv_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch
      */
     int rc = VERR_DBG_NO_MATCHING_INTERPRETER;
     if (pMod->pszDbgFile)
-        rc = rtDbgModCvProbeFile(pMod, pMod->pszDbgFile, enmArch);
+        rc = rtDbgModCvProbeFile(pMod, pMod->pszDbgFile, enmArch, hDbgCfg);
 
     if (!pMod->pvDbgPriv && pMod->pImgVt)
     {
-        int rc2 = pMod->pImgVt->pfnEnumDbgInfo(pMod, rtDbgModCvEnumCallback, pMod);
+        RTDBGMODCVENUMCALLBACKARGS Args = { pMod, hDbgCfg };
+        int rc2 = pMod->pImgVt->pfnEnumDbgInfo(pMod, rtDbgModCvEnumCallback, &Args);
         if (RT_FAILURE(rc2))
             rc = rc2;
 
         if (!pMod->pvDbgPriv)
         {
             /* Try the executable in case it has a NBxx tail header. */
-            rc2 = rtDbgModCvProbeFile(pMod, pMod->pszImgFile, enmArch);
+            rc2 = rtDbgModCvProbeFile(pMod, pMod->pszImgFile, enmArch, hDbgCfg);
             if (RT_FAILURE(rc2) && (RT_SUCCESS(rc) || rc == VERR_DBG_NO_MATCHING_INTERPRETER))
                 rc = rc2;
         }
@@ -3268,7 +3507,9 @@ static DECLCALLBACK(int) rtDbgModCv_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch
     PRTDBGMODCV pThis = (PRTDBGMODCV)pMod->pvDbgPriv;
     if (!pThis)
         return RT_SUCCESS_NP(rc) ? VERR_DBG_NO_MATCHING_INTERPRETER : rc;
-    Assert(pThis->offBase  != UINT32_MAX || pThis->offCoffDbgInfo != UINT32_MAX);
+    Assert(   pThis->offBase != UINT32_MAX
+           || pThis->offCoffDbgInfo != UINT32_MAX
+           || (pThis->pszPdbFilename != NULL && pThis->hVfsPdb != NIL_RTVFS && pThis->enmType == RTCVFILETYPE_DBG));
 
     /*
      * Load the debug info.
@@ -3282,6 +3523,12 @@ static DECLCALLBACK(int) rtDbgModCv_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch
         rc = rtDbgModCvLoadCodeViewInfo(pThis);
     if (RT_SUCCESS(rc) && pThis->offCoffDbgInfo != UINT32_MAX)
         rc = rtDbgModCvLoadCoffInfo(pThis);
+    if (RT_SUCCESS(rc) && pThis->hVfsPdb != NIL_RTVFS)
+    {
+        rc = rtDbgModPdb_CommonOpenWorker(pThis, pThis->pszPdbFilename, pThis->hVfsPdb, hDbgCfg);
+        RTVfsRelease(pThis->hVfsPdb);
+        pThis->hVfsPdb = NIL_RTVFS;
+    }
     if (RT_SUCCESS(rc))
     {
         Log(("RTDbgCv: Successfully loaded debug info\n"));
@@ -3476,16 +3723,7 @@ static DECLCALLBACK(RTDBGSEGIDX) rtDbgModPdb_RvaToSegOff(PRTDBGMODINT pMod, RTUI
 /** @interface_method_impl{RTDBGMODVTDBG,pfnClose} */
 static DECLCALLBACK(int) rtDbgModPdb_Close(PRTDBGMODINT pMod)
 {
-    PRTDBGMODCV pThis = (PRTDBGMODCV)pMod->pvDbgPriv;
-
-    RTDbgModRelease(pThis->hCnt);
-    if (pThis->hFile != NIL_RTFILE)
-        RTFileClose(pThis->hFile);
-    RTMemFree(pThis->paDirEnts);
-    RTMemFree(pThis);
-
-    pMod->pvDbgPriv = NULL; /* for internal use */
-    return VINF_SUCCESS;
+    return rtDbgModCv_Close(pMod);
 }
 
 
@@ -3496,20 +3734,26 @@ static DECLCALLBACK(int) rtDbgModPdb_Close(PRTDBGMODINT pMod)
  *
  */
 
-static int rtDbgModPdb_ScanSymRecs(PRTDBGMODCV pThis, RTVFSFILE hVfsFileSymRecs)
+static int rtDbgModPdb_ScanSymRecs(PRTDBGMODCV pThis, RTVFS hVfsPdb)
 {
-    void    *pvSymRecs;
-    size_t   cbSymRecs;
-    int rc = RTVfsFileReadAll(hVfsFileSymRecs, &pvSymRecs, &cbSymRecs);
+    RTVFSFILE hVfsFileSymRecs = NIL_RTVFSFILE;
+    int rc = RTVfsFileOpen(hVfsPdb, "symbol-records", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, &hVfsFileSymRecs);
     if (RT_SUCCESS(rc))
     {
-        Log3(("rtDbgModPdb_ScanSymRecs: %p LB %#x\n", pvSymRecs, cbSymRecs));
-        rc = rtDbgModCvSsProcessV4PlusSymTab(pThis, pvSymRecs, cbSymRecs, 0 /*fFlags*/);
+        void    *pvSymRecs;
+        size_t   cbSymRecs;
+        rc = RTVfsFileReadAll(hVfsFileSymRecs, &pvSymRecs, &cbSymRecs);
+        RTVfsFileRelease(hVfsFileSymRecs);
+        if (RT_SUCCESS(rc))
+        {
+            Log3(("rtDbgModPdb_ScanSymRecs: %p LB %#x\n", pvSymRecs, cbSymRecs));
+            rc = rtDbgModCvSsProcessV4PlusSymTab(pThis, pvSymRecs, cbSymRecs, 0 /*fFlags*/);
 
-        RTVfsFileReadAllFree(pvSymRecs, cbSymRecs);
+            RTVfsFileReadAllFree(pvSymRecs, cbSymRecs);
+        }
+        else
+            Log(("rtDbgModPdb_ScanSymRecs: RTVfsFileReadAll failed - %Rrc\n", rc));
     }
-    else
-        Log(("rtDbgModPdb_ScanSymRecs: RTVfsFileReadAll failed - %Rrc\n", rc));
     return rc;
 }
 
@@ -3568,103 +3812,102 @@ static int rtDbgModPdb_LoadSegMap(PRTDBGMODCV pThis, RTVFS hVfsPdb)
 }
 
 
-
-DECLINLINE(uint32_t) rtDbgModPdb_AdjustSectionSizeByNextSection(PCIMAGE_SECTION_HEADER paSHdrs, size_t cSections,
-                                                                size_t iCur, uint32_t cbMapped)
-{
-    size_t iNext = iCur + 1;
-    while (iNext < cSections && (paSHdrs[iNext].Characteristics & IMAGE_SCN_TYPE_NOLOAD))
-        iNext++;
-    if (iNext < cSections)
-    {
-        uint32_t cbAvailable = paSHdrs[iNext].VirtualAddress - (iCur != ~(size_t)0 ? paSHdrs[iCur].VirtualAddress : 0);
-        Assert(cbMapped <= cbAvailable);
-        return cbAvailable;
-    }
-    return cbMapped;
-}
-
-
 /**
  * Helper for rtDbgModPdb_TryOpen that loads the section/segments into the
  * container.
  */
-static int rtDbgModPdb_LoadSections(PRTDBGMODINT pMod, PRTDBGMODCV pThis, RTVFSFILE hVfsFileSectionHeaders)
+static int rtDbgModPdb_LoadSections(PRTDBGMODCV pThis, PRTDBGMODINT pDbgMod, RTVFS hVfsPdb, const char *pszFilename)
 {
     /*
      * Use the info from the image if present.
      */
     int rc;
-    if (pMod->pImgVt)
-        rc = pMod->pImgVt->pfnEnumSegments(pMod, rtDbgModCvAddSegmentsCallback, pThis);
+    if (pDbgMod->pImgVt)
+        rc = pDbgMod->pImgVt->pfnEnumSegments(pDbgMod, rtDbgModCvAddSegmentsCallback, pThis);
     /*
      * Otherwise use the copy of the section table from the PDB.
      */
     else
     {
-        PIMAGE_SECTION_HEADER paSHdrs;
-        size_t                cbSHdrs;
-        rc = RTVfsFileReadAll(hVfsFileSectionHeaders, (void **)&paSHdrs, &cbSHdrs);
+        RTVFSFILE hVfsFileSHdrs;
+        rc = RTVfsFileOpen(hVfsPdb, "image-section-headers", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, &hVfsFileSHdrs);
         if (RT_SUCCESS(rc))
         {
-            size_t const cSections = cbSHdrs / sizeof(IMAGE_SECTION_HEADER);
-
-            /** @todo sanity check headers first? */
-
-            /* The first section is a fake one covering the headers. */
-            uint32_t cbMapped = 0x80 /*MZ Stub*/ + sizeof(IMAGE_NT_HEADERS32) + (uint32_t)cbSHdrs;
-            cbMapped = rtDbgModPdb_AdjustSectionSizeByNextSection(paSHdrs, cSections, ~(size_t)0, cbMapped);
-            rc = RTDbgModSegmentAdd(pThis->hCnt, 0, cbMapped, "NtHdrs", 0 /*fFlags*/, NULL);
+            PIMAGE_SECTION_HEADER paShs = NULL;
+            size_t                cbSHdrs = 0;
+            rc = RTVfsFileReadAll(hVfsFileSHdrs, (void **)&paShs, &cbSHdrs);
+            RTVfsFileRelease(hVfsFileSHdrs);
             if (RT_SUCCESS(rc))
             {
-                /* Process the section headers.  This bears some resemblence of the code in rtldrPE_EnumSegments.  */
-                for (size_t i = 0; RT_SUCCESS(rc) && i < cSections; i++)
-                {
-                    Log(("Segment #%u: RVA=%#09RX32 cbVirt=%#09RX32 cbRaw=%#09RX32 Flags=%#010RX32 Name='%.8s'\n",
-                         i, paSHdrs[i].VirtualAddress, paSHdrs[i].Misc.VirtualSize, paSHdrs[i].SizeOfRawData,
-                         paSHdrs[i].Characteristics, paSHdrs[i].Name));
-                    char szName[9];
-                    memcpy(szName, paSHdrs[i].Name, sizeof(paSHdrs[i].Name));
-                    szName[sizeof(paSHdrs[i].Name)] = '\0';
-                    RTStrStripR(szName);
-
-                    /* If the segment doesn't have a mapping, just add a dummy so the indexing
-                       works out correctly (same as for the image). */
-                    uint32_t uRva = 0;
-                    cbMapped = 0;
-                    if (!(paSHdrs[i].Characteristics & IMAGE_SCN_TYPE_NOLOAD))
-                    {
-                        uint32_t cbAlign  = (paSHdrs[i].Characteristics & IMAGE_SCN_ALIGN_MASK) >> IMAGE_SCN_ALIGN_SHIFT;
-                        if (cbAlign > 0)
-                            cbAlign = RT_BIT_32(cbAlign);
-                        else
-                            cbAlign = 1; /** @todo missing file header w/ default section alignment.  */
-                        cbMapped = RT_ALIGN(paSHdrs[i].Misc.VirtualSize, cbAlign);
-
-                        size_t iNext = i + 1;
-                        while (iNext < cSections && (paSHdrs[iNext].Characteristics & IMAGE_SCN_TYPE_NOLOAD))
-                            iNext++;
-                        if (iNext < cSections)
-                            cbMapped = paSHdrs[iNext].VirtualAddress - paSHdrs[i].VirtualAddress;
-                        uRva = paSHdrs[i].VirtualAddress;
-                    }
-                    rc = RTDbgModSegmentAdd(pThis->hCnt, uRva, cbMapped, szName, 0 /*fFlags*/, NULL);
-                    if (RT_FAILURE(rc))
-                    {
-                        Log(("rtDbgModPdb_LoadSections: Failed on #%u: uRva=%#RX32 cbMapped=%#RX32 Flags=%#RX32 '%s' -> %Rrc\n",
-                             i + 1, uRva, cbMapped, szName, paSHdrs[i].Characteristics, rc));
-                        break;
-                    }
-                }
+                rc = rtDbgModCvAddSegmentsFromSectHdrs(pThis, paShs, cbSHdrs / sizeof(IMAGE_SECTION_HEADER),
+                                                       1 /* cbSectAlign - only for validation */,
+                                                       pThis->cbImage ? pThis->cbImage : UINT32_MAX /* only for validation */,
+                                                       pszFilename);
+                RTVfsFileReadAllFree(paShs, cbSHdrs);
             }
             else
-                Log(("rtDbgModPdb_LoadSections: Failed on first: cbMapped=%#RX32 %Rrc\n", cbMapped, rc));
-            RTVfsFileReadAllFree(paSHdrs, cbSHdrs);
+                Log(("rtDbgModPdb_LoadSections: RTVfsFileReadAll failed - %Rrc\n", rc));
         }
         else
-            Log(("rtDbgModPdb_LoadSections: RTVfsFileReadAll failed - %Rrc\n", rc));
+            Log2(("rtDbgModPdb_TryOpen: Failed to open 'image-section-headers' in '%s' -> %Rrc\n", pszFilename, rc));
     }
+    RT_NOREF(pszFilename);
     pThis->fHaveLoadedSegments = true;
+    return rc;
+}
+
+
+/**
+ * Common worker for rtDbgModPdb_TryOpen and rtDbgModCv_TryOpen (for DBG+PDB).
+ */
+static int rtDbgModPdb_CommonOpenWorker(PRTDBGMODCV pThis, const char *pszFilename, RTVFS hVfsPdb, RTDBGCFG hDbgCfg)
+{
+    RT_NOREF(hDbgCfg, pszFilename);
+
+    /*
+     * We need section headers to successfully deal with the section (segment)
+     * map and symbol records.  If there is an associated EXE or DBG file, they
+     * will have segment information we can enumerate or load.  In the DBG case,
+     * it's already done by the time we get here.   Otherwise, newer PDB files
+     * will include a copy of the section header and we can use that of we got
+     * no EXE or DBG files.
+     */
+    int rc = VINF_SUCCESS;
+    if (!pThis->fHaveLoadedSegments)
+        rc = rtDbgModPdb_LoadSections(pThis, pThis->pMod, hVfsPdb, pszFilename);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Load the section/segment map as we need to know how absolute segments
+         * and such.  This should definitely be done after loading sections.
+         * (Unfortuantely, the segement map doesn't not provide sufficient
+         * information to replace the section headers if we cannot find them.)
+         */
+        rc = rtDbgModPdb_LoadSegMap(pThis, hVfsPdb);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Scan symbol records for symbol addresses and anything else we find
+             * interesting.
+             */
+            rc = rtDbgModPdb_ScanSymRecs(pThis, hVfsPdb);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * We're good.
+                 */
+                /** @todo load source files and line numbers if present.   */
+                /** @todo load unwind information. */
+                Log(("rtDbgModPdb_TryOpen: Succeeded\n"));
+                return VINF_SUCCESS;
+            }
+            Log(("rtDbgModPdb_TryOpen: rtDbgModPdb_ScanSymRecs failed - %Rrc\n", rc));
+        }
+        else
+            Log(("rtDbgModPdb_TryOpen: rtDbgModPdb_LoadSegMap failed on '%s' -> %Rrc\n", pszFilename, rc));
+    }
+    else
+        Log(("rtDbgModPdb_TryOpen: rtDbgModPdb_LoadSections failed on '%s' -> %Rrc\n", pszFilename, rc));
     return rc;
 }
 
@@ -3672,8 +3915,6 @@ static int rtDbgModPdb_LoadSections(PRTDBGMODINT pMod, PRTDBGMODCV pThis, RTVFSF
 /** @interface_method_impl{RTDBGMODVTDBG,pfnTryOpen} */
 static DECLCALLBACK(int) rtDbgModPdb_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch, RTDBGCFG hDbgCfg)
 {
-    RT_NOREF(hDbgCfg); RT_NOREF(enmArch);
-
     /*
      * This only works for external files for now.
      */
@@ -3697,58 +3938,22 @@ static DECLCALLBACK(int) rtDbgModPdb_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArc
         RTVfsFileRelease(hVfsFilePdb);
         if (RT_SUCCESS(rc))
         {
+            /** @todo check enmArch. It's part of the new DBI header. */
+            RT_NOREF(enmArch);
+
             /*
-             * Check if we've got the necessary bits present in the PDB.
+             * Create an instance so we can share the next bits with the DBG+PDB
+             * code path in rtDbgModCv_TryOpen.  We need to be able to check if
+             * section headers have been loaded among other things.
              */
-            /* We need section headers. We can get them from the image if we
-               have one, otherwise there is usally a copy of them in the PDB. */
-            RTVFSFILE hVfsFileSectionHeaders = NIL_RTVFSFILE;
-            /** @todo figure out how to deal with old PDBs w/o section headers...
-             *        (like w2ksp4 ones) */
-            if (!pMod->pImgVt)
-                rc = RTVfsFileOpen(hVfsPdb, "image-section-headers", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE,
-                                   &hVfsFileSectionHeaders);
+            PRTDBGMODCV pThis;
+            rc = rtDbgModCvCreateInstance(pMod, RTCVFILETYPE_PDB, NIL_RTFILE, &pThis);
             if (RT_SUCCESS(rc))
             {
-                /* We also need the symbol records. */
-                RTVFSFILE hVfsFileSymRecs = NIL_RTVFSFILE;
-                rc = RTVfsFileOpen(hVfsPdb, "symbol-records", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE,
-                                   &hVfsFileSymRecs);
-                if (RT_SUCCESS(rc))
-                {
-                    /*
-                     * Create an instance and process the available information.
-                     */
-                    PRTDBGMODCV pThis;
-                    rc = rtDbgModCvCreateInstance(pMod, RTCVFILETYPE_PDB, NIL_RTFILE, &pThis);
-                    if (RT_SUCCESS(rc))
-                    {
-                        rc = rtDbgModPdb_LoadSections(pMod, pThis, hVfsFileSectionHeaders);
-                        if (RT_SUCCESS(rc))
-                        {
-                            rc = rtDbgModPdb_LoadSegMap(pThis, hVfsPdb);
-                            if (RT_SUCCESS(rc))
-                            {
-                                rc = rtDbgModPdb_ScanSymRecs(pThis, hVfsFileSymRecs);
-                                if (RT_SUCCESS(rc))
-                                    Log(("rtDbgModPdb_TryOpen: Succeeded\n"));
-                                else
-                                    Log(("rtDbgModPdb_TryOpen: rtDbgModPdb_ScanSymRecs failed - %Rrc\n", rc));
-                            }
-                            else
-                                Log(("rtDbgModPdb_TryOpen: rtDbgModPdb_LoadSegMap failed - %Rrc\n", rc));
-                        }
-                        else
-                            Log(("rtDbgModPdb_TryOpen: rtDbgModPdb_LoadSections failed - %Rrc\n", rc));
-                    }
-                    RTVfsFileRelease(hVfsFileSymRecs);
-                }
-                else
-                    Log2(("rtDbgModPdb_TryOpen: Failed to open 'symbol-records' in '%s' -> %Rrc\n", pMod->pszDbgFile, rc));
-                RTVfsFileRelease(hVfsFileSectionHeaders);
+                rc = rtDbgModPdb_CommonOpenWorker(pThis, pMod->pszDbgFile, hVfsPdb, hDbgCfg);
+                if (RT_FAILURE(rc))
+                    rtDbgModCv_Close(pMod);
             }
-            else
-                Log2(("rtDbgModPdb_TryOpen: Failed to open 'image-section-headers' in '%s' -> %Rrc\n", pMod->pszDbgFile, rc));
             RTVfsRelease(hVfsPdb);
         }
         else
@@ -3758,6 +3963,7 @@ static DECLCALLBACK(int) rtDbgModPdb_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArc
         Log2(("rtDbgModPdb_TryOpen: RTVfsFileOpenNormal '%s' -> %Rrc\n", pMod->pszDbgFile, rc));
     return rc;
 }
+
 
 
 /** Virtual function table for the PDB debug info reader. */

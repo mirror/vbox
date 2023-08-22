@@ -1631,7 +1631,7 @@ static int rtFsPdbVolTryInit(PRTFSPDBVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
         offRootPageMap    = RT_UOFFSETOF(RTPDB20HDR, aiRootPageMap);
     }
     else
-        return RTERRINFO_LOG_SET_F(pErrInfo, rc, "Unknown file header signature: %.44Rhxs", Buf.Hdr70.szSignature);
+        return RTERRINFO_LOG_SET_F(pErrInfo, VERR_INVALID_MAGIC, "Unknown file header signature: %.44Rhxs", Buf.Hdr70.szSignature);
 
     if (   pThis->cbPage != _4K
         && pThis->cbPage != _8K
@@ -1807,15 +1807,6 @@ static int rtFsPdbVolTryInit(PRTFSPDBVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
 }
 
 
-/**
- * Opens an PDB file system volume.
- *
- * @returns IPRT status code.
- * @param   hVfsFileIn      The file or device backing the volume.
- * @param   fFlags          0 or RTFSPDB_F_NO_NAMES
- * @param   phVfs           Where to return the virtual file system handle.
- * @param   pErrInfo        Where to return additional error information.
- */
 RTDECL(int) RTFsPdbVolOpen(RTVFSFILE hVfsFileIn, uint32_t fFlags, PRTVFS phVfs, PRTERRINFO pErrInfo)
 {
     /*
