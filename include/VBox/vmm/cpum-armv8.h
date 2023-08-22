@@ -274,7 +274,7 @@ typedef CPUMDBENTRY const *PCCPUMDBENTRY;
  * @returns true if in 64 bits mode, otherwise false.
  * @param   pCtx    Current CPU context.
  */
-DECLINLINE(bool) CPUMIsGuestIn64BitCodeEx(PCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestIn64BitCodeEx(PCCPUMCTX pCtx)
 {
     return !RT_BOOL(pCtx->fPState & ARMV8_SPSR_EL2_AARCH64_M4);
 }

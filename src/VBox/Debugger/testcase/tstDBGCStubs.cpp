@@ -788,7 +788,7 @@ VMMDECL(PCPUMCTX) CPUMQueryGuestCtxPtr(PVMCPU pVCpu)
     return NULL;
 }
 
-VMMDECL(bool) CPUMIsGuestIn64BitCode(PVMCPU pVCpu)
+VMMDECL(bool) CPUMIsGuestIn64BitCode(PCVMCPU pVCpu)
 {
     return false;
 }

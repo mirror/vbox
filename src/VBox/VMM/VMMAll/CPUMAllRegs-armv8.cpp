@@ -236,7 +236,7 @@ VMMDECL(bool) CPUMIsGuestPagingEnabled(PCVMCPU pVCpu)
  * @returns true if in 64 bits protected mode, otherwise false.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  */
-VMMDECL(bool) CPUMIsGuestIn64BitCode(PVMCPU pVCpu)
+VMMDECL(bool) CPUMIsGuestIn64BitCode(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_PSTATE);
     return !RT_BOOL(pVCpu->cpum.s.Guest.fPState & ARMV8_SPSR_EL2_AARCH64_M4);
@@ -250,7 +250,7 @@ VMMDECL(bool) CPUMIsGuestIn64BitCode(PVMCPU pVCpu)
  * @returns true if in 64 bits protected mode, otherwise false.
  * @param   pCtx        Pointer to the current guest CPU context.
  */
-VMM_INT_DECL(bool) CPUMIsGuestIn64BitCodeSlow(PCPUMCTX pCtx)
+VMM_INT_DECL(bool) CPUMIsGuestIn64BitCodeSlow(PCCPUMCTX pCtx)
 {
     return CPUMIsGuestIn64BitCode(CPUM_GUEST_CTX_TO_VMCPU(pCtx));
 }

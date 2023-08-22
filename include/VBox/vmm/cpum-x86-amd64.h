@@ -1502,7 +1502,7 @@ DECLINLINE(bool) CPUMIsGuestInLongModeEx(PCCPUMCTX pCtx)
     return (pCtx->msrEFER & MSR_K6_EFER_LMA) == MSR_K6_EFER_LMA;
 }
 
-VMM_INT_DECL(bool) CPUMIsGuestIn64BitCodeSlow(PCPUMCTX pCtx);
+VMM_INT_DECL(bool) CPUMIsGuestIn64BitCodeSlow(PCCPUMCTX pCtx);
 
 /**
  * Tests if the guest is running in 64 bits mode or not.
@@ -1510,7 +1510,7 @@ VMM_INT_DECL(bool) CPUMIsGuestIn64BitCodeSlow(PCPUMCTX pCtx);
  * @returns true if in 64 bits protected mode, otherwise false.
  * @param   pCtx    Current CPU context.
  */
-DECLINLINE(bool) CPUMIsGuestIn64BitCodeEx(PCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestIn64BitCodeEx(PCCPUMCTX pCtx)
 {
     if (!(pCtx->msrEFER & MSR_K6_EFER_LMA))
         return false;

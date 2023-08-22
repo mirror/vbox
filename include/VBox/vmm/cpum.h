@@ -381,7 +381,7 @@ VMMDECL(void)           CPUMGetGuestAddrWidths(PCVM pVM, uint8_t *pcPhysAddrWidt
 
 /** @name Misc Guest Predicate Functions.
  * @{  */
-VMMDECL(bool)           CPUMIsGuestIn64BitCode(PVMCPU pVCpu);
+VMMDECL(bool)           CPUMIsGuestIn64BitCode(PCVMCPU pVCpu);
 /** @} */
 
 VMMDECL(CPUMCPUVENDOR)  CPUMGetHostCpuVendor(PVM pVM);

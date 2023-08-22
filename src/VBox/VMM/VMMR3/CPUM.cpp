@@ -3216,9 +3216,9 @@ static void cpumR3InfoFormatFlags(char *pszEFlags, uint32_t efl)
  * @param   enmType     The dump type.
  * @param   pszPrefix   Register name prefix.
  */
-static void cpumR3InfoOne(PVM pVM, PVMCPU pVCpu, PCDBGFINFOHLP pHlp, CPUMDUMPTYPE enmType, const char *pszPrefix)
+static void cpumR3InfoOne(PVM pVM, PCVMCPU pVCpu, PCDBGFINFOHLP pHlp, CPUMDUMPTYPE enmType, const char *pszPrefix)
 {
-    PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
+    PCCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
 
     /*
      * Format the EFLAGS.
@@ -3363,7 +3363,7 @@ static void cpumR3InfoOne(PVM pVM, PVMCPU pVCpu, PCDBGFINFOHLP pHlp, CPUMDUMPTYP
                             pszPrefix, pCtx->aXcr[0], pszPrefix, pCtx->aXcr[1],
                             pszPrefix, UINT64_C(0) /** @todo XSS */, pCtx->fXStateMask);
             {
-                PX86FXSTATE pFpuCtx = &pCtx->XState.x87;
+                PCX86FXSTATE pFpuCtx = &pCtx->XState.x87;
                 pHlp->pfnPrintf(pHlp,
                     "%sFCW=%04x %sFSW=%04x %sFTW=%04x %sFOP=%04x %sMXCSR=%08x %sMXCSR_MASK=%08x\n"
                     "%sFPUIP=%08x %sCS=%04x %sRsrvd1=%04x  %sFPUDP=%08x %sDS=%04x %sRsvrd2=%04x\n"
@@ -3663,7 +3663,7 @@ static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     const char *pszComment;
     cpumR3InfoParseArg(pszArgs, &enmType, &pszComment);
 
-    PVMCPU pVCpu = VMMGetCpu(pVM);
+    PCVMCPU pVCpu = VMMGetCpu(pVM);
     if (!pVCpu)
         pVCpu = pVM->apCpusR3[0];
 
