@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWarningPane class implementation.
+ * VBox Qt GUI - UISettingsWarningPane class implementation.
  */
 
 /*
@@ -33,30 +33,29 @@
 
 /* GUI includes: */
 #include "UISettingsPageValidator.h"
-#include "UIWarningPane.h"
+#include "UISettingsWarningPane.h"
 
 /* Other VBox includes: */
 #include <iprt/assert.h>
 
 
-UIWarningPane::UIWarningPane(QWidget *pParent)
+UISettingsWarningPane::UISettingsWarningPane(QWidget *pParent)
     : QWidget(pParent)
     , m_pIconLayout(0)
     , m_pTextLabel(0)
     , m_pHoverTimer(0)
     , m_iHoveredIconLabelPosition(-1)
 {
-    /* Prepare: */
     prepare();
 }
 
-void UIWarningPane::setWarningLabel(const QString &strWarningLabel)
+void UISettingsWarningPane::setWarningLabel(const QString &strWarningLabel)
 {
     /* Assign passed text directly to warning-label: */
     m_pTextLabel->setText(strWarningLabel);
 }
 
-void UIWarningPane::registerValidator(UISettingsPageValidator *pValidator)
+void UISettingsWarningPane::registerValidator(UISettingsPageValidator *pValidator)
 {
     /* Make sure validator exists: */
     AssertPtrReturnVoid(pValidator);
@@ -91,7 +90,7 @@ void UIWarningPane::registerValidator(UISettingsPageValidator *pValidator)
     m_hovered << false;
 }
 
-bool UIWarningPane::eventFilter(QObject *pObject, QEvent *pEvent)
+bool UISettingsWarningPane::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     /* Depending on event-type: */
     switch (pEvent->type())
@@ -154,14 +153,14 @@ bool UIWarningPane::eventFilter(QObject *pObject, QEvent *pEvent)
     return QWidget::eventFilter(pObject, pEvent);
 }
 
-void UIWarningPane::sltHandleHoverTimer()
+void UISettingsWarningPane::sltHandleHoverTimer()
 {
     /* Notify listeners about hovering: */
     if (m_iHoveredIconLabelPosition >= 0 && m_iHoveredIconLabelPosition < m_validators.size())
         emit sigHoverEnter(m_validators[m_iHoveredIconLabelPosition]);
 }
 
-void UIWarningPane::prepare()
+void UISettingsWarningPane::prepare()
 {
     /* Create main-layout: */
     QHBoxLayout *pMainLayout = new QHBoxLayout(this);
@@ -195,7 +194,7 @@ void UIWarningPane::prepare()
             /* Configure timer: */
             m_pHoverTimer->setInterval(200);
             m_pHoverTimer->setSingleShot(true);
-            connect(m_pHoverTimer, &QTimer::timeout, this, &UIWarningPane::sltHandleHoverTimer);
+            connect(m_pHoverTimer, &QTimer::timeout, this, &UISettingsWarningPane::sltHandleHoverTimer);
         }
 
         /* Add right stretch: */

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWarningPane class declaration.
+ * VBox Qt GUI - UISettingsWarningPane class declaration.
  */
 
 /*
@@ -25,8 +25,8 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef FEQT_INCLUDED_SRC_widgets_UIWarningPane_h
-#define FEQT_INCLUDED_SRC_widgets_UIWarningPane_h
+#ifndef FEQT_INCLUDED_SRC_settings_UISettingsWarningPane_h
+#define FEQT_INCLUDED_SRC_settings_UISettingsWarningPane_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -47,8 +47,9 @@ class QTimer;
 class QWidget;
 class UISettingsPageValidator;
 
-/** QWidget subclass used a settings dialog warning-pane. */
-class SHARED_LIBRARY_STUFF UIWarningPane : public QWidget
+/** QWidget sub-class,
+  * used a settings dialog warning-pane. */
+class SHARED_LIBRARY_STUFF UISettingsWarningPane : public QWidget
 {
     Q_OBJECT;
 
@@ -64,7 +65,7 @@ signals:
 public:
 
     /** Constructs warning-pane passing @a pParent to the base-class. */
-    UIWarningPane(QWidget *pParent = 0);
+    UISettingsWarningPane(QWidget *pParent = 0);
 
     /** Defines current @a strWarningLabel text. */
     void setWarningLabel(const QString &strWarningLabel);
@@ -105,4 +106,4 @@ private:
     int     m_iHoveredIconLabelPosition;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_widgets_UIWarningPane_h */
+#endif /* !FEQT_INCLUDED_SRC_settings_UISettingsWarningPane_h */

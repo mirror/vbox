@@ -881,6 +881,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/UISettingsPageValidator.h \
 	src/settings/UISettingsSelector.h \
 	src/settings/UISettingsSerializer.h \
+	src/settings/UISettingsWarningPane.h \
 	src/settings/editors/UIAccelerationFeaturesEditor.h \
 	src/settings/editors/UIAudioControllerEditor.h \
 	src/settings/editors/UIAudioFeaturesEditor.h \
@@ -971,7 +972,6 @@ UICommon_QT_MOCHDRS = \
 	src/widgets/UIStatusBarEditorWindow.h \
 	src/widgets/UISearchLineEdit.h \
 	src/widgets/UIToolBox.h \
-	src/widgets/UIWarningPane.h \
 	src/wizards/UINativeWizard.h \
 	src/wizards/UINativeWizardPage.h \
 	src/wizards/editors/UIUserNamePasswordEditor.h \
@@ -1464,6 +1464,7 @@ UICommon_SOURCES = \
 	src/settings/UISettingsPageValidator.cpp \
 	src/settings/UISettingsSelector.cpp \
 	src/settings/UISettingsSerializer.cpp \
+	src/settings/UISettingsWarningPane.cpp \
 	src/settings/editors/UIAccelerationFeaturesEditor.cpp \
 	src/settings/editors/UIAudioControllerEditor.cpp \
 	src/settings/editors/UIAudioFeaturesEditor.cpp \
@@ -1554,7 +1555,6 @@ UICommon_SOURCES = \
 	src/widgets/UISpecialControls.cpp \
 	src/widgets/UIStatusBarEditorWindow.cpp \
 	src/widgets/UIToolBox.cpp \
-	src/widgets/UIWarningPane.cpp \
 	src/wizards/UINativeWizard.cpp \
 	src/wizards/UINativeWizardPage.cpp \
 	src/wizards/editors/UIUserNamePasswordEditor.cpp \

@@ -52,7 +52,7 @@ class UISettingsPageValidator;
 class UISettingsPage;
 class UISettingsSelector;
 class UISettingsSerializer;
-class UIWarningPane;
+class UISettingsWarningPane;
 
 /* Using declarations: */
 using namespace UISettingsDefs;
@@ -217,11 +217,11 @@ private:
     bool  m_fClosed;
 
     /** Holds the status-bar widget instance. */
-    QStackedWidget *m_pStatusBar;
+    QStackedWidget         *m_pStatusBar;
     /** Holds the process-bar widget instance. */
-    QProgressBar   *m_pProcessBar;
+    QProgressBar           *m_pProcessBar;
     /** Holds the warning-pane instance. */
-    UIWarningPane  *m_pWarningPane;
+    UISettingsWarningPane  *m_pWarningPane;
 
     /** Holds whether settings dialog is valid (no errors, can be warnings). */
     bool  m_fValid;

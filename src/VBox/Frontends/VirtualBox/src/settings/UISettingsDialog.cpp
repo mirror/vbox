@@ -36,6 +36,7 @@
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
+#include "QIToolBar.h"
 #include "QIWidgetValidator.h"
 #include "UICommon.h"
 #include "UIConverter.h"
@@ -49,8 +50,7 @@
 #include "UISettingsPageValidator.h"
 #include "UISettingsSelector.h"
 #include "UISettingsSerializer.h"
-#include "QIToolBar.h"
-#include "UIWarningPane.h"
+#include "UISettingsWarningPane.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils.h"
 #endif
@@ -716,12 +716,12 @@ void UISettingsDialog::prepareButtonBox()
             }
 
             /* Prepare warning-pane: */
-            m_pWarningPane = new UIWarningPane(m_pStatusBar);
+            m_pWarningPane = new UISettingsWarningPane(m_pStatusBar);
             if (m_pWarningPane)
             {
-                connect(m_pWarningPane, &UIWarningPane::sigHoverEnter,
+                connect(m_pWarningPane, &UISettingsWarningPane::sigHoverEnter,
                         this, &UISettingsDialog::sltHandleWarningPaneHovered);
-                connect(m_pWarningPane, &UIWarningPane::sigHoverLeave,
+                connect(m_pWarningPane, &UISettingsWarningPane::sigHoverLeave,
                         this, &UISettingsDialog::sltHandleWarningPaneUnhovered);
                 m_pStatusBar->addWidget(m_pWarningPane);
             }
