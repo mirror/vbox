@@ -1105,21 +1105,21 @@ void UIVMLogViewerWidget::resetHighlighthing()
 
 void UIVMLogViewerWidget::manageEscapeShortCut()
 {
-    /* if there is no visible panels give the escape shortcut to parent dialog: */
-    if (m_visiblePanelsList.isEmpty())
-    {
-        emit sigSetCloseButtonShortCut(QKeySequence(Qt::Key_Escape));
-        return;
-    }
-    /* Take the escape shortcut from the dialog: */
-    emit sigSetCloseButtonShortCut(QKeySequence());
-    /* Just loop thru the visible panel list and set the esc key to the
-       panel which made visible latest */
-    for (int i = 0; i < m_visiblePanelsList.size() - 1; ++i)
-    {
-        m_visiblePanelsList[i]->setCloseButtonShortCut(QKeySequence());
-    }
-    m_visiblePanelsList.back()->setCloseButtonShortCut(QKeySequence(Qt::Key_Escape));
+    // /* if there is no visible panels give the escape shortcut to parent dialog: */
+    // if (m_visiblePanelsList.isEmpty())
+    // {
+    //     emit sigSetCloseButtonShortCut(QKeySequence(Qt::Key_Escape));
+    //     return;
+    // }
+    // /* Take the escape shortcut from the dialog: */
+    // emit sigSetCloseButtonShortCut(QKeySequence());
+    // /* Just loop thru the visible panel list and set the esc key to the
+    //    panel which made visible latest */
+    // for (int i = 0; i < m_visiblePanelsList.size() - 1; ++i)
+    // {
+    //     m_visiblePanelsList[i]->setCloseButtonShortCut(QKeySequence());
+    // }
+    // m_visiblePanelsList.back()->setCloseButtonShortCut(QKeySequence(Qt::Key_Escape));
 }
 
 bool UIVMLogViewerWidget::labelTabHandler()

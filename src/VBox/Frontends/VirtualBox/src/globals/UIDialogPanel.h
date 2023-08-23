@@ -69,44 +69,4 @@ private:
     QIToolButton  *m_pCloseButton;
 };
 
-/** QWidget extension acting as the base class for all the dialog panels like file manager, logviewer etc. */
-class SHARED_LIBRARY_STUFF UIDialogPanel : public QIWithRetranslateUI<QWidget>
-{
-    Q_OBJECT;
-
-public:
-
-    UIDialogPanel(QWidget *pParent = 0);
-    void setCloseButtonShortCut(QKeySequence shortCut);
-    virtual QString panelName() const = 0;
-
-signals:
-
-    void sigHidePanel(UIDialogPanel *pPanel);
-    void sigShowPanel(UIDialogPanel *pPanel);
-
-protected:
-
-    virtual void prepare();
-    virtual void prepareWidgets();
-    virtual void prepareConnections();
-
-    /* Access functions for children classes. */
-    QHBoxLayout*               mainLayout();
-
-    /** Handles the translation event. */
-    void retranslateUi() RT_OVERRIDE;
-
-    /** Handles the Qt show @a pEvent. */
-    void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
-    /** Handles the Qt hide @a pEvent. */
-    void hideEvent(QHideEvent *pEvent) RT_OVERRIDE;
-    void addVerticalSeparator();
-
-private:
-
-    QHBoxLayout   *m_pMainLayout;
-    QIToolButton  *m_pCloseButton;
-};
-
 #endif /* !FEQT_INCLUDED_SRC_globals_UIDialogPanel_h */
