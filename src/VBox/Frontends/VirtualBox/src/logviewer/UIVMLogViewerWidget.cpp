@@ -419,7 +419,7 @@ void UIVMLogViewerWidget::sltRefresh()
     pCurrentPage->setLogContent(strLogContent, false);
 
     if (m_pPanel && m_pPanel->isVisible() &&
-        m_pPanel->currentIndex() == static_cast<UIVMLogViewerPanelNew::Page>(UIVMLogViewerPanelNew::Page_Search))
+        m_pPanel->currentIndex() == static_cast<UIVMLogViewerPaneContainer::Page>(UIVMLogViewerPaneContainer::Page_Search))
         m_pPanel->refreshSearch();
 
     /* Re-Apply the filter settings: */
@@ -742,10 +742,10 @@ void UIVMLogViewerWidget::prepareActions()
     m_panelActions.insert(m_pActionPool->action(UIActionIndex_M_Log_T_Bookmark));
     m_panelActions.insert(m_pActionPool->action(UIActionIndex_M_Log_T_Preferences));
 
-    m_pActionPool->action(UIActionIndex_M_Log_T_Find)->setData((int)UIVMLogViewerPanelNew::Page_Search);
-    m_pActionPool->action(UIActionIndex_M_Log_T_Filter)->setData((int)UIVMLogViewerPanelNew::Page_Filter);
-    m_pActionPool->action(UIActionIndex_M_Log_T_Bookmark)->setData((int)UIVMLogViewerPanelNew::Page_Bookmark);
-    m_pActionPool->action(UIActionIndex_M_Log_T_Preferences)->setData((int)UIVMLogViewerPanelNew::Page_Preferences);
+    m_pActionPool->action(UIActionIndex_M_Log_T_Find)->setData((int)UIVMLogViewerPaneContainer::Page_Search);
+    m_pActionPool->action(UIActionIndex_M_Log_T_Filter)->setData((int)UIVMLogViewerPaneContainer::Page_Filter);
+    m_pActionPool->action(UIActionIndex_M_Log_T_Bookmark)->setData((int)UIVMLogViewerPaneContainer::Page_Bookmark);
+    m_pActionPool->action(UIActionIndex_M_Log_T_Preferences)->setData((int)UIVMLogViewerPaneContainer::Page_Preferences);
 
     /* Connect actions: */
     connect(m_pActionPool->action(UIActionIndex_M_Log_T_Find), &QAction::toggled,
@@ -790,7 +790,7 @@ void UIVMLogViewerWidget::prepareWidgets()
     m_pTabWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     connect(m_pTabWidget, &QITabWidget::currentChanged, this, &UIVMLogViewerWidget::sltCurrentTabChanged);
 
-    m_pPanel = new UIVMLogViewerPanelNew(0, this);
+    m_pPanel = new UIVMLogViewerPaneContainer(0, this);
     AssertReturnVoid(m_pPanel);
     installEventFilter(m_pPanel);
     m_pPanel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
@@ -798,19 +798,19 @@ void UIVMLogViewerWidget::prepareWidgets()
     m_pPanel->setWrapLines(m_bWrapLines);
     m_pPanel->setFontSizeInPoints(m_font.pointSize());
     m_pPanel->setVisible(false);
-    connect(m_pPanel, &UIVMLogViewerPanelNew::sigHighlightingUpdated,
+    connect(m_pPanel, &UIVMLogViewerPaneContainer::sigHighlightingUpdated,
             this, &UIVMLogViewerWidget::sltSearchResultHighLigting);
-    connect(m_pPanel, &UIVMLogViewerPanelNew::sigSearchUpdated,
+    connect(m_pPanel, &UIVMLogViewerPaneContainer::sigSearchUpdated,
             this, &UIVMLogViewerWidget::sltHandleSearchUpdated);
-    connect(m_pPanel, &UIVMLogViewerPanelNew::sigFilterApplied,
+    connect(m_pPanel, &UIVMLogViewerPaneContainer::sigFilterApplied,
             this, &UIVMLogViewerWidget::sltFilterApplied);
-    connect(m_pPanel, &UIVMLogViewerPanelNew::sigDeleteBookmarkByIndex,
+    connect(m_pPanel, &UIVMLogViewerPaneContainer::sigDeleteBookmarkByIndex,
             this, &UIVMLogViewerWidget::sltDeleteBookmarkByIndex);
-    connect(m_pPanel, &UIVMLogViewerPanelNew::sigDeleteAllBookmarks,
+    connect(m_pPanel, &UIVMLogViewerPaneContainer::sigDeleteAllBookmarks,
             this, &UIVMLogViewerWidget::sltDeleteAllBookmarks);
-    connect(m_pPanel, &UIVMLogViewerPanelNew::sigBookmarkSelected,
+    connect(m_pPanel, &UIVMLogViewerPaneContainer::sigBookmarkSelected,
             this, &UIVMLogViewerWidget::gotoBookmark);
-    connect(m_pPanel, &UIVMLogViewerPanelNew::sigHidden,
+    connect(m_pPanel, &UIVMLogViewerPaneContainer::sigHidden,
             this, &UIVMLogViewerWidget::sltPanelContainerHidden);
 
     m_pMainLayout->addWidget(m_pPanel);

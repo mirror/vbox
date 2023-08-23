@@ -55,7 +55,7 @@ class UIVirtualMachineItem;
 class UIVMLogPage;
 class UIVMLogTab;
 class UIVMLogViewerBookmarksPanel;
-class UIVMLogViewerPanelNew;
+class UIVMLogViewerPaneContainer;
 class UIVMLogViewerFilterPanel;
 class UIVMLogViewerPanel;
 class CMachine;
@@ -250,7 +250,7 @@ private:
       * we should not try to save anything to extra data anymore. */
     bool m_fCommitDataSignalReceived;
     QPointer<UIVMLogPage> m_pPreviousLogPage;
-    UIVMLogViewerPanelNew *m_pPanel;
+    UIVMLogViewerPaneContainer *m_pPanel;
     QSet<QAction*> m_panelActions;
     friend class UIVMLogViewerFilterWidget;
     friend class UIVMLogViewerPanel;

@@ -44,7 +44,7 @@ class UIVMLogViewerFilterWidget;
 class UIVMLogViewerBookmarksWidget;
 class UIVMLogViewerPreferencesWidget;
 
-class UIVMLogViewerPanelNew : public UIPaneContainer
+class UIVMLogViewerPaneContainer : public UIPaneContainer
 {
     Q_OBJECT;
 
@@ -65,7 +65,7 @@ signals:
 
 public:
 
-    UIVMLogViewerPanelNew(QWidget *pParent, UIVMLogViewerWidget *pViewer);
+    UIVMLogViewerPaneContainer(QWidget *pParent, UIVMLogViewerWidget *pViewer);
 
     /** @name Search page pass through functions
       * @{ */
@@ -119,13 +119,13 @@ private:
 };
 
 /** UIDialonPanel extension acting as the base class for UIVMLogViewerXXXPanel widgets. */
-class UIVMLogViewerPanel : public QIWithRetranslateUI<QWidget>
+class UIVMLogViewerPane : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
 public:
 
-    UIVMLogViewerPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer);
+    UIVMLogViewerPane(QWidget *pParent, UIVMLogViewerWidget *pViewer);
 
 protected:
 
