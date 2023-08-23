@@ -48,7 +48,7 @@ class UIVMLogViewerWidget;
 
 /** UIVMLogViewerPanel extension
   * providing GUI for search-panel in VM Log-Viewer. */
-class UIVMLogViewerSearchWidget : public UIVMLogViewerPanel
+class UIVMLogViewerSearchWidget : public UIVMLogViewerPane
 {
     Q_OBJECT;
 

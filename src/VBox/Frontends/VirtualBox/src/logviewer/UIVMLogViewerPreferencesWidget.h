@@ -42,7 +42,7 @@ class QIToolButton;
 class UIVMLogViewerWidget;
 
 /** UIVMLogViewerPanel extension providing GUI to manage logviewer options. */
-class UIVMLogViewerPreferencesWidget : public UIVMLogViewerPanel
+class UIVMLogViewerPreferencesWidget : public UIVMLogViewerPane
 {
     Q_OBJECT;
 

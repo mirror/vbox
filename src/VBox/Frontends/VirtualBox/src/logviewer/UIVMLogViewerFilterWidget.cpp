@@ -261,7 +261,7 @@ void UIVMFilterLineEdit::createButtons()
 *********************************************************************************************************************************/
 
 UIVMLogViewerFilterWidget::UIVMLogViewerFilterWidget(QWidget *pParent, UIVMLogViewerWidget *pViewer)
-    : UIVMLogViewerPanel(pParent, pViewer)
+    : UIVMLogViewerPane(pParent, pViewer)
     , m_pFilterLabel(0)
     , m_pFilterComboBox(0)
     , m_pButtonGroup(0)
@@ -570,7 +570,7 @@ void UIVMLogViewerFilterWidget::prepareConnections()
 
 void UIVMLogViewerFilterWidget::retranslateUi()
 {
-    UIVMLogViewerPanel::retranslateUi();
+    UIVMLogViewerPane::retranslateUi();
 
     m_pFilterComboBox->setToolTip(UIVMLogViewerWidget::tr("Select or enter a term which will be used in filtering the log text"));
     m_pAddFilterTermButton->setToolTip(UIVMLogViewerWidget::tr("Add the filter term to the set of filter terms"));
@@ -584,7 +584,7 @@ bool UIVMLogViewerFilterWidget::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     /* Handle only events sent to viewer(): */
     if (pObject != viewer())
-        return UIVMLogViewerPanel::eventFilter(pObject, pEvent);
+        return UIVMLogViewerPane::eventFilter(pObject, pEvent);
 
     /* Depending on event-type: */
     switch (pEvent->type())
@@ -614,13 +614,13 @@ bool UIVMLogViewerFilterWidget::eventFilter(QObject *pObject, QEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return UIVMLogViewerPanel::eventFilter(pObject, pEvent);
+    return UIVMLogViewerPane::eventFilter(pObject, pEvent);
 }
 
 /** Handles the Qt show @a pEvent. */
 void UIVMLogViewerFilterWidget::showEvent(QShowEvent *pEvent)
 {
-    UIVMLogViewerPanel::showEvent(pEvent);
+    UIVMLogViewerPane::showEvent(pEvent);
     /* Set focus to combo-box: */
     m_pFilterComboBox->setFocus();
     applyFilter();
@@ -628,7 +628,7 @@ void UIVMLogViewerFilterWidget::showEvent(QShowEvent *pEvent)
 
 void UIVMLogViewerFilterWidget::hideEvent(QHideEvent *pEvent)
 {
-    UIVMLogViewerPanel::hideEvent(pEvent);
+    UIVMLogViewerPane::hideEvent(pEvent);
     applyFilter();
 }
 

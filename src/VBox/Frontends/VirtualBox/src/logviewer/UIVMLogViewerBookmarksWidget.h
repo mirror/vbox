@@ -42,7 +42,7 @@ class QIToolButton;
 
 /** UIVMLogViewerPanel extension providing GUI for bookmark management. Show a list of bookmarks currently set
  *  for displayed log page. It has controls to navigate and clear bookmarks. */
-class UIVMLogViewerBookmarksWidget : public UIVMLogViewerPanel
+class UIVMLogViewerBookmarksWidget : public UIVMLogViewerPane
 {
     Q_OBJECT;
 

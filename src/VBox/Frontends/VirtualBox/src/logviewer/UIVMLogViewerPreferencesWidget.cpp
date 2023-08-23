@@ -44,7 +44,7 @@
 
 
 UIVMLogViewerPreferencesWidget::UIVMLogViewerPreferencesWidget(QWidget *pParent, UIVMLogViewerWidget *pViewer)
-    : UIVMLogViewerPanel(pParent, pViewer)
+    : UIVMLogViewerPane(pParent, pViewer)
     , m_pLineNumberCheckBox(0)
     , m_pWrapLinesCheckBox(0)
     , m_pFontSizeSpinBox(0)
@@ -171,7 +171,7 @@ void UIVMLogViewerPreferencesWidget::prepareConnections()
 
 void UIVMLogViewerPreferencesWidget::retranslateUi()
 {
-    UIVMLogViewerPanel::retranslateUi();
+    UIVMLogViewerPane::retranslateUi();
 
     m_pLineNumberCheckBox->setText(UIVMLogViewerWidget::tr("Show Line Numbers"));
     m_pLineNumberCheckBox->setToolTip(UIVMLogViewerWidget::tr("When checked, show line numbers"));

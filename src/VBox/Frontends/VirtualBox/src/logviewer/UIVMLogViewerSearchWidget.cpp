@@ -53,7 +53,7 @@
 #include <iprt/assert.h>
 
 UIVMLogViewerSearchWidget::UIVMLogViewerSearchWidget(QWidget *pParent, UIVMLogViewerWidget *pViewer)
-    : UIVMLogViewerPanel(pParent, pViewer)
+    : UIVMLogViewerPane(pParent, pViewer)
     , m_pSearchEditor(0)
     , m_pNextButton(0)
     , m_pPreviousButton(0)
@@ -107,7 +107,7 @@ void UIVMLogViewerSearchWidget::hideEvent(QHideEvent *pEvent)
     if (pFocus && pFocus->parent() == this)
         focusNextPrevChild(true);
     /* Call to base-class: */
-    UIVMLogViewerPanel::hideEvent(pEvent);
+    UIVMLogViewerPane::hideEvent(pEvent);
     reset();
 }
 
@@ -263,7 +263,7 @@ void UIVMLogViewerSearchWidget::prepareConnections()
 
 void UIVMLogViewerSearchWidget::retranslateUi()
 {
-    UIVMLogViewerPanel::retranslateUi();
+    UIVMLogViewerPane::retranslateUi();
 
     m_pSearchEditor->setToolTip(UIVMLogViewerWidget::tr("Enter a search string here"));
     m_pNextButton->setToolTip(UIVMLogViewerWidget::tr("Search for the next occurrence of the string (F3)"));
@@ -301,7 +301,7 @@ void UIVMLogViewerSearchWidget::keyPressEvent(QKeyEvent *pEvent)
             break;
     }
     /* Call to base-class: */
-    UIVMLogViewerPanel::keyPressEvent(pEvent);
+    UIVMLogViewerPane::keyPressEvent(pEvent);
 }
 
 bool UIVMLogViewerSearchWidget::handleSearchRelatedEvents(QObject *pObject, QEvent *pEvent)
@@ -372,7 +372,7 @@ bool UIVMLogViewerSearchWidget::handleSearchRelatedEvents(QObject *pObject, QEve
 void UIVMLogViewerSearchWidget::showEvent(QShowEvent *pEvent)
 {
     /* Call to base-class: */
-    UIVMLogViewerPanel::showEvent(pEvent);
+    UIVMLogViewerPane::showEvent(pEvent);
     if (m_pSearchEditor)
     {
         /* Set focus on search-editor: */

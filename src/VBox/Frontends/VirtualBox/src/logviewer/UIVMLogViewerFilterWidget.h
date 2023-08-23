@@ -52,7 +52,7 @@ class UIVMFilterLineEdit;
 
 /** QWidget extension
   * providing GUI for filter panel in VM Log Viewer. */
-class UIVMLogViewerFilterWidget : public UIVMLogViewerPanel
+class UIVMLogViewerFilterWidget : public UIVMLogViewerPane
 {
     Q_OBJECT;
 

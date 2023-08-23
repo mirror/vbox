@@ -43,7 +43,7 @@
 #include <iprt/assert.h>
 
 UIVMLogViewerBookmarksWidget::UIVMLogViewerBookmarksWidget(QWidget *pParent, UIVMLogViewerWidget *pViewer)
-    : UIVMLogViewerPanel(pParent, pViewer)
+    : UIVMLogViewerPane(pParent, pViewer)
     , m_iMaxBookmarkTextLength(60)
     , m_pBookmarksComboBox(0)
     , m_pGotoSelectedBookmark(0)
@@ -196,7 +196,7 @@ void UIVMLogViewerBookmarksWidget::prepareConnections()
 
 void UIVMLogViewerBookmarksWidget::retranslateUi()
 {
-    UIVMLogViewerPanel::retranslateUi();
+    UIVMLogViewerPane::retranslateUi();
 
     m_pDeleteCurrentButton->setToolTip(UIVMLogViewerWidget::tr("Delete the current bookmark"));
     m_pDeleteAllButton->setToolTip(UIVMLogViewerWidget::tr("Delete all bookmarks"));

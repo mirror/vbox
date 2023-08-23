@@ -253,7 +253,7 @@ private:
     UIVMLogViewerPaneContainer *m_pPanel;
     QSet<QAction*> m_panelActions;
     friend class UIVMLogViewerFilterWidget;
-    friend class UIVMLogViewerPanel;
+    friend class UIVMLogViewerPane;
     friend class UIVMLogViewerDialog;
 };
 
