@@ -64,7 +64,7 @@
 *   UIVisoSettingWidget definition.                                                                                          *
 *********************************************************************************************************************************/
 
-class SHARED_LIBRARY_STUFF UIVisoSettingWidget : public QIWithRetranslateUI<UIDialogPanelBase>
+class SHARED_LIBRARY_STUFF UIVisoSettingWidget : public UIDialogPanelBase
 {
     Q_OBJECT;
 
@@ -101,7 +101,7 @@ private:
 *********************************************************************************************************************************/
 
 UIVisoSettingWidget::UIVisoSettingWidget(QWidget *pParent)
-    :QIWithRetranslateUI<UIDialogPanelBase>(pParent)
+    : UIDialogPanelBase(pParent)
     , m_pVisoNameLabel(0)
     , m_pCustomOptionsLabel(0)
     , m_pVisoNameLineEdit(0)
@@ -439,6 +439,13 @@ void UIVisoCreatorWidget::sltSettingsChanged()
     }
 }
 
+void UIVisoCreatorWidget::sltPanelContainerHidden()
+{
+    m_pActionPool->action(UIActionIndex_M_VISOCreator_ToggleSettingsDialog)->blockSignals(true);
+    m_pActionPool->action(UIActionIndex_M_VISOCreator_ToggleSettingsDialog)->setChecked(false);
+    m_pActionPool->action(UIActionIndex_M_VISOCreator_ToggleSettingsDialog)->blockSignals(false);
+}
+
 void UIVisoCreatorWidget::prepareWidgets()
 {
     m_pMainLayout = new QVBoxLayout(this);
@@ -529,6 +536,8 @@ void UIVisoCreatorWidget::prepareConnections()
     {
         connect(m_pSettingsWidget, &UIVisoSettingWidget::sigSettingsChanged,
                 this, &UIVisoCreatorWidget::sltSettingsChanged);
+        connect(m_pSettingsWidget, &UIVisoSettingWidget::sigHidden,
+                this, &UIVisoCreatorWidget::sltPanelContainerHidden);
     }
 
     if (m_pAddAction)

@@ -118,6 +118,7 @@ private slots:
     void sltISORemoveAction();
     void sltISOContentImportedOrRemoved(bool fImported);
     void sltSettingsChanged();
+    void sltPanelContainerHidden();
 
 private:
 

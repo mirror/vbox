@@ -44,7 +44,7 @@ class UIVMLogViewerFilterWidget;
 class UIVMLogViewerBookmarksWidget;
 class UIVMLogViewerPreferencesWidget;
 
-class UIVMLogViewerPanelNew : public QIWithRetranslateUI<UIDialogPanelBase>
+class UIVMLogViewerPanelNew : public UIDialogPanelBase
 {
     Q_OBJECT;
 

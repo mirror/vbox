@@ -368,7 +368,7 @@ void UIFileManagerLogViewer::sltClear()
 *********************************************************************************************************************************/
 
 UIFileManagerPanel::UIFileManagerPanel(QWidget *pParent, UIFileManagerOptions *pFileManagerOptions)
-    : QIWithRetranslateUI<UIDialogPanelBase>(pParent)
+    : UIDialogPanelBase(pParent)
     , m_pListDirectoriesOnTopCheckBox(0)
     , m_pDeleteConfirmationCheckBox(0)
     , m_pHumanReabableSizesCheckBox(0)

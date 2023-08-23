@@ -144,6 +144,7 @@ private slots:
     void sltCloseMachineLogs();
     void sltTabCloseButtonClick();
     void sltCommitDataSignalReceived();
+    void sltPanelContainerHidden();
 
 private:
 

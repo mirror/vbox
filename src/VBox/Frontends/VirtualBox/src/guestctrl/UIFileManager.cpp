@@ -329,6 +329,8 @@ void UIFileManager::prepareConnections()
                 this, &UIFileManager::sltReceieveLogOutput);
         connect(m_pPanel, &UIFileManagerPanel::sigCurrentTabChanged,
                 this, &UIFileManager::sltPanelCurrentTabChanged);
+        connect(m_pPanel, &UIFileManagerPanel::sigHidden,
+                this, &UIFileManager::sltPanelContainerHidden);
     }
 
     if (m_pHostFileTable)
@@ -574,6 +576,18 @@ void UIFileManager::sltPanelCurrentTabChanged(int iIndex)
         case UIFileManagerPanel::Page_Max:
         default:
             break;
+    }
+}
+
+void UIFileManager::sltPanelContainerHidden()
+{
+    foreach (QAction *pPanelAction, m_panelActions)
+    {
+        if (!pPanelAction)
+            continue;
+        pPanelAction->blockSignals(true);
+        pPanelAction->setChecked(false);
+        pPanelAction->blockSignals(false);
     }
 }
 

@@ -52,7 +52,7 @@ class QScrollArea;
 class QSpacerItem;
 class QVBoxLayout;
 
-class UIFileManagerPanel : public QIWithRetranslateUI<UIDialogPanelBase>
+class UIFileManagerPanel : public UIDialogPanelBase
 {
     Q_OBJECT;
 
