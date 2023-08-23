@@ -65,7 +65,8 @@ protected:
 
 private:
 
-    QTabWidget *m_pTabWidget;
+    QTabWidget    *m_pTabWidget;
+    QIToolButton  *m_pCloseButton;
 };
 
 /** QWidget extension acting as the base class for all the dialog panels like file manager, logviewer etc. */

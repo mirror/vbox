@@ -49,9 +49,30 @@
 UIDialogPanelBase::UIDialogPanelBase(QWidget *pParent /* = 0 */)
     : QWidget(pParent)
     , m_pTabWidget(0)
+    , m_pCloseButton(0)
 {
     prepare();
 }
+
+//     m_pCloseButton = new QIToolButton;
+//     if (m_pCloseButton)
+//     {
+//         m_pCloseButton->setIcon(UIIconPool::iconSet(":/close_16px.png"));
+//         m_pMainLayout->addWidget(m_pCloseButton, 0, Qt::AlignLeft);
+//     }
+// }
+
+// void UIDialogPanel::prepareConnections()
+// {
+//     if (m_pCloseButton)
+//         connect(m_pCloseButton, &QIToolButton::clicked, this, &UIDialogPanel::hide);
+// }
+
+// void UIDialogPanel::retranslateUi()
+// {
+//     if (m_pCloseButton)
+//         m_pCloseButton->setToolTip(tr("Close the pane"));
+// }
 
 void UIDialogPanelBase::prepare()
 {
@@ -62,6 +83,12 @@ void UIDialogPanelBase::prepare()
     connect(m_pTabWidget, &QTabWidget::currentChanged, this, &UIDialogPanelBase::sigCurrentTabChanged);
     AssertReturnVoid(m_pTabWidget);
     pLayout->addWidget(m_pTabWidget);
+    /* Add a button to close the tab widget: */
+    m_pCloseButton = new QIToolButton;
+    AssertReturnVoid(m_pCloseButton);
+    m_pCloseButton->setIcon(UIIconPool::iconSet(":/close_16px.png"));
+    m_pTabWidget->setCornerWidget(m_pCloseButton);
+
 }
 
 void UIDialogPanelBase::insertTab(int iIndex, QWidget *pPage, const QString &strLabel /* = QString() */)

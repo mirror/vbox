@@ -800,7 +800,6 @@ void UIVMLogViewerWidget::prepareWidgets()
             this, &UIVMLogViewerWidget::gotoBookmark);
 
     m_pMainLayout->addWidget(m_pPanel);
-
 }
 
 void UIVMLogViewerWidget::prepareToolBar()
