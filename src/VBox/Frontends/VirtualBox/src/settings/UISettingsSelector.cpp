@@ -253,15 +253,6 @@ QList<UISettingsPage*> UISettingsSelector::settingPages() const
     return list;
 }
 
-QList<QWidget*> UISettingsSelector::rootPages() const
-{
-    QList<QWidget*> list;
-    foreach (UISelectorItem *pItem, m_list)
-        if (pItem->page())
-            list << pItem->page();
-    return list;
-}
-
 UISelectorItem *UISettingsSelector::findItem(int iID) const
 {
     UISelectorItem *pResult = 0;
@@ -300,10 +291,10 @@ UISelectorItem *UISettingsSelector::findItemByPage(UISettingsPage *pPage) const
 
 
 /*********************************************************************************************************************************
-*   Class UISettingsSelectorTreeView implementation.                                                                             *
+*   Class UISettingsSelectorTreeWidget implementation.                                                                           *
 *********************************************************************************************************************************/
 
-UISettingsSelectorTreeView::UISettingsSelectorTreeView(QWidget *pParent /* = 0 */)
+UISettingsSelectorTreeWidget::UISettingsSelectorTreeWidget(QWidget *pParent /* = 0 */)
     : UISettingsSelector(pParent)
     , m_pTreeWidget(0)
 {
@@ -331,28 +322,28 @@ UISettingsSelectorTreeView::UISettingsSelectorTreeView(QWidget *pParent /* = 0 *
     m_pTreeWidget->hideColumn(TreeWidgetSection_Link);
     /* Setup connections: */
     connect(m_pTreeWidget, &QITreeWidget::currentItemChanged,
-            this, &UISettingsSelectorTreeView::sltSettingsGroupChanged);
+            this, &UISettingsSelectorTreeWidget::sltSettingsGroupChanged);
 }
 
-UISettingsSelectorTreeView::~UISettingsSelectorTreeView()
+UISettingsSelectorTreeWidget::~UISettingsSelectorTreeWidget()
 {
     /* Cleanup the tree-widget: */
     delete m_pTreeWidget;
     m_pTreeWidget = 0;
 }
 
-QWidget *UISettingsSelectorTreeView::widget() const
+QWidget *UISettingsSelectorTreeWidget::widget() const
 {
     return m_pTreeWidget;
 }
 
-QWidget *UISettingsSelectorTreeView::addItem(const QString & /* strBigIcon */,
-                                             const QString &strMediumIcon ,
-                                             const QString & /* strSmallIcon */,
-                                             int iID,
-                                             const QString &strLink,
-                                             UISettingsPage *pPage /* = 0 */,
-                                             int iParentID /* = -1 */)
+QWidget *UISettingsSelectorTreeWidget::addItem(const QString & /* strBigIcon */,
+                                               const QString &strMediumIcon ,
+                                               const QString & /* strSmallIcon */,
+                                               int iID,
+                                               const QString &strLink,
+                                               UISettingsPage *pPage /* = 0 */,
+                                               int iParentID /* = -1 */)
 {
     QWidget *pResult = 0;
     if (pPage != 0)
@@ -373,7 +364,7 @@ QWidget *UISettingsSelectorTreeView::addItem(const QString & /* strBigIcon */,
     return pResult;
 }
 
-void UISettingsSelectorTreeView::setItemText(int iID, const QString &strText)
+void UISettingsSelectorTreeWidget::setItemText(int iID, const QString &strText)
 {
     UISettingsSelector::setItemText(iID, strText);
     QTreeWidgetItem *pItem = findItem(m_pTreeWidget, idToString(iID), TreeWidgetSection_Id);
@@ -381,12 +372,12 @@ void UISettingsSelectorTreeView::setItemText(int iID, const QString &strText)
         pItem->setText(TreeWidgetSection_Category, QString(" %1 ").arg(strText));
 }
 
-QString UISettingsSelectorTreeView::itemText(int iID) const
+QString UISettingsSelectorTreeWidget::itemText(int iID) const
 {
     return pagePath(idToString(iID));
 }
 
-int UISettingsSelectorTreeView::currentId() const
+int UISettingsSelectorTreeWidget::currentId() const
 {
     int iID = -1;
     const QTreeWidgetItem *pItem = m_pTreeWidget->currentItem();
@@ -395,7 +386,7 @@ int UISettingsSelectorTreeView::currentId() const
     return iID;
 }
 
-int UISettingsSelectorTreeView::linkToId(const QString &strLink) const
+int UISettingsSelectorTreeWidget::linkToId(const QString &strLink) const
 {
     int iID = -1;
     const QTreeWidgetItem *pItem = findItem(m_pTreeWidget, strLink, TreeWidgetSection_Link);
@@ -404,21 +395,14 @@ int UISettingsSelectorTreeView::linkToId(const QString &strLink) const
     return iID;
 }
 
-void UISettingsSelectorTreeView::selectById(int iID)
+void UISettingsSelectorTreeWidget::selectById(int iID)
 {
     QTreeWidgetItem *pItem = findItem(m_pTreeWidget, idToString(iID), TreeWidgetSection_Id);
     if (pItem)
         m_pTreeWidget->setCurrentItem(pItem);
 }
 
-void UISettingsSelectorTreeView::setVisibleById(int iID, bool fVisible)
-{
-    QTreeWidgetItem *pItem = findItem(m_pTreeWidget, idToString(iID), TreeWidgetSection_Id);
-    if (pItem)
-        pItem->setHidden(!fVisible);
-}
-
-void UISettingsSelectorTreeView::polish()
+void UISettingsSelectorTreeWidget::polish()
 {
     /* Get recommended size hint: */
     const QStyle *pStyle = QApplication::style();
@@ -443,7 +427,7 @@ void UISettingsSelectorTreeView::polish()
     m_pTreeWidget->resizeColumnToContents(TreeWidgetSection_Category);
 }
 
-void UISettingsSelectorTreeView::sltSettingsGroupChanged(QTreeWidgetItem *pItem,
+void UISettingsSelectorTreeWidget::sltSettingsGroupChanged(QTreeWidgetItem *pItem,
                                                          QTreeWidgetItem * /* pPrevItem */)
 {
     if (pItem)
@@ -454,12 +438,12 @@ void UISettingsSelectorTreeView::sltSettingsGroupChanged(QTreeWidgetItem *pItem,
     }
 }
 
-void UISettingsSelectorTreeView::clear()
+void UISettingsSelectorTreeWidget::clear()
 {
     m_pTreeWidget->clear();
 }
 
-QString UISettingsSelectorTreeView::pagePath(const QString &strMatch) const
+QString UISettingsSelectorTreeWidget::pagePath(const QString &strMatch) const
 {
     const QTreeWidgetItem *pTreeItem =
         findItem(m_pTreeWidget,
@@ -468,9 +452,9 @@ QString UISettingsSelectorTreeView::pagePath(const QString &strMatch) const
     return path(pTreeItem);
 }
 
-QTreeWidgetItem *UISettingsSelectorTreeView::findItem(QTreeWidget *pView,
-                                                      const QString &strMatch,
-                                                      int iColumn) const
+QTreeWidgetItem *UISettingsSelectorTreeWidget::findItem(QTreeWidget *pView,
+                                                        const QString &strMatch,
+                                                        int iColumn) const
 {
     QList<QTreeWidgetItem*> list =
         pView->findItems(strMatch, Qt::MatchExactly, iColumn);
@@ -478,13 +462,13 @@ QTreeWidgetItem *UISettingsSelectorTreeView::findItem(QTreeWidget *pView,
     return list.count() ? list[0] : 0;
 }
 
-QString UISettingsSelectorTreeView::idToString(int iID) const
+QString UISettingsSelectorTreeWidget::idToString(int iID) const
 {
     return QString("%1").arg(iID, 2, 10, QLatin1Char('0'));
 }
 
 /* static */
-QString UISettingsSelectorTreeView::path(const QTreeWidgetItem *pItem)
+QString UISettingsSelectorTreeWidget::path(const QTreeWidgetItem *pItem)
 {
     static QString strSep = ": ";
     QString strPath;
@@ -656,21 +640,6 @@ QWidget *UISettingsSelectorToolBar::idToPage(int iID) const
     return pPage;
 }
 
-QWidget *UISettingsSelectorToolBar::rootPage(int iID) const
-{
-    QWidget *pPage = 0;
-    if (const UISelectorActionItem *pItem = findActionItem(iID))
-    {
-        if (pItem->parentID() > -1)
-            pPage = rootPage(pItem->parentID());
-        else if (pItem->page())
-            pPage = pItem->page();
-        else
-            pPage = pItem->tabWidget();
-    }
-    return pPage;
-}
-
 void UISettingsSelectorToolBar::selectById(int iID)
 {
     if (const UISelectorActionItem *pItem = findActionItem(iID))
@@ -689,48 +658,6 @@ void UISettingsSelectorToolBar::selectById(int iID)
         else
             pItem->action()->trigger();
     }
-}
-
-void UISettingsSelectorToolBar::setVisibleById(int iID, bool fVisible)
-{
-    const UISelectorActionItem *pItem = findActionItem(iID);
-
-    if (pItem)
-    {
-        pItem->action()->setVisible(fVisible);
-        if (pItem->parentID() > -1 &&
-            pItem->page())
-        {
-            const UISelectorActionItem *pParent = findActionItem(pItem->parentID());
-            if (pParent &&
-                pParent->tabWidget())
-            {
-                if (fVisible &&
-                    pParent->tabWidget()->indexOf(pItem->page()) == -1)
-                    pParent->tabWidget()->addTab(pItem->page(), pItem->text());
-                else if (!fVisible &&
-                         pParent->tabWidget()->indexOf(pItem->page()) > -1)
-                    pParent->tabWidget()->removeTab(
-                        pParent->tabWidget()->indexOf(pItem->page()));
-            }
-        }
-    }
-
-}
-
-QList<QWidget*> UISettingsSelectorToolBar::rootPages() const
-{
-    QList<QWidget*> list;
-    foreach (UISelectorItem *pItem, m_list)
-    {
-        const UISelectorActionItem *pActionItem = static_cast<UISelectorActionItem*>(pItem);
-        if (pActionItem->parentID() == -1 &&
-            pActionItem->page())
-            list << pActionItem->page();
-        else if (pActionItem->tabWidget())
-            list << pActionItem->tabWidget();
-    }
-    return list;
 }
 
 int UISettingsSelectorToolBar::minWidth() const

@@ -624,7 +624,7 @@ void UISettingsDialog::prepareSelector()
 #else /* !VBOX_GUI_WITH_TOOLBAR_SETTINGS */
 
     /* Prepare classical tree-view selector: */
-    m_pSelector = new UISettingsSelectorTreeView(centralWidget());
+    m_pSelector = new UISettingsSelectorTreeWidget(centralWidget());
     if (m_pSelector)
     {
         m_pLayoutMain->addWidget(m_pSelector->widget(), 0, 0, 2, 1);
@@ -656,7 +656,7 @@ void UISettingsDialog::prepareSelector()
 
     /* Configure selector created above: */
     if (m_pSelector)
-        connect(m_pSelector, &UISettingsSelectorTreeView::sigCategoryChanged,
+        connect(m_pSelector, &UISettingsSelectorTreeWidget::sigCategoryChanged,
                 this, &UISettingsDialog::sltCategoryChanged);
 }
 

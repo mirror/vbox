@@ -97,21 +97,14 @@ public:
 
     /** Returns the section page for passed @a iID. */
     virtual QWidget *idToPage(int iID) const;
-    /** Returns the section root-page for passed @a iID. */
-    virtual QWidget *rootPage(int iID) const { return idToPage(iID); }
 
     /** Make the section with @a iID current. */
     virtual void selectById(int iID) = 0;
     /** Make the section with @a strLink current. */
     virtual void selectByLink(const QString &strLink) { selectById(linkToId(strLink)); }
 
-    /** Make the section with @a iID @a fVisible. */
-    virtual void setVisibleById(int iID, bool fVisible) = 0;
-
     /** Returns the list of all selector pages. */
     virtual QList<UISettingsPage*> settingPages() const;
-    /** Returns the list of all root pages. */
-    virtual QList<QWidget*> rootPages() const;
 
     /** Performs selector polishing. */
     virtual void polish() {}
@@ -139,16 +132,16 @@ protected:
 /** UISettingsSelector subclass providing settings dialog
   * with the means to switch between settings pages.
   * This one represented as tree-widget. */
-class SHARED_LIBRARY_STUFF UISettingsSelectorTreeView : public UISettingsSelector
+class SHARED_LIBRARY_STUFF UISettingsSelectorTreeWidget : public UISettingsSelector
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs settings selector passing @a pParent to the base-class. */
-    UISettingsSelectorTreeView(QWidget *pParent = 0);
+    UISettingsSelectorTreeWidget(QWidget *pParent = 0);
     /** Destructs settings selector. */
-    virtual ~UISettingsSelectorTreeView() RT_OVERRIDE;
+    virtual ~UISettingsSelectorTreeWidget() RT_OVERRIDE;
 
     /** Returns the widget selector operates on. */
     virtual QWidget *widget() const RT_OVERRIDE;
@@ -177,9 +170,6 @@ public:
 
     /** Make the section with @a iID current. */
     virtual void selectById(int iID) RT_OVERRIDE;
-
-    /** Make the section with @a iID @a fVisible. */
-    virtual void setVisibleById(int iID, bool fVisible) RT_OVERRIDE;
 
     /** Performs selector polishing. */
     virtual void polish() RT_OVERRIDE;
@@ -211,7 +201,7 @@ private:
 
 /** UISettingsSelector subclass providing settings dialog
   * with the means to switch between settings pages.
-  * This one represented as tab-widget. */
+  * This one represented as tool-bar. */
 class SHARED_LIBRARY_STUFF UISettingsSelectorToolBar : public UISettingsSelector
 {
     Q_OBJECT;
@@ -250,17 +240,9 @@ public:
 
     /** Returns the section page for passed @a iID. */
     virtual QWidget *idToPage(int iID) const RT_OVERRIDE;
-    /** Returns the section root-page for passed @a iID. */
-    virtual QWidget *rootPage(int iID) const RT_OVERRIDE;
 
     /** Make the section with @a iID current. */
     virtual void selectById(int iID) RT_OVERRIDE;
-
-    /** Make the section with @a iID @a fVisible. */
-    virtual void setVisibleById(int iID, bool fVisible) RT_OVERRIDE;
-
-    /** Returns the list of all root pages. */
-    virtual QList<QWidget*> rootPages() const RT_OVERRIDE;
 
     /** Returns minimum selector width. */
     virtual int minWidth() const RT_OVERRIDE;
