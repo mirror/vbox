@@ -3194,7 +3194,7 @@ static int rtDbgModCvProbeCommon(PRTDBGMODINT pDbgMod, PRTCVHDR pCvHdr, RTCVFILE
                                  */
                                 RTDBGMODCVOPENPDB20CALLBACK Args = { enmArch, hFile, enmFileType, pInfo->uTimestamp, pInfo->uAge };
                                 rc = RTDbgCfgOpenPdb20(hDbgCfg, (const char *)&pInfo->szPdbFilename[0],
-                                                       cbImage, pInfo->uTimestamp, pInfo->uAge,
+                                                       (uint32_t)cbImage, pInfo->uTimestamp, pInfo->uAge,
                                                        rtDbgModCvOpenPdb20Callback, pDbgMod, &Args);
                                 Log(("RTDbgModCv: RTDbgCfgOpenPdb20 returns %Rrc\n", rc));
                             }
@@ -3839,9 +3839,9 @@ static int rtDbgModPdb_LoadSections(PRTDBGMODCV pThis, PRTDBGMODINT pDbgMod, RTV
             RTVfsFileRelease(hVfsFileSHdrs);
             if (RT_SUCCESS(rc))
             {
-                rc = rtDbgModCvAddSegmentsFromSectHdrs(pThis, paShs, cbSHdrs / sizeof(IMAGE_SECTION_HEADER),
+                rc = rtDbgModCvAddSegmentsFromSectHdrs(pThis, paShs, (uint32_t)(cbSHdrs / sizeof(IMAGE_SECTION_HEADER)),
                                                        1 /* cbSectAlign - only for validation */,
-                                                       pThis->cbImage ? pThis->cbImage : UINT32_MAX /* only for validation */,
+                                                       pThis->cbImage ? (uint32_t)pThis->cbImage : UINT32_MAX /* only for validation */,
                                                        pszFilename);
                 RTVfsFileReadAllFree(paShs, cbSHdrs);
             }
