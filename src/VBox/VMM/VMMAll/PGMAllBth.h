@@ -778,7 +778,9 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTX pCtx, R
             if (PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
             {
                 Log(("PGM #PF: Make writable: %RGp %R[pgmpage] pvFault=%RGp uErr=%#x\n", GCPhys, pPage, pvFault, uErr));
+#   ifndef VBOX_WITH_NEW_LAZY_PAGE_ALLOC
                 Assert(!PGM_PAGE_IS_ZERO(pPage));
+#   endif
                 AssertFatalMsg(!PGM_PAGE_IS_BALLOONED(pPage), ("Unexpected ballooned page at %RGp\n", GCPhys));
                 STAM_STATS({ pVCpu->pgmr0.s.pStatTrap0eAttributionR0 = &pVCpu->pgm.s.Stats.StatRZTrap0eTime2MakeWritable; });
 
@@ -1974,11 +1976,13 @@ static void PGM_BTH_NAME(SyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPteDst, RTGCPH
                 /*
                  * Make sure only allocated pages are mapped writable.
                  */
-                if (    SHW_PTE_IS_P_RW(PteDst)
-                    &&  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
+                if (   SHW_PTE_IS_P_RW(PteDst)
+                    && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
                 {
+# ifndef VBOX_WITH_NEW_LAZY_PAGE_ALLOC
                     /* Still applies to shared pages. */
                     Assert(!PGM_PAGE_IS_ZERO(pPage));
+# endif
                     SHW_PTE_SET_RO(PteDst);   /** @todo this isn't quite working yet. Why, isn't it? */
                     Log3(("SyncPageWorker: write-protecting %RGp pPage=%R[pgmpage]at iPTDst=%d\n", GCPhysPage, pPage, iPTDst));
                 }
@@ -2317,8 +2321,10 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPa
                     if (    SHW_PTE_IS_P_RW(PteDst)
                         &&  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
                     {
+# ifndef VBOX_WITH_NEW_LAZY_PAGE_ALLOC
                         /* Still applies to shared pages. */
                         Assert(!PGM_PAGE_IS_ZERO(pPage));
+# endif
                         SHW_PTE_SET_RO(PteDst);   /** @todo this isn't quite working yet... */
                         Log3(("SyncPage: write-protecting %RGp pPage=%R[pgmpage] at %RGv\n", GCPhys, pPage, GCPtrPage));
                     }
@@ -2609,6 +2615,14 @@ static void PGM_BTH_NAME(NestedSyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPte, RTG
         /** @todo access bit. */
         Pte.u = PGM_PAGE_GET_HCPHYS(pPage) | fGstShwPteFlags;
         Log7Func(("regular page (%R[pgmpage]) at %RGp -> %RX64\n", pPage, GCPhysPage, Pte.u));
+
+        /* Make sure only allocated pages are mapped writable. */
+        if (   (fGstShwPteFlags & EPT_E_WRITE)
+            && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
+        {
+            Pte.u &= ~EPT_E_WRITE;
+            Log7Func(("write-protecting page (%R[pgmpage]) at %RGp -> %RX64\n", pPage, GCPhysPage, Pte.u));
+        }
     }
     else if (!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
     {
@@ -3664,8 +3678,10 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
                         if (    SHW_PTE_IS_P_RW(PteDst)
                             &&  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
                         {
+# ifndef VBOX_WITH_NEW_LAZY_PAGE_ALLOC
                             /* Still applies to shared pages. */
                             Assert(!PGM_PAGE_IS_ZERO(pPage));
+# endif
                             SHW_PTE_SET_RO(PteDst);   /** @todo this isn't quite working yet... */
                             Log3(("SyncPT: write-protecting %RGp pPage=%R[pgmpage] at %RGv\n", GCPhys, pPage, (RTGCPTR)(GCPtr | (iPTDst << SHW_PT_SHIFT))));
                         }
