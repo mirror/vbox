@@ -386,14 +386,20 @@ typedef struct RTPDBDBIHDR
         uint16_t    u16;
         struct
         {
+            RT_GCC_EXTENSION
             uint16_t    uMinor     : 8;
+            RT_GCC_EXTENSION
             uint16_t    uMajor     : 7;
+            RT_GCC_EXTENSION
             uint16_t    fNewVerFmt : 1;
         } New;
         struct
         {
+            RT_GCC_EXTENSION
             uint16_t    uRBuild    : 4;
+            RT_GCC_EXTENSION
             uint16_t    uMinor     : 7;
+            RT_GCC_EXTENSION
             uint16_t    uMajor     : 5;
         } Old;
     } PdbDllVer;
