@@ -46,6 +46,7 @@
 #include "UIPopupCenter.h"
 #include "UISettingsDialog.h"
 #include "UISettingsPage.h"
+#include "UISettingsPageValidator.h"
 #include "UISettingsSelector.h"
 #include "UISettingsSerializer.h"
 #include "QIToolBar.h"
@@ -95,14 +96,14 @@ void UISettingsDialog::accept()
     /* Save data: */
     save();
 
-    /* Close if theere is no ongoing serialization: */
+    /* Close if there is no ongoing serialization: */
     if (!isSerializationInProgress())
         close();
 }
 
 void UISettingsDialog::reject()
 {
-    /* Close if theere is no ongoing serialization: */
+    /* Close if there is no ongoing serialization: */
     if (!isSerializationInProgress())
         close();
 }
@@ -197,7 +198,7 @@ void UISettingsDialog::retranslateUi()
         m_pWarningPane->setWarningLabel(m_strWarningHint);
 
     /* Retranslate all validators: */
-    foreach (UIPageValidator *pValidator, findChildren<UIPageValidator*>())
+    foreach (UISettingsPageValidator *pValidator, findChildren<UISettingsPageValidator*>())
         if (!pValidator->lastMessage().isEmpty())
             revalidate(pValidator);
     revalidate();
@@ -343,7 +344,7 @@ void UISettingsDialog::loadData(QVariant &data)
     /* Create settings loader: */
     m_pSerializeProcess = new UISettingsSerializer(this, UISettingsSerializer::Load,
                                                    data, m_pSelector->settingPages());
-    AssertPtrReturnVoid(m_pSerializeProcess);
+    if (m_pSerializeProcess)
     {
         /* Configure settings loader: */
         connect(m_pSerializeProcess, &UISettingsSerializer::sigNotifyAboutProcessStarted,
@@ -373,7 +374,7 @@ void UISettingsDialog::saveData(QVariant &data)
     QPointer<UISettingsSerializerProgress> pDlgSerializeProgress =
         new UISettingsSerializerProgress(this, UISettingsSerializer::Save,
                                          data, m_pSelector->settingPages());
-    AssertPtrReturnVoid(static_cast<UISettingsSerializerProgress*>(pDlgSerializeProgress));
+    if (pDlgSerializeProgress)
     {
         /* Make the 'settings saver' temporary parent for all sub-dialogs: */
         windowManager().registerNewParent(pDlgSerializeProgress, windowManager().realParentWindow(this));
@@ -431,7 +432,15 @@ void UISettingsDialog::addItem(const QString &strBigIcon,
     if (pSettingsPage)
     {
         pSettingsPage->setId(cId);
-        assignValidator(pSettingsPage);
+
+        /* Create validator: */
+        UISettingsPageValidator *pValidator = new UISettingsPageValidator(this, pSettingsPage);
+        connect(pValidator, &UISettingsPageValidator::sigValidityChanged, this, &UISettingsDialog::sltHandleValidityChange);
+        pSettingsPage->setValidator(pValidator);
+        m_pWarningPane->registerValidator(pValidator);
+
+        /* Update navigation (tab-order): */
+        pSettingsPage->setOrderAfter(m_pSelector->widget());
     }
 }
 
@@ -440,7 +449,7 @@ void UISettingsDialog::addPageHelpKeyword(int iPageType, const QString &strHelpK
     m_pageHelpKeywords[iPageType] = strHelpKeyword;
 }
 
-void UISettingsDialog::revalidate(UIPageValidator *pValidator)
+void UISettingsDialog::revalidate(UISettingsPageValidator *pValidator)
 {
     /* Perform page revalidation: */
     UISettingsPage *pSettingsPage = pValidator->page();
@@ -486,8 +495,8 @@ void UISettingsDialog::revalidate()
     m_pWarningPane->setWarningLabel(QString());
 
     /* Enumerating all the validators we have: */
-    QList<UIPageValidator*> validators(findChildren<UIPageValidator*>());
-    foreach (UIPageValidator *pValidator, validators)
+    QList<UISettingsPageValidator*> validators(findChildren<UISettingsPageValidator*>());
+    foreach (UISettingsPageValidator *pValidator, validators)
     {
         /* Is current validator have something to say? */
         if (!pValidator->lastMessage().isEmpty())
@@ -535,7 +544,7 @@ bool UISettingsDialog::isSettingsChanged()
     return fIsSettingsChanged;
 }
 
-void UISettingsDialog::sltHandleValidityChange(UIPageValidator *pValidator)
+void UISettingsDialog::sltHandleValidityChange(UISettingsPageValidator *pValidator)
 {
     /* Determine which settings-page had called for revalidation: */
     if (UISettingsPage *pSettingsPage = pValidator->page())
@@ -558,19 +567,17 @@ void UISettingsDialog::sltHandleValidityChange(UIPageValidator *pValidator)
     }
 }
 
-void UISettingsDialog::sltHandleWarningPaneHovered(UIPageValidator *pValidator)
+void UISettingsDialog::sltHandleWarningPaneHovered(UISettingsPageValidator *pValidator)
 {
     LogRelFlow(("Settings Dialog: Warning-icon hovered: %s.\n", pValidator->internalName().toUtf8().constData()));
 
     /* Show corresponding popup: */
     if (!m_fValid || !m_fSilent)
-    {
         popupCenter().popup(m_pStack, "SettingsDialogWarning",
                             pValidator->lastMessage());
-    }
 }
 
-void UISettingsDialog::sltHandleWarningPaneUnhovered(UIPageValidator *pValidator)
+void UISettingsDialog::sltHandleWarningPaneUnhovered(UISettingsPageValidator *pValidator)
 {
     LogRelFlow(("Settings Dialog: Warning-icon unhovered: %s.\n", pValidator->internalName().toUtf8().constData()));
 
@@ -731,28 +738,12 @@ void UISettingsDialog::prepareButtonBox()
 void UISettingsDialog::cleanup()
 {
     /* Delete serializer if exists: */
-    if (serializeProcess())
-    {
-        delete m_pSerializeProcess;
-        m_pSerializeProcess = 0;
-    }
+    delete m_pSerializeProcess;
+    m_pSerializeProcess = 0;
 
     /* Recall popup-pane if any: */
     popupCenter().recall(m_pStack, "SettingsDialogWarning");
 
     /* Delete selector early! */
     delete m_pSelector;
-}
-
-void UISettingsDialog::assignValidator(UISettingsPage *pPage)
-{
-    /* Assign validator: */
-    UIPageValidator *pValidator = new UIPageValidator(this, pPage);
-    connect(pValidator, &UIPageValidator::sigValidityChanged, this, &UISettingsDialog::sltHandleValidityChange);
-    pPage->setValidator(pValidator);
-    m_pWarningPane->registerValidator(pValidator);
-
-    /// @todo Why here?
-    /* Configure navigation (tab-order): */
-    pPage->setOrderAfter(m_pSelector->widget());
 }

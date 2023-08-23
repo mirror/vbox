@@ -33,19 +33,13 @@
 
 /* Qt includes: */
 #include <QMap>
-#include <QPixmap>
 #include <QValidator>
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
 
-/* Forward declarations: */
-class QPixmap;
-class QString;
-class UISettingsPage;
 
-
-/** QObject extension,
+/** QObject sub-class,
   * providing passed QObject with validation routine. */
 class SHARED_LIBRARY_STUFF QObjectValidator : public QObject
 {
@@ -84,7 +78,7 @@ private:
 };
 
 
-/** QObject extension,
+/** QObject sub-class,
   * which can group various QObjectValidator instances to operate on. */
 class SHARED_LIBRARY_STUFF QObjectValidatorGroup : public QObject
 {
@@ -98,10 +92,7 @@ signals:
 public:
 
     /** Constructs validation group passing @a pParent to the base-class. */
-    QObjectValidatorGroup(QObject *pParent)
-        : QObject(pParent)
-        , m_fResult(false)
-    {}
+    QObjectValidatorGroup(QObject *pParent);
 
     /** Adds @a pObjectValidator.
       * @note The ownership of @a pObjectValidator is transferred to the group,
@@ -126,66 +117,6 @@ private:
 
     /** Holds validation result. */
     bool m_fResult;
-};
-
-
-/** Page validator prototype. */
-class SHARED_LIBRARY_STUFF UIPageValidator : public QObject
-{
-    Q_OBJECT;
-
-signals:
-
-    /** Notifies about validity change for @a pValidator. */
-    void sigValidityChanged(UIPageValidator *pValidator);
-
-    /** Asks listener to show warning icon. */
-    void sigShowWarningIcon();
-    /** Asks listener to hide warning icon. */
-    void sigHideWarningIcon();
-
-public:
-
-    /** Constructs page validator for a certain @a pPage,
-      * passing @a pParent to the base-class. */
-    UIPageValidator(QObject *pParent, UISettingsPage *pPage)
-        : QObject(pParent)
-        , m_pPage(pPage)
-        , m_fIsValid(true)
-    {}
-
-    /** Returns page. */
-    UISettingsPage *page() const { return m_pPage; }
-    /** Returns warning pixmap. */
-    QPixmap warningPixmap() const;
-    /** Returns internal name. */
-    QString internalName() const;
-
-    /** Returns whether validator is valid. */
-    bool isValid() const { return m_fIsValid; }
-    /** Defines whether validator @a fIsValid. */
-    void setValid(bool fIsValid) { m_fIsValid = fIsValid; }
-
-    /** Returns last message. */
-    QString lastMessage() const { return m_strLastMessage; }
-    /** Defines @a strLastMessage. */
-    void setLastMessage(const QString &strLastMessage);
-
-public slots:
-
-    /** Performs revalidation. */
-    void revalidate();
-
-private:
-
-    /** Holds the validated page. */
-    UISettingsPage *m_pPage;
-
-    /** Holds whether the page is valid. */
-    bool m_fIsValid;
-
-    /** Holds the last message. */
-    QString m_strLastMessage;
 };
 
 

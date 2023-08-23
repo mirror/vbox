@@ -28,7 +28,7 @@
 /* GUI includes: */
 #include "UIConverter.h"
 #include "UISettingsPage.h"
-#include "QIWidgetValidator.h"
+#include "UISettingsPageValidator.h"
 
 
 /*********************************************************************************************************************************
@@ -54,7 +54,7 @@ void UISettingsPage::notifyOperationProgressError(const QString &strErrorInfo)
                               Q_ARG(QString, strErrorInfo));
 }
 
-void UISettingsPage::setValidator(UIPageValidator *pValidator)
+void UISettingsPage::setValidator(UISettingsPageValidator *pValidator)
 {
     /* Make sure validator is not yet assigned: */
     AssertMsg(!m_pValidator, ("Validator already assigned!\n"));

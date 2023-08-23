@@ -52,7 +52,7 @@ class QShowEvent;
 class QString;
 class QVariant;
 class QWidget;
-class UIPageValidator;
+class UISettingsPageValidator;
 
 /* Using declarations: */
 using namespace UISettingsDefs;
@@ -134,7 +134,7 @@ public:
     void notifyOperationProgressError(const QString &strErrorInfo);
 
     /** Defines @a pValidator. */
-    void setValidator(UIPageValidator *pValidator);
+    void setValidator(UISettingsPageValidator *pValidator);
     /** Defines whether @a fIsValidatorBlocked which means not used at all. */
     void setValidatorBlocked(bool fIsValidatorBlocked) { m_fIsValidatorBlocked = fIsValidatorBlocked; }
     /** Performs page validation composing a list of @a messages. */
@@ -206,9 +206,9 @@ private:
     int  m_cId;
 
     /** Holds the first TAB-orer widget reference. */
-    QWidget         *m_pFirstWidget;
+    QWidget                 *m_pFirstWidget;
     /** Holds the page validator. */
-    UIPageValidator *m_pValidator;
+    UISettingsPageValidator *m_pValidator;
 
     /** Holds whether page validation is blocked. */
     bool  m_fIsValidatorBlocked : 1;

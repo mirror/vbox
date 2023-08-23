@@ -878,6 +878,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/UISettingsDialog.h \
 	src/settings/UISettingsDialogSpecific.h \
 	src/settings/UISettingsPage.h \
+	src/settings/UISettingsPageValidator.h \
 	src/settings/UISettingsSelector.h \
 	src/settings/UISettingsSerializer.h \
 	src/settings/editors/UIAccelerationFeaturesEditor.h \
@@ -1460,6 +1461,7 @@ UICommon_SOURCES = \
 	src/settings/UISettingsDialog.cpp \
 	src/settings/UISettingsDialogSpecific.cpp \
 	src/settings/UISettingsPage.cpp \
+	src/settings/UISettingsPageValidator.cpp \
 	src/settings/UISettingsSelector.cpp \
 	src/settings/UISettingsSerializer.cpp \
 	src/settings/editors/UIAccelerationFeaturesEditor.cpp \

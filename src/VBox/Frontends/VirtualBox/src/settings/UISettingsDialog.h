@@ -48,7 +48,7 @@ class QShowEvent;
 class QStackedWidget;
 class QVariant;
 class QIDialogButtonBox;
-class UIPageValidator;
+class UISettingsPageValidator;
 class UISettingsPage;
 class UISettingsSelector;
 class UISettingsSerializer;
@@ -159,7 +159,7 @@ protected:
     void addPageHelpKeyword(int iPageType, const QString &strHelpKeyword);
 
     /** Validates data correctness using certain @a pValidator. */
-    void revalidate(UIPageValidator *pValidator);
+    void revalidate(UISettingsPageValidator *pValidator);
     /** Validates data correctness. */
     void revalidate();
 
@@ -177,12 +177,12 @@ protected:
 private slots:
 
     /** Handles validity change for certain @a pValidator. */
-    void sltHandleValidityChange(UIPageValidator *pValidator);
+    void sltHandleValidityChange(UISettingsPageValidator *pValidator);
 
     /** Handles hover enter for warning pane specified by @a pValidator. */
-    void sltHandleWarningPaneHovered(UIPageValidator *pValidator);
+    void sltHandleWarningPaneHovered(UISettingsPageValidator *pValidator);
     /** Handles hover leave for warning pane specified by @a pValidator. */
-    void sltHandleWarningPaneUnhovered(UIPageValidator *pValidator);
+    void sltHandleWarningPaneUnhovered(UISettingsPageValidator *pValidator);
 
 private:
 
@@ -200,9 +200,6 @@ private:
         /** Cleanups all. */
         void cleanup();
     /** @} */
-
-    /** Assigns validater for passed @a pPage. */
-    void assignValidator(UISettingsPage *pPage);
 
     /** Holds configuration access level. */
     ConfigurationAccessLevel  m_enmConfigurationAccessLevel;

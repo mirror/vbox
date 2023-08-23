@@ -45,7 +45,7 @@ class QObject;
 class QString;
 class QTimer;
 class QWidget;
-class UIPageValidator;
+class UISettingsPageValidator;
 
 /** QWidget subclass used a settings dialog warning-pane. */
 class SHARED_LIBRARY_STUFF UIWarningPane : public QWidget
@@ -56,10 +56,10 @@ signals:
 
     /** Notifies about hover enter event.
       * @param  pValidator  Brings the validator reference. */
-    void sigHoverEnter(UIPageValidator *pValidator);
+    void sigHoverEnter(UISettingsPageValidator *pValidator);
     /** Notifies about hover leave event.
       * @param  pValidator  Brings the validator reference. */
-    void sigHoverLeave(UIPageValidator *pValidator);
+    void sigHoverLeave(UISettingsPageValidator *pValidator);
 
 public:
 
@@ -70,7 +70,7 @@ public:
     void setWarningLabel(const QString &strWarningLabel);
 
     /** Registers corresponding @a pValidator. */
-    void registerValidator(UIPageValidator *pValidator);
+    void registerValidator(UISettingsPageValidator *pValidator);
 
 protected:
 
@@ -93,11 +93,11 @@ private:
     QLabel      *m_pTextLabel;
 
     /** Holds the page validators list. */
-    QList<UIPageValidator*>  m_validators;
+    QList<UISettingsPageValidator*>  m_validators;
     /** Holds the page icons list. */
-    QList<QLabel*>           m_icons;
+    QList<QLabel*>                   m_icons;
     /** Holds the icons hovered-states list. */
-    QList<bool>              m_hovered;
+    QList<bool>                      m_hovered;
 
     /** Holds the hover timer instance. */
     QTimer *m_pHoverTimer;
