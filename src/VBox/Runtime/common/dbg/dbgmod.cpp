@@ -582,7 +582,8 @@ typedef struct RTDBGMODOPENDIETI
 static DECLCALLBACK(int)
 rtDbgModOpenDebugInfoExternalToImageCallback(RTLDRMOD hLdrMod, PCRTLDRDBGINFO pDbgInfo, void *pvUser)
 {
-    RTDBGMODOPENDIETI *pArgs = (RTDBGMODOPENDIETI *)pvUser;
+    RTDBGMODOPENDIETI * const pArgs   = (RTDBGMODOPENDIETI *)pvUser;
+    PRTDBGMODINT const        pDbgMod = pArgs->pDbgMod;
     RT_NOREF_PV(hLdrMod);
 
     Assert(pDbgInfo->enmType > RTLDRDBGINFOTYPE_INVALID && pDbgInfo->enmType < RTLDRDBGINFOTYPE_END);
@@ -590,8 +591,10 @@ rtDbgModOpenDebugInfoExternalToImageCallback(RTLDRMOD hLdrMod, PCRTLDRDBGINFO pD
     if (!pszExtFile)
     {
         /*
-         * If a external debug type comes without a file name, calculate a
-         * likely debug filename for it. (Hack for NT4 drivers.)
+         * If a external debug type comes without a file name, calculate a likely
+         * debug filename for it. (Hack for NT4 drivers and the 'nt' module for
+         * NT and W2K.)  Prefer the image name rather than the module name, since
+         * the latter can be normalized or using a different name (e.g. 'nt').
          */
         const char *pszExt = NULL;
         if (pDbgInfo->enmType == RTLDRDBGINFOTYPE_CODEVIEW_DBG)
@@ -599,18 +602,23 @@ rtDbgModOpenDebugInfoExternalToImageCallback(RTLDRMOD hLdrMod, PCRTLDRDBGINFO pD
         else if (   pDbgInfo->enmType == RTLDRDBGINFOTYPE_CODEVIEW_PDB20
                  || pDbgInfo->enmType == RTLDRDBGINFOTYPE_CODEVIEW_PDB70)
             pszExt = ".pdb";
-        if (pszExt && pArgs->pDbgMod->pszName)
+        if (pszExt)
         {
-            size_t cchName = strlen(pArgs->pDbgMod->pszName);
-            char *psz = (char *)alloca(cchName + strlen(pszExt) + 1);
-            if (psz)
+            const char * const pszName = pDbgMod->pszImgFile
+                                       ? RTPathFilenameEx(pDbgMod->pszImgFile, RTPATH_STR_F_STYLE_DOS)
+                                       : pDbgMod->pszName;
+            if (pszName)
             {
-                memcpy(psz, pArgs->pDbgMod->pszName, cchName + 1);
-                RTPathStripSuffix(psz);
-                pszExtFile = strcat(psz, pszExt);
+                size_t cchName = strlen(pszName);
+                char *pszExtFileBuf = (char *)alloca(cchName + strlen(pszExt) + 1);
+                if (pszExtFileBuf)
+                {
+                    memcpy(pszExtFileBuf, pszName, cchName + 1);
+                    RTPathStripSuffix(pszExtFileBuf);
+                    pszExtFile = strcat(pszExtFileBuf, pszExt);
+                }
             }
         }
-
         if (!pszExtFile)
         {
             Log2(("rtDbgModOpenDebugInfoExternalToImageCallback: enmType=%d\n", pDbgInfo->enmType));
@@ -628,7 +636,7 @@ rtDbgModOpenDebugInfoExternalToImageCallback(RTLDRMOD hLdrMod, PCRTLDRDBGINFO pD
             rc = RTDbgCfgOpenPdb70(pArgs->hDbgCfg, pszExtFile,
                                    &pDbgInfo->u.Pdb70.Uuid,
                                    pDbgInfo->u.Pdb70.uAge,
-                                   rtDbgModExtDbgInfoOpenCallback, pArgs->pDbgMod, (void *)pDbgInfo);
+                                   rtDbgModExtDbgInfoOpenCallback, pDbgMod, (void *)pDbgInfo);
             break;
 
         case RTLDRDBGINFOTYPE_CODEVIEW_PDB20:
@@ -636,20 +644,20 @@ rtDbgModOpenDebugInfoExternalToImageCallback(RTLDRMOD hLdrMod, PCRTLDRDBGINFO pD
                                    pDbgInfo->u.Pdb20.cbImage,
                                    pDbgInfo->u.Pdb20.uTimestamp,
                                    pDbgInfo->u.Pdb20.uAge,
-                                   rtDbgModExtDbgInfoOpenCallback, pArgs->pDbgMod, (void *)pDbgInfo);
+                                   rtDbgModExtDbgInfoOpenCallback, pDbgMod, (void *)pDbgInfo);
             break;
 
         case RTLDRDBGINFOTYPE_CODEVIEW_DBG:
             rc = RTDbgCfgOpenDbg(pArgs->hDbgCfg, pszExtFile,
                                  pDbgInfo->u.Dbg.cbImage,
                                  pDbgInfo->u.Dbg.uTimestamp,
-                                 rtDbgModExtDbgInfoOpenCallback, pArgs->pDbgMod, (void *)pDbgInfo);
+                                 rtDbgModExtDbgInfoOpenCallback, pDbgMod, (void *)pDbgInfo);
             break;
 
         case RTLDRDBGINFOTYPE_DWARF_DWO:
             rc = RTDbgCfgOpenDwo(pArgs->hDbgCfg, pszExtFile,
                                  pDbgInfo->u.Dwo.uCrc32,
-                                 rtDbgModExtDbgInfoOpenCallback, pArgs->pDbgMod, (void *)pDbgInfo);
+                                 rtDbgModExtDbgInfoOpenCallback, pDbgMod, (void *)pDbgInfo);
             break;
 
         default:
@@ -660,11 +668,11 @@ rtDbgModOpenDebugInfoExternalToImageCallback(RTLDRMOD hLdrMod, PCRTLDRDBGINFO pD
     if (RT_SUCCESS(rc))
     {
         LogFlow(("RTDbgMod: Successfully opened external debug info '%s' for '%s'\n",
-                 pArgs->pDbgMod->pszDbgFile, pArgs->pDbgMod->pszImgFile));
+                 pDbgMod->pszDbgFile, pDbgMod->pszImgFile));
         return VINF_CALLBACK_RETURN;
     }
     Log(("rtDbgModOpenDebugInfoExternalToImageCallback: '%s' (enmType=%d) for '%s'  -> %Rrc\n",
-         pszExtFile, pDbgInfo->enmType, pArgs->pDbgMod->pszImgFile, rc));
+         pszExtFile, pDbgInfo->enmType, pDbgMod->pszImgFile, rc));
     return rc;
 }
 
