@@ -2692,7 +2692,7 @@ DECLINLINE(uint32_t) rtDbgModCvAdjustSectionSizeByNext(PCIMAGE_SECTION_HEADER pa
         iNext++;
     if (iNext < cShs)
     {
-        uint32_t cbAvailable = paShs[iNext].VirtualAddress - (iCur != ~(size_t)0 ? paShs[iCur].VirtualAddress : 0);
+        uint32_t cbAvailable = paShs[iNext].VirtualAddress - paShs[iCur].VirtualAddress;
         Assert(cbMapped <= cbAvailable);
         return cbAvailable;
     }
