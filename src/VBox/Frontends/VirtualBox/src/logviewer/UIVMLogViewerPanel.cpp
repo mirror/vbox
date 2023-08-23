@@ -45,7 +45,7 @@
 #endif
 
 UIVMLogViewerPanelNew::UIVMLogViewerPanelNew(QWidget *pParent, UIVMLogViewerWidget *pViewer)
-    : UIDialogPanelBase(pParent)
+    : UIPaneContainer(pParent)
     , m_pViewer(pViewer)
     , m_pSearchWidget(0)
     , m_pFilterWidget(0)
@@ -173,7 +173,7 @@ bool UIVMLogViewerPanelNew::eventFilter(QObject *pObject, QEvent *pEvent)
         if (m_pSearchWidget->handleSearchRelatedEvents(pObject, pEvent))
             return true;
     }
-    return UIDialogPanelBase::eventFilter(pObject, pEvent);
+    return UIPaneContainer::eventFilter(pObject, pEvent);
 }
 
 

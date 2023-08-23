@@ -36,7 +36,7 @@
 #include <QSet>
 
 /* GUI includes: */
-#include "UIDialogPanel.h"
+#include "UIPaneContainer.h"
 #include "UIGuestControlDefs.h"
 #include "QIWithRetranslateUI.h"
 
@@ -52,7 +52,7 @@ class QScrollArea;
 class QSpacerItem;
 class QVBoxLayout;
 
-class UIFileManagerPanel : public UIDialogPanelBase
+class UIFileManagerPanel : public UIPaneContainer
 {
     Q_OBJECT;
 

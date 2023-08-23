@@ -824,10 +824,10 @@ UICommon_QT_MOCHDRS = \
 	src/globals/UICommon.h \
 	src/globals/UICustomFileSystemModel.h \
 	src/globals/UIDesktopWidgetWatchdog.h \
-	src/globals/UIDialogPanel.h \
 	src/globals/UIMainEventListener.h \
 	src/globals/UIMessageCenter.h \
 	src/globals/UIModalWindowManager.h \
+	src/globals/UIPaneContainer.h \
 	src/globals/UIPopupCenter.h \
 	src/globals/UIProgressEventHandler.h \
 	src/globals/UIProgressObject.h \
@@ -1394,7 +1394,6 @@ UICommon_SOURCES = \
 	src/globals/UIDefs.cpp \
 	src/globals/UIDesktopWidgetWatchdog.cpp \
 	src/globals/UIDetailsGenerator.cpp \
-	src/globals/UIDialogPanel.cpp \
 	src/globals/UIErrorString.cpp \
 	src/globals/UIExtension.cpp \
 	src/globals/UIIconPool.cpp \
@@ -1404,6 +1403,7 @@ UICommon_SOURCES = \
 	src/globals/UIMessageCenter.cpp \
 	src/globals/UIModalWindowManager.cpp \
 	src/globals/UIMousePointerShapeData.cpp \
+	src/globals/UIPaneContainer.cpp \
 	src/globals/UIPathOperations.cpp \
 	src/globals/UIPopupCenter.cpp \
 	src/globals/UIProgressEventHandler.cpp \

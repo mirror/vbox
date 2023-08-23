@@ -32,7 +32,7 @@
 #endif
 
 /* GUI includes: */
-#include "UIDialogPanel.h"
+#include "UIPaneContainer.h"
 #include "UIVMLogBookmark.h"
 
 /* Forward declarations: */
@@ -44,7 +44,7 @@ class UIVMLogViewerFilterWidget;
 class UIVMLogViewerBookmarksWidget;
 class UIVMLogViewerPreferencesWidget;
 
-class UIVMLogViewerPanelNew : public UIDialogPanelBase
+class UIVMLogViewerPanelNew : public UIPaneContainer
 {
     Q_OBJECT;
 

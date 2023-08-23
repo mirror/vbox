@@ -25,8 +25,8 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef FEQT_INCLUDED_SRC_globals_UIDialogPanel_h
-#define FEQT_INCLUDED_SRC_globals_UIDialogPanel_h
+#ifndef FEQT_INCLUDED_SRC_globals_UIPaneContainer_h
+#define FEQT_INCLUDED_SRC_globals_UIPaneContainer_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -43,7 +43,7 @@ class QIToolButton;
 
 
 /** QWidget extension acting as the base class for all the dialog panels like file manager, logviewer etc. */
-class SHARED_LIBRARY_STUFF UIDialogPanelBase : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF UIPaneContainer : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -54,7 +54,7 @@ signals:
 
 public:
 
-    UIDialogPanelBase(QWidget *pParent = 0);
+    UIPaneContainer(QWidget *pParent = 0);
     void setCurrentIndex(int iIndex);
     int currentIndex() const;
 
@@ -75,4 +75,4 @@ private:
     QIToolButton  *m_pCloseButton;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_globals_UIDialogPanel_h */
+#endif /* !FEQT_INCLUDED_SRC_globals_UIPaneContainer_h */
