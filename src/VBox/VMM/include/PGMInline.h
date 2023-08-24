@@ -1098,8 +1098,18 @@ DECLINLINE(void) pgmTrackDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoolPage, PPG
     const unsigned cRefs = PGM_PAGE_GET_TD_CREFS(pPhysPage);
     if (cRefs == 1)
     {
+#if 0 /* for more debug info */
+        AssertMsg(   pPoolPage->idx == PGM_PAGE_GET_TD_IDX(pPhysPage)
+                  && iPte == PGM_PAGE_GET_PTE_INDEX(pPhysPage),
+                  ("idx=%#x iPte=%#x enmKind=%d vs pPhysPage=%R[pgmpage] idx=%#x iPte=%#x enmKind=%d [iPte]=%#RX64\n",
+                   pPoolPage->idx, iPte, pPoolPage->enmKind,
+                   pPhysPage, PGM_PAGE_GET_TD_IDX(pPhysPage), PGM_PAGE_GET_PTE_INDEX(pPhysPage),
+                   pPool->aPages[PGM_PAGE_GET_TD_IDX(pPhysPage)].enmKind,
+                   ((uint64_t *)pPoolPage->CTX_SUFF(pvPage))[iPte]));
+#else
         Assert(pPoolPage->idx == PGM_PAGE_GET_TD_IDX(pPhysPage));
         Assert(iPte == PGM_PAGE_GET_PTE_INDEX(pPhysPage));
+#endif
         /* Invalidate the tracking data. */
         PGM_PAGE_SET_TRACKING(pVM, pPhysPage, 0);
     }

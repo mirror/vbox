@@ -71,6 +71,9 @@ static int pgmShwGetNestedEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPhysNested, PEPTP
 #endif
 static int pgmShwSyncLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT uGstPml4e, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD);
 static int pgmShwGetEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD);
+#ifdef PGM_WITH_PAGE_ZEROING_DETECTION
+static bool pgmHandlePageZeroingCode(PVMCPUCC pVCpu, PCPUMCTX pCtx);
+#endif
 
 
 /*
@@ -3930,6 +3933,14 @@ static DECLCALLBACK(size_t) pgmFormatTypeHandlerPage(PFNRTSTROUTPUT pfnOutput, v
 # undef IS_PART_INCLUDED
 
         cch = pfnOutput(pvArgOutput, szTmp, cch);
+#if 0
+        size_t cch2 = 0;
+        szTmp[cch2++] = '(';
+        cch2 += RTStrFormatNumber(&szTmp[cch2], (uintptr_t)pPage, 16, 18, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
+        szTmp[cch2++] = ')';
+        szTmp[cch2] = '\0';
+        cch += pfnOutput(pvArgOutput, szTmp, cch2);
+#endif
     }
     else
         cch = pfnOutput(pvArgOutput, RT_STR_TUPLE("<bad-pgmpage-ptr>"));
@@ -4074,3 +4085,129 @@ VMM_INT_DECL(void) PGMSetGuestEptPtr(PVMCPUCC pVCpu, uint64_t uEptPtr)
     PGM_UNLOCK(pVM);
 }
 
+#ifdef PGM_WITH_PAGE_ZEROING_DETECTION
+
+/**
+ * Helper for checking whether XMM0 is zero, possibly retriving external state.
+ */
+static bool pgmHandlePageZeroingIsXmm0Zero(PVMCPUCC pVCpu, PCPUMCTX pCtx)
+{
+    if (pCtx->fExtrn & CPUMCTX_EXTRN_SSE_AVX)
+    {
+        int rc = CPUMImportGuestStateOnDemand(pVCpu, CPUMCTX_EXTRN_SSE_AVX);
+        AssertRCReturn(rc, false);
+    }
+    return pCtx->XState.x87.aXMM[0].au64[0] == 0
+        && pCtx->XState.x87.aXMM[0].au64[1] == 0
+        && pCtx->XState.x87.aXMM[0].au64[2] == 0
+        && pCtx->XState.x87.aXMM[0].au64[3] == 0;
+}
+
+
+/**
+ * Helper for comparing opcode bytes.
+ */
+static bool pgmHandlePageZeroingMatchOpcodes(PVMCPUCC pVCpu, PCPUMCTX pCtx, uint8_t const *pbOpcodes, uint32_t cbOpcodes)
+{
+    uint8_t abTmp[64];
+    AssertMsgReturn(cbOpcodes <= sizeof(abTmp), ("cbOpcodes=%#x\n", cbOpcodes), false);
+    int rc = PGMPhysSimpleReadGCPtr(pVCpu, abTmp, pCtx->rip + pCtx->cs.u64Base, cbOpcodes);
+    if (RT_SUCCESS(rc))
+        return memcmp(abTmp, pbOpcodes, cbOpcodes) == 0;
+    return false;
+}
+
+
+/**
+ * Called on faults on ZERO pages to check if the guest is trying to zero it.
+ *
+ * Since it's a waste of time to zero a ZERO page and it will cause an
+ * unnecessary page allocation, we'd like to detect and avoid this.
+ * If any known page zeroing code is detected, this function will update the CPU
+ * state to pretend the page was zeroed by the code.
+ *
+ * @returns true if page zeroing code was detected and CPU state updated to skip
+ *          the code.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx    The guest register context.
+ */
+static bool pgmHandlePageZeroingCode(PVMCPUCC pVCpu, PCPUMCTX pCtx)
+{
+    CPUMCTX_ASSERT_NOT_EXTRN(pCtx, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_EFER);
+
+    /*
+     * Sort by mode first.
+     */
+    if (CPUMIsGuestInLongModeEx(pCtx))
+    {
+        if (CPUMIsGuestIn64BitCodeEx(pCtx))
+        {
+            /*
+             * 64-bit code.
+             */
+            Log9(("pgmHandlePageZeroingCode: not page zeroing - 64-bit\n"));
+        }
+        else if (pCtx->cs.Attr.n.u1DefBig)
+            Log9(("pgmHandlePageZeroingCode: not page zeroing - 32-bit lm\n"));
+        else
+            Log9(("pgmHandlePageZeroingCode: not page zeroing - 16-bit lm\n"));
+    }
+    else if (CPUMIsGuestInPagedProtectedModeEx(pCtx))
+    {
+        if (pCtx->cs.Attr.n.u1DefBig)
+        {
+            /*
+             * 32-bit paged protected mode code.
+             */
+            CPUMCTX_ASSERT_NOT_EXTRN(pCtx, CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RCX | CPUMCTX_EXTRN_RDX | CPUMCTX_EXTRN_RBX
+                                         | CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_RBP | CPUMCTX_EXTRN_RSI | CPUMCTX_EXTRN_RDI
+                                         | CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS);
+
+            /* 1. Generic 'rep stosd' detection. */
+            static uint8_t const s_abRepStosD[] = { 0xf3, 0xab };
+            if (   pCtx->eax == 0
+                && pCtx->ecx == X86_PAGE_SIZE / 4
+                && !(pCtx->edi & X86_PAGE_OFFSET_MASK)
+                && pgmHandlePageZeroingMatchOpcodes(pVCpu, pCtx, s_abRepStosD, sizeof(s_abRepStosD)))
+            {
+                pCtx->ecx  = 0;
+                pCtx->edi += X86_PAGE_SIZE;
+                Log9(("pgmHandlePageZeroingCode: REP STOSD: eip=%RX32 -> %RX32\n", pCtx->eip, pCtx->eip + sizeof(s_abRepStosD)));
+                pCtx->eip += sizeof(s_abRepStosD);
+                return true;
+            }
+
+            /* 2. Windows 2000 sp4 KiXMMIZeroPageNoSave loop code: */
+            static uint8_t const s_abW2kSp4XmmZero[] =
+            {
+                0x0f, 0x2b, 0x01,
+                0x0f, 0x2b, 0x41, 0x10,
+                0x0f, 0x2b, 0x41, 0x20,
+                0x0f, 0x2b, 0x41, 0x30,
+                0x83, 0xc1, 0x40,
+                0x48,
+                0x75, 0xeb,
+            };
+            if (   pCtx->eax == 64
+                && !(pCtx->ecx & X86_PAGE_OFFSET_MASK)
+                && pgmHandlePageZeroingMatchOpcodes(pVCpu, pCtx, s_abW2kSp4XmmZero, sizeof(s_abW2kSp4XmmZero))
+                && pgmHandlePageZeroingIsXmm0Zero(pVCpu, pCtx))
+            {
+                pCtx->eax  = 1;
+                pCtx->ecx += X86_PAGE_SIZE;
+                Log9(("pgmHandlePageZeroingCode: w2k sp4 xmm: eip=%RX32 -> %RX32\n",
+                      pCtx->eip, pCtx->eip + sizeof(s_abW2kSp4XmmZero) - 3));
+                pCtx->eip += sizeof(s_abW2kSp4XmmZero) - 3;
+                return true;
+            }
+            Log9(("pgmHandlePageZeroingCode: not page zeroing - 32-bit\n"));
+        }
+        else if (!pCtx->eflags.Bits.u1VM)
+            Log9(("pgmHandlePageZeroingCode: not page zeroing - 16-bit\n"));
+        else
+            Log9(("pgmHandlePageZeroingCode: not page zeroing - v86\n"));
+    }
+    return false;
+}
+
+#endif /* PGM_WITH_PAGE_ZEROING_DETECTION */

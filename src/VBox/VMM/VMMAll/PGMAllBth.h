@@ -782,6 +782,15 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTX pCtx, R
                 Assert(!PGM_PAGE_IS_ZERO(pPage));
 #   endif
                 AssertFatalMsg(!PGM_PAGE_IS_BALLOONED(pPage), ("Unexpected ballooned page at %RGp\n", GCPhys));
+#  ifdef PGM_WITH_PAGE_ZEROING_DETECTION
+                if (   PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ZERO
+                    && (pvFault & X86_PAGE_OFFSET_MASK) == 0
+                    && pgmHandlePageZeroingCode(pVCpu, pCtx))
+                {
+                    STAM_STATS({ pVCpu->pgmr0.s.pStatTrap0eAttributionR0 = &pVCpu->pgm.s.Stats.StatRZTrap0eTime2PageZeroing; });
+                    return VINF_SUCCESS;
+                }
+#  endif
                 STAM_STATS({ pVCpu->pgmr0.s.pStatTrap0eAttributionR0 = &pVCpu->pgm.s.Stats.StatRZTrap0eTime2MakeWritable; });
 
                 rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys);
@@ -1312,6 +1321,15 @@ PGM_BTH_DECL(int, NestedTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTX p
         {
             /* This is a read-only page. */
             AssertFatalMsg(!PGM_PAGE_IS_BALLOONED(pPage), ("Unexpected ballooned page at %RGp\n", GCPhysPage));
+#ifdef PGM_WITH_PAGE_ZEROING_DETECTION
+            if (   PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ZERO
+                && (GCPhysNestedFault & X86_PAGE_OFFSET_MASK) == 0
+                && pgmHandlePageZeroingCode(pVCpu, pCtx))
+            {
+                STAM_STATS({ pVCpu->pgmr0.s.pStatTrap0eAttributionR0 = &pVCpu->pgm.s.Stats.StatRZTrap0eTime2PageZeroing; });
+                return VINF_SUCCESS;
+            }
+#endif
             STAM_STATS({ pVCpu->pgmr0.s.pStatTrap0eAttributionR0 = &pVCpu->pgm.s.Stats.StatRZTrap0eTime2MakeWritable; });
 
             Log7Func(("Calling pgmPhysPageMakeWritable for GCPhysPage=%RGp\n", GCPhysPage));
@@ -1678,21 +1696,49 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVMCPUCC pVCpu, PPGMPOOL
         return;
     }
 # else
-  NOREF(GCPhysPage);
+    NOREF(GCPhysPage);
 # endif
-
-    STAM_PROFILE_START(&pVM->pgm.s.Stats.StatTrackDeref, a);
-    LogFlow(("SyncPageWorkerTrackDeref: Damn HCPhys=%RHp pShwPage->idx=%#x!!!\n", HCPhys, pShwPage->idx));
 
     /** @todo If this turns out to be a bottle neck (*very* likely) two things can be done:
      *      1. have a medium sized HCPhys -> GCPhys TLB (hash?)
      *      2. write protect all shadowed pages. I.e. implement caching.
+     *
+     *  2023-08-24 bird: If we allow the ZeroPg to enter the shadow page tables,
+     *  this becomes a common occurence and we screw up. A better to the above would
+     *  be to have a parallel table that records the guest physical addresses of the
+     *  pages mapped by the shadow page table...  For nested page tables,
+     *  we can easily correleate a table entry to a page entry, so it won't be
+     *  needed for those.
      */
+# if  PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE) || !PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
+    /*
+     * For non-paged guest tables, EPT and nested tables we can figure out the
+     * physical page corresponding to the entry and dereference it.
+     * (This ASSUMES that shadow PTs won't be used ever be used out of place.)
+     */
+    if (   pShwPage->enmKind == PGMPOOLKIND_EPT_PT_FOR_PHYS
+        || pShwPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PHYS
+        || pShwPage->enmKind == PGMPOOLKIND_32BIT_PT_FOR_PHYS)
+    {
+        RTGCPHYS GCPhysNestedEntry = pShwPage->GCPhys + ((uint32_t)iPte << X86_PAGE_SHIFT);
+        if (!pShwPage->fA20Enabled)
+            GCPhysNestedEntry &= ~(uint64_t)RT_BIT_64(20);
+        PPGMPAGE const pPhysPage = pgmPhysGetPage(pVM, GCPhysNestedEntry);
+        AssertRelease(pPhysPage);
+        pgmTrackDerefGCPhys(pVM->pgm.s.CTX_SUFF(pPool), pShwPage, pPhysPage, iPte);
+    }
+    else
+        AssertMsgFailed(("enmKind=%d GCPhys=%RGp\n", pShwPage->enmKind, pShwPage->GCPhys));
+# endif
+
     /** @todo duplicated in the 2nd half of pgmPoolTracDerefGCPhysHint */
 
     /*
      * Find the guest address.
      */
+    STAM_PROFILE_START(&pVM->pgm.s.Stats.StatTrackDeref, a);
+    LogFlow(("SyncPageWorkerTrackDeref(%d,%d): Damn HCPhys=%RHp pShwPage->idx=%#x!!!\n",
+             PGM_SHW_TYPE, PGM_GST_TYPE, HCPhys, pShwPage->idx));
     for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
          pRam;
          pRam = pRam->CTX_SUFF(pNext))
@@ -1749,7 +1795,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackAddref)(PVMCPUCC pVCpu, PPGMPOO
         u16 = pgmPoolTrackPhysExtAddref(pVM, pPage, u16, pShwPage->idx, iPTDst);
 
     /* write back */
-    Log2(("SyncPageWorkerTrackAddRef: u16=%#x->%#x  iPTDst=%#x\n", u16, PGM_PAGE_GET_TRACKING(pPage), iPTDst));
+    Log2(("SyncPageWorkerTrackAddRef: u16=%#x->%#x  iPTDst=%#x pPage=%p\n", u16, PGM_PAGE_GET_TRACKING(pPage), iPTDst, pPage));
     PGM_PAGE_SET_TRACKING(pVM, pPage, u16);
 
     /* update statistics. */
@@ -2573,7 +2619,7 @@ static void PGM_BTH_NAME(NestedSyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPte, RTG
         Assert(rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS);
         if (SHW_PTE_IS_P(*pPte))
         {
-            Log2(("SyncPageWorker: deref! *pPte=%RX64\n", SHW_PTE_LOG64(*pPte)));
+            Log2(("NestedSyncPageWorker: deref! *pPte=%RX64\n", SHW_PTE_LOG64(*pPte)));
             PGM_BTH_NAME(SyncPageWorkerTrackDeref)(pVCpu, pShwPage, SHW_PTE_GET_HCPHYS(*pPte), iPte, NIL_RTGCPHYS);
         }
         Log7Func(("RAM hole/reserved %RGp -> ShwPte=0\n", GCPhysPage));
@@ -2649,14 +2695,14 @@ static void PGM_BTH_NAME(NestedSyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPte, RTG
             PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVCpu, pShwPage, PGM_PAGE_GET_TRACKING(pPage), pPage, iPte);
         else if (SHW_PTE_GET_HCPHYS(*pPte) != SHW_PTE_GET_HCPHYS(Pte))
         {
-            Log2(("SyncPageWorker: deref! *pPte=%RX64 Pte=%RX64\n", SHW_PTE_LOG64(*pPte), SHW_PTE_LOG64(Pte)));
+            Log2(("NestedSyncPageWorker: deref! *pPte=%RX64 Pte=%RX64\n", SHW_PTE_LOG64(*pPte), SHW_PTE_LOG64(Pte)));
             PGM_BTH_NAME(SyncPageWorkerTrackDeref)(pVCpu, pShwPage, SHW_PTE_GET_HCPHYS(*pPte), iPte, NIL_RTGCPHYS);
             PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVCpu, pShwPage, PGM_PAGE_GET_TRACKING(pPage), pPage, iPte);
         }
     }
     else if (SHW_PTE_IS_P(*pPte))
     {
-        Log2(("SyncPageWorker: deref! *pPte=%RX64\n", SHW_PTE_LOG64(*pPte)));
+        Log2(("NestedSyncPageWorker: deref! *pPte=%RX64\n", SHW_PTE_LOG64(*pPte)));
         PGM_BTH_NAME(SyncPageWorkerTrackDeref)(pVCpu, pShwPage, SHW_PTE_GET_HCPHYS(*pPte), iPte, NIL_RTGCPHYS);
     }
 
@@ -3848,6 +3894,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
                     HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
                 }
             }
+#  if !defined(VBOX_WITH_NEW_LAZY_PAGE_ALLOC) && !defined(PGM_WITH_PAGE_ZEROING_DETECTION) /* This code is too aggresive! */
             else if (   PGMIsUsingLargePages(pVM)
                      && PGM_A20_IS_ENABLED(pVCpu))
             {
@@ -3861,6 +3908,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
                 else
                     LogFlow(("pgmPhysAllocLargePage failed with %Rrc\n", rc));
             }
+#  endif
 
             if (HCPhys != NIL_RTHCPHYS)
             {

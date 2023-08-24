@@ -951,6 +951,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         pVM->pgm.s.HCPhysZeroPg = _4G - GUEST_PAGE_SIZE * 2 /* fake to avoid PGM_PAGE_INIT_ZERO assertion */;
     AssertRelease(pVM->pgm.s.HCPhysZeroPg != NIL_RTHCPHYS);
     AssertRelease(pVM->pgm.s.HCPhysZeroPg != 0);
+    Log(("HCPhysZeroPg=%RHp abZeroPg=%p\n", pVM->pgm.s.HCPhysZeroPg, pVM->pgm.s.abZeroPg));
 
     /*
      * Setup the invalid MMIO page (HCPhysMmioPg is set by ring-0).
@@ -962,6 +963,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     AssertRelease(pVM->pgm.s.HCPhysMmioPg != NIL_RTHCPHYS);
     AssertRelease(pVM->pgm.s.HCPhysMmioPg != 0);
     pVM->pgm.s.HCPhysInvMmioPg = pVM->pgm.s.HCPhysMmioPg;
+    Log(("HCPhysInvMmioPg=%RHp abMmioPg=%p\n", pVM->pgm.s.HCPhysMmioPg, pVM->pgm.s.abMmioPg));
 
     /*
      * Initialize physical access handlers.
@@ -1444,6 +1446,7 @@ static int pgmR3InitStats(PVM pVM)
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2OutOfSync,        "/PGM/CPU%u/RZ/Trap0e/Time2/OutOfSync",         "Profiling of the Trap0eHandler body when the cause is an out-of-sync page.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2OutOfSyncHndPhys, "/PGM/CPU%u/RZ/Trap0e/Time2/OutOfSyncHndPhys",  "Profiling of the Trap0eHandler body when the cause is an out-of-sync physical handler page.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2OutOfSyncHndObs,  "/PGM/CPU%u/RZ/Trap0e/Time2/OutOfSyncObsHnd",   "Profiling of the Trap0eHandler body when the cause is an obsolete handler page.");
+        PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2PageZeroing,      "/PGM/CPU%u/RZ/Trap0e/Time2/PageZeroing",       "Profiling of the Trap0eHandler body when the cause is that a zero page is being zeroed.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2SyncPT,           "/PGM/CPU%u/RZ/Trap0e/Time2/SyncPT",            "Profiling of the Trap0eHandler body when the cause is lazy syncing of a PT.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2WPEmulation,      "/PGM/CPU%u/RZ/Trap0e/Time2/WPEmulation",       "Profiling of the Trap0eHandler body when the cause is CR0.WP emulation.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2Wp0RoUsHack,      "/PGM/CPU%u/RZ/Trap0e/Time2/WP0R0USHack",       "Profiling of the Trap0eHandler body when the cause is CR0.WP and netware hack to be enabled.");

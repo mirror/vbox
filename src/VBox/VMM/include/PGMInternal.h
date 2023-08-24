@@ -134,9 +134,18 @@
 #endif
 
 /** @def VBOX_WITH_NEW_LAZY_PAGE_ALLOC
- * Enables the experimental lazy page allocation code. */
-#ifdef DOXYGEN_RUNNING
+ * Enables the experimental lazy page allocation code.
+ * @todo Problems with zero page tracking, see @bugref{}.  */
+#if defined(DOXYGEN_RUNNING)
 # define VBOX_WITH_NEW_LAZY_PAGE_ALLOC
+#endif
+
+/** @def PGM_WITH_PAGE_ZEROING_DETECTION
+ * Enables the code for detecting guest zeroing page in the ZERO state and
+ * tries to avoid allocating them in response.
+ * This kind of relies upon VBOX_WITH_NEW_LAZY_PAGE_ALLOC to work atm.  */
+#if defined(DOXYGEN_RUNNING)
+# define PGM_WITH_PAGE_ZEROING_DETECTION
 #endif
 
 /** @def VBOX_WITH_REAL_WRITE_MONITORED_PAGES
@@ -3257,6 +3266,7 @@ typedef struct PGMCPUSTATS
     STAMPROFILE StatRZTrap0eTime2OutOfSync;         /**< RC/R0: Profiling of the Trap0eHandler body when the cause is an out-of-sync page. */
     STAMPROFILE StatRZTrap0eTime2OutOfSyncHndPhys;  /**< RC/R0: Profiling of the Trap0eHandler body when the cause is an out-of-sync physical handler page. */
     STAMPROFILE StatRZTrap0eTime2OutOfSyncHndObs;   /**< RC/R0: Profiling of the Trap0eHandler body when the cause is an obsolete handler page. */
+    STAMPROFILE StatRZTrap0eTime2PageZeroing;       /**< RC/R0: Profiling of the Trap0eHandler body when the cause is a zero page that is being zeroed. */
     STAMPROFILE StatRZTrap0eTime2SyncPT;            /**< RC/R0: Profiling of the Trap0eHandler body when the cause is lazy syncing of a PT. */
     STAMPROFILE StatRZTrap0eTime2WPEmulation;       /**< RC/R0: Profiling of the Trap0eHandler body when the cause is CR0.WP emulation. */
     STAMPROFILE StatRZTrap0eTime2Wp0RoUsHack;       /**< RC/R0: Profiling of the Trap0eHandler body when the cause is CR0.WP and netware hack to be enabled. */
