@@ -1404,6 +1404,7 @@ int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PP
         PGM_PAGE_SET_WRITTEN_TO(pVM, pPage);
         pVM->pgm.s.cWrittenToPages++;
     }
+    PGM_PAGE_CLEAR_CODE_PAGE(pVM, pPage); /* No callback needed, IEMTlbInvalidateAllPhysicalAllCpus is called below. */
 
     /*
      * pPage = ZERO page.
@@ -1417,7 +1418,7 @@ int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PP
 
     /* Flush physical page map TLB entry. */
     pgmPhysInvalidatePageMapTLBEntry(pVM, GCPhys);
-    IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID); /// @todo move to the perform step.
+    IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID, IEMTLBPHYSFLUSHREASON_FREED); /// @todo move to the perform step.
 
 #ifdef VBOX_WITH_PGM_NEM_MODE
     /*
@@ -2160,7 +2161,7 @@ int pgmR3PhysRamZeroAll(PVM pVM)
     /*
      * Flush the IEM TLB, just to be sure it really is done.
      */
-    IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID);
+    IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID, IEMTLBPHYSFLUSHREASON_ZERO_ALL);
 
     return VINF_SUCCESS;
 }

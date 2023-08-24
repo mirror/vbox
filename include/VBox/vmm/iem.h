@@ -178,10 +178,28 @@ VMM_INT_DECL(VBOXSTRICTRC)  IEMInjectTrap(PVMCPUCC pVCpu, uint8_t u8TrapNo, TRPM
 VMM_INT_DECL(int)           IEMBreakpointSet(PVM pVM, RTGCPTR GCPtrBp);
 VMM_INT_DECL(int)           IEMBreakpointClear(PVM pVM, RTGCPTR GCPtrBp);
 
+/** Reasons why IEMTlbInvalidateAllPhysicalAllCpus is called. */
+typedef enum IEMTLBPHYSFLUSHREASON
+{
+    IEMTLBPHYSFLUSHREASON_INVALID = 0,
+    IEMTLBPHYSFLUSHREASON_ALLOCATED,
+    IEMTLBPHYSFLUSHREASON_ALLOCATED_LARGE,
+    IEMTLBPHYSFLUSHREASON_FREED,
+    IEMTLBPHYSFLUSHREASON_MADE_WRITABLE,
+    IEMTLBPHYSFLUSHREASON_SHARED,
+    IEMTLBPHYSFLUSHREASON_ZERO_ALL,
+    IEMTLBPHYSFLUSHREASON_RESET_ALIAS,
+    IEMTLBPHYSFLUSHREASON_MMIO2_ALIAS,
+    IEMTLBPHYSFLUSHREASON_HANDLER_RESET,
+    IEMTLBPHYSFLUSHREASON_MISC,
+    IEMTLBPHYSFLUSHREASON_END
+} IEMTLBPHYSFLUSHREASON;
+
 VMM_INT_DECL(void)          IEMTlbInvalidateAll(PVMCPUCC pVCpu);
 VMM_INT_DECL(void)          IEMTlbInvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCPtr);
 VMM_INT_DECL(void)          IEMTlbInvalidateAllPhysical(PVMCPUCC pVCpu);
-VMM_INT_DECL(void)          IEMTlbInvalidateAllPhysicalAllCpus(PVMCC pVM, VMCPUID idCpuCaller);
+VMM_INT_DECL(void)          IEMTlbInvalidateAllPhysicalAllCpus(PVMCC pVM, VMCPUID idCpuCaller, IEMTLBPHYSFLUSHREASON enmReason);
+
 VMM_INT_DECL(bool)          IEMGetCurrentXcpt(PVMCPUCC pVCpu, uint8_t *puVector, uint32_t *pfFlags, uint32_t *puErr,
                                               uint64_t *puCr2);
 VMM_INT_DECL(IEMXCPTRAISE)  IEMEvaluateRecursiveXcpt(PVMCPUCC pVCpu, uint32_t fPrevFlags, uint8_t uPrevVector, uint32_t fCurFlags,

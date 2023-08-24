@@ -658,11 +658,19 @@ typedef union PGMPAGE
         uint64_t    u2HandlerPhysStateY : 2;
         /** 2     - Don't apply the physical handler in HM mode (nested APIC hack). */
         uint64_t    fHandlerPhysNotInHm : 1;
-        /** 3     - Flag indicating that a write monitored page was written to
-         *  when set. */
+        /** 3     - Flag indicating that a write monitored page was written to when set. */
         uint64_t    fWrittenToY         : 1;
-        /** 7:4   - Unused. */
-        uint64_t    u2Unused0           : 4;
+        /** 4     - Set when the page is write monitored because it's an IEM TB code
+         * page.  Save recompiled code the need to verify opcode bytes.
+         *
+         * IEM fetches this flag as part of the TLB queries.  The flag is cleared when
+         * the page is made writable and IEM is informed and will invalidate its
+         * physical TLB layer.
+         *
+         * @note Can possibly be set on ROM pages that are not in the monitored state. */
+        uint64_t    fCodePageY          : 1;
+        /** 7:5   - Unused. */
+        uint64_t    u2Unused0           : 3;
         /** 9:8   - Paging structure needed to map the page
          * (PGM_PAGE_PDE_TYPE_*). */
         uint64_t    u2PDETypeY          : 2;
@@ -976,6 +984,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  */
 #define PGM_PAGE_IS_ALLOCATED(a_pPage)          ( (a_pPage)->s.uStateY == PGM_PAGE_STATE_ALLOCATED )
 
+
 /**
  * Marks the page as written to (for GMM change monitoring).
  * @param   a_pVM       The VM handle, only used for lock ownership assertions.
@@ -998,6 +1007,30 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
 #define PGM_PAGE_IS_WRITTEN_TO(a_pPage)         ( (a_pPage)->s.fWrittenToY )
+
+
+/**
+ * Marks the page as an IEM code page (being write monitored or a ROM page).
+ * @param   a_pVM       The VM handle, only used for lock ownership assertions.
+ * @param   a_pPage     Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_SET_CODE_PAGE(a_pVM, a_pPage) \
+    do { (a_pPage)->s.fCodePageY = 1; PGM_PAGE_ASSERT_LOCK(a_pVM); } while (0)
+
+/**
+ * Clears the code page indicator.
+ * @param   a_pVM       The VM handle, only used for lock ownership assertions.
+ * @param   a_pPage     Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_CLEAR_CODE_PAGE(a_pVM, a_pPage) \
+    do { (a_pPage)->s.fCodePageY = 0; PGM_PAGE_ASSERT_LOCK(a_pVM); } while (0)
+
+/**
+ * Checks if the page is an IEM code page (implies write monitored or ROM page).
+ * @returns true/false.
+ * @param   a_pPage     Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_IS_CODE_PAGE(a_pPage)         ( (a_pPage)->s.fCodePageY )
 
 
 /** @name PT usage values (PGMPAGE::u2PDEType).

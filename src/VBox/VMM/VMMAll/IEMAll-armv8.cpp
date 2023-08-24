@@ -113,9 +113,9 @@ VMM_INT_DECL(void) IEMTlbInvalidateAll(PVMCPUCC pVCpu)
 }
 
 
-VMM_INT_DECL(void) IEMTlbInvalidateAllPhysicalAllCpus(PVMCC pVM, VMCPUID idCpuCaller)
+VMM_INT_DECL(void) IEMTlbInvalidateAllPhysicalAllCpus(PVMCC pVM, VMCPUID idCpuCaller, IEMTLBPHYSFLUSHREASON enmReason)
 {
-    RT_NOREF(pVM, idCpuCaller);
+    RT_NOREF(pVM, idCpuCaller, enmReason);
 }
 
 

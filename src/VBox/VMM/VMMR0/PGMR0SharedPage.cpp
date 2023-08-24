@@ -134,7 +134,7 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVMCC pVM, PGVM pGVM, VMCPUID idCpu, PGMMS
 
                             /* Invalidate page map TLB entry for this page too. */
                             pgmPhysInvalidatePageMapTLBEntry(pVM, PageDesc.GCPhys);
-                            IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID);
+                            IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID, IEMTLBPHYSFLUSHREASON_SHARED);
                             pVM->pgm.s.cReusedSharedPages++;
                         }
                         /* else: nothing changed (== this page is now a shared

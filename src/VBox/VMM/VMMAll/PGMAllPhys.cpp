@@ -745,7 +745,7 @@ void pgmPhysInvalidatePageMapTLB(PVMCC pVM)
         pVM->pgm.s.PhysTlbR3.aEntries[i].pv = 0;
     }
 
-    IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID);
+    IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID, IEMTLBPHYSFLUSHREASON_MISC);
     PGM_UNLOCK(pVM);
 }
 
@@ -994,7 +994,7 @@ int pgmPhysAllocPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_ALLOCATED);
     PGM_PAGE_SET_PDE_TYPE(pVM, pPage, PGM_PAGE_PDE_TYPE_PT);
     pgmPhysInvalidatePageMapTLBEntry(pVM, GCPhys);
-    IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID);
+    IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID, IEMTLBPHYSFLUSHREASON_ALLOCATED);
 
     /* Copy the shared page contents to the replacement page. */
     if (pvSharedPage)
@@ -1224,6 +1224,12 @@ void pgmPhysPageMakeWriteMonitoredWritable(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS G
     Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_WRITE_MONITORED);
     PGM_PAGE_SET_WRITTEN_TO(pVM, pPage);
     PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_ALLOCATED);
+    if (PGM_PAGE_IS_CODE_PAGE(pPage))
+    {
+        PGM_PAGE_CLEAR_CODE_PAGE(pVM, pPage);
+        IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID, IEMTLBPHYSFLUSHREASON_MADE_WRITABLE);
+    }
+
     Assert(pVM->pgm.s.cMonitoredPages > 0);
     pVM->pgm.s.cMonitoredPages--;
     pVM->pgm.s.cWrittenToPages++;
@@ -3736,6 +3742,7 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2PtrNoLock(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS
                     switch (PGM_PAGE_GET_STATE(pPage))
                     {
                         case PGM_PAGE_STATE_ALLOCATED:
+                            Assert(!PGM_PAGE_IS_CODE_PAGE(pPage));
                             *pfTlb |= *puTlbPhysRev;
                             break;
                         case PGM_PAGE_STATE_BALLOONED:
@@ -3744,7 +3751,10 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2PtrNoLock(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS
                         case PGM_PAGE_STATE_ZERO:
                         case PGM_PAGE_STATE_SHARED:
                         case PGM_PAGE_STATE_WRITE_MONITORED:
-                            *pfTlb |= *puTlbPhysRev | PGMIEMGCPHYS2PTR_F_NO_WRITE;
+                            if (!PGM_PAGE_IS_CODE_PAGE(pPage))
+                                *pfTlb |= *puTlbPhysRev | PGMIEMGCPHYS2PTR_F_NO_WRITE;
+                            else
+                                *pfTlb |= *puTlbPhysRev | PGMIEMGCPHYS2PTR_F_NO_WRITE | PGMIEMGCPHYS2PTR_F_CODE_PAGE;
                             break;
                     }
 
@@ -3768,11 +3778,17 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2PtrNoLock(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS
                      * Write access handler: Catch write accesses if active.
                      */
                     if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
-                        *pfTlb |= *puTlbPhysRev | PGMIEMGCPHYS2PTR_F_NO_WRITE;
+                    {
+                        if (!PGM_PAGE_IS_CODE_PAGE(pPage)) /* ROM pages end up here */
+                            *pfTlb |= *puTlbPhysRev | PGMIEMGCPHYS2PTR_F_NO_WRITE;
+                        else
+                            *pfTlb |= *puTlbPhysRev | PGMIEMGCPHYS2PTR_F_NO_WRITE | PGMIEMGCPHYS2PTR_F_CODE_PAGE;
+                    }
                     else
                         switch (PGM_PAGE_GET_STATE(pPage))
                         {
                             case PGM_PAGE_STATE_ALLOCATED:
+                                Assert(!PGM_PAGE_IS_CODE_PAGE(pPage));
                                 *pfTlb |= *puTlbPhysRev;
                                 break;
                             case PGM_PAGE_STATE_BALLOONED:
@@ -3781,7 +3797,10 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2PtrNoLock(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS
                             case PGM_PAGE_STATE_ZERO:
                             case PGM_PAGE_STATE_SHARED:
                             case PGM_PAGE_STATE_WRITE_MONITORED:
-                                *pfTlb |= *puTlbPhysRev | PGMIEMGCPHYS2PTR_F_NO_WRITE;
+                                if (!PGM_PAGE_IS_CODE_PAGE(pPage))
+                                    *pfTlb |= *puTlbPhysRev | PGMIEMGCPHYS2PTR_F_NO_WRITE;
+                                else
+                                    *pfTlb |= *puTlbPhysRev | PGMIEMGCPHYS2PTR_F_NO_WRITE | PGMIEMGCPHYS2PTR_F_CODE_PAGE;
                                 break;
                         }
 

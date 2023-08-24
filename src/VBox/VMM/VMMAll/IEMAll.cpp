@@ -753,16 +753,17 @@ VMM_INT_DECL(void) IEMTlbInvalidateAllPhysical(PVMCPUCC pVCpu)
  * @param   pVM         The cross context VM structure.
  * @param   idCpuCaller The ID of the calling EMT if available to the caller,
  *                      otherwise NIL_VMCPUID.
+ * @param   enmReason   The reason we're called.
  *
  * @remarks Caller holds the PGM lock.
  */
-VMM_INT_DECL(void) IEMTlbInvalidateAllPhysicalAllCpus(PVMCC pVM, VMCPUID idCpuCaller)
+VMM_INT_DECL(void) IEMTlbInvalidateAllPhysicalAllCpus(PVMCC pVM, VMCPUID idCpuCaller, IEMTLBPHYSFLUSHREASON enmReason)
 {
 #if defined(IEM_WITH_CODE_TLB) || defined(IEM_WITH_DATA_TLB)
     PVMCPUCC const pVCpuCaller = idCpuCaller >= pVM->cCpus ? VMMGetCpu(pVM) : VMMGetCpuById(pVM, idCpuCaller);
     if (pVCpuCaller)
         VMCPU_ASSERT_EMT(pVCpuCaller);
-    Log10(("IEMTlbInvalidateAllPhysicalAllCpus\n"));
+    Log10(("IEMTlbInvalidateAllPhysicalAllCpus: %d\n", enmReason)); RT_NOREF(enmReason);
 
     VMCC_FOR_EACH_VMCPU(pVM)
     {
@@ -788,7 +789,7 @@ VMM_INT_DECL(void) IEMTlbInvalidateAllPhysicalAllCpus(PVMCC pVM, VMCPUID idCpuCa
     VMCC_FOR_EACH_VMCPU_END(pVM);
 
 #else
-    RT_NOREF(pVM, idCpuCaller);
+    RT_NOREF(pVM, idCpuCaller, enmReason);
 #endif
 }
 
@@ -977,12 +978,17 @@ void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst) IEM_NOEXC
             AssertCompile(PGMIEMGCPHYS2PTR_F_NO_READ      == IEMTLBE_F_PG_NO_READ);
             AssertCompile(PGMIEMGCPHYS2PTR_F_NO_MAPPINGR3 == IEMTLBE_F_NO_MAPPINGR3);
             AssertCompile(PGMIEMGCPHYS2PTR_F_UNASSIGNED   == IEMTLBE_F_PG_UNASSIGNED);
+            AssertCompile(PGMIEMGCPHYS2PTR_F_CODE_PAGE    == IEMTLBE_F_PG_CODE_PAGE);
             if (RT_LIKELY(pVCpu->iem.s.CodeTlb.uTlbPhysRev > IEMTLB_PHYS_REV_INCR))
             { /* likely */ }
             else
                 IEMTlbInvalidateAllPhysicalSlow(pVCpu);
             pTlbe->fFlagsAndPhysRev &= ~(  IEMTLBE_F_PHYS_REV
-                                         | IEMTLBE_F_NO_MAPPINGR3 | IEMTLBE_F_PG_NO_READ | IEMTLBE_F_PG_NO_WRITE | IEMTLBE_F_PG_UNASSIGNED);
+                                         | IEMTLBE_F_NO_MAPPINGR3
+                                         | IEMTLBE_F_PG_NO_READ
+                                         | IEMTLBE_F_PG_NO_WRITE
+                                         | IEMTLBE_F_PG_UNASSIGNED
+                                         | IEMTLBE_F_PG_CODE_PAGE);
             int rc = PGMPhysIemGCPhys2PtrNoLock(pVCpu->CTX_SUFF(pVM), pVCpu, pTlbe->GCPhys, &pVCpu->iem.s.CodeTlb.uTlbPhysRev,
                                                 &pTlbe->pbMappingR3, &pTlbe->fFlagsAndPhysRev);
             AssertRCStmt(rc, IEM_DO_LONGJMP(pVCpu, rc));
@@ -6412,13 +6418,18 @@ VBOXSTRICTRC iemMemMap(PVMCPUCC pVCpu, void **ppvMem, size_t cbMem, uint8_t iSeg
         AssertCompile(PGMIEMGCPHYS2PTR_F_NO_READ      == IEMTLBE_F_PG_NO_READ);
         AssertCompile(PGMIEMGCPHYS2PTR_F_NO_MAPPINGR3 == IEMTLBE_F_NO_MAPPINGR3);
         AssertCompile(PGMIEMGCPHYS2PTR_F_UNASSIGNED   == IEMTLBE_F_PG_UNASSIGNED);
+        AssertCompile(PGMIEMGCPHYS2PTR_F_CODE_PAGE    == IEMTLBE_F_PG_CODE_PAGE);
         if (RT_LIKELY(pVCpu->iem.s.CodeTlb.uTlbPhysRev > IEMTLB_PHYS_REV_INCR))
         { /* likely */ }
         else
             IEMTlbInvalidateAllPhysicalSlow(pVCpu);
         pTlbe->pbMappingR3       = NULL;
         pTlbe->fFlagsAndPhysRev &= ~(  IEMTLBE_F_PHYS_REV
-                                     | IEMTLBE_F_NO_MAPPINGR3 | IEMTLBE_F_PG_NO_READ | IEMTLBE_F_PG_NO_WRITE | IEMTLBE_F_PG_UNASSIGNED);
+                                     | IEMTLBE_F_NO_MAPPINGR3
+                                     | IEMTLBE_F_PG_NO_READ
+                                     | IEMTLBE_F_PG_NO_WRITE
+                                     | IEMTLBE_F_PG_UNASSIGNED
+                                     | IEMTLBE_F_PG_CODE_PAGE);
         int rc = PGMPhysIemGCPhys2PtrNoLock(pVCpu->CTX_SUFF(pVM), pVCpu, pTlbe->GCPhys, &pVCpu->iem.s.DataTlb.uTlbPhysRev,
                                             &pbMem, &pTlbe->fFlagsAndPhysRev);
         AssertRCReturn(rc, rc);
@@ -6747,9 +6758,14 @@ void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrM
             AssertCompile(PGMIEMGCPHYS2PTR_F_NO_READ      == IEMTLBE_F_PG_NO_READ);
             AssertCompile(PGMIEMGCPHYS2PTR_F_NO_MAPPINGR3 == IEMTLBE_F_NO_MAPPINGR3);
             AssertCompile(PGMIEMGCPHYS2PTR_F_UNASSIGNED   == IEMTLBE_F_PG_UNASSIGNED);
+            AssertCompile(PGMIEMGCPHYS2PTR_F_CODE_PAGE    == IEMTLBE_F_PG_CODE_PAGE);
             pTlbe->pbMappingR3       = NULL;
             pTlbe->fFlagsAndPhysRev &= ~(  IEMTLBE_F_PHYS_REV
-                                         | IEMTLBE_F_NO_MAPPINGR3 | IEMTLBE_F_PG_NO_READ | IEMTLBE_F_PG_NO_WRITE | IEMTLBE_F_PG_UNASSIGNED);
+                                         | IEMTLBE_F_NO_MAPPINGR3
+                                         | IEMTLBE_F_PG_NO_READ
+                                         | IEMTLBE_F_PG_NO_WRITE
+                                         | IEMTLBE_F_PG_UNASSIGNED
+                                         | IEMTLBE_F_PG_CODE_PAGE);
             int rc = PGMPhysIemGCPhys2PtrNoLock(pVCpu->CTX_SUFF(pVM), pVCpu, pTlbe->GCPhys, &pVCpu->iem.s.DataTlb.uTlbPhysRev,
                                                 &pbMem, &pTlbe->fFlagsAndPhysRev);
             AssertRCStmt(rc, IEM_DO_LONGJMP(pVCpu, rc));

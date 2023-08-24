@@ -877,6 +877,7 @@ VMM_INT_DECL(int)   PGMPhysIemGCPhys2PtrNoLock(PVMCC pVM, PVMCPUCC pVCpu, RTGCPH
 #define PGMIEMGCPHYS2PTR_F_NO_READ      RT_BIT_32(4)    /**< Not readable (IEMTLBE_F_PG_NO_READ). */
 #define PGMIEMGCPHYS2PTR_F_NO_MAPPINGR3 RT_BIT_32(7)    /**< No ring-3 mapping (IEMTLBE_F_NO_MAPPINGR3). */
 #define PGMIEMGCPHYS2PTR_F_UNASSIGNED   RT_BIT_32(8)    /**< Unassgined memory (IEMTLBE_F_PG_UNASSIGNED). */
+#define PGMIEMGCPHYS2PTR_F_CODE_PAGE    RT_BIT_32(9)    /**< Write monitored IEM code page (IEMTLBE_F_PG_CODE_PAGE). */
 /** @} */
 
 /** Information returned by PGMPhysNemQueryPageInfo. */

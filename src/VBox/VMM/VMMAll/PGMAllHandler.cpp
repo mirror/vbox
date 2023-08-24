@@ -947,7 +947,7 @@ void pgmHandlerPhysicalResetAliasedPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPh
      */
     pgmPhysInvalidatePageMapTLBEntry(pVM, GCPhysPage);
     if (fFlushIemTlbs)
-        IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID);
+        IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID, IEMTLBPHYSFLUSHREASON_RESET_ALIAS);
 
     /*
      * Do accounting for pgmR3PhysRamReset.
@@ -1433,7 +1433,7 @@ VMMDECL(int) PGMHandlerPhysicalReset(PVMCC pVM, RTGCPHYS GCPhys)
                          * This is only necessary for MMIO2 aliases.
                          */
                         if (fFlushIemTlb)
-                            IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID);
+                            IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID, IEMTLBPHYSFLUSHREASON_HANDLER_RESET);
                     }
                 }
                 else if (pCur->cTmpOffPages > 0)
@@ -1789,7 +1789,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasMmio2(PVMCC pVM, RTGCPHYS GCPhys, RTGCP
                 /* Since this may be present in the TLB and now be wrong, invalid
                    the guest physical address part of the IEM TLBs.  Note, we do
                    this here as we will not invalid */
-                IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID);
+                IEMTlbInvalidateAllPhysicalAllCpus(pVM, NIL_VMCPUID, IEMTLBPHYSFLUSHREASON_MMIO2_ALIAS);
             }
             Assert(PGM_PAGE_IS_ZERO(pPage));
 
