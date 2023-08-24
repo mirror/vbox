@@ -193,14 +193,6 @@
  * @{ */
 /** Made read-only to facilitate dirty bit tracking. */
 #define PGM_PTFLAGS_TRACK_DIRTY         RT_BIT_64(9)
-
-#ifndef PGM_PTFLAGS_CSAM_VALIDATED
-/** Scanned and approved by CSAM (tm).
- * NOTE: Must be identical to the one defined in CSAMInternal.h!!
- * @todo Move PGM_PTFLAGS_* and PGM_PDFLAGS_* to VBox/vmm/pgm.h. */
-#define PGM_PTFLAGS_CSAM_VALIDATED      RT_BIT_64(11)
-#endif
-
 /** @} */
 
 /** @name Defines used to indicate the shadow and guest paging in the templates.
@@ -3255,7 +3247,6 @@ typedef struct PGMCPUSTATS
     /* RZ only: */
     STAMPROFILE StatRZTrap0e;                       /**< RC/R0: PGMTrap0eHandler() profiling. */
     STAMPROFILE StatRZTrap0eTime2Ballooned;         /**< RC/R0: Profiling of the Trap0eHandler body when the cause is read access to a ballooned page. */
-    STAMPROFILE StatRZTrap0eTime2CSAM;              /**< RC/R0: Profiling of the Trap0eHandler body when the cause is CSAM. */
     STAMPROFILE StatRZTrap0eTime2DirtyAndAccessed;  /**< RC/R0: Profiling of the Trap0eHandler body when the cause is dirty and/or accessed bit emulation. */
     STAMPROFILE StatRZTrap0eTime2GuestTrap;         /**< RC/R0: Profiling of the Trap0eHandler body when the cause is a guest trap. */
     STAMPROFILE StatRZTrap0eTime2HndPhys;           /**< RC/R0: Profiling of the Trap0eHandler body when the cause is a physical handler. */
