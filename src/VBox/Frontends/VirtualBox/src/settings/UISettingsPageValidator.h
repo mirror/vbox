@@ -82,10 +82,8 @@ public:
     /** Defines @a strLastMessage. */
     void setLastMessage(const QString &strLastMessage);
 
-public slots:
-
-    /** Performs revalidation. */
-    void revalidate();
+    /** Invalidates validator, notifying listener(s). */
+    void invalidate();
 
 private:
 

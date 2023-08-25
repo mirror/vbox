@@ -73,9 +73,9 @@ void UISettingsPage::setConfigurationAccessLevel(ConfigurationAccessLevel enmCon
 
 void UISettingsPage::revalidate()
 {
-    /* Revalidate if possible: */
-    if (m_pValidator && !m_fIsValidatorBlocked)
-        m_pValidator->revalidate();
+    /* Invalidate validator if allowed: */
+    if (!m_fIsValidatorBlocked && m_pValidator)
+        m_pValidator->invalidate();
 }
 
 

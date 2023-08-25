@@ -59,7 +59,7 @@ void UISettingsPageValidator::setLastMessage(const QString &strLastMessage)
         emit sigShowWarningIcon();
 }
 
-void UISettingsPageValidator::revalidate()
+void UISettingsPageValidator::invalidate()
 {
     /* Notify listener(s) about validity change: */
     emit sigValidityChanged(this);
