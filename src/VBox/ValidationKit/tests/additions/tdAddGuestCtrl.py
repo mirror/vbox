@@ -5172,7 +5172,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         else:
             sScratchHstInvalid  = None;
 
-        sScratchDotDotDirGst = oTestVm.pathJoin(self.oTstDrv.getGuestTempDir(oTestVm), '..');
+        sScratchDotDotDirGst = oTestVm.pathJoin(oEmptyDirGst.sPath, '..');
 
         if os.path.exists(sScratchHst):
             if base.wipeDirectory(sScratchHst) != 0:
