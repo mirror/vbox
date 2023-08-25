@@ -37,6 +37,7 @@
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
 #include "UICommon.h"
+#include "UIDesktopWidgetWatchdog.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UIPopupCenter.h"
