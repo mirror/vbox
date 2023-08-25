@@ -1,479 +1,304 @@
-default	rel
-%define XMMWORD
-%define YMMWORD
-%define ZMMWORD
-section	.text code align=64
-
-
-EXTERN	OPENSSL_ia32cap_P
-
-global	poly1305_init
-
-global	poly1305_blocks
-
-global	poly1305_emit
+.text
 
 
 
-ALIGN	32
+.globl  poly1305_init
+.hidden poly1305_init
+.globl  poly1305_blocks
+.hidden poly1305_blocks
+.globl  poly1305_emit
+.hidden poly1305_emit
+
+.type   poly1305_init,@function
+.align  32
 poly1305_init:
-	mov	QWORD[8+rsp],rdi	;WIN64 prologue
-	mov	QWORD[16+rsp],rsi
-	mov	rax,rsp
-$L$SEH_begin_poly1305_init:
-	mov	rdi,rcx
-	mov	rsi,rdx
-	mov	rdx,r8
+.cfi_startproc
+        xorq    %rax,%rax
+        movq    %rax,0(%rdi)
+        movq    %rax,8(%rdi)
+        movq    %rax,16(%rdi)
 
+        cmpq    $0,%rsi
+        je      .Lno_key
 
+        leaq    poly1305_blocks(%rip),%r10
+        leaq    poly1305_emit(%rip),%r11
+        movq    $0x0ffffffc0fffffff,%rax
+        movq    $0x0ffffffc0ffffffc,%rcx
+        andq    0(%rsi),%rax
+        andq    8(%rsi),%rcx
+        movq    %rax,24(%rdi)
+        movq    %rcx,32(%rdi)
+        movq    %r10,0(%rdx)
+        movq    %r11,8(%rdx)
+        movl    $1,%eax
+.Lno_key:
+        .byte   0xf3,0xc3
+.cfi_endproc
+.size   poly1305_init,.-poly1305_init
 
-	xor	rax,rax
-	mov	QWORD[rdi],rax
-	mov	QWORD[8+rdi],rax
-	mov	QWORD[16+rdi],rax
-
-	cmp	rsi,0
-	je	NEAR $L$no_key
-
-	lea	r10,[poly1305_blocks]
-	lea	r11,[poly1305_emit]
-	mov	rax,0x0ffffffc0fffffff
-	mov	rcx,0x0ffffffc0ffffffc
-	and	rax,QWORD[rsi]
-	and	rcx,QWORD[8+rsi]
-	mov	QWORD[24+rdi],rax
-	mov	QWORD[32+rdi],rcx
-	mov	QWORD[rdx],r10
-	mov	QWORD[8+rdx],r11
-	mov	eax,1
-$L$no_key:
-	mov	rdi,QWORD[8+rsp]	;WIN64 epilogue
-	mov	rsi,QWORD[16+rsp]
-	DB	0F3h,0C3h		;repret
-
-$L$SEH_end_poly1305_init:
-
-
-ALIGN	32
+.type   poly1305_blocks,@function
+.align  32
 poly1305_blocks:
-	mov	QWORD[8+rsp],rdi	;WIN64 prologue
-	mov	QWORD[16+rsp],rsi
-	mov	rax,rsp
-$L$SEH_begin_poly1305_blocks:
-	mov	rdi,rcx
-	mov	rsi,rdx
-	mov	rdx,r8
-	mov	rcx,r9
+.cfi_startproc
+.Lblocks:
+        shrq    $4,%rdx
+        jz      .Lno_data
 
+        pushq   %rbx
+.cfi_adjust_cfa_offset  8
+.cfi_offset     %rbx,-16
+        pushq   %rbp
+.cfi_adjust_cfa_offset  8
+.cfi_offset     %rbp,-24
+        pushq   %r12
+.cfi_adjust_cfa_offset  8
+.cfi_offset     %r12,-32
+        pushq   %r13
+.cfi_adjust_cfa_offset  8
+.cfi_offset     %r13,-40
+        pushq   %r14
+.cfi_adjust_cfa_offset  8
+.cfi_offset     %r14,-48
+        pushq   %r15
+.cfi_adjust_cfa_offset  8
+.cfi_offset     %r15,-56
+.Lblocks_body:
 
+        movq    %rdx,%r15
 
-$L$blocks:
-	shr	rdx,4
-	jz	NEAR $L$no_data
+        movq    24(%rdi),%r11
+        movq    32(%rdi),%r13
 
-	push	rbx
+        movq    0(%rdi),%r14
+        movq    8(%rdi),%rbx
+        movq    16(%rdi),%rbp
 
-	push	rbp
+        movq    %r13,%r12
+        shrq    $2,%r13
+        movq    %r12,%rax
+        addq    %r12,%r13
+        jmp     .Loop
 
-	push	r12
+.align  32
+.Loop:
+        addq    0(%rsi),%r14
+        adcq    8(%rsi),%rbx
+        leaq    16(%rsi),%rsi
+        adcq    %rcx,%rbp
+        mulq    %r14
+        movq    %rax,%r9
+        movq    %r11,%rax
+        movq    %rdx,%r10
 
-	push	r13
+        mulq    %r14
+        movq    %rax,%r14
+        movq    %r11,%rax
+        movq    %rdx,%r8
 
-	push	r14
+        mulq    %rbx
+        addq    %rax,%r9
+        movq    %r13,%rax
+        adcq    %rdx,%r10
 
-	push	r15
+        mulq    %rbx
+        movq    %rbp,%rbx
+        addq    %rax,%r14
+        adcq    %rdx,%r8
 
-$L$blocks_body:
+        imulq   %r13,%rbx
+        addq    %rbx,%r9
+        movq    %r8,%rbx
+        adcq    $0,%r10
 
-	mov	r15,rdx
+        imulq   %r11,%rbp
+        addq    %r9,%rbx
+        movq    $-4,%rax
+        adcq    %rbp,%r10
 
-	mov	r11,QWORD[24+rdi]
-	mov	r13,QWORD[32+rdi]
+        andq    %r10,%rax
+        movq    %r10,%rbp
+        shrq    $2,%r10
+        andq    $3,%rbp
+        addq    %r10,%rax
+        addq    %rax,%r14
+        adcq    $0,%rbx
+        adcq    $0,%rbp
+        movq    %r12,%rax
+        decq    %r15
+        jnz     .Loop
 
-	mov	r14,QWORD[rdi]
-	mov	rbx,QWORD[8+rdi]
-	mov	rbp,QWORD[16+rdi]
+        movq    %r14,0(%rdi)
+        movq    %rbx,8(%rdi)
+        movq    %rbp,16(%rdi)
 
-	mov	r12,r13
-	shr	r13,2
-	mov	rax,r12
-	add	r13,r12
-	jmp	NEAR $L$oop
+        movq    0(%rsp),%r15
+.cfi_restore    %r15
+        movq    8(%rsp),%r14
+.cfi_restore    %r14
+        movq    16(%rsp),%r13
+.cfi_restore    %r13
+        movq    24(%rsp),%r12
+.cfi_restore    %r12
+        movq    32(%rsp),%rbp
+.cfi_restore    %rbp
+        movq    40(%rsp),%rbx
+.cfi_restore    %rbx
+        leaq    48(%rsp),%rsp
+.cfi_adjust_cfa_offset  -48
+.Lno_data:
+.Lblocks_epilogue:
+        .byte   0xf3,0xc3
+.cfi_endproc
+.size   poly1305_blocks,.-poly1305_blocks
 
-ALIGN	32
-$L$oop:
-	add	r14,QWORD[rsi]
-	adc	rbx,QWORD[8+rsi]
-	lea	rsi,[16+rsi]
-	adc	rbp,rcx
-	mul	r14
-	mov	r9,rax
-	mov	rax,r11
-	mov	r10,rdx
-
-	mul	r14
-	mov	r14,rax
-	mov	rax,r11
-	mov	r8,rdx
-
-	mul	rbx
-	add	r9,rax
-	mov	rax,r13
-	adc	r10,rdx
-
-	mul	rbx
-	mov	rbx,rbp
-	add	r14,rax
-	adc	r8,rdx
-
-	imul	rbx,r13
-	add	r9,rbx
-	mov	rbx,r8
-	adc	r10,0
-
-	imul	rbp,r11
-	add	rbx,r9
-	mov	rax,-4
-	adc	r10,rbp
-
-	and	rax,r10
-	mov	rbp,r10
-	shr	r10,2
-	and	rbp,3
-	add	rax,r10
-	add	r14,rax
-	adc	rbx,0
-	adc	rbp,0
-	mov	rax,r12
-	dec	r15
-	jnz	NEAR $L$oop
-
-	mov	QWORD[rdi],r14
-	mov	QWORD[8+rdi],rbx
-	mov	QWORD[16+rdi],rbp
-
-	mov	r15,QWORD[rsp]
-
-	mov	r14,QWORD[8+rsp]
-
-	mov	r13,QWORD[16+rsp]
-
-	mov	r12,QWORD[24+rsp]
-
-	mov	rbp,QWORD[32+rsp]
-
-	mov	rbx,QWORD[40+rsp]
-
-	lea	rsp,[48+rsp]
-
-$L$no_data:
-$L$blocks_epilogue:
-	mov	rdi,QWORD[8+rsp]	;WIN64 epilogue
-	mov	rsi,QWORD[16+rsp]
-	DB	0F3h,0C3h		;repret
-
-$L$SEH_end_poly1305_blocks:
-
-
-ALIGN	32
+.type   poly1305_emit,@function
+.align  32
 poly1305_emit:
-	mov	QWORD[8+rsp],rdi	;WIN64 prologue
-	mov	QWORD[16+rsp],rsi
-	mov	rax,rsp
-$L$SEH_begin_poly1305_emit:
-	mov	rdi,rcx
-	mov	rsi,rdx
-	mov	rdx,r8
+.cfi_startproc
+.Lemit:
+        movq    0(%rdi),%r8
+        movq    8(%rdi),%r9
+        movq    16(%rdi),%r10
 
+        movq    %r8,%rax
+        addq    $5,%r8
+        movq    %r9,%rcx
+        adcq    $0,%r9
+        adcq    $0,%r10
+        shrq    $2,%r10
+        cmovnzq %r8,%rax
+        cmovnzq %r9,%rcx
 
+        addq    0(%rdx),%rax
+        adcq    8(%rdx),%rcx
+        movq    %rax,0(%rsi)
+        movq    %rcx,8(%rsi)
 
-$L$emit:
-	mov	r8,QWORD[rdi]
-	mov	r9,QWORD[8+rdi]
-	mov	r10,QWORD[16+rdi]
-
-	mov	rax,r8
-	add	r8,5
-	mov	rcx,r9
-	adc	r9,0
-	adc	r10,0
-	shr	r10,2
-	cmovnz	rax,r8
-	cmovnz	rcx,r9
-
-	add	rax,QWORD[rdx]
-	adc	rcx,QWORD[8+rdx]
-	mov	QWORD[rsi],rax
-	mov	QWORD[8+rsi],rcx
-
-	mov	rdi,QWORD[8+rsp]	;WIN64 epilogue
-	mov	rsi,QWORD[16+rsp]
-	DB	0F3h,0C3h		;repret
-
-$L$SEH_end_poly1305_emit:
-DB	80,111,108,121,49,51,48,53,32,102,111,114,32,120,56,54
-DB	95,54,52,44,32,67,82,89,80,84,79,71,65,77,83,32
-DB	98,121,32,60,97,112,112,114,111,64,111,112,101,110,115,115
-DB	108,46,111,114,103,62,0
-ALIGN	16
-global	xor128_encrypt_n_pad
-
-ALIGN	16
+        .byte   0xf3,0xc3
+.cfi_endproc
+.size   poly1305_emit,.-poly1305_emit
+.byte   80,111,108,121,49,51,48,53,32,102,111,114,32,120,56,54,95,54,52,44,32,67,82,89,80,84,79,71,65,77,83,32,98,121,32,60,97,112,112,114,111,64,111,112,101,110,115,115,108,46,111,114,103,62,0
+.align  16
+.globl  xor128_encrypt_n_pad
+.type   xor128_encrypt_n_pad,@function
+.align  16
 xor128_encrypt_n_pad:
+.cfi_startproc
+        subq    %rdx,%rsi
+        subq    %rdx,%rdi
+        movq    %rcx,%r10
+        shrq    $4,%rcx
+        jz      .Ltail_enc
+        nop
+.Loop_enc_xmm:
+        movdqu  (%rsi,%rdx,1),%xmm0
+        pxor    (%rdx),%xmm0
+        movdqu  %xmm0,(%rdi,%rdx,1)
+        movdqa  %xmm0,(%rdx)
+        leaq    16(%rdx),%rdx
+        decq    %rcx
+        jnz     .Loop_enc_xmm
 
-	sub	rdx,r8
-	sub	rcx,r8
-	mov	r10,r9
-	shr	r9,4
-	jz	NEAR $L$tail_enc
-	nop
-$L$oop_enc_xmm:
-	movdqu	xmm0,XMMWORD[r8*1+rdx]
-	pxor	xmm0,XMMWORD[r8]
-	movdqu	XMMWORD[r8*1+rcx],xmm0
-	movdqa	XMMWORD[r8],xmm0
-	lea	r8,[16+r8]
-	dec	r9
-	jnz	NEAR $L$oop_enc_xmm
+        andq    $15,%r10
+        jz      .Ldone_enc
 
-	and	r10,15
-	jz	NEAR $L$done_enc
+.Ltail_enc:
+        movq    $16,%rcx
+        subq    %r10,%rcx
+        xorl    %eax,%eax
+.Loop_enc_byte:
+        movb    (%rsi,%rdx,1),%al
+        xorb    (%rdx),%al
+        movb    %al,(%rdi,%rdx,1)
+        movb    %al,(%rdx)
+        leaq    1(%rdx),%rdx
+        decq    %r10
+        jnz     .Loop_enc_byte
 
-$L$tail_enc:
-	mov	r9,16
-	sub	r9,r10
-	xor	eax,eax
-$L$oop_enc_byte:
-	mov	al,BYTE[r8*1+rdx]
-	xor	al,BYTE[r8]
-	mov	BYTE[r8*1+rcx],al
-	mov	BYTE[r8],al
-	lea	r8,[1+r8]
-	dec	r10
-	jnz	NEAR $L$oop_enc_byte
+        xorl    %eax,%eax
+.Loop_enc_pad:
+        movb    %al,(%rdx)
+        leaq    1(%rdx),%rdx
+        decq    %rcx
+        jnz     .Loop_enc_pad
 
-	xor	eax,eax
-$L$oop_enc_pad:
-	mov	BYTE[r8],al
-	lea	r8,[1+r8]
-	dec	r9
-	jnz	NEAR $L$oop_enc_pad
+.Ldone_enc:
+        movq    %rdx,%rax
+        .byte   0xf3,0xc3
+.cfi_endproc
+.size   xor128_encrypt_n_pad,.-xor128_encrypt_n_pad
 
-$L$done_enc:
-	mov	rax,r8
-	DB	0F3h,0C3h		;repret
-
-
-
-global	xor128_decrypt_n_pad
-
-ALIGN	16
+.globl  xor128_decrypt_n_pad
+.type   xor128_decrypt_n_pad,@function
+.align  16
 xor128_decrypt_n_pad:
+.cfi_startproc
+        subq    %rdx,%rsi
+        subq    %rdx,%rdi
+        movq    %rcx,%r10
+        shrq    $4,%rcx
+        jz      .Ltail_dec
+        nop
+.Loop_dec_xmm:
+        movdqu  (%rsi,%rdx,1),%xmm0
+        movdqa  (%rdx),%xmm1
+        pxor    %xmm0,%xmm1
+        movdqu  %xmm1,(%rdi,%rdx,1)
+        movdqa  %xmm0,(%rdx)
+        leaq    16(%rdx),%rdx
+        decq    %rcx
+        jnz     .Loop_dec_xmm
 
-	sub	rdx,r8
-	sub	rcx,r8
-	mov	r10,r9
-	shr	r9,4
-	jz	NEAR $L$tail_dec
-	nop
-$L$oop_dec_xmm:
-	movdqu	xmm0,XMMWORD[r8*1+rdx]
-	movdqa	xmm1,XMMWORD[r8]
-	pxor	xmm1,xmm0
-	movdqu	XMMWORD[r8*1+rcx],xmm1
-	movdqa	XMMWORD[r8],xmm0
-	lea	r8,[16+r8]
-	dec	r9
-	jnz	NEAR $L$oop_dec_xmm
+        pxor    %xmm1,%xmm1
+        andq    $15,%r10
+        jz      .Ldone_dec
 
-	pxor	xmm1,xmm1
-	and	r10,15
-	jz	NEAR $L$done_dec
+.Ltail_dec:
+        movq    $16,%rcx
+        subq    %r10,%rcx
+        xorl    %eax,%eax
+        xorq    %r11,%r11
+.Loop_dec_byte:
+        movb    (%rsi,%rdx,1),%r11b
+        movb    (%rdx),%al
+        xorb    %r11b,%al
+        movb    %al,(%rdi,%rdx,1)
+        movb    %r11b,(%rdx)
+        leaq    1(%rdx),%rdx
+        decq    %r10
+        jnz     .Loop_dec_byte
 
-$L$tail_dec:
-	mov	r9,16
-	sub	r9,r10
-	xor	eax,eax
-	xor	r11,r11
-$L$oop_dec_byte:
-	mov	r11b,BYTE[r8*1+rdx]
-	mov	al,BYTE[r8]
-	xor	al,r11b
-	mov	BYTE[r8*1+rcx],al
-	mov	BYTE[r8],r11b
-	lea	r8,[1+r8]
-	dec	r10
-	jnz	NEAR $L$oop_dec_byte
+        xorl    %eax,%eax
+.Loop_dec_pad:
+        movb    %al,(%rdx)
+        leaq    1(%rdx),%rdx
+        decq    %rcx
+        jnz     .Loop_dec_pad
 
-	xor	eax,eax
-$L$oop_dec_pad:
-	mov	BYTE[r8],al
-	lea	r8,[1+r8]
-	dec	r9
-	jnz	NEAR $L$oop_dec_pad
-
-$L$done_dec:
-	mov	rax,r8
-	DB	0F3h,0C3h		;repret
-
-
-EXTERN	__imp_RtlVirtualUnwind
-
-ALIGN	16
-se_handler:
-	push	rsi
-	push	rdi
-	push	rbx
-	push	rbp
-	push	r12
-	push	r13
-	push	r14
-	push	r15
-	pushfq
-	sub	rsp,64
-
-	mov	rax,QWORD[120+r8]
-	mov	rbx,QWORD[248+r8]
-
-	mov	rsi,QWORD[8+r9]
-	mov	r11,QWORD[56+r9]
-
-	mov	r10d,DWORD[r11]
-	lea	r10,[r10*1+rsi]
-	cmp	rbx,r10
-	jb	NEAR $L$common_seh_tail
-
-	mov	rax,QWORD[152+r8]
-
-	mov	r10d,DWORD[4+r11]
-	lea	r10,[r10*1+rsi]
-	cmp	rbx,r10
-	jae	NEAR $L$common_seh_tail
-
-	lea	rax,[48+rax]
-
-	mov	rbx,QWORD[((-8))+rax]
-	mov	rbp,QWORD[((-16))+rax]
-	mov	r12,QWORD[((-24))+rax]
-	mov	r13,QWORD[((-32))+rax]
-	mov	r14,QWORD[((-40))+rax]
-	mov	r15,QWORD[((-48))+rax]
-	mov	QWORD[144+r8],rbx
-	mov	QWORD[160+r8],rbp
-	mov	QWORD[216+r8],r12
-	mov	QWORD[224+r8],r13
-	mov	QWORD[232+r8],r14
-	mov	QWORD[240+r8],r15
-
-	jmp	NEAR $L$common_seh_tail
-
-
-
-ALIGN	16
-avx_handler:
-	push	rsi
-	push	rdi
-	push	rbx
-	push	rbp
-	push	r12
-	push	r13
-	push	r14
-	push	r15
-	pushfq
-	sub	rsp,64
-
-	mov	rax,QWORD[120+r8]
-	mov	rbx,QWORD[248+r8]
-
-	mov	rsi,QWORD[8+r9]
-	mov	r11,QWORD[56+r9]
-
-	mov	r10d,DWORD[r11]
-	lea	r10,[r10*1+rsi]
-	cmp	rbx,r10
-	jb	NEAR $L$common_seh_tail
-
-	mov	rax,QWORD[152+r8]
-
-	mov	r10d,DWORD[4+r11]
-	lea	r10,[r10*1+rsi]
-	cmp	rbx,r10
-	jae	NEAR $L$common_seh_tail
-
-	mov	rax,QWORD[208+r8]
-
-	lea	rsi,[80+rax]
-	lea	rax,[248+rax]
-	lea	rdi,[512+r8]
-	mov	ecx,20
-	DD	0xa548f3fc
-
-$L$common_seh_tail:
-	mov	rdi,QWORD[8+rax]
-	mov	rsi,QWORD[16+rax]
-	mov	QWORD[152+r8],rax
-	mov	QWORD[168+r8],rsi
-	mov	QWORD[176+r8],rdi
-
-	mov	rdi,QWORD[40+r9]
-	mov	rsi,r8
-	mov	ecx,154
-	DD	0xa548f3fc
-
-	mov	rsi,r9
-	xor	rcx,rcx
-	mov	rdx,QWORD[8+rsi]
-	mov	r8,QWORD[rsi]
-	mov	r9,QWORD[16+rsi]
-	mov	r10,QWORD[40+rsi]
-	lea	r11,[56+rsi]
-	lea	r12,[24+rsi]
-	mov	QWORD[32+rsp],r10
-	mov	QWORD[40+rsp],r11
-	mov	QWORD[48+rsp],r12
-	mov	QWORD[56+rsp],rcx
-	call	QWORD[__imp_RtlVirtualUnwind]
-
-	mov	eax,1
-	add	rsp,64
-	popfq
-	pop	r15
-	pop	r14
-	pop	r13
-	pop	r12
-	pop	rbp
-	pop	rbx
-	pop	rdi
-	pop	rsi
-	DB	0F3h,0C3h		;repret
-
-
-section	.pdata rdata align=4
-ALIGN	4
-	DD	$L$SEH_begin_poly1305_init wrt ..imagebase
-	DD	$L$SEH_end_poly1305_init wrt ..imagebase
-	DD	$L$SEH_info_poly1305_init wrt ..imagebase
-
-	DD	$L$SEH_begin_poly1305_blocks wrt ..imagebase
-	DD	$L$SEH_end_poly1305_blocks wrt ..imagebase
-	DD	$L$SEH_info_poly1305_blocks wrt ..imagebase
-
-	DD	$L$SEH_begin_poly1305_emit wrt ..imagebase
-	DD	$L$SEH_end_poly1305_emit wrt ..imagebase
-	DD	$L$SEH_info_poly1305_emit wrt ..imagebase
-section	.xdata rdata align=8
-ALIGN	8
-$L$SEH_info_poly1305_init:
-DB	9,0,0,0
-	DD	se_handler wrt ..imagebase
-	DD	$L$SEH_begin_poly1305_init wrt ..imagebase,$L$SEH_begin_poly1305_init wrt ..imagebase
-
-$L$SEH_info_poly1305_blocks:
-DB	9,0,0,0
-	DD	se_handler wrt ..imagebase
-	DD	$L$blocks_body wrt ..imagebase,$L$blocks_epilogue wrt ..imagebase
-
-$L$SEH_info_poly1305_emit:
-DB	9,0,0,0
-	DD	se_handler wrt ..imagebase
-	DD	$L$SEH_begin_poly1305_emit wrt ..imagebase,$L$SEH_begin_poly1305_emit wrt ..imagebase
+.Ldone_dec:
+        movq    %rdx,%rax
+        .byte   0xf3,0xc3
+.cfi_endproc
+.size   xor128_decrypt_n_pad,.-xor128_decrypt_n_pad
+        .section ".note.gnu.property", "a"
+        .p2align 3
+        .long 1f - 0f
+        .long 4f - 1f
+        .long 5
+0:
+        # "GNU" encoded with .byte, since .asciz isn't supported
+        # on Solaris.
+        .byte 0x47
+        .byte 0x4e
+        .byte 0x55
+        .byte 0
+1:
+        .p2align 3
+        .long 0xc0000002
+        .long 3f - 2f
+2:
+        .long 3
+3:
+        .p2align 3
+4:
