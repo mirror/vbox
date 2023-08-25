@@ -39,17 +39,15 @@
 #include "UISettingsDefs.h"
 
 /* Forward declarations: */
-class QEvent;
 class QGridLayout;
-class QObject;
 class QLabel;
 class QProgressBar;
 class QShowEvent;
 class QStackedWidget;
 class QVariant;
 class QIDialogButtonBox;
-class UISettingsPageValidator;
 class UISettingsPage;
+class UISettingsPageValidator;
 class UISettingsSelector;
 class UISettingsSerializer;
 class UISettingsWarningPane;
