@@ -334,6 +334,8 @@ TEMPLATE_LibCrypto_CFLAGS.win += -wd4090 # ssl_lib.c(229) : warning C4090: 'func
 TEMPLATE_LibCrypto_CFLAGS.win += -wd4310 # bss_acpt.c(223) : warning C4310: cast truncates constant value [(int)INVALID_SOCKET]
 TEMPLATE_LibCrypto_CFLAGS.win += -wd4210 # bn_exp.c(913) : warning C4210: nonstandard extension used : function given file scope
 TEMPLATE_LibCrypto_CFLAGS.win += -wd4067 # mem.c(14) : warning C4067: unexpected tokens following preprocessor directive - expected a newline
+TEMPLATE_LibCrypto_CFLAGS.win += -wd4133 # ssl_local.h(2881): warning C4133: 'function': incompatible types - from 'volatile int *' to 'volatile LONG64 *'
+TEMPLATE_LibCrypto_CFLAGS.win += -wd4047 #threads_win.c(205): warning C4047: 'return': 'CRYPTO_THREAD_ID' differs in levels of indirection from 'DWORD'
 
 if1of ($(VBOX_VCC_TOOL_STEM), VCC120)
  TEMPLATE_LibCrypto_CFLAGS.win += -wd4005 # sdk\v7.1\include\sal_supp.h(57) : warning C4005: '__useHeader' : macro redefinition
