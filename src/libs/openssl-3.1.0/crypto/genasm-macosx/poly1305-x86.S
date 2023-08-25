@@ -1,285 +1,277 @@
-.text
-.align	6,0x90
+.text	
+
+
+
 .globl	_poly1305_init
-.align	4
-_poly1305_init:
-L_poly1305_init_begin:
-	#ifdef __CET__
-
-.byte	243,15,30,251
-	#endif
-
-	pushl	%ebp
-	pushl	%ebx
-	pushl	%esi
-	pushl	%edi
-	movl	20(%esp),%edi
-	movl	24(%esp),%esi
-	movl	28(%esp),%ebp
-	xorl	%eax,%eax
-	movl	%eax,(%edi)
-	movl	%eax,4(%edi)
-	movl	%eax,8(%edi)
-	movl	%eax,12(%edi)
-	movl	%eax,16(%edi)
-	movl	%eax,20(%edi)
-	cmpl	$0,%esi
-	je	L000nokey
-	movl	(%esi),%eax
-	movl	4(%esi),%ebx
-	movl	8(%esi),%ecx
-	movl	12(%esi),%edx
-	andl	$268435455,%eax
-	andl	$268435452,%ebx
-	andl	$268435452,%ecx
-	andl	$268435452,%edx
-	movl	%eax,24(%edi)
-	movl	%ebx,28(%edi)
-	movl	%ecx,32(%edi)
-	movl	%edx,36(%edi)
-	movl	$0,%eax
-L000nokey:
-	popl	%edi
-	popl	%esi
-	popl	%ebx
-	popl	%ebp
-	ret
+.private_extern	_poly1305_init
 .globl	_poly1305_blocks
-.align	4
-_poly1305_blocks:
-L_poly1305_blocks_begin:
-	#ifdef __CET__
-
-.byte	243,15,30,251
-	#endif
-
-	pushl	%ebp
-	pushl	%ebx
-	pushl	%esi
-	pushl	%edi
-	movl	20(%esp),%edi
-	movl	24(%esp),%esi
-	movl	28(%esp),%ecx
-L001enter_blocks:
-	andl	$-15,%ecx
-	jz	L002nodata
-	subl	$64,%esp
-	movl	24(%edi),%eax
-	movl	28(%edi),%ebx
-	leal	(%esi,%ecx,1),%ebp
-	movl	32(%edi),%ecx
-	movl	36(%edi),%edx
-	movl	%ebp,92(%esp)
-	movl	%esi,%ebp
-	movl	%eax,36(%esp)
-	movl	%ebx,%eax
-	shrl	$2,%eax
-	movl	%ebx,40(%esp)
-	addl	%ebx,%eax
-	movl	%ecx,%ebx
-	shrl	$2,%ebx
-	movl	%ecx,44(%esp)
-	addl	%ecx,%ebx
-	movl	%edx,%ecx
-	shrl	$2,%ecx
-	movl	%edx,48(%esp)
-	addl	%edx,%ecx
-	movl	%eax,52(%esp)
-	movl	%ebx,56(%esp)
-	movl	%ecx,60(%esp)
-	movl	(%edi),%eax
-	movl	4(%edi),%ebx
-	movl	8(%edi),%ecx
-	movl	12(%edi),%esi
-	movl	16(%edi),%edi
-	jmp	L003loop
-.align	5,0x90
-L003loop:
-	addl	(%ebp),%eax
-	adcl	4(%ebp),%ebx
-	adcl	8(%ebp),%ecx
-	adcl	12(%ebp),%esi
-	leal	16(%ebp),%ebp
-	adcl	96(%esp),%edi
-	movl	%eax,(%esp)
-	movl	%esi,12(%esp)
-	mull	36(%esp)
-	movl	%edi,16(%esp)
-	movl	%eax,%edi
-	movl	%ebx,%eax
-	movl	%edx,%esi
-	mull	60(%esp)
-	addl	%eax,%edi
-	movl	%ecx,%eax
-	adcl	%edx,%esi
-	mull	56(%esp)
-	addl	%eax,%edi
-	movl	12(%esp),%eax
-	adcl	%edx,%esi
-	mull	52(%esp)
-	addl	%eax,%edi
-	movl	(%esp),%eax
-	adcl	%edx,%esi
-	mull	40(%esp)
-	movl	%edi,20(%esp)
-	xorl	%edi,%edi
-	addl	%eax,%esi
-	movl	%ebx,%eax
-	adcl	%edx,%edi
-	mull	36(%esp)
-	addl	%eax,%esi
-	movl	%ecx,%eax
-	adcl	%edx,%edi
-	mull	60(%esp)
-	addl	%eax,%esi
-	movl	12(%esp),%eax
-	adcl	%edx,%edi
-	mull	56(%esp)
-	addl	%eax,%esi
-	movl	16(%esp),%eax
-	adcl	%edx,%edi
-	imull	52(%esp),%eax
-	addl	%eax,%esi
-	movl	(%esp),%eax
-	adcl	$0,%edi
-	mull	44(%esp)
-	movl	%esi,24(%esp)
-	xorl	%esi,%esi
-	addl	%eax,%edi
-	movl	%ebx,%eax
-	adcl	%edx,%esi
-	mull	40(%esp)
-	addl	%eax,%edi
-	movl	%ecx,%eax
-	adcl	%edx,%esi
-	mull	36(%esp)
-	addl	%eax,%edi
-	movl	12(%esp),%eax
-	adcl	%edx,%esi
-	mull	60(%esp)
-	addl	%eax,%edi
-	movl	16(%esp),%eax
-	adcl	%edx,%esi
-	imull	56(%esp),%eax
-	addl	%eax,%edi
-	movl	(%esp),%eax
-	adcl	$0,%esi
-	mull	48(%esp)
-	movl	%edi,28(%esp)
-	xorl	%edi,%edi
-	addl	%eax,%esi
-	movl	%ebx,%eax
-	adcl	%edx,%edi
-	mull	44(%esp)
-	addl	%eax,%esi
-	movl	%ecx,%eax
-	adcl	%edx,%edi
-	mull	40(%esp)
-	addl	%eax,%esi
-	movl	12(%esp),%eax
-	adcl	%edx,%edi
-	mull	36(%esp)
-	addl	%eax,%esi
-	movl	16(%esp),%ecx
-	adcl	%edx,%edi
-	movl	%ecx,%edx
-	imull	60(%esp),%ecx
-	addl	%ecx,%esi
-	movl	20(%esp),%eax
-	adcl	$0,%edi
-	imull	36(%esp),%edx
-	addl	%edi,%edx
-	movl	24(%esp),%ebx
-	movl	28(%esp),%ecx
-	movl	%edx,%edi
-	shrl	$2,%edx
-	andl	$3,%edi
-	leal	(%edx,%edx,4),%edx
-	addl	%edx,%eax
-	adcl	$0,%ebx
-	adcl	$0,%ecx
-	adcl	$0,%esi
-	adcl	$0,%edi
-	cmpl	92(%esp),%ebp
-	jne	L003loop
-	movl	84(%esp),%edx
-	addl	$64,%esp
-	movl	%eax,(%edx)
-	movl	%ebx,4(%edx)
-	movl	%ecx,8(%edx)
-	movl	%esi,12(%edx)
-	movl	%edi,16(%edx)
-L002nodata:
-	popl	%edi
-	popl	%esi
-	popl	%ebx
-	popl	%ebp
-	ret
+.private_extern	_poly1305_blocks
 .globl	_poly1305_emit
-.align	4
+.private_extern	_poly1305_emit
+
+
+.p2align	5
+_poly1305_init:
+
+	xorq	%rax,%rax
+	movq	%rax,0(%rdi)
+	movq	%rax,8(%rdi)
+	movq	%rax,16(%rdi)
+
+	cmpq	$0,%rsi
+	je	L$no_key
+
+	leaq	_poly1305_blocks(%rip),%r10
+	leaq	_poly1305_emit(%rip),%r11
+	movq	$0x0ffffffc0fffffff,%rax
+	movq	$0x0ffffffc0ffffffc,%rcx
+	andq	0(%rsi),%rax
+	andq	8(%rsi),%rcx
+	movq	%rax,24(%rdi)
+	movq	%rcx,32(%rdi)
+	movq	%r10,0(%rdx)
+	movq	%r11,8(%rdx)
+	movl	$1,%eax
+L$no_key:
+	.byte	0xf3,0xc3
+
+
+
+
+.p2align	5
+_poly1305_blocks:
+
+L$blocks:
+	shrq	$4,%rdx
+	jz	L$no_data
+
+	pushq	%rbx
+
+	pushq	%rbp
+
+	pushq	%r12
+
+	pushq	%r13
+
+	pushq	%r14
+
+	pushq	%r15
+
+L$blocks_body:
+
+	movq	%rdx,%r15
+
+	movq	24(%rdi),%r11
+	movq	32(%rdi),%r13
+
+	movq	0(%rdi),%r14
+	movq	8(%rdi),%rbx
+	movq	16(%rdi),%rbp
+
+	movq	%r13,%r12
+	shrq	$2,%r13
+	movq	%r12,%rax
+	addq	%r12,%r13
+	jmp	L$oop
+
+.p2align	5
+L$oop:
+	addq	0(%rsi),%r14
+	adcq	8(%rsi),%rbx
+	leaq	16(%rsi),%rsi
+	adcq	%rcx,%rbp
+	mulq	%r14
+	movq	%rax,%r9
+	movq	%r11,%rax
+	movq	%rdx,%r10
+
+	mulq	%r14
+	movq	%rax,%r14
+	movq	%r11,%rax
+	movq	%rdx,%r8
+
+	mulq	%rbx
+	addq	%rax,%r9
+	movq	%r13,%rax
+	adcq	%rdx,%r10
+
+	mulq	%rbx
+	movq	%rbp,%rbx
+	addq	%rax,%r14
+	adcq	%rdx,%r8
+
+	imulq	%r13,%rbx
+	addq	%rbx,%r9
+	movq	%r8,%rbx
+	adcq	$0,%r10
+
+	imulq	%r11,%rbp
+	addq	%r9,%rbx
+	movq	$-4,%rax
+	adcq	%rbp,%r10
+
+	andq	%r10,%rax
+	movq	%r10,%rbp
+	shrq	$2,%r10
+	andq	$3,%rbp
+	addq	%r10,%rax
+	addq	%rax,%r14
+	adcq	$0,%rbx
+	adcq	$0,%rbp
+	movq	%r12,%rax
+	decq	%r15
+	jnz	L$oop
+
+	movq	%r14,0(%rdi)
+	movq	%rbx,8(%rdi)
+	movq	%rbp,16(%rdi)
+
+	movq	0(%rsp),%r15
+
+	movq	8(%rsp),%r14
+
+	movq	16(%rsp),%r13
+
+	movq	24(%rsp),%r12
+
+	movq	32(%rsp),%rbp
+
+	movq	40(%rsp),%rbx
+
+	leaq	48(%rsp),%rsp
+
+L$no_data:
+L$blocks_epilogue:
+	.byte	0xf3,0xc3
+
+
+
+
+.p2align	5
 _poly1305_emit:
-L_poly1305_emit_begin:
-	#ifdef __CET__
 
-.byte	243,15,30,251
-	#endif
+L$emit:
+	movq	0(%rdi),%r8
+	movq	8(%rdi),%r9
+	movq	16(%rdi),%r10
 
-	pushl	%ebp
-	pushl	%ebx
-	pushl	%esi
-	pushl	%edi
-	movl	20(%esp),%ebp
-L004enter_emit:
-	movl	24(%esp),%edi
-	movl	(%ebp),%eax
-	movl	4(%ebp),%ebx
-	movl	8(%ebp),%ecx
-	movl	12(%ebp),%edx
-	movl	16(%ebp),%esi
-	addl	$5,%eax
-	adcl	$0,%ebx
-	adcl	$0,%ecx
-	adcl	$0,%edx
-	adcl	$0,%esi
-	shrl	$2,%esi
-	negl	%esi
-	andl	%esi,%eax
-	andl	%esi,%ebx
-	andl	%esi,%ecx
-	andl	%esi,%edx
-	movl	%eax,(%edi)
-	movl	%ebx,4(%edi)
-	movl	%ecx,8(%edi)
-	movl	%edx,12(%edi)
-	notl	%esi
-	movl	(%ebp),%eax
-	movl	4(%ebp),%ebx
-	movl	8(%ebp),%ecx
-	movl	12(%ebp),%edx
-	movl	28(%esp),%ebp
-	andl	%esi,%eax
-	andl	%esi,%ebx
-	andl	%esi,%ecx
-	andl	%esi,%edx
-	orl	(%edi),%eax
-	orl	4(%edi),%ebx
-	orl	8(%edi),%ecx
-	orl	12(%edi),%edx
-	addl	(%ebp),%eax
-	adcl	4(%ebp),%ebx
-	adcl	8(%ebp),%ecx
-	adcl	12(%ebp),%edx
-	movl	%eax,(%edi)
-	movl	%ebx,4(%edi)
-	movl	%ecx,8(%edi)
-	movl	%edx,12(%edi)
-	popl	%edi
-	popl	%esi
-	popl	%ebx
-	popl	%ebp
-	ret
-.byte	80,111,108,121,49,51,48,53,32,102,111,114,32,120,56,54
-.byte	44,32,67,82,89,80,84,79,71,65,77,83,32,98,121,32
-.byte	60,97,112,112,114,111,64,111,112,101,110,115,115,108,46,111
-.byte	114,103,62,0
-.align	2,0x90
+	movq	%r8,%rax
+	addq	$5,%r8
+	movq	%r9,%rcx
+	adcq	$0,%r9
+	adcq	$0,%r10
+	shrq	$2,%r10
+	cmovnzq	%r8,%rax
+	cmovnzq	%r9,%rcx
+
+	addq	0(%rdx),%rax
+	adcq	8(%rdx),%rcx
+	movq	%rax,0(%rsi)
+	movq	%rcx,8(%rsi)
+
+	.byte	0xf3,0xc3
+
+
+.byte	80,111,108,121,49,51,48,53,32,102,111,114,32,120,56,54,95,54,52,44,32,67,82,89,80,84,79,71,65,77,83,32,98,121,32,60,97,112,112,114,111,64,111,112,101,110,115,115,108,46,111,114,103,62,0
+.p2align	4
+.globl	_xor128_encrypt_n_pad
+
+.p2align	4
+_xor128_encrypt_n_pad:
+
+	subq	%rdx,%rsi
+	subq	%rdx,%rdi
+	movq	%rcx,%r10
+	shrq	$4,%rcx
+	jz	L$tail_enc
+	nop
+L$oop_enc_xmm:
+	movdqu	(%rsi,%rdx,1),%xmm0
+	pxor	(%rdx),%xmm0
+	movdqu	%xmm0,(%rdi,%rdx,1)
+	movdqa	%xmm0,(%rdx)
+	leaq	16(%rdx),%rdx
+	decq	%rcx
+	jnz	L$oop_enc_xmm
+
+	andq	$15,%r10
+	jz	L$done_enc
+
+L$tail_enc:
+	movq	$16,%rcx
+	subq	%r10,%rcx
+	xorl	%eax,%eax
+L$oop_enc_byte:
+	movb	(%rsi,%rdx,1),%al
+	xorb	(%rdx),%al
+	movb	%al,(%rdi,%rdx,1)
+	movb	%al,(%rdx)
+	leaq	1(%rdx),%rdx
+	decq	%r10
+	jnz	L$oop_enc_byte
+
+	xorl	%eax,%eax
+L$oop_enc_pad:
+	movb	%al,(%rdx)
+	leaq	1(%rdx),%rdx
+	decq	%rcx
+	jnz	L$oop_enc_pad
+
+L$done_enc:
+	movq	%rdx,%rax
+	.byte	0xf3,0xc3
+
+
+
+.globl	_xor128_decrypt_n_pad
+
+.p2align	4
+_xor128_decrypt_n_pad:
+
+	subq	%rdx,%rsi
+	subq	%rdx,%rdi
+	movq	%rcx,%r10
+	shrq	$4,%rcx
+	jz	L$tail_dec
+	nop
+L$oop_dec_xmm:
+	movdqu	(%rsi,%rdx,1),%xmm0
+	movdqa	(%rdx),%xmm1
+	pxor	%xmm0,%xmm1
+	movdqu	%xmm1,(%rdi,%rdx,1)
+	movdqa	%xmm0,(%rdx)
+	leaq	16(%rdx),%rdx
+	decq	%rcx
+	jnz	L$oop_dec_xmm
+
+	pxor	%xmm1,%xmm1
+	andq	$15,%r10
+	jz	L$done_dec
+
+L$tail_dec:
+	movq	$16,%rcx
+	subq	%r10,%rcx
+	xorl	%eax,%eax
+	xorq	%r11,%r11
+L$oop_dec_byte:
+	movb	(%rsi,%rdx,1),%r11b
+	movb	(%rdx),%al
+	xorb	%r11b,%al
+	movb	%al,(%rdi,%rdx,1)
+	movb	%r11b,(%rdx)
+	leaq	1(%rdx),%rdx
+	decq	%r10
+	jnz	L$oop_dec_byte
+
+	xorl	%eax,%eax
+L$oop_dec_pad:
+	movb	%al,(%rdx)
+	leaq	1(%rdx),%rdx
+	decq	%rcx
+	jnz	L$oop_dec_pad
+
+L$done_dec:
+	movq	%rdx,%rax
+	.byte	0xf3,0xc3
+
+
