@@ -1,19 +1,24 @@
-.text	
-
-.globl	_ossl_rsaz_avx512ifma_eligible
-
-_ossl_rsaz_avx512ifma_eligible:
-	xorl	%eax,%eax
-	.byte	0xf3,0xc3
+default	rel
+%define XMMWORD
+%define YMMWORD
+%define ZMMWORD
+section	.text code align=64
 
 
-.globl	_ossl_rsaz_amm52x20_x1_256
-.globl	_ossl_rsaz_amm52x20_x2_256
-.globl	_ossl_extract_multiplier_2x20_win5
+global	ossl_rsaz_avx512ifma_eligible
 
-_ossl_rsaz_amm52x20_x1_256:
-_ossl_rsaz_amm52x20_x2_256:
-_ossl_extract_multiplier_2x20_win5:
-.byte	0x0f,0x0b
-	.byte	0xf3,0xc3
+ossl_rsaz_avx512ifma_eligible:
+	xor	eax,eax
+	DB	0F3h,0C3h		;repret
+
+
+global	ossl_rsaz_amm52x20_x1_256
+global	ossl_rsaz_amm52x20_x2_256
+global	ossl_extract_multiplier_2x20_win5
+
+ossl_rsaz_amm52x20_x1_256:
+ossl_rsaz_amm52x20_x2_256:
+ossl_extract_multiplier_2x20_win5:
+DB	0x0f,0x0b
+	DB	0F3h,0C3h		;repret
 
