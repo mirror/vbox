@@ -192,10 +192,8 @@ void UISettingsDialog::retranslateUi()
     m_pLabelTitle->setText(m_pSelector->itemText(m_pSelector->currentId()));
 #endif
 
-    /* Translate warning stuff: */
-    m_strWarningHint = tr("Invalid settings detected");
-    if (!m_fValid || !m_fSilent)
-        m_pWarningPane->setWarningLabel(m_strWarningHint);
+    /* Translate warning-pane stuff: */
+    m_pWarningPane->setWarningLabelText(tr("Invalid settings detected"));
 
     /* Retranslate all validators: */
     foreach (UISettingsPageValidator *pValidator, findChildren<UISettingsPageValidator*>())
@@ -492,7 +490,6 @@ void UISettingsDialog::revalidate()
     /* Perform dialog revalidation: */
     m_fValid = true;
     m_fSilent = true;
-    m_pWarningPane->setWarningLabel(QString());
 
     /* Enumerating all the validators we have: */
     QList<UISettingsPageValidator*> validators(findChildren<UISettingsPageValidator*>());
@@ -513,13 +510,13 @@ void UISettingsDialog::revalidate()
             else
                 m_fSilent = false;
 
-            /* Configure warning-pane label: */
-            m_pWarningPane->setWarningLabel(m_strWarningHint);
-
             /* Stop dialog revalidation on first error/warning: */
             break;
         }
     }
+
+    /* Update warning-pane visibility: */
+    m_pWarningPane->setWarningLabelVisible(!m_fValid || !m_fSilent);
 
     /* Make sure warning-pane visible if necessary: */
     if ((!m_fValid || !m_fSilent) && m_pStatusBar->currentIndex() == 0)

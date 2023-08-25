@@ -67,8 +67,10 @@ public:
     /** Constructs warning-pane passing @a pParent to the base-class. */
     UISettingsWarningPane(QWidget *pParent = 0);
 
-    /** Defines current @a strWarningLabel text. */
-    void setWarningLabel(const QString &strWarningLabel);
+    /** Defines current warning-label @a strText. */
+    void setWarningLabelText(const QString &strText);
+    /** Defines whether warning-label should be @a fVisible. */
+    void setWarningLabelVisible(bool fVisible);
 
     /** Registers corresponding @a pValidator. */
     void registerValidator(UISettingsPageValidator *pValidator);
