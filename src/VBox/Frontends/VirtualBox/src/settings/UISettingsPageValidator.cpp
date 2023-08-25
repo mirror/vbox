@@ -47,6 +47,16 @@ QString UISettingsPageValidator::internalName() const
     return m_pPage->internalName();
 }
 
+void UISettingsPageValidator::setTitlePrefix(const QString &strPrefix)
+{
+    /* Assign new prefix: */
+    m_strPrefix = strPrefix;
+
+    /* Revalidate if we had errors previously: */
+    if (!lastMessage().isEmpty())
+        revalidate();
+}
+
 void UISettingsPageValidator::setLastMessage(const QString &strLastMessage)
 {
     /* Remember new message: */
@@ -63,4 +73,38 @@ void UISettingsPageValidator::invalidate()
 {
     /* Notify listener(s) about validity change: */
     emit sigValidityChanged(this);
+}
+
+void UISettingsPageValidator::revalidate()
+{
+    /* Perform page revalidation: */
+    QList<UIValidationMessage> messages;
+    setValid(m_pPage->validate(messages));
+
+    /* Remember warning/error message: */
+    if (messages.isEmpty())
+        setLastMessage(QString());
+    else
+    {
+        /* Prepare text: */
+        QStringList text;
+        foreach (const UIValidationMessage &message, messages)
+        {
+            /* Prepare title: */
+            const QString strTitle(message.first.isNull() ? tr("<b>%1</b> page:").arg(m_strPrefix) :
+                                                            tr("<b>%1: %2</b> page:").arg(m_strPrefix, message.first));
+
+            /* Prepare paragraph: */
+            QStringList paragraph(message.second);
+            paragraph.prepend(strTitle);
+
+            /* Format text for iterated message: */
+            text << paragraph.join("<br>");
+        }
+
+        /* Remember text: */
+        setLastMessage(text.join("<br><br>"));
+        LogRelFlow(("Settings Dialog:  Page validation FAILED: {%s}\n",
+                    lastMessage().toUtf8().constData()));
+    }
 }

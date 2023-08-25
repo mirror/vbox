@@ -72,6 +72,9 @@ public:
     /** Returns internal name. */
     QString internalName() const;
 
+    /** Defines title @a strPrefix. */
+    void setTitlePrefix(const QString &strPrefix);
+
     /** Returns whether validator is valid. */
     bool isValid() const { return m_fIsValid; }
     /** Defines whether validator @a fIsValid. */
@@ -85,10 +88,16 @@ public:
     /** Invalidates validator, notifying listener(s). */
     void invalidate();
 
+    /** Revalidate validator. */
+    void revalidate();
+
 private:
 
     /** Holds the validated page. */
     UISettingsPage *m_pPage;
+
+    /** Holds the title prefix. */
+    QString  m_strPrefix;
 
     /** Holds whether the page is valid. */
     bool  m_fIsValid;

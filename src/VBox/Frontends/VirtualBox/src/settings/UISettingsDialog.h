@@ -158,8 +158,6 @@ protected:
     /** Inserts an item to the map m_pageHelpKeywords. */
     void addPageHelpKeyword(int iPageType, const QString &strHelpKeyword);
 
-    /** Validates data correctness using certain @a pValidator. */
-    void revalidate(UISettingsPageValidator *pValidator);
     /** Validates data correctness. */
     void revalidate();
 

@@ -197,8 +197,7 @@ void UISettingsDialog::retranslateUi()
 
     /* Retranslate all validators: */
     foreach (UISettingsPageValidator *pValidator, findChildren<UISettingsPageValidator*>())
-        if (!pValidator->lastMessage().isEmpty())
-            revalidate(pValidator);
+        pValidator->setTitlePrefix(m_pSelector->itemTextByPage(pValidator->page()));
     revalidate();
 }
 
@@ -447,44 +446,6 @@ void UISettingsDialog::addPageHelpKeyword(int iPageType, const QString &strHelpK
     m_pageHelpKeywords[iPageType] = strHelpKeyword;
 }
 
-void UISettingsDialog::revalidate(UISettingsPageValidator *pValidator)
-{
-    /* Perform page revalidation: */
-    UISettingsPage *pSettingsPage = pValidator->page();
-    QList<UIValidationMessage> messages;
-    bool fIsValid = pSettingsPage->validate(messages);
-
-    /* Remember revalidation result: */
-    pValidator->setValid(fIsValid);
-
-    /* Remember warning/error message: */
-    if (messages.isEmpty())
-        pValidator->setLastMessage(QString());
-    else
-    {
-        /* Prepare title prefix: */
-        // Its the only thing preventing us from moving this method to validator.
-        const QString strTitlePrefix(m_pSelector->itemTextByPage(pSettingsPage));
-        /* Prepare text: */
-        QStringList text;
-        foreach (const UIValidationMessage &message, messages)
-        {
-            /* Prepare title: */
-            const QString strTitle(message.first.isNull() ? tr("<b>%1</b> page:").arg(strTitlePrefix) :
-                                                            tr("<b>%1: %2</b> page:").arg(strTitlePrefix, message.first));
-            /* Prepare paragraph: */
-            QStringList paragraph(message.second);
-            paragraph.prepend(strTitle);
-            /* Format text for iterated message: */
-            text << paragraph.join("<br>");
-        }
-        /* Remember text: */
-        pValidator->setLastMessage(text.join("<br><br>"));
-        LogRelFlow(("Settings Dialog:  Page validation FAILED: {%s}\n",
-                    pValidator->lastMessage().toUtf8().constData()));
-    }
-}
-
 void UISettingsDialog::revalidate()
 {
     /* Perform dialog revalidation: */
@@ -553,7 +514,7 @@ void UISettingsDialog::sltHandleValidityChange(UISettingsPageValidator *pValidat
                     strPageName.toUtf8().constData()));
 
         /* Perform page revalidation: */
-        revalidate(pValidator);
+        pValidator->revalidate();
         /* Perform inter-page recorrelation: */
         recorrelate(pSettingsPage);
         /* Perform dialog revalidation: */
