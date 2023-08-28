@@ -182,4 +182,4 @@ private:
 typedef QPointer<UIAdvancedSettingsDialogMachine> UISafePointerSettingsDialogMachine;
 
 
-#endif /* !FEQT_INCLUDED_SRC_settings_UISettingsDialogSpecific_h */
+#endif /* !FEQT_INCLUDED_SRC_settings_UIAdvancedSettingsDialogSpecific_h */
