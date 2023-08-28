@@ -81,7 +81,7 @@
 UIAdvancedSettingsDialogGlobal::UIAdvancedSettingsDialogGlobal(QWidget *pParent,
                                                                const QString &strCategory /* = QString() */,
                                                                const QString &strControl /* = QString() */)
-    : UISettingsDialog(pParent, strCategory, strControl)
+    : UIAdvancedSettingsDialog(pParent, strCategory, strControl)
 {
     prepare();
 }
@@ -122,7 +122,7 @@ void UIAdvancedSettingsDialogGlobal::retranslateUi()
     m_pSelector->polish();
 
     /* Base-class UI translation: */
-    UISettingsDialog::retranslateUi();
+    UIAdvancedSettingsDialog::retranslateUi();
 
     /* Set dialog's name: */
     setWindowTitle(title());
@@ -139,7 +139,7 @@ void UIAdvancedSettingsDialogGlobal::load()
     QVariant varData = QVariant::fromValue(data);
 
     /* Call to base-class: */
-    UISettingsDialog::loadData(varData);
+    UIAdvancedSettingsDialog::loadData(varData);
 }
 
 void UIAdvancedSettingsDialogGlobal::save()
@@ -153,7 +153,7 @@ void UIAdvancedSettingsDialogGlobal::save()
     QVariant varData = QVariant::fromValue(data);
 
     /* Call to base-class: */
-    UISettingsDialog::saveData(varData);
+    UIAdvancedSettingsDialog::saveData(varData);
 
     /* Get updated host: */
     CHost comNewHost = varData.value<UISettingsDataGlobal>().m_host;
@@ -307,7 +307,7 @@ UIAdvancedSettingsDialogMachine::UIAdvancedSettingsDialogMachine(QWidget *pParen
                                                                  UIActionPool *pActionPool,
                                                                  const QString &strCategory /* = QString() */,
                                                                  const QString &strControl /* = QString() */)
-    : UISettingsDialog(pParent, strCategory, strControl)
+    : UIAdvancedSettingsDialog(pParent, strCategory, strControl)
     , m_uMachineId(uMachineId)
     , m_pActionPool(pActionPool)
 {
@@ -393,7 +393,7 @@ void UIAdvancedSettingsDialogMachine::retranslateUi()
     m_pSelector->polish();
 
     /* Base-class UI translation: */
-    UISettingsDialog::retranslateUi();
+    UIAdvancedSettingsDialog::retranslateUi();
 
     /* Set dialog's name: */
     setWindowTitle(title());
@@ -422,7 +422,7 @@ void UIAdvancedSettingsDialogMachine::load()
     QVariant varData = QVariant::fromValue(data);
 
     /* Call to base-class: */
-    UISettingsDialog::loadData(varData);
+    UIAdvancedSettingsDialog::loadData(varData);
 }
 
 void UIAdvancedSettingsDialogMachine::save()
@@ -448,7 +448,7 @@ void UIAdvancedSettingsDialogMachine::save()
     QVariant varData = QVariant::fromValue(data);
 
     /* Call to base-class: */
-    UISettingsDialog::saveData(varData);
+    UIAdvancedSettingsDialog::saveData(varData);
 
     /* Get updated machine: */
     m_machine = varData.value<UISettingsDataMachine>().m_machine;
@@ -551,13 +551,13 @@ void UIAdvancedSettingsDialogMachine::sltCategoryChanged(int cId)
         serializeProcess()->raisePriorityOfPage(cId);
 
     /* Call to base-class: */
-    UISettingsDialog::sltCategoryChanged(cId);
+    UIAdvancedSettingsDialog::sltCategoryChanged(cId);
 }
 
 void UIAdvancedSettingsDialogMachine::sltHandleSerializationFinished()
 {
     /* Call to base-class: */
-    UISettingsDialog::sltHandleSerializationFinished();
+    UIAdvancedSettingsDialog::sltHandleSerializationFinished();
 
     /* Unlock the session if exists: */
     if (!m_session.isNull())

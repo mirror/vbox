@@ -35,7 +35,7 @@
 #include <QPointer>
 
 /* GUI includes: */
-#include "UISettingsDialog.h"
+#include "UIAdvancedSettingsDialog.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -46,8 +46,8 @@
 /* Forward declarations: */
 class UIActionPool;
 
-/** UISettingsDialog extension encapsulating all the specific functionality of the Global Preferences. */
-class SHARED_LIBRARY_STUFF UIAdvancedSettingsDialogGlobal : public UISettingsDialog
+/** UIAdvancedSettingsDialog extension encapsulating all the specific functionality of the Global Preferences. */
+class SHARED_LIBRARY_STUFF UIAdvancedSettingsDialogGlobal : public UIAdvancedSettingsDialog
 {
     Q_OBJECT;
 
@@ -85,11 +85,11 @@ private:
 };
 
 /** Safe pointer to cloud machine settings dialog. */
-typedef QPointer<UIAdvancedSettingsDialogGlobal> UISafePointerAdvancedSettingsDialogGlobal;
+typedef QPointer<UIAdvancedSettingsDialogGlobal> UISafePointerSettingsDialogGlobal;
 
 
-/** UISettingsDialog extension encapsulating all the specific functionality of the Machine Settings. */
-class SHARED_LIBRARY_STUFF UIAdvancedSettingsDialogMachine : public UISettingsDialog
+/** UIAdvancedSettingsDialog extension encapsulating all the specific functionality of the Machine Settings. */
+class SHARED_LIBRARY_STUFF UIAdvancedSettingsDialogMachine : public UIAdvancedSettingsDialog
 {
     Q_OBJECT;
 
@@ -179,7 +179,7 @@ private:
 };
 
 /** Safe pointer to cloud machine settings dialog. */
-typedef QPointer<UIAdvancedSettingsDialogMachine> UISafePointerAdvancedSettingsDialogMachine;
+typedef QPointer<UIAdvancedSettingsDialogMachine> UISafePointerSettingsDialogMachine;
 
 
-#endif /* !FEQT_INCLUDED_SRC_settings_UIAdvancedSettingsDialogSpecific_h */
+#endif /* !FEQT_INCLUDED_SRC_settings_UISettingsDialogSpecific_h */
