@@ -1,4 +1,4 @@
-/* $Id$ */
+﻿/* $Id$ */
 /** @file
  * VBox Qt GUI - UIAdvancedSettingsDialog class implementation.
  */
@@ -79,7 +79,6 @@ UIAdvancedSettingsDialog::UIAdvancedSettingsDialog(QWidget *pParent,
     , m_fValid(true)
     , m_fSilent(true)
     , m_pLayoutMain(0)
-    , m_pLabelTitle(0)
     , m_pStack(0)
     , m_pButtonBox(0)
 {
@@ -152,8 +151,6 @@ void UIAdvancedSettingsDialog::sltCategoryChanged(int cId)
 
 #ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
     setWindowTitle(title());
-#else
-    m_pLabelTitle->setText(m_pSelector->itemText(cId));
 #endif
 }
 
@@ -187,11 +184,6 @@ void UIAdvancedSettingsDialog::sltHandleSerializationFinished()
 
 void UIAdvancedSettingsDialog::retranslateUi()
 {
-#ifndef VBOX_GUI_WITH_TOOLBAR_SETTINGS
-    /* Retranslate current page headline: */
-    m_pLabelTitle->setText(m_pSelector->itemText(m_pSelector->currentId()));
-#endif
-
     /* Translate warning-pane stuff: */
     m_pWarningPane->setWarningLabelText(tr("Invalid settings detected"));
 
@@ -586,28 +578,6 @@ void UIAdvancedSettingsDialog::prepareSelector()
     {
         m_pLayoutMain->addWidget(m_pSelector->widget(), 0, 0, 2, 1);
         m_pSelector->widget()->setFocus();
-    }
-
-    /* Prepare title label: */
-    m_pLabelTitle = new QLabel(centralWidget());
-    if (m_pLabelTitle)
-    {
-        m_pLabelTitle->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed));
-        QPalette pal = QApplication::palette();
-        pal.setColor(QPalette::Active, QPalette::Window, pal.color(QPalette::Active, QPalette::Base));
-        m_pLabelTitle->setPalette(pal);
-        QFont fnt;
-        fnt.setFamily(QStringLiteral("Sans Serif"));
-        fnt.setPointSize(fnt.pointSize() + 2);
-        fnt.setBold(true);
-        fnt.setWeight(QFont::ExtraBold);
-        m_pLabelTitle->setFont(fnt);
-        m_pLabelTitle->setAutoFillBackground(true);
-        m_pLabelTitle->setFrameShadow(QFrame::Sunken);
-        m_pLabelTitle->setMargin(9);
-
-        /* Add title-label into main layout: */
-        m_pLayoutMain->addWidget(m_pLabelTitle, 0, 1);
     }
 #endif /* !VBOX_GUI_WITH_TOOLBAR_SETTINGS */
 

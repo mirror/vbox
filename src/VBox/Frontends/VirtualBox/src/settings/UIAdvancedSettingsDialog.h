@@ -40,7 +40,6 @@
 
 /* Forward declarations: */
 class QGridLayout;
-class QLabel;
 class QProgressBar;
 class QShowEvent;
 class QStackedWidget;
@@ -242,8 +241,6 @@ private:
      * @{ */
         /** Holds the main layout instance. */
         QGridLayout       *m_pLayoutMain;
-        /** Holds the title-label instance. */
-        QLabel            *m_pLabelTitle;
         /** Holds the page-stack instance. */
         QStackedWidget    *m_pStack;
         /** Holds the button-box instance. */
