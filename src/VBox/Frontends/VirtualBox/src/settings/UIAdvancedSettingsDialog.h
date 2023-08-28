@@ -46,6 +46,7 @@ class QShowEvent;
 class QStackedWidget;
 class QVariant;
 class QIDialogButtonBox;
+class UISettingsGroupBox;
 class UISettingsPage;
 class UISettingsPageValidator;
 class UISettingsSelector;
@@ -228,7 +229,7 @@ private:
     QString  m_strWarningHint;
 
     /** Holds the map of settings pages. */
-    QMap<int, QWidget*>  m_pages;
+    QMap<int, UISettingsGroupBox*>  m_pages;
 
     /** Stores the help tag per page. */
     QMap<int, QString>  m_pageHelpKeywords;
