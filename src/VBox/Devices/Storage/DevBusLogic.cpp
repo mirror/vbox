@@ -548,6 +548,7 @@ typedef CTX_SUFF(PBUSLOGIC) PBUSLOGICCC;
 
 #define BUSLOGIC_REGISTER_GEOMETRY  3 /* Readonly */
 # define BL_GEOM_XLATEN  RT_BIT(7)  /* Extended geometry translation enabled. */
+# define BL_GEOM_ISA     0x55       /* ISA adapter? Utterly undocumented. */
 
 /** Structure for the INQUIRE_PCI_HOST_ADAPTER_INFORMATION reply. */
 typedef struct ReplyInquirePCIHostAdapterInformation
@@ -1194,6 +1195,20 @@ static int buslogicR3HwReset(PPDMDEVINS pDevIns, PBUSLOGIC pThis, bool fResetIO)
     /* Reset registers to default values. */
     pThis->regStatus = BL_STAT_HARDY | BL_STAT_INREQ;
     pThis->regGeometry = BL_GEOM_XLATEN;
+
+    /* BusLogic's BTDOSM.SYS version 4.20 DOS ASPI driver (but not e.g.
+     * version 3.00) insists that bit 6 in the completely undocumented
+     * "geometry register" must be set when scanning for ISA devices.
+     * This bit may be a convenient way of avoiding a "double scan" of
+     * PCI HBAs (which do not have bit 6 set) in ISA compatibility mode.
+     *
+     * On a BT-542B and BT-545C, the geometry register contains the value
+     * 55h after power up/reset. In addition, bit 7 reflects the state
+     * of the >1GB disk setting (DIP switch or EEPROM).
+     */
+    if (pThis->uDevType == DEV_BT_545C)
+        pThis->regGeometry |= BL_GEOM_ISA;
+
     pThis->uOperationCode = 0xff; /* No command executing. */
     pThis->uPrevCmd = 0xff;
     pThis->iParameter = 0;
@@ -1912,6 +1927,15 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
             break;
         case BUSLOGICCOMMAND_INQUIRE_PCI_HOST_ADAPTER_INFORMATION:
         {
+            /* Only supported on PCI BusLogic HBAs. */
+            if (pThis->uDevType != DEV_BT_958D)
+            {
+                Log(("Command %#x not valid for this adapter\n", pThis->uOperationCode));
+                pThis->cbReplyParametersLeft = 0;
+                pThis->regStatus |= BL_STAT_CMDINV;
+                break;
+            }
+
             PReplyInquirePCIHostAdapterInformation pReply = (PReplyInquirePCIHostAdapterInformation)pThis->aReplyBuffer;
             memset(pReply, 0, sizeof(ReplyInquirePCIHostAdapterInformation));
 
@@ -1976,9 +2000,16 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
                 pThis->aReplyBuffer[1] = 'A'; /* Special option byte */
             }
 
-            /* We report version 5.07B. This reply will provide the first two digits. */
-            pThis->aReplyBuffer[2] = '5'; /* Major version 5 */
-            pThis->aReplyBuffer[3] = '0'; /* Minor version 0 */
+            /* FW version 5.07B for BT-958, version 4.25J for BT-545. */
+            if (pThis->uDevType == DEV_BT_958D) {
+                pThis->aReplyBuffer[2] = '5'; /* Major version 5 */
+                pThis->aReplyBuffer[3] = '0'; /* Minor version 0 */
+            }
+            else
+            {
+                pThis->aReplyBuffer[2] = '4';
+                pThis->aReplyBuffer[3] = '2';
+            }
             pThis->cbReplyParametersLeft = 4; /* Reply is 4 bytes long */
             break;
         }
@@ -1993,13 +2024,21 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
                 break;
             }
 
-            pThis->aReplyBuffer[0] = '7';
+            /* FW version 5.07B for BT-958, version 4.25J for BT-545. */
+            if (pThis->uDevType == DEV_BT_958D)
+                pThis->aReplyBuffer[0] = '7';
+            else
+                pThis->aReplyBuffer[0] = '5';
             pThis->cbReplyParametersLeft = 1;
             break;
         }
         case BUSLOGICCOMMAND_INQUIRE_FIRMWARE_VERSION_LETTER:
         {
-            pThis->aReplyBuffer[0] = 'B';
+            /* FW version 5.07B for BT-958, version 4.25J for BT-545. */
+            if (pThis->uDevType == DEV_BT_958D)
+                pThis->aReplyBuffer[0] = 'B';
+            else
+                pThis->aReplyBuffer[0] = 'J';
             pThis->cbReplyParametersLeft = 1;
             break;
         }
@@ -2070,13 +2109,16 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
             }
             pThis->cbReplyParametersLeft = pThis->aCommandBuffer[0];
             memset(pThis->aReplyBuffer, 0, sizeof(pThis->aReplyBuffer));
-            const char aModelName[] = "958D ";  /* Trailing \0 is fine, that's the filler anyway. */
-            int cCharsToTransfer =   pThis->cbReplyParametersLeft <= sizeof(aModelName)
+            const char aModelName958[] = "958D ";   /* Trailing \0 is fine, that's the filler anyway. */
+            const char aModelName545[] = "54xC ";
+            AssertCompile(sizeof(aModelName958) == sizeof(aModelName545));
+            const char *pModelName = pThis->uDevType == DEV_BT_958D ? aModelName958 : aModelName545;
+            int cCharsToTransfer =   pThis->cbReplyParametersLeft <= sizeof(aModelName958)
                                    ? pThis->cbReplyParametersLeft
-                                   : sizeof(aModelName);
+                                   : sizeof(aModelName958);
 
             for (int i = 0; i < cCharsToTransfer; i++)
-                pThis->aReplyBuffer[i] = aModelName[i];
+                pThis->aReplyBuffer[i] = pModelName[i];
 
             break;
         }
@@ -2136,14 +2178,22 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
             memset(pReply, 0, sizeof(ReplyInquireExtendedSetupInformation));
 
             /** @todo should this reflect the RAM contents (AutoSCSIRam)? */
-            pReply->uBusType = 'E';         /* EISA style */
+            if (pThis->uDevType == DEV_BT_958D)
+                pReply->uBusType = 'E';         /* EISA style */
+            else
+                pReply->uBusType = 'A';         /* ISA */
+
             pReply->u16ScatterGatherLimit = 8192;
             pReply->cMailbox = pThis->cMailbox;
             pReply->uMailboxAddressBase = (uint32_t)pThis->GCPhysAddrMailboxOutgoingBase;
             pReply->fLevelSensitiveInterrupt = true;
             pReply->fHostWideSCSI = true;
             pReply->fHostUltraSCSI = true;
-            memcpy(pReply->aFirmwareRevision, "07B", sizeof(pReply->aFirmwareRevision));
+            /* FW version 5.07B for BT-958, version 4.25J for BT-545. */
+            if (pThis->uDevType == DEV_BT_958D)
+                memcpy(pReply->aFirmwareRevision, "07B", sizeof(pReply->aFirmwareRevision));
+            else
+                memcpy(pReply->aFirmwareRevision, "25J", sizeof(pReply->aFirmwareRevision));
 
             break;
         }
@@ -2171,7 +2221,10 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
                 pReply->uSignature  = 'B';
                 pReply->uCharacterD = 'D';      /* BusLogic model. */
             }
-            pReply->uHostBusType = 'F';     /* PCI bus. */
+            if (pThis->uDevType == DEV_BT_958D)
+                pReply->uHostBusType = 'F';     /* PCI bus. */
+            else
+                pReply->uHostBusType = 'A';     /* ISA bus. */
             break;
         }
         case BUSLOGICCOMMAND_FETCH_HOST_ADAPTER_LOCAL_RAM:
@@ -2550,6 +2603,11 @@ static int buslogicRegisterRead(PPDMDEVINS pDevIns, PBUSLOGIC pThis, unsigned iR
         {
             if (pThis->uDevType == DEV_AHA_1540B)
             {
+                /* NB: The AHA-154xB actually does not respond on this I/O port and
+                 * returns 0xFF. However, Adaptec's last ASP4DOS.SYS version (3.36)
+                 * assumes the AHA-154xC behavior and fails to load if the 'ADAP'
+                 * signature is not present.
+                 */
                 uint8_t off = pThis->uAhaSigIdx & 3;
                 *pu32 = s_szAhaSig[off];
                 pThis->uAhaSigIdx = (off + 1) & 3;
