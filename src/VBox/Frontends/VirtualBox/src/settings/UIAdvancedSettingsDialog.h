@@ -41,6 +41,7 @@
 /* Forward declarations: */
 class QGridLayout;
 class QProgressBar;
+class QScrollArea;
 class QShowEvent;
 class QStackedWidget;
 class QVariant;
@@ -187,8 +188,8 @@ private:
         void prepare();
         /** Prepares selector. */
         void prepareSelector();
-        /** Prepare stack. */
-        void prepareStack();
+        /** Prepare scroll-area. */
+        void prepareScrollArea();
         /** Prepare button-box. */
         void prepareButtonBox();
 
@@ -227,22 +228,21 @@ private:
     QString  m_strWarningHint;
 
     /** Holds the map of settings pages. */
-    QMap<int, int>      m_pages;
-    /** Stores the help tag per page. Key is the page type (either GlobalSettingsPageType or MachineSettingsPageType)
-      * and value is the help tag. Used in context sensitive help: */
-    QMap<int, QString>  m_pageHelpKeywords;
+    QMap<int, QWidget*>  m_pages;
 
-#ifdef VBOX_WS_MAC
-    /** Holds the list of settings page sizes for animation purposes. */
-    QList<QSize>  m_sizeList;
-#endif
+    /** Stores the help tag per page. */
+    QMap<int, QString>  m_pageHelpKeywords;
 
     /** @name Widgets
      * @{ */
         /** Holds the main layout instance. */
-        QGridLayout       *m_pLayoutMain;
-        /** Holds the page-stack instance. */
-        QStackedWidget    *m_pStack;
+        QGridLayout *m_pLayoutMain;
+
+        /** Holds the scroll-area instance. */
+        QScrollArea *m_pScrollArea;
+        /** Holds the scroll-viewport instance. */
+        QWidget     *m_pScrollViewport;
+
         /** Holds the button-box instance. */
         QIDialogButtonBox *m_pButtonBox;
     /** @} */

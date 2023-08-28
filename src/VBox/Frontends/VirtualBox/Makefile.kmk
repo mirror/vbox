@@ -1076,6 +1076,7 @@ UICommon_QT_MOCSRCS = \
 	src/medium/viso/UIVisoHostBrowser.cpp \
 	src/medium/viso/UIVisoCreator.cpp \
 	src/notificationcenter/UINotificationCenter.cpp \
+	src/settings/UIAdvancedSettingsDialog.cpp \
 	src/settings/editors/UIBaseMemoryEditor.cpp \
 	src/settings/editors/UIBootOrderEditor.cpp \
 	src/settings/editors/UIHotKeyEditor.cpp \

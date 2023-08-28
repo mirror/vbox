@@ -31,6 +31,8 @@
 #include <QLabel>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QScrollArea>
+#include <QScrollBar>
 #include <QStackedWidget>
 #include <QVariant>
 
@@ -60,6 +62,54 @@
 #endif
 
 
+/** QScrollArea extension to be used for
+  * advanced settings dialog. The idea is to make
+  * vertical scroll-bar always visible, keeping
+  * horizontal scroll-bar always hidden. */
+class UIVerticalScrollArea : public QScrollArea
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs vertical scroll-area passing @a pParent to the base-class. */
+    UIVerticalScrollArea(QWidget *pParent);
+
+protected:
+
+    /** Holds the minimum widget size. */
+    virtual QSize minimumSizeHint() const RT_OVERRIDE;
+};
+
+
+/*********************************************************************************************************************************
+*   Class UIVerticalScrollArea implementation.                                                                                   *
+*********************************************************************************************************************************/
+
+UIVerticalScrollArea::UIVerticalScrollArea(QWidget *pParent)
+    : QScrollArea(pParent)
+{
+    /* Make vertical scroll-bar always visible. */
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+}
+
+QSize UIVerticalScrollArea::minimumSizeHint() const
+{
+    /* To make horizontal scroll-bar always hidden we'll
+     * have to make sure minimum size-hint updated accordingly. */
+    const int iMinWidth = viewportSizeHint().width()
+                        + verticalScrollBar()->sizeHint().width()
+                        + frameWidth() * 2;
+    const int iMinHeight = qMax(QScrollArea::minimumSizeHint().height(),
+                                (int)(iMinWidth / 1.6));
+    return QSize(iMinWidth, iMinHeight);
+}
+
+
+/*********************************************************************************************************************************
+*   Class UIAdvancedSettingsDialog implementation.                                                                               *
+*********************************************************************************************************************************/
+
 UIAdvancedSettingsDialog::UIAdvancedSettingsDialog(QWidget *pParent,
                                                    const QString &strCategory,
                                                    const QString &strControl)
@@ -79,7 +129,8 @@ UIAdvancedSettingsDialog::UIAdvancedSettingsDialog(QWidget *pParent,
     , m_fValid(true)
     , m_fSilent(true)
     , m_pLayoutMain(0)
-    , m_pStack(0)
+    , m_pScrollArea(0)
+    , m_pScrollViewport(0)
     , m_pButtonBox(0)
 {
     prepare();
@@ -109,48 +160,24 @@ void UIAdvancedSettingsDialog::reject()
 
 void UIAdvancedSettingsDialog::sltCategoryChanged(int cId)
 {
-#ifndef VBOX_WS_MAC
-    if (m_pButtonBox)
-        uiCommon().setHelpKeyword(m_pButtonBox->button(QDialogButtonBox::Help), m_pageHelpKeywords[cId]);
-#endif
-    const int iIndex = m_pages.value(cId);
-
-#ifdef VBOX_WS_MAC
-    /* If index is within the stored size list bounds: */
-    if (iIndex < m_sizeList.count())
-    {
-        /* Get current/stored size: */
-        const QSize cs = size();
-        const QSize ss = m_sizeList.at(iIndex);
-
-        /* Switch to the new page first if we are shrinking: */
-        if (cs.height() > ss.height())
-            m_pStack->setCurrentIndex(iIndex);
-
-        /* Do the animation: */
-        ::darwinWindowAnimateResize(this, QRect (x(), y(), ss.width(), ss.height()));
-
-        /* Switch to the new page last if we are zooming: */
-        if (cs.height() <= ss.height())
-            m_pStack->setCurrentIndex(iIndex);
-
-        /* Unlock all page policies but lock the current one: */
-        for (int i = 0; i < m_pStack->count(); ++i)
-            m_pStack->widget(i)->setSizePolicy(QSizePolicy::Minimum, i == iIndex ? QSizePolicy::Minimum : QSizePolicy::Ignored);
-
-        /* And make sure layouts are freshly calculated: */
-        foreach (QLayout *pLayout, findChildren<QLayout*>())
-        {
-            pLayout->update();
-            pLayout->activate();
-        }
-    }
-#else /* !VBOX_WS_MAC */
-    m_pStack->setCurrentIndex(iIndex);
-#endif /* !VBOX_WS_MAC */
-
 #ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
     setWindowTitle(title());
+#endif
+
+    /* Let's calculate scroll-bar shift: */
+    int iShift = 0;
+    /* We'll have to take upper content's margin into account: */
+    int iL, iT, iR, iB;
+    m_pScrollViewport->layout()->getContentsMargins(&iL, &iT, &iR, &iB);
+    iShift -= iT;
+    /* And actual page position according to parent: */
+    const QPoint pnt = m_pages.value(cId)->pos();
+    iShift += pnt.y();
+    /* Make sure corresponding page is visible: */
+    m_pScrollArea->verticalScrollBar()->setValue(iShift);
+
+#ifndef VBOX_WS_MAC
+    uiCommon().setHelpKeyword(m_pButtonBox->button(QDialogButtonBox::Help), m_pageHelpKeywords.value(cId));
 #endif
 }
 
@@ -208,61 +235,11 @@ void UIAdvancedSettingsDialog::showEvent(QShowEvent *pEvent)
 
 void UIAdvancedSettingsDialog::polishEvent()
 {
-    /* Check what's the minimum selector size: */
-    const int iMinWidth = m_pSelector->minWidth();
+    /* Resize to minimum size: */
+    resize(minimumSizeHint());
 
-#ifdef VBOX_WS_MAC
-
-    /* Remove all title bar buttons (Buggy Qt): */
-    ::darwinSetHidesAllTitleButtons(this);
-
-    /* Unlock all page policies initially: */
-    for (int i = 0; i < m_pStack->count(); ++i)
-        m_pStack->widget(i)->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Ignored);
-
-    /* Activate every single page to get the optimal size: */
-    for (int i = m_pStack->count() - 1; i >= 0; --i)
-    {
-        /* Activate current page: */
-        m_pStack->setCurrentIndex(i);
-
-        /* Lock current page policy temporary: */
-        m_pStack->widget(i)->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-        /* And make sure layouts are freshly calculated: */
-        foreach (QLayout *pLayout, findChildren<QLayout*>())
-        {
-            pLayout->update();
-            pLayout->activate();
-        }
-
-        /* Acquire minimum size-hint: */
-        QSize s = minimumSizeHint();
-        // WORKAROUND:
-        // Take into account the height of native tool-bar title.
-        // It will be applied only after widget is really shown.
-        // The height is 11pix * 2 (possible HiDPI support).
-        s.setHeight(s.height() + 11 * 2);
-        /* Also make sure that width is no less than tool-bar: */
-        if (iMinWidth > s.width())
-            s.setWidth(iMinWidth);
-        /* And remember the size finally: */
-        m_sizeList.insert(0, s);
-
-        /* Unlock the policy for current page again: */
-        m_pStack->widget(i)->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Ignored);
-    }
-
-    sltCategoryChanged(m_pSelector->currentId());
-
-#else /* VBOX_WS_MAC */
-
-    /* Resize to the minimum possible size: */
-    QSize s = minimumSize();
-    if (iMinWidth > s.width())
-        s.setWidth(iMinWidth);
-    resize(s);
-
-#endif /* VBOX_WS_MAC */
+    /* Choose page/tab finally: */
+    choosePageAndTab();
 
     /* Explicit centering according to our parent: */
     gpDesktop->centerWidget(this, parentWidget(), false);
@@ -297,7 +274,7 @@ void UIAdvancedSettingsDialog::choosePageAndTab(bool fKeepPreviousByDefault /* =
         /* Search for a widget with the given name: */
         if (!m_strControl.isNull())
         {
-            if (QWidget *pWidget = m_pStack->findChild<QWidget*>(m_strControl))
+            if (QWidget *pWidget = m_pScrollViewport->findChild<QWidget*>(m_strControl))
             {
                 QList<QWidget*> parents;
                 QWidget *pParentWidget = pWidget;
@@ -414,9 +391,13 @@ void UIAdvancedSettingsDialog::addItem(const QString &strBigIcon,
     if (QWidget *pPage = m_pSelector->addItem(strBigIcon, strMediumIcon, strSmallIcon,
                                               cId, strLink, pSettingsPage, iParentId))
     {
-        /* Add stack-widget page if created: */
-        m_pages[cId] = m_pStack->addWidget(pPage);
+        /* Add page to scroll-viewport layout: */
+        m_pScrollViewport->layout()->addWidget(pPage);
+
+        /* Remember widget for referencing: */
+        m_pages[cId] = pPage;
     }
+
     /* Assign validator if necessary: */
     if (pSettingsPage)
     {
@@ -522,7 +503,7 @@ void UIAdvancedSettingsDialog::sltHandleWarningPaneHovered(UISettingsPageValidat
 
     /* Show corresponding popup: */
     if (!m_fValid || !m_fSilent)
-        popupCenter().popup(m_pStack, "SettingsDialogWarning",
+        popupCenter().popup(m_pScrollArea, "SettingsDialogWarning",
                             pValidator->lastMessage());
 }
 
@@ -531,7 +512,7 @@ void UIAdvancedSettingsDialog::sltHandleWarningPaneUnhovered(UISettingsPageValid
     LogRelFlow(("Settings Dialog: Warning-icon unhovered: %s.\n", pValidator->internalName().toUtf8().constData()));
 
     /* Recall corresponding popup: */
-    popupCenter().recall(m_pStack, "SettingsDialogWarning");
+    popupCenter().recall(m_pScrollArea, "SettingsDialogWarning");
 }
 
 void UIAdvancedSettingsDialog::prepare()
@@ -546,7 +527,7 @@ void UIAdvancedSettingsDialog::prepare()
         {
             /* Prepare widgets: */
             prepareSelector();
-            prepareStack();
+            prepareScrollArea();
             prepareButtonBox();
         }
     }
@@ -587,17 +568,33 @@ void UIAdvancedSettingsDialog::prepareSelector()
                 this, &UIAdvancedSettingsDialog::sltCategoryChanged);
 }
 
-void UIAdvancedSettingsDialog::prepareStack()
+void UIAdvancedSettingsDialog::prepareScrollArea()
 {
-    /* Prepare page-stack: */
-    m_pStack = new QStackedWidget(centralWidget());
-    if (m_pStack)
+    /* Prepare scroll-area: */
+    m_pScrollArea = new UIVerticalScrollArea(centralWidget());
+    if (m_pScrollArea)
     {
-        /* Configure page-stack: */
-        popupCenter().setPopupStackOrientation(m_pStack, UIPopupStackOrientation_Bottom);
+        /* Configure popup-stack: */
+        popupCenter().setPopupStackOrientation(m_pScrollArea, UIPopupStackOrientation_Bottom);
 
-        /* Add page-stack into main layout: */
-        m_pLayoutMain->addWidget(m_pStack, 1, 1);
+        m_pScrollArea->setWidgetResizable(true);
+        m_pScrollArea->setFrameShape(QFrame::NoFrame);
+
+        /* Prepare scroll-viewport: */
+        m_pScrollViewport = new QWidget(m_pScrollArea);
+        if (m_pScrollViewport)
+        {
+            QVBoxLayout *pLayout = new QVBoxLayout(m_pScrollViewport);
+            int iL, iT, iR, iB;
+            pLayout->getContentsMargins(&iL, &iT, &iR, &iB);
+            pLayout->setContentsMargins(0, 0, iR, 0);
+            int iSpacing = pLayout->spacing();
+            pLayout->setSpacing(2 * iSpacing);
+            m_pScrollArea->setWidget(m_pScrollViewport);
+        }
+
+        /* Add scroll-area into main layout: */
+        m_pLayoutMain->addWidget(m_pScrollArea, 1, 1);
     }
 }
 
@@ -669,8 +666,10 @@ void UIAdvancedSettingsDialog::cleanup()
     m_pSerializeProcess = 0;
 
     /* Recall popup-pane if any: */
-    popupCenter().recall(m_pStack, "SettingsDialogWarning");
+    popupCenter().recall(m_pScrollArea, "SettingsDialogWarning");
 
     /* Delete selector early! */
     delete m_pSelector;
 }
+
+#include "UIAdvancedSettingsDialog.moc"

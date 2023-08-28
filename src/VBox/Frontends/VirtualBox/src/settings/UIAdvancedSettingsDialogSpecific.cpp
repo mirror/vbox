@@ -286,9 +286,6 @@ void UIAdvancedSettingsDialogGlobal::prepare()
 
     /* Apply language settings: */
     retranslateUi();
-
-    /* Choose page/tab finally: */
-    choosePageAndTab();
 }
 
 bool UIAdvancedSettingsDialogGlobal::isPageAvailable(int) const
@@ -767,9 +764,6 @@ void UIAdvancedSettingsDialogMachine::prepare()
 
     /* Apply language settings: */
     retranslateUi();
-
-    /* Choose page/tab finally: */
-    choosePageAndTab();
 }
 
 bool UIAdvancedSettingsDialogMachine::isPageAvailable(int iPageId) const
