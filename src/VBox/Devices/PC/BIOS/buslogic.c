@@ -68,6 +68,8 @@
 #define BUSLOGIC_REGISTER_COMMAND   1 /**< Writeonly */
 #define BUSLOGIC_REGISTER_DATAIN    1 /**< Readonly */
 #define BUSLOGIC_REGISTER_INTERRUPT 2 /**< Readonly */
+#define BUSLOGIC_REGISTER_GEOMETRY  3 /**< Readonly */
+
 /** Fields for the interrupt register. */
 # define BL_INTR_IMBL   RT_BIT(0)   /* Incoming Mailbox Loaded. */
 # define BL_INTR_OMBR   RT_BIT(1)   /* Outgoing Mailbox Available. */
@@ -220,7 +222,7 @@ static int buslogic_scsi_hba_init(buslogic_t __far *buslogic)
 }
 
 /**
- * Init the BusLogic SCSI driver and detect attached disks.
+ * Init the BusLogic PCI SCSI driver and detect attached disks.
  */
 int buslogic_scsi_init(void __far *pvHba, uint8_t u8Bus, uint8_t u8DevFn)
 {
@@ -249,3 +251,63 @@ int buslogic_scsi_init(void __far *pvHba, uint8_t u8Bus, uint8_t u8DevFn)
 
     return 1;
 }
+
+/**
+ * Init the AHA-154x compatible ISA SCSI driver and find attached disks.
+ * The HBA was already detected.
+ */
+int btaha_scsi_init(void __far *pvHba, uint8_t u8Bus, uint8_t u8DevFn)
+{
+    buslogic_t __far *buslogic = (buslogic_t __far *)pvHba;
+
+    buslogic->u16IoBase = (u8Bus << 8) | u8DevFn;
+    DBG_BUSLOGIC("AHA 154x compatible SCSI HBA at I/O port 0x%x)\n", buslogic->u16IoBase);
+
+    return buslogic_scsi_hba_init(buslogic);
+}
+
+/**
+ * Detect AHA-154x compatible ISA SCSI HBA presence.
+ */
+uint16_t btaha_scsi_detect(void)
+{
+    uint16_t    bases[] = { 0x330, 0x334, 0 };
+    uint16_t    iobase;
+    uint8_t     val;
+    int         i;
+
+    for (i = 0, iobase = bases[0]; iobase; iobase = bases[++i])
+    {
+        /* Read the status register. The possible valid values after power-up
+         * or reset are 0x10 or 0x30.
+         */
+        val = inb(iobase + BUSLOGIC_REGISTER_STATUS);
+        if ((val != 0x30) && (val != 0x10))
+            continue;
+
+        /* Exclude PCI adapters in ISA compatible mode. The check reads the
+         * undocumented "geometry" register and only continues if bit 6 is
+         * set.
+         * The logic is kind of genius. On AHA-154xB and earlier, there's
+         * nothing and the read returns 0xFF. On AHA-154xC, the register
+         * returns the letters 'ADAP' in a round-robin fashion. On BusLogic
+         * ISA adapters, the firmware sets the register to 0x55 during
+         * power-up/reset (possibly also setting bit 7 if > 1GB drive
+         * support is enabled). In all cases, bit 6 will be set.
+         * But on BusLogic PCI HBAs, the geometry register is 0x80 (in our
+         * emulation) or possibly 0 and bit 6 is clear.
+         * Thus if bit 6 is not set, the device is rejected because it was
+         * likely already found as a PCI device, and must not be detected
+         * again at the alternative ISA-compatible I/O base.
+         */
+        val = inb(iobase + BUSLOGIC_REGISTER_GEOMETRY);
+        if ((val & 0x40) == 0)
+            continue;
+
+        /* If we got this far, the I/O base is valid and we're done. */
+        break;
+    }
+
+    return iobase ? iobase: 0xffff;
+}
+

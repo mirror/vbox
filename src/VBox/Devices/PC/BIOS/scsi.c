@@ -42,8 +42,9 @@
 
 #define VBSCSI_MAX_DEVICES 16 /* Maximum number of devices a SCSI device currently supported. */
 
-#define VBOX_SCSI_NO_HBA 0xffff
+#define VBOX_SCSI_NO_HBA    0xffff
 
+typedef uint16_t (* scsi_hba_detect)(void);
 typedef int (* scsi_hba_init)(void __far *pvHba, uint8_t u8Bus, uint8_t u8DevFn);
 typedef int (* scsi_hba_cmd_data_out)(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
                                       uint8_t cbCDB, uint8_t __far *buffer, uint32_t length);
@@ -54,6 +55,7 @@ typedef struct
 {
     uint16_t              idPciVendor;
     uint16_t              idPciDevice;
+    scsi_hba_detect       detect;
     scsi_hba_init         init;
     scsi_hba_cmd_data_out cmd_data_out;
     scsi_hba_cmd_data_in  cmd_data_in;
@@ -91,12 +93,13 @@ void inline high_bits_restore(uint16_t u16EaxHi)
 /* Pointers to the HBA specific access routines. */
 scsi_hba_t hbaacc[] =
 {
-    { 0x1000, 0x0030, lsilogic_scsi_init, lsilogic_scsi_cmd_data_out, lsilogic_scsi_cmd_data_in }, /* SPI */
-    { 0x1000, 0x0054, lsilogic_scsi_init, lsilogic_scsi_cmd_data_out, lsilogic_scsi_cmd_data_in }, /* SAS */
-    { 0x104b, 0x1040, buslogic_scsi_init, buslogic_scsi_cmd_data_out, buslogic_scsi_cmd_data_in },
+    { 0x1000, 0x0030, NULL,                 lsilogic_scsi_init, lsilogic_scsi_cmd_data_out, lsilogic_scsi_cmd_data_in }, /* SPI */
+    { 0x1000, 0x0054, NULL,                 lsilogic_scsi_init, lsilogic_scsi_cmd_data_out, lsilogic_scsi_cmd_data_in }, /* SAS */
+    { 0x104b, 0x1040, NULL,                 buslogic_scsi_init, buslogic_scsi_cmd_data_out, buslogic_scsi_cmd_data_in }, /* PCI */
 #ifdef VBOX_WITH_VIRTIO_SCSI
-    { 0x1af4, 0x1048, virtio_scsi_init,   virtio_scsi_cmd_data_out,   virtio_scsi_cmd_data_in   }
+    { 0x1af4, 0x1048, NULL,                 virtio_scsi_init,   virtio_scsi_cmd_data_out,   virtio_scsi_cmd_data_in   },
 #endif
+    { 0xffff, 0xffff, btaha_scsi_detect,    btaha_scsi_init,    buslogic_scsi_cmd_data_out, buslogic_scsi_cmd_data_in }  /* ISA */
 };
 
 /**
@@ -528,7 +531,14 @@ void BIOSCALL scsi_init(void)
     /* Walk the supported drivers and try to detect the HBA. */
     for (i = 0; i < sizeof(hbaacc)/sizeof(hbaacc[0]); i++)
     {
-        uint16_t busdevfn = pci_find_device(hbaacc[i].idPciVendor, hbaacc[i].idPciDevice);
+        uint16_t busdevfn;
+
+        if (hbaacc[i].detect) {
+            busdevfn = hbaacc[i].detect();
+        } else {
+            busdevfn = pci_find_device(hbaacc[i].idPciVendor, hbaacc[i].idPciDevice);
+        }
+
         if (busdevfn != VBOX_SCSI_NO_HBA)
         {
             int rc;

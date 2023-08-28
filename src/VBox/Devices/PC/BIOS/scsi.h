@@ -78,6 +78,9 @@ extern int buslogic_scsi_cmd_data_out(void __far *pvHba, uint8_t idTgt, uint8_t 
 extern int buslogic_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
                                      uint8_t cbCDB, uint8_t __far *buffer, uint32_t length);
 
+extern uint16_t btaha_scsi_detect();
+extern int btaha_scsi_init(void __far *pvHba, uint8_t u8Bus, uint8_t u8DevFn);
+
 extern int virtio_scsi_init(void __far *pvHba, uint8_t u8Bus, uint8_t u8DevFn);
 extern int virtio_scsi_cmd_data_out(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
                                     uint8_t cbCDB, uint8_t __far *buffer, uint32_t length);
