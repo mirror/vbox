@@ -3231,8 +3231,9 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
 
         /*
          * MTRR support.
-         * Currently we are exposing MTRRs with reasonable default values just to get Nested Hyper-V
-         * going, it isn't feature complete, see @bugref{10318} and bugref{10498}.
+         * We've always reported the MTRR feature bit in CPUID.
+         * Here we allow exposing MTRRs with reasonable default values just to get Nested Hyper-V
+         * going. MTRR support isn't feature complete, see @bugref{10318} and bugref{10498}.
          */
         if (pVM->cpum.s.GuestFeatures.fMtrr)
         {
