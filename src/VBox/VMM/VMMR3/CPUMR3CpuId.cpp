@@ -3268,7 +3268,8 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
                 /* Construct guest MTRR support capabilities. */
                 uint8_t const  cGuestVarRangeRegs = RT_MIN(cHostVarRangeRegs, CPUMCTX_MAX_MTRRVAR_COUNT);
                 uint64_t const uGstMtrrCap        = cGuestVarRangeRegs
-                                                  | MSR_IA32_MTRR_CAP_FIX;
+                                                  | MSR_IA32_MTRR_CAP_FIX
+                                                  | MSR_IA32_MTRR_CAP_WC;
                 for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
                 {
                     PVMCPU pVCpu = pVM->apCpusR3[idCpu];
