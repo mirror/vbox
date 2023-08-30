@@ -3618,7 +3618,7 @@ static void hmR0VmxExportHostMsrs(PVMCPUCC pVCpu)
     }
 
     /** @todo IA32_PERF_GLOBALCTRL, IA32_PAT also see
-     *        hmR0VmxExportGuestEntryExitCtls(). */
+     *        vmxHCExportGuestEntryExitCtls(). */
 }
 
 
@@ -3626,7 +3626,7 @@ static void hmR0VmxExportHostMsrs(PVMCPUCC pVCpu)
  * Figures out if we need to swap the EFER MSR which is particularly expensive.
  *
  * We check all relevant bits. For now, that's everything besides LMA/LME, as
- * these two bits are handled by VM-entry, see hmR0VMxExportGuestEntryExitCtls().
+ * these two bits are handled by VM-entry, see vmxHCExportGuestEntryExitCtls().
  *
  * @returns true if we need to load guest EFER, false otherwise.
  * @param   pVCpu           The cross context virtual CPU structure.
