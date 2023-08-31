@@ -56,7 +56,7 @@ int vds_lock_sg( vds_edds __far *edds );
     "xor    al, al"         \
     "error:"                \
     "cbw"                   \
-    parm [es di] value [ax];
+    parm [es di] value [ax] modify [dx];
 
 int vds_unlock_sg( vds_edds __far *edds );
 #pragma aux vds_unlock_sg = \
@@ -67,7 +67,7 @@ int vds_unlock_sg( vds_edds __far *edds );
     "xor    al, al"         \
     "error:"                \
     "cbw"                   \
-    parm [es di] value [ax];
+    parm [es di] value [ax] modify [dx];
 
 
 /*
