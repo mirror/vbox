@@ -1417,7 +1417,7 @@ RTDECL(int)         RTVfsFileReadAt(RTVFSFILE hVfsFile, RTFOFF off, void *pvBuf,
  * returned buffer, making sure it can be used as a zero terminated string.
  *
  * @returns IPRT status code.
- * @param   hVfsIos         The VFS I/O stream handle.
+ * @param   hVfsFile        The VFS file handle.
  * @param   ppvBuf          Where to return the buffer.  Must pass to
  *                          RTVfsFileReadAllFree for freeing, not RTMemFree!
  * @param   pcbBuf          Where to return the buffer size.
