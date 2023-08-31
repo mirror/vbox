@@ -2414,6 +2414,21 @@ ifdef VBOX_WITH_PARFAIT
 	 -z $(PATH_ROOT) \
 	 -r $(VBOX_SVN_REV) \
 	 $(PATH_OUT)/obj
+ ifdef VBOX_PARFAIT_SERVER_2
+	- $(REDIRECT) -E "PARFAIT_DUMP_PATH=$(PATH_OUT)" -- $(TIME) -- $(VBOX_PARFAIT) \
+	 -p \
+	 $(if-expr defined(VBOX_PARFAIT_SERVER_2),-s $(VBOX_PARFAIT_SERVER_2),) \
+	 $(VBOX_PARFAIT_SERVER_OPTS_2) \
+	 $(if-expr defined(VBOX_PARFAIT_SERVER_BASELINE_2),-b $(VBOX_PARFAIT_SERVER_BASELINE_2),) \
+	 -j $(if-expr $(KMK_OPTS_JOBS) > 0,$(expr $(KMK_OPTS_JOBS) / 2),$(NUMBER_OF_PROCESSORS)) \
+	 -o $(PATH_OUT)/report_2.txt \
+	 -g $(PATH_OUT)/html_2 \
+	 -c $(PATH_ROOT)/webtools/tinderbox/client/parfait-vbox.conf \
+	 -e all -d misaligned-access \
+	 -z $(PATH_ROOT) \
+	 -r $(VBOX_SVN_REV) \
+	 $(PATH_OUT)/obj
+ endif
 else
 	$(ECHO) This target requires VBOX_WITH_PARFAIT to be set.
 	exit 1
