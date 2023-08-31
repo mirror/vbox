@@ -1328,7 +1328,7 @@ VMMDECL(void)           CPUMGetGuestCpuId(PVMCPUCC pVCpu, uint32_t iLeaf, uint32
                                           uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
 VMMDECL(uint64_t)       CPUMGetGuestEFER(PCVMCPU pVCpu);
 VMM_INT_DECL(uint64_t)  CPUMGetGuestIa32FeatCtrl(PCVMCPUCC pVCpu);
-VMM_INT_DECL(uint64_t)  CPUMGetGuestIa32MtrrCap(PCVMCPU pVCpu);
+VMM_INT_DECL(uint64_t)  CPUMGetGuestIa32MtrrCap(PCVMCPUCC pVCpu);
 VMM_INT_DECL(uint64_t)  CPUMGetGuestIa32SmmMonitorCtl(PCVMCPUCC pVCpu);
 VMM_INT_DECL(uint64_t)  CPUMGetGuestIa32VmxEptVpidCap(PCVMCPUCC pVCpu);
 VMMDECL(VBOXSTRICTRC)   CPUMQueryGuestMsr(PVMCPUCC pVCpu, uint32_t idMsr, uint64_t *puValue);
