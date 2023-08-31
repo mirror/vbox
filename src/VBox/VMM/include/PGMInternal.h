@@ -135,7 +135,7 @@
 
 /** @def VBOX_WITH_NEW_LAZY_PAGE_ALLOC
  * Enables the experimental lazy page allocation code.
- * @todo Problems with zero page tracking, see @bugref{}.  */
+ * @todo Problems with zero page tracking, see \@bugref{10509}.  */
 #if defined(DOXYGEN_RUNNING)
 # define VBOX_WITH_NEW_LAZY_PAGE_ALLOC
 #endif
