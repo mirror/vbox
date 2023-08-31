@@ -1393,7 +1393,7 @@ typedef const X86MTRRVAR *PCX86MTRRVAR;
 #define X86_MTRR_MT_WP                      5
 /** Writeback. */
 #define X86_MTRR_MT_WB                      6
-/* @}*/
+/** @}*/
 
 /** Architecture capabilities (bugfixes). */
 #define MSR_IA32_ARCH_CAPABILITIES          UINT32_C(0x10a)
