@@ -2418,7 +2418,7 @@ ifdef VBOX_WITH_PARFAIT
 	- $(REDIRECT) -E "PARFAIT_DUMP_PATH=$(PATH_OUT)" -- $(TIME) -- $(VBOX_PARFAIT) \
 	 -p \
 	 $(if-expr defined(VBOX_PARFAIT_SERVER_2),-s $(VBOX_PARFAIT_SERVER_2),) \
-	 $(VBOX_PARFAIT_SERVER_OPTS_2) \
+	 $(VBOX_PARFAIT_OPTS_2) \
 	 $(if-expr defined(VBOX_PARFAIT_SERVER_BASELINE_2),-b $(VBOX_PARFAIT_SERVER_BASELINE_2),) \
 	 -j $(if-expr $(KMK_OPTS_JOBS) > 0,$(expr $(KMK_OPTS_JOBS) / 2),$(NUMBER_OF_PROCESSORS)) \
 	 -o $(PATH_OUT)/report_2.txt \
