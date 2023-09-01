@@ -2796,9 +2796,9 @@ static int PGM_BTH_NAME(NestedSyncPage)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPag
         Assert(PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE);
         Assert(pShwPage->enmKind == PGMPOOLKIND_EPT_PT_FOR_EPT_2MB);
 #endif
-        uint64_t const fGstPteFlags = (pGstWalkAll->u.Ept.Pde.u & pVCpu->pgm.s.fGstEptShadowedBigPdeMask & ~EPT_E_LEAF)
-                                    | EPT_E_MEMTYPE_WB | EPT_E_IGNORE_PAT;
-        pGstWalkAll->u.Ept.Pte.u = GCPhysPage | fGstPteFlags;
+        uint64_t const fGstShwPteFlags = (pGstWalkAll->u.Ept.Pde.u & pVCpu->pgm.s.fGstEptShadowedBigPdeMask & ~EPT_E_LEAF)
+                                       | EPT_E_MEMTYPE_WB | EPT_E_IGNORE_PAT;
+        pGstWalkAll->u.Ept.Pte.u = GCPhysPage | fGstShwPteFlags;
 
         unsigned const iPte = (GCPhysNestedPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
         PGM_BTH_NAME(NestedSyncPageWorker)(pVCpu, &pPt->a[iPte], GCPhysPage, pShwPage, iPte, pGstWalkAll);
@@ -2989,11 +2989,11 @@ static int PGM_BTH_NAME(NestedSyncPT)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPage,
         /*
          * If we have a 2M backing page, we can map the guest's 2M page right away.
          */
-        uint64_t const fShwBigPdeFlags = (pGstWalkAll->u.Ept.Pde.u & pVCpu->pgm.s.fGstEptShadowedBigPdeMask)
-                                       | EPT_E_MEMTYPE_WB | EPT_E_IGNORE_PAT;
+        uint64_t const fGstShwBigPdeFlags = (pGstWalkAll->u.Ept.Pde.u & pVCpu->pgm.s.fGstEptShadowedBigPdeMask)
+                                          | EPT_E_MEMTYPE_WB | EPT_E_IGNORE_PAT;
         if (HCPhys != NIL_RTHCPHYS)
         {
-            Pde.u = HCPhys | fShwBigPdeFlags;
+            Pde.u = HCPhys | fGstShwBigPdeFlags;
             Assert(!(Pde.u & pVCpu->pgm.s.fGstEptMbzBigPdeMask));
             Assert(Pde.u & EPT_E_LEAF);
             SHW_PDE_ATOMIC_SET2(*pPde, Pde);
@@ -3047,13 +3047,13 @@ static int PGM_BTH_NAME(NestedSyncPT)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPage,
         if (rc == VINF_SUCCESS)
         {
             /* The 4K PTEs shall inherit the flags of the 2M PDE page sans the leaf bit. */
-            uint64_t const fShwPteFlags = fShwBigPdeFlags & ~EPT_E_LEAF;
+            uint64_t const fGstShwPteFlags = fGstShwBigPdeFlags & ~EPT_E_LEAF;
 
             /* Sync each 4K pages in the 2M range. */
             for (unsigned iPte = 0; iPte < RT_ELEMENTS(pPt->a); iPte++)
             {
                 RTGCPHYS const GCPhysSubPage = GCPhysPt | (iPte << GUEST_PAGE_SHIFT);
-                pGstWalkAll->u.Ept.Pte.u = GCPhysSubPage | fShwPteFlags;
+                pGstWalkAll->u.Ept.Pte.u = GCPhysSubPage | fGstShwPteFlags;
                 Assert(!(pGstWalkAll->u.Ept.Pte.u & pVCpu->pgm.s.fGstEptMbzPteMask));
                 PGM_BTH_NAME(NestedSyncPageWorker)(pVCpu, &pPt->a[iPte], GCPhysSubPage, pShwPage, iPte, pGstWalkAll);
                 Log7Func(("GstPte=%RGp ShwPte=%RX64 iPte=%u [2M->4K]\n", pGstWalkAll->u.Ept.Pte, pPt->a[iPte].u, iPte));
