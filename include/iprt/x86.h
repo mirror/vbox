@@ -1443,6 +1443,27 @@ typedef const X86MTRRVAR *PCX86MTRRVAR;
  *  "Programming the PAT", AMD spec. 7.8.2 "PAT Indexing") */
 #define MSR_IA32_CR_PAT_INIT_VAL            UINT64_C(0x0007040600070406)
 
+/** Memory types that can be encoded in the IA32_PAT MSR.
+ * @{ */
+/** Uncacheable. */
+#define MSR_IA32_PAT_MT_UC                  0
+/** Write Combining. */
+#define MSR_IA32_PAT_MT_WC                  1
+/** Reserved value 2. */
+#define MSR_IA32_PAT_MT_RSVD_2              2
+/** Reserved value 3. */
+#define MSR_IA32_PAT_MT_RSVD_3              3
+/** Write-through. */
+#define MSR_IA32_PAT_MT_WT                  4
+/** Write-protected. */
+#define MSR_IA32_PAT_MT_WP                  5
+/** Writeback. */
+#define MSR_IA32_PAT_MT_WB                  6
+/** Uncached (UC-). */
+#define MSR_IA32_PAT_MT_UCD                 7
+/** @}*/
+
+
 /** Performance event select MSRs. (Intel only) */
 #define MSR_IA32_PERFEVTSEL0                0x186
 #define MSR_IA32_PERFEVTSEL1                0x187
