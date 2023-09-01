@@ -1728,10 +1728,10 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
                && !(fEptVpidCap & MSR_IA32_VMX_EPT_VPID_CAP_ACCESS_DIRTY));
         /* We currently do -not- shadow reserved bits in guest page tables but instead trap them using non-present permissions,
            see todo in (NestedSyncPT). */
-        pVCpu->pgm.s.fGstEptShadowedPteMask    = EPT_PRESENT_MASK | EPT_E_MEMTYPE_MASK | EPT_E_IGNORE_PAT;
+        pVCpu->pgm.s.fGstEptShadowedPteMask    = EPT_PRESENT_MASK;
         pVCpu->pgm.s.fGstEptShadowedPdeMask    = EPT_PRESENT_MASK;
-        pVCpu->pgm.s.fGstEptShadowedBigPdeMask = EPT_PRESENT_MASK | EPT_E_MEMTYPE_MASK | EPT_E_IGNORE_PAT | EPT_E_LEAF;
-        pVCpu->pgm.s.fGstEptShadowedPdpteMask  = EPT_PRESENT_MASK | EPT_E_MEMTYPE_MASK | EPT_E_IGNORE_PAT | EPT_E_LEAF;
+        pVCpu->pgm.s.fGstEptShadowedBigPdeMask = EPT_PRESENT_MASK | EPT_E_LEAF;
+        pVCpu->pgm.s.fGstEptShadowedPdpteMask  = EPT_PRESENT_MASK;
         pVCpu->pgm.s.fGstEptShadowedPml4eMask  = EPT_PRESENT_MASK | EPT_PML4E_MBZ_MASK;
         /* If mode-based execute control for EPT is enabled, we would need to include bit 10 in the present mask. */
         pVCpu->pgm.s.fGstEptPresentMask        = EPT_PRESENT_MASK;

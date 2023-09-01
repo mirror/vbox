@@ -2633,7 +2633,8 @@ static void PGM_BTH_NAME(NestedSyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPte, RTG
      * Make page table entry.
      */
     SHWPTE Pte;
-    uint64_t const fGstShwPteFlags = pGstWalkAll->u.Ept.Pte.u & pVCpu->pgm.s.fGstEptShadowedPteMask;
+    uint64_t const fGstShwPteFlags = (pGstWalkAll->u.Ept.Pte.u & pVCpu->pgm.s.fGstEptShadowedPteMask)
+                                   | EPT_E_MEMTYPE_WB | EPT_E_IGNORE_PAT;
     if (!PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage) || PGM_PAGE_IS_HNDL_PHYS_NOT_IN_HM(pPage))
     {
 # ifndef VBOX_WITH_NEW_LAZY_PAGE_ALLOC
@@ -2795,7 +2796,8 @@ static int PGM_BTH_NAME(NestedSyncPage)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPag
         Assert(PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE);
         Assert(pShwPage->enmKind == PGMPOOLKIND_EPT_PT_FOR_EPT_2MB);
 #endif
-        uint64_t const fGstPteFlags = pGstWalkAll->u.Ept.Pde.u & pVCpu->pgm.s.fGstEptShadowedBigPdeMask & ~EPT_E_LEAF;
+        uint64_t const fGstPteFlags = (pGstWalkAll->u.Ept.Pde.u & pVCpu->pgm.s.fGstEptShadowedBigPdeMask & ~EPT_E_LEAF)
+                                    | EPT_E_MEMTYPE_WB | EPT_E_IGNORE_PAT;
         pGstWalkAll->u.Ept.Pte.u = GCPhysPage | fGstPteFlags;
 
         unsigned const iPte = (GCPhysNestedPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
@@ -2987,7 +2989,8 @@ static int PGM_BTH_NAME(NestedSyncPT)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPage,
         /*
          * If we have a 2M backing page, we can map the guest's 2M page right away.
          */
-        uint64_t const fShwBigPdeFlags = pGstWalkAll->u.Ept.Pde.u & pVCpu->pgm.s.fGstEptShadowedBigPdeMask;
+        uint64_t const fShwBigPdeFlags = (pGstWalkAll->u.Ept.Pde.u & pVCpu->pgm.s.fGstEptShadowedBigPdeMask)
+                                       | EPT_E_MEMTYPE_WB | EPT_E_IGNORE_PAT;
         if (HCPhys != NIL_RTHCPHYS)
         {
             Pde.u = HCPhys | fShwBigPdeFlags;
