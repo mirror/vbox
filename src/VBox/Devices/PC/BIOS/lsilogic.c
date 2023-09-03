@@ -34,6 +34,8 @@
 #include "vds.h"
 #include "scsi.h"
 
+#define USE_VDS
+
 //#define DEBUG_LSILOGIC 1
 #if DEBUG_LSILOGIC
 # define DBG_LSILOGIC(...)        BX_INFO(__VA_ARGS__)
@@ -42,6 +44,12 @@
 #endif
 
 #define RT_BIT(bit) (1L << (bit))
+
+
+#ifdef USE_VDS
+#define NUM_SG_BUFFERS      34
+#endif
+
 
 /**
  * A simple SG element for a 32bit address.
@@ -291,13 +299,20 @@ typedef struct MptIOCInitReply
 typedef struct
 {
     /** The SCSI I/O request structure. */
-    MptSCSIIORequest   ScsiIoReq;
+    MptSCSIIORequest    ScsiIoReq;
     /** S/G elements being used, must come after the I/O request structure. */
-    MptSGEntrySimple32 Sge;
+    MptSGEntrySimple32  Sge[NUM_SG_BUFFERS];
     /** The reply frame used for address replies. */
-    uint8_t            abReply[128];
+    uint8_t             abReply[128];
     /** I/O base of device. */
-    uint16_t           u16IoBase;
+    uint16_t            u16IoBase;
+#ifdef USE_VDS
+    /** VDS EDDS structure for the I/O request structure. */
+    vds_edds            edds_req;
+    /** VDS EDDS DMA buffer descriptor structure. */
+    vds_edds            edds;
+    vds_sg              edds_more_sg[NUM_SG_BUFFERS - 1];
+#endif
 } lsilogic_t;
 
 /* The BusLogic specific data must fit into 1KB (statically allocated). */
@@ -365,17 +380,30 @@ static int lsilogic_cmd(lsilogic_t __far *lsilogic, const void __far *pvReq, uin
 
 static int lsilogic_scsi_cmd_exec(lsilogic_t __far *lsilogic)
 {
-    uint32_t u32Reply = 0;
-    uint32_t u32ReplyDummy = 0;
+    uint32_t    u32Reply = 0;
+    uint32_t    u32ReplyDummy = 0;
+
+#ifdef USE_VDS
+    /* Lock request memory. */
+    lsilogic->edds_req.num_avail = 1;
+    vds_build_sg_list(&lsilogic->edds_req, &lsilogic->ScsiIoReq, sizeof(lsilogic->ScsiIoReq));
 
     /* Send it off. */
+    outpd(lsilogic->u16IoBase + LSILOGIC_REG_REQUEST_QUEUE, lsilogic->edds_req.u.sg[0].phys_addr);
+#else
+    /* Send it off. */
     outpd(lsilogic->u16IoBase + LSILOGIC_REG_REQUEST_QUEUE, lsilogic_addr_to_phys(&lsilogic->ScsiIoReq));
+#endif
 
     /* Wait for it to finish. */
     while (!(inpd(lsilogic->u16IoBase + LSILOGIC_REG_HOST_INTR_STATUS) & LSILOGIC_REG_HOST_INTR_STATUS_REPLY_INTR));
 
     outpd(lsilogic->u16IoBase + LSILOGIC_REG_HOST_INTR_STATUS, 1);
 
+#ifdef USE_VDS
+    /* Unlock the request again. */
+    vds_free_sg_list(&lsilogic->edds_req);
+#endif
     /* Read the reply queue. */
     u32Reply = inpd(lsilogic->u16IoBase + LSILOGIC_REG_REPLY_QUEUE);
     u32ReplyDummy = inpd(lsilogic->u16IoBase + LSILOGIC_REG_REPLY_QUEUE);
@@ -400,12 +428,18 @@ static int lsilogic_scsi_cmd_exec(lsilogic_t __far *lsilogic)
 }
 
 int lsilogic_scsi_cmd_data_out(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
-                               uint8_t cbCDB, uint8_t __far *buffer, uint32_t length)
+                               uint8_t cbCDB, unsigned char __far *buffer, uint32_t length)
 {
-    lsilogic_t __far *lsilogic = (lsilogic_t __far *)pvHba;
-    int i;
+    lsilogic_t __far    *lsilogic = (lsilogic_t __far *)pvHba;
+    int                 i;
+    int                 rc;
 
     _fmemset(&lsilogic->ScsiIoReq, 0, sizeof(lsilogic->ScsiIoReq));
+
+#ifdef USE_VDS
+    lsilogic->edds.num_avail = NUM_SG_BUFFERS;
+    vds_build_sg_list(&lsilogic->edds, buffer, length);
+#endif
 
     lsilogic->ScsiIoReq.u8TargetID          = idTgt;
     lsilogic->ScsiIoReq.u8Bus               = 0;
@@ -419,26 +453,56 @@ int lsilogic_scsi_cmd_data_out(void __far *pvHba, uint8_t idTgt, uint8_t __far *
     for (i = 0; i < cbCDB; i++)
         lsilogic->ScsiIoReq.au8CDB[i] = aCDB[i];
 
-    lsilogic->Sge.u24Length               = length;
-    lsilogic->Sge.fEndOfList              = 1;
-    lsilogic->Sge.f64BitAddress           = 0;
-    lsilogic->Sge.fBufferContainsData     = 0;
-    lsilogic->Sge.fLocalAddress           = 0;
-    lsilogic->Sge.u2ElementType           = 0x01; /* Simple type */
-    lsilogic->Sge.fEndOfBuffer            = 1;
-    lsilogic->Sge.fLastElement            = 1;
-    lsilogic->Sge.u32DataBufferAddressLow = lsilogic_addr_to_phys(buffer);
+#ifdef USE_VDS
+    for (i = 0; i < lsilogic->edds.num_used; ++i)
+    {
+        lsilogic->Sge[i].u24Length                  = lsilogic->edds.u.sg[i].size;
+        lsilogic->Sge[i].fEndOfList                 = 0;
+        lsilogic->Sge[i].f64BitAddress              = 0;
+        lsilogic->Sge[i].fBufferContainsData        = 0;
+        lsilogic->Sge[i].fLocalAddress              = 0;
+        lsilogic->Sge[i].u2ElementType              = 0x01; /* Simple type */
+        lsilogic->Sge[i].fEndOfBuffer               = 0;
+        lsilogic->Sge[i].fLastElement               = 0;
+        lsilogic->Sge[i].u32DataBufferAddressLow    = lsilogic->edds.u.sg[i].phys_addr;
+    }
+    --i;
+    lsilogic->Sge[i].fEndOfList = lsilogic->Sge[i].fEndOfBuffer = lsilogic->Sge[i].fLastElement = 1;
+#else
+    lsilogic->Sge[0].u24Length               = length;
+    lsilogic->Sge[0].fEndOfList              = 1;
+    lsilogic->Sge[0].f64BitAddress           = 0;
+    lsilogic->Sge[0].fBufferContainsData     = 0;
+    lsilogic->Sge[0].fLocalAddress           = 0;
+    lsilogic->Sge[0].u2ElementType           = 0x01; /* Simple type */
+    lsilogic->Sge[0].fEndOfBuffer            = 1;
+    lsilogic->Sge[0].fLastElement            = 1;
+    lsilogic->Sge[0].u32DataBufferAddressLow = phys_buf;
+#endif
 
-    return lsilogic_scsi_cmd_exec(lsilogic);
+    rc = lsilogic_scsi_cmd_exec(lsilogic);
+
+#ifdef USE_VDS
+    /* Unlock the buffer again. */
+    vds_free_sg_list(&lsilogic->edds);
+#endif
+
+    return rc;
 }
 
 int lsilogic_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *aCDB,
-                              uint8_t cbCDB, uint8_t __far *buffer, uint32_t length)
+                              uint8_t cbCDB, unsigned char __far *buffer, uint32_t length)
 {
-    lsilogic_t __far *lsilogic = (lsilogic_t __far *)pvHba;
-    int i;
+    lsilogic_t __far    *lsilogic = (lsilogic_t __far *)pvHba;
+    int                 i;
+    int                 rc;
 
     _fmemset(&lsilogic->ScsiIoReq, 0, sizeof(lsilogic->ScsiIoReq));
+
+#ifdef USE_VDS
+    lsilogic->edds.num_avail = NUM_SG_BUFFERS;
+    vds_build_sg_list(&lsilogic->edds, buffer, length);
+#endif
 
     lsilogic->ScsiIoReq.u8TargetID          = idTgt;
     lsilogic->ScsiIoReq.u8Bus               = 0;
@@ -452,17 +516,42 @@ int lsilogic_scsi_cmd_data_in(void __far *pvHba, uint8_t idTgt, uint8_t __far *a
     for (i = 0; i < cbCDB; i++)
         lsilogic->ScsiIoReq.au8CDB[i] = aCDB[i];
 
-    lsilogic->Sge.u24Length                 = length;
-    lsilogic->Sge.fEndOfList                = 1;
-    lsilogic->Sge.f64BitAddress             = 0;
-    lsilogic->Sge.fBufferContainsData       = 0;
-    lsilogic->Sge.fLocalAddress             = 0;
-    lsilogic->Sge.u2ElementType             = 0x01; /* Simple type */
-    lsilogic->Sge.fEndOfBuffer              = 1;
-    lsilogic->Sge.fLastElement              = 1;
-    lsilogic->Sge.u32DataBufferAddressLow   = lsilogic_addr_to_phys(buffer);
+#ifdef USE_VDS
+    for (i = 0; i < lsilogic->edds.num_used; ++i)
+    {
+        lsilogic->Sge[i].u24Length                  = lsilogic->edds.u.sg[i].size;
+        lsilogic->Sge[i].fEndOfList                 = 0;
+        lsilogic->Sge[i].f64BitAddress              = 0;
+        lsilogic->Sge[i].fBufferContainsData        = 0;
+        lsilogic->Sge[i].fLocalAddress              = 0;
+        lsilogic->Sge[i].u2ElementType              = 0x01; /* Simple type */
+        lsilogic->Sge[i].fEndOfBuffer               = 0;
+        lsilogic->Sge[i].fLastElement               = 0;
+        lsilogic->Sge[i].u32DataBufferAddressLow    = lsilogic->edds.u.sg[i].phys_addr;
+    }
+    --i;
+    lsilogic->Sge[i].fEndOfList = lsilogic->Sge[i].fEndOfBuffer = lsilogic->Sge[i].fLastElement = 1;
 
-    return lsilogic_scsi_cmd_exec(lsilogic);
+#else
+    lsilogic->Sge[0].u24Length                 = length;
+    lsilogic->Sge[0].fEndOfList                = 1;
+    lsilogic->Sge[0].f64BitAddress             = 0;
+    lsilogic->Sge[0].fBufferContainsData       = 0;
+    lsilogic->Sge[0].fLocalAddress             = 0;
+    lsilogic->Sge[0].u2ElementType             = 0x01; /* Simple type */
+    lsilogic->Sge[0].fEndOfBuffer              = 1;
+    lsilogic->Sge[0].fLastElement              = 1;
+    lsilogic->Sge[0].u32DataBufferAddressLow   = lsilogic_addr_to_phys(buffer);
+#endif
+
+    rc = lsilogic_scsi_cmd_exec(lsilogic);
+
+#ifdef USE_VDS
+    /* Unlock the buffer again. */
+    vds_free_sg_list(&lsilogic->edds);
+#endif
+
+    return rc;
 }
 
 /**
