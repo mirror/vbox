@@ -39,9 +39,9 @@
 #include "UIMachine.h"
 #include "UIMachineLogicNormal.h"
 #include "UIMachineWindow.h"
-#include "UIMenuBarEditorWindow.h"
+#include "UIMenuBarEditor.h"
 #include "UIMessageCenter.h"
-#include "UIStatusBarEditorWindow.h"
+#include "UIStatusBarEditor.h"
 #ifndef VBOX_WS_MAC
 # include "QIMenu.h"
 #else

@@ -32,8 +32,8 @@
 #include "UIActionPool.h"
 #include "UIExtraDataManager.h"
 #include "UIMachineSettingsInterface.h"
-#include "UIStatusBarEditorWindow.h"
-#include "UIMenuBarEditorWindow.h"
+#include "UIStatusBarEditor.h"
+#include "UIMenuBarEditor.h"
 #include "UIMiniToolbarSettingsEditor.h"
 #include "UIVisualStateEditor.h"
 

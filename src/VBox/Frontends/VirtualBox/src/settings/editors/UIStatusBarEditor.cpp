@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIStatusBarEditorWindow class implementation.
+ * VBox Qt GUI - UIStatusBarEditor class implementation.
  */
 
 /*
@@ -49,7 +49,7 @@
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIMachineWindow.h"
-#include "UIStatusBarEditorWindow.h"
+#include "UIStatusBarEditor.h"
 
 /* Forward declarations: */
 class QAccessibleInterface;
@@ -922,4 +922,4 @@ int UIStatusBarEditorWidget::position(IndicatorType enmType) const
 }
 
 
-#include "UIStatusBarEditorWindow.moc"
+#include "UIStatusBarEditor.moc"

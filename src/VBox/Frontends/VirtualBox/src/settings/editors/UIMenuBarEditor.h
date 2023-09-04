@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIMenuBarEditorWindow class declaration.
+ * VBox Qt GUI - UIMenuBarEditor class declaration.
  */
 
 /*
@@ -25,8 +25,8 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef FEQT_INCLUDED_SRC_widgets_UIMenuBarEditorWindow_h
-#define FEQT_INCLUDED_SRC_widgets_UIMenuBarEditorWindow_h
+#ifndef FEQT_INCLUDED_SRC_settings_editors_UIMenuBarEditor_h
+#define FEQT_INCLUDED_SRC_settings_editors_UIMenuBarEditor_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -55,8 +55,7 @@ class UIActionPool;
 class QIToolBar;
 class UIMachineWindow;
 
-
-/** UISlidingToolBar subclass
+/** UISlidingToolBar sub-class
   * providing user with possibility to edit menu-bar layout. */
 class SHARED_LIBRARY_STUFF UIMenuBarEditorWindow : public UISlidingToolBar
 {
@@ -68,7 +67,6 @@ public:
       * @param  pActionPool  Brings the action-pool reference for internal use. */
     UIMenuBarEditorWindow(UIMachineWindow *pParent, UIActionPool *pActionPool);
 };
-
 
 /** UIEditor sub-class
   * used as menu-bar editor widget. */
@@ -270,5 +268,4 @@ private:
     /** @} */
 };
 
-
-#endif /* !FEQT_INCLUDED_SRC_widgets_UIMenuBarEditorWindow_h */
+#endif /* !FEQT_INCLUDED_SRC_settings_editors_UIMenuBarEditor_h */

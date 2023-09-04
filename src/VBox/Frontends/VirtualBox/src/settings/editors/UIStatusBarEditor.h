@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIStatusBarEditorWindow class declaration.
+ * VBox Qt GUI - UIStatusBarEditor class declaration.
  */
 
 /*
@@ -25,8 +25,8 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef FEQT_INCLUDED_SRC_widgets_UIStatusBarEditorWindow_h
-#define FEQT_INCLUDED_SRC_widgets_UIStatusBarEditorWindow_h
+#ifndef FEQT_INCLUDED_SRC_settings_editors_UIStatusBarEditor_h
+#define FEQT_INCLUDED_SRC_settings_editors_UIStatusBarEditor_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -55,8 +55,7 @@ class QIToolButton;
 class UIMachineWindow;
 class UIStatusBarEditorButton;
 
-
-/** UISlidingToolBar subclass
+/** UISlidingToolBar sub-class
   * providing user with possibility to edit status-bar layout. */
 class SHARED_LIBRARY_STUFF UIStatusBarEditorWindow : public UISlidingToolBar
 {
@@ -67,7 +66,6 @@ public:
     /** Constructs sliding toolbar passing @a pParent to the base-class. */
     UIStatusBarEditorWindow(UIMachineWindow *pParent);
 };
-
 
 /** UIEditor sub-class
   * used as status-bar editor widget. */
@@ -187,5 +185,4 @@ private:
     /** @} */
 };
 
-
-#endif /* !FEQT_INCLUDED_SRC_widgets_UIStatusBarEditorWindow_h */
+#endif /* !FEQT_INCLUDED_SRC_settings_editors_UIStatusBarEditor_h */

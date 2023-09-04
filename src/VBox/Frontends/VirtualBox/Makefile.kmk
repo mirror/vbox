@@ -908,6 +908,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/editors/UIHotKeyEditor.h \
 	src/settings/editors/UILanguageSettingsEditor.h \
 	src/settings/editors/UIMaximumGuestScreenSizeEditor.h \
+	src/settings/editors/UIMenuBarEditor.h \
 	src/settings/editors/UIMiniToolbarSettingsEditor.h \
 	src/settings/editors/UIMonitorCountEditor.h \
 	src/settings/editors/UIMotherboardFeaturesEditor.h \
@@ -926,6 +927,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/editors/UISharedFoldersEditor.h \
 	src/settings/editors/UIShortcutConfigurationEditor.h \
 	src/settings/editors/UISnapshotFolderEditor.h \
+	src/settings/editors/UIStatusBarEditor.h \
 	src/settings/editors/UIStorageSettingsEditor.h \
 	src/settings/editors/UITpmEditor.h \
 	src/settings/editors/UIUSBControllerEditor.h \
@@ -960,7 +962,6 @@ UICommon_QT_MOCHDRS = \
 	src/widgets/UIMediaComboBox.h \
 	src/widgets/UIMediumSizeEditor.h \
 	src/widgets/UIMenuBar.h \
-	src/widgets/UIMenuBarEditorWindow.h \
 	src/widgets/UIPopupBox.h \
 	src/widgets/UIPopupPane.h \
 	src/widgets/UIPopupPaneButtonPane.h \
@@ -972,7 +973,6 @@ UICommon_QT_MOCHDRS = \
 	src/widgets/UIProgressDialog.h \
 	src/widgets/UISlidingToolBar.h \
 	src/widgets/UISpecialControls.h \
-	src/widgets/UIStatusBarEditorWindow.h \
 	src/widgets/UISearchLineEdit.h \
 	src/widgets/UIToolBox.h \
 	src/wizards/UINativeWizard.h \
@@ -1084,6 +1084,7 @@ UICommon_QT_MOCSRCS = \
 	src/settings/editors/UILanguageSettingsEditor.cpp \
 	src/settings/editors/UISharedFoldersEditor.cpp \
 	src/settings/editors/UIShortcutConfigurationEditor.cpp \
+	src/settings/editors/UIStatusBarEditor.cpp \
 	src/settings/editors/UIStorageSettingsEditor.cpp \
 	src/settings/editors/UIUSBFiltersEditor.cpp \
 	src/settings/machine/UIMachineSettingsNetwork.cpp \
@@ -1092,7 +1093,6 @@ UICommon_QT_MOCSRCS = \
 	src/widgets/UIFileTableNavigationWidget.cpp \
 	src/widgets/UIFilmContainer.cpp \
 	src/widgets/UIPortForwardingTable.cpp \
-	src/widgets/UIStatusBarEditorWindow.cpp \
 	src/widgets/UIToolBox.cpp
 
 ifdef VBOX_GUI_WITH_NETWORK_MANAGER
@@ -1495,6 +1495,7 @@ UICommon_SOURCES = \
 	src/settings/editors/UIHotKeyEditor.cpp \
 	src/settings/editors/UILanguageSettingsEditor.cpp \
 	src/settings/editors/UIMaximumGuestScreenSizeEditor.cpp \
+	src/settings/editors/UIMenuBarEditor.cpp \
 	src/settings/editors/UIMiniToolbarSettingsEditor.cpp \
 	src/settings/editors/UIMonitorCountEditor.cpp \
 	src/settings/editors/UIMotherboardFeaturesEditor.cpp \
@@ -1513,6 +1514,7 @@ UICommon_SOURCES = \
 	src/settings/editors/UISharedFoldersEditor.cpp \
 	src/settings/editors/UIShortcutConfigurationEditor.cpp \
 	src/settings/editors/UISnapshotFolderEditor.cpp \
+	src/settings/editors/UIStatusBarEditor.cpp \
 	src/settings/editors/UIStorageSettingsEditor.cpp \
 	src/settings/editors/UITpmEditor.cpp \
 	src/settings/editors/UIUSBControllerEditor.cpp \
@@ -1547,7 +1549,6 @@ UICommon_SOURCES = \
 	src/widgets/UIMediaComboBox.cpp \
 	src/widgets/UIMediumSizeEditor.cpp \
 	src/widgets/UIMenuBar.cpp \
-	src/widgets/UIMenuBarEditorWindow.cpp \
 	src/widgets/UIPopupBox.cpp \
 	src/widgets/UIPopupPane.cpp \
 	src/widgets/UIPopupPaneButtonPane.cpp \
@@ -1560,7 +1561,6 @@ UICommon_SOURCES = \
 	src/widgets/UISearchLineEdit.cpp \
 	src/widgets/UISlidingToolBar.cpp \
 	src/widgets/UISpecialControls.cpp \
-	src/widgets/UIStatusBarEditorWindow.cpp \
 	src/widgets/UIToolBox.cpp \
 	src/wizards/UINativeWizard.cpp \
 	src/wizards/UINativeWizardPage.cpp \
