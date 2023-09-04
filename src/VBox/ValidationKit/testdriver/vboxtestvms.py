@@ -1188,27 +1188,27 @@ class TestVm(object):
         if self.fCom1RawFile:
             self.sCom1RawFile = self._generateRawPortFilename(oTestDrv, '-com1-', '.out');
         return oTestDrv.createTestVM(self.sVmName,
-                                     1,                 # iGroup
-                                     sHd                = self.sHd,
-                                     sKind              = self.sKind,
-                                     fIoApic            = self.fIoApic,
-                                     fNstHwVirt         = self.fNstHwVirt,
-                                     fPae               = self.fPae,
-                                     eNic0AttachType    = eNic0AttachType,
-                                     sDvdImage          = sDvdImage,
-                                     sDvdControllerType = self.sDvdControllerType,
-                                     sHddControllerType = self.sHddControllerType,
-                                     sFloppy            = self.sFloppy,
-                                     fVmmDevTestingPart = self.fVmmDevTestingPart,
-                                     fVmmDevTestingMmio = self.fVmmDevTestingMmio,
-                                     sFirmwareType      = self.sFirmwareType,
-                                     sChipsetType       = self.sChipsetType,
-                                     sIommuType         = self.sIommuType,
-                                     sCom1RawFile       = self.sCom1RawFile if self.fCom1RawFile else None,
-                                     fSecureBoot        = self.fSecureBoot,
-                                     sUefiMokPathPrefix = self.sUefiMokPathPrefix,
-                                     eGraphicsControllerType = vboxcon.GraphicsControllerType_VBoxSVGA if self.sGraphicsControllerType == 'VBoxSVGA' else None
-                                     );
+            1,                 # iGroup
+            sHd                = self.sHd,
+            sKind              = self.sKind,
+            fIoApic            = self.fIoApic,
+            fNstHwVirt         = self.fNstHwVirt,
+            fPae               = self.fPae,
+            eNic0AttachType    = eNic0AttachType,
+            sDvdImage          = sDvdImage,
+            sDvdControllerType = self.sDvdControllerType,
+            sHddControllerType = self.sHddControllerType,
+            sFloppy            = self.sFloppy,
+            fVmmDevTestingPart = self.fVmmDevTestingPart,
+            fVmmDevTestingMmio = self.fVmmDevTestingMmio,
+            sFirmwareType      = self.sFirmwareType,
+            sChipsetType       = self.sChipsetType,
+            sIommuType         = self.sIommuType,
+            sCom1RawFile       = self.sCom1RawFile if self.fCom1RawFile else None,
+            fSecureBoot        = self.fSecureBoot,
+            sUefiMokPathPrefix = self.sUefiMokPathPrefix,
+            eGraphicsControllerType = vboxcon.GraphicsControllerType_VBoxSVGA if self.sGraphicsControllerType == 'VBoxSVGA' else None
+            );
 
     def getReconfiguredVm(self, oTestDrv, cCpus, sVirtMode, sParavirtMode = None):
         """
