@@ -32,14 +32,11 @@
 #endif
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
+#include "UIEditor.h"
 #include "UISettingsDefs.h"
 
 /* COM includes: */
 #include "COMEnums.h"
-
-/* Other VBox includes: */
-#include <VBox/com/com.h>
 
 /* Forward declarations: */
 class QCheckBox;
@@ -51,8 +48,8 @@ class QIAdvancedSlider;
 class UIFilePathSelector;
 class UIFilmContainer;
 
-/** QWidget subclass used as a recording settings editor. */
-class SHARED_LIBRARY_STUFF UIRecordingSettingsEditor : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class used as a recording settings editor. */
+class SHARED_LIBRARY_STUFF UIRecordingSettingsEditor : public UIEditor
 {
     Q_OBJECT;
 

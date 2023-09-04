@@ -35,7 +35,7 @@
 #include <QMap>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
+#include "UIEditor.h"
 #include "UIUpdateDefs.h"
 
 /* Forward declarations: */
@@ -45,8 +45,8 @@ class QCheckBox;
 class QComboBox;
 class QLabel;
 
-/** QWidget subclass used as a update settings editor. */
-class SHARED_LIBRARY_STUFF UIUpdateSettingsEditor : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class used as a update settings editor. */
+class SHARED_LIBRARY_STUFF UIUpdateSettingsEditor : public UIEditor
 {
     Q_OBJECT;
 

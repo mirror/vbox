@@ -38,7 +38,7 @@
 
 
 UIMotherboardFeaturesEditor::UIMotherboardFeaturesEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_fEnableIoApic(false)
     , m_fEnableUtcTime(false)
     , m_fEnableEfi(false)

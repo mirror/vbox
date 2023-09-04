@@ -41,7 +41,7 @@
 
 
 UIGraphicsControllerEditor::UIGraphicsControllerEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_enmValue(KGraphicsControllerType_Max)
     , m_pLayout(0)
     , m_pLabel(0)

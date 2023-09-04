@@ -36,7 +36,7 @@
 
 
 UIDefaultMachineFolderEditor::UIDefaultMachineFolderEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_strValue(QString())
     , m_pLayout(0)
     , m_pLabel(0)

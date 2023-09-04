@@ -41,7 +41,7 @@
 
 
 UIParavirtProviderEditor::UIParavirtProviderEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_enmValue(KParavirtProvider_Max)
     , m_pLabel(0)
     , m_pCombo(0)

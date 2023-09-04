@@ -32,8 +32,7 @@
 #endif
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
-#include "UILibraryDefs.h"
+#include "UIEditor.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -92,8 +91,8 @@ namespace UIBootDataTools
 using namespace UIBootDataTools;
 
 
-/** QWidget subclass used as boot order editor. */
-class SHARED_LIBRARY_STUFF UIBootOrderEditor : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class used as boot order editor. */
+class SHARED_LIBRARY_STUFF UIBootOrderEditor : public UIEditor
 {
     Q_OBJECT;
 

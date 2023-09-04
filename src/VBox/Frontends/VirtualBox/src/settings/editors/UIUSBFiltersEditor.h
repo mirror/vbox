@@ -32,7 +32,7 @@
 #endif
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
+#include "UIEditor.h"
 #include "UIExtraDataDefs.h"
 
 /* Forward declartions: */
@@ -96,8 +96,8 @@ struct UIDataUSBFilter
     UIRemoteMode  m_enmRemoteMode;
 };
 
-/** QWidget subclass used as a USB filters editor. */
-class SHARED_LIBRARY_STUFF UIUSBFiltersEditor : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class used as a USB filters editor. */
+class SHARED_LIBRARY_STUFF UIUSBFiltersEditor : public UIEditor
 {
     Q_OBJECT;
 

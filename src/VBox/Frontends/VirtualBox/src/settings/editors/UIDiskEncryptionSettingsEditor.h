@@ -32,7 +32,7 @@
 #endif
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
+#include "UIEditor.h"
 
 /* COM includes: */
 #include "UIExtraDataDefs.h"
@@ -42,10 +42,9 @@ class QCheckBox;
 class QComboBox;
 class QLabel;
 class QLineEdit;
-class QWidget;
 
-/** QWidget subclass used as a disk encryption settings editor. */
-class SHARED_LIBRARY_STUFF UIDiskEncryptionSettingsEditor : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class used as a disk encryption settings editor. */
+class SHARED_LIBRARY_STUFF UIDiskEncryptionSettingsEditor : public UIEditor
 {
     Q_OBJECT;
 

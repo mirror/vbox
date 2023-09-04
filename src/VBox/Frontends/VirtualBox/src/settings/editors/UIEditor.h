@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIAutoCaptureKeyboardEditor class declaration.
+ * VBox Qt GUI - UIEditor class declaration.
  */
 
 /*
@@ -25,51 +25,29 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef FEQT_INCLUDED_SRC_settings_editors_UIAutoCaptureKeyboardEditor_h
-#define FEQT_INCLUDED_SRC_settings_editors_UIAutoCaptureKeyboardEditor_h
+#ifndef FEQT_INCLUDED_SRC_settings_editors_UIEditor_h
+#define FEQT_INCLUDED_SRC_settings_editors_UIEditor_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
 /* GUI includes: */
-#include "UIEditor.h"
+#include "QIWithRetranslateUI.h"
 
-/* Forward declarations: */
-class QCheckBox;
-class QLabel;
-
-/** UIEditor sub-class used as an auto capture keyboard editor. */
-class SHARED_LIBRARY_STUFF UIAutoCaptureKeyboardEditor : public UIEditor
+/** QWidget sub-class used as editor interface. */
+class SHARED_LIBRARY_STUFF UIEditor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs editor passing @a pParent to the base-class. */
-    UIAutoCaptureKeyboardEditor(QWidget *pParent = 0);
-
-    /** Defines editor @a fValue. */
-    void setValue(bool fValue);
-    /** Returns editor value. */
-    bool value() const;
+    UIEditor(QWidget *pParent = 0);
 
 protected:
 
-    /** Handles translation event. */
-    virtual void retranslateUi() RT_OVERRIDE;
-
-private:
-
-    /** Prepares all. */
-    void prepare();
-
-    /** Holds the value to be set. */
-    bool  m_fValue;
-
-    /** Holds the label instance. */
-    QLabel    *m_pLabel;
-    /** Holds the check-box instance. */
-    QCheckBox *m_pCheckBox;
+    /** Holds the list of sub-editors. */
+    QList<UIEditor*> m_editors;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_settings_editors_UIAutoCaptureKeyboardEditor_h */
+#endif /* !FEQT_INCLUDED_SRC_settings_editors_UIEditor_h */

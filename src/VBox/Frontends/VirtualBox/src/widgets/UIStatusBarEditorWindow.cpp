@@ -442,7 +442,7 @@ UIStatusBarEditorWindow::UIStatusBarEditorWindow(UIMachineWindow *pParent)
 UIStatusBarEditorWidget::UIStatusBarEditorWidget(QWidget *pParent,
                                                  bool fStartedFromVMSettings /* = true */,
                                                  const QUuid &uMachineID /* = QString() */)
-    : QIWithRetranslateUI2<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_fPrepared(false)
     , m_fStartedFromVMSettings(fStartedFromVMSettings)
     , m_uMachineID(uMachineID)

@@ -31,20 +31,16 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QWidget>
-
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
+#include "UIEditor.h"
 #include "UIExtraDataDefs.h"
-#include "UILibraryDefs.h"
 
 /* Forward declarations: */
 class QComboBox;
 class QLabel;
 
-/** QWidget subclass used as a color theme editor. */
-class SHARED_LIBRARY_STUFF UIColorThemeEditor : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class used as a color theme editor. */
+class SHARED_LIBRARY_STUFF UIColorThemeEditor : public UIEditor
 {
     Q_OBJECT;
 

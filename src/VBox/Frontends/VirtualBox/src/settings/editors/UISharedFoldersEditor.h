@@ -32,7 +32,7 @@
 #endif
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
+#include "UIEditor.h"
 #include "UIExtraDataDefs.h"
 
 /* Forward declartions: */
@@ -89,8 +89,8 @@ struct UIDataSharedFolder
     QString             m_strAutoMountPoint;
 };
 
-/** QWidget subclass used as a shared folders editor. */
-class SHARED_LIBRARY_STUFF UISharedFoldersEditor : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class used as a shared folders editor. */
+class SHARED_LIBRARY_STUFF UISharedFoldersEditor : public UIEditor
 {
     Q_OBJECT;
 

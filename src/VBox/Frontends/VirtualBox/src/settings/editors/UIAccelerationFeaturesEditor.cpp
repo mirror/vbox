@@ -36,7 +36,7 @@
 
 
 UIAccelerationFeaturesEditor::UIAccelerationFeaturesEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_fEnableNestedPaging(false)
     , m_pLabel(0)
     , m_pCheckBoxEnableNestedPaging(0)

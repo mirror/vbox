@@ -43,7 +43,7 @@
 
 
 UIScaleFactorEditor::UIScaleFactorEditor(QWidget *pParent)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_pLayout(0)
     , m_pLabel(0)
     , m_pMonitorComboBox(0)

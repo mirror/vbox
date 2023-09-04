@@ -35,7 +35,7 @@
 
 
 UIMiniToolbarSettingsEditor::UIMiniToolbarSettingsEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_fShowMiniToolbar(false)
     , m_fMiniToolbarAtTop(false)
     , m_pLabel(0)

@@ -42,7 +42,7 @@
 
 
 UIVideoMemoryEditor::UIVideoMemoryEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_iValue(0)
     , m_comGuestOSType(CGuestOSType())
     , m_cGuestScreenCount(1)

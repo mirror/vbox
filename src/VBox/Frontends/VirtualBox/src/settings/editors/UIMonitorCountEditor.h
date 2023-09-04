@@ -31,12 +31,8 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QWidget>
-
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
-#include "UILibraryDefs.h"
+#include "UIEditor.h"
 
 /* Forward declarations: */
 class QGridLayout;
@@ -44,8 +40,8 @@ class QLabel;
 class QSpinBox;
 class QIAdvancedSlider;
 
-/** QWidget subclass used as a monitor count editor. */
-class SHARED_LIBRARY_STUFF UIMonitorCountEditor : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class used as a monitor count editor. */
+class SHARED_LIBRARY_STUFF UIMonitorCountEditor : public UIEditor
 {
     Q_OBJECT;
 

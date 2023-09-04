@@ -31,12 +31,8 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QWidget>
-
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
-#include "UILibraryDefs.h"
+#include "UIEditor.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -51,8 +47,8 @@ class QString;
 class UIFilePathSelector;
 class UIMarkableLineEdit;
 
-/** QWidget subclass providing complex editor for basic VM parameters. */
-class SHARED_LIBRARY_STUFF UINameAndSystemEditor : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class providing complex editor for basic VM parameters. */
+class SHARED_LIBRARY_STUFF UINameAndSystemEditor : public UIEditor
 {
     Q_OBJECT;
     Q_PROPERTY(QString name READ name WRITE setName);

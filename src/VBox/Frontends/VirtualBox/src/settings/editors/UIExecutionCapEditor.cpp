@@ -38,7 +38,7 @@
 #include "UIExecutionCapEditor.h"
 
 UIExecutionCapEditor::UIExecutionCapEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_uMinExecCap(1)
     , m_uMedExecCap(40)
     , m_uMaxExecCap(100)

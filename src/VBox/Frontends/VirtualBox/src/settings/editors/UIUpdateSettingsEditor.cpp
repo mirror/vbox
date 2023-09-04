@@ -38,7 +38,7 @@
 
 
 UIUpdateSettingsEditor::UIUpdateSettingsEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_pCheckBox(0)
     , m_pWidgetUpdateSettings(0)
     , m_pLabelUpdatePeriod(0)

@@ -55,7 +55,7 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent,
                                              bool fChooseImage /* = false */,
                                              bool fChooseEdition /* = false */,
                                              bool fChooseType /* = true */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_fChooseName(fChooseName)
     , m_fChoosePath(fChoosePath)
     , m_fChooseImage(fChooseImage)

@@ -38,7 +38,7 @@
 
 
 UIVRDESettingsEditor::UIVRDESettingsEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_fFeatureEnabled(false)
     , m_enmAuthType(KAuthType_Max)
     , m_fMultipleConnectionsAllowed(false)

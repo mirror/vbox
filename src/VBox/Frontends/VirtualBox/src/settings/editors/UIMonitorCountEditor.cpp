@@ -42,7 +42,7 @@
 
 
 UIMonitorCountEditor::UIMonitorCountEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_iValue(1)
     , m_pLayout(0)
     , m_pLabel(0)

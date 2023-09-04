@@ -41,7 +41,7 @@
 
 
 UIDragAndDropEditor::UIDragAndDropEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_enmValue(KDnDMode_Max)
     , m_pLabel(0)
     , m_pCombo(0)

@@ -276,7 +276,7 @@ void SFTreeViewItem::processColumn(int iColumn)
 *********************************************************************************************************************************/
 
 UISharedFoldersEditor::UISharedFoldersEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_pLabelSeparator(0)
     , m_pLayoutTree(0)
     , m_pTreeWidget(0)
@@ -393,7 +393,7 @@ void UISharedFoldersEditor::retranslateUi()
 void UISharedFoldersEditor::showEvent(QShowEvent *pEvent)
 {
     /* Call to base-class: */
-    QIWithRetranslateUI<QWidget>::showEvent(pEvent);
+    UIEditor::showEvent(pEvent);
 
     /* Connect header-resize signal just before widget is shown
      * after all the items properly loaded and initialized: */

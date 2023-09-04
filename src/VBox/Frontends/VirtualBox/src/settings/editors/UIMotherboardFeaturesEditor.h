@@ -32,7 +32,7 @@
 #endif
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
+#include "UIEditor.h"
 
 /* Forward declarations: */
 class QCheckBox;
@@ -40,8 +40,8 @@ class QGridLayout;
 class QLabel;
 class QPushButton;
 
-/** QWidget subclass used as motherboard features editor. */
-class SHARED_LIBRARY_STUFF UIMotherboardFeaturesEditor : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class used as motherboard features editor. */
+class SHARED_LIBRARY_STUFF UIMotherboardFeaturesEditor : public UIEditor
 {
     Q_OBJECT;
 

@@ -32,21 +32,19 @@
 #endif
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
-#include "UILibraryDefs.h"
+#include "UIEditor.h"
 
 /* Forward declarations: */
 class QComboBox;
 class QGridLayout;
 class QLabel;
 class QSpinBox;
-class QWidget;
 class QIAdvancedSlider;
 
-/** QWidget reimplementation providing GUI with monitor scale factor editing functionality.
+/** UIEditor sub-class providing GUI with monitor scale factor editing functionality.
   * It includes a combo box to select a monitor, a slider, and a spinbox to display/modify values.
   * The first item in the combo box is used to change the scale factor of all monitors. */
-class SHARED_LIBRARY_STUFF UIScaleFactorEditor : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF UIScaleFactorEditor : public UIEditor
 {
     Q_OBJECT;
 

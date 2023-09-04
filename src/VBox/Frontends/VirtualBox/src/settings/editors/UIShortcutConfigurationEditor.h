@@ -32,7 +32,7 @@
 #endif
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
+#include "UIEditor.h"
 
 /* Forward declartions: */
 class QLineEdit;
@@ -151,8 +151,8 @@ private:
 /** Shortcut configuration list. */
 typedef QList<UIShortcutConfigurationItem> UIShortcutConfigurationList;
 
-/** QWidget subclass used as a shortcut configuration editor. */
-class SHARED_LIBRARY_STUFF UIShortcutConfigurationEditor : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class used as a shortcut configuration editor. */
+class SHARED_LIBRARY_STUFF UIShortcutConfigurationEditor : public UIEditor
 {
     Q_OBJECT;
 

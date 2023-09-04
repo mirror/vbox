@@ -48,7 +48,7 @@
 
 
 UINetworkFeaturesEditor::UINetworkFeaturesEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_fAdvancedButtonExpanded(false)
     , m_enmAdapterType(KNetworkAdapterType_Null)
     , m_enmPromiscuousMode(KNetworkAdapterPromiscModePolicy_Max)

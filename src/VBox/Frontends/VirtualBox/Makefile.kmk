@@ -900,6 +900,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/editors/UIDisplayFeaturesEditor.h \
 	src/settings/editors/UIDisplayScreenFeaturesEditor.h \
 	src/settings/editors/UIDragAndDropEditor.h \
+	src/settings/editors/UIEditor.h \
 	src/settings/editors/UIExecutionCapEditor.h \
 	src/settings/editors/UIFontScaleEditor.h \
 	src/settings/editors/UIGraphicsControllerEditor.h \
@@ -1486,6 +1487,7 @@ UICommon_SOURCES = \
 	src/settings/editors/UIDisplayFeaturesEditor.cpp \
 	src/settings/editors/UIDisplayScreenFeaturesEditor.cpp \
 	src/settings/editors/UIDragAndDropEditor.cpp \
+	src/settings/editors/UIEditor.cpp \
 	src/settings/editors/UIExecutionCapEditor.cpp \
 	src/settings/editors/UIFontScaleEditor.cpp \
 	src/settings/editors/UIGraphicsControllerEditor.cpp \

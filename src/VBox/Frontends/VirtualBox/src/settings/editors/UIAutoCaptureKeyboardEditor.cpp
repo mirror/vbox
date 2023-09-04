@@ -35,7 +35,7 @@
 
 
 UIAutoCaptureKeyboardEditor::UIAutoCaptureKeyboardEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_fValue(false)
     , m_pLabel(0)
     , m_pCheckBox(0)

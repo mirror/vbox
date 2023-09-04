@@ -38,7 +38,7 @@
 
 
 UIDiskEncryptionSettingsEditor::UIDiskEncryptionSettingsEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_fFeatureEnabled(false)
     , m_enmCipherType(UIDiskEncryptionCipherType_Max)
     , m_pCheckboxFeature(0)

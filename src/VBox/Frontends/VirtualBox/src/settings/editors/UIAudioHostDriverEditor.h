@@ -31,12 +31,8 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QWidget>
-
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
-#include "UILibraryDefs.h"
+#include "UIEditor.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -46,8 +42,8 @@ class QComboBox;
 class QGridLayout;
 class QLabel;
 
-/** QWidget subclass used as an audio host driver editor. */
-class SHARED_LIBRARY_STUFF UIAudioHostDriverEditor : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class used as an audio host driver editor. */
+class SHARED_LIBRARY_STUFF UIAudioHostDriverEditor : public UIEditor
 {
     Q_OBJECT;
 

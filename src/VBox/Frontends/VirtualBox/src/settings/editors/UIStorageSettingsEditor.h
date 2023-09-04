@@ -32,7 +32,7 @@
 #endif
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
+#include "UIEditor.h"
 #include "UIMediumDefs.h"
 #include "UISettingsDefs.h"
 
@@ -163,8 +163,8 @@ struct UIDataStorageController
     QString                 m_strKey;
 };
 
-/** QWidget subclass used as acceleration features editor. */
-class SHARED_LIBRARY_STUFF UIStorageSettingsEditor : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class used as acceleration features editor. */
+class SHARED_LIBRARY_STUFF UIStorageSettingsEditor : public UIEditor
 {
     Q_OBJECT;
 

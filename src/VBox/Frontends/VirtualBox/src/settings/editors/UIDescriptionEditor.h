@@ -32,13 +32,13 @@
 #endif
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
+#include "UIEditor.h"
 
 /* Forward declarations: */
 class QTextEdit;
 
-/** QWidget subclass used as machine description editor. */
-class SHARED_LIBRARY_STUFF UIDescriptionEditor : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class used as machine description editor. */
+class SHARED_LIBRARY_STUFF UIDescriptionEditor : public UIEditor
 {
     Q_OBJECT;
 

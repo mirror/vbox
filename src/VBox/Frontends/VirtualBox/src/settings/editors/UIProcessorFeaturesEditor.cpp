@@ -35,7 +35,7 @@
 
 
 UIProcessorFeaturesEditor::UIProcessorFeaturesEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_fEnablePae(false)
     , m_fEnableNestedVirtualization(false)
     , m_pLabel(0)

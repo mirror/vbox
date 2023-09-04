@@ -32,7 +32,7 @@
 #endif
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
+#include "UIEditor.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -44,8 +44,8 @@ class QLabel;
 class QLineEdit;
 class QWidget;
 
-/** QWidget subclass used as a VRDE settings editor. */
-class SHARED_LIBRARY_STUFF UIVRDESettingsEditor : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class used as a VRDE settings editor. */
+class SHARED_LIBRARY_STUFF UIVRDESettingsEditor : public UIEditor
 {
     Q_OBJECT;
 

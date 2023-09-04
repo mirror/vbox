@@ -212,7 +212,7 @@ void UIUSBMenu::processAboutToShow()
 *********************************************************************************************************************************/
 
 UIUSBFiltersEditor::UIUSBFiltersEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_pLabelSeparator(0)
     , m_pLayoutTree(0)
     , m_pTreeWidget(0)

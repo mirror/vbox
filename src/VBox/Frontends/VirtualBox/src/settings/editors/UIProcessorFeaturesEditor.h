@@ -32,15 +32,15 @@
 #endif
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
+#include "UIEditor.h"
 
 /* Forward declarations: */
 class QCheckBox;
 class QGridLayout;
 class QLabel;
 
-/** QWidget subclass used as processor features editor. */
-class SHARED_LIBRARY_STUFF UIProcessorFeaturesEditor : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class used as processor features editor. */
+class SHARED_LIBRARY_STUFF UIProcessorFeaturesEditor : public UIEditor
 {
     Q_OBJECT;
 

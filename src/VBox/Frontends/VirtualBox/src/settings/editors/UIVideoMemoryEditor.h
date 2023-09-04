@@ -31,12 +31,8 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QWidget>
-
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
-#include "UILibraryDefs.h"
+#include "UIEditor.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -48,8 +44,8 @@ class QLabel;
 class QSpinBox;
 class QIAdvancedSlider;
 
-/** QWidget subclass used as a video memory editor. */
-class SHARED_LIBRARY_STUFF UIVideoMemoryEditor : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class used as a video memory editor. */
+class SHARED_LIBRARY_STUFF UIVideoMemoryEditor : public UIEditor
 {
     Q_OBJECT;
 

@@ -42,7 +42,7 @@
 #include "CSystemProperties.h"
 
 UIVirtualCPUEditor::UIVirtualCPUEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_uMinVCPUCount(1)
     , m_uMaxVCPUCount(1)
     , m_pLabelVCPU(0)

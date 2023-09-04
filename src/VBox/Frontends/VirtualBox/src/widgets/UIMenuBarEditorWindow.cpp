@@ -332,7 +332,7 @@ UIMenuBarEditorWidget::UIMenuBarEditorWidget(QWidget *pParent,
                                              bool fStartedFromVMSettings /* = true */,
                                              const QUuid &uMachineID /* = QUuid() */,
                                              UIActionPool *pActionPool /* = 0 */)
-    : QIWithRetranslateUI2<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_fPrepared(false)
     , m_fStartedFromVMSettings(fStartedFromVMSettings)
     , m_uMachineID(uMachineID)

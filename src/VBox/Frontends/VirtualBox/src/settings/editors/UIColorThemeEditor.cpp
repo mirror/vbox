@@ -37,7 +37,7 @@
 
 
 UIColorThemeEditor::UIColorThemeEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_enmValue(UIColorThemeType_Auto)
     , m_pLabel(0)
     , m_pCombo(0)

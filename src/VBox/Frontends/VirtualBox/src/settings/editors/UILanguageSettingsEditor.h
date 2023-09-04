@@ -32,7 +32,7 @@
 #endif
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
+#include "UIEditor.h"
 
 /* Forward declartions: */
 class QTreeWidgetItem;
@@ -40,8 +40,8 @@ class QILabelSeparator;
 class QIRichTextLabel;
 class QITreeWidget;
 
-/** QWidget subclass used as a language settings editor. */
-class SHARED_LIBRARY_STUFF UILanguageSettingsEditor : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class used as a language settings editor. */
+class SHARED_LIBRARY_STUFF UILanguageSettingsEditor : public UIEditor
 {
     Q_OBJECT;
 

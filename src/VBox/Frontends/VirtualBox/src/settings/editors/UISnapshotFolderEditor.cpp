@@ -36,7 +36,7 @@
 
 
 UISnapshotFolderEditor::UISnapshotFolderEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_pLabel(0)
     , m_pSelector(0)
 {

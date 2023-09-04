@@ -31,12 +31,8 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QWidget>
-
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
-#include "UILibraryDefs.h"
+#include "UIEditor.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -44,8 +40,8 @@
 /* Forward declarations: */
 class QRadioButton;
 
-/** QWidget subclass used as a USB controller editor. */
-class SHARED_LIBRARY_STUFF UIUSBControllerEditor : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class used as a USB controller editor. */
+class SHARED_LIBRARY_STUFF UIUSBControllerEditor : public UIEditor
 {
     Q_OBJECT;
 
@@ -87,11 +83,11 @@ private:
     QVector<KUSBControllerType>  m_supportedValues;
 
     /** Holds the USB1 radio-button instance. */
-    QRadioButton     *m_pRadioButtonUSB1;
+    QRadioButton *m_pRadioButtonUSB1;
     /** Holds the USB2 radio-button instance. */
-    QRadioButton     *m_pRadioButtonUSB2;
+    QRadioButton *m_pRadioButtonUSB2;
     /** Holds the USB3 radio-button instance. */
-    QRadioButton     *m_pRadioButtonUSB3;
+    QRadioButton *m_pRadioButtonUSB3;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_editors_UIUSBControllerEditor_h */

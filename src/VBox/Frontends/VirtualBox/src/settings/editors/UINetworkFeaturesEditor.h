@@ -32,7 +32,7 @@
 #endif
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
+#include "UIEditor.h"
 #include "UIMachineSettingsPortForwardingDlg.h"
 
 /* COM includes: */
@@ -48,8 +48,8 @@ class QIArrowButtonSwitch;
 class QILineEdit;
 class QIToolButton;
 
-/** QWidget subclass used as a network features editor. */
-class SHARED_LIBRARY_STUFF UINetworkFeaturesEditor : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class used as a network features editor. */
+class SHARED_LIBRARY_STUFF UINetworkFeaturesEditor : public UIEditor
 {
     Q_OBJECT;
 

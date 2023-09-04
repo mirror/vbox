@@ -35,7 +35,7 @@
 
 
 UIDisplayScreenFeaturesEditor::UIDisplayScreenFeaturesEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_fEnable3DAcceleration(false)
     , m_pLabel(0)
     , m_pCheckBoxEnable3DAcceleration(0)

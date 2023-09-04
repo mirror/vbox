@@ -34,7 +34,7 @@
 
 
 UIDescriptionEditor::UIDescriptionEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_pTextEdit(0)
 {
     prepare();

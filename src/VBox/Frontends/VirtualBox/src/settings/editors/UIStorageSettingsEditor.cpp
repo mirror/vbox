@@ -2824,7 +2824,7 @@ const QString UIStorageSettingsEditor::s_strControllerMimeType = QString("applic
 const QString UIStorageSettingsEditor::s_strAttachmentMimeType = QString("application/virtualbox;value=StorageAttachmentID");
 
 UIStorageSettingsEditor::UIStorageSettingsEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_fLoadingInProgress(0)
     , m_enmConfigurationAccessLevel(ConfigurationAccessLevel_Null)
     , m_pActionPool(0)
@@ -3212,7 +3212,7 @@ void UIStorageSettingsEditor::showEvent(QShowEvent *pEvent)
     m_pSplitter->setSizes(QList<int>() << 0.4 * width() << 0.6 * width());
 
     /* Call to base-class: */
-    QIWithRetranslateUI<QWidget>::showEvent(pEvent);
+    UIEditor::showEvent(pEvent);
 }
 
 void UIStorageSettingsEditor::sltHandleMediumEnumerated(const QUuid &uMediumId)

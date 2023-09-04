@@ -38,7 +38,7 @@
 
 
 UIAudioSettingsEditor::UIAudioSettingsEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_fFeatureEnabled(false)
     , m_pCheckboxFeature(0)
     , m_pWidgetSettings(0)

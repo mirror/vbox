@@ -31,20 +31,16 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QWidget>
-
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
-#include "UILibraryDefs.h"
+#include "UIEditor.h"
 
 /* Forward declarations: */
 class QGridLayout;
 class QLabel;
 class UIFilePathSelector;
 
-/** QWidget subclass used as a default machine folder editor. */
-class SHARED_LIBRARY_STUFF UIDefaultMachineFolderEditor : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class used as a default machine folder editor. */
+class SHARED_LIBRARY_STUFF UIDefaultMachineFolderEditor : public UIEditor
 {
     Q_OBJECT;
 

@@ -32,7 +32,7 @@
 #endif
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
+#include "UIEditor.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -43,8 +43,8 @@ class QLabel;
 class QRadioButton;
 class QILineEdit;
 
-/** QWidget subclass used as global proxy features editor. */
-class SHARED_LIBRARY_STUFF UIProxyFeaturesEditor : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class used as global proxy features editor. */
+class SHARED_LIBRARY_STUFF UIProxyFeaturesEditor : public UIEditor
 {
     Q_OBJECT;
 

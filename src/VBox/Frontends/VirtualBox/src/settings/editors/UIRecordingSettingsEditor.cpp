@@ -50,7 +50,7 @@
 
 
 UIRecordingSettingsEditor::UIRecordingSettingsEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_fFeatureEnabled(false)
     , m_fOptionsAvailable(false)
     , m_fScreenOptionsAvailable(false)

@@ -39,7 +39,7 @@
 
 
 UIUSBControllerEditor::UIUSBControllerEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_enmValue(KUSBControllerType_Max)
     , m_pRadioButtonUSB1(0)
     , m_pRadioButtonUSB2(0)

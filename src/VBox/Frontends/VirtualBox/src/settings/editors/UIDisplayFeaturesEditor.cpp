@@ -38,7 +38,7 @@
 
 
 UIDisplayFeaturesEditor::UIDisplayFeaturesEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_fActivateOnMouseHover(false)
     , m_fDisableHostScreenSaver(false)
     , m_pLabel(0)

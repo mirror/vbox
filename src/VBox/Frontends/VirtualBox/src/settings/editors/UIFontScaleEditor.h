@@ -32,21 +32,18 @@
 #endif
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
-#include "UILibraryDefs.h"
+#include "UIEditor.h"
 
 /* Forward declarations: */
 class QGridLayout;
 class QLabel;
-class QSpinBox;
-class QWidget;
 class QIAdvancedSlider;
 class UIFontScaleFactorSpinBox;
 
-/** QWidget reimplementation providing GUI with monitor scale factor editing functionality.
+/** UIEditor sub-class providing GUI with monitor scale factor editing functionality.
   * It includes a combo box to select a monitor, a slider, and a spinbox to display/modify values.
   * The first item in the combo box is used to change the scale factor of all monitors. */
-class SHARED_LIBRARY_STUFF UIFontScaleEditor : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF UIFontScaleEditor : public UIEditor
 {
     Q_OBJECT;
 
@@ -92,16 +89,16 @@ private:
     /** Defines spinbox's @a iValue. */
     void setSpinBoxValue(int iValue);
 
-
     /** @name Member widgets.
       * @{ */
-        QGridLayout      *m_pLayout;
-        QLabel           *m_pLabel;
-        QIAdvancedSlider *m_pScaleSlider;
-        UIFontScaleFactorSpinBox         *m_pScaleSpinBox;
-        QLabel           *m_pMinScaleLabel;
-        QLabel           *m_pMaxScaleLabel;
+        QGridLayout              *m_pLayout;
+        QLabel                   *m_pLabel;
+        QIAdvancedSlider         *m_pScaleSlider;
+        UIFontScaleFactorSpinBox *m_pScaleSpinBox;
+        QLabel                   *m_pMinScaleLabel;
+        QLabel                   *m_pMaxScaleLabel;
     /** @} */
+
     /** Hold the factor by which we divided spinbox's @a range to set slider's range to make slider mouse move stop on ticks. */
     const int m_iSliderRangeDivisor;
 };

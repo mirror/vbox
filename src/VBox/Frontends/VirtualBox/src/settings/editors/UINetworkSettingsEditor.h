@@ -31,12 +31,8 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QWidget>
-
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
-#include "UILibraryDefs.h"
+#include "UIEditor.h"
 #include "UIPortForwardingTable.h"
 
 /* COM includes: */
@@ -47,8 +43,8 @@ class QCheckBox;
 class UINetworkAttachmentEditor;
 class UINetworkFeaturesEditor;
 
-/** QWidget subclass used as a network settings editor. */
-class SHARED_LIBRARY_STUFF UINetworkSettingsEditor : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class used as a network settings editor. */
+class SHARED_LIBRARY_STUFF UINetworkSettingsEditor : public UIEditor
 {
     Q_OBJECT;
 

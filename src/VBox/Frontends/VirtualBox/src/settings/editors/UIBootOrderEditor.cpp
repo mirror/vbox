@@ -443,7 +443,7 @@ UIBootItemDataList UIBootDataTools::bootItemsFromSerializedString(const QString 
 *********************************************************************************************************************************/
 
 UIBootOrderEditor::UIBootOrderEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_pLayout(0)
     , m_pLabel(0)
     , m_pTable(0)
@@ -480,7 +480,7 @@ bool UIBootOrderEditor::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     /* Skip events sent to unrelated objects: */
     if (m_pTable && pObject != m_pTable)
-        return QIWithRetranslateUI<QWidget>::eventFilter(pObject, pEvent);
+        return UIEditor::eventFilter(pObject, pEvent);
 
     /* Handle only required event types: */
     switch (pEvent->type())
@@ -498,7 +498,7 @@ bool UIBootOrderEditor::eventFilter(QObject *pObject, QEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return QIWithRetranslateUI<QWidget>::eventFilter(pObject, pEvent);
+    return UIEditor::eventFilter(pObject, pEvent);
 }
 
 void UIBootOrderEditor::retranslateUi()

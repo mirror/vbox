@@ -35,7 +35,7 @@
 
 
 UIAudioFeaturesEditor::UIAudioFeaturesEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_fEnableOutput(false)
     , m_fEnableInput(false)
     , m_pLabel(0)

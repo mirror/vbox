@@ -66,7 +66,7 @@ bool UIMaximumGuestScreenSizeValue::equal(const UIMaximumGuestScreenSizeValue &o
 *********************************************************************************************************************************/
 
 UIMaximumGuestScreenSizeEditor::UIMaximumGuestScreenSizeEditor(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIEditor(pParent)
     , m_pLayout(0)
     , m_pLabelPolicy(0)
     , m_pComboPolicy(0)
