@@ -123,7 +123,7 @@ g_aaNameToDetails = \
     [ 'Windows2016',    'Windows2016',           g_k64,    1,  64, ['w2k16',  'w2k16sp[0-9]', 'win2k16', 'win2k16sp[0-9]',]], # max cpus/cores??
     [ 'Windows2019',    'Windows2019',           g_k64,    1,  64, ['w2k19',  'w2k19sp[0-9]', 'win2k19', 'win2k19sp[0-9]',]], # max cpus/cores??
     [ 'Windows2022',    'Windows2022',           g_k64,    1,  64, ['w2k22',  'w2k22sp[0-9]', 'win2k22', 'win2k22sp[0-9]',]], # max cpus/cores??
-    [ 'Windows11_64',   'Windows11_64',          g_k64,    1,  64, ['w11', 'w11-64', 'w11sp[0-9]-64', 'win11', 'win11-64',]], # max cpus/cores??
+    [ 'Windows11_64',   'Windows11_64',          g_k64,    2,  64, ['w11', 'w11-64', 'w11sp[0-9]-64', 'win11', 'win11-64',]], # max cpus/cores??
     [ 'Linux',          'Debian',                g_k32,    1, 256, ['deb[0-9]*', 'debian[0-9]*', ]],
     [ 'Linux_64',       'Debian_64',             g_k64,    1, 256, ['deb[0-9]*-64', 'debian[0-9]*-64', ]],
     [ 'Linux',          'RedHat',                g_k32,    1, 256, ['rhel',   'rhel[0-9]', 'rhel[0-9]u[0-9]']],
@@ -973,6 +973,7 @@ class TestVm(object):
                  sIommuType = 'none',                       # type: str
                  sHddControllerType = 'IDE Controller',     # type: str
                  sDvdControllerType = 'IDE Controller',     # type: str
+                 sGraphicsControllerType = None,            # type: str
                  fSecureBoot = False,                       # type: bool
                  sUefiMokPathPrefix = None                  # type: str
                  ):
@@ -989,6 +990,7 @@ class TestVm(object):
         self.sGuestOsType            = None;
         self.sDvdImage               = None;         # Relative to the testrsrc root.
         self.sDvdControllerType      = sDvdControllerType;
+        self.sGraphicsControllerType = sGraphicsControllerType;
         self.fIoApic                 = fIoApic;
         self.fNstHwVirt              = fNstHwVirt;
         self.fPae                    = fPae;
@@ -1204,7 +1206,8 @@ class TestVm(object):
                                      sIommuType         = self.sIommuType,
                                      sCom1RawFile       = self.sCom1RawFile if self.fCom1RawFile else None,
                                      fSecureBoot        = self.fSecureBoot,
-                                     sUefiMokPathPrefix = self.sUefiMokPathPrefix
+                                     sUefiMokPathPrefix = self.sUefiMokPathPrefix,
+                                     eGraphicsControllerType = vboxcon.GraphicsControllerType_VBoxSVGA if self.sGraphicsControllerType == 'VBoxSVGA' else None
                                      );
 
     def getReconfiguredVm(self, oTestDrv, cCpus, sVirtMode, sParavirtMode = None):
@@ -1495,6 +1498,7 @@ class AncientTestVm(TestVm):
                  sHddControllerName = 'IDE Controller',     # type: str
                  sDvdControllerName = 'IDE Controller',     # type: str
                  cMBRamMax = None,                          # type: int
+                 sGraphicsControllerType = None             # type: str
                  ):
         TestVm.__init__(self,
                         sVmName,
@@ -1509,7 +1513,8 @@ class AncientTestVm(TestVm):
                         sChipsetType = sChipsetType,
                         sHddControllerType = sHddControllerName,
                         sDvdControllerType = sDvdControllerName,
-                        asParavirtModesSup = (g_ksParavirtProviderNone,)
+                        asParavirtModesSup = (g_ksParavirtProviderNone,),
+                        sGraphicsControllerType = sGraphicsControllerType
                         );
         self.fCom1RawFile = True;
         self.cMBRamMax= cMBRamMax;
@@ -2084,7 +2089,8 @@ class TestVmManager(object):
         # W11
         TestVm('tst-win11-64-efi',           kfGrpStdSmoke,       sHd = '7.0/win11/t-win11-64-efi-2.vdi',
                sKind = 'Windows11_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi',
-               sHddControllerType = 'SATA Controller', sDvdControllerType = 'SATA Controller'),
+               sHddControllerType = 'SATA Controller', sDvdControllerType = 'SATA Controller',
+               sGraphicsControllerType = 'VBoxSVGA'),
 
         # Nested hardware-virtualization
         TestVm('tst-nsthwvirt-ubuntu-64',   kfGrpStdSmoke,       sHd = '5.3/nat/nsthwvirt-ubuntu64/t-nsthwvirt-ubuntu64.vdi',

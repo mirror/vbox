@@ -2578,7 +2578,8 @@ class TestDriver(base.TestDriver):                                              
                      sDvdControllerType = 'IDE Controller',
                      sCom1RawFile = None,
                      fSecureBoot = False,
-                     sUefiMokPathPrefix = None):
+                     sUefiMokPathPrefix = None,
+                     eGraphicsControllerType = None):
         """
         Creates a test VM with a immutable HD from the test resources.
         """
@@ -2692,6 +2693,8 @@ class TestDriver(base.TestDriver):                                              
                 fRc = oSession.setIommuType(vboxcon.IommuType_AMD);
             elif fRc and self.fpApiVer >= 6.2 and hasattr(vboxcon, 'IommuType_Intel') and sIommuType == 'intel':
                 fRc = oSession.setIommuType(vboxcon.IommuType_Intel);
+            if fRc and eGraphicsControllerType is not None:
+                fRc = oSession.setVideoControllerType(eGraphicsControllerType);
 
             if fRc: fRc = oSession.saveSettings();
             if not fRc:   oSession.discardSettings(True);
