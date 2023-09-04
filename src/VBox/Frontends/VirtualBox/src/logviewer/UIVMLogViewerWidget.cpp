@@ -813,6 +813,17 @@ void UIVMLogViewerWidget::prepareWidgets()
     connect(m_pPanel, &UIVMLogViewerPaneContainer::sigHidden,
             this, &UIVMLogViewerWidget::sltPanelContainerHidden);
 
+    connect(m_pPanel, &UIVMLogViewerPaneContainer::sigShowLineNumbers,
+            this, &UIVMLogViewerWidget::sltShowLineNumbers);
+    connect(m_pPanel, &UIVMLogViewerPaneContainer::sigWrapLines,
+            this, &UIVMLogViewerWidget::sltWrapLines);
+    connect(m_pPanel, &UIVMLogViewerPaneContainer::sigChangeFontSizeInPoints,
+            this, &UIVMLogViewerWidget::sltFontSizeChanged);
+    connect(m_pPanel, &UIVMLogViewerPaneContainer::sigChangeFont,
+            this, &UIVMLogViewerWidget::sltChangeFont);
+    connect(m_pPanel, &UIVMLogViewerPaneContainer::sigResetToDefaults,
+            this, &UIVMLogViewerWidget::sltResetOptionsToDefault);
+
     m_pMainLayout->addWidget(m_pPanel);
 }
 
