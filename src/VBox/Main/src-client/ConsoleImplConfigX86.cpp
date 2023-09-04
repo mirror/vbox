@@ -307,6 +307,7 @@ int Console::SetBiosDiskInfo(ComPtr<IMachine> pMachine, PCFGMNODE pCfg, PCFGMNOD
     HRESULT             hrc;
 #define MAX_DEVICES     30
 #define H()     AssertLogRelMsgReturn(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), VERR_MAIN_CONFIG_CONSTRUCTOR_COM_ERROR)
+#define VRC()   AssertLogRelMsgReturn(RT_SUCCESS(vrc), ("vrc=%Rrc\n", vrc), vrc)
 
     LONG lPortLUN[MAX_BIOS_LUN_COUNT];
     LONG lPortUsed[MAX_DEVICES];
@@ -1164,8 +1165,8 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
 #ifdef VBOX_WITH_XPCOM
         // VBoxC is located in the components subdirectory
         char szPathVBoxC[RTPATH_MAX];
-        vrc = RTPathAppPrivateArch(szPathVBoxC, RTPATH_MAX - sizeof("/components/VBoxC"));  AssertRC(vrc);
-        strcat(szPathVBoxC, "/components/VBoxC");
+        vrc = RTPathAppPrivateArch(szPathVBoxC, RTPATH_MAX);                                VRC();
+        vrc = RTPathAppend(szPathVBoxC, RTPATH_MAX, "/components/VBoxC");                   VRC();
         InsertConfigString(pMod,   "Path",  szPathVBoxC);
 #else
         InsertConfigString(pMod,   "Path",  "VBoxC");

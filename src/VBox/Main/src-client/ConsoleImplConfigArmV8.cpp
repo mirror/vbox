@@ -330,8 +330,8 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
 #ifdef VBOX_WITH_XPCOM
         // VBoxC is located in the components subdirectory
         char szPathVBoxC[RTPATH_MAX];
-        vrc = RTPathAppPrivateArch(szPathVBoxC, RTPATH_MAX - sizeof("/components/VBoxC"));  AssertRC(vrc);
-        strcat(szPathVBoxC, "/components/VBoxC");
+        vrc = RTPathAppPrivateArch(szPathVBoxC, RTPATH_MAX);                                VRC();
+        vrc = RTPathAppend(szPathVBoxC, RTPATH_MAX, "/components/VBoxC");                   VRC();
         InsertConfigString(pMod,   "Path",  szPathVBoxC);
 #else
         InsertConfigString(pMod,   "Path",  "VBoxC");
