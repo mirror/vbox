@@ -670,12 +670,12 @@ void UIVMLogViewerWidget::sltResetOptionsToDefault()
     sltWrapLines(false);
     sltChangeFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
 
-    // if (m_pOptionsPanel)
-    // {
-    //     m_pOptionsPanel->setShowLineNumbers(true);
-    //     m_pOptionsPanel->setWrapLines(false);
-    //     m_pOptionsPanel->setFontSizeInPoints(m_font.pointSize());
-    // }
+    if (m_pPanel)
+    {
+        m_pPanel->setShowLineNumbers(true);
+        m_pPanel->setWrapLines(false);
+        m_pPanel->setFontSizeInPoints(m_font.pointSize());
+    }
     saveOptions();
 }
 
