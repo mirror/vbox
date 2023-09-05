@@ -25,8 +25,8 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef FEQT_INCLUDED_SRC_guestctrl_UIFileManagerPanel_h
-#define FEQT_INCLUDED_SRC_guestctrl_UIFileManagerPanel_h
+#ifndef FEQT_INCLUDED_SRC_guestctrl_UIFileManagerPaneContainer_h
+#define FEQT_INCLUDED_SRC_guestctrl_UIFileManagerPaneContainer_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -52,7 +52,7 @@ class QScrollArea;
 class QSpacerItem;
 class QVBoxLayout;
 
-class UIFileManagerPanel : public UIPaneContainer
+class UIFileManagerPaneContainer : public UIPaneContainer
 {
     Q_OBJECT;
 
@@ -66,7 +66,7 @@ signals:
 
 public:
 
-    UIFileManagerPanel(QWidget *pParent, UIFileManagerOptions *pFileManagerOptions);
+    UIFileManagerPaneContainer(QWidget *pParent, UIFileManagerOptions *pFileManagerOptions);
     void updatePreferences();
     void appendLog(const QString &strLog, const QString &strMachineName, FileManagerLogType eLogType);
     void addNewProgress(const CProgress &comProgress, const QString &strSourceTableName);
@@ -136,4 +136,4 @@ private:
     /** @} */
 };
 
-#endif /* !FEQT_INCLUDED_SRC_guestctrl_UIFileManagerPanel_h */
+#endif /* !FEQT_INCLUDED_SRC_guestctrl_UIFileManagerPaneContainer_h */

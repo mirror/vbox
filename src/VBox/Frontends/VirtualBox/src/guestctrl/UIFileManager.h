@@ -53,7 +53,7 @@ class QVBoxLayout;
 class UIActionPool;
 class UIDialogPanel;
 class UIFileManagerLogPanel;
-class UIFileManagerPanel;
+class UIFileManagerPaneContainer;
 class UIFileManagerOperationsPanel;
 class UIFileManagerGuestTable;
 class UIFileManagerHostTable;
@@ -183,7 +183,7 @@ private:
     QList<UIDialogPanel*>          m_visiblePanelsList;
     UIFileManagerLogPanel         *m_pLogPanel;
     UIFileManagerOperationsPanel  *m_pOperationsPanel;
-    UIFileManagerPanel            *m_pPanel;
+    UIFileManagerPaneContainer    *m_pPanel;
     bool m_fCommitDataSignalReceived;
 
     QVector<QUuid> m_machineIds;

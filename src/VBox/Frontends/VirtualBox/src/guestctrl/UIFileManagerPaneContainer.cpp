@@ -42,7 +42,7 @@
 #include "QILabel.h"
 #include "QIToolButton.h"
 #include "UIErrorString.h"
-#include "UIFileManagerPanel.h"
+#include "UIFileManagerPaneContainer.h"
 #include "UIFileManager.h"
 #include "UIProgressEventHandler.h"
 
@@ -363,11 +363,12 @@ void UIFileManagerLogViewer::sltClear()
     clear();
 }
 
+
 /*********************************************************************************************************************************
-*   UIFileManagerPanel implementation.                                                                                   *
+*   UIFileManagerPaneContainer implementation.                                                                                   *
 *********************************************************************************************************************************/
 
-UIFileManagerPanel::UIFileManagerPanel(QWidget *pParent, UIFileManagerOptions *pFileManagerOptions)
+UIFileManagerPaneContainer::UIFileManagerPaneContainer(QWidget *pParent, UIFileManagerOptions *pFileManagerOptions)
     : UIPaneContainer(pParent)
     , m_pListDirectoriesOnTopCheckBox(0)
     , m_pDeleteConfirmationCheckBox(0)
@@ -385,14 +386,14 @@ UIFileManagerPanel::UIFileManagerPanel(QWidget *pParent, UIFileManagerOptions *p
 }
 
 
-void UIFileManagerPanel::prepare()
+void UIFileManagerPaneContainer::prepare()
 {
     preparePreferencesTab();
     prepareLogTab();
     prepareOperationsTab();
 }
 
-void UIFileManagerPanel::preparePreferencesTab()
+void UIFileManagerPaneContainer::preparePreferencesTab()
 {
     QWidget *pPreferencesTab = new QWidget;
     m_pListDirectoriesOnTopCheckBox = new QCheckBox;
@@ -419,13 +420,13 @@ void UIFileManagerPanel::preparePreferencesTab()
     }
 
     connect(m_pListDirectoriesOnTopCheckBox, &QCheckBox::toggled,
-            this, &UIFileManagerPanel::sltListDirectoryCheckBoxToogled);
+            this, &UIFileManagerPaneContainer::sltListDirectoryCheckBoxToogled);
     connect(m_pDeleteConfirmationCheckBox, &QCheckBox::toggled,
-            this, &UIFileManagerPanel::sltDeleteConfirmationCheckBoxToogled);
+            this, &UIFileManagerPaneContainer::sltDeleteConfirmationCheckBoxToogled);
     connect(m_pHumanReabableSizesCheckBox, &QCheckBox::toggled,
-            this, &UIFileManagerPanel::sltHumanReabableSizesCheckBoxToogled);
+            this, &UIFileManagerPaneContainer::sltHumanReabableSizesCheckBoxToogled);
     connect(m_pShowHiddenObjectsCheckBox, &QCheckBox::toggled,
-            this, &UIFileManagerPanel::sltShowHiddenObjectsCheckBoxToggled);
+            this, &UIFileManagerPaneContainer::sltShowHiddenObjectsCheckBoxToggled);
 
     QGridLayout *pPreferencesLayout = new QGridLayout(pPreferencesTab);
     AssertReturnVoid(pPreferencesLayout);
@@ -440,7 +441,7 @@ void UIFileManagerPanel::preparePreferencesTab()
     insertTab(Page_Preferences, pPreferencesTab);
 }
 
-void UIFileManagerPanel::prepareLogTab()
+void UIFileManagerPaneContainer::prepareLogTab()
 {
     QWidget *pLogTab = new QWidget;
     AssertReturnVoid(pLogTab);
@@ -453,7 +454,7 @@ void UIFileManagerPanel::prepareLogTab()
     insertTab(Page_Log, pLogTab);
 }
 
-void UIFileManagerPanel::prepareOperationsTab()
+void UIFileManagerPaneContainer::prepareOperationsTab()
 {
     QPalette pal = QApplication::palette();
     pal.setColor(QPalette::Active, QPalette::Window, pal.color(QPalette::Active, QPalette::Base));
@@ -468,7 +469,7 @@ void UIFileManagerPanel::prepareOperationsTab()
 
     QScrollBar *pVerticalScrollBar = m_pScrollArea->verticalScrollBar();
     if (pVerticalScrollBar)
-        QObject::connect(pVerticalScrollBar, &QScrollBar::rangeChanged, this, &UIFileManagerPanel::sltScrollToBottom);
+        QObject::connect(pVerticalScrollBar, &QScrollBar::rangeChanged, this, &UIFileManagerPaneContainer::sltScrollToBottom);
 
     m_pScrollArea->setBackgroundRole(QPalette::Window);
     m_pScrollArea->setWidgetResizable(true);
@@ -481,7 +482,7 @@ void UIFileManagerPanel::prepareOperationsTab()
     insertTab(Page_Operations, m_pScrollArea);
 }
 
-void UIFileManagerPanel::sltListDirectoryCheckBoxToogled(bool bChecked)
+void UIFileManagerPaneContainer::sltListDirectoryCheckBoxToogled(bool bChecked)
 {
     if (!m_pFileManagerOptions)
         return;
@@ -489,7 +490,7 @@ void UIFileManagerPanel::sltListDirectoryCheckBoxToogled(bool bChecked)
     emit sigOptionsChanged();
 }
 
-void UIFileManagerPanel::sltDeleteConfirmationCheckBoxToogled(bool bChecked)
+void UIFileManagerPaneContainer::sltDeleteConfirmationCheckBoxToogled(bool bChecked)
 {
     if (!m_pFileManagerOptions)
         return;
@@ -497,7 +498,7 @@ void UIFileManagerPanel::sltDeleteConfirmationCheckBoxToogled(bool bChecked)
     emit sigOptionsChanged();
 }
 
-void UIFileManagerPanel::sltHumanReabableSizesCheckBoxToogled(bool bChecked)
+void UIFileManagerPaneContainer::sltHumanReabableSizesCheckBoxToogled(bool bChecked)
 {
     if (!m_pFileManagerOptions)
         return;
@@ -505,7 +506,7 @@ void UIFileManagerPanel::sltHumanReabableSizesCheckBoxToogled(bool bChecked)
     emit sigOptionsChanged();
 }
 
-void UIFileManagerPanel::sltShowHiddenObjectsCheckBoxToggled(bool bChecked)
+void UIFileManagerPaneContainer::sltShowHiddenObjectsCheckBoxToggled(bool bChecked)
 {
     if (!m_pFileManagerOptions)
         return;
@@ -513,7 +514,7 @@ void UIFileManagerPanel::sltShowHiddenObjectsCheckBoxToggled(bool bChecked)
     emit sigOptionsChanged();
 }
 
-void UIFileManagerPanel::retranslateUi()
+void UIFileManagerPaneContainer::retranslateUi()
 {
     if (m_pListDirectoriesOnTopCheckBox)
     {
@@ -546,7 +547,7 @@ void UIFileManagerPanel::retranslateUi()
     setTabText(Page_Operations, QApplication::translate("UIFileManager", "Operations"));
 }
 
-void UIFileManagerPanel::updatePreferences()
+void UIFileManagerPaneContainer::updatePreferences()
 {
     if (!m_pFileManagerOptions)
         return;
@@ -580,7 +581,7 @@ void UIFileManagerPanel::updatePreferences()
     }
 }
 
-void UIFileManagerPanel::appendLog(const QString &strLog, const QString &strMachineName, FileManagerLogType eLogType)
+void UIFileManagerPaneContainer::appendLog(const QString &strLog, const QString &strMachineName, FileManagerLogType eLogType)
 {
     if (!m_pLogTextEdit)
         return;
@@ -597,7 +598,7 @@ void UIFileManagerPanel::appendLog(const QString &strLog, const QString &strMach
     m_pLogTextEdit->ensureCursorVisible();
 }
 
-void UIFileManagerPanel::addNewProgress(const CProgress &comProgress, const QString &strSourceTableName)
+void UIFileManagerPaneContainer::addNewProgress(const CProgress &comProgress, const QString &strSourceTableName)
 {
     if (!m_pOperationsTabLayout)
         return;
@@ -609,17 +610,17 @@ void UIFileManagerPanel::addNewProgress(const CProgress &comProgress, const QStr
     m_pOperationsTabLayout->insertWidget(m_pOperationsTabLayout->count() - 1, pOperationsWidget);
 
     connect(pOperationsWidget, &UIFileOperationProgressWidget::sigProgressComplete,
-            this, &UIFileManagerPanel::sigFileOperationComplete);
+            this, &UIFileManagerPaneContainer::sigFileOperationComplete);
     connect(pOperationsWidget, &UIFileOperationProgressWidget::sigProgressFail,
-            this, &UIFileManagerPanel::sigFileOperationFail);
+            this, &UIFileManagerPaneContainer::sigFileOperationFail);
 
     connect(pOperationsWidget, &UIFileOperationProgressWidget::sigFocusIn,
-            this, &UIFileManagerPanel::sltHandleWidgetFocusIn);
+            this, &UIFileManagerPaneContainer::sltHandleWidgetFocusIn);
     connect(pOperationsWidget, &UIFileOperationProgressWidget::sigFocusOut,
-            this, &UIFileManagerPanel::sltHandleWidgetFocusOut);
+            this, &UIFileManagerPaneContainer::sltHandleWidgetFocusOut);
 }
 
-void UIFileManagerPanel::contextMenuEvent(QContextMenuEvent *pEvent)
+void UIFileManagerPaneContainer::contextMenuEvent(QContextMenuEvent *pEvent)
 {
     QMenu *menu = new QMenu(this);
 
@@ -627,22 +628,22 @@ void UIFileManagerPanel::contextMenuEvent(QContextMenuEvent *pEvent)
     {
         QAction *pRemoveSelected = menu->addAction(UIFileManager::tr("Remove Selected"));
         connect(pRemoveSelected, &QAction::triggered,
-                this, &UIFileManagerPanel::sltRemoveSelected);
+                this, &UIFileManagerPaneContainer::sltRemoveSelected);
     }
 
     QAction *pRemoveFinished = menu->addAction(UIFileManager::tr("Remove Finished"));
     QAction *pRemoveAll = menu->addAction(UIFileManager::tr("Remove All"));
 
     connect(pRemoveFinished, &QAction::triggered,
-            this, &UIFileManagerPanel::sltRemoveFinished);
+            this, &UIFileManagerPaneContainer::sltRemoveFinished);
     connect(pRemoveAll, &QAction::triggered,
-            this, &UIFileManagerPanel::sltRemoveAll);
+            this, &UIFileManagerPaneContainer::sltRemoveAll);
 
     menu->exec(pEvent->globalPos());
     delete menu;
 }
 
-void UIFileManagerPanel::sltRemoveFinished()
+void UIFileManagerPaneContainer::sltRemoveFinished()
 {
     QList<UIFileOperationProgressWidget*> widgetsToRemove;
     foreach (QWidget *pWidget, m_widgetSet)
@@ -658,7 +659,7 @@ void UIFileManagerPanel::sltRemoveFinished()
         m_widgetSet.remove(pWidget);
 }
 
-void UIFileManagerPanel::sltRemoveAll()
+void UIFileManagerPaneContainer::sltRemoveAll()
 {
     foreach (QWidget *pWidget, m_widgetSet)
     {
@@ -670,7 +671,7 @@ void UIFileManagerPanel::sltRemoveAll()
     m_widgetSet.clear();
 }
 
-void UIFileManagerPanel::sltRemoveSelected()
+void UIFileManagerPaneContainer::sltRemoveSelected()
 {
     if (!m_pWidgetInFocus)
         return;
@@ -678,21 +679,21 @@ void UIFileManagerPanel::sltRemoveSelected()
     m_widgetSet.remove(m_pWidgetInFocus);
 }
 
-void UIFileManagerPanel::sltHandleWidgetFocusIn(QWidget *pWidget)
+void UIFileManagerPaneContainer::sltHandleWidgetFocusIn(QWidget *pWidget)
 {
     if (!pWidget)
         return;
     m_pWidgetInFocus = pWidget;
 }
 
-void UIFileManagerPanel::sltHandleWidgetFocusOut(QWidget *pWidget)
+void UIFileManagerPaneContainer::sltHandleWidgetFocusOut(QWidget *pWidget)
 {
     if (!pWidget)
         return;
     m_pWidgetInFocus = 0;
 }
 
-void UIFileManagerPanel::sltScrollToBottom(int iMin, int iMax)
+void UIFileManagerPaneContainer::sltScrollToBottom(int iMin, int iMax)
 {
     Q_UNUSED(iMin);
     if (m_pScrollArea)
@@ -700,4 +701,4 @@ void UIFileManagerPanel::sltScrollToBottom(int iMin, int iMax)
 }
 
 
-#include "UIFileManagerPanel.moc"
+#include "UIFileManagerPaneContainer.moc"
