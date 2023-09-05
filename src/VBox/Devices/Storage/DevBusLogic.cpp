@@ -1147,7 +1147,9 @@ static void buslogicClearInterrupt(PPDMDEVINS pDevIns, PBUSLOGIC pThis)
  */
 DECLINLINE(void) buslogicR3OutgoingMailboxAdvance(PBUSLOGIC pThis)
 {
-    pThis->uMailboxOutgoingPositionCurrent = (pThis->uMailboxOutgoingPositionCurrent + 1) % pThis->cMailbox;
+    uint32_t    uNextPos = pThis->uMailboxOutgoingPositionCurrent + 1;
+    Assert(uNextPos <= pThis->cMailbox);
+    pThis->uMailboxOutgoingPositionCurrent = uNextPos >= pThis->cMailbox ? 0 : uNextPos;
 }
 
 /**
@@ -3413,7 +3415,11 @@ static int buslogicR3ProcessMailboxNext(PPDMDEVINS pDevIns, PBUSLOGIC pThis, PBU
         rc = buslogicR3DeviceSCSIRequestAbort(pDevIns, pThis, (RTGCPHYS)MailboxGuest.u32PhysAddrCCB);
     }
     else
+    {
         AssertMsgFailed(("Invalid outgoing mailbox action code %u\n", MailboxGuest.u.out.uActionCode));
+        /** @todo We ought to report an error in the incoming mailbox here */
+        rc = VINF_NOT_SUPPORTED;    /* Not immediately an error, keep going. */
+    }
 
     AssertRC(rc);
 
@@ -3820,10 +3826,25 @@ static DECLCALLBACK(int) buslogicR3Worker(PPDMDEVINS pDevIns, PPDMTHREAD pThread
 
         if (ASMAtomicXchgU32(&pThis->cMailboxesReady, 0))
         {
-            /* Process mailboxes. */
+            /* Process mailboxes as long as there are new entries. The loop can potentially
+             * keep going for a while if the guest keeps supplying new entries.
+             * If there are too many invalid mailbox entries, abort processing because
+             * we're just wasting time. This might happen if the guest keeps supplying
+             * new invalid entries (extremely unlikely), or if the mailbox memory is not
+             * writable for whatever reason.
+             */
+            uint32_t cMaxInvalid = pThis->cMailbox * 2; /* NB: cMailbox can't be more than 255. */
             do
             {
                 rc = buslogicR3ProcessMailboxNext(pDevIns, pThis, pThisCC);
+                if (RT_UNLIKELY(rc == VINF_NOT_SUPPORTED))
+                {
+                    if (cMaxInvalid-- == 0)
+                    {
+                        LogRelMax(10, ("BusLogic: Too many invalid entries, aborting maibox processing!\n"));
+                        break;
+                    }
+                }
                 AssertMsg(RT_SUCCESS(rc) || rc == VERR_NO_DATA, ("Processing mailbox failed rc=%Rrc\n", rc));
             } while (RT_SUCCESS(rc));
         }
