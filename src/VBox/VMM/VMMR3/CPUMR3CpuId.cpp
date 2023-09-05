@@ -4763,27 +4763,27 @@ static const char *getCacheAss(unsigned u, char *pszBuf)
 
 
 /**
- * Get L2 cache associativity.
+ * Get L2/L3 cache associativity.
  */
-static const char *getL2CacheAss(unsigned u)
+static const char *getL23CacheAss(unsigned u)
 {
     switch (u)
     {
         case 0:  return "off   ";
         case 1:  return "direct";
         case 2:  return "2 way ";
-        case 3:  return "res3  ";
+        case 3:  return "3 way ";
         case 4:  return "4 way ";
-        case 5:  return "res5  ";
+        case 5:  return "6 way ";
         case 6:  return "8 way ";
         case 7:  return "res7  ";
         case 8:  return "16 way";
-        case 9:  return "res9  ";
-        case 10: return "res10 ";
-        case 11: return "res11 ";
-        case 12: return "res12 ";
-        case 13: return "res13 ";
-        case 14: return "res14 ";
+        case 9:  return "tpoext";   /* Overridden by Fn8000_001D */
+        case 10: return "32 way";
+        case 11: return "48 way";
+        case 12: return "64 way";
+        case 13: return "96 way";
+        case 14: return "128way";
         case 15: return "fully ";
         default: return "????";
     }
@@ -5740,27 +5740,37 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
         {
             uint32_t uEAX = pCurLeaf->uEax;
             uint32_t uEBX = pCurLeaf->uEbx;
+            uint32_t uECX = pCurLeaf->uEcx;
             uint32_t uEDX = pCurLeaf->uEdx;
 
             pHlp->pfnPrintf(pHlp,
                             "L2 TLB 2/4M Instr/Uni:           %s %4d entries\n"
                             "L2 TLB 2/4M Data:                %s %4d entries\n",
-                            getL2CacheAss((uEAX >> 12) & 0xf),  (uEAX >>  0) & 0xfff,
-                            getL2CacheAss((uEAX >> 28) & 0xf),  (uEAX >> 16) & 0xfff);
+                            getL23CacheAss((uEAX >> 12) & 0xf), (uEAX >>  0) & 0xfff,
+                            getL23CacheAss((uEAX >> 28) & 0xf), (uEAX >> 16) & 0xfff);
             pHlp->pfnPrintf(pHlp,
                             "L2 TLB 4K Instr/Uni:             %s %4d entries\n"
                             "L2 TLB 4K Data:                  %s %4d entries\n",
-                            getL2CacheAss((uEBX >> 12) & 0xf),  (uEBX >>  0) & 0xfff,
-                            getL2CacheAss((uEBX >> 28) & 0xf),  (uEBX >> 16) & 0xfff);
+                            getL23CacheAss((uEBX >> 12) & 0xf), (uEBX >>  0) & 0xfff,
+                            getL23CacheAss((uEBX >> 28) & 0xf), (uEBX >> 16) & 0xfff);
             pHlp->pfnPrintf(pHlp,
                             "L2 Cache Line Size:              %d bytes\n"
                             "L2 Cache Lines Per Tag:          %d\n"
                             "L2 Cache Associativity:          %s\n"
                             "L2 Cache Size:                   %d KB\n",
+                            (uECX >> 0) & 0xff,
+                            (uECX >> 8) & 0xf,
+                            getL23CacheAss((uECX >> 12) & 0xf),
+                            (uECX >> 16) & 0xffff);
+            pHlp->pfnPrintf(pHlp,
+                            "L3 Cache Line Size:              %d bytes\n"
+                            "L3 Cache Lines Per Tag:          %d\n"
+                            "L3 Cache Associativity:          %s\n"
+                            "L3 Cache Size:                   %d KB\n",
                             (uEDX >> 0) & 0xff,
                             (uEDX >> 8) & 0xf,
-                            getL2CacheAss((uEDX >> 12) & 0xf),
-                            (uEDX >> 16) & 0xffff);
+                            getL23CacheAss((uEDX >> 12) & 0xf),
+                            ((uEDX >> 18) & 0x3fff) * 512);
         }
 
         if (iVerbosity && (pCurLeaf = cpumCpuIdGetLeafInt(paLeaves, cLeaves, UINT32_C(0x80000007), 0)) != NULL)
