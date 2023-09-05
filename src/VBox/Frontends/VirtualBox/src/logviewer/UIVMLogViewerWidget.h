@@ -145,6 +145,7 @@ private slots:
     void sltTabCloseButtonClick();
     void sltCommitDataSignalReceived();
     void sltPanelContainerHidden();
+    void sltPanelCurrentTabChanged(int iIndex);
 
 private:
 
