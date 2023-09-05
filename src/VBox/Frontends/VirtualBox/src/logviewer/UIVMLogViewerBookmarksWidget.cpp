@@ -54,6 +54,7 @@ UIVMLogViewerBookmarksWidget::UIVMLogViewerBookmarksWidget(QWidget *pParent, UIV
 {
     prepareWidgets();
     prepareConnections();
+    retranslateUi();
 }
 
 void UIVMLogViewerBookmarksWidget::updateBookmarkList(const QVector<UIVMLogBookmark>& bookmarkList)
