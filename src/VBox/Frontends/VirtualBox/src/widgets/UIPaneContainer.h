@@ -25,8 +25,8 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef FEQT_INCLUDED_SRC_globals_UIPaneContainer_h
-#define FEQT_INCLUDED_SRC_globals_UIPaneContainer_h
+#ifndef FEQT_INCLUDED_SRC_widgets_UIPaneContainer_h
+#define FEQT_INCLUDED_SRC_widgets_UIPaneContainer_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -75,4 +75,4 @@ private:
     QIToolButton  *m_pCloseButton;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_globals_UIPaneContainer_h */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UIPaneContainer_h */

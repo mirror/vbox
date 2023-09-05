@@ -827,7 +827,6 @@ UICommon_QT_MOCHDRS = \
 	src/globals/UIMainEventListener.h \
 	src/globals/UIMessageCenter.h \
 	src/globals/UIModalWindowManager.h \
-	src/globals/UIPaneContainer.h \
 	src/globals/UIPopupCenter.h \
 	src/globals/UIProgressEventHandler.h \
 	src/globals/UIProgressObject.h \
@@ -962,6 +961,7 @@ UICommon_QT_MOCHDRS = \
 	src/widgets/UIMediaComboBox.h \
 	src/widgets/UIMediumSizeEditor.h \
 	src/widgets/UIMenuBar.h \
+	src/widgets/UIPaneContainer.h \
 	src/widgets/UIPopupBox.h \
 	src/widgets/UIPopupPane.h \
 	src/widgets/UIPopupPaneButtonPane.h \
@@ -1408,7 +1408,6 @@ UICommon_SOURCES = \
 	src/globals/UIMessageCenter.cpp \
 	src/globals/UIModalWindowManager.cpp \
 	src/globals/UIMousePointerShapeData.cpp \
-	src/globals/UIPaneContainer.cpp \
 	src/globals/UIPathOperations.cpp \
 	src/globals/UIPopupCenter.cpp \
 	src/globals/UIProgressEventHandler.cpp \
@@ -1549,6 +1548,7 @@ UICommon_SOURCES = \
 	src/widgets/UIMediaComboBox.cpp \
 	src/widgets/UIMediumSizeEditor.cpp \
 	src/widgets/UIMenuBar.cpp \
+	src/widgets/UIPaneContainer.cpp \
 	src/widgets/UIPopupBox.cpp \
 	src/widgets/UIPopupPane.cpp \
 	src/widgets/UIPopupPaneButtonPane.cpp \

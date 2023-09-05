@@ -64,16 +64,18 @@ void UIPaneContainer::prepare()
     QHBoxLayout *pLayout = new QHBoxLayout(this);
     AssertReturnVoid(pLayout);
     pLayout->setContentsMargins(0, 0, 0, 0);
+
+    /* Add the tab widget: */
     m_pTabWidget = new QTabWidget();
     connect(m_pTabWidget, &QTabWidget::currentChanged, this, &UIPaneContainer::sigCurrentTabChanged);
     AssertReturnVoid(m_pTabWidget);
     pLayout->addWidget(m_pTabWidget);
+
     /* Add a button to close the tab widget: */
     m_pCloseButton = new QIToolButton;
     AssertReturnVoid(m_pCloseButton);
     m_pCloseButton->setIcon(UIIconPool::iconSet(":/close_16px.png"));
     connect(m_pCloseButton, &QIToolButton::clicked, this, &UIPaneContainer::sltHide);
-
     m_pTabWidget->setCornerWidget(m_pCloseButton);
 }
 
