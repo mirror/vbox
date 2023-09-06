@@ -64,7 +64,6 @@ crypto_bn_SOURCES = \
 	bn_srp.c \
 	bn_word.c \
 	bn_x931p.c \
-	rsa_sup_mul.c \
 	rsaz_exp.c \
 	rsaz_exp_x2.c
 ifdef VBOX_WITH_CRYPTO_ASM
