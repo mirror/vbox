@@ -188,12 +188,20 @@ void UIVMLogViewerPreferencesWidget::retranslateUi()
 
 void UIVMLogViewerPreferencesWidget::sltOpenFontDialog()
 {
-    QFont currentFont;
-    UIVMLogViewerWidget* parentWidget = qobject_cast<UIVMLogViewerWidget*>(parent());
-    if (!parentWidget)
-        return;
+    QObject *pParent = parent();
+    UIVMLogViewerWidget *pLogViewer = 0;
+    while(pParent)
+    {
+        pLogViewer = qobject_cast<UIVMLogViewerWidget*>(pParent);
+        if (pLogViewer)
+            break;
+        pParent = pParent->parent();
+    }
 
-    currentFont = parentWidget->currentFont();
+    if (!pLogViewer)
+        return;
+    QFont currentFont;
+    currentFont = pLogViewer->currentFont();
     bool ok;
     QFont font =
         QFontDialog::getFont(&ok, currentFont, this, "Logviewer font");
