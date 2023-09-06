@@ -223,7 +223,6 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
 {
     /* Prepare VM Log-Viewer: */
     prepare();
-    restorePanelVisibility();
     if (!uMachineId.isNull())
         setMachines(QVector<QUuid>() << uMachineId);
     connect(&uiCommon(), &UICommon::sigAskToCommitData,
@@ -389,17 +388,6 @@ void UIVMLogViewerWidget::saveOptions()
 {
     if (!m_fCommitDataSignalReceived)
         gEDataManager->setLogViweverOptions(m_font, m_bWrapLines, m_bShowLineNumbers);
-}
-
-void UIVMLogViewerWidget::savePanelVisibility()
-{
-    // if (m_fCommitDataSignalReceived)
-    //     return;
-    // /* Save a list of currently visible panels: */
-    // QStringList strNameList;
-    // foreach(UIDialogPanel* pPanel, m_visiblePanelsList)
-    //     strNameList.append(pPanel->panelName());
-    // gEDataManager->setLogViewerVisiblePanels(strNameList);
 }
 
 void UIVMLogViewerWidget::sltRefresh()
@@ -755,8 +743,6 @@ void UIVMLogViewerWidget::prepare()
     /* Apply language settings: */
     retranslateUi();
 
-    /* Setup escape shortcut: */
-    manageEscapeShortCut();
     uiCommon().setHelpKeyword(this, "log-viewer");
 }
 
@@ -905,10 +891,6 @@ void UIVMLogViewerWidget::loadOptions()
     QFont loadedFont = gEDataManager->logViewerFont();
     if (loadedFont != QFont())
         m_font = loadedFont;
-}
-
-void UIVMLogViewerWidget::restorePanelVisibility()
-{
 }
 
 void UIVMLogViewerWidget::retranslateUi()
@@ -1161,25 +1143,6 @@ void UIVMLogViewerWidget::resetHighlighthing()
         return;
     logPage->documentUndo();
     logPage->clearScrollBarMarkingsVector();
-}
-
-void UIVMLogViewerWidget::manageEscapeShortCut()
-{
-    // /* if there is no visible panels give the escape shortcut to parent dialog: */
-    // if (m_visiblePanelsList.isEmpty())
-    // {
-    //     emit sigSetCloseButtonShortCut(QKeySequence(Qt::Key_Escape));
-    //     return;
-    // }
-    // /* Take the escape shortcut from the dialog: */
-    // emit sigSetCloseButtonShortCut(QKeySequence());
-    // /* Just loop thru the visible panel list and set the esc key to the
-    //    panel which made visible latest */
-    // for (int i = 0; i < m_visiblePanelsList.size() - 1; ++i)
-    // {
-    //     m_visiblePanelsList[i]->setCloseButtonShortCut(QKeySequence());
-    // }
-    // m_visiblePanelsList.back()->setCloseButtonShortCut(QKeySequence(Qt::Key_Escape));
 }
 
 bool UIVMLogViewerWidget::labelTabHandler()

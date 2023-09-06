@@ -162,9 +162,6 @@ private:
         void saveOptions();
         /** Loads options.  */
         void loadOptions();
-        void savePanelVisibility();
-        /** Shows the panels that have been visible the last time logviewer is closed. */
-        void restorePanelVisibility();
     /** @} */
 
     /** @name Event handling stuff.
@@ -200,12 +197,6 @@ private:
 
     /** Resets document (of the current tab) and scrollbar highligthing */
     void resetHighlighthing();
-    /** Make sure escape key is assigned to only a single widget. This is done by checking
-        several things in the following order:
-        - when there are no more panels visible assign it to the parent dialog
-        - grab it from the dialog as soon as a panel becomes visible again
-        - assigned it to the most recently "unhidden" panel */
-    void manageEscapeShortCut();
     void setMachines(const QVector<QUuid> &machineIDs);
     /** Returns the content of the ith log file of @comMachine or possibly an empty string */
     QString readLogFile(const CMachine &comConstMachine, int iLogFileId);

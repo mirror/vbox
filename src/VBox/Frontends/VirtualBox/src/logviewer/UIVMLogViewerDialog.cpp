@@ -178,7 +178,6 @@ void UIVMLogViewerDialog::finalize()
 {
     /* Apply language settings: */
     retranslateUi();
-    manageEscapeShortCut();
     loadDialogGeometry();
 }
 
@@ -223,12 +222,4 @@ void UIVMLogViewerDialog::sltSetCloseButtonShortCut(QKeySequence shortcut)
 {
     if (!closeEmitted() &&  button(ButtonType_Close))
         button(ButtonType_Close)->setShortcut(shortcut);
-}
-
-void UIVMLogViewerDialog::manageEscapeShortCut()
-{
-    UIVMLogViewerWidget *pWidget = qobject_cast<UIVMLogViewerWidget*>(widget());
-    if (!pWidget)
-        return;
-    pWidget->manageEscapeShortCut();
 }

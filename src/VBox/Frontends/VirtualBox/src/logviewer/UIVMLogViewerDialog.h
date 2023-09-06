@@ -123,7 +123,6 @@ private slots:
 
 private:
 
-    void manageEscapeShortCut();
     /** Holds the action-pool reference. */
     UIActionPool *m_pActionPool;
     /** Holds the machine id. */
