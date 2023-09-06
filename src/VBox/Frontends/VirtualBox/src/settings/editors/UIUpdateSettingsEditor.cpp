@@ -237,7 +237,10 @@ void UIUpdateSettingsEditor::prepareWidgets()
                 /* Prepare update date field: */
                 m_pFieldUpdateDate = new QLabel(m_pWidgetUpdateSettings);
                 if (m_pFieldUpdateDate)
+                {
+                    m_pLabelUpdateDate->setBuddy(m_pFieldUpdateDate);
                     pLayoutUpdateSettings->addWidget(m_pFieldUpdateDate, 1, 1);
+                }
 
                 /* Prepare update date label: */
                 m_pLabelUpdateFilter = new QLabel(m_pWidgetUpdateSettings);
