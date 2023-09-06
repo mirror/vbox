@@ -90,8 +90,8 @@ Q_DECLARE_METATYPE(UISettingsDataMachine);
 typedef QPair<QString, QStringList> UIValidationMessage;
 
 
-/** QWidget subclass used as settings page interface. */
-class UISettingsPage : public QIWithRetranslateUI<QWidget>
+/** UIEditor sub-class used as settings page interface. */
+class UISettingsPage : public UIEditor
 {
     Q_OBJECT;
 
@@ -182,6 +182,9 @@ public:
 
     /** Performs page polishing. */
     virtual void polishPage() {}
+
+    /** Filters out contents with description unrelated to passed @a strFilter. */
+    virtual void filterOut(const QString &strFilter) RT_OVERRIDE;
 
 public slots:
 
@@ -280,8 +283,8 @@ protected:
 };
 
 
-/** QWidget sub-class, used as settings page frame. */
-class UISettingsPageFrame : public QWidget
+/** UIEditor sub-class, used as settings page frame. */
+class UISettingsPageFrame : public UIEditor
 {
     Q_OBJECT;
 
@@ -294,7 +297,13 @@ public:
     /** Defines @a strName. */
     void setName(const QString &strName);
 
+    /** Filters out contents with description unrelated to passed @a strFilter. */
+    virtual void filterOut(const QString &strFilter) RT_OVERRIDE;
+
 protected:
+
+    /** Handles translation event. */
+    virtual void retranslateUi() RT_OVERRIDE;
 
     /** Handles paint @a pEvent. */
     virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
