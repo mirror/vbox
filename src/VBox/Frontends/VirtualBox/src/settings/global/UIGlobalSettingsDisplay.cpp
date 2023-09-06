@@ -225,22 +225,34 @@ void UIGlobalSettingsDisplay::prepareWidgets()
         /* Prepare 'maximum guest screen size' editor: */
         m_pEditorMaximumGuestScreenSize = new UIMaximumGuestScreenSizeEditor(this);
         if (m_pEditorMaximumGuestScreenSize)
+        {
+            m_editors << m_pEditorMaximumGuestScreenSize;
             pLayout->addWidget(m_pEditorMaximumGuestScreenSize);
+        }
 
         /* Prepare 'scale-factor' editor: */
         m_pEditorScaleFactor = new UIScaleFactorEditor(this);
         if (m_pEditorScaleFactor)
+        {
+            m_editors << m_pEditorScaleFactor;
             pLayout->addWidget(m_pEditorScaleFactor);
+        }
 
         /* Prepare 'global display features' editor: */
         m_pEditorGlobalDisplayFeatures = new UIDisplayFeaturesEditor(this);
         if (m_pEditorGlobalDisplayFeatures)
+        {
+            m_editors << m_pEditorGlobalDisplayFeatures;
             pLayout->addWidget(m_pEditorGlobalDisplayFeatures);
+        }
 
         /* Prepare 'font scale' editor: */
         m_pFontScaleEditor = new UIFontScaleEditor(this);
         if (m_pFontScaleEditor)
+        {
+            m_editors << m_pFontScaleEditor;
             pLayout->addWidget(m_pFontScaleEditor);
+        }
 
         /* Add stretch to the end: */
         pLayout->addStretch();

@@ -170,7 +170,10 @@ void UIGlobalSettingsUpdate::prepareWidgets()
         /* Prepare 'update settings' editor: */
         m_pEditorUpdateSettings = new UIUpdateSettingsEditor(this);
         if (m_pEditorUpdateSettings)
+        {
+            m_editors << m_pEditorUpdateSettings;
             pLayout->addWidget(m_pEditorUpdateSettings);
+        }
 
         /* Add stretch to the end: */
         pLayout->addStretch();

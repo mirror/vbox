@@ -170,7 +170,10 @@ void UIGlobalSettingsInterface::prepareWidgets()
         /* Prepare 'color-theme' editor: */
         m_pEditorColorTheme = new UIColorThemeEditor(this);
         if (m_pEditorColorTheme)
+        {
+            m_editors << m_pEditorColorTheme;
             pLayout->addWidget(m_pEditorColorTheme);
+        }
 
         /* Add stretch to the end: */
         pLayout->addStretch();

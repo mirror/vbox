@@ -230,12 +230,18 @@ void UIGlobalSettingsInput::prepareWidgets()
         /* Prepare 'shortcut configuration' editor: */
         m_pEditorShortcutConfiguration = new UIShortcutConfigurationEditor(this);
         if (m_pEditorShortcutConfiguration)
+        {
+            m_editors << m_pEditorShortcutConfiguration;
             pLayout->addWidget(m_pEditorShortcutConfiguration);
+        }
 
         /* Prepare 'auto capture keyboard' editor: */
         m_pEditorAutoCaptureKeyboard = new UIAutoCaptureKeyboardEditor(this);
         if (m_pEditorAutoCaptureKeyboard)
+        {
+            m_editors << m_pEditorAutoCaptureKeyboard;
             pLayout->addWidget(m_pEditorAutoCaptureKeyboard);
+        }
     }
 }
 

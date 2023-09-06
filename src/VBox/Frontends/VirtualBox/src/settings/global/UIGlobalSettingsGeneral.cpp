@@ -185,12 +185,18 @@ void UIGlobalSettingsGeneral::prepareWidgets()
         /* Prepare 'default machine folder' editor: */
         m_pEditorDefaultMachineFolder = new UIDefaultMachineFolderEditor(this);
         if (m_pEditorDefaultMachineFolder)
+        {
+            m_editors << m_pEditorDefaultMachineFolder;
             pLayout->addWidget(m_pEditorDefaultMachineFolder);
+        }
 
         /* Prepare 'VRDE auth library' editor: */
         m_pEditorVRDEAuthLibrary = new UIVRDEAuthLibraryEditor(this);
         if (m_pEditorVRDEAuthLibrary)
+        {
+            m_editors << m_pEditorVRDEAuthLibrary;
             pLayout->addWidget(m_pEditorVRDEAuthLibrary);
+        }
 
         /* Add stretch to the end: */
         pLayout->addStretch();

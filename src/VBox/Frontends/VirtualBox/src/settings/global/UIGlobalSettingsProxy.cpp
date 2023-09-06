@@ -233,7 +233,10 @@ void UIGlobalSettingsProxy::prepareWidgets()
         /* Prepare 'proxy features' editor: */
         m_pEditorProxyFeatures = new UIProxyFeaturesEditor(this);
         if (m_pEditorProxyFeatures)
+        {
+            m_editors << m_pEditorProxyFeatures;
             pLayout->addWidget(m_pEditorProxyFeatures);
+        }
 
         /* Add stretch to the end: */
         pLayout->addStretch();
