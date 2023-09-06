@@ -35,6 +35,9 @@
 #ifdef IN_RING3
 # include <iprt/thread.h>
 #endif
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# include <iprt/x86.h>
+#endif
 #include "TMInternal.h"
 #include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/vmm.h>
