@@ -284,7 +284,7 @@ VMMR3_INT_DECL(void) HMR3Reset(PVM pVM)
 VMMR3_INT_DECL(int)  HMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem)
 {
     AssertReleaseFailed();
-    RT_NOREF(pVM, pPatchMem, cbPatchMem)
+    RT_NOREF(pVM, pPatchMem, cbPatchMem);
     return VERR_NOT_SUPPORTED;
 }
 
@@ -300,7 +300,7 @@ VMMR3_INT_DECL(int)  HMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbP
 VMMR3_INT_DECL(int)  HMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem)
 {
     AssertReleaseFailed();
-    RT_NOREF(pVM, pPatchMem, cbPatchMem)
+    RT_NOREF(pVM, pPatchMem, cbPatchMem);
     return VERR_NOT_SUPPORTED;
 }
 
