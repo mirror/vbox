@@ -25,6 +25,12 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
+/* Qt includes: */
+#include <QAbstractButton>
+#include <QLabel>
+#include <QRegularExpression>
+#include <QTabWidget>
+
 /* GUI includes: */
 #include "UIEditor.h"
 
@@ -32,4 +38,48 @@
 UIEditor::UIEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
 {
+}
+
+void UIEditor::filterOut(const QString &strFilter)
+{
+    /* Make sure the editor is visible in case if filter is empty: */
+    bool fVisible = strFilter.isEmpty();
+    if (!fVisible)
+    {
+        /* Otherwise we'll have to walk through all the
+         * descriptions to check whether filter is suitable: */
+        foreach (const QString &strDescription, description())
+            if (strDescription.contains(strFilter, Qt::CaseInsensitive))
+            {
+                fVisible = true;
+                break;
+            }
+    }
+    /* We'll show whole the editor if filter is suitable: */
+    setVisible(fVisible);
+}
+
+QStringList UIEditor::description() const
+{
+    QStringList result;
+    /* Clean <html> tags and &mpersands: */
+    QRegularExpression re("<[^>]*>|&");
+
+    /* Adding all the buddy labels we have: */
+    foreach (QLabel *pLabel, findChildren<QLabel*>())
+        if (pLabel && pLabel->buddy())
+            result << pLabel->text().remove(re);
+
+    /* Adding all the button sub-types: */
+    foreach (QAbstractButton *pButton, findChildren<QAbstractButton*>())
+        if (pButton)
+            result << pButton->text().remove(re);
+
+    /* Adding all the tab-widget tabs: */
+    foreach (QTabWidget *pTabWidget, findChildren<QTabWidget*>())
+        if (pTabWidget)
+            for (int i = 0; i < pTabWidget->count(); ++i)
+                result << pTabWidget->tabText(i).remove(re);
+
+    return result;
 }

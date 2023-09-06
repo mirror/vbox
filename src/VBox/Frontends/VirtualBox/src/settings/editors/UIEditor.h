@@ -44,7 +44,13 @@ public:
     /** Constructs editor passing @a pParent to the base-class. */
     UIEditor(QWidget *pParent = 0);
 
+    /** Filters out contents with description unrelated to passed @a strFilter. */
+    virtual void filterOut(const QString &strFilter);
+
 protected:
+
+    /** Returns editor description which could be used to filter it in. */
+    virtual QStringList description() const;
 
     /** Holds the list of sub-editors. */
     QList<UIEditor*> m_editors;
