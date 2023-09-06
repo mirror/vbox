@@ -28,15 +28,13 @@
 /* Qt includes: */
 #include <QCloseEvent>
 #include <QGridLayout>
-#include <QLabel>
-#include <QPainter>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QStackedWidget>
-#include <QStyle>
 #include <QVariant>
+#include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
@@ -83,44 +81,6 @@ protected:
     virtual QSize minimumSizeHint() const RT_OVERRIDE;
 };
 
-/** QWidget sub-class,
-  * used as settings group-box. */
-class UISettingsGroupBox : public QWidget
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs details element passing @a pParent to the base-class. */
-    UISettingsGroupBox(QWidget *pParent = 0);
-
-    /** Defines @a strName. */
-    void setName(const QString &strName);
-
-    /** Adds a @a pWidget into group-box. */
-    void addWidget(QWidget *pWidget);
-
-protected:
-
-    /** Handles paint @a pEvent. */
-    virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
-
-private:
-
-    /** Prepares all. */
-    void prepare();
-
-    /** Holds the element name.*/
-    QString  m_strName;
-
-    /** Holds the name label instance. */
-    QLabel  *m_pLabelName;
-    /** Holds the contents widget instance. */
-    QWidget *m_pWidget;
-    /** Holds the contents layout instance. */
-    QLayout *m_pLayout;
-};
-
 
 /*********************************************************************************************************************************
 *   Class UIVerticalScrollArea implementation.                                                                                   *
@@ -143,144 +103,6 @@ QSize UIVerticalScrollArea::minimumSizeHint() const
     const int iMinHeight = qMax(QScrollArea::minimumSizeHint().height(),
                                 (int)(iMinWidth / 1.6));
     return QSize(iMinWidth, iMinHeight);
-}
-
-
-/*********************************************************************************************************************************
-*   Class UISettingsGroupBox implementation.                                                                                     *
-*********************************************************************************************************************************/
-
-UISettingsGroupBox::UISettingsGroupBox(QWidget *pParent /* = 0 */)
-    : QWidget(pParent)
-    , m_pLabelName(0)
-    , m_pWidget(0)
-    , m_pLayout(0)
-{
-    prepare();
-}
-
-void UISettingsGroupBox::setName(const QString &strName)
-{
-    if (m_strName == strName)
-        return;
-
-    m_strName = strName;
-    if (m_pLabelName)
-        m_pLabelName->setText(m_strName);
-}
-
-void UISettingsGroupBox::addWidget(QWidget *pWidget)
-{
-    m_pLayout->addWidget(pWidget);
-}
-
-void UISettingsGroupBox::paintEvent(QPaintEvent *pPaintEvent)
-{
-    /* Prepare painter: */
-    QPainter painter(this);
-    /* Avoid painting more than necessary: */
-    painter.setClipRect(pPaintEvent->rect());
-
-    /* Prepare palette colors: */
-    const QPalette pal = QApplication::palette();
-    QColor color0 = pal.color(QPalette::Window);
-    QColor color1 = pal.color(QPalette::Window).lighter(110);
-    color1.setAlpha(0);
-    QColor color2 = pal.color(QPalette::Window).darker(200);
-
-    /* Acquire contents rect: */
-    QRect cRect = m_pWidget->geometry();
-    const int iX = cRect.x();
-    const int iY = cRect.y();
-    const int iWidth = cRect.width();
-    const int iHeight = cRect.height();
-
-    /* Invent pixel metric: */
-    const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
-
-    /* Top-left corner: */
-    QRadialGradient grad1(QPointF(iX + iMetric, iY + iMetric), iMetric);
-    {
-        grad1.setColorAt(0, color2);
-        grad1.setColorAt(1, color1);
-    }
-    /* Top-right corner: */
-    QRadialGradient grad2(QPointF(iX + iWidth - iMetric, iY + iMetric), iMetric);
-    {
-        grad2.setColorAt(0, color2);
-        grad2.setColorAt(1, color1);
-    }
-    /* Bottom-left corner: */
-    QRadialGradient grad3(QPointF(iX + iMetric, iY + iHeight - iMetric), iMetric);
-    {
-        grad3.setColorAt(0, color2);
-        grad3.setColorAt(1, color1);
-    }
-    /* Botom-right corner: */
-    QRadialGradient grad4(QPointF(iX + iWidth - iMetric, iY + iHeight - iMetric), iMetric);
-    {
-        grad4.setColorAt(0, color2);
-        grad4.setColorAt(1, color1);
-    }
-
-    /* Top line: */
-    QLinearGradient grad5(QPointF(iX + iMetric, iY), QPointF(iX + iMetric, iY + iMetric));
-    {
-        grad5.setColorAt(0, color1);
-        grad5.setColorAt(1, color2);
-    }
-    /* Bottom line: */
-    QLinearGradient grad6(QPointF(iX + iMetric, iY + iHeight), QPointF(iX + iMetric, iY + iHeight - iMetric));
-    {
-        grad6.setColorAt(0, color1);
-        grad6.setColorAt(1, color2);
-    }
-    /* Left line: */
-    QLinearGradient grad7(QPointF(iX, iY + iHeight - iMetric), QPointF(iX + iMetric, iY + iHeight - iMetric));
-    {
-        grad7.setColorAt(0, color1);
-        grad7.setColorAt(1, color2);
-    }
-    /* Right line: */
-    QLinearGradient grad8(QPointF(iX + iWidth, iY + iHeight - iMetric), QPointF(iX + iWidth - iMetric, iY + iHeight - iMetric));
-    {
-        grad8.setColorAt(0, color1);
-        grad8.setColorAt(1, color2);
-    }
-
-    /* Paint shape/shadow: */
-    painter.fillRect(QRect(iX + iMetric,          iY + iMetric,           iWidth - iMetric * 2, iHeight - iMetric * 2), color0);
-    painter.fillRect(QRect(iX,                    iY,                     iMetric,              iMetric),               grad1);
-    painter.fillRect(QRect(iX + iWidth - iMetric, iY,                     iMetric,              iMetric),               grad2);
-    painter.fillRect(QRect(iX,                    iY + iHeight - iMetric, iMetric,              iMetric),               grad3);
-    painter.fillRect(QRect(iX + iWidth - iMetric, iY + iHeight - iMetric, iMetric,              iMetric),               grad4);
-    painter.fillRect(QRect(iX + iMetric,          iY,                     iWidth - iMetric * 2, iMetric),               grad5);
-    painter.fillRect(QRect(iX + iMetric,          iY + iHeight - iMetric, iWidth - iMetric * 2, iMetric),               grad6);
-    painter.fillRect(QRect(iX,                    iY + iMetric,           iMetric,              iHeight - iMetric * 2), grad7);
-    painter.fillRect(QRect(iX + iWidth - iMetric, iY + iMetric,           iMetric,              iHeight - iMetric * 2), grad8);
-}
-
-void UISettingsGroupBox::prepare()
-{
-    /* Create main layout: */
-    QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
-    if (pLayoutMain)
-    {
-        pLayoutMain->setContentsMargins(0, 0, 0, 0);
-
-        /* Create name label: */
-        m_pLabelName = new QLabel(this);
-        if (m_pLabelName)
-            pLayoutMain->addWidget(m_pLabelName);
-
-        /* Create contents widget: */
-        m_pWidget = new QWidget(this);
-        if (m_pWidget)
-        {
-            m_pLayout = new QVBoxLayout(m_pWidget);
-            pLayoutMain->addWidget(m_pWidget);
-        }
-    }
 }
 
 
@@ -349,7 +171,7 @@ void UIAdvancedSettingsDialog::sltCategoryChanged(int cId)
     m_pScrollViewport->layout()->getContentsMargins(&iL, &iT, &iR, &iB);
     iShift -= iT;
     /* And actual page position according to parent: */
-    const QPoint pnt = m_pages.value(cId)->pos();
+    const QPoint pnt = m_frames.value(cId)->pos();
     iShift += pnt.y();
     /* Make sure corresponding page is visible: */
     m_pScrollArea->verticalScrollBar()->setValue(iShift);
@@ -392,9 +214,9 @@ void UIAdvancedSettingsDialog::retranslateUi()
     /* Translate warning-pane stuff: */
     m_pWarningPane->setWarningLabelText(tr("Invalid settings detected"));
 
-    /* Translate group-boxes: */
-    foreach (int cId, m_pages.keys())
-        m_pages.value(cId)->setName(m_pSelector->itemText(cId));
+    /* Translate page-frames: */
+    foreach (int cId, m_frames.keys())
+        m_frames.value(cId)->setName(m_pSelector->itemText(cId));
 
     /* Retranslate all validators: */
     foreach (UISettingsPageValidator *pValidator, findChildren<UISettingsPageValidator*>())
@@ -570,18 +392,18 @@ void UIAdvancedSettingsDialog::addItem(const QString &strBigIcon,
                                        int iParentId /* = -1 */)
 {
     /* Add new selector item: */
-    if (QWidget *pPage = m_pSelector->addItem(strBigIcon, strMediumIcon, strSmallIcon,
-                                              cId, strLink, pSettingsPage, iParentId))
+    if (m_pSelector->addItem(strBigIcon, strMediumIcon, strSmallIcon,
+                             cId, strLink, pSettingsPage, iParentId))
     {
-        /* Create group-box with page inside: */
-        UISettingsGroupBox *pGroupBox = new UISettingsGroupBox(m_pScrollViewport);
-        if (pGroupBox)
+        /* Create frame with page inside: */
+        UISettingsPageFrame *pFrame = new UISettingsPageFrame(pSettingsPage, m_pScrollViewport);
+        if (pFrame)
         {
-            pGroupBox->addWidget(pPage);
-            m_pScrollViewport->layout()->addWidget(pGroupBox);
+            /* Add frame to scroll-viewport: */
+            m_pScrollViewport->layout()->addWidget(pFrame);
 
-            /* Remember group-box for referencing: */
-            m_pages[cId] = pGroupBox;
+            /* Remember page-frame for referencing: */
+            m_frames[cId] = pFrame;
         }
     }
 
@@ -772,11 +594,15 @@ void UIAdvancedSettingsDialog::prepareScrollArea()
         if (m_pScrollViewport)
         {
             QVBoxLayout *pLayout = new QVBoxLayout(m_pScrollViewport);
-            int iL, iT, iR, iB;
-            pLayout->getContentsMargins(&iL, &iT, &iR, &iB);
-            pLayout->setContentsMargins(0, 0, iR, 0);
-            int iSpacing = pLayout->spacing();
-            pLayout->setSpacing(2 * iSpacing);
+            if (pLayout)
+            {
+                pLayout->setAlignment(Qt::AlignTop);
+                int iL, iT, iR, iB;
+                pLayout->getContentsMargins(&iL, &iT, &iR, &iB);
+                pLayout->setContentsMargins(0, 0, iR, 0);
+                int iSpacing = pLayout->spacing();
+                pLayout->setSpacing(2 * iSpacing);
+            }
             m_pScrollArea->setWidget(m_pScrollViewport);
         }
 

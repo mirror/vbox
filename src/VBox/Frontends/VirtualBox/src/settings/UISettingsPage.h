@@ -31,12 +31,8 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QVariant>
-#include <QWidget>
-
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
+#include "UIEditor.h"
 #include "UIExtraDataDefs.h"
 #include "UISettingsDefs.h"
 
@@ -48,8 +44,8 @@
 #include "CSystemProperties.h"
 
 /* Forward declarations: */
-class QShowEvent;
-class QString;
+class QLabel;
+class QLayout;
 class QVariant;
 class QWidget;
 class UISettingsPageValidator;
@@ -95,7 +91,7 @@ typedef QPair<QString, QStringList> UIValidationMessage;
 
 
 /** QWidget subclass used as settings page interface. */
-class SHARED_LIBRARY_STUFF UISettingsPage : public QIWithRetranslateUI<QWidget>
+class UISettingsPage : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -220,7 +216,7 @@ private:
 
 
 /** UISettingsPage extension used as Global Preferences page interface. */
-class SHARED_LIBRARY_STUFF UISettingsPageGlobal : public UISettingsPage
+class UISettingsPageGlobal : public UISettingsPage
 {
     Q_OBJECT;
 
@@ -254,7 +250,7 @@ protected:
 
 
 /** UISettingsPage extension used as Machine Settings page interface. */
-class SHARED_LIBRARY_STUFF UISettingsPageMachine : public UISettingsPage
+class UISettingsPageMachine : public UISettingsPage
 {
     Q_OBJECT;
 
@@ -281,6 +277,45 @@ protected:
     CMachine  m_machine;
     /** Holds the source of console settings. */
     CConsole  m_console;
+};
+
+
+/** QWidget sub-class, used as settings page frame. */
+class UISettingsPageFrame : public QWidget
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs details element passing @a pParent to the base-class.
+      * @param  pPage  Brings the page to wrap with frame. */
+    UISettingsPageFrame(UISettingsPage *pPage, QWidget *pParent = 0);
+
+    /** Defines @a strName. */
+    void setName(const QString &strName);
+
+protected:
+
+    /** Handles paint @a pEvent. */
+    virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
+
+private:
+
+    /** Prepares all. */
+    void prepare();
+
+    /** Holds the page reference. */
+    UISettingsPage *m_pPage;
+
+    /** Holds the element name.*/
+    QString  m_strName;
+
+    /** Holds the name label instance. */
+    QLabel  *m_pLabelName;
+    /** Holds the contents widget instance. */
+    QWidget *m_pWidget;
+    /** Holds the contents layout instance. */
+    QLayout *m_pLayout;
 };
 
 
