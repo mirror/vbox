@@ -38,6 +38,7 @@
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
+#include "QILineEdit.h"
 #include "UIAdvancedSettingsDialog.h"
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
@@ -129,6 +130,7 @@ UIAdvancedSettingsDialog::UIAdvancedSettingsDialog(QWidget *pParent,
     , m_fValid(true)
     , m_fSilent(true)
     , m_pLayoutMain(0)
+    , m_pEditorFilter(0)
     , m_pScrollArea(0)
     , m_pScrollViewport(0)
     , m_pButtonBox(0)
@@ -524,6 +526,13 @@ void UIAdvancedSettingsDialog::sltHandleWarningPaneUnhovered(UISettingsPageValid
     popupCenter().recall(m_pScrollArea, "SettingsDialogWarning");
 }
 
+void UIAdvancedSettingsDialog::sltHandleFilterTextChanged(const QString &strText)
+{
+    /* Filter-out page contents: */
+    foreach (UISettingsPageFrame *pFrame, m_frames.values())
+        pFrame->filterOut(strText);
+}
+
 void UIAdvancedSettingsDialog::prepare()
 {
     /* Prepare central-widget: */
@@ -568,6 +577,15 @@ void UIAdvancedSettingsDialog::prepareSelector()
     {
         m_pLayoutMain->addWidget(m_pSelector->widget(), 0, 0, 2, 1);
         m_pSelector->widget()->setFocus();
+    }
+
+    /* Prepare filter editor: */
+    m_pEditorFilter = new QILineEdit(centralWidget());
+    if (m_pEditorFilter)
+    {
+        connect(m_pEditorFilter, &QILineEdit::textChanged,
+                this, &UIAdvancedSettingsDialog::sltHandleFilterTextChanged);
+        m_pLayoutMain->addWidget(m_pEditorFilter, 0, 1);
     }
 #endif /* !VBOX_GUI_WITH_TOOLBAR_SETTINGS */
 
