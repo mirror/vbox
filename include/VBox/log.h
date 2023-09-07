@@ -398,8 +398,6 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_BANDWIDTHCONTROL,
     /** Main group, IBandwidthGroup. */
     LOG_GROUP_MAIN_BANDWIDTHGROUP,
-    /** Main group, IBIOSSettings. */
-    LOG_GROUP_MAIN_BIOSSETTINGS,
     /** Main group, IBooleanFormValue. */
     LOG_GROUP_MAIN_BOOLEANFORMVALUE,
     /** Main group, ICertificate. */
@@ -482,6 +480,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_EXTPACKPLUGIN,
     /** Main group, IFile. */
     LOG_GROUP_MAIN_FILE,
+    /** Main group, IFirmwareSettings. */
+    LOG_GROUP_MAIN_FIRMWARESETTINGS,
     /** Main group, IForm. */
     LOG_GROUP_MAIN_FORM,
     /** Main group, IFormValue. */
@@ -556,6 +556,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_HOSTUSBDEVICEFILTER,
     /** Main group, IHostVideoInputDevice. */
     LOG_GROUP_MAIN_HOSTVIDEOINPUTDEVICE,
+    /** Main group, IHostX86. */
+    LOG_GROUP_MAIN_HOSTX86,
     /** Main group, IInternalMachineControl. */
     LOG_GROUP_MAIN_INTERNALMACHINECONTROL,
     /** Main group, IInternalSessionControl. */
@@ -598,6 +600,14 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_PERFORMANCECOLLECTOR,
     /** Main group, IPerformanceMetric. */
     LOG_GROUP_MAIN_PERFORMANCEMETRIC,
+    /** Main group, IPlatform. */
+    LOG_GROUP_MAIN_PLATFORM,
+    /** Main group, IPlatformARM. */
+    LOG_GROUP_MAIN_PLATFORMARM,
+    /** Main group, IPlatformProperties. */
+    LOG_GROUP_MAIN_PLATFORMPROPERTIES,
+    /** Main group, IPlatformX86. */
+    LOG_GROUP_MAIN_PLATFORMX86,
     /** Main group, IProcess. */
     LOG_GROUP_MAIN_PROCESS,
     /** Main group, IProgress. */
@@ -1020,7 +1030,6 @@ typedef enum VBOXLOGGROUP
     "MAIN_AUDIOSETTINGS", \
     "MAIN_BANDWIDTHCONTROL", \
     "MAIN_BANDWIDTHGROUP", \
-    "MAIN_BIOSSETTINGS", \
     "MAIN_BOOLEANFORMVALUE", \
     "MAIN_CERTIFICATE", \
     "MAIN_CHOICEFORMVALUE", \
@@ -1062,6 +1071,7 @@ typedef enum VBOXLOGGROUP
     "MAIN_EXTPACKMANAGER", \
     "MAIN_EXTPACKPLUGIN", \
     "MAIN_FILE", \
+    "MAIN_FIRMWARESETTINGS", \
     "MAIN_FORM", \
     "MAIN_FORMVALUE", \
     "MAIN_FRAMEBUFFER", \
@@ -1099,6 +1109,7 @@ typedef enum VBOXLOGGROUP
     "MAIN_HOSTUSBDEVICE", \
     "MAIN_HOSTUSBDEVICEFILTER", \
     "MAIN_HOSTVIDEOINPUTDEVICE", \
+    "MAIN_HOSTX86", \
     "MAIN_INTERNALMACHINECONTROL", \
     "MAIN_INTERNALSESSIONCONTROL", \
     "MAIN_KEYBOARD", \
@@ -1120,6 +1131,10 @@ typedef enum VBOXLOGGROUP
     "MAIN_PCIDEVICEATTACHMENT", \
     "MAIN_PERFORMANCECOLLECTOR", \
     "MAIN_PERFORMANCEMETRIC", \
+    "MAIN_PLATFORM", \
+    "MAIN_PLATFORMARM", \
+    "MAIN_PLATFORMPROPERTIES", \
+    "MAIN_PLATFORMX86", \
     "MAIN_PROCESS", \
     "MAIN_PROGRESS", \
     "MAIN_PROGRESSCREATEDEVENT", \

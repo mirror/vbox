@@ -71,51 +71,31 @@ enum
     MODIFYVM_FIRMWARE,
     MODIFYVM_ACPI,
     MODIFYVM_IOAPIC,
-    MODIFYVM_PAE,
-    MODIFYVM_LONGMODE,
     MODIFYVM_CPUID_PORTABILITY,
-    MODIFYVM_TFRESET,
-    MODIFYVM_APIC,
-    MODIFYVM_X2APIC,
     MODIFYVM_PARAVIRTPROVIDER,
     MODIFYVM_PARAVIRTDEBUG,
-    MODIFYVM_HWVIRTEX,
-    MODIFYVM_NESTEDPAGING,
-    MODIFYVM_LARGEPAGES,
-    MODIFYVM_VTXVPID,
-    MODIFYVM_VTXUX,
-    MODIFYVM_VIRT_VMSAVE_VMLOAD,
-    MODIFYVM_IBPB_ON_VM_EXIT,
-    MODIFYVM_IBPB_ON_VM_ENTRY,
-    MODIFYVM_SPEC_CTRL,
-    MODIFYVM_L1D_FLUSH_ON_SCHED,
-    MODIFYVM_L1D_FLUSH_ON_VM_ENTRY,
-    MODIFYVM_MDS_CLEAR_ON_SCHED,
-    MODIFYVM_MDS_CLEAR_ON_VM_ENTRY,
-    MODIFYVM_NESTED_HW_VIRT,
     MODIFYVM_CPUS,
     MODIFYVM_CPUHOTPLUG,
     MODIFYVM_CPU_PROFILE,
     MODIFYVM_PLUGCPU,
     MODIFYVM_UNPLUGCPU,
-    MODIFYVM_SETCPUID,
-    MODIFYVM_DELCPUID,
-    MODIFYVM_DELCPUID_OLD,      // legacy, different syntax from MODIFYVM_DELCPUID
-    MODIFYVM_DELALLCPUID,
     MODIFYVM_GRAPHICSCONTROLLER,
     MODIFYVM_MONITORCOUNT,
     MODIFYVM_ACCELERATE3D,
 #ifdef VBOX_WITH_VIDEOHWACCEL
     MODIFYVM_ACCELERATE2DVIDEO,
 #endif
-    MODIFYVM_BIOSLOGOFADEIN,
-    MODIFYVM_BIOSLOGOFADEOUT,
-    MODIFYVM_BIOSLOGODISPLAYTIME,
-    MODIFYVM_BIOSLOGOIMAGEPATH,
-    MODIFYVM_BIOSBOOTMENU,
-    MODIFYVM_BIOSAPIC,
-    MODIFYVM_BIOSSYSTEMTIMEOFFSET,
-    MODIFYVM_BIOSPXEDEBUG,
+    /*
+     * Firmware-specific stuff.
+     */
+    MODIFYVM_FWLOGOFADEIN,
+    MODIFYVM_FWLOGOFADEOUT,
+    MODIFYVM_FWLOGODISPLAYTIME,
+    MODIFYVM_FWLOGOIMAGEPATH,
+    MODIFYVM_FWBOOTMENU,
+    MODIFYVM_FWAPIC,
+    MODIFYVM_FWSYSTEMTIMEOFFSET,
+    MODIFYVM_FWPXEDEBUG,
     MODIFYVM_SYSTEMUUIDLE,
     MODIFYVM_BOOT,
     MODIFYVM_HDA,                // deprecated
@@ -223,7 +203,6 @@ enum
     MODIFYVM_TRACING_CONFIG,
     MODIFYVM_TRACING_ALLOW_VM_ACCESS,
     MODIFYVM_HARDWARE_UUID,
-    MODIFYVM_HPET,
     MODIFYVM_IOCACHE,
     MODIFYVM_IOCACHESIZE,
     MODIFYVM_CPU_EXECTUION_CAP,
@@ -268,6 +247,33 @@ enum
     MODIFYVM_GUEST_DEBUG_IO_PROVIDER,
     MODIFYVM_GUEST_DEBUG_ADDRESS,
     MODIFYVM_GUEST_DEBUG_PORT,
+    /*
+     * x86-specific stuff.
+     */
+    MODIFYVM_X86_APIC,
+    MODIFYVM_X86_DELCPUID,
+    MODIFYVM_X86_DELCPUID_OLD,      // legacy, different syntax from MODIFYVM_DELCPUID
+    MODIFYVM_X86_DELALLCPUID,
+    MODIFYVM_X86_HPET,
+    MODIFYVM_X86_HWVIRTEX,
+    MODIFYVM_X86_IBPB_ON_VM_ENTRY,
+    MODIFYVM_X86_IBPB_ON_VM_EXIT,
+    MODIFYVM_X86_L1D_FLUSH_ON_SCHED,
+    MODIFYVM_X86_L1D_FLUSH_ON_VM_ENTRY,
+    MODIFYVM_X86_LARGEPAGES,
+    MODIFYVM_X86_LONGMODE,
+    MODIFYVM_X86_MDS_CLEAR_ON_SCHED,
+    MODIFYVM_X86_MDS_CLEAR_ON_VM_ENTRY,
+    MODIFYVM_X86_NESTED_HW_VIRT,
+    MODIFYVM_X86_NESTEDPAGING,
+    MODIFYVM_X86_PAE,
+    MODIFYVM_X86_SETCPUID,
+    MODIFYVM_X86_SPEC_CTRL,
+    MODIFYVM_X86_TFRESET,
+    MODIFYVM_X86_VIRT_VMSAVE_VMLOAD,
+    MODIFYVM_X86_VTXUX,
+    MODIFYVM_X86_VTXVPID,
+    MODIFYVM_X86_X2APIC
 };
 
 static const RTGETOPTDEF g_aModifyVMOptions[] =
@@ -283,32 +289,9 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     OPT1("--firmware",                                                  MODIFYVM_FIRMWARE,                  RTGETOPT_REQ_STRING),
     OPT1("--acpi",                                                      MODIFYVM_ACPI,                      RTGETOPT_REQ_BOOL_ONOFF),
     OPT1("--ioapic",                                                    MODIFYVM_IOAPIC,                    RTGETOPT_REQ_BOOL_ONOFF),
-    OPT1("--pae",                                                       MODIFYVM_PAE,                       RTGETOPT_REQ_BOOL_ONOFF),
-    OPT2("--long-mode",                     "--longmode",               MODIFYVM_LONGMODE,                  RTGETOPT_REQ_BOOL_ONOFF),
     OPT1("--cpuid-portability-level",                                   MODIFYVM_CPUID_PORTABILITY,         RTGETOPT_REQ_UINT32),
-    OPT2("--triple-fault-reset",            "--triplefaultreset",       MODIFYVM_TFRESET,                   RTGETOPT_REQ_BOOL_ONOFF),
-    OPT1("--apic",                                                      MODIFYVM_APIC,                      RTGETOPT_REQ_BOOL_ONOFF),
-    OPT1("--x2apic",                                                    MODIFYVM_X2APIC,                    RTGETOPT_REQ_BOOL_ONOFF),
     OPT2("--paravirt-provider",             "--paravirtprovider",       MODIFYVM_PARAVIRTPROVIDER,          RTGETOPT_REQ_STRING),
     OPT2("--paravirt-debug",                "--paravirtdebug",          MODIFYVM_PARAVIRTDEBUG,             RTGETOPT_REQ_STRING),
-    OPT1("--hwvirtex",                                                  MODIFYVM_HWVIRTEX,                  RTGETOPT_REQ_BOOL_ONOFF),
-    OPT2("--nested-paging",                 "--nestedpaging",           MODIFYVM_NESTEDPAGING,              RTGETOPT_REQ_BOOL_ONOFF),
-    OPT2("--large-pages",                   "--largepages",             MODIFYVM_LARGEPAGES,                RTGETOPT_REQ_BOOL_ONOFF),
-    OPT2("--vtx-vpid",                      "--vtxvpid",                MODIFYVM_VTXVPID,                   RTGETOPT_REQ_BOOL_ONOFF),
-    OPT2("--vtx-ux",                        "--vtxux",                  MODIFYVM_VTXUX,                     RTGETOPT_REQ_BOOL_ONOFF),
-    OPT1("--virt-vmsave-vmload",                                        MODIFYVM_VIRT_VMSAVE_VMLOAD,        RTGETOPT_REQ_BOOL_ONOFF),
-    OPT1("--ibpb-on-vm-exit",                                           MODIFYVM_IBPB_ON_VM_EXIT,           RTGETOPT_REQ_BOOL_ONOFF),
-    OPT1("--ibpb-on-vm-entry",                                          MODIFYVM_IBPB_ON_VM_ENTRY,          RTGETOPT_REQ_BOOL_ONOFF),
-    OPT1("--spec-ctrl",                                                 MODIFYVM_SPEC_CTRL,                 RTGETOPT_REQ_BOOL_ONOFF),
-    OPT1("--l1d-flush-on-sched",                                        MODIFYVM_L1D_FLUSH_ON_SCHED,        RTGETOPT_REQ_BOOL_ONOFF),
-    OPT1("--l1d-flush-on-vm-entry",                                     MODIFYVM_L1D_FLUSH_ON_VM_ENTRY,     RTGETOPT_REQ_BOOL_ONOFF),
-    OPT1("--mds-clear-on-sched",                                        MODIFYVM_MDS_CLEAR_ON_SCHED,        RTGETOPT_REQ_BOOL_ONOFF),
-    OPT1("--mds-clear-on-vm-entry",                                     MODIFYVM_MDS_CLEAR_ON_VM_ENTRY,     RTGETOPT_REQ_BOOL_ONOFF),
-    OPT1("--nested-hw-virt",                                            MODIFYVM_NESTED_HW_VIRT,            RTGETOPT_REQ_BOOL_ONOFF),
-    OPT2("--cpuid-set",                     "--cpuidset",               MODIFYVM_SETCPUID,                  RTGETOPT_REQ_UINT32_OPTIONAL_PAIR | RTGETOPT_FLAG_HEX),
-    OPT1("--cpuid-remove",                                              MODIFYVM_DELCPUID,                  RTGETOPT_REQ_UINT32_OPTIONAL_PAIR | RTGETOPT_FLAG_HEX),
-    OPT1("--cpuidremove",                                               MODIFYVM_DELCPUID_OLD,              RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX), /* legacy - syntax differs */
-    OPT2("--cpuid-remove-all",              "--cpuidremoveall",         MODIFYVM_DELALLCPUID,               RTGETOPT_REQ_NOTHING),
     OPT1("--cpus",                                                      MODIFYVM_CPUS,                      RTGETOPT_REQ_UINT32),
     OPT2("--cpu-hotplug",                   "--cpuhotplug",             MODIFYVM_CPUHOTPLUG,                RTGETOPT_REQ_BOOL_ONOFF),
     OPT1("--cpu-profile",                                               MODIFYVM_CPU_PROFILE,               RTGETOPT_REQ_STRING),
@@ -322,14 +305,31 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
 #ifdef VBOX_WITH_VIDEOHWACCEL
     OPT2("--accelerate-2d-video",           "--accelerate2dvideo",      MODIFYVM_ACCELERATE2DVIDEO,         RTGETOPT_REQ_BOOL_ONOFF),
 #endif
-    OPT2("--bios-logo-fade-in",             "--bioslogofadein",         MODIFYVM_BIOSLOGOFADEIN,            RTGETOPT_REQ_BOOL_ONOFF),
-    OPT2("--bios-logo-fade-out",            "--bioslogofadeout",        MODIFYVM_BIOSLOGOFADEOUT,           RTGETOPT_REQ_BOOL_ONOFF),
-    OPT2("--bios-logo-display-time",        "--bioslogodisplaytime",    MODIFYVM_BIOSLOGODISPLAYTIME,       RTGETOPT_REQ_UINT32),
-    OPT2("--bios-logo-image-path",          "--bioslogoimagepath",      MODIFYVM_BIOSLOGOIMAGEPATH,         RTGETOPT_REQ_STRING),
-    OPT2("--bios-boot-menu",                "--biosbootmenu",           MODIFYVM_BIOSBOOTMENU,              RTGETOPT_REQ_STRING),
-    OPT2("--bios-system-time-offset",       "--biossystemtimeoffset",   MODIFYVM_BIOSSYSTEMTIMEOFFSET,      RTGETOPT_REQ_INT64),
-    OPT2("--bios-apic",                     "--biosapic",               MODIFYVM_BIOSAPIC,                  RTGETOPT_REQ_STRING),
-    OPT2("--bios-pxe-debug",                "--biospxedebug",           MODIFYVM_BIOSPXEDEBUG,              RTGETOPT_REQ_BOOL_ONOFF),
+    /** Kept for backwards-compatibility. */
+    OPT1("--firmware-logo-fade-in",                                     MODIFYVM_FWLOGOFADEIN,              RTGETOPT_REQ_BOOL_ONOFF),
+    /** Kept for backwards-compatibility. */
+    OPT2("--bios-logo-fade-in",             "--bioslogofadein",         MODIFYVM_FWLOGOFADEIN,              RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--firmware-fade-out",                                         MODIFYVM_FWLOGOFADEOUT,             RTGETOPT_REQ_BOOL_ONOFF),
+    /** Kept for backwards-compatibility. */
+    OPT2("--bios-logo-fade-out",            "--bioslogofadeout",        MODIFYVM_FWLOGOFADEOUT,             RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--firmware-logo-display-time",                                MODIFYVM_FWLOGODISPLAYTIME,         RTGETOPT_REQ_UINT32),
+    /** Kept for backwards-compatibility. */
+    OPT2("--bios-logo-display-time",        "--bioslogodisplaytime",    MODIFYVM_FWLOGODISPLAYTIME,         RTGETOPT_REQ_UINT32),
+    OPT1("--firmware-logo-image-path",                                  MODIFYVM_FWLOGOIMAGEPATH,           RTGETOPT_REQ_STRING),
+    /** Kept for backwards-compatibility. */
+    OPT2("--bios-logo-image-path",          "--bioslogoimagepath",      MODIFYVM_FWLOGOIMAGEPATH,           RTGETOPT_REQ_STRING),
+    OPT1("--firmware-boot-menu",                                        MODIFYVM_FWBOOTMENU,                RTGETOPT_REQ_STRING),
+    /** Kept for backwards-compatibility. */
+    OPT2("--bios-boot-menu",                "--biosbootmenu",           MODIFYVM_FWBOOTMENU,                RTGETOPT_REQ_STRING),
+    OPT1("--firmware-system-time-offset",                               MODIFYVM_FWSYSTEMTIMEOFFSET,        RTGETOPT_REQ_INT64),
+    /** Kept for backwards-compatibility. */
+    OPT2("--bios-system-time-offset",       "--biossystemtimeoffset",   MODIFYVM_FWSYSTEMTIMEOFFSET,        RTGETOPT_REQ_INT64),
+    OPT1("--firmware-apic",                                             MODIFYVM_FWAPIC,                    RTGETOPT_REQ_STRING),
+    /** Kept for backwards-compatibility. */
+    OPT2("--bios-apic",                     "--biosapic",               MODIFYVM_FWAPIC,                    RTGETOPT_REQ_STRING),
+    OPT1("--firmware-pxe-debug",                                        MODIFYVM_FWPXEDEBUG,                RTGETOPT_REQ_BOOL_ONOFF),
+    /** Kept for backwards-compatibility. */
+    OPT2("--bios-pxe-debug",                "--biospxedebug",           MODIFYVM_FWPXEDEBUG,                RTGETOPT_REQ_BOOL_ONOFF),
     OPT2("--system-uuid-le",                "--system-uuid-le",         MODIFYVM_SYSTEMUUIDLE,              RTGETOPT_REQ_BOOL_ONOFF),
     OPT1("--boot",                                                      MODIFYVM_BOOT,                      RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
     OPT1("--hda",                                                       MODIFYVM_HDA,                       RTGETOPT_REQ_STRING), /* deprecated */
@@ -439,7 +439,6 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     OPT1("--tracing-config",                                            MODIFYVM_TRACING_CONFIG,            RTGETOPT_REQ_STRING),
     OPT1("--tracing-allow-vm-access",                                   MODIFYVM_TRACING_ALLOW_VM_ACCESS,   RTGETOPT_REQ_BOOL_ONOFF),
     OPT2("--hardware-uuid",                 "--hardwareuuid",                            MODIFYVM_HARDWARE_UUID,             RTGETOPT_REQ_STRING),
-    OPT1("--hpet",                                                      MODIFYVM_HPET,                      RTGETOPT_REQ_BOOL_ONOFF),
     OPT1("--iocache",                                                   MODIFYVM_IOCACHE,                   RTGETOPT_REQ_BOOL_ONOFF),
     OPT2("--iocache-size",                  "--iocachesize",            MODIFYVM_IOCACHESIZE,               RTGETOPT_REQ_UINT32),
     OPT1("--chipset",                                                   MODIFYVM_CHIPSET,                   RTGETOPT_REQ_STRING),
@@ -482,6 +481,62 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     OPT1("--guest-debug-io-provider",                                   MODIFYVM_GUEST_DEBUG_IO_PROVIDER,   RTGETOPT_REQ_STRING),
     OPT1("--guest-debug-address",                                       MODIFYVM_GUEST_DEBUG_ADDRESS,       RTGETOPT_REQ_STRING),
     OPT1("--guest-debug-port",                                          MODIFYVM_GUEST_DEBUG_PORT,          RTGETOPT_REQ_UINT32),
+
+    /*
+     * x86-only stuff.
+     *
+     * Note: The non-prefixed options (e.g. "hpet" vs. "x86-hpet") are being kept
+     *       to maintain backwards compatibility, at least for a while. Remove them before going on pension.
+     *
+     * Sorted after their MODIFYVM_X86_XXX values.
+     */
+    OPT1("--x86-apic",                                                  MODIFYVM_X86_APIC,                  RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--apic",                                                      MODIFYVM_X86_APIC,                  RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--x86-cpuid-remove",                                          MODIFYVM_X86_DELCPUID,              RTGETOPT_REQ_UINT32_OPTIONAL_PAIR | RTGETOPT_FLAG_HEX),
+    OPT1("--cpuid-remove",                                              MODIFYVM_X86_DELCPUID,              RTGETOPT_REQ_UINT32_OPTIONAL_PAIR | RTGETOPT_FLAG_HEX),
+    OPT1("--cpuidremove",                                               MODIFYVM_X86_DELCPUID_OLD,          RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX), /* legacy - syntax differs */
+    OPT1("--x86-cpuid-remove-all",                                      MODIFYVM_X86_DELALLCPUID,           RTGETOPT_REQ_NOTHING),
+    OPT2("--cpuid-remove-all",              "--cpuidremoveall",         MODIFYVM_X86_DELALLCPUID,           RTGETOPT_REQ_NOTHING),
+    OPT1("--x86-hpet",                                                  MODIFYVM_X86_HPET,                  RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--hpet",                                                      MODIFYVM_X86_HPET,                  RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--x86-hwvirtex",                                              MODIFYVM_X86_HWVIRTEX,              RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--hwvirtex",                                                  MODIFYVM_X86_HWVIRTEX,              RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--x86-ibpb-on-vm-entry",                                      MODIFYVM_X86_IBPB_ON_VM_ENTRY,      RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--ibpb-on-vm-entry",                                          MODIFYVM_X86_IBPB_ON_VM_ENTRY,      RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--x86-ibpb-on-vm-exit",                                       MODIFYVM_X86_IBPB_ON_VM_EXIT,       RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--ibpb-on-vm-exit",                                           MODIFYVM_X86_IBPB_ON_VM_EXIT,       RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--x86-l1d-flush-on-sched",                                    MODIFYVM_X86_L1D_FLUSH_ON_SCHED,    RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--l1d-flush-on-sched",                                        MODIFYVM_X86_L1D_FLUSH_ON_SCHED,    RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--x86-l1d-flush-on-vm-entry",                                 MODIFYVM_X86_L1D_FLUSH_ON_VM_ENTRY, RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--l1d-flush-on-vm-entry",                                     MODIFYVM_X86_L1D_FLUSH_ON_VM_ENTRY, RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--x86-large-pages",                                           MODIFYVM_X86_LARGEPAGES,            RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--large-pages",                   "--largepages",             MODIFYVM_X86_LARGEPAGES,            RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--x86-long-mode",                                             MODIFYVM_X86_LONGMODE,              RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--long-mode",                     "--longmode",               MODIFYVM_X86_LONGMODE,              RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--x86-mds-clear-on-sched",                                    MODIFYVM_X86_MDS_CLEAR_ON_SCHED,    RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--mds-clear-on-sched",                                        MODIFYVM_X86_MDS_CLEAR_ON_SCHED,    RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--x86-mds-clear-on-vm-entry",                                 MODIFYVM_X86_MDS_CLEAR_ON_VM_ENTRY, RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--mds-clear-on-vm-entry",                                     MODIFYVM_X86_MDS_CLEAR_ON_VM_ENTRY, RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--x86-nested-hw-virt",                                        MODIFYVM_X86_NESTED_HW_VIRT,        RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--nested-hw-virt",                                            MODIFYVM_X86_NESTED_HW_VIRT,        RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--x86-nested-paging",                                         MODIFYVM_X86_NESTEDPAGING,          RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--nested-paging",                 "--nestedpaging",           MODIFYVM_X86_NESTEDPAGING,          RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--x86-pae",                                                   MODIFYVM_X86_PAE,                   RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--pae",                                                       MODIFYVM_X86_PAE,                   RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--x86-cpuid-set",                                             MODIFYVM_X86_SETCPUID,              RTGETOPT_REQ_UINT32_OPTIONAL_PAIR | RTGETOPT_FLAG_HEX),
+    OPT2("--cpuid-set",                     "--cpuidset",               MODIFYVM_X86_SETCPUID,              RTGETOPT_REQ_UINT32_OPTIONAL_PAIR | RTGETOPT_FLAG_HEX),
+    OPT1("--x86-spec-ctrl",                                             MODIFYVM_X86_SPEC_CTRL,             RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--spec-ctrl",                                                 MODIFYVM_X86_SPEC_CTRL,             RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--x86-triple-fault-reset",                                    MODIFYVM_X86_TFRESET,               RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--triple-fault-reset",            "--triplefaultreset",       MODIFYVM_X86_TFRESET,               RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--virt-vmsave-vmload",                                        MODIFYVM_X86_VIRT_VMSAVE_VMLOAD,    RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--x86-virt-vmsave-vmload",                                    MODIFYVM_X86_VIRT_VMSAVE_VMLOAD,    RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--x86-vtx-ux",                                                MODIFYVM_X86_VTXUX,                 RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--vtx-ux",                        "--vtxux",                  MODIFYVM_X86_VTXUX,                 RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--x86-vtx-vpid",                                              MODIFYVM_X86_VTXVPID,               RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--vtx-vpid",                      "--vtxvpid",                MODIFYVM_X86_VTXVPID,               RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--x86-x2apic",                                                MODIFYVM_X86_X2APIC,                RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--x2apic",                                                    MODIFYVM_X86_X2APIC,                RTGETOPT_REQ_BOOL_ONOFF),
 };
 
 static void vrdeWarningDeprecatedOption(const char *pszOption)
@@ -616,6 +671,143 @@ VMProcPriority_T nameToVMProcPriority(const char *pszName)
     return VMProcPriority_Invalid;
 }
 
+/**
+ * Handles the x86-specific modifyvm options.
+ *
+ * @returns HRESULT
+ * @retval  E_INVALIDARG if handed-in option was not being handled.
+ * @param   pGetOptState        Pointer to GetOpt state to use.
+ * @param   c                   Current GetOpt value (short form).
+ * @param   pValueUnion         Pointer to current value union.
+ * @param   sessionMachine      Session machine to use.
+ * @param   platformX86         x86-specific platform object to use.
+ */
+HRESULT handleModifyVM_x86(PRTGETOPTSTATE pGetOptState, int c, PRTGETOPTUNION pValueUnion,
+                           ComPtr<IMachine> &sessionMachine, ComPtr<IPlatformX86> &platformX86)
+{
+    RT_NOREF(sessionMachine);
+
+    HRESULT hrc = S_OK;
+
+    switch (c)
+    {
+        case MODIFYVM_X86_APIC:
+            CHECK_ERROR(platformX86, SetCPUProperty(CPUPropertyTypeX86_APIC, pValueUnion->f));
+            break;
+
+        case MODIFYVM_X86_DELCPUID:
+            CHECK_ERROR(platformX86, RemoveCPUIDLeaf(pValueUnion->PairU32.uFirst, pValueUnion->PairU32.uSecond));
+            break;
+
+        case MODIFYVM_X86_DELCPUID_OLD:
+            CHECK_ERROR(platformX86, RemoveCPUIDLeaf(pValueUnion->u32, UINT32_MAX));
+            break;
+
+        case MODIFYVM_X86_DELALLCPUID:
+            CHECK_ERROR(platformX86, RemoveAllCPUIDLeaves());
+            break;
+
+        case MODIFYVM_X86_HPET:
+            CHECK_ERROR(platformX86, COMSETTER(HPETEnabled)(pValueUnion->f));
+            break;
+
+        case MODIFYVM_X86_TFRESET:
+            CHECK_ERROR(platformX86, SetCPUProperty(CPUPropertyTypeX86_TripleFaultReset, pValueUnion->f));
+            break;
+
+        case MODIFYVM_X86_PAE:
+            CHECK_ERROR(platformX86, SetCPUProperty(CPUPropertyTypeX86_PAE, pValueUnion->f));
+            break;
+
+        case MODIFYVM_X86_LONGMODE:
+            CHECK_ERROR(platformX86, SetCPUProperty(CPUPropertyTypeX86_LongMode, pValueUnion->f));
+            break;
+
+        case MODIFYVM_X86_X2APIC:
+            CHECK_ERROR(platformX86, SetCPUProperty(CPUPropertyTypeX86_X2APIC, pValueUnion->f));
+            break;
+
+        case MODIFYVM_X86_NESTEDPAGING:
+            CHECK_ERROR(platformX86, SetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, pValueUnion->f));
+            break;
+
+        case MODIFYVM_X86_LARGEPAGES:
+            CHECK_ERROR(platformX86, SetHWVirtExProperty(HWVirtExPropertyType_LargePages, pValueUnion->f));
+            break;
+
+        case MODIFYVM_X86_VTXVPID:
+            CHECK_ERROR(platformX86, SetHWVirtExProperty(HWVirtExPropertyType_VPID, pValueUnion->f));
+            break;
+
+        case MODIFYVM_X86_VTXUX:
+            CHECK_ERROR(platformX86, SetHWVirtExProperty(HWVirtExPropertyType_UnrestrictedExecution, pValueUnion->f));
+            break;
+
+        case MODIFYVM_X86_VIRT_VMSAVE_VMLOAD:
+            CHECK_ERROR(platformX86, SetHWVirtExProperty(HWVirtExPropertyType_VirtVmsaveVmload, pValueUnion->f));
+            break;
+
+        case MODIFYVM_X86_IBPB_ON_VM_EXIT:
+            CHECK_ERROR(platformX86, SetCPUProperty(CPUPropertyTypeX86_IBPBOnVMExit, pValueUnion->f));
+            break;
+
+        case MODIFYVM_X86_IBPB_ON_VM_ENTRY:
+            CHECK_ERROR(platformX86, SetCPUProperty(CPUPropertyTypeX86_IBPBOnVMEntry, pValueUnion->f));
+            break;
+
+        case MODIFYVM_X86_SPEC_CTRL:
+            CHECK_ERROR(platformX86, SetCPUProperty(CPUPropertyTypeX86_SpecCtrl, pValueUnion->f));
+            break;
+
+        case MODIFYVM_X86_L1D_FLUSH_ON_SCHED:
+            CHECK_ERROR(platformX86, SetCPUProperty(CPUPropertyTypeX86_L1DFlushOnEMTScheduling, pValueUnion->f));
+            break;
+
+        case MODIFYVM_X86_L1D_FLUSH_ON_VM_ENTRY:
+            CHECK_ERROR(platformX86, SetCPUProperty(CPUPropertyTypeX86_L1DFlushOnVMEntry, pValueUnion->f));
+            break;
+
+        case MODIFYVM_X86_MDS_CLEAR_ON_SCHED:
+            CHECK_ERROR(platformX86, SetCPUProperty(CPUPropertyTypeX86_MDSClearOnEMTScheduling, pValueUnion->f));
+            break;
+
+        case MODIFYVM_X86_MDS_CLEAR_ON_VM_ENTRY:
+            CHECK_ERROR(platformX86, SetCPUProperty(CPUPropertyTypeX86_MDSClearOnVMEntry, pValueUnion->f));
+            break;
+
+        case MODIFYVM_X86_NESTED_HW_VIRT:
+            CHECK_ERROR(platformX86, SetCPUProperty(CPUPropertyTypeX86_HWVirt, pValueUnion->f));
+            break;
+
+        case MODIFYVM_X86_HWVIRTEX:
+            CHECK_ERROR(platformX86, SetHWVirtExProperty(HWVirtExPropertyType_Enabled, pValueUnion->f));
+            break;
+
+        case MODIFYVM_X86_SETCPUID:
+        {
+            uint32_t const idx    = c == MODIFYVM_X86_SETCPUID ?  pValueUnion->PairU32.uFirst  : pValueUnion->u32;
+            uint32_t const idxSub = c == MODIFYVM_X86_SETCPUID ?  pValueUnion->PairU32.uSecond : UINT32_MAX;
+            uint32_t aValue[4];
+            for (unsigned i = 0; i < 4; i++)
+            {
+                int vrc = RTGetOptFetchValue(pGetOptState, pValueUnion, RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX);
+                if (RT_FAILURE(vrc))
+                    return errorSyntax(ModifyVM::tr("Missing or invalid argument to '%s'"),
+                                       pGetOptState->pDef->pszLong);
+                aValue[i] = pValueUnion->u32;
+            }
+            CHECK_ERROR(platformX86, SetCPUIDLeaf(idx, idxSub, aValue[0], aValue[1], aValue[2], aValue[3]));
+            break;
+        }
+
+        default:
+            hrc = E_INVALIDARG;
+            break;
+    }
+
+    return hrc;
+}
+
 RTEXITCODE handleModifyVM(HandlerArg *a)
 {
     int c;
@@ -634,7 +826,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 
 
     /* Get the number of network adapters */
-    ULONG NetworkAdapterCount = getMaxNics(a->virtualBox, machine);
+    ULONG NetworkAdapterCount = getMaxNics(machine);
 
     /* open a session for the VM */
     CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Write), RTEXITCODE_FAILURE);
@@ -643,8 +835,15 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
     ComPtr<IMachine> sessionMachine;
     CHECK_ERROR_RET(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()), RTEXITCODE_FAILURE);
 
-    ComPtr<IBIOSSettings> biosSettings;
-    sessionMachine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());
+    ComPtr<IFirmwareSettings> firmwareSettings;
+    CHECK_ERROR_RET(sessionMachine, COMGETTER(FirmwareSettings)(firmwareSettings.asOutParam()), RTEXITCODE_FAILURE);
+
+    ComPtr<IPlatform> platform;
+    CHECK_ERROR_RET(sessionMachine, COMGETTER(Platform)(platform.asOutParam()), RTEXITCODE_FAILURE);
+
+    /* For the x86-based options we need the x86-specific platform object. */
+    ComPtr<IPlatformX86> platformX86;
+    platform->COMGETTER(X86)(platformX86.asOutParam());
 
     ComPtr<IGraphicsAdapter> pGraphicsAdapter;
     sessionMachine->COMGETTER(GraphicsAdapter)(pGraphicsAdapter.asOutParam());
@@ -741,23 +940,23 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
             {
                 if (!RTStrICmp(ValueUnion.psz, "efi"))
                 {
-                    CHECK_ERROR(sessionMachine, COMSETTER(FirmwareType)(FirmwareType_EFI));
+                    CHECK_ERROR(firmwareSettings, COMSETTER(FirmwareType)(FirmwareType_EFI));
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "efi32"))
                 {
-                    CHECK_ERROR(sessionMachine, COMSETTER(FirmwareType)(FirmwareType_EFI32));
+                    CHECK_ERROR(firmwareSettings, COMSETTER(FirmwareType)(FirmwareType_EFI32));
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "efi64"))
                 {
-                    CHECK_ERROR(sessionMachine, COMSETTER(FirmwareType)(FirmwareType_EFI64));
+                    CHECK_ERROR(firmwareSettings, COMSETTER(FirmwareType)(FirmwareType_EFI64));
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "efidual"))
                 {
-                    CHECK_ERROR(sessionMachine, COMSETTER(FirmwareType)(FirmwareType_EFIDUAL));
+                    CHECK_ERROR(firmwareSettings, COMSETTER(FirmwareType)(FirmwareType_EFIDUAL));
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "bios"))
                 {
-                    CHECK_ERROR(sessionMachine, COMSETTER(FirmwareType)(FirmwareType_BIOS));
+                    CHECK_ERROR(firmwareSettings, COMSETTER(FirmwareType)(FirmwareType_BIOS));
                 }
                 else
                 {
@@ -769,49 +968,19 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_ACPI:
             {
-                CHECK_ERROR(biosSettings, COMSETTER(ACPIEnabled)(ValueUnion.f));
+                CHECK_ERROR(firmwareSettings, COMSETTER(ACPIEnabled)(ValueUnion.f));
                 break;
             }
 
             case MODIFYVM_IOAPIC:
             {
-                CHECK_ERROR(biosSettings, COMSETTER(IOAPICEnabled)(ValueUnion.f));
-                break;
-            }
-
-            case MODIFYVM_PAE:
-            {
-                CHECK_ERROR(sessionMachine, SetCPUProperty(CPUPropertyType_PAE, ValueUnion.f));
-                break;
-            }
-
-            case MODIFYVM_LONGMODE:
-            {
-                CHECK_ERROR(sessionMachine, SetCPUProperty(CPUPropertyType_LongMode, ValueUnion.f));
+                CHECK_ERROR(firmwareSettings, COMSETTER(IOAPICEnabled)(ValueUnion.f));
                 break;
             }
 
             case MODIFYVM_CPUID_PORTABILITY:
             {
                 CHECK_ERROR(sessionMachine, COMSETTER(CPUIDPortabilityLevel)(ValueUnion.u32));
-                break;
-            }
-
-            case MODIFYVM_TFRESET:
-            {
-                CHECK_ERROR(sessionMachine, SetCPUProperty(CPUPropertyType_TripleFaultReset, ValueUnion.f));
-                break;
-            }
-
-            case MODIFYVM_APIC:
-            {
-                CHECK_ERROR(sessionMachine, SetCPUProperty(CPUPropertyType_APIC, ValueUnion.f));
-                break;
-            }
-
-            case MODIFYVM_X2APIC:
-            {
-                CHECK_ERROR(sessionMachine, SetCPUProperty(CPUPropertyType_X2APIC, ValueUnion.f));
                 break;
             }
 
@@ -844,103 +1013,6 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_HWVIRTEX:
-            {
-                CHECK_ERROR(sessionMachine, SetHWVirtExProperty(HWVirtExPropertyType_Enabled, ValueUnion.f));
-                break;
-            }
-
-            case MODIFYVM_SETCPUID:
-            {
-                uint32_t const idx    = c == MODIFYVM_SETCPUID ?  ValueUnion.PairU32.uFirst  : ValueUnion.u32;
-                uint32_t const idxSub = c == MODIFYVM_SETCPUID ?  ValueUnion.PairU32.uSecond : UINT32_MAX;
-                uint32_t aValue[4];
-                for (unsigned i = 0; i < 4; i++)
-                {
-                    int vrc = RTGetOptFetchValue(&GetOptState, &ValueUnion, RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX);
-                    if (RT_FAILURE(vrc))
-                        return errorSyntax(ModifyVM::tr("Missing or invalid argument to '%s'"),
-                                           GetOptState.pDef->pszLong);
-                    aValue[i] = ValueUnion.u32;
-                }
-                CHECK_ERROR(sessionMachine, SetCPUIDLeaf(idx, idxSub, aValue[0], aValue[1], aValue[2], aValue[3]));
-                break;
-            }
-
-            case MODIFYVM_DELCPUID:
-                CHECK_ERROR(sessionMachine, RemoveCPUIDLeaf(ValueUnion.PairU32.uFirst, ValueUnion.PairU32.uSecond));
-                break;
-
-            case MODIFYVM_DELCPUID_OLD:
-                CHECK_ERROR(sessionMachine, RemoveCPUIDLeaf(ValueUnion.u32, UINT32_MAX));
-                break;
-
-            case MODIFYVM_DELALLCPUID:
-            {
-                CHECK_ERROR(sessionMachine, RemoveAllCPUIDLeaves());
-                break;
-            }
-
-            case MODIFYVM_NESTEDPAGING:
-            {
-                CHECK_ERROR(sessionMachine, SetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, ValueUnion.f));
-                break;
-            }
-
-            case MODIFYVM_LARGEPAGES:
-            {
-                CHECK_ERROR(sessionMachine, SetHWVirtExProperty(HWVirtExPropertyType_LargePages, ValueUnion.f));
-                break;
-            }
-
-            case MODIFYVM_VTXVPID:
-            {
-                CHECK_ERROR(sessionMachine, SetHWVirtExProperty(HWVirtExPropertyType_VPID, ValueUnion.f));
-                break;
-            }
-
-            case MODIFYVM_VTXUX:
-            {
-                CHECK_ERROR(sessionMachine, SetHWVirtExProperty(HWVirtExPropertyType_UnrestrictedExecution, ValueUnion.f));
-                break;
-            }
-
-            case MODIFYVM_VIRT_VMSAVE_VMLOAD:
-                CHECK_ERROR(sessionMachine, SetHWVirtExProperty(HWVirtExPropertyType_VirtVmsaveVmload, ValueUnion.f));
-                break;
-
-            case MODIFYVM_IBPB_ON_VM_EXIT:
-                CHECK_ERROR(sessionMachine, SetCPUProperty(CPUPropertyType_IBPBOnVMExit, ValueUnion.f));
-                break;
-
-            case MODIFYVM_IBPB_ON_VM_ENTRY:
-                CHECK_ERROR(sessionMachine, SetCPUProperty(CPUPropertyType_IBPBOnVMEntry, ValueUnion.f));
-                break;
-
-            case MODIFYVM_SPEC_CTRL:
-                CHECK_ERROR(sessionMachine, SetCPUProperty(CPUPropertyType_SpecCtrl, ValueUnion.f));
-                break;
-
-            case MODIFYVM_L1D_FLUSH_ON_SCHED:
-                CHECK_ERROR(sessionMachine, SetCPUProperty(CPUPropertyType_L1DFlushOnEMTScheduling, ValueUnion.f));
-                break;
-
-            case MODIFYVM_L1D_FLUSH_ON_VM_ENTRY:
-                CHECK_ERROR(sessionMachine, SetCPUProperty(CPUPropertyType_L1DFlushOnVMEntry, ValueUnion.f));
-                break;
-
-            case MODIFYVM_MDS_CLEAR_ON_SCHED:
-                CHECK_ERROR(sessionMachine, SetCPUProperty(CPUPropertyType_MDSClearOnEMTScheduling, ValueUnion.f));
-                break;
-
-            case MODIFYVM_MDS_CLEAR_ON_VM_ENTRY:
-                CHECK_ERROR(sessionMachine, SetCPUProperty(CPUPropertyType_MDSClearOnVMEntry, ValueUnion.f));
-                break;
-
-            case MODIFYVM_NESTED_HW_VIRT:
-                CHECK_ERROR(sessionMachine, SetCPUProperty(CPUPropertyType_HWVirt, ValueUnion.f));
-                break;
-
             case MODIFYVM_CPUS:
             {
                 CHECK_ERROR(sessionMachine, COMSETTER(CPUCount)(ValueUnion.u32));
@@ -949,7 +1021,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_RTCUSEUTC:
             {
-                CHECK_ERROR(sessionMachine, COMSETTER(RTCUseUTC)(ValueUnion.f));
+                CHECK_ERROR(platform, COMSETTER(RTCUseUTC)(ValueUnion.f));
                 break;
             }
 
@@ -1028,44 +1100,43 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 break;
             }
 #endif
-
-            case MODIFYVM_BIOSLOGOFADEIN:
+            case MODIFYVM_FWLOGOFADEIN:
             {
-                CHECK_ERROR(biosSettings, COMSETTER(LogoFadeIn)(ValueUnion.f));
+                CHECK_ERROR(firmwareSettings, COMSETTER(LogoFadeIn)(ValueUnion.f));
                 break;
             }
 
-            case MODIFYVM_BIOSLOGOFADEOUT:
+            case MODIFYVM_FWLOGOFADEOUT:
             {
-                CHECK_ERROR(biosSettings, COMSETTER(LogoFadeOut)(ValueUnion.f));
+                CHECK_ERROR(firmwareSettings, COMSETTER(LogoFadeOut)(ValueUnion.f));
                 break;
             }
 
-            case MODIFYVM_BIOSLOGODISPLAYTIME:
+            case MODIFYVM_FWLOGODISPLAYTIME:
             {
-                CHECK_ERROR(biosSettings, COMSETTER(LogoDisplayTime)(ValueUnion.u32));
+                CHECK_ERROR(firmwareSettings, COMSETTER(LogoDisplayTime)(ValueUnion.u32));
                 break;
             }
 
-            case MODIFYVM_BIOSLOGOIMAGEPATH:
+            case MODIFYVM_FWLOGOIMAGEPATH:
             {
-                CHECK_ERROR(biosSettings, COMSETTER(LogoImagePath)(Bstr(ValueUnion.psz).raw()));
+                CHECK_ERROR(firmwareSettings, COMSETTER(LogoImagePath)(Bstr(ValueUnion.psz).raw()));
                 break;
             }
 
-            case MODIFYVM_BIOSBOOTMENU:
+            case MODIFYVM_FWBOOTMENU:
             {
                 if (!RTStrICmp(ValueUnion.psz, "disabled"))
                 {
-                    CHECK_ERROR(biosSettings, COMSETTER(BootMenuMode)(BIOSBootMenuMode_Disabled));
+                    CHECK_ERROR(firmwareSettings, COMSETTER(BootMenuMode)(FirmwareBootMenuMode_Disabled));
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "menuonly"))
                 {
-                    CHECK_ERROR(biosSettings, COMSETTER(BootMenuMode)(BIOSBootMenuMode_MenuOnly));
+                    CHECK_ERROR(firmwareSettings, COMSETTER(BootMenuMode)(FirmwareBootMenuMode_MenuOnly));
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "messageandmenu"))
                 {
-                    CHECK_ERROR(biosSettings, COMSETTER(BootMenuMode)(BIOSBootMenuMode_MessageAndMenu));
+                    CHECK_ERROR(firmwareSettings, COMSETTER(BootMenuMode)(FirmwareBootMenuMode_MessageAndMenu));
                 }
                 else
                 {
@@ -1075,21 +1146,21 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_BIOSAPIC:
+            case MODIFYVM_FWAPIC:
             {
                 if (!RTStrICmp(ValueUnion.psz, "disabled"))
                 {
-                    CHECK_ERROR(biosSettings, COMSETTER(APICMode)(APICMode_Disabled));
+                    CHECK_ERROR(firmwareSettings, COMSETTER(APICMode)(APICMode_Disabled));
                 }
                 else if (   !RTStrICmp(ValueUnion.psz, "apic")
                          || !RTStrICmp(ValueUnion.psz, "lapic")
                          || !RTStrICmp(ValueUnion.psz, "xapic"))
                 {
-                    CHECK_ERROR(biosSettings, COMSETTER(APICMode)(APICMode_APIC));
+                    CHECK_ERROR(firmwareSettings, COMSETTER(APICMode)(APICMode_APIC));
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "x2apic"))
                 {
-                    CHECK_ERROR(biosSettings, COMSETTER(APICMode)(APICMode_X2APIC));
+                    CHECK_ERROR(firmwareSettings, COMSETTER(APICMode)(APICMode_X2APIC));
                 }
                 else
                 {
@@ -1099,21 +1170,21 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_BIOSSYSTEMTIMEOFFSET:
+            case MODIFYVM_FWSYSTEMTIMEOFFSET:
             {
-                CHECK_ERROR(biosSettings, COMSETTER(TimeOffset)(ValueUnion.i64));
+                CHECK_ERROR(firmwareSettings, COMSETTER(TimeOffset)(ValueUnion.i64));
                 break;
             }
 
-            case MODIFYVM_BIOSPXEDEBUG:
+            case MODIFYVM_FWPXEDEBUG:
             {
-                CHECK_ERROR(biosSettings, COMSETTER(PXEDebugEnabled)(ValueUnion.f));
+                CHECK_ERROR(firmwareSettings, COMSETTER(PXEDebugEnabled)(ValueUnion.f));
                 break;
             }
 
             case MODIFYVM_SYSTEMUUIDLE:
             {
-                CHECK_ERROR(biosSettings, COMSETTER(SMBIOSUuidLittleEndian)(ValueUnion.f));
+                CHECK_ERROR(firmwareSettings, COMSETTER(SMBIOSUuidLittleEndian)(ValueUnion.f));
                 break;
             }
 
@@ -2492,7 +2563,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     vrc = RTStrToUInt32Ex(pszIOBase, NULL, 0, &uVal);
                     if (vrc != VINF_SUCCESS || uVal == 0)
                         return errorArgument(ModifyVM::tr("Error parsing UART I/O base '%s'"), pszIOBase);
-                    CHECK_ERROR(uart, COMSETTER(IOBase)(uVal));
+                    CHECK_ERROR(uart, COMSETTER(IOAddress)(uVal));
 
                     CHECK_ERROR(uart, COMSETTER(Enabled)(TRUE));
                 }
@@ -3164,12 +3235,6 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_HPET:
-            {
-                CHECK_ERROR(sessionMachine, COMSETTER(HPETEnabled)(ValueUnion.f));
-                break;
-            }
-
             case MODIFYVM_IOCACHE:
             {
                 CHECK_ERROR(sessionMachine, COMSETTER(IOCacheEnabled)(ValueUnion.f));
@@ -3186,17 +3251,17 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
             {
                 if (!RTStrICmp(ValueUnion.psz, "piix3"))
                 {
-                    CHECK_ERROR(sessionMachine, COMSETTER(ChipsetType)(ChipsetType_PIIX3));
+                    CHECK_ERROR(platform, COMSETTER(ChipsetType)(ChipsetType_PIIX3));
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "ich9"))
                 {
-                    CHECK_ERROR(sessionMachine, COMSETTER(ChipsetType)(ChipsetType_ICH9));
+                    CHECK_ERROR(platform, COMSETTER(ChipsetType)(ChipsetType_ICH9));
                     BOOL fIoApic = FALSE;
-                    CHECK_ERROR(biosSettings, COMGETTER(IOAPICEnabled)(&fIoApic));
+                    CHECK_ERROR(firmwareSettings, COMGETTER(IOAPICEnabled)(&fIoApic));
                     if (!fIoApic)
                     {
                         RTStrmPrintf(g_pStdErr, ModifyVM::tr("*** I/O APIC must be enabled for ICH9, enabling. ***\n"));
-                        CHECK_ERROR(biosSettings, COMSETTER(IOAPICEnabled)(TRUE));
+                        CHECK_ERROR(firmwareSettings, COMSETTER(IOAPICEnabled)(TRUE));
                     }
                 }
                 else
@@ -3211,13 +3276,13 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
             {
                 if (   !RTStrICmp(ValueUnion.psz, "none")
                     || !RTStrICmp(ValueUnion.psz, "disabled"))
-                    CHECK_ERROR(sessionMachine, COMSETTER(IommuType)(IommuType_None));
+                    CHECK_ERROR(platform, COMSETTER(IommuType)(IommuType_None));
                 else if (!RTStrICmp(ValueUnion.psz, "amd"))
-                    CHECK_ERROR(sessionMachine, COMSETTER(IommuType)(IommuType_AMD));
+                    CHECK_ERROR(platform, COMSETTER(IommuType)(IommuType_AMD));
                 else if (!RTStrICmp(ValueUnion.psz, "intel"))
                 {
 #ifdef VBOX_WITH_IOMMU_INTEL
-                    CHECK_ERROR(sessionMachine, COMSETTER(IommuType)(IommuType_Intel));
+                    CHECK_ERROR(platform, COMSETTER(IommuType)(IommuType_Intel));
 #else
                     errorArgument(ModifyVM::tr("Invalid --iommu argument '%s' (valid: none,amd,automatic)"), ValueUnion.psz);
                     hrc = E_FAIL;
@@ -3225,7 +3290,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "automatic"))
                 {
-                    CHECK_ERROR(sessionMachine, COMSETTER(IommuType)(IommuType_Automatic));
+                    CHECK_ERROR(platform, COMSETTER(IommuType)(IommuType_Automatic));
 #ifndef VBOX_WITH_IOMMU_INTEL
                     RTStrmPrintf(g_pStdErr,
                                  ModifyVM::tr("Warning: On Intel hosts, 'automatic' will not enable an IOMMU since the Intel IOMMU device is not supported yet.\n"));
@@ -3629,9 +3694,13 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
             }
 
             default:
-                errorGetOpt(c, &ValueUnion);
+            {
+                hrc = handleModifyVM_x86(&GetOptState, c, &ValueUnion, machine, platformX86);
+                if (FAILED(hrc))
+                    errorGetOpt(c, &ValueUnion);
                 hrc = E_FAIL;
                 break;
+            }
         }
     }
 

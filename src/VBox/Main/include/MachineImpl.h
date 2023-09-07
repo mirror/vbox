@@ -42,7 +42,7 @@
 #include "AudioSettingsImpl.h"
 #include "SerialPortImpl.h"
 #include "ParallelPortImpl.h"
-#include "BIOSSettingsImpl.h"
+#include "FirmwareSettingsImpl.h"
 #include "RecordingSettingsImpl.h"
 #include "GraphicsAdapterImpl.h"
 #include "StorageControllerImpl.h"          // required for MachineImpl.h to compile on Windows
@@ -56,6 +56,8 @@
 # include "Performance.h"
 # include "PerformanceImpl.h"
 #endif
+#include "PlatformImpl.h"
+#include "PlatformPropertiesImpl.h"
 #include "ThreadTask.h"
 
 // generated header
@@ -303,38 +305,13 @@ public:
         ULONG               mMemoryBalloonSize;
         BOOL                mPageFusionEnabled;
         settings::RecordingSettings mRecordSettings;
-        BOOL                mHWVirtExEnabled;
-        BOOL                mHWVirtExNestedPagingEnabled;
-        BOOL                mHWVirtExLargePagesEnabled;
-        BOOL                mHWVirtExVPIDEnabled;
-        BOOL                mHWVirtExUXEnabled;
-        BOOL                mHWVirtExForceEnabled;
-        BOOL                mHWVirtExUseNativeApi;
-        BOOL                mHWVirtExVirtVmsaveVmload;
-        BOOL                mPAEEnabled;
-        settings::Hardware::LongModeType mLongMode;
-        BOOL                mTripleFaultReset;
-        BOOL                mAPIC;
-        BOOL                mX2APIC;
-        BOOL                mIBPBOnVMExit;
-        BOOL                mIBPBOnVMEntry;
-        BOOL                mSpecCtrl;
-        BOOL                mSpecCtrlByHost;
-        BOOL                mL1DFlushOnSched;
-        BOOL                mL1DFlushOnVMEntry;
-        BOOL                mMDSClearOnSched;
-        BOOL                mMDSClearOnVMEntry;
-        BOOL                mNestedHWVirt;
         ULONG               mCPUCount;
         BOOL                mCPUHotPlugEnabled;
         ULONG               mCpuExecutionCap;
         uint32_t            mCpuIdPortabilityLevel;
         Utf8Str             mCpuProfile;
-        BOOL                mHPETEnabled;
 
         BOOL                mCPUAttached[SchemaDefs::MaxCPUCount];
-
-        std::list<settings::CpuIdLeaf> mCpuIdLeafList;
 
         DeviceType_T        mBootOrder[SchemaDefs::MaxBootPosition];
 
@@ -349,11 +326,8 @@ public:
         typedef std::map<Utf8Str, GuestProperty> GuestPropertyMap;
         GuestPropertyMap    mGuestProperties;
 
-        FirmwareType_T      mFirmwareType;
         KeyboardHIDType_T   mKeyboardHIDType;
         PointingHIDType_T   mPointingHIDType;
-        ChipsetType_T       mChipsetType;
-        IommuType_T         mIommuType;
         ParavirtProvider_T  mParavirtProvider;
         Utf8Str             mParavirtDebug;
         BOOL                mEmulatedUSBCardReaderEnabled;
@@ -383,6 +357,7 @@ public:
     HRESULT init(VirtualBox *aParent,
                  const Utf8Str &strConfigFile,
                  const Utf8Str &strName,
+                 PlatformArchitecture_T aArchitecture,
                  const StringsList &llGroups,
                  const Utf8Str &strOsTypeId,
                  GuestOSType *aOsType,
@@ -462,6 +437,20 @@ public:
     VirtualBox* i_getVirtualBox() const { return mParent; }
 
     /**
+     * Returns the machine's platform object.
+     *
+     * @returns Platform object.
+     */
+    Platform *i_getPlatform() const { return mPlatform; }
+
+    /**
+     * Returns the machine's platform properties object.
+     *
+     * @returns Platform properties object.
+     */
+    PlatformProperties *i_getPlatformProperties() const { return mPlatformProperties; }
+
+    /**
      * Checks if this machine is accessible, without attempting to load the
      * config file.
      *
@@ -518,7 +507,7 @@ public:
         IsModified_VRDEServer            = 0x000040,
         IsModified_AudioSettings         = 0x000080,
         IsModified_USB                   = 0x000100,
-        IsModified_BIOS                  = 0x000200,
+        IsModified_Firmware              = 0x000200,
         IsModified_SharedFolders         = 0x000400,
         IsModified_Snapshots             = 0x000800,
         IsModified_BandwidthControl      = 0x001000,
@@ -527,6 +516,7 @@ public:
         IsModified_TrustedPlatformModule = 0x008000,
         IsModified_NvramStore            = 0x010000,
         IsModified_GuestDebugControl     = 0x020000,
+        IsModified_Platform              = 0x040000,
     };
 
     /**
@@ -537,8 +527,7 @@ public:
      * for reading.
      */
     Utf8Str i_getOSTypeId() const { return mUserData->s.strOsType; }
-    ChipsetType_T i_getChipsetType() const { return mHWData->mChipsetType; }
-    FirmwareType_T i_getFirmwareType() const { return mHWData->mFirmwareType; }
+    FirmwareType_T i_getFirmwareType() const;
     ParavirtProvider_T i_getParavirtProvider() const { return mHWData->mParavirtProvider; }
     Utf8Str i_getParavirtDebug() const { return mHWData->mParavirtDebug; }
 
@@ -590,6 +579,7 @@ public:
     Utf8Str i_getHardeningLogFilename(void);
     Utf8Str i_getDefaultNVRAMFilename();
     Utf8Str i_getSnapshotNVRAMFilename();
+    NvramStore *i_getNVRAMStore() const { return mNvramStore; };
     SettingsVersion_T i_getSettingsVersion(void);
 
     void i_composeSavedStateFilename(Utf8Str &strStateFilePath);
@@ -808,6 +798,8 @@ protected:
     pm::CollectorGuest     *mCollectorGuest;
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
+    void i_platformPropertiesUpdate();
+
     Machine * const         mPeer;
 
     VirtualBox * const      mParent;
@@ -817,6 +809,11 @@ protected:
 
     Backupable<UserData>    mUserData;
     Backupable<HWData>      mHWData;
+
+    // const objectsf not requiring locking
+    /** The machine's platform properties.
+     *  We keep a (const) object around for performance reasons. */
+    const ComObjPtr<PlatformProperties> mPlatformProperties;
 
     /**
      * Hard disk and other media data.
@@ -839,7 +836,8 @@ protected:
     const ComObjPtr<ParallelPort>      mParallelPorts[SchemaDefs::ParallelPortCount];
     const ComObjPtr<AudioSettings>     mAudioSettings;
     const ComObjPtr<USBDeviceFilters>  mUSBDeviceFilters;
-    const ComObjPtr<BIOSSettings>      mBIOSSettings;
+    const ComObjPtr<Platform>          mPlatform;
+    const ComObjPtr<FirmwareSettings>  mFirmwareSettings;
     const ComObjPtr<RecordingSettings> mRecordingSettings;
     const ComObjPtr<GraphicsAdapter>   mGraphicsAdapter;
     const ComObjPtr<BandwidthControl>  mBandwidthControl;
@@ -906,6 +904,8 @@ protected:
 #endif
 
     friend class Appliance;
+    friend class Platform;
+    friend class PlatformX86;
     friend class RecordingSettings;
     friend class RecordingScreenSettings;
     friend class SessionMachine;
@@ -917,6 +917,7 @@ protected:
 private:
     // wrapped IMachine properties
     HRESULT getParent(ComPtr<IVirtualBox> &aParent);
+    HRESULT getPlatform(ComPtr<IPlatform> &aPlatform);
     HRESULT getIcon(std::vector<BYTE> &aIcon);
     HRESULT setIcon(const std::vector<BYTE> &aIcon);
     HRESULT getAccessible(BOOL *aAccessible);
@@ -951,22 +952,14 @@ private:
     HRESULT getPageFusionEnabled(BOOL *aPageFusionEnabled);
     HRESULT setPageFusionEnabled(BOOL aPageFusionEnabled);
     HRESULT getGraphicsAdapter(ComPtr<IGraphicsAdapter> &aGraphicsAdapter);
-    HRESULT getBIOSSettings(ComPtr<IBIOSSettings> &aBIOSSettings);
+    HRESULT getFirmwareSettings(ComPtr<IFirmwareSettings> &aFirmwareSettings);
     HRESULT getTrustedPlatformModule(ComPtr<ITrustedPlatformModule> &aTrustedPlatformModule);
     HRESULT getNonVolatileStore(ComPtr<INvramStore> &aNvramStore);
     HRESULT getRecordingSettings(ComPtr<IRecordingSettings> &aRecordingSettings);
-    HRESULT getFirmwareType(FirmwareType_T *aFirmwareType);
-    HRESULT setFirmwareType(FirmwareType_T aFirmwareType);
     HRESULT getPointingHIDType(PointingHIDType_T *aPointingHIDType);
     HRESULT setPointingHIDType(PointingHIDType_T aPointingHIDType);
     HRESULT getKeyboardHIDType(KeyboardHIDType_T *aKeyboardHIDType);
     HRESULT setKeyboardHIDType(KeyboardHIDType_T aKeyboardHIDType);
-    HRESULT getHPETEnabled(BOOL *aHPETEnabled);
-    HRESULT setHPETEnabled(BOOL aHPETEnabled);
-    HRESULT getChipsetType(ChipsetType_T *aChipsetType);
-    HRESULT setChipsetType(ChipsetType_T aChipsetType);
-    HRESULT getIommuType(IommuType_T *aIommuType);
-    HRESULT setIommuType(IommuType_T aIommuType);
     HRESULT getSnapshotFolder(com::Utf8Str &aSnapshotFolder);
     HRESULT setSnapshotFolder(const com::Utf8Str &aSnapshotFolder);
     HRESULT getVRDEServer(ComPtr<IVRDEServer> &aVRDEServer);
@@ -1010,8 +1003,6 @@ private:
     HRESULT setParavirtProvider(ParavirtProvider_T aParavirtProvider);
     HRESULT getParavirtDebug(com::Utf8Str &aParavirtDebug);
     HRESULT setParavirtDebug(const com::Utf8Str &aParavirtDebug);
-    HRESULT getRTCUseUTC(BOOL *aRTCUseUTC);
-    HRESULT setRTCUseUTC(BOOL aRTCUseUTC);
     HRESULT getIOCacheEnabled(BOOL *aIOCacheEnabled);
     HRESULT setIOCacheEnabled(BOOL aIOCacheEnabled);
     HRESULT getIOCacheSize(ULONG *aIOCacheSize);
@@ -1144,33 +1135,6 @@ private:
                          com::Utf8Str &aValue);
     HRESULT setExtraData(const com::Utf8Str &aKey,
                          const com::Utf8Str &aValue);
-    HRESULT getCPUProperty(CPUPropertyType_T aProperty,
-                           BOOL *aValue);
-    HRESULT setCPUProperty(CPUPropertyType_T aProperty,
-                           BOOL aValue);
-    HRESULT getCPUIDLeafByOrdinal(ULONG aOrdinal,
-                                  ULONG *aIdx,
-                                  ULONG *aSubIdx,
-                                  ULONG *aValEax,
-                                  ULONG *aValEbx,
-                                  ULONG *aValEcx,
-                                  ULONG *aValEdx);
-    HRESULT getCPUIDLeaf(ULONG aIdx, ULONG aSubIdx,
-                         ULONG *aValEax,
-                         ULONG *aValEbx,
-                         ULONG *aValEcx,
-                         ULONG *aValEdx);
-    HRESULT setCPUIDLeaf(ULONG aIdx, ULONG aSubIdx,
-                         ULONG aValEax,
-                         ULONG aValEbx,
-                         ULONG aValEcx,
-                         ULONG aValEdx);
-    HRESULT removeCPUIDLeaf(ULONG aIdx, ULONG aSubIdx);
-    HRESULT removeAllCPUIDLeaves();
-    HRESULT getHWVirtExProperty(HWVirtExPropertyType_T aProperty,
-                                BOOL *aValue);
-    HRESULT setHWVirtExProperty(HWVirtExPropertyType_T aProperty,
-                                BOOL aValue);
     HRESULT setSettingsFilePath(const com::Utf8Str &aSettingsFilePath,
                                 ComPtr<IProgress> &aProgress);
     HRESULT saveSettings();

@@ -43,7 +43,7 @@
 /* COM includes: */
 #include "COMEnums.h"
 #include "CMachine.h"
-#include "CSystemProperties.h"
+#include "CPlatformProperties.h"
 
 
 /** QITreeWidgetItem extension for our UIBootListWidget. */
@@ -332,7 +332,7 @@ UIBootItemDataList UIBootDataTools::loadBootItems(const CMachine &comMachine)
                                                                     << KDeviceType_DVD
                                                                     << KDeviceType_HardDisk
                                                                     << KDeviceType_Network;
-    const CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+    const CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
     const int iPossibleBootListSize = qMin((ULONG)4, comProperties.GetMaxBootPosition());
     possibleBootItems.resize(iPossibleBootListSize);
 

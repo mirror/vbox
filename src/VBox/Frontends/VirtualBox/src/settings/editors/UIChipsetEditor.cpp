@@ -37,7 +37,7 @@
 #include "UIChipsetEditor.h"
 
 /* COM includes: */
-#include "CSystemProperties.h"
+#include "CPlatformProperties.h"
 
 
 UIChipsetEditor::UIChipsetEditor(QWidget *pParent /* = 0 */)
@@ -149,7 +149,7 @@ void UIChipsetEditor::populateCombo()
         m_pCombo->clear();
 
         /* Load currently supported values: */
-        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+        CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
         m_supportedValues = comProperties.GetSupportedChipsetTypes();
 
         /* Make sure requested value if sane is present as well: */

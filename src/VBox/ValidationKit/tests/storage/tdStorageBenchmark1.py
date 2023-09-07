@@ -1273,8 +1273,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                     except:
                         reporter.logXcpt();
 
-                fRc = fRc and oSession.enableVirtEx(fHwVirt);
-                fRc = fRc and oSession.enableNestedPaging(fNestedPaging);
+                fRc = fRc and oSession.enableVirtExX86(fHwVirt);
+                fRc = fRc and oSession.enableNestedPagingX86(fNestedPaging);
                 fRc = fRc and oSession.setCpuCount(cCpus);
                 fRc = fRc and oSession.saveSettings();
                 fRc = oSession.close() and fRc and True; # pychecker hack.

@@ -3135,6 +3135,14 @@
 #define VERR_IOMMU_IPE_9                            (-7399)
 /** @} */
 
+/** @name Platform Status Codes
+ * @{
+ */
+/** The selected platform architecture is not supported.
+ *  Depends on the context (host / VM). */
+#define VERR_PLATFORM_ARCH_NOT_SUPPORTED            (-7400)
+/** @} */
+
 /* SED-END */
 
 /** @} */

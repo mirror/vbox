@@ -123,11 +123,6 @@ public:
     static uint32_t getOSTypeIndexFromId(const char *pszId);
 
     /**
-     * Get the network adapter limit for each chipset type.
-     */
-    static uint32_t getMaxNetworkAdapters(ChipsetType_T aChipsetType);
-
-    /**
      * Returns @c true if the given machine state is an online state. This is a
      * recommended way to detect if the VM is online (being executed in a
      * dedicated process) or not. Note that some online states are also

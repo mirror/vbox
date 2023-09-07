@@ -376,20 +376,20 @@ HRESULT SerialPort::setIRQ(ULONG aIRQ)
 }
 
 
-HRESULT SerialPort::getIOBase(ULONG *aIOBase)
+HRESULT SerialPort::getIOAddress(ULONG *aIOBase)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aIOBase = m->bd->ulIOBase;
+    *aIOBase = m->bd->ulIOAddress;
 
     return S_OK;
 }
 
-HRESULT SerialPort::setIOBase(ULONG aIOBase)
+HRESULT SerialPort::setIOAddress(ULONG aIOBase)
 {
     /* check IOBase limits
      * (when changing this, make sure it corresponds to XML schema */
-    if (aIOBase > 0xFFFF)
+    if (aIOBase > 0xFFFF) /** @todo BUGBUG Check with ARM. */
         return setError(E_INVALIDARG,
                         tr("Invalid I/O port base address of the serial port %d: %lu (must be in range [0, 0x%X])"),
                         m->bd->ulSlot, aIOBase, 0, 0xFFFF);
@@ -405,10 +405,10 @@ HRESULT SerialPort::setIOBase(ULONG aIOBase)
 
     HRESULT hrc = S_OK;
 
-    if (m->bd->ulIOBase != aIOBase)
+    if (m->bd->ulIOAddress != aIOBase)
     {
         m->bd.backup();
-        m->bd->ulIOBase = aIOBase;
+        m->bd->ulIOAddress = aIOBase;
 
         m->fModified = true;
         // leave the lock before informing callbacks
@@ -680,25 +680,25 @@ void SerialPort::i_applyDefaults(GuestOSType *aOsType)
     {
         case 0:
         {
-            m->bd->ulIOBase = 0x3f8;
+            m->bd->ulIOAddress = 0x3f8;
             m->bd->ulIRQ = 4;
             break;
         }
         case 1:
         {
-            m->bd->ulIOBase = 0x2f8;
+            m->bd->ulIOAddress = 0x2f8;
             m->bd->ulIRQ = 3;
             break;
         }
         case 2:
         {
-            m->bd->ulIOBase = 0x3e8;
+            m->bd->ulIOAddress = 0x3e8;
             m->bd->ulIRQ = 4;
             break;
         }
         case 3:
         {
-            m->bd->ulIOBase = 0x2e8;
+            m->bd->ulIOAddress = 0x2e8;
             m->bd->ulIRQ = 3;
             break;
         }
@@ -734,19 +734,19 @@ bool SerialPort::i_hasDefaults()
         switch (m->bd->ulSlot)
         {
             case 0:
-                if (m->bd->ulIOBase == 0x3f8 && m->bd->ulIRQ == 4)
+                if (m->bd->ulIOAddress == 0x3f8 && m->bd->ulIRQ == 4)
                     return true;
                 break;
             case 1:
-                if (m->bd->ulIOBase == 0x2f8 && m->bd->ulIRQ == 3)
+                if (m->bd->ulIOAddress == 0x2f8 && m->bd->ulIRQ == 3)
                     return true;
                 break;
             case 2:
-                if (m->bd->ulIOBase == 0x3e8 && m->bd->ulIRQ == 4)
+                if (m->bd->ulIOAddress == 0x3e8 && m->bd->ulIRQ == 4)
                     return true;
                 break;
             case 3:
-                if (m->bd->ulIOBase == 0x2e8 && m->bd->ulIRQ == 3)
+                if (m->bd->ulIOAddress == 0x2e8 && m->bd->ulIRQ == 3)
                     return true;
                 break;
             default:
@@ -756,7 +756,7 @@ bool SerialPort::i_hasDefaults()
 
         /* Detect old-style defaults (0x3f8, irq 4) in any slot, they are still
          * in place for many VMs created by old VirtualBox versions. */
-        if (m->bd->ulIOBase == 0x3f8 && m->bd->ulIRQ == 4)
+        if (m->bd->ulIOAddress == 0x3f8 && m->bd->ulIRQ == 4)
             return true;
     }
 

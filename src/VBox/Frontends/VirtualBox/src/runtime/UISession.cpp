@@ -66,6 +66,8 @@
 #include "CHostVideoInputDevice.h"
 #include "CMedium.h"
 #include "CMediumAttachment.h"
+#include "CPlatform.h"
+#include "CPlatformProperties.h"
 #include "CRecordingSettings.h"
 #include "CSnapshot.h"
 #include "CStorageController.h"
@@ -300,7 +302,8 @@ bool UISession::acquireChipsetType(KChipsetType &enmType)
     CMachine comMachine = machine();
     if (comMachine.isNull())
         return false;
-    const KChipsetType enmChipsetType = comMachine.GetChipsetType();
+    CPlatform comPlatform = comMachine.GetPlatform();
+    const KChipsetType enmChipsetType = comPlatform.GetChipsetType();
     const bool fSuccess = comMachine.isOk();
     if (!fSuccess)
         UINotificationMessage::cannotAcquireMachineParameter(comMachine);
@@ -1228,7 +1231,7 @@ bool UISession::acquireWhetherAtLeastOneNetworkAdapterEnabled(bool &fEnabled)
     /* Acquire system properties: */
     CVirtualBox comVBox = uiCommon().virtualBox();
     AssertReturn(comVBox.isNotNull(), false);
-    CSystemProperties comProperties = comVBox.GetSystemProperties();
+    CPlatformProperties comProperties = comVBox.GetPlatformProperties(KPlatformArchitecture_x86);
     if (!comVBox.isOk())
     {
         UINotificationMessage::cannotAcquireVirtualBoxParameter(comVBox);
@@ -1244,7 +1247,7 @@ bool UISession::acquireWhetherAtLeastOneNetworkAdapterEnabled(bool &fEnabled)
         const ulong uSlots = comProperties.GetMaxNetworkAdapters(enmChipsetType);
         fSuccess = comProperties.isOk();
         if (!fSuccess)
-            UINotificationMessage::cannotAcquireSystemPropertiesParameter(comProperties);
+            UINotificationMessage::cannotAcquirePlatformPropertiesParameter(comProperties);
         else
         {
             /* Search for 1st enabled adapter: */
@@ -2692,7 +2695,9 @@ bool UISession::preprocessInitialization()
         }
 
         /* Enumerate all the virtual network adapters: */
-        const ulong cCount = uiCommon().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(machine().GetChipsetType());
+        CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+        CPlatform comPlatform = machine().GetPlatform();
+        const ulong cCount = comProperties.GetMaxNetworkAdapters(comPlatform.GetChipsetType());
         for (ulong uAdapterIndex = 0; uAdapterIndex < cCount; ++uAdapterIndex)
         {
             CNetworkAdapter comNetworkAdapter = machine().GetNetworkAdapter(uAdapterIndex);

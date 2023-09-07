@@ -496,6 +496,7 @@ Console::i_configConstructor(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, void *pvCon
  * Worker for configConstructor.
  *
  * @return  VBox status code.
+ * @return  VERR_PLATFORM_ARCH_NOT_SUPPORTED if the machine's platform architecture is not supported.
  * @param   pUVM        The user mode VM handle.
  * @param   pVM         The cross context VM handle.
  * @param   pVMM        The VMM vtable.
@@ -505,17 +506,33 @@ Console::i_configConstructor(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, void *pvCon
  */
 int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, AutoWriteLock *pAlock)
 {
-#ifdef VBOX_WITH_VIRT_ARMV8
-        ComPtr<IMachine> pMachine = i_machine();
+    ComPtr<IMachine> const pMachine = i_machine();
 
-        Bstr strArmV8VirtFlag;
-        HRESULT hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/ArmV8Virt").raw(),
-                                             strArmV8VirtFlag.asOutParam());
-        if (   hrc == S_OK
-            && strArmV8VirtFlag == "1")
+    ComPtr<IPlatform> pPlatform;
+    HRESULT hrc = pMachine->COMGETTER(Platform)(pPlatform.asOutParam());
+    AssertComRCReturn(hrc, VERR_COM_VM_ERROR);
+
+    PlatformArchitecture_T platformArch;
+    hrc = pPlatform->COMGETTER(Architecture)(&platformArch);
+    AssertComRCReturn(hrc, VERR_COM_VM_ERROR);
+
+    int rc;
+
+    switch (platformArch)
+    {
+        case PlatformArchitecture_x86:
+            return i_configConstructorX86(pUVM, pVM, pVMM, pAlock);
+
+#ifdef VBOX_WITH_VIRT_ARMV8
+        case PlatformArchitecture_ARM:
             return i_configConstructorArmV8(pUVM, pVM, pVMM, pAlock);
 #endif
-        return i_configConstructorX86(pUVM, pVM, pVMM, pAlock);
+        default:
+            rc = VERR_PLATFORM_ARCH_NOT_SUPPORTED;
+            break;
+    }
+
+    return rc;
 }
 
 

@@ -51,6 +51,8 @@
 #include "CExtPackManager.h"
 #include "CMedium.h"
 #include "CMediumAttachment.h"
+#include "CPlatform.h"
+#include "CPlatformX86.h"
 #include "CProgress.h"
 
 
@@ -728,8 +730,11 @@ bool UIMachineSettingsGeneral::saveBasicData()
                 CVirtualBox vbox = uiCommon().virtualBox();
                 // Should we check global object getters?
                 const CGuestOSType &comNewType = vbox.GetGuestOSType(newGeneralData.m_strGuestOsTypeId);
-                m_machine.SetCPUProperty(KCPUPropertyType_LongMode, comNewType.GetIs64Bit());
-                fSuccess = m_machine.isOk();
+                CPlatform comPlatform = m_machine.GetPlatform();
+                CPlatformX86 comPlatformX86 = comPlatform.GetX86();
+                comPlatformX86.SetCPUProperty(KCPUPropertyTypeX86_LongMode, comNewType.GetIs64Bit());
+                fSuccess = comPlatformX86.isOk();
+                /// @todo convey error info ..
             }
         }
 

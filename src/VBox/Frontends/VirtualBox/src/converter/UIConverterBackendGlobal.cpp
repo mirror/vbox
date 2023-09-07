@@ -37,7 +37,7 @@
 #include "UIIconPool.h"
 
 /* COM includes: */
-#include "CSystemProperties.h"
+#include "CPlatformProperties.h"
 
 
 /* Determines if <Object of type X> can be converted to object of other type.
@@ -199,8 +199,8 @@ template<> QString toString(const StorageSlot &storageSlot)
     {
         case KStorageBus_IDE:
         {
-            int iMaxPort = uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(storageSlot.bus);
-            int iMaxDevice = uiCommon().virtualBox().GetSystemProperties().GetMaxDevicesPerPortForStorageBus(storageSlot.bus);
+            int iMaxPort = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86).GetMaxPortCountForStorageBus(storageSlot.bus);
+            int iMaxDevice = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86).GetMaxDevicesPerPortForStorageBus(storageSlot.bus);
             if (storageSlot.port < 0 || storageSlot.port > iMaxPort)
             {
                 AssertMsgFailed(("No text for bus=%d & port=%d", storageSlot.bus, storageSlot.port));
@@ -223,7 +223,7 @@ template<> QString toString(const StorageSlot &storageSlot)
         }
         case KStorageBus_SATA:
         {
-            int iMaxPort = uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(storageSlot.bus);
+            int iMaxPort = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86).GetMaxPortCountForStorageBus(storageSlot.bus);
             if (storageSlot.port < 0 || storageSlot.port > iMaxPort)
             {
                 AssertMsgFailed(("No text for bus=%d & port=%d", storageSlot.bus, storageSlot.port));
@@ -239,7 +239,7 @@ template<> QString toString(const StorageSlot &storageSlot)
         }
         case KStorageBus_SCSI:
         {
-            int iMaxPort = uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(storageSlot.bus);
+            int iMaxPort = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86).GetMaxPortCountForStorageBus(storageSlot.bus);
             if (storageSlot.port < 0 || storageSlot.port > iMaxPort)
             {
                 AssertMsgFailed(("No text for bus=%d & port=%d", storageSlot.bus, storageSlot.port));
@@ -255,7 +255,7 @@ template<> QString toString(const StorageSlot &storageSlot)
         }
         case KStorageBus_SAS:
         {
-            int iMaxPort = uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(storageSlot.bus);
+            int iMaxPort = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86).GetMaxPortCountForStorageBus(storageSlot.bus);
             if (storageSlot.port < 0 || storageSlot.port > iMaxPort)
             {
                 AssertMsgFailed(("No text for bus=%d & port=%d", storageSlot.bus, storageSlot.port));
@@ -271,7 +271,7 @@ template<> QString toString(const StorageSlot &storageSlot)
         }
         case KStorageBus_Floppy:
         {
-            int iMaxDevice = uiCommon().virtualBox().GetSystemProperties().GetMaxDevicesPerPortForStorageBus(storageSlot.bus);
+            int iMaxDevice = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86).GetMaxDevicesPerPortForStorageBus(storageSlot.bus);
             if (storageSlot.port != 0)
             {
                 AssertMsgFailed(("No text for bus=%d & port=%d", storageSlot.bus, storageSlot.port));
@@ -287,7 +287,7 @@ template<> QString toString(const StorageSlot &storageSlot)
         }
         case KStorageBus_USB:
         {
-            int iMaxPort = uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(storageSlot.bus);
+            int iMaxPort = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86).GetMaxPortCountForStorageBus(storageSlot.bus);
             if (storageSlot.port < 0 || storageSlot.port > iMaxPort)
             {
                 AssertMsgFailed(("No text for bus=%d & port=%d", storageSlot.bus, storageSlot.port));
@@ -303,7 +303,7 @@ template<> QString toString(const StorageSlot &storageSlot)
         }
         case KStorageBus_PCIe:
         {
-            int iMaxPort = uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(storageSlot.bus);
+            int iMaxPort = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86).GetMaxPortCountForStorageBus(storageSlot.bus);
             if (storageSlot.port < 0 || storageSlot.port > iMaxPort)
             {
                 AssertMsgFailed(("No text for bus=%d & port=%d", storageSlot.bus, storageSlot.port));
@@ -319,7 +319,7 @@ template<> QString toString(const StorageSlot &storageSlot)
         }
         case KStorageBus_VirtioSCSI:
         {
-            int iMaxPort = uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(storageSlot.bus);
+            int iMaxPort = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86).GetMaxPortCountForStorageBus(storageSlot.bus);
             if (storageSlot.port < 0 || storageSlot.port > iMaxPort)
             {
                 AssertMsgFailed(("No text for bus=%d & port=%d", storageSlot.bus, storageSlot.port));
@@ -402,8 +402,8 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
         {
             if (result.bus == KStorageBus_Null)
                 break;
-            const int iMaxPort = uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(result.bus);
-            const int iMaxDevice = uiCommon().virtualBox().GetSystemProperties().GetMaxDevicesPerPortForStorageBus(result.bus);
+            const int iMaxPort = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86).GetMaxPortCountForStorageBus(result.bus);
+            const int iMaxDevice = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86).GetMaxDevicesPerPortForStorageBus(result.bus);
             const LONG iPort = iIndex / iMaxPort;
             const LONG iDevice = iIndex % iMaxPort;
             if (iPort < 0 || iPort > iMaxPort)
@@ -430,7 +430,7 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
         {
             if (result.bus == KStorageBus_Null)
                 break;
-            const int iMaxPort = uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(result.bus);
+            const int iMaxPort = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86).GetMaxPortCountForStorageBus(result.bus);
             const LONG iPort = regExp.cap(1).toInt();
             const LONG iDevice = 0;
             if (iPort < 0 || iPort > iMaxPort)

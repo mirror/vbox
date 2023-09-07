@@ -122,7 +122,6 @@ RTEXITCODE handleStorageAttach(HandlerArg *a)
     RTGETOPTSTATE GetState;
     ComPtr<IMachine> machine;
     ComPtr<IStorageController> storageCtl;
-    ComPtr<ISystemProperties> systemProperties;
 
     RTGetOptInit(&GetState, a->argc, a->argv, g_aStorageAttachOptions,
                  RT_ELEMENTS(g_aStorageAttachOptions), 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
@@ -336,9 +335,6 @@ RTEXITCODE handleStorageAttach(HandlerArg *a)
     if (!pszCtl)
         return errorSyntax(Storage::tr("Storage controller name not specified"));
 
-    /* get the virtualbox system properties */
-    CHECK_ERROR_RET(a->virtualBox, COMGETTER(SystemProperties)(systemProperties.asOutParam()), RTEXITCODE_FAILURE);
-
     // find the machine, lock it, get the mutable session machine
     CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
                                                machine.asOutParam()), RTEXITCODE_FAILURE);
@@ -346,6 +342,11 @@ RTEXITCODE handleStorageAttach(HandlerArg *a)
     SessionType_T st;
     CHECK_ERROR_RET(a->session, COMGETTER(Type)(&st), RTEXITCODE_FAILURE);
     a->session->COMGETTER(Machine)(machine.asOutParam());
+
+    ComPtr<IPlatform> platform;
+    CHECK_ERROR_RET(machine, COMGETTER(Platform)(platform.asOutParam()), RTEXITCODE_FAILURE);
+    ComPtr<IPlatformProperties> platformProperties;
+    CHECK_ERROR_RET(platform, COMGETTER(Properties)(platformProperties.asOutParam()), RTEXITCODE_FAILURE);
 
     try
     {
@@ -368,9 +369,9 @@ RTEXITCODE handleStorageAttach(HandlerArg *a)
         StorageBus_T storageBus = StorageBus_Null;
         CHECK_ERROR_RET(storageCtl, COMGETTER(Bus)(&storageBus), RTEXITCODE_FAILURE);
         ULONG maxPorts = 0;
-        CHECK_ERROR_RET(systemProperties, GetMaxPortCountForStorageBus(storageBus, &maxPorts), RTEXITCODE_FAILURE);
+        CHECK_ERROR_RET(platformProperties, GetMaxPortCountForStorageBus(storageBus, &maxPorts), RTEXITCODE_FAILURE);
         ULONG maxDevices = 0;
-        CHECK_ERROR_RET(systemProperties, GetMaxDevicesPerPortForStorageBus(storageBus, &maxDevices), RTEXITCODE_FAILURE);
+        CHECK_ERROR_RET(platformProperties, GetMaxDevicesPerPortForStorageBus(storageBus, &maxDevices), RTEXITCODE_FAILURE);
 
         if (port == ~0U)
         {
@@ -459,7 +460,7 @@ RTEXITCODE handleStorageAttach(HandlerArg *a)
                 ULONG driveCheck = 0;
 
                 /* check if the device type is supported by the controller */
-                CHECK_ERROR(systemProperties, GetDeviceTypesForStorageBus(storageBus, ComSafeArrayAsOutParam(saDeviceTypes)));
+                CHECK_ERROR(platformProperties, GetDeviceTypesForStorageBus(storageBus, ComSafeArrayAsOutParam(saDeviceTypes)));
                 for (size_t i = 0; i < saDeviceTypes.size(); ++ i)
                 {
                     if (   (saDeviceTypes[i] == DeviceType_DVD)
@@ -555,7 +556,7 @@ RTEXITCODE handleStorageAttach(HandlerArg *a)
             {
                 com::SafeArray <DeviceType_T> saDeviceTypes;
 
-                CHECK_ERROR(systemProperties, GetDeviceTypesForStorageBus(storageBus, ComSafeArrayAsOutParam(saDeviceTypes)));
+                CHECK_ERROR(platformProperties, GetDeviceTypesForStorageBus(storageBus, ComSafeArrayAsOutParam(saDeviceTypes)));
                 if (SUCCEEDED(hrc))
                 {
                     ULONG driveCheck = 0;

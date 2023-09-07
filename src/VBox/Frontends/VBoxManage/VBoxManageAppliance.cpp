@@ -1015,8 +1015,15 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                         default:  // Not reached since vsdControllerType validated above but silence gcc.
                                             break;
                                     }
-                                    CHECK_ERROR_RET(systemProperties, GetMaxPortCountForStorageBus(enmStorageBus, &maxPorts),
-                                        RTEXITCODE_FAILURE);
+
+                                    PlatformArchitecture_T platformArch = PlatformArchitecture_x86; /** @todo BUGBUG Appliances only handle x86 so far! */
+
+                                    ComPtr<IPlatformProperties> pPlatformProperties;
+                                    CHECK_ERROR_RET(pVirtualBox, GetPlatformProperties(platformArch, pPlatformProperties.asOutParam()),
+                                                                                       RTEXITCODE_FAILURE);
+
+                                    CHECK_ERROR_RET(pPlatformProperties, GetMaxPortCountForStorageBus(enmStorageBus, &maxPorts),
+                                                    RTEXITCODE_FAILURE);
                                     if (uTargetControllerPort >= maxPorts)
                                         return errorSyntax(Appliance::tr("Illegal port value: %u. For %ls controllers the only valid values are 0 to %lu (inclusive)"),
                                                            uTargetControllerPort,

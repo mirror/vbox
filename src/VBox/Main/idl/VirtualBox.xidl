@@ -296,7 +296,7 @@
 
 <application
   name="VirtualBox"
-  uuid="819B4D85-9CEE-493C-B6FC-64FFE759B3C9"
+  uuid="a89ce63a-c7c9-4380-a62a-ffb9052ddb37"
   supportsErrorInfo="yes"
 >
 
@@ -463,6 +463,12 @@
     </desc>
   </result>
 
+  <result name="VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED" value="0x80BB0012">
+    <desc>
+      Platform architecture is not supported.
+    </desc>
+  </result>
+
   <!--
     Note that src/VBox/Runtime/common/err/errmsgvboxcom.xsl will ignore
     everything in <result>/<desc> after (and including) the first dot, so express
@@ -478,7 +484,7 @@
 
   <enum
     name="SettingsVersion"
-    uuid="b4cc23c2-96f2-419d-830b-bd13c1135dfb"
+    uuid="6ad3da60-5ed2-49cd-b882-96a72308ebf6"
     >
     <desc>
       Settings version of VirtualBox settings files. This is written to
@@ -628,8 +634,18 @@
           NetworkAdapter, full VM encryption.
       -->
     </const>
+    <const name="v1_20" value="22">
+      <desc>Settings version "1.20", written by VirtualBox 7.1.x.</desc>
+      <!--
+          Adds VM platform support: Non-platform-specific
+          settings were moved to the new Platform element, which now contains
+          the platform architecture for this VM. x86-specific
+          settings were moved from Machine to a new, dedicated Platform/x86 element.
+          BIOSSettings were renamed to FirmwareSettings.
+      -->
+    </const>
     <const name="Future" value="99999">
-      <desc>Settings version greater than "1.19", written by a future VirtualBox version.</desc>
+      <desc>Settings version greater than "1.20", written by a future VirtualBox version.</desc>
     </const>
   </enum>
 
@@ -1013,8 +1029,36 @@
   </enum>
 
   <enum
+    name="PlatformArchitecture"
+    uuid="36e21926-1713-413d-8cf5-2f169b2cbcf3"
+    >
+    <desc>
+      Platform architecture.
+      <note>
+        <para>This does not specify the CPU type.
+          See <link to="CPUArchitecture"/> for more information.</para>
+      </note>
+    </desc>
+    <const name="None" value="0">
+      <desc>No platform selected. Never used by the API.</desc>
+    </const>
+    <const name="x86"  value="1">
+      <desc>
+        x86-based platform (AMD64 / x86).
+        Valid CPUArchitecture choices: <link to="CPUArchitecture_AMD64"/>, <link to="CPUArchitecture_x86"/>
+      </desc>
+    </const>
+    <const name="ARM"  value="2">
+      <desc>
+        ARM-based platform (AArch32, AArch64).
+        Valid CPUArchitecture choices: <link to="CPUArchitecture_ARMv8_32"/>, <link to="CPUArchitecture_ARMv8_64"/>
+      </desc>
+    </const>
+  </enum>
+
+  <enum
     name="CPUArchitecture"
-    uuid="4a2c9915-12f1-43b2-bb84-e4bd4d5ca227"
+    uuid="12906c63-9967-49c8-ba5a-6521adaf0185"
     >
     <desc>Basic CPU architecture types.</desc>
     <const name="Any"                 value="0">
@@ -1026,15 +1070,21 @@
     <const name="AMD64"               value="2">
       <desc>64-bit x86.  (Also known as x86-64 or x64.)</desc>
     </const>
+    <const name="ARMv8_32"            value="3">
+      <desc>32-bit only ARMv8. (Also known as AArch32 or ARM32.)</desc>
+    </const>
+    <const name="ARMv8_64"            value="4">
+      <desc>64-bit only ARMv8. (Also known as AArch64 or ARM64.)</desc>
+    </const>
   </enum>
 
   <enum
-    name="CPUPropertyType"
-    uuid="3fcfe589-ca66-468f-e313-656f9d0b2eb6"
+    name="CPUPropertyTypeX86"
+    uuid="a754b765-3687-4a68-abb9-78dcf4c07d5f"
     >
     <desc>
-      Virtual CPU property type. This enumeration represents possible values of the
-      IMachine get- and setCPUProperty methods.
+      Virtual CPU property type for x86-based CPUs. This enumeration represents possible values of the
+      IPlatformX86 get- and setCPUProperty methods.
     </desc>
     <const name="Null"                  value="0">
       <desc>Null value (never used by the API).</desc>
@@ -1143,15 +1193,14 @@
     </const>
   </enum>
 
-
   <enum
     name="HWVirtExPropertyType"
     uuid="00069d9c-00b5-460c-00dd-64250024f7aa"
     >
     <desc>
       Hardware virtualization property type. This enumeration represents possible values
-      for the <link to="IMachine::getHWVirtExProperty"/> and
-      <link to="IMachine::setHWVirtExProperty"/> methods.
+      for the <link to="IPlatformX86::getHWVirtExProperty"/> and
+      <link to="IPlatformX86::setHWVirtExProperty"/> methods.
     </desc>
     <const name="Null"                  value="0">
       <desc>Null value (never used by the API).</desc>
@@ -1389,8 +1438,8 @@
   </enum>
 
   <enum
-    name="BIOSBootMenuMode"
-    uuid="ae4fb9f7-29d2-45b4-b2c7-d579603135d5"
+    name="FirmwareBootMenuMode"
+    uuid="bf88ec90-7fbb-4c78-bd71-5f8751d71450"
     >
     <desc>
       BIOS boot menu mode.
@@ -1440,7 +1489,7 @@
       Firmware type.
     </desc>
     <const name="BIOS"              value="1">
-      <desc>BIOS Firmware.</desc>
+      <desc>BIOS Firmware. Only applicable to x86 platforms.</desc>
     </const>
     <const name="EFI"               value="2">
       <desc>EFI Firmware, bitness detected basing on OS type.</desc>
@@ -2651,7 +2700,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="7682d5eb-f00e-44f1-8ca2-99d08b1cd607"
+    uuid="0f22e6d1-07f5-4168-b3ef-167c57670c17"
     wsmap="managed"
     rest="managed"
     wrap-gen-hook="yes"
@@ -2949,6 +2998,23 @@
       </param>
     </method>
 
+    <method name="getPlatformProperties">
+      <rest name="getPlatformProperties" request="get" path="/platform/properties"/>
+      <desc>
+        Gets the associated properties object for the given VM platform architecture.
+      </desc>
+      <param name="architecture" type="PlatformArchitecture" dir="in">
+        <desc>
+          The platform architecture to return the platform properties for.
+        </desc>
+      </param>
+      <param name="properties" type="IPlatformProperties" dir="return">
+        <desc>
+          Returned platform properties.
+        </desc>
+      </param>
+    </method>
+
     <method name="createMachine">
       <rest name="create" request="post" path="/vms/"/>
       <desc>
@@ -3032,6 +3098,9 @@
       </param>
       <param name="name" type="wstring" dir="in">
         <desc>Machine name.</desc>
+      </param>
+      <param name="platform" type="PlatformArchitecture" dir="in">
+        <desc>The platform architecture for the new VM.</desc>
       </param>
       <param name="groups" type="wstring" safearray="yes" dir="in">
         <desc>Array of group names. @c null or an empty array have the same
@@ -5627,16 +5696,22 @@
   </interface>
 
   <interface
-    name="IBIOSSettings" extends="$unknown"
-    uuid="a0a7f210-b857-4468-be26-c29f36a84345"
+    name="IFirmwareSettings" extends="$unknown"
+    uuid="7831C899-DF5D-456A-A37B-0D4EC05D54D0"
     wsmap="managed"
     rest="managed"
     reservedMethods="2" reservedAttributes="8"
     >
     <desc>
-        The IBIOSSettings interface represents BIOS settings of the virtual
-        machine. This is used only in the <link to="IMachine::BIOSSettings" /> attribute.
+        The IFirmwareSettings interface represents firmware settings of the virtual
+        machine. This is used only in the <link to="IMachine::firmwareSettings" /> attribute.
     </desc>
+
+    <attribute name="firmwareType" type="FirmwareType">
+      <desc>Type of firmware (such as legacy BIOS or EFI), used for initial
+        bootstrap in this VM.</desc>
+    </attribute>
+
     <attribute name="logoFadeIn" type="boolean">
       <desc>Fade in flag for BIOS logo animation.</desc>
     </attribute>
@@ -5656,8 +5731,8 @@
       </desc>
     </attribute>
 
-    <attribute name="bootMenuMode" type="BIOSBootMenuMode">
-      <desc>Mode of the BIOS boot device menu.</desc>
+    <attribute name="bootMenuMode" type="FirmwareBootMenuMode">
+      <desc>Mode of the firmware boot device menu.</desc>
     </attribute>
 
     <attribute name="ACPIEnabled" type="boolean">
@@ -6697,7 +6772,7 @@
     >
     <desc>
       The IOMMU type. This enumeration represents possible
-      values for the <link to="IMachine::iommuType"/> attribute.
+      values for the <link to="IPlatform::iommuType"/> attribute.
     </desc>
     <const name="None"      value="0">
       <desc>No IOMMU is present.</desc>
@@ -6714,8 +6789,395 @@
   </enum>
 
   <interface
+    name="IPlatform" extends="$unknown"
+    uuid="a670a023-e172-452c-b731-14ef855f4da6"
+    wsmap="managed"
+    rest="managed"
+    reservedMethods="8" reservedAttributes="16">
+
+    <desc>
+      Platform object for a virtual machine.
+
+      Accessed via <link to="IMachine::platform"/>.
+    </desc>
+
+    <attribute name="architecture" type="PlatformArchitecture" readonly="no">
+      <desc>
+        Returns the platform architecture.
+
+        Changing this means settings for the previously selected architecture
+        will be discarded and replaced by defaults.
+
+        <note>Setting the platform architecture currently is
+          not implemented yet.</note>
+
+        <result name="E_NOTIMPL">
+          Not implemented yet.
+        </result>
+      </desc>
+    </attribute>
+
+    <attribute name="properties" type="IPlatformProperties" readonly="yes">
+      <desc>
+        Returns the platform properties.
+      </desc>
+    </attribute>
+
+    <attribute name="x86" type="IPlatformX86" readonly="yes">
+      <desc>
+        Platform object for x86-specific platform properties.
+
+        Changes to this object will not necessarily be preserved unless
+        <link to="IPlatform::architecture"/> is set to <link to="PlatformArchitecture_x86"/>.
+      </desc>
+
+      <result name="VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED">
+        Current platform  architecture is not x86.
+      </result>
+    </attribute>
+
+    <attribute name="ARM" type="IPlatformARM" readonly="yes">
+      <desc>
+        Platform object for ARM-specific platform properties.
+
+        Changes to this object will not necessarily be preserved unless
+        <link to="IPlatform::architecture"/> is set to <link to="PlatformArchitecture_ARM"/>.
+      </desc>
+
+      <result name="VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED">
+        Current platform  architecture is not ARM.
+      </result>
+    </attribute>
+
+    <!-- Properties common to both (placed here to reduce IMachine bloat): -->
+
+    <attribute name="chipsetType" type="ChipsetType">
+      <desc>Chipset type used in this VM.</desc>
+    </attribute>
+
+    <attribute name="iommuType" type="IommuType">
+      <desc>IOMMU type used in this VM.</desc>
+    </attribute>
+
+    <attribute name="RTCUseUTC" type="boolean">
+      <desc>
+        When set to @a true, the RTC device of the virtual machine will run
+        in UTC time, otherwise in local time. Especially Unix guests prefer
+        the time in UTC.
+      </desc>
+    </attribute>
+
+  </interface>
+
+  <interface
+    name="IPlatformX86" extends="$unknown"
+    uuid="5ada589f-09c9-4604-b700-9ab3a5572e3a"
+    wsmap="managed"
+    rest="managed"
+    reservedMethods="8" reservedAttributes="16">
+
+    <desc>
+      The x86 specific platform properties for a virtual machine.
+
+      Accessed via <link to="IMachine::platform"/> and <link to="IPlatform::x86"/>.
+    </desc>
+
+    <attribute name="HPETEnabled" type="boolean">
+      <desc>This attribute controls if High Precision Event Timer (HPET) is
+        enabled in this VM. Use this property if you want to provide guests
+        with additional time source, or if guest requires HPET to function correctly.
+        Default is false.</desc>
+    </attribute>
+
+    <method name="getCPUProperty" const="yes">
+      <rest request="get" path="/vms/{vmid}/configuration/"/>
+      <desc>
+        Returns the virtual CPU boolean value of the specified property.
+
+        <result name="E_INVALIDARG">
+          Invalid property.
+        </result>
+
+      </desc>
+      <param name="property" type="CPUPropertyTypeX86" dir="in">
+        <desc>
+          Property type to query.
+        </desc>
+      </param>
+      <param name="value" type="boolean" dir="return">
+        <desc>
+          Property value.
+        </desc>
+      </param>
+    </method>
+
+    <method name="setCPUProperty">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
+      <desc>
+        Sets the virtual CPU boolean value of the specified property.
+
+        <result name="E_INVALIDARG">
+          Invalid property.
+        </result>
+
+      </desc>
+      <param name="property" type="CPUPropertyTypeX86" dir="in">
+        <desc>
+          Property type to query.
+        </desc>
+      </param>
+      <param name="value" type="boolean" dir="in">
+        <desc>
+          Property value.
+        </desc>
+      </param>
+    </method>
+
+    <method name="getCPUIDLeafByOrdinal" const="yes">
+      <desc>
+        Used to enumerate CPUID information override values.
+
+        <result name="E_INVALIDARG">
+          Invalid ordinal number is out of range.
+        </result>
+      </desc>
+      <param name="ordinal" type="unsigned long" dir="in">
+        <desc>
+          The ordinal number of the leaf to get.
+        </desc>
+      </param>
+      <param name="idx" type="unsigned long" dir="out">
+        <desc>
+          CPUID leaf index.
+        </desc>
+      </param>
+      <param name="idxSub" type="unsigned long" dir="out">
+        <desc>
+          CPUID leaf sub-index.
+        </desc>
+      </param>
+      <param name="valEax" type="unsigned long" dir="out">
+        <desc>
+          CPUID leaf value for register eax.
+        </desc>
+      </param>
+      <param name="valEbx" type="unsigned long" dir="out">
+        <desc>
+          CPUID leaf value for register ebx.
+        </desc>
+      </param>
+      <param name="valEcx" type="unsigned long" dir="out">
+        <desc>
+          CPUID leaf value for register ecx.
+        </desc>
+      </param>
+      <param name="valEdx" type="unsigned long" dir="out">
+        <desc>
+          CPUID leaf value for register edx.
+        </desc>
+      </param>
+    </method>
+
+    <method name="getCPUIDLeaf" const="yes">
+      <desc>
+        Returns the virtual CPU cpuid information for the specified leaf.
+
+        Currently supported index values for cpuid:
+        Standard CPUID leaves: 0 - 0x1f
+        Extended CPUID leaves: 0x80000000 - 0x8000001f
+        VIA CPUID leaves:      0xc0000000 - 0xc000000f
+
+        See the Intel, AMD and VIA programmer's manuals for detailed information
+        about the CPUID instruction and its leaves.
+        <result name="E_INVALIDARG">
+          Invalid index.
+        </result>
+
+      </desc>
+      <param name="idx" type="unsigned long" dir="in">
+        <desc>
+          CPUID leaf index.
+        </desc>
+      </param>
+      <param name="idxSub" type="unsigned long" dir="in">
+        <desc>
+          CPUID leaf sub-index (ECX).  Set to 0xffffffff (or 0) if not applicable.
+        </desc>
+      </param>
+      <param name="valEax" type="unsigned long" dir="out">
+        <desc>
+          CPUID leaf value for register eax.
+        </desc>
+      </param>
+      <param name="valEbx" type="unsigned long" dir="out">
+        <desc>
+          CPUID leaf value for register ebx.
+        </desc>
+      </param>
+      <param name="valEcx" type="unsigned long" dir="out">
+        <desc>
+          CPUID leaf value for register ecx.
+        </desc>
+      </param>
+      <param name="valEdx" type="unsigned long" dir="out">
+        <desc>
+          CPUID leaf value for register edx.
+        </desc>
+      </param>
+    </method>
+
+    <method name="setCPUIDLeaf">
+      <desc>
+        Sets the virtual CPU cpuid information for the specified leaf. Note that these values
+        are not passed unmodified. VirtualBox clears features that it doesn't support.
+
+        Currently supported index values for cpuid:
+        Standard CPUID leaves: 0 - 0x1f
+        Extended CPUID leaves: 0x80000000 - 0x8000001f
+        VIA CPUID leaves:      0xc0000000 - 0xc000000f
+
+        The subleaf index is only applicable to certain leaves (see manuals as this is
+        subject to change).
+
+        See the Intel, AMD and VIA programmer's manuals for detailed information
+        about the cpuid instruction and its leaves.
+
+        Do not use this method unless you know exactly what you're doing. Misuse can lead to
+        random crashes inside VMs.
+        <result name="E_INVALIDARG">
+          Invalid index.
+        </result>
+
+      </desc>
+      <param name="idx" type="unsigned long" dir="in">
+        <desc>
+          CPUID leaf index.
+        </desc>
+      </param>
+      <param name="idxSub" type="unsigned long" dir="in">
+        <desc>
+          CPUID leaf sub-index (ECX).  Set to 0xffffffff (or 0) if not applicable.
+          The 0xffffffff causes it to remove all other subleaves before adding one
+          with sub-index 0.
+        </desc>
+      </param>
+      <param name="valEax" type="unsigned long" dir="in">
+        <desc>
+          CPUID leaf value for register eax.
+        </desc>
+      </param>
+      <param name="valEbx" type="unsigned long" dir="in">
+        <desc>
+          CPUID leaf value for register ebx.
+        </desc>
+      </param>
+      <param name="valEcx" type="unsigned long" dir="in">
+        <desc>
+          CPUID leaf value for register ecx.
+        </desc>
+      </param>
+      <param name="valEdx" type="unsigned long" dir="in">
+        <desc>
+          CPUID leaf value for register edx.
+        </desc>
+      </param>
+    </method>
+
+    <method name="removeCPUIDLeaf">
+      <desc>
+        Removes the virtual CPU cpuid leaf for the specified index
+
+        <result name="E_INVALIDARG">
+          Invalid index.
+        </result>
+
+      </desc>
+      <param name="idx" type="unsigned long" dir="in">
+        <desc>
+          CPUID leaf index.
+        </desc>
+      </param>
+      <param name="idxSub" type="unsigned long" dir="in">
+        <desc>
+          CPUID leaf sub-index (ECX).  Set to 0xffffffff (or 0) if not applicable.
+          The 0xffffffff value works like a wildcard.
+        </desc>
+      </param>
+    </method>
+
+    <method name="removeAllCPUIDLeaves">
+      <desc>
+        Removes all the virtual CPU cpuid leaves
+      </desc>
+    </method>
+
+    <method name="getHWVirtExProperty" const="yes">
+      <rest request="get" path="/vms/{vmid}/configuration/"/>
+      <desc>
+        Returns the value of the specified hardware virtualization boolean property.
+
+        <result name="E_INVALIDARG">
+          Invalid property.
+        </result>
+
+      </desc>
+      <param name="property" type="HWVirtExPropertyType" dir="in">
+        <desc>
+          Property type to query.
+        </desc>
+      </param>
+      <param name="value" type="boolean" dir="return">
+        <desc>
+          Property value.
+        </desc>
+      </param>
+    </method>
+
+    <method name="setHWVirtExProperty">
+      <rest request="post" path="/vms/{vmid}/configuration/"/>
+      <desc>
+        Sets a new value for the specified hardware virtualization boolean property.
+
+        <result name="E_INVALIDARG">
+          Invalid property.
+        </result>
+
+      </desc>
+      <param name="property" type="HWVirtExPropertyType" dir="in">
+        <desc>
+          Property type to set.
+        </desc>
+      </param>
+      <param name="value" type="boolean" dir="in">
+        <desc>
+          New property value.
+        </desc>
+      </param>
+    </method>
+
+  </interface>
+
+  <interface
+    name="IPlatformARM" extends="$unknown"
+    uuid="75dff9be-6cb3-4857-bde6-2faf82ed9a8d"
+    wsmap="managed"
+    rest="managed"
+    reservedMethods="8" reservedAttributes="16">
+
+    <desc>
+      The x86 specific platform properties for a virtual machine.
+
+      Accessed via <link to="IMachine::platform"/> and <link to="IPlatform::ARM"/>.
+    </desc>
+
+    <!-- Currently empty, but that should change before long... -->
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
+
+  </interface>
+
+  <interface
     name="IMachine" extends="$unknown"
-    uuid="300763af-5d6b-46e6-aa96-273eac15538a"
+    uuid="8161d51b-17b4-4598-add2-eb1fe1de6230"
     wsmap="managed"
     rest="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
@@ -6971,8 +7433,12 @@
       <desc>Graphics adapter object.</desc>
     </attribute>
 
-    <attribute name="BIOSSettings" type="IBIOSSettings" readonly="yes">
-      <desc>Object containing all BIOS settings.</desc>
+    <attribute name="platform" type="IPlatform" readonly="yes">
+      <desc>Associated platform object.</desc>
+    </attribute>
+
+    <attribute name="firmwareSettings" type="IFirmwareSettings" readonly="yes">
+      <desc>Object containing all firmware settings.</desc>
     </attribute>
 
     <attribute name="trustedPlatformModule" type="ITrustedPlatformModule" readonly="yes">
@@ -6987,11 +7453,6 @@
       <desc>Object containing all recording settings.</desc>
     </attribute>
 
-    <attribute name="firmwareType" type="FirmwareType">
-      <desc>Type of firmware (such as legacy BIOS or EFI), used for initial
-        bootstrap in this VM.</desc>
-    </attribute>
-
     <attribute name="pointingHIDType" type="PointingHIDType">
       <desc>Type of pointing HID (such as mouse or tablet) used in this VM.
         The default is typically "PS2Mouse" but can vary depending on the
@@ -7002,21 +7463,6 @@
       <desc>Type of keyboard HID used in this VM.
         The default is typically "PS2Keyboard" but can vary depending on the
         requirements of the guest operating system.</desc>
-    </attribute>
-
-    <attribute name="HPETEnabled" type="boolean">
-      <desc>This attribute controls if High Precision Event Timer (HPET) is
-        enabled in this VM. Use this property if you want to provide guests
-        with additional time source, or if guest requires HPET to function correctly.
-        Default is false.</desc>
-    </attribute>
-
-    <attribute name="chipsetType" type="ChipsetType">
-      <desc>Chipset type used in this VM.</desc>
-    </attribute>
-
-    <attribute name="iommuType" type="IommuType">
-      <desc>IOMMU type used in this VM.</desc>
     </attribute>
 
     <attribute name="snapshotFolder" type="wstring">
@@ -7317,14 +7763,6 @@
     <attribute name="paravirtProvider" type="ParavirtProvider">
       <desc>
         The paravirtualized guest interface provider.
-      </desc>
-    </attribute>
-
-    <attribute name="RTCUseUTC" type="boolean">
-      <desc>
-        When set to @a true, the RTC device of the virtual machine will run
-        in UTC time, otherwise in local time. Especially Unix guests prefer
-        the time in UTC.
       </desc>
     </attribute>
 
@@ -7731,7 +8169,7 @@
         <desc>
           Position in the boot order (@c 1 to the total number of
           devices the machine can boot from, as returned by
-          <link to="ISystemProperties::maxBootPosition"/>).
+          <link to="IPlatformProperties::maxBootPosition"/>).
         </desc>
       </param>
       <param name="device" type="DeviceType" dir="in">
@@ -7766,7 +8204,7 @@
         <desc>
           Position in the boot order (@c 1 to the total number of
           devices the machine can boot from, as returned by
-          <link to="ISystemProperties::maxBootPosition"/>).
+          <link to="IPlatformProperties::maxBootPosition"/>).
         </desc>
       </param>
       <param name="device" type="DeviceType" dir="return">
@@ -8499,7 +8937,7 @@
         Returns the network adapter associated with the given slot.
         Slots are numbered sequentially, starting with zero. The total
         number of adapters per machine is defined by the
-        <link to="ISystemProperties::getMaxNetworkAdapters"/> property,
+        <link to="IPlatformProperties::getMaxNetworkAdapters"/> property,
         so the maximum slot number is one less than that property's value.
 
         <result name="E_INVALIDARG">
@@ -8657,7 +9095,7 @@
         Returns the serial port associated with the given slot.
         Slots are numbered sequentially, starting with zero. The total
         number of serial ports per machine is defined by the
-        <link to="ISystemProperties::serialPortCount"/> property,
+        <link to="IPlatformProperties::serialPortCount"/> property,
         so the maximum slot number is one less than that property's value.
 
         <result name="E_INVALIDARG">
@@ -8675,7 +9113,7 @@
         Returns the parallel port associated with the given slot.
         Slots are numbered sequentially, starting with zero. The total
         number of parallel ports per machine is defined by the
-        <link to="ISystemProperties::parallelPortCount"/> property,
+        <link to="IPlatformProperties::parallelPortCount"/> property,
         so the maximum slot number is one less than that property's value.
 
         <result name="E_INVALIDARG">
@@ -8768,272 +9206,6 @@
       </param>
       <param name="value" type="wstring" dir="in">
         <desc>Value to assign to the key.</desc>
-      </param>
-    </method>
-
-    <method name="getCPUProperty" const="yes">
-      <rest request="get" path="/vms/{vmid}/configuration/"/>
-      <desc>
-        Returns the virtual CPU boolean value of the specified property.
-
-        <result name="E_INVALIDARG">
-          Invalid property.
-        </result>
-
-      </desc>
-      <param name="property" type="CPUPropertyType" dir="in">
-        <desc>
-          Property type to query.
-        </desc>
-      </param>
-      <param name="value" type="boolean" dir="return">
-        <desc>
-          Property value.
-        </desc>
-      </param>
-    </method>
-
-    <method name="setCPUProperty">
-      <rest request="post" path="/vms/{vmid}/configuration/"/>
-      <desc>
-        Sets the virtual CPU boolean value of the specified property.
-
-        <result name="E_INVALIDARG">
-          Invalid property.
-        </result>
-
-      </desc>
-      <param name="property" type="CPUPropertyType" dir="in">
-        <desc>
-          Property type to query.
-        </desc>
-      </param>
-      <param name="value" type="boolean" dir="in">
-        <desc>
-          Property value.
-        </desc>
-      </param>
-    </method>
-
-    <method name="getCPUIDLeafByOrdinal" const="yes">
-      <desc>
-        Used to enumerate CPUID information override values.
-
-        <result name="E_INVALIDARG">
-          Invalid ordinal number is out of range.
-        </result>
-      </desc>
-      <param name="ordinal" type="unsigned long" dir="in">
-        <desc>
-          The ordinal number of the leaf to get.
-        </desc>
-      </param>
-      <param name="idx" type="unsigned long" dir="out">
-        <desc>
-          CPUID leaf index.
-        </desc>
-      </param>
-      <param name="idxSub" type="unsigned long" dir="out">
-        <desc>
-          CPUID leaf sub-index.
-        </desc>
-      </param>
-      <param name="valEax" type="unsigned long" dir="out">
-        <desc>
-          CPUID leaf value for register eax.
-        </desc>
-      </param>
-      <param name="valEbx" type="unsigned long" dir="out">
-        <desc>
-          CPUID leaf value for register ebx.
-        </desc>
-      </param>
-      <param name="valEcx" type="unsigned long" dir="out">
-        <desc>
-          CPUID leaf value for register ecx.
-        </desc>
-      </param>
-      <param name="valEdx" type="unsigned long" dir="out">
-        <desc>
-          CPUID leaf value for register edx.
-        </desc>
-      </param>
-    </method>
-
-    <method name="getCPUIDLeaf" const="yes">
-      <desc>
-        Returns the virtual CPU cpuid information for the specified leaf.
-
-        Currently supported index values for cpuid:
-        Standard CPUID leaves: 0 - 0x1f
-        Extended CPUID leaves: 0x80000000 - 0x8000001f
-        VIA CPUID leaves:      0xc0000000 - 0xc000000f
-
-        See the Intel, AMD and VIA programmer's manuals for detailed information
-        about the CPUID instruction and its leaves.
-        <result name="E_INVALIDARG">
-          Invalid index.
-        </result>
-
-      </desc>
-      <param name="idx" type="unsigned long" dir="in">
-        <desc>
-          CPUID leaf index.
-        </desc>
-      </param>
-      <param name="idxSub" type="unsigned long" dir="in">
-        <desc>
-          CPUID leaf sub-index (ECX).  Set to 0xffffffff (or 0) if not applicable.
-        </desc>
-      </param>
-      <param name="valEax" type="unsigned long" dir="out">
-        <desc>
-          CPUID leaf value for register eax.
-        </desc>
-      </param>
-      <param name="valEbx" type="unsigned long" dir="out">
-        <desc>
-          CPUID leaf value for register ebx.
-        </desc>
-      </param>
-      <param name="valEcx" type="unsigned long" dir="out">
-        <desc>
-          CPUID leaf value for register ecx.
-        </desc>
-      </param>
-      <param name="valEdx" type="unsigned long" dir="out">
-        <desc>
-          CPUID leaf value for register edx.
-        </desc>
-      </param>
-    </method>
-
-    <method name="setCPUIDLeaf">
-      <desc>
-        Sets the virtual CPU cpuid information for the specified leaf. Note that these values
-        are not passed unmodified. VirtualBox clears features that it doesn't support.
-
-        Currently supported index values for cpuid:
-        Standard CPUID leaves: 0 - 0x1f
-        Extended CPUID leaves: 0x80000000 - 0x8000001f
-        VIA CPUID leaves:      0xc0000000 - 0xc000000f
-
-        The subleaf index is only applicable to certain leaves (see manuals as this is
-        subject to change).
-
-        See the Intel, AMD and VIA programmer's manuals for detailed information
-        about the cpuid instruction and its leaves.
-
-        Do not use this method unless you know exactly what you're doing. Misuse can lead to
-        random crashes inside VMs.
-        <result name="E_INVALIDARG">
-          Invalid index.
-        </result>
-
-      </desc>
-      <param name="idx" type="unsigned long" dir="in">
-        <desc>
-          CPUID leaf index.
-        </desc>
-      </param>
-      <param name="idxSub" type="unsigned long" dir="in">
-        <desc>
-          CPUID leaf sub-index (ECX).  Set to 0xffffffff (or 0) if not applicable.
-          The 0xffffffff causes it to remove all other subleaves before adding one
-          with sub-index 0.
-        </desc>
-      </param>
-      <param name="valEax" type="unsigned long" dir="in">
-        <desc>
-          CPUID leaf value for register eax.
-        </desc>
-      </param>
-      <param name="valEbx" type="unsigned long" dir="in">
-        <desc>
-          CPUID leaf value for register ebx.
-        </desc>
-      </param>
-      <param name="valEcx" type="unsigned long" dir="in">
-        <desc>
-          CPUID leaf value for register ecx.
-        </desc>
-      </param>
-      <param name="valEdx" type="unsigned long" dir="in">
-        <desc>
-          CPUID leaf value for register edx.
-        </desc>
-      </param>
-    </method>
-
-    <method name="removeCPUIDLeaf">
-      <desc>
-        Removes the virtual CPU cpuid leaf for the specified index
-
-        <result name="E_INVALIDARG">
-          Invalid index.
-        </result>
-
-      </desc>
-      <param name="idx" type="unsigned long" dir="in">
-        <desc>
-          CPUID leaf index.
-        </desc>
-      </param>
-      <param name="idxSub" type="unsigned long" dir="in">
-        <desc>
-          CPUID leaf sub-index (ECX).  Set to 0xffffffff (or 0) if not applicable.
-          The 0xffffffff value works like a wildcard.
-        </desc>
-      </param>
-    </method>
-
-    <method name="removeAllCPUIDLeaves">
-      <desc>
-        Removes all the virtual CPU cpuid leaves
-      </desc>
-    </method>
-
-    <method name="getHWVirtExProperty" const="yes">
-      <rest request="get" path="/vms/{vmid}/configuration/"/>
-      <desc>
-        Returns the value of the specified hardware virtualization boolean property.
-
-        <result name="E_INVALIDARG">
-          Invalid property.
-        </result>
-
-      </desc>
-      <param name="property" type="HWVirtExPropertyType" dir="in">
-        <desc>
-          Property type to query.
-        </desc>
-      </param>
-      <param name="value" type="boolean" dir="return">
-        <desc>
-          Property value.
-        </desc>
-      </param>
-    </method>
-
-    <method name="setHWVirtExProperty">
-      <rest request="post" path="/vms/{vmid}/configuration/"/>
-      <desc>
-        Sets a new value for the specified hardware virtualization boolean property.
-
-        <result name="E_INVALIDARG">
-          Invalid property.
-        </result>
-
-      </desc>
-      <param name="property" type="HWVirtExPropertyType" dir="in">
-        <desc>
-          Property type to set.
-        </desc>
-      </param>
-      <param name="value" type="boolean" dir="in">
-        <desc>
-          New property value.
-        </desc>
       </param>
     </method>
 
@@ -11871,6 +12043,67 @@
   </interface>
 
   <interface
+    name="IHostX86" extends="$unknown"
+    uuid="50c97996-9cf8-417f-bd79-1e0471367cd3"
+    wsmap="managed"
+    rest="managed"
+    reservedMethods="6" reservedAttributes="12"
+    >
+
+    <desc>
+      The x86 specific interface for the physical host machine.
+    </desc>
+
+    <method name="getProcessorCPUIDLeaf">
+      <desc>
+        Returns the CPU cpuid information for the specified leaf.
+      </desc>
+      <param name="cpuId" type="unsigned long" dir="in">
+        <desc>
+          Identifier of the CPU. The CPU must be online.
+          <note>
+            The current implementation might not necessarily return the
+            description for this exact CPU.
+          </note>
+        </desc>
+      </param>
+      <param name="leaf" type="unsigned long" dir="in">
+        <desc>
+          CPUID leaf index (eax).
+        </desc>
+      </param>
+      <param name="subLeaf" type="unsigned long" dir="in">
+        <desc>
+          CPUID leaf sub index (ecx). This currently only applies to cache
+          information on Intel CPUs. Use 0 if retrieving values for
+          <link to="IPlatformX86::setCPUIDLeaf"/>.
+        </desc>
+      </param>
+      <param name="valEax" type="unsigned long" dir="out">
+        <desc>
+          CPUID leaf value for register eax.
+        </desc>
+      </param>
+      <param name="valEbx" type="unsigned long" dir="out">
+        <desc>
+          CPUID leaf value for register ebx.
+        </desc>
+      </param>
+      <param name="valEcx" type="unsigned long" dir="out">
+        <desc>
+          CPUID leaf value for register ecx.
+        </desc>
+      </param>
+      <param name="valEdx" type="unsigned long" dir="out">
+        <desc>
+          CPUID leaf value for register edx.
+        </desc>
+      </param>
+    </method>
+
+  </interface>
+
+  <interface
     name="IHost" extends="$unknown"
     uuid="e54f6256-97a7-4947-8a78-10c013ddf4b8"
     wsmap="managed"
@@ -11889,6 +12122,15 @@
       such as global USB device filters and host interface networking.
 
     </desc>
+
+    <attribute name="architecture" type="PlatformArchitecture" readonly="yes">
+      <desc>Platform architecture type.</desc>
+    </attribute>
+
+    <attribute name="x86" type="IHostX86" readonly="yes">
+      <desc>Associated object for x86 host specifics.</desc>
+    </attribute>
+
     <attribute name="DVDDrives" type="IMedium" readonly="yes" safearray="yes">
       <desc>List of DVD drives available on the host.</desc>
     </attribute>
@@ -12024,53 +12266,6 @@
         <desc>
           Model string. An empty string is returned if value is not known or
           @a cpuId is invalid.
-        </desc>
-      </param>
-    </method>
-
-    <method name="getProcessorCPUIDLeaf">
-      <desc>
-        Returns the CPU cpuid information for the specified leaf.
-      </desc>
-      <param name="cpuId" type="unsigned long" dir="in">
-        <desc>
-          Identifier of the CPU. The CPU most be online.
-          <note>
-            The current implementation might not necessarily return the
-            description for this exact CPU.
-          </note>
-        </desc>
-      </param>
-      <param name="leaf" type="unsigned long" dir="in">
-        <desc>
-          CPUID leaf index (eax).
-        </desc>
-      </param>
-      <param name="subLeaf" type="unsigned long" dir="in">
-        <desc>
-          CPUID leaf sub index (ecx). This currently only applies to cache
-          information on Intel CPUs. Use 0 if retrieving values for
-          <link to="IMachine::setCPUIDLeaf"/>.
-        </desc>
-      </param>
-      <param name="valEax" type="unsigned long" dir="out">
-        <desc>
-          CPUID leaf value for register eax.
-        </desc>
-      </param>
-      <param name="valEbx" type="unsigned long" dir="out">
-        <desc>
-          CPUID leaf value for register ebx.
-        </desc>
-      </param>
-      <param name="valEcx" type="unsigned long" dir="out">
-        <desc>
-          CPUID leaf value for register ecx.
-        </desc>
-      </param>
-      <param name="valEdx" type="unsigned long" dir="out">
-        <desc>
-          CPUID leaf value for register edx.
         </desc>
       </param>
     </method>
@@ -12421,6 +12616,321 @@
     </attribute>
   </interface>
 
+  <interface
+    name="IPlatformProperties"
+    extends="$unknown"
+    uuid="fb682653-c51d-42d4-bc30-db7c3e8bf75d"
+    wsmap="managed"
+    rest="managed"
+    reservedMethods="4" reservedAttributes="16"
+    >
+    <desc>
+      Properties of a specific virtualization platform.
+    </desc>
+
+    <attribute name="rawModeSupported" type="boolean" readonly="yes">
+      <desc>
+        Indicates whether VirtualBox was built with raw-mode support.
+
+        When this reads as False, the <link to="HWVirtExPropertyType_Enabled"/>
+        setting will be ignored and assumed to be True.
+
+        <note>For guest platform properties, this attribute is being
+          ignored.</note>
+      </desc>
+    </attribute>
+
+    <attribute name="exclusiveHwVirt" type="boolean">
+      <desc>
+        Exclusive use of hardware virtualization by VirtualBox. When enabled,
+        VirtualBox assumes it can obtain full and exclusive access to the VT-x
+        or AMD-V feature of the host. To share hardware virtualization with
+        other hypervisors, this property must be disabled.
+
+        <note>For hosts running on macOS this is being ignored, as the kernel
+          mediates hardware access there.</note>
+        <note>For guest platform properties, this attribute is being
+          ignored.</note>
+      </desc>
+    </attribute>
+
+    <attribute name="serialPortCount" type="unsigned long" readonly="yes">
+      <desc>
+        Maximum number of serial ports associated with every
+        <link to="IMachine"/> instance.
+      </desc>
+    </attribute>
+
+    <attribute name="parallelPortCount" type="unsigned long" readonly="yes">
+      <desc>
+        Maximum number of parallel ports associated with every
+        <link to="IMachine"/> instance.
+      </desc>
+    </attribute>
+
+    <attribute name="maxBootPosition" type="unsigned long" readonly="yes">
+      <desc>
+        Maximum device position in the boot order. This value corresponds
+        to the total number of devices a machine can boot from, to make it
+        possible to include all possible devices to the boot list.
+        <see><link to="IMachine::setBootOrder"/></see>
+      </desc>
+    </attribute>
+
+    <attribute name="supportedParavirtProviders" type="ParavirtProvider" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="ParavirtProvider"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedFirmwareTypes" type="FirmwareType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="FirmwareType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedGraphicsControllerTypes" type="GraphicsControllerType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="GraphicsControllerType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedNetworkAdapterTypes" type="NetworkAdapterType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="NetworkAdapterType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedUartTypes" type="UartType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="UartType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedUSBControllerTypes" type="USBControllerType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="USBControllerType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedAudioControllerTypes" type="AudioControllerType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="AudioControllerType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedStorageBuses" type="StorageBus" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="StorageBus"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedStorageControllerTypes" type="StorageControllerType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="StorageControllerType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedChipsetTypes" type="ChipsetType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="ChipsetType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedIommuTypes" type="IommuType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="IommuType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedTpmTypes" type="TpmType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="TpmType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <method name="getMaxNetworkAdapters">
+      <desc>
+        Maximum total number of network adapters associated with every
+        <link to="IMachine"/> instance.
+      </desc>
+
+      <param name="chipset" type="ChipsetType" dir="in">
+        <desc>The chipset type to get the value for.</desc>
+      </param>
+
+
+      <param name="maxNetworkAdapters" type="unsigned long" dir="return">
+        <desc>The maximum total number of network adapters allowed.</desc>
+      </param>
+
+    </method>
+
+    <method name="getMaxNetworkAdaptersOfType">
+      <desc>
+        Maximum number of network adapters of a given attachment type,
+        associated with every <link to="IMachine"/> instance.
+      </desc>
+
+      <param name="chipset" type="ChipsetType" dir="in">
+        <desc>The chipset type to get the value for.</desc>
+      </param>
+
+      <param name="type" type="NetworkAttachmentType" dir="in">
+        <desc>Type of attachment.</desc>
+      </param>
+
+      <param name="maxNetworkAdapters" type="unsigned long" dir="return">
+        <desc>The maximum number of network adapters allowed for
+          particular chipset and attachment type.</desc>
+      </param>
+
+    </method>
+
+    <method name="getMaxDevicesPerPortForStorageBus">
+      <desc>Returns the maximum number of devices which can be attached to a port
+      for the given storage bus.</desc>
+
+      <param name="bus" type="StorageBus" dir="in">
+        <desc>The storage bus type to get the value for.</desc>
+      </param>
+
+      <param name="maxDevicesPerPort" type="unsigned long" dir="return">
+        <desc>The maximum number of devices which can be attached to the port for the given
+        storage bus.</desc>
+      </param>
+    </method>
+
+    <method name="getMinPortCountForStorageBus">
+      <desc>Returns the minimum number of ports the given storage bus supports.</desc>
+
+      <param name="bus" type="StorageBus" dir="in">
+        <desc>The storage bus type to get the value for.</desc>
+      </param>
+
+      <param name="minPortCount" type="unsigned long" dir="return">
+        <desc>The minimum number of ports for the given storage bus.</desc>
+      </param>
+    </method>
+
+    <method name="getMaxPortCountForStorageBus">
+      <desc>Returns the maximum number of ports the given storage bus supports.</desc>
+
+      <param name="bus" type="StorageBus" dir="in">
+        <desc>The storage bus type to get the value for.</desc>
+      </param>
+
+      <param name="maxPortCount" type="unsigned long" dir="return">
+        <desc>The maximum number of ports for the given storage bus.</desc>
+      </param>
+    </method>
+
+    <method name="getMaxInstancesOfStorageBus">
+      <desc>Returns the maximum number of storage bus instances which
+        can be configured for each VM. This corresponds to the number of
+        storage controllers one can have. Value may depend on chipset type
+        used.</desc>
+
+      <param name="chipset" type="ChipsetType" dir="in">
+        <desc>The chipset type to get the value for.</desc>
+      </param>
+
+      <param name="bus" type="StorageBus" dir="in">
+        <desc>The storage bus type to get the value for.</desc>
+      </param>
+
+      <param name="maxInstances" type="unsigned long" dir="return">
+        <desc>The maximum number of instances for the given storage bus.</desc>
+      </param>
+    </method>
+
+    <method name="getDeviceTypesForStorageBus">
+      <desc>Returns list of all the supported device types
+        (<link to="DeviceType"/>) for the given type of storage
+        bus.</desc>
+
+      <param name="bus" type="StorageBus" dir="in">
+        <desc>The storage bus type to get the value for.</desc>
+      </param>
+
+      <param name="deviceTypes" type="DeviceType" safearray="yes" dir="return">
+        <desc>The list of all supported device types for the given storage bus.</desc>
+      </param>
+    </method>
+
+    <method name="getStorageBusForStorageControllerType">
+      <desc>Returns the <link to="StorageBus"/> enum value
+        for a given storage controller type.</desc>
+
+      <param name="storageControllerType" type="StorageControllerType" dir="in">
+        <desc>The storage controller type to get the value for.</desc>
+      </param>
+
+      <param name="storageBus" type="StorageBus" dir="return">
+        <desc>The storage bus which is applicable.</desc>
+      </param>
+    </method>
+
+    <method name="getStorageControllerTypesForStorageBus">
+      <desc>Returns the possible <link to="StorageControllerType"/> enum values
+        for a given storage bus.</desc>
+
+      <param name="storageBus" type="StorageBus" dir="in">
+        <desc>The storage bus type to get the values for.</desc>
+      </param>
+
+      <param name="storageControllerType" type="StorageControllerType" safearray="yes" dir="return">
+        <desc>The enum values (sorted by what should be a sensible decreasing
+        importance of the type) which are valid.</desc>
+      </param>
+    </method>
+
+    <method name="getStorageControllerHotplugCapable">
+      <desc>Returns whether the given storage controller supports
+        hot-plugging devices.</desc>
+
+      <param name="controllerType" type="StorageControllerType" dir="in">
+        <desc>The storage controller to check the setting for.</desc>
+      </param>
+
+      <param name="hotplugCapable" type="boolean" dir="return">
+        <desc>Returned flag indicating whether the controller is hotplug capable</desc>
+      </param>
+    </method>
+
+    <method name="getMaxInstancesOfUSBControllerType">
+      <desc>Returns the maximum number of USB controller instances which
+        can be configured for each VM. This corresponds to the number of
+        USB controllers one can have. Value may depend on chipset type
+        used.</desc>
+
+      <param name="chipset" type="ChipsetType" dir="in">
+        <desc>The chipset type to get the value for.</desc>
+      </param>
+
+      <param name="type" type="USBControllerType" dir="in">
+        <desc>The USB controller type to get the value for.</desc>
+      </param>
+
+      <param name="maxInstances" type="unsigned long" dir="return">
+        <desc>The maximum number of instances for the given USB controller type.</desc>
+      </param>
+    </method>
+
+  </interface>
+
   <!--
   // ISystemProperties
   /////////////////////////////////////////////////////////////////////////
@@ -12442,7 +12952,7 @@
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="aac6c7cb-a371-4c58-ab51-0616896b2f2c"
+    uuid="584dad7d-120f-40fa-91c2-fc520f60fdf2"
     wsmap="managed"
     rest="managed"
     reservedMethods="4" reservedAttributes="16"
@@ -12455,6 +12965,10 @@
       and parameters. Most of the properties are read-only, but some can be
       changed by a user.
     </desc>
+
+    <attribute name="platform" type="IPlatformProperties" readonly="yes">
+      <desc>Platform properties of the VirtualBox installation.</desc>
+    </attribute>
 
     <attribute name="minGuestRAM" type="unsigned long" readonly="yes">
       <desc>Minimum guest system memory in Megabytes.</desc>
@@ -12487,50 +13001,6 @@
     <attribute name="infoVDSize" type="long long" readonly="yes">
       <desc>Maximum size of a virtual disk image in bytes. Informational value,
       does not reflect the limits of any virtual disk image format.</desc>
-    </attribute>
-
-    <attribute name="serialPortCount" type="unsigned long" readonly="yes">
-      <desc>
-        Maximum number of serial ports associated with every
-        <link to="IMachine"/> instance.
-      </desc>
-    </attribute>
-
-    <attribute name="parallelPortCount" type="unsigned long" readonly="yes">
-      <desc>
-        Maximum number of parallel ports associated with every
-        <link to="IMachine"/> instance.
-      </desc>
-    </attribute>
-
-    <attribute name="maxBootPosition" type="unsigned long" readonly="yes">
-      <desc>
-        Maximum device position in the boot order. This value corresponds
-        to the total number of devices a machine can boot from, to make it
-        possible to include all possible devices to the boot list.
-        <see><link to="IMachine::setBootOrder"/></see>
-      </desc>
-    </attribute>
-
-    <attribute name="rawModeSupported" type="boolean" readonly="yes">
-      <desc>
-        Indicates whether VirtualBox was built with raw-mode support.
-
-        When this reads as False, the <link to="HWVirtExPropertyType_Enabled"/>
-        setting will be ignored and assumed to be True.
-      </desc>
-    </attribute>
-
-    <attribute name="exclusiveHwVirt" type="boolean">
-      <desc>
-        Exclusive use of hardware virtualization by VirtualBox. When enabled,
-        VirtualBox assumes it can obtain full and exclusive access to the VT-x
-        or AMD-V feature of the host. To share hardware virtualization with
-        other hypervisors, this property must be disabled.
-
-        <note>This is ignored on OS X, the kernel mediates hardware
-          access there.</note>
-      </desc>
     </attribute>
 
     <attribute name="defaultMachineFolder" type="wstring">
@@ -12795,13 +13265,6 @@
       </desc>
     </attribute>
 
-    <attribute name="supportedParavirtProviders" type="ParavirtProvider" safearray="yes" readonly="yes">
-      <desc>
-        Returns an array of officially supported values for enum <link to="ParavirtProvider"/>,
-        in the sense of what is e.g. worth offering in the VirtualBox GUI.
-      </desc>
-    </attribute>
-
     <attribute name="supportedClipboardModes" type="ClipboardMode" safearray="yes" readonly="yes">
       <desc>
         Returns an array of officially supported values for enum <link to="ClipboardMode"/>,
@@ -12812,13 +13275,6 @@
     <attribute name="supportedDnDModes" type="DnDMode" safearray="yes" readonly="yes">
       <desc>
         Returns an array of officially supported values for enum <link to="DnDMode"/>,
-        in the sense of what is e.g. worth offering in the VirtualBox GUI.
-      </desc>
-    </attribute>
-
-    <attribute name="supportedFirmwareTypes" type="FirmwareType" safearray="yes" readonly="yes">
-      <desc>
-        Returns an array of officially supported values for enum <link to="FirmwareType"/>,
         in the sense of what is e.g. worth offering in the VirtualBox GUI.
       </desc>
     </attribute>
@@ -12900,13 +13356,6 @@
       </desc>
     </attribute>
 
-    <attribute name="supportedGraphicsControllerTypes" type="GraphicsControllerType" safearray="yes" readonly="yes">
-      <desc>
-        Returns an array of officially supported values for enum <link to="GraphicsControllerType"/>,
-        in the sense of what is e.g. worth offering in the VirtualBox GUI.
-      </desc>
-    </attribute>
-
     <attribute name="supportedCloneOptions" type="CloneOptions" safearray="yes" readonly="yes">
       <desc>
         Returns an array of officially supported values for enum <link to="CloneOptions"/>,
@@ -12935,30 +13384,9 @@
       </desc>
     </attribute>
 
-    <attribute name="supportedNetworkAdapterTypes" type="NetworkAdapterType" safearray="yes" readonly="yes">
-      <desc>
-        Returns an array of officially supported values for enum <link to="NetworkAdapterType"/>,
-        in the sense of what is e.g. worth offering in the VirtualBox GUI.
-      </desc>
-    </attribute>
-
     <attribute name="supportedPortModes" type="PortMode" safearray="yes" readonly="yes">
       <desc>
         Returns an array of officially supported values for enum <link to="PortMode"/>,
-        in the sense of what is e.g. worth offering in the VirtualBox GUI.
-      </desc>
-    </attribute>
-
-    <attribute name="supportedUartTypes" type="UartType" safearray="yes" readonly="yes">
-      <desc>
-        Returns an array of officially supported values for enum <link to="UartType"/>,
-        in the sense of what is e.g. worth offering in the VirtualBox GUI.
-      </desc>
-    </attribute>
-
-    <attribute name="supportedUSBControllerTypes" type="USBControllerType" safearray="yes" readonly="yes">
-      <desc>
-        Returns an array of officially supported values for enum <link to="USBControllerType"/>,
         in the sense of what is e.g. worth offering in the VirtualBox GUI.
       </desc>
     </attribute>
@@ -12970,190 +13398,11 @@
       </desc>
     </attribute>
 
-    <attribute name="supportedAudioControllerTypes" type="AudioControllerType" safearray="yes" readonly="yes">
-      <desc>
-        Returns an array of officially supported values for enum <link to="AudioControllerType"/>,
-        in the sense of what is e.g. worth offering in the VirtualBox GUI.
-      </desc>
-    </attribute>
-
-    <attribute name="supportedStorageBuses" type="StorageBus" safearray="yes" readonly="yes">
-      <desc>
-        Returns an array of officially supported values for enum <link to="StorageBus"/>,
-        in the sense of what is e.g. worth offering in the VirtualBox GUI.
-      </desc>
-    </attribute>
-
-    <attribute name="supportedStorageControllerTypes" type="StorageControllerType" safearray="yes" readonly="yes">
-      <desc>
-        Returns an array of officially supported values for enum <link to="StorageControllerType"/>,
-        in the sense of what is e.g. worth offering in the VirtualBox GUI.
-      </desc>
-    </attribute>
-
-    <attribute name="supportedChipsetTypes" type="ChipsetType" safearray="yes" readonly="yes">
-      <desc>
-        Returns an array of officially supported values for enum <link to="ChipsetType"/>,
-        in the sense of what is e.g. worth offering in the VirtualBox GUI.
-      </desc>
-    </attribute>
-
-    <attribute name="supportedIommuTypes" type="IommuType" safearray="yes" readonly="yes">
-      <desc>
-        Returns an array of officially supported values for enum <link to="IommuType"/>,
-        in the sense of what is e.g. worth offering in the VirtualBox GUI.
-      </desc>
-    </attribute>
-
-    <attribute name="supportedTpmTypes" type="TpmType" safearray="yes" readonly="yes">
-      <desc>
-        Returns an array of officially supported values for enum <link to="TpmType"/>,
-        in the sense of what is e.g. worth offering in the VirtualBox GUI.
-      </desc>
-    </attribute>
-
     <attribute name="languageId" type="wstring">
       <desc>
         The API language ID used to translate messages to client.
       </desc>
     </attribute>
-
-    <method name="getMaxNetworkAdapters">
-      <desc>
-        Maximum total number of network adapters associated with every
-        <link to="IMachine"/> instance.
-      </desc>
-
-      <param name="chipset" type="ChipsetType" dir="in">
-        <desc>The chipset type to get the value for.</desc>
-      </param>
-
-
-      <param name="maxNetworkAdapters" type="unsigned long" dir="return">
-        <desc>The maximum total number of network adapters allowed.</desc>
-      </param>
-
-    </method>
-
-    <method name="getMaxNetworkAdaptersOfType">
-      <desc>
-        Maximum number of network adapters of a given attachment type,
-        associated with every <link to="IMachine"/> instance.
-      </desc>
-
-      <param name="chipset" type="ChipsetType" dir="in">
-        <desc>The chipset type to get the value for.</desc>
-      </param>
-
-      <param name="type" type="NetworkAttachmentType" dir="in">
-        <desc>Type of attachment.</desc>
-      </param>
-
-      <param name="maxNetworkAdapters" type="unsigned long" dir="return">
-        <desc>The maximum number of network adapters allowed for
-          particular chipset and attachment type.</desc>
-      </param>
-
-    </method>
-
-
-    <method name="getMaxDevicesPerPortForStorageBus">
-      <desc>Returns the maximum number of devices which can be attached to a port
-      for the given storage bus.</desc>
-
-      <param name="bus" type="StorageBus" dir="in">
-        <desc>The storage bus type to get the value for.</desc>
-      </param>
-
-      <param name="maxDevicesPerPort" type="unsigned long" dir="return">
-        <desc>The maximum number of devices which can be attached to the port for the given
-        storage bus.</desc>
-      </param>
-    </method>
-
-    <method name="getMinPortCountForStorageBus">
-      <desc>Returns the minimum number of ports the given storage bus supports.</desc>
-
-      <param name="bus" type="StorageBus" dir="in">
-        <desc>The storage bus type to get the value for.</desc>
-      </param>
-
-      <param name="minPortCount" type="unsigned long" dir="return">
-        <desc>The minimum number of ports for the given storage bus.</desc>
-      </param>
-    </method>
-
-    <method name="getMaxPortCountForStorageBus">
-      <desc>Returns the maximum number of ports the given storage bus supports.</desc>
-
-      <param name="bus" type="StorageBus" dir="in">
-        <desc>The storage bus type to get the value for.</desc>
-      </param>
-
-      <param name="maxPortCount" type="unsigned long" dir="return">
-        <desc>The maximum number of ports for the given storage bus.</desc>
-      </param>
-    </method>
-
-    <method name="getMaxInstancesOfStorageBus">
-      <desc>Returns the maximum number of storage bus instances which
-        can be configured for each VM. This corresponds to the number of
-        storage controllers one can have. Value may depend on chipset type
-        used.</desc>
-
-      <param name="chipset" type="ChipsetType" dir="in">
-        <desc>The chipset type to get the value for.</desc>
-      </param>
-
-      <param name="bus" type="StorageBus" dir="in">
-        <desc>The storage bus type to get the value for.</desc>
-      </param>
-
-      <param name="maxInstances" type="unsigned long" dir="return">
-        <desc>The maximum number of instances for the given storage bus.</desc>
-      </param>
-    </method>
-
-    <method name="getDeviceTypesForStorageBus">
-      <desc>Returns list of all the supported device types
-        (<link to="DeviceType"/>) for the given type of storage
-        bus.</desc>
-
-      <param name="bus" type="StorageBus" dir="in">
-        <desc>The storage bus type to get the value for.</desc>
-      </param>
-
-      <param name="deviceTypes" type="DeviceType" safearray="yes" dir="return">
-        <desc>The list of all supported device types for the given storage bus.</desc>
-      </param>
-    </method>
-
-    <method name="getStorageBusForStorageControllerType">
-      <desc>Returns the <link to="StorageBus"/> enum value
-        for a given storage controller type.</desc>
-
-      <param name="storageControllerType" type="StorageControllerType" dir="in">
-        <desc>The storage controller type to get the value for.</desc>
-      </param>
-
-      <param name="storageBus" type="StorageBus" dir="return">
-        <desc>The storage bus which is applicable.</desc>
-      </param>
-    </method>
-
-    <method name="getStorageControllerTypesForStorageBus">
-      <desc>Returns the possible <link to="StorageControllerType"/> enum values
-        for a given storage bus.</desc>
-
-      <param name="storageBus" type="StorageBus" dir="in">
-        <desc>The storage bus type to get the values for.</desc>
-      </param>
-
-      <param name="storageControllerType" type="StorageControllerType" safearray="yes" dir="return">
-        <desc>The enum values (sorted by what should be a sensible decreasing
-        importance of the type) which are valid.</desc>
-      </param>
-    </method>
 
     <method name="getDefaultIoCacheSettingForStorageController" dtracename="getDefaultStorageCtrlCacheSetting">
       <desc>Returns the default I/O cache setting for the
@@ -13165,38 +13414,6 @@
 
       <param name="enabled" type="boolean" dir="return">
         <desc>Returned flag indicating the default value</desc>
-      </param>
-    </method>
-
-    <method name="getStorageControllerHotplugCapable">
-      <desc>Returns whether the given storage controller supports
-        hot-plugging devices.</desc>
-
-      <param name="controllerType" type="StorageControllerType" dir="in">
-        <desc>The storage controller to check the setting for.</desc>
-      </param>
-
-      <param name="hotplugCapable" type="boolean" dir="return">
-        <desc>Returned flag indicating whether the controller is hotplug capable</desc>
-      </param>
-    </method>
-
-    <method name="getMaxInstancesOfUSBControllerType">
-      <desc>Returns the maximum number of USB controller instances which
-        can be configured for each VM. This corresponds to the number of
-        USB controllers one can have. Value may depend on chipset type
-        used.</desc>
-
-      <param name="chipset" type="ChipsetType" dir="in">
-        <desc>The chipset type to get the value for.</desc>
-      </param>
-
-      <param name="type" type="USBControllerType" dir="in">
-        <desc>The USB controller type to get the value for.</desc>
-      </param>
-
-      <param name="maxInstances" type="unsigned long" dir="return">
-        <desc>The maximum number of instances for the given USB controller type.</desc>
       </param>
     </method>
 
@@ -13229,6 +13446,7 @@
     reservedAttributes="16"
     >
     <desc>
+      Specifies a guest OS type and its recommendations.
     </desc>
 
     <attribute name="familyId" type="wstring" readonly="yes">
@@ -13252,11 +13470,11 @@
     </attribute>
 
     <attribute name="recommendedIOAPIC" type="boolean" readonly="yes">
-      <desc>Returns @c true if I/O-APIC recommended for this OS type.</desc>
+      <desc>Returns @c true if I/O-APIC recommended for this OS type. Only applies to x86-based platforms.</desc>
     </attribute>
 
     <attribute name="recommendedVirtEx" type="boolean" readonly="yes">
-      <desc>Returns @c true if VT-x or AMD-V recommended for this OS type.</desc>
+      <desc>Returns @c true if VT-x or AMD-V recommended for this OS type. Only applies to x86-based platforms.</desc>
     </attribute>
 
     <attribute name="recommendedRAM" type="unsigned long" readonly="yes">
@@ -13288,7 +13506,7 @@
     </attribute>
 
     <attribute name="recommendedPAE" type="boolean" readonly="yes">
-      <desc>Returns @c true if using PAE is recommended for this OS type.</desc>
+      <desc>Returns @c true if using PAE is recommended for this OS type. Only applies to x86-based platforms.</desc>
     </attribute>
 
     <attribute name="recommendedDVDStorageController" type="StorageControllerType" readonly="yes">
@@ -13316,7 +13534,7 @@
     </attribute>
 
     <attribute name="recommendedHPET" type="boolean" readonly="yes">
-      <desc>Returns @c true if using HPET is recommended for this OS type.</desc>
+      <desc>Returns @c true if using HPET is recommended for this OS type. Only applies to x86-based platforms.</desc>
     </attribute>
 
     <attribute name="recommendedUSBTablet" type="boolean" readonly="yes">
@@ -13324,7 +13542,7 @@
     </attribute>
 
     <attribute name="recommendedRTCUseUTC" type="boolean" readonly="yes">
-      <desc>Returns @c true if the RTC of this VM should be set to UTC</desc>
+      <desc>Returns @c true if the RTC of this VM should be set to UTC.</desc>
     </attribute>
 
     <attribute name="recommendedChipset" type="ChipsetType" readonly="yes">
@@ -13355,12 +13573,13 @@
       <desc>Returns @c true an xHCI (USB 3) controller is recommended for this OS type.</desc>
     </attribute>
 
+    <!-- @todo r=bird: Rename this to some more generic term that can be applied to ARM? -->
     <attribute name="recommendedTFReset" type="boolean" readonly="yes">
       <desc>Returns @c true if using VCPU reset on triple fault is recommended for this OS type.</desc>
     </attribute>
 
     <attribute name="recommendedX2APIC" type="boolean" readonly="yes">
-      <desc>Returns @c true if X2APIC is recommended for this OS type.</desc>
+      <desc>Returns @c true if X2APIC is recommended for this OS type. Only applies to x86-based platforms.</desc>
     </attribute>
 
     <attribute name="recommendedCPUCount" type="unsigned long" readonly="yes">
@@ -22047,8 +22266,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="IOBase" type="unsigned long">
-      <desc>Base I/O address of the serial port.</desc>
+    <attribute name="IOAddress" type="unsigned long">
+      <desc>Base I/O address of the serial port. For x86, this is an I/O port, for ARM this is an MMIO address.</desc>
     </attribute>
 
     <attribute name="IRQ" type="unsigned long">
@@ -22135,11 +22354,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
 
     <attribute name="IOBase" type="unsigned long">
-      <desc>Base I/O address of the parallel port.</desc>
+      <desc>Base I/O address of the parallel port. Only for X86-based platforms.</desc>
     </attribute>
 
     <attribute name="IRQ" type="unsigned long">
-      <desc>IRQ number of the parallel port.</desc>
+      <desc>IRQ number of the parallel port. Only for X86-based platforms.</desc>
     </attribute>
 
     <attribute name="path" type="wstring">
@@ -22172,7 +22391,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>Emulated thru IEM.</desc>
     </const>
     <const name="HwVirt"            value="2">
-      <desc>Hardware assisted virtualization thru HM.</desc>
+      <desc>Hardware assisted virtualization thru HM. Only for x86-based hosts.</desc>
     </const>
     <const name="NativeApi"         value="3">
       <desc>Hardware assisted virtualization thru native API (NEM).</desc>
@@ -23496,15 +23715,16 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="AudioControllerType"
-    uuid="7afd395c-42c3-444e-8788-3ce80292f36c"
+    uuid="6389dcc9-4e60-4983-9418-299e602efafc"
     >
     <desc>
       Virtual audio controller type.
     </desc>
 
-    <const name="AC97"  value="0"/>
-    <const name="SB16"  value="1"/>
-    <const name="HDA"   value="2"/>
+    <const name="AC97"        value="0"/>
+    <const name="SB16"        value="1"/>
+    <const name="HDA"         value="2"/>
+    <const name="VirtioSound" value="3"/>
   </enum>
 
   <enum
@@ -25004,20 +25224,23 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="ChipsetType"
-    uuid="8b4096a8-a7c3-4d3b-bbb1-05a0a51ec394"
+    uuid="733d5f16-1f47-4e25-b272-d7c138bc2e3d"
     >
     <desc>
-      Type of emulated chipset (mostly southbridge).
+      Type of emulated chipset (think x86 southbridge or ARM SoC/board).
     </desc>
 
     <const name="Null"  value="0">
       <desc>@c null value. Never used by the API.</desc>
     </const>
     <const name="PIIX3" value="1">
-      <desc>A PIIX3 (PCI IDE ISA Xcelerator) chipset.</desc>
+      <desc>x86: A PIIX3 (PCI IDE ISA Xcelerator) chipset.</desc>
     </const>
     <const name="ICH9"  value="2">
-      <desc>A ICH9 (I/O Controller Hub) chipset.</desc>
+      <desc>x86: A ICH9 (I/O Controller Hub) chipset.</desc>
+    </const>
+    <const name="ARMv8Virtual" value="3">
+      <desc>ARM: Virtual ARMv8 base platform (board).</desc>
     </const>
   </enum>
 

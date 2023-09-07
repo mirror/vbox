@@ -99,8 +99,8 @@ public class clienttest
         String id = "bc8b6219-2775-42c4-f1b2-b48b3c177294";
         vbox.openSession(session, id);
         IMachine mach = session.getMachine();
-        IBIOSSettings bios = mach.getBIOSSettings();
-        bios.setIOAPICEnabled(true);
+        IFirmwareSettings firmware = mach.getFirmwareSettings();
+        firmware.setIOAPICEnabled(true);
         mach.saveSettings();
         session.close();
     }

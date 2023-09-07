@@ -2240,6 +2240,14 @@ class TestDriver(base.TestDriver):                                              
         reporter.log("  Name:               %s" % (oVM.name,));
         reporter.log("  ID:                 %s" % (oVM.id,));
         oOsType = self.oVBox.getGuestOSType(oVM.OSTypeId);
+        if self.fpApiVer >= 7.1:
+            if oVM.platform.architecture == vboxcon.PlatformArchitecture_ARM:
+                sArch = 'ARM';
+            else:
+                sArch = 'x86';
+            reporter.log("  Architecture:       %s" % (sArch,));
+        else: # x86 only.
+            reporter.log("  Architecture:       x86");
         reporter.log("  OS Type:            %s - %s" % (oVM.OSTypeId, oOsType.description,));
         reporter.log("  Machine state:      %s" % (oVM.state,));
         reporter.log("  Session state:      %s" % (oVM.sessionState,));
@@ -2264,34 +2272,64 @@ class TestDriver(base.TestDriver):                                              
             reporter.log("  Monitors:           %s" % (oVM.monitorCount,));
             reporter.log("  GraphicsController: %s"
                          % (self.oVBoxMgr.getEnumValueName('GraphicsControllerType', oVM.graphicsControllerType),));              # pylint: disable=not-callable
-        reporter.log("  Chipset:            %s" % (self.oVBoxMgr.getEnumValueName('ChipsetType', oVM.chipsetType),));             # pylint: disable=not-callable
-        if self.fpApiVer >= 6.2 and hasattr(vboxcon, 'IommuType_None'):
-            reporter.log("  IOMMU:              %s" % (self.oVBoxMgr.getEnumValueName('IommuType', oVM.iommuType),));             # pylint: disable=not-callable
-        reporter.log("  Firmware:           %s" % (self.oVBoxMgr.getEnumValueName('FirmwareType', oVM.firmwareType),));           # pylint: disable=not-callable
-        reporter.log("  HwVirtEx:           %s" % (oVM.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_Enabled),));
-        reporter.log("  VPID support:       %s" % (oVM.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_VPID),));
-        reporter.log("  Nested paging:      %s" % (oVM.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_NestedPaging),));
-        atTypes = [
-            ( 'CPUPropertyType_PAE',              'PAE:                '),
-            ( 'CPUPropertyType_LongMode',         'Long-mode:          '),
-            ( 'CPUPropertyType_HWVirt',           'Nested VT-x/AMD-V:  '),
-            ( 'CPUPropertyType_APIC',             'APIC:               '),
-            ( 'CPUPropertyType_X2APIC',           'X2APIC:             '),
-            ( 'CPUPropertyType_TripleFaultReset', 'TripleFaultReset:   '),
-            ( 'CPUPropertyType_IBPBOnVMExit',     'IBPBOnVMExit:       '),
-            ( 'CPUPropertyType_SpecCtrl',         'SpecCtrl:           '),
-            ( 'CPUPropertyType_SpecCtrlByHost',   'SpecCtrlByHost:     '),
+        if self.fpApiVer >= 7.1:
+            reporter.log("  Chipset:            %s" % (self.oVBoxMgr.getEnumValueName('ChipsetType', oVM.platform.chipsetType),));# pylint: disable=not-callable
+            if hasattr(vboxcon, 'IommuType_None'):
+                reporter.log("  IOMMU:              %s" % (self.oVBoxMgr.getEnumValueName('IommuType', oVM.platform.iommuType),));# pylint: disable=not-callable
+            reporter.log("  Firmware:           %s"
+                         % (self.oVBoxMgr.getEnumValueName('FirmwareType', oVM.firmwareSettings.firmwareType),));                 # pylint: disable=not-callable
+            if oVM.platform.architecture == vboxcon.PlatformArchitecture_x86:
+                reporter.log("  HwVirtEx:           %s"
+                             % (oVM.platform.x86.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_Enabled),));
+                reporter.log("  VPID support:       %s"
+                             % (oVM.platform.x86.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_VPID),));
+                reporter.log("  Nested paging:      %s"
+                             % (oVM.platform.x86.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_NestedPaging),));
+        else:
+            reporter.log("  Chipset:            %s" % (self.oVBoxMgr.getEnumValueName('ChipsetType', oVM.chipsetType),));         # pylint: disable=not-callable
+            if self.fpApiVer >= 6.2 and hasattr(vboxcon, 'IommuType_None'):
+                reporter.log("  IOMMU:              %s" % (self.oVBoxMgr.getEnumValueName('IommuType', oVM.iommuType),));         # pylint: disable=not-callable
+            reporter.log("  Firmware:           %s" % (self.oVBoxMgr.getEnumValueName('FirmwareType', oVM.firmwareType),));       # pylint: disable=not-callable
+            reporter.log("  HwVirtEx:           %s" % (oVM.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_Enabled),));
+            reporter.log("  VPID support:       %s" % (oVM.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_VPID),));
+            reporter.log("  Nested paging:      %s" % (oVM.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_NestedPaging),));
+        atCpuPropertyTypesX86 = [
+            ( 'PAE',              'PAE:                '),
+            ( 'LongMode',         'Long-mode:          '),
+            ( 'HWVirt',           'Nested VT-x/AMD-V:  '),
+            ( 'APIC',             'APIC:               '),
+            ( 'X2APIC',           'X2APIC:             '),
+            ( 'TripleFaultReset', 'TripleFaultReset:   '),
+            ( 'IBPBOnVMExit',     'IBPBOnVMExit:       '),
+            ( 'SpecCtrl',         'SpecCtrl:           '),
+            ( 'SpecCtrlByHost',   'SpecCtrlByHost:     '),
+            ## @todo r=andy Add missing properties.
         ];
-        for sEnumValue, sDesc in atTypes:
-            if hasattr(vboxcon, sEnumValue):
-                reporter.log("  %s%s" % (sDesc, oVM.getCPUProperty(getattr(vboxcon, sEnumValue)),));
-        reporter.log("  ACPI:               %s" % (oVM.BIOSSettings.ACPIEnabled,));
-        reporter.log("  IO-APIC:            %s" % (oVM.BIOSSettings.IOAPICEnabled,));
-        if self.fpApiVer >= 3.2:
-            if self.fpApiVer >= 4.2:
-                reporter.log("  HPET:               %s" % (oVM.HPETEnabled,));
-            else:
-                reporter.log("  HPET:               %s" % (oVM.hpetEnabled,));
+        fnGetCpuPropertyX86 = None;
+        if self.fpApiVer >= 7.1:
+            sCpuPropertyTypeNamePrefix = 'CpuPropertyTypeX86_';
+            if oVM.platform.architecture == vboxcon.PlatformArchitecture_x86:
+                fnGetCpuPropertyX86 = oVM.platform.x86.getCPUProperty;
+        else:
+            sCpuPropertyTypeNamePrefix = 'CpuPropertyType_';
+            fnGetCpuPropertyX86 = oVM.getCPUProperty;
+        if fnGetCpuPropertyX86:
+            for sEnumValue, sDesc in atCpuPropertyTypesX86:
+                if hasattr(vboxcon, sCpuPropertyTypeNamePrefix + sEnumValue):
+                    reporter.log("  %s%s" % (sDesc, fnGetCpuPropertyX86(getattr(vboxcon, sEnumValue)),));
+        if self.fpApiVer >= 7.1:
+            reporter.log("  ACPI:               %s" % (oVM.firmwareSettings.ACPIEnabled,));
+            reporter.log("  IO-APIC:            %s" % (oVM.firmwareSettings.IOAPICEnabled,));
+            if oVM.platform.architecture == vboxcon.PlatformArchitecture_x86:
+                reporter.log("  HPET:               %s" % (oVM.platform.x86.HPETEnabled,));
+        else:
+            reporter.log("  ACPI:               %s" % (oVM.BIOSSettings.ACPIEnabled,));
+            reporter.log("  IO-APIC:            %s" % (oVM.BIOSSettings.IOAPICEnabled,));
+            if self.fpApiVer >= 3.2:
+                if self.fpApiVer >= 4.2:
+                    reporter.log("  HPET:               %s" % (oVM.HPETEnabled,));
+                else:
+                    reporter.log("  HPET:               %s" % (oVM.hpetEnabled,));
         if self.fpApiVer >= 6.1 and hasattr(oVM, 'graphicsAdapter'):
             reporter.log("  3D acceleration:    %s" % (oVM.graphicsAdapter.accelerate3DEnabled,));
             reporter.log("  2D acceleration:    %s" % (oVM.graphicsAdapter.accelerate2DVideoEnabled,));
@@ -2500,18 +2538,38 @@ class TestDriver(base.TestDriver):                                              
     # VM Api wrappers that logs errors, hides exceptions and other details.
     #
 
-    def createTestVMOnly(self, sName, sKind):
+    def createTestVMOnly(self, sName, sKind, sPlatformArchitecture = 'x86'):
         """
-        Creates and register a test VM without doing any kind of configuration.
+        Creates and registers a test VM without doing any kind of configuration.
+        Uses x86 as a platform architecture by default (only >= 7.1).
 
         Returns VM object (IMachine) on success, None on failure.
         """
         if not self.importVBoxApi():
             return None;
 
+        # Sanity.
+        if   self.fpApiVer < 7.1 \
+        and sPlatformArchitecture != 'x86':  # 7.1 introduced platform support.
+            reporter.errorXcpt('This host version of VirtualBox only supports x86 as platform architecture');
+            return None;
+
+        # Default to x86 if not explicitly specified.
+        if not sPlatformArchitecture \
+        or     sPlatformArchitecture == 'x86':
+            enmPlatformArchitecture = vboxcon.PlatformArchitecture_x86;
+        elif sPlatformArchitecture == 'ARM':
+            enmPlatformArchitecture = vboxcon.PlatformArchitecture_ARM;
+        else:
+            reporter.error('Unkown platform architecture "%s"' % (sPlatformArchitecture,));
+            return None;
+
         # create + register the VM
         try:
-            if self.fpApiVer >= 7.0: # Introduces VM encryption (three new parameters, empty for now).
+            if self.fpApiVer >= 7.1: # Introduces platform support (x86 + ARM).
+                oVM = self.oVBox.createMachine("", sName, enmPlatformArchitecture, [], self.tryFindGuestOsId(sKind), \
+                                               "", "", "", "");
+            elif self.fpApiVer >= 7.0: # Introduces VM encryption (three new parameters, empty for now).
                 oVM = self.oVBox.createMachine("", sName, [], self.tryFindGuestOsId(sKind), "", "", "", "");
             elif self.fpApiVer >= 4.2: # Introduces grouping (third parameter, empty for now).
                 oVM = self.oVBox.createMachine("", sName, [], self.tryFindGuestOsId(sKind), "");
@@ -2552,6 +2610,7 @@ class TestDriver(base.TestDriver):                                              
     def createTestVM(self,
                      sName,
                      iGroup,
+                     sPlatformArchitecture = 'x86',
                      sHd = None,
                      cMbRam = None,
                      cCpus = 1,
@@ -2584,7 +2643,7 @@ class TestDriver(base.TestDriver):                                              
         Creates a test VM with a immutable HD from the test resources.
         """
         # create + register the VM
-        oVM = self.createTestVMOnly(sName, sKind);
+        oVM = self.createTestVMOnly(sName, sKind, sPlatformArchitecture);
         if not oVM:
             return None;
 
@@ -2598,16 +2657,6 @@ class TestDriver(base.TestDriver):                                              
                 fRc = oSession.setRamSize(cMbRam);
             if fRc and cCpus is not None:
                 fRc = oSession.setCpuCount(cCpus);
-            if fRc and fVirtEx is not None:
-                fRc = oSession.enableVirtEx(fVirtEx);
-            if fRc and fNestedPaging is not None:
-                fRc = oSession.enableNestedPaging(fNestedPaging);
-            if fRc and fIoApic is not None:
-                fRc = oSession.enableIoApic(fIoApic);
-            if fRc and fNstHwVirt is not None:
-                fRc = oSession.enableNestedHwVirt(fNstHwVirt);
-            if fRc and fPae is not None:
-                fRc = oSession.enablePae(fPae);
             if fRc and sDvdImage is not None:
                 fRc = oSession.attachDvd(sDvdImage, sDvdControllerType);
             if fRc and sHd is not None:
@@ -2683,10 +2732,16 @@ class TestDriver(base.TestDriver):                                              
                         reporter.log('Recording only available for VBox >= 6.1, sorry!')
                 except:
                     reporter.errorXcpt('failed to configure recording for "%s"' % (sName));
-            if fRc and sChipsetType == 'piix3':
-                fRc = oSession.setChipsetType(vboxcon.ChipsetType_PIIX3);
-            elif fRc and sChipsetType == 'ich9':
-                fRc = oSession.setChipsetType(vboxcon.ChipsetType_ICH9);
+            if fRc:
+                if sChipsetType == 'piix3':
+                    fRc = oSession.setChipsetType(vboxcon.ChipsetType_PIIX3);
+                elif sChipsetType == 'ich9':
+                    fRc = oSession.setChipsetType(vboxcon.ChipsetType_ICH9);
+                elif    self.fpApiVer >= 7.1 \
+                    and sChipsetType == 'armv8virtual': # ARM only is for VBox >= 7.1.
+                    fRc = oSession.setChipsetType(vboxcon.ChipsetType_ARMv8Virtual);
+                else: # This is fatal.
+                    reporter.log('Unknown chipset type "%s" specified' % (sChipsetType,));
             if fRc and sCom1RawFile:
                 fRc = oSession.setupSerialToRawFile(0, sCom1RawFile);
             if fRc and self.fpApiVer >= 6.2 and hasattr(vboxcon, 'IommuType_AMD') and sIommuType == 'amd':
@@ -2700,6 +2755,27 @@ class TestDriver(base.TestDriver):                                              
                     fRc = oSession.setVideoControllerType(vboxcon.GraphicsControllerType_VMSVGA);
                 elif sGraphicsControllerType == 'VBoxVGA':
                     fRc = oSession.setVideoControllerType(vboxcon.GraphicsControllerType_VBoxVGA);
+
+            #
+            # x86-specifics.
+            #
+            if sPlatformArchitecture == 'x86':
+                if fRc and fVirtEx is not None:
+                    fRc = oSession.enableVirtExX86(fVirtEx);
+                if fRc and fNestedPaging is not None:
+                    fRc = oSession.enableNestedPagingX86(fNestedPaging);
+                if fRc and fIoApic is not None:
+                    fRc = oSession.enableIoApic(fIoApic);
+                if fRc and fNstHwVirt is not None:
+                    fRc = oSession.enableNestedHwVirtX86(fNstHwVirt);
+                if fRc and fPae is not None:
+                    fRc = oSession.enablePaeX86(fPae);
+
+            #
+            # ARM-specifics.
+            #
+            elif sPlatformArchitecture == 'ARM':
+                pass; ## @todo BUGBUG Add stuff for ARM here.
 
             if fRc: fRc = oSession.saveSettings();
             if not fRc:   oSession.discardSettings(True);
@@ -2734,6 +2810,7 @@ class TestDriver(base.TestDriver):                                              
                                  sName,
                                  iGroup,
                                  sKind,
+                                 sPlatformArchitecture = 'x86',
                                  sDvdImage = None,
                                  fFastBootLogo = True,
                                  eNic0AttachType = None,
@@ -2744,9 +2821,11 @@ class TestDriver(base.TestDriver):                                              
                                  sCom1RawFile = None):
         """
         Creates a test VM with all defaults and no HDs.
+
+        Defaults to the x86 platform architecture if not explicitly specified otherwise.
         """
         # create + register the VM
-        oVM = self.createTestVMOnly(sName, sKind);
+        oVM = self.createTestVMOnly(sName, sKind, sPlatformArchitecture);
         if oVM is not None:
             # Configure the VM with defaults according to sKind.
             fRc = True;

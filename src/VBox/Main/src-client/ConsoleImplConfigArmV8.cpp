@@ -129,8 +129,8 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
     ComPtr<ISystemProperties> systemProperties;
     hrc = virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());           H();
 
-    ComPtr<IBIOSSettings> biosSettings;
-    hrc = pMachine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());                     H();
+    ComPtr<IFirmwareSettings> firmwareSettings;
+    hrc = pMachine->COMGETTER(FirmwareSettings)(firmwareSettings.asOutParam());             H();
 
     ComPtr<INvramStore> nvramStore;
     hrc = pMachine->COMGETTER(NonVolatileStore)(nvramStore.asOutParam());                   H();
@@ -144,12 +144,18 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
     hrc = pMachine->COMGETTER(MemorySize)(&cRamMBs);                                        H();
     uint64_t const cbRam   = cRamMBs * (uint64_t)_1M;
 
-    /** @todo This will be 100% wrong but is required for getting the maximum number of network adapters. */
+    ComPtr<IPlatform> pPlatform;
+    hrc = pMachine->COMGETTER(Platform)(pPlatform.asOutParam());                            H();
+
+    ComPtr<IPlatformProperties> pPlatformProperties;
+    hrc = pPlatform->COMGETTER(Properties)(pPlatformProperties.asOutParam());               H();
+
     ChipsetType_T chipsetType;
-    hrc = pMachine->COMGETTER(ChipsetType)(&chipsetType);                                   H();
+    hrc = pPlatform->COMGETTER(ChipsetType)(&chipsetType);                                  H();
 
     ULONG cCpus = 1;
     hrc = pMachine->COMGETTER(CPUCount)(&cCpus);                                            H();
+    Assert(cCpus);
 
     ULONG ulCpuExecutionCap = 100;
     hrc = pMachine->COMGETTER(CPUExecutionCap)(&ulCpuExecutionCap);                         H();
@@ -159,7 +165,7 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
     LogRel(("Guest OS type: '%s'\n", Utf8Str(osTypeId).c_str()));
 
     ULONG maxNetworkAdapters;
-    hrc = systemProperties->GetMaxNetworkAdapters(chipsetType, &maxNetworkAdapters);        H();
+    hrc = pPlatformProperties->GetMaxNetworkAdapters(chipsetType, &maxNetworkAdapters);     H();
 
     /*
      * Get root node first.

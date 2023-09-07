@@ -414,7 +414,8 @@ HRESULT Appliance::interpret()
             /* If there is a <vbox:Machine>, we always prefer the setting from there. */
             if (vsysThis.pelmVBoxMachine)
             {
-                uint32_t maxNetworkAdapters = Global::getMaxNetworkAdapters(pNewDesc->m->pConfig->hardwareMachine.chipsetType);
+                uint32_t maxNetworkAdapters =
+                    PlatformProperties::s_getMaxNetworkAdapters(pNewDesc->m->pConfig->hardwareMachine.platformSettings.chipsetType);
 
                 const settings::NetworkAdaptersList &llNetworkAdapters = pNewDesc->m->pConfig->hardwareMachine.llNetworkAdapters;
                 /* Check for the constrains */
@@ -445,7 +446,7 @@ HRESULT Appliance::interpret()
             else if (vsysThis.llEthernetAdapters.size() >  0)
             {
                 size_t cEthernetAdapters = vsysThis.llEthernetAdapters.size();
-                uint32_t maxNetworkAdapters = Global::getMaxNetworkAdapters(ChipsetType_PIIX3);
+                uint32_t const maxNetworkAdapters = PlatformProperties::s_getMaxNetworkAdapters(ChipsetType_PIIX3); /** @todo BUGBUG x86 only for now. */
 
                 /* Check for the constrains */
                 if (cEthernetAdapters > maxNetworkAdapters)
@@ -4414,17 +4415,15 @@ HRESULT Appliance::i_verifyStorageControllerPortValid(const StorageControllerTyp
                                                       const uint32_t uControllerPort,
                                                       ULONG *aMaxPortCount)
 {
-    SystemProperties *pSysProps;
-    pSysProps = mVirtualBox->i_getSystemProperties();
-    if (pSysProps == NULL)
-        return VBOX_E_OBJECT_NOT_FOUND;
+    ComPtr<IPlatformProperties> platformProperties;
+    mVirtualBox->GetPlatformProperties(PlatformArchitecture_x86, platformProperties.asOutParam()); /// @todo BUGBUG Only x86 for now!
 
     StorageBus_T enmStorageBus = StorageBus_Null;
-    HRESULT hrc = pSysProps->GetStorageBusForStorageControllerType(aStorageControllerType, &enmStorageBus);
+    HRESULT hrc = platformProperties->GetStorageBusForStorageControllerType(aStorageControllerType, &enmStorageBus);
     if (FAILED(hrc))
         return hrc;
 
-    hrc = pSysProps->GetMaxPortCountForStorageBus(enmStorageBus, aMaxPortCount);
+    hrc = platformProperties->GetMaxPortCountForStorageBus(enmStorageBus, aMaxPortCount);
     if (FAILED(hrc))
         return hrc;
 
@@ -4470,6 +4469,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     ComPtr<IMachine> pNewMachine;
     hrc = mVirtualBox->CreateMachine(Bstr(stack.strSettingsFilename).raw(),
                                      Bstr(stack.strNameVBox).raw(),
+                                     PlatformArchitecture_x86, /// @todo BUGBUG Only x86 for now!
                                      ComSafeArrayAsInParam(groups),
                                      Bstr(stack.strOsTypeVBox).raw(),
                                      NULL, /* aCreateFlags */
@@ -4479,6 +4479,14 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                      pNewMachine.asOutParam());
     if (FAILED(hrc)) throw hrc;
     pNewMachineRet = pNewMachine;
+
+    ComPtr<IPlatform> pPlatform;
+    hrc = pNewMachine->COMGETTER(Platform)(pPlatform.asOutParam());
+    if (FAILED(hrc)) throw hrc;
+
+    ComPtr<IPlatformX86> pPlatformX86; /// @todo BUGBUG Only x86 for now! */
+    hrc = pPlatform->COMGETTER(X86)(pPlatformX86.asOutParam());
+    if (FAILED(hrc)) throw hrc;
 
     // set the description
     if (!stack.strDescription.isEmpty())
@@ -4493,7 +4501,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 
     if (stack.fForceHWVirt)
     {
-        hrc = pNewMachine->SetHWVirtExProperty(HWVirtExPropertyType_Enabled, TRUE);
+        hrc = pPlatformX86->SetHWVirtExProperty(HWVirtExPropertyType_Enabled, TRUE);
         if (FAILED(hrc)) throw hrc;
     }
 
@@ -4527,13 +4535,13 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             stack.fForceIOAPIC = true;
     }
 
+    ComPtr<IFirmwareSettings> pFirmwareSettings;
+    hrc = pNewMachine->COMGETTER(FirmwareSettings)(pFirmwareSettings.asOutParam());
+    if (FAILED(hrc)) throw hrc;
+
     if (stack.fForceIOAPIC)
     {
-        ComPtr<IBIOSSettings> pBIOSSettings;
-        hrc = pNewMachine->COMGETTER(BIOSSettings)(pBIOSSettings.asOutParam());
-        if (FAILED(hrc)) throw hrc;
-
-        hrc = pBIOSSettings->COMSETTER(IOAPICEnabled)(TRUE);
+        hrc = pFirmwareSettings->COMSETTER(IOAPICEnabled)(TRUE);
         if (FAILED(hrc)) throw hrc;
     }
 
@@ -4549,7 +4557,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             else
                 firmwareType = FirmwareType_EFI;
         }
-        hrc = pNewMachine->COMSETTER(FirmwareType)(firmwareType);
+        hrc = pFirmwareSettings->COMSETTER(FirmwareType)(firmwareType);
         if (FAILED(hrc)) throw hrc;
     }
 
@@ -4580,7 +4588,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 #endif /* VBOX_WITH_USB */
 
     /* Change the network adapters */
-    uint32_t maxNetworkAdapters = Global::getMaxNetworkAdapters(ChipsetType_PIIX3);
+    uint32_t const maxNetworkAdapters = PlatformProperties::s_getMaxNetworkAdapters(ChipsetType_PIIX3); /** @todo BUGBUG Only x86 for now! */
 
     std::list<VirtualSystemDescriptionEntry*> vsdeNW = vsdescThis->i_findByType(VirtualSystemDescriptionType_NetworkAdapter);
     if (vsdeNW.empty())
@@ -5352,9 +5360,9 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
     /* CPU count & extented attributes */
     config.hardwareMachine.cCPUs = stack.cCPUs;
     if (stack.fForceIOAPIC)
-        config.hardwareMachine.fHardwareVirt = true;
+        config.hardwareMachine.platformSettings.x86.fHWVirtEx = true;
     if (stack.fForceIOAPIC)
-        config.hardwareMachine.biosSettings.fIOAPICEnabled = true;
+        config.hardwareMachine.firmwareSettings.fIOAPICEnabled = true;
     /* RAM size */
     config.hardwareMachine.ulMemorySizeMB = stack.ulMemorySizeMB;
 

@@ -2508,13 +2508,21 @@ HRESULT Unattended::prepare()
     }
     bool const fIs64Bit = i_isGuestOSArchX64(strGuestOsTypeId);
 
+    ComPtr<IPlatform> pPlatform;
+    hrc = ptrMachine->COMGETTER(Platform)(pPlatform.asOutParam());
+    AssertComRCReturn(hrc, hrc);
+
     BOOL fRtcUseUtc = FALSE;
-    hrc = ptrMachine->COMGETTER(RTCUseUTC)(&fRtcUseUtc);
+    hrc = pPlatform->COMGETTER(RTCUseUTC)(&fRtcUseUtc);
     if (FAILED(hrc))
         return hrc;
 
+    ComPtr<IFirmwareSettings> pFirmwareSettings;
+    hrc = ptrMachine->COMGETTER(FirmwareSettings)(pFirmwareSettings.asOutParam());
+    AssertComRCReturn(hrc, hrc);
+
     FirmwareType_T enmFirmware = FirmwareType_BIOS;
-    hrc = ptrMachine->COMGETTER(FirmwareType)(&enmFirmware);
+    hrc = pFirmwareSettings->COMGETTER(FirmwareType)(&enmFirmware);
     if (FAILED(hrc))
         return hrc;
 

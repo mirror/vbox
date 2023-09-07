@@ -333,14 +333,15 @@ static int tstCreateMachines(IVirtualBox *pVBox)
         Bstr machineName(tstMakeMachineName(i));
         /* Default VM settings */
         CHECK_ERROR_L(pVBox, CreateMachine(NULL,                          /* Settings */
-                                         machineName.raw(),             /* Name */
-                                         ComSafeArrayAsInParam(groups), /* Groups */
-                                         NULL,                          /* OS Type */
-                                         NULL,                          /** Cipher */
-                                         NULL,                          /** Password id */
-                                         NULL,                          /** Password */
-                                         NULL,                          /* Create flags */
-                                         ptrMachine.asOutParam()));
+                                           machineName.raw(),             /* Name */
+                                           PlatformArchitecture_x86,
+                                           ComSafeArrayAsInParam(groups), /* Groups */
+                                           NULL,                          /* OS Type */
+                                           NULL,                          /** Cipher */
+                                           NULL,                          /** Password id */
+                                           NULL,                          /** Password */
+                                           NULL,                          /* Create flags */
+                                           ptrMachine.asOutParam()));
         if (SUCCEEDED(hrc))
         {
             CHECK_ERROR_L(pVBox, RegisterMachine(ptrMachine));

@@ -81,11 +81,11 @@
       <arg>--plug-cpu=<replaceable>CPU-ID</replaceable></arg>
       <arg>--unplug-cpu=<replaceable>CPU-ID</replaceable></arg>
       <arg>--cpu-execution-cap=<replaceable>number</replaceable></arg>
-      <arg>--pae=<group choice="plain">
+      <arg>--x86-pae=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--long-mode=<group choice="plain">
+      <arg>--x86-long-mode=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
@@ -123,7 +123,7 @@
           <arg choice="plain">Intel 80286</arg>
           <arg choice="plain">Intel 80386</arg>
         </group></arg>
-      <arg>--hpet=<group choice="plain">
+      <arg>--x86-hpet=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
@@ -139,7 +139,7 @@
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--x2apic=<group choice="plain">
+      <arg>--x86-x2apic=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
@@ -160,11 +160,11 @@
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--vtx-vpid=<group choice="plain">
+      <arg>--x86-vtx-vpid=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--vtx-ux=<group choice="plain">
+      <arg>--x86-vtx-ux=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
@@ -202,28 +202,28 @@
         <arg choice="plain">swtpm</arg>
       </group></arg>
       <arg>--tpm-location=<replaceable>location</replaceable></arg>
-      <arg>--bios-logo-fade-in=<group choice="plain">
+      <arg>--firmware-logo-fade-in=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--bios-logo-fade-out=<group choice="plain">
+      <arg>--firmware-logo-fade-out=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--bios-logo-display-time=<replaceable>msec</replaceable></arg>
-      <arg>--bios-logo-image-path=<replaceable>pathname</replaceable></arg>
-      <arg>--bios-boot-menu=<group choice="plain">
+      <arg>--firmware-logo-display-time=<replaceable>msec</replaceable></arg>
+      <arg>--firmware-logo-image-path=<replaceable>pathname</replaceable></arg>
+      <arg>--firmware-boot-menu=<group choice="plain">
           <arg choice="plain">disabled</arg>
           <arg choice="plain">menuonly</arg>
           <arg choice="plain">messageandmenu</arg>
         </group></arg>
-      <arg>--bios-apic=<group choice="plain">
+      <arg>--firmware-apic=<group choice="plain">
           <arg choice="plain">disabled</arg>
           <arg choice="plain">apic</arg>
           <arg choice="plain">x2apic</arg>
         </group></arg>
-      <arg>--bios-system-time-offset=<replaceable>msec</replaceable></arg>
-      <arg>--bios-pxe-debug=<group choice="plain">
+      <arg>--firmware-system-time-offset=<replaceable>msec</replaceable></arg>
+      <arg>--firmware-pxe-debug=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
@@ -871,14 +871,14 @@ it unless this changes. -->
           </listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--pae=on | off</option></term>
+          <term><option>--x86-pae=on | off</option></term>
           <listitem><para>
               Enables or disables physical address extension (PAE). See
               <xref linkend="settings-processor" />.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--long-mode=on | off</option></term>
+          <term><option>--x86-long-mode=on | off</option></term>
           <listitem><para>
               Enables or disables long mode. See
               <xref linkend="settings-processor" />.
@@ -951,7 +951,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--hpet=on | off</option></term>
+          <term><option>--x86-hpet=on | off</option></term>
           <listitem><para>
               Enables or disables a High Precision Event Timer (HPET)
               that can replace a legacy system timer. This feature is
@@ -988,7 +988,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--x2apic=on | off</option></term>
+          <term><option>--x86-x2apic=on | off</option></term>
           <listitem><para>
               Enables or disables the CPU x2APIC feature. CPU x2APIC
               enables an OS to run more efficiently on high core count
@@ -1064,7 +1064,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vtx-vpid=on | off</option></term>
+          <term><option>--x86-vtx-vpid=on | off</option></term>
           <listitem><para>
               Enables or disables the use of the tagged TLB (VPID)
               feature in the processor of your host system. See
@@ -1073,7 +1073,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vtx-ux=on | off</option></term>
+          <term><option>--x86-vtx-ux=on | off</option></term>
           <listitem><para>
               Enables or disables the use of unrestricted guest mode for
               executing the guest VM. This option is available only when
@@ -1191,27 +1191,27 @@ it unless this changes. -->
             </itemizedlist></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--bios-logo-fade-in=on | off</option></term>
+          <term><option>--firmware-logo-fade-in=on | off</option></term>
           <listitem><para>
               Specifies whether the BIOS logo fades in on VM startup. By
               default, an &product-name; logo is shown.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--bios-logo-fade-out=on | off</option></term>
+          <term><option>--firmware-logo-fade-out=on | off</option></term>
           <listitem><para>
               Specifies whether the BIOS logo fades out on VM startup.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--bios-logo-display-time=<replaceable>msec</replaceable></option></term>
+          <term><option>--firmware-logo-display-time=<replaceable>msec</replaceable></option></term>
           <listitem><para>
               Specifies the amount of time in milliseconds that the BIOS
               logo is visible.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--bios-logo-image-path=<replaceable>pathname</replaceable></option></term>
+          <term><option>--firmware-logo-image-path=<replaceable>pathname</replaceable></option></term>
           <listitem><para>
               Replaces the existing BIOS logo with a different image.
               The replacement image must be an uncompressed 16, 256 or 16M
@@ -1221,7 +1221,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--bios-boot-menu=disabled | menuonly | messageandmenu</option></term>
+          <term><option>--firmware-boot-menu=disabled | menuonly | messageandmenu</option></term>
           <listitem><para>
               Specifies whether the BIOS permits you to select a
               temporary boot device. Valid values are:
@@ -1244,7 +1244,7 @@ it unless this changes. -->
             </itemizedlist></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--bios-apic=x2apic | apic | disabled</option></term>
+          <term><option>--firmware-apic=x2apic | apic | disabled</option></term>
           <listitem><para>
               Specifies the APIC level of the firmware. Valid values
               are: <literal>x2apic</literal>, <literal>apic</literal>,
@@ -1264,7 +1264,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--bios-system-time-offset=<replaceable>msec</replaceable></option></term>
+          <term><option>--firmware-system-time-offset=<replaceable>msec</replaceable></option></term>
           <listitem><para>
               Specifies the time offset in milliseconds of the guest VM
               relative to the time on the host system. If the offset
@@ -1273,7 +1273,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--bios-pxe-debug=on | off</option></term>
+          <term><option>--firmware-pxe-debug=on | off</option></term>
           <listitem><para>
               Enables or disables additional debugging output when using
               the Intel PXE boot ROM. The debug output is written to the

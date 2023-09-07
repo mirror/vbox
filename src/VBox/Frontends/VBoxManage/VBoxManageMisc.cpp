@@ -262,30 +262,33 @@ RTEXITCODE handleUnregisterVM(HandlerArg *a)
 
 static const RTGETOPTDEF g_aCreateVMOptions[] =
 {
-    { "--name",           'n', RTGETOPT_REQ_STRING },
-    { "-name",            'n', RTGETOPT_REQ_STRING },
-    { "--groups",         'g', RTGETOPT_REQ_STRING },
-    { "--basefolder",     'p', RTGETOPT_REQ_STRING },
-    { "-basefolder",      'p', RTGETOPT_REQ_STRING },
-    { "--ostype",         'o', RTGETOPT_REQ_STRING },
-    { "-ostype",          'o', RTGETOPT_REQ_STRING },
-    { "--uuid",           'u', RTGETOPT_REQ_UUID },
-    { "-uuid",            'u', RTGETOPT_REQ_UUID },
-    { "--register",       'r', RTGETOPT_REQ_NOTHING },
-    { "-register",        'r', RTGETOPT_REQ_NOTHING },
-    { "--default",        'd', RTGETOPT_REQ_NOTHING },
-    { "-default",         'd', RTGETOPT_REQ_NOTHING },
-    { "--cipher",         'c', RTGETOPT_REQ_STRING },
-    { "-cipher",          'c', RTGETOPT_REQ_STRING },
-    { "--password-id",    'i', RTGETOPT_REQ_STRING },
-    { "-password-id",     'i', RTGETOPT_REQ_STRING },
-    { "--password",       'w', RTGETOPT_REQ_STRING },
-    { "-password",        'w', RTGETOPT_REQ_STRING },
+    { "--name",                  'n', RTGETOPT_REQ_STRING },
+    { "-name",                   'n', RTGETOPT_REQ_STRING },
+    { "--groups",                'g', RTGETOPT_REQ_STRING },
+    { "--basefolder",            'p', RTGETOPT_REQ_STRING },
+    { "-basefolder",             'p', RTGETOPT_REQ_STRING },
+    { "--ostype",                'o', RTGETOPT_REQ_STRING },
+    { "-ostype",                 'o', RTGETOPT_REQ_STRING },
+    { "--uuid",                  'u', RTGETOPT_REQ_UUID },
+    { "-uuid",                   'u', RTGETOPT_REQ_UUID },
+    { "--register",              'r', RTGETOPT_REQ_NOTHING },
+    { "-register",               'r', RTGETOPT_REQ_NOTHING },
+    { "--default",               'd', RTGETOPT_REQ_NOTHING },
+    { "-default",                'd', RTGETOPT_REQ_NOTHING },
+    { "--cipher",                'c', RTGETOPT_REQ_STRING },
+    { "-cipher",                 'c', RTGETOPT_REQ_STRING },
+    { "--password-id",           'i', RTGETOPT_REQ_STRING },
+    { "-password-id",            'i', RTGETOPT_REQ_STRING },
+    { "--password",              'w', RTGETOPT_REQ_STRING },
+    { "-password",               'w', RTGETOPT_REQ_STRING },
+    { "--platform-architecture", 'a', RTGETOPT_REQ_STRING },
+    { "--platform-arch",         'a', RTGETOPT_REQ_STRING }, /* Shorter. */
 };
 
 RTEXITCODE handleCreateVM(HandlerArg *a)
 {
     HRESULT hrc;
+    PlatformArchitecture_T platformArch = PlatformArchitecture_None;
     Bstr bstrBaseFolder;
     Bstr bstrName;
     Bstr bstrOsTypeId;
@@ -349,12 +352,23 @@ RTEXITCODE handleCreateVM(HandlerArg *a)
                 pszPassword = ValueUnion.psz;
                 break;
 
+            case 'a':   // --platform-architecture
+                if (!RTStrICmp(ValueUnion.psz, "x86"))
+                    platformArch = PlatformArchitecture_x86;
+                else if (!RTStrICmp(ValueUnion.psz, "arm"))
+                    platformArch = PlatformArchitecture_ARM;
+                else
+                    return errorArgument(Misc::tr("Invalid --platform-architecture argument '%s'"), ValueUnion.psz);
+                break;
+
             default:
                 return errorGetOpt(c, &ValueUnion);
         }
     }
 
     /* check for required options */
+    if (platformArch == PlatformArchitecture_None)
+        return errorSyntax(Misc::tr("Parameter --platform-architecture is required"));
     if (bstrName.isEmpty())
         return errorSyntax(Misc::tr("Parameter --name is required"));
 
@@ -397,6 +411,7 @@ RTEXITCODE handleCreateVM(HandlerArg *a)
         CHECK_ERROR_BREAK(a->virtualBox,
                           CreateMachine(bstrSettingsFile.raw(),
                                         bstrName.raw(),
+                                        platformArch,
                                         ComSafeArrayAsInParam(groups),
                                         bstrOsTypeId.raw(),
                                         createFlags.raw(),
@@ -669,6 +684,12 @@ RTEXITCODE handleCloneVM(HandlerArg *a)
                                                srcMachine.asOutParam()),
                     RTEXITCODE_FAILURE);
 
+    /* Get the platform architecture, to clone a VM which has the same architecture. */
+    ComPtr<IPlatform>      platform;
+    CHECK_ERROR_RET(srcMachine, COMGETTER(Platform)(platform.asOutParam()), RTEXITCODE_FAILURE);
+    PlatformArchitecture_T platformArch;
+    CHECK_ERROR_RET(platform, COMGETTER(Architecture)(&platformArch), RTEXITCODE_FAILURE);
+
     /* If a snapshot name/uuid was given, get the particular machine of this
      * snapshot. */
     if (pszSnapshotName)
@@ -703,6 +724,7 @@ RTEXITCODE handleCloneVM(HandlerArg *a)
     ComPtr<IMachine> trgMachine;
     CHECK_ERROR_RET(a->virtualBox, CreateMachine(bstrSettingsFile.raw(),
                                                  Bstr(pszTrgName).raw(),
+                                                 platformArch,
                                                  ComSafeArrayAsInParam(groups),
                                                  NULL,
                                                  createFlags.raw(),
@@ -1418,7 +1440,7 @@ RTEXITCODE handleSetExtraData(HandlerArg *a)
     return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-RTEXITCODE handleSetProperty(HandlerArg *a)
+RTEXITCODE handleSetProperty(HandlerArg *a) /** @todo r=andy Rename this to handle[Get|Set]SystemProperty? */
 {
     HRESULT hrc;
 
@@ -1428,6 +1450,9 @@ RTEXITCODE handleSetProperty(HandlerArg *a)
 
     ComPtr<ISystemProperties> systemProperties;
     a->virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
+
+    ComPtr<IPlatformProperties> platformProperties;
+    systemProperties->COMGETTER(Platform)(platformProperties.asOutParam());
 
     if (!strcmp(a->argv[0], "machinefolder"))
     {
@@ -1447,7 +1472,7 @@ RTEXITCODE handleSetProperty(HandlerArg *a)
             fHwVirtExclusive = false;
         else
             return errorArgument(Misc::tr("Invalid hwvirtexclusive argument '%s'"), a->argv[1]);
-        CHECK_ERROR(systemProperties, COMSETTER(ExclusiveHwVirt)(fHwVirtExclusive));
+        CHECK_ERROR(platformProperties, COMSETTER(ExclusiveHwVirt)(fHwVirtExclusive));
     }
     else if (   !strcmp(a->argv[0], "vrdeauthlibrary")
              || !strcmp(a->argv[0], "vrdpauthlibrary"))

@@ -41,6 +41,7 @@
 /* COM includes: */
 #include "CNATEngine.h"
 #include "CNetworkAdapter.h"
+#include "CPlatformProperties.h"
 
 
 QString wipedOutString(const QString &strInputString)
@@ -906,7 +907,7 @@ void UIMachineSettingsNetworkPage::prepare()
               * but in this place the m_machine field isn't set yet. My observation (on Linux)
               * is that the limitation to 4 isn't necessary any more, but this needs to be checked
               * on all platforms to be certain that it's usable everywhere. */
-            const ulong uCount = qMin((ULONG)4, uiCommon().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3));
+            const ulong uCount = qMin((ULONG)4, uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86).GetMaxNetworkAdapters(KChipsetType_PIIX3));
 
             /* Create corresponding adapter tabs: */
             for (ulong uSlot = 0; uSlot < uCount; ++uSlot)

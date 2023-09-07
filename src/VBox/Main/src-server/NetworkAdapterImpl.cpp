@@ -79,10 +79,16 @@ void NetworkAdapter::FinalRelease()
  */
 HRESULT NetworkAdapter::init(Machine *aParent, ULONG uSlot)
 {
+    ComAssertRet(aParent, E_INVALIDARG);
+
     LogFlowThisFunc(("aParent=%p, uSlot=%d\n", aParent, uSlot));
 
-    ComAssertRet(aParent, E_INVALIDARG);
-    uint32_t maxNetworkAdapters = Global::getMaxNetworkAdapters(aParent->i_getChipsetType());
+    ChipsetType_T enmChipsetType;
+    HRESULT hrc = aParent->i_getPlatform()->getChipsetType(&enmChipsetType);
+    if (FAILED(hrc))
+        return hrc;
+
+    uint32_t const maxNetworkAdapters = PlatformProperties::s_getMaxNetworkAdapters(enmChipsetType);
     ComAssertRet(uSlot < maxNetworkAdapters, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
@@ -1203,7 +1209,7 @@ HRESULT NetworkAdapter::i_loadSettings(BandwidthControl *bwctl,
     /* Note: we assume that the default values for attributes of optional
      * nodes are assigned in the Data::Data() constructor and don't do it
      * here. It implies that this method may only be called after constructing
-     * a new BIOSSettings object while all its data fields are in the default
+     * a new FirmwareSettings object while all its data fields are in the default
      * values. Exceptions are fields whose creation time defaults don't match
      * values that should be applied when these fields are not explicitly set
      * in the settings file (for backwards compatibility reasons). This takes

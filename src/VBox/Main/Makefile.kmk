@@ -569,7 +569,8 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  	$(if $(VBOX_WITH_IOMMU_INTEL),VBOX_WITH_IOMMU_INTEL,) \
  	$(if $(VBOX_WITH_TPM),VBOX_WITH_TPM,) \
  	$(if $(VBOX_WITH_FULL_VM_ENCRYPTION),VBOX_WITH_FULL_VM_ENCRYPTION,) \
- 	$(if-expr defined(VBOX_WITH_SDS),VBOX_WITH_SDS,)
+ 	$(if-expr defined(VBOX_WITH_SDS),VBOX_WITH_SDS,) \
+ 	$(if $(VBOX_WITH_VIRT_ARMV8),VBOX_WITH_VIRT_ARMV8,)
  ifdef VBOX_WITH_USB
   VBoxSVC_DEFS += \
   	VBOX_WITH_USB \
@@ -636,6 +637,7 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  	src-all/Logging.cpp \
  	src-all/NvramStoreImpl.cpp \
  	src-all/PCIDeviceAttachmentImpl.cpp \
+ 	src-all/PlatformPropertiesImpl.cpp \
  	src-all/ProgressImpl.cpp \
  	src-all/SecretKeyStore.cpp \
  	src-all/SharedFolderImpl.cpp \
@@ -652,7 +654,7 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  	src-server/AudioSettingsImpl.cpp \
  	src-server/BandwidthControlImpl.cpp \
  	src-server/BandwidthGroupImpl.cpp \
- 	src-server/BIOSSettingsImpl.cpp \
+ 	src-server/FirmwareSettingsImpl.cpp \
  	src-server/RecordingSettingsImpl.cpp \
  	src-server/RecordingScreenSettingsImpl.cpp \
  	src-server/GraphicsAdapterImpl.cpp \
@@ -673,6 +675,7 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  	src-server/GuestOSTypeImpl.cpp \
  	src-server/HostDnsService.cpp \
  	src-server/HostImpl.cpp \
+ 	src-server/HostX86Impl.cpp \
  	src-server/HostAudioDeviceImpl.cpp \
  	src-server/HostNetworkInterfaceImpl.cpp \
  	src-server/HostPower.cpp \
@@ -696,6 +699,10 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  	src-server/NATEngineImpl.cpp \
  	src-server/NetworkAdapterImpl.cpp \
  	src-server/ParallelPortImpl.cpp \
+ 	src-server/PlatformBase.cpp \
+ 	src-server/PlatformImpl.cpp \
+ 	$(if $(VBOX_WITH_VIRT_ARMV8), src-server/PlatformARMImpl.cpp,) \
+ 	src-server/PlatformX86Impl.cpp \
  	src-server/ProgressProxyImpl.cpp \
  	src-server/SerialPortImpl.cpp \
  	src-server/SnapshotImpl.cpp \
@@ -1138,6 +1145,7 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_EXTPACKS) # Note this goes on f
  	src-all/Logging.cpp \
  	src-all/NvramStoreImpl.cpp \
  	src-all/PCIDeviceAttachmentImpl.cpp \
+ 	src-all/PlatformPropertiesImpl.cpp \
  	src-all/ProgressImpl.cpp \
  	src-all/SecretKeyStore.cpp \
  	src-all/AutoCaller.cpp \

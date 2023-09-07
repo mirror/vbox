@@ -37,6 +37,7 @@
 #include "SystemPropertiesWrap.h"
 
 class CPUProfile;
+class PlatformProperties;
 
 namespace settings
 {
@@ -83,12 +84,6 @@ private:
     HRESULT getMaxGuestCPUCount(ULONG *aMaxGuestCPUCount) RT_OVERRIDE;
     HRESULT getMaxGuestMonitors(ULONG *aMaxGuestMonitors) RT_OVERRIDE;
     HRESULT getInfoVDSize(LONG64 *aInfoVDSize) RT_OVERRIDE;
-    HRESULT getSerialPortCount(ULONG *aSerialPortCount) RT_OVERRIDE;
-    HRESULT getParallelPortCount(ULONG *aParallelPortCount) RT_OVERRIDE;
-    HRESULT getMaxBootPosition(ULONG *aMaxBootPosition) RT_OVERRIDE;
-    HRESULT getRawModeSupported(BOOL *aRawModeSupported) RT_OVERRIDE;
-    HRESULT getExclusiveHwVirt(BOOL *aExclusiveHwVirt) RT_OVERRIDE;
-    HRESULT setExclusiveHwVirt(BOOL aExclusiveHwVirt) RT_OVERRIDE;
     HRESULT getDefaultMachineFolder(com::Utf8Str &aDefaultMachineFolder) RT_OVERRIDE;
     HRESULT setDefaultMachineFolder(const com::Utf8Str &aDefaultMachineFolder) RT_OVERRIDE;
     HRESULT getLoggingLevel(com::Utf8Str &aLoggingLevel) RT_OVERRIDE;
@@ -122,14 +117,13 @@ private:
     HRESULT getDefaultFrontend(com::Utf8Str &aDefaultFrontend) RT_OVERRIDE;
     HRESULT setDefaultFrontend(const com::Utf8Str &aDefaultFrontend) RT_OVERRIDE;
     HRESULT getScreenShotFormats(std::vector<BitmapFormat_T> &aScreenShotFormats) RT_OVERRIDE;
+    HRESULT getPlatform(ComPtr<IPlatformProperties> &aPlatformProperties) RT_OVERRIDE;
     HRESULT getProxyMode(ProxyMode_T *pProxyMode) RT_OVERRIDE;
     HRESULT setProxyMode(ProxyMode_T aProxyMode) RT_OVERRIDE;
     HRESULT getProxyURL(com::Utf8Str &aProxyURL) RT_OVERRIDE;
     HRESULT setProxyURL(const com::Utf8Str &aProxyURL) RT_OVERRIDE;
-    HRESULT getSupportedParavirtProviders(std::vector<ParavirtProvider_T> &aSupportedParavirtProviders) RT_OVERRIDE;
     HRESULT getSupportedClipboardModes(std::vector<ClipboardMode_T> &aSupportedClipboardModes) RT_OVERRIDE;
     HRESULT getSupportedDnDModes(std::vector<DnDMode_T> &aSupportedDnDModes) RT_OVERRIDE;
-    HRESULT getSupportedFirmwareTypes(std::vector<FirmwareType_T> &aSupportedFirmwareTypes) RT_OVERRIDE;
     HRESULT getSupportedPointingHIDTypes(std::vector<PointingHIDType_T> &aSupportedPointingHIDTypes) RT_OVERRIDE;
     HRESULT getSupportedKeyboardHIDTypes(std::vector<KeyboardHIDType_T> &aSupportedKeyboardHIDTypes) RT_OVERRIDE;
     HRESULT getSupportedVFSTypes(std::vector<VFSType_T> &aSupportedVFSTypes) RT_OVERRIDE;
@@ -141,53 +135,18 @@ private:
     HRESULT getSupportedRecordingVSModes(std::vector<RecordingVideoScalingMode_T> &aSupportedRecordingVideoScalingModes) RT_OVERRIDE;
     HRESULT getSupportedRecordingARCModes(std::vector<RecordingRateControlMode_T> &aSupportedRecordingAudioRateControlModes) RT_OVERRIDE;
     HRESULT getSupportedRecordingVRCModes(std::vector<RecordingRateControlMode_T> &aSupportedRecordingVideoRateControlModes) RT_OVERRIDE;
-    HRESULT getSupportedGraphicsControllerTypes(std::vector<GraphicsControllerType_T> &aSupportedGraphicsControllerTypes) RT_OVERRIDE;
     HRESULT getSupportedCloneOptions(std::vector<CloneOptions_T> &aSupportedCloneOptions) RT_OVERRIDE;
     HRESULT getSupportedAutostopTypes(std::vector<AutostopType_T> &aSupportedAutostopTypes) RT_OVERRIDE;
     HRESULT getSupportedVMProcPriorities(std::vector<VMProcPriority_T> &aSupportedVMProcPriorities) RT_OVERRIDE;
     HRESULT getSupportedNetworkAttachmentTypes(std::vector<NetworkAttachmentType_T> &aSupportedNetworkAttachmentTypes) RT_OVERRIDE;
-    HRESULT getSupportedNetworkAdapterTypes(std::vector<NetworkAdapterType_T> &aSupportedNetworkAdapterTypes) RT_OVERRIDE;
     HRESULT getSupportedPortModes(std::vector<PortMode_T> &aSupportedPortModes) RT_OVERRIDE;
-    HRESULT getSupportedUartTypes(std::vector<UartType_T> &aSupportedUartTypes) RT_OVERRIDE;
-    HRESULT getSupportedUSBControllerTypes(std::vector<USBControllerType_T> &aSupportedUSBControllerTypes) RT_OVERRIDE;
     HRESULT getSupportedAudioDriverTypes(std::vector<AudioDriverType_T> &aSupportedAudioDriverTypes) RT_OVERRIDE;
-    HRESULT getSupportedAudioControllerTypes(std::vector<AudioControllerType_T> &aSupportedAudioControllerTypes) RT_OVERRIDE;
-    HRESULT getSupportedStorageBuses(std::vector<StorageBus_T> &aSupportedStorageBuses) RT_OVERRIDE;
-    HRESULT getSupportedStorageControllerTypes(std::vector<StorageControllerType_T> &aSupportedStorageControllerTypes) RT_OVERRIDE;
-    HRESULT getSupportedChipsetTypes(std::vector<ChipsetType_T> &aSupportedChipsetTypes) RT_OVERRIDE;
-    HRESULT getSupportedIommuTypes(std::vector<IommuType_T> &aSupportedIommuTypes) RT_OVERRIDE;
-    HRESULT getSupportedTpmTypes(std::vector<TpmType_T> &aSupportedTpmTypes) RT_OVERRIDE;
     HRESULT getLanguageId(com::Utf8Str &aLanguageId) RT_OVERRIDE;
     HRESULT setLanguageId(const com::Utf8Str &aLanguageId) RT_OVERRIDE;
 
     // wrapped ISystemProperties methods
-    HRESULT getMaxNetworkAdapters(ChipsetType_T aChipset,
-                                  ULONG *aMaxNetworkAdapters) RT_OVERRIDE;
-    HRESULT getMaxNetworkAdaptersOfType(ChipsetType_T aChipset,
-                                        NetworkAttachmentType_T aType,
-                                        ULONG *aMaxNetworkAdapters) RT_OVERRIDE;
-    HRESULT getMaxDevicesPerPortForStorageBus(StorageBus_T aBus,
-                                              ULONG *aMaxDevicesPerPort) RT_OVERRIDE;
-    HRESULT getMinPortCountForStorageBus(StorageBus_T aBus,
-                                         ULONG *aMinPortCount) RT_OVERRIDE;
-    HRESULT getMaxPortCountForStorageBus(StorageBus_T aBus,
-                                         ULONG *aMaxPortCount) RT_OVERRIDE;
-    HRESULT getMaxInstancesOfStorageBus(ChipsetType_T aChipset,
-                                        StorageBus_T aBus,
-                                        ULONG *aMaxInstances) RT_OVERRIDE;
-    HRESULT getDeviceTypesForStorageBus(StorageBus_T aBus,
-                                        std::vector<DeviceType_T> &aDeviceTypes) RT_OVERRIDE;
-    HRESULT getStorageBusForStorageControllerType(StorageControllerType_T aStorageControllerType,
-                                                  StorageBus_T *aStorageBus) RT_OVERRIDE;
-    HRESULT getStorageControllerTypesForStorageBus(StorageBus_T aStorageBus,
-                                                   std::vector<StorageControllerType_T> &aStorageControllerTypes) RT_OVERRIDE;
     HRESULT getDefaultIoCacheSettingForStorageController(StorageControllerType_T aControllerType,
                                                          BOOL *aEnabled) RT_OVERRIDE;
-    HRESULT getStorageControllerHotplugCapable(StorageControllerType_T aControllerType,
-                                               BOOL *aHotplugCapable) RT_OVERRIDE;
-    HRESULT getMaxInstancesOfUSBControllerType(ChipsetType_T aChipset,
-                                               USBControllerType_T aType,
-                                               ULONG *aMaxInstances) RT_OVERRIDE;
     HRESULT getCPUProfiles(CPUArchitecture_T aArchitecture, const com::Utf8Str &aNamePattern,
                            std::vector<ComPtr<ICPUProfile> > &aProfiles) RT_OVERRIDE;
 
@@ -210,8 +169,9 @@ private:
 
     MediumFormatList m_llMediumFormats;
 
-    bool                m_fLoadedX86CPUProfiles;    /**< Set if we've loaded the x86 and AMD64 CPU profiles. */
-    CPUProfileList_T    m_llCPUProfiles;            /**< List of loaded CPU profiles. */
+    ComObjPtr<PlatformProperties> const m_platformProperties;       /**< The host's platform properties. */
+    bool                                m_fLoadedX86CPUProfiles;    /**< Set if we've loaded the x86 and AMD64 CPU profiles. */
+    CPUProfileList_T                    m_llCPUProfiles;            /**< List of loaded CPU profiles. */
 
     friend class VirtualBox;
 };

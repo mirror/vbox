@@ -61,16 +61,19 @@
 /* COM includes: */
 #include "CAudioAdapter.h"
 #include "CAudioSettings.h"
+#include "CFirmwareSettings.h"
 #include "CRecordingSettings.h"
 #include "CRecordingScreenSettings.h"
 #include "CMachine.h"
 #include "CMedium.h"
 #include "CMediumAttachment.h"
 #include "CNetworkAdapter.h"
+#include "CPlatform.h"
+#include "CPlatformX86.h"
+#include "CPlatformProperties.h"
 #include "CSerialPort.h"
 #include "CSharedFolder.h"
 #include "CStorageController.h"
-#include "CSystemProperties.h"
 #include "CUSBController.h"
 #include "CUSBDeviceFilter.h"
 #include "CUSBDeviceFilters.h"
@@ -1358,8 +1361,10 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
                                                      empReport(strBootOrder, strBootOrderOld));
 
             /* Chipset Type? */
-            const KChipsetType enmChipsetType = comMachine.GetChipsetType();
-            const KChipsetType enmChipsetTypeOld = comMachineOld.GetChipsetType();
+            CPlatform comPlatform = comMachine.GetPlatform();
+            const KChipsetType enmChipsetType = comPlatform.GetChipsetType();
+            CPlatform comPlatformOld = comMachineOld.GetPlatform();
+            const KChipsetType enmChipsetTypeOld = comPlatformOld.GetChipsetType();
             if (enmChipsetType == KChipsetType_ICH9)
             {
                 ++iRowCount;
@@ -1714,7 +1719,8 @@ QString UISnapshotDetailsWidget::bootOrderReport(const CMachine &comMachine)
     /* Prepare report: */
     QStringList aReport;
     /* Iterate through boot device types: */
-    for (ulong i = 1; i <= uiCommon().virtualBox().GetSystemProperties().GetMaxBootPosition(); ++i)
+    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+    for (ulong i = 1; i <= comProperties.GetMaxBootPosition(); ++i)
     {
         const KDeviceType enmDevice = comMachine.GetBootOrder(i);
         if (enmDevice != KDeviceType_Null)
@@ -1732,7 +1738,8 @@ QString UISnapshotDetailsWidget::efiStateReport(const CMachine &comMachine)
 {
     /* Prepare report: */
     QString strReport;
-    switch (comMachine.GetFirmwareType())
+    CFirmwareSettings comFirmwareSettings = comMachine.GetFirmwareSettings();
+    switch (comFirmwareSettings.GetFirmwareType())
     {
         case KFirmwareType_EFI:
         case KFirmwareType_EFI32:
@@ -1755,22 +1762,26 @@ QString UISnapshotDetailsWidget::efiStateReport(const CMachine &comMachine)
 /* static */
 QString UISnapshotDetailsWidget::accelerationReport(const CMachine &comMachine)
 {
+    /* Acquire platform stuff: */
+    CPlatform comPlatform = comMachine.GetPlatform();
+    CPlatformX86 comPlatformX86 = comPlatform.GetX86();
+
     /* Prepare report: */
     QStringList aReport;
     /* VT-x/AMD-V and Nested Paging? */
     if (uiCommon().host().GetProcessorFeature(KProcessorFeature_HWVirtEx))
     {
         /* VT-x/AMD-V? */
-        if (comMachine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled))
+        if (comPlatformX86.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled))
         {
             aReport << QApplication::translate("UIDetails", "VT-x/AMD-V", "details (system)");
             /* Nested Paging? */
-            if (comMachine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging))
+            if (comPlatformX86.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging))
                 aReport << QApplication::translate("UIDetails", "Nested Paging", "details (system)");
         }
     }
     /* PAE/NX? */
-    if (comMachine.GetCPUProperty(KCPUPropertyType_PAE))
+    if (comPlatformX86.GetCPUProperty(KCPUPropertyTypeX86_PAE))
         aReport << QApplication::translate("UIDetails", "PAE/NX", "details (system)");
     /* Paravirtualization Interface? */
     switch (comMachine.GetEffectiveParavirtProvider())
@@ -1934,7 +1945,9 @@ QStringList UISnapshotDetailsWidget::networkReport(CMachine comMachine)
     /* Prepare report: */
     QStringList aReport;
     /* Iterate through machine network adapters: */
-    const ulong iCount = uiCommon().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(comMachine.GetChipsetType());
+    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+    CPlatform comPlatform = comMachine.GetPlatform();
+    const ulong iCount = comProperties.GetMaxNetworkAdapters(comPlatform.GetChipsetType());
     for (ulong iSlot = 0; iSlot < iCount; ++iSlot)
     {
         /* Get current network adapter: */
@@ -1992,7 +2005,8 @@ QStringList UISnapshotDetailsWidget::serialReport(CMachine comMachine)
     /* Prepare report: */
     QStringList aReport;
     /* Iterate through machine serial ports: */
-    const ulong iCount = uiCommon().virtualBox().GetSystemProperties().GetSerialPortCount();
+    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+    const ulong iCount = comProperties.GetSerialPortCount();
     for (ulong iSlot = 0; iSlot < iCount; ++iSlot)
     {
         /* Get current serial port: */
@@ -2003,7 +2017,7 @@ QStringList UISnapshotDetailsWidget::serialReport(CMachine comMachine)
             const KPortMode enmMode = comPort.GetHostMode();
             /* Compose the data: */
             QStringList aInfo;
-            aInfo << UITranslator::toCOMPortName(comPort.GetIRQ(), comPort.GetIOBase());
+            aInfo << UITranslator::toCOMPortName(comPort.GetIRQ(), comPort.GetIOAddress());
             if (   enmMode == KPortMode_HostPipe
                 || enmMode == KPortMode_HostDevice
                 || enmMode == KPortMode_TCP

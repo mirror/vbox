@@ -35,8 +35,7 @@
 #include <VBox/com/ptr.h>
 #include <VBox/com/VirtualBox.h>
 
-unsigned int getMaxNics(const ComPtr<IVirtualBox> &pVirtualBox,
-                        const ComPtr<IMachine> &pMachine);
+ULONG getMaxNics(const ComPtr<IMachine> &pMachine);
 
 void verifyHostNetworkInterfaceName(const ComPtr<IVirtualBox> &pVirtualBox,
                                     const char *pszTargetName,

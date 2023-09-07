@@ -109,15 +109,14 @@ HRESULT StorageController::init(Machine *aParent,
         return setError(E_INVALIDARG,
                         tr("Invalid storage connection type"));
 
-    ULONG maxInstances;
     ChipsetType_T chipsetType;
-    HRESULT hrc = aParent->COMGETTER(ChipsetType)(&chipsetType);
-    if (FAILED(hrc))
-        return hrc;
-    hrc = aParent->i_getVirtualBox()->i_getSystemProperties()->
-        GetMaxInstancesOfStorageBus(chipsetType, aStorageBus, &maxInstances);
-    if (FAILED(hrc))
-        return hrc;
+    HRESULT hrc = aParent->i_getPlatform()->COMGETTER(ChipsetType)(&chipsetType);
+    AssertComRCReturnRC(hrc);
+
+    ULONG maxInstances;
+    hrc = aParent->i_getPlatformProperties()->GetMaxInstancesOfStorageBus(chipsetType, aStorageBus, &maxInstances);
+    AssertComRCReturnRC(hrc);
+
     if (aInstance >= maxInstances)
         return setError(E_INVALIDARG,
                         tr("Too many storage controllers of this type"));
@@ -445,19 +444,19 @@ HRESULT StorageController::setControllerType(StorageControllerType_T aController
 HRESULT StorageController::getMaxDevicesPerPortCount(ULONG *aMaxDevicesPerPortCount)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    return m->pSystemProperties->GetMaxDevicesPerPortForStorageBus(m->bd->storageBus, aMaxDevicesPerPortCount);
+    return m->pParent->i_getPlatformProperties()->GetMaxDevicesPerPortForStorageBus(m->bd->storageBus, aMaxDevicesPerPortCount);
 }
 
 HRESULT StorageController::getMinPortCount(ULONG *aMinPortCount)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    return m->pSystemProperties->GetMinPortCountForStorageBus(m->bd->storageBus, aMinPortCount);
+    return m->pParent->i_getPlatformProperties()->GetMinPortCountForStorageBus(m->bd->storageBus, aMinPortCount);
 }
 
 HRESULT StorageController::getMaxPortCount(ULONG *aMaxPortCount)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    return m->pSystemProperties->GetMaxPortCountForStorageBus(m->bd->storageBus, aMaxPortCount);
+    return m->pParent->i_getPlatformProperties()->GetMaxPortCountForStorageBus(m->bd->storageBus, aMaxPortCount);
 }
 
 HRESULT StorageController::getPortCount(ULONG *aPortCount)
@@ -706,7 +705,7 @@ HRESULT StorageController::i_checkPortAndDeviceValid(LONG aControllerPort,
 
     ULONG portCount = m->bd->ulPortCount;
     ULONG devicesPerPort;
-    HRESULT hrc = m->pSystemProperties->GetMaxDevicesPerPortForStorageBus(m->bd->storageBus, &devicesPerPort);
+    HRESULT hrc = m->pParent->i_getPlatformProperties()->GetMaxDevicesPerPortForStorageBus(m->bd->storageBus, &devicesPerPort);
     if (FAILED(hrc)) return hrc;
 
     if (   aControllerPort < 0

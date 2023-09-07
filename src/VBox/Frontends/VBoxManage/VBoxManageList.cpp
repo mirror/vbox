@@ -731,6 +731,9 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     ComPtr<ISystemProperties> systemProperties;
     CHECK_ERROR2I_RET(pVirtualBox, COMGETTER(SystemProperties)(systemProperties.asOutParam()), hrcCheck);
 
+    ComPtr<IPlatformProperties> platformProperties;
+    CHECK_ERROR2I_RET(systemProperties, COMGETTER(Platform)(platformProperties.asOutParam()), hrcCheck);
+
     Bstr str;
     ULONG ulValue;
     LONG64 i64Value;
@@ -756,71 +759,71 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     RTPrintf(List::tr("Maximum guest CPU count:         %u\n"), ulValue);
     systemProperties->COMGETTER(InfoVDSize)(&i64Value);
     RTPrintf(List::tr("Virtual disk limit (info):       %lld Bytes\n", "" , i64Value), i64Value);
-    systemProperties->COMGETTER(SerialPortCount)(&ulValue);
+    platformProperties->COMGETTER(SerialPortCount)(&ulValue);
     RTPrintf(List::tr("Maximum Serial Port count:       %u\n"), ulValue);
-    systemProperties->COMGETTER(ParallelPortCount)(&ulValue);
+    platformProperties->COMGETTER(ParallelPortCount)(&ulValue);
     RTPrintf(List::tr("Maximum Parallel Port count:     %u\n"), ulValue);
-    systemProperties->COMGETTER(MaxBootPosition)(&ulValue);
+    platformProperties->COMGETTER(MaxBootPosition)(&ulValue);
     RTPrintf(List::tr("Maximum Boot Position:           %u\n"), ulValue);
-    systemProperties->GetMaxNetworkAdapters(ChipsetType_PIIX3, &ulValue);
+    platformProperties->GetMaxNetworkAdapters(ChipsetType_PIIX3, &ulValue);
     RTPrintf(List::tr("Maximum PIIX3 Network Adapter count:   %u\n"), ulValue);
-    systemProperties->GetMaxNetworkAdapters(ChipsetType_ICH9,  &ulValue);
+    platformProperties->GetMaxNetworkAdapters(ChipsetType_ICH9,  &ulValue);
     RTPrintf(List::tr("Maximum ICH9 Network Adapter count:   %u\n"), ulValue);
-    systemProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_IDE, &ulValue);
+    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_IDE, &ulValue);
     RTPrintf(List::tr("Maximum PIIX3 IDE Controllers:   %u\n"), ulValue);
-    systemProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_IDE, &ulValue);
+    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_IDE, &ulValue);
     RTPrintf(List::tr("Maximum ICH9 IDE Controllers:    %u\n"), ulValue);
-    systemProperties->GetMaxPortCountForStorageBus(StorageBus_IDE, &ulValue);
+    platformProperties->GetMaxPortCountForStorageBus(StorageBus_IDE, &ulValue);
     RTPrintf(List::tr("Maximum IDE Port count:          %u\n"), ulValue);
-    systemProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_IDE, &ulValue);
+    platformProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_IDE, &ulValue);
     RTPrintf(List::tr("Maximum Devices per IDE Port:    %u\n"), ulValue);
-    systemProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_SATA, &ulValue);
+    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_SATA, &ulValue);
     RTPrintf(List::tr("Maximum PIIX3 SATA Controllers:  %u\n"), ulValue);
-    systemProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_SATA, &ulValue);
+    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_SATA, &ulValue);
     RTPrintf(List::tr("Maximum ICH9 SATA Controllers:   %u\n"), ulValue);
-    systemProperties->GetMaxPortCountForStorageBus(StorageBus_SATA, &ulValue);
+    platformProperties->GetMaxPortCountForStorageBus(StorageBus_SATA, &ulValue);
     RTPrintf(List::tr("Maximum SATA Port count:         %u\n"), ulValue);
-    systemProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_SATA, &ulValue);
+    platformProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_SATA, &ulValue);
     RTPrintf(List::tr("Maximum Devices per SATA Port:   %u\n"), ulValue);
-    systemProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_SCSI, &ulValue);
+    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_SCSI, &ulValue);
     RTPrintf(List::tr("Maximum PIIX3 SCSI Controllers:  %u\n"), ulValue);
-    systemProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_SCSI, &ulValue);
+    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_SCSI, &ulValue);
     RTPrintf(List::tr("Maximum ICH9 SCSI Controllers:   %u\n"), ulValue);
-    systemProperties->GetMaxPortCountForStorageBus(StorageBus_SCSI, &ulValue);
+    platformProperties->GetMaxPortCountForStorageBus(StorageBus_SCSI, &ulValue);
     RTPrintf(List::tr("Maximum SCSI Port count:         %u\n"), ulValue);
-    systemProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_SCSI, &ulValue);
+    platformProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_SCSI, &ulValue);
     RTPrintf(List::tr("Maximum Devices per SCSI Port:   %u\n"), ulValue);
-    systemProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_SAS, &ulValue);
+    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_SAS, &ulValue);
     RTPrintf(List::tr("Maximum SAS PIIX3 Controllers:   %u\n"), ulValue);
-    systemProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_SAS, &ulValue);
+    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_SAS, &ulValue);
     RTPrintf(List::tr("Maximum SAS ICH9 Controllers:    %u\n"), ulValue);
-    systemProperties->GetMaxPortCountForStorageBus(StorageBus_SAS, &ulValue);
+    platformProperties->GetMaxPortCountForStorageBus(StorageBus_SAS, &ulValue);
     RTPrintf(List::tr("Maximum SAS Port count:          %u\n"), ulValue);
-    systemProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_SAS, &ulValue);
+    platformProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_SAS, &ulValue);
     RTPrintf(List::tr("Maximum Devices per SAS Port:    %u\n"), ulValue);
-    systemProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_PCIe, &ulValue);
+    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_PCIe, &ulValue);
     RTPrintf(List::tr("Maximum NVMe PIIX3 Controllers:  %u\n"), ulValue);
-    systemProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_PCIe, &ulValue);
+    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_PCIe, &ulValue);
     RTPrintf(List::tr("Maximum NVMe ICH9 Controllers:   %u\n"), ulValue);
-    systemProperties->GetMaxPortCountForStorageBus(StorageBus_PCIe, &ulValue);
+    platformProperties->GetMaxPortCountForStorageBus(StorageBus_PCIe, &ulValue);
     RTPrintf(List::tr("Maximum NVMe Port count:         %u\n"), ulValue);
-    systemProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_PCIe, &ulValue);
+    platformProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_PCIe, &ulValue);
     RTPrintf(List::tr("Maximum Devices per NVMe Port:   %u\n"), ulValue);
-    systemProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_VirtioSCSI, &ulValue);
+    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_VirtioSCSI, &ulValue);
     RTPrintf(List::tr("Maximum virtio-scsi PIIX3 Controllers:  %u\n"), ulValue);
-    systemProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_VirtioSCSI, &ulValue);
+    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_VirtioSCSI, &ulValue);
     RTPrintf(List::tr("Maximum virtio-scsi ICH9 Controllers:   %u\n"), ulValue);
-    systemProperties->GetMaxPortCountForStorageBus(StorageBus_VirtioSCSI, &ulValue);
+    platformProperties->GetMaxPortCountForStorageBus(StorageBus_VirtioSCSI, &ulValue);
     RTPrintf(List::tr("Maximum virtio-scsi Port count:         %u\n"), ulValue);
-    systemProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_VirtioSCSI, &ulValue);
+    platformProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_VirtioSCSI, &ulValue);
     RTPrintf(List::tr("Maximum Devices per virtio-scsi Port:   %u\n"), ulValue);
-    systemProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_Floppy, &ulValue);
+    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_Floppy, &ulValue);
     RTPrintf(List::tr("Maximum PIIX3 Floppy Controllers:%u\n"), ulValue);
-    systemProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_Floppy, &ulValue);
+    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_Floppy, &ulValue);
     RTPrintf(List::tr("Maximum ICH9 Floppy Controllers: %u\n"), ulValue);
-    systemProperties->GetMaxPortCountForStorageBus(StorageBus_Floppy, &ulValue);
+    platformProperties->GetMaxPortCountForStorageBus(StorageBus_Floppy, &ulValue);
     RTPrintf(List::tr("Maximum Floppy Port count:       %u\n"), ulValue);
-    systemProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_Floppy, &ulValue);
+    platformProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_Floppy, &ulValue);
     RTPrintf(List::tr("Maximum Devices per Floppy Port: %u\n"), ulValue);
 #if 0
     systemProperties->GetFreeDiskSpaceWarning(&i64Value);
@@ -834,9 +837,9 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
 #endif
     systemProperties->COMGETTER(DefaultMachineFolder)(str.asOutParam());
     RTPrintf(List::tr("Default machine folder:          %ls\n"), str.raw());
-    systemProperties->COMGETTER(RawModeSupported)(&fValue);
+    platformProperties->COMGETTER(RawModeSupported)(&fValue);
     RTPrintf(List::tr("Raw-mode Supported:              %s\n"), fValue ? List::tr("yes") : List::tr("no"));
-    systemProperties->COMGETTER(ExclusiveHwVirt)(&fValue);
+    platformProperties->COMGETTER(ExclusiveHwVirt)(&fValue);
     RTPrintf(List::tr("Exclusive HW virtualization use: %s\n"), fValue ? List::tr("on") : List::tr("off"));
     systemProperties->COMGETTER(DefaultHardDiskFormat)(str.asOutParam());
     RTPrintf(List::tr("Default hard disk format:        %ls\n"), str.raw());
@@ -1441,9 +1444,10 @@ static HRESULT displayCPUProfile(ICPUProfile *pProfile, size_t idx, int cchIdx, 
     const char *pszArchitecture = "???";
     switch (enmArchitecture)
     {
-        case CPUArchitecture_x86:       pszArchitecture = "x86"; break;
-        case CPUArchitecture_AMD64:     pszArchitecture = "AMD64"; break;
-
+        case CPUArchitecture_x86:      pszArchitecture = "x86"; break;
+        case CPUArchitecture_AMD64:    pszArchitecture = "AMD64"; break;
+        case CPUArchitecture_ARMv8_32: pszArchitecture = "ARMv8 (32-bit only)"; break;
+        case CPUArchitecture_ARMv8_64: pszArchitecture = "ARMv8 (64-bit)"; break;
 #ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
         case CPUArchitecture_32BitHack:
 #endif
@@ -2153,28 +2157,51 @@ static HRESULT produceList(enum ListType_T enmCommand, bool fOptLong, bool fOptS
         case kListHostCpuIDs:
         {
             ComPtr<IHost> Host;
-            CHECK_ERROR(pVirtualBox, COMGETTER(Host)(Host.asOutParam()));
+            CHECK_ERROR_BREAK(pVirtualBox, COMGETTER(Host)(Host.asOutParam()));
+            PlatformArchitecture_T platformArch;
+            CHECK_ERROR_BREAK(Host, COMGETTER(Architecture)(&platformArch));
 
-            RTPrintf(List::tr("Host CPUIDs:\n\nLeaf no.  EAX      EBX      ECX      EDX\n"));
-            ULONG uCpuNo = 0; /* ASSUMES that CPU#0 is online. */
-            static uint32_t const s_auCpuIdRanges[] =
+            switch (platformArch)
             {
-                UINT32_C(0x00000000), UINT32_C(0x0000007f),
-                UINT32_C(0x80000000), UINT32_C(0x8000007f),
-                UINT32_C(0xc0000000), UINT32_C(0xc000007f)
-            };
-            for (unsigned i = 0; i < RT_ELEMENTS(s_auCpuIdRanges); i += 2)
-            {
-                ULONG uEAX, uEBX, uECX, uEDX, cLeafs;
-                CHECK_ERROR(Host, GetProcessorCPUIDLeaf(uCpuNo, s_auCpuIdRanges[i], 0, &cLeafs, &uEBX, &uECX, &uEDX));
-                if (cLeafs < s_auCpuIdRanges[i] || cLeafs > s_auCpuIdRanges[i+1])
-                    continue;
-                cLeafs++;
-                for (ULONG iLeaf = s_auCpuIdRanges[i]; iLeaf <= cLeafs; iLeaf++)
+                case PlatformArchitecture_x86:
                 {
-                    CHECK_ERROR(Host, GetProcessorCPUIDLeaf(uCpuNo, iLeaf, 0, &uEAX, &uEBX, &uECX, &uEDX));
-                    RTPrintf("%08x  %08x %08x %08x %08x\n", iLeaf, uEAX, uEBX, uECX, uEDX);
+                    ComPtr<IHostX86> HostX86;
+                    CHECK_ERROR_BREAK(Host, COMGETTER(X86)(HostX86.asOutParam()));
+
+                    RTPrintf(List::tr("Host CPUIDs:\n\nLeaf no.  EAX      EBX      ECX      EDX\n"));
+                    ULONG uCpuNo = 0; /* ASSUMES that CPU#0 is online. */
+                    static uint32_t const s_auCpuIdRanges[] =
+                    {
+                        UINT32_C(0x00000000), UINT32_C(0x0000007f),
+                        UINT32_C(0x80000000), UINT32_C(0x8000007f),
+                        UINT32_C(0xc0000000), UINT32_C(0xc000007f)
+                    };
+                    for (unsigned i = 0; i < RT_ELEMENTS(s_auCpuIdRanges); i += 2)
+                    {
+                        ULONG uEAX, uEBX, uECX, uEDX, cLeafs;
+                        CHECK_ERROR(HostX86, GetProcessorCPUIDLeaf(uCpuNo, s_auCpuIdRanges[i], 0, &cLeafs, &uEBX, &uECX, &uEDX));
+                        if (cLeafs < s_auCpuIdRanges[i] || cLeafs > s_auCpuIdRanges[i+1])
+                            continue;
+                        cLeafs++;
+                        for (ULONG iLeaf = s_auCpuIdRanges[i]; iLeaf <= cLeafs; iLeaf++)
+                        {
+                            CHECK_ERROR(HostX86, GetProcessorCPUIDLeaf(uCpuNo, iLeaf, 0, &uEAX, &uEBX, &uECX, &uEDX));
+                            RTPrintf("%08x  %08x %08x %08x %08x\n", iLeaf, uEAX, uEBX, uECX, uEDX);
+                        }
+                    }
+
+                    break;
                 }
+
+                case PlatformArchitecture_ARM:
+                {
+                    /** @todo BUGBUG Implement this for ARM! */
+                    break;
+                }
+
+                default:
+                    AssertFailed();
+                    break;
             }
             break;
         }

@@ -950,15 +950,43 @@ class SessionWrapper(TdTaskBase):
             return self.close();
         return True;
 
-    def enableVirtEx(self, fEnable):
+    def isPlatformArch(self, enmPlatformArch):
         """
-        Enables or disables AMD-V/VT-x.
+        Returns if the machine is of the given platform architecture or not.
+        """
+        if not self.o:
+            return False;
+        if self.fpApiVer >= 7.1:
+            return self.o.machine.platform.architecture == enmPlatformArch;
+        return enmPlatformArch == vboxcon.PlatformArchitecture_x86; # VBox < 7.1 only supported x86.
+
+    def isPlatformARM(self):
+        """
+        Returns if the machine is of the ARM platform architecture or not.
+        """
+        return self.isPlatformArch(vboxcon.PlatformArchitecture_ARM);
+
+    def isPlatformX86(self):
+        """
+        Returns if the machine is of the x86 platform architecture or not.
+        """
+        return self.isPlatformArch(vboxcon.PlatformArchitecture_x86);
+
+    def enableVirtExX86(self, fEnable):
+        """
+        Enables or disables AMD-V/VT-x. x86 only.
         Returns True on success and False on failure.  Error information is logged.
+
+        Ignored on non-x86 platform architectures.
         """
+        if not self.isPlatformX86(): return True;
         # Enable/disable it.
         fRc = True;
         try:
-            self.o.machine.setHWVirtExProperty(vboxcon.HWVirtExPropertyType_Enabled, fEnable);
+            if self.fpApiVer >= 7.1:
+                self.o.machine.platform.x86.setHWVirtExProperty(vboxcon.HWVirtExPropertyType_Enabled, fEnable);
+            else:
+                self.o.machine.setHWVirtExProperty(vboxcon.HWVirtExPropertyType_Enabled, fEnable);
         except:
             reporter.errorXcpt('failed to set HWVirtExPropertyType_Enabled=%s for "%s"' % (fEnable, self.sName));
             fRc = False;
@@ -968,7 +996,10 @@ class SessionWrapper(TdTaskBase):
         # Force/unforce it.
         if fRc and hasattr(vboxcon, 'HWVirtExPropertyType_Force'):
             try:
-                self.o.machine.setHWVirtExProperty(vboxcon.HWVirtExPropertyType_Force, fEnable);
+                if self.fpApiVer >= 7.1:
+                    self.o.machine.platform.x86.setHWVirtExProperty(vboxcon.HWVirtExPropertyType_Force, fEnable);
+                else:
+                    self.o.machine.setHWVirtExProperty(vboxcon.HWVirtExPropertyType_Force, fEnable);
             except:
                 reporter.errorXcpt('failed to set HWVirtExPropertyType_Force=%s for "%s"' % (fEnable, self.sName));
                 fRc = False;
@@ -981,15 +1012,21 @@ class SessionWrapper(TdTaskBase):
         self.oTstDrv.processPendingEvents();
         return fRc;
 
-    def enableNestedPaging(self, fEnable):
+    def enableNestedPagingX86(self, fEnable):
         """
-        Enables or disables nested paging..
+        Enables or disables nested paging. x86 only.
         Returns True on success and False on failure.  Error information is logged.
+
+        Ignored on non-x86 platform architectures.
         """
+        if not self.isPlatformX86(): return True;
         ## @todo Add/remove force CFGM thing, we don't want fallback logic when testing.
         fRc = True;
         try:
-            self.o.machine.setHWVirtExProperty(vboxcon.HWVirtExPropertyType_NestedPaging, fEnable);
+            if self.fpApiVer >= 7.1:
+                self.o.machine.platform.x86.setHWVirtExProperty(vboxcon.HWVirtExPropertyType_NestedPaging, fEnable);
+            else:
+                self.o.machine.setHWVirtExProperty(vboxcon.HWVirtExPropertyType_NestedPaging, fEnable);
         except:
             reporter.errorXcpt('failed to set HWVirtExPropertyType_NestedPaging=%s for "%s"' % (fEnable, self.sName));
             fRc = False;
@@ -998,11 +1035,14 @@ class SessionWrapper(TdTaskBase):
             self.oTstDrv.processPendingEvents();
         return fRc;
 
-    def enableLongMode(self, fEnable):
+    def enableLongModeX86(self, fEnable):
         """
-        Enables or disables LongMode.
+        Enables or disables LongMode. x86 only.
         Returns True on success and False on failure.  Error information is logged.
+
+        Ignored on non-x86 platform architectures.
         """
+        if not self.isPlatformX86(): return True;
         # Supported.
         if self.fpApiVer < 4.2  or  not hasattr(vboxcon, 'HWVirtExPropertyType_LongMode'):
             return True;
@@ -1010,7 +1050,10 @@ class SessionWrapper(TdTaskBase):
         # Enable/disable it.
         fRc = True;
         try:
-            self.o.machine.setCPUProperty(vboxcon.CPUPropertyType_LongMode, fEnable);
+            if self.fpApiVer >= 7.1:
+                self.o.machine.platform.x86.setCPUProperty(vboxcon.CPUPropertyTypeX86_LongMode, fEnable);
+            else:
+                self.o.machine.setCPUProperty(vboxcon.CPUPropertyType_LongMode, fEnable);
         except:
             reporter.errorXcpt('failed to set CPUPropertyType_LongMode=%s for "%s"' % (fEnable, self.sName));
             fRc = False;
@@ -1019,11 +1062,14 @@ class SessionWrapper(TdTaskBase):
         self.oTstDrv.processPendingEvents();
         return fRc;
 
-    def enableNestedHwVirt(self, fEnable):
+    def enableNestedHwVirtX86(self, fEnable):
         """
-        Enables or disables Nested Hardware-Virtualization.
+        Enables or disables Nested Hardware-Virtualization. x86 only.
         Returns True on success and False on failure.  Error information is logged.
+
+        Ignored on non-x86 platform architectures.
         """
+        if not self.isPlatformX86(): return True;
         # Supported.
         if self.fpApiVer < 5.3  or  not hasattr(vboxcon, 'CPUPropertyType_HWVirt'):
             return True;
@@ -1031,7 +1077,10 @@ class SessionWrapper(TdTaskBase):
         # Enable/disable it.
         fRc = True;
         try:
-            self.o.machine.setCPUProperty(vboxcon.CPUPropertyType_HWVirt, fEnable);
+            if self.fpApiVer >= 7.1:
+                self.o.machine.platform.x86.setCPUProperty(vboxcon.CPUPropertyTypeX86_HWVirt, fEnable);
+            else:
+                self.o.machine.setCPUProperty(vboxcon.CPUPropertyType_HWVirt, fEnable);
         except:
             reporter.errorXcpt('failed to set CPUPropertyType_HWVirt=%s for "%s"' % (fEnable, self.sName));
             fRc = False;
@@ -1040,14 +1089,19 @@ class SessionWrapper(TdTaskBase):
         self.oTstDrv.processPendingEvents();
         return fRc;
 
-    def enablePae(self, fEnable):
+    def enablePaeX86(self, fEnable):
         """
-        Enables or disables PAE
+        Enables or disables PAE. x86 only.
         Returns True on success and False on failure.  Error information is logged.
+
+        Ignored on non-x86 platform architectures.
         """
+        if not self.isPlatformX86(): return True;
         fRc = True;
         try:
-            if self.fpApiVer >= 3.2:    # great, ain't it?
+            if self.fpApiVer >= 7.1:
+                self.o.machine.platform.x86.setCPUProperty(vboxcon.CPUPropertyTypeX86_PAE, fEnable);
+            elif self.fpApiVer >= 3.2:    # great, ain't it?
                 self.o.machine.setCPUProperty(vboxcon.CPUPropertyType_PAE, fEnable);
             else:
                 self.o.machine.setCpuProperty(vboxcon.CpuPropertyType_PAE, fEnable);
@@ -1061,28 +1115,36 @@ class SessionWrapper(TdTaskBase):
 
     def enableIoApic(self, fEnable):
         """
-        Enables or disables the IO-APIC
+        Enables or disables the IO-APIC.
         Returns True on success and False on failure.  Error information is logged.
         """
         fRc = True;
         try:
-            self.o.machine.BIOSSettings.IOAPICEnabled = fEnable;
+            if self.fpApiVer >= 7.1:
+                self.o.machine.firmwareSettings.IOAPICEnabled = fEnable;
+            else:
+                self.o.machine.BIOSSettings.IOAPICEnabled = fEnable;
         except:
-            reporter.errorXcpt('failed to set BIOSSettings.IOAPICEnabled=%s for "%s"' % (fEnable, self.sName));
+            reporter.errorXcpt('failed to set firmwareSettings.IOAPICEnabled=%s for "%s"' % (fEnable, self.sName));
             fRc = False;
         else:
-            reporter.log('set BIOSSettings.IOAPICEnabled=%s for "%s"' % (fEnable, self.sName));
+            reporter.log('set firmwareSettings.IOAPICEnabled=%s for "%s"' % (fEnable, self.sName));
         self.oTstDrv.processPendingEvents();
         return fRc;
 
-    def enableHpet(self, fEnable):
+    def enableHpetX86(self, fEnable):
         """
-        Enables or disables the HPET
+        Enables or disables the HPET. x86 only.
         Returns True on success and False on failure.  Error information is logged.
+
+        Ignored on non-x86 platform architectures.
         """
+        if not self.isPlatformX86(): return True;
         fRc = True;
         try:
-            if self.fpApiVer >= 4.2:
+            if self.fpApiVer >= 7.1:
+                self.o.machine.platform.x86.HPETEnabled = fEnable;
+            elif self.fpApiVer >= 4.2:
                 self.o.machine.HPETEnabled = fEnable;
             else:
                 self.o.machine.hpetEnabled = fEnable;
@@ -1096,7 +1158,7 @@ class SessionWrapper(TdTaskBase):
 
     def enableUsbHid(self, fEnable):
         """
-        Enables or disables the USB HID
+        Enables or disables the USB HID.
         Returns True on success and False on failure.  Error information is logged.
         """
         fRc = True;
@@ -1132,7 +1194,7 @@ class SessionWrapper(TdTaskBase):
 
     def enableUsbOhci(self, fEnable):
         """
-        Enables or disables the USB OHCI controller
+        Enables or disables the USB OHCI controller.
         Returns True on success and False on failure.  Error information is logged.
         """
         fRc = True;
@@ -1222,7 +1284,10 @@ class SessionWrapper(TdTaskBase):
         """
         fRc = True;
         try:
-            self.o.machine.firmwareType = eType;
+            if self.fpApiVer >= 7.1:
+                self.o.machine.firmwareSettings.firmwareType = eType;
+            else:
+                self.o.machine.firmwareType = eType;
         except:
             reporter.errorXcpt('failed to set firmwareType=%s for "%s"' % (eType, self.sName));
             fRc = False;
@@ -1278,7 +1343,10 @@ class SessionWrapper(TdTaskBase):
         """
         fRc = True;
         try:
-            self.o.machine.chipsetType = eType;
+            if self.fpApiVer >= 7.1:
+                self.o.machine.platform.chipsetType = eType;
+            else:
+                self.o.machine.chipsetType = eType;
         except:
             reporter.errorXcpt('failed to set chipsetType=%s for "%s"' % (eType, self.sName));
             fRc = False;
@@ -1297,7 +1365,10 @@ class SessionWrapper(TdTaskBase):
             return True;
         fRc = True;
         try:
-            self.o.machine.iommuType = eType;
+            if self.fpApiVer >= 7.1:
+                self.o.machine.platform.iommuType = eType;
+            else:
+                self.o.machine.iommuType = eType;
         except:
             reporter.errorXcpt('failed to set iommuType=%s for "%s"' % (eType, self.sName));
             fRc = False;
@@ -1313,13 +1384,21 @@ class SessionWrapper(TdTaskBase):
         """
         fRc = True;
         try:
-            self.o.machine.BIOSSettings.logoFadeIn       = not fEnable;
-            self.o.machine.BIOSSettings.logoFadeOut      = not fEnable;
-            self.o.machine.BIOSSettings.logoDisplayTime  = cMsLogoDisplay;
-            if fEnable:
-                self.o.machine.BIOSSettings.bootMenuMode = vboxcon.BIOSBootMenuMode_Disabled;
+            if self.fpApiVer >= 7.1:
+                fwSettings = self.o.machine.firmwareSettings;
+                if fEnable:
+                    fwSettings.bootMenuMode = vboxcon.FirmwareBootMenuMode_Disabled;
+                else:
+                    fwSettings.bootMenuMode = vboxcon.FirmwareBootMenuMode_MessageAndMenu;
             else:
-                self.o.machine.BIOSSettings.bootMenuMode = vboxcon.BIOSBootMenuMode_MessageAndMenu;
+                fwSettings = self.o.machine.BIOSSettings;
+                if fEnable:
+                    fwSettings.bootMenuMode = vboxcon.BIOSBootMenuMode_Disabled;
+                else:
+                    fwSettings.bootMenuMode = vboxcon.BIOSBootMenuMode_MessageAndMenu;
+            fwSettings.logoFadeIn       = not fEnable;
+            fwSettings.logoFadeOut      = not fEnable;
+            fwSettings.logoDisplayTime  = cMsLogoDisplay;
         except:
             reporter.errorXcpt('failed to set logoFadeIn/logoFadeOut/bootMenuMode=%s for "%s"' % (fEnable, self.sName));
             fRc = False;
@@ -1759,14 +1838,20 @@ class SessionWrapper(TdTaskBase):
         self.oTstDrv.processPendingEvents();
         return fRc;
 
-    def setLargePages(self, fUseLargePages):
+    def setLargePagesX86(self, fUseLargePages):
         """
-        Configures whether the VM should use large pages or not.
+        Configures whether the VM should use large pages or not. x86 only.
         Returns True on success and False on failure.  Error information is logged.
+
+        Ignored on non-x86 platform architectures.
         """
+        if not self.isPlatformX86(): return True;
         fRc = True;
         try:
-            self.o.machine.setHWVirtExProperty(vboxcon.HWVirtExPropertyType_LargePages, fUseLargePages);
+            if self.fpApiVer >= 7.1:
+                self.o.machine.platform.x86.setHWVirtExProperty(vboxcon.HWVirtExPropertyType_LargePages, fUseLargePages);
+            else:
+                self.o.machine.setHWVirtExProperty(vboxcon.HWVirtExPropertyType_LargePages, fUseLargePages);
         except:
             reporter.errorXcpt('failed to set large pages of "%s" to %s' % (self.sName, fUseLargePages));
             fRc = False;
@@ -2391,15 +2476,15 @@ class SessionWrapper(TdTaskBase):
         # caller ignores the return code
         fRc = True;
         if not self.enableIoApic(fIoApic):              fRc = False;
-        if not self.enableVirtEx(fVirtEx):              fRc = False;
-        if not self.enablePae(fPae):                    fRc = False;
+        if not self.enableVirtExX86(fVirtEx):           fRc = False;
+        if not self.enablePaeX86(fPae):                 fRc = False;
         if not self.setRamSize(cMBRam):                 fRc = False;
         if not self.setVRamSize(cMBVRam):               fRc = False;
         if not self.setNicType(eNicType, 0):            fRc = False;
         if self.fpApiVer >= 3.2:
             if not self.setFirmwareType(eFirmwareType): fRc = False;
             if not self.enableUsbHid(fUsbHid):          fRc = False;
-            if not self.enableHpet(fHpet):              fRc = False;
+            if not self.enableHpetX86(fHpet):           fRc = False;
         if eStorCtlType in (vboxcon.StorageControllerType_PIIX3,
                             vboxcon.StorageControllerType_PIIX4,
                             vboxcon.StorageControllerType_ICH6,):

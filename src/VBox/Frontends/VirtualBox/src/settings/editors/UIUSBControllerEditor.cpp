@@ -35,7 +35,7 @@
 #include "UIUSBControllerEditor.h"
 
 /* COM includes: */
-#include "CSystemProperties.h"
+#include "CPlatformProperties.h"
 
 
 UIUSBControllerEditor::UIUSBControllerEditor(QWidget *pParent /* = 0 */)
@@ -144,7 +144,7 @@ void UIUSBControllerEditor::prepare()
 void UIUSBControllerEditor::updateButtonSet()
 {
     /* Load currently supported types: */
-    CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
     m_supportedValues = comProperties.GetSupportedUSBControllerTypes();
 
     /* Make sure requested value if sane is present as well: */

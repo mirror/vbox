@@ -47,7 +47,9 @@
 #include "UIVirtualCPUEditor.h"
 
 /* COM includes: */
-#include "CBIOSSettings.h"
+#include "CFirmwareSettings.h"
+#include "CPlatform.h"
+#include "CPlatformX86.h"
 #include "CNvramStore.h"
 #include "CTrustedPlatformModule.h"
 #include "CUefiVariableStore.h"
@@ -268,6 +270,12 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
     /* Prepare old data: */
     UIDataSettingsMachineSystem oldSystemData;
 
+    CPlatform comPlatform = m_machine.GetPlatform();
+    CPlatformX86 comPlatformX86 = comPlatform.GetX86();
+    CFirmwareSettings comFirmwareSettings = m_machine.GetFirmwareSettings();
+    CNvramStore comStoreLvl1 = m_machine.GetNonVolatileStore();
+    CUefiVariableStore comStoreLvl2 = comStoreLvl1.GetUefiVariableStore();
+
     /* Gather support flags: */
     oldSystemData.m_fSupportedPAE = uiCommon().host().GetProcessorFeature(KProcessorFeature_PAE);
     oldSystemData.m_fSupportedNestedHwVirtEx = uiCommon().host().GetProcessorFeature(KProcessorFeature_NestedHWVirt);
@@ -277,14 +285,12 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
     /* Gather old 'Motherboard' data: */
     oldSystemData.m_iMemorySize = m_machine.GetMemorySize();
     oldSystemData.m_bootItems = loadBootItems(m_machine);
-    oldSystemData.m_chipsetType = m_machine.GetChipsetType();
+    oldSystemData.m_chipsetType = comPlatform.GetChipsetType();
     oldSystemData.m_tpmType = m_machine.GetTrustedPlatformModule().GetType();
     oldSystemData.m_pointingHIDType = m_machine.GetPointingHIDType();
-    oldSystemData.m_fEnabledIoApic = m_machine.GetBIOSSettings().GetIOAPICEnabled();
-    oldSystemData.m_fEnabledEFI = m_machine.GetFirmwareType() >= KFirmwareType_EFI && m_machine.GetFirmwareType() <= KFirmwareType_EFIDUAL;
-    oldSystemData.m_fEnabledUTC = m_machine.GetRTCUseUTC();
-    CNvramStore comStoreLvl1 = m_machine.GetNonVolatileStore();
-    CUefiVariableStore comStoreLvl2 = comStoreLvl1.GetUefiVariableStore();
+    oldSystemData.m_fEnabledIoApic = comFirmwareSettings.GetIOAPICEnabled();
+    oldSystemData.m_fEnabledEFI = comFirmwareSettings.GetFirmwareType() >= KFirmwareType_EFI && comFirmwareSettings.GetFirmwareType() <= KFirmwareType_EFIDUAL;
+    oldSystemData.m_fEnabledUTC = comPlatform.GetRTCUseUTC();
     oldSystemData.m_fAvailableSecureBoot = comStoreLvl2.isNotNull();
     oldSystemData.m_fEnabledSecureBoot = oldSystemData.m_fAvailableSecureBoot
                                        ? comStoreLvl2.GetSecureBootEnabled()
@@ -294,12 +300,12 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
     /* Gather old 'Processor' data: */
     oldSystemData.m_cCPUCount = oldSystemData.m_fSupportedHwVirtEx ? m_machine.GetCPUCount() : 1;
     oldSystemData.m_iCPUExecCap = m_machine.GetCPUExecutionCap();
-    oldSystemData.m_fEnabledPAE = m_machine.GetCPUProperty(KCPUPropertyType_PAE);
-    oldSystemData.m_fEnabledNestedHwVirtEx = m_machine.GetCPUProperty(KCPUPropertyType_HWVirt);
+    oldSystemData.m_fEnabledPAE = comPlatformX86.GetCPUProperty(KCPUPropertyTypeX86_PAE);
+    oldSystemData.m_fEnabledNestedHwVirtEx = comPlatformX86.GetCPUProperty(KCPUPropertyTypeX86_HWVirt);
 
     /* Gather old 'Acceleration' data: */
     oldSystemData.m_paravirtProvider = m_machine.GetParavirtProvider();
-    oldSystemData.m_fEnabledNestedPaging = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging);
+    oldSystemData.m_fEnabledNestedPaging = comPlatformX86.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging);
 
     /* Cache old data: */
     m_pCache->cacheInitialData(oldSystemData);
@@ -882,8 +888,10 @@ bool UIMachineSettingsSystem::saveMotherboardData()
         /* Save chipset type: */
         if (fSuccess && isMachineOffline() && newSystemData.m_chipsetType != oldSystemData.m_chipsetType)
         {
-            m_machine.SetChipsetType(newSystemData.m_chipsetType);
-            fSuccess = m_machine.isOk();
+            CPlatform comPlatform = m_machine.GetPlatform();
+            comPlatform.SetChipsetType(newSystemData.m_chipsetType);
+            fSuccess = comPlatform.isOk();
+            /// @todo convey error info ..
         }
         /* Save TPM type: */
         if (fSuccess && isMachineOffline() && newSystemData.m_tpmType != oldSystemData.m_tpmType)
@@ -902,20 +910,26 @@ bool UIMachineSettingsSystem::saveMotherboardData()
         /* Save whether IO APIC is enabled: */
         if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledIoApic != oldSystemData.m_fEnabledIoApic)
         {
-            m_machine.GetBIOSSettings().SetIOAPICEnabled(newSystemData.m_fEnabledIoApic);
-            fSuccess = m_machine.isOk();
+            CFirmwareSettings comFirmwareSettings = m_machine.GetFirmwareSettings();
+            comFirmwareSettings.SetIOAPICEnabled(newSystemData.m_fEnabledIoApic);
+            fSuccess = comFirmwareSettings.isOk();
+            /// @todo convey error info ..
         }
         /* Save firware type (whether EFI is enabled): */
         if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledEFI != oldSystemData.m_fEnabledEFI)
         {
-            m_machine.SetFirmwareType(newSystemData.m_fEnabledEFI ? KFirmwareType_EFI : KFirmwareType_BIOS);
-            fSuccess = m_machine.isOk();
+            CFirmwareSettings comFirmwareSettings = m_machine.GetFirmwareSettings();
+            comFirmwareSettings.SetFirmwareType(newSystemData.m_fEnabledEFI ? KFirmwareType_EFI : KFirmwareType_BIOS);
+            fSuccess = comFirmwareSettings.isOk();
+            /// @todo convey error info ..
         }
         /* Save whether UTC is enabled: */
         if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledUTC != oldSystemData.m_fEnabledUTC)
         {
-            m_machine.SetRTCUseUTC(newSystemData.m_fEnabledUTC);
-            fSuccess = m_machine.isOk();
+            CPlatform comPlatform = m_machine.GetPlatform();
+            comPlatform.SetRTCUseUTC(newSystemData.m_fEnabledUTC);
+            fSuccess = comPlatform.isOk();
+            /// @todo convey error info ..
         }
         /* Save whether secure boot is enabled: */
         if (   fSuccess && isMachineOffline()
@@ -988,14 +1002,20 @@ bool UIMachineSettingsSystem::saveProcessorData()
         /* Save whether PAE is enabled: */
         if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledPAE != oldSystemData.m_fEnabledPAE)
         {
-            m_machine.SetCPUProperty(KCPUPropertyType_PAE, newSystemData.m_fEnabledPAE);
-            fSuccess = m_machine.isOk();
+            CPlatform comPlatform = m_machine.GetPlatform();
+            CPlatformX86 comPlatformX86 = comPlatform.GetX86();
+            comPlatformX86.SetCPUProperty(KCPUPropertyTypeX86_PAE, newSystemData.m_fEnabledNestedPaging);
+            fSuccess = comPlatformX86.isOk();
+            /// @todo convey error info ..
         }
         /* Save whether Nested HW Virt Ex is enabled: */
         if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledNestedHwVirtEx != oldSystemData.m_fEnabledNestedHwVirtEx)
         {
-            m_machine.SetCPUProperty(KCPUPropertyType_HWVirt, newSystemData.m_fEnabledNestedHwVirtEx);
-            fSuccess = m_machine.isOk();
+            CPlatform comPlatform = m_machine.GetPlatform();
+            CPlatformX86 comPlatformX86 = comPlatform.GetX86();
+            comPlatformX86.SetCPUProperty(KCPUPropertyTypeX86_HWVirt, newSystemData.m_fEnabledNestedPaging);
+            fSuccess = comPlatformX86.isOk();
+            /// @todo convey error info ..
         }
         /* Save CPU execution cap: */
         if (fSuccess && newSystemData.m_iCPUExecCap != oldSystemData.m_iCPUExecCap)
@@ -1037,8 +1057,11 @@ bool UIMachineSettingsSystem::saveAccelerationData()
         /* Save whether the nested paging is enabled: */
         if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledNestedPaging != oldSystemData.m_fEnabledNestedPaging)
         {
-            m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging, newSystemData.m_fEnabledNestedPaging);
-            fSuccess = m_machine.isOk();
+            CPlatform comPlatform = m_machine.GetPlatform();
+            CPlatformX86 comPlatformX86 = comPlatform.GetX86();
+            comPlatformX86.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging, newSystemData.m_fEnabledNestedPaging);
+            fSuccess = comPlatformX86.isOk();
+            /// @todo convey error info ..
         }
 
         /* Show error message if necessary: */

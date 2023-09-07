@@ -145,6 +145,10 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
         uint32_t cCPUs = mHWData->mCPUCount;
         // memory size in MB
         uint32_t ulMemSizeMB = mHWData->mMemorySize;
+
+        ComPtr<IPlatformX86> pPlatformX86;
+        mPlatform->COMGETTER(X86)(pPlatformX86.asOutParam());
+
         // VRAM size?
         // BIOS settings?
         // 3D acceleration enabled?
@@ -154,7 +158,7 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
         // PAEEnabled?
         // Long mode enabled?
         BOOL fLongMode;
-        hrc = GetCPUProperty(CPUPropertyType_LongMode, &fLongMode);
+        hrc = pPlatformX86->GetCPUProperty(CPUPropertyTypeX86_LongMode, &fLongMode);
         if (FAILED(hrc)) throw hrc;
 
         // snapshotFolder?
@@ -619,7 +623,12 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
         }
 
 //     <const name="NetworkAdapter" />
-        uint32_t maxNetworkAdapters = Global::getMaxNetworkAdapters(i_getChipsetType());
+        ChipsetType_T enmChipsetType;
+        hrc = mPlatform->getChipsetType(&enmChipsetType);
+        if (FAILED(hrc))
+            return hrc;
+
+        uint32_t const maxNetworkAdapters = PlatformProperties::s_getMaxNetworkAdapters(enmChipsetType);
         size_t a;
         for (a = 0; a < maxNetworkAdapters; ++a)
         {

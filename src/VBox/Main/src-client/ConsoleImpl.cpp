@@ -77,6 +77,7 @@
 #ifdef VBOX_WITH_USB_CARDREADER
 # include "UsbCardReader.h"
 #endif
+#include "PlatformPropertiesImpl.h"
 #include "ProgressImpl.h"
 #include "ConsoleVRDPServer.h"
 #include "VMMDev.h"
@@ -544,20 +545,37 @@ HRESULT Console::initWithMachine(IMachine *aMachine, IInternalMachineControl *aC
     mu32SingleRDPClientId = 0;
     mcGuestCredentialsProvided = false;
 
+    ComPtr<IPlatform> pPlatform;
+    hrc = mMachine->COMGETTER(Platform)(pPlatform.asOutParam());
+    AssertComRCReturnRC(hrc);
+
+    PlatformArchitecture_T platformArch;
+    hrc = pPlatform->COMGETTER(Architecture)(&platformArch);
+    AssertComRCReturnRC(hrc);
+
     /* Now the VM specific parts */
     /** @todo r=bird: aLockType is always LockType_VM.   */
     if (aLockType == LockType_VM)
     {
-        const char *pszVMM = "VBoxVMM";
+        const char *pszVMM = NULL; /* Shut up MSVC. */
 
+        switch (platformArch)
+        {
+            case PlatformArchitecture_x86:
+                pszVMM = "VBoxVMM";
+                break;
 #ifdef VBOX_WITH_VIRT_ARMV8
-        Bstr value;
-        hrc = mMachine->GetExtraData(Bstr("VBoxInternal2/ArmV8Virt").raw(),
-                                     value.asOutParam());
-        if (   hrc   == S_OK
-            && value == "1")
-            pszVMM = "VBoxVMMArm";
+            case PlatformArchitecture_ARM:
+                pszVMM = "VBoxVMMArm";
+                break;
 #endif
+            default:
+                hrc = VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED;
+                break;
+        }
+
+        if (FAILED(hrc))
+            return hrc;
 
         /* Load the VMM. We won't continue without it being successfully loaded here. */
         hrc = i_loadVMM(pszVMM);
@@ -568,7 +586,6 @@ HRESULT Console::initWithMachine(IMachine *aMachine, IInternalMachineControl *aC
         hrc = mptrResourceStore->init(this);
         AssertComRCReturnRC(hrc);
 #endif
-
         hrc = mMachine->COMGETTER(VRDEServer)(unconst(mVRDEServer).asOutParam());
         AssertComRCReturnRC(hrc);
 
@@ -640,14 +657,22 @@ HRESULT Console::initWithMachine(IMachine *aMachine, IInternalMachineControl *aC
         ComPtr<IVirtualBox> pVirtualBox;
         hrc = aMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
         AssertComRC(hrc);
+
         ComPtr<ISystemProperties> pSystemProperties;
+        ComPtr<IPlatformProperties> pPlatformProperties;
         if (pVirtualBox)
-            pVirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
+        {
+            hrc = pVirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
+            AssertComRC(hrc);
+            hrc = pVirtualBox->GetPlatformProperties(platformArch, pPlatformProperties.asOutParam());
+            AssertComRC(hrc);
+        }
+
         ChipsetType_T chipsetType = ChipsetType_PIIX3;
-        aMachine->COMGETTER(ChipsetType)(&chipsetType);
+        pPlatform->COMGETTER(ChipsetType)(&chipsetType);
         ULONG maxNetworkAdapters = 0;
-        if (pSystemProperties)
-            pSystemProperties->GetMaxNetworkAdapters(chipsetType, &maxNetworkAdapters);
+        if (pPlatformProperties)
+            pPlatformProperties->GetMaxNetworkAdapters(chipsetType, &maxNetworkAdapters);
         meAttachmentType.resize(maxNetworkAdapters);
         for (ULONG slot = 0; slot < maxNetworkAdapters; ++slot)
             meAttachmentType[slot] = NetworkAttachmentType_Null;
@@ -4487,19 +4512,22 @@ HRESULT Console::i_onNATDnsChanged()
     Log(("domain name = \"%s\"\n", com::Utf8Str(domain).c_str()));
 #endif /* 0 */
 
-    ChipsetType_T enmChipsetType;
-    hrc = mMachine->COMGETTER(ChipsetType)(&enmChipsetType);
-    if (!FAILED(hrc))
-    {
-        SafeVMPtrQuiet ptrVM(this);
-        if (ptrVM.isOk())
-        {
-            ULONG ulInstanceMax = (ULONG)Global::getMaxNetworkAdapters(enmChipsetType);
+    ComPtr<IPlatform> pPlatform;
+    hrc = mMachine->COMGETTER(Platform)(pPlatform.asOutParam());
+    AssertComRCReturn(hrc, hrc);
 
-            notifyNatDnsChange(ptrVM.rawUVM(), ptrVM.vtable(), "pcnet", ulInstanceMax);
-            notifyNatDnsChange(ptrVM.rawUVM(), ptrVM.vtable(), "e1000", ulInstanceMax);
-            notifyNatDnsChange(ptrVM.rawUVM(), ptrVM.vtable(), "virtio-net", ulInstanceMax);
-        }
+    ChipsetType_T enmChipsetType;
+    hrc = pPlatform->COMGETTER(ChipsetType)(&enmChipsetType);
+    AssertComRCReturn(hrc, hrc);
+
+    SafeVMPtrQuiet ptrVM(this);
+    if (ptrVM.isOk())
+    {
+        ULONG const ulInstanceMax = PlatformProperties::s_getMaxNetworkAdapters(enmChipsetType);
+
+        notifyNatDnsChange(ptrVM.rawUVM(), ptrVM.vtable(), "pcnet", ulInstanceMax);
+        notifyNatDnsChange(ptrVM.rawUVM(), ptrVM.vtable(), "e1000", ulInstanceMax);
+        notifyNatDnsChange(ptrVM.rawUVM(), ptrVM.vtable(), "virtio-net", ulInstanceMax);
     }
 
     return S_OK;
@@ -5200,16 +5228,28 @@ DECLCALLBACK(int) Console::i_changeNetworkAttachment(Console *pThis,
     AutoCaller autoCaller(pThis);
     AssertComRCReturn(autoCaller.hrc(), VERR_ACCESS_DENIED);
 
+    ComPtr<IPlatform> pPlatform;
+    HRESULT hrc = pThis->mMachine->COMGETTER(Platform)(pPlatform.asOutParam());
+    AssertComRC(hrc);
+
+    PlatformArchitecture_T platformArch;
+    hrc = pPlatform->COMGETTER(Architecture)(&platformArch);
+    AssertComRC(hrc);
+
     ComPtr<IVirtualBox> pVirtualBox;
     pThis->mMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
-    ComPtr<ISystemProperties> pSystemProperties;
-    if (pVirtualBox)
-        pVirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
-    ChipsetType_T chipsetType = ChipsetType_PIIX3;
-    pThis->mMachine->COMGETTER(ChipsetType)(&chipsetType);
+
+    ComPtr<IPlatformProperties> pPlatformProperties;
+    hrc = pVirtualBox->GetPlatformProperties(platformArch, pPlatformProperties.asOutParam());
+    AssertComRC(hrc);
+
+    ChipsetType_T chipsetType = ChipsetType_PIIX3; /*** @todo BUGBUG ASSUMES x86! */
+    pPlatform->COMGETTER(ChipsetType)(&chipsetType);
+    AssertComRC(hrc);
+
     ULONG maxNetworkAdapters = 0;
-    if (pSystemProperties)
-        pSystemProperties->GetMaxNetworkAdapters(chipsetType, &maxNetworkAdapters);
+    hrc = pPlatformProperties->GetMaxNetworkAdapters(chipsetType, &maxNetworkAdapters);
+    AssertComRC(hrc);
     AssertMsg(   (   !strcmp(pszDevice, "pcnet")
                   || !strcmp(pszDevice, "e1000")
                   || !strcmp(pszDevice, "virtio-net"))
@@ -10626,16 +10666,27 @@ HRESULT Console::i_powerDownHostInterfaces()
      */
     ComPtr<IVirtualBox> pVirtualBox;
     mMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
-    ComPtr<ISystemProperties> pSystemProperties;
-    if (pVirtualBox)
-        pVirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
-    ChipsetType_T chipsetType = ChipsetType_PIIX3;
-    mMachine->COMGETTER(ChipsetType)(&chipsetType);
-    ULONG maxNetworkAdapters = 0;
-    if (pSystemProperties)
-        pSystemProperties->GetMaxNetworkAdapters(chipsetType, &maxNetworkAdapters);
 
-    HRESULT hrc = S_OK;
+    ComPtr<IPlatform> pPlatform;
+    HRESULT hrc = mMachine->COMGETTER(Platform)(pPlatform.asOutParam());
+    AssertComRC(hrc);
+
+    PlatformArchitecture_T platformArch;
+    hrc = pPlatform->COMGETTER(Architecture)(&platformArch);
+    AssertComRC(hrc);
+
+    ComPtr<IPlatformProperties> pPlatformProperties;
+    hrc = pVirtualBox->GetPlatformProperties(platformArch, pPlatformProperties.asOutParam());
+    AssertComRC(hrc);
+
+    ChipsetType_T chipsetType = ChipsetType_PIIX3; /*** @todo BUGBUG ASSUMES x86! */
+    pPlatform->COMGETTER(ChipsetType)(&chipsetType);
+    AssertComRC(hrc);
+
+    ULONG maxNetworkAdapters = 0;
+    hrc = pPlatformProperties->GetMaxNetworkAdapters(chipsetType, &maxNetworkAdapters);
+    AssertComRC(hrc);
+
     for (ULONG slot = 0; slot < maxNetworkAdapters; slot++)
     {
         ComPtr<INetworkAdapter> pNetworkAdapter;

@@ -217,7 +217,7 @@
   </xsd:restriction>
 </xsd:simpleType>
 
-<xsd:simpleType name="TBIOSBootMenuModeType">
+<xsd:simpleType name="TFirmwareBootMenuModeType">
   <xsd:restriction base="xsd:string">
     <xsd:enumeration value="Disabled"/>
     <xsd:enumeration value="MenuOnly"/>
@@ -455,7 +455,7 @@
   <xsd:attribute name="HWVirtExEnabled" type="xsd:boolean"/>
   <xsd:attribute name="LogHistoryCount" type="xsd:unsignedInt" default="3"/>
   <xsd:attribute name="defaultVRDEExtPack" type="xsd:string"/>
-  <xsd:attribute name="exclusiveHwVirt" type="xsd:boolean"/>
+  <xsd:attribute name="exclusiveHwVirt" type="xsd:boolean"/> <!-- deprecated since v1.20 -->
   <xsd:attribute name="proxyMode" type="xsd:string"/>
 </xsd:complexType>
 
@@ -581,6 +581,53 @@
   <xsd:attribute name="enabled" type="xsd:boolean"/>
 </xsd:complexType>
 
+<xsd:complexType name="THardwareVirtExUseNativeApi">
+  <xsd:attribute name="enabled" type="xsd:boolean"/>
+</xsd:complexType>
+
+<xsd:complexType name="TIBPBOn">
+  <xsd:attribute name="vmexit" type="xsd:boolean"/>
+  <xsd:attribute name="vmentry" type="xsd:boolean"/>
+</xsd:complexType>
+
+<xsd:complexType name="TSpecCtrl">
+  <xsd:attribute name="enabled" type="xsd:boolean"/>
+</xsd:complexType>
+
+<xsd:complexType name="TSpecCtrlByHost">
+  <xsd:attribute name="enabled" type="xsd:boolean"/>
+</xsd:complexType>
+
+<xsd:complexType name="TL1DFlushOn">
+  <xsd:attribute name="scheduling" type="xsd:boolean"/>
+  <xsd:attribute name="vmentry" type="xsd:boolean"/>
+</xsd:complexType>
+
+<xsd:complexType name="TMDSClearOn">
+  <xsd:attribute name="scheduling" type="xsd:boolean"/>
+  <xsd:attribute name="vmentry" type="xsd:boolean"/>
+</xsd:complexType>
+
+<xsd:complexType name="TNestedHWVirt">
+  <xsd:attribute name="enabled" type="xsd:boolean"/>
+</xsd:complexType>
+
+<xsd:complexType name="THardwareVirtExVirtVmsaveVmload">
+  <xsd:attribute name="enabled" type="xsd:boolean"/>
+</xsd:complexType>
+
+<xsd:complexType name="TTripleFaultReset">
+  <xsd:attribute name="enabled" type="xsd:boolean"/>
+</xsd:complexType>
+
+<xsd:complexType name="TX2APIC">
+  <xsd:attribute name="enabled" type="xsd:boolean"/>
+</xsd:complexType>
+
+<xsd:complexType name="TAPIC">
+  <xsd:attribute name="enabled" type="xsd:boolean"/>
+</xsd:complexType>
+
 <xsd:simpleType name="TCPUCount">
   <xsd:restriction base="xsd:unsignedInt">
     <xsd:minInclusive value="1"/>
@@ -588,7 +635,7 @@
   </xsd:restriction>
 </xsd:simpleType>
 
-<xsd:complexType name="TCpuIdLeaf">
+<xsd:complexType name="TCpuIdLeafX86">
   <xsd:attribute name="id"        type="xsd:unsignedInt"       use="required"/>
   <xsd:attribute name="eax"       type="xsd:unsignedInt"       use="required"/>
   <xsd:attribute name="ebx"       type="xsd:unsignedInt"       use="required"/>
@@ -596,25 +643,56 @@
   <xsd:attribute name="edx"       type="xsd:unsignedInt"       use="required"/>
 </xsd:complexType>
 
-<xsd:complexType name="TCpuIdTree">
+<xsd:complexType name="TCpuIdTreeX86">
   <xsd:sequence>
-    <xsd:element name="CpuIdLeaf" type="TCpuIdLeaf"
+    <xsd:element name="CpuIdLeaf" type="TCpuIdLeafX86"
                  minOccurs="0" maxOccurs="unbounded"/>
   </xsd:sequence>
 </xsd:complexType>
 
-<xsd:complexType name="TCPU">
+<xsd:complexType name="TCPUX86"> <!-- Contains the "x86" sub element of the CPU element. New since v1.20. -->
   <xsd:sequence>
+    <xsd:element name="HPET" type="THPET" minOccurs="0"/>
+    <xsd:element name="HardwareVirtExLargePages" type="THardwareVirtExLargePages" minOccurs="0"/>
+    <xsd:element name="HardwareVirtForce" type="THardwareVirtForce" minOccurs="0"/>
+    <xsd:element name="HardwareVirtExUseNativeApi" type="THardwareVirtExUseNativeApi" minOccurs="0"/>
     <xsd:element name="HardwareVirtEx" type="THWVirtExType" minOccurs="0"/>
     <xsd:element name="HardwareVirtExNestedPaging" type="THWVirtExNestedPagingType" minOccurs="0"/>
     <xsd:element name="HardwareVirtExVPID" type="THWVirtExVPIDType" minOccurs="0"/>
     <xsd:element name="HardwareVirtExUX" type="THWVirtExUXType" minOccurs="0"/>
     <xsd:element name="PAE" type="TPAEType" minOccurs="0"/>
+    <xsd:element name="IBPBOn" type="TIBPBOn" minOccurs="0"/>
+    <xsd:element name="SpecCtrl" type="TSpecCtrl" minOccurs="0"/>
+    <xsd:element name="SpecCtrlByHost" type="TSpecCtrlByHost" minOccurs="0"/>
+    <xsd:element name="L1DFlushOn" type="TL1DFlushOn" minOccurs="0"/>
+    <xsd:element name="MDSClearOn" type="TMDSClearOn" minOccurs="0"/>
+    <xsd:element name="NestedHWVirt" type="TNestedHWVirt" minOccurs="0"/>
+    <xsd:element name="HardwareVirtExVirtVmsaveVmload" type="THardwareVirtExVirtVmsaveVmload" minOccurs="0"/>
     <xsd:element name="LongMode" type="TLongModeType" minOccurs="0"/>
-    <xsd:element name="HardwareVirtExLargePages" type="THardwareVirtExLargePages" minOccurs="0"/>
-    <xsd:element name="HardwareVirtForce" type="THardwareVirtForce" minOccurs="0"/>
+    <xsd:element name="TripleFaultReset" type="TTripleFaultReset" minOccurs="0"/>
+    <xsd:element name="X2APIC" type="TX2APIC" minOccurs="0"/>
+    <xsd:element name="APIC" type="TAPIC" minOccurs="0"/>
+    <xsd:element name="CpuIdTree" type="TCpuIdTreeX86" minOccurs="0">
+      <xsd:unique name="TCPUX86-CpuIdTree-CpuIdLeaf">
+        <xsd:selector xpath="vb:CpuIdLeaf"/>
+        <xsd:field xpath="@id"/>
+      </xsd:unique>
+    </xsd:element>
+  </xsd:sequence>
+</xsd:complexType>
+
+<xsd:complexType name="TCPU">
+  <xsd:sequence>
+    <xsd:element name="HardwareVirtEx" type="THWVirtExType" minOccurs="0"/> <!-- deprecated since v1.20. -->
+    <xsd:element name="HardwareVirtExNestedPaging" type="THWVirtExNestedPagingType" minOccurs="0"/> <!-- deprecated since v1.20. -->
+    <xsd:element name="HardwareVirtExVPID" type="THWVirtExVPIDType" minOccurs="0"/> <!-- deprecated since v1.20. -->
+    <xsd:element name="HardwareVirtExUX" type="THWVirtExUXType" minOccurs="0"/> <!-- deprecated since v1.20. -->
+    <xsd:element name="PAE" type="TPAEType" minOccurs="0"/> <!-- deprecated since v1.20. -->
+    <xsd:element name="LongMode" type="TLongModeType" minOccurs="0"/> <!-- deprecated since v1.20. -->
+    <xsd:element name="HardwareVirtExLargePages" type="THardwareVirtExLargePages" minOccurs="0"/> <!-- deprecated since v1.20. -->
+    <xsd:element name="HardwareVirtForce" type="THardwareVirtForce" minOccurs="0"/> <!-- deprecated since v1.20. -->
     <xsd:element name="SyntheticCpu" type="TSyntheticCpuType" minOccurs="0"/>
-    <xsd:element name="CpuIdTree" type="TCpuIdTree" minOccurs="0">
+    <xsd:element name="CpuIdTree" type="TCpuIdTreeX86" minOccurs="0"> <!-- deprecated since v1.20. -->
       <xsd:unique name="TCPU-CpuIdTree-CpuIdLeaf">
         <xsd:selector xpath="vb:CpuIdLeaf"/>
         <xsd:field xpath="@id"/>
@@ -719,7 +797,7 @@
   <xsd:attribute name="reuseSingleConnection" type="xsd:boolean" default="false"/>
 </xsd:complexType>
 
-<xsd:complexType name="TBIOS">
+<xsd:complexType name="TFirmware"> <!-- Note: Is named as element "BIOS" for settings < v1.20. -->
   <xsd:all>
     <xsd:element name="ACPI" minOccurs="0">
       <xsd:complexType>
@@ -741,7 +819,7 @@
     </xsd:element>
     <xsd:element name="BootMenu" minOccurs="0">
       <xsd:complexType>
-        <xsd:attribute name="mode" type="TBIOSBootMenuModeType" default="MessageAndMenu"/>
+        <xsd:attribute name="mode" type="TFirmwareBootMenuModeType" default="MessageAndMenu"/>
       </xsd:complexType>
     </xsd:element>
     <xsd:element name="TimeOffset" minOccurs="0">
@@ -779,6 +857,7 @@
       </xsd:complexType>
     </xsd:element>
   </xsd:all>
+  <xsd:attribute name="type" type="TFirmwareType" use="required"/> <!-- new since v1.20. -->
 </xsd:complexType>
 
 <xsd:complexType name="TStorageControllerDevice">
@@ -1280,19 +1359,15 @@
   <xsd:attribute name="PageFusion" type="xsd:boolean" default="false"/>
 </xsd:complexType>
 
-<xsd:complexType name="TFirmware">
-  <xsd:attribute name="type" use="required">
-    <xsd:simpleType>
-      <xsd:restriction base="xsd:token">
-        <xsd:enumeration value="BIOS"/>
-        <xsd:enumeration value="EFI"/>
-        <xsd:enumeration value="EFI32"/>
-        <xsd:enumeration value="EFI64"/>
-        <xsd:enumeration value="EFIDUAL"/>
-      </xsd:restriction>
-    </xsd:simpleType>
-  </xsd:attribute>
-</xsd:complexType>
+<xsd:simpleType name="TFirmwareType">
+  <xsd:restriction base="xsd:token">
+    <xsd:enumeration value="BIOS"/>
+    <xsd:enumeration value="EFI"/>
+    <xsd:enumeration value="EFI32"/>
+    <xsd:enumeration value="EFI64"/>
+    <xsd:enumeration value="EFIDUAL"/>
+  </xsd:restriction>
+</xsd:simpleType>
 
 <xsd:complexType name="THID">
   <xsd:attribute name="Pointing" default="PS2Mouse">
@@ -1331,6 +1406,19 @@
   </xsd:attribute>
 </xsd:complexType>
 
+<xsd:complexType name="TIommu"> <!-- new since v1.19. -->
+  <xsd:attribute name="type" use="required">
+    <xsd:simpleType>
+      <xsd:restriction base="xsd:token">
+        <xsd:enumeration value="None"/>
+        <xsd:enumeration value="Automatic"/>
+        <xsd:enumeration value="AMD"/>
+        <xsd:enumeration value="Intel"/>
+      </xsd:restriction>
+    </xsd:simpleType>
+  </xsd:attribute>
+</xsd:complexType>
+
 <xsd:complexType name="TParavirt">
   <xsd:attribute name="provider" use="required">
     <xsd:simpleType>
@@ -1354,14 +1442,43 @@
   <xsd:attribute name="password" type="xsd:string"/>
 </xsd:complexType>
 
+<xsd:simpleType name="TPlatformArchitecture"> <!-- new since v1.20. -->
+  <xsd:restriction base="xsd:token">
+    <xsd:enumeration value="None"/>
+    <xsd:enumeration value="x86"/>
+    <xsd:enumeration value="ARM"/>
+  </xsd:restriction>
+</xsd:simpleType>
+
+<xsd:complexType name="TPlatformProperties"> <!-- new since v1.20. -->
+  <xsd:attribute name="exclusiveHwVirt" type="xsd:boolean"/>
+</xsd:complexType>
+
+<xsd:complexType name="TPlatformX86"> <!-- new since v1.20. -->
+</xsd:complexType>
+
+<xsd:complexType name="TPlatformARM"> <!-- new since v1.20. -->
+</xsd:complexType>
+
+<xsd:complexType name="TPlatform"> <!-- new since v1.20. -->
+  <xsd:all>
+    <xsd:element name="Chipset" type="TChipset" minOccurs="0"/>
+    <xsd:element name="Iommu" type="TIommu" minOccurs="0"/>
+    <xsd:element name="RTC" type="TRTC" minOccurs="0"/>
+    <xsd:element name="CPU" type="TCPU"/>
+    <xsd:element name="x86" type="TPlatformX86" minOccurs="0"/>
+  </xsd:all>
+  <xsd:attribute name="architecture" type="TPlatformArchitecture" use="required"/>
+</xsd:complexType>
+
 <xsd:complexType name="THardware">
   <xsd:all>
-    <xsd:element name="CPU" type="TCPU" minOccurs="0"/>
+    <xsd:element name="CPU" type="TCPU" minOccurs="0"/> <!-- deprecated since v1.20. -->
     <xsd:element name="Memory" type="TMemory"/>
     <xsd:element name="Firmware" type="TFirmware" minOccurs="0"/>
     <xsd:element name="HID" type="THID" minOccurs="0"/>
-    <xsd:element name="HPET" type="THPET" minOccurs="0"/>
-    <xsd:element name="Chipset" type="TChipset" minOccurs="0"/>
+    <xsd:element name="HPET" type="THPET" minOccurs="0"/> <!-- deprecated since v1.20. -->
+    <xsd:element name="Chipset" type="TChipset" minOccurs="0"/> <!-- deprecated since v1.20. -->
     <xsd:element name="Paravirt" type="TParavirt" minOccurs="0"/>
     <xsd:element name="Boot" type="TBoot" minOccurs="0">
       <xsd:unique name="THardware-Boot-Order">
@@ -1373,7 +1490,7 @@
     <xsd:element name="VideoRecording" type="TVideoRecording" minOccurs="0"/>
     <xsd:element name="VideoCapture" type="TVideoCapture" minOccurs="0"/>
     <xsd:element name="RemoteDisplay" type="TRemoteDisplay" minOccurs="0"/>
-    <xsd:element name="BIOS" type="TBIOS" minOccurs="0"/>
+    <xsd:element name="BIOS" type="TFirmware" minOccurs="0"/> <!-- deprecated since v1.20. -->
     <xsd:element name="DVDDrive" type="TDVDDrive" minOccurs="0"/>
     <xsd:element name="FloppyDrive" type="TFloppyDrive" minOccurs="0"/>
     <xsd:element name="USBController" type="TUSBController" minOccurs="0"/>
@@ -1410,7 +1527,7 @@
       </xsd:unique>
     </xsd:element>
     <xsd:element name="AudioAdapter" type="TAudioAdapter" minOccurs="0"/>
-    <xsd:element name="RTC" type="TRTC" minOccurs="0"/>
+    <xsd:element name="RTC" type="TRTC" minOccurs="0"/> <!-- deprecated since v1.20. -->
     <xsd:element name="SharedFolders" type="TSharedFolders" minOccurs="0">
       <xsd:unique name="THardware-SharedFolders-SharedFolder">
         <xsd:selector xpath="vb:SharedFolder"/>
@@ -1450,6 +1567,7 @@
     <xsd:element name="Description" type="xsd:string" minOccurs="0"/>
     <xsd:element name="Teleporter" type="TTeleporter" minOccurs="0"/>
     <xsd:element name="Hardware" type="THardware"/>
+    <xsd:element name="Platform" type="TPlatform" minOccurs="0"/> <!-- new since v1.20. -->
     <xsd:element name="StorageControllers" type="TStorageControllers" minOccurs="0"/>
     <xsd:element name="HardDiskAttachments" type="THardDiskAttachments" minOccurs="0"/> <!-- deprecated -->
     <xsd:element name="Groups" type="TGroups" minOccurs="0"/>

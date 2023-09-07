@@ -1252,6 +1252,22 @@ HRESULT VirtualBox::getHost(ComPtr<IHost> &aHost)
     return S_OK;
 }
 
+HRESULT VirtualBox::getPlatformProperties(PlatformArchitecture_T platformArchitecture,
+                                          ComPtr<IPlatformProperties> &aPlatformProperties)
+{
+    ComObjPtr<PlatformProperties> platformProperties;
+    HRESULT hrc = platformProperties.createObject();
+    AssertComRCReturn(hrc, hrc);
+
+    hrc = platformProperties->init(this);
+    AssertComRCReturn(hrc, hrc);
+
+    hrc = platformProperties->i_setArchitecture(platformArchitecture);
+    AssertComRCReturn(hrc, hrc);
+
+    return platformProperties.queryInterfaceTo(aPlatformProperties.asOutParam());
+}
+
 HRESULT VirtualBox::getSystemProperties(ComPtr<ISystemProperties> &aSystemProperties)
 {
     /* mSystemProperties is const, no need to lock */
@@ -1599,11 +1615,15 @@ HRESULT VirtualBox::getInternalNetworks(std::vector<com::Utf8Str> &aInternalNetw
 
         if (pMachine->i_isAccessible())
         {
-            uint32_t cNetworkAdapters = Global::getMaxNetworkAdapters(pMachine->i_getChipsetType());
+            ChipsetType_T enmChipsetType;
+            HRESULT hrc = pMachine->i_getPlatform()->getChipsetType(&enmChipsetType);
+            ComAssertComRC(hrc);
+
+            uint32_t const cNetworkAdapters = PlatformProperties::s_getMaxNetworkAdapters(enmChipsetType);
             for (ULONG i = 0; i < cNetworkAdapters; i++)
             {
                 ComPtr<INetworkAdapter> pNet;
-                HRESULT hrc = pMachine->GetNetworkAdapter(i, pNet.asOutParam());
+                hrc = pMachine->GetNetworkAdapter(i, pNet.asOutParam());
                 if (FAILED(hrc) || pNet.isNull())
                     continue;
                 Bstr strInternalNetwork;
@@ -1650,11 +1670,15 @@ HRESULT VirtualBox::getGenericNetworkDrivers(std::vector<com::Utf8Str> &aGeneric
 
         if (pMachine->i_isAccessible())
         {
-            uint32_t cNetworkAdapters = Global::getMaxNetworkAdapters(pMachine->i_getChipsetType());
+            ChipsetType_T enmChipsetType;
+            HRESULT hrc = pMachine->i_getPlatform()->getChipsetType(&enmChipsetType);
+            ComAssertComRC(hrc);
+
+            uint32_t const cNetworkAdapters = PlatformProperties::s_getMaxNetworkAdapters(enmChipsetType);
             for (ULONG i = 0; i < cNetworkAdapters; i++)
             {
                 ComPtr<INetworkAdapter> pNet;
-                HRESULT hrc = pMachine->GetNetworkAdapter(i, pNet.asOutParam());
+                hrc = pMachine->GetNetworkAdapter(i, pNet.asOutParam());
                 if (FAILED(hrc) || pNet.isNull())
                     continue;
                 Bstr strGenericNetworkDriver;
@@ -2087,6 +2111,7 @@ namespace
 /** @note Locks mSystemProperties object for reading. */
 HRESULT VirtualBox::createMachine(const com::Utf8Str &aSettingsFile,
                                   const com::Utf8Str &aName,
+                                  PlatformArchitecture_T aArchitecture,
                                   const std::vector<com::Utf8Str> &aGroups,
                                   const com::Utf8Str &aOsTypeId,
                                   const com::Utf8Str &aFlags,
@@ -2096,15 +2121,15 @@ HRESULT VirtualBox::createMachine(const com::Utf8Str &aSettingsFile,
                                   ComPtr<IMachine> &aMachine)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aSettingsFile=\"%s\", aName=\"%s\", aOsTypeId =\"%s\", aCreateFlags=\"%s\"\n",
-                     aSettingsFile.c_str(), aName.c_str(), aOsTypeId.c_str(), aFlags.c_str()));
+    LogFlowThisFunc(("aSettingsFile=\"%s\", aName=\"%s\", aArchitecture=%#x, aOsTypeId =\"%s\", aCreateFlags=\"%s\"\n",
+                     aSettingsFile.c_str(), aName.c_str(), aArchitecture, aOsTypeId.c_str(), aFlags.c_str()));
 
     StringsList llGroups;
     HRESULT hrc = i_convertMachineGroups(aGroups, &llGroups);
     if (FAILED(hrc))
         return hrc;
 
-    /** @todo r=bird: Would be goot to rewrite this parsing using offset into
+    /** @todo r=bird: Would be good to rewrite this parsing using offset into
      *        aFlags and drop all the C pointers, strchr, misguided RTStrStr and
      *        tedious copying of substrings. */
     Utf8Str strCreateFlags(aFlags); /** @todo r=bird: WTF is the point of this copy? */
@@ -2184,6 +2209,7 @@ HRESULT VirtualBox::createMachine(const com::Utf8Str &aSettingsFile,
     hrc = machine->init(this,
                         strSettingsFile,
                         aName,
+                        aArchitecture,
                         llGroups,
                         aOsTypeId,
                         osType,

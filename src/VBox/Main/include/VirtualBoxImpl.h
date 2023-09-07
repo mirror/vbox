@@ -337,6 +337,7 @@ private:
     HRESULT getHomeFolder(com::Utf8Str &aHomeFolder);
     HRESULT getSettingsFilePath(com::Utf8Str &aSettingsFilePath);
     HRESULT getHost(ComPtr<IHost> &aHost);
+    HRESULT getPlatformProperties(PlatformArchitecture_T platformArchitecture, ComPtr<IPlatformProperties> &aPlatformProperties);
     HRESULT getSystemProperties(ComPtr<ISystemProperties> &aSystemProperties);
     HRESULT getMachines(std::vector<ComPtr<IMachine> > &aMachines);
     HRESULT getMachineGroups(std::vector<com::Utf8Str> &aMachineGroups);
@@ -365,6 +366,7 @@ private:
                                    com::Utf8Str &aFile);
     HRESULT createMachine(const com::Utf8Str &aSettingsFile,
                           const com::Utf8Str &aName,
+                          PlatformArchitecture_T aArchitecture,
                           const std::vector<com::Utf8Str> &aGroups,
                           const com::Utf8Str &aOsTypeId,
                           const com::Utf8Str &aFlags,

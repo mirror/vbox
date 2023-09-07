@@ -44,10 +44,12 @@
 /* COM includes: */
 #include "CAudioAdapter.h"
 #include "CAudioSettings.h"
-#include "CBIOSSettings.h"
+#include "CFirmwareSettings.h"
 #include "CGraphicsAdapter.h"
 #include "CExtPackManager.h"
 #include "CMediumFormat.h"
+#include "CPlatform.h"
+#include "CPlatformX86.h"
 #include "CStorageController.h"
 #include "CUSBController.h"
 #include "CUSBDeviceFilters.h"
@@ -156,6 +158,7 @@ bool UIWizardNewVM::createVM()
             groups << m_strMachineGroup;
         m_machine = vbox.CreateMachine(m_strMachineFilePath,
                                        m_strMachineBaseName,
+                                       KPlatformArchitecture_x86,
                                        groups, strTypeId, QString(),
                                        QString(), QString(), QString());
         if (!vbox.isOk())
@@ -165,6 +168,8 @@ bool UIWizardNewVM::createVM()
             return false;
         }
     }
+
+    CFirmwareSettings comFirmwareSettings = m_machine.GetFirmwareSettings();
 
 #if 0
     /* Configure the newly created vm here in GUI by several calls to API: */
@@ -181,10 +186,10 @@ bool UIWizardNewVM::createVM()
     comGraphics.SetVRAMSize(qMax(comGraphics.GetVRAMSize(), (ULONG)(UICommon::requiredVideoMemory(strTypeId) / _1M)));
     /* Enabled I/O APIC explicitly in we have more than 1 VCPU: */
     if (iVPUCount > 1)
-        m_machine.GetBIOSSettings().SetIOAPICEnabled(true);
+        comFirmwareSettings.SetIOAPICEnabled(true);
 
     /* Set recommended firmware type: */
-    m_machine.SetFirmwareType(m_fEFIEnabled ? KFirmwareType_EFI : KFirmwareType_BIOS);
+    comFirmwareSettings.SetFirmwareType(m_fEFIEnabled ? KFirmwareType_EFI : KFirmwareType_BIOS);
 #endif
 
     /* Register the VM prior to attaching hard disks: */
@@ -275,6 +280,11 @@ void UIWizardNewVM::deleteVirtualDisk()
 
 void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSType &comGuestType)
 {
+    /* Acquire platform stuff: */
+    CPlatform comPlatform = m_machine.GetPlatform();
+    CPlatformX86 comPlatformX86 = comPlatform.GetX86();
+    CFirmwareSettings comFirmwareSettings = m_machine.GetFirmwareSettings();
+
     /* Get graphics adapter: */
     CGraphicsAdapter comGraphics = m_machine.GetGraphicsAdapter();
 
@@ -287,7 +297,7 @@ void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
 
     /* Enabled I/O APIC explicitly in we have more than 1 VCPU: */
     if (iVPUCount > 1)
-        m_machine.GetBIOSSettings().SetIOAPICEnabled(true);
+        comFirmwareSettings.SetIOAPICEnabled(true);
 
     /* Graphics Controller type: */
     comGraphics.SetGraphicsControllerType(comGuestType.GetRecommendedGraphicsController());
@@ -296,7 +306,7 @@ void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
     comGraphics.SetVRAMSize(qMax(comGuestType.GetRecommendedVRAM(), (ULONG)(UICommon::requiredVideoMemory(strGuestTypeId) / _1M)));
 
     /* Selecting recommended chipset type: */
-    m_machine.SetChipsetType(comGuestType.GetRecommendedChipset());
+    comPlatform.SetChipsetType(comGuestType.GetRecommendedChipset());
 
     /* Selecting recommended Audio Controller: */
     CAudioSettings const comAudioSettings = m_machine.GetAudioSettings();
@@ -372,13 +382,13 @@ void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
         dvdCtr.SetPortCount(1);
 
     /* Turn on PAE, if recommended: */
-    m_machine.SetCPUProperty(KCPUPropertyType_PAE, comGuestType.GetRecommendedPAE());
+    comPlatformX86.SetCPUProperty(KCPUPropertyTypeX86_PAE, comGuestType.GetRecommendedPAE());
 
     /* Set the recommended triple fault behavior: */
-    m_machine.SetCPUProperty(KCPUPropertyType_TripleFaultReset, comGuestType.GetRecommendedTFReset());
+    comPlatformX86.SetCPUProperty(KCPUPropertyTypeX86_TripleFaultReset, comGuestType.GetRecommendedTFReset());
 
     /* Set recommended firmware type: */
-    m_machine.SetFirmwareType(m_fEFIEnabled ? KFirmwareType_EFI : KFirmwareType_BIOS);
+    comFirmwareSettings.SetFirmwareType(m_fEFIEnabled ? KFirmwareType_EFI : KFirmwareType_BIOS);
 
     /* Set recommended human interface device types: */
     if (comGuestType.GetRecommendedUSBHID())
@@ -397,10 +407,10 @@ void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
     }
 
     /* Set HPET flag: */
-    m_machine.SetHPETEnabled(comGuestType.GetRecommendedHPET());
+    comPlatformX86.SetHPETEnabled(comGuestType.GetRecommendedHPET());
 
     /* Set UTC flags: */
-    m_machine.SetRTCUseUTC(comGuestType.GetRecommendedRTCUseUTC());
+    comPlatform.SetRTCUseUTC(comGuestType.GetRecommendedRTCUseUTC());
 
     /* Set graphic bits: */
     if (comGuestType.GetRecommended2DVideoAcceleration())

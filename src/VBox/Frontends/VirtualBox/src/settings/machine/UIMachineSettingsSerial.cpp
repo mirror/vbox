@@ -44,6 +44,7 @@
 #include "UITranslator.h"
 
 /* COM includes: */
+#include "CPlatformProperties.h"
 #include "CSerialPort.h"
 
 
@@ -799,7 +800,7 @@ void UIMachineSettingsSerialPage::loadToCacheFrom(QVariant &data)
             oldPortData.m_iSlot = iSlot;
             oldPortData.m_fPortEnabled = comPort.GetEnabled();
             oldPortData.m_uIRQ = comPort.GetIRQ();
-            oldPortData.m_uIOBase = comPort.GetIOBase();
+            oldPortData.m_uIOBase = comPort.GetIOAddress();
             oldPortData.m_hostMode = comPort.GetHostMode();
             oldPortData.m_fServer = comPort.GetServer();
             oldPortData.m_strPath = comPort.GetPath();
@@ -972,7 +973,7 @@ void UIMachineSettingsSerialPage::prepare()
         if (m_pTabWidget)
         {
             /* How many ports to display: */
-            const ulong uCount = uiCommon().virtualBox().GetSystemProperties().GetSerialPortCount();
+            const ulong uCount = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86).GetSerialPortCount();
 
             /* Create corresponding port tabs: */
             for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
@@ -1114,7 +1115,7 @@ bool UIMachineSettingsSerialPage::savePortData(int iSlot)
             /* Save port IO base: */
             if (fSuccess && isMachineOffline() && newPortData.m_uIOBase != oldPortData.m_uIOBase)
             {
-                comPort.SetIOBase(newPortData.m_uIOBase);
+                comPort.SetIOAddress(newPortData.m_uIOBase);
                 fSuccess = comPort.isOk();
             }
             /* Save whether the port is server: */

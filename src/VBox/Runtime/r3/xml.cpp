@@ -64,6 +64,17 @@
 
 
 /*********************************************************************************************************************************
+*   Strict / debug helpers                                                                                                       *
+*********************************************************************************************************************************/
+#ifdef DEBUG_andy
+/** Enable the following to get strict assertions if the XML got some invalid values for attributes. */
+# define VBOX_XML_STRICT_ASSERT_FAILED { AssertMsgFailed(("Invalid value '%s' for %s/@%s\n", pcsz, m_pcszName, pcszMatch)); }
+#else
+# define VBOX_XML_STRICT_ASSERT_FAILED void(0)
+#endif
+
+
+/*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /**
@@ -1102,6 +1113,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, int32_t *piValue, con
         int rc = RTStrToInt32Ex(pcsz, NULL, 0, piValue);
         if (rc == VINF_SUCCESS)
             return true;
+        VBOX_XML_STRICT_ASSERT_FAILED;
     }
     return false;
 }
@@ -1123,6 +1135,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, uint32_t *puValue, co
         int rc = RTStrToUInt32Ex(pcsz, NULL, 0, puValue);
         if (rc == VINF_SUCCESS)
             return true;
+       VBOX_XML_STRICT_ASSERT_FAILED;
     }
     return false;
 }
@@ -1144,6 +1157,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, int64_t *piValue, con
         int rc = RTStrToInt64Ex(pcsz, NULL, 0, piValue);
         if (rc == VINF_SUCCESS)
             return true;
+        VBOX_XML_STRICT_ASSERT_FAILED;
     }
     return false;
 }
@@ -1165,6 +1179,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, uint64_t *puValue, co
         int rc = RTStrToUInt64Ex(pcsz, NULL, 0, puValue);
         if (rc == VINF_SUCCESS)
             return true;
+        VBOX_XML_STRICT_ASSERT_FAILED;
     }
     return false;
 }
@@ -1200,8 +1215,8 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, bool *pfValue, const 
             *pfValue = false;
             return true;
         }
+        VBOX_XML_STRICT_ASSERT_FAILED;
     }
-
     return false;
 }
 

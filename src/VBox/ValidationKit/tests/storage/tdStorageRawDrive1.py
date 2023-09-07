@@ -861,10 +861,10 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
         fRc = True;
         oSession = oTestDrv.openSession(oVM);
         if oSession is not None:
-            fRc = fRc and oSession.enableVirtEx(True);
+            fRc = fRc and oSession.enableVirtExX86(True);
             # nested paging doesn't need for the test
-            #fRc = fRc and oSession.enableNestedPaging(True);
-            #fRc = fRc and oSession.enableNestedHwVirt(True);
+            #fRc = fRc and oSession.enableNestedPagingX86(True);
+            #fRc = fRc and oSession.enableNestedHwVirtX86(True);
             # disable 3D until the error is fixed.
             fRc = fRc and oSession.setAccelerate3DEnabled(False);
             fRc = fRc and oSession.setVRamSize(256);

@@ -2,7 +2,7 @@
 
 /** @file
  *
- * VirtualBox COM class implementation - Machine BIOS settings.
+ * VirtualBox COM class implementation - Machine firmware settings.
  */
 
 /*
@@ -27,49 +27,52 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef MAIN_INCLUDED_BIOSSettingsImpl_h
-#define MAIN_INCLUDED_BIOSSettingsImpl_h
+#ifndef MAIN_INCLUDED_FirmwareSettingsImpl_h
+#define MAIN_INCLUDED_FirmwareSettingsImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
-#include "BIOSSettingsWrap.h"
+#include "FirmwareSettingsWrap.h"
 
 class GuestOSType;
 
 namespace settings
 {
-    struct BIOSSettings;
+    struct FirmwareSettings;
 }
 
-class ATL_NO_VTABLE BIOSSettings :
-    public BIOSSettingsWrap
+class ATL_NO_VTABLE FirmwareSettings :
+    public FirmwareSettingsWrap
 {
 public:
 
-    DECLARE_COMMON_CLASS_METHODS(BIOSSettings)
+    DECLARE_COMMON_CLASS_METHODS(FirmwareSettings)
 
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init(Machine *parent);
-    HRESULT init(Machine *parent, BIOSSettings *that);
-    HRESULT initCopy(Machine *parent, BIOSSettings *that);
+    HRESULT init(Machine *parent, FirmwareSettings *that);
+    HRESULT initCopy(Machine *parent, FirmwareSettings *that);
     void uninit();
 
     // public methods for internal purposes only
-    HRESULT i_loadSettings(const settings::BIOSSettings &data);
-    HRESULT i_saveSettings(settings::BIOSSettings &data);
+    HRESULT i_loadSettings(const settings::FirmwareSettings &data);
+    HRESULT i_saveSettings(settings::FirmwareSettings &data);
+    FirmwareType_T i_getFirmwareType() const;
 
     void i_rollback();
     void i_commit();
-    void i_copyFrom(BIOSSettings *aThat);
+    void i_copyFrom(FirmwareSettings *aThat);
     void i_applyDefaults(GuestOSType *aOsType);
 
 private:
 
-    // wrapped IBIOSettings properties
+    // wrapped IFirmwareSettings properties
+    HRESULT getFirmwareType(FirmwareType_T *aType);
+    HRESULT setFirmwareType(FirmwareType_T aType);
     HRESULT getLogoFadeIn(BOOL *enabled);
     HRESULT setLogoFadeIn(BOOL enable);
     HRESULT getLogoFadeOut(BOOL *enabled);
@@ -78,8 +81,8 @@ private:
     HRESULT setLogoDisplayTime(ULONG displayTime);
     HRESULT getLogoImagePath(com::Utf8Str &imagePath);
     HRESULT setLogoImagePath(const com::Utf8Str &imagePath);
-    HRESULT getBootMenuMode(BIOSBootMenuMode_T *bootMenuMode);
-    HRESULT setBootMenuMode(BIOSBootMenuMode_T bootMenuMode);
+    HRESULT getBootMenuMode(FirmwareBootMenuMode_T *bootMenuMode);
+    HRESULT setBootMenuMode(FirmwareBootMenuMode_T bootMenuMode);
     HRESULT getACPIEnabled(BOOL *enabled);
     HRESULT setACPIEnabled(BOOL enable);
     HRESULT getIOAPICEnabled(BOOL *aIOAPICEnabled);
@@ -96,7 +99,5 @@ private:
     struct Data;
     Data *m;
 };
+#endif /* !MAIN_INCLUDED_FirmwareSettingsImpl_h */
 
-#endif /* !MAIN_INCLUDED_BIOSSettingsImpl_h */
-
-/* vi: set tabstop=4 shiftwidth=4 expandtab: */

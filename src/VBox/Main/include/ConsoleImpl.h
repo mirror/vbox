@@ -738,7 +738,7 @@ private:
                                    BusAssignmentManager *pBusMgr,
                                    const ComPtr<IMachine> &ptrMachine,
                                    const ComPtr<IGraphicsAdapter> &ptrGraphicsAdapter,
-                                   const ComPtr<IBIOSSettings> &ptrBiosSettings,
+                                   const ComPtr<IFirmwareSettings> &ptrFirmwareSettings,
                                    bool fHMEnabled);
     int i_checkMediumLocation(IMedium *pMedium, bool *pfUseHostIOCache);
     int i_unmountMediumFromGuest(PUVM pUVM, PCVMMR3VTABLE pVMM, StorageBus_T enmBus, DeviceType_T enmDevType,

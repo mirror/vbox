@@ -53,6 +53,7 @@
 # include "GuestImpl.h"
 # include "GuestDnDPrivate.h"
 #endif
+#include "PlatformImpl.h"
 #include "VMMDev.h"
 #include "Global.h"
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
@@ -513,8 +514,8 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
     ComPtr<ISystemProperties> systemProperties;
     hrc = virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());           H();
 
-    ComPtr<IBIOSSettings> biosSettings;
-    hrc = pMachine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());                     H();
+    ComPtr<IFirmwareSettings> firmwareSettings;
+    hrc = pMachine->COMGETTER(FirmwareSettings)(firmwareSettings.asOutParam());             H();
 
     ComPtr<INvramStore> nvramStore;
     hrc = pMachine->COMGETTER(NonVolatileStore)(nvramStore.asOutParam());                   H();
@@ -543,10 +544,13 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
 
     BOOL fIOAPIC;
     uint32_t uIoApicPciAddress = NIL_PCIBDF;
-    hrc = biosSettings->COMGETTER(IOAPICEnabled)(&fIOAPIC);                                 H();
+    hrc = firmwareSettings->COMGETTER(IOAPICEnabled)(&fIOAPIC);                             H();
+
+    ComPtr<IPlatform> platform;
+    pMachine->COMGETTER(Platform)(platform.asOutParam());                                   H();
 
     ChipsetType_T chipsetType;
-    hrc = pMachine->COMGETTER(ChipsetType)(&chipsetType);                                   H();
+    hrc = platform->COMGETTER(ChipsetType)(&chipsetType);                                   H();
     if (chipsetType == ChipsetType_ICH9)
     {
         /* We'd better have 0x10000000 region, to cover 256 buses but this put
@@ -562,16 +566,20 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
     Bstr bstrCpuProfile;
     hrc = pMachine->COMGETTER(CPUProfile)(bstrCpuProfile.asOutParam());                     H();
 
+    /* Get the X86 platform object. */
+    ComPtr<IPlatformX86> platformX86;
+    hrc = platform->COMGETTER(X86)(platformX86.asOutParam());                               H();
+
     /* Check if long mode is enabled. */
     BOOL fIsGuest64Bit;
-    hrc = pMachine->GetCPUProperty(CPUPropertyType_LongMode, &fIsGuest64Bit);               H();
+    hrc = platformX86->GetCPUProperty(CPUPropertyTypeX86_LongMode, &fIsGuest64Bit);         H();
 
     /*
      * Figure out the IOMMU config.
      */
 #if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
     IommuType_T enmIommuType;
-    hrc = pMachine->COMGETTER(IommuType)(&enmIommuType);                                    H();
+    hrc = platform->COMGETTER(IommuType)(&enmIommuType);                                    H();
 
     /* Resolve 'automatic' type to an Intel or AMD IOMMU based on the host CPU. */
     if (enmIommuType == IommuType_Automatic)
@@ -663,7 +671,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
     LogRel(("Guest OS type: '%s'\n", Utf8Str(osTypeId).c_str()));
 
     APICMode_T apicMode;
-    hrc = biosSettings->COMGETTER(APICMode)(&apicMode);                                     H();
+    hrc = firmwareSettings->COMGETTER(APICMode)(&apicMode);                                 H();
     uint32_t uFwAPIC;
     switch (apicMode)
     {
@@ -701,8 +709,11 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
         fDosGuest = osTypeId.startsWith("DOS") || osTypeId.startsWith("Windows31");
     }
 
+    ComPtr<IPlatformProperties> platformProperties;
+    virtualBox->GetPlatformProperties(PlatformArchitecture_x86, platformProperties.asOutParam());
+
     ULONG maxNetworkAdapters;
-    hrc = systemProperties->GetMaxNetworkAdapters(chipsetType, &maxNetworkAdapters);        H();
+    hrc = platformProperties->GetMaxNetworkAdapters(chipsetType, &maxNetworkAdapters);      H();
 
     /*
      * Get root node first.
@@ -744,7 +755,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
 
         /* Triple fault behavior. */
         BOOL fTripleFaultReset = false;
-        hrc = pMachine->GetCPUProperty(CPUPropertyType_TripleFaultReset, &fTripleFaultReset); H();
+        hrc = platformX86->GetCPUProperty(CPUPropertyTypeX86_TripleFaultReset, &fTripleFaultReset); H();
         InsertConfigInteger(pEM, "TripleFaultReset", fTripleFaultReset);
 
         /*
@@ -759,7 +770,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
         for (uint32_t iOrdinal = 0; iOrdinal < _4K; iOrdinal++)
         {
             ULONG uLeaf, uSubLeaf, uEax, uEbx, uEcx, uEdx;
-            hrc = pMachine->GetCPUIDLeafByOrdinal(iOrdinal, &uLeaf, &uSubLeaf, &uEax, &uEbx, &uEcx, &uEdx);
+            hrc = platformX86->GetCPUIDLeafByOrdinal(iOrdinal, &uLeaf, &uSubLeaf, &uEax, &uEbx, &uEcx, &uEdx);
             if (hrc == E_INVALIDARG)
                 break;
             H();
@@ -820,7 +831,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
 
         /* Physical Address Extension (PAE) */
         BOOL fEnablePAE = false;
-        hrc = pMachine->GetCPUProperty(CPUPropertyType_PAE, &fEnablePAE);                   H();
+        hrc = platformX86->GetCPUProperty(CPUPropertyTypeX86_PAE, &fEnablePAE);             H();
         fEnablePAE |= fIsGuest64Bit;
         InsertConfigInteger(pRoot, "EnablePAE", fEnablePAE);
 
@@ -830,8 +841,8 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
         /* APIC/X2APIC configuration */
         BOOL fEnableAPIC = true;
         BOOL fEnableX2APIC = true;
-        hrc = pMachine->GetCPUProperty(CPUPropertyType_APIC, &fEnableAPIC);                 H();
-        hrc = pMachine->GetCPUProperty(CPUPropertyType_X2APIC, &fEnableX2APIC);             H();
+        hrc = platformX86->GetCPUProperty(CPUPropertyTypeX86_APIC, &fEnableAPIC);           H();
+        hrc = platformX86->GetCPUProperty(CPUPropertyTypeX86_X2APIC, &fEnableX2APIC);       H();
         if (fEnableX2APIC)
             Assert(fEnableAPIC);
 
@@ -876,12 +887,12 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
 
         /* Speculation Control. */
         BOOL fSpecCtrl = FALSE;
-        hrc = pMachine->GetCPUProperty(CPUPropertyType_SpecCtrl, &fSpecCtrl);      H();
+        hrc = platformX86->GetCPUProperty(CPUPropertyTypeX86_SpecCtrl, &fSpecCtrl);   H();
         InsertConfigInteger(pCPUM, "SpecCtrl", fSpecCtrl);
 
         /* Nested VT-x / AMD-V. */
         BOOL fNestedHWVirt = FALSE;
-        hrc = pMachine->GetCPUProperty(CPUPropertyType_HWVirt, &fNestedHWVirt);      H();
+        hrc = platformX86->GetCPUProperty(CPUPropertyTypeX86_HWVirt, &fNestedHWVirt); H();
         InsertConfigInteger(pCPUM, "NestedHWVirt", fNestedHWVirt ? true : false);
 
         /*
@@ -902,7 +913,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
         }
 
         BOOL fHMEnabled;
-        hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_Enabled, &fHMEnabled);     H();
+        hrc = platformX86->GetHWVirtExProperty(HWVirtExPropertyType_Enabled, &fHMEnabled);      H();
         if (cCpus > 1 && !fHMEnabled)
         {
             LogRel(("Forced fHMEnabled to TRUE by SMP guest.\n"));
@@ -914,7 +925,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
         LogRel(("fHMForced=true - No raw-mode support in this build!\n"));
         if (!fHMForced) /* No need to query if already forced above. */
         {
-            hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_Force, &fHMForced); H();
+            hrc = platformX86->GetHWVirtExProperty(HWVirtExPropertyType_Force, &fHMForced);     H();
             if (fHMForced)
                 LogRel(("fHMForced=true - HWVirtExPropertyType_Force\n"));
         }
@@ -946,27 +957,27 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
 
         /* HWVirtEx exclusive mode */
         BOOL fHMExclusive = true;
-        hrc = systemProperties->COMGETTER(ExclusiveHwVirt)(&fHMExclusive);                  H();
+        hrc = platformProperties->COMGETTER(ExclusiveHwVirt)(&fHMExclusive);                  H();
         InsertConfigInteger(pHM, "Exclusive", fHMExclusive);
 
         /* Nested paging (VT-x/AMD-V) */
         BOOL fEnableNestedPaging = false;
-        hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, &fEnableNestedPaging); H();
+        hrc = platformX86->GetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, &fEnableNestedPaging); H();
         InsertConfigInteger(pHM, "EnableNestedPaging", fEnableNestedPaging);
 
         /* Large pages; requires nested paging */
         BOOL fEnableLargePages = false;
-        hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_LargePages, &fEnableLargePages); H();
+        hrc = platformX86->GetHWVirtExProperty(HWVirtExPropertyType_LargePages, &fEnableLargePages); H();
         InsertConfigInteger(pHM, "EnableLargePages", fEnableLargePages);
 
         /* VPID (VT-x) */
         BOOL fEnableVPID = false;
-        hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_VPID, &fEnableVPID);       H();
+        hrc = platformX86->GetHWVirtExProperty(HWVirtExPropertyType_VPID, &fEnableVPID);       H();
         InsertConfigInteger(pHM, "EnableVPID", fEnableVPID);
 
         /* Unrestricted execution aka UX (VT-x) */
         BOOL fEnableUX = false;
-        hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_UnrestrictedExecution, &fEnableUX); H();
+        hrc = platformX86->GetHWVirtExProperty(HWVirtExPropertyType_UnrestrictedExecution, &fEnableUX); H();
         InsertConfigInteger(pHM, "EnableUX", fEnableUX);
 
         /* Virtualized VMSAVE/VMLOAD (AMD-V) */
@@ -976,31 +987,31 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
 
         /* Indirect branch prediction boundraries. */
         BOOL fIBPBOnVMExit = false;
-        hrc = pMachine->GetCPUProperty(CPUPropertyType_IBPBOnVMExit, &fIBPBOnVMExit); H();
+        hrc = platformX86->GetCPUProperty(CPUPropertyTypeX86_IBPBOnVMExit, &fIBPBOnVMExit); H();
         InsertConfigInteger(pHM, "IBPBOnVMExit", fIBPBOnVMExit);
 
         BOOL fIBPBOnVMEntry = false;
-        hrc = pMachine->GetCPUProperty(CPUPropertyType_IBPBOnVMEntry, &fIBPBOnVMEntry); H();
+        hrc = platformX86->GetCPUProperty(CPUPropertyTypeX86_IBPBOnVMEntry, &fIBPBOnVMEntry); H();
         InsertConfigInteger(pHM, "IBPBOnVMEntry", fIBPBOnVMEntry);
 
         BOOL fSpecCtrlByHost = false;
-        hrc = pMachine->GetCPUProperty(CPUPropertyType_SpecCtrlByHost, &fSpecCtrlByHost); H();
+        hrc = platformX86->GetCPUProperty(CPUPropertyTypeX86_SpecCtrlByHost, &fSpecCtrlByHost); H();
         InsertConfigInteger(pHM, "SpecCtrlByHost", fSpecCtrlByHost);
 
         BOOL fL1DFlushOnSched = true;
-        hrc = pMachine->GetCPUProperty(CPUPropertyType_L1DFlushOnEMTScheduling, &fL1DFlushOnSched); H();
+        hrc = platformX86->GetCPUProperty(CPUPropertyTypeX86_L1DFlushOnEMTScheduling, &fL1DFlushOnSched); H();
         InsertConfigInteger(pHM, "L1DFlushOnSched", fL1DFlushOnSched);
 
         BOOL fL1DFlushOnVMEntry = false;
-        hrc = pMachine->GetCPUProperty(CPUPropertyType_L1DFlushOnVMEntry, &fL1DFlushOnVMEntry); H();
+        hrc = platformX86->GetCPUProperty(CPUPropertyTypeX86_L1DFlushOnVMEntry, &fL1DFlushOnVMEntry); H();
         InsertConfigInteger(pHM, "L1DFlushOnVMEntry", fL1DFlushOnVMEntry);
 
         BOOL fMDSClearOnSched = true;
-        hrc = pMachine->GetCPUProperty(CPUPropertyType_MDSClearOnEMTScheduling, &fMDSClearOnSched); H();
+        hrc = platformX86->GetCPUProperty(CPUPropertyTypeX86_MDSClearOnEMTScheduling, &fMDSClearOnSched); H();
         InsertConfigInteger(pHM, "MDSClearOnSched", fMDSClearOnSched);
 
         BOOL fMDSClearOnVMEntry = false;
-        hrc = pMachine->GetCPUProperty(CPUPropertyType_MDSClearOnVMEntry, &fMDSClearOnVMEntry); H();
+        hrc = platformX86->GetCPUProperty(CPUPropertyTypeX86_MDSClearOnVMEntry, &fMDSClearOnVMEntry); H();
         InsertConfigInteger(pHM, "MDSClearOnVMEntry", fMDSClearOnVMEntry);
 
         /* Reset overwrite. */
@@ -1011,7 +1022,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
 
         /* Use NEM rather than HM. */
         BOOL fUseNativeApi = false;
-        hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_UseNativeApi, &fUseNativeApi); H();
+        hrc = platformX86->GetHWVirtExProperty(HWVirtExPropertyType_UseNativeApi, &fUseNativeApi); H();
         InsertConfigInteger(pHM, "UseNEMInstead", fUseNativeApi);
 
         /* Enable workaround for missing TLB flush for OS/2 guests, see ticketref:20625. */
@@ -1284,7 +1295,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
          * The time offset
          */
         LONG64 timeOffset;
-        hrc = biosSettings->COMGETTER(TimeOffset)(&timeOffset);                             H();
+        hrc = firmwareSettings->COMGETTER(TimeOffset)(&timeOffset);                             H();
         PCFGMNODE pTMNode;
         InsertConfigNode(pRoot, "TM", &pTMNode);
         InsertConfigInteger(pTMNode, "UTCOffset", timeOffset * 1000000);
@@ -1385,7 +1396,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
          */
         BOOL fHPETEnabled;
         /* Other guests may wish to use HPET too, but MacOS X not functional without it */
-        hrc = pMachine->COMGETTER(HPETEnabled)(&fHPETEnabled);                              H();
+        hrc = platformX86->COMGETTER(HPETEnabled)(&fHPETEnabled);                              H();
         /* so always enable HPET in extended profile */
         fHPETEnabled |= fOsXGuest;
         /* HPET is always present on ICH9 */
@@ -1537,7 +1548,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
         InsertConfigNode(pDev,     "0", &pInst);
         InsertConfigNode(pInst,    "Config", &pCfg);
         BOOL fRTCUseUTC;
-        hrc = pMachine->COMGETTER(RTCUseUTC)(&fRTCUseUTC);                                  H();
+        hrc = platform->COMGETTER(RTCUseUTC)(&fRTCUseUTC);                                   H();
         InsertConfigInteger(pCfg,  "UseUTC", fRTCUseUTC ? 1 : 0);
 
         /*
@@ -1559,7 +1570,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
             case GraphicsControllerType_VBoxSVGA:
 #endif
             case GraphicsControllerType_VBoxVGA:
-                vrc = i_configGraphicsController(pDevices, enmGraphicsController, pBusMgr, pMachine, pGraphicsAdapter, biosSettings,
+                vrc = i_configGraphicsController(pDevices, enmGraphicsController, pBusMgr, pMachine, pGraphicsAdapter, firmwareSettings,
                                                  RT_BOOL(fHMEnabled));
                 if (FAILED(vrc))
                     return vrc;
@@ -1574,7 +1585,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
          * Firmware.
          */
         FirmwareType_T eFwType =  FirmwareType_BIOS;
-        hrc = pMachine->COMGETTER(FirmwareType)(&eFwType);                                  H();
+        hrc = firmwareSettings->COMGETTER(FirmwareType)(&eFwType);                          H();
 
 #ifdef VBOX_WITH_EFI
         BOOL fEfiEnabled = (eFwType >= FirmwareType_EFI) && (eFwType <= FirmwareType_EFIDUAL);
@@ -1596,11 +1607,11 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
             InsertConfigInteger(pBiosCfg,  "IOAPIC",               fIOAPIC);
             InsertConfigInteger(pBiosCfg,  "APIC",                 uFwAPIC);
             BOOL fPXEDebug;
-            hrc = biosSettings->COMGETTER(PXEDebugEnabled)(&fPXEDebug);                     H();
+            hrc = firmwareSettings->COMGETTER(PXEDebugEnabled)(&fPXEDebug);                     H();
             InsertConfigInteger(pBiosCfg,  "PXEDebug",             fPXEDebug);
             InsertConfigBytes(pBiosCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid));
             BOOL fUuidLe;
-            hrc = biosSettings->COMGETTER(SMBIOSUuidLittleEndian)(&fUuidLe);                H();
+            hrc = firmwareSettings->COMGETTER(SMBIOSUuidLittleEndian)(&fUuidLe);                H();
             InsertConfigInteger(pBiosCfg,  "UuidLe",               fUuidLe);
             InsertConfigNode(pBiosCfg,     "NetBoot", &pNetBootCfg);
             InsertConfigInteger(pBiosCfg,  "McfgBase",   uMcfgBase);
@@ -1679,7 +1690,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
             Utf8Str strNvram = mptrNvramStore->i_getNonVolatileStorageFile();
 
             BOOL fUuidLe;
-            hrc = biosSettings->COMGETTER(SMBIOSUuidLittleEndian)(&fUuidLe);                H();
+            hrc = firmwareSettings->COMGETTER(SMBIOSUuidLittleEndian)(&fUuidLe);                H();
 
             /* Get graphics mode settings */
             uint32_t u32GraphicsMode = UINT32_MAX;
@@ -2605,8 +2616,8 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
             auSerialIrq[ulInstance] = (uint8_t)ulIRQ;
 
             ULONG ulIOBase;
-            hrc = serialPort->COMGETTER(IOBase)(&ulIOBase);                                 H();
-            InsertConfigInteger(pCfg, "IOBase", ulIOBase);
+            hrc = serialPort->COMGETTER(IOAddress)(&ulIOBase);                              H();
+            InsertConfigInteger(pCfg, "IOAddress", ulIOBase);
             auSerialIoPortBase[ulInstance] = (uint16_t)ulIOBase;
 
             BOOL  fServer;
@@ -3235,7 +3246,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
          * ACPI
          */
         BOOL fACPI;
-        hrc = biosSettings->COMGETTER(ACPIEnabled)(&fACPI);                                 H();
+        hrc = firmwareSettings->COMGETTER(ACPIEnabled)(&fACPI);                                 H();
         if (fACPI)
         {
             /* Always show the CPU leafs when we have multiple VCPUs or when the IO-APIC is enabled.
@@ -3596,7 +3607,7 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
                                         BusAssignmentManager *pBusMgr,
                                         const ComPtr<IMachine> &ptrMachine,
                                         const ComPtr<IGraphicsAdapter> &ptrGraphicsAdapter,
-                                        const ComPtr<IBIOSSettings> &ptrBiosSettings,
+                                        const ComPtr<IFirmwareSettings> &ptrFirmwareSettings,
                                         bool fHMEnabled)
 {
     // InsertConfig* throws
@@ -3686,28 +3697,28 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
          * BIOS logo
          */
         BOOL fFadeIn;
-        hrc = ptrBiosSettings->COMGETTER(LogoFadeIn)(&fFadeIn);                             H();
+        hrc = ptrFirmwareSettings->COMGETTER(LogoFadeIn)(&fFadeIn);                             H();
         InsertConfigInteger(pCfg,  "FadeIn",  fFadeIn ? 1 : 0);
         BOOL fFadeOut;
-        hrc = ptrBiosSettings->COMGETTER(LogoFadeOut)(&fFadeOut);                           H();
+        hrc = ptrFirmwareSettings->COMGETTER(LogoFadeOut)(&fFadeOut);                           H();
         InsertConfigInteger(pCfg,  "FadeOut", fFadeOut ? 1: 0);
         ULONG logoDisplayTime;
-        hrc = ptrBiosSettings->COMGETTER(LogoDisplayTime)(&logoDisplayTime);                H();
+        hrc = ptrFirmwareSettings->COMGETTER(LogoDisplayTime)(&logoDisplayTime);                H();
         InsertConfigInteger(pCfg,  "LogoTime", logoDisplayTime);
         Bstr bstrLogoImagePath;
-        hrc = ptrBiosSettings->COMGETTER(LogoImagePath)(bstrLogoImagePath.asOutParam());    H();
+        hrc = ptrFirmwareSettings->COMGETTER(LogoImagePath)(bstrLogoImagePath.asOutParam());    H();
         InsertConfigString(pCfg,   "LogoFile", bstrLogoImagePath);
 
         /*
          * Boot menu
          */
-        BIOSBootMenuMode_T eBootMenuMode;
+        FirmwareBootMenuMode_T enmBootMenuMode;
         int iShowBootMenu;
-        hrc = ptrBiosSettings->COMGETTER(BootMenuMode)(&eBootMenuMode);                     H();
-        switch (eBootMenuMode)
+        hrc = ptrFirmwareSettings->COMGETTER(BootMenuMode)(&enmBootMenuMode);                     H();
+        switch (enmBootMenuMode)
         {
-            case BIOSBootMenuMode_Disabled: iShowBootMenu = 0;  break;
-            case BIOSBootMenuMode_MenuOnly: iShowBootMenu = 1;  break;
+            case FirmwareBootMenuMode_Disabled: iShowBootMenu = 0;  break;
+            case FirmwareBootMenuMode_MenuOnly: iShowBootMenu = 1;  break;
             default:                        iShowBootMenu = 2;  break;
         }
         InsertConfigInteger(pCfg, "ShowBootMenu", iShowBootMenu);

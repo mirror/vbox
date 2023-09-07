@@ -429,7 +429,9 @@ SettingsVersion_T ConfigFileBase::parseVersion(const Utf8Str &strVersion, const 
                 sv = SettingsVersion_v1_18;
             else if (uMinor == 19)
                 sv = SettingsVersion_v1_19;
-            else if (uMinor > 19)
+            else if (uMinor == 20)
+                sv = SettingsVersion_v1_20;
+            else if (uMinor > 20)
                 sv = SettingsVersion_Future;
         }
         else if (uMajor > 1)
@@ -1071,6 +1073,10 @@ void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
             pcszVersion = "1.19";
             break;
 
+        case SettingsVersion_v1_20:
+            pcszVersion = "1.20";
+            break;
+
         default:
             // catch human error: the assertion below will trigger in debug
             // or dbgopt builds, so hopefully this will get noticed sooner in
@@ -1093,8 +1099,8 @@ void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
                 // for "forgotten settings" this may not be the best choice,
                 // but as it's an omission of someone who changed this file
                 // it's the only generic possibility.
-                pcszVersion = "1.19";
-                m->sv = SettingsVersion_v1_19;
+                pcszVersion = "1.20";
+                m->sv = SettingsVersion_v1_20;
             }
             break;
     }
@@ -1647,17 +1653,21 @@ bool NATHostLoopbackOffset::operator==(const NATHostLoopbackOffset &o) const
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+PlatformProperties::PlatformProperties()
+    : fExclusiveHwVirt(true)
+{
+#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS)
+    fExclusiveHwVirt = false; /** BUGBUG Does this apply to MacOS on ARM as well? */
+#endif
+}
+
 /**
  * Constructor. Needs to set sane defaults which stand the test of time.
  */
 SystemProperties::SystemProperties()
     : uProxyMode(ProxyMode_System)
     , uLogHistoryCount(3)
-    , fExclusiveHwVirt(true)
 {
-#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS)
-    fExclusiveHwVirt = false;
-#endif
 }
 
 #ifdef VBOX_WITH_UPDATE_AGENT
@@ -2351,11 +2361,18 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                         pelmGlobalChild->getAttributeValue("LogHistoryCount", systemProperties.uLogHistoryCount);
                         pelmGlobalChild->getAttributeValue("autostartDatabasePath", systemProperties.strAutostartDatabasePath);
                         pelmGlobalChild->getAttributeValue("defaultFrontend", systemProperties.strDefaultFrontend);
-                        pelmGlobalChild->getAttributeValue("exclusiveHwVirt", systemProperties.fExclusiveHwVirt);
+                        if (m->sv < SettingsVersion_v1_20) /* exclusiveHwVirt was part of SystemProperties for < v1.20. */
+                            pelmGlobalChild->getAttributeValue("exclusiveHwVirt", platformProperties.fExclusiveHwVirt);
                         if (!pelmGlobalChild->getAttributeValue("proxyMode", systemProperties.uProxyMode))
                             fCopyProxySettingsFromExtraData = true;
                         pelmGlobalChild->getAttributeValue("proxyUrl", systemProperties.strProxyUrl);
                         pelmGlobalChild->getAttributeValue("LanguageId", systemProperties.strLanguageId);
+                    }
+                    if (   pelmGlobalChild->nameEquals("PlatformProperties")
+                        && m->sv >= SettingsVersion_v1_20)
+                    {
+                        /* Since settings v1.20 exclusiveHwVirt is part of PlatformProperties. */
+                        pelmGlobalChild->getAttributeValue("exclusiveHwVirt", platformProperties.fExclusiveHwVirt);
                     }
 #ifdef VBOX_WITH_UPDATE_AGENT
                     else if (pelmGlobalChild->nameEquals("Updates"))
@@ -2649,7 +2666,13 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
     if (systemProperties.strProxyUrl.length())
         pelmSysProps->setAttribute("proxyUrl", systemProperties.strProxyUrl);
     pelmSysProps->setAttribute("proxyMode", systemProperties.uProxyMode);
-    pelmSysProps->setAttribute("exclusiveHwVirt", systemProperties.fExclusiveHwVirt);
+    if (m->sv >= SettingsVersion_v1_20) /* Since settings v1.20 exclusiveHwVirt is part of PlatformProperties. */
+    {
+        xml::ElementNode *pelmPlatProps = pelmGlobal->createChild("PlatformProperties");
+        pelmPlatProps->setAttribute("exclusiveHwVirt", platformProperties.fExclusiveHwVirt);
+    }
+    else
+        pelmSysProps->setAttribute("exclusiveHwVirt", platformProperties.fExclusiveHwVirt);
     if (systemProperties.strLanguageId.isNotEmpty())
         pelmSysProps->setAttribute("LanguageId", systemProperties.strLanguageId);
 
@@ -2725,7 +2748,8 @@ bool VRDESettings::operator==(const VRDESettings& v) const
 /**
  * Constructor. Needs to set sane defaults which stand the test of time.
  */
-BIOSSettings::BIOSSettings() :
+FirmwareSettings::FirmwareSettings() :
+    firmwareType(FirmwareType_BIOS),
     fACPIEnabled(true),
     fIOAPICEnabled(false),
     fLogoFadeIn(true),
@@ -2733,28 +2757,62 @@ BIOSSettings::BIOSSettings() :
     fPXEDebugEnabled(false),
     fSmbiosUuidLittleEndian(true),
     ulLogoDisplayTime(0),
-    biosBootMenuMode(BIOSBootMenuMode_MessageAndMenu),
+    enmBootMenuMode(FirmwareBootMenuMode_MessageAndMenu),
     apicMode(APICMode_APIC),
     llTimeOffset(0)
 {
 }
 
 /**
- * Check if all settings have default values.
+ * Returns if all settings have default values.
+ *
+ * @returns \c true if all settings have default values, \c false if not.
+ * @param   enmCPUArch              CPU architecture to use for checking the default values for.
  */
-bool BIOSSettings::areDefaultSettings() const
+bool FirmwareSettings::areDefaultSettings(CPUArchitecture_T enmCPUArch) const
 {
-    return fACPIEnabled
-        && !fIOAPICEnabled
-        && fLogoFadeIn
-        && fLogoFadeOut
-        && !fPXEDebugEnabled
-        && !fSmbiosUuidLittleEndian
-        && ulLogoDisplayTime == 0
-        && biosBootMenuMode == BIOSBootMenuMode_MessageAndMenu
-        && apicMode == APICMode_APIC
-        && llTimeOffset == 0
-        && strLogoImagePath.isEmpty();
+    switch (enmCPUArch)
+    {
+        case CPUArchitecture_x86:
+            RT_FALL_THROUGH();
+        case CPUArchitecture_AMD64:
+            return
+                   firmwareType == FirmwareType_BIOS
+                && !fIOAPICEnabled
+                && fLogoFadeIn
+                && fLogoFadeOut
+                && !fPXEDebugEnabled
+                && !fSmbiosUuidLittleEndian
+                && ulLogoDisplayTime == 0
+                && enmBootMenuMode == FirmwareBootMenuMode_MessageAndMenu
+                && apicMode == APICMode_APIC
+                && llTimeOffset == 0
+                && strLogoImagePath.isEmpty();
+
+        case CPUArchitecture_ARMv8_32:
+            RT_FALL_THROUGH();
+        case CPUArchitecture_ARMv8_64:
+            return
+                   (    enmCPUArch == CPUArchitecture_ARMv8_32
+                    ? firmwareType == FirmwareType_EFI32
+                    : firmwareType == FirmwareType_EFI64)
+                && !fIOAPICEnabled
+                && fLogoFadeIn
+                && fLogoFadeOut
+                && !fPXEDebugEnabled
+                && !fSmbiosUuidLittleEndian
+                && ulLogoDisplayTime == 0
+                && enmBootMenuMode == FirmwareBootMenuMode_MessageAndMenu
+                && apicMode == APICMode_APIC
+                && llTimeOffset == 0
+                && strLogoImagePath.isEmpty();
+            break;
+
+        default:
+            break;
+    }
+
+    AssertFailedReturn(false);
 }
 
 /**
@@ -2762,17 +2820,18 @@ bool BIOSSettings::areDefaultSettings() const
  * which in turn gets called from Machine::saveSettings to figure out whether
  * machine settings have really changed and thus need to be written out to disk.
  */
-bool BIOSSettings::operator==(const BIOSSettings &d) const
+bool FirmwareSettings::operator==(const FirmwareSettings &d) const
 {
     return (this == &d)
-        || (   fACPIEnabled            == d.fACPIEnabled
+        || (   firmwareType            == d.firmwareType
+            && fACPIEnabled            == d.fACPIEnabled
             && fIOAPICEnabled          == d.fIOAPICEnabled
             && fLogoFadeIn             == d.fLogoFadeIn
             && fLogoFadeOut            == d.fLogoFadeOut
             && fPXEDebugEnabled        == d.fPXEDebugEnabled
             && fSmbiosUuidLittleEndian == d.fSmbiosUuidLittleEndian
             && ulLogoDisplayTime       == d.ulLogoDisplayTime
-            && biosBootMenuMode        == d.biosBootMenuMode
+            && enmBootMenuMode        == d.enmBootMenuMode
             && apicMode                == d.apicMode
             && llTimeOffset            == d.llTimeOffset
             && strLogoImagePath        == d.strLogoImagePath);
@@ -3628,7 +3687,7 @@ bool NetworkAdapter::operator==(const NetworkAdapter &n) const
 SerialPort::SerialPort() :
     ulSlot(0),
     fEnabled(false),
-    ulIOBase(0x3f8),
+    ulIOAddress(0x3f8),
     ulIRQ(4),
     portMode(PortMode_Disconnected),
     fServer(false),
@@ -3646,7 +3705,7 @@ bool SerialPort::operator==(const SerialPort &s) const
     return (this == &s)
         || (   ulSlot            == s.ulSlot
             && fEnabled          == s.fEnabled
-            && ulIOBase          == s.ulIOBase
+            && ulIOAddress       == s.ulIOAddress
             && ulIRQ             == s.ulIRQ
             && portMode          == s.portMode
             && strPath           == s.strPath
@@ -3773,7 +3832,7 @@ bool GuestProperty::operator==(const GuestProperty &g) const
 /**
  * Constructor. Needs to set sane defaults which stand the test of time.
  */
-CpuIdLeaf::CpuIdLeaf() :
+CpuIdLeafX86::CpuIdLeafX86() :
     idx(UINT32_MAX),
     idxSub(0),
     uEax(0),
@@ -3788,7 +3847,7 @@ CpuIdLeaf::CpuIdLeaf() :
  * which in turn gets called from Machine::saveSettings to figure out whether
  * machine settings have really changed and thus need to be written out to disk.
  */
-bool CpuIdLeaf::operator==(const CpuIdLeaf &c) const
+bool CpuIdLeafX86::operator==(const CpuIdLeafX86 &c) const
 {
     return (this == &c)
         || (   idx      == c.idx
@@ -3902,22 +3961,27 @@ bool HostPCIDeviceAttachment::operator==(const HostPCIDeviceAttachment &a) const
             && strDeviceName  == a.strDeviceName);
 }
 
+#ifdef VBOX_WITH_VIRT_ARMV8
+PlatformARM::PlatformARM()
+    /** @todo BUGBUG Anything for ARM here? */
+{
 
-/**
- * Constructor. Needs to set sane defaults which stand the test of time.
- */
-Hardware::Hardware() :
-    strVersion("1"),
-    fHardwareVirt(true),
-    fNestedPaging(true),
-    fVPID(true),
-    fUnrestrictedExecution(true),
-    fHardwareVirtForce(false),
-    fUseNativeApi(false),
-    fTripleFaultReset(false),
+}
+
+bool PlatformARM::operator==(const PlatformARM& h) const
+{
+    RT_NOREF(h);
+    return true; /** @todo BUGBUG Anything for ARM here? */
+}
+#endif /* VBOX_WITH_VIRT_ARMV8 */
+
+PlatformX86::PlatformX86() :
     fPAE(false),
     fAPIC(true),
     fX2APIC(false),
+    fHPETEnabled(false),
+    enmLongMode(HC_ARCH_BITS == 64 ? PlatformX86::LongMode_Enabled : PlatformX86::LongMode_Disabled),
+    fTripleFaultReset(false),
     fIBPBOnVMExit(false),
     fIBPBOnVMEntry(false),
     fSpecCtrl(false),
@@ -3926,34 +3990,15 @@ Hardware::Hardware() :
     fL1DFlushOnVMEntry(false),
     fMDSClearOnSched(true),
     fMDSClearOnVMEntry(false),
-    fNestedHWVirt(false),
-    fVirtVmsaveVmload(true),
-    enmLongMode(HC_ARCH_BITS == 64 ? Hardware::LongMode_Enabled : Hardware::LongMode_Disabled),
-    cCPUs(1),
-    fCpuHotPlug(false),
-    fHPETEnabled(false),
-    ulCpuExecutionCap(100),
-    uCpuIdPortabilityLevel(0),
-    strCpuProfile("host"),
-    ulMemorySizeMB((uint32_t)-1),
-    firmwareType(FirmwareType_BIOS),
-    pointingHIDType(PointingHIDType_PS2Mouse),
-    keyboardHIDType(KeyboardHIDType_PS2Keyboard),
-    chipsetType(ChipsetType_PIIX3),
-    iommuType(IommuType_None),
-    paravirtProvider(ParavirtProvider_Legacy), // default for old VMs, for new ones it's ParavirtProvider_Default
-    strParavirtDebug(""),
-    fEmulatedUSBCardReader(false),
-    clipboardMode(ClipboardMode_Disabled),
-    fClipboardFileTransfersEnabled(false),
-    dndMode(DnDMode_Disabled),
-    ulMemoryBalloonSize(0),
-    fPageFusionEnabled(false)
+    fHWVirtEx(true),
+    fHWVirtExNestedPaging(true),
+    fHWVirtExVPID(true),
+    fHWVirtExUX(true),
+    fHWVirtExForce(false),
+    fHWVirtExUseNativeApi(false),
+    fHWVirtExVirtVmsaveVmload(true),
+    fNestedHWVirt(false)
 {
-    mapBootOrder[0] = DeviceType_Floppy;
-    mapBootOrder[1] = DeviceType_DVD;
-    mapBootOrder[2] = DeviceType_HardDisk;
-
     /* The default value for PAE depends on the host:
      * - 64 bits host -> always true
      * - 32 bits host -> true for Windows & Darwin (masked off if the host cpu doesn't support it anyway)
@@ -3967,11 +4012,113 @@ Hardware::Hardware() :
      * - 32 bits host -> false
      */
 #if HC_ARCH_BITS == 64 && !defined(RT_OS_LINUX)
-    fLargePages = true;
+    fHWVirtExLargePages = true; /** @todo BUGBUG Does this apply for ARM as well? */
 #else
     /* Not supported on 32 bits hosts. */
-    fLargePages = false;
+    fHWVirtExLargePages = false;
 #endif
+}
+
+/**
+ * Comparison operator. This gets called from MachineConfigFile::operator==,
+ * which in turn gets called from Platform::saveSettings to figure out whether
+ * machine settings have really changed and thus need to be written out to disk.
+ */
+bool PlatformX86::operator==(const PlatformX86& h) const
+{
+    return (this == &h)
+        || (   fPAE                         == h.fPAE
+            && fAPIC                        == h.fAPIC
+            && fX2APIC                      == h.fX2APIC
+            && fHPETEnabled                 == h.fHPETEnabled
+            && enmLongMode                  == h.enmLongMode
+            && llCpuIdLeafs                 == h.llCpuIdLeafs
+            && fTripleFaultReset            == h.fTripleFaultReset
+            && fIBPBOnVMExit                == h.fIBPBOnVMExit
+            && fIBPBOnVMEntry               == h.fIBPBOnVMEntry
+            && fSpecCtrl                    == h.fSpecCtrl
+            && fSpecCtrlByHost              == h.fSpecCtrlByHost
+            && fL1DFlushOnSched             == h.fL1DFlushOnSched
+            && fL1DFlushOnVMEntry           == h.fL1DFlushOnVMEntry
+            && fMDSClearOnSched             == h.fMDSClearOnSched
+            && fMDSClearOnVMEntry           == h.fMDSClearOnVMEntry
+            && fHWVirtEx                    == h.fHWVirtEx
+            && fHWVirtExNestedPaging        == h.fHWVirtExNestedPaging
+            && fHWVirtExLargePages          == h.fHWVirtExLargePages
+            && fHWVirtExVPID                == h.fHWVirtExVPID
+            && fHWVirtExUX                  == h.fHWVirtExUX
+            && fHWVirtExForce               == h.fHWVirtExForce
+            && fHWVirtExUseNativeApi        == h.fHWVirtExUseNativeApi
+            && fHWVirtExVirtVmsaveVmload    == h.fHWVirtExVirtVmsaveVmload
+            && fNestedHWVirt                == h.fNestedHWVirt);
+}
+
+/**
+ * Constructor. Needs to set sane defaults which stand the test of time.
+ */
+Platform::Platform() :
+    architectureType(PlatformArchitecture_x86), /* We default to x86 here, as this is what we ever had so far. */
+    chipsetType(ChipsetType_PIIX3),
+    iommuType(IommuType_None),
+    fRTCUseUTC(false)
+{
+}
+
+/**
+ * Comparison operator. This gets called from MachineConfigFile::operator==,
+ * which in turn gets called from Platform::saveSettings to figure out whether
+ * machine settings have really changed and thus need to be written out to disk.
+ */
+bool Platform::operator==(const Platform& h) const
+{
+    bool fRc = (this == &h)
+            || (   architectureType == h.architectureType
+                && chipsetType      == h.chipsetType
+                && iommuType        == h.iommuType
+                && fRTCUseUTC       == h.fRTCUseUTC);
+    if (fRc)
+    {
+        switch (architectureType)
+        {
+            case PlatformArchitecture_x86:
+                return x86 == h.x86;
+#ifdef VBOX_WITH_VIRT_ARMV8
+            case PlatformArchitecture_ARM:
+                return arm == h.arm;
+#endif
+            default:
+                AssertFailedReturn(false);
+        }
+    }
+
+    return fRc;
+}
+
+/**
+ * Constructor. Needs to set sane defaults which stand the test of time.
+ */
+Hardware::Hardware() :
+    strVersion("1"),
+    cCPUs(1),
+    fCpuHotPlug(false),
+    ulCpuExecutionCap(100),
+    uCpuIdPortabilityLevel(0),
+    strCpuProfile("host"),
+    ulMemorySizeMB((uint32_t)-1),
+    pointingHIDType(PointingHIDType_PS2Mouse),
+    keyboardHIDType(KeyboardHIDType_PS2Keyboard),
+    paravirtProvider(ParavirtProvider_Legacy), // default for old VMs, for new ones it's ParavirtProvider_Default
+    strParavirtDebug(""),
+    fEmulatedUSBCardReader(false),
+    clipboardMode(ClipboardMode_Disabled),
+    fClipboardFileTransfersEnabled(false),
+    dndMode(DnDMode_Disabled),
+    ulMemoryBalloonSize(0),
+    fPageFusionEnabled(false)
+{
+    mapBootOrder[0] = DeviceType_Floppy; /** @todo BUGBUG Handle ARM. */
+    mapBootOrder[1] = DeviceType_DVD;
+    mapBootOrder[2] = DeviceType_HardDisk;
 }
 
 /**
@@ -4029,48 +4176,22 @@ bool Hardware::operator==(const Hardware& h) const
     return (this == &h)
         || (   strVersion                     == h.strVersion
             && uuid                           == h.uuid
-            && fHardwareVirt                  == h.fHardwareVirt
-            && fNestedPaging                  == h.fNestedPaging
-            && fLargePages                    == h.fLargePages
-            && fVPID                          == h.fVPID
-            && fUnrestrictedExecution         == h.fUnrestrictedExecution
-            && fHardwareVirtForce             == h.fHardwareVirtForce
-            && fUseNativeApi                  == h.fUseNativeApi
-            && fPAE                           == h.fPAE
-            && enmLongMode                    == h.enmLongMode
-            && fTripleFaultReset              == h.fTripleFaultReset
-            && fAPIC                          == h.fAPIC
-            && fX2APIC                        == h.fX2APIC
-            && fIBPBOnVMExit                  == h.fIBPBOnVMExit
-            && fIBPBOnVMEntry                 == h.fIBPBOnVMEntry
-            && fSpecCtrl                      == h.fSpecCtrl
-            && fSpecCtrlByHost                == h.fSpecCtrlByHost
-            && fL1DFlushOnSched               == h.fL1DFlushOnSched
-            && fL1DFlushOnVMEntry             == h.fL1DFlushOnVMEntry
-            && fMDSClearOnSched               == h.fMDSClearOnSched
-            && fMDSClearOnVMEntry             == h.fMDSClearOnVMEntry
-            && fNestedHWVirt                  == h.fNestedHWVirt
-            && fVirtVmsaveVmload              == h.fVirtVmsaveVmload
             && cCPUs                          == h.cCPUs
             && fCpuHotPlug                    == h.fCpuHotPlug
             && ulCpuExecutionCap              == h.ulCpuExecutionCap
             && uCpuIdPortabilityLevel         == h.uCpuIdPortabilityLevel
             && strCpuProfile                  == h.strCpuProfile
-            && fHPETEnabled                   == h.fHPETEnabled
             && llCpus                         == h.llCpus
-            && llCpuIdLeafs                   == h.llCpuIdLeafs
             && ulMemorySizeMB                 == h.ulMemorySizeMB
             && mapBootOrder                   == h.mapBootOrder
-            && firmwareType                   == h.firmwareType
             && pointingHIDType                == h.pointingHIDType
             && keyboardHIDType                == h.keyboardHIDType
-            && chipsetType                    == h.chipsetType
-            && iommuType                      == h.iommuType
             && paravirtProvider               == h.paravirtProvider
             && strParavirtDebug               == h.strParavirtDebug
             && fEmulatedUSBCardReader         == h.fEmulatedUSBCardReader
             && vrdeSettings                   == h.vrdeSettings
-            && biosSettings                   == h.biosSettings
+            && platformSettings               == h.platformSettings
+            && firmwareSettings               == h.firmwareSettings
             && nvramSettings                  == h.nvramSettings
             && graphicsAdapter                == h.graphicsAdapter
             && usbSettings                    == h.usbSettings
@@ -4285,7 +4406,6 @@ MachineUserData::MachineUserData() :
     fNameSync(true),
     fTeleporterEnabled(false),
     uTeleporterPort(0),
-    fRTCUseUTC(false),
     enmVMPriority(VMProcPriority_Default)
 {
     llGroups.push_back("/");
@@ -4310,7 +4430,6 @@ bool MachineUserData::operator==(const MachineUserData &c) const
             && uTeleporterPort            == c.uTeleporterPort
             && strTeleporterAddress       == c.strTeleporterAddress
             && strTeleporterPassword      == c.strTeleporterPassword
-            && fRTCUseUTC                 == c.fRTCUseUTC
             && ovIcon                     == c.ovIcon
             && enmVMPriority              == c.enmVMPriority);
 }
@@ -4460,7 +4579,8 @@ bool MachineConfigFile::operator==(const MachineConfigFile &c) const
 }
 
 /**
- * Called from MachineConfigFile::readHardware() to read cpu information.
+ * Called from MachineConfigFile::readHardware() to read CPU information.
+ *
  * @param elmCpu
  * @param ll
  */
@@ -4481,21 +4601,22 @@ void MachineConfigFile::readCpuTree(const xml::ElementNode &elmCpu,
 }
 
 /**
- * Called from MachineConfigFile::readHardware() to cpuid information.
+ * Called from MachineConfigFile::readPlatformX86() to read x86 CPUID information.
+ *
  * @param elmCpuid
  * @param ll
  */
-void MachineConfigFile::readCpuIdTree(const xml::ElementNode &elmCpuid,
-                                      CpuIdLeafsList &ll)
+void MachineConfigFile::readCpuIdTreeX86(const xml::ElementNode &elmCpuid,
+                                         CpuIdLeafsX86List &ll)
 {
     xml::NodesLoop nl1(elmCpuid, "CpuIdLeaf");
     const xml::ElementNode *pelmCpuIdLeaf;
     while ((pelmCpuIdLeaf = nl1.forAllNodes()))
     {
-        CpuIdLeaf leaf;
+        CpuIdLeafX86 leaf;
 
         if (!pelmCpuIdLeaf->getAttributeValue("id", leaf.idx))
-            throw ConfigFileError(this, pelmCpuIdLeaf, N_("Required CpuId/@id attribute is missing"));
+            throw ConfigFileError(this, pelmCpuIdLeaf, N_("Required CpuIdLeaf/@id attribute is missing"));
 
         if (!pelmCpuIdLeaf->getAttributeValue("subleaf", leaf.idxSub))
             leaf.idxSub = 0;
@@ -4788,8 +4909,16 @@ void MachineConfigFile::readSerialPorts(const xml::ElementNode &elmUART,
 
         if (!pelmPort->getAttributeValue("enabled", port.fEnabled))
             throw ConfigFileError(this, pelmPort, N_("Required UART/Port/@enabled attribute is missing"));
-        if (!pelmPort->getAttributeValue("IOBase", port.ulIOBase))
-            throw ConfigFileError(this, pelmPort, N_("Required UART/Port/@IOBase attribute is missing"));
+        if (m->sv >= SettingsVersion_v1_20) /* IOBase was changed to IOAddress since settings v1.20. */
+        {
+            if (!pelmPort->getAttributeValue("IOAddress", port.ulIOAddress))
+               throw ConfigFileError(this, pelmPort, N_("Required UART/Port/@IOAddress attribute is missing"));
+        }
+        else /* Settings < v1.20. */
+        {
+            if (!pelmPort->getAttributeValue("IOBase", port.ulIOAddress))
+               throw ConfigFileError(this, pelmPort, N_("Required UART/Port/@IOBase attribute is missing"));
+        }
         if (!pelmPort->getAttributeValue("IRQ", port.ulIRQ))
             throw ConfigFileError(this, pelmPort, N_("Required UART/Port/@IRQ attribute is missing"));
 
@@ -5058,6 +5187,231 @@ void MachineConfigFile::readStorageControllerAttributes(const xml::ElementNode &
 }
 
 /**
+ * Reads the x86 CPUID tree.
+ *
+ * For settings >= v1.20 these were stored under the "Platform/x86/CPU" node.
+ * For settings <  v1.20 these were stored under the "Hardware/CPU" node.
+ *
+ * @param elmPlatformOrHardware     Platform or Hardware node to read from.
+ * @param platX86                   Where to store the platform settings.
+ */
+void MachineConfigFile::readPlatformCPUIDTreeX86(const xml::ElementNode &elmChild,
+                                                 PlatformX86 &platX86)
+{
+    const xml::ElementNode *pelmCPUChild;
+    if ((pelmCPUChild = elmChild.findChildElement("CpuIdTree")))
+        readCpuIdTreeX86(*pelmCPUChild, platX86.llCpuIdLeafs);
+}
+
+/**
+ * Reads the x86 platform settings.
+ *
+ * For settings >= v1.20 these were stored under the "Platform/x86" node.
+ * For settings <  v1.20 these were stored under the "Hardware" node.
+ *
+ * @param elmPlatformX86OrHardware  Platform/x86 or Hardware node to read from.
+ * @param platX86                   Where to store the x86 platform settings.
+ */
+void MachineConfigFile::readPlatformX86(const xml::ElementNode &elmPlatformX86OrHardware,
+                                        PlatformX86 &platX86)
+{
+    xml::NodesLoop nl1(elmPlatformX86OrHardware);
+
+    const xml::ElementNode *pelChild;
+    while ((pelChild = nl1.forAllNodes()))
+    {
+        if (pelChild->nameEquals("HPET"))
+        {
+            pelChild->getAttributeValue("enabled", platX86.fHPETEnabled);
+        }
+        else if (pelChild->nameEquals("CPU"))
+        {
+            const xml::ElementNode *pelmCPUChild;
+            if ((pelmCPUChild = pelChild->findChildElement("HardwareVirtEx")))
+                pelmCPUChild->getAttributeValue("enabled", platX86.fHWVirtEx);
+            if ((pelmCPUChild = pelChild->findChildElement("HardwareVirtExNestedPaging")))
+                pelmCPUChild->getAttributeValue("enabled", platX86.fHWVirtExNestedPaging);
+            if ((pelmCPUChild = pelChild->findChildElement("HardwareVirtExLargePages")))
+                pelmCPUChild->getAttributeValue("enabled", platX86.fHWVirtExLargePages);
+            if ((pelmCPUChild = pelChild->findChildElement("HardwareVirtExVPID")))
+                pelmCPUChild->getAttributeValue("enabled", platX86.fHWVirtExVPID);
+            if ((pelmCPUChild = pelChild->findChildElement("HardwareVirtExUX")))
+                pelmCPUChild->getAttributeValue("enabled", platX86.fHWVirtExUX);
+            if ((pelmCPUChild = pelChild->findChildElement("HardwareVirtForce")))
+                pelmCPUChild->getAttributeValue("enabled", platX86.fHWVirtExForce);
+            if ((pelmCPUChild = pelChild->findChildElement("HardwareVirtExUseNativeApi")))
+                pelmCPUChild->getAttributeValue("enabled", platX86.fHWVirtExUseNativeApi);
+            if ((pelmCPUChild = pelChild->findChildElement("HardwareVirtExVirtVmsaveVmload")))
+                pelmCPUChild->getAttributeValue("enabled", platX86.fHWVirtExVirtVmsaveVmload);
+
+            if (!(pelmCPUChild = pelChild->findChildElement("PAE")))
+            {
+                /* The default for pre 3.1 was false, so we must respect that. */
+                if (m->sv < SettingsVersion_v1_9)
+                    platX86.fPAE = false;
+            }
+            else
+                pelmCPUChild->getAttributeValue("enabled", platX86.fPAE);
+
+            bool fLongMode;
+            if (   (pelmCPUChild = pelChild->findChildElement("LongMode"))
+                && pelmCPUChild->getAttributeValue("enabled", fLongMode) )
+                platX86.enmLongMode = fLongMode ? PlatformX86::LongMode_Enabled : PlatformX86::LongMode_Disabled;
+            else
+                platX86.enmLongMode = PlatformX86::LongMode_Legacy;
+
+            if ((pelmCPUChild = pelChild->findChildElement("TripleFaultReset")))
+                pelmCPUChild->getAttributeValue("enabled", platX86.fTripleFaultReset);
+            if ((pelmCPUChild = pelChild->findChildElement("APIC")))
+                pelmCPUChild->getAttributeValue("enabled", platX86.fAPIC);
+            if ((pelmCPUChild = pelChild->findChildElement("X2APIC")))
+                pelmCPUChild->getAttributeValue("enabled", platX86.fX2APIC);
+
+            if ((pelmCPUChild = pelChild->findChildElement("IBPBOn")))
+            {
+                pelmCPUChild->getAttributeValue("vmexit", platX86.fIBPBOnVMExit);
+                pelmCPUChild->getAttributeValue("vmentry", platX86.fIBPBOnVMEntry);
+            }
+            if ((pelmCPUChild = pelChild->findChildElement("SpecCtrl")))
+                pelmCPUChild->getAttributeValue("enabled", platX86.fSpecCtrl);
+            if ((pelmCPUChild = pelChild->findChildElement("SpecCtrlByHost")))
+                pelmCPUChild->getAttributeValue("enabled", platX86.fSpecCtrlByHost);
+            if ((pelmCPUChild = pelChild->findChildElement("L1DFlushOn")))
+            {
+                pelmCPUChild->getAttributeValue("scheduling", platX86.fL1DFlushOnSched);
+                pelmCPUChild->getAttributeValue("vmentry", platX86.fL1DFlushOnVMEntry);
+            }
+            if ((pelmCPUChild = pelChild->findChildElement("MDSClearOn")))
+            {
+                pelmCPUChild->getAttributeValue("scheduling", platX86.fMDSClearOnSched);
+                pelmCPUChild->getAttributeValue("vmentry", platX86.fMDSClearOnVMEntry);
+            }
+            if ((pelmCPUChild = pelChild->findChildElement("NestedHWVirt")))
+                pelmCPUChild->getAttributeValue("enabled", platX86.fNestedHWVirt);
+
+            readPlatformCPUIDTreeX86(*pelChild, platX86);
+        }
+    }
+}
+
+/**
+ * Reads the platform settings.
+ *
+ * For settings >= v1.20 (>= VirtualBox 7.1) these were stored under the "Platform" node.
+ * For settings <  v1.20 (<= VirtualBox 7.0) these were stored under the "Hardware" node.
+ *
+ * @param elmPlatformOrHardware     Platform or Hardware node to read from.
+ * @param plat                      Where to store the platform settings.
+ */
+void MachineConfigFile::readPlatform(const xml::ElementNode &elmPlatformOrHardware,
+                                     Platform &plat)
+{
+    /*
+     * Platform-generic stuff.
+     */
+    xml::NodesLoop nl1(elmPlatformOrHardware);
+    const xml::ElementNode *pelmChild;
+    while ((pelmChild = nl1.forAllNodes()))
+    {
+        if (pelmChild->nameEquals("Chipset"))
+        {
+            Utf8Str strChipsetType;
+            if (pelmChild->getAttributeValue("type", strChipsetType))
+            {
+                if (strChipsetType == "PIIX3")
+                    plat.chipsetType = ChipsetType_PIIX3;
+                else if (strChipsetType == "ICH9")
+                    plat.chipsetType = ChipsetType_ICH9;
+                else if (strChipsetType == "ARMv8Virtual")
+                    plat.chipsetType = ChipsetType_ARMv8Virtual;
+                else
+                    throw ConfigFileError(this,
+                                          pelmChild,
+                                          N_("Invalid value '%s' in Chipset/@type"),
+                                          strChipsetType.c_str());
+            }
+        }
+        else if (pelmChild->nameEquals("Iommu"))
+        {
+            Utf8Str strIommuType;
+            if (pelmChild->getAttributeValue("type", strIommuType))
+            {
+                if (strIommuType == "None")
+                    plat.iommuType = IommuType_None;
+                else if (strIommuType == "Automatic")
+                    plat.iommuType = IommuType_Automatic;
+                else if (strIommuType == "AMD")
+                    plat.iommuType = IommuType_AMD;
+                else if (strIommuType == "Intel")
+                    plat.iommuType = IommuType_Intel;
+                else
+                    throw ConfigFileError(this,
+                                          pelmChild,
+                                          N_("Invalid value '%s' in Iommu/@type"),
+                                          strIommuType.c_str());
+            }
+        }
+        else if (pelmChild->nameEquals("RTC"))
+        {
+            Utf8Str strLocalOrUTC;
+            plat.fRTCUseUTC =    pelmChild->getAttributeValue("localOrUTC", strLocalOrUTC)
+                              && strLocalOrUTC == "UTC";
+        }
+    }
+
+    if (m->sv >= SettingsVersion_v1_20) /* Settings v1.20 introduced platform architecture support. */
+    {
+        Utf8Str strArch;
+        if (elmPlatformOrHardware.getAttributeValue("architecture", strArch))
+        {
+            if (strArch.equalsIgnoreCase("x86"))
+                plat.architectureType = PlatformArchitecture_x86;
+            else if (strArch.equalsIgnoreCase("ARM"))
+                plat.architectureType = PlatformArchitecture_ARM;
+            else
+                throw ConfigFileError(this,
+                                      &elmPlatformOrHardware,
+                                      N_("Platform/@architecture '%s' invalid"), strArch.c_str());
+        }
+        else
+            throw ConfigFileError(this, &elmPlatformOrHardware, N_("Platform/@architecture missing"));
+    }
+
+    /*
+     * Platform-specific stuff.
+     */
+    switch (plat.architectureType)
+    {
+        case PlatformArchitecture_x86:
+        {
+            const xml::ElementNode *pelmPlatformX86OrHardware;
+            if (m->sv >= SettingsVersion_v1_20) /* Settings v1.20 introduced platform support with a x86 sub node. */
+            {
+                pelmPlatformX86OrHardware = elmPlatformOrHardware.findChildElement("x86");
+                if (!pelmPlatformX86OrHardware)
+                    throw ConfigFileError(this, &elmPlatformOrHardware, N_("Required Platform/@x86 element is missing"));
+            }
+            else /* For settings < v1.20 we stored everyhing in the Hardware node. */
+                pelmPlatformX86OrHardware = &elmPlatformOrHardware;
+
+            readPlatformX86(*pelmPlatformX86OrHardware, plat.x86);
+            break;
+        }
+
+#ifdef VBOX_WITH_VIRT_ARMV8
+        case PlatformArchitecture_ARM:
+        {
+            /** @todo BUGBUG Implement loading ARM platform stuff here. */
+            break;
+        }
+#endif
+        default:
+            AssertFailed();
+            break;
+    }
+}
+
+/**
  * Reads in a \<Hardware\> block and stores it in the given structure. Used
  * both directly from readMachine and from readSnapshot, since snapshots
  * have their own hardware sections.
@@ -5133,41 +5487,6 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                     readCpuTree(*pelmCPUChild, hw.llCpus);
             }
 
-            if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtEx")))
-            {
-                pelmCPUChild->getAttributeValue("enabled", hw.fHardwareVirt);
-            }
-            if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtExNestedPaging")))
-                pelmCPUChild->getAttributeValue("enabled", hw.fNestedPaging);
-            if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtExLargePages")))
-                pelmCPUChild->getAttributeValue("enabled", hw.fLargePages);
-            if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtExVPID")))
-                pelmCPUChild->getAttributeValue("enabled", hw.fVPID);
-            if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtExUX")))
-                pelmCPUChild->getAttributeValue("enabled", hw.fUnrestrictedExecution);
-            if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtForce")))
-                pelmCPUChild->getAttributeValue("enabled", hw.fHardwareVirtForce);
-            if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtExUseNativeApi")))
-                pelmCPUChild->getAttributeValue("enabled", hw.fUseNativeApi);
-            if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtExVirtVmsaveVmload")))
-                pelmCPUChild->getAttributeValue("enabled", hw.fVirtVmsaveVmload);
-
-            if (!(pelmCPUChild = pelmHwChild->findChildElement("PAE")))
-            {
-                /* The default for pre 3.1 was false, so we must respect that. */
-                if (m->sv < SettingsVersion_v1_9)
-                    hw.fPAE = false;
-            }
-            else
-                pelmCPUChild->getAttributeValue("enabled", hw.fPAE);
-
-            bool fLongMode;
-            if (   (pelmCPUChild = pelmHwChild->findChildElement("LongMode"))
-                && pelmCPUChild->getAttributeValue("enabled", fLongMode) )
-                hw.enmLongMode = fLongMode ? Hardware::LongMode_Enabled : Hardware::LongMode_Disabled;
-            else
-                hw.enmLongMode = Hardware::LongMode_Legacy;
-
             if ((pelmCPUChild = pelmHwChild->findChildElement("SyntheticCpu")))
             {
                 bool fSyntheticCpu = false;
@@ -5176,77 +5495,11 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             }
             pelmHwChild->getAttributeValue("CpuIdPortabilityLevel", hw.uCpuIdPortabilityLevel);
             pelmHwChild->getAttributeValue("CpuProfile", hw.strCpuProfile);
-
-            if ((pelmCPUChild = pelmHwChild->findChildElement("TripleFaultReset")))
-                pelmCPUChild->getAttributeValue("enabled", hw.fTripleFaultReset);
-
-            if ((pelmCPUChild = pelmHwChild->findChildElement("APIC")))
-                pelmCPUChild->getAttributeValue("enabled", hw.fAPIC);
-            if ((pelmCPUChild = pelmHwChild->findChildElement("X2APIC")))
-                pelmCPUChild->getAttributeValue("enabled", hw.fX2APIC);
-            if (hw.fX2APIC)
-                hw.fAPIC = true;
-            pelmCPUChild = pelmHwChild->findChildElement("IBPBOn");
-            if (pelmCPUChild)
-            {
-                pelmCPUChild->getAttributeValue("vmexit", hw.fIBPBOnVMExit);
-                pelmCPUChild->getAttributeValue("vmentry", hw.fIBPBOnVMEntry);
-            }
-            pelmCPUChild = pelmHwChild->findChildElement("SpecCtrl");
-            if (pelmCPUChild)
-                pelmCPUChild->getAttributeValue("enabled", hw.fSpecCtrl);
-            pelmCPUChild = pelmHwChild->findChildElement("SpecCtrlByHost");
-            if (pelmCPUChild)
-                pelmCPUChild->getAttributeValue("enabled", hw.fSpecCtrlByHost);
-            pelmCPUChild = pelmHwChild->findChildElement("L1DFlushOn");
-            if (pelmCPUChild)
-            {
-                pelmCPUChild->getAttributeValue("scheduling", hw.fL1DFlushOnSched);
-                pelmCPUChild->getAttributeValue("vmentry", hw.fL1DFlushOnVMEntry);
-            }
-            pelmCPUChild = pelmHwChild->findChildElement("MDSClearOn");
-            if (pelmCPUChild)
-            {
-                pelmCPUChild->getAttributeValue("scheduling", hw.fMDSClearOnSched);
-                pelmCPUChild->getAttributeValue("vmentry", hw.fMDSClearOnVMEntry);
-            }
-            pelmCPUChild = pelmHwChild->findChildElement("NestedHWVirt");
-            if (pelmCPUChild)
-                pelmCPUChild->getAttributeValue("enabled", hw.fNestedHWVirt);
-
-            if ((pelmCPUChild = pelmHwChild->findChildElement("CpuIdTree")))
-                readCpuIdTree(*pelmCPUChild, hw.llCpuIdLeafs);
         }
         else if (pelmHwChild->nameEquals("Memory"))
         {
             pelmHwChild->getAttributeValue("RAMSize", hw.ulMemorySizeMB);
             pelmHwChild->getAttributeValue("PageFusion", hw.fPageFusionEnabled);
-        }
-        else if (pelmHwChild->nameEquals("Firmware"))
-        {
-            Utf8Str strFirmwareType;
-            if (pelmHwChild->getAttributeValue("type", strFirmwareType))
-            {
-                if (    (strFirmwareType == "BIOS")
-                     || (strFirmwareType == "1")                // some trunk builds used the number here
-                   )
-                    hw.firmwareType = FirmwareType_BIOS;
-                else if (    (strFirmwareType == "EFI")
-                          || (strFirmwareType == "2")           // some trunk builds used the number here
-                        )
-                    hw.firmwareType = FirmwareType_EFI;
-                else if (    strFirmwareType == "EFI32")
-                    hw.firmwareType = FirmwareType_EFI32;
-                else if (    strFirmwareType == "EFI64")
-                    hw.firmwareType = FirmwareType_EFI64;
-                else if (    strFirmwareType == "EFIDUAL")
-                    hw.firmwareType = FirmwareType_EFIDUAL;
-                else
-                    throw ConfigFileError(this,
-                                          pelmHwChild,
-                                          N_("Invalid value '%s' in Firmware/@type"),
-                                          strFirmwareType.c_str());
-            }
         }
         else if (pelmHwChild->nameEquals("HID"))
         {
@@ -5290,42 +5543,6 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                                           strHIDType.c_str());
             }
         }
-        else if (pelmHwChild->nameEquals("Chipset"))
-        {
-            Utf8Str strChipsetType;
-            if (pelmHwChild->getAttributeValue("type", strChipsetType))
-            {
-                if (strChipsetType == "PIIX3")
-                    hw.chipsetType = ChipsetType_PIIX3;
-                else if (strChipsetType == "ICH9")
-                    hw.chipsetType = ChipsetType_ICH9;
-                else
-                    throw ConfigFileError(this,
-                                          pelmHwChild,
-                                          N_("Invalid value '%s' in Chipset/@type"),
-                                          strChipsetType.c_str());
-            }
-        }
-        else if (pelmHwChild->nameEquals("Iommu"))
-        {
-            Utf8Str strIommuType;
-            if (pelmHwChild->getAttributeValue("type", strIommuType))
-            {
-                if (strIommuType == "None")
-                    hw.iommuType = IommuType_None;
-                else if (strIommuType == "Automatic")
-                    hw.iommuType = IommuType_Automatic;
-                else if (strIommuType == "AMD")
-                    hw.iommuType = IommuType_AMD;
-                else if (strIommuType == "Intel")
-                    hw.iommuType = IommuType_Intel;
-                else
-                    throw ConfigFileError(this,
-                                          pelmHwChild,
-                                          N_("Invalid value '%s' in Iommu/@type"),
-                                          strIommuType.c_str());
-            }
-        }
         else if (pelmHwChild->nameEquals("Paravirt"))
         {
             Utf8Str strProvider;
@@ -5351,10 +5568,6 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             }
 
             pelmHwChild->getAttributeValue("debug", hw.strParavirtDebug);
-        }
-        else if (pelmHwChild->nameEquals("HPET"))
-        {
-            pelmHwChild->getAttributeValue("enabled", hw.fHPETEnabled);
         }
         else if (pelmHwChild->nameEquals("Boot"))
         {
@@ -5502,94 +5715,134 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 }
             }
         }
-        else if (pelmHwChild->nameEquals("BIOS"))
+        /* Since v1.20 (VBox 7.1) we store BIOS / UEFI settings inside the "Firmware" element.
+         * Older versions (< v1.20) stored those settings in a "BIOS" element (see down below) for that. See also down below. */
+        else if (   pelmHwChild->nameEquals("BIOS")
+                 || pelmHwChild->nameEquals("Firmware"))
         {
-            const xml::ElementNode *pelmBIOSChild;
-            if ((pelmBIOSChild = pelmHwChild->findChildElement("ACPI")))
-                pelmBIOSChild->getAttributeValue("enabled", hw.biosSettings.fACPIEnabled);
-            if ((pelmBIOSChild = pelmHwChild->findChildElement("IOAPIC")))
-                pelmBIOSChild->getAttributeValue("enabled", hw.biosSettings.fIOAPICEnabled);
-            if ((pelmBIOSChild = pelmHwChild->findChildElement("APIC")))
+            /* For settings <  v1.20 we already has an element "Firmware", which only contained the firmware type. The rest lived in the "BIOS" element.
+             * For settings >= v1.20 we moved the "BIOS" element attributes also to "Firmware". */
+            if (pelmHwChild->nameEquals("Firmware"))
             {
-                Utf8Str strAPIC;
-                if (pelmBIOSChild->getAttributeValue("mode", strAPIC))
+                Utf8Str strFirmwareType;
+                if (pelmHwChild->getAttributeValue("type", strFirmwareType))
                 {
-                    strAPIC.toUpper();
-                    if (strAPIC == "DISABLED")
-                        hw.biosSettings.apicMode = APICMode_Disabled;
-                    else if (strAPIC == "APIC")
-                        hw.biosSettings.apicMode = APICMode_APIC;
-                    else if (strAPIC == "X2APIC")
-                        hw.biosSettings.apicMode = APICMode_X2APIC;
+                    if (    (strFirmwareType == "BIOS")
+                         || (strFirmwareType == "1")                // some trunk builds used the number here
+                       )
+                        hw.firmwareSettings.firmwareType = FirmwareType_BIOS;
+                    else if (    (strFirmwareType == "EFI")
+                              || (strFirmwareType == "2")           // some trunk builds used the number here
+                            )
+                        hw.firmwareSettings.firmwareType = FirmwareType_EFI;
+                    else if (    strFirmwareType == "EFI32")
+                        hw.firmwareSettings.firmwareType = FirmwareType_EFI32;
+                    else if (    strFirmwareType == "EFI64")
+                        hw.firmwareSettings.firmwareType = FirmwareType_EFI64;
+                    else if (    strFirmwareType == "EFIDUAL")
+                        hw.firmwareSettings.firmwareType = FirmwareType_EFIDUAL;
                     else
-                        throw ConfigFileError(this, pelmBIOSChild, N_("Invalid value '%s' in APIC/@mode attribute"), strAPIC.c_str());
+                        throw ConfigFileError(this,
+                                              pelmHwChild,
+                                              N_("Invalid value '%s' in Firmware/@type"),
+                                              strFirmwareType.c_str());
                 }
             }
-            if ((pelmBIOSChild = pelmHwChild->findChildElement("Logo")))
-            {
-                pelmBIOSChild->getAttributeValue("fadeIn", hw.biosSettings.fLogoFadeIn);
-                pelmBIOSChild->getAttributeValue("fadeOut", hw.biosSettings.fLogoFadeOut);
-                pelmBIOSChild->getAttributeValue("displayTime", hw.biosSettings.ulLogoDisplayTime);
-                pelmBIOSChild->getAttributeValue("imagePath", hw.biosSettings.strLogoImagePath);
-            }
-            if ((pelmBIOSChild = pelmHwChild->findChildElement("BootMenu")))
-            {
-                Utf8Str strBootMenuMode;
-                if (pelmBIOSChild->getAttributeValue("mode", strBootMenuMode))
-                {
-                    // settings before 1.3 used lower case so make sure this is case-insensitive
-                    strBootMenuMode.toUpper();
-                    if (strBootMenuMode == "DISABLED")
-                        hw.biosSettings.biosBootMenuMode = BIOSBootMenuMode_Disabled;
-                    else if (strBootMenuMode == "MENUONLY")
-                        hw.biosSettings.biosBootMenuMode = BIOSBootMenuMode_MenuOnly;
-                    else if (strBootMenuMode == "MESSAGEANDMENU")
-                        hw.biosSettings.biosBootMenuMode = BIOSBootMenuMode_MessageAndMenu;
-                    else
-                        throw ConfigFileError(this, pelmBIOSChild, N_("Invalid value '%s' in BootMenu/@mode attribute"), strBootMenuMode.c_str());
-                }
-            }
-            if ((pelmBIOSChild = pelmHwChild->findChildElement("PXEDebug")))
-                pelmBIOSChild->getAttributeValue("enabled", hw.biosSettings.fPXEDebugEnabled);
-            if ((pelmBIOSChild = pelmHwChild->findChildElement("TimeOffset")))
-                pelmBIOSChild->getAttributeValue("value", hw.biosSettings.llTimeOffset);
-            if ((pelmBIOSChild = pelmHwChild->findChildElement("NVRAM")))
-            {
-                pelmBIOSChild->getAttributeValue("path", hw.nvramSettings.strNvramPath);
-                if (m->sv >= SettingsVersion_v1_19)
-                {
-                    pelmBIOSChild->getAttributeValue("keyId", hw.nvramSettings.strKeyId);
-                    pelmBIOSChild->getAttributeValue("keyStore", hw.nvramSettings.strKeyStore);
-                }
-            }
-            if ((pelmBIOSChild = pelmHwChild->findChildElement("SmbiosUuidLittleEndian")))
-                pelmBIOSChild->getAttributeValue("enabled", hw.biosSettings.fSmbiosUuidLittleEndian);
-            else
-                hw.biosSettings.fSmbiosUuidLittleEndian = false; /* Default for existing VMs. */
 
-            // legacy BIOS/IDEController (pre 1.7)
-            if (    (m->sv < SettingsVersion_v1_7)
-                 && (pelmBIOSChild = pelmHwChild->findChildElement("IDEController"))
+            /* Read the firmware settings either from the "Firmware" or "BIOS" elements, depending on the settings version. */
+            if (   (   pelmHwChild->nameEquals("Firmware")
+                    && m->sv >= SettingsVersion_v1_20)
+                || (   pelmHwChild->nameEquals("BIOS")
+                    && m->sv < SettingsVersion_v1_20)
                )
             {
-                StorageController sctl;
-                sctl.strName = "IDE Controller";
-                sctl.storageBus = StorageBus_IDE;
-
-                Utf8Str strType;
-                if (pelmBIOSChild->getAttributeValue("type", strType))
+                const xml::ElementNode *pelmFirmwareOrBIOSChild;
+                if ((pelmFirmwareOrBIOSChild = pelmHwChild->findChildElement("ACPI")))
+                    pelmFirmwareOrBIOSChild->getAttributeValue("enabled", hw.firmwareSettings.fACPIEnabled);
+                if ((pelmFirmwareOrBIOSChild = pelmHwChild->findChildElement("IOAPIC")))
+                    pelmFirmwareOrBIOSChild->getAttributeValue("enabled", hw.firmwareSettings.fIOAPICEnabled);
+                if ((pelmFirmwareOrBIOSChild = pelmHwChild->findChildElement("APIC")))
                 {
-                    if (strType == "PIIX3")
-                        sctl.controllerType = StorageControllerType_PIIX3;
-                    else if (strType == "PIIX4")
-                        sctl.controllerType = StorageControllerType_PIIX4;
-                    else if (strType == "ICH6")
-                        sctl.controllerType = StorageControllerType_ICH6;
-                    else
-                        throw ConfigFileError(this, pelmBIOSChild, N_("Invalid value '%s' for IDEController/@type attribute"), strType.c_str());
+                    Utf8Str strAPIC;
+                    if (pelmFirmwareOrBIOSChild->getAttributeValue("mode", strAPIC))
+                    {
+                        strAPIC.toUpper();
+                        if (strAPIC == "DISABLED")
+                            hw.firmwareSettings.apicMode = APICMode_Disabled;
+                        else if (strAPIC == "APIC")
+                            hw.firmwareSettings.apicMode = APICMode_APIC;
+                        else if (strAPIC == "X2APIC")
+                            hw.firmwareSettings.apicMode = APICMode_X2APIC;
+                        else
+                            throw ConfigFileError(this, pelmFirmwareOrBIOSChild, N_("Invalid value '%s' in APIC/@mode attribute"), strAPIC.c_str());
+                    }
                 }
-                sctl.ulPortCount = 2;
-                hw.storage.llStorageControllers.push_back(sctl);
+                if ((pelmFirmwareOrBIOSChild = pelmHwChild->findChildElement("Logo")))
+                {
+                    pelmFirmwareOrBIOSChild->getAttributeValue("fadeIn", hw.firmwareSettings.fLogoFadeIn);
+                    pelmFirmwareOrBIOSChild->getAttributeValue("fadeOut", hw.firmwareSettings.fLogoFadeOut);
+                    pelmFirmwareOrBIOSChild->getAttributeValue("displayTime", hw.firmwareSettings.ulLogoDisplayTime);
+                    pelmFirmwareOrBIOSChild->getAttributeValue("imagePath", hw.firmwareSettings.strLogoImagePath);
+                }
+                if ((pelmFirmwareOrBIOSChild = pelmHwChild->findChildElement("BootMenu")))
+                {
+                    Utf8Str strBootMenuMode;
+                    if (pelmFirmwareOrBIOSChild->getAttributeValue("mode", strBootMenuMode))
+                    {
+                        // settings before 1.3 used lower case so make sure this is case-insensitive
+                        strBootMenuMode.toUpper();
+                        if (strBootMenuMode == "DISABLED")
+                            hw.firmwareSettings.enmBootMenuMode = FirmwareBootMenuMode_Disabled;
+                        else if (strBootMenuMode == "MENUONLY")
+                            hw.firmwareSettings.enmBootMenuMode = FirmwareBootMenuMode_MenuOnly;
+                        else if (strBootMenuMode == "MESSAGEANDMENU")
+                            hw.firmwareSettings.enmBootMenuMode = FirmwareBootMenuMode_MessageAndMenu;
+                        else
+                            throw ConfigFileError(this, pelmFirmwareOrBIOSChild, N_("Invalid value '%s' in BootMenu/@mode attribute"), strBootMenuMode.c_str());
+                    }
+                }
+                if ((pelmFirmwareOrBIOSChild = pelmHwChild->findChildElement("PXEDebug")))
+                    pelmFirmwareOrBIOSChild->getAttributeValue("enabled", hw.firmwareSettings.fPXEDebugEnabled);
+                if ((pelmFirmwareOrBIOSChild = pelmHwChild->findChildElement("TimeOffset")))
+                    pelmFirmwareOrBIOSChild->getAttributeValue("value", hw.firmwareSettings.llTimeOffset);
+                if ((pelmFirmwareOrBIOSChild = pelmHwChild->findChildElement("NVRAM")))
+                {
+                    pelmFirmwareOrBIOSChild->getAttributeValue("path", hw.nvramSettings.strNvramPath);
+                    if (m->sv >= SettingsVersion_v1_19)
+                    {
+                        pelmFirmwareOrBIOSChild->getAttributeValue("keyId", hw.nvramSettings.strKeyId);
+                        pelmFirmwareOrBIOSChild->getAttributeValue("keyStore", hw.nvramSettings.strKeyStore);
+                    }
+                }
+                if ((pelmFirmwareOrBIOSChild = pelmHwChild->findChildElement("SmbiosUuidLittleEndian")))
+                    pelmFirmwareOrBIOSChild->getAttributeValue("enabled", hw.firmwareSettings.fSmbiosUuidLittleEndian);
+                else
+                    hw.firmwareSettings.fSmbiosUuidLittleEndian = false; /* Default for existing VMs. */
+
+                // legacy BIOS/IDEController (pre 1.7)
+                if (    (m->sv < SettingsVersion_v1_7)
+                     && (pelmFirmwareOrBIOSChild = pelmHwChild->findChildElement("IDEController"))
+                   )
+                {
+                    StorageController sctl;
+                    sctl.strName = "IDE Controller";
+                    sctl.storageBus = StorageBus_IDE;
+
+                    Utf8Str strType;
+                    if (pelmFirmwareOrBIOSChild->getAttributeValue("type", strType))
+                    {
+                        if (strType == "PIIX3")
+                            sctl.controllerType = StorageControllerType_PIIX3;
+                        else if (strType == "PIIX4")
+                            sctl.controllerType = StorageControllerType_PIIX4;
+                        else if (strType == "ICH6")
+                            sctl.controllerType = StorageControllerType_ICH6;
+                        else
+                            throw ConfigFileError(this, pelmFirmwareOrBIOSChild, N_("Invalid value '%s' for IDEController/@type attribute"), strType.c_str());
+                    }
+                    sctl.ulPortCount = 2;
+                    hw.storage.llStorageControllers.push_back(sctl);
+                }
             }
         }
         else if (pelmHwChild->nameEquals("TrustedPlatformModule"))
@@ -5700,12 +5953,6 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         }
         else if (pelmHwChild->nameEquals("Network"))
             readNetworkAdapters(*pelmHwChild, hw.llNetworkAdapters);
-        else if (pelmHwChild->nameEquals("RTC"))
-        {
-            Utf8Str strLocalOrUTC;
-            machineUserData.fRTCUseUTC = pelmHwChild->getAttributeValue("localOrUTC", strLocalOrUTC)
-                                      && strLocalOrUTC == "UTC";
-        }
         else if (    pelmHwChild->nameEquals("UART")
                   || pelmHwChild->nameEquals("Uart")      // used before 1.3
                 )
@@ -5863,6 +6110,11 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         else if (pelmHwChild->nameEquals("StorageControllers"))
             readStorageControllers(*pelmHwChild, hw.storage);
     }
+
+    /* We read the platform settings here, which were part of the "Hardware" node for settings < 1.2.0.
+     * For newer settings (>= v1.20) we read the platform settings outside readHardware(). */
+    if (m->sv < SettingsVersion_v1_20)
+        readPlatform(elmHardware, hw.platformSettings);
 
     if (hw.ulMemorySizeMB == (uint32_t)-1)
         throw ConfigFileError(this, &elmHardware, N_("Required Memory/@RAMSize element/attribute is missing"));
@@ -6482,6 +6734,16 @@ bool MachineConfigFile::readSnapshot(const Guid &curSnapshotUuid,
 
         pElement->getAttributeValuePath("stateFile", pSnap->strStateFile);      // online snapshots only
 
+        /* We read the platform settings here for newer settings (>= v1.20).
+         * For older settings (< v1.20) we read the platform settings in readHardware(). */
+        if (m->sv >= SettingsVersion_v1_20)
+        {
+            const xml::ElementNode *pelmPlatform;
+            if (!(pelmPlatform = pElement->findChildElement("Platform")))
+                throw ConfigFileError(this, pElement, N_("Required Snapshot/@Platform element is missing"));
+            readPlatform(*pelmPlatform, pSnap->hardware.platformSettings);
+        }
+
         // parse Hardware before the other elements because other things depend on it
         const xml::ElementNode *pelmHardware;
         if (!(pelmHardware = pElement->findChildElement("Hardware")))
@@ -6675,10 +6937,20 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
         elmMachine.getAttributeValue("icon", str);
         parseBase64(machineUserData.ovIcon, str, &elmMachine);
 
+        /* We read the platform settings here for newer settings (>= v1.20).
+         * For older settings (< v1.20) we read the platform settings in readHardware(). */
+        if (m->sv >= SettingsVersion_v1_20)
+        {
+            const xml::ElementNode *pelmPlatform;
+            if (!(pelmPlatform = elmMachine.findChildElement("Platform")))
+                throw ConfigFileError(this, &elmMachine, N_("Required Machine/@Platform element is missing"));
+            readPlatform(*pelmPlatform, hardwareMachine.platformSettings);
+        }
+
         // parse Hardware before the other elements because other things depend on it
         const xml::ElementNode *pelmHardware;
         if (!(pelmHardware = elmMachine.findChildElement("Hardware")))
-            throw ConfigFileError(this, &elmMachine, N_("Required Machine/Hardware element is missing"));
+            throw ConfigFileError(this, &elmMachine, N_("Required Machine/@Hardware element is missing"));
         readHardware(*pelmHardware, hardwareMachine);
 
         xml::NodesLoop nlRootChildren(elmMachine);
@@ -6821,94 +7093,221 @@ void MachineConfigFile::readMachineEncrypted(const xml::ElementNode &elmMachine,
 }
 
 /**
- * Creates a \<Hardware\> node under elmParent and then writes out the XML
+ * Writes x86-specific platform settings out to the XML.
+ *
+ * For settings >= v1.20 this creates a \<x86\> node under elmParent.
  * keys under that. Called for both the \<Machine\> node and for snapshots.
- * @param elmParent
- * @param hw
- * @param fl
- * @param pllElementsWithUuidAttributes
+ *
+ * @param elmParent                         Parent element.
+ *                                          For settings >= v1.20 this is the \<Platform\> element.
+ *                                          For settings  < v1.20 this is the \<Hardware\> element.
+ * @param elmCPU                            CPU element platform-generic settings.
+ *                                          For settings >= v1.20 this is the \<Platform/CPU\> element.
+ *                                          For settings  < v1.20 this is the \<Hardware/CPU\> element.
+ * @param platX86                           x86-specific platform settings to use for building the XML.
  */
-void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
-                                         const Hardware &hw,
-                                         uint32_t fl,
-                                         std::list<xml::ElementNode*> *pllElementsWithUuidAttributes)
+void MachineConfigFile::buildPlatformX86XML(xml::ElementNode &elmParent, xml::ElementNode &elmCPU, const PlatformX86 &platX86)
 {
-    xml::ElementNode *pelmHardware = elmParent.createChild("Hardware");
+    xml::ElementNode *pelmX86Root;
+    xml::ElementNode *pelmX86CPU;
+    if (m->sv >= SettingsVersion_v1_20)
+    {
+        pelmX86Root = elmParent.createChild("x86");
+        pelmX86CPU  = pelmX86Root->createChild("CPU");
 
-    if (   m->sv >= SettingsVersion_v1_4
-        && (m->sv < SettingsVersion_v1_7 ? hw.strVersion != "1" : hw.strVersion != "2"))
-        pelmHardware->setAttribute("version", hw.strVersion);
+    }
+    else
+    {
+        pelmX86Root = &elmParent; /* Before settings v1.20 the x86-specifics were sprinkled across the Machine element. */
+        pelmX86CPU  = &elmCPU;    /* Use the generic CPU element, even for x86-specific things. */
+    }
 
-    if ((m->sv >= SettingsVersion_v1_9)
-         && !hw.uuid.isZero()
-         && hw.uuid.isValid()
-       )
-        pelmHardware->setAttribute("uuid", hw.uuid.toStringCurly());
+    if (   (m->sv >= SettingsVersion_v1_10)
+        && platX86.fHPETEnabled)
+    {
+        xml::ElementNode *pelmHPET = pelmX86Root->createChild("HPET");
+        pelmHPET->setAttribute("enabled", platX86.fHPETEnabled);
+    }
 
-    xml::ElementNode *pelmCPU      = pelmHardware->createChild("CPU");
+    // HardwareVirtExLargePages has too crazy default handling, must always save this setting.
+    pelmX86CPU->createChild("HardwareVirtExLargePages")->setAttribute("enabled", platX86.fHWVirtExLargePages);
 
-    if (!hw.fHardwareVirt)
-        pelmCPU->createChild("HardwareVirtEx")->setAttribute("enabled", hw.fHardwareVirt);
-    if (!hw.fNestedPaging)
-        pelmCPU->createChild("HardwareVirtExNestedPaging")->setAttribute("enabled", hw.fNestedPaging);
-    if (!hw.fVPID)
-        pelmCPU->createChild("HardwareVirtExVPID")->setAttribute("enabled", hw.fVPID);
-    if (!hw.fUnrestrictedExecution)
-        pelmCPU->createChild("HardwareVirtExUX")->setAttribute("enabled", hw.fUnrestrictedExecution);
+    if (m->sv >= SettingsVersion_v1_9)
+    {
+        if (platX86.fHWVirtExForce)
+            pelmX86CPU->createChild("HardwareVirtForce")->setAttribute("enabled", platX86.fHWVirtExForce);
+    }
+
+    if (m->sv >= SettingsVersion_v1_9 && platX86.fHWVirtExUseNativeApi)
+        pelmX86CPU->createChild("HardwareVirtExUseNativeApi")->setAttribute("enabled", platX86.fHWVirtExUseNativeApi);
+
+    if (!platX86.fHWVirtEx)
+        pelmX86CPU->createChild("HardwareVirtEx")->setAttribute("enabled", platX86.fHWVirtEx);
+    if (!platX86.fHWVirtExNestedPaging)
+        pelmX86CPU->createChild("HardwareVirtExNestedPaging")->setAttribute("enabled", platX86.fHWVirtExNestedPaging);
+    if (!platX86.fHWVirtExVPID)
+        pelmX86CPU->createChild("HardwareVirtExVPID")->setAttribute("enabled", platX86.fHWVirtExVPID);
+    if (!platX86.fHWVirtExUX)
+        pelmX86CPU->createChild("HardwareVirtExUX")->setAttribute("enabled", platX86.fHWVirtExUX);
     // PAE has too crazy default handling, must always save this setting.
-    pelmCPU->createChild("PAE")->setAttribute("enabled", hw.fPAE);
+    pelmX86CPU->createChild("PAE")->setAttribute("enabled", platX86.fPAE);
     if (m->sv >= SettingsVersion_v1_16)
     {
-        if (hw.fIBPBOnVMEntry || hw.fIBPBOnVMExit)
+        if (platX86.fIBPBOnVMEntry || platX86.fIBPBOnVMExit)
         {
-            xml::ElementNode *pelmChild = pelmCPU->createChild("IBPBOn");
-            if (hw.fIBPBOnVMExit)
-                pelmChild->setAttribute("vmexit", hw.fIBPBOnVMExit);
-            if (hw.fIBPBOnVMEntry)
-                pelmChild->setAttribute("vmentry", hw.fIBPBOnVMEntry);
+            xml::ElementNode *pelmChild = pelmX86CPU->createChild("IBPBOn");
+            if (platX86.fIBPBOnVMExit)
+                pelmChild->setAttribute("vmexit", platX86.fIBPBOnVMExit);
+            if (platX86.fIBPBOnVMEntry)
+                pelmChild->setAttribute("vmentry", platX86.fIBPBOnVMEntry);
         }
-        if (hw.fSpecCtrl)
-            pelmCPU->createChild("SpecCtrl")->setAttribute("enabled", hw.fSpecCtrl);
-        if (hw.fSpecCtrlByHost)
-            pelmCPU->createChild("SpecCtrlByHost")->setAttribute("enabled", hw.fSpecCtrlByHost);
-        if (!hw.fL1DFlushOnSched || hw.fL1DFlushOnVMEntry)
+        if (platX86.fSpecCtrl)
+            pelmX86CPU->createChild("SpecCtrl")->setAttribute("enabled", platX86.fSpecCtrl);
+        if (platX86.fSpecCtrlByHost)
+            pelmX86CPU->createChild("SpecCtrlByHost")->setAttribute("enabled", platX86.fSpecCtrlByHost);
+        if (!platX86.fL1DFlushOnSched || platX86.fL1DFlushOnVMEntry)
         {
-            xml::ElementNode *pelmChild = pelmCPU->createChild("L1DFlushOn");
-            if (!hw.fL1DFlushOnSched)
-                pelmChild->setAttribute("scheduling", hw.fL1DFlushOnSched);
-            if (hw.fL1DFlushOnVMEntry)
-                pelmChild->setAttribute("vmentry", hw.fL1DFlushOnVMEntry);
+            xml::ElementNode *pelmChild = pelmX86CPU->createChild("L1DFlushOn");
+            if (!platX86.fL1DFlushOnSched)
+                pelmChild->setAttribute("scheduling", platX86.fL1DFlushOnSched);
+            if (platX86.fL1DFlushOnVMEntry)
+                pelmChild->setAttribute("vmentry", platX86.fL1DFlushOnVMEntry);
         }
-        if (!hw.fMDSClearOnSched || hw.fMDSClearOnVMEntry)
+        if (!platX86.fMDSClearOnSched || platX86.fMDSClearOnVMEntry)
         {
-            xml::ElementNode *pelmChild = pelmCPU->createChild("MDSClearOn");
-            if (!hw.fMDSClearOnSched)
-                pelmChild->setAttribute("scheduling", hw.fMDSClearOnSched);
-            if (hw.fMDSClearOnVMEntry)
-                pelmChild->setAttribute("vmentry", hw.fMDSClearOnVMEntry);
+            xml::ElementNode *pelmChild = pelmX86CPU->createChild("MDSClearOn");
+            if (!platX86.fMDSClearOnSched)
+                pelmChild->setAttribute("scheduling", platX86.fMDSClearOnSched);
+            if (platX86.fMDSClearOnVMEntry)
+                pelmChild->setAttribute("vmentry", platX86.fMDSClearOnVMEntry);
         }
     }
-    if (m->sv >= SettingsVersion_v1_17 && hw.fNestedHWVirt)
-        pelmCPU->createChild("NestedHWVirt")->setAttribute("enabled", hw.fNestedHWVirt);
+    if (m->sv >= SettingsVersion_v1_17 && platX86.fNestedHWVirt)
+        pelmX86CPU->createChild("NestedHWVirt")->setAttribute("enabled", platX86.fNestedHWVirt);
 
-    if (m->sv >= SettingsVersion_v1_18 && !hw.fVirtVmsaveVmload)
-        pelmCPU->createChild("HardwareVirtExVirtVmsaveVmload")->setAttribute("enabled", hw.fVirtVmsaveVmload);
+    if (m->sv >= SettingsVersion_v1_18 && !platX86.fHWVirtExVirtVmsaveVmload)
+        pelmX86CPU->createChild("HardwareVirtExVirtVmsaveVmload")->setAttribute("enabled", platX86.fHWVirtExVirtVmsaveVmload);
 
-    if (m->sv >= SettingsVersion_v1_14 && hw.enmLongMode != Hardware::LongMode_Legacy)
+    if (m->sv >= SettingsVersion_v1_14 && platX86.enmLongMode != PlatformX86::LongMode_Legacy)
     {
         // LongMode has too crazy default handling, must always save this setting.
-        pelmCPU->createChild("LongMode")->setAttribute("enabled", hw.enmLongMode == Hardware::LongMode_Enabled);
+        pelmX86CPU->createChild("LongMode")->setAttribute("enabled", platX86.enmLongMode == PlatformX86::LongMode_Enabled);
     }
 
-    if (hw.fTripleFaultReset)
-        pelmCPU->createChild("TripleFaultReset")->setAttribute("enabled", hw.fTripleFaultReset);
+    if (platX86.fTripleFaultReset)
+        pelmX86CPU->createChild("TripleFaultReset")->setAttribute("enabled", platX86.fTripleFaultReset);
     if (m->sv >= SettingsVersion_v1_14)
     {
-        if (hw.fX2APIC)
-            pelmCPU->createChild("X2APIC")->setAttribute("enabled", hw.fX2APIC);
-        else if (!hw.fAPIC)
-            pelmCPU->createChild("APIC")->setAttribute("enabled", hw.fAPIC);
+        if (platX86.fX2APIC)
+            pelmX86CPU->createChild("X2APIC")->setAttribute("enabled", platX86.fX2APIC);
+        else if (!platX86.fAPIC)
+            pelmX86CPU->createChild("APIC")->setAttribute("enabled", platX86.fAPIC);
     }
+
+    xml::ElementNode *pelmCpuIdTree = NULL;
+    for (CpuIdLeafsX86List::const_iterator it  = platX86.llCpuIdLeafs.begin();
+                                           it != platX86.llCpuIdLeafs.end();
+         ++it)
+    {
+        const CpuIdLeafX86 &leaf = *it;
+
+        if (pelmCpuIdTree == NULL)
+             pelmCpuIdTree = pelmX86CPU->createChild("CpuIdTree");
+
+        xml::ElementNode *pelmCpuIdLeaf = pelmCpuIdTree->createChild("CpuIdLeaf");
+        pelmCpuIdLeaf->setAttribute("id",  leaf.idx);
+        if (leaf.idxSub != 0)
+            pelmCpuIdLeaf->setAttribute("subleaf",  leaf.idxSub);
+        pelmCpuIdLeaf->setAttribute("eax", leaf.uEax);
+        pelmCpuIdLeaf->setAttribute("ebx", leaf.uEbx);
+        pelmCpuIdLeaf->setAttribute("ecx", leaf.uEcx);
+        pelmCpuIdLeaf->setAttribute("edx", leaf.uEdx);
+    }
+}
+
+/**
+ * Stores platform-generic and platform-specific data and then writes out the XML.
+ *
+ * For settings >= v.120 this creates a \<Platform\> node under elmParent.
+ * For settings  < v.120 this stores the data directly under elmParent.
+ *
+ * Called for both the \<Machine\> node and for snapshots.
+ *
+ * @param elmParent                         Parent element.
+ * @param hw                                Hardware settings to use for building the XML.
+ *                                          For CPU stuff we don't have in Platform (yet).
+ * @param plat                              Platform settings to use for building the XML.
+ */
+void MachineConfigFile::buildPlatformXML(xml::ElementNode &elmParent,
+                                         const Hardware &hw, const Platform &plat)
+{
+    xml::ElementNode *pelmPlatformOrHardware;
+    if (m->sv >= SettingsVersion_v1_20) /* Since settings v1.20 we have a dedicated Platform element. */
+    {
+        pelmPlatformOrHardware = elmParent.createChild("Platform");
+
+        switch (plat.architectureType)
+        {
+            case PlatformArchitecture_x86:
+                pelmPlatformOrHardware->setAttribute("architecture", "x86");
+                break;
+
+            case PlatformArchitecture_ARM:
+                pelmPlatformOrHardware->setAttribute("architecture", "ARM");
+                break;
+
+            default:
+                AssertFailed();
+                break;
+        }
+    }
+    else /* For settings < v1.20 we use the parent element (which is Hardware). */
+        pelmPlatformOrHardware = &elmParent;
+
+    if (   m->sv >= SettingsVersion_v1_10
+        && plat.fRTCUseUTC)
+    {
+        xml::ElementNode *pelmRTC = pelmPlatformOrHardware->createChild("RTC");
+        pelmRTC->setAttribute("localOrUTC", plat.fRTCUseUTC ? "UTC" : "local");
+    }
+
+    if (m->sv >= SettingsVersion_v1_11)
+    {
+        if (plat.chipsetType != ChipsetType_PIIX3)
+        {
+            xml::ElementNode *pelmChipset = pelmPlatformOrHardware->createChild("Chipset");
+            const char *pcszChipset;
+
+            switch (plat.chipsetType)
+            {
+                case ChipsetType_PIIX3:             pcszChipset = "PIIX3";        break;
+                case ChipsetType_ICH9:              pcszChipset = "ICH9";         break;
+                case ChipsetType_ARMv8Virtual:      pcszChipset = "ARMv8Virtual"; break;
+                default:            Assert(false);  pcszChipset = "PIIX3";        break;
+            }
+            pelmChipset->setAttribute("type", pcszChipset);
+        }
+    }
+
+    if (   m->sv >= SettingsVersion_v1_19
+        && plat.iommuType != IommuType_None)
+    {
+        const char *pcszIommuType;
+        switch (plat.iommuType)
+        {
+            case IommuType_None:         pcszIommuType = "None";        break;
+            case IommuType_Automatic:    pcszIommuType = "Automatic";   break;
+            case IommuType_AMD:          pcszIommuType = "AMD";         break;
+            case IommuType_Intel:        pcszIommuType = "Intel";       break;
+            default:     Assert(false);  pcszIommuType = "None";        break;
+        }
+
+        xml::ElementNode *pelmIommu = pelmPlatformOrHardware->createChild("Iommu");
+        pelmIommu->setAttribute("type", pcszIommuType);
+    }
+
+    xml::ElementNode *pelmCPU = pelmPlatformOrHardware->createChild("CPU");
+
     if (hw.cCPUs > 1)
         pelmCPU->setAttribute("count", hw.cCPUs);
     if (hw.ulCpuExecutionCap != 100)
@@ -6917,18 +7316,6 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         pelmCPU->setAttribute("CpuIdPortabilityLevel", hw.uCpuIdPortabilityLevel);
     if (!hw.strCpuProfile.equals("host") && hw.strCpuProfile.isNotEmpty())
         pelmCPU->setAttribute("CpuProfile", hw.strCpuProfile);
-
-    // HardwareVirtExLargePages has too crazy default handling, must always save this setting.
-    pelmCPU->createChild("HardwareVirtExLargePages")->setAttribute("enabled", hw.fLargePages);
-
-    if (m->sv >= SettingsVersion_v1_9)
-    {
-        if (hw.fHardwareVirtForce)
-            pelmCPU->createChild("HardwareVirtForce")->setAttribute("enabled", hw.fHardwareVirtForce);
-    }
-
-    if (m->sv >= SettingsVersion_v1_9 && hw.fUseNativeApi)
-        pelmCPU->createChild("HardwareVirtExUseNativeApi")->setAttribute("enabled", hw.fUseNativeApi);
 
     if (m->sv >= SettingsVersion_v1_10)
     {
@@ -6950,25 +7337,37 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         }
     }
 
-    xml::ElementNode *pelmCpuIdTree = NULL;
-    for (CpuIdLeafsList::const_iterator it = hw.llCpuIdLeafs.begin();
-         it != hw.llCpuIdLeafs.end();
-         ++it)
-    {
-        const CpuIdLeaf &leaf = *it;
+    /* We only store specific stuff for the selected platform. */
+    if (plat.architectureType == PlatformArchitecture_x86)
+        buildPlatformX86XML(*pelmPlatformOrHardware, *pelmCPU, plat.x86);
+    /** @todo BUGBUG Put ARM stuff here. */
+}
 
-        if (pelmCpuIdTree == NULL)
-             pelmCpuIdTree = pelmCPU->createChild("CpuIdTree");
+/**
+ * Creates a \<Hardware\> node under elmParent and then writes out the XML
+ * keys under that. Called for both the \<Machine\> node and for snapshots.
+ *
+ * @param elmParent                         Parent element.
+ * @param hw                                Hardware settings to use for building the XML.
+ * @param fl                                Flags.
+ * @param pllElementsWithUuidAttributes     Document me.
+ */
+void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
+                                         const Hardware &hw,
+                                         uint32_t fl,
+                                         std::list<xml::ElementNode*> *pllElementsWithUuidAttributes)
+{
+    xml::ElementNode *pelmHardware = elmParent.createChild("Hardware");
 
-        xml::ElementNode *pelmCpuIdLeaf = pelmCpuIdTree->createChild("CpuIdLeaf");
-        pelmCpuIdLeaf->setAttribute("id",  leaf.idx);
-        if (leaf.idxSub != 0)
-            pelmCpuIdLeaf->setAttribute("subleaf",  leaf.idxSub);
-        pelmCpuIdLeaf->setAttribute("eax", leaf.uEax);
-        pelmCpuIdLeaf->setAttribute("ebx", leaf.uEbx);
-        pelmCpuIdLeaf->setAttribute("ecx", leaf.uEcx);
-        pelmCpuIdLeaf->setAttribute("edx", leaf.uEdx);
-    }
+    if (   m->sv >= SettingsVersion_v1_4
+        && (m->sv < SettingsVersion_v1_7 ? hw.strVersion != "1" : hw.strVersion != "2"))
+        pelmHardware->setAttribute("version", hw.strVersion);
+
+    if ((m->sv >= SettingsVersion_v1_9)
+         && !hw.uuid.isZero()
+         && hw.uuid.isValid()
+       )
+        pelmHardware->setAttribute("uuid", hw.uuid.toStringCurly());
 
     xml::ElementNode *pelmMemory = pelmHardware->createChild("Memory");
     pelmMemory->setAttribute("RAMSize", hw.ulMemorySizeMB);
@@ -6976,24 +7375,6 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     {
         if (hw.fPageFusionEnabled)
             pelmMemory->setAttribute("PageFusion", hw.fPageFusionEnabled);
-    }
-
-    if (    (m->sv >= SettingsVersion_v1_9)
-         && (hw.firmwareType >= FirmwareType_EFI)
-       )
-    {
-        xml::ElementNode *pelmFirmware = pelmHardware->createChild("Firmware");
-        const char *pcszFirmware;
-
-        switch (hw.firmwareType)
-        {
-            case FirmwareType_EFI:      pcszFirmware = "EFI";     break;
-            case FirmwareType_EFI32:    pcszFirmware = "EFI32";   break;
-            case FirmwareType_EFI64:    pcszFirmware = "EFI64";   break;
-            case FirmwareType_EFIDUAL:  pcszFirmware = "EFIDUAL"; break;
-            default:                    pcszFirmware = "None";    break;
-        }
-        pelmFirmware->setAttribute("type", pcszFirmware);
     }
 
     if (   m->sv >= SettingsVersion_v1_10
@@ -7033,31 +7414,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         }
     }
 
-    if (    (m->sv >= SettingsVersion_v1_10)
-        &&  hw.fHPETEnabled
-       )
-    {
-        xml::ElementNode *pelmHPET = pelmHardware->createChild("HPET");
-        pelmHPET->setAttribute("enabled", hw.fHPETEnabled);
-    }
 
-    if (    (m->sv >= SettingsVersion_v1_11)
-       )
-    {
-        if (hw.chipsetType != ChipsetType_PIIX3)
-        {
-            xml::ElementNode *pelmChipset = pelmHardware->createChild("Chipset");
-            const char *pcszChipset;
-
-            switch (hw.chipsetType)
-            {
-                case ChipsetType_PIIX3:             pcszChipset = "PIIX3";   break;
-                case ChipsetType_ICH9:              pcszChipset = "ICH9";    break;
-                default:            Assert(false);  pcszChipset = "PIIX3";   break;
-            }
-            pelmChipset->setAttribute("type", pcszChipset);
-        }
-    }
 
     if (    (m->sv >= SettingsVersion_v1_15)
         && !hw.areParavirtDefaultSettings(m->sv)
@@ -7081,23 +7438,6 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         if (   m->sv >= SettingsVersion_v1_16
             && hw.strParavirtDebug.isNotEmpty())
             pelmParavirt->setAttribute("debug", hw.strParavirtDebug);
-    }
-
-    if (   m->sv >= SettingsVersion_v1_19
-        && hw.iommuType != IommuType_None)
-    {
-        const char *pcszIommuType;
-        switch (hw.iommuType)
-        {
-            case IommuType_None:         pcszIommuType = "None";        break;
-            case IommuType_Automatic:    pcszIommuType = "Automatic";   break;
-            case IommuType_AMD:          pcszIommuType = "AMD";         break;
-            case IommuType_Intel:        pcszIommuType = "Intel";       break;
-            default:     Assert(false);  pcszIommuType = "None";        break;
-        }
-
-        xml::ElementNode *pelmIommu = pelmHardware->createChild("Iommu");
-        pelmIommu->setAttribute("type", pcszIommuType);
     }
 
     if (!hw.areBootOrderDefaultSettings())
@@ -7244,17 +7584,42 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         }
     }
 
-    if (!hw.biosSettings.areDefaultSettings() || !hw.nvramSettings.areDefaultSettings())
+    if (   !hw.firmwareSettings.areDefaultSettings(  hw.platformSettings.architectureType == PlatformArchitecture_ARM
+                                                   /* Good enough for now (we don't support ARMv7). */
+                                                   ? CPUArchitecture_ARMv8_64 : CPUArchitecture_x86)
+        || !hw.nvramSettings.areDefaultSettings())
     {
-        xml::ElementNode *pelmBIOS = pelmHardware->createChild("BIOS");
-        if (!hw.biosSettings.fACPIEnabled)
-            pelmBIOS->createChild("ACPI")->setAttribute("enabled", hw.biosSettings.fACPIEnabled);
-        if (hw.biosSettings.fIOAPICEnabled)
-            pelmBIOS->createChild("IOAPIC")->setAttribute("enabled", hw.biosSettings.fIOAPICEnabled);
-        if (hw.biosSettings.apicMode != APICMode_APIC)
+        xml::ElementNode *pelmFirmwareOrBIOS;
+        if (m->sv >= SettingsVersion_v1_20) /* Since settings v1.20 the element was renamed to "Firmware". */
+            pelmFirmwareOrBIOS = pelmHardware->createChild("Firmware");
+        else
+            pelmFirmwareOrBIOS = pelmHardware->createChild("BIOS");
+
+        if (   (m->sv >= SettingsVersion_v1_9)
+            && (hw.firmwareSettings.firmwareType >= FirmwareType_EFI)
+           )
+        {
+            const char *pcszFirmware;
+
+            switch (hw.firmwareSettings.firmwareType)
+            {
+                case FirmwareType_EFI:      pcszFirmware = "EFI";     break;
+                case FirmwareType_EFI32:    pcszFirmware = "EFI32";   break;
+                case FirmwareType_EFI64:    pcszFirmware = "EFI64";   break;
+                case FirmwareType_EFIDUAL:  pcszFirmware = "EFIDUAL"; break;
+                default:                    pcszFirmware = "None";    break;
+            }
+            pelmFirmwareOrBIOS->setAttribute("type", pcszFirmware);
+        }
+
+        if (!hw.firmwareSettings.fACPIEnabled)
+            pelmFirmwareOrBIOS->createChild("ACPI")->setAttribute("enabled", hw.firmwareSettings.fACPIEnabled);
+        if (hw.firmwareSettings.fIOAPICEnabled)
+            pelmFirmwareOrBIOS->createChild("IOAPIC")->setAttribute("enabled", hw.firmwareSettings.fIOAPICEnabled);
+        if (hw.firmwareSettings.apicMode != APICMode_APIC)
         {
             const char *pcszAPIC;
-            switch (hw.biosSettings.apicMode)
+            switch (hw.firmwareSettings.apicMode)
             {
                 case APICMode_Disabled:
                     pcszAPIC = "Disabled";
@@ -7267,40 +7632,40 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                     pcszAPIC = "X2APIC";
                     break;
             }
-            pelmBIOS->createChild("APIC")->setAttribute("mode", pcszAPIC);
+            pelmFirmwareOrBIOS->createChild("APIC")->setAttribute("mode", pcszAPIC);
         }
 
-        if (   !hw.biosSettings.fLogoFadeIn
-            || !hw.biosSettings.fLogoFadeOut
-            || hw.biosSettings.ulLogoDisplayTime
-            || !hw.biosSettings.strLogoImagePath.isEmpty())
+        if (   !hw.firmwareSettings.fLogoFadeIn
+            || !hw.firmwareSettings.fLogoFadeOut
+            ||  hw.firmwareSettings.ulLogoDisplayTime
+            || !hw.firmwareSettings.strLogoImagePath.isEmpty())
         {
-            xml::ElementNode *pelmLogo = pelmBIOS->createChild("Logo");
-            pelmLogo->setAttribute("fadeIn", hw.biosSettings.fLogoFadeIn);
-            pelmLogo->setAttribute("fadeOut", hw.biosSettings.fLogoFadeOut);
-            pelmLogo->setAttribute("displayTime", hw.biosSettings.ulLogoDisplayTime);
-            if (!hw.biosSettings.strLogoImagePath.isEmpty())
-                pelmLogo->setAttribute("imagePath", hw.biosSettings.strLogoImagePath);
+            xml::ElementNode *pelmLogo = pelmFirmwareOrBIOS->createChild("Logo");
+            pelmLogo->setAttribute("fadeIn", hw.firmwareSettings.fLogoFadeIn);
+            pelmLogo->setAttribute("fadeOut", hw.firmwareSettings.fLogoFadeOut);
+            pelmLogo->setAttribute("displayTime", hw.firmwareSettings.ulLogoDisplayTime);
+            if (!hw.firmwareSettings.strLogoImagePath.isEmpty())
+                pelmLogo->setAttribute("imagePath", hw.firmwareSettings.strLogoImagePath);
         }
 
-        if (hw.biosSettings.biosBootMenuMode != BIOSBootMenuMode_MessageAndMenu)
+        if (hw.firmwareSettings.enmBootMenuMode != FirmwareBootMenuMode_MessageAndMenu)
         {
             const char *pcszBootMenu;
-            switch (hw.biosSettings.biosBootMenuMode)
+            switch (hw.firmwareSettings.enmBootMenuMode)
             {
-                case BIOSBootMenuMode_Disabled: pcszBootMenu = "Disabled"; break;
-                case BIOSBootMenuMode_MenuOnly: pcszBootMenu = "MenuOnly"; break;
-                default: /*BIOSBootMenuMode_MessageAndMenu*/ pcszBootMenu = "MessageAndMenu"; break;
+                case FirmwareBootMenuMode_Disabled: pcszBootMenu = "Disabled"; break;
+                case FirmwareBootMenuMode_MenuOnly: pcszBootMenu = "MenuOnly"; break;
+                default: /*FirmwareBootMenuMode_MessageAndMenu*/ pcszBootMenu = "MessageAndMenu"; break;
             }
-            pelmBIOS->createChild("BootMenu")->setAttribute("mode", pcszBootMenu);
+            pelmFirmwareOrBIOS->createChild("BootMenu")->setAttribute("mode", pcszBootMenu);
         }
-        if (hw.biosSettings.llTimeOffset)
-            pelmBIOS->createChild("TimeOffset")->setAttribute("value", hw.biosSettings.llTimeOffset);
-        if (hw.biosSettings.fPXEDebugEnabled)
-            pelmBIOS->createChild("PXEDebug")->setAttribute("enabled", hw.biosSettings.fPXEDebugEnabled);
+        if (hw.firmwareSettings.llTimeOffset)
+            pelmFirmwareOrBIOS->createChild("TimeOffset")->setAttribute("value", hw.firmwareSettings.llTimeOffset);
+        if (hw.firmwareSettings.fPXEDebugEnabled)
+            pelmFirmwareOrBIOS->createChild("PXEDebug")->setAttribute("enabled", hw.firmwareSettings.fPXEDebugEnabled);
         if (!hw.nvramSettings.areDefaultSettings())
         {
-            xml::ElementNode *pelmNvram = pelmBIOS->createChild("NVRAM");
+            xml::ElementNode *pelmNvram = pelmFirmwareOrBIOS->createChild("NVRAM");
             if (!hw.nvramSettings.strNvramPath.isEmpty())
                 pelmNvram->setAttribute("path", hw.nvramSettings.strNvramPath);
             if (m->sv >= SettingsVersion_v1_9)
@@ -7311,8 +7676,8 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                     pelmNvram->setAttribute("keyStore", hw.nvramSettings.strKeyStore);
             }
         }
-        if (hw.biosSettings.fSmbiosUuidLittleEndian)
-            pelmBIOS->createChild("SmbiosUuidLittleEndian")->setAttribute("enabled", hw.biosSettings.fSmbiosUuidLittleEndian);
+        if (hw.firmwareSettings.fSmbiosUuidLittleEndian)
+            pelmFirmwareOrBIOS->createChild("SmbiosUuidLittleEndian")->setAttribute("enabled", hw.firmwareSettings.fSmbiosUuidLittleEndian);
     }
 
     if (!hw.tpmSettings.areDefaultSettings())
@@ -7625,7 +7990,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
             xml::ElementNode *pelmPort = pelmPorts->createChild("Port");
             pelmPort->setAttribute("slot", port.ulSlot);
             pelmPort->setAttribute("enabled", port.fEnabled);
-            pelmPort->setAttributeHex("IOBase", port.ulIOBase);
+            pelmPort->setAttributeHex("IOAddress", port.ulIOAddress);
             pelmPort->setAttribute("IRQ", port.ulIRQ);
 
             const char *pcszHostMode;
@@ -7806,12 +8171,6 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                 pelm->setAttribute("value", strValue);
             }
         }
-    }
-
-    if (m->sv >= SettingsVersion_v1_10 && machineUserData.fRTCUseUTC)
-    {
-        xml::ElementNode *pelmRTC = pelmHardware->createChild("RTC");
-        pelmRTC->setAttribute("localOrUTC", machineUserData.fRTCUseUTC ? "UTC" : "local");
     }
 
     if (hw.llSharedFolders.size())
@@ -8602,6 +8961,15 @@ void MachineConfigFile::buildSnapshotXML(xml::ElementNode &elmParent,
         buildRecordingXML(*pelmSnapshot, pSnap->recordingSettings);
         // note: Groups exist only for Machine, not for Snapshot
 
+        if (m->sv < SettingsVersion_v1_20) /* Before settings v1.20 the platform stuff lived directly in the Hardware element. */
+        {
+            xml::ElementNode *pelHardware = unconst(pelmSnapshot->findChildElement("Hardware"));
+            if (pelHardware)
+                buildPlatformXML(*pelHardware, pSnap->hardware, pSnap->hardware.platformSettings);
+        }
+        else /* Now lives outside of "Hardware", in "Platform". */
+            buildPlatformXML(*pelmSnapshot, pSnap->hardware, pSnap->hardware.platformSettings);
+
         if (pSnap->llChildSnapshots.size())
         {
             xml::ElementNode *pelmChildren = pelmSnapshot->createChild("Snapshots");
@@ -8779,6 +9147,16 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
         buildRecordingXML(elmMachine, recordingSettings);
 
     buildGroupsXML(elmMachine, machineUserData.llGroups);
+
+    /* Note: Must come *after* buildHardwareXML(), as the "Hardware" branch is needed. */
+    if (m->sv < SettingsVersion_v1_20)
+    {
+        xml::ElementNode *pelHardware = unconst(elmMachine.findChildElement("Hardware"));
+        if (pelHardware)
+            buildPlatformXML(*pelHardware, hardwareMachine, hardwareMachine.platformSettings);
+    }
+    else /* Now lives outside of "Hardware", in "Platform". */
+        buildPlatformXML(elmMachine, hardwareMachine, hardwareMachine.platformSettings);
 }
 
  /**
@@ -8993,10 +9371,22 @@ AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
  */
 void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
+    if (m->sv < SettingsVersion_v1_20)
+    {
+        // VirtualBox 7.1 (settings v1.20) adds support for different VM platforms.
+        if (   hardwareMachine.platformSettings.architectureType != PlatformArchitecture_None
+            && hardwareMachine.platformSettings.architectureType != PlatformArchitecture_x86)
+        {
+            /* Note: The new chipset type ARMv8Virtual implies setting the platform architecture type to ARM. */
+            m->sv = SettingsVersion_v1_20;
+            return;
+        }
+    }
+
     if (m->sv < SettingsVersion_v1_19)
     {
         // VirtualBox 7.0 adds iommu device and full VM encryption.
-        if (   hardwareMachine.iommuType != IommuType_None
+        if (   hardwareMachine.platformSettings.iommuType != IommuType_None
             || strKeyId.isNotEmpty()
             || strKeyStore.isNotEmpty()
             || strStateKeyId.isNotEmpty()
@@ -9066,7 +9456,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
         }
 
         // VirtualBox 6.1 adds AMD-V virtualized VMSAVE/VMLOAD setting.
-        if (hardwareMachine.fVirtVmsaveVmload == false)
+        if (hardwareMachine.platformSettings.x86.fHWVirtExVirtVmsaveVmload == false)
         {
             m->sv = SettingsVersion_v1_18;
             return;
@@ -9113,8 +9503,8 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
         }
 
         // VirtualBox 6.0 adds nested hardware virtualization, using native API (NEM).
-        if (   hardwareMachine.fNestedHWVirt
-            || hardwareMachine.fUseNativeApi)
+        if (   hardwareMachine.platformSettings.x86.fNestedHWVirt
+            || hardwareMachine.platformSettings.x86.fHWVirtExUseNativeApi)
         {
             m->sv = SettingsVersion_v1_17;
             return;
@@ -9150,19 +9540,19 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
         // VirtualBox 5.1 adds a NVMe storage controller, paravirt debug
         // options, cpu profile, APIC settings (CPU capability and BIOS).
 
-        if (   hardwareMachine.strParavirtDebug.isNotEmpty()
+        if (    hardwareMachine.strParavirtDebug.isNotEmpty()
             || (!hardwareMachine.strCpuProfile.equals("host") && hardwareMachine.strCpuProfile.isNotEmpty())
-            || hardwareMachine.biosSettings.apicMode != APICMode_APIC
-            || !hardwareMachine.fAPIC
-            || hardwareMachine.fX2APIC
-            || hardwareMachine.fIBPBOnVMExit
-            || hardwareMachine.fIBPBOnVMEntry
-            || hardwareMachine.fSpecCtrl
-            || hardwareMachine.fSpecCtrlByHost
-            || !hardwareMachine.fL1DFlushOnSched
-            || hardwareMachine.fL1DFlushOnVMEntry
-            || !hardwareMachine.fMDSClearOnSched
-            || hardwareMachine.fMDSClearOnVMEntry)
+            ||  hardwareMachine.firmwareSettings.apicMode != APICMode_APIC
+            || !hardwareMachine.platformSettings.x86.fAPIC
+            ||  hardwareMachine.platformSettings.x86.fX2APIC
+            ||  hardwareMachine.platformSettings.x86.fIBPBOnVMExit
+            ||  hardwareMachine.platformSettings.x86.fIBPBOnVMEntry
+            ||  hardwareMachine.platformSettings.x86.fSpecCtrl
+            ||  hardwareMachine.platformSettings.x86.fSpecCtrlByHost
+            || !hardwareMachine.platformSettings.x86.fL1DFlushOnSched
+            ||  hardwareMachine.platformSettings.x86.fL1DFlushOnVMEntry
+            || !hardwareMachine.platformSettings.x86.fMDSClearOnSched
+            ||  hardwareMachine.platformSettings.x86.fMDSClearOnVMEntry)
         {
             m->sv = SettingsVersion_v1_16;
             return;
@@ -9181,8 +9571,8 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             }
         }
 
-        for (CpuIdLeafsList::const_iterator it = hardwareMachine.llCpuIdLeafs.begin();
-             it != hardwareMachine.llCpuIdLeafs.end();
+        for (CpuIdLeafsX86List::const_iterator it = hardwareMachine.platformSettings.x86.llCpuIdLeafs.begin();
+             it != hardwareMachine.platformSettings.x86.llCpuIdLeafs.end();
              ++it)
             if (it->idxSub != 0)
             {
@@ -9279,7 +9669,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
         // setting, explicit long mode setting, (video) capturing and NAT networking.
         if (   !hardwareMachine.strDefaultFrontend.isEmpty()
             || hardwareMachine.graphicsAdapter.graphicsControllerType != GraphicsControllerType_VBoxVGA
-            || hardwareMachine.enmLongMode != Hardware::LongMode_Legacy
+            || hardwareMachine.platformSettings.x86.enmLongMode != PlatformX86::LongMode_Legacy
             || machineUserData.ovIcon.size() > 0
             || recordingSettings.common.fEnabled)
         {
@@ -9407,7 +9797,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
              || !hardwareMachine.vrdeSettings.strAuthLibrary.isEmpty()
              || machineUserData.strOsType == "JRockitVE"
              || hardwareMachine.ioSettings.llBandwidthGroups.size()
-             || hardwareMachine.chipsetType == ChipsetType_ICH9
+             || hardwareMachine.platformSettings.chipsetType == ChipsetType_ICH9
            )
             m->sv = SettingsVersion_v1_11;
     }
@@ -9588,11 +9978,11 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                 // and page fusion
             || (hardwareMachine.fPageFusionEnabled)
                 // and CPU hotplug, RTC timezone control, HID type and HPET
-            || machineUserData.fRTCUseUTC
+            || hardwareMachine.platformSettings.fRTCUseUTC
             || hardwareMachine.fCpuHotPlug
             || hardwareMachine.pointingHIDType != PointingHIDType_PS2Mouse
             || hardwareMachine.keyboardHIDType != KeyboardHIDType_PS2Keyboard
-            || hardwareMachine.fHPETEnabled
+            || hardwareMachine.platformSettings.x86.fHPETEnabled
            )
             m->sv = SettingsVersion_v1_10;
     }
@@ -9651,7 +10041,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 
     // all the following require settings version 1.9
     if (    (m->sv < SettingsVersion_v1_9)
-         && (    (hardwareMachine.firmwareType >= FirmwareType_EFI)
+        && (    (hardwareMachine.firmwareSettings.firmwareType >= FirmwareType_EFI)
               || machineUserData.fTeleporterEnabled
               || machineUserData.uTeleporterPort
               || !machineUserData.strTeleporterAddress.isEmpty()

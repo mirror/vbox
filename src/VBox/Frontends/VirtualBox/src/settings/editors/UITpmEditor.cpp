@@ -37,7 +37,7 @@
 #include "UITpmEditor.h"
 
 /* COM includes: */
-#include "CSystemProperties.h"
+#include "CPlatformProperties.h"
 
 
 UITpmEditor::UITpmEditor(QWidget *pParent /* = 0 */)
@@ -147,7 +147,7 @@ void UITpmEditor::populateCombo()
         m_pCombo->clear();
 
         /* Load currently supported values: */
-        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+        CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
         m_supportedValues = comProperties.GetSupportedTpmTypes();
 
         /* Make sure requested value if sane is present as well: */

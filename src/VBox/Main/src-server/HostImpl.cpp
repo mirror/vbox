@@ -40,6 +40,7 @@
 #include "VBox/com/ptr.h"
 
 #include "HostImpl.h"
+#include "HostX86Impl.h"
 
 #ifdef VBOX_WITH_USB
 # include "HostUSBDeviceImpl.h"
@@ -149,16 +150,12 @@ typedef SOLARISFIXEDDISK *PSOLARISFIXEDDISK;
 # include "darwin/iokit.h"
 #endif
 
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-# include <iprt/asm-amd64-x86.h>
-#endif
 #ifdef RT_OS_SOLARIS
 # include <iprt/ctype.h>
 #endif
 #if defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS)
 # include <iprt/file.h>
 #endif
-#include <iprt/mp.h>
 #include <iprt/env.h>
 #include <iprt/mem.h>
 #include <iprt/param.h>
@@ -262,6 +259,8 @@ struct Host::Data
     /** Reference to the host update agent. */
     const ComObjPtr<HostUpdateAgent> pUpdateHost;
 #endif
+    /** Reference to the x86 host specific portions of the host object. */
+    const ComObjPtr<HostX86>         pHostX86;
 };
 
 
@@ -300,6 +299,11 @@ HRESULT Host::init(VirtualBox *aParent)
     m = new Data();
 
     m->pParent = aParent;
+
+    hrc = unconst(m->pHostX86).createObject();
+    if (SUCCEEDED(hrc))
+        hrc = m->pHostX86->init();
+    AssertComRCReturn(hrc, hrc);
 
 #ifdef VBOX_WITH_USB
     /*
@@ -514,6 +518,12 @@ void Host::uninit()
 
     m->hostDnsMonitorProxy.uninit();
 
+    if (m->pHostX86)
+    {
+        m->pHostX86->uninit();
+        unconst(m->pHostX86).setNull();
+    }
+
 #ifdef VBOX_WITH_UPDATE_AGENT
     if (m->pUpdateHost)
     {
@@ -581,6 +591,25 @@ void Host::uninit()
 // IHost public methods
 //
 ////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Returns the host's platform architecture.
+ *
+ * @returns COM status code
+ * @param   platformArchitecture    Where to return the host's platform architecture.
+ */
+HRESULT Host::getArchitecture(PlatformArchitecture_T *platformArchitecture)
+{
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+    *platformArchitecture = PlatformArchitecture_x86;
+#elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    *platformArchitecture = PlatformArchitecture_ARM;
+#else
+# error "Port me!"
+#endif
+
+    return S_OK;
+}
 
 /**
  * Returns a list of host DVD drives.
@@ -1323,48 +1352,6 @@ HRESULT Host::getProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSupported)
 }
 
 /**
- * Returns the specific CPUID leaf.
- *
- * @returns COM status code
- * @param   aCpuId              The CPU number. Mostly ignored.
- * @param   aLeaf               The leaf number.
- * @param   aSubLeaf            The sub-leaf number.
- * @param   aValEAX             Where to return EAX.
- * @param   aValEBX             Where to return EBX.
- * @param   aValECX             Where to return ECX.
- * @param   aValEDX             Where to return EDX.
- */
-HRESULT Host::getProcessorCPUIDLeaf(ULONG aCpuId, ULONG aLeaf, ULONG aSubLeaf,
-                                    ULONG *aValEAX, ULONG *aValEBX, ULONG *aValECX, ULONG *aValEDX)
-{
-    // no locking required
-
-    /* Check that the CPU is online. */
-    /** @todo later use RTMpOnSpecific. */
-    if (!RTMpIsCpuOnline(aCpuId))
-        return RTMpIsCpuPresent(aCpuId)
-             ? setError(E_FAIL, tr("CPU no.%u is not present"), aCpuId)
-             : setError(E_FAIL, tr("CPU no.%u is not online"), aCpuId);
-
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-    uint32_t uEAX, uEBX, uECX, uEDX;
-    ASMCpuId_Idx_ECX(aLeaf, aSubLeaf, &uEAX, &uEBX, &uECX, &uEDX);
-    *aValEAX = uEAX;
-    *aValEBX = uEBX;
-    *aValECX = uECX;
-    *aValEDX = uEDX;
-#else
-    RT_NOREF(aLeaf, aSubLeaf);
-    *aValEAX = 0;
-    *aValEBX = 0;
-    *aValECX = 0;
-    *aValEDX = 0;
-#endif
-
-    return S_OK;
-}
-
-/**
  * Returns the amount of installed system memory in megabytes
  *
  * @returns COM status code
@@ -1999,6 +1986,17 @@ HRESULT Host::getVideoInputDevices(std::vector<ComPtr<IHostVideoInputDevice> > &
         (*it).queryInterfaceTo(aVideoInputDevices[i].asOutParam());
 
     return S_OK;
+}
+
+/**
+ * Returns the x86 host specific portions of the host object.
+ *
+ * @returns x86 host specific portions of the host object.
+ * @param   aHostX86            Where to return the x86 host specific portions of the host objects.
+ */
+HRESULT Host::getX86(ComPtr<IHostX86> &aHostX86)
+{
+    return m->pHostX86.queryInterfaceTo(aHostX86.asOutParam());
 }
 
 HRESULT Host::addUSBDeviceSource(const com::Utf8Str &aBackend, const com::Utf8Str &aId, const com::Utf8Str &aAddress,

@@ -85,8 +85,8 @@ private:
     HRESULT getSlot(ULONG *aSlot);
     HRESULT getIRQ(ULONG *aIRQ);
     HRESULT setIRQ(ULONG aIRQ);
-    HRESULT getIOBase(ULONG *aIOBase);
-    HRESULT setIOBase(ULONG aIOBase);
+    HRESULT getIOAddress(ULONG *aIOAddress);
+    HRESULT setIOAddress(ULONG aIOAddress);
     HRESULT getServer(BOOL *aServer);
     HRESULT setServer(BOOL aServer);
     HRESULT getPath(com::Utf8Str &aPath);

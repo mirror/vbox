@@ -97,7 +97,6 @@
 
 /* COM includes: */
 #include "CAudioAdapter.h"
-#include "CBIOSSettings.h"
 #include "CCloudMachine.h"
 #include "CConsole.h"
 #include "CExtPack.h"

@@ -171,6 +171,15 @@ g_ksParavirtProviderKVM     = 'kvm';
 g_kasParavirtProviders = ( g_ksParavirtProviderNone, g_ksParavirtProviderDefault, g_ksParavirtProviderLegacy,
                            g_ksParavirtProviderMinimal, g_ksParavirtProviderHyperV, g_ksParavirtProviderKVM );
 
+## @name String constants for platform architectures. The createVMXXX functions depend on these strings.
+## @{
+g_kasPlatformArchitectureX86 = 'x86';
+g_kasPlatformArchitectureARM = 'ARM';
+## @}
+
+## Valid platform architectures.
+g_kasPlatformArchitectures = ( g_kasPlatformArchitectureX86, g_kasPlatformArchitectureARM );
+
 # Mapping for support of paravirtualisation providers per guest OS.
 #g_kdaParavirtProvidersSupported = {
 #    g_ksGuestOsTypeDarwin  : ( g_ksParavirtProviderMinimal, ),
@@ -213,10 +222,13 @@ def _intersects(asSet1, asSet2):
 class BaseTestVm(object):
     """
     Base class for Test VMs.
+
+    Defaults to the x86 platform architecture.
     """
 
     def __init__(self, # pylint: disable=too-many-arguments
                  sVmName,                                   # type: str
+                 sPlatformArchitecture = 'x86',             # type: str
                  fGrouping = 0,                             # type: int
                  oSet = None,                               # type: TestVmSet
                  sKind = None,                              # type: str
@@ -230,6 +242,7 @@ class BaseTestVm(object):
                  ):
         self.oSet                    = oSet                 # type: TestVmSet
         self.sVmName                 = sVmName;
+        self.sPlatformArchitecture   = sPlatformArchitecture;
         self.iGroup                  = iGroup;              # Startup group (for MAC address uniqueness and non-NAT networking).
         self.fGrouping               = fGrouping;
         self.sKind                   = sKind;               # API Guest OS type.
@@ -388,13 +401,14 @@ class BaseTestVm(object):
         Returns Wrapped VM object on success, None on failure.
         """
         return oTestDrv.createTestVmWithDefaults(self.sVmName,
-                                                 iGroup             = self.iGroup,
-                                                 sKind              = self.sKind,
-                                                 eNic0AttachType    = eNic0AttachType,
-                                                 sDvdImage          = sDvdImage,
-                                                 fVmmDevTestingPart = self.fVmmDevTestingPart,
-                                                 fVmmDevTestingMmio = self.fVmmDevTestingMmio,
-                                                 sCom1RawFile       = self.__sCom1RawFile if self.fCom1RawFile else None
+                                                 iGroup                = self.iGroup,
+                                                 sKind                 = self.sKind,
+                                                 sPlatformArchitecture = self.sPlatformArchitecture,
+                                                 eNic0AttachType       = eNic0AttachType,
+                                                 sDvdImage             = sDvdImage,
+                                                 fVmmDevTestingPart    = self.fVmmDevTestingPart,
+                                                 fVmmDevTestingMmio    = self.fVmmDevTestingMmio,
+                                                 sCom1RawFile          = self.__sCom1RawFile if self.fCom1RawFile else None
                                                  );
 
     def _createVmPost(self, oTestDrv, oVM, eNic0AttachType, sDvdImage): # type: (base.testdriver, Any, int, str) -> Any
@@ -531,8 +545,8 @@ class BaseTestVm(object):
                 else:
                     oSession = oTestDrv.openSession(oVM);
                     if oSession is not None:
-                        fRc =         oSession.enableVirtEx(sVirtMode != 'raw');
-                        fRc = fRc and oSession.enableNestedPaging(sVirtMode == 'hwvirt-np');
+                        fRc =         oSession.enableVirtExX86(sVirtMode != 'raw');
+                        fRc = fRc and oSession.enableNestedPagingX86(sVirtMode == 'hwvirt-np');
                         fRc = fRc and oSession.setCpuCount(cCpus);
                         if cCpus > 1:
                             fRc = fRc and oSession.enableIoApic(True);
@@ -549,7 +563,7 @@ class BaseTestVm(object):
                             fRc = fRc and oSession.setParavirtProvider(adParavirtProviders[sParavirtMode]);
 
                         fCfg64Bit = self.is64bitRequired() or (self.is64bit() and fHostSupports64bit and sVirtMode != 'raw');
-                        fRc = fRc and oSession.enableLongMode(fCfg64Bit);
+                        fRc = fRc and oSession.enableLongModeX86(fCfg64Bit);
                         if fCfg64Bit: # This is to avoid GUI pedantic warnings in the GUI. Sigh.
                             oOsType = oSession.getOsType();
                             if oOsType is not None:
@@ -1236,8 +1250,8 @@ class TestVm(object):
                 else:
                     oSession = oTestDrv.openSession(oVM);
                     if oSession is not None:
-                        fRc =         oSession.enableVirtEx(sVirtMode != 'raw');
-                        fRc = fRc and oSession.enableNestedPaging(sVirtMode == 'hwvirt-np');
+                        fRc =         oSession.enableVirtExX86(sVirtMode != 'raw');
+                        fRc = fRc and oSession.enableNestedPagingX86(sVirtMode == 'hwvirt-np');
                         fRc = fRc and oSession.setCpuCount(cCpus);
                         if cCpus > 1:
                             fRc = fRc and oSession.enableIoApic(True);
@@ -1254,7 +1268,7 @@ class TestVm(object):
                             fRc = fRc and oSession.setParavirtProvider(adParavirtProviders[sParavirtMode]);
 
                         fCfg64Bit = self.is64bitRequired() or (self.is64bit() and fHostSupports64bit and sVirtMode != 'raw');
-                        fRc = fRc and oSession.enableLongMode(fCfg64Bit);
+                        fRc = fRc and oSession.enableLongModeX86(fCfg64Bit);
                         if fCfg64Bit: # This is to avoid GUI pedantic warnings in the GUI. Sigh.
                             oOsType = oSession.getOsType();
                             if oOsType is not None:
@@ -1613,10 +1627,13 @@ class TestVmSet(object):
         reporter.log('  --paravirt-modes   <pv1[:pv2[:...]]>');
         reporter.log('      Set of paravirtualized providers (modes) to tests. Intersected with what the test VM supports.');
         reporter.log('      Default is the first PV mode the test VMs support, generally same as "legacy".');
-        reporter.log('  --with-nested-hwvirt-only');
+        reporter.log('  --with-x86-nested-hwvirt-only');
         reporter.log('      Test VMs using nested hardware-virtualization only.');
-        reporter.log('  --without-nested-hwvirt-only');
+        reporter.log('  --without-x86-nested-hwvirt-only');
         reporter.log('      Test VMs not using nested hardware-virtualization only.');
+        reporter.log('  --platform-arch    <architecture>');
+        reporter.log('      Specifies the test VM platform architecture to use.');
+        reporter.log('      Default: x86');
         ## @todo Add more options for controlling individual VMs.
         return True;
 
@@ -1735,15 +1752,30 @@ class TestVmSet(object):
             for oTestVm in self.aoTestVms:
                 oTestVm.asParavirtModesSup = oTestVm.asParavirtModesSupOrg;
 
-        elif asArgs[iArg] == '--with-nested-hwvirt-only':
+        # First is kept for backwards compatibility.
+        elif asArgs[iArg] == '--with-nested-hwvirt-only' \
+        or   asArgs[iArg] == '--with-x86-nested-hwvirt-only':
             for oTestVm in self.aoTestVms:
                 if oTestVm.fNstHwVirt is False:
                     oTestVm.fSkip = True;
 
-        elif asArgs[iArg] == '--without-nested-hwvirt-only':
+        # First is kept for backwards compatibility.
+        elif asArgs[iArg] == '--without-nested-hwvirt-only' \
+        or   asArgs[iArg] == '--without-x86-nested-hwvirt-only':
             for oTestVm in self.aoTestVms:
                 if oTestVm.fNstHwVirt is True:
                     oTestVm.fSkip = True;
+
+        elif asArgs[iArg] == '--platform-arch':
+            iArg += 1;
+            if iArg >= len(asArgs):
+                raise base.InvalidOption('The "--platform-arch" takes a string to specify the platform architecture');
+            sPlatformArchitecture = asArgs[iArg];
+            if sPlatformArchitecture not in g_kasPlatformArchitectures:
+                raise base.InvalidOption('The "--platform-arch" value "%s" is not valid; valid values are: %s'
+                                         % (sPlatformArchitecture, ', '.join(g_kasPlatformArchitectures),));
+            for oTestVm in self.aoTestVms:
+                oTestVm.sPlatformArchitecture = sPlatformArchitecture;
 
         else:
             return iArg;

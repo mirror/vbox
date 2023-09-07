@@ -1163,8 +1163,16 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
 
     /* create all other child objects that will be immutable private copies */
 
-    unconst(mBIOSSettings).createObject();
-    hrc = mBIOSSettings->initCopy(this, pMachine->mBIOSSettings);
+    unconst(mPlatform).createObject();
+    hrc = mPlatform->initCopy(this, pMachine->mPlatform);
+    if (FAILED(hrc)) return hrc;
+
+    unconst(mPlatformProperties).createObject();
+    hrc = mPlatformProperties->init(mParent); /* Does not contain any "real" data, hence only init() and not initCopy(). */
+    if (FAILED(hrc)) return hrc;
+
+    unconst(mFirmwareSettings).createObject();
+    hrc = mFirmwareSettings->initCopy(this, pMachine->mFirmwareSettings);
     if (FAILED(hrc)) return hrc;
 
     unconst(mRecordingSettings).createObject();
@@ -1308,8 +1316,15 @@ HRESULT SnapshotMachine::initFromSettings(Machine *aMachine,
 
     /* create all other child objects that will be immutable private copies */
 
-    unconst(mBIOSSettings).createObject();
-    mBIOSSettings->init(this);
+    unconst(mPlatform).createObject();
+    mPlatform->init(this);
+    mPlatform->i_loadSettings(hardware.platformSettings); /* Needed for initializing the network adapters below (chipset type). */
+
+    unconst(mPlatformProperties).createObject();
+    mPlatformProperties->init(mParent);
+
+    unconst(mFirmwareSettings).createObject();
+    mFirmwareSettings->init(this);
 
     unconst(mRecordingSettings).createObject();
     mRecordingSettings->init(this);
@@ -1332,7 +1347,7 @@ HRESULT SnapshotMachine::initFromSettings(Machine *aMachine,
     unconst(mUSBDeviceFilters).createObject();
     mUSBDeviceFilters->init(this);
 
-    mNetworkAdapters.resize(Global::getMaxNetworkAdapters(mHWData->mChipsetType));
+    mNetworkAdapters.resize(PlatformProperties::s_getMaxNetworkAdapters(hardware.platformSettings.chipsetType));
     for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
     {
         unconst(mNetworkAdapters[slot]).createObject();

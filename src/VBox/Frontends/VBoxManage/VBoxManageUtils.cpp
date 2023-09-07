@@ -39,23 +39,25 @@ using namespace com;
 
 DECLARE_TRANSLATION_CONTEXT(Utils);
 
-unsigned int getMaxNics(const ComPtr<IVirtualBox> &pVirtualBox,
-                        const ComPtr<IMachine> &pMachine)
+ULONG getMaxNics(const ComPtr<IMachine> &pMachine)
 {
-    ULONG NetworkAdapterCount = 0;
+    HRESULT hrc;
+
+    ULONG maxNetworkAdapters = 0;
     do {
-        HRESULT hrc;
+        ComPtr<IPlatform> pPlatform;
+        CHECK_ERROR_BREAK(pMachine, COMGETTER(Platform)(pPlatform.asOutParam()));
 
-        ComPtr<ISystemProperties> info;
-        CHECK_ERROR_BREAK(pVirtualBox, COMGETTER(SystemProperties)(info.asOutParam()));
+        ChipsetType_T chipsetType;
+        CHECK_ERROR_BREAK(pPlatform, COMGETTER(ChipsetType)(&chipsetType));
 
-        ChipsetType_T aChipset;
-        CHECK_ERROR_BREAK(pMachine, COMGETTER(ChipsetType)(&aChipset));
+        ComPtr<IPlatformProperties> pPlatformProperties;
+        CHECK_ERROR_BREAK(pPlatform, COMGETTER(Properties)(pPlatformProperties.asOutParam()));
 
-        CHECK_ERROR_BREAK(info, GetMaxNetworkAdapters(aChipset, &NetworkAdapterCount));
+        CHECK_ERROR_BREAK(pPlatformProperties, GetMaxNetworkAdapters(chipsetType, &maxNetworkAdapters));
     } while (0);
 
-    return (unsigned int)NetworkAdapterCount;
+    return maxNetworkAdapters;
 }
 
 

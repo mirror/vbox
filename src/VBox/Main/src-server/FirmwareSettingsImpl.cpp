@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VirtualBox COM class implementation - Machine BIOS settings.
+ * VirtualBox COM class implementation - Machine firmware settings.
  */
 
 /*
@@ -25,8 +25,8 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#define LOG_GROUP LOG_GROUP_MAIN_BIOSSETTINGS
-#include "BIOSSettingsImpl.h"
+#define LOG_GROUP LOG_GROUP_MAIN_FIRMWARESETTINGS
+#include "FirmwareSettingsImpl.h"
 #include "MachineImpl.h"
 #include "GuestOSTypeImpl.h"
 
@@ -40,34 +40,34 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// BIOSSettings private data definition
+// FirmwareSettings private data definition
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-struct BIOSSettings::Data
+struct FirmwareSettings::Data
 {
     Data()
         : pMachine(NULL)
     { }
 
     Machine * const             pMachine;
-    ComObjPtr<BIOSSettings>     pPeer;
+    ComObjPtr<FirmwareSettings> pPeer;
 
     // use the XML settings structure in the members for simplicity
-    Backupable<settings::BIOSSettings> bd;
+    Backupable<settings::FirmwareSettings> bd;
 };
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR(BIOSSettings)
+DEFINE_EMPTY_CTOR_DTOR(FirmwareSettings)
 
-HRESULT BIOSSettings::FinalConstruct()
+HRESULT FirmwareSettings::FinalConstruct()
 {
     return BaseFinalConstruct();
 }
 
-void BIOSSettings::FinalRelease()
+void FirmwareSettings::FinalRelease()
 {
     uninit();
     BaseFinalRelease();
@@ -81,7 +81,7 @@ void BIOSSettings::FinalRelease()
  *
  * @returns COM result indicator
  */
-HRESULT BIOSSettings::init(Machine *aParent)
+HRESULT FirmwareSettings::init(Machine *aParent)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aParent: %p\n", aParent));
@@ -106,14 +106,14 @@ HRESULT BIOSSettings::init(Machine *aParent)
 }
 
 /**
- *  Initializes the BIOS settings object given another BIOS settings object
+ *  Initializes the firmware settings object given another firmware settings object
  *  (a kind of copy constructor). This object shares data with
  *  the object passed as an argument.
  *
  *  @note This object must be destroyed before the original object
  *  it shares data with is destroyed.
  */
-HRESULT BIOSSettings::init(Machine *aParent, BIOSSettings *that)
+HRESULT FirmwareSettings::init(Machine *aParent, FirmwareSettings *that)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aParent: %p, that: %p\n", aParent, that));
@@ -143,7 +143,7 @@ HRESULT BIOSSettings::init(Machine *aParent, BIOSSettings *that)
  *  (a kind of copy constructor). This object makes a private copy of data
  *  of the original object passed as an argument.
  */
-HRESULT BIOSSettings::initCopy(Machine *aParent, BIOSSettings *that)
+HRESULT FirmwareSettings::initCopy(Machine *aParent, FirmwareSettings *that)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aParent: %p, that: %p\n", aParent, that));
@@ -172,7 +172,7 @@ HRESULT BIOSSettings::initCopy(Machine *aParent, BIOSSettings *that)
  *  Uninitializes the instance and sets the ready flag to FALSE.
  *  Called either from FinalRelease() or by the parent when it gets destroyed.
  */
-void BIOSSettings::uninit()
+void FirmwareSettings::uninit()
 {
     LogFlowThisFuncEnter();
 
@@ -192,11 +192,11 @@ void BIOSSettings::uninit()
     LogFlowThisFuncLeave();
 }
 
-// IBIOSSettings properties
+// IFirmwareSettings properties
 /////////////////////////////////////////////////////////////////////////////
 
 
-HRESULT BIOSSettings::getLogoFadeIn(BOOL *enabled)
+HRESULT FirmwareSettings::getLogoFadeIn(BOOL *enabled)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -205,7 +205,7 @@ HRESULT BIOSSettings::getLogoFadeIn(BOOL *enabled)
     return S_OK;
 }
 
-HRESULT BIOSSettings::setLogoFadeIn(BOOL enable)
+HRESULT FirmwareSettings::setLogoFadeIn(BOOL enable)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
@@ -218,13 +218,13 @@ HRESULT BIOSSettings::setLogoFadeIn(BOOL enable)
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-    m->pMachine->i_setModified(Machine::IsModified_BIOS);
+    m->pMachine->i_setModified(Machine::IsModified_Firmware);
 
     return S_OK;
 }
 
 
-HRESULT BIOSSettings::getLogoFadeOut(BOOL *enabled)
+HRESULT FirmwareSettings::getLogoFadeOut(BOOL *enabled)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -233,7 +233,7 @@ HRESULT BIOSSettings::getLogoFadeOut(BOOL *enabled)
     return S_OK;
 }
 
-HRESULT BIOSSettings::setLogoFadeOut(BOOL enable)
+HRESULT FirmwareSettings::setLogoFadeOut(BOOL enable)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
@@ -246,13 +246,13 @@ HRESULT BIOSSettings::setLogoFadeOut(BOOL enable)
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-    m->pMachine->i_setModified(Machine::IsModified_BIOS);
+    m->pMachine->i_setModified(Machine::IsModified_Firmware);
 
     return S_OK;
 }
 
 
-HRESULT BIOSSettings::getLogoDisplayTime(ULONG *displayTime)
+HRESULT FirmwareSettings::getLogoDisplayTime(ULONG *displayTime)
 {
     if (!displayTime)
         return E_POINTER;
@@ -264,7 +264,7 @@ HRESULT BIOSSettings::getLogoDisplayTime(ULONG *displayTime)
     return S_OK;
 }
 
-HRESULT BIOSSettings::setLogoDisplayTime(ULONG displayTime)
+HRESULT FirmwareSettings::setLogoDisplayTime(ULONG displayTime)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
@@ -277,13 +277,13 @@ HRESULT BIOSSettings::setLogoDisplayTime(ULONG displayTime)
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-    m->pMachine->i_setModified(Machine::IsModified_BIOS);
+    m->pMachine->i_setModified(Machine::IsModified_Firmware);
 
     return S_OK;
 }
 
 
-HRESULT BIOSSettings::getLogoImagePath(com::Utf8Str &imagePath)
+HRESULT FirmwareSettings::getLogoImagePath(com::Utf8Str &imagePath)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -291,7 +291,7 @@ HRESULT BIOSSettings::getLogoImagePath(com::Utf8Str &imagePath)
     return S_OK;
 }
 
-HRESULT BIOSSettings::setLogoImagePath(const com::Utf8Str &imagePath)
+HRESULT FirmwareSettings::setLogoImagePath(const com::Utf8Str &imagePath)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
@@ -304,20 +304,20 @@ HRESULT BIOSSettings::setLogoImagePath(const com::Utf8Str &imagePath)
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-    m->pMachine->i_setModified(Machine::IsModified_BIOS);
+    m->pMachine->i_setModified(Machine::IsModified_Firmware);
 
     return S_OK;
 }
 
-HRESULT BIOSSettings::getBootMenuMode(BIOSBootMenuMode_T *bootMenuMode)
+HRESULT FirmwareSettings::getBootMenuMode(FirmwareBootMenuMode_T *bootMenuMode)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *bootMenuMode = m->bd->biosBootMenuMode;
+    *bootMenuMode = m->bd->enmBootMenuMode;
     return S_OK;
 }
 
-HRESULT BIOSSettings::setBootMenuMode(BIOSBootMenuMode_T bootMenuMode)
+HRESULT FirmwareSettings::setBootMenuMode(FirmwareBootMenuMode_T bootMenuMode)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
@@ -326,17 +326,17 @@ HRESULT BIOSSettings::setBootMenuMode(BIOSBootMenuMode_T bootMenuMode)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
-    m->bd->biosBootMenuMode = bootMenuMode;
+    m->bd->enmBootMenuMode = bootMenuMode;
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-    m->pMachine->i_setModified(Machine::IsModified_BIOS);
+    m->pMachine->i_setModified(Machine::IsModified_Firmware);
 
     return S_OK;
 }
 
 
-HRESULT BIOSSettings::getACPIEnabled(BOOL *enabled)
+HRESULT FirmwareSettings::getACPIEnabled(BOOL *enabled)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -345,7 +345,7 @@ HRESULT BIOSSettings::getACPIEnabled(BOOL *enabled)
     return S_OK;
 }
 
-HRESULT BIOSSettings::setACPIEnabled(BOOL enable)
+HRESULT FirmwareSettings::setACPIEnabled(BOOL enable)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
@@ -358,13 +358,13 @@ HRESULT BIOSSettings::setACPIEnabled(BOOL enable)
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-    m->pMachine->i_setModified(Machine::IsModified_BIOS);
+    m->pMachine->i_setModified(Machine::IsModified_Firmware);
 
     return S_OK;
 }
 
 
-HRESULT BIOSSettings::getIOAPICEnabled(BOOL *aIOAPICEnabled)
+HRESULT FirmwareSettings::getIOAPICEnabled(BOOL *aIOAPICEnabled)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -373,7 +373,39 @@ HRESULT BIOSSettings::getIOAPICEnabled(BOOL *aIOAPICEnabled)
     return S_OK;
 }
 
-HRESULT BIOSSettings::setIOAPICEnabled(BOOL aIOAPICEnabled)
+HRESULT FirmwareSettings::getFirmwareType(FirmwareType_T *aType)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aType = m->bd->firmwareType;
+
+    return S_OK;
+}
+
+HRESULT FirmwareSettings::setFirmwareType(FirmwareType_T aType)
+{
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pMachine);
+    if (FAILED(adep.hrc())) return adep.hrc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    m->bd.backup();
+    m->bd->firmwareType = aType;
+
+    alock.release();
+
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // pMachine is const, needs no locking
+    m->pMachine->i_setModified(Machine::IsModified_Firmware);
+    Utf8Str strNVRAM = m->pMachine->i_getDefaultNVRAMFilename();
+    mlock.release();
+
+    m->pMachine->i_getNVRAMStore()->i_updateNonVolatileStorageFile(strNVRAM);
+
+    return S_OK;
+}
+
+HRESULT FirmwareSettings::setIOAPICEnabled(BOOL aIOAPICEnabled)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
@@ -386,13 +418,13 @@ HRESULT BIOSSettings::setIOAPICEnabled(BOOL aIOAPICEnabled)
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-    m->pMachine->i_setModified(Machine::IsModified_BIOS);
+    m->pMachine->i_setModified(Machine::IsModified_Firmware);
 
     return S_OK;
 }
 
 
-HRESULT BIOSSettings::getAPICMode(APICMode_T *aAPICMode)
+HRESULT FirmwareSettings::getAPICMode(APICMode_T *aAPICMode)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -401,7 +433,7 @@ HRESULT BIOSSettings::getAPICMode(APICMode_T *aAPICMode)
     return S_OK;
 }
 
-HRESULT BIOSSettings::setAPICMode(APICMode_T aAPICMode)
+HRESULT FirmwareSettings::setAPICMode(APICMode_T aAPICMode)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
@@ -414,13 +446,13 @@ HRESULT BIOSSettings::setAPICMode(APICMode_T aAPICMode)
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-    m->pMachine->i_setModified(Machine::IsModified_BIOS);
+    m->pMachine->i_setModified(Machine::IsModified_Firmware);
 
     return S_OK;
 }
 
 
-HRESULT BIOSSettings::getPXEDebugEnabled(BOOL *enabled)
+HRESULT FirmwareSettings::getPXEDebugEnabled(BOOL *enabled)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -429,7 +461,7 @@ HRESULT BIOSSettings::getPXEDebugEnabled(BOOL *enabled)
     return S_OK;
 }
 
-HRESULT BIOSSettings::setPXEDebugEnabled(BOOL enable)
+HRESULT FirmwareSettings::setPXEDebugEnabled(BOOL enable)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
@@ -442,13 +474,13 @@ HRESULT BIOSSettings::setPXEDebugEnabled(BOOL enable)
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-    m->pMachine->i_setModified(Machine::IsModified_BIOS);
+    m->pMachine->i_setModified(Machine::IsModified_Firmware);
 
     return S_OK;
 }
 
 
-HRESULT BIOSSettings::getTimeOffset(LONG64 *offset)
+HRESULT FirmwareSettings::getTimeOffset(LONG64 *offset)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -457,7 +489,7 @@ HRESULT BIOSSettings::getTimeOffset(LONG64 *offset)
     return S_OK;
 }
 
-HRESULT BIOSSettings::setTimeOffset(LONG64 offset)
+HRESULT FirmwareSettings::setTimeOffset(LONG64 offset)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
@@ -470,13 +502,13 @@ HRESULT BIOSSettings::setTimeOffset(LONG64 offset)
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-    m->pMachine->i_setModified(Machine::IsModified_BIOS);
+    m->pMachine->i_setModified(Machine::IsModified_Firmware);
 
     return S_OK;
 }
 
 
-HRESULT BIOSSettings::getSMBIOSUuidLittleEndian(BOOL *enabled)
+HRESULT FirmwareSettings::getSMBIOSUuidLittleEndian(BOOL *enabled)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -485,7 +517,7 @@ HRESULT BIOSSettings::getSMBIOSUuidLittleEndian(BOOL *enabled)
     return S_OK;
 }
 
-HRESULT BIOSSettings::setSMBIOSUuidLittleEndian(BOOL enable)
+HRESULT FirmwareSettings::setSMBIOSUuidLittleEndian(BOOL enable)
 {
     /* the machine needs to be mutable */
     AutoMutableStateDependency adep(m->pMachine);
@@ -498,13 +530,13 @@ HRESULT BIOSSettings::setSMBIOSUuidLittleEndian(BOOL enable)
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-    m->pMachine->i_setModified(Machine::IsModified_BIOS);
+    m->pMachine->i_setModified(Machine::IsModified_Firmware);
 
     return S_OK;
 }
 
 
-// IBIOSSettings methods
+// IFirmwareSettings methods
 /////////////////////////////////////////////////////////////////////////////
 
 // public methods only for internal purposes
@@ -518,7 +550,7 @@ HRESULT BIOSSettings::setSMBIOSUuidLittleEndian(BOOL enable)
  *
  *  @note Locks this object for writing.
  */
-HRESULT BIOSSettings::i_loadSettings(const settings::BIOSSettings &data)
+HRESULT FirmwareSettings::i_loadSettings(const settings::FirmwareSettings &data)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.hrc());
@@ -538,7 +570,7 @@ HRESULT BIOSSettings::i_loadSettings(const settings::BIOSSettings &data)
  *
  *  @note Locks this object for reading.
  */
-HRESULT BIOSSettings::i_saveSettings(settings::BIOSSettings &data)
+HRESULT FirmwareSettings::i_saveSettings(settings::FirmwareSettings &data)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.hrc());
@@ -550,13 +582,18 @@ HRESULT BIOSSettings::i_saveSettings(settings::BIOSSettings &data)
     return S_OK;
 }
 
-void BIOSSettings::i_rollback()
+FirmwareType_T FirmwareSettings::i_getFirmwareType() const
+{
+    return m->bd->firmwareType;
+}
+
+void FirmwareSettings::i_rollback()
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     m->bd.rollback();
 }
 
-void BIOSSettings::i_commit()
+void FirmwareSettings::i_commit()
 {
     /* sanity */
     AutoCaller autoCaller(this);
@@ -582,7 +619,7 @@ void BIOSSettings::i_commit()
     }
 }
 
-void BIOSSettings::i_copyFrom(BIOSSettings *aThat)
+void FirmwareSettings::i_copyFrom(FirmwareSettings *aThat)
 {
     AssertReturnVoid(aThat != NULL);
 
@@ -603,7 +640,7 @@ void BIOSSettings::i_copyFrom(BIOSSettings *aThat)
     m->bd.assignCopy(aThat->m->bd);
 }
 
-void BIOSSettings::i_applyDefaults(GuestOSType *aOsType)
+void FirmwareSettings::i_applyDefaults(GuestOSType *aOsType)
 {
     /* sanity */
     AutoCaller autoCaller(this);
@@ -611,11 +648,20 @@ void BIOSSettings::i_applyDefaults(GuestOSType *aOsType)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* Initialize default BIOS settings here */
+    /* Initialize default firmware settings here */
     if (aOsType)
+    {
+        HRESULT hrc = aOsType->COMGETTER(RecommendedFirmware)(&m->bd->firmwareType);
+        AssertComRC(hrc);
+
         m->bd->fIOAPICEnabled = aOsType->i_recommendedIOAPIC();
+    }
     else
+    {
+        m->bd->firmwareType   = FirmwareType_BIOS; /** @todo BUGBUG Handle ARM? */
         m->bd->fIOAPICEnabled = true;
+    }
+
+    /// @todo r=andy BUGBUG Is this really enough here? What about the other stuff?
 }
 
-/* vi: set tabstop=4 shiftwidth=4 expandtab: */

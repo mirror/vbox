@@ -108,6 +108,7 @@ public:
 private:
 
     // wrapped IHost properties
+    HRESULT getArchitecture(PlatformArchitecture_T *platformArchitecture);
     HRESULT getDVDDrives(std::vector<ComPtr<IMedium> > &aDVDDrives);
     HRESULT getFloppyDrives(std::vector<ComPtr<IMedium> > &aFloppyDrives);
     HRESULT getAudioDevices(std::vector<ComPtr<IHostAudioDevice> > &aAudioDevices);
@@ -136,6 +137,7 @@ private:
     HRESULT getUpdateVersion(com::Utf8Str &aUpdateVersion);
     HRESULT getUpdateURL(com::Utf8Str &aUpdateURL);
     HRESULT getUpdateCheckNeeded(BOOL *aUpdateCheckNeeded);
+    HRESULT getX86(ComPtr<IHostX86> &aHostX86);
 
     // wrapped IHost methods
     HRESULT getProcessorSpeed(ULONG aCpuId,
@@ -144,13 +146,6 @@ private:
                                 BOOL *aSupported);
     HRESULT getProcessorDescription(ULONG aCpuId,
                                     com::Utf8Str &aDescription);
-    HRESULT getProcessorCPUIDLeaf(ULONG aCpuId,
-                                  ULONG aLeaf,
-                                  ULONG aSubLeaf,
-                                  ULONG *aValEax,
-                                  ULONG *aValEbx,
-                                  ULONG *aValEcx,
-                                  ULONG *aValEdx);
     HRESULT createHostOnlyNetworkInterface(ComPtr<IHostNetworkInterface> &aHostInterface,
                                            ComPtr<IProgress> &aProgress);
     HRESULT removeHostOnlyNetworkInterface(const com::Guid &aId,

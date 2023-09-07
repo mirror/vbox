@@ -354,8 +354,14 @@ struct SystemProperties
     com::Utf8Str            strProxyUrl;
     uint32_t                uProxyMode; /**< ProxyMode_T */
     uint32_t                uLogHistoryCount;
-    bool                    fExclusiveHwVirt;
     com::Utf8Str            strLanguageId;
+};
+
+struct PlatformProperties
+{
+    PlatformProperties();
+
+    bool                    fExclusiveHwVirt;
 };
 
 struct MachineRegistryEntry
@@ -517,6 +523,7 @@ public:
 
     Host                    host;
     SystemProperties        systemProperties;
+    PlatformProperties      platformProperties;
     MediaRegistry           mediaRegistry;
     MachinesRegistry        llMachines;
     DHCPServersList         llDhcpServers;
@@ -574,25 +581,26 @@ struct VRDESettings
  * the operator== which is used by MachineConfigFile::operator==(), or otherwise
  * your settings might never get saved.
  */
-struct BIOSSettings
+struct FirmwareSettings
 {
-    BIOSSettings();
+    FirmwareSettings();
 
-    bool areDefaultSettings() const;
+    bool areDefaultSettings(CPUArchitecture_T enmCPUArch) const;
 
-    bool operator==(const BIOSSettings &d) const;
+    bool operator==(const FirmwareSettings &d) const;
 
-    bool            fACPIEnabled,
-                    fIOAPICEnabled,
-                    fLogoFadeIn,
-                    fLogoFadeOut,
-                    fPXEDebugEnabled,
-                    fSmbiosUuidLittleEndian;
-    uint32_t        ulLogoDisplayTime;
-    BIOSBootMenuMode_T biosBootMenuMode;
-    APICMode_T      apicMode;           // requires settings version 1.16 (VirtualBox 5.1)
-    int64_t         llTimeOffset;
-    com::Utf8Str    strLogoImagePath;
+    FirmwareType_T         firmwareType;       // requires settings version 1.9 (VirtualBox 3.1)
+    bool                   fACPIEnabled,
+                           fIOAPICEnabled,
+                           fLogoFadeIn,
+                           fLogoFadeOut,
+                           fPXEDebugEnabled,
+                           fSmbiosUuidLittleEndian;
+    uint32_t               ulLogoDisplayTime;
+    FirmwareBootMenuMode_T enmBootMenuMode;
+    APICMode_T             apicMode;           // requires settings version 1.16 (VirtualBox 5.1)
+    int64_t                llTimeOffset;
+    com::Utf8Str           strLogoImagePath;
 };
 
 /**
@@ -930,7 +938,7 @@ struct SerialPort
     uint32_t        ulSlot;
 
     bool            fEnabled;
-    uint32_t        ulIOBase;
+    uint32_t        ulIOAddress;
     uint32_t        ulIRQ;
     PortMode_T      portMode;
     com::Utf8Str    strPath;
@@ -1029,11 +1037,11 @@ typedef std::map<uint32_t, DeviceType_T> BootOrderMap;
  * the operator== which is used by MachineConfigFile::operator==(), or otherwise
  * your settings might never get saved.
  */
-struct CpuIdLeaf
+struct CpuIdLeafX86
 {
-    CpuIdLeaf();
+    CpuIdLeafX86();
 
-    bool operator==(const CpuIdLeaf &c) const;
+    bool operator==(const CpuIdLeafX86 &c) const;
 
     uint32_t                idx;
     uint32_t                idxSub;
@@ -1043,7 +1051,7 @@ struct CpuIdLeaf
     uint32_t                uEdx;
 };
 
-typedef std::list<CpuIdLeaf> CpuIdLeafsList;
+typedef std::list<CpuIdLeafX86> CpuIdLeafsX86List;
 
 /**
  * NOTE: If you add any fields in here, you must update a) the constructor and b)
@@ -1212,6 +1220,103 @@ struct Storage
     StorageControllersList  llStorageControllers;
 };
 
+#ifdef VBOX_WITH_VIRT_ARMV8
+struct PlatformARM
+{
+    PlatformARM();
+
+    bool operator==(const PlatformARM&) const;
+};
+#endif /* VBOX_WITH_VIRT_ARMV8 */
+
+/**
+ * Covers x86-specific platform attributes.
+ *
+ * New since settings v1.20 (VirtualBox 7.1).
+ * Contains attributes which were in the Hardware settings before.
+ */
+struct PlatformX86
+{
+    PlatformX86();
+
+    bool operator==(const PlatformX86&) const;
+
+    /** Note: Lived in Hardware for settings < version 1.20 (requires settings version 1.10 (VirtualBox 3.2). */
+    bool                    fPAE;
+    /** Note: Lived in Hardware for settings < version 1.20 (requires settings version 1.10 (VirtualBox 3.2). */
+    bool                    fAPIC;                  // requires settings version 1.16 (VirtualBox 5.1)
+    /** Note: Lived in Hardware for settings < version 1.20 (requires settings version 1.10 (VirtualBox 3.2). */
+    bool                    fX2APIC;                // requires settings version 1.16 (VirtualBox 5.1)
+    /** Note: Lived in Hardware for settings < version 1.20 (requires settings version 1.10 (VirtualBox 3.2). */
+    bool                    fHPETEnabled;
+    /** Note: Lived in Hardware for settings < version 1.20. */
+    typedef enum LongModeType { LongMode_Enabled, LongMode_Disabled, LongMode_Legacy } LongModeType;
+    /** Note: Lived in Hardware for settings < version 1.20. */
+    LongModeType            enmLongMode;
+    /** Custom x86 CPUID leafs list.
+     *  Note: Lived in Hardware for settings < version 1.20. */
+    CpuIdLeafsX86List       llCpuIdLeafs;
+    /** Note: Lived in Hardware for settings < version 1.20. */
+    bool                    fTripleFaultReset;
+    /** Note: Lived in Hardware for settings < version 1.20. */
+    bool                    fIBPBOnVMExit;          //< added out of cycle, after settings version 1.16 was out.
+    /** Note: Lived in Hardware for settings < version 1.20. */
+    bool                    fIBPBOnVMEntry;         //< added out of cycle, after settings version 1.16 was out.
+    /** Note: Lived in Hardware for settings < version 1.20. */
+    bool                    fSpecCtrl;              //< added out of cycle, after settings version 1.16 was out.
+    /** Note: Lived in Hardware for settings < version 1.20. */
+    bool                    fSpecCtrlByHost;        //< added out of cycle, after settings version 1.16 was out.
+    /** Note: Lived in Hardware for settings < version 1.20. */
+    bool                    fL1DFlushOnSched;       //< added out of cycle, after settings version 1.16 was out.
+    /** Note: Lived in Hardware for settings < version 1.20. */
+    bool                    fL1DFlushOnVMEntry;     //< added out of cycle, after settings version 1.16 was out.
+    /** Note: Lived in Hardware for settings < version 1.20. */
+    bool                    fMDSClearOnSched;       //< added out of cycle, after settings version 1.16 was out.
+    /** Note: Lived in Hardware for settings < version 1.20. */
+    bool                    fMDSClearOnVMEntry;     //< added out of cycle, after settings version 1.16 was out.
+    bool                    fHWVirtEx;
+    bool                    fHWVirtExNestedPaging;
+    bool                    fHWVirtExLargePages;
+    bool                    fHWVirtExVPID;
+    /** Unrestricted execution. */
+    bool                    fHWVirtExUX;
+    bool                    fHWVirtExForce;
+    bool                    fHWVirtExUseNativeApi;
+    /** AMD-V VMSAVE/VMLOAD. */
+    bool                    fHWVirtExVirtVmsaveVmload;
+    /** Nested VT-x / AMD-V.
+     *  Note: Lived in Hardware for settings < version 1.20. */
+    bool                    fNestedHWVirt;              //< requires settings version 1.17 (VirtualBox 6.0)
+};
+
+/**
+ * Covers common platform attributes.
+ *
+ * New since settings v1.20 (VirtualBox 7.1).
+ * Contains attributes which were in the Hardware settings before.
+ */
+struct Platform
+{
+    Platform();
+
+    bool operator==(const Platform&) const;
+
+    /** Requires settings version 1.20 (VirtualBox 7.1). */
+    PlatformArchitecture_T  architectureType;
+    /** Note: Lived in Hardware for settings < version 1.20 (requires settings version 1.11 (VirtualBox 4.0). */
+    ChipsetType_T           chipsetType;
+    /** Note: Lived in Hardware for settings < version 1.20 (requires settings version 1.19 (VirtualBox 6.2). */
+    IommuType_T             iommuType;
+    /** Note: Lived in Hardware for settings < version 1.20. */
+    bool                    fRTCUseUTC;
+    /** Note: Is a class, so we can't use a union here. */
+    PlatformX86             x86;
+#ifdef VBOX_WITH_VIRT_ARMV8
+    /** Note: Is a class, so we can't use a union here. */
+    PlatformARM             arm;
+#endif
+};
+
 /**
  * Representation of Machine hardware; this is used in the MachineConfigFile.hardwareMachine
  * field.
@@ -1233,52 +1338,21 @@ struct Hardware
 
     com::Utf8Str        strVersion;             // hardware version, optional
     com::Guid           uuid;                   // hardware uuid, optional (null).
-
-    bool                fHardwareVirt,
-                        fNestedPaging,
-                        fLargePages,
-                        fVPID,
-                        fUnrestrictedExecution,
-                        fHardwareVirtForce,
-                        fUseNativeApi,
-                        fSyntheticCpu,
-                        fTripleFaultReset,
-                        fPAE,
-                        fAPIC,                  // requires settings version 1.16 (VirtualBox 5.1)
-                        fX2APIC;                // requires settings version 1.16 (VirtualBox 5.1)
-    bool                fIBPBOnVMExit;          //< added out of cycle, after 1.16 was out.
-    bool                fIBPBOnVMEntry;         //< added out of cycle, after 1.16 was out.
-    bool                fSpecCtrl;              //< added out of cycle, after 1.16 was out.
-    bool                fSpecCtrlByHost;        //< added out of cycle, after 1.16 was out.
-    bool                fL1DFlushOnSched ;      //< added out of cycle, after 1.16 was out.
-    bool                fL1DFlushOnVMEntry ;    //< added out of cycle, after 1.16 was out.
-    bool                fMDSClearOnSched;       //< added out of cycle, after 1.16 was out.
-    bool                fMDSClearOnVMEntry;     //< added out of cycle, after 1.16 was out.
-    bool                fNestedHWVirt;          //< requires settings version 1.17 (VirtualBox 6.0)
-    bool                fVirtVmsaveVmload;      //< requires settings version 1.18 (VirtualBox 6.1)
-    typedef enum LongModeType { LongMode_Enabled, LongMode_Disabled, LongMode_Legacy } LongModeType;
-    LongModeType        enmLongMode;
+    bool                fSyntheticCpu;
     uint32_t            cCPUs;
     bool                fCpuHotPlug;            // requires settings version 1.10 (VirtualBox 3.2)
     CpuList             llCpus;                 // requires settings version 1.10 (VirtualBox 3.2)
-    bool                fHPETEnabled;           // requires settings version 1.10 (VirtualBox 3.2)
     uint32_t            ulCpuExecutionCap;      // requires settings version 1.11 (VirtualBox 3.3)
     uint32_t            uCpuIdPortabilityLevel; // requires settings version 1.15 (VirtualBox 5.0)
     com::Utf8Str        strCpuProfile;          // requires settings version 1.16 (VirtualBox 5.1)
-
-    CpuIdLeafsList      llCpuIdLeafs;
 
     uint32_t            ulMemorySizeMB;
 
     BootOrderMap        mapBootOrder;           // item 0 has highest priority
 
-    FirmwareType_T      firmwareType;           // requires settings version 1.9 (VirtualBox 3.1)
-
     PointingHIDType_T   pointingHIDType;        // requires settings version 1.10 (VirtualBox 3.2)
     KeyboardHIDType_T   keyboardHIDType;        // requires settings version 1.10 (VirtualBox 3.2)
 
-    ChipsetType_T       chipsetType;            // requires settings version 1.11 (VirtualBox 4.0)
-    IommuType_T         iommuType;              // requires settings version 1.19 (VirtualBox 6.2)
     ParavirtProvider_T  paravirtProvider;       // requires settings version 1.15 (VirtualBox 4.4)
     com::Utf8Str        strParavirtDebug;       // requires settings version 1.16 (VirtualBox 5.1)
 
@@ -1286,7 +1360,8 @@ struct Hardware
 
     VRDESettings        vrdeSettings;
 
-    BIOSSettings        biosSettings;
+    Platform            platformSettings;       // new since 1.20 (VirtualBox 7.1)
+    FirmwareSettings    firmwareSettings;
     NvramSettings       nvramSettings;
     GraphicsAdapter     graphicsAdapter;
     USB                 usbSettings;
@@ -1407,7 +1482,6 @@ struct MachineUserData
     uint32_t                uTeleporterPort;
     com::Utf8Str            strTeleporterAddress;
     com::Utf8Str            strTeleporterPassword;
-    bool                    fRTCUseUTC;
     IconBlob                ovIcon;
     VMProcPriority_T        enmVMPriority;
 };
@@ -1491,13 +1565,16 @@ public:
 private:
     void readNetworkAdapters(const xml::ElementNode &elmHardware, NetworkAdaptersList &ll);
     void readAttachedNetworkMode(const xml::ElementNode &pelmMode, bool fEnabled, NetworkAdapter &nic);
-    void readCpuIdTree(const xml::ElementNode &elmCpuid, CpuIdLeafsList &ll);
+    void readCpuIdTreeX86(const xml::ElementNode &elmCpuid, CpuIdLeafsX86List &ll);
     void readCpuTree(const xml::ElementNode &elmCpu, CpuList &ll);
     void readSerialPorts(const xml::ElementNode &elmUART, SerialPortsList &ll);
     void readParallelPorts(const xml::ElementNode &elmLPT, ParallelPortsList &ll);
     void readAudioAdapter(const xml::ElementNode &elmAudioAdapter, AudioAdapter &aa);
     void readGuestProperties(const xml::ElementNode &elmGuestProperties, Hardware &hw);
     void readStorageControllerAttributes(const xml::ElementNode &elmStorageController, StorageController &sctl);
+    void readPlatformCPUIDTreeX86(const xml::ElementNode &elmChild, PlatformX86 &platX86);
+    void readPlatformX86(const xml::ElementNode &elmPlatform,PlatformX86 &platX86);
+    void readPlatform(const xml::ElementNode &elmPlatform, Platform &plat);
     void readHardware(const xml::ElementNode &elmHardware, Hardware &hw);
     void readHardDiskAttachments_pre1_7(const xml::ElementNode &elmHardDiskAttachments, Storage &strg);
     void readStorageControllers(const xml::ElementNode &elmStorageControllers, Storage &strg);
@@ -1512,6 +1589,8 @@ private:
     void readMachine(const xml::ElementNode &elmMachine);
     void readMachineEncrypted(const xml::ElementNode &elmMachine, PCVBOXCRYPTOIF pCryptoIf, const char *pszPassword);
 
+    void buildPlatformX86XML(xml::ElementNode &elmParent, xml::ElementNode &elmCPU, const PlatformX86 &plat);
+    void buildPlatformXML(xml::ElementNode &elmParent, const Hardware &h, const Platform &plat);
     void buildHardwareXML(xml::ElementNode &elmParent, const Hardware &hw, uint32_t fl, std::list<xml::ElementNode*> *pllElementsWithUuidAttributes);
     void buildNetworkXML(NetworkAttachmentType_T mode, bool fEnabled, xml::ElementNode &elmParent, const NetworkAdapter &nic);
     void buildStorageControllersXML(xml::ElementNode &elmParent,

@@ -68,6 +68,7 @@
 #include "CMouse.h"
 #include "CNATNetwork.h"
 #include "CNetworkAdapter.h"
+#include "CPlatformProperties.h"
 #include "CRangedIntegerFormValue.h"
 #include "CRangedInteger64FormValue.h"
 #include "CRecordingSettings.h"
@@ -626,6 +627,15 @@ void UINotificationMessage::cannotAcquireApplianceParameter(const CAppliance &co
         QApplication::translate("UIMessageCenter", "Failed to acquire appliance parameter.") +
         UIErrorString::formatErrorInfo(comAppliance),
         QString(), QString(), pParent);
+}
+
+/* static */
+void UINotificationMessage::cannotAcquirePlatformPropertiesParameter(const CPlatformProperties &comProperties)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Platform properties failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire platform properties parameter.") +
+        UIErrorString::formatErrorInfo(comProperties));
 }
 
 /* static */

@@ -181,8 +181,8 @@ class tdCpuPae1(vbox.TestDriver):
         fRc = True;
         oSession = self.openSession(oVM);
         if oSession is not None:
-            fRc = fRc and oSession.enableVirtEx(fHwVirt);
-            fRc = fRc and oSession.enableNestedPaging(fNestedPaging);
+            fRc = fRc and oSession.enableVirtExX86(fHwVirt);
+            fRc = fRc and oSession.enableNestedPagingX86(fNestedPaging);
             fRc = fRc and oSession.setCpuCount(cCpus);
             fRc = fRc and oSession.setupBootLogo(True, 2500); # Race avoidance fudge.
             fRc = fRc and oSession.saveSettings();

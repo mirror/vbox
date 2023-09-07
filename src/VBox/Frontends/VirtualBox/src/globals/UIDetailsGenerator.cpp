@@ -47,6 +47,7 @@
 #include "CChoiceFormValue.h"
 #include "CCloudMachine.h"
 #include "CConsole.h"
+#include "CFirmwareSettings.h"
 #include "CForm.h"
 #include "CFormValue.h"
 #include "CGraphicsAdapter.h"
@@ -55,6 +56,9 @@
 #include "CMediumAttachment.h"
 #include "CNetworkAdapter.h"
 #include "CNvramStore.h"
+#include "CPlatform.h"
+#include "CPlatformX86.h"
+#include "CPlatformProperties.h"
 #include "CProgress.h"
 #include "CRangedIntegerFormValue.h"
 #include "CRecordingScreenSettings.h"
@@ -63,7 +67,6 @@
 #include "CSharedFolder.h"
 #include "CStorageController.h"
 #include "CStringFormValue.h"
-#include "CSystemProperties.h"
 #include "CTrustedPlatformModule.h"
 #include "CUefiVariableStore.h"
 #include "CUSBController.h"
@@ -309,7 +312,8 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(CMachine &comMa
     /* Chipset type: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_ChipsetType)
     {
-        const KChipsetType enmChipsetType = comMachine.GetChipsetType();
+        CPlatform comPlatform = comMachine.GetPlatform();
+        const KChipsetType enmChipsetType = comPlatform.GetChipsetType();
         if (enmChipsetType == KChipsetType_ICH9)
             table << UITextTableLine(QApplication::translate("UIDetails", "Chipset Type", "details (system)"),
                                      gpConverter->toString(enmChipsetType));
@@ -328,7 +332,8 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(CMachine &comMa
     /* EFI: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Firmware)
     {
-        switch (comMachine.GetFirmwareType())
+        CFirmwareSettings comFirmwareSettings = comMachine.GetFirmwareSettings();
+        switch (comFirmwareSettings.GetFirmwareType())
         {
             case KFirmwareType_EFI:
             case KFirmwareType_EFI32:
@@ -369,18 +374,20 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(CMachine &comMa
     /* Acceleration: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Acceleration)
     {
+        CPlatform comPlatform = comMachine.GetPlatform();
+        CPlatformX86 comPlatformX86 = comPlatform.GetX86();
         QStringList acceleration;
         if (uiCommon().virtualBox().GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx))
         {
             /* Nested Paging: */
-            if (comMachine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging))
+            if (comPlatformX86.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging))
                 acceleration << QApplication::translate("UIDetails", "Nested Paging", "details (system)");
         }
         /* Nested VT-x/AMD-V: */
-        if (comMachine.GetCPUProperty(KCPUPropertyType_HWVirt))
+        if (comPlatformX86.GetCPUProperty(KCPUPropertyTypeX86_HWVirt))
             acceleration << QApplication::translate("UIDetails", "Nested VT-x/AMD-V", "details (system)");
         /* PAE/NX: */
-        if (comMachine.GetCPUProperty(KCPUPropertyType_PAE))
+        if (comPlatformX86.GetCPUProperty(KCPUPropertyTypeX86_PAE))
             acceleration << QApplication::translate("UIDetails", "PAE/NX", "details (system)");
         /* Paravirtualization provider: */
         switch (comMachine.GetEffectiveParavirtProvider())
@@ -710,7 +717,9 @@ UITextTable UIDetailsGenerator::generateMachineInformationNetwork(CMachine &comM
     }
 
     /* Iterate over all the adapters: */
-    const ulong uCount = uiCommon().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(comMachine.GetChipsetType());
+    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+    CPlatform comPlatform = comMachine.GetPlatform();
+    const ulong uCount = comProperties.GetMaxNetworkAdapters(comPlatform.GetChipsetType());
     for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
     {
         const QString strAnchorType = QString("network_attachment_type");
@@ -875,7 +884,8 @@ UITextTable UIDetailsGenerator::generateMachineInformationSerial(CMachine &comMa
     }
 
     /* Iterate over all the ports: */
-    const ulong uCount = uiCommon().virtualBox().GetSystemProperties().GetSerialPortCount();
+    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+    const ulong uCount = comProperties.GetSerialPortCount();
     for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
     {
         const CSerialPort comPort = comMachine.GetSerialPort(uSlot);
@@ -886,7 +896,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationSerial(CMachine &comMa
 
         /* Gather port information: */
         const KPortMode enmMode = comPort.GetHostMode();
-        const QString strModeTemplate = UITranslator::toCOMPortName(comPort.GetIRQ(), comPort.GetIOBase()) + ", ";
+        const QString strModeTemplate = UITranslator::toCOMPortName(comPort.GetIRQ(), comPort.GetIOAddress()) + ", ";
         QString strModeType;
         switch (enmMode)
         {
@@ -1286,10 +1296,11 @@ void UIDetailsGenerator::acquireNetworkStatusInfo(CMachine &comMachine, QString 
                                                   bool &fAdaptersPresent, bool &fCablesDisconnected)
 {
     /* Determine max amount of network adapters: */
-    const CVirtualBox comVBox = uiCommon().virtualBox();
-    const KChipsetType enmChipsetType = comMachine.GetChipsetType();
-    CSystemProperties comSystemProperties = comVBox.GetSystemProperties();
-    const ulong cMaxNetworkAdapters = comSystemProperties.GetMaxNetworkAdapters(enmChipsetType);
+    CVirtualBox comVBox = uiCommon().virtualBox();
+    CPlatform comPlatform = comMachine.GetPlatform();
+    const KChipsetType enmChipsetType = comPlatform.GetChipsetType();
+    CPlatformProperties comPlatformProperties = comVBox.GetPlatformProperties(KPlatformArchitecture_x86);
+    const ulong cMaxNetworkAdapters = comPlatformProperties.GetMaxNetworkAdapters(enmChipsetType);
 
     /* Gather adapter properties: */
     RTTIMESPEC time;

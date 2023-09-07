@@ -650,19 +650,6 @@ const char *Global::OSTypeId(VBOXOSTYPE aOSType)
     return UINT32_MAX;
 }
 
-/*static*/ uint32_t Global::getMaxNetworkAdapters(ChipsetType_T aChipsetType)
-{
-    switch (aChipsetType)
-    {
-        case ChipsetType_PIIX3:
-            return 8;
-        case ChipsetType_ICH9:
-            return 36;
-        default:
-            return 0;
-    }
-}
-
 /*static*/ const char *
 Global::stringifyMachineState(MachineState_T aState)
 {

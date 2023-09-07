@@ -155,7 +155,7 @@ class tdBenchmark2(vbox.TestDriver):
                 oSession = self.openSession(oVM);
                 if oSession:
                     fRc = oSession.setRamSize(cMbRam);
-                    fRc = oSession.setLargePages(fLargePages) and fRc;
+                    fRc = oSession.setLargePagesX86(fLargePages) and fRc;
                     if fRc:
                         fRc = oSession.saveSettings();
                     if not fRc:

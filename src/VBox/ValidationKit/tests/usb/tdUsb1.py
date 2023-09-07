@@ -496,8 +496,8 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         fRc = True;
         oSession = self.openSession(oVM);
         if oSession is not None:
-            fRc = fRc and oSession.enableVirtEx(True);
-            fRc = fRc and oSession.enableNestedPaging(True);
+            fRc = fRc and oSession.enableVirtExX86(True);
+            fRc = fRc and oSession.enableNestedPagingX86(True);
 
             # Make sure controllers are disabled initially.
             fRc = fRc and oSession.enableUsbOhci(False);

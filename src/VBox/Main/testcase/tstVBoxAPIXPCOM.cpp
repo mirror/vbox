@@ -197,6 +197,7 @@ static void createVM(IVirtualBox *virtualBox)
     nsCOMPtr<IMachine> machine;
     rc = virtualBox->CreateMachine(NULL,        /* settings file */
                                    NS_LITERAL_STRING("A brand new name").get(),
+                                   PlatformArchitecture_x86,
                                    0, nsnull,   /* groups (safearray)*/
                                    nsnull,      /* ostype */
                                    nsnull,      /* create flags */

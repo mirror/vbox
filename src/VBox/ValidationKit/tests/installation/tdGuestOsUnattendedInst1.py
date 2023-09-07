@@ -298,7 +298,7 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
 
         # I/O APIC:
         if self.fOptPae is not None:
-            fRc = oSession.enablePae(self.fOptPae) and fRc;
+            fRc = oSession.enablePaeX86(self.fOptPae) and fRc;
 
         # Set extra data
         for sExtraData in self.asOptExtraData:

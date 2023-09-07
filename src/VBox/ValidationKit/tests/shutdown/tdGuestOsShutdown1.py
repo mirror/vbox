@@ -197,16 +197,16 @@ class tdGuestOsBootTest1(vbox.TestDriver):
         fRc =         oSession.attachHd(sHddPath, sController, fImmutable=True)
 
         # Enable HW virt
-        fRc = fRc and oSession.enableVirtEx(True)
+        fRc = fRc and oSession.enableVirtExX86(True)
 
         # Enable I/O APIC
         fRc = fRc and oSession.enableIoApic(self.fEnableIOAPIC)
 
         # Enable Nested Paging
-        fRc = fRc and oSession.enableNestedPaging(self.fEnableNestedPaging)
+        fRc = fRc and oSession.enableNestedPagingX86(self.fEnableNestedPaging)
 
         # Enable PAE
-        fRc = fRc and oSession.enablePae(self.fEnablePAE)
+        fRc = fRc and oSession.enablePaeX86(self.fEnablePAE)
 
         if (sNicTraceFile is not None):
             fRc = fRc and oSession.setNicTraceEnabled(True, sNicTraceFile)

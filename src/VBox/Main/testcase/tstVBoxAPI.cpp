@@ -64,7 +64,7 @@ static HRESULT tstComExpr(HRESULT hrc, const char *pszOperation, int iLine)
 #define TST_COM_EXPR(expr) tstComExpr(expr, #expr, __LINE__)
 
 
-static BOOL tstApiIVirtualBox(IVirtualBox *pVBox)
+static void tstApiIVirtualBox(IVirtualBox *pVBox)
 {
     HRESULT hrc;
     Bstr bstrTmp;
@@ -127,13 +127,71 @@ static BOOL tstApiIVirtualBox(IVirtualBox *pVBox)
     else
         RTTestFailed(g_hTest, "%d: IVirtualBox::guestOSTypes failed", __LINE__);
 
-    /** Create VM */
+    /* For now we only test same-same architectures (host == guest). */
+    PlatformArchitecture_T enmPlatformArch;
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+    enmPlatformArch = PlatformArchitecture_x86;
+#elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
+    enmPlatformArch = PlatformArchitecture_ARM;
+#else
+# error "Port me!"
+#endif
+
+    /*
+     * Host
+     */
+    ComPtr<IHost> host;
+    RTTestSub(g_hTest, "IVirtualBox::host");
+    CHECK_ERROR(pVBox, COMGETTER(Host)(host.asOutParam()));
+    if (SUCCEEDED(hrc))
+    {
+        RTTestPassed(g_hTest, "IVirtualBox::host");
+        CHECK_ERROR(host, COMGETTER(Architecture)(&enmPlatformArch));
+
+        switch (enmPlatformArch)
+        {
+            case PlatformArchitecture_x86:
+            {
+                ComPtr<IHostX86> hostX86;
+                CHECK_ERROR(host, COMGETTER(X86)(hostX86.asOutParam()));
+                break;
+            }
+
+            default:
+                break;
+        }
+    }
+    else
+        RTTestFailed(g_hTest, "%d: IVirtualBox::host failed", __LINE__);
+
+    ComPtr<ISystemProperties> sysprop;
+    RTTestSub(g_hTest, "IVirtualBox::systemProperties");
+    CHECK_ERROR(pVBox, COMGETTER(SystemProperties)(sysprop.asOutParam()));
+    if (SUCCEEDED(hrc))
+    {
+        RTTestPassed(g_hTest, "IVirtualBox::systemProperties");
+
+        RTTestSub(g_hTest, "IVirtualBox::platform::::platformProperties");
+        ComPtr<IPlatformProperties> platformprop;
+        CHECK_ERROR(sysprop, COMGETTER(Platform)(platformprop.asOutParam()));
+        BOOL fTemp;
+        CHECK_ERROR(platformprop, COMGETTER(ExclusiveHwVirt)(&fTemp));
+        ULONG ulTemp;
+        CHECK_ERROR(platformprop, GetMaxNetworkAdapters(ChipsetType_PIIX3, &ulTemp));
+    }
+    else
+        RTTestFailed(g_hTest, "%d: IVirtualBox::systemProperties failed", __LINE__);
+
+    /*
+     * VM
+     */
     RTTestSub(g_hTest, "IVirtualBox::CreateMachine");
     ComPtr<IMachine> ptrMachine;
     com::SafeArray<BSTR> groups;
     /** Default VM settings */
     CHECK_ERROR(pVBox, CreateMachine(NULL,                          /** Settings */
                                      tstMachineName.raw(),          /** Name */
+                                     enmPlatformArch,
                                      ComSafeArrayAsInParam(groups), /** Groups */
                                      NULL,                          /** OS Type */
                                      NULL,                          /** Create flags */
@@ -146,7 +204,7 @@ static BOOL tstApiIVirtualBox(IVirtualBox *pVBox)
     else
     {
         RTTestFailed(g_hTest, "%d: IVirtualBox::CreateMachine failed", __LINE__);
-        return FALSE;
+        return;
     }
 
     RTTestSub(g_hTest, "IVirtualBox::RegisterMachine");
@@ -156,37 +214,15 @@ static BOOL tstApiIVirtualBox(IVirtualBox *pVBox)
     else
     {
         RTTestFailed(g_hTest, "%d: IVirtualBox::RegisterMachine failed", __LINE__);
-        return FALSE;
+        return;
     }
-
-    ComPtr<IHost> host;
-    RTTestSub(g_hTest, "IVirtualBox::host");
-    CHECK_ERROR(pVBox, COMGETTER(Host)(host.asOutParam()));
-    if (SUCCEEDED(hrc))
-    {
-        /** @todo Add IHost testing here. */
-        RTTestPassed(g_hTest, "IVirtualBox::host");
-    }
-    else
-        RTTestFailed(g_hTest, "%d: IVirtualBox::host failed", __LINE__);
-
-    ComPtr<ISystemProperties> sysprop;
-    RTTestSub(g_hTest, "IVirtualBox::systemProperties");
-    CHECK_ERROR(pVBox, COMGETTER(SystemProperties)(sysprop.asOutParam()));
-    if (SUCCEEDED(hrc))
-    {
-        /** @todo Add ISystemProperties testing here. */
-        RTTestPassed(g_hTest, "IVirtualBox::systemProperties");
-    }
-    else
-        RTTestFailed(g_hTest, "%d: IVirtualBox::systemProperties failed", __LINE__);
 
     com::SafeIfaceArray<IMachine> machines;
-    RTTestSub(g_hTest, "IVirtualBox::machines");
+    RTTestSub(g_hTest, "IVirtualBox::machines2");
     CHECK_ERROR(pVBox, COMGETTER(Machines)(ComSafeArrayAsOutParam(machines)));
     if (SUCCEEDED(hrc))
     {
-        bool bFound = FALSE;
+        bool fFound = FALSE;
         for (size_t i = 0; i < machines.size(); ++i)
         {
             if (machines[i])
@@ -197,20 +233,35 @@ static BOOL tstApiIVirtualBox(IVirtualBox *pVBox)
                 {
                     if (tmpName == tstMachineName)
                     {
-                        bFound = TRUE;
+                        fFound = TRUE;
                         break;
                     }
                 }
             }
         }
 
-        if (bFound)
+        if (fFound)
             RTTestPassed(g_hTest, "IVirtualBox::machines");
         else
             RTTestFailed(g_hTest, "%d: IVirtualBox::machines failed. No created machine found", __LINE__);
     }
     else
         RTTestFailed(g_hTest, "%d: IVirtualBox::machines failed", __LINE__);
+
+    RTTestSub(g_hTest, "IMachine::FirmwareSettings");
+    ComPtr<IFirmwareSettings> ptrFirmwareSettings;
+    CHECK_ERROR(ptrMachine, COMGETTER(FirmwareSettings)(ptrFirmwareSettings.asOutParam()));
+    FirmwareType_T firmwareType;
+    CHECK_ERROR(ptrFirmwareSettings, COMGETTER(FirmwareType)(&firmwareType));
+
+//    CHECK_ERROR(ptrMachine, LockMachine());
+//    RTTestSub(g_hTest, "IMachine::saveSettings");
+//    CHECK_ERROR(ptrMachine, SaveSettings());
+
+    Bstr bstSettingsFile;
+    CHECK_ERROR(ptrMachine, COMGETTER(SettingsFilePath)(bstSettingsFile.asOutParam()));
+    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Settings file: %ls\n", bstSettingsFile.raw());
+//    CHECK_ERROR(ptrMachine, UnlockMachine());
 
 #if 0 /** Not yet implemented */
     com::SafeIfaceArray<ISharedFolder> sharedFolders;
@@ -343,26 +394,21 @@ static BOOL tstApiIVirtualBox(IVirtualBox *pVBox)
     }
     else
         RTTestFailed(g_hTest, "%d: IVirtualBox::genericNetworkDrivers failed", __LINE__);
-
-    return TRUE;
 }
 
 
-static BOOL tstApiClean(IVirtualBox *pVBox)
+static void tstApiClean(IVirtualBox *pVBox)
 {
     HRESULT hrc;
 
     /** Delete created VM and its files */
     ComPtr<IMachine> machine;
-    CHECK_ERROR_RET(pVBox, FindMachine(Bstr(tstMachineName).raw(), machine.asOutParam()), FALSE);
+    CHECK_ERROR(pVBox, FindMachine(Bstr(tstMachineName).raw(), machine.asOutParam()));
     SafeIfaceArray<IMedium> media;
-    CHECK_ERROR_RET(machine, Unregister(CleanupMode_DetachAllReturnHardDisksOnly,
-                                    ComSafeArrayAsOutParam(media)), FALSE);
+    CHECK_ERROR(machine, Unregister(CleanupMode_DetachAllReturnHardDisksOnly, ComSafeArrayAsOutParam(media)));
     ComPtr<IProgress> progress;
-    CHECK_ERROR_RET(machine, DeleteConfig(ComSafeArrayAsInParam(media), progress.asOutParam()), FALSE);
-    CHECK_ERROR_RET(progress, WaitForCompletion(-1), FALSE);
-
-    return TRUE;
+    CHECK_ERROR(machine, DeleteConfig(ComSafeArrayAsInParam(media), progress.asOutParam()));
+    CHECK_ERROR(progress, WaitForCompletion(-1));
 }
 
 
@@ -400,7 +446,6 @@ int main()
 
                 /** Test IVirtualBox interface */
                 tstApiIVirtualBox(ptrVBox);
-
 
                 /** Clean files/configs */
                 tstApiClean(ptrVBox);

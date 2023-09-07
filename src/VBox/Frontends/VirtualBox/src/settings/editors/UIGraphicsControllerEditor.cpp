@@ -37,7 +37,7 @@
 #include "UIGraphicsControllerEditor.h"
 
 /* COM includes: */
-#include "CSystemProperties.h"
+#include "CPlatformProperties.h"
 
 
 UIGraphicsControllerEditor::UIGraphicsControllerEditor(QWidget *pParent /* = 0 */)
@@ -155,7 +155,7 @@ void UIGraphicsControllerEditor::populateCombo()
         m_pCombo->clear();
 
         /* Load currently supported graphics controller types: */
-        CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+        CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
         m_supportedValues = comProperties.GetSupportedGraphicsControllerTypes();
 
         /* Make sure requested value if sane is present as well: */
