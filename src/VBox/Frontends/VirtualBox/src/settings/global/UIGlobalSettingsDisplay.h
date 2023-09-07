@@ -93,13 +93,13 @@ private:
 
     /** @name Widgets
      * @{ */
-        /** Holds the maximum guest screen size editor instance. */
+        /** Holds the 'maximum guest screen size' editor instance. */
         UIMaximumGuestScreenSizeEditor *m_pEditorMaximumGuestScreenSize;
-        /** Holds the scale-factor editor instance. */
+        /** Holds the 'scale-factor' editor instance. */
         UIScaleFactorEditor            *m_pEditorScaleFactor;
-        /** Holds the global display features editor instance. */
-        UIDisplayFeaturesEditor        *m_pEditorGlobalDisplayFeatures;
-        /** Holds the font scale editor instance. */
+        /** Holds the 'display features' editor instance. */
+        UIDisplayFeaturesEditor        *m_pEditorDisplayFeatures;
+        /** Holds the 'font scale' editor instance. */
         UIFontScaleEditor              *m_pFontScaleEditor;
     /** @} */
 };

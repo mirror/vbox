@@ -91,7 +91,7 @@ private:
 
     /** @name Widgets
      * @{ */
-        /** Holds the update settings editor instance. */
+        /** Holds the 'update settings' editor instance. */
         UIUpdateSettingsEditor *m_pEditorUpdateSettings;
     /** @} */
 };

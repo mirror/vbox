@@ -96,7 +96,7 @@ private:
 
     /** @name Widgets
      * @{ */
-        /** Holds the proxy features editor instance. */
+        /** Holds the 'proxy features' editor instance. */
         UIProxyFeaturesEditor *m_pEditorProxyFeatures;
     /** @} */
 };

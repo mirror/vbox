@@ -85,7 +85,7 @@ UIGlobalSettingsDisplay::UIGlobalSettingsDisplay()
     : m_pCache(0)
     , m_pEditorMaximumGuestScreenSize(0)
     , m_pEditorScaleFactor(0)
-    , m_pEditorGlobalDisplayFeatures(0)
+    , m_pEditorDisplayFeatures(0)
     , m_pFontScaleEditor(0)
 {
     prepare();
@@ -144,10 +144,10 @@ void UIGlobalSettingsDisplay::getFromCache()
         m_pEditorScaleFactor->setScaleFactors(oldData.m_scaleFactors);
         m_pEditorScaleFactor->setMonitorCount(UIDesktopWidgetWatchdog::screenCount());
     }
-    if (m_pEditorGlobalDisplayFeatures)
+    if (m_pEditorDisplayFeatures)
     {
-        m_pEditorGlobalDisplayFeatures->setActivateOnMouseHover(oldData.m_fActivateHoveredMachineWindow);
-        m_pEditorGlobalDisplayFeatures->setDisableHostScreenSaver(oldData.m_fDisableHostScreenSaver);
+        m_pEditorDisplayFeatures->setActivateOnMouseHover(oldData.m_fActivateHoveredMachineWindow);
+        m_pEditorDisplayFeatures->setDisableHostScreenSaver(oldData.m_fDisableHostScreenSaver);
     }
     if (m_pFontScaleEditor)
         m_pFontScaleEditor->setFontScaleFactor(oldData.m_iFontScalingFactor);
@@ -167,10 +167,10 @@ void UIGlobalSettingsDisplay::putToCache()
         newData.m_guiMaximumGuestScreenSizeValue = m_pEditorMaximumGuestScreenSize->value();
     if (m_pEditorScaleFactor)
         newData.m_scaleFactors = m_pEditorScaleFactor->scaleFactors();
-    if (m_pEditorGlobalDisplayFeatures)
+    if (m_pEditorDisplayFeatures)
     {
-        newData.m_fActivateHoveredMachineWindow = m_pEditorGlobalDisplayFeatures->activateOnMouseHover();
-        newData.m_fDisableHostScreenSaver = m_pEditorGlobalDisplayFeatures->disableHostScreenSaver();
+        newData.m_fActivateHoveredMachineWindow = m_pEditorDisplayFeatures->activateOnMouseHover();
+        newData.m_fDisableHostScreenSaver = m_pEditorDisplayFeatures->disableHostScreenSaver();
     }
     if (m_pFontScaleEditor)
         newData.m_iFontScalingFactor = m_pFontScaleEditor->fontScaleFactor();
@@ -195,11 +195,11 @@ void UIGlobalSettingsDisplay::retranslateUi()
     int iMinimumLayoutHint = 0;
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorMaximumGuestScreenSize->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorScaleFactor->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorGlobalDisplayFeatures->minimumLabelHorizontalHint());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorDisplayFeatures->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pFontScaleEditor->minimumLabelHorizontalHint());
     m_pEditorMaximumGuestScreenSize->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pEditorScaleFactor->setMinimumLayoutIndent(iMinimumLayoutHint);
-    m_pEditorGlobalDisplayFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
+    m_pEditorDisplayFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pFontScaleEditor->setMinimumLayoutIndent(iMinimumLayoutHint);
 }
 
@@ -238,12 +238,12 @@ void UIGlobalSettingsDisplay::prepareWidgets()
             pLayout->addWidget(m_pEditorScaleFactor);
         }
 
-        /* Prepare 'global display features' editor: */
-        m_pEditorGlobalDisplayFeatures = new UIDisplayFeaturesEditor(this);
-        if (m_pEditorGlobalDisplayFeatures)
+        /* Prepare 'display features' editor: */
+        m_pEditorDisplayFeatures = new UIDisplayFeaturesEditor(this);
+        if (m_pEditorDisplayFeatures)
         {
-            m_editors << m_pEditorGlobalDisplayFeatures;
-            pLayout->addWidget(m_pEditorGlobalDisplayFeatures);
+            m_editors << m_pEditorDisplayFeatures;
+            pLayout->addWidget(m_pEditorDisplayFeatures);
         }
 
         /* Prepare 'font scale' editor: */

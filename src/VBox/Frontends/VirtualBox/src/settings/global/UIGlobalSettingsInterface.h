@@ -90,7 +90,7 @@ private:
 
     /** @name Widgets
      * @{ */
-        /** Holds the color theme label instance. */
+        /** Holds the 'color theme' editor instance. */
         UIColorThemeEditor *m_pEditorColorTheme;
     /** @} */
 };

@@ -90,7 +90,7 @@ private:
 
     /** @name Widgets
      * @{ */
-        /** Holds the language settings editor instance. */
+        /** Holds the 'language settings' editor instance. */
         UILanguageSettingsEditor *m_pEditorLanguageSettings;
     /** @} */
 };
