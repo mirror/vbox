@@ -91,13 +91,15 @@ HRESULT Platform::init(Machine *aParent)
 
     m->bd.allocate();
 
-    /* Allocates architecture-dependent stuff. */
-    HRESULT hrc = i_initArchitecture(m->bd->architectureType);
-    AssertComRCReturnRC(hrc);
+    /* Allocates architecture-dependent stuff.
+     * Note: We ignore the return value here, as the machine object expects a working platform object.
+             We always want a working platform object, no matter if we support the current platform architecture or not. */
+    i_initArchitecture(m->bd->architectureType);
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
 
+    LogFlowThisFuncLeave();
     return S_OK;
 }
 
@@ -128,9 +130,10 @@ HRESULT Platform::init(Machine *aParent, Platform *aThat)
     AutoWriteLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
     m->bd.share(aThat->m->bd);
 
-    /* Allocates architecture-dependent stuff. */
-    HRESULT hrc = i_initArchitecture(aThat->m->bd->architectureType, aThat);
-    AssertComRCReturnRC(hrc);
+    /* Allocates architecture-dependent stuff.
+     * Note: We ignore the return value here, as the machine object expects a working platform object.
+             We always want a working platform object, no matter if we support the current platform architecture or not. */
+    i_initArchitecture(aThat->m->bd->architectureType, aThat);
 
     autoInitSpan.setSucceeded();
 
@@ -162,9 +165,10 @@ HRESULT Platform::initCopy(Machine *aParent, Platform *aThat)
     AutoWriteLock thatlock(aThat COMMA_LOCKVAL_SRC_POS); /** @todo r=andy Shouldn't a read lock be sufficient here? */
     m->bd.attachCopy(aThat->m->bd);
 
-    /* Allocates architecture-dependent stuff. */
-    HRESULT hrc = i_initArchitecture(aThat->m->bd->architectureType, aThat, true /* fCopy */);
-    AssertComRCReturnRC(hrc);
+    /* Allocates architecture-dependent stuff.
+     * Note: We ignore the return value here, as the machine object expects a working platform object.
+             We always want a working platform object, no matter if we support the current platform architecture or not. */
+    i_initArchitecture(aThat->m->bd->architectureType, aThat, true /* fCopy */);
 
     autoInitSpan.setSucceeded();
 
@@ -276,8 +280,12 @@ HRESULT Platform::getX86(ComPtr<IPlatformX86> &aX86)
     {
         case PlatformArchitecture_x86:
         {
-            /* mX86 is constant during life time, no need to lock */
-            return mX86.queryInterfaceTo(aX86.asOutParam());
+            if (mX86.isNotNull())
+            {
+                /* mX86 is constant during life time, no need to lock. */
+                return mX86.queryInterfaceTo(aX86.asOutParam());
+            }
+            break;
         }
 
         default:
@@ -285,7 +293,7 @@ HRESULT Platform::getX86(ComPtr<IPlatformX86> &aX86)
             break;
     }
 
-    return VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED;
+    return setErrorVrc(VERR_PLATFORM_ARCH_NOT_SUPPORTED, ("x86-specific platform settings are not available on this platform"));
 }
 
 HRESULT Platform::getARM(ComPtr<IPlatformARM> &aARM)
@@ -301,8 +309,12 @@ HRESULT Platform::getARM(ComPtr<IPlatformARM> &aARM)
 #ifdef VBOX_WITH_VIRT_ARMV8
         case PlatformArchitecture_ARM:
         {
-            /* mARM is constant during life time, no need to lock */
-            return mARM.queryInterfaceTo(aARM.asOutParam());
+            if (mARM.isNotNull())
+            {
+                /* mARM is constant during life time, no need to lock. */
+                return mARM.queryInterfaceTo(aARM.asOutParam());
+            }
+            break;
         }
 #else
         RT_NOREF(aARM);
@@ -312,7 +324,7 @@ HRESULT Platform::getARM(ComPtr<IPlatformARM> &aARM)
             break;
     }
 
-    return VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED;
+    return setErrorVrc(VERR_PLATFORM_ARCH_NOT_SUPPORTED, ("ARM-specific platform settings are not available on this platform"));
 }
 
 HRESULT Platform::getChipsetType(ChipsetType_T *aChipsetType)
@@ -537,7 +549,7 @@ HRESULT Platform::i_saveSettings(settings::Platform &data)
         case PlatformArchitecture_x86:
             return mX86->i_saveSettings(data.x86);
 
- #ifdef VBOX_WITH_VIRT_ARMV8
+#ifdef VBOX_WITH_VIRT_ARMV8
         case PlatformArchitecture_ARM:
             return mARM->i_saveSettings(data.arm);
 #endif
@@ -553,24 +565,30 @@ HRESULT Platform::i_saveSettings(settings::Platform &data)
 void Platform::i_rollback()
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    m->bd.rollback();
 
-    switch (m->bd->architectureType)
+    if (m)
     {
-        case PlatformArchitecture_x86:
-            return mX86->i_rollback();
+        m->bd.rollback();
+
+        switch (m->bd->architectureType)
+        {
+            case PlatformArchitecture_x86:
+                if (mX86.isNotNull())
+                    return mX86->i_rollback();
+                break;
 
 #ifdef VBOX_WITH_VIRT_ARMV8
-        case PlatformArchitecture_ARM:
-            return mARM->i_rollback();
+            case PlatformArchitecture_ARM:
+                if (mARM.isNotNull())
+                    return mARM->i_rollback();
+                break;
 #endif
-        case PlatformArchitecture_None:
-            RT_FALL_THROUGH();
-        default:
-            break;
+            case PlatformArchitecture_None:
+                RT_FALL_THROUGH();
+            default:
+                break;
+        }
     }
-
-    AssertFailedReturnVoid();
 }
 
 void Platform::i_commit()
@@ -675,14 +693,6 @@ HRESULT Platform::i_initArchitecture(PlatformArchitecture_T aArchitecture, Platf
 
     HRESULT hrc = S_OK;
 
-     /** @todo BUGBUG We only support ARM VMs on ARM hosts for now.
-      *               Remove this limitation once we have support for FE/Qt and x86-on-ARM support. */
-#if defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
-    m->bd->architectureType = PlatformArchitecture_ARM;
-#else
-    m->bd->architectureType = aArchitecture;
-#endif
-
     /* Currently we only keep the current platform-specific object around,
      * e.g. we destroy any data for the former architecture (if any). */
     uninitArchitecture();
@@ -727,7 +737,7 @@ HRESULT Platform::i_initArchitecture(PlatformArchitecture_T aArchitecture, Platf
         }
 #endif
         default:
-            AssertFailedStmt(hrc = VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED);
+            hrc = VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED;
             break;
     }
 
@@ -795,10 +805,11 @@ HRESULT Platform::i_applyDefaults(GuestOSType *aOsType)
             hrc = mX86->i_applyDefaults(aOsType);
             break;
 
+#ifdef VBOX_WITH_VIRT_ARMV8
         case PlatformArchitecture_ARM:
-            AssertFailed(); /** @todo BUGBUG Implement this! */
+            /** @todo BUGBUG Implement this! */
             break;
-
+#endif
         case PlatformArchitecture_None:
             RT_FALL_THROUGH();
         default:

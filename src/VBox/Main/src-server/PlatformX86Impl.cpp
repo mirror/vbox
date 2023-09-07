@@ -180,7 +180,8 @@ void PlatformX86::uninit()
 void PlatformX86::i_rollback()
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    m->bd.rollback();
+    if (m)
+        m->bd.rollback();
 }
 
 void PlatformX86::i_commit()

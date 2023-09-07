@@ -171,7 +171,8 @@ void PlatformARM::uninit()
 void PlatformARM::i_rollback()
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    m->bd.rollback();
+    if (m)
+        m->bd.rollback();
 }
 
 void PlatformARM::i_commit()

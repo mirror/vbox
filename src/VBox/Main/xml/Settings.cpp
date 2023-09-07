@@ -5406,7 +5406,6 @@ void MachineConfigFile::readPlatform(const xml::ElementNode &elmPlatformOrHardwa
         }
 #endif
         default:
-            AssertFailed();
             break;
     }
 }
