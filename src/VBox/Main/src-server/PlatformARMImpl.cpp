@@ -158,11 +158,14 @@ void PlatformARM::uninit()
 
     unconst(mMachine) = NULL;
 
-    m->bd.free();
-    unconst(m->pPeer) = NULL;
+    if (m)
+    {
+        m->bd.free();
+        unconst(m->pPeer) = NULL;
 
-    delete m;
-    m = NULL;
+        delete m;
+        m = NULL;
+    }
 }
 
 void PlatformARM::i_rollback()
