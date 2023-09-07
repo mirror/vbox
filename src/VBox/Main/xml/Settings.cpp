@@ -7989,7 +7989,10 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
             xml::ElementNode *pelmPort = pelmPorts->createChild("Port");
             pelmPort->setAttribute("slot", port.ulSlot);
             pelmPort->setAttribute("enabled", port.fEnabled);
-            pelmPort->setAttributeHex("IOAddress", port.ulIOAddress);
+            if (m->sv >= SettingsVersion_v1_20) /* IOBase was renamed to IOAddress in v1.20. */
+                pelmPort->setAttributeHex("IOAddress", port.ulIOAddress);
+            else
+                pelmPort->setAttributeHex("IOBase", port.ulIOAddress);
             pelmPort->setAttribute("IRQ", port.ulIRQ);
 
             const char *pcszHostMode;
