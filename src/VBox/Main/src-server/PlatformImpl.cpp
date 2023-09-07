@@ -671,7 +671,13 @@ HRESULT Platform::i_initArchitecture(PlatformArchitecture_T aArchitecture, Platf
 
     HRESULT hrc = S_OK;
 
+     /** @todo BUGBUG We only support ARM VMs on ARM hosts for now.
+      *               Remove this limitation once we have support for FE/Qt and x86-on-ARM support. */
+#if defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
+    m->bd->architectureType = PlatformArchitecture_ARM;
+#else
     m->bd->architectureType = aArchitecture;
+#endif
 
     /* Currently we only keep the current platform-specific object around,
      * e.g. we destroy any data for the former architecture (if any). */
