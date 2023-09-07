@@ -5195,12 +5195,12 @@ void MachineConfigFile::readStorageControllerAttributes(const xml::ElementNode &
  * @param elmPlatformOrHardware     Platform or Hardware node to read from.
  * @param platX86                   Where to store the platform settings.
  */
-void MachineConfigFile::readPlatformCPUIDTreeX86(const xml::ElementNode &elmChild,
+void MachineConfigFile::readPlatformCPUIDTreeX86(const xml::ElementNode &elmPlatformOrHardware,
                                                  PlatformX86 &platX86)
 {
     const xml::ElementNode *pelmCPUChild;
     if ((pelmCPUChild = elmChild.findChildElement("CpuIdTree")))
-        readCpuIdTreeX86(*pelmCPUChild, platX86.llCpuIdLeafs);
+        readCpuIdTreeX86(*elmPlatformOrHardware, platX86.llCpuIdLeafs);
 }
 
 /**
