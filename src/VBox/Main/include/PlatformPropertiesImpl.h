@@ -25,8 +25,8 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef MAIN_INCLUDED_PlatformProperties_h
-#define MAIN_INCLUDED_PlatformProperties_h
+#ifndef MAIN_INCLUDED_PlatformPropertiesImpl_h
+#define MAIN_INCLUDED_PlatformPropertiesImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -128,5 +128,5 @@ private:
     settings::PlatformProperties *m;
 };
 
-#endif /* !MAIN_INCLUDED_PlatformProperties_h */
+#endif /* !MAIN_INCLUDED_PlatformPropertiesImpl_h */
 

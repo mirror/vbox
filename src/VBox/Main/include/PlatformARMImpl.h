@@ -25,8 +25,8 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef MAIN_INCLUDED_PlatformARM_h
-#define MAIN_INCLUDED_PlatformARM_h
+#ifndef MAIN_INCLUDED_PlatformARMImpl_h
+#define MAIN_INCLUDED_PlatformARMImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -68,5 +68,5 @@ public:
     HRESULT i_saveSettings(settings::PlatformARM &data);
     HRESULT i_applyDefaults(GuestOSType *aOsType);
 };
-#endif /* !MAIN_INCLUDED_PlatformARM_h */
+#endif /* !MAIN_INCLUDED_PlatformARMImpl_h */
 
