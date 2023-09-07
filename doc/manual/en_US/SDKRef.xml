@@ -5145,7 +5145,7 @@ AuthResult AUTHCALL AuthEntry(
               </row>
               <row>
                 <entry>IMachine::hpetEnabled</entry>
-                <entry><link linkend="IMachine__HPETEnabled">IMachine::HPETEnabled</link></entry>
+                <entry>IMachine::HPETEnabled</entry>
               </row>
               <row>
                 <entry>IMachine::sessionPid</entry>
@@ -5774,33 +5774,27 @@ AuthResult AUTHCALL AuthEntry(
           <para>The following interfaces were renamed for consistency:
           <itemizedlist>
               <listitem>
-                <para>IMachine::getCpuProperty() is now
-                <link linkend="IMachine__getCPUProperty">IMachine::getCPUProperty()</link>;</para>
+                <para>IMachine::getCpuProperty() is now IMachine::getCPUProperty();</para>
               </listitem>
 
               <listitem>
-                <para>IMachine::setCpuProperty() is now
-                <link linkend="IMachine__setCPUProperty">IMachine::setCPUProperty()</link>;</para>
+                <para>IMachine::setCpuProperty() is now IMachine::setCPUProperty();</para>
               </listitem>
 
               <listitem>
-                <para>IMachine::getCpuIdLeaf() is now
-                <link linkend="IMachine__getCPUIDLeaf">IMachine::getCPUIDLeaf()</link>;</para>
+                <para>IMachine::getCpuIdLeaf() is now IMachine::getCPUIDLeaf();</para>
               </listitem>
 
               <listitem>
-                <para>IMachine::setCpuIdLeaf() is now
-                <link linkend="IMachine__setCPUIDLeaf">IMachine::setCPUIDLeaf()</link>;</para>
+                <para>IMachine::setCpuIdLeaf() is now IMachine::setCPUIDLeaf();</para>
               </listitem>
 
               <listitem>
-                <para>IMachine::removeCpuIdLeaf() is now
-                <link linkend="IMachine__removeCPUIDLeaf">IMachine::removeCPUIDLeaf()</link>;</para>
+                <para>IMachine::removeCpuIdLeaf() is now IMachine::removeCPUIDLeaf();</para>
               </listitem>
 
               <listitem>
-                <para>IMachine::removeAllCpuIdLeafs() is now
-                <link linkend="IMachine__removeAllCPUIDLeaves">IMachine::removeAllCPUIDLeaves()</link>;</para>
+                <para>IMachine::removeAllCpuIdLeafs() is now IMachine::removeAllCPUIDLeaves();</para>
               </listitem>
 
               <listitem>
