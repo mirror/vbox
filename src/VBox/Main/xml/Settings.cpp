@@ -5199,8 +5199,8 @@ void MachineConfigFile::readPlatformCPUIDTreeX86(const xml::ElementNode &elmPlat
                                                  PlatformX86 &platX86)
 {
     const xml::ElementNode *pelmCPUChild;
-    if ((pelmCPUChild = elmChild.findChildElement("CpuIdTree")))
-        readCpuIdTreeX86(*elmPlatformOrHardware, platX86.llCpuIdLeafs);
+    if ((pelmCPUChild = elmPlatformOrHardware.findChildElement("CpuIdTree")))
+        readCpuIdTreeX86(*pelmCPUChild, platX86.llCpuIdLeafs);
 }
 
 /**
