@@ -6305,11 +6305,11 @@ HRESULT Machine::attachHostPCIDevice(LONG aHostAddress, LONG aDesiredGuestAddres
         HRESULT hrc = i_checkStateDependency(MutableStateDep);
         if (FAILED(hrc)) return hrc;
 
-        ChipsetType_T aChipset = ChipsetType_PIIX3; /*** @todo BUGBUG ASSUMES x86! */
+        ChipsetType_T aChipset = ChipsetType_PIIX3; /** @todo BUGBUG ASSUMES x86! */
         hrc = mPlatform->COMGETTER(ChipsetType)(&aChipset);
         if (FAILED(hrc)) return hrc;
 
-        if (aChipset != ChipsetType_ICH9) /*** @todo BUGBUG ASSUMES x86! */
+        if (aChipset != ChipsetType_ICH9) /** @todo BUGBUG ASSUMES x86! */
         {
             return setError(E_INVALIDARG,
                             tr("Host PCI attachment only supported with ICH9 chipset"));

@@ -1035,8 +1035,7 @@
     <desc>
       Platform architecture.
       <note>
-        <para>This does not specify the CPU type.
-          See <link to="CPUArchitecture"/> for more information.</para>
+        This does not specify the CPU type. See <link to="CPUArchitecture"/> for more information.
       </note>
     </desc>
     <const name="None" value="0">
