@@ -679,6 +679,8 @@ void Platform::i_copyFrom(Platform *aThat)
  * @returns HRESULT
  * @retval  VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED if platform architecture is not supported.
  * @param   aArchitecture       Platform architecture to set.
+ * @param   aThat               Other platform object to use for shared / copied initialization. Optional.
+ * @param   fCopy               Whether to copy or share the configuration from / with \a aThat.
  *
  * @note    Creates the platform-specific sub object (e.g. x86 or ARM).
  *          Usually only called when creating a new machine or loading settings.
