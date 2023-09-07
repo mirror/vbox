@@ -5798,8 +5798,7 @@ AuthResult AUTHCALL AuthEntry(
               </listitem>
 
               <listitem>
-                <para>the CpuPropertyType enum is now
-                <link linkend="CPUPropertyType">CPUPropertyType</link>.</para>
+                <para>the CpuPropertyType enum is now CPUPropertyType.</para>
               </listitem>
 
               <listitem>

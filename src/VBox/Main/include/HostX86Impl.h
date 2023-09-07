@@ -25,8 +25,8 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef MAIN_INCLUDED_HostX86_h
-#define MAIN_INCLUDED_HostX86_h
+#ifndef MAIN_INCLUDED_HostX86Impl_h
+#define MAIN_INCLUDED_HostX86Impl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -88,5 +88,5 @@ private:
     Data *m;
 };
 
-#endif /* !MAIN_INCLUDED_HostX86_h */
+#endif /* !MAIN_INCLUDED_HostX86Impl_h */
 
