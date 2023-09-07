@@ -42,12 +42,29 @@ UIEditor::UIEditor(QWidget *pParent /* = 0 */)
 
 void UIEditor::filterOut(const QString &strFilter)
 {
-    /* Make sure the editor is visible in case if filter is empty: */
+    /* Propagate filter towards all the children: */
+    foreach (UIEditor *pEditor, m_editors)
+        pEditor->filterOut(strFilter);
+
+    /* Make sure the editor is visible if filter is empty: */
     bool fVisible = strFilter.isEmpty();
+
+    /* If editor still hidden we'll need to make it
+     * visible if at least one of children is. */
     if (!fVisible)
     {
-        /* Otherwise we'll have to walk through all the
-         * descriptions to check whether filter is suitable: */
+        foreach (UIEditor *pEditor, m_editors)
+            if (pEditor->isVisibleTo(this))
+            {
+                fVisible = true;
+                break;
+            }
+    }
+
+    /* If editor still hidden we'll need to make it
+     * visible if at least one of descriptions suits filter well: */
+    if (!fVisible)
+    {
         foreach (const QString &strDescription, description())
             if (strDescription.contains(strFilter, Qt::CaseInsensitive))
             {
@@ -55,7 +72,8 @@ void UIEditor::filterOut(const QString &strFilter)
                 break;
             }
     }
-    /* We'll show whole the editor if filter is suitable: */
+
+    /* Update widget visibility: */
     setVisible(fVisible);
 }
 

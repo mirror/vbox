@@ -183,9 +183,6 @@ public:
     /** Performs page polishing. */
     virtual void polishPage() {}
 
-    /** Filters out contents with description unrelated to passed @a strFilter. */
-    virtual void filterOut(const QString &strFilter) RT_OVERRIDE;
-
 public slots:
 
     /** Performs validation. */
@@ -296,9 +293,6 @@ public:
 
     /** Defines @a strName. */
     void setName(const QString &strName);
-
-    /** Filters out contents with description unrelated to passed @a strFilter. */
-    virtual void filterOut(const QString &strFilter) RT_OVERRIDE;
 
 protected:
 
