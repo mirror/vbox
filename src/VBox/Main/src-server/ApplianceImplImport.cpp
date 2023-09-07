@@ -4419,7 +4419,7 @@ HRESULT Appliance::i_verifyStorageControllerPortValid(const StorageControllerTyp
     mVirtualBox->GetPlatformProperties(PlatformArchitecture_x86, platformProperties.asOutParam()); /// @todo BUGBUG Only x86 for now!
 
     StorageBus_T enmStorageBus = StorageBus_Null;
-    HRESULT hrc = platformProperties->GetStorageBusForStorageControllerType(aStorageControllerType, &enmStorageBus);
+    HRESULT hrc = platformProperties->GetStorageBusForControllerType(aStorageControllerType, &enmStorageBus);
     if (FAILED(hrc))
         return hrc;
 

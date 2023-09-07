@@ -473,8 +473,8 @@ HRESULT PlatformProperties::getDeviceTypesForStorageBus(StorageBus_T aBus,
     return S_OK;
 }
 
-HRESULT PlatformProperties::getStorageBusForStorageControllerType(StorageControllerType_T aStorageControllerType,
-                                                                  StorageBus_T *aStorageBus)
+HRESULT PlatformProperties::getStorageBusForControllerType(StorageControllerType_T aStorageControllerType,
+                                                           StorageBus_T *aStorageBus)
 {
     /* no need to lock, this is const */
     switch (aStorageControllerType)
@@ -513,8 +513,8 @@ HRESULT PlatformProperties::getStorageBusForStorageControllerType(StorageControl
     return S_OK;
 }
 
-HRESULT PlatformProperties::getStorageControllerTypesForStorageBus(StorageBus_T aStorageBus,
-                                                                   std::vector<StorageControllerType_T> &aStorageControllerTypes)
+HRESULT PlatformProperties::getStorageControllerTypesForBus(StorageBus_T aStorageBus,
+                                                            std::vector<StorageControllerType_T> &aStorageControllerTypes)
 {
     aStorageControllerTypes.resize(0);
 

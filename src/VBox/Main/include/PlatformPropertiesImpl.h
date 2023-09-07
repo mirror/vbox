@@ -106,10 +106,10 @@ private:
                                         ULONG *aMaxInstances) RT_OVERRIDE;
     HRESULT getDeviceTypesForStorageBus(StorageBus_T aBus,
                                         std::vector<DeviceType_T> &aDeviceTypes) RT_OVERRIDE;
-    HRESULT getStorageBusForStorageControllerType(StorageControllerType_T aStorageControllerType,
-                                                  StorageBus_T *aStorageBus) RT_OVERRIDE;
-    HRESULT getStorageControllerTypesForStorageBus(StorageBus_T aStorageBus,
-                                                   std::vector<StorageControllerType_T> &aStorageControllerTypes) RT_OVERRIDE;
+    HRESULT getStorageBusForControllerType(StorageControllerType_T aStorageControllerType,
+                                           StorageBus_T *aStorageBus) RT_OVERRIDE;
+    HRESULT getStorageControllerTypesForBus(StorageBus_T aStorageBus,
+                                            std::vector<StorageControllerType_T> &aStorageControllerTypes) RT_OVERRIDE;
     HRESULT getStorageControllerHotplugCapable(StorageControllerType_T aControllerType,
                                                BOOL *aHotplugCapable) RT_OVERRIDE;
     HRESULT getMaxInstancesOfUSBControllerType(ChipsetType_T aChipset,

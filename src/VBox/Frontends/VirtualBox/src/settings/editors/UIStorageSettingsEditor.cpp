@@ -1385,7 +1385,7 @@ void ControllerItem::updateTypeInfo()
     foreach (const KStorageBus &enmBus, possibleBuses)
     {
         /* Enumerate possible types and check whether type is supported or already selected before adding it: */
-        foreach (const KStorageControllerType &enmType, comProperties.GetStorageControllerTypesForStorageBus(enmBus))
+        foreach (const KStorageControllerType &enmType, comProperties.GetStorageControllerTypesForBus(enmBus))
             if (supportedTypes.contains(enmType) || enmType == m_enmType)
                 m_types[enmBus] << enmType;
     }
@@ -3284,7 +3284,7 @@ void UIStorageSettingsEditor::sltAddController()
     foreach (const KStorageControllerType &enmType, supportedTypes)
     {
         QAction *pAction = m_addControllerActions.value(enmType);
-        if (supportedBuses.contains(comProperties.GetStorageBusForStorageControllerType(enmType)))
+        if (supportedBuses.contains(comProperties.GetStorageBusForControllerType(enmType)))
             menu.addAction(pAction);
     }
 

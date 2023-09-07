@@ -12618,7 +12618,7 @@
   <interface
     name="IPlatformProperties"
     extends="$unknown"
-    uuid="fb682653-c51d-42d4-bc30-db7c3e8bf75d"
+    uuid="1ec98a25-d94c-4cfb-a012-5e21481c154c"
     wsmap="managed"
     rest="managed"
     reservedMethods="4" reservedAttributes="16"
@@ -12869,7 +12869,7 @@
       </param>
     </method>
 
-    <method name="getStorageBusForStorageControllerType">
+    <method name="getStorageBusForControllerType">
       <desc>Returns the <link to="StorageBus"/> enum value
         for a given storage controller type.</desc>
 
@@ -12882,7 +12882,7 @@
       </param>
     </method>
 
-    <method name="getStorageControllerTypesForStorageBus">
+    <method name="getStorageControllerTypesForBus">
       <desc>Returns the possible <link to="StorageControllerType"/> enum values
         for a given storage bus.</desc>
 
