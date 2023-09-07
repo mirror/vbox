@@ -717,7 +717,7 @@ HRESULT Platform::i_initArchitecture(PlatformArchitecture_T aArchitecture, Platf
         }
 #endif
         default:
-            AssertFailedStmt(hrc = VERR_PLATFORM_ARCH_NOT_SUPPORTED);
+            AssertFailedStmt(hrc = VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED);
             break;
     }
 
