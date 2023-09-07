@@ -282,7 +282,8 @@ public:
     static void FromSafeArray(const com::SafeArray<T> &aArr, QVector<T> &aVec)
     {
         aVec.resize(static_cast<int>(aArr.size()));
-        memcpy(&aVec[0], aArr.raw(), aArr.size() * sizeof(T));
+        if (aArr.size())
+            memcpy(&aVec[0], aArr.raw(), aArr.size() * sizeof(T));
     }
 
     /* Arrays of strings */
