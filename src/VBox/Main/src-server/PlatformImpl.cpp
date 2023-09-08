@@ -703,7 +703,7 @@ HRESULT Platform::i_initArchitecture(PlatformArchitecture_T aArchitecture, Platf
      * e.g. we destroy any data for the former architecture (if any). */
     uninitArchitecture();
 
-    switch (m->bd->architectureType)
+    switch (aArchitecture)
     {
         case PlatformArchitecture_x86:
         {
@@ -748,8 +748,10 @@ HRESULT Platform::i_initArchitecture(PlatformArchitecture_T aArchitecture, Platf
     }
 
     if (SUCCEEDED(hrc))
-        LogRel(("Platform architecture set to '%s'\n",
-                aArchitecture == PlatformArchitecture_x86 ? "x86" : "ARM"));
+    {
+        m->bd->architectureType = aArchitecture;
+        LogRel(("Platform architecture set to '%s'\n", Platform::s_platformArchitectureToStr(m->bd->architectureType)));
+    }
 
     return hrc;
 }
@@ -781,15 +783,30 @@ HRESULT Platform::i_applyDefaults(GuestOSType *aOsType)
     {
         /* No guest OS type object. Pick some plausible defaults which the
          * host can handle. There's no way to know or validate anything. */
+        switch (m->bd->architectureType)
+        {
+            case PlatformArchitecture_x86:
+            {
+                /* Note: These are the value we ever had, so default to these. */
+                enmChipsetType = ChipsetType_PIIX3;
+                enmIommuType   = IommuType_None;
+                fRTCUseUTC     = FALSE;
+                break;
+            }
 
-        /* Note: These are the value we ever had, so default to these. */
-        enmChipsetType = ChipsetType_PIIX3;
-        enmIommuType   = IommuType_None;
-        fRTCUseUTC     = FALSE;
+            case PlatformArchitecture_ARM:
+            {
+                /* Note: These are the value we ever had, so default to these. */
+                enmChipsetType = ChipsetType_ARMv8Virtual;
+                enmIommuType   = IommuType_None;
+                fRTCUseUTC     = TRUE; /** @todo BUGBUG Is this correct for ARM? */
+                break;
+            }
 
-        /* The above only holds for x86. */
-        AssertReturn(m->bd->architectureType == PlatformArchitecture_x86,
-                     VBOX_E_NOT_SUPPORTED);
+            default:
+                AssertFailed();
+                break;
+        }
     }
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -813,7 +830,7 @@ HRESULT Platform::i_applyDefaults(GuestOSType *aOsType)
 
 #ifdef VBOX_WITH_VIRT_ARMV8
         case PlatformArchitecture_ARM:
-            /** @todo BUGBUG Implement this! */
+            hrc = mARM->i_applyDefaults(aOsType);
             break;
 #endif
         case PlatformArchitecture_None:
