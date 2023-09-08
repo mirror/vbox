@@ -50,7 +50,7 @@ PGM_BTH_DECL(int, NestedTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTX p
                                        bool fIsLinearAddrValid, RTGCPTR GCPtrNestedFault, PPGMPTWALK pWalk, bool *pfLockTaken);
 # if defined(VBOX_WITH_NESTED_HWVIRT_VMX_EPT) && PGM_SHW_TYPE == PGM_TYPE_EPT
 static void PGM_BTH_NAME(NestedSyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPte, RTGCPHYS GCPhysPage, PPGMPOOLPAGE pShwPage,
-                                               unsigned iPte, PCPGMPTWALKGST pGstWalkAll);
+                                               unsigned iPte, SLATPTE GstSlatPte);
 static int  PGM_BTH_NAME(NestedSyncPage)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPage, RTGCPHYS GCPhysPage, unsigned cPages,
                                          uint32_t uErr, PPGMPTWALKGST pGstWalkAll);
 static int  PGM_BTH_NAME(NestedSyncPT)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPage, RTGCPHYS GCPhysPage, PPGMPTWALKGST pGstWalkAll);
@@ -2579,28 +2579,20 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPa
  * @param   GCPhysPage      The guest-physical address of the page.
  * @param   pShwPage        The shadow page of the page table.
  * @param   iPte            The index of the page table entry.
- * @param   pGstWalkAll     The guest page table walk result.
+ * @param   pGstSlatPte     The guest SLAT page table entry.
  *
  * @note    Not to be used for 2/4MB pages!
  */
 static void PGM_BTH_NAME(NestedSyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPte, RTGCPHYS GCPhysPage, PPGMPOOLPAGE pShwPage,
-                                               unsigned iPte, PCPGMPTWALKGST pGstWalkAll)
+                                               unsigned iPte, SLATPTE GstSlatPte)
 {
-    /*
-     * Do not make assumptions about anything other than the final PTE entry in the
-     * guest page table walk result. For instance, while mapping 2M PDEs as 4K pages,
-     * the PDE might still be having its leaf bit set.
-     *
-     * In the future, we could consider introducing a generic SLAT macro like PSLATPTE
-     * and using that instead of passing the full SLAT translation result.
-     */
     PGM_A20_ASSERT_MASKED(pVCpu, GCPhysPage);
     Assert(PGMPOOL_PAGE_IS_NESTED(pShwPage));
     Assert(!pShwPage->fDirty);
     Assert(pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_EPT);
-    AssertMsg(!(pGstWalkAll->u.Ept.Pte.u & EPT_E_LEAF), ("Large page unexpected: %RX64\n", pGstWalkAll->u.Ept.Pte.u));
-    AssertMsg((pGstWalkAll->u.Ept.Pte.u & EPT_PTE_PG_MASK) == GCPhysPage,
-              ("PTE address mismatch. GCPhysPage=%RGp Pte=%RX64\n", GCPhysPage, pGstWalkAll->u.Ept.Pte.u & EPT_PTE_PG_MASK));
+    AssertMsg(!(GstSlatPte.u & EPT_E_LEAF), ("Large page unexpected: %RX64\n", GstSlatPte.u));
+    AssertMsg((GstSlatPte.u & EPT_PTE_PG_MASK) == GCPhysPage,
+              ("PTE address mismatch. GCPhysPage=%RGp Pte=%RX64\n", GCPhysPage, GstSlatPte.u & EPT_PTE_PG_MASK));
 
     /*
      * Find the ram range.
@@ -2633,7 +2625,7 @@ static void PGM_BTH_NAME(NestedSyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPte, RTG
      * Make page table entry.
      */
     SHWPTE Pte;
-    uint64_t const fGstShwPteFlags = (pGstWalkAll->u.Ept.Pte.u & pVCpu->pgm.s.fGstEptShadowedPteMask)
+    uint64_t const fGstShwPteFlags = (GstSlatPte.u & pVCpu->pgm.s.fGstEptShadowedPteMask)
                                    | EPT_E_MEMTYPE_WB | EPT_E_IGNORE_PAT;
     if (!PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage) || PGM_PAGE_IS_HNDL_PHYS_NOT_IN_HM(pPage))
     {
@@ -2641,7 +2633,7 @@ static void PGM_BTH_NAME(NestedSyncPageWorker)(PVMCPUCC pVCpu, PSHWPTE pPte, RTG
         /* If it's the zero page or write to an unallocated page, allocate it to make it writable. */
         if (    PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM
             &&  (   PGM_PAGE_IS_ZERO(pPage)
-                 || (   (pGstWalkAll->u.Ept.Pte.u & EPT_E_WRITE)
+                 || (   (GstSlatPte.u & EPT_E_WRITE)
                      && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
 #  ifdef VBOX_WITH_REAL_WRITE_MONITORED_PAGES
                      && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_WRITE_MONITORED
@@ -2798,14 +2790,12 @@ static int PGM_BTH_NAME(NestedSyncPage)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPag
 #endif
         uint64_t const fGstShwPteFlags = (pGstWalkAll->u.Ept.Pde.u & pVCpu->pgm.s.fGstEptShadowedBigPdeMask & ~EPT_E_LEAF)
                                        | EPT_E_MEMTYPE_WB | EPT_E_IGNORE_PAT;
-        pGstWalkAll->u.Ept.Pte.u = GCPhysPage | fGstShwPteFlags;
+        SLATPTE GstSlatPte;
+        GstSlatPte.u = GCPhysPage | fGstShwPteFlags;
 
         unsigned const iPte = (GCPhysNestedPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
-        PGM_BTH_NAME(NestedSyncPageWorker)(pVCpu, &pPt->a[iPte], GCPhysPage, pShwPage, iPte, pGstWalkAll);
+        PGM_BTH_NAME(NestedSyncPageWorker)(pVCpu, &pPt->a[iPte], GCPhysPage, pShwPage, iPte, GstSlatPte);
         Log7Func(("4K: GCPhysPage=%RGp iPte=%u ShwPte=%08llx\n", GCPhysPage, iPte, SHW_PTE_LOG64(pPt->a[iPte])));
-
-        /* Restore modifications did to the guest-walk result above in case callers might inspect them later. */
-        pGstWalkAll->u.Ept.Pte.u = 0;
         return VINF_SUCCESS;
     }
 
@@ -2838,7 +2828,7 @@ static int PGM_BTH_NAME(NestedSyncPage)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPag
                 rc = pgmGstSlatWalk(pVCpu, GCPhysNestedPage, false /*fIsLinearAddrValid*/, 0 /*GCPtrNested*/, &WalkPt,
                                     &GstWalkPt);
                 if (RT_SUCCESS(rc))
-                    PGM_BTH_NAME(NestedSyncPageWorker)(pVCpu, &pPt->a[iPte], WalkPt.GCPhys, pShwPage, iPte, &GstWalkPt);
+                    PGM_BTH_NAME(NestedSyncPageWorker)(pVCpu, &pPt->a[iPte], WalkPt.GCPhys, pShwPage, iPte, GstWalkPt.u.Ept.Pte);
                 else
                 {
                     /*
@@ -2877,7 +2867,7 @@ static int PGM_BTH_NAME(NestedSyncPage)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPag
 # endif /* PGM_SYNC_N_PAGES */
     {
         unsigned const iPte = (GCPhysNestedPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
-        PGM_BTH_NAME(NestedSyncPageWorker)(pVCpu, &pPt->a[iPte], GCPhysPage, pShwPage, iPte, pGstWalkAll);
+        PGM_BTH_NAME(NestedSyncPageWorker)(pVCpu, &pPt->a[iPte], GCPhysPage, pShwPage, iPte, pGstWalkAll->u.Ept.Pte);
         Log7Func(("4K: GCPhysPage=%RGp iPte=%u ShwPte=%08llx\n", GCPhysPage, iPte, SHW_PTE_LOG64(pPt->a[iPte])));
     }
 
@@ -3053,16 +3043,14 @@ static int PGM_BTH_NAME(NestedSyncPT)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPage,
             for (unsigned iPte = 0; iPte < RT_ELEMENTS(pPt->a); iPte++)
             {
                 RTGCPHYS const GCPhysSubPage = GCPhysPt | (iPte << GUEST_PAGE_SHIFT);
-                pGstWalkAll->u.Ept.Pte.u = GCPhysSubPage | fGstShwPteFlags;
-                Assert(!(pGstWalkAll->u.Ept.Pte.u & pVCpu->pgm.s.fGstEptMbzPteMask));
-                PGM_BTH_NAME(NestedSyncPageWorker)(pVCpu, &pPt->a[iPte], GCPhysSubPage, pShwPage, iPte, pGstWalkAll);
+                SLATPTE GstSlatPte;
+                GstSlatPte.u = GCPhysSubPage | fGstShwPteFlags;
+                Assert(!(GstSlatPte.u & pVCpu->pgm.s.fGstEptMbzPteMask));
+                PGM_BTH_NAME(NestedSyncPageWorker)(pVCpu, &pPt->a[iPte], GCPhysSubPage, pShwPage, iPte, GstSlatPte);
                 Log7Func(("GstPte=%RGp ShwPte=%RX64 iPte=%u [2M->4K]\n", pGstWalkAll->u.Ept.Pte, pPt->a[iPte].u, iPte));
                 if (RT_UNLIKELY(VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY)))
                     break;
             }
-
-            /* Restore modifications did to the guest-walk result above in case callers might inspect them later. */
-            pGstWalkAll->u.Ept.Pte.u = 0;
         }
         else
         {
@@ -3122,7 +3110,7 @@ static int PGM_BTH_NAME(NestedSyncPT)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPage,
     {
         /* Sync the page we've already translated through SLAT. */
         const unsigned iPte = (GCPhysNestedPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
-        PGM_BTH_NAME(NestedSyncPageWorker)(pVCpu, &pPt->a[iPte], GCPhysPage, pShwPage, iPte, pGstWalkAll);
+        PGM_BTH_NAME(NestedSyncPageWorker)(pVCpu, &pPt->a[iPte], GCPhysPage, pShwPage, iPte, pGstWalkAll->u.Ept.Pte);
         Log7Func(("GstPte=%RGp ShwPte=%RX64 iPte=%u\n", pGstWalkAll->u.Ept.Pte.u, pPt->a[iPte].u, iPte));
 
         /* Sync the rest of page table (expensive but might be cheaper than nested-guest VM-exits in hardware). */
@@ -3138,7 +3126,8 @@ static int PGM_BTH_NAME(NestedSyncPT)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPage,
                                                &WalkPt, &GstWalkPt);
                 if (RT_SUCCESS(rc2))
                 {
-                    PGM_BTH_NAME(NestedSyncPageWorker)(pVCpu, &pPt->a[iPteCur], WalkPt.GCPhys, pShwPage, iPteCur, &GstWalkPt);
+                    PGM_BTH_NAME(NestedSyncPageWorker)(pVCpu, &pPt->a[iPteCur], WalkPt.GCPhys, pShwPage, iPteCur,
+                                                       GstWalkPt.u.Ept.Pte);
                     Log7Func(("GstPte=%RGp ShwPte=%RX64 iPte=%u\n", GstWalkPt.u.Ept.Pte.u, pPt->a[iPteCur].u, iPteCur));
                 }
                 else
