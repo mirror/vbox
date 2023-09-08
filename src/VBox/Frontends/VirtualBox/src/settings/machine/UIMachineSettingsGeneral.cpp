@@ -745,20 +745,17 @@ bool UIMachineSettingsGeneral::saveBasicData()
             }
             if (fSuccess)
             {
-                // Must update long mode CPU feature bit when os type changed:
-                CVirtualBox vbox = uiCommon().virtualBox();
-                // Should we check global object getters?
-                const CGuestOSType &comNewType = vbox.GetGuestOSType(newGeneralData.m_strGuestOsTypeId);
-
-                CPlatform comPlatform                    = m_machine.GetPlatform();
-                KPlatformArchitecture const platformArch = comPlatform.GetArchitecture();
-                switch (platformArch)
+                /* Update long mode CPU feature bit when OS type changed: */
+                const CPlatform comPlatform = m_machine.GetPlatform();
+                switch (comPlatform.GetArchitecture())
                 {
                     case KPlatformArchitecture_x86:
                     {
                         CPlatformX86 comPlatformX86 = comPlatform.GetX86();
+                        const CGuestOSType &comNewType = uiCommon().virtualBox().GetGuestOSType(newGeneralData.m_strGuestOsTypeId);
                         comPlatformX86.SetCPUProperty(KCPUPropertyTypeX86_LongMode, comNewType.GetIs64Bit());
                         fSuccess = comPlatformX86.isOk();
+                        /// @todo convey error info ..
                         break;
                     }
 
@@ -771,10 +768,10 @@ bool UIMachineSettingsGeneral::saveBasicData()
                         break;
                     }
 #endif
+
                     default:
                         break;
                 }
-                /// @todo convey error info ..
             }
         }
 

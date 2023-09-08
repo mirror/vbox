@@ -374,9 +374,8 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(CMachine &comMa
     /* Acceleration: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Acceleration)
     {
-        CPlatform comPlatform                    = comMachine.GetPlatform();
-        KPlatformArchitecture const platformArch = comPlatform.GetArchitecture();
-        switch (platformArch)
+        const CPlatform comPlatform = comMachine.GetPlatform();
+        switch (comPlatform.GetArchitecture())
         {
             case KPlatformArchitecture_x86:
             {
@@ -416,6 +415,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(CMachine &comMa
                 break;
             }
 #endif
+
             default:
                 break;
         }

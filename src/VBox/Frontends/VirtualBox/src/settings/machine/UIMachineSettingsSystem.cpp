@@ -299,20 +299,16 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
     /* Gather old 'Processor' data: */
     oldSystemData.m_cCPUCount = oldSystemData.m_fSupportedHwVirtEx ? m_machine.GetCPUCount() : 1;
     oldSystemData.m_iCPUExecCap = m_machine.GetCPUExecutionCap();
-
-    KPlatformArchitecture const platformArch = comPlatform.GetArchitecture();
-    switch (platformArch)
+    switch (comPlatform.GetArchitecture())
     {
         case KPlatformArchitecture_x86:
         {
             CPlatformX86 comPlatformX86 = comPlatform.GetX86();
-
             oldSystemData.m_fEnabledPAE = comPlatformX86.GetCPUProperty(KCPUPropertyTypeX86_PAE);
             oldSystemData.m_fEnabledNestedHwVirtEx = comPlatformX86.GetCPUProperty(KCPUPropertyTypeX86_HWVirt);
             oldSystemData.m_fEnabledNestedPaging = comPlatformX86.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging);
             break;
         }
-
 #ifdef VBOX_WITH_VIRT_ARMV8
         case KPlatformArchitecture_ARM:
         {
@@ -1052,44 +1048,45 @@ bool UIMachineSettingsSystem::saveProcessorData()
             m_machine.SetCPUCount(newSystemData.m_cCPUCount);
             fSuccess = m_machine.isOk();
         }
-
-        CPlatform comPlatform                    = m_machine.GetPlatform();
-        KPlatformArchitecture const platformArch = comPlatform.GetArchitecture();
-        switch (platformArch)
+        if (fSuccess)
         {
-            case KPlatformArchitecture_x86:
+            const CPlatform comPlatform = m_machine.GetPlatform();
+            switch (comPlatform.GetArchitecture())
             {
-                CPlatformX86 comPlatformX86 = comPlatform.GetX86();
-
-                /* Save whether PAE is enabled: */
-                if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledPAE != oldSystemData.m_fEnabledPAE)
+                case KPlatformArchitecture_x86:
                 {
-                    comPlatformX86.SetCPUProperty(KCPUPropertyTypeX86_PAE, newSystemData.m_fEnabledNestedPaging);
-                    fSuccess = comPlatformX86.isOk();
-                    /// @todo convey error info ..
-                }
-                /* Save whether Nested HW Virt Ex is enabled: */
-                if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledNestedHwVirtEx != oldSystemData.m_fEnabledNestedHwVirtEx)
-                {
-                    comPlatformX86.SetCPUProperty(KCPUPropertyTypeX86_HWVirt, newSystemData.m_fEnabledNestedPaging);
-                    fSuccess = comPlatformX86.isOk();
-                    /// @todo convey error info ..
-                }
+                    CPlatformX86 comPlatformX86 = comPlatform.GetX86();
 
-                break;
-            }
+                    /* Save whether PAE is enabled: */
+                    if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledPAE != oldSystemData.m_fEnabledPAE)
+                    {
+                        comPlatformX86.SetCPUProperty(KCPUPropertyTypeX86_PAE, newSystemData.m_fEnabledNestedPaging);
+                        fSuccess = comPlatformX86.isOk();
+                        /// @todo convey error info ..
+                    }
+                    /* Save whether Nested HW Virt Ex is enabled: */
+                    if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledNestedHwVirtEx != oldSystemData.m_fEnabledNestedHwVirtEx)
+                    {
+                        comPlatformX86.SetCPUProperty(KCPUPropertyTypeX86_HWVirt, newSystemData.m_fEnabledNestedPaging);
+                        fSuccess = comPlatformX86.isOk();
+                        /// @todo convey error info ..
+                    }
+
+                    break;
+                }
 
 #ifdef VBOX_WITH_VIRT_ARMV8
-            case KPlatformArchitecture_ARM:
-            {
-                /** @todo BUGBUG ARM stuff goes here. */
-                break;
-            }
+                case KPlatformArchitecture_ARM:
+                {
+                    /** @todo BUGBUG ARM stuff goes here. */
+                    break;
+                }
 #endif
-            default:
-                break;
-        }
 
+                default:
+                    break;
+            }
+        }
         /* Save CPU execution cap: */
         if (fSuccess && newSystemData.m_iCPUExecCap != oldSystemData.m_iCPUExecCap)
         {
@@ -1127,36 +1124,38 @@ bool UIMachineSettingsSystem::saveAccelerationData()
             m_machine.SetParavirtProvider(newSystemData.m_paravirtProvider);
             fSuccess = m_machine.isOk();
         }
-
-        CPlatform comPlatform                     = m_machine.GetPlatform();
-        KPlatformArchitecture const platformArch = comPlatform.GetArchitecture();
-        switch (platformArch)
+        if (fSuccess)
         {
-            case KPlatformArchitecture_x86:
+            const CPlatform comPlatform = m_machine.GetPlatform();
+            switch (comPlatform.GetArchitecture())
             {
-                CPlatformX86 comPlatformX86 = comPlatform.GetX86();
-
-                /* Save whether the nested paging is enabled: */
-                if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledNestedPaging != oldSystemData.m_fEnabledNestedPaging)
+                case KPlatformArchitecture_x86:
                 {
-                    comPlatformX86.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging, newSystemData.m_fEnabledNestedPaging);
-                    fSuccess = comPlatformX86.isOk();
-                    /// @todo convey error info ..
+                    CPlatformX86 comPlatformX86 = comPlatform.GetX86();
+
+                    /* Save whether the nested paging is enabled: */
+                    if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledNestedPaging != oldSystemData.m_fEnabledNestedPaging)
+                    {
+                        comPlatformX86.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging, newSystemData.m_fEnabledNestedPaging);
+                        fSuccess = comPlatformX86.isOk();
+                        /// @todo convey error info ..
+                    }
+
+                    break;
                 }
 
-                break;
-            }
-
 #ifdef VBOX_WITH_VIRT_ARMV8
-            case KPlatformArchitecture_ARM:
-            {
-                /** @todo BUGBUG ARM stuff goes here. */
-                break;
-            }
+                case KPlatformArchitecture_ARM:
+                {
+                    /** @todo BUGBUG ARM stuff goes here. */
+                    break;
+                }
 #endif
-            default:
-                break;
-         }
+
+                default:
+                    break;
+             }
+        }
 
          /* Show error message if necessary: */
          if (!fSuccess)
