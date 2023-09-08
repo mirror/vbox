@@ -1764,25 +1764,46 @@ QString UISnapshotDetailsWidget::accelerationReport(const CMachine &comMachine)
 {
     /* Acquire platform stuff: */
     CPlatform comPlatform = comMachine.GetPlatform();
-    CPlatformX86 comPlatformX86 = comPlatform.GetX86();
 
     /* Prepare report: */
     QStringList aReport;
-    /* VT-x/AMD-V and Nested Paging? */
-    if (uiCommon().host().GetProcessorFeature(KProcessorFeature_HWVirtEx))
+
+    KPlatformArchitecture const platformArch = comPlatform.GetArchitecture();
+    switch (platformArch)
     {
-        /* VT-x/AMD-V? */
-        if (comPlatformX86.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled))
+        case KPlatformArchitecture_x86:
         {
-            aReport << QApplication::translate("UIDetails", "VT-x/AMD-V", "details (system)");
-            /* Nested Paging? */
-            if (comPlatformX86.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging))
-                aReport << QApplication::translate("UIDetails", "Nested Paging", "details (system)");
+            CPlatformX86 comPlatformX86 = comPlatform.GetX86();
+
+            /* VT-x/AMD-V and Nested Paging? */
+            if (uiCommon().host().GetProcessorFeature(KProcessorFeature_HWVirtEx))
+            {
+                /* VT-x/AMD-V? */
+                if (comPlatformX86.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled))
+                {
+                    aReport << QApplication::translate("UIDetails", "VT-x/AMD-V", "details (system)");
+                    /* Nested Paging? */
+                    if (comPlatformX86.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging))
+                        aReport << QApplication::translate("UIDetails", "Nested Paging", "details (system)");
+                }
+            }
+            /* PAE/NX? */
+            if (comPlatformX86.GetCPUProperty(KCPUPropertyTypeX86_PAE))
+                aReport << QApplication::translate("UIDetails", "PAE/NX", "details (system)");
+            break;
         }
+
+#ifdef VBOX_WITH_VIRT_ARMV8
+        case KPlatformArchitecture_ARM:
+        {
+            /** @todo BUGBUG ARM stuff goes here. */
+            break;
+        }
+#endif
+        default:
+            break;
     }
-    /* PAE/NX? */
-    if (comPlatformX86.GetCPUProperty(KCPUPropertyTypeX86_PAE))
-        aReport << QApplication::translate("UIDetails", "PAE/NX", "details (system)");
+
     /* Paravirtualization Interface? */
     switch (comMachine.GetEffectiveParavirtProvider())
     {

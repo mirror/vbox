@@ -374,32 +374,51 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(CMachine &comMa
     /* Acceleration: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Acceleration)
     {
-        CPlatform comPlatform = comMachine.GetPlatform();
-        CPlatformX86 comPlatformX86 = comPlatform.GetX86();
-        QStringList acceleration;
-        if (uiCommon().virtualBox().GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx))
+        CPlatform comPlatform                    = comMachine.GetPlatform();
+        KPlatformArchitecture const platformArch = comPlatform.GetArchitecture();
+        switch (platformArch)
         {
-            /* Nested Paging: */
-            if (comPlatformX86.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging))
-                acceleration << QApplication::translate("UIDetails", "Nested Paging", "details (system)");
+            case KPlatformArchitecture_x86:
+            {
+                CPlatformX86 comPlatformX86 = comPlatform.GetX86();
+                QStringList acceleration;
+                if (uiCommon().virtualBox().GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx))
+                {
+                    /* Nested Paging: */
+                    if (comPlatformX86.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging))
+                        acceleration << QApplication::translate("UIDetails", "Nested Paging", "details (system)");
+                }
+                /* Nested VT-x/AMD-V: */
+                if (comPlatformX86.GetCPUProperty(KCPUPropertyTypeX86_HWVirt))
+                    acceleration << QApplication::translate("UIDetails", "Nested VT-x/AMD-V", "details (system)");
+                /* PAE/NX: */
+                if (comPlatformX86.GetCPUProperty(KCPUPropertyTypeX86_PAE))
+                    acceleration << QApplication::translate("UIDetails", "PAE/NX", "details (system)");
+
+                /* Paravirtualization provider: */
+                switch (comMachine.GetEffectiveParavirtProvider())
+                {
+                    case KParavirtProvider_Minimal: acceleration << QApplication::translate("UIDetails", "Minimal Paravirtualization", "details (system)"); break;
+                    case KParavirtProvider_HyperV:  acceleration << QApplication::translate("UIDetails", "Hyper-V Paravirtualization", "details (system)"); break;
+                    case KParavirtProvider_KVM:     acceleration << QApplication::translate("UIDetails", "KVM Paravirtualization", "details (system)"); break;
+                    default: break;
+                }
+                if (!acceleration.isEmpty())
+                    table << UITextTableLine(QApplication::translate("UIDetails", "Acceleration", "details (system)"),
+                                             acceleration.join(", "));
+                break;
+            }
+
+#ifdef VBOX_WITH_VIRT_ARMV8
+            case KPlatformArchitecture_ARM:
+            {
+                /** @todo BUGBUG ARM stuff goes here. */
+                break;
+            }
+#endif
+            default:
+                break;
         }
-        /* Nested VT-x/AMD-V: */
-        if (comPlatformX86.GetCPUProperty(KCPUPropertyTypeX86_HWVirt))
-            acceleration << QApplication::translate("UIDetails", "Nested VT-x/AMD-V", "details (system)");
-        /* PAE/NX: */
-        if (comPlatformX86.GetCPUProperty(KCPUPropertyTypeX86_PAE))
-            acceleration << QApplication::translate("UIDetails", "PAE/NX", "details (system)");
-        /* Paravirtualization provider: */
-        switch (comMachine.GetEffectiveParavirtProvider())
-        {
-            case KParavirtProvider_Minimal: acceleration << QApplication::translate("UIDetails", "Minimal Paravirtualization", "details (system)"); break;
-            case KParavirtProvider_HyperV:  acceleration << QApplication::translate("UIDetails", "Hyper-V Paravirtualization", "details (system)"); break;
-            case KParavirtProvider_KVM:     acceleration << QApplication::translate("UIDetails", "KVM Paravirtualization", "details (system)"); break;
-            default: break;
-        }
-        if (!acceleration.isEmpty())
-            table << UITextTableLine(QApplication::translate("UIDetails", "Acceleration", "details (system)"),
-                                     acceleration.join(", "));
     }
 
     return table;

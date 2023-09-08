@@ -271,7 +271,6 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
     UIDataSettingsMachineSystem oldSystemData;
 
     CPlatform comPlatform = m_machine.GetPlatform();
-    CPlatformX86 comPlatformX86 = comPlatform.GetX86();
     CFirmwareSettings comFirmwareSettings = m_machine.GetFirmwareSettings();
     CNvramStore comStoreLvl1 = m_machine.GetNonVolatileStore();
     CUefiVariableStore comStoreLvl2 = comStoreLvl1.GetUefiVariableStore();
@@ -300,12 +299,33 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
     /* Gather old 'Processor' data: */
     oldSystemData.m_cCPUCount = oldSystemData.m_fSupportedHwVirtEx ? m_machine.GetCPUCount() : 1;
     oldSystemData.m_iCPUExecCap = m_machine.GetCPUExecutionCap();
-    oldSystemData.m_fEnabledPAE = comPlatformX86.GetCPUProperty(KCPUPropertyTypeX86_PAE);
-    oldSystemData.m_fEnabledNestedHwVirtEx = comPlatformX86.GetCPUProperty(KCPUPropertyTypeX86_HWVirt);
+
+    KPlatformArchitecture const platformArch = comPlatform.GetArchitecture();
+    switch (platformArch)
+    {
+        case KPlatformArchitecture_x86:
+        {
+            CPlatformX86 comPlatformX86 = comPlatform.GetX86();
+
+            oldSystemData.m_fEnabledPAE = comPlatformX86.GetCPUProperty(KCPUPropertyTypeX86_PAE);
+            oldSystemData.m_fEnabledNestedHwVirtEx = comPlatformX86.GetCPUProperty(KCPUPropertyTypeX86_HWVirt);
+            oldSystemData.m_fEnabledNestedPaging = comPlatformX86.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging);
+            break;
+        }
+
+#ifdef VBOX_WITH_VIRT_ARMV8
+        case KPlatformArchitecture_ARM:
+        {
+            /** @todo BUGBUG ARM stuff goes here. */
+            break;
+        }
+#endif
+        default:
+            break;
+    }
 
     /* Gather old 'Acceleration' data: */
     oldSystemData.m_paravirtProvider = m_machine.GetParavirtProvider();
-    oldSystemData.m_fEnabledNestedPaging = comPlatformX86.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging);
 
     /* Cache old data: */
     m_pCache->cacheInitialData(oldSystemData);
@@ -999,24 +1019,44 @@ bool UIMachineSettingsSystem::saveProcessorData()
             m_machine.SetCPUCount(newSystemData.m_cCPUCount);
             fSuccess = m_machine.isOk();
         }
-        /* Save whether PAE is enabled: */
-        if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledPAE != oldSystemData.m_fEnabledPAE)
+
+        CPlatform comPlatform                    = m_machine.GetPlatform();
+        KPlatformArchitecture const platformArch = comPlatform.GetArchitecture();
+        switch (platformArch)
         {
-            CPlatform comPlatform = m_machine.GetPlatform();
-            CPlatformX86 comPlatformX86 = comPlatform.GetX86();
-            comPlatformX86.SetCPUProperty(KCPUPropertyTypeX86_PAE, newSystemData.m_fEnabledNestedPaging);
-            fSuccess = comPlatformX86.isOk();
-            /// @todo convey error info ..
+            case KPlatformArchitecture_x86:
+            {
+                CPlatformX86 comPlatformX86 = comPlatform.GetX86();
+
+                /* Save whether PAE is enabled: */
+                if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledPAE != oldSystemData.m_fEnabledPAE)
+                {
+                    comPlatformX86.SetCPUProperty(KCPUPropertyTypeX86_PAE, newSystemData.m_fEnabledNestedPaging);
+                    fSuccess = comPlatformX86.isOk();
+                    /// @todo convey error info ..
+                }
+                /* Save whether Nested HW Virt Ex is enabled: */
+                if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledNestedHwVirtEx != oldSystemData.m_fEnabledNestedHwVirtEx)
+                {
+                    comPlatformX86.SetCPUProperty(KCPUPropertyTypeX86_HWVirt, newSystemData.m_fEnabledNestedPaging);
+                    fSuccess = comPlatformX86.isOk();
+                    /// @todo convey error info ..
+                }
+
+                break;
+            }
+
+#ifdef VBOX_WITH_VIRT_ARMV8
+            case KPlatformArchitecture_ARM:
+            {
+                /** @todo BUGBUG ARM stuff goes here. */
+                break;
+            }
+#endif
+            default:
+                break;
         }
-        /* Save whether Nested HW Virt Ex is enabled: */
-        if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledNestedHwVirtEx != oldSystemData.m_fEnabledNestedHwVirtEx)
-        {
-            CPlatform comPlatform = m_machine.GetPlatform();
-            CPlatformX86 comPlatformX86 = comPlatform.GetX86();
-            comPlatformX86.SetCPUProperty(KCPUPropertyTypeX86_HWVirt, newSystemData.m_fEnabledNestedPaging);
-            fSuccess = comPlatformX86.isOk();
-            /// @todo convey error info ..
-        }
+
         /* Save CPU execution cap: */
         if (fSuccess && newSystemData.m_iCPUExecCap != oldSystemData.m_iCPUExecCap)
         {
@@ -1054,19 +1094,40 @@ bool UIMachineSettingsSystem::saveAccelerationData()
             m_machine.SetParavirtProvider(newSystemData.m_paravirtProvider);
             fSuccess = m_machine.isOk();
         }
-        /* Save whether the nested paging is enabled: */
-        if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledNestedPaging != oldSystemData.m_fEnabledNestedPaging)
-        {
-            CPlatform comPlatform = m_machine.GetPlatform();
-            CPlatformX86 comPlatformX86 = comPlatform.GetX86();
-            comPlatformX86.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging, newSystemData.m_fEnabledNestedPaging);
-            fSuccess = comPlatformX86.isOk();
-            /// @todo convey error info ..
-        }
 
-        /* Show error message if necessary: */
-        if (!fSuccess)
-            notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
+        CPlatform comPlatform                     = m_machine.GetPlatform();
+        KPlatformArchitecture const platformArch = comPlatform.GetArchitecture();
+        switch (platformArch)
+        {
+            case KPlatformArchitecture_x86:
+            {
+                CPlatformX86 comPlatformX86 = comPlatform.GetX86();
+
+                /* Save whether the nested paging is enabled: */
+                if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledNestedPaging != oldSystemData.m_fEnabledNestedPaging)
+                {
+                    comPlatformX86.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging, newSystemData.m_fEnabledNestedPaging);
+                    fSuccess = comPlatformX86.isOk();
+                    /// @todo convey error info ..
+                }
+
+                break;
+            }
+
+#ifdef VBOX_WITH_VIRT_ARMV8
+            case KPlatformArchitecture_ARM:
+            {
+                /** @todo BUGBUG ARM stuff goes here. */
+                break;
+            }
+#endif
+            default:
+                break;
+         }
+
+         /* Show error message if necessary: */
+         if (!fSuccess)
+             notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
     }
     /* Return result: */
     return fSuccess;

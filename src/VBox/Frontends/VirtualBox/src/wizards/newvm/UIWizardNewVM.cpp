@@ -282,7 +282,6 @@ void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
 {
     /* Acquire platform stuff: */
     CPlatform comPlatform = m_machine.GetPlatform();
-    CPlatformX86 comPlatformX86 = comPlatform.GetX86();
     CFirmwareSettings comFirmwareSettings = m_machine.GetFirmwareSettings();
 
     /* Get graphics adapter: */
@@ -381,11 +380,34 @@ void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
     else if (dvdStorageControllerType == KStorageControllerType_IntelAhci)
         dvdCtr.SetPortCount(1);
 
-    /* Turn on PAE, if recommended: */
-    comPlatformX86.SetCPUProperty(KCPUPropertyTypeX86_PAE, comGuestType.GetRecommendedPAE());
+    KPlatformArchitecture const platformArch = comPlatform.GetArchitecture();
+    switch (platformArch)
+    {
+        case KPlatformArchitecture_x86:
+        {
+            CPlatformX86 comPlatformX86 = comPlatform.GetX86();
 
-    /* Set the recommended triple fault behavior: */
-    comPlatformX86.SetCPUProperty(KCPUPropertyTypeX86_TripleFaultReset, comGuestType.GetRecommendedTFReset());
+            /* Turn on PAE, if recommended: */
+            comPlatformX86.SetCPUProperty(KCPUPropertyTypeX86_PAE, comGuestType.GetRecommendedPAE());
+
+            /* Set the recommended triple fault behavior: */
+            comPlatformX86.SetCPUProperty(KCPUPropertyTypeX86_TripleFaultReset, comGuestType.GetRecommendedTFReset());
+
+            /* Set HPET flag: */
+            comPlatformX86.SetHPETEnabled(comGuestType.GetRecommendedHPET());
+            break;
+        }
+
+#ifdef VBOX_WITH_VIRT_ARMV8
+        case KPlatformArchitecture_ARM:
+        {
+            /** @todo BUGBUG ARM stuff goes here. */
+            break;
+        }
+#endif
+        default:
+            break;
+    }
 
     /* Set recommended firmware type: */
     comFirmwareSettings.SetFirmwareType(m_fEFIEnabled ? KFirmwareType_EFI : KFirmwareType_BIOS);
@@ -405,9 +427,6 @@ void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
         if (!fOhciEnabled && !usbDeviceFilters.isNull())
             m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
     }
-
-    /* Set HPET flag: */
-    comPlatformX86.SetHPETEnabled(comGuestType.GetRecommendedHPET());
 
     /* Set UTC flags: */
     comPlatform.SetRTCUseUTC(comGuestType.GetRecommendedRTCUseUTC());
