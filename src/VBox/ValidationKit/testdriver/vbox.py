@@ -2548,20 +2548,18 @@ class TestDriver(base.TestDriver):                                              
         if not self.importVBoxApi():
             return None;
 
-        # Sanity.
-        if   self.fpApiVer < 7.1 \
-        and sPlatformArchitecture != 'x86':  # 7.1 introduced platform support.
-            reporter.errorXcpt('This host version of VirtualBox only supports x86 as platform architecture');
-            return None;
-
         # Default to x86 if not explicitly specified.
-        if not sPlatformArchitecture \
-        or     sPlatformArchitecture == 'x86':
-            enmPlatformArchitecture = vboxcon.PlatformArchitecture_x86;
-        elif sPlatformArchitecture == 'ARM':
-            enmPlatformArchitecture = vboxcon.PlatformArchitecture_ARM;
-        else:
-            reporter.error('Unkown platform architecture "%s"' % (sPlatformArchitecture,));
+        if self.fpApiVer >= 7.1:
+            if not sPlatformArchitecture \
+            or     sPlatformArchitecture == 'x86':
+                enmPlatformArchitecture = vboxcon.PlatformArchitecture_x86;
+            elif sPlatformArchitecture == 'ARM':
+                enmPlatformArchitecture = vboxcon.PlatformArchitecture_ARM;
+            else:
+                reporter.error('Unkown platform architecture "%s"' % (sPlatformArchitecture,));
+                return None;
+        elif sPlatformArchitecture != 'x86':  # < 7.1 only has x86 support.
+            reporter.errorXcpt('This host version of VirtualBox only supports x86 as platform architecture');
             return None;
 
         # create + register the VM
