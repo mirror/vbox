@@ -409,6 +409,19 @@
 /** @} */
 
 
+/** @name VMX EPT memory type encodings.
+ * @{ */
+#define VMX_EPT_MT_UC                                           UINT64_C(0)
+#define VMX_EPT_MT_WC                                           UINT64_C(1)
+#define VMX_EPT_MT_RSVD_2                                       UINT64_C(2)
+#define VMX_EPT_MT_RSVD_3                                       UINT64_C(3)
+#define VMX_EPT_MT_WT                                           UINT64_C(4)
+#define VMX_EPT_MT_WP                                           UINT64_C(5)
+#define VMX_EPT_MT_WB                                           UINT64_C(6)
+#define VMX_EPT_MT_RSVD_7                                       UINT64_C(7)
+/** @} */
+
+
 /** @name VMX Extended Page Tables (EPT) Common Bits.
  * @{ */
 /** Bit 0 - Readable (we often think of it as present). */
@@ -431,21 +444,21 @@
 /** Bits 3-5 - Memory type shift count. */
 #define EPT_E_MEMTYPE_SHIFT                 3
 /** Bits 3-5 - Memory type: UC (Uncacheable). */
-#define EPT_E_MEMTYPE_UC                    (UINT64_C(0) << EPT_E_MEMTYPE_SHIFT)
+#define EPT_E_MEMTYPE_UC                    (VMX_EPT_MT_UC << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: WC (Write Combining). */
-#define EPT_E_MEMTYPE_WC                    (UINT64_C(1) << EPT_E_MEMTYPE_SHIFT)
+#define EPT_E_MEMTYPE_WC                    (VMX_EPT_MT_WC << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: Invalid (2). */
-#define EPT_E_MEMTYPE_INVALID_2             (UINT64_C(2) << EPT_E_MEMTYPE_SHIFT)
+#define EPT_E_MEMTYPE_INVALID_2             (VMX_EPT_MT_RSVD_2 << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: Invalid (3). */
-#define EPT_E_MEMTYPE_INVALID_3             (UINT64_C(3) << EPT_E_MEMTYPE_SHIFT)
+#define EPT_E_MEMTYPE_INVALID_3             (VMX_EPT_MT_RSVD_3 << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: WT (Write Through). */
-#define EPT_E_MEMTYPE_WT                    (UINT64_C(4) << EPT_E_MEMTYPE_SHIFT)
+#define EPT_E_MEMTYPE_WT                    (VMX_EPT_MT_WT << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: WP (Write Protected). */
-#define EPT_E_MEMTYPE_WP                    (UINT64_C(5) << EPT_E_MEMTYPE_SHIFT)
+#define EPT_E_MEMTYPE_WP                    (VMX_EPT_MT_WP << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: WB (Write Back). */
-#define EPT_E_MEMTYPE_WB                    (UINT64_C(6) << EPT_E_MEMTYPE_SHIFT)
+#define EPT_E_MEMTYPE_WB                    (VMX_EPT_MT_WB << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: Invalid (7). */
-#define EPT_E_MEMTYPE_INVALID_7             (UINT64_C(7) << EPT_E_MEMTYPE_SHIFT)
+#define EPT_E_MEMTYPE_INVALID_7             (VMX_EPT_MT_RSVD_7 << EPT_E_MEMTYPE_SHIFT)
 /** Bit 6 - Ignore page attribute table (leaf, MBZ). */
 #define EPT_E_BIT_IGNORE_PAT                6
 #define EPT_E_IGNORE_PAT                    RT_BIT_64(EPT_E_BIT_IGNORE_PAT)         /**< @see EPT_E_BIT_IGNORE_PAT */
