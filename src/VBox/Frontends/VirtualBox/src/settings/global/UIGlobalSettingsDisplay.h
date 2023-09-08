@@ -97,10 +97,10 @@ private:
         UIMaximumGuestScreenSizeEditor *m_pEditorMaximumGuestScreenSize;
         /** Holds the 'scale-factor' editor instance. */
         UIScaleFactorEditor            *m_pEditorScaleFactor;
-        /** Holds the 'display features' editor instance. */
-        UIDisplayFeaturesEditor        *m_pEditorDisplayFeatures;
         /** Holds the 'font scale' editor instance. */
         UIFontScaleEditor              *m_pFontScaleEditor;
+        /** Holds the 'display features' editor instance. */
+        UIDisplayFeaturesEditor        *m_pEditorDisplayFeatures;
     /** @} */
 };
 

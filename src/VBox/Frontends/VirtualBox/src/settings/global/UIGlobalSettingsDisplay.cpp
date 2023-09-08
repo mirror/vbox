@@ -53,9 +53,9 @@ struct UIDataSettingsGlobalDisplay
         return    true
                && (m_guiMaximumGuestScreenSizeValue == other.m_guiMaximumGuestScreenSizeValue)
                && (m_scaleFactors == other.m_scaleFactors)
+               && (m_iFontScalingFactor == other.m_iFontScalingFactor)
                && (m_fActivateHoveredMachineWindow == other.m_fActivateHoveredMachineWindow)
                && (m_fDisableHostScreenSaver == other.m_fDisableHostScreenSaver)
-               && (m_iFontScalingFactor == other.m_iFontScalingFactor)
                   ;
     }
 
@@ -68,12 +68,12 @@ struct UIDataSettingsGlobalDisplay
     UIMaximumGuestScreenSizeValue  m_guiMaximumGuestScreenSizeValue;
     /** Holds the guest screen scale-factor. */
     QList<double>                  m_scaleFactors;
+    /** Holds the font scaling factor. */
+    int                            m_iFontScalingFactor;
     /** Holds whether we should automatically activate machine window under the mouse cursor. */
     bool                           m_fActivateHoveredMachineWindow;
     /** Holds whether we should disable host sceen saver on a vm is running. */
     bool                           m_fDisableHostScreenSaver;
-    /** Holds font scaling factor. */
-    int                            m_iFontScalingFactor;
 };
 
 
@@ -85,8 +85,8 @@ UIGlobalSettingsDisplay::UIGlobalSettingsDisplay()
     : m_pCache(0)
     , m_pEditorMaximumGuestScreenSize(0)
     , m_pEditorScaleFactor(0)
-    , m_pEditorDisplayFeatures(0)
     , m_pFontScaleEditor(0)
+    , m_pEditorDisplayFeatures(0)
 {
     prepare();
 }
@@ -118,11 +118,11 @@ void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
     oldData.m_guiMaximumGuestScreenSizeValue = UIMaximumGuestScreenSizeValue(gEDataManager->maxGuestResolutionPolicy(),
                                                                              gEDataManager->maxGuestResolutionForPolicyFixed());
     oldData.m_scaleFactors = gEDataManager->scaleFactors(UIExtraDataManager::GlobalID);
+    oldData.m_iFontScalingFactor = gEDataManager->fontScaleFactor();
     oldData.m_fActivateHoveredMachineWindow = gEDataManager->activateHoveredMachineWindow();
 #if defined(VBOX_WS_WIN) || defined(VBOX_WS_NIX)
     oldData.m_fDisableHostScreenSaver = gEDataManager->disableHostScreenSaver();
 #endif
-    oldData.m_iFontScalingFactor = gEDataManager->fontScaleFactor();
     m_pCache->cacheInitialData(oldData);
 
     /* Upload properties to data: */
@@ -144,13 +144,13 @@ void UIGlobalSettingsDisplay::getFromCache()
         m_pEditorScaleFactor->setScaleFactors(oldData.m_scaleFactors);
         m_pEditorScaleFactor->setMonitorCount(UIDesktopWidgetWatchdog::screenCount());
     }
+    if (m_pFontScaleEditor)
+        m_pFontScaleEditor->setFontScaleFactor(oldData.m_iFontScalingFactor);
     if (m_pEditorDisplayFeatures)
     {
         m_pEditorDisplayFeatures->setActivateOnMouseHover(oldData.m_fActivateHoveredMachineWindow);
         m_pEditorDisplayFeatures->setDisableHostScreenSaver(oldData.m_fDisableHostScreenSaver);
     }
-    if (m_pFontScaleEditor)
-        m_pFontScaleEditor->setFontScaleFactor(oldData.m_iFontScalingFactor);
 }
 
 void UIGlobalSettingsDisplay::putToCache()
@@ -167,13 +167,13 @@ void UIGlobalSettingsDisplay::putToCache()
         newData.m_guiMaximumGuestScreenSizeValue = m_pEditorMaximumGuestScreenSize->value();
     if (m_pEditorScaleFactor)
         newData.m_scaleFactors = m_pEditorScaleFactor->scaleFactors();
+    if (m_pFontScaleEditor)
+        newData.m_iFontScalingFactor = m_pFontScaleEditor->fontScaleFactor();
     if (m_pEditorDisplayFeatures)
     {
         newData.m_fActivateHoveredMachineWindow = m_pEditorDisplayFeatures->activateOnMouseHover();
         newData.m_fDisableHostScreenSaver = m_pEditorDisplayFeatures->disableHostScreenSaver();
     }
-    if (m_pFontScaleEditor)
-        newData.m_iFontScalingFactor = m_pFontScaleEditor->fontScaleFactor();
     m_pCache->cacheCurrentData(newData);
 }
 
@@ -195,12 +195,12 @@ void UIGlobalSettingsDisplay::retranslateUi()
     int iMinimumLayoutHint = 0;
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorMaximumGuestScreenSize->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorScaleFactor->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorDisplayFeatures->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pFontScaleEditor->minimumLabelHorizontalHint());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorDisplayFeatures->minimumLabelHorizontalHint());
     m_pEditorMaximumGuestScreenSize->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pEditorScaleFactor->setMinimumLayoutIndent(iMinimumLayoutHint);
-    m_pEditorDisplayFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pFontScaleEditor->setMinimumLayoutIndent(iMinimumLayoutHint);
+    m_pEditorDisplayFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
 }
 
 void UIGlobalSettingsDisplay::prepare()
@@ -238,20 +238,20 @@ void UIGlobalSettingsDisplay::prepareWidgets()
             pLayout->addWidget(m_pEditorScaleFactor);
         }
 
-        /* Prepare 'display features' editor: */
-        m_pEditorDisplayFeatures = new UIDisplayFeaturesEditor(this);
-        if (m_pEditorDisplayFeatures)
-        {
-            m_editors << m_pEditorDisplayFeatures;
-            pLayout->addWidget(m_pEditorDisplayFeatures);
-        }
-
         /* Prepare 'font scale' editor: */
         m_pFontScaleEditor = new UIFontScaleEditor(this);
         if (m_pFontScaleEditor)
         {
             m_editors << m_pFontScaleEditor;
             pLayout->addWidget(m_pFontScaleEditor);
+        }
+
+        /* Prepare 'display features' editor: */
+        m_pEditorDisplayFeatures = new UIDisplayFeaturesEditor(this);
+        if (m_pEditorDisplayFeatures)
+        {
+            m_editors << m_pEditorDisplayFeatures;
+            pLayout->addWidget(m_pEditorDisplayFeatures);
         }
 
         /* Add stretch to the end: */
@@ -292,6 +292,10 @@ bool UIGlobalSettingsDisplay::saveData()
         if (   fSuccess
             && newData.m_scaleFactors != oldData.m_scaleFactors)
             /* fSuccess = */ gEDataManager->setScaleFactors(newData.m_scaleFactors, UIExtraDataManager::GlobalID);
+        /* Save font scale factor: */
+        if (   fSuccess
+            && newData.m_iFontScalingFactor != oldData.m_iFontScalingFactor)
+            /* fSuccess = */ gEDataManager->setFontScaleFactor(newData.m_iFontScalingFactor);
         /* Save whether hovered machine-window should be activated automatically: */
         if (   fSuccess
             && newData.m_fActivateHoveredMachineWindow != oldData.m_fActivateHoveredMachineWindow)
@@ -302,10 +306,6 @@ bool UIGlobalSettingsDisplay::saveData()
             && newData.m_fDisableHostScreenSaver != oldData.m_fDisableHostScreenSaver)
             /* fSuccess = */ gEDataManager->setDisableHostScreenSaver(newData.m_fDisableHostScreenSaver);
 #endif /* VBOX_WS_WIN || VBOX_WS_NIX */
-        /* Save font scale factor: */
-        if (   fSuccess
-            && newData.m_iFontScalingFactor != oldData.m_iFontScalingFactor)
-            /* fSuccess = */ gEDataManager->setFontScaleFactor(newData.m_iFontScalingFactor);
     }
     /* Return result: */
     return fSuccess;
