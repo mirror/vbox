@@ -2608,7 +2608,6 @@ class TestDriver(base.TestDriver):                                              
     def createTestVM(self,
                      sName,
                      iGroup,
-                     sPlatformArchitecture = 'x86',
                      sHd = None,
                      cMbRam = None,
                      cCpus = 1,
@@ -2636,7 +2635,8 @@ class TestDriver(base.TestDriver):                                              
                      sCom1RawFile = None,
                      fSecureBoot = False,
                      sUefiMokPathPrefix = None,
-                     sGraphicsControllerType = None):
+                     sGraphicsControllerType = None,
+                     sPlatformArchitecture = 'x86'):
         """
         Creates a test VM with a immutable HD from the test resources.
         """
