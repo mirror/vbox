@@ -87,7 +87,7 @@ private:
 
     /** Prepares all. */
     void prepare();
-    /** Prepares Widgets. */
+    /** Prepares widgets. */
     void prepareWidgets();
     /** Prepares connections. */
     void prepareConnections();

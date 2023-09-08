@@ -349,7 +349,10 @@ void UIMachineSettingsUSB::prepareWidgets()
         /* Prepare settings editor: */
         m_pEditorUsbSettings = new UIUSBSettingsEditor(this);
         if (m_pEditorUsbSettings)
+        {
+            m_editors << m_pEditorUsbSettings;
             pLayout->addWidget(m_pEditorUsbSettings);
+        }
     }
 }
 

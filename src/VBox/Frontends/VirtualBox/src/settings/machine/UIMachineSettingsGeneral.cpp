@@ -565,7 +565,10 @@ void UIMachineSettingsGeneral::prepareTabBasic()
             /* Prepare name and system editor: */
             m_pEditorNameAndSystem = new UINameAndSystemEditor(m_pTabBasic);
             if (m_pEditorNameAndSystem)
+            {
+                m_editors << m_pEditorNameAndSystem;
                 pLayoutBasic->addWidget(m_pEditorNameAndSystem);
+            }
 
             pLayoutBasic->addStretch();
         }
@@ -587,17 +590,26 @@ void UIMachineSettingsGeneral::prepareTabAdvanced()
             /* Prepare snapshot folder editor: */
             m_pEditorSnapshotFolder = new UISnapshotFolderEditor(m_pTabAdvanced);
             if (m_pEditorSnapshotFolder)
+            {
+                m_editors << m_pEditorSnapshotFolder;
                 pLayoutAdvanced->addWidget(m_pEditorSnapshotFolder);
+            }
 
             /* Prepare clipboard editor: */
             m_pEditorClipboard = new UISharedClipboardEditor(m_pTabAdvanced);
             if (m_pEditorClipboard)
+            {
+                m_editors << m_pEditorClipboard;
                 pLayoutAdvanced->addWidget(m_pEditorClipboard);
+            }
 
             /* Prepare drag&drop editor: */
             m_pEditorDragAndDrop = new UIDragAndDropEditor(m_pTabAdvanced);
             if (m_pEditorDragAndDrop)
+            {
+                m_editors << m_pEditorDragAndDrop;
                 pLayoutAdvanced->addWidget(m_pEditorDragAndDrop);
+            }
 
             pLayoutAdvanced->addStretch();
         }
@@ -620,6 +632,7 @@ void UIMachineSettingsGeneral::prepareTabDescription()
             m_pEditorDescription = new UIDescriptionEditor(m_pTabDescription);
             if (m_pEditorDescription)
             {
+                m_editors << m_pEditorDescription;
                 m_pEditorDescription->setObjectName(QStringLiteral("m_pEditorDescription"));
                 pLayoutDescription->addWidget(m_pEditorDescription);
             }
@@ -642,7 +655,10 @@ void UIMachineSettingsGeneral::prepareTabEncryption()
             /* Prepare disk encryption settings editor: */
             m_pEditorDiskEncryptionSettings = new UIDiskEncryptionSettingsEditor(m_pTabEncryption);
             if (m_pEditorDiskEncryptionSettings)
+            {
+                m_editors << m_pEditorDiskEncryptionSettings;
                 pLayoutEncryption->addWidget(m_pEditorDiskEncryptionSettings);
+            }
 
             pLayoutEncryption->addStretch();
         }

@@ -895,28 +895,43 @@ void UIMachineSettingsDisplay::prepareTabScreen()
             /* Prepare video memory editor: */
             m_pEditorVideoMemorySize = new UIVideoMemoryEditor(m_pTabScreen);
             if (m_pEditorVideoMemorySize)
+            {
+                m_editors << m_pEditorVideoMemorySize;
                 pLayoutScreen->addWidget(m_pEditorVideoMemorySize);
+            }
 
             /* Prepare monitor count editor: */
             m_pEditorMonitorCount = new UIMonitorCountEditor(m_pTabScreen);
             if (m_pEditorMonitorCount)
+            {
+                m_editors << m_pEditorMonitorCount;
                 pLayoutScreen->addWidget(m_pEditorMonitorCount);
+            }
 
             /* Prepare scale factor editor: */
             m_pEditorScaleFactor = new UIScaleFactorEditor(m_pTabScreen);
             if (m_pEditorScaleFactor)
+            {
+                m_editors << m_pEditorScaleFactor;
                 pLayoutScreen->addWidget(m_pEditorScaleFactor);
+            }
 
             /* Prepare graphics controller editor: */
             m_pEditorGraphicsController = new UIGraphicsControllerEditor(m_pTabScreen);
             if (m_pEditorGraphicsController)
+            {
+                m_editors << m_pEditorGraphicsController;
                 pLayoutScreen->addWidget(m_pEditorGraphicsController);
+            }
 
 #ifdef VBOX_WITH_3D_ACCELERATION
             /* Prepare display screen features editor: */
             m_pEditorDisplayScreenFeatures = new UIDisplayScreenFeaturesEditor(m_pTabScreen);
             if (m_pEditorDisplayScreenFeatures)
+            {
+                m_editors << m_pEditorDisplayScreenFeatures;
                 pLayoutScreen->addWidget(m_pEditorDisplayScreenFeatures);
+            }
 #endif /* VBOX_WITH_3D_ACCELERATION */
 
             pLayoutScreen->addStretch();
@@ -939,7 +954,10 @@ void UIMachineSettingsDisplay::prepareTabRemoteDisplay()
             /* Prepare remote display settings editor: */
             m_pEditorVRDESettings = new UIVRDESettingsEditor(m_pTabRemoteDisplay);
             if (m_pEditorVRDESettings)
+            {
+                m_editors << m_pEditorVRDESettings;
                 pLayoutRemoteDisplay->addWidget(m_pEditorVRDESettings);
+            }
 
             pLayoutRemoteDisplay->addStretch();
         }
@@ -961,7 +979,10 @@ void UIMachineSettingsDisplay::prepareTabRecording()
             /* Prepare recording editor: */
             m_pEditorRecordingSettings = new UIRecordingSettingsEditor(m_pTabRecording);
             if (m_pEditorRecordingSettings)
+            {
+                m_editors << m_pEditorRecordingSettings;
                 pLayoutRecording->addWidget(m_pEditorRecordingSettings);
+            }
 
             pLayoutRecording->addStretch();
         }

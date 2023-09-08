@@ -725,32 +725,50 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
             /* Prepare base memory editor: */
             m_pEditorBaseMemory = new UIBaseMemoryEditor(m_pTabMotherboard);
             if (m_pEditorBaseMemory)
+            {
+                m_editors << m_pEditorBaseMemory;
                 pLayoutMotherboard->addWidget(m_pEditorBaseMemory, 0, 0, 1, 2);
+            }
 
             /* Prepare boot order editor: */
             m_pEditorBootOrder = new UIBootOrderEditor(m_pTabMotherboard);
             if (m_pEditorBootOrder)
+            {
+                m_editors << m_pEditorBootOrder;
                 pLayoutMotherboard->addWidget(m_pEditorBootOrder, 1, 0);
+            }
 
             /* Prepare chipset editor: */
             m_pEditorChipset = new UIChipsetEditor(m_pTabMotherboard);
             if (m_pEditorChipset)
+            {
+                m_editors << m_pEditorChipset;
                 pLayoutMotherboard->addWidget(m_pEditorChipset, 2, 0);
+            }
 
             /* Prepare TPM editor: */
             m_pEditorTpm = new UITpmEditor(m_pTabMotherboard);
             if (m_pEditorTpm)
+            {
+                m_editors << m_pEditorTpm;
                 pLayoutMotherboard->addWidget(m_pEditorTpm, 3, 0);
+            }
 
             /* Prepare pointing HID editor: */
             m_pEditorPointingHID = new UIPointingHIDEditor(m_pTabMotherboard);
             if (m_pEditorPointingHID)
+            {
+                m_editors << m_pEditorPointingHID;
                 pLayoutMotherboard->addWidget(m_pEditorPointingHID, 4, 0);
+            }
 
             /* Prepare motherboard features editor: */
             m_pEditorMotherboardFeatures = new UIMotherboardFeaturesEditor(m_pTabMotherboard);
             if (m_pEditorMotherboardFeatures)
+            {
+                m_editors << m_pEditorMotherboardFeatures;
                 pLayoutMotherboard->addWidget(m_pEditorMotherboardFeatures, 5, 0);
+            }
         }
 
         m_pTabWidget->addTab(m_pTabMotherboard, QString());
@@ -773,17 +791,26 @@ void UIMachineSettingsSystem::prepareTabProcessor()
             /* Prepare VCPU editor : */
             m_pEditorVCPU = new UIVirtualCPUEditor(m_pTabProcessor);
             if (m_pEditorVCPU)
+            {
+                m_editors << m_pEditorVCPU;
                 pLayoutProcessor->addWidget(m_pEditorVCPU, 0, 0, 1, 2);
+            }
 
             /* Prepare exec cap editor : */
             m_pEditorExecCap = new UIExecutionCapEditor(m_pTabProcessor);
             if (m_pEditorExecCap)
+            {
+                m_editors << m_pEditorExecCap;
                 pLayoutProcessor->addWidget(m_pEditorExecCap, 1, 0, 1, 2);
+            }
 
             /* Prepare processor features editor: */
             m_pEditorProcessorFeatures = new UIProcessorFeaturesEditor(m_pTabProcessor);
             if (m_pEditorProcessorFeatures)
+            {
+                m_editors << m_pEditorProcessorFeatures;
                 pLayoutProcessor->addWidget(m_pEditorProcessorFeatures, 2, 0);
+            }
         }
 
         m_pTabWidget->addTab(m_pTabProcessor, QString());
@@ -806,12 +833,18 @@ void UIMachineSettingsSystem::prepareTabAcceleration()
             /* Prepare paravirtualization provider editor: */
             m_pEditorParavirtProvider = new UIParavirtProviderEditor(m_pTabAcceleration);
             if (m_pEditorParavirtProvider)
+            {
+                m_editors << m_pEditorParavirtProvider;
                 pLayoutAcceleration->addWidget(m_pEditorParavirtProvider, 0, 0, 1, 2);
+            }
 
             /* Prepare acceleration features editor: */
             m_pEditorAccelerationFeatures = new UIAccelerationFeaturesEditor(m_pTabAcceleration);
             if (m_pEditorAccelerationFeatures)
+            {
+                m_editors << m_pEditorAccelerationFeatures;
                 pLayoutAcceleration->addWidget(m_pEditorAccelerationFeatures, 1, 0);
+            }
 
             m_pTabWidget->addTab(m_pTabAcceleration, QString());
         }

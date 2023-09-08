@@ -227,7 +227,10 @@ void UIMachineSettingsAudio::prepareWidgets()
         /* Prepare settings editor: */
         m_pEditorAudioSettings = new UIAudioSettingsEditor(this);
         if (m_pEditorAudioSettings)
+        {
+            m_editors << m_pEditorAudioSettings;
             pLayout->addWidget(m_pEditorAudioSettings);
+        }
 
         pLayout->addStretch();
     }
