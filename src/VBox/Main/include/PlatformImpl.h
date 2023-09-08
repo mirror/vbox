@@ -70,6 +70,13 @@ public:
     HRESULT i_initArchitecture(PlatformArchitecture_T aArchitecture, Platform *that = NULL, bool fCopy = false);
     HRESULT i_applyDefaults(GuestOSType *aOsType);
 
+public:
+
+    // static public helper functions
+    const char *s_platformArchitectureToStr(PlatformArchitecture_T enmArchitecture);
+
+public:
+
     // wrapped IPlatform properties
     HRESULT getArchitecture(PlatformArchitecture_T *aArchitecture);
     HRESULT setArchitecture(PlatformArchitecture_T aArchitecture);

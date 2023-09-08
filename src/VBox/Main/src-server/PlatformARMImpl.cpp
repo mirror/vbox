@@ -85,7 +85,12 @@ HRESULT PlatformARM::init(Platform *aParent, Machine *aMachine)
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    RT_NOREF(aParent, aMachine);
+    /* share the parent + machine weakly */
+    unconst(mParent)  = aParent;
+    unconst(mMachine) = aMachine;
+
+    m = new Data;
+    m->bd.allocate();
 
     autoInitSpan.setSucceeded();
 
@@ -236,7 +241,7 @@ HRESULT PlatformARM::i_loadSettings(const settings::PlatformARM &data)
     RT_NOREF(data);
 
     /** @todo BUGBUG Implement this form ARM! */
-    return E_NOTIMPL;
+    return S_OK;
 }
 
 /**
@@ -251,7 +256,14 @@ HRESULT PlatformARM::i_saveSettings(settings::PlatformARM &data)
 {
     RT_NOREF(data);
 
-    /** @todo BUGBUG Implement this form ARM! */
-    return E_NOTIMPL;
+    /** @todo BUGBUG Implement this for ARM! */
+    return S_OK;
 }
 
+HRESULT PlatformARM::i_applyDefaults(GuestOSType *aOsType)
+{
+    RT_NOREF(aOsType);
+
+    /** @todo BUGBUG Implement this for ARM! */
+    return S_OK;
+}

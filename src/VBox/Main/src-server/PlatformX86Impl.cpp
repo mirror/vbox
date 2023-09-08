@@ -87,12 +87,11 @@ HRESULT PlatformX86::init(Platform *aParent, Machine *aMachine)
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    m = new Data;
-
     /* share the parent + machine weakly */
     unconst(mParent)  = aParent;
     unconst(mMachine) = aMachine;
 
+    m = new Data;
     m->bd.allocate();
 
     /* Confirm a successful initialization */
