@@ -764,9 +764,9 @@ HRESULT Platform::i_applyDefaults(GuestOSType *aOsType)
 
     HRESULT hrc = S_OK;
 
-    ChipsetType_T enmChipsetType;
-    IommuType_T   enmIommuType;
-    BOOL          fRTCUseUTC;
+    ChipsetType_T enmChipsetType = ChipsetType_Null;
+    IommuType_T   enmIommuType   = IommuType_None;
+    BOOL          fRTCUseUTC     = FALSE;
 
     if (aOsType)
     {
