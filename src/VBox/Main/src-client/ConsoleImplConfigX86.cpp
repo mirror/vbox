@@ -666,6 +666,8 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
     ULONG ulCpuExecutionCap = 100;
     hrc = pMachine->COMGETTER(CPUExecutionCap)(&ulCpuExecutionCap);                         H();
 
+    LogRel(("Guest architecture: x86\n"));
+
     Bstr osTypeId;
     hrc = pMachine->COMGETTER(OSTypeId)(osTypeId.asOutParam());                             H();
     LogRel(("Guest OS type: '%s'\n", Utf8Str(osTypeId).c_str()));
