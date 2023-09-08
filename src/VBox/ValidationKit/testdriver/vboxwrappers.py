@@ -964,13 +964,17 @@ class SessionWrapper(TdTaskBase):
         """
         Returns if the machine is of the ARM platform architecture or not.
         """
-        return self.isPlatformArch(vboxcon.PlatformArchitecture_ARM);
+        if self.fpApiVer >= 7.1:
+            return self.isPlatformArch(vboxcon.PlatformArchitecture_ARM);
+        return False; # For VBox < 7.1 this always is false (x86 only).
 
     def isPlatformX86(self):
         """
         Returns if the machine is of the x86 platform architecture or not.
         """
-        return self.isPlatformArch(vboxcon.PlatformArchitecture_x86);
+        if self.fpApiVer >= 7.1:
+            return self.isPlatformArch(vboxcon.PlatformArchitecture_x86);
+        return True; # For VBox < 7.1 this always is true (x86 only).
 
     def enableVirtExX86(self, fEnable):
         """
