@@ -30,7 +30,6 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "QILabelSeparator.h"
 #include "QIRichTextLabel.h"
 #include "UIApplianceExportEditorWidget.h"
 #include "UICommon.h"

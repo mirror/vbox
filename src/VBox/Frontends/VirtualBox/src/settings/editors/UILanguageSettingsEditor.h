@@ -36,7 +36,6 @@
 
 /* Forward declartions: */
 class QTreeWidgetItem;
-class QILabelSeparator;
 class QIRichTextLabel;
 class QITreeWidget;
 
@@ -89,8 +88,6 @@ private:
 
     /** @name Widgets
      * @{ */
-        /** Holds the separator label instance. */
-        QILabelSeparator *m_pLabelSeparator;
         /** Holds the tree-widget instance. */
         QITreeWidget     *m_pTreeWidget;
         /** Holds the info label instance. */

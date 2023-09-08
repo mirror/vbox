@@ -34,7 +34,6 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "QILabelSeparator.h"
 #include "QIRichTextLabel.h"
 #include "QITreeWidget.h"
 #include "UILanguageSettingsEditor.h"
@@ -212,7 +211,6 @@ QString UILanguageItem::tratra(const QTranslator &translator, const char *pConte
 UILanguageSettingsEditor::UILanguageSettingsEditor(QWidget *pParent /* = 0 */)
     : UIEditor(pParent)
     , m_fPolished(false)
-    , m_pLabelSeparator(0)
     , m_pTreeWidget(0)
     , m_pLabelInfo(0)
 {
@@ -239,10 +237,6 @@ QString UILanguageSettingsEditor::value() const
 
 void UILanguageSettingsEditor::retranslateUi()
 {
-    /* Translate separator label: */
-    if (m_pLabelSeparator)
-        m_pLabelSeparator->setText(tr("&Interface Languages"));
-
     /* Translate tree-widget: */
     if (m_pTreeWidget)
     {
@@ -335,17 +329,10 @@ void UILanguageSettingsEditor::prepare()
     {
         pLayoutMain->setContentsMargins(0, 0, 0, 0);
 
-        /* Prepare separator: */
-        m_pLabelSeparator = new QILabelSeparator(this);
-        if (m_pLabelSeparator)
-            pLayoutMain->addWidget(m_pLabelSeparator);
-
         /* Prepare tree-widget: */
         m_pTreeWidget = new QITreeWidget(this);
         if (m_pTreeWidget)
         {
-            if (m_pLabelSeparator)
-                m_pLabelSeparator->setBuddy(m_pTreeWidget);
             m_pTreeWidget->header()->hide();
             m_pTreeWidget->setColumnCount(4);
             m_pTreeWidget->hideColumn(1);

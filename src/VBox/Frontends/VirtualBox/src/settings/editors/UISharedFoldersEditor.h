@@ -38,7 +38,6 @@
 /* Forward declartions: */
 class QHBoxLayout;
 class QTreeWidgetItem;
-class QILabelSeparator;
 class QIToolBar;
 class QITreeWidget;
 class SFTreeViewItem;
@@ -176,8 +175,6 @@ private:
 
     /** @name Widgets
      * @{ */
-        /** Holds the widget separator instance. */
-        QILabelSeparator *m_pLabelSeparator;
         /** Holds the tree layout instance. */
         QHBoxLayout      *m_pLayoutTree;
         /** Holds the tree-widget instance. */

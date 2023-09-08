@@ -38,7 +38,6 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "QILabelSeparator.h"
 #include "QITreeWidget.h"
 #include "QIWidgetValidator.h"
 #include "UIConverter.h"
