@@ -293,7 +293,8 @@ HRESULT Platform::getX86(ComPtr<IPlatformX86> &aX86)
             break;
     }
 
-    return setErrorVrc(VERR_PLATFORM_ARCH_NOT_SUPPORTED, ("x86-specific platform settings are not available on this platform"));
+    return setErrorBoth(VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED, VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED,
+                        "x86-specific platform settings are not available on this platform");
 }
 
 HRESULT Platform::getARM(ComPtr<IPlatformARM> &aARM)
@@ -324,7 +325,8 @@ HRESULT Platform::getARM(ComPtr<IPlatformARM> &aARM)
             break;
     }
 
-    return setErrorVrc(VERR_PLATFORM_ARCH_NOT_SUPPORTED, ("ARM-specific platform settings are not available on this platform"));
+    return setErrorBoth(VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED, VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED,
+                        "ARM-specific platform settings are not available on this platform");
 }
 
 HRESULT Platform::getChipsetType(ChipsetType_T *aChipsetType)
@@ -524,7 +526,8 @@ HRESULT Platform::i_loadSettings(const settings::Platform &data)
             break;
     }
 
-    return setErrorVrc(VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED, "Platform '%s' not supported", Platform::s_platformArchitectureToStr(m->bd->architectureType));
+    return setErrorBoth(VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED, VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED,
+                        "Platform '%s' not supported", Platform::s_platformArchitectureToStr(m->bd->architectureType));
 }
 
 /**
@@ -559,7 +562,8 @@ HRESULT Platform::i_saveSettings(settings::Platform &data)
             break;
     }
 
-    return setErrorVrc(VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED, "Platform '%s' not supported", Platform::s_platformArchitectureToStr(m->bd->architectureType));
+        return setErrorBoth(VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED, VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED,
+                            "Platform '%s' not supported", Platform::s_platformArchitectureToStr(m->bd->architectureType));
 }
 
 void Platform::i_rollback()
