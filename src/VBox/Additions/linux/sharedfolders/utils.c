@@ -289,6 +289,24 @@ DECLINLINE(int) sf_file_mode_to_linux(uint32_t fVBoxMode, int fFixedMode, int fC
     return fLnxMode;
 }
 
+/**
+ * Update inode timestamps.
+ *
+ * @param pInode    Linux inode object.
+ # @param pObjInfo  VBox vboxsf object.
+ */
+static void vbsf_update_inode_timestamps(struct inode *pInode, PSHFLFSOBJINFO pObjInfo)
+{
+#if RTLNX_VER_MIN(6,6,0)
+    struct timespec64 ts;
+    vbsf_time_to_linux(&ts, &pObjInfo->ChangeTime);
+    inode_set_ctime_to_ts(pInode, ts);
+#else
+    vbsf_time_to_linux(&pInode->i_atime, &pObjInfo->AccessTime);
+    vbsf_time_to_linux(&pInode->i_ctime, &pObjInfo->ChangeTime);
+    vbsf_time_to_linux(&pInode->i_mtime, &pObjInfo->ModificationTime);
+#endif
+}
 
 /**
  * Initializes the @a inode attributes based on @a pObjInfo and @a pSuperInfo
@@ -348,9 +366,8 @@ void vbsf_init_inode(struct inode *inode, struct vbsf_inode_info *sf_i, PSHFLFSO
     /* i_blocks always in units of 512 bytes! */
     inode->i_blocks = (pObjInfo->cbAllocated + 511) / 512;
 
-    vbsf_time_to_linux(&inode->i_atime, &pObjInfo->AccessTime);
-    vbsf_time_to_linux(&inode->i_ctime, &pObjInfo->ChangeTime);
-    vbsf_time_to_linux(&inode->i_mtime, &pObjInfo->ModificationTime);
+    vbsf_update_inode_timestamps(inode, pObjInfo);
+
     sf_i->BirthTime = pObjInfo->BirthTime;
     sf_i->ModificationTime = pObjInfo->ModificationTime;
     RTTimeSpecSetSeconds(&sf_i->ModificationTimeAtOurLastWrite, 0);
@@ -416,9 +433,7 @@ void vbsf_update_inode(struct inode *pInode, struct vbsf_inode_info *pInodeInfo,
     /*
      * Update the timestamps.
      */
-    vbsf_time_to_linux(&pInode->i_atime, &pObjInfo->AccessTime);
-    vbsf_time_to_linux(&pInode->i_ctime, &pObjInfo->ChangeTime);
-    vbsf_time_to_linux(&pInode->i_mtime, &pObjInfo->ModificationTime);
+    vbsf_update_inode_timestamps(pInode, pObjInfo);
     pInodeInfo->BirthTime = pObjInfo->BirthTime;
 
     /*
@@ -743,7 +758,9 @@ int vbsf_inode_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat
 # endif
     if (rc == 0) {
         /* Do generic filling in of info. */
-# if RTLNX_VER_MIN(6,3,0)
+# if RTLNX_VER_MIN(6,6,0)
+        generic_fillattr(idmap, request_mask, dentry->d_inode, kstat);
+# elif RTLNX_VER_MIN(6,3,0)
         generic_fillattr(idmap, dentry->d_inode, kstat);
 # elif RTLNX_VER_MIN(5,12,0)
         generic_fillattr(ns, dentry->d_inode, kstat);
