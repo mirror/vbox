@@ -3221,8 +3221,8 @@ QString UINotificationProgressCloudMachineClone::details() const
 
 CProgress UINotificationProgressCloudMachineClone::createProgress(COMResult &comResult)
 {
-    // This is wrong, we need to acquire ocid, we have no one for now ..
-    m_uId = m_comMachine.GetId();
+    /* Acquire cloud VM internal id: */
+    m_strId = m_comMachine.GetCloudId();
     if (!m_comMachine.isOk())
     {
         /* Store COM result: */
@@ -3242,9 +3242,7 @@ CProgress UINotificationProgressCloudMachineClone::createProgress(COMResult &com
 
     /* Initialize progress-wrapper: */
     CCloudMachine comCloneMachine;
-    // This is wrong, we need to pass ocid, we have no one for now ..
-    const QString strId = m_uId.toString();
-    CProgress comProgress = m_comClient.CloneInstance(strId, m_strCloneName, comCloneMachine);
+    CProgress comProgress = m_comClient.CloneInstance(m_strId, m_strCloneName, comCloneMachine);
     /* Store COM result: */
     comResult = m_comMachine;
     /* Return progress-wrapper: */

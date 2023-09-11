@@ -1857,8 +1857,8 @@ private:
     CCloudMachine  m_comMachine;
     /** Holds the clone name. */
     QString        m_strCloneName;
-    // This is wrong, we need to store ocid, we have no one for now ..
-    QUuid          m_uId;
+    /** Holds the machine internal id. */
+    QString        m_strId;
     /** Holds the machine name. */
     QString        m_strName;
 };
