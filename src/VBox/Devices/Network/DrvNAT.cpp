@@ -1914,4 +1914,3 @@ const PDMDRVREG g_DrvNAT =
     /* u32EndVersion */
     PDM_DRVREG_VERSION
 };
-
