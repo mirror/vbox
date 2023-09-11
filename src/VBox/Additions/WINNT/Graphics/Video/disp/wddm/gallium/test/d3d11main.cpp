@@ -58,6 +58,8 @@ private:
     } miRenderMode;
 
     HWND mHwnd;
+    UINT mRTWidth;
+    UINT mRTHeight;
 
     struct
     {
@@ -92,6 +94,8 @@ D3D11Test::D3D11Test()
     miRenderId(1),
     miRenderMode(RenderModeStep),
     mHwnd(0),
+    mRTWidth(0),
+    mRTHeight(0),
     mSharedHandle(0),
     mpRender(0)
 {
@@ -279,6 +283,11 @@ HRESULT D3D11Test::initDirect3D11()
 {
     HRESULT hr = S_OK;
 
+    RECT clientRect;
+    GetClientRect(mHwnd, &clientRect);
+    mRTWidth = clientRect.right;
+    mRTHeight = clientRect.bottom;
+
     /*
      * Render.
      */
@@ -289,8 +298,8 @@ HRESULT D3D11Test::initDirect3D11()
     {
         D3D11_TEXTURE2D_DESC texDesc;
         RT_ZERO(texDesc);
-        texDesc.Width     = 800;
-        texDesc.Height    = 600;
+        texDesc.Width     = mRTWidth;
+        texDesc.Height    = mRTHeight;
         texDesc.MipLevels = 1;
         texDesc.ArraySize = 1;
         texDesc.Format    = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -310,21 +319,24 @@ HRESULT D3D11Test::initDirect3D11()
 
         HTEST(mRender.pRenderTarget->QueryInterface(__uuidof(IDXGIKeyedMutex), (LPVOID*)&mRender.pDXGIKeyedMutex));
 
-        D3D11_TEXTURE2D_DESC depthStencilDesc;
-        depthStencilDesc.Width     = 800;
-        depthStencilDesc.Height    = 600;
-        depthStencilDesc.MipLevels = 1;
-        depthStencilDesc.ArraySize = 1;
-        depthStencilDesc.Format    = DXGI_FORMAT_D24_UNORM_S8_UINT;
-        depthStencilDesc.SampleDesc.Count   = 1;
-        depthStencilDesc.SampleDesc.Quality = 0;
-        depthStencilDesc.Usage          = D3D11_USAGE_DEFAULT;
-        depthStencilDesc.BindFlags      = D3D11_BIND_DEPTH_STENCIL;
-        depthStencilDesc.CPUAccessFlags = 0;
-        depthStencilDesc.MiscFlags      = 0;
+        if (mpRender->IsDepthStencilBufferRequired(this))
+        {
+            D3D11_TEXTURE2D_DESC depthStencilDesc;
+            depthStencilDesc.Width     = mRTWidth;
+            depthStencilDesc.Height    = mRTHeight;
+            depthStencilDesc.MipLevels = 1;
+            depthStencilDesc.ArraySize = 1;
+            depthStencilDesc.Format    = DXGI_FORMAT_D24_UNORM_S8_UINT;
+            depthStencilDesc.SampleDesc.Count   = 1;
+            depthStencilDesc.SampleDesc.Quality = 0;
+            depthStencilDesc.Usage          = D3D11_USAGE_DEFAULT;
+            depthStencilDesc.BindFlags      = D3D11_BIND_DEPTH_STENCIL;
+            depthStencilDesc.CPUAccessFlags = 0;
+            depthStencilDesc.MiscFlags      = 0;
 
-        HTEST(mRender.pDevice->CreateTexture2D(&depthStencilDesc, 0, &mRender.pDepthStencilBuffer));
-        HTEST(mRender.pDevice->CreateDepthStencilView(mRender.pDepthStencilBuffer, 0, &mRender.pDepthStencilView));
+            HTEST(mRender.pDevice->CreateTexture2D(&depthStencilDesc, 0, &mRender.pDepthStencilBuffer));
+            HTEST(mRender.pDevice->CreateDepthStencilView(mRender.pDepthStencilBuffer, 0, &mRender.pDepthStencilView));
+        }
     }
 
     if (mRender.pImmediateContext)
@@ -333,8 +345,8 @@ HRESULT D3D11Test::initDirect3D11()
         D3D11_VIEWPORT mScreenViewport;
         mScreenViewport.TopLeftX = 0;
         mScreenViewport.TopLeftY = 0;
-        mScreenViewport.Width    = static_cast<float>(800);
-        mScreenViewport.Height   = static_cast<float>(600);
+        mScreenViewport.Width    = static_cast<float>(mRTWidth);
+        mScreenViewport.Height   = static_cast<float>(mRTHeight);
         mScreenViewport.MinDepth = 0.0f;
         mScreenViewport.MaxDepth = 1.0f;
 
@@ -351,8 +363,8 @@ HRESULT D3D11Test::initDirect3D11()
     {
         DXGI_SWAP_CHAIN_DESC sd;
         RT_ZERO(sd);
-        sd.BufferDesc.Width  = 800;
-        sd.BufferDesc.Height = 600;
+        sd.BufferDesc.Width  = mRTWidth;
+        sd.BufferDesc.Height = mRTHeight;
         sd.BufferDesc.RefreshRate.Numerator = 60;
         sd.BufferDesc.RefreshRate.Denominator = 1;
         sd.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -369,7 +381,7 @@ HRESULT D3D11Test::initDirect3D11()
 
         HTEST(mOutput.pDxgiFactory->CreateSwapChain(mOutput.pDevice, &sd, &mOutput.pSwapChain));
 
-        HTEST(mOutput.pSwapChain->ResizeBuffers(1, 800, 600, DXGI_FORMAT_B8G8R8A8_UNORM, 0));
+        HTEST(mOutput.pSwapChain->ResizeBuffers(1, mRTWidth, mRTHeight, DXGI_FORMAT_B8G8R8A8_UNORM, 0));
 
         HTEST(mOutput.pDevice->OpenSharedResource(mSharedHandle, __uuidof(ID3D11Texture2D), (void**)&mOutput.pSharedTexture));
         HTEST(mOutput.pSharedTexture->QueryInterface(__uuidof(IDXGIKeyedMutex), (LPVOID*)&mOutput.pDXGIKeyedMutex));
@@ -761,14 +773,14 @@ int D3D11Test::Run()
                         /*
                          * Use the shared texture from the output device.
                          */
-                        float cDstWidth = 800.0f;
-                        float cDstHeight = 600.0f;
+                        float cDstWidth = static_cast<float>(mRTWidth);
+                        float cDstHeight = static_cast<float>(mRTHeight);
 
                         D3D11_RECT rectDst;
                         rectDst.left   = 0;
                         rectDst.top    = 0;
-                        rectDst.right  = 800;
-                        rectDst.bottom = 600;
+                        rectDst.right  = mRTWidth;
+                        rectDst.bottom = mRTHeight;
 
                         ID3D11ShaderResourceView *pShaderResourceView = 0;
                         HTEST(Blitter.pDevice->CreateShaderResourceView(mOutput.pSharedTexture, NULL, &pShaderResourceView));

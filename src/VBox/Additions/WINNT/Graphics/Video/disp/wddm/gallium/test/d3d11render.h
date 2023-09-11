@@ -85,6 +85,7 @@ public:
     virtual HRESULT InitRender(D3D11DeviceProvider *pDP) = 0;
     virtual HRESULT DoRender(D3D11DeviceProvider *pDP) = 0;
     virtual void TimeAdvance(float dt) { (void)dt; return; }
+    virtual bool IsDepthStencilBufferRequired(D3D11DeviceProvider *pDP) { (void)pDP; return true; }
 };
 
 D3D11Render *CreateRender(int iRenderId);

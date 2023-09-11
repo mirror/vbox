@@ -47,7 +47,7 @@ VBoxGaD3DTest-x86_BLD_TRG_ARCH = x86
 
 PROGRAMS += VBoxD3D11
 VBoxD3D11_TEMPLATE    = VBoxR3Static
-VBoxD3D11_CXXFLAGS   += -wd4458 -wd4668 -wd4838 -wd5029 -wd5039
+VBoxD3D11_CXXFLAGS   += -wd4305 -wd4458 -wd4668 -wd4838 -wd5029 -wd5039
 VBoxD3D11_INCS       += $(PATH_ROOT)/src/VBox/Devices/Graphics/shaders
 VBoxD3D11_LIBS        = d3d11.lib
 VBoxD3D11_SOURCES     = \
