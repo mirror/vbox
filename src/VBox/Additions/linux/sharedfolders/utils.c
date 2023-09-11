@@ -293,7 +293,7 @@ DECLINLINE(int) sf_file_mode_to_linux(uint32_t fVBoxMode, int fFixedMode, int fC
  * Update inode timestamps.
  *
  * @param pInode    Linux inode object.
- # @param pObjInfo  VBox vboxsf object.
+ * @param pObjInfo  VBox vboxsf object.
  */
 static void vbsf_update_inode_timestamps(struct inode *pInode, PSHFLFSOBJINFO pObjInfo)
 {
