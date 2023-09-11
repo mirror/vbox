@@ -1145,6 +1145,795 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 /** @} */
 
 
+/** @name ID_AA64ISAR0_EL1 - AArch64 Instruction Set Attribute Register 0.
+ * @{ */
+/* Bit 0 - 3 - Reserved. */
+/** Bit 4 - 7 - Indicates support for AES instructions in AArch64 state. */
+#define ARMV8_ID_AA64ISAR0_EL1_AES                              (RT_BIT_64(4) | RT_BIT_64(5) | RT_BIT_64(6) | RT_BIT_64(7))
+#define ARMV8_ID_AA64ISAR0_EL1_AES_GET(a_IdAa64Isar0El1)        (((a_IdAa64Isar0El1) & ARMV8_ID_AA64ISAR0_EL1_AES) >> 4)
+/** No AES instructions implemented. */
+# define ARMV8_ID_AA64ISAR0_EL1_AES_NOT_IMPL                    0
+/** AES, AESD, AESMC and AESIMC instructions implemented (FEAT_AES). */
+# define ARMV8_ID_AA64ISAR0_EL1_AES_SUPPORTED                   1
+/** AES, AESD, AESMC and AESIMC instructions implemented and PMULL and PMULL2 instructions operating on 64bit source elements (FEAT_PMULL). */
+# define ARMV8_ID_AA64ISAR0_EL1_AES_SUPPORTED_PMULL             2
+/** Bit 8 - 11 - Indicates support for SHA1 instructions in AArch64 state. */
+#define ARMV8_ID_AA64ISAR0_EL1_SHA1                             (RT_BIT_64(8) | RT_BIT_64(9) | RT_BIT_64(10) | RT_BIT_64(11))
+#define ARMV8_ID_AA64ISAR0_EL1_SHA1_GET(a_IdAa64Isar0El1)       (((a_IdAa64Isar0El1) & ARMV8_ID_AA64ISAR0_EL1_SHA1) >> 8)
+/** No SHA1 instructions implemented. */
+# define ARMV8_ID_AA64ISAR0_EL1_SHA1_NOT_IMPL                   0
+/** SHA1C, SHA1P, SHA1M, SHA1H, SHA1SU0 and SHA1SU1 instructions implemented (FEAT_SHA1). */
+# define ARMV8_ID_AA64ISAR0_EL1_SHA1_SUPPORTED                  1
+/** Bit 12 - 15 - Indicates support for SHA2 instructions in AArch64 state. */
+#define ARMV8_ID_AA64ISAR0_EL1_SHA2                             (RT_BIT_64(12) | RT_BIT_64(13) | RT_BIT_64(14) | RT_BIT_64(15))
+#define ARMV8_ID_AA64ISAR0_EL1_SHA2_GET(a_IdAa64Isar0El1)       (((a_IdAa64Isar0El1) & ARMV8_ID_AA64ISAR0_EL1_SHA2) >> 12)
+/** No SHA2 instructions implemented. */
+# define ARMV8_ID_AA64ISAR0_EL1_SHA2_NOT_IMPL                   0
+/** SHA256 instructions implemented (FEAT_SHA256). */
+# define ARMV8_ID_AA64ISAR0_EL1_SHA2_SUPPORTED_SHA256           1
+/** SHA256 and SHA512 instructions implemented (FEAT_SHA512). */
+# define ARMV8_ID_AA64ISAR0_EL1_SHA2_SUPPORTED_SHA256_SHA512    2
+/** Bit 16 - 19 - Indicates support for CRC32 instructions in AArch64 state. */
+#define ARMV8_ID_AA64ISAR0_EL1_CRC32                            (RT_BIT_64(16) | RT_BIT_64(17) | RT_BIT_64(18) | RT_BIT_64(19))
+#define ARMV8_ID_AA64ISAR0_EL1_CRC32_GET(a_IdAa64Isar0El1)      (((a_IdAa64Isar0El1) & ARMV8_ID_AA64ISAR0_EL1_CRC32) >> 16)
+/** No CRC32 instructions implemented. */
+# define ARMV8_ID_AA64ISAR0_EL1_CRC32_NOT_IMPL                  0
+/** CRC32 instructions implemented (FEAT_CRC32). */
+# define ARMV8_ID_AA64ISAR0_EL1_CRC32_SUPPORTED                 1
+/** Bit 20 - 23 - Indicates support for Atomic instructions in AArch64 state. */
+#define ARMV8_ID_AA64ISAR0_EL1_ATOMIC                           (RT_BIT_64(20) | RT_BIT_64(21) | RT_BIT_64(22) | RT_BIT_64(23))
+#define ARMV8_ID_AA64ISAR0_EL1_ATOMIC_GET(a_IdAa64Isar0El1)     (((a_IdAa64Isar0El1) & ARMV8_ID_AA64ISAR0_EL1_ATOMIC) >> 20)
+/** No Atomic instructions implemented. */
+# define ARMV8_ID_AA64ISAR0_EL1_ATOMIC_NOT_IMPL                 0
+/** Atomic instructions implemented (FEAT_LSE). */
+# define ARMV8_ID_AA64ISAR0_EL1_ATOMIC_SUPPORTED                2
+/** Bit 24 - 27 - Indicates support for TME instructions. */
+#define ARMV8_ID_AA64ISAR0_EL1_TME                              (RT_BIT_64(24) | RT_BIT_64(25) | RT_BIT_64(26) | RT_BIT_64(27))
+#define ARMV8_ID_AA64ISAR0_EL1_TME_GET(a_IdAa64Isar0El1)        (((a_IdAa64Isar0El1) & ARMV8_ID_AA64ISAR0_EL1_TME) >> 24)
+/** TME instructions are not implemented. */
+# define ARMV8_ID_AA64ISAR0_EL1_TME_NOT_IMPL                    0
+/** TME instructions are implemented. */
+# define ARMV8_ID_AA64ISAR0_EL1_TME_SUPPORTED                   1
+/** Bit 28 - 31 - Indicates support for SQRDMLAH and SQRDMLSH instructions in AArch64 state. */
+#define ARMV8_ID_AA64ISAR0_EL1_RDM                              (RT_BIT_64(28) | RT_BIT_64(29) | RT_BIT_64(30) | RT_BIT_64(31))
+#define ARMV8_ID_AA64ISAR0_EL1_RDM_GET(a_IdAa64Isar0El1)        (((a_IdAa64Isar0El1) & ARMV8_ID_AA64ISAR0_EL1_RDM) >> 28)
+/** No RDMA instructions implemented. */
+# define ARMV8_ID_AA64ISAR0_EL1_RDM_NOT_IMPL                    0
+/** SQRDMLAH and SQRDMLSH instructions implemented (FEAT_RDM). */
+# define ARMV8_ID_AA64ISAR0_EL1_RAS_SUPPORTED                   1
+/** Bit 32 - 35 - Indicates support for SHA3 instructions in AArch64 state. */
+#define ARMV8_ID_AA64ISAR0_EL1_SHA3                             (RT_BIT_64(32) | RT_BIT_64(33) | RT_BIT_64(34) | RT_BIT_64(35))
+#define ARMV8_ID_AA64ISAR0_EL1_SHA3_GET(a_IdAa64Isar0El1)       (((a_IdAa64Isar0El1) & ARMV8_ID_AA64ISAR0_EL1_SHA3) >> 32)
+/** No SHA3 instructions implemented. */
+# define ARMV8_ID_AA64ISAR0_EL1_SHA3_NOT_IMPL                   0
+/** EOR3, RAX1, XAR and BCAX instructions implemented (FEAT_SHA3). */
+# define ARMV8_ID_AA64ISAR0_EL1_SHA3_SUPPORTED                  1
+/** Bit 36 - 39 - Indicates support for SM3 instructions in AArch64 state. */
+#define ARMV8_ID_AA64ISAR0_EL1_SM3                              (RT_BIT_64(36) | RT_BIT_64(37) | RT_BIT_64(38) | RT_BIT_64(39))
+#define ARMV8_ID_AA64ISAR0_EL1_SM3_GET(a_IdAa64Isar0El1)        (((a_IdAa64Isar0El1) & ARMV8_ID_AA64ISAR0_EL1_SM3) >> 36)
+/** No SM3 instructions implemented. */
+# define ARMV8_ID_AA64ISAR0_EL1_SM3_NOT_IMPL                    0
+/** SM3 instructions implemented (FEAT_SM3). */
+# define ARMV8_ID_AA64ISAR0_EL1_SM3_SUPPORTED                   1
+/** Bit 40 - 43 - Indicates support for SM4 instructions in AArch64 state. */
+#define ARMV8_ID_AA64ISAR0_EL1_SM4                              (RT_BIT_64(40) | RT_BIT_64(41) | RT_BIT_64(42) | RT_BIT_64(43))
+#define ARMV8_ID_AA64ISAR0_EL1_SM4_GET(a_IdAa64Isar0El1)        (((a_IdAa64Isar0El1) & ARMV8_ID_AA64ISAR0_EL1_SM4) >> 40)
+/** No SM4 instructions implemented. */
+# define ARMV8_ID_AA64ISAR0_EL1_SM4_NOT_IMPL                    0
+/** SM4 instructions implemented (FEAT_SM4). */
+# define ARMV8_ID_AA64ISAR0_EL1_SM4_SUPPORTED                   1
+/** Bit 44 - 47 - Indicates support for Dot Product instructions in AArch64 state. */
+#define ARMV8_ID_AA64ISAR0_EL1_DP                               (RT_BIT_64(44) | RT_BIT_64(45) | RT_BIT_64(46) | RT_BIT_64(47))
+#define ARMV8_ID_AA64ISAR0_EL1_DP_GET(a_IdAa64Isar0El1)         (((a_IdAa64Isar0El1) & ARMV8_ID_AA64ISAR0_EL1_DP) >> 44)
+/** No Dot Product instructions implemented. */
+# define ARMV8_ID_AA64ISAR0_EL1_DP_NOT_IMPL                     0
+/** UDOT and SDOT instructions implemented (FEAT_DotProd). */
+# define ARMV8_ID_AA64ISAR0_EL1_DP_SUPPORTED                    1
+/** Bit 48 - 51 - Indicates support for FMLAL and FMLSL instructions. */
+#define ARMV8_ID_AA64ISAR0_EL1_FHM                              (RT_BIT_64(48) | RT_BIT_64(49) | RT_BIT_64(50) | RT_BIT_64(51))
+#define ARMV8_ID_AA64ISAR0_EL1_FHM_GET(a_IdAa64Isar0El1)        (((a_IdAa64Isar0El1) & ARMV8_ID_AA64ISAR0_EL1_DIT) >> 48)
+/** FMLAL and FMLSL instructions are not implemented. */
+# define ARMV8_ID_AA64ISAR0_EL1_FHM_NOT_IMPL                    0
+/** FMLAL and FMLSL instructions are implemented (FEAT_FHM). */
+# define ARMV8_ID_AA64ISAR0_EL1_FHM_SUPPORTED                   1
+/** Bit 52 - 55 - Indicates support for flag manipulation instructions. */
+#define ARMV8_ID_AA64ISAR0_EL1_TS                               (RT_BIT_64(52) | RT_BIT_64(53) | RT_BIT_64(54) | RT_BIT_64(55))
+#define ARMV8_ID_AA64ISAR0_EL1_TS_GET(a_IdAa64Isar0El1)         (((a_IdAa64Isar0El1) & ARMV8_ID_AA64ISAR0_EL1_TS) >> 52)
+/** No flag manipulation instructions implemented. */
+# define ARMV8_ID_AA64ISAR0_EL1_TS_NOT_IMPL                     0
+/** CFINV, RMIF, SETF16 and SETF8 instrutions are implemented (FEAT_FlagM). */
+# define ARMV8_ID_AA64ISAR0_EL1_TS_SUPPORTED                    1
+/** CFINV, RMIF, SETF16, SETF8, AXFLAG and XAFLAG instrutions are implemented (FEAT_FlagM2). */
+# define ARMV8_ID_AA64ISAR0_EL1_TS_SUPPORTED_2                  2
+/** Bit 56 - 59 - Indicates support for Outer Shareable and TLB range maintenance instructions. */
+#define ARMV8_ID_AA64ISAR0_EL1_TLB                              (RT_BIT_64(56) | RT_BIT_64(57) | RT_BIT_64(58) | RT_BIT_64(59))
+#define ARMV8_ID_AA64ISAR0_EL1_TLB_GET(a_IdAa64Isar0El1)        (((a_IdAa64Isar0El1) & ARMV8_ID_AA64ISAR0_EL1_TLB) >> 56)
+/** Outer Sahreable and TLB range maintenance instructions are not implemented. */
+# define ARMV8_ID_AA64ISAR0_EL1_TLB_NOT_IMPL                    0
+/** Outer Shareable TLB maintenance instructions are implemented (FEAT_TLBIOS). */
+# define ARMV8_ID_AA64ISAR0_EL1_TLB_SUPPORTED                   1
+/** Outer Shareable and TLB range maintenance instructions are implemented (FEAT_TLBIRANGE). */
+# define ARMV8_ID_AA64ISAR0_EL1_TLB_SUPPORTED_RANGE             2
+/** Bit 60 - 63 - Indicates support for Random Number instructons in AArch64 state. */
+#define ARMV8_ID_AA64ISAR0_EL1_RNDR                             (RT_BIT_64(60) | RT_BIT_64(61) | RT_BIT_64(62) | RT_BIT_64(63))
+#define ARMV8_ID_AA64ISAR0_EL1_RNDR_GET(a_IdAa64Isar0El1)       (((a_IdAa64Isar0El1) & ARMV8_ID_AA64ISAR0_EL1_RNDR) >> 60)
+/** No Random Number instructions implemented. */
+# define ARMV8_ID_AA64ISAR0_EL1_RNDR_NOT_IMPL                   0
+/** RNDR and RDNRRS registers are implemented . */
+# define ARMV8_ID_AA64ISAR0_EL1_RNDR_SUPPORTED                  1
+/** @} */
+
+
+/** @name ID_AA64ISAR1_EL1 - AArch64 Instruction Set Attribute Register 0.
+ * @{ */
+/** Bit 0 - 3 - Indicates support for Data Persistence writeback instructions in AArch64 state. */
+#define ARMV8_ID_AA64ISAR1_EL1_DPB                              (RT_BIT_64(0) | RT_BIT_64(1) | RT_BIT_64(2) | RT_BIT_64(3))
+#define ARMV8_ID_AA64ISAR1_EL1_DPB_GET(a_IdAa64Isar1El1)        ((a_IdAa64Isar1El1) & ARMV8_ID_AA64ISAR1_EL1_DPB)
+/** DC CVAP not supported. */
+# define ARMV8_ID_AA64ISAR1_EL1_DPB_NOT_IMPL                    0
+/** DC CVAP supported (FEAT_DPB). */
+# define ARMV8_ID_AA64ISAR1_EL1_DPB_SUPPORTED                   1
+/** DC CVAP and DC CVADP supported (FEAT_DPB2). */
+# define ARMV8_ID_AA64ISAR1_EL1_DPB_SUPPORTED_2                 2
+/** Bit 4 - 7 - Indicates whether QARMA5 algorithm is implemented in the PE for address authentication. */
+#define ARMV8_ID_AA64ISAR1_EL1_APA                              (RT_BIT_64(4) | RT_BIT_64(5) | RT_BIT_64(6) | RT_BIT_64(7))
+#define ARMV8_ID_AA64ISAR1_EL1_APA_GET(a_IdAa64Isar1El1)        (((a_IdAa64Isar1El1) & ARMV8_ID_AA64ISAR1_EL1_APA) >> 4)
+/** Address Authentication using the QARMA5 algorithm is not implemented. */
+# define ARMV8_ID_AA64ISAR1_EL1_APA_NOT_IMPL                    0
+/** Address Authentication using the QARMA5 algorithm is implemented (FEAT_PAuth, FEAT_PACQARMA5). */
+# define ARMV8_ID_AA64ISAR1_EL1_APA_SUPPORTED_PAUTH             1
+/** Address Authentication using the QARMA5 algorithm is implemented and enhanced PAC is supported (FEAT_EPAC, FEAT_PACQARMA5). */
+# define ARMV8_ID_AA64ISAR1_EL1_APA_SUPPORTED_EPAC              2
+/** Address Authentication using the QARMA5 algorithm is implemented and enhanced PAC 2 is supported (FEAT_PAuth2, FEAT_PACQARMA5). */
+# define ARMV8_ID_AA64ISAR1_EL1_APA_SUPPORTED_PAUTH2            3
+/** Address Authentication using the QARMA5 algorithm is implemented and enhanced PAC 2 and FPAC are supported (FEAT_FPAC, FEAT_PACQARMA5). */
+# define ARMV8_ID_AA64ISAR1_EL1_APA_SUPPORTED_FPAC              4
+/** Address Authentication using the QARMA5 algorithm is implemented and enhanced PAC 2 and combined FPAC are supported (FEAT_FPACCOMBINE, FEAT_PACQARMA5). */
+# define ARMV8_ID_AA64ISAR1_EL1_APA_SUPPORTED_FPACCOMBINE       5
+/** Bit 8 - 11 - Indicates whether an implementation defined algorithm is implemented in the PE for address authentication. */
+#define ARMV8_ID_AA64ISAR1_EL1_API                              (RT_BIT_64(8) | RT_BIT_64(9) | RT_BIT_64(10) | RT_BIT_64(11))
+#define ARMV8_ID_AA64ISAR1_EL1_API_GET(a_IdAa64Isar1El1)        (((a_IdAa64Isar1El1) & ARMV8_ID_AA64ISAR1_EL1_API) >> 8)
+/** Address Authentication using the QARMA5 algorithm is not implemented. */
+# define ARMV8_ID_AA64ISAR1_EL1_API_NOT_IMPL                    0
+/** Address Authentication using the QARMA5 algorithm is implemented (FEAT_PAuth, FEAT_PACIMP). */
+# define ARMV8_ID_AA64ISAR1_EL1_API_SUPPORTED_PAUTH             1
+/** Address Authentication using the QARMA5 algorithm is implemented and enhanced PAC is supported (FEAT_EPAC, FEAT_PACIMP). */
+# define ARMV8_ID_AA64ISAR1_EL1_API_SUPPORTED_EPAC              2
+/** Address Authentication using the QARMA5 algorithm is implemented and enhanced PAC 2 is supported (FEAT_PAuth2, FEAT_PACIMP). */
+# define ARMV8_ID_AA64ISAR1_EL1_API_SUPPORTED_PAUTH2            3
+/** Address Authentication using the QARMA5 algorithm is implemented and enhanced PAC 2 and FPAC are supported (FEAT_FPAC, FEAT_PACIMP). */
+# define ARMV8_ID_AA64ISAR1_EL1_API_SUPPORTED_FPAC              4
+/** Address Authentication using the QARMA5 algorithm is implemented and enhanced PAC 2 and combined FPAC are supported (FEAT_FPACCOMBINE, FEAT_PACIMP). */
+# define ARMV8_ID_AA64ISAR1_EL1_API_SUPPORTED_FPACCOMBINE       5
+/** Bit 12 - 15 - Indicates support for JavaScript conversion from double precision floating values to integers in AArch64 state. */
+#define ARMV8_ID_AA64ISAR1_EL1_FJCVTZS                          (RT_BIT_64(12) | RT_BIT_64(13) | RT_BIT_64(14) | RT_BIT_64(15))
+#define ARMV8_ID_AA64ISAR1_EL1_FJCVTZS_GET(a_IdAa64Isar1El1)    (((a_IdAa64Isar1El1) & ARMV8_ID_AA64ISAR1_EL1_FJCVTZS) >> 12)
+/** No FJCVTZS instruction implemented. */
+# define ARMV8_ID_AA64ISAR1_EL1_FJCVTZS_NOT_IMPL                0
+/** FJCVTZS instruction implemented (FEAT_JSCVT). */
+# define ARMV8_ID_AA64ISAR1_EL1_FJCVTZS_SUPPORTED               1
+/** Bit 16 - 19 - Indicates support for CRC32 instructions in AArch64 state. */
+#define ARMV8_ID_AA64ISAR1_EL1_FCMA                             (RT_BIT_64(16) | RT_BIT_64(17) | RT_BIT_64(18) | RT_BIT_64(19))
+#define ARMV8_ID_AA64ISAR1_EL1_FCMA_GET(a_IdAa64Isar1El1)       (((a_IdAa64Isar1El1) & ARMV8_ID_AA64ISAR1_EL1_FCMA) >> 16)
+/** No FCMLA and FCADD instructions implemented. */
+# define ARMV8_ID_AA64ISAR1_EL1_FCMA_NOT_IMPL                   0
+/** FCMLA and FCADD instructions implemented (FEAT_FCMA). */
+# define ARMV8_ID_AA64ISAR1_EL1_FCMA_SUPPORTED                  1
+/** Bit 20 - 23 - Indicates support for weaker release consistency, RCpc, based model. */
+#define ARMV8_ID_AA64ISAR1_EL1_LRCPC                            (RT_BIT_64(20) | RT_BIT_64(21) | RT_BIT_64(22) | RT_BIT_64(23))
+#define ARMV8_ID_AA64ISAR1_EL1_LRCPC_GET(a_IdAa64Isar1El1)      (((a_IdAa64Isar1El1) & ARMV8_ID_AA64ISAR1_EL1_LRCPC) >> 20)
+/** No RCpc instructions implemented. */
+# define ARMV8_ID_AA64ISAR1_EL1_LRCPC_NOT_IMPL                  0
+/** The no offset LDAPR, LDAPRB and LDAPRH instructions are implemented (FEAT_LRCPC). */
+# define ARMV8_ID_AA64ISAR1_EL1_LRCPC_SUPPORTED                 1
+/** The no ffset LDAPR, LDAPRB, LDAPRH, LDAPR and STLR instructions are implemented (FEAT_LRCPC2). */
+# define ARMV8_ID_AA64ISAR1_EL1_LRCPC_SUPPORTED_2               2
+/** Bit 24 - 27 - Indicates whether the QARMA5 algorithm is implemented in the PE for generic code authentication in AArch64 state. */
+#define ARMV8_ID_AA64ISAR1_EL1_GPA                              (RT_BIT_64(24) | RT_BIT_64(25) | RT_BIT_64(26) | RT_BIT_64(27))
+#define ARMV8_ID_AA64ISAR1_EL1_GPA_GET(a_IdAa64Isar1El1)        (((a_IdAa64Isar1El1) & ARMV8_ID_AA64ISAR1_EL1_GPA) >> 24)
+/** Generic Authentication using the QARMA5 algorithm is not implemented. */
+# define ARMV8_ID_AA64ISAR1_EL1_GPA_NOT_IMPL                    0
+/** Generic Authentication using the QARMA5 algorithm is implemented (FEAT_PACQARMA5). */
+# define ARMV8_ID_AA64ISAR1_EL1_GPA_SUPPORTED                   1
+/** Bit 28 - 31 - Indicates whether an implementation defined algorithm is implemented in the PE for generic code authentication in AArch64 state. */
+#define ARMV8_ID_AA64ISAR1_EL1_GPI                              (RT_BIT_64(28) | RT_BIT_64(29) | RT_BIT_64(30) | RT_BIT_64(31))
+#define ARMV8_ID_AA64ISAR1_EL1_GPI_GET(a_IdAa64Isar1El1)        (((a_IdAa64Isar1El1) & ARMV8_ID_AA64ISAR1_EL1_GPI) >> 28)
+/** Generic Authentication using an implementation defined algorithm is not implemented. */
+# define ARMV8_ID_AA64ISAR1_EL1_GPI_NOT_IMPL                    0
+/** Generic Authentication using an implementation defined algorithm is implemented (FEAT_PACIMP). */
+# define ARMV8_ID_AA64ISAR1_EL1_GPI_SUPPORTED                   1
+/** Bit 32 - 35 - Indicates support for SHA3 instructions in AArch64 state. */
+#define ARMV8_ID_AA64ISAR1_EL1_FRINTTS                          (RT_BIT_64(32) | RT_BIT_64(33) | RT_BIT_64(34) | RT_BIT_64(35))
+#define ARMV8_ID_AA64ISAR1_EL1_FRINTTS_GET(a_IdAa64Isar1El1)    (((a_IdAa64Isar1El1) & ARMV8_ID_AA64ISAR1_EL1_FRINTTS) >> 32)
+/** FRINT32Z, FRINT32X, FRINT64Z and FRINT64X instructions are not implemented. */
+# define ARMV8_ID_AA64ISAR1_EL1_FRINTTS_NOT_IMPL                0
+/** FRINT32Z, FRINT32X, FRINT64Z and FRINT64X instructions are implemented (FEAT_FRINTTS). */
+# define ARMV8_ID_AA64ISAR1_EL1_FRINTTS_SUPPORTED               1
+/** Bit 36 - 39 - Indicates support for SB instructions in AArch64 state. */
+#define ARMV8_ID_AA64ISAR1_EL1_SB                               (RT_BIT_64(36) | RT_BIT_64(37) | RT_BIT_64(38) | RT_BIT_64(39))
+#define ARMV8_ID_AA64ISAR1_EL1_SB_GET(a_IdAa64Isar1El1)         (((a_IdAa64Isar1El1) & ARMV8_ID_AA64ISAR1_EL1_SB) >> 36)
+/** No SB instructions implemented. */
+# define ARMV8_ID_AA64ISAR1_EL1_SB_NOT_IMPL                     0
+/** SB instructions implemented (FEAT_SB). */
+# define ARMV8_ID_AA64ISAR1_EL1_SB_SUPPORTED                    1
+/** Bit 40 - 43 - Indicates support for prediction invalidation instructions in AArch64 state. */
+#define ARMV8_ID_AA64ISAR1_EL1_SPECRES                          (RT_BIT_64(40) | RT_BIT_64(41) | RT_BIT_64(42) | RT_BIT_64(43))
+#define ARMV8_ID_AA64ISAR1_EL1_SPECRES_GET(a_IdAa64Isar1El1)    (((a_IdAa64Isar1El1) & ARMV8_ID_AA64ISAR1_EL1_SPECRES) >> 40)
+/** Prediction invalidation instructions are not implemented. */
+# define ARMV8_ID_AA64ISAR1_EL1_SPECRES_NOT_IMPL                0
+/** Prediction invalidation instructions are implemented (FEAT_SPECRES). */
+# define ARMV8_ID_AA64ISAR1_EL1_SPECRES_SUPPORTED               1
+/** Bit 44 - 47 - Indicates support for Advanced SIMD and Floating-point BFloat16 instructions in AArch64 state. */
+#define ARMV8_ID_AA64ISAR1_EL1_BF16                             (RT_BIT_64(44) | RT_BIT_64(45) | RT_BIT_64(46) | RT_BIT_64(47))
+#define ARMV8_ID_AA64ISAR1_EL1_BF16_GET(a_IdAa64Isar1El1)       (((a_IdAa64Isar1El1) & ARMV8_ID_AA64ISAR1_EL1_DP) >> 44)
+/** BFloat16 instructions are not implemented. */
+# define ARMV8_ID_AA64ISAR1_EL1_BF16_NOT_IMPL                   0
+/** BFCVT, BFCVTN, BFCVTN2, BFDOT, BFMLALB, BFMLALT and BFMMLA instructions are implemented (FEAT_BF16). */
+# define ARMV8_ID_AA64ISAR1_EL1_BF16_SUPPORTED_BF16             1
+/** BFCVT, BFCVTN, BFCVTN2, BFDOT, BFMLALB, BFMLALT and BFMMLA instructions are implemented and FPCR.EBF is supported (FEAT_EBF16). */
+# define ARMV8_ID_AA64ISAR1_EL1_BF16_SUPPORTED_EBF16            2
+/** Bit 48 - 51 - Indicates support for Data Gathering Hint instructions. */
+#define ARMV8_ID_AA64ISAR1_EL1_DGH                              (RT_BIT_64(48) | RT_BIT_64(49) | RT_BIT_64(50) | RT_BIT_64(51))
+#define ARMV8_ID_AA64ISAR1_EL1_DGH_GET(a_IdAa64Isar1El1)        (((a_IdAa64Isar1El1) & ARMV8_ID_AA64ISAR1_EL1_DGH) >> 48)
+/** Data Gathering Hint instructions are not implemented. */
+# define ARMV8_ID_AA64ISAR1_EL1_DGH_NOT_IMPL                    0
+/** Data Gathering Hint instructions are implemented (FEAT_DGH). */
+# define ARMV8_ID_AA64ISAR1_EL1_DGH_SUPPORTED                   1
+/** Bit 52 - 55 - Indicates support for Advanced SIMD and Floating-point Int8 matri multiplication instructions. */
+#define ARMV8_ID_AA64ISAR1_EL1_I8MM                             (RT_BIT_64(52) | RT_BIT_64(53) | RT_BIT_64(54) | RT_BIT_64(55))
+#define ARMV8_ID_AA64ISAR1_EL1_I8MM_GET(a_IdAa64Isar1El1)       (((a_IdAa64Isar1El1) & ARMV8_ID_AA64ISAR1_EL1_I8MM) >> 52)
+/** No Int8 matrix multiplication instructions implemented. */
+# define ARMV8_ID_AA64ISAR1_EL1_I8MM_NOT_IMPL                   0
+/** SMMLA, SUDOT, UMMLA, USMMLA and USDOT instrutions are implemented (FEAT_I8MM). */
+# define ARMV8_ID_AA64ISAR1_EL1_I8MM_SUPPORTED                  1
+/** Bit 56 - 59 - Indicates support for the XS attribute, the TLBI and DSB insturctions with the nXS qualifier in AArch64 state. */
+#define ARMV8_ID_AA64ISAR1_EL1_XS                               (RT_BIT_64(56) | RT_BIT_64(57) | RT_BIT_64(58) | RT_BIT_64(59))
+#define ARMV8_ID_AA64ISAR1_EL1_XS_GET(a_IdAa64Isar1El1)         (((a_IdAa64Isar1El1) & ARMV8_ID_AA64ISAR1_EL1_XS) >> 56)
+/** The XS attribute and the TLBI and DSB instructions with the nXS qualifier are not supported. */
+# define ARMV8_ID_AA64ISAR1_EL1_XS_NOT_IMPL                     0
+/** The XS attribute and the TLBI and DSB instructions with the nXS qualifier are supported (FEAT_XS). */
+# define ARMV8_ID_AA64ISAR1_EL1_XS_SUPPORTED                    1
+/** Bit 60 - 63 - Indicates support LD64B and ST64B* instructons and the ACCDATA_EL1 register. */
+#define ARMV8_ID_AA64ISAR1_EL1_LS64                             (RT_BIT_64(60) | RT_BIT_64(61) | RT_BIT_64(62) | RT_BIT_64(63))
+#define ARMV8_ID_AA64ISAR1_EL1_LS64_GET(a_IdAa64Isar1El1)       (((a_IdAa64Isar1El1) & ARMV8_ID_AA64ISAR1_EL1_LS64) >> 60)
+/** The LD64B, ST64B, ST64BV and ST64BV0 instructions, the ACCDATA_EL1 register and associated traps are not supported. */
+# define ARMV8_ID_AA64ISAR1_EL1_LS64_NOT_IMPL                   0
+/** The LD64B and ST64B instructions are supported (FEAT_LS64). */
+# define ARMV8_ID_AA64ISAR1_EL1_LS64_SUPPORTED                  1
+/** The LD64B, ST64B, ST64BV and associated traps are not supported (FEAT_LS64_V). */
+# define ARMV8_ID_AA64ISAR1_EL1_LS64_SUPPORTED_V                2
+/** The LD64B, ST64B, ST64BV and ST64BV0 instructions, the ACCDATA_EL1 register and associated traps are supported (FEAT_LS64_ACCDATA). */
+# define ARMV8_ID_AA64ISAR1_EL1_LS64_SUPPORTED_ACCDATA          3
+/** @} */
+
+
+/** @name ID_AA64ISAR2_EL1 - AArch64 Instruction Set Attribute Register 0.
+ * @{ */
+/** Bit 0 - 3 - Indicates support for WFET and WFIT instructions in AArch64 state. */
+#define ARMV8_ID_AA64ISAR2_EL1_WFXT                             (RT_BIT_64(0) | RT_BIT_64(1) | RT_BIT_64(2) | RT_BIT_64(3))
+#define ARMV8_ID_AA64ISAR2_EL1_WFXT_GET(a_IdAa64Isar2El1)       ((a_IdAa64Isar2El1) & ARMV8_ID_AA64ISAR2_EL1_WFXT)
+/** WFET and WFIT are not supported. */
+# define ARMV8_ID_AA64ISAR2_EL1_WFXT_NOT_IMPL                   0
+/** WFET and WFIT are supported (FEAT_WFxT). */
+# define ARMV8_ID_AA64ISAR2_EL1_WFXT_SUPPORTED                  2
+/** Bit 4 - 7 - Indicates whether QARMA5 algorithm is implemented in the PE for address authentication. */
+#define ARMV8_ID_AA64ISAR2_EL1_RPRES                            (RT_BIT_64(4) | RT_BIT_64(5) | RT_BIT_64(6) | RT_BIT_64(7))
+#define ARMV8_ID_AA64ISAR2_EL1_RPRES_GET(a_IdAa64Isar2El1)      (((a_IdAa64Isar2El1) & ARMV8_ID_AA64ISAR2_EL1_RPRES) >> 4)
+/** Reciprocal and reciprocal square root estimates give 8 bits of mantissa when FPCR.AH is 1. */
+# define ARMV8_ID_AA64ISAR2_EL1_RPRES_NOT_IMPL                  0
+/** Reciprocal and reciprocal square root estimates give 12 bits of mantissa when FPCR.AH is 1 (FEAT_RPRES). */
+# define ARMV8_ID_AA64ISAR2_EL1_RPRES_SUPPORTED                 1
+/** Bit 8 - 11 - Indicates whether the QARMA3 algorithm is implemented in the PE for generic code authentication in AArch64 state. */
+#define ARMV8_ID_AA64ISAR2_EL1_GPA3                             (RT_BIT_64(8) | RT_BIT_64(9) | RT_BIT_64(10) | RT_BIT_64(11))
+#define ARMV8_ID_AA64ISAR2_EL1_GPA3_GET(a_IdAa64Isar2El1)       (((a_IdAa64Isar2El1) & ARMV8_ID_AA64ISAR2_EL1_API) >> 8)
+/** Generic Authentication using the QARMA3 algorithm is not implemented. */
+# define ARMV8_ID_AA64ISAR2_EL1_GPA3_NOT_IMPL                   0
+/** Generic Authentication using the QARMA3 algorithm is implemented (FEAT_PACQARMA3). */
+# define ARMV8_ID_AA64ISAR2_EL1_GPA3_SUPPORTED                  1
+/** Bit 12 - 15 - Indicates whether QARMA3 algorithm is implemented in the PE for address authentication. */
+#define ARMV8_ID_AA64ISAR2_EL1_APA3                             (RT_BIT_64(12) | RT_BIT_64(13) | RT_BIT_64(14) | RT_BIT_64(15))
+#define ARMV8_ID_AA64ISAR2_EL1_APA3_GET(a_IdAa64Isar2El1)       (((a_IdAa64Isar2El1) & ARMV8_ID_AA64ISAR2_EL1_APA3) >> 12)
+/** Address Authentication using the QARMA3 algorithm is not implemented. */
+# define ARMV8_ID_AA64ISAR2_EL1_APA3_NOT_IMPL                   0
+/** Address Authentication using the QARMA5 algorithm is implemented (FEAT_PAuth, FEAT_PACQARMA3). */
+# define ARMV8_ID_AA64ISAR2_EL1_APA3_SUPPORTED_PAUTH            1
+/** Address Authentication using the QARMA5 algorithm is implemented and enhanced PAC is supported (FEAT_EPAC, FEAT_PACQARMA3). */
+# define ARMV8_ID_AA64ISAR2_EL1_APA3_SUPPORTED_EPAC             2
+/** Address Authentication using the QARMA5 algorithm is implemented and enhanced PAC 2 is supported (FEAT_PAuth2, FEAT_PACQARMA3). */
+# define ARMV8_ID_AA64ISAR2_EL1_APA3_SUPPORTED_PAUTH2           3
+/** Address Authentication using the QARMA5 algorithm is implemented and enhanced PAC 2 and FPAC are supported (FEAT_FPAC, FEAT_PACQARMA3). */
+# define ARMV8_ID_AA64ISAR2_EL1_APA3_SUPPORTED_FPAC             4
+/** Address Authentication using the QARMA5 algorithm is implemented and enhanced PAC 2 and combined FPAC are supported (FEAT_FPACCOMBINE, FEAT_PACQARMA3). */
+# define ARMV8_ID_AA64ISAR2_EL1_APA3_SUPPORTED_FPACCOMBINE      5
+/** Bit 16 - 19 - Indicates support for Memory Copy and Memory Set instructions in AArch64 state. */
+#define ARMV8_ID_AA64ISAR2_EL1_MOPS                             (RT_BIT_64(16) | RT_BIT_64(17) | RT_BIT_64(18) | RT_BIT_64(19))
+#define ARMV8_ID_AA64ISAR2_EL1_MOPS_GET(a_IdAa64Isar2El1)       (((a_IdAa64Isar2El1) & ARMV8_ID_AA64ISAR2_EL1_MOPS) >> 16)
+/** No Memory Copy and Memory Set instructions implemented. */
+# define ARMV8_ID_AA64ISAR2_EL1_MOPS_NOT_IMPL                   0
+/** Memory Copy and Memory Set instructions implemented (FEAT_MOPS). */
+# define ARMV8_ID_AA64ISAR2_EL1_MOPS_SUPPORTED                  1
+/** Bit 20 - 23 - Indicates support for weaker release consistency, RCpc, based model. */
+#define ARMV8_ID_AA64ISAR2_EL1_BC                               (RT_BIT_64(20) | RT_BIT_64(21) | RT_BIT_64(22) | RT_BIT_64(23))
+#define ARMV8_ID_AA64ISAR2_EL1_BC_GET(a_IdAa64Isar2El1)         (((a_IdAa64Isar2El1) & ARMV8_ID_AA64ISAR2_EL1_BC) >> 20)
+/** BC instruction is not implemented. */
+# define ARMV8_ID_AA64ISAR2_EL1_BC_NOT_IMPL                     0
+/** BC instruction is implemented (FEAT_HBC). */
+# define ARMV8_ID_AA64ISAR2_EL1_BC_SUPPORTED                    1
+/** Bit 24 - 27 - Indicates whether the QARMA5 algorithm is implemented in the PE for generic code authentication in AArch64 state. */
+#define ARMV8_ID_AA64ISAR2_EL1_PACFRAC                          (RT_BIT_64(24) | RT_BIT_64(25) | RT_BIT_64(26) | RT_BIT_64(27))
+#define ARMV8_ID_AA64ISAR2_EL1_PACFRAC_GET(a_IdAa64Isar2El1)    (((a_IdAa64Isar2El1) & ARMV8_ID_AA64ISAR2_EL1_PACFRAC) >> 24)
+/** ConstPACField() returns FALSE. */
+# define ARMV8_ID_AA64ISAR2_EL1_PACFRAC_FALSE                   0
+/** ConstPACField() returns TRUE (FEAT_CONSTPACFIELD). */
+# define ARMV8_ID_AA64ISAR2_EL1_PACFRAC_TRUE                    1
+/* Bit 28 - 63 - Reserved. */
+/** @} */
+
+
+/** @name ID_AA64PFR0_EL1 - AArch64 Processor Feature Register 0.
+ * @{ */
+/** Bit 0 - 3 - EL0 Exception level handling. */
+#define ARMV8_ID_AA64PFR0_EL1_EL0                               (RT_BIT_64(0) | RT_BIT_64(1) | RT_BIT_64(2) | RT_BIT_64(3))
+#define ARMV8_ID_AA64PFR0_EL1_EL0_GET(a_IdAa64Pfr0El1)          ((a_IdAa64Pfr0El1) & ARMV8_ID_AA64PFR0_EL1_EL0)
+/** EL0 can be executed in AArch64 state only. */
+# define ARMV8_ID_AA64PFR0_EL1_EL0_AARCH64_ONLY                 1
+/** EL0 can be executed in AArch64 and AArch32 state. */
+# define ARMV8_ID_AA64PFR0_EL1_EL0_AARCH64_AARCH32              2
+/** Bit 4 - 7 - EL1 Exception level handling. */
+#define ARMV8_ID_AA64PFR0_EL1_EL1                               (RT_BIT_64(4) | RT_BIT_64(5) | RT_BIT_64(6) | RT_BIT_64(7))
+#define ARMV8_ID_AA64PFR0_EL1_EL1_GET(a_IdAa64Pfr0El1)          (((a_IdAa64Pfr0El1) & ARMV8_ID_AA64PFR0_EL1_EL1) >> 4)
+/** EL1 can be executed in AArch64 state only. */
+# define ARMV8_ID_AA64PFR0_EL1_EL1_AARCH64_ONLY                 1
+/** EL1 can be executed in AArch64 and AArch32 state. */
+# define ARMV8_ID_AA64PFR0_EL1_EL1_AARCH64_AARCH32              2
+/** Bit 8 - 11 - EL2 Exception level handling. */
+#define ARMV8_ID_AA64PFR0_EL1_EL2                               (RT_BIT_64(8) | RT_BIT_64(9) | RT_BIT_64(10) | RT_BIT_64(11))
+#define ARMV8_ID_AA64PFR0_EL1_EL2_GET(a_IdAa64Pfr0El1)          (((a_IdAa64Pfr0El1) & ARMV8_ID_AA64PFR0_EL1_EL2) >> 8)
+/** EL2 is not implemented. */
+# define ARMV8_ID_AA64PFR0_EL1_EL2_NOT_IMPL                     0
+/** EL2 can be executed in AArch64 state only. */
+# define ARMV8_ID_AA64PFR0_EL1_EL2_AARCH64_ONLY                 1
+/** EL2 can be executed in AArch64 and AArch32 state. */
+# define ARMV8_ID_AA64PFR0_EL1_EL2_AARCH64_AARCH32              2
+/** Bit 12 - 15 - EL3 Exception level handling. */
+#define ARMV8_ID_AA64PFR0_EL1_EL3                               (RT_BIT_64(12) | RT_BIT_64(13) | RT_BIT_64(14) | RT_BIT_64(15))
+#define ARMV8_ID_AA64PFR0_EL1_EL3_GET(a_IdAa64Pfr0El1)          (((a_IdAa64Pfr0El1) & ARMV8_ID_AA64PFR0_EL1_EL3) >> 12)
+/** EL3 is not implemented. */
+# define ARMV8_ID_AA64PFR0_EL1_EL3_NOT_IMPL                     0
+/** EL3 can be executed in AArch64 state only. */
+# define ARMV8_ID_AA64PFR0_EL1_EL3_AARCH64_ONLY                 1
+/** EL3 can be executed in AArch64 and AArch32 state. */
+# define ARMV8_ID_AA64PFR0_EL1_EL3_AARCH64_AARCH32              2
+/** Bit 16 - 19 - Floating-point support. */
+#define ARMV8_ID_AA64PFR0_EL1_FP                                (RT_BIT_64(16) | RT_BIT_64(17) | RT_BIT_64(18) | RT_BIT_64(19))
+#define ARMV8_ID_AA64PFR0_EL1_FP_GET(a_IdAa64Pfr0El1)           (((a_IdAa64Pfr0El1) & ARMV8_ID_AA64PFR0_EL1_EL3) >> 16)
+/** Floating-point is implemented and support single and double precision. */
+# define ARMV8_ID_AA64PFR0_EL1_FP_IMPL_SP_DP                    0
+/** Floating-point is implemented and support single, double and half precision. */
+# define ARMV8_ID_AA64PFR0_EL1_FP_IMPL_SP_DP_HP                 1
+/** Floating-point is not implemented. */
+# define ARMV8_ID_AA64PFR0_EL1_FP_NOT_IMPL                      0xf
+/** Bit 20 - 23 - Advanced SIMD support. */
+#define ARMV8_ID_AA64PFR0_EL1_ADVSIMD                           (RT_BIT_64(20) | RT_BIT_64(21) | RT_BIT_64(22) | RT_BIT_64(23))
+#define ARMV8_ID_AA64PFR0_EL1_ADVSIMD_GET(a_IdAa64Pfr0El1)      (((a_IdAa64Pfr0El1) & ARMV8_ID_AA64PFR0_EL1_ADVSIMD) >> 20)
+/** Advanced SIMD is implemented and support single and double precision. */
+# define ARMV8_ID_AA64PFR0_EL1_ADVSIMD_IMPL_SP_DP               0
+/** Advanced SIMD is implemented and support single, double and half precision. */
+# define ARMV8_ID_AA64PFR0_EL1_ADVSIMD_IMPL_SP_DP_HP            1
+/** Advanced SIMD is not implemented. */
+# define ARMV8_ID_AA64PFR0_EL1_ADVSIMD_NOT_IMPL                 0xf
+/** Bit 24 - 27 - System register GIC CPU interface support. */
+#define ARMV8_ID_AA64PFR0_EL1_GIC                               (RT_BIT_64(24) | RT_BIT_64(25) | RT_BIT_64(26) | RT_BIT_64(27))
+#define ARMV8_ID_AA64PFR0_EL1_GIC_GET(a_IdAa64Pfr0El1)          (((a_IdAa64Pfr0El1) & ARMV8_ID_AA64PFR0_EL1_GIC) >> 24)
+/** GIC CPU interface system registers are not implemented. */
+# define ARMV8_ID_AA64PFR0_EL1_GIC_NOT_IMPL                     0
+/** System register interface to versions 3.0 and 4.0 of the GIC CPU interface is supported. */
+# define ARMV8_ID_AA64PFR0_EL1_GIC_V3_V4                        1
+/** System register interface to version 4.1 of the GIC CPU interface is supported. */
+# define ARMV8_ID_AA64PFR0_EL1_GIC_V4_1                         3
+/** Bit 28 - 31 - RAS Extension version. */
+#define ARMV8_ID_AA64PFR0_EL1_RAS                               (RT_BIT_64(28) | RT_BIT_64(29) | RT_BIT_64(30) | RT_BIT_64(31))
+#define ARMV8_ID_AA64PFR0_EL1_RAS_GET(a_IdAa64Pfr0El1)          (((a_IdAa64Pfr0El1) & ARMV8_ID_AA64PFR0_EL1_RAS) >> 28)
+/** No RAS extension. */
+# define ARMV8_ID_AA64PFR0_EL1_RAS_NOT_IMPL                     0
+/** RAS Extension implemented. */
+# define ARMV8_ID_AA64PFR0_EL1_RAS_SUPPORTED                    1
+/** FEAT_RASv1p1 implemented. */
+# define ARMV8_ID_AA64PFR0_EL1_RAS_V1P1                         2
+/** Bit 32 - 35 - Scalable Vector Extension (SVE) support. */
+#define ARMV8_ID_AA64PFR0_EL1_SVE                               (RT_BIT_64(32) | RT_BIT_64(33) | RT_BIT_64(34) | RT_BIT_64(35))
+#define ARMV8_ID_AA64PFR0_EL1_SVE_GET(a_IdAa64Pfr0El1)          (((a_IdAa64Pfr0El1) & ARMV8_ID_AA64PFR0_EL1_SVE) >> 32)
+/** SVE is not supported. */
+# define ARMV8_ID_AA64PFR0_EL1_SVE_NOT_IMPL                     0
+/** SVE is supported. */
+# define ARMV8_ID_AA64PFR0_EL1_SVE_SUPPORTED                    1
+/** Bit 36 - 39 - Secure EL2 support. */
+#define ARMV8_ID_AA64PFR0_EL1_SEL2                              (RT_BIT_64(36) | RT_BIT_64(37) | RT_BIT_64(38) | RT_BIT_64(39))
+#define ARMV8_ID_AA64PFR0_EL1_SEL2_GET(a_IdAa64Pfr0El1)         (((a_IdAa64Pfr0El1) & ARMV8_ID_AA64PFR0_EL1_SEL2) >> 36)
+/** Secure EL2 is not supported. */
+# define ARMV8_ID_AA64PFR0_EL1_SEL2_NOT_IMPL                    0
+/** Secure EL2 is implemented. */
+# define ARMV8_ID_AA64PFR0_EL1_SEL2_SUPPORTED                   1
+/** Bit 40 - 43 - MPAM support. */
+#define ARMV8_ID_AA64PFR0_EL1_MPAM                              (RT_BIT_64(40) | RT_BIT_64(41) | RT_BIT_64(42) | RT_BIT_64(43))
+#define ARMV8_ID_AA64PFR0_EL1_MPAM_GET(a_IdAa64Pfr0El1)         (((a_IdAa64Pfr0El1) & ARMV8_ID_AA64PFR0_EL1_MPAM) >> 40)
+/** MPAM extension major version number is 0. */
+# define ARMV8_ID_AA64PFR0_EL1_MPAM_MAJOR_V0                    0
+/** MPAM extension major version number is 1. */
+# define ARMV8_ID_AA64PFR0_EL1_MPAM_MAJOR_V1                    1
+/** Bit 44 - 47 - Activity Monitor Extension support. */
+#define ARMV8_ID_AA64PFR0_EL1_AMU                               (RT_BIT_64(44) | RT_BIT_64(45) | RT_BIT_64(46) | RT_BIT_64(47))
+#define ARMV8_ID_AA64PFR0_EL1_AMU_GET(a_IdAa64Pfr0El1)          (((a_IdAa64Pfr0El1) & ARMV8_ID_AA64PFR0_EL1_AMU) >> 44)
+/** Activity Monitor extension is not implemented. */
+# define ARMV8_ID_AA64PFR0_EL1_AMU_NOT_IMPL                     0
+/** Activity Monitor extension is implemented as of FEAT_AMUv1. */
+# define ARMV8_ID_AA64PFR0_EL1_AMU_V1                           1
+/** Activity Monitor extension is implemented as of FEAT_AMUv1p1 including virtualization support. */
+# define ARMV8_ID_AA64PFR0_EL1_AMU_V1P1                         2
+/** Bit 48 - 51 - Data Independent Timing support. */
+#define ARMV8_ID_AA64PFR0_EL1_DIT                               (RT_BIT_64(48) | RT_BIT_64(49) | RT_BIT_64(50) | RT_BIT_64(51))
+#define ARMV8_ID_AA64PFR0_EL1_DIT_GET(a_IdAa64Pfr0El1)          (((a_IdAa64Pfr0El1) & ARMV8_ID_AA64PFR0_EL1_DIT) >> 48)
+/** AArch64 does not guarantee constant execution time of any instructions. */
+# define ARMV8_ID_AA64PFR0_EL1_DIT_NOT_IMPL                     0
+/** AArch64 provides the PSTATE.DIT mechanism to guarantee constant execution time of certain instructions (FEAT_DIT). */
+# define ARMV8_ID_AA64PFR0_EL1_DIT_SUPPORTED                    1
+/** Bit 52 - 55 - Realm Management Extension support. */
+#define ARMV8_ID_AA64PFR0_EL1_RME                               (RT_BIT_64(52) | RT_BIT_64(53) | RT_BIT_64(54) | RT_BIT_64(55))
+#define ARMV8_ID_AA64PFR0_EL1_RME_GET(a_IdAa64Pfr0El1)          (((a_IdAa64Pfr0El1) & ARMV8_ID_AA64PFR0_EL1_RME) >> 52)
+/** Realm Management Extension not implemented. */
+# define ARMV8_ID_AA64PFR0_EL1_RME_NOT_IMPL                     0
+/** RMEv1 is implemented (FEAT_RME). */
+# define ARMV8_ID_AA64PFR0_EL1_RME_SUPPORTED                    1
+/** Bit 56 - 59 - Speculative use out of context branch targets support. */
+#define ARMV8_ID_AA64PFR0_EL1_CSV2                              (RT_BIT_64(56) | RT_BIT_64(57) | RT_BIT_64(58) | RT_BIT_64(59))
+#define ARMV8_ID_AA64PFR0_EL1_CSV2_GET(a_IdAa64Pfr0El1)         (((a_IdAa64Pfr0El1) & ARMV8_ID_AA64PFR0_EL1_CSV2) >> 56)
+/** Implementation does not disclose whether FEAT_CSV2 is implemented. */
+# define ARMV8_ID_AA64PFR0_EL1_CSV2_NOT_EXPOSED                 0
+/** FEAT_CSV2 is implemented. */
+# define ARMV8_ID_AA64PFR0_EL1_CSV2_SUPPORTED                   1
+/** FEAT_CSV2_2 is implemented. */
+# define ARMV8_ID_AA64PFR0_EL1_CSV2_2_SUPPORTED                 2
+/** FEAT_CSV2_3 is implemented. */
+# define ARMV8_ID_AA64PFR0_EL1_CSV2_3_SUPPORTED                 3
+/** Bit 60 - 63 - Speculative use of faulting data support. */
+#define ARMV8_ID_AA64PFR0_EL1_CSV3                              (RT_BIT_64(60) | RT_BIT_64(61) | RT_BIT_64(62) | RT_BIT_64(63))
+#define ARMV8_ID_AA64PFR0_EL1_CSV3_GET(a_IdAa64Pfr0El1)         (((a_IdAa64Pfr0El1) & ARMV8_ID_AA64PFR0_EL1_CSV3) >> 60)
+/** Implementation does not disclose whether data loaded under speculation with a permission or domain fault can be used. */
+# define ARMV8_ID_AA64PFR0_EL1_CSV3_NOT_EXPOSED                 0
+/** FEAT_CSV3 is supported . */
+# define ARMV8_ID_AA64PFR0_EL1_CSV3_SUPPORTED                   1
+/** @} */
+
+
+/** @name ID_AA64PFR1_EL1 - AArch64 Processor Feature Register 1.
+ * @{ */
+/** Bit 0 - 3 - Branch Target Identification support. */
+#define ARMV8_ID_AA64PFR1_EL1_BT                                (RT_BIT_64(0) | RT_BIT_64(1) | RT_BIT_64(2) | RT_BIT_64(3))
+#define ARMV8_ID_AA64PFR1_EL1_BT_GET(a_IdAa64Pfr1El1)           ((a_IdAa64Pfr1El1) & ARMV8_ID_AA64PFR1_EL1_BT)
+/** The Branch Target Identification mechanism is not implemented. */
+# define ARMV8_ID_AA64PFR1_EL1_BT_NOT_IMPL                      0
+/** The Branch Target Identifcation mechanism is implemented. */
+# define ARMV8_ID_AA64PFR1_EL1_BT_SUPPORTED                     1
+/** Bit 4 - 7 - Speculative Store Bypassing control support. */
+#define ARMV8_ID_AA64PFR1_EL1_SSBS                              (RT_BIT_64(4) | RT_BIT_64(5) | RT_BIT_64(6) | RT_BIT_64(7))
+#define ARMV8_ID_AA64PFR1_EL1_SSBS_GET(a_IdAa64Pfr1El1)         (((a_IdAa64Pfr1El1) & ARMV8_ID_AA64PFR1_EL1_SSBS) >> 4)
+/** AArch64 provides no mechanism to control the use of Speculative Store Bypassing. */
+# define ARMV8_ID_AA64PFR1_EL1_SSBS_NOT_IMPL                    0
+/** AArch64 provides the PSTATE.SSBS mechanism to mark regions that are Speculative Store Bypass Safe. */
+# define ARMV8_ID_AA64PFR1_EL1_SSBS_SUPPORTED                   1
+/** AArch64 provides the PSTATE.SSBS mechanism to mark regions that are Speculative Store Bypass Safe and adds MSR and MRS instructions
+ * to directly read and write the PSTATE.SSBS field. */
+# define ARMV8_ID_AA64PFR1_EL1_SSBS_SUPPORTED_MSR_MRS           2
+/** Bit 8 - 11 - Memory Tagging Extension support. */
+#define ARMV8_ID_AA64PFR1_EL1_MTE                               (RT_BIT_64(8) | RT_BIT_64(9) | RT_BIT_64(10) | RT_BIT_64(11))
+#define ARMV8_ID_AA64PFR1_EL1_MTE_GET(a_IdAa64Pfr1El1)          (((a_IdAa64Pfr1El1) & ARMV8_ID_AA64PFR1_EL1_MTE) >> 8)
+/** MTE is not implemented. */
+# define ARMV8_ID_AA64PFR1_EL1_MTE_NOT_IMPL                     0
+/** Instruction only Memory Tagging Extensions implemented. */
+# define ARMV8_ID_AA64PFR1_EL1_MTE_INSN_ONLY                    1
+/** Full Memory Tagging Extension implemented. */
+# define ARMV8_ID_AA64PFR1_EL1_MTE_FULL                         2
+/** Full Memory Tagging Extension with asymmetric Tag Check Fault handling implemented. */
+# define ARMV8_ID_AA64PFR1_EL1_MTE_FULL_ASYM_TAG_FAULT_CHK      3
+/** Bit 12 - 15 - RAS Extension fractional field. */
+#define ARMV8_ID_AA64PFR1_EL1_RASFRAC                           (RT_BIT_64(12) | RT_BIT_64(13) | RT_BIT_64(14) | RT_BIT_64(15))
+#define ARMV8_ID_AA64PFR1_EL1_RASFRAC_GET(a_IdAa64Pfr1El1)      (((a_IdAa64Pfr1El1) & ARMV8_ID_AA64PFR1_EL1_RASFRAC) >> 12)
+/** RAS Extension is implemented. */
+# define ARMV8_ID_AA64PFR1_EL1_RASFRAC_IMPL                     0
+/** FEAT_RASv1p1 is implemented. */
+# define ARMV8_ID_AA64PFR1_EL1_RASFRAC_RASV1P1                  1
+/** Bit 16 - 19 - MPAM minor version number. */
+#define ARMV8_ID_AA64PFR1_EL1_MPAMFRAC                          (RT_BIT_64(16) | RT_BIT_64(17) | RT_BIT_64(18) | RT_BIT_64(19))
+#define ARMV8_ID_AA64PFR1_EL1_MPAMFRAC_GET(a_IdAa64Pfr1El1)     (((a_IdAa64Pfr1El1) & ARMV8_ID_AA64PFR1_EL1_MPAMFRAC) >> 16)
+/** The minor version of number of the MPAM extension is 0. */
+# define ARMV8_ID_AA64PFR1_EL1_MPAMFRAC_0                       0
+/** The minor version of number of the MPAM extension is 1. */
+# define ARMV8_ID_AA64PFR1_EL1_MPAMFRAC_1                       1
+/* Bit 20 - 23 - Reserved. */
+/** Bit 24 - 27 - Scalable Matrix Extension support. */
+#define ARMV8_ID_AA64PFR1_EL1_SME                               (RT_BIT_64(24) | RT_BIT_64(25) | RT_BIT_64(26) | RT_BIT_64(27))
+#define ARMV8_ID_AA64PFR1_EL1_SME_GET(a_IdAa64Pfr1El1)          (((a_IdAa64Pfr1El1) & ARMV8_ID_AA64PFR1_EL1_SME) >> 24)
+/** Scalable Matrix Extensions are not implemented. */
+# define ARMV8_ID_AA64PFR1_EL1_SME_NOT_IMPL                     0
+/** Scalable Matrix Extensions are implemented (FEAT_SME). */
+# define ARMV8_ID_AA64PFR1_EL1_SME_SUPPORTED                    1
+/** Scalable Matrix Extensions are implemented + SME2 ZT0 register(FEAT_SME2). */
+# define ARMV8_ID_AA64PFR1_EL1_SME_SME2                         2
+/** Bit 28 - 31 - Random Number trap to EL3 support. */
+#define ARMV8_ID_AA64PFR1_EL1_RNDRTRAP                          (RT_BIT_64(28) | RT_BIT_64(29) | RT_BIT_64(30) | RT_BIT_64(31))
+#define ARMV8_ID_AA64PFR1_EL1_RNDRTRAP_GET(a_IdAa64Pfr1El1)     (((a_IdAa64Pfr1El1) & ARMV8_ID_AA64PFR1_EL1_RNDRTRAP) >> 28)
+/** Trapping of RNDR and RNDRRS to EL3 is not supported. */
+# define ARMV8_ID_AA64PFR1_EL1_RNDRTRAP_NOT_IMPL                0
+/** Trapping of RNDR and RDNRRS to EL3 is supported. */
+# define ARMV8_ID_AA64PFR1_EL1_RNDRTRAP_SUPPORTED               1
+/** Bit 32 - 35 - CSV2 fractional field. */
+#define ARMV8_ID_AA64PFR1_EL1_CSV2FRAC                          (RT_BIT_64(32) | RT_BIT_64(33) | RT_BIT_64(34) | RT_BIT_64(35))
+#define ARMV8_ID_AA64PFR1_EL1_CSV2FRAC_GET(a_IdAa64Pfr1El1)     (((a_IdAa64Pfr1El1) & ARMV8_ID_AA64PFR1_EL1_CSV2FRAC) >> 32)
+/** Either CSV2 not exposed or implementation does not expose whether FEAT_CSV2_1p1 is implemented. */
+# define ARMV8_ID_AA64PFR1_EL1_CSV2FRAC_NOT_EXPOSED             0
+/** FEAT_CSV2_1p1 is implemented. */
+# define ARMV8_ID_AA64PFR1_EL1_CSV2FRAC_1P1                     1
+/** FEAT_CSV2_1p2 is implemented. */
+# define ARMV8_ID_AA64PFR1_EL1_CSV2FRAC_1P2                     2
+/** Bit 36 - 39 - Non-maskable Interrupt support. */
+#define ARMV8_ID_AA64PFR1_EL1_NMI                               (RT_BIT_64(36) | RT_BIT_64(37) | RT_BIT_64(38) | RT_BIT_64(39))
+#define ARMV8_ID_AA64PFR1_EL1_NMI_GET(a_IdAa64Pfr1El1)          (((a_IdAa64Pfr1El1) & ARMV8_ID_AA64PFR1_EL1_NMI) >> 36)
+/** SCTLR_ELx.{SPINTMASK, NMI} and PSTATE.ALLINT and associated instructions are not supported. */
+# define ARMV8_ID_AA64PFR1_EL1_NMI_NOT_IMPL                     0
+/** SCTLR_ELx.{SPINTMASK, NMI} and PSTATE.ALLINT and associated instructions are supported (FEAT_NMI). */
+# define ARMV8_ID_AA64PFR1_EL1_NMI_SUPPORTED                    1
+/** @} */
+
+
+/** @name ID_AA64MMFR0_EL1 - AArch64 Memory Model Feature Register 0.
+ * @{ */
+/** Bit 0 - 3 - Physical Address range supported. */
+#define ARMV8_ID_AA64MMFR0_EL1_PARANGE                          (RT_BIT_64(0) | RT_BIT_64(1) | RT_BIT_64(2) | RT_BIT_64(3))
+#define ARMV8_ID_AA64MMFR0_EL1_PARANGE_GET(a_IdAa64Mmfr0El1)    ((a_IdAa64Mmfr0El1) & ARMV8_ID_AA64MMFR0_EL1_PARANGE)
+/** Physical Address range is 32 bits, 4GiB. */
+# define ARMV8_ID_AA64MMFR0_EL1_PARANGE_32BITS                  0
+/** Physical Address range is 36 bits, 64GiB. */
+# define ARMV8_ID_AA64MMFR0_EL1_PARANGE_36BITS                  1
+/** Physical Address range is 40 bits, 1TiB. */
+# define ARMV8_ID_AA64MMFR0_EL1_PARANGE_40BITS                  2
+/** Physical Address range is 42 bits, 4TiB. */
+# define ARMV8_ID_AA64MMFR0_EL1_PARANGE_42BITS                  3
+/** Physical Address range is 44 bits, 16TiB. */
+# define ARMV8_ID_AA64MMFR0_EL1_PARANGE_44BITS                  4
+/** Physical Address range is 48 bits, 256TiB. */
+# define ARMV8_ID_AA64MMFR0_EL1_PARANGE_48BITS                  5
+/** Physical Address range is 52 bits, 4PiB. */
+# define ARMV8_ID_AA64MMFR0_EL1_PARANGE_52BITS                  6
+/** Bit 4 - 7 - Number of ASID bits. */
+#define ARMV8_ID_AA64MMFR0_EL1_ASIDBITS                         (RT_BIT_64(4) | RT_BIT_64(5) | RT_BIT_64(6) | RT_BIT_64(7))
+#define ARMV8_ID_AA64MMFR0_EL1_ASIDBITS_GET(a_IdAa64Mmfr0El1)   (((a_IdAa64Mmfr0El1) & ARMV8_ID_AA64MMFR0_EL1_ASIDBITS) >> 4)
+/** ASID bits is 8. */
+# define ARMV8_ID_AA64MMFR0_EL1_ASIDBITS_8                      0
+/** ASID bits is 16. */
+# define ARMV8_ID_AA64MMFR0_EL1_ASIDBITS_16                     2
+/** Bit 8 - 11 - Indicates support for mixed-endian configuration. */
+#define ARMV8_ID_AA64MMFR0_EL1_BIGEND                           (RT_BIT_64(8) | RT_BIT_64(9) | RT_BIT_64(10) | RT_BIT_64(11))
+#define ARMV8_ID_AA64MMFR0_EL1_BIGEND_GET(a_IdAa64Mmfr0El1)     (((a_IdAa64Mmfr0El1) & ARMV8_ID_AA64MMFR0_EL1_BIGEND) >> 8)
+/** No mixed-endian support. */
+# define ARMV8_ID_AA64MMFR0_EL1_BIGEND_NOT_IMPL                 0
+/** Mixed-endian supported. */
+# define ARMV8_ID_AA64MMFR0_EL1_BIGEND_SUPPORTED                1
+/** Bit 12 - 15 - Indicates support for a distinction between Secure and Non-secure Memory. */
+#define ARMV8_ID_AA64MMFR0_EL1_SNSMEM                           (RT_BIT_64(12) | RT_BIT_64(13) | RT_BIT_64(14) | RT_BIT_64(15))
+#define ARMV8_ID_AA64MMFR0_EL1_SNSMEM_GET(a_IdAa64Mmfr0El1)     (((a_IdAa64Mmfr0El1) & ARMV8_ID_AA64MMFR0_EL1_SNSMEM) >> 12)
+/** No distinction between Secure and Non-secure Memory supported. */
+# define ARMV8_ID_AA64MMFR0_EL1_SNSMEM_NOT_IMPL                 0
+/** Distinction between Secure and Non-secure Memory supported. */
+# define ARMV8_ID_AA64MMFR0_EL1_SNSMEM_SUPPORTED                1
+/** Bit 16 - 19 - Indicates support for mixed-endian at EL0 only. */
+#define ARMV8_ID_AA64MMFR0_EL1_BIGENDEL0                        (RT_BIT_64(16) | RT_BIT_64(17) | RT_BIT_64(18) | RT_BIT_64(19))
+#define ARMV8_ID_AA64MMFR0_EL1_BIGENDEL0_GET(a_IdAa64Mmfr0El1)  (((a_IdAa64Mmfr0El1) & ARMV8_ID_AA64MMFR0_EL1_BIGENDEL0) >> 16)
+/** No mixed-endian support at EL0. */
+# define ARMV8_ID_AA64MMFR0_EL1_BIGENDEL0_NOT_IMPL              0
+/** Mixed-endian support at EL0. */
+# define ARMV8_ID_AA64MMFR0_EL1_BIGENDEL0_SUPPORTED             1
+/** Bit 20 - 23 - Indicates support for 16KiB memory translation granule size. */
+#define ARMV8_ID_AA64MMFR0_EL1_TGRAN16                          (RT_BIT_64(20) | RT_BIT_64(21) | RT_BIT_64(22) | RT_BIT_64(23))
+#define ARMV8_ID_AA64MMFR0_EL1_TGRAN16_GET(a_IdAa64Mmfr0El1)    (((a_IdAa64Mmfr0El1) & ARMV8_ID_AA64MMFR0_EL1_TGRAN16) >> 20)
+/** 16KiB granule size not supported. */
+# define ARMV8_ID_AA64MMFR0_EL1_TGRAN16_NOT_IMPL                0
+/** 16KiB granule size is supported. */
+# define ARMV8_ID_AA64MMFR0_EL1_TGRAN16_SUPPORTED               1
+/** 16KiB granule size is supported and supports 52-bit input addresses and can describe 52-bit output addresses (FEAT_LPA2). */
+# define ARMV8_ID_AA64MMFR0_EL1_TGRAN16_SUPPORTED_52BIT         2
+/** Bit 24 - 27 - Indicates support for 64KiB memory translation granule size. */
+#define ARMV8_ID_AA64MMFR0_EL1_TGRAN64                          (RT_BIT_64(24) | RT_BIT_64(25) | RT_BIT_64(26) | RT_BIT_64(27))
+#define ARMV8_ID_AA64MMFR0_EL1_TGRAN64_GET(a_IdAa64Mmfr0El1)    (((a_IdAa64Mmfr0El1) & ARMV8_ID_AA64MMFR0_EL1_TGRAN64) >> 24)
+/** 64KiB granule supported. */
+# define ARMV8_ID_AA64MMFR0_EL1_TGRAN64_SUPPORTED               0
+/** 64KiB granule not supported. */
+# define ARMV8_ID_AA64MMFR0_EL1_TGRAN64_NOT_IMPL                0xf
+/** Bit 28 - 31 - Indicates support for 4KiB memory translation granule size. */
+#define ARMV8_ID_AA64MMFR0_EL1_TGRAN4                           (RT_BIT_64(28) | RT_BIT_64(29) | RT_BIT_64(30) | RT_BIT_64(31))
+#define ARMV8_ID_AA64MMFR0_EL1_TGRAN4_GET(a_IdAa64Mmfr0El1)     (((a_IdAa64Mmfr0El1) & ARMV8_ID_AA64MMFR0_EL1_TGRAN4) >> 28)
+/** 4KiB granule supported. */
+# define ARMV8_ID_AA64MMFR0_EL1_TGRAN4_SUPPORTED                0
+/** 4KiB granule size is supported and supports 52-bit input addresses and can describe 52-bit output addresses (FEAT_LPA2). */
+# define ARMV8_ID_AA64MMFR0_EL1_TGRAN4_SUPPORTED_52BIT          1
+/** 4KiB granule not supported. */
+# define ARMV8_ID_AA64MMFR0_EL1_TGRAN4_NOT_IMPL                 0xf
+/** Bit 32 - 35 - Indicates support for 16KiB granule size at stage 2. */
+#define ARMV8_ID_AA64MMFR0_EL1_TGRAN16_2                        (RT_BIT_64(32) | RT_BIT_64(33) | RT_BIT_64(34) | RT_BIT_64(35))
+#define ARMV8_ID_AA64MMFR0_EL1_TGRAN16_2_GET(a_IdAa64Mmfr0El1)  (((a_IdAa64Mmfr0El1) & ARMV8_ID_AA64MMFR0_EL1_TGRAN16_2) >> 32)
+/** Support for 16KiB granule at stage 2 is identified in the ID_AA64MMFR0_EL1.TGran16 field. */
+# define ARMV8_ID_AA64MMFR0_EL1_TGRAN16_2_SUPPORT_BY_TGRAN16    0
+/** 16KiB granule not supported at stage 2. */
+# define ARMV8_ID_AA64MMFR0_EL1_TGRAN16_2_NOT_IMPL              1
+/** 16KiB granule supported at stage 2. */
+# define ARMV8_ID_AA64MMFR0_EL1_TGRAN16_2_SUPPORTED             2
+/** 16KiB granule supported at stage 2 and supports 52-bit input addresses and can describe 52-bit output addresses (FEAT_LPA2). */
+# define ARMV8_ID_AA64MMFR0_EL1_TGRAN16_2_SUPPORTED_52BIT       3
+/** Bit 36 - 39 - Indicates support for 64KiB granule size at stage 2. */
+#define ARMV8_ID_AA64MMFR0_EL1_TGRAN64_2                        (RT_BIT_64(36) | RT_BIT_64(37) | RT_BIT_64(38) | RT_BIT_64(39))
+#define ARMV8_ID_AA64MMFR0_EL1_TGRAN64_2_GET(a_IdAa64Mmfr0El1)  (((a_IdAa64Mmfr0El1) & ARMV8_ID_AA64MMFR0_EL1_TGRAN64_2) >> 36)
+/** Support for 64KiB granule at stage 2 is identified in the ID_AA64MMFR0_EL1.TGran64 field. */
+# define ARMV8_ID_AA64MMFR0_EL1_TGRAN64_2_SUPPORT_BY_TGRAN64    0
+/** 64KiB granule not supported at stage 2. */
+# define ARMV8_ID_AA64MMFR0_EL1_TGRAN64_2_NOT_IMPL              1
+/** 64KiB granule supported at stage 2. */
+# define ARMV8_ID_AA64MMFR0_EL1_TGRAN64_2_SUPPORTED             2
+/** Bit 40 - 43 - Indicates HCRX_EL2 and its associated EL3 trap support. */
+#define ARMV8_ID_AA64MMFR0_EL1_TGRAN4_2                         (RT_BIT_64(40) | RT_BIT_64(41) | RT_BIT_64(42) | RT_BIT_64(43))
+#define ARMV8_ID_AA64MMFR0_EL1_TGRAN4_2_GET(a_IdAa64Mmfr0El1)   (((a_IdAa64Mmfr0El1) & ARMV8_ID_AA64MMFR0_EL1_TGRAN4_2) >> 40)
+/** Support for 4KiB granule at stage 2 is identified in the ID_AA64MMFR0_EL1.TGran4 field. */
+# define ARMV8_ID_AA64MMFR0_EL1_TGRAN4_2_SUPPORT_BY_TGRAN16     0
+/** 4KiB granule not supported at stage 2. */
+# define ARMV8_ID_AA64MMFR0_EL1_TGRAN4_2_NOT_IMPL               1
+/** 4KiB granule supported at stage 2. */
+# define ARMV8_ID_AA64MMFR0_EL1_TGRAN4_2_SUPPORTED              2
+/** 4KiB granule supported at stage 2 and supports 52-bit input addresses and can describe 52-bit output addresses (FEAT_LPA2). */
+# define ARMV8_ID_AA64MMFR0_EL1_TGRAN4_2_SUPPORTED_52BIT        3
+/** Bit 44 - 47 - Indicates support for disabling context synchronizing exception entry and exit. */
+#define ARMV8_ID_AA64MMFR0_EL1_EXS                              (RT_BIT_64(44) | RT_BIT_64(45) | RT_BIT_64(46) | RT_BIT_64(47))
+#define ARMV8_ID_AA64MMFR0_EL1_EXS_GET(a_IdAa64Mmfr0El1)        (((a_IdAa64Mmfr0El1) & ARMV8_ID_AA64MMFR0_EL1_EXS) >> 44)
+/** All exception entries and exits are context synchronization events. */
+# define ARMV8_ID_AA64MMFR0_EL1_EXS_NOT_IMPL                    0
+/** Non-context synchronizing exception entry and exit are supported (FEAT_ExS). */
+# define ARMV8_ID_AA64MMFR0_EL1_EXS_SUPPORTED                   1
+/* Bit 48 - 55 - Reserved. */
+/** Bit 56 - 59 - Indicates the presence of the Fine-Grained Trap controls. */
+#define ARMV8_ID_AA64MMFR0_EL1_FGT                              (RT_BIT_64(56) | RT_BIT_64(57) | RT_BIT_64(58) | RT_BIT_64(59))
+#define ARMV8_ID_AA64MMFR0_EL1_FGT_GET(a_IdAa64Mmfr0El1)        (((a_IdAa64Mmfr0El1) & ARMV8_ID_AA64MMFR0_EL1_FGT) >> 56)
+/** Fine-grained trap controls are not implemented. */
+# define ARMV8_ID_AA64MMFR0_EL1_FGT_NOT_IMPL                    0
+/** Fine-grained trap controls are implemented (FEAT_FGT). */
+# define ARMV8_ID_AA64MMFR0_EL1_FGT_SUPPORTED                   1
+/** Bit 60 - 63 - Indicates the presence of Enhanced Counter Virtualization. */
+#define ARMV8_ID_AA64MMFR0_EL1_ECV                              (RT_BIT_64(60) | RT_BIT_64(61) | RT_BIT_64(62) | RT_BIT_64(63))
+#define ARMV8_ID_AA64MMFR0_EL1_ECV_GET(a_IdAa64Mmfr0El1)        (((a_IdAa64Mmfr0El1) & ARMV8_ID_AA64MMFR0_EL1_ECV) >> 60)
+/** Enhanced Counter Virtualization is not implemented. */
+# define ARMV8_ID_AA64MMFR0_EL1_ECV_NOT_IMPL                    0
+/** Enhanced Counter Virtualization is implemented (FEAT_ECV). */
+# define ARMV8_ID_AA64MMFR0_EL1_ECV_SUPPORTED                   1
+/** Enhanced Counter Virtualization is implemented and includes support for CNTHCTL_EL2.ECV and CNTPOFF_EL2 (FEAT_ECV). */
+# define ARMV8_ID_AA64MMFR0_EL1_ECV_SUPPORTED_2                 2
+/** @} */
+
+
+/** @name ID_AA64MMFR1_EL1 - AArch64 Memory Model Feature Register 1.
+ * @{ */
+/** Bit 0 - 3 - Hardware updates to Access flag and Dirty state in translation tables. */
+#define ARMV8_ID_AA64MMFR1_EL1_HAFDBS                           (RT_BIT_64(0) | RT_BIT_64(1) | RT_BIT_64(2) | RT_BIT_64(3))
+#define ARMV8_ID_AA64MMFR1_EL1_HAFDBS_GET(a_IdAa64Mmfr1El1)     ((a_IdAa64Mmfr1El1) & ARMV8_ID_AA64MMFR1_EL1_HAFDBS)
+/** Hardware update of the Access flag and dirty state are not supported. */
+# define ARMV8_ID_AA64MMFR1_EL1_HAFDBS_NOT_IMPL                 0
+/** Support for hardware update of the Access flag for Block and Page descriptors. */
+# define ARMV8_ID_AA64MMFR1_EL1_HAFDBS_SUPPORTED                1
+/** Support for hardware update of the Access flag for Block and Page descriptors, hardware update of dirty state supported. */
+# define ARMV8_ID_AA64MMFR1_EL1_HAFDBS_DIRTY_SUPPORTED          2
+/** Bit 4 - 7 - EL1 Exception level handling. */
+#define ARMV8_ID_AA64MMFR1_EL1_VMIDBITS                         (RT_BIT_64(4) | RT_BIT_64(5) | RT_BIT_64(6) | RT_BIT_64(7))
+#define ARMV8_ID_AA64MMFR1_EL1_VMIDBITS_GET(a_IdAa64Mmfr1El1)   (((a_IdAa64Mmfr1El1) & ARMV8_ID_AA64MMFR1_EL1_VMIDBITS) >> 4)
+/** VMID bits is 8. */
+# define ARMV8_ID_AA64MMFR1_EL1_VMIDBITS_8                      0
+/** VMID bits is 16 (FEAT_VMID16). */
+# define ARMV8_ID_AA64MMFR1_EL1_VMIDBITS_16                     2
+/** Bit 8 - 11 - Virtualization Host Extensions support. */
+#define ARMV8_ID_AA64MMFR1_EL1_VHE                              (RT_BIT_64(8) | RT_BIT_64(9) | RT_BIT_64(10) | RT_BIT_64(11))
+#define ARMV8_ID_AA64MMFR1_EL1_VHE_GET(a_IdAa64Mmfr1El1)        (((a_IdAa64Mmfr1El1) & ARMV8_ID_AA64MMFR1_EL1_VHE) >> 8)
+/** Virtualization Host Extensions are not supported. */
+# define ARMV8_ID_AA64MMFR1_EL1_VHE_NOT_IMPL                    0
+/** Virtualization Host Extensions are supported. */
+# define ARMV8_ID_AA64MMFR1_EL1_VHE_SUPPORTED                   1
+/** Bit 12 - 15 - Hierarchical Permission Disables. */
+#define ARMV8_ID_AA64MMFR1_EL1_HPDS                             (RT_BIT_64(12) | RT_BIT_64(13) | RT_BIT_64(14) | RT_BIT_64(15))
+#define ARMV8_ID_AA64MMFR1_EL1_HPDS_GET(a_IdAa64Mmfr1El1)       (((a_IdAa64Mmfr1El1) & ARMV8_ID_AA64MMFR1_EL1_HPDS) >> 12)
+/** Disabling of hierarchical controls not supported. */
+# define ARMV8_ID_AA64MMFR1_EL1_HPDS_NOT_IMPL                   0
+/** Disabling of hierarchical controls supported (FEAT_HPDS). */
+# define ARMV8_ID_AA64MMFR1_EL1_HPDS_SUPPORTED                  1
+/** FEAT_HPDS + possible hardware allocation of bits[62:59] of the translation table descriptors from the final lookup level (FEAT_HPDS2). */
+# define ARMV8_ID_AA64MMFR1_EL1_HPDS_SUPPORTED_2                2
+/** Bit 16 - 19 - LORegions support. */
+#define ARMV8_ID_AA64MMFR1_EL1_LO                               (RT_BIT_64(16) | RT_BIT_64(17) | RT_BIT_64(18) | RT_BIT_64(19))
+#define ARMV8_ID_AA64MMFR1_EL1_LO_GET(a_IdAa64Mmfr1El1)         (((a_IdAa64Mmfr1El1) & ARMV8_ID_AA64MMFR1_EL1_LO) >> 16)
+/** LORegions not supported. */
+# define ARMV8_ID_AA64MMFR1_EL1_LO_NOT_IMPL                     0
+/** LORegions supported. */
+# define ARMV8_ID_AA64MMFR1_EL1_LO_SUPPORTED                    1
+/** Bit 20 - 23 - Privileged Access Never support. */
+#define ARMV8_ID_AA64MMFR1_EL1_PAN                              (RT_BIT_64(20) | RT_BIT_64(21) | RT_BIT_64(22) | RT_BIT_64(23))
+#define ARMV8_ID_AA64MMFR1_EL1_PAN_GET(a_IdAa64Mmfr1El1)        (((a_IdAa64Mmfr1El1) & ARMV8_ID_AA64MMFR1_EL1_PAN) >> 20)
+/** PAN not supported. */
+# define ARMV8_ID_AA64MMFR1_EL1_PAN_NOT_IMPL                    0
+/** PAN supported (FEAT_PAN). */
+# define ARMV8_ID_AA64MMFR1_EL1_PAN_SUPPORTED                   1
+/** PAN supported and AT S1E1RP and AT S1E1WP instructions supported (FEAT_PAN2). */
+# define ARMV8_ID_AA64MMFR1_EL1_PAN_SUPPORTED_2                 2
+/** PAN supported and AT S1E1RP and AT S1E1WP instructions and SCTRL_EL1.EPAN and SCTRL_EL2.EPAN supported (FEAT_PAN3). */
+# define ARMV8_ID_AA64MMFR1_EL1_PAN_SUPPORTED_3                 3
+/** Bit 24 - 27 - Describes whether the PE can generate SError interrupt exceptions. */
+#define ARMV8_ID_AA64MMFR1_EL1_SPECSEI                          (RT_BIT_64(24) | RT_BIT_64(25) | RT_BIT_64(26) | RT_BIT_64(27))
+#define ARMV8_ID_AA64MMFR1_EL1_SPECSEI_GET(a_IdAa64Mmfr1El1)    (((a_IdAa64Mmfr1El1) & ARMV8_ID_AA64MMFR1_EL1_SPECSEI) >> 24)
+/** The PE never generates an SError interrupt due to an External abort on a speculative read. */
+# define ARMV8_ID_AA64MMFR1_EL1_SPECSEI_NOT_IMPL                0
+/** The PE might generate an SError interrupt due to an External abort on a speculative read. */
+# define ARMV8_ID_AA64MMFR1_EL1_SPECSEI_SUPPORTED               1
+/** Bit 28 - 31 - Indicates support for execute-never control distinction by Exception level at stage 2. */
+#define ARMV8_ID_AA64MMFR1_EL1_XNX                              (RT_BIT_64(28) | RT_BIT_64(29) | RT_BIT_64(30) | RT_BIT_64(31))
+#define ARMV8_ID_AA64MMFR1_EL1_XNX_GET(a_IdAa64Mmfr1El1)        (((a_IdAa64Mmfr1El1) & ARMV8_ID_AA64MMFR1_EL1_XNX) >> 28)
+/** Distinction between EL0 and EL1 execute-never control at stage 2 not supported. */
+# define ARMV8_ID_AA64MMFR1_EL1_XNX_NOT_IMPL                    0
+/** Distinction between EL0 and EL1 execute-never control at stage 2 supported (FEAT_XNX). */
+# define ARMV8_ID_AA64MMFR1_EL1_XNX_SUPPORTED                   1
+/** Bit 32 - 35 - Indicates support for the configurable delayed trapping of WFE. */
+#define ARMV8_ID_AA64MMFR1_EL1_TWED                             (RT_BIT_64(32) | RT_BIT_64(33) | RT_BIT_64(34) | RT_BIT_64(35))
+#define ARMV8_ID_AA64MMFR1_EL1_TWED_GET(a_IdAa64Mmfr1El1)       (((a_IdAa64Mmfr1El1) & ARMV8_ID_AA64MMFR1_EL1_TWED) >> 32)
+/** Configurable delayed trapping of WFE is not supported. */
+# define ARMV8_ID_AA64MMFR1_EL1_TWED_NOT_IMPL                   0
+/** Configurable delayed trapping of WFE is supported (FEAT_TWED). */
+# define ARMV8_ID_AA64MMFR1_EL1_TWED_SUPPORTED                  1
+/** Bit 36 - 39 - Indicates support for Enhanced Translation Synchronization. */
+#define ARMV8_ID_AA64MMFR1_EL1_ETS                              (RT_BIT_64(36) | RT_BIT_64(37) | RT_BIT_64(38) | RT_BIT_64(39))
+#define ARMV8_ID_AA64MMFR1_EL1_ETS_GET(a_IdAa64Mmfr1El1)        (((a_IdAa64Mmfr1El1) & ARMV8_ID_AA64MMFR1_EL1_ETS) >> 36)
+/** Enhanced Translation Synchronization is not supported. */
+# define ARMV8_ID_AA64MMFR1_EL1_ETS_NOT_IMPL                    0
+/** Enhanced Translation Synchronization is implemented. */
+# define ARMV8_ID_AA64MMFR1_EL1_ETS_SUPPORTED                   1
+/** Bit 40 - 43 - Indicates HCRX_EL2 and its associated EL3 trap support. */
+#define ARMV8_ID_AA64MMFR1_EL1_HCX                              (RT_BIT_64(40) | RT_BIT_64(41) | RT_BIT_64(42) | RT_BIT_64(43))
+#define ARMV8_ID_AA64MMFR1_EL1_HCX_GET(a_IdAa64Mmfr1El1)        (((a_IdAa64Mmfr1El1) & ARMV8_ID_AA64MMFR1_EL1_MPAM) >> 40)
+/** HCRX_EL2 and its associated EL3 trap are not supported. */
+# define ARMV8_ID_AA64MMFR1_EL1_HCX_NOT_IMPL                    0
+/** HCRX_EL2 and its associated EL3 trap are supported (FEAT_HCX). */
+# define ARMV8_ID_AA64MMFR1_EL1_HCX_SUPPORTED                   1
+/** Bit 44 - 47 - Indicates support for FPCR.{AH,FIZ,NEP}. */
+#define ARMV8_ID_AA64MMFR1_EL1_AFP                              (RT_BIT_64(44) | RT_BIT_64(45) | RT_BIT_64(46) | RT_BIT_64(47))
+#define ARMV8_ID_AA64MMFR1_EL1_AFP_GET(a_IdAa64Mmfr1El1)        (((a_IdAa64Mmfr1El1) & ARMV8_ID_AA64MMFR1_EL1_AFP) >> 44)
+/** The FPCR.{AH,FIZ,NEP} fields are not supported. */
+# define ARMV8_ID_AA64MMFR1_EL1_AFP_NOT_IMPL                    0
+/** The FPCR.{AH,FIZ,NEP} fields are supported (FEAT_AFP). */
+# define ARMV8_ID_AA64MMFR1_EL1_AFP_SUPPORTED                   1
+/** Bit 48 - 51 - Indicates support for intermediate caching of translation table walks. */
+#define ARMV8_ID_AA64MMFR1_EL1_NTLBPA                           (RT_BIT_64(48) | RT_BIT_64(49) | RT_BIT_64(50) | RT_BIT_64(51))
+#define ARMV8_ID_AA64MMFR1_EL1_NTLBPA_GET(a_IdAa64Mmfr1El1)     (((a_IdAa64Mmfr1El1) & ARMV8_ID_AA64MMFR1_EL1_NTLBPA) >> 48)
+/** The intermediate caching of translation table walks might include non-coherent physical translation caches. */
+# define ARMV8_ID_AA64MMFR1_EL1_NTLBPA_INCLUDE_NON_COHERENT     0
+/** The intermediate caching of translation table walks does not include non-coherent physical translation caches (FEAT_nTLBPA). */
+# define ARMV8_ID_AA64MMFR1_EL1_NTLBPA_INCLUDE_COHERENT_ONLY    1
+/** Bit 52 - 55 - Indicates whether SCTLR_EL1.TIDCP and SCTLR_EL2.TIDCP are implemented in AArch64 state. */
+#define ARMV8_ID_AA64MMFR1_EL1_TIDCP1                           (RT_BIT_64(52) | RT_BIT_64(53) | RT_BIT_64(54) | RT_BIT_64(55))
+#define ARMV8_ID_AA64MMFR1_EL1_TIDCP1_GET(a_IdAa64Mmfr1El1)     (((a_IdAa64Mmfr1El1) & ARMV8_ID_AA64MMFR1_EL1_TIDCP1_GET) >> 52)
+/** SCTLR_EL1.TIDCP and SCTLR_EL2.TIDCP bits are not implemented. */
+# define ARMV8_ID_AA64MMFR1_EL1_TIDCP1_NOT_IMPL                 0
+/** SCTLR_EL1.TIDCP and SCTLR_EL2.TIDCP bits are implemented (FEAT_TIDCP1). */
+# define ARMV8_ID_AA64MMFR1_EL1_TIDCP1_SUPPORTED                1
+/** Bit 56 - 59 - Indicates support for cache maintenance instruction permission. */
+#define ARMV8_ID_AA64MMFR1_EL1_CMOW                             (RT_BIT_64(56) | RT_BIT_64(57) | RT_BIT_64(58) | RT_BIT_64(59))
+#define ARMV8_ID_AA64MMFR1_EL1_CMOW_GET(a_IdAa64Mmfr1El1)       (((a_IdAa64Mmfr1El1) & ARMV8_ID_AA64MMFR1_EL1_CMOW) >> 56)
+/** SCTLR_EL1.CMOW, SCTLR_EL2.CMOW and HCRX_EL2.CMOW bits are not implemented. */
+# define ARMV8_ID_AA64MMFR1_EL1_CMOW_NOT_IMPL                   0
+/** SCTLR_EL1.CMOW, SCTLR_EL2.CMOW and HCRX_EL2.CMOW bits are implemented (FEAT_CMOW). */
+# define ARMV8_ID_AA64MMFR1_EL1_CMOW_SUPPORTED                  1
+/* Bit 60 - 63 - Reserved. */
+/** @} */
+
+
 /** @} */
 
 #endif /* !IPRT_INCLUDED_armv8_h */
