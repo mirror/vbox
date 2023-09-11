@@ -29919,7 +29919,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
              uuid="147816c8-17e0-11eb-81fa-87cea6263e1a"
              wsmap="managed"
              rest="managed"
-             reservedMethods="15" reservedAttributes="8"
+             reservedMethods="15" reservedAttributes="7"
       >
     <desc>
       Virtual virtual machine (sic) in the cloud.
@@ -29929,7 +29929,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </desc>
 
     <attribute name="id" type="uuid" mod="string" readonly="yes">
-      <desc>UUID of the cloud machine.</desc>
+      <desc>UUID of the cloud machine within VirtualBox.</desc>
+    </attribute>
+
+    <attribute name="cloudId" type="wstring" readonly="yes">
+      <desc>UUID of the cloud machine within Cloud</desc>
     </attribute>
 
     <attribute name="accessible" type="boolean" readonly="yes"
