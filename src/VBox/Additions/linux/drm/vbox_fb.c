@@ -197,7 +197,12 @@ static struct fb_ops vboxfb_ops = {
 	.fb_check_var = drm_fb_helper_check_var,
 	.fb_set_par = drm_fb_helper_set_par,
 #if RTLNX_VER_MIN(6,5,0)
-	FB_DEFAULT_SYS_OPS,
+	.fb_read    = fb_sys_read,
+	.fb_write   = fb_sys_write,
+	.fb_fillrect = sys_fillrect,
+	.fb_copyarea = sys_copyarea,
+	.fb_imageblit = sys_imageblit,
+	.fb_mmap = NULL,
 #else
 	.fb_fillrect = drm_fb_helper_sys_fillrect,
 	.fb_copyarea = drm_fb_helper_sys_copyarea,
@@ -346,7 +351,11 @@ static int vboxfb_create(struct drm_fb_helper *helper,
 	 * The last flag forces a mode set on VT switches even if the kernel
 	 * does not think it is needed.
 	 */
+#if RTLNX_VER_MIN(6,6,0)
+	info->flags = FBINFO_MISC_ALWAYS_SETPAR;
+#else
 	info->flags = FBINFO_DEFAULT | FBINFO_MISC_ALWAYS_SETPAR;
+#endif
 	info->fbops = &vboxfb_ops;
 
 #if RTLNX_VER_MAX(6,3,0) && !RTLNX_RHEL_MAJ_PREREQ(9,3)

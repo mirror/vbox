@@ -529,8 +529,10 @@ struct drm_gem_object *vbox_gem_prime_import_sg_table(
 #endif
 void *vbox_gem_prime_vmap(struct drm_gem_object *obj);
 void vbox_gem_prime_vunmap(struct drm_gem_object *obj, void *vaddr);
+#if RTLNX_VER_MAX(6,6,0)
 int vbox_gem_prime_mmap(struct drm_gem_object *obj,
 			struct vm_area_struct *area);
+#endif
 
 /* vbox_irq.c */
 int vbox_irq_init(struct vbox_private *vbox);
