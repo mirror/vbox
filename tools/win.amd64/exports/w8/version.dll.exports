@@ -1,0 +1,25 @@
+;
+; Generated from: version.dll
+;      Size file: 0x5000 (20480)
+;         Format: PE
+;  Size of image: 0x9000 (36864)
+;   Architecture: AMD64
+;      Timestamp: 0x5010a95b - 2012-07-26T02:20:11
+;
+GetFileVersionInfoA
+GetFileVersionInfoByHandle
+GetFileVersionInfoExA
+GetFileVersionInfoExW
+GetFileVersionInfoSizeA
+GetFileVersionInfoSizeExA
+GetFileVersionInfoSizeExW
+GetFileVersionInfoSizeW
+GetFileVersionInfoW
+VerFindFileA
+VerFindFileW
+VerInstallFileA
+VerInstallFileW
+VerLanguageNameA
+VerLanguageNameW
+VerQueryValueA
+VerQueryValueW

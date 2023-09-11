@@ -1,0 +1,13 @@
+;
+; Generated from: d3d8.dll
+;      Size file: 0xf7400 (1012736)
+;         Format: PE
+;  Size of image: 0x101000 (1052672)
+;   Architecture: X86
+;      Timestamp: 0x5010a6cd - 2012-07-26T02:09:17
+;
+Direct3D8EnableMaximizedWindowedModeShim
+ValidatePixelShader
+ValidateVertexShader
+DebugSetMute
+Direct3DCreate8

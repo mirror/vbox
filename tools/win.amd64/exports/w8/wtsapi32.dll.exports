@@ -1,0 +1,73 @@
+;
+; Generated from: wtsapi32.dll
+;      Size file: 0xcc00 (52224)
+;         Format: PE
+;  Size of image: 0x11000 (69632)
+;   Architecture: AMD64
+;      Timestamp: 0x5010a79e - 2012-07-26T02:12:46
+;
+WTSCloseServer
+WTSConnectSessionA
+WTSConnectSessionW
+WTSCreateListenerA
+WTSCreateListenerW
+WTSDisconnectSession
+WTSEnableChildSessions
+WTSEnumerateListenersA
+WTSEnumerateListenersW
+WTSEnumerateProcessesA
+WTSEnumerateProcessesExA
+WTSEnumerateProcessesExW
+WTSEnumerateProcessesW
+WTSEnumerateServersA
+WTSEnumerateServersW
+WTSEnumerateSessionsA
+WTSEnumerateSessionsExA
+WTSEnumerateSessionsExW
+WTSEnumerateSessionsW
+WTSFreeMemory
+WTSFreeMemoryExA
+WTSFreeMemoryExW
+WTSGetChildSessionId
+WTSGetListenerSecurityA
+WTSGetListenerSecurityW
+WTSIsChildSessionsEnabled
+WTSLogoffSession
+WTSOpenServerA
+WTSOpenServerExA
+WTSOpenServerExW
+WTSOpenServerW
+WTSQueryListenerConfigA
+WTSQueryListenerConfigW
+WTSQuerySessionInformationA
+WTSQuerySessionInformationW
+WTSQueryUserConfigA
+WTSQueryUserConfigW
+WTSQueryUserToken
+WTSRegisterSessionNotification
+WTSRegisterSessionNotificationEx
+WTSSendMessageA
+WTSSendMessageW
+WTSSetListenerSecurityA
+WTSSetListenerSecurityW
+WTSSetRenderHint
+WTSSetSessionInformationA
+WTSSetSessionInformationW
+WTSSetUserConfigA
+WTSSetUserConfigW
+WTSShutdownSystem
+WTSStartRemoteControlSessionA
+WTSStartRemoteControlSessionW
+WTSStopRemoteControlSession
+WTSTerminateProcess
+WTSUnRegisterSessionNotification
+WTSUnRegisterSessionNotificationEx
+WTSVirtualChannelClose
+WTSVirtualChannelOpen
+WTSVirtualChannelOpenEx
+WTSVirtualChannelPurgeInput
+WTSVirtualChannelPurgeOutput
+WTSVirtualChannelQuery
+WTSVirtualChannelRead
+WTSVirtualChannelWrite
+WTSWaitSystemEvent

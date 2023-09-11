@@ -1,0 +1,35 @@
+;
+; Generated from: psapi.dll
+;      Size file: 0x2600 (9728)
+;         Format: PE
+;  Size of image: 0x7000 (28672)
+;   Architecture: AMD64
+;      Timestamp: 0x50108aed - 2012-07-26T00:10:21
+;
+EmptyWorkingSet
+EnumDeviceDrivers
+EnumPageFilesA
+EnumPageFilesW
+EnumProcessModules
+EnumProcessModulesEx
+EnumProcesses
+GetDeviceDriverBaseNameA
+GetDeviceDriverBaseNameW
+GetDeviceDriverFileNameA
+GetDeviceDriverFileNameW
+GetMappedFileNameA
+GetMappedFileNameW
+GetModuleBaseNameA
+GetModuleBaseNameW
+GetModuleFileNameExA
+GetModuleFileNameExW
+GetModuleInformation
+GetPerformanceInfo
+GetProcessImageFileNameA
+GetProcessImageFileNameW
+GetProcessMemoryInfo
+GetWsChanges
+GetWsChangesEx
+InitializeProcessForWsWatch
+QueryWorkingSet
+QueryWorkingSetEx
