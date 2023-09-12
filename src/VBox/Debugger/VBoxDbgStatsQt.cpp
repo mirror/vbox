@@ -658,7 +658,7 @@ static char *formatNumber(char *psz, uint64_t u64)
  * Formats a number into a 64-byte buffer.
  * (18 446 744 073 709 551 615)
  */
-static char *formatNumberSigned(char *psz, int64_t i64)
+static char *formatNumberSigned(char *psz, int64_t i64, bool fPositivePlus = false)
 {
     static const char s_szDigits[] = "0123456789";
     psz += 63;
@@ -679,6 +679,8 @@ static char *formatNumberSigned(char *psz, int64_t i64)
     }
     if (fNegative)
         *--psz = '-';
+    else if (fPositivePlus)
+        *--psz = '+';
     return psz;
 }
 
@@ -1949,16 +1951,27 @@ VBoxDbgStatsModel::updateDone(bool a_fSuccess)
                         iChild++;
                     if (iChild >= pNode->cChildren)
                         break;
-                    QModelIndex const TopLeft = createIndex(iChild, 2, pNode->papChildren[iChild]);
-                    pNode->papChildren[iChild]->enmState = kDbgGuiStatsNodeState_kVisible;
+                    PDBGGUISTATSNODE  pChild    = pNode->papChildren[iChild];
+                    QModelIndex const TopLeft   = createIndex(iChild, 2, pChild);
+                    pChild->enmState = kDbgGuiStatsNodeState_kVisible;
 
                     /* Any subsequent nodes that also needs refreshing? */
-                    while (   iChild + 1 < pNode->cChildren
-                           && pNode->papChildren[iChild + 1]->enmState == kDbgGuiStatsNodeState_kRefresh)
-                        iChild++;
+                    int const iRightCol = pChild->enmType != STAMTYPE_PROFILE && pChild->enmType != STAMTYPE_PROFILE_ADV ? 4 : 7;
+                    if (iRightCol == 4)
+                        while (   iChild + 1 < pNode->cChildren
+                               && (pChild = pNode->papChildren[iChild + 1])->enmState == kDbgGuiStatsNodeState_kRefresh
+                               && pChild->enmType != STAMTYPE_PROFILE
+                               && pChild->enmType != STAMTYPE_PROFILE_ADV)
+                            iChild++;
+                    else
+                        while (   iChild + 1 < pNode->cChildren
+                               && (pChild = pNode->papChildren[iChild + 1])->enmState == kDbgGuiStatsNodeState_kRefresh
+                               && (   pChild->enmType == STAMTYPE_PROFILE
+                                   || pChild->enmType == STAMTYPE_PROFILE_ADV))
+                            iChild++;
 
                     /* emit the refresh signal */
-                    QModelIndex const BottomRight = createIndex(iChild, DBGGUI_STATS_COLUMNS - 2, pNode->papChildren[iChild]);
+                    QModelIndex const BottomRight = createIndex(iChild, iRightCol, pNode->papChildren[iChild]);
                     emit dataChanged(TopLeft, BottomRight);
                     iChild++;
                 }
@@ -2193,11 +2206,11 @@ VBoxDbgStatsModel::headerData(int a_iSection, Qt::Orientation a_eOrientation, in
             case 0: return tr("Name");
             case 1: return tr("Unit");
             case 2: return tr("Value/Times");
-            case 3: return tr("Min");
-            case 4: return tr("Average");
-            case 5: return tr("Max");
-            case 6: return tr("Total");
-            case 7: return tr("dInt");
+            case 3: return tr("dInt");
+            case 4: return tr("Min");
+            case 5: return tr("Average");
+            case 6: return tr("Max");
+            case 7: return tr("Total");
             case 8: return tr("Description");
             default:
                 AssertCompile(DBGGUI_STATS_COLUMNS == 9);
@@ -2416,7 +2429,9 @@ VBoxDbgStatsModel::strDeltaValue(PCDBGGUISTATSNODE pNode)
         case STAMTYPE_X64_RESET:
         case STAMTYPE_BOOL:
         case STAMTYPE_BOOL_RESET:
-            return formatNumberSigned(sz, pNode->i64Delta);
+            if (pNode->i64Delta)
+                return formatNumberSigned(sz, pNode->i64Delta, true /*fPositivePlus*/);
+            return "0";
         default:
             return "";
     }
@@ -2444,15 +2459,15 @@ VBoxDbgStatsModel::data(const QModelIndex &a_rIndex, int a_eRole) const
             case 2:
                 return strValueTimes(pNode);
             case 3:
-                return strMinValue(pNode);
-            case 4:
-                return strAvgValue(pNode);
-            case 5:
-                return strMaxValue(pNode);
-            case 6:
-                return strTotalValue(pNode);
-            case 7:
                 return strDeltaValue(pNode);
+            case 4:
+                return strMinValue(pNode);
+            case 5:
+                return strAvgValue(pNode);
+            case 6:
+                return strMaxValue(pNode);
+            case 7:
+                return strTotalValue(pNode);
             case 8:
                 return pNode->pDescStr ? QString(*pNode->pDescStr) : QString("");
             default:
