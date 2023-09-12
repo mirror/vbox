@@ -115,23 +115,30 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 #endif
 
 #ifdef VBOX_WITH_IEM_RECOMPILER
-    /** @cfgm{/IEM/InitialTbCount, uint32_t, 32768}
-     * Initial (minimum) number of TBs per EMT in ring-3. */
-    uint32_t cInitialTbs = 0;
-    rc = CFGMR3QueryU32Def(pIem, "InitialTbCount", &cInitialTbs, _32K);
-    AssertLogRelRCReturn(rc, rc);
-    if (cInitialTbs < _16K || cInitialTbs > _8M)
-        return VMSetError(pVM, VERR_OUT_OF_RANGE, RT_SRC_POS,
-                          "InitialTbCount value %u (%#x) is out of range (min %u, max %u)", cInitialTbs, cInitialTbs, _16K, _8M);
-
     /** @cfgm{/IEM/MaxTbCount, uint32_t, 524288}
      * Max number of TBs per EMT. */
     uint32_t cMaxTbs = 0;
     rc = CFGMR3QueryU32Def(pIem, "MaxTbCount", &cMaxTbs, _512K);
     AssertLogRelRCReturn(rc, rc);
-    if (cMaxTbs < cInitialTbs || cMaxTbs > _8M)
+    if (cMaxTbs < _16K || cMaxTbs > _8M)
         return VMSetError(pVM, VERR_OUT_OF_RANGE, RT_SRC_POS,
-                          "MaxTbCount value %u (%#x) is out of range (min %u, max %u)", cMaxTbs, cMaxTbs, cInitialTbs, _8M);
+                          "MaxTbCount value %u (%#x) is out of range (min %u, max %u)", cMaxTbs, cMaxTbs, _16K, _8M);
+
+    /** @cfgm{/IEM/InitialTbCount, uint32_t, 32678}
+     * Initial (minimum) number of TBs per EMT in ring-3. */
+    uint32_t cInitialTbs = 0;
+    rc = CFGMR3QueryU32Def(pIem, "InitialTbCount", &cInitialTbs, RT_MIN(cMaxTbs, _32K));
+    AssertLogRelRCReturn(rc, rc);
+    if (cInitialTbs < _16K || cInitialTbs > _8M)
+        return VMSetError(pVM, VERR_OUT_OF_RANGE, RT_SRC_POS,
+                          "InitialTbCount value %u (%#x) is out of range (min %u, max %u)", cInitialTbs, cInitialTbs, _16K, _8M);
+
+    /* Check that the two values makes sense together. Expect user/api to do
+       the right thing or get lost. */
+    if (cInitialTbs > cMaxTbs)
+        return VMSetError(pVM, VERR_OUT_OF_RANGE, RT_SRC_POS,
+                          "InitialTbCount value %u (%#x) is higher than the MaxTbCount value %u (%#x)",
+                          cInitialTbs, cInitialTbs, cMaxTbs, cMaxTbs);
 #endif
 
     /*
@@ -284,10 +291,10 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
                         "Times TB execution was interrupted/broken off", "/IEM/CPU%u/re/cTbExecBreaks", idCpu);
 
         PIEMTBALLOCATOR const pTbAllocator = pVCpu->iem.s.pTbAllocatorR3;
-        STAMR3RegisterF(pVM, (void *)&pTbAllocator->StatAllocs,         STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
-                        "Translation block allocations",                "/IEM/CPU%u/re/cTbAllocs", idCpu);
-        STAMR3RegisterF(pVM, (void *)&pTbAllocator->StatFrees,          STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
-                        "Translation block frees",                      "/IEM/CPU%u/re/cTbFrees", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pTbAllocator->StatAllocs,         STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS,
+                        "Translation block allocations",                "/IEM/CPU%u/re/cTbAllocCalls", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pTbAllocator->StatFrees,          STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS,
+                        "Translation block frees",                      "/IEM/CPU%u/re/cTbFreeCalls", idCpu);
 # ifdef VBOX_WITH_STATISTICS
         STAMR3RegisterF(pVM, (void *)&pTbAllocator->StatPrune,          STAMTYPE_PROFILE,   STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
                         "Time spent freeing up TBs when full at alloc", "/IEM/CPU%u/re/TbPruningAlloc", idCpu);

@@ -787,7 +787,7 @@ DECLCALLBACK(int) iemTbInit(PVMCC pVM, uint32_t cInitialTbs, uint32_t cMaxTbs)
         pTbAllocator->cAllocatedChunks = (uint16_t)(idxChunk + 1);
         pTbAllocator->cTotalTbs       += cTbsPerChunk;
 
-        if (idxChunk * cTbsPerChunk >= cInitialTbs)
+        if ((idxChunk + 1) * cTbsPerChunk >= cInitialTbs)
             break;
     }
 
@@ -1002,21 +1002,23 @@ static PIEMTB iemTbAllocatorAllocSlow(PVMCPUCC pVCpu, PIEMTBALLOCATOR const pTbA
      */
     STAM_PROFILE_START(&pTbAllocator->StatPrune, a);
     uint32_t const msNow          = pVCpu->iem.s.msRecompilerPollNow;
+    uint32_t const cTbsToPrune    = 128;
+    uint32_t const cTbsPerGroup   = 4;
     uint32_t       cFreedTbs      = 0;
 #ifdef IEMTB_SIZE_IS_POWER_OF_TWO
-    uint32_t       idxTbPruneFrom = pTbAllocator->iPruneFrom & ~(uint32_t)3;
+    uint32_t       idxTbPruneFrom = pTbAllocator->iPruneFrom & ~(uint32_t)(cTbsToPrune - 1); /* Stay within a chunk! */
 #else
     uint32_t       idxTbPruneFrom = pTbAllocator->iPruneFrom;
 #endif
-    if (idxTbPruneFrom > pTbAllocator->cMaxTbs)
+    if (idxTbPruneFrom >= pTbAllocator->cMaxTbs)
         idxTbPruneFrom = 0;
-    for (uint32_t i = 0; i < 128; i += 4, idxTbPruneFrom += 4)
+    for (uint32_t i = 0; i < cTbsToPrune; i += cTbsPerGroup, idxTbPruneFrom += cTbsPerGroup)
     {
         uint32_t idxChunk   = IEMTBALLOC_IDX_TO_CHUNK(pTbAllocator, idxTbPruneFrom);
         uint32_t idxInChunk = IEMTBALLOC_IDX_TO_INDEX_IN_CHUNK(pTbAllocator, idxTbPruneFrom, idxChunk);
         PIEMTB   pTb        = &pTbAllocator->aChunks[idxChunk].paTbs[idxInChunk];
         uint32_t cMsAge     = msNow - pTb->msLastUsed;
-        for (uint32_t j = 1, idxChunk2 = idxChunk, idxInChunk2 = idxInChunk + 1; j < 4; j++, idxInChunk2++)
+        for (uint32_t j = 1, idxChunk2 = idxChunk, idxInChunk2 = idxInChunk + 1; j < cTbsPerGroup; j++, idxInChunk2++)
         {
 #ifndef IEMTB_SIZE_IS_POWER_OF_TWO
             if (idxInChunk2 < pTbAllocator->cTbsPerChunk)
