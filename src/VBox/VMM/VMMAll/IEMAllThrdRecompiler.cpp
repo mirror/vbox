@@ -459,6 +459,25 @@ static DECLCALLBACK(int) iemTbCachePruneCmpTb(void const *pvElement1, void const
     return 0;
 }
 
+#ifdef VBOX_STRICT
+/**
+ * Assertion helper that checks a collisions list count.
+ */
+static void iemTbCacheAssertCorrectCount(PIEMTBCACHE pTbCache, uint32_t idxHash, const char *pszOperation)
+{
+    PIEMTB pTb   = IEMTBCACHE_PTR_GET_TB(pTbCache->apHash[idxHash]);
+    int    cLeft = IEMTBCACHE_PTR_GET_COUNT(pTbCache->apHash[idxHash]);
+    while (pTb)
+    {
+        pTb = pTb->pNext;
+        cLeft--;
+    }
+    AssertMsg(cLeft == 0,
+              ("idxHash=%#x cLeft=%d; entry count=%d; %s\n",
+               idxHash, cLeft, IEMTBCACHE_PTR_GET_COUNT(pTbCache->apHash[idxHash]), pszOperation));
+}
+#endif
+
 
 DECL_NO_INLINE(static, void) iemTbCacheAddWithPruning(PVMCPUCC pVCpu, PIEMTBCACHE pTbCache, PIEMTB pTb, uint32_t idxHash)
 {
@@ -470,6 +489,7 @@ DECL_NO_INLINE(static, void) iemTbCacheAddWithPruning(PVMCPUCC pVCpu, PIEMTBCACH
     PIEMTB    apSortedTbs[IEMTBCACHE_PTR_MAX_COUNT];
     uintptr_t cInserted    = 0;
     PIEMTB    pTbCollision = IEMTBCACHE_PTR_GET_TB(pTbCache->apHash[idxHash]);
+
     pTbCache->apHash[idxHash] = NULL; /* Must NULL the entry before trying to free anything. */
 
     while (pTbCollision && cInserted < RT_ELEMENTS(apSortedTbs))
@@ -503,14 +523,17 @@ DECL_NO_INLINE(static, void) iemTbCacheAddWithPruning(PVMCPUCC pVCpu, PIEMTBCACH
     for (uintptr_t idx = cKeep; idx < cInserted; idx++)
         iemTbAllocatorFree(pVCpu, apSortedTbs[idx]);
 
-    /* Chain the new TB together with the ones we like to keep of the existing
-       ones and insert this list into the hash table. */
+    /* Then chain the new TB together with the ones we like to keep of the
+       existing ones and insert this list into the hash table. */
     pTbCollision = pTb;
     for (uintptr_t idx = 0; idx < cKeep; idx++)
         pTbCollision = pTbCollision->pNext = apSortedTbs[idx];
     pTbCollision->pNext = NULL;
 
     pTbCache->apHash[idxHash] = IEMTBCACHE_PTR_MAKE(pTb, cKeep + 1);
+#ifdef VBOX_STRICT
+    iemTbCacheAssertCorrectCount(pTbCache, idxHash, "add w/ pruning");
+#endif
 
     STAM_PROFILE_STOP(&pTbCache->StatPrune, a);
 }
@@ -533,6 +556,9 @@ static void iemTbCacheAdd(PVMCPUCC pVCpu, PIEMTBCACHE pTbCache, PIEMTB pTb)
         {
             pTb->pNext = IEMTBCACHE_PTR_GET_TB(pTbOldHead);
             pTbCache->apHash[idxHash] = IEMTBCACHE_PTR_MAKE(pTb, cCollisions + 1);
+#ifdef VBOX_STRICT
+            iemTbCacheAssertCorrectCount(pTbCache, idxHash, "add");
+#endif
         }
         else
             iemTbCacheAddWithPruning(pVCpu, pTbCache, pTb, idxHash);
@@ -551,27 +577,40 @@ static bool iemTbCacheRemove(PIEMTBCACHE pTbCache, PIEMTB pTb)
 {
     uint32_t const idxHash = IEMTBCACHE_HASH(pTbCache, pTb->fFlags, pTb->GCPhysPc);
     PIEMTB         pTbHash = IEMTBCACHE_PTR_GET_TB(pTbCache->apHash[idxHash]);
+    uint32_t volatile cLength = IEMTBCACHE_PTR_GET_COUNT(pTbCache->apHash[idxHash]); RT_NOREF(cLength);
 
-    /* At the head of the collision list? */
+    /*
+     * At the head of the collision list?
+     */
     if (pTbHash == pTb)
     {
         if (!pTb->pNext)
             pTbCache->apHash[idxHash] = NULL;
         else
+        {
             pTbCache->apHash[idxHash] = IEMTBCACHE_PTR_MAKE(pTb->pNext,
                                                             IEMTBCACHE_PTR_GET_COUNT(pTbCache->apHash[idxHash]) - 1);
+#ifdef VBOX_STRICT
+            iemTbCacheAssertCorrectCount(pTbCache, idxHash, "remove #1");
+#endif
+        }
         return true;
     }
 
-    /* Search the collision list. */
+    /*
+     * Search the collision list.
+     */
+    PIEMTB const pTbHead = pTbHash;
     while (pTbHash)
     {
         PIEMTB const pNextTb = pTbHash->pNext;
         if (pNextTb == pTb)
         {
             pTbHash->pNext = pTb->pNext;
-            pTbCache->apHash[idxHash] = IEMTBCACHE_PTR_MAKE(pTbCache->apHash[idxHash],
-                                                            IEMTBCACHE_PTR_GET_COUNT(pTbCache->apHash[idxHash]) - 1);
+            pTbCache->apHash[idxHash] = IEMTBCACHE_PTR_MAKE(pTbHead, IEMTBCACHE_PTR_GET_COUNT(pTbCache->apHash[idxHash]) - 1);
+#ifdef VBOX_STRICT
+            iemTbCacheAssertCorrectCount(pTbCache, idxHash, "remove #2");
+#endif
             return true;
         }
         pTbHash = pNextTb;
