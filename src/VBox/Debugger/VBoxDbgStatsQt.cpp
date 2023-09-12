@@ -80,6 +80,7 @@ typedef enum DBGGUISTATSNODESTATE
     kDbgGuiStatsNodeState_kVisible,
     /** The node should be refreshed. */
     kDbgGuiStatsNodeState_kRefresh,
+#if 0 /// @todo not implemented
     /** diff: The node equals. */
     kDbgGuiStatsNodeState_kDiffEqual,
     /** diff: The node in set 1 is less than the one in set 2. */
@@ -90,6 +91,7 @@ typedef enum DBGGUISTATSNODESTATE
     kDbgGuiStatsNodeState_kDiffOnlyIn1,
     /** diff: The node is only in set 2. */
     kDbgGuiStatsNodeState_kDiffOnlyIn2,
+#endif
     /** The end of the valid state values. */
     kDbgGuiStatsNodeState_kEnd
 } DBGGUISTATENODESTATE;
@@ -1898,9 +1900,12 @@ VBoxDbgStatsModel::updateDone(bool a_fSuccess)
      */
     if (m_fUpdateInsertRemove)
     {
-        /* emit layoutChanged(); - hrmpf, doesn't work reliably... */
-        beginResetModel();
+#if 0 // hrmpf, layoutChanged() didn't work reliably at some point so doing this as well... 
+        beginResetModel();  
         endResetModel();
+#else
+        emit layoutChanged();
+#endif
     }
     else
     {
@@ -1927,7 +1932,7 @@ VBoxDbgStatsModel::updateDone(bool a_fSuccess)
                 Stack.iTop++;
                 Assert(Stack.iTop < (int32_t)RT_ELEMENTS(Stack.a));
                 Stack.a[Stack.iTop].pNode = pNode->papChildren[iChild];
-                Stack.a[Stack.iTop].iChild = 0;
+                Stack.a[Stack.iTop].iChild = -1;
             }
             else
             {
@@ -1944,26 +1949,18 @@ VBoxDbgStatsModel::updateDone(bool a_fSuccess)
                         iChild++;
                     if (iChild >= pNode->cChildren)
                         break;
-                    QModelIndex TopLeft = createIndex(iChild, 0, pNode->papChildren[iChild]);
+                    QModelIndex const TopLeft = createIndex(iChild, 2, pNode->papChildren[iChild]);
                     pNode->papChildren[iChild]->enmState = kDbgGuiStatsNodeState_kVisible;
 
-                    /* any subsequent nodes that also needs refreshing? */
-                    if (   ++iChild < pNode->cChildren
-                        && pNode->papChildren[iChild]->enmState == kDbgGuiStatsNodeState_kRefresh)
-                    {
-                        do  pNode->papChildren[iChild]->enmState = kDbgGuiStatsNodeState_kVisible;
-                        while (   ++iChild < pNode->cChildren
-                               && pNode->papChildren[iChild]->enmState == kDbgGuiStatsNodeState_kRefresh);
-                        QModelIndex BottomRight = createIndex(iChild - 1, DBGGUI_STATS_COLUMNS - 1, pNode->papChildren[iChild - 1]);
+                    /* Any subsequent nodes that also needs refreshing? */
+                    while (   iChild + 1 < pNode->cChildren
+                           && pNode->papChildren[iChild + 1]->enmState == kDbgGuiStatsNodeState_kRefresh)
+                        iChild++;
 
-                        /* emit the refresh signal */
-                        emit dataChanged(TopLeft, BottomRight);
-                    }
-                    else
-                    {
-                        /* emit the refresh signal */
-                        emit dataChanged(TopLeft, TopLeft);
-                    }
+                    /* emit the refresh signal */
+                    QModelIndex const BottomRight = createIndex(iChild, DBGGUI_STATS_COLUMNS - 2, pNode->papChildren[iChild]);
+                    emit dataChanged(TopLeft, BottomRight);
+                    iChild++;
                 }
             }
         }
@@ -2151,33 +2148,21 @@ QModelIndex
 VBoxDbgStatsModel::index(int iRow, int iColumn, const QModelIndex &a_rParent) const
 {
     PDBGGUISTATSNODE pParent = nodeFromIndex(a_rParent);
-    if (!pParent)
+    if (pParent)
     {
-        if (    a_rParent.isValid()
-            ||  iRow
-            ||  (unsigned)iColumn < DBGGUI_STATS_COLUMNS)
-        {
-            Assert(!a_rParent.isValid());
-            Assert(!iRow);
-            Assert((unsigned)iColumn < DBGGUI_STATS_COLUMNS);
-            return QModelIndex();
-        }
+        AssertMsgReturn((unsigned)iRow < pParent->cChildren,
+                        ("iRow=%d >= cChildren=%u (iColumn=%d)\n", iRow, (unsigned)pParent->cChildren, iColumn),
+                        QModelIndex());
+        AssertMsgReturn((unsigned)iColumn < DBGGUI_STATS_COLUMNS, ("iColumn=%d (iRow=%d)\n", iColumn, iRow), QModelIndex());
 
-        /* root */
-        return createIndex(0, iColumn, m_pRoot);
+        PDBGGUISTATSNODE pChild = pParent->papChildren[iRow];
+        return createIndex(iRow, iColumn, pChild);
     }
-    if ((unsigned)iRow >= pParent->cChildren)
-    {
-        Log(("index: iRow=%d >= cChildren=%u (iColumn=%d)\n", iRow, (unsigned)pParent->cChildren, iColumn));
-        return QModelIndex(); /* bug? */
-    }
-    if ((unsigned)iColumn >= DBGGUI_STATS_COLUMNS)
-    {
-        Log(("index: iColumn=%d (iRow=%d)\n", iColumn, iRow));
-        return QModelIndex(); /* bug? */
-    }
-    PDBGGUISTATSNODE pChild = pParent->papChildren[iRow];
-    return createIndex(iRow, iColumn, pChild);
+
+    /* root?  */
+    AssertReturn(a_rParent.isValid(), QModelIndex());
+    AssertMsgReturn(iRow == 0 && (unsigned)iColumn < DBGGUI_STATS_COLUMNS, ("iRow=%d iColumn=%d", iRow, iColumn), QModelIndex());
+    return createIndex(0, iColumn, m_pRoot);
 }
 
 
@@ -2442,14 +2427,13 @@ QVariant
 VBoxDbgStatsModel::data(const QModelIndex &a_rIndex, int a_eRole) const
 {
     unsigned iCol = a_rIndex.column();
-    if (iCol >= DBGGUI_STATS_COLUMNS)
-        return QVariant();
+    AssertMsgReturn(iCol < DBGGUI_STATS_COLUMNS, ("%d\n", iCol), QVariant());
+    Log4(("Model::data(%p(%d,%d), %d)\n", nodeFromIndex(a_rIndex), iCol, a_rIndex.row(), a_eRole));
 
     if (a_eRole == Qt::DisplayRole)
     {
         PDBGGUISTATSNODE pNode = nodeFromIndex(a_rIndex);
-        if (!pNode)
-            return QVariant();
+        AssertReturn(pNode, QVariant());
 
         switch (iCol)
         {
