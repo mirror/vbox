@@ -4886,6 +4886,7 @@ static DBGFREGSUBFIELD const g_aLeaf7Sub0EbxSubFields[] =
     DBGFREGSUBFIELD_RO("ADX\0"              "ADCX/ADOX instructions",                       19, 1, 0),
     DBGFREGSUBFIELD_RO("SMAP\0"             "Supervisor Mode Access Prevention",            20, 1, 0),
     DBGFREGSUBFIELD_RO("CLFLUSHOPT\0"       "CLFLUSHOPT (Cache Line Flush) instruction",    23, 1, 0),
+    DBGFREGSUBFIELD_RO("CLWB\0"             "CLWB instruction",                             24, 1, 0),
     DBGFREGSUBFIELD_RO("INTEL_PT\0"         "Intel Processor Trace",                        25, 1, 0),
     DBGFREGSUBFIELD_RO("AVX512PF\0"         "AVX512 Prefetch instructions",                 26, 1, 0),
     DBGFREGSUBFIELD_RO("AVX512ER\0"         "AVX512 Exponential & Reciprocal instructions", 27, 1, 0),
@@ -4999,6 +5000,7 @@ static DBGFREGSUBFIELD const g_aExtLeaf1EcxSubFields[] =
     DBGFREGSUBFIELD_RO("WDT\0"          "AMD Watchdog Timer support",                   13, 1, 0),
     DBGFREGSUBFIELD_RO("LWP\0"          "Lightweight Profiling support",                15, 1, 0),
     DBGFREGSUBFIELD_RO("FMA4\0"         "Four operand FMA instruction support",         16, 1, 0),
+    DBGFREGSUBFIELD_RO("TCE\0"          "Translation Cache Extension support",          17, 1, 0),
     DBGFREGSUBFIELD_RO("NodeId\0"       "NodeId in MSR C001_100C",                      19, 1, 0),
     DBGFREGSUBFIELD_RO("TBM\0"          "Trailing Bit Manipulation instructions",       21, 1, 0),
     DBGFREGSUBFIELD_RO("TOPOEXT\0"      "Topology Extensions",                          22, 1, 0),
@@ -5007,7 +5009,8 @@ static DBGFREGSUBFIELD const g_aExtLeaf1EcxSubFields[] =
     DBGFREGSUBFIELD_RO("DATABPEXT\0"    "Data-access Breakpoint Extension",             26, 1, 0),
     DBGFREGSUBFIELD_RO("PERFTSC\0"      "Performance Time Stamp Counter",               27, 1, 0),
     DBGFREGSUBFIELD_RO("PCX_L2I\0"      "L2I/L3 Performance Counter Extensions",        28, 1, 0),
-    DBGFREGSUBFIELD_RO("MWAITX\0"       "MWAITX and MONITORX instructions",             29, 1, 0),
+    DBGFREGSUBFIELD_RO("MONITORX\0"     "MWAITX and MONITORX instructions",             29, 1, 0),
+    DBGFREGSUBFIELD_RO("AddrMaskExt\0"  "BP Addressing masking extended to bit 31",     30, 1, 0),
     DBGFREGSUBFIELD_TERMINATOR()
 };
 
@@ -5028,6 +5031,17 @@ static DBGFREGSUBFIELD const g_aExtLeafAEdxSubFields[] =
     DBGFREGSUBFIELD_RO("VMSAVEVirt\0"     "VMSAVE and VMLOAD Virtualization",           15, 1, 0),
     DBGFREGSUBFIELD_RO("VGIF\0"           "Virtual Global-Interrupt Flag",              16, 1, 0),
     DBGFREGSUBFIELD_RO("GMET\0"           "Guest Mode Execute Trap Extension",          17, 1, 0),
+    DBGFREGSUBFIELD_RO("x2AVIC\0"         "AVIC support for x2APIC mode",               18, 1, 0),
+    DBGFREGSUBFIELD_RO("SSSCheck\0"       "SVM supervisor shadow stack restrictions",   19, 1, 0),
+    DBGFREGSUBFIELD_RO("SpecCtrl\0"       "SPEC_CTRL virtualization",                   20, 1, 0),
+    DBGFREGSUBFIELD_RO("ROGPT\0"          "Read-Only Guest Page Table feature support", 21, 1, 0),
+    DBGFREGSUBFIELD_RO("HOST_MCE_OVERRIDE\0"    "Guest #MC can be intercepted",         23, 1, 0),
+    DBGFREGSUBFIELD_RO("TlbiCtl\0"        "INVLPGB/TLBSYNC enable and intercept",       24, 1, 0),
+    DBGFREGSUBFIELD_RO("VNMI\0"           "NMI Virtualization",                         25, 1, 0),
+    DBGFREGSUBFIELD_RO("IbsVirt\0"        "IBS Virtualization",                         26, 1, 0),
+    DBGFREGSUBFIELD_RO("ExtLvtAvicAccessChg\0"  "Extended LVT access changes",          27, 1, 0),
+    DBGFREGSUBFIELD_RO("NestedVirtVmcbAddrChk\0""Guest VMCB address check",             28, 1, 0),
+    DBGFREGSUBFIELD_RO("BusLockThreshold\0"     "Bus Lock Threshold",                   29, 1, 0),
     DBGFREGSUBFIELD_TERMINATOR()
 };
 
@@ -5038,16 +5052,17 @@ static DBGFREGSUBFIELD const g_aExtLeaf7EdxSubFields[] =
     DBGFREGSUBFIELD_RO("TS\0"           "Temperature Sensor",                            0, 1, 0),
     DBGFREGSUBFIELD_RO("FID\0"          "Frequency ID control",                          1, 1, 0),
     DBGFREGSUBFIELD_RO("VID\0"          "Voltage ID control",                            2, 1, 0),
-    DBGFREGSUBFIELD_RO("VID\0"          "Voltage ID control",                            2, 1, 0),
     DBGFREGSUBFIELD_RO("TTP\0"          "Thermal Trip",                                  3, 1, 0),
     DBGFREGSUBFIELD_RO("TM\0"           "Hardware Thermal Control (HTC)",                4, 1, 0),
     DBGFREGSUBFIELD_RO("100MHzSteps\0"  "100 MHz Multiplier control",                    6, 1, 0),
     DBGFREGSUBFIELD_RO("HwPstate\0"     "Hardware P-state control",                      7, 1, 0),
     DBGFREGSUBFIELD_RO("TscInvariant\0" "Invariant Time Stamp Counter",                  8, 1, 0),
-    DBGFREGSUBFIELD_RO("CBP\0"          "Core Performance Boost",                        9, 1, 0),
+    DBGFREGSUBFIELD_RO("CPB\0"          "Core Performance Boost",                        9, 1, 0),
     DBGFREGSUBFIELD_RO("EffFreqRO\0"    "Read-only Effective Frequency Interface",      10, 1, 0),
     DBGFREGSUBFIELD_RO("ProcFdbkIf\0"   "Processor Feedback Interface",                 11, 1, 0),
     DBGFREGSUBFIELD_RO("ProcPwrRep\0"   "Core power reporting interface support",       12, 1, 0),
+    DBGFREGSUBFIELD_RO("ConnectedStandby\0" "Connected Standby",                        13, 1, 0),
+    DBGFREGSUBFIELD_RO("RAPL\0"         "Running average power limit",                  14, 1, 0),
     DBGFREGSUBFIELD_TERMINATOR()
 };
 
@@ -5057,9 +5072,28 @@ static DBGFREGSUBFIELD const g_aExtLeaf8EbxSubFields[] =
     DBGFREGSUBFIELD_RO("CLZERO\0"       "Clear zero instruction (cacheline)",            0, 1, 0),
     DBGFREGSUBFIELD_RO("IRPerf\0"       "Instructions retired count support",            1, 1, 0),
     DBGFREGSUBFIELD_RO("XSaveErPtr\0"   "Save/restore error pointers (FXSAVE/RSTOR)",    2, 1, 0),
+    DBGFREGSUBFIELD_RO("INVLPGB\0"      "INVLPGB and TLBSYNC instructions",              3, 1, 0),
     DBGFREGSUBFIELD_RO("RDPRU\0"        "RDPRU instruction",                             4, 1, 0),
+    DBGFREGSUBFIELD_RO("BE\0"           "Bandwidth Enforcement extension",               6, 1, 0),
     DBGFREGSUBFIELD_RO("MCOMMIT\0"      "MCOMMIT instruction",                           8, 1, 0),
+    DBGFREGSUBFIELD_RO("WBNOINVD\0"     "WBNOINVD instruction",                          9, 1, 0),
     DBGFREGSUBFIELD_RO("IBPB\0"         "Supports the IBPB command in IA32_PRED_CMD",   12, 1, 0),
+    DBGFREGSUBFIELD_RO("INT_WBINVD\0"   "WBINVD/WBNOINVD interruptible",                13, 1, 0),
+    DBGFREGSUBFIELD_RO("IBRS\0"         "Indirect Branch Restricted Speculation",       14, 1, 0),
+    DBGFREGSUBFIELD_RO("STIBP\0"        "Single Thread Indirect Branch Prediction",     15, 1, 0),
+    DBGFREGSUBFIELD_RO("IbrsAlwaysOn\0" "Processor prefers that IBRS be left on",       16, 1, 0),
+    DBGFREGSUBFIELD_RO("StibpAlwaysOn\0""Processor prefers that STIBP be left on",      17, 1, 0),
+    DBGFREGSUBFIELD_RO("IbrsPreferred\0""IBRS preferred over software solution",        18, 1, 0),
+    DBGFREGSUBFIELD_RO("IbrsSameMode\0" "IBRS limits same mode speculation",            19, 1, 0),
+    DBGFREGSUBFIELD_RO("EferLmsleUnsupported\0" "EFER.LMSLE is unsupported",            20, 1, 0),
+    DBGFREGSUBFIELD_RO("INVLPGBnestedPages\0"   "INVLPGB for nested translation",       21, 1, 0),
+    DBGFREGSUBFIELD_RO("SSBD\0"         "Speculative Store Bypass Disable",             24, 1, 0),
+    DBGFREGSUBFIELD_RO("SsbdVirtSpecCtrl\0"     "Use VIRT_SPEC_CTL for SSBD",           25, 1, 0),
+    DBGFREGSUBFIELD_RO("SsbdNotRequired\0"      "SSBD not needed on this processor",    26, 1, 0),
+    DBGFREGSUBFIELD_RO("CPPC\0"         "Collaborative Processor Performance Control",  27, 1, 0),
+    DBGFREGSUBFIELD_RO("PSFD\0"         "Predictive Store Forward Disable",             28, 1, 0),
+    DBGFREGSUBFIELD_RO("BTC_NO\0"       "Unaffected by branch type confusion",          29, 1, 0),
+    DBGFREGSUBFIELD_RO("IBPB_RET\0"     "Clears RA predictor when PRED_CMD.IBPB set",   30, 1, 0),
     DBGFREGSUBFIELD_TERMINATOR()
 };
 
