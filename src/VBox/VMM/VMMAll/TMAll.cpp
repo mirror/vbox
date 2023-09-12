@@ -889,12 +889,13 @@ DECL_FORCE_INLINE(uint64_t) tmTimerPollReturnHit(PVM pVM, PVMCPU pVCpu, PVMCPU p
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pu64Delta   Where to store the delta.
+ * @param   pu64Now     Where to store the current time. Optional.
  *
  * @thread  The emulation thread.
  *
  * @remarks GIP uses ns ticks.
  */
-DECL_FORCE_INLINE(uint64_t) tmTimerPollInternal(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *pu64Delta)
+DECL_FORCE_INLINE(uint64_t) tmTimerPollInternal(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *pu64Delta, uint64_t *pu64Now)
 {
     VMCPUID idCpu = pVM->tm.s.idTimerCpu;
     AssertReturn(idCpu < pVM->cCpus, 0);
@@ -902,6 +903,8 @@ DECL_FORCE_INLINE(uint64_t) tmTimerPollInternal(PVMCC pVM, PVMCPUCC pVCpu, uint6
 
     const uint64_t u64Now = TMVirtualGetNoCheck(pVM);
     STAM_COUNTER_INC(&pVM->tm.s.StatPoll);
+    if (pu64Now)
+        *pu64Now = u64Now;
 
     /*
      * Return straight away if the timer FF is already set ...
@@ -1103,7 +1106,34 @@ VMMDECL(bool) TMTimerPollBool(PVMCC pVM, PVMCPUCC pVCpu)
 {
     AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
     uint64_t off = 0;
-    tmTimerPollInternal(pVM, pVCpu, &off);
+    tmTimerPollInternal(pVM, pVCpu, &off, NULL);
+    return off == 0;
+}
+
+
+/**
+ * Set FF if we've passed the next virtual event and return virtual time as MS.
+ *
+ * This function is called before FFs are checked in the inner execution EM loops.
+ *
+ * This is used by the IEM recompiler for polling timers while also providing a
+ * free time source for recent use tracking and such.
+ *
+ * @returns true if timers are pending, false if not.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pmsNow      Where to return the current virtual time in
+ *                      milliseconds.
+ * @thread  The emulation thread.
+ */
+VMMDECL(bool) TMTimerPollBoolWith32BitMilliTS(PVMCC pVM, PVMCPUCC pVCpu, uint32_t *pmsNow)
+{
+    AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
+    uint64_t off = 0;
+    uint64_t u64Now = 0;
+    tmTimerPollInternal(pVM, pVCpu, &off, &u64Now);
+    *pmsNow = (uint32_t)(u64Now / RT_NS_1MS);
     return off == 0;
 }
 
@@ -1120,7 +1150,7 @@ VMMDECL(bool) TMTimerPollBool(PVMCC pVM, PVMCPUCC pVCpu)
 VMM_INT_DECL(void) TMTimerPollVoid(PVMCC pVM, PVMCPUCC pVCpu)
 {
     uint64_t off;
-    tmTimerPollInternal(pVM, pVCpu, &off);
+    tmTimerPollInternal(pVM, pVCpu, &off, NULL);
 }
 
 
@@ -1138,7 +1168,7 @@ VMM_INT_DECL(void) TMTimerPollVoid(PVMCC pVM, PVMCPUCC pVCpu)
  */
 VMM_INT_DECL(uint64_t) TMTimerPollGIP(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *pu64Delta)
 {
-    return tmTimerPollInternal(pVM, pVCpu, pu64Delta);
+    return tmTimerPollInternal(pVM, pVCpu, pu64Delta, NULL);
 }
 
 #endif /* VBOX_HIGH_RES_TIMERS_HACK */

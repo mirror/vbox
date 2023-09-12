@@ -711,7 +711,8 @@ AssertCompileSizeAlignment(IEMTLB, 64);
  *
  *       For the same reasons, we skip all of IEM_F_X86_CTX_MASK, with the
  *       exception of SMM (which we don't implement). */
-#define IEMTB_F_KEY_MASK                ((UINT32_C(0xffffffff) & ~(IEM_F_X86_CTX_MASK | IEM_F_X86_CPL_MASK)) | IEM_F_X86_CTX_SMM)
+#define IEMTB_F_KEY_MASK                (  (UINT32_MAX & ~(IEM_F_X86_CTX_MASK | IEM_F_X86_CPL_MASK | IEMTB_F_TYPE_MASK)) \
+                                         | IEM_F_X86_CTX_SMM)
 /** @} */
 
 AssertCompile( (IEM_F_MODE_X86_16BIT              & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_16BIT);
@@ -780,14 +781,26 @@ typedef IEMTHRDEDCALLENTRY const *PCIEMTHRDEDCALLENTRY;
 
 /**
  * Translation block.
+ *
+ * The current plan is to just keep TBs and associated lookup hash table private
+ * to each VCpu as that simplifies TB removal greatly (no races) and generally
+ * avoids using expensive atomic primitives for updating lists and stuff.
  */
 #pragma pack(2) /* to prevent the Thrd structure from being padded unnecessarily */
 typedef struct IEMTB
 {
     /** Next block with the same hash table entry. */
-    struct IEMTB * volatile pNext;
-    /** List on the local VCPU for blocks. */
-    RTLISTNODE          LocalList;
+    struct IEMTB       *pNext;
+    /** Usage counter. */
+    uint32_t            cUsed;
+    /** The IEMCPU::msRecompilerPollNow last time it was used. */
+    uint32_t            msLastUsed;
+    /** The allocation chunk this TB belongs to. */
+    uint8_t             idxAllocChunk;
+
+    uint8_t             abUnused[3];
+    uint32_t            uUnused;
+
 
     /** @name What uniquely identifies the block.
      * @{ */
@@ -821,6 +834,18 @@ typedef struct IEMTB
             /** Number of calls allocated. */
             uint16_t            cAllocated;
         } Thrd;
+        struct
+        {
+            uint8_t            *pbCode;
+            /** Amount of code that pbCode points to. */
+            uint32_t            cbAllocated;
+        } Native;
+        /** Generic view for zeroing when freeing. */
+        struct
+        {
+            uintptr_t           uPtr;
+            uint32_t            uData;
+        } Gen;
     };
 
     /** Number of bytes of opcodes stored in pabOpcodes. */
@@ -871,11 +896,184 @@ AssertCompileMemberOffset(IEMTB, Thrd, 40);
 AssertCompileMemberOffset(IEMTB, Thrd.cCalls, 48);
 AssertCompileMemberOffset(IEMTB, cbOpcodes, 52);
 AssertCompileMemberSize(IEMTB, aRanges[0], 6);
+#if 1
 AssertCompileSize(IEMTB, 128);
+# define IEMTB_SIZE_IS_POWER_OF_TWO /**< The IEMTB size is a power of two. */
+#else
+AssertCompileSize(IEMTB, 168);
+# undef  IEMTB_SIZE_IS_POWER_OF_TWO
+#endif
+
 /** Pointer to a translation block. */
 typedef IEMTB *PIEMTB;
 /** Pointer to a const translation block. */
 typedef IEMTB const *PCIEMTB;
+
+/**
+ * A chunk of memory in the TB allocator.
+ */
+typedef struct IEMTBCHUNK
+{
+    /** Pointer to the translation blocks in this chunk. */
+    PIEMTB          paTbs;
+#ifdef IN_RING0
+    /** Allocation handle. */
+    RTR0MEMOBJ      hMemObj;
+#endif
+} IEMTBCHUNK;
+
+/**
+ * A per-CPU translation block allocator.
+ *
+ * Because of how the IEMTBCACHE uses the lower 6 bits of the TB address to keep
+ * the length of the collision list, and of course also for cache line alignment
+ * reasons, the TBs must be allocated with at least 64-byte alignment.
+ * Memory is there therefore allocated using one of the page aligned allocators.
+ *
+ *
+ * To avoid wasting too much memory, it is allocated piecemeal as needed,
+ * in chunks (IEMTBCHUNK) of 2 MiB or more.  The TB has an 8-bit chunk index
+ * that enables us to quickly calculate the allocation bitmap position when
+ * freeing the translation block.
+ */
+typedef struct IEMTBALLOCATOR
+{
+    /** Magic value (IEMTBALLOCATOR_MAGIC). */
+    uint32_t        uMagic;
+
+#ifdef IEMTB_SIZE_IS_POWER_OF_TWO
+    /** Mask corresponding to cTbsPerChunk - 1. */
+    uint32_t        fChunkMask;
+    /** Shift count corresponding to cTbsPerChunk. */
+    uint8_t         cChunkShift;
+#else
+    uint32_t        uUnused;
+    uint8_t         bUnused;
+#endif
+    /** Number of chunks we're allowed to allocate. */
+    uint8_t         cMaxChunks;
+    /** Number of chunks currently populated. */
+    uint16_t        cAllocatedChunks;
+    /** Number of translation blocks per chunk. */
+    uint32_t        cTbsPerChunk;
+    /** Chunk size. */
+    uint32_t        cbPerChunk;
+
+    /** The maximum number of TBs. */
+    uint32_t        cMaxTbs;
+    /** Total number of TBs in the populated chunks.
+     * (cAllocatedChunks * cTbsPerChunk) */
+    uint32_t        cTotalTbs;
+    /** The current number of TBs in use.
+     * The number of free TBs: cAllocatedTbs - cInUseTbs; */
+    uint32_t        cInUseTbs;
+    /** Statistics: Number of the cInUseTbs that are native ones. */
+    uint32_t        cNativeTbs;
+    /** Statistics: Number of the cInUseTbs that are threaded ones. */
+    uint32_t        cThreadedTbs;
+
+    /** Where to start pruning TBs from when we're out.
+     *  See iemTbAllocatorAllocSlow for details. */
+    uint32_t        iPruneFrom;
+    /** Hint about which bit to start scanning the bitmap from. */
+    uint32_t        iStartHint;
+
+    /** Statistics: Number of TB allocation calls. */
+    STAMCOUNTER     StatAllocs;
+    /** Statistics: Number of TB free calls. */
+    STAMCOUNTER     StatFrees;
+    /** Statistics: Time spend pruning. */
+    STAMPROFILE     StatPrune;
+
+    /** Allocation chunks. */
+    IEMTBCHUNK      aChunks[256];
+
+    /** Allocation bitmap for all possible chunk chunks. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
+    uint64_t        bmAllocated[RT_FLEXIBLE_ARRAY];
+} IEMTBALLOCATOR;
+/** Pointer to a TB allocator. */
+typedef struct IEMTBALLOCATOR *PIEMTBALLOCATOR;
+
+/** Magic value for the TB allocator (Emmet Harley Cohen). */
+#define IEMTBALLOCATOR_MAGIC        UINT32_C(0x19900525)
+
+
+/**
+ * A per-CPU translation block cache (hash table).
+ *
+ * The hash table is allocated once during IEM initialization and size double
+ * the max TB count, rounded up to the nearest power of two (so we can use and
+ * AND mask rather than a rest division when hashing).
+ */
+typedef struct IEMTBCACHE
+{
+    /** Magic value (IEMTBCACHE_MAGIC). */
+    uint32_t        uMagic;
+    /** Size of the hash table.  This is a power of two. */
+    uint32_t        cHash;
+    /** The mask corresponding to cHash. */
+    uint32_t        uHashMask;
+    uint32_t        uPadding;
+
+    /** @name Statistics
+     * @{ */
+    /** Number of collisions ever. */
+    STAMCOUNTER     cCollisions;
+
+    /** Statistics: Number of TB lookup misses. */
+    STAMCOUNTER     cLookupMisses;
+    /** Statistics: Number of TB lookup hits (debug only). */
+    STAMCOUNTER     cLookupHits;
+    STAMCOUNTER     auPadding2[3];
+    /** Statistics: Collision list length pruning. */
+    STAMPROFILE     StatPrune;
+    /** @} */
+
+    /** The hash table itself.
+     * @note The lower 6 bits of the pointer is used for keeping the collision
+     *       list length, so we can take action when it grows too long.
+     *       This works because TBs are allocated using a 64 byte (or
+     *       higher) alignment from page aligned chunks of memory, so the lower
+     *       6 bits of the address will always be zero.
+     *       See IEMTBCACHE_PTR_COUNT_MASK, IEMTBCACHE_PTR_MAKE and friends.
+     */
+    RT_FLEXIBLE_ARRAY_EXTENSION
+    PIEMTB          apHash[RT_FLEXIBLE_ARRAY];
+} IEMTBCACHE;
+/** Pointer to a per-CPU translation block cahce. */
+typedef IEMTBCACHE *PIEMTBCACHE;
+
+/** Magic value for IEMTBCACHE (Johnny O'Neal). */
+#define IEMTBCACHE_MAGIC            UINT32_C(0x19561010)
+
+/** The collision count mask for IEMTBCACHE::apHash entries. */
+#define IEMTBCACHE_PTR_COUNT_MASK               ((uintptr_t)0x3f)
+/** The max collision count for IEMTBCACHE::apHash entries before pruning. */
+#define IEMTBCACHE_PTR_MAX_COUNT                ((uintptr_t)0x30)
+/** Combine a TB pointer and a collision list length into a value for an
+ *  IEMTBCACHE::apHash entry. */
+#define IEMTBCACHE_PTR_MAKE(a_pTb, a_cCount)    (PIEMTB)((uintptr_t)(a_pTb) | (a_cCount))
+/** Combine a TB pointer and a collision list length into a value for an
+ *  IEMTBCACHE::apHash entry. */
+#define IEMTBCACHE_PTR_GET_TB(a_pHashEntry)     (PIEMTB)((uintptr_t)(a_pHashEntry) & ~IEMTBCACHE_PTR_COUNT_MASK)
+/** Combine a TB pointer and a collision list length into a value for an
+ *  IEMTBCACHE::apHash entry. */
+#define IEMTBCACHE_PTR_GET_COUNT(a_pHashEntry)  ((uintptr_t)(a_pHashEntry) & IEMTBCACHE_PTR_COUNT_MASK)
+
+/**
+ * Calculates the hash table slot for a TB from physical PC address and TB flags.
+ */
+#define IEMTBCACHE_HASH(a_paCache, a_fTbFlags, a_GCPhysPc) \
+    IEMTBCACHE_HASH_NO_KEY_MASK(a_paCache, (a_fTbFlags) & IEMTB_F_KEY_MASK, a_GCPhysPc)
+
+/**
+ * Calculates the hash table slot for a TB from physical PC address and TB
+ * flags, ASSUMING the caller has applied IEMTB_F_KEY_MASK to @a a_fTbFlags.
+ */
+#define IEMTBCACHE_HASH_NO_KEY_MASK(a_paCache, a_fTbFlags, a_GCPhysPc) \
+    (((uint32_t)(a_GCPhysPc) ^ (a_fTbFlags)) & (a_paCache)->uHashMask)
+
 
 /** @name IEMBRANCHED_F_XXX - Branched indicator (IEMCPU::fTbBranched).
  *
@@ -1184,14 +1382,12 @@ typedef struct IEMCPU
      * This is allocated once and re-used afterwards, growing individual
      * components as needed. */
     R3PTRTYPE(PIEMTB)       pNativeCompileTbR3;
+    /** Pointer to the ring-3 TB cache for this EMT. */
+    R3PTRTYPE(PIEMTBCACHE)  pTbCacheR3;
     /** The PC (RIP) at the start of pCurTbR3/pCurTbR0.
      * The TBs are based on physical addresses, so this is needed to correleated
      * RIP to opcode bytes stored in the TB (AMD-V / VT-x). */
     uint64_t                uCurTbStartPc;
-    /** Statistics: Number of TB lookup misses. */
-    uint64_t                cTbLookupMisses;
-    /** Statistics: Number of TB lookup hits (debug only). */
-    uint64_t                cTbLookupHits;
     /** Number of TBs executed. */
     uint64_t                cTbExec;
     /** Whether we need to check the opcode bytes for the current instruction.
@@ -1214,7 +1410,9 @@ typedef struct IEMCPU
      * iemCImpl_sti code and subsequently cleared by the recompiler. */
     bool                    fTbCurInstrIsSti;
     /** Spaced reserved for recompiler data / alignment. */
-    bool                    afRecompilerStuff1[2];
+    bool                    afRecompilerStuff1[2+4];
+    /** The virtual sync time at the last timer poll call. */
+    uint32_t                msRecompilerPollNow;
     /** Previous GCPhysInstrBuf value - only valid if fTbCrossedPage is set.   */
     RTGCPHYS                GCPhysInstrBufPrev;
     /** Copy of IEMCPU::GCPhysInstrBuf after decoding a branch instruction.
@@ -1224,12 +1422,10 @@ typedef struct IEMCPU
     RTGCPHYS                GCPhysTbBranchSrcBuf;
     /** Copy of IEMCPU::uInstrBufPc after decoding a branch instruction.  */
     uint64_t                GCVirtTbBranchSrcBuf;
+    /** Pointer to the ring-3 TB allocator for this EMT. */
+    R3PTRTYPE(PIEMTBALLOCATOR) pTbAllocatorR3;
     /* Alignment. */
-    uint64_t                auAlignment10[6];
-    /** Statistics: Number of TB allocation calls. */
-    uint64_t                cTbAllocs;
-    /** Statistics: Number of TB free calls. */
-    uint64_t                cTbFrees;
+    uint64_t                auAlignment10[7];
     /** Statistics: Times TB execution was broken off before reaching the end. */
     STAMCOUNTER             StatTbExecBreaks;
     /** Statistics: Times BltIn_CheckIrq breaks out of the TB. */
@@ -5104,6 +5300,7 @@ extern const PFNIEMOP g_apfnIemThreadedRecompilerVecMap1[1024];
 extern const PFNIEMOP g_apfnIemThreadedRecompilerVecMap2[1024];
 extern const PFNIEMOP g_apfnIemThreadedRecompilerVecMap3[1024];
 
+DECLCALLBACK(int) iemTbInit(PVMCC pVM, uint32_t cInitialTbs, uint32_t cMaxTbs);
 void            iemThreadedTbObsolete(PVMCPUCC pVCpu, PIEMTB pTb);
 
 /** @todo FNIEMTHREADEDFUNC and friends may need more work... */

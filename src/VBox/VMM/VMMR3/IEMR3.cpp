@@ -94,21 +94,44 @@ static const char *iemGetTargetCpuName(uint32_t enmTargetCpu)
  */
 VMMR3DECL(int)      IEMR3Init(PVM pVM)
 {
-#if !defined(VBOX_VMM_TARGET_ARMV8) && !defined(VBOX_WITHOUT_CPUID_HOST_CALL)
     /*
      * Read configuration.
      */
-    PCFGMNODE pIem = CFGMR3GetChild(CFGMR3GetRoot(pVM), "IEM");
+#if (!defined(VBOX_VMM_TARGET_ARMV8) && !defined(VBOX_WITHOUT_CPUID_HOST_CALL)) || defined(VBOX_WITH_IEM_RECOMPILER)
+    PCFGMNODE const pIem = CFGMR3GetChild(CFGMR3GetRoot(pVM), "IEM");
+    int rc;
+#endif
 
+#if !defined(VBOX_VMM_TARGET_ARMV8) && !defined(VBOX_WITHOUT_CPUID_HOST_CALL)
     /** @cfgm{/IEM/CpuIdHostCall, boolean, false}
      * Controls whether the custom VBox specific CPUID host call interface is
      * enabled or not. */
 # ifdef DEBUG_bird
-    int rc = CFGMR3QueryBoolDef(pIem, "CpuIdHostCall", &pVM->iem.s.fCpuIdHostCall, true);
+    rc = CFGMR3QueryBoolDef(pIem, "CpuIdHostCall", &pVM->iem.s.fCpuIdHostCall, true);
 # else
-    int rc = CFGMR3QueryBoolDef(pIem, "CpuIdHostCall", &pVM->iem.s.fCpuIdHostCall, false);
+    rc = CFGMR3QueryBoolDef(pIem, "CpuIdHostCall", &pVM->iem.s.fCpuIdHostCall, false);
 # endif
     AssertLogRelRCReturn(rc, rc);
+#endif
+
+#ifdef VBOX_WITH_IEM_RECOMPILER
+    /** @cfgm{/IEM/InitialTbCount, uint32_t, 32768}
+     * Initial (minimum) number of TBs per EMT in ring-3. */
+    uint32_t cInitialTbs = 0;
+    rc = CFGMR3QueryU32Def(pIem, "InitialTbCount", &cInitialTbs, _32K);
+    AssertLogRelRCReturn(rc, rc);
+    if (cInitialTbs < _16K || cInitialTbs > _8M)
+        return VMSetError(pVM, VERR_OUT_OF_RANGE, RT_SRC_POS,
+                          "InitialTbCount value %u (%#x) is out of range (min %u, max %u)", cInitialTbs, cInitialTbs, _16K, _8M);
+
+    /** @cfgm{/IEM/MaxTbCount, uint32_t, 524288}
+     * Max number of TBs per EMT. */
+    uint32_t cMaxTbs = 0;
+    rc = CFGMR3QueryU32Def(pIem, "MaxTbCount", &cMaxTbs, _512K);
+    AssertLogRelRCReturn(rc, rc);
+    if (cMaxTbs < cInitialTbs || cMaxTbs > _8M)
+        return VMSetError(pVM, VERR_OUT_OF_RANGE, RT_SRC_POS,
+                          "MaxTbCount value %u (%#x) is out of range (min %u, max %u)", cMaxTbs, cMaxTbs, cInitialTbs, _8M);
 #endif
 
     /*
@@ -124,103 +147,6 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 
         pVCpu->iem.s.CodeTlb.uTlbRevision = pVCpu->iem.s.DataTlb.uTlbRevision = uInitialTlbRevision;
         pVCpu->iem.s.CodeTlb.uTlbPhysRev  = pVCpu->iem.s.DataTlb.uTlbPhysRev  = uInitialTlbPhysRev;
-
-#if !defined(VBOX_VMM_TARGET_ARMV8) && defined(VBOX_WITH_NESTED_HWVIRT_VMX) /* quick fix for stupid structure duplication non-sense */
-
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cInstructions,               STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Instructions interpreted",                     "/IEM/CPU%u/cInstructions", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cLongJumps,                  STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
-                        "Number of longjmp calls",                      "/IEM/CPU%u/cLongJumps", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cPotentialExits,             STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Potential exits",                              "/IEM/CPU%u/cPotentialExits", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetAspectNotImplemented,    STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "VERR_IEM_ASPECT_NOT_IMPLEMENTED",              "/IEM/CPU%u/cRetAspectNotImplemented", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetInstrNotImplemented,     STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "VERR_IEM_INSTR_NOT_IMPLEMENTED",               "/IEM/CPU%u/cRetInstrNotImplemented", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetInfStatuses,             STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Informational statuses returned",              "/IEM/CPU%u/cRetInfStatuses", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetErrStatuses,             STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Error statuses returned",                      "/IEM/CPU%u/cRetErrStatuses", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cbWritten,                   STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
-                        "Approx bytes written",                         "/IEM/CPU%u/cbWritten", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cPendingCommit,              STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
-                        "Times RC/R0 had to postpone instruction committing to ring-3", "/IEM/CPU%u/cPendingCommit", idCpu);
-
-#ifdef VBOX_WITH_STATISTICS
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbHits,            STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Code TLB hits",                            "/IEM/CPU%u/CodeTlb-Hits", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbHits,            STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Data TLB hits",                            "/IEM/CPU%u/DataTlb-Hits", idCpu);
-#endif
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbMisses,          STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Code TLB misses",                          "/IEM/CPU%u/CodeTlb-Misses", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.uTlbRevision,        STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
-                        "Code TLB revision",                        "/IEM/CPU%u/CodeTlb-Revision", idCpu);
-        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.CodeTlb.uTlbPhysRev, STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
-                        "Code TLB physical revision",               "/IEM/CPU%u/CodeTlb-PhysRev", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbSlowReadPath,    STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
-                        "Code TLB slow read path",                  "/IEM/CPU%u/CodeTlb-SlowReads", idCpu);
-
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbMisses,          STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Data TLB misses",                          "/IEM/CPU%u/DataTlb-Misses", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbSafeReadPath,    STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Data TLB safe read path",                  "/IEM/CPU%u/DataTlb-SafeReads", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbSafeWritePath,   STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Data TLB safe write path",                 "/IEM/CPU%u/DataTlb-SafeWrites", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.uTlbRevision,        STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
-                        "Data TLB revision",                        "/IEM/CPU%u/DataTlb-Revision", idCpu);
-        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.DataTlb.uTlbPhysRev, STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
-                        "Data TLB physical revision",               "/IEM/CPU%u/DataTlb-PhysRev", idCpu);
-
-
-#ifdef VBOX_WITH_IEM_RECOMPILER
-        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.cTbExec,             STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
-                        "Executed translation block",                   "/IEM/CPU%u/re/cTbExec", idCpu);
-        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTbExecBreaks,    STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
-                        "Times TB execution was interrupted/broken off", "/IEM/CPU%u/re/cTbExecBreaks", idCpu);
-        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.cTbAllocs,           STAMTYPE_U64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
-                        "Translation block allocations",                "/IEM/CPU%u/re/cTbAllocs", idCpu);
-        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.cTbFrees,            STAMTYPE_U64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
-                        "Translation block frees",                      "/IEM/CPU%u/re/cTbFrees", idCpu);
-        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.cTbLookupHits,       STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
-                        "Translation block lookup hits",                "/IEM/CPU%u/re/cTbLookupHits", idCpu);
-        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.cTbLookupMisses,     STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
-                        "Translation block lookup misses",              "/IEM/CPU%u/re/cTbLookupMisses", idCpu);
-
-        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTbThreadedCalls, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS_PER_TB,
-                        "Calls per threaded translation block",         "/IEM/CPU%u/re/ThrdCallsPerTb", idCpu);
-        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTbThreadedInstr, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_INSTR_PER_TB,
-                        "Instruction per threaded translation block",   "/IEM/CPU%u/re/ThrdInstrPerTb", idCpu);
-
-        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatCheckIrqBreaks,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "TB breaks by CheckIrq",                        "/IEM/CPU%u/re/CheckIrqBreaks", idCpu);
-        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatCheckModeBreaks, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "TB breaks by CheckMode",                       "/IEM/CPU%u/re/CheckModeBreaks", idCpu);
-        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatCheckBranchMisses, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Branch target misses",                         "/IEM/CPU%u/re/CheckTbJmpMisses", idCpu);
-        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatCheckNeedCsLimChecking, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Needing CS.LIM checking TB after branch or on page crossing", "/IEM/CPU%u/re/CheckTbNeedCsLimChecking", idCpu);
-#endif
-
-        for (uint32_t i = 0; i < RT_ELEMENTS(pVCpu->iem.s.aStatXcpts); i++)
-            STAMR3RegisterF(pVM, &pVCpu->iem.s.aStatXcpts[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
-                            "", "/IEM/CPU%u/Exceptions/%02x", idCpu, i);
-        for (uint32_t i = 0; i < RT_ELEMENTS(pVCpu->iem.s.aStatInts); i++)
-            STAMR3RegisterF(pVM, &pVCpu->iem.s.aStatInts[i], STAMTYPE_U32_RESET, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
-                            "", "/IEM/CPU%u/Interrupts/%02x", idCpu, i);
-
-#if !defined(VBOX_VMM_TARGET_ARMV8) && defined(VBOX_WITH_STATISTICS) && !defined(DOXYGEN_RUNNING)
-        /* Instruction statistics: */
-# define IEM_DO_INSTR_STAT(a_Name, a_szDesc) \
-            STAMR3RegisterF(pVM, &pVCpu->iem.s.StatsRZ.a_Name, STAMTYPE_U32_RESET, STAMVISIBILITY_USED, \
-                            STAMUNIT_COUNT, a_szDesc, "/IEM/CPU%u/instr-RZ/" #a_Name, idCpu); \
-            STAMR3RegisterF(pVM, &pVCpu->iem.s.StatsR3.a_Name, STAMTYPE_U32_RESET, STAMVISIBILITY_USED, \
-                            STAMUNIT_COUNT, a_szDesc, "/IEM/CPU%u/instr-R3/" #a_Name, idCpu);
-# include "IEMInstructionStatisticsTmpl.h"
-# undef IEM_DO_INSTR_STAT
-#endif
-
-#endif /* !defined(VBOX_VMM_TARGET_ARMV8) && defined(VBOX_WITH_NESTED_HWVIRT_VMX) - quick fix for stupid structure duplication non-sense */
 
         /*
          * Host and guest CPU information.
@@ -284,6 +210,152 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         uint32_t iMemMap = RT_ELEMENTS(pVCpu->iem.s.aMemMappings);
         while (iMemMap-- > 0)
             pVCpu->iem.s.aMemMappings[iMemMap].fAccess = IEM_ACCESS_INVALID;
+    }
+
+
+#ifdef VBOX_WITH_IEM_RECOMPILER
+    /*
+     * Initialize the TB allocator and cache (/ hash table).
+     *
+     * This is done by each EMT to try get more optimal thread/numa locality of
+     * the allocations.
+     */
+    rc = VMR3ReqCallWait(pVM, VMCPUID_ALL, (PFNRT)iemTbInit, 3, pVM, cInitialTbs, cMaxTbs);
+    AssertLogRelRCReturn(rc, rc);
+#endif
+
+    /*
+     * Register statistics.
+     */
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+#if !defined(VBOX_VMM_TARGET_ARMV8) && defined(VBOX_WITH_NESTED_HWVIRT_VMX) /* quick fix for stupid structure duplication non-sense */
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cInstructions,               STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Instructions interpreted",                     "/IEM/CPU%u/cInstructions", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cLongJumps,                  STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
+                        "Number of longjmp calls",                      "/IEM/CPU%u/cLongJumps", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cPotentialExits,             STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Potential exits",                              "/IEM/CPU%u/cPotentialExits", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetAspectNotImplemented,    STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "VERR_IEM_ASPECT_NOT_IMPLEMENTED",              "/IEM/CPU%u/cRetAspectNotImplemented", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetInstrNotImplemented,     STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "VERR_IEM_INSTR_NOT_IMPLEMENTED",               "/IEM/CPU%u/cRetInstrNotImplemented", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetInfStatuses,             STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Informational statuses returned",              "/IEM/CPU%u/cRetInfStatuses", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetErrStatuses,             STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Error statuses returned",                      "/IEM/CPU%u/cRetErrStatuses", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cbWritten,                   STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
+                        "Approx bytes written",                         "/IEM/CPU%u/cbWritten", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cPendingCommit,              STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
+                        "Times RC/R0 had to postpone instruction committing to ring-3", "/IEM/CPU%u/cPendingCommit", idCpu);
+
+# ifdef VBOX_WITH_STATISTICS
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbHits,            STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Code TLB hits",                            "/IEM/CPU%u/CodeTlb-Hits", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbHits,            STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Data TLB hits",                            "/IEM/CPU%u/DataTlb-Hits", idCpu);
+# endif
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbMisses,          STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Code TLB misses",                          "/IEM/CPU%u/CodeTlb-Misses", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.uTlbRevision,        STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Code TLB revision",                        "/IEM/CPU%u/CodeTlb-Revision", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.CodeTlb.uTlbPhysRev, STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Code TLB physical revision",               "/IEM/CPU%u/CodeTlb-PhysRev", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.CodeTlb.cTlbSlowReadPath,    STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Code TLB slow read path",                  "/IEM/CPU%u/CodeTlb-SlowReads", idCpu);
+
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbMisses,          STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Data TLB misses",                          "/IEM/CPU%u/DataTlb-Misses", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbSafeReadPath,    STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Data TLB safe read path",                  "/IEM/CPU%u/DataTlb-SafeReads", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.cTlbSafeWritePath,   STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Data TLB safe write path",                 "/IEM/CPU%u/DataTlb-SafeWrites", idCpu);
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.DataTlb.uTlbRevision,        STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Data TLB revision",                        "/IEM/CPU%u/DataTlb-Revision", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.DataTlb.uTlbPhysRev, STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                        "Data TLB physical revision",               "/IEM/CPU%u/DataTlb-PhysRev", idCpu);
+
+#ifdef VBOX_WITH_IEM_RECOMPILER
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.cTbExec,             STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Executed translation block",                   "/IEM/CPU%u/re/cTbExec", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTbExecBreaks,    STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+                        "Times TB execution was interrupted/broken off", "/IEM/CPU%u/re/cTbExecBreaks", idCpu);
+
+        PIEMTBALLOCATOR const pTbAllocator = pVCpu->iem.s.pTbAllocatorR3;
+        STAMR3RegisterF(pVM, (void *)&pTbAllocator->StatAllocs,         STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+                        "Translation block allocations",                "/IEM/CPU%u/re/cTbAllocs", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pTbAllocator->StatFrees,          STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+                        "Translation block frees",                      "/IEM/CPU%u/re/cTbFrees", idCpu);
+# ifdef VBOX_WITH_STATISTICS
+        STAMR3RegisterF(pVM, (void *)&pTbAllocator->StatPrune,          STAMTYPE_PROFILE,   STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
+                        "Time spent freeing up TBs when full at alloc", "/IEM/CPU%u/re/TbPruningAlloc", idCpu);
+# endif
+        STAMR3RegisterF(pVM, (void *)&pTbAllocator->cAllocatedChunks,   STAMTYPE_U16,   STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Populated TB chunks",                          "/IEM/CPU%u/re/cTbChunks", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pTbAllocator->cMaxChunks,         STAMTYPE_U8,    STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Max number of TB chunks",                      "/IEM/CPU%u/re/cTbChunksMax", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pTbAllocator->cTotalTbs,          STAMTYPE_U32,   STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Total number of TBs in the allocator",         "/IEM/CPU%u/re/cTbTotal", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pTbAllocator->cMaxTbs,            STAMTYPE_U32,   STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Max total number of TBs allowed",              "/IEM/CPU%u/re/cTbTotalMax", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pTbAllocator->cInUseTbs,          STAMTYPE_U32,   STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of currently allocated TBs",            "/IEM/CPU%u/re/cTbAllocated", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pTbAllocator->cNativeTbs,         STAMTYPE_U32,   STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of currently allocated native TBs",     "/IEM/CPU%u/re/cTbAllocatedNative", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pTbAllocator->cThreadedTbs,       STAMTYPE_U32,   STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Number of currently allocated threaded TBs",   "/IEM/CPU%u/re/cTbAllocatedThreaded", idCpu);
+
+        PIEMTBCACHE     const pTbCache     = pVCpu->iem.s.pTbCacheR3;
+        STAMR3RegisterF(pVM, (void *)&pTbCache->cHash,                  STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Translation block lookup table size",          "/IEM/CPU%u/re/cTbHashTab", idCpu);
+
+        STAMR3RegisterF(pVM, (void *)&pTbCache->cLookupHits,            STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+                        "Translation block lookup hits",                "/IEM/CPU%u/re/cTbLookupHits", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pTbCache->cLookupMisses,          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+                        "Translation block lookup misses",              "/IEM/CPU%u/re/cTbLookupMisses", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pTbCache->cCollisions,            STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+                        "Translation block hash table collisions",      "/IEM/CPU%u/re/cTbCollisions", idCpu);
+# ifdef VBOX_WITH_STATISTICS
+        STAMR3RegisterF(pVM, (void *)&pTbCache->StatPrune,              STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
+                        "Time spent shortening collision lists",        "/IEM/CPU%u/re/TbPruningCollisions", idCpu);
+# endif
+
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTbThreadedCalls, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS_PER_TB,
+                        "Calls per threaded translation block",         "/IEM/CPU%u/re/ThrdCallsPerTb", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTbThreadedInstr, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_INSTR_PER_TB,
+                        "Instruction per threaded translation block",   "/IEM/CPU%u/re/ThrdInstrPerTb", idCpu);
+
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatCheckIrqBreaks,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "TB breaks by CheckIrq",                        "/IEM/CPU%u/re/CheckIrqBreaks", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatCheckModeBreaks, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "TB breaks by CheckMode",                       "/IEM/CPU%u/re/CheckModeBreaks", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatCheckBranchMisses, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Branch target misses",                         "/IEM/CPU%u/re/CheckTbJmpMisses", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatCheckNeedCsLimChecking, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Needing CS.LIM checking TB after branch or on page crossing", "/IEM/CPU%u/re/CheckTbNeedCsLimChecking", idCpu);
+#endif
+
+        for (uint32_t i = 0; i < RT_ELEMENTS(pVCpu->iem.s.aStatXcpts); i++)
+            STAMR3RegisterF(pVM, &pVCpu->iem.s.aStatXcpts[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                            "", "/IEM/CPU%u/Exceptions/%02x", idCpu, i);
+        for (uint32_t i = 0; i < RT_ELEMENTS(pVCpu->iem.s.aStatInts); i++)
+            STAMR3RegisterF(pVM, &pVCpu->iem.s.aStatInts[i], STAMTYPE_U32_RESET, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                            "", "/IEM/CPU%u/Interrupts/%02x", idCpu, i);
+
+# if !defined(VBOX_VMM_TARGET_ARMV8) && defined(VBOX_WITH_STATISTICS) && !defined(DOXYGEN_RUNNING)
+        /* Instruction statistics: */
+#  define IEM_DO_INSTR_STAT(a_Name, a_szDesc) \
+            STAMR3RegisterF(pVM, &pVCpu->iem.s.StatsRZ.a_Name, STAMTYPE_U32_RESET, STAMVISIBILITY_USED, \
+                            STAMUNIT_COUNT, a_szDesc, "/IEM/CPU%u/instr-RZ/" #a_Name, idCpu); \
+            STAMR3RegisterF(pVM, &pVCpu->iem.s.StatsR3.a_Name, STAMTYPE_U32_RESET, STAMVISIBILITY_USED, \
+                            STAMUNIT_COUNT, a_szDesc, "/IEM/CPU%u/instr-R3/" #a_Name, idCpu);
+#  include "IEMInstructionStatisticsTmpl.h"
+#  undef IEM_DO_INSTR_STAT
+# endif
+
+#endif /* !defined(VBOX_VMM_TARGET_ARMV8) && defined(VBOX_WITH_NESTED_HWVIRT_VMX) - quick fix for stupid structure duplication non-sense */
     }
 
 #if !defined(VBOX_VMM_TARGET_ARMV8) && defined(VBOX_WITH_NESTED_HWVIRT_VMX)

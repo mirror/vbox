@@ -82,6 +82,7 @@
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#include <iprt/sort.h>
 #include <iprt/x86.h>
 
 #ifndef TST_IEM_CHECK_MC
@@ -114,6 +115,7 @@
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb);
+static void         iemTbAllocatorFree(PVMCPUCC pVCpu, PIEMTB pTb);
 
 
 /**
@@ -437,21 +439,612 @@ RTGCPTR iemOpHlpCalcRmEffAddrJmpEx(PVMCPUCC pVCpu, uint8_t bRm, uint32_t cbImmAn
 }
 
 
+/*********************************************************************************************************************************
+*   Translation Block Cache.                                                                                                     *
+*********************************************************************************************************************************/
+
+/** @callback_method_impl{FNRTSORTCMP, Compare two TBs for pruning sorting purposes.}  */
+static DECLCALLBACK(int) iemTbCachePruneCmpTb(void const *pvElement1, void const *pvElement2, void *pvUser)
+{
+    PCIEMTB const  pTb1 = (PCIEMTB)pvElement1;
+    PCIEMTB const  pTb2 = (PCIEMTB)pvElement2;
+    uint32_t const cMsSinceUse1 = (uint32_t)(uintptr_t)pvUser - pTb1->msLastUsed;
+    uint32_t const cMsSinceUse2 = (uint32_t)(uintptr_t)pvUser - pTb2->msLastUsed;
+    if (cMsSinceUse1 != cMsSinceUse2)
+        return cMsSinceUse1 < cMsSinceUse2 ? -1 : 1;
+    if (pTb1->cUsed != pTb2->cUsed)
+        return pTb1->cUsed > pTb2->cUsed ? -1 : 1;
+    if ((pTb1->fFlags & IEMTB_F_TYPE_MASK) != (pTb2->fFlags & IEMTB_F_TYPE_MASK))
+        return (pTb1->fFlags & IEMTB_F_TYPE_MASK) == IEMTB_F_TYPE_NATIVE ? -1 : 1;
+    return 0;
+}
+
+
+DECL_NO_INLINE(static, void) iemTbCacheAddWithPruning(PVMCPUCC pVCpu, PIEMTBCACHE pTbCache, PIEMTB pTb, uint32_t idxHash)
+{
+    STAM_PROFILE_START(&pTbCache->StatPrune, a);
+
+    /*
+     * First convert the collision list to an array.
+     */
+    PIEMTB    apSortedTbs[IEMTBCACHE_PTR_MAX_COUNT];
+    uintptr_t cInserted    = 0;
+    PIEMTB    pTbCollision = IEMTBCACHE_PTR_GET_TB(pTbCache->apHash[idxHash]);
+    pTbCache->apHash[idxHash] = NULL; /* Must NULL the entry before trying to free anything. */
+
+    while (pTbCollision && cInserted < RT_ELEMENTS(apSortedTbs))
+    {
+        apSortedTbs[cInserted++] = pTbCollision;
+        pTbCollision = pTbCollision->pNext;
+    }
+
+    /* Free any excess (impossible). */
+    if (RT_LIKELY(!pTbCollision))
+        Assert(cInserted == RT_ELEMENTS(apSortedTbs));
+    else
+        do
+        {
+            PIEMTB pTbToFree = pTbCollision;
+            pTbCollision = pTbToFree->pNext;
+            iemTbAllocatorFree(pVCpu, pTbToFree);
+        } while (pTbCollision);
+
+    /*
+     * Sort it by most recently used and usage count.
+     */
+    RTSortApvShell((void **)apSortedTbs, cInserted, iemTbCachePruneCmpTb, (void *)(uintptr_t)pVCpu->iem.s.msRecompilerPollNow);
+
+    /* We keep half the list for now. Perhaps a bit aggressive... */
+    uintptr_t const cKeep = cInserted / 2;
+
+    /* First free up the TBs we don't wish to keep (before creating the new
+       list because otherwise the free code will scan the list for each one
+       without ever finding it). */
+    for (uintptr_t idx = cKeep; idx < cInserted; idx++)
+        iemTbAllocatorFree(pVCpu, apSortedTbs[idx]);
+
+    /* Chain the new TB together with the ones we like to keep of the existing
+       ones and insert this list into the hash table. */
+    pTbCollision = pTb;
+    for (uintptr_t idx = 0; idx < cKeep; idx++)
+        pTbCollision = pTbCollision->pNext = apSortedTbs[idx];
+    pTbCollision->pNext = NULL;
+
+    pTbCache->apHash[idxHash] = IEMTBCACHE_PTR_MAKE(pTb, cKeep + 1);
+
+    STAM_PROFILE_STOP(&pTbCache->StatPrune, a);
+}
+
+
+static void iemTbCacheAdd(PVMCPUCC pVCpu, PIEMTBCACHE pTbCache, PIEMTB pTb)
+{
+    uint32_t const idxHash    = IEMTBCACHE_HASH(pTbCache, pTb->fFlags, pTb->GCPhysPc);
+    PIEMTB const   pTbOldHead = pTbCache->apHash[idxHash];
+    if (!pTbOldHead)
+    {
+        pTb->pNext = NULL;
+        pTbCache->apHash[idxHash] = IEMTBCACHE_PTR_MAKE(pTb, 1);  /** @todo could make 1 implicit... */
+    }
+    else
+    {
+        STAM_REL_COUNTER_INC(&pTbCache->cCollisions);
+        uintptr_t cCollisions = IEMTBCACHE_PTR_GET_COUNT(pTbOldHead);
+        if (cCollisions < IEMTBCACHE_PTR_MAX_COUNT)
+        {
+            pTb->pNext = IEMTBCACHE_PTR_GET_TB(pTbOldHead);
+            pTbCache->apHash[idxHash] = IEMTBCACHE_PTR_MAKE(pTb, cCollisions + 1);
+        }
+        else
+            iemTbCacheAddWithPruning(pVCpu, pTbCache, pTb, idxHash);
+    }
+}
+
+
+/**
+ * Unlinks @a pTb from the hash table if found in it.
+ *
+ * @returns true if unlinked, false if not present.
+ * @param   pTbCache    The hash table.
+ * @param   pTb         The TB to remove.
+ */
+static bool iemTbCacheRemove(PIEMTBCACHE pTbCache, PIEMTB pTb)
+{
+    uint32_t const idxHash = IEMTBCACHE_HASH(pTbCache, pTb->fFlags, pTb->GCPhysPc);
+    PIEMTB         pTbHash = IEMTBCACHE_PTR_GET_TB(pTbCache->apHash[idxHash]);
+
+    /* At the head of the collision list? */
+    if (pTbHash == pTb)
+    {
+        if (!pTb->pNext)
+            pTbCache->apHash[idxHash] = NULL;
+        else
+            pTbCache->apHash[idxHash] = IEMTBCACHE_PTR_MAKE(pTb->pNext,
+                                                            IEMTBCACHE_PTR_GET_COUNT(pTbCache->apHash[idxHash]) - 1);
+        return true;
+    }
+
+    /* Search the collision list. */
+    while (pTbHash)
+    {
+        PIEMTB const pNextTb = pTbHash->pNext;
+        if (pNextTb == pTb)
+        {
+            pTbHash->pNext = pTb->pNext;
+            pTbCache->apHash[idxHash] = IEMTBCACHE_PTR_MAKE(pTbCache->apHash[idxHash],
+                                                            IEMTBCACHE_PTR_GET_COUNT(pTbCache->apHash[idxHash]) - 1);
+            return true;
+        }
+        pTbHash = pNextTb;
+    }
+    return false;
+}
+
+
+/**
+ * Looks up a TB for the given PC and flags in the cache.
+ *
+ * @returns Pointer to TB on success, NULL if not found.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling thread.
+ * @param   pTbCache        The translation block cache.
+ * @param   GCPhysPc        The PC to look up a TB for.
+ * @param   fExtraFlags     The extra flags to join with IEMCPU::fExec for
+ *                          the lookup.
+ * @thread  EMT(pVCpu)
+ */
+static PIEMTB iemTbCacheLookup(PVMCPUCC pVCpu, PIEMTBCACHE pTbCache,
+                               RTGCPHYS GCPhysPc, uint32_t fExtraFlags) IEM_NOEXCEPT_MAY_LONGJMP
+{
+    uint32_t const fFlags  = ((pVCpu->iem.s.fExec & IEMTB_F_IEM_F_MASK) | fExtraFlags | IEMTB_F_STATE_READY) & IEMTB_F_KEY_MASK;
+    uint32_t const idxHash = IEMTBCACHE_HASH_NO_KEY_MASK(pTbCache, fFlags, GCPhysPc);
+    PIEMTB         pTb     = IEMTBCACHE_PTR_GET_TB(pTbCache->apHash[idxHash]);
+#if defined(VBOX_STRICT) || defined(LOG_ENABLED)
+    int            cLeft   = IEMTBCACHE_PTR_GET_COUNT(pTbCache->apHash[idxHash]);
+#endif
+    Log10(("TB lookup: fFlags=%#x GCPhysPc=%RGp idxHash=%#x: %p L %d\n", fFlags, GCPhysPc, idxHash, pTb, cLeft));
+    while (pTb)
+    {
+        if (pTb->GCPhysPc == GCPhysPc)
+        {
+            if ((pTb->fFlags & IEMTB_F_KEY_MASK) == fFlags)
+            {
+                if (pTb->x86.fAttr == (uint16_t)pVCpu->cpum.GstCtx.cs.Attr.u)
+                {
+                    pTb->cUsed++;
+                    pTb->msLastUsed = pVCpu->iem.s.msRecompilerPollNow;
+                    STAM_COUNTER_INC(&pTbCache->cLookupHits);
+                    AssertMsg(cLeft > 0, ("%d\n", cLeft));
+                    return pTb;
+                }
+                Log11(("TB miss: CS: %#x, wanted %#x\n", pTb->x86.fAttr, (uint16_t)pVCpu->cpum.GstCtx.cs.Attr.u));
+            }
+            else
+                Log11(("TB miss: fFlags: %#x, wanted %#x\n", pTb->fFlags, fFlags));
+        }
+        else
+            Log11(("TB miss: GCPhysPc: %#x, wanted %#x\n", pTb->GCPhysPc, GCPhysPc));
+
+        pTb = pTb->pNext;
+#ifdef VBOX_STRICT
+        cLeft--;
+#endif
+    }
+    AssertMsg(cLeft == 0, ("%d\n", cLeft));
+    STAM_REL_COUNTER_INC(&pTbCache->cLookupMisses);
+    return pTb;
+}
+
+
+/*********************************************************************************************************************************
+*   Translation Block Allocator.
+*********************************************************************************************************************************/
 /*
- * Translation block management.
+ * Translation block allocationmanagement.
  */
 
-typedef struct IEMTBCACHE
+#ifdef IEMTB_SIZE_IS_POWER_OF_TWO
+# define IEMTBALLOC_IDX_TO_CHUNK(a_pTbAllocator, a_idxTb) \
+    ((a_idxTb) >> (a_pTbAllocator)->cChunkShift)
+# define IEMTBALLOC_IDX_TO_INDEX_IN_CHUNK(a_pTbAllocator, a_idxTb, a_idxChunk) \
+    ((a_idxTb) &  (a_pTbAllocator)->fChunkMask)
+# define IEMTBALLOC_IDX_FOR_CHUNK(a_pTbAllocator, a_idxChunk) \
+    ((uint32_t)(a_idxChunk) << (a_pTbAllocator)->cChunkShift)
+#else
+# define IEMTBALLOC_IDX_TO_CHUNK(a_pTbAllocator, a_idxTb) \
+    ((a_idxTb) / (a_pTbAllocator)->cTbsPerChunk)
+# define IEMTBALLOC_IDX_TO_INDEX_IN_CHUNK(a_pTbAllocator, a_idxTb, a_idxChunk) \
+    ((a_idxTb) - (a_idxChunk) * (a_pTbAllocator)->cTbsPerChunk)
+# define IEMTBALLOC_IDX_FOR_CHUNK(a_pTbAllocator, a_idxChunk) \
+    ((uint32_t)(a_idxChunk) * (a_pTbAllocator)->cTbsPerChunk)
+#endif
+/** Makes a TB index from a chunk index and TB index within that chunk. */
+#define IEMTBALLOC_IDX_MAKE(a_pTbAllocator, a_idxChunk, a_idxInChunk) \
+    (IEMTBALLOC_IDX_FOR_CHUNK(a_pTbAllocator, a_idxChunk) + (a_idxInChunk))
+
+
+/**
+ * Initializes the TB allocator and cache for an EMT.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   cInitialTbs The initial number of translation blocks to
+ *                      preallocator.
+ * @param   cMaxTbs     The max number of translation blocks allowed.
+ * @thread  EMT
+ */
+DECLCALLBACK(int) iemTbInit(PVMCC pVM, uint32_t cInitialTbs, uint32_t cMaxTbs)
 {
-    uint32_t cHash;
-    uint32_t uHashMask;
-    PIEMTB   apHash[_1M];
-} IEMTBCACHE;
+    PVMCPUCC pVCpu = VMMGetCpu(pVM);
+    Assert(!pVCpu->iem.s.pTbCacheR3);
+    Assert(!pVCpu->iem.s.pTbAllocatorR3);
 
-static IEMTBCACHE g_TbCache = { _1M, _1M - 1, }; /**< Quick and dirty. */
+    /*
+     * Calculate the chunk size of the TB allocator.
+     * The minimum chunk size is 2MiB.
+     */
+    AssertCompile(!(sizeof(IEMTB) & IEMTBCACHE_PTR_COUNT_MASK));
+    uint32_t      cbPerChunk   = _2M;
+    uint32_t      cTbsPerChunk = _2M / sizeof(IEMTB);
+#ifdef IEMTB_SIZE_IS_POWER_OF_TWO
+    uint8_t const cTbShift     = ASMBitFirstSetU32((uint32_t)sizeof(IEMTB)) - 1;
+    uint8_t       cChunkShift  = 21 - cTbShift;
+    AssertCompile(RT_BIT_32(21) == _2M); Assert(RT_BIT_32(cChunkShift) == cTbsPerChunk);
+#endif
+    for (;;)
+    {
+        if (cMaxTbs <= cTbsPerChunk * (uint64_t)RT_ELEMENTS(pVCpu->iem.s.pTbAllocatorR3->aChunks))
+            break;
+        cbPerChunk  *= 2;
+        cTbsPerChunk = cbPerChunk / sizeof(IEMTB);
+#ifdef IEMTB_SIZE_IS_POWER_OF_TWO
+        cChunkShift += 1;
+#endif
+    }
 
-#define IEMTBCACHE_HASH(a_paCache, a_fTbFlags, a_GCPhysPc) \
-    ( ((uint32_t)(a_GCPhysPc) ^ (a_fTbFlags)) & (a_paCache)->uHashMask)
+    uint32_t cMaxChunks = (cMaxTbs + cTbsPerChunk - 1) / cTbsPerChunk;
+    Assert(cMaxChunks * cTbsPerChunk >= cMaxTbs);
+    Assert(cMaxChunks <= RT_ELEMENTS(pVCpu->iem.s.pTbAllocatorR3->aChunks));
+
+    cMaxTbs = cMaxChunks * cTbsPerChunk;
+
+    /*
+     * Allocate and initalize it.
+     */
+    uint32_t const        c64BitWords   = RT_ALIGN_32(cMaxTbs, 64) / 64;
+    size_t const          cbTbAllocator = RT_UOFFSETOF_DYN(IEMTBALLOCATOR, bmAllocated[c64BitWords]);
+    PIEMTBALLOCATOR const pTbAllocator  = (PIEMTBALLOCATOR)RTMemAllocZ(cbTbAllocator);
+    if (!pTbAllocator)
+        return VMSetError(pVM, VERR_NO_MEMORY, RT_SRC_POS,
+                          "Failed to allocate %zu bytes (max %u TBs) for the TB allocator of VCpu #%u",
+                          cbTbAllocator, cMaxTbs, pVCpu->idCpu);
+    pTbAllocator->uMagic        = IEMTBALLOCATOR_MAGIC;
+    pTbAllocator->cMaxChunks    = (uint8_t)cMaxChunks;
+    pTbAllocator->cTbsPerChunk  = cTbsPerChunk;
+    pTbAllocator->cbPerChunk    = cbPerChunk;
+    pTbAllocator->cMaxTbs       = cMaxTbs;
+#ifdef IEMTB_SIZE_IS_POWER_OF_TWO
+    pTbAllocator->fChunkMask    = cTbsPerChunk - 1;
+    pTbAllocator->cChunkShift   = cChunkShift;
+    Assert(RT_BIT_32(cChunkShift) == cTbsPerChunk);
+#endif
+
+    memset(pTbAllocator->bmAllocated, 0xff, c64BitWords * sizeof(uint64_t)); /* Mark all as allocated, clear as chunks are added. */
+    pVCpu->iem.s.pTbAllocatorR3 = pTbAllocator;
+
+    /*
+     * Allocate the initial chunks.
+     */
+    for (uint32_t idxChunk = 0; ; idxChunk++)
+    {
+        PIEMTB const paTbs = pTbAllocator->aChunks[idxChunk].paTbs = (PIEMTB)RTMemPageAllocZ(cbPerChunk);
+        if (!paTbs)
+            return VMSetError(pVM, VERR_NO_MEMORY, RT_SRC_POS,
+                              "Failed to initial %zu bytes for the #%u chunk of TBs for VCpu #%u",
+                              cbPerChunk, idxChunk, pVCpu->idCpu);
+
+        for (uint32_t iTb = 0; iTb < cTbsPerChunk; iTb++)
+            paTbs[iTb].idxAllocChunk = idxChunk; /* This is not strictly necessary... */
+        ASMBitClearRange(pTbAllocator->bmAllocated, idxChunk * cTbsPerChunk, (idxChunk + 1) * cTbsPerChunk);
+        pTbAllocator->cAllocatedChunks = (uint16_t)(idxChunk + 1);
+        pTbAllocator->cTotalTbs       += cTbsPerChunk;
+
+        if (idxChunk * cTbsPerChunk >= cInitialTbs)
+            break;
+    }
+
+    /*
+     * Calculate the size of the hash table. We double the max TB count and
+     * round it up to the nearest power of two.
+     */
+    uint32_t cCacheEntries = cMaxTbs * 2;
+    if (!RT_IS_POWER_OF_TWO(cCacheEntries))
+    {
+        uint8_t const iBitTop = ASMBitFirstSetU32(cCacheEntries);
+        cCacheEntries = RT_BIT_32(iBitTop);
+        Assert(cCacheEntries >= cMaxTbs * 2);
+    }
+
+    size_t const      cbTbCache = RT_UOFFSETOF_DYN(IEMTBCACHE, apHash[cCacheEntries]);
+    PIEMTBCACHE const pTbCache  = (PIEMTBCACHE)RTMemAllocZ(cbTbCache);
+    if (!pTbCache)
+        return VMSetError(pVM, VERR_NO_MEMORY, RT_SRC_POS,
+                          "Failed to allocate %zu bytes (%u entries) for the TB cache of VCpu #%u",
+                          cbTbCache, cCacheEntries, pVCpu->idCpu);
+
+    /*
+     * Initialize it (assumes zeroed by the allocator).
+     */
+    pTbCache->uMagic    = IEMTBCACHE_MAGIC;
+    pTbCache->cHash     = cCacheEntries;
+    pTbCache->uHashMask = cCacheEntries - 1;
+    Assert(pTbCache->cHash > pTbCache->uHashMask);
+    pVCpu->iem.s.pTbCacheR3 = pTbCache;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Inner free worker.
+ */
+static void iemTbAllocatorFreeInner(PVMCPUCC pVCpu, PIEMTBALLOCATOR pTbAllocator,
+                                    PIEMTB pTb, uint32_t idxChunk, uint32_t idxInChunk)
+{
+    Assert(idxChunk < pTbAllocator->cAllocatedChunks);
+    Assert(idxInChunk < pTbAllocator->cTbsPerChunk);
+    Assert((uintptr_t)(pTb - pTbAllocator->aChunks[idxChunk].paTbs) == idxInChunk);
+    Assert(ASMBitTest(&pTbAllocator->bmAllocated, IEMTBALLOC_IDX_MAKE(pTbAllocator, idxChunk, idxInChunk)));
+
+    /*
+     * Unlink the TB from the hash table.
+     */
+    iemTbCacheRemove(pVCpu->iem.s.pTbCacheR3, pTb);
+
+    /*
+     * Free the TB itself.
+     */
+    switch (pTb->fFlags & IEMTB_F_TYPE_MASK)
+    {
+        case IEMTB_F_TYPE_THREADED:
+            pTbAllocator->cThreadedTbs -= 1;
+            RTMemFree(pTb->Thrd.paCalls);
+            break;
+        case IEMTB_F_TYPE_NATIVE:
+            pTbAllocator->cNativeTbs -= 1;
+            RTMemFree(pTb->Native.pbCode); /// @todo native: fix me
+            break;
+        default:
+            AssertFailed();
+    }
+    RTMemFree(pTb->pabOpcodes);
+
+    pTb->pNext              = NULL;
+    pTb->fFlags             = 0;
+    pTb->GCPhysPc           = UINT64_MAX;
+    pTb->Gen.uPtr           = 0;
+    pTb->Gen.uData          = 0;
+    pTb->cbOpcodes          = 0;
+    pTb->cbOpcodesAllocated = 0;
+    pTb->pabOpcodes         = NULL;
+
+    ASMBitClear(&pTbAllocator->bmAllocated, IEMTBALLOC_IDX_MAKE(pTbAllocator, idxChunk, idxInChunk));
+    Assert(pTbAllocator->cInUseTbs > 0);
+
+    pTbAllocator->cInUseTbs -= 1;
+    STAM_REL_COUNTER_INC(&pTbAllocator->StatFrees);
+}
+
+
+/**
+ * Frees the given TB.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure of the calling
+ *                  thread.
+ * @param   pTb     The translation block to free..
+ * @thread  EMT(pVCpu)
+ */
+static void iemTbAllocatorFree(PVMCPUCC pVCpu, PIEMTB pTb)
+{
+    /*
+     * Validate state.
+     */
+    PIEMTBALLOCATOR const pTbAllocator = pVCpu->iem.s.pTbAllocatorR3;
+    Assert(pTbAllocator && pTbAllocator->uMagic == IEMTBALLOCATOR_MAGIC);
+    uint8_t const idxChunk = pTb->idxAllocChunk;
+    AssertLogRelReturnVoid(idxChunk < pTbAllocator->cAllocatedChunks);
+    uintptr_t const idxInChunk = pTb - pTbAllocator->aChunks[idxChunk].paTbs;
+    AssertLogRelReturnVoid(idxInChunk < pTbAllocator->cTbsPerChunk);
+
+    /*
+     * Call inner worker.
+     */
+    iemTbAllocatorFreeInner(pVCpu, pTbAllocator, pTb, idxChunk, (uint32_t)idxInChunk);
+}
+
+
+/**
+ * Grow the translation block allocator with another chunk.
+ */
+static int iemTbAllocatorGrow(PVMCPUCC pVCpu)
+{
+    /*
+     * Validate state.
+     */
+    PIEMTBALLOCATOR const pTbAllocator = pVCpu->iem.s.pTbAllocatorR3;
+    AssertReturn(pTbAllocator, VERR_WRONG_ORDER);
+    AssertReturn(pTbAllocator->uMagic == IEMTBALLOCATOR_MAGIC, VERR_INVALID_MAGIC);
+    uint32_t const idxChunk = pTbAllocator->cAllocatedChunks;
+    AssertReturn(idxChunk < pTbAllocator->cMaxChunks, VERR_OUT_OF_RESOURCES);
+
+    /*
+     * Allocate a new chunk and add it to the allocator.
+     */
+    PIEMTB const paTbs = (PIEMTB)RTMemPageAllocZ(pTbAllocator->cbPerChunk);
+    AssertLogRelReturn(paTbs, VERR_NO_PAGE_MEMORY);
+    pTbAllocator->aChunks[idxChunk].paTbs = paTbs;
+
+    uint32_t const cTbsPerChunk = pTbAllocator->cTbsPerChunk;
+    for (uint32_t iTb = 0; iTb < cTbsPerChunk; iTb++)
+        paTbs[iTb].idxAllocChunk = idxChunk; /* This is not strictly necessary... */
+    ASMBitClearRange(pTbAllocator->bmAllocated, idxChunk * cTbsPerChunk, (idxChunk + 1) * cTbsPerChunk);
+    pTbAllocator->cAllocatedChunks = (uint16_t)(idxChunk + 1);
+    pTbAllocator->cTotalTbs       += cTbsPerChunk;
+    pTbAllocator->iStartHint       = idxChunk * cTbsPerChunk;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Allocates a TB from allocator with free block.
+ *
+ * This is common code to both the fast and slow allocator code paths.
+ */
+DECL_FORCE_INLINE(PIEMTB) iemTbAllocatorAllocCore(PIEMTBALLOCATOR const pTbAllocator, bool fThreaded)
+{
+    Assert(pTbAllocator->cInUseTbs < pTbAllocator->cTotalTbs);
+
+    int idxTb;
+    if (pTbAllocator->iStartHint < pTbAllocator->cTotalTbs)
+        idxTb = ASMBitNextClear(pTbAllocator->bmAllocated,
+                                pTbAllocator->cTotalTbs,
+                                pTbAllocator->iStartHint & ~(uint32_t)63);
+    else
+        idxTb = -1;
+    if (idxTb < 0)
+    {
+        idxTb = ASMBitFirstClear(pTbAllocator->bmAllocated, pTbAllocator->cTotalTbs);
+        AssertLogRelReturn(idxTb >= 0, NULL);
+    }
+    Assert((uint32_t)idxTb < pTbAllocator->cTotalTbs);
+    ASMBitSet(pTbAllocator->bmAllocated, idxTb);
+
+    /** @todo shift/mask optimization for power of two IEMTB sizes. */
+    uint32_t const idxChunk     = IEMTBALLOC_IDX_TO_CHUNK(pTbAllocator, idxTb);
+    uint32_t const idxTbInChunk = IEMTBALLOC_IDX_TO_INDEX_IN_CHUNK(pTbAllocator, idxTb, idxChunk);
+    PIEMTB const   pTb          = &pTbAllocator->aChunks[idxChunk].paTbs[idxTbInChunk];
+    Assert(pTb->idxAllocChunk == idxChunk);
+
+    pTbAllocator->cInUseTbs        += 1;
+    if (fThreaded)
+        pTbAllocator->cThreadedTbs += 1;
+    else
+        pTbAllocator->cNativeTbs   += 1;
+    STAM_REL_COUNTER_INC(&pTbAllocator->StatAllocs);
+    return pTb;
+}
+
+
+/**
+ * Slow path for iemTbAllocatorAlloc.
+ */
+static PIEMTB iemTbAllocatorAllocSlow(PVMCPUCC pVCpu, PIEMTBALLOCATOR const pTbAllocator, bool fThreaded)
+{
+    /*
+     * With some luck we can add another chunk.
+     */
+    if (pTbAllocator->cAllocatedChunks < pTbAllocator->cMaxChunks)
+    {
+        int rc = iemTbAllocatorGrow(pVCpu);
+        if (RT_SUCCESS(rc))
+            return iemTbAllocatorAllocCore(pTbAllocator, fThreaded);
+    }
+
+    /*
+     * We have to prune stuff. Sigh.
+     *
+     * This requires scanning for older TBs and kick them out.  Not sure how to
+     * best do this as we don't want to maintain any list of TBs ordered by last
+     * usage time. But one reasonably simple approach would be that each time we
+     * get here we continue a sequential scan of the allocation chunks,
+     * considering just a smallish number of TBs and freeing a fixed portion of
+     * them.  Say, we consider the next 128 TBs, freeing the least recently used
+     * in out of groups of 4 TBs, resulting in 32 free TBs.
+     */
+    STAM_PROFILE_START(&pTbAllocator->StatPrune, a);
+    uint32_t const msNow          = pVCpu->iem.s.msRecompilerPollNow;
+    uint32_t       cFreedTbs      = 0;
+#ifdef IEMTB_SIZE_IS_POWER_OF_TWO
+    uint32_t       idxTbPruneFrom = pTbAllocator->iPruneFrom & ~(uint32_t)3;
+#else
+    uint32_t       idxTbPruneFrom = pTbAllocator->iPruneFrom;
+#endif
+    if (idxTbPruneFrom > pTbAllocator->cMaxTbs)
+        idxTbPruneFrom = 0;
+    for (uint32_t i = 0; i < 128; i += 4, idxTbPruneFrom += 4)
+    {
+        uint32_t idxChunk   = IEMTBALLOC_IDX_TO_CHUNK(pTbAllocator, idxTbPruneFrom);
+        uint32_t idxInChunk = IEMTBALLOC_IDX_TO_INDEX_IN_CHUNK(pTbAllocator, idxTbPruneFrom, idxChunk);
+        PIEMTB   pTb        = &pTbAllocator->aChunks[idxChunk].paTbs[idxInChunk];
+        uint32_t cMsAge     = msNow - pTb->msLastUsed;
+        for (uint32_t j = 1, idxChunk2 = idxChunk, idxInChunk2 = idxInChunk + 1; j < 4; j++, idxInChunk2++)
+        {
+#ifndef IEMTB_SIZE_IS_POWER_OF_TWO
+            if (idxInChunk2 < pTbAllocator->cTbsPerChunk)
+            { /* likely */ }
+            else
+            {
+                idxInChunk2 = 0;
+                idxChunk2  += 1;
+                if (idxChunk2 >= pTbAllocator->cAllocatedChunks)
+                    idxChunk2 = 0;
+            }
+#endif
+            PIEMTB   const pTb2    = &pTbAllocator->aChunks[idxChunk2].paTbs[idxInChunk2];
+            uint32_t const cMsAge2 = msNow - pTb2->msLastUsed;
+            if (   cMsAge2 > cMsAge
+                || (cMsAge2 == cMsAge && pTb2->cUsed < pTb->cUsed)
+                || (pTb2->fFlags & IEMTB_F_STATE_MASK) == IEMTB_F_STATE_OBSOLETE) /** @todo Consider state (and clean it up)! */
+            {
+                pTb        = pTb2;
+                idxChunk   = idxChunk2;
+                idxInChunk = idxInChunk2;
+                cMsAge     = cMsAge2;
+            }
+        }
+
+        /* Free the TB if in the right state. */
+        /** @todo They shall all be freeable! Otherwise we've buggered up the
+         *        accounting.  The TB state crap needs elimnating. */
+        if (   (pTb->fFlags & IEMTB_F_STATE_MASK) == IEMTB_F_STATE_READY
+            || (pTb->fFlags & IEMTB_F_STATE_MASK) == IEMTB_F_STATE_OBSOLETE)
+        {
+            iemTbAllocatorFreeInner(pVCpu, pTbAllocator, pTb, idxChunk, idxInChunk);
+            cFreedTbs++; /* just for safety */
+        }
+    }
+    pTbAllocator->iPruneFrom = idxTbPruneFrom;
+    STAM_PROFILE_STOP(&pTbAllocator->StatPrune, a);
+
+    /*
+     * Allocate a TB from the ones we've pruned.
+     */
+    if (cFreedTbs)
+        return iemTbAllocatorAllocCore(pTbAllocator, fThreaded);
+    return NULL;
+}
+
+
+/**
+ * Allocate a translation block.
+ *
+ * @returns Pointer to block on success, NULL if we're out and is unable to
+ *          free up an existing one (very unlikely once implemented).
+ * @param   pVCpu       The cross context virtual CPU structure of the calling
+ *                      thread.
+ * @param   fThreaded   Set if threaded TB being allocated, clear if native TB.
+ *                      For statistics.
+ */
+DECL_FORCE_INLINE(PIEMTB) iemTbAllocatorAlloc(PVMCPUCC pVCpu, bool fThreaded)
+{
+    PIEMTBALLOCATOR const pTbAllocator = pVCpu->iem.s.pTbAllocatorR3;
+    Assert(pTbAllocator && pTbAllocator->uMagic == IEMTBALLOCATOR_MAGIC);
+
+    /* If the allocator is full, take slow code path.*/
+    if (RT_LIKELY(pTbAllocator->cInUseTbs < pTbAllocator->cTotalTbs))
+        return iemTbAllocatorAllocCore(pTbAllocator, fThreaded);
+    return iemTbAllocatorAllocSlow(pVCpu, pTbAllocator, fThreaded);
+}
 
 
 /**
@@ -470,7 +1063,7 @@ static IEMTBCACHE g_TbCache = { _1M, _1M - 1, }; /**< Quick and dirty. */
  */
 static PIEMTB iemThreadedTbAlloc(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPc, uint32_t fExtraFlags)
 {
-    PIEMTB pTb = (PIEMTB)RTMemAlloc(sizeof(IEMTB));
+    PIEMTB pTb = (PIEMTB)RTMemAllocZ(sizeof(IEMTB));
     if (pTb)
     {
         unsigned const cCalls = 256;
@@ -485,7 +1078,9 @@ static PIEMTB iemThreadedTbAlloc(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPc, u
                 pTb->Thrd.cCalls            = 0;
                 pTb->cbOpcodes              = 0;
                 pTb->pNext                  = NULL;
-                RTListInit(&pTb->LocalList);
+                pTb->cUsed                  = 0;
+                pTb->msLastUsed             = pVCpu->iem.s.msRecompilerPollNow;
+                pTb->idxAllocChunk          = UINT8_MAX;
                 pTb->GCPhysPc               = GCPhysPc;
                 pTb->x86.fAttr              = (uint16_t)pVCpu->cpum.GstCtx.cs.Attr.u;
                 pTb->fFlags                 = (pVCpu->iem.s.fExec & IEMTB_F_IEM_F_MASK) | fExtraFlags;
@@ -501,7 +1096,6 @@ static PIEMTB iemThreadedTbAlloc(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPc, u
                 pTb->aGCPhysPages[0]        = NIL_RTGCPHYS;
                 pTb->aGCPhysPages[1]        = NIL_RTGCPHYS;
 
-                pVCpu->iem.s.cTbAllocs++;
                 return pTb;
             }
             RTMemFree(pTb->Thrd.paCalls);
@@ -558,10 +1152,12 @@ static PIEMTB iemThreadedTbDuplicate(PVMCC pVM, PVMCPUCC pVCpu, PCIEMTB pTbSrc)
      * Just using the heap for now.  Will make this more efficient and
      * complicated later, don't worry. :-)
      */
-    PIEMTB pTb = (PIEMTB)RTMemAlloc(sizeof(IEMTB));
+    PIEMTB pTb = iemTbAllocatorAlloc(pVCpu, true /*fThreaded*/);
     if (pTb)
     {
+        uint8_t const idxAllocChunk = pTb->idxAllocChunk;
         memcpy(pTb, pTbSrc, sizeof(*pTb));
+        pTb->idxAllocChunk = idxAllocChunk;
 
         unsigned const cCalls = pTbSrc->Thrd.cCalls;
         Assert(cCalls > 0);
@@ -576,15 +1172,15 @@ static PIEMTB iemThreadedTbDuplicate(PVMCC pVM, PVMCPUCC pVCpu, PCIEMTB pTbSrc)
                 pTb->Thrd.cAllocated        = cCalls;
                 pTb->cbOpcodesAllocated     = cbOpcodes;
                 pTb->pNext                  = NULL;
-                RTListInit(&pTb->LocalList);
+                pTb->cUsed                  = 0;
+                pTb->msLastUsed             = pVCpu->iem.s.msRecompilerPollNow;
                 pTb->fFlags                 = (pTbSrc->fFlags & ~IEMTB_F_STATE_MASK) | IEMTB_F_STATE_READY;
 
-                pVCpu->iem.s.cTbAllocs++;
                 return pTb;
             }
             RTMemFree(pTb->Thrd.paCalls);
         }
-        RTMemFree(pTb);
+        iemTbAllocatorFree(pVCpu, pTb);
     }
     RT_NOREF(pVM);
     return NULL;
@@ -595,22 +1191,22 @@ static PIEMTB iemThreadedTbDuplicate(PVMCC pVM, PVMCPUCC pVCpu, PCIEMTB pTbSrc)
 /**
  * Adds the given TB to the hash table.
  *
- * @param   pVM         The cross context virtual machine structure.
  * @param   pVCpu       The cross context virtual CPU structure of the calling
  *                      thread.
+ * @param   pTbCache    The cache to add it to.
  * @param   pTb         The translation block to add.
  */
-static void iemThreadedTbAdd(PVMCC pVM, PVMCPUCC pVCpu, PIEMTB pTb)
+static void iemThreadedTbAdd(PVMCPUCC pVCpu, PIEMTBCACHE pTbCache, PIEMTB pTb)
 {
-    uint32_t const idxHash = IEMTBCACHE_HASH(&g_TbCache, pTb->fFlags, pTb->GCPhysPc);
-    pTb->pNext = g_TbCache.apHash[idxHash];
-    g_TbCache.apHash[idxHash] = pTb;
+    iemTbCacheAdd(pVCpu, pTbCache, pTb);
+
     STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->iem.s.StatTbThreadedInstr, pTb->cInstructions);
     STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->iem.s.StatTbThreadedCalls, pTb->Thrd.cCalls);
     if (LogIs12Enabled())
     {
         Log12(("TB added: %p %RGp LB %#x fl=%#x idxHash=%#x cRanges=%u cInstr=%u cCalls=%u\n",
-               pTb, pTb->GCPhysPc, pTb->cbOpcodes, pTb->fFlags, idxHash, pTb->cRanges, pTb->cInstructions, pTb->Thrd.cCalls));
+               pTb, pTb->GCPhysPc, pTb->cbOpcodes, pTb->fFlags, IEMTBCACHE_HASH(pTbCache, pTb->fFlags, pTb->GCPhysPc),
+               pTb->cRanges, pTb->cInstructions, pTb->Thrd.cCalls));
         for (uint8_t idxRange = 0; idxRange < pTb->cRanges; idxRange++)
             Log12((" range#%u: offPg=%#05x offOp=%#04x LB %#04x pg#%u=%RGp\n", idxRange, pTb->aRanges[idxRange].offPhysPage,
                    pTb->aRanges[idxRange].offOpcodes, pTb->aRanges[idxRange].cbOpcodes, pTb->aRanges[idxRange].idxPhysPage,
@@ -618,52 +1214,6 @@ static void iemThreadedTbAdd(PVMCC pVM, PVMCPUCC pVCpu, PIEMTB pTb)
                    ? pTb->GCPhysPc & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK
                    : pTb->aGCPhysPages[pTb->aRanges[idxRange].idxPhysPage - 1]));
     }
-    RT_NOREF(pVM);
-}
-
-
-/**
- * Frees the given TB.
- *
- * @param   pVM     The cross context virtual machine structure.
- * @param   pVCpu   The cross context virtual CPU structure of the calling
- *                  thread.
- * @param   pTb     The translation block to free..
- */
-static void iemThreadedTbFree(PVMCC pVM, PVMCPUCC pVCpu, PIEMTB pTb)
-{
-    RT_NOREF(pVM);
-    AssertPtr(pTb);
-
-    AssertCompile(IEMTB_F_STATE_OBSOLETE == IEMTB_F_STATE_MASK);
-    pTb->fFlags |= IEMTB_F_STATE_OBSOLETE; /* works, both bits set */
-
-    /* Unlink it from the hash table: */
-    uint32_t const idxHash = IEMTBCACHE_HASH(&g_TbCache, pTb->fFlags, pTb->GCPhysPc);
-    PIEMTB pTbCur = g_TbCache.apHash[idxHash];
-    if (pTbCur == pTb)
-        g_TbCache.apHash[idxHash] = pTb->pNext;
-    else
-        while (pTbCur)
-        {
-            PIEMTB const pNextTb = pTbCur->pNext;
-            if (pNextTb == pTb)
-            {
-                pTbCur->pNext = pTb->pNext;
-                break;
-            }
-            pTbCur = pNextTb;
-        }
-
-    /* Free it. */
-    RTMemFree(pTb->Thrd.paCalls);
-    pTb->Thrd.paCalls = NULL;
-
-    RTMemFree(pTb->pabOpcodes);
-    pTb->pabOpcodes = NULL;
-
-    RTMemFree(pTb);
-    pVCpu->iem.s.cTbFrees++;
 }
 
 
@@ -672,42 +1222,7 @@ static void iemThreadedTbFree(PVMCC pVM, PVMCPUCC pVCpu, PIEMTB pTb)
  */
 void iemThreadedTbObsolete(PVMCPUCC pVCpu, PIEMTB pTb)
 {
-    iemThreadedTbFree(pVCpu->CTX_SUFF(pVM), pVCpu, pTb);
-}
-
-
-static PIEMTB iemThreadedTbLookup(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPc, uint32_t fExtraFlags) IEM_NOEXCEPT_MAY_LONGJMP
-{
-    uint32_t const fFlags  = (pVCpu->iem.s.fExec & IEMTB_F_IEM_F_MASK) | fExtraFlags | IEMTB_F_STATE_READY;
-    uint32_t const idxHash = IEMTBCACHE_HASH(&g_TbCache, fFlags, GCPhysPc);
-    Log10(("TB lookup: idxHash=%#x fFlags=%#x GCPhysPc=%RGp\n", idxHash, fFlags, GCPhysPc));
-    PIEMTB pTb = g_TbCache.apHash[idxHash];
-    while (pTb)
-    {
-        if (pTb->GCPhysPc == GCPhysPc)
-        {
-            if (pTb->fFlags == fFlags)
-            {
-                if (pTb->x86.fAttr == (uint16_t)pVCpu->cpum.GstCtx.cs.Attr.u)
-                {
-#ifdef VBOX_WITH_STATISTICS
-                    pVCpu->iem.s.cTbLookupHits++;
-#endif
-                    return pTb;
-                }
-                Log11(("TB miss: CS: %#x, wanted %#x\n", pTb->x86.fAttr, (uint16_t)pVCpu->cpum.GstCtx.cs.Attr.u));
-            }
-            else
-                Log11(("TB miss: fFlags: %#x, wanted %#x\n", pTb->fFlags, fFlags));
-        }
-        else
-            Log11(("TB miss: GCPhysPc: %#x, wanted %#x\n", pTb->GCPhysPc, GCPhysPc));
-
-        pTb = pTb->pNext;
-    }
-    RT_NOREF(pVM);
-    pVCpu->iem.s.cTbLookupMisses++;
-    return pTb;
+    iemTbAllocatorFree(pVCpu, pTb);
 }
 
 
@@ -1442,11 +1957,14 @@ static bool iemThreadedCompileCheckIrqAfter(PVMCPUCC pVCpu, PIEMTB pTb)
  *                      thread.
  * @param   GCPhysPc    The physical address corresponding to the current
  *                      RIP+CS.BASE.
- * @param   fExtraFlags Extra translation block flags: IEMTB_F_TYPE_THREADED and
- *                      maybe IEMTB_F_RIP_CHECKS.
+ * @param   fExtraFlags Extra translation block flags: IEMTB_F_INHIBIT_SHADOW,
+ *                      IEMTB_F_INHIBIT_NMI, IEMTB_F_CS_LIM_CHECKS.
  */
 static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPc, uint32_t fExtraFlags) IEM_NOEXCEPT_MAY_LONGJMP
 {
+    Assert(!(fExtraFlags & IEMTB_F_TYPE_MASK));
+    fExtraFlags |= IEMTB_F_TYPE_THREADED;
+
     /*
      * Get the TB we use for the recompiling.  This is a maxed-out TB so
      * that'll we'll make a more efficient copy of when we're done compiling.
@@ -1543,7 +2061,7 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
     pTb = iemThreadedTbDuplicate(pVM, pVCpu, pTb);
     AssertReturn(pTb, VERR_IEM_TB_ALLOC_FAILED);
 
-    iemThreadedTbAdd(pVM, pVCpu, pTb);
+    iemThreadedTbAdd(pVCpu, pVCpu->iem.s.pTbCacheR3, pTb);
 
 #ifdef IEM_COMPILE_ONLY_MODE
     /*
@@ -1573,7 +2091,7 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_M
     else
     {
         Log7(("TB obsolete: %p GCPhys=%RGp\n", pTb, pTb->GCPhysPc));
-        iemThreadedTbFree(pVCpu->pVMR3, pVCpu, pTb);
+        iemThreadedTbObsolete(pVCpu, pTb);
         return VINF_SUCCESS;
     }
 
@@ -1679,13 +2197,14 @@ DECL_FORCE_INLINE_THROW(RTGCPHYS) iemGetPcWithPhysAndCode(PVMCPUCC pVCpu)
 /**
  * Determines the extra IEMTB_F_XXX flags.
  *
- * @returns IEMTB_F_TYPE_THREADED and maybe IEMTB_F_RIP_CHECKS.
+ * @returns A mix of IEMTB_F_INHIBIT_SHADOW, IEMTB_F_INHIBIT_NMI and
+ *          IEMTB_F_CS_LIM_CHECKS (or zero).
  * @param   pVCpu   The cross context virtual CPU structure of the calling
  *                  thread.
  */
 DECL_FORCE_INLINE(uint32_t) iemGetTbFlagsForCurrentPc(PVMCPUCC pVCpu)
 {
-    uint32_t fRet = IEMTB_F_TYPE_THREADED;
+    uint32_t fRet = 0;
 
     /*
      * Determine the inhibit bits.
@@ -1714,7 +2233,7 @@ DECL_FORCE_INLINE(uint32_t) iemGetTbFlagsForCurrentPc(PVMCPUCC pVCpu)
 }
 
 
-VMMDECL(VBOXSTRICTRC) IEMExecRecompilerThreaded(PVMCC pVM, PVMCPUCC pVCpu)
+VMMDECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu)
 {
     /*
      * See if there is an interrupt pending in TRPM, inject it if we can.
@@ -1734,6 +2253,10 @@ VMMDECL(VBOXSTRICTRC) IEMExecRecompilerThreaded(PVMCC pVM, PVMCPUCC pVCpu)
      * Init the execution environment.
      */
     iemInitExec(pVCpu, 0 /*fExecOpts*/);
+    if (RT_LIKELY(pVCpu->iem.s.msRecompilerPollNow != 0))
+    { }
+    else
+        pVCpu->iem.s.msRecompilerPollNow = (uint32_t)(TMVirtualGetNoCheck(pVM) / RT_NS_1MS);
 
     /*
      * Run-loop.
@@ -1741,6 +2264,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecRecompilerThreaded(PVMCC pVM, PVMCPUCC pVCpu)
      * If we're using setjmp/longjmp we combine all the catching here to avoid
      * having to call setjmp for each block we're executing.
      */
+    PIEMTBCACHE const pTbCache = pVCpu->iem.s.pTbCacheR3;
     for (;;)
     {
         PIEMTB       pTb = NULL;
@@ -1754,9 +2278,14 @@ VMMDECL(VBOXSTRICTRC) IEMExecRecompilerThreaded(PVMCC pVM, PVMCPUCC pVCpu)
                 RTGCPHYS const GCPhysPc    = iemGetPcWithPhysAndCode(pVCpu);
                 uint32_t const fExtraFlags = iemGetTbFlagsForCurrentPc(pVCpu);
 
-                pTb = iemThreadedTbLookup(pVM, pVCpu, GCPhysPc, fExtraFlags);
+                pTb = iemTbCacheLookup(pVCpu, pTbCache, GCPhysPc, fExtraFlags);
                 if (pTb)
-                    rcStrict = iemThreadedTbExec(pVCpu, pTb);
+                {
+                    if (pTb->fFlags & IEMTB_F_TYPE_THREADED)
+                        rcStrict = iemThreadedTbExec(pVCpu, pTb);
+                    else
+                        AssertFailedStmt(rcStrict = VERR_INTERNAL_ERROR_4);
+                }
                 else
                     rcStrict = iemThreadedCompile(pVM, pVCpu, GCPhysPc, fExtraFlags);
                 if (rcStrict == VINF_SUCCESS)
@@ -1776,7 +2305,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecRecompilerThreaded(PVMCC pVM, PVMCPUCC pVCpu)
                                   && !VM_FF_IS_ANY_SET(pVM, VM_FF_ALL_MASK) ))
                     {
                         if (RT_LIKELY(   (iIterations & cPollRate) != 0
-                                      || !TMTimerPollBool(pVM, pVCpu)))
+                                      || !TMTimerPollBoolWith32BitMilliTS(pVM, pVCpu, &pVCpu->iem.s.msRecompilerPollNow)))
                         {
 
                         }
