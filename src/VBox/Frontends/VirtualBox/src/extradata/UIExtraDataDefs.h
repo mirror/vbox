@@ -460,7 +460,6 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_LogViewerWrapLinesEnabled;
         SHARED_LIBRARY_STUFF extern const char *GUI_LogViewerShowLineNumbersDisabled;
         SHARED_LIBRARY_STUFF extern const char *GUI_LogViewerNoFontStyleName;
-        SHARED_LIBRARY_STUFF extern const char *GUI_GuestControl_LogViewerVisiblePanels;
     /** @} */
 
     /** @name Help Browser

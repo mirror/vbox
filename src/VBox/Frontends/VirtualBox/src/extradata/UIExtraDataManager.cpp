@@ -4686,16 +4686,6 @@ QFont UIExtraDataManager::logViewerFont()
 #endif
 }
 
-void UIExtraDataManager::setLogViewerVisiblePanels(const QStringList &panelNameList)
-{
-    setExtraDataStringList(GUI_GuestControl_LogViewerVisiblePanels, panelNameList);
-}
-
-QStringList UIExtraDataManager::logViewerVisiblePanels()
-{
-    return extraDataStringList(GUI_GuestControl_LogViewerVisiblePanels);
-}
-
 void UIExtraDataManager::setHelpBrowserLastUrlList(const QStringList &urlList)
 {
     setExtraDataStringList(GUI_HelpBrowser_LastURLList, urlList);
