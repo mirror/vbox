@@ -63,6 +63,8 @@ signals:
     void sigChangeFont(QFont font);
     void sigResetToDefaults();
 
+    void sigShowSearchPane();
+
 public:
 
     UIVMLogViewerPaneContainer(QWidget *pParent, UIVMLogViewerWidget *pViewer);

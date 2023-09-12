@@ -56,6 +56,7 @@ signals:
 
     void sigHighlightingUpdated();
     void sigSearchUpdated();
+    void sigShowPane();
 
 public:
 

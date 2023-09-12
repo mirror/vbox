@@ -146,6 +146,7 @@ private slots:
     void sltCommitDataSignalReceived();
     void sltPanelContainerHidden();
     void sltPanelCurrentTabChanged(int iIndex);
+    void sltShowSearchPane();
 
 private:
 

@@ -716,6 +716,16 @@ void UIVMLogViewerWidget::sltPanelCurrentTabChanged(int iIndex)
     }
 }
 
+void UIVMLogViewerWidget::sltShowSearchPane()
+{
+    AssertReturnVoid(m_pPanel);
+
+    m_pPanel->setVisible(true);
+    int iIndex = (int)UIVMLogViewerPaneContainer::Page_Search;
+    m_pPanel->setCurrentIndex(iIndex);
+    sltPanelCurrentTabChanged(iIndex);
+}
+
 void UIVMLogViewerWidget::prepare()
 {
     /* Load options: */
@@ -831,6 +841,8 @@ void UIVMLogViewerWidget::prepareWidgets()
             this, &UIVMLogViewerWidget::sltResetOptionsToDefault);
     connect(m_pPanel, &UIVMLogViewerPaneContainer::sigCurrentTabChanged,
             this, &UIVMLogViewerWidget::sltPanelCurrentTabChanged);
+    connect(m_pPanel, &UIVMLogViewerPaneContainer::sigShowSearchPane,
+            this, &UIVMLogViewerWidget::sltShowSearchPane);
 
     m_pMainLayout->addWidget(m_pPanel);
 }

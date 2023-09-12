@@ -342,7 +342,7 @@ bool UIVMLogViewerSearchWidget::handleSearchRelatedEvents(QObject *pObject, QEve
                      pKeyEvent->key() == Qt::Key_F)
             {
                 /* Make sure current log-page is visible: */
-                //emit sigShowPanel(this);
+                emit sigShowPane();
                 /* Set focus on search-editor: */
                 m_pSearchEditor->setFocus();
                 return true;
@@ -352,7 +352,7 @@ bool UIVMLogViewerSearchWidget::handleSearchRelatedEvents(QObject *pObject, QEve
                      pKeyEvent->key() >= Qt::Key_Exclam && pKeyEvent->key() <= Qt::Key_AsciiTilde)
             {
                 /* Make sure current log-page is visible: */
-                //emit sigShowPanel(this);
+                emit sigShowPane();
                 /* Set focus on search-editor: */
                 m_pSearchEditor->setFocus();
                 /* Insert the text to search-editor, which triggers the search-operation for new text: */

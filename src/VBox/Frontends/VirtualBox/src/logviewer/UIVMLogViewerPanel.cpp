@@ -65,6 +65,8 @@ void UIVMLogViewerPaneContainer::prepare()
             this, &UIVMLogViewerPaneContainer::sigHighlightingUpdated);
     connect(m_pSearchWidget, &UIVMLogViewerSearchWidget::sigSearchUpdated,
             this, &UIVMLogViewerPaneContainer::sigSearchUpdated);
+    connect(m_pSearchWidget, &UIVMLogViewerSearchWidget::sigShowPane,
+            this, &UIVMLogViewerPaneContainer::sigShowSearchPane);
 
     /* Filter tab: */
     m_pFilterWidget = new UIVMLogViewerFilterWidget(0, m_pViewer);
@@ -168,11 +170,10 @@ void UIVMLogViewerPaneContainer::retranslateUi()
 
 bool UIVMLogViewerPaneContainer::eventFilter(QObject *pObject, QEvent *pEvent)
 {
-    if (currentIndex() == static_cast<Page>(Page_Search))
-    {
-        if (m_pSearchWidget->handleSearchRelatedEvents(pObject, pEvent))
-            return true;
-    }
+    /* Check if the search panel is interested in the event (most prob. key event): */
+    if (m_pSearchWidget && m_pSearchWidget->handleSearchRelatedEvents(pObject, pEvent))
+        return true;
+
     return UIPaneContainer::eventFilter(pObject, pEvent);
 }
 
