@@ -635,20 +635,28 @@ protected:
  */
 static char *formatNumber(char *psz, uint64_t u64)
 {
-    static const char s_szDigits[] = "0123456789";
-    psz += 63;
-    *psz-- = '\0';
-    unsigned cDigits = 0;
-    for (;;)
+    if (!u64)
     {
-        const unsigned iDigit = u64 % 10;
-        u64 /= 10;
-        *psz = s_szDigits[iDigit];
-        if (!u64)
-            break;
-        psz--;
-        if (!(++cDigits % 3))
-            *psz-- = ',';
+        psz[0] = '0';
+        psz[1] = '\0';
+    }
+    else
+    {
+        static const char s_szDigits[] = "0123456789";
+        psz += 63;
+        *psz-- = '\0';
+        unsigned cDigits = 0;
+        for (;;)
+        {
+            const unsigned iDigit = u64 % 10;
+            u64 /= 10;
+            *psz = s_szDigits[iDigit];
+            if (!u64)
+                break;
+            psz--;
+            if (!(++cDigits % 3))
+                *psz-- = ',';
+        }
     }
     return psz;
 }
@@ -658,7 +666,7 @@ static char *formatNumber(char *psz, uint64_t u64)
  * Formats a number into a 64-byte buffer.
  * (18 446 744 073 709 551 615)
  */
-static char *formatNumberSigned(char *psz, int64_t i64, bool fPositivePlus = false)
+static char *formatNumberSigned(char *psz, int64_t i64, bool fPositivePlus)
 {
     static const char s_szDigits[] = "0123456789";
     psz += 63;
@@ -2260,8 +2268,6 @@ VBoxDbgStatsModel::strValueTimes(PCDBGGUISTATSNODE pNode)
 
         case STAMTYPE_PROFILE:
         case STAMTYPE_PROFILE_ADV:
-            if (!pNode->Data.Profile.cPeriods)
-                return "0";
             return formatNumber(sz, pNode->Data.Profile.cPeriods);
 
         case STAMTYPE_RATIO_U32:
@@ -2333,9 +2339,9 @@ VBoxDbgStatsModel::strMinValue(PCDBGGUISTATSNODE pNode)
     {
         case STAMTYPE_PROFILE:
         case STAMTYPE_PROFILE_ADV:
-            if (!pNode->Data.Profile.cPeriods)
-                return "0";
-            return formatNumber(sz, pNode->Data.Profile.cTicksMin);
+            if (pNode->Data.Profile.cPeriods)
+                return formatNumber(sz, pNode->Data.Profile.cTicksMin);
+            return "0"; /* cTicksMin is set to UINT64_MAX */
         default:
             return "";
     }
@@ -2351,9 +2357,9 @@ VBoxDbgStatsModel::strAvgValue(PCDBGGUISTATSNODE pNode)
     {
         case STAMTYPE_PROFILE:
         case STAMTYPE_PROFILE_ADV:
-            if (!pNode->Data.Profile.cPeriods)
-                return "0";
-            return formatNumber(sz, pNode->Data.Profile.cTicks / pNode->Data.Profile.cPeriods);
+            if (pNode->Data.Profile.cPeriods)
+                return formatNumber(sz, pNode->Data.Profile.cTicks / pNode->Data.Profile.cPeriods);
+            return "0";
         default:
             return "";
     }
@@ -2369,8 +2375,6 @@ VBoxDbgStatsModel::strMaxValue(PCDBGGUISTATSNODE pNode)
     {
         case STAMTYPE_PROFILE:
         case STAMTYPE_PROFILE_ADV:
-            if (!pNode->Data.Profile.cPeriods)
-                return "0";
             return formatNumber(sz, pNode->Data.Profile.cTicksMax);
         default:
             return "";
@@ -2387,8 +2391,6 @@ VBoxDbgStatsModel::strTotalValue(PCDBGGUISTATSNODE pNode)
     {
         case STAMTYPE_PROFILE:
         case STAMTYPE_PROFILE_ADV:
-            if (!pNode->Data.Profile.cPeriods)
-                return "0";
             return formatNumber(sz, pNode->Data.Profile.cTicks);
         default:
             return "";
@@ -2399,15 +2401,10 @@ VBoxDbgStatsModel::strTotalValue(PCDBGGUISTATSNODE pNode)
 /*static*/ QString
 VBoxDbgStatsModel::strDeltaValue(PCDBGGUISTATSNODE pNode)
 {
-    char sz[128];
-
     switch (pNode->enmType)
     {
         case STAMTYPE_PROFILE:
         case STAMTYPE_PROFILE_ADV:
-            if (!pNode->Data.Profile.cPeriods)
-                return "0";
-            RT_FALL_THRU();
         case STAMTYPE_COUNTER:
         case STAMTYPE_RATIO_U32:
         case STAMTYPE_RATIO_U32_RESET:
@@ -2430,11 +2427,18 @@ VBoxDbgStatsModel::strDeltaValue(PCDBGGUISTATSNODE pNode)
         case STAMTYPE_BOOL:
         case STAMTYPE_BOOL_RESET:
             if (pNode->i64Delta)
+            {
+                char sz[128];
                 return formatNumberSigned(sz, pNode->i64Delta, true /*fPositivePlus*/);
+            }
             return "0";
-        default:
-            return "";
+        case STAMTYPE_END:
+            AssertFailed(); RT_FALL_THRU();
+        case STAMTYPE_CALLBACK:
+        case STAMTYPE_INVALID:
+            break;
     }
+    return "";
 }
 
 
