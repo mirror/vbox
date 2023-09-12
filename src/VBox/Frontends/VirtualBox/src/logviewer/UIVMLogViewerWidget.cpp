@@ -510,14 +510,7 @@ void UIVMLogViewerWidget::gotoBookmark(int bookmarkIndex)
 
 void UIVMLogViewerWidget::sltPanelContainerHidden()
 {
-    foreach (QAction *pPanelAction, m_panelActions)
-    {
-        if (!pPanelAction)
-            continue;
-        pPanelAction->blockSignals(true);
-        pPanelAction->setChecked(false);
-        pPanelAction->blockSignals(false);
-    }
+    uncheckPaneActions();
 }
 
 void UIVMLogViewerWidget::sltPanelActionToggled(bool fChecked)
@@ -526,10 +519,10 @@ void UIVMLogViewerWidget::sltPanelActionToggled(bool fChecked)
         return;
     QAction *pAction = qobject_cast<QAction*>(sender());
 
-    if (!m_panelActions.contains(pAction))
+    if (!m_paneActions.contains(pAction))
         return;
 
-    foreach (QAction *pOther, m_panelActions)
+    foreach (QAction *pOther, m_paneActions)
     {
         if (pOther == pAction)
             continue;
@@ -702,14 +695,7 @@ void UIVMLogViewerWidget::sltPanelCurrentTabChanged(int iIndex)
     if (!m_pPanel || !m_pPanel->isVisible())
         return;
 
-    for(QSet<QAction*>::iterator iter = m_panelActions.begin(); iter != m_panelActions.end(); ++iter)
-    {
-        QAction *pAction = *iter;
-
-        pAction->blockSignals(true);
-        pAction->setChecked(false);
-        pAction->blockSignals(false);
-    }
+    uncheckPaneActions();
 
     switch (static_cast<UIVMLogViewerPaneContainer::Page>(iIndex))
     {
@@ -756,10 +742,11 @@ void UIVMLogViewerWidget::prepareActions()
     addAction(m_pActionPool->action(UIActionIndex_M_Log_S_Refresh));
     addAction(m_pActionPool->action(UIActionIndex_M_Log_S_Save));
 
-    m_panelActions.insert(m_pActionPool->action(UIActionIndex_M_Log_T_Find));
-    m_panelActions.insert(m_pActionPool->action(UIActionIndex_M_Log_T_Filter));
-    m_panelActions.insert(m_pActionPool->action(UIActionIndex_M_Log_T_Bookmark));
-    m_panelActions.insert(m_pActionPool->action(UIActionIndex_M_Log_T_Preferences));
+    m_paneActions.insert(m_pActionPool->action(UIActionIndex_M_Log_T_Find));
+    m_paneActions.insert(m_pActionPool->action(UIActionIndex_M_Log_T_Filter));
+    m_paneActions.insert(m_pActionPool->action(UIActionIndex_M_Log_T_Bookmark));
+    m_paneActions.insert(m_pActionPool->action(UIActionIndex_M_Log_T_Preferences));
+    uncheckPaneActions();
 
     m_pActionPool->action(UIActionIndex_M_Log_T_Find)->setData((int)UIVMLogViewerPaneContainer::Page_Search);
     m_pActionPool->action(UIActionIndex_M_Log_T_Filter)->setData((int)UIVMLogViewerPaneContainer::Page_Filter);
@@ -1152,6 +1139,18 @@ bool UIVMLogViewerWidget::labelTabHandler()
     if (m_pTabWidget->currentIndex() < m_pTabWidget->count() - 1)
         m_pTabWidget->setCurrentIndex(m_pTabWidget->currentIndex() + 1);
     return true;
+}
+
+void UIVMLogViewerWidget::uncheckPaneActions()
+{
+    foreach (QAction *pPanelAction, m_paneActions)
+    {
+        if (!pPanelAction)
+            continue;
+        pPanelAction->blockSignals(true);
+        pPanelAction->setChecked(false);
+        pPanelAction->blockSignals(false);
+    }
 }
 
 #include "UIVMLogViewerWidget.moc"

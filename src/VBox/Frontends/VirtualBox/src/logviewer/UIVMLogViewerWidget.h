@@ -202,6 +202,7 @@ private:
     QString readLogFile(const CMachine &comConstMachine, int iLogFileId);
     /** If the current tab is a label tab then switch to the next tab and return true. Returns false otherwise. */
     bool labelTabHandler();
+    void uncheckPaneActions();
 
     /** Holds the widget's embedding type. */
     const EmbedTo m_enmEmbedding;
@@ -243,7 +244,7 @@ private:
     bool m_fCommitDataSignalReceived;
     QPointer<UIVMLogPage> m_pPreviousLogPage;
     UIVMLogViewerPaneContainer *m_pPanel;
-    QSet<QAction*> m_panelActions;
+    QSet<QAction*> m_paneActions;
     friend class UIVMLogViewerFilterWidget;
     friend class UIVMLogViewerPane;
     friend class UIVMLogViewerDialog;
