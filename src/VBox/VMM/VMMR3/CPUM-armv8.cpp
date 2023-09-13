@@ -127,6 +127,11 @@ static DECLCALLBACK(void) cpumR3InfoGuestInstr(PVM pVM, PCDBGFINFOHLP pHlp, cons
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+#if defined(RT_ARCH_ARM64)
+/** Host CPU features. */
+DECL_HIDDEN_DATA(CPUHOSTFEATURES) g_CpumHostFeatures;
+#endif
+
 /**
  * System register ranges.
  */
@@ -374,6 +379,10 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
                                  &cpumR3InfoAll, DBGFINFO_FLAGS_ALL_EMTS);
     DBGFR3InfoRegisterInternalEx(pVM, "cpumguest",        "Displays the guest cpu state.",
                                  &cpumR3InfoGuest, DBGFINFO_FLAGS_ALL_EMTS);
+    DBGFR3InfoRegisterInternalEx(pVM, "cpumguestinstr",   "Displays the current guest instruction.",
+                                 &cpumR3InfoGuestInstr, DBGFINFO_FLAGS_ALL_EMTS);
+    DBGFR3InfoRegisterInternal(  pVM, "cpuid",            "Displays the guest cpuid information.",
+                                 &cpumR3CpuIdInfo);
 
     rc = cpumR3DbgInit(pVM);
     if (RT_FAILURE(rc))
@@ -948,14 +957,11 @@ VMMR3DECL(void) CPUMR3LogCpuIdAndMsrFeatures(PVM pVM)
     RTCPUID cCores = RTMpGetCoreCount();
     if (cCores)
         LogRel(("CPUM: Physical host cores: %u\n", (unsigned)cCores));
-    RT_NOREF(pVM);
-#if 0 /** @todo Someting similar. */
     LogRel(("************************* CPUID dump ************************\n"));
     DBGFR3Info(pVM->pUVM, "cpuid", "verbose", DBGFR3InfoLogRelHlp());
     LogRel(("\n"));
     DBGFR3_INFO_LOG_SAFE(pVM, "cpuid", "verbose"); /* macro */
     LogRel(("******************** End of CPUID dump **********************\n"));
-#endif
 
     /*
      * Restore the log buffering state to what it was previously.

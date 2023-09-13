@@ -99,14 +99,28 @@ typedef CPUMINFO const *CPCPUMINFO;
  */
 typedef struct CPUM
 {
+    /** The (more) portable CPUID level. */
+    uint8_t                 u8PortableCpuIdLevel;
     /** Indicates that a state restore is pending.
      * This is used to verify load order dependencies (PGM). */
     bool                    fPendingRestore;
-    uint8_t                 abPadding0[7];
+    uint8_t                 abPadding0[6];
 
+    /** Align to 64-byte boundary. */
+    uint8_t                 abPadding1[56];
+
+    /** Host CPU feature information.
+     * Externaly visible via the VM structure, aligned on 64-byte boundrary. */
+    CPUMFEATURES            HostFeatures;
+    /** Guest CPU feature information.
+     * Externaly visible via that VM structure, aligned with HostFeatures. */
+    CPUMFEATURES            GuestFeatures;
     /** Guest CPU info. */
     CPUMINFO                GuestInfo;
-    /** @todo */
+    /** Host CPU ID registers. */
+    CPUMIDREGS              HostIdRegs;
+    /** Guest CPU ID registers. */
+    CPUMIDREGS              GuestIdRegs;
 
     /** @name System register statistics.
      * @{ */
@@ -120,7 +134,8 @@ typedef struct CPUM
     /** @} */
 } CPUM;
 #ifndef VBOX_FOR_DTRACE_LIB
-/** @todo Compile time size/alignment assertions. */
+AssertCompileMemberOffset(CPUM, HostFeatures, 64);
+AssertCompileMemberOffset(CPUM, GuestFeatures, 112);
 #endif
 /** Pointer to the CPUM instance data residing in the shared VM structure. */
 typedef CPUM *PCPUM;
@@ -158,6 +173,8 @@ RT_C_DECLS_BEGIN
 # ifdef IN_RING3
 DECLHIDDEN(int)       cpumR3DbgInit(PVM pVM);
 DECLHIDDEN(int)       cpumR3SysRegStrictInitChecks(void);
+
+DECLCALLBACK(void)    cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 # endif
 
 RT_C_DECLS_END

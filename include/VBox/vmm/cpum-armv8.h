@@ -182,6 +182,16 @@ typedef struct CPUMFEATURES
     /** The maximum linear address width of the CPU. */
     uint8_t         cMaxLinearAddrWidth;
 
+    /** @name Granule sizes supported.
+     * @{ */
+    /** 4KiB translation granule size supported. */
+    uint32_t        fTGran4K : 1;
+    /** 16KiB translation granule size supported. */
+    uint32_t        fTGran16K : 1;
+    /** 64KiB translation granule size supported. */
+    uint32_t        fTGran64K : 1;
+    /** @} */
+
     /** @name pre-2020 Architecture Extensions.
      * @{ */
     /** Supports Advanced SIMD Extension (FEAT_AdvSIMD). */
@@ -502,6 +512,8 @@ typedef struct CPUMFEATURES
     uint32_t        fSmeI16I64 : 1;
     /** Supports Statistical Profiling Extensions version 1.2 (FEAT_SPEv1p2). */
     uint32_t        fSpeV1p2 : 1;
+    /** Supports AArch64 Extended BFloat16 instructions (FEAT_EBF16). */
+    uint32_t        fEbf16 : 1;
     /** Supports WFE and WFI instructions with timeout (FEAT_WFxT). */
     uint32_t        fWfxt : 1;
     /** Supports XS attribute (FEAT_XS). */
@@ -771,6 +783,8 @@ typedef struct CPUMIDREGS
     uint64_t        u64RegIdAa64Isar0El1;
     /** Content of the ID_AA64ISAR1_EL1 register. */
     uint64_t        u64RegIdAa64Isar1El1;
+    /** Content of the ID_AA64ISAR2_EL1 register. */
+    uint64_t        u64RegIdAa64Isar2El1;
     /** Content of the ID_AA64MMFR0_EL1 register. */
     uint64_t        u64RegIdAa64Mmfr0El1;
     /** Content of the ID_AA64MMFR1_EL1 register. */

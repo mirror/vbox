@@ -364,6 +364,7 @@ ifdef VBOX_WITH_VIRT_ARMV8
  	VMMR3/CFGM.cpp \
  	VMMR3/CPUM-armv8.cpp \
  	VMMR3/CPUMDbg-armv8.cpp \
+ 	VMMR3/CPUMR3CpuId-armv8.cpp \
  	VMMR3/CPUMR3Db-armv8.cpp \
  	VMMR3/DBGF.cpp \
  	VMMR3/DBGFAddr.cpp \
