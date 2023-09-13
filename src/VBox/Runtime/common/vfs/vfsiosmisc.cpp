@@ -193,7 +193,7 @@ RTDECL(int) RTVfsIoStrmReadAll(RTVFSIOSTREAM hVfsIos, void **ppvBuf, size_t *pcb
                                  true /*fBlocking*/, &cbActual);
             if (RT_FAILURE(rc))
                 break;
-            Assert(cbActual > 0);
+            Assert(cbActual > 0 || (cbActual == 0 && rc == VINF_EOF));
             Assert(cbActual <= cbToRead);
             off += cbActual;
             if (rc == VINF_EOF)
