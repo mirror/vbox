@@ -44,6 +44,7 @@ class QProgressBar;
 class QScrollArea;
 class QShowEvent;
 class QStackedWidget;
+class QTimer;
 class QVariant;
 class QIDialogButtonBox;
 class QILineEdit;
@@ -106,6 +107,9 @@ protected slots:
     virtual void sltHandleSerializationFinished();
 
 protected:
+
+    /** Preprocesses Qt @a pEvent for passed @a pObject. */
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
 
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE;
@@ -237,6 +241,9 @@ private:
 
     /** Stores the help tag per page. */
     QMap<int, QString>  m_pageHelpKeywords;
+
+    /** Holds the 'sticky scrolling timer' instance. */
+    QTimer *m_pScrollingTimer;
 
     /** @name Widgets
      * @{ */
