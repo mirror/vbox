@@ -811,7 +811,7 @@ static DECLCALLBACK(int) nemR3DarwinNativeInitVCpuOnEmt(PVM pVM, PVMCPU pVCpu, V
                               "Call to hv_vcpu_config_create failed on vCPU %u", idCpu);
 
         /* Query ID registers and hand them to CPUM. */
-        CPUMIDREGS IdRegs;
+        CPUMIDREGS IdRegs; RT_ZERO(IdRegs);
         for (uint32_t i = 0; i < RT_ELEMENTS(s_aIdRegs); i++)
         {
             uint64_t *pu64 = (uint64_t *)((uint8_t *)&IdRegs + s_aIdRegs[i].offIdStruct);
@@ -835,6 +835,43 @@ static DECLCALLBACK(int) nemR3DarwinNativeInitVCpuOnEmt(PVM pVM, PVMCPU pVCpu, V
     if (hrc != HV_SUCCESS)
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                           "Setting MPIDR_EL1 failed on vCPU %u: %#x (%Rrc)", idCpu, hrc, nemR3DarwinHvSts2Rc(hrc));
+
+    /*
+     * The guest ID registers are populated after the call to CPUMR3PopulateFeaturesByIdRegisters() so
+     * query the guest ID registers now and sync them to the vCPU once as they are constant during guest lifetime.
+     */
+    static const struct
+    {
+        const char       *pszIdReg;
+        hv_sys_reg_t     enmHvReg;
+        uint32_t         offIdStruct;
+    } s_aSysIdRegs[] =
+    {
+#define ID_SYS_REG_CREATE(a_IdReg, a_CpumIdReg) { #a_IdReg, HV_SYS_REG_##a_IdReg,     RT_UOFFSETOF(CPUMIDREGS, a_CpumIdReg) }
+        ID_SYS_REG_CREATE(ID_AA64DFR0_EL1,  u64RegIdAa64Dfr0El1),
+        ID_SYS_REG_CREATE(ID_AA64DFR1_EL1,  u64RegIdAa64Dfr1El1),
+        ID_SYS_REG_CREATE(ID_AA64ISAR0_EL1, u64RegIdAa64Isar0El1),
+        ID_SYS_REG_CREATE(ID_AA64ISAR1_EL1, u64RegIdAa64Isar1El1),
+        ID_SYS_REG_CREATE(ID_AA64MMFR0_EL1, u64RegIdAa64Mmfr0El1),
+        ID_SYS_REG_CREATE(ID_AA64MMFR1_EL1, u64RegIdAa64Mmfr1El1),
+        ID_SYS_REG_CREATE(ID_AA64MMFR2_EL1, u64RegIdAa64Mmfr2El1),
+        ID_SYS_REG_CREATE(ID_AA64PFR0_EL1,  u64RegIdAa64Pfr0El1),
+        ID_SYS_REG_CREATE(ID_AA64PFR1_EL1,  u64RegIdAa64Pfr1El1),
+#undef ID_SYS_REG_CREATE
+    };
+
+    PCCPUMIDREGS pIdRegsGst = NULL;
+    int rc = CPUMR3QueryGuestIdRegs(pVM, &pIdRegsGst);
+    AssertRCReturn(rc, rc);
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_aSysIdRegs); i++)
+    {
+        uint64_t *pu64 = (uint64_t *)((uint8_t *)pIdRegsGst + s_aSysIdRegs[i].offIdStruct);
+        hrc = hv_vcpu_set_sys_reg(pVCpu->nem.s.hVCpu, s_aSysIdRegs[i].enmHvReg, *pu64);
+        if (hrc != HV_SUCCESS)
+            return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
+                              "Setting %s failed on vCPU %u: %#x (%Rrc)", s_aSysIdRegs[i].pszIdReg, idCpu, hrc, nemR3DarwinHvSts2Rc(hrc));
+    }
 
     return VINF_SUCCESS;
 }
