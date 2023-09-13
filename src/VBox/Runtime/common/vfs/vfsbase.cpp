@@ -3615,7 +3615,11 @@ RTDECL(int) RTVfsIoStrmRead(RTVFSIOSTREAM hVfsIos, void *pvBuf, size_t cbToRead,
     RTVfsLockAcquireWrite(pThis->Base.hLock);
     int rc = pThis->pOps->pfnRead(pThis->Base.pvThis, -1 /*off*/, &SgBuf, fBlocking, pcbRead);
     RTVfsLockReleaseWrite(pThis->Base.hLock);
-    Assert(rc != VINF_SUCCESS || RTSgBufIsAtEnd(&SgBuf));
+
+    Assert(   rc != VINF_SUCCESS
+           || RTSgBufIsAtEnd(&SgBuf)
+           || (pcbRead && cbToRead == *pcbRead + RTSgBufCalcLengthLeft(&SgBuf)));
+    Assert(!pcbRead || *pcbRead + RTSgBufCalcLengthLeft(&SgBuf) == cbToRead || RT_FAILURE(rc));
     return rc;
 }
 
@@ -3639,7 +3643,11 @@ RTDECL(int) RTVfsIoStrmReadAt(RTVFSIOSTREAM hVfsIos, RTFOFF off, void *pvBuf, si
     RTVfsLockAcquireWrite(pThis->Base.hLock);
     int rc = pThis->pOps->pfnRead(pThis->Base.pvThis, off, &SgBuf, fBlocking, pcbRead);
     RTVfsLockReleaseWrite(pThis->Base.hLock);
-    Assert(rc != VINF_SUCCESS || RTSgBufIsAtEnd(&SgBuf));
+
+    Assert(   rc != VINF_SUCCESS
+           || RTSgBufIsAtEnd(&SgBuf)
+           || (pcbRead && cbToRead == *pcbRead + RTSgBufCalcLengthLeft(&SgBuf)));
+    Assert(!pcbRead || *pcbRead + RTSgBufCalcLengthLeft(&SgBuf) == cbToRead || RT_FAILURE(rc));
     return rc;
 }
 
@@ -3665,6 +3673,7 @@ RTDECL(int) RTVfsIoStrmWrite(RTVFSIOSTREAM hVfsIos, const void *pvBuf, size_t cb
         RTVfsLockAcquireWrite(pThis->Base.hLock);
         rc = pThis->pOps->pfnWrite(pThis->Base.pvThis, -1 /*off*/, &SgBuf, fBlocking, pcbWritten);
         RTVfsLockReleaseWrite(pThis->Base.hLock);
+
         Assert(!pcbWritten || *pcbWritten + RTSgBufCalcLengthLeft(&SgBuf) == cbToWrite || RT_FAILURE(rc));
     }
     else
@@ -3695,6 +3704,7 @@ RTDECL(int) RTVfsIoStrmWriteAt(RTVFSIOSTREAM hVfsIos, RTFOFF off, const void *pv
         RTVfsLockAcquireWrite(pThis->Base.hLock);
         rc = pThis->pOps->pfnWrite(pThis->Base.pvThis, off, &SgBuf, fBlocking, pcbWritten);
         RTVfsLockReleaseWrite(pThis->Base.hLock);
+
         Assert(!pcbWritten || *pcbWritten + RTSgBufCalcLengthLeft(&SgBuf) == cbToWrite || RT_FAILURE(rc));
     }
     else
@@ -3714,6 +3724,9 @@ RTDECL(int) RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, RTFOFF off, PRTSGBUF pSgBuf
     AssertPtr(pSgBuf);
     AssertReturn(fBlocking || pcbRead, VERR_INVALID_PARAMETER);
     AssertReturn(pThis->fFlags & RTFILE_O_READ, VERR_ACCESS_DENIED);
+#ifdef RT_STRICT
+    size_t const cbToReadAssert = RTSgBufCalcLengthLeft(pSgBuf);
+#endif
 
     RTVfsLockAcquireWrite(pThis->Base.hLock);
     int rc;
@@ -3747,7 +3760,11 @@ RTDECL(int) RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, RTFOFF off, PRTSGBUF pSgBuf
             *pcbRead = cbRead;
     }
     RTVfsLockReleaseWrite(pThis->Base.hLock);
-    Assert(rc != VINF_SUCCESS || RTSgBufIsAtEnd(pSgBuf));
+
+    Assert(   rc != VINF_SUCCESS
+           || RTSgBufIsAtEnd(pSgBuf)
+           || (pcbRead && cbToReadAssert == *pcbRead + RTSgBufCalcLengthLeft(pSgBuf)));
+    Assert(!pcbRead || *pcbRead + RTSgBufCalcLengthLeft(pSgBuf) == cbToReadAssert || RT_FAILURE(rc));
     return rc;
 }
 
