@@ -718,8 +718,9 @@ template<> QString toString(const KChipsetType &type)
 {
     switch (type)
     {
-        case KChipsetType_PIIX3: return QApplication::translate("UICommon", "PIIX3", "ChipsetType");
-        case KChipsetType_ICH9:  return QApplication::translate("UICommon", "ICH9", "ChipsetType");
+        case KChipsetType_PIIX3:        return QApplication::translate("UICommon", "PIIX3", "ChipsetType");
+        case KChipsetType_ICH9:         return QApplication::translate("UICommon", "ICH9", "ChipsetType");
+        case KChipsetType_ARMv8Virtual: return QApplication::translate("UICommon", "ARMv8Virtual", "ChipsetType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
