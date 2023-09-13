@@ -417,6 +417,7 @@ HRESULT PlatformProperties::getMaxInstancesOfStorageBus(ChipsetType_T aChipset,
         case StorageBus_PCIe:
         case StorageBus_VirtioSCSI:
             cCtrs = aChipset == ChipsetType_ICH9 ? 8 : 1;
+            /** @todo r=andy How many we want to define explicitly for ARMv8Virtual? */
             break;
         case StorageBus_USB:
         case StorageBus_IDE:
@@ -634,30 +635,80 @@ HRESULT PlatformProperties::getSupportedParavirtProviders(std::vector<ParavirtPr
 
 HRESULT PlatformProperties::getSupportedFirmwareTypes(std::vector<FirmwareType_T> &aSupportedFirmwareTypes)
 {
-    static const FirmwareType_T aFirmwareTypes[] =
+    switch (mPlatformArchitecture)
     {
-        FirmwareType_BIOS,
-        FirmwareType_EFI,
-        FirmwareType_EFI32,
-        FirmwareType_EFI64,
-        FirmwareType_EFIDUAL,
-    };
-    aSupportedFirmwareTypes.assign(aFirmwareTypes,
-                                   aFirmwareTypes + RT_ELEMENTS(aFirmwareTypes));
+        case PlatformArchitecture_x86:
+        {
+            static const FirmwareType_T aFirmwareTypes[] =
+            {
+                FirmwareType_BIOS,
+                FirmwareType_EFI,
+                FirmwareType_EFI32,
+                FirmwareType_EFI64,
+                FirmwareType_EFIDUAL
+            };
+            aSupportedFirmwareTypes.assign(aFirmwareTypes,
+                                           aFirmwareTypes + RT_ELEMENTS(aFirmwareTypes));
+            break;
+        }
+
+        case PlatformArchitecture_ARM:
+        {
+            static const FirmwareType_T aFirmwareTypes[] =
+            {
+                FirmwareType_EFI,
+                FirmwareType_EFI32,
+                FirmwareType_EFI64,
+                FirmwareType_EFIDUAL
+            };
+            aSupportedFirmwareTypes.assign(aFirmwareTypes,
+                                           aFirmwareTypes + RT_ELEMENTS(aFirmwareTypes));
+            break;
+        }
+
+        default:
+            AssertFailedStmt(aSupportedFirmwareTypes.clear());
+            break;
+    }
+
     return S_OK;
 }
 
 HRESULT PlatformProperties::getSupportedGraphicsControllerTypes(std::vector<GraphicsControllerType_T> &aSupportedGraphicsControllerTypes)
 {
-    static const GraphicsControllerType_T aGraphicsControllerTypes[] =
+    switch (mPlatformArchitecture)
     {
-        GraphicsControllerType_VBoxVGA,
-        GraphicsControllerType_VMSVGA,
-        GraphicsControllerType_VBoxSVGA,
-        GraphicsControllerType_Null,
-    };
-    aSupportedGraphicsControllerTypes.assign(aGraphicsControllerTypes,
-                                             aGraphicsControllerTypes + RT_ELEMENTS(aGraphicsControllerTypes));
+        case PlatformArchitecture_x86:
+        {
+            static const GraphicsControllerType_T aGraphicsControllerTypes[] =
+            {
+                GraphicsControllerType_VBoxVGA,
+                GraphicsControllerType_VMSVGA,
+                GraphicsControllerType_VBoxSVGA,
+                GraphicsControllerType_Null
+            };
+            aSupportedGraphicsControllerTypes.assign(aGraphicsControllerTypes,
+                                                     aGraphicsControllerTypes + RT_ELEMENTS(aGraphicsControllerTypes));
+            break;
+        }
+
+        case PlatformArchitecture_ARM:
+        {
+            static const GraphicsControllerType_T aGraphicsControllerTypes[] =
+            {
+                GraphicsControllerType_VMSVGA,
+                GraphicsControllerType_Null
+            };
+            aSupportedGraphicsControllerTypes.assign(aGraphicsControllerTypes,
+                                                     aGraphicsControllerTypes + RT_ELEMENTS(aGraphicsControllerTypes));
+            break;
+        }
+
+        default:
+            AssertFailedStmt(aSupportedGraphicsControllerTypes.clear());
+            break;
+    }
+
     return S_OK;
 }
 
@@ -670,7 +721,7 @@ HRESULT PlatformProperties::getSupportedNetworkAdapterTypes(std::vector<NetworkA
         NetworkAdapterType_I82540EM,
         NetworkAdapterType_I82543GC,
         NetworkAdapterType_I82545EM,
-        NetworkAdapterType_Virtio,
+        NetworkAdapterType_Virtio
     };
     aSupportedNetworkAdapterTypes.assign(aNetworkAdapterTypes,
                                          aNetworkAdapterTypes + RT_ELEMENTS(aNetworkAdapterTypes));
@@ -683,7 +734,7 @@ HRESULT PlatformProperties::getSupportedUartTypes(std::vector<UartType_T> &aSupp
     {
         UartType_U16450,
         UartType_U16550A,
-        UartType_U16750,
+        UartType_U16750
     };
     aSupportedUartTypes.assign(aUartTypes,
                                aUartTypes + RT_ELEMENTS(aUartTypes));
@@ -696,7 +747,7 @@ HRESULT PlatformProperties::getSupportedUSBControllerTypes(std::vector<USBContro
     {
         USBControllerType_OHCI,
         USBControllerType_EHCI,
-        USBControllerType_XHCI,
+        USBControllerType_XHCI
     };
     aSupportedUSBControllerTypes.assign(aUSBControllerTypes,
                                         aUSBControllerTypes + RT_ELEMENTS(aUSBControllerTypes));
@@ -705,91 +756,226 @@ HRESULT PlatformProperties::getSupportedUSBControllerTypes(std::vector<USBContro
 
 HRESULT PlatformProperties::getSupportedAudioControllerTypes(std::vector<AudioControllerType_T> &aSupportedAudioControllerTypes)
 {
-    static const AudioControllerType_T aAudioControllerTypes[] =
+    switch (mPlatformArchitecture)
     {
-        AudioControllerType_AC97,
-        AudioControllerType_SB16,
-        AudioControllerType_HDA,
-    };
-    aSupportedAudioControllerTypes.assign(aAudioControllerTypes,
-                                          aAudioControllerTypes + RT_ELEMENTS(aAudioControllerTypes));
+        case PlatformArchitecture_x86:
+        {
+            static const AudioControllerType_T aAudioControllerTypes[] =
+            {
+                AudioControllerType_AC97,
+                AudioControllerType_SB16,
+                AudioControllerType_HDA,
+            };
+            aSupportedAudioControllerTypes.assign(aAudioControllerTypes,
+                                                  aAudioControllerTypes + RT_ELEMENTS(aAudioControllerTypes));
+            break;
+        }
+
+        case PlatformArchitecture_ARM:
+        {
+            /** @todo None yet / needs to be tested first. */
+            aSupportedAudioControllerTypes.clear();
+            break;
+        }
+
+        default:
+            AssertFailedStmt(aSupportedAudioControllerTypes.clear());
+            break;
+    }
+
+
     return S_OK;
 }
 
 HRESULT PlatformProperties::getSupportedStorageBuses(std::vector<StorageBus_T> &aSupportedStorageBuses)
 {
-    static const StorageBus_T aStorageBuses[] =
+    switch (mPlatformArchitecture)
     {
-        StorageBus_SATA,
-        StorageBus_IDE,
-        StorageBus_SCSI,
-        StorageBus_Floppy,
-        StorageBus_SAS,
-        StorageBus_USB,
-        StorageBus_PCIe,
-        StorageBus_VirtioSCSI,
-    };
-    aSupportedStorageBuses.assign(aStorageBuses,
-                                  aStorageBuses + RT_ELEMENTS(aStorageBuses));
+        case PlatformArchitecture_x86:
+        {
+            static const StorageBus_T aStorageBuses[] =
+            {
+                StorageBus_SATA,
+                StorageBus_IDE,
+                StorageBus_SCSI,
+                StorageBus_Floppy,
+                StorageBus_SAS,
+                StorageBus_USB,
+                StorageBus_PCIe,
+                StorageBus_VirtioSCSI,
+            };
+            aSupportedStorageBuses.assign(aStorageBuses,
+                                          aStorageBuses + RT_ELEMENTS(aStorageBuses));
+            break;
+        }
+
+        case PlatformArchitecture_ARM:
+        {
+            static const StorageBus_T aStorageBuses[] =
+            {
+                StorageBus_VirtioSCSI
+            };
+            aSupportedStorageBuses.assign(aStorageBuses,
+                                          aStorageBuses + RT_ELEMENTS(aStorageBuses));
+            break;
+        }
+
+        default:
+            AssertFailedStmt(aSupportedStorageBuses.clear());
+            break;
+    }
+
     return S_OK;
 }
 
 HRESULT PlatformProperties::getSupportedStorageControllerTypes(std::vector<StorageControllerType_T> &aSupportedStorageControllerTypes)
 {
-    static const StorageControllerType_T aStorageControllerTypes[] =
+    switch (mPlatformArchitecture)
     {
-        StorageControllerType_IntelAhci,
-        StorageControllerType_PIIX4,
-        StorageControllerType_PIIX3,
-        StorageControllerType_ICH6,
-        StorageControllerType_LsiLogic,
-        StorageControllerType_BusLogic,
-        StorageControllerType_I82078,
-        StorageControllerType_LsiLogicSas,
-        StorageControllerType_USB,
-        StorageControllerType_NVMe,
-        StorageControllerType_VirtioSCSI,
-    };
-    aSupportedStorageControllerTypes.assign(aStorageControllerTypes,
-                                            aStorageControllerTypes + RT_ELEMENTS(aStorageControllerTypes));
+        case PlatformArchitecture_x86:
+        {
+            static const StorageControllerType_T aStorageControllerTypes[] =
+            {
+                StorageControllerType_IntelAhci,
+                StorageControllerType_PIIX4,
+                StorageControllerType_PIIX3,
+                StorageControllerType_ICH6,
+                StorageControllerType_LsiLogic,
+                StorageControllerType_BusLogic,
+                StorageControllerType_I82078,
+                StorageControllerType_LsiLogicSas,
+                StorageControllerType_USB,
+                StorageControllerType_NVMe,
+                StorageControllerType_VirtioSCSI
+            };
+            aSupportedStorageControllerTypes.assign(aStorageControllerTypes,
+                                                    aStorageControllerTypes + RT_ELEMENTS(aStorageControllerTypes));
+            break;
+        }
+
+        case PlatformArchitecture_ARM:
+        {
+            static const StorageControllerType_T aStorageControllerTypes[] =
+            {
+                StorageControllerType_VirtioSCSI
+            };
+            aSupportedStorageControllerTypes.assign(aStorageControllerTypes,
+                                                    aStorageControllerTypes + RT_ELEMENTS(aStorageControllerTypes));
+            break;
+        }
+
+        default:
+            AssertFailedStmt(aSupportedStorageControllerTypes.clear());
+            break;
+    }
+
     return S_OK;
 }
 
 HRESULT PlatformProperties::getSupportedChipsetTypes(std::vector<ChipsetType_T> &aSupportedChipsetTypes)
 {
-    static const ChipsetType_T aChipsetTypes[] =
+    switch (mPlatformArchitecture)
     {
-        ChipsetType_PIIX3,
-        ChipsetType_ICH9,
-    };
-    aSupportedChipsetTypes.assign(aChipsetTypes,
-                                  aChipsetTypes + RT_ELEMENTS(aChipsetTypes));
+        case PlatformArchitecture_x86:
+        {
+            static const ChipsetType_T aChipsetTypes[] =
+            {
+                ChipsetType_PIIX3,
+                ChipsetType_ICH9
+            };
+            aSupportedChipsetTypes.assign(aChipsetTypes,
+                                          aChipsetTypes + RT_ELEMENTS(aChipsetTypes));
+            break;
+        }
+
+        case PlatformArchitecture_ARM:
+        {
+            static const ChipsetType_T aChipsetTypes[] =
+            {
+                ChipsetType_ARMv8Virtual
+            };
+            aSupportedChipsetTypes.assign(aChipsetTypes,
+                                          aChipsetTypes + RT_ELEMENTS(aChipsetTypes));
+            break;
+        }
+
+        default:
+            AssertFailedStmt(aSupportedChipsetTypes.clear());
+            break;
+    }
+
     return S_OK;
 }
 
 HRESULT PlatformProperties::getSupportedIommuTypes(std::vector<IommuType_T> &aSupportedIommuTypes)
 {
-    static const IommuType_T aIommuTypes[] =
+    switch (mPlatformArchitecture)
     {
-        IommuType_None,
-        IommuType_Automatic,
-        IommuType_AMD,
-        /** @todo Add Intel when it's supported. */
-    };
-    aSupportedIommuTypes.assign(aIommuTypes,
-                                aIommuTypes + RT_ELEMENTS(aIommuTypes));
+        case PlatformArchitecture_x86:
+        {
+            static const IommuType_T aIommuTypes[] =
+            {
+                IommuType_None,
+                IommuType_Automatic,
+                IommuType_AMD
+                /** @todo Add Intel when it's supported. */
+            };
+            aSupportedIommuTypes.assign(aIommuTypes,
+                                        aIommuTypes + RT_ELEMENTS(aIommuTypes));
+            break;
+        }
+
+        case PlatformArchitecture_ARM:
+        {
+            static const IommuType_T aIommuTypes[] =
+            {
+                IommuType_None
+            };
+            aSupportedIommuTypes.assign(aIommuTypes,
+                                        aIommuTypes + RT_ELEMENTS(aIommuTypes));
+            break;
+        }
+
+        default:
+            AssertFailedStmt(aSupportedIommuTypes.clear());
+            break;
+    }
+
     return S_OK;
 }
 
 HRESULT PlatformProperties::getSupportedTpmTypes(std::vector<TpmType_T> &aSupportedTpmTypes)
 {
-    static const TpmType_T aTpmTypes[] =
+    switch (mPlatformArchitecture)
     {
-        TpmType_None,
-        TpmType_v1_2,
-        TpmType_v2_0
-    };
-    aSupportedTpmTypes.assign(aTpmTypes,
-                              aTpmTypes + RT_ELEMENTS(aTpmTypes));
+        case PlatformArchitecture_x86:
+        {
+            static const TpmType_T aTpmTypes[] =
+            {
+                TpmType_None,
+                TpmType_v1_2,
+                TpmType_v2_0
+            };
+            aSupportedTpmTypes.assign(aTpmTypes,
+                                      aTpmTypes + RT_ELEMENTS(aTpmTypes));
+            break;
+        }
+
+        case PlatformArchitecture_ARM:
+        {
+            static const TpmType_T aTpmTypes[] =
+            {
+                TpmType_None
+            };
+            aSupportedTpmTypes.assign(aTpmTypes,
+                                      aTpmTypes + RT_ELEMENTS(aTpmTypes));
+            break;
+        }
+
+        default:
+            AssertFailedStmt(aSupportedTpmTypes.clear());
+            break;
+    }
+
     return S_OK;
 }
