@@ -220,7 +220,8 @@ public:
     virtual ~VBoxDbgStatsModel();
 
     /**
-     * Updates the data matching the specified pattern.
+     * Updates the data matching the specified pattern, normally for the whole tree
+     * but optionally a sub-tree if @a a_pSubTree is given.
      *
      * This will should invoke updatePrep, updateCallback and updateDone.
      *
@@ -229,19 +230,21 @@ public:
      * strictly sorted and taking the slash into account when doing so.
      *
      * @returns true if we reset the model and it's necessary to set the root index.
-     * @param   a_rPatStr       The selection pattern.
+     * @param   a_rPatStr   The selection pattern.
+     * @param   a_pSubTree  The node / sub-tree to update if this is partial update.
+     *                      This is NULL for a full tree update.
      *
      * @remarks The default implementation is an empty stub.
      */
-    virtual bool updateStatsByPattern(const QString &a_rPatStr);
+    virtual bool updateStatsByPattern(const QString &a_rPatStr, PDBGGUISTATSNODE a_pSubTree = NULL);
 
     /**
      * Similar to updateStatsByPattern, except that it only works on a sub-tree and
      * will not remove anything that's outside that tree.
      *
-     * @param   a_rIndex    The sub-tree root. Invalid index means root.
+     * The default implementation will call redirect to updateStatsByPattern().
      *
-     * @todo    Create a default implementation using updateStatsByPattern.
+     * @param   a_rIndex    The sub-tree root. Invalid index means root.
      */
     virtual void updateStatsByIndex(QModelIndex const &a_rIndex);
 
@@ -333,18 +336,21 @@ protected:
      * Called by updateStatsByPattern(), makes the necessary preparations.
      *
      * @returns Success indicator.
+     * @param   a_pSubTree  The node / sub-tree to update if this is partial update.
+     *                      This is NULL for a full tree update.
      */
-    bool updatePrepare(void);
+    bool updatePrepare(PDBGGUISTATSNODE a_pSubTree = NULL);
 
     /**
      * Called by updateStatsByPattern(), finalizes the update.
      *
-     * @return See updateStatsByPattern().
+     * @returns See updateStatsByPattern().
      *
-     * @param  a_fSuccess   Whether the update was successful or not.
-     *
+     * @param   a_fSuccess  Whether the update was successful or not.
+     * @param   a_pSubTree  The node / sub-tree to update if this is partial update.
+     *                      This is NULL for a full tree update.
      */
-    bool updateDone(bool a_fSuccess);
+    bool updateDone(bool a_fSuccess, PDBGGUISTATSNODE a_pSubTree = NULL);
 
     /**
      * updateCallback() worker taking care of in-tree inserts and removals.
@@ -397,6 +403,16 @@ protected:
      * @param   cch         The size of the buffer.
      */
     static char *getNodePath2(PCDBGGUISTATSNODE pNode, char *psz, ssize_t cch);
+
+    /**
+     * Returns the pattern for the node, optionally including the entire sub-tree
+     * under it.
+     *
+     * @returns Pattern.
+     * @param   pNode       The node.
+     * @param   fSubTree    Whether to include the sub-tree in the pattern.
+     */
+    static QString getNodePattern(PCDBGGUISTATSNODE pNode, bool fSubTree = true);
 
     /**
      * Check if the first node is an ancestor to the second one.
@@ -600,7 +616,7 @@ public:
     /** Destructor */
     virtual ~VBoxDbgStatsModelVM();
 
-    virtual bool updateStatsByPattern(const QString &a_rPatStr);
+    virtual bool updateStatsByPattern(const QString &a_rPatStr, PDBGGUISTATSNODE a_pSubTree = NULL);
     virtual void resetStatsByPattern(const QString &a_rPatStr);
 
 protected:
@@ -1380,6 +1396,28 @@ VBoxDbgStatsModel::getNodePath2(PCDBGGUISTATSNODE pNode, char *psz, ssize_t cch)
 }
 
 
+/*static*/ QString
+VBoxDbgStatsModel::getNodePattern(PCDBGGUISTATSNODE pNode, bool fSubTree /*= true*/)
+{
+    /* the node pattern. */
+    char szPat[1024+1024+4];
+    ssize_t cch = getNodePath(pNode, szPat, 1024);
+    AssertReturn(cch >= 0, QString("//////////////////////////////////////////////////////"));
+
+    /* the sub-tree pattern. */
+    if (fSubTree && pNode->cChildren)
+    {
+        char *psz = &szPat[cch];
+        *psz++ = '|';
+        memcpy(psz, szPat, cch);
+        psz += cch;
+        *psz++ = '/';
+        *psz++ = '*';
+        *psz++ = '\0';
+    }
+    return szPat;
+}
+
 
 /*static*/ bool
 VBoxDbgStatsModel::isNodeAncestorOf(PCDBGGUISTATSNODE pAncestor, PCDBGGUISTATSNODE pDescendant)
@@ -1841,15 +1879,19 @@ VBoxDbgStatsModel::updateCallback(const char *pszName, STAMTYPE enmType, void *p
 
 
 bool
-VBoxDbgStatsModel::updatePrepare(void)
+VBoxDbgStatsModel::updatePrepare(PDBGGUISTATSNODE a_pSubTree /*= NULL*/)
 {
     /*
      * Find the first child with data and set it up as the 'next'
      * node to be updated.
      */
+    PDBGGUISTATSNODE pFirst;
     Assert(m_pRoot);
     Assert(m_pRoot->enmType == STAMTYPE_INVALID);
-    PDBGGUISTATSNODE pFirst = nextDataNode(m_pRoot);
+    if (!a_pSubTree)
+        pFirst = nextDataNode(m_pRoot);
+    else
+        pFirst = a_pSubTree->enmType != STAMTYPE_INVALID ? a_pSubTree : nextDataNode(a_pSubTree);
     if (pFirst)
     {
         m_iUpdateChild = pFirst->iSelf;
@@ -1877,13 +1919,14 @@ VBoxDbgStatsModel::updatePrepare(void)
 
 
 bool
-VBoxDbgStatsModel::updateDone(bool a_fSuccess)
+VBoxDbgStatsModel::updateDone(bool a_fSuccess, PDBGGUISTATSNODE a_pSubTree /*= NULL*/)
 {
     /*
      * Remove any nodes following the last in the update (unless the update failed).
      */
     if (    a_fSuccess
-        &&  m_iUpdateChild != UINT32_MAX)
+        &&  m_iUpdateChild != UINT32_MAX
+        &&  a_pSubTree == NULL)
     {
         PDBGGUISTATSNODE const pLast = prevDataNode(m_pUpdateParent->papChildren[m_iUpdateChild]);
         if (!pLast)
@@ -1927,7 +1970,7 @@ VBoxDbgStatsModel::updateDone(bool a_fSuccess)
          * easier way because we can traverse the tree in a different fashion.
          */
         DBGGUISTATSSTACK    Stack;
-        Stack.a[0].pNode = m_pRoot;
+        Stack.a[0].pNode  = !a_pSubTree ? m_pRoot : a_pSubTree;
         Stack.a[0].iChild = -1;
         Stack.iTop = 0;
 
@@ -1985,7 +2028,18 @@ VBoxDbgStatsModel::updateDone(bool a_fSuccess)
                 }
             }
         }
-        /* emit layoutChanged(); - hrmpf, doesn't work reliably... */
+
+        /*
+         * If a_pSubTree is not an intermediate node, invalidate it explicitly.
+         */
+        if (a_pSubTree && a_pSubTree->enmType != STAMTYPE_INVALID)
+        {
+            int         const iRightCol   = a_pSubTree->enmType != STAMTYPE_PROFILE && a_pSubTree->enmType != STAMTYPE_PROFILE_ADV
+                                          ? 4 : 7;
+            QModelIndex const BottomRight = createIndex(a_pSubTree->iSelf, iRightCol, a_pSubTree);
+            QModelIndex const TopLeft     = createIndex(a_pSubTree->iSelf, 2, a_pSubTree);
+            emit dataChanged(TopLeft, BottomRight);
+        }
     }
 
     return m_fUpdateInsertRemove;
@@ -1993,10 +2047,10 @@ VBoxDbgStatsModel::updateDone(bool a_fSuccess)
 
 
 bool
-VBoxDbgStatsModel::updateStatsByPattern(const QString &a_rPatStr)
+VBoxDbgStatsModel::updateStatsByPattern(const QString &a_rPatStr, PDBGGUISTATSNODE a_pSubTree /*= NULL*/)
 {
     /* stub */
-    NOREF(a_rPatStr);
+    RT_NOREF(a_rPatStr, a_pSubTree);
     return false;
 }
 
@@ -2004,8 +2058,12 @@ VBoxDbgStatsModel::updateStatsByPattern(const QString &a_rPatStr)
 void
 VBoxDbgStatsModel::updateStatsByIndex(QModelIndex const &a_rIndex)
 {
-    /** @todo implement this based on updateStatsByPattern. */
-    NOREF(a_rIndex);
+    PDBGGUISTATSNODE pNode = nodeFromIndex(a_rIndex);
+    if (pNode == m_pRoot || !a_rIndex.isValid())
+        updateStatsByPattern(QString());
+    else if (pNode)
+        /** @todo this doesn't quite work if pNode is excluded by the m_PatStr.   */
+        updateStatsByPattern(getNodePattern(pNode, true /*fSubTree*/), pNode);
 }
 
 
@@ -2023,33 +2081,12 @@ VBoxDbgStatsModel::resetStatsByIndex(QModelIndex const &a_rIndex, bool fSubTree 
     PCDBGGUISTATSNODE pNode = nodeFromIndex(a_rIndex);
     if (pNode == m_pRoot || !a_rIndex.isValid())
     {
+        /* The root can't be reset, so only take action if fSubTree is set. */
         if (fSubTree)
-        {
-            /* everything from the root down. */
             resetStatsByPattern(QString());
-        }
     }
     else if (pNode)
-    {
-        /* the node pattern. */
-        char szPat[1024+1024+4];
-        ssize_t cch = getNodePath(pNode, szPat, 1024);
-        AssertReturnVoid(cch >= 0);
-
-        /* the sub-tree pattern. */
-        if (fSubTree && pNode->cChildren)
-        {
-            char *psz = &szPat[cch];
-            *psz++ = '|';
-            memcpy(psz, szPat, cch);
-            psz += cch;
-            *psz++ = '/';
-            *psz++ = '*';
-            *psz++ = '\0';
-        }
-
-        resetStatsByPattern(szPat);
-    }
+        resetStatsByPattern(getNodePattern(pNode, fSubTree));
 }
 
 
@@ -2715,16 +2752,16 @@ VBoxDbgStatsModelVM::~VBoxDbgStatsModelVM()
 
 
 bool
-VBoxDbgStatsModelVM::updateStatsByPattern(const QString &a_rPatStr)
+VBoxDbgStatsModelVM::updateStatsByPattern(const QString &a_rPatStr, PDBGGUISTATSNODE a_pSubTree /*= NULL*/)
 {
     /** @todo the way we update this stuff is independent of the source (XML, file, STAM), our only
      * ASSUMPTION is that the input is strictly ordered by (fully slashed) name. So, all this stuff
      * should really move up into the parent class. */
-    bool fRc = updatePrepare();
+    bool fRc = updatePrepare(a_pSubTree);
     if (fRc)
     {
         int rc = stamEnum(a_rPatStr, updateCallback, this);
-        fRc = updateDone(RT_SUCCESS(rc));
+        fRc = updateDone(RT_SUCCESS(rc), a_pSubTree);
     }
     return fRc;
 }
