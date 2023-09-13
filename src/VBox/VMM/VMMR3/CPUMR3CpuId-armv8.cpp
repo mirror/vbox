@@ -530,6 +530,21 @@ VMMR3DECL(int) CPUMR3PopulateFeaturesByIdRegisters(PVM pVM, PCCPUMIDREGS pIdRegs
 }
 
 
+/**
+ * Queries the pointer to the VM wide ID registers exposing configured features to the guest.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The cross context VM structure.
+ * @param   ppIdRegs            Where to store the pointer to the guest ID register struct.
+ */
+VMMR3_INT_DECL(int) CPUMR3QueryGuestIdRegs(PVM pVM, PCCPUMIDREGS *ppIdRegs)
+{
+    AssertPtrReturn(ppIdRegs, VERR_INVALID_POINTER);
+
+    *ppIdRegs = &pVM->cpum.s.GuestIdRegs;
+    return VINF_SUCCESS;
+}
+
 
 /*
  *
@@ -597,6 +612,75 @@ static DBGFREGSUBFIELD const g_aIdAa64IsaR2Fields[] =
     DBGFREGSUBFIELD_RO("MOPS\0"      "Memory Copy and Set instruction support in AArch64",          16, 4, 0),
     DBGFREGSUBFIELD_RO("BC\0"        "BC instruction support in AArch64",                           20, 4, 0),
     DBGFREGSUBFIELD_RO("PAC_frac\0"  "ConstPACField() returns TRUE",                                24, 4, 0),
+    DBGFREGSUBFIELD_TERMINATOR()
+};
+
+
+/** ID_AA64MMFR0_EL1 field descriptions.   */
+static DBGFREGSUBFIELD const g_aIdAa64MmfR0Fields[] =
+{
+    DBGFREGSUBFIELD_RO("PARange\0"   "Physical address width",                                       0, 4, 0),
+    DBGFREGSUBFIELD_RO("ASIDBits\0"  "Number of ASID bits",                                          4, 4, 0),
+    DBGFREGSUBFIELD_RO("BigEnd\0"    "Mixed-endian configuration support",                           8, 4, 0),
+    DBGFREGSUBFIELD_RO("SNSMem\0"    "Secure and Non-secure memory distinction",                    12, 4, 0),
+    DBGFREGSUBFIELD_RO("BigEndEL0\0" "Mixed-endian support in EL0 only",                            16, 4, 0),
+    DBGFREGSUBFIELD_RO("TGran16\0"   "16KiB memory granule size",                                   20, 4, 0),
+    DBGFREGSUBFIELD_RO("TGran64\0"   "64KiB memory granule size",                                   24, 4, 0),
+    DBGFREGSUBFIELD_RO("TGran4\0"    "4KiB memory granule size",                                    28, 4, 0),
+    DBGFREGSUBFIELD_RO("TGran16_2\0" "16KiB memory granule size at stage 2",                        32, 4, 0),
+    DBGFREGSUBFIELD_RO("TGran64_2\0" "64KiB memory granule size at stage 2",                        36, 4, 0),
+    DBGFREGSUBFIELD_RO("TGran4_2\0"  "4KiB memory granule size at stage 2",                         40, 4, 0),
+    DBGFREGSUBFIELD_RO("ExS\0"       "Disabling context synchronizing exception",                   44, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"      "Reserved",                                                    48, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"      "Reserved",                                                    52, 4, 0),
+    DBGFREGSUBFIELD_RO("FGT\0"       "Fine-grained trap controls support",                          56, 4, 0),
+    DBGFREGSUBFIELD_RO("ECV\0"       "Enhanced Counter Virtualization support",                      60, 4, 0),
+    DBGFREGSUBFIELD_TERMINATOR()
+};
+
+
+/** ID_AA64MMFR1_EL1 field descriptions.   */
+static DBGFREGSUBFIELD const g_aIdAa64MmfR1Fields[] =
+{
+    DBGFREGSUBFIELD_RO("HAFDBS\0"    "Hardware updates to Access/Dirty state",                       0, 4, 0),
+    DBGFREGSUBFIELD_RO("VMIDBit\0"   "Number of VMID bits",                                          4, 4, 0),
+    DBGFREGSUBFIELD_RO("VH\0"        "Virtualization Host Extensions",                               8, 4, 0),
+    DBGFREGSUBFIELD_RO("HPDS\0"      "Hierarchical Permission Disables",                            12, 4, 0),
+    DBGFREGSUBFIELD_RO("LO\0"        "LORegions support",                                           16, 4, 0),
+    DBGFREGSUBFIELD_RO("PAN\0"       "Privileged Access Never",                                     20, 4, 0),
+    DBGFREGSUBFIELD_RO("SpecSEI\0"   "SError interrupt exception for speculative reads",            24, 4, 0),
+    DBGFREGSUBFIELD_RO("XNX\0"       "Execute-never control support",                               28, 4, 0),
+    DBGFREGSUBFIELD_RO("TWED\0"      "Configurable delayed WFE trapping",                           32, 4, 0),
+    DBGFREGSUBFIELD_RO("ETS\0"       "Enhanced Translation Synchronization support",                36, 4, 0),
+    DBGFREGSUBFIELD_RO("HCX\0"       "HCRX_EL2 support",                                            40, 4, 0),
+    DBGFREGSUBFIELD_RO("AFP\0"       "FPCR.{AH,FIZ,NEP} support",                                   44, 4, 0),
+    DBGFREGSUBFIELD_RO("nTLBPA\0"    "Caching of translation table walks",                          48, 4, 0),
+    DBGFREGSUBFIELD_RO("TIDCP1\0"    "FEAT_TIDCP1 support",                                         52, 4, 0),
+    DBGFREGSUBFIELD_RO("CMOW\0"      "Cache maintenance instruction permission",                    56, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"      "Reserved",                                                    60, 4, 0),
+    DBGFREGSUBFIELD_TERMINATOR()
+};
+
+
+/** ID_AA64MMFR2_EL1 field descriptions.   */
+static DBGFREGSUBFIELD const g_aIdAa64MmfR2Fields[] =
+{
+    DBGFREGSUBFIELD_RO("CnP\0"       "Common not Private translation support",                       0, 4, 0),
+    DBGFREGSUBFIELD_RO("UAO\0"       "User Access Override",                                         4, 4, 0),
+    DBGFREGSUBFIELD_RO("LSM\0"       "LSMAOE/nTLSMD bit support",                                    8, 4, 0),
+    DBGFREGSUBFIELD_RO("IESB\0"      "IESB bit support in SCTLR_ELx",                               12, 4, 0),
+    DBGFREGSUBFIELD_RO("VARange\0"   "Large virtual address space support",                         16, 4, 0),
+    DBGFREGSUBFIELD_RO("CCIDX\0"     "64-bit CCSIDR_EL1 format",                                    20, 4, 0),
+    DBGFREGSUBFIELD_RO("NV\0"        "Nested Virtualization support",                               24, 4, 0),
+    DBGFREGSUBFIELD_RO("ST\0"        "Small translation table support",                             28, 4, 0),
+    DBGFREGSUBFIELD_RO("AT\0"        "Unaligned single-copy atomicity support",                     32, 4, 0),
+    DBGFREGSUBFIELD_RO("IDS\0"       "FEAT_IDST support",                                           36, 4, 0),
+    DBGFREGSUBFIELD_RO("FWB\0"       "HCR_EL2.FWB support",                                         40, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"      "Reserved",                                                    44, 4, 0),
+    DBGFREGSUBFIELD_RO("TTL\0"       "TTL field support in address operations",                     48, 4, 0),
+    DBGFREGSUBFIELD_RO("BBM\0"       "FEAT_BBM support",                                            52, 4, 0),
+    DBGFREGSUBFIELD_RO("EVT\0"       "Enhanced Virtualization Traps support",                       56, 4, 0),
+    DBGFREGSUBFIELD_RO("E0PD\0"      "E0PD mechanism support",                                      60, 4, 0),
     DBGFREGSUBFIELD_TERMINATOR()
 };
 
@@ -736,6 +820,21 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
                                 pVM->cpum.s.HostIdRegs.u64RegIdAa64Isar2El1,
                                 pVM->cpum.s.GuestIdRegs.u64RegIdAa64Isar2El1,
                                 g_aIdAa64IsaR2Fields, iVerbosity > 1);
+
+    cpumR3CpuIdInfoIdRegDetails(pHlp, "ID_AA64MMFR0_EL1",
+                                pVM->cpum.s.HostIdRegs.u64RegIdAa64Mmfr0El1,
+                                pVM->cpum.s.GuestIdRegs.u64RegIdAa64Mmfr0El1,
+                                g_aIdAa64MmfR0Fields, iVerbosity > 1);
+
+    cpumR3CpuIdInfoIdRegDetails(pHlp, "ID_AA64MMFR1_EL1",
+                                pVM->cpum.s.HostIdRegs.u64RegIdAa64Mmfr1El1,
+                                pVM->cpum.s.GuestIdRegs.u64RegIdAa64Mmfr1El1,
+                                g_aIdAa64MmfR1Fields, iVerbosity > 1);
+
+    cpumR3CpuIdInfoIdRegDetails(pHlp, "ID_AA64MMFR2_EL1",
+                                pVM->cpum.s.HostIdRegs.u64RegIdAa64Mmfr2El1,
+                                pVM->cpum.s.GuestIdRegs.u64RegIdAa64Mmfr2El1,
+                                g_aIdAa64MmfR2Fields, iVerbosity > 1);
 
     /** @todo Other ID and feature registers. */
 }
