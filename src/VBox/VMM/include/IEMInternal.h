@@ -681,29 +681,18 @@ AssertCompileSizeAlignment(IEMTLB, 64);
 /** Type: Native recompilation.  */
 #define IEMTB_F_TYPE_NATIVE             UINT32_C(0x02000000)
 
-/** State mask.  */
-#define IEMTB_F_STATE_MASK              UINT32_C(0x0c000000)
-/** State shift count.  */
-#define IEMTB_F_STATE_SHIFT             26
-/** State: Compiling. */
-#define IEMTB_F_STATE_COMPILING         UINT32_C(0x04000000)
-/** State: Ready.  */
-#define IEMTB_F_STATE_READY             UINT32_C(0x08000000)
-/** State: Obsolete, can be deleted when we're sure it's not used any longer. */
-#define IEMTB_F_STATE_OBSOLETE          UINT32_C(0x0c000000)
-
 /** Set when we're starting the block in an "interrupt shadow".
  * We don't need to distingish between the two types of this mask, thus the one.
  * @see CPUMCTX_INHIBIT_SHADOW, CPUMIsInInterruptShadow() */
-#define IEMTB_F_INHIBIT_SHADOW          UINT32_C(0x10000000)
+#define IEMTB_F_INHIBIT_SHADOW          UINT32_C(0x04000000)
 /** Set when we're currently inhibiting NMIs
  * @see CPUMCTX_INHIBIT_NMI, CPUMAreInterruptsInhibitedByNmi() */
-#define IEMTB_F_INHIBIT_NMI             UINT32_C(0x20000000)
+#define IEMTB_F_INHIBIT_NMI             UINT32_C(0x08000000)
 
 /** Checks that EIP/IP is wihin CS.LIM before each instruction.  Used when
  * we're close the limit before starting a TB, as determined by
  * iemGetTbFlagsForCurrentPc(). */
-#define IEMTB_F_CS_LIM_CHECKS           UINT32_C(0x40000000)
+#define IEMTB_F_CS_LIM_CHECKS           UINT32_C(0x10000000)
 
 /** Mask of the IEMTB_F_XXX flags that are part of the TB lookup key.
  * @note We skip the CPL as we don't currently generate ring-specific code,

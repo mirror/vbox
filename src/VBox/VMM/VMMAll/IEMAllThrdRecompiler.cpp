@@ -634,7 +634,7 @@ static bool iemTbCacheRemove(PIEMTBCACHE pTbCache, PIEMTB pTb)
 static PIEMTB iemTbCacheLookup(PVMCPUCC pVCpu, PIEMTBCACHE pTbCache,
                                RTGCPHYS GCPhysPc, uint32_t fExtraFlags) IEM_NOEXCEPT_MAY_LONGJMP
 {
-    uint32_t const fFlags  = ((pVCpu->iem.s.fExec & IEMTB_F_IEM_F_MASK) | fExtraFlags | IEMTB_F_STATE_READY) & IEMTB_F_KEY_MASK;
+    uint32_t const fFlags  = ((pVCpu->iem.s.fExec & IEMTB_F_IEM_F_MASK) | fExtraFlags) & IEMTB_F_KEY_MASK;
     uint32_t const idxHash = IEMTBCACHE_HASH_NO_KEY_MASK(pTbCache, fFlags, GCPhysPc);
     PIEMTB         pTb     = IEMTBCACHE_PTR_GET_TB(pTbCache->apHash[idxHash]);
 #if defined(VBOX_STRICT) || defined(LOG_ENABLED)
@@ -1018,6 +1018,8 @@ static PIEMTB iemTbAllocatorAllocSlow(PVMCPUCC pVCpu, PIEMTBALLOCATOR const pTbA
         uint32_t idxInChunk = IEMTBALLOC_IDX_TO_INDEX_IN_CHUNK(pTbAllocator, idxTbPruneFrom, idxChunk);
         PIEMTB   pTb        = &pTbAllocator->aChunks[idxChunk].paTbs[idxInChunk];
         uint32_t cMsAge     = msNow - pTb->msLastUsed;
+        Assert(pTb->fFlags & IEMTB_F_TYPE_MASK);
+
         for (uint32_t j = 1, idxChunk2 = idxChunk, idxInChunk2 = idxInChunk + 1; j < cTbsPerGroup; j++, idxInChunk2++)
         {
 #ifndef IEMTB_SIZE_IS_POWER_OF_TWO
@@ -1034,9 +1036,9 @@ static PIEMTB iemTbAllocatorAllocSlow(PVMCPUCC pVCpu, PIEMTBALLOCATOR const pTbA
             PIEMTB   const pTb2    = &pTbAllocator->aChunks[idxChunk2].paTbs[idxInChunk2];
             uint32_t const cMsAge2 = msNow - pTb2->msLastUsed;
             if (   cMsAge2 > cMsAge
-                || (cMsAge2 == cMsAge && pTb2->cUsed < pTb->cUsed)
-                || (pTb2->fFlags & IEMTB_F_STATE_MASK) == IEMTB_F_STATE_OBSOLETE) /** @todo Consider state (and clean it up)! */
+                || (cMsAge2 == cMsAge && pTb2->cUsed < pTb->cUsed))
             {
+                Assert(pTb2->fFlags & IEMTB_F_TYPE_MASK);
                 pTb        = pTb2;
                 idxChunk   = idxChunk2;
                 idxInChunk = idxInChunk2;
@@ -1044,15 +1046,9 @@ static PIEMTB iemTbAllocatorAllocSlow(PVMCPUCC pVCpu, PIEMTBALLOCATOR const pTbA
             }
         }
 
-        /* Free the TB if in the right state. */
-        /** @todo They shall all be freeable! Otherwise we've buggered up the
-         *        accounting.  The TB state crap needs elimnating. */
-        if (   (pTb->fFlags & IEMTB_F_STATE_MASK) == IEMTB_F_STATE_READY
-            || (pTb->fFlags & IEMTB_F_STATE_MASK) == IEMTB_F_STATE_OBSOLETE)
-        {
-            iemTbAllocatorFreeInner(pVCpu, pTbAllocator, pTb, idxChunk, idxInChunk);
-            cFreedTbs++; /* just for safety */
-        }
+        /* Free the TB. */
+        iemTbAllocatorFreeInner(pVCpu, pTbAllocator, pTb, idxChunk, idxInChunk);
+        cFreedTbs++; /* paranoia */
     }
     pTbAllocator->iPruneFrom = idxTbPruneFrom;
     STAM_PROFILE_STOP(&pTbAllocator->StatPrune, a);
@@ -1210,12 +1206,12 @@ static PIEMTB iemThreadedTbDuplicate(PVMCC pVM, PVMCPUCC pVCpu, PCIEMTB pTbSrc)
             pTb->pabOpcodes = (uint8_t *)RTMemDup(pTbSrc->pabOpcodes, cbOpcodes);
             if (pTb->pabOpcodes)
             {
-                pTb->Thrd.cAllocated        = cCalls;
-                pTb->cbOpcodesAllocated     = cbOpcodes;
-                pTb->pNext                  = NULL;
-                pTb->cUsed                  = 0;
-                pTb->msLastUsed             = pVCpu->iem.s.msRecompilerPollNow;
-                pTb->fFlags                 = (pTbSrc->fFlags & ~IEMTB_F_STATE_MASK) | IEMTB_F_STATE_READY;
+                pTb->Thrd.cAllocated    = cCalls;
+                pTb->cbOpcodesAllocated = cbOpcodes;
+                pTb->pNext              = NULL;
+                pTb->cUsed              = 0;
+                pTb->msLastUsed         = pVCpu->iem.s.msRecompilerPollNow;
+                pTb->fFlags             = pTbSrc->fFlags;
 
                 return pTb;
             }
@@ -1314,11 +1310,13 @@ static void iemThreadedLogCurInstr(PVMCPUCC pVCpu, const char *pszFunction) RT_N
 #endif /* LOG_ENABLED */
 
 
+#if 0
 static VBOXSTRICTRC iemThreadedCompileLongJumped(PVMCC pVM, PVMCPUCC pVCpu, VBOXSTRICTRC rcStrict)
 {
     RT_NOREF(pVM, pVCpu);
     return rcStrict;
 }
+#endif
 
 
 /**
@@ -2012,10 +2010,10 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
      */
     PIEMTB pTb = pVCpu->iem.s.pThrdCompileTbR3;
     if (pTb)
-        iemThreadedTbReuse(pVCpu, pTb, GCPhysPc, fExtraFlags | IEMTB_F_STATE_COMPILING);
+        iemThreadedTbReuse(pVCpu, pTb, GCPhysPc, fExtraFlags);
     else
     {
-        pTb = iemThreadedTbAlloc(pVM, pVCpu, GCPhysPc, fExtraFlags | IEMTB_F_STATE_COMPILING);
+        pTb = iemThreadedTbAlloc(pVM, pVCpu, GCPhysPc, fExtraFlags);
         AssertReturn(pTb, VERR_IEM_TB_ALLOC_FAILED);
         pVCpu->iem.s.pThrdCompileTbR3 = pTb;
     }
@@ -2366,6 +2364,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu)
             if (pVCpu->iem.s.cActiveMappings > 0)
                 iemMemRollback(pVCpu);
 
+#if 0 /** @todo do we need to clean up anything? */
             /* If pTb isn't NULL we're in iemThreadedTbExec. */
             if (!pTb)
             {
@@ -2373,12 +2372,12 @@ VMMDECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu)
                 pTb = pVCpu->iem.s.pCurTbR3;
                 if (pTb)
                 {
-                    /* If the pCurTbR3 block is in compiling state, we're in iemThreadedCompile,
-                       otherwise it's iemThreadedTbExec inside iemThreadedCompile (compile option). */
-                    if ((pTb->fFlags & IEMTB_F_STATE_MASK) == IEMTB_F_STATE_COMPILING)
+                    if (pTb == pVCpu->iem.s.pThrdCompileTbR3)
                         return iemThreadedCompileLongJumped(pVM, pVCpu, rcStrict);
+                    Assert(pTb != pVCpu->iem.s.pNativeCompileTbR3);
                 }
             }
+#endif
             return rcStrict;
         }
         IEM_CATCH_LONGJMP_END(pVCpu);
