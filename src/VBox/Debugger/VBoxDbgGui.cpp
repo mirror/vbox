@@ -190,25 +190,11 @@ VBoxDbgGui::showStatistics(const char *pszFilter, const char *pszExpand)
                                        pszExpand && *pszExpand ? pszExpand : NULL,
                                        2, m_pParent);
         connect(m_pDbgStats, SIGNAL(destroyed(QObject *)), this, SLOT(notifyChildDestroyed(QObject *)));
-        repositionStatistics();
+        repositionWindowInitial(m_pDbgStats, "DbgStats", VBoxDbgBaseWindow::kAttractionVmRight);
     }
 
     m_pDbgStats->vShow();
     return VINF_SUCCESS;
-}
-
-
-void
-VBoxDbgGui::repositionStatistics(bool fResize/* = true*/)
-{
-    /*
-     * Move it to the right side of the VBox console,
-     * and resize it to cover all the space to the left side of the desktop.
-     */
-    if (m_pDbgStats)
-        m_pDbgStats->vReposition(m_x + m_cx, m_y,
-                                 m_cxDesktop - m_cx - m_x + m_xDesktop, m_cyDesktop - m_y + m_yDesktop,
-                                 fResize);
 }
 
 
@@ -221,25 +207,11 @@ VBoxDbgGui::showConsole()
         m_pMachine->COMGETTER(Parent)(&pVirtualBox);
         m_pDbgConsole = new VBoxDbgConsole(this, m_pParent, pVirtualBox);
         connect(m_pDbgConsole, SIGNAL(destroyed(QObject *)), this, SLOT(notifyChildDestroyed(QObject *)));
-        repositionConsole();
+        repositionWindowInitial(m_pDbgConsole, "DbgConsole", VBoxDbgBaseWindow::kAttractionVmBottom);
     }
 
     m_pDbgConsole->vShow();
     return VINF_SUCCESS;
-}
-
-
-void
-VBoxDbgGui::repositionConsole(bool fResize/* = true*/)
-{
-    /*
-     * Move it to the bottom of the VBox console,
-     * and resize it to cover the space down to the bottom of the desktop.
-     */
-    if (m_pDbgConsole)
-        m_pDbgConsole->vReposition(m_x, m_y + m_cy,
-                                   RT_MAX(m_cx, 32), m_cyDesktop - m_cy - m_y + m_yDesktop,
-                                   fResize);
 }
 
 
@@ -264,10 +236,72 @@ VBoxDbgGui::updateDesktopSize()
 
 
 void
+VBoxDbgGui::repositionWindow(VBoxDbgBaseWindow *a_pWindow, bool a_fResize /*=true*/)
+{
+    if (a_pWindow)
+    {
+        VBoxDbgBaseWindow::VBoxDbgAttractionType const enmAttraction = a_pWindow->vGetWindowAttraction();
+        QSize const     BorderSize = a_pWindow->vGetBorderSize();
+        unsigned const  cxMinHint  = RT_MAX(32, a_pWindow->vGetMinWidthHint()) + BorderSize.width();
+        int             x,  y;
+        unsigned        cx, cy;
+        /** @todo take the x,y screen into account rather than the one of the VM
+         *        window. also generally consider adjacent screens. */
+        switch (enmAttraction)
+        {
+            case VBoxDbgBaseWindow::kAttractionVmRight:
+                x  = m_x + m_cx;
+                y  = m_y;
+                cx = m_cxDesktop - m_cx - m_x + m_xDesktop;
+                if (cx > m_cxDesktop || cx < cxMinHint)
+                    cx = cxMinHint;
+                cy = m_cyDesktop - m_y + m_yDesktop;
+                break;
+
+            case VBoxDbgBaseWindow::kAttractionVmBottom:
+                x  = m_x;
+                y  = m_y + m_cy;
+                cx = m_cx;
+                if (cx < cxMinHint)
+                {
+                    if (cxMinHint - cx <= unsigned(m_x - m_xDesktop)) /* move it to the left if we have sufficient room. */
+                        x -= cxMinHint - cx;
+                    else
+                        x = m_xDesktop;
+                    cx = cxMinHint;
+                }
+                cy = m_cyDesktop - m_cy - m_y + m_yDesktop;
+                break;
+
+            /** @todo implement the other placements when they become selectable. */
+
+            default:
+                return;
+        }
+
+        a_pWindow->vReposition(x, y, cx, cy, a_fResize);
+    }
+}
+
+
+void
+VBoxDbgGui::repositionWindowInitial(VBoxDbgBaseWindow *a_pWindow, const char *a_pszSettings,
+                                    VBoxDbgBaseWindow::VBoxDbgAttractionType a_enmDefaultAttraction)
+{
+    a_pWindow->vSetWindowAttraction(a_enmDefaultAttraction);
+
+    /** @todo save/restore the attachment type. */
+    RT_NOREF(a_pszSettings);
+
+    repositionWindow(a_pWindow, true /*fResize*/);
+}
+
+
+void
 VBoxDbgGui::adjustRelativePos(int x, int y, unsigned cx, unsigned cy)
 {
     /* Disregard a width less than 640 since it will mess up the console,
-       but only if previous width was already initialized.. */
+       but only if previous width was already initialized. */
     if (cx < 640 && m_cx > 0)
         cx = m_cx;
 
@@ -281,8 +315,8 @@ VBoxDbgGui::adjustRelativePos(int x, int y, unsigned cx, unsigned cy)
 
     if (fMoved)
         updateDesktopSize();
-    repositionConsole(fResize);
-    repositionStatistics(fResize);
+    repositionWindow(m_pDbgConsole, fResize);
+    repositionWindow(m_pDbgStats, fResize);
 }
 
 

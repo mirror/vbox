@@ -171,6 +171,53 @@ public:
      */
     void vReposition(int a_x, int a_y, unsigned a_cx, unsigned a_cy, bool a_fResize);
 
+    /**
+     * Gets the minimum client area width hint.
+     */
+    unsigned vGetMinWidthHint(void) const RT_NOEXCEPT
+    {
+        return m_cxMinHint;
+    }
+
+protected:
+    /**
+     * Sets the minimum client area width hint (without frame).
+     */
+    void vSetMinWidthHint(unsigned a_cxMin)
+    {
+        m_cxMinHint = a_cxMin;
+    }
+
+
+public:
+    /** VM window magnetic attraction. */
+    typedef enum
+    { kAttractionVmLeft, kAttractionVmRight, kAttractionVmTop, kAttractionVmBottom, kAttractionVmNone } VBoxDbgAttractionType;
+
+    /**
+     * Gets the window attraction.
+     */
+    VBoxDbgAttractionType vGetWindowAttraction(void) const RT_NOEXCEPT
+    {
+        return m_enmAttraction;
+    }
+
+    /**
+     * Sets the window attraction.
+     */
+    void vSetWindowAttraction(VBoxDbgAttractionType a_enmAttraction) RT_NOEXCEPT
+    {
+        m_enmAttraction = a_enmAttraction;
+    }
+
+    /**
+     * Get the border size for the window.
+     *
+     * This may return different values after the window has been shown,
+     * at least on X11.
+     */
+    QSize vGetBorderSize();
+
 protected:
     /**
      * For polishing the window size (X11 mess).
@@ -193,11 +240,6 @@ protected:
      */
     void vPolishSizeAndPos();
 
-    /**
-     * Internal worker that guesses the border sizes.
-     */
-    QSize vGuessBorderSizes();
-
 private:
     /** The Window title string (inflexible, read only). */
     const char *m_pszTitle;
@@ -211,6 +253,10 @@ private:
     unsigned m_cx;
     /** The desired height. */
     unsigned m_cy;
+    /** Minimum client area width hint (for the console window, etc). */
+    unsigned m_cxMinHint;
+    /** The window attraction. */
+    VBoxDbgAttractionType m_enmAttraction;
 
     /** Best effort x border size (for X11). */
     static unsigned m_cxBorder;

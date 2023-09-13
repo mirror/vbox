@@ -108,13 +108,6 @@ public:
     int showStatistics(const char *pszFilter, const char *pszExpand);
 
     /**
-     * Repositions and resizes (optionally) the statistics to its defaults
-     *
-     * @param   fResize     If set (default) the size of window is also changed.
-     */
-    void repositionStatistics(bool fResize = true);
-
-    /**
      * Show the console window (aka. command line), creating it if necessary.
      *
      * @returns VBox status code.
@@ -122,17 +115,30 @@ public:
     int showConsole();
 
     /**
-     * Repositions and resizes (optionally) the console to its defaults
-     *
-     * @param   fResize     If set (default) the size of window is also changed.
-     */
-    void repositionConsole(bool fResize = true);
-
-    /**
      * Update the desktop size.
      * This is called whenever the reference window changes position.
      */
     void updateDesktopSize();
+
+    /**
+     * Repositions and maybe resizes a window according to the VM window.
+     *
+     * @param   a_pWindow   The window.  Ignored if NULL.
+     * @param   a_fResize   If set (default) the size of window is also changed.
+     */
+    void repositionWindow(VBoxDbgBaseWindow *a_pWindow, bool a_fResize = true);
+
+    /**
+     * Does the initial repositioning and sizing of a window.
+     *
+     * This may get preferences from extra data.
+     *
+     * @param   a_pWindow               The window.
+     * @param   a_pszSettings           The 'section' name in the settings.
+     * @param   a_enmDefaultAttraction  The default attraction of the window.
+     */
+    void repositionWindowInitial(VBoxDbgBaseWindow *a_pWindow, const char *a_pszSettings,
+                                 VBoxDbgBaseWindow::VBoxDbgAttractionType a_enmDefaultAttraction);
 
     /**
      * Notifies the debugger GUI that the console window (or whatever) has changed

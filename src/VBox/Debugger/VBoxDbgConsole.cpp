@@ -41,6 +41,7 @@
 #include <QAction>
 #include <QContextMenuEvent>
 #include <QMenu>
+#include <QScrollBar>
 
 #include <VBox/dbg.h>
 #include <VBox/vmm/cfgm.h>
@@ -507,14 +508,16 @@ VBoxDbgConsole::VBoxDbgConsole(VBoxDbgGui *a_pDbgGui, QWidget *a_pParent/* = NUL
      */
     m_pOutput = new VBoxDbgConsoleOutput(this, a_pVirtualBox);
 
-    /* try figure a suitable size */
-    QLabel *pLabel = new QLabel(      "11111111111111111111111111111111111111111111111111111111111111111111111111111112222222222", this);
+    /* try figure a suitable size and tell the parent class. */
+    QLabel *pLabel = new QLabel("8888888888888888888888888888888888888888888888888888888888888888888888888888888", this);
     pLabel->setFont(m_pOutput->font());
     QSize Size = pLabel->sizeHint();
     delete pLabel;
-    Size.setWidth((int)(Size.width() * 1.10));
-    Size.setHeight(Size.width() / 2);
-    resize(Size);
+    QSize SizeScrollBar(0,0);
+    QScrollBar *pScrollBar = m_pOutput->verticalScrollBar();
+    if (pScrollBar)
+        SizeScrollBar = pScrollBar->sizeHint();
+    vSetMinWidthHint(Size.width() + SizeScrollBar.width() + 1);
 
     /*
      * Create the input combo box (with a label).
