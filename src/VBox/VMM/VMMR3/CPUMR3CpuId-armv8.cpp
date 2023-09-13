@@ -230,7 +230,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
         && (RT_BF_GET(a_IdReg, a_FeatNm) >= a_IdRegValCheck) \
         && (enmConfig) != CPUMISAEXTCFG_ENABLED_PORTABLE ) \
     { \
-        LogRel(("PortableCpuId: " #a_pLeafReg "[" #a_FeatNm "]: 1 -> 0\n")); \
+        LogRel(("PortableCpuId: [" #a_FeatNm "]: 1 -> 0\n")); \
         (a_IdReg) = RT_BF_SET(a_IdReg, a_FeatNm, a_IdRegValNotSup); \
     }
     //Assert(pCpum->GuestFeatures.enmCpuVendor != CPUMCPUVENDOR_INVALID);
