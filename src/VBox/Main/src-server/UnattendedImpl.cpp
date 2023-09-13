@@ -1305,6 +1305,16 @@ static struct { const char *pszArch; uint32_t cchArch; VBOXOSTYPE fArch; } const
     { RT_STR_TUPLE("x86-64"), VBOXOSTYPE_x64 }, /* just in case */
     { RT_STR_TUPLE("x64"),    VBOXOSTYPE_x64 }, /* ditto */
 
+    { RT_STR_TUPLE("arm"),    VBOXOSTYPE_arm64 },
+    { RT_STR_TUPLE("arm64"),  VBOXOSTYPE_arm64 },
+    { RT_STR_TUPLE("arm-64"), VBOXOSTYPE_arm64 },
+    { RT_STR_TUPLE("arm_64"), VBOXOSTYPE_arm64 },
+
+    { RT_STR_TUPLE("arm32"),  VBOXOSTYPE_arm32 },
+    { RT_STR_TUPLE("arm-32"), VBOXOSTYPE_arm32 },
+    { RT_STR_TUPLE("arm_32"), VBOXOSTYPE_arm32 },
+    { RT_STR_TUPLE("armel"),  VBOXOSTYPE_arm32 }, // mostly Debians
+
     { RT_STR_TUPLE("x86"),    VBOXOSTYPE_x86 },
     { RT_STR_TUPLE("i386"),   VBOXOSTYPE_x86 },
     { RT_STR_TUPLE("i486"),   VBOXOSTYPE_x86 },
