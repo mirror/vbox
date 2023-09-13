@@ -35,7 +35,6 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_NEM
 #define VMCPU_INCL_CPUM_GST_CTX
-#define CPUM_WITH_NONCONST_HOST_FEATURES /* required for initializing parts of the g_CpumHostFeatures structure here. */
 #include <VBox/vmm/nem.h>
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/em.h>
@@ -279,17 +278,18 @@ static const struct
     uint32_t         offIdStruct;
 } s_aIdRegs[] =
 {
-    { HV_FEATURE_REG_ID_AA64DFR0_EL1,       RT_UOFFSETOF(HVIDREGS, u64IdDfReg0El1)  },
-    { HV_FEATURE_REG_ID_AA64DFR1_EL1,       RT_UOFFSETOF(HVIDREGS, u64IdDfReg1El1)  },
-    { HV_FEATURE_REG_ID_AA64ISAR0_EL1,      RT_UOFFSETOF(HVIDREGS, u64IdIsaReg0El1) },
-    { HV_FEATURE_REG_ID_AA64ISAR1_EL1,      RT_UOFFSETOF(HVIDREGS, u64IdIsaReg1El1) },
-    { HV_FEATURE_REG_ID_AA64MMFR0_EL1,      RT_UOFFSETOF(HVIDREGS, u64IdMmfReg0El1) },
-    { HV_FEATURE_REG_ID_AA64MMFR1_EL1,      RT_UOFFSETOF(HVIDREGS, u64IdMmfReg1El1) },
-    { HV_FEATURE_REG_ID_AA64MMFR2_EL1,      RT_UOFFSETOF(HVIDREGS, u64IdPfReg0El1)  },
-    { HV_FEATURE_REG_ID_AA64PFR0_EL1,       RT_UOFFSETOF(HVIDREGS, u64IdPfReg1El1)  },
-    { HV_FEATURE_REG_ID_AA64PFR1_EL1,       RT_UOFFSETOF(HVIDREGS, u64ClidrEl1)     },
-    { HV_FEATURE_REG_CLIDR_EL1,             RT_UOFFSETOF(HVIDREGS, u64CtrEl0)       },
-    { HV_FEATURE_REG_CTR_EL0,               RT_UOFFSETOF(HVIDREGS, u64DczidEl1)     },
+    { HV_FEATURE_REG_ID_AA64DFR0_EL1,       RT_UOFFSETOF(CPUMIDREGS, u64RegIdAa64Dfr0El1)  },
+    { HV_FEATURE_REG_ID_AA64DFR1_EL1,       RT_UOFFSETOF(CPUMIDREGS, u64RegIdAa64Dfr1El1)  },
+    { HV_FEATURE_REG_ID_AA64ISAR0_EL1,      RT_UOFFSETOF(CPUMIDREGS, u64RegIdAa64Isar0El1) },
+    { HV_FEATURE_REG_ID_AA64ISAR1_EL1,      RT_UOFFSETOF(CPUMIDREGS, u64RegIdAa64Isar1El1) },
+    { HV_FEATURE_REG_ID_AA64MMFR0_EL1,      RT_UOFFSETOF(CPUMIDREGS, u64RegIdAa64Mmfr0El1) },
+    { HV_FEATURE_REG_ID_AA64MMFR1_EL1,      RT_UOFFSETOF(CPUMIDREGS, u64RegIdAa64Mmfr1El1) },
+    { HV_FEATURE_REG_ID_AA64MMFR2_EL1,      RT_UOFFSETOF(CPUMIDREGS, u64RegIdAa64Mmfr2El1) },
+    { HV_FEATURE_REG_ID_AA64PFR0_EL1,       RT_UOFFSETOF(CPUMIDREGS, u64RegIdAa64Pfr0El1)  },
+    { HV_FEATURE_REG_ID_AA64PFR1_EL1,       RT_UOFFSETOF(CPUMIDREGS, u64RegIdAa64Pfr1El1)  },
+    { HV_FEATURE_REG_CLIDR_EL1,             RT_UOFFSETOF(CPUMIDREGS, u64RegClidrEl1)       },
+    { HV_FEATURE_REG_CTR_EL0,               RT_UOFFSETOF(CPUMIDREGS, u64RegCtrEl0)         },
+    { HV_FEATURE_REG_DCZID_EL0,             RT_UOFFSETOF(CPUMIDREGS, u64RegDczidEl0)       }
 };
 
 
@@ -810,14 +810,20 @@ static DECLCALLBACK(int) nemR3DarwinNativeInitVCpuOnEmt(PVM pVM, PVMCPU pVCpu, V
             return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                               "Call to hv_vcpu_config_create failed on vCPU %u", idCpu);
 
+        /* Query ID registers and hand them to CPUM. */
+        CPUMIDREGS IdRegs;
         for (uint32_t i = 0; i < RT_ELEMENTS(s_aIdRegs); i++)
         {
-            uint64_t *pu64 = (uint64_t *)((uint8_t *)&pVM->nem.s.IdRegs + s_aIdRegs[i].offIdStruct);
+            uint64_t *pu64 = (uint64_t *)((uint8_t *)&IdRegs + s_aIdRegs[i].offIdStruct);
             hv_return_t hrc = hv_vcpu_config_get_feature_reg(pVM->nem.s.hVCpuCfg, s_aIdRegs[i].enmHvReg, pu64);
             if (hrc != HV_SUCCESS)
                 return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                                   "Call to hv_vcpu_get_feature_reg(, %#x, ) failed: %#x (%Rrc)", hrc, nemR3DarwinHvSts2Rc(hrc));
         }
+
+        int rc = CPUMR3PopulateFeaturesByIdRegisters(pVM, &IdRegs);
+        if (RT_FAILURE(rc))
+            return rc;
     }
 
     hv_return_t hrc = hv_vcpu_create(&pVCpu->nem.s.hVCpu, &pVCpu->nem.s.pHvExit, pVM->nem.s.hVCpuCfg);
