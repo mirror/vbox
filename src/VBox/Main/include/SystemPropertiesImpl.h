@@ -122,6 +122,7 @@ private:
     HRESULT setProxyMode(ProxyMode_T aProxyMode) RT_OVERRIDE;
     HRESULT getProxyURL(com::Utf8Str &aProxyURL) RT_OVERRIDE;
     HRESULT setProxyURL(const com::Utf8Str &aProxyURL) RT_OVERRIDE;
+    HRESULT getSupportedPlatformArchitectures(std::vector<PlatformArchitecture_T> &aSupportedPlatformArchitectures);
     HRESULT getSupportedClipboardModes(std::vector<ClipboardMode_T> &aSupportedClipboardModes) RT_OVERRIDE;
     HRESULT getSupportedDnDModes(std::vector<DnDMode_T> &aSupportedDnDModes) RT_OVERRIDE;
     HRESULT getSupportedPointingHIDTypes(std::vector<PointingHIDType_T> &aSupportedPointingHIDTypes) RT_OVERRIDE;

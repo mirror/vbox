@@ -12951,7 +12951,7 @@
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="584dad7d-120f-40fa-91c2-fc520f60fdf2"
+    uuid="bed5b0ec-e866-401b-ac32-fd63aa67954b"
     wsmap="managed"
     rest="managed"
     reservedMethods="4" reservedAttributes="16"
@@ -13261,6 +13261,13 @@
         An empty string will cause the behavior to be identical to <link to="ProxyMode_System" />.
         For compatibility with libproxy, an URL starting with "direct://" will cause
         <link to="ProxyMode_NoProxy" /> behavior.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedPlatformArchitectures" type="PlatformArchitecture" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="PlatformArchitecture"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
       </desc>
     </attribute>
 

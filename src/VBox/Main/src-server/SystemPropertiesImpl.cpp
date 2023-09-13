@@ -1020,6 +1020,25 @@ HRESULT SystemProperties::setProxyURL(const com::Utf8Str &aProxyURL)
     return mParent->i_saveSettings();
 }
 
+HRESULT SystemProperties::getSupportedPlatformArchitectures(std::vector<PlatformArchitecture_T> &aSupportedPlatformArchitectures)
+{
+    static const PlatformArchitecture_T aPlatformArchitectures[] =
+    {
+        /* Currently we only support same-same architectures (host == guest). */
+#if   defined(RT_ARCH_X86)   || defined(RT_ARCH_AMD64)
+        PlatformArchitecture_x86
+#elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
+        PlatformArchitecture_ARM
+#else
+# error "Port me!"
+        PlatformArchitecture_None
+#endif
+    };
+    aSupportedPlatformArchitectures.assign(aPlatformArchitectures,
+                                           aPlatformArchitectures + RT_ELEMENTS(aPlatformArchitectures));
+    return S_OK;
+}
+
 HRESULT SystemProperties::getSupportedClipboardModes(std::vector<ClipboardMode_T> &aSupportedClipboardModes)
 {
     static const ClipboardMode_T aClipboardModes[] =
