@@ -206,9 +206,6 @@ void UIFontScaleEditor::prepareScaleFactorMinMax()
     m_pScaleSpinBox->setMinimum(iMinimum);
     m_pScaleSpinBox->setMaximum(iMaximum);
 
-    QLineEdit *pLineEdit = new QLineEdit;
-    pLineEdit->setReadOnly(true);
-
     m_pScaleSlider->blockSignals(false);
     m_pScaleSpinBox->blockSignals(false);
 }
