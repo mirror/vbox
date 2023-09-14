@@ -50,6 +50,10 @@
 <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
       <command>VBoxManage createvm</command>
       <arg choice="req">--name=<replaceable>name</replaceable></arg>
+      <arg choice="req">--platform-architecture=<group choice="plain">
+        <arg choice="plain">x86</arg>
+        <arg choice="plain">arm</arg>
+      </group></arg>
       <arg>--basefolder=<replaceable>basefolder</replaceable></arg>
       <arg>--default</arg>
       <arg>--group=<replaceable>group-ID</replaceable><arg rep="repeat">,</arg></arg>
@@ -84,12 +88,17 @@
       file and folder names will be updated to match the new name
       automatically.
     </para>
+    <para>
+      Also, the intended platform architecture for the VM must be specified by
+      using <option>--platform-architecture<replaceable>architecture</replaceable>
+      </option>.
+    </para>
   </refsect1>
 
   <refsect1 id="vboxmanage-createvm-common-options">
     <title>Command Options</title>
     <para>
-      In addition to specifying the name or UUID of the VM, which is
+      In addition to specifying the name or UUID of the VM and the platform architecture, which is
       required, you can specify any of the following options:
     </para>
     <variablelist>
