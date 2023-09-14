@@ -162,6 +162,10 @@ private:
     void prepareStateMachineSliding();
     /** Prepares open-timer. */
     void prepareOpenTimer();
+    /** Cleanups model. */
+    void cleanupModel();
+    /** Cleanups items. */
+    void cleanupItems();
     /** Cleanups everything. */
     void cleanup();
 
