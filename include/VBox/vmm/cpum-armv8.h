@@ -453,7 +453,7 @@ typedef struct CPUMFEATURES
     /** Supports Generic Interrupt Controller version 4.1 (FEAT_GICv4p1). */
     uint32_t        fGicV4p1 : 1;
     /** Supports PMU extension, version 3 (FEAT_PMUv3). */
-    uint32_t        fPmuv3 : 1;
+    uint32_t        fPmuV3 : 1;
     /** Supports Embedded Trace Extension (FEAT_ETE). */
     uint32_t        fEte : 1;
     /** Supports Embedded Trace Extension, version 1.1 (FEAT_ETEv1p1). */
@@ -654,7 +654,7 @@ typedef struct CPUMFEATURES
     uint32_t        fRasV2 : 1;
     /** Supports RAS version 2 System Architecture (FEAT_RASSAv2). */
     uint32_t        fRasSaV2 : 1;
-    /** Supports for Range Prefetch Memory instruction (FEAT_RPFRM). */
+    /** Supports for Range Prefetch Memory instruction (FEAT_RPRFM). */
     uint32_t        fRprfm : 1;
     /** Supports extensions to SCTLR_ELx (FEAT_SCTLR2). */
     uint32_t        fSctlr2 : 1;

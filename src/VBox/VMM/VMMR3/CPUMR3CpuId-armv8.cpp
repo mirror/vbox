@@ -705,7 +705,7 @@ static DBGFREGSUBFIELD const g_aIdAa64MmfR0Fields[] =
     DBGFREGSUBFIELD_RO("Res0\0"      "Reserved",                                                    48, 4, 0),
     DBGFREGSUBFIELD_RO("Res0\0"      "Reserved",                                                    52, 4, 0),
     DBGFREGSUBFIELD_RO("FGT\0"       "Fine-grained trap controls support",                          56, 4, 0),
-    DBGFREGSUBFIELD_RO("ECV\0"       "Enhanced Counter Virtualization support",                      60, 4, 0),
+    DBGFREGSUBFIELD_RO("ECV\0"       "Enhanced Counter Virtualization support",                     60, 4, 0),
     DBGFREGSUBFIELD_TERMINATOR()
 };
 
@@ -979,4 +979,294 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
                                 pVM->cpum.s.HostIdRegs.u64RegIdAa64Dfr1El1,
                                 pVM->cpum.s.GuestIdRegs.u64RegIdAa64Dfr1El1,
                                 g_aIdAa64DfR1Fields, iVerbosity > 1);
+}
+
+
+/**
+ * Display the guest CPU features.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   pHlp        The info helper functions.
+ * @param   pszArgs     "default" or "verbose".
+ */
+DECLCALLBACK(void) cpumR3CpuFeatInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    /*
+     * Parse the argument.
+     */
+    bool fVerbose = false;
+    if (pszArgs)
+    {
+        pszArgs = RTStrStripL(pszArgs);
+        if (!strcmp(pszArgs, "verbose"))
+            fVerbose = true;
+    }
+
+    if (fVerbose)
+        pHlp->pfnPrintf(pHlp, "  Features                                  = guest (host)\n");
+    else
+        pHlp->pfnPrintf(pHlp, "  Features                                  = guest\n");
+
+
+#define LOG_CPU_FEATURE(a_FeatNm, a_Flag) \
+    do { \
+        if (fVerbose) \
+            pHlp->pfnPrintf(pHlp, "  %*s = %u (%u)\n", 41, #a_FeatNm, pVM->cpum.s.GuestFeatures.a_Flag, pVM->cpum.s.HostFeatures.a_Flag); \
+        else \
+            pHlp->pfnPrintf(pHlp, "  %*s = %u\n", 41, #a_FeatNm, pVM->cpum.s.GuestFeatures.a_Flag); \
+    } while (0)
+
+    /* Not really features. */
+    LOG_CPU_FEATURE(FEAT_TGRAN4K,   fTGran4K);
+    LOG_CPU_FEATURE(FEAT_TGRAN16K,  fTGran16K);
+    LOG_CPU_FEATURE(FEAT_TGRAN64K,  fTGran64K);
+
+    /* Offical ARM FEAT_* definitions start here. */
+    LOG_CPU_FEATURE(FEAT_AdvSIMD,       fAdvSimd);
+    LOG_CPU_FEATURE(FEAT_AES,           fAes);
+    LOG_CPU_FEATURE(FEAT_PMULL,         fPmull);
+    LOG_CPU_FEATURE(FEAT_CP15DISABLE2,  fCp15Disable2);
+    LOG_CPU_FEATURE(FEAT_CSV2,          fCsv2);
+    LOG_CPU_FEATURE(FEAT_CSV2_1p1,      fCsv21p1);
+    LOG_CPU_FEATURE(FEAT_CSV2_1p2,      fCsv21p2);
+    LOG_CPU_FEATURE(FEAT_CSV3,          fCsv3);
+    LOG_CPU_FEATURE(FEAT_DGH,           fDgh);
+    LOG_CPU_FEATURE(FEAT_DOUBLELOCK,    fDoubleLock);
+    LOG_CPU_FEATURE(FEAT_ETS2,          fEts2);
+    LOG_CPU_FEATURE(FEAT_FP,            fFp);
+    LOG_CPU_FEATURE(FEAT_IVIPT,         fIvipt);
+    LOG_CPU_FEATURE(FEAT_PCSRv8,        fPcsrV8);
+    LOG_CPU_FEATURE(FEAT_SPECRES,       fSpecres);
+    LOG_CPU_FEATURE(FEAT_RAS,           fRas);
+    LOG_CPU_FEATURE(FEAT_SB,            fSb);
+    LOG_CPU_FEATURE(FEAT_SHA1,          fSha1);
+    LOG_CPU_FEATURE(FEAT_SHA256,        fSha256);
+    LOG_CPU_FEATURE(FEAT_SSBS,          fSsbs);
+    LOG_CPU_FEATURE(FEAT_SSBS2,         fSsbs2);
+    LOG_CPU_FEATURE(FEAT_CRC32,         fCrc32);
+    LOG_CPU_FEATURE(FEAT_nTLBPA,        fNTlbpa);
+    LOG_CPU_FEATURE(FEAT_Debugv8p1,     fDebugV8p1);
+    LOG_CPU_FEATURE(FEAT_HPDS,          fHpds);
+    LOG_CPU_FEATURE(FEAT_LOR,           fLor);
+    LOG_CPU_FEATURE(FEAT_LSE,           fLse);
+    LOG_CPU_FEATURE(FEAT_PAN,           fPan);
+    LOG_CPU_FEATURE(FEAT_PMUv3p1,       fPmuV3p1);
+    LOG_CPU_FEATURE(FEAT_RDM,           fRdm);
+    LOG_CPU_FEATURE(FEAT_HAFDBS,        fHafdbs);
+    LOG_CPU_FEATURE(FEAT_VHE,           fVhe);
+    LOG_CPU_FEATURE(FEAT_VMID16,        fVmid16);
+    LOG_CPU_FEATURE(FEAT_AA32BF16,      fAa32Bf16);
+    LOG_CPU_FEATURE(FEAT_AA32HPD,       fAa32Hpd);
+    LOG_CPU_FEATURE(FEAT_AA32I8MM,      fAa32I8mm);
+    LOG_CPU_FEATURE(FEAT_PAN2,          fPan2);
+    LOG_CPU_FEATURE(FEAT_BF16,          fBf16);
+    LOG_CPU_FEATURE(FEAT_DPB2,          fDpb2);
+    LOG_CPU_FEATURE(FEAT_DPB,           fDpb);
+    LOG_CPU_FEATURE(FEAT_Debugv8p2,     fDebugV8p2);
+    LOG_CPU_FEATURE(FEAT_DotProd,       fDotProd);
+    LOG_CPU_FEATURE(FEAT_EVT,           fEvt);
+    LOG_CPU_FEATURE(FEAT_F32MM,         fF32mm);
+    LOG_CPU_FEATURE(FEAT_F64MM,         fF64mm);
+    LOG_CPU_FEATURE(FEAT_FHM,           fFhm);
+    LOG_CPU_FEATURE(FEAT_FP16,          fFp16);
+    LOG_CPU_FEATURE(FEAT_I8MM,          fI8mm);
+    LOG_CPU_FEATURE(FEAT_IESB,          fIesb);
+    LOG_CPU_FEATURE(FEAT_LPA,           fLpa);
+    LOG_CPU_FEATURE(FEAT_LSMAOC,        fLsmaoc);
+    LOG_CPU_FEATURE(FEAT_LVA,           fLva);
+    LOG_CPU_FEATURE(FEAT_MPAM,          fMpam);
+    LOG_CPU_FEATURE(FEAT_PCSRv8p2,      fPcsrV8p2);
+    LOG_CPU_FEATURE(FEAT_SHA3,          fSha3);
+    LOG_CPU_FEATURE(FEAT_SHA512,        fSha512);
+    LOG_CPU_FEATURE(FEAT_SM3,           fSm3);
+    LOG_CPU_FEATURE(FEAT_SM4,           fSm4);
+    LOG_CPU_FEATURE(FEAT_SPE,           fSpe);
+    LOG_CPU_FEATURE(FEAT_SVE,           fSve);
+    LOG_CPU_FEATURE(FEAT_TTCNP,         fTtcnp);
+    LOG_CPU_FEATURE(FEAT_HPDS2,         fHpds2);
+    LOG_CPU_FEATURE(FEAT_XNX,           fXnx);
+    LOG_CPU_FEATURE(FEAT_UAO,           fUao);
+    LOG_CPU_FEATURE(FEAT_VPIPT,         fVpipt);
+    LOG_CPU_FEATURE(FEAT_CCIDX,         fCcidx);
+    LOG_CPU_FEATURE(FEAT_FCMA,          fFcma);
+    LOG_CPU_FEATURE(FEAT_DoPD,          fDopd);
+    LOG_CPU_FEATURE(FEAT_EPAC,          fEpac);
+    LOG_CPU_FEATURE(FEAT_FPAC,          fFpac);
+    LOG_CPU_FEATURE(FEAT_FPACCOMBINE,   fFpacCombine);
+    LOG_CPU_FEATURE(FEAT_JSCVT,         fJscvt);
+    LOG_CPU_FEATURE(FEAT_LRCPC,         fLrcpc);
+    LOG_CPU_FEATURE(FEAT_NV,            fNv);
+    LOG_CPU_FEATURE(FEAT_PACQARMA5,     fPacQarma5);
+    LOG_CPU_FEATURE(FEAT_PACIMP,        fPacImp);
+    LOG_CPU_FEATURE(FEAT_PAuth,         fPAuth);
+    LOG_CPU_FEATURE(FEAT_PAuth2,        fPAuth2);
+    LOG_CPU_FEATURE(FEAT_SPEv1p1,       fSpeV1p1);
+    LOG_CPU_FEATURE(FEAT_AMUv1,         fAmuV1);
+    LOG_CPU_FEATURE(FEAT_CNTSC,         fCntsc);
+    LOG_CPU_FEATURE(FEAT_Debugv8p4,     fDebugV8p4);
+    LOG_CPU_FEATURE(FEAT_DoubleFault,   fDoubleFault);
+    LOG_CPU_FEATURE(FEAT_DIT,           fDit);
+    LOG_CPU_FEATURE(FEAT_FlagM,         fFlagM);
+    LOG_CPU_FEATURE(FEAT_IDST,          fIdst);
+    LOG_CPU_FEATURE(FEAT_LRCPC2,        fLrcpc2);
+    LOG_CPU_FEATURE(FEAT_LSE2,          fLse2);
+    LOG_CPU_FEATURE(FEAT_NV2,           fNv2);
+    LOG_CPU_FEATURE(FEAT_PMUv3p4,       fPmuV3p4);
+    LOG_CPU_FEATURE(FEAT_RASv1p1,       fRasV1p1);
+    LOG_CPU_FEATURE(FEAT_RASSAv1p1,     fRassaV1p1);
+    LOG_CPU_FEATURE(FEAT_S2FWB,         fS2Fwb);
+    LOG_CPU_FEATURE(FEAT_SEL2,          fSecEl2);
+    LOG_CPU_FEATURE(FEAT_TLBIOS,        fTlbios);
+    LOG_CPU_FEATURE(FEAT_TLBIRANGE,     fTlbirange);
+    LOG_CPU_FEATURE(FEAT_TRF,           fTrf);
+    LOG_CPU_FEATURE(FEAT_TTL,           fTtl);
+    LOG_CPU_FEATURE(FEAT_BBM,           fBbm);
+    LOG_CPU_FEATURE(FEAT_TTST,          fTtst);
+    LOG_CPU_FEATURE(FEAT_BTI,           fBti);
+    LOG_CPU_FEATURE(FEAT_FlagM2,        fFlagM2);
+    LOG_CPU_FEATURE(FEAT_ExS,           fExs);
+    LOG_CPU_FEATURE(FEAT_E0PD,          fE0Pd);
+    LOG_CPU_FEATURE(FEAT_FRINTTS,       fFrintts);
+    LOG_CPU_FEATURE(FEAT_GTG,           fGtg);
+    LOG_CPU_FEATURE(FEAT_MTE,           fMte);
+    LOG_CPU_FEATURE(FEAT_MTE2,          fMte2);
+    LOG_CPU_FEATURE(FEAT_PMUv3p5,       fPmuV3p5);
+    LOG_CPU_FEATURE(FEAT_RNG,           fRng);
+    LOG_CPU_FEATURE(FEAT_AMUv1p1,       fAmuV1p1);
+    LOG_CPU_FEATURE(FEAT_ECV,           fEcv);
+    LOG_CPU_FEATURE(FEAT_FGT,           fFgt);
+    LOG_CPU_FEATURE(FEAT_MPAMv0p1,      fMpamV0p1);
+    LOG_CPU_FEATURE(FEAT_MPAMv1p1,      fMpamV1p1);
+    LOG_CPU_FEATURE(FEAT_MTPMU,         fMtPmu);
+    LOG_CPU_FEATURE(FEAT_TWED,          fTwed);
+    LOG_CPU_FEATURE(FEAT_ETMv4,         fEtmV4);
+    LOG_CPU_FEATURE(FEAT_ETMv4p1,       fEtmV4p1);
+    LOG_CPU_FEATURE(FEAT_ETMv4p2,       fEtmV4p2);
+    LOG_CPU_FEATURE(FEAT_ETMv4p3,       fEtmV4p3);
+    LOG_CPU_FEATURE(FEAT_ETMv4p4,       fEtmV4p4);
+    LOG_CPU_FEATURE(FEAT_ETMv4p5,       fEtmV4p5);
+    LOG_CPU_FEATURE(FEAT_ETMv4p6,       fEtmV4p6);
+    LOG_CPU_FEATURE(FEAT_GICv3,         fGicV3);
+    LOG_CPU_FEATURE(FEAT_GICv3p1,       fGicV3p1);
+    LOG_CPU_FEATURE(FEAT_GICv3_TDIR,    fGicV3Tdir);
+    LOG_CPU_FEATURE(FEAT_GICv4,         fGicV4);
+    LOG_CPU_FEATURE(FEAT_GICv4p1,       fGicV4p1);
+    LOG_CPU_FEATURE(FEAT_PMUv3,         fPmuV3);
+    LOG_CPU_FEATURE(FEAT_ETE,           fEte);
+    LOG_CPU_FEATURE(FEAT_ETEv1p1,       fEteV1p1);
+    LOG_CPU_FEATURE(FEAT_ETEv1p2,       fEteV1p2);
+    LOG_CPU_FEATURE(FEAT_SVE2,          fSve2);
+    LOG_CPU_FEATURE(FEAT_SVE_AES,       fSveAes);
+    LOG_CPU_FEATURE(FEAT_SVE_PMULL128,  fSvePmull128);
+    LOG_CPU_FEATURE(FEAT_SVE_BitPerm,   fSveBitPerm);
+    LOG_CPU_FEATURE(FEAT_SVE_SHA3,      fSveSha3);
+    LOG_CPU_FEATURE(FEAT_SVE_SM4,       fSveSm4);
+    LOG_CPU_FEATURE(FEAT_TME,           fTme);
+    LOG_CPU_FEATURE(FEAT_TRBE,          fTrbe);
+    LOG_CPU_FEATURE(FEAT_SME,           fSme);
+
+    LOG_CPU_FEATURE(FEAT_AFP,           fAfp);
+    LOG_CPU_FEATURE(FEAT_HCX,           fHcx);
+    LOG_CPU_FEATURE(FEAT_LPA2,          fLpa2);
+    LOG_CPU_FEATURE(FEAT_LS64,          fLs64);
+    LOG_CPU_FEATURE(FEAT_LS64_V,        fLs64V);
+    LOG_CPU_FEATURE(FEAT_LS64_ACCDATA,  fLs64Accdata);
+    LOG_CPU_FEATURE(FEAT_MTE3,          fMte3);
+    LOG_CPU_FEATURE(FEAT_PAN3,          fPan3);
+    LOG_CPU_FEATURE(FEAT_PMUv3p7,       fPmuV3p7);
+    LOG_CPU_FEATURE(FEAT_RPRES,         fRpres);
+    LOG_CPU_FEATURE(FEAT_RME,           fRme);
+    LOG_CPU_FEATURE(FEAT_SME_FA64,      fSmeFA64);
+    LOG_CPU_FEATURE(FEAT_SME_F64F64,    fSmeF64F64);
+    LOG_CPU_FEATURE(FEAT_SME_I16I64,    fSmeI16I64);
+    LOG_CPU_FEATURE(FEAT_SPEv1p2,       fSpeV1p2);
+    LOG_CPU_FEATURE(FEAT_EBF16,         fEbf16);
+    LOG_CPU_FEATURE(FEAT_WFxT,          fWfxt);
+    LOG_CPU_FEATURE(FEAT_XS,            fXs);
+    LOG_CPU_FEATURE(FEAT_BRBE,          fBrbe);
+
+    LOG_CPU_FEATURE(FEAT_CMOW,          fCmow);
+    LOG_CPU_FEATURE(FEAT_CONSTPACFIELD, fConstPacField);
+    LOG_CPU_FEATURE(FEAT_Debugv8p8,     fDebugV8p8);
+    LOG_CPU_FEATURE(FEAT_HBC,           fHbc);
+    LOG_CPU_FEATURE(FEAT_HPMN0,         fHpmn0);
+    LOG_CPU_FEATURE(FEAT_NMI,           fNmi);
+    LOG_CPU_FEATURE(FEAT_GICv3_NMI,     fGicV3Nmi);
+    LOG_CPU_FEATURE(FEAT_MOPS,          fMops);
+    LOG_CPU_FEATURE(FEAT_PACQARMA3,     fPacQarma3);
+    LOG_CPU_FEATURE(FEAT_PMUv3_TH,      fPmuV3Th);
+    LOG_CPU_FEATURE(FEAT_PMUv3p8,       fPmuV3p8);
+    LOG_CPU_FEATURE(FEAT_PMUv3_EXT64,   fPmuV3Ext64);
+    LOG_CPU_FEATURE(FEAT_PMUv3_EXT32,   fPmuV3Ext32);
+    LOG_CPU_FEATURE(FEAT_PMUv3_EXT,     fPmuV3Ext);
+    LOG_CPU_FEATURE(FEAT_RNG_TRAP,      fRngTrap);
+    LOG_CPU_FEATURE(FEAT_SPEv1p3,       fSpeV1p3);
+    LOG_CPU_FEATURE(FEAT_TIDCP1,        fTidcp1);
+    LOG_CPU_FEATURE(FEAT_BRBEv1p1,      fBrbeV1p1);
+
+    LOG_CPU_FEATURE(FEAT_ABLE,          fAble);
+    LOG_CPU_FEATURE(FEAT_ADERR,         fAderr);
+    LOG_CPU_FEATURE(FEAT_AIE,           fAie);
+    LOG_CPU_FEATURE(FEAT_ANERR,         fAnerr);
+    LOG_CPU_FEATURE(FEAT_BWE,           fBwe);
+    LOG_CPU_FEATURE(FEAT_CLRBHB,        fClrBhb);
+    LOG_CPU_FEATURE(FEAT_CHK,           fChk);
+    LOG_CPU_FEATURE(FEAT_CSSC,          fCssc);
+    LOG_CPU_FEATURE(FEAT_CSV2_3,        fCsv2v3);
+    LOG_CPU_FEATURE(FEAT_D128,          fD128);
+    LOG_CPU_FEATURE(FEAT_Debugv8p9,     fDebugV8p9);
+    LOG_CPU_FEATURE(FEAT_DoubleFault2,  fDoubleFault2);
+    LOG_CPU_FEATURE(FEAT_EBEP,          fEbep);
+    LOG_CPU_FEATURE(FEAT_ECBHB,         fEcBhb);
+    LOG_CPU_FEATURE(FEAT_EDHSR,         fEdhsr);
+    LOG_CPU_FEATURE(FEAT_ETEv1p3,       fEteV1p3);
+    LOG_CPU_FEATURE(FEAT_FGT2,          fFgt2);
+    LOG_CPU_FEATURE(FEAT_GCS,           fGcs);
+    LOG_CPU_FEATURE(FEAT_HAFT,          fHaft);
+    LOG_CPU_FEATURE(FEAT_ITE,           fIte);
+    LOG_CPU_FEATURE(FEAT_LRCPC3,        fLrcpc3);
+    LOG_CPU_FEATURE(FEAT_LSE128,        fLse128);
+    LOG_CPU_FEATURE(FEAT_LVA3,          fLva3);
+    LOG_CPU_FEATURE(FEAT_MEC,           fMec);
+    LOG_CPU_FEATURE(FEAT_MTE4,          fMte4);
+    LOG_CPU_FEATURE(FEAT_MTE_CANONICAL_TAGS,    fMteCanonicalTags);
+    LOG_CPU_FEATURE(FEAT_MTE_TAGGED_FAR,        fMteTaggedFar);
+    LOG_CPU_FEATURE(FEAT_MTE_STORE_ONLY,        fMteStoreOnly);
+    LOG_CPU_FEATURE(FEAT_MTE_NO_ADDRESS_TAGS,   fMteNoAddressTags);
+    LOG_CPU_FEATURE(FEAT_MTE_ASYM_FAULT,        fMteAsymFault);
+    LOG_CPU_FEATURE(FEAT_MTE_ASYNC,             fMteAsync);
+    LOG_CPU_FEATURE(FEAT_MTE_PERM_S1,           fMtePermS1);
+    LOG_CPU_FEATURE(FEAT_PCSRv8p9,              fPcsrV8p9);
+    LOG_CPU_FEATURE(FEAT_S1PIE,                 fS1Pie);
+    LOG_CPU_FEATURE(FEAT_S2PIE,                 fS2Pie);
+    LOG_CPU_FEATURE(FEAT_S1POE,                 fS1Poe);
+    LOG_CPU_FEATURE(FEAT_S2POE,                 fS2Poe);
+    LOG_CPU_FEATURE(FEAT_PFAR,                  fPfar);
+    LOG_CPU_FEATURE(FEAT_PMUv3p9,               fPmuV3p9);
+    LOG_CPU_FEATURE(FEAT_PMUv3_EDGE,            fPmuV3Edge);
+    LOG_CPU_FEATURE(FEAT_PMUv3_ICNTR,           fPmuV3Icntr);
+    LOG_CPU_FEATURE(FEAT_PMUv3_SS,              fPmuV3Ss);
+    LOG_CPU_FEATURE(FEAT_PRFMSLC,               fPrfmSlc);
+    LOG_CPU_FEATURE(FEAT_RASv2,                 fRasV2);
+    LOG_CPU_FEATURE(FEAT_RASSAv2,               fRasSaV2);
+    LOG_CPU_FEATURE(FEAT_RPRFM,                 fRprfm);
+    LOG_CPU_FEATURE(FEAT_SCTLR2,                fSctlr2);
+    LOG_CPU_FEATURE(FEAT_SEBEP,                 fSebep);
+    LOG_CPU_FEATURE(FEAT_SME_F16F16,            fSmeF16F16);
+    LOG_CPU_FEATURE(FEAT_SME2,                  fSme2);
+    LOG_CPU_FEATURE(FEAT_SME2p1,                fSme2p1);
+    LOG_CPU_FEATURE(FEAT_SPECRES2,              fSpecres2);
+    LOG_CPU_FEATURE(FEAT_SPMU,                  fSpmu);
+    LOG_CPU_FEATURE(FEAT_SPEv1p4,               fSpeV1p4);
+    LOG_CPU_FEATURE(FEAT_SPE_CRR,               fSpeCrr);
+    LOG_CPU_FEATURE(FEAT_SPE_FDS,               fSpeFds);
+    LOG_CPU_FEATURE(FEAT_SVE2p1,                fSve2p1);
+    LOG_CPU_FEATURE(FEAT_SVE_B16B16,            fSveB16B16);
+    LOG_CPU_FEATURE(FEAT_SYSINSTR128,           fSysInstr128);
+    LOG_CPU_FEATURE(FEAT_SYSREG128,             fSysReg128);
+    LOG_CPU_FEATURE(FEAT_TCR2,                  fTcr2);
+    LOG_CPU_FEATURE(FEAT_THE,                   fThe);
+    LOG_CPU_FEATURE(FEAT_TRBE_EXT,              fTrbeExt);
+    LOG_CPU_FEATURE(FEAT_TRBE_MPAM,             fTrbeMpam);
+#undef LOG_CPU_FEATURE
 }
