@@ -556,6 +556,77 @@ VMMR3_INT_DECL(int) CPUMR3QueryGuestIdRegs(PVM pVM, PCCPUMIDREGS *ppIdRegs)
  *
  */
 
+/** CLIDR_EL1 field descriptions.   */
+static DBGFREGSUBFIELD const g_aClidrEl1Fields[] =
+{
+    DBGFREGSUBFIELD_RO("Ctype1\0"     "Cache 1 type field",                                          0, 3, 0),
+    DBGFREGSUBFIELD_RO("Ctype2\0"     "Cache 2 type field",                                          3, 3, 0),
+    DBGFREGSUBFIELD_RO("Ctype3\0"     "Cache 3 type field",                                          6, 3, 0),
+    DBGFREGSUBFIELD_RO("Ctype4\0"     "Cache 4 type field",                                          9, 3, 0),
+    DBGFREGSUBFIELD_RO("Ctype5\0"     "Cache 5 type field",                                         12, 3, 0),
+    DBGFREGSUBFIELD_RO("Ctype6\0"     "Cache 6 type field",                                         15, 3, 0),
+    DBGFREGSUBFIELD_RO("Ctype7\0"     "Cache 7 type field",                                         18, 3, 0),
+    DBGFREGSUBFIELD_RO("LoUIS\0"      "Level of Unification Inner Shareable",                       21, 3, 0),
+    DBGFREGSUBFIELD_RO("LoC\0"        "Level of Coherence for the cache hierarchy",                 24, 3, 0),
+    DBGFREGSUBFIELD_RO("LoUU\0"       "Level of Unification Uniprocessor",                          27, 3, 0),
+    DBGFREGSUBFIELD_RO("ICB\0"        "Inner cache boundary",                                       30, 3, 0),
+    DBGFREGSUBFIELD_RO("Ttype1\0"     "Cache 1 - Tag cache type",                                   33, 2, 0),
+    DBGFREGSUBFIELD_RO("Ttype2\0"     "Cache 2 - Tag cache type",                                   35, 2, 0),
+    DBGFREGSUBFIELD_RO("Ttype3\0"     "Cache 3 - Tag cache type",                                   37, 2, 0),
+    DBGFREGSUBFIELD_RO("Ttype4\0"     "Cache 4 - Tag cache type",                                   39, 2, 0),
+    DBGFREGSUBFIELD_RO("Ttype5\0"     "Cache 5 - Tag cache type",                                   41, 2, 0),
+    DBGFREGSUBFIELD_RO("Ttype6\0"     "Cache 6 - Tag cache type",                                   43, 2, 0),
+    DBGFREGSUBFIELD_RO("Ttype7\0"     "Cache 7 - Tag cache type",                                   45, 2, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"       "Reserved",                                                   47, 17, 0),
+    DBGFREGSUBFIELD_TERMINATOR()
+};
+
+
+/** ID_AA64PFR0_EL1 field descriptions.   */
+static DBGFREGSUBFIELD const g_aIdAa64PfR0Fields[] =
+{
+    DBGFREGSUBFIELD_RO("EL0\0"       "EL0 Exception level handling",                                 0, 4, 0),
+    DBGFREGSUBFIELD_RO("EL1\0"       "EL1 Exception level handling",                                 4, 4, 0),
+    DBGFREGSUBFIELD_RO("EL2\0"       "EL2 Exception level handling",                                 8, 4, 0),
+    DBGFREGSUBFIELD_RO("EL3\0"       "EL3 Exception level handling",                                12, 4, 0),
+    DBGFREGSUBFIELD_RO("FP\0"        "Floating-point",                                              16, 4, 0),
+    DBGFREGSUBFIELD_RO("AdvSIMD\0"   "Advanced SIMD",                                               20, 4, 0),
+    DBGFREGSUBFIELD_RO("GIC\0"       "System register GIC CPU interface",                           24, 4, 0),
+    DBGFREGSUBFIELD_RO("RAS\0"       "RAS Extension version",                                       28, 4, 0),
+    DBGFREGSUBFIELD_RO("SVE\0"       "Scalable Vector Extension",                                   32, 4, 0),
+    DBGFREGSUBFIELD_RO("SEL2\0"      "Secure EL2",                                                  36, 4, 0),
+    DBGFREGSUBFIELD_RO("MPAM\0"      "MPAM Extension major version number",                         40, 4, 0),
+    DBGFREGSUBFIELD_RO("AMU\0"       "Activity Monitors Extension support",                         44, 4, 0),
+    DBGFREGSUBFIELD_RO("DIT\0"       "Data Independent Timing",                                     48, 4, 0),
+    DBGFREGSUBFIELD_RO("RME\0"       "Realm Management Extension",                                  52, 4, 0),
+    DBGFREGSUBFIELD_RO("CSV2\0"      "Speculative use of out of branch targets",                    56, 4, 0),
+    DBGFREGSUBFIELD_RO("CSV3\0"      "Speculative use of faulting data",                            60, 4, 0),
+    DBGFREGSUBFIELD_TERMINATOR()
+};
+
+
+/** ID_AA64PFR1_EL1 field descriptions.   */
+static DBGFREGSUBFIELD const g_aIdAa64PfR1Fields[] =
+{
+    DBGFREGSUBFIELD_RO("BT\0"        "Branch Target Identification mechanism",                       0, 4, 0),
+    DBGFREGSUBFIELD_RO("SSBS\0"      "Speculative Store Bypassing controls",                         4, 4, 0),
+    DBGFREGSUBFIELD_RO("MTE\0"       "Memory Tagging Extension support",                             8, 4, 0),
+    DBGFREGSUBFIELD_RO("RAS_frac\0"  "RAS Extension fractional field",                              12, 4, 0),
+    DBGFREGSUBFIELD_RO("MPAM_frac\0" "MPAM Extension minor version",                                16, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"      "Reserved",                                                    20, 4, 0),
+    DBGFREGSUBFIELD_RO("SME\0"       "Scalable Matrix Extension",                                   24, 4, 0),
+    DBGFREGSUBFIELD_RO("RNDR_trap\0" "Random Number trap to EL3",                                   28, 4, 0),
+    DBGFREGSUBFIELD_RO("CSV2_frac\0" "CSV2 fractional version field",                               32, 4, 0),
+    DBGFREGSUBFIELD_RO("NMI\0"       "Non-maskable Interrupt support",                              36, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"      "Reserved",                                                    40, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"      "Reserved",                                                    44, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"      "Reserved",                                                    48, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"      "Reserved",                                                    52, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"      "Reserved",                                                    56, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"      "Reserved",                                                    60, 4, 0),
+    DBGFREGSUBFIELD_TERMINATOR()
+};
+
 
 /** ID_AA64ISAR0_EL1 field descriptions.   */
 static DBGFREGSUBFIELD const g_aIdAa64IsaR0Fields[] =
@@ -685,6 +756,52 @@ static DBGFREGSUBFIELD const g_aIdAa64MmfR2Fields[] =
 };
 
 
+/** ID_AA64DFR0_EL1 field descriptions.   */
+static DBGFREGSUBFIELD const g_aIdAa64DfR0Fields[] =
+{
+    DBGFREGSUBFIELD_RO("DebugVer\0"  "Debug architecture version",                                   0, 4, 0),
+    DBGFREGSUBFIELD_RO("TraceVer\0"  "Trace support",                                                4, 4, 0),
+    DBGFREGSUBFIELD_RO("PMUVer\0"    "Performance Monitors Extension version",                       8, 4, 0),
+    DBGFREGSUBFIELD_RO("BRPs\0"      "Number of breakpoints minus 1",                               12, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"      "Reserved",                                                    16, 4, 0),
+    DBGFREGSUBFIELD_RO("WRPs\0"      "Number of watchpoints minus 1",                               20, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"      "Reserved",                                                    24, 4, 0),
+    DBGFREGSUBFIELD_RO("CTX_CMPs\0"  "Number of context-aware breakpoints minus 1",                 28, 4, 0),
+    DBGFREGSUBFIELD_RO("PMSVer\0"    "Statistical Profiling Extension version",                     32, 4, 0),
+    DBGFREGSUBFIELD_RO("DoubleLock\0"  "OS Double Lock support",                                    36, 4, 0),
+    DBGFREGSUBFIELD_RO("TraceFilt\0" "Armv8.4 Self-hosted Trace Extension version",                 40, 4, 0),
+    DBGFREGSUBFIELD_RO("TraceBuffer\0" "Trace Buffer Extension",                                    44, 4, 0),
+    DBGFREGSUBFIELD_RO("MTPMU\0"     "Multi-threaded PMU extension",                                48, 4, 0),
+    DBGFREGSUBFIELD_RO("BRBE\0"      "Branch Record Buffer Extension",                              52, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"      "Reserved",                                                    56, 4, 0),
+    DBGFREGSUBFIELD_RO("HPMN0\0"     "Zero PMU event counters for guest",                           60, 4, 0),
+    DBGFREGSUBFIELD_TERMINATOR()
+};
+
+
+/** ID_AA64DFR1_EL1 field descriptions.   */
+static DBGFREGSUBFIELD const g_aIdAa64DfR1Fields[] =
+{
+    DBGFREGSUBFIELD_RO("Res0\0"       "Reserved",                                                    0, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"       "Reserved",                                                    4, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"       "Reserved",                                                    8, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"       "Reserved",                                                   12, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"       "Reserved",                                                   16, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"       "Reserved",                                                   20, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"       "Reserved",                                                   24, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"       "Reserved",                                                   28, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"       "Reserved",                                                   32, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"       "Reserved",                                                   36, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"       "Reserved",                                                   40, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"       "Reserved",                                                   44, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"       "Reserved",                                                   48, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"       "Reserved",                                                   52, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"       "Reserved",                                                   56, 4, 0),
+    DBGFREGSUBFIELD_RO("Res0\0"       "Reserved",                                                   60, 4, 0),
+    DBGFREGSUBFIELD_TERMINATOR()
+};
+
+
 static void cpumR3CpuIdInfoMnemonicListU64(PCDBGFINFOHLP pHlp, uint64_t uVal, PCDBGFREGSUBFIELD pDesc,
                                            const char *pszLeadIn, uint32_t cchWidth)
 {
@@ -806,6 +923,23 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
             iVerbosity++;
     }
 
+    /** @todo MIDR_EL1. */
+
+    cpumR3CpuIdInfoIdRegDetails(pHlp, "CLIDR_EL1",
+                                pVM->cpum.s.HostIdRegs.u64RegClidrEl1,
+                                pVM->cpum.s.GuestIdRegs.u64RegClidrEl1,
+                                g_aClidrEl1Fields, iVerbosity > 1);
+
+    cpumR3CpuIdInfoIdRegDetails(pHlp, "ID_AA64PFR0_EL1",
+                                pVM->cpum.s.HostIdRegs.u64RegIdAa64Pfr0El1,
+                                pVM->cpum.s.GuestIdRegs.u64RegIdAa64Pfr0El1,
+                                g_aIdAa64PfR0Fields, iVerbosity > 1);
+
+    cpumR3CpuIdInfoIdRegDetails(pHlp, "ID_AA64PFR1_EL1",
+                                pVM->cpum.s.HostIdRegs.u64RegIdAa64Pfr1El1,
+                                pVM->cpum.s.GuestIdRegs.u64RegIdAa64Pfr1El1,
+                                g_aIdAa64PfR1Fields, iVerbosity > 1);
+
     cpumR3CpuIdInfoIdRegDetails(pHlp, "ID_AA64ISAR0_EL1",
                                 pVM->cpum.s.HostIdRegs.u64RegIdAa64Isar0El1,
                                 pVM->cpum.s.GuestIdRegs.u64RegIdAa64Isar0El1,
@@ -836,5 +970,13 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
                                 pVM->cpum.s.GuestIdRegs.u64RegIdAa64Mmfr2El1,
                                 g_aIdAa64MmfR2Fields, iVerbosity > 1);
 
-    /** @todo Other ID and feature registers. */
+    cpumR3CpuIdInfoIdRegDetails(pHlp, "ID_AA64DFR0_EL1",
+                                pVM->cpum.s.HostIdRegs.u64RegIdAa64Dfr0El1,
+                                pVM->cpum.s.GuestIdRegs.u64RegIdAa64Dfr0El1,
+                                g_aIdAa64DfR0Fields, iVerbosity > 1);
+
+    cpumR3CpuIdInfoIdRegDetails(pHlp, "ID_AA64DFR1_EL1",
+                                pVM->cpum.s.HostIdRegs.u64RegIdAa64Dfr1El1,
+                                pVM->cpum.s.GuestIdRegs.u64RegIdAa64Dfr1El1,
+                                g_aIdAa64DfR1Fields, iVerbosity > 1);
 }
