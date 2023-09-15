@@ -703,7 +703,7 @@ HRESULT PlatformProperties::getSupportedGraphicsControllerTypes(std::vector<Grap
               , GraphicsControllerType_VMSVGA
 #endif
             };
-            aSupportedGraphicsControllerTypes.assign(aGraphicsControllerTypes /* Don't include _Null */,
+            aSupportedGraphicsControllerTypes.assign(aGraphicsControllerTypes + 1 /* Don't include _Null */,
                                                      aGraphicsControllerTypes + RT_ELEMENTS(aGraphicsControllerTypes));
             break;
         }
