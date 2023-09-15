@@ -146,7 +146,11 @@ void UIAudioControllerEditor::populateCombo()
         m_pCombo->clear();
 
         /* Load currently supported audio driver types: */
+#ifdef VBOX_WITH_VIRT_ARMV8 /** @todo BUGBUG Quick'n dirty fix to make it run on ARM. Needs proper fixing / re-structuring. */
+        CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_ARM);
+#else
         CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+#endif
         m_supportedValues = comProperties.GetSupportedAudioControllerTypes();
 
         /* Make sure requested value if sane is present as well: */

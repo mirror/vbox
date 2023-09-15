@@ -464,7 +464,11 @@ void UINetworkFeaturesEditor::repopulateAdapterTypeCombo()
         m_pComboAdapterType->clear();
 
         /* Load currently supported types: */
+#ifdef VBOX_WITH_VIRT_ARMV8 /** @todo BUGBUG Quick'n dirty fix to make it run on ARM. Needs proper fixing / re-structuring. */
+        CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_ARM);
+#else
         CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+#endif
         QVector<KNetworkAdapterType> supportedTypes = comProperties.GetSupportedNetworkAdapterTypes();
 
         /* Make sure requested value if sane is present as well: */
