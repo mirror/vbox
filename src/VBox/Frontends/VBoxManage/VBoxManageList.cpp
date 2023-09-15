@@ -719,6 +719,142 @@ static HRESULT listUsbFilters(const ComPtr<IVirtualBox> &pVirtualBox)
     return hrc;
 }
 
+/**
+ * Returns the chipset type as a string.
+ *
+ * @return Chipset type as a string.
+ * @param  enmType               Chipset type to convert.
+ */
+static const char *chipsetTypeToStr(ChipsetType_T enmType)
+{
+    switch (enmType)
+    {
+        case ChipsetType_PIIX3:        return "PIIX3";
+        case ChipsetType_ICH9:         return "ICH9";
+        case ChipsetType_ARMv8Virtual: return "ARMv8Virtual";
+        case ChipsetType_Null:
+        default:
+            break;
+    }
+
+    return "<Unknown>";
+}
+
+/**
+ * Returns a platform architecture as a string.
+ *
+ * @return Platform architecture as a string.
+ * @param  enmArch               Platform architecture to convert.
+ */
+static const char *platformArchitectureToStr(PlatformArchitecture_T enmArch)
+{
+    switch (enmArch)
+    {
+        case PlatformArchitecture_x86: return "x86";
+        case PlatformArchitecture_ARM: return "ARMv8";
+        default:
+            break;
+    }
+
+    return "<Unknown>";
+}
+
+/** @todo r=andy Make use of SHOW_ULONG_PROP and friends like in VBoxManageInfo to have a more uniform / prettier output.
+ *               Use nesting (as padding / tabs). */
+
+/**
+ * List chipset properties.
+ *
+ * @returns See produceList.
+ * @param   pVirtualBox         Reference to the IVirtualBox smart pointer.
+ */
+static HRESULT listPlatformChipsetProperties(const ComPtr<IPlatformProperties> &pPlatformProperties, ChipsetType_T enmChipsetType)
+{
+    const char *pszChipset = chipsetTypeToStr(enmChipsetType);
+    AssertPtrReturn(pszChipset, E_INVALIDARG);
+
+    /* Note: Keep the chipset name within the description -- makes it easier to grep for specific chipsts manually. */
+    ULONG ulValue;
+    pPlatformProperties->GetMaxNetworkAdapters(enmChipsetType, &ulValue);
+    RTPrintf(List::tr("Maximum %s Network Adapter count:   %u\n"), pszChipset, ulValue);
+    pPlatformProperties->GetMaxInstancesOfStorageBus(enmChipsetType, StorageBus_IDE, &ulValue);
+    RTPrintf(List::tr("Maximum %s IDE Controllers:   %u\n"), pszChipset, ulValue);
+    pPlatformProperties->GetMaxInstancesOfStorageBus(enmChipsetType, StorageBus_SATA, &ulValue);
+    RTPrintf(List::tr("Maximum %s SATA Controllers:  %u\n"), pszChipset, ulValue);
+    pPlatformProperties->GetMaxInstancesOfStorageBus(enmChipsetType, StorageBus_SCSI, &ulValue);
+    RTPrintf(List::tr("Maximum %s SCSI Controllers:  %u\n"), pszChipset, ulValue);
+    pPlatformProperties->GetMaxInstancesOfStorageBus(enmChipsetType, StorageBus_SAS, &ulValue);
+    RTPrintf(List::tr("Maximum %s SAS Controllers:   %u\n"), pszChipset, ulValue);
+    pPlatformProperties->GetMaxInstancesOfStorageBus(enmChipsetType, StorageBus_PCIe, &ulValue);
+    RTPrintf(List::tr("Maximum %s NVMe Controllers:  %u\n"), pszChipset, ulValue);
+    pPlatformProperties->GetMaxInstancesOfStorageBus(enmChipsetType, StorageBus_VirtioSCSI, &ulValue);
+    RTPrintf(List::tr("Maximum %s virtio-scsi Controllers:  %u\n"), pszChipset, ulValue);
+    pPlatformProperties->GetMaxInstancesOfStorageBus(enmChipsetType, StorageBus_Floppy, &ulValue);
+    RTPrintf(List::tr("Maximum %s Floppy Controllers:%u\n"), pszChipset, ulValue);
+
+    return S_OK;
+}
+
+static HRESULT listPlatformProperties(const ComPtr<IPlatformProperties> &platformProperties)
+{
+    ULONG ulValue;
+    platformProperties->COMGETTER(SerialPortCount)(&ulValue);
+    RTPrintf(List::tr("Maximum Serial Port count:              %u\n"), ulValue);
+    platformProperties->COMGETTER(ParallelPortCount)(&ulValue);
+    RTPrintf(List::tr("Maximum Parallel Port count:            %u\n"), ulValue);
+    platformProperties->COMGETTER(MaxBootPosition)(&ulValue);
+    RTPrintf(List::tr("Maximum Boot Position:                  %u\n"), ulValue);
+    platformProperties->GetMaxPortCountForStorageBus(StorageBus_Floppy, &ulValue);
+    RTPrintf(List::tr("Maximum Floppy Port count:              %u\n"), ulValue);
+    platformProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_Floppy, &ulValue);
+    RTPrintf(List::tr("Maximum Floppy Devices per Port:        %u\n"), ulValue);
+    platformProperties->GetMaxPortCountForStorageBus(StorageBus_VirtioSCSI, &ulValue);
+    RTPrintf(List::tr("Maximum virtio-scsi Port count:         %u\n"), ulValue);
+    platformProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_VirtioSCSI, &ulValue);
+    RTPrintf(List::tr("Maximum virtio-scsi Devices per Port:   %u\n"), ulValue);
+    platformProperties->GetMaxPortCountForStorageBus(StorageBus_IDE, &ulValue);
+    RTPrintf(List::tr("Maximum IDE Port count:                 %u\n"), ulValue);
+    platformProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_IDE, &ulValue);
+    RTPrintf(List::tr("Maximum IDE Devices per port:           %u\n"), ulValue);
+    platformProperties->GetMaxPortCountForStorageBus(StorageBus_SATA, &ulValue);
+    RTPrintf(List::tr("Maximum SATA Port count:                %u\n"), ulValue);
+    platformProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_SATA, &ulValue);
+    RTPrintf(List::tr("Maximum SATA Device per port:          %u\n"), ulValue);
+    platformProperties->GetMaxPortCountForStorageBus(StorageBus_SCSI, &ulValue);
+    RTPrintf(List::tr("Maximum SCSI Port count:                %u\n"), ulValue);
+    platformProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_SCSI, &ulValue);
+    RTPrintf(List::tr("Maximum SCSI Devices per port:          %u\n"), ulValue);
+    platformProperties->GetMaxPortCountForStorageBus(StorageBus_SAS, &ulValue);
+    RTPrintf(List::tr("Maximum SAS Port count:                 %u\n"), ulValue);
+    platformProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_SAS, &ulValue);
+    RTPrintf(List::tr("Maximum SAS Devices per Port:           %u\n"), ulValue);
+    platformProperties->GetMaxPortCountForStorageBus(StorageBus_PCIe, &ulValue);
+    RTPrintf(List::tr("Maximum NVMe Port count:                %u\n"), ulValue);
+    platformProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_PCIe, &ulValue);
+    RTPrintf(List::tr("Maximum NVMe Devices per Port:          %u\n"), ulValue);
+
+    SafeArray <ChipsetType_T> saChipset;
+    platformProperties->COMGETTER(SupportedChipsetTypes(ComSafeArrayAsOutParam(saChipset)));
+
+    RTPrintf(List::tr("Supported chipsets:                     "));
+    for (size_t i = 0; i < saChipset.size(); i++)
+    {
+        if (i > 0)
+            RTPrintf(", ");
+        RTPrintf("%s", chipsetTypeToStr(saChipset[i]));
+    }
+    RTPrintf("\n");
+
+    for (size_t i = 0; i < saChipset.size(); i++)
+    {
+        if (i > 0)
+            RTPrintf("\n");
+        RTPrintf(List::tr("%s chipset properties:\n"), chipsetTypeToStr(saChipset[i]));
+        listPlatformChipsetProperties(platformProperties, saChipset[i]);
+    }
+
+    return S_OK;
+}
 
 /**
  * List system properties.
@@ -731,8 +867,8 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     ComPtr<ISystemProperties> systemProperties;
     CHECK_ERROR2I_RET(pVirtualBox, COMGETTER(SystemProperties)(systemProperties.asOutParam()), hrcCheck);
 
-    ComPtr<IPlatformProperties> platformProperties;
-    CHECK_ERROR2I_RET(systemProperties, COMGETTER(Platform)(platformProperties.asOutParam()), hrcCheck);
+    ComPtr<IPlatformProperties> hostPlatformProperties;
+    CHECK_ERROR2I_RET(systemProperties, COMGETTER(Platform)(hostPlatformProperties.asOutParam()), hrcCheck);
 
     Bstr str;
     ULONG ulValue;
@@ -759,72 +895,7 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     RTPrintf(List::tr("Maximum guest CPU count:         %u\n"), ulValue);
     systemProperties->COMGETTER(InfoVDSize)(&i64Value);
     RTPrintf(List::tr("Virtual disk limit (info):       %lld Bytes\n", "" , i64Value), i64Value);
-    platformProperties->COMGETTER(SerialPortCount)(&ulValue);
-    RTPrintf(List::tr("Maximum Serial Port count:       %u\n"), ulValue);
-    platformProperties->COMGETTER(ParallelPortCount)(&ulValue);
-    RTPrintf(List::tr("Maximum Parallel Port count:     %u\n"), ulValue);
-    platformProperties->COMGETTER(MaxBootPosition)(&ulValue);
-    RTPrintf(List::tr("Maximum Boot Position:           %u\n"), ulValue);
-    platformProperties->GetMaxNetworkAdapters(ChipsetType_PIIX3, &ulValue);
-    RTPrintf(List::tr("Maximum PIIX3 Network Adapter count:   %u\n"), ulValue);
-    platformProperties->GetMaxNetworkAdapters(ChipsetType_ICH9,  &ulValue);
-    RTPrintf(List::tr("Maximum ICH9 Network Adapter count:   %u\n"), ulValue);
-    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_IDE, &ulValue);
-    RTPrintf(List::tr("Maximum PIIX3 IDE Controllers:   %u\n"), ulValue);
-    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_IDE, &ulValue);
-    RTPrintf(List::tr("Maximum ICH9 IDE Controllers:    %u\n"), ulValue);
-    platformProperties->GetMaxPortCountForStorageBus(StorageBus_IDE, &ulValue);
-    RTPrintf(List::tr("Maximum IDE Port count:          %u\n"), ulValue);
-    platformProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_IDE, &ulValue);
-    RTPrintf(List::tr("Maximum Devices per IDE Port:    %u\n"), ulValue);
-    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_SATA, &ulValue);
-    RTPrintf(List::tr("Maximum PIIX3 SATA Controllers:  %u\n"), ulValue);
-    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_SATA, &ulValue);
-    RTPrintf(List::tr("Maximum ICH9 SATA Controllers:   %u\n"), ulValue);
-    platformProperties->GetMaxPortCountForStorageBus(StorageBus_SATA, &ulValue);
-    RTPrintf(List::tr("Maximum SATA Port count:         %u\n"), ulValue);
-    platformProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_SATA, &ulValue);
-    RTPrintf(List::tr("Maximum Devices per SATA Port:   %u\n"), ulValue);
-    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_SCSI, &ulValue);
-    RTPrintf(List::tr("Maximum PIIX3 SCSI Controllers:  %u\n"), ulValue);
-    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_SCSI, &ulValue);
-    RTPrintf(List::tr("Maximum ICH9 SCSI Controllers:   %u\n"), ulValue);
-    platformProperties->GetMaxPortCountForStorageBus(StorageBus_SCSI, &ulValue);
-    RTPrintf(List::tr("Maximum SCSI Port count:         %u\n"), ulValue);
-    platformProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_SCSI, &ulValue);
-    RTPrintf(List::tr("Maximum Devices per SCSI Port:   %u\n"), ulValue);
-    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_SAS, &ulValue);
-    RTPrintf(List::tr("Maximum SAS PIIX3 Controllers:   %u\n"), ulValue);
-    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_SAS, &ulValue);
-    RTPrintf(List::tr("Maximum SAS ICH9 Controllers:    %u\n"), ulValue);
-    platformProperties->GetMaxPortCountForStorageBus(StorageBus_SAS, &ulValue);
-    RTPrintf(List::tr("Maximum SAS Port count:          %u\n"), ulValue);
-    platformProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_SAS, &ulValue);
-    RTPrintf(List::tr("Maximum Devices per SAS Port:    %u\n"), ulValue);
-    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_PCIe, &ulValue);
-    RTPrintf(List::tr("Maximum NVMe PIIX3 Controllers:  %u\n"), ulValue);
-    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_PCIe, &ulValue);
-    RTPrintf(List::tr("Maximum NVMe ICH9 Controllers:   %u\n"), ulValue);
-    platformProperties->GetMaxPortCountForStorageBus(StorageBus_PCIe, &ulValue);
-    RTPrintf(List::tr("Maximum NVMe Port count:         %u\n"), ulValue);
-    platformProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_PCIe, &ulValue);
-    RTPrintf(List::tr("Maximum Devices per NVMe Port:   %u\n"), ulValue);
-    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_VirtioSCSI, &ulValue);
-    RTPrintf(List::tr("Maximum virtio-scsi PIIX3 Controllers:  %u\n"), ulValue);
-    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_VirtioSCSI, &ulValue);
-    RTPrintf(List::tr("Maximum virtio-scsi ICH9 Controllers:   %u\n"), ulValue);
-    platformProperties->GetMaxPortCountForStorageBus(StorageBus_VirtioSCSI, &ulValue);
-    RTPrintf(List::tr("Maximum virtio-scsi Port count:         %u\n"), ulValue);
-    platformProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_VirtioSCSI, &ulValue);
-    RTPrintf(List::tr("Maximum Devices per virtio-scsi Port:   %u\n"), ulValue);
-    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_Floppy, &ulValue);
-    RTPrintf(List::tr("Maximum PIIX3 Floppy Controllers:%u\n"), ulValue);
-    platformProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_Floppy, &ulValue);
-    RTPrintf(List::tr("Maximum ICH9 Floppy Controllers: %u\n"), ulValue);
-    platformProperties->GetMaxPortCountForStorageBus(StorageBus_Floppy, &ulValue);
-    RTPrintf(List::tr("Maximum Floppy Port count:       %u\n"), ulValue);
-    platformProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_Floppy, &ulValue);
-    RTPrintf(List::tr("Maximum Devices per Floppy Port: %u\n"), ulValue);
+
 #if 0
     systemProperties->GetFreeDiskSpaceWarning(&i64Value);
     RTPrintf(List::tr("Free disk space warning at:      %u Bytes\n", "", i64Value), i64Value);
@@ -837,9 +908,9 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
 #endif
     systemProperties->COMGETTER(DefaultMachineFolder)(str.asOutParam());
     RTPrintf(List::tr("Default machine folder:          %ls\n"), str.raw());
-    platformProperties->COMGETTER(RawModeSupported)(&fValue);
+    hostPlatformProperties->COMGETTER(RawModeSupported)(&fValue);
     RTPrintf(List::tr("Raw-mode Supported:              %s\n"), fValue ? List::tr("yes") : List::tr("no"));
-    platformProperties->COMGETTER(ExclusiveHwVirt)(&fValue);
+    hostPlatformProperties->COMGETTER(ExclusiveHwVirt)(&fValue);
     RTPrintf(List::tr("Exclusive HW virtualization use: %s\n"), fValue ? List::tr("on") : List::tr("off"));
     systemProperties->COMGETTER(DefaultHardDiskFormat)(str.asOutParam());
     RTPrintf(List::tr("Default hard disk format:        %ls\n"), str.raw());
@@ -898,6 +969,34 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     systemProperties->COMGETTER(LanguageId)(str.asOutParam());
     RTPrintf(List::tr("User language:                   %ls\n"), str.raw());
 #endif
+
+    RTPrintf("Host platform properties:\n");
+    listPlatformProperties(hostPlatformProperties);
+
+    /* Separate host system / platform properties stuff from guest platform properties a bit. */
+    RTPrintf("\n");
+
+    SafeArray <PlatformArchitecture_T> saPlatformArch;
+    systemProperties->COMGETTER(SupportedPlatformArchitectures(ComSafeArrayAsOutParam(saPlatformArch)));
+    RTPrintf("Supported platform architectures: ");
+    for (size_t i = 0; i < saPlatformArch.size(); ++i)
+    {
+        if (i > 0)
+            RTPrintf(",");
+        RTPrintf(platformArchitectureToStr(saPlatformArch[i]));
+    }
+    RTPrintf("\n\n");
+
+    for (size_t i = 0; i < saPlatformArch.size(); ++i)
+    {
+        if (i > 0)
+            RTPrintf("\n");
+        ComPtr<IPlatformProperties> platformProperties;
+        CHECK_ERROR2I_RET(pVirtualBox, COMGETTER(PlatformProperties)(saPlatformArch[i], platformProperties.asOutParam()), hrcCheck);
+        RTPrintf(List::tr("%s platform properties:\n"), platformArchitectureToStr(saPlatformArch[i]));
+        listPlatformProperties(platformProperties);
+    }
+
     return S_OK;
 }
 
