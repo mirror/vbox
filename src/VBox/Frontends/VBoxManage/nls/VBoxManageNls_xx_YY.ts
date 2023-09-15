@@ -9633,7 +9633,7 @@ to the VBoxManage command line.
     </message>
     <message>
         <location filename="../VBoxManageModifyVM.cpp" line="3170"/>
-        <source>Invalid --chipset argument &apos;%s&apos; (valid: piix3,ich9)</source>
+        <source>Invalid --chipset argument &apos;%s&apos; (valid: piix3,ich9,armv8virtual)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

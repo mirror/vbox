@@ -11248,8 +11248,8 @@ to the VBoxManage command line.
     </message>
     <message>
         <location filename="../VBoxManageModifyVM.cpp" line="3170"/>
-        <source>Invalid --chipset argument &apos;%s&apos; (valid: piix3,ich9)</source>
-        <translation>Недопустимый аргумент к --chipset &apos;%s&apos; (допустимые: piix3,ich9)</translation>
+        <source>Invalid --chipset argument &apos;%s&apos; (valid: piix3,ich9,armv8virtual)</source>
+        <translation>Недопустимый аргумент к --chipset &apos;%s&apos; (допустимые: piix3,ich9,armv8virtual)</translation>
     </message>
     <message>
         <location filename="../VBoxManageModifyVM.cpp" line="3188"/>

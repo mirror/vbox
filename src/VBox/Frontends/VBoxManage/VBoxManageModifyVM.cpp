@@ -3264,9 +3264,15 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                         CHECK_ERROR(firmwareSettings, COMSETTER(IOAPICEnabled)(TRUE));
                     }
                 }
+                else if (   !RTStrICmp(ValueUnion.psz, "armv8")
+                         || !RTStrICmp(ValueUnion.psz, "armv8virtual"))
+                {
+                    CHECK_ERROR(platform, COMSETTER(ChipsetType)(ChipsetType_ARMv8Virtual));
+                }
                 else
                 {
-                    errorArgument(ModifyVM::tr("Invalid --chipset argument '%s' (valid: piix3,ich9)"), ValueUnion.psz);
+                    errorArgument(ModifyVM::tr("Invalid --chipset argument '%s' (valid: piix3,ich9,armv8virtual)"),
+                                  ValueUnion.psz);
                     hrc = E_FAIL;
                 }
                 break;

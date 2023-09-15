@@ -1224,8 +1224,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             else
                 pszChipsetType = Info::tr("invalid");
             break;
-        case ChipsetType_PIIX3: pszChipsetType = "piix3"; break;
-        case ChipsetType_ICH9:  pszChipsetType = "ich9"; break;
+        case ChipsetType_PIIX3:        pszChipsetType = "piix3";        break;
+        case ChipsetType_ICH9:         pszChipsetType = "ich9";         break;
+        case ChipsetType_ARMv8Virtual: pszChipsetType = "armv8virtual"; break;
         default:
             AssertFailed();
             if (details == VMINFO_MACHINEREADABLE)

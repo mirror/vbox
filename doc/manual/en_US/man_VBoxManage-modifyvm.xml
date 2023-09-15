@@ -187,6 +187,7 @@
       <arg>--chipset=<group choice="plain">
           <arg choice="plain">ich9</arg>
           <arg choice="plain">piix3</arg>
+          <arg choice="plain">armv8virtual</arg>
         </group></arg>
     <arg>--iommu=<group choice="plain">
         <arg choice="plain">none</arg>
@@ -1120,11 +1121,13 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--chipset=piix3 | ich9</option></term>
+          <term><option>--chipset=piix3 | ich9 | armv8virtual</option></term>
           <listitem><para>
               Specify the Intel chipset for &product-name; to emulate.
-              The default value is the Intel PIIX3 chipset
+              For the x86 platform, the default value is the Intel PIIX3 chipset.
               (<literal>piix3</literal>).
+              For the ARM platform, the default value is the ARMv8Virtual chipset.
+              (<literal>armv8virtual</literal>).
             </para><para>
               Change this value only if you need to relax some of the
               chipset constraints. See
