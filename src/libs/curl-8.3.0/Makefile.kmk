@@ -155,6 +155,8 @@ VBox-libcurl_SOURCES.win = \
 	lib/curl_multibyte.c \
 	lib/system_win32.c \
 	lib/version_win32.c
+VBox-libcurl_SOURCES.darwin = \
+	lib/macos.c
 
 # Use checked in config.h instead of running ./configure for it.
 VBox-libcurl_DEPS  = $(VBox-libcurl_0_OUTDIR)/lib/curl_config.h
