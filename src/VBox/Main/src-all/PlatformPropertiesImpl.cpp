@@ -682,12 +682,14 @@ HRESULT PlatformProperties::getSupportedGraphicsControllerTypes(std::vector<Grap
         {
             static const GraphicsControllerType_T aGraphicsControllerTypes[] =
             {
+                GraphicsControllerType_Null,
                 GraphicsControllerType_VBoxVGA,
-                GraphicsControllerType_VMSVGA,
-                GraphicsControllerType_VBoxSVGA,
-                GraphicsControllerType_Null
+                GraphicsControllerType_VBoxSVGA
+#ifdef VBOX_WITH_VMSVGA
+              , GraphicsControllerType_VMSVGA
+#endif
             };
-            aSupportedGraphicsControllerTypes.assign(aGraphicsControllerTypes,
+            aSupportedGraphicsControllerTypes.assign(aGraphicsControllerTypes + 1 /* Don't include _Null */,
                                                      aGraphicsControllerTypes + RT_ELEMENTS(aGraphicsControllerTypes));
             break;
         }
@@ -696,10 +698,12 @@ HRESULT PlatformProperties::getSupportedGraphicsControllerTypes(std::vector<Grap
         {
             static const GraphicsControllerType_T aGraphicsControllerTypes[] =
             {
-                GraphicsControllerType_VMSVGA,
                 GraphicsControllerType_Null
+#ifdef VBOX_WITH_VMSVGA
+              , GraphicsControllerType_VMSVGA
+#endif
             };
-            aSupportedGraphicsControllerTypes.assign(aGraphicsControllerTypes,
+            aSupportedGraphicsControllerTypes.assign(aGraphicsControllerTypes /* Don't include _Null */,
                                                      aGraphicsControllerTypes + RT_ELEMENTS(aGraphicsControllerTypes));
             break;
         }
@@ -732,7 +736,7 @@ HRESULT PlatformProperties::getSupportedNetworkAdapterTypes(std::vector<NetworkA
               , NetworkAdapterType_Virtio
 #endif
             };
-            aSupportedNetworkAdapterTypes.assign(aNetworkAdapterTypes,
+            aSupportedNetworkAdapterTypes.assign(aNetworkAdapterTypes + 1 /* Don't include _Null */,
                                                  aNetworkAdapterTypes + RT_ELEMENTS(aNetworkAdapterTypes));
             break;
         }
@@ -751,7 +755,7 @@ HRESULT PlatformProperties::getSupportedNetworkAdapterTypes(std::vector<NetworkA
               , NetworkAdapterType_Virtio
 #endif
             };
-            aSupportedNetworkAdapterTypes.assign(aNetworkAdapterTypes,
+            aSupportedNetworkAdapterTypes.assign(aNetworkAdapterTypes + 1 /* Don't include _Null */,
                                                  aNetworkAdapterTypes + RT_ELEMENTS(aNetworkAdapterTypes));
             break;
         }
