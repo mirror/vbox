@@ -15128,7 +15128,18 @@ com::Utf8Str Machine::i_controllerNameFromBusType(StorageBus_T aBusType)
             strControllerName = "USB";
             break;
         }
+        case StorageBus_PCIe:
+        {
+            strControllerName = "PCIe";
+            break;
+        }
+        case StorageBus_VirtioSCSI:
+        {
+            strControllerName = "VirtioSCSI";
+            break;
+        }
         default:
+            AssertFailed(); /* Catch missing case above. */
             break;
     }
     return strControllerName;
