@@ -47,7 +47,7 @@ class QStackedWidget;
 class QTimer;
 class QVariant;
 class QIDialogButtonBox;
-class QILineEdit;
+class UIFilterEditor;
 class UISettingsPage;
 class UISettingsPageFrame;
 class UISettingsPageValidator;
@@ -251,7 +251,7 @@ private:
         QGridLayout *m_pLayoutMain;
 
         /** Holds the filter editor instance. */
-        QILineEdit *m_pEditorFilter;
+        UIFilterEditor *m_pEditorFilter;
 
         /** Holds the scroll-area instance. */
         QScrollArea *m_pScrollArea;

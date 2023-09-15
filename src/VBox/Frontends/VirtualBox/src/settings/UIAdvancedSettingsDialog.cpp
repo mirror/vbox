@@ -46,9 +46,12 @@
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
 #include "QILineEdit.h"
+#include "QIToolButton.h"
 #include "UIAdvancedSettingsDialog.h"
+#include "UIAnimationFramework.h"
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
+#include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UIPopupCenter.h"
@@ -70,6 +73,81 @@
 #endif
 
 
+/** QWidget reimplementation
+  * wrapping custom QILineEdit and
+  * representing filter editor for advanced settings dialog. */
+class UIFilterEditor : public QWidget
+{
+    Q_OBJECT;
+    Q_PROPERTY(int editorWidth READ editorWidth WRITE setEditorWidth);
+    Q_PROPERTY(int unfocusedEditorWidth READ unfocusedEditorWidth);
+    Q_PROPERTY(int focusedEditorWidth READ focusedEditorWidth);
+
+signals:
+
+    /** Notifies listeners about @a strText changed. */
+    void sigTextChanged(const QString &strText);
+
+    /** Notifies listeners about editor focused. */
+    void sigFocused();
+    /** Notifies listeners about editor unfocused. */
+    void sigUnfocused();
+
+public:
+
+    /** Constructs filter editor passing @a pParent to the base-class. */
+    UIFilterEditor(QWidget *pParent);
+    /** Destructs filter editor. */
+    virtual ~UIFilterEditor() RT_OVERRIDE;
+
+protected:
+
+    /** Returns the minimum widget size. */
+    virtual QSize minimumSizeHint() const RT_OVERRIDE;
+
+    /** Handles resize @a pEvent. */
+    virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
+
+    /** Preprocesses Qt @a pEvent for passed @a pObject. */
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
+
+private:
+
+    /** Prepares all. */
+    void prepare();
+    /** Cleanups all. */
+    void cleanup();
+
+    /** Adjusts editor geometry. */
+    void adjustEditorGeometry();
+
+    /** Defines internal widget @a iWidth. */
+    void setEditorWidth(int iWidth);
+    /** Returns internal widget width. */
+    int editorWidth() const;
+    /** Returns internal widget width when it's unfocused. */
+    int unfocusedEditorWidth() const { return m_iUnfocusedEditorWidth; }
+    /** Returns internal widget width when it's focused. */
+    int focusedEditorWidth() const { return m_iFocusedEditorWidth; }
+
+    /** Holds the filter editor instance. */
+    QILineEdit   *m_pLineEdit;
+#if 0
+    /** Holds the filter reset button instance. */
+    QIToolButton *m_pToolButton;
+#endif
+
+    /** Holds whether filter editor focused. */
+    bool         m_fFocused;
+    /** Holds unfocused filter editor width. */
+    int          m_iUnfocusedEditorWidth;
+    /** Holds focused filter editor width. */
+    int          m_iFocusedEditorWidth;
+    /** Holds the animation framework object. */
+    UIAnimation *m_pAnimation;
+};
+
+
 /** QScrollArea extension to be used for
   * advanced settings dialog. The idea is to make
   * vertical scroll-bar always visible, keeping
@@ -88,6 +166,133 @@ protected:
     /** Holds the minimum widget size. */
     virtual QSize minimumSizeHint() const RT_OVERRIDE;
 };
+
+
+/*********************************************************************************************************************************
+*   Class UIFilterEditor implementation.                                                                                         *
+*********************************************************************************************************************************/
+
+UIFilterEditor::UIFilterEditor(QWidget *pParent)
+    : QWidget(pParent)
+    , m_pLineEdit(0)
+#if 0
+    , m_pToolButton(0)
+#endif
+    , m_fFocused(false)
+    , m_iUnfocusedEditorWidth(0)
+    , m_iFocusedEditorWidth(0)
+    , m_pAnimation(0)
+{
+    prepare();
+}
+
+UIFilterEditor::~UIFilterEditor()
+{
+    cleanup();
+}
+
+QSize UIFilterEditor::minimumSizeHint() const
+{
+    return m_pLineEdit ? m_pLineEdit->minimumSizeHint() : QWidget::minimumSizeHint();
+}
+
+void UIFilterEditor::resizeEvent(QResizeEvent *pEvent)
+{
+    /* Call to base-class: */
+    QWidget::resizeEvent(pEvent);
+
+    /* Adjust filter editor geometry on each parent resize: */
+    adjustEditorGeometry();
+}
+
+bool UIFilterEditor::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+    /* Preprocess events for m_pLineEdit only: */
+    if (pObject != m_pLineEdit)
+        return QWidget::eventFilter(pObject, pEvent);
+
+    /* Handles various event types: */
+    switch (pEvent->type())
+    {
+        /* Foreard animation on focus-in: */
+        case QEvent::FocusIn:
+            m_fFocused = true;
+            emit sigFocused();
+            break;
+        /* Backward animation on focus-out: */
+        case QEvent::FocusOut:
+            m_fFocused = false;
+            emit sigUnfocused();
+            break;
+        default:
+            break;
+    }
+
+    /* Call to base-class: */
+    return QWidget::eventFilter(pObject, pEvent);
+}
+
+void UIFilterEditor::prepare()
+{
+    /* Prepare filter editor: */
+    m_pLineEdit = new QILineEdit(this);
+    if (m_pLineEdit)
+    {
+        m_pLineEdit->installEventFilter(this);
+        connect(m_pLineEdit, &QILineEdit::textChanged,
+                this, &UIFilterEditor::sigTextChanged);
+    }
+
+#if 0
+    /* Prepare filter reset button: */
+    m_pToolButton = new QIToolButton(this);
+    if (m_pToolButton)
+        m_pToolButton->setIcon(UIIconPool::iconSet(":/search_16px.png"));
+#endif
+
+    /* Install 'unfocus/focus' animation to 'editorWidth' property: */
+    m_pAnimation = UIAnimation::installPropertyAnimation(this,
+                                                         "editorWidth",
+                                                         "unfocusedEditorWidth", "focusedEditorWidth",
+                                                         SIGNAL(sigFocused()), SIGNAL(sigUnfocused()));
+
+    /* Adjust filter editor geometry initially: */
+    adjustEditorGeometry();
+}
+
+void UIFilterEditor::cleanup()
+{
+    /* Cleanup 'unfocus/focus' animation: */
+    delete m_pAnimation;
+    m_pAnimation = 0;
+}
+
+void UIFilterEditor::adjustEditorGeometry()
+{
+    /* Update minimum/maximum filter editor width: */
+    const int iWidth = width();
+    const int iMinimumWidth = m_pLineEdit->minimumSizeHint().width();
+    m_iUnfocusedEditorWidth = qMax(iWidth / 2, iMinimumWidth);
+    m_iFocusedEditorWidth = qMax(iWidth, iMinimumWidth);;
+    m_pAnimation->update();
+
+    /* Update filter editor geometry: */
+    setEditorWidth(m_fFocused ? m_iFocusedEditorWidth : m_iUnfocusedEditorWidth);
+}
+
+void UIFilterEditor::setEditorWidth(int iWidth)
+{
+    /* Align filter editor right: */
+    const int iX = width() - iWidth;
+    const int iY = 0;
+    const int iHeight = m_pLineEdit->minimumSizeHint().height();
+    m_pLineEdit->setGeometry(iX, iY, iWidth, iHeight);
+}
+
+int UIFilterEditor::editorWidth() const
+{
+    return m_pLineEdit->width();
+}
 
 
 /*********************************************************************************************************************************
@@ -634,10 +839,10 @@ void UIAdvancedSettingsDialog::prepareSelector()
     }
 
     /* Prepare filter editor: */
-    m_pEditorFilter = new QILineEdit(centralWidget());
+    m_pEditorFilter = new UIFilterEditor(centralWidget());
     if (m_pEditorFilter)
     {
-        connect(m_pEditorFilter, &QILineEdit::textChanged,
+        connect(m_pEditorFilter, &UIFilterEditor::sigTextChanged,
                 this, &UIAdvancedSettingsDialog::sltHandleFilterTextChanged);
         m_pLayoutMain->addWidget(m_pEditorFilter, 0, 1);
     }
