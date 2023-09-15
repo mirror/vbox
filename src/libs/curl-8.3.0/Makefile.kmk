@@ -62,23 +62,27 @@ VBox-libcurl_INCS           = \
 	$(VBOX_PATH_LIBCURL)/lib
 VBox-libcurl_SOURCES        = \
 	lib/base64.c \
+	lib/bufq.c \
 	lib/bufref.c \
 	lib/conncache.c \
 	lib/connect.c \
 	lib/content_encoding.c \
 	lib/cookie.c \
+	lib/cf-haproxy.c \
+	lib/cf-h1-proxy.c \
 	lib/cf-https-connect.c \
 	lib/cf-socket.c \
 	lib/cfilters.c \
 	lib/curl_addrinfo.c \
 	lib/curl_get_line.c \
 	lib/curl_fnmatch.c \
-	lib/curl_log.c \
 	lib/curl_memrchr.c \
-	lib/curl_sasl.c \
 	lib/curl_range.c \
+	lib/curl_sasl.c \
+	lib/curl_trc.c \
 	lib/doh.c \
 	lib/dynbuf.c \
+	lib/dynhds.c \
 	lib/easy.c \
 	lib/escape.c \
 	lib/fileinfo.c \
