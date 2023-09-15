@@ -38,7 +38,9 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include <iprt/win/windows.h>
+
+#include <d3d11.h>
+
 #include <iprt/win/setupapi.h>
 #include <devguid.h>
 
@@ -91,7 +93,7 @@ NTSTATUS SetDisplayDeviceState(bool bEnable)
             if (SetupDiCallClassInstaller(DIF_PROPERTYCHANGE, hDevs, &DevInfo))
             {
                 if (g_cVerbosity >= 1)
-                    RTPrintf("debug: device %s\n", bEnable ? "enabled" : "disabled");
+                    RTMsgInfo("debug: device %s\n", bEnable ? "enabled" : "disabled");
             }
             else
             {
@@ -111,6 +113,59 @@ NTSTATUS SetDisplayDeviceState(bool bEnable)
     return rcNt;
 }
 
+bool CheckDXFeatureLevel()
+{
+    IDXGIAdapter *pAdapter = NULL; /* Default adapter. */
+    static const D3D_FEATURE_LEVEL aFeatureLevels[] =
+    {
+        D3D_FEATURE_LEVEL_11_1,
+        D3D_FEATURE_LEVEL_11_0,
+        D3D_FEATURE_LEVEL_10_1,
+        D3D_FEATURE_LEVEL_10_0,
+        D3D_FEATURE_LEVEL_9_3,
+        D3D_FEATURE_LEVEL_9_2,
+        D3D_FEATURE_LEVEL_9_1
+    };
+    UINT Flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+    D3D_FEATURE_LEVEL FeatureLevel = D3D_FEATURE_LEVEL_9_1;
+    ID3D11Device *pDevice = NULL;
+    ID3D11DeviceContext *pImmediateContext = NULL;
+    bool fResult = false;
+    HRESULT hr = S_OK;
+
+    hr = D3D11CreateDevice(pAdapter,
+                           D3D_DRIVER_TYPE_HARDWARE,
+                           NULL,
+                           Flags,
+                           aFeatureLevels,
+                           RT_ELEMENTS(aFeatureLevels),
+                           D3D11_SDK_VERSION,
+                           &pDevice,
+                           &FeatureLevel,
+                           &pImmediateContext);
+
+    if (FAILED(hr))
+    {
+        RTMsgError("D3D11CreateDevice failed with 0x%X\n", hr);
+        return false;
+    }
+
+    if (FeatureLevel == D3D_FEATURE_LEVEL_11_1)
+    {
+        RTMsgInfo("D3D_FEATURE_LEVEL_11_1 is supported\n");
+        fResult = true;
+    }
+    else
+    {
+        RTMsgError("D3D_FEATURE_LEVEL_11_1 is not supported, only 0x%X\n", FeatureLevel);
+    }
+
+    pDevice->Release();
+    pImmediateContext->Release();
+
+    return fResult;
+}
+
 int main(int argc, char **argv)
 {
     /*
@@ -123,8 +178,6 @@ int main(int argc, char **argv)
     /*
      * Parse arguments.
      */
-    bool fEnable = true;
-
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--enable",       'e',  RTGETOPT_REQ_UINT32  },
@@ -140,7 +193,7 @@ int main(int argc, char **argv)
     {
         switch (chOpt)
         {
-            case 'e': fEnable = RT_BOOL(ValueUnion.u32); break;
+            case 'e': SetDisplayDeviceState(RT_BOOL(ValueUnion.u32)); break;
             case 'q': g_cVerbosity = 0; break;
             case 'v': g_cVerbosity += 1; break;
             case 'h':
@@ -152,7 +205,5 @@ int main(int argc, char **argv)
         }
     }
 
-    NTSTATUS rcNt = SetDisplayDeviceState(fEnable);
-
-    return RTErrConvertFromNtStatus(rcNt);
+    return !CheckDXFeatureLevel();
 }

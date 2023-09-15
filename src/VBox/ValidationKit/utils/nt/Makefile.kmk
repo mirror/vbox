@@ -63,9 +63,12 @@ ntFlushVirtualMemory_SOURCES  = ntFlushVirtualMemory.cpp
 # Test Display device and 3D rendering.
 #
 PROGRAMS.win += ntDisplay
-ntDisplay_TEMPLATE = VBoxValidationKitR3
-ntDisplay_SOURCES  = ntDisplay.cpp
-ntDisplay_VBOX_IMPORT_CHECKER.win.x86 = nt4
+ntDisplay_TEMPLATE  = VBoxValidationKitR3
+ntDisplay_CXXFLAGS += -wd4668
+ntDisplay_LIBS      = d3d11.lib
+ntDisplay_SOURCES   = ntDisplay.cpp
+ntDisplay_VBOX_IMPORT_CHECKER.win.amd64 = w8
+ntDisplay_VBOX_IMPORT_CHECKER.win.x86 = w8
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
