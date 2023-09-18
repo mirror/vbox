@@ -114,7 +114,6 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb);
 static void         iemTbAllocatorFree(PVMCPUCC pVCpu, PIEMTB pTb);
 
 
@@ -649,11 +648,18 @@ static PIEMTB iemTbCacheLookup(PVMCPUCC pVCpu, PIEMTBCACHE pTbCache,
             {
                 if (pTb->x86.fAttr == (uint16_t)pVCpu->cpum.GstCtx.cs.Attr.u)
                 {
-                    pTb->cUsed++;
-                    pTb->msLastUsed = pVCpu->iem.s.msRecompilerPollNow;
                     STAM_COUNTER_INC(&pTbCache->cLookupHits);
                     AssertMsg(cLeft > 0, ("%d\n", cLeft));
+
+                    pTb->msLastUsed = pVCpu->iem.s.msRecompilerPollNow;
+                    pTb->cUsed++;
+#ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
+                    if ((pTb->fFlags & IEMTB_F_TYPE_NATIVE) || pTb->cUsed != 16)
+                        return pTb;
+                    return iemNativeRecompile(pVCpu, pTb);
+#else
                     return pTb;
+#endif
                 }
                 Log11(("TB miss: CS: %#x, wanted %#x\n", pTb->x86.fAttr, (uint16_t)pVCpu->cpum.GstCtx.cs.Attr.u));
             }
@@ -705,13 +711,18 @@ static PIEMTB iemTbCacheLookup(PVMCPUCC pVCpu, PIEMTBCACHE pTbCache,
  * Initializes the TB allocator and cache for an EMT.
  *
  * @returns VBox status code.
- * @param   pVM         The VM handle.
- * @param   cInitialTbs The initial number of translation blocks to
- *                      preallocator.
- * @param   cMaxTbs     The max number of translation blocks allowed.
+ * @param   pVM             The VM handle.
+ * @param   cInitialTbs     The initial number of translation blocks to
+ *                          preallocator.
+ * @param   cMaxTbs         The max number of translation blocks allowed.
+ * @param   cbInitialExec   The initial size of the executable memory allocator.
+ * @param   cbMaxExec       The max size of the executable memory allocator.
+ * @param   cbChunkExec     The chunk size for executable memory allocator. Zero
+ *                          or UINT32_MAX for automatically determining this.
  * @thread  EMT
  */
-DECLCALLBACK(int) iemTbInit(PVMCC pVM, uint32_t cInitialTbs, uint32_t cMaxTbs)
+DECLCALLBACK(int) iemTbInit(PVMCC pVM, uint32_t cInitialTbs, uint32_t cMaxTbs,
+                            uint64_t cbInitialExec, uint64_t cbMaxExec, uint32_t cbChunkExec)
 {
     PVMCPUCC pVCpu = VMMGetCpu(pVM);
     Assert(!pVCpu->iem.s.pTbCacheR3);
@@ -819,6 +830,16 @@ DECLCALLBACK(int) iemTbInit(PVMCC pVM, uint32_t cInitialTbs, uint32_t cMaxTbs)
     Assert(pTbCache->cHash > pTbCache->uHashMask);
     pVCpu->iem.s.pTbCacheR3 = pTbCache;
 
+    /*
+     * Initialize the native executable memory allocator.
+     */
+#ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
+    int rc = iemExecMemAllocatorInit(pVCpu, cbMaxExec, cbInitialExec, cbChunkExec);
+    AssertLogRelRCReturn(rc, rc);
+#else
+    RT_NOREF(cbMaxExec, cbInitialExec, cbChunkExec);
+#endif
+
     return VINF_SUCCESS;
 }
 
@@ -848,10 +869,13 @@ static void iemTbAllocatorFreeInner(PVMCPUCC pVCpu, PIEMTBALLOCATOR pTbAllocator
             pTbAllocator->cThreadedTbs -= 1;
             RTMemFree(pTb->Thrd.paCalls);
             break;
+#ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
         case IEMTB_F_TYPE_NATIVE:
             pTbAllocator->cNativeTbs -= 1;
-            RTMemFree(pTb->Native.pbCode); /// @todo native: fix me
+            iemExecMemAllocatorFree(pVCpu, pTb->Native.paInstructions,
+                                    pTb->Native.cInstructions * sizeof(pTb->Native.paInstructions[0]));
             break;
+#endif
         default:
             AssertFailed();
     }
@@ -879,7 +903,7 @@ static void iemTbAllocatorFreeInner(PVMCPUCC pVCpu, PIEMTBALLOCATOR pTbAllocator
  *
  * @param   pVCpu   The cross context virtual CPU structure of the calling
  *                  thread.
- * @param   pTb     The translation block to free..
+ * @param   pTb     The translation block to free.
  * @thread  EMT(pVCpu)
  */
 static void iemTbAllocatorFree(PVMCPUCC pVCpu, PIEMTB pTb)
@@ -898,6 +922,62 @@ static void iemTbAllocatorFree(PVMCPUCC pVCpu, PIEMTB pTb)
      * Call inner worker.
      */
     iemTbAllocatorFreeInner(pVCpu, pTbAllocator, pTb, idxChunk, (uint32_t)idxInChunk);
+}
+
+
+/**
+ * Schedules a native TB for freeing when it's not longer being executed and
+ * part of the caller's call stack.
+ *
+ * The TB will be removed from the translation block cache, though, so it isn't
+ * possible to executed it again and the IEMTB::pNext member can be used to link
+ * it together with other TBs awaiting freeing.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure of the calling
+ *                  thread.
+ * @param   pTb     The translation block to schedule for freeing.
+ */
+static void iemTbAlloctorScheduleForFree(PVMCPUCC pVCpu, PIEMTB pTb)
+{
+    /*
+     * Validate state.
+     */
+    PIEMTBALLOCATOR const pTbAllocator = pVCpu->iem.s.pTbAllocatorR3;
+    Assert(pTbAllocator && pTbAllocator->uMagic == IEMTBALLOCATOR_MAGIC);
+    Assert(pTb->idxAllocChunk < pTbAllocator->cAllocatedChunks);
+    Assert((uintptr_t)(pTb - pTbAllocator->aChunks[pTb->idxAllocChunk].paTbs) < pTbAllocator->cTbsPerChunk);
+    Assert(ASMBitTest(&pTbAllocator->bmAllocated,
+                      IEMTBALLOC_IDX_MAKE(pTbAllocator, pTb->idxAllocChunk,
+                                          (uintptr_t)(pTb - pTbAllocator->aChunks[pTb->idxAllocChunk].paTbs))));
+    Assert((pTb->fFlags & IEMTB_F_TYPE_MASK) == IEMTB_F_TYPE_NATIVE);
+
+    /*
+     * Remove it from the cache and prepend it to the allocator's todo list.
+     */
+    iemTbCacheRemove(pVCpu->iem.s.pTbCacheR3, pTb);
+
+    pTb->pNext = pTbAllocator->pDelayedFreeHead;
+    pTbAllocator->pDelayedFreeHead = pTb;
+}
+
+
+/**
+ * Processes the delayed frees.
+ *
+ * This is called by the allocator function as well as the native recompile
+ * function before making any TB or executable memory allocations respectively.
+ */
+void iemTbAllocatorProcessDelayedFrees(PVMCPU pVCpu, PIEMTBALLOCATOR pTbAllocator)
+{
+    PIEMTB pTb = pTbAllocator->pDelayedFreeHead;
+    pTbAllocator->pDelayedFreeHead = NULL;
+    while (pTb)
+    {
+        PIEMTB const pTbNext = pTb->pNext;
+        Assert(pVCpu->iem.s.pCurTbR3 != pTb);
+        iemTbAlloctorScheduleForFree(pVCpu, pTb);
+        pTb = pTbNext;
+    }
 }
 
 
@@ -1077,12 +1157,23 @@ DECL_FORCE_INLINE(PIEMTB) iemTbAllocatorAlloc(PVMCPUCC pVCpu, bool fThreaded)
     PIEMTBALLOCATOR const pTbAllocator = pVCpu->iem.s.pTbAllocatorR3;
     Assert(pTbAllocator && pTbAllocator->uMagic == IEMTBALLOCATOR_MAGIC);
 
+    /* Free any pending TBs before we proceed. */
+    if (!pTbAllocator->pDelayedFreeHead)
+    { /* probably likely */ }
+    else
+        iemTbAllocatorProcessDelayedFrees(pVCpu, pTbAllocator);
+
     /* If the allocator is full, take slow code path.*/
     if (RT_LIKELY(pTbAllocator->cInUseTbs < pTbAllocator->cTotalTbs))
         return iemTbAllocatorAllocCore(pTbAllocator, fThreaded);
     return iemTbAllocatorAllocSlow(pVCpu, pTbAllocator, fThreaded);
 }
 
+
+
+/*********************************************************************************************************************************
+*   Threaded Recompiler Core                                                                                                     *
+*********************************************************************************************************************************/
 
 /**
  * Allocate a translation block for threadeded recompilation.
@@ -1257,9 +1348,14 @@ static void iemThreadedTbAdd(PVMCPUCC pVCpu, PIEMTBCACHE pTbCache, PIEMTB pTb)
 /**
  * Called by opcode verifier functions when they detect a problem.
  */
-void iemThreadedTbObsolete(PVMCPUCC pVCpu, PIEMTB pTb)
+void iemThreadedTbObsolete(PVMCPUCC pVCpu, PIEMTB pTb, bool fSafeToFree)
 {
-    iemTbAllocatorFree(pVCpu, pTb);
+    /* Unless it's safe, we can only immediately free threaded TB, as we will
+       have more code left to execute in native TBs when fSafeToFree == false.  */
+    if (fSafeToFree || (pTb->fFlags & IEMTB_F_TYPE_THREADED))
+        iemTbAllocatorFree(pVCpu, pTb);
+    else
+        iemTbAlloctorScheduleForFree(pVCpu, pTb);
 }
 
 
@@ -2112,6 +2208,11 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
 }
 
 
+
+/*********************************************************************************************************************************
+*   Recompiled Execution Core                                                                                                    *
+*********************************************************************************************************************************/
+
 /**
  * Executes a translation block.
  *
@@ -2120,9 +2221,11 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
  *                  thread.
  * @param   pTb     The translation block to execute.
  */
-static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_MAY_LONGJMP
+static VBOXSTRICTRC iemTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_MAY_LONGJMP
 {
-    /* Check the opcodes in the first page before starting execution. */
+    /*
+     * Check the opcodes in the first page before starting execution.
+     */
     Assert(!(pVCpu->iem.s.GCPhysInstrBuf & (RTGCPHYS)GUEST_PAGE_OFFSET_MASK));
     Assert(pTb->aRanges[0].cbOpcodes <= pVCpu->iem.s.cbInstrBufTotal - pVCpu->iem.s.offInstrNextByte);
     if (memcmp(pTb->pabOpcodes, &pVCpu->iem.s.pbInstrBuf[pTb->aRanges[0].offPhysPage], pTb->aRanges[0].cbOpcodes) == 0)
@@ -2130,50 +2233,86 @@ static VBOXSTRICTRC iemThreadedTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_M
     else
     {
         Log7(("TB obsolete: %p GCPhys=%RGp\n", pTb, pTb->GCPhysPc));
-        iemThreadedTbObsolete(pVCpu, pTb);
+        iemThreadedTbObsolete(pVCpu, pTb, true /*fSafeToFree*/);
         return VINF_SUCCESS;
     }
 
-    /* Set the current TB so CIMPL function may get at it. */
+    /*
+     * Set the current TB so CIMPL functions may get at it.
+     */
     pVCpu->iem.s.pCurTbR3 = pTb;
-    pVCpu->iem.s.cTbExec++;
 
-    /* The execution loop. */
-#ifdef LOG_ENABLED
-    uint64_t             uRipPrev   = UINT64_MAX;
-#endif
-    PCIEMTHRDEDCALLENTRY pCallEntry = pTb->Thrd.paCalls;
-    uint32_t             cCallsLeft = pTb->Thrd.cCalls;
-    while (cCallsLeft-- > 0)
+    /*
+     * Execute the block.
+     */
+#ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
+    if (pTb->fFlags & IEMTB_F_TYPE_NATIVE)
     {
-#ifdef LOG_ENABLED
-        if (pVCpu->cpum.GstCtx.rip != uRipPrev)
-        {
-            uRipPrev = pVCpu->cpum.GstCtx.rip;
-            iemThreadedLogCurInstr(pVCpu, "EX");
-        }
-        Log9(("%04x:%08RX64: #%d/%d - %d %s\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
-              pTb->Thrd.cCalls - cCallsLeft - 1, pCallEntry->idxInstr, pCallEntry->enmFunction,
-              g_apszIemThreadedFunctions[pCallEntry->enmFunction]));
-#endif
-        VBOXSTRICTRC const rcStrict = g_apfnIemThreadedFunctions[pCallEntry->enmFunction](pVCpu,
-                                                                                          pCallEntry->auParams[0],
-                                                                                          pCallEntry->auParams[1],
-                                                                                          pCallEntry->auParams[2]);
+        pVCpu->iem.s.cTbExecNative++;
+        typedef IEM_DECL_IMPL_TYPE(int, FNIEMNATIVETB, (PVMCPUCC pVCpu, PIEMTB pTb));
+# ifdef LOG_ENABLED
+        iemThreadedLogCurInstr(pVCpu, "EXn");
+# endif
+        VBOXSTRICTRC const rcStrict = ((FNIEMNATIVETB *)pTb->Native.paInstructions)(pVCpu, pTb);
         if (RT_LIKELY(   rcStrict == VINF_SUCCESS
                       && pVCpu->iem.s.rcPassUp == VINF_SUCCESS /** @todo this isn't great. */))
-            pCallEntry++;
+        { /* likely */ }
         else
         {
-            pVCpu->iem.s.cInstructions += pCallEntry->idxInstr; /* This may be one short, but better than zero. */
-            pVCpu->iem.s.pCurTbR3       = NULL;
+            /* pVCpu->iem.s.cInstructions is incremented by iemNativeHlpExecStatusCodeFiddling. */
+            pVCpu->iem.s.pCurTbR3 = NULL;
             STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatTbExecBreaks);
 
-            /* Some status codes are just to get us out of this loop and
-               continue in a different translation block. */
+            /* VINF_IEM_REEXEC_BREAK should be treated as VINF_SUCCESS as it's
+               only to break out of TB execution early. */
             if (rcStrict == VINF_IEM_REEXEC_BREAK)
                 return iemExecStatusCodeFiddling(pVCpu, VINF_SUCCESS);
             return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+        }
+    }
+    else
+#endif /* VBOX_WITH_IEM_NATIVE_RECOMPILER */
+    {
+        /*
+         * The threaded execution loop.
+         */
+        pVCpu->iem.s.cTbExecThreaded++;
+#ifdef LOG_ENABLED
+        uint64_t             uRipPrev   = UINT64_MAX;
+#endif
+        PCIEMTHRDEDCALLENTRY pCallEntry = pTb->Thrd.paCalls;
+        uint32_t             cCallsLeft = pTb->Thrd.cCalls;
+        while (cCallsLeft-- > 0)
+        {
+#ifdef LOG_ENABLED
+            if (pVCpu->cpum.GstCtx.rip != uRipPrev)
+            {
+                uRipPrev = pVCpu->cpum.GstCtx.rip;
+                iemThreadedLogCurInstr(pVCpu, "EXt");
+            }
+            Log9(("%04x:%08RX64: #%d/%d - %d %s\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
+                  pTb->Thrd.cCalls - cCallsLeft - 1, pCallEntry->idxInstr, pCallEntry->enmFunction,
+                  g_apszIemThreadedFunctions[pCallEntry->enmFunction]));
+#endif
+            VBOXSTRICTRC const rcStrict = g_apfnIemThreadedFunctions[pCallEntry->enmFunction](pVCpu,
+                                                                                              pCallEntry->auParams[0],
+                                                                                              pCallEntry->auParams[1],
+                                                                                              pCallEntry->auParams[2]);
+            if (RT_LIKELY(   rcStrict == VINF_SUCCESS
+                          && pVCpu->iem.s.rcPassUp == VINF_SUCCESS /** @todo this isn't great. */))
+                pCallEntry++;
+            else
+            {
+                pVCpu->iem.s.cInstructions += pCallEntry->idxInstr; /* This may be one short, but better than zero. */
+                pVCpu->iem.s.pCurTbR3       = NULL;
+                STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatTbExecBreaks);
+
+                /* VINF_IEM_REEXEC_BREAK should be treated as VINF_SUCCESS as it's
+                   only to break out of TB execution early. */
+                if (rcStrict == VINF_IEM_REEXEC_BREAK)
+                    return iemExecStatusCodeFiddling(pVCpu, VINF_SUCCESS);
+                return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+            }
         }
     }
 
@@ -2319,12 +2458,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu)
 
                 pTb = iemTbCacheLookup(pVCpu, pTbCache, GCPhysPc, fExtraFlags);
                 if (pTb)
-                {
-                    if (pTb->fFlags & IEMTB_F_TYPE_THREADED)
-                        rcStrict = iemThreadedTbExec(pVCpu, pTb);
-                    else
-                        AssertFailedStmt(rcStrict = VERR_INTERNAL_ERROR_4);
-                }
+                    rcStrict = iemTbExec(pVCpu, pTb);
                 else
                     rcStrict = iemThreadedCompile(pVM, pVCpu, GCPhysPc, fExtraFlags);
                 if (rcStrict == VINF_SUCCESS)
@@ -2345,9 +2479,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu)
                     {
                         if (RT_LIKELY(   (iIterations & cPollRate) != 0
                                       || !TMTimerPollBoolWith32BitMilliTS(pVM, pVCpu, &pVCpu->iem.s.msRecompilerPollNow)))
-                        {
-
-                        }
+                            pTb = NULL; /* Clear it before looping so iemTbCacheLookup can safely do native recompilation. */
                         else
                             return VINF_SUCCESS;
                     }
@@ -2364,8 +2496,8 @@ VMMDECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu)
             if (pVCpu->iem.s.cActiveMappings > 0)
                 iemMemRollback(pVCpu);
 
-#if 0 /** @todo do we need to clean up anything? */
-            /* If pTb isn't NULL we're in iemThreadedTbExec. */
+#if 0 /** @todo do we need to clean up anything?  If not, we can drop the pTb = NULL some lines up and change the scope. */
+            /* If pTb isn't NULL we're in iemTbExec. */
             if (!pTb)
             {
                 /* If pCurTbR3 is NULL, we're in iemGetPcWithPhysAndCode.*/

@@ -741,6 +741,16 @@ AssertCompile( (IEM_F_MODE_X86_64BIT              & IEM_F_MODE_CPUMODE_MASK) == 
 AssertCompile(  IEM_F_MODE_X86_64BIT              & IEM_F_MODE_X86_PROT_MASK);
 AssertCompile(!(IEM_F_MODE_X86_64BIT              & IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK));
 
+/** Native instruction type for use with the native code generator.
+ * This is a byte (uint8_t) for x86 and amd64 and uint32_t for the other(s). */
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+typedef uint8_t IEMNATIVEINSTR;
+#else
+typedef uint32_t IEMNATIVEINSTR;
+#endif
+/** Pointer to a native instruction unit. */
+typedef IEMNATIVEINSTR *PIEMNATIVEINSTR;
+
 /**
  * A call for the threaded call table.
  */
@@ -825,9 +835,10 @@ typedef struct IEMTB
         } Thrd;
         struct
         {
-            uint8_t            *pbCode;
-            /** Amount of code that pbCode points to. */
-            uint32_t            cbAllocated;
+            /** The native instructions. */
+            PIEMNATIVEINSTR     paInstructions;
+            /** Number of instructions pointed to by paInstructions. */
+            uint32_t            cInstructions;
         } Native;
         /** Generic view for zeroing when freeing. */
         struct
@@ -973,6 +984,9 @@ typedef struct IEMTBALLOCATOR
     STAMCOUNTER     StatFrees;
     /** Statistics: Time spend pruning. */
     STAMPROFILE     StatPrune;
+
+    /** The delayed free list (see iemTbAlloctorScheduleForFree). */
+    PIEMTB          pDelayedFreeHead;
 
     /** Allocation chunks. */
     IEMTBCHUNK      aChunks[256];
@@ -1367,18 +1381,16 @@ typedef struct IEMCPU
     /** Fixed TB used for threaded recompilation.
      * This is allocated once with maxed-out sizes and re-used afterwards. */
     R3PTRTYPE(PIEMTB)       pThrdCompileTbR3;
-    /** Fixed TB used for native recompilation.
-     * This is allocated once and re-used afterwards, growing individual
-     * components as needed. */
-    R3PTRTYPE(PIEMTB)       pNativeCompileTbR3;
     /** Pointer to the ring-3 TB cache for this EMT. */
     R3PTRTYPE(PIEMTBCACHE)  pTbCacheR3;
     /** The PC (RIP) at the start of pCurTbR3/pCurTbR0.
      * The TBs are based on physical addresses, so this is needed to correleated
      * RIP to opcode bytes stored in the TB (AMD-V / VT-x). */
     uint64_t                uCurTbStartPc;
-    /** Number of TBs executed. */
-    uint64_t                cTbExec;
+    /** Number of threaded TBs executed. */
+    uint64_t                cTbExecThreaded;
+    /** Number of native TBs executed. */
+    uint64_t                cTbExecNative;
     /** Whether we need to check the opcode bytes for the current instruction.
      * This is set by a previous instruction if it modified memory or similar.  */
     bool                    fTbCheckOpcodes;
@@ -1413,8 +1425,36 @@ typedef struct IEMCPU
     uint64_t                GCVirtTbBranchSrcBuf;
     /** Pointer to the ring-3 TB allocator for this EMT. */
     R3PTRTYPE(PIEMTBALLOCATOR) pTbAllocatorR3;
-    /* Alignment. */
-    uint64_t                auAlignment10[7];
+    /** Pointer to the ring-3 executable memory allocator for this EMT. */
+    R3PTRTYPE(struct IEMEXECMEMALLOCATOR *) pExecMemAllocatorR3;
+
+    /** Native recompiler state for ring-3. */
+    struct IEMRECOMPILERSTATE
+    {
+        /** Size of the buffer that pbNativeRecompileBufR3 points to in
+         * IEMNATIVEINSTR units. */
+        uint32_t                            cInstrBufAlloc;
+        uint32_t                            uPadding; /* We don't keep track of this here... */
+        /** Fixed temporary code buffer for native recompilation. */
+        R3PTRTYPE(PIEMNATIVEINSTR)          pInstrBuf;
+
+        /** Actual number of labels in paLabels. */
+        uint32_t                            cLabels;
+        /** Max number of entries allowed in paLabels before reallocating it. */
+        uint32_t                            cLabelsAlloc;
+        /** Labels defined while recompiling (referenced by fixups). */
+        R3PTRTYPE(struct IEMNATIVELABEL *)  paLabels;
+
+        /** Actual number of fixups paFixups. */
+        uint32_t                            cFixups;
+        /** Max number of entries allowed in paFixups before reallocating it. */
+        uint32_t                            cFixupsAlloc;
+        /** Buffer used by the recompiler for recording fixups when generating code. */
+        R3PTRTYPE(struct IEMNATIVEFIXUP *)  paFixups;
+    } Native;
+
+//    /* Alignment. */
+//    uint64_t                auAlignment10[1];
     /** Statistics: Times TB execution was broken off before reaching the end. */
     STAMCOUNTER             StatTbExecBreaks;
     /** Statistics: Times BltIn_CheckIrq breaks out of the TB. */
@@ -1429,6 +1469,10 @@ typedef struct IEMCPU
     STAMPROFILE             StatTbThreadedInstr;
     /** Threaded TB statistics: Number of calls per TB. */
     STAMPROFILE             StatTbThreadedCalls;
+    /** Native TB statistics: Native code size per TB. */
+    STAMPROFILE             StatTbNativeCode;
+    /** Native TB statistics: Profiling native recompilation. */
+    STAMPROFILE             StatNativeRecompilation;
     /** @} */
 
     /** Data TLB.
@@ -5289,8 +5333,11 @@ extern const PFNIEMOP g_apfnIemThreadedRecompilerVecMap1[1024];
 extern const PFNIEMOP g_apfnIemThreadedRecompilerVecMap2[1024];
 extern const PFNIEMOP g_apfnIemThreadedRecompilerVecMap3[1024];
 
-DECLCALLBACK(int) iemTbInit(PVMCC pVM, uint32_t cInitialTbs, uint32_t cMaxTbs);
-void            iemThreadedTbObsolete(PVMCPUCC pVCpu, PIEMTB pTb);
+DECLCALLBACK(int)   iemTbInit(PVMCC pVM, uint32_t cInitialTbs, uint32_t cMaxTbs,
+                              uint64_t cbInitialExec, uint64_t cbMaxExec, uint32_t cbChunkExec);
+void                iemThreadedTbObsolete(PVMCPUCC pVCpu, PIEMTB pTb, bool fSafeToFree);
+void                iemTbAllocatorProcessDelayedFrees(PVMCPU pVCpu, PIEMTBALLOCATOR pTbAllocator);
+
 
 /** @todo FNIEMTHREADEDFUNC and friends may need more work... */
 #if defined(__GNUC__) && !defined(IEM_WITH_THROW_CATCH)
@@ -5346,6 +5393,11 @@ IEM_DECL_IEMTHREADEDFUNC_PROTO(iemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadin
 
 bool iemThreadedCompileEmitIrqCheckBefore(PVMCPUCC pVCpu, PIEMTB pTb);
 bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb);
+
+/* Native recompiler public bits: */
+PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb);
+int    iemExecMemAllocatorInit(PVMCPU pVCpu, uint64_t cbMax, uint64_t cbInitial, uint32_t cbChunk);
+void   iemExecMemAllocatorFree(PVMCPU pVCpu, void *pv, size_t cb);
 
 
 /** @} */

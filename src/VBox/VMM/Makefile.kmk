@@ -257,6 +257,10 @@ ifdef VBOX_WITH_IEM_RECOMPILER
  	VMMAll/IEMAllThrdTables4.cpp \
  	VMMAll/IEMAllThrdFuncs.cpp \
  	VMMAll/IEMAllThrdFuncsBltIn.cpp
+ ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
+  VBoxVMM_SOURCES += \
+  	VMMAll/IEMAllN8veRecompiler.cpp
+ endif
  VMMAll/IEMAllThrdFuncs.cpp_CXXFLAGS.win = /bigobj
 endif
 

@@ -331,6 +331,7 @@ DECL_FORCE_INLINE(uint32_t) iemCalcExecHwVirtFlags(PVMCPUCC pVCpu) RT_NOEXCEPT
     return IEM_F_X86_CTX_SVM;
 }
 
+#ifdef VBOX_INCLUDED_vmm_dbgf_h /* VM::dbgf.ro.cEnabledHwBreakpoints is only accessible if VBox/vmm/dbgf.h is included. */
 
 /**
  * Calculates IEM_F_BRK_PENDING_XXX (IEM_F_PENDING_BRK_MASK) flags.
@@ -391,10 +392,13 @@ DECL_FORCE_INLINE(void) iemRecalcExecDbgFlags(PVMCPUCC pVCpu)
                        | iemCalcExecDbgFlags(pVCpu);
 }
 
+#endif /* VBOX_INCLUDED_vmm_dbgf_h */
+
 
 #ifndef IEM_WITH_OPAQUE_DECODER_STATE
 
 # if defined(VBOX_INCLUDED_vmm_dbgf_h) || defined(DOXYGEN_RUNNING) /* dbgf.ro.cEnabledHwBreakpoints */
+
 /**
  * Initializes the execution state.
  *
@@ -457,10 +461,9 @@ DECLINLINE(void) iemInitExec(PVMCPUCC pVCpu, uint32_t fExecOpts) RT_NOEXCEPT
 #   endif
 #  endif /* VBOX_STRICT */
 }
-# endif /* VBOX_INCLUDED_vmm_dbgf_h */
 
 
-# if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
+#  if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
 /**
  * Performs a minimal reinitialization of the execution state.
  *
@@ -476,8 +479,9 @@ DECLINLINE(void) iemReInitExec(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXCEPT
     pVCpu->iem.s.fExec = iemCalcExecFlags(pVCpu) | (pVCpu->iem.s.fExec & IEM_F_USER_OPTS);
     iemOpcodeFlushHeavy(pVCpu, cbInstr);
 }
-# endif
+#  endif
 
+# endif /* VBOX_INCLUDED_vmm_dbgf_h || DOXYGEN_RUNNING */
 
 /**
  * Counterpart to #iemInitExec that undoes evil strict-build stuff.
@@ -3563,6 +3567,7 @@ DECLINLINE(uint64_t) iemVmxGetCr0Fixed0(PCVMCPUCC pVCpu, bool fVmxNonRootMode) R
 }
 
 
+# ifdef XAPIC_OFF_END /* Requires VBox/apic.h to be included before IEMInline.h. */
 /**
  * Sets virtual-APIC write emulation as pending.
  *
@@ -3587,6 +3592,7 @@ DECLINLINE(void) iemVmxVirtApicSetPendingWrite(PVMCPUCC pVCpu, uint16_t offApic)
     if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
         VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE);
 }
+# endif /* XAPIC_OFF_END */
 
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 

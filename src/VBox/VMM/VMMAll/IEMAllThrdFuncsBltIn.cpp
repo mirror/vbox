@@ -72,7 +72,11 @@
 
 static VBOXSTRICTRC iemThreadeFuncWorkerObsoleteTb(PVMCPUCC pVCpu)
 {
-    iemThreadedTbObsolete(pVCpu, pVCpu->iem.s.pCurTbR3);
+    /* We set fSafeToFree to false where as we're being called in the context
+       of a TB callback function, which for native TBs means we cannot release
+       the executable memory till we've returned our way back to iemTbExec as
+       that return path codes via the native code generated for the TB. */
+    iemThreadedTbObsolete(pVCpu, pVCpu->iem.s.pCurTbR3, false /*fSafeToFree*/);
     return VINF_IEM_REEXEC_BREAK;
 }
 

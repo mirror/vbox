@@ -139,7 +139,39 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         return VMSetError(pVM, VERR_OUT_OF_RANGE, RT_SRC_POS,
                           "InitialTbCount value %u (%#x) is higher than the MaxTbCount value %u (%#x)",
                           cInitialTbs, cInitialTbs, cMaxTbs, cMaxTbs);
-#endif
+
+    /** @cfgm{/IEM/MaxExecMem, uint64_t, 512 MiB}
+     * Max executable memory for recompiled code per EMT. */
+    uint64_t cbMaxExec = 0;
+    rc = CFGMR3QueryU64Def(pIem, "MaxExecMem", &cbMaxExec, _512M);
+    AssertLogRelRCReturn(rc, rc);
+    if (cbMaxExec < _1M || cbMaxExec > 16*_1G64)
+        return VMSetError(pVM, VERR_OUT_OF_RANGE, RT_SRC_POS,
+                          "MaxExecMem value %'RU64 (%#RX64) is out of range (min %'RU64, max %'RU64)",
+                          cbMaxExec, cbMaxExec, (uint64_t)_1M, 16*_1G64);
+
+    /** @cfgm{/IEM/ExecChunkSize, uint32_t, 0 (auto)}
+     * The executable memory allocator chunk size. */
+    uint32_t cbChunkExec = 0;
+    rc = CFGMR3QueryU32Def(pIem, "ExecChunkSize", &cbChunkExec, 0);
+    AssertLogRelRCReturn(rc, rc);
+    if (cbChunkExec != 0 && cbChunkExec != UINT32_MAX && (cbChunkExec < _1M || cbChunkExec > _256M))
+        return VMSetError(pVM, VERR_OUT_OF_RANGE, RT_SRC_POS,
+                          "ExecChunkSize value %'RU32 (%#RX32) is out of range (min %'RU32, max %'RU32)",
+                          cbChunkExec, cbChunkExec, _1M, _256M);
+
+    /** @cfgm{/IEM/InitialExecMemSize, uint64_t, 1}
+     * The initial executable memory allocator size (per EMT).  The value is
+     * rounded up to the nearest chunk size, so 1 byte means one chunk. */
+    uint64_t cbInitialExec = 0;
+    rc = CFGMR3QueryU64Def(pIem, "InitialExecMemSize", &cbInitialExec, 0);
+    AssertLogRelRCReturn(rc, rc);
+    if (cbInitialExec > cbMaxExec)
+        return VMSetError(pVM, VERR_OUT_OF_RANGE, RT_SRC_POS,
+                          "InitialExecMemSize value %'RU64 (%#RX64) is out of range (max %'RU64)",
+                          cbInitialExec, cbInitialExec, cbMaxExec);
+
+#endif /* VBOX_WITH_IEM_RECOMPILER*/
 
     /*
      * Initialize per-CPU data and register statistics.
@@ -227,7 +259,8 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
      * This is done by each EMT to try get more optimal thread/numa locality of
      * the allocations.
      */
-    rc = VMR3ReqCallWait(pVM, VMCPUID_ALL, (PFNRT)iemTbInit, 3, pVM, cInitialTbs, cMaxTbs);
+    rc = VMR3ReqCallWait(pVM, VMCPUID_ALL, (PFNRT)iemTbInit, 6,
+                         pVM, cInitialTbs, cMaxTbs, cbInitialExec, cbMaxExec, cbChunkExec);
     AssertLogRelRCReturn(rc, rc);
 #endif
 
@@ -285,8 +318,10 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
                         "Data TLB physical revision",               "/IEM/CPU%u/DataTlb-PhysRev", idCpu);
 
 #ifdef VBOX_WITH_IEM_RECOMPILER
-        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.cTbExec,             STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Executed translation block",                   "/IEM/CPU%u/re/cTbExec", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.cTbExecNative,       STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Executed native translation block",            "/IEM/CPU%u/re/cTbExecNative", idCpu);
+        STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.cTbExecThreaded,     STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        "Executed threaded translation block",          "/IEM/CPU%u/re/cTbExecThreaded", idCpu);
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.StatTbExecBreaks,    STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                         "Times TB execution was interrupted/broken off", "/IEM/CPU%u/re/cTbExecBreaks", idCpu);
 
