@@ -396,7 +396,7 @@ static PRTHEAPPAGEBLOCK rtHeapPageIntBlockAllocatorAlloc(PRTHEAPPAGE pHeap)
     ASMBitSetRange(pChunk->bmAlloc, pChunk->cBlocks, RTHEAPPAGEBLOCKALLOCCHUNK_MAX_BLOCKS);
     RTListPrepend(&pHeap->BlockAllocatorChunks, &pChunk->ListEntry);
 
-    /* 
+    /*
      * Allocate the first one.
      */
     ASMBitSet(pChunk->bmAlloc, 0);
