@@ -15267,7 +15267,7 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
         mNetworkAdapters[slot]->i_applyDefaults(osType);
 
 #ifdef VBOX_WITH_ARMV8_HARDCODED_DEFAULTS
-	/* Configuration is done in Machine::init(). */
+    /* Configuration is done in Machine::init(). */
 #else
     /* Apply serial port defaults */
     for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); ++slot)
