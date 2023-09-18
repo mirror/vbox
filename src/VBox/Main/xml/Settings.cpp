@@ -7588,11 +7588,8 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                                                    ? CPUArchitecture_ARMv8_64 : CPUArchitecture_x86)
         || !hw.nvramSettings.areDefaultSettings())
     {
-        xml::ElementNode *pelmFirmwareOrBIOS;
-        if (m->sv >= SettingsVersion_v1_20) /* Since settings v1.20 the element was renamed to "Firmware". */
-            pelmFirmwareOrBIOS = pelmHardware->createChild("Firmware");
-        else
-            pelmFirmwareOrBIOS = pelmHardware->createChild("BIOS");
+        /* Settings < v1.20 also had a "Firmware" element, but that only stored the firmware type. */
+        xml::ElementNode *pelmFirmware = pelmHardware->createChild("Firmware");
 
         if (   (m->sv >= SettingsVersion_v1_9)
             && (hw.firmwareSettings.firmwareType >= FirmwareType_EFI)
@@ -7608,8 +7605,14 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                 case FirmwareType_EFIDUAL:  pcszFirmware = "EFIDUAL"; break;
                 default:                    pcszFirmware = "None";    break;
             }
-            pelmFirmwareOrBIOS->setAttribute("type", pcszFirmware);
+            pelmFirmware->setAttribute("type", pcszFirmware);
         }
+
+        xml::ElementNode *pelmFirmwareOrBIOS;
+        if (m->sv >= SettingsVersion_v1_20) /* Since settings v1.20 the rest also gets stored in "Firmware". */
+            pelmFirmwareOrBIOS = pelmFirmware; /* Use the "Firmware" element from above. */
+        else /* For settings < v1.20 the rest was stored in the "BIOS" element. */
+            pelmFirmwareOrBIOS = pelmHardware->createChild("BIOS");
 
         if (!hw.firmwareSettings.fACPIEnabled)
             pelmFirmwareOrBIOS->createChild("ACPI")->setAttribute("enabled", hw.firmwareSettings.fACPIEnabled);
