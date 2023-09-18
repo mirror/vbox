@@ -3702,6 +3702,8 @@ typedef union RTPTRUNION
     long            RT_FAR *pl;
     /** Pointer to a long value. */
     unsigned long   RT_FAR *pul;
+    /** Pointer to a byte value. */
+    uint8_t         RT_FAR *pb;
     /** Pointer to a 8-bit unsigned value. */
     uint8_t         RT_FAR *pu8;
     /** Pointer to a 16-bit unsigned value. */
@@ -3749,6 +3751,8 @@ typedef union RTCPTRUNION
     long const      RT_FAR *pl;
     /** Pointer to a long value. */
     unsigned long const RT_FAR *pul;
+    /** Pointer to a byte  value. */
+    uint8_t const   RT_FAR *pb;
     /** Pointer to a 8-bit unsigned value. */
     uint8_t const   RT_FAR *pu8;
     /** Pointer to a 16-bit unsigned value. */
@@ -3796,6 +3800,8 @@ typedef union RTVPTRUNION
     long volatile  RT_FAR *pl;
     /** Pointer to a long value. */
     unsigned long volatile RT_FAR *pul;
+    /** Pointer to a byte value. */
+    uint8_t volatile RT_FAR  *pb;
     /** Pointer to a 8-bit unsigned value. */
     uint8_t volatile RT_FAR  *pu8;
     /** Pointer to a 16-bit unsigned value. */
@@ -3843,6 +3849,8 @@ typedef union RTCVPTRUNION
     long const volatile             RT_FAR *pl;
     /** Pointer to a long value. */
     unsigned long const volatile    RT_FAR *pul;
+    /** Pointer to a byte value. */
+    uint8_t const volatile          RT_FAR *pb;
     /** Pointer to a 8-bit unsigned value. */
     uint8_t const volatile          RT_FAR *pu8;
     /** Pointer to a 16-bit unsigned value. */
