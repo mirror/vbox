@@ -372,19 +372,19 @@ void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
         strHDName = strDVDName;
     }
 
-    /* Limit the AHCI port count if it's used because windows has trouble with
-       too many ports and other guest (OS X in particular) may take extra long
-       to boot: */
-    if (hdStorageControllerType == KStorageControllerType_IntelAhci)
-        hdCtr.SetPortCount(1 + (dvdStorageControllerType == KStorageControllerType_IntelAhci));
-    else if (dvdStorageControllerType == KStorageControllerType_IntelAhci)
-        dvdCtr.SetPortCount(1);
-
     KPlatformArchitecture const platformArch = comPlatform.GetArchitecture();
     switch (platformArch)
     {
         case KPlatformArchitecture_x86:
         {
+            /* Limit the AHCI port count if it's used because windows has trouble with
+               too many ports and other guest (OS X in particular) may take extra long
+               to boot: */
+            if (hdStorageControllerType == KStorageControllerType_IntelAhci)
+                hdCtr.SetPortCount(1 + (dvdStorageControllerType == KStorageControllerType_IntelAhci));
+            else if (dvdStorageControllerType == KStorageControllerType_IntelAhci)
+                dvdCtr.SetPortCount(1);
+
             CPlatformX86 comPlatformX86 = comPlatform.GetX86();
 
             /* Turn on PAE, if recommended: */
@@ -401,7 +401,11 @@ void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
 #ifdef VBOX_WITH_VIRT_ARMV8
         case KPlatformArchitecture_ARM:
         {
-            /** @todo BUGBUG ARM stuff goes here. */
+            /* When using VirtioSCSI as the HDD storage controller and the DVD Drive is on that same controller,
+             * we have to raise the port count, as VirtioSCSI only configures one port per default. */
+            if (   hdCtr 				   == dvdCtr
+                && hdStorageControllerType == KStorageControllerType_VirtioSCSI)
+                hdCtr.SetPortCount(2);
             break;
         }
 #endif
