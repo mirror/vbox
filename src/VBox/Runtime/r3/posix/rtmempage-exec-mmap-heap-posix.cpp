@@ -118,15 +118,21 @@ typedef struct RTHEAPPAGEBLOCK
 {
     /** The AVL tree node core (void pointer range). */
     AVLRPVNODECORE      Core;
+    /** The number of free pages. */
+    uint32_t            cFreePages;
+    /** Pointer back to the heap. */
+    PRTHEAPPAGE         pHeap;
     /** Allocation bitmap.  Set bits marks allocated pages. */
     uint32_t            bmAlloc[RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT / 32];
     /** Allocation boundrary bitmap.  Set bits marks the start of
      *  allocations. */
     uint32_t            bmFirst[RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT / 32];
-    /** The number of free pages. */
-    uint32_t            cFreePages;
-    /** Pointer back to the heap. */
-    PRTHEAPPAGE         pHeap;
+    /** Bitmap tracking pages where RTMEMPAGEALLOC_F_ADVISE_LOCKED has been
+     *  successfully applied. */
+    uint32_t            bmLockedAdviced[RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT / 32];
+    /** Bitmap tracking pages where RTMEMPAGEALLOC_F_ADVISE_NO_DUMP has been
+     *  successfully applied. */
+    uint32_t            bmNoDumpAdviced[RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT / 32];
 } RTHEAPPAGEBLOCK;
 
 
@@ -155,51 +161,106 @@ static RTHEAPPAGE   g_MemPagePosixHeap;
 static RTHEAPPAGE   g_MemExecPosixHeap;
 
 
-#ifdef RT_OS_OS2
-/*
- * A quick mmap/munmap mockup for avoid duplicating lots of good code.
+/**
+ * Native allocation worker for the heap-based RTMemPage implementation.
  */
-# define INCL_BASE
-# include <os2.h>
-# undef  MAP_PRIVATE
-# define MAP_PRIVATE    0
-# undef  MAP_ANONYMOUS
-# define MAP_ANONYMOUS  0
-# undef  MAP_FAILED
-# define MAP_FAILED  (void *)-1
-# undef mmap
-# define mmap   iprt_mmap
-# undef munmap
-# define munmap iprt_munmap
-
-static void *mmap(void *pvWhere, size_t cb, int fProt, int fFlags, int fd, off_t off)
+DECLHIDDEN(int) rtMemPageNativeAlloc(size_t cb, uint32_t fFlags, void **ppvRet)
 {
-    NOREF(pvWhere); NOREF(fd); NOREF(off);
-    void   *pv    = NULL;
-    ULONG  fAlloc = OBJ_ANY | PAG_COMMIT;
-    if (fProt & PROT_EXEC)
+#ifdef RT_OS_OS2
+    ULONG fAlloc = OBJ_ANY | PAG_COMMIT | PAG_READ | PAG_WRITE;
+    if (fFlags & RTMEMPAGEALLOC_F_EXECUTABLE)
         fAlloc |= PAG_EXECUTE;
-    if (fProt & PROT_READ)
-        fAlloc |= PAG_READ;
-    if (fProt & PROT_WRITE)
-        fAlloc |= PAG_WRITE;
-    APIRET rc = DosAllocMem(&pv, cb, fAlloc);
+    APIRET rc = DosAllocMem(ppvRet, cb, fAlloc);
     if (rc == NO_ERROR)
-        return pv;
-    errno = ENOMEM;
-    return MAP_FAILED;
-}
+        return VINF_SUCCESS;
+    return RTErrConvertFromOS2(rc);
 
-static int munmap(void *pv, size_t cb)
-{
-    APIRET rc = DosFreeMem(pv);
-    if (rc == NO_ERROR)
-        return 0;
-    errno = EINVAL;
-    return -1;
-}
-
+#else
+    void *pvRet = mmap(NULL, cb,
+                       PROT_READ | PROT_WRITE | (fFlags & RTMEMPAGEALLOC_F_EXECUTABLE ? PROT_EXEC : 0),
+                       MAP_PRIVATE | MAP_ANONYMOUS,
+                       -1, 0);
+    if (pvRet != MAP_FAILED)
+    {
+        *ppvRet = pvRet;
+        return VINF_SUCCESS;
+    }
+    *ppvRet = NULL;
+    return RTErrConvertFromErrno(errno);
 #endif
+}
+
+
+/**
+ * Native allocation worker for the heap-based RTMemPage implementation.
+ */
+DECLHIDDEN(int) rtMemPageNativeFree(void *pv, size_t cb)
+{
+#ifdef RT_OS_OS2
+    APIRET rc = DosFreeMem(pv);
+    AssertMsgReturn(rc == NO_ERROR, ("rc=%d pv=%p cb=%#zx\n", rc, pv, cb), RTErrConvertFromOS2(rc));
+    RT_NOREF(cb);
+#else
+    int rc = munmap(pv, cb);
+    AssertMsgReturn(rc == 0, ("rc=%d pv=%p cb=%#zx errno=%d\n", rc, pv, cb, errno), RTErrConvertFromErrno(errno));
+#endif
+    return VINF_SUCCESS;
+}
+
+
+DECLHIDDEN(uint32_t) rtMemPageNativeApplyFlags(void *pv, size_t cb, uint32_t fFlags)
+{
+    uint32_t fRet = 0;
+#ifdef RT_OS_OS2
+    RT_NOREF(pv, cb, fFlags);
+#else /* !RT_OS_OS2 */
+    if (fFlags & RTMEMPAGEALLOC_F_ADVISE_LOCKED)
+    {
+        int rc = mlock(pv, cb);
+# ifndef RT_OS_SOLARIS /* mlock(3C) on Solaris requires the priv_lock_memory privilege */
+        AssertMsg(rc == 0, ("mlock %p LB %#zx -> %d errno=%d\n", pv, cb, rc, errno));
+# endif
+        if (rc == 0)
+            fRet |= RTMEMPAGEALLOC_F_ADVISE_LOCKED;
+    }
+
+# ifdef MADV_DONTDUMP
+    if (fFlags & RTMEMPAGEALLOC_F_ADVISE_NO_DUMP)
+    {
+        int rc = madvise(pv, cb, MADV_DONTDUMP);
+        AssertMsg(rc == 0, ("madvice %p LB %#zx MADV_DONTDUMP -> %d errno=%d\n", pv, cb, rc, errno));
+        if (rc == 0)
+            fRet |= RTMEMPAGEALLOC_F_ADVISE_NO_DUMP;
+    }
+# endif
+#endif /* !RT_OS_OS2 */
+    return fRet;
+}
+
+
+DECLHIDDEN(void) rtMemPageNativeRevertFlags(void *pv, size_t cb, uint32_t fFlags)
+{
+#ifdef RT_OS_OS2
+    RT_NOREF(pv, cb, fFlags);
+#else /* !RT_OS_OS2 */
+    if (fFlags & RTMEMPAGEALLOC_F_ADVISE_LOCKED)
+    {
+        int rc = munlock(pv, cb);
+        AssertMsg(rc == 0, ("munlock %p LB %#zx -> %d errno=%d\n", pv, cb, rc, errno));
+        RT_NOREF(rc);
+    }
+
+# if defined(MADV_DONTDUMP) && defined(MADV_DODUMP)
+    if (fFlags & RTMEMPAGEALLOC_F_ADVISE_NO_DUMP)
+    {
+        int rc = madvise(pv, cb, MADV_DODUMP);
+        AssertMsg(rc == 0, ("madvice %p LB %#zx MADV_DODUMP -> %d errno=%d\n", pv, cb, rc, errno));
+        RT_NOREF(rc);
+    }
+# endif
+#endif /* !RT_OS_OS2 */
+}
+
 
 /**
  * Initializes the heap.
@@ -238,41 +299,27 @@ static int RTHeapPageInit(PRTHEAPPAGE pHeap, bool fExec)
 static int RTHeapPageDelete(PRTHEAPPAGE pHeap)
 {
     NOREF(pHeap);
-    return VERR_NOT_IMPLEMENTED;
+    pHeap->u32Magic = ~RTHEAPPAGE_MAGIC;
+    return VINF_SUCCESS;
 }
 
 
 /**
  * Applies flags to an allocation.
  *
+ * @return  Flags that eeds to be reverted upon free.
  * @param   pv              The allocation.
  * @param   cb              The size of the allocation (page aligned).
  * @param   fFlags          RTMEMPAGEALLOC_F_XXX.
  */
-DECLINLINE(void) rtMemPagePosixApplyFlags(void *pv, size_t cb, uint32_t fFlags)
+DECLINLINE(uint32_t) rtMemPagePosixApplyFlags(void *pv, size_t cb, uint32_t fFlags)
 {
-#ifndef RT_OS_OS2
-    if (fFlags & RTMEMPAGEALLOC_F_ADVISE_LOCKED)
-    {
-        int rc = mlock(pv, cb);
-# ifndef RT_OS_SOLARIS /* mlock(3C) on Solaris requires the priv_lock_memory privilege */
-        AssertMsg(rc == 0, ("mlock %p LB %#zx -> %d errno=%d\n", pv, cb, rc, errno));
-# endif
-        NOREF(rc);
-    }
-
-# ifdef MADV_DONTDUMP
-    if (fFlags & RTMEMPAGEALLOC_F_ADVISE_NO_DUMP)
-    {
-        int rc = madvise(pv, cb, MADV_DONTDUMP);
-        AssertMsg(rc == 0, ("madvice %p LB %#zx MADV_DONTDUMP -> %d errno=%d\n", pv, cb, rc, errno));
-        NOREF(rc);
-    }
-# endif
-#endif
-
+    uint32_t fHandled = 0;
+    if (fFlags & (RTMEMPAGEALLOC_F_ADVISE_LOCKED | RTMEMPAGEALLOC_F_ADVISE_NO_DUMP))
+        fHandled = rtMemPageNativeApplyFlags(pv, cb, fFlags);
     if (fFlags & RTMEMPAGEALLOC_F_ZERO)
         RT_BZERO(pv, cb);
+    return fHandled;
 }
 
 
@@ -301,7 +348,14 @@ DECLINLINE(int) rtHeapPageAllocFromBlockSuccess(PRTHEAPPAGEBLOCK pBlock, uint32_
     *ppv = pv;
 
     if (fFlags)
-        rtMemPagePosixApplyFlags(pv, cPages << PAGE_SHIFT, fFlags);
+    {
+        uint32_t fHandled = rtMemPagePosixApplyFlags(pv, cPages << PAGE_SHIFT, fFlags);
+        Assert(!(fHandled & ~(RTMEMPAGEALLOC_F_ADVISE_LOCKED | RTMEMPAGEALLOC_F_ADVISE_NO_DUMP)));
+        if (fHandled & RTMEMPAGEALLOC_F_ADVISE_LOCKED)
+            ASMBitSetRange(&pBlock->bmLockedAdviced[0], iPage, iPage + cPages);
+        if (fHandled & RTMEMPAGEALLOC_F_ADVISE_NO_DUMP)
+            ASMBitSetRange(&pBlock->bmNoDumpAdviced[0], iPage, iPage + cPages);
+    }
 
     return VINF_SUCCESS;
 }
@@ -442,19 +496,16 @@ static int rtHeapPageAllocLocked(PRTHEAPPAGE pHeap, size_t cPages, const char *p
     }
 
     /*
-     * Didn't find anytyhing, so expand the heap with a new block.
+     * Didn't find anything, so expand the heap with a new block.
      */
     RTCritSectLeave(&pHeap->CritSect);
-    void *pvPages;
-    pvPages = mmap(NULL, RTMEMPAGEPOSIX_BLOCK_SIZE,
-                   PROT_READ | PROT_WRITE | (pHeap->fExec ? PROT_EXEC : 0),
-                   MAP_PRIVATE | MAP_ANONYMOUS,
-                   -1, 0);
-    if (pvPages == MAP_FAILED)
+
+    void *pvPages = NULL;
+    rc = rtMemPageNativeAlloc(RTMEMPAGEPOSIX_BLOCK_SIZE, pHeap->fExec ? RTMEMPAGEALLOC_F_EXECUTABLE : 0, &pvPages);
+    if (RT_FAILURE(rc))
     {
         RTCritSectEnter(&pHeap->CritSect);
-        return RTErrConvertFromErrno(errno);
-
+        return rc;
     }
     /** @todo Eliminate this rtMemBaseAlloc dependency! */
     PRTHEAPPAGEBLOCK pBlock;
@@ -466,7 +517,7 @@ static int rtHeapPageAllocLocked(PRTHEAPPAGE pHeap, size_t cPages, const char *p
         pBlock = (PRTHEAPPAGEBLOCK)rtMemBaseAlloc(sizeof(*pBlock));
     if (!pBlock)
     {
-        munmap(pvPages, RTMEMPAGEPOSIX_BLOCK_SIZE);
+        rtMemPageNativeFree(pvPages, RTMEMPAGEPOSIX_BLOCK_SIZE);
         RTCritSectEnter(&pHeap->CritSect);
         return VERR_NO_MEMORY;
     }
@@ -601,6 +652,14 @@ static int RTHeapPageFree(PRTHEAPPAGE pHeap, void *pv, size_t cPages)
                 /*
                  * Free the memory.
                  */
+                uint32_t fRevert = (ASMBitTest(&pBlock->bmLockedAdviced[0], iPage) ? RTMEMPAGEALLOC_F_ADVISE_LOCKED  : 0)
+                                 | (ASMBitTest(&pBlock->bmNoDumpAdviced[0], iPage) ? RTMEMPAGEALLOC_F_ADVISE_NO_DUMP : 0);
+                if (fRevert)
+                {
+                    rtMemPageNativeRevertFlags(pv, cPages << PAGE_SHIFT, fRevert);
+                    ASMBitClearRange(&pBlock->bmLockedAdviced[0], iPage, iPage + cPages);
+                    ASMBitClearRange(&pBlock->bmNoDumpAdviced[0], iPage, iPage + cPages);
+                }
                 ASMBitClearRange(&pBlock->bmAlloc[0], iPage, iPage + cPages);
                 ASMBitClear(&pBlock->bmFirst[0], iPage);
                 pBlock->cFreePages += cPages;
@@ -637,7 +696,7 @@ static int RTHeapPageFree(PRTHEAPPAGE pHeap, void *pv, size_t cPages)
                         pHeap->pHint2      = NULL;
                         RTCritSectLeave(&pHeap->CritSect);
 
-                        munmap(pBlock->Core.Key, RTMEMPAGEPOSIX_BLOCK_SIZE);
+                        rtMemPageNativeFree(pBlock->Core.Key, RTMEMPAGEPOSIX_BLOCK_SIZE);
                         pBlock->Core.Key = pBlock->Core.KeyLast = NULL;
                         pBlock->cFreePages = 0;
 #ifdef RTALLOC_REPLACE_MALLOC
@@ -704,17 +763,13 @@ static void *rtMemPagePosixAlloc(size_t cb, const char *pszTag, uint32_t fFlags,
     cb = RT_ALIGN_Z(cb, PAGE_SIZE);
 
     /*
-     * If the allocation is relatively large, we use mmap/munmap directly.
+     * If the allocation is relatively large, we use mmap/VirtualAlloc/DosAllocMem directly.
      */
     void *pv = NULL; /* shut up gcc */
     if (cb >= RTMEMPAGEPOSIX_MMAP_THRESHOLD)
     {
-
-        pv = mmap(NULL, cb,
-                  PROT_READ | PROT_WRITE | (pHeap == &g_MemExecPosixHeap ? PROT_EXEC : 0),
-                  MAP_PRIVATE | MAP_ANONYMOUS,
-                  -1, 0);
-        if (pv != MAP_FAILED)
+        int rc = rtMemPageNativeAlloc(cb, fFlags, &pv);
+        if (RT_SUCCESS(rc))
         {
             AssertPtr(pv);
 
@@ -758,13 +813,10 @@ static void rtMemPagePosixFree(void *pv, size_t cb, PRTHEAPPAGE pHeap1, PRTHEAPP
     cb = RT_ALIGN_Z(cb, PAGE_SIZE);
 
     /*
-     * If the allocation is relatively large, we use mmap/munmap directly.
+     * If the allocation is relatively large, we used mmap/VirtualAlloc/DosAllocMem directly.
      */
     if (cb >= RTMEMPAGEPOSIX_MMAP_THRESHOLD)
-    {
-        int rc = munmap(pv, cb);
-        AssertMsg(rc == 0, ("rc=%d pv=%p cb=%#zx\n", rc, pv, cb)); NOREF(rc);
-    }
+        rtMemPageNativeFree(pv, cb);
     else
     {
         int rc = RTHeapPageFree(pHeap1, pv, cb >> PAGE_SHIFT);
