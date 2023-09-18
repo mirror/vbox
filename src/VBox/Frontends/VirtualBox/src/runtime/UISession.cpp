@@ -2695,8 +2695,8 @@ bool UISession::preprocessInitialization()
         }
 
         /* Enumerate all the virtual network adapters: */
-        CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
-        CPlatform comPlatform = machine().GetPlatform();
+        CPlatform comPlatform             = machine().GetPlatform();
+        CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(comPlatform.GetArchitecture());
         const ulong cCount = comProperties.GetMaxNetworkAdapters(comPlatform.GetChipsetType());
         for (ulong uAdapterIndex = 0; uAdapterIndex < cCount; ++uAdapterIndex)
         {
