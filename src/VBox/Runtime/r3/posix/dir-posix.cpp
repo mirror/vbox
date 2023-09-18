@@ -108,7 +108,7 @@ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode, uint32_t fCreate)
                 if (fCreate & RTDIRCREATE_FLAGS_IGNORE_UMASK)
                 {
                     if (   stat(pszNativePath, &st)
-                        || (st.st_mode & 07777) != (fMode & 07777) )
+                        || (st.st_mode & 07777u) != (fMode & 07777u) )
                         chmod(pszNativePath, fMode & RTFS_UNIX_MASK);
                 }
                 rc = VINF_SUCCESS;
