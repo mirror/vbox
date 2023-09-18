@@ -811,6 +811,7 @@ RuntimeBaseR3_SOURCES      := \
 	r3/init.cpp \
 	r3/init-data.cpp \
 	r3/process-data.cpp \
+	r3/mempage-heap.cpp \
 	r3/memsafer-r3.cpp \
 	r3/path.cpp \
 	r3/RTPathTemp.cpp \
@@ -1060,7 +1061,7 @@ RuntimeBaseR3_SOURCES.win = \
 	r3/win/RTSystemFirmware-win.cpp \
 	r3/win/RTSystemQueryTotalRam-win.cpp \
 	r3/win/RTTimeZoneGetCurrent-win.cpp \
-	r3/win/alloc-win.cpp \
+	r3/win/RTMemProtect-win.cpp \
 	r3/win/allocex-win.cpp \
 	r3/win/dir-win.cpp \
 	$(if-expr defined(VBOX_WITH_NT_DIRENUM),r3/nt/direnum-r3-nt.cpp,r3/win/direnum-win.cpp generic/RTDirQueryInfo-generic.cpp) \
@@ -1071,6 +1072,7 @@ RuntimeBaseR3_SOURCES.win = \
 	r3/win/krnlmod-win.cpp \
 	r3/win/ldrNative-win.cpp \
 	r3/win/localipc-win.cpp \
+	r3/win/mempage-native-win.cpp \
 	r3/win/mp-win.cpp \
 	r3/win/path-win.cpp \
 	r3/win/pathint-win.cpp \
@@ -1157,7 +1159,7 @@ RuntimeBaseR3_SOURCES.linux = \
 	r3/posix/RTTimeNow-posix.cpp \
 	r3/posix/RTTimeSet-posix.cpp \
 	r3/posix/RTTimeZoneGetCurrent-posix.cpp \
-	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
+	r3/posix/mempage-native-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/errvars-posix.cpp \
@@ -1274,6 +1276,7 @@ RuntimeBaseR3_SOURCES.os2   = \
 	r3/generic/dirrel-r3-generic.cpp \
 	r3/os2/RTTimeSet-os2.cpp \
 	r3/os2/filelock-os2.cpp \
+	r3/os2/mempage-native-os2.cpp \
 	r3/os2/mp-os2.cpp \
 	r3/os2/pipe-os2.cpp \
 	r3/os2/rtProcInitExePath-os2.cpp \
@@ -1302,7 +1305,6 @@ RuntimeBaseR3_SOURCES.os2   = \
 	r3/posix/path-posix.cpp \
 	r3/posix/path2-posix.cpp \
 	r3/posix/pathhost-posix.cpp \
-	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
 	r3/posix/RTPathUserDocuments-posix.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/process-creation-posix.cpp \
@@ -1381,7 +1383,7 @@ RuntimeBaseR3_SOURCES.darwin = \
 	r3/posix/fs3-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/localipc-posix.cpp \
-	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
+	r3/posix/mempage-native-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/path2-posix.cpp \
 	r3/posix/pipe-posix.cpp \
@@ -1482,7 +1484,7 @@ RuntimeBaseR3_SOURCES.freebsd = \
 	r3/posix/fs3-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/localipc-posix.cpp \
-	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
+	r3/posix/mempage-native-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/path2-posix.cpp \
 	r3/posix/pathhost-posix.cpp \
@@ -1566,7 +1568,7 @@ RuntimeBaseR3_SOURCES.netbsd = \
 	r3/posix/fs2-posix.cpp \
 	r3/posix/fs3-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
-	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
+	r3/posix/mempage-native-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/path2-posix.cpp \
 	r3/posix/pathhost-posix.cpp \
@@ -1641,7 +1643,7 @@ RuntimeBaseR3_SOURCES.solaris = \
 	r3/posix/fs3-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/localipc-posix.cpp \
-	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
+	r3/posix/mempage-native-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/path2-posix.cpp \
 	r3/posix/pathhost-posix.cpp \
@@ -1748,7 +1750,7 @@ RuntimeBaseR3_SOURCES.haiku = \
 	r3/posix/fs3-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/localipc-posix.cpp \
-	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
+	r3/posix/mempage-native-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/path2-posix.cpp \
 	r3/posix/pathhost-posix.cpp \
@@ -2548,6 +2550,7 @@ RuntimeBldProg_SOURCES          = \
 	r3/init.cpp \
 	r3/init-data.cpp \
 	r3/process-data.cpp \
+	r3/mempage-heap.cpp \
 	r3/memsafer-r3.cpp \
 	r3/path.cpp \
 	r3/RTPathTemp.cpp \
@@ -2633,7 +2636,7 @@ RuntimeBldProg_SOURCES.win = \
 	r3/nt/RTPathQueryInfo-nt.cpp \
 	r3/nt/RTPathSetMode-r3-nt.cpp \
 	r3/nt/RTProcQueryParent-r3-nt.cpp \
-	r3/win/alloc-win.cpp \
+	r3/win/RTMemProtect-win.cpp \
 	r3/win/allocex-win.cpp \
 	r3/win/dir-win.cpp \
 	r3/win/env-win.cpp \
@@ -2641,6 +2644,7 @@ RuntimeBldProg_SOURCES.win = \
 	r3/win/fileio-win.cpp \
 	r3/win/init-win.cpp \
 	r3/win/ldrNative-win.cpp \
+	r3/win/mempage-native-win.cpp \
 	r3/win/path-win.cpp \
 	r3/win/pathint-win.cpp \
 	r3/win/pipe-win.cpp \
@@ -2715,6 +2719,7 @@ RuntimeBldProg_SOURCES.os2 += \
 	r3/generic/allocex-r3-generic.cpp \
 	r3/generic/dirrel-r3-generic.cpp \
 	r3/os2/filelock-os2.cpp \
+	r3/os2/mempage-native-os2.cpp \
 	r3/os2/mp-os2.cpp \
 	r3/os2/pipe-os2.cpp \
 	r3/os2/rtProcInitExePath-os2.cpp \
@@ -2739,7 +2744,6 @@ RuntimeBldProg_SOURCES.os2 += \
 	r3/posix/process-posix.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
-	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
 	r3/posix/RTMemProtect-posix.cpp \
 	r3/posix/RTPathUserDocuments-posix.cpp \
 	r3/posix/RTPathUserHome-posix.cpp \
@@ -2750,10 +2754,8 @@ RuntimeBldProg_SOURCES.os2 += \
 	r3/posix/utf8-posix.cpp
 
 RuntimeBldProg_SOURCES.linux = $(filter-out \
-		r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
 		r3/memsafer-r3.cpp \
-		, $(RuntimeBaseR3_SOURCES.linux)) \
-	r3/posix/rtmempage-exec-mmap-posix.cpp
+		, $(RuntimeBaseR3_SOURCES.linux))
 
 ## @todo reduce linux, solaris and freebsd sources too.
 
@@ -2794,10 +2796,8 @@ ifndef VBOX_WITH_NOCRT_STATIC
 endif
 
 RuntimeGuestR3_SOURCES.linux             = $(filter-out \
-		r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
 		r3/memsafer-r3.cpp \
-		, $(RuntimeR3_SOURCES.linux)) \
-	r3/posix/rtmempage-exec-mmap-posix.cpp
+		, $(RuntimeR3_SOURCES.linux))
 
 
 #

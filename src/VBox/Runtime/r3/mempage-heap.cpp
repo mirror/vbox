@@ -50,14 +50,8 @@
 #include <iprt/once.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
-/*#include "internal/mem.h"*/
+#include "internal/mem.h"
 
-#include <stdlib.h>
-#include <errno.h>
-#include <sys/mman.h>
-#if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
-# define MAP_ANONYMOUS MAP_ANON
-#endif
 
 
 /*********************************************************************************************************************************
@@ -194,122 +188,6 @@ static RTONCE       g_MemPageHeapInitOnce = RTONCE_INITIALIZER;
 static RTHEAPPAGE   g_MemPageHeap;
 /** The exec page heap. */
 static RTHEAPPAGE   g_MemExecHeap;
-
-
-/**
- * Native allocation worker for the heap-based RTMemPage implementation.
- */
-DECLHIDDEN(int) rtMemPageNativeAlloc(size_t cb, uint32_t fFlags, void **ppvRet)
-{
-#ifdef RT_OS_OS2
-    ULONG fAlloc = OBJ_ANY | PAG_COMMIT | PAG_READ | PAG_WRITE;
-    if (fFlags & RTMEMPAGEALLOC_F_EXECUTABLE)
-        fAlloc |= PAG_EXECUTE;
-    APIRET rc = DosAllocMem(ppvRet, cb, fAlloc);
-    if (rc == NO_ERROR)
-        return VINF_SUCCESS;
-    return RTErrConvertFromOS2(rc);
-
-#else
-    void *pvRet = mmap(NULL, cb,
-                       PROT_READ | PROT_WRITE | (fFlags & RTMEMPAGEALLOC_F_EXECUTABLE ? PROT_EXEC : 0),
-                       MAP_PRIVATE | MAP_ANONYMOUS,
-                       -1, 0);
-    if (pvRet != MAP_FAILED)
-    {
-        *ppvRet = pvRet;
-        return VINF_SUCCESS;
-    }
-    *ppvRet = NULL;
-    return RTErrConvertFromErrno(errno);
-#endif
-}
-
-
-/**
- * Native allocation worker for the heap-based RTMemPage implementation.
- */
-DECLHIDDEN(int) rtMemPageNativeFree(void *pv, size_t cb)
-{
-#ifdef RT_OS_OS2
-    APIRET rc = DosFreeMem(pv);
-    AssertMsgReturn(rc == NO_ERROR, ("rc=%d pv=%p cb=%#zx\n", rc, pv, cb), RTErrConvertFromOS2(rc));
-    RT_NOREF(cb);
-#else
-    int rc = munmap(pv, cb);
-    AssertMsgReturn(rc == 0, ("rc=%d pv=%p cb=%#zx errno=%d\n", rc, pv, cb, errno), RTErrConvertFromErrno(errno));
-#endif
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Native page allocator worker that applies advisory flags to the memory.
- *
- * @returns Set of flags succesfully applied
- * @param   pv      The memory block address.
- * @param   cb      The size of the memory block.
- * @param   fFlags  The flags to apply (may include other flags too, ignore).
- */
-DECLHIDDEN(uint32_t) rtMemPageNativeApplyFlags(void *pv, size_t cb, uint32_t fFlags)
-{
-    uint32_t fRet = 0;
-#ifdef RT_OS_OS2
-    RT_NOREF(pv, cb, fFlags);
-#else /* !RT_OS_OS2 */
-    if (fFlags & RTMEMPAGEALLOC_F_ADVISE_LOCKED)
-    {
-        int rc = mlock(pv, cb);
-# ifndef RT_OS_SOLARIS /* mlock(3C) on Solaris requires the priv_lock_memory privilege */
-        AssertMsg(rc == 0, ("mlock %p LB %#zx -> %d errno=%d\n", pv, cb, rc, errno));
-# endif
-        if (rc == 0)
-            fRet |= RTMEMPAGEALLOC_F_ADVISE_LOCKED;
-    }
-
-# ifdef MADV_DONTDUMP
-    if (fFlags & RTMEMPAGEALLOC_F_ADVISE_NO_DUMP)
-    {
-        int rc = madvise(pv, cb, MADV_DONTDUMP);
-        AssertMsg(rc == 0, ("madvice %p LB %#zx MADV_DONTDUMP -> %d errno=%d\n", pv, cb, rc, errno));
-        if (rc == 0)
-            fRet |= RTMEMPAGEALLOC_F_ADVISE_NO_DUMP;
-    }
-# endif
-#endif /* !RT_OS_OS2 */
-    return fRet;
-}
-
-
-/**
- * Reverts flags previously applied by rtMemPageNativeApplyFlags().
- *
- * @param   pv      The memory block address.
- * @param   cb      The size of the memory block.
- * @param   fFlags  The flags to revert.
- */
-DECLHIDDEN(void) rtMemPageNativeRevertFlags(void *pv, size_t cb, uint32_t fFlags)
-{
-#ifdef RT_OS_OS2
-    RT_NOREF(pv, cb, fFlags);
-#else /* !RT_OS_OS2 */
-    if (fFlags & RTMEMPAGEALLOC_F_ADVISE_LOCKED)
-    {
-        int rc = munlock(pv, cb);
-        AssertMsg(rc == 0, ("munlock %p LB %#zx -> %d errno=%d\n", pv, cb, rc, errno));
-        RT_NOREF(rc);
-    }
-
-# if defined(MADV_DONTDUMP) && defined(MADV_DODUMP)
-    if (fFlags & RTMEMPAGEALLOC_F_ADVISE_NO_DUMP)
-    {
-        int rc = madvise(pv, cb, MADV_DODUMP);
-        AssertMsg(rc == 0, ("madvice %p LB %#zx MADV_DODUMP -> %d errno=%d\n", pv, cb, rc, errno));
-        RT_NOREF(rc);
-    }
-# endif
-#endif /* !RT_OS_OS2 */
-}
 
 
 /**
@@ -468,8 +346,8 @@ DECLINLINE(int) rtHeapPageAllocFromBlockSuccess(PRTHEAPPAGEBLOCK pBlock, uint32_
     PRTHEAPPAGE pHeap = pBlock->pHeap;
 
     ASMBitSet(&pBlock->bmFirst[0], iPage);
-    pBlock->cFreePages -= cPages;
-    pHeap->cFreePages  -= cPages;
+    pBlock->cFreePages -= (uint32_t)cPages;
+    pHeap->cFreePages  -= (uint32_t)cPages;
     if (!pHeap->pHint2 || pHeap->pHint2->cFreePages < pBlock->cFreePages)
         pHeap->pHint2 = pBlock;
     pHeap->cAllocCalls++;
@@ -539,7 +417,7 @@ DECLINLINE(int) rtHeapPageAllocFromBlock(PRTHEAPPAGEBLOCK pBlock, size_t cPages,
         while (   iPage >= 0
                && (unsigned)iPage <= RTMEMPAGE_BLOCK_PAGE_COUNT - cPages)
         {
-            if (rtHeapPageIsPageRangeFree(pBlock, iPage + 1, cPages - 1))
+            if (rtHeapPageIsPageRangeFree(pBlock, iPage + 1, (uint32_t)cPages - 1))
             {
                 ASMBitSetRange(&pBlock->bmAlloc[0], iPage, iPage + cPages);
                 return rtHeapPageAllocFromBlockSuccess(pBlock, iPage, cPages, fFlags, ppv);
@@ -759,10 +637,10 @@ static int RTHeapPageFree(PRTHEAPPAGE pHeap, void *pv, size_t cPages)
             fOk = fOk && ASMBitTest(&pBlock->bmFirst[0], iPage);
             /* Check that the range ends at an allocation boundrary. */
             fOk = fOk && (   iPage + cPages == RTMEMPAGE_BLOCK_PAGE_COUNT
-                          || ASMBitTest(&pBlock->bmFirst[0], iPage + cPages)
-                          || !ASMBitTest(&pBlock->bmAlloc[0], iPage + cPages));
+                          || ASMBitTest(&pBlock->bmFirst[0], iPage + (uint32_t)cPages)
+                          || !ASMBitTest(&pBlock->bmAlloc[0], iPage + (uint32_t)cPages));
             /* Check the other pages. */
-            uint32_t const iLastPage = iPage + cPages - 1;
+            uint32_t const iLastPage = iPage + (uint32_t)cPages - 1;
             for (uint32_t i = iPage + 1; i < iLastPage && fOk; i++)
                 fOk = ASMBitTest(&pBlock->bmAlloc[0], i)
                    && !ASMBitTest(&pBlock->bmFirst[0], i);
@@ -781,8 +659,8 @@ static int RTHeapPageFree(PRTHEAPPAGE pHeap, void *pv, size_t cPages)
                 }
                 ASMBitClearRange(&pBlock->bmAlloc[0], iPage, iPage + cPages);
                 ASMBitClear(&pBlock->bmFirst[0], iPage);
-                pBlock->cFreePages += cPages;
-                pHeap->cFreePages  += cPages;
+                pBlock->cFreePages += (uint32_t)cPages;
+                pHeap->cFreePages  += (uint32_t)cPages;
                 pHeap->cFreeCalls++;
                 if (!pHeap->pHint1 || pHeap->pHint1->cFreePages < pBlock->cFreePages)
                     pHeap->pHint1 = pBlock;
