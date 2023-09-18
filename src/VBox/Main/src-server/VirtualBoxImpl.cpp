@@ -2132,9 +2132,6 @@ HRESULT VirtualBox::createMachine(const com::Utf8Str &aSettingsFile,
      * with the host architecture.
      */
     aArchitecture = PlatformProperties::s_getHostPlatformArchitecture();
-# ifdef DEBUG_andy
-    aArchitecture = PlatformArchitecture_ARM; /** Testing stuff. */
-# endif
 #endif
 
     StringsList llGroups;
