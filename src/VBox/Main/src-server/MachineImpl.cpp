@@ -11803,11 +11803,32 @@ void Machine::i_commit()
     size_t const newSize = PlatformProperties::s_getMaxNetworkAdapters(enmChipset);
     if (mPeer)
     {
+        size_t const oldSize     = mNetworkAdapters.size();
+        size_t const oldPeerSize = mPeer->mNetworkAdapters.size();
+
         /* commit everything, even the ones which will go away */
-        for (size_t slot = 0; slot < mNetworkAdapters.size(); slot++)
+        for (size_t slot = 0; slot < oldSize; slot++)
             mNetworkAdapters[slot]->i_commit();
         /* copy over the new entries, creating a peer and uninit the original */
-        mPeer->mNetworkAdapters.resize(RT_MAX(newSize, mPeer->mNetworkAdapters.size()));
+        mPeer->mNetworkAdapters.resize(RT_MAX(newSize, oldPeerSize));
+        /* make sure to have enough room for iterating over the (newly added) slots down below */
+        if (newSize > oldSize)
+        {
+            mNetworkAdapters.resize(newSize);
+
+            com::Utf8Str           osTypeId;
+            ComObjPtr<GuestOSType> osType = NULL;
+            hrc = getOSTypeId(osTypeId);
+            if (SUCCEEDED(hrc))
+                hrc = mParent->i_findGuestOSType(Bstr(osTypeId), osType);
+
+            for (size_t slot = oldSize; slot < newSize; slot++)
+            {
+                mNetworkAdapters[slot].createObject();
+                mNetworkAdapters[slot]->init(this, (ULONG)slot);
+                mNetworkAdapters[slot]->i_applyDefaults(SUCCEEDED(hrc) ? osType : NULL);
+            }
+        }
         for (size_t slot = 0; slot < newSize; slot++)
         {
             /* look if this adapter has a peer device */
@@ -11822,9 +11843,9 @@ void Machine::i_commit()
             mPeer->mNetworkAdapters[slot] = peer;
         }
         /* uninit any no longer needed network adapters */
-        for (size_t slot = newSize; slot < mNetworkAdapters.size(); ++slot)
+        for (size_t slot = newSize; slot < oldSize; ++slot)
             mNetworkAdapters[slot]->uninit();
-        for (size_t slot = newSize; slot < mPeer->mNetworkAdapters.size(); ++slot)
+        for (size_t slot = newSize; slot < oldPeerSize; ++slot)
         {
             if (mPeer->mNetworkAdapters[slot])
                 mPeer->mNetworkAdapters[slot]->uninit();
