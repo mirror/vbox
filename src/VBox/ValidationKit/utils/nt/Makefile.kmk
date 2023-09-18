@@ -69,6 +69,7 @@ ntDisplay_LIBS      = d3d11.lib
 ntDisplay_SOURCES   = ntDisplay.cpp
 ntDisplay_VBOX_IMPORT_CHECKER.win.amd64 = w8
 ntDisplay_VBOX_IMPORT_CHECKER.win.x86 = w8
+ntDisplay_CFLAGS.win += -wd5039 #winbase.h(7722): warning C5039: 'TpSetCallbackCleanupGroup': pointer or reference to potentially throwing function passed to 'extern "C"' function under -EHc. Undefined behavior may occur if this function throws an exception.
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
