@@ -64,13 +64,13 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 /** Threshold at which to we switch to simply calling mmap. */
-#define RTMEMPAGEPOSIX_MMAP_THRESHOLD   _1M
+#define RTMEMPAGE_NATIVE_THRESHOLD      _1M
 /** The size of a heap block (power of two) - in bytes. */
-#define RTMEMPAGEPOSIX_BLOCK_SIZE       _2M
+#define RTMEMPAGE_BLOCK_SIZE            _4M
 
-AssertCompile(RTMEMPAGEPOSIX_BLOCK_SIZE == (RTMEMPAGEPOSIX_BLOCK_SIZE / PAGE_SIZE) * PAGE_SIZE);
 /** The number of pages per heap block. */
-#define RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT (RTMEMPAGEPOSIX_BLOCK_SIZE / PAGE_SIZE)
+#define RTMEMPAGE_BLOCK_PAGE_COUNT      (RTMEMPAGE_BLOCK_SIZE / PAGE_SIZE)
+AssertCompile(RTMEMPAGE_BLOCK_SIZE == RTMEMPAGE_BLOCK_PAGE_COUNT * PAGE_SIZE);
 
 
 /*********************************************************************************************************************************
@@ -127,16 +127,16 @@ typedef struct RTHEAPPAGEBLOCK
     /** Pointer back to the heap. */
     PRTHEAPPAGE         pHeap;
     /** Allocation bitmap.  Set bits marks allocated pages. */
-    uint32_t            bmAlloc[RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT / 32];
+    uint32_t            bmAlloc[RTMEMPAGE_BLOCK_PAGE_COUNT / 32];
     /** Allocation boundrary bitmap.  Set bits marks the start of
      *  allocations. */
-    uint32_t            bmFirst[RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT / 32];
+    uint32_t            bmFirst[RTMEMPAGE_BLOCK_PAGE_COUNT / 32];
     /** Bitmap tracking pages where RTMEMPAGEALLOC_F_ADVISE_LOCKED has been
      *  successfully applied. */
-    uint32_t            bmLockedAdviced[RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT / 32];
+    uint32_t            bmLockedAdviced[RTMEMPAGE_BLOCK_PAGE_COUNT / 32];
     /** Bitmap tracking pages where RTMEMPAGEALLOC_F_ADVISE_NO_DUMP has been
      *  successfully applied. */
-    uint32_t            bmNoDumpAdviced[RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT / 32];
+    uint32_t            bmNoDumpAdviced[RTMEMPAGE_BLOCK_PAGE_COUNT / 32];
 } RTHEAPPAGEBLOCK;
 
 
@@ -189,11 +189,11 @@ typedef struct RTHEAPPAGEALLOCARGS
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** Initialize once structure. */
-static RTONCE       g_MemPagePosixInitOnce = RTONCE_INITIALIZER;
+static RTONCE       g_MemPageHeapInitOnce = RTONCE_INITIALIZER;
 /** The page heap. */
-static RTHEAPPAGE   g_MemPagePosixHeap;
+static RTHEAPPAGE   g_MemPageHeap;
 /** The exec page heap. */
-static RTHEAPPAGE   g_MemExecPosixHeap;
+static RTHEAPPAGE   g_MemExecHeap;
 
 
 /**
@@ -243,6 +243,14 @@ DECLHIDDEN(int) rtMemPageNativeFree(void *pv, size_t cb)
 }
 
 
+/**
+ * Native page allocator worker that applies advisory flags to the memory.
+ *
+ * @returns Set of flags succesfully applied
+ * @param   pv      The memory block address.
+ * @param   cb      The size of the memory block.
+ * @param   fFlags  The flags to apply (may include other flags too, ignore).
+ */
 DECLHIDDEN(uint32_t) rtMemPageNativeApplyFlags(void *pv, size_t cb, uint32_t fFlags)
 {
     uint32_t fRet = 0;
@@ -273,6 +281,13 @@ DECLHIDDEN(uint32_t) rtMemPageNativeApplyFlags(void *pv, size_t cb, uint32_t fFl
 }
 
 
+/**
+ * Reverts flags previously applied by rtMemPageNativeApplyFlags().
+ *
+ * @param   pv      The memory block address.
+ * @param   cb      The size of the memory block.
+ * @param   fFlags  The flags to revert.
+ */
 DECLHIDDEN(void) rtMemPageNativeRevertFlags(void *pv, size_t cb, uint32_t fFlags)
 {
 #ifdef RT_OS_OS2
@@ -427,7 +442,7 @@ static void rtHeapPageIntBlockAllocatorFree(PRTHEAPPAGE pHeap, PRTHEAPPAGEBLOCK 
  * @param   cb              The size of the allocation (page aligned).
  * @param   fFlags          RTMEMPAGEALLOC_F_XXX.
  */
-DECLINLINE(uint32_t) rtMemPagePosixApplyFlags(void *pv, size_t cb, uint32_t fFlags)
+DECLINLINE(uint32_t) rtMemPageApplyFlags(void *pv, size_t cb, uint32_t fFlags)
 {
     uint32_t fHandled = 0;
     if (fFlags & (RTMEMPAGEALLOC_F_ADVISE_LOCKED | RTMEMPAGEALLOC_F_ADVISE_NO_DUMP))
@@ -464,7 +479,7 @@ DECLINLINE(int) rtHeapPageAllocFromBlockSuccess(PRTHEAPPAGEBLOCK pBlock, uint32_
 
     if (fFlags)
     {
-        uint32_t fHandled = rtMemPagePosixApplyFlags(pv, cPages << PAGE_SHIFT, fFlags);
+        uint32_t fHandled = rtMemPageApplyFlags(pv, cPages << PAGE_SHIFT, fFlags);
         Assert(!(fHandled & ~(RTMEMPAGEALLOC_F_ADVISE_LOCKED | RTMEMPAGEALLOC_F_ADVISE_NO_DUMP)));
         if (fHandled & RTMEMPAGEALLOC_F_ADVISE_LOCKED)
             ASMBitSetRange(&pBlock->bmLockedAdviced[0], iPage, iPage + cPages);
@@ -511,7 +526,7 @@ DECLINLINE(int) rtHeapPageAllocFromBlock(PRTHEAPPAGEBLOCK pBlock, size_t cPages,
 {
     if (pBlock->cFreePages >= cPages)
     {
-        int iPage = ASMBitFirstClear(&pBlock->bmAlloc[0], RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT);
+        int iPage = ASMBitFirstClear(&pBlock->bmAlloc[0], RTMEMPAGE_BLOCK_PAGE_COUNT);
         Assert(iPage >= 0);
 
         /* special case: single page. */
@@ -522,7 +537,7 @@ DECLINLINE(int) rtHeapPageAllocFromBlock(PRTHEAPPAGEBLOCK pBlock, size_t cPages,
         }
 
         while (   iPage >= 0
-               && (unsigned)iPage <= RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT - cPages)
+               && (unsigned)iPage <= RTMEMPAGE_BLOCK_PAGE_COUNT - cPages)
         {
             if (rtHeapPageIsPageRangeFree(pBlock, iPage + 1, cPages - 1))
             {
@@ -531,10 +546,10 @@ DECLINLINE(int) rtHeapPageAllocFromBlock(PRTHEAPPAGEBLOCK pBlock, size_t cPages,
             }
 
             /* next */
-            iPage = ASMBitNextSet(&pBlock->bmAlloc[0], RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT, iPage);
-            if (iPage < 0 || (unsigned)iPage >= RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT - 1)
+            iPage = ASMBitNextSet(&pBlock->bmAlloc[0], RTMEMPAGE_BLOCK_PAGE_COUNT, iPage);
+            if (iPage < 0 || (unsigned)iPage >= RTMEMPAGE_BLOCK_PAGE_COUNT - 1)
                 break;
-            iPage = ASMBitNextClear(&pBlock->bmAlloc[0], RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT, iPage);
+            iPage = ASMBitNextClear(&pBlock->bmAlloc[0], RTMEMPAGE_BLOCK_PAGE_COUNT, iPage);
         }
     }
 
@@ -619,7 +634,7 @@ static int rtHeapPageAllocLocked(PRTHEAPPAGE pHeap, size_t cPages, const char *p
     RTCritSectLeave(&pHeap->CritSect);
 
     void *pvPages = NULL;
-    rc = rtMemPageNativeAlloc(RTMEMPAGEPOSIX_BLOCK_SIZE, pHeap->fExec ? RTMEMPAGEALLOC_F_EXECUTABLE : 0, &pvPages);
+    rc = rtMemPageNativeAlloc(RTMEMPAGE_BLOCK_SIZE, pHeap->fExec ? RTMEMPAGEALLOC_F_EXECUTABLE : 0, &pvPages);
 
     RTCritSectEnter(&pHeap->CritSect);
     if (RT_FAILURE(rc))
@@ -630,13 +645,13 @@ static int rtHeapPageAllocLocked(PRTHEAPPAGE pHeap, size_t cPages, const char *p
 
     RT_ZERO(*pBlock);
     pBlock->Core.Key        = pvPages;
-    pBlock->Core.KeyLast    = (uint8_t *)pvPages + RTMEMPAGEPOSIX_BLOCK_SIZE - 1;
-    pBlock->cFreePages      = RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT;
+    pBlock->Core.KeyLast    = (uint8_t *)pvPages + RTMEMPAGE_BLOCK_SIZE - 1;
+    pBlock->cFreePages      = RTMEMPAGE_BLOCK_PAGE_COUNT;
     pBlock->pHeap           = pHeap;
 
     bool fRc = RTAvlrPVInsert(&pHeap->BlockTree, &pBlock->Core); Assert(fRc); NOREF(fRc);
-    pHeap->cFreePages      +=  RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT;
-    pHeap->cHeapPages      +=  RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT;
+    pHeap->cFreePages      +=  RTMEMPAGE_BLOCK_PAGE_COUNT;
+    pHeap->cHeapPages      +=  RTMEMPAGE_BLOCK_PAGE_COUNT;
 
     /*
      * Grab memory from the new block (cannot fail).
@@ -667,7 +682,7 @@ static int RTHeapPageAlloc(PRTHEAPPAGE pHeap, size_t cPages, const char *pszTag,
     *ppv = NULL;
     AssertPtrReturn(pHeap, VERR_INVALID_HANDLE);
     AssertReturn(pHeap->u32Magic == RTHEAPPAGE_MAGIC, VERR_INVALID_HANDLE);
-    AssertMsgReturn(cPages < RTMEMPAGEPOSIX_BLOCK_SIZE, ("%#zx\n", cPages), VERR_OUT_OF_RANGE);
+    AssertMsgReturn(cPages < RTMEMPAGE_BLOCK_SIZE, ("%#zx\n", cPages), VERR_OUT_OF_RANGE);
 
     /*
      * Grab the lock and call a worker with many returns.
@@ -694,7 +709,7 @@ static int RTHeapPageAlloc(PRTHEAPPAGE pHeap, size_t cPages, const char *pszTag,
 static DECLCALLBACK(int) rtHeapPageFindUnusedBlockCallback(PAVLRPVNODECORE pNode, void *pvUser)
 {
     PRTHEAPPAGEBLOCK pBlock = RT_FROM_MEMBER(pNode, RTHEAPPAGEBLOCK, Core);
-    if (pBlock->cFreePages == RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT)
+    if (pBlock->cFreePages == RTMEMPAGE_BLOCK_PAGE_COUNT)
     {
         *(PRTHEAPPAGEBLOCK *)pvUser = pBlock;
         return 1;
@@ -739,11 +754,11 @@ static int RTHeapPageFree(PRTHEAPPAGE pHeap, void *pv, size_t cPages)
              */
             uint32_t const iPage = (uint32_t)(((uintptr_t)pv - (uintptr_t)pBlock->Core.Key) >> PAGE_SHIFT);
             /* Check the range is within the block. */
-            bool fOk = iPage + cPages <= RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT;
+            bool fOk = iPage + cPages <= RTMEMPAGE_BLOCK_PAGE_COUNT;
             /* Check that it's the start of an allocation. */
             fOk = fOk && ASMBitTest(&pBlock->bmFirst[0], iPage);
             /* Check that the range ends at an allocation boundrary. */
-            fOk = fOk && (   iPage + cPages == RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT
+            fOk = fOk && (   iPage + cPages == RTMEMPAGE_BLOCK_PAGE_COUNT
                           || ASMBitTest(&pBlock->bmFirst[0], iPage + cPages)
                           || !ASMBitTest(&pBlock->bmAlloc[0], iPage + cPages));
             /* Check the other pages. */
@@ -777,9 +792,9 @@ static int RTHeapPageFree(PRTHEAPPAGE pHeap, void *pv, size_t cPages)
                 /*
                  * Shrink the heap. Not very efficient because of the AVL tree.
                  */
-                if (   pHeap->cFreePages >= RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT * 3
+                if (   pHeap->cFreePages >= RTMEMPAGE_BLOCK_PAGE_COUNT * 3
                     && pHeap->cFreePages >= pHeap->cHeapPages / 2 /* 50% free */
-                    && pHeap->cFreeCalls - pHeap->uLastMinimizeCall > RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT
+                    && pHeap->cFreeCalls - pHeap->uLastMinimizeCall > RTMEMPAGE_BLOCK_PAGE_COUNT
                    )
                 {
                     uint32_t cFreePageTarget = pHeap->cHeapPages / 4; /* 25% free */
@@ -794,13 +809,13 @@ static int RTHeapPageFree(PRTHEAPPAGE pHeap, void *pv, size_t cPages)
                             break;
 
                         void *pv2 = RTAvlrPVRemove(&pHeap->BlockTree, pBlock->Core.Key); Assert(pv2); NOREF(pv2);
-                        pHeap->cHeapPages -= RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT;
-                        pHeap->cFreePages -= RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT;
+                        pHeap->cHeapPages -= RTMEMPAGE_BLOCK_PAGE_COUNT;
+                        pHeap->cFreePages -= RTMEMPAGE_BLOCK_PAGE_COUNT;
                         pHeap->pHint1      = NULL;
                         pHeap->pHint2      = NULL;
                         RTCritSectLeave(&pHeap->CritSect);
 
-                        rtMemPageNativeFree(pBlock->Core.Key, RTMEMPAGEPOSIX_BLOCK_SIZE);
+                        rtMemPageNativeFree(pBlock->Core.Key, RTMEMPAGE_BLOCK_SIZE);
                         pBlock->Core.Key = pBlock->Core.KeyLast = NULL;
                         pBlock->cFreePages = 0;
                         rtHeapPageIntBlockAllocatorFree(pHeap, pBlock);
@@ -813,7 +828,7 @@ static int RTHeapPageFree(PRTHEAPPAGE pHeap, void *pv, size_t cPages)
                 rc = VERR_INVALID_POINTER;
         }
         else
-            rc = VERR_NOT_FOUND; /* Distinct return code for this so rtMemPagePosixFree and others can try alternative heaps. */
+            rc = VERR_NOT_FOUND; /* Distinct return code for this so RTMemPageFree and others can try alternative heaps. */
 
         RTCritSectLeave(&pHeap->CritSect);
     }
@@ -828,16 +843,16 @@ static int RTHeapPageFree(PRTHEAPPAGE pHeap, void *pv, size_t cPages)
  * @returns IPRT status code
  * @param   pvUser              Unused.
  */
-static DECLCALLBACK(int) rtMemPagePosixInitOnce(void *pvUser)
+static DECLCALLBACK(int) rtMemPageInitOnce(void *pvUser)
 {
     NOREF(pvUser);
-    int rc = RTHeapPageInit(&g_MemPagePosixHeap, false /*fExec*/);
+    int rc = RTHeapPageInit(&g_MemPageHeap, false /*fExec*/);
     if (RT_SUCCESS(rc))
     {
-        rc = RTHeapPageInit(&g_MemExecPosixHeap, true /*fExec*/);
+        rc = RTHeapPageInit(&g_MemExecHeap, true /*fExec*/);
         if (RT_SUCCESS(rc))
             return rc;
-        RTHeapPageDelete(&g_MemPagePosixHeap);
+        RTHeapPageDelete(&g_MemPageHeap);
     }
     return rc;
 }
@@ -852,7 +867,7 @@ static DECLCALLBACK(int) rtMemPagePosixInitOnce(void *pvUser)
  * @param   fFlags              RTMEMPAGEALLOC_F_XXX.
  * @param   pHeap               The heap to use.
  */
-static void *rtMemPagePosixAlloc(size_t cb, const char *pszTag, uint32_t fFlags, PRTHEAPPAGE pHeap)
+static void *rtMemPageAllocInner(size_t cb, const char *pszTag, uint32_t fFlags, PRTHEAPPAGE pHeap)
 {
     /*
      * Validate & adjust the input.
@@ -865,7 +880,7 @@ static void *rtMemPagePosixAlloc(size_t cb, const char *pszTag, uint32_t fFlags,
      * If the allocation is relatively large, we use mmap/VirtualAlloc/DosAllocMem directly.
      */
     void *pv = NULL; /* shut up gcc */
-    if (cb >= RTMEMPAGEPOSIX_MMAP_THRESHOLD)
+    if (cb >= RTMEMPAGE_NATIVE_THRESHOLD)
     {
         int rc = rtMemPageNativeAlloc(cb, fFlags, &pv);
         if (RT_SUCCESS(rc))
@@ -873,14 +888,14 @@ static void *rtMemPagePosixAlloc(size_t cb, const char *pszTag, uint32_t fFlags,
             AssertPtr(pv);
 
             if (fFlags)
-                rtMemPagePosixApplyFlags(pv, cb, fFlags);
+                rtMemPageApplyFlags(pv, cb, fFlags);
         }
         else
             pv = NULL;
     }
     else
     {
-        int rc = RTOnce(&g_MemPagePosixInitOnce, rtMemPagePosixInitOnce, NULL);
+        int rc = RTOnce(&g_MemPageHeapInitOnce, rtMemPageInitOnce, NULL);
         if (RT_SUCCESS(rc))
             rc = RTHeapPageAlloc(pHeap, cb >> PAGE_SHIFT, pszTag, fFlags, &pv);
         if (RT_FAILURE(rc))
@@ -891,15 +906,27 @@ static void *rtMemPagePosixAlloc(size_t cb, const char *pszTag, uint32_t fFlags,
 }
 
 
-/**
- * Free memory allocated by rtMemPagePosixAlloc.
- *
- * @param   pv      The address of the memory to free.
- * @param   cb      The size.
- * @param   pHeap1  The most probable heap.
- * @param   pHeap2  The less probable heap.
- */
-static void rtMemPagePosixFree(void *pv, size_t cb, PRTHEAPPAGE pHeap1, PRTHEAPPAGE pHeap2)
+RTDECL(void *) RTMemPageAllocTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
+{
+    return rtMemPageAllocInner(cb, pszTag, 0, &g_MemPageHeap);
+}
+
+
+RTDECL(void *) RTMemPageAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
+{
+    return rtMemPageAllocInner(cb, pszTag, RTMEMPAGEALLOC_F_ZERO, &g_MemPageHeap);
+}
+
+
+RTDECL(void *) RTMemPageAllocExTag(size_t cb, uint32_t fFlags, const char *pszTag) RT_NO_THROW_DEF
+{
+    AssertReturn(!(fFlags & ~RTMEMPAGEALLOC_F_VALID_MASK), NULL);
+    return rtMemPageAllocInner(cb, pszTag, fFlags,
+                               !(fFlags & RTMEMPAGEALLOC_F_EXECUTABLE) ? &g_MemPageHeap : &g_MemExecHeap);
+}
+
+
+RTDECL(void) RTMemPageFree(void *pv, size_t cb) RT_NO_THROW_DEF
 {
     /*
      * Validate & adjust the input.
@@ -914,43 +941,14 @@ static void rtMemPagePosixFree(void *pv, size_t cb, PRTHEAPPAGE pHeap1, PRTHEAPP
     /*
      * If the allocation is relatively large, we used mmap/VirtualAlloc/DosAllocMem directly.
      */
-    if (cb >= RTMEMPAGEPOSIX_MMAP_THRESHOLD)
+    if (cb >= RTMEMPAGE_NATIVE_THRESHOLD)
         rtMemPageNativeFree(pv, cb);
     else
     {
-        int rc = RTHeapPageFree(pHeap1, pv, cb >> PAGE_SHIFT);
+        int rc = RTHeapPageFree(&g_MemPageHeap, pv, cb >> PAGE_SHIFT);
         if (rc == VERR_NOT_FOUND)
-            rc = RTHeapPageFree(pHeap2, pv, cb >> PAGE_SHIFT);
+            rc = RTHeapPageFree(&g_MemExecHeap, pv, cb >> PAGE_SHIFT);
         AssertRC(rc);
     }
-}
-
-
-
-
-
-RTDECL(void *) RTMemPageAllocTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
-{
-    return rtMemPagePosixAlloc(cb, pszTag, 0, &g_MemPagePosixHeap);
-}
-
-
-RTDECL(void *) RTMemPageAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
-{
-    return rtMemPagePosixAlloc(cb, pszTag, RTMEMPAGEALLOC_F_ZERO, &g_MemPagePosixHeap);
-}
-
-
-RTDECL(void *) RTMemPageAllocExTag(size_t cb, uint32_t fFlags, const char *pszTag) RT_NO_THROW_DEF
-{
-    AssertReturn(!(fFlags & ~RTMEMPAGEALLOC_F_VALID_MASK), NULL);
-    return rtMemPagePosixAlloc(cb, pszTag, fFlags,
-                               !(fFlags & RTMEMPAGEALLOC_F_EXECUTABLE) ? &g_MemPagePosixHeap : &g_MemExecPosixHeap);
-}
-
-
-RTDECL(void) RTMemPageFree(void *pv, size_t cb) RT_NO_THROW_DEF
-{
-    rtMemPagePosixFree(pv, cb, &g_MemPagePosixHeap, &g_MemExecPosixHeap);
 }
 
