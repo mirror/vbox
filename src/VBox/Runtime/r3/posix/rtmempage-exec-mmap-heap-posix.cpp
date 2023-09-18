@@ -46,11 +46,11 @@
 #include <iprt/avl.h>
 #include <iprt/critsect.h>
 #include <iprt/errcore.h>
+#include <iprt/list.h>
 #include <iprt/once.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
-#include "internal/mem.h"
-#include "../alloc-ef.h"
+/*#include "internal/mem.h"*/
 
 #include <stdlib.h>
 #include <errno.h>
@@ -64,9 +64,10 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 /** Threshold at which to we switch to simply calling mmap. */
-#define RTMEMPAGEPOSIX_MMAP_THRESHOLD   _128K
+#define RTMEMPAGEPOSIX_MMAP_THRESHOLD   _1M
 /** The size of a heap block (power of two) - in bytes. */
 #define RTMEMPAGEPOSIX_BLOCK_SIZE       _2M
+
 AssertCompile(RTMEMPAGEPOSIX_BLOCK_SIZE == (RTMEMPAGEPOSIX_BLOCK_SIZE / PAGE_SIZE) * PAGE_SIZE);
 /** The number of pages per heap block. */
 #define RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT (RTMEMPAGEPOSIX_BLOCK_SIZE / PAGE_SIZE)
@@ -101,6 +102,9 @@ typedef struct RTHEAPPAGE
     PRTHEAPPAGEBLOCK    pHint1;
     /** Allocation hint no 2 (last alloc). */
     PRTHEAPPAGEBLOCK    pHint2;
+    /** The allocation chunks for the RTHEAPPAGEBLOCK allocator
+     * (RTHEAPPAGEBLOCKALLOCCHUNK). */
+    RTLISTANCHOR        BlockAllocatorChunks;
     /** Critical section protecting the heap. */
     RTCRITSECT          CritSect;
     /** Set if the memory must allocated with execute access. */
@@ -134,6 +138,37 @@ typedef struct RTHEAPPAGEBLOCK
      *  successfully applied. */
     uint32_t            bmNoDumpAdviced[RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT / 32];
 } RTHEAPPAGEBLOCK;
+
+
+/**
+ * Allocation chunk of RTHEAPPAGEBLOCKALLOCCHUNK structures.
+ *
+ * This is backed by an 64KB allocation and non-present blocks will be marked as
+ * allocated in bmAlloc.
+ */
+typedef struct RTHEAPPAGEBLOCKALLOCCHUNK
+{
+    /** List entry. */
+    RTLISTNODE          ListEntry;
+    /** Number of free RTHEAPPAGEBLOCK structures here. */
+    uint32_t            cFree;
+    /** Number of blocks in aBlocks. */
+    uint32_t            cBlocks;
+    /** Allocation bitmap. */
+    uint32_t            bmAlloc[ARCH_BITS == 32 ? 28 : 26];
+    /** Block array. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
+    RTHEAPPAGEBLOCK     aBlocks[RT_FLEXIBLE_ARRAY];
+} RTHEAPPAGEBLOCKALLOCCHUNK;
+AssertCompileMemberAlignment(RTHEAPPAGEBLOCKALLOCCHUNK, bmAlloc, 8);
+AssertCompileMemberAlignment(RTHEAPPAGEBLOCKALLOCCHUNK, aBlocks, 64);
+/** Pointer to an allocation chunk of RTHEAPPAGEBLOCKALLOCCHUNK structures. */
+typedef RTHEAPPAGEBLOCKALLOCCHUNK *PRTHEAPPAGEBLOCKALLOCCHUNK;
+
+/** Max number of blocks one RTHEAPPAGEBLOCKALLOCCHUNK can track (896/832). */
+#define RTHEAPPAGEBLOCKALLOCCHUNK_MAX_BLOCKS    ((ARCH_BITS == 32 ? 28 : 26) * 32)
+/** The chunk size for the block allocator. */
+#define RTHEAPPAGEBLOCKALLOCCHUNK_ALLOC_SIZE    _64K
 
 
 /**
@@ -284,6 +319,7 @@ static int RTHeapPageInit(PRTHEAPPAGE pHeap, bool fExec)
         pHeap->uLastMinimizeCall    = 0;
         pHeap->BlockTree            = NULL;
         pHeap->fExec                = fExec;
+        RTListInit(&pHeap->BlockAllocatorChunks);
         pHeap->u32Magic             = RTHEAPPAGE_MAGIC;
     }
     return rc;
@@ -301,6 +337,85 @@ static int RTHeapPageDelete(PRTHEAPPAGE pHeap)
     NOREF(pHeap);
     pHeap->u32Magic = ~RTHEAPPAGE_MAGIC;
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Allocates a RTHEAPPAGEBLOCK.
+ *
+ * @returns Pointer to RTHEAPPAGEBLOCK on success, NULL on failure.
+ * @param   pHeap   The heap this is for.
+ */
+static PRTHEAPPAGEBLOCK rtHeapPageIntBlockAllocatorAlloc(PRTHEAPPAGE pHeap)
+{
+    /*
+     * Locate a chunk with space and grab a block from it.
+     */
+    PRTHEAPPAGEBLOCKALLOCCHUNK pChunk;
+    RTListForEach(&pHeap->BlockAllocatorChunks, pChunk, RTHEAPPAGEBLOCKALLOCCHUNK, ListEntry)
+    {
+        if (pChunk->cFree > 0)
+        {
+            int idxBlock = ASMBitFirstClear(&pChunk->bmAlloc[0], RT_MIN(RTHEAPPAGEBLOCKALLOCCHUNK_MAX_BLOCKS, pChunk->cBlocks));
+            if (idxBlock >= 0)
+            {
+                ASMBitSet(&pChunk->bmAlloc[0], idxBlock);
+                pChunk->cFree -= 1;
+                return &pChunk->aBlocks[idxBlock];
+            }
+            AssertFailed();
+        }
+    }
+
+    /*
+     * Allocate a new chunk and return the first block in it.
+     */
+    int rc = rtMemPageNativeAlloc(RTHEAPPAGEBLOCKALLOCCHUNK_ALLOC_SIZE, 0, (void **)&pChunk);
+    AssertRCReturn(rc, NULL);
+    pChunk->cBlocks = (RTHEAPPAGEBLOCKALLOCCHUNK_ALLOC_SIZE - RT_UOFFSETOF(RTHEAPPAGEBLOCKALLOCCHUNK, aBlocks))
+                    / sizeof(pChunk->aBlocks[0]);
+    AssertStmt(pChunk->cBlocks < RTHEAPPAGEBLOCKALLOCCHUNK_MAX_BLOCKS, pChunk->cBlocks = RTHEAPPAGEBLOCKALLOCCHUNK_MAX_BLOCKS);
+    pChunk->cFree   = pChunk->cBlocks;
+
+    RT_ZERO(pChunk->bmAlloc);
+    ASMBitSetRange(pChunk->bmAlloc, pChunk->cBlocks, RTHEAPPAGEBLOCKALLOCCHUNK_MAX_BLOCKS);
+    RTListPrepend(&pHeap->BlockAllocatorChunks, &pChunk->ListEntry);
+
+    /* 
+     * Allocate the first one.
+     */
+    ASMBitSet(pChunk->bmAlloc, 0);
+    pChunk->cFree -= 1;
+
+    return &pChunk->aBlocks[0];
+}
+
+
+/**
+ * Frees a RTHEAPPAGEBLOCK.
+ *
+ * @param   pHeap   The heap this is for.
+ * @param   pBlock  The block to free.
+ */
+static void rtHeapPageIntBlockAllocatorFree(PRTHEAPPAGE pHeap, PRTHEAPPAGEBLOCK pBlock)
+{
+    /*
+     * Locate the chunk the block belongs to and mark it as freed.
+     */
+    PRTHEAPPAGEBLOCKALLOCCHUNK pChunk;
+    RTListForEach(&pHeap->BlockAllocatorChunks, pChunk, RTHEAPPAGEBLOCKALLOCCHUNK, ListEntry)
+    {
+        if ((uintptr_t)pBlock - (uintptr_t)pChunk < RTHEAPPAGEBLOCKALLOCCHUNK_ALLOC_SIZE)
+        {
+            uintptr_t const idxBlock = (uintptr_t)(pBlock - &pChunk->aBlocks[0]);
+            if (ASMBitTestAndClear(&pChunk->bmAlloc[0], idxBlock))
+                pChunk->cFree++;
+            else
+                AssertMsgFailed(("pBlock=%p idxBlock=%#zx\n", pBlock, idxBlock));
+            return;
+        }
+    }
+    AssertFailed();
 }
 
 
@@ -417,7 +532,7 @@ DECLINLINE(int) rtHeapPageAllocFromBlock(PRTHEAPPAGEBLOCK pBlock, size_t cPages,
 
             /* next */
             iPage = ASMBitNextSet(&pBlock->bmAlloc[0], RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT, iPage);
-            if (iPage < 0 || iPage >= RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT - 1)
+            if (iPage < 0 || (unsigned)iPage >= RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT - 1)
                 break;
             iPage = ASMBitNextClear(&pBlock->bmAlloc[0], RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT, iPage);
         }
@@ -498,28 +613,19 @@ static int rtHeapPageAllocLocked(PRTHEAPPAGE pHeap, size_t cPages, const char *p
     /*
      * Didn't find anything, so expand the heap with a new block.
      */
+    PRTHEAPPAGEBLOCK const pBlock = rtHeapPageIntBlockAllocatorAlloc(pHeap);
+    AssertReturn(pBlock, VERR_NO_MEMORY);
+
     RTCritSectLeave(&pHeap->CritSect);
 
     void *pvPages = NULL;
     rc = rtMemPageNativeAlloc(RTMEMPAGEPOSIX_BLOCK_SIZE, pHeap->fExec ? RTMEMPAGEALLOC_F_EXECUTABLE : 0, &pvPages);
+
+    RTCritSectEnter(&pHeap->CritSect);
     if (RT_FAILURE(rc))
     {
-        RTCritSectEnter(&pHeap->CritSect);
+        rtHeapPageIntBlockAllocatorFree(pHeap, pBlock);
         return rc;
-    }
-    /** @todo Eliminate this rtMemBaseAlloc dependency! */
-    PRTHEAPPAGEBLOCK pBlock;
-#ifdef RTALLOC_REPLACE_MALLOC
-    if (g_pfnOrgMalloc)
-        pBlock = (PRTHEAPPAGEBLOCK)g_pfnOrgMalloc(sizeof(*pBlock));
-    else
-#endif
-        pBlock = (PRTHEAPPAGEBLOCK)rtMemBaseAlloc(sizeof(*pBlock));
-    if (!pBlock)
-    {
-        rtMemPageNativeFree(pvPages, RTMEMPAGEPOSIX_BLOCK_SIZE);
-        RTCritSectEnter(&pHeap->CritSect);
-        return VERR_NO_MEMORY;
     }
 
     RT_ZERO(*pBlock);
@@ -527,8 +633,6 @@ static int rtHeapPageAllocLocked(PRTHEAPPAGE pHeap, size_t cPages, const char *p
     pBlock->Core.KeyLast    = (uint8_t *)pvPages + RTMEMPAGEPOSIX_BLOCK_SIZE - 1;
     pBlock->cFreePages      = RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT;
     pBlock->pHeap           = pHeap;
-
-    RTCritSectEnter(&pHeap->CritSect);
 
     bool fRc = RTAvlrPVInsert(&pHeap->BlockTree, &pBlock->Core); Assert(fRc); NOREF(fRc);
     pHeap->cFreePages      +=  RTMEMPAGEPOSIX_BLOCK_PAGE_COUNT;
@@ -699,12 +803,7 @@ static int RTHeapPageFree(PRTHEAPPAGE pHeap, void *pv, size_t cPages)
                         rtMemPageNativeFree(pBlock->Core.Key, RTMEMPAGEPOSIX_BLOCK_SIZE);
                         pBlock->Core.Key = pBlock->Core.KeyLast = NULL;
                         pBlock->cFreePages = 0;
-#ifdef RTALLOC_REPLACE_MALLOC
-                        if (g_pfnOrgFree)
-                            g_pfnOrgFree(pBlock);
-                        else
-#endif
-                            rtMemBaseFree(pBlock);
+                        rtHeapPageIntBlockAllocatorFree(pHeap, pBlock);
 
                         RTCritSectEnter(&pHeap->CritSect);
                     }
