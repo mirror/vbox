@@ -114,6 +114,13 @@ protected:
     /** Preprocesses Qt @a pEvent for passed @a pObject. */
     virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
 
+private slots:
+
+    /** Handles editor @a strText change. */
+    void sltHandleEditorTextChanged(const QString &strText);
+    /** Handles button click. */
+    void sltHandleButtonClicked();
+
 private:
 
     /** Prepares all. */
@@ -135,10 +142,8 @@ private:
 
     /** Holds the filter editor instance. */
     QILineEdit   *m_pLineEdit;
-#if 0
     /** Holds the filter reset button instance. */
     QIToolButton *m_pToolButton;
-#endif
 
     /** Holds whether filter editor focused. */
     bool         m_fFocused;
@@ -178,9 +183,7 @@ protected:
 UIFilterEditor::UIFilterEditor(QWidget *pParent)
     : QWidget(pParent)
     , m_pLineEdit(0)
-#if 0
     , m_pToolButton(0)
-#endif
     , m_fFocused(false)
     , m_iUnfocusedEditorWidth(0)
     , m_iFocusedEditorWidth(0)
@@ -241,6 +244,17 @@ bool UIFilterEditor::eventFilter(QObject *pObject, QEvent *pEvent)
     return QWidget::eventFilter(pObject, pEvent);
 }
 
+void UIFilterEditor::sltHandleEditorTextChanged(const QString &strText)
+{
+    m_pToolButton->setHidden(m_pLineEdit->text().isEmpty());
+    emit sigTextChanged(strText);
+}
+
+void UIFilterEditor::sltHandleButtonClicked()
+{
+    m_pLineEdit->clear();
+}
+
 void UIFilterEditor::prepare()
 {
     /* Prepare filter editor: */
@@ -249,15 +263,19 @@ void UIFilterEditor::prepare()
     {
         m_pLineEdit->installEventFilter(this);
         connect(m_pLineEdit, &QILineEdit::textChanged,
-                this, &UIFilterEditor::sigTextChanged);
+                this, &UIFilterEditor::sltHandleEditorTextChanged);
     }
 
-#if 0
     /* Prepare filter reset button: */
     m_pToolButton = new QIToolButton(this);
     if (m_pToolButton)
-        m_pToolButton->setIcon(UIIconPool::iconSet(":/search_16px.png"));
-#endif
+    {
+        m_pToolButton->hide();
+        m_pToolButton->setIconSize(QSize(10, 10));
+        m_pToolButton->setIcon(UIIconPool::iconSet(":/close_16px.png"));
+        connect(m_pToolButton, &QIToolButton::clicked,
+                this, &UIFilterEditor::sltHandleButtonClicked);
+    }
 
     /* Install 'unfocus/focus' animation to 'editorWidth' property: */
     m_pAnimation = UIAnimation::installPropertyAnimation(this,
@@ -278,15 +296,27 @@ void UIFilterEditor::cleanup()
 
 void UIFilterEditor::adjustEditorGeometry()
 {
-    /* Update minimum/maximum filter editor width: */
+    /* Acquire maximum widget width: */
     const int iWidth = width();
-    const int iMinimumWidth = m_pLineEdit->minimumSizeHint().width();
-    m_iUnfocusedEditorWidth = qMax(iWidth / 2, iMinimumWidth);
-    m_iFocusedEditorWidth = qMax(iWidth, iMinimumWidth);;
-    m_pAnimation->update();
 
     /* Update filter editor geometry: */
+    const QSize esh = m_pLineEdit->minimumSizeHint();
+    const int iMinimumEditorWidth = esh.width();
+    const int iMinimumEditorHeight = esh.height();
+    /* Update minimum/maximum filter editor width: */
+    m_iUnfocusedEditorWidth = qMax(iWidth / 2, iMinimumEditorWidth);
+    m_iFocusedEditorWidth = qMax(iWidth, iMinimumEditorWidth);
+    m_pAnimation->update();
     setEditorWidth(m_fFocused ? m_iFocusedEditorWidth : m_iUnfocusedEditorWidth);
+
+    /* Update filter button geometry: */
+    const QSize bsh = m_pToolButton->minimumSizeHint();
+    const int iMinimumButtonWidth = bsh.width();
+    const int iMinimumButtonHeight = bsh.height();
+    const int iButtonY = iMinimumEditorHeight > iMinimumButtonHeight
+                       ? (iMinimumEditorHeight - iMinimumButtonHeight) / 2
+                       : 0;
+    m_pToolButton->setGeometry(iWidth - iMinimumButtonWidth, iButtonY, iMinimumButtonWidth, iMinimumButtonHeight);
 }
 
 void UIFilterEditor::setEditorWidth(int iWidth)
