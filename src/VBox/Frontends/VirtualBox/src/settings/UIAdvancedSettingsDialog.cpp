@@ -100,6 +100,9 @@ public:
     /** Destructs filter editor. */
     virtual ~UIFilterEditor() RT_OVERRIDE;
 
+    /** Defines placeholder @a strText. */
+    void setPlaceholderText(const QString &strText);
+
 protected:
 
     /** Returns the minimum widget size. */
@@ -189,6 +192,12 @@ UIFilterEditor::UIFilterEditor(QWidget *pParent)
 UIFilterEditor::~UIFilterEditor()
 {
     cleanup();
+}
+
+void UIFilterEditor::setPlaceholderText(const QString &strText)
+{
+    if (m_pLineEdit)
+        m_pLineEdit->setPlaceholderText(strText);
 }
 
 QSize UIFilterEditor::minimumSizeHint() const
@@ -464,6 +473,9 @@ bool UIAdvancedSettingsDialog::eventFilter(QObject *pObject, QEvent *pEvent)
 
 void UIAdvancedSettingsDialog::retranslateUi()
 {
+    /* Translate filter editor placeholder: */
+    m_pEditorFilter->setPlaceholderText(tr("Search settings"));
+
     /* Translate warning-pane stuff: */
     m_pWarningPane->setWarningLabelText(tr("Invalid settings detected"));
 
