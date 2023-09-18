@@ -141,10 +141,10 @@ RTDECL(void) RTMemPageFree(void *pv, size_t cb) RT_NO_THROW_DEF
             AssertMsgFailed(("pv=%p lasterr=%d\n", pv, GetLastError()));
 #else
         /** @todo The exec version of this doesn't really work well... */
-        MEMORY_BASIC_INFORMATION MemInfo = { NULL }
+        MEMORY_BASIC_INFORMATION MemInfo = { NULL };
         SIZE_T cbRet = VirtualQuery(pv, &MemInfo, cb);
-        Assert(cbRet > 0)
-        if (cbRet >= 0 && MemInfo.Protect == PAGE_EXECUTE_READWRITE)
+        Assert(cbRet > 0);
+        if (cbRet > 0 && MemInfo.Protect == PAGE_EXECUTE_READWRITE)
         {
             DWORD      fIgn = 0;
             BOOL const fRc  = VirtualProtect(pv, cb, PAGE_READWRITE, &fIgn);
