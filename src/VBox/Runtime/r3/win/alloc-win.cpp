@@ -87,7 +87,7 @@ RTDECL(void *) RTMemPageAllocExTag(size_t cb, uint32_t fFlags, const char *pszTa
 #endif
     AssertMsgReturn(pv, ("cb=%d lasterr=%d\n", cb, GetLastError()), NULL);
 
-#ifdef USE_VIRTUAL_ALLOC
+#ifndef USE_VIRTUAL_ALLOC
     if (fFlags & RTMEMPAGEALLOC_F_EXECUTABLE)
     {
         DWORD      fIgn = 0;
