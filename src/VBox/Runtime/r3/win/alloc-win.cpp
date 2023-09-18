@@ -55,6 +55,10 @@
 #endif
 
 
+/** @todo merge the page alloc code with the heap-based mmap stuff as
+ *        _aligned_malloc just isn't well suited for exec. */
+
+
 RTDECL(void *) RTMemPageAllocTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
 {
     RT_NOREF_PV(pszTag);
@@ -76,11 +80,21 @@ RTDECL(void *) RTMemPageAllocExTag(size_t cb, uint32_t fFlags, const char *pszTa
     AssertReturn(!(fFlags & ~RTMEMPAGEALLOC_F_VALID_MASK), NULL);
 
 #ifdef USE_VIRTUAL_ALLOC
-    void *pv = VirtualAlloc(NULL, cbAligned, MEM_COMMIT, PAGE_READWRITE);
+    void *pv = VirtualAlloc(NULL, cbAligned, MEM_COMMIT,
+                            !(fFlags & RTMEMPAGEALLOC_F_EXECUTABLE) ? PAGE_READWRITE : PAGE_EXECUTE_READWRITE);
 #else
     void *pv = _aligned_malloc(cbAligned, PAGE_SIZE);
 #endif
     AssertMsgReturn(pv, ("cb=%d lasterr=%d\n", cb, GetLastError()), NULL);
+
+#ifdef USE_VIRTUAL_ALLOC
+    if (fFlags & RTMEMPAGEALLOC_F_EXECUTABLE)
+    {
+        DWORD      fIgn = 0;
+        BOOL const fRc  = VirtualProtect(pv, cbAligned, PAGE_EXECUTE_READWRITE, &fIgn);
+        AssertMsgReturnStmt(fRc, ("%p LB %#zx: %#u\n", pv, cbAligned, GetLastError()), _aligned_free(pv), NULL);
+    }
+#endif
 
     if (fFlags & RTMEMPAGEALLOC_F_ADVISE_LOCKED)
     {
@@ -126,6 +140,16 @@ RTDECL(void) RTMemPageFree(void *pv, size_t cb) RT_NO_THROW_DEF
         if (!VirtualFree(pv, 0, MEM_RELEASE))
             AssertMsgFailed(("pv=%p lasterr=%d\n", pv, GetLastError()));
 #else
+        /** @todo The exec version of this doesn't really work well... */
+        MEMORY_BASIC_INFORMATION MemInfo = { NULL }
+        SIZE_T cbRet = VirtualQuery(pv, &MemInfo, cb);
+        Assert(cbRet > 0)
+        if (cbRet >= 0 && MemInfo.Protect == PAGE_EXECUTE_READWRITE)
+        {
+            DWORD      fIgn = 0;
+            BOOL const fRc  = VirtualProtect(pv, cb, PAGE_READWRITE, &fIgn);
+            Assert(fRc); RT_NOREF(fRc);
+        }
         _aligned_free(pv);
 #endif
     }

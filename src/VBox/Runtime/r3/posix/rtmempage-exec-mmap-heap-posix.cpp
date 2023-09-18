@@ -549,9 +549,13 @@ static DECLCALLBACK(int) rtHeapPageFindUnusedBlockCallback(PAVLRPVNODECORE pNode
 
 
 /**
- * Allocates one or more pages off the heap.
+ * Frees an allocation.
  *
  * @returns IPRT status code.
+ * @retval  VERR_NOT_FOUND if pv isn't within any of the memory blocks in the
+ *          heap.
+ * @retval  VERR_INVALID_POINTER if the given memory range isn't exactly one
+ *          allocation block.
  * @param   pHeap           The page heap.
  * @param   pv              Pointer to what RTHeapPageAlloc returned.
  * @param   cPages          The number of pages that was allocated.
@@ -651,7 +655,7 @@ static int RTHeapPageFree(PRTHEAPPAGE pHeap, void *pv, size_t cPages)
                 rc = VERR_INVALID_POINTER;
         }
         else
-            rc = VERR_INVALID_POINTER;
+            rc = VERR_NOT_FOUND; /* Distinct return code for this so rtMemPagePosixFree and others can try alternative heaps. */
 
         RTCritSectLeave(&pHeap->CritSect);
     }
@@ -736,11 +740,12 @@ static void *rtMemPagePosixAlloc(size_t cb, const char *pszTag, uint32_t fFlags,
 /**
  * Free memory allocated by rtMemPagePosixAlloc.
  *
- * @param   pv                  The address of the memory to free.
- * @param   cb                  The size.
- * @param   pHeap               The heap.
+ * @param   pv      The address of the memory to free.
+ * @param   cb      The size.
+ * @param   pHeap1  The most probable heap.
+ * @param   pHeap2  The less probable heap.
  */
-static void rtMemPagePosixFree(void *pv, size_t cb, PRTHEAPPAGE pHeap)
+static void rtMemPagePosixFree(void *pv, size_t cb, PRTHEAPPAGE pHeap1, PRTHEAPPAGE pHeap2)
 {
     /*
      * Validate & adjust the input.
@@ -762,7 +767,9 @@ static void rtMemPagePosixFree(void *pv, size_t cb, PRTHEAPPAGE pHeap)
     }
     else
     {
-        int rc = RTHeapPageFree(pHeap, pv, cb >> PAGE_SHIFT);
+        int rc = RTHeapPageFree(pHeap1, pv, cb >> PAGE_SHIFT);
+        if (rc == VERR_NOT_FOUND)
+            rc = RTHeapPageFree(pHeap2, pv, cb >> PAGE_SHIFT);
         AssertRC(rc);
     }
 }
@@ -786,12 +793,13 @@ RTDECL(void *) RTMemPageAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW_DEF
 RTDECL(void *) RTMemPageAllocExTag(size_t cb, uint32_t fFlags, const char *pszTag) RT_NO_THROW_DEF
 {
     AssertReturn(!(fFlags & ~RTMEMPAGEALLOC_F_VALID_MASK), NULL);
-    return rtMemPagePosixAlloc(cb, pszTag, fFlags, &g_MemPagePosixHeap);
+    return rtMemPagePosixAlloc(cb, pszTag, fFlags,
+                               !(fFlags & RTMEMPAGEALLOC_F_EXECUTABLE) ? &g_MemPagePosixHeap : &g_MemExecPosixHeap);
 }
 
 
 RTDECL(void) RTMemPageFree(void *pv, size_t cb) RT_NO_THROW_DEF
 {
-    return rtMemPagePosixFree(pv, cb, &g_MemPagePosixHeap);
+    rtMemPagePosixFree(pv, cb, &g_MemPagePosixHeap, &g_MemExecPosixHeap);
 }
 
