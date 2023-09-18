@@ -142,7 +142,7 @@ RTDECL(void) RTMemPageFree(void *pv, size_t cb) RT_NO_THROW_DEF
 #else
         /** @todo The exec version of this doesn't really work well... */
         MEMORY_BASIC_INFORMATION MemInfo = { NULL };
-        SIZE_T cbRet = VirtualQuery(pv, &MemInfo, cb);
+        SIZE_T cbRet = VirtualQuery(pv, &MemInfo, sizeof(MemInfo));
         Assert(cbRet > 0);
         if (cbRet > 0 && MemInfo.Protect == PAGE_EXECUTE_READWRITE)
         {
