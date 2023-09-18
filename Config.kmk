@@ -539,6 +539,9 @@ VBOX_WITH_DBGF_FLOW_TRACING = 1
 # Enables ARMv8 virtualization, see @bugref{10383}
 if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.arm64)
  VBOX_WITH_VIRT_ARMV8 = 1
+ # Enables setting hardcoded defaults for newly created VMs,
+ # to get the VM off the ground. That setting might go away again as development progresses.
+ VBOX_WITH_ARMV8_HARDCODED_DEFAULTS=1
 endif
 if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), linux.amd64)
  ifdef VBOX_WITH_R0_MODULES
