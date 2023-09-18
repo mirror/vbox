@@ -403,7 +403,7 @@ void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
         {
             /* When using VirtioSCSI as the HDD storage controller and the DVD Drive is on that same controller,
              * we have to raise the port count, as VirtioSCSI only configures one port per default. */
-            if (   hdCtr 				   == dvdCtr
+            if (   hdCtr                   == dvdCtr
                 && hdStorageControllerType == KStorageControllerType_VirtioSCSI)
                 hdCtr.SetPortCount(2);
             break;
