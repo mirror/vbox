@@ -2191,7 +2191,7 @@ static HRESULT produceList(enum ListType_T enmCommand, bool fOptLong, bool fOptS
         case kListOsVariants:
         {
             com::SafeArray<BSTR> GuestOSFamilies;
-            CHECK_ERROR(pVirtualBox, COMGETTER(GuestOSFamilies)(ComSafeArrayAsOutParam(GuestOSFamilies)));
+            CHECK_ERROR(pVirtualBox, GetGuestOSFamilies(ComSafeArrayAsOutParam(GuestOSFamilies)));
             if (SUCCEEDED(hrc))
             {
                 for (size_t i = 0; i < GuestOSFamilies.size(); ++i)
@@ -2199,8 +2199,8 @@ static HRESULT produceList(enum ListType_T enmCommand, bool fOptLong, bool fOptS
                     const Bstr bstrOSFamily = GuestOSFamilies[i];
                     com::SafeArray<BSTR> GuestOSVariants;
                     CHECK_ERROR(pVirtualBox,
-                                COMGETTER(GuestOSVariantsByFamilyId)(bstrOSFamily.raw(),
-                                          ComSafeArrayAsOutParam(GuestOSVariants)));
+                                GetGuestOSVariantsByFamilyId(bstrOSFamily.raw(),
+                                                             ComSafeArrayAsOutParam(GuestOSVariants)));
                     if (SUCCEEDED(hrc))
                     {
                         RTPrintf("%ls\n", bstrOSFamily.raw());
@@ -2210,8 +2210,8 @@ static HRESULT produceList(enum ListType_T enmCommand, bool fOptLong, bool fOptS
                             com::SafeArray<BSTR> GuestOSDescs;
                             const Bstr bstrOSVariant = GuestOSVariants[j];
                             CHECK_ERROR(pVirtualBox,
-                                        COMGETTER(GuestOSDescsByVariant)(bstrOSVariant.raw(),
-                                                  ComSafeArrayAsOutParam(GuestOSDescs)));
+                                        GetGuestOSDescsByVariant(bstrOSVariant.raw(),
+                                                                 ComSafeArrayAsOutParam(GuestOSDescs)));
                             if (SUCCEEDED(hrc))
                                 for (size_t k = 0; k < GuestOSDescs.size(); ++k)
                                     RTPrintf("\t\t%ls\n", GuestOSDescs[k]);
