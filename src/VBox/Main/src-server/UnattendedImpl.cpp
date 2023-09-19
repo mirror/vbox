@@ -3954,6 +3954,12 @@ HRESULT Unattended::getIsUnattendedInstallSupported(BOOL *aIsUnattendedInstallSu
     if (mStrDetectedOSTypeId.isEmpty())
         return S_OK;
 
+    /* For now we don't support unattended installation for ARM guests. */
+    const VBOXOSTYPE enmArchitectureMasked = (VBOXOSTYPE)(mEnmOsType & VBOXOSTYPE_ArchitectureMask);
+    if (   enmArchitectureMasked == VBOXOSTYPE_arm32
+        || enmArchitectureMasked == VBOXOSTYPE_arm64)
+        return S_OK;
+
     const VBOXOSTYPE enmOsTypeMasked = (VBOXOSTYPE)(mEnmOsType & VBOXOSTYPE_OsTypeMask);
 
     /* We require a version to have been detected, except for windows where the
