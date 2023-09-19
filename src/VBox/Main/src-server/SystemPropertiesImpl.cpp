@@ -1028,7 +1028,11 @@ HRESULT SystemProperties::getSupportedPlatformArchitectures(std::vector<Platform
 #if   defined(RT_ARCH_X86)   || defined(RT_ARCH_AMD64)
         PlatformArchitecture_x86
 #elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
+# ifdef VBOX_WITH_VIRT_ARMV8
         PlatformArchitecture_ARM
+# else /* No platform supported. */
+        PlatformArchitecture_None:
+# endif
 #else
 # error "Port me!"
         PlatformArchitecture_None
