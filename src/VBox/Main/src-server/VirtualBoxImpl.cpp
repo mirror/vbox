@@ -1376,11 +1376,40 @@ HRESULT VirtualBox::getProgressOperations(std::vector<ComPtr<IProgress> > &aProg
 HRESULT VirtualBox::getGuestOSTypes(std::vector<ComPtr<IGuestOSType> > &aGuestOSTypes)
 {
     AutoReadLock al(m->allGuestOSTypes.getLockHandle() COMMA_LOCKVAL_SRC_POS);
-    aGuestOSTypes.resize(m->allGuestOSTypes.size());
-    size_t i = 0;
-    for (GuestOSTypesOList::const_iterator it = m->allGuestOSTypes.begin();
-         it != m->allGuestOSTypes.end(); ++it, ++i)
-         (*it).queryInterfaceTo(aGuestOSTypes[i].asOutParam());
+
+    com::SafeArray<PlatformArchitecture_T> supportedPlatformArchitectures;
+    HRESULT hrc = m->pSystemProperties->COMGETTER(SupportedPlatformArchitectures)(ComSafeArrayAsOutParam(supportedPlatformArchitectures));
+    ComAssertComRCRetRC(hrc);
+
+    aGuestOSTypes.clear();
+
+    /** @todo We might want to redo this at some point, to better group / hash this. */
+
+    for (GuestOSTypesOList::const_iterator it = m->allGuestOSTypes.begin(); it != m->allGuestOSTypes.end(); ++it)
+    {
+        bool fFound = false;
+        if (supportedPlatformArchitectures.size() == 0) /* If empty, we add all types we have. */
+            fFound = true;
+        else
+        {
+            for (size_t i = 0; i < supportedPlatformArchitectures.size(); i++)
+            {
+                if (supportedPlatformArchitectures[i] == (*it)->i_platformArchitecture())
+                {
+                    fFound = true;
+                    break;
+                }
+            }
+        }
+
+        if (fFound)
+        {
+            ComPtr<IGuestOSType> osType;
+            (*it).queryInterfaceTo(osType.asOutParam());
+            aGuestOSTypes.push_back(osType);
+        }
+    }
+
     return S_OK;
 }
 
