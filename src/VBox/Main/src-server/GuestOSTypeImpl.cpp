@@ -207,6 +207,25 @@ HRESULT GuestOSType::getIs64Bit(BOOL *aIs64Bit)
     return S_OK;
 }
 
+HRESULT GuestOSType::getPlatformArchitecture(PlatformArchitecture_T *aPlatformArchitecture)
+{
+    /* mOSType constant during life time, no need to lock */
+    VBOXOSTYPE const osTypePlatformArchitectureMasked = VBOXOSTYPE(mOSType & VBOXOSTYPE_ArchitectureMask);
+    if (   osTypePlatformArchitectureMasked & VBOXOSTYPE_x86
+        || osTypePlatformArchitectureMasked & VBOXOSTYPE_x64)
+        *aPlatformArchitecture = PlatformArchitecture_x86;
+    else if (   osTypePlatformArchitectureMasked & VBOXOSTYPE_arm32
+             || osTypePlatformArchitectureMasked & VBOXOSTYPE_arm64)
+        *aPlatformArchitecture = PlatformArchitecture_ARM;
+    else
+    {
+        AssertFailed(); /* Something is fishy in the OSTYPE spec. */
+        *aPlatformArchitecture = PlatformArchitecture_None;
+    }
+
+    return S_OK;
+}
+
 HRESULT GuestOSType::getRecommendedIOAPIC(BOOL *aRecommendedIOAPIC)
 {
     /* mRecommendedIOAPIC is constant during life time, no need to lock */

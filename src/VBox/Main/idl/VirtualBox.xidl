@@ -13518,7 +13518,7 @@
 
   <interface
     name="IGuestOSType" extends="$unknown"
-    uuid="858fc38e-efe6-47d0-b6ac-c71023f9d043"
+    uuid="4799a50c-9451-4cbe-b80b-73df6c21ac06"
     wsmap="struct"
     rest="managed"
     reservedAttributes="16"
@@ -13549,6 +13549,10 @@
 
     <attribute name="is64Bit" type="boolean" readonly="yes">
       <desc>Returns @c true if the given OS is 64-bit</desc>
+    </attribute>
+
+    <attribute name="platformArchitecture" type="PlatformArchitecture" readonly="yes">
+      <desc>Returns the guest OS platform architecture.</desc>
     </attribute>
 
     <attribute name="recommendedIOAPIC" type="boolean" readonly="yes">

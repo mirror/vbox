@@ -73,6 +73,7 @@ private:
     HRESULT getId(com::Utf8Str &aId);
     HRESULT getDescription(com::Utf8Str &aDescription);
     HRESULT getIs64Bit(BOOL *aIs64Bit);
+    HRESULT getPlatformArchitecture(PlatformArchitecture_T *aPlatformArchitecture);
     HRESULT getRecommendedIOAPIC(BOOL *aRecommendedIOAPIC);
     HRESULT getRecommendedVirtEx(BOOL *aRecommendedVirtEx);
     HRESULT getRecommendedRAM(ULONG *RAMSize);
