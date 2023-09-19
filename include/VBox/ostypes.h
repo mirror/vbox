@@ -55,6 +55,8 @@ typedef enum VBOXOSTYPE
 {
     VBOXOSTYPE_Unknown          = 0,
     VBOXOSTYPE_Unknown_x64      = 0x00100,
+    VBOXOSTYPE_Unknown_arm32    = 0x00200,
+    VBOXOSTYPE_Unknown_arm64    = 0x00300,
 
     /** @name DOS and it's descendants
      * @{ */

@@ -58,6 +58,18 @@ const Global::OSType Global::sOSTypes[] =
       1,   64,   4,  2 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700 },
 
+#ifdef VBOX_WITH_VIRT_ARMV8
+    { "Other",   "Other",             "",               "Other_ARM",          "Other/Unknown (ARM)",
+      VBOXOSTYPE_Unknown_arm32,       VBOXOSHINT_NONE | VBOXOSHINT_EFI,
+      1,   64,   4,  2 * _1G64, GraphicsControllerType_VBoxSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI,
+      StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI, ChipsetType_ARMv8Virtual, IommuType_None, AudioControllerType_VirtioSound, AudioCodecType_Null },
+
+    { "Other",   "Other",             "",               "Other_ARM64",        "Other/Unknown (ARM 64-bit)",
+      VBOXOSTYPE_Unknown_arm64,       VBOXOSHINT_64BIT | VBOXOSHINT_EFI,
+      1,   64,   4,  2 * _1G64, GraphicsControllerType_VBoxSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI,
+      StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI, ChipsetType_ARMv8Virtual, IommuType_None, AudioControllerType_VirtioSound, AudioCodecType_Null },
+#endif
+
     { "Windows", "Microsoft Windows", "",               "Windows31",          "Windows 3.1",
       VBOXOSTYPE_Win31,           VBOXOSHINT_FLOPPY,
       1,   32,   4,  1 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
