@@ -1573,8 +1573,8 @@ private:
     void readGuestProperties(const xml::ElementNode &elmGuestProperties, Hardware &hw);
     void readStorageControllerAttributes(const xml::ElementNode &elmStorageController, StorageController &sctl);
     void readPlatformCPUIDTreeX86(const xml::ElementNode &elmChild, PlatformX86 &platX86);
-    void readPlatformX86(const xml::ElementNode &elmPlatform,PlatformX86 &platX86);
-    void readPlatform(const xml::ElementNode &elmPlatform, Platform &plat);
+    void readPlatformX86(const xml::ElementNode &elmPlatformX86OrHardware, PlatformX86 &platX86);
+    void readPlatform(const xml::ElementNode &elmPlatformOrHardware, Hardware &hw, Platform &plat);
     void readHardware(const xml::ElementNode &elmHardware, Hardware &hw);
     void readHardDiskAttachments_pre1_7(const xml::ElementNode &elmHardDiskAttachments, Storage &strg);
     void readStorageControllers(const xml::ElementNode &elmStorageControllers, Storage &strg);

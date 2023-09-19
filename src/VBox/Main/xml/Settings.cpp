@@ -5301,10 +5301,11 @@ void MachineConfigFile::readPlatformX86(const xml::ElementNode &elmPlatformX86Or
  * For settings <  v1.20 (<= VirtualBox 7.0) these were stored under the "Hardware" node.
  *
  * @param elmPlatformOrHardware     Platform or Hardware node to read from.
+ * @param hw                        Where to store the hardware settings.
  * @param plat                      Where to store the platform settings.
  */
 void MachineConfigFile::readPlatform(const xml::ElementNode &elmPlatformOrHardware,
-                                     Platform &plat)
+                                     Hardware &hw, Platform &plat)
 {
     /*
      * Platform-generic stuff.
@@ -5313,7 +5314,36 @@ void MachineConfigFile::readPlatform(const xml::ElementNode &elmPlatformOrHardwa
     const xml::ElementNode *pelmChild;
     while ((pelmChild = nl1.forAllNodes()))
     {
-        if (pelmChild->nameEquals("Chipset"))
+        if (pelmChild->nameEquals("CPU"))
+        {
+            if (!pelmChild->getAttributeValue("count", hw.cCPUs))
+            {
+                // pre-1.5 variant; not sure if this actually exists in the wild anywhere
+                const xml::ElementNode *pelmCPUChild;
+                if ((pelmCPUChild = pelmChild->findChildElement("CPUCount")))
+                    pelmCPUChild->getAttributeValue("count", hw.cCPUs);
+            }
+
+            pelmChild->getAttributeValue("hotplug", hw.fCpuHotPlug);
+            pelmChild->getAttributeValue("executionCap", hw.ulCpuExecutionCap);
+
+            const xml::ElementNode *pelmCPUChild;
+            if (hw.fCpuHotPlug)
+            {
+                if ((pelmCPUChild = pelmChild->findChildElement("CpuTree")))
+                    readCpuTree(*pelmCPUChild, hw.llCpus);
+            }
+
+            if ((pelmCPUChild = pelmChild->findChildElement("SyntheticCpu")))
+            {
+                bool fSyntheticCpu = false;
+                pelmCPUChild->getAttributeValue("enabled", fSyntheticCpu);
+                hw.uCpuIdPortabilityLevel = fSyntheticCpu ? 1 : 0;
+            }
+            pelmChild->getAttributeValue("CpuIdPortabilityLevel", hw.uCpuIdPortabilityLevel);
+            pelmChild->getAttributeValue("CpuProfile", hw.strCpuProfile);
+        }
+        else if (pelmChild->nameEquals("Chipset"))
         {
             Utf8Str strChipsetType;
             if (pelmChild->getAttributeValue("type", strChipsetType))
@@ -5466,36 +5496,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
     const xml::ElementNode *pelmHwChild;
     while ((pelmHwChild = nl1.forAllNodes()))
     {
-        if (pelmHwChild->nameEquals("CPU"))
-        {
-            if (!pelmHwChild->getAttributeValue("count", hw.cCPUs))
-            {
-                // pre-1.5 variant; not sure if this actually exists in the wild anywhere
-                const xml::ElementNode *pelmCPUChild;
-                if ((pelmCPUChild = pelmHwChild->findChildElement("CPUCount")))
-                    pelmCPUChild->getAttributeValue("count", hw.cCPUs);
-            }
-
-            pelmHwChild->getAttributeValue("hotplug", hw.fCpuHotPlug);
-            pelmHwChild->getAttributeValue("executionCap", hw.ulCpuExecutionCap);
-
-            const xml::ElementNode *pelmCPUChild;
-            if (hw.fCpuHotPlug)
-            {
-                if ((pelmCPUChild = pelmHwChild->findChildElement("CpuTree")))
-                    readCpuTree(*pelmCPUChild, hw.llCpus);
-            }
-
-            if ((pelmCPUChild = pelmHwChild->findChildElement("SyntheticCpu")))
-            {
-                bool fSyntheticCpu = false;
-                pelmCPUChild->getAttributeValue("enabled", fSyntheticCpu);
-                hw.uCpuIdPortabilityLevel = fSyntheticCpu ? 1 : 0;
-            }
-            pelmHwChild->getAttributeValue("CpuIdPortabilityLevel", hw.uCpuIdPortabilityLevel);
-            pelmHwChild->getAttributeValue("CpuProfile", hw.strCpuProfile);
-        }
-        else if (pelmHwChild->nameEquals("Memory"))
+        if (pelmHwChild->nameEquals("Memory"))
         {
             pelmHwChild->getAttributeValue("RAMSize", hw.ulMemorySizeMB);
             pelmHwChild->getAttributeValue("PageFusion", hw.fPageFusionEnabled);
@@ -6113,7 +6114,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
     /* We read the platform settings here, which were part of the "Hardware" node for settings < 1.2.0.
      * For newer settings (>= v1.20) we read the platform settings outside readHardware(). */
     if (m->sv < SettingsVersion_v1_20)
-        readPlatform(elmHardware, hw.platformSettings);
+        readPlatform(elmHardware, hw, hw.platformSettings);
 
     if (hw.ulMemorySizeMB == (uint32_t)-1)
         throw ConfigFileError(this, &elmHardware, N_("Required Memory/@RAMSize element/attribute is missing"));
@@ -6740,7 +6741,7 @@ bool MachineConfigFile::readSnapshot(const Guid &curSnapshotUuid,
             const xml::ElementNode *pelmPlatform;
             if (!(pelmPlatform = pElement->findChildElement("Platform")))
                 throw ConfigFileError(this, pElement, N_("Required Snapshot/@Platform element is missing"));
-            readPlatform(*pelmPlatform, pSnap->hardware.platformSettings);
+            readPlatform(*pelmPlatform, pSnap->hardware, pSnap->hardware.platformSettings);
         }
 
         // parse Hardware before the other elements because other things depend on it
@@ -6943,7 +6944,7 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
             const xml::ElementNode *pelmPlatform;
             if (!(pelmPlatform = elmMachine.findChildElement("Platform")))
                 throw ConfigFileError(this, &elmMachine, N_("Required Machine/@Platform element is missing"));
-            readPlatform(*pelmPlatform, hardwareMachine.platformSettings);
+            readPlatform(*pelmPlatform, hardwareMachine, hardwareMachine.platformSettings);
         }
 
         // parse Hardware before the other elements because other things depend on it
