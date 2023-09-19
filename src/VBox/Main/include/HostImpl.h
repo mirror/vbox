@@ -98,6 +98,7 @@ public:
 #endif /* !VBOX_WITH_USB */
 
     static void i_generateMACAddress(Utf8Str &mac);
+    static PlatformArchitecture_T s_getPlatformArchitecture();
 
 #ifdef RT_OS_WINDOWS
     HRESULT i_updatePersistentConfigForHostOnlyAdapters(void);

@@ -600,13 +600,7 @@ void Host::uninit()
  */
 HRESULT Host::getArchitecture(PlatformArchitecture_T *platformArchitecture)
 {
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-    *platformArchitecture = PlatformArchitecture_x86;
-#elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
-    *platformArchitecture = PlatformArchitecture_ARM;
-#else
-# error "Port me!"
-#endif
+    *platformArchitecture = Host::s_getPlatformArchitecture();
 
     return S_OK;
 }
@@ -3960,6 +3954,24 @@ void Host::i_generateMACAddress(Utf8Str &mac)
     guid.create();
     mac = Utf8StrFmt("080027%02X%02X%02X",
                      guid.raw()->au8[0], guid.raw()->au8[1], guid.raw()->au8[2]);
+}
+
+/**
+ * Returns the host's platform architecture.
+ *
+ * @returns The host's platform architecture.
+ */
+/* static */
+PlatformArchitecture_T Host::s_getPlatformArchitecture()
+{
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+    return PlatformArchitecture_x86;
+#elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    return PlatformArchitecture_ARM;
+#else
+# error "Port me!"
+    return PlatformArchitecture_None;
+#endif
 }
 
 #ifdef RT_OS_WINDOWS
