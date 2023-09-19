@@ -641,7 +641,11 @@
           settings were moved to the new Platform element, which now contains
           the platform architecture for this VM. x86-specific
           settings were moved from Machine to a new, dedicated Platform/x86 element.
-          BIOSSettings were renamed to FirmwareSettings.
+          BIOSSettings were renamed to FirmwareSettings. ARM-specific settings
+          were added to a new, dedicated Platform/ARM element. This settings
+          version only will be written if the ARM platform architecture is being
+          selected. Only affects the machine settings (not main configuration
+          settings).
       -->
     </const>
     <const name="Future" value="99999">
