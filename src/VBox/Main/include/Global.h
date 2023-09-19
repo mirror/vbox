@@ -85,11 +85,12 @@ public:
     /** Represents OS Type <-> string mappings. */
     struct OSType
     {
-        const char                    *familyId;          /* utf-8 */
-        const char                    *familyDescription; /* utf-8 */
-        const char                    *id;          /* utf-8, VM config file value */
-        const char                    *description; /* utf-8 */
-        const VBOXOSTYPE               osType;
+        const char                    *familyId;          /* utf-8, e.g. Linux or MacOS  */
+        const char                    *familyDescription; /* utf-8, e.g. Linux or Mac OS X */
+        const char                    *variant;     /* utf-8, the subtype of the family e.g. Debian or FreeBSD */
+        const char                    *id;          /* utf-8, VM config file value e.g. Debian12_64 */
+        const char                    *description; /* utf-8, e.g. "Debian 12 Bookworm (64-bit)" */
+        const VBOXOSTYPE               osType;      /* enum, e.g. VBOXOSTYPE_Debian12_x64 */
         const uint32_t                 osHint;
         const uint32_t                 recommendedCPUCount;
         const uint32_t                 recommendedRAM;

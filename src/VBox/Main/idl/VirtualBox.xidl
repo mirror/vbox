@@ -2699,7 +2699,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="0f22e6d1-07f5-4168-b3ef-167c57670c17"
+    uuid="901ac662-0b6e-4b19-a0ac-21cb54d4d5b2"
     wsmap="managed"
     rest="managed"
     wrap-gen-hook="yes"
@@ -3490,6 +3490,74 @@
       </param>
       <param name="type" type="IGuestOSType" dir="return">
         <desc>Guest OS type object.</desc>
+      </param>
+    </method>
+
+    <method name="getGuestOSFamilies">
+      <rest request="get" path="/server/methods/"/>
+      <desc>
+        Returns a list of all known guest OS family IDs.
+
+        The <link to="IVirtualBox::guestOSTypes"/> collection contains all
+        available guest OS type objects. Each object has an
+        <link to="IGuestOSType::familyId"/> attribute which contains
+        the guest OS family identifier string that this object describes.
+
+      </desc>
+      <param name="guestOSFamilies" type="wstring" safearray="yes" dir="return">
+        <desc>Array of all known guest OS family IDs.</desc>
+      </param>
+    </method>
+
+    <method name="getGuestOSVariantsByFamilyId">
+      <rest request="get" path="/server/methods/"/>
+      <desc>
+        Returns a list of guest OS family variants for a corresponding
+        guest OS family ID type.
+
+        The <link to="IVirtualBox::guestOSTypes"/> collection contains all
+        available guest OS type objects. Each object has an
+        <link to="IGuestOSType::familyId"/> attribute which contains a
+        the guest OS family this object describes.  The guest OS family
+        variant is contained in the <link to="IGuestOSType::variant"/>
+        attribute.
+
+        <result name="E_INVALIDARG">
+          @a family is not a valid guest OS family identifier.
+        </result>
+
+      </desc>
+      <param name="family" type="wstring" dir="in">
+        <desc>Guest OS type ID string.</desc>
+      </param>
+      <param name="OSvariants" type="wstring" safearray="yes" dir="return">
+        <desc>Array of guest OS family variants associated with the specified guest OS family ID.</desc>
+      </param>
+    </method>
+
+    <method name="getGuestOSDescsByVariant">
+      <rest request="get" path="/server/methods/"/>
+      <desc>
+        Returns a list of guest OS family descriptions for a corresponding
+        guest OS family variant.
+
+        The <link to="IVirtualBox::guestOSTypes"/> collection contains all
+        available guest OS type objects. Each object has an
+        <link to="IGuestOSType::variant"/> attribute which contains a
+        human readable description of the guest OS variant this object describes.
+        The guest OS family description is contained in the
+        <link to="IGuestOSType::familyDescription"/> attribute.
+
+        <result name="E_INVALIDARG">
+          @a OSVariant is not a valid guest OS variant.
+        </result>
+
+      </desc>
+      <param name="OSVariant" type="wstring" dir="in">
+        <desc>Guest OS variant.</desc>
+      </param>
+      <param name="GuestOSDescs" type="wstring" safearray="yes" dir="return">
+        <desc>Array of guest OS descriptions associated with the specified guest OS variant.</desc>
       </param>
     </method>
 
@@ -13446,7 +13514,7 @@
 
   <interface
     name="IGuestOSType" extends="$unknown"
-    uuid="966303d0-36a8-4180-8971-18650b0d1055"
+    uuid="858fc38e-efe6-47d0-b6ac-c71023f9d043"
     wsmap="struct"
     rest="managed"
     reservedAttributes="16"
@@ -13465,6 +13533,10 @@
 
     <attribute name="id" type="wstring" readonly="yes">
       <desc>Guest OS identifier string.</desc>
+    </attribute>
+
+    <attribute name="variant" type="wstring" readonly="yes">
+      <desc>Guest OS variant string.</desc>
     </attribute>
 
     <attribute name="description" type="wstring" readonly="yes">

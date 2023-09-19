@@ -275,6 +275,14 @@ public:
     HRESULT i_findGuestOSType(const Utf8Str &strOSType,
                               ComObjPtr<GuestOSType> &guestOSType);
 
+    HRESULT getGuestOSFamilies(std::vector<com::Utf8Str> &aOSFamilies);
+
+    HRESULT getGuestOSVariantsByFamilyId(const Utf8Str &strOSFamily,
+                                         std::vector<com::Utf8Str> &aOSVariants);
+
+    HRESULT getGuestOSDescsByVariant(const Utf8Str &strOSVariant,
+                                     std::vector<com::Utf8Str> &aGuestOSDescs);
+
     const Guid &i_getGlobalRegistryId() const;
 
     const ComObjPtr<Host> &i_host() const;

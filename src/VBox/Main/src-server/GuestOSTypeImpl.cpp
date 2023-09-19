@@ -112,6 +112,7 @@ HRESULT GuestOSType::init(const Global::OSType &ostype)
 
     unconst(mFamilyID)                  = ostype.familyId;
     unconst(mFamilyDescription)         = ostype.familyDescription;
+    unconst(mOSVariant)                 = ostype.variant;
     unconst(mID)                        = ostype.id;
     unconst(mDescription)               = ostype.description;
     unconst(mOSType)                    = ostype.osType;
@@ -167,6 +168,15 @@ HRESULT GuestOSType::getFamilyDescription(com::Utf8Str &aFamilyDescription)
 {
     /* mFamilyDescription is constant during life time, no need to lock */
     aFamilyDescription = mFamilyDescription;
+
+    return S_OK;
+}
+
+
+HRESULT GuestOSType::getVariant(com::Utf8Str &aVariant)
+{
+    /* mOSVariant is constant during life time, no need to lock */
+    aVariant = mOSVariant;
 
     return S_OK;
 }

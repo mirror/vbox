@@ -2013,6 +2013,7 @@ enum ListType_T
     kListVMs,
     kListRunningVMs,
     kListOsTypes,
+    kListOsVariants,
     kListHostDvds,
     kListHostFloppies,
     kListInternalNetworks,
@@ -2174,10 +2175,48 @@ static HRESULT produceList(enum ListType_T enmCommand, bool fOptLong, bool fOptS
                     Bstr familyDescription;
                     guestOS->COMGETTER(FamilyDescription)(familyDescription.asOutParam());
                     RTPrintf(List::tr("Family Desc: %ls\n"), familyDescription.raw());
+                    Bstr guestOSVariant;
+                    guestOS->COMGETTER(Variant)(guestOSVariant.asOutParam());
+                    if (guestOSVariant.isNotEmpty())
+                        RTPrintf(List::tr("OS Variant:  %ls\n"), guestOSVariant.raw());
                     BOOL is64Bit;
                     guestOS->COMGETTER(Is64Bit)(&is64Bit);
                     RTPrintf(List::tr("64 bit:      %RTbool\n"), is64Bit);
                     RTPrintf("\n");
+                }
+            }
+            break;
+        }
+
+        case kListOsVariants:
+        {
+            com::SafeArray<BSTR> GuestOSFamilies;
+            CHECK_ERROR(pVirtualBox, COMGETTER(GuestOSFamilies)(ComSafeArrayAsOutParam(GuestOSFamilies)));
+            if (SUCCEEDED(hrc))
+            {
+                for (size_t i = 0; i < GuestOSFamilies.size(); ++i)
+                {
+                    const Bstr bstrOSFamily = GuestOSFamilies[i];
+                    com::SafeArray<BSTR> GuestOSVariants;
+                    CHECK_ERROR(pVirtualBox,
+                                COMGETTER(GuestOSVariantsByFamilyId)(bstrOSFamily.raw(),
+                                          ComSafeArrayAsOutParam(GuestOSVariants)));
+                    if (SUCCEEDED(hrc))
+                    {
+                        RTPrintf("%ls\n", bstrOSFamily.raw());
+                        for (size_t j = 0; j < GuestOSVariants.size(); ++j)
+                        {
+                            RTPrintf("\t%ls\n", GuestOSVariants[j]);
+                            com::SafeArray<BSTR> GuestOSDescs;
+                            const Bstr bstrOSVariant = GuestOSVariants[j];
+                            CHECK_ERROR(pVirtualBox,
+                                        COMGETTER(GuestOSDescsByVariant)(bstrOSVariant.raw(),
+                                                  ComSafeArrayAsOutParam(GuestOSDescs)));
+                            if (SUCCEEDED(hrc))
+                                for (size_t k = 0; k < GuestOSDescs.size(); ++k)
+                                    RTPrintf("\t\t%ls\n", GuestOSDescs[k]);
+                        }
+                    }
                 }
             }
             break;
@@ -2419,6 +2458,7 @@ RTEXITCODE handleList(HandlerArg *a)
         { "vms",                kListVMs,                RTGETOPT_REQ_NOTHING },
         { "runningvms",         kListRunningVMs,         RTGETOPT_REQ_NOTHING },
         { "ostypes",            kListOsTypes,            RTGETOPT_REQ_NOTHING },
+        { "osvariants",         kListOsVariants,         RTGETOPT_REQ_NOTHING },
         { "hostdvds",           kListHostDvds,           RTGETOPT_REQ_NOTHING },
         { "hostfloppies",       kListHostFloppies,       RTGETOPT_REQ_NOTHING },
         { "intnets",            kListInternalNetworks,   RTGETOPT_REQ_NOTHING },
@@ -2485,6 +2525,7 @@ RTEXITCODE handleList(HandlerArg *a)
             case kListVMs:
             case kListRunningVMs:
             case kListOsTypes:
+            case kListOsVariants:
             case kListHostDvds:
             case kListHostFloppies:
             case kListInternalNetworks:
