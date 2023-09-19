@@ -853,6 +853,7 @@ HRESULT Platform::i_applyDefaults(GuestOSType *aOsType)
  * @returns Platform architecture as a string.
  * @param   enmArchitecture         Platform architecture to convert.
  */
+/* static */
 const char *Platform::s_platformArchitectureToStr(PlatformArchitecture_T enmArchitecture)
 {
     switch (enmArchitecture)

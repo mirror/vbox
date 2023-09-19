@@ -73,7 +73,7 @@ public:
 public:
 
     // static public helper functions
-    const char *s_platformArchitectureToStr(PlatformArchitecture_T enmArchitecture);
+    static const char *s_platformArchitectureToStr(PlatformArchitecture_T enmArchitecture);
 
 public:
 
