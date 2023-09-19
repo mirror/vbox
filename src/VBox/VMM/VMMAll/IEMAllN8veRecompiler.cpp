@@ -1404,6 +1404,7 @@ static uint32_t iemNativeEmitThreadedCall(PVMCPUCC pVCpu, uint32_t off, PCIEMTHR
     off = iemNativeEmitMarker(pVCpu, off);
     AssertReturn(off != UINT32_MAX, UINT32_MAX);
 #endif
+    uint8_t const cParams = g_acIemThreadedFunctionUsedArgs[pCallEntry->enmFunction];
 
 #ifdef RT_ARCH_AMD64
     /* Load the parameters and emit the call. */
@@ -1411,21 +1412,39 @@ static uint32_t iemNativeEmitThreadedCall(PVMCPUCC pVCpu, uint32_t off, PCIEMTHR
 #  ifndef VBOXSTRICTRC_STRICT_ENABLED
     off = iemNativeEmitLoadGprFromGpr(pVCpu, off, X86_GREG_xCX, X86_GREG_xBX);
     AssertReturn(off != UINT32_MAX, UINT32_MAX);
-    off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_xDX, pCallEntry->auParams[0]);
-    AssertReturn(off != UINT32_MAX, UINT32_MAX);
-    off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_x8, pCallEntry->auParams[1]);
-    AssertReturn(off != UINT32_MAX, UINT32_MAX);
-    off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_x9, pCallEntry->auParams[2]);
-    AssertReturn(off != UINT32_MAX, UINT32_MAX);
+    if (cParams > 0)
+    {
+        off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_xDX, pCallEntry->auParams[0]);
+        AssertReturn(off != UINT32_MAX, UINT32_MAX);
+    }
+    if (cParams > 1)
+    {
+        off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_x8, pCallEntry->auParams[1]);
+        AssertReturn(off != UINT32_MAX, UINT32_MAX);
+    }
+    if (cParams > 2)
+    {
+        off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_x9, pCallEntry->auParams[2]);
+        AssertReturn(off != UINT32_MAX, UINT32_MAX);
+    }
 #  else  /* VBOXSTRICTRC: Returned via hidden parameter. Sigh. */
     off = iemNativeEmitLoadGprFromGpr(pVCpu, off, X86_GREG_xDX, X86_GREG_xBX);
     AssertReturn(off != UINT32_MAX, UINT32_MAX);
-    off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_x8, pCallEntry->auParams[0]);
-    AssertReturn(off != UINT32_MAX, UINT32_MAX);
-    off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_x9, pCallEntry->auParams[1]);
-    AssertReturn(off != UINT32_MAX, UINT32_MAX);
-    off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_x10, pCallEntry->auParams[2]);
-    AssertReturn(off != UINT32_MAX, UINT32_MAX);
+    if (cParams > 0)
+    {
+        off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_x8, pCallEntry->auParams[0]);
+        AssertReturn(off != UINT32_MAX, UINT32_MAX);
+    }
+    if (cParams > 1)
+    {
+        off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_x9, pCallEntry->auParams[1]);
+        AssertReturn(off != UINT32_MAX, UINT32_MAX);
+    }
+    if (cParams > 2)
+    {
+        off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_x10, pCallEntry->auParams[2]);
+        AssertReturn(off != UINT32_MAX, UINT32_MAX);
+    }
     off = iemNativeEmitStoreGprByBp(pVCpu, off, IEMNATIVE_FP_OFF_STACK_ARG0, X86_GREG_x10);
     AssertReturn(off != UINT32_MAX, UINT32_MAX);
     off = iemNativeEmitLeaGrpByBp(pVCpu, off, X86_GREG_xCX, IEMNATIVE_FP_OFF_IN_SHADOW_ARG0); /* rcStrict */
@@ -1434,12 +1453,21 @@ static uint32_t iemNativeEmitThreadedCall(PVMCPUCC pVCpu, uint32_t off, PCIEMTHR
 # else
     off = iemNativeEmitLoadGprFromGpr(pVCpu, off, X86_GREG_xDI, X86_GREG_xBX);
     AssertReturn(off != UINT32_MAX, UINT32_MAX);
-    off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_xSI, pCallEntry->auParams[0]);
-    AssertReturn(off != UINT32_MAX, UINT32_MAX);
-    off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_xDX, pCallEntry->auParams[1]);
-    AssertReturn(off != UINT32_MAX, UINT32_MAX);
-    off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_xCX, pCallEntry->auParams[2]);
-    AssertReturn(off != UINT32_MAX, UINT32_MAX);
+    if (cParams > 0)
+    {
+        off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_xSI, pCallEntry->auParams[0]);
+        AssertReturn(off != UINT32_MAX, UINT32_MAX);
+    }
+    if (cParams > 1)
+    {
+        off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_xDX, pCallEntry->auParams[1]);
+        AssertReturn(off != UINT32_MAX, UINT32_MAX);
+    }
+    if (cParams > 2)
+    {
+        off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_xCX, pCallEntry->auParams[2]);
+        AssertReturn(off != UINT32_MAX, UINT32_MAX);
+    }
 # endif
     off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_xAX, (uintptr_t)g_apfnIemThreadedFunctions[pCallEntry->enmFunction]);
     AssertReturn(off != UINT32_MAX, UINT32_MAX);

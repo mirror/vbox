@@ -1581,37 +1581,37 @@ class IEMThreadedGenerator(object):
             '',
         ];
 
-    ## List of built-in threaded functions.
-    kasBltIns = (
-        'DeferToCImpl0',
-        'CheckIrq',
-        'CheckMode',
-        'CheckHwInstrBps',
-        'CheckCsLim',
+    ## List of built-in threaded functions with user argument counts.
+    katBltIns = (
+        ( 'DeferToCImpl0',                                      2 ),
+        ( 'CheckIrq',                                           0 ),
+        ( 'CheckMode',                                          1 ),
+        ( 'CheckHwInstrBps',                                    0 ),
+        ( 'CheckCsLim',                                         1 ),
 
-        'CheckCsLimAndOpcodes',
-        'CheckOpcodes',
-        'CheckOpcodesConsiderCsLim',
+        ( 'CheckCsLimAndOpcodes',                               3 ),
+        ( 'CheckOpcodes',                                       3 ),
+        ( 'CheckOpcodesConsiderCsLim',                          3 ),
 
-        'CheckCsLimAndPcAndOpcodes',
-        'CheckPcAndOpcodes',
-        'CheckPcAndOpcodesConsiderCsLim',
+        ( 'CheckCsLimAndPcAndOpcodes',                          3 ),
+        ( 'CheckPcAndOpcodes',                                  3 ),
+        ( 'CheckPcAndOpcodesConsiderCsLim',                     3 ),
 
-        'CheckCsLimAndOpcodesAcrossPageLoadingTlb',
-        'CheckOpcodesAcrossPageLoadingTlb',
-        'CheckOpcodesAcrossPageLoadingTlbConsiderCsLim',
+        ( 'CheckCsLimAndOpcodesAcrossPageLoadingTlb',           3 ),
+        ( 'CheckOpcodesAcrossPageLoadingTlb',                   3 ),
+        ( 'CheckOpcodesAcrossPageLoadingTlbConsiderCsLim',      2 ),
 
-        'CheckCsLimAndOpcodesLoadingTlb',
-        'CheckOpcodesLoadingTlb',
-        'CheckOpcodesLoadingTlbConsiderCsLim',
+        ( 'CheckCsLimAndOpcodesLoadingTlb',                     3 ),
+        ( 'CheckOpcodesLoadingTlb',                             3 ),
+        ( 'CheckOpcodesLoadingTlbConsiderCsLim',                3 ),
 
-        'CheckCsLimAndOpcodesOnNextPageLoadingTlb',
-        'CheckOpcodesOnNextPageLoadingTlb',
-        'CheckOpcodesOnNextPageLoadingTlbConsiderCsLim',
+        ( 'CheckCsLimAndOpcodesOnNextPageLoadingTlb',           2 ),
+        ( 'CheckOpcodesOnNextPageLoadingTlb',                   2 ),
+        ( 'CheckOpcodesOnNextPageLoadingTlbConsiderCsLim',      2 ),
 
-        'CheckCsLimAndOpcodesOnNewPageLoadingTlb',
-        'CheckOpcodesOnNewPageLoadingTlb',
-        'CheckOpcodesOnNewPageLoadingTlbConsiderCsLim',
+        ( 'CheckCsLimAndOpcodesOnNewPageLoadingTlb',            3 ), # actually 2 params, but asserts uParam2 == 0.
+        ( 'CheckOpcodesOnNewPageLoadingTlb',                    3 ), # actually 2 params, but asserts uParam2 == 0.
+        ( 'CheckOpcodesOnNewPageLoadingTlbConsiderCsLim',       3 ), # actually 2 params, but asserts uParam2 == 0.
     );
 
     def generateThreadedFunctionsHeader(self, oOut):
@@ -1632,7 +1632,7 @@ class IEMThreadedGenerator(object):
             '     * Predefined',
             '     */',
         ];
-        asLines += ['    kIemThreadedFunc_BltIn_%s,' % (sFuncNm,) for sFuncNm in self.kasBltIns];
+        asLines += ['    kIemThreadedFunc_BltIn_%s,' % (sFuncNm,) for sFuncNm, _ in self.katBltIns];
 
         iThreadedFunction = 1;
         for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
@@ -1660,6 +1660,7 @@ class IEMThreadedGenerator(object):
             '#if defined(IN_RING3) || defined(LOG_ENABLED)',
             'extern const char * const       g_apszIemThreadedFunctions[kIemThreadedFunc_End];',
             '#endif',
+            'extern uint8_t const            g_acIemThreadedFunctionUsedArgs[kIemThreadedFunc_End];',
         ];
 
         oOut.write('\n'.join(asLines));
@@ -1761,73 +1762,85 @@ class IEMThreadedGenerator(object):
 
 
         #
-        # Emit the function table.
+        # Generate the output tables in parallel.
         #
-        oOut.write(  '\n'
-                   + '\n'
-                   + '/**\n'
-                   + ' * Function table.\n'
-                   + ' */\n'
-                   + 'const PFNIEMTHREADEDFUNC g_apfnIemThreadedFunctions[kIemThreadedFunc_End] =\n'
-                   + '{\n'
-                   + '    /*Invalid*/ NULL,\n'
-                   + '\n'
-                   + '    /*\n'
-                   + '     * Predefined.\n'
-                   + '     */\n');
-        for sFuncNm in self.kasBltIns:
-            oOut.write('    iemThreadedFunc_BltIn_%s,\n' % (sFuncNm,));
+        asFuncTable = [
+            '/**',
+            ' * Function pointer table.',
+            ' */',
+            'PFNIEMTHREADEDFUNC const g_apfnIemThreadedFunctions[kIemThreadedFunc_End] =',
+            '{',
+            '    /*Invalid*/ NULL,',
+        ];
+        asNameTable = [
+            '/**',
+            ' * Function name table.',
+            ' */',
+            'const char * const g_apszIemThreadedFunctions[kIemThreadedFunc_End] =',
+            '{',
+            '    "Invalid",',
+        ];
+        asArgCntTab = [
+            '/**',
+            ' * Argument count table.',
+            ' */',
+            'uint8_t const g_acIemThreadedFunctionUsedArgs[kIemThreadedFunc_End] =',
+            '{',
+            '    0, /*Invalid*/',
+        ];
+        aasTables = (asFuncTable, asNameTable, asArgCntTab,);
+
+        for asTable in aasTables:
+            asTable.extend((
+                '',
+                '    /*',
+                '     * Predefined.',
+                '     */',
+            ));
+        for sFuncNm, cArgs in self.katBltIns:
+            asFuncTable.append('    iemThreadedFunc_BltIn_%s,' % (sFuncNm,));
+            asNameTable.append('    "BltIn_%s",' % (sFuncNm,));
+            asArgCntTab.append('    %d, /*BltIn_%s*/' % (cArgs, sFuncNm,));
 
         iThreadedFunction = 1;
         for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
-            oOut.write(  '\n'
-                       + '    /*\n'
-                       + '     * Variation: ' + ThreadedFunctionVariation.kdVariationNames[sVariation] + '\n'
-                       + '     */\n');
-            for oThreadedFunction in self.aoThreadedFuncs:
-                oVariation = oThreadedFunction.dVariations.get(sVariation, None);
-                if oVariation:
-                    iThreadedFunction += 1;
-                    assert oVariation.iEnumValue == iThreadedFunction;
-                    oOut.write('    /*%4u*/ %s,\n' % (iThreadedFunction, oVariation.getFunctionName(),));
-        oOut.write('};\n');
-
-        #
-        # Emit the function name table.
-        #
-        oOut.write(  '\n'
-                   + '\n'
-                   + '#if defined(IN_RING3) || defined(LOG_ENABLED)\n'
-                   + '/**\n'
-                   + ' * Function table.\n'
-                   + ' */\n'
-                   + 'const char * const g_apszIemThreadedFunctions[kIemThreadedFunc_End] =\n'
-                   + '{\n'
-                   + '    "Invalid",\n'
-                   + '\n'
-                   + '    /*\n'
-                   + '     * Predefined.\n'
-                   + '     */\n');
-        for sFuncNm in self.kasBltIns:
-            oOut.write('    "BltIn_%s",\n' % (sFuncNm,));
-
-        iThreadedFunction = 1;
-        for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
-            oOut.write(  '\n'
-                       + '    /*\n'
-                       + '     * Variation: ' + ThreadedFunctionVariation.kdVariationNames[sVariation] + '\n'
-                       + '     */\n');
+            for asTable in aasTables:
+                asTable.extend((
+                    '',
+                    '    /*',
+                    '     * Variation: ' + ThreadedFunctionVariation.kdVariationNames[sVariation],
+                    '     */',
+                ));
             for oThreadedFunction in self.aoThreadedFuncs:
                 oVariation = oThreadedFunction.dVariations.get(sVariation, None);
                 if oVariation:
                     iThreadedFunction += 1;
                     assert oVariation.iEnumValue == iThreadedFunction;
                     sName = oVariation.getFunctionName();
-                    if sName.startswith('iemThreadedFunc_'):
-                        sName = sName[len('iemThreadedFunc_'):];
-                    oOut.write('    /*%4u*/ "%s",\n' % (iThreadedFunction, sName,));
-        oOut.write(  '};\n'
-                   + '#endif /* IN_RING3 || LOG_ENABLED */\n');
+                    asFuncTable.append('    /*%4u*/ %s,' % (iThreadedFunction, sName,));
+                    asNameTable.append('    /*%4u*/ "%s",' % (iThreadedFunction, sName,));
+                    asArgCntTab.append('    /*%4u*/ %d, /*%s*/' % (iThreadedFunction, oVariation.cMinParams, sName,));
+
+        for asTable in aasTables:
+            asTable.append('};');
+
+        #
+        # Output the tables.
+        #
+        oOut.write(  '\n'
+                   + '\n');
+        oOut.write('\n'.join(asFuncTable));
+        oOut.write(  '\n'
+                   + '\n'
+                   + '\n'
+                   + '#if defined(IN_RING3) || defined(LOG_ENABLED)\n');
+        oOut.write('\n'.join(asNameTable));
+        oOut.write(  '\n'
+                   + '#endif /* IN_RING3 || LOG_ENABLED */\n'
+                   + '\n'
+                   + '\n');
+        oOut.write('\n'.join(asArgCntTab));
+        oOut.write('\n');
 
         return True;
 
