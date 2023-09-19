@@ -2868,7 +2868,20 @@
 
     <attribute name="progressOperations" type="IProgress" readonly="yes" safearray="yes"/>
 
-    <attribute name="guestOSTypes" type="IGuestOSType" readonly="yes" safearray="yes"/>
+    <attribute name="guestOSTypes" type="IGuestOSType" readonly="yes" safearray="yes">
+      <desc>
+        Array of guest OS type objects known to this VirtualBox installation.
+      </desc>
+    </attribute>
+
+    <attribute name="guestOSFamilies" type="wstring" readonly="yes" safearray="yes">
+      <desc>
+        Array of guest OS family identifiers known to this VirtualBox installation.
+
+        The guest OS family identifier corrresponds to the <link to="IGuestOSType::familyId"/>
+        attribute.
+      </desc>
+    </attribute>
 
     <attribute name="sharedFolders" type="ISharedFolder" readonly="yes" safearray="yes">
       <desc>
@@ -3494,22 +3507,6 @@
       </param>
       <param name="type" type="IGuestOSType" dir="return">
         <desc>Guest OS type object.</desc>
-      </param>
-    </method>
-
-    <method name="getGuestOSFamilies">
-      <rest request="get" path="/server/methods/"/>
-      <desc>
-        Returns a list of all known guest OS family IDs.
-
-        The <link to="IVirtualBox::guestOSTypes"/> collection contains all
-        available guest OS type objects. Each object has an
-        <link to="IGuestOSType::familyId"/> attribute which contains
-        the guest OS family identifier string that this object describes.
-
-      </desc>
-      <param name="guestOSFamilies" type="wstring" safearray="yes" dir="return">
-        <desc>Array of all known guest OS family IDs.</desc>
       </param>
     </method>
 

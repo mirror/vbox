@@ -2191,7 +2191,7 @@ static HRESULT produceList(enum ListType_T enmCommand, bool fOptLong, bool fOptS
         case kListOsVariants:
         {
             com::SafeArray<BSTR> GuestOSFamilies;
-            CHECK_ERROR(pVirtualBox, GetGuestOSFamilies(ComSafeArrayAsOutParam(GuestOSFamilies)));
+            CHECK_ERROR(pVirtualBox, COMGETTER(GuestOSFamilies)(ComSafeArrayAsOutParam(GuestOSFamilies)));
             if (SUCCEEDED(hrc))
             {
                 for (size_t i = 0; i < GuestOSFamilies.size(); ++i)

@@ -1946,6 +1946,42 @@ HRESULT VirtualBox::checkFirmwarePresent(FirmwareType_T aFirmwareType,
 
     return S_OK;
 }
+
+/**
+ * Walk the list of GuestOSType objects and return a list of all known guest
+ * OS families.
+ *
+ * @param aOSFamilies    Where to store the list of guest OS families.
+ *
+ * @note Locks the guest OS types list for reading.
+ */
+HRESULT VirtualBox::getGuestOSFamilies(std::vector<com::Utf8Str> &aOSFamilies)
+{
+    std::list<com::Utf8Str> allOSFamilies;
+
+    AutoReadLock alock(m->allGuestOSTypes.getLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+    for (GuestOSTypesOList::const_iterator it = m->allGuestOSTypes.begin();
+         it != m->allGuestOSTypes.end(); ++it)
+    {
+        const Utf8Str &familyId = (*it)->i_familyId();
+        AssertMsg(!familyId.isEmpty(), ("familfyId must not be NULL"));
+        allOSFamilies.push_back(familyId);
+    }
+
+    /* throw out any duplicates */
+    allOSFamilies.sort();
+    allOSFamilies.unique();
+
+    aOSFamilies.resize(allOSFamilies.size());
+    size_t i = 0;
+    for (std::list<com::Utf8Str>::const_iterator it = allOSFamilies.begin();
+         it != allOSFamilies.end(); ++it, ++i)
+        aOSFamilies[i] = (*it);
+
+    return S_OK;
+}
+
 // Wrapped IVirtualBox methods
 /////////////////////////////////////////////////////////////////////////////
 
@@ -4427,41 +4463,6 @@ HRESULT VirtualBox::i_findGuestOSType(const Utf8Str &strOSType,
     return setError(VBOX_E_OBJECT_NOT_FOUND,
                     tr("'%s' is not a valid Guest OS type"),
                     strOSType.c_str());
-}
-
-/**
- * Walk the list of GuestOSType objects and return a list of all known guest
- * OS families.
- *
- * @param aOSFamilies    Where to store the list of guest OS families.
- *
- * @note Locks the guest OS types list for reading.
- */
-HRESULT VirtualBox::getGuestOSFamilies(std::vector<com::Utf8Str> &aOSFamilies)
-{
-    std::list<com::Utf8Str> allOSFamilies;
-
-    AutoReadLock alock(m->allGuestOSTypes.getLockHandle() COMMA_LOCKVAL_SRC_POS);
-
-    for (GuestOSTypesOList::const_iterator it = m->allGuestOSTypes.begin();
-         it != m->allGuestOSTypes.end(); ++it)
-    {
-        const Utf8Str &familyId = (*it)->i_familyId();
-        AssertMsg(!familyId.isEmpty(), ("familfyId must not be NULL"));
-        allOSFamilies.push_back(familyId);
-    }
-
-    /* throw out any duplicates */
-    allOSFamilies.sort();
-    allOSFamilies.unique();
-
-    aOSFamilies.resize(allOSFamilies.size());
-    size_t i = 0;
-    for (std::list<com::Utf8Str>::const_iterator it = allOSFamilies.begin();
-         it != allOSFamilies.end(); ++it, ++i)
-        aOSFamilies[i] = (*it);
-
-    return S_OK;
 }
 
 /**
