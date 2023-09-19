@@ -529,7 +529,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
             break;
     }
 
-    return VERR_PLATFORM_ARCH_NOT_SUPPORTED;;
+    return VERR_PLATFORM_ARCH_NOT_SUPPORTED;
 }
 
 
