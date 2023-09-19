@@ -1609,9 +1609,9 @@ class IEMThreadedGenerator(object):
         ( 'CheckOpcodesOnNextPageLoadingTlb',                   2 ),
         ( 'CheckOpcodesOnNextPageLoadingTlbConsiderCsLim',      2 ),
 
-        ( 'CheckCsLimAndOpcodesOnNewPageLoadingTlb',            3 ), # actually 2 params, but asserts uParam2 == 0.
-        ( 'CheckOpcodesOnNewPageLoadingTlb',                    3 ), # actually 2 params, but asserts uParam2 == 0.
-        ( 'CheckOpcodesOnNewPageLoadingTlbConsiderCsLim',       3 ), # actually 2 params, but asserts uParam2 == 0.
+        ( 'CheckCsLimAndOpcodesOnNewPageLoadingTlb',            2 ),
+        ( 'CheckOpcodesOnNewPageLoadingTlb',                    2 ),
+        ( 'CheckOpcodesOnNewPageLoadingTlbConsiderCsLim',       2 ),
     );
 
     def generateThreadedFunctionsHeader(self, oOut):

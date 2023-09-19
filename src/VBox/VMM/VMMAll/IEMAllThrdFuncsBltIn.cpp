@@ -737,7 +737,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckCsLimAndOpcodesOnNewPage
     PCIEMTB const  pTb         = pVCpu->iem.s.pCurTbR3;
     uint32_t const cbInstr     = (uint32_t)uParam0;
     uint32_t const idxRange    = (uint32_t)uParam1;
-    Assert(uParam2 == 0 /*offRange*/); RT_NOREF(uParam2);
+    RT_NOREF(uParam2); //Assert(uParam2 == 0 /*offRange*/);
     BODY_CHECK_CS_LIM(cbInstr);
     BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, 0, idxRange, cbInstr);
     Assert(pVCpu->iem.s.offCurInstrStart == 0);
@@ -757,7 +757,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingT
     PCIEMTB const  pTb         = pVCpu->iem.s.pCurTbR3;
     uint32_t const cbInstr     = (uint32_t)uParam0;
     uint32_t const idxRange    = (uint32_t)uParam1;
-    Assert(uParam2 == 0 /*offRange*/); RT_NOREF(uParam2);
+    RT_NOREF(uParam2); //Assert(uParam2 == 0 /*offRange*/);
     BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, 0, idxRange, cbInstr);
     Assert(pVCpu->iem.s.offCurInstrStart == 0);
     BODY_CHECK_OPCODES(pTb, idxRange, 0, cbInstr);
@@ -777,7 +777,7 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckOpcodesOnNewPageLoadingT
     PCIEMTB const  pTb         = pVCpu->iem.s.pCurTbR3;
     uint32_t const cbInstr     = (uint32_t)uParam0;
     uint32_t const idxRange    = (uint32_t)uParam1;
-    Assert(uParam2 == 0 /*offRange*/); RT_NOREF(uParam2);
+    RT_NOREF(uParam2); //Assert(uParam2 == 0 /*offRange*/);
     BODY_CONSIDER_CS_LIM_CHECKING(pTb, cbInstr);
     BODY_LOAD_TLB_FOR_NEW_PAGE(pTb, 0, idxRange, cbInstr);
     Assert(pVCpu->iem.s.offCurInstrStart == 0);
