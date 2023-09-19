@@ -55,6 +55,7 @@ public:
     const Utf8Str &i_variant() const { return mOSVariant; }
     const Utf8Str &i_description() const { return mDescription; }
     bool i_is64Bit() const { return !!(mOSHint & VBOXOSHINT_64BIT); }
+    PlatformArchitecture_T i_platformArchitecture() const;
     bool i_recommendedIOAPIC() const { return !!(mOSHint & VBOXOSHINT_IOAPIC); }
     bool i_recommendedX2APIC() const { return !!(mOSHint & VBOXOSHINT_X2APIC); }
     bool i_recommendedVirtEx() const { return !!(mOSHint & VBOXOSHINT_HWVIRTEX); }
