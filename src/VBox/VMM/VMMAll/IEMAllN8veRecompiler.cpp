@@ -58,11 +58,14 @@
 #include <iprt/heap.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+
 #ifdef RT_OS_WINDOWS
-/** @todo */
+# include <iprt/formats/pecoff.h> /* this is incomaptible with windows.h, thus: */
+extern "C" DECLIMPORT(uint8_t) __cdecl RtlAddFunctionTable(void *pvFunctionTable, uint32_t cEntries, uintptr_t uBaseAddress);
+extern "C" DECLIMPORT(uint8_t) __cdecl RtlDelFunctionTable(void *pvFunctionTable);
 #else
 # include <iprt/formats/dwarf.h>
-extern "C" void __register_frame_info(void *begin, void *ob);
+extern "C" void __register_frame_info(void *begin, void *ob); /* found no header for these two */
 #endif
 
 #include "IEMInline.h"
@@ -85,6 +88,64 @@ extern "C" void __register_frame_info(void *begin, void *ob);
 #ifndef IEM_WITH_SETJMP
 # error The setjmp approach must be enabled for the recompiler.
 #endif
+
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** @name Stack Frame Layout
+ *
+ * @{  */
+/** The size of the area for stack variables and spills and stuff. */
+#define IEMNATIVE_FRAME_VAR_SIZE            0x40
+#ifdef RT_ARCH_AMD64
+/** Number of stack arguments slots for calls made from the frame. */
+# define IEMNATIVE_FRAME_STACK_ARG_COUNT    4
+/** An stack alignment adjustment (between non-volatile register pushes and
+ *  the stack variable area, so the latter better aligned). */
+# define IEMNATIVE_FRAME_ALIGN_SIZE         8
+/** Number of any shadow arguments (spill area) for calls we make. */
+# ifdef RT_OS_WINDOWS
+#  define IEMNATIVE_FRAME_SHADOW_ARG_COUNT  4
+# else
+#  define IEMNATIVE_FRAME_SHADOW_ARG_COUNT  0
+# endif
+
+/** Frame pointer (RBP) relative offset of the last push. */
+# ifdef RT_OS_WINDOWS
+#  define IEMNATIVE_FP_OFF_LAST_PUSH        (7 * -8)
+# else
+#  define IEMNATIVE_FP_OFF_LAST_PUSH        (5 * -8)
+# endif
+/** Frame pointer (RBP) relative offset of the stack variable area (the lowest
+ * address for it). */
+# define IEMNATIVE_FP_OFF_STACK_VARS        (IEMNATIVE_FP_OFF_LAST_PUSH - IEMNATIVE_FRAME_ALIGN_SIZE - IEMNATIVE_FRAME_VAR_SIZE)
+/** Frame pointer (RBP) relative offset of the first stack argument for calls. */
+# define IEMNATIVE_FP_OFF_STACK_ARG0        (IEMNATIVE_FP_OFF_STACK_VARS - IEMNATIVE_FRAME_STACK_ARG_COUNT * 8)
+/** Frame pointer (RBP) relative offset of the second stack argument for calls. */
+# define IEMNATIVE_FP_OFF_STACK_ARG1        (IEMNATIVE_FP_OFF_STACK_ARG0 + 8)
+/** Frame pointer (RBP) relative offset of the third stack argument for calls. */
+# define IEMNATIVE_FP_OFF_STACK_ARG2        (IEMNATIVE_FP_OFF_STACK_ARG0 + 16)
+/** Frame pointer (RBP) relative offset of the fourth stack argument for calls. */
+# define IEMNATIVE_FP_OFF_STACK_ARG3        (IEMNATIVE_FP_OFF_STACK_ARG0 + 24)
+
+# ifdef RT_OS_WINDOWS
+/** Frame pointer (RBP) relative offset of the first incoming shadow argument. */
+#  define IEMNATIVE_FP_OFF_IN_SHADOW_ARG0   (16)
+/** Frame pointer (RBP) relative offset of the second incoming shadow argument. */
+#  define IEMNATIVE_FP_OFF_IN_SHADOW_ARG1   (24)
+/** Frame pointer (RBP) relative offset of the third incoming shadow argument. */
+#  define IEMNATIVE_FP_OFF_IN_SHADOW_ARG2   (32)
+/** Frame pointer (RBP) relative offset of the fourth incoming shadow argument. */
+#  define IEMNATIVE_FP_OFF_IN_SHADOW_ARG3   (40)
+# endif
+
+#elif RT_ARCH_ARM64
+
+#else
+# error "port me"
+#endif
+/** @} */
 
 
 
@@ -117,12 +178,18 @@ typedef struct IEMEXECMEMCHUNK
     RTHEAPSIMPLE            hHeap;
     /** Pointer to the chunk. */
     void                   *pvChunk;
-#if defined(IN_RING3) && !defined(RT_OS_WINDOWS)
+#ifdef IN_RING3
+# ifdef RT_OS_WINDOWS
+    /** Pointer to the unwind information.  This is allocated from hHeap on
+     *  windows because (at least for AMD64) the UNWIND_INFO structure address
+     *  in the RUNTIME_FUNCTION entry is an RVA and the chunk is the "image".  */
+    void                   *pvUnwindInfo;
+# else
     /** Exception handling frame information for proper unwinding during C++
      *  throws and (possibly) longjmp(). */
     PIEMEXECMEMCHUNKEHFRAME pEhFrame;
-#endif
-#ifdef IN_RING0
+# endif
+#elif defined(IN_RING0)
     /** Allocation handle. */
     RTR0MEMOBJ              hMemObj;
 #endif
@@ -170,10 +237,6 @@ typedef struct IEMEXECMEMALLOCATOR
     void                   *pvAlignTweak;
     /** @} */
 
-#if defined(IN_RING3) && defined(RT_OS_WINDOWS) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64))
-    PRUNTIME_FUNCTION       paUnwindFunctions;
-#endif
-
     /** The allocation chunks. */
     RT_FLEXIBLE_ARRAY_EXTENSION
     IEMEXECMEMCHUNK         aChunks[RT_FLEXIBLE_ARRAY];
@@ -185,7 +248,97 @@ typedef IEMEXECMEMALLOCATOR *PIEMEXECMEMALLOCATOR;
 #define IEMEXECMEMALLOCATOR_MAGIC UINT32_C(0x19490412)
 
 
-#if defined(IN_RING3) && !defined(RT_OS_WINDOWS)
+#ifdef IN_RING3
+# ifdef RT_OS_WINDOWS
+
+/**
+ * Initializes the unwind info structures for windows hosts.
+ */
+static void *iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecMemAllocator,
+                                                                  RTHEAPSIMPLE hHeap, void *pvChunk)
+{
+    /*
+     * The AMD64 unwind opcodes.
+     *
+     * This is a program that starts with RSP after a RET instruction that
+     * ends up in recompiled code, and the operations we describe here will
+     * restore all non-volatile registers and bring RSP back to where our
+     * RET address is.  This means it's reverse order from what happens in
+     * the prologue.
+     *
+     * Note! Using a frame register approach here both because we have one
+     *       and but mainly because the UWOP_ALLOC_LARGE argument values
+     *       would be a pain to write initializers for.  On the positive
+     *       side, we're impervious to changes in the the stack variable
+     *       area can can deal with dynamic stack allocations if necessary.
+     */
+    static const IMAGE_UNWIND_CODE s_aOpcodes[] =
+    {
+        { { 16, IMAGE_AMD64_UWOP_SET_FPREG,     0 } },              /* RSP  = RBP - FrameOffset * 10 (0x60) */
+        { { 16, IMAGE_AMD64_UWOP_ALLOC_SMALL,   0 } },              /* RSP += 8; */
+        { { 14, IMAGE_AMD64_UWOP_PUSH_NONVOL,   X86_GREG_x15 } },   /* R15  = [RSP]; RSP += 8; */
+        { { 12, IMAGE_AMD64_UWOP_PUSH_NONVOL,   X86_GREG_x14 } },   /* R14  = [RSP]; RSP += 8; */
+        { { 10, IMAGE_AMD64_UWOP_PUSH_NONVOL,   X86_GREG_x13 } },   /* R13  = [RSP]; RSP += 8; */
+        { {  8, IMAGE_AMD64_UWOP_PUSH_NONVOL,   X86_GREG_x12 } },   /* R12  = [RSP]; RSP += 8; */
+        { {  7, IMAGE_AMD64_UWOP_PUSH_NONVOL,   X86_GREG_xDI } },   /* RDI  = [RSP]; RSP += 8; */
+        { {  6, IMAGE_AMD64_UWOP_PUSH_NONVOL,   X86_GREG_xSI } },   /* RSI  = [RSP]; RSP += 8; */
+        { {  5, IMAGE_AMD64_UWOP_PUSH_NONVOL,   X86_GREG_xBX } },   /* RBX  = [RSP]; RSP += 8; */
+        { {  4, IMAGE_AMD64_UWOP_PUSH_NONVOL,   X86_GREG_xBP } },   /* RBP  = [RSP]; RSP += 8; */
+    };
+    union
+    {
+        IMAGE_UNWIND_INFO Info;
+        uint8_t abPadding[RT_UOFFSETOF(IMAGE_UNWIND_INFO, aOpcodes) + 16];
+    } s_UnwindInfo =
+    {
+        {
+            /* .Version = */        1,
+            /* .Flags = */          0,
+            /* .SizeOfProlog = */   16, /* whatever */
+            /* .CountOfCodes = */   RT_ELEMENTS(s_aOpcodes),
+            /* .FrameRegister = */  X86_GREG_xBP,
+            /* .FrameOffset = */    (-IEMNATIVE_FP_OFF_LAST_PUSH + 8) / 16 /* we're off by one slot. sigh. */,
+        }
+    };
+    AssertCompile(-IEMNATIVE_FP_OFF_LAST_PUSH < 240 && -IEMNATIVE_FP_OFF_LAST_PUSH > 0);
+    AssertCompile((-IEMNATIVE_FP_OFF_LAST_PUSH & 0xf) == 8);
+
+    /*
+     * Calc how much space we need and allocate it off the exec heap.
+     */
+    unsigned const cFunctionEntries = 1;
+    unsigned const cbUnwindInfo     = sizeof(s_aOpcodes) + RT_UOFFSETOF(IMAGE_UNWIND_INFO, aOpcodes);
+    unsigned const cbNeeded         = sizeof(IMAGE_RUNTIME_FUNCTION_ENTRY) * cFunctionEntries + cbUnwindInfo;
+    unsigned const cbNeededAligned  = RT_ALIGN_32(cbNeeded + pExecMemAllocator->cbHeapBlockHdr, 64)
+                                    - pExecMemAllocator->cbHeapBlockHdr;
+
+    PIMAGE_RUNTIME_FUNCTION_ENTRY const paFunctions = (PIMAGE_RUNTIME_FUNCTION_ENTRY)RTHeapSimpleAlloc(hHeap, cbNeededAligned,
+                                                                                                       32 /*cbAlignment*/);
+    AssertReturn(paFunctions, NULL);
+
+    /*
+     * Initialize the structures.
+     */
+    PIMAGE_UNWIND_INFO const pInfo = (PIMAGE_UNWIND_INFO)&paFunctions[cFunctionEntries];
+
+    paFunctions[0].BeginAddress         = 0;
+    paFunctions[0].EndAddress           = pExecMemAllocator->cbChunk;
+    paFunctions[0].UnwindInfoAddress    = (uint32_t)((uintptr_t)pInfo - (uintptr_t)pvChunk);
+
+    memcpy(pInfo, &s_UnwindInfo, RT_UOFFSETOF(IMAGE_UNWIND_INFO, aOpcodes));
+    memcpy(&pInfo->aOpcodes[0], s_aOpcodes, sizeof(s_aOpcodes));
+
+    /*
+     * Register it.
+     */
+    uint8_t fRet = RtlAddFunctionTable(paFunctions, cFunctionEntries, (uintptr_t)pvChunk);
+    AssertReturn(fRet, NULL); /* Nothing to clean up on failure, since its within the chunk itself. */
+
+    return paFunctions;
+}
+
+
+# else /* !RT_OS_WINDOWS */
 
 /**
  * Emits a LEB128 encoded value between -0x2000 and 0x2000 (both exclusive).
@@ -271,7 +424,7 @@ DECLINLINE(RTPTRUNION) iemDwarfPutCfaSignedOffset(RTPTRUNION Ptr, uint32_t uReg,
 
 
 /**
- * Initalizes the unwind info section for non-windows hosts.
+ * Initializes the unwind info section for non-windows hosts.
  */
 static void iemExecMemAllocatorInitEhFrameForChunk(PIEMEXECMEMALLOCATOR pExecMemAllocator,
                                                    PIEMEXECMEMCHUNKEHFRAME pEhFrame, void *pvChunk)
@@ -326,7 +479,8 @@ static void iemExecMemAllocatorInitEhFrameForChunk(PIEMEXECMEMALLOCATOR pExecMem
     Assert(Ptr.u - (uintptr_t)&pEhFrame->abEhFrame[0] <= sizeof(pEhFrame->abEhFrame));
 }
 
-#endif /* IN_RING3 && !RT_OS_WINDOWS */
+# endif /* !RT_OS_WINDOWS */
+#endif /* IN_RING3 */
 
 
 /**
@@ -400,10 +554,14 @@ static int iemExecMemAllocatorGrow(PIEMEXECMEMALLOCATOR pExecMemAllocator)
 #ifdef IN_RING3
 # ifdef RT_OS_WINDOWS
             /*
-             * Register the runtime function table for this chunk.
-             * We can share the data structure on windows.
+             * The unwind information need to reside inside the chunk (at least
+             * the UNWIND_INFO structures does), as the UnwindInfoAddress member
+             * of RUNTIME_FUNCTION (AMD64) is relative to the "image base".
+             *
+             * We need unwind info because even longjmp() does a C++ stack unwind.
              */
-            /** @todo */
+            void *pvUnwindInfo = iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(pExecMemAllocator, hHeap, pvChunk);
+            AssertStmt(pvUnwindInfo, rc = VERR_INTERNAL_ERROR_3);
 # else
             /*
              * Generate an .eh_frame section for the chunk and register it so
@@ -426,10 +584,14 @@ static int iemExecMemAllocatorGrow(PIEMEXECMEMALLOCATOR pExecMemAllocator)
                 /*
                  * Finalize the adding of the chunk.
                  */
-                pExecMemAllocator->aChunks[idxChunk].pvChunk  = pvChunk;
-                pExecMemAllocator->aChunks[idxChunk].hHeap    = hHeap;
-#if defined(IN_RING3) && !defined(RT_OS_WINDOWS)
-                pExecMemAllocator->aChunks[idxChunk].pEhFrame = pEhFrame;
+                pExecMemAllocator->aChunks[idxChunk].pvChunk      = pvChunk;
+                pExecMemAllocator->aChunks[idxChunk].hHeap        = hHeap;
+#ifdef IN_RING3
+# ifdef RT_OS_WINDOWS
+                pExecMemAllocator->aChunks[idxChunk].pvUnwindInfo = pvUnwindInfo;
+# else
+                pExecMemAllocator->aChunks[idxChunk].pEhFrame     = pEhFrame;
+# endif
 #endif
 
                 pExecMemAllocator->cChunks      = idxChunk + 1;
@@ -504,14 +666,8 @@ int iemExecMemAllocatorInit(PVMCPU pVCpu, uint64_t cbMax, uint64_t cbInitial, ui
     /*
      * Allocate and initialize the allocatore instance.
      */
-#if defined(IN_RING3) && defined(RT_OS_WINDOWS) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64))
-    size_t const cbExtra = sizeof(RUNTIME_FUNCTION) + 0; /** @todo */
-#else
-    size_t const cbExtra = 0;
-#endif
-    PIEMEXECMEMALLOCATOR pExecMemAllocator = (PIEMEXECMEMALLOCATOR)RTMemAllocZ(  RT_UOFFSETOF_DYN(IEMEXECMEMALLOCATOR,
-                                                                                                  aChunks[cMaxChunks])
-                                                                               + cbExtra);
+    PIEMEXECMEMALLOCATOR pExecMemAllocator = (PIEMEXECMEMALLOCATOR)RTMemAllocZ(RT_UOFFSETOF_DYN(IEMEXECMEMALLOCATOR,
+                                                                                                aChunks[cMaxChunks]));
     AssertReturn(pExecMemAllocator, VERR_NO_MEMORY);
     pExecMemAllocator->uMagic       = IEMEXECMEMALLOCATOR_MAGIC;
     pExecMemAllocator->cbChunk      = cbChunk;
@@ -522,10 +678,6 @@ int iemExecMemAllocatorInit(PVMCPU pVCpu, uint64_t cbMax, uint64_t cbInitial, ui
     pExecMemAllocator->cbTotal      = 0;
     pExecMemAllocator->cbFree       = 0;
     pExecMemAllocator->cbAllocated  = 0;
-#if defined(IN_RING3) && defined(RT_OS_WINDOWS) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64))
-    pExecMemAllocator->paUnwindFunctions = (PRUNTIME_FUNCTION)&pExecMemAllocator->aChunks[cMaxChunks];
-    /** @todo */
-#endif
     for (uint32_t i = 0; i < cMaxChunks; i++)
     {
         pExecMemAllocator->aChunks[i].hHeap    = NIL_RTHEAPSIMPLE;
@@ -726,7 +878,7 @@ typedef struct IEMNATIVEFIXUP
     /** Addend or other data. */
     int8_t      offAddend;
 } IEMNATIVEFIXUP;
-
+/** Pointer to a native code generator fixup. */
 typedef IEMNATIVEFIXUP *PIEMNATIVEFIXUP;
 
 
@@ -972,7 +1124,7 @@ static uint32_t iemNativeEmitLoadGprImm64(PVMCPUCC pVCpu, uint32_t off, uint8_t 
         uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pVCpu, off, 6);
         AssertReturn(pbCodeBuf, UINT32_MAX);
         if (iGpr >= 8)
-            pbCodeBuf[off++] = X86_OP_REX_R;
+            pbCodeBuf[off++] = X86_OP_REX_B;
         pbCodeBuf[off++] = 0xb8 + (iGpr & 7);
         pbCodeBuf[off++] = RT_BYTE1(uImm64);
         pbCodeBuf[off++] = RT_BYTE2(uImm64);
@@ -987,7 +1139,7 @@ static uint32_t iemNativeEmitLoadGprImm64(PVMCPUCC pVCpu, uint32_t off, uint8_t 
         if (iGpr < 8)
             pbCodeBuf[off++] = X86_OP_REX_W;
         else
-            pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_R;
+            pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_B;
         pbCodeBuf[off++] = 0xb8 + (iGpr & 7);
         pbCodeBuf[off++] = RT_BYTE1(uImm64);
         pbCodeBuf[off++] = RT_BYTE2(uImm64);
@@ -1070,7 +1222,136 @@ static uint32_t iemNativeEmitLoadGprFromGpr(PVMCPUCC pVCpu, uint32_t off, uint8_
     return off;
 }
 
+#ifdef RT_ARCH_AMD64
+/**
+ * Common bit of iemNativeEmitLoadGprByBp and friends.
+ */
+DECL_FORCE_INLINE(uint32_t) iemNativeEmitGprByBpDisp(uint8_t *pbCodeBuf, uint32_t off, uint8_t iGprReg, int32_t offDisp)
+{
+    if (offDisp < 128 && offDisp >= -128)
+    {
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM1, iGprReg & 7, X86_GREG_xBP);
+        pbCodeBuf[off++] = (uint8_t)(int8_t)offDisp;
+    }
+    else
+    {
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM4, iGprReg & 7, X86_GREG_xBP);
+        pbCodeBuf[off++] = RT_BYTE1((uint32_t)offDisp);
+        pbCodeBuf[off++] = RT_BYTE2((uint32_t)offDisp);
+        pbCodeBuf[off++] = RT_BYTE3((uint32_t)offDisp);
+        pbCodeBuf[off++] = RT_BYTE4((uint32_t)offDisp);
+    }
+    return off;
+}
+#endif
 
+
+#ifdef RT_ARCH_AMD64
+/**
+ * Emits a 64-bit GRP load instruction with an BP relative source address.
+ */
+static uint32_t iemNativeEmitLoadGprByBp(PVMCPUCC pVCpu, uint32_t off, uint8_t iGprDst, int32_t offDisp)
+{
+    /* mov gprdst, qword [rbp + offDisp]  */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pVCpu, off, 7);
+    if (iGprDst < 8)
+        pbCodeBuf[off++] = X86_OP_REX_W;
+    else
+        pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x8b;
+    return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprDst, offDisp);
+}
+#endif
+
+
+#ifdef RT_ARCH_AMD64
+/**
+ * Emits a 32-bit GRP load instruction with an BP relative source address.
+ */
+static uint32_t iemNativeEmitLoadGprByBpU32(PVMCPUCC pVCpu, uint32_t off, uint8_t iGprDst, int32_t offDisp)
+{
+    /* mov gprdst, dword [rbp + offDisp]  */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pVCpu, off, 7);
+    if (iGprDst >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x8b;
+    return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprDst, offDisp);
+}
+#endif
+
+
+#ifdef RT_ARCH_AMD64
+/**
+ * Emits a load effective address to a GRP with an BP relative source address.
+ */
+static uint32_t iemNativeEmitLeaGrpByBp(PVMCPUCC pVCpu, uint32_t off, uint8_t iGprDst, int32_t offDisp)
+{
+    /* lea gprdst, [rbp + offDisp] */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pVCpu, off, 7);
+    if (iGprDst < 8)
+        pbCodeBuf[off++] = X86_OP_REX_W;
+    else
+        pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x8d;
+    return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprDst, offDisp);
+}
+#endif
+
+
+#ifdef RT_ARCH_AMD64
+/**
+ * Emits a 64-bit GPR store with an BP relative destination address.
+ */
+static uint32_t iemNativeEmitStoreGprByBp(PVMCPUCC pVCpu, uint32_t off, int32_t offDisp, uint8_t iGprSrc)
+{
+    /* mov qword [rbp + offDisp], gprdst */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pVCpu, off, 7);
+    if (iGprSrc < 8)
+        pbCodeBuf[off++] = X86_OP_REX_W;
+    else
+        pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x89;
+    return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprSrc, offDisp);
+}
+#endif
+
+
+#ifdef RT_ARCH_AMD64
+/**
+ * Emits a 64-bit GPR subtract with a signed immediate subtrahend.
+ */
+static uint32_t iemNativeEmitSubGprImm(PVMCPUCC pVCpu, uint32_t off, uint8_t iGprDst, int32_t iSubtrahend)
+{
+    /* sub gprdst, imm8/imm32 */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pVCpu, off, 7);
+    if (iGprDst < 7)
+        pbCodeBuf[off++] = X86_OP_REX_W;
+    else
+        pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_B;
+    if (iSubtrahend < 128 && iSubtrahend >= -128)
+    {
+        pbCodeBuf[off++] = 0x83;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 5, iGprDst & 7);
+        pbCodeBuf[off++] = (uint8_t)iSubtrahend;
+    }
+    else
+    {
+        pbCodeBuf[off++] = 0x81;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 5, iGprDst & 7);
+        pbCodeBuf[off++] = RT_BYTE1(iSubtrahend);
+        pbCodeBuf[off++] = RT_BYTE2(iSubtrahend);
+        pbCodeBuf[off++] = RT_BYTE3(iSubtrahend);
+        pbCodeBuf[off++] = RT_BYTE4(iSubtrahend);
+    }
+    return off;
+}
+#endif
+
+
+/**
+ * Emits a code for checking the return code of a call and rcPassUp, returning
+ * from the code if either are non-zero.
+ */
 static uint32_t iemNativeEmitCheckCallRetAndPassUp(PVMCPUCC pVCpu, uint32_t off, uint8_t idxInstr)
 {
 #ifdef RT_ARCH_AMD64
@@ -1114,6 +1395,9 @@ static uint32_t iemNativeEmitCheckCallRetAndPassUp(PVMCPUCC pVCpu, uint32_t off,
 }
 
 
+/**
+ * Emits a call to a threaded worker function.
+ */
 static uint32_t iemNativeEmitThreadedCall(PVMCPUCC pVCpu, uint32_t off, PCIEMTHRDEDCALLENTRY pCallEntry)
 {
 #ifdef VBOX_STRICT
@@ -1124,6 +1408,7 @@ static uint32_t iemNativeEmitThreadedCall(PVMCPUCC pVCpu, uint32_t off, PCIEMTHR
 #ifdef RT_ARCH_AMD64
     /* Load the parameters and emit the call. */
 # ifdef RT_OS_WINDOWS
+#  ifndef VBOXSTRICTRC_STRICT_ENABLED
     off = iemNativeEmitLoadGprFromGpr(pVCpu, off, X86_GREG_xCX, X86_GREG_xBX);
     AssertReturn(off != UINT32_MAX, UINT32_MAX);
     off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_xDX, pCallEntry->auParams[0]);
@@ -1132,6 +1417,20 @@ static uint32_t iemNativeEmitThreadedCall(PVMCPUCC pVCpu, uint32_t off, PCIEMTHR
     AssertReturn(off != UINT32_MAX, UINT32_MAX);
     off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_x9, pCallEntry->auParams[2]);
     AssertReturn(off != UINT32_MAX, UINT32_MAX);
+#  else  /* VBOXSTRICTRC: Returned via hidden parameter. Sigh. */
+    off = iemNativeEmitLoadGprFromGpr(pVCpu, off, X86_GREG_xDX, X86_GREG_xBX);
+    AssertReturn(off != UINT32_MAX, UINT32_MAX);
+    off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_x8, pCallEntry->auParams[0]);
+    AssertReturn(off != UINT32_MAX, UINT32_MAX);
+    off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_x9, pCallEntry->auParams[1]);
+    AssertReturn(off != UINT32_MAX, UINT32_MAX);
+    off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_x10, pCallEntry->auParams[2]);
+    AssertReturn(off != UINT32_MAX, UINT32_MAX);
+    off = iemNativeEmitStoreGprByBp(pVCpu, off, IEMNATIVE_FP_OFF_STACK_ARG0, X86_GREG_x10);
+    AssertReturn(off != UINT32_MAX, UINT32_MAX);
+    off = iemNativeEmitLeaGrpByBp(pVCpu, off, X86_GREG_xCX, IEMNATIVE_FP_OFF_IN_SHADOW_ARG0); /* rcStrict */
+    AssertReturn(off != UINT32_MAX, UINT32_MAX);
+#  endif /* VBOXSTRICTRC_STRICT_ENABLED */
 # else
     off = iemNativeEmitLoadGprFromGpr(pVCpu, off, X86_GREG_xDI, X86_GREG_xBX);
     AssertReturn(off != UINT32_MAX, UINT32_MAX);
@@ -1150,6 +1449,10 @@ static uint32_t iemNativeEmitThreadedCall(PVMCPUCC pVCpu, uint32_t off, PCIEMTHR
     pbCodeBuf[off++] = 0xff;                    /* call rax */
     pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 2, X86_GREG_xAX);
 
+# if defined(VBOXSTRICTRC_STRICT_ENABLED) && defined(RT_OS_WINDOWS)
+    off = iemNativeEmitLoadGprByBpU32(pVCpu, off, X86_GREG_xAX, IEMNATIVE_FP_OFF_IN_SHADOW_ARG0); /* rcStrict (see above) */
+# endif
+
     /* Check the status code. */
     off = iemNativeEmitCheckCallRetAndPassUp(pVCpu, off, pCallEntry->idxInstr);
     AssertReturn(off != UINT32_MAX, off);
@@ -1166,6 +1469,9 @@ static uint32_t iemNativeEmitThreadedCall(PVMCPUCC pVCpu, uint32_t off, PCIEMTHR
 }
 
 
+/**
+ * Emits a standard epilog.
+ */
 static uint32_t iemNativeEmitEpilog(PVMCPUCC pVCpu, uint32_t off)
 {
 #ifdef RT_ARCH_AMD64
@@ -1188,11 +1494,7 @@ static uint32_t iemNativeEmitEpilog(PVMCPUCC pVCpu, uint32_t off)
     pbCodeBuf[off++] = X86_OP_REX_W;
     pbCodeBuf[off++] = 0x8d;                    /* lea rsp, [rbp - (gcc ? 5 : 7) * 8] */
     pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM1, X86_GREG_xSP, X86_GREG_xBP);
-# ifdef RT_OS_WINDOWS
-    pbCodeBuf[off++] = (uint8_t)(-7 * 8);
-# else
-    pbCodeBuf[off++] = (uint8_t)(-5 * 8);
-# endif
+    pbCodeBuf[off++] = (uint8_t)IEMNATIVE_FP_OFF_LAST_PUSH;
 
     /* Pop non-volatile registers and return */
     pbCodeBuf[off++] = X86_OP_REX_B;            /* pop r15 */
@@ -1223,7 +1525,7 @@ static uint32_t iemNativeEmitEpilog(PVMCPUCC pVCpu, uint32_t off)
 
         /* Call helper and jump to return point. */
 # ifdef RT_OS_WINDOWS
-        off = iemNativeEmitLoadGprFromGpr(pVCpu, off, X86_GREG_xR8, X86_GREG_xCX); /* cl = instruction number */
+        off = iemNativeEmitLoadGprFromGpr(pVCpu, off, X86_GREG_x8,  X86_GREG_xCX); /* cl = instruction number */
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
         off = iemNativeEmitLoadGprFromGpr(pVCpu, off, X86_GREG_xCX, X86_GREG_xBX);
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
@@ -1276,6 +1578,9 @@ static uint32_t iemNativeEmitEpilog(PVMCPUCC pVCpu, uint32_t off)
 }
 
 
+/**
+ * Emits a standard prolog.
+ */
 static uint32_t iemNativeEmitProlog(PVMCPUCC pVCpu, uint32_t off)
 {
 #ifdef RT_ARCH_AMD64
@@ -1314,16 +1619,15 @@ static uint32_t iemNativeEmitProlog(PVMCPUCC pVCpu, uint32_t off)
     pbCodeBuf[off++] = X86_OP_REX_B;            /* push r15 */
     pbCodeBuf[off++] = 0x50 + X86_GREG_x15 - 8;
 
-    pbCodeBuf[off++] = X86_OP_REX_W;            /* sub rsp, byte 28h */
-    pbCodeBuf[off++] = 0x83;
-    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 5, X86_GREG_xSP);
-    pbCodeBuf[off++] = 0x40  /* for variables */
-                     + 8     /* stack alignment correction */
-                     + 4 * 8 /* 4 non-register arguments */
-# ifdef RT_OS_WINDOWS
-                     + 0x20  /* register argument spill area for windows calling convention */
-# endif
-                     ;
+    off = iemNativeEmitSubGprImm(pVCpu, off,    /* sub rsp, byte 28h */
+                                 X86_GREG_xSP,
+                                   IEMNATIVE_FRAME_ALIGN_SIZE
+                                 + IEMNATIVE_FRAME_VAR_SIZE
+                                 + IEMNATIVE_FRAME_STACK_ARG_COUNT * 8
+                                 + IEMNATIVE_FRAME_SHADOW_ARG_COUNT * 8);
+    AssertCompile(!(IEMNATIVE_FRAME_VAR_SIZE & 0xf));
+    AssertCompile(!(IEMNATIVE_FRAME_STACK_ARG_COUNT & 0x1));
+    AssertCompile(!(IEMNATIVE_FRAME_SHADOW_ARG_COUNT & 0x1));
 
 #elif RT_ARCH_ARM64
     RT_NOREF(pVCpu);
