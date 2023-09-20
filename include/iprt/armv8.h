@@ -1934,6 +1934,236 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 /** @} */
 
 
+/** @name ID_AA64MMFR2_EL1 - AArch64 Memory Model Feature Register 2.
+ * @{ */
+/** Bit 0 - 3 - Indicates support for Common not Private translations. */
+#define ARMV8_ID_AA64MMFR2_EL1_CNP_MASK                         (RT_BIT_64(0) | RT_BIT_64(1) | RT_BIT_64(2) | RT_BIT_64(3))
+#define ARMV8_ID_AA64MMFR2_EL1_CNP_SHIFT                        0
+/** Common not Private translations are not supported. */
+# define ARMV8_ID_AA64MMFR2_EL1_CNP_NOT_IMPL                    0
+/** Support for Common not Private translations (FEAT_TTNCP). */
+# define ARMV8_ID_AA64MMFR2_EL1_CNP_SUPPORTED                   1
+/** Bit 4 - 7 - Indicates support for User Access Override. */
+#define ARMV8_ID_AA64MMFR2_EL1_UAO_MASK                         (RT_BIT_64(4) | RT_BIT_64(5) | RT_BIT_64(6) | RT_BIT_64(7))
+#define ARMV8_ID_AA64MMFR2_EL1_UAO_SHIFT                        4
+/** User Access Override is not supported. */
+# define ARMV8_ID_AA64MMFR2_EL1_UAO_NOT_IMPL                    0
+/** User Access Override is supported (FEAT_UAO). */
+# define ARMV8_ID_AA64MMFR2_EL1_UAO_SUPPORTED                   1
+/** Bit 8 - 11 - Indicates support for LSMAOE and nTLSMD bits in SCTLR_ELx. */
+#define ARMV8_ID_AA64MMFR2_EL1_LSM_MASK                         (RT_BIT_64(8) | RT_BIT_64(9) | RT_BIT_64(10) | RT_BIT_64(11))
+#define ARMV8_ID_AA64MMFR2_EL1_LSM_SHIFT                        8
+/** LSMAOE and nTLSMD bits are not supported. */
+# define ARMV8_ID_AA64MMFR2_EL1_LSM_NOT_IMPL                    0
+/** LSMAOE and nTLSMD bits are supported (FEAT_LSMAOC). */
+# define ARMV8_ID_AA64MMFR2_EL1_LSM_SUPPORTED                   1
+/** Bit 12 - 15 - Indicates support for the IESB bit in SCTLR_ELx registers. */
+#define ARMV8_ID_AA64MMFR2_EL1_IESB_MASK                        (RT_BIT_64(12) | RT_BIT_64(13) | RT_BIT_64(14) | RT_BIT_64(15))
+#define ARMV8_ID_AA64MMFR2_EL1_IESB_SHIFT                       12
+/** IESB bit is not supported. */
+# define ARMV8_ID_AA64MMFR2_EL1_IESB_NOT_IMPL                   0
+/** IESB bit is supported (FEAT_IESB). */
+# define ARMV8_ID_AA64MMFR2_EL1_IESB_SUPPORTED                  1
+/** Bit 16 - 19 - Indicates support for larger virtual address. */
+#define ARMV8_ID_AA64MMFR2_EL1_VARANGE_MASK                     (RT_BIT_64(16) | RT_BIT_64(17) | RT_BIT_64(18) | RT_BIT_64(19))
+#define ARMV8_ID_AA64MMFR2_EL1_VARANGE_SHIFT                    16
+/** Virtual address range is 48 bits. */
+# define ARMV8_ID_AA64MMFR2_EL1_VARANGE_48BITS                  0
+/** 52 bit virtual addresses supported for 64KiB granules (FEAT_LVA). */
+# define ARMV8_ID_AA64MMFR2_EL1_VARANGE_52BITS_64KB_GRAN        1
+/** Bit 20 - 23 - Revised CCSIDR_EL1 register format supported. */
+#define ARMV8_ID_AA64MMFR2_EL1_CCIDX_MASK                       (RT_BIT_64(20) | RT_BIT_64(21) | RT_BIT_64(22) | RT_BIT_64(23))
+#define ARMV8_ID_AA64MMFR2_EL1_CCIDX_SHIFT                      20
+/** CCSIDR_EL1 register format is 32-bit. */
+# define ARMV8_ID_AA64MMFR2_EL1_CCIDX_32BIT                     0
+/** CCSIDR_EL1 register format is 64-bit (FEAT_CCIDX). */
+# define ARMV8_ID_AA64MMFR2_EL1_CCIDX_64BIT                     1
+/** Bit 24 - 27 - Indicates support for nested virtualization. */
+#define ARMV8_ID_AA64MMFR2_EL1_NV_MASK                          (RT_BIT_64(24) | RT_BIT_64(25) | RT_BIT_64(26) | RT_BIT_64(27))
+#define ARMV8_ID_AA64MMFR2_EL1_NV_SHIFT                         24
+/** Nested virtualization is not supported. */
+# define ARMV8_ID_AA64MMFR2_EL1_NV_NOT_IMPL                     0
+/** The HCR_EL2.{AT,NV1,NV} bits are implemented (FEAT_NV). */
+# define ARMV8_ID_AA64MMFR2_EL1_NV_SUPPORTED                    1
+/** The VNCR_EL2 register and HCR_EL2.{NV2,AT,NV1,NV} bits are implemented (FEAT_NV2). */
+# define ARMV8_ID_AA64MMFR2_EL1_NV_SUPPORTED_2                  2
+/** Bit 28 - 31 - Indicates support for small translation tables. */
+#define ARMV8_ID_AA64MMFR2_EL1_ST_MASK                          (RT_BIT_64(28) | RT_BIT_64(29) | RT_BIT_64(30) | RT_BIT_64(31))
+#define ARMV8_ID_AA64MMFR2_EL1_ST_SHIFT                         28
+/** The maximum value of TCR_ELx.{T0SZ,T1SZ} is 39. */
+# define ARMV8_ID_AA64MMFR2_EL1_ST_NOT_IMPL                     0
+/** The maximum value of TCR_ELx.{T0SZ,T1SZ} is 48 for 4KiB and 16KiB, and 47 for 64KiB granules (FEAT_TTST). */
+# define ARMV8_ID_AA64MMFR2_EL1_ST_SUPPORTED                    1
+/** Bit 32 - 35 - Indicates support for unaligned single-copy atomicity and atomic functions. */
+#define ARMV8_ID_AA64MMFR2_EL1_AT_MASK                          (RT_BIT_64(32) | RT_BIT_64(33) | RT_BIT_64(34) | RT_BIT_64(35))
+#define ARMV8_ID_AA64MMFR2_EL1_AT_SHIFT                         32
+/** Unaligned single-copy atomicity and atomic functions are not supported. */
+# define ARMV8_ID_AA64MMFR2_EL1_AT_NOT_IMPL                     0
+/** Unaligned single-copy atomicity and atomic functions are supported (FEAT_LSE2). */
+# define ARMV8_ID_AA64MMFR2_EL1_AT_SUPPORTED                    1
+/** Bit 36 - 39 - Indicates value of ESR_ELx.EC that reports an exception generated by a read access to the feature ID space. */
+#define ARMV8_ID_AA64MMFR2_EL1_IDS_MASK                         (RT_BIT_64(36) | RT_BIT_64(37) | RT_BIT_64(38) | RT_BIT_64(39))
+#define ARMV8_ID_AA64MMFR2_EL1_IDS_SHIFT                        36
+/** ESR_ELx.EC is 0 for traps generated by a read access to the feature ID space. */
+# define ARMV8_ID_AA64MMFR2_EL1_IDS_EC_0                        0
+/** ESR_ELx.EC is 0x18 for traps generated by a read access to the feature ID space (FEAT_IDST). */
+# define ARMV8_ID_AA64MMFR2_EL1_IDS_EC_18H                      1
+/** Bit 40 - 43 - Indicates support for the HCR_EL2.FWB bit. */
+#define ARMV8_ID_AA64MMFR2_EL1_FWB_MASK                         (RT_BIT_64(40) | RT_BIT_64(41) | RT_BIT_64(42) | RT_BIT_64(43))
+#define ARMV8_ID_AA64MMFR2_EL1_FWB_SHIFT                        40
+/** HCR_EL2.FWB bit is not supported. */
+# define ARMV8_ID_AA64MMFR2_EL1_FWB_NOT_IMPL                    0
+/** HCR_EL2.FWB bit is supported (FEAT_S2FWB). */
+# define ARMV8_ID_AA64MMFR2_EL1_FWB_SUPPORTED                   1
+/* Bit 44 - 47 - Reserved. */
+/** Bit 48 - 51 - Indicates support for TTL field in address operations. */
+#define ARMV8_ID_AA64MMFR2_EL1_TTL_MASK                         (RT_BIT_64(48) | RT_BIT_64(49) | RT_BIT_64(50) | RT_BIT_64(51))
+#define ARMV8_ID_AA64MMFR2_EL1_TTL_SHIFT                        48
+/** TLB maintenance instructions by address have bits [47:44] Res0. */
+# define ARMV8_ID_AA64MMFR2_EL1_TTL_NOT_IMPL                    0
+/** TLB maintenance instructions by address have bits [47:44] holding the TTL field (FEAT_TTL). */
+# define ARMV8_ID_AA64MMFR2_EL1_TTL_SUPPORTED                   1
+/** Bit 52 - 55 - Identification of the hardware requirements of the hardware to have break-before-make sequences when
+ * changing block size for a translation. */
+#define ARMV8_ID_AA64MMFR2_EL1_BBM_MASK                         (RT_BIT_64(52) | RT_BIT_64(53) | RT_BIT_64(54) | RT_BIT_64(55))
+#define ARMV8_ID_AA64MMFR2_EL1_BBM_SHIFT                        52
+/** Level 0 support for changing block size is supported (FEAT_BBM). */
+# define ARMV8_ID_AA64MMFR2_EL1_BBM_LVL0                        0
+/** Level 1 support for changing block size is supported (FEAT_BBM). */
+# define ARMV8_ID_AA64MMFR2_EL1_BBM_LVL1                        1
+/** Level 2 support for changing block size is supported (FEAT_BBM). */
+# define ARMV8_ID_AA64MMFR2_EL1_BBM_LVL2                        2
+/** Bit 56 - 59 - Indicates support for Enhanced Virtualization Traps. */
+#define ARMV8_ID_AA64MMFR2_EL1_EVT_MASK                         (RT_BIT_64(56) | RT_BIT_64(57) | RT_BIT_64(58) | RT_BIT_64(59))
+#define ARMV8_ID_AA64MMFR2_EL1_EVT_SHIFT                        56
+/** Enhanced Virtualization Traps are not supported. */
+# define ARMV8_ID_AA64MMFR2_EL1_EVT_NOT_IMPL                    0
+/** Enhanced Virtualization Traps are supported (FEAT_EVT). */
+# define ARMV8_ID_AA64MMFR2_EL1_EVT_SUPPORTED                   1
+/** Enhanced Virtualization Traps are supported with additional traps (FEAT_EVT). */
+# define ARMV8_ID_AA64MMFR2_EL1_EVT_SUPPORTED_2                 2
+/** Bit 60 - 63 - Indicates support for E0PDx mechanism. */
+#define ARMV8_ID_AA64MMFR2_EL1_E0PD_MASK                        (RT_BIT_64(60) | RT_BIT_64(61) | RT_BIT_64(62) | RT_BIT_64(63))
+#define ARMV8_ID_AA64MMFR2_EL1_E0PD_SHIFT                       60
+/** E0PDx mechanism is not supported. */
+# define ARMV8_ID_AA64MMFR2_EL1_E0PD_NOT_IMPL                   0
+/** E0PDx mechanism is supported (FEAT_E0PD). */
+# define ARMV8_ID_AA64MMFR2_EL1_E0PD_SUPPORTED                  1
+/** @} */
+
+
+/** @name ID_AA64DFR0_EL1 - AArch64 Debug Feature Register 0.
+ * @{ */
+/** Bit 0 - 3 - Indicates the Debug Architecture version supported. */
+#define ARMV8_ID_AA64DFR0_EL1_DEBUGVER_MASK                     (RT_BIT_64(0) | RT_BIT_64(1) | RT_BIT_64(2) | RT_BIT_64(3))
+#define ARMV8_ID_AA64DFR0_EL1_DEBUGVER_SHIFT                    0
+/** Armv8 debug architecture version. */
+# define ARMV8_ID_AA64DFR0_EL1_DEBUGVER_ARMV8                   6
+/** Armv8 debug architecture version with virtualization host extensions. */
+# define ARMV8_ID_AA64DFR0_EL1_DEBUGVER_ARMV8_VHE               7
+/** Armv8.2 debug architecture version (FEAT_Debugv8p2). */
+# define ARMV8_ID_AA64DFR0_EL1_DEBUGVER_ARMV8p2                 8
+/** Armv8.4 debug architecture version (FEAT_Debugv8p4). */
+# define ARMV8_ID_AA64DFR0_EL1_DEBUGVER_ARMV8p4                 9
+/** Armv8.8 debug architecture version (FEAT_Debugv8p8). */
+# define ARMV8_ID_AA64DFR0_EL1_DEBUGVER_ARMV8p8                 10
+/** Bit 4 - 7 - Indicates trace support. */
+#define ARMV8_ID_AA64DFR0_EL1_TRACEVER_MASK                     (RT_BIT_64(4) | RT_BIT_64(5) | RT_BIT_64(6) | RT_BIT_64(7))
+#define ARMV8_ID_AA64DFR0_EL1_TRACEVER_SHIFT                    4
+/** Trace unit System registers not implemented. */
+# define ARMV8_ID_AA64DFR0_EL1_TRACEVER_NOT_IMPL                0
+/** Trace unit System registers supported. */
+# define ARMV8_ID_AA64DFR0_EL1_TRACEVER_SUPPORTED               1
+/** Bit 8 - 11 - Performance Monitors Extension version. */
+#define ARMV8_ID_AA64DFR0_EL1_PMUVER_MASK                       (RT_BIT_64(8) | RT_BIT_64(9) | RT_BIT_64(10) | RT_BIT_64(11))
+#define ARMV8_ID_AA64DFR0_EL1_PMUVER_SHIFT                      8
+/** Performance Monitors Extension not supported. */
+# define ARMV8_ID_AA64DFR0_EL1_PMUVER_NOT_IMPL                  0
+/** Performance Monitors Extension v3 supported (FEAT_PMUv3). */
+# define ARMV8_ID_AA64DFR0_EL1_PMUVER_SUPPORTED_V3              1
+/** Performance Monitors Extension v3 supported (FEAT_PMUv3p1). */
+# define ARMV8_ID_AA64DFR0_EL1_PMUVER_SUPPORTED_V3P1            4
+/** Performance Monitors Extension v3 supported (FEAT_PMUv3p4). */
+# define ARMV8_ID_AA64DFR0_EL1_PMUVER_SUPPORTED_V3P4            5
+/** Performance Monitors Extension v3 supported (FEAT_PMUv3p5). */
+# define ARMV8_ID_AA64DFR0_EL1_PMUVER_SUPPORTED_V3P5            6
+/** Performance Monitors Extension v3 supported (FEAT_PMUv3p7). */
+# define ARMV8_ID_AA64DFR0_EL1_PMUVER_SUPPORTED_V3P7            7
+/** Performance Monitors Extension v3 supported (FEAT_PMUv3p8). */
+# define ARMV8_ID_AA64DFR0_EL1_PMUVER_SUPPORTED_V3P8            8
+/** Bit 12 - 15 - Number of breakpoints, minus 1. */
+#define ARMV8_ID_AA64DFR0_EL1_BRPS_MASK                         (RT_BIT_64(12) | RT_BIT_64(13) | RT_BIT_64(14) | RT_BIT_64(15))
+#define ARMV8_ID_AA64DFR0_EL1_BRPS_SHIFT                        12
+/* Bit 16 - 19 - Reserved 0. */
+/** Bit 20 - 23 - Number of watchpoints, minus 1. */
+#define ARMV8_ID_AA64DFR0_EL1_WRPS_MASK                         (RT_BIT_64(20) | RT_BIT_64(21) | RT_BIT_64(22) | RT_BIT_64(23))
+#define ARMV8_ID_AA64DFR0_EL1_WRPS_SHIFT                        20
+/* Bit 24 - 27 - Reserved 0. */
+/** Bit 28 - 31 - Number of context-aware breakpoints. */
+#define ARMV8_ID_AA64DFR0_EL1_CTXCMPS_MASK                      (RT_BIT_64(28) | RT_BIT_64(29) | RT_BIT_64(30) | RT_BIT_64(31))
+#define ARMV8_ID_AA64DFR0_EL1_CTXCMPS_SHIFT                     28
+/** Bit 32 - 35 - Statistical Profiling Extension version. */
+#define ARMV8_ID_AA64DFR0_EL1_PMSVER_MASK                       (RT_BIT_64(32) | RT_BIT_64(33) | RT_BIT_64(34) | RT_BIT_64(35))
+#define ARMV8_ID_AA64DFR0_EL1_PMSVER_SHIFT                      32
+/** Statistical Profiling Extension not implemented. */
+# define ARMV8_ID_AA64DFR0_EL1_PMSVER_NOT_IMPL                  0
+/** Statistical Profiling Extension supported (FEAT_SPE). */
+# define ARMV8_ID_AA64DFR0_EL1_PMSVER_SUPPORTED                 1
+/** Statistical Profiling Extension supported, version 1.1 (FEAT_SPEv1p1). */
+# define ARMV8_ID_AA64DFR0_EL1_PMSVER_SUPPORTED_V1P1            2
+/** Statistical Profiling Extension supported, version 1.2 (FEAT_SPEv1p2). */
+# define ARMV8_ID_AA64DFR0_EL1_PMSVER_SUPPORTED_V1P2            3
+/** Statistical Profiling Extension supported, version 1.2 (FEAT_SPEv1p3). */
+# define ARMV8_ID_AA64DFR0_EL1_PMSVER_SUPPORTED_V1P3            4
+/** Bit 36 - 39 - OS Double Lock implemented. */
+#define ARMV8_ID_AA64DFR0_EL1_DOUBLELOCK_MASK                   (RT_BIT_64(36) | RT_BIT_64(37) | RT_BIT_64(38) | RT_BIT_64(39))
+#define ARMV8_ID_AA64DFR0_EL1_DOUBLELOCK_SHIFT                  36
+/** OS Double Lock is not implemented. */
+# define ARMV8_ID_AA64DFR0_EL1_DOUBLELOCK_NOT_IMPL              0xf
+/** OS Double Lock is supported (FEAT_DoubleLock). */
+# define ARMV8_ID_AA64DFR0_EL1_DOUBLELOCK_SUPPORTED             0
+/** Bit 40 - 43 - Indicates the Armv8.4 self-hosted Trace Extension. */
+#define ARMV8_ID_AA64DFR0_EL1_TRACEFILT_MASK                    (RT_BIT_64(40) | RT_BIT_64(41) | RT_BIT_64(42) | RT_BIT_64(43))
+#define ARMV8_ID_AA64DFR0_EL1_TRACEFILT_SHIFT                   40
+/** Armv8.4 self-hosted Trace Extension not implemented. */
+# define ARMV8_ID_AA64DFR0_EL1_TRACEFILT_NOT_IMPL               0
+/** Armv8.4 self-hosted Trace Extension is supported (FEAT_TRF). */
+# define ARMV8_ID_AA64DFR0_EL1_TRACEFILT_SUPPORTED              1
+/** Bit 44 - 47 - Indicates support for the Trace Buffer Extension. */
+#define ARMV8_ID_AA64DFR0_EL1_TRACEBUFFER_MASK                  (RT_BIT_64(44) | RT_BIT_64(45) | RT_BIT_64(46) | RT_BIT_64(47))
+#define ARMV8_ID_AA64DFR0_EL1_TRACEBUFFER_SHIFT                 44
+/** Trace Buffer Extension is not implemented. */
+# define ARMV8_ID_AA64DFR0_EL1_TRACEBUFFER_NOT_IMPL             0
+/** Trace Buffer Extension is supported (FEAT_TRBE). */
+# define ARMV8_ID_AA64DFR0_EL1_TRACEBUFFER_SUPPORTED            1
+/** Bit 48 - 51 - Indicates support for the multi-threaded PMU extension. */
+#define ARMV8_ID_AA64DFR0_EL1_MTPMU_MASK                        (RT_BIT_64(48) | RT_BIT_64(49) | RT_BIT_64(50) | RT_BIT_64(51))
+#define ARMV8_ID_AA64DFR0_EL1_MTPMU_SHIFT                       48
+/** Multi-threaded PMU extension is not implemented. */
+# define ARMV8_ID_AA64DFR0_EL1_MTPMU_NOT_IMPL                   0
+/** Multi-threaded PMU extension is supported (FEAT_MTPMU). */
+# define ARMV8_ID_AA64DFR0_EL1_MTPMU_SUPPORTED                  1
+/** Multi-threaded PMU extension is not implemented. */
+# define ARMV8_ID_AA64DFR0_EL1_MTPMU_NOT_IMPL_2                 0xf
+/** Bit 52 - 55 - Indicates support for the Branch Record Buffer extension. */
+#define ARMV8_ID_AA64DFR0_EL1_BRBE_MASK                         (RT_BIT_64(52) | RT_BIT_64(53) | RT_BIT_64(54) | RT_BIT_64(55))
+#define ARMV8_ID_AA64DFR0_EL1_BRBE_SHIFT                        52
+/** Branch Record Buffer extension is not implemented. */
+# define ARMV8_ID_AA64DFR0_EL1_BRBE_NOT_IMPL                    0
+/** Branch Record Buffer extension is supported (FEAT_BRBE). */
+# define ARMV8_ID_AA64DFR0_EL1_BRBE_SUPPORTED                   1
+/** Branch Record Buffer extension is supported and supports branch recording at EL3 (FEAT_BRBEv1p1). */
+# define ARMV8_ID_AA64DFR0_EL1_BRBE_SUPPORTED_V1P1              2
+/* Bit 56 - 59 - Reserved. */
+/** Bit 60 - 63 - Indicates support for Zero PMU event counters for guest operating systems. */
+#define ARMV8_ID_AA64DFR0_EL1_HPMN0_MASK                        (RT_BIT_64(60) | RT_BIT_64(61) | RT_BIT_64(62) | RT_BIT_64(63))
+#define ARMV8_ID_AA64DFR0_EL1_HPMN0_SHIFT                       60
+/** Setting MDCE_EL2.HPMN to zero has CONSTRAINED UNPREDICTABLE behavior. */
+# define ARMV8_ID_AA64DFR0_EL1_HPMN0_NOT_IMPL                   0
+/** Setting MDCE_EL2.HPMN to zero has defined behavior (FEAT_HPMN0). */
+# define ARMV8_ID_AA64DFR0_EL1_HPMN0_SUPPORTED                  1
+/** @} */
+
 /** @} */
 
 #endif /* !IPRT_INCLUDED_armv8_h */
