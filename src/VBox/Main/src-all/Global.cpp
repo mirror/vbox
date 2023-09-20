@@ -234,24 +234,32 @@ const Global::OSType Global::sOSTypes[] =
 #define VBOX_LINUX_OSTYPE_ARM32(a_OStype)   VBOXOSTYPE_ ## a_OStype ## _ARM32
 #define VBOX_LINUX_OSTYPE_ARM64(a_OStype)   VBOXOSTYPE_ ## a_OStype ## _ARM64
 
-#define VBOX_LINUX_OSID_STR(a_OSid)         #a_OSid
-#define VBOX_LINUX_OSID_STR_64(a_OSid)      VBOX_LINUX_OSID_STR(a_OSid ## _64)
+/** Base string for Linux-based OS IDs. */
+#define VBOX_LINUX_OSID_STR_BASE(a_OSid)    #a_OSid
+/* Note: Keep this naming for legacy reasons. Always meant x86 (32-bit). */
+#define VBOX_LINUX_OSID_STR_X86(a_OSid)     VBOX_LINUX_OSID_STR_BASE(a_OSId)
+/* Note: Keep this naming for legacy reasons. Always meant x64 (i.e. x86 64-bit). */
+#define VBOX_LINUX_OSID_STR_X64(a_OSid)     VBOX_LINUX_OSID_STR_BASE(a_OSid ## _64)
+/* New since VBox 7.1. */
+#define VBOX_LINUX_OSID_STR_ARM32(a_OSid)   VBOX_LINUX_OSID_STR_BASE(a_OSid ## _ARM32)
+/* New since VBox 7.1. */
+#define VBOX_LINUX_OSID_STR_ARM64(a_OSid)   VBOX_LINUX_OSID_STR_BASE(a_OSid ## _ARM64)
 
 #define VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_Variant, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
                                         a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \
-    { "Linux",   "Linux", #a_Variant, VBOX_LINUX_OSID_STR(a_Id), a_Description, VBOX_LINUX_OSTYPE_X86(a_OStype), a_OSHint, \
+    { "Linux",   "Linux", #a_Variant, VBOX_LINUX_OSID_STR_X86(a_Id), a_Description, VBOX_LINUX_OSTYPE_X86(a_OStype), a_OSHint, \
       1, a_Memory, a_Vram, a_Diskspace * _1G64, GraphicsControllerType_VMSVGA, a_NetworkAdapter, 0, StorageControllerType_PIIX4, StorageBus_IDE, \
       a_HDStorageController, a_HDStorageBusType, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_AD1980  }
 
 #define VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_Variant, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
                                         a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \
-    { "Linux",   "Linux", #a_Variant, VBOX_LINUX_OSID_STR_64(a_Id), a_Description, VBOX_LINUX_OSTYPE_X64(a_OStype), a_OSHint, \
+    { "Linux",   "Linux", #a_Variant, VBOX_LINUX_OSID_STR_X64(a_Id), a_Description, VBOX_LINUX_OSTYPE_X64(a_OStype), a_OSHint, \
       1, a_Memory, a_Vram, a_Diskspace * _1G64, GraphicsControllerType_VMSVGA, a_NetworkAdapter, 0, StorageControllerType_PIIX4, StorageBus_IDE, \
       a_HDStorageController, a_HDStorageBusType, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_AD1980  }
 
 #define VBOX_LINUX_SUBTYPE_TEMPLATE_ARM64(a_Variant, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
                                            a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \
-    { "Linux",   "Linux", #a_Variant, VBOX_LINUX_OSID_STR_64(a_Id), a_Description, VBOX_LINUX_OSTYPE_ARM64(a_OStype), a_OSHint, \
+    { "Linux",   "Linux", #a_Variant, VBOX_LINUX_OSID_STR_ARM64(a_Id), a_Description, VBOX_LINUX_OSTYPE_ARM64(a_OStype), a_OSHint, \
       1, a_Memory, a_Vram, a_Diskspace * _1G64, GraphicsControllerType_VMSVGA, a_NetworkAdapter, 0, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI, \
       a_HDStorageController, a_HDStorageBusType, ChipsetType_ARMv8Virtual, IommuType_None, AudioControllerType_VirtioSound, AudioCodecType_Null }
 
