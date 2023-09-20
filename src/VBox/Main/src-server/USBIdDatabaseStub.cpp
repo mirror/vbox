@@ -27,13 +27,13 @@
 
 #include "USBIdDatabase.h"
 
-const RTBLDPROGSTRTAB   USBIdDatabase::s_StrTab          =  { "", 0, 0 NULL };
+const RTBLDPROGSTRTAB   USBIdDatabase::s_StrTab          =  { "", 0, 0, NULL };
 
 const size_t            USBIdDatabase::s_cVendors        = 0;
-const USBIDDBVENDOR     USBIdDatabase::s_aVendors[]      = { 0 };
+const USBIDDBVENDOR     USBIdDatabase::s_aVendors[]      = { {0,0,0} };
 const RTBLDPROGSTRREF   USBIdDatabase::s_aVendorNames[]  = { {0,0} };
 
 const size_t            USBIdDatabase::s_cProducts       = 0;
-const USBIDDBPROD       USBIdDatabase::s_aProducts[]     = { 0 };
+const USBIDDBPROD       USBIdDatabase::s_aProducts[]     = { {0} };
 const RTBLDPROGSTRREF   USBIdDatabase::s_aProductNames[] = { {0,0} };
 
