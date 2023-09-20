@@ -76,7 +76,7 @@ RTDECL(void) RTMd5Update(PRTMD5CONTEXT pCtx, const void *pvBuf, size_t cbBuf)
 RT_EXPORT_SYMBOL(RTMd5Update);
 
 
-RTDECL(void) RTMd5Final(uint8_t pabDigest[32], PRTMD5CONTEXT pCtx)
+RTDECL(void) RTMd5Final(uint8_t pabDigest[RTMD5_HASH_SIZE], PRTMD5CONTEXT pCtx)
 {
     MD5_Final((unsigned char *)&pabDigest[0], &pCtx->OsslPrivate);
 }
