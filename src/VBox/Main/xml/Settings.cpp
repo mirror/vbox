@@ -5034,6 +5034,8 @@ void MachineConfigFile::readAudioAdapter(const xml::ElementNode &elmAudioAdapter
             aa.controllerType = AudioControllerType_AC97;
         else if (strTemp == "HDA")
             aa.controllerType = AudioControllerType_HDA;
+        else if (strTemp == "Virtio-Sound")
+            aa.controllerType = AudioControllerType_VirtioSound;
         else
             throw ConfigFileError(this, &elmAudioAdapter, N_("Invalid value '%s' in AudioAdapter/@controller attribute"), strTemp.c_str());
     }
@@ -5064,6 +5066,9 @@ void MachineConfigFile::readAudioAdapter(const xml::ElementNode &elmAudioAdapter
                 break;
             case AudioControllerType_HDA:
                 aa.codecType = AudioCodecType_STAC9221;
+                break;
+            case AudioControllerType_VirtioSound:
+                aa.codecType = AudioCodecType_Null;
                 break;
             default:
                 Assert(false);  /* We just checked the controller type above. */
@@ -8066,9 +8071,16 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     {
         xml::ElementNode *pelmAudio = pelmHardware->createChild("AudioAdapter");
 
-        const char *pcszController;
+        const char *pcszController = NULL;
         switch (hw.audioAdapter.controllerType)
         {
+            case AudioControllerType_VirtioSound:
+                if (m->sv >= SettingsVersion_v1_20)
+                {
+                    pcszController = "Virtio-Sound";
+                    break;
+                }
+                break;
             case AudioControllerType_SB16:
                 pcszController = "SB16";
                 break;

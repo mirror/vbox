@@ -584,9 +584,10 @@ template<> QString toString(const KAudioControllerType &type)
 {
     switch (type)
     {
-        case KAudioControllerType_AC97: return QApplication::translate("UICommon", "ICH AC97", "AudioControllerType");
-        case KAudioControllerType_SB16: return QApplication::translate("UICommon", "SoundBlaster 16", "AudioControllerType");
-        case KAudioControllerType_HDA:  return QApplication::translate("UICommon", "Intel HD Audio", "AudioControllerType");
+        case KAudioControllerType_AC97:        return QApplication::translate("UICommon", "ICH AC97", "AudioControllerType");
+        case KAudioControllerType_SB16:        return QApplication::translate("UICommon", "SoundBlaster 16", "AudioControllerType");
+        case KAudioControllerType_HDA:         return QApplication::translate("UICommon", "Intel HD Audio", "AudioControllerType");
+        case KAudioControllerType_VirtioSound: return QApplication::translate("UICommon", "Virtio-Sound", "AudioControllerType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -599,6 +600,7 @@ template<> KAudioControllerType fromString<KAudioControllerType>(const QString &
     list.insert(QApplication::translate("UICommon", "ICH AC97", "AudioControllerType"),        KAudioControllerType_AC97);
     list.insert(QApplication::translate("UICommon", "SoundBlaster 16", "AudioControllerType"), KAudioControllerType_SB16);
     list.insert(QApplication::translate("UICommon", "Intel HD Audio", "AudioControllerType"),  KAudioControllerType_HDA);
+    list.insert(QApplication::translate("UICommon", "Virtio-Sound", "AudioControllerType"),    KAudioControllerType_VirtioSound);
     if (!list.contains(strType))
     {
         AssertMsgFailed(("No value for '%s'", strType.toUtf8().constData()));

@@ -396,6 +396,9 @@ HRESULT AudioAdapter::setAudioController(AudioControllerType_T aAudioController)
             case AudioControllerType_HDA:
                 defaultCodec = AudioCodecType_STAC9221;
                 break;
+            case AudioControllerType_VirtioSound:
+                defaultCodec = AudioCodecType_Null;
+                break;
 
             default:
                 AssertMsgFailed(("Wrong audio controller type %d\n", aAudioController));
@@ -463,6 +466,12 @@ HRESULT AudioAdapter::setAudioCodec(AudioCodecType_T aAudioCodec)
         {
             if (aAudioCodec != AudioCodecType_STAC9221)
                 hrc = E_INVALIDARG;
+            break;
+        }
+
+        case AudioControllerType_VirtioSound:
+        {
+            hrc = E_NOTIMPL;
             break;
         }
 
