@@ -60,12 +60,12 @@ const Global::OSType Global::sOSTypes[] =
 
 #ifdef VBOX_WITH_VIRT_ARMV8
     { "Other",   "Other",             "",               "Other_ARM",          "Other/Unknown (ARM)",
-      VBOXOSTYPE_Unknown_arm32,       VBOXOSHINT_NONE | VBOXOSHINT_EFI,
+      VBOXOSTYPE_Unknown_ARM32,       VBOXOSHINT_NONE | VBOXOSHINT_EFI,
       1,   64,   4,  2 * _1G64, GraphicsControllerType_VBoxSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI,
       StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI, ChipsetType_ARMv8Virtual, IommuType_None, AudioControllerType_VirtioSound, AudioCodecType_Null },
 
     { "Other",   "Other",             "",               "Other_ARM64",        "Other/Unknown (ARM 64-bit)",
-      VBOXOSTYPE_Unknown_arm64,       VBOXOSHINT_64BIT | VBOXOSHINT_EFI,
+      VBOXOSTYPE_Unknown_ARM64,       VBOXOSHINT_64BIT | VBOXOSHINT_EFI,
       1,   64,   4,  2 * _1G64, GraphicsControllerType_VBoxSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI,
       StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI, ChipsetType_ARMv8Virtual, IommuType_None, AudioControllerType_VirtioSound, AudioCodecType_Null },
 #endif

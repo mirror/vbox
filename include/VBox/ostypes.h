@@ -55,8 +55,8 @@ typedef enum VBOXOSTYPE
 {
     VBOXOSTYPE_Unknown          = 0,
     VBOXOSTYPE_Unknown_x64      = 0x00100,
-    VBOXOSTYPE_Unknown_arm32    = 0x00200,
-    VBOXOSTYPE_Unknown_arm64    = 0x00300,
+    VBOXOSTYPE_Unknown_ARM32    = 0x00200,
+    VBOXOSTYPE_Unknown_ARM64    = 0x00300,
 
     /** @name DOS and it's descendants
      * @{ */
@@ -277,9 +277,9 @@ typedef enum VBOXOSTYPE
     /** Architecture value for 64-bit x86 (AMD64). */
     VBOXOSTYPE_x64              = 0x00100,
     /** Architecture value for 32-bit ARM. */
-    VBOXOSTYPE_arm32            = 0x00200,
+    VBOXOSTYPE_ARM32            = 0x00200,
     /** Architecture value for 64-bit ARM. */
-    VBOXOSTYPE_arm64            = 0x00300,
+    VBOXOSTYPE_ARM64            = 0x00300,
     /** Architecture value for unknown or unsupported architectures. */
     VBOXOSTYPE_UnknownArch      = 0x00f00,
     /** @} */

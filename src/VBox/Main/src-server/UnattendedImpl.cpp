@@ -549,14 +549,14 @@ static void parseArchElement(const xml::ElementNode *pElmArch, WIMImage &rImage)
         /* PROCESSOR_ARCHITECTURE_ALPHA         / [2]  = */ { "alpha",               VBOXOSTYPE_UnknownArch },
         /* PROCESSOR_ARCHITECTURE_PPC           / [3]  = */ { "ppc",                 VBOXOSTYPE_UnknownArch },
         /* PROCESSOR_ARCHITECTURE_SHX           / [4]  = */ { "shx",                 VBOXOSTYPE_UnknownArch },
-        /* PROCESSOR_ARCHITECTURE_ARM           / [5]  = */ { "arm32",               VBOXOSTYPE_arm32       },
+        /* PROCESSOR_ARCHITECTURE_ARM           / [5]  = */ { "arm32",               VBOXOSTYPE_ARM32       },
         /* PROCESSOR_ARCHITECTURE_IA64          / [6]  = */ { "ia64",                VBOXOSTYPE_UnknownArch },
         /* PROCESSOR_ARCHITECTURE_ALPHA64       / [7]  = */ { "alpha64",             VBOXOSTYPE_UnknownArch },
         /* PROCESSOR_ARCHITECTURE_MSIL          / [8]  = */ { "msil",                VBOXOSTYPE_UnknownArch },
         /* PROCESSOR_ARCHITECTURE_AMD64         / [9]  = */ { "x64",                 VBOXOSTYPE_x64         },
         /* PROCESSOR_ARCHITECTURE_IA32_ON_WIN64 / [10] = */ { "x86-on-x64",          VBOXOSTYPE_UnknownArch },
         /* PROCESSOR_ARCHITECTURE_NEUTRAL       / [11] = */ { "noarch",              VBOXOSTYPE_UnknownArch },
-        /* PROCESSOR_ARCHITECTURE_ARM64         / [12] = */ { "arm64",               VBOXOSTYPE_arm64       },
+        /* PROCESSOR_ARCHITECTURE_ARM64         / [12] = */ { "arm64",               VBOXOSTYPE_ARM64       },
         /* PROCESSOR_ARCHITECTURE_ARM32_ON_WIN64/ [13] = */ { "arm32-on-arm64",      VBOXOSTYPE_UnknownArch },
         /* PROCESSOR_ARCHITECTURE_IA32_ON_ARM64 / [14] = */ { "x86-on-arm32",        VBOXOSTYPE_UnknownArch },
     };
@@ -1305,15 +1305,15 @@ static struct { const char *pszArch; uint32_t cchArch; VBOXOSTYPE fArch; } const
     { RT_STR_TUPLE("x86-64"), VBOXOSTYPE_x64 }, /* just in case */
     { RT_STR_TUPLE("x64"),    VBOXOSTYPE_x64 }, /* ditto */
 
-    { RT_STR_TUPLE("arm"),    VBOXOSTYPE_arm64 },
-    { RT_STR_TUPLE("arm64"),  VBOXOSTYPE_arm64 },
-    { RT_STR_TUPLE("arm-64"), VBOXOSTYPE_arm64 },
-    { RT_STR_TUPLE("arm_64"), VBOXOSTYPE_arm64 },
+    { RT_STR_TUPLE("arm"),    VBOXOSTYPE_ARM64 },
+    { RT_STR_TUPLE("arm64"),  VBOXOSTYPE_ARM64 },
+    { RT_STR_TUPLE("arm-64"), VBOXOSTYPE_ARM64 },
+    { RT_STR_TUPLE("arm_64"), VBOXOSTYPE_ARM64 },
 
-    { RT_STR_TUPLE("arm32"),  VBOXOSTYPE_arm32 },
-    { RT_STR_TUPLE("arm-32"), VBOXOSTYPE_arm32 },
-    { RT_STR_TUPLE("arm_32"), VBOXOSTYPE_arm32 },
-    { RT_STR_TUPLE("armel"),  VBOXOSTYPE_arm32 }, // mostly Debians
+    { RT_STR_TUPLE("arm32"),  VBOXOSTYPE_ARM32 },
+    { RT_STR_TUPLE("arm-32"), VBOXOSTYPE_ARM32 },
+    { RT_STR_TUPLE("arm_32"), VBOXOSTYPE_ARM32 },
+    { RT_STR_TUPLE("armel"),  VBOXOSTYPE_ARM32 }, // mostly Debians
 
     { RT_STR_TUPLE("x86"),    VBOXOSTYPE_x86 },
     { RT_STR_TUPLE("i386"),   VBOXOSTYPE_x86 },
@@ -2072,8 +2072,8 @@ HRESULT Unattended::i_innerDetectIsoOSLinuxFedora(RTVFS hVfsIso, DETECTBUFFER *p
     {
         static struct { const char *pszFile; VBOXOSTYPE fArch; } const s_aArchSpecificFiles[] =
         {
-            { "EFI/BOOT/grubaa64.efi", VBOXOSTYPE_arm64 },
-            { "EFI/BOOT/BOOTAA64.EFI", VBOXOSTYPE_arm64 },
+            { "EFI/BOOT/grubaa64.efi", VBOXOSTYPE_ARM64 },
+            { "EFI/BOOT/BOOTAA64.EFI", VBOXOSTYPE_ARM64 },
         };
         PRTFSOBJINFO pObjInfo = (PRTFSOBJINFO)&pBuf->ab[0];
         AssertCompile(sizeof(*pBuf) > sizeof(*pObjInfo));
@@ -3956,8 +3956,8 @@ HRESULT Unattended::getIsUnattendedInstallSupported(BOOL *aIsUnattendedInstallSu
 
     /* For now we don't support unattended installation for ARM guests. */
     const VBOXOSTYPE enmArchitectureMasked = (VBOXOSTYPE)(mEnmOsType & VBOXOSTYPE_ArchitectureMask);
-    if (   enmArchitectureMasked == VBOXOSTYPE_arm32
-        || enmArchitectureMasked == VBOXOSTYPE_arm64)
+    if (   enmArchitectureMasked == VBOXOSTYPE_ARM32
+        || enmArchitectureMasked == VBOXOSTYPE_ARM64)
         return S_OK;
 
     const VBOXOSTYPE enmOsTypeMasked = (VBOXOSTYPE)(mEnmOsType & VBOXOSTYPE_OsTypeMask);
