@@ -47,7 +47,10 @@ const Global::OSType Global::sOSTypes[] =
      *        '2GB' looks better than '1.95GB' (= 2000MB)
      * NOTE3: if you add new guest OS types please check if the code in
      *        Machine::getEffectiveParavirtProvider and Console::i_configConstructorInner
-     *        are still covering the relevant cases. */
+     *        are still covering the relevant cases.
+     * NOTE4: platform support: always define all guest OS types w/o guarding new / different platform architectures
+      *       with own #defines. If (and how) guest OS types will be reported is decided by the actual Main
+      *       implementations(s). */
     { "Other",   "Other",             "",               "Other",              "Other/Unknown",
       VBOXOSTYPE_Unknown,         VBOXOSHINT_NONE,
       1,   64,   4,  2 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
@@ -58,17 +61,10 @@ const Global::OSType Global::sOSTypes[] =
       1,   64,   4,  2 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700 },
 
-#ifdef VBOX_WITH_VIRT_ARMV8
-    { "Other",   "Other",             "",               "Other_ARM",          "Other/Unknown (ARM)",
-      VBOXOSTYPE_Unknown_ARM32,       VBOXOSHINT_NONE | VBOXOSHINT_EFI,
-      1,   64,   4,  2 * _1G64, GraphicsControllerType_VBoxSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI,
-      StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI, ChipsetType_ARMv8Virtual, IommuType_None, AudioControllerType_VirtioSound, AudioCodecType_Null },
-
     { "Other",   "Other",             "",               "Other_ARM64",        "Other/Unknown (ARM 64-bit)",
       VBOXOSTYPE_Unknown_ARM64,       VBOXOSHINT_64BIT | VBOXOSHINT_EFI,
-      1,   64,   4,  2 * _1G64, GraphicsControllerType_VBoxSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI,
+      1,   64,   4,  2 * _1G64, GraphicsControllerType_VMSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI,
       StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI, ChipsetType_ARMv8Virtual, IommuType_None, AudioControllerType_VirtioSound, AudioCodecType_Null },
-#endif
 
     { "Windows", "Microsoft Windows", "",               "Windows31",          "Windows 3.1",
       VBOXOSTYPE_Win31,           VBOXOSHINT_FLOPPY,
@@ -220,8 +216,9 @@ const Global::OSType Global::sOSTypes[] =
       1,  512,  16, 20 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-#define VBOX_LINUX_OSHINTS_A_X86  (VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET | VBOXOSHINT_X2APIC | VBOXOSHINT_PAE)
-#define VBOX_LINUX_OSHINTS_A_X64  (VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET | VBOXOSHINT_X2APIC | VBOXOSHINT_64BIT | VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC)
+#define VBOX_LINUX_OSHINTS_A_X86   (VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET | VBOXOSHINT_X2APIC | VBOXOSHINT_PAE)
+#define VBOX_LINUX_OSHINTS_A_X64   (VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET | VBOXOSHINT_X2APIC | VBOXOSHINT_64BIT | VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC)
+#define VBOX_LINUX_OSHINTS_A_ARM64 (VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET | VBOXOSHINT_64BIT)
 
 #define VBOX_LINUX_OSHINTS_B_X86  (VBOXOSHINT_RTCUTC | VBOXOSHINT_PAE | VBOXOSHINT_X2APIC)
 #define VBOX_LINUX_OSHINTS_B_X64  (VBOXOSHINT_RTCUTC | VBOXOSHINT_PAE | VBOXOSHINT_X2APIC | VBOXOSHINT_64BIT | VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC)
@@ -252,6 +249,12 @@ const Global::OSType Global::sOSTypes[] =
       1, a_Memory, a_Vram, a_Diskspace * _1G64, GraphicsControllerType_VMSVGA, a_NetworkAdapter, 0, StorageControllerType_PIIX4, StorageBus_IDE, \
       a_HDStorageController, a_HDStorageBusType, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_AD1980  }
 
+#define VBOX_LINUX_SUBTYPE_TEMPLATE_ARM64(a_Variant, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
+                                           a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \
+    { "Linux",   "Linux", #a_Variant, VBOX_LINUX_OSID_STR_64(a_Id), a_Description, VBOX_LINUX_OSTYPE_ARM64(a_OStype), a_OSHint, \
+      1, a_Memory, a_Vram, a_Diskspace * _1G64, GraphicsControllerType_VMSVGA, a_NetworkAdapter, 0, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI, \
+      a_HDStorageController, a_HDStorageBusType, ChipsetType_ARMv8Virtual, IommuType_None, AudioControllerType_VirtioSound, AudioCodecType_Null }
+
 /* Linux x86 32-bit sub-type template defaulting to 1 CPU with USB-tablet-mouse/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
 #define VBOX_LINUX_SUBTYPE_A_X86(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
     VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_A_X86, a_Memory, a_Vram, a_Diskspace, \
@@ -261,6 +264,10 @@ const Global::OSType Global::sOSTypes[] =
 #define VBOX_LINUX_SUBTYPE_A_X64(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
     VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_A_X64, a_Memory, a_Vram, a_Diskspace, \
                                      NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
+
+#define VBOX_LINUX_SUBTYPE_A_ARM64(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_ARM64(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_A_ARM64, a_Memory, a_Vram, a_Diskspace, \
+                                      NetworkAdapterType_I82540EM, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI)
 
 #define VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_X86(a_Variant, a_Id, a_Description, a_OStype, a_Memory, a_Vram, a_Diskspace) \
     VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_Variant, a_Id, a_Description, a_OStype, VBOX_LINUX_OSHINTS_A_X86, a_Memory, a_Vram, a_Diskspace, \
@@ -311,6 +318,7 @@ const Global::OSType Global::sOSTypes[] =
 
     VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian,   "Debian (32-bit)",             2048, 16, 20),
     VBOX_LINUX_SUBTYPE_A_X64(Debian,  Debian,   "Debian (64-bit)",             2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_ARM64(Debian,  Debian, "Debian (64-bit)",             2048, 128, 20),
     VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian31, "Debian 3.1 Sarge (32-bit)",   1024, 16, 8),  // 32-bit only
     VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian4,  "Debian 4.0 Etch (32-bit)",    1024, 16, 8),
     VBOX_LINUX_SUBTYPE_A_X64(Debian,  Debian4,  "Debian 4.0 Etch (64-bit)",    1024, 16, 8),
