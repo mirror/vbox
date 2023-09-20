@@ -334,6 +334,7 @@ UIIconPoolGeneral::UIIconPoolGeneral()
     /* Prepare OS type icon-name hash: */
     m_guestOSTypeIconNames.insert("Other",           ":/os_other_32.png");
     m_guestOSTypeIconNames.insert("Other_x64",       ":/os_other.png");
+    m_guestOSTypeIconNames.insert("Other_arm64",     ":/os_other.png");
     m_guestOSTypeIconNames.insert("DOS",             ":/os_dos.png");
     m_guestOSTypeIconNames.insert("Netware",         ":/os_netware.png");
     m_guestOSTypeIconNames.insert("L4",              ":/os_l4.png");
@@ -383,6 +384,7 @@ UIIconPoolGeneral::UIIconPoolGeneral()
     m_guestOSTypeIconNames.insert("ArchLinux_x64",   ":/os_archlinux.png");
     m_guestOSTypeIconNames.insert("Debian",          ":/os_debian_32.png");
     m_guestOSTypeIconNames.insert("Debian_x64",      ":/os_debian.png");
+    m_guestOSTypeIconNames.insert("Debian_arm64",    ":/os_debian.png");
     m_guestOSTypeIconNames.insert("Debian31",        ":/os_debian_32.png");
     m_guestOSTypeIconNames.insert("Debian4",         ":/os_debian_32.png");
     m_guestOSTypeIconNames.insert("Debian4_x64",     ":/os_debian.png");
@@ -404,6 +406,7 @@ UIIconPoolGeneral::UIIconPoolGeneral()
     m_guestOSTypeIconNames.insert("Debian11_x64",    ":/os_debian.png");
     m_guestOSTypeIconNames.insert("Debian12",        ":/os_debian_32.png");
     m_guestOSTypeIconNames.insert("Debian12_x64",    ":/os_debian.png");
+    m_guestOSTypeIconNames.insert("Debian12_arm64",  ":/os_debian.png");
     m_guestOSTypeIconNames.insert("OpenSUSE",        ":/os_opensuse_32.png");
     m_guestOSTypeIconNames.insert("OpenSUSE_x64",    ":/os_opensuse.png");
     m_guestOSTypeIconNames.insert("OpenSUSE_Leap_x64", ":/os_opensuse.png");
