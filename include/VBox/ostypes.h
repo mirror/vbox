@@ -173,7 +173,7 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_Ubuntu           = 0x5C000,
     VBOXOSTYPE_Ubuntu_x64       = 0x5C100,
     VBOXOSTYPE_Ubuntu_ARM32     = 0x5C200,
-    VBOXOSTYPE_Ubuntu_ARM34     = 0x5C300,
+    VBOXOSTYPE_Ubuntu_ARM64     = 0x5C300,
     VBOXOSTYPE_Xubuntu          = 0x5C001,
     VBOXOSTYPE_Xubuntu_x64      = 0x5C101,
     VBOXOSTYPE_Lubuntu          = 0x5C002,
