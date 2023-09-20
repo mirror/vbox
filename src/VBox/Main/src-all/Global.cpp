@@ -220,215 +220,217 @@ const Global::OSType Global::sOSTypes[] =
       1,  512,  16, 20 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-#define VBOX_LINUX_OSHINTS_A_32   (VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET | VBOXOSHINT_X2APIC | VBOXOSHINT_PAE)
-#define VBOX_LINUX_OSHINTS_A_64   (VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET | VBOXOSHINT_X2APIC | VBOXOSHINT_64BIT | VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC)
+#define VBOX_LINUX_OSHINTS_A_X86  (VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET | VBOXOSHINT_X2APIC | VBOXOSHINT_PAE)
+#define VBOX_LINUX_OSHINTS_A_X64  (VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET | VBOXOSHINT_X2APIC | VBOXOSHINT_64BIT | VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC)
 
-#define VBOX_LINUX_OSHINTS_B_32   (VBOXOSHINT_RTCUTC | VBOXOSHINT_PAE | VBOXOSHINT_X2APIC)
-#define VBOX_LINUX_OSHINTS_B_64   (VBOXOSHINT_RTCUTC | VBOXOSHINT_PAE | VBOXOSHINT_X2APIC | VBOXOSHINT_64BIT | VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC)
+#define VBOX_LINUX_OSHINTS_B_X86  (VBOXOSHINT_RTCUTC | VBOXOSHINT_PAE | VBOXOSHINT_X2APIC)
+#define VBOX_LINUX_OSHINTS_B_X64  (VBOXOSHINT_RTCUTC | VBOXOSHINT_PAE | VBOXOSHINT_X2APIC | VBOXOSHINT_64BIT | VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC)
 
-#define VBOX_LINUX_OSHINTS_C_32   (VBOXOSHINT_RTCUTC | VBOXOSHINT_X2APIC | VBOXOSHINT_PAE)
-#define VBOX_LINUX_OSHINTS_C_64   (VBOXOSHINT_RTCUTC | VBOXOSHINT_X2APIC | VBOXOSHINT_64BIT | VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC)
+#define VBOX_LINUX_OSHINTS_C_X86  (VBOXOSHINT_RTCUTC | VBOXOSHINT_X2APIC | VBOXOSHINT_PAE)
+#define VBOX_LINUX_OSHINTS_C_X64  (VBOXOSHINT_RTCUTC | VBOXOSHINT_X2APIC | VBOXOSHINT_64BIT | VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC)
 
-#define VBOX_LINUX_OSHINTS_D_32   (VBOXOSHINT_RTCUTC | VBOXOSHINT_PAE)
-#define VBOX_LINUX_OSHINTS_D_64   (VBOXOSHINT_RTCUTC | VBOXOSHINT_64BIT | VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC)
+#define VBOX_LINUX_OSHINTS_D_X86  (VBOXOSHINT_RTCUTC | VBOXOSHINT_PAE)
+#define VBOX_LINUX_OSHINTS_D_X64  (VBOXOSHINT_RTCUTC | VBOXOSHINT_64BIT | VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC)
 
-#define VBOX_LINUX_OSTYPE_32(a_OStype)      VBOXOSTYPE_ ## a_OStype
-#define VBOX_LINUX_OSTYPE_64(a_OStype)      VBOXOSTYPE_ ## a_OStype ## _x64
+#define VBOX_LINUX_OSTYPE_X86(a_OStype)     VBOXOSTYPE_ ## a_OStype
+#define VBOX_LINUX_OSTYPE_X64(a_OStype)     VBOXOSTYPE_ ## a_OStype ## _x64
+#define VBOX_LINUX_OSTYPE_ARM32(a_OStype)   VBOXOSTYPE_ ## a_OStype ## _ARM32
+#define VBOX_LINUX_OSTYPE_ARM64(a_OStype)   VBOXOSTYPE_ ## a_OStype ## _ARM64
 
 #define VBOX_LINUX_OSID_STR(a_OSid)         #a_OSid
 #define VBOX_LINUX_OSID_STR_64(a_OSid)      VBOX_LINUX_OSID_STR(a_OSid ## _64)
 
-#define VBOX_LINUX_SUBTYPE_TEMPLATE_32(a_Variant, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
-                                       a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \
-    { "Linux",   "Linux", #a_Variant, VBOX_LINUX_OSID_STR(a_Id), a_Description, VBOX_LINUX_OSTYPE_32(a_OStype), a_OSHint, \
+#define VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_Variant, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
+                                        a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \
+    { "Linux",   "Linux", #a_Variant, VBOX_LINUX_OSID_STR(a_Id), a_Description, VBOX_LINUX_OSTYPE_X86(a_OStype), a_OSHint, \
       1, a_Memory, a_Vram, a_Diskspace * _1G64, GraphicsControllerType_VMSVGA, a_NetworkAdapter, 0, StorageControllerType_PIIX4, StorageBus_IDE, \
       a_HDStorageController, a_HDStorageBusType, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_AD1980  }
 
-#define VBOX_LINUX_SUBTYPE_TEMPLATE_64(a_Variant, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
-                                       a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \
-    { "Linux",   "Linux", #a_Variant, VBOX_LINUX_OSID_STR_64(a_Id), a_Description, VBOX_LINUX_OSTYPE_64(a_OStype), a_OSHint, \
+#define VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_Variant, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
+                                        a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \
+    { "Linux",   "Linux", #a_Variant, VBOX_LINUX_OSID_STR_64(a_Id), a_Description, VBOX_LINUX_OSTYPE_X64(a_OStype), a_OSHint, \
       1, a_Memory, a_Vram, a_Diskspace * _1G64, GraphicsControllerType_VMSVGA, a_NetworkAdapter, 0, StorageControllerType_PIIX4, StorageBus_IDE, \
       a_HDStorageController, a_HDStorageBusType, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_AD1980  }
 
-/* Linux 32-bit sub-type template defaulting to 1 CPU with USB-tablet-mouse/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_A_32(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_32(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_A_32, a_Memory, a_Vram, a_Diskspace, \
-                                   NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
+/* Linux x86 32-bit sub-type template defaulting to 1 CPU with USB-tablet-mouse/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
+#define VBOX_LINUX_SUBTYPE_A_X86(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_A_X86, a_Memory, a_Vram, a_Diskspace, \
+                                     NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
-/* Linux 64-bit sub-type template defaulting to 1 CPU with USB-tablet-mouse/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_A_64(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_64(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_A_64, a_Memory, a_Vram, a_Diskspace, \
-                                   NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
+/* Linux x86 64-bit sub-type template defaulting to 1 CPU with USB-tablet-mouse/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
+#define VBOX_LINUX_SUBTYPE_A_X64(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_A_X64, a_Memory, a_Vram, a_Diskspace, \
+                                     NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
-#define VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_32(a_Variant, a_Id, a_Description, a_OStype, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_32(a_Variant, a_Id, a_Description, a_OStype, VBOX_LINUX_OSHINTS_A_32, a_Memory, a_Vram, a_Diskspace, \
-                                   NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
+#define VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_X86(a_Variant, a_Id, a_Description, a_OStype, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_Variant, a_Id, a_Description, a_OStype, VBOX_LINUX_OSHINTS_A_X86, a_Memory, a_Vram, a_Diskspace, \
+                                    NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
-#define VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_64(a_Variant, a_Id, a_Description, a_OStype, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_64(a_Variant, a_Id, a_Description, a_OStype, VBOX_LINUX_OSHINTS_A_64, a_Memory, a_Vram, a_Diskspace, \
-                                   NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
+#define VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_X64(a_Variant, a_Id, a_Description, a_OStype, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_Variant, a_Id, a_Description, a_OStype, VBOX_LINUX_OSHINTS_A_X64, a_Memory, a_Vram, a_Diskspace, \
+                                    NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
-/* Linux 32-bit sub-type template defaulting to 1 CPU with PS/2-mouse/PAE-NX/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_B_32(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_32(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_B_32, a_Memory, a_Vram, a_Diskspace, \
-                                   NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
+/* Linux x86 32-bit sub-type template defaulting to 1 CPU with PS/2-mouse/PAE-NX/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
+#define VBOX_LINUX_SUBTYPE_B_X86(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_B_X86, a_Memory, a_Vram, a_Diskspace, \
+                                    NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
 /* Linux 64-bit sub-type template defaulting to 1 CPU with PS/2-mouse/PAE-NX/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_B_64(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_64(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_B_64, a_Memory, a_Vram, a_Diskspace, \
-                                   NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
+#define VBOX_LINUX_SUBTYPE_B_X64(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_B_X64, a_Memory, a_Vram, a_Diskspace, \
+                                    NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
 /* Linux 32-bit sub-type template defaulting to 1 CPU with PS/2-mouse/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_C_32(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_32(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_C_32, a_Memory, a_Vram, a_Diskspace, \
-                                   NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
+#define VBOX_LINUX_SUBTYPE_C_X86(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_C_X86, a_Memory, a_Vram, a_Diskspace, \
+                                    NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
 /* Linux 64-bit sub-type template defaulting to 1 CPU with PS/2-mouse/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_C_64(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_64(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_C_64, a_Memory, a_Vram, a_Diskspace, \
-                                   NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
+#define VBOX_LINUX_SUBTYPE_C_X64(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_C_X64, a_Memory, a_Vram, a_Diskspace, \
+                                    NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
 /* Linux 32-bit sub-type template defaulting to 1 CPU with PS/2-mouse/VMSVGA/PCnet-FASTIII/PIIX4+IDE DVD/PIIX4+IDE disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_D_32(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_32(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_D_32, a_Memory, a_Vram, a_Diskspace, \
-                                   NetworkAdapterType_Am79C973, StorageControllerType_PIIX4, StorageBus_IDE)
+#define VBOX_LINUX_SUBTYPE_D_X86(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_D_X86, a_Memory, a_Vram, a_Diskspace, \
+                                    NetworkAdapterType_Am79C973, StorageControllerType_PIIX4, StorageBus_IDE)
 
 /* Linux 64-bit sub-type template defaulting to 1 CPU with PS/2-mouse/VMSVGA/PCnet-FASTIII/PIIX4+IDE DVD/PIIX4+IDE disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_D_64(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_64(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_D_64, a_Memory, a_Vram, a_Diskspace, \
-                                   NetworkAdapterType_I82540EM, StorageControllerType_PIIX4, StorageBus_IDE)
+#define VBOX_LINUX_SUBTYPE_D_X64(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_D_X64, a_Memory, a_Vram, a_Diskspace, \
+                                    NetworkAdapterType_I82540EM, StorageControllerType_PIIX4, StorageBus_IDE)
 
-    VBOX_LINUX_SUBTYPE_D_32(Linux 2.2,   Linux22, "Linux 2.2 (32-bit)",                      64,  4, 2),
-    VBOX_LINUX_SUBTYPE_D_32(Linux 2.4,   Linux24, "Linux 2.4 (32-bit)",                     128, 16, 2),
-    VBOX_LINUX_SUBTYPE_D_64(Linux 2.4,   Linux24, "Linux 2.4 (64-bit)",                    1024, 16, 4),
-    VBOX_LINUX_SUBTYPE_A_32(Linux 2.6,   Linux26, "Linux 2.6 / 3.x / 4.x / 5.x (32-bit)",  1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_64(Linux 2.6,   Linux26, "Linux 2.6 / 3.x / 4.x / 5.x (64-bit)",  1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_D_X86(Linux 2.2,   Linux22, "Linux 2.2 (32-bit)",                      64,  4, 2),
+    VBOX_LINUX_SUBTYPE_D_X86(Linux 2.4,   Linux24, "Linux 2.4 (32-bit)",                     128, 16, 2),
+    VBOX_LINUX_SUBTYPE_D_X64(Linux 2.4,   Linux24, "Linux 2.4 (64-bit)",                    1024, 16, 4),
+    VBOX_LINUX_SUBTYPE_A_X86(Linux 2.6,   Linux26, "Linux 2.6 / 3.x / 4.x / 5.x (32-bit)",  1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64(Linux 2.6,   Linux26, "Linux 2.6 / 3.x / 4.x / 5.x (64-bit)",  1024, 16, 8),
 
-    VBOX_LINUX_SUBTYPE_A_32(ArchLinux, ArchLinux, "Arch Linux (32-bit)", 1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_64(ArchLinux, ArchLinux, "Arch Linux (64-bit)", 1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X86(ArchLinux, ArchLinux, "Arch Linux (32-bit)", 1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64(ArchLinux, ArchLinux, "Arch Linux (64-bit)", 1024, 16, 8),
 
-    VBOX_LINUX_SUBTYPE_A_32(Debian,  Debian,   "Debian (32-bit)",             2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_64(Debian,  Debian,   "Debian (64-bit)",             2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_32(Debian,  Debian31, "Debian 3.1 Sarge (32-bit)",   1024, 16, 8),  // 32-bit only
-    VBOX_LINUX_SUBTYPE_A_32(Debian,  Debian4,  "Debian 4.0 Etch (32-bit)",    1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_64(Debian,  Debian4,  "Debian 4.0 Etch (64-bit)",    1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_32(Debian,  Debian5,  "Debian 5.0 Lenny (32-bit)",   1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_64(Debian,  Debian5,  "Debian 5.0 Lenny (64-bit)",   1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_32(Debian,  Debian6,  "Debian 6.0 Squeeze (32-bit)", 1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_64(Debian,  Debian6,  "Debian 6.0 Squeeze (64-bit)", 1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_32(Debian,  Debian7,  "Debian 7 Wheezy (32-bit)",    2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_64(Debian,  Debian7,  "Debian 7 Wheezy (64-bit)",    2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_32(Debian,  Debian8,  "Debian 8 Jessie (32-bit)",    2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_64(Debian,  Debian8,  "Debian 8 Jessie (64-bit)",    2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_32(Debian,  Debian9,  "Debian 9 Stretch (32-bit)",   2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_64(Debian,  Debian9,  "Debian 9 Stretch (64-bit)",   2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_32(Debian,  Debian10, "Debian 10 Buster (32-bit)",   2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_64(Debian,  Debian10, "Debian 10 Buster (64-bit)",   2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_32(Debian,  Debian11, "Debian 11 Bullseye (32-bit)", 2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_64(Debian,  Debian11, "Debian 11 Bullseye (64-bit)", 2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_32(Debian,  Debian12, "Debian 12 Bookworm (32-bit)", 2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_64(Debian,  Debian12, "Debian 12 Bookworm (64-bit)", 2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian,   "Debian (32-bit)",             2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X64(Debian,  Debian,   "Debian (64-bit)",             2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian31, "Debian 3.1 Sarge (32-bit)",   1024, 16, 8),  // 32-bit only
+    VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian4,  "Debian 4.0 Etch (32-bit)",    1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64(Debian,  Debian4,  "Debian 4.0 Etch (64-bit)",    1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian5,  "Debian 5.0 Lenny (32-bit)",   1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64(Debian,  Debian5,  "Debian 5.0 Lenny (64-bit)",   1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian6,  "Debian 6.0 Squeeze (32-bit)", 1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64(Debian,  Debian6,  "Debian 6.0 Squeeze (64-bit)", 1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian7,  "Debian 7 Wheezy (32-bit)",    2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X64(Debian,  Debian7,  "Debian 7 Wheezy (64-bit)",    2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian8,  "Debian 8 Jessie (32-bit)",    2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X64(Debian,  Debian8,  "Debian 8 Jessie (64-bit)",    2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian9,  "Debian 9 Stretch (32-bit)",   2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X64(Debian,  Debian9,  "Debian 9 Stretch (64-bit)",   2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian10, "Debian 10 Buster (32-bit)",   2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X64(Debian,  Debian10, "Debian 10 Buster (64-bit)",   2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian11, "Debian 11 Bullseye (32-bit)", 2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X64(Debian,  Debian11, "Debian 11 Bullseye (64-bit)", 2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian12, "Debian 12 Bookworm (32-bit)", 2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X64(Debian,  Debian12, "Debian 12 Bookworm (64-bit)", 2048, 16, 20),
 
-    VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_32(Fedora, Fedora, "Fedora (32-bit)", FedoraCore, 2048, 16, 15),
-    VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_64(Fedora, Fedora, "Fedora (64-bit)", FedoraCore, 2048, 16, 15),
+    VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_X86(Fedora, Fedora, "Fedora (32-bit)", FedoraCore, 2048, 16, 15),
+    VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_X64(Fedora, Fedora, "Fedora (64-bit)", FedoraCore, 2048, 16, 15),
 
-    VBOX_LINUX_SUBTYPE_A_32(Gentoo, Gentoo, "Gentoo (32-bit)", 1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_64(Gentoo, Gentoo, "Gentoo (64-bit)", 1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X86(Gentoo, Gentoo, "Gentoo (32-bit)", 1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64(Gentoo, Gentoo, "Gentoo (64-bit)", 1024, 16, 8),
 
-    VBOX_LINUX_SUBTYPE_A_32(Mandriva, Mandriva,  "Mandriva (32-bit)",        1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_64(Mandriva, Mandriva,  "Mandriva (64-bit)",        1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_32(Mandriva, OpenMandriva_Lx, "OpenMandriva Lx (32-bit)", 2048, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_64(Mandriva, OpenMandriva_Lx, "OpenMandriva Lx (64-bit)", 2048, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_32(PCLinuxOS, PCLinuxOS, "PCLinuxOS / PCLOS (32-bit)",     2048, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_64(PCLinuxOS, PCLinuxOS, "PCLinuxOS / PCLOS (64-bit)",     2048, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_32(Mageia, Mageia,    "Mageia (32-bit)",                2048, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_64(Mageia, Mageia,    "Mageia (64-bit)",                2048, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X86(Mandriva, Mandriva,  "Mandriva (32-bit)",        1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64(Mandriva, Mandriva,  "Mandriva (64-bit)",        1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X86(Mandriva, OpenMandriva_Lx, "OpenMandriva Lx (32-bit)", 2048, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X64(Mandriva, OpenMandriva_Lx, "OpenMandriva Lx (64-bit)", 2048, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X86(PCLinuxOS, PCLinuxOS, "PCLinuxOS / PCLOS (32-bit)",     2048, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X64(PCLinuxOS, PCLinuxOS, "PCLinuxOS / PCLOS (64-bit)",     2048, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X86(Mageia, Mageia,    "Mageia (32-bit)",                2048, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X64(Mageia, Mageia,    "Mageia (64-bit)",                2048, 16, 10),
 
-    VBOX_LINUX_SUBTYPE_B_32(Oracle Linux, Oracle,   "Oracle Linux (32-bit)",      2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_B_64(Oracle Linux, Oracle,   "Oracle Linux (64-bit)",      2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_B_32(Oracle Linux, Oracle4,  "Oracle Linux 4.x (32-bit)",  1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_B_64(Oracle Linux, Oracle4,  "Oracle Linux 4.x (64-bit)",  1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_B_32(Oracle Linux, Oracle5,  "Oracle Linux 5.x (32-bit)",  1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_B_64(Oracle Linux, Oracle5,  "Oracle Linux 5.x (64-bit)",  1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_B_32(Oracle Linux, Oracle6,  "Oracle Linux 6.x (32-bit)",  2048, 16, 10),
-    VBOX_LINUX_SUBTYPE_B_64(Oracle Linux, Oracle6,  "Oracle Linux 6.x (64-bit)",  2048, 16, 10),
-    VBOX_LINUX_SUBTYPE_B_64(Oracle Linux, Oracle7,  "Oracle Linux 7.x (64-bit)",  2048, 16, 20),  // 64-bit only
-    VBOX_LINUX_SUBTYPE_B_64(Oracle Linux, Oracle8,  "Oracle Linux 8.x (64-bit)",  2048, 16, 20),  // 64-bit only
-    VBOX_LINUX_SUBTYPE_B_64(Oracle Linux, Oracle9,  "Oracle Linux 9.x (64-bit)",  2048, 16, 20),  // 64-bit only
+    VBOX_LINUX_SUBTYPE_B_X86(Oracle Linux, Oracle,   "Oracle Linux (32-bit)",      2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_B_X64(Oracle Linux, Oracle,   "Oracle Linux (64-bit)",      2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_B_X86(Oracle Linux, Oracle4,  "Oracle Linux 4.x (32-bit)",  1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_B_X64(Oracle Linux, Oracle4,  "Oracle Linux 4.x (64-bit)",  1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_B_X86(Oracle Linux, Oracle5,  "Oracle Linux 5.x (32-bit)",  1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_B_X64(Oracle Linux, Oracle5,  "Oracle Linux 5.x (64-bit)",  1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_B_X86(Oracle Linux, Oracle6,  "Oracle Linux 6.x (32-bit)",  2048, 16, 10),
+    VBOX_LINUX_SUBTYPE_B_X64(Oracle Linux, Oracle6,  "Oracle Linux 6.x (64-bit)",  2048, 16, 10),
+    VBOX_LINUX_SUBTYPE_B_X64(Oracle Linux, Oracle7,  "Oracle Linux 7.x (64-bit)",  2048, 16, 20),  // 64-bit only
+    VBOX_LINUX_SUBTYPE_B_X64(Oracle Linux, Oracle8,  "Oracle Linux 8.x (64-bit)",  2048, 16, 20),  // 64-bit only
+    VBOX_LINUX_SUBTYPE_B_X64(Oracle Linux, Oracle9,  "Oracle Linux 9.x (64-bit)",  2048, 16, 20),  // 64-bit only
 
-    VBOX_LINUX_SUBTYPE_B_32(Red Hat, RedHat,   "Red Hat (32-bit)",      2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_B_64(Red Hat, RedHat,   "Red Hat (64-bit)",      2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_B_32(Red Hat, RedHat3,  "Red Hat 3.x (32-bit)",  1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_B_64(Red Hat, RedHat3,  "Red Hat 3.x (64-bit)",  1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_B_32(Red Hat, RedHat4,  "Red Hat 4.x (32-bit)",  1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_B_64(Red Hat, RedHat4,  "Red Hat 4.x (64-bit)",  1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_B_32(Red Hat, RedHat5,  "Red Hat 5.x (32-bit)",  1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_B_64(Red Hat, RedHat5,  "Red Hat 5.x (64-bit)",  1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_B_32(Red Hat, RedHat6,  "Red Hat 6.x (32-bit)",  1024, 16, 10),
-    VBOX_LINUX_SUBTYPE_B_64(Red Hat, RedHat6,  "Red Hat 6.x (64-bit)",  1024, 16, 10),
-    VBOX_LINUX_SUBTYPE_B_64(Red Hat, RedHat7,  "Red Hat 7.x (64-bit)",  2048, 16, 20),  // 64-bit only
-    VBOX_LINUX_SUBTYPE_B_64(Red Hat, RedHat8,  "Red Hat 8.x (64-bit)",  2048, 16, 20),  // 64-bit only
-    VBOX_LINUX_SUBTYPE_B_64(Red Hat, RedHat9,  "Red Hat 9.x (64-bit)",  2048, 16, 20),  // 64-bit only
+    VBOX_LINUX_SUBTYPE_B_X86(Red Hat, RedHat,   "Red Hat (32-bit)",      2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_B_X64(Red Hat, RedHat,   "Red Hat (64-bit)",      2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_B_X86(Red Hat, RedHat3,  "Red Hat 3.x (32-bit)",  1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_B_X64(Red Hat, RedHat3,  "Red Hat 3.x (64-bit)",  1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_B_X86(Red Hat, RedHat4,  "Red Hat 4.x (32-bit)",  1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_B_X64(Red Hat, RedHat4,  "Red Hat 4.x (64-bit)",  1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_B_X86(Red Hat, RedHat5,  "Red Hat 5.x (32-bit)",  1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_B_X64(Red Hat, RedHat5,  "Red Hat 5.x (64-bit)",  1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_B_X86(Red Hat, RedHat6,  "Red Hat 6.x (32-bit)",  1024, 16, 10),
+    VBOX_LINUX_SUBTYPE_B_X64(Red Hat, RedHat6,  "Red Hat 6.x (64-bit)",  1024, 16, 10),
+    VBOX_LINUX_SUBTYPE_B_X64(Red Hat, RedHat7,  "Red Hat 7.x (64-bit)",  2048, 16, 20),  // 64-bit only
+    VBOX_LINUX_SUBTYPE_B_X64(Red Hat, RedHat8,  "Red Hat 8.x (64-bit)",  2048, 16, 20),  // 64-bit only
+    VBOX_LINUX_SUBTYPE_B_X64(Red Hat, RedHat9,  "Red Hat 9.x (64-bit)",  2048, 16, 20),  // 64-bit only
 
-    VBOX_LINUX_SUBTYPE_A_32(openSUSE, OpenSUSE,            "openSUSE (32-bit)",               1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_64(openSUSE, OpenSUSE,            "openSUSE (64-bit)",               1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_64(openSUSE, OpenSUSE_Leap,       "openSUSE Leap (64-bit)",          2048, 16, 8),  // 64-bit only
-    VBOX_LINUX_SUBTYPE_A_32(openSUSE, OpenSUSE_Tumbleweed, "openSUSE Tumbleweed (32-bit)",    2048, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_64(openSUSE, OpenSUSE_Tumbleweed, "openSUSE Tumbleweed (64-bit)",    2048, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_32(SUSE, SUSE_LE,             "SUSE Linux Enterprise (32-bit)",  2048, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_64(SUSE, SUSE_LE,             "SUSE Linux Enterprise (64-bit)",  2048, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X86(openSUSE, OpenSUSE,            "openSUSE (32-bit)",               1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64(openSUSE, OpenSUSE,            "openSUSE (64-bit)",               1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64(openSUSE, OpenSUSE_Leap,       "openSUSE Leap (64-bit)",          2048, 16, 8),  // 64-bit only
+    VBOX_LINUX_SUBTYPE_A_X86(openSUSE, OpenSUSE_Tumbleweed, "openSUSE Tumbleweed (32-bit)",    2048, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64(openSUSE, OpenSUSE_Tumbleweed, "openSUSE Tumbleweed (64-bit)",    2048, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X86(SUSE, SUSE_LE,             "SUSE Linux Enterprise (32-bit)",  2048, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64(SUSE, SUSE_LE,             "SUSE Linux Enterprise (64-bit)",  2048, 16, 8),
 
-    VBOX_LINUX_SUBTYPE_A_32(TurboLinux, Turbolinux, "Turbolinux (32-bit)", 384, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_64(TurboLinux, Turbolinux, "Turbolinux (64-bit)", 384, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X86(TurboLinux, Turbolinux, "Turbolinux (32-bit)", 384, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64(TurboLinux, Turbolinux, "Turbolinux (64-bit)", 384, 16, 8),
 
-    VBOX_LINUX_SUBTYPE_A_32(Ubuntu, Ubuntu,       "Ubuntu (32-bit)",                             2048, 16, 25),
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Ubuntu,       "Ubuntu (64-bit)",                             2048, 16, 25),
-    VBOX_LINUX_SUBTYPE_A_32(Ubuntu, Ubuntu10_LTS, "Ubuntu 10.04 LTS (Lucid Lynx) (32-bit)",       256, 16, 3),
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Ubuntu10_LTS, "Ubuntu 10.04 LTS (Lucid Lynx) (64-bit)",       256, 16, 3),
-    VBOX_LINUX_SUBTYPE_A_32(Ubuntu, Ubuntu10,     "Ubuntu 10.10 (Maverick Meerkat) (32-bit)",     256, 16, 3),
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Ubuntu10,     "Ubuntu 10.10 (Maverick Meerkat) (64-bit)",     256, 16, 3),
-    VBOX_LINUX_SUBTYPE_A_32(Ubuntu, Ubuntu11,     "Ubuntu 11.04 (Natty Narwhal) / 11.10 (Oneiric Ocelot) (32-bit)",  384, 16, 5),
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Ubuntu11,     "Ubuntu 11.04 (Natty Narwhal) / 11.10 (Oneiric Ocelot) (64-bit)",  384, 16, 5),
-    VBOX_LINUX_SUBTYPE_A_32(Ubuntu, Ubuntu12_LTS, "Ubuntu 12.04 LTS (Precise Pangolin) (32-bit)", 768, 16, 5),
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Ubuntu12_LTS, "Ubuntu 12.04 LTS (Precise Pangolin) (64-bit)", 768, 16, 5),
-    VBOX_LINUX_SUBTYPE_A_32(Ubuntu, Ubuntu12,     "Ubuntu 12.10 (Quantal Quetzal) (32-bit)",      768, 16, 5),
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Ubuntu12,     "Ubuntu 12.10 (Quantal Quetzal) (64-bit)",      768, 16, 5),
-    VBOX_LINUX_SUBTYPE_A_32(Ubuntu, Ubuntu13,     "Ubuntu 13.04 (Raring Ringtail) / 13.10 (Saucy Salamander) (32-bit)",  768, 16, 5),
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Ubuntu13,     "Ubuntu 13.04 (Raring Ringtail) / 13.10 (Saucy Salamander) (64-bit)",  768, 16, 5),
-    VBOX_LINUX_SUBTYPE_A_32(Ubuntu, Ubuntu14_LTS, "Ubuntu 14.04 LTS (Trusty Tahr) (32-bit)",     1536, 16, 7),
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Ubuntu14_LTS, "Ubuntu 14.04 LTS (Trusty Tahr) (64-bit)",     1536, 16, 7),
-    VBOX_LINUX_SUBTYPE_A_32(Ubuntu, Ubuntu14,     "Ubuntu 14.10 (Utopic Unicorn) (32-bit)",      1536, 16, 7),
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Ubuntu14,     "Ubuntu 14.10 (Utopic Unicorn) (64-bit)",      1536, 16, 7),
-    VBOX_LINUX_SUBTYPE_A_32(Ubuntu, Ubuntu15,     "Ubuntu 15.04 (Vivid Vervet) / 15.10 (Wily Werewolf) (32-bit)",  1536, 16, 7),
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Ubuntu15,     "Ubuntu 15.04 (Vivid Vervet) / 15.10 (Wily Werewolf) (64-bit)",  1536, 16, 7),
-    VBOX_LINUX_SUBTYPE_A_32(Ubuntu, Ubuntu16_LTS, "Ubuntu 16.04 LTS (Xenial Xerus) (32-bit)",    1536, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Ubuntu16_LTS, "Ubuntu 16.04 LTS (Xenial Xerus) (64-bit)",    1536, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_32(Ubuntu, Ubuntu16,     "Ubuntu 16.10 (Yakkety Yak) (32-bit)",         1536, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Ubuntu16,     "Ubuntu 16.10 (Yakkety Yak) (64-bit)",         1536, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_32(Ubuntu, Ubuntu17,     "Ubuntu 17.04 (Zesty Zapus) / 17.10 (Artful Aardvark) (32-bit)", 1536, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Ubuntu17,     "Ubuntu 17.04 (Zesty Zapus) / 17.10 (Artful Aardvark) (64-bit)", 1536, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_32(Ubuntu, Ubuntu18_LTS, "Ubuntu 18.04 LTS (Bionic Beaver) (32-bit)",   2048, 16, 25),
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Ubuntu18_LTS, "Ubuntu 18.04 LTS (Bionic Beaver) (64-bit)",   2048, 16, 25),
-    VBOX_LINUX_SUBTYPE_A_32(Ubuntu, Ubuntu18,     "Ubuntu 18.10 (Cosmic Cuttlefish) (32-bit)",   2048, 16, 25),
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Ubuntu18,     "Ubuntu 18.10 (Cosmic Cuttlefish) (64-bit)",   2048, 16, 25),
-    VBOX_LINUX_SUBTYPE_A_32(Ubuntu, Ubuntu19,     "Ubuntu 19.04 (Disco Dingo) / 19.10 (Eoan Ermine) (32-bit)",     2048, 16, 25),
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Ubuntu19,     "Ubuntu 19.04 (Disco Dingo) / 19.10 (Eoan Ermine) (64-bit)",     2048, 16, 25),
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Ubuntu20_LTS, "Ubuntu 20.04 LTS (Focal Fossa) (64-bit)",     2048, 16, 25),  // 64-bit only
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Ubuntu20,     "Ubuntu 20.10 (Groovy Gorilla) (64-bit)",      2048, 16, 25),  // 64-bit only
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Ubuntu21,     "Ubuntu 21.04 (Hirsute Hippo) / 21.10 (Impish Indri) (64-bit)",  2048, 16, 25), // 64-bit only
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Ubuntu22_LTS, "Ubuntu 22.04 LTS (Jammy Jellyfish) (64-bit)", 2048, 16, 25), // 64-bit only
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Ubuntu22,     "Ubuntu 22.10 (Kinetic Kudu) (64-bit)", 2048, 16, 25), // 64-bit only
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Ubuntu23,     "Ubuntu 23.04 (Lunar Lobster) (64-bit)", 2048, 16, 25), // 64-bit only
-    VBOX_LINUX_SUBTYPE_A_32(Ubuntu, Lubuntu,      "Lubuntu (32-bit)",  1024, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Lubuntu,      "Lubuntu (64-bit)",  1024, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_32(Ubuntu, Xubuntu,      "Xubuntu (32-bit)",  1024, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_64(Ubuntu, Xubuntu,      "Xubuntu (64-bit)",  1024, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu,       "Ubuntu (32-bit)",                             2048, 16, 25),
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu,       "Ubuntu (64-bit)",                             2048, 16, 25),
+    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu10_LTS, "Ubuntu 10.04 LTS (Lucid Lynx) (32-bit)",       256, 16, 3),
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu10_LTS, "Ubuntu 10.04 LTS (Lucid Lynx) (64-bit)",       256, 16, 3),
+    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu10,     "Ubuntu 10.10 (Maverick Meerkat) (32-bit)",     256, 16, 3),
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu10,     "Ubuntu 10.10 (Maverick Meerkat) (64-bit)",     256, 16, 3),
+    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu11,     "Ubuntu 11.04 (Natty Narwhal) / 11.10 (Oneiric Ocelot) (32-bit)",  384, 16, 5),
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu11,     "Ubuntu 11.04 (Natty Narwhal) / 11.10 (Oneiric Ocelot) (64-bit)",  384, 16, 5),
+    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu12_LTS, "Ubuntu 12.04 LTS (Precise Pangolin) (32-bit)", 768, 16, 5),
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu12_LTS, "Ubuntu 12.04 LTS (Precise Pangolin) (64-bit)", 768, 16, 5),
+    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu12,     "Ubuntu 12.10 (Quantal Quetzal) (32-bit)",      768, 16, 5),
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu12,     "Ubuntu 12.10 (Quantal Quetzal) (64-bit)",      768, 16, 5),
+    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu13,     "Ubuntu 13.04 (Raring Ringtail) / 13.10 (Saucy Salamander) (32-bit)",  768, 16, 5),
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu13,     "Ubuntu 13.04 (Raring Ringtail) / 13.10 (Saucy Salamander) (64-bit)",  768, 16, 5),
+    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu14_LTS, "Ubuntu 14.04 LTS (Trusty Tahr) (32-bit)",     1536, 16, 7),
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu14_LTS, "Ubuntu 14.04 LTS (Trusty Tahr) (64-bit)",     1536, 16, 7),
+    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu14,     "Ubuntu 14.10 (Utopic Unicorn) (32-bit)",      1536, 16, 7),
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu14,     "Ubuntu 14.10 (Utopic Unicorn) (64-bit)",      1536, 16, 7),
+    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu15,     "Ubuntu 15.04 (Vivid Vervet) / 15.10 (Wily Werewolf) (32-bit)",  1536, 16, 7),
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu15,     "Ubuntu 15.04 (Vivid Vervet) / 15.10 (Wily Werewolf) (64-bit)",  1536, 16, 7),
+    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu16_LTS, "Ubuntu 16.04 LTS (Xenial Xerus) (32-bit)",    1536, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu16_LTS, "Ubuntu 16.04 LTS (Xenial Xerus) (64-bit)",    1536, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu16,     "Ubuntu 16.10 (Yakkety Yak) (32-bit)",         1536, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu16,     "Ubuntu 16.10 (Yakkety Yak) (64-bit)",         1536, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu17,     "Ubuntu 17.04 (Zesty Zapus) / 17.10 (Artful Aardvark) (32-bit)", 1536, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu17,     "Ubuntu 17.04 (Zesty Zapus) / 17.10 (Artful Aardvark) (64-bit)", 1536, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu18_LTS, "Ubuntu 18.04 LTS (Bionic Beaver) (32-bit)",   2048, 16, 25),
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu18_LTS, "Ubuntu 18.04 LTS (Bionic Beaver) (64-bit)",   2048, 16, 25),
+    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu18,     "Ubuntu 18.10 (Cosmic Cuttlefish) (32-bit)",   2048, 16, 25),
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu18,     "Ubuntu 18.10 (Cosmic Cuttlefish) (64-bit)",   2048, 16, 25),
+    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu19,     "Ubuntu 19.04 (Disco Dingo) / 19.10 (Eoan Ermine) (32-bit)",     2048, 16, 25),
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu19,     "Ubuntu 19.04 (Disco Dingo) / 19.10 (Eoan Ermine) (64-bit)",     2048, 16, 25),
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu20_LTS, "Ubuntu 20.04 LTS (Focal Fossa) (64-bit)",     2048, 16, 25),  // 64-bit only
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu20,     "Ubuntu 20.10 (Groovy Gorilla) (64-bit)",      2048, 16, 25),  // 64-bit only
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu21,     "Ubuntu 21.04 (Hirsute Hippo) / 21.10 (Impish Indri) (64-bit)",  2048, 16, 25), // 64-bit only
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu22_LTS, "Ubuntu 22.04 LTS (Jammy Jellyfish) (64-bit)", 2048, 16, 25), // 64-bit only
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu22,     "Ubuntu 22.10 (Kinetic Kudu) (64-bit)", 2048, 16, 25), // 64-bit only
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu23,     "Ubuntu 23.04 (Lunar Lobster) (64-bit)", 2048, 16, 25), // 64-bit only
+    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Lubuntu,      "Lubuntu (32-bit)",  1024, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Lubuntu,      "Lubuntu (64-bit)",  1024, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Xubuntu,      "Xubuntu (32-bit)",  1024, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Xubuntu,      "Xubuntu (64-bit)",  1024, 16, 10),
 
-    VBOX_LINUX_SUBTYPE_C_32(Xandros, Xandros, "Xandros (32-bit)", 1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_C_64(Xandros, Xandros, "Xandros (64-bit)", 1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_C_X86(Xandros, Xandros, "Xandros (32-bit)", 1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_C_X64(Xandros, Xandros, "Xandros (64-bit)", 1024, 16, 8),
 
-    VBOX_LINUX_SUBTYPE_A_32(Other Linux, Linux, "Other Linux (32-bit)", 256, 16, 8),
-    VBOX_LINUX_SUBTYPE_B_64(Other Linux, Linux, "Other Linux (64-bit)", 512, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X86(Other Linux, Linux, "Other Linux (32-bit)", 256, 16, 8),
+    VBOX_LINUX_SUBTYPE_B_X64(Other Linux, Linux, "Other Linux (64-bit)", 512, 16, 8),
 
     { "Solaris", "Solaris",           "",        "Solaris",            "Oracle Solaris 10 5/09 and earlier (32-bit)",
       VBOXOSTYPE_Solaris,         VBOXOSHINT_NONE,
