@@ -1427,34 +1427,10 @@ typedef struct IEMCPU
     R3PTRTYPE(PIEMTBALLOCATOR) pTbAllocatorR3;
     /** Pointer to the ring-3 executable memory allocator for this EMT. */
     R3PTRTYPE(struct IEMEXECMEMALLOCATOR *) pExecMemAllocatorR3;
-
-    /** Native recompiler state for ring-3. */
-    struct IEMRECOMPILERSTATE
-    {
-        /** Size of the buffer that pbNativeRecompileBufR3 points to in
-         * IEMNATIVEINSTR units. */
-        uint32_t                            cInstrBufAlloc;
-        uint32_t                            uPadding; /* We don't keep track of this here... */
-        /** Fixed temporary code buffer for native recompilation. */
-        R3PTRTYPE(PIEMNATIVEINSTR)          pInstrBuf;
-
-        /** Actual number of labels in paLabels. */
-        uint32_t                            cLabels;
-        /** Max number of entries allowed in paLabels before reallocating it. */
-        uint32_t                            cLabelsAlloc;
-        /** Labels defined while recompiling (referenced by fixups). */
-        R3PTRTYPE(struct IEMNATIVELABEL *)  paLabels;
-
-        /** Actual number of fixups paFixups. */
-        uint32_t                            cFixups;
-        /** Max number of entries allowed in paFixups before reallocating it. */
-        uint32_t                            cFixupsAlloc;
-        /** Buffer used by the recompiler for recording fixups when generating code. */
-        R3PTRTYPE(struct IEMNATIVEFIXUP *)  paFixups;
-    } Native;
-
-//    /* Alignment. */
-//    uint64_t                auAlignment10[1];
+    /** Pointer to the native recompiler state for ring-3. */
+    R3PTRTYPE(struct IEMRECOMPILERSTATE *)  pNativeRecompilerStateR3;
+    /** Alignment padding. */
+    uint64_t                auAlignment10[5];
     /** Statistics: Times TB execution was broken off before reaching the end. */
     STAMCOUNTER             StatTbExecBreaks;
     /** Statistics: Times BltIn_CheckIrq breaks out of the TB. */

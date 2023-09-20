@@ -77,6 +77,7 @@ extern "C" void *__deregister_frame_info(void *pvBegin);           /* (returns p
 
 #include "IEMInline.h"
 #include "IEMThreadedFunctions.h"
+#include "IEMN8veRecompiler.h"
 
 
 /*
@@ -155,7 +156,6 @@ extern "C" void *__deregister_frame_info(void *pvBegin);           /* (returns p
 /** @} */
 
 
-
 /*********************************************************************************************************************************
 *   Executable Memory Allocator                                                                                                  *
 *********************************************************************************************************************************/
@@ -191,16 +191,19 @@ typedef struct IEMEXECMEMCHUNK
     /** Pointer to the chunk. */
     void                   *pvChunk;
 #ifdef IN_RING3
-# ifdef RT_OS_WINDOWS
-    /** Pointer to the unwind information.  This is allocated from hHeap on
-     *  windows because (at least for AMD64) the UNWIND_INFO structure address
-     *  in the RUNTIME_FUNCTION entry is an RVA and the chunk is the "image".  */
+    /**
+     * Pointer to the unwind information.
+     *
+     * This is used during C++ throw and longjmp (windows and probably most other
+     * platforms).  Some debuggers (windbg) makes use of it as well.
+     *
+     * Windows: This is allocated from hHeap on windows because (at least for
+     *          AMD64) the UNWIND_INFO structure address in the
+     *          RUNTIME_FUNCTION entry is an RVA and the chunk is the "image".
+     *
+     * Others:  Allocated from the regular heap to avoid unnecessary executable data
+     *          structures.  This points to an IEMEXECMEMCHUNKEHFRAME structure. */
     void                   *pvUnwindInfo;
-# else
-    /** Exception handling frame information for proper unwinding during C++
-     *  throws and (possibly) longjmp(). */
-    PIEMEXECMEMCHUNKEHFRAME pEhFrame;
-# endif
 #elif defined(IN_RING0)
     /** Allocation handle. */
     RTR0MEMOBJ              hMemObj;
@@ -266,8 +269,8 @@ typedef IEMEXECMEMALLOCATOR *PIEMEXECMEMALLOCATOR;
 /**
  * Initializes the unwind info structures for windows hosts.
  */
-static void *iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecMemAllocator,
-                                                                  RTHEAPSIMPLE hHeap, void *pvChunk)
+static void *
+iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecMemAllocator, RTHEAPSIMPLE hHeap, void *pvChunk)
 {
     /*
      * The AMD64 unwind opcodes.
@@ -422,6 +425,7 @@ DECLINLINE(RTPTRUNION) iemDwarfPutCfaOffset(RTPTRUNION Ptr, uint32_t uReg, uint3
 }
 
 
+#  if 0 /* unused */
 /**
  * Emits a register (@a uReg) save location, using signed offset:
  *      CFA + @a offSigned * data_alignment_factor
@@ -433,24 +437,31 @@ DECLINLINE(RTPTRUNION) iemDwarfPutCfaSignedOffset(RTPTRUNION Ptr, uint32_t uReg,
     Ptr = iemDwarfPutLeb128(Ptr, offSigned);
     return Ptr;
 }
+#  endif
 
 
 /**
  * Initializes the unwind info section for non-windows hosts.
  */
-static void iemExecMemAllocatorInitEhFrameForChunk(PIEMEXECMEMALLOCATOR pExecMemAllocator,
-                                                   PIEMEXECMEMCHUNKEHFRAME pEhFrame, void *pvChunk)
+static PIEMEXECMEMCHUNKEHFRAME
+iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecMemAllocator, void *pvChunk)
 {
-    RTPTRUNION Ptr = { pEhFrame };
+    /*
+     * Allocate the structure for the eh_frame data and associate registration stuff.
+     */
+    PIEMEXECMEMCHUNKEHFRAME pEhFrame = (PIEMEXECMEMCHUNKEHFRAME)RTMemAllocZ(sizeof(IEMEXECMEMCHUNKEHFRAME));
+    AssertReturn(pEhFrame, NULL);
+
+    RTPTRUNION Ptr = { pEhFrame->abEhFrame };
 
     /*
      * Generate the CIE first.
      */
-#ifdef IEMNATIVE_USE_LIBUNWIND /* libunwind (llvm, darwin) only supports v1 and v3. */
+#  ifdef IEMNATIVE_USE_LIBUNWIND /* libunwind (llvm, darwin) only supports v1 and v3. */
     uint8_t const iDwarfVer = 3;
-#else
+#  else
     uint8_t const iDwarfVer = 4;
-#endif
+#  endif
     RTPTRUNION const PtrCie = Ptr;
     *Ptr.pu32++ = 123;                                      /* The CIE length will be determined later. */
     *Ptr.pu32++ = 0 /*UINT32_MAX*/;                         /* I'm a CIE in .eh_frame speak. */
@@ -481,9 +492,9 @@ static void iemExecMemAllocatorInitEhFrameForChunk(PIEMEXECMEMALLOCATOR pExecMem
     /*
      * Generate an FDE for the whole chunk area.
      */
-#ifdef IEMNATIVE_USE_LIBUNWIND
+#  ifdef IEMNATIVE_USE_LIBUNWIND
     pEhFrame->offFda = Ptr.u - (uintptr_t)&pEhFrame->abEhFrame[0];
-#endif
+#  endif
     RTPTRUNION const PtrFde = Ptr;
     *Ptr.pu32++ = 123;                                      /* The CIE length will be determined later. */
     *Ptr.pu32   = Ptr.u - PtrCie.u;                         /* Negated self relative CIE address. */
@@ -500,6 +511,17 @@ static void iemExecMemAllocatorInitEhFrameForChunk(PIEMEXECMEMALLOCATOR pExecMem
     *Ptr.pu32++ = 0;
     *Ptr.pu32++ = 0;            /* just to be sure... */
     Assert(Ptr.u - (uintptr_t)&pEhFrame->abEhFrame[0] <= sizeof(pEhFrame->abEhFrame));
+
+    /*
+     * Register it.
+     */
+#  ifdef IEMNATIVE_USE_LIBUNWIND
+    __register_frame(&pEhFrame->abEhFrame[pEhFrame->offFda]);
+#  else
+    memset(pEhFrame->abObject, 0xf6, sizeof(pEhFrame->abObject)); /* color the memory to better spot usage */
+    __register_frame_info(pEhFrame->abEhFrame, pEhFrame->abObject);
+#  endif
+    return pEhFrame;
 }
 
 # endif /* !RT_OS_WINDOWS */
@@ -576,34 +598,11 @@ static int iemExecMemAllocatorGrow(PIEMEXECMEMALLOCATOR pExecMemAllocator)
         {
 #ifdef IN_RING3
 # ifdef RT_OS_WINDOWS
-            /*
-             * The unwind information need to reside inside the chunk (at least
-             * the UNWIND_INFO structures does), as the UnwindInfoAddress member
-             * of RUNTIME_FUNCTION (AMD64) is relative to the "image base".
-             *
-             * We need unwind info because even longjmp() does a C++ stack unwind.
-             */
             void *pvUnwindInfo = iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(pExecMemAllocator, hHeap, pvChunk);
             AssertStmt(pvUnwindInfo, rc = VERR_INTERNAL_ERROR_3);
 # else
-            /*
-             * Generate an .eh_frame section for the chunk and register it so
-             * the unwinding code works (required for C++ exceptions and
-             * probably also for longjmp()).
-             */
-            PIEMEXECMEMCHUNKEHFRAME pEhFrame = (PIEMEXECMEMCHUNKEHFRAME)RTMemAllocZ(sizeof(IEMEXECMEMCHUNKEHFRAME));
-            if (pEhFrame)
-            {
-                iemExecMemAllocatorInitEhFrameForChunk(pExecMemAllocator, pEhFrame, pvChunk);
-#  ifdef IEMNATIVE_USE_LIBUNWIND
-                __register_frame(&pEhFrame->abEhFrame[pEhFrame->offFda]);
-#  else
-                memset(pEhFrame->abObject, 0xf6, sizeof(pEhFrame->abObject)); /* color the memory to better spot usage */
-                __register_frame_info(pEhFrame->abEhFrame, pEhFrame->abObject);
-#  endif
-            }
-            else
-                rc = VERR_NO_MEMORY;
+            void *pvUnwindInfo = iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(pExecMemAllocator, pvChunk);
+            AssertStmt(pvUnwindInfo, rc = VERR_NO_MEMORY);
 # endif
             if (RT_SUCCESS(rc))
 #endif
@@ -614,11 +613,7 @@ static int iemExecMemAllocatorGrow(PIEMEXECMEMALLOCATOR pExecMemAllocator)
                 pExecMemAllocator->aChunks[idxChunk].pvChunk      = pvChunk;
                 pExecMemAllocator->aChunks[idxChunk].hHeap        = hHeap;
 #ifdef IN_RING3
-# ifdef RT_OS_WINDOWS
                 pExecMemAllocator->aChunks[idxChunk].pvUnwindInfo = pvUnwindInfo;
-# else
-                pExecMemAllocator->aChunks[idxChunk].pEhFrame     = pEhFrame;
-# endif
 #endif
 
                 pExecMemAllocator->cChunks      = idxChunk + 1;
@@ -707,12 +702,12 @@ int iemExecMemAllocatorInit(PVMCPU pVCpu, uint64_t cbMax, uint64_t cbInitial, ui
     pExecMemAllocator->cbAllocated  = 0;
     for (uint32_t i = 0; i < cMaxChunks; i++)
     {
-        pExecMemAllocator->aChunks[i].hHeap    = NIL_RTHEAPSIMPLE;
-        pExecMemAllocator->aChunks[i].pvChunk  = NULL;
+        pExecMemAllocator->aChunks[i].hHeap        = NIL_RTHEAPSIMPLE;
+        pExecMemAllocator->aChunks[i].pvChunk      = NULL;
 #ifdef IN_RING0
-        pExecMemAllocator->aChunks[i].hMemObj  = NIL_RTR0MEMOBJ;
-#elif !defined(RT_OS_WINDOWS)
-        pExecMemAllocator->aChunks[i].pEhFrame = NULL;
+        pExecMemAllocator->aChunks[i].hMemObj      = NIL_RTR0MEMOBJ;
+#else
+        pExecMemAllocator->aChunks[i].pvUnwindInfo = NULL;
 #endif
     }
     pVCpu->iem.s.pExecMemAllocatorR3 = pExecMemAllocator;
@@ -857,57 +852,6 @@ void iemExecMemAllocatorFree(PVMCPU pVCpu, void *pv, size_t cb)
 *   Native Recompilation                                                                                                         *
 *********************************************************************************************************************************/
 
-/** Native code generator label types. */
-typedef enum
-{
-    kIemNativeLabelType_Invalid = 0,
-    kIemNativeLabelType_Return,
-    kIemNativeLabelType_NonZeroRetOrPassUp,
-    kIemNativeLabelType_End
-} IEMNATIVELABELTYPE;
-
-/** Native code generator label definition. */
-typedef struct IEMNATIVELABEL
-{
-    /** Code offset if defined, UINT32_MAX if it needs to be generated after/in
-     * the epilog. */
-    uint32_t    off;
-    /** The type of label (IEMNATIVELABELTYPE). */
-    uint16_t    enmType;
-    /** Additional label data, type specific. */
-    uint16_t    uData;
-} IEMNATIVELABEL;
-/** Pointer to a label. */
-typedef IEMNATIVELABEL *PIEMNATIVELABEL;
-
-
-/** Native code generator fixup types.  */
-typedef enum
-{
-    kIemNativeFixupType_Invalid = 0,
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-    /** AMD64 fixup: PC relative 32-bit with addend in bData. */
-    kIemNativeFixupType_Rel32,
-#elif defined(RT_ARCH_ARM64)
-#endif
-    kIemNativeFixupType_End
-} IEMNATIVEFIXUPTYPE;
-
-/** Native code generator fixup. */
-typedef struct IEMNATIVEFIXUP
-{
-    /** Code offset of the fixup location. */
-    uint32_t    off;
-    /** The IEMNATIVELABEL this is a fixup for. */
-    uint16_t    idxLabel;
-    /** The fixup type (IEMNATIVEFIXUPTYPE). */
-    uint8_t     enmType;
-    /** Addend or other data. */
-    int8_t      offAddend;
-} IEMNATIVEFIXUP;
-/** Pointer to a native code generator fixup. */
-typedef IEMNATIVEFIXUP *PIEMNATIVEFIXUP;
-
 
 /**
  * Used by TB code when encountering a non-zero status or rcPassUp after a call.
@@ -919,57 +863,91 @@ IEM_DECL_IMPL_DEF(int, iemNativeHlpExecStatusCodeFiddling,(PVMCPUCC pVCpu, int r
 }
 
 
-static void iemNativeReInit(PVMCPUCC pVCpu)
+/**
+ * Reinitializes the native recompiler state.
+ *
+ * Called before starting a new recompile job.
+ */
+static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative)
 {
-    pVCpu->iem.s.Native.cLabels   = 0;
-    pVCpu->iem.s.Native.cFixups   = 0;
+    pReNative->cLabels   = 0;
+    pReNative->cFixups   = 0;
+    return pReNative;
 }
 
 
-static bool iemNativeInit(PVMCPUCC pVCpu)
+/**
+ * Allocates and initializes the native recompiler state.
+ *
+ * This is called the first time an EMT wants to recompile something.
+ *
+ * @returns Pointer to the new recompiler state.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling
+ *                  thread.
+ * @thread  EMT(pVCpu)
+ */
+static PIEMRECOMPILERSTATE iemNativeInit(PVMCPUCC pVCpu)
 {
+    VMCPU_ASSERT_EMT(pVCpu);
+
+    PIEMRECOMPILERSTATE pReNative = (PIEMRECOMPILERSTATE)RTMemAllocZ(sizeof(*pReNative));
+    AssertReturn(pReNative, NULL);
+
     /*
      * Try allocate all the buffers and stuff we need.
      */
-    pVCpu->iem.s.Native.pInstrBuf = (PIEMNATIVEINSTR)RTMemAllocZ(_64K);
-    pVCpu->iem.s.Native.paLabels  = (PIEMNATIVELABEL)RTMemAllocZ(sizeof(IEMNATIVELABEL) * _8K);
-    pVCpu->iem.s.Native.paFixups  = (PIEMNATIVEFIXUP)RTMemAllocZ(sizeof(IEMNATIVEFIXUP) * _16K);
-    if (RT_LIKELY(   pVCpu->iem.s.Native.pInstrBuf
-                  && pVCpu->iem.s.Native.paLabels
-                  && pVCpu->iem.s.Native.paFixups))
+    pReNative->pInstrBuf = (PIEMNATIVEINSTR)RTMemAllocZ(_64K);
+    pReNative->paLabels  = (PIEMNATIVELABEL)RTMemAllocZ(sizeof(IEMNATIVELABEL) * _8K);
+    pReNative->paFixups  = (PIEMNATIVEFIXUP)RTMemAllocZ(sizeof(IEMNATIVEFIXUP) * _16K);
+    if (RT_LIKELY(   pReNative->pInstrBuf
+                  && pReNative->paLabels
+                  && pReNative->paFixups))
     {
         /*
          * Set the buffer & array sizes on success.
          */
-        pVCpu->iem.s.Native.cInstrBufAlloc = _64K / sizeof(IEMNATIVEINSTR);
-        pVCpu->iem.s.Native.cLabelsAlloc   = _8K;
-        pVCpu->iem.s.Native.cFixupsAlloc   = _16K;
-        iemNativeReInit(pVCpu);
-        return true;
+        pReNative->cInstrBufAlloc = _64K / sizeof(IEMNATIVEINSTR);
+        pReNative->cLabelsAlloc   = _8K;
+        pReNative->cFixupsAlloc   = _16K;
+
+        /*
+         * Done, just need to save it and reinit it.
+         */
+        pVCpu->iem.s.pNativeRecompilerStateR3 = pReNative;
+        return iemNativeReInit(pReNative);
     }
 
     /*
-     * Failed. Cleanup and the reset state.
+     * Failed. Cleanup and return.
      */
     AssertFailed();
-    RTMemFree(pVCpu->iem.s.Native.pInstrBuf);
-    RTMemFree(pVCpu->iem.s.Native.paLabels);
-    RTMemFree(pVCpu->iem.s.Native.paFixups);
-    pVCpu->iem.s.Native.pInstrBuf = NULL;
-    pVCpu->iem.s.Native.paLabels  = NULL;
-    pVCpu->iem.s.Native.paFixups  = NULL;
-    return false;
+    RTMemFree(pReNative->pInstrBuf);
+    RTMemFree(pReNative->paLabels);
+    RTMemFree(pReNative->paFixups);
+    RTMemFree(pReNative);
+    return NULL;
 }
 
 
-static uint32_t iemNativeMakeLabel(PVMCPUCC pVCpu, IEMNATIVELABELTYPE enmType,
-                                   uint32_t offWhere = UINT32_MAX, uint16_t uData = 0)
+/**
+ * Defines a label.
+ *
+ * @returns Label ID.
+ * @param   pReNative   The native recompile state.
+ * @param   enmType     The label type.
+ * @param   offWhere    The instruction offset of the label.  UINT32_MAX if the
+ *                      label is not yet defined (default).
+ * @param   uData       Data associated with the lable. Only applicable to
+ *                      certain type of labels. Default is zero.
+ */
+DECLHIDDEN(uint32_t) iemNativeMakeLabel(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType,
+                                        uint32_t offWhere /*= UINT32_MAX*/, uint16_t uData /*= 0*/) RT_NOEXCEPT
 {
     /*
      * Do we have the label already?
      */
-    PIEMNATIVELABEL paLabels = pVCpu->iem.s.Native.paLabels;
-    uint32_t const  cLabels  = pVCpu->iem.s.Native.cLabels;
+    PIEMNATIVELABEL paLabels = pReNative->paLabels;
+    uint32_t const  cLabels  = pReNative->cLabels;
     for (uint32_t i = 0; i < cLabels; i++)
         if (   paLabels[i].enmType == enmType
             && paLabels[i].uData   == uData)
@@ -986,19 +964,19 @@ static uint32_t iemNativeMakeLabel(PVMCPUCC pVCpu, IEMNATIVELABELTYPE enmType,
     /*
      * Make sure we've got room for another label.
      */
-    if (RT_LIKELY(cLabels < pVCpu->iem.s.Native.cLabelsAlloc))
+    if (RT_LIKELY(cLabels < pReNative->cLabelsAlloc))
     { /* likely */ }
     else
     {
-        uint32_t cNew = pVCpu->iem.s.Native.cLabelsAlloc;
+        uint32_t cNew = pReNative->cLabelsAlloc;
         AssertReturn(cNew, UINT32_MAX);
         AssertReturn(cLabels == cNew, UINT32_MAX);
         cNew *= 2;
         AssertReturn(cNew <= _64K, UINT32_MAX); /* IEMNATIVEFIXUP::idxLabel type restrict this */
         paLabels = (PIEMNATIVELABEL)RTMemRealloc(paLabels, cNew * sizeof(paLabels[0]));
         AssertReturn(paLabels, UINT32_MAX);
-        pVCpu->iem.s.Native.paLabels     = paLabels;
-        pVCpu->iem.s.Native.cLabelsAlloc = cNew;
+        pReNative->paLabels     = paLabels;
+        pReNative->cLabelsAlloc = cNew;
     }
 
     /*
@@ -1007,16 +985,21 @@ static uint32_t iemNativeMakeLabel(PVMCPUCC pVCpu, IEMNATIVELABELTYPE enmType,
     paLabels[cLabels].off     = offWhere;
     paLabels[cLabels].enmType = enmType;
     paLabels[cLabels].uData   = uData;
-    pVCpu->iem.s.Native.cLabels = cLabels + 1;
+    pReNative->cLabels = cLabels + 1;
     return cLabels;
 }
 
 
-static uint32_t iemNativeFindLabel(PVMCPUCC pVCpu, IEMNATIVELABELTYPE enmType,
-                                   uint32_t offWhere = UINT32_MAX, uint16_t uData = 0)
+/**
+ * Looks up a lable.
+ *
+ * @returns Label ID if found, UINT32_MAX if not.
+ */
+static uint32_t iemNativeFindLabel(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType,
+                                   uint32_t offWhere = UINT32_MAX, uint16_t uData = 0) RT_NOEXCEPT
 {
-    PIEMNATIVELABEL paLabels = pVCpu->iem.s.Native.paLabels;
-    uint32_t const  cLabels  = pVCpu->iem.s.Native.cLabels;
+    PIEMNATIVELABEL paLabels = pReNative->paLabels;
+    uint32_t const  cLabels  = pReNative->cLabels;
     for (uint32_t i = 0; i < cLabels; i++)
         if (   paLabels[i].enmType == enmType
             && paLabels[i].uData   == uData
@@ -1029,8 +1012,18 @@ static uint32_t iemNativeFindLabel(PVMCPUCC pVCpu, IEMNATIVELABELTYPE enmType,
 
 
 
-static bool iemNativeAddFixup(PVMCPUCC pVCpu, uint32_t offWhere, uint32_t idxLabel,
-                              IEMNATIVEFIXUPTYPE enmType, int8_t offAddend = 0)
+/**
+ * Adds a fixup.
+ *
+ * @returns Success indicator.
+ * @param   pReNative   The native recompile state.
+ * @param   offWhere    The instruction offset of the fixup location.
+ * @param   idxLabel    The target label ID for the fixup.
+ * @param   enmType     The fixup type.
+ * @param   offAddend   Fixup addend if applicable to the type. Default is 0.
+ */
+DECLHIDDEN(bool) iemNativeAddFixup(PIEMRECOMPILERSTATE pReNative, uint32_t offWhere, uint32_t idxLabel,
+                                   IEMNATIVEFIXUPTYPE enmType, int8_t offAddend /*= 0*/) RT_NOEXCEPT
 {
     Assert(idxLabel <= UINT16_MAX);
     Assert((unsigned)enmType <= UINT8_MAX);
@@ -1038,21 +1031,21 @@ static bool iemNativeAddFixup(PVMCPUCC pVCpu, uint32_t offWhere, uint32_t idxLab
     /*
      * Make sure we've room.
      */
-    PIEMNATIVEFIXUP paFixups = pVCpu->iem.s.Native.paFixups;
-    uint32_t const  cFixups  = pVCpu->iem.s.Native.cFixups;
-    if (RT_LIKELY(cFixups < pVCpu->iem.s.Native.cFixupsAlloc))
+    PIEMNATIVEFIXUP paFixups = pReNative->paFixups;
+    uint32_t const  cFixups  = pReNative->cFixups;
+    if (RT_LIKELY(cFixups < pReNative->cFixupsAlloc))
     { /* likely */ }
     else
     {
-        uint32_t cNew = pVCpu->iem.s.Native.cFixupsAlloc;
+        uint32_t cNew = pReNative->cFixupsAlloc;
         AssertReturn(cNew, false);
         AssertReturn(cFixups == cNew, false);
         cNew *= 2;
         AssertReturn(cNew <= _128K, false);
         paFixups = (PIEMNATIVEFIXUP)RTMemRealloc(paFixups, cNew * sizeof(paFixups[0]));
         AssertReturn(paFixups, false);
-        pVCpu->iem.s.Native.paFixups     = paFixups;
-        pVCpu->iem.s.Native.cFixupsAlloc = cNew;
+        pReNative->paFixups     = paFixups;
+        pReNative->cFixupsAlloc = cNew;
     }
 
     /*
@@ -1062,15 +1055,18 @@ static bool iemNativeAddFixup(PVMCPUCC pVCpu, uint32_t offWhere, uint32_t idxLab
     paFixups[cFixups].idxLabel  = (uint16_t)idxLabel;
     paFixups[cFixups].enmType   = enmType;
     paFixups[cFixups].offAddend = offAddend;
-    pVCpu->iem.s.Native.cFixups = cFixups + 1;
+    pReNative->cFixups = cFixups + 1;
     return true;
 }
 
-
-static PIEMNATIVEINSTR iemNativeInstrBufEnsureSlow(PVMCPUCC pVCpu, uint32_t off, uint32_t cInstrReq)
+/**
+ * Slow code path for iemNativeInstrBufEnsure.
+ */
+DECLHIDDEN(PIEMNATIVEINSTR) iemNativeInstrBufEnsureSlow(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                        uint32_t cInstrReq) RT_NOEXCEPT
 {
     /* Double the buffer size till we meet the request. */
-    uint32_t cNew = pVCpu->iem.s.Native.cInstrBufAlloc;
+    uint32_t cNew = pReNative->cInstrBufAlloc;
     AssertReturn(cNew > 0, NULL);
     do
         cNew *= 2;
@@ -1079,316 +1075,29 @@ static PIEMNATIVEINSTR iemNativeInstrBufEnsureSlow(PVMCPUCC pVCpu, uint32_t off,
     uint32_t const cbNew = cNew * sizeof(IEMNATIVEINSTR);
     AssertReturn(cbNew <= _2M, NULL);
 
-    void *pvNew = RTMemRealloc(pVCpu->iem.s.Native.pInstrBuf, cbNew);
+    void *pvNew = RTMemRealloc(pReNative->pInstrBuf, cbNew);
     AssertReturn(pvNew, NULL);
 
-    pVCpu->iem.s.Native.cInstrBufAlloc   = cNew;
-    return pVCpu->iem.s.Native.pInstrBuf = (PIEMNATIVEINSTR)pvNew;
+    pReNative->cInstrBufAlloc   = cNew;
+    return pReNative->pInstrBuf = (PIEMNATIVEINSTR)pvNew;
 }
-
-
-DECL_FORCE_INLINE(PIEMNATIVEINSTR) iemNativeInstrBufEnsure(PVMCPUCC pVCpu, uint32_t off, uint32_t cInstrReq)
-{
-    if (RT_LIKELY(off + cInstrReq <= pVCpu->iem.s.Native.cInstrBufAlloc))
-        return pVCpu->iem.s.Native.pInstrBuf;
-    return iemNativeInstrBufEnsureSlow(pVCpu, off, cInstrReq);
-}
-
-
-/**
- * Emit a simple marker instruction to more easily tell where something starts
- * in the disassembly.
- */
-uint32_t iemNativeEmitMarker(PVMCPUCC pVCpu, uint32_t off)
-{
-#ifdef RT_ARCH_AMD64
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pVCpu, off, 1);
-    AssertReturn(pbCodeBuf, UINT32_MAX);
-    pbCodeBuf[off++] = 0x90;                    /* nop */
-
-#elif RT_ARCH_ARM64
-    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pVCpu, off, 1);
-    pu32CodeBuf[off++] = 0xe503201f;            /* nop? */
-
-#else
-# error "port me"
-#endif
-    return off;
-}
-
-
-static uint32_t iemNativeEmitGprZero(PVMCPUCC pVCpu, uint32_t off, uint8_t iGpr)
-{
-#ifdef RT_ARCH_AMD64
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pVCpu, off, 3);
-    AssertReturn(pbCodeBuf, UINT32_MAX);
-    if (iGpr >= 8)                          /* xor gpr32, gpr32 */
-        pbCodeBuf[off++] = X86_OP_REX_R | X86_OP_REX_B;
-    pbCodeBuf[off++] = 0x33;
-    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGpr & 7, iGpr & 7);
-
-#elif RT_ARCH_ARM64
-    RT_NOREF(pVCpu, iGpr, uImm64);
-    off = UINT32_MAX;
-
-#else
-# error "port me"
-#endif
-    RT_NOREF(pVCpu);
-    return off;
-}
-
-
-static uint32_t iemNativeEmitLoadGprImm64(PVMCPUCC pVCpu, uint32_t off, uint8_t iGpr, uint64_t uImm64)
-{
-    if (!uImm64)
-        return iemNativeEmitGprZero(pVCpu, off, iGpr);
-
-#ifdef RT_ARCH_AMD64
-    if (uImm64 <= UINT32_MAX)
-    {
-        /* mov gpr, imm32 */
-        uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pVCpu, off, 6);
-        AssertReturn(pbCodeBuf, UINT32_MAX);
-        if (iGpr >= 8)
-            pbCodeBuf[off++] = X86_OP_REX_B;
-        pbCodeBuf[off++] = 0xb8 + (iGpr & 7);
-        pbCodeBuf[off++] = RT_BYTE1(uImm64);
-        pbCodeBuf[off++] = RT_BYTE2(uImm64);
-        pbCodeBuf[off++] = RT_BYTE3(uImm64);
-        pbCodeBuf[off++] = RT_BYTE4(uImm64);
-    }
-    else
-    {
-        /* mov gpr, imm64 */
-        uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pVCpu, off, 10);
-        AssertReturn(pbCodeBuf, UINT32_MAX);
-        if (iGpr < 8)
-            pbCodeBuf[off++] = X86_OP_REX_W;
-        else
-            pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_B;
-        pbCodeBuf[off++] = 0xb8 + (iGpr & 7);
-        pbCodeBuf[off++] = RT_BYTE1(uImm64);
-        pbCodeBuf[off++] = RT_BYTE2(uImm64);
-        pbCodeBuf[off++] = RT_BYTE3(uImm64);
-        pbCodeBuf[off++] = RT_BYTE4(uImm64);
-        pbCodeBuf[off++] = RT_BYTE5(uImm64);
-        pbCodeBuf[off++] = RT_BYTE6(uImm64);
-        pbCodeBuf[off++] = RT_BYTE7(uImm64);
-        pbCodeBuf[off++] = RT_BYTE8(uImm64);
-    }
-
-#elif RT_ARCH_ARM64
-    RT_NOREF(pVCpu, iGpr, uImm64);
-    off = UINT32_MAX;
-
-#else
-# error "port me"
-#endif
-    return off;
-}
-
-
-static uint32_t iemNativeEmitLoadGprFromVCpuU32(PVMCPUCC pVCpu, uint32_t off, uint8_t iGpr, uint32_t offVCpu)
-{
-#ifdef RT_ARCH_AMD64
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pVCpu, off, 7);
-    AssertReturn(pbCodeBuf, UINT32_MAX);
-
-    /* mov reg32, mem32 */
-    if (iGpr >= 8)
-        pbCodeBuf[off++] = X86_OP_REX_R;
-    pbCodeBuf[off++] = 0x8b;
-    if (offVCpu < 128)
-    {
-        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM1, iGpr & 7, X86_GREG_xBX);
-        pbCodeBuf[off++] = (uint8_t)offVCpu;
-    }
-    else
-    {
-        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM4, iGpr & 7, X86_GREG_xBX);
-        pbCodeBuf[off++] = RT_BYTE1(offVCpu);
-        pbCodeBuf[off++] = RT_BYTE2(offVCpu);
-        pbCodeBuf[off++] = RT_BYTE3(offVCpu);
-        pbCodeBuf[off++] = RT_BYTE4(offVCpu);
-    }
-
-#elif RT_ARCH_ARM64
-    RT_NOREF(pVCpu, idxInstr);
-    off = UINT32_MAX;
-
-#else
-# error "port me"
-#endif
-    return off;
-}
-
-
-static uint32_t iemNativeEmitLoadGprFromGpr(PVMCPUCC pVCpu, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc)
-{
-#ifdef RT_ARCH_AMD64
-    /* mov gprdst, gprsrc */
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pVCpu, off, 3);
-    AssertReturn(pbCodeBuf, UINT32_MAX);
-    if ((iGprDst | iGprSrc) >= 8)
-        pbCodeBuf[off++] = iGprDst < 8  ? X86_OP_REX_W | X86_OP_REX_B
-                         : iGprSrc >= 8 ? X86_OP_REX_W | X86_OP_REX_R | X86_OP_REX_B
-                         :                X86_OP_REX_W | X86_OP_REX_R;
-    else
-        pbCodeBuf[off++] = X86_OP_REX_W;
-    pbCodeBuf[off++] = 0x8b;
-    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprSrc & 7);
-
-#elif RT_ARCH_ARM64
-    RT_NOREF(pVCpu, iGprDst, iGprSrc);
-    off = UINT32_MAX;
-
-#else
-# error "port me"
-#endif
-    return off;
-}
-
-#ifdef RT_ARCH_AMD64
-/**
- * Common bit of iemNativeEmitLoadGprByBp and friends.
- */
-DECL_FORCE_INLINE(uint32_t) iemNativeEmitGprByBpDisp(uint8_t *pbCodeBuf, uint32_t off, uint8_t iGprReg, int32_t offDisp)
-{
-    if (offDisp < 128 && offDisp >= -128)
-    {
-        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM1, iGprReg & 7, X86_GREG_xBP);
-        pbCodeBuf[off++] = (uint8_t)(int8_t)offDisp;
-    }
-    else
-    {
-        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM4, iGprReg & 7, X86_GREG_xBP);
-        pbCodeBuf[off++] = RT_BYTE1((uint32_t)offDisp);
-        pbCodeBuf[off++] = RT_BYTE2((uint32_t)offDisp);
-        pbCodeBuf[off++] = RT_BYTE3((uint32_t)offDisp);
-        pbCodeBuf[off++] = RT_BYTE4((uint32_t)offDisp);
-    }
-    return off;
-}
-#endif
-
-
-#ifdef RT_ARCH_AMD64
-/**
- * Emits a 64-bit GRP load instruction with an BP relative source address.
- */
-static uint32_t iemNativeEmitLoadGprByBp(PVMCPUCC pVCpu, uint32_t off, uint8_t iGprDst, int32_t offDisp)
-{
-    /* mov gprdst, qword [rbp + offDisp]  */
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pVCpu, off, 7);
-    if (iGprDst < 8)
-        pbCodeBuf[off++] = X86_OP_REX_W;
-    else
-        pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_R;
-    pbCodeBuf[off++] = 0x8b;
-    return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprDst, offDisp);
-}
-#endif
-
-
-#ifdef RT_ARCH_AMD64
-/**
- * Emits a 32-bit GRP load instruction with an BP relative source address.
- */
-static uint32_t iemNativeEmitLoadGprByBpU32(PVMCPUCC pVCpu, uint32_t off, uint8_t iGprDst, int32_t offDisp)
-{
-    /* mov gprdst, dword [rbp + offDisp]  */
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pVCpu, off, 7);
-    if (iGprDst >= 8)
-        pbCodeBuf[off++] = X86_OP_REX_R;
-    pbCodeBuf[off++] = 0x8b;
-    return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprDst, offDisp);
-}
-#endif
-
-
-#ifdef RT_ARCH_AMD64
-/**
- * Emits a load effective address to a GRP with an BP relative source address.
- */
-static uint32_t iemNativeEmitLeaGrpByBp(PVMCPUCC pVCpu, uint32_t off, uint8_t iGprDst, int32_t offDisp)
-{
-    /* lea gprdst, [rbp + offDisp] */
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pVCpu, off, 7);
-    if (iGprDst < 8)
-        pbCodeBuf[off++] = X86_OP_REX_W;
-    else
-        pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_R;
-    pbCodeBuf[off++] = 0x8d;
-    return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprDst, offDisp);
-}
-#endif
-
-
-#ifdef RT_ARCH_AMD64
-/**
- * Emits a 64-bit GPR store with an BP relative destination address.
- */
-static uint32_t iemNativeEmitStoreGprByBp(PVMCPUCC pVCpu, uint32_t off, int32_t offDisp, uint8_t iGprSrc)
-{
-    /* mov qword [rbp + offDisp], gprdst */
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pVCpu, off, 7);
-    if (iGprSrc < 8)
-        pbCodeBuf[off++] = X86_OP_REX_W;
-    else
-        pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_R;
-    pbCodeBuf[off++] = 0x89;
-    return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprSrc, offDisp);
-}
-#endif
-
-
-#ifdef RT_ARCH_AMD64
-/**
- * Emits a 64-bit GPR subtract with a signed immediate subtrahend.
- */
-static uint32_t iemNativeEmitSubGprImm(PVMCPUCC pVCpu, uint32_t off, uint8_t iGprDst, int32_t iSubtrahend)
-{
-    /* sub gprdst, imm8/imm32 */
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pVCpu, off, 7);
-    if (iGprDst < 7)
-        pbCodeBuf[off++] = X86_OP_REX_W;
-    else
-        pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_B;
-    if (iSubtrahend < 128 && iSubtrahend >= -128)
-    {
-        pbCodeBuf[off++] = 0x83;
-        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 5, iGprDst & 7);
-        pbCodeBuf[off++] = (uint8_t)iSubtrahend;
-    }
-    else
-    {
-        pbCodeBuf[off++] = 0x81;
-        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 5, iGprDst & 7);
-        pbCodeBuf[off++] = RT_BYTE1(iSubtrahend);
-        pbCodeBuf[off++] = RT_BYTE2(iSubtrahend);
-        pbCodeBuf[off++] = RT_BYTE3(iSubtrahend);
-        pbCodeBuf[off++] = RT_BYTE4(iSubtrahend);
-    }
-    return off;
-}
-#endif
 
 
 /**
  * Emits a code for checking the return code of a call and rcPassUp, returning
  * from the code if either are non-zero.
  */
-static uint32_t iemNativeEmitCheckCallRetAndPassUp(PVMCPUCC pVCpu, uint32_t off, uint8_t idxInstr)
+DECLHIDDEN(uint32_t) iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                        uint8_t idxInstr) RT_NOEXCEPT
 {
 #ifdef RT_ARCH_AMD64
     /* eax = call status code.*/
 
     /* edx = rcPassUp */
-    off = iemNativeEmitLoadGprFromVCpuU32(pVCpu, off, X86_GREG_xDX, RT_UOFFSETOF(VMCPUCC, iem.s.rcPassUp));
+    off = iemNativeEmitLoadGprFromVCpuU32(pReNative, off, X86_GREG_xDX, RT_UOFFSETOF(VMCPUCC, iem.s.rcPassUp));
     AssertReturn(off != UINT32_MAX, UINT32_MAX);
 
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pVCpu, off, 10);
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
     AssertReturn(pbCodeBuf, UINT32_MAX);
 
     /* edx = eax | rcPassUp*/
@@ -1401,9 +1110,9 @@ static uint32_t iemNativeEmitCheckCallRetAndPassUp(PVMCPUCC pVCpu, uint32_t off,
 
     pbCodeBuf[off++] = 0x0f;                    /* jnz rel32 */
     pbCodeBuf[off++] = 0x85;
-    uint32_t const idxLabel = iemNativeMakeLabel(pVCpu, kIemNativeLabelType_NonZeroRetOrPassUp);
+    uint32_t const idxLabel = iemNativeMakeLabel(pReNative, kIemNativeLabelType_NonZeroRetOrPassUp);
     AssertReturn(idxLabel != UINT32_MAX, UINT32_MAX);
-    AssertReturn(iemNativeAddFixup(pVCpu, off, idxLabel, kIemNativeFixupType_Rel32, -4), UINT32_MAX);
+    AssertReturn(iemNativeAddFixup(pReNative, off, idxLabel, kIemNativeFixupType_Rel32, -4), UINT32_MAX);
     pbCodeBuf[off++] = 0x00;
     pbCodeBuf[off++] = 0x00;
     pbCodeBuf[off++] = 0x00;
@@ -1412,7 +1121,7 @@ static uint32_t iemNativeEmitCheckCallRetAndPassUp(PVMCPUCC pVCpu, uint32_t off,
     /* done. */
 
 #elif RT_ARCH_ARM64
-    RT_NOREF(pVCpu, idxInstr);
+    RT_NOREF(pReNative, idxInstr);
     off = UINT32_MAX;
 
 #else
@@ -1425,10 +1134,10 @@ static uint32_t iemNativeEmitCheckCallRetAndPassUp(PVMCPUCC pVCpu, uint32_t off,
 /**
  * Emits a call to a threaded worker function.
  */
-static uint32_t iemNativeEmitThreadedCall(PVMCPUCC pVCpu, uint32_t off, PCIEMTHRDEDCALLENTRY pCallEntry)
+static int32_t iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIEMTHRDEDCALLENTRY pCallEntry)
 {
 #ifdef VBOX_STRICT
-    off = iemNativeEmitMarker(pVCpu, off);
+    off = iemNativeEmitMarker(pReNative, off);
     AssertReturn(off != UINT32_MAX, UINT32_MAX);
 #endif
     uint8_t const cParams = g_acIemThreadedFunctionUsedArgs[pCallEntry->enmFunction];
@@ -1437,84 +1146,84 @@ static uint32_t iemNativeEmitThreadedCall(PVMCPUCC pVCpu, uint32_t off, PCIEMTHR
     /* Load the parameters and emit the call. */
 # ifdef RT_OS_WINDOWS
 #  ifndef VBOXSTRICTRC_STRICT_ENABLED
-    off = iemNativeEmitLoadGprFromGpr(pVCpu, off, X86_GREG_xCX, X86_GREG_xBX);
+    off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xCX, X86_GREG_xBX);
     AssertReturn(off != UINT32_MAX, UINT32_MAX);
     if (cParams > 0)
     {
-        off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_xDX, pCallEntry->auParams[0]);
+        off = iemNativeEmitLoadGprImm64(pReNative, off, X86_GREG_xDX, pCallEntry->auParams[0]);
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
     }
     if (cParams > 1)
     {
-        off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_x8, pCallEntry->auParams[1]);
+        off = iemNativeEmitLoadGprImm64(pReNative, off, X86_GREG_x8, pCallEntry->auParams[1]);
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
     }
     if (cParams > 2)
     {
-        off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_x9, pCallEntry->auParams[2]);
+        off = iemNativeEmitLoadGprImm64(pReNative, off, X86_GREG_x9, pCallEntry->auParams[2]);
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
     }
 #  else  /* VBOXSTRICTRC: Returned via hidden parameter. Sigh. */
-    off = iemNativeEmitLoadGprFromGpr(pVCpu, off, X86_GREG_xDX, X86_GREG_xBX);
+    off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xDX, X86_GREG_xBX);
     AssertReturn(off != UINT32_MAX, UINT32_MAX);
     if (cParams > 0)
     {
-        off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_x8, pCallEntry->auParams[0]);
+        off = iemNativeEmitLoadGprImm64(pReNative, off, X86_GREG_x8, pCallEntry->auParams[0]);
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
     }
     if (cParams > 1)
     {
-        off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_x9, pCallEntry->auParams[1]);
+        off = iemNativeEmitLoadGprImm64(pReNative, off, X86_GREG_x9, pCallEntry->auParams[1]);
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
     }
     if (cParams > 2)
     {
-        off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_x10, pCallEntry->auParams[2]);
+        off = iemNativeEmitLoadGprImm64(pReNative, off, X86_GREG_x10, pCallEntry->auParams[2]);
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
     }
-    off = iemNativeEmitStoreGprByBp(pVCpu, off, IEMNATIVE_FP_OFF_STACK_ARG0, X86_GREG_x10);
+    off = iemNativeEmitStoreGprByBp(pReNative, off, IEMNATIVE_FP_OFF_STACK_ARG0, X86_GREG_x10);
     AssertReturn(off != UINT32_MAX, UINT32_MAX);
-    off = iemNativeEmitLeaGrpByBp(pVCpu, off, X86_GREG_xCX, IEMNATIVE_FP_OFF_IN_SHADOW_ARG0); /* rcStrict */
+    off = iemNativeEmitLeaGrpByBp(pReNative, off, X86_GREG_xCX, IEMNATIVE_FP_OFF_IN_SHADOW_ARG0); /* rcStrict */
     AssertReturn(off != UINT32_MAX, UINT32_MAX);
 #  endif /* VBOXSTRICTRC_STRICT_ENABLED */
 # else
-    off = iemNativeEmitLoadGprFromGpr(pVCpu, off, X86_GREG_xDI, X86_GREG_xBX);
+    off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xDI, X86_GREG_xBX);
     AssertReturn(off != UINT32_MAX, UINT32_MAX);
     if (cParams > 0)
     {
-        off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_xSI, pCallEntry->auParams[0]);
+        off = iemNativeEmitLoadGprImm64(pReNative, off, X86_GREG_xSI, pCallEntry->auParams[0]);
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
     }
     if (cParams > 1)
     {
-        off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_xDX, pCallEntry->auParams[1]);
+        off = iemNativeEmitLoadGprImm64(pReNative, off, X86_GREG_xDX, pCallEntry->auParams[1]);
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
     }
     if (cParams > 2)
     {
-        off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_xCX, pCallEntry->auParams[2]);
+        off = iemNativeEmitLoadGprImm64(pReNative, off, X86_GREG_xCX, pCallEntry->auParams[2]);
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
     }
 # endif
-    off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_xAX, (uintptr_t)g_apfnIemThreadedFunctions[pCallEntry->enmFunction]);
+    off = iemNativeEmitLoadGprImm64(pReNative, off, X86_GREG_xAX, (uintptr_t)g_apfnIemThreadedFunctions[pCallEntry->enmFunction]);
     AssertReturn(off != UINT32_MAX, UINT32_MAX);
 
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pVCpu, off, 2);
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
     AssertReturn(pbCodeBuf, UINT32_MAX);
     pbCodeBuf[off++] = 0xff;                    /* call rax */
     pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 2, X86_GREG_xAX);
 
 # if defined(VBOXSTRICTRC_STRICT_ENABLED) && defined(RT_OS_WINDOWS)
-    off = iemNativeEmitLoadGprByBpU32(pVCpu, off, X86_GREG_xAX, IEMNATIVE_FP_OFF_IN_SHADOW_ARG0); /* rcStrict (see above) */
+    off = iemNativeEmitLoadGprByBpU32(pReNative, off, X86_GREG_xAX, IEMNATIVE_FP_OFF_IN_SHADOW_ARG0); /* rcStrict (see above) */
 # endif
 
     /* Check the status code. */
-    off = iemNativeEmitCheckCallRetAndPassUp(pVCpu, off, pCallEntry->idxInstr);
+    off = iemNativeEmitCheckCallRetAndPassUp(pReNative, off, pCallEntry->idxInstr);
     AssertReturn(off != UINT32_MAX, off);
 
 
 #elif RT_ARCH_ARM64
-    RT_NOREF(pVCpu, pCallEntry);
+    RT_NOREF(pReNative, pCallEntry);
     off = UINT32_MAX;
 
 #else
@@ -1527,10 +1236,10 @@ static uint32_t iemNativeEmitThreadedCall(PVMCPUCC pVCpu, uint32_t off, PCIEMTHR
 /**
  * Emits a standard epilog.
  */
-static uint32_t iemNativeEmitEpilog(PVMCPUCC pVCpu, uint32_t off)
+static uint32_t iemNativeEmitEpilog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 {
 #ifdef RT_ARCH_AMD64
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pVCpu, off, 20);
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 20);
     AssertReturn(pbCodeBuf, UINT32_MAX);
 
     /*
@@ -1542,7 +1251,7 @@ static uint32_t iemNativeEmitEpilog(PVMCPUCC pVCpu, uint32_t off)
     /*
      * Define label for common return point.
      */
-    uint32_t const idxReturn = iemNativeMakeLabel(pVCpu, kIemNativeLabelType_Return, off);
+    uint32_t const idxReturn = iemNativeMakeLabel(pReNative, kIemNativeLabelType_Return, off);
     AssertReturn(idxReturn != UINT32_MAX, UINT32_MAX);
 
     /* Reposition esp at the r15 restore point. */
@@ -1572,38 +1281,38 @@ static uint32_t iemNativeEmitEpilog(PVMCPUCC pVCpu, uint32_t off)
     /*
      * Generate the rc + rcPassUp fiddling code if needed.
      */
-    uint32_t idxLabel = iemNativeFindLabel(pVCpu, kIemNativeLabelType_NonZeroRetOrPassUp);
+    uint32_t idxLabel = iemNativeFindLabel(pReNative, kIemNativeLabelType_NonZeroRetOrPassUp);
     if (idxLabel != UINT32_MAX)
     {
-        Assert(pVCpu->iem.s.Native.paLabels[idxLabel].off == UINT32_MAX);
-        pVCpu->iem.s.Native.paLabels[idxLabel].off = off;
+        Assert(pReNative->paLabels[idxLabel].off == UINT32_MAX);
+        pReNative->paLabels[idxLabel].off = off;
 
         /* Call helper and jump to return point. */
 # ifdef RT_OS_WINDOWS
-        off = iemNativeEmitLoadGprFromGpr(pVCpu, off, X86_GREG_x8,  X86_GREG_xCX); /* cl = instruction number */
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_x8,  X86_GREG_xCX); /* cl = instruction number */
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
-        off = iemNativeEmitLoadGprFromGpr(pVCpu, off, X86_GREG_xCX, X86_GREG_xBX);
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xCX, X86_GREG_xBX);
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
-        off = iemNativeEmitLoadGprFromGpr(pVCpu, off, X86_GREG_xDX, X86_GREG_xAX);
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xDX, X86_GREG_xAX);
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
 # else
-        off = iemNativeEmitLoadGprFromGpr(pVCpu, off, X86_GREG_xDI, X86_GREG_xBX);
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xDI, X86_GREG_xBX);
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
-        off = iemNativeEmitLoadGprFromGpr(pVCpu, off, X86_GREG_xSI, X86_GREG_xAX);
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xSI, X86_GREG_xAX);
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
-        off = iemNativeEmitLoadGprFromGpr(pVCpu, off, X86_GREG_xDX, X86_GREG_xCX); /* cl = instruction number */
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xDX, X86_GREG_xCX); /* cl = instruction number */
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
 # endif
-        off = iemNativeEmitLoadGprImm64(pVCpu, off, X86_GREG_xAX, (uintptr_t)iemNativeHlpExecStatusCodeFiddling);
+        off = iemNativeEmitLoadGprImm64(pReNative, off, X86_GREG_xAX, (uintptr_t)iemNativeHlpExecStatusCodeFiddling);
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
 
-        pbCodeBuf = iemNativeInstrBufEnsure(pVCpu, off, 10);
+        pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
         AssertReturn(pbCodeBuf, UINT32_MAX);
         pbCodeBuf[off++] = 0xff;                    /* call rax */
         pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 2, X86_GREG_xAX);
 
         /* Jump to common return point. */
-        uint32_t offRel = pVCpu->iem.s.Native.paLabels[idxReturn].off - (off + 2);
+        uint32_t offRel = pReNative->paLabels[idxReturn].off - (off + 2);
         if (-(int32_t)offRel <= 127)
         {
             pbCodeBuf[off++] = 0xeb;                /* jmp rel8 */
@@ -1623,7 +1332,7 @@ static uint32_t iemNativeEmitEpilog(PVMCPUCC pVCpu, uint32_t off)
     }
 
 #elif RT_ARCH_ARM64
-    RT_NOREF(pVCpu);
+    RT_NOREF(pReNative);
     off = UINT32_MAX;
 
 #else
@@ -1636,18 +1345,18 @@ static uint32_t iemNativeEmitEpilog(PVMCPUCC pVCpu, uint32_t off)
 /**
  * Emits a standard prolog.
  */
-static uint32_t iemNativeEmitProlog(PVMCPUCC pVCpu, uint32_t off)
+static uint32_t iemNativeEmitProlog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 {
 #ifdef RT_ARCH_AMD64
     /*
      * Set up a regular xBP stack frame, pushing all non-volatile GPRs,
      * reserving 64 bytes for stack variables plus 4 non-register argument
-     * slots.  Fixed register assignment: xBX = pVCpu;
+     * slots.  Fixed register assignment: xBX = pReNative;
      *
      * Since we always do the same register spilling, we can use the same
      * unwind description for all the code.
      */
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pVCpu, off, 32);
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 32);
     AssertReturn(pbCodeBuf, UINT32_MAX);
     pbCodeBuf[off++] = 0x50 + X86_GREG_xBP;     /* push rbp */
     pbCodeBuf[off++] = X86_OP_REX_W;            /* mov rbp, rsp */
@@ -1674,7 +1383,7 @@ static uint32_t iemNativeEmitProlog(PVMCPUCC pVCpu, uint32_t off)
     pbCodeBuf[off++] = X86_OP_REX_B;            /* push r15 */
     pbCodeBuf[off++] = 0x50 + X86_GREG_x15 - 8;
 
-    off = iemNativeEmitSubGprImm(pVCpu, off,    /* sub rsp, byte 28h */
+    off = iemNativeEmitSubGprImm(pReNative, off,    /* sub rsp, byte 28h */
                                  X86_GREG_xSP,
                                    IEMNATIVE_FRAME_ALIGN_SIZE
                                  + IEMNATIVE_FRAME_VAR_SIZE
@@ -1685,7 +1394,7 @@ static uint32_t iemNativeEmitProlog(PVMCPUCC pVCpu, uint32_t off)
     AssertCompile(!(IEMNATIVE_FRAME_SHADOW_ARG_COUNT & 0x1));
 
 #elif RT_ARCH_ARM64
-    RT_NOREF(pVCpu);
+    RT_NOREF(pReNative);
     off = UINT32_MAX;
 
 #else
@@ -1711,15 +1420,19 @@ PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb)
      * The first time thru, we allocate the recompiler state, the other times
      * we just need to reset it before using it again.
      */
-    if (RT_LIKELY(pVCpu->iem.s.Native.pInstrBuf))
-        iemNativeReInit(pVCpu);
+    PIEMRECOMPILERSTATE pReNative = pVCpu->iem.s.pNativeRecompilerStateR3;
+    if (RT_LIKELY(pReNative))
+        iemNativeReInit(pReNative);
     else
-        AssertReturn(iemNativeInit(pVCpu), pTb);
+    {
+        pReNative = iemNativeInit(pVCpu);
+        AssertReturn(pReNative, pTb);
+    }
 
     /*
-     * Emit prolog code (fixed atm).
+     * Emit prolog code (fixed).
      */
-    uint32_t off = iemNativeEmitProlog(pVCpu, 0);
+    uint32_t off = iemNativeEmitProlog(pReNative, 0);
     AssertReturn(off != UINT32_MAX, pTb);
 
     /*
@@ -1729,7 +1442,7 @@ PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb)
     uint32_t             cCallsLeft = pTb->Thrd.cCalls;
     while (cCallsLeft-- > 0)
     {
-        off = iemNativeEmitThreadedCall(pVCpu, off, pCallEntry);
+        off = iemNativeEmitThreadedCall(pReNative, off, pCallEntry);
         AssertReturn(off != UINT32_MAX, pTb);
 
         pCallEntry++;
@@ -1738,15 +1451,15 @@ PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb)
     /*
      * Emit the epilog code.
      */
-    off = iemNativeEmitEpilog(pVCpu, off);
+    off = iemNativeEmitEpilog(pReNative, off);
     AssertReturn(off != UINT32_MAX, pTb);
 
     /*
      * Make sure all labels has been defined.
      */
-    PIEMNATIVELABEL const paLabels = pVCpu->iem.s.Native.paLabels;
+    PIEMNATIVELABEL const paLabels = pReNative->paLabels;
 #ifdef VBOX_STRICT
-    uint32_t const        cLabels  = pVCpu->iem.s.Native.cLabels;
+    uint32_t const        cLabels  = pReNative->cLabels;
     for (uint32_t i = 0; i < cLabels; i++)
         AssertMsgReturn(paLabels[i].off < off, ("i=%d enmType=%d\n", i, paLabels[i].enmType), pTb);
 #endif
@@ -1760,13 +1473,13 @@ PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb)
 
     PIEMNATIVEINSTR const paFinalInstrBuf = (PIEMNATIVEINSTR)iemExecMemAllocatorAlloc(pVCpu, off * sizeof(IEMNATIVEINSTR));
     AssertReturn(paFinalInstrBuf, pTb);
-    memcpy(paFinalInstrBuf, pVCpu->iem.s.Native.pInstrBuf, off * sizeof(paFinalInstrBuf[0]));
+    memcpy(paFinalInstrBuf, pReNative->pInstrBuf, off * sizeof(paFinalInstrBuf[0]));
 
     /*
      * Apply fixups.
      */
-    PIEMNATIVEFIXUP const paFixups   = pVCpu->iem.s.Native.paFixups;
-    uint32_t const        cFixups    = pVCpu->iem.s.Native.cFixups;
+    PIEMNATIVEFIXUP const paFixups   = pReNative->paFixups;
+    uint32_t const        cFixups    = pReNative->cFixups;
     for (uint32_t i = 0; i < cFixups; i++)
     {
         Assert(paFixups[i].off < off);
