@@ -412,6 +412,14 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         }
 
         /*
+         * VGA.
+         */
+        ComPtr<IGraphicsAdapter> pGraphicsAdapter;
+        hrc = pMachine->COMGETTER(GraphicsAdapter)(pGraphicsAdapter.asOutParam());           H();
+        GraphicsControllerType_T enmGraphicsController;
+        hrc = pGraphicsAdapter->COMGETTER(GraphicsControllerType)(&enmGraphicsController);   H();
+
+        /*
          * Devices
          */
         PCFGMNODE pDevices = NULL;      /* /Devices */
@@ -481,9 +489,12 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         InsertConfigInteger(pCfg,  "MmioSize",       4096);
         InsertConfigInteger(pCfg,  "MmioBase", 0x09020000);
         InsertConfigInteger(pCfg,  "DmaEnabled",        1);
-        InsertConfigInteger(pCfg,  "QemuRamfbSupport",  0);
-        InsertConfigNode(pInst,    "LUN#0",           &pLunL0);
-        InsertConfigString(pLunL0, "Driver",          "MainDisplay");
+        InsertConfigInteger(pCfg,  "QemuRamfbSupport",  enmGraphicsController == GraphicsControllerType_QemuRamFB ? 1 : 0);
+        if (enmGraphicsController == GraphicsControllerType_QemuRamFB)
+        {
+            InsertConfigNode(pInst,    "LUN#0",           &pLunL0);
+            InsertConfigString(pLunL0, "Driver",          "MainDisplay");
+        }
 
         vrc = RTFdtNodeAddF(hFdt, "fw-cfg@%RX32", 0x09020000);                              VRC();
         vrc = RTFdtNodePropertyAddEmpty(   hFdt, "dma-coherent");                           VRC();
@@ -636,28 +647,31 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         vrc = RTFdtNodePropertyAddString(  hFdt, "compatible", "pci-host-ecam-generic");    VRC();
         vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
-        InsertConfigNode(pDevices, "vga", &pDev);
-        InsertConfigNode(pDev,     "0", &pInst);
-        InsertConfigInteger(pInst, "Trusted",           1);
-        InsertConfigInteger(pInst, "PCIBusNo",          0);
-        InsertConfigInteger(pInst, "PCIDeviceNo",       2);
-        InsertConfigInteger(pInst, "PCIFunctionNo",     0);
-        InsertConfigNode(pInst,    "Config", &pCfg);
-        InsertConfigInteger(pCfg,  "VRamSize",          32 * _1M);
-        InsertConfigInteger(pCfg,  "MonitorCount",         1);
-        i_attachStatusDriver(pInst, DeviceType_Graphics3D);
-        InsertConfigInteger(pCfg, "VMSVGAEnabled", true);
-        InsertConfigInteger(pCfg, "VMSVGAPciBarLayout", true);
-        InsertConfigInteger(pCfg, "VMSVGAPciId", true);
-        InsertConfigInteger(pCfg, "VMSVGA3dEnabled", false);
-        InsertConfigInteger(pCfg, "VmSvga3", true);
-        InsertConfigInteger(pCfg, "VmSvgaExposeLegacyVga", false);
+        if (   enmGraphicsController != GraphicsControllerType_QemuRamFB
+            && enmGraphicsController != GraphicsControllerType_Null)
+        {
+            InsertConfigNode(pDevices, "vga", &pDev);
+            InsertConfigNode(pDev,     "0", &pInst);
+            InsertConfigInteger(pInst, "Trusted",           1);
+            InsertConfigInteger(pInst, "PCIBusNo",          0);
+            InsertConfigInteger(pInst, "PCIDeviceNo",       2);
+            InsertConfigInteger(pInst, "PCIFunctionNo",     0);
+            InsertConfigNode(pInst,    "Config", &pCfg);
+            InsertConfigInteger(pCfg,  "VRamSize",          32 * _1M);
+            InsertConfigInteger(pCfg,  "MonitorCount",         1);
+            i_attachStatusDriver(pInst, DeviceType_Graphics3D);
+            InsertConfigInteger(pCfg, "VMSVGAEnabled", true);
+            InsertConfigInteger(pCfg, "VMSVGAPciBarLayout", true);
+            InsertConfigInteger(pCfg, "VMSVGAPciId", true);
+            InsertConfigInteger(pCfg, "VMSVGA3dEnabled", false);
+            InsertConfigInteger(pCfg, "VmSvga3", true);
+            InsertConfigInteger(pCfg, "VmSvgaExposeLegacyVga", false);
 
-        /* Attach the display. */
-        InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-        InsertConfigString(pLunL0, "Driver",               "MainDisplay");
-        InsertConfigNode(pLunL0,   "Config", &pCfg);
-
+            /* Attach the display. */
+            InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+            InsertConfigString(pLunL0, "Driver",               "MainDisplay");
+            InsertConfigNode(pLunL0,   "Config", &pCfg);
+        }
 
         InsertConfigNode(pDevices, "VMMDev",          &pDev);
         InsertConfigNode(pDev,     "0",              &pInst);

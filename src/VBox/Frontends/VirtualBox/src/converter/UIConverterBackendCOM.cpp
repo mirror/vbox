@@ -312,10 +312,11 @@ template<> QString toString(const KGraphicsControllerType &type)
 {
     switch (type)
     {
-        case KGraphicsControllerType_Null:     return QApplication::translate("UICommon", "None",     "GraphicsControllerType");
-        case KGraphicsControllerType_VBoxVGA:  return QApplication::translate("UICommon", "VBoxVGA",  "GraphicsControllerType");
-        case KGraphicsControllerType_VMSVGA:   return QApplication::translate("UICommon", "VMSVGA",   "GraphicsControllerType");
-        case KGraphicsControllerType_VBoxSVGA: return QApplication::translate("UICommon", "VBoxSVGA", "GraphicsControllerType");
+        case KGraphicsControllerType_Null:      return QApplication::translate("UICommon", "None",      "GraphicsControllerType");
+        case KGraphicsControllerType_VBoxVGA:   return QApplication::translate("UICommon", "VBoxVGA",   "GraphicsControllerType");
+        case KGraphicsControllerType_VMSVGA:    return QApplication::translate("UICommon", "VMSVGA",    "GraphicsControllerType");
+        case KGraphicsControllerType_VBoxSVGA:  return QApplication::translate("UICommon", "VBoxSVGA",  "GraphicsControllerType");
+        case KGraphicsControllerType_QemuRamFB: return QApplication::translate("UICommon", "QemuRamFB", "GraphicsControllerType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -325,10 +326,11 @@ template<> QString toString(const KGraphicsControllerType &type)
 template<> KGraphicsControllerType fromString<KGraphicsControllerType>(const QString &strType)
 {
     QHash<QString, KGraphicsControllerType> list;
-    list.insert(QApplication::translate("UICommon", "None",     "GraphicsControllerType"), KGraphicsControllerType_Null);
-    list.insert(QApplication::translate("UICommon", "VBoxVGA",  "GraphicsControllerType"), KGraphicsControllerType_VBoxVGA);
-    list.insert(QApplication::translate("UICommon", "VMSVGA",   "GraphicsControllerType"), KGraphicsControllerType_VMSVGA);
-    list.insert(QApplication::translate("UICommon", "VBoxSVGA", "GraphicsControllerType"), KGraphicsControllerType_VBoxSVGA);
+    list.insert(QApplication::translate("UICommon", "None",      "GraphicsControllerType"), KGraphicsControllerType_Null);
+    list.insert(QApplication::translate("UICommon", "VBoxVGA",   "GraphicsControllerType"), KGraphicsControllerType_VBoxVGA);
+    list.insert(QApplication::translate("UICommon", "VMSVGA",    "GraphicsControllerType"), KGraphicsControllerType_VMSVGA);
+    list.insert(QApplication::translate("UICommon", "VBoxSVGA",  "GraphicsControllerType"), KGraphicsControllerType_VBoxSVGA);
+    list.insert(QApplication::translate("UICommon", "QemuRamFB", "GraphicsControllerType"), KGraphicsControllerType_QemuRamFB);
     if (!list.contains(strType))
     {
         AssertMsgFailed(("No value for '%s'", strType.toUtf8().constData()));

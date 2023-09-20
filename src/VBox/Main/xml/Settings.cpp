@@ -5635,6 +5635,8 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                     type = GraphicsControllerType_VMSVGA;
                 else if (strGraphicsControllerType == "VBOXSVGA")
                     type = GraphicsControllerType_VBoxSVGA;
+                else if (strGraphicsControllerType == "QEMURAMFB")
+                    type = GraphicsControllerType_QemuRamFB;
                 else if (strGraphicsControllerType == "NONE")
                     type = GraphicsControllerType_Null;
                 else
@@ -7483,6 +7485,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                 case GraphicsControllerType_VBoxVGA:            pcszGraphics = "VBoxVGA"; break;
                 case GraphicsControllerType_VMSVGA:             pcszGraphics = "VMSVGA"; break;
                 case GraphicsControllerType_VBoxSVGA:           pcszGraphics = "VBoxSVGA"; break;
+                case GraphicsControllerType_QemuRamFB:          pcszGraphics = "QemuRamFB"; break;
                 default: /*case GraphicsControllerType_Null:*/  pcszGraphics = "None"; break;
             }
             pelmDisplay->setAttribute("controller", pcszGraphics);
@@ -9391,9 +9394,10 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
     if (m->sv < SettingsVersion_v1_20)
     {
-        // VirtualBox 7.1 (settings v1.20) adds support for different VM platforms.
-        if (   hardwareMachine.platformSettings.architectureType != PlatformArchitecture_None
-            && hardwareMachine.platformSettings.architectureType != PlatformArchitecture_x86)
+        // VirtualBox 7.1 (settings v1.20) adds support for different VM platforms and the QEMU RAM based framebuffer device.
+        if (   (   hardwareMachine.platformSettings.architectureType != PlatformArchitecture_None
+                && hardwareMachine.platformSettings.architectureType != PlatformArchitecture_x86)
+            || hardwareMachine.graphicsAdapter.graphicsControllerType == GraphicsControllerType_QemuRamFB)
         {
             /* Note: The new chipset type ARMv8Virtual implies setting the platform architecture type to ARM. */
             m->sv = SettingsVersion_v1_20;

@@ -6678,7 +6678,7 @@
 
   <enum
     name="GraphicsControllerType"
-    uuid="3e009bb0-2b57-4283-a39b-4c363d4f0808"
+    uuid="e1379bad-ae01-493d-abf5-740a95c41676"
     >
     <desc>Graphics controller type, used with <link to="IGraphicsAdapter::graphicsControllerType" />.
     </desc>
@@ -6693,6 +6693,9 @@
     </const>
     <const name="VBoxSVGA"  value="3">
       <desc>VirtualBox VGA device with VMware SVGA II extensions.</desc>
+    </const>
+    <const name="QemuRamFB" value="4">
+      <desc>QEMU RAM based framebuffer based device.</desc>
     </const>
   </enum>
 

@@ -698,7 +698,8 @@ HRESULT PlatformProperties::getSupportedGraphicsControllerTypes(std::vector<Grap
         {
             static const GraphicsControllerType_T aGraphicsControllerTypes[] =
             {
-                GraphicsControllerType_Null
+                GraphicsControllerType_Null,
+                GraphicsControllerType_QemuRamFB
 #ifdef VBOX_WITH_VMSVGA
               , GraphicsControllerType_VMSVGA
 #endif
