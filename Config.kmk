@@ -1701,9 +1701,15 @@ ifeq ($(KBUILD_TARGET),darwin)
  # The first two entitlements are required to get everything working
  # on Catalina which we want to keep supported for now.
  #
+ # allow-jit   - for the recompiler in order to be able to generate and execute native code.
+ # audio-input - recording audio from a guest.
+ # camera      - accessing the webcam from a guest.
+ # usb         - USB passthrough.
+ #
  VBOX_DARWIN_ENTITLEMENTS_LIST := \
  	com.apple.security.cs.allow-unsigned-executable-memory \
  	com.apple.security.cs.disable-executable-page-protection \
+ 	com.apple.security.cs.allow-jit \
  	com.apple.security.device.audio-input \
  	com.apple.security.device.camera \
  	com.apple.security.device.usb
