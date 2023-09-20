@@ -62,6 +62,7 @@
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIDesktopWidgetWatchdog.h"
+#include "UIGuestOSTypeII.h"
 #include "UIExtraDataDefs.h"
 #include "UIExtraDataManager.h"
 #include "UIFDCreationDialog.h"
@@ -213,6 +214,7 @@ UICommon::UICommon(UIType enmType)
     , m_fSettingsPwSet(false)
     , m_fWrappersValid(false)
     , m_fVBoxSVCAvailable(true)
+    , m_pGuestOSTypeManager(new UIGuestOSTypeManager)
     , m_pThreadPool(0)
     , m_pThreadPoolCloud(0)
     , m_pMediumEnumerator(0)
@@ -223,6 +225,7 @@ UICommon::UICommon(UIType enmType)
 
 UICommon::~UICommon()
 {
+    delete m_pGuestOSTypeManager;
     /* Unassign instance: */
     s_pInstance = 0;
 }
@@ -3013,6 +3016,7 @@ void UICommon::comWrappersReinit()
             for (int i = j == 0 ? 2 : 0; i < cMax; ++i)
             {
                 const CGuestOSType os = guestOSTypes.at(i);
+                //printf("%s -- %s -- %s\n", qPrintable(os.GetId()), qPrintable(os.GetVariant()), qPrintable(os.GetDescription()));
                 const QString strFamilyID = os.GetFamilyId();
                 const QString strFamilyDescription = os.GetFamilyDescription();
                 if (!m_guestOSFamilyIDs.contains(strFamilyID))
@@ -3025,7 +3029,8 @@ void UICommon::comWrappersReinit()
             }
         }
     }
-
+    if (m_pGuestOSTypeManager)
+        m_pGuestOSTypeManager->reCacheGuestOSTypes(guestOSTypes);
     /* Mark wrappers valid: */
     m_fWrappersValid = true;
 }

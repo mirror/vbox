@@ -66,6 +66,7 @@ class CHostVideoInputDevice;
 class CMachine;
 class CUSBDevice;
 class UIActionPool;
+class UIGuestOSTypeManager;
 class UIMedium;
 class UIMediumEnumerator;
 class UIThreadPool;
@@ -750,6 +751,7 @@ private:
         QMap<QString, QString>       m_guestOSFamilyDescriptions;
         /** Holds the guest OS types for each family ID. */
         QList<QList<CGuestOSType> >  m_guestOSTypes;
+        UIGuestOSTypeManager *m_pGuestOSTypeManager;
     /** @} */
 
     /** @name Thread stuff.

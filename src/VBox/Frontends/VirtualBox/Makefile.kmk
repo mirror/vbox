@@ -1404,6 +1404,7 @@ UICommon_SOURCES = \
 	src/globals/UIDetailsGenerator.cpp \
 	src/globals/UIErrorString.cpp \
 	src/globals/UIExtension.cpp \
+	src/globals/UIGuestOSTypeII.cpp \
 	src/globals/UIIconPool.cpp \
 	src/globals/UIImageTools.cpp \
 	src/globals/UIMachineAttributeSetter.cpp \
