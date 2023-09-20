@@ -533,6 +533,16 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
             InsertConfigInteger(pCfg,  "Irq",               1);
             InsertConfigInteger(pCfg,  "MmioBase", 0x09000000);
 
+            vrc = RTFdtNodeAddF(hFdt, "pl011@%RX32", 0x09000000);                               VRC();
+            vrc = RTFdtNodePropertyAddStringList(hFdt, "clock-names", 2, "uartclk", "apb_pclk"); VRC();
+            vrc = RTFdtNodePropertyAddCellsU32(hFdt, "clocks", 2,
+                                               idPHandleAbpPClk, idPHandleAbpPClk);             VRC();
+            vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupts", 3, 0x00, 0x01, 0x04);        VRC();
+            vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 4, 0, 0x09000000, 0, 0x1000);       VRC();
+            vrc = RTFdtNodePropertyAddStringList(hFdt, "compatible", 2,
+                                                 "arm,pl011", "arm,primecell");                 VRC();
+            vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
+
             BOOL  fServer;
             hrc = serialPort->COMGETTER(Server)(&fServer);                                  H();
             hrc = serialPort->COMGETTER(Path)(bstr.asOutParam());                           H();
@@ -548,16 +558,6 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                     return vrc;
             }
         }
-
-        vrc = RTFdtNodeAddF(hFdt, "pl011@%RX32", 0x09000000);                               VRC();
-        vrc = RTFdtNodePropertyAddStringList(hFdt, "clock-names", 2, "uartclk", "apb_pclk"); VRC();
-        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "clocks", 2,
-                                           idPHandleAbpPClk, idPHandleAbpPClk);             VRC();
-        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupts", 3, 0x00, 0x01, 0x04);        VRC();
-        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 4, 0, 0x09000000, 0, 0x1000);       VRC();
-        vrc = RTFdtNodePropertyAddStringList(hFdt, "compatible", 2,
-                                             "arm,pl011", "arm,primecell");                 VRC();
-        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
         InsertConfigNode(pDevices, "arm-pl031-rtc", &pDev);
         InsertConfigNode(pDev,     "0",            &pInst);
