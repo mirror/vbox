@@ -61,8 +61,8 @@ const Global::OSType Global::sOSTypes[] =
       1,   64,   4,  2 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700 },
 
-    { "Other",   "Other",             "",               "Other_ARM64",        "Other/Unknown (ARM 64-bit)",
-      VBOXOSTYPE_Unknown_ARM64,       VBOXOSHINT_64BIT | VBOXOSHINT_EFI,
+    { "Other",   "Other",             "",               "Other_arm64",        "Other/Unknown (ARM 64-bit)",
+      VBOXOSTYPE_Unknown_arm64,       VBOXOSHINT_64BIT | VBOXOSHINT_EFI,
       1,   64,   4,  2 * _1G64, GraphicsControllerType_VMSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI,
       StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI, ChipsetType_ARMv8Virtual, IommuType_None, AudioControllerType_VirtioSound, AudioCodecType_Null },
 
@@ -231,8 +231,8 @@ const Global::OSType Global::sOSTypes[] =
 
 #define VBOX_LINUX_OSTYPE_X86(a_OStype)     VBOXOSTYPE_ ## a_OStype
 #define VBOX_LINUX_OSTYPE_X64(a_OStype)     VBOXOSTYPE_ ## a_OStype ## _x64
-#define VBOX_LINUX_OSTYPE_ARM32(a_OStype)   VBOXOSTYPE_ ## a_OStype ## _ARM32
-#define VBOX_LINUX_OSTYPE_ARM64(a_OStype)   VBOXOSTYPE_ ## a_OStype ## _ARM64
+#define VBOX_LINUX_OSTYPE_ARM32(a_OStype)   VBOXOSTYPE_ ## a_OStype ## _arm32
+#define VBOX_LINUX_OSTYPE_ARM64(a_OStype)   VBOXOSTYPE_ ## a_OStype ## _arm64
 
 /** Base string for Linux-based OS IDs. */
 #define VBOX_LINUX_OSID_STR_BASE(a_OSid)    #a_OSid
@@ -241,9 +241,9 @@ const Global::OSType Global::sOSTypes[] =
 /* Note: Keep this naming for legacy reasons. Always meant x64 (i.e. x86 64-bit). */
 #define VBOX_LINUX_OSID_STR_X64(a_OSid)     VBOX_LINUX_OSID_STR_BASE(a_OSid ## _64)
 /* New since VBox 7.1. */
-#define VBOX_LINUX_OSID_STR_ARM32(a_OSid)   VBOX_LINUX_OSID_STR_BASE(a_OSid ## _ARM32)
+#define VBOX_LINUX_OSID_STR_ARM32(a_OSid)   VBOX_LINUX_OSID_STR_BASE(a_OSid ## _arm32)
 /* New since VBox 7.1. */
-#define VBOX_LINUX_OSID_STR_ARM64(a_OSid)   VBOX_LINUX_OSID_STR_BASE(a_OSid ## _ARM64)
+#define VBOX_LINUX_OSID_STR_ARM64(a_OSid)   VBOX_LINUX_OSID_STR_BASE(a_OSid ## _arm64)
 
 #define VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_Variant, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
                                         a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \

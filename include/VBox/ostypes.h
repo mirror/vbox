@@ -55,8 +55,8 @@ typedef enum VBOXOSTYPE
 {
     VBOXOSTYPE_Unknown          = 0,
     VBOXOSTYPE_Unknown_x64      = 0x00100,
-    VBOXOSTYPE_Unknown_ARM32    = 0x00200,
-    VBOXOSTYPE_Unknown_ARM64    = 0x00300,
+    VBOXOSTYPE_Unknown_arm32    = 0x00200,
+    VBOXOSTYPE_Unknown_arm64    = 0x00300,
 
     /** @name DOS and it's descendants
      * @{ */
@@ -113,8 +113,8 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_ArchLinux_x64    = 0x54100,
     VBOXOSTYPE_Debian           = 0x55000,
     VBOXOSTYPE_Debian_x64       = 0x55100,
-    VBOXOSTYPE_Debian_ARM32     = 0x55200,
-    VBOXOSTYPE_Debian_ARM64     = 0x55300,
+    VBOXOSTYPE_Debian_arm32     = 0x55200,
+    VBOXOSTYPE_Debian_arm64     = 0x55300,
     VBOXOSTYPE_Debian31         = 0x55001,  // 32-bit only
     VBOXOSTYPE_Debian4          = 0x55002,
     VBOXOSTYPE_Debian4_x64      = 0x55102,
@@ -172,8 +172,8 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_Turbolinux_x64   = 0x5B100,
     VBOXOSTYPE_Ubuntu           = 0x5C000,
     VBOXOSTYPE_Ubuntu_x64       = 0x5C100,
-    VBOXOSTYPE_Ubuntu_ARM32     = 0x5C200,
-    VBOXOSTYPE_Ubuntu_ARM64     = 0x5C300,
+    VBOXOSTYPE_Ubuntu_arm32     = 0x5C200,
+    VBOXOSTYPE_Ubuntu_arm64     = 0x5C300,
     VBOXOSTYPE_Xubuntu          = 0x5C001,
     VBOXOSTYPE_Xubuntu_x64      = 0x5C101,
     VBOXOSTYPE_Lubuntu          = 0x5C002,
@@ -277,9 +277,9 @@ typedef enum VBOXOSTYPE
     /** Architecture value for 64-bit x86 (AMD64). */
     VBOXOSTYPE_x64              = 0x00100,
     /** Architecture value for 32-bit ARM. */
-    VBOXOSTYPE_ARM32            = 0x00200,
+    VBOXOSTYPE_arm32            = 0x00200,
     /** Architecture value for 64-bit ARM. */
-    VBOXOSTYPE_ARM64            = 0x00300,
+    VBOXOSTYPE_arm64            = 0x00300,
     /** Architecture value for unknown or unsupported architectures. */
     VBOXOSTYPE_UnknownArch      = 0x00f00,
     /** @} */
