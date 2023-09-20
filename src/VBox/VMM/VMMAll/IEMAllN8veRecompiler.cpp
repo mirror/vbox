@@ -65,7 +65,14 @@ extern "C" DECLIMPORT(uint8_t) __cdecl RtlAddFunctionTable(void *pvFunctionTable
 extern "C" DECLIMPORT(uint8_t) __cdecl RtlDelFunctionTable(void *pvFunctionTable);
 #else
 # include <iprt/formats/dwarf.h>
-extern "C" void __register_frame_info(void *begin, void *ob); /* found no header for these two */
+# if defined(RT_OS_DARWIN)
+#  define IEMNATIVE_USE_LIBUNWIND
+extern "C" void  __register_frame(const void *pvFde);
+extern "C" void  __deregister_frame(const void *pvFde);
+# else
+extern "C" void  __register_frame_info(void *pvBegin, void *pvObj); /* found no header for these two */
+extern "C" void *__deregister_frame_info(void *pvBegin);           /* (returns pvObj from __register_frame_info call) */
+# endif
 #endif
 
 #include "IEMInline.h"
@@ -159,8 +166,13 @@ extern "C" void __register_frame_info(void *begin, void *ob); /* found no header
  */
 typedef struct IEMEXECMEMCHUNKEHFRAME
 {
+# ifdef IEMNATIVE_USE_LIBUNWIND
+    /** The offset of the FDA into abEhFrame. */
+    uintptr_t               offFda;
+# else
     /** struct object storage area. */
     uint8_t                 abObject[1024];
+# endif
     /** The dwarf ehframe data for the chunk. */
     uint8_t                 abEhFrame[512];
 } IEMEXECMEMCHUNKEHFRAME;
@@ -434,13 +446,21 @@ static void iemExecMemAllocatorInitEhFrameForChunk(PIEMEXECMEMALLOCATOR pExecMem
     /*
      * Generate the CIE first.
      */
+#ifdef IEMNATIVE_USE_LIBUNWIND /* libunwind (llvm, darwin) only supports v1 and v3. */
+    uint8_t const iDwarfVer = 3;
+#else
+    uint8_t const iDwarfVer = 4;
+#endif
     RTPTRUNION const PtrCie = Ptr;
     *Ptr.pu32++ = 123;                                      /* The CIE length will be determined later. */
     *Ptr.pu32++ = 0 /*UINT32_MAX*/;                         /* I'm a CIE in .eh_frame speak. */
-    *Ptr.pb++   = 4;                                        /* DwARF v4. */
+    *Ptr.pb++   = iDwarfVer;                                /* DwARF version */
     *Ptr.pb++   = 0;                                        /* Augmentation. */
-    *Ptr.pb++   = sizeof(uintptr_t);                        /* Address size. */
-    *Ptr.pb++   = 0;                                        /* Segment selector size. */
+    if (iDwarfVer >= 4)
+    {
+        *Ptr.pb++   = sizeof(uintptr_t);                    /* Address size. */
+        *Ptr.pb++   = 0;                                    /* Segment selector size. */
+    }
     Ptr = iemDwarfPutLeb128(Ptr, 1);                        /* Code alignment factor (LEB128 = 1). */
     Ptr = iemDwarfPutLeb128(Ptr, -8);                       /* Data alignment factor (LEB128 = -8). */
     Ptr = iemDwarfPutUleb128(Ptr, DWREG_AMD64_RA);          /* Return address column (ULEB128) */
@@ -461,6 +481,9 @@ static void iemExecMemAllocatorInitEhFrameForChunk(PIEMEXECMEMALLOCATOR pExecMem
     /*
      * Generate an FDE for the whole chunk area.
      */
+#ifdef IEMNATIVE_USE_LIBUNWIND
+    pEhFrame->offFda = Ptr.u - (uintptr_t)&pEhFrame->abEhFrame[0];
+#endif
     RTPTRUNION const PtrFde = Ptr;
     *Ptr.pu32++ = 123;                                      /* The CIE length will be determined later. */
     *Ptr.pu32   = Ptr.u - PtrCie.u;                         /* Negated self relative CIE address. */
@@ -572,8 +595,12 @@ static int iemExecMemAllocatorGrow(PIEMEXECMEMALLOCATOR pExecMemAllocator)
             if (pEhFrame)
             {
                 iemExecMemAllocatorInitEhFrameForChunk(pExecMemAllocator, pEhFrame, pvChunk);
+#  ifdef IEMNATIVE_USE_LIBUNWIND
+                __register_frame(&pEhFrame->abEhFrame[pEhFrame->offFda]);
+#  else
                 memset(pEhFrame->abObject, 0xf6, sizeof(pEhFrame->abObject)); /* color the memory to better spot usage */
                 __register_frame_info(pEhFrame->abEhFrame, pEhFrame->abObject);
+#  endif
             }
             else
                 rc = VERR_NO_MEMORY;
