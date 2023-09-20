@@ -323,6 +323,7 @@ const Global::OSType Global::sOSTypes[] =
 
     VBOX_LINUX_SUBTYPE_A_X86(ArchLinux, ArchLinux, "Arch Linux (32-bit)", 1024, 16, 8),
     VBOX_LINUX_SUBTYPE_A_X64(ArchLinux, ArchLinux, "Arch Linux (64-bit)", 1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_ARM64(ArchLinux, ArchLinux, "Arch Linux (64-bit)", 1024, 128, 8),
 
     VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian,   "Debian (32-bit)",             2048, 16, 20),
     VBOX_LINUX_SUBTYPE_A_X64(Debian,  Debian,   "Debian (64-bit)",             2048, 16, 20),

@@ -382,6 +382,7 @@ UIIconPoolGeneral::UIIconPoolGeneral()
     m_guestOSTypeIconNames.insert("Linux26_x64",     ":/os_linux26.png");
     m_guestOSTypeIconNames.insert("ArchLinux",       ":/os_archlinux_32.png");
     m_guestOSTypeIconNames.insert("ArchLinux_x64",   ":/os_archlinux.png");
+    m_guestOSTypeIconNames.insert("ArchLinux_arm64", ":/os_archlinux.png");
     m_guestOSTypeIconNames.insert("Debian",          ":/os_debian_32.png");
     m_guestOSTypeIconNames.insert("Debian_x64",      ":/os_debian.png");
     m_guestOSTypeIconNames.insert("Debian_arm64",    ":/os_debian.png");

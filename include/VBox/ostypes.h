@@ -111,6 +111,7 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_Linux26_x64      = 0x53100,
     VBOXOSTYPE_ArchLinux        = 0x54000,
     VBOXOSTYPE_ArchLinux_x64    = 0x54100,
+    VBOXOSTYPE_ArchLinux_arm64  = 0x54300,
     VBOXOSTYPE_Debian           = 0x55000,
     VBOXOSTYPE_Debian_x64       = 0x55100,
     VBOXOSTYPE_Debian_arm32     = 0x55200,
