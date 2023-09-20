@@ -498,7 +498,7 @@ VMMR3DECL(void) CPUMR3Reset(PVM pVM)
 static DECLCALLBACK(int) cpumR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
 {
     AssertReturn(uPass == 0, VERR_SSM_UNEXPECTED_PASS);
-    /** @todo */ RT_NOREF(pVM, pSSM);
+    cpumR3SaveCpuId(pVM, pSSM);
     return VINF_SSM_DONT_CALL_AGAIN;
 }
 
@@ -525,6 +525,8 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
 
         SSMR3PutU32(pSSM, pVCpu->cpum.s.fChanged);
     }
+
+    cpumR3SaveCpuId(pVM, pSSM);
     return VINF_SUCCESS;
 }
 
@@ -583,7 +585,9 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
     }
 
     pVM->cpum.s.fPendingRestore = false;
-    return VINF_SUCCESS;
+
+    /* Load CPUID and explode guest features. */
+    return cpumR3LoadCpuId(pVM, pSSM, uVersion);
 }
 
 

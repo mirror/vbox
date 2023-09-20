@@ -174,6 +174,9 @@ RT_C_DECLS_BEGIN
 DECLHIDDEN(int)       cpumR3DbgInit(PVM pVM);
 DECLHIDDEN(int)       cpumR3SysRegStrictInitChecks(void);
 
+void                  cpumR3SaveCpuId(PVM pVM, PSSMHANDLE pSSM);
+int                   cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion);
+
 DECLCALLBACK(void)    cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 DECLCALLBACK(void)    cpumR3CpuFeatInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 

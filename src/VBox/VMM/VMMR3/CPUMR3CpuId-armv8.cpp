@@ -659,6 +659,182 @@ VMMR3_INT_DECL(int) CPUMR3QueryGuestIdRegs(PVM pVM, PCCPUMIDREGS *ppIdRegs)
 /*
  *
  *
+ * Saved state related code.
+ * Saved state related code.
+ * Saved state related code.
+ *
+ *
+ */
+/** Saved state field descriptors for CPUMIDREGS. */
+static const SSMFIELD g_aCpumIdRegsFields[] =
+{
+    SSMFIELD_ENTRY(CPUMIDREGS, u64RegIdAa64Pfr0El1),
+    SSMFIELD_ENTRY(CPUMIDREGS, u64RegIdAa64Pfr1El1),
+    SSMFIELD_ENTRY(CPUMIDREGS, u64RegIdAa64Dfr0El1),
+    SSMFIELD_ENTRY(CPUMIDREGS, u64RegIdAa64Dfr1El1),
+    SSMFIELD_ENTRY(CPUMIDREGS, u64RegIdAa64Afr0El1),
+    SSMFIELD_ENTRY(CPUMIDREGS, u64RegIdAa64Afr1El1),
+    SSMFIELD_ENTRY(CPUMIDREGS, u64RegIdAa64Isar0El1),
+    SSMFIELD_ENTRY(CPUMIDREGS, u64RegIdAa64Isar1El1),
+    SSMFIELD_ENTRY(CPUMIDREGS, u64RegIdAa64Isar2El1),
+    SSMFIELD_ENTRY(CPUMIDREGS, u64RegIdAa64Mmfr0El1),
+    SSMFIELD_ENTRY(CPUMIDREGS, u64RegIdAa64Mmfr1El1),
+    SSMFIELD_ENTRY(CPUMIDREGS, u64RegIdAa64Mmfr2El1),
+    SSMFIELD_ENTRY(CPUMIDREGS, u64RegClidrEl1),
+    SSMFIELD_ENTRY(CPUMIDREGS, u64RegCtrEl0),
+    SSMFIELD_ENTRY(CPUMIDREGS, u64RegDczidEl0),
+    SSMFIELD_ENTRY_TERM()
+};
+
+
+/**
+ * Called both in pass 0 and the final pass.
+ *
+ * @param   pVM                 The cross context VM structure.
+ * @param   pSSM                The saved state handle.
+ */
+void cpumR3SaveCpuId(PVM pVM, PSSMHANDLE pSSM)
+{
+    /*
+     * Save all the CPU ID leaves.
+     */
+    SSMR3PutStructEx(pSSM, &pVM->cpum.s.GuestIdRegs, sizeof(pVM->cpum.s.GuestIdRegs), 0, g_aCpumIdRegsFields, NULL);
+}
+
+
+/**
+ * Loads the CPU ID leaves saved by pass 0, inner worker.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The cross context VM structure.
+ * @param   pSSM                The saved state handle.
+ * @param   uVersion            The format version.
+ * @param   pGuestIdRegs        The guest ID register as loaded from the saved state.
+ */
+static int cpumR3LoadCpuIdInner(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, PCCPUMIDREGS pGuestIdRegs)
+{
+    /*
+     * This can be skipped.
+     */
+    bool fStrictCpuIdChecks;
+    CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "CPUM"), "StrictCpuIdChecks", &fStrictCpuIdChecks, true);
+
+    /*
+     * Define a bunch of macros for simplifying the santizing/checking code below.
+     */
+    /* For checking guest features. */
+#define CPUID_GST_FEATURE_RET(a_IdReg, a_Field) \
+    do { \
+        if (RT_BF_GET(pGuestIdRegs->a_IdReg, a_Field) > RT_BF_GET(pVM->cpum.s.GuestIdRegs.a_IdReg, a_Field)) \
+        { \
+            if (fStrictCpuIdChecks) \
+                return SSMR3SetLoadError(pSSM, VERR_SSM_LOAD_CPUID_MISMATCH, RT_SRC_POS, \
+                                         N_(#a_Field " is not supported by the host but has already exposed to the guest")); \
+            LogRel(("CPUM: " #a_Field " is not supported by the host but has already been exposed to the guest\n")); \
+        } \
+    } while (0)
+#define CPUID_GST_FEATURE_WRN(a_IdReg, a_Field) \
+    do { \
+        if (RT_BF_GET(pGuestIdRegs->a_IdReg, a_Field) > RT_BF_GET(pVM->cpum.s.GuestIdRegs.a_IdReg, a_Field)) \
+            LogRel(("CPUM: " #a_Field " is not supported by the host but has already been exposed to the guest\n")); \
+    } while (0)
+#define CPUID_GST_FEATURE_EMU(a_IdReg, a_Field) \
+    do { \
+        if (RT_BF_GET(pGuestIdRegs->a_IdReg, a_Field) > RT_BF_GET(pVM->cpum.s.GuestIdRegs.a_IdReg, a_Field)) \
+            LogRel(("CPUM: Warning - " #a_Field " is not supported by the host but has already been exposed to the guest. This may impact performance.\n")); \
+    } while (0)
+#define CPUID_GST_FEATURE_IGN(a_IdReg, a_Field) do { } while (0)
+
+    RT_NOREF(uVersion);
+    /*
+     * Verify that we can support the features already exposed to the guest on
+     * this host.
+     *
+     * Most of the features we're emulating requires intercepting instruction
+     * and doing it the slow way, so there is no need to warn when they aren't
+     * present in the host CPU.  Thus we use IGN instead of EMU on these.
+     *
+     * Trailing comments:
+     *      "EMU"  - Possible to emulate, could be lots of work and very slow.
+     *      "EMU?" - Can this be emulated?
+     */
+    /* ID_AA64ISAR0_EL1 */
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar0El1, ARMV8_ID_AA64ISAR0_EL1_AES);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar0El1, ARMV8_ID_AA64ISAR0_EL1_SHA1);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar0El1, ARMV8_ID_AA64ISAR0_EL1_SHA2);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar0El1, ARMV8_ID_AA64ISAR0_EL1_CRC32);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar0El1, ARMV8_ID_AA64ISAR0_EL1_ATOMIC);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar0El1, ARMV8_ID_AA64ISAR0_EL1_TME);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar0El1, ARMV8_ID_AA64ISAR0_EL1_RDM);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar0El1, ARMV8_ID_AA64ISAR0_EL1_SHA3);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar0El1, ARMV8_ID_AA64ISAR0_EL1_SM3);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar0El1, ARMV8_ID_AA64ISAR0_EL1_SM4);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar0El1, ARMV8_ID_AA64ISAR0_EL1_DP);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar0El1, ARMV8_ID_AA64ISAR0_EL1_FHM);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar0El1, ARMV8_ID_AA64ISAR0_EL1_TS);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar0El1, ARMV8_ID_AA64ISAR0_EL1_TLB);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar0El1, ARMV8_ID_AA64ISAR0_EL1_RNDR);
+
+    /* ID_AA64ISAR1_EL1 */
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar1El1, ARMV8_ID_AA64ISAR1_EL1_DPB);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar1El1, ARMV8_ID_AA64ISAR1_EL1_APA);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar1El1, ARMV8_ID_AA64ISAR1_EL1_API);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar1El1, ARMV8_ID_AA64ISAR1_EL1_FJCVTZS);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar1El1, ARMV8_ID_AA64ISAR1_EL1_LRCPC);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar1El1, ARMV8_ID_AA64ISAR1_EL1_GPA);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar1El1, ARMV8_ID_AA64ISAR1_EL1_GPI);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar1El1, ARMV8_ID_AA64ISAR1_EL1_FRINTTS);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar1El1, ARMV8_ID_AA64ISAR1_EL1_SB);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar1El1, ARMV8_ID_AA64ISAR1_EL1_SPECRES);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar1El1, ARMV8_ID_AA64ISAR1_EL1_BF16);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar1El1, ARMV8_ID_AA64ISAR1_EL1_DGH);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar1El1, ARMV8_ID_AA64ISAR1_EL1_I8MM);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar1El1, ARMV8_ID_AA64ISAR1_EL1_XS);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar1El1, ARMV8_ID_AA64ISAR1_EL1_LS64);
+
+    /* ID_AA64ISAR2_EL1 */
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar2El1, ARMV8_ID_AA64ISAR2_EL1_WFXT);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar2El1, ARMV8_ID_AA64ISAR2_EL1_RPRES);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar2El1, ARMV8_ID_AA64ISAR2_EL1_GPA3);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar2El1, ARMV8_ID_AA64ISAR2_EL1_APA3);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar2El1, ARMV8_ID_AA64ISAR2_EL1_MOPS);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar2El1, ARMV8_ID_AA64ISAR2_EL1_BC);
+    CPUID_GST_FEATURE_RET(u64RegIdAa64Isar2El1, ARMV8_ID_AA64ISAR2_EL1_PACFRAC);
+
+#undef CPUID_GST_FEATURE_RET
+#undef CPUID_GST_FEATURE_WRN
+#undef CPUID_GST_FEATURE_EMU
+#undef CPUID_GST_FEATURE_IGN
+
+    /*
+     * We're good, commit the CPU ID registers.
+     */
+    pVM->cpum.s.GuestIdRegs = *pGuestIdRegs;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Loads the CPU ID leaves saved by pass 0.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The cross context VM structure.
+ * @param   pSSM                The saved state handle.
+ * @param   uVersion            The format version.
+ */
+int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
+{
+    CPUMIDREGS GuestIdRegs;
+    int rc = SSMR3GetStructEx(pSSM, &GuestIdRegs, sizeof(GuestIdRegs), 0, g_aCpumIdRegsFields, NULL);
+    AssertRCReturn(rc, rc);
+
+    return cpumR3LoadCpuIdInner(pVM, pSSM, uVersion, &GuestIdRegs);
+}
+
+
+/*
+ *
+ *
  * CPUID Info Handler.
  * CPUID Info Handler.
  * CPUID Info Handler.
