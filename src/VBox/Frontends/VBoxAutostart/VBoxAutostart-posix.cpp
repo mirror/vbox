@@ -61,6 +61,7 @@
 #include <iprt/time.h>
 #include <iprt/ctype.h>
 #include <iprt/dir.h>
+#include <iprt/env.h>
 
 #include <signal.h>
 
@@ -442,6 +443,7 @@ int main(int argc, char *argv[])
     char *pszUser = NULL;
     PCFGAST pCfgAstUser = NULL;
     PCFGAST pCfgAstPolicy = NULL;
+    PCFGAST pCfgAstUserHome = NULL;
     bool fAllow = false;
 
     rc = autostartParseConfig(pszConfigFile, &pCfgAst);
@@ -486,6 +488,14 @@ int main(int argc, char *argv[])
             }
             else
                 return RTMsgErrorExit(RTEXITCODE_FAILURE, "'allow' must be either 'true' or 'false'");
+        }
+        pCfgAstUserHome = autostartConfigAstGetByName(pCfgAstUser, "VBOX_USER_HOME");
+        if (   pCfgAstUserHome
+            && pCfgAstUserHome->enmType == CFGASTNODETYPE_KEYVALUE)
+        {
+            rc = RTEnvSet("VBOX_USER_HOME", pCfgAstUserHome->u.KeyValue.aszValue);
+            if (RT_FAILURE(rc))
+                return RTMsgErrorExit(RTEXITCODE_FAILURE, "'VBOX_USER_HOME' could not be set for this user");
         }
     }
     else if (pCfgAstUser)
