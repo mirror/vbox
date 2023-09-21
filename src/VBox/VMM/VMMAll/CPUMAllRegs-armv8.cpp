@@ -211,8 +211,8 @@ VMMDECL(void) CPUMGetGuestAddrWidths(PCVM pVM, uint8_t *pcPhysAddrWidth, uint8_t
     AssertPtr(pVM);
     AssertReturnVoid(pcPhysAddrWidth);
     AssertReturnVoid(pcLinearAddrWidth);
-    AssertReleaseFailed();
-    RT_NOREF(pVM);
+    *pcPhysAddrWidth   = pVM->cpum.s.GuestFeatures.cMaxPhysAddrWidth;
+    *pcLinearAddrWidth = pVM->cpum.s.GuestFeatures.cMaxLinearAddrWidth;
 }
 
 
