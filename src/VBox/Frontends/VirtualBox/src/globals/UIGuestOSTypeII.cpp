@@ -32,8 +32,8 @@
 void UIGuestOSTypeManager::reCacheGuestOSTypes(const CGuestOSTypeVector &guestOSTypes)
 {
     m_guestOSTypes.clear();
-    m_guestOSFamilyIds.clear();
-    m_guestOSTypesPerFamily.clear();
+    m_guestOSFamilies.clear();
+    //m_guestOSTypesPerFamily.clear();
     QList<CGuestOSType> otherOSTypes;
     foreach (const CGuestOSType &comType, guestOSTypes)
     {
@@ -47,74 +47,102 @@ void UIGuestOSTypeManager::reCacheGuestOSTypes(const CGuestOSTypeVector &guestOS
     /* Add OS types with family other to the end of the lists: */
     foreach (const CGuestOSType &comType, otherOSTypes)
         addGuestOSType(comType);
-
-    for (int i = 0; i < m_guestOSTypes.size(); ++i)
-    {
-        QList<int> &indexList = m_guestOSTypesPerFamily[m_guestOSTypes[i].getFamilyId()];
-        indexList << i;
-    }
-
-    // foreach (const QString &strFamilyId, m_guestOSFamilyIds)
-    // {
-    //     printf(" ----family---%s\n", qPrintable(strFamilyId));
-    //     const QList<int> &indices = m_guestOSTypesPerFamily[strFamilyId];
-    //     if (!m_guestOSTypesPerFamily.contains(strFamilyId))
-    //     {
-    //         printf("\t-----empty\n");
-    //         continue;
-    //     }
-    //     for (int i = 0; i < indices.size(); ++i)
-    //     {
-    //         if (indices[i] >= 0 && indices[i] < m_guestOSTypes.size())
-    //         {
-    //             //printf("\t%s %s\n", qPrintable(m_guestOSTypes[indices[i]].getDescription()), qPrintable(m_guestOSTypes[indices[i]].getVariant()));
-    //         }
-    //     }
-    // }
 }
 
 void UIGuestOSTypeManager::addGuestOSType(const CGuestOSType &comType)
 {
     m_guestOSTypes << UIGuestOSTypeII(comType);
-    const QString &strFamilyId = m_guestOSTypes.last().getFamilyId();
-    if (!m_guestOSFamilyIds.contains(strFamilyId))
-        m_guestOSFamilyIds << strFamilyId;
+    QPair<QString, QString> family = QPair<QString, QString>(m_guestOSTypes.last().getFamilyId(), m_guestOSTypes.last().getFamilyDescription());
+    if (!m_guestOSFamilies.contains(family))
+        m_guestOSFamilies << family;
 }
+
+const UIGuestOSTypeManager::UIGuestOSTypeFamilyInfo &UIGuestOSTypeManager::getFamilies() const
+{
+    return m_guestOSFamilies;
+}
+
+QStringList UIGuestOSTypeManager::getVariantListForFamilyId(const QString &strFamilyId) const
+{
+    QStringList variantList;
+    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    {
+        if (type.getFamilyId() != strFamilyId)
+            continue;
+        const QString &strVariant = type.getVariant();
+        if (!strVariant.isEmpty() && !variantList.contains(strVariant))
+            variantList << strVariant;
+    }
+    return variantList;
+}
+
+UIGuestOSTypeManager::UIGuestOSTypeInfo UIGuestOSTypeManager::getTypeListForFamilyId(const QString &strFamilyId) const
+{
+    UIGuestOSTypeInfo typeInfoList;
+    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    {
+        if (type.getFamilyId() != strFamilyId)
+            continue;
+        QPair<QString, QString> info(type.getId(), type.getDescription());
+
+        if (!typeInfoList.contains(info))
+            typeInfoList << info;
+    }
+    return typeInfoList;
+}
+
+UIGuestOSTypeManager::UIGuestOSTypeInfo UIGuestOSTypeManager::getTypeListForVariant(const QString &strVariant) const
+{
+    UIGuestOSTypeInfo typeInfoList;
+    if (strVariant.isEmpty())
+        return typeInfoList;
+
+    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    {
+        if (type.getVariant() != strVariant)
+            continue;
+        QPair<QString, QString> info(type.getId(), type.getDescription());
+        if (!typeInfoList.contains(info))
+            typeInfoList << info;
+    }
+    return typeInfoList;
+}
+
 
 UIGuestOSTypeII::UIGuestOSTypeII(const CGuestOSType &comGuestOSType)
     : m_comGuestOSType(comGuestOSType)
 {
 }
 
-const QString &UIGuestOSTypeII::getFamilyId()
+const QString &UIGuestOSTypeII::getFamilyId() const
 {
     if (m_strFamilyId.isEmpty() && m_comGuestOSType.isOk())
         m_strFamilyId = m_comGuestOSType.GetFamilyId();
     return m_strFamilyId;
 }
 
-const QString &UIGuestOSTypeII::getFamilyDescription()
+const QString &UIGuestOSTypeII::getFamilyDescription() const
 {
     if (m_strFamilyDescription.isEmpty() && m_comGuestOSType.isOk())
         m_strFamilyDescription = m_comGuestOSType.GetFamilyDescription();
     return m_strFamilyDescription;
 }
 
-const QString &UIGuestOSTypeII::getId()
+const QString &UIGuestOSTypeII::getId() const
 {
     if (m_strId.isEmpty() && m_comGuestOSType.isOk())
         m_strId = m_comGuestOSType.GetId();
     return m_strId;
 }
 
-const QString &UIGuestOSTypeII::getVariant()
+const QString &UIGuestOSTypeII::getVariant() const
 {
     if (m_strVariant.isEmpty() && m_comGuestOSType.isOk())
         m_strVariant = m_comGuestOSType.GetVariant();
     return m_strVariant;
 }
 
-const QString &UIGuestOSTypeII::getDescription()
+const QString &UIGuestOSTypeII::getDescription() const
 {
     if (m_strDescription.isEmpty() && m_comGuestOSType.isOk())
         m_strDescription = m_comGuestOSType.GetDescription();

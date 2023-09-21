@@ -528,6 +528,8 @@ public:
         bool isExtentionPackInstalled() const;
     /** @} */
 
+    const UIGuestOSTypeManager *guestOSTypeManager() const { return m_pGuestOSTypeManager; }
+
 public slots:
 
     /** @name Process arguments stuff.

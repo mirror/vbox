@@ -154,8 +154,9 @@ protected:
 
 private slots:
 
-    /** Handles VM OS family @a iIndex change. */
-    void sltFamilyChanged(int iIndex);
+    void sltFamilyChanged(int index);
+    void sltVariantChanged(const QString &strVariant);
+
     /** Handles VM OS type @a iIndex change. */
     void sltTypeChanged(int iIndex);
     void sltSelectedEditionsChanged(int);
@@ -177,6 +178,7 @@ private:
     /** @} */
 
     ulong selectedEditionIndex() const;
+    void populateTypeCombo(const QList<QPair<QString, QString> > &typeList);
 
     /** @name Arguments
      * @{ */
@@ -194,9 +196,6 @@ private:
 
     /** @name Values
      * @{ */
-        /** Holds the current family ID list. */
-        QStringList  m_familyIDs;
-
         /** Holds the current type cache. */
         QMap<QString, QList<UIGuestOSType> >  m_types;
 
@@ -228,6 +227,8 @@ private:
         QLabel *m_pLabelType;
         /** Holds the VM OS type icon instance. */
         QLabel *m_pIconType;
+        /** Holds the VM OS variant label instance. */
+        QLabel *m_pLabelVariant;
 
         /** Holds the VM name editor instance. */
         UIMarkableLineEdit *m_pEditorName;
@@ -241,6 +242,9 @@ private:
         QComboBox          *m_pComboFamily;
         /** Holds the VM OS type combo instance. */
         QComboBox          *m_pComboType;
+        /** Holds the VM OS type variant instance. */
+        QComboBox          *m_pComboVariant;
+
     /** @} */
 };
 

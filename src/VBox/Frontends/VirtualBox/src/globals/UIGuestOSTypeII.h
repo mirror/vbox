@@ -40,26 +40,34 @@
 #include "COMEnums.h"
 #include "CGuestOSType.h"
 
-
 class UIGuestOSTypeII;
+
+
 
 class UIGuestOSTypeManager
 {
 
 public:
 
+    typedef QList<QPair<QString, QString> > UIGuestOSTypeFamilyInfo;
+    typedef QList<QPair<QString, QString> > UIGuestOSTypeInfo;
+
     void reCacheGuestOSTypes(const CGuestOSTypeVector &guestOSTypes);
+
+    const UIGuestOSTypeFamilyInfo &getFamilies() const;
+    QStringList getVariantListForFamilyId(const QString &strFamilyId) const;
+
+    UIGuestOSTypeInfo getTypeListForFamilyId(const QString &strFamilyId) const;
+    UIGuestOSTypeInfo getTypeListForVariant(const QString &strVariant) const;
 
 private:
 
     void addGuestOSType(const CGuestOSType &comType);
 
     QList<UIGuestOSTypeII> m_guestOSTypes;
-    QStringList m_guestOSFamilyIds;
-    /* Key is family id (linux, windows, etc) and value is the list of indices to m_guestOSTypes. */
-    QMap<QString, QList<int> > m_guestOSTypesPerFamily;
-    /* Key is variant (debian, ubuntu, ) and value is the list of indices to m_guestOSTypes. */
-    QMap<QString, QList<int> > m_guestOSTypesPerVariant;
+    /* First item of the pair is family id and the 2nd is family description. */
+    UIGuestOSTypeInfo m_guestOSFamilies;
+
 };
 
 /** A wrapper around CGuestOSType. */
@@ -70,22 +78,22 @@ public:
 
     UIGuestOSTypeII(const CGuestOSType &comGuestOSType);
 
-    const QString &getFamilyId();
-    const QString &getFamilyDescription();
-    const QString &getId();
-    const QString &getVariant();
-    const QString &getDescription();
+    const QString &getFamilyId() const;
+    const QString &getFamilyDescription() const;
+    const QString &getId() const;
+    const QString &getVariant() const;
+    const QString &getDescription() const;
 
 
 private:
 
     /** @name CGuestOSType properties. Cached here for a faster access.
       * @{ */
-        QString m_strFamilyId;
-        QString m_strFamilyDescription;
-        QString m_strId;
-        QString m_strVariant;
-        QString m_strDescription;
+        mutable QString m_strFamilyId;
+        mutable QString m_strFamilyDescription;
+        mutable QString m_strId;
+        mutable QString m_strVariant;
+        mutable QString m_strDescription;
     /** @} */
 
     CGuestOSType m_comGuestOSType;

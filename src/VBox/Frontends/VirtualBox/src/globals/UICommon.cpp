@@ -3016,7 +3016,7 @@ void UICommon::comWrappersReinit()
             for (int i = j == 0 ? 2 : 0; i < cMax; ++i)
             {
                 const CGuestOSType os = guestOSTypes.at(i);
-                //printf("%s -- %s -- %s\n", qPrintable(os.GetId()), qPrintable(os.GetVariant()), qPrintable(os.GetDescription()));
+                printf("%s -- %s -- %s\n", qPrintable(os.GetFamilyId()), qPrintable(os.GetVariant()), qPrintable(os.GetDescription()));
                 const QString strFamilyID = os.GetFamilyId();
                 const QString strFamilyDescription = os.GetFamilyDescription();
                 if (!m_guestOSFamilyIDs.contains(strFamilyID))
