@@ -63,19 +63,21 @@ DECLINLINE(uint64_t) ASMReadTSC(void)
 # if RT_INLINE_ASM_GNU_STYLE
     uint64_t u64;
 #  ifdef RT_ARCH_ARM64
-    __asm__ __volatile__("isb\n\t"
+    __asm__ __volatile__("Lstart_ASMReadTSC_%=:\n\t"
+                         "isb\n\t"
                          "mrs %0, CNTVCT_EL0\n\t"
                          : "=r" (u64));
 #  else
     uint32_t u32Spill;
     uint32_t u32Comp;
-    __asm__ __volatile__("isb\n"
-                         "Lagain:\n\t"
+    __asm__ __volatile__("Lstart_ASMReadTSC_%=:\n\t"
+                         "isb\n"
+                         "Ltry_again_ASMReadTSC_%=:\n\t"
                          "mrrc p15, 0, %[uSpill], %H[uRet],   c14\n\t"  /* CNTPCT high into uRet.hi */
                          "mrrc p15, 0, %[uRet],   %[uSpill],  c14\n\t"  /* CNTPCT low  into uRet.lo */
                          "mrrc p15, 0, %[uSpill], %[uHiComp], c14\n\t"  /* CNTPCT high into uHiComp */
                          "cmp  %H[uRet], %[uHiComp]\n\t"
-                         "b.eq Lagain\n\t"                              /* Redo if high value changed. */
+                         "b.eq Ltry_again_ASMReadTSC_%=\n\t"            /* Redo if high value changed. */
                          : [uRet] "=r" (u64)
                          , "=r" (uHiComp)
                          , "=r" (uSpill));
@@ -102,12 +104,14 @@ DECLINLINE(uint64_t) ASMReadCntFrqEl0(void)
 # if RT_INLINE_ASM_GNU_STYLE
     uint64_t u64;
 #  ifdef RT_ARCH_ARM64
-    __asm__ __volatile__("isb\n\t"
+    __asm__ __volatile__("Lstart_ASMReadCntFrqEl0_%=:\n\t"
+                         "isb\n\t"
                          "mrs %0, CNTFRQ_EL0\n\t"
                          : "=r" (u64));
 #  else
     u64 = 0;
-    __asm__ __volatile__("isb\n"
+    __asm__ __volatile__("Lstart_ASMReadCntFrqEl0_%=:\n\t"
+                         "isb\n\t"
                          "mrc p15, 0, %[uRet], c14, 0, 0\n\t"  /* CNTFRQ */
                          : [uRet] "=r" (u64));
 #  endif
@@ -130,10 +134,12 @@ DECLINLINE(void) ASMIntEnable(void)
 {
 # if RT_INLINE_ASM_GNU_STYLE
 #  ifdef RT_ARCH_ARM64
-    __asm__ __volatile__("msr daifclr, #0xf\n\t");
+    __asm__ __volatile__("Lstart_ASMIntEnable_%=:\n\t"
+                         "msr daifclr, #0xf\n\t");
 #  else
     RTCCUINTREG uFlags;
-    __asm__ __volatile__("mrs %0, cpsr\n\t"
+    __asm__ __volatile__("Lstart_ASMIntEnable_%=:\n\t"
+                         "mrs %0, cpsr\n\t"
                          "bic %0, %0, #0xc0\n\t"
                          "msr cpsr_c, %0\n\t"
                          : "=r" (uFlags));
@@ -155,10 +161,12 @@ DECLINLINE(void) ASMIntDisable(void)
 {
 # if RT_INLINE_ASM_GNU_STYLE
 #  ifdef RT_ARCH_ARM64
-    __asm__ __volatile__("msr daifset, #0xf\n\t");
+    __asm__ __volatile__("Lstart_ASMIntDisable_%=:\n\t"
+                         "msr daifset, #0xf\n\t");
 #  else
     RTCCUINTREG uFlags;
-    __asm__ __volatile__("mrs %0, cpsr\n\t"
+    __asm__ __volatile__("Lstart_ASMIntDisable_%=:\n\t"
+                         "mrs %0, cpsr\n\t"
                          "orr %0, %0, #0xc0\n\t"
                          "msr cpsr_c, %0\n\t"
                          : "=r" (uFlags));
@@ -181,12 +189,14 @@ DECLINLINE(RTCCUINTREG) ASMIntDisableFlags(void)
     RTCCUINTREG uFlags;
 # if RT_INLINE_ASM_GNU_STYLE
 #  ifdef RT_ARCH_ARM64
-    __asm__ __volatile__("mrs %[uRet], daif\n\t"
+    __asm__ __volatile__("Lstart_ASMIntDisableFlags_%=:\n\t"
+                         "mrs %[uRet], daif\n\t"
                          "msr daifset, #0xf\n\t"
                          : [uRet] "=r" (uFlags));
 #  else
     RTCCUINTREG uNewFlags;
-    __asm__ __volatile__("mrs %0, cpsr\n\t"
+    __asm__ __volatile__("Lstart_ASMIntDisableFlags_%=:\n\t"
+                         "mrs %0, cpsr\n\t"
                          "orr %1, %0, #0xc0\n\t"
                          "msr cpsr_c, %1\n\t"
                          : "=r" (uFlags)
@@ -211,7 +221,8 @@ DECLINLINE(RTCCUINTREG) ASMGetFlags(void)
     RTCCUINTREG uFlags;
 # if RT_INLINE_ASM_GNU_STYLE
 #  ifdef RT_ARCH_ARM64
-    __asm__ __volatile__("isb\n\t"
+    __asm__ __volatile__("Lstart_ASMGetFlags_%=:\n\t"
+                         "isb\n\t"
                          "mrs %0, daif\n\t"
                          : "=r" (uFlags));
 #  else
@@ -235,7 +246,8 @@ DECLINLINE(void) ASMSetFlags(RTCCUINTREG uFlags)
 {
 # if RT_INLINE_ASM_GNU_STYLE
 #  ifdef RT_ARCH_ARM64
-    __asm__ __volatile__("isb\n\t"
+    __asm__ __volatile__("Lstart_ASMSetFlags_%=:\n\t"
+                         "isb\n\t"
                          "msr daif, %[uFlags]\n\t"
                          : : [uFlags] "r" (uFlags));
 #  else
@@ -269,7 +281,8 @@ DECLASM(void) ASMHalt(void);
 DECLINLINE(void) ASMHalt(void)
 {
 # if RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__ ("wfi\n\t"); /* wait for interrupt */
+    __asm__ __volatile__ ("Lstart_ASMHalt_%=:\n\t"
+                          "wfi\n\t"); /* wait for interrupt */
 # else
 #  error "Unsupported compiler"
 # endif
@@ -291,7 +304,8 @@ DECLINLINE(uint8_t) ASMGetApicId(void)
 {
 # if RT_INLINE_ASM_GNU_STYLE
     RTCCUINTREG uCpuId;
-    __asm__ ("mrc p15, 0, %0, c0, c0, 5\n\t" /*  CPU ID Register, privileged */
+    __asm__ ("Lstart_ASMGetApicId_%=:\n\t"
+             "mrc p15, 0, %0, c0, c0, 5\n\t" /*  CPU ID Register, privileged */
              : "=r" (uCpuId));
     return uCpuId;
 # else

@@ -220,12 +220,12 @@
 #  define RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_32(name, a_pu32Mem, barrier_type, modify64, modify32, in_reg) \
     uint32_t rcSpill; \
     uint32_t u32NewRet; \
-    __asm__ __volatile__(".Ltry_again_" #name "_%=:\n\t" \
+    __asm__ __volatile__("Ltry_again_" #name "_%=:\n\t" \
                          RTASM_ARM_##barrier_type /* before lable? */ \
                          "ldaxr     %w[uNew], %[pMem]\n\t" \
                          modify64 \
                          "stlxr     %w[rc], %w[uNew], %[pMem]\n\t" \
-                         "cbnz      %w[rc], .Ltry_again_" #name "_%=\n\t" \
+                         "cbnz      %w[rc], Ltry_again_" #name "_%=\n\t" \
                          : [pMem] "+Q"  (*a_pu32Mem) \
                          , [uNew] "=&r" (u32NewRet) \
                          , [rc]   "=&r" (rcSpill) \
@@ -235,12 +235,12 @@
     uint32_t rcSpill; \
     uint32_t u32OldRet; \
     uint32_t u32NewSpill; \
-    __asm__ __volatile__(".Ltry_again_" #name "_%=:\n\t" \
+    __asm__ __volatile__("Ltry_again_" #name "_%=:\n\t" \
                          RTASM_ARM_##barrier_type /* before lable? */ \
                          "ldaxr     %w[uOld], %[pMem]\n\t" \
                          modify64 \
                          "stlxr     %w[rc], %w[uNew], %[pMem]\n\t" \
-                         "cbnz      %w[rc], .Ltry_again_" #name "_%=\n\t" \
+                         "cbnz      %w[rc], Ltry_again_" #name "_%=\n\t" \
                          : [pMem] "+Q"  (*a_pu32Mem) \
                          , [uOld] "=&r" (u32OldRet) \
                          , [uNew] "=&r" (u32NewSpill) \
@@ -250,12 +250,12 @@
 #  define RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_64(name, a_pu64Mem, barrier_type, modify64, modify32, in_reg) \
     uint32_t rcSpill; \
     uint64_t u64NewRet; \
-    __asm__ __volatile__(".Ltry_again_" #name "_%=:\n\t" \
+    __asm__ __volatile__("Ltry_again_" #name "_%=:\n\t" \
                          RTASM_ARM_##barrier_type /* before lable? */ \
                          "ldaxr     %[uNew], %[pMem]\n\t" \
                          modify64 \
                          "stlxr     %w[rc], %[uNew], %[pMem]\n\t" \
-                         "cbnz      %w[rc], .Ltry_again_" #name "_%=\n\t" \
+                         "cbnz      %w[rc], Ltry_again_" #name "_%=\n\t" \
                          : [pMem] "+Q"  (*a_pu64Mem) \
                          , [uNew] "=&r" (u64NewRet) \
                          , [rc]   "=&r" (rcSpill) \
@@ -265,12 +265,12 @@
     uint32_t rcSpill; \
     uint64_t u64OldRet; \
     uint64_t u64NewSpill; \
-    __asm__ __volatile__(".Ltry_again_" #name "_%=:\n\t" \
+    __asm__ __volatile__("Ltry_again_" #name "_%=:\n\t" \
                          RTASM_ARM_##barrier_type /* before lable? */ \
                          "ldaxr     %[uOld], %[pMem]\n\t" \
                          modify64 \
                          "stlxr     %w[rc], %[uNew], %[pMem]\n\t" \
-                         "cbnz      %w[rc], .Ltry_again_" #name "_%=\n\t" \
+                         "cbnz      %w[rc], Ltry_again_" #name "_%=\n\t" \
                          : [pMem] "+Q"  (*a_pu64Mem) \
                          , [uOld] "=&r" (u64OldRet) \
                          , [uNew] "=&r" (u64NewSpill) \
@@ -323,13 +323,13 @@
 #  define RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_32(name, a_pu32Mem, barrier_type, modify64, modify32, in_reg) \
     uint32_t rcSpill; \
     uint32_t u32NewRet; \
-    __asm__ __volatile__(".Ltry_again_" #name "_%=:\n\t" \
+    __asm__ __volatile__("Ltry_again_" #name "_%=:\n\t" \
                          RT_CONCAT(RTASM_ARM_,barrier_type) /* before lable? */ \
                          "ldrex     %[uNew], %[pMem]\n\t" \
                          modify32 \
                          "strex     %[rc], %[uNew], %[pMem]\n\t" \
                          "cmp       %[rc], #0\n\t" \
-                         "bne       .Ltry_again_" #name "_%=\n\t" \
+                         "bne       Ltry_again_" #name "_%=\n\t" \
                          : [pMem] "+m"  (*a_pu32Mem) \
                          , [uNew] "=&r" (u32NewRet) \
                          , [rc]   "=&r" (rcSpill) \
@@ -340,13 +340,13 @@
     uint32_t rcSpill; \
     uint32_t u32OldRet; \
     uint32_t u32NewSpill; \
-    __asm__ __volatile__(".Ltry_again_" #name "_%=:\n\t" \
+    __asm__ __volatile__("Ltry_again_" #name "_%=:\n\t" \
                          RT_CONCAT(RTASM_ARM_,barrier_type) /* before lable? */ \
                          "ldrex     %[uOld], %[pMem]\n\t" \
                          modify32 \
                          "strex     %[rc], %[uNew], %[pMem]\n\t" \
                          "cmp       %[rc], #0\n\t" \
-                         "bne       .Ltry_again_" #name "_%=\n\t" \
+                         "bne       Ltry_again_" #name "_%=\n\t" \
                          : [pMem] "+m"  (*a_pu32Mem) \
                          , [uOld] "=&r" (u32OldRet) \
                          , [uNew] "=&r" (u32NewSpill) \
@@ -357,13 +357,13 @@
 #  define RTASM_ARM_LOAD_MODIFY_STORE_RET_NEW_64(name, a_pu64Mem, barrier_type, modify64, modify32, in_reg) \
     uint32_t rcSpill; \
     uint64_t u64NewRet; \
-    __asm__ __volatile__(".Ltry_again_" #name "_%=:\n\t" \
+    __asm__ __volatile__("Ltry_again_" #name "_%=:\n\t" \
                          RT_CONCAT(RTASM_ARM_,barrier_type) /* before lable? */ \
                          "ldrexd    %[uNew], %H[uNew], %[pMem]\n\t" \
                          modify32 \
                          "strexd    %[rc], %[uNew], %H[uNew], %[pMem]\n\t" \
                          "cmp       %[rc], #0\n\t" \
-                         "bne       .Ltry_again_" #name "_%=\n\t" \
+                         "bne       Ltry_again_" #name "_%=\n\t" \
                          : [pMem] "+m"  (*a_pu64Mem), \
                            [uNew] "=&r" (u64NewRet), \
                            [rc]   "=&r" (rcSpill) \
@@ -374,13 +374,13 @@
     uint32_t rcSpill; \
     uint64_t u64OldRet; \
     uint64_t u64NewSpill; \
-    __asm__ __volatile__(".Ltry_again_" #name "_%=:\n\t" \
+    __asm__ __volatile__("Ltry_again_" #name "_%=:\n\t" \
                          RT_CONCAT(RTASM_ARM_,barrier_type) /* before lable? */ \
                          "ldrexd    %[uOld], %H[uOld], %[pMem]\n\t" \
                          modify32 \
                          "strexd    %[rc], %[uNew], %H[uNew], %[pMem]\n\t" \
                          "cmp       %[rc], #0\n\t" \
-                         "bne       .Ltry_again_" #name "_%=\n\t" \
+                         "bne       Ltry_again_" #name "_%=\n\t" \
                          : [pMem] "+m"  (*a_pu64Mem), \
                            [uOld] "=&r" (u64OldRet), \
                            [uNew] "=&r" (u64NewSpill), \
@@ -517,17 +517,17 @@ DECLINLINE(uint8_t) ASMAtomicXchgU8(volatile uint8_t RT_FAR *pu8, uint8_t u8) RT
 # elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
     uint32_t uOld;
     uint32_t rcSpill;
-    __asm__ __volatile__(".Ltry_again_ASMAtomicXchgU8_%=:\n\t"
+    __asm__ __volatile__("Ltry_again_ASMAtomicXchgU8_%=:\n\t"
                          RTASM_ARM_DMB_SY
 #  if defined(RT_ARCH_ARM64)
                          "ldaxrb    %w[uOld], %[pMem]\n\t"
                          "stlxrb    %w[rc], %w[uNew], %[pMem]\n\t"
-                         "cbnz      %w[rc], .Ltry_again_ASMAtomicXchgU8_%=\n\t"
+                         "cbnz      %w[rc], Ltry_again_ASMAtomicXchgU8_%=\n\t"
 #  else
                          "ldrexb    %[uOld], %[pMem]\n\t"      /* ARMv6+ */
                          "strexb    %[rc], %[uNew], %[pMem]\n\t"
                          "cmp       %[rc], #0\n\t"
-                         "bne       .Ltry_again_ASMAtomicXchgU8_%=\n\t"
+                         "bne       Ltry_again_ASMAtomicXchgU8_%=\n\t"
 #  endif
                          : [pMem] "+Q" (*pu8)
                          , [uOld] "=&r" (uOld)
@@ -614,17 +614,17 @@ DECLINLINE(uint16_t) ASMAtomicXchgU16(volatile uint16_t RT_FAR *pu16, uint16_t u
 # elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
     uint32_t uOld;
     uint32_t rcSpill;
-    __asm__ __volatile__(".Ltry_again_ASMAtomicXchgU16_%=:\n\t"
+    __asm__ __volatile__("Ltry_again_ASMAtomicXchgU16_%=:\n\t"
                          RTASM_ARM_DMB_SY
 #  if defined(RT_ARCH_ARM64)
                          "ldaxrh    %w[uOld], %[pMem]\n\t"
                          "stlxrh    %w[rc], %w[uNew], %[pMem]\n\t"
-                         "cbnz      %w[rc], .Ltry_again_ASMAtomicXchgU16_%=\n\t"
+                         "cbnz      %w[rc], Ltry_again_ASMAtomicXchgU16_%=\n\t"
 #  else
                          "ldrexh    %[uOld], %[pMem]\n\t"      /* ARMv6+ */
                          "strexh    %[rc], %[uNew], %[pMem]\n\t"
                          "cmp       %[rc], #0\n\t"
-                         "bne       .Ltry_again_ASMAtomicXchgU16_%=\n\t"
+                         "bne       Ltry_again_ASMAtomicXchgU16_%=\n\t"
 #  endif
                          : [pMem] "+Q" (*pu16)
                          , [uOld] "=&r" (uOld)
@@ -700,17 +700,17 @@ DECLINLINE(uint32_t) ASMAtomicXchgU32(volatile uint32_t RT_FAR *pu32, uint32_t u
 # elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
     uint32_t uOld;
     uint32_t rcSpill;
-    __asm__ __volatile__(".Ltry_again_ASMAtomicXchgU32_%=:\n\t"
+    __asm__ __volatile__("Ltry_again_ASMAtomicXchgU32_%=:\n\t"
                          RTASM_ARM_DMB_SY
 #  if defined(RT_ARCH_ARM64)
                          "ldaxr     %w[uOld], %[pMem]\n\t"
                          "stlxr     %w[rc], %w[uNew], %[pMem]\n\t"
-                         "cbnz      %w[rc], .Ltry_again_ASMAtomicXchgU32_%=\n\t"
+                         "cbnz      %w[rc], Ltry_again_ASMAtomicXchgU32_%=\n\t"
 #  else
                          "ldrex     %[uOld], %[pMem]\n\t"      /* ARMv6+ */
                          "strex     %[rc], %[uNew], %[pMem]\n\t"
                          "cmp       %[rc], #0\n\t"
-                         "bne       .Ltry_again_ASMAtomicXchgU32_%=\n\t"
+                         "bne       Ltry_again_ASMAtomicXchgU32_%=\n\t"
 #  endif
                          : [pMem] "+Q"  (*pu32)
                          , [uOld] "=&r" (uOld)
@@ -826,17 +826,17 @@ DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u
 # elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
     uint32_t rcSpill;
     uint64_t uOld;
-    __asm__ __volatile__(".Ltry_again_ASMAtomicXchgU64_%=:\n\t"
+    __asm__ __volatile__("Ltry_again_ASMAtomicXchgU64_%=:\n\t"
                          RTASM_ARM_DMB_SY
 #  if defined(RT_ARCH_ARM64)
                          "ldaxr     %[uOld], %[pMem]\n\t"
                          "stlxr     %w[rc], %[uNew], %[pMem]\n\t"
-                         "cbnz      %w[rc], .Ltry_again_ASMAtomicXchgU64_%=\n\t"
+                         "cbnz      %w[rc], Ltry_again_ASMAtomicXchgU64_%=\n\t"
 #  else
                          "ldrexd    %[uOld], %H[uOld], %[pMem]\n\t"      /* ARMv6+ */
                          "strexd    %[rc], %[uNew], %H[uNew], %[pMem]\n\t"
                          "cmp       %[rc], #0\n\t"
-                         "bne       .Ltry_again_ASMAtomicXchgU64_%=\n\t"
+                         "bne       Ltry_again_ASMAtomicXchgU64_%=\n\t"
 #  endif
                          : [pMem] "+Q"  (*pu64)
                          , [uOld] "=&r" (uOld)
@@ -1084,14 +1084,14 @@ DECLINLINE(bool) ASMAtomicCmpXchgU8(volatile uint8_t RT_FAR *pu8, const uint8_t 
     union { uint32_t u; bool f; } fXchg;
     uint32_t u32Spill;
     uint32_t rcSpill;
-    __asm__ __volatile__(".Ltry_again_ASMAtomicCmpXchgU8_%=:\n\t"
+    __asm__ __volatile__("Ltry_again_ASMAtomicCmpXchgU8_%=:\n\t"
                          RTASM_ARM_DMB_SY
 #  if defined(RT_ARCH_ARM64)
                          "ldaxrb    %w[uOld], %[pMem]\n\t"
                          "cmp       %w[uOld], %w[uCmp]\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
                          "stlxrb    %w[rc], %w[uNew], %[pMem]\n\t"
-                         "cbnz      %w[rc], .Ltry_again_ASMAtomicCmpXchgU8_%=\n\t"
+                         "cbnz      %w[rc], Ltry_again_ASMAtomicCmpXchgU8_%=\n\t"
                          "mov       %w[fXchg], #1\n\t"
 #  else
                          "ldrexb    %[uOld], %[pMem]\n\t"
@@ -1099,7 +1099,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU8(volatile uint8_t RT_FAR *pu8, const uint8_t 
                          "strexbeq  %[rc], %[uNew], %[pMem]\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
                          "cmp       %[rc], #0\n\t"
-                         "bne       .Ltry_again_ASMAtomicCmpXchgU8_%=\n\t"
+                         "bne       Ltry_again_ASMAtomicCmpXchgU8_%=\n\t"
                          "mov       %[fXchg], #1\n\t"
 #  endif
                          "1:\n\t"
@@ -1221,14 +1221,14 @@ DECLINLINE(bool) ASMAtomicCmpXchgU32(volatile uint32_t RT_FAR *pu32, const uint3
     union { uint32_t u; bool f; } fXchg;
     uint32_t u32Spill;
     uint32_t rcSpill;
-    __asm__ __volatile__(".Ltry_again_ASMAtomicCmpXchgU32_%=:\n\t"
+    __asm__ __volatile__("Ltry_again_ASMAtomicCmpXchgU32_%=:\n\t"
                          RTASM_ARM_DMB_SY
 #  if defined(RT_ARCH_ARM64)
                          "ldaxr     %w[uOld], %[pMem]\n\t"
                          "cmp       %w[uOld], %w[uCmp]\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
                          "stlxr     %w[rc], %w[uNew], %[pMem]\n\t"
-                         "cbnz      %w[rc], .Ltry_again_ASMAtomicCmpXchgU32_%=\n\t"
+                         "cbnz      %w[rc], Ltry_again_ASMAtomicCmpXchgU32_%=\n\t"
                          "mov       %w[fXchg], #1\n\t"
 #  else
                          "ldrex     %[uOld], %[pMem]\n\t"
@@ -1236,7 +1236,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU32(volatile uint32_t RT_FAR *pu32, const uint3
                          "strexeq   %[rc], %[uNew], %[pMem]\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
                          "cmp       %[rc], #0\n\t"
-                         "bne       .Ltry_again_ASMAtomicCmpXchgU32_%=\n\t"
+                         "bne       Ltry_again_ASMAtomicCmpXchgU32_%=\n\t"
                          "mov       %[fXchg], #1\n\t"
 #  endif
                          "1:\n\t"
@@ -1383,14 +1383,14 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u6
     union { uint32_t u; bool f; } fXchg;
     uint64_t u64Spill;
     uint32_t rcSpill;
-    __asm__ __volatile__(".Ltry_again_ASMAtomicCmpXchgU64_%=:\n\t"
+    __asm__ __volatile__("Ltry_again_ASMAtomicCmpXchgU64_%=:\n\t"
                          RTASM_ARM_DMB_SY
 #  if defined(RT_ARCH_ARM64)
                          "ldaxr     %[uOld], %[pMem]\n\t"
                          "cmp       %[uOld], %[uCmp]\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
                          "stlxr     %w[rc], %[uNew], %[pMem]\n\t"
-                         "cbnz      %w[rc], .Ltry_again_ASMAtomicCmpXchgU64_%=\n\t"
+                         "cbnz      %w[rc], Ltry_again_ASMAtomicCmpXchgU64_%=\n\t"
                          "mov       %w[fXchg], #1\n\t"
 #  else
                          "ldrexd    %[uOld], %H[uOld], %[pMem]\n\t"
@@ -1399,7 +1399,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u6
                          "strexdeq  %[rc], %[uNew], %H[uNew], %[pMem]\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
                          "cmp       %[rc], #0\n\t"
-                         "bne       .Ltry_again_ASMAtomicCmpXchgU64_%=\n\t"
+                         "bne       Ltry_again_ASMAtomicCmpXchgU64_%=\n\t"
                          "mov       %[fXchg], #1\n\t"
 #  endif
                          "1:\n\t"
@@ -1728,14 +1728,14 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU8(volatile uint8_t RT_FAR *pu8, const uint8_
     union { uint8_t u; bool f; } fXchg;
     uint8_t u8ActualOld;
     uint8_t rcSpill;
-    __asm__ __volatile__(".Ltry_again_ASMAtomicCmpXchgExU8_%=:\n\t"
+    __asm__ __volatile__("Ltry_again_ASMAtomicCmpXchgExU8_%=:\n\t"
                          RTASM_ARM_DMB_SY
 #  if defined(RT_ARCH_ARM64)
                          "ldaxrb    %w[uOld], %[pMem]\n\t"
                          "cmp       %w[uOld], %w[uCmp]\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
                          "stlxrb    %w[rc], %w[uNew], %[pMem]\n\t"
-                         "cbnz      %w[rc], .Ltry_again_ASMAtomicCmpXchgExU8_%=\n\t"
+                         "cbnz      %w[rc], Ltry_again_ASMAtomicCmpXchgExU8_%=\n\t"
                          "mov       %w[fXchg], #1\n\t"
 #  else
                          "ldrexb     %[uOld], %[pMem]\n\t"
@@ -1743,7 +1743,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU8(volatile uint8_t RT_FAR *pu8, const uint8_
                          "strexbeq  %[rc], %[uNew], %[pMem]\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
                          "cmp       %[rc], #0\n\t"
-                         "bne       .Ltry_again_ASMAtomicCmpXchgExU8_%=\n\t"
+                         "bne       Ltry_again_ASMAtomicCmpXchgExU8_%=\n\t"
                          "mov       %[fXchg], #1\n\t"
 #  endif
                          "1:\n\t"
@@ -1853,14 +1853,14 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU16(volatile uint16_t RT_FAR *pu16, const uin
     union { uint16_t u; bool f; } fXchg;
     uint16_t u16ActualOld;
     uint16_t rcSpill;
-    __asm__ __volatile__(".Ltry_again_ASMAtomicCmpXchgExU16_%=:\n\t"
+    __asm__ __volatile__("Ltry_again_ASMAtomicCmpXchgExU16_%=:\n\t"
                          RTASM_ARM_DMB_SY
 #  if defined(RT_ARCH_ARM64)
                          "ldaxrh    %w[uOld], %[pMem]\n\t"
                          "cmp       %w[uOld], %w[uCmp]\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
                          "stlxrh    %w[rc], %w[uNew], %[pMem]\n\t"
-                         "cbnz      %w[rc], .Ltry_again_ASMAtomicCmpXchgExU16_%=\n\t"
+                         "cbnz      %w[rc], Ltry_again_ASMAtomicCmpXchgExU16_%=\n\t"
                          "mov       %w[fXchg], #1\n\t"
 #  else
                          "ldrexh     %[uOld], %[pMem]\n\t"
@@ -1868,7 +1868,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU16(volatile uint16_t RT_FAR *pu16, const uin
                          "strexheq  %[rc], %[uNew], %[pMem]\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
                          "cmp       %[rc], #0\n\t"
-                         "bne       .Ltry_again_ASMAtomicCmpXchgExU16_%=\n\t"
+                         "bne       Ltry_again_ASMAtomicCmpXchgExU16_%=\n\t"
                          "mov       %[fXchg], #1\n\t"
 #  endif
                          "1:\n\t"
@@ -1978,14 +1978,14 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU32(volatile uint32_t RT_FAR *pu32, const uin
     union { uint32_t u; bool f; } fXchg;
     uint32_t u32ActualOld;
     uint32_t rcSpill;
-    __asm__ __volatile__(".Ltry_again_ASMAtomicCmpXchgExU32_%=:\n\t"
+    __asm__ __volatile__("Ltry_again_ASMAtomicCmpXchgExU32_%=:\n\t"
                          RTASM_ARM_DMB_SY
 #  if defined(RT_ARCH_ARM64)
                          "ldaxr     %w[uOld], %[pMem]\n\t"
                          "cmp       %w[uOld], %w[uCmp]\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
                          "stlxr     %w[rc], %w[uNew], %[pMem]\n\t"
-                         "cbnz      %w[rc], .Ltry_again_ASMAtomicCmpXchgExU32_%=\n\t"
+                         "cbnz      %w[rc], Ltry_again_ASMAtomicCmpXchgExU32_%=\n\t"
                          "mov       %w[fXchg], #1\n\t"
 #  else
                          "ldrex     %[uOld], %[pMem]\n\t"
@@ -1993,7 +1993,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU32(volatile uint32_t RT_FAR *pu32, const uin
                          "strexeq   %[rc], %[uNew], %[pMem]\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
                          "cmp       %[rc], #0\n\t"
-                         "bne       .Ltry_again_ASMAtomicCmpXchgExU32_%=\n\t"
+                         "bne       Ltry_again_ASMAtomicCmpXchgExU32_%=\n\t"
                          "mov       %[fXchg], #1\n\t"
 #  endif
                          "1:\n\t"
@@ -2148,14 +2148,14 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t RT_FAR *pu64, const uin
     union { uint32_t u; bool f; } fXchg;
     uint64_t u64ActualOld;
     uint32_t rcSpill;
-    __asm__ __volatile__(".Ltry_again_ASMAtomicCmpXchgU64_%=:\n\t"
+    __asm__ __volatile__("Ltry_again_ASMAtomicCmpXchgU64_%=:\n\t"
                          RTASM_ARM_DMB_SY
 #  if defined(RT_ARCH_ARM64)
                          "ldaxr     %[uOld], %[pMem]\n\t"
                          "cmp       %[uOld], %[uCmp]\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
                          "stlxr     %w[rc], %[uNew], %[pMem]\n\t"
-                         "cbnz      %w[rc], .Ltry_again_ASMAtomicCmpXchgU64_%=\n\t"
+                         "cbnz      %w[rc], Ltry_again_ASMAtomicCmpXchgU64_%=\n\t"
                          "mov       %w[fXchg], #1\n\t"
 #  else
                          "ldrexd    %[uOld], %H[uOld], %[pMem]\n\t"
@@ -2164,7 +2164,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t RT_FAR *pu64, const uin
                          "strexdeq  %[rc], %[uNew], %H[uNew], %[pMem]\n\t"
                          "bne       1f\n\t"   /* stop here if not equal */
                          "cmp       %[rc], #0\n\t"
-                         "bne       .Ltry_again_ASMAtomicCmpXchgU64_%=\n\t"
+                         "bne       Ltry_again_ASMAtomicCmpXchgU64_%=\n\t"
                          "mov       %[fXchg], #1\n\t"
 #  endif
                          "1:\n\t"
@@ -2680,7 +2680,7 @@ DECLINLINE(uint8_t) ASMAtomicReadU8(volatile uint8_t RT_FAR *pu8) RT_NOTHROW_DEF
 {
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     uint32_t u32;
-    __asm__ __volatile__(".Lstart_ASMAtomicReadU8_%=:\n\t"
+    __asm__ __volatile__("Lstart_ASMAtomicReadU8_%=:\n\t"
                          RTASM_ARM_DMB_SY
 # if defined(RT_ARCH_ARM64)
                          "ldxrb     %w[uDst], %[pMem]\n\t"
@@ -2708,7 +2708,7 @@ DECLINLINE(uint8_t) ASMAtomicUoReadU8(volatile uint8_t RT_FAR *pu8) RT_NOTHROW_D
 {
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     uint32_t u32;
-    __asm__ __volatile__(".Lstart_ASMAtomicUoReadU8_%=:\n\t"
+    __asm__ __volatile__("Lstart_ASMAtomicUoReadU8_%=:\n\t"
 # if defined(RT_ARCH_ARM64)
                          "ldxrb     %w[uDst], %[pMem]\n\t"
 # else
@@ -2734,7 +2734,7 @@ DECLINLINE(int8_t) ASMAtomicReadS8(volatile int8_t RT_FAR *pi8) RT_NOTHROW_DEF
     ASMMemoryFence();
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     int32_t i32;
-    __asm__ __volatile__(".Lstart_ASMAtomicReadS8_%=:\n\t"
+    __asm__ __volatile__("Lstart_ASMAtomicReadS8_%=:\n\t"
                          RTASM_ARM_DMB_SY
 # if defined(RT_ARCH_ARM64)
                          "ldxrb     %w[iDst], %[pMem]\n\t"
@@ -2761,7 +2761,7 @@ DECLINLINE(int8_t) ASMAtomicUoReadS8(volatile int8_t RT_FAR *pi8) RT_NOTHROW_DEF
 {
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     int32_t i32;
-    __asm__ __volatile__(".Lstart_ASMAtomicUoReadS8_%=:\n\t"
+    __asm__ __volatile__("Lstart_ASMAtomicUoReadS8_%=:\n\t"
 # if defined(RT_ARCH_ARM64)
                          "ldxrb     %w[iDst], %[pMem]\n\t"
 # else
@@ -2787,7 +2787,7 @@ DECLINLINE(uint16_t) ASMAtomicReadU16(volatile uint16_t RT_FAR *pu16) RT_NOTHROW
     Assert(!((uintptr_t)pu16 & 1));
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     uint32_t u32;
-    __asm__ __volatile__(".Lstart_ASMAtomicReadU16_%=:\n\t"
+    __asm__ __volatile__("Lstart_ASMAtomicReadU16_%=:\n\t"
                          RTASM_ARM_DMB_SY
 # if defined(RT_ARCH_ARM64)
                          "ldxrh     %w[uDst], %[pMem]\n\t"
@@ -2816,7 +2816,7 @@ DECLINLINE(uint16_t) ASMAtomicUoReadU16(volatile uint16_t RT_FAR *pu16) RT_NOTHR
     Assert(!((uintptr_t)pu16 & 1));
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     uint32_t u32;
-    __asm__ __volatile__(".Lstart_ASMAtomicUoReadU16_%=:\n\t"
+    __asm__ __volatile__("Lstart_ASMAtomicUoReadU16_%=:\n\t"
 # if defined(RT_ARCH_ARM64)
                          "ldxrh     %w[uDst], %[pMem]\n\t"
 # else
@@ -2842,7 +2842,7 @@ DECLINLINE(int16_t) ASMAtomicReadS16(volatile int16_t RT_FAR *pi16) RT_NOTHROW_D
     Assert(!((uintptr_t)pi16 & 1));
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     int32_t i32;
-    __asm__ __volatile__(".Lstart_ASMAtomicReadS16_%=:\n\t"
+    __asm__ __volatile__("Lstart_ASMAtomicReadS16_%=:\n\t"
                          RTASM_ARM_DMB_SY
 # if defined(RT_ARCH_ARM64)
                          "ldxrh     %w[iDst], %[pMem]\n\t"
@@ -2871,7 +2871,7 @@ DECLINLINE(int16_t) ASMAtomicUoReadS16(volatile int16_t RT_FAR *pi16) RT_NOTHROW
     Assert(!((uintptr_t)pi16 & 1));
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     int32_t i32;
-    __asm__ __volatile__(".Lstart_ASMAtomicUoReadS16_%=:\n\t"
+    __asm__ __volatile__("Lstart_ASMAtomicUoReadS16_%=:\n\t"
 # if defined(RT_ARCH_ARM64)
                          "ldxrh     %w[iDst], %[pMem]\n\t"
 # else
@@ -2897,7 +2897,7 @@ DECLINLINE(uint32_t) ASMAtomicReadU32(volatile uint32_t RT_FAR *pu32) RT_NOTHROW
     Assert(!((uintptr_t)pu32 & 3));
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     uint32_t u32;
-    __asm__ __volatile__(".Lstart_ASMAtomicReadU32_%=:\n\t"
+    __asm__ __volatile__("Lstart_ASMAtomicReadU32_%=:\n\t"
                          RTASM_ARM_DMB_SY
 # if defined(RT_ARCH_ARM64)
                          "ldxr      %w[uDst], %[pMem]\n\t"
@@ -2929,7 +2929,7 @@ DECLINLINE(uint32_t) ASMAtomicUoReadU32(volatile uint32_t RT_FAR *pu32) RT_NOTHR
     Assert(!((uintptr_t)pu32 & 3));
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     uint32_t u32;
-    __asm__ __volatile__(".Lstart_ASMAtomicUoReadU32_%=:\n\t"
+    __asm__ __volatile__("Lstart_ASMAtomicUoReadU32_%=:\n\t"
 # if defined(RT_ARCH_ARM64)
                          "ldxr      %w[uDst], %[pMem]\n\t"
 # else
@@ -2958,7 +2958,7 @@ DECLINLINE(int32_t) ASMAtomicReadS32(volatile int32_t RT_FAR *pi32) RT_NOTHROW_D
     Assert(!((uintptr_t)pi32 & 3));
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     int32_t i32;
-    __asm__ __volatile__(".Lstart_ASMAtomicReadS32_%=:\n\t"
+    __asm__ __volatile__("Lstart_ASMAtomicReadS32_%=:\n\t"
                          RTASM_ARM_DMB_SY
 # if defined(RT_ARCH_ARM64)
                          "ldxr      %w[iDst], %[pMem]\n\t"
@@ -2990,7 +2990,7 @@ DECLINLINE(int32_t) ASMAtomicUoReadS32(volatile int32_t RT_FAR *pi32) RT_NOTHROW
     Assert(!((uintptr_t)pi32 & 3));
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     int32_t i32;
-    __asm__ __volatile__(".Lstart_ASMAtomicUoReadS32_%=:\n\t"
+    __asm__ __volatile__("Lstart_ASMAtomicUoReadS32_%=:\n\t"
 # if defined(RT_ARCH_ARM64)
                          "ldxr      %w[iDst], %[pMem]\n\t"
 # else
@@ -3090,7 +3090,7 @@ DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t RT_FAR *pu64) RT_NOTHROW
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     Assert(!((uintptr_t)pu64 & 7));
-    __asm__ __volatile__(".Lstart_ASMAtomicReadU64_%=:\n\t"
+    __asm__ __volatile__("Lstart_ASMAtomicReadU64_%=:\n\t"
                          RTASM_ARM_DMB_SY
 # if defined(RT_ARCH_ARM64)
                          "ldxr      %[uDst], %[pMem]\n\t"
@@ -3192,7 +3192,7 @@ DECLINLINE(uint64_t) ASMAtomicUoReadU64(volatile uint64_t RT_FAR *pu64) RT_NOTHR
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     Assert(!((uintptr_t)pu64 & 7));
-    __asm__ __volatile__(".Lstart_ASMAtomicUoReadU64_%=:\n\t"
+    __asm__ __volatile__("Lstart_ASMAtomicUoReadU64_%=:\n\t"
 # if defined(RT_ARCH_ARM64)
                          "ldxr      %[uDst], %[pMem]\n\t"
 # else
@@ -5941,7 +5941,7 @@ DECLINLINE(uint8_t) ASMProbeReadByte(const void RT_FAR *pvByte) RT_NOTHROW_DEF
 
 # elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     uint32_t u32;
-    __asm__ __volatile__(".Lstart_ASMProbeReadByte_%=:\n\t"
+    __asm__ __volatile__("Lstart_ASMProbeReadByte_%=:\n\t"
 #  if defined(RT_ARCH_ARM64)
                          "ldxrb     %w[uDst], %[pMem]\n\t"
 #  else
