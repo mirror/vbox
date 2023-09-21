@@ -3233,7 +3233,9 @@
 #define RT_MAKE_U64(Lo, Hi)                     ( (uint64_t)((uint32_t)(Hi)) << 32 | (uint32_t)(Lo) )
 
 /** @def RT_MAKE_U64_FROM_U16
- * Constructs a uint64_t value from four uint16_t values.
+ * Constructs a uint64_t value from four uint16_t values, with parameters in
+ * least significant word first order.
+ * @see RT_MAKE_U64_FROM_MSW_U16
  */
 #define RT_MAKE_U64_FROM_U16(w0, w1, w2, w3) \
     ((uint64_t)(  (uint64_t)((uint16_t)(w3)) << 48 \
@@ -3241,8 +3243,17 @@
                 | (uint32_t)((uint16_t)(w1)) << 16 \
                 |            (uint16_t)(w0) ))
 
+/** @def RT_MAKE_U64_FROM_U16
+ * Constructs a uint64_t value from four uint16_t values, with parameters in
+ * most significant word first order.
+ * @see RT_MAKE_U64_FROM_U16
+ */
+#define RT_MAKE_U64_FROM_MSW_U16(w3, w2, w1, w0) RT_MAKE_U64_FROM_U16(w0, w1, w2, w3)
+
 /** @def RT_MAKE_U64_FROM_U8
- * Constructs a uint64_t value from eight uint8_t values.
+ * Constructs a uint64_t value from eight uint8_t values, with parameters in
+ * least significant byte first order.
+ * @see RT_MAKE_U64_FROM_MSB_U8
  */
 #define RT_MAKE_U64_FROM_U8(b0, b1, b2, b3, b4, b5, b6, b7) \
     ((uint64_t)(  (uint64_t)((uint8_t)(b7)) << 56 \
@@ -3254,6 +3265,13 @@
                 | (uint64_t)((uint8_t)(b1)) << 8 \
                 | (uint64_t) (uint8_t)(b0) ))
 
+/** @def RT_MAKE_U64_FROM_MSB_U8
+ * Constructs a uint64_t value from eight uint8_t values, with parameters in
+ * most significant byte first order.
+ * @see RT_MAKE_U64_FROM_U8
+ */
+#define RT_MAKE_U64_FROM_MSB_U8(b7, b6, b5, b4, b3, b2, b1, b0) RT_MAKE_U64_FROM_U8(b0, b1, b2, b3, b4, b5, b6, b7)
+
 /** @def RT_MAKE_U32
  * Constructs a uint32_t value from two uint16_t values.
  */
@@ -3262,13 +3280,22 @@
                 |            (uint16_t)(Lo) ))
 
 /** @def RT_MAKE_U32_FROM_U8
- * Constructs a uint32_t value from four uint8_t values.
+ * Constructs a uint32_t value from four uint8_t values, with parameters in
+ * least significant byte first order.
+ * @see RT_MAKE_U32_FROM_MSB_U8
  */
 #define RT_MAKE_U32_FROM_U8(b0, b1, b2, b3) \
     ((uint32_t)(  (uint32_t)((uint8_t)(b3)) << 24 \
                 | (uint32_t)((uint8_t)(b2)) << 16 \
                 | (uint32_t)((uint8_t)(b1)) << 8 \
                 |            (uint8_t)(b0) ))
+
+/** @def RT_MAKE_U32_FROM_MSB_U8
+ * Constructs a uint32_t value from four uint8_t values, with parameters in most
+ * significant byte first order.
+ * @see RT_MAKE_U32_FROM_8
+ */
+#define RT_MAKE_U32_FROM_MSB_U8(b3, b2, b1, b0) RT_MAKE_U32_FROM_U8(b0, b1, b2, b3)
 
 /** @def RT_MAKE_U16
  * Constructs a uint16_t value from two uint8_t values.
