@@ -226,7 +226,7 @@ void UIGlobalSettingsDisplay::prepareWidgets()
         m_pEditorMaximumGuestScreenSize = new UIMaximumGuestScreenSizeEditor(this);
         if (m_pEditorMaximumGuestScreenSize)
         {
-            m_editors << m_pEditorMaximumGuestScreenSize;
+            addEditor(m_pEditorMaximumGuestScreenSize);
             pLayout->addWidget(m_pEditorMaximumGuestScreenSize);
         }
 
@@ -234,7 +234,7 @@ void UIGlobalSettingsDisplay::prepareWidgets()
         m_pEditorScaleFactor = new UIScaleFactorEditor(this);
         if (m_pEditorScaleFactor)
         {
-            m_editors << m_pEditorScaleFactor;
+            addEditor(m_pEditorScaleFactor);
             pLayout->addWidget(m_pEditorScaleFactor);
         }
 
@@ -242,7 +242,7 @@ void UIGlobalSettingsDisplay::prepareWidgets()
         m_pFontScaleEditor = new UIFontScaleEditor(this);
         if (m_pFontScaleEditor)
         {
-            m_editors << m_pFontScaleEditor;
+            addEditor(m_pFontScaleEditor);
             pLayout->addWidget(m_pFontScaleEditor);
         }
 
@@ -250,7 +250,7 @@ void UIGlobalSettingsDisplay::prepareWidgets()
         m_pEditorDisplayFeatures = new UIDisplayFeaturesEditor(this);
         if (m_pEditorDisplayFeatures)
         {
-            m_editors << m_pEditorDisplayFeatures;
+            addEditor(m_pEditorDisplayFeatures);
             pLayout->addWidget(m_pEditorDisplayFeatures);
         }
 

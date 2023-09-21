@@ -186,7 +186,7 @@ void UIGlobalSettingsGeneral::prepareWidgets()
         m_pEditorDefaultMachineFolder = new UIDefaultMachineFolderEditor(this);
         if (m_pEditorDefaultMachineFolder)
         {
-            m_editors << m_pEditorDefaultMachineFolder;
+            addEditor(m_pEditorDefaultMachineFolder);
             pLayout->addWidget(m_pEditorDefaultMachineFolder);
         }
 
@@ -194,7 +194,7 @@ void UIGlobalSettingsGeneral::prepareWidgets()
         m_pEditorVRDEAuthLibrary = new UIVRDEAuthLibraryEditor(this);
         if (m_pEditorVRDEAuthLibrary)
         {
-            m_editors << m_pEditorVRDEAuthLibrary;
+            addEditor(m_pEditorVRDEAuthLibrary);
             pLayout->addWidget(m_pEditorVRDEAuthLibrary);
         }
 

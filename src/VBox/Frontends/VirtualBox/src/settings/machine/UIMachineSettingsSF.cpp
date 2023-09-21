@@ -242,7 +242,7 @@ void UIMachineSettingsSF::prepareWidgets()
         m_pEditorSharedFolders = new UISharedFoldersEditor(this);
         if (m_pEditorSharedFolders)
         {
-            m_editors << m_pEditorSharedFolders;
+            addEditor(m_pEditorSharedFolders);
             pLayout->addWidget(m_pEditorSharedFolders);
         }
     }

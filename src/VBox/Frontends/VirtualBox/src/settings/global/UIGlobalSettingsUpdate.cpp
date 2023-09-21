@@ -171,7 +171,7 @@ void UIGlobalSettingsUpdate::prepareWidgets()
         m_pEditorUpdateSettings = new UIUpdateSettingsEditor(this);
         if (m_pEditorUpdateSettings)
         {
-            m_editors << m_pEditorUpdateSettings;
+            addEditor(m_pEditorUpdateSettings);
             pLayout->addWidget(m_pEditorUpdateSettings);
         }
 

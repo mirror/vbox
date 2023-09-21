@@ -234,7 +234,7 @@ void UIGlobalSettingsProxy::prepareWidgets()
         m_pEditorProxyFeatures = new UIProxyFeaturesEditor(this);
         if (m_pEditorProxyFeatures)
         {
-            m_editors << m_pEditorProxyFeatures;
+            addEditor(m_pEditorProxyFeatures);
             pLayout->addWidget(m_pEditorProxyFeatures);
         }
 

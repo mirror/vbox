@@ -231,7 +231,7 @@ void UIGlobalSettingsInput::prepareWidgets()
         m_pEditorShortcutConfiguration = new UIShortcutConfigurationEditor(this);
         if (m_pEditorShortcutConfiguration)
         {
-            m_editors << m_pEditorShortcutConfiguration;
+            addEditor(m_pEditorShortcutConfiguration);
             pLayout->addWidget(m_pEditorShortcutConfiguration);
         }
 
@@ -239,7 +239,7 @@ void UIGlobalSettingsInput::prepareWidgets()
         m_pEditorAutoCaptureKeyboard = new UIAutoCaptureKeyboardEditor(this);
         if (m_pEditorAutoCaptureKeyboard)
         {
-            m_editors << m_pEditorAutoCaptureKeyboard;
+            addEditor(m_pEditorAutoCaptureKeyboard);
             pLayout->addWidget(m_pEditorAutoCaptureKeyboard);
         }
     }

@@ -300,7 +300,7 @@ void UISettingsPageFrame::prepare()
             {
                 m_pLayout->addWidget(m_pPage);
                 /// @todo what about removal handling?
-                m_editors << m_pPage;
+                addEditor(m_pPage);
             }
             pLayoutMain->addWidget(m_pWidget);
         }

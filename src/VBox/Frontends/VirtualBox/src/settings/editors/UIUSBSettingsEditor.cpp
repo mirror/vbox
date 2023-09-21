@@ -161,7 +161,7 @@ void UIUSBSettingsEditor::prepareWidgets()
                 m_pEditorController = new UIUSBControllerEditor(m_pWidgetSettings);
                 if (m_pEditorController)
                 {
-                    m_editors << m_pEditorController;
+                    addEditor(m_pEditorController);
                     pLayoutSettings->addWidget(m_pEditorController);
                 }
 
@@ -169,7 +169,7 @@ void UIUSBSettingsEditor::prepareWidgets()
                 m_pEditorFilters = new UIUSBFiltersEditor(m_pWidgetSettings);
                 if (m_pEditorFilters)
                 {
-                    m_editors << m_pEditorFilters;
+                    addEditor(m_pEditorFilters);
                     pLayoutSettings->addWidget(m_pEditorFilters);
                 }
             }

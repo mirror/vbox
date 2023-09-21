@@ -168,7 +168,7 @@ void UIGlobalSettingsLanguage::prepareWidgets()
         m_pEditorLanguageSettings = new UILanguageSettingsEditor(this);
         if (m_pEditorLanguageSettings)
         {
-            m_editors << m_pEditorLanguageSettings;
+            addEditor(m_pEditorLanguageSettings);
             pLayout->addWidget(m_pEditorLanguageSettings);
         }
     }

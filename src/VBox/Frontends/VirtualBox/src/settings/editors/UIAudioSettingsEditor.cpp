@@ -208,7 +208,7 @@ void UIAudioSettingsEditor::prepareWidgets()
                 m_pEditorAudioHostDriver = new UIAudioHostDriverEditor(m_pWidgetSettings);
                 if (m_pEditorAudioHostDriver)
                 {
-                    m_editors << m_pEditorAudioHostDriver;
+                    addEditor(m_pEditorAudioHostDriver);
                     pLayoutAudioSettings->addWidget(m_pEditorAudioHostDriver);
                 }
 
@@ -216,7 +216,7 @@ void UIAudioSettingsEditor::prepareWidgets()
                 m_pEditorAudioController = new UIAudioControllerEditor(m_pWidgetSettings);
                 if (m_pEditorAudioController)
                 {
-                    m_editors << m_pEditorAudioController;
+                    addEditor(m_pEditorAudioController);
                     pLayoutAudioSettings->addWidget(m_pEditorAudioController);
                 }
 
@@ -224,7 +224,7 @@ void UIAudioSettingsEditor::prepareWidgets()
                 m_pEditorAudioFeatures = new UIAudioFeaturesEditor(m_pWidgetSettings);
                 if (m_pEditorAudioFeatures)
                 {
-                    m_editors << m_pEditorAudioFeatures;
+                    addEditor(m_pEditorAudioFeatures);
                     pLayoutAudioSettings->addWidget(m_pEditorAudioFeatures);
                 }
             }

@@ -228,7 +228,7 @@ void UIMachineSettingsAudio::prepareWidgets()
         m_pEditorAudioSettings = new UIAudioSettingsEditor(this);
         if (m_pEditorAudioSettings)
         {
-            m_editors << m_pEditorAudioSettings;
+            addEditor(m_pEditorAudioSettings);
             pLayout->addWidget(m_pEditorAudioSettings);
         }
 

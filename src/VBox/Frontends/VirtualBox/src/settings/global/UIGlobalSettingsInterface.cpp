@@ -171,7 +171,7 @@ void UIGlobalSettingsInterface::prepareWidgets()
         m_pEditorColorTheme = new UIColorThemeEditor(this);
         if (m_pEditorColorTheme)
         {
-            m_editors << m_pEditorColorTheme;
+            addEditor(m_pEditorColorTheme);
             pLayout->addWidget(m_pEditorColorTheme);
         }
 

@@ -566,7 +566,7 @@ void UIMachineSettingsGeneral::prepareTabBasic()
             m_pEditorNameAndSystem = new UINameAndSystemEditor(m_pTabBasic);
             if (m_pEditorNameAndSystem)
             {
-                m_editors << m_pEditorNameAndSystem;
+                addEditor(m_pEditorNameAndSystem);
                 pLayoutBasic->addWidget(m_pEditorNameAndSystem);
             }
 
@@ -591,7 +591,7 @@ void UIMachineSettingsGeneral::prepareTabAdvanced()
             m_pEditorSnapshotFolder = new UISnapshotFolderEditor(m_pTabAdvanced);
             if (m_pEditorSnapshotFolder)
             {
-                m_editors << m_pEditorSnapshotFolder;
+                addEditor(m_pEditorSnapshotFolder);
                 pLayoutAdvanced->addWidget(m_pEditorSnapshotFolder);
             }
 
@@ -599,7 +599,7 @@ void UIMachineSettingsGeneral::prepareTabAdvanced()
             m_pEditorClipboard = new UISharedClipboardEditor(m_pTabAdvanced);
             if (m_pEditorClipboard)
             {
-                m_editors << m_pEditorClipboard;
+                addEditor(m_pEditorClipboard);
                 pLayoutAdvanced->addWidget(m_pEditorClipboard);
             }
 
@@ -607,7 +607,7 @@ void UIMachineSettingsGeneral::prepareTabAdvanced()
             m_pEditorDragAndDrop = new UIDragAndDropEditor(m_pTabAdvanced);
             if (m_pEditorDragAndDrop)
             {
-                m_editors << m_pEditorDragAndDrop;
+                addEditor(m_pEditorDragAndDrop);
                 pLayoutAdvanced->addWidget(m_pEditorDragAndDrop);
             }
 
@@ -632,8 +632,8 @@ void UIMachineSettingsGeneral::prepareTabDescription()
             m_pEditorDescription = new UIDescriptionEditor(m_pTabDescription);
             if (m_pEditorDescription)
             {
-                m_editors << m_pEditorDescription;
                 m_pEditorDescription->setObjectName(QStringLiteral("m_pEditorDescription"));
+                addEditor(m_pEditorDescription);
                 pLayoutDescription->addWidget(m_pEditorDescription);
             }
         }
@@ -656,7 +656,7 @@ void UIMachineSettingsGeneral::prepareTabEncryption()
             m_pEditorDiskEncryptionSettings = new UIDiskEncryptionSettingsEditor(m_pTabEncryption);
             if (m_pEditorDiskEncryptionSettings)
             {
-                m_editors << m_pEditorDiskEncryptionSettings;
+                addEditor(m_pEditorDiskEncryptionSettings);
                 pLayoutEncryption->addWidget(m_pEditorDiskEncryptionSettings);
             }
 

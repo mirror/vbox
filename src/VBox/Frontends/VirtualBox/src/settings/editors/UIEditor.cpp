@@ -42,6 +42,11 @@ UIEditor::UIEditor(QWidget *pParent /* = 0 */)
 {
 }
 
+void UIEditor::addEditor(UIEditor *pEditor)
+{
+    m_editors << pEditor;
+}
+
 void UIEditor::filterOut(const QString &strFilter)
 {
     /* Propagate filter towards all the children: */
