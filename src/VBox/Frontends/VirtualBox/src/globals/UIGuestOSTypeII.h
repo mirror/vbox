@@ -60,6 +60,8 @@ public:
     UIGuestOSTypeInfo getTypeListForFamilyId(const QString &strFamilyId) const;
     UIGuestOSTypeInfo getTypeListForVariant(const QString &strVariant) const;
 
+    UIGuestOSTypeII findGuestTypeById(const QString &strTypeId) const;
+
 private:
 
     void addGuestOSType(const CGuestOSType &comType);
@@ -73,10 +75,12 @@ private:
 /** A wrapper around CGuestOSType. */
 class SHARED_LIBRARY_STUFF UIGuestOSTypeII
 {
+
 public:
 
 
     UIGuestOSTypeII(const CGuestOSType &comGuestOSType);
+    UIGuestOSTypeII();
 
     const QString &getFamilyId() const;
     const QString &getFamilyDescription() const;
@@ -84,6 +88,7 @@ public:
     const QString &getVariant() const;
     const QString &getDescription() const;
 
+    bool isOk() const;
 
 private:
 

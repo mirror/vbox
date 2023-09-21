@@ -188,12 +188,20 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegularExpression("jessie.*64",                        QRegularExpression::CaseInsensitiveOption), "Debian8_x64" },
     { QRegularExpression("jessie.*32",                        QRegularExpression::CaseInsensitiveOption), "Debian8" },
     { QRegularExpression("stretch.*64",                       QRegularExpression::CaseInsensitiveOption), "Debian9_x64" },
+    { QRegularExpression("debian.*9.*64",                     QRegularExpression::CaseInsensitiveOption), "Debian9_x64" },
+    { QRegularExpression("debian.*9.*32",                     QRegularExpression::CaseInsensitiveOption), "Debian9" },
     { QRegularExpression("stretch.*32",                       QRegularExpression::CaseInsensitiveOption), "Debian9" },
     { QRegularExpression("buster.*64",                        QRegularExpression::CaseInsensitiveOption), "Debian10_x64" },
+    { QRegularExpression("debian.*10.*64",                    QRegularExpression::CaseInsensitiveOption), "Debian10_x64" },
     { QRegularExpression("buster.*32",                        QRegularExpression::CaseInsensitiveOption), "Debian10" },
+    { QRegularExpression("debian.*10.*32",                    QRegularExpression::CaseInsensitiveOption), "Debian10" },
     { QRegularExpression("bullseye.*64",                      QRegularExpression::CaseInsensitiveOption), "Debian11_x64" },
+    { QRegularExpression("debian.*11.*64",                    QRegularExpression::CaseInsensitiveOption), "Debian11_x64" },
     { QRegularExpression("bullseye.*32",                      QRegularExpression::CaseInsensitiveOption), "Debian11" },
+    { QRegularExpression("debian.*11.*32",                    QRegularExpression::CaseInsensitiveOption), "Debian11" },
     { QRegularExpression("bookworm.*64",                      QRegularExpression::CaseInsensitiveOption), "Debian12_x64" },
+    { QRegularExpression("debian.*12.*64",                    QRegularExpression::CaseInsensitiveOption), "Debian12_x64" },
+    { QRegularExpression("debian.*12",                        QRegularExpression::CaseInsensitiveOption), "Debian12" },
     { QRegularExpression("bookworm.*32",                      QRegularExpression::CaseInsensitiveOption), "Debian12" },
     { QRegularExpression("((trixie)|(sid)).*64",              QRegularExpression::CaseInsensitiveOption), "Debian_x64" },
     { QRegularExpression("((trixie)|(sid)).*32",              QRegularExpression::CaseInsensitiveOption), "Debian" },
@@ -279,7 +287,7 @@ bool UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(UINameAndSystemEditor *p
     {
         if (strNewName.contains(gs_OSTypePattern[i].pattern))
         {
-            pNameAndSystemEditor->setType(uiCommon().vmGuestOSType(gs_OSTypePattern[i].pcstId));
+            pNameAndSystemEditor->setGuestOSTypeByTypeId(gs_OSTypePattern[i].pcstId);
             return true;
         }
     }
@@ -289,6 +297,7 @@ bool UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(UINameAndSystemEditor *p
 bool UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(UINameAndSystemEditor *pNameAndSystemEditor, QString strDetectedOSType)
 {
     AssertReturn(pNameAndSystemEditor, false);
+
     if (!strDetectedOSType.isEmpty())
     {
         CGuestOSType const osType = uiCommon().vmGuestOSType(strDetectedOSType);

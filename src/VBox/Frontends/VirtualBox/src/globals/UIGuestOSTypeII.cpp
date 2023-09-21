@@ -108,10 +108,30 @@ UIGuestOSTypeManager::UIGuestOSTypeInfo UIGuestOSTypeManager::getTypeListForVari
     return typeInfoList;
 }
 
+UIGuestOSTypeII UIGuestOSTypeManager::findGuestTypeById(const QString &strTypeId) const
+{
+    if (strTypeId.isEmpty())
+        return UIGuestOSTypeII();
+    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    {
+        if (type.getId() == strTypeId)
+            return type;
+    }
+    return UIGuestOSTypeII();
+}
+
+UIGuestOSTypeII::UIGuestOSTypeII()
+{
+}
 
 UIGuestOSTypeII::UIGuestOSTypeII(const CGuestOSType &comGuestOSType)
     : m_comGuestOSType(comGuestOSType)
 {
+}
+
+bool UIGuestOSTypeII::isOk() const
+{
+    return (!m_comGuestOSType.isNull() && m_comGuestOSType.isOk());
 }
 
 const QString &UIGuestOSTypeII::getFamilyId() const
