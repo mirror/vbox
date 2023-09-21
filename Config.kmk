@@ -521,6 +521,10 @@ endif
 if1of ($(KBUILD_TARGET_ARCH), arm64)
  VBOX_WITH_IEM_TLB := 1
 endif
+# Enable the IEM recompiler of x86 code.
+if1of ($(KBUILD_TARGET_ARCH), arm64)
+ VBOX_WITH_IEM_RECOMPILER := 1
+endif
 # Enable native NEM on windows and macOS.
 if1of ($(KBUILD_TARGET), win darwin)
  VBOX_WITH_NATIVE_NEM = 1
