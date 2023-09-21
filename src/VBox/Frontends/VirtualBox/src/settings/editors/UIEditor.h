@@ -34,6 +34,9 @@
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
 
+/* Forward declarations: */
+class QTabWidget;
+
 /** QWidget sub-class used as editor interface. */
 class SHARED_LIBRARY_STUFF UIEditor : public QIWithRetranslateUI<QWidget>
 {
@@ -41,6 +44,8 @@ class SHARED_LIBRARY_STUFF UIEditor : public QIWithRetranslateUI<QWidget>
 
 public:
 
+    /** Constructs editor to be injected into @a pTabWidget. */
+    UIEditor(QTabWidget *pTabWidget);
     /** Constructs editor passing @a pParent to the base-class. */
     UIEditor(QWidget *pParent = 0);
 
@@ -52,8 +57,14 @@ public:
 
 protected:
 
+    /** Handles translation event. */
+    virtual void retranslateUi() RT_OVERRIDE {}
+
     /** Returns editor description which could be used to filter it in. */
     virtual QStringList description() const;
+
+    /** Holds the parent tab-widget if any. */
+    QTabWidget *m_pTabWidget;
 
     /** Holds the list of sub-editors. */
     QList<UIEditor*> m_editors;

@@ -555,7 +555,7 @@ void UIMachineSettingsGeneral::prepareWidgets()
 void UIMachineSettingsGeneral::prepareTabBasic()
 {
     /* Prepare 'Basic' tab: */
-    m_pTabBasic = new QWidget;
+    m_pTabBasic = new UIEditor(m_pTabWidget);
     if (m_pTabBasic)
     {
         /* Prepare 'Basic' tab layout: */
@@ -566,13 +566,14 @@ void UIMachineSettingsGeneral::prepareTabBasic()
             m_pEditorNameAndSystem = new UINameAndSystemEditor(m_pTabBasic);
             if (m_pEditorNameAndSystem)
             {
-                addEditor(m_pEditorNameAndSystem);
+                m_pTabBasic->addEditor(m_pEditorNameAndSystem);
                 pLayoutBasic->addWidget(m_pEditorNameAndSystem);
             }
 
             pLayoutBasic->addStretch();
         }
 
+        addEditor(m_pTabBasic);
         m_pTabWidget->addTab(m_pTabBasic, QString());
     }
 }
@@ -580,7 +581,7 @@ void UIMachineSettingsGeneral::prepareTabBasic()
 void UIMachineSettingsGeneral::prepareTabAdvanced()
 {
     /* Prepare 'Advanced' tab: */
-    m_pTabAdvanced = new QWidget;
+    m_pTabAdvanced = new UIEditor(m_pTabWidget);
     if (m_pTabAdvanced)
     {
         /* Prepare 'Advanced' tab layout: */
@@ -591,7 +592,7 @@ void UIMachineSettingsGeneral::prepareTabAdvanced()
             m_pEditorSnapshotFolder = new UISnapshotFolderEditor(m_pTabAdvanced);
             if (m_pEditorSnapshotFolder)
             {
-                addEditor(m_pEditorSnapshotFolder);
+                m_pTabAdvanced->addEditor(m_pEditorSnapshotFolder);
                 pLayoutAdvanced->addWidget(m_pEditorSnapshotFolder);
             }
 
@@ -599,7 +600,7 @@ void UIMachineSettingsGeneral::prepareTabAdvanced()
             m_pEditorClipboard = new UISharedClipboardEditor(m_pTabAdvanced);
             if (m_pEditorClipboard)
             {
-                addEditor(m_pEditorClipboard);
+                m_pTabAdvanced->addEditor(m_pEditorClipboard);
                 pLayoutAdvanced->addWidget(m_pEditorClipboard);
             }
 
@@ -607,13 +608,14 @@ void UIMachineSettingsGeneral::prepareTabAdvanced()
             m_pEditorDragAndDrop = new UIDragAndDropEditor(m_pTabAdvanced);
             if (m_pEditorDragAndDrop)
             {
-                addEditor(m_pEditorDragAndDrop);
+                m_pTabAdvanced->addEditor(m_pEditorDragAndDrop);
                 pLayoutAdvanced->addWidget(m_pEditorDragAndDrop);
             }
 
             pLayoutAdvanced->addStretch();
         }
 
+        addEditor(m_pTabAdvanced);
         m_pTabWidget->addTab(m_pTabAdvanced, QString());
     }
 }
@@ -621,7 +623,7 @@ void UIMachineSettingsGeneral::prepareTabAdvanced()
 void UIMachineSettingsGeneral::prepareTabDescription()
 {
     /* Prepare 'Description' tab: */
-    m_pTabDescription = new QWidget;
+    m_pTabDescription = new UIEditor(m_pTabWidget);
     if (m_pTabDescription)
     {
         /* Prepare 'Description' tab layout: */
@@ -633,11 +635,12 @@ void UIMachineSettingsGeneral::prepareTabDescription()
             if (m_pEditorDescription)
             {
                 m_pEditorDescription->setObjectName(QStringLiteral("m_pEditorDescription"));
-                addEditor(m_pEditorDescription);
+                m_pTabDescription->addEditor(m_pEditorDescription);
                 pLayoutDescription->addWidget(m_pEditorDescription);
             }
         }
 
+        addEditor(m_pTabDescription);
         m_pTabWidget->addTab(m_pTabDescription, QString());
     }
 }
@@ -645,7 +648,7 @@ void UIMachineSettingsGeneral::prepareTabDescription()
 void UIMachineSettingsGeneral::prepareTabEncryption()
 {
     /* Prepare 'Encryption' tab: */
-    m_pTabEncryption = new QWidget;
+    m_pTabEncryption = new UIEditor(m_pTabWidget);
     if (m_pTabEncryption)
     {
         /* Prepare 'Encryption' tab layout: */
@@ -656,13 +659,14 @@ void UIMachineSettingsGeneral::prepareTabEncryption()
             m_pEditorDiskEncryptionSettings = new UIDiskEncryptionSettingsEditor(m_pTabEncryption);
             if (m_pEditorDiskEncryptionSettings)
             {
-                addEditor(m_pEditorDiskEncryptionSettings);
+                m_pTabEncryption->addEditor(m_pEditorDiskEncryptionSettings);
                 pLayoutEncryption->addWidget(m_pEditorDiskEncryptionSettings);
             }
 
             pLayoutEncryption->addStretch();
         }
 
+        addEditor(m_pTabEncryption);
         m_pTabWidget->addTab(m_pTabEncryption, QString());
     }
 }

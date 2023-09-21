@@ -37,8 +37,14 @@
 #include "UIEditor.h"
 
 
+UIEditor::UIEditor(QTabWidget *pTabWidget)
+    : m_pTabWidget(pTabWidget)
+{
+}
+
 UIEditor::UIEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
+    , m_pTabWidget(0)
 {
 }
 
@@ -80,8 +86,16 @@ void UIEditor::filterOut(const QString &strFilter)
             }
     }
 
-    /* Update widget visibility: */
-    setVisible(fVisible);
+    /* Hide/show this editor special way if it's one of tab-widget tabs: */
+    if (m_pTabWidget)
+    {
+        for (int i = 0; i < m_pTabWidget->count(); ++i)
+            if (this == m_pTabWidget->widget(i))
+                m_pTabWidget->setTabVisible(i, fVisible);
+    }
+    /* Otherwise update widget visibility usual way: */
+    else
+        setVisible(fVisible);
 }
 
 QStringList UIEditor::description() const
@@ -99,12 +113,6 @@ QStringList UIEditor::description() const
     foreach (QAbstractButton *pButton, findChildren<QAbstractButton*>())
         if (pButton)
             result << pButton->text().remove(re);
-
-    /* Adding all the tab-widget tabs: */
-    foreach (QTabWidget *pTabWidget, findChildren<QTabWidget*>())
-        if (pTabWidget)
-            for (int i = 0; i < pTabWidget->count(); ++i)
-                result << pTabWidget->tabText(i).remove(re);
 
     /* Adding all the horizontal headers of abstract-item-view: */
     foreach (QAbstractItemView *pView, findChildren<QAbstractItemView*>())

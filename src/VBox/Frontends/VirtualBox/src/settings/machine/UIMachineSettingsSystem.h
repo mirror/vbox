@@ -153,7 +153,7 @@ private:
         QITabWidget *m_pTabWidget;
 
         /** Holds the 'Motherboard' tab instance. */
-        QWidget                     *m_pTabMotherboard;
+        UIEditor                    *m_pTabMotherboard;
         /** Holds the base memory editor instance. */
         UIBaseMemoryEditor          *m_pEditorBaseMemory;
         /** Holds the boot order editor instance. */
@@ -168,7 +168,7 @@ private:
         UIMotherboardFeaturesEditor *m_pEditorMotherboardFeatures;
 
         /** Holds the 'Processor' tab instance. */
-        QWidget                   *m_pTabProcessor;
+        UIEditor                  *m_pTabProcessor;
         /** Holds the VCPU editor instance. */
         UIVirtualCPUEditor        *m_pEditorVCPU;
         /** Holds the exec cap editor instance. */
@@ -177,7 +177,7 @@ private:
         UIProcessorFeaturesEditor *m_pEditorProcessorFeatures;
 
         /** Holds the 'Acceleration' tab instance. */
-        QWidget                      *m_pTabAcceleration;
+        UIEditor                     *m_pTabAcceleration;
         /** Holds the paravirtualization provider editor instance. */
         UIParavirtProviderEditor     *m_pEditorParavirtProvider;
         /** Holds the acceleration features editor instance. */

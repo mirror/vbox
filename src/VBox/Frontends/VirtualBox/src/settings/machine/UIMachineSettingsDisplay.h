@@ -167,27 +167,27 @@ private:
         QITabWidget *m_pTabWidget;
 
         /** Holds the 'Screen' tab instance. */
-        QWidget                              *m_pTabScreen;
+        UIEditor                      *m_pTabScreen;
         /** Holds the video memory size editor instance. */
-        UIVideoMemoryEditor                  *m_pEditorVideoMemorySize;
+        UIVideoMemoryEditor           *m_pEditorVideoMemorySize;
         /** Holds the monitor count spinbox instance. */
-        UIMonitorCountEditor                 *m_pEditorMonitorCount;
+        UIMonitorCountEditor          *m_pEditorMonitorCount;
         /** Holds the scale factor editor instance. */
-        UIScaleFactorEditor                  *m_pEditorScaleFactor;
+        UIScaleFactorEditor           *m_pEditorScaleFactor;
         /** Holds the graphics controller editor instance. */
-        UIGraphicsControllerEditor           *m_pEditorGraphicsController;
+        UIGraphicsControllerEditor    *m_pEditorGraphicsController;
 #ifdef VBOX_WITH_3D_ACCELERATION
         /** Holds the display screen features editor instance. */
-        UIDisplayScreenFeaturesEditor        *m_pEditorDisplayScreenFeatures;
+        UIDisplayScreenFeaturesEditor *m_pEditorDisplayScreenFeatures;
 #endif
 
         /** Holds the 'Remote Display' tab instance. */
-        QWidget              *m_pTabRemoteDisplay;
+        UIEditor             *m_pTabRemoteDisplay;
         /** Holds the VRDE settings editor instance. */
         UIVRDESettingsEditor *m_pEditorVRDESettings;
 
         /** Holds the 'Recording' tab instance. */
-        QWidget                   *m_pTabRecording;
+        UIEditor                  *m_pTabRecording;
         /** Holds the Recording settings editor instance. */
         UIRecordingSettingsEditor *m_pEditorRecordingSettings;
    /** @} */

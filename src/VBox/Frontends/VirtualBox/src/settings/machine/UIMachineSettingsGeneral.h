@@ -146,12 +146,12 @@ private:
         QITabWidget *m_pTabWidget;
 
         /** Holds the 'Basic' tab instance. */
-        QWidget               *m_pTabBasic;
+        UIEditor              *m_pTabBasic;
         /** Holds the name and system editor instance. */
         UINameAndSystemEditor *m_pEditorNameAndSystem;
 
         /** Holds the 'Advanced' tab instance. */
-        QWidget                 *m_pTabAdvanced;
+        UIEditor                *m_pTabAdvanced;
         /** Holds the snapshot folder editor instance. */
         UISnapshotFolderEditor  *m_pEditorSnapshotFolder;
         /** Holds the shared clipboard editor instance. */
@@ -160,12 +160,12 @@ private:
         UIDragAndDropEditor     *m_pEditorDragAndDrop;
 
         /** Holds the 'Description' tab instance. */
-        QWidget             *m_pTabDescription;
+        UIEditor            *m_pTabDescription;
         /** Holds the description editor instance. */
         UIDescriptionEditor *m_pEditorDescription;
 
         /** Holds the 'Encryption' tab instance. */
-        QWidget                        *m_pTabEncryption;
+        UIEditor                       *m_pTabEncryption;
         /** Holds the cipher settings editor instance. */
         UIDiskEncryptionSettingsEditor *m_pEditorDiskEncryptionSettings;
     /** @} */

@@ -885,7 +885,7 @@ void UIMachineSettingsDisplay::prepareWidgets()
 void UIMachineSettingsDisplay::prepareTabScreen()
 {
     /* Prepare 'Screen' tab: */
-    m_pTabScreen = new QWidget;
+    m_pTabScreen = new UIEditor(m_pTabWidget);
     if (m_pTabScreen)
     {
         /* Prepare 'Screen' tab layout: */
@@ -896,7 +896,7 @@ void UIMachineSettingsDisplay::prepareTabScreen()
             m_pEditorVideoMemorySize = new UIVideoMemoryEditor(m_pTabScreen);
             if (m_pEditorVideoMemorySize)
             {
-                addEditor(m_pEditorVideoMemorySize);
+                m_pTabScreen->addEditor(m_pEditorVideoMemorySize);
                 pLayoutScreen->addWidget(m_pEditorVideoMemorySize);
             }
 
@@ -904,7 +904,7 @@ void UIMachineSettingsDisplay::prepareTabScreen()
             m_pEditorMonitorCount = new UIMonitorCountEditor(m_pTabScreen);
             if (m_pEditorMonitorCount)
             {
-                addEditor(m_pEditorMonitorCount);
+                m_pTabScreen->addEditor(m_pEditorMonitorCount);
                 pLayoutScreen->addWidget(m_pEditorMonitorCount);
             }
 
@@ -912,7 +912,7 @@ void UIMachineSettingsDisplay::prepareTabScreen()
             m_pEditorScaleFactor = new UIScaleFactorEditor(m_pTabScreen);
             if (m_pEditorScaleFactor)
             {
-                addEditor(m_pEditorScaleFactor);
+                m_pTabScreen->addEditor(m_pEditorScaleFactor);
                 pLayoutScreen->addWidget(m_pEditorScaleFactor);
             }
 
@@ -920,7 +920,7 @@ void UIMachineSettingsDisplay::prepareTabScreen()
             m_pEditorGraphicsController = new UIGraphicsControllerEditor(m_pTabScreen);
             if (m_pEditorGraphicsController)
             {
-                addEditor(m_pEditorGraphicsController);
+                m_pTabScreen->addEditor(m_pEditorGraphicsController);
                 pLayoutScreen->addWidget(m_pEditorGraphicsController);
             }
 
@@ -929,7 +929,7 @@ void UIMachineSettingsDisplay::prepareTabScreen()
             m_pEditorDisplayScreenFeatures = new UIDisplayScreenFeaturesEditor(m_pTabScreen);
             if (m_pEditorDisplayScreenFeatures)
             {
-                addEditor(m_pEditorDisplayScreenFeatures);
+                m_pTabScreen->addEditor(m_pEditorDisplayScreenFeatures);
                 pLayoutScreen->addWidget(m_pEditorDisplayScreenFeatures);
             }
 #endif /* VBOX_WITH_3D_ACCELERATION */
@@ -937,6 +937,7 @@ void UIMachineSettingsDisplay::prepareTabScreen()
             pLayoutScreen->addStretch();
         }
 
+        addEditor(m_pTabScreen);
         m_pTabWidget->addTab(m_pTabScreen, QString());
     }
 }
@@ -944,7 +945,7 @@ void UIMachineSettingsDisplay::prepareTabScreen()
 void UIMachineSettingsDisplay::prepareTabRemoteDisplay()
 {
     /* Prepare 'Remote Display' tab: */
-    m_pTabRemoteDisplay = new QWidget;
+    m_pTabRemoteDisplay = new UIEditor(m_pTabWidget);
     if (m_pTabRemoteDisplay)
     {
         /* Prepare 'Remote Display' tab layout: */
@@ -955,13 +956,14 @@ void UIMachineSettingsDisplay::prepareTabRemoteDisplay()
             m_pEditorVRDESettings = new UIVRDESettingsEditor(m_pTabRemoteDisplay);
             if (m_pEditorVRDESettings)
             {
-                addEditor(m_pEditorVRDESettings);
+                m_pTabRemoteDisplay->addEditor(m_pEditorVRDESettings);
                 pLayoutRemoteDisplay->addWidget(m_pEditorVRDESettings);
             }
 
             pLayoutRemoteDisplay->addStretch();
         }
 
+        addEditor(m_pTabRemoteDisplay);
         m_pTabWidget->addTab(m_pTabRemoteDisplay, QString());
     }
 }
@@ -969,7 +971,7 @@ void UIMachineSettingsDisplay::prepareTabRemoteDisplay()
 void UIMachineSettingsDisplay::prepareTabRecording()
 {
     /* Prepare 'Recording' tab: */
-    m_pTabRecording = new QWidget;
+    m_pTabRecording = new UIEditor(m_pTabWidget);
     if (m_pTabRecording)
     {
         /* Prepare 'Recording' tab layout: */
@@ -980,13 +982,14 @@ void UIMachineSettingsDisplay::prepareTabRecording()
             m_pEditorRecordingSettings = new UIRecordingSettingsEditor(m_pTabRecording);
             if (m_pEditorRecordingSettings)
             {
-                addEditor(m_pEditorRecordingSettings);
+                m_pTabRecording->addEditor(m_pEditorRecordingSettings);
                 pLayoutRecording->addWidget(m_pEditorRecordingSettings);
             }
 
             pLayoutRecording->addStretch();
         }
 
+        addEditor(m_pTabRecording);
         m_pTabWidget->addTab(m_pTabRecording, QString());
     }
 }

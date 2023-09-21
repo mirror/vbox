@@ -708,7 +708,7 @@ void UIMachineSettingsSystem::prepareWidgets()
 void UIMachineSettingsSystem::prepareTabMotherboard()
 {
     /* Prepare 'Motherboard' tab: */
-    m_pTabMotherboard = new QWidget;
+    m_pTabMotherboard = new UIEditor(m_pTabWidget);
     if (m_pTabMotherboard)
     {
         /* Prepare 'Motherboard' tab layout: */
@@ -722,7 +722,7 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
             m_pEditorBaseMemory = new UIBaseMemoryEditor(m_pTabMotherboard);
             if (m_pEditorBaseMemory)
             {
-                addEditor(m_pEditorBaseMemory);
+                m_pTabMotherboard->addEditor(m_pEditorBaseMemory);
                 pLayoutMotherboard->addWidget(m_pEditorBaseMemory, 0, 0, 1, 2);
             }
 
@@ -730,7 +730,7 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
             m_pEditorBootOrder = new UIBootOrderEditor(m_pTabMotherboard);
             if (m_pEditorBootOrder)
             {
-                addEditor(m_pEditorBootOrder);
+                m_pTabMotherboard->addEditor(m_pEditorBootOrder);
                 pLayoutMotherboard->addWidget(m_pEditorBootOrder, 1, 0);
             }
 
@@ -738,7 +738,7 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
             m_pEditorChipset = new UIChipsetEditor(m_pTabMotherboard);
             if (m_pEditorChipset)
             {
-                addEditor(m_pEditorChipset);
+                m_pTabMotherboard->addEditor(m_pEditorChipset);
                 pLayoutMotherboard->addWidget(m_pEditorChipset, 2, 0);
             }
 
@@ -746,7 +746,7 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
             m_pEditorTpm = new UITpmEditor(m_pTabMotherboard);
             if (m_pEditorTpm)
             {
-                addEditor(m_pEditorTpm);
+                m_pTabMotherboard->addEditor(m_pEditorTpm);
                 pLayoutMotherboard->addWidget(m_pEditorTpm, 3, 0);
             }
 
@@ -754,7 +754,7 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
             m_pEditorPointingHID = new UIPointingHIDEditor(m_pTabMotherboard);
             if (m_pEditorPointingHID)
             {
-                addEditor(m_pEditorPointingHID);
+                m_pTabMotherboard->addEditor(m_pEditorPointingHID);
                 pLayoutMotherboard->addWidget(m_pEditorPointingHID, 4, 0);
             }
 
@@ -762,11 +762,12 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
             m_pEditorMotherboardFeatures = new UIMotherboardFeaturesEditor(m_pTabMotherboard);
             if (m_pEditorMotherboardFeatures)
             {
-                addEditor(m_pEditorMotherboardFeatures);
+                m_pTabMotherboard->addEditor(m_pEditorMotherboardFeatures);
                 pLayoutMotherboard->addWidget(m_pEditorMotherboardFeatures, 5, 0);
             }
         }
 
+        addEditor(m_pTabMotherboard);
         m_pTabWidget->addTab(m_pTabMotherboard, QString());
     }
 }
@@ -774,7 +775,7 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
 void UIMachineSettingsSystem::prepareTabProcessor()
 {
     /* Prepare 'Processor' tab: */
-    m_pTabProcessor = new QWidget;
+    m_pTabProcessor = new UIEditor(m_pTabWidget);
     if (m_pTabProcessor)
     {
         /* Prepare 'Processor' tab layout: */
@@ -788,7 +789,7 @@ void UIMachineSettingsSystem::prepareTabProcessor()
             m_pEditorVCPU = new UIVirtualCPUEditor(m_pTabProcessor);
             if (m_pEditorVCPU)
             {
-                addEditor(m_pEditorVCPU);
+                m_pTabProcessor->addEditor(m_pEditorVCPU);
                 pLayoutProcessor->addWidget(m_pEditorVCPU, 0, 0, 1, 2);
             }
 
@@ -796,7 +797,7 @@ void UIMachineSettingsSystem::prepareTabProcessor()
             m_pEditorExecCap = new UIExecutionCapEditor(m_pTabProcessor);
             if (m_pEditorExecCap)
             {
-                addEditor(m_pEditorExecCap);
+                m_pTabProcessor->addEditor(m_pEditorExecCap);
                 pLayoutProcessor->addWidget(m_pEditorExecCap, 1, 0, 1, 2);
             }
 
@@ -804,11 +805,12 @@ void UIMachineSettingsSystem::prepareTabProcessor()
             m_pEditorProcessorFeatures = new UIProcessorFeaturesEditor(m_pTabProcessor);
             if (m_pEditorProcessorFeatures)
             {
-                addEditor(m_pEditorProcessorFeatures);
+                m_pTabProcessor->addEditor(m_pEditorProcessorFeatures);
                 pLayoutProcessor->addWidget(m_pEditorProcessorFeatures, 2, 0);
             }
         }
 
+        addEditor(m_pTabProcessor);
         m_pTabWidget->addTab(m_pTabProcessor, QString());
     }
 }
@@ -816,7 +818,7 @@ void UIMachineSettingsSystem::prepareTabProcessor()
 void UIMachineSettingsSystem::prepareTabAcceleration()
 {
     /* Prepare 'Acceleration' tab: */
-    m_pTabAcceleration = new QWidget;
+    m_pTabAcceleration = new UIEditor(m_pTabWidget);
     if (m_pTabAcceleration)
     {
         /* Prepare 'Acceleration' tab layout: */
@@ -830,7 +832,7 @@ void UIMachineSettingsSystem::prepareTabAcceleration()
             m_pEditorParavirtProvider = new UIParavirtProviderEditor(m_pTabAcceleration);
             if (m_pEditorParavirtProvider)
             {
-                addEditor(m_pEditorParavirtProvider);
+                m_pTabAcceleration->addEditor(m_pEditorParavirtProvider);
                 pLayoutAcceleration->addWidget(m_pEditorParavirtProvider, 0, 0, 1, 2);
             }
 
@@ -838,10 +840,11 @@ void UIMachineSettingsSystem::prepareTabAcceleration()
             m_pEditorAccelerationFeatures = new UIAccelerationFeaturesEditor(m_pTabAcceleration);
             if (m_pEditorAccelerationFeatures)
             {
-                addEditor(m_pEditorAccelerationFeatures);
+                m_pTabAcceleration->addEditor(m_pEditorAccelerationFeatures);
                 pLayoutAcceleration->addWidget(m_pEditorAccelerationFeatures, 1, 0);
             }
 
+            addEditor(m_pTabAcceleration);
             m_pTabWidget->addTab(m_pTabAcceleration, QString());
         }
     }
