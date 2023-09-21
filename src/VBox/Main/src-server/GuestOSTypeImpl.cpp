@@ -53,19 +53,6 @@ GuestOSType::GuestOSType()
     , mAudioControllerType(AudioControllerType_AC97)
     , mAudioCodecType(AudioCodecType_STAC9700)
 {
-#ifdef VBOX_WITH_ARMV8_HARDCODED_DEFAULTS
-    unconst(mGraphicsControllerType)    = GraphicsControllerType_VMSVGA;
-    unconst(mVRAMSize)                  = 128; /* MB */
-# ifdef VBOX_WITH_E1000
-    unconst(mNetworkAdapterType)        = NetworkAdapterType_I82540EM;
-# endif
-    unconst(mNumSerialEnabled)          = 1;
-    unconst(mDVDStorageControllerType)  = StorageControllerType_VirtioSCSI;
-    unconst(mDVDStorageBusType)         = StorageBus_VirtioSCSI;
-    unconst(mHDStorageControllerType)   = StorageControllerType_VirtioSCSI;
-    unconst(mHDStorageBusType)          = StorageBus_VirtioSCSI;
-    unconst(mChipsetType)               = ChipsetType_ARMv8Virtual;
-#endif /* VBOX_WITH_ARMV8_HARDCODED_DEFAULTS */
 }
 
 GuestOSType::~GuestOSType()
@@ -120,7 +107,6 @@ HRESULT GuestOSType::init(const Global::OSType &ostype)
     unconst(mRAMSize)                   = ostype.recommendedRAM;
     unconst(mCPUCount)                  = ostype.recommendedCPUCount;
     unconst(mHDDSize)                   = ostype.recommendedHDD;
-#ifndef VBOX_WITH_ARMV8_HARDCODED_DEFAULTS
     unconst(mGraphicsControllerType)    = ostype.graphicsControllerType;
     unconst(mVRAMSize)                  = ostype.recommendedVRAM;
     unconst(mNetworkAdapterType)        = ostype.networkAdapterType;
@@ -130,7 +116,6 @@ HRESULT GuestOSType::init(const Global::OSType &ostype)
     unconst(mHDStorageControllerType)   = ostype.hdStorageControllerType;
     unconst(mHDStorageBusType)          = ostype.hdStorageBusType;
     unconst(mChipsetType)               = ostype.chipsetType;
-#endif
     unconst(mIommuType)                 = ostype.iommuType;
     unconst(mAudioControllerType)       = ostype.audioControllerType;
     unconst(mAudioCodecType)            = ostype.audioCodecType;

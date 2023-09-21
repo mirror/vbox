@@ -505,32 +505,6 @@ HRESULT Machine::init(VirtualBox *aParent,
 #ifdef VBOX_WITH_FULL_VM_ENCRYPTION
         hrc = mNvramStore->i_updateEncryptionSettings(strNVRAMKeyId, strNVRAMKeyStore);
 #endif
-
-#ifdef VBOX_WITH_ARMV8_HARDCODED_DEFAULTS
-        /* At least one serial port has to be enabled. */
-        char szPathTemp[RTPATH_MAX];
-        int vrc = RTPathTemp(szPathTemp, sizeof(szPathTemp)); /* Don't clutter the VM directory; instead use the temp dir. */
-        if (RT_SUCCESS(vrc))
-        {
-            vrc = RTPathAppend(szPathTemp, sizeof(szPathTemp), strName.c_str());
-            if (RT_SUCCESS(vrc))
-            {
-                vrc = RTStrCat(szPathTemp, sizeof(szPathTemp), "-serialPort0");
-                if (RT_SUCCESS(vrc))
-                {
-                    mSerialPorts[0]->COMSETTER(Path)(Bstr(szPathTemp).raw()); /* Must be set first. */
-                    mSerialPorts[0]->COMSETTER(HostMode)(PortMode_RawFile);
-                    mSerialPorts[0]->COMSETTER(Enabled)(TRUE);
-                }
-            }
-        }
-        /* Always needs EFI. */
-        mFirmwareSettings->COMSETTER(FirmwareType)(FirmwareType_EFI);
-        /* Needs VMSVGA for now. */
-        mGraphicsAdapter->COMSETTER(GraphicsControllerType)(GraphicsControllerType_VMSVGA);
-        mGraphicsAdapter->COMSETTER(VRAMSize)(128 /* MB */);
-#endif /* VBOX_WITH_ARMV8_HARDCODED_DEFAULTS */
-
         if (SUCCEEDED(hrc))
         {
             /* At this point the changing of the current state modification
@@ -15266,13 +15240,9 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     for (ULONG slot = 0; slot < mNetworkAdapters.size(); ++slot)
         mNetworkAdapters[slot]->i_applyDefaults(osType);
 
-#ifdef VBOX_WITH_ARMV8_HARDCODED_DEFAULTS
-    /* Configuration is done in Machine::init(). */
-#else
     /* Apply serial port defaults */
     for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); ++slot)
         mSerialPorts[slot]->i_applyDefaults(osType);
-#endif
 
     /* Apply parallel port defaults  - not OS dependent*/
     for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); ++slot)
@@ -15365,14 +15335,12 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     else if (dvdStorageControllerType == StorageControllerType_IntelAhci)
         storageController->COMSETTER(PortCount)(1);
 
-#ifdef VBOX_WITH_ARMV8_HARDCODED_DEFAULTS
-    /* ARM VMs only support VirtioSCSI for now -- set two ports here, one for HDD and one for DVD drive. */
+    /* VirtioSCSI configures only one port per default  -- set two ports here, one for HDD and one for DVD drive. */
     if (hdStorageControllerType == StorageControllerType_VirtioSCSI)
     {
         hrc = storageController->COMSETTER(PortCount)(2);
         if (FAILED(hrc)) return hrc;
     }
-#endif
 
     /* USB stuff */
 
