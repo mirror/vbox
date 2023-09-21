@@ -3181,18 +3181,8 @@ HRESULT Unattended::i_reconfigureIsos(com::SafeIfaceArray<IStorageController> &r
         /* Do we need to add the recommended controller? */
         if (strRecommendedControllerName.isEmpty())
         {
-            switch (enmRecommendedStorageBus)
-            {
-                case StorageBus_IDE:    strRecommendedControllerName = "IDE";  break;
-                case StorageBus_SATA:   strRecommendedControllerName = "SATA"; break;
-                case StorageBus_SCSI:   strRecommendedControllerName = "SCSI"; break;
-                case StorageBus_SAS:    strRecommendedControllerName = "SAS";  break;
-                case StorageBus_USB:    strRecommendedControllerName = "USB";  break;
-                case StorageBus_PCIe:   strRecommendedControllerName = "PCIe"; break;
-                default:
-                    return setError(E_FAIL, tr("Support for recommended storage bus %d not implemented"),
-                                    (int)enmRecommendedStorageBus);
-            }
+            strRecommendedControllerName = StorageController::i_controllerNameFromBusType(enmRecommendedStorageBus);
+
             ComPtr<IStorageController> ptrControllerIgnored;
             hrc = rPtrSessionMachine->AddStorageController(Bstr(strRecommendedControllerName).raw(), enmRecommendedStorageBus,
                                                            ptrControllerIgnored.asOutParam());

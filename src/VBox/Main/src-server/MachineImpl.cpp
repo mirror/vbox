@@ -57,6 +57,7 @@
 #include "MachineImplCloneVM.h"
 #include "AutostartDb.h"
 #include "SystemPropertiesImpl.h"
+#include "StorageControllerImpl.h"
 #include "MachineImplMoveVM.h"
 #include "ExtPackManagerImpl.h"
 #include "MachineLaunchVMCommonWorker.h"
@@ -15114,58 +15115,6 @@ HRESULT Machine::authenticateExternal(const std::vector<com::Utf8Str> &aAuthPara
     ReturnComNotImplemented();
 }
 
-com::Utf8Str Machine::i_controllerNameFromBusType(StorageBus_T aBusType)
-{
-    com::Utf8Str strControllerName = "Unknown";
-    switch (aBusType)
-    {
-        case StorageBus_IDE:
-        {
-            strControllerName = "IDE";
-            break;
-        }
-        case StorageBus_SATA:
-        {
-            strControllerName = "SATA";
-            break;
-        }
-        case StorageBus_SCSI:
-        {
-            strControllerName = "SCSI";
-            break;
-        }
-        case StorageBus_Floppy:
-        {
-            strControllerName = "Floppy";
-            break;
-        }
-        case StorageBus_SAS:
-        {
-            strControllerName = "SAS";
-            break;
-        }
-        case StorageBus_USB:
-        {
-            strControllerName = "USB";
-            break;
-        }
-        case StorageBus_PCIe:
-        {
-            strControllerName = "PCIe";
-            break;
-        }
-        case StorageBus_VirtioSCSI:
-        {
-            strControllerName = "VirtioSCSI";
-            break;
-        }
-        default:
-            AssertFailed(); /* Catch missing case above. */
-            break;
-    }
-    return strControllerName;
-}
-
 HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
 {
     /* it's assumed the machine already registered. If not, it's a problem of the caller */
@@ -15271,7 +15220,7 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     Utf8Str strFloppyName, strDVDName, strHDName;
 
     /* GUI auto generates controller names using bus type. Do the same*/
-    strFloppyName = i_controllerNameFromBusType(StorageBus_Floppy);
+    strFloppyName = StorageController::i_controllerNameFromBusType(StorageBus_Floppy);
 
     /* Floppy recommended? add one. */
     hrc = osType->COMGETTER(RecommendedFloppy(&recommendedFloppy));
@@ -15289,7 +15238,7 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     hrc = osType->COMGETTER(RecommendedDVDStorageBus)(&dvdStorageBusType);
     if (FAILED(hrc)) return hrc;
 
-    strDVDName = i_controllerNameFromBusType(dvdStorageBusType);
+    strDVDName = StorageController::i_controllerNameFromBusType(dvdStorageBusType);
 
     hrc = addStorageController(strDVDName, dvdStorageBusType, dvdController);
     if (FAILED(hrc)) return hrc;
@@ -15304,7 +15253,7 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     hrc = osType->COMGETTER(RecommendedHDStorageBus)(&hdStorageBusType);
     if (FAILED(hrc)) return hrc;
 
-    strHDName = i_controllerNameFromBusType(hdStorageBusType);
+    strHDName = StorageController::i_controllerNameFromBusType(hdStorageBusType);
 
     if (hdStorageBusType != dvdStorageBusType && hdStorageControllerType != dvdStorageControllerType)
     {

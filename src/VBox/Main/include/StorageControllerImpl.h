@@ -74,6 +74,9 @@ public:
 
     void i_unshare();
 
+    // public static methods
+    static com::Utf8Str i_controllerNameFromBusType(StorageBus_T aBusType);
+
     /** @note this doesn't require a read lock since mParent is constant. */
     Machine* i_getMachine();
     ComObjPtr<StorageController> i_getPeer();
