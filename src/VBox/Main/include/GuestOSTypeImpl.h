@@ -56,9 +56,9 @@ public:
     const Utf8Str &i_description() const { return mDescription; }
     bool i_is64Bit() const { return !!(mOSHint & VBOXOSHINT_64BIT); }
     PlatformArchitecture_T i_platformArchitecture() const;
-    bool i_recommendedIOAPIC() const { return !!(mOSHint & VBOXOSHINT_IOAPIC); }
-    bool i_recommendedX2APIC() const { return !!(mOSHint & VBOXOSHINT_X2APIC); }
-    bool i_recommendedVirtEx() const { return !!(mOSHint & VBOXOSHINT_HWVIRTEX); }
+    bool i_recommendedIOAPIC() const { return !!(mOSHint & VBOXOSHINT_X86_IOAPIC); }
+    bool i_recommendedX2APIC() const { return !!(mOSHint & VBOXOSHINT_X86_X2APIC); }
+    bool i_recommendedVirtEx() const { return !!(mOSHint & VBOXOSHINT_X86_HWVIRTEX); }
     bool i_recommendedEFI() const { return !!(mOSHint & VBOXOSHINT_EFI); }
     bool i_recommendedEFISecureBoot() const { return !!(mOSHint & VBOXOSHINT_EFI_SECUREBOOT); }
     bool i_recommendedTpm2() const { return !!(mOSHint & VBOXOSHINT_TPM2); }

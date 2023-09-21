@@ -216,7 +216,7 @@ HRESULT GuestOSType::getPlatformArchitecture(PlatformArchitecture_T *aPlatformAr
 HRESULT GuestOSType::getRecommendedIOAPIC(BOOL *aRecommendedIOAPIC)
 {
     /* mRecommendedIOAPIC is constant during life time, no need to lock */
-    *aRecommendedIOAPIC = !!(mOSHint & VBOXOSHINT_IOAPIC);
+    *aRecommendedIOAPIC = !!(mOSHint & VBOXOSHINT_X86_IOAPIC);
 
     return S_OK;
 }
@@ -225,7 +225,7 @@ HRESULT GuestOSType::getRecommendedIOAPIC(BOOL *aRecommendedIOAPIC)
 HRESULT GuestOSType::getRecommendedVirtEx(BOOL *aRecommendedVirtEx)
 {
     /* mRecommendedVirtEx is constant during life time, no need to lock */
-    *aRecommendedVirtEx = !!(mOSHint & VBOXOSHINT_HWVIRTEX);
+    *aRecommendedVirtEx = !!(mOSHint & VBOXOSHINT_X86_HWVIRTEX);
 
     return S_OK;
 }
@@ -296,7 +296,7 @@ HRESULT GuestOSType::getAdapterType(NetworkAdapterType_T *aNetworkAdapterType)
 HRESULT GuestOSType::getRecommendedPAE(BOOL *aRecommendedPAE)
 {
     /* recommended PAE is constant during life time, no need to lock */
-    *aRecommendedPAE = !!(mOSHint & VBOXOSHINT_PAE);
+    *aRecommendedPAE = !!(mOSHint & VBOXOSHINT_X86_PAE);
 
     return S_OK;
 }
@@ -362,7 +362,7 @@ HRESULT GuestOSType::getRecommendedUSBHID(BOOL *aRecommendedUSBHID)
 HRESULT GuestOSType::getRecommendedHPET(BOOL *aRecommendedHPET)
 {
     /* HPET recommendation is constant during life time, no need to lock */
-    *aRecommendedHPET = !!(mOSHint & VBOXOSHINT_HPET);
+    *aRecommendedHPET = !!(mOSHint & VBOXOSHINT_X86_HPET);
 
     return S_OK;
 }
@@ -456,7 +456,7 @@ HRESULT GuestOSType::getRecommendedTFReset(BOOL *aRecommendedTFReset)
 HRESULT GuestOSType::getRecommendedX2APIC(BOOL *aRecommendedX2APIC)
 {
     /* mRecommendedX2APIC is constant during life time, no need to lock */
-    *aRecommendedX2APIC = !!(mOSHint & VBOXOSHINT_X2APIC);
+    *aRecommendedX2APIC = !!(mOSHint & VBOXOSHINT_X86_X2APIC);
 
     return S_OK;
 }

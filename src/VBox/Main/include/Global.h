@@ -38,27 +38,36 @@
 
 #include <iprt/types.h>
 
+/** @name Generic OS hint bits.
+ * @{
+ */
 #define VBOXOSHINT_NONE                 0
 #define VBOXOSHINT_64BIT                RT_BIT(0)
-#define VBOXOSHINT_HWVIRTEX             RT_BIT(1)
-#define VBOXOSHINT_IOAPIC               RT_BIT(2)
-#define VBOXOSHINT_EFI                  RT_BIT(3)
-#define VBOXOSHINT_PAE                  RT_BIT(4)
-#define VBOXOSHINT_USBHID               RT_BIT(5)
-#define VBOXOSHINT_HPET                 RT_BIT(6)
-#define VBOXOSHINT_USBTABLET            RT_BIT(7)
-#define VBOXOSHINT_RTCUTC               RT_BIT(8)
-#define VBOXOSHINT_ACCEL2D              RT_BIT(9)
-#define VBOXOSHINT_ACCEL3D              RT_BIT(10)
-#define VBOXOSHINT_FLOPPY               RT_BIT(11)
-#define VBOXOSHINT_NOUSB                RT_BIT(12)
-#define VBOXOSHINT_TFRESET              RT_BIT(13)
-#define VBOXOSHINT_USB3                 RT_BIT(14)
-#define VBOXOSHINT_X2APIC               RT_BIT(15)
-#define VBOXOSHINT_EFI_SECUREBOOT       RT_BIT(16)
-#define VBOXOSHINT_TPM                  RT_BIT(17)
-#define VBOXOSHINT_TPM2                 RT_BIT(18)
-#define VBOXOSHINT_WDDM_GRAPHICS        RT_BIT(19)
+#define VBOXOSHINT_EFI                  RT_BIT(1)
+#define VBOXOSHINT_USBHID               RT_BIT(2)
+#define VBOXOSHINT_USBTABLET            RT_BIT(3)
+#define VBOXOSHINT_RTCUTC               RT_BIT(4)
+#define VBOXOSHINT_ACCEL2D              RT_BIT(5)
+#define VBOXOSHINT_ACCEL3D              RT_BIT(6)
+#define VBOXOSHINT_FLOPPY               RT_BIT(7)
+#define VBOXOSHINT_NOUSB                RT_BIT(8)
+#define VBOXOSHINT_TFRESET              RT_BIT(9)
+#define VBOXOSHINT_USB3                 RT_BIT(10)
+#define VBOXOSHINT_EFI_SECUREBOOT       RT_BIT(11)
+#define VBOXOSHINT_TPM                  RT_BIT(12)
+#define VBOXOSHINT_TPM2                 RT_BIT(13)
+#define VBOXOSHINT_WDDM_GRAPHICS        RT_BIT(14)
+/** @} */
+
+/** @name x86-specific OS hint bits.
+ * @{
+ */
+#define VBOXOSHINT_X86_HWVIRTEX         RT_BIT(15)
+#define VBOXOSHINT_X86_IOAPIC           RT_BIT(16)
+#define VBOXOSHINT_X86_HPET             RT_BIT(17)
+#define VBOXOSHINT_X86_PAE              RT_BIT(18)
+#define VBOXOSHINT_X86_X2APIC           RT_BIT(19)
+/** @} */
 
 /** The VBoxVRDP kludge extension pack name.
  *
