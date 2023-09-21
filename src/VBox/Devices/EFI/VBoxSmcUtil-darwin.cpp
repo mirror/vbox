@@ -339,15 +339,15 @@ int main(int argc, char **argv)
         /*
          * Known keys that doesn't make it into the enumeration.
          */
-        DisplayKeyByName('OSK0');
-        DisplayKeyByName('OSK1');
-        DisplayKeyByName('OSK2');
+        DisplayKeyByName(RT_MAKE_U32_FROM_MSB_U8('O','S','K','0'));
+        DisplayKeyByName(RT_MAKE_U32_FROM_MSB_U8('O','S','K','1'));
+        DisplayKeyByName(RT_MAKE_U32_FROM_MSB_U8('O','S','K','2'));
 
         /* Negative checks, sometimes maybe. */
-        DisplayKeyByName('$Num');
-        DisplayKeyByName('MSTf');
-        DisplayKeyByName('MSDS');
-        DisplayKeyByName('LSOF');
+        DisplayKeyByName(RT_MAKE_U32_FROM_MSB_U8('$','N','u','m'));
+        DisplayKeyByName(RT_MAKE_U32_FROM_MSB_U8('M','S','T','f'));
+        DisplayKeyByName(RT_MAKE_U32_FROM_MSB_U8('M','S','D','S'));
+        DisplayKeyByName(RT_MAKE_U32_FROM_MSB_U8('L','S','O','F'));
     }
     DisconnectFromSmc();
 
