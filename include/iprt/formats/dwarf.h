@@ -470,8 +470,8 @@
 
 
 /** @name DWREG_AMD64_XXX - AMD64 register number mappings.
- * @note This for some braindead reason the first 8 GPR are in intel encoding
- *       order, unlike the DWREG_X86_XXX variant.  Utter stupidity.
+ * @note This for some braindead reason the first 8 GPR are NOT in the intel
+ *       encoding order, unlike the DWREG_X86_XXX variant.  Utter stupidity.
  * @{ */
 #define DWREG_AMD64_RAX     0
 #define DWREG_AMD64_RDX     1
@@ -537,6 +537,137 @@
 #define DWREG_AMD64_FCW     65
 #define DWREG_AMD64_FSW     66
 /** @} */
+
+
+/** @name DWREG_ARM64_XXX - ARM64 register number mappings.
+ * @{ */
+#define DWREG_ARM64_X0              0
+#define DWREG_ARM64_X1              1
+#define DWREG_ARM64_X2              2
+#define DWREG_ARM64_X3              3
+#define DWREG_ARM64_X4              4
+#define DWREG_ARM64_X5              5
+#define DWREG_ARM64_X6              6
+#define DWREG_ARM64_X7              7
+#define DWREG_ARM64_X8              8
+#define DWREG_ARM64_X9              9
+#define DWREG_ARM64_X10             10
+#define DWREG_ARM64_X11             11
+#define DWREG_ARM64_X12             12
+#define DWREG_ARM64_X13             13
+#define DWREG_ARM64_X14             14
+#define DWREG_ARM64_X15             15
+#define DWREG_ARM64_X16             16
+#define DWREG_ARM64_X17             17
+#define DWREG_ARM64_X18             18
+#define DWREG_ARM64_X19             19
+#define DWREG_ARM64_X20             20
+#define DWREG_ARM64_X21             21
+#define DWREG_ARM64_X22             22
+#define DWREG_ARM64_X23             23
+#define DWREG_ARM64_X24             24
+#define DWREG_ARM64_X25             25
+#define DWREG_ARM64_X26             26
+#define DWREG_ARM64_X27             27
+#define DWREG_ARM64_X28             28
+#define DWREG_ARM64_X29             29
+#define DWREG_ARM64_X30             30
+#define DWREG_ARM64_SP              31
+#define DWREG_ARM64_BP              DWREG_ARM64_X29
+#define DWREG_ARM64_LR              DWREG_ARM64_X30
+#define DWREG_ARM64_PC              32
+#define DWREG_ARM64_ELR_MODE        33
+#define DWREG_ARM64_RA_SIGN_STATE   34
+#define DWREG_ARM64_TPIDRRO_ELO     35
+#define DWREG_ARM64_TPIDR_ELO       36
+#define DWREG_ARM64_TPIDR_EL1       37
+#define DWREG_ARM64_TPIDR_EL2       38
+#define DWREG_ARM64_TPIDR_EL3       39
+/* 40-45 are reserved */
+#define DWREG_ARM64_VG              46
+#define DWREG_ARM64_FFR             47
+#define DWREG_ARM64_P0              48
+#define DWREG_ARM64_P1              49
+#define DWREG_ARM64_P2              50
+#define DWREG_ARM64_P3              51
+#define DWREG_ARM64_P4              52
+#define DWREG_ARM64_P5              53
+#define DWREG_ARM64_P6              54
+#define DWREG_ARM64_P7              55
+#define DWREG_ARM64_P8              56
+#define DWREG_ARM64_P9              57
+#define DWREG_ARM64_P10             58
+#define DWREG_ARM64_P11             59
+#define DWREG_ARM64_P12             60
+#define DWREG_ARM64_P13             61
+#define DWREG_ARM64_P14             62
+#define DWREG_ARM64_P15             63
+#define DWREG_ARM64_V0              64
+#define DWREG_ARM64_V1              65
+#define DWREG_ARM64_V2              66
+#define DWREG_ARM64_V3              67
+#define DWREG_ARM64_V4              68
+#define DWREG_ARM64_V5              69
+#define DWREG_ARM64_V6              70
+#define DWREG_ARM64_V7              71
+#define DWREG_ARM64_V8              72
+#define DWREG_ARM64_V9              73
+#define DWREG_ARM64_V10             74
+#define DWREG_ARM64_V11             75
+#define DWREG_ARM64_V12             76
+#define DWREG_ARM64_V13             77
+#define DWREG_ARM64_V14             78
+#define DWREG_ARM64_V15             79
+#define DWREG_ARM64_V16             80
+#define DWREG_ARM64_V17             81
+#define DWREG_ARM64_V18             82
+#define DWREG_ARM64_V19             83
+#define DWREG_ARM64_V20             84
+#define DWREG_ARM64_V21             85
+#define DWREG_ARM64_V22             86
+#define DWREG_ARM64_V23             87
+#define DWREG_ARM64_V24             88
+#define DWREG_ARM64_V25             89
+#define DWREG_ARM64_V26             90
+#define DWREG_ARM64_V27             91
+#define DWREG_ARM64_V28             92
+#define DWREG_ARM64_V29             93
+#define DWREG_ARM64_V30             94
+#define DWREG_ARM64_V31             95
+#define DWREG_ARM64_Z0              96
+#define DWREG_ARM64_Z1              97
+#define DWREG_ARM64_Z2              98
+#define DWREG_ARM64_Z3              99
+#define DWREG_ARM64_Z4              100
+#define DWREG_ARM64_Z5              101
+#define DWREG_ARM64_Z6              102
+#define DWREG_ARM64_Z7              103
+#define DWREG_ARM64_Z8              104
+#define DWREG_ARM64_Z9              105
+#define DWREG_ARM64_Z10             106
+#define DWREG_ARM64_Z11             107
+#define DWREG_ARM64_Z12             108
+#define DWREG_ARM64_Z13             109
+#define DWREG_ARM64_Z14             110
+#define DWREG_ARM64_Z15             111
+#define DWREG_ARM64_Z16             112
+#define DWREG_ARM64_Z17             113
+#define DWREG_ARM64_Z18             114
+#define DWREG_ARM64_Z19             115
+#define DWREG_ARM64_Z20             116
+#define DWREG_ARM64_Z21             117
+#define DWREG_ARM64_Z22             118
+#define DWREG_ARM64_Z23             119
+#define DWREG_ARM64_Z24             120
+#define DWREG_ARM64_Z25             121
+#define DWREG_ARM64_Z26             122
+#define DWREG_ARM64_Z27             123
+#define DWREG_ARM64_Z28             124
+#define DWREG_ARM64_Z29             125
+#define DWREG_ARM64_Z30             126
+#define DWREG_ARM64_Z31             127
+/** @} */
+
 
 #endif /* !IPRT_INCLUDED_formats_dwarf_h */
 

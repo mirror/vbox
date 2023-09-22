@@ -51,73 +51,110 @@
  * @{
  */
 
-/** @name The AArch64 register encoding.
+/** @name The AArch64 register encoding - deprecated.
+ *  @deprecated  Use ARMV8_A64_REG_XXX instead.
+ *  @todo correct code and drop these remaining ones.
  * @{ */
 #define ARMV8_AARCH64_REG_X0                        0
-#define ARMV8_AARCH64_REG_W0                        ARMV8_AARCH64_REG_X0
 #define ARMV8_AARCH64_REG_X1                        1
-#define ARMV8_AARCH64_REG_W1                        ARMV8_AARCH64_REG_X1
 #define ARMV8_AARCH64_REG_X2                        2
-#define ARMV8_AARCH64_REG_W2                        ARMV8_AARCH64_REG_X2
 #define ARMV8_AARCH64_REG_X3                        3
-#define ARMV8_AARCH64_REG_W3                        ARMV8_AARCH64_REG_X3
-#define ARMV8_AARCH64_REG_X4                        4
-#define ARMV8_AARCH64_REG_W4                        ARMV8_AARCH64_REG_X4
-#define ARMV8_AARCH64_REG_X5                        5
-#define ARMV8_AARCH64_REG_W5                        ARMV8_AARCH64_REG_X5
-#define ARMV8_AARCH64_REG_X6                        6
-#define ARMV8_AARCH64_REG_W6                        ARMV8_AARCH64_REG_X6
-#define ARMV8_AARCH64_REG_X7                        7
-#define ARMV8_AARCH64_REG_W7                        ARMV8_AARCH64_REG_X7
-#define ARMV8_AARCH64_REG_X8                        8
-#define ARMV8_AARCH64_REG_W8                        ARMV8_AARCH64_REG_X8
-#define ARMV8_AARCH64_REG_X9                        9
-#define ARMV8_AARCH64_REG_W9                        ARMV8_AARCH64_REG_X9
-#define ARMV8_AARCH64_REG_X10                       10
-#define ARMV8_AARCH64_REG_W10                       ARMV8_AARCH64_REG_X10
-#define ARMV8_AARCH64_REG_X11                       11
-#define ARMV8_AARCH64_REG_W11                       ARMV8_AARCH64_REG_X11
-#define ARMV8_AARCH64_REG_X12                       12
-#define ARMV8_AARCH64_REG_W12                       ARMV8_AARCH64_REG_X12
-#define ARMV8_AARCH64_REG_X13                       13
-#define ARMV8_AARCH64_REG_W13                       ARMV8_AARCH64_REG_X13
-#define ARMV8_AARCH64_REG_X14                       14
-#define ARMV8_AARCH64_REG_W14                       ARMV8_AARCH64_REG_X14
-#define ARMV8_AARCH64_REG_X15                       15
-#define ARMV8_AARCH64_REG_W15                       ARMV8_AARCH64_REG_X15
-#define ARMV8_AARCH64_REG_X16                       16
-#define ARMV8_AARCH64_REG_W16                       ARMV8_AARCH64_REG_X16
-#define ARMV8_AARCH64_REG_X17                       17
-#define ARMV8_AARCH64_REG_W17                       ARMV8_AARCH64_REG_X17
-#define ARMV8_AARCH64_REG_X18                       18
-#define ARMV8_AARCH64_REG_W18                       ARMV8_AARCH64_REG_X18
-#define ARMV8_AARCH64_REG_X19                       19
-#define ARMV8_AARCH64_REG_W19                       ARMV8_AARCH64_REG_X19
-#define ARMV8_AARCH64_REG_X20                       20
-#define ARMV8_AARCH64_REG_W20                       ARMV8_AARCH64_REG_X20
-#define ARMV8_AARCH64_REG_X21                       21
-#define ARMV8_AARCH64_REG_W21                       ARMV8_AARCH64_REG_X21
-#define ARMV8_AARCH64_REG_X22                       22
-#define ARMV8_AARCH64_REG_W22                       ARMV8_AARCH64_REG_X22
-#define ARMV8_AARCH64_REG_X23                       23
-#define ARMV8_AARCH64_REG_W23                       ARMV8_AARCH64_REG_X23
-#define ARMV8_AARCH64_REG_X24                       24
-#define ARMV8_AARCH64_REG_W24                       ARMV8_AARCH64_REG_X24
-#define ARMV8_AARCH64_REG_X25                       25
-#define ARMV8_AARCH64_REG_W25                       ARMV8_AARCH64_REG_X25
-#define ARMV8_AARCH64_REG_X26                       26
-#define ARMV8_AARCH64_REG_W26                       ARMV8_AARCH64_REG_X26
-#define ARMV8_AARCH64_REG_X27                       27
-#define ARMV8_AARCH64_REG_W27                       ARMV8_AARCH64_REG_X27
-#define ARMV8_AARCH64_REG_X28                       28
-#define ARMV8_AARCH64_REG_W28                       ARMV8_AARCH64_REG_X28
-#define ARMV8_AARCH64_REG_X29                       29
-#define ARMV8_AARCH64_REG_W29                       ARMV8_AARCH64_REG_X29
-#define ARMV8_AARCH64_REG_X30                       30
-#define ARMV8_AARCH64_REG_W30                       ARMV8_AARCH64_REG_X30
-/** The zero register. */
 #define ARMV8_AARCH64_REG_ZR                        31
 /** @} */
+
+/** @name The AArch64 general purpose register encoding.
+ * @{ */
+#define ARMV8_A64_REG_X0                            0
+#define ARMV8_A64_REG_X1                            1
+#define ARMV8_A64_REG_X2                            2
+#define ARMV8_A64_REG_X3                            3
+#define ARMV8_A64_REG_X4                            4
+#define ARMV8_A64_REG_X5                            5
+#define ARMV8_A64_REG_X6                            6
+#define ARMV8_A64_REG_X7                            7
+#define ARMV8_A64_REG_X8                            8
+#define ARMV8_A64_REG_X9                            9
+#define ARMV8_A64_REG_X10                           10
+#define ARMV8_A64_REG_X11                           11
+#define ARMV8_A64_REG_X12                           12
+#define ARMV8_A64_REG_X13                           13
+#define ARMV8_A64_REG_X14                           14
+#define ARMV8_A64_REG_X15                           15
+#define ARMV8_A64_REG_X16                           16
+#define ARMV8_A64_REG_X17                           17
+#define ARMV8_A64_REG_X18                           18
+#define ARMV8_A64_REG_X19                           19
+#define ARMV8_A64_REG_X20                           20
+#define ARMV8_A64_REG_X21                           21
+#define ARMV8_A64_REG_X22                           22
+#define ARMV8_A64_REG_X23                           23
+#define ARMV8_A64_REG_X24                           24
+#define ARMV8_A64_REG_X25                           25
+#define ARMV8_A64_REG_X26                           26
+#define ARMV8_A64_REG_X27                           27
+#define ARMV8_A64_REG_X28                           28
+#define ARMV8_A64_REG_X29                           29
+#define ARMV8_A64_REG_X30                           30
+/** @} */
+
+/** @name The AArch64 32-bit general purpose register names.
+ * @{ */
+#define ARMV8_A64_REG_W0                            ARMV8_A64_REG_X0
+#define ARMV8_A64_REG_W1                            ARMV8_A64_REG_X1
+#define ARMV8_A64_REG_W2                            ARMV8_A64_REG_X2
+#define ARMV8_A64_REG_W3                            ARMV8_A64_REG_X3
+#define ARMV8_A64_REG_W4                            ARMV8_A64_REG_X4
+#define ARMV8_A64_REG_W5                            ARMV8_A64_REG_X5
+#define ARMV8_A64_REG_W6                            ARMV8_A64_REG_X6
+#define ARMV8_A64_REG_W7                            ARMV8_A64_REG_X7
+#define ARMV8_A64_REG_W8                            ARMV8_A64_REG_X8
+#define ARMV8_A64_REG_W9                            ARMV8_A64_REG_X9
+#define ARMV8_A64_REG_W10                           ARMV8_A64_REG_X10
+#define ARMV8_A64_REG_W11                           ARMV8_A64_REG_X11
+#define ARMV8_A64_REG_W12                           ARMV8_A64_REG_X12
+#define ARMV8_A64_REG_W13                           ARMV8_A64_REG_X13
+#define ARMV8_A64_REG_W14                           ARMV8_A64_REG_X14
+#define ARMV8_A64_REG_W15                           ARMV8_A64_REG_X15
+#define ARMV8_A64_REG_W16                           ARMV8_A64_REG_X16
+#define ARMV8_A64_REG_W17                           ARMV8_A64_REG_X17
+#define ARMV8_A64_REG_W18                           ARMV8_A64_REG_X18
+#define ARMV8_A64_REG_W19                           ARMV8_A64_REG_X19
+#define ARMV8_A64_REG_W20                           ARMV8_A64_REG_X20
+#define ARMV8_A64_REG_W21                           ARMV8_A64_REG_X21
+#define ARMV8_A64_REG_W22                           ARMV8_A64_REG_X22
+#define ARMV8_A64_REG_W23                           ARMV8_A64_REG_X23
+#define ARMV8_A64_REG_W24                           ARMV8_A64_REG_X24
+#define ARMV8_A64_REG_W25                           ARMV8_A64_REG_X25
+#define ARMV8_A64_REG_W26                           ARMV8_A64_REG_X26
+#define ARMV8_A64_REG_W27                           ARMV8_A64_REG_X27
+#define ARMV8_A64_REG_W28                           ARMV8_A64_REG_X28
+#define ARMV8_A64_REG_W29                           ARMV8_A64_REG_X29
+#define ARMV8_A64_REG_W30                           ARMV8_A64_REG_X30
+/** @} */
+
+/** @name The AArch64 register 31.
+ * @note Register 31 typically refers to the zero register, but can also in
+ *       select case (by instruction and opecode field) refer the to stack
+ *       pointer of the current exception level.  ARM typically uses \<Xn|SP\>
+ *       to indicate that register 31 is taken as SP, if just \<Xn\> is used
+ *       31 will be the zero register.
+ * @{ */
+/** The stack pointer. */
+#define ARMV8_A64_REG_SP                            31
+/** The zero register.  Reads as zero, writes ignored. */
+#define ARMV8_A64_REG_XZR                           31
+/** The zero register, the 32-bit register name. */
+#define ARMV8_A64_REG_WZR                           ARMV8_A64_REG_XZR
+/** @} */
+
+/** @name AArch64 register aliases
+ * @{ */
+/** The link register is typically mapped to x30 as that's the default pick of
+ *  the RET instruction. */
+#define ARMV8_A64_REG_LR                            ARMV8_A64_REG_X30
+/** Frame base pointer is typically mapped to x29. */
+#define ARMV8_A64_REG_BP                            ARMV8_A64_REG_X29
+/* @} */
 
 
 /** @name System register encoding.
