@@ -52,7 +52,6 @@ class SHARED_LIBRARY_STUFF UINameAndSystemEditor : public UIEditor
 {
     Q_OBJECT;
     Q_PROPERTY(QString name READ name WRITE setName);
-    Q_PROPERTY(CGuestOSType type READ type WRITE setType);
 
     /** Simple struct representing CGuestOSType cache. */
     struct UIGuestOSType
@@ -129,8 +128,6 @@ public:
     /** Returns the VM OS family ID. */
     QString familyId() const;
 
-    /** Defines the VM OS @a enmType. */
-    void setType(const CGuestOSType &enmType);
     /** Returns the VM OS type. */
     CGuestOSType type() const;
 
@@ -181,6 +178,7 @@ private:
 
     ulong selectedEditionIndex() const;
     void populateTypeCombo(const QList<QPair<QString, QString> > &typeList);
+    void selectPreferredType();
 
     /** @name Arguments
      * @{ */
@@ -205,6 +203,7 @@ private:
         QString  m_strTypeId;
         /** Holds the VM OS family ID. */
         QString  m_strFamilyId;
+        QString  m_strVariant;
 
         /** Holds the currently chosen OS type IDs on per-family basis. */
         QMap<QString, QString>  m_currentIds;

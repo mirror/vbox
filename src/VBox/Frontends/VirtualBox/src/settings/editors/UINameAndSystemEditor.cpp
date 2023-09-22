@@ -315,18 +315,18 @@ QString UINameAndSystemEditor::familyId() const
     return m_strFamilyId;
 }
 
-void UINameAndSystemEditor::setType(const CGuestOSType &enmType)
-{
-    // WORKAROUND:
-    // We're getting here with a NULL enmType when creating new VMs.
-    // Very annoying, so just workarounded for now.
-    /** @todo find out the reason and way to fix that.. */
-    if (enmType.isNull())
-        return;
+// void UINameAndSystemEditor::setType(const CGuestOSType &enmType)
+// {
+//     // WORKAROUND:
+//     // We're getting here with a NULL enmType when creating new VMs.
+//     // Very annoying, so just workarounded for now.
+//     /** @todo find out the reason and way to fix that.. */
+//     if (enmType.isNull())
+//         return;
 
-    /* Pass to function above: */
-    setTypeId(enmType.GetId(), enmType.GetFamilyId());
-}
+//     /* Pass to function above: */
+//     setTypeId(enmType.GetId(), enmType.GetFamilyId());
+// }
 
 CGuestOSType UINameAndSystemEditor::type() const
 {
@@ -401,7 +401,7 @@ void UINameAndSystemEditor::retranslateUi()
     if (m_pLabelType)
         m_pLabelType->setText(tr("&Version:"));
     if (m_pLabelVariant)
-        m_pLabelVariant->setText(tr("Variant:"));
+        m_pLabelVariant->setText(tr("Kind:"));
 
     if (m_pEditorName)
         m_pEditorName->setToolTip(tr("Holds the name for virtual machine."));
@@ -426,9 +426,9 @@ void UINameAndSystemEditor::sltFamilyChanged(int index)
     const UIGuestOSTypeManager * const pGuestOSTypeManager = uiCommon().guestOSTypeManager();
     AssertReturnVoid(pGuestOSTypeManager);
 
-    QString strFamilyId = m_pComboFamily->itemData(index, FamilyID).toString();
+    m_strFamilyId = m_pComboFamily->itemData(index, FamilyID).toString();
 
-    AssertReturnVoid(!strFamilyId.isEmpty());
+    AssertReturnVoid(!m_strFamilyId.isEmpty());
 
     m_pComboVariant->blockSignals(true);
     m_pLabelVariant->setEnabled(true);
@@ -436,14 +436,14 @@ void UINameAndSystemEditor::sltFamilyChanged(int index)
     m_pComboVariant->setEnabled(true);
     m_pComboVariant->clear();
 
-    const QStringList variantList = pGuestOSTypeManager->getVariantListForFamilyId(strFamilyId);
+    const QStringList variantList = pGuestOSTypeManager->getVariantListForFamilyId(m_strFamilyId);
 
     if (variantList.isEmpty())
     {
         m_pComboVariant->setEnabled(false);
         m_pLabelVariant->setEnabled(false);
         /* If variant list is empty the all the types of the family are added to typ selection combo: */
-        populateTypeCombo(pGuestOSTypeManager->getTypeListForFamilyId(strFamilyId));
+        populateTypeCombo(pGuestOSTypeManager->getTypeListForFamilyId(m_strFamilyId));
     }
     else
     {
@@ -460,8 +460,6 @@ void UINameAndSystemEditor::sltFamilyChanged(int index)
     // m_pComboType->blockSignals(true);
     // m_pComboType->clear();
 
-    // /* Acquire family ID: */
-    // m_strFamilyId = m_pComboFamily->itemData(iIndex, TypeID).toString();
 
     // /* Populate combo-box with OS types related to currently selected family id: */
     // foreach (const UIGuestOSType &guiType, m_types.value(m_strFamilyId))
@@ -471,47 +469,6 @@ void UINameAndSystemEditor::sltFamilyChanged(int index)
     //     m_pComboType->setItemData(idxItem, guiType.typeId, TypeID);
     // }
 
-    // /* Select the most recently chosen item: */
-    // if (m_currentIds.contains(m_strFamilyId))
-    // {
-    //     const QString strTypeId = m_currentIds.value(m_strFamilyId);
-    //     const int iTypeIndex = m_pComboType->findData(strTypeId, TypeID);
-    //     if (iTypeIndex != -1)
-    //         m_pComboType->setCurrentIndex(iTypeIndex);
-    // }
-    // /* Or select Windows 10 item for Windows family as default: */
-    // else if (m_strFamilyId == "Windows")
-    // {
-    //     QString strDefaultID = "Windows11_64";
-    //     const int iIndexWin = m_pComboType->findData(strDefaultID, TypeID);
-    //     if (iIndexWin != -1)
-    //         m_pComboType->setCurrentIndex(iIndexWin);
-    // }
-    // /* Or select Oracle Linux item for Linux family as default: */
-    // else if (m_strFamilyId == "Linux")
-    // {
-    //     QString strDefaultID = "Oracle_64";
-    //     const int iIndexOracle = m_pComboType->findData(strDefaultID, TypeID);
-    //     if (iIndexOracle != -1)
-    //         m_pComboType->setCurrentIndex(iIndexOracle);
-    // }
-    // else if (m_strFamilyId == "Other")
-    // {
-    //     QString strDefaultID = "Other_64";
-    //     const int iIndexOther = m_pComboType->findData(strDefaultID, TypeID);
-    //     if (iIndexOther != -1)
-    //         m_pComboType->setCurrentIndex(iIndexOther);
-    // }
-    // /* Else try to pick the first 64-bit one if it exists.: */
-    // else
-    // {
-    //    QString strDefaultID = "_64";
-    //    const int iIndexAll = m_pComboType->findData(strDefaultID, TypeID, Qt::MatchContains);
-    //    if (iIndexAll != -1)
-    //        m_pComboType->setCurrentIndex(iIndexAll);
-    //    else
-    //        m_pComboType->setCurrentIndex(0);
-    // }
 
     // /* Update all the stuff: */
     // sltTypeChanged(m_pComboType->currentIndex());
@@ -519,15 +476,15 @@ void UINameAndSystemEditor::sltFamilyChanged(int index)
     // /* Unlock the signals of m_pComboType: */
     // m_pComboType->blockSignals(false);
 
-    // /* Notify listeners about this change: */
-    // emit sigOSFamilyChanged(m_strFamilyId);
+    /* Notify listeners about this change: */
+    emit sigOSFamilyChanged(m_strFamilyId);
 }
 
 void UINameAndSystemEditor::sltVariantChanged(const QString &strVariant)
 {
     const UIGuestOSTypeManager * const pGuestOSTypeManager = uiCommon().guestOSTypeManager();
     AssertReturnVoid(pGuestOSTypeManager);
-
+    m_strVariant = strVariant;
     populateTypeCombo(pGuestOSTypeManager->getTypeListForVariant(strVariant));
 }
 
@@ -544,7 +501,51 @@ void UINameAndSystemEditor::populateTypeCombo(const UIGuestOSTypeManager::UIGues
         m_pComboType->setItemData(i, typeList[i].first, TypeID);
     }
     m_pComboType->blockSignals(false);
+    selectPreferredType();
     sltTypeChanged(m_pComboType->currentIndex());
+}
+
+void UINameAndSystemEditor::selectPreferredType()
+{
+    // /* Select the most recently chosen item: */
+    // if (m_currentIds.contains(m_strFamilyId))
+    // {
+    //     const QString strTypeId = m_currentIds.value(m_strFamilyId);
+    //     const int iTypeIndex = m_pComboType->findData(strTypeId, TypeID);
+    //     if (iTypeIndex != -1)
+    //         m_pComboType->setCurrentIndex(iTypeIndex);
+    // }
+    // /* Or select Windows 10 item for Windows family as default: */
+    // else
+    if (m_strFamilyId == "Windows")
+    {
+        QString strDefaultID = "Windows11_x64";
+        const int iIndexWin = m_pComboType->findData(strDefaultID, TypeID);
+        if (iIndexWin != -1)
+        {
+            m_pComboType->setCurrentIndex(iIndexWin);
+            return;
+        }
+    }
+    /* Or select Oracle Linux item for Linux family as default: */
+    if (m_strVariant == "Oracle")
+    {
+        QString strDefaultID = "Oracle_x64";
+        const int iIndexOracle = m_pComboType->findData(strDefaultID, TypeID);
+        if (iIndexOracle != -1)
+        {
+            m_pComboType->setCurrentIndex(iIndexOracle);
+            return;
+        }
+    }
+
+    /* Else try to pick the first 64-bit one if it exists.: */
+    QString strDefaultID = "_x64";
+    const int iIndexAll = m_pComboType->findData(strDefaultID, TypeID, Qt::MatchContains);
+    if (iIndexAll != -1)
+        m_pComboType->setCurrentIndex(iIndexAll);
+    else
+        m_pComboType->setCurrentIndex(0);
 }
 
 void UINameAndSystemEditor::sltTypeChanged(int iIndex)
