@@ -178,15 +178,23 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegularExpression("((lunar)|(lobster)).*64",                                             QRegularExpression::CaseInsensitiveOption), "Ubuntu23_x64" },
     { QRegularExpression("sarge.*32",                         QRegularExpression::CaseInsensitiveOption), "Debian31" },
     { QRegularExpression("^etch.*64",                         QRegularExpression::CaseInsensitiveOption), "Debian4_x64" },
+    { QRegularExpression("debian.*4.*64",                     QRegularExpression::CaseInsensitiveOption), "Debian4_x64" },
     { QRegularExpression("^etch.*32",                         QRegularExpression::CaseInsensitiveOption), "Debian4" },
+    { QRegularExpression("debian.*4.*32",                     QRegularExpression::CaseInsensitiveOption), "Debian4" },
     { QRegularExpression("lenny.*64",                         QRegularExpression::CaseInsensitiveOption), "Debian5_x64" },
     { QRegularExpression("lenny.*32",                         QRegularExpression::CaseInsensitiveOption), "Debian5" },
     { QRegularExpression("squeeze.*64",                       QRegularExpression::CaseInsensitiveOption), "Debian6_x64" },
+    { QRegularExpression("debian.*6.*64",                     QRegularExpression::CaseInsensitiveOption), "Debian6_x64" },
     { QRegularExpression("squeeze.*32",                       QRegularExpression::CaseInsensitiveOption), "Debian6" },
+    { QRegularExpression("debian.*6.*32",                     QRegularExpression::CaseInsensitiveOption), "Debian6" },
     { QRegularExpression("wheezy.*64",                        QRegularExpression::CaseInsensitiveOption), "Debian7_x64" },
+    { QRegularExpression("debian.*7.*64",                     QRegularExpression::CaseInsensitiveOption), "Debian7_x64" },
     { QRegularExpression("wheezy.*32",                        QRegularExpression::CaseInsensitiveOption), "Debian7" },
+    { QRegularExpression("debian.*7.*32",                     QRegularExpression::CaseInsensitiveOption), "Debian7" },
     { QRegularExpression("jessie.*64",                        QRegularExpression::CaseInsensitiveOption), "Debian8_x64" },
+    { QRegularExpression("debian.*8.*64",                     QRegularExpression::CaseInsensitiveOption), "Debian8_x64" },
     { QRegularExpression("jessie.*32",                        QRegularExpression::CaseInsensitiveOption), "Debian8" },
+    { QRegularExpression("debian.*8*32",                      QRegularExpression::CaseInsensitiveOption), "Debian8" },
     { QRegularExpression("stretch.*64",                       QRegularExpression::CaseInsensitiveOption), "Debian9_x64" },
     { QRegularExpression("debian.*9.*64",                     QRegularExpression::CaseInsensitiveOption), "Debian9_x64" },
     { QRegularExpression("debian.*9.*32",                     QRegularExpression::CaseInsensitiveOption), "Debian9" },
@@ -286,10 +294,7 @@ bool UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(UINameAndSystemEditor *p
     for (size_t i = 0; i < RT_ELEMENTS(gs_OSTypePattern); ++i)
     {
         if (strNewName.contains(gs_OSTypePattern[i].pattern))
-        {
-            pNameAndSystemEditor->setGuestOSTypeByTypeId(gs_OSTypePattern[i].pcstId);
-            return true;
-        }
+            return pNameAndSystemEditor->setGuestOSTypeByTypeId(gs_OSTypePattern[i].pcstId);
     }
     return false;
 }
@@ -297,21 +302,17 @@ bool UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(UINameAndSystemEditor *p
 bool UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(UINameAndSystemEditor *pNameAndSystemEditor, QString strDetectedOSType)
 {
     AssertReturn(pNameAndSystemEditor, false);
-
     if (!strDetectedOSType.isEmpty())
     {
-        CGuestOSType const osType = uiCommon().vmGuestOSType(strDetectedOSType);
-        if (!osType.isNull())
+        if (!pNameAndSystemEditor->setGuestOSTypeByTypeId(strDetectedOSType))
         {
-            pNameAndSystemEditor->setType(osType);
-            return true;
+            pNameAndSystemEditor->setGuestOSTypeByTypeId("Other");
+            /* Return false to allow OS type guessing from name. See caller code: */
+            return false;
         }
-        /* The detectedOSType shall be a valid OS type ID. So, unless the UI is
-           out of sync with the types in main this shouldn't ever happen. */
-        AssertFailed();
+        return true;
     }
-    pNameAndSystemEditor->setType(uiCommon().vmGuestOSType("Other"));
-    /* Return false to allow OS type guessing from name. See caller code: */
+    pNameAndSystemEditor->setGuestOSTypeByTypeId("Other");
     return false;
 }
 

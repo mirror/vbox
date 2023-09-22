@@ -121,7 +121,7 @@ public:
     void setISOImagePath(const QString &strPath);
 
     /* strTypeId should be one of the type ids defined in Global.cpp and returned by IGuestOSType::getId(). */
-    void setGuestOSTypeByTypeId(const QString &strTypeId);
+    bool setGuestOSTypeByTypeId(const QString &strTypeId);
     /** Defines the VM OS @a strTypeId and @a strFamilyId if passed. */
     void setTypeId(QString strTypeId, QString strFamilyId = QString());
     /** Returns the VM OS type ID. */
