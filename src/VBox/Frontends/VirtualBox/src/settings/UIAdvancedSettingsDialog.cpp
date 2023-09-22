@@ -479,18 +479,26 @@ bool UIAdvancedSettingsDialog::eventFilter(QObject *pObject, QEvent *pEvent)
         return QIWithRetranslateUI<QMainWindow>::eventFilter(pObject, pEvent);
     }
 
+    /* Unconditionally and for good
+     * redirect wheel event for widgets of following types to m_pScrollViewport: */
+    if (   qobject_cast<QAbstractButton*>(pObject)
+        || qobject_cast<QAbstractSpinBox*>(pObject)
+        || qobject_cast<QAbstractSpinBox*>(pObject->parent())
+        || qobject_cast<QComboBox*>(pObject)
+        || qobject_cast<QSlider*>(pObject)
+        || qobject_cast<QTabWidget*>(pObject)
+        || qobject_cast<QTabWidget*>(pObject->parent()))
+    {
+        /* Check if redirected event was really handled, otherwise give it back: */
+        if (QCoreApplication::sendEvent(m_pScrollViewport, pEvent))
+            return true;
+    }
+
     /* While 'sticky scrolling timer' is active
      * redirect wheel event for widgets of following types to m_pScrollViewport: */
     if (   m_pScrollingTimer->isActive()
-        && (   qobject_cast<QAbstractButton*>(pObject)
-            || qobject_cast<QAbstractScrollArea*>(pObject)
-            || qobject_cast<QAbstractScrollArea*>(pObject->parent())
-            || qobject_cast<QAbstractSpinBox*>(pObject)
-            || qobject_cast<QAbstractSpinBox*>(pObject->parent())
-            || qobject_cast<QComboBox*>(pObject)
-            || qobject_cast<QSlider*>(pObject)
-            || qobject_cast<QTabWidget*>(pObject)
-            || qobject_cast<QTabWidget*>(pObject->parent())))
+        && (   qobject_cast<QAbstractScrollArea*>(pObject)
+            || qobject_cast<QAbstractScrollArea*>(pObject->parent())))
     {
         /* Check if redirected event was really handled, otherwise give it back: */
         if (QCoreApplication::sendEvent(m_pScrollViewport, pEvent))
