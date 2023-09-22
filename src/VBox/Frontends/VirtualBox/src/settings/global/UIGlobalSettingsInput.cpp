@@ -215,7 +215,6 @@ void UIGlobalSettingsInput::prepare()
 
     /* Prepare everything: */
     prepareWidgets();
-    prepareConnections();
 
     /* Apply language settings: */
     retranslateUi();
@@ -231,6 +230,8 @@ void UIGlobalSettingsInput::prepareWidgets()
         m_pEditorShortcutConfiguration = new UIShortcutConfigurationEditor(this);
         if (m_pEditorShortcutConfiguration)
         {
+            connect(m_pEditorShortcutConfiguration, &UIShortcutConfigurationEditor::sigValueChanged,
+                    this, &UIGlobalSettingsInput::revalidate);
             addEditor(m_pEditorShortcutConfiguration);
             pLayout->addWidget(m_pEditorShortcutConfiguration);
         }
@@ -243,12 +244,6 @@ void UIGlobalSettingsInput::prepareWidgets()
             pLayout->addWidget(m_pEditorAutoCaptureKeyboard);
         }
     }
-}
-
-void UIGlobalSettingsInput::prepareConnections()
-{
-    connect(m_pEditorShortcutConfiguration, &UIShortcutConfigurationEditor::sigValueChanged,
-            this, &UIGlobalSettingsInput::revalidate);
 }
 
 void UIGlobalSettingsInput::cleanup()

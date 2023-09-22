@@ -83,8 +83,6 @@ private:
     void prepare();
     /** Prepares widgets. */
     void prepareWidgets();
-    /** Prepares connections. */
-    void prepareConnections();
     /** Cleanups all. */
     void cleanup();
 
