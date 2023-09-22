@@ -742,7 +742,7 @@ static int vgsvcVMInfoWriteUsers(void)
     if (   pConnection
         && !dbus_error_is_set(&dbErr))
     {
-// TODO: is there some Less Horrible Way(tm) to access dbus?
+/// @todo is there some Less Horrible Way(tm) to access dbus?
         /* Get all available sessions. */
         /* like `busctl call org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager ListSessions` */
         DBusMessage *pMsgSessions = dbus_message_new_method_call(SYSTEMD_LOGIN_INTERFACE,
@@ -800,9 +800,9 @@ static int vgsvcVMInfoWriteUsers(void)
                                                                              &dbErr);
                                             int sessionPropertyActiveValue;
                                             if (   vboxService_dbus_unpack_variant_reply(
-                                                       &dbErr, 
-                                                       pReplySession, 
-                                                       DBUS_TYPE_BOOLEAN, 
+                                                       &dbErr,
+                                                       pReplySession,
+                                                       DBUS_TYPE_BOOLEAN,
                                                        &sessionPropertyActiveValue)
                                                 && sessionPropertyActiveValue) {
                                                 DBusMessage *pMsgSession2 = dbus_message_new_method_call(SYSTEMD_LOGIN_INTERFACE,
@@ -824,9 +824,9 @@ static int vgsvcVMInfoWriteUsers(void)
                                                                                  &dbErr);
                                                     const char *sessionPropertyNameValue;
                                                     if (   vboxService_dbus_unpack_variant_reply(
-                                                               &dbErr, 
-                                                               pReplyName, 
-                                                               DBUS_TYPE_STRING, 
+                                                               &dbErr,
+                                                               pReplyName,
+                                                               DBUS_TYPE_STRING,
                                                                &sessionPropertyNameValue)
                                                         && sessionPropertyNameValue)
                                                         vgsvcVMInfoAddUserToList(sessionPropertyNameValue, "systemd-logind");
@@ -873,7 +873,7 @@ static int vgsvcVMInfoWriteUsers(void)
         VGSvcVerbose(4, "Checking ConsoleKit sessions ...\n");
         fHaveLibDbus = true;
         dbus_error_init(&dbErr);
-        /* TODO: should this be dbus_connection_open() (and below, dbus_connection_unref())? */
+        /** @todo should this be dbus_connection_open() (and below, dbus_connection_unref())? */
         pConnection = dbus_bus_get(DBUS_BUS_SYSTEM, &dbErr);
     }
 
@@ -935,7 +935,7 @@ static int vgsvcVMInfoWriteUsers(void)
                                 }
 
                             }
-                            /* TODO: clean up if &dbErr */
+                            /** @todo clean up if &dbErr */
                             vboxService_dbus_message_discard(&pReplySessionActive);
 
                             vboxService_dbus_message_discard(&pMsgSessionActive);
@@ -985,7 +985,7 @@ static int vgsvcVMInfoWriteUsers(void)
                                 else
                                     AssertMsgFailed(("ConsoleKit: GetUnixUser returned a wrong argument type\n"));
                             }
-                            /* TODO: clean up if &dbErr */
+                            /** @todo clean up if &dbErr */
 
                             vboxService_dbus_message_discard(&pReplyUnixUser);
                         }
