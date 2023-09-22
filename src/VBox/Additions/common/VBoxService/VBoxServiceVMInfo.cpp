@@ -164,13 +164,20 @@ static const char *g_pszLAActiveClient = "/VirtualBox/HostInfo/VRDP/ActiveClient
 #ifdef VBOX_WITH_DBUS
 /** @name ConsoleKit defines (taken from 0.4.5).
  * @{ */
-# define CK_NAME                "org.freedesktop.ConsoleKit"
-# define CK_PATH                "/org/freedesktop/ConsoleKit"
+# define CK_NAME                "org.freedesktop.ConsoleKit"            /* unused */
+# define CK_PATH                "/org/freedesktop/ConsoleKit"           /* unused */
 # define CK_INTERFACE           "org.freedesktop.ConsoleKit"
 # define CK_MANAGER_PATH        "/org/freedesktop/ConsoleKit/Manager"
 # define CK_MANAGER_INTERFACE   "org.freedesktop.ConsoleKit.Manager"
-# define CK_SEAT_INTERFACE      "org.freedesktop.ConsoleKit.Seat"
+# define CK_SEAT_INTERFACE      "org.freedesktop.ConsoleKit.Seat"       /* unused */
 # define CK_SESSION_INTERFACE   "org.freedesktop.ConsoleKit.Session"
+/** @} */
+/** @name systemd-logind defines
+ * @{ */
+# define SYSTEMD_LOGIN_INTERFACE           "org.freedesktop.login1"
+# define SYSTEMD_LOGIN_PATH                "/org/freedesktop/login1"
+# define SYSTEMD_LOGIN_MANAGER_INTERFACE   "org.freedesktop.login1.Manager"
+# define SYSTEMD_LOGIN_SESSION_INTERFACE   "org.freedesktop.login1.Session"
 /** @} */
 #endif
 
@@ -537,7 +544,7 @@ static void vgsvcVMInfoWriteFixedProperties(void)
 
 #if defined(VBOX_WITH_DBUS) && defined(RT_OS_LINUX) /* Not yet for Solaris/FreeBSB. */
 /*
- * Simple wrapper to work around compiler-specific va_list madness.
+ * Simple wrappers to work around compiler-specific va_list madness.
  */
 static dbus_bool_t vboxService_dbus_message_get_args(DBusMessage *message, DBusError *error, int first_arg_type, ...)
 {
@@ -547,8 +554,116 @@ static dbus_bool_t vboxService_dbus_message_get_args(DBusMessage *message, DBusE
     va_end(va);
     return ret;
 }
+
+static dbus_bool_t vboxService_dbus_message_append_args(DBusMessage *message, int first_arg_type, ...)
+{
+    va_list va;
+    va_start(va, first_arg_type);
+    dbus_bool_t ret = dbus_message_append_args_valist(message, first_arg_type, va);
+    va_end(va);
+    return ret;
+}
+
+#ifndef DBUS_TYPE_VARIANT
+#define DBUS_TYPE_VARIANT       ((int) 'v')
+#endif
+/*
+ * Wrapper to dig values out of dbus replies, which are contained in
+ * a 'variant' and must be iterated into twice.
+ *
+ * Returns true if it thinks it got a value; false if not.
+ *
+ * This does various error checking so the caller can skip it:
+ *   - whether a DBusError is set
+ *   - whether the DBusMessage is valid
+ *   - whether we actually got a 'variant'
+ *   - whether we got the type the caller's looking for
+ */
+static bool vboxService_dbus_unpack_variant_reply(DBusError *error, DBusMessage *pReply, char pType, void *pValue) {
+    if (dbus_error_is_set(error)) {
+        VGSvcError("dbus_unpack_variant_reply: dbus returned error '%s'\n", error->message);
+        dbus_error_free(error);
+    } else if (pReply) {
+        DBusMessageIter iterMsg;
+        int             iterType;
+        dbus_message_iter_init(pReply, &iterMsg);
+        iterType = dbus_message_iter_get_arg_type(&iterMsg);
+        if (iterType == DBUS_TYPE_VARIANT) {
+            DBusMessageIter iterValueMsg;
+            int             iterValueType;
+            dbus_message_iter_recurse(&iterMsg, &iterValueMsg);
+            iterValueType = dbus_message_iter_get_arg_type(&iterValueMsg);
+            if (iterValueType == pType) {
+                dbus_message_iter_get_basic(&iterValueMsg, pValue);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/*
+ * Wrapper to NULL out the DBusMessage pointer while discarding it.
+ * DBus API is multi-threaded and can have multiple concurrent accessors.
+ * Our use here is single-threaded and can never have multiple accessors.
+ */
+static void vboxService_dbus_message_discard(DBusMessage **ppMsg)
+{
+    if (ppMsg && *ppMsg) {
+#if defined(ICKY_REFCOUNT_GRUBBING)
+        {
+            /* The DBusMessage Refcount private field isn't externally accessible.
+             * We want to check it for debug / assert purposes.
+             */
+            uint32_t *pcRefCnt = (uint32_t *)(*ppMsg);
+            if (*p == 0) {
+                VGSvcVerbose(1, "dbus_message_discard: unref %p whose refcnt is 0 (expected 1) -- this would have been a double-free\n", ppMsg);
+                *ppMsg = NULL;
+                return;
+            } else if (*p != 1) {
+                VGSvcVerbose(1, "dbus_message_discard: unref %p whose refcnt is %d (expected 1)\n", ppMsg, *p);
+            }
+        }
+#endif /* ICKY_REFCOUNT_GRUBBING */
+        dbus_message_unref(*ppMsg);
+        *ppMsg = NULL;
+    }
+}
 #endif
 
+
+/*
+ * Add a user to the list of active users (while ignoring duplicates
+ * and dynamically maintaining the list storage)
+ */
+#define USER_LIST_CHUNK_SIZE 32
+static uint32_t cUsersInList;
+static uint32_t cListSize;
+static char **papszUsers;
+
+static void vgsvcVMInfoAddUserToList(const char *name, const char *src)
+{
+    int rc;
+    bool fFound = false;
+    for (uint32_t idx = 0; idx < cUsersInList && !fFound; idx++)
+        fFound = strncmp(papszUsers[idx], name, 32) == 0;
+    VGSvcVerbose(5, "LoggedInUsers: Asked to add user '%s' from '%s' to list (already in list = %lu)\n", name, src, fFound);
+    if (!fFound)
+    {
+        if (cUsersInList + 1 > cListSize)
+        {
+            VGSvcVerbose(5, "LoggedInUsers: increase user list size from %lu to %lu\n", cListSize, cListSize + USER_LIST_CHUNK_SIZE);
+            cListSize += USER_LIST_CHUNK_SIZE;
+            void *pvNew = RTMemRealloc(papszUsers, cListSize * sizeof(char*));
+            AssertReturnVoidStmt(pvNew, cListSize -= USER_LIST_CHUNK_SIZE);
+            papszUsers = (char **)pvNew;
+        }
+        VGSvcVerbose(4, "LoggedInUsers: Adding user '%s' from '%s' to list (size = %lu, count = %lu)\n", name, src, cListSize, cUsersInList);
+        rc = RTStrDupEx(&papszUsers[cUsersInList], name);
+        if (!RT_FAILURE(rc))
+            cUsersInList++;
+    }
+}
 
 /**
  * Provide information about active users.
@@ -557,7 +672,8 @@ static int vgsvcVMInfoWriteUsers(void)
 {
     int rc;
     char *pszUserList = NULL;
-    uint32_t cUsersInList = 0;
+
+    cUsersInList = 0;
 
 #ifdef RT_OS_WINDOWS
     rc = VGSvcVMInfoWinWriteUsers(&g_VMInfoPropCache, &pszUserList, &cUsersInList);
@@ -579,10 +695,10 @@ static int vgsvcVMInfoWriteUsers(void)
 #else
     setutxent();
     utmpx *ut_user;
-    uint32_t cListSize = 32;
+    cListSize = USER_LIST_CHUNK_SIZE;
 
     /* Allocate a first array to hold 32 users max. */
-    char **papszUsers = (char **)RTMemAllocZ(cListSize * sizeof(char *));
+    papszUsers = (char **)RTMemAllocZ(cListSize * sizeof(char *));
     if (papszUsers)
         rc = VINF_SUCCESS;
     else
@@ -599,31 +715,12 @@ static int vgsvcVMInfoWriteUsers(void)
         VGSvcVerbose(4, "Found entry '%s' (type: %d, PID: %RU32, session: %RU32)\n",
                      ut_user->ut_user, ut_user->ut_type, ut_user->ut_pid, ut_user->ut_session);
 # endif
-        if (cUsersInList > cListSize)
-        {
-            cListSize += 32;
-            void *pvNew = RTMemRealloc(papszUsers, cListSize * sizeof(char*));
-            AssertBreakStmt(pvNew, cListSize -= 32);
-            papszUsers = (char **)pvNew;
-        }
 
         /* Make sure we don't add user names which are not
          * part of type USER_PROCES. */
         if (ut_user->ut_type == USER_PROCESS) /* Regular user process. */
         {
-            bool fFound = false;
-            for (uint32_t i = 0; i < cUsersInList && !fFound; i++)
-                fFound = strncmp(papszUsers[i], ut_user->ut_user, sizeof(ut_user->ut_user)) == 0;
-
-            if (!fFound)
-            {
-                VGSvcVerbose(4, "Adding user '%s' (type: %d) to list\n", ut_user->ut_user, ut_user->ut_type);
-
-                rc = RTStrDupEx(&papszUsers[cUsersInList], (const char *)ut_user->ut_user);
-                if (RT_FAILURE(rc))
-                    break;
-                cUsersInList++;
-            }
+            vgsvcVMInfoAddUserToList(ut_user->ut_user, "utmpx");
         }
     }
 
@@ -635,8 +732,8 @@ static int vgsvcVMInfoWriteUsers(void)
     bool fHaveLibDbus = false;
     if (RT_SUCCESS(rc2))
     {
-        /* Handle desktop sessions using ConsoleKit. */
-        VGSvcVerbose(4, "Checking ConsoleKit sessions ...\n");
+        /* Handle desktop sessions using systemd-logind. */
+        VGSvcVerbose(4, "Checking systemd-logind sessions ...\n");
         fHaveLibDbus = true;
         dbus_error_init(&dbErr);
         pConnection = dbus_bus_get(DBUS_BUS_SYSTEM, &dbErr);
@@ -645,11 +742,148 @@ static int vgsvcVMInfoWriteUsers(void)
     if (   pConnection
         && !dbus_error_is_set(&dbErr))
     {
+// TODO: is there some Less Horrible Way(tm) to access dbus?
         /* Get all available sessions. */
-/** @todo r=bird: What's the point of hardcoding things here when we've taken the pain of defining CK_XXX constants at the top of the file (or vice versa)? */
-        DBusMessage *pMsgSessions = dbus_message_new_method_call("org.freedesktop.ConsoleKit",
-                                                                 "/org/freedesktop/ConsoleKit/Manager",
-                                                                 "org.freedesktop.ConsoleKit.Manager",
+        /* like `busctl call org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager ListSessions` */
+        DBusMessage *pMsgSessions = dbus_message_new_method_call(SYSTEMD_LOGIN_INTERFACE,
+                                                                 SYSTEMD_LOGIN_PATH,
+                                                                 SYSTEMD_LOGIN_MANAGER_INTERFACE,
+                                                                 "ListSessions");
+        if (   pMsgSessions
+            && dbus_message_get_type(pMsgSessions) == DBUS_MESSAGE_TYPE_METHOD_CALL)
+        {
+            DBusMessage *pReplySessions = dbus_connection_send_with_reply_and_block(pConnection,
+                                                                                    pMsgSessions, 30 * 1000 /* 30s timeout */,
+                                                                                    &dbErr);
+            if (   pReplySessions
+                && !dbus_error_is_set(&dbErr))
+            {
+                /* dbus_message_new_method_call() returns a DBusMessage, which we must iterate to get the returned value */
+                DBusMessageIter messageIterMsg;
+                int             messageIterType;
+                dbus_message_iter_init(pReplySessions, &messageIterMsg);
+                while ((messageIterType = dbus_message_iter_get_arg_type (&messageIterMsg)) != DBUS_TYPE_INVALID) {
+                    if (messageIterType == DBUS_TYPE_ARRAY) {
+                        /* "ListSessions" returns an array, which we must iterate to get the array elements */
+                        DBusMessageIter arrayIterMsg;
+                        int             arrayIterType;
+                        dbus_message_iter_recurse(&messageIterMsg, &arrayIterMsg);
+                        while ((arrayIterType = dbus_message_iter_get_arg_type (&arrayIterMsg)) != DBUS_TYPE_INVALID) {
+                            if (arrayIterType == DBUS_TYPE_STRUCT) {
+                                /* The array elements are structs, which we must iterate to get the struct elements */
+                                DBusMessageIter structIterMsg;
+                                int             structIterType;
+                                dbus_message_iter_recurse(&arrayIterMsg, &structIterMsg);
+                                while ((structIterType = dbus_message_iter_get_arg_type (&structIterMsg)) != DBUS_TYPE_INVALID) {
+                                    if (structIterType == DBUS_TYPE_OBJECT_PATH) {
+                                        /* We are interested only in the "object path" struct element */
+                                        const char *objectPath;
+                                        dbus_message_iter_get_basic(&structIterMsg, &objectPath);
+                                        const char *pInterface = SYSTEMD_LOGIN_SESSION_INTERFACE;
+                                        /* Create and send a new dbus query asking for that session's details */
+                                        DBusMessage *pMsgSession = dbus_message_new_method_call(SYSTEMD_LOGIN_INTERFACE,
+                                                                                                objectPath,
+                                                                                                "org.freedesktop.DBus.Properties",
+                                                                                                "Get");
+                                        if (   pMsgSession
+                                            && dbus_message_get_type(pMsgSession) == DBUS_MESSAGE_TYPE_METHOD_CALL) {
+                                            const char *pPropertyActive = "Active";
+                                            vboxService_dbus_message_append_args(pMsgSession,
+                                                                                 DBUS_TYPE_STRING, &pInterface,
+                                                                                 DBUS_TYPE_STRING, &pPropertyActive,
+                                                                                 DBUS_TYPE_INVALID, 0);
+                                            /* like `busctl get-property org.freedesktop.login1 %s org.freedesktop.login1.Session Active` %(objectPath) */
+                                            DBusMessage *pReplySession = dbus_connection_send_with_reply_and_block(
+                                                                             pConnection,
+                                                                             pMsgSession,
+                                                                             -1,
+                                                                             &dbErr);
+                                            int sessionPropertyActiveValue;
+                                            if (   vboxService_dbus_unpack_variant_reply(
+                                                       &dbErr, 
+                                                       pReplySession, 
+                                                       DBUS_TYPE_BOOLEAN, 
+                                                       &sessionPropertyActiveValue)
+                                                && sessionPropertyActiveValue) {
+                                                DBusMessage *pMsgSession2 = dbus_message_new_method_call(SYSTEMD_LOGIN_INTERFACE,
+                                                                                                         objectPath,
+                                                                                                         "org.freedesktop.DBus.Properties",
+                                                                                                         "Get");
+                                                const char *pPropertyName = "Name";
+                                                if (   pMsgSession2
+                                                    && dbus_message_get_type(pMsgSession2) == DBUS_MESSAGE_TYPE_METHOD_CALL) {
+                                                    vboxService_dbus_message_append_args(pMsgSession2,
+                                                                                         DBUS_TYPE_STRING, &pInterface,
+                                                                                         DBUS_TYPE_STRING, &pPropertyName,
+                                                                                         DBUS_TYPE_INVALID, 0);
+                                                    /* like `busctl get-property org.freedesktop.login1 %s org.freedesktop.login1.Session Name` %(objectPath) */
+                                                    DBusMessage *pReplyName = dbus_connection_send_with_reply_and_block(
+                                                                                 pConnection,
+                                                                                 pMsgSession2,
+                                                                                 -1,
+                                                                                 &dbErr);
+                                                    const char *sessionPropertyNameValue;
+                                                    if (   vboxService_dbus_unpack_variant_reply(
+                                                               &dbErr, 
+                                                               pReplyName, 
+                                                               DBUS_TYPE_STRING, 
+                                                               &sessionPropertyNameValue)
+                                                        && sessionPropertyNameValue)
+                                                        vgsvcVMInfoAddUserToList(sessionPropertyNameValue, "systemd-logind");
+                                                    vboxService_dbus_message_discard(&pReplyName);
+                                                }
+                                                vboxService_dbus_message_discard(&pMsgSession2);
+                                            }
+                                            vboxService_dbus_message_discard(&pReplySession);
+                                        }
+                                        vboxService_dbus_message_discard(&pMsgSession);
+                                    }
+                                    dbus_message_iter_next (&structIterMsg);
+                                }
+                            }
+                            dbus_message_iter_next (&arrayIterMsg);
+                        }
+                    }
+                    dbus_message_iter_next (&messageIterMsg);
+                }
+                vboxService_dbus_message_discard(&pReplySessions);
+            }
+        }
+        else
+        {
+            static int s_iBitchedAboutSystemdLogind = 0;
+            if (s_iBitchedAboutSystemdLogind < 3)
+            {
+                s_iBitchedAboutSystemdLogind++;
+                VGSvcError("Unable to invoke systemd-logind (%d/3) -- maybe not installed / used? Error: %s\n",
+                           s_iBitchedAboutSystemdLogind,
+                           dbus_error_is_set(&dbErr) ? dbErr.message : "No error information available");
+            }
+        }
+
+        vboxService_dbus_message_discard(&pMsgSessions);
+        if (dbus_error_is_set(&dbErr))
+        {
+            dbus_error_free(&dbErr);
+        }
+    }
+    if (RT_SUCCESS(rc2))
+    {
+        /* Handle desktop sessions using ConsoleKit. */
+        VGSvcVerbose(4, "Checking ConsoleKit sessions ...\n");
+        fHaveLibDbus = true;
+        dbus_error_init(&dbErr);
+        /* TODO: should this be dbus_connection_open() (and below, dbus_connection_unref())? */
+        pConnection = dbus_bus_get(DBUS_BUS_SYSTEM, &dbErr);
+    }
+
+    if (   pConnection
+        && !dbus_error_is_set(&dbErr))
+    {
+        /* Get all available sessions. */
+        DBusMessage *pMsgSessions = dbus_message_new_method_call(CK_INTERFACE,
+                                                                 CK_MANAGER_PATH,
+                                                                 CK_MANAGER_INTERFACE,
                                                                  "GetSessions");
         if (   pMsgSessions
             && dbus_message_get_type(pMsgSessions) == DBUS_MESSAGE_TYPE_METHOD_CALL)
@@ -676,9 +910,9 @@ static int vgsvcVMInfoWriteUsers(void)
 
                         /* Only respect active sessions .*/
                         bool fActive = false;
-                        DBusMessage *pMsgSessionActive = dbus_message_new_method_call("org.freedesktop.ConsoleKit",
+                        DBusMessage *pMsgSessionActive = dbus_message_new_method_call(CK_INTERFACE,
                                                                                       *ppszCurSession,
-                                                                                      "org.freedesktop.ConsoleKit.Session",
+                                                                                      CK_SESSION_INTERFACE,
                                                                                       "IsActive");
                         if (   pMsgSessionActive
                             && dbus_message_get_type(pMsgSessionActive) == DBUS_MESSAGE_TYPE_METHOD_CALL)
@@ -700,12 +934,11 @@ static int vgsvcVMInfoWriteUsers(void)
                                     fActive = val >= 1;
                                 }
 
-                                if (pReplySessionActive)
-                                    dbus_message_unref(pReplySessionActive);
                             }
+                            /* TODO: clean up if &dbErr */
+                            vboxService_dbus_message_discard(&pReplySessionActive);
 
-                            if (pMsgSessionActive)
-                                dbus_message_unref(pMsgSessionActive);
+                            vboxService_dbus_message_discard(&pMsgSessionActive);
                         }
 
                         VGSvcVerbose(4, "ConsoleKit: session '%s' is %s\n",
@@ -713,9 +946,9 @@ static int vgsvcVMInfoWriteUsers(void)
 
                         /* *ppszCurSession now contains the object path
                          * (e.g. "/org/freedesktop/ConsoleKit/Session1"). */
-                        DBusMessage *pMsgUnixUser = dbus_message_new_method_call("org.freedesktop.ConsoleKit",
+                        DBusMessage *pMsgUnixUser = dbus_message_new_method_call(CK_INTERFACE,
                                                                                  *ppszCurSession,
-                                                                                 "org.freedesktop.ConsoleKit.Session",
+                                                                                 CK_SESSION_INTERFACE,
                                                                                  "GetUnixUser");
                         if (   fActive
                             && pMsgUnixUser
@@ -736,36 +969,15 @@ static int vgsvcVMInfoWriteUsers(void)
                                     uint32_t uid;
                                     dbus_message_iter_get_basic(&itMsg, &uid);
 
-                                    /** @todo Add support for getting UID_MIN (/etc/login.defs on
-                                     *        Debian). */
-                                    uint32_t uid_min = 1000;
-
                                     /* Look up user name (realname) from uid. */
                                     setpwent();
                                     struct passwd *ppwEntry = getpwuid(uid);
                                     if (   ppwEntry
                                         && ppwEntry->pw_name)
                                     {
-                                        if (ppwEntry->pw_uid >= uid_min /* Only respect users, not daemons etc. */)
-                                        {
                                             VGSvcVerbose(4, "ConsoleKit: session '%s' -> %s (uid: %RU32)\n",
                                                          *ppszCurSession, ppwEntry->pw_name, uid);
-
-                                            bool fFound = false;
-                                            for (uint32_t i = 0; i < cUsersInList && !fFound; i++)
-                                                fFound = strcmp(papszUsers[i], ppwEntry->pw_name) == 0;
-
-                                            if (!fFound)
-                                            {
-                                                VGSvcVerbose(4, "ConsoleKit: adding user '%s' to list\n", ppwEntry->pw_name);
-
-                                                rc = RTStrDupEx(&papszUsers[cUsersInList], (const char *)ppwEntry->pw_name);
-                                                if (RT_FAILURE(rc))
-                                                    break;
-                                                cUsersInList++;
-                                            }
-                                        }
-                                        /* else silently ignore the user */
+                                            vgsvcVMInfoAddUserToList(ppwEntry->pw_name, "ConsoleKit");
                                     }
                                     else
                                         VGSvcError("ConsoleKit: unable to lookup user name for uid=%RU32\n", uid);
@@ -773,9 +985,9 @@ static int vgsvcVMInfoWriteUsers(void)
                                 else
                                     AssertMsgFailed(("ConsoleKit: GetUnixUser returned a wrong argument type\n"));
                             }
+                            /* TODO: clean up if &dbErr */
 
-                            if (pReplyUnixUser)
-                                dbus_message_unref(pReplyUnixUser);
+                            vboxService_dbus_message_discard(&pReplyUnixUser);
                         }
                         else if (fActive) /* don't bitch about inactive users */
                         {
@@ -789,8 +1001,7 @@ static int vgsvcVMInfoWriteUsers(void)
                             }
                         }
 
-                        if (pMsgUnixUser)
-                            dbus_message_unref(pMsgUnixUser);
+                        vboxService_dbus_message_discard(&pMsgUnixUser);
                     }
 
                     dbus_free_string_array(ppszSessions);
@@ -799,13 +1010,7 @@ static int vgsvcVMInfoWriteUsers(void)
                     VGSvcError("ConsoleKit: unable to retrieve session parameters (msg type=%d): %s\n",
                                dbus_message_get_type(pMsgSessions),
                                dbus_error_is_set(&dbErr) ? dbErr.message : "No error information available");
-                dbus_message_unref(pReplySessions);
-            }
-
-            if (pMsgSessions)
-            {
-                dbus_message_unref(pMsgSessions);
-                pMsgSessions = NULL;
+                vboxService_dbus_message_discard(&pReplySessions);
             }
         }
         else
@@ -820,8 +1025,7 @@ static int vgsvcVMInfoWriteUsers(void)
             }
         }
 
-        if (pMsgSessions)
-            dbus_message_unref(pMsgSessions);
+        vboxService_dbus_message_discard(&pMsgSessions);
     }
     else
     {
@@ -839,8 +1043,6 @@ static int vgsvcVMInfoWriteUsers(void)
         dbus_error_free(&dbErr);
 #  endif /* RT_OS_LINUX */
 # endif /* VBOX_WITH_DBUS */
-
-    /** @todo Fedora/others: Handle systemd-loginctl. */
 
     /* Calc the string length. */
     size_t cchUserList = 0;
