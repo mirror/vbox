@@ -171,10 +171,6 @@ bool UIWizardNewVM::createVM()
 
     CFirmwareSettings comFirmwareSettings = m_machine.GetFirmwareSettings();
 
-#if 0
-    /* Configure the newly created vm here in GUI by several calls to API: */
-    configureVM(strTypeId, m_comGuestOSType);
-#else
     /* The newer and less tested way of configuring vms: */
     m_machine.ApplyDefaults(QString());
     /* Apply user preferences again. IMachine::applyDefaults may have overwritten the user setting: */
@@ -190,7 +186,6 @@ bool UIWizardNewVM::createVM()
 
     /* Set recommended firmware type: */
     comFirmwareSettings.SetFirmwareType(m_fEFIEnabled ? KFirmwareType_EFI : KFirmwareType_BIOS);
-#endif
 
     /* Register the VM prior to attaching hard disks: */
     vbox.RegisterMachine(m_machine);
@@ -276,171 +271,6 @@ void UIWizardNewVM::deleteVirtualDisk()
 
     /* Detach virtual-disk finally: */
     m_virtualDisk.detach();
-}
-
-void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSType &comGuestType)
-{
-    /* Acquire platform stuff: */
-    CPlatform comPlatform = m_machine.GetPlatform();
-    CFirmwareSettings comFirmwareSettings = m_machine.GetFirmwareSettings();
-
-    /* Get graphics adapter: */
-    CGraphicsAdapter comGraphics = m_machine.GetGraphicsAdapter();
-
-    /* RAM size: */
-    m_machine.SetMemorySize(m_iMemorySize);
-
-    /* VCPU count: */
-    int iVPUCount = qMax(1, m_iCPUCount);
-    m_machine.SetCPUCount(iVPUCount);
-
-    /* Enabled I/O APIC explicitly in we have more than 1 VCPU: */
-    if (iVPUCount > 1)
-        comFirmwareSettings.SetIOAPICEnabled(true);
-
-    /* Graphics Controller type: */
-    comGraphics.SetGraphicsControllerType(comGuestType.GetRecommendedGraphicsController());
-
-    /* VRAM size - select maximum between recommended and minimum for fullscreen: */
-    comGraphics.SetVRAMSize(qMax(comGuestType.GetRecommendedVRAM(), (ULONG)(UICommon::requiredVideoMemory(strGuestTypeId) / _1M)));
-
-    /* Selecting recommended chipset type: */
-    comPlatform.SetChipsetType(comGuestType.GetRecommendedChipset());
-
-    /* Selecting recommended Audio Controller: */
-    CAudioSettings const comAudioSettings = m_machine.GetAudioSettings();
-    CAudioAdapter        comAdapter  = comAudioSettings.GetAdapter();
-    comAdapter.SetAudioController(comGuestType.GetRecommendedAudioController());
-    /* And the Audio Codec: */
-    comAdapter.SetAudioCodec(comGuestType.GetRecommendedAudioCodec());
-    /* Enabling audio by default: */
-    comAdapter.SetEnabled(true);
-    comAdapter.SetEnabledOut(true);
-
-    /* Enable the OHCI and EHCI controller by default for new VMs. (new in 2.2): */
-    CUSBDeviceFilters usbDeviceFilters = m_machine.GetUSBDeviceFilters();
-    bool fOhciEnabled = false;
-    if (!usbDeviceFilters.isNull() && comGuestType.GetRecommendedUSB3() && m_machine.GetUSBProxyAvailable())
-    {
-        m_machine.AddUSBController("XHCI", KUSBControllerType_XHCI);
-        /* xHCI includes OHCI */
-        fOhciEnabled = true;
-    }
-    if (   !fOhciEnabled
-        && !usbDeviceFilters.isNull() && comGuestType.GetRecommendedUSB() && m_machine.GetUSBProxyAvailable())
-    {
-        m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
-        fOhciEnabled = true;
-        m_machine.AddUSBController("EHCI", KUSBControllerType_EHCI);
-    }
-
-    /* Create a floppy controller if recommended: */
-    QString strFloppyName = getNextControllerName(KStorageBus_Floppy);
-    if (comGuestType.GetRecommendedFloppy())
-    {
-        m_machine.AddStorageController(strFloppyName, KStorageBus_Floppy);
-        CStorageController flpCtr = m_machine.GetStorageControllerByName(strFloppyName);
-        flpCtr.SetControllerType(KStorageControllerType_I82078);
-    }
-
-    /* Create recommended DVD storage controller: */
-    KStorageBus strDVDBus = comGuestType.GetRecommendedDVDStorageBus();
-    QString strDVDName = getNextControllerName(strDVDBus);
-    m_machine.AddStorageController(strDVDName, strDVDBus);
-
-    /* Set recommended DVD storage controller type: */
-    CStorageController dvdCtr = m_machine.GetStorageControllerByName(strDVDName);
-    KStorageControllerType dvdStorageControllerType = comGuestType.GetRecommendedDVDStorageController();
-    dvdCtr.SetControllerType(dvdStorageControllerType);
-
-    /* Create recommended HD storage controller if it's not the same as the DVD controller: */
-    KStorageBus ctrHDBus = comGuestType.GetRecommendedHDStorageBus();
-    KStorageControllerType hdStorageControllerType = comGuestType.GetRecommendedHDStorageController();
-    CStorageController hdCtr;
-    QString strHDName;
-    if (ctrHDBus != strDVDBus || hdStorageControllerType != dvdStorageControllerType)
-    {
-        strHDName = getNextControllerName(ctrHDBus);
-        m_machine.AddStorageController(strHDName, ctrHDBus);
-        hdCtr = m_machine.GetStorageControllerByName(strHDName);
-        hdCtr.SetControllerType(hdStorageControllerType);
-    }
-    else
-    {
-        /* The HD controller is the same as DVD: */
-        hdCtr = dvdCtr;
-        strHDName = strDVDName;
-    }
-
-    KPlatformArchitecture const platformArch = comPlatform.GetArchitecture();
-    switch (platformArch)
-    {
-        case KPlatformArchitecture_x86:
-        {
-            /* Limit the AHCI port count if it's used because windows has trouble with
-               too many ports and other guest (OS X in particular) may take extra long
-               to boot: */
-            if (hdStorageControllerType == KStorageControllerType_IntelAhci)
-                hdCtr.SetPortCount(1 + (dvdStorageControllerType == KStorageControllerType_IntelAhci));
-            else if (dvdStorageControllerType == KStorageControllerType_IntelAhci)
-                dvdCtr.SetPortCount(1);
-
-            CPlatformX86 comPlatformX86 = comPlatform.GetX86();
-
-            /* Turn on PAE, if recommended: */
-            comPlatformX86.SetCPUProperty(KCPUPropertyTypeX86_PAE, comGuestType.GetRecommendedPAE());
-
-            /* Set the recommended triple fault behavior: */
-            comPlatformX86.SetCPUProperty(KCPUPropertyTypeX86_TripleFaultReset, comGuestType.GetRecommendedTFReset());
-
-            /* Set HPET flag: */
-            comPlatformX86.SetHPETEnabled(comGuestType.GetRecommendedHPET());
-            break;
-        }
-
-#ifdef VBOX_WITH_VIRT_ARMV8
-        case KPlatformArchitecture_ARM:
-        {
-            /* When using VirtioSCSI as the HDD storage controller and the DVD Drive is on that same controller,
-             * we have to raise the port count, as VirtioSCSI only configures one port per default. */
-            if (   hdCtr                   == dvdCtr
-                && hdStorageControllerType == KStorageControllerType_VirtioSCSI)
-                hdCtr.SetPortCount(2);
-            break;
-        }
-#endif
-        default:
-            break;
-    }
-
-    /* Set recommended firmware type: */
-    comFirmwareSettings.SetFirmwareType(m_fEFIEnabled ? KFirmwareType_EFI : KFirmwareType_BIOS);
-
-    /* Set recommended human interface device types: */
-    if (comGuestType.GetRecommendedUSBHID())
-    {
-        m_machine.SetKeyboardHIDType(KKeyboardHIDType_USBKeyboard);
-        m_machine.SetPointingHIDType(KPointingHIDType_USBMouse);
-        if (!fOhciEnabled && !usbDeviceFilters.isNull())
-            m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
-    }
-
-    if (comGuestType.GetRecommendedUSBTablet())
-    {
-        m_machine.SetPointingHIDType(KPointingHIDType_USBTablet);
-        if (!fOhciEnabled && !usbDeviceFilters.isNull())
-            m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
-    }
-
-    /* Set UTC flags: */
-    comPlatform.SetRTCUseUTC(comGuestType.GetRecommendedRTCUseUTC());
-
-    /* Set graphic bits: */
-    if (comGuestType.GetRecommended2DVideoAcceleration())
-        comGraphics.SetAccelerate2DVideoEnabled(comGuestType.GetRecommended2DVideoAcceleration());
-
-    if (comGuestType.GetRecommended3DAcceleration())
-        comGraphics.SetAccelerate3DEnabled(comGuestType.GetRecommended3DAcceleration());
 }
 
 bool UIWizardNewVM::attachDefaultDevices()
