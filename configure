@@ -1577,7 +1577,7 @@ EOF
     # Now try the user provided directory and some of the standard directories.
     QT_TRIES="$QT6DIR /System/Library /Library"
     for t in $QT_TRIES; do
-      if [ -f "$t/Frameworks/QtCore.framework/QtCore" -o -f "$t/clang_64/lib/QtCore.framework/QtCore" ]; then
+      if [ -f "$t/Frameworks/QtCore.framework/QtCore" -o -f "$t/clang_64/lib/QtCore.framework/QtCore" -o -f "$t/lib/QtCore.framework/QtCore" ]; then
         PATH_SDK_QT6="$t"
         foundqt6=1
         break
@@ -1585,7 +1585,11 @@ EOF
     done
     # Add the necessary params for building the test application
     if [ -n "$PATH_SDK_QT6" ]; then
-      if [ -f "$t/clang_64/lib/QtCore.framework/QtCore" ]; then
+      if [ -f "$t/lib/QtCore.framework/QtCore" ]; then
+        INCQT6=-I$PATH_SDK_QT6/lib/QtCore.framework/Headers
+        LIBQT6=-F$PATH_SDK_QT6/lib
+        SDKQT6=$PATH_SDK_QT6
+      elif [ -f "$t/clang_64/lib/QtCore.framework/QtCore" ]; then
         INCQT6=-I$PATH_SDK_QT6/clang_64/lib/QtCore.framework/Headers
         LIBQT6=-F$PATH_SDK_QT6/clang_64/lib
         SDKQT6=$PATH_SDK_QT6/clang_64
