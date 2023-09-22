@@ -58,6 +58,11 @@
 #include <iprt/heap.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#if   defined(RT_ARCH_AMD64)
+# include <iprt/x86.h>
+#elif defined(RT_ARCH_ARM64)
+# include <iprt/armv8.h>
+#endif
 
 #ifdef RT_OS_WINDOWS
 # include <iprt/formats/pecoff.h> /* this is incomaptible with windows.h, thus: */
@@ -96,64 +101,6 @@ extern "C" void *__deregister_frame_info(void *pvBegin);           /* (returns p
 #ifndef IEM_WITH_SETJMP
 # error The setjmp approach must be enabled for the recompiler.
 #endif
-
-
-/*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
-/** @name Stack Frame Layout
- *
- * @{  */
-/** The size of the area for stack variables and spills and stuff. */
-#define IEMNATIVE_FRAME_VAR_SIZE            0x40
-#ifdef RT_ARCH_AMD64
-/** Number of stack arguments slots for calls made from the frame. */
-# define IEMNATIVE_FRAME_STACK_ARG_COUNT    4
-/** An stack alignment adjustment (between non-volatile register pushes and
- *  the stack variable area, so the latter better aligned). */
-# define IEMNATIVE_FRAME_ALIGN_SIZE         8
-/** Number of any shadow arguments (spill area) for calls we make. */
-# ifdef RT_OS_WINDOWS
-#  define IEMNATIVE_FRAME_SHADOW_ARG_COUNT  4
-# else
-#  define IEMNATIVE_FRAME_SHADOW_ARG_COUNT  0
-# endif
-
-/** Frame pointer (RBP) relative offset of the last push. */
-# ifdef RT_OS_WINDOWS
-#  define IEMNATIVE_FP_OFF_LAST_PUSH        (7 * -8)
-# else
-#  define IEMNATIVE_FP_OFF_LAST_PUSH        (5 * -8)
-# endif
-/** Frame pointer (RBP) relative offset of the stack variable area (the lowest
- * address for it). */
-# define IEMNATIVE_FP_OFF_STACK_VARS        (IEMNATIVE_FP_OFF_LAST_PUSH - IEMNATIVE_FRAME_ALIGN_SIZE - IEMNATIVE_FRAME_VAR_SIZE)
-/** Frame pointer (RBP) relative offset of the first stack argument for calls. */
-# define IEMNATIVE_FP_OFF_STACK_ARG0        (IEMNATIVE_FP_OFF_STACK_VARS - IEMNATIVE_FRAME_STACK_ARG_COUNT * 8)
-/** Frame pointer (RBP) relative offset of the second stack argument for calls. */
-# define IEMNATIVE_FP_OFF_STACK_ARG1        (IEMNATIVE_FP_OFF_STACK_ARG0 + 8)
-/** Frame pointer (RBP) relative offset of the third stack argument for calls. */
-# define IEMNATIVE_FP_OFF_STACK_ARG2        (IEMNATIVE_FP_OFF_STACK_ARG0 + 16)
-/** Frame pointer (RBP) relative offset of the fourth stack argument for calls. */
-# define IEMNATIVE_FP_OFF_STACK_ARG3        (IEMNATIVE_FP_OFF_STACK_ARG0 + 24)
-
-# ifdef RT_OS_WINDOWS
-/** Frame pointer (RBP) relative offset of the first incoming shadow argument. */
-#  define IEMNATIVE_FP_OFF_IN_SHADOW_ARG0   (16)
-/** Frame pointer (RBP) relative offset of the second incoming shadow argument. */
-#  define IEMNATIVE_FP_OFF_IN_SHADOW_ARG1   (24)
-/** Frame pointer (RBP) relative offset of the third incoming shadow argument. */
-#  define IEMNATIVE_FP_OFF_IN_SHADOW_ARG2   (32)
-/** Frame pointer (RBP) relative offset of the fourth incoming shadow argument. */
-#  define IEMNATIVE_FP_OFF_IN_SHADOW_ARG3   (40)
-# endif
-
-#elif RT_ARCH_ARM64
-
-#else
-# error "port me"
-#endif
-/** @} */
 
 
 /*********************************************************************************************************************************
@@ -474,8 +421,15 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecM
     }
     Ptr = iemDwarfPutLeb128(Ptr, 1);                        /* Code alignment factor (LEB128 = 1). */
     Ptr = iemDwarfPutLeb128(Ptr, -8);                       /* Data alignment factor (LEB128 = -8). */
+#  ifdef RT_ARCH_AMD64
     Ptr = iemDwarfPutUleb128(Ptr, DWREG_AMD64_RA);          /* Return address column (ULEB128) */
+#  elif defined(RT_ARCH_ARM64)
+    Ptr = iemDwarfPutUleb128(Ptr, DWREG_ARM64_PC);          /* Return address column (ULEB128) */
+#  else
+#   error "port me"
+#  endif
     /* Initial instructions: */
+#  ifdef RT_ARCH_AMD64
     Ptr = iemDwarfPutCfaDefCfa(Ptr, DWREG_AMD64_RBP, 16);   /* CFA     = RBP + 0x10 - first stack parameter */
     Ptr = iemDwarfPutCfaOffset(Ptr, DWREG_AMD64_RA,  1);    /* Ret RIP = [CFA + 1*-8] */
     Ptr = iemDwarfPutCfaOffset(Ptr, DWREG_AMD64_RBP, 2);    /* RBP     = [CFA + 2*-8] */
@@ -484,6 +438,11 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecM
     Ptr = iemDwarfPutCfaOffset(Ptr, DWREG_AMD64_R13, 5);    /* R13     = [CFA + 5*-8] */
     Ptr = iemDwarfPutCfaOffset(Ptr, DWREG_AMD64_R14, 6);    /* R14     = [CFA + 6*-8] */
     Ptr = iemDwarfPutCfaOffset(Ptr, DWREG_AMD64_R15, 7);    /* R15     = [CFA + 7*-8] */
+#  elif defined(RT_ARCH_ARM64)
+    Ptr = iemDwarfPutCfaDefCfa(Ptr, DWREG_ARM64_BP,  0);    /* CFA     = BP + 0x00 - first stack parameter */
+    Ptr = iemDwarfPutCfaOffset(Ptr, DWREG_ARM64_PC,  1);    /* Ret PC  = [CFA + 1*-8] */
+    Ptr = iemDwarfPutCfaOffset(Ptr, DWREG_ARM64_BP,  2);    /* Ret BP  = [CFA + 2*-8] */
+#  endif
     while ((Ptr.u - PtrCie.u) & 3)
         *Ptr.pb++ = DW_CFA_nop;
     /* Finalize the CIE size. */
@@ -1146,7 +1105,7 @@ static int32_t iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_t
     /* Load the parameters and emit the call. */
 # ifdef RT_OS_WINDOWS
 #  ifndef VBOXSTRICTRC_STRICT_ENABLED
-    off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xCX, X86_GREG_xBX);
+    off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xCX, IEMNATIVE_REG_FIXED_PVMCPU);
     AssertReturn(off != UINT32_MAX, UINT32_MAX);
     if (cParams > 0)
     {
@@ -1164,7 +1123,7 @@ static int32_t iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_t
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
     }
 #  else  /* VBOXSTRICTRC: Returned via hidden parameter. Sigh. */
-    off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xDX, X86_GREG_xBX);
+    off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xDX, IEMNATIVE_REG_FIXED_PVMCPU);
     AssertReturn(off != UINT32_MAX, UINT32_MAX);
     if (cParams > 0)
     {
@@ -1187,7 +1146,7 @@ static int32_t iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_t
     AssertReturn(off != UINT32_MAX, UINT32_MAX);
 #  endif /* VBOXSTRICTRC_STRICT_ENABLED */
 # else
-    off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xDI, X86_GREG_xBX);
+    off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xDI, IEMNATIVE_REG_FIXED_PVMCPU);
     AssertReturn(off != UINT32_MAX, UINT32_MAX);
     if (cParams > 0)
     {
@@ -1223,7 +1182,7 @@ static int32_t iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_t
 
 
 #elif RT_ARCH_ARM64
-    RT_NOREF(pReNative, pCallEntry);
+    RT_NOREF(pReNative, pCallEntry, cParams);
     off = UINT32_MAX;
 
 #else
@@ -1291,12 +1250,12 @@ static uint32_t iemNativeEmitEpilog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 # ifdef RT_OS_WINDOWS
         off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_x8,  X86_GREG_xCX); /* cl = instruction number */
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
-        off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xCX, X86_GREG_xBX);
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xCX, IEMNATIVE_REG_FIXED_PVMCPU);
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
         off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xDX, X86_GREG_xAX);
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
 # else
-        off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xDI, X86_GREG_xBX);
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xDI, IEMNATIVE_REG_FIXED_PVMCPU);
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
         off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xSI, X86_GREG_xAX);
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
@@ -1342,6 +1301,29 @@ static uint32_t iemNativeEmitEpilog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 }
 
 
+typedef enum
+{
+    kArm64InstrStLdPairType_kPostIndex = 1,
+    kArm64InstrStLdPairType_kSigned    = 2,
+    kArm64InstrStLdPairType_kPreIndex  = 3
+} ARM64INSTRSTLDPAIRTYPE;
+
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStLdPair(bool fLoad, uint32_t iOpc, ARM64INSTRSTLDPAIRTYPE enmType,
+                                                    uint32_t iReg1, uint32_t iReg2, uint32_t iBaseReg, int32_t iImm7 = 0)
+{
+    Assert(iOpc < 3); Assert(iReg1 <= 31); Assert(iReg2 <= 31); Assert(iBaseReg <= 31); Assert(iImm7 < 64 && iImm7 >= -64);
+    return (iOpc << 30)
+         | UINT32_C(0x28000000)
+         | ((uint32_t)enmType << 23)
+         | ((uint32_t)fLoad << 22)
+         | ((uint32_t)iImm7 << 15)
+         | (iReg2 << 10)
+         | (iBaseReg << 5)
+         | iReg1;
+}
+
+
+
 /**
  * Emits a standard prolog.
  */
@@ -1363,6 +1345,7 @@ static uint32_t iemNativeEmitProlog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
     pbCodeBuf[off++] = 0x8b;
     pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, X86_GREG_xBP, X86_GREG_xSP);
     pbCodeBuf[off++] = 0x50 + X86_GREG_xBX;     /* push rbx */
+    AssertCompile(IEMNATIVE_REG_FIXED_PVMCPU == X86_GREG_xBX);
 # ifdef RT_OS_WINDOWS
     pbCodeBuf[off++] = X86_OP_REX_W;            /* mov rbx, rcx ; RBX = pVCpu */
     pbCodeBuf[off++] = 0x8b;
@@ -1394,8 +1377,37 @@ static uint32_t iemNativeEmitProlog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
     AssertCompile(!(IEMNATIVE_FRAME_SHADOW_ARG_COUNT & 0x1));
 
 #elif RT_ARCH_ARM64
-    RT_NOREF(pReNative);
-    off = UINT32_MAX;
+    /*
+     * We set up a stack frame exactly like on x86, only we have to push the
+     * return address our selves here.  We save all non-volatile registers.
+     */
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
+    AssertReturn(pu32CodeBuf, UINT32_MAX);
+    /* stp x19, x20, [sp, #-IEMNATIVE_FRAME_SAVE_REG_SIZE] ; Allocate space for saving registers and place x19+x20 at the bottom. */
+    AssertCompile(IEMNATIVE_FRAME_SAVE_REG_SIZE < 64*8);
+    pu32CodeBuf[off++] = Armv8A64MkInstrStLdPair(false /*fLoad*/, 2 /*64-bit*/, kArm64InstrStLdPairType_kPreIndex,
+                                                 ARMV8_A64_REG_X19, ARMV8_A64_REG_X20, ARMV8_A64_REG_SP,
+                                                 -IEMNATIVE_FRAME_SAVE_REG_SIZE / 8);
+    /* Save x21 thru x28 (SP remains unchanged in the kSigned variant). */
+    pu32CodeBuf[off++] = Armv8A64MkInstrStLdPair(false /*fLoad*/, 2 /*64-bit*/, kArm64InstrStLdPairType_kSigned,
+                                                 ARMV8_A64_REG_X21, ARMV8_A64_REG_X22, ARMV8_A64_REG_SP, 2);
+    pu32CodeBuf[off++] = Armv8A64MkInstrStLdPair(false /*fLoad*/, 2 /*64-bit*/, kArm64InstrStLdPairType_kSigned,
+                                                 ARMV8_A64_REG_X23, ARMV8_A64_REG_X24, ARMV8_A64_REG_SP, 4);
+    pu32CodeBuf[off++] = Armv8A64MkInstrStLdPair(false /*fLoad*/, 2 /*64-bit*/, kArm64InstrStLdPairType_kSigned,
+                                                 ARMV8_A64_REG_X25, ARMV8_A64_REG_X26, ARMV8_A64_REG_SP, 6);
+    pu32CodeBuf[off++] = Armv8A64MkInstrStLdPair(false /*fLoad*/, 2 /*64-bit*/, kArm64InstrStLdPairType_kSigned,
+                                                 ARMV8_A64_REG_X27, ARMV8_A64_REG_X28, ARMV8_A64_REG_SP, 8);
+    /* Save the BP and LR (ret address) registers at the top of the frame. */
+    pu32CodeBuf[off++] = Armv8A64MkInstrStLdPair(false /*fLoad*/, 2 /*64-bit*/, kArm64InstrStLdPairType_kSigned,
+                                                 ARMV8_A64_REG_BP, ARMV8_A64_REG_LR, ARMV8_A64_REG_SP, 10);
+    AssertCompile(IEMNATIVE_FRAME_SAVE_REG_SIZE / 8 == 12);
+    /* sub bp, sp, IEMNATIVE_FRAME_SAVE_REG_SIZE - 16 ; Set BP to point to the old BP stack address. */
+    AssertCompile(IEMNATIVE_FRAME_SAVE_REG_SIZE - 16 < 4096);
+    pu32CodeBuf[off++] = UINT32_C(0xd1000000) | ((IEMNATIVE_FRAME_SAVE_REG_SIZE - 16) << 10) | ARMV8_A64_REG_SP | ARMV8_A64_REG_BP;
+
+    /* sub sp, sp, IEMNATIVE_FRAME_VAR_SIZE ;  Allocate the variable area from SP. */
+    AssertCompile(IEMNATIVE_FRAME_VAR_SIZE < 4096);
+    pu32CodeBuf[off++] = UINT32_C(0xd1000000) | (IEMNATIVE_FRAME_VAR_SIZE << 10)             | ARMV8_A64_REG_SP | ARMV8_A64_REG_SP;
 
 #else
 # error "port me"

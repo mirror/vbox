@@ -37,6 +37,94 @@
  * @{
  */
 
+/** @name Stack Frame Layout
+ *
+ * @{  */
+/** The size of the area for stack variables and spills and stuff. */
+#define IEMNATIVE_FRAME_VAR_SIZE            0x40
+#ifdef RT_ARCH_AMD64
+/** Number of stack arguments slots for calls made from the frame. */
+# define IEMNATIVE_FRAME_STACK_ARG_COUNT    4
+/** An stack alignment adjustment (between non-volatile register pushes and
+ *  the stack variable area, so the latter better aligned). */
+# define IEMNATIVE_FRAME_ALIGN_SIZE         8
+/** Number of any shadow arguments (spill area) for calls we make. */
+# ifdef RT_OS_WINDOWS
+#  define IEMNATIVE_FRAME_SHADOW_ARG_COUNT  4
+# else
+#  define IEMNATIVE_FRAME_SHADOW_ARG_COUNT  0
+# endif
+
+/** Frame pointer (RBP) relative offset of the last push. */
+# ifdef RT_OS_WINDOWS
+#  define IEMNATIVE_FP_OFF_LAST_PUSH        (7 * -8)
+# else
+#  define IEMNATIVE_FP_OFF_LAST_PUSH        (5 * -8)
+# endif
+/** Frame pointer (RBP) relative offset of the stack variable area (the lowest
+ * address for it). */
+# define IEMNATIVE_FP_OFF_STACK_VARS        (IEMNATIVE_FP_OFF_LAST_PUSH - IEMNATIVE_FRAME_ALIGN_SIZE - IEMNATIVE_FRAME_VAR_SIZE)
+/** Frame pointer (RBP) relative offset of the first stack argument for calls. */
+# define IEMNATIVE_FP_OFF_STACK_ARG0        (IEMNATIVE_FP_OFF_STACK_VARS - IEMNATIVE_FRAME_STACK_ARG_COUNT * 8)
+/** Frame pointer (RBP) relative offset of the second stack argument for calls. */
+# define IEMNATIVE_FP_OFF_STACK_ARG1        (IEMNATIVE_FP_OFF_STACK_ARG0 + 8)
+/** Frame pointer (RBP) relative offset of the third stack argument for calls. */
+# define IEMNATIVE_FP_OFF_STACK_ARG2        (IEMNATIVE_FP_OFF_STACK_ARG0 + 16)
+/** Frame pointer (RBP) relative offset of the fourth stack argument for calls. */
+# define IEMNATIVE_FP_OFF_STACK_ARG3        (IEMNATIVE_FP_OFF_STACK_ARG0 + 24)
+
+# ifdef RT_OS_WINDOWS
+/** Frame pointer (RBP) relative offset of the first incoming shadow argument. */
+#  define IEMNATIVE_FP_OFF_IN_SHADOW_ARG0   (16)
+/** Frame pointer (RBP) relative offset of the second incoming shadow argument. */
+#  define IEMNATIVE_FP_OFF_IN_SHADOW_ARG1   (24)
+/** Frame pointer (RBP) relative offset of the third incoming shadow argument. */
+#  define IEMNATIVE_FP_OFF_IN_SHADOW_ARG2   (32)
+/** Frame pointer (RBP) relative offset of the fourth incoming shadow argument. */
+#  define IEMNATIVE_FP_OFF_IN_SHADOW_ARG3   (40)
+# endif
+
+#elif RT_ARCH_ARM64
+/** No stack argument slots, enough got 8 registers for arguments.  */
+# define IEMNATIVE_FRAME_STACK_ARG_COUNT    0
+/** There are no argument spill area. */
+# define IEMNATIVE_FRAME_SHADOW_ARG_COUNT   0
+
+/** Number of saved registers at the top of our stack frame.
+ * This includes the return address and old frame pointer, so x19 thru x30. */
+# define IEMNATIVE_FRAME_SAVE_REG_COUNT     (12)
+/** The size of the save registered (IEMNATIVE_FRAME_SAVE_REG_COUNT). */
+# define IEMNATIVE_FRAME_SAVE_REG_SIZE      (IEMNATIVE_FRAME_SAVE_REG_COUNT * 8)
+
+/** Frame pointer (BP) relative offset of the last push. */
+# define IEMNATIVE_FP_OFF_LAST_PUSH         (7 * -8)
+
+/** Frame pointer (BP) relative offset of the stack variable area (the lowest
+ * address for it). */
+# define IEMNATIVE_FP_OFF_STACK_VARS        (IEMNATIVE_FP_OFF_LAST_PUSH - IEMNATIVE_FRAME_ALIGN_SIZE - IEMNATIVE_FRAME_VAR_SIZE)
+
+#else
+# error "port me"
+#endif
+/** @} */
+
+
+/** @name Fixed Register Allocation(s)
+ * @{ */
+/** @def IEMNATIVE_REG_FIXED_PVMCPU
+ * The register number hold in pVCpu pointer.  */
+#ifdef RT_ARCH_AMD64
+# define IEMNATIVE_REG_FIXED_PVMCPU         X86_GREG_xBX
+#elif RT_ARCH_ARM64
+# define IEMNATIVE_REG_FIXED_PVMCPU         ARMV8_A64_REG_X28
+/** Dedicated temporary register.
+ * @todo replace this by a register allocator and content tracker.  */
+# define IEMNATIVE_REG_FIXED_TMP0           ARMV8_A64_REG_X15
+#else
+# error "port me"
+#endif
+/** @} */
+
 /** Native code generator label types. */
 typedef enum
 {
@@ -138,13 +226,14 @@ DECLHIDDEN(uint32_t)        iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTA
  * @returns Pointer to the instruction output buffer on success, NULL on
  *          failure.
  * @param   pReNative   The native recompile state.
- * @param   off         Current instruction offset.
+ * @param   off         Current instruction offset.  Works safely for UINT32_MAX
+ *                      as well.
  * @param   cInstrReq   Number of instruction about to be added.  It's okay to
  *                      overestimate this a bit.
  */
 DECL_FORCE_INLINE(PIEMNATIVEINSTR) iemNativeInstrBufEnsure(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t cInstrReq)
 {
-    if (RT_LIKELY(off + cInstrReq <= pReNative->cInstrBufAlloc))
+    if (RT_LIKELY(off + (uint64_t)cInstrReq <= pReNative->cInstrBufAlloc))
         return pReNative->pInstrBuf;
     return iemNativeInstrBufEnsureSlow(pReNative, off, cInstrReq);
 }
@@ -159,11 +248,14 @@ DECLINLINE(uint32_t) iemNativeEmitMarker(PIEMRECOMPILERSTATE pReNative, uint32_t
 #ifdef RT_ARCH_AMD64
     uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
     AssertReturn(pbCodeBuf, UINT32_MAX);
-    pbCodeBuf[off++] = 0x90;                    /* nop */
+    /* nop */
+    pbCodeBuf[off++] = 0x90;
 
 #elif RT_ARCH_ARM64
     uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-    pu32CodeBuf[off++] = 0xe503201f;            /* nop? */
+    AssertReturn(pu32CodeBuf, UINT32_MAX);
+    /* nop */
+    pu32CodeBuf[off++] = 0xd503201f;
 
 #else
 # error "port me"
@@ -180,14 +272,17 @@ DECLINLINE(uint32_t) iemNativeEmitGprZero(PIEMRECOMPILERSTATE pReNative, uint32_
 #ifdef RT_ARCH_AMD64
     uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
     AssertReturn(pbCodeBuf, UINT32_MAX);
-    if (iGpr >= 8)                          /* xor gpr32, gpr32 */
+    /* xor gpr32, gpr32 */
+    if (iGpr >= 8)
         pbCodeBuf[off++] = X86_OP_REX_R | X86_OP_REX_B;
     pbCodeBuf[off++] = 0x33;
     pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGpr & 7, iGpr & 7);
 
 #elif RT_ARCH_ARM64
-    RT_NOREF(pReNative, iGpr, uImm64);
-    off = UINT32_MAX;
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    AssertReturn(pu32CodeBuf, UINT32_MAX);
+    /* mov gpr, #0x0 */
+    pu32CodeBuf[off++] = UINT32_C(0xd2800000) | iGpr;
 
 #else
 # error "port me"
@@ -240,8 +335,51 @@ DECLINLINE(uint32_t) iemNativeEmitLoadGprImm64(PIEMRECOMPILERSTATE pReNative, ui
     }
 
 #elif RT_ARCH_ARM64
-    RT_NOREF(pReNative, iGpr, uImm64);
-    off = UINT32_MAX;
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
+    AssertReturn(pu32CodeBuf, UINT32_MAX);
+
+    /*
+     * We need to start this sequence with a 'mov grp, imm16, lsl #x' and
+     * supply remaining bits using 'movk grp, imm16, lsl #x'.
+     *
+     * The mov instruction is encoded 0xd2800000 + shift + imm16 + grp,
+     * while the movk is 0xf2800000 + shift + imm16 + grp, meaning the diff
+     * is 0x20000000 (bit 29). So, we keep this bit in a variable and set it
+     * after the first non-zero immediate component so we switch to movk for
+     * the remainder.
+     */
+    uint32_t fMovK = 0;
+    /* mov  gpr, imm16 */
+    uint32_t uImmPart = ((uint32_t)((uImm64 >>  0) & UINT32_C(0xffff)) << 5);
+    if (uImmPart)
+    {
+        pu32CodeBuf[off++] = UINT32_C(0xd2800000) |         (UINT32_C(0) << 21) | uImmPart | iGpr;
+        fMovK |= RT_BIT_32(29);
+    }
+    /* mov[k] gpr, imm16, lsl #16 */
+    uImmPart = ((uint32_t)((uImm64 >> 16) & UINT32_C(0xffff)) << 5);
+    if (uImmPart)
+    {
+        pu32CodeBuf[off++] = UINT32_C(0xd2800000) | fMovK | (UINT32_C(1) << 21) | uImmPart | iGpr;
+        fMovK |= RT_BIT_32(29);
+    }
+    /* mov[k] gpr, imm16, lsl #32 */
+    uImmPart = ((uint32_t)((uImm64 >> 32) & UINT32_C(0xffff)) << 5);
+    if (uImmPart)
+    {
+        pu32CodeBuf[off++] = UINT32_C(0xd2800000) | fMovK | (UINT32_C(2) << 21) | uImmPart | iGpr;
+        fMovK |= RT_BIT_32(29);
+    }
+    /* mov[k] gpr, imm16, lsl #48 */
+    uImmPart = ((uint32_t)((uImm64 >> 48) & UINT32_C(0xffff)) << 5);
+    if (uImmPart)
+        pu32CodeBuf[off++] = UINT32_C(0xd2800000) | fMovK | (UINT32_C(3) << 21) | uImmPart | iGpr;
+
+    /** @todo there is an inverted mask variant we might want to explore if it
+     *        reduces the number of instructions... */
+    /** @todo load into 'w' register instead of 'x' when imm64 <= UINT32_MAX?
+     *        clang 12.x does that, only to use the 'x' version for the
+     *        addressing in the following ldr). */
 
 #else
 # error "port me"
@@ -265,12 +403,12 @@ DECLINLINE(uint32_t) iemNativeEmitLoadGprFromVCpuU32(PIEMRECOMPILERSTATE pReNati
     pbCodeBuf[off++] = 0x8b;
     if (offVCpu < 128)
     {
-        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM1, iGpr & 7, X86_GREG_xBX);
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM1, iGpr & 7, IEMNATIVE_REG_FIXED_PVMCPU);
         pbCodeBuf[off++] = (uint8_t)offVCpu;
     }
     else
     {
-        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM4, iGpr & 7, X86_GREG_xBX);
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM4, iGpr & 7, IEMNATIVE_REG_FIXED_PVMCPU);
         pbCodeBuf[off++] = RT_BYTE1(offVCpu);
         pbCodeBuf[off++] = RT_BYTE2(offVCpu);
         pbCodeBuf[off++] = RT_BYTE3(offVCpu);
@@ -278,8 +416,29 @@ DECLINLINE(uint32_t) iemNativeEmitLoadGprFromVCpuU32(PIEMRECOMPILERSTATE pReNati
     }
 
 #elif RT_ARCH_ARM64
-    RT_NOREF(pReNative, idxInstr);
-    off = UINT32_MAX;
+    /*
+     * There are a couple of ldr variants that takes an immediate offset, so
+     * try use those if we can, otherwise we have to use the temporary register
+     * help with the addressing.
+     */
+    if (offVCpu < _16K)
+    {
+        /* Use the unsigned variant of ldr Wt, [<Xn|SP>, #off]. */
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        AssertReturn(pu32CodeBuf, UINT32_MAX);
+        pu32CodeBuf[off++] = UINT32_C(0xb9400000) | (offVCpu << 10) | (IEMNATIVE_REG_FIXED_PVMCPU << 5) | iGpr;
+    }
+    else
+    {
+        /* The offset is too large, so we must load it into a register and use
+           ldr Wt, [<Xn|SP>, (<Wm>|<Xm>). */
+        /** @todo reduce by offVCpu by >> 3 or >> 2? if it saves instructions? */
+        off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, offVCpu);
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        AssertReturn(pu32CodeBuf, UINT32_MAX);
+        pu32CodeBuf[off++] = UINT32_C(0xb8600800) | ((uint32_t)IEMNATIVE_REG_FIXED_TMP0 << 16)
+                           | ((uint32_t)IEMNATIVE_REG_FIXED_PVMCPU << 5) | iGpr;
+    }
 
 #else
 # error "port me"
@@ -307,8 +466,10 @@ DECLINLINE(uint32_t) iemNativeEmitLoadGprFromGpr(PIEMRECOMPILERSTATE pReNative, 
     pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprSrc & 7);
 
 #elif RT_ARCH_ARM64
-    RT_NOREF(pReNative, iGprDst, iGprSrc);
-    off = UINT32_MAX;
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    AssertReturn(pu32CodeBuf, UINT32_MAX);
+    /* mov dst, src;   alias for: orr dst, xzr, src */
+    pu32CodeBuf[off++] = UINT32_C(0xaa000000) | ((uint32_t)iGprSrc << 16) | ((uint32_t)ARMV8_A64_REG_XZR << 5) | iGprDst;
 
 #else
 # error "port me"
