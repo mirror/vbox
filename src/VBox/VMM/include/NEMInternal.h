@@ -514,6 +514,9 @@ typedef struct NEMCPU
     bool                        fVTimerActivated;
     /** Flag whether to update the vTimer offset. */
     bool                        fVTimerOffUpdate;
+    /** Flag whether the ID registers were synced to the guest context
+     * (for first guest exec call on the EMT after loading the saved state). */
+    bool                        fIdRegsSynced;
 # else
     /** The vCPU handle associated with the EMT executing this vCPU. */
     hv_vcpuid_t                 hVCpuId;
