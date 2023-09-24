@@ -115,14 +115,65 @@
  * The register number hold in pVCpu pointer.  */
 #ifdef RT_ARCH_AMD64
 # define IEMNATIVE_REG_FIXED_PVMCPU         X86_GREG_xBX
-#elif RT_ARCH_ARM64
+
+#elif defined(RT_ARCH_ARM64)
 # define IEMNATIVE_REG_FIXED_PVMCPU         ARMV8_A64_REG_X28
 /** Dedicated temporary register.
  * @todo replace this by a register allocator and content tracker.  */
 # define IEMNATIVE_REG_FIXED_TMP0           ARMV8_A64_REG_X15
+
 #else
 # error "port me"
 #endif
+/** @} */
+
+/** @name Call related registers.
+ * @{ */
+/** @def IEMNATIVE_CALL_RET_GREG
+ * The return value register. */
+/** @def IEMNATIVE_CALL_ARG_GREG_COUNT
+ * Number of arguments in registers. */
+/** @def IEMNATIVE_CALL_ARG0_GREG
+ * The general purpose register carrying argument \#0. */
+/** @def IEMNATIVE_CALL_ARG1_GREG
+ * The general purpose register carrying argument \#1. */
+/** @def IEMNATIVE_CALL_ARG2_GREG
+ * The general purpose register carrying argument \#2. */
+/** @def IEMNATIVE_CALL_ARG3_GREG
+ * The general purpose register carrying argument \#3. */
+#ifdef RT_ARCH_AMD64
+# define IEMNATIVE_CALL_RET_GREG             X86_GREG_xAX
+
+# ifdef RT_OS_WINDOWS
+#  define IEMNATIVE_CALL_ARG_GREG_COUNT     4
+#  define IEMNATIVE_CALL_ARG0_GREG          X86_GREG_xCX
+#  define IEMNATIVE_CALL_ARG1_GREG          X86_GREG_xDX
+#  define IEMNATIVE_CALL_ARG2_GREG          X86_GREG_x8
+#  define IEMNATIVE_CALL_ARG3_GREG          X86_GREG_x9
+# else
+#  define IEMNATIVE_CALL_ARG_GREG_COUNT     6
+#  define IEMNATIVE_CALL_ARG0_GREG          X86_GREG_xDI
+#  define IEMNATIVE_CALL_ARG1_GREG          X86_GREG_xSI
+#  define IEMNATIVE_CALL_ARG2_GREG          X86_GREG_xDX
+#  define IEMNATIVE_CALL_ARG3_GREG          X86_GREG_xCX
+#  define IEMNATIVE_CALL_ARG4_GREG          X86_GREG_x8
+#  define IEMNATIVE_CALL_ARG5_GREG          X86_GREG_x9
+# endif
+
+#elif defined(RT_ARCH_ARM64)
+# define IEMNATIVE_CALL_RET_GREG            ARMV8_A64_REG_X0
+# define IEMNATIVE_CALL_ARG_GREG_COUNT      8
+# define IEMNATIVE_CALL_ARG0_GREG           ARMV8_A64_REG_X0
+# define IEMNATIVE_CALL_ARG1_GREG           ARMV8_A64_REG_X1
+# define IEMNATIVE_CALL_ARG2_GREG           ARMV8_A64_REG_X2
+# define IEMNATIVE_CALL_ARG3_GREG           ARMV8_A64_REG_X3
+# define IEMNATIVE_CALL_ARG4_GREG           ARMV8_A64_REG_X4
+# define IEMNATIVE_CALL_ARG5_GREG           ARMV8_A64_REG_X5
+# define IEMNATIVE_CALL_ARG6_GREG           ARMV8_A64_REG_X6
+# define IEMNATIVE_CALL_ARG7_GREG           ARMV8_A64_REG_X7
+
+#endif
+
 /** @} */
 
 /** Native code generator label types. */
@@ -157,6 +208,8 @@ typedef enum
     /** AMD64 fixup: PC relative 32-bit with addend in bData. */
     kIemNativeFixupType_Rel32,
 #elif defined(RT_ARCH_ARM64)
+    /** ARM64 fixup: PC relative offset at bits 23:5 (CBZ, CBNZ).  */
+    kIemNativeFixupType_RelImm19At5,
 #endif
     kIemNativeFixupType_End
 } IEMNATIVEFIXUPTYPE;

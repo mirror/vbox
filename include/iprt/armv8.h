@@ -2201,6 +2201,299 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 # define ARMV8_ID_AA64DFR0_EL1_HPMN0_SUPPORTED                  1
 /** @} */
 
+
+#if (!defined(VBOX_FOR_DTRACE_LIB) && defined(__cplusplus) && !defined(ARMV8_WITHOUT_MK_INSTR)) || defined(DOXYGEN_RUNNING)
+/** @def grp_rt_armv8_mkinstr   Instruction Encoding Helpers
+ *
+ * A few inlined functions and macros for assiting in encoding common ARMv8
+ * instructions.
+ *
+ * @{ */
+
+/** A64: Return instruction. */
+#define ARMV8_A64_INSTR_RET         UINT32_C(0xd65f03c0)
+
+
+typedef enum
+{
+    /** Add @a iImm7*sizeof(reg) to @a iBaseReg after the store/load,
+     * and update the register. */
+    kArm64InstrStLdPairType_kPostIndex = 1,
+    /** Add @a iImm7*sizeof(reg) to @a iBaseReg before the store/load,
+     * but don't update the register. */
+    kArm64InstrStLdPairType_kSigned    = 2,
+    /** Add @a iImm7*sizeof(reg) to @a iBaseReg before the store/load,
+     * and update the register. */
+    kArm64InstrStLdPairType_kPreIndex  = 3
+} ARM64INSTRSTLDPAIRTYPE;
+
+/**
+ * A64: Encodes either stp (store register pair) or ldp (load register pair).
+ *
+ * @returns The encoded instruction.
+ * @param   fLoad       true for ldp, false of stp.
+ * @param   iOpc        When @a fSimdFp is @c false:
+ *                          - 0 for 32-bit GPRs (Wt).
+ *                          - 1 for encoding stgp or ldpsw.
+ *                          - 2 for 64-bit GRPs (Xt).
+ *                          - 3 illegal.
+ *                      When @a fSimdFp is @c true:
+ *                          - 0 for 32-bit SIMD&FP registers (St).
+ *                          - 1 for 64-bit SIMD&FP registers (Dt).
+ *                          - 2 for 128-bit SIMD&FP regsiters (Qt).
+ * @param   enmType     The instruction variant wrt addressing and updating of the
+ *                      addressing register.
+ * @param   iReg1       The first register to store/load.
+ * @param   iReg2       The second register to store/load.
+ * @param   iBaseReg    The base register to use when addressing. SP is allowed.
+ * @param   iImm7       Signed addressing immediate value scaled, range -64..63,
+ *                      will be multiplied by the register size.
+ * @param   fSimdFp     true for SIMD&FP registers, false for GPRs and
+ *                      stgp/ldpsw instructions.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStLdPair(bool fLoad, uint32_t iOpc, ARM64INSTRSTLDPAIRTYPE enmType,
+                                                    uint32_t iReg1, uint32_t iReg2, uint32_t iBaseReg, int32_t iImm7 = 0,
+                                                    bool fSimdFp = false)
+{
+    Assert(iOpc < 3); Assert(iReg1 <= 31); Assert(iReg2 <= 31); Assert(iBaseReg <= 31); Assert(iImm7 < 64 && iImm7 >= -64);
+    return (iOpc                               << 30)
+         | UINT32_C(0x28000000)
+         | ((uint32_t)fSimdFp                  << 26) /* VR bit, see "Top-level encodings for A64" */
+         | ((uint32_t)enmType                  << 23)
+         | ((uint32_t)fLoad                    << 22)
+         | (((uint32_t)iImm7 & UINT32_C(0x7f)) << 15)
+         | (iReg2                              << 10)
+         | (iBaseReg                           <<  5)
+         | iReg1;
+}
+
+
+typedef enum
+{
+    kArmv8A64InstrShift_kLsl = 0,
+    kArmv8A64InstrShift_kLsr,
+    kArmv8A64InstrShift_kAsr,
+    kArmv8A64InstrShift_kRor
+} ARMV8A64INSTRSHIFT;
+
+
+/**
+ * A64: Encodes a logical instruction with a shifted 2nd register operand.
+ *
+ * @returns The encoded instruction.
+ * @param   u2Opc           The logical operation to perform.
+ * @param   fNot            Whether to complement the 2nd operand.
+ * @param   iRegResult      The output register.
+ * @param   iReg1           The 1st register operand.
+ * @param   iReg2Shifted    The 2nd register operand, to which the optional
+ *                          shifting is applied.
+ * @param   f64Bit          true for 64-bit GPRs (default), @c false for 32-bit
+ *                          GPRs.
+ * @param   offShift6       The shift amount (default: none).
+ * @param   enmShift        The shift operation (default: LSL).
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrLogicalShiftedReg(uint32_t u2Opc, bool fNot,
+                                                             uint32_t iRegResult, uint32_t iReg1, uint32_t iReg2Shifted,
+                                                             bool f64Bit, uint32_t offShift6, ARMV8A64INSTRSHIFT enmShift)
+{
+    Assert(u2Opc < 4); Assert(offShift6 < (f64Bit ? 64 : 32));
+    Assert(iRegResult < 32); Assert(iReg1 < 32); Assert(iReg2Shifted < 32);
+    return ((uint32_t)f64Bit << 31)
+         | (u2Opc << 29)
+         | UINT32_C(0x0a000000)
+         | ((uint32_t)enmShift << 22)
+         | ((uint32_t)fNot     << 21)
+         | (iReg2Shifted       << 16)
+         | (offShift6          << 10)
+         | (iReg1              <<  5)
+         | iRegResult;
+}
+
+
+/** A64: Encodes an AND instruction.
+ * @see Armv8A64MkInstrLogicalShiftedReg for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAnd(uint32_t iRegResult, uint32_t iReg1, uint32_t iReg2Shifted, bool f64Bit = true,
+                                               uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_kLsl)
+{
+    return Armv8A64MkInstrLogicalShiftedReg(0, false /*fNot*/, iRegResult, iReg1, iReg2Shifted, f64Bit, offShift6, enmShift);
+}
+
+
+/** A64: Encodes an BIC instruction.
+ * @see Armv8A64MkInstrLogicalShiftedReg for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBic(uint32_t iRegResult, uint32_t iReg1, uint32_t iReg2Shifted, bool f64Bit = true,
+                                               uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_kLsl)
+{
+    return Armv8A64MkInstrLogicalShiftedReg(0, true /*fNot*/, iRegResult, iReg1, iReg2Shifted, f64Bit, offShift6, enmShift);
+}
+
+
+/** A64: Encodes an ORR instruction.
+ * @see Armv8A64MkInstrLogicalShiftedReg for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrOrr(uint32_t iRegResult, uint32_t iReg1, uint32_t iReg2Shifted, bool f64Bit = true,
+                                               uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_kLsl)
+{
+    return Armv8A64MkInstrLogicalShiftedReg(1, false /*fNot*/, iRegResult, iReg1, iReg2Shifted, f64Bit, offShift6, enmShift);
+}
+
+
+/** A64: Encodes an ORN instruction.
+ * @see Armv8A64MkInstrLogicalShiftedReg for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrOrn(uint32_t iRegResult, uint32_t iReg1, uint32_t iReg2Shifted, bool f64Bit = true,
+                                               uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_kLsl)
+{
+    return Armv8A64MkInstrLogicalShiftedReg(1, true /*fNot*/, iRegResult, iReg1, iReg2Shifted, f64Bit, offShift6, enmShift);
+}
+
+
+/** A64: Encodes an EOR instruction.
+ * @see Armv8A64MkInstrLogicalShiftedReg for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrEor(uint32_t iRegResult, uint32_t iReg1, uint32_t iReg2Shifted, bool f64Bit = true,
+                                               uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_kLsl)
+{
+    return Armv8A64MkInstrLogicalShiftedReg(2, false /*fNot*/, iRegResult, iReg1, iReg2Shifted, f64Bit, offShift6, enmShift);
+}
+
+
+/** A64: Encodes an EON instruction.
+ * @see Armv8A64MkInstrLogicalShiftedReg for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrEon(uint32_t iRegResult, uint32_t iReg1, uint32_t iReg2Shifted, bool f64Bit = true,
+                                               uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_kLsl)
+{
+    return Armv8A64MkInstrLogicalShiftedReg(2, true /*fNot*/, iRegResult, iReg1, iReg2Shifted, f64Bit, offShift6, enmShift);
+}
+
+
+/** A64: Encodes an ANDS instruction.
+ * @see Armv8A64MkInstrLogicalShiftedReg for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAnds(uint32_t iRegResult, uint32_t iReg1, uint32_t iReg2Shifted, bool f64Bit = true,
+                                                uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_kLsl)
+{
+    return Armv8A64MkInstrLogicalShiftedReg(3, false /*fNot*/, iRegResult, iReg1, iReg2Shifted, f64Bit, offShift6, enmShift);
+}
+
+
+/** A64: Encodes an BICS instruction.
+ * @see Armv8A64MkInstrLogicalShiftedReg for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBics(uint32_t iRegResult, uint32_t iReg1, uint32_t iReg2Shifted, bool f64Bit = true,
+                                                uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_kLsl)
+{
+    return Armv8A64MkInstrLogicalShiftedReg(3, true /*fNot*/, iRegResult, iReg1, iReg2Shifted, f64Bit, offShift6, enmShift);
+}
+
+
+/**
+ * A64: Encodes either add, adds, sub or subs.
+ *
+ * @returns The encoded instruction.
+ * @param   fSub                    true for sub and subs, false for add and
+ *                                  adds.
+ * @param   iRegResult              The register to store the result in.
+ *                                  SP is valid when @a fSetFlags = false,
+ *                                  and ZR is valid otherwise.
+ * @param   iRegSrc                 The register containing the augend (@a fSub
+ *                                  = false) or minuend (@a fSub = true).  SP is
+ *                                  a valid registers for all variations.
+ * @param   uImm12AddendSubtrahend  The addended (@a fSub = false) or subtrahend
+ *                                  (@a fSub = true).
+ * @param   f64Bit                  true for 64-bit GRPs (default), false for
+ *                                  32-bit GPRs.
+ * @param   fSetFlags               Whether to set flags (adds / subs) or not
+ *                                  (add / sub - default).
+ * @param   fShift12                Whether to shift uImm12AddendSubtrahend 12
+ *                                  bits to the left, or not (default).
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAddSub(bool fSub, uint32_t iRegResult, uint32_t iRegSrc,
+                                                  uint32_t uImm12AddendSubtrahend, bool f64Bit = true, bool fSetFlags = false,
+                                                  bool fShift12 = false)
+{
+    Assert(uImm12AddendSubtrahend < 4096); Assert(iRegSrc < 32); Assert(iRegResult < 32);
+    return ((uint32_t)f64Bit       << 31)
+         | ((uint32_t)fSub         << 30)
+         | ((uint32_t)fSetFlags    << 29)
+         | UINT32_C(0x11000000)
+         | ((uint32_t)fShift12     << 22)
+         | (uImm12AddendSubtrahend << 10)
+         | (iRegSrc                <<  5)
+         | iRegResult;
+}
+
+
+/**
+ * A64: Encodes a B (unconditional branch w/ imm) instruction.
+ *
+ * @returns The encoded instruction.
+ * @param   iImm26      Signed number of instruction to jump (i.e. *4).
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrB(int32_t iImm26)
+{
+    Assert(iImm26 >= -67108864 && iImm26 < 67108864);
+    return UINT32_C(0x14000000) | ((uint32_t)iImm26 & UINT32_C(0x3ffffff));
+}
+
+
+/**
+ * A64: Encodes a BL (unconditional call w/ imm) instruction.
+ *
+ * @returns The encoded instruction.
+ * @param   iImm26      Signed number of instruction to jump (i.e. *4).
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBl(int32_t iImm26)
+{
+    return Armv8A64MkInstrB(iImm26) | RT_BIT_32(31);
+}
+
+
+/**
+ * A64: Encodes a BR (unconditional branch w/ register) instruction.
+ *
+ * @returns The encoded instruction.
+ * @param   iReg                    The register containing the target address.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBr(uint32_t iReg)
+{
+    Assert(iReg < 32);
+    return UINT32_C(0xd61f0000) | (iReg <<  5);
+}
+
+
+/**
+ * A64: Encodes a BLR instruction.
+ *
+ * @returns The encoded instruction.
+ * @param   iReg                    The register containing the target address.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBlr(uint32_t iReg)
+{
+    return Armv8A64MkInstrBr(iReg) | RT_BIT_32(21);
+}
+
+
+/**
+ * A64: Encodes CBZ and CBNZ (conditional branch w/ immediate) instructions.
+ *
+ * @returns The encoded instruction.
+ * @param   fJmpIfNotZero   false to jump if register is zero, true to jump if
+ *                          its not zero.
+ * @param   iImm19          Signed number of instruction to jump (i.e. *4).
+ * @param   iReg            The GPR to check for zero / non-zero value.
+ * @param   f64Bit          true for 64-bit register, false for 32-bit.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCbzCbnz(bool fJmpIfNotZero, int32_t iImm19, uint32_t iReg, bool f64Bit = true)
+{
+    Assert(iReg < 32); Assert(iImm19 >= -262144 && iImm19 < 262144);
+    return ((uint32_t)f64Bit             << 31)
+         | UINT32_C(0x34000000)
+         | ((uint32_t)fJmpIfNotZero      << 24)
+         | (((uint32_t)iImm19 & 0x7ffff) <<  5)
+         | iReg;
+}
+
+
+/** @} */
+
+#endif /* !dtrace && __cplusplus */
+
 /** @} */
 
 #endif /* !IPRT_INCLUDED_armv8_h */

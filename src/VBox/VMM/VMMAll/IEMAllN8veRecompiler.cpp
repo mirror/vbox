@@ -500,7 +500,11 @@ static int iemExecMemAllocatorGrow(PIEMEXECMEMALLOCATOR pExecMemAllocator)
     AssertLogRelReturn(idxChunk < pExecMemAllocator->cMaxChunks, VERR_OUT_OF_RESOURCES);
 
     /* Allocate a chunk. */
+#ifdef RT_OS_DARWIN /** @todo oh carp! This isn't going to work very well with the unpredictability of the simple heap... */
+    void *pvChunk = RTMemPageAllocEx(pExecMemAllocator->cbChunk, 0);
+#else
     void *pvChunk = RTMemPageAllocEx(pExecMemAllocator->cbChunk, RTMEMPAGEALLOC_F_EXECUTABLE);
+#endif
     AssertLogRelReturn(pvChunk, VERR_NO_EXEC_MEMORY);
 
     /* Initialize the heap for the chunk. */
@@ -764,7 +768,12 @@ static void *iemExecMemAllocatorAlloc(PVMCPU pVCpu, uint32_t cbReq)
  *  to readonly+exec */
 static void iemExecMemAllocatorReadyForUse(PVMCPUCC pVCpu, void *pv, size_t cb)
 {
+#ifdef RT_OS_DARWIN
+    int rc = RTMemProtect(pv, cb, RTMEM_PROT_EXEC | RTMEM_PROT_READ);
+    AssertRC(rc); RT_NOREF(pVCpu);
+#else
     RT_NOREF(pVCpu, pv, cb);
+#endif
 }
 
 
@@ -1050,7 +1059,9 @@ DECLHIDDEN(uint32_t) iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReN
                                                         uint8_t idxInstr) RT_NOEXCEPT
 {
 #ifdef RT_ARCH_AMD64
-    /* eax = call status code.*/
+    /*
+     * AMD64: eax = call status code.
+     */
 
     /* edx = rcPassUp */
     off = iemNativeEmitLoadGprFromVCpuU32(pReNative, off, X86_GREG_xDX, RT_UOFFSETOF(VMCPUCC, iem.s.rcPassUp));
@@ -1080,8 +1091,21 @@ DECLHIDDEN(uint32_t) iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReN
     /* done. */
 
 #elif RT_ARCH_ARM64
-    RT_NOREF(pReNative, idxInstr);
-    off = UINT32_MAX;
+    /*
+     * ARM64: w0 = call status code.
+     */
+    off = iemNativeEmitLoadGprImm64(pReNative, off, ARMV8_A64_REG_X2, idxInstr); /** @todo 32-bit imm load? Fixed counter register? */
+    off = iemNativeEmitLoadGprFromVCpuU32(pReNative, off, ARMV8_A64_REG_X3, RT_UOFFSETOF(VMCPUCC, iem.s.rcPassUp));
+
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
+    AssertReturn(pu32CodeBuf, UINT32_MAX);
+
+    pu32CodeBuf[off++] = Armv8A64MkInstrOrr(ARMV8_A64_REG_X4, ARMV8_A64_REG_X3, ARMV8_A64_REG_X0, false /*f64Bit*/);
+
+    uint32_t const idxLabel = iemNativeMakeLabel(pReNative, kIemNativeLabelType_NonZeroRetOrPassUp);
+    AssertReturn(idxLabel != UINT32_MAX, UINT32_MAX);
+    AssertReturn(iemNativeAddFixup(pReNative, off, idxLabel, kIemNativeFixupType_RelImm19At5), UINT32_MAX);
+    pu32CodeBuf[off++] = Armv8A64MkInstrCbzCbnz(true /*fJmpIfNotZero*/, ARMV8_A64_REG_X4, false /*f64Bit*/);
 
 #else
 # error "port me"
@@ -1176,18 +1200,35 @@ static int32_t iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_t
     off = iemNativeEmitLoadGprByBpU32(pReNative, off, X86_GREG_xAX, IEMNATIVE_FP_OFF_IN_SHADOW_ARG0); /* rcStrict (see above) */
 # endif
 
-    /* Check the status code. */
-    off = iemNativeEmitCheckCallRetAndPassUp(pReNative, off, pCallEntry->idxInstr);
-    AssertReturn(off != UINT32_MAX, off);
-
-
 #elif RT_ARCH_ARM64
-    RT_NOREF(pReNative, pCallEntry, cParams);
-    off = UINT32_MAX;
+    /*
+     * ARM64:
+     */
+    off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
+    if (cParams > 0)
+        off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, pCallEntry->auParams[0]);
+    if (cParams > 1)
+        off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_CALL_ARG2_GREG, pCallEntry->auParams[1]);
+    if (cParams > 2)
+        off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_CALL_ARG3_GREG, pCallEntry->auParams[2]);
+    off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_REG_FIXED_TMP0,
+                                    (uintptr_t)g_apfnIemThreadedFunctions[pCallEntry->enmFunction]);
+
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    AssertReturn(pu32CodeBuf, UINT32_MAX);
+
+    pu32CodeBuf[off++] = Armv8A64MkInstrBlr(IEMNATIVE_REG_FIXED_TMP0);
 
 #else
 # error "port me"
 #endif
+
+    /*
+     * Check the status code.
+     */
+    off = iemNativeEmitCheckCallRetAndPassUp(pReNative, off, pCallEntry->idxInstr);
+    AssertReturn(off != UINT32_MAX, off);
+
     return off;
 }
 
@@ -1195,48 +1236,8 @@ static int32_t iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_t
 /**
  * Emits a standard epilog.
  */
-static uint32_t iemNativeEmitEpilog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
+static uint32_t iemNativeEmitRcFiddling(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxReturnLabel)
 {
-#ifdef RT_ARCH_AMD64
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 20);
-    AssertReturn(pbCodeBuf, UINT32_MAX);
-
-    /*
-     * Successful return, so clear eax.
-     */
-    pbCodeBuf[off++] = 0x33;                    /* xor eax, eax */
-    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, X86_GREG_xAX, X86_GREG_xAX);
-
-    /*
-     * Define label for common return point.
-     */
-    uint32_t const idxReturn = iemNativeMakeLabel(pReNative, kIemNativeLabelType_Return, off);
-    AssertReturn(idxReturn != UINT32_MAX, UINT32_MAX);
-
-    /* Reposition esp at the r15 restore point. */
-    pbCodeBuf[off++] = X86_OP_REX_W;
-    pbCodeBuf[off++] = 0x8d;                    /* lea rsp, [rbp - (gcc ? 5 : 7) * 8] */
-    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM1, X86_GREG_xSP, X86_GREG_xBP);
-    pbCodeBuf[off++] = (uint8_t)IEMNATIVE_FP_OFF_LAST_PUSH;
-
-    /* Pop non-volatile registers and return */
-    pbCodeBuf[off++] = X86_OP_REX_B;            /* pop r15 */
-    pbCodeBuf[off++] = 0x58 + X86_GREG_x15 - 8;
-    pbCodeBuf[off++] = X86_OP_REX_B;            /* pop r14 */
-    pbCodeBuf[off++] = 0x58 + X86_GREG_x14 - 8;
-    pbCodeBuf[off++] = X86_OP_REX_B;            /* pop r13 */
-    pbCodeBuf[off++] = 0x58 + X86_GREG_x13 - 8;
-    pbCodeBuf[off++] = X86_OP_REX_B;            /* pop r12 */
-    pbCodeBuf[off++] = 0x58 + X86_GREG_x12 - 8;
-# ifdef RT_OS_WINDOWS
-    pbCodeBuf[off++] = 0x58 + X86_GREG_xDI;     /* pop rdi */
-    pbCodeBuf[off++] = 0x58 + X86_GREG_xSI;     /* pop rsi */
-# endif
-    pbCodeBuf[off++] = 0x58 + X86_GREG_xBX;     /* pop rbx */
-    pbCodeBuf[off++] = 0xc9;                    /* leave */
-    pbCodeBuf[off++] = 0xc3;                    /* ret */
-    pbCodeBuf[off++] = 0xcc;                    /* int3 poison */
-
     /*
      * Generate the rc + rcPassUp fiddling code if needed.
      */
@@ -1245,6 +1246,14 @@ static uint32_t iemNativeEmitEpilog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
     {
         Assert(pReNative->paLabels[idxLabel].off == UINT32_MAX);
         pReNative->paLabels[idxLabel].off = off;
+
+        /* iemNativeHlpExecStatusCodeFiddling(PVMCPUCC pVCpu, int rc, uint8_t idxInstr) */
+#ifdef RT_ARCH_AMD64
+        /*
+         * AMD64:
+         */
+        uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 20);
+        AssertReturn(pbCodeBuf, UINT32_MAX);
 
         /* Call helper and jump to return point. */
 # ifdef RT_OS_WINDOWS
@@ -1271,7 +1280,7 @@ static uint32_t iemNativeEmitEpilog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
         pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 2, X86_GREG_xAX);
 
         /* Jump to common return point. */
-        uint32_t offRel = pReNative->paLabels[idxReturn].off - (off + 2);
+        uint32_t offRel = pReNative->paLabels[idxReturnLabel].off - (off + 2);
         if (-(int32_t)offRel <= 127)
         {
             pbCodeBuf[off++] = 0xeb;                /* jmp rel8 */
@@ -1288,40 +1297,117 @@ static uint32_t iemNativeEmitEpilog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
             pbCodeBuf[off++] = RT_BYTE4(offRel);
         }
         pbCodeBuf[off++] = 0xcc;                    /*  int3 poison */
-    }
 
 #elif RT_ARCH_ARM64
-    RT_NOREF(pReNative);
-    off = UINT32_MAX;
+        /*
+         * ARM64:
+         */
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, IEMNATIVE_CALL_RET_GREG);
+        AssertReturn(off != UINT32_MAX, UINT32_MAX);
+        off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
+        AssertReturn(off != UINT32_MAX, UINT32_MAX);
+        /* IEMNATIVE_CALL_ARG2_GREG is already set. */
+        off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, (uintptr_t)iemNativeHlpExecStatusCodeFiddling);
+        AssertReturn(off != UINT32_MAX, UINT32_MAX);
 
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
+        AssertReturn(pu32CodeBuf, UINT32_MAX);
+        pu32CodeBuf[off++] = Armv8A64MkInstrBlr(IEMNATIVE_REG_FIXED_TMP0);
+
+        /* Jump back to the common return point. */
+        int32_t const offRel = pReNative->paLabels[idxReturnLabel].off - off;
+        pu32CodeBuf[off++] = Armv8A64MkInstrB(offRel);
 #else
 # error "port me"
 #endif
+    }
     return off;
 }
 
 
-typedef enum
+/**
+ * Emits a standard epilog.
+ */
+static uint32_t iemNativeEmitEpilog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 {
-    kArm64InstrStLdPairType_kPostIndex = 1,
-    kArm64InstrStLdPairType_kSigned    = 2,
-    kArm64InstrStLdPairType_kPreIndex  = 3
-} ARM64INSTRSTLDPAIRTYPE;
+    /*
+     * Successful return, so clear the return register (eax, w0).
+     */
+    off = iemNativeEmitGprZero(pReNative,off, IEMNATIVE_CALL_RET_GREG);
+    AssertReturn(off != UINT32_MAX, UINT32_MAX);
 
-DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStLdPair(bool fLoad, uint32_t iOpc, ARM64INSTRSTLDPAIRTYPE enmType,
-                                                    uint32_t iReg1, uint32_t iReg2, uint32_t iBaseReg, int32_t iImm7 = 0)
-{
-    Assert(iOpc < 3); Assert(iReg1 <= 31); Assert(iReg2 <= 31); Assert(iBaseReg <= 31); Assert(iImm7 < 64 && iImm7 >= -64);
-    return (iOpc << 30)
-         | UINT32_C(0x28000000)
-         | ((uint32_t)enmType << 23)
-         | ((uint32_t)fLoad << 22)
-         | ((uint32_t)iImm7 << 15)
-         | (iReg2 << 10)
-         | (iBaseReg << 5)
-         | iReg1;
+    /*
+     * Define label for common return point.
+     */
+    uint32_t const idxReturn = iemNativeMakeLabel(pReNative, kIemNativeLabelType_Return, off);
+    AssertReturn(idxReturn != UINT32_MAX, UINT32_MAX);
+
+    /*
+     * Restore registers and return.
+     */
+#ifdef RT_ARCH_AMD64
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 20);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
+
+    /* Reposition esp at the r15 restore point. */
+    pbCodeBuf[off++] = X86_OP_REX_W;
+    pbCodeBuf[off++] = 0x8d;                    /* lea rsp, [rbp - (gcc ? 5 : 7) * 8] */
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM1, X86_GREG_xSP, X86_GREG_xBP);
+    pbCodeBuf[off++] = (uint8_t)IEMNATIVE_FP_OFF_LAST_PUSH;
+
+    /* Pop non-volatile registers and return */
+    pbCodeBuf[off++] = X86_OP_REX_B;            /* pop r15 */
+    pbCodeBuf[off++] = 0x58 + X86_GREG_x15 - 8;
+    pbCodeBuf[off++] = X86_OP_REX_B;            /* pop r14 */
+    pbCodeBuf[off++] = 0x58 + X86_GREG_x14 - 8;
+    pbCodeBuf[off++] = X86_OP_REX_B;            /* pop r13 */
+    pbCodeBuf[off++] = 0x58 + X86_GREG_x13 - 8;
+    pbCodeBuf[off++] = X86_OP_REX_B;            /* pop r12 */
+    pbCodeBuf[off++] = 0x58 + X86_GREG_x12 - 8;
+# ifdef RT_OS_WINDOWS
+    pbCodeBuf[off++] = 0x58 + X86_GREG_xDI;     /* pop rdi */
+    pbCodeBuf[off++] = 0x58 + X86_GREG_xSI;     /* pop rsi */
+# endif
+    pbCodeBuf[off++] = 0x58 + X86_GREG_xBX;     /* pop rbx */
+    pbCodeBuf[off++] = 0xc9;                    /* leave */
+    pbCodeBuf[off++] = 0xc3;                    /* ret */
+    pbCodeBuf[off++] = 0xcc;                    /* int3 poison */
+
+#elif RT_ARCH_ARM64
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
+    AssertReturn(pu32CodeBuf, UINT32_MAX);
+
+    /* ldp x19, x20, [sp #IEMNATIVE_FRAME_VAR_SIZE]! ; Unallocate the variable space and restore x19+x20. */
+    AssertCompile(IEMNATIVE_FRAME_VAR_SIZE < 64*8);
+    pu32CodeBuf[off++] = Armv8A64MkInstrStLdPair(true /*fLoad*/, 2 /*64-bit*/, kArm64InstrStLdPairType_kPreIndex,
+                                                 ARMV8_A64_REG_X19, ARMV8_A64_REG_X20, ARMV8_A64_REG_SP,
+                                                 IEMNATIVE_FRAME_VAR_SIZE / 8);
+    /* Restore x21 thru x28 + BP and LR (ret address) (SP remains unchanged in the kSigned variant). */
+    pu32CodeBuf[off++] = Armv8A64MkInstrStLdPair(true /*fLoad*/, 2 /*64-bit*/, kArm64InstrStLdPairType_kSigned,
+                                                 ARMV8_A64_REG_X21, ARMV8_A64_REG_X22, ARMV8_A64_REG_SP, 2);
+    pu32CodeBuf[off++] = Armv8A64MkInstrStLdPair(true /*fLoad*/, 2 /*64-bit*/, kArm64InstrStLdPairType_kSigned,
+                                                 ARMV8_A64_REG_X23, ARMV8_A64_REG_X24, ARMV8_A64_REG_SP, 4);
+    pu32CodeBuf[off++] = Armv8A64MkInstrStLdPair(true /*fLoad*/, 2 /*64-bit*/, kArm64InstrStLdPairType_kSigned,
+                                                 ARMV8_A64_REG_X25, ARMV8_A64_REG_X26, ARMV8_A64_REG_SP, 6);
+    pu32CodeBuf[off++] = Armv8A64MkInstrStLdPair(true /*fLoad*/, 2 /*64-bit*/, kArm64InstrStLdPairType_kSigned,
+                                                 ARMV8_A64_REG_X27, ARMV8_A64_REG_X28, ARMV8_A64_REG_SP, 8);
+    pu32CodeBuf[off++] = Armv8A64MkInstrStLdPair(true /*fLoad*/, 2 /*64-bit*/, kArm64InstrStLdPairType_kSigned,
+                                                 ARMV8_A64_REG_BP,  ARMV8_A64_REG_LR,  ARMV8_A64_REG_SP, 10);
+    AssertCompile(IEMNATIVE_FRAME_SAVE_REG_SIZE / 8 == 12);
+
+    /* add sp, sp, IEMNATIVE_FRAME_SAVE_REG_SIZE ;  */
+    AssertCompile(IEMNATIVE_FRAME_SAVE_REG_SIZE < 4096);
+    pu32CodeBuf[off++] = Armv8A64MkInstrAddSub(false /*fSub*/, ARMV8_A64_REG_SP, ARMV8_A64_REG_SP, IEMNATIVE_FRAME_SAVE_REG_SIZE);
+
+    /* ret */
+    pu32CodeBuf[off++] = ARMV8_A64_INSTR_RET;
+
+#else
+# error "port me"
+#endif
+
+    return iemNativeEmitRcFiddling(pReNative, off, idxReturn);
 }
-
 
 
 /**
@@ -1383,6 +1469,7 @@ static uint32_t iemNativeEmitProlog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
      */
     uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
     AssertReturn(pu32CodeBuf, UINT32_MAX);
+
     /* stp x19, x20, [sp, #-IEMNATIVE_FRAME_SAVE_REG_SIZE] ; Allocate space for saving registers and place x19+x20 at the bottom. */
     AssertCompile(IEMNATIVE_FRAME_SAVE_REG_SIZE < 64*8);
     pu32CodeBuf[off++] = Armv8A64MkInstrStLdPair(false /*fLoad*/, 2 /*64-bit*/, kArm64InstrStLdPairType_kPreIndex,
@@ -1399,15 +1486,17 @@ static uint32_t iemNativeEmitProlog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
                                                  ARMV8_A64_REG_X27, ARMV8_A64_REG_X28, ARMV8_A64_REG_SP, 8);
     /* Save the BP and LR (ret address) registers at the top of the frame. */
     pu32CodeBuf[off++] = Armv8A64MkInstrStLdPair(false /*fLoad*/, 2 /*64-bit*/, kArm64InstrStLdPairType_kSigned,
-                                                 ARMV8_A64_REG_BP, ARMV8_A64_REG_LR, ARMV8_A64_REG_SP, 10);
+                                                 ARMV8_A64_REG_BP,  ARMV8_A64_REG_LR,  ARMV8_A64_REG_SP, 10);
     AssertCompile(IEMNATIVE_FRAME_SAVE_REG_SIZE / 8 == 12);
-    /* sub bp, sp, IEMNATIVE_FRAME_SAVE_REG_SIZE - 16 ; Set BP to point to the old BP stack address. */
-    AssertCompile(IEMNATIVE_FRAME_SAVE_REG_SIZE - 16 < 4096);
-    pu32CodeBuf[off++] = UINT32_C(0xd1000000) | ((IEMNATIVE_FRAME_SAVE_REG_SIZE - 16) << 10) | ARMV8_A64_REG_SP | ARMV8_A64_REG_BP;
+    /* add bp, sp, IEMNATIVE_FRAME_SAVE_REG_SIZE - 16 ; Set BP to point to the old BP stack address. */
+    pu32CodeBuf[off++] = Armv8A64MkInstrAddSub(false /*fSub*/, ARMV8_A64_REG_BP,
+                                               ARMV8_A64_REG_SP, IEMNATIVE_FRAME_SAVE_REG_SIZE - 16);
 
     /* sub sp, sp, IEMNATIVE_FRAME_VAR_SIZE ;  Allocate the variable area from SP. */
-    AssertCompile(IEMNATIVE_FRAME_VAR_SIZE < 4096);
-    pu32CodeBuf[off++] = UINT32_C(0xd1000000) | (IEMNATIVE_FRAME_VAR_SIZE << 10)             | ARMV8_A64_REG_SP | ARMV8_A64_REG_SP;
+    pu32CodeBuf[off++] = Armv8A64MkInstrAddSub(true /*fSub*/, ARMV8_A64_REG_SP, ARMV8_A64_REG_SP, IEMNATIVE_FRAME_VAR_SIZE);
+
+    /* mov r28, r0  */
+    off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_REG_FIXED_PVMCPU, IEMNATIVE_CALL_ARG0_GREG);
 
 #else
 # error "port me"
@@ -1506,6 +1595,14 @@ PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb)
                 continue;
 
 #elif defined(RT_ARCH_ARM64)
+            case kIemNativeFixupType_RelImm19At5:
+            {
+                Assert(paFixups[i].off < off);
+                int32_t const offDisp = paLabels[paFixups[i].idxLabel].off - paFixups[i].off + paFixups[i].offAddend;
+                Assert(offDisp >= -262144 && offDisp < 262144);
+                *Ptr.pu32 = (*Ptr.pu32 & UINT32_C(0xff00001f)) | (offDisp << 5);
+                continue;
+            }
 #endif
             case kIemNativeFixupType_Invalid:
             case kIemNativeFixupType_End:
