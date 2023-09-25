@@ -106,6 +106,23 @@ extern "C" void *__deregister_frame_info(void *pvBegin);           /* (returns p
 /*********************************************************************************************************************************
 *   Executable Memory Allocator                                                                                                  *
 *********************************************************************************************************************************/
+/** @def IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
+ * Use an alternative chunk sub-allocator that does store internal data
+ * in the chunk.
+ *
+ * Using the RTHeapSimple is not practial on newer darwin systems where
+ * RTMEM_PROT_WRITE and RTMEM_PROT_EXEC are mutually exclusive in process
+ * memory.  We would have to change the protection of the whole chunk for
+ * every call to RTHeapSimple, which would be rather expensive.
+ *
+ * This alternative implemenation let restrict page protection modifications
+ * to the pages backing the executable memory we just allocated.
+ */
+#define IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
+/** The chunk sub-allocation unit size in bytes. */
+#define IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE      128
+/** The chunk sub-allocation unit size as a shift factor. */
+#define IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT     7
 
 #if defined(IN_RING3) && !defined(RT_OS_WINDOWS)
 /**
@@ -133,8 +150,15 @@ typedef IEMEXECMEMCHUNKEHFRAME *PIEMEXECMEMCHUNKEHFRAME;
  */
 typedef struct IEMEXECMEMCHUNK
 {
+#ifdef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
+    /** Number of free items in this chunk. */
+    uint32_t                cFreeUnits;
+    /** Hint were to start searching for free space in the allocation bitmap. */
+    uint32_t                idxFreeHint;
+#else
     /** The heap handle. */
     RTHEAPSIMPLE            hHeap;
+#endif
     /** Pointer to the chunk. */
     void                   *pvChunk;
 #ifdef IN_RING3
@@ -186,6 +210,21 @@ typedef struct IEMEXECMEMALLOCATOR
     /** Total amount of memory allocated. */
     uint64_t                cbAllocated;
 
+#ifdef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
+    /** Pointer to the allocation bitmaps for all the chunks (follows aChunks).
+     *
+     * Since the chunk size is a power of two and the minimum chunk size is a lot
+     * higher than the IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE, each chunk will always
+     * require a whole number of uint64_t elements in the allocation bitmap.  So,
+     * for sake of simplicity, they are allocated as one continous chunk for
+     * simplicity/laziness. */
+    uint64_t               *pbmAlloc;
+    /** Number of units (IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE) per chunk. */
+    uint32_t                cUnitsPerChunk;
+    /** Number of bitmap elements per chunk (for quickly locating the bitmap
+     * portion corresponding to an chunk). */
+    uint32_t                cBitmapElementsPerChunk;
+#else
     /** @name Tweaks to get 64 byte aligned allocats w/o unnecessary fragmentation.
      * @{ */
     /** The size of the heap internal block header.   This is used to adjust the
@@ -198,6 +237,15 @@ typedef struct IEMEXECMEMALLOCATOR
     /** The alignment tweak allocation address. */
     void                   *pvAlignTweak;
     /** @} */
+#endif
+
+#if defined(IN_RING3) && !defined(RT_OS_WINDOWS)
+    /** Pointer to the array of unwind info running parallel to aChunks (same
+     * allocation as this structure, located after the bitmaps).
+     * (For Windows, the structures must reside in 32-bit RVA distance to the
+     * actual chunk, so they are allocated off the chunk.) */
+    PIEMEXECMEMCHUNKEHFRAME paEhFrames;
+#endif
 
     /** The allocation chunks. */
     RT_FLEXIBLE_ARRAY_EXTENSION
@@ -210,14 +258,298 @@ typedef IEMEXECMEMALLOCATOR *PIEMEXECMEMALLOCATOR;
 #define IEMEXECMEMALLOCATOR_MAGIC UINT32_C(0x19490412)
 
 
+static int iemExecMemAllocatorGrow(PIEMEXECMEMALLOCATOR pExecMemAllocator);
+
+
+/**
+ * Worker for iemExecMemAllocatorAlloc that returns @a pvRet after updating
+ * the heap statistics.
+ */
+static void * iemExecMemAllocatorAllocTailCode(PIEMEXECMEMALLOCATOR pExecMemAllocator, void *pvRet,
+                                               uint32_t cbReq, uint32_t idxChunk)
+{
+    pExecMemAllocator->cAllocations += 1;
+    pExecMemAllocator->cbAllocated  += cbReq;
+#ifdef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
+    pExecMemAllocator->cbFree       -= cbReq;
+#else
+    pExecMemAllocator->cbFree       -= RT_ALIGN_32(cbReq, 64);
+#endif
+    pExecMemAllocator->idxChunkHint  = idxChunk;
+
+#ifdef RT_OS_DARWIN
+    /*
+     * Sucks, but RTMEM_PROT_EXEC and RTMEM_PROT_WRITE are mutually exclusive
+     * on darwin.  So, we mark the pages returned as read+write after alloc and
+     * expect the caller to call iemExecMemAllocatorReadyForUse when done
+     * writing to the allocation.
+     */
+    /** @todo detect if this is necessary... it wasn't required on 10.15 or
+     *        whatever older version it was. */
+    int rc = RTMemProtect(pvRet, cbReq, RTMEM_PROT_WRITE | RTMEM_PROT_READ);
+    AssertRC(rc);
+#endif
+
+    return pvRet;
+}
+
+
+#ifdef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
+static void *iemExecMemAllocatorAllocInChunkInt(PIEMEXECMEMALLOCATOR pExecMemAllocator, uint64_t *pbmAlloc, uint32_t idxFirst,
+                                                uint32_t cToScan, uint32_t cReqUnits, uint32_t idxChunk)
+{
+    /*
+     * Shift the bitmap to the idxFirst bit so we can use ASMBitFirstClear.
+     */
+    Assert(!(cToScan & 63));
+    Assert(!(idxFirst & 63));
+    Assert(cToScan + idxFirst <= pExecMemAllocator->cUnitsPerChunk);
+    pbmAlloc += idxFirst / 64;
+
+    /*
+     * Scan the bitmap for cReqUnits of consequtive clear bits
+     */
+    /** @todo This can probably be done more efficiently for non-x86 systems. */
+    int iBit = ASMBitFirstClear(pbmAlloc, cToScan);
+    while (iBit >= 0 && (uint32_t)iBit <= cToScan - cReqUnits)
+    {
+        uint32_t idxAddBit = 1;
+        while (idxAddBit < cReqUnits && !ASMBitTest(pbmAlloc, (uint32_t)iBit + idxAddBit))
+            idxAddBit++;
+        if (idxAddBit >= cReqUnits)
+        {
+            ASMBitSetRange(pbmAlloc, (uint32_t)iBit, (uint32_t)iBit + cReqUnits);
+
+            PIEMEXECMEMCHUNK const pChunk = &pExecMemAllocator->aChunks[idxChunk];
+            pChunk->cFreeUnits -= cReqUnits;
+            pChunk->idxFreeHint = (uint32_t)iBit + cReqUnits;
+
+            void * const pvRet  = (uint8_t *)pChunk->pvChunk
+                                + ((idxFirst + (uint32_t)iBit) << IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT);
+
+            return iemExecMemAllocatorAllocTailCode(pExecMemAllocator, pvRet,
+                                                    cReqUnits << IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT, idxChunk);
+        }
+
+        iBit = ASMBitNextClear(pbmAlloc, cToScan, iBit + idxAddBit - 1);
+    }
+    return NULL;
+}
+#endif /* IEMEXECMEM_USE_ALT_SUB_ALLOCATOR */
+
+
+static void *iemExecMemAllocatorAllocInChunk(PIEMEXECMEMALLOCATOR pExecMemAllocator, uint32_t idxChunk, uint32_t cbReq)
+{
+#ifdef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
+    /*
+     * Figure out how much to allocate.
+     */
+    uint32_t const cReqUnits = (cbReq + IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE - 1) >> IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT;
+    if (cReqUnits <= pExecMemAllocator->aChunks[idxChunk].cFreeUnits)
+    {
+        uint64_t * const pbmAlloc = &pExecMemAllocator->pbmAlloc[pExecMemAllocator->cBitmapElementsPerChunk * idxChunk];
+        uint32_t const   idxHint  = pExecMemAllocator->aChunks[idxChunk].idxFreeHint & ~(uint32_t)63;
+        if (idxHint + cReqUnits <= pExecMemAllocator->cUnitsPerChunk)
+        {
+            void *pvRet = iemExecMemAllocatorAllocInChunkInt(pExecMemAllocator, pbmAlloc, idxHint,
+                                                             pExecMemAllocator->cUnitsPerChunk - idxHint, cReqUnits, idxChunk);
+            if (pvRet)
+                return pvRet;
+        }
+        return iemExecMemAllocatorAllocInChunkInt(pExecMemAllocator, pbmAlloc, 0,
+                                                  RT_MIN(pExecMemAllocator->cUnitsPerChunk, RT_ALIGN_32(idxHint + cReqUnits, 64)),
+                                                  cReqUnits, idxChunk);
+    }
+#else
+    void *pvRet = RTHeapSimpleAlloc(pExecMemAllocator->aChunks[idxChunk].hHeap, cbReq, 32);
+    if (pvRet)
+        return iemExecMemAllocatorAllocTailCode(pExecMemAllocator, pvRet, cbReq, idxChunk);
+#endif
+    return NULL;
+
+}
+
+
+/**
+ * Allocates @a cbReq bytes of executable memory.
+ *
+ * @returns Pointer to the memory, NULL if out of memory or other problem
+ *          encountered.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling
+ *                  thread.
+ * @param   cbReq   How many bytes are required.
+ */
+static void *iemExecMemAllocatorAlloc(PVMCPU pVCpu, uint32_t cbReq)
+{
+    PIEMEXECMEMALLOCATOR pExecMemAllocator = pVCpu->iem.s.pExecMemAllocatorR3;
+    AssertReturn(pExecMemAllocator && pExecMemAllocator->uMagic == IEMEXECMEMALLOCATOR_MAGIC, NULL);
+    AssertMsgReturn(cbReq > 32 && cbReq < _512K, ("%#x\n", cbReq), NULL);
+
+    /*
+     * Adjust the request size so it'll fit the allocator alignment/whatnot.
+     *
+     * For the RTHeapSimple allocator this means to follow the logic described
+     * in iemExecMemAllocatorGrow and attempt to allocate it from one of the
+     * existing chunks if we think we've got sufficient free memory around.
+     *
+     * While for the alternative one we just align it up to a whole unit size.
+     */
+#ifdef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
+    cbReq = RT_ALIGN_32(cbReq, IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE);
+#else
+    cbReq = RT_ALIGN_32(cbReq + pExecMemAllocator->cbHeapBlockHdr, 64) - pExecMemAllocator->cbHeapBlockHdr;
+#endif
+    if (cbReq <= pExecMemAllocator->cbFree)
+    {
+        uint32_t const cChunks      = pExecMemAllocator->cChunks;
+        uint32_t const idxChunkHint = pExecMemAllocator->idxChunkHint < cChunks ? pExecMemAllocator->idxChunkHint : 0;
+        for (uint32_t idxChunk = idxChunkHint; idxChunk < cChunks; idxChunk++)
+        {
+            void *pvRet = iemExecMemAllocatorAllocInChunk(pExecMemAllocator, idxChunk, cbReq);
+            if (pvRet)
+                return pvRet;
+        }
+        for (uint32_t idxChunk = 0; idxChunk < idxChunkHint; idxChunk++)
+        {
+            void *pvRet = iemExecMemAllocatorAllocInChunk(pExecMemAllocator, idxChunk, cbReq);
+            if (pvRet)
+                return pvRet;
+        }
+    }
+
+    /*
+     * Can we grow it with another chunk?
+     */
+    if (pExecMemAllocator->cChunks < pExecMemAllocator->cMaxChunks)
+    {
+        int rc = iemExecMemAllocatorGrow(pExecMemAllocator);
+        AssertLogRelRCReturn(rc, NULL);
+
+        uint32_t const idxChunk = pExecMemAllocator->cChunks - 1;
+        void *pvRet = iemExecMemAllocatorAllocInChunk(pExecMemAllocator, idxChunk, cbReq);
+        if (pvRet)
+            return pvRet;
+        AssertFailed();
+    }
+
+    /* What now? Prune native translation blocks from the cache? */
+    AssertFailed();
+    return NULL;
+}
+
+
+/** This is a hook that we may need later for changing memory protection back
+ *  to readonly+exec */
+static void iemExecMemAllocatorReadyForUse(PVMCPUCC pVCpu, void *pv, size_t cb)
+{
+#ifdef RT_OS_DARWIN
+    /* See iemExecMemAllocatorAllocTailCode for the explanation. */
+# if 0 /** @todo getting weird EXC_BAD_INSTRUCTION exceptions, trying to figure out / work around why... */
+    int rc2 = RTMemProtect(pv, cb, RTMEM_PROT_NONE);
+    AssertRC(rc2); RT_NOREF(pVCpu);
+# endif
+    int rc = RTMemProtect(pv, cb, RTMEM_PROT_EXEC | RTMEM_PROT_READ);
+    AssertRC(rc); RT_NOREF(pVCpu);
+# if 0 /** @todo getting weird EXC_BAD_INSTRUCTION exceptions, trying to figure out / work around why... */
+    ASMProbeReadBuffer(pv, cb);
+#  ifdef RT_ARCH_ARM64
+    __asm__ __volatile__("dmb sy\n\t"
+                         "dsb sy\n\t"
+                         "isb\n\t"
+                         ::: "memory");
+#  endif
+# endif
+#else
+    RT_NOREF(pVCpu, pv, cb);
+#endif
+}
+
+
+/**
+ * Frees executable memory.
+ */
+void iemExecMemAllocatorFree(PVMCPU pVCpu, void *pv, size_t cb)
+{
+    PIEMEXECMEMALLOCATOR pExecMemAllocator = pVCpu->iem.s.pExecMemAllocatorR3;
+    Assert(pExecMemAllocator && pExecMemAllocator->uMagic == IEMEXECMEMALLOCATOR_MAGIC);
+    Assert(pv);
+#ifdef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
+    Assert(!((uintptr_t)pv & (IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE - 1)));
+#else
+    Assert(!((uintptr_t)pv & 63));
+#endif
+
+    /* Align the size as we did when allocating the block. */
+#ifdef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
+    cb = RT_ALIGN_Z(cb, IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE);
+#else
+    cb = RT_ALIGN_Z(cb + pExecMemAllocator->cbHeapBlockHdr, 64) - pExecMemAllocator->cbHeapBlockHdr;
+#endif
+
+    /* Free it / assert sanity. */
+#if defined(VBOX_STRICT) || defined(IEMEXECMEM_USE_ALT_SUB_ALLOCATOR)
+    uint32_t const cChunks = pExecMemAllocator->cChunks;
+    uint32_t const cbChunk = pExecMemAllocator->cbChunk;
+    bool           fFound  = false;
+    for (uint32_t idxChunk = 0; idxChunk < cChunks; idxChunk++)
+    {
+        uintptr_t const offChunk = (uintptr_t)pv - (uintptr_t)pExecMemAllocator->aChunks[idxChunk].pvChunk;
+        fFound = offChunk < cbChunk;
+        if (fFound)
+        {
+#ifdef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
+            uint32_t const idxFirst  = offChunk >> IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT;
+            uint32_t const cReqUnits = cb       >> IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT;
+
+            /* Check that it's valid and free it. */
+            uint64_t * const pbmAlloc = &pExecMemAllocator->pbmAlloc[pExecMemAllocator->cBitmapElementsPerChunk * idxChunk];
+            AssertReturnVoid(ASMBitTest(pbmAlloc, idxFirst));
+            for (uint32_t i = 1; i < cReqUnits; i++)
+                AssertReturnVoid(ASMBitTest(pbmAlloc, idxFirst + i));
+            ASMBitClearRange(pbmAlloc, idxFirst, idxFirst + cReqUnits);
+
+            pExecMemAllocator->aChunks[idxChunk].cFreeUnits  += cReqUnits;
+            pExecMemAllocator->aChunks[idxChunk].idxFreeHint  = idxFirst;
+
+            /* Update the stats. */
+            pExecMemAllocator->cbAllocated  -= cb;
+            pExecMemAllocator->cbFree       += cb;
+            pExecMemAllocator->cAllocations -= 1;
+            return;
+#else
+            Assert(RTHeapSimpleSize(pExecMemAllocator->aChunks[idxChunk].hHeap, pv) == cb);
+            break;
+#endif
+        }
+    }
+# ifdef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
+    AssertFailed();
+# else
+    Assert(fFound);
+# endif
+#endif
+
+#ifdef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
+    /* Update stats while cb is freshly calculated.*/
+    pExecMemAllocator->cbAllocated  -= cb;
+    pExecMemAllocator->cbFree       += RT_ALIGN_Z(cb, 64);
+    pExecMemAllocator->cAllocations -= 1;
+
+    /* Free it. */
+    RTHeapSimpleFree(NIL_RTHEAPSIMPLE, pv);
+#endif
+}
+
+
+
 #ifdef IN_RING3
 # ifdef RT_OS_WINDOWS
 
 /**
  * Initializes the unwind info structures for windows hosts.
  */
-static void *
-iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecMemAllocator, RTHEAPSIMPLE hHeap, void *pvChunk)
+static int
+iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecMemAllocator, void *pvChunk, uint32_t idxChunk)
 {
     /*
      * The AMD64 unwind opcodes.
@@ -271,12 +603,18 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecM
     unsigned const cFunctionEntries = 1;
     unsigned const cbUnwindInfo     = sizeof(s_aOpcodes) + RT_UOFFSETOF(IMAGE_UNWIND_INFO, aOpcodes);
     unsigned const cbNeeded         = sizeof(IMAGE_RUNTIME_FUNCTION_ENTRY) * cFunctionEntries + cbUnwindInfo;
+#  ifdef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
+    unsigned const cbNeededAligned  = RT_ALIGN_32(cbNeeded, IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SIZE);
+    PIMAGE_RUNTIME_FUNCTION_ENTRY const paFunctions
+        = (PIMAGE_RUNTIME_FUNCTION_ENTRY)iemExecMemAllocatorAllocInChunk(pExecMemAllocator, idxChunk, cbNeededAligned);
+#  else
     unsigned const cbNeededAligned  = RT_ALIGN_32(cbNeeded + pExecMemAllocator->cbHeapBlockHdr, 64)
                                     - pExecMemAllocator->cbHeapBlockHdr;
-
     PIMAGE_RUNTIME_FUNCTION_ENTRY const paFunctions = (PIMAGE_RUNTIME_FUNCTION_ENTRY)RTHeapSimpleAlloc(hHeap, cbNeededAligned,
                                                                                                        32 /*cbAlignment*/);
-    AssertReturn(paFunctions, NULL);
+#  endif
+    AssertReturn(paFunctions, VERR_INTERNAL_ERROR_5);
+    pExecMemAllocator->aChunks[idxChunk].pvUnwindInfo = paFunctions;
 
     /*
      * Initialize the structures.
@@ -390,14 +728,11 @@ DECLINLINE(RTPTRUNION) iemDwarfPutCfaSignedOffset(RTPTRUNION Ptr, uint32_t uReg,
 /**
  * Initializes the unwind info section for non-windows hosts.
  */
-static PIEMEXECMEMCHUNKEHFRAME
-iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecMemAllocator, void *pvChunk)
+static int
+iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecMemAllocator, void *pvChunk, uint32_t idxChunk)
 {
-    /*
-     * Allocate the structure for the eh_frame data and associate registration stuff.
-     */
-    PIEMEXECMEMCHUNKEHFRAME pEhFrame = (PIEMEXECMEMCHUNKEHFRAME)RTMemAllocZ(sizeof(IEMEXECMEMCHUNKEHFRAME));
-    AssertReturn(pEhFrame, NULL);
+    PIEMEXECMEMCHUNKEHFRAME const pEhFrame = &pExecMemAllocator->paEhFrames[idxChunk];
+    pExecMemAllocator->aChunks[idxChunk].pvUnwindInfo = pEhFrame; /* not necessary, but whatever */
 
     RTPTRUNION Ptr = { pEhFrame->abEhFrame };
 
@@ -480,7 +815,8 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecM
     memset(pEhFrame->abObject, 0xf6, sizeof(pEhFrame->abObject)); /* color the memory to better spot usage */
     __register_frame_info(pEhFrame->abEhFrame, pEhFrame->abObject);
 #  endif
-    return pEhFrame;
+
+    return VINF_SUCCESS;
 }
 
 # endif /* !RT_OS_WINDOWS */
@@ -507,6 +843,9 @@ static int iemExecMemAllocatorGrow(PIEMEXECMEMALLOCATOR pExecMemAllocator)
 #endif
     AssertLogRelReturn(pvChunk, VERR_NO_EXEC_MEMORY);
 
+#ifdef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
+    int rc = VINF_SUCCESS;
+#else
     /* Initialize the heap for the chunk. */
     RTHEAPSIMPLE hHeap = NIL_RTHEAPSIMPLE;
     int rc = RTHeapSimpleInit(&hHeap, pvChunk, pExecMemAllocator->cbChunk);
@@ -558,38 +897,65 @@ static int iemExecMemAllocatorGrow(PIEMEXECMEMALLOCATOR pExecMemAllocator)
             AssertStmt(pExecMemAllocator->pvAlignTweak, rc = VERR_INTERNAL_ERROR_4);
         }
         if (RT_SUCCESS(rc))
+#endif /* !IEMEXECMEM_USE_ALT_SUB_ALLOCATOR */
         {
+            /*
+             * Add the chunk.
+             *
+             * This must be done before the unwind init so windows can allocate
+             * memory from the chunk when using the alternative sub-allocator.
+             */
+            pExecMemAllocator->aChunks[idxChunk].pvChunk      = pvChunk;
 #ifdef IN_RING3
-# ifdef RT_OS_WINDOWS
-            void *pvUnwindInfo = iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(pExecMemAllocator, hHeap, pvChunk);
-            AssertStmt(pvUnwindInfo, rc = VERR_INTERNAL_ERROR_3);
-# else
-            void *pvUnwindInfo = iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(pExecMemAllocator, pvChunk);
-            AssertStmt(pvUnwindInfo, rc = VERR_NO_MEMORY);
-# endif
+            pExecMemAllocator->aChunks[idxChunk].pvUnwindInfo = NULL;
+#endif
+#ifndef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
+            pExecMemAllocator->aChunks[idxChunk].hHeap        = hHeap;
+#else
+            pExecMemAllocator->aChunks[idxChunk].cFreeUnits   = pExecMemAllocator->cUnitsPerChunk;
+            pExecMemAllocator->aChunks[idxChunk].idxFreeHint  = 0;
+            memset(&pExecMemAllocator->pbmAlloc[pExecMemAllocator->cBitmapElementsPerChunk * idxChunk],
+                   0, sizeof(pExecMemAllocator->pbmAlloc[0]) * pExecMemAllocator->cBitmapElementsPerChunk);
+#endif
+
+            pExecMemAllocator->cChunks      = idxChunk + 1;
+            pExecMemAllocator->idxChunkHint = idxChunk;
+
+#ifdef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
+            pExecMemAllocator->cbTotal     += pExecMemAllocator->cbChunk;
+            pExecMemAllocator->cbFree      += pExecMemAllocator->cbChunk;
+#else
+            size_t const cbFree = RTHeapSimpleGetFreeSize(hHeap);
+            pExecMemAllocator->cbTotal     += cbFree;
+            pExecMemAllocator->cbFree      += cbFree;
+#endif
+
+#ifdef IN_RING3
+            /*
+             * Initialize the unwind information (this cannot really fail atm).
+             * (This sets pvUnwindInfo.)
+             */
+            rc = iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(pExecMemAllocator, pvChunk, idxChunk);
             if (RT_SUCCESS(rc))
 #endif
             {
-                /*
-                 * Finalize the adding of the chunk.
-                 */
-                pExecMemAllocator->aChunks[idxChunk].pvChunk      = pvChunk;
-                pExecMemAllocator->aChunks[idxChunk].hHeap        = hHeap;
-#ifdef IN_RING3
-                pExecMemAllocator->aChunks[idxChunk].pvUnwindInfo = pvUnwindInfo;
-#endif
-
-                pExecMemAllocator->cChunks      = idxChunk + 1;
-                pExecMemAllocator->idxChunkHint = idxChunk;
-
-                size_t const cbFree = RTHeapSimpleGetFreeSize(hHeap);
-                pExecMemAllocator->cbTotal     += cbFree;
-                pExecMemAllocator->cbFree      += cbFree;
-
                 return VINF_SUCCESS;
             }
+
+#ifdef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
+            /* Just in case the impossible happens, undo the above up: */
+            pExecMemAllocator->cbTotal -= pExecMemAllocator->cbChunk;
+            pExecMemAllocator->cbFree  -= pExecMemAllocator->aChunks[idxChunk].cFreeUnits << IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT;
+            pExecMemAllocator->cChunks  = idxChunk;
+            memset(&pExecMemAllocator->pbmAlloc[pExecMemAllocator->cBitmapElementsPerChunk * idxChunk],
+                   0xff, sizeof(pExecMemAllocator->pbmAlloc[0]) * pExecMemAllocator->cBitmapElementsPerChunk);
+            pExecMemAllocator->aChunks[idxChunk].pvChunk    = NULL;
+            pExecMemAllocator->aChunks[idxChunk].cFreeUnits = 0;
+#endif
         }
+#ifndef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
     }
+#endif
     RTMemPageFree(pvChunk, pExecMemAllocator->cbChunk);
     return rc;
 }
@@ -651,9 +1017,21 @@ int iemExecMemAllocatorInit(PVMCPU pVCpu, uint64_t cbMax, uint64_t cbInitial, ui
     /*
      * Allocate and initialize the allocatore instance.
      */
-    PIEMEXECMEMALLOCATOR pExecMemAllocator = (PIEMEXECMEMALLOCATOR)RTMemAllocZ(RT_UOFFSETOF_DYN(IEMEXECMEMALLOCATOR,
-                                                                                                aChunks[cMaxChunks]));
-    AssertReturn(pExecMemAllocator, VERR_NO_MEMORY);
+    size_t       cbNeeded   = RT_UOFFSETOF_DYN(IEMEXECMEMALLOCATOR, aChunks[cMaxChunks]);
+#ifdef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
+    size_t const offBitmaps = RT_ALIGN_Z(cbNeeded, RT_CACHELINE_SIZE);
+    size_t const cbBitmap   = cbChunk >> (IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT + 3);
+    cbNeeded += cbBitmap * cMaxChunks;
+    AssertCompile(IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT <= 10);
+    Assert(cbChunk > RT_BIT_32(IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT + 3));
+#endif
+#if defined(IN_RING3) && !defined(RT_OS_WINDOWS)
+    size_t const offEhFrames = RT_ALIGN_Z(cbNeeded, RT_CACHELINE_SIZE);
+    cbNeeded += sizeof(IEMEXECMEMCHUNKEHFRAME) * cMaxChunks;
+#endif
+    PIEMEXECMEMALLOCATOR pExecMemAllocator = (PIEMEXECMEMALLOCATOR)RTMemAllocZ(cbNeeded);
+    AssertLogRelMsgReturn(pExecMemAllocator, ("cbNeeded=%zx cMaxChunks=%#x cbChunk=%#x\n", cbNeeded, cMaxChunks, cbChunk),
+                          VERR_NO_MEMORY);
     pExecMemAllocator->uMagic       = IEMEXECMEMALLOCATOR_MAGIC;
     pExecMemAllocator->cbChunk      = cbChunk;
     pExecMemAllocator->cMaxChunks   = cMaxChunks;
@@ -663,9 +1041,23 @@ int iemExecMemAllocatorInit(PVMCPU pVCpu, uint64_t cbMax, uint64_t cbInitial, ui
     pExecMemAllocator->cbTotal      = 0;
     pExecMemAllocator->cbFree       = 0;
     pExecMemAllocator->cbAllocated  = 0;
+#ifdef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
+    pExecMemAllocator->pbmAlloc                 = (uint64_t *)((uintptr_t)pExecMemAllocator + offBitmaps);
+    pExecMemAllocator->cUnitsPerChunk           = cbChunk >> IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT;
+    pExecMemAllocator->cBitmapElementsPerChunk  = cbChunk >> (IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT + 6);
+    memset(pExecMemAllocator->pbmAlloc, 0xff, cbBitmap); /* Mark everything as allocated. Clear when chunks are added. */
+#endif
+#if defined(IN_RING3) && !defined(RT_OS_WINDOWS)
+    pExecMemAllocator->paEhFrames = (PIEMEXECMEMCHUNKEHFRAME)((uintptr_t)pExecMemAllocator + offEhFrames);
+#endif
     for (uint32_t i = 0; i < cMaxChunks; i++)
     {
+#ifdef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
+        pExecMemAllocator->aChunks[i].cFreeUnits   = 0;
+        pExecMemAllocator->aChunks[i].idxFreeHint  = 0;
+#else
         pExecMemAllocator->aChunks[i].hHeap        = NIL_RTHEAPSIMPLE;
+#endif
         pExecMemAllocator->aChunks[i].pvChunk      = NULL;
 #ifdef IN_RING0
         pExecMemAllocator->aChunks[i].hMemObj      = NIL_RTR0MEMOBJ;
@@ -687,132 +1079,6 @@ int iemExecMemAllocatorInit(PVMCPU pVCpu, uint64_t cbMax, uint64_t cbInitial, ui
     pExecMemAllocator->idxChunkHint = 0;
 
     return VINF_SUCCESS;
-}
-
-/**
- * Worker for iemExecMemAllocatorAlloc that returns @a pvRet after updating
- * the heap statistics.
- */
-DECL_FORCE_INLINE(void *) iemExecMemAllocatorAllocTailCode(PIEMEXECMEMALLOCATOR pExecMemAllocator, void *pvRet,
-                                                           uint32_t cbReq, uint32_t idxChunk)
-{
-    pExecMemAllocator->cAllocations += 1;
-    pExecMemAllocator->cbAllocated  += cbReq;
-    pExecMemAllocator->cbFree       -= RT_ALIGN_32(cbReq, 64);
-    pExecMemAllocator->idxChunkHint  = idxChunk;
-    return pvRet;
-}
-
-
-/**
- * Allocates @a cbReq bytes of executable memory.
- *
- * @returns Pointer to the memory, NULL if out of memory or other problem
- *          encountered.
- * @param   pVCpu   The cross context virtual CPU structure of the calling
- *                  thread.
- * @param   cbReq   How many bytes are required.
- */
-static void *iemExecMemAllocatorAlloc(PVMCPU pVCpu, uint32_t cbReq)
-{
-    PIEMEXECMEMALLOCATOR pExecMemAllocator = pVCpu->iem.s.pExecMemAllocatorR3;
-    AssertReturn(pExecMemAllocator && pExecMemAllocator->uMagic == IEMEXECMEMALLOCATOR_MAGIC, NULL);
-    AssertMsgReturn(cbReq > 32 && cbReq < _512K, ("%#x\n", cbReq), NULL);
-
-    /*
-     * Adjust the request size as per the logic described in
-     * iemExecMemAllocatorGrow and attempt to allocate it from one of the
-     * existing chunks if we think we've got sufficient free memory around.
-     */
-    cbReq = RT_ALIGN_32(cbReq + pExecMemAllocator->cbHeapBlockHdr, 64) - pExecMemAllocator->cbHeapBlockHdr;
-    if (cbReq <= pExecMemAllocator->cbFree)
-    {
-        uint32_t const cChunks      = pExecMemAllocator->cChunks;
-        uint32_t const idxChunkHint = pExecMemAllocator->idxChunkHint < cChunks ? pExecMemAllocator->idxChunkHint : 0;
-        for (uint32_t idxChunk = idxChunkHint; idxChunk < cChunks; idxChunk++)
-        {
-            void *pvRet = RTHeapSimpleAlloc(pExecMemAllocator->aChunks[idxChunk].hHeap, cbReq, 32);
-            if (pvRet)
-                return iemExecMemAllocatorAllocTailCode(pExecMemAllocator, pvRet, cbReq, idxChunk);
-        }
-        for (uint32_t idxChunk = 0; idxChunk < idxChunkHint; idxChunk++)
-        {
-            void *pvRet = RTHeapSimpleAlloc(pExecMemAllocator->aChunks[idxChunk].hHeap, cbReq, 32);
-            if (pvRet)
-                return iemExecMemAllocatorAllocTailCode(pExecMemAllocator, pvRet, cbReq, idxChunk);
-        }
-    }
-
-    /*
-     * Can we grow it with another chunk?
-     */
-    if (pExecMemAllocator->cChunks < pExecMemAllocator->cMaxChunks)
-    {
-        int rc = iemExecMemAllocatorGrow(pExecMemAllocator);
-        AssertLogRelRCReturn(rc, NULL);
-
-        uint32_t const idxChunk = pExecMemAllocator->cChunks - 1;
-        void *pvRet = RTHeapSimpleAlloc(pExecMemAllocator->aChunks[idxChunk].hHeap, cbReq, 32);
-        if (pvRet)
-            return iemExecMemAllocatorAllocTailCode(pExecMemAllocator, pvRet, cbReq, idxChunk);
-        AssertFailed();
-    }
-
-    /* What now? Prune native translation blocks from the cache? */
-    AssertFailed();
-    return NULL;
-}
-
-
-/** This is a hook that we may need later for changing memory protection back
- *  to readonly+exec */
-static void iemExecMemAllocatorReadyForUse(PVMCPUCC pVCpu, void *pv, size_t cb)
-{
-#ifdef RT_OS_DARWIN
-    int rc = RTMemProtect(pv, cb, RTMEM_PROT_EXEC | RTMEM_PROT_READ);
-    AssertRC(rc); RT_NOREF(pVCpu);
-#else
-    RT_NOREF(pVCpu, pv, cb);
-#endif
-}
-
-
-/**
- * Frees executable memory.
- */
-void iemExecMemAllocatorFree(PVMCPU pVCpu, void *pv, size_t cb)
-{
-    PIEMEXECMEMALLOCATOR pExecMemAllocator = pVCpu->iem.s.pExecMemAllocatorR3;
-    Assert(pExecMemAllocator && pExecMemAllocator->uMagic == IEMEXECMEMALLOCATOR_MAGIC);
-    Assert(pv);
-
-    /* Align the size as we did when allocating the block. */
-    cb = RT_ALIGN_Z(cb + pExecMemAllocator->cbHeapBlockHdr, 64) - pExecMemAllocator->cbHeapBlockHdr;
-
-    /* Assert sanity if strict build. */
-#ifdef VBOX_STRICT
-    uint32_t const cChunks = pExecMemAllocator->cChunks;
-    uint32_t const cbChunk = pExecMemAllocator->cbChunk;
-    bool           fFound  = false;
-    for (uint32_t idxChunk = 0; idxChunk < cChunks; idxChunk++)
-    {
-        fFound = (uintptr_t)pv - (uintptr_t)pExecMemAllocator->aChunks[idxChunk].pvChunk < cbChunk;
-        if (fFound)
-        {
-            Assert(RTHeapSimpleSize(pExecMemAllocator->aChunks[idxChunk].hHeap, pv) == cb);
-            break;
-        }
-    }
-    Assert(fFound);
-#endif
-
-    /* Update stats while cb is freshly calculated.*/
-    pExecMemAllocator->cbAllocated  -= cb;
-    pExecMemAllocator->cbFree       += RT_ALIGN_Z(cb, 64);
-    pExecMemAllocator->cAllocations -= 1;
-
-    /* Do the actual freeing. */
-    RTHeapSimpleFree(NIL_RTHEAPSIMPLE, pv);
 }
 
 
@@ -1572,9 +1838,18 @@ PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb)
     if (pTbAllocator->pDelayedFreeHead)
         iemTbAllocatorProcessDelayedFrees(pVCpu, pVCpu->iem.s.pTbAllocatorR3);
 
+#if 1 /** @todo getting weird EXC_BAD_INSTRUCTION exceptions, trying to figure out / work around why... */
     PIEMNATIVEINSTR const paFinalInstrBuf = (PIEMNATIVEINSTR)iemExecMemAllocatorAlloc(pVCpu, off * sizeof(IEMNATIVEINSTR));
     AssertReturn(paFinalInstrBuf, pTb);
     memcpy(paFinalInstrBuf, pReNative->pInstrBuf, off * sizeof(paFinalInstrBuf[0]));
+#else
+    IEMNATIVEINSTR volatile * const paFinalInstrBuf
+        = (IEMNATIVEINSTR volatile *)iemExecMemAllocatorAlloc(pVCpu, off * sizeof(IEMNATIVEINSTR));
+    AssertReturn(paFinalInstrBuf, pTb);
+    for (uint32_t i = 0; i < off; i++)
+        paFinalInstrBuf[i] = pReNative->pInstrBuf[i];
+    __asm__ __volatile__("dmb sy\n\t" ::: "memory");
+#endif
 
     /*
      * Apply fixups.
