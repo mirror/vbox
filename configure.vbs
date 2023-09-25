@@ -1756,44 +1756,34 @@ end function
 
 
 ''
-' Checks for any Qt5 binaries.
+' Checks for any Qt binaries.
 '
-sub CheckForQt(strOptQt5, strOptInfix)
-   dim strPathQt5, strInfixQt5, arrFolders, arrVccInfixes, strVccInfix, strPathDev
-   PrintHdr "Qt5"
+sub CheckForQt(strOptQt, strOptInfix)
+   dim strPathQt, strInfixQt, arrFolders, arrVccInfixes, strVccInfix, strPathDev
+   PrintHdr "Qt"
 
    '
-   ' Try to find the Qt5 installation (user specified path with --with-qt5)
+   ' Try to find the Qt installation (user specified path with --with-qt)
    '
-   LogPrint "Checking for user specified path of Qt5 ... "
-   strPathQt5 = CheckForQt5Sub(UnixSlashes(strOptQt5), strOptInfix, strInfixQt5)
-   if strPathQt5 = "" and g_blnInternalFirst = true then strPathQt5 = CheckForQt5Internal(strOptInfix, strInfixQt5)
-   if strPathQt5 = "" then
+   LogPrint "Checking for user specified path of Qt ... "
+   strPathQt = CheckForQtSub(UnixSlashes(strOptQt), strOptInfix, strInfixQt)
+   if strPathQt = "" and g_blnInternalFirst = true then strPathQt = CheckForQtInternal(strOptInfix, strInfixQt)
+   if strPathQt = "" then
       '
       ' Collect links from "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\UFH\SHC"
       '
       ' Typical string list:
-      '   C:\Users\someuser\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Qt\5.x.y\MSVC 20zz (64-bit)\Qt 5.x.y (MSVC 20zz 64-bit).lnk
+      '   C:\Users\someuser\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Qt\6.x.y\MSVC 20zz (64-bit)\Qt 6.x.y (MSVC 20zz 64-bit).lnk
       '   C:\Windows\System32\cmd.exe
-      '   /A /Q /K E:\qt\installed\5.x.y\msvc20zz_64\bin\qtenv2.bat
+      '   /A /Q /K E:\qt\installed\6.x.y\msvc20zz_64\bin\qtenv2.bat
       '
       dim arrCandidates, strCandidate
-      arrCandidates = CollectFromProgramItemLinks(GetRef("Qt5ProgramItemCallback"), strPathQt5)
+      arrCandidates = CollectFromProgramItemLinks(GetRef("QtProgramItemCallback"), strPathQt)
       LogPrint "Testing qtenv2.bat links (" & ArraySize(arrCandidates) & ") ..."
 
       ' VC infixes/subdir names to consider (ASSUMES 64bit)
       if     g_strVCCVersion = "VCC142" or g_strVCCVersion = "" then
          arrVccInfixes = Array("msvc2019_64", "msvc2017_64", "msvc2015_64")
-      elseif g_strVCCVersion = "VCC141" then
-         arrVccInfixes = Array("msvc2017_64", "msvc2015_64", "msvc2019_64")
-      elseif g_strVCCVersion = "VCC140" then
-         arrVccInfixes = Array("msvc2015_64", "msvc2017_64", "msvc2019_64")
-      elseif g_strVCCVersion = "VCC120" then
-         arrVccInfixes = Array("msvc2013_64")
-      elseif g_strVCCVersion = "VCC110" then
-         arrVccInfixes = Array("msvc2012_64")
-      elseif g_strVCCVersion = "VCC100" then
-         arrVccInfixes = Array("msvc2010_64")
       else
          MsgFatal "Unexpected VC version: " & g_strVCCVersion
          arrVccInfixes = Array()
@@ -1801,48 +1791,48 @@ sub CheckForQt(strOptQt5, strOptInfix)
       for each strVccInfix in arrVccInfixes
          for each strCandidate in arrCandidates
             if InStr(1, LCase(strCandidate), strVccInfix) > 0 then
-               strPathQt5 = CheckForQt5Sub(strCandidate, strOptInfix, strInfixQt5)
-               if strPathQt5 <> "" then exit for
+               strPathQt = CheckForQtSub(strCandidate, strOptInfix, strInfixQt)
+               if strPathQt <> "" then exit for
             end if
          next
-         if strPathQt5 <> "" then exit for
+         if strPathQt <> "" then exit for
       next
    end if
 
    ' Check the dev tools - prefer ones matching the compiler.
-   if strPathQt5 = "" and g_blnInternalFirst = false then strPathQt5 = CheckForQt5Internal(strOptInfix, strInfixQt5)
+   if strPathQt = "" and g_blnInternalFirst = false then strPathQt = CheckForQtInternal(strOptInfix, strInfixQt)
 
    '
    ' Display the result and output the config.
    '
-   if strPathQt5 <> "" then
-      PrintResult "Qt5", strPathQt5
-      PrintResultMsg "Qt5 infix", strInfixQt5
-      CfgPrintAssign "PATH_SDK_QT5",          strPathQt5
-      CfgPrintAssign "PATH_TOOL_QT5",         "$(PATH_SDK_QT5)"
-      CfgPrintAssign "VBOX_PATH_QT",          "$(PATH_SDK_QT5)"
-      CfgPrintAssign "VBOX_QT_INFIX",         strInfixQt5
+   if strPathQt <> "" then
+      PrintResult "Qt", strPathQt
+      PrintResultMsg "Qt infix", strInfixQt
+      CfgPrintAssign "PATH_SDK_QT6",          strPathQt
+      CfgPrintAssign "PATH_TOOL_QT6",         "$(PATH_SDK_QT6)"
+      CfgPrintAssign "VBOX_PATH_QT",          "$(PATH_SDK_QT6)"
+      CfgPrintAssign "VBOX_QT_INFIX",         strInfixQt
       CfgPrintAssign "VBOX_WITH_QT_PAYLOAD",  "1"
    else
-      PrintResultMsg "Qt5", "not found"
+      PrintResultMsg "Qt", "not found"
       CfgPrintAssign "VBOX_WITH_QTGUI", ""
    end if
 end sub
 
-function CheckForQt5Internal(strOptInfix, ByRef strInfixQt5)
+function CheckForQtInternal(strOptInfix, ByRef strInfixQt)
    dim strPathDev, arrFolders, arrVccInfixes, strVccInfix, i
-   CheckForQt5Internal = ""
+   CheckForQtInternal = ""
    for each strPathDev in g_arrPathDev
-      LogPrint "Testing tools dir (" & strPathDev & "/win." & g_strTargetArch & "/qt/v5*) ..."
-      arrFolders = GetSubdirsStartingWithVerSorted(strPathDev & "/win." & g_strTargetArch & "/qt", "v5")
+      LogPrint "Testing tools dir (" & strPathDev & "/win." & g_strTargetArch & "/qt/v6*) ..."
+      arrFolders = GetSubdirsStartingWithVerSorted(strPathDev & "/win." & g_strTargetArch & "/qt", "v6")
       arrVccInfixes = Array(LCase(g_strVCCVersion), Left(LCase(g_strVCCVersion), Len(g_strVCCVersion) - 1), "")
       for each strVccInfix in arrVccInfixes
          for i = UBound(arrFolders) to LBound(arrFolders) step -1
             if strVccInfix = "" or InStr(1, LCase(arrFolders(i)), strVccInfix) > 0 then
 LogPrint "i="&i&" strVccInfix="&strVccInfix
-               strPathQt5 = CheckForQt5Sub(strPathDev & "/win." & g_strTargetArch & "/qt/" & arrFolders(i), strOptInfix, strInfixQt5)
-               if strPathQt5 <> "" then
-                  CheckForQt5Internal = strPathQt5
+               strPathQt = CheckForQtSub(strPathDev & "/win." & g_strTargetArch & "/qt/" & arrFolders(i), strOptInfix, strInfixQt)
+               if strPathQt <> "" then
+                  CheckForQtInternal = strPathQt
                   exit function
                end if
             end if
@@ -1851,9 +1841,9 @@ LogPrint "i="&i&" strVccInfix="&strVccInfix
    next
 end function
 
-function Qt5ProgramItemCallback(ByRef arrStrings, cStrings, ByRef strUnused)
+function QtProgramItemCallback(ByRef arrStrings, cStrings, ByRef strUnused)
    dim str, off
-   Qt5ProgramItemCallback = ""
+   QtProgramItemCallback = ""
    if cStrings >= 3 then
       str = Trim(arrStrings(UBound(arrStrings)))
       if   LCase(Right(str, Len("\bin\qtenv2.bat"))) = "\bin\qtenv2.bat" _
@@ -1861,39 +1851,39 @@ function Qt5ProgramItemCallback(ByRef arrStrings, cStrings, ByRef strUnused)
        and InStr(1, str, ":") > 0 _
       then
          off = InStr(1, str, ":") - 1
-         Qt5ProgramItemCallback = Mid(str, off, Len(str) - off - Len("\bin\qtenv2.bat") + 1)
+         QtProgramItemCallback = Mid(str, off, Len(str) - off - Len("\bin\qtenv2.bat") + 1)
       end if
    end if
 end function
 
-function CheckForQt5Sub(strPathQt5, strOptInfix, ByRef strInfixQt5)
-   CheckForQt5Sub = ""
-   if strPathQt5 <> "" then
-      LogPrint "Trying: strPathQt5=" & strPathQt5
+function CheckForQtSub(strPathQt, strOptInfix, ByRef strInfixQt)
+   CheckForQtSub = ""
+   if strPathQt <> "" then
+      LogPrint "Trying: strPathQt=" & strPathQt
 
-      if   LogFileExists(strPathQt5, "bin/moc.exe") _
-       and LogFileExists(strPathQt5, "bin/uic.exe") _
-       and LogFileExists(strPathQt5, "include/QtWidgets/qwidget.h") _
-       and LogFileExists(strPathQt5, "include/QtWidgets/QApplication") _
-       and LogFileExists(strPathQt5, "include/QtGui/QImage") _
-       and LogFileExists(strPathQt5, "include/QtNetwork/QHostAddress") _
+      if   LogFileExists(strPathQt, "bin/moc.exe") _
+       and LogFileExists(strPathQt, "bin/uic.exe") _
+       and LogFileExists(strPathQt, "include/QtWidgets/qwidget.h") _
+       and LogFileExists(strPathQt, "include/QtWidgets/QApplication") _
+       and LogFileExists(strPathQt, "include/QtGui/QImage") _
+       and LogFileExists(strPathQt, "include/QtNetwork/QHostAddress") _
       then
          ' Infix testing.
-         if   LogFileExists(strPathQt5, "lib/Qt5Core.lib") _
-          and LogFileExists(strPathQt5, "lib/Qt5Network.lib") then
+         if   LogFileExists(strPathQt, "lib/Qt6Core.lib") _
+          and LogFileExists(strPathQt, "lib/Qt6Network.lib") then
             LogPrint "found it w/o infix"
-            strInfixQt5 = ""
-            CheckForQt5Sub = UnixSlashes(PathAbs(strPathQt5))
-         elseif LogFileExists(strPathQt5, "lib/Qt5Core" & strOptInfix & ".lib") _
-            and LogFileExists(strPathQt5, "lib/Qt5Network" & strOptInfix & ".lib") then
+            strInfixQt = ""
+            CheckForQtSub = UnixSlashes(PathAbs(strPathQt))
+         elseif LogFileExists(strPathQt, "lib/Qt6Core" & strOptInfix & ".lib") _
+            and LogFileExists(strPathQt, "lib/Qt6Network" & strOptInfix & ".lib") then
             LogPrint "found it w/ infix: " & strOptInfix & " (option)"
-            strInfixQt5 = strOptInfix
-            CheckForQt5Sub = UnixSlashes(PathAbs(strPathQt5))
-         elseif LogFileExists(strPathQt5, "lib/Qt5CoreVBox.lib") _
-            and LogFileExists(strPathQt5, "lib/Qt5NetworkVBox.lib") then
+            strInfixQt = strOptInfix
+            CheckForQtSub = UnixSlashes(PathAbs(strPathQt))
+         elseif LogFileExists(strPathQt, "lib/Qt6CoreVBox.lib") _
+            and LogFileExists(strPathQt, "lib/Qt6NetworkVBox.lib") then
             LogPrint "found it w/ infix: VBox"
-            strInfixQt5 = "VBox"
-            CheckForQt5Sub = UnixSlashes(PathAbs(strPathQt5))
+            strInfixQt = "VBox"
+            CheckForQtSub = UnixSlashes(PathAbs(strPathQt))
          end if
       end if
    end if
@@ -1970,7 +1960,7 @@ sub usage
    Print "Locations:"
    Print "  --with-kBuild=PATH      Where kBuild is to be found."
    Print "  --with-libSDL=PATH      Where libSDL is to be found."
-   Print "  --with-Qt5=PATH         Where Qt5 is to be found (optional)."
+   Print "  --with-Qt=PATH          Where Qt is to be found (optional)."
    Print "  --with-DDK=PATH         Where the WDK is to be found."
    Print "  --with-SDK=PATH         Where the Windows SDK is to be found."
    Print "  --with-SDK10=PATH       Where the Windows 10 SDK/WDK is to be found."
@@ -2021,8 +2011,8 @@ function Main
    strOptDDK = ""
    strOptkBuild = ""
    strOptlibSDL = ""
-   strOptQt5 = ""
-   strOptQt5Infix = ""
+   strOptQt = ""
+   strOptQtInfix = ""
    strOptSDK10 = ""
    strOptSDK10Version = ""
    strOptVC = ""
@@ -2069,10 +2059,10 @@ function Main
             ' ignore
          case "--with-mingw-w64"
             ' ignore
-         case "--with-qt5"
-            strOptQt5 = strPath
-         case "--with-qt5-infix"
-            strOptQt5Infix = strPath
+         case "--with-qt"
+            strOptQt = strPath
+         case "--with-qt-infix"
+            strOptQtInfix = strPath
          case "--with-sdk"
             MsgWarning "Ignoring --with-sdk (the legacy Platform SDK is no longer required)."
          case "--with-sdk10"
@@ -2218,7 +2208,7 @@ function Main
        ' 32-bit Curl required as well
       CheckForCurl      strOptCurl32, True
    end if
-   CheckForQt           strOptQt5, strOptQt5Infix
+   CheckForQt           strOptQt, strOptQtInfix
    CheckForPython       strOptPython
    CfgPrintAssign "VBOX_WITH_LIBVPX",    "" '' @todo look for libvpx 1.1.0+
    CfgPrintAssign "VBOX_WITH_LIBOGG",    "" '' @todo look for libogg 1.3.5+
