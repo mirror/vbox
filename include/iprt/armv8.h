@@ -2306,7 +2306,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrLogicalShiftedReg(uint32_t u2Opc, boo
                                                              uint32_t iRegResult, uint32_t iReg1, uint32_t iReg2Shifted,
                                                              bool f64Bit, uint32_t offShift6, ARMV8A64INSTRSHIFT enmShift)
 {
-    Assert(u2Opc < 4); Assert(offShift6 < (f64Bit ? 64 : 32));
+    Assert(u2Opc < 4); Assert(offShift6 < (f64Bit ? UINT32_C(64) : UINT32_C(32)));
     Assert(iRegResult < 32); Assert(iReg1 < 32); Assert(iReg2Shifted < 32);
     return ((uint32_t)f64Bit << 31)
          | (u2Opc << 29)
