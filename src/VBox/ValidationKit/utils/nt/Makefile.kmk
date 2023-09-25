@@ -64,9 +64,9 @@ ntFlushVirtualMemory_SOURCES  = ntFlushVirtualMemory.cpp
 #
 PROGRAMS.win += ntDisplay
 ntDisplay_TEMPLATE  = VBoxValidationKitR3
-# todo: figure out why there's so much C4668
-ntDisplay_CXXFLAGS.win += -wd4668 # winioctl.h(lots of strings): warning C4668: '_WIN32_WINNT_WIN10_RS5' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-ntDisplay_CXXFLAGS.win += -wd5039 # winbase.h(7722): warning C5039: 'TpSetCallbackCleanupGroup': pointer or reference to potentially throwing function passed to 'extern "C"' function under -EHc. Undefined behavior may occur if this function throws an exception.
+#  -wd4668: winioctl.h(lots of strings): '_WIN32_WINNT_WIN10_RS5' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+#  -wd5039: winbase.h(7722): 'TpSetCallbackCleanupGroup': pointer or reference to potentially throwing function passed to 'extern "C"' function under -EHc
+ntDisplay_CXXFLAGS += -wd5039 -wd4668
 ntDisplay_LIBS      = d3d11.lib
 ntDisplay_SOURCES   = ntDisplay.cpp
 ntDisplay_VBOX_IMPORT_CHECKER.win.amd64 = w8
