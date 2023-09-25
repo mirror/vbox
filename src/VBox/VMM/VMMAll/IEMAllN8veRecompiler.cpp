@@ -71,6 +71,7 @@ extern "C" DECLIMPORT(uint8_t) __cdecl RtlDelFunctionTable(void *pvFunctionTable
 #else
 # include <iprt/formats/dwarf.h>
 # if defined(RT_OS_DARWIN)
+#  include <libkern/OSCacheControl.h>
 #  define IEMNATIVE_USE_LIBUNWIND
 extern "C" void  __register_frame(const void *pvFde);
 extern "C" void  __deregister_frame(const void *pvFde);
@@ -283,6 +284,9 @@ static void * iemExecMemAllocatorAllocTailCode(PIEMEXECMEMALLOCATOR pExecMemAllo
      * on darwin.  So, we mark the pages returned as read+write after alloc and
      * expect the caller to call iemExecMemAllocatorReadyForUse when done
      * writing to the allocation.
+     *
+     * See also https://developer.apple.com/documentation/apple-silicon/porting-just-in-time-compilers-to-apple-silicon
+     * for details.
      */
     /** @todo detect if this is necessary... it wasn't required on 10.15 or
      *        whatever older version it was. */
@@ -444,21 +448,15 @@ static void iemExecMemAllocatorReadyForUse(PVMCPUCC pVCpu, void *pv, size_t cb)
 {
 #ifdef RT_OS_DARWIN
     /* See iemExecMemAllocatorAllocTailCode for the explanation. */
-# if 0 /** @todo getting weird EXC_BAD_INSTRUCTION exceptions, trying to figure out / work around why... */
-    int rc2 = RTMemProtect(pv, cb, RTMEM_PROT_NONE);
-    AssertRC(rc2); RT_NOREF(pVCpu);
-# endif
     int rc = RTMemProtect(pv, cb, RTMEM_PROT_EXEC | RTMEM_PROT_READ);
     AssertRC(rc); RT_NOREF(pVCpu);
-# if 0 /** @todo getting weird EXC_BAD_INSTRUCTION exceptions, trying to figure out / work around why... */
-    ASMProbeReadBuffer(pv, cb);
-#  ifdef RT_ARCH_ARM64
-    __asm__ __volatile__("dmb sy\n\t"
-                         "dsb sy\n\t"
-                         "isb\n\t"
-                         ::: "memory");
-#  endif
-# endif
+
+    /*
+     * Flush the instruction cache:
+     *      https://developer.apple.com/documentation/apple-silicon/porting-just-in-time-compilers-to-apple-silicon
+     */
+    /* sys_dcache_flush(pv, cb); - not necessary */
+    sys_icache_invalidate(pv, cb);
 #else
     RT_NOREF(pVCpu, pv, cb);
 #endif
@@ -836,7 +834,7 @@ static int iemExecMemAllocatorGrow(PIEMEXECMEMALLOCATOR pExecMemAllocator)
     AssertLogRelReturn(idxChunk < pExecMemAllocator->cMaxChunks, VERR_OUT_OF_RESOURCES);
 
     /* Allocate a chunk. */
-#ifdef RT_OS_DARWIN /** @todo oh carp! This isn't going to work very well with the unpredictability of the simple heap... */
+#ifdef RT_OS_DARWIN
     void *pvChunk = RTMemPageAllocEx(pExecMemAllocator->cbChunk, 0);
 #else
     void *pvChunk = RTMemPageAllocEx(pExecMemAllocator->cbChunk, RTMEMPAGEALLOC_F_EXECUTABLE);
@@ -1838,18 +1836,9 @@ PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb)
     if (pTbAllocator->pDelayedFreeHead)
         iemTbAllocatorProcessDelayedFrees(pVCpu, pVCpu->iem.s.pTbAllocatorR3);
 
-#if 1 /** @todo getting weird EXC_BAD_INSTRUCTION exceptions, trying to figure out / work around why... */
     PIEMNATIVEINSTR const paFinalInstrBuf = (PIEMNATIVEINSTR)iemExecMemAllocatorAlloc(pVCpu, off * sizeof(IEMNATIVEINSTR));
     AssertReturn(paFinalInstrBuf, pTb);
     memcpy(paFinalInstrBuf, pReNative->pInstrBuf, off * sizeof(paFinalInstrBuf[0]));
-#else
-    IEMNATIVEINSTR volatile * const paFinalInstrBuf
-        = (IEMNATIVEINSTR volatile *)iemExecMemAllocatorAlloc(pVCpu, off * sizeof(IEMNATIVEINSTR));
-    AssertReturn(paFinalInstrBuf, pTb);
-    for (uint32_t i = 0; i < off; i++)
-        paFinalInstrBuf[i] = pReNative->pInstrBuf[i];
-    __asm__ __volatile__("dmb sy\n\t" ::: "memory");
-#endif
 
     /*
      * Apply fixups.
