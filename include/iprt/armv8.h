@@ -2212,6 +2212,16 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 
 /** A64: Return instruction. */
 #define ARMV8_A64_INSTR_RET         UINT32_C(0xd65f03c0)
+/** A64: Return instruction with LR pointer authentication using SP and key A. */
+#define ARMV8_A64_INSTR_RETAA       UINT32_C(0xd65f0bff)
+/** A64: Return instruction with LR pointer authentication using SP and key B. */
+#define ARMV8_A64_INSTR_RETAB       UINT32_C(0xd65f0fff)
+/** A64: Insert pointer authentication code into X17 using X16 and key B. */
+#define ARMV8_A64_INSTR_PACIB1716   UINT32_C(0xd503215f)
+/** A64: Insert pointer authentication code into LR using SP and key B. */
+#define ARMV8_A64_INSTR_PACIBSP     UINT32_C(0xd503237f)
+/** A64: Insert pointer authentication code into LR using XZR and key B. */
+#define ARMV8_A64_INSTR_PACIBZ      UINT32_C(0xd503235f)
 
 
 typedef enum

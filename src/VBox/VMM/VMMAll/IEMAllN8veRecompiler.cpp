@@ -752,12 +752,16 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecM
         *Ptr.pb++   = sizeof(uintptr_t);                    /* Address size. */
         *Ptr.pb++   = 0;                                    /* Segment selector size. */
     }
+#  ifdef RT_ARCH_AMD64
     Ptr = iemDwarfPutLeb128(Ptr, 1);                        /* Code alignment factor (LEB128 = 1). */
+#  else
+    Ptr = iemDwarfPutLeb128(Ptr, 4);                        /* Code alignment factor (LEB128 = 4). */
+#  endif
     Ptr = iemDwarfPutLeb128(Ptr, -8);                       /* Data alignment factor (LEB128 = -8). */
 #  ifdef RT_ARCH_AMD64
     Ptr = iemDwarfPutUleb128(Ptr, DWREG_AMD64_RA);          /* Return address column (ULEB128) */
 #  elif defined(RT_ARCH_ARM64)
-    Ptr = iemDwarfPutUleb128(Ptr, DWREG_ARM64_PC);          /* Return address column (ULEB128) */
+    Ptr = iemDwarfPutUleb128(Ptr, DWREG_ARM64_LR);          /* Return address column (ULEB128) */
 #  else
 #   error "port me"
 #  endif
@@ -774,7 +778,7 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecM
 #  elif defined(RT_ARCH_ARM64)
     Ptr = iemDwarfPutCfaDefCfa(Ptr, DWREG_ARM64_BP,  16);   /* CFA     = BP + 0x10 - first stack parameter */
     //Ptr = iemDwarfPutCfaDefCfa(Ptr, DWREG_ARM64_SP,  IEMNATIVE_FRAME_VAR_SIZE + IEMNATIVE_FRAME_SAVE_REG_SIZE);
-    Ptr = iemDwarfPutCfaOffset(Ptr, DWREG_ARM64_PC,   1);   /* Ret PC  = [CFA + 1*-8] */
+    Ptr = iemDwarfPutCfaOffset(Ptr, DWREG_ARM64_LR,   1);   /* Ret PC  = [CFA + 1*-8] */
     Ptr = iemDwarfPutCfaOffset(Ptr, DWREG_ARM64_BP,   2);   /* Ret BP  = [CFA + 2*-8] */
     Ptr = iemDwarfPutCfaOffset(Ptr, DWREG_ARM64_X28,  3);   /* X28     = [CFA + 3*-8] */
     Ptr = iemDwarfPutCfaOffset(Ptr, DWREG_ARM64_X27,  4);   /* X27     = [CFA + 4*-8] */
@@ -787,6 +791,9 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecM
     Ptr = iemDwarfPutCfaOffset(Ptr, DWREG_ARM64_X20, 11);   /* X20     = [CFA +11*-8] */
     Ptr = iemDwarfPutCfaOffset(Ptr, DWREG_ARM64_X19, 12);   /* X19     = [CFA +12*-8] */
     AssertCompile(IEMNATIVE_FRAME_SAVE_REG_SIZE / 8 == 12);
+    /** @todo we we need to do something about clearing DWREG_ARM64_RA_SIGN_STATE or something? */
+#  else
+#   error "port me"
 #  endif
     while ((Ptr.u - PtrCie.u) & 3)
         *Ptr.pb++ = DW_CFA_nop;
@@ -805,7 +812,9 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecM
     Ptr.pu32++;
     *Ptr.pu64++ = (uintptr_t)pvChunk;                       /* Absolute start PC of this FDE. */
     *Ptr.pu64++ = pExecMemAllocator->cbChunk;               /* PC range length for this PDE. */
-    //*Ptr.pb++ = DW_CFA_nop; - not required for recent libgcc/glibc.
+#  if 0 /* not requried for recent libunwind.dylib nor recent libgcc/glib. */
+    *Ptr.pb++ = DW_CFA_nop;
+#  endif
     while ((Ptr.u - PtrFde.u) & 3)
         *Ptr.pb++ = DW_CFA_nop;
     /* Finalize the FDE size. */
@@ -1675,8 +1684,13 @@ static uint32_t iemNativeEmitEpilog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
     AssertCompile(IEMNATIVE_FRAME_SAVE_REG_SIZE < 4096);
     pu32CodeBuf[off++] = Armv8A64MkInstrAddSub(false /*fSub*/, ARMV8_A64_REG_SP, ARMV8_A64_REG_SP, IEMNATIVE_FRAME_SAVE_REG_SIZE);
 
-    /* ret */
-    pu32CodeBuf[off++] = ARMV8_A64_INSTR_RET;
+    /* retab / ret */
+# ifdef RT_OS_DARWIN /** @todo See todo on pacibsp in the prolog. */
+    if (1)
+        pu32CodeBuf[off++] = ARMV8_A64_INSTR_RETAB;
+    else
+# endif
+        pu32CodeBuf[off++] = ARMV8_A64_INSTR_RET;
 
 #else
 # error "port me"
@@ -1745,6 +1759,14 @@ static uint32_t iemNativeEmitProlog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
      */
     uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
     AssertReturn(pu32CodeBuf, UINT32_MAX);
+
+# ifdef RT_OS_DARWIN /** @todo This seems to be requirement by libunwind for JIT FDEs. Investigate further as been unable
+                      * to figure out where the BRK following AUTHB*+XPACB* stuff comes from in libunwind.  It's
+                      * definitely the dwarf stepping code, but till found it's very tedious to figure out whether it's
+                      * in any way conditional, so just emitting this instructions now and hoping for the best... */
+    /* pacibsp */
+    pu32CodeBuf[off++] = ARMV8_A64_INSTR_PACIBSP;
+# endif
 
     /* stp x19, x20, [sp, #-IEMNATIVE_FRAME_SAVE_REG_SIZE] ; Allocate space for saving registers and place x19+x20 at the bottom. */
     AssertCompile(IEMNATIVE_FRAME_SAVE_REG_SIZE < 64*8);
