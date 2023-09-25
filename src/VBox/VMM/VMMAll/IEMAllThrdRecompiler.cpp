@@ -2249,11 +2249,10 @@ static VBOXSTRICTRC iemTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_MAY_LONGJ
     if (pTb->fFlags & IEMTB_F_TYPE_NATIVE)
     {
         pVCpu->iem.s.cTbExecNative++;
-        typedef IEM_DECL_IMPL_TYPE(int, FNIEMNATIVETB, (PVMCPUCC pVCpu, PIEMTB pTb));
 # ifdef LOG_ENABLED
         iemThreadedLogCurInstr(pVCpu, "EXn");
 # endif
-        VBOXSTRICTRC const rcStrict = ((FNIEMNATIVETB *)pTb->Native.paInstructions)(pVCpu, pTb);
+        VBOXSTRICTRC const rcStrict = ((PFNIEMTBNATIVE)pTb->Native.paInstructions)(pVCpu);
         if (RT_LIKELY(   rcStrict == VINF_SUCCESS
                       && pVCpu->iem.s.rcPassUp == VINF_SUCCESS /** @todo this isn't great. */))
         { /* likely */ }
