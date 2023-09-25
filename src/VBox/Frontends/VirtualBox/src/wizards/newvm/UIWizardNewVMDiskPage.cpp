@@ -205,9 +205,9 @@ void UIWizardNewVMDiskPage::sltGetWithFileOpenDialog()
 {
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);
-    const CGuestOSType &comOSType = pWizard->guestOSType();
-    AssertReturnVoid(!comOSType.isNull());
-    QUuid uMediumId = UIWizardNewVMDiskCommon::getWithFileOpenDialog(comOSType.GetId(),
+    const UIGuestOSTypeII &OSType = pWizard->guestOSType();
+
+    QUuid uMediumId = UIWizardNewVMDiskCommon::getWithFileOpenDialog(OSType.getId(),
                                                                      pWizard->machineFolder(),
                                                                      this, m_pActionPool);
     if (!uMediumId.isNull())
@@ -265,10 +265,10 @@ void UIWizardNewVMDiskPage::initializePage()
     AssertReturnVoid(pWizard);
 
     LONG64 iRecommendedSize = 0;
-    CGuestOSType type = pWizard->guestOSType();
-    if (!type.isNull() && !m_userModifiedParameters.contains("SelectedDiskSource"))
+    const UIGuestOSTypeII &type = pWizard->guestOSType();
+    if (!type.isOk() && !m_userModifiedParameters.contains("SelectedDiskSource"))
     {
-        iRecommendedSize = type.GetRecommendedHDD();
+        iRecommendedSize = type.getRecommendedHDD();
         if (iRecommendedSize != 0)
         {
             if (m_pDiskNew)

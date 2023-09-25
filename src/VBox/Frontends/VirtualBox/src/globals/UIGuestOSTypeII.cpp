@@ -168,3 +168,52 @@ const QString &UIGuestOSTypeII::getDescription() const
         m_strDescription = m_comGuestOSType.GetDescription();
     return m_strDescription;
 }
+
+KStorageBus UIGuestOSTypeII::getRecommendedHDStorageBus() const
+{
+    if (m_comGuestOSType.isOk())
+        return m_comGuestOSType.GetRecommendedHDStorageBus();
+    return KStorageBus_Null;
+}
+
+ULONG UIGuestOSTypeII::getRecommendedRAM() const
+{
+    if (m_comGuestOSType.isOk())
+        return m_comGuestOSType.GetRecommendedRAM();
+    return 0;
+}
+
+KStorageBus UIGuestOSTypeII::getRecommendedDVDStorageBus() const
+{
+    if (m_comGuestOSType.isOk())
+        return m_comGuestOSType.GetRecommendedDVDStorageBus();
+    return KStorageBus_Null;
+}
+
+ULONG UIGuestOSTypeII::getRecommendedCPUCount() const
+{
+    if (m_comGuestOSType.isOk())
+        return m_comGuestOSType.GetRecommendedCPUCount();
+    return 0;
+}
+
+KFirmwareType UIGuestOSTypeII::getRecommendedFirmware() const
+{
+    if (m_comGuestOSType.isOk())
+        return m_comGuestOSType.GetRecommendedFirmware();
+    return  KFirmwareType_Max;
+}
+
+bool UIGuestOSTypeII::getRecommendedFloppy() const
+{
+    if (m_comGuestOSType.isOk())
+        return m_comGuestOSType.GetRecommendedFloppy();
+    return false;
+}
+
+LONG64 UIGuestOSTypeII::getRecommendedHDD() const
+{
+    if (m_comGuestOSType.isOk())
+        return m_comGuestOSType.GetRecommendedHDD();
+    return 0;
+}

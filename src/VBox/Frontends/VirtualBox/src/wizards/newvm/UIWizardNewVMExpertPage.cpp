@@ -147,9 +147,9 @@ void UIWizardNewVMExpertPage::sltGetWithFileOpenDialog()
 {
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);
-    const CGuestOSType &comOSType = pWizard->guestOSType();
-    AssertReturnVoid(!comOSType.isNull());
-    QUuid uMediumId = UIWizardNewVMDiskCommon::getWithFileOpenDialog(comOSType.GetId(),
+    const UIGuestOSTypeII &OSType = pWizard->guestOSType();
+    AssertReturnVoid(!OSType.isOk());
+    QUuid uMediumId = UIWizardNewVMDiskCommon::getWithFileOpenDialog(OSType.getId(),
                                                                      pWizard->machineFolder(),
                                                                      this, m_pActionPool);
     if (!uMediumId.isNull())
@@ -347,8 +347,8 @@ void UIWizardNewVMExpertPage::setOSTypeDependedValues()
     AssertReturnVoid(pWizard);
 
     /* Get recommended 'ram' field value: */
-    const CGuestOSType &type = pWizard->guestOSType();
-    ULONG recommendedRam = type.GetRecommendedRAM();
+    const UIGuestOSTypeII &type = pWizard->guestOSType();
+    ULONG recommendedRam = type.getRecommendedRAM();
 
     if (m_pHardwareWidgetContainer)
     {
@@ -362,7 +362,7 @@ void UIWizardNewVMExpertPage::setOSTypeDependedValues()
         }
 
         /* Set Firmware Type of the widget and the wizard: */
-        KFirmwareType fwType = type.GetRecommendedFirmware();
+        KFirmwareType fwType = type.getRecommendedFirmware();
         if (!m_userModifiedParameters.contains("EFIEnabled"))
         {
             m_pHardwareWidgetContainer->setEFIEnabled(fwType != KFirmwareType_BIOS);
@@ -370,7 +370,7 @@ void UIWizardNewVMExpertPage::setOSTypeDependedValues()
         }
 
         /* Initialize CPU count:*/
-        int iCPUCount = type.GetRecommendedCPUCount();
+        int iCPUCount = type.getRecommendedCPUCount();
         if (!m_userModifiedParameters.contains("CPUCount"))
         {
             m_pHardwareWidgetContainer->setCPUCount(iCPUCount);
@@ -379,7 +379,7 @@ void UIWizardNewVMExpertPage::setOSTypeDependedValues()
         m_pHardwareWidgetContainer->blockSignals(false);
     }
 
-    LONG64 iRecommendedDiskSize = type.GetRecommendedHDD();
+    LONG64 iRecommendedDiskSize = type.getRecommendedHDD();
     /* Prepare initial disk choice: */
     if (!m_userModifiedParameters.contains("SelectedDiskSource"))
     {

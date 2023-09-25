@@ -32,6 +32,7 @@
 #endif
 
 /* GUI includes: */
+#include "UIGuestOSTypeII.h"
 #include "UINativeWizard.h"
 
 /* COM includes: */
@@ -39,7 +40,6 @@
 #include "CMachine.h"
 #include "CMedium.h"
 #include "CMediumFormat.h"
-#include "CGuestOSType.h"
 #include "CUnattended.h"
 
 /* Forward declarations: */
@@ -103,8 +103,8 @@ public:
         const QString &guestOSFamilyId() const;
         void setGuestOSFamilyId(const QString &strGuestOSFamilyId);
 
-        const CGuestOSType &guestOSType() const;
-        void setGuestOSType(const CGuestOSType &guestOSType);
+        const UIGuestOSTypeII &guestOSType() const;
+        void setGuestOSType(const UIGuestOSTypeII &guestOSType);
 
         bool installGuestAdditions() const;
         void setInstallGuestAdditions(bool fInstallGA);
@@ -218,7 +218,7 @@ private:
        /** Holds the VM OS family ID. */
        QString  m_strGuestOSFamilyId;
        /** Holds the VM OS type. */
-       CGuestOSType m_comGuestOSType;
+       UIGuestOSTypeII m_guestOSType;
 
        /** True if guest additions are to be installed during unattended install. */
        bool m_fInstallGuestAdditions;

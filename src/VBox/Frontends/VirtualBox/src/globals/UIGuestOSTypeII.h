@@ -88,6 +88,17 @@ public:
     const QString &getVariant() const;
     const QString &getDescription() const;
 
+    /** @name Wrapper getters for CGuestOSType member.
+      * @{ */
+        KStorageBus getRecommendedHDStorageBus() const;
+        ULONG getRecommendedRAM() const;
+        KStorageBus getRecommendedDVDStorageBus() const;
+        ULONG getRecommendedCPUCount() const;
+        KFirmwareType getRecommendedFirmware() const;
+        bool getRecommendedFloppy() const;
+        LONG64 getRecommendedHDD() const;
+    /** @} */
+
     bool isOk() const;
 
 private:

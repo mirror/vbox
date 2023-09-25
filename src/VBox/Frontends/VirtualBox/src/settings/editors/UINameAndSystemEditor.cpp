@@ -453,7 +453,7 @@ void UINameAndSystemEditor::sltFamilyChanged(int index)
         foreach (const QString &strVariant, variantList)
         {
             m_pComboVariant->addItem(strVariant);
-            if (strVariant == "Oracle Linux")
+            if (strVariant.contains(QRegularExpression("Oracle.*Linux")))
                 iOracleIndex = m_pComboVariant->count() - 1;
         }
         if (iOracleIndex != -1)
@@ -462,27 +462,6 @@ void UINameAndSystemEditor::sltFamilyChanged(int index)
         populateTypeCombo(pGuestOSTypeManager->getTypeListForVariant(m_pComboVariant->currentText()));
     }
     m_pComboVariant->blockSignals(false);
-    // AssertPtrReturnVoid(m_pComboFamily);
-
-    // /* Lock the signals of m_pComboType to prevent it's reaction on clearing: */
-    // m_pComboType->blockSignals(true);
-    // m_pComboType->clear();
-
-
-    // /* Populate combo-box with OS types related to currently selected family id: */
-    // foreach (const UIGuestOSType &guiType, m_types.value(m_strFamilyId))
-    // {
-    //     const int idxItem = m_pComboType->count();
-    //     m_pComboType->insertItem(idxItem, guiType.typeDescription);
-    //     m_pComboType->setItemData(idxItem, guiType.typeId, TypeID);
-    // }
-
-
-    // /* Update all the stuff: */
-    // sltTypeChanged(m_pComboType->currentIndex());
-
-    // /* Unlock the signals of m_pComboType: */
-    // m_pComboType->blockSignals(false);
 
     /* Notify listeners about this change: */
     emit sigOSFamilyChanged(m_strFamilyId);

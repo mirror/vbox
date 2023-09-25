@@ -148,7 +148,7 @@ void UIWizardNewVM::cleanWizard()
 bool UIWizardNewVM::createVM()
 {
     CVirtualBox vbox = uiCommon().virtualBox();
-    QString strTypeId = m_comGuestOSType.GetId();
+    QString strTypeId = m_guestOSType.getId();
 
     /* Create virtual machine: */
     if (m_machine.isNull())
@@ -283,7 +283,7 @@ bool UIWizardNewVM::attachDefaultDevices()
         CMachine machine = session.GetMachine();
         if (!m_virtualDisk.isNull())
         {
-            KStorageBus enmHDDBus = m_comGuestOSType.GetRecommendedHDStorageBus();
+            KStorageBus enmHDDBus = m_guestOSType.getRecommendedHDStorageBus();
             CStorageController comHDDController = m_machine.GetStorageControllerByInstance(enmHDDBus, 0);
             if (!comHDDController.isNull())
             {
@@ -295,7 +295,7 @@ bool UIWizardNewVM::attachDefaultDevices()
         }
 
         /* Attach optical drive: */
-        KStorageBus enmDVDBus = m_comGuestOSType.GetRecommendedDVDStorageBus();
+        KStorageBus enmDVDBus = m_guestOSType.getRecommendedDVDStorageBus();
         CStorageController comDVDController = m_machine.GetStorageControllerByInstance(enmDVDBus, 0);
         if (!comDVDController.isNull())
         {
@@ -316,7 +316,7 @@ bool UIWizardNewVM::attachDefaultDevices()
         }
 
         /* Attach an empty floppy drive if recommended */
-        if (m_comGuestOSType.GetRecommendedFloppy()) {
+        if (m_guestOSType.getRecommendedFloppy()) {
             CStorageController comFloppyController = m_machine.GetStorageControllerByInstance(KStorageBus_Floppy, 0);
             if (!comFloppyController.isNull())
             {
@@ -522,14 +522,14 @@ void UIWizardNewVM::setGuestOSFamilyId(const QString &strGuestOSFamilyId)
     m_strGuestOSFamilyId = strGuestOSFamilyId;
 }
 
-const CGuestOSType &UIWizardNewVM::guestOSType() const
+const UIGuestOSTypeII &UIWizardNewVM::guestOSType() const
 {
-    return m_comGuestOSType;;
+    return m_guestOSType;
 }
 
-void UIWizardNewVM::setGuestOSType(const CGuestOSType &guestOSType)
+void UIWizardNewVM::setGuestOSType(const UIGuestOSTypeII &guestOSType)
 {
-    m_comGuestOSType= guestOSType;
+    m_guestOSType = guestOSType;
 }
 
 bool UIWizardNewVM::installGuestAdditions() const

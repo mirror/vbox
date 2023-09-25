@@ -90,30 +90,28 @@ void UIWizardNewVMHardwarePage::initializePage()
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     if (pWizard && m_pHardwareWidgetContainer)
     {
-        CGuestOSType type = pWizard->guestOSType();
-        if (!type.isNull())
+        const UIGuestOSTypeII &type = pWizard->guestOSType();
+
+        m_pHardwareWidgetContainer->blockSignals(true);
+        if (!m_userModifiedParameters.contains("MemorySize"))
         {
-            m_pHardwareWidgetContainer->blockSignals(true);
-            if (!m_userModifiedParameters.contains("MemorySize"))
-            {
-                ULONG recommendedRam = type.GetRecommendedRAM();
-                m_pHardwareWidgetContainer->setMemorySize(recommendedRam);
-                pWizard->setMemorySize(recommendedRam);
-            }
-            if (!m_userModifiedParameters.contains("CPUCount"))
-            {
-                ULONG recommendedCPUs = type.GetRecommendedCPUCount();
-                m_pHardwareWidgetContainer->setCPUCount(recommendedCPUs);
-                pWizard->setCPUCount(recommendedCPUs);
-            }
-            if (!m_userModifiedParameters.contains("EFIEnabled"))
-            {
-                KFirmwareType fwType = type.GetRecommendedFirmware();
-                m_pHardwareWidgetContainer->setEFIEnabled(fwType != KFirmwareType_BIOS);
-                pWizard->setEFIEnabled(fwType != KFirmwareType_BIOS);
-            }
-            m_pHardwareWidgetContainer->blockSignals(false);
+            ULONG recommendedRam = type.getRecommendedRAM();
+            m_pHardwareWidgetContainer->setMemorySize(recommendedRam);
+            pWizard->setMemorySize(recommendedRam);
         }
+        if (!m_userModifiedParameters.contains("CPUCount"))
+        {
+            ULONG recommendedCPUs = type.getRecommendedCPUCount();
+            m_pHardwareWidgetContainer->setCPUCount(recommendedCPUs);
+            pWizard->setCPUCount(recommendedCPUs);
+        }
+        if (!m_userModifiedParameters.contains("EFIEnabled"))
+        {
+            KFirmwareType fwType = type.getRecommendedFirmware();
+            m_pHardwareWidgetContainer->setEFIEnabled(fwType != KFirmwareType_BIOS);
+            pWizard->setEFIEnabled(fwType != KFirmwareType_BIOS);
+        }
+        m_pHardwareWidgetContainer->blockSignals(false);
     }
 }
 
