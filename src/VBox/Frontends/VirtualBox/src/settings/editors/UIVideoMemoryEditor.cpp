@@ -44,7 +44,6 @@
 UIVideoMemoryEditor::UIVideoMemoryEditor(QWidget *pParent /* = 0 */)
     : UIEditor(pParent)
     , m_iValue(0)
-    , m_guestOSType(UIGuestOSTypeII())
     , m_cGuestScreenCount(1)
     , m_enmGraphicsControllerType(KGraphicsControllerType_Null)
 #ifdef VBOX_WITH_3D_ACCELERATION
@@ -84,14 +83,14 @@ int UIVideoMemoryEditor::value() const
     return m_pSlider ? m_pSlider->value() : m_iValue;
 }
 
-void UIVideoMemoryEditor::setGuestOSType(const UIGuestOSTypeII &guestOSType)
+void UIVideoMemoryEditor::setGuestOSTypeId(const QString &strGuestOSTypeId)
 {
     /* Update cached value and
      * requirements if value has changed: */
-    if (m_guestOSType != guestOSType)
+    if (m_strGuestOSTypeId != strGuestOSTypeId)
     {
         /* Remember new guest OS type: */
-        m_guestOSType = guestOSType;
+        m_strGuestOSTypeId = strGuestOSTypeId;
 
         /* Update requirements: */
         updateRequirements();
@@ -315,14 +314,15 @@ void UIVideoMemoryEditor::prepare()
 void UIVideoMemoryEditor::updateRequirements()
 {
     /* Make sure guest OS type is set: */
-    if (!m_guestOSType.isOk())
+    if (m_strGuestOSTypeId.isEmpty())
         return;
 
     /* Init visible maximum VRAM: */
     m_iMaxVRAMVisible = m_cGuestScreenCount * 32;
 
     /* Get monitors count and recommended VRAM: */
-    int iNeedMBytes = UICommon::requiredVideoMemory(m_guestOSType.getId(), m_cGuestScreenCount) / _1M;
+    int iNeedMBytes = UICommon::requiredVideoMemory(m_strGuestOSTypeId, m_cGuestScreenCount) / _1M;
+
     /* Adjust visible maximum VRAM to be no less than 128MB (if possible): */
     if (m_iMaxVRAMVisible < 128 && m_iMaxVRAM >= 128)
         m_iMaxVRAMVisible = 128;

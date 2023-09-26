@@ -33,7 +33,6 @@
 
 /* GUI includes: */
 #include "UIEditor.h"
-#include "UIGuestOSTypeII.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -65,7 +64,7 @@ public:
     int value() const;
 
     /** Defines @a comGuestOSType. */
-    void setGuestOSType(const UIGuestOSTypeII &comGuestOSType);
+    void setGuestOSTypeId(const QString &strGuestOSTypeId);
 
     /** Defines @a cGuestScreenCount. */
     void setGuestScreenCount(int cGuestScreenCount);
@@ -116,8 +115,8 @@ private:
 
     /** @name Options
      * @{ */
-        /** Holds the guest OS type ID. */
-        UIGuestOSTypeII          m_guestOSType;
+        /** Holds the guest OS type Id. */
+        QString                 m_strGuestOSTypeId;
         /** Holds the guest screen count. */
         int                      m_cGuestScreenCount;
         /** Holds the graphics controller type. */

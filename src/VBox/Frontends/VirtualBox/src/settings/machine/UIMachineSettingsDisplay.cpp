@@ -329,7 +329,7 @@ void UIMachineSettingsDisplay::setGuestOSType(UIGuestOSTypeII guestOSType)
 
     /* Remember new guest OS type: */
     m_guestOSType = guestOSType;
-    m_pEditorVideoMemorySize->setGuestOSType(m_guestOSType);
+    m_pEditorVideoMemorySize->setGuestOSTypeId(m_guestOSType.getId());
 
 #ifdef VBOX_WITH_3D_ACCELERATION
     /* Check if WDDM mode supported by the guest OS type: */
