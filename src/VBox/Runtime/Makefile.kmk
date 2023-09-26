@@ -2775,6 +2775,7 @@ RuntimeGuestR3_SOURCES                   = $(filter-out \
 		common/time/timesup.cpp \
 		common/zip/xarvfs.cpp \
 		common/zip/lzmavfs.cpp \
+		r3/mempage-heap.cpp \
 		r3/xml.cpp \
 		generic/RTLogWriteUser-generic.cpp \
 		, $(RuntimeR3_SOURCES)) \
@@ -2795,9 +2796,31 @@ ifndef VBOX_WITH_NOCRT_STATIC
  	r3/win/vcc-fakes-shell32-A.asm
 endif
 
+RuntimeGuestR3_SOURCES.darwin            = \
+               r3/posix/rtmempage-exec-mmap-posix.cpp
+
+RuntimeGuestR3_SOURCES.freebsd           = \
+               r3/posix/rtmempage-exec-mmap-posix.cpp
+
+RuntimeGuestR3_SOURCES.haiku             = \
+               r3/posix/rtmempage-exec-mmap-posix.cpp
+
 RuntimeGuestR3_SOURCES.linux             = $(filter-out \
 		r3/memsafer-r3.cpp \
-		, $(RuntimeR3_SOURCES.linux))
+		, $(RuntimeR3_SOURCES.linux)) \
+               r3/posix/rtmempage-exec-mmap-posix.cpp
+
+RuntimeGuestR3_SOURCES.os2               = \
+               r3/mempage-heap.cpp \
+               r3/os2/mempage-native-os2.cpp
+
+RuntimeGuestR3_SOURCES.solaris           = \
+               r3/posix/rtmempage-exec-mmap-posix.cpp
+
+## @todo provide VirtualAlloc variant for GAs?
+RuntimeGuestR3_SOURCES.win               = \
+               r3/mempage-heap.cpp \
+               r3/win/mempage-native-win.cpp
 
 
 #
