@@ -259,6 +259,27 @@ typedef struct IEMRECOMPILERSTATE
 typedef IEMRECOMPILERSTATE *PIEMRECOMPILERSTATE;
 
 
+/**
+ * Native recompiler worker for a threaded function.
+ *
+ * @returns New code buffer offset, UINT32_MAX in case of failure.
+ * @param   pReNative   The native recompiler state.
+ * @param   off         The current code buffer offset.
+ * @param   pCallEntry  The threaded call entry.
+ *
+ * @note    This is not allowed to throw anything atm.
+ */
+typedef DECLCALLBACKTYPE(uint32_t, FNIEMNATIVERECOMPFUNC,(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                          PCIEMTHRDEDCALLENTRY pCallEntry));
+/** Pointer to a native recompiler worker for a threaded function. */
+typedef FNIEMNATIVERECOMPFUNC *PFNIEMNATIVERECOMPFUNC;
+
+/** Defines a native recompiler worker for a threaded function. */
+#define IEM_DECL_IEMNATIVERECOMPFUNC_DEF(a_Name) \
+    DECLCALLBACK(uint32_t) a_Name(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIEMTHRDEDCALLENTRY pCallEntry)
+/** Prototypes a native recompiler function for a threaded function. */
+#define IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(a_Name) FNIEMNATIVERECOMPFUNC a_Name
+
 
 DECLHIDDEN(uint32_t)        iemNativeMakeLabel(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType,
                                                uint32_t offWhere = UINT32_MAX, uint16_t uData = 0) RT_NOEXCEPT;

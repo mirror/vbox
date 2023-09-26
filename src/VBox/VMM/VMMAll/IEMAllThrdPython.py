@@ -42,6 +42,7 @@ import sys;
 import argparse;
 
 import IEMAllInstPython as iai;
+import IEMAllN8vePython as ian;
 
 
 # Python 3 hacks:
@@ -288,6 +289,9 @@ class ThreadedFunctionVariation(object):
         ## Function enum number, for verification. Set by generateThreadedFunctionsHeader.
         self.iEnumValue     = -1;
 
+        ## Native recompilation details for this variation.
+        self.oNativeRecomp  = None;
+
     def getIndexName(self):
         sName = self.oParent.oMcBlock.sFunction;
         if sName.startswith('iemOp_'):
@@ -296,13 +300,16 @@ class ThreadedFunctionVariation(object):
             return 'kIemThreadedFunc_%s%s' % ( sName, self.sVariation, );
         return 'kIemThreadedFunc_%s_%s%s' % ( sName, self.oParent.oMcBlock.iInFunction, self.sVariation, );
 
-    def getFunctionName(self):
+    def getThreadedFunctionName(self):
         sName = self.oParent.oMcBlock.sFunction;
         if sName.startswith('iemOp_'):
             sName = sName[len('iemOp_'):];
         if self.oParent.oMcBlock.iInFunction == 0:
             return 'iemThreadedFunc_%s%s' % ( sName, self.sVariation, );
         return 'iemThreadedFunc_%s_%s%s' % ( sName, self.oParent.oMcBlock.iInFunction, self.sVariation, );
+
+    def getNativeFunctionName(self):
+        return 'iemNativeRecompFunc_' + self.getThreadedFunctionName()[len('iemThreadedFunc_'):];
 
     #
     # Analysis and code morphing.
@@ -1493,7 +1500,7 @@ class IEMThreadedGenerator(object):
     # Processing.
     #
 
-    def processInputFiles(self):
+    def processInputFiles(self, sNativeRecompilerArch = None):
         """
         Process the input files.
         """
@@ -1529,6 +1536,19 @@ class IEMThreadedGenerator(object):
             while oThreadedFunction.oMcBlock.sSrcFile == oParser.sSrcFile:
                 iThreadedFunction += 1;
                 oThreadedFunction  = self.getThreadedFunctionByIndex(iThreadedFunction);
+
+        # Analyze the threaded functions and their variations for native recompilation.
+        if sNativeRecompilerArch:
+            cTotal  = 0;
+            cNative = 0;
+            for oThreadedFunction in self.aoThreadedFuncs:
+                for oVariation in oThreadedFunction.aoVariations:
+                    cTotal += 1;
+                    oVariation.oNativeRecomp = ian.analyzeVariantForNativeRecomp(oVariation, sNativeRecompilerArch);
+                    if oVariation.oNativeRecomp and oVariation.oNativeRecomp.isRecompilable():
+                        cNative += 1;
+            print('debug: %.1f%% / %u out of %u threaded function variations are recompilable'
+                  % (cNative * 100.0 / cTotal, cNative, cTotal));
 
         return True;
 
@@ -1634,7 +1654,7 @@ class IEMThreadedGenerator(object):
         ];
         asLines += ['    kIemThreadedFunc_BltIn_%s,' % (sFuncNm,) for sFuncNm, _ in self.katBltIns];
 
-        iThreadedFunction = 1;
+        iThreadedFunction = 1 + len(self.katBltIns);
         for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
             asLines += [
                     '',
@@ -1674,6 +1694,50 @@ class IEMThreadedGenerator(object):
         16: "UINT64_C(0xffff)",
         32: "UINT64_C(0xffffffff)",
     };
+
+    def generateFunctionParameterUnpacking(self, oVariation, oOut, asParams):
+        """
+        Outputs code for unpacking parameters.
+        This is shared by the threaded and native code generators.
+        """
+        aasVars = [];
+        for aoRefs in oVariation.dParamRefs.values():
+            oRef  = aoRefs[0];
+            if oRef.sType[0] != 'P':
+                cBits = g_kdTypeInfo[oRef.sType][0];
+                sType = g_kdTypeInfo[oRef.sType][2];
+            else:
+                cBits = 64;
+                sType = oRef.sType;
+
+            sTypeDecl = sType + ' const';
+
+            if cBits == 64:
+                assert oRef.offNewParam == 0;
+                if sType == 'uint64_t':
+                    sUnpack = '%s;' % (asParams[oRef.iNewParam],);
+                else:
+                    sUnpack = '(%s)%s;' % (sType, asParams[oRef.iNewParam],);
+            elif oRef.offNewParam == 0:
+                sUnpack = '(%s)(%s & %s);' % (sType, asParams[oRef.iNewParam], self.ksBitsToIntMask[cBits]);
+            else:
+                sUnpack = '(%s)((%s >> %s) & %s);' \
+                        % (sType, asParams[oRef.iNewParam], oRef.offNewParam, self.ksBitsToIntMask[cBits]);
+
+            sComment = '/* %s - %s ref%s */' % (oRef.sOrgRef, len(aoRefs), 's' if len(aoRefs) != 1 else '',);
+
+            aasVars.append([ '%s:%02u' % (oRef.iNewParam, oRef.offNewParam),
+                             sTypeDecl, oRef.sNewName, sUnpack, sComment ]);
+        acchVars = [0, 0, 0, 0, 0];
+        for asVar in aasVars:
+            for iCol, sStr in enumerate(asVar):
+                acchVars[iCol] = max(acchVars[iCol], len(sStr));
+        sFmt = '    %%-%ss %%-%ss = %%-%ss %%s\n' % (acchVars[1], acchVars[2], acchVars[3]);
+        for asVar in sorted(aasVars):
+            oOut.write(sFmt % (asVar[1], asVar[2], asVar[3], asVar[4],));
+        return True;
+
+    kasThreadedParamNames = ('uParam0', 'uParam1', 'uParam2');
     def generateThreadedFunctionsSource(self, oOut):
         """
         Generates the threaded functions source file.
@@ -1710,50 +1774,15 @@ class IEMThreadedGenerator(object):
                                      os.path.split(oMcBlock.sSrcFile)[1],
                                      ' (macro expansion)' if oMcBlock.iBeginLine == oMcBlock.iEndLine else '')
                                + ' */\n'
-                               + 'static IEM_DECL_IEMTHREADEDFUNC_DEF(' + oVariation.getFunctionName() + ')\n'
+                               + 'static IEM_DECL_IEMTHREADEDFUNC_DEF(' + oVariation.getThreadedFunctionName() + ')\n'
                                + '{\n');
 
-                    aasVars = [];
-                    for aoRefs in oVariation.dParamRefs.values():
-                        oRef  = aoRefs[0];
-                        if oRef.sType[0] != 'P':
-                            cBits = g_kdTypeInfo[oRef.sType][0];
-                            sType = g_kdTypeInfo[oRef.sType][2];
-                        else:
-                            cBits = 64;
-                            sType = oRef.sType;
-
-                        sTypeDecl = sType + ' const';
-
-                        if cBits == 64:
-                            assert oRef.offNewParam == 0;
-                            if sType == 'uint64_t':
-                                sUnpack = 'uParam%s;' % (oRef.iNewParam,);
-                            else:
-                                sUnpack = '(%s)uParam%s;' % (sType, oRef.iNewParam,);
-                        elif oRef.offNewParam == 0:
-                            sUnpack = '(%s)(uParam%s & %s);' % (sType, oRef.iNewParam, self.ksBitsToIntMask[cBits]);
-                        else:
-                            sUnpack = '(%s)((uParam%s >> %s) & %s);' \
-                                    % (sType, oRef.iNewParam, oRef.offNewParam, self.ksBitsToIntMask[cBits]);
-
-                        sComment = '/* %s - %s ref%s */' % (oRef.sOrgRef, len(aoRefs), 's' if len(aoRefs) != 1 else '',);
-
-                        aasVars.append([ '%s:%02u' % (oRef.iNewParam, oRef.offNewParam),
-                                         sTypeDecl, oRef.sNewName, sUnpack, sComment ]);
-                    acchVars = [0, 0, 0, 0, 0];
-                    for asVar in aasVars:
-                        for iCol, sStr in enumerate(asVar):
-                            acchVars[iCol] = max(acchVars[iCol], len(sStr));
-                    sFmt = '    %%-%ss %%-%ss = %%-%ss %%s\n' % (acchVars[1], acchVars[2], acchVars[3]);
-                    for asVar in sorted(aasVars):
-                        oOut.write(sFmt % (asVar[1], asVar[2], asVar[3], asVar[4],));
+                    # Unpack parameters.
+                    self.generateFunctionParameterUnpacking(oVariation, oOut, self.kasThreadedParamNames);
 
                     # RT_NOREF for unused parameters.
                     if oVariation.cMinParams < g_kcThreadedParams:
-                        oOut.write('    RT_NOREF('
-                                   + ', '.join(['uParam%u' % (i,) for i in range(oVariation.cMinParams, g_kcThreadedParams)])
-                                   + ');\n');
+                        oOut.write('    RT_NOREF(' + ', '.join(self.kasThreadedParamNames[oVariation.cMinParams:]) + ');\n');
 
                     # Now for the actual statements.
                     oOut.write(iai.McStmt.renderCodeForList(oVariation.aoStmtsForThreadedFunction, cchIndent = 4));
@@ -1802,7 +1831,7 @@ class IEMThreadedGenerator(object):
             asNameTable.append('    "BltIn_%s",' % (sFuncNm,));
             asArgCntTab.append('    %d, /*BltIn_%s*/' % (cArgs, sFuncNm,));
 
-        iThreadedFunction = 1;
+        iThreadedFunction = 1 + len(self.katBltIns);
         for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
             for asTable in aasTables:
                 asTable.extend((
@@ -1816,7 +1845,7 @@ class IEMThreadedGenerator(object):
                 if oVariation:
                     iThreadedFunction += 1;
                     assert oVariation.iEnumValue == iThreadedFunction;
-                    sName = oVariation.getFunctionName();
+                    sName = oVariation.getThreadedFunctionName();
                     asFuncTable.append('    /*%4u*/ %s,' % (iThreadedFunction, sName,));
                     asNameTable.append('    /*%4u*/ "%s",' % (iThreadedFunction, sName,));
                     asArgCntTab.append('    /*%4u*/ %d, /*%s*/' % (iThreadedFunction, oVariation.cMinParams, sName,));
@@ -1843,6 +1872,119 @@ class IEMThreadedGenerator(object):
         oOut.write('\n');
 
         return True;
+
+    def generateNativeFunctionsHeader(self, oOut):
+        """
+        Generates the native recompiler functions header file.
+        Returns success indicator.
+        """
+        if not self.oOptions.sNativeRecompilerArch:
+            return True;
+
+        asLines = self.generateLicenseHeader();
+
+        # Prototype the function table.
+        asLines += [
+            'extern const PFNIEMNATIVERECOMPFUNC g_apfnIemNativeRecompileFunctions[kIemThreadedFunc_End];',
+            '',
+        ];
+
+        oOut.write('\n'.join(asLines));
+        return True;
+
+    def generateNativeFunctionsSource(self, oOut):
+        """
+        Generates the native recompiler functions source file.
+        Returns success indicator.
+        """
+        if not self.oOptions.sNativeRecompilerArch:
+            return True;
+
+        #
+        # The file header.
+        #
+        oOut.write('\n'.join(self.generateLicenseHeader()));
+
+        #
+        # Emit the functions.
+        #
+        for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
+            sVarName = ThreadedFunctionVariation.kdVariationNames[sVariation];
+            oOut.write(  '\n'
+                       + '\n'
+                       + '\n'
+                       + '\n'
+                       + '/*' + '*' * 128 + '\n'
+                       + '*   Variation: ' + sVarName + ' ' * (129 - len(sVarName) - 15) + '*\n'
+                       + '*' * 128 + '*/\n');
+
+            for oThreadedFunction in self.aoThreadedFuncs:
+                oVariation = oThreadedFunction.dVariations.get(sVariation, None) # type: ThreadedFunctionVariation
+                if oVariation and oVariation.oNativeRecomp and oVariation.oNativeRecomp.isRecompilable():
+                    oMcBlock = oThreadedFunction.oMcBlock;
+
+                    # Function header
+                    oOut.write(  '\n'
+                               + '\n'
+                               + '/**\n'
+                               + ' * #%u: %s at line %s offset %s in %s%s\n'
+                                  % (oVariation.iEnumValue, oMcBlock.sFunction, oMcBlock.iBeginLine, oMcBlock.offBeginLine,
+                                     os.path.split(oMcBlock.sSrcFile)[1],
+                                     ' (macro expansion)' if oMcBlock.iBeginLine == oMcBlock.iEndLine else '')
+                               + ' */\n'
+                               + 'static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(' + oVariation.getNativeFunctionName() + ')\n'
+                               + '{\n');
+
+                    # Unpack parameters.
+                    self.generateFunctionParameterUnpacking(oVariation, oOut,
+                                                            ('pCallEntry->auParams[0]',
+                                                             'pCallEntry->auParams[1]',
+                                                             'pCallEntry->auParams[2]',));
+
+                    # Now for the actual statements.
+                    oOut.write(oVariation.oNativeRecomp.renderCode(cchIndent = 4));
+
+                    oOut.write('}\n');
+
+        #
+        # Output the function table.
+        #
+        oOut.write(   '\n'
+                    + '\n'
+                    + '/*\n'
+                    + ' * Function table running parallel to g_apfnIemThreadedFunctions and friends.\n'
+                    + ' */\n'
+                    + 'const PFNIEMNATIVERECOMPFUNC g_apfnIemNativeRecompileFunctions[kIemThreadedFunc_End] =\n'
+                    + '{\n'
+                    + '    /*Invalid*/ NULL,'
+                    + '\n'
+                    + '    /*\n'
+                    + '     * Predefined.\n'
+                    + '     */\n'
+                    );
+        for sFuncNm, _ in self.katBltIns:
+            oOut.write('    NULL, /*BltIn_%s*/\n' % (sFuncNm,))
+
+        iThreadedFunction = 1 + len(self.katBltIns);
+        for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
+            oOut.write(  '    /*\n'
+                       + '     * Variation: ' + ThreadedFunctionVariation.kdVariationNames[sVariation] + '\n'
+                       + '     */\n');
+            for oThreadedFunction in self.aoThreadedFuncs:
+                oVariation = oThreadedFunction.dVariations.get(sVariation, None);
+                if oVariation:
+                    iThreadedFunction += 1;
+                    assert oVariation.iEnumValue == iThreadedFunction;
+                    sName = oVariation.getNativeFunctionName();
+                    if oVariation.oNativeRecomp and oVariation.oNativeRecomp.isRecompilable():
+                        oOut.write('    /*%4u*/ %s,\n' % (iThreadedFunction, sName,));
+                    else:
+                        oOut.write('    /*%4u*/ NULL /*%s*/,\n' % (iThreadedFunction, sName,));
+
+        oOut.write(  '};\n'
+                   + '\n');
+        return True;
+
 
     def getThreadedFunctionByIndex(self, idx):
         """
@@ -1984,44 +2126,94 @@ class IEMThreadedGenerator(object):
         #
         sScriptDir = os.path.dirname(__file__);
         oParser = argparse.ArgumentParser(add_help = False);
-        oParser.add_argument('asInFiles',       metavar = 'input.cpp.h',        nargs = '*',
+        oParser.add_argument('asInFiles',
+                             metavar = 'input.cpp.h',
+                             nargs   = '*',
                              default = [os.path.join(sScriptDir, aoInfo[0])
                                         for aoInfo in iai.g_aaoAllInstrFilesAndDefaultMapAndSet],
-                             help = "Selection of VMMAll/IEMAllInst*.cpp.h files to use as input.");
-        oParser.add_argument('--out-funcs-hdr', metavar = 'file-funcs.h',       dest = 'sOutFileFuncsHdr', action = 'store',
-                             default = '-', help = 'The output header file for the functions.');
-        oParser.add_argument('--out-funcs-cpp', metavar = 'file-funcs.cpp',     dest = 'sOutFileFuncsCpp', action = 'store',
-                             default = '-', help = 'The output C++ file for the functions.');
-        oParser.add_argument('--out-mod-input1', metavar = 'file-instr.cpp.h',   dest = 'sOutFileModInput1', action = 'store',
-                             default = '-', help = 'The output C++/header file for modified input instruction files part 1.');
-        oParser.add_argument('--out-mod-input2', metavar = 'file-instr.cpp.h',   dest = 'sOutFileModInput2', action = 'store',
-                             default = '-', help = 'The output C++/header file for modified input instruction files part 2.');
-        oParser.add_argument('--out-mod-input3', metavar = 'file-instr.cpp.h',   dest = 'sOutFileModInput3', action = 'store',
-                             default = '-', help = 'The output C++/header file for modified input instruction files part 3.');
-        oParser.add_argument('--out-mod-input4', metavar = 'file-instr.cpp.h',   dest = 'sOutFileModInput4', action = 'store',
-                             default = '-', help = 'The output C++/header file for modified input instruction files part 4.');
-        oParser.add_argument('--help', '-h', '-?', action = 'help', help = 'Display help and exit.');
-        oParser.add_argument('--version', '-V', action = 'version',
+                             help    = "Selection of VMMAll/IEMAllInst*.cpp.h files to use as input.");
+        oParser.add_argument('--out-thrd-funcs-hdr',
+                             metavar = 'file-thrd-funcs.h',
+                             dest    = 'sOutFileThrdFuncsHdr',
+                             action  = 'store',
+                             default = '-',
+                             help    = 'The output header file for the threaded functions.');
+        oParser.add_argument('--out-thrd-funcs-cpp',
+                             metavar = 'file-thrd-funcs.cpp',
+                             dest    = 'sOutFileThrdFuncsCpp',
+                             action  = 'store',
+                             default = '-',
+                             help    = 'The output C++ file for the threaded functions.');
+        oParser.add_argument('--out-n8ve-funcs-hdr',
+                             metavar = 'file-n8tv-funcs.h',
+                             dest    = 'sOutFileN8veFuncsHdr',
+                             action  = 'store',
+                             default = '-',
+                             help    = 'The output header file for the native recompiler functions.');
+        oParser.add_argument('--out-n8ve-funcs-cpp',
+                             metavar = 'file-n8tv-funcs.cpp',
+                             dest    = 'sOutFileN8veFuncsCpp',
+                             action  = 'store',
+                             default = '-',
+                             help    = 'The output C++ file for the native recompiler functions.');
+        oParser.add_argument('--native-arch',
+                             metavar = 'arch',
+                             dest    = 'sNativeRecompilerArch',
+                             action  = 'store',
+                             default = None,
+                             help    = 'The host architecture for the native recompiler. No default as it enables/disables '
+                                     + 'generating the files related to native recompilation.');
+        oParser.add_argument('--out-mod-input1',
+                             metavar = 'file-instr.cpp.h',
+                             dest    = 'sOutFileModInput1',
+                             action  = 'store',
+                             default = '-',
+                             help    = 'The output C++/header file for modified input instruction files part 1.');
+        oParser.add_argument('--out-mod-input2',
+                             metavar = 'file-instr.cpp.h',
+                             dest    = 'sOutFileModInput2',
+                             action  = 'store',
+                             default = '-',
+                             help    = 'The output C++/header file for modified input instruction files part 2.');
+        oParser.add_argument('--out-mod-input3',
+                             metavar = 'file-instr.cpp.h',
+                             dest    = 'sOutFileModInput3',
+                             action  = 'store',
+                             default = '-',
+                             help    = 'The output C++/header file for modified input instruction files part 3.');
+        oParser.add_argument('--out-mod-input4',
+                             metavar = 'file-instr.cpp.h',
+                             dest    = 'sOutFileModInput4',
+                             action  = 'store',
+                             default = '-',
+                             help    = 'The output C++/header file for modified input instruction files part 4.');
+        oParser.add_argument('--help', '-h', '-?',
+                             action  = 'help',
+                             help    = 'Display help and exit.');
+        oParser.add_argument('--version', '-V',
+                             action  = 'version',
                              version = 'r%s (IEMAllThreadedPython.py), r%s (IEMAllInstPython.py)'
                                      % (__version__.split()[1], iai.__version__.split()[1],),
-                             help = 'Displays the version/revision of the script and exit.');
+                             help    = 'Displays the version/revision of the script and exit.');
         self.oOptions = oParser.parse_args(asArgs[1:]);
         print("oOptions=%s" % (self.oOptions,));
 
         #
         # Process the instructions specified in the IEM sources.
         #
-        if self.processInputFiles():
+        if self.processInputFiles(self.oOptions.sNativeRecompilerArch):
             #
             # Generate the output files.
             #
             aaoOutputFiles = (
-                 ( self.oOptions.sOutFileFuncsHdr,  self.generateThreadedFunctionsHeader ),
-                 ( self.oOptions.sOutFileFuncsCpp,  self.generateThreadedFunctionsSource ),
-                 ( self.oOptions.sOutFileModInput1, self.generateModifiedInput1 ),
-                 ( self.oOptions.sOutFileModInput2, self.generateModifiedInput2 ),
-                 ( self.oOptions.sOutFileModInput3, self.generateModifiedInput3 ),
-                 ( self.oOptions.sOutFileModInput4, self.generateModifiedInput4 ),
+                 ( self.oOptions.sOutFileThrdFuncsHdr,  self.generateThreadedFunctionsHeader ),
+                 ( self.oOptions.sOutFileThrdFuncsCpp,  self.generateThreadedFunctionsSource ),
+                 ( self.oOptions.sOutFileN8veFuncsHdr,  self.generateNativeFunctionsHeader ),
+                 ( self.oOptions.sOutFileN8veFuncsCpp,  self.generateNativeFunctionsSource ),
+                 ( self.oOptions.sOutFileModInput1,     self.generateModifiedInput1 ),
+                 ( self.oOptions.sOutFileModInput2,     self.generateModifiedInput2 ),
+                 ( self.oOptions.sOutFileModInput3,     self.generateModifiedInput3 ),
+                 ( self.oOptions.sOutFileModInput4,     self.generateModifiedInput4 ),
             );
             fRc = True;
             for sOutFile, fnGenMethod in aaoOutputFiles:
