@@ -2797,30 +2797,30 @@ ifndef VBOX_WITH_NOCRT_STATIC
 endif
 
 RuntimeGuestR3_SOURCES.darwin            = \
-               r3/posix/rtmempage-exec-mmap-posix.cpp
+	r3/posix/rtmempage-exec-mmap-posix.cpp
 
 RuntimeGuestR3_SOURCES.freebsd           = \
-               r3/posix/rtmempage-exec-mmap-posix.cpp
+	r3/posix/rtmempage-exec-mmap-posix.cpp
 
 RuntimeGuestR3_SOURCES.haiku             = \
-               r3/posix/rtmempage-exec-mmap-posix.cpp
+	r3/posix/rtmempage-exec-mmap-posix.cpp
 
 RuntimeGuestR3_SOURCES.linux             = $(filter-out \
 		r3/memsafer-r3.cpp \
 		, $(RuntimeR3_SOURCES.linux)) \
-               r3/posix/rtmempage-exec-mmap-posix.cpp
+	r3/posix/rtmempage-exec-mmap-posix.cpp
 
 RuntimeGuestR3_SOURCES.os2               = \
-               r3/mempage-heap.cpp \
-               r3/os2/mempage-native-os2.cpp
+	r3/mempage-heap.cpp \
+	r3/os2/mempage-native-os2.cpp
 
 RuntimeGuestR3_SOURCES.solaris           = \
-               r3/posix/rtmempage-exec-mmap-posix.cpp
+	r3/posix/rtmempage-exec-mmap-posix.cpp
 
 ## @todo provide VirtualAlloc variant for GAs?
 RuntimeGuestR3_SOURCES.win               = \
-               r3/mempage-heap.cpp \
-               r3/win/mempage-native-win.cpp
+	r3/mempage-heap.cpp \
+	r3/win/mempage-native-win.cpp
 
 
 #
