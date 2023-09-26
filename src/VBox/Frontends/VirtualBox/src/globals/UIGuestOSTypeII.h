@@ -97,9 +97,12 @@ public:
         KFirmwareType getRecommendedFirmware() const;
         bool getRecommendedFloppy() const;
         LONG64 getRecommendedHDD() const;
+        KGraphicsControllerType getRecommendedGraphicsController() const;
     /** @} */
 
     bool isOk() const;
+    bool operator==(const UIGuestOSTypeII &other);
+    bool operator!=(const UIGuestOSTypeII &other);
 
 private:
 

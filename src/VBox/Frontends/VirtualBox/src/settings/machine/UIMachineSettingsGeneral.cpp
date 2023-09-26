@@ -157,9 +157,9 @@ UIMachineSettingsGeneral::~UIMachineSettingsGeneral()
     cleanup();
 }
 
-CGuestOSType UIMachineSettingsGeneral::guestOSType() const
+UIGuestOSTypeII UIMachineSettingsGeneral::guestOSType() const
 {
-    AssertPtrReturn(m_pEditorNameAndSystem, CGuestOSType());
+    AssertPtrReturn(m_pEditorNameAndSystem, UIGuestOSTypeII());
     return m_pEditorNameAndSystem->type();
 }
 

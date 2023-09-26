@@ -32,6 +32,7 @@
 #endif
 
 /* GUI includes: */
+#include "UIGuestOSTypeII.h"
 #include "UISettingsPage.h"
 
 /* Forward declarations: */
@@ -57,8 +58,8 @@ public:
     /** Destructs General settings page. */
     virtual ~UIMachineSettingsGeneral() RT_OVERRIDE;
 
-    /** Returns the VM OS type ID. */
-    CGuestOSType guestOSType() const;
+    /** Returns the VM OS type. */
+    UIGuestOSTypeII guestOSType() const;
 
 protected:
 

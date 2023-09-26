@@ -33,10 +33,10 @@
 
 /* GUI includes: */
 #include "UIEditor.h"
+#include "UIGuestOSTypeII.h"
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CGuestOSType.h"
 
 /* Forward declarations: */
 class QGridLayout;
@@ -65,7 +65,7 @@ public:
     int value() const;
 
     /** Defines @a comGuestOSType. */
-    void setGuestOSType(const CGuestOSType &comGuestOSType);
+    void setGuestOSType(const UIGuestOSTypeII &comGuestOSType);
 
     /** Defines @a cGuestScreenCount. */
     void setGuestScreenCount(int cGuestScreenCount);
@@ -117,7 +117,7 @@ private:
     /** @name Options
      * @{ */
         /** Holds the guest OS type ID. */
-        CGuestOSType             m_comGuestOSType;
+        UIGuestOSTypeII          m_guestOSType;
         /** Holds the guest screen count. */
         int                      m_cGuestScreenCount;
         /** Holds the graphics controller type. */
