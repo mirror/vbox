@@ -479,7 +479,7 @@ void UIWizardNewVMNameOSTypePage::sltNameChanged(const QString &strNewName)
         m_pNameAndSystemEditor->blockSignals(true);
         if (UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(m_pNameAndSystemEditor, strNewName))
         {
-            wizardWindow<UIWizardNewVM>()->setGuestOSType(m_pNameAndSystemEditor->type());
+            wizardWindow<UIWizardNewVM>()->setGuestOSTypeId(m_pNameAndSystemEditor->typeId());
             m_userModifiedParameters << "GuestOSTypeFromName";
         }
         m_pNameAndSystemEditor->blockSignals(false);
@@ -499,7 +499,7 @@ void UIWizardNewVMNameOSTypePage::sltOsTypeChanged()
     AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     //m_userModifiedParameters << "GuestOSType";
     if (m_pNameAndSystemEditor)
-        wizardWindow<UIWizardNewVM>()->setGuestOSType(m_pNameAndSystemEditor->type());
+        wizardWindow<UIWizardNewVM>()->setGuestOSTypeId(m_pNameAndSystemEditor->typeId());
 }
 
 void UIWizardNewVMNameOSTypePage::retranslateUi()
@@ -590,7 +590,7 @@ void UIWizardNewVMNameOSTypePage::initializePage()
         if (m_pNameAndSystemEditor)
         {
             pWizard->setGuestOSFamilyId(m_pNameAndSystemEditor->familyId());
-            pWizard->setGuestOSType(m_pNameAndSystemEditor->type());
+            pWizard->setGuestOSTypeId(m_pNameAndSystemEditor->typeId());
             /* Vm name, folder, file path etc. will be initilized by composeMachineFilePath: */
         }
     }

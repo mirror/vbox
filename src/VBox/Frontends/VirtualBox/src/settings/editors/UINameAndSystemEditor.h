@@ -130,7 +130,7 @@ public:
     QString familyId() const;
 
     /** Returns the VM OS type. */
-    UIGuestOSTypeII type() const;
+    //UIGuestOSTypeII type() const;
 
     /** Passes the @p fError to QILineEdit::mark(bool) effectively marking it for error. */
     void markNameEditor(bool fError);

@@ -132,6 +132,103 @@ KGraphicsControllerType UIGuestOSTypeManager::getRecommendedGraphicsController(c
     return KGraphicsControllerType_Null;
 }
 
+ULONG UIGuestOSTypeManager::getRecommendedRAM(const QString &strTypeId) const
+{
+    if (strTypeId.isEmpty())
+        return 0;
+    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    {
+        if (type.getId() == strTypeId)
+            return type.getRecommendedRAM();
+    }
+    return 0;
+}
+
+ULONG UIGuestOSTypeManager::getRecommendedCPUCount(const QString &strTypeId) const
+{
+    if (strTypeId.isEmpty())
+        return 0;
+    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    {
+        if (type.getId() == strTypeId)
+            return type.getRecommendedCPUCount();
+    }
+    return 0;
+}
+
+KFirmwareType UIGuestOSTypeManager::getRecommendedFirmware(const QString &strTypeId) const
+{
+    if (strTypeId.isEmpty())
+        return KFirmwareType_Max;
+    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    {
+        if (type.getId() == strTypeId)
+            return type.getRecommendedFirmware();
+    }
+    return KFirmwareType_Max;
+}
+
+QString UIGuestOSTypeManager::getDescription(const QString &strTypeId) const
+{
+    if (strTypeId.isEmpty())
+        return QString();
+    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    {
+        if (type.getId() == strTypeId)
+            return type.getDescription();
+    }
+    return QString();
+}
+
+LONG64 UIGuestOSTypeManager::getRecommendedHDD(const QString &strTypeId) const
+{
+    if (strTypeId.isEmpty())
+        return 0;
+    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    {
+        if (type.getId() == strTypeId)
+            return type.getRecommendedHDD();
+    }
+    return 0;
+}
+
+KStorageBus UIGuestOSTypeManager::getRecommendedHDStorageBus(const QString &strTypeId) const
+{
+    if (strTypeId.isEmpty())
+        return KStorageBus_Null;
+    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    {
+        if (type.getId() == strTypeId)
+            return type.getRecommendedHDStorageBus();
+    }
+    return KStorageBus_Null;
+}
+
+KStorageBus UIGuestOSTypeManager::getRecommendedDVDStorageBus(const QString &strTypeId) const
+{
+    if (strTypeId.isEmpty())
+        return KStorageBus_Null;
+    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    {
+        if (type.getId() == strTypeId)
+            return type.getRecommendedDVDStorageBus();
+    }
+    return KStorageBus_Null;
+}
+
+
+bool UIGuestOSTypeManager::getRecommendedFloppy(const QString &strTypeId) const
+{
+    if (strTypeId.isEmpty())
+        return false;
+    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    {
+        if (type.getId() == strTypeId)
+            return type.getRecommendedFloppy();
+    }
+    return false;
+}
+
 UIGuestOSTypeII::UIGuestOSTypeII()
 {
 }

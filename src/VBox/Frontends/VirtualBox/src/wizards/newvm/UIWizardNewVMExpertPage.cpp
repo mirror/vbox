@@ -109,7 +109,7 @@ void UIWizardNewVMExpertPage::sltNameChanged(const QString &strNewName)
         m_pNameAndSystemEditor->blockSignals(true);
         if (UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(m_pNameAndSystemEditor, strNewName))
         {
-            wizardWindow<UIWizardNewVM>()->setGuestOSType(m_pNameAndSystemEditor->type());
+            wizardWindow<UIWizardNewVM>()->setGuestOSTypeId(m_pNameAndSystemEditor->typeId());
             /* Since the type `possibly` changed: */
             setOSTypeDependedValues();
             m_userModifiedParameters << "GuestOSTypeFromName";
@@ -139,7 +139,7 @@ void UIWizardNewVMExpertPage::sltOsTypeChanged()
      * has already set the os type explicitly or not: */
     //m_userModifiedParameters << "GuestOSType";
     if (m_pNameAndSystemEditor)
-        wizardWindow<UIWizardNewVM>()->setGuestOSType(m_pNameAndSystemEditor->type());
+        wizardWindow<UIWizardNewVM>()->setGuestOSTypeId(m_pNameAndSystemEditor->typeId());
     setOSTypeDependedValues();
 }
 
@@ -147,9 +147,7 @@ void UIWizardNewVMExpertPage::sltGetWithFileOpenDialog()
 {
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);
-    const UIGuestOSTypeII &OSType = pWizard->guestOSType();
-    AssertReturnVoid(!OSType.isOk());
-    QUuid uMediumId = UIWizardNewVMDiskCommon::getWithFileOpenDialog(OSType.getId(),
+    QUuid uMediumId = UIWizardNewVMDiskCommon::getWithFileOpenDialog(pWizard->guestOSTypeId(),
                                                                      pWizard->machineFolder(),
                                                                      this, m_pActionPool);
     if (!uMediumId.isNull())
@@ -344,11 +342,13 @@ void UIWizardNewVMExpertPage::createConnections()
 void UIWizardNewVMExpertPage::setOSTypeDependedValues()
 {
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
+    const UIGuestOSTypeManager *pManager = uiCommon().guestOSTypeManager();
     AssertReturnVoid(pWizard);
+    AssertReturnVoid(pManager);
 
+    QString strTypeId = pWizard->guestOSTypeId();
     /* Get recommended 'ram' field value: */
-    const UIGuestOSTypeII &type = pWizard->guestOSType();
-    ULONG recommendedRam = type.getRecommendedRAM();
+    ULONG recommendedRam = pManager->getRecommendedRAM(strTypeId);
 
     if (m_pHardwareWidgetContainer)
     {
@@ -362,7 +362,7 @@ void UIWizardNewVMExpertPage::setOSTypeDependedValues()
         }
 
         /* Set Firmware Type of the widget and the wizard: */
-        KFirmwareType fwType = type.getRecommendedFirmware();
+        KFirmwareType fwType = pManager->getRecommendedFirmware(strTypeId);
         if (!m_userModifiedParameters.contains("EFIEnabled"))
         {
             m_pHardwareWidgetContainer->setEFIEnabled(fwType != KFirmwareType_BIOS);
@@ -370,7 +370,7 @@ void UIWizardNewVMExpertPage::setOSTypeDependedValues()
         }
 
         /* Initialize CPU count:*/
-        int iCPUCount = type.getRecommendedCPUCount();
+        int iCPUCount = pManager->getRecommendedCPUCount(strTypeId);
         if (!m_userModifiedParameters.contains("CPUCount"))
         {
             m_pHardwareWidgetContainer->setCPUCount(iCPUCount);
@@ -379,7 +379,7 @@ void UIWizardNewVMExpertPage::setOSTypeDependedValues()
         m_pHardwareWidgetContainer->blockSignals(false);
     }
 
-    LONG64 iRecommendedDiskSize = type.getRecommendedHDD();
+    LONG64 iRecommendedDiskSize = pManager->getRecommendedHDD(strTypeId);
     /* Prepare initial disk choice: */
     if (!m_userModifiedParameters.contains("SelectedDiskSource"))
     {
@@ -424,7 +424,7 @@ void UIWizardNewVMExpertPage::initializePage()
         {
             /* Guest OS type: */
             pWizard->setGuestOSFamilyId(m_pNameAndSystemEditor->familyId());
-            pWizard->setGuestOSType(m_pNameAndSystemEditor->type());
+            pWizard->setGuestOSTypeId(m_pNameAndSystemEditor->typeId());
             /* Vm name, folder, file path etc. will be initilized by composeMachineFilePath: */
         }
 

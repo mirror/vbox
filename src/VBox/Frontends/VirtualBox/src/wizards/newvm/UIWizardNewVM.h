@@ -32,7 +32,6 @@
 #endif
 
 /* GUI includes: */
-#include "UIGuestOSTypeII.h"
 #include "UINativeWizard.h"
 
 /* COM includes: */
@@ -103,8 +102,8 @@ public:
         const QString &guestOSFamilyId() const;
         void setGuestOSFamilyId(const QString &strGuestOSFamilyId);
 
-        const UIGuestOSTypeII &guestOSType() const;
-        void setGuestOSType(const UIGuestOSTypeII &guestOSType);
+        const QString &guestOSTypeId() const;
+        void setGuestOSTypeId(const QString &guestOSType);
 
         bool installGuestAdditions() const;
         void setInstallGuestAdditions(bool fInstallGA);
@@ -162,12 +161,14 @@ public:
 
         void setDetectedWindowsImageNamesAndIndices(const QVector<QString> &names, const QVector<ulong> &ids);
         const QVector<QString> &detectedWindowsImageNames() const;
-    const QVector<ulong> &detectedWindowsImageIndices() const;
+        const QVector<ulong> &detectedWindowsImageIndices() const;
 
         void setSelectedWindowImageIndex(ulong uIndex);
         ulong selectedWindowImageIndex() const;
 
         QVector<KMediumVariant> mediumVariants() const;
+
+       QString getGuestOSTypeDescription() const;
     /** @} */
 
 protected:
@@ -218,7 +219,7 @@ private:
        /** Holds the VM OS family ID. */
        QString  m_strGuestOSFamilyId;
        /** Holds the VM OS type. */
-       UIGuestOSTypeII m_guestOSType;
+       QString m_guestOSTypeId;
 
        /** True if guest additions are to be installed during unattended install. */
        bool m_fInstallGuestAdditions;

@@ -325,12 +325,12 @@ QString UINameAndSystemEditor::familyId() const
 //     setTypeId(enmType.GetId(), enmType.GetFamilyId());
 // }
 
-UIGuestOSTypeII UINameAndSystemEditor::type() const
-{
-    const UIGuestOSTypeManager * const pGuestOSTypeManager = uiCommon().guestOSTypeManager();
-    AssertReturn(pGuestOSTypeManager, UIGuestOSTypeII());
-    return pGuestOSTypeManager->findGuestTypeById(m_strTypeId);
-}
+// UIGuestOSTypeII UINameAndSystemEditor::type() const
+// {
+//     const UIGuestOSTypeManager * const pGuestOSTypeManager = uiCommon().guestOSTypeManager();
+//     AssertReturn(pGuestOSTypeManager, UIGuestOSTypeII());
+//     return pGuestOSTypeManager->findGuestTypeById(m_strTypeId);
+// }
 
 void UINameAndSystemEditor::markNameEditor(bool fError)
 {

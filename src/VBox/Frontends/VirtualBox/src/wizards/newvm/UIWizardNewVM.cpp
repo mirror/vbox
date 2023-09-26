@@ -31,6 +31,7 @@
 
 /* GUI includes: */
 #include "UICommon.h"
+#include "UIGuestOSTypeII.h"
 #include "UIMedium.h"
 #include "UINotificationCenter.h"
 #include "UIWizardNewVM.h"
@@ -148,7 +149,6 @@ void UIWizardNewVM::cleanWizard()
 bool UIWizardNewVM::createVM()
 {
     CVirtualBox vbox = uiCommon().virtualBox();
-    QString strTypeId = m_guestOSType.getId();
 
     /* Create virtual machine: */
     if (m_machine.isNull())
@@ -159,7 +159,7 @@ bool UIWizardNewVM::createVM()
         m_machine = vbox.CreateMachine(m_strMachineFilePath,
                                        m_strMachineBaseName,
                                        KPlatformArchitecture_x86,
-                                       groups, strTypeId, QString(),
+                                       groups, m_guestOSTypeId, QString(),
                                        QString(), QString(), QString());
         if (!vbox.isOk())
         {
@@ -179,7 +179,7 @@ bool UIWizardNewVM::createVM()
     m_machine.SetCPUCount(iVPUCount);
     /* Correct the VRAM size since API does not take fullscreen memory requirements into account: */
     CGraphicsAdapter comGraphics = m_machine.GetGraphicsAdapter();
-    comGraphics.SetVRAMSize(qMax(comGraphics.GetVRAMSize(), (ULONG)(UICommon::requiredVideoMemory(strTypeId) / _1M)));
+    comGraphics.SetVRAMSize(qMax(comGraphics.GetVRAMSize(), (ULONG)(UICommon::requiredVideoMemory(m_guestOSTypeId) / _1M)));
     /* Enabled I/O APIC explicitly in we have more than 1 VCPU: */
     if (iVPUCount > 1)
         comFirmwareSettings.SetIOAPICEnabled(true);
@@ -278,12 +278,13 @@ bool UIWizardNewVM::attachDefaultDevices()
     bool success = false;
     QUuid uMachineId = m_machine.GetId();
     CSession session = uiCommon().openSession(uMachineId);
-    if (!session.isNull())
+    const UIGuestOSTypeManager *pManager = uiCommon().guestOSTypeManager();
+    if (!session.isNull() && pManager)
     {
         CMachine machine = session.GetMachine();
         if (!m_virtualDisk.isNull())
         {
-            KStorageBus enmHDDBus = m_guestOSType.getRecommendedHDStorageBus();
+            KStorageBus enmHDDBus = pManager->getRecommendedHDStorageBus(m_guestOSTypeId);
             CStorageController comHDDController = m_machine.GetStorageControllerByInstance(enmHDDBus, 0);
             if (!comHDDController.isNull())
             {
@@ -295,7 +296,7 @@ bool UIWizardNewVM::attachDefaultDevices()
         }
 
         /* Attach optical drive: */
-        KStorageBus enmDVDBus = m_guestOSType.getRecommendedDVDStorageBus();
+        KStorageBus enmDVDBus = pManager->getRecommendedDVDStorageBus(m_guestOSTypeId);
         CStorageController comDVDController = m_machine.GetStorageControllerByInstance(enmDVDBus, 0);
         if (!comDVDController.isNull())
         {
@@ -316,7 +317,8 @@ bool UIWizardNewVM::attachDefaultDevices()
         }
 
         /* Attach an empty floppy drive if recommended */
-        if (m_guestOSType.getRecommendedFloppy()) {
+        if (pManager->getRecommendedFloppy(m_guestOSTypeId))
+        {
             CStorageController comFloppyController = m_machine.GetStorageControllerByInstance(KStorageBus_Floppy, 0);
             if (!comFloppyController.isNull())
             {
@@ -522,14 +524,14 @@ void UIWizardNewVM::setGuestOSFamilyId(const QString &strGuestOSFamilyId)
     m_strGuestOSFamilyId = strGuestOSFamilyId;
 }
 
-const UIGuestOSTypeII &UIWizardNewVM::guestOSType() const
+const QString &UIWizardNewVM::guestOSTypeId() const
 {
-    return m_guestOSType;
+    return m_guestOSTypeId;
 }
 
-void UIWizardNewVM::setGuestOSType(const UIGuestOSTypeII &guestOSType)
+void UIWizardNewVM::setGuestOSTypeId(const QString &guestOSTypeId)
 {
-    m_guestOSType = guestOSType;
+    m_guestOSTypeId = guestOSTypeId;
 }
 
 bool UIWizardNewVM::installGuestAdditions() const
@@ -788,6 +790,14 @@ QVector<KMediumVariant> UIWizardNewVM::mediumVariants() const
         variants[i] = (KMediumVariant)temp;
     }
     return variants;
+}
+
+QString UIWizardNewVM::getGuestOSTypeDescription() const
+{
+    const UIGuestOSTypeManager *pManager = uiCommon().guestOSTypeManager();
+    if (!pManager)
+        return QString();
+    return pManager->getDescription(m_guestOSTypeId);
 }
 
 bool UIWizardNewVM::isUnattendedEnabled() const

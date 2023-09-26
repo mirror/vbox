@@ -35,6 +35,7 @@
 #include "QIRichTextLabel.h"
 #include "QITreeView.h"
 #include "UIIconPool.h"
+#include "UIGuestOSTypeII.h"
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
 #include "UITranslator.h"
@@ -353,7 +354,9 @@ void UIWizardNewVMSummaryModel::populateData(UIWizardNewVM *pWizard)
     pNameRoot->addChild(UIWizardNewVM::tr("Machine Name"), pWizard->machineBaseName());
     pNameRoot->addChild(UIWizardNewVM::tr("Machine Folder"), pWizard->machineFolder());
     pNameRoot->addChild(UIWizardNewVM::tr("ISO Image"), pWizard->ISOFilePath());
-    pNameRoot->addChild(UIWizardNewVM::tr("Guest OS Type"), pWizard->guestOSType().getDescription());
+    const UIGuestOSTypeManager *pManager = uiCommon().guestOSTypeManager();
+    if (pManager)
+        pNameRoot->addChild(UIWizardNewVM::tr("Guest OS Type"), pManager->getDescription(pWizard->guestOSTypeId()));
 
     const QString &ISOPath = pWizard->ISOFilePath();
     if (!ISOPath.isNull() && !ISOPath.isEmpty())
