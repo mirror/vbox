@@ -1506,31 +1506,31 @@ HRESULT Machine::getEffectiveParavirtProvider(ParavirtProvider_T *aParavirtProvi
                 {
                     if (fOsXGuest)
                         *aParavirtProvider = ParavirtProvider_Minimal;
-                    else if (   mUserData->s.strOsType == "Windows11_64"
+                    else if (   mUserData->s.strOsType == "Windows11_x64"
                              || mUserData->s.strOsType == "Windows10"
-                             || mUserData->s.strOsType == "Windows10_64"
+                             || mUserData->s.strOsType == "Windows10_x64"
                              || mUserData->s.strOsType == "Windows81"
-                             || mUserData->s.strOsType == "Windows81_64"
+                             || mUserData->s.strOsType == "Windows81_x64"
                              || mUserData->s.strOsType == "Windows8"
-                             || mUserData->s.strOsType == "Windows8_64"
+                             || mUserData->s.strOsType == "Windows8_x64"
                              || mUserData->s.strOsType == "Windows7"
-                             || mUserData->s.strOsType == "Windows7_64"
+                             || mUserData->s.strOsType == "Windows7_x64"
                              || mUserData->s.strOsType == "WindowsVista"
-                             || mUserData->s.strOsType == "WindowsVista_64"
+                             || mUserData->s.strOsType == "WindowsVista_x64"
                              || (   (   mUserData->s.strOsType.startsWith("Windows202")
                                      || mUserData->s.strOsType.startsWith("Windows201"))
-                                 && mUserData->s.strOsType.endsWith("_64"))
+                                 && mUserData->s.strOsType.endsWith("_x64"))
                              || mUserData->s.strOsType == "Windows2012"
-                             || mUserData->s.strOsType == "Windows2012_64"
+                             || mUserData->s.strOsType == "Windows2012_x64"
                              || mUserData->s.strOsType == "Windows2008"
-                             || mUserData->s.strOsType == "Windows2008_64")
+                             || mUserData->s.strOsType == "Windows2008_x64")
                     {
                         *aParavirtProvider = ParavirtProvider_HyperV;
                     }
                     else if (guestTypeFamilyId == "Linux" &&
                              mUserData->s.strOsType != "Linux22" &&      // Linux22 and Linux24{_64} excluded as they're too old
                              mUserData->s.strOsType != "Linux24" &&      // to have any KVM paravirtualization support.
-                             mUserData->s.strOsType != "Linux24_64")
+                             mUserData->s.strOsType != "Linux24_x64")
                     {
                         *aParavirtProvider = ParavirtProvider_KVM;
                     }
