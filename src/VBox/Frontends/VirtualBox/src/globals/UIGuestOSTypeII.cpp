@@ -120,6 +120,18 @@ UIGuestOSTypeII UIGuestOSTypeManager::findGuestTypeById(const QString &strTypeId
     return UIGuestOSTypeII();
 }
 
+KGraphicsControllerType UIGuestOSTypeManager::getRecommendedGraphicsController(const QString &strTypeId) const
+{
+    if (strTypeId.isEmpty())
+        return KGraphicsControllerType_Null;
+    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    {
+        if (type.getId() == strTypeId)
+            return type.getRecommendedGraphicsController();
+    }
+    return KGraphicsControllerType_Null;
+}
+
 UIGuestOSTypeII::UIGuestOSTypeII()
 {
 }

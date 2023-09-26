@@ -293,7 +293,7 @@ struct UIDataSettingsMachineDisplay
 
 
 UIMachineSettingsDisplay::UIMachineSettingsDisplay()
-    : m_guestOSType(CGuestOSType())
+    : m_strGuestOSTypeId(QString())
 #ifdef VBOX_WITH_3D_ACCELERATION
     , m_fWddmModeSupported(false)
 #endif
@@ -321,25 +321,23 @@ UIMachineSettingsDisplay::~UIMachineSettingsDisplay()
     cleanup();
 }
 
-void UIMachineSettingsDisplay::setGuestOSType(UIGuestOSTypeII guestOSType)
+void UIMachineSettingsDisplay::setGuestOSTypeId(const QString &strGuestOSTypeId)
 {
     /* Check if guest OS type changed: */
-    if (m_guestOSType == guestOSType)
+    if (m_strGuestOSTypeId == strGuestOSTypeId)
         return;
 
     /* Remember new guest OS type: */
-    m_guestOSType = guestOSType;
-    m_pEditorVideoMemorySize->setGuestOSTypeId(m_guestOSType.getId());
+    m_strGuestOSTypeId = strGuestOSTypeId;
+    m_pEditorVideoMemorySize->setGuestOSTypeId(m_strGuestOSTypeId);
 
 #ifdef VBOX_WITH_3D_ACCELERATION
     /* Check if WDDM mode supported by the guest OS type: */
-    const QString strGuestOSTypeId = m_guestOSType.isOk() ? m_guestOSType.getId() : QString();
-    m_fWddmModeSupported = UICommon::isWddmCompatibleOsType(strGuestOSTypeId);
+    m_fWddmModeSupported = UICommon::isWddmCompatibleOsType(m_strGuestOSTypeId);
     m_pEditorVideoMemorySize->set3DAccelerationSupported(m_fWddmModeSupported);
 #endif /* VBOX_WITH_3D_ACCELERATION */
     /* Acquire recommended graphics controller type: */
-    m_enmGraphicsControllerTypeRecommended = m_guestOSType.getRecommendedGraphicsController();
-
+    m_enmGraphicsControllerTypeRecommended = uiCommon().getRecommendedGraphicsController(m_strGuestOSTypeId);
     /* Revalidate: */
     revalidate();
 }
@@ -635,9 +633,9 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
         message.first = UITranslator::removeAccelMark(m_pTabWidget->tabText(0));
 
         /* Video RAM amount test: */
-        if (shouldWeWarnAboutLowVRAM() && m_guestOSType.isOk())
+        if (shouldWeWarnAboutLowVRAM() && !m_strGuestOSTypeId.isEmpty())
         {
-            quint64 uNeedBytes = UICommon::requiredVideoMemory(m_guestOSType.getId(), m_pEditorMonitorCount->value());
+            quint64 uNeedBytes = UICommon::requiredVideoMemory(m_strGuestOSTypeId, m_pEditorMonitorCount->value());
 
             /* Basic video RAM amount test: */
             if ((quint64)m_pEditorVideoMemorySize->value() * _1M < uNeedBytes)
@@ -663,7 +661,7 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
         }
 
         /* Graphics controller type test: */
-        if (m_guestOSType.isOk())
+        if (!m_strGuestOSTypeId.isEmpty())
         {
             if (graphicsControllerTypeCurrent() != graphicsControllerTypeRecommended())
             {
@@ -1022,14 +1020,9 @@ void UIMachineSettingsDisplay::cleanup()
 
 bool UIMachineSettingsDisplay::shouldWeWarnAboutLowVRAM()
 {
-    bool fResult = true;
-
     QStringList excludingOSList = QStringList()
         << "Other" << "DOS" << "Netware" << "L4" << "QNX" << "JRockitVE";
-    if (!m_guestOSType.isOk() || excludingOSList.contains(m_guestOSType.getId()))
-        fResult = false;
-
-    return fResult;
+    return !excludingOSList.contains(m_strGuestOSTypeId);
 }
 
 void UIMachineSettingsDisplay::updateGuestScreenCount()

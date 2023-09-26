@@ -2566,6 +2566,13 @@ quint64 UICommon::requiredVideoMemory(const QString &strGuestOSTypeId, int cMoni
     return uNeedMBytes * _1M;
 }
 
+KGraphicsControllerType UICommon::getRecommendedGraphicsController(const QString &strGuestOSTypeId) const
+{
+    if (!m_pGuestOSTypeManager)
+        return KGraphicsControllerType_Null;
+    return m_pGuestOSTypeManager->getRecommendedGraphicsController(strGuestOSTypeId);
+}
+
 /* static */
 void UICommon::setHelpKeyword(QObject *pObject, const QString &strHelpKeyword)
 {

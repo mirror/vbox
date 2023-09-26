@@ -62,6 +62,8 @@ public:
 
     UIGuestOSTypeII findGuestTypeById(const QString &strTypeId) const;
 
+    KGraphicsControllerType getRecommendedGraphicsController(const QString &strTypeId) const;
+
 private:
 
     void addGuestOSType(const CGuestOSType &comType);

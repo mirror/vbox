@@ -501,6 +501,7 @@ public:
         /** Returns the required video memory in bytes for the current desktop
           * resolution at maximum possible screen depth in bpp. */
         static quint64 requiredVideoMemory(const QString &strGuestOSTypeId, int cMonitors = 1);
+        KGraphicsControllerType getRecommendedGraphicsController(const QString &strGuestOSTypeId) const;
     /** @} */
 
     /** @name Thread stuff.

@@ -513,7 +513,7 @@ void UIAdvancedSettingsDialogMachine::recorrelate(UISettingsPage *pSettingsPage)
             UIMachineSettingsGeneral *pGeneralPage = qobject_cast<UIMachineSettingsGeneral*>(pSettingsPage);
             UIMachineSettingsDisplay *pDisplayPage = qobject_cast<UIMachineSettingsDisplay*>(m_pSelector->idToPage(MachineSettingsPageType_Display));
             if (pGeneralPage && pDisplayPage)
-                pDisplayPage->setGuestOSType(pGeneralPage->guestOSType());
+                pDisplayPage->setGuestOSTypeId(pGeneralPage->guestOSTypeId());
             break;
         }
         /* System page correlations: */
