@@ -6828,7 +6828,7 @@ bool MachineConfigFile::readSnapshot(const Guid &curSnapshotUuid,
 const struct {
     const char *pcszOld;
     const char *pcszNew;
-} aConvertOSTypes[] =
+} aConvertGuestOSTypesPre1_5[] =
 {
     { "unknown", "Other" },
     { "dos", "DOS" },
@@ -6867,18 +6867,68 @@ const struct {
     { "l4", "L4" }
 };
 
-void MachineConfigFile::convertOldOSType_pre1_5(Utf8Str &str)
+void MachineConfigFile::convertGuestOSTypeFromPre1_5(Utf8Str &str)
 {
-    for (unsigned u = 0;
-         u < RT_ELEMENTS(aConvertOSTypes);
-         ++u)
-    {
-        if (str == aConvertOSTypes[u].pcszOld)
+    for (size_t u = 0; u < RT_ELEMENTS(aConvertGuestOSTypesPre1_5); ++u)
+        if (str == aConvertGuestOSTypesPre1_5[u].pcszOld)
         {
-            str = aConvertOSTypes[u].pcszNew;
+            str = aConvertGuestOSTypesPre1_5[u].pcszNew;
             break;
         }
+}
+
+/**
+ * Static function to convert a guest OS type ID suffix.
+ *
+ * @returns \c true if suffix got converted, or \c false if not.
+ * @param   strOsType               Guest OS type ID to convert.
+ * @param   pszToReplace            Suffix to replace.
+ * @param   pszReplacement          What to replace the suffix with.
+ */
+/* static */
+bool MachineConfigFile::convertGuestOSTypeSuffix(com::Utf8Str &strOsType, const char *pszToReplace, const char *pszReplacement)
+{
+    AssertPtrReturn(pszToReplace, false);
+    AssertPtrReturn(pszReplacement, false);
+
+    size_t const cchSuffix = strlen(pszToReplace);
+    size_t const idxSuffix = strOsType.find(pszToReplace);
+    if (idxSuffix == strOsType.length() - cchSuffix) /* Be extra cautious to only replace the real suffix. */
+    {
+        strOsType.replace(idxSuffix, cchSuffix, pszReplacement);
+        return true;
     }
+    return false;
+}
+
+/**
+ * Converts guest OS type IDs to be compatible with settings >= v1.20.
+ *
+ * @param   str                 Guest OS type ID to convert.
+ *
+ * @note    Settings < v1.20 require converting some guest OS type IDs, so that the rest of Main can recognize them.
+ *          We always work with the latest guest OS type ID internally.
+ *
+ *          However, we never write back those modified guest OS type IDs for settings < v1.20, as this would break
+ *          compatibility with older VBox versions.
+ */
+void MachineConfigFile::convertGuestOSTypeFromPre1_20(Utf8Str &str)
+{
+    convertGuestOSTypeSuffix(str, "_64", "_x64");
+}
+
+/**
+ * Converts guest OS type IDs to be compatible with settings < v1.20.
+ *
+ * @param   str                 Guest OS type ID to convert.
+ *
+ * @note    For settings < v1.20 we have to make sure that we replace the new guest OS type ID suffix "_x64"
+ *          with "_64" so that we don't break loading (valid) settings for old(er) VBox versions, which don't
+ *          know about the new suffix.
+ */
+void MachineConfigFile::convertGuestOSTypeToPre1_20(Utf8Str &str)
+{
+    convertGuestOSTypeSuffix(str, "_x64", "_64");
 }
 
 /**
@@ -6901,7 +6951,9 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
         elmMachine.getAttributeValue("Description", machineUserData.strDescription);
         elmMachine.getAttributeValue("OSType", machineUserData.strOsType);
         if (m->sv < SettingsVersion_v1_5)
-            convertOldOSType_pre1_5(machineUserData.strOsType);
+            convertGuestOSTypeFromPre1_5(machineUserData.strOsType);
+        if (m->sv <= SettingsVersion_v1_19)
+            convertGuestOSTypeFromPre1_20(machineUserData.strOsType);
 
         elmMachine.getAttributeValue("stateKeyId", strStateKeyId);
         elmMachine.getAttributeValue("stateKeyStore", strStateKeyStore);
@@ -9069,8 +9121,12 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
         elmMachine.setAttribute("nameSync", machineUserData.fNameSync);
     if (machineUserData.strDescription.length())
         elmMachine.createChild("Description")->addContent(machineUserData.strDescription);
-    elmMachine.setAttribute("OSType", machineUserData.strOsType);
 
+    com::Utf8Str strOsType = machineUserData.strOsType;
+    if (m->sv < SettingsVersion_v1_20)
+        convertGuestOSTypeToPre1_20(strOsType);
+    /* else use the unmodified guest OS type ID. */
+    elmMachine.setAttribute("OSType", strOsType);
 
     if (m->sv >= SettingsVersion_v1_19)
     {
