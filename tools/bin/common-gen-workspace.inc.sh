@@ -296,7 +296,9 @@ my_generate_all_projects()
     my_generate_project "Debugger"      "src/VBox/Debugger"                     --begin-incs "include" "src/VBox/Debugger"                      --end-includes "src/VBox/Debugger" "include/VBox/dbggui.h" "include/VBox/dbg.h"
 
     # src/VBox/Devices
-    my_generate_project "Devices"       "src/VBox/Devices"                      --begin-incs "include" "src/VBox/Devices"                       --end-includes "src/VBox/Devices" "include/VBox/pci.h" "include/VBox/pdm*.h"
+    if test -z "$MY_OPT_MINIMAL"; then
+        my_generate_project "Devices"   "src/VBox/Devices"                      --begin-incs "include" "src/VBox/Devices"                       --end-includes "src/VBox/Devices" "include/VBox/pci.h" "include/VBox/pdm*.h"
+    fi
     ## @todo split this up.
 
     # src/VBox/Disassembler
@@ -308,11 +310,13 @@ my_generate_all_projects()
         my_generate_project "FE-VBoxBugReport"   "src/VBox/Frontends/VBoxBugReport"   --begin-incs "include" "src/VBox/Frontends/VBoxBugReport"       --end-includes "src/VBox/Frontends/VBoxBugReport"
         my_generate_project "FE-VBoxBalloonCtrl" "src/VBox/Frontends/VBoxBalloonCtrl" --begin-incs "include" "src/VBox/Frontends/VBoxBalloonCtrl"     --end-includes "src/VBox/Frontends/VBoxBalloonCtrl"
     fi
-    my_generate_project "FE-VBoxManage"      "src/VBox/Frontends/VBoxManage"      --begin-incs "include" "src/VBox/Frontends/VBoxManage"          --end-includes "src/VBox/Frontends/VBoxManage"
-    my_generate_project "FE-VBoxHeadless"    "src/VBox/Frontends/VBoxHeadless"    --begin-incs "include" "src/VBox/Frontends/VBoxHeadless"        --end-includes "src/VBox/Frontends/VBoxHeadless"
-    my_generate_project "FE-VBoxSDL"         "src/VBox/Frontends/VBoxSDL"         --begin-incs "include" "src/VBox/Frontends/VBoxSDL"             --end-includes "src/VBox/Frontends/VBoxSDL"
-    my_generate_project "FE-VBoxShell"       "src/VBox/Frontends/VBoxShell"       --begin-incs "include" "src/VBox/Frontends/VBoxShell"           --end-includes "src/VBox/Frontends/VBoxShell"
-    # noise - my_generate_project "FE-VBoxBFE"      "src/VBox/Frontends/VBoxBFE"      --begin-incs "include" "src/VBox/Frontends/VBoxBFE"            --end-includes "src/VBox/Frontends/VBoxBFE"
+    my_generate_project "FE-VBoxManage"     "src/VBox/Frontends/VBoxManage"     --begin-incs "include" "src/VBox/Frontends/VBoxManage"          --end-includes "src/VBox/Frontends/VBoxManage"
+    my_generate_project "FE-VBoxHeadless"   "src/VBox/Frontends/VBoxHeadless"   --begin-incs "include" "src/VBox/Frontends/VBoxHeadless"        --end-includes "src/VBox/Frontends/VBoxHeadless"
+    my_generate_project "FE-VBoxSDL"        "src/VBox/Frontends/VBoxSDL"        --begin-incs "include" "src/VBox/Frontends/VBoxSDL"             --end-includes "src/VBox/Frontends/VBoxSDL"
+    if test -z "$MY_OPT_MINIMAL"; then
+        my_generate_project "FE-VBoxShell"  "src/VBox/Frontends/VBoxShell"      --begin-incs "include" "src/VBox/Frontends/VBoxShell"           --end-includes "src/VBox/Frontends/VBoxShell"
+        my_generate_project "FE-VBoxBFE"    "src/VBox/Frontends/VBoxBFE"        --begin-incs "include" "src/VBox/Frontends/VBoxBFE"             --end-includes "src/VBox/Frontends/VBoxBFE"
+    fi
     FE_VBOX_WRAPPERS=""
     for d in ${MY_OUT_DIRS};
     do
@@ -330,7 +334,7 @@ my_generate_all_projects()
     # src/VBox/GuestHost
     my_generate_project "HGSMI-GH"      "src/VBox/GuestHost/HGSMI"              --begin-incs "include"                                          --end-includes "src/VBox/GuestHost/HGSMI"
     if test -z "$MY_OPT_MINIMAL"; then
-        my_generate_project "DragAndDrop-GH"    "src/VBox/GuestHost/DragAndDrop"        --begin-incs "include"                                          --end-includes "src/VBox/GuestHost/DragAndDrop"
+        my_generate_project "DragAndDrop-GH" "src/VBox/GuestHost/DragAndDrop"   --begin-incs "include"                                          --end-includes "src/VBox/GuestHost/DragAndDrop"
     fi
     my_generate_project "ShClip-GH"     "src/VBox/GuestHost/SharedClipboard"    --begin-incs "include"                                          --end-includes "src/VBox/GuestHost/SharedClipboard"
 
@@ -342,19 +346,25 @@ my_generate_all_projects()
     my_generate_project "AdpCtl"        "src/VBox/HostDrivers/adpctl"           --begin-incs "include"                                          --end-includes "src/VBox/HostDrivers/adpctl"
 
     # src/VBox/HostServices
-    my_generate_project "HS-auth"        "src/VBox/HostServices/auth"            --begin-incs "include" "src/VBox/HostServices/auth"             --end-includes "src/VBox/HostServices/auth"
-    my_generate_project "HS-common"      "src/VBox/HostServices/common"          --begin-incs "include" "src/VBox/HostServices/common"           --end-includes "src/VBox/HostServices/common"
-    my_generate_project "GstCtl-HS"      "src/VBox/HostServices/GuestControl"    --begin-incs "include" "src/VBox/HostServices/GuestControl"     --end-includes "src/VBox/HostServices/GuestControl"
-    my_generate_project "DragAndDrop-HS" "src/VBox/HostServices/DragAndDrop"     --begin-incs "include" "src/VBox/HostServices/DragAndDrop"     --end-includes "src/VBox/HostServices/DragAndDrop"
-    my_generate_project "GuestProps-HS"  "src/VBox/HostServices/GuestProperties" --begin-incs "include" "src/VBox/HostServices/GuestProperties"  --end-includes "src/VBox/HostServices/GuestProperties"
-    my_generate_project "ShClip-HS"      "src/VBox/HostServices/SharedClipboard" --begin-incs "include" "src/VBox/HostServices/SharedClipboard"  --end-includes "src/VBox/HostServices/SharedClipboard"
-    my_generate_project "ShFolders-HS"   "src/VBox/HostServices/SharedFolders"   --begin-incs "include" "src/VBox/HostServices/SharedFolders"    --end-includes "src/VBox/HostServices/SharedFolders" "include/VBox/shflsvc.h"
+    my_generate_project "HS-auth"       "src/VBox/HostServices/auth"            --begin-incs "include" "src/VBox/HostServices/auth"            --end-includes "src/VBox/HostServices/auth"
+    my_generate_project "HS-common"     "src/VBox/HostServices/common"          --begin-incs "include" "src/VBox/HostServices/common"          --end-includes "src/VBox/HostServices/common"
+    my_generate_project "GstCtl-HS"     "src/VBox/HostServices/GuestControl"    --begin-incs "include" "src/VBox/HostServices/GuestControl"    --end-includes "src/VBox/HostServices/GuestControl"
+    if test -z "$MY_OPT_MINIMAL"; then
+        my_generate_project "DragAndDrop-HS" "src/VBox/HostServices/DragAndDrop" --begin-incs "include" "src/VBox/HostServices/DragAndDrop"     --end-includes "src/VBox/HostServices/DragAndDrop"
+    fi
+    my_generate_project "GuestProps-HS" "src/VBox/HostServices/GuestProperties" --begin-incs "include" "src/VBox/HostServices/GuestProperties" --end-includes "src/VBox/HostServices/GuestProperties"
+    my_generate_project "ShClip-HS"     "src/VBox/HostServices/SharedClipboard" --begin-incs "include" "src/VBox/HostServices/SharedClipboard" --end-includes "src/VBox/HostServices/SharedClipboard"
+    my_generate_project "ShFolders-HS"  "src/VBox/HostServices/SharedFolders"   --begin-incs "include" "src/VBox/HostServices/SharedFolders"   --end-includes "src/VBox/HostServices/SharedFolders" "include/VBox/shflsvc.h"
 
     # src/VBox/ImageMounter
-    my_generate_project "ImageMounter"  "src/VBox/ImageMounter"                 --begin-incs "include" "src/VBox/ImageMounter"                  --end-includes "src/VBox/ImageMounter"
+    if test -z "$MY_OPT_MINIMAL"; then
+        my_generate_project "ImageMounter"  "src/VBox/ImageMounter"             --begin-incs "include" "src/VBox/ImageMounter"              --end-includes "src/VBox/ImageMounter"
+    fi
 
     # src/VBox/Installer
-    my_generate_project "Installers"    "src/VBox/Installer"                    --begin-incs "include"                                          --end-includes "src/VBox/Installer"
+    if test -z "$MY_OPT_MINIMAL"; then
+        my_generate_project "Installers"    "src/VBox/Installer"                --begin-incs "include"                                      --end-includes "src/VBox/Installer"
+    fi
 
     # src/VBox/Main
     my_generate_project "Main"          "src/VBox/Main"                         --begin-incs "include" "src/VBox/Main/include"                  --end-includes "src/VBox/Main" "include/VBox/com" "include/VBox/settings.h"
@@ -366,15 +376,19 @@ my_generate_all_projects()
     my_generate_project "Net-NetLib"    "src/VBox/NetworkServices/NetLib"       --begin-incs "include" "src/VBox/NetworkServices/NetLib"        --end-includes "src/VBox/NetworkServices/NetLib"
 
     # src/VBox/RDP
-    my_generate_project "RDP-Server"    "src/VBox/RDP/server"                   --begin-incs "include" "src/VBox/RDP/server"                    --end-includes "src/VBox/RDP/server"
-    my_generate_project "RDP-WebClient" "src/VBox/RDP/webclient"                --begin-incs "include" "src/VBox/RDP/webclient"                 --end-includes "src/VBox/RDP/webclient"
-    my_generate_project "RDP-Misc"      "src/VBox/RDP"                          --begin-incs "include"                                          --end-includes "src/VBox/RDP/auth" "src/VBox/RDP/tscpasswd" "src/VBox/RDP/x11server"
+    if test -z "$MY_OPT_MINIMAL"; then
+        my_generate_project "RDP-Server"    "src/VBox/RDP/server"               --begin-incs "include" "src/VBox/RDP/server"                --end-includes "src/VBox/RDP/server"
+        my_generate_project "RDP-WebClient" "src/VBox/RDP/webclient"            --begin-incs "include" "src/VBox/RDP/webclient"             --end-includes "src/VBox/RDP/webclient"
+        my_generate_project "RDP-Misc"      "src/VBox/RDP"                      --begin-incs "include"                                      --end-includes "src/VBox/RDP/auth" "src/VBox/RDP/tscpasswd" "src/VBox/RDP/x11server"
+    fi
 
     # src/VBox/Storage
     my_generate_project "Storage"       "src/VBox/Storage"                      --begin-incs "include" "src/VBox/Storage"                       --end-includes "src/VBox/Storage"
 
     # src/VBox/ValidationKit
-    my_generate_project "ValidationKit" "src/VBox/ValidationKit"                --begin-incs "include"                                          --end-includes "src/VBox/ValidationKit"
+    if test -z "$MY_OPT_MINIMAL"; then
+        my_generate_project "ValidationKit" "src/VBox/ValidationKit"            --begin-incs "include"                                      --end-includes "src/VBox/ValidationKit"
+    fi
 
     # src/VBox/ExtPacks
     my_generate_project "ExtPacks"      "src/VBox/ExtPacks"                     --begin-incs "include"                                          --end-includes "src/VBox/ExtPacks"
@@ -383,19 +397,19 @@ my_generate_all_projects()
     my_generate_project "bldprogs"      "src/bldprogs"                          --begin-incs "include"                                          --end-includes "src/bldprogs"
 
     # A few things from src/lib
-    lib=$(my_get_newest_ver src/libs/zlib)
-    my_generate_project "zlib"          "${lib}"                                --begin-incs "include"                                          --end-includes "${lib}/*.c" "${lib}/*.h"
-    lib=$(my_get_newest_ver src/libs/liblzf)
-    my_generate_project "liblzf"        "${lib}"                                --begin-incs "include"                                          --end-includes "${lib}"
-    lib=$(my_get_newest_ver src/libs/libpng)
-    my_generate_project "libpng"        "${lib}"                                --begin-incs "include"                                          --end-includes "${lib}/*.c" "${lib}/*.h"
-    lib=$(my_get_newest_ver src/libs/openssl)
-    my_generate_project "openssl"       "${lib}"                                --begin-incs "include" "${lib}/crypto"                          --end-includes "${lib}"
-    lib=$(my_get_newest_ver src/libs/curl)
-    my_generate_project "curl"          "${lib}"                                --begin-incs "include" "${lib}/include"                         --end-includes "${lib}"
-    lib=$(my_get_newest_ver src/libs/softfloat)
-    my_generate_project "softfloat"     "${lib}"                                --begin-incs "include" "${lib}/source/include"                  --end-includes "${lib}"
     if test -z "$MY_OPT_MINIMAL"; then
+        lib=$(my_get_newest_ver src/libs/zlib)
+        my_generate_project "zlib"          "${lib}"                            --begin-incs "include"                                          --end-includes "${lib}/*.c" "${lib}/*.h"
+        lib=$(my_get_newest_ver src/libs/liblzf)
+        my_generate_project "liblzf"        "${lib}"                            --begin-incs "include"                                          --end-includes "${lib}"
+        lib=$(my_get_newest_ver src/libs/libpng)
+        my_generate_project "libpng"        "${lib}"                            --begin-incs "include"                                          --end-includes "${lib}/*.c" "${lib}/*.h"
+        lib=$(my_get_newest_ver src/libs/openssl)
+        my_generate_project "openssl"       "${lib}"                            --begin-incs "include" "${lib}/crypto"                          --end-includes "${lib}"
+        lib=$(my_get_newest_ver src/libs/curl)
+        my_generate_project "curl"          "${lib}"                            --begin-incs "include" "${lib}/include"                         --end-includes "${lib}"
+        lib=$(my_get_newest_ver src/libs/softfloat)
+        my_generate_project "softfloat"     "${lib}"                            --begin-incs "include" "${lib}/source/include"                  --end-includes "${lib}"
         lib=$(my_get_newest_ver src/libs/libvorbis)
         my_generate_project "libvorbis"     "${lib}"                            --begin-incs "include" "${lib}/include/vorbis"                  --end-includes "${lib}"
         lib=$(my_get_newest_ver src/libs/libogg)
@@ -403,7 +417,9 @@ my_generate_all_projects()
     fi
 
     # webtools
-    my_generate_project "webtools"      "webtools"                              --begin-incs "include" "webtools/tinderbox/server/Tinderbox3"   --end-includes "webtools"
+    if test -z "$MY_OPT_MINIMAL"; then
+        my_generate_project "webtools"      "webtools"                          --begin-incs "include" "webtools/tinderbox/server/Tinderbox3"   --end-includes "webtools"
+    fi
 
     # include/VBox
     my_generate_project "VBoxHeaders"   "include"                               --begin-incs "include"                                          --end-includes "include/VBox"
