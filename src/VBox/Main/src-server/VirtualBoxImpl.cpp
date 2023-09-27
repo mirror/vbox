@@ -1373,13 +1373,19 @@ HRESULT VirtualBox::getProgressOperations(std::vector<ComPtr<IProgress> > &aProg
     return S_OK;
 }
 
-HRESULT VirtualBox::getGuestOSTypes(std::vector<ComPtr<IGuestOSType> > &aGuestOSTypes)
+
+/**
+ * Returns all supported guest OS types for one ore more platform architecture(s).
+ *
+ * @returns HRESULT
+ * @param   aArchitectures          Platform architectures to return supported guest OS types for.
+ *                                  If empty, all supported guest OS for all platform architectures will be returned.
+ * @param   aGuestOSTypes           Where to return the supported guest OS types.
+ *                                  Will be empty if none supported.
+ */
+HRESULT VirtualBox::i_getSupportedGuestOSTypes(std::vector<PlatformArchitecture_T> aArchitectures, std::vector<ComPtr<IGuestOSType>> &aGuestOSTypes)
 {
     AutoReadLock al(m->allGuestOSTypes.getLockHandle() COMMA_LOCKVAL_SRC_POS);
-
-    com::SafeArray<PlatformArchitecture_T> supportedPlatformArchitectures;
-    HRESULT hrc = m->pSystemProperties->COMGETTER(SupportedPlatformArchitectures)(ComSafeArrayAsOutParam(supportedPlatformArchitectures));
-    ComAssertComRCRetRC(hrc);
 
     aGuestOSTypes.clear();
 
@@ -1388,13 +1394,13 @@ HRESULT VirtualBox::getGuestOSTypes(std::vector<ComPtr<IGuestOSType> > &aGuestOS
     for (GuestOSTypesOList::const_iterator it = m->allGuestOSTypes.begin(); it != m->allGuestOSTypes.end(); ++it)
     {
         bool fFound = false;
-        if (supportedPlatformArchitectures.size() == 0) /* If empty, we add all types we have. */
+        if (aArchitectures.size() == 0) /* If empty, we add all types we have. */
             fFound = true;
         else
         {
-            for (size_t i = 0; i < supportedPlatformArchitectures.size(); i++)
+            for (size_t i = 0; i < aArchitectures.size(); i++)
             {
-                if (supportedPlatformArchitectures[i] == (*it)->i_platformArchitecture())
+                if (aArchitectures[i] == (*it)->i_platformArchitecture())
                 {
                     fFound = true;
                     break;
@@ -1411,6 +1417,12 @@ HRESULT VirtualBox::getGuestOSTypes(std::vector<ComPtr<IGuestOSType> > &aGuestOS
     }
 
     return S_OK;
+}
+
+HRESULT VirtualBox::getGuestOSTypes(std::vector<ComPtr<IGuestOSType> > &aGuestOSTypes)
+{
+    std::vector<PlatformArchitecture_T> vecArchitectures; /* Stays empty to return all guest OS types. */
+    return VirtualBox::i_getSupportedGuestOSTypes(vecArchitectures, aGuestOSTypes);
 }
 
 HRESULT VirtualBox::getSharedFolders(std::vector<ComPtr<ISharedFolder> > &aSharedFolders)

@@ -717,6 +717,12 @@ HRESULT PlatformProperties::getSupportedGraphicsControllerTypes(std::vector<Grap
     return S_OK;
 }
 
+HRESULT PlatformProperties::getSupportedGuestOSTypes(std::vector<ComPtr<IGuestOSType>> &aSupportedGuestOSTypes)
+{
+    std::vector<PlatformArchitecture_T> vecArchitectures(mPlatformArchitecture);
+    return mParent->i_getSupportedGuestOSTypes(vecArchitectures, aSupportedGuestOSTypes);
+}
+
 HRESULT PlatformProperties::getSupportedNetworkAdapterTypes(std::vector<NetworkAdapterType_T> &aSupportedNetworkAdapterTypes)
 {
     switch (mPlatformArchitecture)

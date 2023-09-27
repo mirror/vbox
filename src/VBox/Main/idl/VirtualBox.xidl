@@ -2870,7 +2870,7 @@
 
     <attribute name="guestOSTypes" type="IGuestOSType" readonly="yes" safearray="yes">
       <desc>
-        Array of guest OS type objects known to this VirtualBox installation.
+        Array of all guest OS type objects known to this VirtualBox installation.
       </desc>
     </attribute>
 
@@ -12690,7 +12690,7 @@
   <interface
     name="IPlatformProperties"
     extends="$unknown"
-    uuid="1ec98a25-d94c-4cfb-a012-5e21481c154c"
+    uuid="6bf432a7-b9e6-4317-ba51-52373dac02de"
     wsmap="managed"
     rest="managed"
     reservedMethods="4" reservedAttributes="16"
@@ -12758,6 +12758,13 @@
     <attribute name="supportedFirmwareTypes" type="FirmwareType" safearray="yes" readonly="yes">
       <desc>
         Returns an array of officially supported values for enum <link to="FirmwareType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedGuestOSTypes" type="IGuestOSType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="IGuestOSType"/>,
         in the sense of what is e.g. worth offering in the VirtualBox GUI.
       </desc>
     </attribute>
