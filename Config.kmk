@@ -9113,7 +9113,7 @@ ifeq ($(KBUILD_TARGET),darwin)
 	$(QUIET)$(APPEND) $@.tmp '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">'
 	$(QUIET)$(APPEND) $@.tmp '<plist version="1.0">'
 	$(QUIET)$(APPEND) $@.tmp '<dict>'
-	$(QUIET)$(APPEND) -n $@.tmp $(foreach entitlement,$(VBOX_DARWIN_ENTITLEMENTS_LIST), '	<key>$(entitlement)</key><true/>')
+	$(QUIET)$(APPEND) -n $@.tmp $(foreach entitlement,$(VBOX_DARWIN_ENTITLEMENTS_LIST_COMMON), '	<key>$(entitlement)</key><true/>')
 	$(QUIET)$(APPEND) $@.tmp '</dict>'
 	$(QUIET)$(APPEND) $@.tmp '</plist>'
 	$(QUIET)$(MV) -f $@.tmp $@
