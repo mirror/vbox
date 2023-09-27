@@ -32,7 +32,7 @@
 #endif
 
 /* Qt includes: */
-#include <QList>
+#include <QVector>
 #include <QMap>
 #include <QString>
 
@@ -49,8 +49,8 @@ class SHARED_LIBRARY_STUFF UIGuestOSTypeManager
 
 public:
 
-    typedef QList<QPair<QString, QString> > UIGuestOSTypeFamilyInfo;
-    typedef QList<QPair<QString, QString> > UIGuestOSTypeInfo;
+    typedef QVector<QPair<QString, QString> > UIGuestOSTypeFamilyInfo;
+    typedef QVector<QPair<QString, QString> > UIGuestOSTypeInfo;
 
     void reCacheGuestOSTypes(const CGuestOSTypeVector &guestOSTypes);
 
@@ -76,7 +76,7 @@ private:
 
     void addGuestOSType(const CGuestOSType &comType);
 
-    QList<UIGuestOSTypeII> m_guestOSTypes;
+    QVector<UIGuestOSTypeII> m_guestOSTypes;
     /* First item of the pair is family id and the 2nd is family description. */
     UIGuestOSTypeInfo m_guestOSFamilies;
 

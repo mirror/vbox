@@ -54,14 +54,6 @@ class SHARED_LIBRARY_STUFF UINameAndSystemEditor : public UIEditor
     Q_OBJECT;
     Q_PROPERTY(QString name READ name WRITE setName);
 
-    /** Simple struct representing CGuestOSType cache. */
-    struct UIGuestOSType
-    {
-        QString typeId;
-        QString typeDescription;
-        bool is64bit;
-    };
-
 signals:
 
     /** Notifies listeners about VM name change. */
@@ -197,9 +189,6 @@ private:
 
     /** @name Values
      * @{ */
-        /** Holds the current type cache. */
-        QMap<QString, QList<UIGuestOSType> >  m_types;
-
         /** Holds the VM OS type ID. */
         QString  m_strTypeId;
         /** Holds the VM OS family ID. */
