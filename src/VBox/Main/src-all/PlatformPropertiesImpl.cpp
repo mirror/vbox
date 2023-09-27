@@ -721,7 +721,7 @@ HRESULT PlatformProperties::getSupportedGuestOSTypes(std::vector<ComPtr<IGuestOS
 {
    /* We only have all supported guest OS types as part of VBoxSVC, not in VBoxC itself. */
 #ifdef IN_VBOXSVC
-    std::vector<PlatformArchitecture_T> vecArchitectures(mPlatformArchitecture);
+    std::vector<PlatformArchitecture_T> vecArchitectures(1 /* Size */, mPlatformArchitecture);
     return mParent->i_getSupportedGuestOSTypes(vecArchitectures, aSupportedGuestOSTypes);
 #else /* VBoxC */
     RT_NOREF(aSupportedGuestOSTypes);
