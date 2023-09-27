@@ -153,7 +153,7 @@ IoMmuInitReservedSharedMem (
   DEBUG ((
     DEBUG_VERBOSE,
     "%a: ReservedMem (%d pages) address = 0x%llx\n",
-    __FUNCTION__,
+    __func__,
     TotalPages,
     PhysicalAddress
     ));
@@ -330,7 +330,7 @@ InternalAllocateBuffer (
   DEBUG ((
     DEBUG_VERBOSE,
     "%a: range-size: %lx, start-address=0x%llx, pages=0x%llx, bits=0x%lx, bitmap: %lx => %lx\n",
-    __FUNCTION__,
+    __func__,
     MemRange->DataSize,
     *PhysicalAddress,
     Pages,
@@ -367,7 +367,9 @@ IoMmuAllocateBounceBuffer (
 {
   EFI_STATUS  Status;
   UINT32      ReservedMemBitmap;
+  EFI_TPL     OldTpl;
 
+  OldTpl            = gBS->RaiseTPL (TPL_NOTIFY);
   ReservedMemBitmap = 0;
   Status            = InternalAllocateBuffer (
                         Type,
@@ -378,6 +380,7 @@ IoMmuAllocateBounceBuffer (
                         );
   MapInfo->ReservedMemBitmap = ReservedMemBitmap;
   mReservedMemBitmap        |= ReservedMemBitmap;
+  gBS->RestoreTPL (OldTpl);
 
   ASSERT (Status == EFI_SUCCESS);
 
@@ -395,21 +398,25 @@ IoMmuFreeBounceBuffer (
   IN OUT     MAP_INFO  *MapInfo
   )
 {
+  EFI_TPL  OldTpl;
+
   if (MapInfo->ReservedMemBitmap == 0) {
     gBS->FreePages (MapInfo->PlainTextAddress, MapInfo->NumberOfPages);
   } else {
     DEBUG ((
       DEBUG_VERBOSE,
       "%a: PlainTextAddress=0x%Lx, bits=0x%Lx, bitmap: %Lx => %Lx\n",
-      __FUNCTION__,
+      __func__,
       MapInfo->PlainTextAddress,
       MapInfo->ReservedMemBitmap,
       mReservedMemBitmap,
       mReservedMemBitmap & ((UINT32)(~MapInfo->ReservedMemBitmap))
       ));
+    OldTpl                     = gBS->RaiseTPL (TPL_NOTIFY);
     MapInfo->PlainTextAddress  = 0;
     mReservedMemBitmap        &= (UINT32)(~MapInfo->ReservedMemBitmap);
     MapInfo->ReservedMemBitmap = 0;
+    gBS->RestoreTPL (OldTpl);
   }
 
   return EFI_SUCCESS;
@@ -480,7 +487,7 @@ IoMmuFreeCommonBuffer (
   DEBUG ((
     DEBUG_VERBOSE,
     "%a: CommonBuffer=0x%Lx, bits=0x%Lx, bitmap: %Lx => %Lx\n",
-    __FUNCTION__,
+    __func__,
     (UINT64)(UINTN)CommonBufferHeader + SIZE_4KB,
     CommonBufferHeader->ReservedMemBitmap,
     mReservedMemBitmap,

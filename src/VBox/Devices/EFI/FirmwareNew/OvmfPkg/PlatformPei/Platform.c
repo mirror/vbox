@@ -114,7 +114,7 @@ MicrovmInitialization (
 
   Status = QemuFwCfgFindFile ("etc/fdt", &FdtItem, &FdtSize);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_INFO, "%a: no etc/fdt found in fw_cfg, using dummy\n", __FUNCTION__));
+    DEBUG ((DEBUG_INFO, "%a: no etc/fdt found in fw_cfg, using dummy\n", __func__));
     FdtItem = 0;
     FdtSize = sizeof (EmptyFdt);
   }
@@ -122,7 +122,7 @@ MicrovmInitialization (
   FdtPages = EFI_SIZE_TO_PAGES (FdtSize);
   NewBase  = AllocatePages (FdtPages);
   if (NewBase == NULL) {
-    DEBUG ((DEBUG_INFO, "%a: AllocatePages failed\n", __FUNCTION__));
+    DEBUG ((DEBUG_INFO, "%a: AllocatePages failed\n", __func__));
     return;
   }
 
@@ -135,14 +135,14 @@ MicrovmInitialization (
 
   FdtHobData = BuildGuidHob (&gFdtHobGuid, sizeof (*FdtHobData));
   if (FdtHobData == NULL) {
-    DEBUG ((DEBUG_INFO, "%a: BuildGuidHob failed\n", __FUNCTION__));
+    DEBUG ((DEBUG_INFO, "%a: BuildGuidHob failed\n", __func__));
     return;
   }
 
   DEBUG ((
     DEBUG_INFO,
     "%a: fdt at 0x%x (size %d)\n",
-    __FUNCTION__,
+    __func__,
     NewBase,
     FdtSize
     ));
@@ -158,7 +158,7 @@ MiscInitializationForMicrovm (
 
   ASSERT (PlatformInfoHob->HostBridgeDevId == 0xffff);
 
-  DEBUG ((DEBUG_INFO, "%a: microvm\n", __FUNCTION__));
+  DEBUG ((DEBUG_INFO, "%a: microvm\n", __func__));
   //
   // Disable A20 Mask
   //
@@ -223,43 +223,14 @@ ReserveEmuVariableNvStore (
   VariableStore = (EFI_PHYSICAL_ADDRESS)(UINTN)PlatformReserveEmuVariableNvStore ();
   PcdStatus     = PcdSet64S (PcdEmuVariableNvStoreReserved, VariableStore);
 
- #ifdef SECURE_BOOT_FEATURE_ENABLED
-  PlatformInitEmuVariableNvStore ((VOID *)(UINTN)VariableStore);
- #endif
+  if (FeaturePcdGet (PcdSecureBootSupported)) {
+    // restore emulated VarStore from pristine ROM copy
+    PlatformInitEmuVariableNvStore ((VOID *)(UINTN)VariableStore);
+  }
 
   ASSERT_RETURN_ERROR (PcdStatus);
 }
 #endif
-
-STATIC
-VOID
-S3Verification (
-  IN EFI_HOB_PLATFORM_INFO  *PlatformInfoHob
-  )
-{
- #if defined (MDE_CPU_X64)
-  if (PlatformInfoHob->SmmSmramRequire && PlatformInfoHob->S3Supported) {
-    DEBUG ((
-      DEBUG_ERROR,
-      "%a: S3Resume2Pei doesn't support X64 PEI + SMM yet.\n",
-      __FUNCTION__
-      ));
-    DEBUG ((
-      DEBUG_ERROR,
-      "%a: Please disable S3 on the QEMU command line (see the README),\n",
-      __FUNCTION__
-      ));
-    DEBUG ((
-      DEBUG_ERROR,
-      "%a: or build OVMF with \"OvmfPkgIa32X64.dsc\".\n",
-      __FUNCTION__
-      ));
-    ASSERT (FALSE);
-    CpuDeadLoop ();
-  }
-
- #endif
-}
 
 STATIC
 VOID
@@ -275,7 +246,7 @@ Q35BoardVerification (
     DEBUG_ERROR,
     "%a: no TSEG (SMRAM) on host bridge DID=0x%04x; "
     "only DID=0x%04x (Q35) is supported\n",
-    __FUNCTION__,
+    __func__,
     PlatformInfoHob->HostBridgeDevId,
     INTEL_Q35_MCH_DEVICE_ID
     ));
@@ -358,7 +329,6 @@ InitializePlatform (
     ASSERT_EFI_ERROR (Status);
   }
 
-  S3Verification (PlatformInfoHob);
   BootModeInitialization (PlatformInfoHob);
 
   //

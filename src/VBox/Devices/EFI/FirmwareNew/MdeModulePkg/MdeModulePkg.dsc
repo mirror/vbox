@@ -274,6 +274,10 @@
   MdeModulePkg/Bus/Usb/UsbMassStorageDxe/UsbMassStorageDxe.inf
   MdeModulePkg/Bus/Usb/UsbMouseAbsolutePointerDxe/UsbMouseAbsolutePointerDxe.inf
   MdeModulePkg/Bus/Usb/UsbMouseDxe/UsbMouseDxe.inf
+  MdeModulePkg/Bus/Usb/UsbNetwork/NetworkCommon/NetworkCommon.inf
+  MdeModulePkg/Bus/Usb/UsbNetwork/UsbCdcEcm/UsbCdcEcm.inf
+  MdeModulePkg/Bus/Usb/UsbNetwork/UsbCdcNcm/UsbCdcNcm.inf
+  MdeModulePkg/Bus/Usb/UsbNetwork/UsbRndis/UsbRndis.inf
   MdeModulePkg/Bus/I2c/I2cDxe/I2cBusDxe.inf
   MdeModulePkg/Bus/I2c/I2cDxe/I2cHostDxe.inf
   MdeModulePkg/Bus/I2c/I2cDxe/I2cDxe.inf
@@ -400,6 +404,7 @@
   MdeModulePkg/Application/VariableInfo/VariableInfo.inf
   MdeModulePkg/Universal/FaultTolerantWritePei/FaultTolerantWritePei.inf
   MdeModulePkg/Universal/Variable/Pei/VariablePei.inf
+  MdeModulePkg/Universal/Variable/MmVariablePei/MmVariablePei.inf
   MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer.inf
   MdeModulePkg/Universal/TimestampDxe/TimestampDxe.inf
   MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteDxe.inf
@@ -515,6 +520,9 @@
   MdeModulePkg/Universal/RegularExpressionDxe/RegularExpressionDxe.inf
   MdeModulePkg/Universal/SmmCommunicationBufferDxe/SmmCommunicationBufferDxe.inf
   MdeModulePkg/Universal/Disk/RamDiskDxe/RamDiskDxe.inf
+  MdeModulePkg/Library/TraceHubDebugSysTLib/BaseTraceHubDebugSysTLib.inf
+  MdeModulePkg/Library/TraceHubDebugSysTLib/PeiTraceHubDebugSysTLib.inf
+  MdeModulePkg/Library/TraceHubDebugSysTLib/DxeSmmTraceHubDebugSysTLib.inf
 
 [Components.X64]
   MdeModulePkg/Universal/CapsulePei/CapsuleX64.inf

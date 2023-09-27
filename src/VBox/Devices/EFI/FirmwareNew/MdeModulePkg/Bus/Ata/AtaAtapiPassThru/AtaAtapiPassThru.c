@@ -1306,15 +1306,15 @@ AtaPassThruPassThru (
 
   Instance = ATA_PASS_THRU_PRIVATE_DATA_FROM_THIS (This);
 
-  if ((This->Mode->IoAlign > 1) && !IS_ALIGNED (Packet->InDataBuffer, This->Mode->IoAlign)) {
+  if ((This->Mode->IoAlign > 1) && !ADDRESS_IS_ALIGNED (Packet->InDataBuffer, This->Mode->IoAlign)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  if ((This->Mode->IoAlign > 1) && !IS_ALIGNED (Packet->OutDataBuffer, This->Mode->IoAlign)) {
+  if ((This->Mode->IoAlign > 1) && !ADDRESS_IS_ALIGNED (Packet->OutDataBuffer, This->Mode->IoAlign)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  if ((This->Mode->IoAlign > 1) && !IS_ALIGNED (Packet->Asb, This->Mode->IoAlign)) {
+  if ((This->Mode->IoAlign > 1) && !ADDRESS_IS_ALIGNED (Packet->Asb, This->Mode->IoAlign)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -1352,7 +1352,7 @@ AtaPassThruPassThru (
     // Check logical block size
     //
     if ((IdentifyData->AtaData.phy_logic_sector_support & BIT12) != 0) {
-      BlockSize = (UINT32)(((IdentifyData->AtaData.logic_sector_size_hi << 16) | IdentifyData->AtaData.logic_sector_size_lo) * sizeof (UINT16));
+      BlockSize = (UINT32)(((UINT32)(IdentifyData->AtaData.logic_sector_size_hi << 16) | IdentifyData->AtaData.logic_sector_size_lo) * sizeof (UINT16));
     }
   }
 
@@ -2046,15 +2046,15 @@ ExtScsiPassThruPassThru (
     return EFI_INVALID_PARAMETER;
   }
 
-  if ((This->Mode->IoAlign > 1) && !IS_ALIGNED (Packet->InDataBuffer, This->Mode->IoAlign)) {
+  if ((This->Mode->IoAlign > 1) && !ADDRESS_IS_ALIGNED (Packet->InDataBuffer, This->Mode->IoAlign)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  if ((This->Mode->IoAlign > 1) && !IS_ALIGNED (Packet->OutDataBuffer, This->Mode->IoAlign)) {
+  if ((This->Mode->IoAlign > 1) && !ADDRESS_IS_ALIGNED (Packet->OutDataBuffer, This->Mode->IoAlign)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  if ((This->Mode->IoAlign > 1) && !IS_ALIGNED (Packet->SenseData, This->Mode->IoAlign)) {
+  if ((This->Mode->IoAlign > 1) && !ADDRESS_IS_ALIGNED (Packet->SenseData, This->Mode->IoAlign)) {
     return EFI_INVALID_PARAMETER;
   }
 

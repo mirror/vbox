@@ -331,7 +331,7 @@ TlsSetCipherList (
         DEBUG_VERBOSE,
         "%a:%a: skipping CipherId=0x%04x\n",
         gEfiCallerBaseName,
-        __FUNCTION__,
+        __func__,
         CipherId[Index]
         ));
       //
@@ -380,7 +380,7 @@ TlsSetCipherList (
       DEBUG_ERROR,
       "%a:%a: no CipherId could be mapped\n",
       gEfiCallerBaseName,
-      __FUNCTION__
+      __func__
       ));
     Status = EFI_UNSUPPORTED;
     goto FreeMappedCipher;
@@ -441,7 +441,7 @@ TlsSetCipherList (
     DEBUG_VERBOSE,
     "%a:%a: CipherString={\n",
     gEfiCallerBaseName,
-    __FUNCTION__
+    __func__
     ));
   for (CipherStringPosition = CipherString;
        CipherStringPosition < CipherString + FullLength;
@@ -610,7 +610,7 @@ TlsSetVerifyHost (
       "%a:%a: parsed \"%a\" as an IPv%c address "
       "literal\n",
       gEfiCallerBaseName,
-      __FUNCTION__,
+      __func__,
       HostName,
       (UINTN)((BinaryAddressSize == NS_IN6ADDRSZ) ? '6' : '4')
       ));
@@ -701,7 +701,6 @@ TlsSetCaCertificate (
   TLS_CONNECTION  *TlsConn;
   SSL_CTX         *SslCtx;
   INTN            Ret;
-  UINTN           ErrorCode;
 
   BioCert   = NULL;
   Cert      = NULL;
@@ -753,11 +752,13 @@ TlsSetCaCertificate (
   //
   Ret = X509_STORE_add_cert (X509Store, Cert);
   if (Ret != 1) {
+    unsigned long  ErrorCode;
+
     ErrorCode = ERR_peek_last_error ();
     //
     // Ignore "already in table" errors
     //
-    if (!((ERR_GET_FUNC (ErrorCode) == X509_F_X509_STORE_ADD_CERT) &&
+    if (!((ERR_GET_LIB (ErrorCode) == ERR_LIB_X509) &&
           (ERR_GET_REASON (ErrorCode) == X509_R_CERT_ALREADY_IN_HASH_TABLE)))
     {
       Status = EFI_ABORTED;

@@ -383,7 +383,10 @@ class GitDiffCheck:
                     self.force_crlf = False
                     self.force_notabs = False
                 if os.path.basename(self.filename) == 'GNUmakefile' or \
-                   os.path.basename(self.filename) == 'Makefile':
+                   os.path.basename(self.filename).lower() == 'makefile' or \
+                   os.path.splitext(self.filename)[1] == '.makefile' or \
+                   self.filename.startswith(
+                        'BaseTools/Source/C/VfrCompile/Pccts/'):
                     self.force_notabs = False
             elif len(line.rstrip()) != 0:
                 self.format_error("didn't find diff command")
@@ -487,6 +490,12 @@ class GitDiffCheck:
             self.added_line_error('EFI_D_' + mo.group(1) + ' was used, '
                                   'but DEBUG_' + mo.group(1) +
                                   ' is now recommended', line)
+
+        rp_file = os.path.realpath(self.filename)
+        rp_script = os.path.realpath(__file__)
+        if line.find('__FUNCTION__') != -1 and rp_file != rp_script:
+            self.added_line_error('__FUNCTION__ was used, but __func__ '
+                                  'is now recommended', line)
 
     split_diff_re = re.compile(r'''
                                    (?P<cmd>

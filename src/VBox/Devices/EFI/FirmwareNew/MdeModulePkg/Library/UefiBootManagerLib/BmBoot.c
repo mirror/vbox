@@ -1530,7 +1530,7 @@ BmExpandLoadFile (
       "%a:%a: failed to allocate reserved pages: "
       "BufferSize=%Lu LoadFile=\"%s\" FilePath=\"%s\"\n",
       gEfiCallerBaseName,
-      __FUNCTION__,
+      __func__,
       (UINT64)BufferSize,
       LoadFileText,
       FileText
@@ -2297,6 +2297,15 @@ BmEnumerateBootOptions (
       // Skip the fixed block io then the removable block io
       //
       if (BlkIo->Media->RemovableMedia == ((Removable == 0) ? FALSE : TRUE)) {
+        continue;
+      }
+
+      //
+      // Skip removable media if not present
+      //
+      if ((BlkIo->Media->RemovableMedia == TRUE) &&
+          (BlkIo->Media->MediaPresent == FALSE))
+      {
         continue;
       }
 

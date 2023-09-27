@@ -98,9 +98,9 @@ READ_LOCK_STATUS   = TRUE
   INF OvmfPkg/VirtioNetDxe/VirtioNet.inf
   INF OvmfPkg/VirtioScsiDxe/VirtioScsi.inf
   INF OvmfPkg/VirtioRngDxe/VirtioRng.inf
+  INF OvmfPkg/VirtioSerialDxe/VirtioSerial.inf
 
 !ifdef $(VBOX)
-  INF OvmfPkg/SataControllerDxe/SataControllerDxe.inf
   INF VBoxPkg/VmwSvga3Dxe/VmwSvga3VideoDxe.inf
 !endif
 

@@ -171,7 +171,6 @@ XhcCreateUrb (
   Urb->Context  = Context;
 
   Status = XhcCreateTransferTrb (Xhc, Urb);
-  ASSERT_EFI_ERROR (Status);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "XhcCreateUrb: XhcCreateTransferTrb Failed, Status = %r\n", Status));
     FreePool (Urb);
@@ -247,7 +246,11 @@ XhcCreateTransferTrb (
 
   Dci = XhcEndpointToDci (Urb->Ep.EpAddr, (UINT8)(Urb->Ep.Direction));
   ASSERT (Dci < 32);
-  EPRing        = (TRANSFER_RING *)(UINTN)Xhc->UsbDevContext[SlotId].EndpointTransferRing[Dci-1];
+  EPRing = (TRANSFER_RING *)(UINTN)Xhc->UsbDevContext[SlotId].EndpointTransferRing[Dci-1];
+  if (EPRing == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
   Urb->Ring     = EPRing;
   OutputContext = Xhc->UsbDevContext[SlotId].OutputContext;
   if (Xhc->HcCParams.Data.Csz == 0) {
@@ -1495,7 +1498,7 @@ XhciInsertAsyncIntTransfer (
 
   Data = AllocateZeroPool (DataLen);
   if (Data == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a: failed to allocate buffer\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: failed to allocate buffer\n", __func__));
     return NULL;
   }
 
@@ -1513,7 +1516,7 @@ XhciInsertAsyncIntTransfer (
           Context
           );
   if (Urb == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a: failed to create URB\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: failed to create URB\n", __func__));
     FreePool (Data);
     return NULL;
   }

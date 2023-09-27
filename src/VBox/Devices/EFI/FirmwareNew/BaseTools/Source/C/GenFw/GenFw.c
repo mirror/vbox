@@ -6,8 +6,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#include "WinNtInclude.h"
-
 #ifndef __GNUC__
 #include <windows.h>
 #include <io.h>
@@ -28,9 +26,9 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 // Acpi Table definition
 //
 #include <IndustryStandard/Acpi.h>
-#include <IndustryStandard/Acpi1_0.h>
-#include <IndustryStandard/Acpi2_0.h>
-#include <IndustryStandard/Acpi3_0.h>
+#include <IndustryStandard/Acpi10.h>
+#include <IndustryStandard/Acpi20.h>
+#include <IndustryStandard/Acpi30.h>
 #include <IndustryStandard/MemoryMappedConfigurationSpaceAccessTable.h>
 
 #include "CommonLib.h"
@@ -374,7 +372,7 @@ Returns:
     if (Facs->Version > EFI_ACPI_3_0_FIRMWARE_ACPI_CONTROL_STRUCTURE_VERSION) {
       break;
     }
-    if ((Facs->Version != EFI_ACPI_1_0_FIRMWARE_ACPI_CONTROL_STRUCTURE_VERSION) &&
+    if ((Facs->Version != 0 /* field is reserved in ACPI 1.0 */) &&
         (Facs->Version != EFI_ACPI_2_0_FIRMWARE_ACPI_CONTROL_STRUCTURE_VERSION) &&
         (Facs->Version != EFI_ACPI_3_0_FIRMWARE_ACPI_CONTROL_STRUCTURE_VERSION)){
       Error (NULL, 0, 3000, "Invalid", "FACS version check failed.");
@@ -2203,12 +2201,6 @@ Returns:
     }
   }
 
-  if (PeHdr->Pe32.FileHeader.Machine == IMAGE_FILE_MACHINE_ARM) {
-    // Some tools kick out IMAGE_FILE_MACHINE_ARM (0x1c0) vs IMAGE_FILE_MACHINE_ARMT (0x1c2)
-    // so patch back to the official UEFI value.
-    PeHdr->Pe32.FileHeader.Machine = IMAGE_FILE_MACHINE_ARMT;
-  }
-
   //
   // Set new base address into image
   //
@@ -2936,7 +2928,8 @@ Returns:
       if (mIsConvertXip) {
         DebugEntry->FileOffset = DebugEntry->RVA;
       }
-      if (ZeroDebugFlag || DebugEntry->Type != EFI_IMAGE_DEBUG_TYPE_CODEVIEW) {
+      if ((ZeroDebugFlag || DebugEntry->Type != EFI_IMAGE_DEBUG_TYPE_CODEVIEW) &&
+          (DebugEntry->Type != EFI_IMAGE_DEBUG_TYPE_EX_DLLCHARACTERISTICS)) {
         memset (FileBuffer + DebugEntry->FileOffset, 0, DebugEntry->SizeOfData);
         memset (DebugEntry, 0, sizeof (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY));
       }
@@ -3122,7 +3115,7 @@ Returns:
   // Get Debug, Export and Resource EntryTable RVA address.
   // Resource Directory entry need to review.
   //
-  if (FileHdr->Machine == EFI_IMAGE_MACHINE_IA32) {
+  if (FileHdr->Machine == IMAGE_FILE_MACHINE_I386) {
     Optional32Hdr = (EFI_IMAGE_OPTIONAL_HEADER32 *) ((UINT8*) FileHdr + sizeof (EFI_IMAGE_FILE_HEADER));
     SectionHeader = (EFI_IMAGE_SECTION_HEADER *) ((UINT8 *) Optional32Hdr +  FileHdr->SizeOfOptionalHeader);
     if (Optional32Hdr->NumberOfRvaAndSizes > EFI_IMAGE_DIRECTORY_ENTRY_EXPORT && \
