@@ -795,6 +795,46 @@ static HRESULT listPlatformChipsetProperties(const ComPtr<IPlatformProperties> &
     return S_OK;
 }
 
+/**
+ * Lists guest OS types.
+ *
+ * @returns HRESULT
+ * @param   aGuestOSTypes       Reference to guest OS types to list.
+ */
+static HRESULT listGuestOSTypes(const com::SafeIfaceArray<IGuestOSType> &aGuestOSTypes)
+{
+    /*
+     * Iterate through the collection.
+     */
+    for (size_t i = 0; i < aGuestOSTypes.size(); ++i)
+    {
+        ComPtr<IGuestOSType> guestOS;
+        guestOS = aGuestOSTypes[i];
+        Bstr guestId;
+        guestOS->COMGETTER(Id)(guestId.asOutParam());
+        RTPrintf("ID:          %ls\n", guestId.raw());
+        Bstr guestDescription;
+        guestOS->COMGETTER(Description)(guestDescription.asOutParam());
+        RTPrintf(List::tr("Description: %ls\n"), guestDescription.raw());
+        Bstr familyId;
+        guestOS->COMGETTER(FamilyId)(familyId.asOutParam());
+        RTPrintf(List::tr("Family ID:   %ls\n"), familyId.raw());
+        Bstr familyDescription;
+        guestOS->COMGETTER(FamilyDescription)(familyDescription.asOutParam());
+        RTPrintf(List::tr("Family Desc: %ls\n"), familyDescription.raw());
+        Bstr guestOSVariant;
+        guestOS->COMGETTER(Variant)(guestOSVariant.asOutParam());
+        if (guestOSVariant.isNotEmpty())
+            RTPrintf(List::tr("OS Variant:  %ls\n"), guestOSVariant.raw());
+        BOOL is64Bit;
+        guestOS->COMGETTER(Is64Bit)(&is64Bit);
+        RTPrintf(List::tr("64 bit:      %RTbool\n"), is64Bit);
+        RTPrintf("\n");
+    }
+
+    return S_OK;
+}
+
 static HRESULT listPlatformProperties(const ComPtr<IPlatformProperties> &platformProperties)
 {
     ULONG ulValue;
@@ -852,6 +892,14 @@ static HRESULT listPlatformProperties(const ComPtr<IPlatformProperties> &platfor
         RTPrintf(List::tr("%s chipset properties:\n"), chipsetTypeToStr(saChipset[i]));
         listPlatformChipsetProperties(platformProperties, saChipset[i]);
     }
+
+    RTPrintf("\n");
+
+    RTPrintf(List::tr("Supported guest OS types:\n\n"));
+
+    com::SafeIfaceArray<IGuestOSType> coll;
+    platformProperties->GetSupportedGuestOSTypes(ComSafeArrayAsOutParam(coll));
+        listGuestOSTypes(coll);
 
     return S_OK;
 }
@@ -2155,36 +2203,7 @@ static HRESULT produceList(enum ListType_T enmCommand, bool fOptLong, bool fOptS
             com::SafeIfaceArray<IGuestOSType> coll;
             hrc = pVirtualBox->COMGETTER(GuestOSTypes)(ComSafeArrayAsOutParam(coll));
             if (SUCCEEDED(hrc))
-            {
-                /*
-                 * Iterate through the collection.
-                 */
-                for (size_t i = 0; i < coll.size(); ++i)
-                {
-                    ComPtr<IGuestOSType> guestOS;
-                    guestOS = coll[i];
-                    Bstr guestId;
-                    guestOS->COMGETTER(Id)(guestId.asOutParam());
-                    RTPrintf("ID:          %ls\n", guestId.raw());
-                    Bstr guestDescription;
-                    guestOS->COMGETTER(Description)(guestDescription.asOutParam());
-                    RTPrintf(List::tr("Description: %ls\n"), guestDescription.raw());
-                    Bstr familyId;
-                    guestOS->COMGETTER(FamilyId)(familyId.asOutParam());
-                    RTPrintf(List::tr("Family ID:   %ls\n"), familyId.raw());
-                    Bstr familyDescription;
-                    guestOS->COMGETTER(FamilyDescription)(familyDescription.asOutParam());
-                    RTPrintf(List::tr("Family Desc: %ls\n"), familyDescription.raw());
-                    Bstr guestOSVariant;
-                    guestOS->COMGETTER(Variant)(guestOSVariant.asOutParam());
-                    if (guestOSVariant.isNotEmpty())
-                        RTPrintf(List::tr("OS Variant:  %ls\n"), guestOSVariant.raw());
-                    BOOL is64Bit;
-                    guestOS->COMGETTER(Is64Bit)(&is64Bit);
-                    RTPrintf(List::tr("64 bit:      %RTbool\n"), is64Bit);
-                    RTPrintf("\n");
-                }
-            }
+                listGuestOSTypes(coll);
             break;
         }
 
