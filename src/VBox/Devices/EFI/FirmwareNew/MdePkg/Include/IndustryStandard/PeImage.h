@@ -681,11 +681,13 @@ typedef struct {
 //
 // .pdata entries for X64
 //
+#if !defined(VBOX) || !defined(_WINNT_)
 typedef struct {
   UINT32    FunctionStartAddress;
   UINT32    FunctionEndAddress;
   UINT32    UnwindInfoAddress;
 } RUNTIME_FUNCTION;
+#endif
 
 typedef struct {
   UINT8    Version             : 3;

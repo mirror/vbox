@@ -116,6 +116,7 @@ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
  TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4477 # dlg\dlg_p.c(874): warning C4477: 'fprintf' : format string '%x' requires an argument of type 'unsigned int', but variadic argument 1 has type '_nfa_node *'
  TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4313 # dlg\dlg_p.c(874): warning C4313: 'fprintf': '%x' in format string conflicts with argument 1 of type '_nfa_node *'
  TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4459 # antlr\gen.c(756): warning C4459: declaration of 'output' hides global declaration
+ TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4668 # winioctl.h(10983): warning C4668: '_WIN32_WINNT_WIN10_TH2' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
 endif
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win  = $(TEMPLATE_VBoxBldProg_CXXFLAGS.win)
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4018 # warning C4018: '>' : signed/unsigned mismatch

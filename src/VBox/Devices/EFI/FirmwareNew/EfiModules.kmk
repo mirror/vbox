@@ -65,6 +65,7 @@ ifndef VBOX_EFI_FIRMWARE_EFI_MODULES_KMK_INCLUDED
  	MdeModulePkg/Bus/Pci/PciBusDxe/PciBusDxe/$(VBOX_EFI_DEBUG_DIR)/PciBusDxe \
  	MdeModulePkg/Bus/Pci/PciHostBridgeDxe/PciHostBridgeDxe/$(VBOX_EFI_DEBUG_DIR)/PciHostBridgeDxe \
  	MdeModulePkg/Bus/Pci/PciSioSerialDxe/PciSioSerialDxe/$(VBOX_EFI_DEBUG_DIR)/PciSioSerialDxe \
+ 	MdeModulePkg/Bus/Pci/SataControllerDxe/SataControllerDxe/$(VBOX_EFI_DEBUG_DIR)/SataController \
  	MdeModulePkg/Bus/Pci/UhciDxe/UhciDxe/$(VBOX_EFI_DEBUG_DIR)/UhciDxe \
  	MdeModulePkg/Bus/Pci/XhciDxe/XhciDxe/$(VBOX_EFI_DEBUG_DIR)/XhciDxe \
  	MdeModulePkg/Bus/Scsi/ScsiBusDxe/ScsiBusDxe/$(VBOX_EFI_DEBUG_DIR)/ScsiBus \
@@ -128,7 +129,6 @@ ifndef VBOX_EFI_FIRMWARE_EFI_MODULES_KMK_INCLUDED
  	OvmfPkg/PlatformDxe/Platform/$(VBOX_EFI_DEBUG_DIR)/PlatformDxe \
  	OvmfPkg/PlatformPei/PlatformPei/$(VBOX_EFI_DEBUG_DIR)/PlatformPei \
  	OvmfPkg/QemuFlashFvbServicesRuntimeDxe/FvbServicesRuntimeDxe/$(VBOX_EFI_DEBUG_DIR)/FvbServicesRuntimeDxe \
- 	OvmfPkg/SataControllerDxe/SataControllerDxe/$(VBOX_EFI_DEBUG_DIR)/SataController \
  	OvmfPkg/Sec/SecMain/$(VBOX_EFI_DEBUG_DIR)/SecMain \
  	OvmfPkg/SioBusDxe/SioBusDxe/$(VBOX_EFI_DEBUG_DIR)/SioBusDxe \
  	OvmfPkg/SmbiosPlatformDxe/SmbiosPlatformDxe/$(VBOX_EFI_DEBUG_DIR)/SmbiosPlatformDxe \
