@@ -71,7 +71,8 @@ private:
 
     /** Populates menu. */
     void populateMenu();
-
+    /** A help fundtion for populateMenu(). @p is the list of os type and @p pMenu is the menu to populate. */
+    void createOSTypeMenu(const QVector<QPair<QString, QString> > &typeList, QMenu *pMenu);
     /** Holds the current guest OS type ID. */
     QString  m_strOSTypeId;
 

@@ -32,9 +32,12 @@
 
 /* GUI includes */
 #include "UICommon.h"
+#include "UIGuestOSType.h"
 #include "UIGuestOSTypeSelectionButton.h"
 #include "UIIconPool.h"
 
+/* Other VBox includes: */
+#include "iprt/assert.h"
 
 UIGuestOSTypeSelectionButton::UIGuestOSTypeSelectionButton(QWidget *pParent)
     : QIWithRetranslateUI<QPushButton>(pParent)
@@ -75,15 +78,19 @@ bool UIGuestOSTypeSelectionButton::isMenuShown() const
 
 void UIGuestOSTypeSelectionButton::setOSTypeId(const QString &strOSTypeId)
 {
+    if (m_strOSTypeId == strOSTypeId)
+        return;
+    const UIGuestOSTypeManager *pManager = uiCommon().guestOSTypeManager();
+    AssertReturnVoid(pManager);
+
     m_strOSTypeId = strOSTypeId;
-    CGuestOSType enmType = uiCommon().vmGuestOSType(strOSTypeId);
 
 #ifndef VBOX_WS_MAC
     /* Looks ugly on the Mac: */
-    setIcon(generalIconPool().guestOSTypePixmapDefault(enmType.GetId()));
+    setIcon(generalIconPool().guestOSTypePixmapDefault(m_strOSTypeId));
 #endif
 
-    setText(enmType.GetDescription());
+    setText(pManager->getDescription(m_strOSTypeId));
 }
 
 void UIGuestOSTypeSelectionButton::retranslateUi()
@@ -91,22 +98,39 @@ void UIGuestOSTypeSelectionButton::retranslateUi()
     populateMenu();
 }
 
+void UIGuestOSTypeSelectionButton::createOSTypeMenu(const UIGuestOSTypeManager::UIGuestOSTypeInfo &typeList, QMenu *pMenu)
+{
+    for (int j = 0; j < typeList.size(); ++j)
+    {
+        const QPair<QString, QString> &typeInfo = typeList[j];
+        QAction *pAction = pMenu->addAction(generalIconPool().guestOSTypePixmapDefault(typeInfo.first), typeInfo.second);
+        connect(pAction, &QAction::triggered,
+                m_pSignalMapper, static_cast<void(QSignalMapper::*)(void)>(&QSignalMapper::map));
+        m_pSignalMapper->setMapping(pAction, typeInfo.first);
+    }
+}
+
 void UIGuestOSTypeSelectionButton::populateMenu()
 {
-    /* Clea initially: */
+    /* Clear initially: */
     m_pMainMenu->clear();
 
-    /* Create a list of all possible OS types: */
-    foreach(const QString &strFamilyId, uiCommon().vmGuestOSFamilyIDs())
+    const UIGuestOSTypeManager *pManager = uiCommon().guestOSTypeManager();
+    AssertReturnVoid(pManager);
+    UIGuestOSTypeManager::UIGuestOSTypeFamilyInfo familyList = pManager->getFamilies();
+
+    for (int i = 0; i < familyList.size(); ++i)
     {
-        QMenu *pSubMenu = m_pMainMenu->addMenu(uiCommon().vmGuestOSFamilyDescription(strFamilyId));
-        foreach (const CGuestOSType &comType, uiCommon().vmGuestOSTypeList(strFamilyId))
+        const QPair<QString, QString> &familyInfo = familyList[i];
+        QMenu *pSubMenu = m_pMainMenu->addMenu(familyInfo.second);
+        QStringList variantList = pManager->getVariantListForFamilyId(familyInfo.first);
+
+        if (variantList.isEmpty())
+            createOSTypeMenu(pManager->getTypeListForFamilyId(familyInfo.first), pSubMenu);
+        else
         {
-            QAction *pAction = pSubMenu->addAction(generalIconPool().guestOSTypePixmapDefault(comType.GetId()),
-                                                   comType.GetDescription());
-            connect(pAction, &QAction::triggered,
-                    m_pSignalMapper, static_cast<void(QSignalMapper::*)(void)>(&QSignalMapper::map));
-            m_pSignalMapper->setMapping(pAction, comType.GetId());
+            foreach (const QString &strVariant, variantList)
+                createOSTypeMenu(pManager->getTypeListForVariant(strVariant), pSubMenu->addMenu(strVariant));
         }
     }
 }

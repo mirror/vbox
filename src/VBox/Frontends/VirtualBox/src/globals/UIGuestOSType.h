@@ -43,12 +43,16 @@
 class UIGuestOSType;
 
 
-
+/** A wrapper and manager class for Guest OS types (IGuestOSType). Logically we structure os types into families
+  *  e.g. Window, Linux etc. Some families have so-called variants which for Linux corresponds to distros, while some
+  *  families have no variant. Under variants (and when no variant exists direcly under family) we have guest os
+  *  types, e.g. Debian12_x64 etc. */
 class SHARED_LIBRARY_STUFF UIGuestOSTypeManager
 {
 
 public:
 
+    /* A list of all OS families. 'first' of each pair is famil Id and 'second' is family description. */
     typedef QVector<QPair<QString, QString> > UIGuestOSTypeFamilyInfo;
     typedef QVector<QPair<QString, QString> > UIGuestOSTypeInfo;
 
