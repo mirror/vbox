@@ -124,11 +124,19 @@ static const uint8_t aScancode2Hid[] =
 
 /* Keyboard usage page (07h). */
 #define KB(key)     (RT_MAKE_U32(0, USB_HID_KB_PAGE) | (uint16_t)key)
-/* Consumer Control usage page (0Ch). */
-#define CC(key)     (RT_MAKE_U32(0, USB_HID_CC_PAGE) | (uint16_t)key)
-/* Generic Desktop Control usage page (01h). */
-#define DC(key)     (RT_MAKE_U32(0, USB_HID_DC_PAGE) | (uint16_t)key)
-/* Untranslated/unised, shouldn't be encountered. */
+
+#ifndef VBOX_DISABLE_HID_CC_DC_PASSTHROUGH
+ /* Consumer Control usage page (0Ch). */
+ #define CC(key)     (RT_MAKE_U32(0, USB_HID_CC_PAGE) | (uint16_t)key)
+ /* Generic Desktop Control usage page (01h). */
+ #define DC(key)     (RT_MAKE_U32(0, USB_HID_DC_PAGE) | (uint16_t)key)
+#else
+ /* Do not pass through Consumer/Generic Desktop Control usage page. */
+ #define CC(key)     0
+ #define DC(key)     0
+#endif
+
+/* Untranslated/unused, shouldn't be encountered. */
 #define XX(key)     0
 
 /** Lookup table for extended scancodes (arrow keys etc.).

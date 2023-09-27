@@ -745,6 +745,8 @@ VBOX_WITH_TPM = 1
 if1of ($(KBUILD_TARGET), linux darwin win solaris)
  VBOX_WITH_LIBTPMS = 1
 endif
+# Disable keyboard HID Consumer/Desktop control keys passthrough
+# VBOX_WITHOUT_KEYBOARD_HID_CC_DC_PASSTHROUGH = 1
 ## @}
 
 # legacy
