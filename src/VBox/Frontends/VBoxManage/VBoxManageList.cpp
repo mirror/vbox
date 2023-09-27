@@ -898,7 +898,7 @@ static HRESULT listPlatformProperties(const ComPtr<IPlatformProperties> &platfor
     RTPrintf(List::tr("Supported guest OS types:\n\n"));
 
     com::SafeIfaceArray<IGuestOSType> coll;
-    platformProperties->GetSupportedGuestOSTypes(ComSafeArrayAsOutParam(coll));
+    platformProperties->COMGETTER(SupportedGuestOSTypes(ComSafeArrayAsOutParam(coll)));
         listGuestOSTypes(coll);
 
     return S_OK;
