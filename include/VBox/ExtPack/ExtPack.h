@@ -345,18 +345,19 @@ typedef struct VBOXEXTPACKHLP
      * user changes the language.
      *
      * @returns Translated string on success the pszSourceText otherwise.
-     * @param   pHlp                      Pointer to this helper structure.
-     * @param   aComponent                Translation context e.g. class name
-     * @param   pszSourceText             String to translate
-     * @param   pszComment                Comment to the string to resolve possible ambiguities
-     *                                    (NULL means no comment).
-     * @param   aNum                      Number used to define plural form of the translation
-     */
+     * @param   pHlp            Pointer to this helper structure.
+     * @param   pszComponent    Translation context e.g. class name
+     * @param   pszSourceText   String to translate
+     * @param   pszComment      Comment to the string to resolve possible
+     *                          ambiguities (NULL means no comment).
+     * @param   uNum            Number used to define plural form of the
+     *                          translation.
+                                                                          */
     DECLR3CALLBACKMEMBER(const char *, pfnTranslate,(PCVBOXEXTPACKHLP pHlp,
-                                                     const char  *pszComponent,
-                                                     const char  *pszSourceText,
-                                                     const char  *pszComment,
-                                                     const size_t aNum));
+                                                     const char      *pszComponent,
+                                                     const char      *pszSourceText,
+                                                     const char      *pszComment,
+                                                     const size_t     uNum));
 
     DECLR3CALLBACKMEMBER(int, pfnReserved1,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
     DECLR3CALLBACKMEMBER(int, pfnReserved2,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */

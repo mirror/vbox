@@ -1773,9 +1773,9 @@ ExtPack::i_hlpFindModule(PCVBOXEXTPACKHLP pHlp, const char *pszName, const char 
 
     AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
     AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
-    ExtPack::Data *m = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
-    AssertPtrReturn(m, VERR_INVALID_POINTER);
-    ExtPack *pThis = m->pThis;
+    ExtPack::Data *pData = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
+    AssertPtrReturn(pData, VERR_INVALID_POINTER);
+    ExtPack *pThis = pData->pThis;
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
     /*
@@ -1787,6 +1787,9 @@ ExtPack::i_hlpFindModule(PCVBOXEXTPACKHLP pHlp, const char *pszName, const char 
     return VERR_FILE_NOT_FOUND;
 }
 
+/**
+ * @interface_method_impl{VBOXEXTPACKHLP,pfnGetFilePath}
+ */
 /*static*/ DECLCALLBACK(int)
 ExtPack::i_hlpGetFilePath(PCVBOXEXTPACKHLP pHlp, const char *pszFilename, char *pszPath, size_t cbPath)
 {
@@ -1799,20 +1802,21 @@ ExtPack::i_hlpGetFilePath(PCVBOXEXTPACKHLP pHlp, const char *pszFilename, char *
 
     AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
     AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
-    ExtPack::Data *m = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
-    AssertPtrReturn(m, VERR_INVALID_POINTER);
-    ExtPack *pThis = m->pThis;
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    ExtPack::Data *pData = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
+    AssertPtrReturn(pData, VERR_INVALID_POINTER);
 
     /*
      * This is a simple RTPathJoin, no checking if things exists or anything.
      */
-    int vrc = RTPathJoin(pszPath, cbPath, pThis->m->strExtPackPath.c_str(), pszFilename);
+    int vrc = RTPathJoin(pszPath, cbPath, pData->strExtPackPath.c_str(), pszFilename);
     if (RT_FAILURE(vrc))
         RT_BZERO(pszPath, cbPath);
     return vrc;
 }
 
+/**
+ * @interface_method_impl{VBOXEXTPACKHLP,pfnGetContext}
+ */
 /*static*/ DECLCALLBACK(VBOXEXTPACKCTX)
 ExtPack::i_hlpGetContext(PCVBOXEXTPACKHLP pHlp)
 {
@@ -1821,14 +1825,15 @@ ExtPack::i_hlpGetContext(PCVBOXEXTPACKHLP pHlp)
      */
     AssertPtrReturn(pHlp, VBOXEXTPACKCTX_INVALID);
     AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VBOXEXTPACKCTX_INVALID);
-    ExtPack::Data *m = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
-    AssertPtrReturn(m, VBOXEXTPACKCTX_INVALID);
-    ExtPack *pThis = m->pThis;
-    AssertPtrReturn(pThis, VBOXEXTPACKCTX_INVALID);
+    ExtPack::Data *pData = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
+    AssertPtrReturn(pData, VBOXEXTPACKCTX_INVALID);
 
-    return pThis->m->enmContext;
+    return pData->enmContext;
 }
 
+/**
+ * @interface_method_impl{VBOXEXTPACKHLP,pfnLoadHGCMService}
+ */
 /*static*/ DECLCALLBACK(int)
 ExtPack::i_hlpLoadHGCMService(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IConsole) *pConsole,
                               const char *pszServiceLibrary, const char *pszServiceName)
@@ -1842,20 +1847,23 @@ ExtPack::i_hlpLoadHGCMService(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IConsole)
 
     AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
     AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
-    ExtPack::Data *m = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
-    AssertPtrReturn(m, VERR_INVALID_POINTER);
-    ExtPack *pThis = m->pThis;
+    ExtPack::Data *pData = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
+    AssertPtrReturn(pData, VERR_INVALID_POINTER);
+    ExtPack *pThis = pData->pThis;
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pConsole, VERR_INVALID_POINTER);
 
     Console *pCon = (Console *)pConsole;
     return pCon->i_hgcmLoadService(pszServiceLibrary, pszServiceName);
 #else
-    NOREF(pHlp); NOREF(pConsole); NOREF(pszServiceLibrary); NOREF(pszServiceName);
+    RT_NOREF(pHlp, pConsole, pszServiceLibrary, pszServiceName);
     return VERR_INVALID_STATE;
 #endif
 }
 
+/**
+ * @interface_method_impl{VBOXEXTPACKHLP,pfnLoadVDPlugin}
+ */
 /*static*/ DECLCALLBACK(int)
 ExtPack::i_hlpLoadVDPlugin(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox, const char *pszPluginLibrary)
 {
@@ -1867,20 +1875,23 @@ ExtPack::i_hlpLoadVDPlugin(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IVirtualBox)
 
     AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
     AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
-    ExtPack::Data *m = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
-    AssertPtrReturn(m, VERR_INVALID_POINTER);
-    ExtPack *pThis = m->pThis;
+    ExtPack::Data *pData = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
+    AssertPtrReturn(pData, VERR_INVALID_POINTER);
+    ExtPack *pThis = pData->pThis;
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pVirtualBox, VERR_INVALID_POINTER);
 
     VirtualBox *pVBox = (VirtualBox *)pVirtualBox;
     return pVBox->i_loadVDPlugin(pszPluginLibrary);
 #else
-    NOREF(pHlp); NOREF(pVirtualBox); NOREF(pszPluginLibrary);
+    RT_NOREF(pHlp, pVirtualBox, pszPluginLibrary);
     return VERR_INVALID_STATE;
 #endif
 }
 
+/**
+ * @interface_method_impl{VBOXEXTPACKHLP,pfnUnloadVDPlugin}
+ */
 /*static*/ DECLCALLBACK(int)
 ExtPack::i_hlpUnloadVDPlugin(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox, const char *pszPluginLibrary)
 {
@@ -1892,20 +1903,23 @@ ExtPack::i_hlpUnloadVDPlugin(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IVirtualBo
 
     AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
     AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
-    ExtPack::Data *m = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
-    AssertPtrReturn(m, VERR_INVALID_POINTER);
-    ExtPack *pThis = m->pThis;
+    ExtPack::Data *pData = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
+    AssertPtrReturn(pData, VERR_INVALID_POINTER);
+    ExtPack *pThis = pData->pThis;
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pVirtualBox, VERR_INVALID_POINTER);
 
     VirtualBox *pVBox = (VirtualBox *)pVirtualBox;
     return pVBox->i_unloadVDPlugin(pszPluginLibrary);
 #else
-    NOREF(pHlp); NOREF(pVirtualBox); NOREF(pszPluginLibrary);
+    RT_NOREF(pHlp, pVirtualBox, pszPluginLibrary);
     return VERR_INVALID_STATE;
 #endif
 }
 
+/**
+ * @interface_method_impl{VBOXEXTPACKHLP,pfnCreateProgress}
+ */
 /*static*/ DECLCALLBACK(uint32_t)
 ExtPack::i_hlpCreateProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IUnknown) *pInitiator,
                              const char *pcszDescription, uint32_t cOperations,
@@ -1925,26 +1939,29 @@ ExtPack::i_hlpCreateProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IUnknown) 
     AssertPtrReturn(pHlp, (uint32_t)E_INVALIDARG);
     AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, (uint32_t)E_INVALIDARG);
 #ifndef VBOX_COM_INPROC
-    ExtPack::Data *m = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
+    ExtPack::Data *pData = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
 #endif
 
     ComObjPtr<Progress> pProgress;
     HRESULT hrc = pProgress.createObject();
-    if (FAILED(hrc))
-        return hrc;
-    hrc = pProgress->init(
+    if (SUCCEEDED(hrc))
+    {
+        hrc = pProgress->init(
 #ifndef VBOX_COM_INPROC
-                          m->pVirtualBox,
+                              pData->pVirtualBox,
 #endif
-                          pInitiator, pcszDescription, TRUE /* aCancelable */,
-                          cOperations, uTotalOperationsWeight,
-                          pcszFirstOperationDescription, uFirstOperationWeight);
-    if (FAILED(hrc))
-        return hrc;
-
-    return pProgress.queryInterfaceTo(ppProgressOut);
+                              pInitiator, pcszDescription, TRUE /* aCancelable */,
+                              cOperations, uTotalOperationsWeight,
+                              pcszFirstOperationDescription, uFirstOperationWeight);
+        if (SUCCEEDED(hrc))
+            hrc = pProgress.queryInterfaceTo(ppProgressOut);
+    }
+    return hrc;
 }
 
+/**
+ * @interface_method_impl{VBOXEXTPACKHLP,pfnGetCanceledProgress}
+ */
 /*static*/ DECLCALLBACK(uint32_t)
 ExtPack::i_hlpGetCanceledProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress) *pProgress,
                                   bool *pfCanceled)
@@ -1964,6 +1981,9 @@ ExtPack::i_hlpGetCanceledProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProg
     return hrc;
 }
 
+/**
+ * @interface_method_impl{VBOXEXTPACKHLP,pfnUpdateProgress}
+ */
 /*static*/ DECLCALLBACK(uint32_t)
 ExtPack::i_hlpUpdateProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress) *pProgress,
                              uint32_t uPercent)
@@ -1982,6 +2002,9 @@ ExtPack::i_hlpUpdateProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress)
     return pProgressControl->SetCurrentOperationProgress(uPercent);
 }
 
+/**
+ * @interface_method_impl{VBOXEXTPACKHLP,pfnNextOperationProgress}
+ */
 /*static*/ DECLCALLBACK(uint32_t)
 ExtPack::i_hlpNextOperationProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress) *pProgress,
                                     const char *pcszNextOperationDescription,
@@ -2002,6 +2025,9 @@ ExtPack::i_hlpNextOperationProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IPr
     return pProgressControl->SetNextOperation(Bstr(pcszNextOperationDescription).raw(), uNextOperationWeight);
 }
 
+/**
+ * @interface_method_impl{VBOXEXTPACKHLP,pfnWaitOtherProgress}
+ */
 /*static*/ DECLCALLBACK(uint32_t)
 ExtPack::i_hlpWaitOtherProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress) *pProgress,
                                 VBOXEXTPACK_IF_CS(IProgress) *pProgressOther, uint32_t cTimeoutMS)
@@ -2020,6 +2046,9 @@ ExtPack::i_hlpWaitOtherProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgre
     return pProgressControl->WaitForOtherProgressCompletion(pProgressOther, cTimeoutMS);
 }
 
+/**
+ * @interface_method_impl{VBOXEXTPACKHLP,pfnCompleteProgress}
+ */
 /*static*/ DECLCALLBACK(uint32_t)
 ExtPack::i_hlpCompleteProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgress) *pProgress,
                                uint32_t uResultCode)
@@ -2027,10 +2056,9 @@ ExtPack::i_hlpCompleteProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgres
     /*
      * Validate the input and get our bearings.
      */
-    AssertPtrReturn(pProgress, (uint32_t)E_INVALIDARG);
-
     AssertPtrReturn(pHlp, (uint32_t)E_INVALIDARG);
     AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, (uint32_t)E_INVALIDARG);
+    AssertPtrReturn(pProgress, (uint32_t)E_INVALIDARG);
 
     ComPtr<IInternalProgressControl> pProgressControl(pProgress);
     AssertReturn(!!pProgressControl, (uint32_t)E_INVALIDARG);
@@ -2044,83 +2072,82 @@ ExtPack::i_hlpCompleteProgress(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IProgres
     return pProgressControl->NotifyComplete((LONG)uResultCode, errorInfo);
 }
 
-
+/**
+ * @interface_method_impl{VBOXEXTPACKHLP,pfnCreateEvent}
+ */
 /*static*/ DECLCALLBACK(uint32_t)
 ExtPack::i_hlpCreateEvent(PCVBOXEXTPACKHLP pHlp,
                           VBOXEXTPACK_IF_CS(IEventSource) *aSource,
                           /* VBoxEventType_T */ uint32_t aType, bool aWaitable,
                           VBOXEXTPACK_IF_CS(IEvent) **ppEventOut)
 {
-    HRESULT hrc;
-
+    /*
+     * Validate the input and get our bearings.
+     */
     AssertPtrReturn(pHlp, (uint32_t)E_INVALIDARG);
     AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, (uint32_t)E_INVALIDARG);
     AssertPtrReturn(ppEventOut, (uint32_t)E_INVALIDARG);
 
     ComObjPtr<VBoxEvent> pEvent;
-
-    hrc = pEvent.createObject();
-    if (FAILED(hrc))
-        return hrc;
-
-    /* default aSource to pVirtualBox? */
-    hrc = pEvent->init(aSource, static_cast<VBoxEventType_T>(aType), aWaitable);
-    if (FAILED(hrc))
-        return hrc;
-
-    return pEvent.queryInterfaceTo(ppEventOut);
+    HRESULT hrc = pEvent.createObject();
+    if (SUCCEEDED(hrc))
+    {
+        /* default aSource to pVirtualBox? */
+        hrc = pEvent->init(aSource, static_cast<VBoxEventType_T>(aType), aWaitable);
+        if (SUCCEEDED(hrc))
+            hrc = pEvent.queryInterfaceTo(ppEventOut);
+    }
+    return hrc;
 }
 
-
+/**
+ * @interface_method_impl{VBOXEXTPACKHLP,pfnCreateVetoEvent}
+ */
 /*static*/ DECLCALLBACK(uint32_t)
 ExtPack::i_hlpCreateVetoEvent(PCVBOXEXTPACKHLP pHlp,
                               VBOXEXTPACK_IF_CS(IEventSource) *aSource,
                               /* VBoxEventType_T */ uint32_t aType,
                               VBOXEXTPACK_IF_CS(IVetoEvent) **ppEventOut)
 {
-    HRESULT hrc;
-
     AssertPtrReturn(pHlp, (uint32_t)E_INVALIDARG);
     AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, (uint32_t)E_INVALIDARG);
     AssertPtrReturn(ppEventOut, (uint32_t)E_INVALIDARG);
 
     ComObjPtr<VBoxVetoEvent> pEvent;
 
-    hrc = pEvent.createObject();
-    if (FAILED(hrc))
-        return hrc;
-
-    /* default aSource to pVirtualBox? */
-    hrc = pEvent->init(aSource, static_cast<VBoxEventType_T>(aType));
-    if (FAILED(hrc))
-        return hrc;
-
-    return pEvent.queryInterfaceTo(ppEventOut);
+    HRESULT hrc = pEvent.createObject();
+    if (SUCCEEDED(hrc))
+    {
+        /* default aSource to pVirtualBox? */
+        hrc = pEvent->init(aSource, static_cast<VBoxEventType_T>(aType));
+        if (SUCCEEDED(hrc))
+            hrc = pEvent.queryInterfaceTo(ppEventOut);
+    }
+    return hrc;
 }
 
-
+/**
+ * @interface_method_impl{VBOXEXTPACKHLP,pfnTranslate}
+ */
 /*static*/ DECLCALLBACK(const char *)
 ExtPack::i_hlpTranslate(PCVBOXEXTPACKHLP pHlp,
                         const char  *pszComponent,
                         const char  *pszSourceText,
-                        const char  *pszComment /* = NULL */,
-                        const size_t aNum /* = -1 */)
+                        const char  *pszComment /*=NULL*/,
+                        const size_t uNum /*= ~(size_t)0*/)
 {
     /*
      * Validate the input and get our bearings.
      */
     AssertPtrReturn(pHlp, pszSourceText);
     AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, pszSourceText);
-    ExtPack::Data *m = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
-    AssertPtrReturn(m, pszSourceText);
+    ExtPack::Data *pData = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
+    AssertPtrReturn(pData, pszSourceText);
 
 #ifdef VBOX_WITH_MAIN_NLS
-    return VirtualBoxTranslator::translate(m->pTrComponent, pszComponent,
-                                           pszSourceText,  pszComment, aNum);
+    return VirtualBoxTranslator::translate(pData->pTrComponent, pszComponent, pszSourceText, pszComment, uNum);
 #else
-    NOREF(pszComponent);
-    NOREF(pszComment);
-    NOREF(aNum);
+    RT_NOREF(pszComponent, pszComment, uNum);
     return pszSourceText;
 #endif
 }
@@ -2134,9 +2161,9 @@ ExtPack::i_hlpReservedN(PCVBOXEXTPACKHLP pHlp)
      */
     AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
     AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
-    ExtPack::Data *m = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
-    AssertPtrReturn(m, VERR_INVALID_POINTER);
-    ExtPack *pThis = m->pThis;
+    ExtPack::Data *pData = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
+    AssertPtrReturn(pData, VERR_INVALID_POINTER);
+    ExtPack *pThis = pData->pThis;
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
     return VERR_NOT_IMPLEMENTED;
