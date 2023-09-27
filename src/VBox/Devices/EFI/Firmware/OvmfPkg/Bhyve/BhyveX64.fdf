@@ -158,6 +158,8 @@ INF  UefiCpuPkg/Universal/Acpi/S3Resume2Pei/S3Resume2Pei.inf
 INF  OvmfPkg/Bhyve/SmmAccess/SmmAccessPei.inf
 !endif
 
+!include OvmfPkg/Include/Fdf/OvmfTpmPei.fdf.inc
+
 ################################################################################
 
 [FV.DXEFV]
@@ -205,6 +207,7 @@ INF  MdeModulePkg/Universal/EbcDxe/EbcDxe.inf
 INF  UefiCpuPkg/CpuIo2Dxe/CpuIo2Dxe.inf
 INF  UefiCpuPkg/CpuDxe/CpuDxe.inf
 INF  PcAtChipsetPkg/HpetTimerDxe/HpetTimerDxe.inf
+INF  OvmfPkg/IncompatiblePciDeviceSupportDxe/IncompatiblePciDeviceSupport.inf
 INF  OvmfPkg/PciHotPlugInitDxe/PciHotPlugInit.inf
 INF  MdeModulePkg/Bus/Pci/PciHostBridgeDxe/PciHostBridgeDxe.inf
 INF  MdeModulePkg/Bus/Pci/PciBusDxe/PciBusDxe.inf
@@ -239,7 +242,7 @@ INF  MdeModulePkg/Universal/Disk/RamDiskDxe/RamDiskDxe.inf
 INF  MdeModulePkg/Universal/Disk/UnicodeCollation/EnglishDxe/EnglishDxe.inf
 INF  MdeModulePkg/Bus/Scsi/ScsiBusDxe/ScsiBusDxe.inf
 INF  MdeModulePkg/Bus/Scsi/ScsiDiskDxe/ScsiDiskDxe.inf
-INF  OvmfPkg/SataControllerDxe/SataControllerDxe.inf
+INF  MdeModulePkg/Bus/Pci/SataControllerDxe/SataControllerDxe.inf
 INF  MdeModulePkg/Bus/Ata/AtaAtapiPassThru/AtaAtapiPassThru.inf
 INF  MdeModulePkg/Bus/Ata/AtaBusDxe/AtaBusDxe.inf
 INF  MdeModulePkg/Bus/Pci/NvmExpressDxe/NvmExpressDxe.inf
@@ -334,6 +337,11 @@ INF  OvmfPkg/EmuVariableFvbRuntimeDxe/Fvb.inf
 INF  MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteDxe.inf
 INF  MdeModulePkg/Universal/Variable/RuntimeDxe/VariableRuntimeDxe.inf
 !endif
+
+#
+# TPM support
+#
+!include OvmfPkg/Include/Fdf/OvmfTpmDxe.fdf.inc
 
 ################################################################################
 

@@ -34,3 +34,7 @@
   # Build HOST_APPLICATION Libraries
   #
   MdePkg/Library/BaseLib/UnitTestHostBaseLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockUefiLib/MockUefiLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockUefiRuntimeServicesTableLib/MockUefiRuntimeServicesTableLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockPeiServicesLib/MockPeiServicesLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockHobLib/MockHobLib.inf

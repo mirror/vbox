@@ -8,6 +8,7 @@
   (C) Copyright 2020 Hewlett Packard Enterprise Development LP<BR>
   Copyright (C) 2022 Advanced Micro Devices, Inc. All rights reserved.<BR>
   Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+  Copyright (c) 2023, Ampere Computing LLC. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -59,11 +60,11 @@ RedfishCreateSmbiosTable42 (
   Status = RedfishPlatformHostInterfaceDeviceDescriptor (&DeviceType, &DeviceDescriptor);
   if (EFI_ERROR (Status)) {
     if (Status == EFI_NOT_FOUND) {
-      DEBUG ((DEBUG_ERROR, "%a: No Redfish host interface descriptor is provided on this platform.", __FUNCTION__));
+      DEBUG ((DEBUG_ERROR, "%a: No Redfish host interface descriptor is provided on this platform.\n", __func__));
       return EFI_NOT_FOUND;
     }
 
-    DEBUG ((DEBUG_ERROR, "%a: Fail to get device descriptor, %r.", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: Fail to get device descriptor, %r.", __func__, Status));
     return Status;
   }
 
@@ -71,7 +72,7 @@ RedfishCreateSmbiosTable42 (
       (DeviceType != REDFISH_HOST_INTERFACE_DEVICE_TYPE_PCI_PCIE_V2)
       )
   {
-    DEBUG ((DEBUG_ERROR, "%a: Only support either protocol type 04h or 05h as Redfish host interface.", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: Only support either protocol type 04h or 05h as Redfish host interface.", __func__));
     return EFI_UNSUPPORTED;
   }
 
@@ -98,7 +99,7 @@ RedfishCreateSmbiosTable42 (
     }
 
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a: Fail to get Redfish host interafce protocol type data.", __FUNCTION__));
+      DEBUG ((DEBUG_ERROR, "%a: Fail to get Redfish host interafce protocol type data.", __func__));
       if (ProtocolRecords != NULL) {
         FreePool (ProtocolRecords);
       }
@@ -124,7 +125,7 @@ RedfishCreateSmbiosTable42 (
     } else {
       NewProtocolRecords = ReallocatePool (CurrentProtocolsDataLength, NewProtocolsDataLength, (VOID *)ProtocolRecords);
       if (NewProtocolRecords == NULL) {
-        DEBUG ((DEBUG_ERROR, "%a: Fail to allocate memory for Redfish host interface protocol data.", __FUNCTION__));
+        DEBUG ((DEBUG_ERROR, "%a: Fail to allocate memory for Redfish host interface protocol data.", __func__));
         FreePool (ProtocolRecords);
         FreePool (ProtocolRecord);
         return EFI_OUT_OF_RESOURCES;
@@ -220,7 +221,7 @@ RedfishCreateSmbiosTable42 (
                                              &MemArrayMappedAddrSmbiosHandle,
                                              (EFI_SMBIOS_TABLE_HEADER *)Type42Record
                                              );
-  DEBUG ((DEBUG_INFO, "RedfishPlatformDxe: Smbios->Add() - %r\n", Status));
+  DEBUG ((DEBUG_MANAGEABILITY, "RedfishPlatformDxe: Smbios->Add() - %r\n", Status));
   if (EFI_ERROR (Status)) {
     goto ON_EXIT;
   }
@@ -258,7 +259,7 @@ PlatformHostInterfaceInformationReady (
   IN  VOID       *Context
   )
 {
-  DEBUG ((DEBUG_INFO, "%a: Platform Redfish Host Interface informtion is ready\n", __FUNCTION__));
+  DEBUG ((DEBUG_MANAGEABILITY, "%a: Platform Redfish Host Interface informtion is ready\n", __func__));
 
   RedfishCreateSmbiosTable42 ();
 
@@ -290,7 +291,7 @@ RedfishHostInterfaceDxeEntryPoint (
   EFI_STATUS  Status;
   EFI_GUID    *ReadyGuid;
 
-  DEBUG ((DEBUG_INFO, "%a: Entry\n.", __FUNCTION__));
+  DEBUG ((DEBUG_MANAGEABILITY, "%a: Entry\n.", __func__));
 
   //
   // Check if the Redfish Host Interface depends on
@@ -298,8 +299,8 @@ RedfishHostInterfaceDxeEntryPoint (
   //
   Status = RedfishPlatformHostInterfaceNotification (&ReadyGuid);
   if (Status == EFI_SUCCESS) {
-    DEBUG ((DEBUG_INFO, "    Create protocol install notification to know the installation of platform Redfish host interface readiness\n"));
-    DEBUG ((DEBUG_INFO, "    Protocol GUID: %g\n", ReadyGuid));
+    DEBUG ((DEBUG_MANAGEABILITY, "    Create protocol install notification to know the installation of platform Redfish host interface readiness\n"));
+    DEBUG ((DEBUG_MANAGEABILITY, "    Protocol GUID: %g\n", ReadyGuid));
     //
     // Register event for ReadyGuid protocol installed by
     // platform Redfish host interface library.

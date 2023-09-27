@@ -116,6 +116,7 @@ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
  TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4477 # dlg\dlg_p.c(874): warning C4477: 'fprintf' : format string '%x' requires an argument of type 'unsigned int', but variadic argument 1 has type '_nfa_node *'
  TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4313 # dlg\dlg_p.c(874): warning C4313: 'fprintf': '%x' in format string conflicts with argument 1 of type '_nfa_node *'
  TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4459 # antlr\gen.c(756): warning C4459: declaration of 'output' hides global declaration
+ TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4668 # winioctl.h(10983): warning C4668: '_WIN32_WINNT_WIN10_TH2' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
 endif
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win  = $(TEMPLATE_VBoxBldProg_CXXFLAGS.win)
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4018 # warning C4018: '>' : signed/unsigned mismatch
@@ -144,22 +145,22 @@ TEMPLATE_VBoxEfiBldProg_CXXFLAGS.darwin.arm64  = $(TEMPLATE_VBoxBldProg_CXXFLAGS
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.darwin.arm64 += -Wno-register # BaseTools/Source/C/VfrCompile/Pccts/h/AParser.cpp:475:2: error: ISO C++17 does not allow 'register' storage class specifier [-Wregister]
 
 TEMPLATE_VBoxEfiBldProg_INCS = $(TEMPLATE_VBoxBldProg_INCS) \
-	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Include/IndustryStandard \
 	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Common \
 	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Include \
-	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C
+	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C \
+	$(VBOX_PATH_EFI_FIRMWARE)/MdePkg/Include
 
 TEMPLATE_VBoxEfiBldProg_INCS.x86 = $(TEMPLATE_VBoxBldProg_INCS.x86) \
-	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Include/IA32
+	$(VBOX_PATH_EFI_FIRMWARE)/MdePkg/Include/Ia32
 
 TEMPLATE_VBoxEfiBldProg_INCS.amd64 = $(TEMPLATE_VBoxBldProg_INCS.amd64) \
-	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Include/X64
+	$(VBOX_PATH_EFI_FIRMWARE)/MdePkg/Include/X64
 
 TEMPLATE_VBoxEfiBldProg_INCS.arm = $(TEMPLATE_VBoxBldProg_INCS.arm) \
-	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Include/ARM
+	$(VBOX_PATH_EFI_FIRMWARE)/MdePkg/Include/Arm
 
 TEMPLATE_VBoxEfiBldProg_INCS.arm64 = $(TEMPLATE_VBoxBldProg_INCS.arm64) \
-	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Include/AARCH64
+	$(VBOX_PATH_EFI_FIRMWARE)/MdePkg/Include/AArch64
 
 TEMPLATE_VBoxEfiBldProg_LIBS = \
 	$(VBOX_PATH_STAGE_EFI_BLDPROGS)/EfiBldCommonLib$(VBOX_SUFF_LIB) \

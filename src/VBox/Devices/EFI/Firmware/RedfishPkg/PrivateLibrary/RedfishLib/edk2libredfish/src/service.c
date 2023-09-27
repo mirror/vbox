@@ -428,7 +428,7 @@ getUriFromService (
     return NULL;
   }
 
-  DEBUG ((DEBUG_INFO, "libredfish: getUriFromService(): %a\n", url));
+  DEBUG ((DEBUG_MANAGEABILITY, "libredfish: getUriFromService(): %a\n", url));
 
   //
   // Step 1: Create HTTP request message with 4 headers:
@@ -521,7 +521,7 @@ getUriFromService (
       //
       Status = DecodeResponseContent (ContentEncodedHeader->FieldValue, &ResponseMsg.Body, &ResponseMsg.BodyLength);
       if (EFI_ERROR (Status)) {
-        DEBUG ((DEBUG_ERROR, "%a: Failed to decompress the response content %r\n.", __FUNCTION__, Status));
+        DEBUG ((DEBUG_ERROR, "%a: Failed to decompress the response content %r\n.", __func__, Status));
         ret = NULL;
         goto ON_EXIT;
       }
@@ -587,7 +587,7 @@ patchUriFromService (
     return NULL;
   }
 
-  DEBUG ((DEBUG_INFO, "libredfish: patchUriFromService(): %a\n", url));
+  DEBUG ((DEBUG_MANAGEABILITY, "libredfish: patchUriFromService(): %a\n", url));
 
   //
   // Step 1: Create HTTP request message with 4 headers:
@@ -656,11 +656,11 @@ patchUriFromService (
   //
   Status = EncodeRequestContent ((CHAR8 *)HTTP_CONTENT_ENCODING_GZIP, (CHAR8 *)content, (VOID **)&EncodedContent, &EncodedContentLen);
   if (Status == EFI_INVALID_PARAMETER) {
-    DEBUG ((DEBUG_ERROR, "%a: Error to encode content.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: Error to encode content.\n", __func__));
     ret = NULL;
     goto ON_EXIT;
   } else if (Status == EFI_UNSUPPORTED) {
-    DEBUG ((DEBUG_INFO, "No content coding for %a! Use raw data instead.\n", HTTP_CONTENT_ENCODING_GZIP));
+    DEBUG ((DEBUG_MANAGEABILITY, "No content coding for %a! Use raw data instead.\n", HTTP_CONTENT_ENCODING_GZIP));
     Status = HttpIoSetHeader (HttpIoHeader, "Content-Encoding", HTTP_CONTENT_ENCODING_IDENTITY);
     ASSERT_EFI_ERROR (Status);
   } else {
@@ -769,7 +769,7 @@ postUriFromService (
     return NULL;
   }
 
-  DEBUG ((DEBUG_INFO, "libredfish: postUriFromService(): %a\n", url));
+  DEBUG ((DEBUG_MANAGEABILITY, "libredfish: postUriFromService(): %a\n", url));
 
   if (contentLength == 0) {
     contentLength = strlen (content);
@@ -954,7 +954,7 @@ deleteUriFromServiceEx (
     return NULL;
   }
 
-  DEBUG ((DEBUG_INFO, "libredfish: deleteUriFromService(): %a\n", url));
+  DEBUG ((DEBUG_MANAGEABILITY, "libredfish: deleteUriFromService(): %a\n", url));
 
   //
   // Step 1: Create HTTP request message with 4 headers:

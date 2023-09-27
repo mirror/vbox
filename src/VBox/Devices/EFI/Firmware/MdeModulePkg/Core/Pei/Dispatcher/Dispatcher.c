@@ -101,7 +101,7 @@ DiscoverPeimsAndOrderWithApriori (
   DEBUG ((
     DEBUG_INFO,
     "%a(): Found 0x%x PEI FFS files in the %dth FV\n",
-    __FUNCTION__,
+    __func__,
     PeimCount,
     Private->CurrentPeimFvCount
     ));
@@ -1630,6 +1630,7 @@ PeiDispatcher (
       Private->CurrentFileHandle    = NULL;
       Private->CurrentPeimCount     = 0;
       Private->CurrentFvFileHandles = NULL;
+      Private->AprioriCount         = 0;
     }
 
     //

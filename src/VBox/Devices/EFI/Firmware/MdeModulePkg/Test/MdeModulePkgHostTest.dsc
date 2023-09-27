@@ -47,3 +47,14 @@
       UefiSortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
       DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
   }
+
+  MdeModulePkg/Library/UefiSortLib/GoogleTest/UefiSortLibGoogleTest.inf {
+    <LibraryClasses>
+      UefiSortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
+      DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
+  }
+
+  #
+  # Build HOST_APPLICATION Libraries
+  #
+  MdeModulePkg/Test/Mock/Library/GoogleTest/MockPciHostBridgeLib/MockPciHostBridgeLib.inf
