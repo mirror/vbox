@@ -55,19 +55,24 @@ public:
     UIGuestOSTypeManager();
     UIGuestOSTypeManager(const UIGuestOSTypeManager &other) = delete;
 
-    /* A list of all OS families. 'first' of each pair is famil Id and 'second' is family description. */
+    /** A list of all OS families. 'first' of each pair is family Id and 'second' is family description. */
     typedef QVector<QPair<QString, QString> > UIGuestOSTypeFamilyInfo;
+    /** Guest OS type info list for all type.  'first' is typeId and 'second' is description. */
     typedef QVector<QPair<QString, QString> > UIGuestOSTypeInfo;
 
+    /** Re-create the guest OS type database. */
     void reCacheGuestOSTypes(const CGuestOSTypeVector &guestOSTypes);
 
+    /** Returns a list of all families (id and description). */
     const UIGuestOSTypeFamilyInfo &getFamilies() const;
-    QStringList getVariantListForFamilyId(const QString &strFamilyId) const;
+    /** Returns the list of variants for @p strFamilyId. This may be an empty list. */
+    QStringList                    getVariantListForFamilyId(const QString &strFamilyId) const;
+    /** Returns a list of OS types for the @p strFamilyId. */
+    UIGuestOSTypeInfo              getTypeListForFamilyId(const QString &strFamilyId) const;
+    /** Returns a list of OS types for the @p strVariant. */
+    UIGuestOSTypeInfo              getTypeListForVariant(const QString &strVariant) const;
 
-    UIGuestOSTypeInfo getTypeListForFamilyId(const QString &strFamilyId) const;
-    UIGuestOSTypeInfo getTypeListForVariant(const QString &strVariant) const;
-
-    /** @name Getters UIGuestOSType properties. They utilize a map for faster access to UIGuestOSType instance with @p strTypeId
+    /** @name Getters for UIGuestOSType properties. They utilize a map for faster access to UIGuestOSType instance with @p strTypeId
       * @{ */
         QString                 getFamilyId(const QString &strTypeId) const;
         QString                 getVariant(const QString  &strTypeId) const;
