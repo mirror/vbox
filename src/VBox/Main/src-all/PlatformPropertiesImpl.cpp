@@ -717,7 +717,7 @@ HRESULT PlatformProperties::getSupportedGraphicsControllerTypes(std::vector<Grap
     return S_OK;
 }
 
-HRESULT PlatformProperties::getSupportedGuestOSTypes(std::vector<ComPtr<IGuestOSType>> &aSupportedGuestOSTypes)
+HRESULT PlatformProperties::getSupportedGuestOSTypes(std::vector<ComPtr<IGuestOSType> > &aSupportedGuestOSTypes)
 {
    /* We only have all supported guest OS types as part of VBoxSVC, not in VBoxC itself. */
 #ifdef IN_VBOXSVC

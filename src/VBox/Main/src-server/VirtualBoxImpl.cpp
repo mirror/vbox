@@ -1383,7 +1383,8 @@ HRESULT VirtualBox::getProgressOperations(std::vector<ComPtr<IProgress> > &aProg
  * @param   aGuestOSTypes           Where to return the supported guest OS types.
  *                                  Will be empty if none supported.
  */
-HRESULT VirtualBox::i_getSupportedGuestOSTypes(std::vector<PlatformArchitecture_T> aArchitectures, std::vector<ComPtr<IGuestOSType>> &aGuestOSTypes)
+HRESULT VirtualBox::i_getSupportedGuestOSTypes(std::vector<PlatformArchitecture_T> aArchitectures,
+                                               std::vector<ComPtr<IGuestOSType> > &aGuestOSTypes)
 {
     AutoReadLock al(m->allGuestOSTypes.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 

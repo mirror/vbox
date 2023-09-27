@@ -321,7 +321,8 @@ public:
     HRESULT i_retainCryptoIf(PCVBOXCRYPTOIF *ppCryptoIf);
     HRESULT i_releaseCryptoIf(PCVBOXCRYPTOIF pCryptoIf);
     HRESULT i_unloadCryptoIfModule(void);
-    HRESULT i_getSupportedGuestOSTypes(std::vector<PlatformArchitecture_T> aArchitectures, std::vector<ComPtr<IGuestOSType>> &aGuestOSTypes);
+    HRESULT i_getSupportedGuestOSTypes(std::vector<PlatformArchitecture_T> aArchitectures,
+                                       std::vector<ComPtr<IGuestOSType> > &aGuestOSTypes);
 
 private:
     class ClientWatcher;
