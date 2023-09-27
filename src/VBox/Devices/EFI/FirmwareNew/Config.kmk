@@ -147,7 +147,7 @@ TEMPLATE_VBoxEfiBldProg_INCS = $(TEMPLATE_VBoxBldProg_INCS) \
 	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Common \
 	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Include \
 	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C \
-    $(VBOX_PATH_EFI_FIRMWARE)/MdePkg/Include
+	$(VBOX_PATH_EFI_FIRMWARE)/MdePkg/Include
 
 TEMPLATE_VBoxEfiBldProg_INCS.x86 = $(TEMPLATE_VBoxBldProg_INCS.x86) \
 	$(VBOX_PATH_EFI_FIRMWARE)/MdePkg/Include/Ia32
