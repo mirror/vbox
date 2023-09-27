@@ -32,7 +32,7 @@
 #include "QIRichTextLabel.h"
 #include "UIBaseMemoryEditor.h"
 #include "UICommon.h"
-#include "UIGuestOSTypeII.h"
+#include "UIGuestOSType.h"
 #include "UIVirtualCPUEditor.h"
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMEditors.h"

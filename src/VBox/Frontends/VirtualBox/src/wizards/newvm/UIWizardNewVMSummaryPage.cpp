@@ -35,7 +35,7 @@
 #include "QIRichTextLabel.h"
 #include "QITreeView.h"
 #include "UIIconPool.h"
-#include "UIGuestOSTypeII.h"
+#include "UIGuestOSType.h"
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
 #include "UITranslator.h"

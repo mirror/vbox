@@ -36,7 +36,7 @@
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
 #include "UIIconPool.h"
-#include "UIGuestOSTypeII.h"
+#include "UIGuestOSType.h"
 #include "UIMediaComboBox.h"
 #include "UIMediumSelector.h"
 #include "UIMediumSizeEditor.h"

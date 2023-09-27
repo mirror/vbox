@@ -62,7 +62,7 @@
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIDesktopWidgetWatchdog.h"
-#include "UIGuestOSTypeII.h"
+#include "UIGuestOSType.h"
 #include "UIExtraDataDefs.h"
 #include "UIExtraDataManager.h"
 #include "UIFDCreationDialog.h"

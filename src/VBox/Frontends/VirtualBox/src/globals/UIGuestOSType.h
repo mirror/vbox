@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGuestOSTypeII class declaration.
+ * VBox Qt GUI - UIGuestOSType class declaration.
  */
 
 /*
@@ -25,8 +25,8 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-#ifndef FEQT_INCLUDED_SRC_globals_UIGuestOSTypeII_h
-#define FEQT_INCLUDED_SRC_globals_UIGuestOSTypeII_h
+#ifndef FEQT_INCLUDED_SRC_globals_UIGuestOSType_h
+#define FEQT_INCLUDED_SRC_globals_UIGuestOSType_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -40,7 +40,7 @@
 #include "COMEnums.h"
 #include "CGuestOSType.h"
 
-class UIGuestOSTypeII;
+class UIGuestOSType;
 
 
 
@@ -60,7 +60,7 @@ public:
     UIGuestOSTypeInfo getTypeListForFamilyId(const QString &strFamilyId) const;
     UIGuestOSTypeInfo getTypeListForVariant(const QString &strVariant) const;
 
-    UIGuestOSTypeII findGuestTypeById(const QString &strTypeId) const;
+    UIGuestOSType findGuestTypeById(const QString &strTypeId) const;
 
     KGraphicsControllerType getRecommendedGraphicsController(const QString &strTypeId) const;
     ULONG getRecommendedRAM(const QString &strTypeId) const;
@@ -76,21 +76,21 @@ private:
 
     void addGuestOSType(const CGuestOSType &comType);
 
-    QVector<UIGuestOSTypeII> m_guestOSTypes;
+    QVector<UIGuestOSType> m_guestOSTypes;
     /* First item of the pair is family id and the 2nd is family description. */
     UIGuestOSTypeInfo m_guestOSFamilies;
 
 };
 
 /** A wrapper around CGuestOSType. */
-class SHARED_LIBRARY_STUFF UIGuestOSTypeII
+class SHARED_LIBRARY_STUFF UIGuestOSType
 {
 
 public:
 
 
-    UIGuestOSTypeII(const CGuestOSType &comGuestOSType);
-    UIGuestOSTypeII();
+    UIGuestOSType(const CGuestOSType &comGuestOSType);
+    UIGuestOSType();
 
     const QString &getFamilyId() const;
     const QString &getFamilyDescription() const;
@@ -111,8 +111,8 @@ public:
     /** @} */
 
     bool isOk() const;
-    bool operator==(const UIGuestOSTypeII &other);
-    bool operator!=(const UIGuestOSTypeII &other);
+    bool operator==(const UIGuestOSType &other);
+    bool operator!=(const UIGuestOSType &other);
 
 private:
 
@@ -129,4 +129,4 @@ private:
 
 };
 
-#endif /* !FEQT_INCLUDED_SRC_globals_UIGuestOSTypeII_h */
+#endif /* !FEQT_INCLUDED_SRC_globals_UIGuestOSType_h */

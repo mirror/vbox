@@ -31,7 +31,7 @@
 
 /* GUI includes: */
 #include "UICommon.h"
-#include "UIGuestOSTypeII.h"
+#include "UIGuestOSType.h"
 #include "UIMedium.h"
 #include "UINotificationCenter.h"
 #include "UIWizardNewVM.h"

@@ -33,7 +33,7 @@
 
 /* GUI includes: */
 #include "UIEditor.h"
-#include "UIGuestOSTypeII.h"
+#include "UIGuestOSType.h"
 
 /* COM includes: */
 #include "COMEnums.h"

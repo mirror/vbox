@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGuestOSTypeII class implementation.
+ * VBox Qt GUI - UIGuestOSType class implementation.
  */
 
 /*
@@ -26,7 +26,7 @@
  */
 
 /* GUI includes: */
-#include "UIGuestOSTypeII.h"
+#include "UIGuestOSType.h"
 
 
 void UIGuestOSTypeManager::reCacheGuestOSTypes(const CGuestOSTypeVector &guestOSTypes)
@@ -51,7 +51,7 @@ void UIGuestOSTypeManager::reCacheGuestOSTypes(const CGuestOSTypeVector &guestOS
 
 void UIGuestOSTypeManager::addGuestOSType(const CGuestOSType &comType)
 {
-    m_guestOSTypes << UIGuestOSTypeII(comType);
+    m_guestOSTypes << UIGuestOSType(comType);
     QPair<QString, QString> family = QPair<QString, QString>(m_guestOSTypes.last().getFamilyId(), m_guestOSTypes.last().getFamilyDescription());
     if (!m_guestOSFamilies.contains(family))
         m_guestOSFamilies << family;
@@ -65,7 +65,7 @@ const UIGuestOSTypeManager::UIGuestOSTypeFamilyInfo &UIGuestOSTypeManager::getFa
 QStringList UIGuestOSTypeManager::getVariantListForFamilyId(const QString &strFamilyId) const
 {
     QStringList variantList;
-    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    foreach (const UIGuestOSType &type, m_guestOSTypes)
     {
         if (type.getFamilyId() != strFamilyId)
             continue;
@@ -79,7 +79,7 @@ QStringList UIGuestOSTypeManager::getVariantListForFamilyId(const QString &strFa
 UIGuestOSTypeManager::UIGuestOSTypeInfo UIGuestOSTypeManager::getTypeListForFamilyId(const QString &strFamilyId) const
 {
     UIGuestOSTypeInfo typeInfoList;
-    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    foreach (const UIGuestOSType &type, m_guestOSTypes)
     {
         if (type.getFamilyId() != strFamilyId)
             continue;
@@ -97,7 +97,7 @@ UIGuestOSTypeManager::UIGuestOSTypeInfo UIGuestOSTypeManager::getTypeListForVari
     if (strVariant.isEmpty())
         return typeInfoList;
 
-    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    foreach (const UIGuestOSType &type, m_guestOSTypes)
     {
         if (type.getVariant() != strVariant)
             continue;
@@ -108,23 +108,23 @@ UIGuestOSTypeManager::UIGuestOSTypeInfo UIGuestOSTypeManager::getTypeListForVari
     return typeInfoList;
 }
 
-UIGuestOSTypeII UIGuestOSTypeManager::findGuestTypeById(const QString &strTypeId) const
+UIGuestOSType UIGuestOSTypeManager::findGuestTypeById(const QString &strTypeId) const
 {
     if (strTypeId.isEmpty())
-        return UIGuestOSTypeII();
-    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+        return UIGuestOSType();
+    foreach (const UIGuestOSType &type, m_guestOSTypes)
     {
         if (type.getId() == strTypeId)
             return type;
     }
-    return UIGuestOSTypeII();
+    return UIGuestOSType();
 }
 
 KGraphicsControllerType UIGuestOSTypeManager::getRecommendedGraphicsController(const QString &strTypeId) const
 {
     if (strTypeId.isEmpty())
         return KGraphicsControllerType_Null;
-    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    foreach (const UIGuestOSType &type, m_guestOSTypes)
     {
         if (type.getId() == strTypeId)
             return type.getRecommendedGraphicsController();
@@ -136,7 +136,7 @@ ULONG UIGuestOSTypeManager::getRecommendedRAM(const QString &strTypeId) const
 {
     if (strTypeId.isEmpty())
         return 0;
-    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    foreach (const UIGuestOSType &type, m_guestOSTypes)
     {
         if (type.getId() == strTypeId)
             return type.getRecommendedRAM();
@@ -148,7 +148,7 @@ ULONG UIGuestOSTypeManager::getRecommendedCPUCount(const QString &strTypeId) con
 {
     if (strTypeId.isEmpty())
         return 0;
-    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    foreach (const UIGuestOSType &type, m_guestOSTypes)
     {
         if (type.getId() == strTypeId)
             return type.getRecommendedCPUCount();
@@ -160,7 +160,7 @@ KFirmwareType UIGuestOSTypeManager::getRecommendedFirmware(const QString &strTyp
 {
     if (strTypeId.isEmpty())
         return KFirmwareType_Max;
-    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    foreach (const UIGuestOSType &type, m_guestOSTypes)
     {
         if (type.getId() == strTypeId)
             return type.getRecommendedFirmware();
@@ -172,7 +172,7 @@ QString UIGuestOSTypeManager::getDescription(const QString &strTypeId) const
 {
     if (strTypeId.isEmpty())
         return QString();
-    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    foreach (const UIGuestOSType &type, m_guestOSTypes)
     {
         if (type.getId() == strTypeId)
             return type.getDescription();
@@ -184,7 +184,7 @@ LONG64 UIGuestOSTypeManager::getRecommendedHDD(const QString &strTypeId) const
 {
     if (strTypeId.isEmpty())
         return 0;
-    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    foreach (const UIGuestOSType &type, m_guestOSTypes)
     {
         if (type.getId() == strTypeId)
             return type.getRecommendedHDD();
@@ -196,7 +196,7 @@ KStorageBus UIGuestOSTypeManager::getRecommendedHDStorageBus(const QString &strT
 {
     if (strTypeId.isEmpty())
         return KStorageBus_Null;
-    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    foreach (const UIGuestOSType &type, m_guestOSTypes)
     {
         if (type.getId() == strTypeId)
             return type.getRecommendedHDStorageBus();
@@ -208,7 +208,7 @@ KStorageBus UIGuestOSTypeManager::getRecommendedDVDStorageBus(const QString &str
 {
     if (strTypeId.isEmpty())
         return KStorageBus_Null;
-    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    foreach (const UIGuestOSType &type, m_guestOSTypes)
     {
         if (type.getId() == strTypeId)
             return type.getRecommendedDVDStorageBus();
@@ -221,7 +221,7 @@ bool UIGuestOSTypeManager::getRecommendedFloppy(const QString &strTypeId) const
 {
     if (strTypeId.isEmpty())
         return false;
-    foreach (const UIGuestOSTypeII &type, m_guestOSTypes)
+    foreach (const UIGuestOSType &type, m_guestOSTypes)
     {
         if (type.getId() == strTypeId)
             return type.getRecommendedFloppy();
@@ -229,117 +229,117 @@ bool UIGuestOSTypeManager::getRecommendedFloppy(const QString &strTypeId) const
     return false;
 }
 
-UIGuestOSTypeII::UIGuestOSTypeII()
+UIGuestOSType::UIGuestOSType()
 {
 }
 
-UIGuestOSTypeII::UIGuestOSTypeII(const CGuestOSType &comGuestOSType)
+UIGuestOSType::UIGuestOSType(const CGuestOSType &comGuestOSType)
     : m_comGuestOSType(comGuestOSType)
 {
 }
 
-bool UIGuestOSTypeII::isOk() const
+bool UIGuestOSType::isOk() const
 {
     return (!m_comGuestOSType.isNull() && m_comGuestOSType.isOk());
 }
 
-const QString &UIGuestOSTypeII::getFamilyId() const
+const QString &UIGuestOSType::getFamilyId() const
 {
     if (m_strFamilyId.isEmpty() && m_comGuestOSType.isOk())
         m_strFamilyId = m_comGuestOSType.GetFamilyId();
     return m_strFamilyId;
 }
 
-const QString &UIGuestOSTypeII::getFamilyDescription() const
+const QString &UIGuestOSType::getFamilyDescription() const
 {
     if (m_strFamilyDescription.isEmpty() && m_comGuestOSType.isOk())
         m_strFamilyDescription = m_comGuestOSType.GetFamilyDescription();
     return m_strFamilyDescription;
 }
 
-const QString &UIGuestOSTypeII::getId() const
+const QString &UIGuestOSType::getId() const
 {
     if (m_strId.isEmpty() && m_comGuestOSType.isOk())
         m_strId = m_comGuestOSType.GetId();
     return m_strId;
 }
 
-const QString &UIGuestOSTypeII::getVariant() const
+const QString &UIGuestOSType::getVariant() const
 {
     if (m_strVariant.isEmpty() && m_comGuestOSType.isOk())
         m_strVariant = m_comGuestOSType.GetVariant();
     return m_strVariant;
 }
 
-const QString &UIGuestOSTypeII::getDescription() const
+const QString &UIGuestOSType::getDescription() const
 {
     if (m_strDescription.isEmpty() && m_comGuestOSType.isOk())
         m_strDescription = m_comGuestOSType.GetDescription();
     return m_strDescription;
 }
 
-KStorageBus UIGuestOSTypeII::getRecommendedHDStorageBus() const
+KStorageBus UIGuestOSType::getRecommendedHDStorageBus() const
 {
     if (m_comGuestOSType.isOk())
         return m_comGuestOSType.GetRecommendedHDStorageBus();
     return KStorageBus_Null;
 }
 
-ULONG UIGuestOSTypeII::getRecommendedRAM() const
+ULONG UIGuestOSType::getRecommendedRAM() const
 {
     if (m_comGuestOSType.isOk())
         return m_comGuestOSType.GetRecommendedRAM();
     return 0;
 }
 
-KStorageBus UIGuestOSTypeII::getRecommendedDVDStorageBus() const
+KStorageBus UIGuestOSType::getRecommendedDVDStorageBus() const
 {
     if (m_comGuestOSType.isOk())
         return m_comGuestOSType.GetRecommendedDVDStorageBus();
     return KStorageBus_Null;
 }
 
-ULONG UIGuestOSTypeII::getRecommendedCPUCount() const
+ULONG UIGuestOSType::getRecommendedCPUCount() const
 {
     if (m_comGuestOSType.isOk())
         return m_comGuestOSType.GetRecommendedCPUCount();
     return 0;
 }
 
-KFirmwareType UIGuestOSTypeII::getRecommendedFirmware() const
+KFirmwareType UIGuestOSType::getRecommendedFirmware() const
 {
     if (m_comGuestOSType.isOk())
         return m_comGuestOSType.GetRecommendedFirmware();
     return  KFirmwareType_Max;
 }
 
-bool UIGuestOSTypeII::getRecommendedFloppy() const
+bool UIGuestOSType::getRecommendedFloppy() const
 {
     if (m_comGuestOSType.isOk())
         return m_comGuestOSType.GetRecommendedFloppy();
     return false;
 }
 
-LONG64 UIGuestOSTypeII::getRecommendedHDD() const
+LONG64 UIGuestOSType::getRecommendedHDD() const
 {
     if (m_comGuestOSType.isOk())
         return m_comGuestOSType.GetRecommendedHDD();
     return 0;
 }
 
-KGraphicsControllerType UIGuestOSTypeII::getRecommendedGraphicsController() const
+KGraphicsControllerType UIGuestOSType::getRecommendedGraphicsController() const
 {
     if (m_comGuestOSType.isOk())
         return m_comGuestOSType.GetRecommendedGraphicsController();
     return KGraphicsControllerType_Null;
 }
 
-bool UIGuestOSTypeII::operator==(const UIGuestOSTypeII &other)
+bool UIGuestOSType::operator==(const UIGuestOSType &other)
 {
     return m_comGuestOSType == other.m_comGuestOSType;
 }
 
-bool UIGuestOSTypeII::operator!=(const UIGuestOSTypeII &other)
+bool UIGuestOSType::operator!=(const UIGuestOSType &other)
 {
     return m_comGuestOSType != other.m_comGuestOSType;
 }

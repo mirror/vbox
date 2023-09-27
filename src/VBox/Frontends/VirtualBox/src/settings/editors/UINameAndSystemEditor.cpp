@@ -255,7 +255,7 @@ bool UINameAndSystemEditor::setGuestOSTypeByTypeId(const QString &strTypeId)
 
     const UIGuestOSTypeManager * const pGuestOSTypeManager = uiCommon().guestOSTypeManager();
     AssertReturn(pGuestOSTypeManager, false);
-    const UIGuestOSTypeII &type = pGuestOSTypeManager->findGuestTypeById(strTypeId);
+    const UIGuestOSType &type = pGuestOSTypeManager->findGuestTypeById(strTypeId);
     if (!type.isOk())
         return false;
 
@@ -311,26 +311,6 @@ QString UINameAndSystemEditor::familyId() const
         return QString();
     return m_strFamilyId;
 }
-
-// void UINameAndSystemEditor::setType(const CGuestOSType &enmType)
-// {
-//     // WORKAROUND:
-//     // We're getting here with a NULL enmType when creating new VMs.
-//     // Very annoying, so just workarounded for now.
-//     /** @todo find out the reason and way to fix that.. */
-//     if (enmType.isNull())
-//         return;
-
-//     /* Pass to function above: */
-//     setTypeId(enmType.GetId(), enmType.GetFamilyId());
-// }
-
-// UIGuestOSTypeII UINameAndSystemEditor::type() const
-// {
-//     const UIGuestOSTypeManager * const pGuestOSTypeManager = uiCommon().guestOSTypeManager();
-//     AssertReturn(pGuestOSTypeManager, UIGuestOSTypeII());
-//     return pGuestOSTypeManager->findGuestTypeById(m_strTypeId);
-// }
 
 void UINameAndSystemEditor::markNameEditor(bool fError)
 {
