@@ -613,8 +613,8 @@ ifdef VBOX_WITH_INTNET_SERVICE_IN_R3
  endif
 endif
 
-VBOX_VIRTUALBOX_APP_ENTITLEMENTS := $(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlements.plist
-VBOX_VIRTUALBOXVM_APP_ENTITLEMENTS := $(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlementsVM.plist
+VBOX_VIRTUALBOX_APP_ENTITLEMENTS := $(VBOX_DARWIN_ENTITLEMENTS_FILE)
+VBOX_VIRTUALBOXVM_APP_ENTITLEMENTS := $(VBOX_DARWIN_ENTITLEMENTS_FILE)
 
 ##
 # Add application and team ID into entitlement file
@@ -633,12 +633,12 @@ endef
 if defined(VBOX_WITH_MACOS_HARDENED_RUNTIME) && defined(VBOX_SIGNING_MODE) && defined(VBOX_PROVISIONPROFILE_TEAM_ID)
  ifdef VBOX_VIRTUALBOX_APP_ID
   VBOX_VIRTUALBOX_APP_ENTITLEMENTS := $(VBOX_PATH_PACK_TMP)/SUPR3HardenedEntitlements.plist
-  $(evalcall2 def_vbox_entitlement_add_app_and_team_id,$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlements.plist,$(VBOX_VIRTUALBOX_APP_ENTITLEMENTS),$(VBOX_VIRTUALBOX_APP_ID),$(VBOX_PROVISIONPROFILE_TEAM_ID))
+  $(evalcall2 def_vbox_entitlement_add_app_and_team_id,$(VBOX_DARWIN_ENTITLEMENTS_FILE),$(VBOX_VIRTUALBOX_APP_ENTITLEMENTS),$(VBOX_VIRTUALBOX_APP_ID),$(VBOX_PROVISIONPROFILE_TEAM_ID))
  endif
 
  ifdef VBOX_VIRTUALBOXVM_APP_ID
   VBOX_VIRTUALBOXVM_APP_ENTITLEMENTS := $(VBOX_PATH_PACK_TMP)/SUPR3HardenedEntitlementsVM.plist
-  $(evalcall2 def_vbox_entitlement_add_app_and_team_id,$(PATH_ROOT)/src/VBox/HostDrivers/Support/darwin/SUPR3HardenedEntitlementsVM.plist,$(VBOX_VIRTUALBOXVM_APP_ENTITLEMENTS),$(VBOX_VIRTUALBOXVM_APP_ID),$(VBOX_PROVISIONPROFILE_TEAM_ID))
+  $(evalcall2 def_vbox_entitlement_add_app_and_team_id,$(VBOX_DARWIN_ENTITLEMENTS_FILE),$(VBOX_VIRTUALBOXVM_APP_ENTITLEMENTS),$(VBOX_VIRTUALBOXVM_APP_ID),$(VBOX_PROVISIONPROFILE_TEAM_ID))
  endif
 endif
 
