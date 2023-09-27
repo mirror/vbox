@@ -159,96 +159,6 @@ QString UINameAndSystemEditor::ISOImagePath() const
     return m_pSelectorImage->path();
 }
 
-void UINameAndSystemEditor::setTypeId(QString strTypeId, QString strFamilyId /* = QString() */)
-{
-    Q_UNUSED(strTypeId);
-    Q_UNUSED(strFamilyId);
-    // if (!m_pComboType)
-    //     return;
-    // AssertMsgReturnVoid(!strTypeId.isNull(), ("Null guest OS type ID"));
-
-    // /* Initialize indexes: */
-    // int iTypeIndex = -1;
-    // int iFamilyIndex = -1;
-
-    // /* If family ID isn't empty: */
-    // if (!strFamilyId.isEmpty())
-    // {
-    //     /* Search for corresponding family ID index: */
-    //     iFamilyIndex = m_pComboFamily->findData(strFamilyId, TypeID);
-
-    //     /* If that family ID isn't present, we have to add it: */
-    //     if (iFamilyIndex == -1)
-    //     {
-    //         /* Append family ID to corresponding combo: */
-    //         m_pComboFamily->addItem(strFamilyId);
-    //         m_pComboFamily->setItemData(m_pComboFamily->count() - 1, strFamilyId, TypeID);
-    //         /* Append family ID to type cache: */
-    //         m_types[strFamilyId] = QList<UIGuestOSType>();
-
-    //         /* Search for corresponding family ID index finally: */
-    //         iFamilyIndex = m_pComboFamily->findData(strFamilyId, TypeID);
-    //     }
-    // }
-    // /* If family ID is empty: */
-    // else
-    // {
-    //     /* We'll try to find it by type ID: */
-    //     foreach (const QString &strKnownFamilyId, m_types.keys())
-    //     {
-    //         foreach (const UIGuestOSType &guiType, m_types.value(strKnownFamilyId))
-    //         {
-    //             if (guiType.typeId == strTypeId)
-    //                 strFamilyId = strKnownFamilyId;
-    //             if (!strFamilyId.isNull())
-    //                 break;
-    //         }
-    //         if (!strFamilyId.isNull())
-    //             break;
-    //     }
-
-    //     /* If we were unable to find it => use "Other": */
-    //     if (strFamilyId.isNull())
-    //         strFamilyId = "Other";
-
-    //     /* Search for corresponding family ID index finally: */
-    //     iFamilyIndex = m_pComboFamily->findData(strFamilyId, TypeID);
-    // }
-
-    // /* To that moment family ID index should be always found: */
-    // AssertReturnVoid(iFamilyIndex != -1);
-    // /* So we choose it: */
-    // m_pComboFamily->setCurrentIndex(iFamilyIndex);
-    // sltFamilyChanged(m_pComboFamily->currentIndex());
-
-    // /* Search for corresponding type ID index: */
-    // iTypeIndex = m_pComboType->findData(strTypeId, TypeID);
-
-    // /* If that type ID isn't present, we have to add it: */
-    // if (iTypeIndex == -1)
-    // {
-    //     /* Append type ID to type cache: */
-    //     UIGuestOSType guiType;
-    //     guiType.typeId = strTypeId;
-    //     guiType.typeDescription = strTypeId;
-    //     guiType.is64bit = false;
-    //     m_types[strFamilyId] << guiType;
-
-    //     /* So we re-choose family again: */
-    //     m_pComboFamily->setCurrentIndex(iFamilyIndex);
-    //     sltFamilyChanged(m_pComboFamily->currentIndex());
-
-    //     /* Search for corresponding type ID index finally: */
-    //     iTypeIndex = m_pComboType->findData(strTypeId, TypeID);
-    // }
-
-    // /* To that moment type ID index should be always found: */
-    // AssertReturnVoid(iTypeIndex != -1);
-    // /* So we choose it: */
-    // m_pComboType->setCurrentIndex(iTypeIndex);
-    // sltTypeChanged(m_pComboType->currentIndex());
-}
-
 bool UINameAndSystemEditor::setGuestOSTypeByTypeId(const QString &strTypeId)
 {
     AssertReturn(m_pComboFamily, false);
@@ -473,16 +383,6 @@ void UINameAndSystemEditor::populateTypeCombo(const UIGuestOSTypeManager::UIGues
 
 void UINameAndSystemEditor::selectPreferredType()
 {
-    // /* Select the most recently chosen item: */
-    // if (m_currentIds.contains(m_strFamilyId))
-    // {
-    //     const QString strTypeId = m_currentIds.value(m_strFamilyId);
-    //     const int iTypeIndex = m_pComboType->findData(strTypeId, TypeID);
-    //     if (iTypeIndex != -1)
-    //         m_pComboType->setCurrentIndex(iTypeIndex);
-    // }
-    // /* Or select Windows 10 item for Windows family as default: */
-    // else
     if (m_strFamilyId == "Windows")
     {
         QString strDefaultID = "Windows11_x64";
@@ -757,21 +657,8 @@ void UINameAndSystemEditor::prepareFamilyCombo()
     /* For each known family ID: */
     for (int i = 0; i < families.size(); ++i)
     {
-        //const QString &strFamilyId = familyIds.at(i);
-
         m_pComboFamily->addItem(families[i].second);
         m_pComboFamily->setItemData(i, families[i].first, FamilyID);
-
-        /* Fill in the type cache: */
-        // m_types[strFamilyId] = QList<UIGuestOSType>();
-        // foreach (const CGuestOSType &comType, uiCommon().vmGuestOSTypeList(strFamilyId))
-        // {
-        //     UIGuestOSType guiType;
-        //     guiType.typeId = comType.GetId();
-        //     guiType.typeDescription = QString(comType.GetDescription()).remove(" (64-bit)", Qt::CaseInsensitive);
-        //     guiType.is64bit = comType.GetIs64Bit();
-        //     m_types[strFamilyId] << guiType;
-        // }
     }
 
     /* Choose the 1st item to be the current: */

@@ -251,7 +251,7 @@ void UIMachineSettingsGeneral::getFromCache()
     if (m_pEditorNameAndSystem)
     {
         m_pEditorNameAndSystem->setName(oldGeneralData.m_strName);
-        m_pEditorNameAndSystem->setTypeId(oldGeneralData.m_strGuestOsTypeId);
+        m_pEditorNameAndSystem->setGuestOSTypeByTypeId(oldGeneralData.m_strGuestOsTypeId);
     }
 
     /* Load old 'Advanced' data from cache: */

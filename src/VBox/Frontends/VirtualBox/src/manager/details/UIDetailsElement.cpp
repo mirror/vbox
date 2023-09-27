@@ -910,7 +910,7 @@ void UIDetailsElement::popupNameAndSystemEditor(bool fChooseName, bool fChoosePa
             else if (fChoosePath)
                 pEditor->setPath(strValue);
             else if (fChooseType)
-                pEditor->setTypeId(strValue);
+                pEditor->setGuestOSTypeByTypeId(strValue);
 
             /* Add to popup: */
             pPopup->setWidget(pEditor);

@@ -114,8 +114,6 @@ public:
 
     /* strTypeId should be one of the type ids defined in Global.cpp and returned by IGuestOSType::getId(). */
     bool setGuestOSTypeByTypeId(const QString &strTypeId);
-    /** Defines the VM OS @a strTypeId and @a strFamilyId if passed. */
-    void setTypeId(QString strTypeId, QString strFamilyId = QString());
     /** Returns the VM OS type ID. */
     QString typeId() const;
     /** Returns the VM OS family ID. */
