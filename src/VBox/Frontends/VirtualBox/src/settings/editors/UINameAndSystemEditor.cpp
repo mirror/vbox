@@ -165,16 +165,16 @@ bool UINameAndSystemEditor::setGuestOSTypeByTypeId(const QString &strTypeId)
 
     const UIGuestOSTypeManager * const pGuestOSTypeManager = uiCommon().guestOSTypeManager();
     AssertReturn(pGuestOSTypeManager, false);
-    const UIGuestOSType &type = pGuestOSTypeManager->findGuestTypeById(strTypeId);
-    if (!type.isOk())
-        return false;
+    // const UIGuestOSType &type = pGuestOSTypeManager->findGuestTypeById(strTypeId);
+    // if (!type.isOk())
+    //     return false;
 
     int iFamilyComboIndex = -1;
     /* We already have to have an item in the family combo box for this family id: */
     for (int i = 0; i < m_pComboFamily->count() && iFamilyComboIndex == -1; ++i)
     {
         QString strComboFamilyId = m_pComboFamily->itemData(i, FamilyID).toString();
-        if (!strComboFamilyId.isEmpty() && strComboFamilyId == type.getFamilyId())
+        if (!strComboFamilyId.isEmpty() && strComboFamilyId == pGuestOSTypeManager->getFamilyId(strTypeId))
             iFamilyComboIndex = i;
     }
     /* Bail out if family combo has no such item: */
@@ -184,12 +184,13 @@ bool UINameAndSystemEditor::setGuestOSTypeByTypeId(const QString &strTypeId)
     m_pComboFamily->setCurrentIndex(iFamilyComboIndex);
 
     /* If variant is not empty then try to select correct index. This will populate type combo: */
-    if (!type.getVariant().isEmpty())
+    QString strVariant = pGuestOSTypeManager->getVariant(strTypeId);
+    if (!strVariant.isEmpty())
     {
         int index = -1;
         for (int i = 0; i < m_pComboVariant->count() && index == -1; ++i)
         {
-            if (type.getVariant() == m_pComboVariant->itemText(i))
+            if (strVariant == m_pComboVariant->itemText(i))
                 index = i;
         }
         if (index != -1)

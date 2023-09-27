@@ -119,9 +119,6 @@ public:
     /** Returns the VM OS family ID. */
     QString familyId() const;
 
-    /** Returns the VM OS type. */
-    //UIGuestOSTypeII type() const;
-
     /** Passes the @p fError to QILineEdit::mark(bool) effectively marking it for error. */
     void markNameEditor(bool fError);
     /** Passes the @p fError and @a strErrorMessage to UIFilePathSelector::mark(bool)

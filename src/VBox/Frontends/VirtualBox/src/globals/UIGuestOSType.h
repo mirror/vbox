@@ -41,7 +41,7 @@
 #include "CGuestOSType.h"
 
 class UIGuestOSType;
-
+class UIFoo;
 
 /** A wrapper and manager class for Guest OS types (IGuestOSType). Logically we structure os types into families
   *  e.g. Window, Linux etc. Some families have so-called variants which for Linux corresponds to distros, while some
@@ -51,6 +51,9 @@ class SHARED_LIBRARY_STUFF UIGuestOSTypeManager
 {
 
 public:
+
+    UIGuestOSTypeManager();
+    UIGuestOSTypeManager(const UIGuestOSTypeManager &other) = delete;
 
     /* A list of all OS families. 'first' of each pair is famil Id and 'second' is family description. */
     typedef QVector<QPair<QString, QString> > UIGuestOSTypeFamilyInfo;
@@ -64,73 +67,33 @@ public:
     UIGuestOSTypeInfo getTypeListForFamilyId(const QString &strFamilyId) const;
     UIGuestOSTypeInfo getTypeListForVariant(const QString &strVariant) const;
 
-    UIGuestOSType findGuestTypeById(const QString &strTypeId) const;
-
-    KGraphicsControllerType getRecommendedGraphicsController(const QString &strTypeId) const;
-    ULONG getRecommendedRAM(const QString &strTypeId) const;
-    ULONG getRecommendedCPUCount(const QString &strTypeId) const;
-    KFirmwareType getRecommendedFirmware(const QString &strTypeId) const;
-    QString getDescription(const QString &strTypeId) const;
-    LONG64 getRecommendedHDD(const QString &strTypeId) const;
-    KStorageBus getRecommendedHDStorageBus(const QString &strTypeId) const;
-    KStorageBus getRecommendedDVDStorageBus(const QString &strTypeId) const;
-    bool getRecommendedFloppy(const QString &strTypeId) const;
+    /** @name Getters UIGuestOSType properties. They utilize a map for faster access to UIGuestOSType instance with @p strTypeId
+      * @{ */
+        QString                 getFamilyId(const QString &strTypeId) const;
+        QString                 getVariant(const QString  &strTypeId) const;
+        KGraphicsControllerType getRecommendedGraphicsController(const QString &strTypeId) const;
+        ULONG                   getRecommendedRAM(const QString &strTypeId) const;
+        ULONG                   getRecommendedCPUCount(const QString &strTypeId) const;
+        KFirmwareType           getRecommendedFirmware(const QString &strTypeId) const;
+        QString                 getDescription(const QString &strTypeId) const;
+        LONG64                  getRecommendedHDD(const QString &strTypeId) const;
+        KStorageBus             getRecommendedHDStorageBus(const QString &strTypeId) const;
+        KStorageBus             getRecommendedDVDStorageBus(const QString &strTypeId) const;
+        bool                    getRecommendedFloppy(const QString &strTypeId) const;
+    /** @} */
 
 private:
 
     void addGuestOSType(const CGuestOSType &comType);
 
-    QVector<UIGuestOSType> m_guestOSTypes;
-    /* First item of the pair is family id and the 2nd is family description. */
+    /** The type list. Here it is a pointer to QVector to delay definition of UIGuestOSType. */
+    QVector<UIGuestOSType> *m_guestOSTypes;
+    /** A map to prevent linear search of UIGuestOSType instances wrt. typeId. Key is typeId and value
+      * is index to m_guestOSTypes list. */
+    QMap<QString, int> m_typeIdIndexMap;
+    /** First item of the pair is family id and the 2nd is family description. */
     UIGuestOSTypeInfo m_guestOSFamilies;
-
 };
 
-/** A wrapper around CGuestOSType. */
-class SHARED_LIBRARY_STUFF UIGuestOSType
-{
-
-public:
-
-
-    UIGuestOSType(const CGuestOSType &comGuestOSType);
-    UIGuestOSType();
-
-    const QString &getFamilyId() const;
-    const QString &getFamilyDescription() const;
-    const QString &getId() const;
-    const QString &getVariant() const;
-    const QString &getDescription() const;
-
-    /** @name Wrapper getters for CGuestOSType member.
-      * @{ */
-        KStorageBus getRecommendedHDStorageBus() const;
-        ULONG getRecommendedRAM() const;
-        KStorageBus getRecommendedDVDStorageBus() const;
-        ULONG getRecommendedCPUCount() const;
-        KFirmwareType getRecommendedFirmware() const;
-        bool getRecommendedFloppy() const;
-        LONG64 getRecommendedHDD() const;
-        KGraphicsControllerType getRecommendedGraphicsController() const;
-    /** @} */
-
-    bool isOk() const;
-    bool operator==(const UIGuestOSType &other);
-    bool operator!=(const UIGuestOSType &other);
-
-private:
-
-    /** @name CGuestOSType properties. Cached here for a faster access.
-      * @{ */
-        mutable QString m_strFamilyId;
-        mutable QString m_strFamilyDescription;
-        mutable QString m_strId;
-        mutable QString m_strVariant;
-        mutable QString m_strDescription;
-    /** @} */
-
-    CGuestOSType m_comGuestOSType;
-
-};
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UIGuestOSType_h */
