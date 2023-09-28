@@ -44,46 +44,60 @@
 
 static const GUID gaDecoderProfiles[] =
 {
-    D3D11_DECODER_PROFILE_MPEG2_MOCOMP,
-    D3D11_DECODER_PROFILE_MPEG2_IDCT,
-    D3D11_DECODER_PROFILE_MPEG2_VLD,
-    D3D11_DECODER_PROFILE_MPEG1_VLD,
-    D3D11_DECODER_PROFILE_MPEG2and1_VLD,
-    D3D11_DECODER_PROFILE_H264_MOCOMP_NOFGT,
-    D3D11_DECODER_PROFILE_H264_MOCOMP_FGT,
-    D3D11_DECODER_PROFILE_H264_IDCT_NOFGT,
-    D3D11_DECODER_PROFILE_H264_IDCT_FGT,
+    //D3D11_DECODER_PROFILE_MPEG2_MOCOMP,
+    //D3D11_DECODER_PROFILE_MPEG2_IDCT,
+    //D3D11_DECODER_PROFILE_MPEG2_VLD,
+    //D3D11_DECODER_PROFILE_MPEG1_VLD,
+    //D3D11_DECODER_PROFILE_MPEG2and1_VLD,
+    //D3D11_DECODER_PROFILE_H264_MOCOMP_NOFGT,
+    //D3D11_DECODER_PROFILE_H264_MOCOMP_FGT,
+    //D3D11_DECODER_PROFILE_H264_IDCT_NOFGT,
+    //D3D11_DECODER_PROFILE_H264_IDCT_FGT,
     D3D11_DECODER_PROFILE_H264_VLD_NOFGT,
-    D3D11_DECODER_PROFILE_H264_VLD_FGT,
+    //D3D11_DECODER_PROFILE_H264_VLD_FGT,
     //D3D11_DECODER_PROFILE_H264_VLD_WITHFMOASO_NOFGT,
     //D3D11_DECODER_PROFILE_H264_VLD_STEREO_PROGRESSIVE_NOFGT,
     //D3D11_DECODER_PROFILE_H264_VLD_STEREO_NOFGT,
     //D3D11_DECODER_PROFILE_H264_VLD_MULTIVIEW_NOFGT,
-    D3D11_DECODER_PROFILE_WMV8_POSTPROC,
-    D3D11_DECODER_PROFILE_WMV8_MOCOMP,
-    D3D11_DECODER_PROFILE_WMV9_POSTPROC,
-    D3D11_DECODER_PROFILE_WMV9_MOCOMP,
-    D3D11_DECODER_PROFILE_WMV9_IDCT,
-    D3D11_DECODER_PROFILE_VC1_POSTPROC,
-    D3D11_DECODER_PROFILE_VC1_MOCOMP,
-    D3D11_DECODER_PROFILE_VC1_IDCT,
-    D3D11_DECODER_PROFILE_VC1_VLD,
-    D3D11_DECODER_PROFILE_VC1_D2010,
-    D3D11_DECODER_PROFILE_MPEG4PT2_VLD_SIMPLE,
-    D3D11_DECODER_PROFILE_MPEG4PT2_VLD_ADVSIMPLE_NOGMC,
-    D3D11_DECODER_PROFILE_MPEG4PT2_VLD_ADVSIMPLE_GMC,
-    D3D11_DECODER_PROFILE_HEVC_VLD_MAIN,
-    D3D11_DECODER_PROFILE_HEVC_VLD_MAIN10,
-    D3D11_DECODER_PROFILE_VP9_VLD_PROFILE0,
-    D3D11_DECODER_PROFILE_VP9_VLD_10BIT_PROFILE2,
-    D3D11_DECODER_PROFILE_VP8_VLD,
-    D3D11_DECODER_PROFILE_AV1_VLD_PROFILE0,
-    D3D11_DECODER_PROFILE_AV1_VLD_PROFILE1,
-    D3D11_DECODER_PROFILE_AV1_VLD_PROFILE2,
-    D3D11_DECODER_PROFILE_AV1_VLD_12BIT_PROFILE2,
-    D3D11_DECODER_PROFILE_AV1_VLD_12BIT_PROFILE2_420,
+    //D3D11_DECODER_PROFILE_WMV8_POSTPROC,
+    //D3D11_DECODER_PROFILE_WMV8_MOCOMP,
+    //D3D11_DECODER_PROFILE_WMV9_POSTPROC,
+    //D3D11_DECODER_PROFILE_WMV9_MOCOMP,
+    //D3D11_DECODER_PROFILE_WMV9_IDCT,
+    //D3D11_DECODER_PROFILE_VC1_POSTPROC,
+    //D3D11_DECODER_PROFILE_VC1_MOCOMP,
+    //D3D11_DECODER_PROFILE_VC1_IDCT,
+    //D3D11_DECODER_PROFILE_VC1_VLD,
+    //D3D11_DECODER_PROFILE_VC1_D2010,
+    //D3D11_DECODER_PROFILE_MPEG4PT2_VLD_SIMPLE,
+    //D3D11_DECODER_PROFILE_MPEG4PT2_VLD_ADVSIMPLE_NOGMC,
+    //D3D11_DECODER_PROFILE_MPEG4PT2_VLD_ADVSIMPLE_GMC,
+    //D3D11_DECODER_PROFILE_HEVC_VLD_MAIN,
+    //D3D11_DECODER_PROFILE_HEVC_VLD_MAIN10,
+    //D3D11_DECODER_PROFILE_VP9_VLD_PROFILE0,
+    //D3D11_DECODER_PROFILE_VP9_VLD_10BIT_PROFILE2,
+    //D3D11_DECODER_PROFILE_VP8_VLD,
+    //D3D11_DECODER_PROFILE_AV1_VLD_PROFILE0,
+    //D3D11_DECODER_PROFILE_AV1_VLD_PROFILE1,
+    //D3D11_DECODER_PROFILE_AV1_VLD_PROFILE2,
+    //D3D11_DECODER_PROFILE_AV1_VLD_12BIT_PROFILE2,
+    //D3D11_DECODER_PROFILE_AV1_VLD_12BIT_PROFILE2_420,
 };
 
+
+typedef struct VBOXDXVIDEOPROCESSORINPUTVIEW
+{
+    PVBOXDX_DEVICE pDevice;
+    D3D11_1DDI_HRTVIDEOPROCESSORINPUTVIEW hRTView;
+    D3D11_1DDIARG_CREATEVIDEOPROCESSORINPUTVIEW CreateData;
+} VBOXDXVIDEOPROCESSORINPUTVIEW, *PVBOXDXVIDEOPROCESSORINPUTVIEW;
+
+typedef struct VBOXDXVIDEOPROCESSOROUTPUTVIEW
+{
+    PVBOXDX_DEVICE pDevice;
+    D3D11_1DDI_HRTVIDEOPROCESSOROUTPUTVIEW hRTView;
+    D3D11_1DDIARG_CREATEVIDEOPROCESSOROUTPUTVIEW CreateData;
+} VBOXDXVIDEOPROCESSOROUTPUTVIEW, *PVBOXDXVIDEOPROCESSOROUTPUTVIEW;
 
 typedef struct VBOXDXVIDEOPROCESSORFILTER
 {
@@ -149,6 +163,24 @@ typedef struct VBOXDXVIDEOPROCESSORENUM
     D3D11_1DDI_VIDEO_PROCESSOR_CONTENT_DESC Desc;
 } VBOXDXVIDEOPROCESSORENUM, *PVBOXDXVIDEOPROCESSORENUM;
 
+
+typedef struct VBOXDXVIDEODECODEROUTPUTVIEW
+{
+    PVBOXDX_DEVICE pDevice;
+    D3D11_1DDI_HRTVIDEODECODEROUTPUTVIEW hRTView;
+    D3D11_1DDIARG_CREATEVIDEODECODEROUTPUTVIEW CreateData;
+} VBOXDXVIDEODECODEROUTPUTVIEW, *PVBOXDXVIDEODECODEROUTPUTVIEW;
+
+typedef struct VBOXDXVIDEODECODER
+{
+    PVBOXDX_DEVICE pDevice;
+    D3D11_1DDI_HRTDECODE hRTVideoDecoder;
+    D3D11_1DDIARG_CREATEVIDEODECODER CreateData;
+    struct {
+        PVBOXDXVIDEODECODEROUTPUTVIEW pOutputView;
+    } Frame;
+} VBOXDXVIDEODECODER, *PVBOXDXVIDEODECODER;
+
 typedef struct VBOXDXVIDEOCRYPTOSESSION
 {
     PVBOXDX_DEVICE pDevice;
@@ -169,7 +201,7 @@ static VOID APIENTRY ddi11_1GetVideoDecoderProfileCount(
     UINT *pDecodeProfileCount)
 {
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
-    //DEBUG_BREAKPOINT_TEST();
+    DEBUG_BREAKPOINT_TEST();
     RT_NOREF(pDevice);
     *pDecodeProfileCount = RT_ELEMENTS(gaDecoderProfiles);
     return;
@@ -182,7 +214,7 @@ static VOID APIENTRY ddi11_1GetVideoDecoderProfile(
 {
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
     D3D11_1DDI_VIDEO_DECODER_DESC *pDecodeDesc = (D3D11_1DDI_VIDEO_DECODER_DESC *)pGuid;
-    //DEBUG_BREAKPOINT_TEST();
+    DEBUG_BREAKPOINT_TEST();
     RT_NOREF(pDevice, Index, pDecodeDesc);
     *pGuid = gaDecoderProfiles[Index];
     return;
@@ -195,9 +227,13 @@ static VOID APIENTRY ddi11_1CheckVideoDecoderFormat(
     BOOL *pSupported)
 {
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
-    //DEBUG_BREAKPOINT_TEST();
+    DEBUG_BREAKPOINT_TEST();
     RT_NOREF(pDevice, pDecoderProfile, Format);
-    *pSupported = TRUE;
+    if (   Format == DXGI_FORMAT_NV12
+        || Format == DXGI_FORMAT_B8G8R8A8_UNORM)
+        *pSupported = TRUE;
+    else
+        *pSupported = FALSE;
     return;
 }
 
@@ -207,7 +243,7 @@ static VOID APIENTRY ddi11_1GetVideoDecoderConfigCount(
     UINT *pConfigCount)
 {
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
-    //DEBUG_BREAKPOINT_TEST();
+    DEBUG_BREAKPOINT_TEST();
     RT_NOREF(pDevice, pDecodeDesc);
     *pConfigCount = 1;
     return;
@@ -220,7 +256,7 @@ static VOID APIENTRY ddi11_1GetVideoDecoderConfig(
     D3D11_1DDI_VIDEO_DECODER_CONFIG *pConfig)
 {
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
-    //DEBUG_BREAKPOINT_TEST();
+    DEBUG_BREAKPOINT_TEST();
     RT_NOREF(pDevice, pDecodeDesc, Index);
     pConfig->guidConfigBitstreamEncryption = DXVADDI_NoEncrypt;
     pConfig->guidConfigMBcontrolEncryption = DXVADDI_NoEncrypt;
@@ -242,6 +278,22 @@ static VOID APIENTRY ddi11_1GetVideoDecoderConfig(
     return;
 }
 
+/* D3D11_1DDI_VIDEO_DECODER_BUFFER_INFO::Usage has to be D3D11_1DDI_VIDEO_USAGE_OPTIMAL_QUALITY,
+ * otherwise Windows refuses to use the decoder.
+ */
+static D3D11_1DDI_VIDEO_DECODER_BUFFER_INFO const aBufferInfo[] =
+{
+    { D3D11_1DDI_VIDEO_DECODER_BUFFER_PICTURE_PARAMETERS, _64K, D3D11_1DDI_VIDEO_USAGE_OPTIMAL_QUALITY },
+    { D3D11_1DDI_VIDEO_DECODER_BUFFER_MACROBLOCK_CONTROL, _64K, D3D11_1DDI_VIDEO_USAGE_OPTIMAL_QUALITY },
+    { D3D11_1DDI_VIDEO_DECODER_BUFFER_RESIDUAL_DIFFERENCE, _64K, D3D11_1DDI_VIDEO_USAGE_OPTIMAL_QUALITY },
+    { D3D11_1DDI_VIDEO_DECODER_BUFFER_DEBLOCKING_CONTROL, _64K, D3D11_1DDI_VIDEO_USAGE_OPTIMAL_QUALITY },
+    { D3D11_1DDI_VIDEO_DECODER_BUFFER_INVERSE_QUANTIZATION_MATRIX, _64K, D3D11_1DDI_VIDEO_USAGE_OPTIMAL_QUALITY },
+    { D3D11_1DDI_VIDEO_DECODER_BUFFER_SLICE_CONTROL, _64K, D3D11_1DDI_VIDEO_USAGE_OPTIMAL_QUALITY },
+    { D3D11_1DDI_VIDEO_DECODER_BUFFER_BITSTREAM, _64K, D3D11_1DDI_VIDEO_USAGE_OPTIMAL_QUALITY },
+    { D3D11_1DDI_VIDEO_DECODER_BUFFER_MOTION_VECTOR, _64K, D3D11_1DDI_VIDEO_USAGE_OPTIMAL_QUALITY },
+    { D3D11_1DDI_VIDEO_DECODER_BUFFER_FILM_GRAIN, _64K, D3D11_1DDI_VIDEO_USAGE_OPTIMAL_QUALITY },
+};
+
 static VOID APIENTRY ddi11_1GetVideoDecoderBufferTypeCount(
     D3D10DDI_HDEVICE hDevice,
     CONST D3D11_1DDI_VIDEO_DECODER_DESC *pDecodeDesc,
@@ -250,7 +302,7 @@ static VOID APIENTRY ddi11_1GetVideoDecoderBufferTypeCount(
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
     DEBUG_BREAKPOINT_TEST();
     RT_NOREF(pDevice, pDecodeDesc);
-    *pBufferTypeCount = 0;
+    *pBufferTypeCount = RT_ELEMENTS(aBufferInfo);
     return;
 }
 
@@ -262,7 +314,8 @@ static VOID APIENTRY ddi11_1GetVideoDecoderBufferInfo(
 {
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
     DEBUG_BREAKPOINT_TEST();
-    RT_NOREF(pDevice, pDecodeDesc, Index, pInfo);
+    RT_NOREF(pDevice, pDecodeDesc);
+    *pInfo = aBufferInfo[Index];
     return;
 }
 
@@ -273,18 +326,23 @@ static SIZE_T APIENTRY ddi11_1CalcPrivateVideoDecoderSize(
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
     DEBUG_BREAKPOINT_TEST();
     RT_NOREF(pDevice, pDecoder);
-    return 0;
+    return sizeof(VBOXDXVIDEODECODER);
 }
 
 static HRESULT APIENTRY ddi11_1CreateVideoDecoder(
     D3D10DDI_HDEVICE hDevice,
     CONST D3D11_1DDIARG_CREATEVIDEODECODER *pCreateData,
-    D3D11_1DDI_HDECODE hDecode,
-    D3D11_1DDI_HRTDECODE hRTDecode)
+    D3D11_1DDI_HDECODE hDecoder,
+    D3D11_1DDI_HRTDECODE hRTDecoder)
 {
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
+    PVBOXDXVIDEODECODER pVideoDecoder = (PVBOXDXVIDEODECODER)hDecoder.pDrvPrivate;
     DEBUG_BREAKPOINT_TEST();
-    RT_NOREF(pDevice, pCreateData, hDecode, hRTDecode);
+    RT_NOREF(pDevice);
+    RT_ZERO(*pVideoDecoder);
+    pVideoDecoder->pDevice = pDevice;
+    pVideoDecoder->hRTVideoDecoder = hRTDecoder;
+    pVideoDecoder->CreateData = *pCreateData;
     return S_OK;
 }
 
@@ -293,8 +351,9 @@ static VOID APIENTRY ddi11_1DestroyVideoDecoder(
     D3D11_1DDI_HDECODE hDecoder)
 {
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
+    PVBOXDXVIDEODECODER pVideoDecoder = (PVBOXDXVIDEODECODER)hDecoder.pDrvPrivate;
     DEBUG_BREAKPOINT_TEST();
-    RT_NOREF(pDevice, hDecoder);
+    RT_NOREF(pDevice, pVideoDecoder);
     return;
 }
 
@@ -315,8 +374,12 @@ static HRESULT APIENTRY ddi11_1VideoDecoderBeginFrame(
     CONST D3D11_1DDIARG_VIDEODECODERBEGINFRAME *pBeginFrame)
 {
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
+    PVBOXDXVIDEODECODER pVideoDecoder = (PVBOXDXVIDEODECODER)hDecoder.pDrvPrivate;
     DEBUG_BREAKPOINT_TEST();
-    RT_NOREF(pDevice, hDecoder, pBeginFrame);
+    RT_NOREF(pDevice);
+    pVideoDecoder->Frame.pOutputView = (PVBOXDXVIDEODECODEROUTPUTVIEW)pBeginFrame->hOutputView.pDrvPrivate;
+    //pBeginFrame->pContentKey;
+    //pBeginFrame->ContentKeySize;
     return S_OK;
 }
 
@@ -325,8 +388,10 @@ static VOID APIENTRY ddi11_1VideoDecoderEndFrame(
     D3D11_1DDI_HDECODE hDecoder)
 {
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
+    PVBOXDXVIDEODECODER pVideoDecoder = (PVBOXDXVIDEODECODER)hDecoder.pDrvPrivate;
     DEBUG_BREAKPOINT_TEST();
-    RT_NOREF(pDevice, hDecoder);
+    RT_NOREF(pDevice);
+    pVideoDecoder->Frame.pOutputView = NULL;
     return;
 }
 
@@ -337,8 +402,15 @@ static HRESULT APIENTRY ddi11_1VideoDecoderSubmitBuffers(
     CONST D3D11_1DDI_VIDEO_DECODER_BUFFER_DESC *pBufferDesc)
 {
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
+    PVBOXDXVIDEODECODER pVideoDecoder = (PVBOXDXVIDEODECODER)hDecoder.pDrvPrivate;
     DEBUG_BREAKPOINT_TEST();
-    RT_NOREF(pDevice, hDecoder, BufferCount, pBufferDesc);
+    RT_NOREF(pDevice, pVideoDecoder);
+    for (UINT i = 0; i < BufferCount; ++i)
+    {
+        D3D11_1DDI_VIDEO_DECODER_BUFFER_DESC const *pDesc = &pBufferDesc[i];
+        LogFlowFunc(("at %d, size %d\n", pDesc->DataOffset, pDesc->DataSize));
+        RT_NOREF(pDesc);
+    }
     return S_OK;
 }
 
@@ -387,10 +459,14 @@ static VOID APIENTRY ddi11_1CheckVideoProcessorFormat(
     UINT *pSupported)
 {
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
-    //DEBUG_BREAKPOINT_TEST();
+    DEBUG_BREAKPOINT_TEST();
     RT_NOREF(pDevice, hVideoProcessorEnum, Format);
-    *pSupported = D3D11_1DDI_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT
-                | D3D11_1DDI_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT;
+    if (   Format == DXGI_FORMAT_NV12
+        || Format == DXGI_FORMAT_B8G8R8A8_UNORM)
+        *pSupported = D3D11_1DDI_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT
+                    | D3D11_1DDI_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT;
+    else
+        *pSupported = 0;
     return;
 }
 
@@ -401,7 +477,7 @@ static VOID APIENTRY ddi11_1GetVideoProcessorCaps(
 {
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
     PVBOXDXVIDEOPROCESSORENUM pVideoProcessorEnum = (PVBOXDXVIDEOPROCESSORENUM)hProcessorEnum.pDrvPrivate;
-    //DEBUG_BREAKPOINT_TEST();
+    DEBUG_BREAKPOINT_TEST();
     RT_NOREF(pDevice, pVideoProcessorEnum);
     RT_ZERO(*pCaps);
     pCaps->DeviceCaps = D3D11_1DDI_VIDEO_PROCESSOR_DEVICE_CAPS_LINEAR_SPACE
@@ -434,7 +510,7 @@ static VOID APIENTRY ddi11_1GetVideoProcessorRateConversionCaps(
     D3D11_1DDI_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS *pCaps)
 {
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
-    //DEBUG_BREAKPOINT_TEST();
+    DEBUG_BREAKPOINT_TEST();
     RT_NOREF(pDevice, hProcessorEnum, RateConversionIndex);
     RT_ZERO(*pCaps);
     pCaps->PastFrames = 2;
@@ -473,7 +549,7 @@ static VOID APIENTRY ddi11_1GetVideoProcessorFilterRange(
     D3D11_1DDI_VIDEO_PROCESSOR_FILTER_RANGE *pFilterRange)
 {
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
-    //DEBUG_BREAKPOINT_TEST();
+    DEBUG_BREAKPOINT_TEST();
     RT_NOREF(pDevice, hProcessorEnum, Filter);
     pFilterRange->Minimum = 0;
     pFilterRange->Maximum = 100;
@@ -510,11 +586,12 @@ static HRESULT APIENTRY ddi11_1CreateVideoProcessor(
 
 static VOID APIENTRY ddi11_1DestroyVideoProcessor(
     D3D10DDI_HDEVICE hDevice,
-    D3D11_1DDI_HVIDEOPROCESSOR hProcessor)
+    D3D11_1DDI_HVIDEOPROCESSOR hVideoProcessor)
 {
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
+    PVBOXDXVIDEOPROCESSOR pVideoProcessor = (PVBOXDXVIDEOPROCESSOR)hVideoProcessor.pDrvPrivate;
     DEBUG_BREAKPOINT_TEST();
-    RT_NOREF(pDevice, hProcessor);
+    RT_NOREF(pDevice, pVideoProcessor);
     return;
 }
 
@@ -873,7 +950,7 @@ static SIZE_T APIENTRY ddi11_1CalcPrivateVideoDecoderOutputViewSize(
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
     DEBUG_BREAKPOINT_TEST();
     RT_NOREF(pDevice, pView);
-    return 0;
+    return sizeof(VBOXDXVIDEODECODEROUTPUTVIEW);
 }
 
 static HRESULT APIENTRY ddi11_1CreateVideoDecoderOutputView(
@@ -883,8 +960,12 @@ static HRESULT APIENTRY ddi11_1CreateVideoDecoderOutputView(
     D3D11_1DDI_HRTVIDEODECODEROUTPUTVIEW hRTView)
 {
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
+    PVBOXDXVIDEODECODEROUTPUTVIEW pVideoDecoderOutputView = (PVBOXDXVIDEODECODEROUTPUTVIEW)hView.pDrvPrivate;
     DEBUG_BREAKPOINT_TEST();
-    RT_NOREF(pDevice, pCreateData, hView, hRTView);
+    RT_NOREF(pDevice);
+    pVideoDecoderOutputView->pDevice = pDevice;
+    pVideoDecoderOutputView->hRTView = hRTView;
+    pVideoDecoderOutputView->CreateData = *pCreateData;
     return S_OK;
 }
 
@@ -893,8 +974,9 @@ static VOID APIENTRY ddi11_1DestroyVideoDecoderOutputView(
     D3D11_1DDI_HVIDEODECODEROUTPUTVIEW hView)
 {
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
+    PVBOXDXVIDEODECODEROUTPUTVIEW pVideoDecoderOutputView = (PVBOXDXVIDEODECODEROUTPUTVIEW)hView.pDrvPrivate;
     DEBUG_BREAKPOINT_TEST();
-    RT_NOREF(pDevice, hView);
+    RT_NOREF(pDevice, pVideoDecoderOutputView);
     return;
 }
 
@@ -905,7 +987,7 @@ static SIZE_T APIENTRY ddi11_1CalcPrivateVideoProcessorInputViewSize(
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
     DEBUG_BREAKPOINT_TEST();
     RT_NOREF(pDevice, pView);
-    return 0;
+    return sizeof(VBOXDXVIDEOPROCESSORINPUTVIEW);
 }
 
 static HRESULT APIENTRY ddi11_1CreateVideoProcessorInputView(
@@ -915,8 +997,12 @@ static HRESULT APIENTRY ddi11_1CreateVideoProcessorInputView(
     D3D11_1DDI_HRTVIDEOPROCESSORINPUTVIEW hRTView)
 {
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
+    PVBOXDXVIDEOPROCESSORINPUTVIEW pVideoProcessorInputView = (PVBOXDXVIDEOPROCESSORINPUTVIEW)hView.pDrvPrivate;
     DEBUG_BREAKPOINT_TEST();
-    RT_NOREF(pDevice, pCreateData, hView, hRTView);
+    RT_NOREF(pDevice);
+    pVideoProcessorInputView->pDevice = pDevice;
+    pVideoProcessorInputView->hRTView = hRTView;
+    pVideoProcessorInputView->CreateData = *pCreateData;
     return S_OK;
 }
 
@@ -925,8 +1011,9 @@ static VOID APIENTRY ddi11_1DestroyVideoProcessorInputView(
     D3D11_1DDI_HVIDEOPROCESSORINPUTVIEW hView)
 {
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
+    PVBOXDXVIDEOPROCESSORINPUTVIEW pVideoProcessorInputView = (PVBOXDXVIDEOPROCESSORINPUTVIEW)hView.pDrvPrivate;
     DEBUG_BREAKPOINT_TEST();
-    RT_NOREF(pDevice, hView);
+    RT_NOREF(pDevice, pVideoProcessorInputView);
     return;
 }
 
@@ -937,7 +1024,7 @@ static SIZE_T APIENTRY ddi11_1CalcPrivateVideoProcessorOutputViewSize(
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
     DEBUG_BREAKPOINT_TEST();
     RT_NOREF(pDevice, pView);
-    return 0;
+    return sizeof(VBOXDXVIDEOPROCESSOROUTPUTVIEW);
 }
 
 static HRESULT APIENTRY ddi11_1CreateVideoProcessorOutputView(
@@ -947,8 +1034,12 @@ static HRESULT APIENTRY ddi11_1CreateVideoProcessorOutputView(
     D3D11_1DDI_HRTVIDEOPROCESSOROUTPUTVIEW hRTView)
 {
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
+    PVBOXDXVIDEOPROCESSOROUTPUTVIEW pVideoProcessorOutputView = (PVBOXDXVIDEOPROCESSOROUTPUTVIEW)hView.pDrvPrivate;
     DEBUG_BREAKPOINT_TEST();
-    RT_NOREF(pDevice, pCreateData, hView, hRTView);
+    RT_NOREF(pDevice);
+    pVideoProcessorOutputView->pDevice = pDevice;
+    pVideoProcessorOutputView->hRTView = hRTView;
+    pVideoProcessorOutputView->CreateData = *pCreateData;
     return S_OK;
 }
 
@@ -957,8 +1048,9 @@ static VOID APIENTRY ddi11_1DestroyVideoProcessorOutputView(
     D3D11_1DDI_HVIDEOPROCESSOROUTPUTVIEW hView)
 {
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
+    PVBOXDXVIDEOPROCESSOROUTPUTVIEW pVideoProcessorOutputView = (PVBOXDXVIDEOPROCESSOROUTPUTVIEW)hView.pDrvPrivate;
     DEBUG_BREAKPOINT_TEST();
-    RT_NOREF(pDevice, hView);
+    RT_NOREF(pDevice, pVideoProcessorOutputView);
     return;
 }
 
