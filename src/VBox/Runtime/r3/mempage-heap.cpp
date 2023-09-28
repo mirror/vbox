@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - RTMemPage*, POSIX with heap.
+ * IPRT - RTMemPage*, optimized using heap.
  */
 
 /*
