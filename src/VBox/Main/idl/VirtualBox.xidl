@@ -10056,6 +10056,7 @@
     </method>
 
     <method name="readLog">
+      <rest request="get" path="/vms/{vmid}/logs/"/>
       <desc>
         Reads the VM log file. The chunk size is limited, so even if you
         ask for a big piece there might be less data returned.
