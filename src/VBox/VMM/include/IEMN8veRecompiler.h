@@ -113,13 +113,15 @@
  * @{ */
 /** @def IEMNATIVE_REG_FIXED_PVMCPU
  * The register number hold in pVCpu pointer.  */
+/** @def IEMNATIVE_REG_FIXED_TMP0
+ * Dedicated temporary register.
+ * @todo replace this by a register allocator and content tracker.  */
 #ifdef RT_ARCH_AMD64
 # define IEMNATIVE_REG_FIXED_PVMCPU         X86_GREG_xBX
+# define IEMNATIVE_REG_FIXED_TMP0           X86_GREG_x11
 
 #elif defined(RT_ARCH_ARM64)
 # define IEMNATIVE_REG_FIXED_PVMCPU         ARMV8_A64_REG_X28
-/** Dedicated temporary register.
- * @todo replace this by a register allocator and content tracker.  */
 # define IEMNATIVE_REG_FIXED_TMP0           ARMV8_A64_REG_X15
 
 #else
@@ -583,6 +585,7 @@ DECLINLINE(uint32_t) iemNativeEmitLoadGprByBp(PIEMRECOMPILERSTATE pReNative, uin
 {
     /* mov gprdst, qword [rbp + offDisp]  */
     uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
     if (iGprDst < 8)
         pbCodeBuf[off++] = X86_OP_REX_W;
     else
@@ -601,6 +604,7 @@ DECLINLINE(uint32_t) iemNativeEmitLoadGprByBpU32(PIEMRECOMPILERSTATE pReNative, 
 {
     /* mov gprdst, dword [rbp + offDisp]  */
     uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
     if (iGprDst >= 8)
         pbCodeBuf[off++] = X86_OP_REX_R;
     pbCodeBuf[off++] = 0x8b;
@@ -617,6 +621,7 @@ DECLINLINE(uint32_t) iemNativeEmitLeaGrpByBp(PIEMRECOMPILERSTATE pReNative, uint
 {
     /* lea gprdst, [rbp + offDisp] */
     uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
     if (iGprDst < 8)
         pbCodeBuf[off++] = X86_OP_REX_W;
     else
@@ -627,22 +632,98 @@ DECLINLINE(uint32_t) iemNativeEmitLeaGrpByBp(PIEMRECOMPILERSTATE pReNative, uint
 #endif
 
 
-#ifdef RT_ARCH_AMD64
 /**
  * Emits a 64-bit GPR store with an BP relative destination address.
+ *
+ * @note May trash IEMNATIVE_REG_FIXED_TMP0.
  */
 DECLINLINE(uint32_t) iemNativeEmitStoreGprByBp(PIEMRECOMPILERSTATE pReNative, uint32_t off, int32_t offDisp, uint8_t iGprSrc)
 {
+#ifdef RT_ARCH_AMD64
     /* mov qword [rbp + offDisp], gprdst */
     uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
     if (iGprSrc < 8)
         pbCodeBuf[off++] = X86_OP_REX_W;
     else
         pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_R;
     pbCodeBuf[off++] = 0x89;
     return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprSrc, offDisp);
-}
+
+#elif defined(RT_ARCH_ARM64)
+    if (offDisp >= 0 && offDisp < 4096 * 8 && !((uint32_t)offDisp & 7))
+    {
+        /* str w/ unsigned imm12 (scaled) */
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        AssertReturn(pu32CodeBuf, UINT32_MAX);
+        pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_St_Dword, iGprSrc,
+                                                      ARMV8_A64_BP, (uint32_t)offDisp / 8);
+    }
+    else if (offDisp >= -256 offDisp <= 256)
+    {
+        /* stur w/ signed imm9 (unscaled) */
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        AssertReturn(pu32CodeBuf, UINT32_MAX);
+        pu32CodeBuf[off++] = Armv8A64MkInstrSturLdur(kArmv8A64InstrLdStType_St_Dword, iGprSrc, ARMV8_A64_BP, offDisp);
+    }
+    else
+    {
+        /* Use temporary indexing register. */
+        off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, (uint32_t)offDisp);
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        AssertReturn(pu32CodeBuf, UINT32_MAX);
+        pu32CodeBuf[off++] = Armv8A64MkInstrStLdRegIdx(kArmv8A64InstrLdStType_St_Dword, iGprSrc, ARMV8_A64_BP,
+                                                       IEMNATIVE_REG_FIXDE_TMP0, kArmv8A64InstrLdStExtend_Sxtw);
+    }
+    return off;
+
+#else
+# error "Port me!"
 #endif
+}
+
+
+/**
+ * Emits a 64-bit immediate store with an BP relative destination address.
+ *
+ * @note May trash IEMNATIVE_REG_FIXED_TMP0.
+ */
+DECLINLINE(uint32_t) iemNativeEmitStoreImm64ByBp(PIEMRECOMPILERSTATE pReNative, uint32_t off, int32_t offDisp, uint64_t uImm64)
+{
+#ifdef RT_ARCH_AMD64
+    if ((int64_t)uImm64 == (int32_t)uImm64)
+    {
+        /* mov qword [rbp + offDisp], imm32 - sign extended */
+        uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 11);
+        AssertReturn(pbCodeBuf, UINT32_MAX);
+
+        pbCodeBuf[off++] = X86_OP_REX_W;
+        pbCodeBuf[off++] = 0xc7;
+        if (offDisp < 128 && offDisp >= -128)
+        {
+            pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM1, 0, X86_GREG_xBP);
+            pbCodeBuf[off++] = (uint8_t)offDisp;
+        }
+        else
+        {
+            pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM4, 0, X86_GREG_xBP);
+            pbCodeBuf[off++] = RT_BYTE1((uint32_t)offDisp);
+            pbCodeBuf[off++] = RT_BYTE2((uint32_t)offDisp);
+            pbCodeBuf[off++] = RT_BYTE3((uint32_t)offDisp);
+            pbCodeBuf[off++] = RT_BYTE4((uint32_t)offDisp);
+        }
+        pbCodeBuf[off++] = RT_BYTE1(uImm64);
+        pbCodeBuf[off++] = RT_BYTE2(uImm64);
+        pbCodeBuf[off++] = RT_BYTE3(uImm64);
+        pbCodeBuf[off++] = RT_BYTE4(uImm64);
+        return off;
+    }
+#endif
+
+    /* Load tmp0, imm64; Store tmp to bp+disp. */
+    off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, uImm64);
+    return iemNativeEmitStoreGprByBp(pReNative, off, offDisp, IEMNATIVE_REG_FIXED_TMP0);
+}
 
 
 #ifdef RT_ARCH_AMD64
@@ -653,6 +734,7 @@ DECLINLINE(uint32_t) iemNativeEmitSubGprImm(PIEMRECOMPILERSTATE pReNative, uint3
 {
     /* sub gprdst, imm8/imm32 */
     uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
     if (iGprDst < 7)
         pbCodeBuf[off++] = X86_OP_REX_W;
     else

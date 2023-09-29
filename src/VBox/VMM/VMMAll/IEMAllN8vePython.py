@@ -36,16 +36,20 @@ SPDX-License-Identifier: GPL-3.0-only
 """
 __version__ = "$Revision$"
 
-# Standard python imports.
+# Standard python imports:
 #import sys;
 
-#import IEMAllInstPython as iai;
+# Out python imports:
+import IEMAllInstPython as iai;
 
 
 class NativeRecompFunctionVariation(object):
     """
     Class that deals with transforming a threaded function variation into a
     native recompiler function.
+
+    This base class doesn't do any transforming and just renders the same
+    code as for the threaded function.
     """
 
     def __init__(self, oVariation, sHostArch):
@@ -57,13 +61,14 @@ class NativeRecompFunctionVariation(object):
         Predicate that returns whether the variant can be recompiled natively
         (for the selected host architecture).
         """
-        return False;
+        return True;
 
     def renderCode(self, cchIndent):
         """
         Returns the native recompiler function body for this threaded variant.
         """
-        return ' ' * cchIndent + '    AssertFailed();';
+        aoStmts = self.oVariation.aoStmtsForThreadedFunction # type: list(McStmt)
+        return iai.McStmt.renderCodeForList(aoStmts, cchIndent);
 
 
 
@@ -77,7 +82,16 @@ def analyzeVariantForNativeRecomp(oVariation,
     Returns NativeRecompFunctionVariation or None.
     """
 
-    _ = oVariation;
-    _ = sHostArch;
+    #
+    # Analyze the statements.
+    #
+    aoStmts = oVariation.aoStmtsForThreadedFunction # type: list(McStmt)
+
+    # The simplest case are the IEM_MC_DEFER_TO_CIMPL_*_RET_THREADED ones, just pass them thru:
+    if (    len(aoStmts) == 1
+        and aoStmts[0].sName.startswith('IEM_MC_DEFER_TO_CIMPL_')
+        and aoStmts[0].sName.endswith('_RET_THREADED')
+        and sHostArch in ('amd64',)):
+        return NativeRecompFunctionVariation(oVariation, sHostArch);
 
     return None;

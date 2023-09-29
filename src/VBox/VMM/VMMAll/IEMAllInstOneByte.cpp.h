@@ -10537,7 +10537,7 @@ FNIEMOP_DEF_1(iemOp_fucomi_stN, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fucomi_st0_stN, "fucomi st0,stN");
     IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_FPU | IEM_CIMPL_F_STATUS_FLAGS,
-                                iemCImpl_fcomi_fucomi, IEM_GET_MODRM_RM_8(bRm), iemAImpl_fucomi_r80_by_r80,
+                                iemCImpl_fcomi_fucomi, IEM_GET_MODRM_RM_8(bRm), true /*fUCmp*/,
                                 0 /*fPop*/ | pVCpu->iem.s.uFpuOpcode);
 }
 
@@ -10547,7 +10547,7 @@ FNIEMOP_DEF_1(iemOp_fcomi_stN,  uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fcomi_st0_stN, "fcomi st0,stN");
     IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_FPU | IEM_CIMPL_F_STATUS_FLAGS,
-                                iemCImpl_fcomi_fucomi, IEM_GET_MODRM_RM_8(bRm), iemAImpl_fcomi_r80_by_r80,
+                                iemCImpl_fcomi_fucomi, IEM_GET_MODRM_RM_8(bRm), false /*fUCmp*/,
                                 false /*fPop*/ | pVCpu->iem.s.uFpuOpcode);
 }
 
@@ -11466,7 +11466,7 @@ FNIEMOP_DEF_1(iemOp_fucomip_st0_stN, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fucomip_st0_stN, "fucomip st0,stN");
     IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_FPU | IEM_CIMPL_F_STATUS_FLAGS,
-                                iemCImpl_fcomi_fucomi, IEM_GET_MODRM_RM_8(bRm), iemAImpl_fcomi_r80_by_r80,
+                                iemCImpl_fcomi_fucomi, IEM_GET_MODRM_RM_8(bRm), false /*fUCmp*/,
                                 RT_BIT_32(31) /*fPop*/ | pVCpu->iem.s.uFpuOpcode);
 }
 
@@ -11476,7 +11476,7 @@ FNIEMOP_DEF_1(iemOp_fcomip_st0_stN,  uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fcomip_st0_stN, "fcomip st0,stN");
     IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_FPU | IEM_CIMPL_F_STATUS_FLAGS,
-                                iemCImpl_fcomi_fucomi, IEM_GET_MODRM_RM_8(bRm), iemAImpl_fcomi_r80_by_r80,
+                                iemCImpl_fcomi_fucomi, IEM_GET_MODRM_RM_8(bRm), false /*fUCmp*/,
                                 RT_BIT_32(31) /*fPop*/ | pVCpu->iem.s.uFpuOpcode);
 }
 

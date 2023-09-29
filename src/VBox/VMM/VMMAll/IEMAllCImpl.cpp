@@ -9888,12 +9888,12 @@ IEM_CIMPL_DEF_2(iemCImpl_fxch_underflow, uint8_t, iStReg, uint16_t, uFpuOpcode)
  * Implements 'FCOMI', 'FCOMIP', 'FUCOMI', and 'FUCOMIP'.
  *
  * @param   iStReg              The other stack register.
- * @param   pfnAImpl            The assembly comparison implementation.
+ * @param   fUCmp               true for FUCOMI[P], false for FCOMI[P].
  * @param   uPopAndFpuOpcode    Bits 15-0: The FPU opcode.
  *                              Bit  31: Whether we should pop the stack when
  *                              done or not.
  */
-IEM_CIMPL_DEF_3(iemCImpl_fcomi_fucomi, uint8_t, iStReg, PFNIEMAIMPLFPUR80EFL, pfnAImpl, uint32_t, uPopAndFpuOpcode)
+IEM_CIMPL_DEF_3(iemCImpl_fcomi_fucomi, uint8_t, iStReg, bool, fUCmp, uint32_t, uPopAndFpuOpcode)
 {
     Assert(iStReg < 8);
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_X87);
@@ -9917,7 +9917,11 @@ IEM_CIMPL_DEF_3(iemCImpl_fcomi_fucomi, uint8_t, iStReg, PFNIEMAIMPLFPUR80EFL, pf
     unsigned const iReg2 = (iReg1 + iStReg) & X86_FSW_TOP_SMASK;
     if ((pFpuCtx->FTW & (RT_BIT(iReg1) | RT_BIT(iReg2))) == (RT_BIT(iReg1) | RT_BIT(iReg2)))
     {
-        uint32_t u32Eflags = pfnAImpl(pFpuCtx, &u16Fsw, &pFpuCtx->aRegs[0].r80, &pFpuCtx->aRegs[iStReg].r80);
+        uint32_t u32Eflags;
+        if (!fUCmp)
+            u32Eflags = iemAImpl_fcomi_r80_by_r80(pFpuCtx, &u16Fsw, &pFpuCtx->aRegs[0].r80, &pFpuCtx->aRegs[iStReg].r80);
+        else
+            u32Eflags = iemAImpl_fucomi_r80_by_r80(pFpuCtx, &u16Fsw, &pFpuCtx->aRegs[0].r80, &pFpuCtx->aRegs[iStReg].r80);
 
         pFpuCtx->FSW &= ~X86_FSW_C1;
         pFpuCtx->FSW |= u16Fsw & ~X86_FSW_TOP_MASK;

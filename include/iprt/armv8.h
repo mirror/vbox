@@ -2242,7 +2242,7 @@ typedef enum
  *
  * @returns The encoded instruction.
  * @param   fLoad       true for ldp, false of stp.
- * @param   iOpc        When @a fSimdFp is @c false:
+ * @param   u2Opc       When @a fSimdFp is @c false:
  *                          - 0 for 32-bit GPRs (Wt).
  *                          - 1 for encoding stgp or ldpsw.
  *                          - 2 for 64-bit GRPs (Xt).
@@ -2261,13 +2261,13 @@ typedef enum
  * @param   fSimdFp     true for SIMD&FP registers, false for GPRs and
  *                      stgp/ldpsw instructions.
  */
-DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStLdPair(bool fLoad, uint32_t iOpc, ARM64INSTRSTLDPAIRTYPE enmType,
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStLdPair(bool fLoad, uint32_t u2Opc, ARM64INSTRSTLDPAIRTYPE enmType,
                                                     uint32_t iReg1, uint32_t iReg2, uint32_t iBaseReg, int32_t iImm7 = 0,
                                                     bool fSimdFp = false)
 {
-    Assert(iOpc < 3); Assert(iReg1 <= 31); Assert(iReg2 <= 31); Assert(iBaseReg <= 31); Assert(iImm7 < 64 && iImm7 >= -64);
-    return (iOpc                               << 30)
-         | UINT32_C(0x28000000)
+    Assert(u2Opc < 3); Assert(iReg1 <= 31); Assert(iReg2 <= 31); Assert(iBaseReg <= 31); Assert(iImm7 < 64 && iImm7 >= -64);
+    return (u2Opc                              << 30)
+         | UINT32_C(0x28000000) /* 0b101000000000000000000000000000 */
          | ((uint32_t)fSimdFp                  << 26) /* VR bit, see "Top-level encodings for A64" */
          | ((uint32_t)enmType                  << 23)
          | ((uint32_t)fLoad                    << 22)
@@ -2275,6 +2275,255 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStLdPair(bool fLoad, uint32_t iOpc, A
          | (iReg2                              << 10)
          | (iBaseReg                           <<  5)
          | iReg1;
+}
+
+typedef enum                         /* Size VR Opc */
+{                                    /*     \ | /   */
+    kArmv8A64InstrLdStType_Mask_Size       = 0x300,
+    kArmv8A64InstrLdStType_Mask_VR         = 0x010,
+    kArmv8A64InstrLdStType_Mask_Opc        = 0x003,
+    kArmv8A64InstrLdStType_Shift_Size      =     8,
+    kArmv8A64InstrLdStType_Shift_VR        =     4,
+    kArmv8A64InstrLdStType_Shift_Opc       =     0,
+
+    kArmv8A64InstrLdStType_St_Byte         = 0x000,
+    kArmv8A64InstrLdStType_Ld_Byte         = 0x001,
+    kArmv8A64InstrLdStType_Ld_SignByte64   = 0x002,
+    kArmv8A64InstrLdStType_Ld_SignByte32   = 0x003,
+
+    kArmv8A64InstrLdStType_St_Half         = 0x100, /**< Half = 16-bit */
+    kArmv8A64InstrLdStType_Ld_Half         = 0x101, /**< Half = 16-bit */
+    kArmv8A64InstrLdStType_Ld_SignHalf64   = 0x102, /**< Half = 16-bit */
+    kArmv8A64InstrLdStType_Ld_SignHalf32   = 0x103, /**< Half = 16-bit */
+
+    kArmv8A64InstrLdStType_St_Word         = 0x200, /**< Word = 32-bit */
+    kArmv8A64InstrLdStType_Ld_Word         = 0x201, /**< Word = 32-bit */
+    kArmv8A64InstrLdStType_Ld_SignWord64   = 0x202, /**< Word = 32-bit */
+
+    kArmv8A64InstrLdStType_St_Dword        = 0x300, /**< Dword = 64-bit */
+    kArmv8A64InstrLdStType_Ld_Dword        = 0x301, /**< Dword = 64-bit */
+
+    kArmv8A64InstrLdStType_Prefetch        = 0x302, /**< Not valid in all variations, check docs. */
+
+    kArmv8A64InstrLdStType_St_Vr_Byte      = 0x010,
+    kArmv8A64InstrLdStType_Ld_Vr_Byte      = 0x011,
+    kArmv8A64InstrLdStType_St_Vr_128       = 0x012,
+    kArmv8A64InstrLdStType_Ld_Vr_128       = 0x013,
+
+    kArmv8A64InstrLdStType_St_Vr_Half      = 0x110, /**< Half = 16-bit */
+    kArmv8A64InstrLdStType_Ld_Vr_Half      = 0x111, /**< Half = 16-bit */
+
+    kArmv8A64InstrLdStType_St_Vr_Word      = 0x210, /**< Word = 32-bit */
+    kArmv8A64InstrLdStType_Ld_Vr_Word      = 0x211, /**< Word = 32-bit */
+
+    kArmv8A64InstrLdStType_St_Vr_Dword     = 0x310, /**< Dword = 64-bit */
+    kArmv8A64InstrLdStType_Ld_Vr_Dword     = 0x311  /**< Dword = 64-bit */
+
+} ARMV8A64INSTRLDSTTYPE;
+
+/**
+ * A64: Encodes load/store with unscaled 9-bit signed immediate.
+ *
+ * @returns The encoded instruction.
+ * @param   u32Opcode   The base opcode value.
+ * @param   enmType     The load/store instruction type. Prefech valid (PRFUM)
+ * @param   iReg        The register to load into / store.
+ * @param   iBaseReg    The base register to use when addressing. SP is allowed.
+ * @param   i9ImmDisp   The 9-bit signed addressing displacement. Unscaled.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStLdImm9Ex(uint32_t u32Opcode, ARMV8A64INSTRLDSTTYPE enmType,
+                                                      uint32_t iReg, uint32_t iRegBase, int32_t i9ImmDisp = 0)
+{
+    Assert(i9ImmDisp >= -256 && i9ImmDisp < 256); Assert(iReg < 32); Assert(iRegBase < 32);
+    return u32Opcode
+         | (((uint32_t)enmType & (uint32_t)kArmv8A64InstrLdStType_Mask_Size) << (30 - kArmv8A64InstrLdStType_Shift_Size))
+         | (((uint32_t)enmType & (uint32_t)kArmv8A64InstrLdStType_Mask_VR)   << (26 - kArmv8A64InstrLdStType_Shift_VR))
+         | (((uint32_t)enmType & (uint32_t)kArmv8A64InstrLdStType_Mask_Opc)  << (22 - kArmv8A64InstrLdStType_Shift_Opc))
+         | (((uint32_t)i9ImmDisp & UINT32_C(0x1ff)) << 12)
+         | (iRegBase                                <<  5)
+         | iReg;
+}
+
+
+/**
+ * A64: Encodes load/store with unscaled 9-bit signed immediate.
+ *
+ * @returns The encoded instruction.
+ * @param   enmType     The load/store instruction type. Prefech valid (PRFUM)
+ * @param   iReg        The register to load into / store.
+ * @param   iBaseReg    The base register to use when addressing. SP is allowed.
+ * @param   i9ImmDisp   The 9-bit signed addressing displacement. Unscaled.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSturLdur(ARMV8A64INSTRLDSTTYPE enmType,
+                                                    uint32_t iReg, uint32_t iRegBase, int32_t i9ImmDisp = 0)
+{
+                                                          /*    3         2         1         0 */
+                                                          /*   10987654321098765432109876543210 */
+    return Armv8A64MkInstrStLdImm9Ex(UINT32_C(0x38000000) /* 0b00111000000000000000000000000000 */,
+                                     enmType, iReg, iRegBase, i9ImmDisp);
+}
+
+/**
+ * A64: Encodes load/store with unscaled 9-bit signed immediate, post-indexed.
+ *
+ * @returns The encoded instruction.
+ * @param   enmType     The load/store instruction type. Prefech not valid.
+ * @param   iReg        The register to load into / store.
+ * @param   iBaseReg    The base register to use when addressing. SP is allowed.
+ *                      Written back.
+ * @param   i9ImmDisp   The 9-bit signed addressing displacement. Unscaled.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStrLdrPostIndex9(ARMV8A64INSTRLDSTTYPE enmType,
+                                                            uint32_t iReg, uint32_t iRegBase, int32_t i9ImmDisp = 0)
+{
+    Assert(enmType != kArmv8A64InstrLdStType_Prefetch);   /*    3         2         1         0 */
+                                                          /*   10987654321098765432109876543210 */
+    return Armv8A64MkInstrStLdImm9Ex(UINT32_C(0x38000400) /* 0b00111000000000000000010000000000 */,
+                                     enmType, iReg, iRegBase, i9ImmDisp);
+}
+
+/**
+ * A64: Encodes load/store with unscaled 9-bit signed immediate, pre-indexed
+ *
+ * @returns The encoded instruction.
+ * @param   enmType     The load/store instruction type. Prefech valid (PRFUM)
+ * @param   iReg        The register to load into / store.
+ * @param   iBaseReg    The base register to use when addressing. SP is allowed.
+ *                      Written back.
+ * @param   i9ImmDisp   The 9-bit signed addressing displacement. Unscaled.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStrLdrPreIndex9(ARMV8A64INSTRLDSTTYPE enmType,
+                                                           uint32_t iReg, uint32_t iRegBase, int32_t i9ImmDisp = 0)
+{
+    Assert(enmType != kArmv8A64InstrLdStType_Prefetch);   /*    3         2         1         0 */
+                                                          /*   10987654321098765432109876543210 */
+    return Armv8A64MkInstrStLdImm9Ex(UINT32_C(0x38000c00) /* 0b00111000000000000000110000000000 */,
+                                     enmType, iReg, iRegBase, i9ImmDisp);
+}
+
+/**
+ * A64: Encodes unprivileged load/store with unscaled 9-bit signed immediate.
+ *
+ * @returns The encoded instruction.
+ * @param   enmType     The load/store instruction type. Prefech not valid,
+ *                      nor any SIMD&FP variants.
+ * @param   iReg        The register to load into / store.
+ * @param   iBaseReg    The base register to use when addressing. SP is allowed.
+ * @param   i9ImmDisp   The 9-bit signed addressing displacement. Unscaled.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSttrLdtr(ARMV8A64INSTRLDSTTYPE enmType,
+                                                    uint32_t iReg, uint32_t iRegBase, int32_t i9ImmDisp = 0)
+{
+    Assert(enmType != kArmv8A64InstrLdStType_Prefetch);
+    Assert(!((uint32_t)enmType & (uint32_t)kArmv8A64InstrLdStType_Mask_VR));
+                                                          /*    3         2         1         0 */
+                                                          /*   10987654321098765432109876543210 */
+    return Armv8A64MkInstrStLdImm9Ex(UINT32_C(0x38000800) /* 0b00111000000000000000100000000000 */,
+                                     enmType, iReg, iRegBase, i9ImmDisp);
+}
+
+
+/**
+ * A64: Encodes load/store w/ scaled 12-bit unsigned address displacement.
+ *
+ * @returns The encoded instruction.
+ * @param   enmType     The load/store instruction type. Prefech not valid,
+ *                      nor any SIMD&FP variants.
+ * @param   iReg        The register to load into / store.
+ * @param   iBaseReg    The base register to use when addressing. SP is allowed.
+ * @param   u12ImmDisp  Addressing displacement, scaled by size.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStLdRUOff(ARMV8A64INSTRLDSTTYPE enmType,
+                                                     uint32_t iReg, uint32_t iRegBase, uint32_t u12ImmDisp)
+{
+    Assert(u12ImmDisp < 4096U);
+    Assert(iReg < 32);          /*    3         2         1         0 */
+    Assert(iRegBase < 32);      /*   10987654321098765432109876543210 */
+    return UINT32_C(0x39000000) /* 0b00111001000000000000000000000000 */
+         | (((uint32_t)enmType & (uint32_t)kArmv8A64InstrLdStType_Mask_Size) << (30 - kArmv8A64InstrLdStType_Shift_Size))
+         | (((uint32_t)enmType & (uint32_t)kArmv8A64InstrLdStType_Mask_VR)   << (26 - kArmv8A64InstrLdStType_Shift_VR))
+         | (((uint32_t)enmType & (uint32_t)kArmv8A64InstrLdStType_Mask_Opc)  << (22 - kArmv8A64InstrLdStType_Shift_Opc))
+         | (u12ImmDisp       << 10)
+         | (iRegBase         <<  5)
+         | iReg;
+}
+
+typedef enum
+{
+    kArmv8A64InstrLdStExtend_Uxtw   = 2, /**< Zero-extend (32-bit) word. */
+    kArmv8A64InstrLdStExtend_Lsl    = 3, /**< Not valid for bytes. */
+    kArmv8A64InstrLdStExtend_Sxtw   = 6, /**< Sign-extend (32-bit) word. */
+    kArmv8A64InstrLdStExtend_Sxtx   = 7  /**< Sign-extend (64-bit) dword (to 128-bit SIMD&FP reg, presumably). */
+} ARMV8A64INSTRLDSTEXTEND;
+
+/**
+ * A64: Encodes load/store w/ scaled 12-bit unsigned address displacement.
+ *
+ * @returns The encoded instruction.
+ * @param   enmType     The load/store instruction type.
+ * @param   iReg        The register to load into / store.
+ * @param   iBaseReg    The base register to use when addressing. SP is allowed.
+ * @param   iRegIndex   The index register.
+ * @param   enmExtend   The extending to apply to @a iRegIndex.
+ * @param   fShifted    Whether to shift the index. The shift amount corresponds
+ *                      to the access size (thus irrelevant for byte accesses).
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStLdRegIdx(ARMV8A64INSTRLDSTTYPE enmType,
+                                                      uint32_t iReg, uint32_t iRegBase, uint32_t iRegIndex,
+                                                      ARMV8A64INSTRLDSTEXTEND enmExtend = kArmv8A64InstrLdStExtend_Lsl,
+                                                      bool fShifted = false)
+{
+    Assert(iRegIndex < 32);
+    Assert(iReg < 32);          /*    3         2         1         0 */
+    Assert(iRegBase < 32);      /*   10987654321098765432109876543210 */
+    return UINT32_C(0x38200800) /* 0b00111000001000000000100000000000 */
+         | (((uint32_t)enmType & (uint32_t)kArmv8A64InstrLdStType_Mask_Size) << (30 - kArmv8A64InstrLdStType_Shift_Size))
+         | (((uint32_t)enmType & (uint32_t)kArmv8A64InstrLdStType_Mask_VR)   << (26 - kArmv8A64InstrLdStType_Shift_VR))
+         | (((uint32_t)enmType & (uint32_t)kArmv8A64InstrLdStType_Mask_Opc)  << (22 - kArmv8A64InstrLdStType_Shift_Opc))
+         | (iRegIndex            << 16)
+         | ((uint32_t)enmExtend  << 13)
+         | ((uint32_t)fShifted   << 12)
+         | (iRegBase             <<  5)
+         | iReg;
+}
+
+typedef enum                            /* VR  Opc */
+{                                       /*   \ |   */
+    kArmv8A64InstrLdrLitteral_Mask_Vr     = 0x10,
+    kArmv8A64InstrLdrLitteral_Mask_Opc    = 0x03,
+    kArmv8A64InstrLdrLitteral_Shift_Vr    = 4,
+    kArmv8A64InstrLdrLitteral_Shift_Opc   = 0,
+
+    kArmv8A64InstrLdrLitteral_Word        = 0x00,   /**< word = 32-bit */
+    kArmv8A64InstrLdrLitteral_Dword       = 0x01,   /**< dword = 64-bit */
+    kArmv8A64InstrLdrLitteral_SignWord64  = 0x02,   /**< Loads word, signextending it to 64-bit  */
+    kArmv8A64InstrLdrLitteral_Prefetch    = 0x03,   /**< prfm */
+
+    kArmv8A64InstrLdrLitteral_Vr_Word     = 0x10,   /**< word = 32-bit */
+    kArmv8A64InstrLdrLitteral_Vr_Dword    = 0x11,   /**< dword = 64-bit */
+    kArmv8A64InstrLdrLitteral_Vr_128      = 0x12
+} ARMV8A64INSTRLDRLITTERAL;
+
+
+/**
+ * A64: Encodes load w/ a PC relative 19-bit signed immediate.
+ *
+ * @returns The encoded instruction.
+ * @param   enmType     The load instruction type.
+ * @param   iReg        The register to load into.
+ * @param   i19Imm      The signed immediate value, multiplied by 4 regardless
+ *                      of access size.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrLdrLitteral(ARMV8A64INSTRLDRLITTERAL enmType, uint32_t iReg, int32_t i19Imm)
+{
+    Assert(i19Imm >= -262144 && i19Imm < 262144);
+    Assert(iReg < 32);          /*    3         2         1         0 */
+                                /*   10987654321098765432109876543210 */
+    return UINT32_C(0x30000000) /* 0b00110000000000000000000000000000 */
+         | (((uint32_t)enmType & (uint32_t)kArmv8A64InstrLdrLitteral_Mask_Vr)  << (26 - kArmv8A64InstrLdrLitteral_Shift_Vr))
+         | (((uint32_t)enmType & (uint32_t)kArmv8A64InstrLdrLitteral_Mask_Opc) << (30 - kArmv8A64InstrLdrLitteral_Shift_Opc))
+         | (((uint32_t)i19Imm & UINT32_C(0x00ffffe0)) << 5)
+         | iReg;
 }
 
 
