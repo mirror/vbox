@@ -431,15 +431,45 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
 
         InsertConfigNode(pRoot, "Devices", &pDevices);
 
-        InsertConfigNode(pDevices, "efi-armv8",             &pDev);
+        InsertConfigNode(pDevices, "platform",              &pDev);
         InsertConfigNode(pDev,     "0",                     &pInst);
         InsertConfigNode(pInst,    "Config",                &pCfg);
-        InsertConfigInteger(pCfg,  "GCPhysLoadAddress",     0);
-        InsertConfigString(pCfg,   "EfiRom",                "VBoxEFIAArch64.fd");
-        InsertConfigInteger(pCfg,  "GCPhysFdtAddress",      0x40000000);
-        InsertConfigString(pCfg,   "FdtId",                 "fdt");
         InsertConfigNode(pInst,    "LUN#0",                 &pLunL0);
         InsertConfigString(pLunL0, "Driver",                "ResourceStore");
+
+        /* Add the resources. */
+        PCFGMNODE pResources = NULL;    /* /Devices/efi-armv8/Config/Resources */
+        PCFGMNODE pRes = NULL;          /* /Devices/efi-armv8/Config/Resources/<Resource> */
+        InsertConfigString(pCfg,        "ResourceNamespace",     "resources");
+        InsertConfigNode(pCfg,          "Resources",             &pResources);
+        InsertConfigNode(pResources,    "EfiRom",                &pRes);
+        InsertConfigInteger(pRes,       "RegisterAsRom",         1);
+        InsertConfigInteger(pRes,       "GCPhysLoadAddress",     0);
+
+        /** @todo r=aeichner 32-bit guests and query the firmware type from VBoxSVC. */
+        /*
+         * Firmware.
+         */
+        FirmwareType_T eFwType =  FirmwareType_EFI64;
+#ifdef VBOX_WITH_EFI_IN_DD2
+        const char *pszEfiRomFile = eFwType == FirmwareType_EFIDUAL ? "<INVALID>"
+                                  : eFwType == FirmwareType_EFI32   ? "VBoxEFIAArch32.fd"
+                                  :                                   "VBoxEFIAArch64.fd";
+        const char *pszKey = "ResourceId";
+#else
+        Utf8Str efiRomFile;
+        vrc = findEfiRom(virtualBox, PlatformArchitecture_ARM, eFwType, &efiRomFile);
+        AssertRCReturn(vrc, vrc);
+        const char *pszEfiRomFile = efiRomFile.c_str();
+        const char *pszKey = "Filename";
+#endif
+        InsertConfigString(pRes,        pszKey,                  pszEfiRomFile);
+
+
+        InsertConfigNode(pResources,    "Fdt",                   &pRes);
+        InsertConfigInteger(pRes,       "RegisterAsRom",         0);
+        InsertConfigInteger(pRes,       "GCPhysLoadAddress",     0x40000000);
+        InsertConfigString(pRes,        "ResourceId",            "fdt");
 
         vrc = RTFdtNodeAddF(hFdt, "platform-bus@%RX32", 0x0c000000);                        VRC();
         vrc = RTFdtNodePropertyAddU32(     hFdt, "interrupt-parent", idPHandleIntCtrl);     VRC();
@@ -1261,7 +1291,7 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
     vrc = RTFdtDumpToVfsIoStrm(hFdt, RTFDTTYPE_DTB, 0 /*fFlags*/, hVfsIosFdt, NULL /*pErrInfo*/);
     RTVfsIoStrmRelease(hVfsIosFdt);
     if (RT_SUCCESS(vrc))
-        vrc = mptrResourceStore->i_addItem("fdt", "fdt", hVfsFileFdt);
+        vrc = mptrResourceStore->i_addItem("resources", "fdt", hVfsFileFdt);
     RTVfsFileRelease(hVfsFileFdt);
     AssertRCReturnStmt(vrc, RTFdtDestroy(hFdt), vrc);
 
