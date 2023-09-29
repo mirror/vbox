@@ -2703,7 +2703,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="901ac662-0b6e-4b19-a0ac-21cb54d4d5b2"
+    uuid="d644ad1e-c501-4fc7-9ab6-aa6d763bc540"
     wsmap="managed"
     rest="managed"
     wrap-gen-hook="yes"
@@ -3892,6 +3892,11 @@
         Optionally, this may return a hint where this firmware can be
         downloaded from.
       </desc>
+      <param name="platformArchitecture" type="PlatformArchitecture" dir="in">
+        <desc>
+          Architecture of firmware to check.
+        </desc>
+      </param>
       <param name="firmwareType" type="FirmwareType" dir="in">
         <desc>
           Type of firmware to check.

@@ -1255,5 +1255,9 @@ public:
 
 DECL_HIDDEN_THROW(Utf8Str *) GetExtraDataBoth(IVirtualBox *pVirtualBox, IMachine *pMachine, const char *pszName, Utf8Str *pStrValue);
 
+#ifndef VBOX_WITH_EFI_IN_DD2
+DECLHIDDEN(int) findEfiRom(IVirtualBox* vbox, PlatformArchitecture_T aPlatformArchitecture, FirmwareType_T aFirmwareType, Utf8Str *pEfiRomFile);
+#endif
+
 #endif /* !MAIN_INCLUDED_ConsoleImpl_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

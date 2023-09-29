@@ -469,6 +469,20 @@ struct VirtualBox::Data
     /** @} */
 };
 
+
+/**
+ * VirtualBox firmware descriptor.
+ */
+typedef struct VBOXFWDESC
+{
+    FirmwareType_T  enmType;
+    bool            fBuiltIn;
+    const char     *pszFileName;
+    const char     *pszUrl;
+} VBoxFwDesc;
+typedef const VBOXFWDESC *PVBOXFWDESC;
+
+
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1884,7 +1898,8 @@ HRESULT VirtualBox::getCloudProviderManager(ComPtr<ICloudProviderManager> &aClou
     return hrc;
 }
 
-HRESULT VirtualBox::checkFirmwarePresent(FirmwareType_T aFirmwareType,
+HRESULT VirtualBox::checkFirmwarePresent(PlatformArchitecture_T aPlatformArchitecture,
+                                         FirmwareType_T aFirmwareType,
                                          const com::Utf8Str &aVersion,
                                          com::Utf8Str &aUrl,
                                          com::Utf8Str &aFile,
@@ -1892,14 +1907,7 @@ HRESULT VirtualBox::checkFirmwarePresent(FirmwareType_T aFirmwareType,
 {
     NOREF(aVersion);
 
-    static const struct
-    {
-        FirmwareType_T  enmType;
-        bool            fBuiltIn;
-        const char     *pszFileName;
-        const char     *pszUrl;
-    }
-    firmwareDesc[] =
+    static const VBOXFWDESC s_FwDescX86[] =
     {
         {   FirmwareType_BIOS,    true,  NULL,             NULL },
 #ifdef VBOX_WITH_EFI_IN_DD2
@@ -1913,21 +1921,50 @@ HRESULT VirtualBox::checkFirmwarePresent(FirmwareType_T aFirmwareType,
 #endif
     };
 
-    for (size_t i = 0; i < sizeof(firmwareDesc) / sizeof(firmwareDesc[0]); i++)
+    static const VBOXFWDESC s_FwDescArm[] =
     {
-        if (aFirmwareType != firmwareDesc[i].enmType)
+#ifdef VBOX_WITH_EFI_IN_DD2
+        {   FirmwareType_EFI32,   true,  "VBoxEFIAArch32.fd",   NULL },
+        {   FirmwareType_EFI64,   true,  "VBoxEFIAArch64.fd",   NULL },
+#else
+        {   FirmwareType_EFI32,   false, "VBoxEFIAArch32.fd",   "http://virtualbox.org/firmware/VBoxEFIAArch32.fd" },
+        {   FirmwareType_EFI64,   false, "VBoxEFIAArch64.fd",   "http://virtualbox.org/firmware/VBoxEFIAArch64.fd" },
+#endif
+    };
+
+    PVBOXFWDESC pFwDesc = NULL;
+    uint32_t cFwDesc = 0;
+    if (aPlatformArchitecture == PlatformArchitecture_x86)
+    {
+        pFwDesc = &s_FwDescX86[0];
+        cFwDesc = RT_ELEMENTS(s_FwDescX86);
+    }
+    else if (aPlatformArchitecture == PlatformArchitecture_ARM)
+    {
+        pFwDesc = &s_FwDescArm[0];
+        cFwDesc = RT_ELEMENTS(s_FwDescArm);
+    }
+    else
+        return E_INVALIDARG;
+
+    for (size_t i = 0; i < cFwDesc; i++)
+    {
+        if (aFirmwareType != pFwDesc->enmType)
+        {
+            pFwDesc++;
             continue;
+        }
 
         /* compiled-in firmware */
-        if (firmwareDesc[i].fBuiltIn)
+        if (pFwDesc->fBuiltIn)
         {
-            aFile = firmwareDesc[i].pszFileName;
+            aFile = pFwDesc->pszFileName;
             *aResult = TRUE;
             break;
         }
 
         Utf8Str    fullName;
-        Utf8StrFmt shortName("Firmware%c%s", RTPATH_DELIMITER, firmwareDesc[i].pszFileName);
+        Utf8StrFmt shortName("Firmware%c%s", RTPATH_DELIMITER, pFwDesc->pszFileName);
         int vrc = i_calculateFullPath(shortName, fullName);
         AssertRCReturn(vrc, VBOX_E_IPRT_ERROR);
         if (RTFileExists(fullName.c_str()))
@@ -1940,7 +1977,7 @@ HRESULT VirtualBox::checkFirmwarePresent(FirmwareType_T aFirmwareType,
         char szVBoxPath[RTPATH_MAX];
         vrc = RTPathExecDir(szVBoxPath, RTPATH_MAX);
         AssertRCReturn(vrc, VBOX_E_IPRT_ERROR);
-        vrc = RTPathAppend(szVBoxPath, sizeof(szVBoxPath), firmwareDesc[i].pszFileName);
+        vrc = RTPathAppend(szVBoxPath, sizeof(szVBoxPath), pFwDesc->pszFileName);
         AssertRCReturn(vrc, VBOX_E_IPRT_ERROR);
         if (RTFileExists(szVBoxPath))
         {
@@ -1950,7 +1987,7 @@ HRESULT VirtualBox::checkFirmwarePresent(FirmwareType_T aFirmwareType,
         }
 
         /** @todo account for version in the URL */
-        aUrl = firmwareDesc[i].pszUrl;
+        aUrl = pFwDesc->pszUrl;
         *aResult = FALSE;
 
         /* Assume single record per firmware type */

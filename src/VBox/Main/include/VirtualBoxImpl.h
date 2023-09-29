@@ -437,7 +437,8 @@ private:
     HRESULT findCloudNetworkByName(const com::Utf8Str &aNetworkName,
                                    ComPtr<ICloudNetwork> &aNetwork);
     HRESULT removeCloudNetwork(const ComPtr<ICloudNetwork> &aNetwork);
-    HRESULT checkFirmwarePresent(FirmwareType_T aFirmwareType,
+    HRESULT checkFirmwarePresent(PlatformArchitecture_T aPlatformArchitecture,
+                                 FirmwareType_T aFirmwareType,
                                  const com::Utf8Str &aVersion,
                                  com::Utf8Str &aUrl,
                                  com::Utf8Str &aFile,

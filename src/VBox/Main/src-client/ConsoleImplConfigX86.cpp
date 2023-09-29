@@ -194,27 +194,6 @@ struct BootNic
     }
 };
 
-#ifndef VBOX_WITH_EFI_IN_DD2
-static int findEfiRom(IVirtualBox* vbox, FirmwareType_T aFirmwareType, Utf8Str *pEfiRomFile)
-{
-    Bstr aFilePath, empty;
-    BOOL fPresent = FALSE;
-    HRESULT hrc = vbox->CheckFirmwarePresent(aFirmwareType, empty.raw(),
-                                             empty.asOutParam(), aFilePath.asOutParam(), &fPresent);
-    AssertComRCReturn(hrc, Global::vboxStatusCodeFromCOM(hrc));
-
-    if (!fPresent)
-    {
-        LogRel(("Failed to find an EFI ROM file.\n"));
-        return VERR_FILE_NOT_FOUND;
-    }
-
-    *pEfiRomFile = Utf8Str(aFilePath);
-
-    return VINF_SUCCESS;
-}
-#endif
-
 /**
  * @throws HRESULT on extra data retrival error.
  */
@@ -1675,7 +1654,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
                                       :                                   "VBoxEFI64.fd";
 #else
             Utf8Str efiRomFile;
-            vrc = findEfiRom(virtualBox, eFwType, &efiRomFile);
+            vrc = findEfiRom(virtualBox, PlatformArchitecture_x86, eFwType, &efiRomFile);
             AssertRCReturn(vrc, vrc);
             const char *pszEfiRomFile = efiRomFile.c_str();
 #endif

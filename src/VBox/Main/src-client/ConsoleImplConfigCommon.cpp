@@ -3420,3 +3420,24 @@ int Console::i_configSerialPort(PCFGMNODE pInst, PortMode_T ePortMode, const cha
     return VINF_SUCCESS;
 }
 
+
+#ifndef VBOX_WITH_EFI_IN_DD2
+DECLHIDDEN(int) findEfiRom(IVirtualBox* vbox, PlatformArchitecture_T aPlatformArchitecture, FirmwareType_T aFirmwareType, Utf8Str *pEfiRomFile)
+{
+    Bstr aFilePath, empty;
+    BOOL fPresent = FALSE;
+    HRESULT hrc = vbox->CheckFirmwarePresent(aPlatformArchitecture, aFirmwareType, empty.raw(),
+                                             empty.asOutParam(), aFilePath.asOutParam(), &fPresent);
+    AssertComRCReturn(hrc, Global::vboxStatusCodeFromCOM(hrc));
+
+    if (!fPresent)
+    {
+        LogRel(("Failed to find an EFI ROM file.\n"));
+        return VERR_FILE_NOT_FOUND;
+    }
+
+    *pEfiRomFile = Utf8Str(aFilePath);
+
+    return VINF_SUCCESS;
+}
+#endif
