@@ -1249,19 +1249,28 @@ static DECLCALLBACK(void) cpumR3InfoVmxFeatures(PVM pVM, PCDBGFINFOHLP pHlp, con
         VMXFEATDUMP("VmFuncs - Enable VM Functions                          ", fVmxVmFunc);
         VMXFEATDUMP("VmcsShadowing - VMCS shadowing                         ", fVmxVmcsShadowing);
         VMXFEATDUMP("RdseedExiting - RDSEED exiting                         ", fVmxRdseedExit);
-        VMXFEATDUMP("PML - Page-Modification Log (PML)                      ", fVmxPml);
+        VMXFEATDUMP("PML - Page-Modification Log                            ", fVmxPml);
         VMXFEATDUMP("EptVe - EPT violations can cause #VE                   ", fVmxEptXcptVe);
         VMXFEATDUMP("ConcealVmxFromPt - Conceal VMX from Processor Trace    ", fVmxConcealVmxFromPt);
         VMXFEATDUMP("XsavesXRstors - Enable XSAVES/XRSTORS                  ", fVmxXsavesXrstors);
+        VMXFEATDUMP("PasidTranslate - PASID translation                     ", fVmxPasidTranslate);
         VMXFEATDUMP("ModeBasedExecuteEpt - Mode-based execute permissions   ", fVmxModeBasedExecuteEpt);
         VMXFEATDUMP("SppEpt - Sub-page page write permissions for EPT       ", fVmxSppEpt);
         VMXFEATDUMP("PtEpt - Processor Trace address' translatable by EPT   ", fVmxPtEpt);
         VMXFEATDUMP("UseTscScaling - Use TSC scaling                        ", fVmxUseTscScaling);
         VMXFEATDUMP("UserWaitPause - Enable TPAUSE, UMONITOR and UMWAIT     ", fVmxUserWaitPause);
+        VMXFEATDUMP("Pconfig - Enable PCONFIG                               ", fVmxPconfig);
         VMXFEATDUMP("EnclvExit - ENCLV exiting                              ", fVmxEnclvExit);
+        VMXFEATDUMP("BusLockDetect - VMM Bus-Lock detection                 ", fVmxBusLockDetect);
+        VMXFEATDUMP("InstrTimeout - Instruction timeout                     ", fVmxInstrTimeout);
 
         /* Tertiary processor-based controls. */
         VMXFEATDUMP("LoadIwKeyExit - LOADIWKEY exiting                      ", fVmxLoadIwKeyExit);
+        VMXFEATDUMP("HLAT - Hypervisor-managed linear-address translation   ", fVmxHlat);
+        VMXFEATDUMP("EptPagingWrite - EPT paging-write                      ", fVmxEptPagingWrite);
+        VMXFEATDUMP("GstPagingVerify - Guest-paging verification            ", fVmxGstPagingVerify);
+        VMXFEATDUMP("IpiVirt - IPI virtualization                           ", fVmxIpiVirt);
+        VMXFEATDUMP("VirtSpecCtrl - Virtualize IA32_SPEC_CTRL               ", fVmxVirtSpecCtrl);
 
         /* VM-entry controls. */
         VMXFEATDUMP("EntryLoadDebugCtls - Load debug controls on VM-entry   ", fVmxEntryLoadDebugCtls);
@@ -1282,7 +1291,7 @@ static DECLCALLBACK(void) cpumR3InfoVmxFeatures(PVM pVM, PCDBGFINFOHLP pHlp, con
 
         /* Miscellaneous data. */
         VMXFEATDUMP("ExitSaveEferLma - Save IA32_EFER.LMA on VM-exit        ", fVmxExitSaveEferLma);
-        VMXFEATDUMP("IntelPt - Intel PT (Processor Trace) in VMX operation  ", fVmxPt);
+        VMXFEATDUMP("IntelPt - Intel Processor Trace in VMX operation       ", fVmxPt);
         VMXFEATDUMP("VmwriteAll - VMWRITE to any supported VMCS field       ", fVmxVmwriteAll);
         VMXFEATDUMP("EntryInjectSoftInt - Inject softint. with 0-len instr. ", fVmxEntryInjectSoftInt);
 #undef VMXFEATDUMP
@@ -1432,12 +1441,16 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
                                  | (pGuestFeatures->fVmxEptXcptVe             << VMX_BF_PROC_CTLS2_EPT_VE_SHIFT             )
                                  | (pGuestFeatures->fVmxConcealVmxFromPt      << VMX_BF_PROC_CTLS2_CONCEAL_VMX_FROM_PT_SHIFT)
                                  | (pGuestFeatures->fVmxXsavesXrstors         << VMX_BF_PROC_CTLS2_XSAVES_XRSTORS_SHIFT     )
+                                 | (pGuestFeatures->fVmxPasidTranslate        << VMX_BF_PROC_CTLS2_PASID_TRANSLATE_SHIFT    )
                                  | (pGuestFeatures->fVmxModeBasedExecuteEpt   << VMX_BF_PROC_CTLS2_MODE_BASED_EPT_PERM_SHIFT)
                                  | (pGuestFeatures->fVmxSppEpt                << VMX_BF_PROC_CTLS2_SPP_EPT_SHIFT            )
                                  | (pGuestFeatures->fVmxPtEpt                 << VMX_BF_PROC_CTLS2_PT_EPT_SHIFT             )
                                  | (pGuestFeatures->fVmxUseTscScaling         << VMX_BF_PROC_CTLS2_TSC_SCALING_SHIFT        )
                                  | (pGuestFeatures->fVmxUserWaitPause         << VMX_BF_PROC_CTLS2_USER_WAIT_PAUSE_SHIFT    )
-                                 | (pGuestFeatures->fVmxEnclvExit             << VMX_BF_PROC_CTLS2_ENCLV_EXIT_SHIFT         );
+                                 | (pGuestFeatures->fVmxPconfig               << VMX_BF_PROC_CTLS2_PCONFIG_SHIFT            )
+                                 | (pGuestFeatures->fVmxEnclvExit             << VMX_BF_PROC_CTLS2_ENCLV_EXIT_SHIFT         )
+                                 | (pGuestFeatures->fVmxBusLockDetect         << VMX_BF_PROC_CTLS2_BUSLOCK_DETECT_SHIFT     )
+                                 | (pGuestFeatures->fVmxInstrTimeout          << VMX_BF_PROC_CTLS2_INSTR_TIMEOUT_SHIFT      );
         uint32_t const fAllowed0 = 0;
         uint32_t const fAllowed1 = fFeatures;
         pGuestVmxMsrs->ProcCtls2.u = RT_MAKE_U64(fAllowed0, fAllowed1);
@@ -1446,7 +1459,12 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
     /* Tertiary processor-based VM-execution controls. */
     if (pGuestFeatures->fVmxTertiaryExecCtls)
     {
-        pGuestVmxMsrs->u64ProcCtls3 = (pGuestFeatures->fVmxLoadIwKeyExit  << VMX_BF_PROC_CTLS3_LOADIWKEY_EXIT_SHIFT);
+        pGuestVmxMsrs->u64ProcCtls3 = (pGuestFeatures->fVmxLoadIwKeyExit   << VMX_BF_PROC_CTLS3_LOADIWKEY_EXIT_SHIFT)
+                                    | (pGuestFeatures->fVmxHlat            << VMX_BF_PROC_CTLS3_HLAT_SHIFT)
+                                    | (pGuestFeatures->fVmxEptPagingWrite  << VMX_BF_PROC_CTLS3_EPT_PAGING_WRITE_SHIFT)
+                                    | (pGuestFeatures->fVmxGstPagingVerify << VMX_BF_PROC_CTLS3_GST_PAGING_VERIFY_SHIFT)
+                                    | (pGuestFeatures->fVmxIpiVirt         << VMX_BF_PROC_CTLS3_IPI_VIRT_SHIFT)
+                                    | (pGuestFeatures->fVmxVirtSpecCtrl    << VMX_BF_PROC_CTLS3_VIRT_SPEC_CTRL_SHIFT);
     }
 
     /* VM-exit controls. */
@@ -1866,13 +1884,22 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCFGMNODE pCpumCfg, PCVMXMSRS pH
     EmuFeat.fVmxEptXcptVe             = 0;
     EmuFeat.fVmxConcealVmxFromPt      = 0;
     EmuFeat.fVmxXsavesXrstors         = 0;
+    EmuFeat.fVmxPasidTranslate        = 0;
     EmuFeat.fVmxModeBasedExecuteEpt   = 0;
     EmuFeat.fVmxSppEpt                = 0;
     EmuFeat.fVmxPtEpt                 = 0;
     EmuFeat.fVmxUseTscScaling         = 0;
     EmuFeat.fVmxUserWaitPause         = 0;
+    EmuFeat.fVmxPconfig               = 0;
     EmuFeat.fVmxEnclvExit             = 0;
+    EmuFeat.fVmxBusLockDetect         = 0;
+    EmuFeat.fVmxInstrTimeout          = 0;
     EmuFeat.fVmxLoadIwKeyExit         = 0;
+    EmuFeat.fVmxHlat                  = 0;
+    EmuFeat.fVmxEptPagingWrite        = 0;
+    EmuFeat.fVmxGstPagingVerify       = 0;
+    EmuFeat.fVmxIpiVirt               = 0;
+    EmuFeat.fVmxVirtSpecCtrl          = 0;
     EmuFeat.fVmxEntryLoadDebugCtls    = 1;
     EmuFeat.fVmxIa32eModeGuest        = 1;
     EmuFeat.fVmxEntryLoadEferMsr      = 1;
@@ -1948,13 +1975,22 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCFGMNODE pCpumCfg, PCVMXMSRS pH
     pGuestFeat->fVmxEptXcptVe             = (pBaseFeat->fVmxEptXcptVe             & EmuFeat.fVmxEptXcptVe            );
     pGuestFeat->fVmxConcealVmxFromPt      = (pBaseFeat->fVmxConcealVmxFromPt      & EmuFeat.fVmxConcealVmxFromPt     );
     pGuestFeat->fVmxXsavesXrstors         = (pBaseFeat->fVmxXsavesXrstors         & EmuFeat.fVmxXsavesXrstors        );
+    pGuestFeat->fVmxPasidTranslate        = (pBaseFeat->fVmxPasidTranslate        & EmuFeat.fVmxPasidTranslate       );
     pGuestFeat->fVmxModeBasedExecuteEpt   = (pBaseFeat->fVmxModeBasedExecuteEpt   & EmuFeat.fVmxModeBasedExecuteEpt  );
     pGuestFeat->fVmxSppEpt                = (pBaseFeat->fVmxSppEpt                & EmuFeat.fVmxSppEpt               );
     pGuestFeat->fVmxPtEpt                 = (pBaseFeat->fVmxPtEpt                 & EmuFeat.fVmxPtEpt                );
     pGuestFeat->fVmxUseTscScaling         = (pBaseFeat->fVmxUseTscScaling         & EmuFeat.fVmxUseTscScaling        );
     pGuestFeat->fVmxUserWaitPause         = (pBaseFeat->fVmxUserWaitPause         & EmuFeat.fVmxUserWaitPause        );
+    pGuestFeat->fVmxPconfig               = (pBaseFeat->fVmxPconfig               & EmuFeat.fVmxPconfig              );
     pGuestFeat->fVmxEnclvExit             = (pBaseFeat->fVmxEnclvExit             & EmuFeat.fVmxEnclvExit            );
+    pGuestFeat->fVmxBusLockDetect         = (pBaseFeat->fVmxBusLockDetect         & EmuFeat.fVmxBusLockDetect        );
+    pGuestFeat->fVmxInstrTimeout          = (pBaseFeat->fVmxInstrTimeout          & EmuFeat.fVmxInstrTimeout         );
     pGuestFeat->fVmxLoadIwKeyExit         = (pBaseFeat->fVmxLoadIwKeyExit         & EmuFeat.fVmxLoadIwKeyExit        );
+    pGuestFeat->fVmxHlat                  = (pBaseFeat->fVmxHlat                  & EmuFeat.fVmxHlat                 );
+    pGuestFeat->fVmxEptPagingWrite        = (pBaseFeat->fVmxEptPagingWrite        & EmuFeat.fVmxEptPagingWrite       );
+    pGuestFeat->fVmxGstPagingVerify       = (pBaseFeat->fVmxGstPagingVerify       & EmuFeat.fVmxGstPagingVerify      );
+    pGuestFeat->fVmxIpiVirt               = (pBaseFeat->fVmxIpiVirt               & EmuFeat.fVmxIpiVirt              );
+    pGuestFeat->fVmxVirtSpecCtrl          = (pBaseFeat->fVmxVirtSpecCtrl          & EmuFeat.fVmxVirtSpecCtrl         );
     pGuestFeat->fVmxEntryLoadDebugCtls    = (pBaseFeat->fVmxEntryLoadDebugCtls    & EmuFeat.fVmxEntryLoadDebugCtls   );
     pGuestFeat->fVmxIa32eModeGuest        = (pBaseFeat->fVmxIa32eModeGuest        & EmuFeat.fVmxIa32eModeGuest       );
     pGuestFeat->fVmxEntryLoadEferMsr      = (pBaseFeat->fVmxEntryLoadEferMsr      & EmuFeat.fVmxEntryLoadEferMsr     );
@@ -2023,7 +2059,14 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCFGMNODE pCpumCfg, PCVMXMSRS pH
     }
 
     if (!pGuestFeat->fVmxTertiaryExecCtls)
+    {
         Assert(!pGuestFeat->fVmxLoadIwKeyExit);
+        Assert(!pGuestFeat->fVmxHlat);
+        Assert(!pGuestFeat->fVmxEptPagingWrite);
+        Assert(!pGuestFeat->fVmxGstPagingVerify);
+        Assert(!pGuestFeat->fVmxIpiVirt);
+        Assert(!pGuestFeat->fVmxVirtSpecCtrl);
+    }
 
     /*
      * Finally initialize the VMX guest MSRs.

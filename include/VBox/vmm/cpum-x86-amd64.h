@@ -1112,6 +1112,8 @@ typedef struct CPUMFEATURES
     uint32_t        fVmxConcealVmxFromPt : 1;
     /** VMX: Supports XSAVES/XRSTORS. */
     uint32_t        fVmxXsavesXrstors : 1;
+    /** VMX: Supports PASID translation. */
+    uint32_t        fVmxPasidTranslate : 1;
     /** VMX: Supports mode-based execute control for EPT. */
     uint32_t        fVmxModeBasedExecuteEpt : 1;
     /** VMX: Supports sub-page write permissions for EPT. */
@@ -1122,14 +1124,30 @@ typedef struct CPUMFEATURES
     uint32_t        fVmxUseTscScaling : 1;
     /** VMX: Supports TPAUSE, UMONITOR, or UMWAIT. */
     uint32_t        fVmxUserWaitPause : 1;
+    /** VMX: Supports PCONFIG. */
+    uint32_t        fVmxPconfig : 1;
     /** VMX: Supports enclave (ENCLV) exiting. */
     uint32_t        fVmxEnclvExit : 1;
+    /** VMX: Supports VMM bus-lock detection. */
+    uint32_t        fVmxBusLockDetect : 1;
+    /** VMX: Supports instruction timeout. */
+    uint32_t        fVmxInstrTimeout : 1;
     /** @} */
 
     /** @name VMX Tertiary processor-based controls.
      * @{ */
     /** VMX: Supports LOADIWKEY exiting. */
     uint32_t        fVmxLoadIwKeyExit : 1;
+    /** VMX: Supports hypervisor-managed linear address translation (HLAT). */
+    uint32_t        fVmxHlat : 1;
+    /** VMX: Supports EPT paging-write control. */
+    uint32_t        fVmxEptPagingWrite : 1;
+    /** VMX: Supports Guest-paging verification. */
+    uint32_t        fVmxGstPagingVerify : 1;
+    /** VMX: Supports IPI virtualization. */
+    uint32_t        fVmxIpiVirt : 1;
+    /** VMX: Supports virtualize IA32_SPEC_CTRL. */
+    uint32_t        fVmxVirtSpecCtrl : 1;
     /** @} */
 
     /** @name VMX VM-entry controls.
@@ -1181,7 +1199,7 @@ typedef struct CPUMFEATURES
     /** @} */
 
     /** VMX: Padding / reserved for future features. */
-    uint32_t        fVmxPadding0 : 16;
+    uint32_t        fVmxPadding0 : 7;
     /** VMX: Padding / reserved for future, making it a total of 128 bits.  */
     uint32_t        fVmxPadding1;
 } CPUMFEATURES;
