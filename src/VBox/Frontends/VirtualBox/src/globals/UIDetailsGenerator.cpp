@@ -36,6 +36,7 @@
 #include "UIConverter.h"
 #include "UIDetailsGenerator.h"
 #include "UIErrorString.h"
+#include "UIGuestOSType.h"
 #include "UIMedium.h"
 #include "UITranslator.h"
 
@@ -117,11 +118,15 @@ UITextTable UIDetailsGenerator::generateMachineInformationGeneral(CMachine &comM
         /* Configure hovering anchor: */
         const QString strAnchorType = QString("os_type");
         const QString strOsTypeId = comMachine.GetOSTypeId();
+        const UIGuestOSTypeManager *pManager = uiCommon().guestOSTypeManager();
+        QString strOsTypeDescription;
+        if (pManager)
+            strOsTypeDescription = pManager->getDescription(strOsTypeId);
         table << UITextTableLine(QApplication::translate("UIDetails", "Operating System", "details (general)"),
                                  QString("<a href=#%1,%2>%3</a>")
                                      .arg(strAnchorType,
                                           strOsTypeId,
-                                          uiCommon().vmGuestOSTypeDescription(strOsTypeId)));
+                                          strOsTypeDescription));
     }
 
     /* Settings file location: */
@@ -1408,7 +1413,7 @@ void UIDetailsGenerator::acquireSharedFoldersStatusInfo(CMachine &comMachine, CC
     for (QMap<QString, QString>::const_iterator it = folders.constBegin(); it != folders.constEnd(); ++it)
     {
         /* Select slashes depending on the OS type: */
-        if (UICommon::isDOSType(comGuest.GetOSTypeId()))
+        if (UIGuestOSTypeManager::isDOSType(comGuest.GetOSTypeId()))
             strInfo += e_strTableRow2.arg(QString("<b>\\\\vboxsvr\\%1</b>").arg(it.key()), it.value());
         else
             strInfo += e_strTableRow2.arg(QString("<b>%1</b>").arg(it.key()), it.value());

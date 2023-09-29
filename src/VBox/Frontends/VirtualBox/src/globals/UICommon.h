@@ -316,22 +316,8 @@ public:
 
     /** @name COM: Guest OS Type stuff.
      * @{ */
-        /** Returns the list of family IDs. */
-        QList<QString> vmGuestOSFamilyIDs() const { return m_guestOSFamilyIDs; }
-
-        /** Returns a family description with passed @a strFamilyId. */
-        QString vmGuestOSFamilyDescription(const QString &strFamilyId) const;
-        /** Returns a list of all guest OS types with passed @a strFamilyId. */
-        QList<CGuestOSType> vmGuestOSTypeList(const QString &strFamilyId) const;
-
-        /** Returns the guest OS type for passed @a strTypeId.
-          * It is being serached through the list of family with passed @a strFamilyId if specified. */
-        CGuestOSType vmGuestOSType(const QString &strTypeId, const QString &strFamilyId = QString()) const;
-        /** Returns a type description with passed @a strTypeId. */
-        QString vmGuestOSTypeDescription(const QString &strTypeId) const;
-
-        /** Returns whether guest type with passed @a strOSTypeId is one of DOS types. */
-        static bool isDOSType(const QString &strOSTypeId);
+        const UIGuestOSTypeManager *guestOSTypeManager() const { return m_pGuestOSTypeManager; }
+        UIGuestOSTypeManager &guestOSTypeManager2() const { return *m_pGuestOSTypeManager; }
     /** @} */
 
     /** @name COM: Virtual Machine stuff.
@@ -528,8 +514,6 @@ public:
         /** Returns true if it can find at least one usable ext. pack. Else returns false. */
         bool isExtentionPackInstalled() const;
     /** @} */
-
-    const UIGuestOSTypeManager *guestOSTypeManager() const { return m_pGuestOSTypeManager; }
 
 public slots:
 
@@ -748,12 +732,6 @@ private:
         /** Holds whether VBoxSVC is currently available. */
         bool  m_fVBoxSVCAvailable;
 
-        /** Holds the guest OS family IDs. */
-        QList<QString>               m_guestOSFamilyIDs;
-        /** Holds the guest OS family descriptions. */
-        QMap<QString, QString>       m_guestOSFamilyDescriptions;
-        /** Holds the guest OS types for each family ID. */
-        QList<QList<CGuestOSType> >  m_guestOSTypes;
         UIGuestOSTypeManager *m_pGuestOSTypeManager;
     /** @} */
 

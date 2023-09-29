@@ -39,6 +39,7 @@
 #include "UIExtraDataManager.h"
 #include "UIFrameBuffer.h"
 #include "UIIconPool.h"
+#include "UIGuestOSType.h"
 #include "UIMachine.h"
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"
@@ -839,24 +840,18 @@ bool UISession::mountBootMedium(const QUuid &uMediumId)
 
     /* Get recommended controller bus & type: */
     CVirtualBox comVBox = uiCommon().virtualBox();
-    const CGuestOSType comOsType = comVBox.GetGuestOSType(osTypeId());
+
     if (!comVBox.isOk())
     {
         UINotificationMessage::cannotAcquireVirtualBoxParameter(comVBox);
         return false;
     }
-    const KStorageBus enmRecommendedDvdBus = comOsType.GetRecommendedDVDStorageBus();
-    if (!comOsType.isOk())
-    {
-        UINotificationMessage::cannotAcquireGuestOSTypeParameter(comOsType);
-        return false;
-    }
-    const KStorageControllerType enmRecommendedDvdType = comOsType.GetRecommendedDVDStorageController();
-    if (!comOsType.isOk())
-    {
-        UINotificationMessage::cannotAcquireGuestOSTypeParameter(comOsType);
-        return false;
-    }
+
+    const UIGuestOSTypeManager *pManager = uiCommon().guestOSTypeManager();
+    AssertReturn(pManager, false);
+
+    const KStorageBus enmRecommendedDvdBus = pManager->getRecommendedDVDStorageBus(osTypeId());
+    const KStorageControllerType enmRecommendedDvdType = pManager->getRecommendedDVDStorageController(osTypeId());
 
     /* Search for an attachment of required bus & type: */
     CMachine comMachine = machine();
@@ -1309,12 +1304,10 @@ bool UISession::guestAdditionsUpgradable()
         return false;
 
     /* Auto GA update is currently for Windows and Linux guests only */
-    const CGuestOSType osType = uiCommon().vmGuestOSType(uimachine()->osTypeId());
-    if (!osType.isOk())
-        return false;
+    const UIGuestOSTypeManager *pManager = uiCommon().guestOSTypeManager();
+    AssertReturn(pManager, false);
 
-    const QString strGuestFamily = osType.GetFamilyId();
-    bool fIsWindowOrLinux = strGuestFamily.contains("windows", Qt::CaseInsensitive) || strGuestFamily.contains("linux", Qt::CaseInsensitive);
+    bool fIsWindowOrLinux = pManager->isLinux(uimachine()->osTypeId()) || pManager->isWindows(uimachine()->osTypeId());
 
     if (!fIsWindowOrLinux)
         return false;

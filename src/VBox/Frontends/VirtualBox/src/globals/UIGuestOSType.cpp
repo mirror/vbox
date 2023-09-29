@@ -28,6 +28,8 @@
 /* GUI includes: */
 #include "UIGuestOSType.h"
 
+/* COM includes: */
+#include "CGuestOSType.h"
 
 /*********************************************************************************************************************************
 *   UIGuestOSType definition.                                                                                     *
@@ -59,6 +61,7 @@ public:
         bool                    getRecommendedFloppy() const;
         LONG64                  getRecommendedHDD() const;
         KGraphicsControllerType getRecommendedGraphicsController() const;
+        KStorageControllerType  getRecommendedDVDStorageController() const;
     /** @} */
 
     bool isOk() const;
@@ -191,6 +194,12 @@ KGraphicsControllerType UIGuestOSTypeManager::getRecommendedGraphicsController(c
     return m_guestOSTypes->value(m_typeIdIndexMap.value(strTypeId, -1)).getRecommendedGraphicsController();
 }
 
+KStorageControllerType UIGuestOSTypeManager::getRecommendedDVDStorageController(const QString &strTypeId) const
+{
+    AssertReturn(m_guestOSTypes, KStorageControllerType_Null);
+    return m_guestOSTypes->value(m_typeIdIndexMap.value(strTypeId, -1)).getRecommendedDVDStorageController();
+}
+
 ULONG UIGuestOSTypeManager::getRecommendedRAM(const QString &strTypeId) const
 {
     AssertReturn(m_guestOSTypes, 0);
@@ -237,6 +246,33 @@ bool UIGuestOSTypeManager::getRecommendedFloppy(const QString &strTypeId) const
 {
     AssertReturn(m_guestOSTypes, false);
     return m_guestOSTypes->value(m_typeIdIndexMap.value(strTypeId, -1)).getRecommendedFloppy();
+}
+
+bool UIGuestOSTypeManager::isLinux(const QString &strTypeId) const
+{
+    QString strFamilyId = getFamilyId(strTypeId);
+    if (strFamilyId.contains("linux", Qt::CaseInsensitive))
+        return true;
+    return false;
+}
+
+bool UIGuestOSTypeManager::isWindows(const QString &strTypeId) const
+{
+    QString strFamilyId = getFamilyId(strTypeId);
+    if (strFamilyId.contains("windows", Qt::CaseInsensitive))
+        return true;
+    return false;
+}
+
+/* static */
+bool UIGuestOSTypeManager::isDOSType(const QString &strOSTypeId)
+{
+    if (   strOSTypeId.left(3) == "dos"
+        || strOSTypeId.left(3) == "win"
+        || strOSTypeId.left(3) == "os2")
+        return true;
+
+    return false;
 }
 
 /*********************************************************************************************************************************
@@ -346,4 +382,11 @@ KGraphicsControllerType UIGuestOSType::getRecommendedGraphicsController() const
     if (m_comGuestOSType.isOk())
         return m_comGuestOSType.GetRecommendedGraphicsController();
     return KGraphicsControllerType_Null;
+}
+
+KStorageControllerType UIGuestOSType::getRecommendedDVDStorageController() const
+{
+    if (m_comGuestOSType.isOk())
+        return m_comGuestOSType.GetRecommendedDVDStorageController();
+    return KStorageControllerType_Null;
 }

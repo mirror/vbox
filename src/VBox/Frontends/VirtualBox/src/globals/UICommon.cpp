@@ -813,10 +813,6 @@ void UICommon::cleanup()
     delete m_pThreadPoolCloud;
     m_pThreadPoolCloud = 0;
 
-    /* Ensure CGuestOSType objects are no longer used: */
-    m_guestOSFamilyIDs.clear();
-    m_guestOSTypes.clear();
-
     /* Starting COM cleanup: */
     m_comCleanupProtectionToken.lockForWrite();
     {
@@ -1126,63 +1122,6 @@ void UICommon::deletePidfile()
 }
 
 #endif /* VBOX_GUI_WITH_PIDFILE */
-
-QString UICommon::vmGuestOSFamilyDescription(const QString &strFamilyId) const
-{
-    AssertMsg(m_guestOSFamilyDescriptions.contains(strFamilyId),
-              ("Family ID incorrect: '%s'.", strFamilyId.toLatin1().constData()));
-    return m_guestOSFamilyDescriptions.value(strFamilyId);
-}
-
-QList<CGuestOSType> UICommon::vmGuestOSTypeList(const QString &strFamilyId) const
-{
-    AssertMsg(m_guestOSFamilyIDs.contains(strFamilyId),
-              ("Family ID incorrect: '%s'.", strFamilyId.toLatin1().constData()));
-    return m_guestOSFamilyIDs.contains(strFamilyId) ?
-           m_guestOSTypes[m_guestOSFamilyIDs.indexOf(strFamilyId)] : QList<CGuestOSType>();
-}
-
-CGuestOSType UICommon::vmGuestOSType(const QString &strTypeId,
-                                     const QString &strFamilyId /* = QString() */) const
-{
-    QList<CGuestOSType> list;
-    if (m_guestOSFamilyIDs.contains(strFamilyId))
-    {
-        list = m_guestOSTypes.at(m_guestOSFamilyIDs.indexOf(strFamilyId));
-    }
-    else
-    {
-        for (int i = 0; i < m_guestOSFamilyIDs.size(); ++i)
-            list += m_guestOSTypes.at(i);
-    }
-    for (int j = 0; j < list.size(); ++j)
-        if (!list.at(j).GetId().compare(strTypeId))
-            return list.at(j);
-    return CGuestOSType();
-}
-
-QString UICommon::vmGuestOSTypeDescription(const QString &strTypeId) const
-{
-    for (int i = 0; i < m_guestOSFamilyIDs.size(); ++i)
-    {
-        QList<CGuestOSType> list(m_guestOSTypes[i]);
-        for (int j = 0; j < list.size(); ++j)
-            if (!list.at(j).GetId().compare(strTypeId))
-                return list.at(j).GetDescription();
-    }
-    return QString();
-}
-
-/* static */
-bool UICommon::isDOSType(const QString &strOSTypeId)
-{
-    if (   strOSTypeId.left(3) == "dos"
-        || strOSTypeId.left(3) == "win"
-        || strOSTypeId.left(3) == "os2")
-        return true;
-
-    return false;
-}
 
 /* static */
 bool UICommon::switchToMachine(CMachine &comMachine)
@@ -3006,37 +2945,9 @@ void UICommon::comWrappersReinit()
     m_comHost = virtualBox().GetHost();
     m_strHomeFolder = virtualBox().GetHomeFolder();
 
-    /* Re-initialize guest OS Type list: */
-    m_guestOSFamilyIDs.clear();
-    m_guestOSTypes.clear();
-    const CGuestOSTypeVector guestOSTypes = m_comVBox.GetGuestOSTypes();
-    const int cGuestOSTypeCount = guestOSTypes.size();
-    AssertMsg(cGuestOSTypeCount > 0, ("Number of OS types must not be zero"));
-    if (cGuestOSTypeCount > 0)
-    {
-        /* Here we ASSUME the 'Other' types are always the first,
-         * so we remember them and will append them to the list when finished.
-         * We do a two pass, first adding the specific types, then the two 'Other' types. */
-        for (int j = 0; j < 2; ++j)
-        {
-            int cMax = j == 0 ? cGuestOSTypeCount : RT_MIN(2, cGuestOSTypeCount);
-            for (int i = j == 0 ? 2 : 0; i < cMax; ++i)
-            {
-                const CGuestOSType os = guestOSTypes.at(i);
-                const QString strFamilyID = os.GetFamilyId();
-                const QString strFamilyDescription = os.GetFamilyDescription();
-                if (!m_guestOSFamilyIDs.contains(strFamilyID))
-                {
-                    m_guestOSFamilyIDs << strFamilyID;
-                    m_guestOSFamilyDescriptions[strFamilyID] = strFamilyDescription;
-                    m_guestOSTypes << QList<CGuestOSType>();
-                }
-                m_guestOSTypes[m_guestOSFamilyIDs.indexOf(strFamilyID)].append(os);
-            }
-        }
-    }
+    /* Re-initialize guest OS Type database: */
     if (m_pGuestOSTypeManager)
-        m_pGuestOSTypeManager->reCacheGuestOSTypes(guestOSTypes);
+        m_pGuestOSTypeManager->reCacheGuestOSTypes(m_comVBox.GetGuestOSTypes());
     /* Mark wrappers valid: */
     m_fWrappersValid = true;
 }

@@ -41,7 +41,6 @@
 #include "CGuestOSType.h"
 
 class UIGuestOSType;
-class UIFoo;
 
 /** A wrapper and manager class for Guest OS types (IGuestOSType). Logically we structure os types into families
   *  e.g. Window, Linux etc. Some families have so-called variants which for Linux corresponds to distros, while some
@@ -72,6 +71,8 @@ public:
     /** Returns a list of OS types for the @p strVariant. */
     UIGuestOSTypeInfo              getTypeListForVariant(const QString &strVariant) const;
 
+    static bool isDOSType(const QString &strOSTypeId);
+
     /** @name Getters for UIGuestOSType properties. They utilize a map for faster access to UIGuestOSType instance with @p strTypeId
       * @{ */
         QString                 getFamilyId(const QString &strTypeId) const;
@@ -85,6 +86,9 @@ public:
         KStorageBus             getRecommendedHDStorageBus(const QString &strTypeId) const;
         KStorageBus             getRecommendedDVDStorageBus(const QString &strTypeId) const;
         bool                    getRecommendedFloppy(const QString &strTypeId) const;
+        KStorageControllerType  getRecommendedDVDStorageController(const QString &strTypeId) const;
+        bool                    isLinux(const QString &strTypeId) const;
+        bool                    isWindows(const QString &strTypeId) const;
     /** @} */
 
 private:

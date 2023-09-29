@@ -40,6 +40,7 @@
 #include "UIConverter.h"
 #include "UIIconPool.h"
 #include "UIInformationRuntime.h"
+#include "UIGuestOSType.h"
 #include "UIMachine.h"
 
 /* COM includes: */
@@ -349,7 +350,11 @@ void UIRuntimeInfoWidget::updateOSTypeRow()
     if (strOSType.isEmpty())
         strOSType = m_strOSNotDetected;
     else
-        strOSType = uiCommon().vmGuestOSTypeDescription(strOSType);
+    {
+        const UIGuestOSTypeManager *pManager = uiCommon().guestOSTypeManager();
+        if (pManager)
+            strOSType = pManager->getDescription(strOSType);
+    }
    updateInfoRow(InfoRow_GuestOSType, QString("%1").arg(m_strGuestOSTypeLabel), strOSType);
 }
 
