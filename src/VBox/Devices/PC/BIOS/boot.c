@@ -177,6 +177,27 @@ void print_cdromboot_failure(uint16_t code)
     return;
 }
 
+
+#define BOOT_CHK_WORDS  8
+
+/* Check if the first n words of a boot sector
+ * are identical. Only consider the boot sector
+ * valid if they're not.
+ */
+static int valid_bootsect(uint16_t __far *boot)
+{
+    int         i;
+    uint16_t    word1;
+
+    word1 = boot[0];
+    for (i = 1; i < BOOT_CHK_WORDS; ++i) {
+        if (word1 != boot[i])
+            break;
+    }
+
+    return i != BOOT_CHK_WORDS;
+}
+
 // returns bootsegment in ax, drive in bl
 uint32_t BIOSCALL int19_function(uint8_t bseqnr)
 {
@@ -333,9 +354,8 @@ uint32_t BIOSCALL int19_function(uint8_t bseqnr)
     // from an invalid one.
     // NB: It is somewhat common for failed OS installs to have the
     // 0x55AA signature and a valid partition table but zeros in the
-    // rest of the boot sector. We do a quick check by comparing the first
-    // and third word of boot sector; if identical, the boot sector is
-    // extremely unlikely to be valid.
+    // rest of the boot sector. We check the first few words; if identical,
+    // the boot sector is extremely unlikely to be valid.
     if (bootdrv != 0) bootchk = 0;
     else bootchk = 1; /* disable 0x55AA signature check on drive A: */
 
@@ -345,7 +365,7 @@ uint32_t BIOSCALL int19_function(uint8_t bseqnr)
         bootchk = 1;
 #endif // BX_ELTORITO_BOOT
 
-    if (read_word(bootseg,0) == read_word(bootseg,4)
+    if (!valid_bootsect(MK_FP(bootseg,0))
       || (bootchk == 0 && read_word(bootseg,0x1fe) != 0xaa55))
     {
         print_boot_failure(bootcd, bootlan, bootdrv, 0, lastdrive);
