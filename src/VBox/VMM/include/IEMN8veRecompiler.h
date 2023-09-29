@@ -673,7 +673,7 @@ DECLINLINE(uint32_t) iemNativeEmitStoreGprByBp(PIEMRECOMPILERSTATE pReNative, ui
         uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
         AssertReturn(pu32CodeBuf, UINT32_MAX);
         pu32CodeBuf[off++] = Armv8A64MkInstrStLdRegIdx(kArmv8A64InstrLdStType_St_Dword, iGprSrc, ARMV8_A64_REG_BP,
-                                                       IEMNATIVE_REG_FIXDE_TMP0, kArmv8A64InstrLdStExtend_Sxtw);
+                                                       IEMNATIVE_REG_FIXED_TMP0, kArmv8A64InstrLdStExtend_Sxtw);
     }
     return off;
 
