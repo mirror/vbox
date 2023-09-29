@@ -2539,6 +2539,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_PROC_CTLS2_CONCEAL_VMX_FROM_PT                      RT_BIT(19)
 /** Enables XSAVES/XRSTORS instructions. */
 #define VMX_PROC_CTLS2_XSAVES_XRSTORS                           RT_BIT(20)
+/** Enables PASID translation. */
+#define VMX_PROC_CTLS2_PASID_TRANSLATE                          RT_BIT(21)
 /** Enables supervisor/user mode based EPT execute permission for linear
  *  addresses. */
 #define VMX_PROC_CTLS2_MODE_BASED_EPT_PERM                      RT_BIT(22)
@@ -2551,8 +2553,15 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_PROC_CTLS2_TSC_SCALING                              RT_BIT(25)
 /** Enables TPAUSE, UMONITOR and UMWAIT instructions. */
 #define VMX_PROC_CTLS2_USER_WAIT_PAUSE                          RT_BIT(26)
+/** Enables PCONFIG instruction. */
+#define VMX_PROC_CTLS2_PCONFIG                                  RT_BIT(27)
 /** Enables consulting ENCLV-exiting bitmap when executing ENCLV. */
 #define VMX_PROC_CTLS2_ENCLV_EXIT                               RT_BIT(28)
+/** Enables VMM Bus-lock detection. */
+#define VMX_PROC_CTLS2_BUS_LOCK_DETECT                          RT_BIT(30)
+/** Enables instruction timeout VM-exits. */
+#define VMX_PROC_CTLS2_INSTR_TIMEOUT                            RT_BIT(31)
+
 
 /** Bit fields for MSR_IA32_VMX_PROCBASED_CTLS2 and Secondary processor-based
  *  VM-execution controls field in the VMCS. */
@@ -2598,8 +2607,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_BF_PROC_CTLS2_CONCEAL_VMX_FROM_PT_MASK              UINT32_C(0x00080000)
 #define VMX_BF_PROC_CTLS2_XSAVES_XRSTORS_SHIFT                  20
 #define VMX_BF_PROC_CTLS2_XSAVES_XRSTORS_MASK                   UINT32_C(0x00100000)
-#define VMX_BF_PROC_CTLS2_RSVD_21_SHIFT                         21
-#define VMX_BF_PROC_CTLS2_RSVD_21_MASK                          UINT32_C(0x00200000)
+#define VMX_BF_PROC_CTLS2_PASID_TRANSLATE_SHIFT                 21
+#define VMX_BF_PROC_CTLS2_PASID_TRANSLATE_MASK                  UINT32_C(0x00200000)
 #define VMX_BF_PROC_CTLS2_MODE_BASED_EPT_PERM_SHIFT             22
 #define VMX_BF_PROC_CTLS2_MODE_BASED_EPT_PERM_MASK              UINT32_C(0x00400000)
 #define VMX_BF_PROC_CTLS2_SPP_EPT_SHIFT                         23
@@ -2610,19 +2619,23 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_BF_PROC_CTLS2_TSC_SCALING_MASK                      UINT32_C(0x02000000)
 #define VMX_BF_PROC_CTLS2_USER_WAIT_PAUSE_SHIFT                 26
 #define VMX_BF_PROC_CTLS2_USER_WAIT_PAUSE_MASK                  UINT32_C(0x04000000)
-#define VMX_BF_PROC_CTLS2_RSVD_27_SHIFT                         27
-#define VMX_BF_PROC_CTLS2_RSVD_27_MASK                          UINT32_C(0x08000000)
+#define VMX_BF_PROC_CTLS2_PCONFIG_SHIFT                         27
+#define VMX_BF_PROC_CTLS2_PCONFIG_MASK                          UINT32_C(0x08000000)
 #define VMX_BF_PROC_CTLS2_ENCLV_EXIT_SHIFT                      28
 #define VMX_BF_PROC_CTLS2_ENCLV_EXIT_MASK                       UINT32_C(0x10000000)
-#define VMX_BF_PROC_CTLS2_RSVD_29_31_SHIFT                      29
-#define VMX_BF_PROC_CTLS2_RSVD_29_31_MASK                       UINT32_C(0xe0000000)
+#define VMX_BF_PROC_CTLS2_RSVD_29_SHIFT                         29
+#define VMX_BF_PROC_CTLS2_RSVD_29_MASK                          UINT32_C(0x20000000)
+#define VMX_BF_PROC_CTLS2_BUSLOCK_DETECT_SHIFT                  30
+#define VMX_BF_PROC_CTLS2_BUSLOCK_DETECT_MASK                   UINT32_C(0x40000000)
+#define VMX_BF_PROC_CTLS2_INSTR_TIMEOUT_SHIFT                   31
+#define VMX_BF_PROC_CTLS2_INSTR_TIMEOUT_MASK                    UINT32_C(0x80000000)
 
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS2_, UINT32_C(0), UINT32_MAX,
                             (VIRT_APIC_ACCESS, EPT, DESC_TABLE_EXIT, RDTSCP, VIRT_X2APIC_MODE, VPID, WBINVD_EXIT,
                              UNRESTRICTED_GUEST, APIC_REG_VIRT, VIRT_INT_DELIVERY, PAUSE_LOOP_EXIT, RDRAND_EXIT, INVPCID, VMFUNC,
-                             VMCS_SHADOWING, ENCLS_EXIT, RDSEED_EXIT, PML, EPT_VE, CONCEAL_VMX_FROM_PT, XSAVES_XRSTORS, RSVD_21,
-                             MODE_BASED_EPT_PERM, SPP_EPT, PT_EPT, TSC_SCALING, USER_WAIT_PAUSE, RSVD_27, ENCLV_EXIT,
-                             RSVD_29_31));
+                             VMCS_SHADOWING, ENCLS_EXIT, RDSEED_EXIT, PML, EPT_VE, CONCEAL_VMX_FROM_PT, XSAVES_XRSTORS,
+                             PASID_TRANSLATE, MODE_BASED_EPT_PERM, SPP_EPT, PT_EPT, TSC_SCALING, USER_WAIT_PAUSE, PCONFIG,
+                             ENCLV_EXIT, RSVD_29, BUSLOCK_DETECT, INSTR_TIMEOUT));
 /** @} */
 
 
@@ -2631,15 +2644,38 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS2_, UINT32_C(0), UINT32_MAX,
  */
 /** VM-exit when executing LOADIWKEY. */
 #define VMX_PROC_CTLS3_LOADIWKEY_EXIT                           RT_BIT_64(0)
+/** Enables hypervisor-managed linear-address translation (HLAT). */
+#define VMX_PROC_CTLS3_HLAT                                     RT_BIT_64(1)
+/** Enables EPT paging-write control. */
+#define VMX_PROC_CTLS3_EPT_PAGING_WRITE                         RT_BIT_64(2)
+/** Enables Guest-paging verification. */
+#define VMX_PROC_CTLS3_GST_PAGING_VERIFY                        RT_BIT_64(3)
+/** Enables IPI virtualization. */
+#define VMX_PROC_CTLS3_IPI_VIRT                                 RT_BIT_64(4)
+/** Virtualize IA32_SPEC_CTRL. */
+#define VMX_PROC_CTLS3_VIRT_SPEC_CTRL                           RT_BIT_64(7)
 
 /** Bit fields for Tertiary processor-based VM-execution controls field in the VMCS. */
 #define VMX_BF_PROC_CTLS3_LOADIWKEY_EXIT_SHIFT                  0
 #define VMX_BF_PROC_CTLS3_LOADIWKEY_EXIT_MASK                   UINT64_C(0x0000000000000001)
-#define VMX_BF_PROC_CTLS3_RSVD_1_63_SHIFT                       1
-#define VMX_BF_PROC_CTLS3_RSVD_1_63_MASK                        UINT64_C(0xfffffffffffffffe)
+#define VMX_BF_PROC_CTLS3_HLAT_SHIFT                            1
+#define VMX_BF_PROC_CTLS3_HLAT_MASK                             UINT64_C(0x0000000000000002)
+#define VMX_BF_PROC_CTLS3_EPT_PAGING_WRITE_SHIFT                2
+#define VMX_BF_PROC_CTLS3_EPT_PAGING_WRITE_MASK                 UINT64_C(0x0000000000000004)
+#define VMX_BF_PROC_CTLS3_GST_PAGING_VERIFY_SHIFT               3
+#define VMX_BF_PROC_CTLS3_GST_PAGING_VERIFY_MASK                UINT64_C(0x0000000000000008)
+#define VMX_BF_PROC_CTLS3_IPI_VIRT_SHIFT                        4
+#define VMX_BF_PROC_CTLS3_IPI_VIRT_MASK                         UINT64_C(0x0000000000000010)
+#define VMX_BF_PROC_CTLS3_RSVD_5_6_SHIFT                        5
+#define VMX_BF_PROC_CTLS3_RSVD_5_6_MASK                         UINT64_C(0x0000000000000060)
+#define VMX_BF_PROC_CTLS3_VIRT_SPEC_CTRL_SHIFT                  7
+#define VMX_BF_PROC_CTLS3_VIRT_SPEC_CTRL_MASK                   UINT64_C(0x0000000000000080)
+#define VMX_BF_PROC_CTLS3_RSVD_8_63_SHIFT                       8
+#define VMX_BF_PROC_CTLS3_RSVD_8_63_MASK                        UINT64_C(0xffffffffffffff00)
 
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS3_, UINT64_C(0), UINT64_MAX,
-                            (LOADIWKEY_EXIT, RSVD_1_63));
+                            (LOADIWKEY_EXIT, HLAT, EPT_PAGING_WRITE, GST_PAGING_VERIFY, IPI_VIRT, RSVD_5_6, VIRT_SPEC_CTRL,
+                             RSVD_8_63));
 /** @} */
 
 
