@@ -2614,10 +2614,11 @@ HRESULT Unattended::prepare()
     uint32_t const   idxMachineOSType = Global::getOSTypeIndexFromId(mStrGuestOsTypeId.c_str());
     VBOXOSTYPE const enmMachineOSType = idxMachineOSType < Global::cOSTypes
                                       ? Global::sOSTypes[idxMachineOSType].osType : VBOXOSTYPE_Unknown;
-
+    uint32_t const   osHint           = idxMachineOSType < Global::cOSTypes
+                                      ? Global::sOSTypes[idxMachineOSType].osHint : 0;
     /*
      * Check that the detected guest OS type for the ISO is compatible with
-     * that of the VM, boardly speaking.
+     * that of the VM, broadly speaking.
      */
     if (idxMachineOSType != idxIsoOSType)
     {
@@ -2626,9 +2627,11 @@ HRESULT Unattended::prepare()
             && (   (enmIsoOSType     & VBOXOSTYPE_ArchitectureMask) != VBOXOSTYPE_x86
                 || (enmMachineOSType & VBOXOSTYPE_ArchitectureMask) != VBOXOSTYPE_x64))
             return setError(E_FAIL, tr("The supplied ISO file is incompatible with the guest OS type of the VM: CPU architecture mismatch"));
-
-        /** @todo check BIOS/EFI requirement */
     }
+
+    /* We don't support guest OSes w/ EFI, as that requires UDF remastering support we don't have yet. */
+    if (osHint & VBOXOSHINT_EFI)
+        return setError(E_FAIL, tr("The detected guest OS type requires EFI to boot and therefore is not supported yet"));
 
     /*
      * Do some default property stuff and check other properties.
