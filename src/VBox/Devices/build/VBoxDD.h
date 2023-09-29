@@ -240,6 +240,7 @@ extern const PDMDEVREG g_DevicePl031Rtc;
 extern const PDMDEVREG g_DevicePl061Gpio;
 extern const PDMDEVREG g_DeviceFlashCFI;
 extern const PDMDEVREG g_DevicePciGenericEcam;
+extern const PDMDEVREG g_DevicePlatform;
 #endif
 
 /* VBoxAcpi.cpp */

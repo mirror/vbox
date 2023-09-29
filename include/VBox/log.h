@@ -166,6 +166,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_DEV_PIC,
     /** PIT Device group. */
     LOG_GROUP_DEV_PIT,
+    /** Generic Platform Device group. */
+    LOG_GROUP_DEV_PLATFORM,
     /** QEMU firmware config Device group. */
     LOG_GROUP_DEV_QEMUFWCFG,
     /** RTC Device group. */
@@ -914,6 +916,7 @@ typedef enum VBOXLOGGROUP
     "DEV_PCNET", \
     "DEV_PIC", \
     "DEV_PIT", \
+    "DEV_PLATFORM", \
     "DEV_QEMUFWCFG", \
     "DEV_RTC", \
     "DEV_SB16", \
