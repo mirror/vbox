@@ -163,18 +163,12 @@ bool UINameAndSystemEditor::setGuestOSTypeByTypeId(const QString &strTypeId)
 {
     AssertReturn(m_pComboFamily, false);
 
-    const UIGuestOSTypeManager * const pGuestOSTypeManager = uiCommon().guestOSTypeManager();
-    AssertReturn(pGuestOSTypeManager, false);
-    // const UIGuestOSType &type = pGuestOSTypeManager->findGuestTypeById(strTypeId);
-    // if (!type.isOk())
-    //     return false;
-
     int iFamilyComboIndex = -1;
     /* We already have to have an item in the family combo box for this family id: */
     for (int i = 0; i < m_pComboFamily->count() && iFamilyComboIndex == -1; ++i)
     {
         QString strComboFamilyId = m_pComboFamily->itemData(i, FamilyID).toString();
-        if (!strComboFamilyId.isEmpty() && strComboFamilyId == pGuestOSTypeManager->getFamilyId(strTypeId))
+        if (!strComboFamilyId.isEmpty() && strComboFamilyId == uiCommon().guestOSTypeManager().getFamilyId(strTypeId))
             iFamilyComboIndex = i;
     }
     /* Bail out if family combo has no such item: */
@@ -184,7 +178,7 @@ bool UINameAndSystemEditor::setGuestOSTypeByTypeId(const QString &strTypeId)
     m_pComboFamily->setCurrentIndex(iFamilyComboIndex);
 
     /* If variant is not empty then try to select correct index. This will populate type combo: */
-    QString strVariant = pGuestOSTypeManager->getVariant(strTypeId);
+    QString strVariant = uiCommon().guestOSTypeManager().getVariant(strTypeId);
     if (!strVariant.isEmpty())
     {
         int index = -1;
@@ -313,8 +307,6 @@ void UINameAndSystemEditor::sltFamilyChanged(int index)
 {
     AssertReturnVoid(m_pComboFamily);
     AssertReturnVoid(m_pComboVariant);
-    const UIGuestOSTypeManager * const pGuestOSTypeManager = uiCommon().guestOSTypeManager();
-    AssertReturnVoid(pGuestOSTypeManager);
 
     m_strFamilyId = m_pComboFamily->itemData(index, FamilyID).toString();
 
@@ -326,14 +318,14 @@ void UINameAndSystemEditor::sltFamilyChanged(int index)
     m_pComboVariant->setEnabled(true);
     m_pComboVariant->clear();
 
-    const QStringList variantList = pGuestOSTypeManager->getVariantListForFamilyId(m_strFamilyId);
+    const QStringList variantList = uiCommon().guestOSTypeManager().getVariantListForFamilyId(m_strFamilyId);
 
     if (variantList.isEmpty())
     {
         m_pComboVariant->setEnabled(false);
         m_pLabelVariant->setEnabled(false);
         /* If variant list is empty the all the types of the family are added to typ selection combo: */
-        populateTypeCombo(pGuestOSTypeManager->getTypeListForFamilyId(m_strFamilyId));
+        populateTypeCombo(uiCommon().guestOSTypeManager().getTypeListForFamilyId(m_strFamilyId));
     }
     else
     {
@@ -349,7 +341,7 @@ void UINameAndSystemEditor::sltFamilyChanged(int index)
         if (iOracleIndex != -1)
             m_pComboVariant->setCurrentIndex(iOracleIndex);
 
-        populateTypeCombo(pGuestOSTypeManager->getTypeListForVariant(m_pComboVariant->currentText()));
+        populateTypeCombo(uiCommon().guestOSTypeManager().getTypeListForVariant(m_pComboVariant->currentText()));
     }
     m_pComboVariant->blockSignals(false);
 
@@ -359,10 +351,8 @@ void UINameAndSystemEditor::sltFamilyChanged(int index)
 
 void UINameAndSystemEditor::sltVariantChanged(const QString &strVariant)
 {
-    const UIGuestOSTypeManager * const pGuestOSTypeManager = uiCommon().guestOSTypeManager();
-    AssertReturnVoid(pGuestOSTypeManager);
     m_strVariant = strVariant;
-    populateTypeCombo(pGuestOSTypeManager->getTypeListForVariant(strVariant));
+    populateTypeCombo(uiCommon().guestOSTypeManager().getTypeListForVariant(strVariant));
 }
 
 void UINameAndSystemEditor::populateTypeCombo(const UIGuestOSTypeManager::UIGuestOSTypeInfo &typeList)
@@ -649,11 +639,8 @@ void UINameAndSystemEditor::prepareFamilyCombo()
 {
     AssertPtrReturnVoid(m_pComboFamily);
 
-    const UIGuestOSTypeManager * const pGuestOSTypeManager = uiCommon().guestOSTypeManager();
-    AssertPtrReturnVoid(pGuestOSTypeManager);
-
     /* Acquire family IDs: */
-    const UIGuestOSTypeManager::UIGuestOSTypeFamilyInfo &families = pGuestOSTypeManager->getFamilies();
+    const UIGuestOSTypeManager::UIGuestOSTypeFamilyInfo &families = uiCommon().guestOSTypeManager().getFamilies();
 
     /* For each known family ID: */
     for (int i = 0; i < families.size(); ++i)

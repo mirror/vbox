@@ -351,9 +351,7 @@ void UIRuntimeInfoWidget::updateOSTypeRow()
         strOSType = m_strOSNotDetected;
     else
     {
-        const UIGuestOSTypeManager *pManager = uiCommon().guestOSTypeManager();
-        if (pManager)
-            strOSType = pManager->getDescription(strOSType);
+        strOSType = uiCommon().guestOSTypeManager().getDescription(strOSType);
     }
    updateInfoRow(InfoRow_GuestOSType, QString("%1").arg(m_strGuestOSTypeLabel), strOSType);
 }

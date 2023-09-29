@@ -264,10 +264,10 @@ void UIWizardNewVMDiskPage::initializePage()
     AssertReturnVoid(pWizard);
 
     LONG64 iRecommendedSize = 0;
-    const UIGuestOSTypeManager *pManager = uiCommon().guestOSTypeManager();
-    if (pManager && !m_userModifiedParameters.contains("SelectedDiskSource"))
+
+    if (!m_userModifiedParameters.contains("SelectedDiskSource"))
     {
-        iRecommendedSize = pManager->getRecommendedHDD(pWizard->guestOSTypeId());
+        iRecommendedSize = uiCommon().guestOSTypeManager().getRecommendedHDD(pWizard->guestOSTypeId());
         if (iRecommendedSize != 0)
         {
             if (m_pDiskNew)

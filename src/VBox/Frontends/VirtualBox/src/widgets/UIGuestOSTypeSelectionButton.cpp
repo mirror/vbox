@@ -80,9 +80,6 @@ void UIGuestOSTypeSelectionButton::setOSTypeId(const QString &strOSTypeId)
 {
     if (m_strOSTypeId == strOSTypeId)
         return;
-    const UIGuestOSTypeManager *pManager = uiCommon().guestOSTypeManager();
-    AssertReturnVoid(pManager);
-
     m_strOSTypeId = strOSTypeId;
 
 #ifndef VBOX_WS_MAC
@@ -90,7 +87,7 @@ void UIGuestOSTypeSelectionButton::setOSTypeId(const QString &strOSTypeId)
     setIcon(generalIconPool().guestOSTypePixmapDefault(m_strOSTypeId));
 #endif
 
-    setText(pManager->getDescription(m_strOSTypeId));
+    setText(uiCommon().guestOSTypeManager().getDescription(m_strOSTypeId));
 }
 
 void UIGuestOSTypeSelectionButton::retranslateUi()
@@ -115,22 +112,20 @@ void UIGuestOSTypeSelectionButton::populateMenu()
     /* Clear initially: */
     m_pMainMenu->clear();
 
-    const UIGuestOSTypeManager *pManager = uiCommon().guestOSTypeManager();
-    AssertReturnVoid(pManager);
-    UIGuestOSTypeManager::UIGuestOSTypeFamilyInfo familyList = pManager->getFamilies();
+    UIGuestOSTypeManager::UIGuestOSTypeFamilyInfo familyList = uiCommon().guestOSTypeManager().getFamilies();
 
     for (int i = 0; i < familyList.size(); ++i)
     {
         const QPair<QString, QString> &familyInfo = familyList[i];
         QMenu *pSubMenu = m_pMainMenu->addMenu(familyInfo.second);
-        QStringList variantList = pManager->getVariantListForFamilyId(familyInfo.first);
+        QStringList variantList = uiCommon().guestOSTypeManager().getVariantListForFamilyId(familyInfo.first);
 
         if (variantList.isEmpty())
-            createOSTypeMenu(pManager->getTypeListForFamilyId(familyInfo.first), pSubMenu);
+            createOSTypeMenu(uiCommon().guestOSTypeManager().getTypeListForFamilyId(familyInfo.first), pSubMenu);
         else
         {
             foreach (const QString &strVariant, variantList)
-                createOSTypeMenu(pManager->getTypeListForVariant(strVariant), pSubMenu->addMenu(strVariant));
+                createOSTypeMenu(uiCommon().guestOSTypeManager().getTypeListForVariant(strVariant), pSubMenu->addMenu(strVariant));
         }
     }
 }

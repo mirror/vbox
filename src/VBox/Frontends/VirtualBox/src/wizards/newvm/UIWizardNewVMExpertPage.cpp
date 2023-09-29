@@ -342,13 +342,11 @@ void UIWizardNewVMExpertPage::createConnections()
 void UIWizardNewVMExpertPage::setOSTypeDependedValues()
 {
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
-    const UIGuestOSTypeManager *pManager = uiCommon().guestOSTypeManager();
     AssertReturnVoid(pWizard);
-    AssertReturnVoid(pManager);
 
     QString strTypeId = pWizard->guestOSTypeId();
     /* Get recommended 'ram' field value: */
-    ULONG recommendedRam = pManager->getRecommendedRAM(strTypeId);
+    ULONG recommendedRam = uiCommon().guestOSTypeManager().getRecommendedRAM(strTypeId);
 
     if (m_pHardwareWidgetContainer)
     {
@@ -362,7 +360,7 @@ void UIWizardNewVMExpertPage::setOSTypeDependedValues()
         }
 
         /* Set Firmware Type of the widget and the wizard: */
-        KFirmwareType fwType = pManager->getRecommendedFirmware(strTypeId);
+        KFirmwareType fwType = uiCommon().guestOSTypeManager().getRecommendedFirmware(strTypeId);
         if (!m_userModifiedParameters.contains("EFIEnabled"))
         {
             m_pHardwareWidgetContainer->setEFIEnabled(fwType != KFirmwareType_BIOS);
@@ -370,7 +368,7 @@ void UIWizardNewVMExpertPage::setOSTypeDependedValues()
         }
 
         /* Initialize CPU count:*/
-        int iCPUCount = pManager->getRecommendedCPUCount(strTypeId);
+        int iCPUCount = uiCommon().guestOSTypeManager().getRecommendedCPUCount(strTypeId);
         if (!m_userModifiedParameters.contains("CPUCount"))
         {
             m_pHardwareWidgetContainer->setCPUCount(iCPUCount);
@@ -379,7 +377,7 @@ void UIWizardNewVMExpertPage::setOSTypeDependedValues()
         m_pHardwareWidgetContainer->blockSignals(false);
     }
 
-    LONG64 iRecommendedDiskSize = pManager->getRecommendedHDD(strTypeId);
+    LONG64 iRecommendedDiskSize = uiCommon().guestOSTypeManager().getRecommendedHDD(strTypeId);
     /* Prepare initial disk choice: */
     if (!m_userModifiedParameters.contains("SelectedDiskSource"))
     {

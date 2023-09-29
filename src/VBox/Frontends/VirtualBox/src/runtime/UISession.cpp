@@ -847,11 +847,8 @@ bool UISession::mountBootMedium(const QUuid &uMediumId)
         return false;
     }
 
-    const UIGuestOSTypeManager *pManager = uiCommon().guestOSTypeManager();
-    AssertReturn(pManager, false);
-
-    const KStorageBus enmRecommendedDvdBus = pManager->getRecommendedDVDStorageBus(osTypeId());
-    const KStorageControllerType enmRecommendedDvdType = pManager->getRecommendedDVDStorageController(osTypeId());
+    const KStorageBus enmRecommendedDvdBus = uiCommon().guestOSTypeManager().getRecommendedDVDStorageBus(osTypeId());
+    const KStorageControllerType enmRecommendedDvdType = uiCommon().guestOSTypeManager().getRecommendedDVDStorageController(osTypeId());
 
     /* Search for an attachment of required bus & type: */
     CMachine comMachine = machine();
@@ -1304,10 +1301,8 @@ bool UISession::guestAdditionsUpgradable()
         return false;
 
     /* Auto GA update is currently for Windows and Linux guests only */
-    const UIGuestOSTypeManager *pManager = uiCommon().guestOSTypeManager();
-    AssertReturn(pManager, false);
-
-    bool fIsWindowOrLinux = pManager->isLinux(uimachine()->osTypeId()) || pManager->isWindows(uimachine()->osTypeId());
+    bool fIsWindowOrLinux = uiCommon().guestOSTypeManager().isLinux(uimachine()->osTypeId())
+                         || uiCommon().guestOSTypeManager().isWindows(uimachine()->osTypeId());
 
     if (!fIsWindowOrLinux)
         return false;

@@ -549,10 +549,7 @@ void UIWizardNewVMNameOSTypePage::updateInfoLabel()
                                        "the guest OS will need to be installed manually.");
     else if (!pWizard->detectedOSTypeId().isEmpty())
     {
-        const UIGuestOSTypeManager *pManager = uiCommon().guestOSTypeManager();
-        QString strType;
-        if (pManager)
-            strType = pManager->getDescription(pWizard->detectedOSTypeId());
+        QString strType = uiCommon().guestOSTypeManager().getDescription(pWizard->detectedOSTypeId());
         if (!pWizard->isUnattendedInstallSupported())
             strMessage = UIWizardNewVM::tr("Detected OS type: %1. %2")
                                            .arg(strType)

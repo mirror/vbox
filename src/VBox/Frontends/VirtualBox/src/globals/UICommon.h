@@ -316,8 +316,7 @@ public:
 
     /** @name COM: Guest OS Type stuff.
      * @{ */
-        const UIGuestOSTypeManager *guestOSTypeManager() const { return m_pGuestOSTypeManager; }
-        UIGuestOSTypeManager &guestOSTypeManager2() const { return *m_pGuestOSTypeManager; }
+        const UIGuestOSTypeManager &guestOSTypeManager() const { return *m_pGuestOSTypeManager; }
     /** @} */
 
     /** @name COM: Virtual Machine stuff.

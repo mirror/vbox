@@ -92,9 +92,6 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent,
     /* Assign background image: */
     setPixmapName(":/wizard_new_welcome_bg.png");
 #endif /* VBOX_WS_MAC */
-    /* Register classes: */
-    qRegisterMetaType<CGuestOSType>();
-
     connect(this, &UIWizardNewVM::rejected, this, &UIWizardNewVM::sltHandleWizardCancel);
 
     /* Create installer: */
@@ -278,13 +275,12 @@ bool UIWizardNewVM::attachDefaultDevices()
     bool success = false;
     QUuid uMachineId = m_machine.GetId();
     CSession session = uiCommon().openSession(uMachineId);
-    const UIGuestOSTypeManager *pManager = uiCommon().guestOSTypeManager();
-    if (!session.isNull() && pManager)
+    if (!session.isNull())
     {
         CMachine machine = session.GetMachine();
         if (!m_virtualDisk.isNull())
         {
-            KStorageBus enmHDDBus = pManager->getRecommendedHDStorageBus(m_guestOSTypeId);
+            KStorageBus enmHDDBus = uiCommon().guestOSTypeManager().getRecommendedHDStorageBus(m_guestOSTypeId);
             CStorageController comHDDController = m_machine.GetStorageControllerByInstance(enmHDDBus, 0);
             if (!comHDDController.isNull())
             {
@@ -296,7 +292,7 @@ bool UIWizardNewVM::attachDefaultDevices()
         }
 
         /* Attach optical drive: */
-        KStorageBus enmDVDBus = pManager->getRecommendedDVDStorageBus(m_guestOSTypeId);
+        KStorageBus enmDVDBus = uiCommon().guestOSTypeManager().getRecommendedDVDStorageBus(m_guestOSTypeId);
         CStorageController comDVDController = m_machine.GetStorageControllerByInstance(enmDVDBus, 0);
         if (!comDVDController.isNull())
         {
@@ -317,7 +313,7 @@ bool UIWizardNewVM::attachDefaultDevices()
         }
 
         /* Attach an empty floppy drive if recommended */
-        if (pManager->getRecommendedFloppy(m_guestOSTypeId))
+        if (uiCommon().guestOSTypeManager().getRecommendedFloppy(m_guestOSTypeId))
         {
             CStorageController comFloppyController = m_machine.GetStorageControllerByInstance(KStorageBus_Floppy, 0);
             if (!comFloppyController.isNull())
@@ -794,10 +790,7 @@ QVector<KMediumVariant> UIWizardNewVM::mediumVariants() const
 
 QString UIWizardNewVM::getGuestOSTypeDescription() const
 {
-    const UIGuestOSTypeManager *pManager = uiCommon().guestOSTypeManager();
-    if (!pManager)
-        return QString();
-    return pManager->getDescription(m_guestOSTypeId);
+    return uiCommon().guestOSTypeManager().getDescription(m_guestOSTypeId);
 }
 
 bool UIWizardNewVM::isUnattendedEnabled() const

@@ -88,28 +88,26 @@ void UIWizardNewVMHardwarePage::initializePage()
     retranslateUi();
 
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
-    const UIGuestOSTypeManager *pManager = uiCommon().guestOSTypeManager();
-
-    if (pManager && pWizard && m_pHardwareWidgetContainer)
+    if (pWizard && m_pHardwareWidgetContainer)
     {
         const QString &strTypeId = pWizard->guestOSTypeId();
 
         m_pHardwareWidgetContainer->blockSignals(true);
         if (!m_userModifiedParameters.contains("MemorySize"))
         {
-            ULONG recommendedRam = pManager->getRecommendedRAM(strTypeId);
+            ULONG recommendedRam = uiCommon().guestOSTypeManager().getRecommendedRAM(strTypeId);
             m_pHardwareWidgetContainer->setMemorySize(recommendedRam);
             pWizard->setMemorySize(recommendedRam);
         }
         if (!m_userModifiedParameters.contains("CPUCount"))
         {
-            ULONG recommendedCPUs = pManager->getRecommendedCPUCount(strTypeId);
+            ULONG recommendedCPUs = uiCommon().guestOSTypeManager().getRecommendedCPUCount(strTypeId);
             m_pHardwareWidgetContainer->setCPUCount(recommendedCPUs);
             pWizard->setCPUCount(recommendedCPUs);
         }
         if (!m_userModifiedParameters.contains("EFIEnabled"))
         {
-            KFirmwareType fwType = pManager->getRecommendedFirmware(strTypeId);
+            KFirmwareType fwType = uiCommon().guestOSTypeManager().getRecommendedFirmware(strTypeId);
             m_pHardwareWidgetContainer->setEFIEnabled(fwType != KFirmwareType_BIOS);
             pWizard->setEFIEnabled(fwType != KFirmwareType_BIOS);
         }

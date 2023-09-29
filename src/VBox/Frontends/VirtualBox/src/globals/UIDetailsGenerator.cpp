@@ -118,15 +118,11 @@ UITextTable UIDetailsGenerator::generateMachineInformationGeneral(CMachine &comM
         /* Configure hovering anchor: */
         const QString strAnchorType = QString("os_type");
         const QString strOsTypeId = comMachine.GetOSTypeId();
-        const UIGuestOSTypeManager *pManager = uiCommon().guestOSTypeManager();
-        QString strOsTypeDescription;
-        if (pManager)
-            strOsTypeDescription = pManager->getDescription(strOsTypeId);
         table << UITextTableLine(QApplication::translate("UIDetails", "Operating System", "details (general)"),
                                  QString("<a href=#%1,%2>%3</a>")
                                      .arg(strAnchorType,
                                           strOsTypeId,
-                                          strOsTypeDescription));
+                                          uiCommon().guestOSTypeManager().getDescription(strOsTypeId)));
     }
 
     /* Settings file location: */
