@@ -931,6 +931,7 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
   	Gpio/DevPL061.cpp \
   	Misc/DevFlashCFI.cpp \
   	Misc/DevPL031.cpp \
+  	Misc/DevPlatform.cpp \
   	Serial/DevPL011.cpp
  endif
 
