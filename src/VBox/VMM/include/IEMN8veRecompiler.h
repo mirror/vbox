@@ -657,14 +657,14 @@ DECLINLINE(uint32_t) iemNativeEmitStoreGprByBp(PIEMRECOMPILERSTATE pReNative, ui
         uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
         AssertReturn(pu32CodeBuf, UINT32_MAX);
         pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_St_Dword, iGprSrc,
-                                                      ARMV8_A64_BP, (uint32_t)offDisp / 8);
+                                                      ARMV8_A64_REG_BP, (uint32_t)offDisp / 8);
     }
-    else if (offDisp >= -256 offDisp <= 256)
+    else if (offDisp >= -256 && offDisp <= 256)
     {
         /* stur w/ signed imm9 (unscaled) */
         uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
         AssertReturn(pu32CodeBuf, UINT32_MAX);
-        pu32CodeBuf[off++] = Armv8A64MkInstrSturLdur(kArmv8A64InstrLdStType_St_Dword, iGprSrc, ARMV8_A64_BP, offDisp);
+        pu32CodeBuf[off++] = Armv8A64MkInstrSturLdur(kArmv8A64InstrLdStType_St_Dword, iGprSrc, ARMV8_A64_REG_BP, offDisp);
     }
     else
     {
@@ -672,7 +672,7 @@ DECLINLINE(uint32_t) iemNativeEmitStoreGprByBp(PIEMRECOMPILERSTATE pReNative, ui
         off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, (uint32_t)offDisp);
         uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
         AssertReturn(pu32CodeBuf, UINT32_MAX);
-        pu32CodeBuf[off++] = Armv8A64MkInstrStLdRegIdx(kArmv8A64InstrLdStType_St_Dword, iGprSrc, ARMV8_A64_BP,
+        pu32CodeBuf[off++] = Armv8A64MkInstrStLdRegIdx(kArmv8A64InstrLdStType_St_Dword, iGprSrc, ARMV8_A64_REG_BP,
                                                        IEMNATIVE_REG_FIXDE_TMP0, kArmv8A64InstrLdStExtend_Sxtw);
     }
     return off;

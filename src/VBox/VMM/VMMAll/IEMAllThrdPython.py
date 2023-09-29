@@ -1601,37 +1601,38 @@ class IEMThreadedGenerator(object):
             '',
         ];
 
-    ## List of built-in threaded functions with user argument counts.
+    ## List of built-in threaded functions with user argument counts and
+    ## whether it has a native recompiler implementation.
     katBltIns = (
-        ( 'DeferToCImpl0',                                      2 ),
-        ( 'CheckIrq',                                           0 ),
-        ( 'CheckMode',                                          1 ),
-        ( 'CheckHwInstrBps',                                    0 ),
-        ( 'CheckCsLim',                                         1 ),
+        ( 'DeferToCImpl0',                                      2, True  ),
+        ( 'CheckIrq',                                           0, False ),
+        ( 'CheckMode',                                          1, False ),
+        ( 'CheckHwInstrBps',                                    0, False ),
+        ( 'CheckCsLim',                                         1, False ),
 
-        ( 'CheckCsLimAndOpcodes',                               3 ),
-        ( 'CheckOpcodes',                                       3 ),
-        ( 'CheckOpcodesConsiderCsLim',                          3 ),
+        ( 'CheckCsLimAndOpcodes',                               3, False ),
+        ( 'CheckOpcodes',                                       3, False ),
+        ( 'CheckOpcodesConsiderCsLim',                          3, False ),
 
-        ( 'CheckCsLimAndPcAndOpcodes',                          3 ),
-        ( 'CheckPcAndOpcodes',                                  3 ),
-        ( 'CheckPcAndOpcodesConsiderCsLim',                     3 ),
+        ( 'CheckCsLimAndPcAndOpcodes',                          3, False ),
+        ( 'CheckPcAndOpcodes',                                  3, False ),
+        ( 'CheckPcAndOpcodesConsiderCsLim',                     3, False ),
 
-        ( 'CheckCsLimAndOpcodesAcrossPageLoadingTlb',           3 ),
-        ( 'CheckOpcodesAcrossPageLoadingTlb',                   3 ),
-        ( 'CheckOpcodesAcrossPageLoadingTlbConsiderCsLim',      2 ),
+        ( 'CheckCsLimAndOpcodesAcrossPageLoadingTlb',           3, False ),
+        ( 'CheckOpcodesAcrossPageLoadingTlb',                   3, False ),
+        ( 'CheckOpcodesAcrossPageLoadingTlbConsiderCsLim',      2, False ),
 
-        ( 'CheckCsLimAndOpcodesLoadingTlb',                     3 ),
-        ( 'CheckOpcodesLoadingTlb',                             3 ),
-        ( 'CheckOpcodesLoadingTlbConsiderCsLim',                3 ),
+        ( 'CheckCsLimAndOpcodesLoadingTlb',                     3, False ),
+        ( 'CheckOpcodesLoadingTlb',                             3, False ),
+        ( 'CheckOpcodesLoadingTlbConsiderCsLim',                3, False ),
 
-        ( 'CheckCsLimAndOpcodesOnNextPageLoadingTlb',           2 ),
-        ( 'CheckOpcodesOnNextPageLoadingTlb',                   2 ),
-        ( 'CheckOpcodesOnNextPageLoadingTlbConsiderCsLim',      2 ),
+        ( 'CheckCsLimAndOpcodesOnNextPageLoadingTlb',           2, False ),
+        ( 'CheckOpcodesOnNextPageLoadingTlb',                   2, False ),
+        ( 'CheckOpcodesOnNextPageLoadingTlbConsiderCsLim',      2, False ),
 
-        ( 'CheckCsLimAndOpcodesOnNewPageLoadingTlb',            2 ),
-        ( 'CheckOpcodesOnNewPageLoadingTlb',                    2 ),
-        ( 'CheckOpcodesOnNewPageLoadingTlbConsiderCsLim',       2 ),
+        ( 'CheckCsLimAndOpcodesOnNewPageLoadingTlb',            2, False ),
+        ( 'CheckOpcodesOnNewPageLoadingTlb',                    2, False ),
+        ( 'CheckOpcodesOnNewPageLoadingTlbConsiderCsLim',       2, False ),
     );
 
     def generateThreadedFunctionsHeader(self, oOut):
@@ -1652,7 +1653,7 @@ class IEMThreadedGenerator(object):
             '     * Predefined',
             '     */',
         ];
-        asLines += ['    kIemThreadedFunc_BltIn_%s,' % (sFuncNm,) for sFuncNm, _ in self.katBltIns];
+        asLines += ['    kIemThreadedFunc_BltIn_%s,' % (sFuncNm,) for sFuncNm, _, _ in self.katBltIns];
 
         iThreadedFunction = 1 + len(self.katBltIns);
         for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
@@ -1826,7 +1827,7 @@ class IEMThreadedGenerator(object):
                 '     * Predefined.',
                 '     */',
             ));
-        for sFuncNm, cArgs in self.katBltIns:
+        for sFuncNm, cArgs, _ in self.katBltIns:
             asFuncTable.append('    iemThreadedFunc_BltIn_%s,' % (sFuncNm,));
             asNameTable.append('    "BltIn_%s",' % (sFuncNm,));
             asArgCntTab.append('    %d, /*BltIn_%s*/' % (cArgs, sFuncNm,));
@@ -1962,8 +1963,11 @@ class IEMThreadedGenerator(object):
                     + '     * Predefined.\n'
                     + '     */\n'
                     );
-        for sFuncNm, _ in self.katBltIns:
-            oOut.write('    NULL, /*BltIn_%s*/\n' % (sFuncNm,))
+        for sFuncNm, _, fHaveRecompFunc in self.katBltIns:
+            if fHaveRecompFunc:
+                oOut.write('    iemNativeRecompFunc_BltIn_%s,\n' % (sFuncNm,))
+            else:
+                oOut.write('    NULL, /*BltIn_%s*/\n' % (sFuncNm,))
 
         iThreadedFunction = 1 + len(self.katBltIns);
         for sVariation in ThreadedFunctionVariation.kasVariationsEmitOrder:
