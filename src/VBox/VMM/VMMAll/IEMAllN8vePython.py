@@ -90,8 +90,7 @@ def analyzeVariantForNativeRecomp(oVariation,
     # The simplest case are the IEM_MC_DEFER_TO_CIMPL_*_RET_THREADED ones, just pass them thru:
     if (    len(aoStmts) == 1
         and aoStmts[0].sName.startswith('IEM_MC_DEFER_TO_CIMPL_')
-        and aoStmts[0].sName.endswith('_RET_THREADED')
-        and sHostArch in ('amd64',)):
+        and aoStmts[0].sName.endswith('_RET_THREADED')):
         return NativeRecompFunctionVariation(oVariation, sHostArch);
 
     return None;
