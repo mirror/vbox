@@ -471,7 +471,7 @@ HRESULT AudioAdapter::setAudioCodec(AudioCodecType_T aAudioCodec)
 
         case AudioControllerType_VirtioSound:
         {
-            hrc = E_NOTIMPL;
+            hrc = S_OK; /* Don't return an error here, even if this is not implemented yet. Will confuse callers. */
             break;
         }
 
