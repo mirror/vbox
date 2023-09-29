@@ -1436,12 +1436,16 @@ static void hmR3VmxReportProcBasedCtls2Msr(PCVMXCTLSMSR pVmxMsr)
     HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "EPT_XCPT_VE",         VMX_PROC_CTLS2_EPT_XCPT_VE);
     HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CONCEAL_VMX_FROM_PT", VMX_PROC_CTLS2_CONCEAL_VMX_FROM_PT);
     HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "XSAVES_XRSTORS",      VMX_PROC_CTLS2_XSAVES_XRSTORS);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "PASID_TRANSLATE",     VMX_PROC_CTLS2_PASID_TRANSLATE);
     HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "MODE_BASED_EPT_PERM", VMX_PROC_CTLS2_MODE_BASED_EPT_PERM);
     HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "SPP_EPT",             VMX_PROC_CTLS2_SPP_EPT);
     HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "PT_EPT",              VMX_PROC_CTLS2_PT_EPT);
     HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "TSC_SCALING",         VMX_PROC_CTLS2_TSC_SCALING);
     HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "USER_WAIT_PAUSE",     VMX_PROC_CTLS2_USER_WAIT_PAUSE);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "PCONFIG",             VMX_PROC_CTLS2_PCONFIG);
     HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "ENCLV_EXIT",          VMX_PROC_CTLS2_ENCLV_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "BUS_LOCK_DETECT",     VMX_PROC_CTLS2_BUS_LOCK_DETECT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "INSTR_TIMEOUT",       VMX_PROC_CTLS2_INSTR_TIMEOUT);
 }
 
 
@@ -1454,6 +1458,11 @@ static void hmR3VmxReportProcBasedCtls3Msr(uint64_t uProcCtls3)
 {
     LogRel(("HM: MSR_IA32_VMX_PROCBASED_CTLS3      = %#RX64\n", uProcCtls3));
     LogRel(("HM:   LOADIWKEY_EXIT                    = %RTbool\n", RT_BOOL(uProcCtls3 & VMX_PROC_CTLS3_LOADIWKEY_EXIT)));
+    LogRel(("HM:   HLAT                              = %RTbool\n", RT_BOOL(uProcCtls3 & VMX_PROC_CTLS3_HLAT)));
+    LogRel(("HM:   EPT_PAGING_WRITE                  = %RTbool\n", RT_BOOL(uProcCtls3 & VMX_PROC_CTLS3_EPT_PAGING_WRITE)));
+    LogRel(("HM:   GST_PAGING_VERIFY                 = %RTbool\n", RT_BOOL(uProcCtls3 & VMX_PROC_CTLS3_GST_PAGING_VERIFY)));
+    LogRel(("HM:   IPI_VIRT                          = %RTbool\n", RT_BOOL(uProcCtls3 & VMX_PROC_CTLS3_IPI_VIRT)));
+    LogRel(("HM:   VIRT_SPEC_CTRL                    = %RTbool\n", RT_BOOL(uProcCtls3 & VMX_PROC_CTLS3_VIRT_SPEC_CTRL)));
 }
 
 
@@ -2994,12 +3003,16 @@ static void hmR3CheckErrorLogVmcsCtls(VMCPUID idCpu, PCVMXVMCSINFO pVmcsInfo)
         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_EPT_XCPT_VE        );
         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_CONCEAL_VMX_FROM_PT);
         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_XSAVES_XRSTORS     );
+        HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_PASID_TRANSLATE    );
         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_MODE_BASED_EPT_PERM);
         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_SPP_EPT            );
         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_PT_EPT             );
         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_TSC_SCALING        );
         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_USER_WAIT_PAUSE    );
+        HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_PCONFIG            );
         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_ENCLV_EXIT         );
+        HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_BUS_LOCK_DETECT    );
+        HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_INSTR_TIMEOUT      );
     }
     LogRel(("HM: CPU[%u] EntryCtls            %#RX32\n", idCpu, pVmcsInfo->u32EntryCtls));
     {
