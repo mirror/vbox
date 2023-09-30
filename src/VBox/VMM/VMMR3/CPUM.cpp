@@ -1911,9 +1911,9 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCFGMNODE pCpumCfg, PCVMXMSRS pH
     EmuFeat.fVmxExitLoadPatMsr        = 1;
     EmuFeat.fVmxExitSaveEferMsr       = 1;
     EmuFeat.fVmxExitLoadEferMsr       = 1;
-    EmuFeat.fVmxSavePreemptTimer      = 0;  /* Cannot be enabled if VMX-preemption timer is disabled. */
+    EmuFeat.fVmxSavePreemptTimer      = 0 & fVmxPreemptTimer;       /* Cannot be enabled if VMX-preemption timer is disabled. */
     EmuFeat.fVmxSecondaryExitCtls     = 0;
-    EmuFeat.fVmxExitSaveEferLma       = 1;  /* Cannot be disabled if unrestricted guest is enabled. */
+    EmuFeat.fVmxExitSaveEferLma       = 1 | fVmxUnrestrictedGuest;  /* Cannot be disabled if unrestricted guest is enabled. */
     EmuFeat.fVmxPt                    = 0;
     EmuFeat.fVmxVmwriteAll            = 0;  /** @todo NSTVMX: enable this when nested VMCS shadowing is enabled. */
     EmuFeat.fVmxEntryInjectSoftInt    = 1;
@@ -1927,87 +1927,94 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCFGMNODE pCpumCfg, PCVMXMSRS pH
     PCCPUMFEATURES pBaseFeat  = cpumR3IsHwAssistNstGstExecAllowed(pVM) ? &pVM->cpum.s.HostFeatures : &EmuFeat;
     PCPUMFEATURES  pGuestFeat = &pVM->cpum.s.GuestFeatures;
     Assert(pBaseFeat->fVmx);
-    pGuestFeat->fVmxInsOutInfo            = (pBaseFeat->fVmxInsOutInfo            & EmuFeat.fVmxInsOutInfo           );
-    pGuestFeat->fVmxExtIntExit            = (pBaseFeat->fVmxExtIntExit            & EmuFeat.fVmxExtIntExit           );
-    pGuestFeat->fVmxNmiExit               = (pBaseFeat->fVmxNmiExit               & EmuFeat.fVmxNmiExit              );
-    pGuestFeat->fVmxVirtNmi               = (pBaseFeat->fVmxVirtNmi               & EmuFeat.fVmxVirtNmi              );
-    pGuestFeat->fVmxPreemptTimer          = (pBaseFeat->fVmxPreemptTimer          & EmuFeat.fVmxPreemptTimer         );
-    pGuestFeat->fVmxPostedInt             = (pBaseFeat->fVmxPostedInt             & EmuFeat.fVmxPostedInt            );
-    pGuestFeat->fVmxIntWindowExit         = (pBaseFeat->fVmxIntWindowExit         & EmuFeat.fVmxIntWindowExit        );
-    pGuestFeat->fVmxTscOffsetting         = (pBaseFeat->fVmxTscOffsetting         & EmuFeat.fVmxTscOffsetting        );
-    pGuestFeat->fVmxHltExit               = (pBaseFeat->fVmxHltExit               & EmuFeat.fVmxHltExit              );
-    pGuestFeat->fVmxInvlpgExit            = (pBaseFeat->fVmxInvlpgExit            & EmuFeat.fVmxInvlpgExit           );
-    pGuestFeat->fVmxMwaitExit             = (pBaseFeat->fVmxMwaitExit             & EmuFeat.fVmxMwaitExit            );
-    pGuestFeat->fVmxRdpmcExit             = (pBaseFeat->fVmxRdpmcExit             & EmuFeat.fVmxRdpmcExit            );
-    pGuestFeat->fVmxRdtscExit             = (pBaseFeat->fVmxRdtscExit             & EmuFeat.fVmxRdtscExit            );
-    pGuestFeat->fVmxCr3LoadExit           = (pBaseFeat->fVmxCr3LoadExit           & EmuFeat.fVmxCr3LoadExit          );
-    pGuestFeat->fVmxCr3StoreExit          = (pBaseFeat->fVmxCr3StoreExit          & EmuFeat.fVmxCr3StoreExit         );
-    pGuestFeat->fVmxTertiaryExecCtls      = (pBaseFeat->fVmxTertiaryExecCtls      & EmuFeat.fVmxTertiaryExecCtls     );
-    pGuestFeat->fVmxCr8LoadExit           = (pBaseFeat->fVmxCr8LoadExit           & EmuFeat.fVmxCr8LoadExit          );
-    pGuestFeat->fVmxCr8StoreExit          = (pBaseFeat->fVmxCr8StoreExit          & EmuFeat.fVmxCr8StoreExit         );
-    pGuestFeat->fVmxUseTprShadow          = (pBaseFeat->fVmxUseTprShadow          & EmuFeat.fVmxUseTprShadow         );
-    pGuestFeat->fVmxNmiWindowExit         = (pBaseFeat->fVmxNmiWindowExit         & EmuFeat.fVmxNmiWindowExit        );
-    pGuestFeat->fVmxMovDRxExit            = (pBaseFeat->fVmxMovDRxExit            & EmuFeat.fVmxMovDRxExit           );
-    pGuestFeat->fVmxUncondIoExit          = (pBaseFeat->fVmxUncondIoExit          & EmuFeat.fVmxUncondIoExit         );
-    pGuestFeat->fVmxUseIoBitmaps          = (pBaseFeat->fVmxUseIoBitmaps          & EmuFeat.fVmxUseIoBitmaps         );
-    pGuestFeat->fVmxMonitorTrapFlag       = (pBaseFeat->fVmxMonitorTrapFlag       & EmuFeat.fVmxMonitorTrapFlag      );
-    pGuestFeat->fVmxUseMsrBitmaps         = (pBaseFeat->fVmxUseMsrBitmaps         & EmuFeat.fVmxUseMsrBitmaps        );
-    pGuestFeat->fVmxMonitorExit           = (pBaseFeat->fVmxMonitorExit           & EmuFeat.fVmxMonitorExit          );
-    pGuestFeat->fVmxPauseExit             = (pBaseFeat->fVmxPauseExit             & EmuFeat.fVmxPauseExit            );
-    pGuestFeat->fVmxSecondaryExecCtls     = (pBaseFeat->fVmxSecondaryExecCtls     & EmuFeat.fVmxSecondaryExecCtls    );
-    pGuestFeat->fVmxVirtApicAccess        = (pBaseFeat->fVmxVirtApicAccess        & EmuFeat.fVmxVirtApicAccess       );
-    pGuestFeat->fVmxEpt                   = (pBaseFeat->fVmxEpt                   & EmuFeat.fVmxEpt                  );
-    pGuestFeat->fVmxDescTableExit         = (pBaseFeat->fVmxDescTableExit         & EmuFeat.fVmxDescTableExit        );
-    pGuestFeat->fVmxRdtscp                = (pBaseFeat->fVmxRdtscp                & EmuFeat.fVmxRdtscp               );
-    pGuestFeat->fVmxVirtX2ApicMode        = (pBaseFeat->fVmxVirtX2ApicMode        & EmuFeat.fVmxVirtX2ApicMode       );
-    pGuestFeat->fVmxVpid                  = (pBaseFeat->fVmxVpid                  & EmuFeat.fVmxVpid                 );
-    pGuestFeat->fVmxWbinvdExit            = (pBaseFeat->fVmxWbinvdExit            & EmuFeat.fVmxWbinvdExit           );
-    pGuestFeat->fVmxUnrestrictedGuest     = (pBaseFeat->fVmxUnrestrictedGuest     & EmuFeat.fVmxUnrestrictedGuest    );
-    pGuestFeat->fVmxApicRegVirt           = (pBaseFeat->fVmxApicRegVirt           & EmuFeat.fVmxApicRegVirt          );
-    pGuestFeat->fVmxVirtIntDelivery       = (pBaseFeat->fVmxVirtIntDelivery       & EmuFeat.fVmxVirtIntDelivery      );
-    pGuestFeat->fVmxPauseLoopExit         = (pBaseFeat->fVmxPauseLoopExit         & EmuFeat.fVmxPauseLoopExit        );
-    pGuestFeat->fVmxRdrandExit            = (pBaseFeat->fVmxRdrandExit            & EmuFeat.fVmxRdrandExit           );
-    pGuestFeat->fVmxInvpcid               = (pBaseFeat->fVmxInvpcid               & EmuFeat.fVmxInvpcid              );
-    pGuestFeat->fVmxVmFunc                = (pBaseFeat->fVmxVmFunc                & EmuFeat.fVmxVmFunc               );
-    pGuestFeat->fVmxVmcsShadowing         = (pBaseFeat->fVmxVmcsShadowing         & EmuFeat.fVmxVmcsShadowing        );
-    pGuestFeat->fVmxRdseedExit            = (pBaseFeat->fVmxRdseedExit            & EmuFeat.fVmxRdseedExit           );
-    pGuestFeat->fVmxPml                   = (pBaseFeat->fVmxPml                   & EmuFeat.fVmxPml                  );
-    pGuestFeat->fVmxEptXcptVe             = (pBaseFeat->fVmxEptXcptVe             & EmuFeat.fVmxEptXcptVe            );
-    pGuestFeat->fVmxConcealVmxFromPt      = (pBaseFeat->fVmxConcealVmxFromPt      & EmuFeat.fVmxConcealVmxFromPt     );
-    pGuestFeat->fVmxXsavesXrstors         = (pBaseFeat->fVmxXsavesXrstors         & EmuFeat.fVmxXsavesXrstors        );
-    pGuestFeat->fVmxPasidTranslate        = (pBaseFeat->fVmxPasidTranslate        & EmuFeat.fVmxPasidTranslate       );
-    pGuestFeat->fVmxModeBasedExecuteEpt   = (pBaseFeat->fVmxModeBasedExecuteEpt   & EmuFeat.fVmxModeBasedExecuteEpt  );
-    pGuestFeat->fVmxSppEpt                = (pBaseFeat->fVmxSppEpt                & EmuFeat.fVmxSppEpt               );
-    pGuestFeat->fVmxPtEpt                 = (pBaseFeat->fVmxPtEpt                 & EmuFeat.fVmxPtEpt                );
-    pGuestFeat->fVmxUseTscScaling         = (pBaseFeat->fVmxUseTscScaling         & EmuFeat.fVmxUseTscScaling        );
-    pGuestFeat->fVmxUserWaitPause         = (pBaseFeat->fVmxUserWaitPause         & EmuFeat.fVmxUserWaitPause        );
-    pGuestFeat->fVmxPconfig               = (pBaseFeat->fVmxPconfig               & EmuFeat.fVmxPconfig              );
-    pGuestFeat->fVmxEnclvExit             = (pBaseFeat->fVmxEnclvExit             & EmuFeat.fVmxEnclvExit            );
-    pGuestFeat->fVmxBusLockDetect         = (pBaseFeat->fVmxBusLockDetect         & EmuFeat.fVmxBusLockDetect        );
-    pGuestFeat->fVmxInstrTimeout          = (pBaseFeat->fVmxInstrTimeout          & EmuFeat.fVmxInstrTimeout         );
-    pGuestFeat->fVmxLoadIwKeyExit         = (pBaseFeat->fVmxLoadIwKeyExit         & EmuFeat.fVmxLoadIwKeyExit        );
-    pGuestFeat->fVmxHlat                  = (pBaseFeat->fVmxHlat                  & EmuFeat.fVmxHlat                 );
-    pGuestFeat->fVmxEptPagingWrite        = (pBaseFeat->fVmxEptPagingWrite        & EmuFeat.fVmxEptPagingWrite       );
-    pGuestFeat->fVmxGstPagingVerify       = (pBaseFeat->fVmxGstPagingVerify       & EmuFeat.fVmxGstPagingVerify      );
-    pGuestFeat->fVmxIpiVirt               = (pBaseFeat->fVmxIpiVirt               & EmuFeat.fVmxIpiVirt              );
-    pGuestFeat->fVmxVirtSpecCtrl          = (pBaseFeat->fVmxVirtSpecCtrl          & EmuFeat.fVmxVirtSpecCtrl         );
-    pGuestFeat->fVmxEntryLoadDebugCtls    = (pBaseFeat->fVmxEntryLoadDebugCtls    & EmuFeat.fVmxEntryLoadDebugCtls   );
-    pGuestFeat->fVmxIa32eModeGuest        = (pBaseFeat->fVmxIa32eModeGuest        & EmuFeat.fVmxIa32eModeGuest       );
-    pGuestFeat->fVmxEntryLoadEferMsr      = (pBaseFeat->fVmxEntryLoadEferMsr      & EmuFeat.fVmxEntryLoadEferMsr     );
-    pGuestFeat->fVmxEntryLoadPatMsr       = (pBaseFeat->fVmxEntryLoadPatMsr       & EmuFeat.fVmxEntryLoadPatMsr      );
-    pGuestFeat->fVmxExitSaveDebugCtls     = (pBaseFeat->fVmxExitSaveDebugCtls     & EmuFeat.fVmxExitSaveDebugCtls    );
-    pGuestFeat->fVmxHostAddrSpaceSize     = (pBaseFeat->fVmxHostAddrSpaceSize     & EmuFeat.fVmxHostAddrSpaceSize    );
-    pGuestFeat->fVmxExitAckExtInt         = (pBaseFeat->fVmxExitAckExtInt         & EmuFeat.fVmxExitAckExtInt        );
-    pGuestFeat->fVmxExitSavePatMsr        = (pBaseFeat->fVmxExitSavePatMsr        & EmuFeat.fVmxExitSavePatMsr       );
-    pGuestFeat->fVmxExitLoadPatMsr        = (pBaseFeat->fVmxExitLoadPatMsr        & EmuFeat.fVmxExitLoadPatMsr       );
-    pGuestFeat->fVmxExitSaveEferMsr       = (pBaseFeat->fVmxExitSaveEferMsr       & EmuFeat.fVmxExitSaveEferMsr      );
-    pGuestFeat->fVmxExitLoadEferMsr       = (pBaseFeat->fVmxExitLoadEferMsr       & EmuFeat.fVmxExitLoadEferMsr      );
-    pGuestFeat->fVmxSavePreemptTimer      = (pBaseFeat->fVmxSavePreemptTimer      & EmuFeat.fVmxSavePreemptTimer     );
-    pGuestFeat->fVmxSecondaryExitCtls     = (pBaseFeat->fVmxSecondaryExitCtls     & EmuFeat.fVmxSecondaryExitCtls    );
-    pGuestFeat->fVmxExitSaveEferLma       = (pBaseFeat->fVmxExitSaveEferLma       & EmuFeat.fVmxExitSaveEferLma      );
-    pGuestFeat->fVmxPt                    = (pBaseFeat->fVmxPt                    & EmuFeat.fVmxPt                   );
-    pGuestFeat->fVmxVmwriteAll            = (pBaseFeat->fVmxVmwriteAll            & EmuFeat.fVmxVmwriteAll           );
-    pGuestFeat->fVmxEntryInjectSoftInt    = (pBaseFeat->fVmxEntryInjectSoftInt    & EmuFeat.fVmxEntryInjectSoftInt   );
+#define CPUMVMX_SET_GST_FEAT(a_Feat) \
+    do { \
+        pGuestFeat->a_Feat = (pBaseFeat->a_Feat & EmuFeat.a_Feat); \
+    } while (0)
+
+    CPUMVMX_SET_GST_FEAT(fVmxInsOutInfo);
+    CPUMVMX_SET_GST_FEAT(fVmxExtIntExit);
+    CPUMVMX_SET_GST_FEAT(fVmxNmiExit);
+    CPUMVMX_SET_GST_FEAT(fVmxVirtNmi);
+    CPUMVMX_SET_GST_FEAT(fVmxPreemptTimer);
+    CPUMVMX_SET_GST_FEAT(fVmxPostedInt);
+    CPUMVMX_SET_GST_FEAT(fVmxIntWindowExit);
+    CPUMVMX_SET_GST_FEAT(fVmxTscOffsetting);
+    CPUMVMX_SET_GST_FEAT(fVmxHltExit);
+    CPUMVMX_SET_GST_FEAT(fVmxInvlpgExit);
+    CPUMVMX_SET_GST_FEAT(fVmxMwaitExit);
+    CPUMVMX_SET_GST_FEAT(fVmxRdpmcExit);
+    CPUMVMX_SET_GST_FEAT(fVmxRdtscExit);
+    CPUMVMX_SET_GST_FEAT(fVmxCr3LoadExit);
+    CPUMVMX_SET_GST_FEAT(fVmxCr3StoreExit);
+    CPUMVMX_SET_GST_FEAT(fVmxTertiaryExecCtls);
+    CPUMVMX_SET_GST_FEAT(fVmxCr8LoadExit);
+    CPUMVMX_SET_GST_FEAT(fVmxCr8StoreExit);
+    CPUMVMX_SET_GST_FEAT(fVmxUseTprShadow);
+    CPUMVMX_SET_GST_FEAT(fVmxNmiWindowExit);
+    CPUMVMX_SET_GST_FEAT(fVmxMovDRxExit);
+    CPUMVMX_SET_GST_FEAT(fVmxUncondIoExit);
+    CPUMVMX_SET_GST_FEAT(fVmxUseIoBitmaps);
+    CPUMVMX_SET_GST_FEAT(fVmxMonitorTrapFlag);
+    CPUMVMX_SET_GST_FEAT(fVmxUseMsrBitmaps);
+    CPUMVMX_SET_GST_FEAT(fVmxMonitorExit);
+    CPUMVMX_SET_GST_FEAT(fVmxPauseExit);
+    CPUMVMX_SET_GST_FEAT(fVmxSecondaryExecCtls);
+    CPUMVMX_SET_GST_FEAT(fVmxVirtApicAccess);
+    CPUMVMX_SET_GST_FEAT(fVmxEpt);
+    CPUMVMX_SET_GST_FEAT(fVmxDescTableExit);
+    CPUMVMX_SET_GST_FEAT(fVmxRdtscp);
+    CPUMVMX_SET_GST_FEAT(fVmxVirtX2ApicMode);
+    CPUMVMX_SET_GST_FEAT(fVmxVpid);
+    CPUMVMX_SET_GST_FEAT(fVmxWbinvdExit);
+    CPUMVMX_SET_GST_FEAT(fVmxUnrestrictedGuest);
+    CPUMVMX_SET_GST_FEAT(fVmxApicRegVirt);
+    CPUMVMX_SET_GST_FEAT(fVmxVirtIntDelivery);
+    CPUMVMX_SET_GST_FEAT(fVmxPauseLoopExit);
+    CPUMVMX_SET_GST_FEAT(fVmxRdrandExit);
+    CPUMVMX_SET_GST_FEAT(fVmxInvpcid);
+    CPUMVMX_SET_GST_FEAT(fVmxVmFunc);
+    CPUMVMX_SET_GST_FEAT(fVmxVmcsShadowing);
+    CPUMVMX_SET_GST_FEAT(fVmxRdseedExit);
+    CPUMVMX_SET_GST_FEAT(fVmxPml);
+    CPUMVMX_SET_GST_FEAT(fVmxEptXcptVe);
+    CPUMVMX_SET_GST_FEAT(fVmxConcealVmxFromPt);
+    CPUMVMX_SET_GST_FEAT(fVmxXsavesXrstors);
+    CPUMVMX_SET_GST_FEAT(fVmxPasidTranslate);
+    CPUMVMX_SET_GST_FEAT(fVmxModeBasedExecuteEpt);
+    CPUMVMX_SET_GST_FEAT(fVmxSppEpt);
+    CPUMVMX_SET_GST_FEAT(fVmxPtEpt);
+    CPUMVMX_SET_GST_FEAT(fVmxUseTscScaling);
+    CPUMVMX_SET_GST_FEAT(fVmxUserWaitPause);
+    CPUMVMX_SET_GST_FEAT(fVmxPconfig);
+    CPUMVMX_SET_GST_FEAT(fVmxEnclvExit);
+    CPUMVMX_SET_GST_FEAT(fVmxBusLockDetect);
+    CPUMVMX_SET_GST_FEAT(fVmxInstrTimeout);
+    CPUMVMX_SET_GST_FEAT(fVmxLoadIwKeyExit);
+    CPUMVMX_SET_GST_FEAT(fVmxHlat);
+    CPUMVMX_SET_GST_FEAT(fVmxEptPagingWrite);
+    CPUMVMX_SET_GST_FEAT(fVmxGstPagingVerify);
+    CPUMVMX_SET_GST_FEAT(fVmxIpiVirt);
+    CPUMVMX_SET_GST_FEAT(fVmxVirtSpecCtrl);
+    CPUMVMX_SET_GST_FEAT(fVmxEntryLoadDebugCtls);
+    CPUMVMX_SET_GST_FEAT(fVmxIa32eModeGuest);
+    CPUMVMX_SET_GST_FEAT(fVmxEntryLoadEferMsr);
+    CPUMVMX_SET_GST_FEAT(fVmxEntryLoadPatMsr);
+    CPUMVMX_SET_GST_FEAT(fVmxExitSaveDebugCtls);
+    CPUMVMX_SET_GST_FEAT(fVmxHostAddrSpaceSize);
+    CPUMVMX_SET_GST_FEAT(fVmxExitAckExtInt);
+    CPUMVMX_SET_GST_FEAT(fVmxExitSavePatMsr);
+    CPUMVMX_SET_GST_FEAT(fVmxExitLoadPatMsr);
+    CPUMVMX_SET_GST_FEAT(fVmxExitSaveEferMsr);
+    CPUMVMX_SET_GST_FEAT(fVmxExitLoadEferMsr);
+    CPUMVMX_SET_GST_FEAT(fVmxSavePreemptTimer);
+    CPUMVMX_SET_GST_FEAT(fVmxSecondaryExitCtls);
+    CPUMVMX_SET_GST_FEAT(fVmxExitSaveEferLma);
+    CPUMVMX_SET_GST_FEAT(fVmxPt);
+    CPUMVMX_SET_GST_FEAT(fVmxVmwriteAll);
+    CPUMVMX_SET_GST_FEAT(fVmxEntryInjectSoftInt);
+
+#undef CPUMVMX_SET_GST_FEAT
 
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     /* Don't expose VMX preemption timer if host is subject to VMX-preemption timer erratum. */
@@ -3579,17 +3586,17 @@ static void cpumR3InfoOne(PVM pVM, PCVMCPU pVCpu, PCDBGFINFOHLP pHlp, CPUMDUMPTY
                 pHlp->pfnPrintf(pHlp,
                     "%sMTRR_CAP          =%016RX64\n"
                     "%sMTRR_DEF_TYPE     =%016RX64\n"
-                    "%sMtrrFix64K_00000  =%016RX64\n"
-                    "%sMtrrFix16K_80000  =%016RX64\n"
-                    "%sMtrrFix16K_A0000  =%016RX64\n"
-                    "%sMtrrFix4K_C0000   =%016RX64\n"
-                    "%sMtrrFix4K_C8000   =%016RX64\n"
-                    "%sMtrrFix4K_D0000   =%016RX64\n"
-                    "%sMtrrFix4K_D8000   =%016RX64\n"
-                    "%sMtrrFix4K_E0000   =%016RX64\n"
-                    "%sMtrrFix4K_E8000   =%016RX64\n"
-                    "%sMtrrFix4K_F0000   =%016RX64\n"
-                    "%sMtrrFix4K_F8000   =%016RX64\n",
+                    "%sMTRR_FIX64K_00000 =%016RX64\n"
+                    "%sMTRR_FIX16K_80000 =%016RX64\n"
+                    "%sMTRR_FIX16K_A0000 =%016RX64\n"
+                    "%sMTRR_FIX4K_C0000  =%016RX64\n"
+                    "%sMTRR_FIX4K_C8000  =%016RX64\n"
+                    "%sMTRR_FIX4K_D0000  =%016RX64\n"
+                    "%sMTRR_FIX4K_D8000  =%016RX64\n"
+                    "%sMTRR_FIX4K_E0000  =%016RX64\n"
+                    "%sMTRR_FIX4K_E8000  =%016RX64\n"
+                    "%sMTRR_FIX4K_F0000  =%016RX64\n"
+                    "%sMTRR_FIX4K_F8000  =%016RX64\n",
                     pszPrefix, pVCpu->cpum.s.GuestMsrs.msr.MtrrCap,
                     pszPrefix, pVCpu->cpum.s.GuestMsrs.msr.MtrrDefType,
                     pszPrefix, pVCpu->cpum.s.GuestMsrs.msr.MtrrFix64K_00000,
