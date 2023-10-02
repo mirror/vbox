@@ -544,6 +544,8 @@ void UINameAndSystemEditor::prepareWidgets()
 
         if (m_fChooseType)
         {
+            const int iIconRow = iRow;
+
             /* Prepare VM OS family label: */
             m_pLabelFamily = new QLabel(this);
             if (m_pLabelFamily)
@@ -560,8 +562,9 @@ void UINameAndSystemEditor::prepareWidgets()
                 m_pLabelFamily->setBuddy(m_pComboFamily);
                 m_pLayout->addWidget(m_pComboFamily, iRow, 1);
             }
-
             ++iRow;
+
+            /* Prepare VM OS variant label: */
             m_pLabelVariant = new QLabel(this);
             if (m_pLabelVariant)
             {
@@ -570,14 +573,13 @@ void UINameAndSystemEditor::prepareWidgets()
 
                 m_pLayout->addWidget(m_pLabelVariant, iRow, 0);
             }
+            /* Prepare VM OS variant combo: */
             m_pComboVariant = new QComboBox(this);
             if (m_pComboVariant)
             {
                 m_pLabelFamily->setBuddy(m_pComboVariant);
                 m_pLayout->addWidget(m_pComboVariant, iRow, 1);
             }
-
-            const int iIconRow = iRow;
             ++iRow;
 
             /* Prepare VM OS type label: */
@@ -596,7 +598,6 @@ void UINameAndSystemEditor::prepareWidgets()
                 m_pLabelType->setBuddy(m_pComboType);
                 m_pLayout->addWidget(m_pComboType, iRow, 1);
             }
-
             ++iRow;
 
             /* Prepare sub-layout: */
