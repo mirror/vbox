@@ -42,6 +42,52 @@
 
 class UIGuestOSType;
 
+/** A wrapper around CGuestOSType. Some of the properties are cached here for performance. */
+class SHARED_LIBRARY_STUFF UIGuestOSType
+{
+
+public:
+
+
+    UIGuestOSType(const CGuestOSType &comGuestOSType);
+    UIGuestOSType();
+
+    const QString &getFamilyId() const;
+    const QString &getFamilyDescription() const;
+    const QString &getId() const;
+    const QString &getVariant() const;
+    const QString &getDescription() const;
+
+    /** @name Wrapper getters for CGuestOSType member.
+      * @{ */
+        KStorageBus             getRecommendedHDStorageBus() const;
+        ULONG                   getRecommendedRAM() const;
+        KStorageBus             getRecommendedDVDStorageBus() const;
+        ULONG                   getRecommendedCPUCount() const;
+        KFirmwareType           getRecommendedFirmware() const;
+        bool                    getRecommendedFloppy() const;
+        LONG64                  getRecommendedHDD() const;
+        KGraphicsControllerType getRecommendedGraphicsController() const;
+        KStorageControllerType  getRecommendedDVDStorageController() const;
+    /** @} */
+
+    bool isOk() const;
+
+private:
+
+    /** @name CGuestOSType properties. Cached here for a faster access.
+      * @{ */
+        mutable QString m_strFamilyId;
+        mutable QString m_strFamilyDescription;
+        mutable QString m_strId;
+        mutable QString m_strVariant;
+        mutable QString m_strDescription;
+    /** @} */
+
+    CGuestOSType m_comGuestOSType;
+};
+
+
 /** A wrapper and manager class for Guest OS types (IGuestOSType). Logically we structure os types into families
   *  e.g. Window, Linux etc. Some families have so-called variants which for Linux corresponds to distros, while some
   *  families have no variant. Under variants (and when no variant exists direcly under family) we have guest os
@@ -96,7 +142,7 @@ private:
     void addGuestOSType(const CGuestOSType &comType);
 
     /** The type list. Here it is a pointer to QVector to delay definition of UIGuestOSType. */
-    QVector<UIGuestOSType> *m_guestOSTypes;
+    QVector<UIGuestOSType> m_guestOSTypes;
     /** A map to prevent linear search of UIGuestOSType instances wrt. typeId. Key is typeId and value
       * is index to m_guestOSTypes list. */
     QMap<QString, int> m_typeIdIndexMap;
