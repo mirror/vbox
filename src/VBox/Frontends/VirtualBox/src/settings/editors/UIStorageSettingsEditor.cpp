@@ -3176,7 +3176,7 @@ void UIStorageSettingsEditor::retranslateUi()
     m_pLabelHDDetails->setText(tr("Details:"));
     m_pLabelLocation->setText(tr("Location:"));
     m_pLabelUsage->setText(tr("Attached to:"));
-    m_pLabelEncryption->setText(tr("Encrypted with key:"));
+    m_pLabelEncryption->setText(tr("Encryption key:"));
 
     /* Translate storage-view: */
     m_pTreeViewStorage->setWhatsThis(tr("Lists all storage controllers for this machine and "

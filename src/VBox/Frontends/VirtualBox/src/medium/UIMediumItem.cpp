@@ -278,7 +278,7 @@ void UIMediumItem::refresh()
             m_details.m_aLabels << tr("Format:");
             m_details.m_aLabels << tr("Storage details:");
             m_details.m_aLabels << tr("Attached to:");
-            m_details.m_aLabels << tr("Encrypted with key:");
+            m_details.m_aLabels << tr("Encryption key:");
             m_details.m_aLabels << tr("UUID:");
 
             m_details.m_aFields << hardDiskFormat();
