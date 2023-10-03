@@ -2332,15 +2332,15 @@ typedef enum                         /* Size VR Opc */
  * @param   i9ImmDisp   The 9-bit signed addressing displacement. Unscaled.
  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStLdImm9Ex(uint32_t u32Opcode, ARMV8A64INSTRLDSTTYPE enmType,
-                                                      uint32_t iReg, uint32_t iRegBase, int32_t i9ImmDisp = 0)
+                                                      uint32_t iReg, uint32_t iBaseReg, int32_t i9ImmDisp = 0)
 {
-    Assert(i9ImmDisp >= -256 && i9ImmDisp < 256); Assert(iReg < 32); Assert(iRegBase < 32);
+    Assert(i9ImmDisp >= -256 && i9ImmDisp < 256); Assert(iReg < 32); Assert(iBaseReg < 32);
     return u32Opcode
          | (((uint32_t)enmType & (uint32_t)kArmv8A64InstrLdStType_Mask_Size) << (30 - kArmv8A64InstrLdStType_Shift_Size))
          | (((uint32_t)enmType & (uint32_t)kArmv8A64InstrLdStType_Mask_VR)   << (26 - kArmv8A64InstrLdStType_Shift_VR))
          | (((uint32_t)enmType & (uint32_t)kArmv8A64InstrLdStType_Mask_Opc)  << (22 - kArmv8A64InstrLdStType_Shift_Opc))
          | (((uint32_t)i9ImmDisp & UINT32_C(0x1ff)) << 12)
-         | (iRegBase                                <<  5)
+         | (iBaseReg                                <<  5)
          | iReg;
 }
 
@@ -2355,12 +2355,12 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStLdImm9Ex(uint32_t u32Opcode, ARMV8A
  * @param   i9ImmDisp   The 9-bit signed addressing displacement. Unscaled.
  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSturLdur(ARMV8A64INSTRLDSTTYPE enmType,
-                                                    uint32_t iReg, uint32_t iRegBase, int32_t i9ImmDisp = 0)
+                                                    uint32_t iReg, uint32_t iBaseReg, int32_t i9ImmDisp = 0)
 {
                                                           /*    3         2         1         0 */
                                                           /*   10987654321098765432109876543210 */
     return Armv8A64MkInstrStLdImm9Ex(UINT32_C(0x38000000) /* 0b00111000000000000000000000000000 */,
-                                     enmType, iReg, iRegBase, i9ImmDisp);
+                                     enmType, iReg, iBaseReg, i9ImmDisp);
 }
 
 /**
@@ -2374,12 +2374,12 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSturLdur(ARMV8A64INSTRLDSTTYPE enmTyp
  * @param   i9ImmDisp   The 9-bit signed addressing displacement. Unscaled.
  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStrLdrPostIndex9(ARMV8A64INSTRLDSTTYPE enmType,
-                                                            uint32_t iReg, uint32_t iRegBase, int32_t i9ImmDisp = 0)
+                                                            uint32_t iReg, uint32_t iBaseReg, int32_t i9ImmDisp = 0)
 {
     Assert(enmType != kArmv8A64InstrLdStType_Prefetch);   /*    3         2         1         0 */
                                                           /*   10987654321098765432109876543210 */
     return Armv8A64MkInstrStLdImm9Ex(UINT32_C(0x38000400) /* 0b00111000000000000000010000000000 */,
-                                     enmType, iReg, iRegBase, i9ImmDisp);
+                                     enmType, iReg, iBaseReg, i9ImmDisp);
 }
 
 /**
@@ -2393,12 +2393,12 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStrLdrPostIndex9(ARMV8A64INSTRLDSTTYP
  * @param   i9ImmDisp   The 9-bit signed addressing displacement. Unscaled.
  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStrLdrPreIndex9(ARMV8A64INSTRLDSTTYPE enmType,
-                                                           uint32_t iReg, uint32_t iRegBase, int32_t i9ImmDisp = 0)
+                                                           uint32_t iReg, uint32_t iBaseReg, int32_t i9ImmDisp = 0)
 {
     Assert(enmType != kArmv8A64InstrLdStType_Prefetch);   /*    3         2         1         0 */
                                                           /*   10987654321098765432109876543210 */
     return Armv8A64MkInstrStLdImm9Ex(UINT32_C(0x38000c00) /* 0b00111000000000000000110000000000 */,
-                                     enmType, iReg, iRegBase, i9ImmDisp);
+                                     enmType, iReg, iBaseReg, i9ImmDisp);
 }
 
 /**
@@ -2412,14 +2412,14 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStrLdrPreIndex9(ARMV8A64INSTRLDSTTYPE
  * @param   i9ImmDisp   The 9-bit signed addressing displacement. Unscaled.
  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSttrLdtr(ARMV8A64INSTRLDSTTYPE enmType,
-                                                    uint32_t iReg, uint32_t iRegBase, int32_t i9ImmDisp = 0)
+                                                    uint32_t iReg, uint32_t iBaseReg, int32_t i9ImmDisp = 0)
 {
     Assert(enmType != kArmv8A64InstrLdStType_Prefetch);
     Assert(!((uint32_t)enmType & (uint32_t)kArmv8A64InstrLdStType_Mask_VR));
                                                           /*    3         2         1         0 */
                                                           /*   10987654321098765432109876543210 */
     return Armv8A64MkInstrStLdImm9Ex(UINT32_C(0x38000800) /* 0b00111000000000000000100000000000 */,
-                                     enmType, iReg, iRegBase, i9ImmDisp);
+                                     enmType, iReg, iBaseReg, i9ImmDisp);
 }
 
 
@@ -2434,17 +2434,17 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSttrLdtr(ARMV8A64INSTRLDSTTYPE enmTyp
  * @param   u12ImmDisp  Addressing displacement, scaled by size.
  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStLdRUOff(ARMV8A64INSTRLDSTTYPE enmType,
-                                                     uint32_t iReg, uint32_t iRegBase, uint32_t u12ImmDisp)
+                                                     uint32_t iReg, uint32_t iBaseReg, uint32_t u12ImmDisp)
 {
     Assert(u12ImmDisp < 4096U);
     Assert(iReg < 32);          /*    3         2         1         0 */
-    Assert(iRegBase < 32);      /*   10987654321098765432109876543210 */
+    Assert(iBaseReg < 32);      /*   10987654321098765432109876543210 */
     return UINT32_C(0x39000000) /* 0b00111001000000000000000000000000 */
          | (((uint32_t)enmType & (uint32_t)kArmv8A64InstrLdStType_Mask_Size) << (30 - kArmv8A64InstrLdStType_Shift_Size))
          | (((uint32_t)enmType & (uint32_t)kArmv8A64InstrLdStType_Mask_VR)   << (26 - kArmv8A64InstrLdStType_Shift_VR))
          | (((uint32_t)enmType & (uint32_t)kArmv8A64InstrLdStType_Mask_Opc)  << (22 - kArmv8A64InstrLdStType_Shift_Opc))
          | (u12ImmDisp       << 10)
-         | (iRegBase         <<  5)
+         | (iBaseReg         <<  5)
          | iReg;
 }
 
@@ -2469,13 +2469,13 @@ typedef enum
  *                      to the access size (thus irrelevant for byte accesses).
  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStLdRegIdx(ARMV8A64INSTRLDSTTYPE enmType,
-                                                      uint32_t iReg, uint32_t iRegBase, uint32_t iRegIndex,
+                                                      uint32_t iReg, uint32_t iBaseReg, uint32_t iRegIndex,
                                                       ARMV8A64INSTRLDSTEXTEND enmExtend = kArmv8A64InstrLdStExtend_Lsl,
                                                       bool fShifted = false)
 {
     Assert(iRegIndex < 32);
     Assert(iReg < 32);          /*    3         2         1         0 */
-    Assert(iRegBase < 32);      /*   10987654321098765432109876543210 */
+    Assert(iBaseReg < 32);      /*   10987654321098765432109876543210 */
     return UINT32_C(0x38200800) /* 0b00111000001000000000100000000000 */
          | (((uint32_t)enmType & (uint32_t)kArmv8A64InstrLdStType_Mask_Size) << (30 - kArmv8A64InstrLdStType_Shift_Size))
          | (((uint32_t)enmType & (uint32_t)kArmv8A64InstrLdStType_Mask_VR)   << (26 - kArmv8A64InstrLdStType_Shift_VR))
@@ -2483,7 +2483,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStLdRegIdx(ARMV8A64INSTRLDSTTYPE enmT
          | (iRegIndex            << 16)
          | ((uint32_t)enmExtend  << 13)
          | ((uint32_t)fShifted   << 12)
-         | (iRegBase             <<  5)
+         | (iBaseReg             <<  5)
          | iReg;
 }
 
