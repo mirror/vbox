@@ -308,20 +308,21 @@ void UISerialSettingsEditor::prepare()
 void UISerialSettingsEditor::prepareWidgets()
 {
     /* Prepare main layout: */
-    QGridLayout *pLayoutMain = new QGridLayout(this);
-    if (pLayoutMain)
+    QGridLayout *pLayout = new QGridLayout(this);
+    if (pLayout)
     {
-        pLayoutMain->setRowStretch(2, 1);
+        pLayout->setContentsMargins(0, 0, 0, 0);
+        pLayout->setRowStretch(2, 1);
 
         /* Prepare port check-box: */
         m_pCheckBoxPort = new QCheckBox(this);
         if (m_pCheckBoxPort)
-            pLayoutMain->addWidget(m_pCheckBoxPort, 0, 0, 1, 2);
+            pLayout->addWidget(m_pCheckBoxPort, 0, 0, 1, 2);
 
         /* Prepare 20-px shifting spacer: */
         QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
         if (pSpacerItem)
-            pLayoutMain->addItem(pSpacerItem, 1, 0);
+            pLayout->addItem(pSpacerItem, 1, 0);
 
         /* Prepare adapter settings widget: */
         m_pWidgetPortSettings = new QWidget(this);
@@ -427,7 +428,7 @@ void UISerialSettingsEditor::prepareWidgets()
                 }
             }
 
-            pLayoutMain->addWidget(m_pWidgetPortSettings, 1, 1);
+            pLayout->addWidget(m_pWidgetPortSettings, 1, 1);
         }
     }
 }
