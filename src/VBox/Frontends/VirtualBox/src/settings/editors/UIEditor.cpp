@@ -32,6 +32,7 @@
 #include <QLabel>
 #include <QRegularExpression>
 #include <QTabWidget>
+#include <QTextEdit>
 
 /* GUI includes: */
 #include "UIEditor.h"
@@ -120,6 +121,15 @@ QStringList UIEditor::description() const
             if (QAbstractItemModel *pModel = pView->model())
                 for (int i = 0; i < pModel->columnCount(); ++i)
                     result << pModel->headerData(i, Qt::Horizontal).toString().remove(re);
+
+    /* Adding all the text-edits having description property: */
+    foreach (QTextEdit *pTextEdit, findChildren<QTextEdit*>())
+        if (pTextEdit)
+        {
+            const QString strDescription = pTextEdit->property("description").toString();
+            if (!strDescription.isEmpty())
+                result << strDescription.remove(re);
+        }
 
     return result;
 }

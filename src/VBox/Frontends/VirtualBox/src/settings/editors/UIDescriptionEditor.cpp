@@ -60,8 +60,11 @@ QString UIDescriptionEditor::value() const
 void UIDescriptionEditor::retranslateUi()
 {
     if (m_pTextEdit)
+    {
         m_pTextEdit->setToolTip(tr("Holds the description of the virtual machine. The description field is useful "
                                    "for commenting on configuration details of the installed guest OS."));
+        m_pTextEdit->setProperty("description", QApplication::translate("UICommon", "Description", "DetailsElementType"));
+    }
 }
 
 void UIDescriptionEditor::prepare()
