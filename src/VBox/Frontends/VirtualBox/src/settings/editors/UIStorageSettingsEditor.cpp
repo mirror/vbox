@@ -4683,22 +4683,34 @@ void UIStorageSettingsEditor::prepareAttachmentWidget()
                 /* Prepare attachment passthrough check-box: */
                 m_pCheckBoxPassthrough = new QCheckBox(pWidgetAttachment);
                 if (m_pCheckBoxPassthrough)
+                {
+                    m_pCheckBoxPassthrough->hide();
                     pLayoutAttachmentSettings->addWidget(m_pCheckBoxPassthrough);
+                }
 
                 /* Prepare attachment temporary eject check-box: */
                 m_pCheckBoxTempEject = new QCheckBox(pWidgetAttachment);
                 if (m_pCheckBoxTempEject)
+                {
+                    m_pCheckBoxTempEject->hide();
                     pLayoutAttachmentSettings->addWidget(m_pCheckBoxTempEject);
+                }
 
                 /* Prepare attachment non rotational check-box: */
                 m_pCheckBoxNonRotational = new QCheckBox(pWidgetAttachment);
                 if (m_pCheckBoxNonRotational)
+                {
+                    m_pCheckBoxNonRotational->hide();
                     pLayoutAttachmentSettings->addWidget(m_pCheckBoxNonRotational);
+                }
 
                 /* Prepare attachment hot pluggable check-box: */
                 m_pCheckBoxHotPluggable = new QCheckBox(pWidgetAttachment);
                 if (m_pCheckBoxHotPluggable)
+                {
+                    m_pCheckBoxHotPluggable->hide();
                     pLayoutAttachmentSettings->addWidget(m_pCheckBoxHotPluggable);
+                }
 
                 m_pLayoutAttachment->addLayout(pLayoutAttachmentSettings, 2, 2);
             }
