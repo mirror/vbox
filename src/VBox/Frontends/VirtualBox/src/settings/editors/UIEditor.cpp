@@ -126,9 +126,9 @@ QStringList UIEditor::description() const
     foreach (QTextEdit *pTextEdit, findChildren<QTextEdit*>())
         if (pTextEdit)
         {
-            const QString strDescription = pTextEdit->property("description").toString();
+            const QString strDescription = pTextEdit->property("description").toString().remove(re);
             if (!strDescription.isEmpty())
-                result << strDescription.remove(re);
+                result << strDescription;
         }
 
     return result;
