@@ -345,9 +345,6 @@ private:
     /** Adds attachment with @a enmDevice. */
     void addAttachmentWrapper(KDeviceType enmDevice);
 
-    /** Updates additions details according to passed @a enmType. */
-    void updateAdditionalDetails(KDeviceType enmType);
-
     /** Generates unique controller name based on passed @a strTemplate. */
     QString generateUniqueControllerName(const QString &strTemplate) const;
 
