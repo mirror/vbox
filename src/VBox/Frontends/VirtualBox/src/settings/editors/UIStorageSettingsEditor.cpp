@@ -41,6 +41,7 @@
 #include <QMimeData>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QSizePolicy>
 #include <QSpinBox>
 #include <QStackedWidget>
 #include <QVBoxLayout>
@@ -817,6 +818,25 @@ private:
     QUuid               m_uId;
     /** Holds the medium device type. */
     UIMediumDeviceType  m_enmType;
+};
+
+
+/** QWidget sub-class
+  * with manual size-hint recalculation.
+  * Tries to take into account size-hint even for hidden items.
+  * Assumes QGridLayout is present as this widget is used purely
+  * for controller/attachment pane. */
+class UIWidgetOfMaximumSize : public QWidget
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs widget passing @a pParent to base-class. */
+    UIWidgetOfMaximumSize(QWidget *pParent = 0);
+
+    /** Returns the minimum widget size. */
+    virtual QSize minimumSizeHint() const RT_OVERRIDE;
 };
 
 
@@ -2828,6 +2848,69 @@ void StorageDelegate::paint(QPainter *pPainter, const QStyleOptionViewItem &opti
 
 
 /*********************************************************************************************************************************
+*   Class UIWidgetOfMaximumSize implementation.                                                                                  *
+*********************************************************************************************************************************/
+
+UIWidgetOfMaximumSize::UIWidgetOfMaximumSize(QWidget *pParent /* = 0 */)
+    : QWidget(pParent)
+{
+}
+
+QSize UIWidgetOfMaximumSize::minimumSizeHint() const
+{
+    /* Assume there is just one grid-layout: */
+    QList<QGridLayout*> gridLayouts = findChildren<QGridLayout*>();
+    AssertReturn(gridLayouts.size() == 1, QWidget::minimumSizeHint());
+    QGridLayout *pLayout = gridLayouts.first();
+    AssertPtrReturn(pLayout, QWidget::minimumSizeHint());
+
+    /* Acquire layout spacing: */
+    const int iSpacing = pLayout->spacing();
+
+    /* Calcualte column widths: */
+    QList<int> columns(pLayout->columnCount());
+    for (int iColumn = 0; iColumn < pLayout->columnCount(); ++iColumn)
+        for (int iRow = 0; iRow < pLayout->rowCount(); ++iRow)
+        {
+            QLayoutItem *pItem = pLayout->itemAtPosition(iRow, iColumn);
+            if (!pItem)
+                continue;
+            if (QWidget *pWidget = pItem->widget())
+            {
+                const QSizePolicy sp = pWidget->sizePolicy();
+                if (sp.horizontalPolicy() != QSizePolicy::Ignored)
+                    columns[iColumn] = qMax(columns.at(iColumn), pWidget->minimumSizeHint().width());
+            }
+        }
+
+    /* Calcualte row heights: */
+    QList<int> rows(pLayout->rowCount());
+    for (int iRow = 0; iRow < pLayout->rowCount(); ++iRow)
+        for (int iColumn = 0; iColumn < pLayout->columnCount(); ++iColumn)
+        {
+            QLayoutItem *pItem = pLayout->itemAtPosition(iRow, iColumn);
+            if (!pItem)
+                continue;
+            if (QWidget *pWidget = pItem->widget())
+            {
+                const QSizePolicy sp = pWidget->sizePolicy();
+                if (sp.verticalPolicy() != QSizePolicy::Ignored)
+                    rows[iRow] = qMax(rows.at(iRow), pWidget->minimumSizeHint().height());
+            }
+        }
+
+    /* Calculate effective layout size: */
+    int iTotalWidth = 0;
+    for (int iColumn = 0; iColumn < columns.size(); ++iColumn)
+        iTotalWidth += columns.at(iColumn) + iSpacing;
+    int iTotalHeight = 0;
+    for (int iRow = 0; iRow < rows.size(); ++iRow)
+        iTotalHeight += rows.at(iRow) + iSpacing;
+    return QSize(iTotalWidth, iTotalHeight);
+}
+
+
+/*********************************************************************************************************************************
 *   Class UIStorageSettingsEditor implementation.                                                                                *
 *********************************************************************************************************************************/
 
@@ -4540,7 +4623,7 @@ void UIStorageSettingsEditor::prepareEmptyWidget()
 void UIStorageSettingsEditor::prepareControllerWidget()
 {
     /* Create widget for controller case: */
-    QWidget *pWidgetController = new QWidget;
+    UIWidgetOfMaximumSize *pWidgetController = new UIWidgetOfMaximumSize;
     if (pWidgetController)
     {
         /* Create widget layout for controller case: */
@@ -4619,7 +4702,7 @@ void UIStorageSettingsEditor::prepareControllerWidget()
 void UIStorageSettingsEditor::prepareAttachmentWidget()
 {
     /* Create widget for attachment case: */
-    QWidget *pWidgetAttachment = new QWidget;
+    UIWidgetOfMaximumSize *pWidgetAttachment = new UIWidgetOfMaximumSize;
     if (pWidgetAttachment)
     {
         /* Create widget layout for attachment case: */
