@@ -1318,7 +1318,7 @@ public:
      * Returns true if @a this ends with @a a_pszSuffix, selective case version.
      *
      * @param   a_pszSuffix The suffix to test for.
-     * @param   enmCase     Case sensitivity selector.
+     * @param   a_enmCase   Case sensitivity selector.
      * @returns true if match, false if mismatch.
      */
     inline bool endsWith(const char *a_pszSuffix, CaseSensitivity a_enmCase) const RT_NOEXCEPT
@@ -1415,7 +1415,7 @@ public:
      * Returns true if @a this begins with @a a_pszPrefix, selective case version.
      *
      * @param   a_pszPrefix The prefix to test for.
-     * @param   enmCase     Case sensitivity selector.
+     * @param   a_enmCase   Case sensitivity selector.
      * @returns true if match, false if mismatch.
      */
     inline bool startsWith(const char *a_pszPrefix, CaseSensitivity a_enmCase) const RT_NOEXCEPT
