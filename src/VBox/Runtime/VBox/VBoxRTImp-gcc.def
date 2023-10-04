@@ -566,9 +566,18 @@ EXPORTS
     _ZNK24RTCRestJsonPrimaryCursor7getPathERK17RTCRestJsonCursorPcm
     _ZNK3xml11ElementNode17getAttributeValueEPKcP9RTCStringS2_
     _ZNK3xml11ElementNode21getAttributeValuePathEPKcP9RTCStringS2_
-    _ZNK9RTCString10startsWithERKS_NS_15CaseSensitivityE
-    _ZNK9RTCString14startsWithWordEPKcNS_15CaseSensitivityE
-    _ZNK9RTCString14startsWithWordERKS_NS_15CaseSensitivityE
+    _ZNK9RTCString8endsWithEPKc
+    _ZNK9RTCString8endsWithEPKcm
+    _ZNK9RTCString8endsWithERKS_
+    _ZNK9RTCString9endsWithIEPKc
+    _ZNK9RTCString9endsWithIEPKcm
+    _ZNK9RTCString9endsWithIERKS_
+    _ZNK9RTCString10startsWithEPKc
+    _ZNK9RTCString10startsWithEPKcm
+    _ZNK9RTCString10startsWithERKS_
+    _ZNK9RTCString11startsWithIEPKc
+    _ZNK9RTCString11startsWithIEPKcm
+    _ZNK9RTCString11startsWithIERKS_
     _ZNK9RTCString4findEPKS_m
     _ZNK9RTCString4findEPKcm
     _ZNK9RTCString4findERKS_m
