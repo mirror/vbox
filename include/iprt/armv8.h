@@ -199,7 +199,8 @@
 /** @} */
 
 /** @name Mapping of op0:op1:CRn:CRm:op2 to a system register ID. This is
- * IPRT specific and not part of the ARMv8 specification. */
+ * IPRT specific and not part of the ARMv8 specification.
+ * @{  */
 #define ARMV8_AARCH64_SYSREG_ID_CREATE(a_Op0, a_Op1, a_CRn, a_CRm, a_Op2) \
     UINT16_C(  (((a_Op0) & 0x3) << 14) \
              | (((a_Op1) & 0x7) << 11) \
