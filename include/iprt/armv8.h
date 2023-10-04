@@ -154,7 +154,7 @@
 #define ARMV8_A64_REG_LR                            ARMV8_A64_REG_X30
 /** Frame base pointer is typically mapped to x29. */
 #define ARMV8_A64_REG_BP                            ARMV8_A64_REG_X29
-/* @} */
+/** @} */
 
 
 /** @name System register encoding.
