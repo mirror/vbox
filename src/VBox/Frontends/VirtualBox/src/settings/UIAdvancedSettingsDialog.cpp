@@ -34,6 +34,7 @@
 #include <QCoreApplication>
 #include <QGridLayout>
 #include <QProgressBar>
+#include <QPropertyAnimation>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QScrollBar>
@@ -163,16 +164,33 @@ private:
 class UIVerticalScrollArea : public QScrollArea
 {
     Q_OBJECT;
+    Q_PROPERTY(int verticalScrollBarPosition READ verticalScrollBarPosition WRITE setVerticalScrollBarPosition);
 
 public:
 
     /** Constructs vertical scroll-area passing @a pParent to the base-class. */
     UIVerticalScrollArea(QWidget *pParent);
 
+    /** Requests vertical scrollbar @a iPosition. */
+    void requestVerticalScrollBarPosition(int iPosition);
+
 protected:
 
     /** Holds the minimum widget size. */
     virtual QSize minimumSizeHint() const RT_OVERRIDE;
+
+private:
+
+    /** Prepares all. */
+    void prepare();
+
+    /** Returns vertical scrollbar position. */
+    int verticalScrollBarPosition() const;
+    /** Defines vertical scrollbar @a iPosition. */
+    void setVerticalScrollBarPosition(int iPosition) const;
+
+    /** Holds the vertical scrollbar animation instance. */
+    QPropertyAnimation *m_pAnimation;
 };
 
 
@@ -340,9 +358,31 @@ int UIFilterEditor::editorWidth() const
 
 UIVerticalScrollArea::UIVerticalScrollArea(QWidget *pParent)
     : QScrollArea(pParent)
+    , m_pAnimation(0)
 {
-    /* Make vertical scroll-bar always visible. */
-    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    prepare();
+}
+
+void UIVerticalScrollArea::requestVerticalScrollBarPosition(int iPosition)
+{
+    /* Acquire scroll-bar minumum, maximum and length: */
+    const int iScrollBarMinimum = verticalScrollBar()->minimum();
+    const int iScrollBarMaximum = verticalScrollBar()->maximum();
+    const int iScrollBarLength = qAbs(iScrollBarMaximum - iScrollBarMinimum);
+
+    /* Acquire start, final position and total shift:: */
+    const int iStartPosition = verticalScrollBarPosition();
+    const int iFinalPosition = iPosition;
+    int iShift = qAbs(iFinalPosition - iStartPosition);
+    /* Make sure iShift is no more than iScrollBarLength: */
+    iShift = qMin(iShift, iScrollBarLength);
+
+    /* Calculate walking ratio: */
+    const float dRatio = (double)iShift / iScrollBarLength;
+    m_pAnimation->setDuration(dRatio * 500 /* 500ms is the max */);
+    m_pAnimation->setStartValue(iStartPosition);
+    m_pAnimation->setEndValue(iFinalPosition);
+    m_pAnimation->start();
 }
 
 QSize UIVerticalScrollArea::minimumSizeHint() const
@@ -355,6 +395,25 @@ QSize UIVerticalScrollArea::minimumSizeHint() const
     const int iMinHeight = qMax(QScrollArea::minimumSizeHint().height(),
                                 (int)(iMinWidth / 1.6));
     return QSize(iMinWidth, iMinHeight);
+}
+
+void UIVerticalScrollArea::prepare()
+{
+    /* Make vertical scroll-bar always visible. */
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+
+    /* Prepare vertical scrollbar animation: */
+    m_pAnimation = new QPropertyAnimation(this, "verticalScrollBarPosition", this);
+}
+
+int UIVerticalScrollArea::verticalScrollBarPosition() const
+{
+    return verticalScrollBar()->value();
+}
+
+void UIVerticalScrollArea::setVerticalScrollBarPosition(int iPosition) const
+{
+    verticalScrollBar()->setValue(iPosition);
 }
 
 
@@ -428,7 +487,7 @@ void UIAdvancedSettingsDialog::sltCategoryChanged(int cId)
     const QPoint pnt = m_frames.value(cId)->pos();
     iShift += pnt.y();
     /* Make sure corresponding page is visible: */
-    m_pScrollArea->verticalScrollBar()->setValue(iShift);
+    m_pScrollArea->requestVerticalScrollBarPosition(iShift);
 
 #ifndef VBOX_WS_MAC
     uiCommon().setHelpKeyword(m_pButtonBox->button(QDialogButtonBox::Help), m_pageHelpKeywords.value(cId));

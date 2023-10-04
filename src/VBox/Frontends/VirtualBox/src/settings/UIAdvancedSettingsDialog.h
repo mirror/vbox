@@ -41,7 +41,6 @@
 /* Forward declarations: */
 class QGridLayout;
 class QProgressBar;
-class QScrollArea;
 class QShowEvent;
 class QStackedWidget;
 class QTimer;
@@ -54,6 +53,7 @@ class UISettingsPageValidator;
 class UISettingsSelector;
 class UISettingsSerializer;
 class UISettingsWarningPane;
+class UIVerticalScrollArea;
 
 /* Using declarations: */
 using namespace UISettingsDefs;
@@ -254,9 +254,9 @@ private:
         UIFilterEditor *m_pEditorFilter;
 
         /** Holds the scroll-area instance. */
-        QScrollArea *m_pScrollArea;
+        UIVerticalScrollArea *m_pScrollArea;
         /** Holds the scroll-viewport instance. */
-        QWidget     *m_pScrollViewport;
+        QWidget              *m_pScrollViewport;
 
         /** Holds the button-box instance. */
         QIDialogButtonBox *m_pButtonBox;

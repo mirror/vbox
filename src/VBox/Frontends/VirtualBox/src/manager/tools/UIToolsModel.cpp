@@ -30,7 +30,6 @@
 #include <QGraphicsSceneContextMenuEvent>
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsView>
-#include <QPropertyAnimation>
 #include <QScrollBar>
 #include <QTimer>
 
