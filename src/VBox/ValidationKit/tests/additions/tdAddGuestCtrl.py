@@ -5483,7 +5483,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return (fRc, oTxsSession);
 
-    def testGuestCtrl3D(self, oSession, oTxsSession, oTestVm):
+    def testGuestCtrl3D(self, oSession, oTxsSession, oTestVm):  # pylint: disable=unused-argument
         """
         Tests for VMSVGA device.
         """
