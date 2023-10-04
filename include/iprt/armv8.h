@@ -2204,7 +2204,8 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 
 
 #if (!defined(VBOX_FOR_DTRACE_LIB) && defined(__cplusplus) && !defined(ARMV8_WITHOUT_MK_INSTR)) || defined(DOXYGEN_RUNNING)
-/** @def grp_rt_armv8_mkinstr   Instruction Encoding Helpers
+/** @defgroup grp_rt_armv8_mkinstr   Instruction Encoding Helpers
+ * @ingroup grp_rt_armv8
  *
  * A few inlined functions and macros for assiting in encoding common ARMv8
  * instructions.
