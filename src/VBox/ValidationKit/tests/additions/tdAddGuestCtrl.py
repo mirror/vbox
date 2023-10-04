@@ -5491,58 +5491,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if oTestVm.sKind not in ('Windows8_64', 'Windows10', 'Windows10_64', 'Windows11_64'):
             return (True, oTxsSession);
 
-        sPnpUtil = os.path.join(self.oTstDrv.getGuestSystemDir(oTestVm), 'pnputil.exe');
-
-        # Use credential defaults.
-        oCreds = tdCtxCreds();
-        oCreds.applyDefaultsIfNotSet(oTestVm);
-
-        #
-        # Create a session.
-        #
-        try:
-            oGuest = oSession.o.console.guest;
-            oGuestSession = oGuest.createSession(oCreds.sUser, oCreds.sPassword, oCreds.sDomain, "testGuestCtrl3D");
-            eWaitResult = oGuestSession.waitForArray([ vboxcon.GuestSessionWaitForFlag_Start, ], 30 * 1000);
-        except:
-            return (reporter.errorXcpt(), oTxsSession);
-
-        # Be nice to Guest Additions < 4.3: They don't support session handling and therefore return WaitFlagNotSupported.
-        if eWaitResult not in (vboxcon.GuestSessionWaitResult_Start, vboxcon.GuestSessionWaitResult_WaitFlagNotSupported):
-            return (reporter.error('Session did not start successfully - wait error: %d' % (eWaitResult,)), oTxsSession);
-        reporter.log('Session successfully started');
-
-        fRc = True;
-        asArgs = [ sPnpUtil, '/enum-devices', '/connected', '/class', 'Display' ];
-
-        try:
-            oCurProcess = self.processCreateWrapper(oGuestSession, sPnpUtil,
-                                                    asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:],
-                                                    "", # Working directory.
-                                                    [], [], 30 * 1000);
-        except:
-            fRc = reporter.errorXcpt();
-        else:
-            reporter.log('Waiting for PnPUtil process being started ...');
-            try:
-                eWaitResult = oCurProcess.waitForArray([ vboxcon.ProcessWaitForFlag_Start ], 30 * 1000);
-            except:
-                fRc = reporter.errorXcpt();
-            else:
-                if eWaitResult != vboxcon.ProcessWaitResult_Start:
-                    fRc = reporter.error('Waiting for PnPUtil process to start failed, got status %d' % (eWaitResult,));
-                else:
-                    reporter.log('PnPUtil process started');
-
-            oCurProcess = None;
-
-        #
-        # Clean up the session.
-        #
-        try:
-            oGuestSession.close();
-        except:
-            fRc = reporter.errorXcpt();
+        fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Checking DX11 feature level', 30 * 1000,
+                                      '${CDROM}/${OS/ARCH}/ntDisplay${EXESUFF}', ('ntDisplay', ))
 
         return (fRc, oTxsSession);
 
