@@ -1257,6 +1257,73 @@ public:
     bool endsWith(const RTCString &that, CaseSensitivity cs = CaseSensitive) const RT_NOEXCEPT;
 
     /**
+     * Returns true if @a this ends with @a that.
+     *
+     * @param   a_pszSuffix The suffix to test for.
+     * @returns true if match, false if mismatch.
+     */
+    bool endsWith(const char *a_pszSuffix) const RT_NOEXCEPT;
+
+    /**
+     * Returns true if @a this ends with @a a_pszSuffix of @a a_cchSuffix length
+     * (case sensitive compare).
+     *
+     * @param   a_pszSuffix The suffix to test for.
+     * @param   a_cchSuffix The length of the suffix string.
+     * @returns true if match, false if mismatch.
+     */
+    bool endsWith(const char *a_pszSuffix, size_t a_cchSuffix) const RT_NOEXCEPT;
+
+    /**
+     * Returns true if @a this ends with @a a_pszSuffix, ignoring case when
+     * comparing.
+     *
+     * @param   a_pszSuffix The suffix to test for.
+     * @returns true if match, false if mismatch.
+     */
+    bool endsWithI(const char *a_pszSuffix) const RT_NOEXCEPT;
+
+    /**
+     * Returns true if @a this ends with @a a_pszSuffix of @a a_cchSuffix length,
+     * ignoring case when comparing.
+     *
+     * @param   a_pszSuffix The suffix to test for.
+     * @param   a_cchSuffix The length of the suffix string.
+     * @returns true if match, false if mismatch.
+     */
+    bool endsWithI(const char *a_pszSuffix, size_t a_cchSuffix) const RT_NOEXCEPT;
+
+    /**
+     * Returns true if @a this ends with @a a_pszSuffix, selective case version.
+     *
+     * @param   a_pszSuffix The suffix to test for.
+     * @param   enmCase     Case sensitivity selector.
+     * @returns true if match, false if mismatch.
+     */
+    inline bool endsWith(const char *a_pszSuffix, CaseSensitivity enmCase) const RT_NOEXCEPT
+    {
+        if (enmCase == CaseSensitive)
+            return endsWith(a_pszSuffix);
+        return endsWithI(a_pszSuffix);
+    }
+
+    /**
+     * Returns true if @a this ends with @a a_pszSuffix of @a a_cchSuffix length,
+     * selective case version.
+     *
+     * @param   a_pszSuffix The suffix to test for.
+     * @param   a_cchSuffix The length of the suffix string.
+     * @param   enmCase     Case sensitivity selector.
+     * @returns true if match, false if mismatch.
+     */
+    inline bool endsWith(const char *a_pszSuffix, size_t a_cchSuffix, CaseSensitivity enmCase) const RT_NOEXCEPT
+    {
+        if (enmCase == CaseSensitive)
+            return endsWith(a_pszSuffix, a_cchSuffix);
+        return endsWithI(a_pszSuffix, a_cchSuffix);
+    }
+
+    /**
      * Returns true if @a this begins with @a that.
      * @param   that    Prefix to test for.
      * @param   cs      Case sensitivity selector.

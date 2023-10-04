@@ -1037,6 +1037,32 @@ bool RTCString::endsWith(const RTCString &that, CaseSensitivity cs /*= CaseSensi
     return ::RTStrICmp(&m_psz[l], that.m_psz) == 0;
 }
 
+bool RTCString::endsWith(const char *a_pszSuffix, size_t a_cchSuffix) const RT_NOEXCEPT
+{
+    Assert(RTStrNLen(a_pszSuffix, a_cchSuffix) == a_cchSuffix);
+    return a_cchSuffix >  0
+        && a_cchSuffix <= length()
+        && ::memcmp(&m_psz[length() - a_cchSuffix], a_pszSuffix, a_cchSuffix) == 0;
+}
+
+bool RTCString::endsWith(const char *a_pszSuffix) const RT_NOEXCEPT
+{
+    return endsWith(a_pszSuffix, strlen(a_pszSuffix));
+}
+
+bool RTCString::endsWithI(const char *a_pszSuffix, size_t a_cchSuffix) const RT_NOEXCEPT
+{
+    Assert(RTStrNLen(a_pszSuffix, a_cchSuffix) == a_cchSuffix);
+    return a_cchSuffix >  0
+        && a_cchSuffix <= length()
+        && ::RTStrNICmp(&m_psz[length() - a_cchSuffix], a_pszSuffix, a_cchSuffix) == 0;
+}
+
+bool RTCString::endsWithI(const char *a_pszSuffix) const RT_NOEXCEPT
+{
+    return endsWithI(a_pszSuffix, strlen(a_pszSuffix));
+}
+
 bool RTCString::startsWith(const RTCString &that, CaseSensitivity cs /*= CaseSensitive*/) const RT_NOEXCEPT
 {
     size_t l1 = length();
