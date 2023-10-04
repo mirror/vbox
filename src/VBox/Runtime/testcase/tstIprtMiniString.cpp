@@ -410,15 +410,30 @@ static void test1(RTTEST hTest)
     CHECK(strTest.endsWith("rty"));
     CHECK(strTest.endsWith("ty"));
     CHECK(strTest.endsWith("y"));
+    CHECK(!strTest.endsWith("ty00", 3));
+    CHECK(strTest.endsWith("ty00", 2));
     CHECK(!strTest.endsWith(""));
+    CHECK(!strTest.endsWith(NULL));
+    CHECK(!strTest.endsWith(strEmpty));
+    CHECK(!strEmpty.endsWith(""));
+    CHECK(!strEmpty.endsWith(NULL));
+    CHECK(!strEmpty.endsWith(strEmpty));
+
     CHECK(strTest.endsWithI("qwerty"));
-    CHECK(strTest.endsWithI("werty"));
-    CHECK(strTest.endsWithI("erty"));
-    CHECK(strTest.endsWithI("rty"));
+    CHECK(strTest.endsWithI("QWERTY"));
+    CHECK(strTest.endsWithI("wErtY"));
+    CHECK(strTest.endsWithI("eRty"));
+    CHECK(strTest.endsWithI("rTy"));
     CHECK(strTest.endsWithI("ty"));
     CHECK(strTest.endsWithI("y"));
+    CHECK(!strTest.endsWithI("ty000", 3));
+    CHECK(strTest.endsWithI("ty000", 2));
     CHECK(!strTest.endsWithI(""));
-    CHECK(!strTest.endsWith(strEmpty));
+    CHECK(!strTest.endsWithI(NULL));
+    CHECK(!strTest.endsWithI(strEmpty));
+    CHECK(!strEmpty.endsWithI(""));
+    CHECK(!strEmpty.endsWithI(NULL));
+    CHECK(!strEmpty.endsWithI(strEmpty));
 
     /* startsWith */
     CHECK(strTest.startsWith(strTest));
@@ -428,8 +443,32 @@ static void test1(RTTEST hTest)
     CHECK(strTest.startsWith("qwe"));
     CHECK(strTest.startsWith("qw"));
     CHECK(strTest.startsWith("q"));
+    CHECK(strTest.startsWith("q00000", 1));
+    CHECK(strTest.startsWith("qw0000", 2));
+    CHECK(!strTest.startsWith("qw0000", 3));
     CHECK(!strTest.startsWith(""));
     CHECK(!strTest.startsWith(strEmpty));
+    CHECK(!strEmpty.startsWith(strTest));
+    CHECK(!strEmpty.startsWith(strEmpty));
+    CHECK(!strEmpty.startsWith(""));
+    CHECK(!strEmpty.startsWith(NULL));
+
+    CHECK(strTest.startsWithI(strTest));
+    CHECK(strTest.startsWithI("qWeRty"));
+    CHECK(strTest.startsWithI("qWerT"));
+    CHECK(strTest.startsWithI("qWeR"));
+    CHECK(strTest.startsWithI("qwE"));
+    CHECK(strTest.startsWithI("qW"));
+    CHECK(strTest.startsWithI("q"));
+    CHECK(strTest.startsWithI("Q00000", 1));
+    CHECK(strTest.startsWithI("qW0000", 2));
+    CHECK(!strTest.startsWithI("qW0000", 3));
+    CHECK(!strTest.startsWithI(""));
+    CHECK(!strTest.startsWithI(strEmpty));
+    CHECK(!strEmpty.startsWithI(strTest));
+    CHECK(!strEmpty.startsWithI(strEmpty));
+    CHECK(!strEmpty.startsWithI(""));
+    CHECK(!strEmpty.startsWithI(NULL));
 
 #undef CHECK
 #undef CHECK_DUMP

@@ -1016,25 +1016,24 @@ RTCString RTCString::substrCP(size_t pos /*= 0*/, size_t n /*= npos*/) const
     return ret;
 }
 
-bool RTCString::endsWith(const RTCString &that, CaseSensitivity cs /*= CaseSensitive*/) const RT_NOEXCEPT
+bool RTCString::endsWith(const RTCString &a_rThat) const RT_NOEXCEPT
 {
-    size_t l1 = length();
-    if (l1 == 0)
-        return false;
+    size_t const cchThis = length();
+    size_t const cchThat = a_rThat.length();
+    if (   cchThat > 0
+        && cchThat <= cchThis)
+        return ::memcmp(&m_psz[cchThis - cchThat], a_rThat.m_psz, cchThat) == 0;
+    return false;
+}
 
-    size_t l2 = that.length();
-    if (l1 < l2)
-        return false;
-
-    if (!m_psz) /* Don't crash when running against an empty string. */
-        return false;
-
-    /** @todo r=bird: See handling of l2 == in startsWith; inconsistent output (if l2 == 0, it matches anything). */
-
-    size_t l = l1 - l2;
-    if (cs == CaseSensitive)
-        return ::RTStrCmp(&m_psz[l], that.m_psz) == 0;
-    return ::RTStrICmp(&m_psz[l], that.m_psz) == 0;
+bool RTCString::endsWithI(const RTCString &a_rThat) const RT_NOEXCEPT
+{
+    size_t const cchThis = length();
+    size_t const cchThat = a_rThat.length();
+    if (   cchThat > 0
+        && cchThat <= cchThis)
+        return ::RTStrICmp(&m_psz[cchThis - cchThat], a_rThat.m_psz) == 0;
+    return false;
 }
 
 bool RTCString::endsWith(const char *a_pszSuffix, size_t a_cchSuffix) const RT_NOEXCEPT
@@ -1047,7 +1046,9 @@ bool RTCString::endsWith(const char *a_pszSuffix, size_t a_cchSuffix) const RT_N
 
 bool RTCString::endsWith(const char *a_pszSuffix) const RT_NOEXCEPT
 {
-    return endsWith(a_pszSuffix, strlen(a_pszSuffix));
+    if (a_pszSuffix)
+        return endsWith(a_pszSuffix, strlen(a_pszSuffix));
+    return false;
 }
 
 bool RTCString::endsWithI(const char *a_pszSuffix, size_t a_cchSuffix) const RT_NOEXCEPT
@@ -1060,22 +1061,59 @@ bool RTCString::endsWithI(const char *a_pszSuffix, size_t a_cchSuffix) const RT_
 
 bool RTCString::endsWithI(const char *a_pszSuffix) const RT_NOEXCEPT
 {
-    return endsWithI(a_pszSuffix, strlen(a_pszSuffix));
+    if (a_pszSuffix)
+        return endsWithI(a_pszSuffix, strlen(a_pszSuffix));
+    return false;
 }
 
-bool RTCString::startsWith(const RTCString &that, CaseSensitivity cs /*= CaseSensitive*/) const RT_NOEXCEPT
+bool RTCString::startsWith(const RTCString &a_rThat) const RT_NOEXCEPT
 {
-    size_t l1 = length();
-    size_t l2 = that.length();
-    if (l1 == 0 || l2 == 0) /** @todo r=bird: this differs from endsWith, and I think other IPRT code. If l2 == 0, it matches anything. */
-        return false;
+    size_t const cchThis = length();
+    size_t const cchThat = a_rThat.length();
+    if (   cchThat > 0
+        && cchThat <= cchThis)
+        return ::memcmp(m_psz, a_rThat.m_psz, cchThat) == 0;
+    return false;
+}
 
-    if (l1 < l2)
-        return false;
+bool RTCString::startsWithI(const RTCString &a_rThat) const RT_NOEXCEPT
+{
+    size_t const cchThis = length();
+    size_t const cchThat = a_rThat.length();
+    if (   cchThat > 0
+        && cchThat <= cchThis)
+        return ::RTStrNICmp(m_psz, a_rThat.m_psz, cchThat) == 0;
+    return false;
+}
 
-    if (cs == CaseSensitive)
-        return ::RTStrNCmp(m_psz, that.m_psz, l2) == 0;
-    return ::RTStrNICmp(m_psz, that.m_psz, l2) == 0;
+bool RTCString::startsWith(const char *a_pszPrefix, size_t a_cchPrefix) const RT_NOEXCEPT
+{
+    Assert(RTStrNLen(a_pszPrefix, a_cchPrefix) == a_cchPrefix);
+    return a_cchPrefix >  0
+        && a_cchPrefix <= length()
+        && ::memcmp(m_psz, a_pszPrefix, a_cchPrefix) == 0;
+}
+
+bool RTCString::startsWith(const char *a_pszPrefix) const RT_NOEXCEPT
+{
+    if (a_pszPrefix)
+        return startsWith(a_pszPrefix, strlen(a_pszPrefix));
+    return false;
+}
+
+bool RTCString::startsWithI(const char *a_pszPrefix, size_t a_cchPrefix) const RT_NOEXCEPT
+{
+    Assert(RTStrNLen(a_pszPrefix, a_cchPrefix) == a_cchPrefix);
+    return a_cchPrefix >  0
+        && a_cchPrefix <= length()
+        && ::RTStrNICmp(m_psz, a_pszPrefix, a_cchPrefix) == 0;
+}
+
+bool RTCString::startsWithI(const char *a_pszPrefix) const RT_NOEXCEPT
+{
+    if (a_pszPrefix)
+        return startsWithI(a_pszPrefix, strlen(a_pszPrefix));
+    return false;
 }
 
 bool RTCString::startsWithWord(const char *pszWord, CaseSensitivity enmCase /*= CaseSensitive*/) const RT_NOEXCEPT

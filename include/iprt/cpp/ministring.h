@@ -1248,13 +1248,34 @@ public:
     RTCString substrCP(size_t pos = 0, size_t n = npos) const;
 
     /**
-     * Returns true if @a this ends with @a that.
+     * Returns true if @a this ends with @a a_rThat (case sensitive compare).
      *
-     * @param   that    Suffix to test for.
-     * @param   cs      Case sensitivity selector.
+     * @param   a_rThat Suffix to test for.
      * @returns true if match, false if mismatch.
      */
-    bool endsWith(const RTCString &that, CaseSensitivity cs = CaseSensitive) const RT_NOEXCEPT;
+    bool endsWith(const RTCString &a_rThat) const RT_NOEXCEPT;
+
+    /**
+     * Returns true if @a this ends with @a a_rThat, ignoring case when comparing.
+     *
+     * @param   a_rThat Suffix to test for.
+     * @returns true if match, false if mismatch.
+     */
+    bool endsWithI(const RTCString &a_rThat) const RT_NOEXCEPT;
+
+    /**
+     * Returns true if @a this ends with @a that, selective case compare.
+     *
+     * @param   a_rThat     Suffix to test for.
+     * @param   a_enmCase   Case sensitivity selector.
+     * @returns true if match, false if mismatch.
+     */
+    inline bool endsWith(const RTCString &a_rThat, CaseSensitivity a_enmCase) const RT_NOEXCEPT
+    {
+        if (a_enmCase == CaseSensitive)
+            return endsWith(a_rThat);
+        return endsWithI(a_rThat);
+    }
 
     /**
      * Returns true if @a this ends with @a that.
@@ -1300,9 +1321,9 @@ public:
      * @param   enmCase     Case sensitivity selector.
      * @returns true if match, false if mismatch.
      */
-    inline bool endsWith(const char *a_pszSuffix, CaseSensitivity enmCase) const RT_NOEXCEPT
+    inline bool endsWith(const char *a_pszSuffix, CaseSensitivity a_enmCase) const RT_NOEXCEPT
     {
-        if (enmCase == CaseSensitive)
+        if (a_enmCase == CaseSensitive)
             return endsWith(a_pszSuffix);
         return endsWithI(a_pszSuffix);
     }
@@ -1313,23 +1334,112 @@ public:
      *
      * @param   a_pszSuffix The suffix to test for.
      * @param   a_cchSuffix The length of the suffix string.
-     * @param   enmCase     Case sensitivity selector.
+     * @param   a_enmCase   Case sensitivity selector.
      * @returns true if match, false if mismatch.
      */
-    inline bool endsWith(const char *a_pszSuffix, size_t a_cchSuffix, CaseSensitivity enmCase) const RT_NOEXCEPT
+    inline bool endsWith(const char *a_pszSuffix, size_t a_cchSuffix, CaseSensitivity a_enmCase) const RT_NOEXCEPT
     {
-        if (enmCase == CaseSensitive)
+        if (a_enmCase == CaseSensitive)
             return endsWith(a_pszSuffix, a_cchSuffix);
         return endsWithI(a_pszSuffix, a_cchSuffix);
     }
 
     /**
-     * Returns true if @a this begins with @a that.
-     * @param   that    Prefix to test for.
-     * @param   cs      Case sensitivity selector.
+     * Returns true if @a this begins with @a a_rThat (case sensitive compare).
+     *
+     * @param   a_rThat    Prefix to test for.
      * @returns true if match, false if mismatch.
      */
-    bool startsWith(const RTCString &that, CaseSensitivity cs = CaseSensitive) const RT_NOEXCEPT;
+    bool startsWith(const RTCString &a_rThat) const RT_NOEXCEPT;
+
+    /**
+     * Returns true if @a this begins with @a a_rThat, ignoring case when comparing.
+     *
+     * @param   a_rThat    Prefix to test for.
+     * @returns true if match, false if mismatch.
+     */
+    bool startsWithI(const RTCString &a_rThat) const RT_NOEXCEPT;
+
+    /**
+     * Returns true if @a this begins with @a that.
+     *
+     * @param   a_rThat     Prefix to test for.
+     * @param   a_enmCase   Case sensitivity selector.
+     * @returns true if match, false if mismatch.
+     */
+    inline bool startsWith(const RTCString &a_rThat, CaseSensitivity a_enmCase) const RT_NOEXCEPT
+    {
+        if (a_enmCase == CaseSensitive)
+            return endsWith(a_rThat);
+        return endsWithI(a_rThat);
+    }
+
+    /**
+     * Returns true if @a this begins with @a that.
+     *
+     * @param   a_pszPrefix The prefix to test for.
+     * @returns true if match, false if mismatch.
+     */
+    bool startsWith(const char *a_pszPrefix) const RT_NOEXCEPT;
+
+    /**
+     * Returns true if @a this begins with @a a_pszPrefix of @a a_cchPrefix length
+     * (case sensitive compare).
+     *
+     * @param   a_pszPrefix The prefix to test for.
+     * @param   a_cchPrefix The length of the prefix string.
+     * @returns true if match, false if mismatch.
+     */
+    bool startsWith(const char *a_pszPrefix, size_t a_cchPrefix) const RT_NOEXCEPT;
+
+    /**
+     * Returns true if @a this begins with @a a_pszPrefix, ignoring case when
+     * comparing.
+     *
+     * @param   a_pszPrefix The prefix to test for.
+     * @returns true if match, false if mismatch.
+     */
+    bool startsWithI(const char *a_pszPrefix) const RT_NOEXCEPT;
+
+    /**
+     * Returns true if @a this begins with @a a_pszPrefix of @a a_cchPrefix length,
+     * ignoring case when comparing.
+     *
+     * @param   a_pszPrefix The prefix to test for.
+     * @param   a_cchPrefix The length of the prefix string.
+     * @returns true if match, false if mismatch.
+     */
+    bool startsWithI(const char *a_pszPrefix, size_t a_cchPrefix) const RT_NOEXCEPT;
+
+    /**
+     * Returns true if @a this begins with @a a_pszPrefix, selective case version.
+     *
+     * @param   a_pszPrefix The prefix to test for.
+     * @param   enmCase     Case sensitivity selector.
+     * @returns true if match, false if mismatch.
+     */
+    inline bool startsWith(const char *a_pszPrefix, CaseSensitivity a_enmCase) const RT_NOEXCEPT
+    {
+        if (a_enmCase == CaseSensitive)
+            return startsWith(a_pszPrefix);
+        return startsWithI(a_pszPrefix);
+    }
+
+    /**
+     * Returns true if @a this begins with @a a_pszPrefix of @a a_cchPrefix length,
+     * selective case version.
+     *
+     * @param   a_pszPrefix The prefix to test for.
+     * @param   a_cchPrefix The length of the prefix string.
+     * @param   a_enmCase   Case sensitivity selector.
+     * @returns true if match, false if mismatch.
+     */
+    inline bool startsWith(const char *a_pszPrefix, size_t a_cchPrefix, CaseSensitivity a_enmCase) const RT_NOEXCEPT
+    {
+        if (a_enmCase == CaseSensitive)
+            return startsWith(a_pszPrefix, a_cchPrefix);
+        return startsWithI(a_pszPrefix, a_cchPrefix);
+    }
 
     /**
      * Checks if the string starts with the given word, ignoring leading blanks.
