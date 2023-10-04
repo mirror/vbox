@@ -1561,7 +1561,6 @@ public:
 
     static bool isAudioDriverAllowedOnThisHost(AudioDriverType_T enmDrvType);
     static AudioDriverType_T getHostDefaultAudioDriver();
-    static bool convertGuestOSTypeSuffix(com::Utf8Str &str, const char *pszToReplace, const char *pszReplacement);
 
 private:
     void readNetworkAdapters(const xml::ElementNode &elmHardware, NetworkAdaptersList &ll);
@@ -1586,9 +1585,10 @@ private:
     void readRecordingSettings(const xml::ElementNode &elmRecording, uint32_t cMonitors, RecordingSettings &recording);
     void readGroups(const xml::ElementNode &elmGroups, StringsList &llGroups);
     bool readSnapshot(const com::Guid &curSnapshotUuid, const xml::ElementNode &elmSnapshot, Snapshot &snap);
-    void convertGuestOSTypeFromPre1_5(com::Utf8Str &str);
-    void convertGuestOSTypeFromPre1_20(com::Utf8Str &str);
-    void convertGuestOSTypeToPre1_20(com::Utf8Str &str);
+    static void convertGuestOSTypeFromPre1_5(com::Utf8Str &str);
+    static void convertGuestOSTypeFromPre1_20(com::Utf8Str &str);
+    static void convertGuestOSTypeToPre1_20(com::Utf8Str &str);
+    static void convertGuestOSTypeSuffix(com::Utf8Str &str, const char *pszToReplace, const char *pszReplacement);
     void readMachine(const xml::ElementNode &elmMachine);
     void readMachineEncrypted(const xml::ElementNode &elmMachine, PCVBOXCRYPTOIF pCryptoIf, const char *pszPassword);
 
