@@ -6825,10 +6825,11 @@ bool MachineConfigFile::readSnapshot(const Guid &curSnapshotUuid,
     return foundCurrentSnapshot;
 }
 
-const struct {
+static struct
+{
     const char *pcszOld;
     const char *pcszNew;
-} aConvertGuestOSTypesPre1_5[] =
+} const g_aConvertGuestOSTypesPre1_5[] =
 {
     { "unknown", "Other" },
     { "dos", "DOS" },
@@ -6867,12 +6868,13 @@ const struct {
     { "l4", "L4" }
 };
 
+/* static */
 void MachineConfigFile::convertGuestOSTypeFromPre1_5(Utf8Str &str)
 {
-    for (size_t u = 0; u < RT_ELEMENTS(aConvertGuestOSTypesPre1_5); ++u)
-        if (str == aConvertGuestOSTypesPre1_5[u].pcszOld)
+    for (size_t idx = 0; idx < RT_ELEMENTS(g_aConvertGuestOSTypesPre1_5); ++idx)
+        if (str == g_aConvertGuestOSTypesPre1_5[idx].pcszOld)
         {
-            str = aConvertGuestOSTypesPre1_5[u].pcszNew;
+            str = g_aConvertGuestOSTypesPre1_5[idx].pcszNew;
             break;
         }
 }
@@ -6880,25 +6882,16 @@ void MachineConfigFile::convertGuestOSTypeFromPre1_5(Utf8Str &str)
 /**
  * Static function to convert a guest OS type ID suffix.
  *
- * @returns \c true if suffix got converted, or \c false if not.
  * @param   strOsType               Guest OS type ID to convert.
  * @param   pszToReplace            Suffix to replace.
  * @param   pszReplacement          What to replace the suffix with.
  */
 /* static */
-bool MachineConfigFile::convertGuestOSTypeSuffix(com::Utf8Str &strOsType, const char *pszToReplace, const char *pszReplacement)
+void MachineConfigFile::convertGuestOSTypeSuffix(com::Utf8Str &strOsType, const char *pszToReplace, const char *pszReplacement)
 {
-    AssertPtrReturn(pszToReplace, false);
-    AssertPtrReturn(pszReplacement, false);
-
-    size_t const cchSuffix = strlen(pszToReplace);
-    size_t const idxSuffix = strOsType.find(pszToReplace);
-    if (idxSuffix == strOsType.length() - cchSuffix) /* Be extra cautious to only replace the real suffix. */
-    {
-        strOsType.replace(idxSuffix, cchSuffix, pszReplacement);
-        return true;
-    }
-    return false;
+    size_t const cchToReplace = strlen(pszToReplace);
+    if (strOsType.endsWith(pszToReplace, cchToReplace))
+        strOsType.replace(strOsType.length() - cchToReplace, cchToReplace, pszReplacement);
 }
 
 /**
@@ -6912,6 +6905,7 @@ bool MachineConfigFile::convertGuestOSTypeSuffix(com::Utf8Str &strOsType, const 
  *          However, we never write back those modified guest OS type IDs for settings < v1.20, as this would break
  *          compatibility with older VBox versions.
  */
+/* static */
 void MachineConfigFile::convertGuestOSTypeFromPre1_20(Utf8Str &str)
 {
     convertGuestOSTypeSuffix(str, "_64", "_x64");
@@ -6926,6 +6920,7 @@ void MachineConfigFile::convertGuestOSTypeFromPre1_20(Utf8Str &str)
  *          with "_64" so that we don't break loading (valid) settings for old(er) VBox versions, which don't
  *          know about the new suffix.
  */
+/* static */
 void MachineConfigFile::convertGuestOSTypeToPre1_20(Utf8Str &str)
 {
     convertGuestOSTypeSuffix(str, "_x64", "_64");
