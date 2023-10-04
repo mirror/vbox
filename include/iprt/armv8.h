@@ -721,6 +721,7 @@ typedef const ARMV8SPSREL2 *PCXARMV8SPSREL2;
 /** Bit 24 - ISV - Instruction Syndrome Valid. */
 #define ARMV8_EC_ISS_DATA_ABRT_ISV                              RT_BIT_32(24)
 #define ARMV8_EC_ISS_DATA_ABRT_ISV_BIT                          24
+/** @} */
 
 
 /** @name Data Fault Status Code (DFSC).
