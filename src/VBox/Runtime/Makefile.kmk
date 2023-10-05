@@ -3175,6 +3175,7 @@ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.x86 win.amd64 linux.amd64 dar
   #
   PROGRAMS += VBoxRTStableCheck
   VBoxRTStableCheck_TEMPLATE = VBoxR3TstExe
+  VBoxRTStableCheck_ASDEFS.linux.amd64 = PIC		# Hack
   VBoxRTStableCheck_SOURCES = \
   	VBox/VBoxRTStableCheck.cpp \
   	$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm
