@@ -1040,7 +1040,7 @@ static int vboxNetFltNewInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszNam
     pNew->cRefs                         = 1;
     pNew->cBusy                         = 0;
     pNew->hEventIdle                    = NIL_RTSEMEVENT;
-    memcpy(pNew->szName, pszName, cchName + 1);
+    RT_BCOPY_UNFORTIFIED(pNew->szName, pszName, cchName + 1);
 
     rc = RTSpinlockCreate(&pNew->hSpinlock, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "VBoxNetFltNewInstance");
     if (RT_SUCCESS(rc))
