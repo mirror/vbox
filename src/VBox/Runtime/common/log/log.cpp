@@ -2931,7 +2931,7 @@ RTDECL(int) RTLogBulkUpdate(PRTLOGGER pLogger, uint64_t fFlags, uint32_t uGroupC
         if (   uGroupCrc32 == rtLogCalcGroupNameCrc32(pLoggerInt)
             && pLoggerInt->cGroups == cGroups)
         {
-            memcpy(pLoggerInt->afGroups, pafGroups, sizeof(pLoggerInt->afGroups[0]) * cGroups);
+            RT_BCOPY_UNFORTIFIED(pLoggerInt->afGroups, pafGroups, sizeof(pLoggerInt->afGroups[0]) * cGroups);
             rc = VINF_SUCCESS;
         }
         else
