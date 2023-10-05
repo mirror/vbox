@@ -47,6 +47,7 @@
 #if defined(RT_OS_LINUX) && defined(__KERNEL__)
   /* no C++ hacks ('new' etc) here anymore! */
 # include <linux/string.h>
+# include <iprt/linux/version.h>
 
 #elif defined(IN_XF86_MODULE) && !defined(NO_ANSIC)
   RT_C_DECLS_BEGIN
@@ -190,6 +191,27 @@ RT_C_DECLS_END
         void const volatile *a_pvVolatileSrc_BCopy_Volatile = (a_pVolatileSrc); \
         memcpy((a_pDst), (void const *)a_pvVolatileSrc_BCopy_Volatile, (a_cbToCopy)); \
     } while (0)
+
+/**
+ * Wrapper for the Linux kernel memcpy.
+ *
+ * Use when copying to variable length structures, it prevents a fortified
+ * memcpy (linux 5.18+) from complaining about "field-spanning writes".
+ *
+ * @see @ticketref{21410}, @bugref{10209}
+ */
+#if defined(RT_OS_LINUX) && defined(__KERNEL__)
+# if (RTLNX_VER_MIN(5,18,0) || RTLNX_RHEL_RANGE(9,3, 9,99)) \
+  && !defined(__NO_FORTIFY) \
+  && defined(__OPTIMIZE__) \
+  && defined(CONFIG_FORTIFY_SOURCE)
+#  define RT_BCOPY_UNFORTIFIED      __underlying_memcpy
+# else /* __NO_FORTIFY && !__OPTIMIZE__ && !CONFIG_FORTIFY_SOURCE */
+#  define RT_BCOPY_UNFORTIFIED      memcpy
+# endif /* !__NO_FORTIFY && __OPTIMIZE__ && CONFIG_FORTIFY_SOURCE */
+#else /* !RT_OS_LINUX && !__KERNEL__ */
+# define RT_BCOPY_UNFORTIFIED       memcpy
+#endif
 
 
 /** @defgroup grp_rt_str    RTStr - String Manipulation
