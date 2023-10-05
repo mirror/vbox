@@ -40,7 +40,7 @@ EXPORTS
     ; Use the following command-line to generate the stuff below (same as vcc32, except input/output):
     ; kmk_sed -r -e "/^    .*(RTCRest|RTCString)/!d" -e "/exported name:/d" -e "s/^ +[[:digit:]]+ +([^ ]+) /    \1                                                                                    ; /" -e "s/ (\?\?_7[^ ]+@@6B[^ ]*|\?[^ ]+@@[0-4][^ @]+) / \1 DATA /" -e "s/(.{78} ) *;/\1 ;/" e:\vbox\svn\trunk\out\win.amd64\debug\obj\VBoxRT\VBoxRT.map | sort >> VBox\VBoxRTImp-vcc64.def
     ;
-    
+
     ; Specials due to noexcept:
     ?setConsumerCallback@RTCRestBinaryResponse@@QEAAXP6AHPEAV1@PEBX_KI22@ZPEAX@Z    ; before-noexcept ; (public: void __cdecl RTCRestBinaryResponse::setConsumerCallback(int (__cdecl*)(class RTCRestBinaryResponse *,void const *,unsigned __int64,unsigned int,unsigned __int64,unsigned __int64),void *))
     ?setConsumerCallback@RTCRestBinaryResponse@@QEAAXP6AHPEAV1@PEBX_KI22@_EPEAX@Z=?setConsumerCallback@RTCRestBinaryResponse@@QEAAXP6AHPEAV1@PEBX_KI22@ZPEAX@Z     ; before-noexcept  ; (public: void __cdecl RTCRestBinaryResponse::setConsumerCallback(int (__cdecl*)(class RTCRestBinaryResponse *,void const *,unsigned __int64,unsigned int,unsigned __int64,unsigned __int64) noexcept,void *))
