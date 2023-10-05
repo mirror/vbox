@@ -192,7 +192,7 @@ int vbsf_nls_to_shflstring(struct vbsf_super_info *pSuperInfo, const char *pszNl
             if (pString) {
                 pString->u16Length = (uint16_t)cchNls;
                 pString->u16Size   = (uint16_t)(cchNls + 1);
-                VBSF_UNFORTIFIED_MEMCPY(pString->String.ach, pszNls, cchNls);
+                RT_BCOPY_UNFORTIFIED(pString->String.ach, pszNls, cchNls);
                 pString->String.ach[cchNls] = '\0';
                 rc = 0;
             } else {
@@ -517,7 +517,7 @@ int vbsf_stat(const char *caller, struct vbsf_super_info *pSuperInfo, SHFLSTRING
     pReq = (VBOXSFCREATEREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq) + path->u16Size);
     if (pReq) {
         RT_ZERO(*pReq);
-        VBSF_UNFORTIFIED_MEMCPY(&pReq->StrPath, path, SHFLSTRING_HEADER_SIZE + path->u16Size);
+        RT_BCOPY_UNFORTIFIED(&pReq->StrPath, path, SHFLSTRING_HEADER_SIZE + path->u16Size);
         pReq->CreateParms.Handle = SHFL_HANDLE_NIL;
         pReq->CreateParms.CreateFlags = SHFL_CF_LOOKUP | SHFL_CF_ACT_FAIL_IF_NEW;
 
@@ -603,7 +603,7 @@ int vbsf_inode_revalidate_worker(struct dentry *dentry, bool fForced, bool fInod
                 VBOXSFCREATEREQ *pReq  = (VBOXSFCREATEREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq) + pPath->u16Size);
                 if (pReq) {
                     RT_ZERO(*pReq);
-                    VBSF_UNFORTIFIED_MEMCPY(&pReq->StrPath, pPath, SHFLSTRING_HEADER_SIZE + pPath->u16Size);
+                    RT_BCOPY_UNFORTIFIED(&pReq->StrPath, pPath, SHFLSTRING_HEADER_SIZE + pPath->u16Size);
                     pReq->CreateParms.Handle      = SHFL_HANDLE_NIL;
                     pReq->CreateParms.CreateFlags = SHFL_CF_LOOKUP | SHFL_CF_ACT_FAIL_IF_NEW;
 
@@ -906,7 +906,7 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
                                                          | SHFL_CF_ACCESS_ATTR_WRITE;
                     if (fAttrs & ATTR_SIZE)
                         pReq->Create.CreateParms.CreateFlags |= SHFL_CF_ACCESS_WRITE;
-                    VBSF_UNFORTIFIED_MEMCPY(&pReq->Create.StrPath, sf_i->path, SHFLSTRING_HEADER_SIZE + sf_i->path->u16Size);
+                    RT_BCOPY_UNFORTIFIED(&pReq->Create.StrPath, sf_i->path, SHFLSTRING_HEADER_SIZE + sf_i->path->u16Size);
                     vrc = VbglR0SfHostReqCreate(pSuperInfo->map.root, &pReq->Create);
                     if (RT_SUCCESS(vrc)) {
                         if (pReq->Create.CreateParms.Result == SHFL_FILE_EXISTS) {
@@ -1044,11 +1044,11 @@ static int vbsf_make_path(const char *caller, struct vbsf_inode_info *sf_i,
     tmp->u16Size = path_len;
 
     if (fRoot)
-        VBSF_UNFORTIFIED_MEMCPY(&tmp->String.utf8[0], d_name, d_len + 1);
+        RT_BCOPY_UNFORTIFIED(&tmp->String.utf8[0], d_name, d_len + 1);
     else {
-        VBSF_UNFORTIFIED_MEMCPY(&tmp->String.utf8[0], p_name, p_len);
+        RT_BCOPY_UNFORTIFIED(&tmp->String.utf8[0], p_name, p_len);
         tmp->String.utf8[p_len] = '/';
-        VBSF_UNFORTIFIED_MEMCPY(&tmp->String.utf8[p_len + 1], d_name, d_len);
+        RT_BCOPY_UNFORTIFIED(&tmp->String.utf8[p_len + 1], d_name, d_len);
         tmp->String.utf8[p_len + 1 + d_len] = '\0';
     }
 

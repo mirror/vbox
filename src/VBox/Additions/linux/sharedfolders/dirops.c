@@ -77,7 +77,7 @@ static int vbsf_dir_open(struct inode *inode, struct file *file)
          */
         pReq = (VBOXSFCREATEREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFCREATEREQ, StrPath.String) + sf_i->path->u16Size);
         if (pReq) {
-            VBSF_UNFORTIFIED_MEMCPY(&pReq->StrPath, sf_i->path, SHFLSTRING_HEADER_SIZE + sf_i->path->u16Size);
+            RT_BCOPY_UNFORTIFIED(&pReq->StrPath, sf_i->path, SHFLSTRING_HEADER_SIZE + sf_i->path->u16Size);
             RT_ZERO(pReq->CreateParms);
             pReq->CreateParms.Handle      = SHFL_HANDLE_NIL;
             pReq->CreateParms.CreateFlags = SHFL_CF_DIRECTORY
@@ -687,7 +687,7 @@ static struct dentry *vbsf_inode_lookup(struct inode *parent, struct dentry *den
             struct inode *pInode = NULL;
 
             RT_ZERO(*pReq);
-            VBSF_UNFORTIFIED_MEMCPY(&pReq->StrPath, path, SHFLSTRING_HEADER_SIZE + path->u16Size);
+            RT_BCOPY_UNFORTIFIED(&pReq->StrPath, path, SHFLSTRING_HEADER_SIZE + path->u16Size);
             pReq->CreateParms.Handle = SHFL_HANDLE_NIL;
             pReq->CreateParms.CreateFlags = SHFL_CF_LOOKUP | SHFL_CF_ACT_FAIL_IF_NEW;
 
@@ -823,7 +823,7 @@ static int vbsf_create_worker(struct inode *parent, struct dentry *dentry, umode
             VBOXSFCLOSEREQ  Close;
         } *pReq = (union CreateAuxReq *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFCREATEREQ, StrPath.String) + path->u16Size);
         if (pReq) {
-            VBSF_UNFORTIFIED_MEMCPY(&pReq->Create.StrPath, path, SHFLSTRING_HEADER_SIZE + path->u16Size);
+            RT_BCOPY_UNFORTIFIED(&pReq->Create.StrPath, path, SHFLSTRING_HEADER_SIZE + path->u16Size);
             RT_ZERO(pReq->Create.CreateParms);
             pReq->Create.CreateParms.Handle                  = SHFL_HANDLE_NIL;
             pReq->Create.CreateParms.CreateFlags             = fCreateFlags;
@@ -1130,7 +1130,7 @@ static int vbsf_unlink_worker(struct inode *parent, struct dentry *dentry, int f
         VBOXSFREMOVEREQ *pReq = (VBOXSFREMOVEREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFREMOVEREQ, StrPath.String)
                                                                        + path->u16Size);
         if (pReq) {
-            VBSF_UNFORTIFIED_MEMCPY(&pReq->StrPath, path, SHFLSTRING_HEADER_SIZE + path->u16Size);
+            RT_BCOPY_UNFORTIFIED(&pReq->StrPath, path, SHFLSTRING_HEADER_SIZE + path->u16Size);
             uint32_t fFlags = fDirectory ? SHFL_REMOVE_DIR : SHFL_REMOVE_FILE;
             if (dentry->d_inode && ((dentry->d_inode->i_mode & S_IFLNK) == S_IFLNK))
                 fFlags |= SHFL_REMOVE_SYMLINK;
@@ -1250,7 +1250,7 @@ static int vbsf_inode_rename(struct inode *old_parent, struct dentry *old_dentry
                     struct vbsf_inode_info *sf_file_i = VBSF_GET_INODE_INFO(old_dentry->d_inode);
                     PSHFLSTRING             pOldPath = sf_file_i->path;
 
-                    VBSF_UNFORTIFIED_MEMCPY(&pReq->StrDstPath, pNewPath, SHFLSTRING_HEADER_SIZE + pNewPath->u16Size);
+                    RT_BCOPY_UNFORTIFIED(&pReq->StrDstPath, pNewPath, SHFLSTRING_HEADER_SIZE + pNewPath->u16Size);
                     rc = VbglR0SfHostReqRenameWithSrcContig(pSuperInfo->map.root, pReq, pOldPath, virt_to_phys(pOldPath), fRename);
                     VbglR0PhysHeapFree(pReq);
                     if (RT_SUCCESS(rc)) {
@@ -1351,7 +1351,7 @@ static int vbsf_inode_symlink(struct inode *parent, struct dentry *dentry, const
             VBOXSFCREATESYMLINKREQ *pReq  = (VBOXSFCREATESYMLINKREQ *)VbglR0PhysHeapAlloc(cbReq);
             if (pReq) {
                 RT_ZERO(*pReq);
-                VBSF_UNFORTIFIED_MEMCPY(&pReq->StrSymlinkPath, pPath, SHFLSTRING_HEADER_SIZE + pPath->u16Size);
+                RT_BCOPY_UNFORTIFIED(&pReq->StrSymlinkPath, pPath, SHFLSTRING_HEADER_SIZE + pPath->u16Size);
 
                 rc = VbglR0SfHostReqCreateSymlinkContig(pSuperInfo->map.root, pTarget, virt_to_phys(pTarget), pReq);
                 if (RT_SUCCESS(rc)) {
