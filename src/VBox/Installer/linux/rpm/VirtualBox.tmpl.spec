@@ -210,14 +210,13 @@ rm *.debug
 mv *.debug $RPM_BUILD_ROOT/usr/lib/debug/usr/lib/virtualbox
 %endif
 mv * $RPM_BUILD_ROOT/usr/lib/virtualbox
-if [ -f $RPM_BUILD_ROOT/usr/lib/virtualbox/libQt5CoreVBox.so.5 ]; then
+if [ -f $RPM_BUILD_ROOT/usr/lib/virtualbox/libQt6CoreVBox.so.6 ]; then
   $RPM_BUILD_ROOT/usr/lib/virtualbox/chrpath --keepgoing --replace /usr/lib/virtualbox \
-    $RPM_BUILD_ROOT/usr/lib/virtualbox/*.so.5 \
+    $RPM_BUILD_ROOT/usr/lib/virtualbox/*.so.6 \
     $RPM_BUILD_ROOT/usr/lib/virtualbox/plugins/platforms/*.so \
     $RPM_BUILD_ROOT/usr/lib/virtualbox/plugins/platformthemes/*.so \
     $RPM_BUILD_ROOT/usr/lib/virtualbox/plugins/sqldrivers/*.so \
-    $RPM_BUILD_ROOT/usr/lib/virtualbox/plugins/styles/*.so \
-    $RPM_BUILD_ROOT/usr/lib/virtualbox/plugins/xcbglintegrations/*.so || true
+    $RPM_BUILD_ROOT/usr/lib/virtualbox/plugins/styles/*.so || true
   echo "[Paths]" > $RPM_BUILD_ROOT/usr/lib/virtualbox/qt.conf
   echo "Plugins = /usr/lib/virtualbox/plugins" >> $RPM_BUILD_ROOT/usr/lib/virtualbox/qt.conf
 fi
