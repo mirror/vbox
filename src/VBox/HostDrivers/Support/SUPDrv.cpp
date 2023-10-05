@@ -1764,7 +1764,7 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
 
             /* execute */
             pReq->u.Out.cFunctions = RT_ELEMENTS(g_aFunctions);
-            SUPDRV_UNFORTIFIED_MEMCPY(&pReq->u.Out.aFunctions[0], g_aFunctions, sizeof(g_aFunctions));
+            RT_BCOPY_UNFORTIFIED(&pReq->u.Out.aFunctions[0], g_aFunctions, sizeof(g_aFunctions));
             pReq->Hdr.rc = VINF_SUCCESS;
             return 0;
         }

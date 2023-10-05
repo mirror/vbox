@@ -998,10 +998,10 @@ static int supdrvTracerRegisterVtgObj(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr,
             pProv->fRegistered          = true;
 
             if (!pUmod)
-                SUPDRV_UNFORTIFIED_MEMCPY(pProv->szName, pszName, cchName + 1);
+                RT_BCOPY_UNFORTIFIED(pProv->szName, pszName, cchName + 1);
             else
                 RTStrPrintf(pProv->szName, cchName + 1, "%s%u", pszName, (uint32_t)pSession->Process);
-            SUPDRV_UNFORTIFIED_MEMCPY((void *)pProv->Core.pszModName, pszModName, cchModName + 1);
+            RT_BCOPY_UNFORTIFIED((void *)pProv->Core.pszModName, pszModName, cchModName + 1);
 
             /*
              * Do the actual registration and list manipulations while holding
