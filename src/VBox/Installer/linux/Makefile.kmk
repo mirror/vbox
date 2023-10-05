@@ -528,8 +528,7 @@ BLDDIRS += $(foreach d, \
 			archive/plugins/platforms \
 			archive/plugins/platformthemes \
 			archive/plugins/sqldrivers \
-			archive/plugins/styles \
-			archive/plugins/xcbglintegrations,) \
+			archive/plugins/styles,) \
 		$(if $(VBOX_WITH_PYTHON), \
 			archive/sdk/installer \
 			archive/sdk/installer/vboxapi \
