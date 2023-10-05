@@ -844,22 +844,18 @@ public:
 
 
 /**
- * Oracle Linux 8 installer. Same as OL 7.
- * The class was added for better handling any possible subtle difference between OL7 and OL8.
+ * Oracle Linux 8 installer. Using a different kickstart file than earlier OL versions.
  */
 class UnattendedOracleLinux8Installer : public UnattendedOracleLinux7Installer
 {
 public:
     DECLARE_TRANSLATE_METHODS(UnattendedOracleLinux8Installer)
 
-    UnattendedOracleLinux8Installer(Unattended *pParent)
-        : UnattendedOracleLinux7Installer(pParent)
-    { Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded()); Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); }
-
     UnattendedOracleLinux8Installer(Unattended *pParent,
-                                    const char *pszMainScriptTemplateName,
-                                    const char *pszPostScriptTemplateName,
-                                    const char *pszMainScriptFilename)
+                                    const char *pszMainScriptTemplateName = "ol8_ks.cfg",
+                                    const char *pszPostScriptTemplateName = "ol_postinstall.sh",
+                                    const char *pszMainScriptFilename = "ks.cfg")
+
         : UnattendedOracleLinux7Installer(pParent, pszMainScriptTemplateName, pszPostScriptTemplateName, pszMainScriptFilename)
     { Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded()); Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); }
     ~UnattendedOracleLinux8Installer() {}
