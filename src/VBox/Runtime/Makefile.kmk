@@ -3215,7 +3215,9 @@ if1of ($(KBUILD_TARGET), win linux darwin) # remove later
        	$(if-expr "$(KBUILD_TARGET_ARCH)" == "arm64",-e "/not-arm64/d",-e "/only-arm64/d") \
        	$(if-expr "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "darwin.arm64",, -e "/only-darwin.arm64/d") \
 		$(if-expr "$(substr $(if-expr $(KBUILD_TARGET) != 'win',$(VBOX_GCC_std), $(VBOX_VCC_std)),-2)" >= "17" \
-		                                            ,-e "/before-noexcept/d", -e "/after-noexcept/d") \
+			,-e "/before-noexcept/d", -e "/after-noexcept/d") \
+		$(if-expr $(intersects $(KBUILD_TARGET), linux) && $(intersects $(KBUILD_TARGET_ARCH), amd64 arm64) \
+			,-e "/int64=llong/d", -e "/int64=long/d") \
 		-f "$<" $(filter %.def, $^)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
    $(call KB_FN_AUTO_CMD_DEPS,$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm)

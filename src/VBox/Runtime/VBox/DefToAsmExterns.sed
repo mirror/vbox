@@ -65,7 +65,7 @@ s/^EXPORTS$//
 # Function export
 #
 :code
-s/^\(.*\)$/EXTERN_IMP2 \1/
+s/^\(.*\)$/EXTERN_IMP2 \1\nBEGINCODE\njmp IMP2(\1)\nBEGINDATA/
 b end
 
 #

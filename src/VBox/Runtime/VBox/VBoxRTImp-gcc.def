@@ -120,17 +120,20 @@ EXPORTS
     _ZN12RTCRestInt32aSERKS_
     _ZN12RTCRestInt6410assignCopyERKS_
     _ZN12RTCRestInt6410fromStringERK9RTCStringPKcP9RTERRINFOj
-    _ZN12RTCRestInt6411assignValueEx
+    _ZN12RTCRestInt6411assignValueEl                ; int64=long
+    _ZN12RTCRestInt6411assignValueEx                ; int64=llong
     _ZN12RTCRestInt6414createInstanceEv
     _ZN12RTCRestInt6414resetToDefaultEv
     _ZN12RTCRestInt6419deserializeFromJsonERK17RTCRestJsonCursor
     _ZN12RTCRestInt6427deserializeInstanceFromJsonERK17RTCRestJsonCursorPP17RTCRestObjectBase
     _ZN12RTCRestInt64C1ERKS_
     _ZN12RTCRestInt64C1Ev
-    _ZN12RTCRestInt64C1Ex
+    _ZN12RTCRestInt64C1El                           ; int64=long
+    _ZN12RTCRestInt64C1Ex                           ; int64=llong
     _ZN12RTCRestInt64C2ERKS_
     _ZN12RTCRestInt64C2Ev
-    _ZN12RTCRestInt64C2Ex
+    _ZN12RTCRestInt64C2El                           ; int64=long
+    _ZN12RTCRestInt64C2Ex                           ; int64=llong
     _ZN12RTCRestInt64D0Ev
     _ZN12RTCRestInt64D1Ev
     _ZN12RTCRestInt64D2Ev
@@ -223,7 +226,8 @@ EXPORTS
     _ZN16RTCRestAnyObject11assignValueEd
     _ZN16RTCRestAnyObject11assignValueEi
     _ZN16RTCRestAnyObject11assignValueEs
-    _ZN16RTCRestAnyObject11assignValueEx
+    _ZN16RTCRestAnyObject11assignValueEl            ; int64=long
+    _ZN16RTCRestAnyObject11assignValueEx            ; int64=llong
     _ZN16RTCRestAnyObject14createInstanceEv
     _ZN16RTCRestAnyObject14resetToDefaultEv
     _ZN16RTCRestAnyObject19deserializeFromJsonERK17RTCRestJsonCursor
@@ -325,9 +329,12 @@ EXPORTS
     _ZN21RTCRestBinaryResponse15assignWriteableEPvm
     _ZN21RTCRestBinaryResponse15receiveCompleteEP14RTHTTPINTERNAL
     _ZN21RTCRestBinaryResponse18setMaxDownloadSizeEm
-    _ZN21RTCRestBinaryResponse19receiveHttpCallbackEP14RTHTTPINTERNALPKvmjyyPv
-    _ZN21RTCRestBinaryResponse19setConsumerCallbackEPFiPS_PKvmjyyEPv   ; before-noexcept
-    _ZN21RTCRestBinaryResponse19setConsumerCallbackEPDoFiPS_PKvmjyyEPv ; after-noexcept
+    _ZN21RTCRestBinaryResponse19receiveHttpCallbackEP14RTHTTPINTERNALPKvmjmmPv ; int64=long
+    _ZN21RTCRestBinaryResponse19receiveHttpCallbackEP14RTHTTPINTERNALPKvmjyyPv ; int64=llong
+    _ZN21RTCRestBinaryResponse19setConsumerCallbackEPFiPS_PKvmjmmEPv   ; before-noexcept int64=long
+    _ZN21RTCRestBinaryResponse19setConsumerCallbackEPFiPS_PKvmjyyEPv   ; before-noexcept int64=llong
+    _ZN21RTCRestBinaryResponse19setConsumerCallbackEPDoFiPS_PKvmjmmEPv ; after-noexcept  int64=long
+    _ZN21RTCRestBinaryResponse19setConsumerCallbackEPDoFiPS_PKvmjyyEPv ; after-noexcept  int64=llong
     _ZN21RTCRestBinaryResponseC1Ev
     _ZN21RTCRestBinaryResponseC2Ev
     _ZN21RTCRestOutputToString6outputEPKcm
@@ -368,9 +375,12 @@ EXPORTS
     _ZN22RTCRestBinaryParameter14resetToDefaultEv
     _ZN22RTCRestBinaryParameter14setContentTypeEPKc
     _ZN22RTCRestBinaryParameter15assignWriteableEPvm
-    _ZN22RTCRestBinaryParameter16xmitHttpCallbackEP14RTHTTPINTERNALPvmyPmS2_
-    _ZN22RTCRestBinaryParameter19setProducerCallbackEPFiPS_PvmyPmES1_y   ; before-noexcept
-    _ZN22RTCRestBinaryParameter19setProducerCallbackEPDoFiPS_PvmyPmES1_y ; after-noexcept
+    _ZN22RTCRestBinaryParameter16xmitHttpCallbackEP14RTHTTPINTERNALPvmmPmS2_ ; int64=long
+    _ZN22RTCRestBinaryParameter16xmitHttpCallbackEP14RTHTTPINTERNALPvmyPmS2_ ; int64=llong
+    _ZN22RTCRestBinaryParameter19setProducerCallbackEPFiPS_PvmmPmES1_m   ; before-noexcept int64=long
+    _ZN22RTCRestBinaryParameter19setProducerCallbackEPFiPS_PvmyPmES1_y   ; before-noexcept int64=llong
+    _ZN22RTCRestBinaryParameter19setProducerCallbackEPDoFiPS_PvmyPmES1_m ; after-noexcept  int64=long
+    _ZN22RTCRestBinaryParameter19setProducerCallbackEPDoFiPS_PvmyPmES1_y ; after-noexcept  int64=llong
     _ZN22RTCRestBinaryParameterC1Ev
     _ZN22RTCRestBinaryParameterC2Ev
     _ZN23RTCRestOutputPrettyBase10beginArrayEv
@@ -585,10 +595,10 @@ EXPORTS
     _ZNK9RTCString5countEc
     _ZNK9RTCString5splitERKS_NS_9SplitModeE
     _ZNK9RTCString5toIntERj
-    _ZNK9RTCString5toIntERy
+    _ZNK9RTCString5toIntERm                 ; int64=long
+    _ZNK9RTCString5toIntERy                 ; int64=llong
     _ZNK9RTCString8containsEPKcNS_15CaseSensitivityE
     _ZNK9RTCString8containsERKS_NS_15CaseSensitivityE
-    _ZNK9RTCString8endsWithERKS_NS_15CaseSensitivityE
     _ZNK9RTCString8substrCPEmm
     _ZTI11RTCRestBool DATA
     _ZTI11RTCRestDate DATA

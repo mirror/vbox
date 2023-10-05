@@ -1209,14 +1209,15 @@ EXPORTS
     RTLdrOpen
     RTLdrRelocate
     RTLdrSize
-    RTLinuxFindDevicePath               ; only-linux
-    RTLinuxFindDevicePathV              ; only-linux
-    RTLinuxSysFsClose                   ; only-linux
     RTLinuxSysFsExists                  ; only-linux
+    RTLinuxSysFsExistsEx                ; only-linux
+    RTLinuxSysFsExistsExV               ; only-linux
     RTLinuxSysFsExistsV                 ; only-linux
     RTLinuxSysFsGetLinkDest             ; only-linux
     RTLinuxSysFsGetLinkDestV            ; only-linux
     RTLinuxSysFsOpen                    ; only-linux
+    RTLinuxSysFsOpenEx                  ; only-linux
+    RTLinuxSysFsOpenExV                 ; only-linux
     RTLinuxSysFsOpenV                   ; only-linux
     RTLinuxSysFsReadDevNumFile          ; only-linux
     RTLinuxSysFsReadDevNumFileV         ; only-linux
@@ -1226,6 +1227,18 @@ EXPORTS
     RTLinuxSysFsReadStr                 ; only-linux
     RTLinuxSysFsReadStrFile             ; only-linux
     RTLinuxSysFsReadStrFileV            ; only-linux
+    RTLinuxSysFsWriteFile               ; only-linux
+    RTLinuxSysFsWriteStr                ; only-linux
+    RTLinuxSysFsWriteStrFile            ; only-linux
+    RTLinuxSysFsWriteStrFileV           ; only-linux
+    RTLinuxSysFsWriteU16File            ; only-linux
+    RTLinuxSysFsWriteU16FileV           ; only-linux
+    RTLinuxSysFsWriteU32File            ; only-linux
+    RTLinuxSysFsWriteU32FileV           ; only-linux
+    RTLinuxSysFsWriteU64File            ; only-linux
+    RTLinuxSysFsWriteU64FileV           ; only-linux
+    RTLinuxSysFsWriteU8File             ; only-linux
+    RTLinuxSysFsWriteU8FileV            ; only-linux
     RTLockValidatorClassAddPriorClass
     RTLockValidatorClassCreate
     RTLockValidatorClassCreateEx
