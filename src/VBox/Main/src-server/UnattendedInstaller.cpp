@@ -102,7 +102,9 @@ UnattendedInstaller::createInstance(VBOXOSTYPE enmDetectedOSType, const Utf8Str 
             pUinstaller = new UnattendedFedoraInstaller(pParent);
         else if (enmDetectedOSType >= VBOXOSTYPE_Oracle && enmDetectedOSType <= VBOXOSTYPE_Oracle_latest_x64)
         {
-            if (RTStrVersionCompare(strDetectedOSVersion.c_str(), "8") >= 0)
+            if (RTStrVersionCompare(strDetectedOSVersion.c_str(), "9") >= 0)
+                pUinstaller = new UnattendedOracleLinux9Installer(pParent);
+            else if (RTStrVersionCompare(strDetectedOSVersion.c_str(), "8") >= 0)
                 pUinstaller = new UnattendedOracleLinux8Installer(pParent);
             else if (RTStrVersionCompare(strDetectedOSVersion.c_str(), "7") >= 0)
                 pUinstaller = new UnattendedOracleLinux7Installer(pParent);
@@ -1363,8 +1365,8 @@ HRESULT UnattendedDebianInstaller::editDebianGrubCfg(GeneralTextScript *pEditor)
 *
 */
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-HRESULT UnattendedRhel6Installer::addFilesToAuxVisoVectors(RTCList<RTCString> &rVecArgs, RTCList<RTCString> &rVecFiles,
-                                                               RTVFS hVfsOrgIso, bool fOverwrite)
+HRESULT UnattendedRhelInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &rVecArgs, RTCList<RTCString> &rVecFiles,
+                                                          RTVFS hVfsOrgIso, bool fOverwrite)
 {
     Utf8Str strIsoLinuxCfg;
     try

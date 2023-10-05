@@ -652,13 +652,37 @@ public:
     ~UnattendedUbuntuInstaller() {}
 };
 
+/**
+ * RHEL installer.
+ *
+ * This serves as a base for the kickstart based installers.
+ */
+class UnattendedRhelInstaller : public UnattendedLinuxInstaller
+{
+public:
+    DECLARE_TRANSLATE_METHODS(UnattendedRhelInstaller)
+
+    UnattendedRhelInstaller(Unattended *pParent,
+                             const char *pszMainScriptTemplateName,
+                             const char *pszPostScriptTemplateName,
+                             const char *pszMainScriptFilename)
+        : UnattendedLinuxInstaller(pParent, pszMainScriptTemplateName, pszPostScriptTemplateName, pszMainScriptFilename)
+    {}
+    ~UnattendedRhelInstaller() {}
+
+    bool isAuxiliaryIsoIsVISO()             { return true; }
+    bool isOriginalIsoNeeded() const        { return false; }
+
+protected:
+    HRESULT addFilesToAuxVisoVectors(RTCList<RTCString> &rVecArgs, RTCList<RTCString> &rVecFiles,
+                                     RTVFS hVfsOrgIso, bool fOverwrite);
+};
 
 /**
  * RHEL 6 installer.
  *
- * This serves as a base for the kickstart based installers.
  */
-class UnattendedRhel6Installer : public UnattendedLinuxInstaller
+class UnattendedRhel6Installer : public UnattendedRhelInstaller
 {
 public:
     DECLARE_TRANSLATE_METHODS(UnattendedRhel6Installer)
@@ -667,7 +691,7 @@ public:
                              const char *pszMainScriptTemplateName = "redhat67_ks.cfg",
                              const char *pszPostScriptTemplateName = "redhat_postinstall.sh",
                              const char *pszMainScriptFilename     = "ks.cfg")
-        : UnattendedLinuxInstaller(pParent, pszMainScriptTemplateName, pszPostScriptTemplateName, pszMainScriptFilename)
+        : UnattendedRhelInstaller(pParent, pszMainScriptTemplateName, pszPostScriptTemplateName, pszMainScriptFilename)
     {
         Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded());
         Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO());
@@ -675,13 +699,6 @@ public:
         mArrStrRemoveInstallKernelParameters.append("rd.live.check"); /* Disables the checkisomd5 step. Required for VISO. */
     }
     ~UnattendedRhel6Installer() {}
-
-    bool isAuxiliaryIsoIsVISO()             { return true; }
-    bool isOriginalIsoNeeded() const        { return false; }
-
-protected:
-    HRESULT addFilesToAuxVisoVectors(RTCList<RTCString> &rVecArgs, RTCList<RTCString> &rVecFiles,
-                                     RTVFS hVfsOrgIso, bool fOverwrite);
 };
 
 /**
@@ -847,6 +864,34 @@ public:
     { Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded()); Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); }
     ~UnattendedOracleLinux8Installer() {}
 };
+
+/**
+ * Oracle Linux 9 installer.
+ * Uses a different kickstart file since several commands/options are removed in OL9.
+ * See the ol9_ks.cfg file for comments. Also, as of OL9 kernel command argument 'ks' should have
+ * 'inst.' prefix.
+ */
+class UnattendedOracleLinux9Installer : public UnattendedRhelInstaller
+{
+public:
+    DECLARE_TRANSLATE_METHODS(UnattendedOracleLinux9Installer)
+
+    UnattendedOracleLinux9Installer(Unattended *pParent,
+                                    const char *pszMainScriptTemplateName = "ol9_ks.cfg",
+                                    const char *pszPostScriptTemplateName = "ol_postinstall.sh",
+                                    const char *pszMainScriptFilename = "ks.cfg")
+        : UnattendedRhelInstaller(pParent, pszMainScriptTemplateName, pszPostScriptTemplateName, pszMainScriptFilename)
+    {
+        Assert(!isOriginalIsoNeeded());
+        Assert(isAuxiliaryIsoNeeded());
+        Assert(!isAuxiliaryFloppyNeeded());
+        Assert(isAuxiliaryIsoIsVISO());
+        mStrDefaultExtraInstallKernelParameters.assign(" inst.ks=cdrom:/").append(pszMainScriptFilename).append(' ');
+        mArrStrRemoveInstallKernelParameters.append("rd.live.check"); /* Disables the checkisomd5 step. Required for VISO. */
+    }
+    ~UnattendedOracleLinux9Installer() {}
+};
+
 
 #if 0 /* fixme */
 /**

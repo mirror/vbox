@@ -72,6 +72,7 @@ ifdef VBOX_WITH_UNATTENDED
  	ubuntu_preseed.cfg \
  	fedora_ks.cfg \
  	ol_ks.cfg \
+ 	ol9_ks.cfg \
  	rhel3_ks.cfg \
  	rhel4_ks.cfg \
  	rhel5_ks.cfg \
