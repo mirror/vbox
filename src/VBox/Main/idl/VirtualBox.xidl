@@ -285,22 +285,6 @@
 </if>
 
 <!--
-  Macros for helping with constructing guest OS type ID strings for the
-  different architectures.
--->
-<cpp line="#define GUEST_OS_ID_STR_X86(a_szOSid)     a_szOSid"/>
-<cpp line="#if 0 /** @todo r=bird: revert to legacy naming: */"/>
-<cpp line="#define GUEST_OS_ID_STR_X64(a_szOSid)     a_szOSid  &quot;_64&quot;"/>
-<cpp line="#else"/>
-<cpp line="#define GUEST_OS_ID_STR_X64(a_szOSid)     a_szOSid  &quot;_x64&quot;"/>
-<cpp line="#endif"/>
-<cpp line="#define GUEST_OS_ID_STR_A32(a_szOSid)     a_szOSid  &quot;_arm32&quot;"/>
-<cpp line="#define GUEST_OS_ID_STR_A64(a_szOSid)     a_szOSid  &quot;_arm64&quot;"/>
-<cpp line="#define GUEST_OS_ID_STR_AMD64(a_szOSid)   GUEST_OS_ID_STR_X64(a_szOSid)"/>
-<cpp line="#define GUEST_OS_ID_STR_ARM32(a_szOSid)   GUEST_OS_ID_STR_A32(a_szOSid)"/>
-<cpp line="#define GUEST_OS_ID_STR_ARM64(a_szOSid)   GUEST_OS_ID_STR_A64(a_szOSid)"/>
-
-<!--
   Note!! Don't forget to update the python bindings (++) when changing the
          UUID or version!!
 -->

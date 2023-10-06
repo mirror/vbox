@@ -256,9 +256,6 @@ typedef struct IEMRECOMPILERSTATE
     uint32_t                    cFixupsAlloc;
     /** Buffer used by the recompiler for recording fixups when generating code. */
     PIEMNATIVEFIXUP             paFixups;
-
-    /** The translation block being recompiled. */
-    PCIEMTB                     pTbOrg;
 } IEMRECOMPILERSTATE;
 /** Pointer to a native recompiler state. */
 typedef IEMRECOMPILERSTATE *PIEMRECOMPILERSTATE;
