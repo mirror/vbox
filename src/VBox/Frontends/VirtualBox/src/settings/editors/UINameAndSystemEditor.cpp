@@ -40,7 +40,7 @@
 
 /* COM includes: */
 #include "CSystemProperties.h"
-
+#include <VBox/com/VirtualBox.h> /* Need GUEST_OS_ID_STR_X86 and friends. */
 
 /** Defines the VM OS type ID. */
 enum
@@ -376,7 +376,7 @@ void UINameAndSystemEditor::selectPreferredType()
 {
     if (m_strFamilyId == "Windows")
     {
-        QString strDefaultID = "Windows11_x64";
+        QString strDefaultID = GUEST_OS_ID_STR_X64("Windows11");
         const int iIndexWin = m_pComboType->findData(strDefaultID, TypeID);
         if (iIndexWin != -1)
         {
@@ -387,7 +387,7 @@ void UINameAndSystemEditor::selectPreferredType()
     /* Or select Oracle Linux item for Linux family as default: */
     if (m_strVariant == "Oracle")
     {
-        QString strDefaultID = "Oracle_x64";
+        QString strDefaultID = GUEST_OS_ID_STR_X64("Oracle");
         const int iIndexOracle = m_pComboType->findData(strDefaultID, TypeID);
         if (iIndexOracle != -1)
         {
@@ -397,7 +397,7 @@ void UINameAndSystemEditor::selectPreferredType()
     }
 
     /* Else try to pick the first 64-bit one if it exists.: */
-    QString strDefaultID = "_x64";
+    QString strDefaultID = GUEST_OS_ID_STR_X64("");
     const int iIndexAll = m_pComboType->findData(strDefaultID, TypeID, Qt::MatchContains);
     if (iIndexAll != -1)
         m_pComboType->setCurrentIndex(iIndexAll);
