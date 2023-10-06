@@ -47,6 +47,7 @@
 #define LOG_GROUP LOG_GROUP_IEM_RE_THREADED
 #define IEM_WITH_OPAQUE_DECODER_STATE
 #define VMCPU_INCL_CPUM_GST_CTX
+#define VMM_INCLUDED_SRC_include_IEMMc_h /* block IEMMc.h inclusion. */
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/cpum.h>
 #include "IEMInternal.h"
@@ -1125,10 +1126,11 @@ IEM_DECL_IMPL_DEF(int, iemNativeHlpExecStatusCodeFiddling,(PVMCPUCC pVCpu, int r
  *
  * Called before starting a new recompile job.
  */
-static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative)
+static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMTB pTb)
 {
     pReNative->cLabels   = 0;
     pReNative->cFixups   = 0;
+    pReNative->pTbOrg    = pTb;
     return pReNative;
 }
 
@@ -1141,9 +1143,10 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative)
  * @returns Pointer to the new recompiler state.
  * @param   pVCpu   The cross context virtual CPU structure of the calling
  *                  thread.
+ * @param   pTb     The TB that's about to be recompiled.
  * @thread  EMT(pVCpu)
  */
-static PIEMRECOMPILERSTATE iemNativeInit(PVMCPUCC pVCpu)
+static PIEMRECOMPILERSTATE iemNativeInit(PVMCPUCC pVCpu, PCIEMTB pTb)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
@@ -1171,7 +1174,7 @@ static PIEMRECOMPILERSTATE iemNativeInit(PVMCPUCC pVCpu)
          * Done, just need to save it and reinit it.
          */
         pVCpu->iem.s.pNativeRecompilerStateR3 = pReNative;
-        return iemNativeReInit(pReNative);
+        return iemNativeReInit(pReNative, pTb);
     }
 
     /*
@@ -1905,6 +1908,34 @@ DECLINLINE(uint32_t) iemNativeEmitCImplCall3(PIEMRECOMPILERSTATE pReNative, uint
 }
 
 
+/** Same as iemRegFinishClearingRF. */
+DECLINLINE(uint32_t) iemNativeEmitFinishClearingRF(PIEMRECOMPILERSTATE pReNative, uint32_t off)
+{
+    uint32_t const fFlags = pReNative->pTbOrg->fFlags;
+    if (fFlags & IEMTB_F_INHIBIT_SHADOW)
+    {
+    }
+    IEMTB_F_IEM_F_MASK
+
+    //
+        if (RT_LIKELY(!(  pVCpu->cpum.GstCtx.eflags.uBoth
+                        & (X86_EFL_TF | X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW | CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_DBG_DBGF_MASK)) ))
+            return VINF_SUCCESS;
+        return iemFinishInstructionWithFlagsSet(pVCpu);
+}
+
+
+/** Same as iemRegAddToEip32AndFinishingClearingRF. */
+DECLINLINE(uint32_t) iemNativeEmitAddToEip32AndFinishingClearingRF(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr)
+{
+    /* Increment RIP. */
+    pVCpu->cpum.GstCtx.rip = (uint32_t)(pVCpu->cpum.GstCtx.eip + cbInstr);
+
+    /* Consider flags. */
+    return iemNativeEmitFinishClearingRF(pReNative, off);
+}
+
+
 /*
  * MC definitions for the native recompiler.
  */
@@ -1920,6 +1951,21 @@ DECLINLINE(uint32_t) iemNativeEmitCImplCall3(PIEMRECOMPILERSTATE pReNative, uint
 
 #define IEM_MC_DEFER_TO_CIMPL_3_RET_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl, a0, a1, a2) \
     return iemNativeEmitCImplCall3(pReNative, off, pCallEntry->idxInstr, (uintptr_t)a_pfnCImpl, a_cbInstr, a0, a1, a2)
+
+
+#define IEM_MC_BEGIN(a_cArgs, a_cLocals, a_fFlags)      {
+
+#define IEM_MC_END()                                    } AssertFailedReturn(UINT32_MAX /* shouldn't be reached! */)
+
+#define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC16(a_cbInstr) \
+    return iemNativeEmitAddToIp16AndFinishingClearingRF(pReNative, off, a_cbInstr)
+
+#define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC32(a_cbInstr) \
+    return iemNativeEmitAddToEip32AndFinishingClearingRF(pReNative, off, a_cbInstr)
+
+#define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC64(a_cbInstr) \
+    return iemNativeEmitAddToRip64AndFinishingClearingRF(pReNative, off, a_cbInstr)
+
 
 /*
  * Builtin functions.
@@ -1964,10 +2010,10 @@ PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb)
      */
     PIEMRECOMPILERSTATE pReNative = pVCpu->iem.s.pNativeRecompilerStateR3;
     if (RT_LIKELY(pReNative))
-        iemNativeReInit(pReNative);
+        iemNativeReInit(pReNative, pTb);
     else
     {
-        pReNative = iemNativeInit(pVCpu);
+        pReNative = iemNativeInit(pVCpu, pTb);
         AssertReturn(pReNative, pTb);
     }
 
