@@ -775,26 +775,38 @@ protected:
 
         /* Create new painter: */
         QPainter painter(this);
-        /* Draw a thin bar on th right hand side of the icon indication CPU load: */
-        QLinearGradient gradient(0, 0, 0, height());
-        gradient.setColorAt(1.0, Qt::green);
-        gradient.setColorAt(0.5, Qt::yellow);
-        gradient.setColorAt(0.0, Qt::red);
-        painter.setPen(Qt::NoPen);
-        painter.setBrush(gradient);
-        /* Use 20% of the icon width to draw the indicator bar: */
-        painter.drawRect(QRect(QPoint(0.8 * width(), (100 - m_uEffectiveCPULoad) / 100.f * height()),
-                               QPoint(width(), height())));
-        /* Draw an empty rect. around the CPU load bar: */
+
+        /* Be a paranoid: */
+        ulong uCPU = qMin(m_uEffectiveCPULoad, static_cast<ulong>(100));
+
         int iBorderThickness = 1;
-        QRect outRect(QPoint(0.8 * width(), 0),
-                      QPoint(width() - 2 * iBorderThickness,  height() - 2 * iBorderThickness));
-        if (m_pMachine->machineState() == KMachineState_Running)
-            painter.setPen(QPen(Qt::black, 1));
-        else
-            painter.setPen(QPen(Qt::gray, 1));
-        painter.setBrush(Qt::NoBrush);
+        /** Draw a black rectangle as background to the right hand side of 'this'.
+          * A smaller and colored rectangle will be drawn on top of this:  **/
+        QPoint topLeftOut(0.76 * width() ,0);
+        QPoint bottomRightOut(width() - 1, height() - 1);
+        QRect outRect(topLeftOut, bottomRightOut);
+
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(Qt::black);
         painter.drawRect(outRect);
+
+        /* Draw a colored rectangle. Its color and height is dynamically computed from CPU usage: */
+        int inFullHeight = outRect.height() - 2 * iBorderThickness;
+        int inWidth = outRect.width() - 2 * iBorderThickness;
+        int inHeight = inFullHeight * uCPU / 100.;
+        QPoint topLeftIn(topLeftOut.x() + iBorderThickness,
+                         topLeftOut.y() + iBorderThickness + (inFullHeight - inHeight));
+
+        QRect inRect(topLeftIn, QSize(inWidth, inHeight));
+        painter.setPen(Qt::NoPen);
+
+        /* Compute color as HSV: */
+        int iH = 120 * (1 - uCPU / 100.);
+        QColor fillColor;
+        fillColor.setHsv(iH, 255 /*saturation */, 255 /* value */);
+
+        painter.setBrush(fillColor);
+        painter.drawRect(inRect);
     }
 
 protected slots:
@@ -840,7 +852,7 @@ private:
     /** Holds the auto-update timer instance. */
     QTimer *m_pTimerAutoUpdate;
 
-    /** Holds the effective CPU load. */
+    /** Holds the effective CPU load. Expected to be in range [0, 100] */
     ulong  m_uEffectiveCPULoad;
 };
 
