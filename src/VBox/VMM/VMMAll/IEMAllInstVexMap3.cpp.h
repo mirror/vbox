@@ -570,8 +570,8 @@ FNIEMOP_STUB(iemOp_vdpps_Vx_Hx_Wx_Ib);
 /** Opcode VEX.66.0F3A 0x41, */
 FNIEMOP_STUB(iemOp_vdppd_Vdq_Hdq_Wdq_Ib);
 
-/** Opcode VEX.66.0F3A 0x42.
- * AVX,AVX2 */
+
+/** Opcode VEX.66.0F3A 0x42. */
 FNIEMOP_DEF(iemOp_vmpsadbw_Vx_Hx_Wx_Ib)
 {
     IEMOP_MNEMONIC3(VEX_RVM, VMPSADBW, vmpsadbw, Vx, Hx, Wx, DISOPTYPE_HARMLESS, 0); /** @todo */
