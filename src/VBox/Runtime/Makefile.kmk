@@ -3170,40 +3170,41 @@ endif
 
 if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.x86 win.amd64 linux.amd64 darwin.amd64) # remove later
  if1of (VBoxRT, $(DLLS))
-  #
-  # VBoxRTImpCheck - Import library check.
-  #
-  PROGRAMS += VBoxRTStableCheck
-  VBoxRTStableCheck_TEMPLATE = VBoxR3TstExe
-  VBoxRTStableCheck_ASDEFS.linux.amd64 = PIC    # Hack
-  VBoxRTStableCheck_SOURCES = \
-  	VBox/VBoxRTStableCheck.cpp \
-  	$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm
-  VBoxRTStableCheck_LIBS = \
-  	$(LIB_RUNTIME)
-  VBoxRTStableCheck_CLEAN = \
-  	$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm
-  $(call KB_FN_DO_PASS0_ON_TARGET,VBoxRTStableCheck)
+  ifdef VBOX_WITH_LIBCURL
+   #
+   # VBoxRTImpCheck - Import library check.
+   #
+   PROGRAMS += VBoxRTStableCheck
+   VBoxRTStableCheck_TEMPLATE = VBoxR3TstExe
+   VBoxRTStableCheck_ASDEFS.linux.amd64 = PIC    # Hack
+   VBoxRTStableCheck_SOURCES = \
+   	VBox/VBoxRTStableCheck.cpp \
+   	$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm
+   VBoxRTStableCheck_LIBS = \
+   	$(LIB_RUNTIME)
+   VBoxRTStableCheck_CLEAN = \
+   	$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm
+   $(call KB_FN_DO_PASS0_ON_TARGET,VBoxRTStableCheck)
 
-  ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.amd64)
-   $(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
-   		$(PATH_SUB_CURRENT)/VBox/DefToAsmExterns.sed \
-   		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def \
-   		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp-vcc64.def \
-   		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-win64.def \
-   		| $$(dir $$@)
-  else ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.x86)
-   $(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
-   		$(PATH_SUB_CURRENT)/VBox/DefToAsmExternsVcc32.sed \
-   		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def \
-   		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp-vcc32.def \
-   		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-win32.def | $$(dir $$@)
-  else
-   $(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
-   		$(PATH_SUB_CURRENT)/VBox/DefToAsmExterns.sed \
-   		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def \
-   		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp-gcc.def | $$(dir $$@)
-  endif
+   ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.amd64)
+    $(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
+    		$(PATH_SUB_CURRENT)/VBox/DefToAsmExterns.sed \
+    		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def \
+    		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp-vcc64.def \
+    		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-win64.def \
+    		| $$(dir $$@)
+   else ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.x86)
+    $(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
+    		$(PATH_SUB_CURRENT)/VBox/DefToAsmExternsVcc32.sed \
+    		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def \
+    		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp-vcc32.def \
+    		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-win32.def | $$(dir $$@)
+   else
+    $(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm: \
+    		$(PATH_SUB_CURRENT)/VBox/DefToAsmExterns.sed \
+    		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp.def \
+    		$(PATH_SUB_CURRENT)/VBox/VBoxRTImp-gcc.def | $$(dir $$@)
+   endif
 	$(APPEND) -tn "$@" '%include "iprt/asmdefs.mac"' ''
 	$(SED) --append "$@" \
 		-e "/not-$(KBUILD_TARGET)/d" \
@@ -3220,8 +3221,9 @@ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.x86 win.amd64 linux.amd64 dar
 			,-e "/int64=llong/d", -e "/int64=long/d") \
 		-f "$<" $(filter %.def, $^)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
-  $(call KB_FN_AUTO_CMD_DEPS,$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm)
+   $(call KB_FN_AUTO_CMD_DEPS,$(VBoxRTStableCheck_0_OUTDIR)/VBoxRTStableCheckA.asm)
 
+  endif
  endif
 endif # remove later
 
