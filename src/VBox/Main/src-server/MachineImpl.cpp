@@ -500,7 +500,7 @@ HRESULT Machine::init(VirtualBox *aParent,
             mParallelPorts[slot]->i_applyDefaults();
 
         /* Enable the VMMDev testing feature for bootsector VMs: */
-        if (aOsType && aOsType->i_id() == "VBoxBS_x64")
+        if (aOsType && aOsType->i_id() == GUEST_OS_ID_STR_X64("VBoxBS"))
             mData->pMachineConfigFile->mapExtraDataItems["VBoxInternal/Devices/VMMDev/0/Config/TestingEnabled"] = "1";
 
 #ifdef VBOX_WITH_FULL_VM_ENCRYPTION
@@ -1504,36 +1504,33 @@ HRESULT Machine::getEffectiveParavirtProvider(ParavirtProvider_T *aParavirtProvi
 
                 case ParavirtProvider_Default:
                 {
+                    Assert(strlen(GUEST_OS_ID_STR_X64("")) > 0);
                     if (fOsXGuest)
                         *aParavirtProvider = ParavirtProvider_Minimal;
-                    else if (   mUserData->s.strOsType == "Windows11_x64"
-                             || mUserData->s.strOsType == "Windows10"
-                             || mUserData->s.strOsType == "Windows10_x64"
-                             || mUserData->s.strOsType == "Windows81"
-                             || mUserData->s.strOsType == "Windows81_x64"
-                             || mUserData->s.strOsType == "Windows8"
-                             || mUserData->s.strOsType == "Windows8_x64"
-                             || mUserData->s.strOsType == "Windows7"
-                             || mUserData->s.strOsType == "Windows7_x64"
-                             || mUserData->s.strOsType == "WindowsVista"
-                             || mUserData->s.strOsType == "WindowsVista_x64"
+                    else if (   mUserData->s.strOsType == GUEST_OS_ID_STR_X64("Windows11")
+                             || mUserData->s.strOsType == GUEST_OS_ID_STR_X86("Windows10")
+                             || mUserData->s.strOsType == GUEST_OS_ID_STR_X64("Windows10")
+                             || mUserData->s.strOsType == GUEST_OS_ID_STR_X86("Windows81")
+                             || mUserData->s.strOsType == GUEST_OS_ID_STR_X64("Windows81")
+                             || mUserData->s.strOsType == GUEST_OS_ID_STR_X86("Windows8")
+                             || mUserData->s.strOsType == GUEST_OS_ID_STR_X64("Windows8")
+                             || mUserData->s.strOsType == GUEST_OS_ID_STR_X86("Windows7")
+                             || mUserData->s.strOsType == GUEST_OS_ID_STR_X64("Windows7")
+                             || mUserData->s.strOsType == GUEST_OS_ID_STR_X86("WindowsVista")
+                             || mUserData->s.strOsType == GUEST_OS_ID_STR_X64("WindowsVista")
                              || (   (   mUserData->s.strOsType.startsWith("Windows202")
                                      || mUserData->s.strOsType.startsWith("Windows201"))
-                                 && mUserData->s.strOsType.endsWith("_x64"))
-                             || mUserData->s.strOsType == "Windows2012"
-                             || mUserData->s.strOsType == "Windows2012_x64"
-                             || mUserData->s.strOsType == "Windows2008"
-                             || mUserData->s.strOsType == "Windows2008_x64")
-                    {
+                                 && mUserData->s.strOsType.endsWith(GUEST_OS_ID_STR_X64("")))
+                             || mUserData->s.strOsType == GUEST_OS_ID_STR_X86("Windows2012")
+                             || mUserData->s.strOsType == GUEST_OS_ID_STR_X64("Windows2012")
+                             || mUserData->s.strOsType == GUEST_OS_ID_STR_X86("Windows2008")
+                             || mUserData->s.strOsType == GUEST_OS_ID_STR_X64("Windows2008"))
                         *aParavirtProvider = ParavirtProvider_HyperV;
-                    }
-                    else if (guestTypeFamilyId == "Linux" &&
-                             mUserData->s.strOsType != "Linux22" &&      // Linux22 and Linux24{_64} excluded as they're too old
-                             mUserData->s.strOsType != "Linux24" &&      // to have any KVM paravirtualization support.
-                             mUserData->s.strOsType != "Linux24_x64")
-                    {
+                    else if (   guestTypeFamilyId == "Linux"
+                             && mUserData->s.strOsType != GUEST_OS_ID_STR_X86("Linux22") // Linux22 and Linux24{_64} excluded as they're too old
+                             && mUserData->s.strOsType != GUEST_OS_ID_STR_X86("Linux24") // to have any KVM paravirtualization support.
+                             && mUserData->s.strOsType != GUEST_OS_ID_STR_X64("Linux24"))
                         *aParavirtProvider = ParavirtProvider_KVM;
-                    }
                     else
                         *aParavirtProvider = ParavirtProvider_None;
                     break;
@@ -15358,7 +15355,7 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     }
 
     /* Enable the VMMDev testing feature for bootsector VMs: */
-    if (osTypeId == "VBoxBS_x64")
+    if (osTypeId == GUEST_OS_ID_STR_X64("VBoxBS"))
     {
         hrc = setExtraData("VBoxInternal/Devices/VMMDev/0/Config/TestingEnabled", "1");
         if (FAILED(hrc))

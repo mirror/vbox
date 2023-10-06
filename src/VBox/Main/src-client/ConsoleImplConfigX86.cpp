@@ -783,22 +783,22 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
                and partly because mac os x expects more from systems with newer
                cpus (MSRs, power features, whatever). */
             uint32_t uMaxIntelFamilyModelStep = UINT32_MAX;
-            if (   osTypeId == "MacOS"
-                || osTypeId == "MacOS_x64")
+            if (   osTypeId == GUEST_OS_ID_STR_X86("MacOS")
+                || osTypeId == GUEST_OS_ID_STR_X64("MacOS"))
                 uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 0); /* Penryn / X5482. */
-            else if (   osTypeId == "MacOS106"
-                     || osTypeId == "MacOS106_x64")
+            else if (   osTypeId == GUEST_OS_ID_STR_X86("MacOS106")
+                     || osTypeId == GUEST_OS_ID_STR_X64("MacOS106"))
                 uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 0); /* Penryn / X5482 */
-            else if (   osTypeId == "MacOS107"
-                     || osTypeId == "MacOS107_x64")
+            else if (   osTypeId == GUEST_OS_ID_STR_X86("MacOS107")
+                     || osTypeId == GUEST_OS_ID_STR_X64("MacOS107"))
                 uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 0); /* Penryn / X5482 */ /** @todo figure out
                                                                                 what is required here. */
-            else if (   osTypeId == "MacOS108"
-                     || osTypeId == "MacOS108_x64")
+            else if (   osTypeId == GUEST_OS_ID_STR_X86("MacOS108")
+                     || osTypeId == GUEST_OS_ID_STR_X64("MacOS108"))
                 uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 0); /* Penryn / X5482 */ /** @todo figure out
                                                                                 what is required here. */
-            else if (   osTypeId == "MacOS109"
-                     || osTypeId == "MacOS109_x64")
+            else if (   osTypeId == GUEST_OS_ID_STR_X86("MacOS109")
+                     || osTypeId == GUEST_OS_ID_STR_X64("MacOS109"))
                 uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 0); /* Penryn / X5482 */ /** @todo figure
                                                                                 out what is required here. */
             if (uMaxIntelFamilyModelStep != UINT32_MAX)
