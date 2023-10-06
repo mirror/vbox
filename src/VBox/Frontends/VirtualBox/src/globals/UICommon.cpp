@@ -118,6 +118,7 @@
 #include "CUSBDeviceFilter.h"
 #include "CUSBDeviceFilters.h"
 #include "CVRDEServer.h"
+#include <VBox/com/VirtualBox.h> /* For GUEST_OS_ID_STR_PARTIAL. */
 
 /* Other VBox includes: */
 #include <iprt/asm.h>
@@ -2434,16 +2435,16 @@ void UICommon::setMinimumWidthAccordingSymbolCount(QSpinBox *pSpinBox, int cCoun
 /* static */
 bool UICommon::isWddmCompatibleOsType(const QString &strGuestOSTypeId)
 {
-    return    strGuestOSTypeId.startsWith("WindowsVista")
-           || strGuestOSTypeId.startsWith("Windows7")
-           || strGuestOSTypeId.startsWith("Windows8")
-           || strGuestOSTypeId.startsWith("Windows81")
-           || strGuestOSTypeId.startsWith("Windows10")
-           || strGuestOSTypeId.startsWith("Windows11")
-           || strGuestOSTypeId.startsWith("Windows2008")
-           || strGuestOSTypeId.startsWith("Windows2012")
-           || strGuestOSTypeId.startsWith("Windows2016")
-           || strGuestOSTypeId.startsWith("Windows2019");
+    return    strGuestOSTypeId.startsWith(GUEST_OS_ID_STR_PARTIAL("WindowsVista"))
+           || strGuestOSTypeId.startsWith(GUEST_OS_ID_STR_PARTIAL("Windows7"))
+           || strGuestOSTypeId.startsWith(GUEST_OS_ID_STR_PARTIAL("Windows8"))
+           || strGuestOSTypeId.startsWith(GUEST_OS_ID_STR_PARTIAL("Windows81"))
+           || strGuestOSTypeId.startsWith(GUEST_OS_ID_STR_PARTIAL("Windows10"))
+           || strGuestOSTypeId.startsWith(GUEST_OS_ID_STR_PARTIAL("Windows11"))
+           || strGuestOSTypeId.startsWith(GUEST_OS_ID_STR_PARTIAL("Windows2008"))
+           || strGuestOSTypeId.startsWith(GUEST_OS_ID_STR_PARTIAL("Windows2012"))
+           || strGuestOSTypeId.startsWith(GUEST_OS_ID_STR_PARTIAL("Windows2016"))
+           || strGuestOSTypeId.startsWith(GUEST_OS_ID_STR_PARTIAL("Windows2019"));
 }
 #endif /* VBOX_WITH_3D_ACCELERATION */
 

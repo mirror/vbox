@@ -56,7 +56,7 @@ struct osTypePattern
 static const osTypePattern gs_OSTypePattern[] =
 {
     /* DOS: */
-    { QRegularExpression("DOS", QRegularExpression::CaseInsensitiveOption), "DOS" },
+    { QRegularExpression("DOS", QRegularExpression::CaseInsensitiveOption), GUEST_OS_ID_STR_X86("DOS") },
 
     /* Windows: */
     { QRegularExpression(  "Wi.*98",                         QRegularExpression::CaseInsensitiveOption), GUEST_OS_ID_STR_X86("Windows98") },
@@ -307,13 +307,13 @@ bool UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(UINameAndSys
     {
         if (!pNameAndSystemEditor->setGuestOSTypeByTypeId(strDetectedOSType))
         {
-            pNameAndSystemEditor->setGuestOSTypeByTypeId("Other");
+            pNameAndSystemEditor->setGuestOSTypeByTypeId(GUEST_OS_ID_STR_X86("Other"));
             /* Return false to allow OS type guessing from name. See caller code: */
             return false;
         }
         return true;
     }
-    pNameAndSystemEditor->setGuestOSTypeByTypeId("Other");
+    pNameAndSystemEditor->setGuestOSTypeByTypeId(GUEST_OS_ID_STR_X86("Other"));
     return false;
 }
 

@@ -43,6 +43,7 @@
 /* COM includes: */
 #include "CProgress.h"
 #include "CVirtualBoxErrorInfo.h"
+#include <VBox/com/VirtualBox.h> /* For GUEST_OS_ID_STR_X86. */
 
 
 /** UIProgressTask extension performing cloud machine refresh task.
@@ -206,7 +207,7 @@ void UIVirtualMachineItemCloud::recache()
             m_strAccessError = m_strFakeCloudItemErrorMessage;
 
             /* Determine VM OS type: */
-            m_strOSTypeId = "Other";
+            m_strOSTypeId = GUEST_OS_ID_STR_X86("Other");
 
             /* Determine VM states: */
             m_enmMachineState = KCloudMachineState_Stopped;
@@ -244,7 +245,7 @@ void UIVirtualMachineItemCloud::recache()
             m_strAccessError = !m_fAccessible ? UIErrorString::formatErrorInfo(m_comCloudMachine.GetAccessError()) : QString();
 
             /* Determine VM OS type: */
-            m_strOSTypeId = m_fAccessible ? m_comCloudMachine.GetOSTypeId() : "Other";
+            m_strOSTypeId = m_fAccessible ? m_comCloudMachine.GetOSTypeId() : GUEST_OS_ID_STR_X86("Other");
 
             /* Determine VM states: */
             m_enmMachineState = m_fAccessible ? m_comCloudMachine.GetState() : KCloudMachineState_Stopped;
