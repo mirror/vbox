@@ -18470,8 +18470,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vmpsadbw_u256_fallback,(PRTUINT256U puDst, PCRT
 {
     RTUINT256U const uSrc1 = *puSrc1; /* Might overlap with destination. */
     RTUINT256U const uSrc2 = *puSrc2;
-//? ASMCompilerBarrier();
-
+    ASMCompilerBarrier();
     iemAImpl_vmpsadbw_u128_fallback(&puDst->au128[0], &uSrc1.au128[0], &uSrc2.au128[0], bEvil);
     iemAImpl_vmpsadbw_u128_fallback(&puDst->au128[1], &uSrc1.au128[1], &uSrc2.au128[1], bEvil >> 3);
 }
