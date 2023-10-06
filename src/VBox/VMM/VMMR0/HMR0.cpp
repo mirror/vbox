@@ -333,6 +333,71 @@ static RTCPUID hmR0FirstRcGetCpuId(PHMR0FIRSTRC pFirstRc)
 #endif /* VBOX_STRICT */
 
 
+/**
+ * Verify if VMX is really usable by entering and exiting VMX root mode.
+ *
+ * @returns VBox status code.
+ * @param   uVmxBasicMsr    The host's IA32_VMX_BASIC_MSR value.
+ */
+static int hmR0InitIntelVerifyVmxUsability(uint64_t uVmxBasicMsr)
+{
+    /* Allocate a temporary VMXON region. */
+    RTR0MEMOBJ hScatchMemObj;
+    int rc = RTR0MemObjAllocCont(&hScatchMemObj, HOST_PAGE_SIZE, NIL_RTHCPHYS /* PhysHighest */, false /* fExecutable */);
+    if (RT_FAILURE(rc))
+    {
+        LogRelFunc(("RTR0MemObjAllocCont(,HOST_PAGE_SIZE,false) -> %Rrc\n", rc));
+        return rc;
+    }
+    void          *pvScatchPage      = RTR0MemObjAddress(hScatchMemObj);
+    RTHCPHYS const HCPhysScratchPage = RTR0MemObjGetPagePhysAddr(hScatchMemObj, 0);
+    RT_BZERO(pvScatchPage, HOST_PAGE_SIZE);
+
+    /* Set revision dword at the beginning of the VMXON structure. */
+    *(uint32_t *)pvScatchPage = RT_BF_GET(uVmxBasicMsr, VMX_BF_BASIC_VMCS_ID);
+
+    /* Make sure we don't get rescheduled to another CPU during this probe. */
+    RTCCUINTREG const fEFlags = ASMIntDisableFlags();
+
+    /* Enable CR4.VMXE if it isn't already set. */
+    RTCCUINTREG const uOldCr4 = SUPR0ChangeCR4(X86_CR4_VMXE, RTCCUINTREG_MAX);
+
+    /*
+     * The only way of checking if we're in VMX root mode is to try and enter it.
+     * There is no instruction or control bit that tells us if we're in VMX root mode.
+     * Therefore, try and enter and exit VMX root mode.
+     */
+    rc = VMXEnable(HCPhysScratchPage);
+    if (RT_SUCCESS(rc))
+        VMXDisable();
+    else
+    {
+        /*
+         * KVM leaves the CPU in VMX root mode. Not only is this not allowed,
+         * it will crash the host when we enter raw mode, because:
+         *
+         *   (a) clearing X86_CR4_VMXE in CR4 causes a #GP (we no longer modify
+         *       this bit), and
+         *   (b) turning off paging causes a #GP  (unavoidable when switching
+         *       from long to 32 bits mode or 32 bits to PAE).
+         *
+         * They should fix their code, but until they do we simply refuse to run.
+         */
+        rc = VERR_VMX_IN_VMX_ROOT_MODE;
+    }
+
+    /* Restore CR4.VMXE if it wasn't set prior to us setting it above. */
+    if (!(uOldCr4 & X86_CR4_VMXE))
+        SUPR0ChangeCR4(0 /* fOrMask */, ~(uint64_t)X86_CR4_VMXE);
+
+    /* Restore interrupts. */
+    ASMSetFlags(fEFlags);
+
+    RTR0MemObjFree(hScatchMemObj, false);
+
+    return rc;
+}
+
 
 /**
  * Worker function used by hmR0PowerCallback() and HMR0Init() to initalize VT-x
@@ -418,63 +483,14 @@ static int hmR0InitIntel(void)
          */
         if (!g_fHmVmxUsingSUPR0EnableVTx)
         {
-            /* Allocate a temporary VMXON region. */
-            RTR0MEMOBJ hScatchMemObj;
-            rc = RTR0MemObjAllocCont(&hScatchMemObj, HOST_PAGE_SIZE, NIL_RTHCPHYS /*PhysHighest*/, false /* fExecutable */);
-            if (RT_FAILURE(rc))
-            {
-                LogRel(("hmR0InitIntel: RTR0MemObjAllocCont(,HOST_PAGE_SIZE,false) -> %Rrc\n", rc));
-                return rc;
-            }
-            void          *pvScatchPage      = RTR0MemObjAddress(hScatchMemObj);
-            RTHCPHYS const HCPhysScratchPage = RTR0MemObjGetPagePhysAddr(hScatchMemObj, 0);
-            RT_BZERO(pvScatchPage, HOST_PAGE_SIZE);
-
-            /* Set revision dword at the beginning of the VMXON structure. */
-            *(uint32_t *)pvScatchPage = RT_BF_GET(uVmxBasicMsr, VMX_BF_BASIC_VMCS_ID);
-
-            /* Make sure we don't get rescheduled to another CPU during this probe. */
-            RTCCUINTREG const fEFlags = ASMIntDisableFlags();
-
-            /* Enable CR4.VMXE if it isn't already set. */
-            RTCCUINTREG const uOldCr4 = SUPR0ChangeCR4(X86_CR4_VMXE, RTCCUINTREG_MAX);
-
-            /*
-             * The only way of checking if we're in VMX root mode or not is to try and enter it.
-             * There is no instruction or control bit that tells us if we're in VMX root mode.
-             * Therefore, try and enter VMX root mode here.
-             */
-            rc = VMXEnable(HCPhysScratchPage);
+            rc = hmR0InitIntelVerifyVmxUsability(uVmxBasicMsr);
             if (RT_SUCCESS(rc))
-            {
                 g_fHmVmxSupported = true;
-                VMXDisable();
-            }
             else
             {
-                /*
-                 * KVM leaves the CPU in VMX root mode. Not only is  this not allowed,
-                 * it will crash the host when we enter raw mode, because:
-                 *
-                 *   (a) clearing X86_CR4_VMXE in CR4 causes a #GP (we no longer modify
-                 *       this bit), and
-                 *   (b) turning off paging causes a #GP  (unavoidable when switching
-                 *       from long to 32 bits mode or 32 bits to PAE).
-                 *
-                 * They should fix their code, but until they do we simply refuse to run.
-                 */
-                g_rcHmInit = VERR_VMX_IN_VMX_ROOT_MODE;
+                g_rcHmInit = rc;
                 Assert(g_fHmVmxSupported == false);
             }
-
-            /* Restore CR4.VMXE if it wasn't set prior to us setting it above. */
-            if (!(uOldCr4 & X86_CR4_VMXE))
-                SUPR0ChangeCR4(0 /* fOrMask */, ~(uint64_t)X86_CR4_VMXE);
-
-            /* Restore interrupts. */
-            ASMSetFlags(fEFlags);
-
-            RTR0MemObjFree(hScatchMemObj, false);
         }
 
         if (g_fHmVmxSupported)
@@ -947,12 +963,30 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
     if (   RT_SUCCESS(rc)
         && g_fHmGlobalInit)
     {
-        /* First time, so initialize each cpu/core. */
-        HMR0FIRSTRC FirstRc;
-        hmR0FirstRcInit(&FirstRc);
-        rc = RTMpOnAll(hmR0EnableCpuCallback, (void *)pVM, &FirstRc);
-        if (RT_SUCCESS(rc))
-            rc = hmR0FirstRcGetStatus(&FirstRc);
+        /*
+         * It's possible we end up here with VMX (and perhaps SVM) not supported, see @bugref{9918}.
+         * In that case, our HMR0 function table contains the dummy placeholder functions which pretend
+         * success. However, we must not pretend success any longer (like we did during HMR0Init called
+         * during VMMR0 module init) as the HM init error code (g_rcHmInit) should be propagated to
+         * ing-3 especially since we now have a VM instance.
+         */
+        if (   !g_fHmVmxSupported
+            && !g_fHmSvmSupported)
+        {
+            Assert(g_HmR0Ops.pfnEnableCpu == hmR0DummyEnableCpu);
+            Assert(RT_FAILURE(g_rcHmInit));
+            rc = g_rcHmInit;
+        }
+        else
+        {
+            /* First time, so initialize each cpu/core. */
+            HMR0FIRSTRC FirstRc;
+            hmR0FirstRcInit(&FirstRc);
+            Assert(g_HmR0Ops.pfnEnableCpu != hmR0DummyEnableCpu);
+            rc = RTMpOnAll(hmR0EnableCpuCallback, (void *)pVM, &FirstRc);
+            if (RT_SUCCESS(rc))
+                rc = hmR0FirstRcGetStatus(&FirstRc);
+        }
     }
 
     return rc;
