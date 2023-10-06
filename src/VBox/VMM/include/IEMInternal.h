@@ -3190,6 +3190,8 @@ FNIEMAIMPLMEDIAOPTF2U128IMM8 iemAImpl_pclmulqdq_u128, iemAImpl_pclmulqdq_u128_fa
 FNIEMAIMPLMEDIAOPTF3U128IMM8 iemAImpl_vpclmulqdq_u128, iemAImpl_vpclmulqdq_u128_fallback;
 
 FNIEMAIMPLMEDIAOPTF2U128IMM8 iemAImpl_mpsadbw_u128, iemAImpl_mpsadbw_u128_fallback;
+FNIEMAIMPLMEDIAOPTF3U128IMM8 iemAImpl_vmpsadbw_u128, iemAImpl_vmpsadbw_u128_fallback;
+FNIEMAIMPLMEDIAOPTF3U256IMM8 iemAImpl_vmpsadbw_u256, iemAImpl_vmpsadbw_u256_fallback;
 /** @} */
 
 /** @name Media Odds and Ends

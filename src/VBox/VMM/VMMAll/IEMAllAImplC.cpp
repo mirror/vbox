@@ -18445,6 +18445,38 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_mpsadbw_u128_fallback,(PRTUINT128U puDst, PCRTU
 }
 
 
+IEM_DECL_IMPL_DEF(void, iemAImpl_vmpsadbw_u128_fallback,(PRTUINT128U puDst, PCRTUINT128U puSrc1, PCRTUINT128U puSrc2, uint8_t bEvil))
+{
+    uint8_t idxSrc2 = (bEvil & 0x3) * sizeof(uint32_t);
+    uint8_t idxSrc1 = ((bEvil >> 2) & 0x1) * sizeof(uint32_t);
+    int16_t ai16Src1[11];
+    int16_t ai16Src2[4];
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(ai16Src1); i++)
+        ai16Src1[i] = puSrc1->au8[idxSrc1 + i];
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(ai16Src2); i++)
+        ai16Src2[i] = puSrc2->au8[idxSrc2 + i];
+
+    for (uint8_t i = 0; i < RT_ELEMENTS(puDst->au16); i++)
+        puDst->au16[i] =   RT_ABS(ai16Src1[i]     - ai16Src2[0])
+                         + RT_ABS(ai16Src1[i + 1] - ai16Src2[1])
+                         + RT_ABS(ai16Src1[i + 2] - ai16Src2[2])
+                         + RT_ABS(ai16Src1[i + 3] - ai16Src2[3]);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_vmpsadbw_u256_fallback,(PRTUINT256U puDst, PCRTUINT256U puSrc1, PCRTUINT256U puSrc2, uint8_t bEvil))
+{
+    RTUINT256U const uSrc1 = *puSrc1; /* Might overlap with destination. */
+    RTUINT256U const uSrc2 = *puSrc2;
+//? ASMCompilerBarrier();
+
+    iemAImpl_vmpsadbw_u128_fallback(&puDst->au128[0], &uSrc1.au128[0], &uSrc2.au128[0], bEvil);
+    iemAImpl_vmpsadbw_u128_fallback(&puDst->au128[1], &uSrc1.au128[1], &uSrc2.au128[1], bEvil >> 3);
+}
+
+
 /**
  * VPERM2I128
  */
