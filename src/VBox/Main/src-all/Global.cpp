@@ -44,20 +44,6 @@ DECLARE_TRANSLATION_CONTEXT(GlobalCtx);
 #define VBOX_OSTYPE_ARM32(a_OStype)     VBOXOSTYPE_ ## a_OStype ## _arm32
 #define VBOX_OSTYPE_ARM64(a_OStype)     VBOXOSTYPE_ ## a_OStype ## _arm64
 
-/** @todo r=bird: These macros should move to VBox/cdefs.h or a similarly easily
- *        accessible file, so that the GUI can make use of them too. */
-/* Note: Keep this naming for legacy reasons. Always meant x86 (32-bit). */
-#define GUEST_OS_ID_STR_X86(a_szOSid)     a_szOSid
-#if 0 /** @todo r=bird: revert to legacy naming: */
-#define GUEST_OS_ID_STR_X64(a_szOSid)     a_szOSid  "_64"
-#else
-#define GUEST_OS_ID_STR_X64(a_szOSid)     a_szOSid  "_x64"
-#endif
-/* New since VBox 7.1. */
-#define GUEST_OS_ID_STR_A32(a_szOSid)     a_szOSid  "_arm32"
-/* New since VBox 7.1. */
-#define GUEST_OS_ID_STR_A64(a_szOSid)     a_szOSid  "_arm64"
-
 /* static */
 const Global::OSType Global::sOSTypes[] =
 {
