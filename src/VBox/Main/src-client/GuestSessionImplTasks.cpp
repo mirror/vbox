@@ -2877,12 +2877,17 @@ int GuestSessionTaskUpdateAdditions::Run(void)
         /*
          * Determine guest OS type and the required installer image.
          */
+/** @todo r=bird: Why are we using the guest properties for this instead of the
+ * reported guest VBOXOSTYPE/ID?  Since we've got guest properties, we must
+ * have GAs, so the guest additions must've reported the guest OS type. That
+ * would allow proper OS categorization by family ID instead of this ridiculous
+ * naive code assuming anything that isn't windows or solaris must be linux.  */
         Utf8Str strOSType;
         vrc = getGuestProperty(pGuest, "/VirtualBox/GuestInfo/OS/Product", strOSType);
         if (RT_SUCCESS(vrc))
         {
-            if (   strOSType.contains("Microsoft", Utf8Str::CaseInsensitive)
-                || strOSType.contains("Windows", Utf8Str::CaseInsensitive))
+            if (   strOSType.contains(GUEST_OS_ID_STR_PARTIAL("Microsoft"), Utf8Str::CaseInsensitive)
+                || strOSType.contains(GUEST_OS_ID_STR_PARTIAL("Windows"), Utf8Str::CaseInsensitive))
             {
                 osType = eOSType_Windows;
 
@@ -2926,7 +2931,7 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                     vrc = VERR_NOT_SUPPORTED;
                 }
             }
-            else if (strOSType.contains("Solaris", Utf8Str::CaseInsensitive))
+            else if (strOSType.contains(GUEST_OS_ID_STR_PARTIAL("Solaris"), Utf8Str::CaseInsensitive))
             {
                 osType = eOSType_Solaris;
             }

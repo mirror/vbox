@@ -679,15 +679,15 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
     BOOL fOs2Guest = FALSE;
     BOOL fW9xGuest = FALSE;
     BOOL fDosGuest = FALSE;
-    if (!pGuestOSType.isNull())
+    if (pGuestOSType.isNotNull())
     {
         Bstr guestTypeFamilyId;
         hrc = pGuestOSType->COMGETTER(FamilyId)(guestTypeFamilyId.asOutParam());            H();
         fOsXGuest = guestTypeFamilyId == Bstr("MacOS");
         fWinGuest = guestTypeFamilyId == Bstr("Windows");
-        fOs2Guest = osTypeId.startsWith("OS2");
-        fW9xGuest = osTypeId.startsWith("Windows9");    /* Does not include Windows Me. */
-        fDosGuest = osTypeId.startsWith("DOS") || osTypeId.startsWith("Windows31");
+        fOs2Guest = osTypeId.startsWith(GUEST_OS_ID_STR_PARTIAL("OS2"));
+        fW9xGuest = osTypeId.startsWith(GUEST_OS_ID_STR_PARTIAL("Windows9"));    /* Does not include Windows Me. */
+        fDosGuest = osTypeId.equals(GUEST_OS_ID_STR_X86("DOS")) || osTypeId.equals(GUEST_OS_ID_STR_X86("Windows31"));
     }
 
     ComPtr<IPlatformProperties> platformProperties;
@@ -766,7 +766,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
 
         /* We must limit CPUID count for Windows NT 4, as otherwise it stops
         with error 0x3e (MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED). */
-        if (osTypeId == "WindowsNT4")
+        if (osTypeId == GUEST_OS_ID_STR_X86("WindowsNT4"))
         {
             LogRel(("Limiting CPUID leaf count for NT4 guests\n"));
             InsertConfigInteger(pCPUM, "NT4LeafLimit", true);
@@ -924,10 +924,10 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
             /** @todo Not exactly pretty to check strings; VBOXOSTYPE would be better,
                 but that requires quite a bit of API change in Main. */
             if (    fIOAPIC
-                &&  (   osTypeId == "WindowsNT4"
-                     || osTypeId == "Windows2000"
-                     || osTypeId == "WindowsXP"
-                     || osTypeId == "Windows2003"))
+                &&  (   osTypeId == GUEST_OS_ID_STR_X86("WindowsNT4")
+                     || osTypeId == GUEST_OS_ID_STR_X86("Windows2000")
+                     || osTypeId == GUEST_OS_ID_STR_X86("WindowsXP")
+                     || osTypeId == GUEST_OS_ID_STR_X86("Windows2003")))
             {
                 /* Only allow TPR patching for NT, Win2k, XP and Windows Server 2003. (32 bits mode)
                  * We may want to consider adding more guest OSes (Solaris) later on.
@@ -1007,7 +1007,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
         InsertConfigInteger(pHM, "UseNEMInstead", fUseNativeApi);
 
         /* Enable workaround for missing TLB flush for OS/2 guests, see ticketref:20625. */
-        if (osTypeId.startsWith("OS2"))
+        if (fOs2Guest)
             InsertConfigInteger(pHM, "MissingOS2TlbFlushWorkaround", 1);
 
         /*
@@ -1637,7 +1637,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
 
             /** @todo @bugref{7145}: We might want to enable this by default for new VMs. For now,
              *        this is required for Windows 2012 guests. */
-            if (osTypeId == "Windows2012_64")
+            if (osTypeId == GUEST_OS_ID_STR_X64("Windows2012"))
                 InsertConfigInteger(pBiosCfg, "DmiExposeMemoryTable", 1); /* boolean */
         }
         else

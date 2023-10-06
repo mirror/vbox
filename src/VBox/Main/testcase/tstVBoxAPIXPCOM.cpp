@@ -229,7 +229,7 @@ static void createVM(IVirtualBox *virtualBox)
      * guest OS type collection and enumerating it.
      */
     nsCOMPtr<IGuestOSType> osType;
-    rc = virtualBox->GetGuestOSType(NS_LITERAL_STRING("Windows2000").get(),
+    rc = virtualBox->GetGuestOSType(NS_LITERAL_STRING(GUEST_OS_ID_STR_X86("Windows2000")).get(),
                                     getter_AddRefs(osType));
     if (NS_FAILED(rc))
     {
@@ -237,7 +237,7 @@ static void createVM(IVirtualBox *virtualBox)
     }
     else
     {
-        machine->SetOSTypeId(NS_LITERAL_STRING("Windows2000").get());
+        machine->SetOSTypeId(NS_LITERAL_STRING(GUEST_OS_ID_STR_X86("Windows2000")).get());
     }
 
     /*

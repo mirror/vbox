@@ -301,6 +301,7 @@
 <cpp line="#define GUEST_OS_ID_STR_AMD64(a_szOSid)   GUEST_OS_ID_STR_X64(a_szOSid)"/>
 <cpp line="#define GUEST_OS_ID_STR_ARM32(a_szOSid)   GUEST_OS_ID_STR_A32(a_szOSid)"/>
 <cpp line="#define GUEST_OS_ID_STR_ARM64(a_szOSid)   GUEST_OS_ID_STR_A64(a_szOSid)"/>
+<cpp line="#define GUEST_OS_ID_STR_PARTIAL(a_szOSidPart) a_szOSidPart"/>
 
 <!--
   Note!! Don't forget to update the python bindings (++) when changing the

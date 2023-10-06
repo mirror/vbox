@@ -4283,7 +4283,7 @@ bool Unattended::i_updateDetectedAttributeForImage(WIMImage const &rImage)
      * This is obviously a little bit bogus, but what can we do...
      */
     const char *pszOSTypeId = Global::OSTypeId(rImage.mOSType);
-    if (pszOSTypeId && strcmp(pszOSTypeId, "Other") != 0)
+    if (pszOSTypeId && !RTStrStartsWith(pszOSTypeId, GUEST_OS_ID_STR_PARTIAL("Other"))) /** @todo set x64/a64 other variants or not? */
         mStrDetectedOSTypeId = pszOSTypeId;
     else
         fRet = false;
