@@ -289,7 +289,7 @@
   different architectures.
 -->
 <cpp line="#define GUEST_OS_ID_STR_X86(a_szOSid)     a_szOSid"/>
-<cpp line="#if 0 /** @todo r=bird: revert to legacy naming: */"/>
+<cpp line="#if 1 /* 2023-10-06: We stick with legacy variant, see bugref{10384#c19}. */"/>
 <cpp line="# define GUEST_OS_ID_STR_X64(a_szOSid)    a_szOSid  &quot;_64&quot;"/>
 <cpp line="# define GUEST_OS_ID_STYLE_LEGACY"/>
 <cpp line="#else"/>
