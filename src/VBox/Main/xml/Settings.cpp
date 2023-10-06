@@ -6880,19 +6880,22 @@ void MachineConfigFile::convertGuestOSTypeFromPre1_5(Utf8Str &str)
 }
 
 /**
- * Static function to convert a guest OS type ID suffix.
+ * Worker function that converts the suffix of a guest OS type ID.
  *
- * @param   strOsType               Guest OS type ID to convert.
- * @param   pszToReplace            Suffix to replace.
- * @param   pszReplacement          What to replace the suffix with.
+ * @param   a_rstrOsType        Guest OS type ID to convert.
+ * @param   a_pszToReplace      Suffix to replace.
+ * @param   a_pszReplacement    What to replace the suffix with.
  */
 /* static */
-void MachineConfigFile::convertGuestOSTypeSuffix(com::Utf8Str &strOsType, const char *pszToReplace, const char *pszReplacement)
+void MachineConfigFile::convertGuestOSTypeSuffix(com::Utf8Str &a_rstrOsType,
+                                                 const char *a_pszToReplace, const char *a_pszReplacement)
 {
-    size_t const cchToReplace = strlen(pszToReplace);
-    if (strOsType.endsWith(pszToReplace, cchToReplace))
-        strOsType.replace(strOsType.length() - cchToReplace, cchToReplace, pszReplacement);
+    size_t const cchToReplace = strlen(a_pszToReplace);
+    if (a_rstrOsType.endsWith(a_pszToReplace, cchToReplace))
+        a_rstrOsType.replace(a_rstrOsType.length() - cchToReplace, cchToReplace, a_pszReplacement);
 }
+
+#ifdef GUEST_OS_ID_STYLE_PARTIAL_CLEANUP
 
 /**
  * Converts guest OS type IDs to be compatible with settings >= v1.20.
@@ -6926,6 +6929,23 @@ void MachineConfigFile::convertGuestOSTypeToPre1_20(Utf8Str &str)
     convertGuestOSTypeSuffix(str, "_x64", "_64");
 }
 
+#else  /* !GUEST_OS_ID_STYLE_PARTIAL_CLEANUP */
+
+/**
+ * Undoes effects of the 'OSTYPEID_64' to 'OSTYPEID_x64' renaming attempt from
+ * the VBox v7.1 development cycle on @a a_rstrOsType.
+ *
+ * @see     @bugref{10384#c18}
+ */
+/* static */
+void MachineConfigFile::convertGuestOSTypeFromDev1_20(Utf8Str &a_rstrOsType)
+{
+    convertGuestOSTypeSuffix(a_rstrOsType, "_x64", "_64");
+}
+
+#endif /* !GUEST_OS_ID_STYLE_PARTIAL_CLEANUP */
+
+
 /**
  * Called from the constructor to actually read in the \<Machine\> element
  * of a machine config file.
@@ -6947,9 +6967,13 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
         elmMachine.getAttributeValue("OSType", machineUserData.strOsType);
         if (m->sv < SettingsVersion_v1_5)
             convertGuestOSTypeFromPre1_5(machineUserData.strOsType);
+#ifdef GUEST_OS_ID_STYLE_PARTIAL_CLEANUP
         if (m->sv <= SettingsVersion_v1_19)
             convertGuestOSTypeFromPre1_20(machineUserData.strOsType);
-
+#else
+        if (m->sv == SettingsVersion_v1_20)
+            convertGuestOSTypeFromDev1_20(machineUserData.strOsType);
+#endif
         elmMachine.getAttributeValue("stateKeyId", strStateKeyId);
         elmMachine.getAttributeValue("stateKeyStore", strStateKeyStore);
         elmMachine.getAttributeValuePath("stateFile", strStateFile);
@@ -9117,11 +9141,14 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
     if (machineUserData.strDescription.length())
         elmMachine.createChild("Description")->addContent(machineUserData.strDescription);
 
+#ifdef GUEST_OS_ID_STYLE_PARTIAL_CLEANUP
     com::Utf8Str strOsType = machineUserData.strOsType;
     if (m->sv < SettingsVersion_v1_20)
         convertGuestOSTypeToPre1_20(strOsType);
-    /* else use the unmodified guest OS type ID. */
     elmMachine.setAttribute("OSType", strOsType);
+#else
+    elmMachine.setAttribute("OSType", machineUserData.strOsType);
+#endif
 
     if (m->sv >= SettingsVersion_v1_19)
     {

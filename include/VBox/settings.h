@@ -1586,9 +1586,13 @@ private:
     void readGroups(const xml::ElementNode &elmGroups, StringsList &llGroups);
     bool readSnapshot(const com::Guid &curSnapshotUuid, const xml::ElementNode &elmSnapshot, Snapshot &snap);
     static void convertGuestOSTypeFromPre1_5(com::Utf8Str &str);
+#ifdef GUEST_OS_ID_STYLE_PARTIAL_CLEANUP
     static void convertGuestOSTypeFromPre1_20(com::Utf8Str &str);
     static void convertGuestOSTypeToPre1_20(com::Utf8Str &str);
-    static void convertGuestOSTypeSuffix(com::Utf8Str &str, const char *pszToReplace, const char *pszReplacement);
+#else
+    static void convertGuestOSTypeFromDev1_20(com::Utf8Str &a_rstrOsType);
+#endif
+    static void convertGuestOSTypeSuffix(com::Utf8Str &a_rstrOsType, const char *a_pszToReplace, const char *a_pszReplacement);
     void readMachine(const xml::ElementNode &elmMachine);
     void readMachineEncrypted(const xml::ElementNode &elmMachine, PCVBOXCRYPTOIF pCryptoIf, const char *pszPassword);
 
