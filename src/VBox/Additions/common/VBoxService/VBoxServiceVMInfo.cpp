@@ -579,21 +579,27 @@ static dbus_bool_t vboxService_dbus_message_append_args(DBusMessage *message, in
  *   - whether we actually got a 'variant'
  *   - whether we got the type the caller's looking for
  */
-static bool vboxService_dbus_unpack_variant_reply(DBusError *error, DBusMessage *pReply, char pType, void *pValue) {
-    if (dbus_error_is_set(error)) {
+static bool vboxService_dbus_unpack_variant_reply(DBusError *error, DBusMessage *pReply, char pType, void *pValue)
+{
+    if (dbus_error_is_set(error))
+    {
         VGSvcError("dbus_unpack_variant_reply: dbus returned error '%s'\n", error->message);
         dbus_error_free(error);
-    } else if (pReply) {
+    }
+    else if (pReply)
+    {
         DBusMessageIter iterMsg;
         int             iterType;
         dbus_message_iter_init(pReply, &iterMsg);
         iterType = dbus_message_iter_get_arg_type(&iterMsg);
-        if (iterType == DBUS_TYPE_VARIANT) {
+        if (iterType == DBUS_TYPE_VARIANT)
+        {
             DBusMessageIter iterValueMsg;
             int             iterValueType;
             dbus_message_iter_recurse(&iterMsg, &iterValueMsg);
             iterValueType = dbus_message_iter_get_arg_type(&iterValueMsg);
-            if (iterValueType == pType) {
+            if (iterValueType == pType)
+            {
                 dbus_message_iter_get_basic(&iterValueMsg, pValue);
                 return true;
             }
@@ -609,22 +615,9 @@ static bool vboxService_dbus_unpack_variant_reply(DBusError *error, DBusMessage 
  */
 static void vboxService_dbus_message_discard(DBusMessage **ppMsg)
 {
-    if (ppMsg && *ppMsg) {
-#if defined(ICKY_REFCOUNT_GRUBBING)
-        {
-            /* The DBusMessage Refcount private field isn't externally accessible.
-             * We want to check it for debug / assert purposes.
-             */
-            uint32_t *pcRefCnt = (uint32_t *)(*ppMsg);
-            if (*p == 0) {
-                VGSvcVerbose(1, "dbus_message_discard: unref %p whose refcnt is 0 (expected 1) -- this would have been a double-free\n", ppMsg);
-                *ppMsg = NULL;
-                return;
-            } else if (*p != 1) {
-                VGSvcVerbose(1, "dbus_message_discard: unref %p whose refcnt is %d (expected 1)\n", ppMsg, *p);
-            }
-        }
-#endif /* ICKY_REFCOUNT_GRUBBING */
+    if (ppMsg && *ppMsg)
+    {
+        /** @todo any clean-ish way to verify DBus internal refcount == 1 here? */
         dbus_message_unref(*ppMsg);
         *ppMsg = NULL;
     }
@@ -742,7 +735,7 @@ static int vgsvcVMInfoWriteUsers(void)
     if (   pConnection
         && !dbus_error_is_set(&dbErr))
     {
-/// @todo is there some Less Horrible Way(tm) to access dbus?
+/** @todo is there some Less Horrible Way(tm) to access dbus? */
         /* Get all available sessions. */
         /* like `busctl call org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager ListSessions` */
         DBusMessage *pMsgSessions = dbus_message_new_method_call(SYSTEMD_LOGIN_INTERFACE,
@@ -762,20 +755,26 @@ static int vgsvcVMInfoWriteUsers(void)
                 DBusMessageIter messageIterMsg;
                 int             messageIterType;
                 dbus_message_iter_init(pReplySessions, &messageIterMsg);
-                while ((messageIterType = dbus_message_iter_get_arg_type (&messageIterMsg)) != DBUS_TYPE_INVALID) {
-                    if (messageIterType == DBUS_TYPE_ARRAY) {
+                while ((messageIterType = dbus_message_iter_get_arg_type (&messageIterMsg)) != DBUS_TYPE_INVALID)
+                {
+                    if (messageIterType == DBUS_TYPE_ARRAY)
+                    {
                         /* "ListSessions" returns an array, which we must iterate to get the array elements */
                         DBusMessageIter arrayIterMsg;
                         int             arrayIterType;
                         dbus_message_iter_recurse(&messageIterMsg, &arrayIterMsg);
-                        while ((arrayIterType = dbus_message_iter_get_arg_type (&arrayIterMsg)) != DBUS_TYPE_INVALID) {
-                            if (arrayIterType == DBUS_TYPE_STRUCT) {
+                        while ((arrayIterType = dbus_message_iter_get_arg_type (&arrayIterMsg)) != DBUS_TYPE_INVALID)
+                        {
+                            if (arrayIterType == DBUS_TYPE_STRUCT)
+                            {
                                 /* The array elements are structs, which we must iterate to get the struct elements */
                                 DBusMessageIter structIterMsg;
                                 int             structIterType;
                                 dbus_message_iter_recurse(&arrayIterMsg, &structIterMsg);
-                                while ((structIterType = dbus_message_iter_get_arg_type (&structIterMsg)) != DBUS_TYPE_INVALID) {
-                                    if (structIterType == DBUS_TYPE_OBJECT_PATH) {
+                                while ((structIterType = dbus_message_iter_get_arg_type (&structIterMsg)) != DBUS_TYPE_INVALID)
+                                {
+                                    if (structIterType == DBUS_TYPE_OBJECT_PATH)
+                                    {
                                         /* We are interested only in the "object path" struct element */
                                         const char *objectPath;
                                         dbus_message_iter_get_basic(&structIterMsg, &objectPath);
@@ -786,7 +785,8 @@ static int vgsvcVMInfoWriteUsers(void)
                                                                                                 "org.freedesktop.DBus.Properties",
                                                                                                 "Get");
                                         if (   pMsgSession
-                                            && dbus_message_get_type(pMsgSession) == DBUS_MESSAGE_TYPE_METHOD_CALL) {
+                                            && dbus_message_get_type(pMsgSession) == DBUS_MESSAGE_TYPE_METHOD_CALL)
+                                            {
                                             const char *pPropertyActive = "Active";
                                             vboxService_dbus_message_append_args(pMsgSession,
                                                                                  DBUS_TYPE_STRING, &pInterface,
@@ -804,14 +804,16 @@ static int vgsvcVMInfoWriteUsers(void)
                                                        pReplySession,
                                                        DBUS_TYPE_BOOLEAN,
                                                        &sessionPropertyActiveValue)
-                                                && sessionPropertyActiveValue) {
+                                                && sessionPropertyActiveValue)
+                                                {
                                                 DBusMessage *pMsgSession2 = dbus_message_new_method_call(SYSTEMD_LOGIN_INTERFACE,
                                                                                                          objectPath,
                                                                                                          "org.freedesktop.DBus.Properties",
                                                                                                          "Get");
                                                 const char *pPropertyName = "Name";
                                                 if (   pMsgSession2
-                                                    && dbus_message_get_type(pMsgSession2) == DBUS_MESSAGE_TYPE_METHOD_CALL) {
+                                                    && dbus_message_get_type(pMsgSession2) == DBUS_MESSAGE_TYPE_METHOD_CALL)
+                                                    {
                                                     vboxService_dbus_message_append_args(pMsgSession2,
                                                                                          DBUS_TYPE_STRING, &pInterface,
                                                                                          DBUS_TYPE_STRING, &pPropertyName,
