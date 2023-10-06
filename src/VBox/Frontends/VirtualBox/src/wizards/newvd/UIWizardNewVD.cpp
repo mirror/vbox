@@ -35,6 +35,9 @@
 #include "UIWizardNewVDSizeLocationPage.h"
 #include "UIWizardNewVDExpertPage.h"
 
+/* COM includes: */
+#include "CGuestOSType.h"
+
 UIWizardNewVD::UIWizardNewVD(QWidget *pParent,
                              const QString &strDefaultName,
                              const QString &strDefaultPath,

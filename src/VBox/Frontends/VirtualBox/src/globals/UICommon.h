@@ -45,7 +45,6 @@
 #endif
 
 /* COM includes: */
-#include "CGuestOSType.h"
 #include "CHost.h"
 #include "CMedium.h"
 #include "CSession.h"

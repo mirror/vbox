@@ -101,6 +101,7 @@
 
 /* COM includes: */
 #include "CHostUSBDevice.h"
+#include "CGuestOSType.h"
 #include "CSystemProperties.h"
 #include "CUnattended.h"
 #include "CVirtualBoxErrorInfo.h"
