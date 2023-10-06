@@ -39,6 +39,25 @@
 DECLARE_TRANSLATION_CONTEXT(GlobalCtx);
 
 
+#define VBOX_OSTYPE_X86(a_OStype)       VBOXOSTYPE_ ## a_OStype
+#define VBOX_OSTYPE_X64(a_OStype)       VBOXOSTYPE_ ## a_OStype ## _x64
+#define VBOX_OSTYPE_ARM32(a_OStype)     VBOXOSTYPE_ ## a_OStype ## _arm32
+#define VBOX_OSTYPE_ARM64(a_OStype)     VBOXOSTYPE_ ## a_OStype ## _arm64
+
+/** @todo r=bird: These macros should move to VBox/cdefs.h or a similarly easily
+ *        accessible file, so that the GUI can make use of them too. */
+/* Note: Keep this naming for legacy reasons. Always meant x86 (32-bit). */
+#define GUEST_OS_ID_STR_X86(a_szOSid)     a_szOSid
+#if 0 /** @todo r=bird: revert to legacy naming: */
+#define GUEST_OS_ID_STR_X64(a_szOSid)     a_szOSid  "_64"
+#else
+#define GUEST_OS_ID_STR_X64(a_szOSid)     a_szOSid  "_x64"
+#endif
+/* New since VBox 7.1. */
+#define GUEST_OS_ID_STR_A32(a_szOSid)     a_szOSid  "_arm32"
+/* New since VBox 7.1. */
+#define GUEST_OS_ID_STR_A64(a_szOSid)     a_szOSid  "_arm64"
+
 /* static */
 const Global::OSType Global::sOSTypes[] =
 {
@@ -49,169 +68,170 @@ const Global::OSType Global::sOSTypes[] =
      *        Machine::getEffectiveParavirtProvider and Console::i_configConstructorInner
      *        are still covering the relevant cases.
      * NOTE4: platform support: always define all guest OS types w/o guarding new / different platform architectures
-      *       with own #defines. If (and how) guest OS types will be reported is decided by the actual Main
-      *       implementations(s). */
-    { "Other",   "Other",             "",               "Other",              "Other/Unknown",
+     *       with own #defines. If (and how) guest OS types will be reported is decided by the actual Main
+     *       implementations(s).
+     */
+    { "Other",   "Other",             "",               GUEST_OS_ID_STR_X86("Other"),           "Other/Unknown",
       VBOXOSTYPE_Unknown,         VBOXOSHINT_NONE,
       1,   64,   4,  2 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700 },
 
-    { "Other",   "Other",             "",               "Other_x64",          "Other/Unknown (64-bit)",
+    { "Other",   "Other",             "",               GUEST_OS_ID_STR_X64("Other"),           "Other/Unknown (64-bit)",
       VBOXOSTYPE_Unknown_x64,     VBOXOSHINT_64BIT | VBOXOSHINT_X86_PAE | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC,
       1,   64,   4,  2 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700 },
 
-    { "Other",   "Other",             "",               "Other_arm64",        "Other/Unknown (ARM 64-bit)",
+    { "Other",   "Other",             "",               GUEST_OS_ID_STR_A64("Other"),           "Other/Unknown (ARM 64-bit)",
       VBOXOSTYPE_Unknown_arm64,       VBOXOSHINT_64BIT | VBOXOSHINT_EFI,
       1,   1024, 128,  2 * _1G64, GraphicsControllerType_VMSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI,
       StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI, ChipsetType_ARMv8Virtual, IommuType_None, AudioControllerType_VirtioSound, AudioCodecType_Null },
 
-    { "Windows", "Microsoft Windows", "",               "Windows31",          "Windows 3.1",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X86("Windows31"),       "Windows 3.1",
       VBOXOSTYPE_Win31,           VBOXOSHINT_FLOPPY,
       1,   32,   4,  1 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_SB16, AudioCodecType_SB16  },
 
-    { "Windows", "Microsoft Windows", "",               "Windows95",          "Windows 95",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X86("Windows95"),       "Windows 95",
       VBOXOSTYPE_Win95,           VBOXOSHINT_FLOPPY,
       1,   64,   4,  2 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_SB16, AudioCodecType_SB16  },
 
-    { "Windows", "Microsoft Windows", "",               "Windows98",          "Windows 98",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X86("Windows98"),       "Windows 98",
       VBOXOSTYPE_Win98,           VBOXOSHINT_FLOPPY,
       1,   64,   4,  2 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_SB16, AudioCodecType_SB16  },
 
-    { "Windows", "Microsoft Windows", "",               "WindowsMe",          "Windows ME",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X86("WindowsMe"),       "Windows ME",
       VBOXOSTYPE_WinMe,           VBOXOSHINT_FLOPPY | VBOXOSHINT_USBTABLET,
       1,  128,   4,  4 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "Windows", "Microsoft Windows", "",               "WindowsNT3x",        "Windows NT 3.x",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X86("WindowsNT3x"),     "Windows NT 3.x",
       VBOXOSTYPE_WinNT3x,         VBOXOSHINT_NOUSB | VBOXOSHINT_FLOPPY,
       1,   64,   8,  _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 0, StorageControllerType_BusLogic, StorageBus_SCSI,
       StorageControllerType_BusLogic, StorageBus_SCSI, ChipsetType_PIIX3, IommuType_None, AudioControllerType_SB16, AudioCodecType_SB16  },
 
-    { "Windows", "Microsoft Windows", "",               "WindowsNT4",         "Windows NT 4",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X86("WindowsNT4"),      "Windows NT 4",
       VBOXOSTYPE_WinNT4,          VBOXOSHINT_NOUSB,
       1,  128,  16,  2 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_SB16, AudioCodecType_SB16  },
 
-    { "Windows", "Microsoft Windows", "",               "Windows2000",        "Windows 2000",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X86("Windows2000"),     "Windows 2000",
       VBOXOSTYPE_Win2k,           VBOXOSHINT_USBTABLET,
       1,  168,  16,  4 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "Windows", "Microsoft Windows", "",               "WindowsXP",          "Windows XP (32-bit)",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X86("WindowsXP"),       "Windows XP (32-bit)",
       VBOXOSTYPE_WinXP,           VBOXOSHINT_USBTABLET,
       1,  192,  16, 10 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82543GC, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "Windows", "Microsoft Windows", "",               "WindowsXP_x64",      "Windows XP (64-bit)",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X64("WindowsXP"),       "Windows XP (64-bit)",
       VBOXOSTYPE_WinXP_x64,       VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_USBTABLET,
       1,  512,  16, 10 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "Windows", "Microsoft Windows", "",               "Windows2003",        "Windows 2003 (32-bit)",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X86("Windows2003"),     "Windows 2003 (32-bit)",
       VBOXOSTYPE_Win2k3,          VBOXOSHINT_USBTABLET,
       1,  512,  16, 20 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82543GC, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "Windows", "Microsoft Windows", "",               "Windows2003_x64",    "Windows 2003 (64-bit)",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X64("Windows2003"),     "Windows 2003 (64-bit)",
       VBOXOSTYPE_Win2k3_x64,      VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_USBTABLET,
       1,  512,  16, 20 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "Windows", "Microsoft Windows", "",               "WindowsVista",       "Windows Vista (32-bit)",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X86("WindowsVista"),    "Windows Vista (32-bit)",
       VBOXOSTYPE_WinVista,        VBOXOSHINT_USBTABLET | VBOXOSHINT_WDDM_GRAPHICS,
       1,  512,  16, 25 * _1G64, GraphicsControllerType_VBoxSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "Windows", "Microsoft Windows", "",               "WindowsVista_x64",   "Windows Vista (64-bit)",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X64("WindowsVista"),    "Windows Vista (64-bit)",
       VBOXOSTYPE_WinVista_x64,    VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_USBTABLET | VBOXOSHINT_WDDM_GRAPHICS,
       1,  512,  16, 25 * _1G64, GraphicsControllerType_VBoxSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "Windows", "Microsoft Windows", "",               "Windows2008",        "Windows 2008 (32-bit)",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X86("Windows2008"),     "Windows 2008 (32-bit)",
       VBOXOSTYPE_Win2k8,          VBOXOSHINT_USBTABLET | VBOXOSHINT_WDDM_GRAPHICS,
       1, 1024,  16, 32 * _1G64, GraphicsControllerType_VBoxSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "Windows", "Microsoft Windows", "",               "Windows2008_x64",    "Windows 2008 (64-bit)",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X64("Windows2008"),     "Windows 2008 (64-bit)",
       VBOXOSTYPE_Win2k8_x64,      VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_USBTABLET | VBOXOSHINT_WDDM_GRAPHICS,
       1, 2048,  16, 32 * _1G64, GraphicsControllerType_VBoxSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "Windows", "Microsoft Windows", "",               "Windows7",           "Windows 7 (32-bit)",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X86("Windows7"),        "Windows 7 (32-bit)",
       VBOXOSTYPE_Win7,            VBOXOSHINT_USBTABLET | VBOXOSHINT_WDDM_GRAPHICS,
       1, 1024,  16, 32 * _1G64, GraphicsControllerType_VBoxSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "Windows", "Microsoft Windows", "",               "Windows7_x64",       "Windows 7 (64-bit)",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X64("Windows7"),        "Windows 7 (64-bit)",
       VBOXOSTYPE_Win7_x64,        VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_USBTABLET | VBOXOSHINT_WDDM_GRAPHICS,
       1, 2048,  16, 32 * _1G64, GraphicsControllerType_VBoxSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "Windows", "Microsoft Windows", "",               "Windows8",           "Windows 8 (32-bit)",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X86("Windows8"),        "Windows 8 (32-bit)",
       VBOXOSTYPE_Win8,            VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_USBTABLET | VBOXOSHINT_X86_PAE | VBOXOSHINT_USB3 | VBOXOSHINT_WDDM_GRAPHICS,
       1, 1024, 128, 40 * _1G64, GraphicsControllerType_VBoxSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "Windows", "Microsoft Windows", "",               "Windows8_x64",       "Windows 8 (64-bit)",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X64("Windows8"),        "Windows 8 (64-bit)",
       VBOXOSTYPE_Win8_x64,        VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_USBTABLET | VBOXOSHINT_USB3 | VBOXOSHINT_WDDM_GRAPHICS,
       1, 2048, 128, 40 * _1G64, GraphicsControllerType_VBoxSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "Windows", "Microsoft Windows", "",               "Windows81",          "Windows 8.1 (32-bit)",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X86("Windows81"),       "Windows 8.1 (32-bit)",
       VBOXOSTYPE_Win81,           VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_USBTABLET | VBOXOSHINT_X86_PAE | VBOXOSHINT_USB3 | VBOXOSHINT_WDDM_GRAPHICS,
       1, 1024, 128, 40 * _1G64, GraphicsControllerType_VBoxSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "Windows", "Microsoft Windows", "",               "Windows81_x64",      "Windows 8.1 (64-bit)",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X64("Windows81"),      "Windows 8.1 (64-bit)",
       VBOXOSTYPE_Win81_x64,       VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_USBTABLET | VBOXOSHINT_USB3 | VBOXOSHINT_WDDM_GRAPHICS,
       1, 2048, 128, 40 * _1G64, GraphicsControllerType_VBoxSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "Windows", "Microsoft Windows", "",               "Windows2012_x64",    "Windows 2012 (64-bit)",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X64("Windows2012"),     "Windows 2012 (64-bit)",
       VBOXOSTYPE_Win2k12_x64,     VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_USBTABLET | VBOXOSHINT_USB3 | VBOXOSHINT_WDDM_GRAPHICS,
       1, 2048, 128, 50 * _1G64, GraphicsControllerType_VBoxSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "Windows", "Microsoft Windows", "",               "Windows10",          "Windows 10 (32-bit)",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X86("Windows10"),       "Windows 10 (32-bit)",
       VBOXOSTYPE_Win10,           VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_USBTABLET | VBOXOSHINT_X86_PAE | VBOXOSHINT_USB3 | VBOXOSHINT_WDDM_GRAPHICS,
       1, 1024, 128, 50 * _1G64, GraphicsControllerType_VBoxSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "Windows", "Microsoft Windows", "",               "Windows10_x64",      "Windows 10 (64-bit)",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X64("Windows10"),       "Windows 10 (64-bit)",
       VBOXOSTYPE_Win10_x64,       VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_USBTABLET | VBOXOSHINT_USB3 | VBOXOSHINT_WDDM_GRAPHICS,
       1, 2048, 128, 50 * _1G64, GraphicsControllerType_VBoxSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "Windows", "Microsoft Windows", "",               "Windows2016_x64",    "Windows 2016 (64-bit)",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X64("Windows2016"),     "Windows 2016 (64-bit)",
       VBOXOSTYPE_Win2k16_x64,     VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_USBTABLET | VBOXOSHINT_USB3 | VBOXOSHINT_WDDM_GRAPHICS,
       1, 2048, 128, 50 * _1G64, GraphicsControllerType_VBoxSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "Windows", "Microsoft Windows", "",               "Windows2019_x64",    "Windows 2019 (64-bit)",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X64("Windows2019"),     "Windows 2019 (64-bit)",
       VBOXOSTYPE_Win2k19_x64,     VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_USBTABLET | VBOXOSHINT_USB3 | VBOXOSHINT_WDDM_GRAPHICS,
       1, 2048, 128, 50 * _1G64, GraphicsControllerType_VBoxSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "Windows", "Microsoft Windows", "",               "Windows11_x64",      "Windows 11 (64-bit)",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X64("Windows11"),       "Windows 11 (64-bit)",
       VBOXOSTYPE_Win11_x64,       VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_USBTABLET | VBOXOSHINT_USB3 | VBOXOSHINT_EFI_SECUREBOOT | VBOXOSHINT_TPM2 | VBOXOSHINT_WDDM_GRAPHICS,
       2, 4096, 128, 80 * _1G64, GraphicsControllerType_VBoxSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "Windows", "Microsoft Windows", "",               "Windows2022_x64",    "Windows 2022 (64-bit)",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X64("Windows2022"),     "Windows 2022 (64-bit)",
       VBOXOSTYPE_Win2k22_x64,     VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_USBTABLET | VBOXOSHINT_USB3 | VBOXOSHINT_WDDM_GRAPHICS,
       1, 2048, 128, 50 * _1G64, GraphicsControllerType_VBoxSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "Windows", "Microsoft Windows", "",               "WindowsNT",          "Other Windows (32-bit)",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X86("WindowsNT"),       "Other Windows (32-bit)",
       VBOXOSTYPE_WinNT,           VBOXOSHINT_NONE,
       1,  512,  16, 20 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "Windows", "Microsoft Windows", "",               "WindowsNT_x64",      "Other Windows (64-bit)",
+    { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X64("WindowsNT"),       "Other Windows (64-bit)",
       VBOXOSTYPE_WinNT_x64,       VBOXOSHINT_64BIT | VBOXOSHINT_X86_PAE | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_USBTABLET,
       1,  512,  16, 20 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
@@ -229,417 +249,403 @@ const Global::OSType Global::sOSTypes[] =
 #define VBOX_LINUX_OSHINTS_D_X86  (VBOXOSHINT_RTCUTC | VBOXOSHINT_X86_PAE)
 #define VBOX_LINUX_OSHINTS_D_X64  (VBOXOSHINT_RTCUTC | VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC)
 
-#define VBOX_LINUX_OSTYPE_X86(a_OStype)     VBOXOSTYPE_ ## a_OStype
-#define VBOX_LINUX_OSTYPE_X64(a_OStype)     VBOXOSTYPE_ ## a_OStype ## _x64
-#define VBOX_LINUX_OSTYPE_ARM32(a_OStype)   VBOXOSTYPE_ ## a_OStype ## _arm32
-#define VBOX_LINUX_OSTYPE_ARM64(a_OStype)   VBOXOSTYPE_ ## a_OStype ## _arm64
-
-/** Base string for Linux-based OS IDs. */
-#define VBOX_LINUX_OSID_STR_BASE(a_OSid)    #a_OSid
-/* Note: Keep this naming for legacy reasons. Always meant x86 (32-bit). */
-#define VBOX_LINUX_OSID_STR_X86(a_OSid)     VBOX_LINUX_OSID_STR_BASE(a_OSid)
-#define VBOX_LINUX_OSID_STR_X64(a_OSid)     VBOX_LINUX_OSID_STR_BASE(a_OSid ## _x64)
-/* New since VBox 7.1. */
-#define VBOX_LINUX_OSID_STR_ARM32(a_OSid)   VBOX_LINUX_OSID_STR_BASE(a_OSid ## _arm32)
-/* New since VBox 7.1. */
-#define VBOX_LINUX_OSID_STR_ARM64(a_OSid)   VBOX_LINUX_OSID_STR_BASE(a_OSid ## _arm64)
-
-#define VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_Variant, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_szVariant, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
                                         a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \
-    { "Linux",   "Linux", #a_Variant, VBOX_LINUX_OSID_STR_X86(a_Id), a_Description, VBOX_LINUX_OSTYPE_X86(a_OStype), a_OSHint, \
+    { "Linux",   "Linux", a_szVariant, GUEST_OS_ID_STR_X86(#a_Id), a_Description, VBOX_OSTYPE_X86(a_OStype), a_OSHint, \
       1, a_Memory, a_Vram, a_Diskspace * _1G64, GraphicsControllerType_VMSVGA, a_NetworkAdapter, 0, StorageControllerType_PIIX4, StorageBus_IDE, \
       a_HDStorageController, a_HDStorageBusType, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_AD1980  }
 
-#define VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_Variant, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szVariant, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
                                         a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \
-    { "Linux",   "Linux", #a_Variant, VBOX_LINUX_OSID_STR_X64(a_Id), a_Description, VBOX_LINUX_OSTYPE_X64(a_OStype), a_OSHint, \
+    { "Linux",   "Linux", a_szVariant, GUEST_OS_ID_STR_X64(#a_Id), a_Description, VBOX_OSTYPE_X64(a_OStype), a_OSHint, \
       1, a_Memory, a_Vram, a_Diskspace * _1G64, GraphicsControllerType_VMSVGA, a_NetworkAdapter, 0, StorageControllerType_PIIX4, StorageBus_IDE, \
       a_HDStorageController, a_HDStorageBusType, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_AD1980  }
 
-#define VBOX_LINUX_SUBTYPE_TEMPLATE_ARM64(a_Variant, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
-                                           a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \
-    { "Linux",   "Linux", #a_Variant, VBOX_LINUX_OSID_STR_ARM64(a_Id), a_Description, VBOX_LINUX_OSTYPE_ARM64(a_OStype), a_OSHint, \
+#define VBOX_LINUX_SUBTYPE_TEMPLATE_ARM64(a_szVariant, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
+                                          a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \
+    { "Linux",   "Linux", a_szVariant, GUEST_OS_ID_STR_A64(#a_Id), a_Description, VBOX_OSTYPE_ARM64(a_OStype), a_OSHint, \
       1, a_Memory, a_Vram, a_Diskspace * _1G64, GraphicsControllerType_VMSVGA, a_NetworkAdapter, 0, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI, \
       a_HDStorageController, a_HDStorageBusType, ChipsetType_ARMv8Virtual, IommuType_None, AudioControllerType_VirtioSound, AudioCodecType_Null }
 
 /* Linux x86 32-bit sub-type template defaulting to 1 CPU with USB-tablet-mouse/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_A_X86(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_A_X86, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_A_X86(a_szVariant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_szVariant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_A_X86, a_Memory, a_Vram, a_Diskspace, \
                                      NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
 /* Linux x86 64-bit sub-type template defaulting to 1 CPU with USB-tablet-mouse/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_A_X64(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_A_X64, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_A_X64(a_szVariant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szVariant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_A_X64, a_Memory, a_Vram, a_Diskspace, \
                                      NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
-#define VBOX_LINUX_SUBTYPE_A_ARM64(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_ARM64(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_A_ARM64, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_A_A64(a_szVariant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_ARM64(a_szVariant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_A_ARM64, a_Memory, a_Vram, a_Diskspace, \
                                       NetworkAdapterType_I82540EM, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI)
 
-#define VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_X86(a_Variant, a_Id, a_Description, a_OStype, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_Variant, a_Id, a_Description, a_OStype, VBOX_LINUX_OSHINTS_A_X86, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_X86(a_szVariant, a_Id, a_Description, a_OStype, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_szVariant, a_Id, a_Description, a_OStype, VBOX_LINUX_OSHINTS_A_X86, a_Memory, a_Vram, a_Diskspace, \
                                     NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
-#define VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_X64(a_Variant, a_Id, a_Description, a_OStype, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_Variant, a_Id, a_Description, a_OStype, VBOX_LINUX_OSHINTS_A_X64, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_X64(a_szVariant, a_Id, a_Description, a_OStype, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szVariant, a_Id, a_Description, a_OStype, VBOX_LINUX_OSHINTS_A_X64, a_Memory, a_Vram, a_Diskspace, \
                                     NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
 /* Linux x86 32-bit sub-type template defaulting to 1 CPU with PS/2-mouse/PAE-NX/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_B_X86(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_B_X86, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_B_X86(a_szVariant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_szVariant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_B_X86, a_Memory, a_Vram, a_Diskspace, \
                                     NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
 /* Linux 64-bit sub-type template defaulting to 1 CPU with PS/2-mouse/PAE-NX/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_B_X64(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_B_X64, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_B_X64(a_szVariant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szVariant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_B_X64, a_Memory, a_Vram, a_Diskspace, \
                                     NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
 /* Linux 32-bit sub-type template defaulting to 1 CPU with PS/2-mouse/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_C_X86(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_C_X86, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_C_X86(a_szVariant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_szVariant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_C_X86, a_Memory, a_Vram, a_Diskspace, \
                                     NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
 /* Linux 64-bit sub-type template defaulting to 1 CPU with PS/2-mouse/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_C_X64(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_C_X64, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_C_X64(a_szVariant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szVariant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_C_X64, a_Memory, a_Vram, a_Diskspace, \
                                     NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
 /* Linux 32-bit sub-type template defaulting to 1 CPU with PS/2-mouse/VMSVGA/PCnet-FASTIII/PIIX4+IDE DVD/PIIX4+IDE disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_D_X86(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_D_X86, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_D_X86(a_szVariant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_szVariant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_D_X86, a_Memory, a_Vram, a_Diskspace, \
                                     NetworkAdapterType_Am79C973, StorageControllerType_PIIX4, StorageBus_IDE)
 
 /* Linux 64-bit sub-type template defaulting to 1 CPU with PS/2-mouse/VMSVGA/PCnet-FASTIII/PIIX4+IDE DVD/PIIX4+IDE disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_D_X64(a_Variant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_Variant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_D_X64, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_D_X64(a_szVariant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szVariant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_D_X64, a_Memory, a_Vram, a_Diskspace, \
                                     NetworkAdapterType_I82540EM, StorageControllerType_PIIX4, StorageBus_IDE)
 
-    VBOX_LINUX_SUBTYPE_D_X86(Linux 2.2,   Linux22, "Linux 2.2 (32-bit)",                      64,  4, 2),
-    VBOX_LINUX_SUBTYPE_D_X86(Linux 2.4,   Linux24, "Linux 2.4 (32-bit)",                     128, 16, 2),
-    VBOX_LINUX_SUBTYPE_D_X64(Linux 2.4,   Linux24, "Linux 2.4 (64-bit)",                    1024, 16, 4),
-    VBOX_LINUX_SUBTYPE_A_X86(Linux 2.6,   Linux26, "Linux 2.6 / 3.x / 4.x / 5.x (32-bit)",  1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_X64(Linux 2.6,   Linux26, "Linux 2.6 / 3.x / 4.x / 5.x (64-bit)",  1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_D_X86("Linux 2.2",    Linux22,            "Linux 2.2 (32-bit)",                      64,  4, 2),
+    VBOX_LINUX_SUBTYPE_D_X86("Linux 2.4",    Linux24,            "Linux 2.4 (32-bit)",                     128, 16, 2),
+    VBOX_LINUX_SUBTYPE_D_X64("Linux 2.4",    Linux24,            "Linux 2.4 (64-bit)",                    1024, 16, 4),
+    VBOX_LINUX_SUBTYPE_A_X86("Linux 2.6",    Linux26,            "Linux 2.6 / 3.x / 4.x / 5.x (32-bit)",  1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64("Linux 2.6",    Linux26,            "Linux 2.6 / 3.x / 4.x / 5.x (64-bit)",  1024, 16, 8),
 
-    VBOX_LINUX_SUBTYPE_A_X86(ArchLinux, ArchLinux, "Arch Linux (32-bit)", 1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_X64(ArchLinux, ArchLinux, "Arch Linux (64-bit)", 1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_ARM64(ArchLinux, ArchLinux, "Arch Linux (64-bit)", 1024, 128, 8),
+    VBOX_LINUX_SUBTYPE_A_X86("ArchLinux",    ArchLinux,          "Arch Linux (32-bit)",             1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64("ArchLinux",    ArchLinux,          "Arch Linux (64-bit)",             1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_A64("ArchLinux",    ArchLinux,          "Arch Linux (64-bit)",             1024, 128, 8),
 
-    VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian,   "Debian (32-bit)",             2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_X64(Debian,  Debian,   "Debian (64-bit)",             2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_ARM64(Debian,  Debian, "Debian (64-bit)",             2048, 128, 20),
-    VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian31, "Debian 3.1 Sarge (32-bit)",   1024, 16, 8),  // 32-bit only
-    VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian4,  "Debian 4.0 Etch (32-bit)",    1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_X64(Debian,  Debian4,  "Debian 4.0 Etch (64-bit)",    1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian5,  "Debian 5.0 Lenny (32-bit)",   1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_X64(Debian,  Debian5,  "Debian 5.0 Lenny (64-bit)",   1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian6,  "Debian 6.0 Squeeze (32-bit)", 1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_X64(Debian,  Debian6,  "Debian 6.0 Squeeze (64-bit)", 1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian7,  "Debian 7 Wheezy (32-bit)",    2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_X64(Debian,  Debian7,  "Debian 7 Wheezy (64-bit)",    2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian8,  "Debian 8 Jessie (32-bit)",    2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_X64(Debian,  Debian8,  "Debian 8 Jessie (64-bit)",    2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian9,  "Debian 9 Stretch (32-bit)",   2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_X64(Debian,  Debian9,  "Debian 9 Stretch (64-bit)",   2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian10, "Debian 10 Buster (32-bit)",   2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_X64(Debian,  Debian10, "Debian 10 Buster (64-bit)",   2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian11, "Debian 11 Bullseye (32-bit)", 2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_X64(Debian,  Debian11, "Debian 11 Bullseye (64-bit)", 2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_X86(Debian,  Debian12, "Debian 12 Bookworm (32-bit)", 2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_X64(Debian,  Debian12, "Debian 12 Bookworm (64-bit)", 2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X86("Debian",       Debian,             "Debian (32-bit)",                 2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X64("Debian",       Debian,             "Debian (64-bit)",                 2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_A64("Debian",       Debian,             "Debian (64-bit)",                 2048, 128, 20), /** @todo r=bird: "Debian (ARM 64-bit)"? */
+    VBOX_LINUX_SUBTYPE_A_X86("Debian",       Debian31,           "Debian 3.1 Sarge (32-bit)",       1024, 16, 8),  // 32-bit only
+    VBOX_LINUX_SUBTYPE_A_X86("Debian",       Debian4,            "Debian 4.0 Etch (32-bit)",        1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64("Debian",       Debian4,            "Debian 4.0 Etch (64-bit)",        1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X86("Debian",       Debian5,            "Debian 5.0 Lenny (32-bit)",       1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64("Debian",       Debian5,            "Debian 5.0 Lenny (64-bit)",       1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X86("Debian",       Debian6,            "Debian 6.0 Squeeze (32-bit)",     1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64("Debian",       Debian6,            "Debian 6.0 Squeeze (64-bit)",     1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X86("Debian",       Debian7,            "Debian 7 Wheezy (32-bit)",        2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X64("Debian",       Debian7,            "Debian 7 Wheezy (64-bit)",        2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X86("Debian",       Debian8,            "Debian 8 Jessie (32-bit)",        2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X64("Debian",       Debian8,            "Debian 8 Jessie (64-bit)",        2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X86("Debian",       Debian9,            "Debian 9 Stretch (32-bit)",       2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X64("Debian",       Debian9,            "Debian 9 Stretch (64-bit)",       2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X86("Debian",       Debian10,           "Debian 10 Buster (32-bit)",       2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X64("Debian",       Debian10,           "Debian 10 Buster (64-bit)",       2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X86("Debian",       Debian11,           "Debian 11 Bullseye (32-bit)",     2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X64("Debian",       Debian11,           "Debian 11 Bullseye (64-bit)",     2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X86("Debian",       Debian12,           "Debian 12 Bookworm (32-bit)",     2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_A_X64("Debian",       Debian12,           "Debian 12 Bookworm (64-bit)",     2048, 16, 20),
 
-    VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_X86(Fedora, Fedora, "Fedora (32-bit)", FedoraCore, 2048, 16, 15),
-    VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_X64(Fedora, Fedora, "Fedora (64-bit)", FedoraCore, 2048, 16, 15),
+    /** @todo rename VBOXOSTYPE entries to Fedora to avoid this? */
+    VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_X86("Fedora", Fedora,       "Fedora (32-bit)", FedoraCore,     2048, 16, 15),
+    VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_X64("Fedora", Fedora,       "Fedora (64-bit)", FedoraCore,     2048, 16, 15),
 
-    VBOX_LINUX_SUBTYPE_A_X86(Gentoo, Gentoo, "Gentoo (32-bit)", 1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_X64(Gentoo, Gentoo, "Gentoo (64-bit)", 1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X86("Gentoo",       Gentoo,             "Gentoo (32-bit)",                 1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64("Gentoo",       Gentoo,             "Gentoo (64-bit)",                 1024, 16, 8),
 
-    VBOX_LINUX_SUBTYPE_A_X86(Mandriva, Mandriva,  "Mandriva (32-bit)",        1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_X64(Mandriva, Mandriva,  "Mandriva (64-bit)",        1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_X86(Mandriva, OpenMandriva_Lx, "OpenMandriva Lx (32-bit)", 2048, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_X64(Mandriva, OpenMandriva_Lx, "OpenMandriva Lx (64-bit)", 2048, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_X86(PCLinuxOS, PCLinuxOS, "PCLinuxOS / PCLOS (32-bit)",     2048, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_X64(PCLinuxOS, PCLinuxOS, "PCLinuxOS / PCLOS (64-bit)",     2048, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_X86(Mageia, Mageia,    "Mageia (32-bit)",                2048, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_X64(Mageia, Mageia,    "Mageia (64-bit)",                2048, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X86("Mandriva",     Mandriva,           "Mandriva (32-bit)",               1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64("Mandriva",     Mandriva,           "Mandriva (64-bit)",               1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X86("Mandriva",     OpenMandriva_Lx,    "OpenMandriva Lx (32-bit)",        2048, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X64("Mandriva",     OpenMandriva_Lx,    "OpenMandriva Lx (64-bit)",        2048, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X86("PCLinuxOS",    PCLinuxOS,          "PCLinuxOS / PCLOS (32-bit)",      2048, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X64("PCLinuxOS",    PCLinuxOS,          "PCLinuxOS / PCLOS (64-bit)",      2048, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X86("Mageia",       Mageia,             "Mageia (32-bit)",                 2048, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X64("Mageia",       Mageia,             "Mageia (64-bit)",                 2048, 16, 10),
 
-    VBOX_LINUX_SUBTYPE_B_X86(Oracle Linux, Oracle,   "Oracle Linux (32-bit)",      2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_B_X64(Oracle Linux, Oracle,   "Oracle Linux (64-bit)",      2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_B_X86(Oracle Linux, Oracle4,  "Oracle Linux 4.x (32-bit)",  1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_B_X64(Oracle Linux, Oracle4,  "Oracle Linux 4.x (64-bit)",  1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_B_X86(Oracle Linux, Oracle5,  "Oracle Linux 5.x (32-bit)",  1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_B_X64(Oracle Linux, Oracle5,  "Oracle Linux 5.x (64-bit)",  1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_B_X86(Oracle Linux, Oracle6,  "Oracle Linux 6.x (32-bit)",  2048, 16, 10),
-    VBOX_LINUX_SUBTYPE_B_X64(Oracle Linux, Oracle6,  "Oracle Linux 6.x (64-bit)",  2048, 16, 10),
-    VBOX_LINUX_SUBTYPE_B_X64(Oracle Linux, Oracle7,  "Oracle Linux 7.x (64-bit)",  2048, 16, 20),  // 64-bit only
-    VBOX_LINUX_SUBTYPE_B_X64(Oracle Linux, Oracle8,  "Oracle Linux 8.x (64-bit)",  2048, 16, 20),  // 64-bit only
-    VBOX_LINUX_SUBTYPE_B_X64(Oracle Linux, Oracle9,  "Oracle Linux 9.x (64-bit)",  2048, 16, 20),  // 64-bit only
+    VBOX_LINUX_SUBTYPE_B_X86("Oracle Linux", Oracle,             "Oracle Linux (32-bit)",           2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_B_X64("Oracle Linux", Oracle,             "Oracle Linux (64-bit)",           2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_B_X86("Oracle Linux", Oracle4,            "Oracle Linux 4.x (32-bit)",       1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_B_X64("Oracle Linux", Oracle4,            "Oracle Linux 4.x (64-bit)",       1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_B_X86("Oracle Linux", Oracle5,            "Oracle Linux 5.x (32-bit)",       1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_B_X64("Oracle Linux", Oracle5,            "Oracle Linux 5.x (64-bit)",       1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_B_X86("Oracle Linux", Oracle6,            "Oracle Linux 6.x (32-bit)",       2048, 16, 10),
+    VBOX_LINUX_SUBTYPE_B_X64("Oracle Linux", Oracle6,            "Oracle Linux 6.x (64-bit)",       2048, 16, 10),
+    VBOX_LINUX_SUBTYPE_B_X64("Oracle Linux", Oracle7,            "Oracle Linux 7.x (64-bit)",       2048, 16, 20),  // 64-bit only
+    VBOX_LINUX_SUBTYPE_B_X64("Oracle Linux", Oracle8,            "Oracle Linux 8.x (64-bit)",       2048, 16, 20),  // 64-bit only
+    VBOX_LINUX_SUBTYPE_B_X64("Oracle Linux", Oracle9,            "Oracle Linux 9.x (64-bit)",       2048, 16, 20),  // 64-bit only
 
-    VBOX_LINUX_SUBTYPE_B_X86(Red Hat, RedHat,   "Red Hat (32-bit)",      2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_B_X64(Red Hat, RedHat,   "Red Hat (64-bit)",      2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_B_X86(Red Hat, RedHat3,  "Red Hat 3.x (32-bit)",  1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_B_X64(Red Hat, RedHat3,  "Red Hat 3.x (64-bit)",  1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_B_X86(Red Hat, RedHat4,  "Red Hat 4.x (32-bit)",  1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_B_X64(Red Hat, RedHat4,  "Red Hat 4.x (64-bit)",  1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_B_X86(Red Hat, RedHat5,  "Red Hat 5.x (32-bit)",  1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_B_X64(Red Hat, RedHat5,  "Red Hat 5.x (64-bit)",  1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_B_X86(Red Hat, RedHat6,  "Red Hat 6.x (32-bit)",  1024, 16, 10),
-    VBOX_LINUX_SUBTYPE_B_X64(Red Hat, RedHat6,  "Red Hat 6.x (64-bit)",  1024, 16, 10),
-    VBOX_LINUX_SUBTYPE_B_X64(Red Hat, RedHat7,  "Red Hat 7.x (64-bit)",  2048, 16, 20),  // 64-bit only
-    VBOX_LINUX_SUBTYPE_B_X64(Red Hat, RedHat8,  "Red Hat 8.x (64-bit)",  2048, 16, 20),  // 64-bit only
-    VBOX_LINUX_SUBTYPE_B_X64(Red Hat, RedHat9,  "Red Hat 9.x (64-bit)",  2048, 16, 20),  // 64-bit only
+    VBOX_LINUX_SUBTYPE_B_X86("Red Hat",     RedHat,              "Red Hat (32-bit)",                2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_B_X64("Red Hat",     RedHat,              "Red Hat (64-bit)",                2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_B_X86("Red Hat",     RedHat3,             "Red Hat 3.x (32-bit)",            1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_B_X64("Red Hat",     RedHat3,             "Red Hat 3.x (64-bit)",            1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_B_X86("Red Hat",     RedHat4,             "Red Hat 4.x (32-bit)",            1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_B_X64("Red Hat",     RedHat4,             "Red Hat 4.x (64-bit)",            1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_B_X86("Red Hat",     RedHat5,             "Red Hat 5.x (32-bit)",            1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_B_X64("Red Hat",     RedHat5,             "Red Hat 5.x (64-bit)",            1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_B_X86("Red Hat",     RedHat6,             "Red Hat 6.x (32-bit)",            1024, 16, 10),
+    VBOX_LINUX_SUBTYPE_B_X64("Red Hat",     RedHat6,             "Red Hat 6.x (64-bit)",            1024, 16, 10),
+    VBOX_LINUX_SUBTYPE_B_X64("Red Hat",     RedHat7,             "Red Hat 7.x (64-bit)",            2048, 16, 20),  // 64-bit only
+    VBOX_LINUX_SUBTYPE_B_X64("Red Hat",     RedHat8,             "Red Hat 8.x (64-bit)",            2048, 16, 20),  // 64-bit only
+    VBOX_LINUX_SUBTYPE_B_X64("Red Hat",     RedHat9,             "Red Hat 9.x (64-bit)",            2048, 16, 20),  // 64-bit only
 
-    VBOX_LINUX_SUBTYPE_A_X86(openSUSE, OpenSUSE,            "openSUSE (32-bit)",               1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_X64(openSUSE, OpenSUSE,            "openSUSE (64-bit)",               1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_X64(openSUSE, OpenSUSE_Leap,       "openSUSE Leap (64-bit)",          2048, 16, 8),  // 64-bit only
-    VBOX_LINUX_SUBTYPE_A_X86(openSUSE, OpenSUSE_Tumbleweed, "openSUSE Tumbleweed (32-bit)",    2048, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_X64(openSUSE, OpenSUSE_Tumbleweed, "openSUSE Tumbleweed (64-bit)",    2048, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_X86(SUSE, SUSE_LE,             "SUSE Linux Enterprise (32-bit)",  2048, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_X64(SUSE, SUSE_LE,             "SUSE Linux Enterprise (64-bit)",  2048, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X86("openSUSE",    OpenSUSE,            "openSUSE (32-bit)",               1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64("openSUSE",    OpenSUSE,            "openSUSE (64-bit)",               1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64("openSUSE",    OpenSUSE_Leap,       "openSUSE Leap (64-bit)",          2048, 16, 8),  // 64-bit only
+    VBOX_LINUX_SUBTYPE_A_X86("openSUSE",    OpenSUSE_Tumbleweed, "openSUSE Tumbleweed (32-bit)",    2048, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64("openSUSE",    OpenSUSE_Tumbleweed, "openSUSE Tumbleweed (64-bit)",    2048, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X86("SUSE",        SUSE_LE,             "SUSE Linux Enterprise (32-bit)",  2048, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64("SUSE",        SUSE_LE,             "SUSE Linux Enterprise (64-bit)",  2048, 16, 8),
 
-    VBOX_LINUX_SUBTYPE_A_X86(TurboLinux, Turbolinux, "Turbolinux (32-bit)", 384, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_X64(TurboLinux, Turbolinux, "Turbolinux (64-bit)", 384, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X86("TurboLinux",  Turbolinux,          "Turbolinux (32-bit)",              384, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X64("TurboLinux",  Turbolinux,          "Turbolinux (64-bit)",              384, 16, 8),
 
-    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu,       "Ubuntu (32-bit)",                             2048, 16, 25),
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu,       "Ubuntu (64-bit)",                             2048, 16, 25),
-    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu10_LTS, "Ubuntu 10.04 LTS (Lucid Lynx) (32-bit)",       256, 16, 3),
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu10_LTS, "Ubuntu 10.04 LTS (Lucid Lynx) (64-bit)",       256, 16, 3),
-    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu10,     "Ubuntu 10.10 (Maverick Meerkat) (32-bit)",     256, 16, 3),
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu10,     "Ubuntu 10.10 (Maverick Meerkat) (64-bit)",     256, 16, 3),
-    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu11,     "Ubuntu 11.04 (Natty Narwhal) / 11.10 (Oneiric Ocelot) (32-bit)",  384, 16, 5),
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu11,     "Ubuntu 11.04 (Natty Narwhal) / 11.10 (Oneiric Ocelot) (64-bit)",  384, 16, 5),
-    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu12_LTS, "Ubuntu 12.04 LTS (Precise Pangolin) (32-bit)", 768, 16, 5),
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu12_LTS, "Ubuntu 12.04 LTS (Precise Pangolin) (64-bit)", 768, 16, 5),
-    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu12,     "Ubuntu 12.10 (Quantal Quetzal) (32-bit)",      768, 16, 5),
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu12,     "Ubuntu 12.10 (Quantal Quetzal) (64-bit)",      768, 16, 5),
-    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu13,     "Ubuntu 13.04 (Raring Ringtail) / 13.10 (Saucy Salamander) (32-bit)",  768, 16, 5),
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu13,     "Ubuntu 13.04 (Raring Ringtail) / 13.10 (Saucy Salamander) (64-bit)",  768, 16, 5),
-    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu14_LTS, "Ubuntu 14.04 LTS (Trusty Tahr) (32-bit)",     1536, 16, 7),
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu14_LTS, "Ubuntu 14.04 LTS (Trusty Tahr) (64-bit)",     1536, 16, 7),
-    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu14,     "Ubuntu 14.10 (Utopic Unicorn) (32-bit)",      1536, 16, 7),
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu14,     "Ubuntu 14.10 (Utopic Unicorn) (64-bit)",      1536, 16, 7),
-    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu15,     "Ubuntu 15.04 (Vivid Vervet) / 15.10 (Wily Werewolf) (32-bit)",  1536, 16, 7),
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu15,     "Ubuntu 15.04 (Vivid Vervet) / 15.10 (Wily Werewolf) (64-bit)",  1536, 16, 7),
-    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu16_LTS, "Ubuntu 16.04 LTS (Xenial Xerus) (32-bit)",    1536, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu16_LTS, "Ubuntu 16.04 LTS (Xenial Xerus) (64-bit)",    1536, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu16,     "Ubuntu 16.10 (Yakkety Yak) (32-bit)",         1536, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu16,     "Ubuntu 16.10 (Yakkety Yak) (64-bit)",         1536, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu17,     "Ubuntu 17.04 (Zesty Zapus) / 17.10 (Artful Aardvark) (32-bit)", 1536, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu17,     "Ubuntu 17.04 (Zesty Zapus) / 17.10 (Artful Aardvark) (64-bit)", 1536, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu18_LTS, "Ubuntu 18.04 LTS (Bionic Beaver) (32-bit)",   2048, 16, 25),
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu18_LTS, "Ubuntu 18.04 LTS (Bionic Beaver) (64-bit)",   2048, 16, 25),
-    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu18,     "Ubuntu 18.10 (Cosmic Cuttlefish) (32-bit)",   2048, 16, 25),
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu18,     "Ubuntu 18.10 (Cosmic Cuttlefish) (64-bit)",   2048, 16, 25),
-    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Ubuntu19,     "Ubuntu 19.04 (Disco Dingo) / 19.10 (Eoan Ermine) (32-bit)",     2048, 16, 25),
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu19,     "Ubuntu 19.04 (Disco Dingo) / 19.10 (Eoan Ermine) (64-bit)",     2048, 16, 25),
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu20_LTS, "Ubuntu 20.04 LTS (Focal Fossa) (64-bit)",     2048, 16, 25),  // 64-bit only
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu20,     "Ubuntu 20.10 (Groovy Gorilla) (64-bit)",      2048, 16, 25),  // 64-bit only
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu21,     "Ubuntu 21.04 (Hirsute Hippo) / 21.10 (Impish Indri) (64-bit)",  2048, 16, 25), // 64-bit only
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu22_LTS, "Ubuntu 22.04 LTS (Jammy Jellyfish) (64-bit)", 2048, 16, 25), // 64-bit only
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu22,     "Ubuntu 22.10 (Kinetic Kudu) (64-bit)", 2048, 16, 25), // 64-bit only
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Ubuntu23,     "Ubuntu 23.04 (Lunar Lobster) (64-bit)", 2048, 16, 25), // 64-bit only
-    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Lubuntu,      "Lubuntu (32-bit)",  1024, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Lubuntu,      "Lubuntu (64-bit)",  1024, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_X86(Ubuntu, Xubuntu,      "Xubuntu (32-bit)",  1024, 16, 10),
-    VBOX_LINUX_SUBTYPE_A_X64(Ubuntu, Xubuntu,      "Xubuntu (64-bit)",  1024, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X86("Ubuntu", Ubuntu,       "Ubuntu (32-bit)",                             2048, 16, 25),
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu,       "Ubuntu (64-bit)",                             2048, 16, 25),
+    VBOX_LINUX_SUBTYPE_A_X86("Ubuntu", Ubuntu10_LTS, "Ubuntu 10.04 LTS (Lucid Lynx) (32-bit)",       256, 16, 3),
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu10_LTS, "Ubuntu 10.04 LTS (Lucid Lynx) (64-bit)",       256, 16, 3),
+    VBOX_LINUX_SUBTYPE_A_X86("Ubuntu", Ubuntu10,     "Ubuntu 10.10 (Maverick Meerkat) (32-bit)",     256, 16, 3),
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu10,     "Ubuntu 10.10 (Maverick Meerkat) (64-bit)",     256, 16, 3),
+    VBOX_LINUX_SUBTYPE_A_X86("Ubuntu", Ubuntu11,     "Ubuntu 11.04 (Natty Narwhal) / 11.10 (Oneiric Ocelot) (32-bit)",  384, 16, 5),
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu11,     "Ubuntu 11.04 (Natty Narwhal) / 11.10 (Oneiric Ocelot) (64-bit)",  384, 16, 5),
+    VBOX_LINUX_SUBTYPE_A_X86("Ubuntu", Ubuntu12_LTS, "Ubuntu 12.04 LTS (Precise Pangolin) (32-bit)", 768, 16, 5),
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu12_LTS, "Ubuntu 12.04 LTS (Precise Pangolin) (64-bit)", 768, 16, 5),
+    VBOX_LINUX_SUBTYPE_A_X86("Ubuntu", Ubuntu12,     "Ubuntu 12.10 (Quantal Quetzal) (32-bit)",      768, 16, 5),
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu12,     "Ubuntu 12.10 (Quantal Quetzal) (64-bit)",      768, 16, 5),
+    VBOX_LINUX_SUBTYPE_A_X86("Ubuntu", Ubuntu13,     "Ubuntu 13.04 (Raring Ringtail) / 13.10 (Saucy Salamander) (32-bit)",  768, 16, 5),
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu13,     "Ubuntu 13.04 (Raring Ringtail) / 13.10 (Saucy Salamander) (64-bit)",  768, 16, 5),
+    VBOX_LINUX_SUBTYPE_A_X86("Ubuntu", Ubuntu14_LTS, "Ubuntu 14.04 LTS (Trusty Tahr) (32-bit)",     1536, 16, 7),
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu14_LTS, "Ubuntu 14.04 LTS (Trusty Tahr) (64-bit)",     1536, 16, 7),
+    VBOX_LINUX_SUBTYPE_A_X86("Ubuntu", Ubuntu14,     "Ubuntu 14.10 (Utopic Unicorn) (32-bit)",      1536, 16, 7),
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu14,     "Ubuntu 14.10 (Utopic Unicorn) (64-bit)",      1536, 16, 7),
+    VBOX_LINUX_SUBTYPE_A_X86("Ubuntu", Ubuntu15,     "Ubuntu 15.04 (Vivid Vervet) / 15.10 (Wily Werewolf) (32-bit)",  1536, 16, 7),
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu15,     "Ubuntu 15.04 (Vivid Vervet) / 15.10 (Wily Werewolf) (64-bit)",  1536, 16, 7),
+    VBOX_LINUX_SUBTYPE_A_X86("Ubuntu", Ubuntu16_LTS, "Ubuntu 16.04 LTS (Xenial Xerus) (32-bit)",    1536, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu16_LTS, "Ubuntu 16.04 LTS (Xenial Xerus) (64-bit)",    1536, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X86("Ubuntu", Ubuntu16,     "Ubuntu 16.10 (Yakkety Yak) (32-bit)",         1536, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu16,     "Ubuntu 16.10 (Yakkety Yak) (64-bit)",         1536, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X86("Ubuntu", Ubuntu17,     "Ubuntu 17.04 (Zesty Zapus) / 17.10 (Artful Aardvark) (32-bit)", 1536, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu17,     "Ubuntu 17.04 (Zesty Zapus) / 17.10 (Artful Aardvark) (64-bit)", 1536, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X86("Ubuntu", Ubuntu18_LTS, "Ubuntu 18.04 LTS (Bionic Beaver) (32-bit)",   2048, 16, 25),
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu18_LTS, "Ubuntu 18.04 LTS (Bionic Beaver) (64-bit)",   2048, 16, 25),
+    VBOX_LINUX_SUBTYPE_A_X86("Ubuntu", Ubuntu18,     "Ubuntu 18.10 (Cosmic Cuttlefish) (32-bit)",   2048, 16, 25),
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu18,     "Ubuntu 18.10 (Cosmic Cuttlefish) (64-bit)",   2048, 16, 25),
+    VBOX_LINUX_SUBTYPE_A_X86("Ubuntu", Ubuntu19,     "Ubuntu 19.04 (Disco Dingo) / 19.10 (Eoan Ermine) (32-bit)",     2048, 16, 25),
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu19,     "Ubuntu 19.04 (Disco Dingo) / 19.10 (Eoan Ermine) (64-bit)",     2048, 16, 25),
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu20_LTS, "Ubuntu 20.04 LTS (Focal Fossa) (64-bit)",     2048, 16, 25),  // 64-bit only
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu20,     "Ubuntu 20.10 (Groovy Gorilla) (64-bit)",      2048, 16, 25),  // 64-bit only
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu21,     "Ubuntu 21.04 (Hirsute Hippo) / 21.10 (Impish Indri) (64-bit)",  2048, 16, 25), // 64-bit only
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu22_LTS, "Ubuntu 22.04 LTS (Jammy Jellyfish) (64-bit)", 2048, 16, 25), // 64-bit only
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu22,     "Ubuntu 22.10 (Kinetic Kudu) (64-bit)", 2048, 16, 25), // 64-bit only
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Ubuntu23,     "Ubuntu 23.04 (Lunar Lobster) (64-bit)", 2048, 16, 25), // 64-bit only
+    VBOX_LINUX_SUBTYPE_A_X86("Ubuntu", Lubuntu,      "Lubuntu (32-bit)",  1024, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Lubuntu,      "Lubuntu (64-bit)",  1024, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X86("Ubuntu", Xubuntu,      "Xubuntu (32-bit)",  1024, 16, 10),
+    VBOX_LINUX_SUBTYPE_A_X64("Ubuntu", Xubuntu,      "Xubuntu (64-bit)",  1024, 16, 10),
 
-    VBOX_LINUX_SUBTYPE_C_X86(Xandros, Xandros, "Xandros (32-bit)", 1024, 16, 8),
-    VBOX_LINUX_SUBTYPE_C_X64(Xandros, Xandros, "Xandros (64-bit)", 1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_C_X86("Xandros",     Xandros,             "Xandros (32-bit)",                1024, 16, 8),
+    VBOX_LINUX_SUBTYPE_C_X64("Xandros",     Xandros,             "Xandros (64-bit)",                1024, 16, 8),
 
-    VBOX_LINUX_SUBTYPE_A_X86(Other Linux, Linux, "Other Linux (32-bit)", 256, 16, 8),
-    VBOX_LINUX_SUBTYPE_B_X64(Other Linux, Linux, "Other Linux (64-bit)", 512, 16, 8),
+    VBOX_LINUX_SUBTYPE_A_X86("Other Linux", Linux,               "Other Linux (32-bit)",             256, 16, 8),
+    VBOX_LINUX_SUBTYPE_B_X64("Other Linux", Linux,               "Other Linux (64-bit)",             512, 16, 8),
 
-    { "Solaris", "Solaris",           "",        "Solaris",                     "Oracle Solaris 10 5/09 and earlier (32-bit)",
+    { "Solaris", "Solaris",           "",        GUEST_OS_ID_STR_X86("Solaris"),        "Oracle Solaris 10 5/09 and earlier (32-bit)",
       VBOXOSTYPE_Solaris,         VBOXOSHINT_NONE,
       1, 1024,  16, 32 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "Solaris", "Solaris",           "",        "Solaris_x64",                 "Oracle Solaris 10 5/09 and earlier (64-bit)",
+    { "Solaris", "Solaris",           "",        GUEST_OS_ID_STR_X64("Solaris"),        "Oracle Solaris 10 5/09 and earlier (64-bit)",
       VBOXOSTYPE_Solaris_x64,     VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC,
       1, 2048,  16, 32 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "Solaris", "Solaris",           "",        "Solaris10U8_or_later",        "Oracle Solaris 10 10/09 and later (32-bit)",
+    { "Solaris", "Solaris",           "",        GUEST_OS_ID_STR_X86("Solaris10U8_or_later"), "Oracle Solaris 10 10/09 and later (32-bit)",
       VBOXOSTYPE_Solaris10U8_or_later,     VBOXOSHINT_USBTABLET,
       1, 1024,  16, 32 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "Solaris", "Solaris",           "",        "Solaris10U8_or_later_x64",    "Oracle Solaris 10 10/09 and later (64-bit)",
+    { "Solaris", "Solaris",           "",        GUEST_OS_ID_STR_X64("Solaris10U8_or_later"), "Oracle Solaris 10 10/09 and later (64-bit)",
       VBOXOSTYPE_Solaris10U8_or_later_x64, VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_USBTABLET,
       1, 2048,  16, 32 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "Solaris", "Solaris",           "",        "Solaris11_x64",               "Oracle Solaris 11 (64-bit)",
+    { "Solaris", "Solaris",           "",        GUEST_OS_ID_STR_X64("Solaris11"),      "Oracle Solaris 11 (64-bit)",
       VBOXOSTYPE_Solaris11_x64,   VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_USBTABLET | VBOXOSHINT_RTCUTC,
       1, 4096,  16, 32 * _1G64, GraphicsControllerType_VMSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "Solaris", "Solaris",           "",        "OpenSolaris",                 "OpenSolaris / Illumos / OpenIndiana (32-bit)",
+    { "Solaris", "Solaris",           "",        GUEST_OS_ID_STR_X86("OpenSolaris"),    "OpenSolaris / Illumos / OpenIndiana (32-bit)",
       VBOXOSTYPE_OpenSolaris,     VBOXOSHINT_USBTABLET,
       1, 1024,  16, 32 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "Solaris", "Solaris",           "",        "OpenSolaris_x64",             "OpenSolaris / Illumos / OpenIndiana (64-bit)",
+    { "Solaris", "Solaris",           "",        GUEST_OS_ID_STR_X64("OpenSolaris"),    "OpenSolaris / Illumos / OpenIndiana (64-bit)",
       VBOXOSTYPE_OpenSolaris_x64, VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_USBTABLET,
       1, 2048,  16, 32 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "BSD",     "BSD",       "FreeBSD",         "FreeBSD",            "FreeBSD (32-bit)",
+    { "BSD",     "BSD",       "FreeBSD",         GUEST_OS_ID_STR_X86("FreeBSD"),        "FreeBSD (32-bit)",
       VBOXOSTYPE_FreeBSD,         VBOXOSHINT_NONE,
       1, 1024,  16,  2 * _1G64, GraphicsControllerType_VMSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "BSD",     "BSD",       "FreeBSD",         "FreeBSD_x64",        "FreeBSD (64-bit)",
+    { "BSD",     "BSD",       "FreeBSD",         GUEST_OS_ID_STR_X64("FreeBSD"),        "FreeBSD (64-bit)",
       VBOXOSTYPE_FreeBSD_x64,     VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC,
       1, 1024,  16, 16 * _1G64, GraphicsControllerType_VMSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "BSD",     "BSD",        "OpenBSD",        "OpenBSD",            "OpenBSD (32-bit)",
+    { "BSD",     "BSD",        "OpenBSD",        GUEST_OS_ID_STR_X86("OpenBSD"),        "OpenBSD (32-bit)",
       VBOXOSTYPE_OpenBSD,         VBOXOSHINT_X86_HWVIRTEX,
       1, 1024,  16, 16 * _1G64, GraphicsControllerType_VMSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "BSD",     "BSD",       "OpenBSD",         "OpenBSD_x64",        "OpenBSD (64-bit)",
+    { "BSD",     "BSD",       "OpenBSD",         GUEST_OS_ID_STR_X64("OpenBSD"),        "OpenBSD (64-bit)",
       VBOXOSTYPE_OpenBSD_x64,     VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC,
       1, 1024,  16, 16 * _1G64, GraphicsControllerType_VMSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "BSD",     "BSD",       "NetBSD",          "NetBSD",             "NetBSD (32-bit)",
+    { "BSD",     "BSD",       "NetBSD",          GUEST_OS_ID_STR_X86("NetBSD"),         "NetBSD (32-bit)",
       VBOXOSTYPE_NetBSD,          VBOXOSHINT_RTCUTC,
       1, 1024,  16, 16 * _1G64, GraphicsControllerType_VMSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "BSD",     "BSD",       "NetBSD",          "NetBSD_x64",         "NetBSD (64-bit)",
+    { "BSD",     "BSD",       "NetBSD",          GUEST_OS_ID_STR_X64("NetBSD"),         "NetBSD (64-bit)",
       VBOXOSTYPE_NetBSD_x64,      VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_RTCUTC,
       1, 1024,  16, 16 * _1G64, GraphicsControllerType_VMSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "OS2",     "IBM OS/2",          "",        "OS21x",              "OS/2 1.x",
+    { "OS2",     "IBM OS/2",          "",        GUEST_OS_ID_STR_X86("OS21x"),          "OS/2 1.x",
       VBOXOSTYPE_OS21x,           VBOXOSHINT_FLOPPY | VBOXOSHINT_NOUSB | VBOXOSHINT_TFRESET,
       1,    8,   4, 500 * _1M, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 1, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_SB16, AudioCodecType_SB16  },
 
-    { "OS2",     "IBM OS/2",          "",        "OS2Warp3",           "OS/2 Warp 3",
+    { "OS2",     "IBM OS/2",          "",        GUEST_OS_ID_STR_X86("OS2Warp3"),       "OS/2 Warp 3",
       VBOXOSTYPE_OS2Warp3,        VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_FLOPPY,
       1,   48,   4,  1 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 1, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_SB16, AudioCodecType_SB16  },
 
-    { "OS2",     "IBM OS/2",          "",        "OS2Warp4",           "OS/2 Warp 4",
+    { "OS2",     "IBM OS/2",          "",        GUEST_OS_ID_STR_X86("OS2Warp4"),       "OS/2 Warp 4",
       VBOXOSTYPE_OS2Warp4,        VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_FLOPPY,
       1,   64,   4,  2 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 1, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_SB16, AudioCodecType_SB16  },
 
-    { "OS2",     "IBM OS/2",          "",        "OS2Warp45",          "OS/2 Warp 4.5",
+    { "OS2",     "IBM OS/2",          "",        GUEST_OS_ID_STR_X86("OS2Warp45"),      "OS/2 Warp 4.5",
       VBOXOSTYPE_OS2Warp45,       VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_FLOPPY,
       1,  128,   4,  2 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 1, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_SB16, AudioCodecType_SB16  },
 
-    { "OS2",     "IBM OS/2",          "",        "OS2eCS",             "eComStation",
+    { "OS2",     "IBM OS/2",          "",        GUEST_OS_ID_STR_X86("OS2eCS"),         "eComStation",
       VBOXOSTYPE_ECS,             VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_FLOPPY,
       1,  256,   4,  2 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 1, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "OS2",     "IBM OS/2",          "",        "OS2ArcaOS",          "ArcaOS",
+    { "OS2",     "IBM OS/2",          "",        GUEST_OS_ID_STR_X86("OS2ArcaOS"),      "ArcaOS",
       VBOXOSTYPE_ArcaOS,          VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_FLOPPY,
       1, 1024,   4,  2 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82540EM, 1, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700 },
 
-    { "OS2",     "IBM OS/2",          "",        "OS2",                "Other OS/2",
+    { "OS2",     "IBM OS/2",          "",        GUEST_OS_ID_STR_X86("OS2"),            "Other OS/2",
       VBOXOSTYPE_OS2,             VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_FLOPPY | VBOXOSHINT_NOUSB,
       1,   96,   4,  2 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 1, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_SB16, AudioCodecType_SB16  },
 
-    { "MacOS",   "Mac OS X",          "",        "MacOS",              "Mac OS X (32-bit)",
+    { "MacOS",   "Mac OS X",          "",        GUEST_OS_ID_STR_X86("MacOS"),          "Mac OS X (32-bit)",
       VBOXOSTYPE_MacOS,           VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_X86_PAE
                                 | VBOXOSHINT_USBHID | VBOXOSHINT_X86_HPET | VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET,
       1, 2048,  16, 20 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82545EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_ICH9, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "MacOS",   "Mac OS X",          "",        "MacOS_x64",          "Mac OS X (64-bit)",
+    { "MacOS",   "Mac OS X",          "",        GUEST_OS_ID_STR_X64("MacOS"),          "Mac OS X (64-bit)",
       VBOXOSTYPE_MacOS_x64,       VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_X86_PAE |  VBOXOSHINT_64BIT
                                 | VBOXOSHINT_USBHID | VBOXOSHINT_X86_HPET | VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET,
       1, 2048,  16, 20 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82545EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_ICH9, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "MacOS",   "Mac OS X",          "",        "MacOS106",           "Mac OS X 10.6 Snow Leopard (32-bit)",
+    { "MacOS",   "Mac OS X",          "",        GUEST_OS_ID_STR_X86("MacOS106"),       "Mac OS X 10.6 Snow Leopard (32-bit)",
       VBOXOSTYPE_MacOS106,        VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_X86_PAE
                                 | VBOXOSHINT_USBHID | VBOXOSHINT_X86_HPET | VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET,
       1, 2048,  16, 20 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82545EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_ICH9, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "MacOS",   "Mac OS X",          "",        "MacOS106_x64",       "Mac OS X 10.6 Snow Leopard (64-bit)",
+    { "MacOS",   "Mac OS X",          "",        GUEST_OS_ID_STR_X64("MacOS106"),       "Mac OS X 10.6 Snow Leopard (64-bit)",
       VBOXOSTYPE_MacOS106_x64,    VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_X86_PAE |  VBOXOSHINT_64BIT
                                 | VBOXOSHINT_USBHID | VBOXOSHINT_X86_HPET | VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET,
       1, 2048,  16, 20 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82545EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_ICH9, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "MacOS",   "Mac OS X",          "",        "MacOS107_x64",       "Mac OS X 10.7 Lion (64-bit)",
+    { "MacOS",   "Mac OS X",          "",        GUEST_OS_ID_STR_X64("MacOS107"),       "Mac OS X 10.7 Lion (64-bit)",
       VBOXOSTYPE_MacOS107_x64,    VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_X86_PAE |  VBOXOSHINT_64BIT
                                 | VBOXOSHINT_USBHID | VBOXOSHINT_X86_HPET | VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET,
       1, 2048,  16, 20 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82545EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_ICH9, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "MacOS",   "Mac OS X",          "",        "MacOS108_x64",       "Mac OS X 10.8 Mountain Lion (64-bit)",  /* Aka "Mountain Kitten". */
+    { "MacOS",   "Mac OS X",          "",        GUEST_OS_ID_STR_X64("MacOS108"),       "Mac OS X 10.8 Mountain Lion (64-bit)",  /* Aka "Mountain Kitten". */
       VBOXOSTYPE_MacOS108_x64,    VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_X86_PAE |  VBOXOSHINT_64BIT
                                 | VBOXOSHINT_USBHID | VBOXOSHINT_X86_HPET | VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET,
       1, 2048,  16, 20 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82545EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_ICH9, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "MacOS",   "Mac OS X",          "",        "MacOS109_x64",       "Mac OS X 10.9 Mavericks (64-bit)", /* Not to be confused with McCain. */
+    { "MacOS",   "Mac OS X",          "",        GUEST_OS_ID_STR_X64("MacOS109"),       "Mac OS X 10.9 Mavericks (64-bit)", /* Not to be confused with McCain. */
       VBOXOSTYPE_MacOS109_x64,    VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_X86_PAE |  VBOXOSHINT_64BIT
                                 | VBOXOSHINT_USBHID | VBOXOSHINT_X86_HPET | VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET,
       1, 2048,  16, 25 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82545EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_ICH9, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "MacOS",   "Mac OS X",         "",         "MacOS1010_x64",      "Mac OS X 10.10 Yosemite (64-bit)",
+    { "MacOS",   "Mac OS X",         "",         GUEST_OS_ID_STR_X64("MacOS1010"),      "Mac OS X 10.10 Yosemite (64-bit)",
       VBOXOSTYPE_MacOS1010_x64,   VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_X86_PAE |  VBOXOSHINT_64BIT
                                 | VBOXOSHINT_USBHID | VBOXOSHINT_X86_HPET | VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET,
       1, 2048,  16, 25 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82545EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_ICH9, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "MacOS",   "Mac OS X",         "",         "MacOS1011_x64",      "Mac OS X 10.11 El Capitan (64-bit)",
+    { "MacOS",   "Mac OS X",         "",         GUEST_OS_ID_STR_X64("MacOS1011"),      "Mac OS X 10.11 El Capitan (64-bit)",
       VBOXOSTYPE_MacOS1011_x64,   VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_X86_PAE |  VBOXOSHINT_64BIT
                                 | VBOXOSHINT_USBHID | VBOXOSHINT_X86_HPET | VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET,
       1, 2048,  16, 30 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82545EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_ICH9, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "MacOS",   "Mac OS X",         "",         "MacOS1012_x64",      "macOS 10.12 Sierra (64-bit)",
+    { "MacOS",   "Mac OS X",         "",         GUEST_OS_ID_STR_X64("MacOS1012"),      "macOS 10.12 Sierra (64-bit)",
       VBOXOSTYPE_MacOS1012_x64,   VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_X86_PAE |  VBOXOSHINT_64BIT
                                 | VBOXOSHINT_USBHID | VBOXOSHINT_X86_HPET | VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET,
       1, 2048,  16, 30 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82545EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_ICH9, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "MacOS",   "Mac OS X",         "",         "MacOS1013_x64",      "macOS 10.13 High Sierra (64-bit)",
+    { "MacOS",   "Mac OS X",         "",         GUEST_OS_ID_STR_X64("MacOS1013"),      "macOS 10.13 High Sierra (64-bit)",
       VBOXOSTYPE_MacOS1013_x64,   VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_X86_PAE |  VBOXOSHINT_64BIT
                                 | VBOXOSHINT_USBHID | VBOXOSHINT_X86_HPET | VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET,
       1, 2048,  16, 30 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82545EM, 0, StorageControllerType_IntelAhci, StorageBus_SATA,
       StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_ICH9, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
 
-    { "Other",   "Other",             "",        "DOS",                "DOS",
+    { "Other",   "Other",             "",        GUEST_OS_ID_STR_X86("DOS"),            "DOS",
       VBOXOSTYPE_DOS,             VBOXOSHINT_FLOPPY | VBOXOSHINT_NOUSB,
       1,   32,   4,  500 * _1M, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 1, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_SB16, AudioCodecType_SB16  },
 
-    { "Other",   "Other",             "",        "Netware",            "Netware",
+    { "Other",   "Other",             "",        GUEST_OS_ID_STR_X86("Netware"),        "Netware",
       VBOXOSTYPE_Netware,         VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_FLOPPY | VBOXOSHINT_NOUSB,
       1,  512,   4,  4 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "Other",   "Other",             "",        "L4",                 "L4",
+    { "Other",   "Other",             "",        GUEST_OS_ID_STR_X86("L4"),             "L4",
       VBOXOSTYPE_L4,              VBOXOSHINT_NONE,
       1,   64,   4,  2 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "Other",   "Other",             "",        "QNX",                "QNX",
+    { "Other",   "Other",             "",        GUEST_OS_ID_STR_X86("QNX"),            "QNX",
       VBOXOSTYPE_QNX,             VBOXOSHINT_X86_HWVIRTEX,
       1,  512,   4,  4 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "Other",   "Other",             "",        "JRockitVE",          "JRockitVE",
+    { "Other",   "Other",             "",        GUEST_OS_ID_STR_X86("JRockitVE"),      "JRockitVE",
       VBOXOSTYPE_JRockitVE,       VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_X86_PAE,
       1, 1024,   4,  8 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82545EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_BusLogic, StorageBus_SCSI, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "Other",   "Other",             "",        "VBoxBS_x64",         "VirtualBox Bootsector Test (64-bit)",
+    { "Other",   "Other",             "",        GUEST_OS_ID_STR_X64("VBoxBS"),         "VirtualBox Bootsector Test (64-bit)",
       VBOXOSTYPE_VBoxBS_x64,      VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_FLOPPY | VBOXOSHINT_X86_IOAPIC | VBOXOSHINT_X86_PAE | VBOXOSHINT_64BIT,
       1,  128,   4,  0, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82545EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
