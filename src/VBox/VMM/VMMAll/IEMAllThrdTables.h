@@ -114,6 +114,14 @@
 
 
 /*
+ * Override IEM_MC_BEGIN to take down the IEM_CIMPL_F_XXX flags.
+ */
+#undef IEM_MC_BEGIN
+#define IEM_MC_BEGIN(a_cArgs, a_cLocals, a_fMcFlags, a_fCImplFlags) \
+    { \
+        pVCpu->iem.s.fTbCurInstr = (a_fCImplFlags) /*| ((a_fMcFlags) << 20*/
+
+/*
  * Override IEM_MC_CALC_RM_EFF_ADDR to use iemOpHlpCalcRmEffAddrJmpEx and produce uEffAddrInfo.
  */
 #undef IEM_MC_CALC_RM_EFF_ADDR
@@ -299,6 +307,7 @@ DECLINLINE(VBOXSTRICTRC) iemThreadedRecompilerMcDeferToCImpl0(PVMCPUCC pVCpu, ui
 {
     Log8(("CImpl0: %04x:%08RX64 LB %#x: %#x %p\n",
           pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, IEM_GET_INSTR_LEN(pVCpu), fFlags, pfnCImpl));
+    pVCpu->iem.s.fTbCurInstr = fFlags;
 
     IEM_MC2_BEGIN_EMIT_CALLS(fFlags & IEM_CIMPL_F_CHECK_IRQ_BEFORE);
     IEM_MC2_EMIT_CALL_2(kIemThreadedFunc_BltIn_DeferToCImpl0, (uintptr_t)pfnCImpl, IEM_GET_INSTR_LEN(pVCpu));

@@ -40,6 +40,7 @@ import os;
 import re;
 import sys;
 import argparse;
+from typing import Dict, List;
 
 import IEMAllInstPython as iai;
 import IEMAllN8vePython as ian;
@@ -133,114 +134,230 @@ class ThreadedFunctionVariation(object):
     ## @{
     ksVariation_Default     = '';               ##< No variations - only used by IEM_MC_DEFER_TO_CIMPL_X_RET.
     ksVariation_16          = '_16';            ##< 16-bit mode code (386+).
+    ksVariation_16f         = '_16f';           ##< 16-bit mode code (386+), check+clear eflags.
     ksVariation_16_Addr32   = '_16_Addr32';     ##< 16-bit mode code (386+), address size prefixed to 32-bit addressing.
+    ksVariation_16f_Addr32  = '_16f_Addr32';    ##< 16-bit mode code (386+), address size prefixed to 32-bit addressing, eflags.
     ksVariation_16_Pre386   = '_16_Pre386';     ##< 16-bit mode code, pre-386 CPU target.
+    ksVariation_16f_Pre386  = '_16f_Pre386';    ##< 16-bit mode code, pre-386 CPU target, check+clear eflags.
     ksVariation_32          = '_32';            ##< 32-bit mode code (386+).
+    ksVariation_32f         = '_32f';           ##< 32-bit mode code (386+), check+clear eflags.
     ksVariation_32_Flat     = '_32_Flat';       ##< 32-bit mode code (386+) with CS, DS, E,S and SS flat and 4GB wide.
+    ksVariation_32f_Flat    = '_32f_Flat';      ##< 32-bit mode code (386+) with CS, DS, E,S and SS flat and 4GB wide, eflags.
     ksVariation_32_Addr16   = '_32_Addr16';     ##< 32-bit mode code (386+), address size prefixed to 16-bit addressing.
+    ksVariation_32f_Addr16  = '_32f_Addr16';    ##< 32-bit mode code (386+), address size prefixed to 16-bit addressing, eflags.
     ksVariation_64          = '_64';            ##< 64-bit mode code.
+    ksVariation_64f         = '_64f';           ##< 64-bit mode code, check+clear eflags.
     ksVariation_64_FsGs     = '_64_FsGs';       ##< 64-bit mode code, with memory accesses via FS or GS.
+    ksVariation_64f_FsGs    = '_64f_FsGs';      ##< 64-bit mode code, with memory accesses via FS or GS, check+clear eflags.
     ksVariation_64_Addr32   = '_64_Addr32';     ##< 64-bit mode code, address size prefixed to 32-bit addressing.
+    ksVariation_64f_Addr32  = '_64f_Addr32';    ##< 64-bit mode code, address size prefixed to 32-bit addressing, c+c eflags.
     kasVariations           = (
         ksVariation_Default,
         ksVariation_16,
+        ksVariation_16f,
         ksVariation_16_Addr32,
+        ksVariation_16f_Addr32,
         ksVariation_16_Pre386,
+        ksVariation_16f_Pre386,
         ksVariation_32,
+        ksVariation_32f,
         ksVariation_32_Flat,
+        ksVariation_32f_Flat,
         ksVariation_32_Addr16,
+        ksVariation_32f_Addr16,
         ksVariation_64,
+        ksVariation_64f,
         ksVariation_64_FsGs,
+        ksVariation_64f_FsGs,
         ksVariation_64_Addr32,
+        ksVariation_64f_Addr32,
     );
     kasVariationsWithoutAddress = (
         ksVariation_16,
+        ksVariation_16f,
         ksVariation_16_Pre386,
+        ksVariation_16f_Pre386,
         ksVariation_32,
+        ksVariation_32f,
         ksVariation_64,
+        ksVariation_64f,
     );
     kasVariationsWithoutAddressNot286 = (
         ksVariation_16,
+        ksVariation_16f,
         ksVariation_32,
+        ksVariation_32f,
         ksVariation_64,
+        ksVariation_64f,
     );
     kasVariationsWithoutAddressNot286Not64 = (
         ksVariation_16,
+        ksVariation_16f,
         ksVariation_32,
+        ksVariation_32f,
     );
     kasVariationsWithoutAddressNot64 = (
         ksVariation_16,
+        ksVariation_16f,
         ksVariation_16_Pre386,
+        ksVariation_16f_Pre386,
         ksVariation_32,
+        ksVariation_32f,
     );
     kasVariationsWithoutAddressOnly64 = (
         ksVariation_64,
+        ksVariation_64f,
     );
     kasVariationsWithAddress = (
         ksVariation_16,
+        ksVariation_16f,
         ksVariation_16_Addr32,
+        ksVariation_16f_Addr32,
         ksVariation_16_Pre386,
+        ksVariation_16f_Pre386,
         ksVariation_32,
+        ksVariation_32f,
         ksVariation_32_Flat,
+        ksVariation_32f_Flat,
         ksVariation_32_Addr16,
+        ksVariation_32f_Addr16,
         ksVariation_64,
+        ksVariation_64f,
         ksVariation_64_FsGs,
+        ksVariation_64f_FsGs,
         ksVariation_64_Addr32,
+        ksVariation_64f_Addr32,
     );
     kasVariationsWithAddressNot286 = (
         ksVariation_16,
+        ksVariation_16f,
         ksVariation_16_Addr32,
+        ksVariation_16f_Addr32,
         ksVariation_32,
+        ksVariation_32f,
         ksVariation_32_Flat,
+        ksVariation_32f_Flat,
         ksVariation_32_Addr16,
+        ksVariation_32f_Addr16,
         ksVariation_64,
+        ksVariation_64f,
         ksVariation_64_FsGs,
+        ksVariation_64f_FsGs,
         ksVariation_64_Addr32,
+        ksVariation_64f_Addr32,
     );
     kasVariationsWithAddressNot286Not64 = (
         ksVariation_16,
+        ksVariation_16f,
         ksVariation_16_Addr32,
+        ksVariation_16f_Addr32,
         ksVariation_32,
+        ksVariation_32f,
         ksVariation_32_Flat,
+        ksVariation_32f_Flat,
         ksVariation_32_Addr16,
+        ksVariation_32f_Addr16,
     );
     kasVariationsWithAddressNot64 = (
         ksVariation_16,
+        ksVariation_16f,
         ksVariation_16_Addr32,
+        ksVariation_16f_Addr32,
         ksVariation_16_Pre386,
+        ksVariation_16f_Pre386,
         ksVariation_32,
+        ksVariation_32f,
         ksVariation_32_Flat,
+        ksVariation_32f_Flat,
         ksVariation_32_Addr16,
+        ksVariation_32f_Addr16,
     );
     kasVariationsWithAddressOnly64 = (
         ksVariation_64,
+        ksVariation_64f,
         ksVariation_64_FsGs,
+        ksVariation_64f_FsGs,
         ksVariation_64_Addr32,
+        ksVariation_64f_Addr32,
+    );
+    kasVariationsOnlyPre386 = (
+        ksVariation_16_Pre386,
+        ksVariation_16f_Pre386,
     );
     kasVariationsEmitOrder = (
         ksVariation_Default,
         ksVariation_64,
+        ksVariation_64f,
         ksVariation_64_FsGs,
+        ksVariation_64f_FsGs,
         ksVariation_32_Flat,
+        ksVariation_32f_Flat,
         ksVariation_32,
+        ksVariation_32f,
         ksVariation_16,
+        ksVariation_16f,
         ksVariation_16_Addr32,
+        ksVariation_16f_Addr32,
         ksVariation_16_Pre386,
+        ksVariation_16f_Pre386,
         ksVariation_32_Addr16,
+        ksVariation_32f_Addr16,
         ksVariation_64_Addr32,
+        ksVariation_64f_Addr32,
     );
     kdVariationNames = {
         ksVariation_Default:    'defer-to-cimpl',
         ksVariation_16:         '16-bit',
+        ksVariation_16f:        '16-bit w/ eflag checking and clearing',
         ksVariation_16_Addr32:  '16-bit w/ address prefix (Addr32)',
+        ksVariation_16f_Addr32: '16-bit w/ address prefix (Addr32) and eflag checking and clearing',
         ksVariation_16_Pre386:  '16-bit on pre-386 CPU',
+        ksVariation_16f_Pre386: '16-bit on pre-386 CPU w/ eflag checking and clearing',
         ksVariation_32:         '32-bit',
+        ksVariation_32f:        '32-bit w/ eflag checking and clearing',
         ksVariation_32_Flat:    '32-bit flat and wide open CS, SS, DS and ES',
+        ksVariation_32f_Flat:   '32-bit flat and wide open CS, SS, DS and ES w/ eflag checking and clearing',
         ksVariation_32_Addr16:  '32-bit w/ address prefix (Addr16)',
+        ksVariation_32f_Addr16: '32-bit w/ address prefix (Addr16) and eflag checking and clearing',
         ksVariation_64:         '64-bit',
+        ksVariation_64f:        '64-bit w/ eflag checking and clearing',
         ksVariation_64_FsGs:    '64-bit with memory accessed via FS or GS',
+        ksVariation_64f_FsGs:   '64-bit with memory accessed via FS or GS and eflag checking and clearing',
         ksVariation_64_Addr32:  '64-bit w/ address prefix (Addr32)',
-
+        ksVariation_64f_Addr32: '64-bit w/ address prefix (Addr32) and eflag checking and clearing',
+    };
+    kdVariationsWithEflagsCheckingAndClearing = {
+        ksVariation_16f: True,
+        ksVariation_16f_Addr32: True,
+        ksVariation_16f_Pre386: True,
+        ksVariation_32f: True,
+        ksVariation_32f_Flat: True,
+        ksVariation_32f_Addr16: True,
+        ksVariation_64f: True,
+        ksVariation_64f_FsGs: True,
+        ksVariation_64f_Addr32: True,
+    };
+    kdVariationsWithFlatAddress = {
+        ksVariation_32_Flat: True,
+        ksVariation_32f_Flat: True,
+        ksVariation_64: True,
+        ksVariation_64f: True,
+    };
+    kdVariationsWithFlatAddr16 = {
+        ksVariation_16: True,
+        ksVariation_16f: True,
+        ksVariation_16_Pre386: True,
+        ksVariation_16f_Pre386: True,
+        ksVariation_32_Addr16: True,
+        ksVariation_32f_Addr16: True,
+    };
+    kdVariationsWithFlatAddr32No64 = {
+        ksVariation_16_Addr32:  True,
+        ksVariation_16f_Addr32: True,
+        ksVariation_32:         True,
+        ksVariation_32f:        True,
+        ksVariation_32_Flat:    True,
+        ksVariation_32f_Flat:   True,
     };
     ## @}
 
@@ -250,22 +367,25 @@ class ThreadedFunctionVariation(object):
     ##
     ## @note iemThreadedRecompilerMcDeferToCImpl0 duplicates info found here.
     kdCImplFlags = {
-        'IEM_CIMPL_F_MODE':                 False,
-        'IEM_CIMPL_F_BRANCH_DIRECT':        False,
-        'IEM_CIMPL_F_BRANCH_INDIRECT':      False,
-        'IEM_CIMPL_F_BRANCH_RELATIVE':      False,
-        'IEM_CIMPL_F_BRANCH_FAR':           True,
-        'IEM_CIMPL_F_BRANCH_CONDITIONAL':   False,
-        'IEM_CIMPL_F_RFLAGS':               False,
-        'IEM_CIMPL_F_CHECK_IRQ_AFTER':      False,
-        'IEM_CIMPL_F_CHECK_IRQ_BEFORE':     False,
-        'IEM_CIMPL_F_STATUS_FLAGS':         False,
-        'IEM_CIMPL_F_VMEXIT':               False,
-        'IEM_CIMPL_F_FPU':                  False,
-        'IEM_CIMPL_F_REP':                  False,
-        'IEM_CIMPL_F_IO':                   False,
-        'IEM_CIMPL_F_END_TB':               True,
-        'IEM_CIMPL_F_XCPT':                 True,
+        'IEM_CIMPL_F_MODE':                         False,
+        'IEM_CIMPL_F_BRANCH_DIRECT':                False,
+        'IEM_CIMPL_F_BRANCH_INDIRECT':              False,
+        'IEM_CIMPL_F_BRANCH_RELATIVE':              False,
+        'IEM_CIMPL_F_BRANCH_FAR':                   True,
+        'IEM_CIMPL_F_BRANCH_CONDITIONAL':           False,
+        # IEM_CIMPL_F_BRANCH_ANY should only be used for testing, so not included here.
+        'IEM_CIMPL_F_RFLAGS':                       False,
+        'IEM_CIMPL_F_INHIBIT_SHADOW':               False,
+        'IEM_CIMPL_F_CHECK_IRQ_AFTER':              False,
+        'IEM_CIMPL_F_CHECK_IRQ_BEFORE':             False,
+        'IEM_CIMPL_F_CHECK_IRQ_BEFORE_AND_AFTER':   False, # (ignore)
+        'IEM_CIMPL_F_STATUS_FLAGS':                 False,
+        'IEM_CIMPL_F_VMEXIT':                       False,
+        'IEM_CIMPL_F_FPU':                          False,
+        'IEM_CIMPL_F_REP':                          False,
+        'IEM_CIMPL_F_IO':                           False,
+        'IEM_CIMPL_F_END_TB':                       True,
+        'IEM_CIMPL_F_XCPT':                         True,
     };
 
     def __init__(self, oThreadedFunction, sVariation = ksVariation_Default):
@@ -274,17 +394,14 @@ class ThreadedFunctionVariation(object):
         self.sVariation     = sVariation
 
         ## Threaded function parameter references.
-        self.aoParamRefs    = []            # type: list(ThreadedParamRef)
+        self.aoParamRefs    = []            # type: List[ThreadedParamRef]
         ## Unique parameter references.
-        self.dParamRefs     = {}            # type: dict(str,list(ThreadedParamRef))
+        self.dParamRefs     = {}            # type: Dict[str, List[ThreadedParamRef]]
         ## Minimum number of parameters to the threaded function.
         self.cMinParams     = 0;
 
         ## List/tree of statements for the threaded function.
-        self.aoStmtsForThreadedFunction = [] # type: list(McStmt)
-
-        ## Dictionary with any IEM_CIMPL_F_XXX flags associated to the code block.
-        self.dsCImplFlags   = { }           # type: dict(str, bool)
+        self.aoStmtsForThreadedFunction = [] # type: List[McStmt]
 
         ## Function enum number, for verification. Set by generateThreadedFunctionsHeader.
         self.iEnumValue     = -1;
@@ -553,6 +670,27 @@ class ThreadedFunctionVariation(object):
         'IEM_MC_POP_U64':                         (  'IEM_MC_POP_U64',              'IEM_MC_FLAT64_POP_U64', ),
     };
 
+    kdThreadedCalcRmEffAddrMcByVariation = {
+        ksVariation_16:             'IEM_MC_CALC_RM_EFF_ADDR_THREADED_16',
+        ksVariation_16f:            'IEM_MC_CALC_RM_EFF_ADDR_THREADED_16',
+        ksVariation_16_Pre386:      'IEM_MC_CALC_RM_EFF_ADDR_THREADED_16',
+        ksVariation_16f_Pre386:     'IEM_MC_CALC_RM_EFF_ADDR_THREADED_16',
+        ksVariation_32_Addr16:      'IEM_MC_CALC_RM_EFF_ADDR_THREADED_16',
+        ksVariation_32f_Addr16:     'IEM_MC_CALC_RM_EFF_ADDR_THREADED_16',
+        ksVariation_16_Addr32:      'IEM_MC_CALC_RM_EFF_ADDR_THREADED_32',
+        ksVariation_16f_Addr32:     'IEM_MC_CALC_RM_EFF_ADDR_THREADED_32',
+        ksVariation_32:             'IEM_MC_CALC_RM_EFF_ADDR_THREADED_32',
+        ksVariation_32f:            'IEM_MC_CALC_RM_EFF_ADDR_THREADED_32',
+        ksVariation_32_Flat:        'IEM_MC_CALC_RM_EFF_ADDR_THREADED_32',
+        ksVariation_32f_Flat:       'IEM_MC_CALC_RM_EFF_ADDR_THREADED_32',
+        ksVariation_64:             'IEM_MC_CALC_RM_EFF_ADDR_THREADED_64',
+        ksVariation_64f:            'IEM_MC_CALC_RM_EFF_ADDR_THREADED_64',
+        ksVariation_64_FsGs:        'IEM_MC_CALC_RM_EFF_ADDR_THREADED_64_FSGS',
+        ksVariation_64f_FsGs:       'IEM_MC_CALC_RM_EFF_ADDR_THREADED_64_FSGS',
+        ksVariation_64_Addr32:      'IEM_MC_CALC_RM_EFF_ADDR_THREADED_64_ADDR32', ## @todo How did this work again...
+        ksVariation_64f_Addr32:     'IEM_MC_CALC_RM_EFF_ADDR_THREADED_64_ADDR32',
+    };
+
     def analyzeMorphStmtForThreaded(self, aoStmts, iParamRef = 0):
         """
         Transforms (copy) the statements into those for the threaded function.
@@ -601,11 +739,10 @@ class ThreadedFunctionVariation(object):
 
                 # Morph IEM_MC_CALC_RM_EFF_ADDR into IEM_MC_CALC_RM_EFF_ADDR_THREADED ...
                 if oNewStmt.sName == 'IEM_MC_CALC_RM_EFF_ADDR':
-                    assert self.sVariation != self.ksVariation_Default;
-                    oNewStmt.sName = 'IEM_MC_CALC_RM_EFF_ADDR_THREADED' + self.sVariation.upper();
+                    oNewStmt.sName = self.kdThreadedCalcRmEffAddrMcByVariation[self.sVariation];
                     assert len(oNewStmt.asParams) == 3;
 
-                    if self.sVariation in (self.ksVariation_16, self.ksVariation_16_Pre386, self.ksVariation_32_Addr16):
+                    if self.sVariation in self.kdVariationsWithFlatAddr16:
                         oNewStmt.asParams = [
                             oNewStmt.asParams[0], oNewStmt.asParams[1], self.dParamRefs['u16Disp'][0].sNewName,
                         ];
@@ -614,7 +751,7 @@ class ThreadedFunctionVariation(object):
                         if oStmt.asParams[2] not in ('0', '1', '2', '4'):
                             sSibAndMore = '(%s) | ((%s) & 0x0f00)' % (self.dParamRefs['bSib'][0].sNewName, oStmt.asParams[2]);
 
-                        if self.sVariation in (self.ksVariation_32, self.ksVariation_32_Flat, self.ksVariation_16_Addr32):
+                        if self.sVariation in self.kdVariationsWithFlatAddr32No64:
                             oNewStmt.asParams = [
                                 oNewStmt.asParams[0], oNewStmt.asParams[1], sSibAndMore, self.dParamRefs['u32Disp'][0].sNewName,
                             ];
@@ -623,20 +760,27 @@ class ThreadedFunctionVariation(object):
                                 oNewStmt.asParams[0], self.dParamRefs['bRmEx'][0].sNewName, sSibAndMore,
                                 self.dParamRefs['u32Disp'][0].sNewName, self.dParamRefs['cbInstr'][0].sNewName,
                             ];
-                # ... and IEM_MC_ADVANCE_RIP_AND_FINISH into *_THREADED and maybe *_LM64/_NOT64 ...
+                # ... and IEM_MC_ADVANCE_RIP_AND_FINISH into *_THREADED_PCxx[_WITH_FLAGS] ...
                 elif oNewStmt.sName in ('IEM_MC_ADVANCE_RIP_AND_FINISH', 'IEM_MC_REL_JMP_S8_AND_FINISH',
                                         'IEM_MC_REL_JMP_S16_AND_FINISH', 'IEM_MC_REL_JMP_S32_AND_FINISH'):
                     oNewStmt.asParams.append(self.dParamRefs['cbInstr'][0].sNewName);
                     if (    oNewStmt.sName in ('IEM_MC_REL_JMP_S8_AND_FINISH', )
-                        and self.sVariation != self.ksVariation_16_Pre386):
+                        and self.sVariation not in (self.ksVariation_16_Pre386, self.ksVariation_16f_Pre386,)):
                         oNewStmt.asParams.append(self.dParamRefs['pVCpu->iem.s.enmEffOpSize'][0].sNewName);
                     oNewStmt.sName += '_THREADED';
-                    if self.sVariation in (self.ksVariation_64, self.ksVariation_64_FsGs, self.ksVariation_64_Addr32):
+                    if   self.sVariation in (self.ksVariation_64,  self.ksVariation_64_FsGs,  self.ksVariation_64_Addr32):
                         oNewStmt.sName += '_PC64';
+                    elif self.sVariation in (self.ksVariation_64f, self.ksVariation_64f_FsGs, self.ksVariation_64f_Addr32):
+                        oNewStmt.sName += '_PC64_WITH_FLAGS';
                     elif self.sVariation == self.ksVariation_16_Pre386:
                         oNewStmt.sName += '_PC16';
-                    elif self.sVariation != self.ksVariation_Default:
+                    elif self.sVariation == self.ksVariation_16f_Pre386:
+                        oNewStmt.sName += '_PC16_WITH_FLAGS';
+                    elif self.sVariation not in self.kdVariationsWithEflagsCheckingAndClearing:
+                        assert self.sVariation != self.ksVariation_Default;
                         oNewStmt.sName += '_PC32';
+                    else:
+                        oNewStmt.sName += '_PC32_WITH_FLAGS';
 
                 # ... and IEM_MC_*_GREG_U8 into *_THREADED w/ reworked index taking REX into account
                 elif oNewStmt.sName.startswith('IEM_MC_') and oNewStmt.sName.find('_GREG_U8') > 0:
@@ -650,7 +794,7 @@ class ThreadedFunctionVariation(object):
                     oNewStmt.asParams.insert(0, self.dParamRefs['cbInstr'][0].sNewName);
 
                 # ... and in FLAT modes we must morph memory access into FLAT accesses ...
-                elif (    self.sVariation in (self.ksVariation_64, self.ksVariation_32_Flat,)
+                elif (    self.sVariation in self.kdVariationsWithFlatAddress
                       and (   oNewStmt.sName.startswith('IEM_MC_FETCH_MEM')
                            or (oNewStmt.sName.startswith('IEM_MC_STORE_MEM_') and oNewStmt.sName.find('_BY_REF') < 0)
                            or oNewStmt.sName.startswith('IEM_MC_MEM_MAP') )):
@@ -664,10 +808,11 @@ class ThreadedFunctionVariation(object):
                     oNewStmt.sName = self.kdMemMcToFlatInfo[oNewStmt.sName][1];
 
                 # ... PUSH and POP also needs flat variants, but these differ a little.
-                elif (    self.sVariation in (self.ksVariation_64, self.ksVariation_32_Flat,)
+                elif (    self.sVariation in self.kdVariationsWithFlatAddress
                       and (   (oNewStmt.sName.startswith('IEM_MC_PUSH') and oNewStmt.sName.find('_FPU') < 0)
                            or oNewStmt.sName.startswith('IEM_MC_POP'))):
-                    oNewStmt.sName = self.kdMemMcToFlatInfoStack[oNewStmt.sName][int(self.sVariation == self.ksVariation_64)];
+                    oNewStmt.sName = self.kdMemMcToFlatInfoStack[oNewStmt.sName][int(self.sVariation in (self.ksVariation_64,
+                                                                                                         self.ksVariation_64f,))];
 
 
                 # Process branches of conditionals recursively.
@@ -677,46 +822,6 @@ class ThreadedFunctionVariation(object):
                         (oNewStmt.aoElseBranch, iParamRef) = self.analyzeMorphStmtForThreaded(oStmt.aoElseBranch, iParamRef);
 
         return (aoThreadedStmts, iParamRef);
-
-
-    def analyzeCodeOperation(self, aoStmts, fSeenConditional = False):
-        """
-        Analyzes the code looking clues as to additional side-effects.
-
-        Currently this is simply looking for any IEM_IMPL_C_F_XXX flags and
-        collecting these in self.dsCImplFlags.
-        """
-        for oStmt in aoStmts:
-            # Pick up hints from CIMPL calls and deferals.
-            if oStmt.sName.startswith('IEM_MC_CALL_CIMPL_') or oStmt.sName.startswith('IEM_MC_DEFER_TO_CIMPL_'):
-                sFlagsSansComments = iai.McBlock.stripComments(oStmt.asParams[0]);
-                for sFlag in sFlagsSansComments.split('|'):
-                    sFlag = sFlag.strip();
-                    if sFlag != '0':
-                        if sFlag in self.kdCImplFlags:
-                            self.dsCImplFlags[sFlag] = True;
-                        elif sFlag == 'IEM_CIMPL_F_CHECK_IRQ_BEFORE_AND_AFTER':
-                            self.dsCImplFlags['IEM_CIMPL_F_CHECK_IRQ_BEFORE'] = True;
-                            self.dsCImplFlags['IEM_CIMPL_F_CHECK_IRQ_AFTER']  = True;
-                        else:
-                            self.raiseProblem('Unknown CIMPL flag value: %s' % (sFlag,));
-
-            # Set IEM_IMPL_C_F_BRANCH if we see any branching MCs.
-            elif oStmt.sName.startswith('IEM_MC_SET_RIP'):
-                assert not fSeenConditional;
-                self.dsCImplFlags['IEM_CIMPL_F_BRANCH_INDIRECT'] = True;
-            elif oStmt.sName.startswith('IEM_MC_REL_JMP'):
-                self.dsCImplFlags['IEM_CIMPL_F_BRANCH_RELATIVE'] = True;
-                if fSeenConditional:
-                    self.dsCImplFlags['IEM_CIMPL_F_BRANCH_CONDITIONAL'] = True;
-
-            # Process branches of conditionals recursively.
-            if isinstance(oStmt, iai.McStmtCond):
-                self.analyzeCodeOperation(oStmt.aoIfBranch, True);
-                if oStmt.aoElseBranch:
-                    self.analyzeCodeOperation(oStmt.aoElseBranch, True);
-
-        return True;
 
 
     def analyzeConsolidateThreadedParamRefs(self):
@@ -759,7 +864,7 @@ class ThreadedFunctionVariation(object):
                 oRef.sNewName = sName;
 
         # Organize them by size too for the purpose of optimize them.
-        dBySize = {}        # type: dict(str,str)
+        dBySize = {}        # type: Dict[str, str]
         for sStdRef, aoRefs in self.dParamRefs.items():
             if aoRefs[0].sType[0] != 'P':
                 cBits = g_kdTypeInfo[aoRefs[0].sType][0];
@@ -828,7 +933,7 @@ class ThreadedFunctionVariation(object):
                 self.aoParamRefs.append(ThreadedParamRef('IEM_GET_INSTR_LEN(pVCpu)', 'uint4_t', oStmt, sStdRef = 'cbInstr'));
 
             if (    oStmt.sName in ('IEM_MC_REL_JMP_S8_AND_FINISH',)
-                and self.sVariation != self.ksVariation_16_Pre386):
+                and self.sVariation not in (self.ksVariation_16_Pre386, self.ksVariation_16f_Pre386,)):
                 self.aoParamRefs.append(ThreadedParamRef('pVCpu->iem.s.enmEffOpSize', 'IEMMODE', oStmt));
 
             if oStmt.sName == 'IEM_MC_CALC_RM_EFF_ADDR':
@@ -836,18 +941,18 @@ class ThreadedFunctionVariation(object):
                 assert len(oStmt.asParams) == 3;
                 assert oStmt.asParams[1] == 'bRm';
 
-                if self.sVariation in (self.ksVariation_16, self.ksVariation_16_Pre386, self.ksVariation_32_Addr16):
+                if self.sVariation in self.kdVariationsWithFlatAddr16:
                     self.aoParamRefs.append(ThreadedParamRef('bRm',     'uint8_t',  oStmt));
                     self.aoParamRefs.append(ThreadedParamRef('(uint16_t)uEffAddrInfo' ,
                                                              'uint16_t', oStmt, sStdRef = 'u16Disp'));
-                elif self.sVariation in (self.ksVariation_32, self.ksVariation_32_Flat, self.ksVariation_16_Addr32):
+                elif self.sVariation in self.kdVariationsWithFlatAddr32No64:
                     self.aoParamRefs.append(ThreadedParamRef('bRm',     'uint8_t',  oStmt));
                     self.aoParamRefs.append(ThreadedParamRef('(uint8_t)(uEffAddrInfo >> 32)',
                                                              'uint8_t',  oStmt, sStdRef = 'bSib'));
                     self.aoParamRefs.append(ThreadedParamRef('(uint32_t)uEffAddrInfo',
                                                              'uint32_t', oStmt, sStdRef = 'u32Disp'));
                 else:
-                    assert self.sVariation in (self.ksVariation_64, self.ksVariation_64_FsGs, self.ksVariation_64_Addr32);
+                    assert self.sVariation in self.kasVariationsWithAddressOnly64;
                     self.aoParamRefs.append(ThreadedParamRef('IEM_GET_MODRM_EX(pVCpu, bRm)',
                                                              'uint8_t',  oStmt, sStdRef = 'bRmEx'));
                     self.aoParamRefs.append(ThreadedParamRef('(uint8_t)(uEffAddrInfo >> 32)',
@@ -865,7 +970,7 @@ class ThreadedFunctionVariation(object):
                 aiSkipParams[idxReg] = True; # Skip the parameter below.
 
             # If in flat mode variation, ignore the effective segment parameter to memory MCs.
-            if (    self.sVariation in (self.ksVariation_64, self.ksVariation_32_Flat,)
+            if (    self.sVariation in self.kdVariationsWithFlatAddress
                 and oStmt.sName in self.kdMemMcToFlatInfo
                 and self.kdMemMcToFlatInfo[oStmt.sName][0] != -1):
                 aiSkipParams[self.kdMemMcToFlatInfo[oStmt.sName][0]] = True;
@@ -1041,9 +1146,6 @@ class ThreadedFunctionVariation(object):
         self.analyzeFindThreadedParamRefs(aoStmts);
         self.analyzeConsolidateThreadedParamRefs();
 
-        # Scan the code for IEM_CIMPL_F_ and other clues.
-        self.analyzeCodeOperation(aoStmts);
-
         # Morph the statement stream for the block into what we'll be using in the threaded function.
         (self.aoStmtsForThreadedFunction, iParamRef) = self.analyzeMorphStmtForThreaded(aoStmts);
         if iParamRef != len(self.aoParamRefs):
@@ -1059,7 +1161,8 @@ class ThreadedFunctionVariation(object):
         The sCallVarNm is for emitting
         """
         aoStmts = [
-            iai.McCppCall('IEM_MC2_BEGIN_EMIT_CALLS', ['1' if 'IEM_CIMPL_F_CHECK_IRQ_BEFORE' in self.dsCImplFlags else '0'],
+            iai.McCppCall('IEM_MC2_BEGIN_EMIT_CALLS',
+                          ['1' if 'IEM_CIMPL_F_CHECK_IRQ_BEFORE' in self.oParent.dsCImplFlags else '0'],
                           cchIndent = cchIndent), # Scope and a hook for various stuff.
         ];
 
@@ -1084,13 +1187,13 @@ class ThreadedFunctionVariation(object):
 
         # For CIMPL stuff, we need to consult the associated IEM_CIMPL_F_XXX
         # mask and maybe emit additional checks.
-        if (   'IEM_CIMPL_F_MODE'   in self.dsCImplFlags
-            or 'IEM_CIMPL_F_XCPT'   in self.dsCImplFlags
-            or 'IEM_CIMPL_F_VMEXIT' in self.dsCImplFlags):
+        if (   'IEM_CIMPL_F_MODE'   in self.oParent.dsCImplFlags
+            or 'IEM_CIMPL_F_XCPT'   in self.oParent.dsCImplFlags
+            or 'IEM_CIMPL_F_VMEXIT' in self.oParent.dsCImplFlags):
             aoStmts.append(iai.McCppCall('IEM_MC2_EMIT_CALL_1', ( 'kIemThreadedFunc_BltIn_CheckMode', 'pVCpu->iem.s.fExec', ),
                                          cchIndent = cchIndent));
 
-        sCImplFlags = ' | '.join(self.dsCImplFlags.keys());
+        sCImplFlags = ' | '.join(self.oParent.dsCImplFlags.keys());
         if not sCImplFlags:
             sCImplFlags = '0'
         aoStmts.append(iai.McCppCall('IEM_MC2_END_EMIT_CALLS', ( sCImplFlags, ), cchIndent = cchIndent)); # For closing the scope.
@@ -1100,7 +1203,7 @@ class ThreadedFunctionVariation(object):
         # Note! iemThreadedRecompilerMcDeferToCImpl0 duplicates work done here.
         asEndTbFlags      = [];
         asTbBranchedFlags = [];
-        for sFlag in self.dsCImplFlags:
+        for sFlag in self.oParent.dsCImplFlags:
             if self.kdCImplFlags[sFlag] is True:
                 asEndTbFlags.append(sFlag);
             elif sFlag.startswith('IEM_CIMPL_F_BRANCH_'):
@@ -1113,7 +1216,7 @@ class ThreadedFunctionVariation(object):
             aoStmts.append(iai.McCppGeneric('pVCpu->iem.s.fEndTb = true; /* %s */' % (','.join(asEndTbFlags),),
                                             cchIndent = cchIndent));
 
-        if 'IEM_CIMPL_F_CHECK_IRQ_AFTER' in self.dsCImplFlags:
+        if 'IEM_CIMPL_F_CHECK_IRQ_AFTER' in self.oParent.dsCImplFlags:
             aoStmts.append(iai.McCppGeneric('pVCpu->iem.s.cInstrTillIrqCheck = 0;', cchIndent = cchIndent));
 
         return aoStmts;
@@ -1124,14 +1227,18 @@ class ThreadedFunction(object):
     A threaded function.
     """
 
-    def __init__(self, oMcBlock):
-        self.oMcBlock       = oMcBlock      # type: IEMAllInstPython.McBlock
+    def __init__(self, oMcBlock: iai.McBlock) -> None:
+        self.oMcBlock       = oMcBlock      # type: iai.McBlock
+        # The remaining fields are only useful after analyze() has been called:
         ## Variations for this block. There is at least one.
-        self.aoVariations   = []            # type: list(ThreadedFunctionVariation)
+        self.aoVariations   = []            # type: List[ThreadedFunctionVariation]
         ## Variation dictionary containing the same as aoVariations.
-        self.dVariations    = {}            # type: dict(str,ThreadedFunctionVariation)
+        self.dVariations    = {}            # type: Dict[str, ThreadedFunctionVariation]
         ## Dictionary of local variables (IEM_MC_LOCAL[_CONST]) and call arguments (IEM_MC_ARG*).
-        self.dVariables     = {}            # type: dict(str,McStmtVar)
+        self.dVariables     = {}            # type: Dict[str, iai.McStmtVar]
+        ## Dictionary with any IEM_CIMPL_F_XXX flags explicitly advertised in the code block
+        ## and those determined by analyzeCodeOperation().
+        self.dsCImplFlags   = {}            # type: Dict[str, bool]
 
     @staticmethod
     def dummyInstance():
@@ -1147,7 +1254,7 @@ class ThreadedFunction(object):
         """ Emits a warning. """
         print('%s:%s: warning: %s' % (self.oMcBlock.sSrcFile, self.oMcBlock.iBeginLine, sMessage, ));
 
-    def analyzeFindVariablesAndCallArgs(self, aoStmts):
+    def analyzeFindVariablesAndCallArgs(self, aoStmts: List[iai.McStmt]) -> bool:
         """ Scans the statements for MC variables and call arguments. """
         for oStmt in aoStmts:
             if isinstance(oStmt, iai.McStmtVar):
@@ -1163,6 +1270,32 @@ class ThreadedFunction(object):
                 self.analyzeFindVariablesAndCallArgs(oStmt.aoElseBranch);
                 if len(self.dVariables) != cBefore:
                     raise Exception('Variables/arguments defined in conditional branches!');
+        return True;
+
+    def analyzeCodeOperation(self, aoStmts: List[iai.McStmt], fSeenConditional = False) -> bool:
+        """
+        Analyzes the code looking clues as to additional side-effects.
+
+        Currently this is simply looking for branching and adding the relevant
+        branch flags to dsCImplFlags.  ASSUMES the caller pre-populates the
+        dictionary with a copy of self.oMcBlock.dsCImplFlags.
+        """
+        for oStmt in aoStmts:
+            # Set IEM_IMPL_C_F_BRANCH if we see any branching MCs.
+            if oStmt.sName.startswith('IEM_MC_SET_RIP'):
+                assert not fSeenConditional;
+                self.dsCImplFlags['IEM_CIMPL_F_BRANCH_INDIRECT'] = True;
+            elif oStmt.sName.startswith('IEM_MC_REL_JMP'):
+                self.dsCImplFlags['IEM_CIMPL_F_BRANCH_RELATIVE'] = True;
+                if fSeenConditional:
+                    self.dsCImplFlags['IEM_CIMPL_F_BRANCH_CONDITIONAL'] = True;
+
+            # Process branches of conditionals recursively.
+            if isinstance(oStmt, iai.McStmtCond):
+                self.analyzeCodeOperation(oStmt.aoIfBranch, True);
+                if oStmt.aoElseBranch:
+                    self.analyzeCodeOperation(oStmt.aoElseBranch, True);
+
         return True;
 
     def analyze(self):
@@ -1184,40 +1317,53 @@ class ThreadedFunction(object):
         # Scan the statements for local variables and call arguments (self.dVariables).
         self.analyzeFindVariablesAndCallArgs(aoStmts);
 
+        # Scan the code for IEM_CIMPL_F_ and other clues.
+        self.dsCImplFlags = self.oMcBlock.dsCImplFlags.copy();
+        self.analyzeCodeOperation(aoStmts);
+
         # Create variations as needed.
         if iai.McStmt.findStmtByNames(aoStmts,
                                       { 'IEM_MC_DEFER_TO_CIMPL_0_RET': True,
                                         'IEM_MC_DEFER_TO_CIMPL_1_RET': True,
                                         'IEM_MC_DEFER_TO_CIMPL_2_RET': True,
                                         'IEM_MC_DEFER_TO_CIMPL_3_RET': True, }):
-            asVariations = [ThreadedFunctionVariation.ksVariation_Default,];
+            asVariations = (ThreadedFunctionVariation.ksVariation_Default,);
 
         elif iai.McStmt.findStmtByNames(aoStmts, {'IEM_MC_CALC_RM_EFF_ADDR' : True,}):
-            if 'IEM_MC_F_64BIT' in self.oMcBlock.dMcFlags:
+            if 'IEM_MC_F_64BIT' in self.oMcBlock.dsMcFlags:
                 asVariations = ThreadedFunctionVariation.kasVariationsWithAddressOnly64;
-            elif 'IEM_MC_F_NOT_64BIT' in self.oMcBlock.dMcFlags and 'IEM_MC_F_NOT_286_OR_OLDER' in self.oMcBlock.dMcFlags:
+            elif 'IEM_MC_F_NOT_64BIT' in self.oMcBlock.dsMcFlags and 'IEM_MC_F_NOT_286_OR_OLDER' in self.oMcBlock.dsMcFlags:
                 asVariations = ThreadedFunctionVariation.kasVariationsWithAddressNot286Not64;
-            elif 'IEM_MC_F_NOT_286_OR_OLDER' in self.oMcBlock.dMcFlags:
+            elif 'IEM_MC_F_NOT_286_OR_OLDER' in self.oMcBlock.dsMcFlags:
                 asVariations = ThreadedFunctionVariation.kasVariationsWithAddressNot286;
-            elif 'IEM_MC_F_NOT_64BIT' in self.oMcBlock.dMcFlags:
+            elif 'IEM_MC_F_NOT_64BIT' in self.oMcBlock.dsMcFlags:
                 asVariations = ThreadedFunctionVariation.kasVariationsWithAddressNot64;
-            elif 'IEM_MC_F_ONLY_8086' in self.oMcBlock.dMcFlags:
-                asVariations = [ThreadedFunctionVariation.ksVariation_16_Pre386,];
+            elif 'IEM_MC_F_ONLY_8086' in self.oMcBlock.dsMcFlags:
+                asVariations = ThreadedFunctionVariation.kasVariationsOnlyPre386;
             else:
                 asVariations = ThreadedFunctionVariation.kasVariationsWithAddress;
         else:
-            if 'IEM_MC_F_64BIT' in self.oMcBlock.dMcFlags:
+            if 'IEM_MC_F_64BIT' in self.oMcBlock.dsMcFlags:
                 asVariations = ThreadedFunctionVariation.kasVariationsWithoutAddressOnly64;
-            elif 'IEM_MC_F_NOT_64BIT' in self.oMcBlock.dMcFlags and 'IEM_MC_F_NOT_286_OR_OLDER' in self.oMcBlock.dMcFlags:
+            elif 'IEM_MC_F_NOT_64BIT' in self.oMcBlock.dsMcFlags and 'IEM_MC_F_NOT_286_OR_OLDER' in self.oMcBlock.dsMcFlags:
                 asVariations = ThreadedFunctionVariation.kasVariationsWithoutAddressNot286Not64;
-            elif 'IEM_MC_F_NOT_286_OR_OLDER' in self.oMcBlock.dMcFlags:
+            elif 'IEM_MC_F_NOT_286_OR_OLDER' in self.oMcBlock.dsMcFlags:
                 asVariations = ThreadedFunctionVariation.kasVariationsWithoutAddressNot286;
-            elif 'IEM_MC_F_NOT_64BIT' in self.oMcBlock.dMcFlags:
+            elif 'IEM_MC_F_NOT_64BIT' in self.oMcBlock.dsMcFlags:
                 asVariations = ThreadedFunctionVariation.kasVariationsWithoutAddressNot64;
-            elif 'IEM_MC_F_ONLY_8086' in self.oMcBlock.dMcFlags:
-                asVariations = [ThreadedFunctionVariation.ksVariation_16_Pre386,];
+            elif 'IEM_MC_F_ONLY_8086' in self.oMcBlock.dsMcFlags:
+                asVariations = ThreadedFunctionVariation.kasVariationsOnlyPre386;
             else:
                 asVariations = ThreadedFunctionVariation.kasVariationsWithoutAddress;
+
+        if not iai.McStmt.findStmtByNames(aoStmts,
+                                          { 'IEM_MC_ADVANCE_RIP_AND_FINISH': True,
+                                            'IEM_MC_REL_JMP_S8_AND_FINISH':  True,
+                                            'IEM_MC_REL_JMP_S16_AND_FINISH': True,
+                                            'IEM_MC_REL_JMP_S32_AND_FINISH': True,
+                                           }):
+            asVariations = [sVariation for sVariation in asVariations
+                            if sVariation not in ThreadedFunctionVariation.kdVariationsWithEflagsCheckingAndClearing];
 
         self.aoVariations = [ThreadedFunctionVariation(self, sVar) for sVar in asVariations];
 
@@ -1229,6 +1375,20 @@ class ThreadedFunction(object):
             oVariation.analyzeVariation(aoStmts);
 
         return True;
+
+    ## Used by emitThreadedCallStmts.
+    kdVariationsWithNeedForPrefixCheck = {
+        ThreadedFunctionVariation.ksVariation_64_Addr32:  True,
+        ThreadedFunctionVariation.ksVariation_64f_Addr32: True,
+        ThreadedFunctionVariation.ksVariation_64_FsGs:    True,
+        ThreadedFunctionVariation.ksVariation_64f_FsGs:   True,
+        ThreadedFunctionVariation.ksVariation_32_Addr16:  True,
+        ThreadedFunctionVariation.ksVariation_32f_Addr16: True,
+        ThreadedFunctionVariation.ksVariation_32_Flat:    True,
+        ThreadedFunctionVariation.ksVariation_32f_Flat:   True,
+        ThreadedFunctionVariation.ksVariation_16_Addr32:  True,
+        ThreadedFunctionVariation.ksVariation_16f_Addr32: True,
+    };
 
     def emitThreadedCallStmts(self):
         """
@@ -1304,17 +1464,16 @@ class ThreadedFunction(object):
         #
         fSimple = True;
         sSwitchValue  = '(pVCpu->iem.s.fExec & (IEM_F_MODE_CPUMODE_MASK | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK))';
-        if (   ThrdFnVar.ksVariation_64_Addr32 in dByVari
-            or ThrdFnVar.ksVariation_64_FsGs   in dByVari
-            or ThrdFnVar.ksVariation_32_Addr16 in dByVari
-            or ThrdFnVar.ksVariation_32_Flat   in dByVari
-            or ThrdFnVar.ksVariation_16_Addr32 in dByVari):
+        if dByVari.keys() & self.kdVariationsWithNeedForPrefixCheck.keys():
             sSwitchValue += ' | (pVCpu->iem.s.enmEffAddrMode == (pVCpu->iem.s.fExec & IEM_F_MODE_CPUMODE_MASK) ? 0 : 8)';
             # Accesses via FS and GS and CS goes thru non-FLAT functions. (CS
             # is not writable in 32-bit mode (at least), thus the penalty mode
             # for any accesses via it (simpler this way).)
             sSwitchValue += ' | (pVCpu->iem.s.iEffSeg < X86_SREG_FS && pVCpu->iem.s.iEffSeg != X86_SREG_CS ? 0 : 16)';
             fSimple       = False;                                              # threaded functions.
+        if dByVari.keys() & ThreadedFunctionVariation.kdVariationsWithEflagsCheckingAndClearing:
+            sSwitchValue += ' | ((pVCpu->iem.s.fTbPrevInstr & (IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_INHIBIT_SHADOW)) || ' \
+                          + '(pVCpu->iem.s.fExec & IEM_F_PENDING_BRK_MASK) ? 32 : 0)';
 
         #
         # Generate the case statements.
@@ -1329,28 +1488,53 @@ class ThreadedFunction(object):
                 Case('IEMMODE_64BIT | 8 | 16', None), # fall thru
                 Case('IEMMODE_64BIT | 8',   ThrdFnVar.ksVariation_64_Addr32),
             ]);
+            if ThreadedFunctionVariation.ksVariation_64f_Addr32 in dByVari:
+                aoCases.extend([
+                    Case('IEMMODE_64BIT | 32',       ThrdFnVar.ksVariation_64f),
+                    Case('IEMMODE_64BIT | 32 | 16',  ThrdFnVar.ksVariation_64f_FsGs),
+                    Case('IEMMODE_64BIT | 32 | 8 | 16', None), # fall thru
+                    Case('IEMMODE_64BIT | 32 | 8',   ThrdFnVar.ksVariation_64f_Addr32),
+                ]);
         elif ThrdFnVar.ksVariation_64 in dByVari:
             assert fSimple;
             aoCases.append(Case('IEMMODE_64BIT', ThrdFnVar.ksVariation_64));
+            if ThreadedFunctionVariation.ksVariation_64f in dByVari:
+                aoCases.append(Case('IEMMODE_64BIT | 32', ThrdFnVar.ksVariation_64f));
 
         if ThrdFnVar.ksVariation_32_Addr16 in dByVari:
             assert not fSimple;
             aoCases.extend([
                 Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK',         ThrdFnVar.ksVariation_32_Flat),
                 Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 16',    None), # fall thru
-                Case('IEMMODE_32BIT | 16',                                          None), # fall thru
+                Case('IEMMODE_32BIT                                       | 16',    None), # fall thru
                 Case('IEMMODE_32BIT',                                               ThrdFnVar.ksVariation_32),
                 Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 8',     None), # fall thru
                 Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 8 | 16',None), # fall thru
                 Case('IEMMODE_32BIT                                       | 8 | 16',None), # fall thru
                 Case('IEMMODE_32BIT                                       | 8',     ThrdFnVar.ksVariation_32_Addr16),
             ]);
+            if ThrdFnVar.ksVariation_32f_Addr16 in dByVari:
+                aoCases.extend([
+                    Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 32',         ThrdFnVar.ksVariation_32f_Flat),
+                    Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 32 | 16',    None), # fall thru
+                    Case('IEMMODE_32BIT                                       | 32 | 16',    None), # fall thru
+                    Case('IEMMODE_32BIT                                       | 32',         ThrdFnVar.ksVariation_32f),
+                    Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 32 | 8',     None), # fall thru
+                    Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 32 | 8 | 16',None), # fall thru
+                    Case('IEMMODE_32BIT                                       | 32 | 8 | 16',None), # fall thru
+                    Case('IEMMODE_32BIT                                       | 32 | 8',     ThrdFnVar.ksVariation_32f_Addr16),
+                ]);
         elif ThrdFnVar.ksVariation_32 in dByVari:
             assert fSimple;
             aoCases.extend([
                 Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK', None), # fall thru
                 Case('IEMMODE_32BIT',                                       ThrdFnVar.ksVariation_32),
             ]);
+            if ThrdFnVar.ksVariation_32f in dByVari:
+                aoCases.extend([
+                    Case('IEMMODE_32BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 32', None), # fall thru
+                    Case('IEMMODE_32BIT                                       | 32', ThrdFnVar.ksVariation_32f),
+                ]);
 
         if ThrdFnVar.ksVariation_16_Addr32 in dByVari:
             assert not fSimple;
@@ -1360,12 +1544,23 @@ class ThreadedFunction(object):
                 Case('IEMMODE_16BIT | 8 | 16',  None), # fall thru
                 Case('IEMMODE_16BIT | 8',       ThrdFnVar.ksVariation_16_Addr32),
             ]);
+            if ThrdFnVar.ksVariation_16f_Addr32 in dByVari:
+                aoCases.extend([
+                    Case('IEMMODE_16BIT | 32 | 16',      None), # fall thru
+                    Case('IEMMODE_16BIT | 32',           ThrdFnVar.ksVariation_16f),
+                    Case('IEMMODE_16BIT | 32 | 8 | 16',  None), # fall thru
+                    Case('IEMMODE_16BIT | 32 | 8',       ThrdFnVar.ksVariation_16f_Addr32),
+                ]);
         elif ThrdFnVar.ksVariation_16 in dByVari:
             assert fSimple;
             aoCases.append(Case('IEMMODE_16BIT', ThrdFnVar.ksVariation_16));
+            if ThrdFnVar.ksVariation_16f in dByVari:
+                aoCases.append(Case('IEMMODE_16BIT | 32', ThrdFnVar.ksVariation_16f));
 
         if ThrdFnVar.ksVariation_16_Pre386 in dByVari:
             aoCases.append(Case('IEMMODE_16BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK', ThrdFnVar.ksVariation_16_Pre386));
+        if ThrdFnVar.ksVariation_16f_Pre386 in dByVari:  # should be nested under previous if, but line too long.
+            aoCases.append(Case('IEMMODE_16BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 32', ThrdFnVar.ksVariation_16f_Pre386));
 
         #
         # If the case bodies are all the same, except for the function called,
@@ -1426,6 +1621,8 @@ class ThreadedFunction(object):
             oNewStmt = copy.deepcopy(oStmt);
             aoDecoderStmts.append(oNewStmt);
             #print('oNewStmt %s %s' % (oNewStmt.sName, len(oNewStmt.asParams),));
+            if oNewStmt.sName == 'IEM_MC_BEGIN' and self.dsCImplFlags:
+                oNewStmt.asParams[3] = ' | '.join(sorted(self.dsCImplFlags.keys()));
 
             # If we haven't emitted the threaded function call yet, look for
             # statements which it would naturally follow or preceed.
@@ -1469,11 +1666,15 @@ class ThreadedFunction(object):
 
         if len(self.oMcBlock.aoStmts) == 1:
             # IEM_MC_DEFER_TO_CIMPL_X_RET - need to wrap in {} to make it safe to insert into random code.
-            sCode = iai.McStmt.renderCodeForList(self.morphInputCode(self.oMcBlock.aoStmts)[0],
-                                                 cchIndent = cchIndent).replace('\n', ' /* gen */\n', 1);
-            sCode = ' ' * (min(cchIndent, 2) - 2) + '{\n' \
-                  + sCode \
-                  + ' ' * (min(cchIndent, 2) - 2) + '}\n';
+            sCode = ' ' * cchIndent + 'pVCpu->iem.s.fTbCurInstr = ';
+            if self.dsCImplFlags:
+                sCode += ' | '.join(sorted(self.dsCImplFlags.keys())) + ';\n';
+            else:
+                sCode += '0;\n';
+            sCode += iai.McStmt.renderCodeForList(self.morphInputCode(self.oMcBlock.aoStmts)[0],
+                                                  cchIndent = cchIndent).replace('\n', ' /* gen */\n', 1);
+            sIndent = ' ' * (min(cchIndent, 2) - 2);
+            sCode = sIndent + '{\n' + sCode + sIndent + '}\n';
             return sCode;
 
         # IEM_MC_BEGIN/END block
@@ -1491,10 +1692,10 @@ class IEMThreadedGenerator(object):
     """
 
     def __init__(self):
-        self.aoThreadedFuncs = []       # type: list(ThreadedFunction)
+        self.aoThreadedFuncs = []       # type: List[ThreadedFunction]
         self.oOptions        = None     # type: argparse.Namespace
-        self.aoParsers       = []       # type: list(IEMAllInstPython.SimpleParser)
-        self.aidxFirstFunctions = []    # type: list(int) ##< Runs parallel to aoParser giving the index of the first function.
+        self.aoParsers       = []       # type: List[IEMAllInstPython.SimpleParser]
+        self.aidxFirstFunctions = []    # type: List[int] ##< Runs parallel to aoParser giving the index of the first function.
 
     #
     # Processing.
@@ -2069,6 +2270,7 @@ class IEMThreadedGenerator(object):
                         assert (   sModified.startswith('IEM_MC_BEGIN')
                                 or (sModified.find('IEM_MC_DEFER_TO_CIMPL_') > 0 and sModified.strip().startswith('{\n'))
                                 or sModified.startswith('pVCpu->iem.s.fEndTb = true')
+                                or sModified.startswith('pVCpu->iem.s.fTbCurInstr = ')
                                 ), 'sModified="%s"' % (sModified,);
                         oOut.write(sModified);
 

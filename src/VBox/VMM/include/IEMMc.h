@@ -40,8 +40,8 @@
  * @{
  */
 
-#define IEM_MC_BEGIN(a_cArgs, a_cLocals, a_fFlags)      {
-#define IEM_MC_END()                                    }
+#define IEM_MC_BEGIN(a_cArgs, a_cLocals, a_fMcFlags, a_fCImplFlags) {
+#define IEM_MC_END()                                                }
 
 /** Internal macro. */
 #define IEM_MC_RETURN_ON_FAILURE(a_Expr) \
@@ -2002,30 +2002,32 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_CIMPL_F_MODE                RT_BIT_32(5)
 /** May change significant portions of RFLAGS. */
 #define IEM_CIMPL_F_RFLAGS              RT_BIT_32(6)
-/** May change the status bits (X86_EFL_STATUS_BITS) in RFLAGS . */
+/** May change the status bits (X86_EFL_STATUS_BITS) in RFLAGS. */
 #define IEM_CIMPL_F_STATUS_FLAGS        RT_BIT_32(7)
+/** May trigger interrupt shadowing. */
+#define IEM_CIMPL_F_INHIBIT_SHADOW      RT_BIT_32(8)
 /** May enable interrupts, so recheck IRQ immediately afterwards executing
  *  the instruction. */
-#define IEM_CIMPL_F_CHECK_IRQ_AFTER     RT_BIT_32(8)
+#define IEM_CIMPL_F_CHECK_IRQ_AFTER     RT_BIT_32(9)
 /** May disable interrupts, so recheck IRQ immediately before executing the
  *  instruction. */
-#define IEM_CIMPL_F_CHECK_IRQ_BEFORE    RT_BIT_32(9)
+#define IEM_CIMPL_F_CHECK_IRQ_BEFORE    RT_BIT_32(10)
 /** Convenience: Check for IRQ both before and after an instruction. */
 #define IEM_CIMPL_F_CHECK_IRQ_BEFORE_AND_AFTER (IEM_CIMPL_F_CHECK_IRQ_BEFORE | IEM_CIMPL_F_CHECK_IRQ_AFTER)
 /** May trigger a VM exit (treated like IEM_CIMPL_F_MODE atm). */
-#define IEM_CIMPL_F_VMEXIT              RT_BIT_32(10)
+#define IEM_CIMPL_F_VMEXIT              RT_BIT_32(11)
 /** May modify FPU state.
  * @todo Not sure if this is useful yet.  */
-#define IEM_CIMPL_F_FPU                 RT_BIT_32(11)
+#define IEM_CIMPL_F_FPU                 RT_BIT_32(12)
 /** REP prefixed instruction which may yield before updating PC.
  * @todo Not sure if this is useful, REP functions now return non-zero
  *       status if they don't update the PC. */
-#define IEM_CIMPL_F_REP                 RT_BIT_32(12)
+#define IEM_CIMPL_F_REP                 RT_BIT_32(13)
 /** I/O instruction.
  * @todo Not sure if this is useful yet.  */
-#define IEM_CIMPL_F_IO                  RT_BIT_32(13)
+#define IEM_CIMPL_F_IO                  RT_BIT_32(14)
 /** Force end of TB after the instruction. */
-#define IEM_CIMPL_F_END_TB              RT_BIT_32(14)
+#define IEM_CIMPL_F_END_TB              RT_BIT_32(15)
 /** Convenience: Raise exception (technically unnecessary, since it shouldn't return VINF_SUCCESS). */
 #define IEM_CIMPL_F_XCPT \
     (IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT)

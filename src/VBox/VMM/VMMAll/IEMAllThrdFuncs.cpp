@@ -79,16 +79,35 @@
 /** Variant of IEM_MC_ADVANCE_RIP_AND_FINISH with instruction length as param
  *  and only used when we're in 16-bit code on a pre-386 CPU. */
 #define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC16(a_cbInstr) \
-    return iemRegAddToIp16AndFinishingClearingRF(pVCpu, a_cbInstr)
+    return iemRegAddToIp16AndFinishingNoFlags(pVCpu, a_cbInstr)
 
 /** Variant of IEM_MC_ADVANCE_RIP_AND_FINISH with instruction length as param
  *  and used for 16-bit and 32-bit code on 386 and later CPUs. */
 #define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC32(a_cbInstr) \
-    return iemRegAddToEip32AndFinishingClearingRF(pVCpu, a_cbInstr)
+    return iemRegAddToEip32AndFinishingNoFlags(pVCpu, a_cbInstr)
 
 /** Variant of IEM_MC_ADVANCE_RIP_AND_FINISH with instruction length as param
  *  and only used when we're in 64-bit code. */
 #define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC64(a_cbInstr) \
+    return iemRegAddToRip64AndFinishingNoFlags(pVCpu, a_cbInstr)
+
+
+/** Variant of IEM_MC_ADVANCE_RIP_AND_FINISH with instruction length as param
+ *  and only used when we're in 16-bit code on a pre-386 CPU and we need to
+ *  check and clear flags. */
+#define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC16_WITH_FLAGS(a_cbInstr) \
+    return iemRegAddToIp16AndFinishingClearingRF(pVCpu, a_cbInstr)
+
+/** Variant of IEM_MC_ADVANCE_RIP_AND_FINISH with instruction length as param
+ *  and used for 16-bit and 32-bit code on 386 and later CPUs and we need to
+ *  check and clear flags. */
+#define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_cbInstr) \
+    return iemRegAddToEip32AndFinishingClearingRF(pVCpu, a_cbInstr)
+
+/** Variant of IEM_MC_ADVANCE_RIP_AND_FINISH with instruction length as param
+ *  and only used when we're in 64-bit code and we need to check and clear
+ *  flags. */
+#define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_cbInstr) \
     return iemRegAddToRip64AndFinishingClearingRF(pVCpu, a_cbInstr)
 
 #undef  IEM_MC_ADVANCE_RIP_AND_FINISH
@@ -97,17 +116,36 @@
 /** Variant of IEM_MC_REL_JMP_S8_AND_FINISH with instruction length as extra
  *  parameter, for use in 16-bit code on a pre-386 CPU. */
 #define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC16(a_i8, a_cbInstr) \
-    return iemRegIp16RelativeJumpS8AndFinishClearingRF(pVCpu, a_cbInstr, (a_i8))
+    return iemRegIp16RelativeJumpS8AndFinishNoFlags(pVCpu, a_cbInstr, (a_i8))
 
 /** Variant of IEM_MC_REL_JMP_S8_AND_FINISH with instruction length and operand
  * size as extra parameters, for use in 16-bit and 32-bit code on 386 and
  * later CPUs. */
 #define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC32(a_i8, a_cbInstr, a_enmEffOpSize) \
-    return iemRegEip32RelativeJumpS8AndFinishClearingRF(pVCpu, a_cbInstr, (a_i8), a_enmEffOpSize)
+    return iemRegEip32RelativeJumpS8AndFinishNoFlags(pVCpu, a_cbInstr, (a_i8), a_enmEffOpSize)
 
 /** Variant of IEM_MC_REL_JMP_S8_AND_FINISH with instruction length and operand
  * size as extra parameters, for use in 64-bit code. */
 #define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC64(a_i8, a_cbInstr, a_enmEffOpSize) \
+    return iemRegRip64RelativeJumpS8AndFinishNoFlags(pVCpu, a_cbInstr, (a_i8), a_enmEffOpSize)
+
+
+/** Variant of IEM_MC_REL_JMP_S8_AND_FINISH with instruction length as extra
+ *  parameter, for use in 16-bit code on a pre-386 CPU and we need to check and
+ *  clear flags. */
+#define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC16_WITH_FLAGS(a_i8, a_cbInstr) \
+    return iemRegIp16RelativeJumpS8AndFinishClearingRF(pVCpu, a_cbInstr, (a_i8))
+
+/** Variant of IEM_MC_REL_JMP_S8_AND_FINISH with instruction length and operand
+ * size as extra parameters, for use in 16-bit and 32-bit code on 386 and
+ * later CPUs and we need to check and clear flags. */
+#define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_i8, a_cbInstr, a_enmEffOpSize) \
+    return iemRegEip32RelativeJumpS8AndFinishClearingRF(pVCpu, a_cbInstr, (a_i8), a_enmEffOpSize)
+
+/** Variant of IEM_MC_REL_JMP_S8_AND_FINISH with instruction length and operand
+ * size as extra parameters, for use in 64-bit code and we need to check and
+ * clear flags. */
+#define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_i8, a_cbInstr, a_enmEffOpSize) \
     return iemRegRip64RelativeJumpS8AndFinishClearingRF(pVCpu, a_cbInstr, (a_i8), a_enmEffOpSize)
 
 #undef  IEM_MC_REL_JMP_S8_AND_FINISH
@@ -116,16 +154,34 @@
 /** Variant of IEM_MC_REL_JMP_S16_AND_FINISH with instruction length as
  *  param, for use in 16-bit code on a pre-386 CPU. */
 #define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC16(a_i16, a_cbInstr) \
-    return iemRegEip32RelativeJumpS16AndFinishClearingRF(pVCpu, a_cbInstr, (a_i16))
+    return iemRegEip32RelativeJumpS16AndFinishNoFlags(pVCpu, a_cbInstr, (a_i16))
 
 /** Variant of IEM_MC_REL_JMP_S16_AND_FINISH with instruction length as
  *  param, for use in 16-bit and 32-bit code on 386 and later CPUs. */
 #define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC32(a_i16, a_cbInstr) \
-    return iemRegEip32RelativeJumpS16AndFinishClearingRF(pVCpu, a_cbInstr, (a_i16))
+    return iemRegEip32RelativeJumpS16AndFinishNoFlags(pVCpu, a_cbInstr, (a_i16))
 
 /** Variant of IEM_MC_REL_JMP_S16_AND_FINISH with instruction length as
  *  param, for use in 64-bit code. */
 #define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC64(a_i16, a_cbInstr) \
+    return iemRegRip64RelativeJumpS16AndFinishNoFlags(pVCpu, a_cbInstr, (a_i16))
+
+
+/** Variant of IEM_MC_REL_JMP_S16_AND_FINISH with instruction length as
+ *  param, for use in 16-bit code on a pre-386 CPU and we need to check and
+ *  clear flags. */
+#define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC16_WITH_FLAGS(a_i16, a_cbInstr) \
+    return iemRegEip32RelativeJumpS16AndFinishClearingRF(pVCpu, a_cbInstr, (a_i16))
+
+/** Variant of IEM_MC_REL_JMP_S16_AND_FINISH with instruction length as
+ *  param, for use in 16-bit and 32-bit code on 386 and later CPUs and we need
+ *  to check and clear flags. */
+#define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_i16, a_cbInstr) \
+    return iemRegEip32RelativeJumpS16AndFinishClearingRF(pVCpu, a_cbInstr, (a_i16))
+
+/** Variant of IEM_MC_REL_JMP_S16_AND_FINISH with instruction length as
+ *  param, for use in 64-bit code and we need to check and clear flags. */
+#define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_i16, a_cbInstr) \
     return iemRegRip64RelativeJumpS16AndFinishClearingRF(pVCpu, a_cbInstr, (a_i16))
 
 #undef  IEM_MC_REL_JMP_S16_AND_FINISH
@@ -140,11 +196,30 @@
 /** Variant of IEM_MC_REL_JMP_S32_AND_FINISH with instruction length as
  *  an extra parameter, for use in 16-bit and 32-bit code on 386+. */
 #define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC32(a_i32, a_cbInstr) \
-    return iemRegEip32RelativeJumpS32AndFinishClearingRF(pVCpu, a_cbInstr, (a_i32))
+    return iemRegEip32RelativeJumpS32AndFinishNoFlags(pVCpu, a_cbInstr, (a_i32))
 
 /** Variant of IEM_MC_REL_JMP_S32_AND_FINISH with instruction length as
  *  an extra parameter, for use in 64-bit code. */
 #define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC64(a_i32, a_cbInstr) \
+    return iemRegRip64RelativeJumpS32AndFinishNoFlags(pVCpu, a_cbInstr, (a_i32))
+
+
+/** Variant of IEM_MC_REL_JMP_S32_AND_FINISH with instruction length as
+ *  an extra parameter - dummy for pre-386 variations not eliminated by the
+ *  python script. */
+#define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC16_WITH_FLAGS(a_i32, a_cbInstr) \
+    do { RT_NOREF(pVCpu, a_i32, a_cbInstr); AssertFailedReturn(VERR_IEM_IPE_9); } while (0)
+
+/** Variant of IEM_MC_REL_JMP_S32_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 16-bit and 32-bit code on 386+ and we need
+ *  to check and clear flags. */
+#define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_i32, a_cbInstr) \
+    return iemRegEip32RelativeJumpS32AndFinishClearingRF(pVCpu, a_cbInstr, (a_i32))
+
+/** Variant of IEM_MC_REL_JMP_S32_AND_FINISH with instruction length as
+ *  an extra parameter, for use in 64-bit codeand we need to check and clear
+ *  flags. */
+#define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_i32, a_cbInstr) \
     return iemRegRip64RelativeJumpS32AndFinishClearingRF(pVCpu, a_cbInstr, (a_i32))
 
 #undef  IEM_MC_REL_JMP_S32_AND_FINISH
@@ -154,27 +229,9 @@
 #define IEM_MC_CALC_RM_EFF_ADDR_THREADED_16(a_GCPtrEff, a_bRm, a_u16Disp) \
     (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr16(pVCpu, a_bRm, a_u16Disp)
 
-/** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters, pre-386 16-bit. */
-#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_16_PRE386(a_GCPtrEff, a_bRm, a_u16Disp) \
-    IEM_MC_CALC_RM_EFF_ADDR_THREADED_16(a_GCPtrEff, a_bRm, a_u16Disp)
-
-/** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters, 32-bit with address prefix. */
-#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_32_ADDR16(a_GCPtrEff, a_bRm, a_u16Disp) \
-    IEM_MC_CALC_RM_EFF_ADDR_THREADED_16(a_GCPtrEff, a_bRm, a_u16Disp)
-
-
 /** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters, 32-bit. */
 #define IEM_MC_CALC_RM_EFF_ADDR_THREADED_32(a_GCPtrEff, a_bRm, a_uSibAndRspOffset, a_u32Disp) \
     (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr32(pVCpu, a_bRm, a_uSibAndRspOffset, a_u32Disp)
-
-/** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters, 32-bit flat. */
-#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_32_FLAT(a_GCPtrEff, a_bRm, a_uSibAndRspOffset, a_u32Disp) \
-    (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr32(pVCpu, a_bRm, a_uSibAndRspOffset, a_u32Disp)
-
-/** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters, 16-bit with address prefix. */
-#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_16_ADDR32(a_GCPtrEff, a_bRm, a_uSibAndRspOffset, a_u32Disp) \
-    (a_GCPtrEff) = iemOpHlpCalcRmEffAddrThreadedAddr32(pVCpu, a_bRm, a_uSibAndRspOffset, a_u32Disp)
-
 
 /** Variant of IEM_MC_CALC_RM_EFF_ADDR with additional parameters. */
 #define IEM_MC_CALC_RM_EFF_ADDR_THREADED_64(a_GCPtrEff, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm) \

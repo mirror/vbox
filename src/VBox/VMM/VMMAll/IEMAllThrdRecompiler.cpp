@@ -9,7 +9,7 @@
  *      - Level 3  (Log3) : More detailed execution state info. [same as IEM]
  *      - Level 4  (Log4) : Decoding mnemonics w/ EIP. [same as IEM]
  *      - Level 5  (Log5) : Decoding details. [same as IEM]
- *      - Level 6  (Log6) :
+ *      - Level 6  (Log6) : TB opcode range management.
  *      - Level 7  (Log7) : TB obsoletion.
  *      - Level 8  (Log8) : TB compilation.
  *      - Level 9  (Log9) : TB exec.
@@ -1368,8 +1368,9 @@ void iemThreadedTbObsolete(PVMCPUCC pVCpu, PIEMTB pTb, bool fSafeToFree)
  * Logs the current instruction.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pszFunction The IEM function doing the execution.
+ * @param   idxInstr    The instruction number in the block.
  */
-static void iemThreadedLogCurInstr(PVMCPUCC pVCpu, const char *pszFunction) RT_NOEXCEPT
+static void iemThreadedLogCurInstr(PVMCPUCC pVCpu, const char *pszFunction, uint32_t idxInstr) RT_NOEXCEPT
 {
 # ifdef IN_RING3
     if (LogIs2Enabled())
@@ -1381,13 +1382,13 @@ static void iemThreadedLogCurInstr(PVMCPUCC pVCpu, const char *pszFunction) RT_N
                            szInstr, sizeof(szInstr), &cbInstr);
 
         PCX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
-        Log2(("**** %s fExec=%x pTb=%p\n"
+        Log2(("**** %s fExec=%x pTb=%p #%u\n"
               " eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
               " eip=%08x esp=%08x ebp=%08x iopl=%d tr=%04x\n"
               " cs=%04x ss=%04x ds=%04x es=%04x fs=%04x gs=%04x efl=%08x\n"
               " fsw=%04x fcw=%04x ftw=%02x mxcsr=%04x/%04x\n"
               " %s\n"
-              , pszFunction, pVCpu->iem.s.fExec, pVCpu->iem.s.pCurTbR3,
+              , pszFunction, pVCpu->iem.s.fExec, pVCpu->iem.s.pCurTbR3, idxInstr,
               pVCpu->cpum.GstCtx.eax, pVCpu->cpum.GstCtx.ebx, pVCpu->cpum.GstCtx.ecx, pVCpu->cpum.GstCtx.edx, pVCpu->cpum.GstCtx.esi, pVCpu->cpum.GstCtx.edi,
               pVCpu->cpum.GstCtx.eip, pVCpu->cpum.GstCtx.esp, pVCpu->cpum.GstCtx.ebp, pVCpu->cpum.GstCtx.eflags.Bits.u2IOPL, pVCpu->cpum.GstCtx.tr.Sel,
               pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.ss.Sel, pVCpu->cpum.GstCtx.ds.Sel, pVCpu->cpum.GstCtx.es.Sel,
@@ -1476,6 +1477,9 @@ DECL_FORCE_INLINE(void) iemThreadedCompileInitDecoder(PVMCPUCC pVCpu, bool const
         pVCpu->iem.s.fTbCrossedPage         = false;
         pVCpu->iem.s.cInstrTillIrqCheck     = !(fExtraFlags & IEMTB_F_INHIBIT_SHADOW) ? 32 : 0;
         pVCpu->iem.s.fTbCurInstrIsSti       = false;
+        /* Force RF clearing and TF checking on first instruction in the block
+           as we don't really know what came before and should assume the worst: */
+        pVCpu->iem.s.fTbPrevInstr           = IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_END_TB;
     }
     else
     {
@@ -1483,7 +1487,9 @@ DECL_FORCE_INLINE(void) iemThreadedCompileInitDecoder(PVMCPUCC pVCpu, bool const
         Assert(pVCpu->iem.s.rcPassUp        == VINF_SUCCESS);
         Assert(pVCpu->iem.s.fEndTb          == false);
         Assert(pVCpu->iem.s.fTbCrossedPage  == false);
+        pVCpu->iem.s.fTbPrevInstr           = pVCpu->iem.s.fTbCurInstr;
     }
+    pVCpu->iem.s.fTbCurInstr                = 0;
 
 #ifdef DBGFTRACE_ENABLED
     switch (IEM_GET_CPU_MODE(pVCpu))
@@ -1608,6 +1614,7 @@ DECLINLINE(void) iemThreadedCopyOpcodeBytesInline(PCVMCPUCC pVCpu, uint8_t *pbDs
  */
 bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
 {
+    Log6(("%04x:%08RX64: iemThreadedCompileBeginEmitCallsComplications\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
     Assert((pVCpu->iem.s.GCPhysInstrBuf & GUEST_PAGE_OFFSET_MASK) == 0);
 #if 0
     if (pVCpu->cpum.GstCtx.rip >= 0xc0000000 && !LogIsEnabled())
@@ -1692,7 +1699,7 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
      *        load CS which should technically be considered indirect since the
      *        GDT/LDT entry's base address can be modified independently from
      *        the code. */
-    if (pVCpu->iem.s.fTbBranched != 0)
+    if (pVCpu->iem.s.fTbBranched != IEMBRANCHED_F_NO)
     {
         if (   !pVCpu->iem.s.fTbCrossedPage       /* 1a */
             || pVCpu->iem.s.offCurInstrStart >= 0 /* 1b */ )
@@ -1745,6 +1752,9 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
                 pTb->aRanges[idxRange].cbOpcodes   = cbInstr;
                 pTb->aRanges[idxRange].u2Unused    = 0;
                 pTb->cRanges++;
+                Log6(("%04x:%08RX64: new range #%u same page: offPhysPage=%#x offOpcodes=%#x\n",
+                      pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, idxRange, pTb->aRanges[idxRange].offPhysPage,
+                      pTb->aRanges[idxRange].offOpcodes));
             }
             else
             {
@@ -1874,6 +1884,9 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
             pTb->aRanges[idxRange].cbOpcodes   = cbInstr;
             pTb->aRanges[idxRange].u2Unused    = 0;
             pTb->cRanges++;
+            Log6(("%04x:%08RX64: new range #%u new page (a) %u/%RGp: offPhysPage=%#x offOpcodes=%#x\n",
+                  pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, idxRange,  pTb->aRanges[idxRange].idxPhysPage, GCPhysNew,
+                  pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].offOpcodes));
 
             /* Determin which function we need to load & check. */
             pCall->enmFunction = pTb->fFlags & IEMTB_F_CS_LIM_CHECKS
@@ -1897,6 +1910,9 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
             pTb->aRanges[idxRange].cbOpcodes      = cbInstr   - cbStartPage;
             pTb->aRanges[idxRange].u2Unused       = 0;
             pTb->cRanges++;
+            Log6(("%04x:%08RX64: new range #%u new page (b) %u/%RGp: offPhysPage=%#x offOpcodes=%#x\n",
+                  pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, idxRange,  pTb->aRanges[idxRange].idxPhysPage, GCPhysNew,
+                  pTb->aRanges[idxRange].offPhysPage, pTb->aRanges[idxRange].offOpcodes));
 
             /* Determin which function we need to load & check. */
             if (pVCpu->iem.s.fTbCheckOpcodes)
@@ -2136,7 +2152,7 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
     {
         /* Process the next instruction. */
 #ifdef LOG_ENABLED
-        iemThreadedLogCurInstr(pVCpu, "CC");
+        iemThreadedLogCurInstr(pVCpu, "CC", pTb->cInstructions);
         uint16_t const uCsLog  = pVCpu->cpum.GstCtx.cs.Sel;
         uint64_t const uRipLog = pVCpu->cpum.GstCtx.rip;
 #endif
@@ -2250,7 +2266,7 @@ static VBOXSTRICTRC iemTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_MAY_LONGJ
     {
         pVCpu->iem.s.cTbExecNative++;
 # ifdef LOG_ENABLED
-        iemThreadedLogCurInstr(pVCpu, "EXn");
+        iemThreadedLogCurInstr(pVCpu, "EXn", 0);
 # endif
         VBOXSTRICTRC const rcStrict = ((PFNIEMTBNATIVE)pTb->Native.paInstructions)(pVCpu);
         if (RT_LIKELY(   rcStrict == VINF_SUCCESS
@@ -2287,7 +2303,7 @@ static VBOXSTRICTRC iemTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_MAY_LONGJ
             if (pVCpu->cpum.GstCtx.rip != uRipPrev)
             {
                 uRipPrev = pVCpu->cpum.GstCtx.rip;
-                iemThreadedLogCurInstr(pVCpu, "EXt");
+                iemThreadedLogCurInstr(pVCpu, "EXt", pTb->Thrd.cCalls - cCallsLeft - 1);
             }
             Log9(("%04x:%08RX64: #%d/%d - %d %s\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
                   pTb->Thrd.cCalls - cCallsLeft - 1, pCallEntry->idxInstr, pCallEntry->enmFunction,

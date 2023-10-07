@@ -2188,6 +2188,69 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToIp16AndFinishingClearingRF(PVMCPUCC p
 
 
 /**
+ * Tail method for a finish function that does't clear flags or raise \#DB.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegFinishNoFlags(PVMCPUCC pVCpu) RT_NOEXCEPT
+{
+    AssertCompile(CPUMCTX_INHIBIT_SHADOW < UINT32_MAX);
+    Assert(!(  pVCpu->cpum.GstCtx.eflags.uBoth
+             & (X86_EFL_TF | X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW | CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_DBG_DBGF_MASK)) );
+    RT_NOREF(pVCpu);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Updates the RIP to point to the next instruction, but does not need to clear
+ * EFLAGS.RF or CPUMCTX_INHIBIT_SHADOW nor check for debug flags.
+ *
+ * Only called from 64-bit code.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             The number of bytes to add.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToRip64AndFinishingNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXCEPT
+{
+    pVCpu->cpum.GstCtx.rip = pVCpu->cpum.GstCtx.rip + cbInstr;
+    return iemRegFinishNoFlags(pVCpu);
+}
+
+
+/**
+ * Updates the EIP to point to the next instruction, but does not need to clear
+ * EFLAGS.RF or CPUMCTX_INHIBIT_SHADOW nor check for debug flags.
+ *
+ * This is never from 64-bit code.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             The number of bytes to add.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToEip32AndFinishingNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXCEPT
+{
+    pVCpu->cpum.GstCtx.rip = (uint32_t)(pVCpu->cpum.GstCtx.eip + cbInstr);
+    return iemRegFinishNoFlags(pVCpu);
+}
+
+
+/**
+ * Updates the IP to point to the next instruction, but does not need to clear
+ * EFLAGS.RF or CPUMCTX_INHIBIT_SHADOW nor check for debug flags.
+ *
+ * This is only ever used from 16-bit code on a pre-386 CPU.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             The number of bytes to add.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegAddToIp16AndFinishingNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr) RT_NOEXCEPT
+{
+    pVCpu->cpum.GstCtx.rip = (uint16_t)(pVCpu->cpum.GstCtx.ip + cbInstr);
+    return iemRegFinishNoFlags(pVCpu);
+}
+
+
+/**
  * Adds a 8-bit signed jump offset to RIP from 64-bit code.
  *
  * May raise a \#GP(0) if the new RIP is non-canonical or outside the code
@@ -2294,6 +2357,102 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegIp16RelativeJumpS8AndFinishClearingRF(PVMC
 
 
 /**
+ * Adds a 8-bit signed jump offset to RIP from 64-bit code, no checking or
+ * clearing of flags.
+ *
+ * May raise a \#GP(0) if the new RIP is non-canonical or outside the code
+ * segment limit.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             Instruction size.
+ * @param   offNextInstr        The offset of the next instruction.
+ * @param   enmEffOpSize        Effective operand size.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegRip64RelativeJumpS8AndFinishNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr, int8_t offNextInstr,
+                                                                          IEMMODE enmEffOpSize) RT_NOEXCEPT
+{
+    Assert(IEM_IS_64BIT_CODE(pVCpu));
+    Assert(enmEffOpSize == IEMMODE_64BIT || enmEffOpSize == IEMMODE_16BIT);
+
+    uint64_t uNewRip = pVCpu->cpum.GstCtx.rip + cbInstr + (int64_t)offNextInstr;
+    if (enmEffOpSize == IEMMODE_16BIT)
+        uNewRip &= UINT16_MAX;
+
+    if (RT_LIKELY(IEM_IS_CANONICAL(uNewRip)))
+        pVCpu->cpum.GstCtx.rip = uNewRip;
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+
+#ifndef IEM_WITH_CODE_TLB
+    iemOpcodeFlushLight(pVCpu, cbInstr);
+#endif
+    return iemRegFinishNoFlags(pVCpu);
+}
+
+
+/**
+ * Adds a 8-bit signed jump offset to EIP, on 386 or later from 16-bit or 32-bit
+ * code (never 64-bit), no checking or clearing of flags.
+ *
+ * May raise a \#GP(0) if the new RIP is non-canonical or outside the code
+ * segment limit.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             Instruction size.
+ * @param   offNextInstr        The offset of the next instruction.
+ * @param   enmEffOpSize        Effective operand size.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegEip32RelativeJumpS8AndFinishNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr, int8_t offNextInstr,
+                                                                          IEMMODE enmEffOpSize) RT_NOEXCEPT
+{
+    Assert(!IEM_IS_64BIT_CODE(pVCpu));
+    Assert(enmEffOpSize == IEMMODE_32BIT || enmEffOpSize == IEMMODE_16BIT);
+
+    uint32_t uNewEip = pVCpu->cpum.GstCtx.eip + cbInstr + (int32_t)offNextInstr;
+    if (enmEffOpSize == IEMMODE_16BIT)
+        uNewEip &= UINT16_MAX;
+    if (RT_LIKELY(uNewEip <= pVCpu->cpum.GstCtx.cs.u32Limit))
+        pVCpu->cpum.GstCtx.rip = uNewEip;
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+
+#ifndef IEM_WITH_CODE_TLB
+    iemOpcodeFlushLight(pVCpu, cbInstr);
+#endif
+    return iemRegFinishNoFlags(pVCpu);
+}
+
+
+/**
+ * Adds a 8-bit signed jump offset to IP, on a pre-386 CPU, no checking or
+ * clearing of flags.
+ *
+ * May raise a \#GP(0) if the new RIP is non-canonical or outside the code
+ * segment limit.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             Instruction size.
+ * @param   offNextInstr        The offset of the next instruction.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegIp16RelativeJumpS8AndFinishNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr,
+                                                                         int8_t offNextInstr) RT_NOEXCEPT
+{
+    Assert(!IEM_IS_64BIT_CODE(pVCpu));
+
+    uint16_t const uNewIp = pVCpu->cpum.GstCtx.ip + cbInstr + (int16_t)offNextInstr;
+    if (RT_LIKELY(uNewIp <= pVCpu->cpum.GstCtx.cs.u32Limit))
+        pVCpu->cpum.GstCtx.rip = uNewIp;
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+
+#ifndef IEM_WITH_CODE_TLB
+    iemOpcodeFlushLight(pVCpu, cbInstr);
+#endif
+    return iemRegFinishNoFlags(pVCpu);
+}
+
+
+/**
  * Adds a 16-bit signed jump offset to RIP from 64-bit code.
  *
  * @returns Strict VBox status code.
@@ -2352,6 +2511,62 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegEip32RelativeJumpS16AndFinishClearingRF(PV
      * Clear RF and finish the instruction (maybe raise #DB).
      */
     return iemRegFinishClearingRF(pVCpu);
+}
+
+
+/**
+ * Adds a 16-bit signed jump offset to RIP from 64-bit code, no checking or
+ * clearing of flags.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             Instruction size.
+ * @param   offNextInstr        The offset of the next instruction.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegRip64RelativeJumpS16AndFinishNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr,
+                                                                           int16_t offNextInstr) RT_NOEXCEPT
+{
+    Assert(IEM_IS_64BIT_CODE(pVCpu));
+
+    pVCpu->cpum.GstCtx.rip = (uint16_t)(pVCpu->cpum.GstCtx.ip + cbInstr + offNextInstr);
+
+#ifndef IEM_WITH_CODE_TLB
+    iemOpcodeFlushLight(pVCpu, cbInstr);
+#endif
+    return iemRegFinishNoFlags(pVCpu);
+}
+
+
+/**
+ * Adds a 16-bit signed jump offset to EIP from 16-bit or 32-bit code,
+ * no checking or clearing of flags.
+ *
+ * May raise a \#GP(0) if the new RIP is non-canonical or outside the code
+ * segment limit.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             Instruction size.
+ * @param   offNextInstr        The offset of the next instruction.
+ *
+ * @note    This is also used by 16-bit code in pre-386 mode, as the code is
+ *          identical.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegEip32RelativeJumpS16AndFinishNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr,
+                                                                           int16_t offNextInstr) RT_NOEXCEPT
+{
+    Assert(!IEM_IS_64BIT_CODE(pVCpu));
+
+    uint16_t const uNewIp = pVCpu->cpum.GstCtx.ip + cbInstr + offNextInstr;
+    if (RT_LIKELY(uNewIp <= pVCpu->cpum.GstCtx.cs.u32Limit))
+        pVCpu->cpum.GstCtx.rip = uNewIp;
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+
+#ifndef IEM_WITH_CODE_TLB
+    iemOpcodeFlushLight(pVCpu, cbInstr);
+#endif
+    return iemRegFinishNoFlags(pVCpu);
 }
 
 
@@ -2427,6 +2642,75 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegEip32RelativeJumpS32AndFinishClearingRF(PV
      * Clear RF and finish the instruction (maybe raise #DB).
      */
     return iemRegFinishClearingRF(pVCpu);
+}
+
+
+/**
+ * Adds a 32-bit signed jump offset to RIP from 64-bit code, no checking or
+ * clearing of flags.
+ *
+ * May raise a \#GP(0) if the new RIP is non-canonical or outside the code
+ * segment limit.
+ *
+ * We ASSUME that the effective operand size is 64-bit here, as 16-bit is the
+ * only alternative for relative jumps in 64-bit code and that is already
+ * handled in the decoder stage.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             Instruction size.
+ * @param   offNextInstr        The offset of the next instruction.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegRip64RelativeJumpS32AndFinishNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr,
+                                                                           int32_t offNextInstr) RT_NOEXCEPT
+{
+    Assert(IEM_IS_64BIT_CODE(pVCpu));
+
+    uint64_t const uNewRip = pVCpu->cpum.GstCtx.rip + cbInstr + (int64_t)offNextInstr;
+    if (RT_LIKELY(IEM_IS_CANONICAL(uNewRip)))
+        pVCpu->cpum.GstCtx.rip = uNewRip;
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+
+#ifndef IEM_WITH_CODE_TLB
+    iemOpcodeFlushLight(pVCpu, cbInstr);
+#endif
+    return iemRegFinishNoFlags(pVCpu);
+}
+
+
+/**
+ * Adds a 32-bit signed jump offset to RIP from 64-bit code, no checking or
+ * clearing of flags.
+ *
+ * May raise a \#GP(0) if the new RIP is non-canonical or outside the code
+ * segment limit.
+ *
+ * We ASSUME that the effective operand size is 32-bit here, as 16-bit is the
+ * only alternative for relative jumps in 32-bit code and that is already
+ * handled in the decoder stage.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   cbInstr             Instruction size.
+ * @param   offNextInstr        The offset of the next instruction.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemRegEip32RelativeJumpS32AndFinishNoFlags(PVMCPUCC pVCpu, uint8_t cbInstr,
+                                                                           int32_t offNextInstr) RT_NOEXCEPT
+{
+    Assert(!IEM_IS_64BIT_CODE(pVCpu));
+    Assert(pVCpu->cpum.GstCtx.rip <= UINT32_MAX);
+
+    uint32_t const uNewEip = pVCpu->cpum.GstCtx.eip + cbInstr + offNextInstr;
+    if (RT_LIKELY(uNewEip <= pVCpu->cpum.GstCtx.cs.u32Limit))
+        pVCpu->cpum.GstCtx.rip = uNewEip;
+    else
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+
+#ifndef IEM_WITH_CODE_TLB
+    iemOpcodeFlushLight(pVCpu, cbInstr);
+#endif
+    return iemRegFinishNoFlags(pVCpu);
 }
 
 

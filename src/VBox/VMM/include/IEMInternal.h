@@ -1426,6 +1426,10 @@ typedef struct IEMCPU
     bool                    afRecompilerStuff1[2+4];
     /** The virtual sync time at the last timer poll call. */
     uint32_t                msRecompilerPollNow;
+    /** The IEM_CIMPL_F_XXX mask for the current instruction. */
+    uint32_t                fTbCurInstr;
+    /** The IEM_CIMPL_F_XXX mask for the previous instruction. */
+    uint32_t                fTbPrevInstr;
     /** Previous GCPhysInstrBuf value - only valid if fTbCrossedPage is set.   */
     RTGCPHYS                GCPhysInstrBufPrev;
     /** Copy of IEMCPU::GCPhysInstrBuf after decoding a branch instruction.
@@ -1442,7 +1446,7 @@ typedef struct IEMCPU
     /** Pointer to the native recompiler state for ring-3. */
     R3PTRTYPE(struct IEMRECOMPILERSTATE *)  pNativeRecompilerStateR3;
     /** Alignment padding. */
-    uint64_t                auAlignment10[5];
+    uint64_t                auAlignment10[4];
     /** Statistics: Times TB execution was broken off before reaching the end. */
     STAMCOUNTER             StatTbExecBreaks;
     /** Statistics: Times BltIn_CheckIrq breaks out of the TB. */
