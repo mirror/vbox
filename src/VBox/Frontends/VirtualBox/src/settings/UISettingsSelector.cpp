@@ -320,27 +320,36 @@ QWidget *UISettingsSelectorTreeWidget::addItem(const QString & /* strBigIcon */,
                                                int iParentID /* = -1 */)
 {
     QWidget *pResult = 0;
-    if (pPage != 0)
+    if (pPage)
     {
-        const QIcon icon = UIIconPool::iconSet(strMediumIcon);
-
-        UISelectorItem *pItem = new UISelectorItem(icon, iID, strLink, pPage, iParentID);
-        m_list.append(pItem);
-
-        QTreeWidgetItem *pTwItem = new QITreeWidgetItem(m_pTreeWidget, QStringList() << QString("")
-                                                                                     << idToString(iID)
-                                                                                     << strLink);
-        pTwItem->setIcon(TreeWidgetSection_Category, pItem->icon());
+        /* Adjust page a bit: */
         pPage->setContentsMargins(0, 0, 0, 0);
-        pPage->layout()->setContentsMargins(0, 0, 0, 0);
+        if (pPage->layout())
+            pPage->layout()->setContentsMargins(0, 0, 0, 0);
         pResult = pPage;
+
+        /* Add selector-item object: */
+        const QIcon icon = UIIconPool::iconSet(strMediumIcon);
+        UISelectorItem *pItem = new UISelectorItem(icon, iID, strLink, pPage, iParentID);
+        if (pItem)
+            m_list.append(pItem);
+
+        /* Add tree-widget item: */
+        QITreeWidgetItem *pTwItem = new QITreeWidgetItem(m_pTreeWidget, QStringList() << QString("")
+                                                                                      << idToString(iID)
+                                                                                      << strLink);
+        if (pTwItem)
+            pTwItem->setIcon(TreeWidgetSection_Category, pItem->icon());
     }
     return pResult;
 }
 
 void UISettingsSelectorTreeWidget::setItemText(int iID, const QString &strText)
 {
+    /* Call to base-class: */
     UISettingsSelector::setItemText(iID, strText);
+
+    /* Look for the tree-widget item to assign the text: */
     QTreeWidgetItem *pItem = findItem(m_pTreeWidget, idToString(iID), TreeWidgetSection_Id);
     if (pItem)
         pItem->setText(TreeWidgetSection_Category, QString(" %1 ").arg(strText));
@@ -379,20 +388,19 @@ void UISettingsSelectorTreeWidget::selectById(int iID)
 void UISettingsSelectorTreeWidget::polish()
 {
     /* Get recommended size hint: */
-    const QStyle *pStyle = QApplication::style();
-    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
-    int iItemWidth = static_cast<QAbstractItemView*>(m_pTreeWidget)->sizeHintForColumn(TreeWidgetSection_Category);
-    int iItemHeight = qMax((int)(iIconMetric * 1.5) /* icon height */,
-                           m_pTreeWidget->fontMetrics().height() /* text height */);
-    /* Add some margin to every item in the tree: */
-    iItemHeight += 4 /* margin itself */ * 2 /* margin count */;
+    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+    const int iItemWidth = static_cast<QAbstractItemView*>(m_pTreeWidget)->sizeHintForColumn(TreeWidgetSection_Category);
+    const int iItemHeight = qMax((int)(iIconMetric * 1.5) /* icon height */,
+                                 m_pTreeWidget->fontMetrics().height() /* text height */)
+                          + 4 /* margin itself */ * 2 /* margin count */;
+
     /* Set final size hint for items: */
     m_pTreeWidget->setSizeHintForItems(QSize(iItemWidth , iItemHeight));
 
     /* Adjust selector width/height: */
     m_pTreeWidget->setFixedWidth(iItemWidth + 2 * m_pTreeWidget->frameWidth());
-    m_pTreeWidget->setMinimumHeight(m_pTreeWidget->topLevelItemCount() * iItemHeight +
-                                    1 /* margin itself */ * 2 /* margin count */);
+    m_pTreeWidget->setMinimumHeight(  m_pTreeWidget->topLevelItemCount() * iItemHeight
+                                    + 1 /* margin itself */ * 2 /* margin count */);
 
     /* Sort selector by the id column: */
     m_pTreeWidget->sortItems(TreeWidgetSection_Id, Qt::AscendingOrder);
@@ -401,8 +409,7 @@ void UISettingsSelectorTreeWidget::polish()
     m_pTreeWidget->resizeColumnToContents(TreeWidgetSection_Category);
 }
 
-void UISettingsSelectorTreeWidget::sltSettingsGroupChanged(QTreeWidgetItem *pItem,
-                                                         QTreeWidgetItem * /* pPrevItem */)
+void UISettingsSelectorTreeWidget::sltSettingsGroupChanged(QTreeWidgetItem *pItem, QTreeWidgetItem * /* pPrevItem */)
 {
     if (pItem)
     {
@@ -442,21 +449,14 @@ void UISettingsSelectorTreeWidget::prepare()
 
 QString UISettingsSelectorTreeWidget::pagePath(const QString &strMatch) const
 {
-    const QTreeWidgetItem *pTreeItem =
-        findItem(m_pTreeWidget,
-                 strMatch,
-                 TreeWidgetSection_Id);
+    const QTreeWidgetItem *pTreeItem = findItem(m_pTreeWidget, strMatch, TreeWidgetSection_Id);
     return path(pTreeItem);
 }
 
-QTreeWidgetItem *UISettingsSelectorTreeWidget::findItem(QTreeWidget *pView,
-                                                        const QString &strMatch,
-                                                        int iColumn) const
+QTreeWidgetItem *UISettingsSelectorTreeWidget::findItem(QTreeWidget *pView, const QString &strMatch, int iColumn) const
 {
-    QList<QTreeWidgetItem*> list =
-        pView->findItems(strMatch, Qt::MatchExactly, iColumn);
-
-    return list.count() ? list[0] : 0;
+    const QList<QTreeWidgetItem*> list = pView->findItems(strMatch, Qt::MatchExactly, iColumn);
+    return list.count() ? list.first() : 0;
 }
 
 QString UISettingsSelectorTreeWidget::idToString(int iID) const
