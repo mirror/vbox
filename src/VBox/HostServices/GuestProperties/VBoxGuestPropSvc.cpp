@@ -1264,25 +1264,29 @@ int Service::doNotifications(const char *pszProperty, uint64_t nsTimestamp)
     /* Release guest waiters if applicable and add the event
      * to the queue for guest notifications */
     CallList::iterator it = mGuestWaiters.begin();
-    if (it != mGuestWaiters.end())
+    while (it != mGuestWaiters.end())
     {
         const char *pszPatterns = NULL;
         uint32_t    cchPatterns;
-        HGCMSvcGetCStr(&it->mParms[0], &pszPatterns, &cchPatterns);
+        int rc2;
 
-        while (it != mGuestWaiters.end())
+        rc2 = HGCMSvcGetCStr(&it->mParms[0], &pszPatterns, &cchPatterns);
+        if (RT_FAILURE(rc2))
         {
-            if (prop.Matches(pszPatterns))
-            {
-                int rc2 = getNotificationWriteOut(it->mParmsCnt, it->mParms, prop, !pProp);
-                if (RT_SUCCESS(rc2))
-                    rc2 = it->mRc;
-                mpHelpers->pfnCallComplete(it->mHandle, rc2);
-                it = mGuestWaiters.erase(it);
-            }
-            else
-                ++it;
+            LogRel(("doNotifications: failed to get match pattern for guest property notification request, rc=%Rrc\n", rc2));
+            mpHelpers->pfnCallComplete(it->mHandle, VERR_INVALID_PARAMETER);
+            it = mGuestWaiters.erase(it);
         }
+        else if (prop.Matches(pszPatterns))
+        {
+            rc2 = getNotificationWriteOut(it->mParmsCnt, it->mParms, prop, !pProp);
+            if (RT_SUCCESS(rc2))
+                rc2 = it->mRc;
+            mpHelpers->pfnCallComplete(it->mHandle, rc2);
+            it = mGuestWaiters.erase(it);
+        }
+        else
+            ++it;
     }
 
     try
