@@ -5483,7 +5483,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return (fRc, oTxsSession);
 
-    def checkScreenShot(self, iWidth, iHeight, aRGBData):
+    def checkScreenShot(self, iWidth, iHeight, aRGBData):      # pylint: disable=unused-argument
         """
         TBD: Implement basic validation of the captured screenshot content.
         """
