@@ -121,14 +121,12 @@ public:
 
     /** Constructs selector item.
       * @param  icon       Brings the item icon.
-      * @param  strText    Brings the item text.
       * @param  iID        Brings the item ID.
       * @param  strLink    Brings the item link.
       * @param  pPage      Brings the item page reference.
       * @param  iParentID  Brings the item parent ID. */
-    UISelectorItem(const QIcon &icon, const QString &strText, int iID, const QString &strLink, UISettingsPage *pPage, int iParentID)
+    UISelectorItem(const QIcon &icon, int iID, const QString &strLink, UISettingsPage *pPage, int iParentID)
         : m_icon(icon)
-        , m_strText(strText)
         , m_iID(iID)
         , m_strLink(strLink)
         , m_pPage(pPage)
@@ -177,15 +175,14 @@ public:
 
     /** Constructs selector item.
       * @param  icon       Brings the item icon.
-      * @param  strText    Brings the item text.
       * @param  iID        Brings the item ID.
       * @param  strLink    Brings the item link.
       * @param  pPage      Brings the item page reference.
       * @param  iParentID  Brings the item parent ID.
       * @param  pParent    Brings the item parent. */
-    UISelectorActionItem(const QIcon &icon, const QString &strText, int iID, const QString &strLink, UISettingsPage *pPage, int iParentID, QObject *pParent)
-        : UISelectorItem(icon, strText, iID, strLink, pPage, iParentID)
-        , m_pAction(new QAction(icon, strText, pParent))
+    UISelectorActionItem(const QIcon &icon, int iID, const QString &strLink, UISettingsPage *pPage, int iParentID, QObject *pParent)
+        : UISelectorItem(icon, iID, strLink, pPage, iParentID)
+        , m_pAction(new QAction(icon, QString(), pParent))
         , m_pTabWidget(0)
     {
         m_pAction->setCheckable(true);
@@ -327,7 +324,7 @@ QWidget *UISettingsSelectorTreeWidget::addItem(const QString & /* strBigIcon */,
     {
         const QIcon icon = UIIconPool::iconSet(strMediumIcon);
 
-        UISelectorItem *pItem = new UISelectorItem(icon, "", iID, strLink, pPage, iParentID);
+        UISelectorItem *pItem = new UISelectorItem(icon, iID, strLink, pPage, iParentID);
         m_list.append(pItem);
 
         QTreeWidgetItem *pTwItem = new QITreeWidgetItem(m_pTreeWidget, QStringList() << QString("")
@@ -523,7 +520,7 @@ QWidget *UISettingsSelectorToolBar::addItem(const QString &strBigIcon,
     const QIcon icon = UIIconPool::iconSet(strBigIcon);
 
     QWidget *pResult = 0;
-    UISelectorActionItem *pItem = new UISelectorActionItem(icon, "", iID, strLink, pPage, iParentID, this);
+    UISelectorActionItem *pItem = new UISelectorActionItem(icon, iID, strLink, pPage, iParentID, this);
     m_list.append(pItem);
 
     if (iParentID == -1 &&
