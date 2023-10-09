@@ -5483,6 +5483,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return (fRc, oTxsSession);
 
+    def checkScreenShot(self, iWidth, iHeight, aRGBData):
+        """
+        TBD: Implement basic validation of the captured screenshot content.
+        """
+        return True
+
     def testGuestCtrl3D(self, oSession, oTxsSession, oTestVm):  # pylint: disable=unused-argument
         """
         Tests for VMSVGA device.
@@ -5491,8 +5497,24 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if oTestVm.sKind not in ('Windows8_64', 'Windows10', 'Windows10_64', 'Windows11_64'):
             return (True, oTxsSession);
 
-        fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Checking DX11 feature level', 30 * 1000,
-                                      '${CDROM}/${OS/ARCH}/ntDisplay${EXESUFF}', ('ntDisplay', ))
+        iScreenId = 0 # TBD: Use a loop to iterate and check all virtual displays
+        try:
+            if self.oTstDrv.fpApiVer >= 5.0:
+                iWidth, iHeight, _, _, _, _ = oSession.o.console.display.getScreenResolution(iScreenId);
+            else:
+                iWidth, iHeight, _, _, _ = oSession.o.console.display.getScreenResolution(iScreenId)
+
+            aRGBData = oSession.o.console.display.takeScreenShotToArray(iScreenId, iWidth, iHeight,
+                                                                        vboxcon.BitmapFormat_RGBA);
+        except:
+            reporter.logXcpt("Unable to take screenshot");
+            return False
+
+        reporter.log2('Got screenshot (%s x %s) having %s bytes' % (iWidth, iHeight, len(aRGBData)));
+        fRc = self.checkScreenShot(iWidth, iHeight, aRGBData);
+
+        fRc = fRc and self.oTstDrv.txsRunTest(oTxsSession, 'Checking DX11 feature level', 30 * 1000,
+                                      '${CDROM}/${OS/ARCH}/ntDisplay${EXESUFF}', ('ntDisplay', ));
 
         return (fRc, oTxsSession);
 
