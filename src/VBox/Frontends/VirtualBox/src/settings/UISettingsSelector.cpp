@@ -438,11 +438,6 @@ void UISettingsSelectorTreeWidget::sltSettingsGroupChanged(QTreeWidgetItem *pIte
     }
 }
 
-void UISettingsSelectorTreeWidget::clear()
-{
-    m_pTreeWidget->clear();
-}
-
 QString UISettingsSelectorTreeWidget::pagePath(const QString &strMatch) const
 {
     const QTreeWidgetItem *pTreeItem =
@@ -562,8 +557,6 @@ QWidget *UISettingsSelectorToolBar::addItem(const QString &strBigIcon,
         QITabWidget *pTabWidget = new QITabWidget();
         pTabWidget->setIconSize(QSize(16, 16));
         pTabWidget->setContentsMargins(0, 0, 0, 0);
-//        connect(pTabWidget, SIGNAL(currentChanged(int)),
-//                 this, SLOT(sltSettingsGroupChanged(int)));
         pItem->setTabWidget(pTabWidget);
         pResult = pTabWidget;
     }
@@ -669,24 +662,7 @@ void UISettingsSelectorToolBar::sltSettingsGroupChanged(QAction *pAction)
 {
     const UISelectorActionItem *pItem = findActionItemByAction(pAction);
     if (pItem)
-    {
         emit sigCategoryChanged(pItem->id());
-//        if (pItem->page() &&
-//            !pItem->tabWidget())
-//            emit sigCategoryChanged(pItem->id());
-//        else
-//        {
-//
-//            pItem->tabWidget()->blockSignals(true);
-//            pItem->tabWidget()->setCurrentIndex(0);
-//            pItem->tabWidget()->blockSignals(false);
-//            printf("%s\n", qPrintable(pItem->text()));
-//            UISelectorActionItem *child = static_cast<UISelectorActionItem*>(
-//                findItemByPage(static_cast<UISettingsPage*>(pItem->tabWidget()->currentWidget())));
-//            if (child)
-//                emit sigCategoryChanged(child->id());
-//        }
-    }
 }
 
 void UISettingsSelectorToolBar::sltSettingsGroupChanged(int iIndex)
@@ -705,13 +681,6 @@ void UISettingsSelectorToolBar::sltSettingsGroupChanged(int iIndex)
                 emit sigCategoryChanged(pChild->id());
         }
     }
-}
-
-void UISettingsSelectorToolBar::clear()
-{
-    QList<QAction*> list = m_pActionGroup->actions();
-    foreach (QAction *pAction, list)
-       delete pAction;
 }
 
 UISelectorActionItem *UISettingsSelectorToolBar::findActionItem(int iID) const
