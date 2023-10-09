@@ -109,7 +109,8 @@ enum TreeWidgetSection
 {
     TreeWidgetSection_Category = 0,
     TreeWidgetSection_Id,
-    TreeWidgetSection_Link
+    TreeWidgetSection_Link,
+    TreeWidgetSection_Max
 };
 
 
@@ -298,31 +299,7 @@ UISettingsSelectorTreeWidget::UISettingsSelectorTreeWidget(QWidget *pParent /* =
     : UISettingsSelector(pParent)
     , m_pTreeWidget(0)
 {
-    /* Prepare the tree-widget: */
-    m_pTreeWidget = new QITreeWidget(pParent);
-    QSizePolicy sizePolicy(QSizePolicy::Minimum, QSizePolicy::Expanding);
-    sizePolicy.setHorizontalStretch(0);
-    sizePolicy.setVerticalStretch(0);
-    sizePolicy.setHeightForWidth(m_pTreeWidget->sizePolicy().hasHeightForWidth());
-    const QStyle *pStyle = QApplication::style();
-    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
-    m_pTreeWidget->setSizePolicy(sizePolicy);
-    m_pTreeWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    m_pTreeWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    m_pTreeWidget->setRootIsDecorated(false);
-    m_pTreeWidget->setUniformRowHeights(true);
-    m_pTreeWidget->setIconSize(QSize((int)(1.5 * iIconMetric), (int)(1.5 * iIconMetric)));
-    /* Add the columns: */
-    m_pTreeWidget->headerItem()->setText(TreeWidgetSection_Category, "Category");
-    m_pTreeWidget->headerItem()->setText(TreeWidgetSection_Id, "[id]");
-    m_pTreeWidget->headerItem()->setText(TreeWidgetSection_Link, "[link]");
-    /* Hide unnecessary columns and header: */
-    m_pTreeWidget->header()->hide();
-    m_pTreeWidget->hideColumn(TreeWidgetSection_Id);
-    m_pTreeWidget->hideColumn(TreeWidgetSection_Link);
-    /* Setup connections: */
-    connect(m_pTreeWidget, &QITreeWidget::currentItemChanged,
-            this, &UISettingsSelectorTreeWidget::sltSettingsGroupChanged);
+    prepare();
 }
 
 UISettingsSelectorTreeWidget::~UISettingsSelectorTreeWidget()
@@ -438,6 +415,34 @@ void UISettingsSelectorTreeWidget::sltSettingsGroupChanged(QTreeWidgetItem *pIte
     }
 }
 
+void UISettingsSelectorTreeWidget::prepare()
+{
+    /* Prepare the tree-widget: */
+    m_pTreeWidget = new QITreeWidget(qobject_cast<QWidget*>(parent()));
+    if (m_pTreeWidget)
+    {
+        /* Configure tree-widget: */
+        m_pTreeWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        m_pTreeWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        m_pTreeWidget->setRootIsDecorated(false);
+        m_pTreeWidget->setUniformRowHeights(true);
+        /* Adjust size-policy: */
+        QSizePolicy sizePolicy(QSizePolicy::Minimum, QSizePolicy::Expanding);
+        m_pTreeWidget->setSizePolicy(sizePolicy);
+        /* Adjust icon size: */
+        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+        m_pTreeWidget->setIconSize(QSize((int)(1.5 * iIconMetric), (int)(1.5 * iIconMetric)));
+        /* Add the columns, hide unnecessary columns and header: */
+        m_pTreeWidget->setColumnCount(TreeWidgetSection_Max);
+        m_pTreeWidget->header()->hide();
+        m_pTreeWidget->hideColumn(TreeWidgetSection_Id);
+        m_pTreeWidget->hideColumn(TreeWidgetSection_Link);
+        /* Setup connections: */
+        connect(m_pTreeWidget, &QITreeWidget::currentItemChanged,
+                this, &UISettingsSelectorTreeWidget::sltSettingsGroupChanged);
+    }
+}
+
 QString UISettingsSelectorTreeWidget::pagePath(const QString &strMatch) const
 {
     const QTreeWidgetItem *pTreeItem =
@@ -488,22 +493,7 @@ UISettingsSelectorToolBar::UISettingsSelectorToolBar(QWidget *pParent /* = 0 */)
     , m_pToolBar(0)
     , m_pActionGroup(0)
 {
-    /* Install tool-bar button accessibility interface factory: */
-    QAccessible::installFactory(UIAccessibilityInterfaceForUISettingsSelectorToolBarButton::pFactory);
-
-    /* Prepare the toolbar: */
-    m_pToolBar = new QIToolBar(pParent);
-    m_pToolBar->setUseTextLabels(true);
-    m_pToolBar->setIconSize(QSize(32, 32));
-#ifdef VBOX_WS_MAC
-    m_pToolBar->setShowToolBarButton(false);
-#endif /* VBOX_WS_MAC */
-
-    /* Prepare the action group: */
-    m_pActionGroup = new QActionGroup(this);
-    m_pActionGroup->setExclusive(true);
-    connect(m_pActionGroup, &QActionGroup::triggered,
-            this, static_cast<void(UISettingsSelectorToolBar::*)(QAction*)>(&UISettingsSelectorToolBar::sltSettingsGroupChanged));
+    prepare();
 }
 
 UISettingsSelectorToolBar::~UISettingsSelectorToolBar()
@@ -679,6 +669,33 @@ void UISettingsSelectorToolBar::sltSettingsGroupChanged(int iIndex)
                 findItemByPage(static_cast<UISettingsPage*>(pItem->tabWidget()->currentWidget())));
             if (pChild)
                 emit sigCategoryChanged(pChild->id());
+        }
+    }
+}
+
+void UISettingsSelectorToolBar::prepare()
+{
+    /* Install tool-bar button accessibility interface factory: */
+    QAccessible::installFactory(UIAccessibilityInterfaceForUISettingsSelectorToolBarButton::pFactory);
+
+    /* Prepare the toolbar: */
+    m_pToolBar = new QIToolBar(qobject_cast<QWidget*>(parent()));
+    if (m_pToolBar)
+    {
+        /* Configure toolbar: */
+        m_pToolBar->setUseTextLabels(true);
+        m_pToolBar->setIconSize(QSize(32, 32));
+#ifdef VBOX_WS_MAC
+        m_pToolBar->setShowToolBarButton(false);
+#endif
+
+        /* Prepare the action group: */
+        m_pActionGroup = new QActionGroup(this);
+        if (m_pActionGroup)
+        {
+            m_pActionGroup->setExclusive(true);
+            connect(m_pActionGroup, &QActionGroup::triggered,
+                    this, static_cast<void(UISettingsSelectorToolBar::*)(QAction*)>(&UISettingsSelectorToolBar::sltSettingsGroupChanged));
         }
     }
 }
