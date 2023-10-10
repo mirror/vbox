@@ -5487,7 +5487,36 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
         TBD: Implement basic validation of the captured screenshot content.
         """
-        return True
+        cPixels = iHeight * iWidth
+
+        if cPixels == 0:
+            reporter.logXcpt("Empty screenshot");
+            return False
+
+        # The simple algoritm below assumes that Windows OS desktop consists of a pixels that
+        # are not too dark or bright but usually of blue tint.
+        cDesktopPixels = 0
+        cDesktopPixelsBlue = 0
+        threshold = 20
+        for i in range(0, cPixels, 4) :
+            r = aRGBData[i]
+            g = aRGBData[i + 1]
+            b = aRGBData[i + 2]
+            v = (3 * r + 6 * g + b) / 10
+            if v > threshold and v < (255 - threshold) :
+                cDesktopPixels += 1;
+                cDesktopPixelsBlue += int(b > g and b > r);
+
+        fpRatioDesktop = cDesktopPixels / cPixels;
+        reporter.log2('Ratio of not too dark or bright pixels %.2f' % (fpRatioDesktop));
+
+        if fpRatioDesktop > 0.1:
+            fpRatioBlue = cDesktopPixelsBlue / cDesktopPixels;
+            reporter.log2('Ratio of blue pixels %.2f ' % (fpRatioBlue));
+            if fpRatioBlue > 0.5:
+                return True
+
+        return True # Always return True until the parameters will be calibrated.
 
     def testGuestCtrl3D(self, oSession, oTxsSession, oTestVm):  # pylint: disable=unused-argument
         """
