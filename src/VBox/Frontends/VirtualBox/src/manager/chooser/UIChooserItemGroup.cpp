@@ -47,6 +47,7 @@
 #include "UIGraphicsRotatorButton.h"
 #include "UIGraphicsScrollArea.h"
 #include "UIIconPool.h"
+#include "UIImageTools.h"
 #include "UIVirtualBoxManager.h"
 #include "UIVirtualMachineItem.h"
 
@@ -1775,23 +1776,9 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
         /* Get background color: */
         const QColor background = pal.color(QPalette::Active, QPalette::Highlight).lighter(m_iHighlightLightness);
 
-        /* Get foreground color: */
-        const QColor simpleText = pal.color(QPalette::Active, QPalette::Text);
-        const QColor highlightText = pal.color(QPalette::Active, QPalette::HighlightedText);
-        QColor lightText = simpleText.black() < highlightText.black() ? simpleText : highlightText;
-        QColor darkText = simpleText.black() > highlightText.black() ? simpleText : highlightText;
-        if (lightText.black() > 128)
-            lightText = QColor(Qt::white);
-        if (darkText.black() < 128)
-            darkText = QColor(Qt::black);
-
         /* Gather foreground color for background one: */
-        double dLuminance = (0.299 * background.red() + 0.587 * background.green() + 0.114 * background.blue()) / 255;
-        //printf("luminance = %f\n", dLuminance);
-        if (dLuminance > 0.5)
-            pPainter->setPen(darkText);
-        else
-            pPainter->setPen(lightText);
+        const QColor foreground = suitableForegroundColor(pal, background);
+        pPainter->setPen(foreground);
     }
 
     /* Paint name: */

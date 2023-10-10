@@ -29,6 +29,7 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QPainterPathStroker>
+#include <QPalette>
 
 /* GUI include */
 #include "UIDesktopWidgetWatchdog.h"
@@ -280,4 +281,24 @@ static QImage betaLabelImage(QSize size, QWidget *pHint)
 QPixmap UIImageTools::betaLabel(const QSize &size /* = QSize(80, 16) */, QWidget *pHint /* = 0 */)
 {
     return QPixmap::fromImage(betaLabelImage(size, pHint));
+}
+
+QColor UIImageTools::suitableForegroundColor(const QPalette &pal, const QColor &background)
+{
+    /* Get possible foreground colors: */
+    const QColor simpleText = pal.color(QPalette::Active, QPalette::Text);
+    const QColor highlightText = pal.color(QPalette::Active, QPalette::HighlightedText);
+    QColor lightText = simpleText.black() < highlightText.black() ? simpleText : highlightText;
+    QColor darkText = simpleText.black() > highlightText.black() ? simpleText : highlightText;
+    if (lightText.black() > 128)
+        lightText = QColor(Qt::white);
+    if (darkText.black() < 128)
+        darkText = QColor(Qt::black);
+
+    /* Measure background luminance: */
+    double dLuminance = (0.299 * background.red() + 0.587 * background.green() + 0.114 * background.blue()) / 255;
+    //printf("luminance = %f\n", dLuminance);
+
+    /* Gather foreground color for background one: */
+    return dLuminance > 0.5 ? darkText : lightText;
 }
