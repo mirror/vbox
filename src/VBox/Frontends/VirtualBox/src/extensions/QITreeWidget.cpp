@@ -470,6 +470,9 @@ QList<QTreeWidgetItem*> QITreeWidget::filterItems(const QITreeWidgetItemFilter &
 
 void QITreeWidget::paintEvent(QPaintEvent *pEvent)
 {
+    /* Call to base-class: */
+    QTreeWidget::paintEvent(pEvent);
+
     /* Create item painter: */
     QPainter painter;
     painter.begin(viewport());
@@ -484,9 +487,6 @@ void QITreeWidget::paintEvent(QPaintEvent *pEvent)
 
     /* Close item painter: */
     painter.end();
-
-    /* Call to base-class: */
-    QTreeWidget::paintEvent(pEvent);
 }
 
 void QITreeWidget::resizeEvent(QResizeEvent *pEvent)

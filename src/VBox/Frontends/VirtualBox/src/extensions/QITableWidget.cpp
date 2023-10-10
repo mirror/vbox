@@ -336,6 +336,9 @@ QModelIndex QITableWidget::itemIndex(QTableWidgetItem *pItem)
 
 void QITableWidget::paintEvent(QPaintEvent *pEvent)
 {
+    /* Call to base-class: */
+    QTableWidget::paintEvent(pEvent);
+
     /* Create item painter: */
     QPainter painter;
     painter.begin(viewport());
@@ -347,9 +350,6 @@ void QITableWidget::paintEvent(QPaintEvent *pEvent)
 
     /* Close item painter: */
     painter.end();
-
-    /* Call to base-class: */
-    QTableWidget::paintEvent(pEvent);
 }
 
 void QITableWidget::resizeEvent(QResizeEvent *pEvent)
