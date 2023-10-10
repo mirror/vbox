@@ -2294,12 +2294,12 @@ static uint8_t virtioNetR3CtrlMac(PVIRTIONET pThis, PVIRTIONET_CTRL_HDR_T pCtrlP
 
             Log7Func(("[%s] Guest provided %d unicast MAC Table entries\n", pThis->szInst, cMacs));
 
+            AssertMsgReturn(cMacs <= RT_ELEMENTS(pThis->aMacUnicastFilter),
+                            ("Guest provided Unicast MAC filter table exceeds hardcoded table size"), VIRTIONET_ERROR);
+
             if (cMacs)
             {
                 uint32_t cbMacs = cMacs * sizeof(RTMAC);
-
-                AssertMsgReturn(cbMacs <= sizeof(pThis->aMacUnicastFilter)  / sizeof(RTMAC),
-                                ("Guest provided Unicast MAC filter table exceeds hardcoded table size"), VIRTIONET_ERROR);
 
                 AssertMsgReturn(cbRemaining >= cbMacs,
                                 ("Virtq buffer too small to process CTRL_MAC_TABLE_SET cmd\n"), VIRTIONET_ERROR);
@@ -2321,12 +2321,12 @@ static uint8_t virtioNetR3CtrlMac(PVIRTIONET pThis, PVIRTIONET_CTRL_HDR_T pCtrlP
 
             Log10Func(("[%s] Guest provided %d multicast MAC Table entries\n", pThis->szInst, cMacs));
 
+            AssertMsgReturn(cMacs <= RT_ELEMENTS(pThis->aMacMulticastFilter),
+                            ("Guest provided Unicast MAC filter table exceeds hardcoded table size"), VIRTIONET_ERROR);
+
             if (cMacs)
             {
                 uint32_t cbMacs = cMacs * sizeof(RTMAC);
-
-                AssertMsgReturn(cbMacs <= sizeof(pThis->aMacMulticastFilter)  / sizeof(RTMAC),
-                                ("Guest provided Unicast MAC filter table exceeds hardcoded table size"), VIRTIONET_ERROR);
 
                 AssertMsgReturn(cbRemaining >= cbMacs,
                                 ("Virtq buffer too small to process CTRL_MAC_TABLE_SET cmd\n"), VIRTIONET_ERROR);
@@ -2374,13 +2374,13 @@ static uint8_t virtioNetR3CtrlMultiQueue(PVIRTIONET pThis, PVIRTIONETCC pThisCC,
         {
             size_t cbRemaining = pVirtqBuf->cbPhysSend;
 
-            AssertMsgReturn(cbRemaining > sizeof(cVirtqPairs),
+            AssertMsgReturn(cbRemaining >= sizeof(cVirtqPairs),
                 ("DESC chain too small for VIRTIONET_CTRL_MQ cmd processing"), VIRTIONET_ERROR);
 
             /* Fetch number of virtq pairs from guest buffer */
             virtioCoreR3VirtqBufDrain(&pThis->Virtio, pVirtqBuf, &cVirtqPairs, sizeof(cVirtqPairs));
 
-            AssertMsgReturn(cVirtqPairs > VIRTIONET_MAX_QPAIRS,
+            AssertMsgReturn(cVirtqPairs <= VIRTIONET_MAX_QPAIRS,
                 ("[%s] Guest CTRL MQ virtq pair count out of range [%d])\n", pThis->szInst, cVirtqPairs), VIRTIONET_ERROR);
 
             LogFunc(("[%s] Guest specifies %d VQ pairs in use\n", pThis->szInst, cVirtqPairs));
