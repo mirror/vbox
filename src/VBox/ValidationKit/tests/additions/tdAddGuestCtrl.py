@@ -5497,15 +5497,15 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # are not too dark or bright but usually of blue tint.
         cDesktopPixels = 0
         cDesktopPixelsBlue = 0
-        threshold = 20
+        iThreshold = 20
         for i in range(0, cPixels, 4) :
-            r = aRGBData[i]
-            g = aRGBData[i + 1]
-            b = aRGBData[i + 2]
-            v = (3 * r + 6 * g + b) / 10
-            if v > threshold and v < (255 - threshold) :
+            iRed = aRGBData[i]
+            iGreen = aRGBData[i + 1]
+            iBlue = aRGBData[i + 2]
+            iBright = (3 * iRed + 6 * iGreen + iBlue) / 10
+            if iThreshold < iBright < 255 - iThreshold :
                 cDesktopPixels += 1;
-                cDesktopPixelsBlue += int(b > g and b > r);
+                cDesktopPixelsBlue += int(iBlue > iRed and iBlue > iGreen);
 
         fpRatioDesktop = cDesktopPixels / cPixels;
         reporter.log2('Ratio of not too dark or bright pixels %.2f' % (fpRatioDesktop));
