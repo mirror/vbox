@@ -285,11 +285,17 @@ void UISettingsPageFrame::prepare()
     if (pLayoutMain)
     {
         pLayoutMain->setContentsMargins(0, 0, 0, 0);
+        pLayoutMain->setSpacing(0);
 
         /* Create name label: */
         m_pLabelName = new QLabel(this);
         if (m_pLabelName)
+        {
+            QFont fnt = m_pLabelName->font();
+            fnt.setBold(true);
+            m_pLabelName->setFont(fnt);
             pLayoutMain->addWidget(m_pLabelName);
+        }
 
         /* Create contents widget: */
         m_pWidget = new QWidget(this);
