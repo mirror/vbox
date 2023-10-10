@@ -3701,10 +3701,9 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 
             default:
             {
-                hrc = handleModifyVM_x86(&GetOptState, c, &ValueUnion, machine, platformX86);
+                hrc = handleModifyVM_x86(&GetOptState, c, &ValueUnion, sessionMachine, platformX86);
                 if (FAILED(hrc))
                     errorGetOpt(c, &ValueUnion);
-                hrc = E_FAIL;
                 break;
             }
         }
