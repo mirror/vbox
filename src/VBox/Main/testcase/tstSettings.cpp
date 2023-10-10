@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
     }
 
     if (!cFiles)
-        RTTestIFailed("At least one .vbox machine file must be specified to test!\n");
+        return RTTestSkipAndDestroy(hTest, "At least one .vbox machine file must be specified to test!\n");
 
     return RTTestSummaryAndDestroy(hTest);
 }
