@@ -116,7 +116,7 @@ void tstFileSingle(const Utf8Str &strFileSrc)
 int main(int argc, char *argv[])
 {
     RTTEST      hTest;
-    RTEXITCODE  rcExit = RTTestInitAndCreate("tstGuid", &hTest);
+    RTEXITCODE  rcExit = RTTestInitAndCreate("tstSettings", &hTest);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
     RTTestBanner(hTest);
