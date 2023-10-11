@@ -998,7 +998,7 @@ DECLINLINE(RTGCPHYS) virtioCoreGCPhysChainGet(PVIRTIOSGBUF pGcSgBuf, size_t *pcb
     RTGCPHYS pGcBuf;
 
     /* Check that the S/G buffer has memory left. */
-    if (RT_LIKELY(pGcSgBuf->idxSeg < pGcSgBuf->cSegs && pGcSgBuf->cbSegLeft))
+    if (RT_LIKELY(pGcSgBuf->idxSeg < pGcSgBuf->cSegs || pGcSgBuf->cbSegLeft))
     { /* likely */ }
     else
     {
