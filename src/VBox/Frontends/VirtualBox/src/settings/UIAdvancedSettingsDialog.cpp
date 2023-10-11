@@ -939,11 +939,14 @@ void UIAdvancedSettingsDialog::prepareSelector()
 
 #else /* !VBOX_GUI_WITH_TOOLBAR_SETTINGS */
 
+    /* Make sure there is a serious spacing between selector and pages: */
+    m_pLayoutMain->setColumnMinimumWidth(1, 20);
+
     /* Prepare classical tree-view selector: */
-    m_pSelector = new UISettingsSelectorTreeWidget(centralWidget());
+    m_pSelector = new UISettingsSelectorTreeView(centralWidget());
     if (m_pSelector)
     {
-        m_pLayoutMain->addWidget(m_pSelector->widget(), 0, 0, 2, 1);
+        m_pLayoutMain->addWidget(m_pSelector->widget(), 1, 0);
         m_pSelector->widget()->setFocus();
     }
 
@@ -953,7 +956,7 @@ void UIAdvancedSettingsDialog::prepareSelector()
     {
         connect(m_pEditorFilter, &UIFilterEditor::sigTextChanged,
                 this, &UIAdvancedSettingsDialog::sltHandleFilterTextChanged);
-        m_pLayoutMain->addWidget(m_pEditorFilter, 0, 1);
+        m_pLayoutMain->addWidget(m_pEditorFilter, 0, 2);
     }
 #endif /* !VBOX_GUI_WITH_TOOLBAR_SETTINGS */
 
@@ -993,7 +996,7 @@ void UIAdvancedSettingsDialog::prepareScrollArea()
         }
 
         /* Add scroll-area into main layout: */
-        m_pLayoutMain->addWidget(m_pScrollArea, 1, 1);
+        m_pLayoutMain->addWidget(m_pScrollArea, 1, 2);
     }
 }
 
@@ -1054,7 +1057,7 @@ void UIAdvancedSettingsDialog::prepareButtonBox()
         }
 
         /* Add button-box into main layout: */
-        m_pLayoutMain->addWidget(m_pButtonBox, 2, 0, 1, 2);
+        m_pLayoutMain->addWidget(m_pButtonBox, 2, 0, 1, 3);
     }
 }
 
