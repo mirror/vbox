@@ -490,7 +490,7 @@ static int hmR0InitIntel(void)
              * VMX root mode (until our module termination) is done later when 
              * the first VM powers up (after module initialization) using 
              * VMMR0_DO_HM_ENABLE which calls HMR0EnableAllCpus(). 
-             *  
+             *
              * This is just a quick sanity check.
              */
             rc = hmR0InitIntelVerifyVmxUsability(uVmxBasicMsr);
