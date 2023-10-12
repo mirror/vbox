@@ -97,6 +97,7 @@ enum
     MODIFYVM_FWSYSTEMTIMEOFFSET,
     MODIFYVM_FWPXEDEBUG,
     MODIFYVM_SYSTEMUUIDLE,
+    MODIFYVM_FWAUTOSERIALNUMGEN,
     MODIFYVM_BOOT,
     MODIFYVM_HDA,                // deprecated
     MODIFYVM_HDB,                // deprecated
@@ -331,6 +332,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     /** Kept for backwards-compatibility. */
     OPT2("--bios-pxe-debug",                "--biospxedebug",           MODIFYVM_FWPXEDEBUG,                RTGETOPT_REQ_BOOL_ONOFF),
     OPT2("--system-uuid-le",                "--system-uuid-le",         MODIFYVM_SYSTEMUUIDLE,              RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--bios-auto-serial-num-gen",      "--biosautoserialnumgen",   MODIFYVM_FWAUTOSERIALNUMGEN,        RTGETOPT_REQ_BOOL_ONOFF),
     OPT1("--boot",                                                      MODIFYVM_BOOT,                      RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
     OPT1("--hda",                                                       MODIFYVM_HDA,                       RTGETOPT_REQ_STRING), /* deprecated */
     OPT1("--hdb",                                                       MODIFYVM_HDB,                       RTGETOPT_REQ_STRING), /* deprecated */
@@ -1185,6 +1187,12 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
             case MODIFYVM_SYSTEMUUIDLE:
             {
                 CHECK_ERROR(firmwareSettings, COMSETTER(SMBIOSUuidLittleEndian)(ValueUnion.f));
+                break;
+            }
+
+            case MODIFYVM_FWAUTOSERIALNUMGEN:
+            {
+                CHECK_ERROR(firmwareSettings, COMSETTER(AutoSerialNumGen)(ValueUnion.f));
                 break;
             }
 

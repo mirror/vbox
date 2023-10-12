@@ -5789,7 +5789,7 @@
 
   <interface
     name="IFirmwareSettings" extends="$unknown"
-    uuid="7831C899-DF5D-456A-A37B-0D4EC05D54D0"
+    uuid="426EF1B8-DE91-49FB-ABC3-0E2BAE654FF2"
     wsmap="managed"
     rest="managed"
     reservedMethods="2" reservedAttributes="8"
@@ -5868,6 +5868,12 @@
         Before VirtualBox version 6.1 it was always presented in big endian form
         and to retain the old behavior this flag was introduced so it can be changed.
         VMs created with VBox 6.1 will default to true for this flag.
+      </desc>
+    </attribute>
+
+    <attribute name="AutoSerialNumGen" type="boolean">
+      <desc>
+        Flag for enabling automatic VM serial number generation.
       </desc>
     </attribute>
 

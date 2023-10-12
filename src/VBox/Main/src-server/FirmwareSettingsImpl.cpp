@@ -535,6 +535,32 @@ HRESULT FirmwareSettings::setSMBIOSUuidLittleEndian(BOOL enable)
     return S_OK;
 }
 
+HRESULT FirmwareSettings::getAutoSerialNumGen(BOOL *enabled)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *enabled = m->bd->fAutoSerialNumGen;
+
+    return S_OK;
+}
+
+HRESULT FirmwareSettings::setAutoSerialNumGen(BOOL enable)
+{
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pMachine);
+    if (FAILED(adep.hrc())) return adep.hrc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    m->bd.backup();
+    m->bd->fAutoSerialNumGen = RT_BOOL(enable);
+
+    alock.release();
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
+    m->pMachine->i_setModified(Machine::IsModified_Firmware);
+
+    return S_OK;
+}
 
 // IFirmwareSettings methods
 /////////////////////////////////////////////////////////////////////////////

@@ -2756,6 +2756,7 @@ FirmwareSettings::FirmwareSettings() :
     fLogoFadeOut(true),
     fPXEDebugEnabled(false),
     fSmbiosUuidLittleEndian(true),
+    fAutoSerialNumGen(true),
     ulLogoDisplayTime(0),
     enmBootMenuMode(FirmwareBootMenuMode_MessageAndMenu),
     apicMode(APICMode_APIC),
@@ -2783,6 +2784,7 @@ bool FirmwareSettings::areDefaultSettings(CPUArchitecture_T enmCPUArch) const
                 && fLogoFadeOut
                 && !fPXEDebugEnabled
                 && !fSmbiosUuidLittleEndian
+                && !fAutoSerialNumGen
                 && ulLogoDisplayTime == 0
                 && enmBootMenuMode == FirmwareBootMenuMode_MessageAndMenu
                 && apicMode == APICMode_APIC
@@ -2801,6 +2803,7 @@ bool FirmwareSettings::areDefaultSettings(CPUArchitecture_T enmCPUArch) const
                 && fLogoFadeOut
                 && !fPXEDebugEnabled
                 && !fSmbiosUuidLittleEndian
+                && !fAutoSerialNumGen
                 && ulLogoDisplayTime == 0
                 && enmBootMenuMode == FirmwareBootMenuMode_MessageAndMenu
                 && apicMode == APICMode_APIC
@@ -2830,6 +2833,7 @@ bool FirmwareSettings::operator==(const FirmwareSettings &d) const
             && fLogoFadeOut            == d.fLogoFadeOut
             && fPXEDebugEnabled        == d.fPXEDebugEnabled
             && fSmbiosUuidLittleEndian == d.fSmbiosUuidLittleEndian
+            && fAutoSerialNumGen       == d.fAutoSerialNumGen
             && ulLogoDisplayTime       == d.ulLogoDisplayTime
             && enmBootMenuMode        == d.enmBootMenuMode
             && apicMode                == d.apicMode
@@ -5826,6 +5830,11 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 else
                     hw.firmwareSettings.fSmbiosUuidLittleEndian = false; /* Default for existing VMs. */
 
+                if ((pelmFirmwareOrBIOSChild = pelmHwChild->findChildElement("AutoSerialNumGen")))
+                    pelmFirmwareOrBIOSChild->getAttributeValue("enabled", hw.firmwareSettings.fAutoSerialNumGen);
+                else
+                    hw.firmwareSettings.fAutoSerialNumGen = false; /* Default for existing VMs. */
+
                 // legacy BIOS/IDEController (pre 1.7)
                 if (    (m->sv < SettingsVersion_v1_7)
                      && (pelmFirmwareOrBIOSChild = pelmHwChild->findChildElement("IDEController"))
@@ -7760,6 +7769,8 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         }
         if (hw.firmwareSettings.fSmbiosUuidLittleEndian)
             pelmFirmwareOrBIOS->createChild("SmbiosUuidLittleEndian")->setAttribute("enabled", hw.firmwareSettings.fSmbiosUuidLittleEndian);
+        if (hw.firmwareSettings.fAutoSerialNumGen)
+            pelmFirmwareOrBIOS->createChild("AutoSerialNumGen")->setAttribute("enabled", hw.firmwareSettings.fAutoSerialNumGen);
     }
 
     if (!hw.tpmSettings.areDefaultSettings())

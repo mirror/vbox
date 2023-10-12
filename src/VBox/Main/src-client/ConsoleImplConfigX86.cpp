@@ -1594,6 +1594,10 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
             BOOL fUuidLe;
             hrc = firmwareSettings->COMGETTER(SMBIOSUuidLittleEndian)(&fUuidLe);                H();
             InsertConfigInteger(pBiosCfg,  "UuidLe",               fUuidLe);
+            BOOL fAutoSerialNumGen;
+            hrc = firmwareSettings->COMGETTER(AutoSerialNumGen)(&fAutoSerialNumGen);            H();
+            if (fAutoSerialNumGen)
+                InsertConfigString(pBiosCfg,  "DmiSystemSerial", "VirtualBox-<DmiSystemUuid>");
             InsertConfigNode(pBiosCfg,     "NetBoot", &pNetBootCfg);
             InsertConfigInteger(pBiosCfg,  "McfgBase",   uMcfgBase);
             InsertConfigInteger(pBiosCfg,  "McfgLength", cbMcfgLength);
@@ -1673,6 +1677,9 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
             BOOL fUuidLe;
             hrc = firmwareSettings->COMGETTER(SMBIOSUuidLittleEndian)(&fUuidLe);                H();
 
+            BOOL fAutoSerialNumGen;
+            hrc = firmwareSettings->COMGETTER(AutoSerialNumGen)(&fAutoSerialNumGen);            H();
+
             /* Get graphics mode settings */
             uint32_t u32GraphicsMode = UINT32_MAX;
             GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiGraphicsMode", &strTmp);
@@ -1736,6 +1743,8 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
             InsertConfigInteger(pCfg,  "APIC",        uFwAPIC);
             InsertConfigBytes(pCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid));
             InsertConfigInteger(pCfg,  "UuidLe",      fUuidLe);
+            if (fAutoSerialNumGen)
+                InsertConfigString(pCfg,  "DmiSystemSerial", "VirtualBox-<DmiSystemUuid>");
             InsertConfigInteger(pCfg,  "64BitEntry",  f64BitEntry); /* boolean */
             InsertConfigString(pCfg,   "NvramFile",   strNvram);
             if (u32GraphicsMode != UINT32_MAX)

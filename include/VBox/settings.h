@@ -595,7 +595,8 @@ struct FirmwareSettings
                            fLogoFadeIn,
                            fLogoFadeOut,
                            fPXEDebugEnabled,
-                           fSmbiosUuidLittleEndian;
+                           fSmbiosUuidLittleEndian,
+                           fAutoSerialNumGen;
     uint32_t               ulLogoDisplayTime;
     FirmwareBootMenuMode_T enmBootMenuMode;
     APICMode_T             apicMode;           // requires settings version 1.16 (VirtualBox 5.1)
