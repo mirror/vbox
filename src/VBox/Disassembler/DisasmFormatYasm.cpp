@@ -1754,6 +1754,12 @@ DISDECL(bool) DISFormatYasmIsOddEncoding(PDISSTATE pDis)
         &&  (pDis->uCpuMode == DISCPUMODE_16BIT) != !!(fPrefixes & DISPREFIX_OPSIZE))
         return true;
 
+    /*
+     * YASM doesn't do ICEBP/INT1/INT01, unlike NASM.
+     */
+    if (pDis->arch.x86.bOpCode == 0xF1)
+        return true;
+
     return false;
 }
 
