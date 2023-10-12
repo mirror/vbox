@@ -571,7 +571,8 @@ bool UIAdvancedSettingsDialog::eventFilter(QObject *pObject, QEvent *pEvent)
 void UIAdvancedSettingsDialog::retranslateUi()
 {
     /* Translate filter editor placeholder: */
-    m_pEditorFilter->setPlaceholderText(tr("Search settings"));
+    if (m_pEditorFilter)
+        m_pEditorFilter->setPlaceholderText(tr("Search settings"));
 
     /* Translate warning-pane stuff: */
     m_pWarningPane->setWarningLabelText(tr("Invalid settings detected"));
