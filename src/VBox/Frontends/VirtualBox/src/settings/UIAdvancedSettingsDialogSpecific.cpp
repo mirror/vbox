@@ -70,7 +70,7 @@
 #include "CUSBController.h"
 
 #ifdef VBOX_WS_MAC
-# define VBOX_GUI_WITH_TOOLBAR_SETTINGS
+//# define VBOX_GUI_WITH_TOOLBAR_SETTINGS
 #endif
 
 
