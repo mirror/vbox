@@ -226,8 +226,9 @@ const Global::OSType Global::sOSTypes[] =
 #define VBOX_LINUX_OSHINTS_A_X64   (VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET | VBOXOSHINT_X86_X2APIC | VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC)
 #define VBOX_LINUX_OSHINTS_A_ARM64 (VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET | VBOXOSHINT_EFI | VBOXOSHINT_64BIT)
 
-#define VBOX_LINUX_OSHINTS_B_X86  (VBOXOSHINT_RTCUTC | VBOXOSHINT_X86_PAE | VBOXOSHINT_X86_X2APIC)
-#define VBOX_LINUX_OSHINTS_B_X64  (VBOXOSHINT_RTCUTC | VBOXOSHINT_X86_PAE | VBOXOSHINT_X86_X2APIC | VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC)
+#define VBOX_LINUX_OSHINTS_B_X86   (VBOXOSHINT_RTCUTC | VBOXOSHINT_X86_PAE | VBOXOSHINT_X86_X2APIC)
+#define VBOX_LINUX_OSHINTS_B_X64   (VBOXOSHINT_RTCUTC | VBOXOSHINT_X86_PAE | VBOXOSHINT_X86_X2APIC | VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC)
+#define VBOX_LINUX_OSHINTS_B_ARM64 (VBOXOSHINT_RTCUTC | VBOXOSHINT_X86_PAE | VBOXOSHINT_X86_X2APIC | VBOXOSHINT_64BIT)
 
 #define VBOX_LINUX_OSHINTS_C_X86  (VBOXOSHINT_RTCUTC | VBOXOSHINT_X86_X2APIC | VBOXOSHINT_X86_PAE)
 #define VBOX_LINUX_OSHINTS_C_X64  (VBOXOSHINT_RTCUTC | VBOXOSHINT_X86_X2APIC | VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC)
@@ -285,6 +286,10 @@ const Global::OSType Global::sOSTypes[] =
     VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szVariant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_B_X64, a_Memory, a_Vram, a_Diskspace, \
                                     NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
+#define VBOX_LINUX_SUBTYPE_B_A64(a_szVariant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_ARM64(a_szVariant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_B_ARM64, a_Memory, a_Vram, a_Diskspace, \
+                                      NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
+
 /* Linux 32-bit sub-type template defaulting to 1 CPU with PS/2-mouse/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
 #define VBOX_LINUX_SUBTYPE_C_X86(a_szVariant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
     VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_szVariant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_C_X86, a_Memory, a_Vram, a_Diskspace, \
@@ -317,7 +322,7 @@ const Global::OSType Global::sOSTypes[] =
 
     VBOX_LINUX_SUBTYPE_A_X86("Debian",       Debian,             "Debian (32-bit)",                 2048, 16, 20),
     VBOX_LINUX_SUBTYPE_A_X64("Debian",       Debian,             "Debian (64-bit)",                 2048, 16, 20),
-    VBOX_LINUX_SUBTYPE_A_A64("Debian",       Debian,             "Debian (64-bit)",                 2048, 128, 20), /** @todo r=bird: "Debian (ARM 64-bit)"? */
+    VBOX_LINUX_SUBTYPE_A_A64("Debian",       Debian,             "Debian (ARM 64-bit)",             2048, 128, 20), /** @todo r=bird: "Debian (ARM 64-bit)"? */
     VBOX_LINUX_SUBTYPE_A_X86("Debian",       Debian31,           "Debian 3.1 Sarge (32-bit)",       1024, 16, 8),  // 32-bit only
     VBOX_LINUX_SUBTYPE_A_X86("Debian",       Debian4,            "Debian 4.0 Etch (32-bit)",        1024, 16, 8),
     VBOX_LINUX_SUBTYPE_A_X64("Debian",       Debian4,            "Debian 4.0 Etch (64-bit)",        1024, 16, 8),
@@ -356,6 +361,7 @@ const Global::OSType Global::sOSTypes[] =
 
     VBOX_LINUX_SUBTYPE_B_X86("Oracle Linux", Oracle,             "Oracle Linux (32-bit)",           2048, 16, 20),
     VBOX_LINUX_SUBTYPE_B_X64("Oracle Linux", Oracle,             "Oracle Linux (64-bit)",           2048, 16, 20),
+    VBOX_LINUX_SUBTYPE_B_A64("Oracle Linux", Oracle,             "Oracle Linux (ARM 64-bit)",       2048, 16, 20),
     VBOX_LINUX_SUBTYPE_B_X86("Oracle Linux", Oracle4,            "Oracle Linux 4.x (32-bit)",       1024, 16, 8),
     VBOX_LINUX_SUBTYPE_B_X64("Oracle Linux", Oracle4,            "Oracle Linux 4.x (64-bit)",       1024, 16, 8),
     VBOX_LINUX_SUBTYPE_B_X86("Oracle Linux", Oracle5,            "Oracle Linux 5.x (32-bit)",       1024, 16, 8),
