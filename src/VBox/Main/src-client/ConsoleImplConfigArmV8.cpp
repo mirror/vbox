@@ -64,6 +64,7 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/version.h>
+#include <VBox/platforms/vbox-armv8.h>
 #ifdef VBOX_WITH_SHARED_CLIPBOARD
 # include <VBox/HostServices/VBoxClipboardSvc.h>
 #endif
@@ -116,6 +117,9 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
 #define H()         AssertLogRelMsgReturnStmt(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), RTFdtDestroy(hFdt), VERR_MAIN_CONFIG_CONSTRUCTOR_COM_ERROR)
 #define VRC()       AssertLogRelMsgReturnStmt(RT_SUCCESS(vrc), ("vrc=%Rrc\n", vrc), RTFdtDestroy(hFdt), vrc)
 
+    /** @todo Find a way to figure it out before CPUM is set up, can't use CPUMGetGuestAddrWidths() and on macOS we need
+     * access to Hypervisor.framework to query the ID registers (Linux can in theory parse /proc/cpuinfo, no idea for Windows). */
+    RTGCPHYS GCPhysTopOfAddrSpace = RT_BIT_64(36);
 
     /*
      * Get necessary objects and frequently used parameters.
@@ -465,11 +469,10 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
 #endif
         InsertConfigString(pRes,        pszKey,                  pszEfiRomFile);
 
-
-        InsertConfigNode(pResources,    "Fdt",                   &pRes);
-        InsertConfigInteger(pRes,       "RegisterAsRom",         0);
-        InsertConfigInteger(pRes,       "GCPhysLoadAddress",     0x40000000);
-        InsertConfigString(pRes,        "ResourceId",            "fdt");
+        InsertConfigNode(pResources,    "ArmV8Desc",             &pRes);
+        InsertConfigInteger(pRes,       "RegisterAsRom",         1);
+        InsertConfigInteger(pRes,       "GCPhysLoadAddress",     UINT64_MAX); /* End of physical address space. */
+        InsertConfigString(pRes,        "ResourceId",            "VBoxArmV8Desc");
 
         vrc = RTFdtNodeAddF(hFdt, "platform-bus@%RX32", 0x0c000000);                        VRC();
         vrc = RTFdtNodePropertyAddU32(     hFdt, "interrupt-parent", idPHandleIntCtrl);     VRC();
@@ -1282,18 +1285,44 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
     vrc = RTFdtFinalize(hFdt);
     AssertRCReturnStmt(vrc, RTFdtDestroy(hFdt), vrc);
 
-    RTVFSFILE hVfsFileFdt = NIL_RTVFSFILE;
-    vrc = RTVfsMemFileCreate(NIL_RTVFSIOSTREAM, 0 /*cbEstimate*/, &hVfsFileFdt);
+    RTVFSFILE hVfsFileDesc = NIL_RTVFSFILE;
+    vrc = RTVfsMemFileCreate(NIL_RTVFSIOSTREAM, 0 /*cbEstimate*/, &hVfsFileDesc);
     AssertRCReturnStmt(vrc, RTFdtDestroy(hFdt), vrc);
-    RTVFSIOSTREAM hVfsIosFdt = RTVfsFileToIoStream(hVfsFileFdt);
-    AssertRelease(hVfsIosFdt != NIL_RTVFSIOSTREAM);
+    RTVFSIOSTREAM hVfsIosDesc = RTVfsFileToIoStream(hVfsFileDesc);
+    AssertRelease(hVfsIosDesc != NIL_RTVFSIOSTREAM);
 
-    vrc = RTFdtDumpToVfsIoStrm(hFdt, RTFDTTYPE_DTB, 0 /*fFlags*/, hVfsIosFdt, NULL /*pErrInfo*/);
-    RTVfsIoStrmRelease(hVfsIosFdt);
+    /* Initialize the VBox platform descriptor. */
+    VBOXPLATFORMARMV8 ArmV8Platform; RT_ZERO(ArmV8Platform);
+
+    vrc = RTFdtDumpToVfsIoStrm(hFdt, RTFDTTYPE_DTB, 0 /*fFlags*/, hVfsIosDesc, NULL /*pErrInfo*/);
     if (RT_SUCCESS(vrc))
-        vrc = mptrResourceStore->i_addItem("resources", "fdt", hVfsFileFdt);
-    RTVfsFileRelease(hVfsFileFdt);
+        vrc = RTVfsFileQuerySize(hVfsFileDesc, &ArmV8Platform.cbFdt);
     AssertRCReturnStmt(vrc, RTFdtDestroy(hFdt), vrc);
+
+    vrc = RTVfsIoStrmZeroFill(hVfsIosDesc, (RTFOFF)(RT_ALIGN_64(ArmV8Platform.cbFdt, _64K) - ArmV8Platform.cbFdt));
+    AssertRCReturn(vrc, vrc);
+
+    ArmV8Platform.u32Magic            = VBOXPLATFORMARMV8_MAGIC;
+    ArmV8Platform.u32Version          = VBOXPLATFORMARMV8_VERSION;
+    ArmV8Platform.cbDesc              = sizeof(ArmV8Platform);
+    ArmV8Platform.fFlags              = 0;
+    ArmV8Platform.u64PhysAddrRamBase  = UINT64_C(0x40000000);
+    ArmV8Platform.cbRamBase           = cbRam;
+    ArmV8Platform.u64OffBackFdt       = RT_ALIGN_64(ArmV8Platform.cbFdt, _64K);
+    ArmV8Platform.cbFdt               = RT_ALIGN_64(ArmV8Platform.cbFdt, _64K);
+    ArmV8Platform.u64OffBackAcpiXsdp  = 0;
+    ArmV8Platform.cbAcpiXsdp          = 0;
+    ArmV8Platform.u64OffBackUefiRom   = GCPhysTopOfAddrSpace - sizeof(ArmV8Platform);
+    ArmV8Platform.cbUefiRom           = _64M; /** @todo Fixed reservation but the ROM region is usually much smaller. */
+    ArmV8Platform.u64OffBackMmio      = GCPhysTopOfAddrSpace - sizeof(ArmV8Platform) - 0x08000000; /** @todo Start of generic MMIO area containing the GIC,UART,RTC, etc. Will be changed soon */
+    ArmV8Platform.cbMmio              = _128M;
+
+    /* Add the VBox platform descriptor to the resource store. */
+    vrc = RTVfsIoStrmWrite(hVfsIosDesc, &ArmV8Platform, sizeof(ArmV8Platform), true /*fBlocking*/, NULL /*pcbWritten*/);
+    RTVfsIoStrmRelease(hVfsIosDesc);
+    vrc = mptrResourceStore->i_addItem("resources", "VBoxArmV8Desc", hVfsFileDesc);
+    RTVfsFileRelease(hVfsFileDesc);
+    AssertRCReturn(vrc, vrc);
 
     /* Dump the DTB for debugging purposes if requested. */
     Bstr DtbDumpVal;
