@@ -43,13 +43,13 @@
 #include <QSlider>
 #include <QStackedWidget>
 #include <QTimer>
+#include <QToolButton>
 #include <QVariant>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
 #include "QILineEdit.h"
-#include "QIToolButton.h"
 #include "UIAdvancedSettingsDialog.h"
 #include "UIAnimationFramework.h"
 #include "UICommon.h"
@@ -181,9 +181,9 @@ private:
     int focusedEditorWidth() const { return m_iFocusedEditorWidth; }
 
     /** Holds the filter editor instance. */
-    QILineEdit   *m_pLineEdit;
+    QILineEdit  *m_pLineEdit;
     /** Holds the filter reset button instance. */
-    QIToolButton *m_pToolButton;
+    QToolButton *m_pToolButton;
 
     /** Holds whether filter editor focused. */
     bool         m_fFocused;
@@ -431,13 +431,16 @@ void UIFilterEditor::prepare()
     }
 
     /* Prepare filter reset button: */
-    m_pToolButton = new QIToolButton(this);
+    m_pToolButton = new QToolButton(this);
     if (m_pToolButton)
     {
+#ifdef VBOX_WS_MAC
+        setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
+#endif
         m_pToolButton->hide();
         m_pToolButton->setIconSize(QSize(10, 10));
         m_pToolButton->setIcon(UIIconPool::iconSet(":/close_16px.png"));
-        connect(m_pToolButton, &QIToolButton::clicked,
+        connect(m_pToolButton, &QToolButton::clicked,
                 this, &UIFilterEditor::sltHandleButtonClicked);
     }
 
@@ -480,7 +483,7 @@ void UIFilterEditor::adjustEditorGeometry()
     const int iButtonY = iMinimumEditorHeight > iMinimumButtonHeight
                        ? (iMinimumEditorHeight - iMinimumButtonHeight) / 2
                        : 0;
-    m_pToolButton->setGeometry(iWidth - iMinimumButtonWidth, iButtonY, iMinimumButtonWidth, iMinimumButtonHeight);
+    m_pToolButton->setGeometry(iWidth - iMinimumButtonWidth - 1, iButtonY, iMinimumButtonWidth, iMinimumButtonHeight);
 }
 
 void UIFilterEditor::setEditorWidth(int iWidth)
