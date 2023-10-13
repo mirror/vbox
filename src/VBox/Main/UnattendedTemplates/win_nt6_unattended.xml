@@ -112,7 +112,9 @@
 
             <UserData>
                 <ProductKey>
+@@VBOX_COND_HAS_PRODUCT_KEY@@
                     <Key>@@VBOX_INSERT_PRODUCT_KEY_ELEMENT@@</Key>
+@@VBOX_COND_END@@
                     <WillShowUI>OnError</WillShowUI>
                 </ProductKey>
                 <AcceptEula>true</AcceptEula>
