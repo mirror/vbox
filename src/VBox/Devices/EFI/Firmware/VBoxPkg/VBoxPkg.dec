@@ -89,3 +89,5 @@
   ##  @libraryclass  Generic BDS library definition, include the data structure and function.
   GenericBdsLib|Include/Library/GenericBdsLib.h
 
+  ##  @libraryclass  VirtualBox ARM platform support library.
+  VBoxArmPlatformLib|Include/Library/VBoxArmPlatformLib.h
