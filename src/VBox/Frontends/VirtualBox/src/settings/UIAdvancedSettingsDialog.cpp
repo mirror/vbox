@@ -29,10 +29,12 @@
 #include <QAbstractButton>
 #include <QAbstractScrollArea>
 #include <QAbstractSpinBox>
+#include <QCheckBox>
 #include <QCloseEvent>
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QGridLayout>
+#include <QPainter>
 #include <QProgressBar>
 #include <QPropertyAnimation>
 #include <QPushButton>
@@ -53,6 +55,7 @@
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIIconPool.h"
+#include "UIImageTools.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UIPopupCenter.h"
@@ -72,6 +75,42 @@
 #ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
 # include "QIToolBar.h"
 #endif
+
+
+/** QCheckBox subclass used as mode checkbox. */
+class UIModeCheckBox : public QCheckBox
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs checkbox passing @a pParent to the base-class. */
+    UIModeCheckBox(QWidget *pParent);
+
+    /** Returns text 1. */
+    QString text1() const { return m_strText1; }
+    /** Defines @a strText1. */
+    void setText1(const QString &strText1) { m_strText1 = strText1; }
+    /** Returns text 2. */
+    QString text2() const { return m_strText2; }
+    /** Defines @a strText2. */
+    void setText2(const QString &strText2) { m_strText2 = strText2; }
+
+protected:
+
+    /** Handles any @a pEvent. */
+    virtual bool event(QEvent *pEvent) RT_OVERRIDE;
+
+    /** Handles paint @a pEvent. */
+    virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
+
+private:
+
+    /** Returns text 1. */
+    QString  m_strText1;
+    /** Returns text 2. */
+    QString  m_strText2;
+};
 
 
 /** QWidget reimplementation
@@ -192,6 +231,113 @@ private:
     /** Holds the vertical scrollbar animation instance. */
     QPropertyAnimation *m_pAnimation;
 };
+
+
+/*********************************************************************************************************************************
+*   Class UIModeCheckBox implementation.                                                                                         *
+*********************************************************************************************************************************/
+
+UIModeCheckBox::UIModeCheckBox(QWidget *pParent)
+    : QCheckBox(pParent)
+{
+}
+
+bool UIModeCheckBox::event(QEvent *pEvent)
+{
+    /* Handle desired events: */
+    switch (pEvent->type())
+    {
+        /* Handles mouse button press/release: */
+        case QEvent::MouseButtonPress:
+        case QEvent::MouseButtonRelease:
+        {
+            /* Handle release, ignore press: */
+            if (pEvent->type() == QEvent::MouseButtonRelease)
+            {
+                QMouseEvent *pMouseEvent = static_cast<QMouseEvent*>(pEvent);
+                setCheckState(pMouseEvent->pos().x() < width() / 2 ? Qt::Unchecked : Qt::Checked);
+            }
+            /* Prevent from handling somewhere else: */
+            pEvent->accept();
+            return true;
+        }
+
+        default:
+            break;
+    }
+
+    return QCheckBox::event(pEvent);
+}
+
+void UIModeCheckBox::paintEvent(QPaintEvent *pEvent)
+{
+    /* Acquire useful properties: */
+    const QPalette pal = QGuiApplication::palette();
+    QRect contentRect = pEvent->rect();
+    contentRect.setWidth(contentRect.width() - 10);
+
+    /* Prepare painter: */
+    QPainter painter(this);
+
+    /* Prepare left painter paths: */
+    QPainterPath painterPath1;
+    painterPath1.lineTo(contentRect.width() / 2 - 1,                    0);
+    painterPath1.lineTo(contentRect.width() / 2 - contentRect.height(), contentRect.height());
+    painterPath1.lineTo(0,                                              contentRect.height());
+    painterPath1.closeSubpath();
+
+    /* Prepare right painter paths: */
+    QPainterPath painterPath2;
+    painterPath2.moveTo(contentRect.width() / 2 + 1,                        0);
+    painterPath2.lineTo(contentRect.width(),                                0);
+    painterPath2.lineTo(contentRect.width() - contentRect.height(),         contentRect.height());
+    painterPath2.lineTo(contentRect.width() / 2 + 1 - contentRect.height(), contentRect.height());
+    painterPath2.closeSubpath();
+
+    /* Prepare left painting gradient: */
+    const QColor backColor1 = pal.color(QPalette::Active, isChecked() ? QPalette::Window : QPalette::Highlight);
+    const QColor bcTone11 = backColor1.lighter(100);
+    const QColor bcTone12 = backColor1.lighter(120);
+    QLinearGradient grad1(painterPath1.boundingRect().topLeft(), painterPath1.boundingRect().bottomRight());
+    grad1.setColorAt(0, bcTone11);
+    grad1.setColorAt(1, bcTone12);
+
+    /* Prepare right painting gradient: */
+    const QColor backColor2 = pal.color(QPalette::Active, isChecked() ? QPalette::Highlight : QPalette::Window);
+    const QColor bcTone21 = backColor2.lighter(100);
+    const QColor bcTone22 = backColor2.lighter(120);
+    QLinearGradient grad2(painterPath2.boundingRect().topLeft(), painterPath2.boundingRect().bottomRight());
+    grad2.setColorAt(0, bcTone21);
+    grad2.setColorAt(1, bcTone22);
+
+    /* Paint fancy shape: */
+    painter.save();
+    painter.setClipPath(painterPath1);
+    painter.fillRect(contentRect, grad1);
+    painter.setClipPath(painterPath2);
+    painter.fillRect(contentRect, grad2);
+    painter.restore();
+
+    /* Prepare text1/text2: */
+    const QFont fnt = font();
+    const QFontMetrics fm(fnt);
+    const QColor foreground1 = suitableForegroundColor(pal, backColor1);
+    const QString strName1 = text1();
+    const QPoint point1 = QPoint(5, contentRect.height() / 2 + fm.ascent() / 2 - 1 /* base line */);
+    const QColor foreground2 = suitableForegroundColor(pal, backColor2);
+    const QString strName2 = text2();
+    const QPoint point2 = QPoint(contentRect.width() / 2 + 5,
+                                 contentRect.height() / 2 + fm.ascent() / 2 - 1 /* base line */);
+
+    /* Paint text: */
+    painter.save();
+    painter.setFont(fnt);
+    painter.setPen(foreground1);
+    painter.drawText(point1, strName1);
+    painter.setPen(foreground2);
+    painter.drawText(point2, strName2);
+    painter.restore();
+}
 
 
 /*********************************************************************************************************************************
@@ -441,6 +587,7 @@ UIAdvancedSettingsDialog::UIAdvancedSettingsDialog(QWidget *pParent,
     , m_fSilent(true)
     , m_pScrollingTimer(0)
     , m_pLayoutMain(0)
+    , m_pCheckBoxMode(0)
     , m_pEditorFilter(0)
     , m_pScrollArea(0)
     , m_pScrollViewport(0)
@@ -570,6 +717,10 @@ bool UIAdvancedSettingsDialog::eventFilter(QObject *pObject, QEvent *pEvent)
 
 void UIAdvancedSettingsDialog::retranslateUi()
 {
+    /* Translate mode checkbox: */
+    m_pCheckBoxMode->setText1(tr("Basic"));
+    m_pCheckBoxMode->setText2(tr("Expert"));
+
     /* Translate filter editor placeholder: */
     if (m_pEditorFilter)
         m_pEditorFilter->setPlaceholderText(tr("Search settings"));
@@ -942,6 +1093,11 @@ void UIAdvancedSettingsDialog::prepareSelector()
 
     /* Make sure there is a serious spacing between selector and pages: */
     m_pLayoutMain->setColumnMinimumWidth(1, 20);
+
+    /* Prepare mode checkbox: */
+    m_pCheckBoxMode = new UIModeCheckBox(centralWidget());
+    if (m_pCheckBoxMode)
+        m_pLayoutMain->addWidget(m_pCheckBoxMode, 0, 0);
 
     /* Prepare classical tree-view selector: */
     m_pSelector = new UISettingsSelectorTreeView(centralWidget());

@@ -47,6 +47,7 @@ class QTimer;
 class QVariant;
 class QIDialogButtonBox;
 class UIFilterEditor;
+class UIModeCheckBox;
 class UISettingsPage;
 class UISettingsPageFrame;
 class UISettingsPageValidator;
@@ -249,6 +250,9 @@ private:
      * @{ */
         /** Holds the main layout instance. */
         QGridLayout *m_pLayoutMain;
+
+        /** Holds the mode checkbox instance. */
+        UIModeCheckBox *m_pCheckBoxMode;
 
         /** Holds the filter editor instance. */
         UIFilterEditor *m_pEditorFilter;
