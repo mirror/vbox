@@ -17,6 +17,11 @@
 #include <Library/PcdLib.h>
 #include <Library/CacheMaintenanceLib.h>
 
+#ifdef VBOX
+# include <Library/VBoxArmPlatformLib.h>
+#endif
+
+
 VOID
 BuildMemoryTypeInformationHob (
   VOID
@@ -55,10 +60,17 @@ MemoryPeim (
   UINT64                       SystemMemorySize;
   VOID                         *Hob;
 
+#ifndef VBOX
   // Ensure PcdSystemMemorySize has been set
   ASSERT (PcdGet64 (PcdSystemMemorySize) != 0);
 
   SystemMemorySize = PcdGet64 (PcdSystemMemorySize);
+#else
+  // Ensure we have memory
+  ASSERT (VBoxArmPlatformRamBaseSizeGet() != 0);
+
+  SystemMemorySize = VBoxArmPlatformRamBaseSizeGet();
+#endif
 
   Hob = GetFirstGuidHob (&gArmVirtSystemMemorySizeGuid);
   if (Hob != NULL) {
@@ -75,14 +87,23 @@ MemoryPeim (
                         EFI_RESOURCE_ATTRIBUTE_TESTED
                         );
 
+#ifndef VBOX
   SystemMemoryTop = PcdGet64 (PcdSystemMemoryBase) + SystemMemorySize;
+#else
+  SystemMemoryTop = (UINTN)VBoxArmPlatformRamBaseStartGetPhysAddr() + SystemMemorySize;
+#endif
 
   if (SystemMemoryTop - 1 > MAX_ALLOC_ADDRESS) {
     BuildResourceDescriptorHob (
       EFI_RESOURCE_SYSTEM_MEMORY,
       ResourceAttributes,
+#ifndef VBOX
       PcdGet64 (PcdSystemMemoryBase),
       (UINT64)MAX_ALLOC_ADDRESS - PcdGet64 (PcdSystemMemoryBase) + 1
+#else
+      (UINT64)VBoxArmPlatformRamBaseStartGetPhysAddr(),
+      (UINT64)MAX_ALLOC_ADDRESS - VBoxArmPlatformRamBaseStartGetPhysAddr() + 1
+#endif
       );
     BuildResourceDescriptorHob (
       EFI_RESOURCE_SYSTEM_MEMORY,
@@ -94,7 +115,11 @@ MemoryPeim (
     BuildResourceDescriptorHob (
       EFI_RESOURCE_SYSTEM_MEMORY,
       ResourceAttributes,
+#ifndef VBOX
       PcdGet64 (PcdSystemMemoryBase),
+#else
+      (UINT64)VBoxArmPlatformRamBaseStartGetPhysAddr(),
+#endif
       SystemMemorySize
       );
   }

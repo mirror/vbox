@@ -26,6 +26,7 @@
   EmbeddedPkg/EmbeddedPkg.dec
   ArmPkg/ArmPkg.dec
   ArmPlatformPkg/ArmPlatformPkg.dec
+  VBoxPkg/VBoxPkg.dec               # VBox: Added
 
 [LibraryClasses]
   PeimEntryPoint
@@ -34,6 +35,7 @@
   ArmLib
   ArmPlatformLib
   MemoryInitPeiLib
+  VBoxArmPlatformLib                # VBox: Added
 
 [Guids]
   gEfiMemoryTypeInformationGuid
@@ -42,7 +44,7 @@
   gEmbeddedTokenSpaceGuid.PcdPrePiProduceMemoryTypeInformationHob
 
 [FixedPcd]
-  gArmTokenSpaceGuid.PcdSystemMemoryBase
+#  gArmTokenSpaceGuid.PcdSystemMemoryBase VBox: Commented out
   gArmPlatformTokenSpaceGuid.PcdSystemMemoryUefiRegionSize
 
   gEmbeddedTokenSpaceGuid.PcdMemoryTypeEfiACPIReclaimMemory

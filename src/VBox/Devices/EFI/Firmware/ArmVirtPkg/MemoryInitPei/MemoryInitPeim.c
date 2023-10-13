@@ -16,6 +16,10 @@
 #include <Library/PcdLib.h>
 #include <Guid/MemoryTypeInformation.h>
 
+#ifdef VBOX
+# include <Library/VBoxArmPlatformLib.h>
+#endif
+
 EFI_STATUS
 EFIAPI
 MemoryPeim (
@@ -79,6 +83,7 @@ InitializeMemory (
   UINTN       UefiMemoryBase;
   EFI_STATUS  Status;
 
+#ifndef VBOX
   ASSERT (FixedPcdGet64 (PcdSystemMemoryBase) < (UINT64)MAX_ALLOC_ADDRESS);
 
   //
@@ -87,6 +92,15 @@ InitializeMemory (
   //
   UefiMemoryBase = (UINTN)FixedPcdGet64 (PcdSystemMemoryBase) + SIZE_128MB
                    - FixedPcdGet32 (PcdSystemMemoryUefiRegionSize);
+#else
+  ASSERT (VBoxArmPlatformRamBaseStartGetPhysAddr() < (UINT64)MAX_ALLOC_ADDRESS);
+
+  //
+  // Put the permanent PEI memory at the top of the base DRAM region.
+  //
+  UefiMemoryBase = (UINTN)VBoxArmPlatformRamBaseStartGetPhysAddr() + VBoxArmPlatformRamBaseSizeGet()
+                   - FixedPcdGet32 (PcdSystemMemoryUefiRegionSize);
+#endif
 
   Status = PeiServicesInstallPeiMemory (
              UefiMemoryBase,

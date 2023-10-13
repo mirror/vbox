@@ -55,11 +55,6 @@ VBoxVirtMemInfoPeiLibConstructor (
   NewSize = VBoxArmPlatformRamBaseSizeGet();
 
   /** @todo This will go away soon when we change the other places to deal with dynamic RAM ranges. */
-  //
-  // Make sure the start of DRAM matches our expectation
-  //
-  ASSERT (PcdGet64 (PcdSystemMemoryBase) == NewBase);
-
   Hob = BuildGuidDataHob (
           &gArmVirtSystemMemorySizeGuid,
           &NewSize,

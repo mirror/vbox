@@ -24,6 +24,7 @@
   ArmPkg/ArmPkg.dec
   ArmPlatformPkg/ArmPlatformPkg.dec
   ArmVirtPkg/ArmVirtPkg.dec
+  VBoxPkg/VBoxPkg.dec               # VBox: Added
 
 [LibraryClasses]
   DebugLib
@@ -32,6 +33,7 @@
   ArmMmuLib
   ArmVirtMemInfoLib
   CacheMaintenanceLib
+  VBoxArmPlatformLib                # VBox: Added
 
 [Guids]
   gArmVirtSystemMemorySizeGuid
