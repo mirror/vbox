@@ -274,7 +274,8 @@ void UIModeCheckBox::paintEvent(QPaintEvent *pEvent)
     /* Acquire useful properties: */
     const QPalette pal = QGuiApplication::palette();
     QRect contentRect = pEvent->rect();
-    contentRect.setWidth(contentRect.width() - 10);
+    contentRect.setLeft(contentRect.left() + 2); /// @todo justify!
+    contentRect.setWidth(contentRect.width() - 10); /// @todo justify!
 
     /* Prepare painter: */
     QPainter painter(this);
@@ -296,16 +297,16 @@ void UIModeCheckBox::paintEvent(QPaintEvent *pEvent)
 
     /* Prepare left painting gradient: */
     const QColor backColor1 = pal.color(QPalette::Active, isChecked() ? QPalette::Window : QPalette::Highlight);
-    const QColor bcTone11 = backColor1.lighter(100);
-    const QColor bcTone12 = backColor1.lighter(120);
+    const QColor bcTone11 = backColor1.lighter(isChecked() ? 100 : 120);
+    const QColor bcTone12 = backColor1.lighter(isChecked() ? 120 : 140);
     QLinearGradient grad1(painterPath1.boundingRect().topLeft(), painterPath1.boundingRect().bottomRight());
     grad1.setColorAt(0, bcTone11);
     grad1.setColorAt(1, bcTone12);
 
     /* Prepare right painting gradient: */
     const QColor backColor2 = pal.color(QPalette::Active, isChecked() ? QPalette::Highlight : QPalette::Window);
-    const QColor bcTone21 = backColor2.lighter(100);
-    const QColor bcTone22 = backColor2.lighter(120);
+    const QColor bcTone21 = backColor2.lighter(isChecked() ? 100 : 120);
+    const QColor bcTone22 = backColor2.lighter(isChecked() ? 120 : 140);
     QLinearGradient grad2(painterPath2.boundingRect().topLeft(), painterPath2.boundingRect().bottomRight());
     grad2.setColorAt(0, bcTone21);
     grad2.setColorAt(1, bcTone22);
@@ -323,10 +324,10 @@ void UIModeCheckBox::paintEvent(QPaintEvent *pEvent)
     const QFontMetrics fm(fnt);
     const QColor foreground1 = suitableForegroundColor(pal, backColor1);
     const QString strName1 = text1();
-    const QPoint point1 = QPoint(5, contentRect.height() / 2 + fm.ascent() / 2 - 1 /* base line */);
+    const QPoint point1 = QPoint(contentRect.left() + 5 /** @todo justify! */, contentRect.height() / 2 + fm.ascent() / 2 - 1 /* base line */);
     const QColor foreground2 = suitableForegroundColor(pal, backColor2);
     const QString strName2 = text2();
-    const QPoint point2 = QPoint(contentRect.width() / 2 + 5,
+    const QPoint point2 = QPoint(contentRect.width() / 2 + 1 + 5 /** @todo justify! */,
                                  contentRect.height() / 2 + fm.ascent() / 2 - 1 /* base line */);
 
     /* Paint text: */
