@@ -883,14 +883,30 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_SVM_FEATURE_EDX_VGIF                      RT_BIT(16)
 /** Bit 17 - GMET - Supports Guest Mode Execute Trap Extensions. */
 #define X86_CPUID_SVM_FEATURE_EDX_GMET                      RT_BIT(17)
+/** Bit 18 - X2AVIC - Supports Advanced Virtual Interrupt Controller in x2APIC
+ *  mode. */
+#define X86_CPUID_SVM_FEATURE_EDX_X2AVIC                    RT_BIT(18)
 /** Bit 19 - SSSCheck - SVM supervisor shadow stack restrictions. */
 #define X86_CPUID_SVM_FEATURE_EDX_SSSCHECK                  RT_BIT(19)
 /** Bit 20 - SpecCtrl - Supports SPEC_CTRL Virtualization. */
 #define X86_CPUID_SVM_FEATURE_EDX_SPEC_CTRL                 RT_BIT(20)
+/** Bit 21 - ROGPT - Read-Only Guest Page Table. */
+#define X86_CPUID_SVM_FEATURE_EDX_ROGPT                     RT_BIT(21)
 /** Bit 23 - HOST_MCE_OVERRIDE - Supports host \#MC exception override. */
 #define X86_CPUID_SVM_FEATURE_EDX_HOST_MCE_OVERRIDE         RT_BIT(23)
 /** Bit 24 - TlbiCtl - Supports INVLPGB/TLBSYNC in VMCB and TLBSYNC intercept. */
 #define X86_CPUID_SVM_FEATURE_EDX_TLBICTL                   RT_BIT(24)
+/** Bit 25 - TlbiCtl - Supports virtual NMIs. */
+#define X86_CPUID_SVM_FEATURE_EDX_VNMI                      RT_BIT(25)
+/** Bit 26 - TlbiCtl - Supports IBS virtualization. */
+#define X86_CPUID_SVM_FEATURE_EDX_IBS_VIRT                  RT_BIT(26)
+/** Bit 27 - TlbiCtl - Supports extended LVT AVIC access changes. */
+#define X86_CPUID_SVM_FEATURE_EDX_EXT_LVT_AVIC_ACCESS_CHG   RT_BIT(27)
+/** Bit 28 - TlbiCtl - Supports guest VMCB address check. */
+#define X86_CPUID_SVM_FEATURE_EDX_NST_VIRT_VMCB_ADDR_CHK    RT_BIT(28)
+/** Bit 29 - TlbiCtl - Supports INVLPGB/TLBSYNC in VMCB and TLBSYNC intercept. */
+#define X86_CPUID_SVM_FEATURE_EDX_BUS_LOCK_THRESHOLD        RT_BIT(29)
+
 /** @} */
 
 

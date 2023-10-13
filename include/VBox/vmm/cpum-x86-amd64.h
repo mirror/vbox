@@ -984,16 +984,30 @@ typedef struct CPUMFEATURES
     uint32_t        fSvmVGif : 1;
     /** SVM: Supports GMET (Guest Mode Execute Trap Extension). */
     uint32_t        fSvmGmet : 1;
+    /** SVM: Supports AVIC in x2APIC mode. */
+    uint32_t        fSvmX2Avic : 1;
     /** SVM: Supports SSSCheck (SVM Supervisor Shadow Stack). */
     uint32_t        fSvmSSSCheck : 1;
     /** SVM: Supports SPEC_CTRL virtualization. */
     uint32_t        fSvmSpecCtrl : 1;
+    /** SVM: Supports Read-Only Guest Page Table feature. */
+    uint32_t        fSvmRoGpt : 1;
     /** SVM: Supports HOST_MCE_OVERRIDE. */
     uint32_t        fSvmHostMceOverride : 1;
     /** SVM: Supports TlbiCtl (INVLPGB/TLBSYNC in VMCB and TLBSYNC intercept). */
     uint32_t        fSvmTlbiCtl : 1;
+     /** SVM: Supports NMI virtualization. */
+    uint32_t        fSvmVNmi : 1;
+    /** SVM: Supports IBS virtualizaiton. */
+    uint32_t        fSvmIbsVirt : 1;
+    /** SVM: Supports Extended LVT AVIC access changes. */
+    uint32_t        fSvmExtLvtAvicAccessChg : 1;
+    /** SVM: Supports Guest VMCB address check. */
+    uint32_t        fSvmNstVirtVmcbAddrChk : 1;
+    /** SVM: Supports Bus Lock Threshold. */
+    uint32_t        fSvmBusLockThreshold : 1;
     /** SVM: Padding / reserved for future features (64 bits total w/ max ASID). */
-    uint32_t        fSvmPadding0 : 14;
+    uint32_t        fSvmPadding0 : 7;
     /** SVM: Maximum supported ASID. */
     uint32_t        uSvmMaxAsid;
     /** @} */
