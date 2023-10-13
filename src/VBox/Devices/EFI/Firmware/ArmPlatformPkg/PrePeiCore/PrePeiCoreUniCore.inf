@@ -37,6 +37,7 @@
   MdeModulePkg/MdeModulePkg.dec
   ArmPkg/ArmPkg.dec
   ArmPlatformPkg/ArmPlatformPkg.dec
+  VBoxPkg/VBoxPkg.dec               # VBox: Added
 
 [LibraryClasses]
   ArmLib
@@ -48,6 +49,7 @@
   IoLib
   PrintLib
   SerialPortLib
+  VBoxArmPlatformLib                # VBox: Added
 
 [Ppis]
   gEfiTemporaryRamSupportPpiGuid

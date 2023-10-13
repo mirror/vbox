@@ -38,8 +38,56 @@ ASM_PFX(MainEntryPoint):
   // Is it the Primary Core ?
   bl    ASM_PFX(ArmPlatformIsPrimaryCore)
 
+#ifndef VBOX
   // Get the top of the primary stacks (and the base of the secondary stacks)
   MOV64 (x1, FixedPcdGet64(PcdCPUCoresStackBase) + FixedPcdGet32(PcdCPUCorePrimaryStackSize))
+#else
+  //
+  // The VirtualBox platform has the following layout:
+  //
+  //    0        128MiB            RAM size + 128MiB                                                                            -64KiB    Max phys address
+  //    +----------+------------------------+-----------------------------+-------------+---------+----------+---------+-----------+------------+
+  //    |   UEFI   |                        |                             |             |         |          |  Misc   |  FDT/ACPI |    VBox    |
+  //    | firmware |        RAM ..... =>    |  Not assigned address space | <= PCI MMIO | PCI PIO | PCI ECAM |  MMIO   |   table   | Descriptor |
+  //    |  region  |                        |                             |             |         |          | region  |   region  |   region   |
+  //    +----------+------------------------+-----------------------------+-------------+---------+----------+---------+-----------+------------+
+  //
+  // In order to have as few as hardcoded addresses as possible in the firmware
+  // VirtualBox installs a descriptor at the end of the physical address space
+  // where all the other information is stored.
+  //
+  // First the start of the region is determined by reading the size of the
+  // physical address space. From there the memory and stack is set up and
+  // the C entry point is called.
+  //
+  // Note: Only the VBox descriptor and UEFI firmware region are at a fixed location.
+  //       Everything else can float around freely in theory to give us the most flexibility.
+  //
+
+  // Save the result from ArmPlatformIsPrimaryCore().
+  mov x6, x0
+
+  // Get the number of physical address bits
+  bl ASM_PFX(ArmGetPhysicalAddressBits)
+
+  //
+  // Determine the start of the VBox descriptor region.
+  //
+  mov x1, #1
+  lsl x1, x1, x0      // Determine first invalid address
+  sub x1, x1, #65536  // Get at start of VBox descriptor region.
+
+  //
+  // Get at the ram base and use the beginning as our temporary stack.
+  //
+  ldr x1, [x1, #16]
+
+  // Get the top of the primary stacks (and the base of the secondary stacks)
+  add x1, x1, FixedPcdGet32(PcdCPUCorePrimaryStackSize)
+
+  // Restore the result from ArmPlatformIsPrimaryCore().
+  mov x0, x6
+#endif
 
   // x0 is equal to 1 if I am the primary core
   cmp   x0, #1
@@ -81,7 +129,11 @@ _PrepareArguments:
 
 _SetupPrimaryCoreStack:
   mov   sp, x1
+#ifndef VBOX
   MOV64 (x8, FixedPcdGet64 (PcdCPUCoresStackBase))
+#else
+  sub   x8, x1, FixedPcdGet32(PcdCPUCorePrimaryStackSize)
+#endif
   MOV64 (x9, FixedPcdGet32 (PcdInitValueInTempStack) |\
              FixedPcdGet32 (PcdInitValueInTempStack) << 32)
 0:stp   x9, x9, [x8], #16

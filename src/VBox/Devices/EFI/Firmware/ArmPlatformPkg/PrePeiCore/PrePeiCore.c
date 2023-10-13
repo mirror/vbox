@@ -14,6 +14,10 @@
 #include <Library/PrintLib.h>
 #include <Library/SerialPortLib.h>
 
+#ifdef VBOX
+# include <Library/VBoxArmPlatformLib.h>
+#endif
+
 #include "PrePeiCore.h"
 
 CONST EFI_PEI_TEMPORARY_RAM_SUPPORT_PPI  mTemporaryRamSupportPpi = { PrePeiCoreTemporaryRamSupport };
@@ -42,7 +46,11 @@ CreatePpiList (
   ArmPlatformGetPlatformPpiList (&PlatformPpiListSize, &PlatformPpiList);
 
   // Copy the Common and Platform PPis in Temporary Memory
+#ifndef VBOX
   ListBase = PcdGet64 (PcdCPUCoresStackBase);
+#else
+  ListBase = (UINTN)VBoxArmPlatformRamBaseStartGetPhysAddr();
+#endif
   CopyMem ((VOID *)ListBase, gCommonPpiTable, sizeof (gCommonPpiTable));
   CopyMem ((VOID *)(ListBase + sizeof (gCommonPpiTable)), PlatformPpiList, PlatformPpiListSize);
 
@@ -93,10 +101,17 @@ CEntryPoint (
     // Enable Instruction Caches on all cores.
     ArmEnableInstructionCache ();
 
+#ifndef VBOX
     InvalidateDataCacheRange (
       (VOID *)(UINTN)PcdGet64 (PcdCPUCoresStackBase),
       PcdGet32 (PcdCPUCorePrimaryStackSize)
       );
+#else
+    InvalidateDataCacheRange (
+      (VOID *)(UINTN)VBoxArmPlatformRamBaseStartGetPhysAddr(),
+      PcdGet32 (PcdCPUCorePrimaryStackSize)
+      );
+#endif
   }
 
   //

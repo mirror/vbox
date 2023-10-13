@@ -8,6 +8,10 @@
 
 #include "PrePeiCore.h"
 
+#ifdef VBOX
+# include <Library/VBoxArmPlatformLib.h>
+#endif
+
 VOID
 EFIAPI
 SecondaryMain (
@@ -34,7 +38,11 @@ PrimaryMain (
   // Adjust the Temporary Ram as the new Ppi List (Common + Platform Ppi Lists) is created at
   // the base of the primary core stack
   PpiListSize      = ALIGN_VALUE (PpiListSize, CPU_STACK_ALIGNMENT);
+#ifndef VBOX
   TemporaryRamBase = (UINTN)PcdGet64 (PcdCPUCoresStackBase) + PpiListSize;
+#else
+  TemporaryRamBase = (UINTN)VBoxArmPlatformRamBaseStartGetPhysAddr() + PpiListSize;
+#endif
   TemporaryRamSize = (UINTN)PcdGet32 (PcdCPUCorePrimaryStackSize) - PpiListSize;
 
   //
