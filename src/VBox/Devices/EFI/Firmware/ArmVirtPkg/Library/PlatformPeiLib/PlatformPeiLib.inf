@@ -37,6 +37,7 @@
   FdtLib
   PcdLib
   PeiServicesLib
+  VBoxArmPlatformLib            # VBox: Added
 
 [FixedPcd]
   gArmTokenSpaceGuid.PcdFvSize
