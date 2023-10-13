@@ -5499,9 +5499,15 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         cDesktopPixelsBlue = 0
         iThreshold = 20
         for i in range(0, cPixels, 4) :
-            iRed = int(aRGBData[i])
-            iGreen = int(aRGBData[i + 1])
-            iBlue = int(aRGBData[i + 2])
+            if sys.version_info[0] >= 3:
+                iRed   = aRGBData[i];
+                iGreen = aRGBData[i + 1];
+                iBlue  = aRGBData[i + 2];
+            else: # Python 2.7 treats a pixel data returned by takeScreenShotToArray as a string
+                iRed   = ord(aRGBData[i])
+                iGreen = ord(aRGBData[i + 1])
+                iBlue  = ord(aRGBData[i + 2])
+
             iBright = (3 * iRed + 6 * iGreen + iBlue) / 10
             if iThreshold < iBright < 255 - iThreshold :
                 cDesktopPixels += 1;
