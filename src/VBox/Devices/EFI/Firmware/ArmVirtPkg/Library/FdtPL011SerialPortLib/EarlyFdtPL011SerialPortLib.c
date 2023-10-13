@@ -16,6 +16,9 @@
 #include <Library/PL011UartLib.h>
 #include <Library/SerialPortLib.h>
 #include <libfdt.h>
+#ifdef VBOX
+# include <Library/VBoxArmPlatformLib.h>
+#endif
 
 RETURN_STATUS
 EFIAPI
@@ -65,7 +68,11 @@ SerialPortGetBaseAddress (
   UINTN               UartBase;
   RETURN_STATUS       Status;
 
+#ifndef VBOX
   DeviceTreeBase = (VOID *)(UINTN)PcdGet64 (PcdDeviceTreeInitialBaseAddress);
+#else
+  DeviceTreeBase = VBoxArmPlatformFdtGet();
+#endif
 
   if ((DeviceTreeBase == NULL) || (fdt_check_header (DeviceTreeBase) != 0)) {
     return 0;

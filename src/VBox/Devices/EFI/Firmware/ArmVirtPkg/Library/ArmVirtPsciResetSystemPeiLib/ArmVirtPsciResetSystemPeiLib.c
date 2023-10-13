@@ -19,6 +19,9 @@
 #include <Library/DebugLib.h>
 #include <Library/HobLib.h>
 #include <Library/ResetSystemLib.h>
+#ifdef VBOX
+# include <Library/VBoxArmPlatformLib.h>
+#endif
 
 #include <IndustryStandard/ArmStdSmc.h>
 
@@ -41,7 +44,11 @@ DiscoverPsciMethod (
   CONST CHAR8  *CompatibleItem;
   CONST VOID   *Prop;
 
+#ifndef VBOX
   DeviceTreeBase = (VOID *)(UINTN)PcdGet64 (PcdDeviceTreeInitialBaseAddress);
+#else
+  DeviceTreeBase = VBoxArmPlatformFdtGet();
+#endif
   ASSERT (fdt_check_header (DeviceTreeBase) == 0);
 
   //

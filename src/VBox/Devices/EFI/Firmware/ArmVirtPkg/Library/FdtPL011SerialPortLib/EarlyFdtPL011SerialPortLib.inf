@@ -23,12 +23,14 @@
   PL011UartLib
   PcdLib
   FdtLib
+  VBoxArmPlatformLib            # VBox: Added
 
 [Packages]
   MdePkg/MdePkg.dec
   EmbeddedPkg/EmbeddedPkg.dec
   ArmPlatformPkg/ArmPlatformPkg.dec
   ArmVirtPkg/ArmVirtPkg.dec
+  VBoxPkg/VBoxPkg.dec           # VBox: Added
 
 [Pcd]
   gArmVirtTokenSpaceGuid.PcdDeviceTreeInitialBaseAddress

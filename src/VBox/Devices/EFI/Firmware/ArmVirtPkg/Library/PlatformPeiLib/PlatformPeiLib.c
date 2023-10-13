@@ -15,6 +15,9 @@
 #include <Library/PcdLib.h>
 #include <Library/PeiServicesLib.h>
 #include <libfdt.h>
+#ifdef VBOX
+# include <Library/VBoxArmPlatformLib.h>
+#endif
 
 #include <Guid/EarlyPL011BaseAddress.h>
 #include <Guid/FdtHob.h>
@@ -57,7 +60,11 @@ PlatformPeim (
   UINT64        TpmBase;
   EFI_STATUS    Status;
 
+#ifndef VBOX
   Base = (VOID *)(UINTN)PcdGet64 (PcdDeviceTreeInitialBaseAddress);
+#else
+  Base = VBoxArmPlatformFdtGet();
+#endif
   ASSERT (Base != NULL);
   ASSERT (fdt_check_header (Base) == 0);
 

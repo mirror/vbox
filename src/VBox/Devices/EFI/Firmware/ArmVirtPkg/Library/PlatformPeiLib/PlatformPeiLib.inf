@@ -26,6 +26,7 @@
   MdePkg/MdePkg.dec
   OvmfPkg/OvmfPkg.dec
   SecurityPkg/SecurityPkg.dec
+  VBoxPkg/VBoxPkg.dec           # VBox: Added
 
 [FeaturePcd]
   gArmVirtTokenSpaceGuid.PcdTpm2SupportEnabled

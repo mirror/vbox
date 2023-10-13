@@ -101,13 +101,21 @@
 !endif
 
 [LibraryClasses.AARCH64]
+!ifndef $(VBOX)
   ArmPlatformLib|ArmVirtPkg/Library/ArmPlatformLibQemu/ArmPlatformLibQemu.inf
+!else
+  ArmPlatformLib|ArmPlatformPkg/Library/ArmPlatformLibNull/ArmPlatformLibNull.inf
+!endif
 
 [LibraryClasses.ARM]
   ArmPlatformLib|ArmPlatformPkg/Library/ArmPlatformLibNull/ArmPlatformLibNull.inf
 
 [LibraryClasses.common.PEIM]
+!ifndef $(VBOX)
   ArmVirtMemInfoLib|ArmVirtPkg/Library/QemuVirtMemInfoLib/QemuVirtMemInfoPeiLib.inf
+!else
+  ArmVirtMemInfoLib|VBoxPkg/Library/VBoxVirtMemInfoLib/VBoxVirtMemInfoPeiLib.inf
+!endif
 
 !if $(TPM2_ENABLE) == TRUE
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/PeiCryptLib.inf
@@ -130,10 +138,12 @@
   UefiScsiLib|MdePkg/Library/UefiScsiLib/UefiScsiLib.inf
 
 [BuildOptions]
+!ifndef $(VBOX) # Don't clear the XIPFLAGS as we run with MMU disabled (no early ID mapping).
 !if $(CAVIUM_ERRATUM_27456) == TRUE
   GCC:*_*_AARCH64_PP_FLAGS = -DCAVIUM_ERRATUM_27456
 !else
   GCC:*_*_AARCH64_CC_XIPFLAGS ==
+!endif
 !endif
 
 !include NetworkPkg/NetworkBuildOptions.dsc.inc
