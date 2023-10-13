@@ -4786,7 +4786,7 @@ typedef enum X86XCPT
     X86_XCPT_XF = 0x13,
     /** \#VE - Virtualization Exception (Intel only). */
     X86_XCPT_VE = 0x14,
-    /** \#CP - Control Protection Exception (Intel only). */
+    /** \#CP - Control Protection Exception. */
     X86_XCPT_CP = 0x15,
     /** \#VC - VMM Communication Exception (AMD only). */
     X86_XCPT_VC = 0x1d,
