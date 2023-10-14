@@ -891,6 +891,13 @@ void UIMachineSettingsDisplay::prepareTabScreen()
         QVBoxLayout *pLayoutScreen = new QVBoxLayout(m_pTabScreen);
         if (pLayoutScreen)
         {
+#ifdef VBOX_WS_MAC
+            /* On Mac OS X we can do a bit of smoothness: */
+            int iLeft, iTop, iRight, iBottom;
+            pLayoutScreen->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+            pLayoutScreen->setContentsMargins(iLeft / 2, iTop / 2, iRight / 2, iBottom / 2);
+#endif
+
             /* Prepare video memory editor: */
             m_pEditorVideoMemorySize = new UIVideoMemoryEditor(m_pTabScreen);
             if (m_pEditorVideoMemorySize)
@@ -951,6 +958,13 @@ void UIMachineSettingsDisplay::prepareTabRemoteDisplay()
         QVBoxLayout *pLayoutRemoteDisplay = new QVBoxLayout(m_pTabRemoteDisplay);
         if (pLayoutRemoteDisplay)
         {
+#ifdef VBOX_WS_MAC
+            /* On Mac OS X we can do a bit of smoothness: */
+            int iLeft, iTop, iRight, iBottom;
+            pLayoutRemoteDisplay->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+            pLayoutRemoteDisplay->setContentsMargins(iLeft / 2, iTop / 2, iRight / 2, iBottom / 2);
+#endif
+
             /* Prepare remote display settings editor: */
             m_pEditorVRDESettings = new UIVRDESettingsEditor(m_pTabRemoteDisplay);
             if (m_pEditorVRDESettings)
@@ -977,6 +991,13 @@ void UIMachineSettingsDisplay::prepareTabRecording()
         QVBoxLayout *pLayoutRecording = new QVBoxLayout(m_pTabRecording);
         if (pLayoutRecording)
         {
+#ifdef VBOX_WS_MAC
+            /* On Mac OS X we can do a bit of smoothness: */
+            int iLeft, iTop, iRight, iBottom;
+            pLayoutRecording->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+            pLayoutRecording->setContentsMargins(iLeft / 2, iTop / 2, iRight / 2, iBottom / 2);
+#endif
+
             /* Prepare recording editor: */
             m_pEditorRecordingSettings = new UIRecordingSettingsEditor(m_pTabRecording);
             if (m_pEditorRecordingSettings)

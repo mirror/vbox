@@ -575,6 +575,13 @@ void UIMachineSettingsNetwork::prepareWidgets()
     QVBoxLayout *pLayout = new QVBoxLayout(this);
     if (pLayout)
     {
+#ifdef VBOX_WS_MAC
+            /* On Mac OS X we can do a bit of smoothness: */
+            int iLeft, iTop, iRight, iBottom;
+            pLayout->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+            pLayout->setContentsMargins(iLeft / 2, iTop / 2, iRight / 2, iBottom / 2);
+#endif
+
         /* Prepare settings editor: */
         m_pEditorNetworkSettings = new UINetworkSettingsEditor(this);
         if (m_pEditorNetworkSettings)

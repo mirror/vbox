@@ -717,6 +717,12 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
         {
             pLayoutMotherboard->setColumnStretch(1, 1);
             pLayoutMotherboard->setRowStretch(6, 1);
+#ifdef VBOX_WS_MAC
+            /* On Mac OS X we can do a bit of smoothness: */
+            int iLeft, iTop, iRight, iBottom;
+            pLayoutMotherboard->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+            pLayoutMotherboard->setContentsMargins(iLeft / 2, iTop / 2, iRight / 2, iBottom / 2);
+#endif
 
             /* Prepare base memory editor: */
             m_pEditorBaseMemory = new UIBaseMemoryEditor(m_pTabMotherboard);
@@ -784,6 +790,12 @@ void UIMachineSettingsSystem::prepareTabProcessor()
         {
             pLayoutProcessor->setColumnStretch(1, 1);
             pLayoutProcessor->setRowStretch(3, 1);
+#ifdef VBOX_WS_MAC
+            /* On Mac OS X we can do a bit of smoothness: */
+            int iLeft, iTop, iRight, iBottom;
+            pLayoutProcessor->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+            pLayoutProcessor->setContentsMargins(iLeft / 2, iTop / 2, iRight / 2, iBottom / 2);
+#endif
 
             /* Prepare VCPU editor : */
             m_pEditorVCPU = new UIVirtualCPUEditor(m_pTabProcessor);
@@ -827,6 +839,12 @@ void UIMachineSettingsSystem::prepareTabAcceleration()
         {
             pLayoutAcceleration->setColumnStretch(2, 1);
             pLayoutAcceleration->setRowStretch(3, 1);
+#ifdef VBOX_WS_MAC
+            /* On Mac OS X we can do a bit of smoothness: */
+            int iLeft, iTop, iRight, iBottom;
+            pLayoutAcceleration->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+            pLayoutAcceleration->setContentsMargins(iLeft / 2, iTop / 2, iRight / 2, iBottom / 2);
+#endif
 
             /* Prepare paravirtualization provider editor: */
             m_pEditorParavirtProvider = new UIParavirtProviderEditor(m_pTabAcceleration);

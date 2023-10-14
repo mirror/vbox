@@ -562,6 +562,13 @@ void UIMachineSettingsGeneral::prepareTabBasic()
         QVBoxLayout *pLayoutBasic = new QVBoxLayout(m_pTabBasic);
         if (pLayoutBasic)
         {
+#ifdef VBOX_WS_MAC
+            /* On Mac OS X we can do a bit of smoothness: */
+            int iLeft, iTop, iRight, iBottom;
+            pLayoutBasic->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+            pLayoutBasic->setContentsMargins(iLeft / 2, iTop / 2, iRight / 2, iBottom / 2);
+#endif
+
             /* Prepare name and system editor: */
             m_pEditorNameAndSystem = new UINameAndSystemEditor(m_pTabBasic);
             if (m_pEditorNameAndSystem)
@@ -588,6 +595,13 @@ void UIMachineSettingsGeneral::prepareTabAdvanced()
         QVBoxLayout *pLayoutAdvanced = new QVBoxLayout(m_pTabAdvanced);
         if (pLayoutAdvanced)
         {
+#ifdef VBOX_WS_MAC
+            /* On Mac OS X we can do a bit of smoothness: */
+            int iLeft, iTop, iRight, iBottom;
+            pLayoutAdvanced->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+            pLayoutAdvanced->setContentsMargins(iLeft / 2, iTop / 2, iRight / 2, iBottom / 2);
+#endif
+
             /* Prepare snapshot folder editor: */
             m_pEditorSnapshotFolder = new UISnapshotFolderEditor(m_pTabAdvanced);
             if (m_pEditorSnapshotFolder)
@@ -630,6 +644,13 @@ void UIMachineSettingsGeneral::prepareTabDescription()
         QVBoxLayout *pLayoutDescription = new QVBoxLayout(m_pTabDescription);
         if (pLayoutDescription)
         {
+#ifdef VBOX_WS_MAC
+            /* On Mac OS X we can do a bit of smoothness: */
+            int iLeft, iTop, iRight, iBottom;
+            pLayoutDescription->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+            pLayoutDescription->setContentsMargins(iLeft / 2, iTop / 2, iRight / 2, iBottom / 2);
+#endif
+
             /* Prepare description editor: */
             m_pEditorDescription = new UIDescriptionEditor(m_pTabDescription);
             if (m_pEditorDescription)
@@ -655,6 +676,13 @@ void UIMachineSettingsGeneral::prepareTabEncryption()
         QVBoxLayout *pLayoutEncryption = new QVBoxLayout(m_pTabEncryption);
         if (pLayoutEncryption)
         {
+#ifdef VBOX_WS_MAC
+            /* On Mac OS X we can do a bit of smoothness: */
+            int iLeft, iTop, iRight, iBottom;
+            pLayoutEncryption->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+            pLayoutEncryption->setContentsMargins(iLeft / 2, iTop / 2, iRight / 2, iBottom / 2);
+#endif
+
             /* Prepare disk encryption settings editor: */
             m_pEditorDiskEncryptionSettings = new UIDiskEncryptionSettingsEditor(m_pTabEncryption);
             if (m_pEditorDiskEncryptionSettings)
