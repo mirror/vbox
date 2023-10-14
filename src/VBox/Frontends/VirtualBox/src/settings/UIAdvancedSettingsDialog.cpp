@@ -297,8 +297,8 @@ void UIModeCheckBox::paintEvent(QPaintEvent *pEvent)
 
     /* Prepare left painting gradient: */
     const QColor backColor1 = pal.color(QPalette::Active, isChecked() ? QPalette::Window : QPalette::Highlight);
-    const QColor bcTone11 = backColor1.lighter(isChecked() ? 100 : 120);
-    const QColor bcTone12 = backColor1.lighter(isChecked() ? 120 : 140);
+    const QColor bcTone11 = backColor1.lighter(isChecked() ? 120 : 100);
+    const QColor bcTone12 = backColor1.lighter(isChecked() ? 140 : 120);
     QLinearGradient grad1(painterPath1.boundingRect().topLeft(), painterPath1.boundingRect().bottomRight());
     grad1.setColorAt(0, bcTone11);
     grad1.setColorAt(1, bcTone12);
