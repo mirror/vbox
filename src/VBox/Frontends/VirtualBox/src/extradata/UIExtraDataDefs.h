@@ -108,6 +108,8 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_RestrictedGlobalSettingsPages;
         /** Holds restricted Machine Settings pages. */
         SHARED_LIBRARY_STUFF extern const char *GUI_RestrictedMachineSettingsPages;
+        /** Holds whether settings are in expert mode. */
+        SHARED_LIBRARY_STUFF extern const char *GUI_Settings_ExpertMode;
     /** @} */
 
     /** @name Settings: Language

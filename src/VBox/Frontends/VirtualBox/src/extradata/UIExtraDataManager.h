@@ -80,6 +80,9 @@ signals:
     /** Notifies about notification-center order change. */
     void sigNotificationCenterOrderChange();
 
+    /** Notifies about settings expert mode change. */
+    void sigSettingsExpertModeChange();
+
     /** Notifies about GUI language change. */
     void sigLanguageChange(QString strLanguage);
 
@@ -259,6 +262,11 @@ public:
         QList<GlobalSettingsPageType> restrictedGlobalSettingsPages();
         /** Returns restricted machine settings pages. */
         QList<MachineSettingsPageType> restrictedMachineSettingsPages(const QUuid &uID);
+
+        /** Returns whether settings are in expert mode. */
+        bool isSettingsInExpertMode();
+        /** Defines whether settings are in @a fExpertMode. */
+        void setSettingsInExpertMode(bool fExpertMode);
     /** @} */
 
     /** @name Settings: Language

@@ -54,6 +54,7 @@
 #include "UIAnimationFramework.h"
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
+#include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIImageTools.h"
 #include "UIMessageCenter.h"
@@ -763,6 +764,9 @@ void UIAdvancedSettingsDialog::polishEvent()
     /* Choose page/tab finally: */
     choosePageAndTab();
 
+    /* Apply actual experience mode: */
+    sltHandleExperienceModeChanged();
+
     /* Explicit centering according to our parent: */
     gpDesktop->centerWidget(this, parentWidget(), false);
 }
@@ -1042,6 +1046,23 @@ void UIAdvancedSettingsDialog::sltHandleWarningPaneUnhovered(UISettingsPageValid
     popupCenter().recall(m_pScrollArea, "SettingsDialogWarning");
 }
 
+void UIAdvancedSettingsDialog::sltHandleExperienceModeCheckBoxChanged()
+{
+    /* Save new value: */
+    gEDataManager->setSettingsInExpertMode(m_pCheckBoxMode->isChecked());
+}
+
+void UIAdvancedSettingsDialog::sltHandleExperienceModeChanged()
+{
+    /* Acquire actual value: */
+    const bool fExpertMode = gEDataManager->isSettingsInExpertMode();
+
+    /* Update check-box state: */
+    m_pCheckBoxMode->blockSignals(true);
+    m_pCheckBoxMode->setChecked(fExpertMode);
+    m_pCheckBoxMode->blockSignals(false);
+}
+
 void UIAdvancedSettingsDialog::sltHandleFilterTextChanged(const QString &strText)
 {
     /* Filter-out page contents: */
@@ -1101,7 +1122,13 @@ void UIAdvancedSettingsDialog::prepareSelector()
     /* Prepare mode checkbox: */
     m_pCheckBoxMode = new UIModeCheckBox(centralWidget());
     if (m_pCheckBoxMode)
+    {
+        connect(m_pCheckBoxMode, &UIModeCheckBox::stateChanged,
+                this, &UIAdvancedSettingsDialog::sltHandleExperienceModeCheckBoxChanged);
+        connect(gEDataManager, &UIExtraDataManager::sigSettingsExpertModeChange,
+                this, &UIAdvancedSettingsDialog::sltHandleExperienceModeChanged);
         m_pLayoutMain->addWidget(m_pCheckBoxMode, 0, 0);
+    }
 
     /* Prepare classical tree-view selector: */
     m_pSelector = new UISettingsSelectorTreeView(centralWidget());

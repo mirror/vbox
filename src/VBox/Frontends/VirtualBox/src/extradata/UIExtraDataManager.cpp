@@ -2501,6 +2501,25 @@ QList<MachineSettingsPageType> UIExtraDataManager::restrictedMachineSettingsPage
     return result;
 }
 
+bool UIExtraDataManager::isSettingsInExpertMode()
+{
+#ifdef DEBUG
+    /* For debug build return true by default: */
+    if (extraDataString(GUI_Settings_ExpertMode).isEmpty())
+        return true;
+#endif
+
+    /* 'False' unless feature allowed: */
+    return isFeatureAllowed(GUI_Settings_ExpertMode);
+}
+
+void UIExtraDataManager::setSettingsInExpertMode(bool fExpertMode)
+{
+    /* Store actual feature state, whether it is "true" or "false",
+     * because absent state means default, depending on defines: */
+    setExtraDataString(GUI_Settings_ExpertMode, toFeatureState(fExpertMode));
+}
+
 QString UIExtraDataManager::languageId()
 {
     /* Load language ID: */
@@ -4798,6 +4817,9 @@ void UIExtraDataManager::sltExtraDataChange(const QUuid &uMachineID, const QStri
             /* Notification-center order? */
             if (strKey == GUI_NotificationCenter_Order)
                 emit sigNotificationCenterOrderChange();
+            /* Settings expert mode? */
+            if (strKey == GUI_Settings_ExpertMode)
+                emit sigSettingsExpertModeChange();
             /* Language changed? */
             if (strKey == GUI_LanguageID)
                 emit sigLanguageChange(extraDataString(strKey));

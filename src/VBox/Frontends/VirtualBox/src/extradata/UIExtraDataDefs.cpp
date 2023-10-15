@@ -64,6 +64,7 @@ const char *UIExtraDataDefs::GUI_Progress_LegacyMode = "GUI/Progress/LegacyMode"
 const char *UIExtraDataDefs::GUI_Customizations = "GUI/Customizations";
 const char *UIExtraDataDefs::GUI_RestrictedGlobalSettingsPages = "GUI/RestrictedGlobalSettingsPages";
 const char *UIExtraDataDefs::GUI_RestrictedMachineSettingsPages = "GUI/RestrictedMachineSettingsPages";
+const char *UIExtraDataDefs::GUI_Settings_ExpertMode = "GUI/Settings/ExpertMode";
 
 /* Settings: Language: */
 const char *UIExtraDataDefs::GUI_LanguageID = "GUI/LanguageID";

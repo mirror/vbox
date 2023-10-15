@@ -187,6 +187,11 @@ private slots:
     /** Handles hover leave for warning pane specified by @a pValidator. */
     void sltHandleWarningPaneUnhovered(UISettingsPageValidator *pValidator);
 
+    /** Handles experience mode checkbox change. */
+    void sltHandleExperienceModeCheckBoxChanged();
+    /** Handles experience mode change. */
+    void sltHandleExperienceModeChanged();
+
     /** Handles text-change for filter editor. */
     void sltHandleFilterTextChanged(const QString &strText);
 
