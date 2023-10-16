@@ -9974,6 +9974,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fcomi_fucomi, uint8_t, iStReg, bool, fUCmp, uint32_t, u
  */
 IEM_CIMPL_DEF_2(iemCImpl_rdseed, uint8_t, iReg, IEMMODE, enmEffOpSize)
 {
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     /* Nested-guest VMX intercept. */
     if (   !IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
         || !IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_RDSEED_EXIT))
@@ -9983,6 +9984,7 @@ IEM_CIMPL_DEF_2(iemCImpl_rdseed, uint8_t, iReg, IEMMODE, enmEffOpSize)
         Log(("rdseed: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_RDSEED, VMXINSTRID_RDSEED, cbInstr);
     }
+#endif
 
     uint32_t *pEFlags = &pVCpu->cpum.GstCtx.eflags.uBoth;
     switch (enmEffOpSize)
@@ -10030,6 +10032,7 @@ IEM_CIMPL_DEF_2(iemCImpl_rdseed, uint8_t, iReg, IEMMODE, enmEffOpSize)
  */
 IEM_CIMPL_DEF_2(iemCImpl_rdrand, uint8_t, iReg, IEMMODE, enmEffOpSize)
 {
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     /* Nested-guest VMX intercept. */
     if (   !IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
         || !IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_RDRAND_EXIT))
@@ -10039,6 +10042,7 @@ IEM_CIMPL_DEF_2(iemCImpl_rdrand, uint8_t, iReg, IEMMODE, enmEffOpSize)
         Log(("rdrand: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_RDRAND, VMXINSTRID_RDRAND, cbInstr);
     }
+#endif
 
     uint32_t *pEFlags = &pVCpu->cpum.GstCtx.eflags.uBoth;
     switch (enmEffOpSize)
