@@ -1137,14 +1137,13 @@ typedef union
     /** RDRAND, RDSEED information. */
     struct
     {
-        /** Scaling; 0=no scaling, 1=scale-by-2, 2=scale-by-4, 3=scale-by-8. */
-        uint32_t    u2Undef0        : 2;
+        uint32_t    u3Undef0        : 3;
         /** Destination register (X86_GREG_XXX). */
         uint32_t    iReg1           : 4;
         uint32_t    u4Undef0        : 4;
         /** Operand size; 0=16-bit, 1=32-bit, 2=64-bit, 3=unused. */
         uint32_t    u2OperandSize   : 2;
-        uint32_t    u19Def0         : 20;
+        uint32_t    u19Undef0       : 19;
     } RdrandRdseed;
 
     /** VMREAD, VMWRITE information. */
@@ -1175,6 +1174,7 @@ typedef union
         uint32_t    iReg2           : 4;
     } VmreadVmwrite;
 
+    /** LOADIWKEY information. */
     struct
     {
         uint32_t    u2Undef0        : 3;
@@ -3102,6 +3102,8 @@ typedef uint32_t VMXINSTRID;
 #define VMXINSTRID_IO_OUTS                                      (0x17 | VMXINSTRID_VALID)
 #define VMXINSTRID_MOV_TO_DRX                                   (0x18 | VMXINSTRID_VALID)
 #define VMXINSTRID_MOV_FROM_DRX                                 (0x19 | VMXINSTRID_VALID)
+#define VMXINSTRID_RDSEED                                       (0x20 | VMXINSTRID_VALID | VMXINSTRID_MODRM_PRIMARY_OP_W)
+#define VMXINSTRID_RDRAND                                       (0x21 | VMXINSTRID_VALID | VMXINSTRID_MODRM_PRIMARY_OP_W)
 /** @} */
 
 
