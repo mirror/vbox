@@ -1531,6 +1531,17 @@ RTDECL(int) RTFdtNodePropertyAddU32(RTFDT hFdt, const char *pszProperty, uint32_
 }
 
 
+RTDECL(int) RTFdtNodePropertyAddU64(RTFDT hFdt, const char *pszProperty, uint64_t u64)
+{
+    PRTFDTINT pThis = hFdt;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+
+    uint32_t u32Low  = RT_H2BE_U32((uint32_t)u64);
+    uint32_t u32High = RT_H2BE_U32((uint32_t)(u64 >> 32));
+    return RTFdtNodePropertyAddCellsU32(pThis, pszProperty, 2, u32High, u32Low);
+}
+
+
 RTDECL(int) RTFdtNodePropertyAddString(RTFDT hFdt, const char *pszProperty, const char *pszVal)
 {
     PRTFDTINT pThis = hFdt;
@@ -1576,6 +1587,50 @@ RTDECL(int) RTFdtNodePropertyAddCellsU32V(RTFDT hFdt, const char *pszProperty, u
     {
         uint32_t u32 = va_arg(va, uint32_t);
         *pu32++ = RT_H2BE_U32(u32);
+    }
+
+    pThis->cbStruct += cbProp;
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTFdtNodePropertyAddCellsU64(RTFDT hFdt, const char *pszProperty, uint32_t cCells, ...)
+{
+    va_list va;
+    va_start(va, cCells);
+    int rc = RTFdtNodePropertyAddCellsU64V(hFdt, pszProperty, cCells, va);
+    va_end(va);
+    return rc;
+}
+
+
+RTDECL(int) RTFdtNodePropertyAddCellsU64V(RTFDT hFdt, const char *pszProperty, uint32_t cCells, va_list va)
+{
+    PRTFDTINT pThis = hFdt;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+
+    /* Insert the property name into the strings block. */
+    uint32_t offStr;
+    int rc = rtFdtStringsInsertString(pThis, pszProperty, &offStr);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    uint32_t cbProp = cCells * 2 * sizeof(uint32_t) + 3 * sizeof(uint32_t);
+
+    rc = rtFdtStructEnsureSpace(pThis, cbProp);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    uint32_t *pu32 = (uint32_t *)(pThis->pbStruct + pThis->cbStruct);
+    *pu32++ = DTB_FDT_TOKEN_PROPERTY_BE;
+    *pu32++ = RT_H2BE_U32(cCells * 2 * sizeof(uint32_t));
+    *pu32++ = RT_H2BE_U32(offStr);
+    for (uint32_t i = 0; i < cCells; i++)
+    {
+        /* First the high 32-bits of the 64-bit value are stored, then the lower ones. */
+        uint64_t u64 = va_arg(va, uint64_t);
+        *pu32++ = RT_H2BE_U32((uint32_t)(u64 >> 32));
+        *pu32++ = RT_H2BE_U32((uint32_t)u64);
     }
 
     pThis->cbStruct += cbProp;

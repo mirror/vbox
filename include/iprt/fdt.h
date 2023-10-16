@@ -239,6 +239,17 @@ RTDECL(int) RTFdtNodePropertyAddU32(RTFDT hFdt, const char *pszProperty, uint32_
 
 
 /**
+ * Adds a single u64 property as two 32-bit cells with the given name to the current node.
+ *
+ * @returns IPRT status code.
+ * @param   hFdt            The flattened devicetree handle.
+ * @param   pszProperty     The property name.
+ * @param   u64             The u64 value to set the property to.
+ */
+RTDECL(int) RTFdtNodePropertyAddU64(RTFDT hFdt, const char *pszProperty, uint64_t u64);
+
+
+/**
  * Adds a string property with the given name to the current node.
  *
  * @returns IPRT status code.
@@ -271,6 +282,30 @@ RTDECL(int) RTFdtNodePropertyAddCellsU32(RTFDT hFdt, const char *pszProperty, ui
  * @param   va              The cell u32 data items.
  */
 RTDECL(int) RTFdtNodePropertyAddCellsU32V(RTFDT hFdt, const char *pszProperty, uint32_t cCells, va_list va);
+
+
+/**
+ * Adds a property with a variable number of u64 items (each as two 32-bit cells).
+ *
+ * @returns IPRT staus code.
+ * @param   hFdt            The flattened devicetree handle.
+ * @param   pszProperty     The property name.
+ * @param   cCells          The number of cells.
+ * @param   ...             The cell u64 data items.
+ */
+RTDECL(int) RTFdtNodePropertyAddCellsU64(RTFDT hFdt, const char *pszProperty, uint32_t cCells, ...);
+
+
+/**
+ * Adds a property with a variable number of u64 items (each as two 32-bit cells).
+ *
+ * @returns IPRT staus code.
+ * @param   hFdt            The flattened devicetree handle.
+ * @param   pszProperty     The property name.
+ * @param   cCells          The number of cells.
+ * @param   va              The cell u64 data items.
+ */
+RTDECL(int) RTFdtNodePropertyAddCellsU64V(RTFDT hFdt, const char *pszProperty, uint32_t cCells, va_list va);
 
 
 /**
