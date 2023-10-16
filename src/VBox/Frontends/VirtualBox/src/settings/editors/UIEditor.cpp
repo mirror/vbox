@@ -39,12 +39,16 @@
 
 
 UIEditor::UIEditor(QTabWidget *pTabWidget)
-    : m_pTabWidget(pTabWidget)
+    : m_fShowInBasicMode(false)
+    , m_fInExpertMode(false)
+    , m_pTabWidget(pTabWidget)
 {
 }
 
-UIEditor::UIEditor(QWidget *pParent /* = 0 */)
+UIEditor::UIEditor(QWidget *pParent /* = 0 */, bool fShowInBasicMode /* = false */)
     : QIWithRetranslateUI<QWidget>(pParent)
+    , m_fShowInBasicMode(fShowInBasicMode)
+    , m_fInExpertMode(false)
     , m_pTabWidget(0)
 {
 }
@@ -54,14 +58,17 @@ void UIEditor::addEditor(UIEditor *pEditor)
     m_editors << pEditor;
 }
 
-void UIEditor::filterOut(const QString &strFilter)
+void UIEditor::filterOut(bool fExpertMode, const QString &strFilter)
 {
+    /* Save if editor is in expert mode: */
+    m_fInExpertMode = fExpertMode;
+
     /* Propagate filter towards all the children: */
     foreach (UIEditor *pEditor, m_editors)
-        pEditor->filterOut(strFilter);
+        pEditor->filterOut(m_fInExpertMode, strFilter);
 
-    /* Make sure the editor is visible if filter is empty: */
-    bool fVisible = strFilter.isEmpty();
+    /* Make sure the editor is visible if mode and filter are suitable: */
+    bool fVisible = (m_fInExpertMode || m_fShowInBasicMode) && strFilter.isEmpty();
 
     /* If editor still hidden we'll need to make it
      * visible if at least one of children is. */
@@ -75,9 +82,9 @@ void UIEditor::filterOut(const QString &strFilter)
             }
     }
 
-    /* If editor still hidden we'll need to make it
+    /* If editor still hidden and mode is suitable we'll need to make it
      * visible if at least one of descriptions suits filter well: */
-    if (!fVisible)
+    if (!fVisible && (m_fInExpertMode || m_fShowInBasicMode))
     {
         foreach (const QString &strDescription, description())
             if (strDescription.contains(strFilter, Qt::CaseInsensitive))

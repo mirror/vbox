@@ -192,8 +192,8 @@ private slots:
     /** Handles experience mode change. */
     void sltHandleExperienceModeChanged();
 
-    /** Handles text-change for filter editor. */
-    void sltHandleFilterTextChanged(const QString &strText);
+    /** Handles changes done to mode checkbox or filter editor. */
+    void sltHandleModeOrFilterChanged();
 
 private:
 

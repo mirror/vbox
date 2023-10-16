@@ -144,6 +144,9 @@ public:
     /** Defines placeholder @a strText. */
     void setPlaceholderText(const QString &strText);
 
+    /** Returns filter editor text. */
+    QString text() const;
+
 protected:
 
     /** Returns the minimum widget size. */
@@ -367,6 +370,11 @@ void UIFilterEditor::setPlaceholderText(const QString &strText)
 {
     if (m_pLineEdit)
         m_pLineEdit->setPlaceholderText(strText);
+}
+
+QString UIFilterEditor::text() const
+{
+    return m_pLineEdit ? m_pLineEdit->text() : QString();
 }
 
 QSize UIFilterEditor::minimumSizeHint() const
@@ -1061,13 +1069,16 @@ void UIAdvancedSettingsDialog::sltHandleExperienceModeChanged()
     m_pCheckBoxMode->blockSignals(true);
     m_pCheckBoxMode->setChecked(fExpertMode);
     m_pCheckBoxMode->blockSignals(false);
+
+    /* Reapply mode: */
+    sltHandleModeOrFilterChanged();
 }
 
-void UIAdvancedSettingsDialog::sltHandleFilterTextChanged(const QString &strText)
+void UIAdvancedSettingsDialog::sltHandleModeOrFilterChanged()
 {
     /* Filter-out page contents: */
     foreach (UISettingsPageFrame *pFrame, m_frames.values())
-        pFrame->filterOut(strText);
+        pFrame->filterOut(m_pCheckBoxMode->isChecked(), m_pEditorFilter->text());
 }
 
 void UIAdvancedSettingsDialog::prepare()
@@ -1143,7 +1154,7 @@ void UIAdvancedSettingsDialog::prepareSelector()
     if (m_pEditorFilter)
     {
         connect(m_pEditorFilter, &UIFilterEditor::sigTextChanged,
-                this, &UIAdvancedSettingsDialog::sltHandleFilterTextChanged);
+                this, &UIAdvancedSettingsDialog::sltHandleModeOrFilterChanged);
         m_pLayoutMain->addWidget(m_pEditorFilter, 0, 2);
     }
 #endif /* !VBOX_GUI_WITH_TOOLBAR_SETTINGS */
