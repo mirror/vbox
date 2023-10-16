@@ -209,7 +209,7 @@ QString UILanguageItem::tratra(const QTranslator &translator, const char *pConte
 *********************************************************************************************************************************/
 
 UILanguageSettingsEditor::UILanguageSettingsEditor(QWidget *pParent /* = 0 */)
-    : UIEditor(pParent)
+    : UIEditor(pParent, true /* show in basic mode? */)
     , m_fPolished(false)
     , m_pTreeWidget(0)
     , m_pLabelInfo(0)
