@@ -2403,9 +2403,9 @@ FNIEMAIMPLBINU16 iemAImpl_arpl;
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLRDRANDSEEDU16,(uint16_t *puDst, uint32_t *pEFlags));
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLRDRANDSEEDU32,(uint32_t *puDst, uint32_t *pEFlags));
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLRDRANDSEEDU64,(uint64_t *puDst, uint32_t *pEFlags));
-typedef FNIEMAIMPLRDRANDSEEDU16  *FNIEMAIMPLPRDRANDSEEDU16;
-typedef FNIEMAIMPLRDRANDSEEDU32  *FNIEMAIMPLPRDRANDSEEDU32;
-typedef FNIEMAIMPLRDRANDSEEDU64  *FNIEMAIMPLPRDRANDSEEDU64;
+typedef FNIEMAIMPLRDRANDSEEDU16  *PFNIEMAIMPLRDRANDSEEDU16;
+typedef FNIEMAIMPLRDRANDSEEDU32  *PFNIEMAIMPLRDRANDSEEDU32;
+typedef FNIEMAIMPLRDRANDSEEDU64  *PFNIEMAIMPLRDRANDSEEDU64;
 
 FNIEMAIMPLRDRANDSEEDU16 iemAImpl_rdrand_u16, iemAImpl_rdrand_u16_fallback;
 FNIEMAIMPLRDRANDSEEDU32 iemAImpl_rdrand_u32, iemAImpl_rdrand_u32_fallback;
@@ -5098,6 +5098,8 @@ IEM_CIMPL_PROTO_3(iemCImpl_frstor, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGC
 IEM_CIMPL_PROTO_1(iemCImpl_fldcw, uint16_t, u16Fcw);
 IEM_CIMPL_PROTO_2(iemCImpl_fxch_underflow, uint8_t, iStReg, uint16_t, uFpuOpcode);
 IEM_CIMPL_PROTO_3(iemCImpl_fcomi_fucomi, uint8_t, iStReg, bool, fUCmp, uint32_t, uPopAndFpuOpcode);
+IEM_CIMPL_PROTO_2(iemCImpl_rdseed, uint8_t, iReg, IEMMODE, enmEffOpSize);
+IEM_CIMPL_PROTO_2(iemCImpl_rdrand, uint8_t, iReg, IEMMODE, enmEffOpSize);
 /** @} */
 
 /** @name IEMAllCImplStrInstr.cpp.h

@@ -9964,5 +9964,114 @@ IEM_CIMPL_DEF_3(iemCImpl_fcomi_fucomi, uint8_t, iStReg, bool, fUCmp, uint32_t, u
     return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
 
+
+/**
+ * Implements 'RDSEED'.
+ *
+ * @returns VINF_SUCCESS.
+ * @param   iReg            The register.
+ * @param   enmEffOpSize    The operand size.
+ */
+IEM_CIMPL_DEF_2(iemCImpl_rdseed, uint8_t, iReg, IEMMODE, enmEffOpSize)
+{
+    /* Nested-guest VMX intercept. */
+    if (   !IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        || !IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_RDSEED_EXIT))
+    { /* probable */ }
+    else
+    {
+        Log(("rdseed: Guest intercept -> VM-exit\n"));
+        IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_RDSEED, VMXINSTRID_RDSEED, cbInstr);
+    }
+
+    uint32_t *pEFlags = &pVCpu->cpum.GstCtx.eflags.uBoth;
+    switch (enmEffOpSize)
+    {
+        case IEMMODE_16BIT:
+        {
+            PFNIEMAIMPLRDRANDSEEDU16 pfnImpl = IEM_SELECT_HOST_OR_FALLBACK(fRdSeed,
+                                                                           &iemAImpl_rdseed_u16,
+                                                                           &iemAImpl_rdseed_u16_fallback);
+            uint16_t *pu16Dst = iemGRegRefU16(pVCpu, iReg);
+            (pfnImpl)(pu16Dst, pEFlags);
+            break;
+        }
+        case IEMMODE_32BIT:
+        {
+            PFNIEMAIMPLRDRANDSEEDU32 pfnImpl = IEM_SELECT_HOST_OR_FALLBACK(fRdSeed,
+                                                                           &iemAImpl_rdseed_u32,
+                                                                           &iemAImpl_rdseed_u32_fallback);
+            uint32_t *pu32Dst = iemGRegRefU32(pVCpu, iReg);
+            (pfnImpl)(pu32Dst, pEFlags);
+            iemGRegStoreU32(pVCpu, iReg, *pu32Dst);
+            break;
+        }
+        case IEMMODE_64BIT:
+        {
+            PFNIEMAIMPLRDRANDSEEDU64 pfnImpl = IEM_SELECT_HOST_OR_FALLBACK(fRdSeed,
+                                                                           &iemAImpl_rdseed_u64,
+                                                                           &iemAImpl_rdseed_u64_fallback);
+            uint64_t *pu64Dst = iemGRegRefU64(pVCpu, iReg);
+            (pfnImpl)(pu64Dst, pEFlags);
+            break;
+        }
+        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+    }
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+}
+
+
+/**
+ * Implements 'RDRAND'.
+ *
+ * @returns VINF_SUCCESS.
+ * @param   iReg            The register.
+ * @param   enmEffOpSize    The operand size.
+ */
+IEM_CIMPL_DEF_2(iemCImpl_rdrand, uint8_t, iReg, IEMMODE, enmEffOpSize)
+{
+    /* Nested-guest VMX intercept. */
+    if (   !IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        || !IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_RDRAND_EXIT))
+    { /* probable */ }
+    else
+    {
+        Log(("rdrand: Guest intercept -> VM-exit\n"));
+        IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(pVCpu, VMX_EXIT_RDRAND, VMXINSTRID_RDRAND, cbInstr);
+    }
+
+    uint32_t *pEFlags = &pVCpu->cpum.GstCtx.eflags.uBoth;
+    switch (enmEffOpSize)
+    {
+        case IEMMODE_16BIT:
+        {
+            PFNIEMAIMPLRDRANDSEEDU16 pfnImpl = IEM_SELECT_HOST_OR_FALLBACK(fRdRand, &iemAImpl_rdrand_u16,
+                                                                                    &iemAImpl_rdrand_u16_fallback);
+            uint16_t *pu16Dst = iemGRegRefU16(pVCpu, iReg);
+            (pfnImpl)(pu16Dst, pEFlags);
+            break;
+        }
+        case IEMMODE_32BIT:
+        {
+            PFNIEMAIMPLRDRANDSEEDU32 pfnImpl = IEM_SELECT_HOST_OR_FALLBACK(fRdRand, &iemAImpl_rdrand_u32,
+                                                                                    &iemAImpl_rdrand_u32_fallback);
+            uint32_t *pu32Dst = iemGRegRefU32(pVCpu, iReg);
+            (pfnImpl)(pu32Dst, pEFlags);
+            iemGRegStoreU32(pVCpu, iReg, *pu32Dst);
+            break;
+        }
+        case IEMMODE_64BIT:
+        {
+            PFNIEMAIMPLRDRANDSEEDU64 pfnImpl = IEM_SELECT_HOST_OR_FALLBACK(fRdRand, &iemAImpl_rdrand_u64,
+                                                                                    &iemAImpl_rdrand_u64_fallback);
+            uint64_t *pu64Dst = iemGRegRefU64(pVCpu, iReg);
+            (pfnImpl)(pu64Dst, pEFlags);
+            break;
+        }
+        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+    }
+    return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
+}
+
 /** @} */
 

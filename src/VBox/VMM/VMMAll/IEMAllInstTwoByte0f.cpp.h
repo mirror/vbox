@@ -12517,57 +12517,12 @@ FNIEMOP_DEF_1(iemOp_Grp9_rdrand_Rv, uint8_t, bRm)
 
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
-        /* register destination. */
-        switch (pVCpu->iem.s.enmEffOpSize)
-        {
-            case IEMMODE_16BIT:
-                IEM_MC_BEGIN(2, 0, IEM_MC_F_NOT_286_OR_OLDER, 0);
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_ARG(uint16_t *,      pu16Dst,                0);
-                IEM_MC_ARG(uint32_t *,      pEFlags,                1);
-
-                IEM_MC_REF_GREG_U16(pu16Dst, IEM_GET_MODRM_RM(pVCpu, bRm));
-                IEM_MC_REF_EFLAGS(pEFlags);
-                IEM_MC_CALL_VOID_AIMPL_2(IEM_SELECT_HOST_OR_FALLBACK(fRdRand, iemAImpl_rdrand_u16, iemAImpl_rdrand_u16_fallback),
-                                         pu16Dst, pEFlags);
-
-                IEM_MC_ADVANCE_RIP_AND_FINISH();
-                IEM_MC_END();
-                break;
-
-            case IEMMODE_32BIT:
-                IEM_MC_BEGIN(2, 0, IEM_MC_F_MIN_386, 0);
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_ARG(uint32_t *,      pu32Dst,                0);
-                IEM_MC_ARG(uint32_t *,      pEFlags,                1);
-
-                IEM_MC_REF_GREG_U32(pu32Dst, IEM_GET_MODRM_RM(pVCpu, bRm));
-                IEM_MC_REF_EFLAGS(pEFlags);
-                IEM_MC_CALL_VOID_AIMPL_2(IEM_SELECT_HOST_OR_FALLBACK(fRdRand, iemAImpl_rdrand_u32, iemAImpl_rdrand_u32_fallback),
-                                         pu32Dst, pEFlags);
-
-                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
-                IEM_MC_ADVANCE_RIP_AND_FINISH();
-                IEM_MC_END();
-                break;
-
-            case IEMMODE_64BIT:
-                IEM_MC_BEGIN(2, 0, IEM_MC_F_64BIT, 0);
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_ARG(uint64_t *,      pu64Dst,                0);
-                IEM_MC_ARG(uint32_t *,      pEFlags,                1);
-
-                IEM_MC_REF_GREG_U64(pu64Dst, IEM_GET_MODRM_RM(pVCpu, bRm));
-                IEM_MC_REF_EFLAGS(pEFlags);
-                IEM_MC_CALL_VOID_AIMPL_2(IEM_SELECT_HOST_OR_FALLBACK(fRdRand, iemAImpl_rdrand_u64, iemAImpl_rdrand_u64_fallback),
-                                         pu64Dst, pEFlags);
-
-                IEM_MC_ADVANCE_RIP_AND_FINISH();
-                IEM_MC_END();
-                break;
-
-            IEM_NOT_REACHED_DEFAULT_CASE_RET();
-        }
+        IEM_MC_BEGIN(2, 0, IEM_MC_F_NOT_286_OR_OLDER, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_ARG_CONST(uint8_t, iReg,        /*=*/IEM_GET_MODRM_RM(pVCpu, bRm), 0);
+        IEM_MC_ARG_CONST(IEMMODE, enmEffOpSize,/*=*/pVCpu->iem.s.enmEffOpSize,    1);
+        IEM_MC_CALL_CIMPL_2(IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT, iemCImpl_rdrand, iReg, enmEffOpSize);
+        IEM_MC_END();
     }
     /* Register only. */
     else
@@ -12662,56 +12617,12 @@ FNIEMOP_DEF_1(iemOp_Grp9_rdseed_Rv, uint8_t, bRm)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         /* register destination. */
-        switch (pVCpu->iem.s.enmEffOpSize)
-        {
-            case IEMMODE_16BIT:
-                IEM_MC_BEGIN(2, 0, IEM_MC_F_NOT_286_OR_OLDER, 0);
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_ARG(uint16_t *,      pu16Dst,                0);
-                IEM_MC_ARG(uint32_t *,      pEFlags,                1);
-
-                IEM_MC_REF_GREG_U16(pu16Dst, IEM_GET_MODRM_RM(pVCpu, bRm));
-                IEM_MC_REF_EFLAGS(pEFlags);
-                IEM_MC_CALL_VOID_AIMPL_2(IEM_SELECT_HOST_OR_FALLBACK(fRdSeed, iemAImpl_rdseed_u16, iemAImpl_rdseed_u16_fallback),
-                                         pu16Dst, pEFlags);
-
-                IEM_MC_ADVANCE_RIP_AND_FINISH();
-                IEM_MC_END();
-                break;
-
-            case IEMMODE_32BIT:
-                IEM_MC_BEGIN(2, 0, IEM_MC_F_MIN_386, 0);
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_ARG(uint32_t *,      pu32Dst,                0);
-                IEM_MC_ARG(uint32_t *,      pEFlags,                1);
-
-                IEM_MC_REF_GREG_U32(pu32Dst, IEM_GET_MODRM_RM(pVCpu, bRm));
-                IEM_MC_REF_EFLAGS(pEFlags);
-                IEM_MC_CALL_VOID_AIMPL_2(IEM_SELECT_HOST_OR_FALLBACK(fRdSeed, iemAImpl_rdseed_u32, iemAImpl_rdseed_u32_fallback),
-                                         pu32Dst, pEFlags);
-
-                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
-                IEM_MC_ADVANCE_RIP_AND_FINISH();
-                IEM_MC_END();
-                break;
-
-            case IEMMODE_64BIT:
-                IEM_MC_BEGIN(2, 0, IEM_MC_F_64BIT, 0);
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_ARG(uint64_t *,      pu64Dst,                0);
-                IEM_MC_ARG(uint32_t *,      pEFlags,                1);
-
-                IEM_MC_REF_GREG_U64(pu64Dst, IEM_GET_MODRM_RM(pVCpu, bRm));
-                IEM_MC_REF_EFLAGS(pEFlags);
-                IEM_MC_CALL_VOID_AIMPL_2(IEM_SELECT_HOST_OR_FALLBACK(fRdSeed, iemAImpl_rdseed_u64, iemAImpl_rdseed_u64_fallback),
-                                         pu64Dst, pEFlags);
-
-                IEM_MC_ADVANCE_RIP_AND_FINISH();
-                IEM_MC_END();
-                break;
-
-            IEM_NOT_REACHED_DEFAULT_CASE_RET();
-        }
+        IEM_MC_BEGIN(2, 0, IEM_MC_F_NOT_286_OR_OLDER, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_ARG_CONST(uint8_t, iReg,        /*=*/IEM_GET_MODRM_RM(pVCpu, bRm), 0);
+        IEM_MC_ARG_CONST(IEMMODE, enmEffOpSize,/*=*/pVCpu->iem.s.enmEffOpSize,    1);
+        IEM_MC_CALL_CIMPL_2(IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT, iemCImpl_rdseed, iReg, enmEffOpSize);
+        IEM_MC_END();
     }
     /* Register only. */
     else
