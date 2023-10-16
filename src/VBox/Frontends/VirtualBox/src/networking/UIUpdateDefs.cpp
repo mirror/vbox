@@ -78,7 +78,7 @@ QStringList VBoxUpdateData::list()
     return result;
 }
 
-VBoxUpdateData::VBoxUpdateData(const QString &strData)
+VBoxUpdateData::VBoxUpdateData(const QString &strData /* = QString("never") */)
     : m_strData(strData)
     , m_fCheckEnabled(false)
     , m_fCheckRequired(false)
