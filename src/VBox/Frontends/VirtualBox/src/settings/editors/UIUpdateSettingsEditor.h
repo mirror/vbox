@@ -62,6 +62,11 @@ public:
 
 protected:
 
+    /** Filters out contents.
+      * @param  fExpertMode  Brings whether settings expert mode is requested.
+      * @param  strFilter    Brings the filter description should correspond to. */
+    virtual void filterOut(bool fExpertMode, const QString &strFilter) RT_OVERRIDE;
+
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE;
 
@@ -87,6 +92,9 @@ private:
     UpdatePeriodType updatePeriod() const;
     /** Returns update channel. */
     KUpdateChannel updateChannel() const;
+
+    /** Fetches passed value. */
+    void fetchValue();
 
     /** Holds the value to be set. */
     VBoxUpdateData  m_guiValue;

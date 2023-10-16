@@ -38,7 +38,7 @@
 
 
 UIUpdateSettingsEditor::UIUpdateSettingsEditor(QWidget *pParent /* = 0 */)
-    : UIEditor(pParent)
+    : UIEditor(pParent, true /* show in basic mode? */)
     , m_pCheckBox(0)
     , m_pWidgetUpdateSettings(0)
     , m_pLabelUpdatePeriod(0)
@@ -53,38 +53,24 @@ UIUpdateSettingsEditor::UIUpdateSettingsEditor(QWidget *pParent /* = 0 */)
 
 void UIUpdateSettingsEditor::setValue(const VBoxUpdateData &guiValue)
 {
-    /* Update cached value and
-     * widgets if value has changed: */
+    /* Update cached value and fetch it: */
     if (m_guiValue != guiValue)
     {
         m_guiValue = guiValue;
-
-        if (m_pCheckBox)
-        {
-            m_pCheckBox->setChecked(m_guiValue.isCheckEnabled());
-
-            foreach (const KUpdateChannel &enmUpdateChannel, m_mapRadioButtons.keys())
-                if (m_mapRadioButtons.value(enmUpdateChannel))
-                    m_mapRadioButtons.value(enmUpdateChannel)->setVisible(
-                           m_guiValue.updateChannel() == enmUpdateChannel
-                        || m_guiValue.supportedUpdateChannels().contains(enmUpdateChannel));
-
-            if (m_pCheckBox->isChecked())
-            {
-                if (m_pComboUpdatePeriod)
-                    m_pComboUpdatePeriod->setCurrentIndex(m_guiValue.updatePeriod());
-                if (m_mapRadioButtons.value(m_guiValue.updateChannel()))
-                    m_mapRadioButtons.value(m_guiValue.updateChannel())->setChecked(true);
-            }
-
-            sltHandleUpdateToggle(m_pCheckBox->isChecked());
-        }
+        fetchValue();
     }
 }
 
 VBoxUpdateData UIUpdateSettingsEditor::value() const
 {
     return VBoxUpdateData(isCheckEnabled(), updatePeriod(), updateChannel());
+}
+
+void UIUpdateSettingsEditor::filterOut(bool fExpertMode, const QString &strFilter)
+{
+    /* Call to base-class: */
+    UIEditor::filterOut(fExpertMode, strFilter);
+    fetchValue();
 }
 
 void UIUpdateSettingsEditor::retranslateUi()
@@ -316,4 +302,42 @@ KUpdateChannel UIUpdateSettingsEditor::updateChannel() const
 {
     QAbstractButton *pCheckedButton = m_pRadioButtonGroup ? m_pRadioButtonGroup->checkedButton() : 0;
     return m_mapRadioButtons.key(pCheckedButton, m_guiValue.updateChannel());
+}
+
+void UIUpdateSettingsEditor::fetchValue()
+{
+    if (m_pCheckBox)
+    {
+        m_pCheckBox->setChecked(m_guiValue.isCheckEnabled());
+
+        // Too tricky conditions .. update visibility for each button separately:
+        if (m_mapRadioButtons.value(KUpdateChannel_Stable))
+            m_mapRadioButtons.value(KUpdateChannel_Stable)
+                ->setVisible(   m_guiValue.updateChannel() == KUpdateChannel_Stable
+                             || m_guiValue.supportedUpdateChannels().contains(KUpdateChannel_Stable));
+        if (m_mapRadioButtons.value(KUpdateChannel_All))
+            m_mapRadioButtons.value(KUpdateChannel_All)
+                ->setVisible(   m_guiValue.updateChannel() == KUpdateChannel_All
+                             || m_guiValue.supportedUpdateChannels().contains(KUpdateChannel_All));
+        if (m_mapRadioButtons.value(KUpdateChannel_WithBetas))
+            m_mapRadioButtons.value(KUpdateChannel_WithBetas)
+                ->setVisible(   m_guiValue.updateChannel() == KUpdateChannel_WithBetas
+                             || (   m_fInExpertMode
+                                 && m_guiValue.supportedUpdateChannels().contains(KUpdateChannel_WithBetas)));
+        if (m_mapRadioButtons.value(KUpdateChannel_WithTesting))
+            m_mapRadioButtons.value(KUpdateChannel_WithTesting)
+                ->setVisible(   m_guiValue.updateChannel() == KUpdateChannel_WithTesting
+                             || (   m_fInExpertMode
+                                 && m_guiValue.supportedUpdateChannels().contains(KUpdateChannel_WithTesting)));
+
+        if (m_pCheckBox->isChecked())
+        {
+            if (m_pComboUpdatePeriod)
+                m_pComboUpdatePeriod->setCurrentIndex(m_guiValue.updatePeriod());
+            if (m_mapRadioButtons.value(m_guiValue.updateChannel()))
+                m_mapRadioButtons.value(m_guiValue.updateChannel())->setChecked(true);
+        }
+
+        sltHandleUpdateToggle(m_pCheckBox->isChecked());
+    }
 }

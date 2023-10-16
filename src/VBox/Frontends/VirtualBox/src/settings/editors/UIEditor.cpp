@@ -48,7 +48,7 @@ UIEditor::UIEditor(QTabWidget *pTabWidget)
 UIEditor::UIEditor(QWidget *pParent /* = 0 */, bool fShowInBasicMode /* = false */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fShowInBasicMode(fShowInBasicMode)
-    , m_fInExpertMode(false)
+    , m_fInExpertMode(true)
     , m_pTabWidget(0)
 {
 }

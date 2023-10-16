@@ -60,7 +60,7 @@ UIFontScaleFactorSpinBox::UIFontScaleFactorSpinBox(QWidget *pParent /* = 0*/)
 }
 
 UIFontScaleEditor::UIFontScaleEditor(QWidget *pParent)
-    : UIEditor(pParent)
+    : UIEditor(pParent, true /* show in basic mode? */)
     , m_pLayout(0)
     , m_pLabel(0)
     , m_pScaleSlider(0)

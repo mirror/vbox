@@ -819,7 +819,7 @@ void UIShortcutConfigurationTable::cleanup()
 *********************************************************************************************************************************/
 
 UIShortcutConfigurationEditor::UIShortcutConfigurationEditor(QWidget *pParent /* = 0 */)
-    : UIEditor(pParent)
+    : UIEditor(pParent, true /* show in basic mode? */)
     , m_pModelManager(0)
     , m_pModelRuntime(0)
     , m_pTabWidget(0)
