@@ -1886,6 +1886,8 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                                 ulParent = idSCSIController;
                             else if (lControllerIndex == lSATAControllerIndex)
                                 ulParent = idSATAController;
+                            else if (lControllerIndex == lVirtioSCSIControllerIndex)
+                                ulParent = idVirtioSCSIController;
                         }
                         if (pos2 != Utf8Str::npos)
                             RTStrToInt32Ex(desc.strExtraConfigCurrent.c_str() + pos2 + 8, NULL, 0, &lAddressOnParent);
