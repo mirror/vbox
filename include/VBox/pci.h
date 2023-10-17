@@ -804,7 +804,7 @@ struct PCIBusAddress
     }
 
     /** Create string representation of this PCI address. */
-    bool format(char* szBuf, int32_t cBufSize)
+    bool format(char* szBuf, size_t cBufSize)
     {
         if (cBufSize < (/* bus */ 2 + /* : */ 1 + /* device */ 2 + /* . */ 1 + /* function*/ 1 + /* \0 */1))
             return false;
