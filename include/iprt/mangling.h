@@ -960,6 +960,7 @@
 # define RTFdtNodeAddV                                  RT_MANGLER(RTFdtNodeAddV)
 # define RTFdtNodeFinalize                              RT_MANGLER(RTFdtNodeFinalize)
 # define RTFdtNodePropertyAddCellsU32                   RT_MANGLER(RTFdtNodePropertyAddCellsU32)
+# define RTFdtNodePropertyAddCellsU32AsArray            RT_MANGLER(RTFdtNodePropertyAddCellsU32AsArray)
 # define RTFdtNodePropertyAddCellsU32V                  RT_MANGLER(RTFdtNodePropertyAddCellsU32V)
 # define RTFdtNodePropertyAddCellsU64                   RT_MANGLER(RTFdtNodePropertyAddCellsU64)
 # define RTFdtNodePropertyAddCellsU64V                  RT_MANGLER(RTFdtNodePropertyAddCellsU64V)

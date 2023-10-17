@@ -285,6 +285,18 @@ RTDECL(int) RTFdtNodePropertyAddCellsU32V(RTFDT hFdt, const char *pszProperty, u
 
 
 /**
+ * Adds a property with a variable number of u32 items passed as an array.
+ *
+ * @returns IPRT staus code.
+ * @param   hFdt            The flattened devicetree handle.
+ * @param   pszProperty     The property name.
+ * @param   cCells          The number of cells.
+ * @param   pau32Cells      Pointer to the array of u32 cell data items.
+ */
+RTDECL(int) RTFdtNodePropertyAddCellsU32AsArray(RTFDT hFdt, const char *pszProperty, uint32_t cCells, uint32_t *pau32Cells);
+
+
+/**
  * Adds a property with a variable number of u64 items (each as two 32-bit cells).
  *
  * @returns IPRT staus code.

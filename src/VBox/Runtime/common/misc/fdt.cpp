@@ -1594,6 +1594,35 @@ RTDECL(int) RTFdtNodePropertyAddCellsU32V(RTFDT hFdt, const char *pszProperty, u
 }
 
 
+RTDECL(int) RTFdtNodePropertyAddCellsU32AsArray(RTFDT hFdt, const char *pszProperty, uint32_t cCells, uint32_t *pau32Cells)
+{
+    PRTFDTINT pThis = hFdt;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+
+    /* Insert the property name into the strings block. */
+    uint32_t offStr;
+    int rc = rtFdtStringsInsertString(pThis, pszProperty, &offStr);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    uint32_t cbProp = cCells * sizeof(uint32_t) + 3 * sizeof(uint32_t);
+
+    rc = rtFdtStructEnsureSpace(pThis, cbProp);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    uint32_t *pu32 = (uint32_t *)(pThis->pbStruct + pThis->cbStruct);
+    *pu32++ = DTB_FDT_TOKEN_PROPERTY_BE;
+    *pu32++ = RT_H2BE_U32(cCells * sizeof(uint32_t));
+    *pu32++ = RT_H2BE_U32(offStr);
+    for (uint32_t i = 0; i < cCells; i++)
+        *pu32++ = RT_H2BE_U32(pau32Cells[i]);
+
+    pThis->cbStruct += cbProp;
+    return VINF_SUCCESS;
+}
+
+
 RTDECL(int) RTFdtNodePropertyAddCellsU64(RTFDT hFdt, const char *pszProperty, uint32_t cCells, ...)
 {
     va_list va;
