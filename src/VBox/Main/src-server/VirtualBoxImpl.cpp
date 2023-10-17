@@ -2239,16 +2239,6 @@ HRESULT VirtualBox::createMachine(const com::Utf8Str &aSettingsFile,
     LogFlowThisFunc(("aSettingsFile=\"%s\", aName=\"%s\", aArchitecture=%#x, aOsTypeId =\"%s\", aCreateFlags=\"%s\"\n",
                      aSettingsFile.c_str(), aName.c_str(), aArchitecture, aOsTypeId.c_str(), aFlags.c_str()));
 
-#if 1
-    /**
-     * We only allow same-same platform architectures (x86 VMs for x86 hosts, for instance) for now.
-     *
-     * This might change in the future, but for now we simply overwrite the architecture the caller handed-in
-     * with the host architecture.
-     */
-    aArchitecture = PlatformProperties::s_getHostPlatformArchitecture();
-#endif
-
     StringsList llGroups;
     HRESULT hrc = i_convertMachineGroups(aGroups, &llGroups);
     if (FAILED(hrc))

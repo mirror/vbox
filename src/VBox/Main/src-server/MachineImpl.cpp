@@ -316,6 +316,7 @@ void Machine::FinalRelease()
  *  @param strConfigFile        Local file system path to the VM settings (can be relative to the VirtualBox config directory).
  *  @param strName              Name for the machine.
  *  @param aArchitecture        Architecture to use for the machine.
+ *                              If a valid guest OS type is set via @aOsType, the guest OS' type will be used instead then.
  *  @param llGroups             list of groups for the machine.
  *  @param strOsType            OS Type string (stored as is if aOsType is NULL).
  *  @param aOsType              OS Type of this machine or NULL.
@@ -459,10 +460,16 @@ HRESULT Machine::init(VirtualBox *aParent,
         hrc = COMSETTER(SnapshotFolder)(NULL);
         AssertComRC(hrc);
 
+        /* Use the platform architecture which was handed-in by default. */
+        PlatformArchitecture_T enmPlatformArch = aArchitecture;
+
         if (aOsType)
         {
             /* Store OS type */
             mUserData->s.strOsType = aOsType->i_id();
+
+            /* Use the platform architecture of the found guest OS type. */
+            enmPlatformArch = aOsType->i_platformArchitecture();
         }
         else if (!strOsType.isEmpty())
         {
@@ -471,7 +478,7 @@ HRESULT Machine::init(VirtualBox *aParent,
         }
 
         /* Set the platform architecture first before applying the defaults below. */
-        hrc = mPlatform->i_initArchitecture(aArchitecture);
+        hrc = mPlatform->i_initArchitecture(enmPlatformArch);
         if (FAILED(hrc)) return hrc;
 
         /* Apply platform defaults. */

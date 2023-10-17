@@ -482,6 +482,9 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
     ComPtr<ISystemProperties> systemProperties;
     hrc = virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());           H();
 
+    PlatformArchitecture_T platformArchHost;
+    hrc = host->COMGETTER(Architecture)(&platformArchHost);                                 H();
+
     ComPtr<IFirmwareSettings> firmwareSettings;
     hrc = pMachine->COMGETTER(FirmwareSettings)(firmwareSettings.asOutParam());             H();
 
@@ -516,6 +519,16 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
 
     ComPtr<IPlatform> platform;
     pMachine->COMGETTER(Platform)(platform.asOutParam());                                   H();
+
+#if 1 /* For now we only support running same-same architectures (e.g. x86 VMs on x86 hosts). */
+    PlatformArchitecture_T platformArchMachine;
+    hrc = platform->COMGETTER(Architecture)(&platformArchMachine);                          H();
+    if (platformArchMachine != platformArchHost)
+        return pVMM->pfnVMR3SetError(pUVM, VERR_PLATFORM_ARCH_NOT_SUPPORTED, RT_SRC_POS,
+                                     N_("VM platform architecture (%s) not supported on this host (%s)."),
+                                     Global::stringifyPlatformArchitecture(platformArchMachine),
+                                     Global::stringifyPlatformArchitecture(platformArchHost));
+#endif
 
     ChipsetType_T chipsetType;
     hrc = platform->COMGETTER(ChipsetType)(&chipsetType);                                   H();
