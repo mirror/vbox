@@ -4056,6 +4056,360 @@ int Console::i_configVmmDev(ComPtr<IMachine> pMachine, BusAssignmentManager *pBu
     return vrc;
 }
 
+
+int Console::i_configUsb(ComPtr<IMachine> pMachine, BusAssignmentManager *pBusMgr, PCFGMNODE pRoot, PCFGMNODE pDevices,
+                         KeyboardHIDType_T enmKbdHid, PointingHIDType_T enmPointingHid, PCFGMNODE *ppUsbDevices)
+{
+    int vrc = VINF_SUCCESS;
+    PCFGMNODE pDev = NULL;          /* /Devices/Dev/ */
+    PCFGMNODE pInst = NULL;         /* /Devices/Dev/0/ */
+    PCFGMNODE pCfg = NULL;          /* /Devices/Dev/.../Config/ */
+    PCFGMNODE pLunL0 = NULL;        /* /Devices/Dev/0/LUN#0/ */
+    PCFGMNODE pLunL1 = NULL;        /* /Devices/Dev/0/LUN#0/AttachedDriver/ */
+
+    com::SafeIfaceArray<IUSBController> usbCtrls;
+    HRESULT hrc = pMachine->COMGETTER(USBControllers)(ComSafeArrayAsOutParam(usbCtrls));
+    bool fOhciPresent = false; /**< Flag whether at least one OHCI controller is present. */
+    bool fXhciPresent = false; /**< Flag whether at least one XHCI controller is present. */
+
+    if (SUCCEEDED(hrc))
+    {
+        for (size_t i = 0; i < usbCtrls.size(); ++i)
+        {
+            USBControllerType_T enmCtrlType;
+            vrc = usbCtrls[i]->COMGETTER(Type)(&enmCtrlType);                                  H();
+            if (enmCtrlType == USBControllerType_OHCI)
+            {
+                fOhciPresent = true;
+                break;
+            }
+            else if (enmCtrlType == USBControllerType_XHCI)
+            {
+                fXhciPresent = true;
+                break;
+            }
+        }
+    }
+    else if (hrc != E_NOTIMPL)
+    {
+        H();
+    }
+
+    /*
+     * Currently EHCI is only enabled when an OHCI or XHCI controller is present as well.
+     */
+    if (fOhciPresent || fXhciPresent)
+        mfVMHasUsbController = true;
+
+    if (mfVMHasUsbController)
+    {
+        for (size_t i = 0; i < usbCtrls.size(); ++i)
+        {
+            USBControllerType_T enmCtrlType;
+            vrc = usbCtrls[i]->COMGETTER(Type)(&enmCtrlType);                                  H();
+
+            if (enmCtrlType == USBControllerType_OHCI)
+            {
+                InsertConfigNode(pDevices, "usb-ohci", &pDev);
+                InsertConfigNode(pDev,     "0", &pInst);
+                InsertConfigNode(pInst,    "Config", &pCfg);
+                InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
+                hrc = pBusMgr->assignPCIDevice("usb-ohci", pInst);                          H();
+                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+                InsertConfigString(pLunL0, "Driver",               "VUSBRootHub");
+                InsertConfigNode(pLunL0,   "Config", &pCfg);
+
+                /*
+                 * Attach the status driver.
+                 */
+                i_attachStatusDriver(pInst, DeviceType_USB);
+            }
+#ifdef VBOX_WITH_EHCI
+            else if (enmCtrlType == USBControllerType_EHCI)
+            {
+                InsertConfigNode(pDevices, "usb-ehci", &pDev);
+                InsertConfigNode(pDev,     "0", &pInst);
+                InsertConfigNode(pInst,    "Config", &pCfg);
+                InsertConfigInteger(pInst, "Trusted", 1); /* boolean */
+                hrc = pBusMgr->assignPCIDevice("usb-ehci", pInst);                  H();
+
+                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+                InsertConfigString(pLunL0, "Driver",               "VUSBRootHub");
+                InsertConfigNode(pLunL0,   "Config", &pCfg);
+
+                /*
+                 * Attach the status driver.
+                 */
+                i_attachStatusDriver(pInst, DeviceType_USB);
+            }
+#endif
+            else if (enmCtrlType == USBControllerType_XHCI)
+            {
+                InsertConfigNode(pDevices, "usb-xhci", &pDev);
+                InsertConfigNode(pDev,     "0", &pInst);
+                InsertConfigNode(pInst,    "Config", &pCfg);
+                InsertConfigInteger(pInst, "Trusted", 1); /* boolean */
+                hrc = pBusMgr->assignPCIDevice("usb-xhci", pInst);                  H();
+
+                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+                InsertConfigString(pLunL0, "Driver",               "VUSBRootHub");
+                InsertConfigNode(pLunL0,   "Config", &pCfg);
+
+                InsertConfigNode(pInst,    "LUN#1", &pLunL1);
+                InsertConfigString(pLunL1, "Driver",               "VUSBRootHub");
+                InsertConfigNode(pLunL1,   "Config", &pCfg);
+
+                /*
+                 * Attach the status driver.
+                 */
+                i_attachStatusDriver(pInst, DeviceType_USB, 2);
+            }
+        } /* for every USB controller. */
+
+
+        /*
+         * Virtual USB Devices.
+         */
+        PCFGMNODE pUsbDevices = NULL;
+        InsertConfigNode(pRoot, "USB", &pUsbDevices);
+        *ppUsbDevices = pUsbDevices;
+
+#ifdef VBOX_WITH_USB
+        {
+            /*
+             * Global USB options, currently unused as we'll apply the 2.0 -> 1.1 morphing
+             * on a per device level now.
+             */
+            InsertConfigNode(pUsbDevices, "USBProxy", &pCfg);
+            InsertConfigNode(pCfg, "GlobalConfig", &pCfg);
+            // This globally enables the 2.0 -> 1.1 device morphing of proxied devices to keep windows quiet.
+            //InsertConfigInteger(pCfg, "Force11Device", true);
+            // The following breaks stuff, but it makes MSDs work in vista. (I include it here so
+            // that it's documented somewhere.) Users needing it can use:
+            //      VBoxManage setextradata "myvm" "VBoxInternal/USB/USBProxy/GlobalConfig/Force11PacketSize" 1
+            //InsertConfigInteger(pCfg, "Force11PacketSize", true);
+        }
+#endif
+
+#ifdef VBOX_WITH_USB_CARDREADER
+        BOOL aEmulatedUSBCardReaderEnabled = FALSE;
+        hrc = pMachine->COMGETTER(EmulatedUSBCardReaderEnabled)(&aEmulatedUSBCardReaderEnabled);    H();
+        if (aEmulatedUSBCardReaderEnabled)
+        {
+            InsertConfigNode(pUsbDevices, "CardReader", &pDev);
+            InsertConfigNode(pDev,     "0", &pInst);
+            InsertConfigNode(pInst,    "Config", &pCfg);
+
+            InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+# ifdef VBOX_WITH_USB_CARDREADER_TEST
+            InsertConfigString(pLunL0, "Driver", "DrvDirectCardReader");
+            InsertConfigNode(pLunL0,   "Config", &pCfg);
+# else
+            InsertConfigString(pLunL0, "Driver", "UsbCardReader");
+            InsertConfigNode(pLunL0,   "Config", &pCfg);
+# endif
+         }
+#endif
+
+        /* Virtual USB Mouse/Tablet */
+        if (   enmPointingHid == PointingHIDType_USBMouse
+            || enmPointingHid == PointingHIDType_USBTablet
+            || enmPointingHid == PointingHIDType_USBMultiTouch
+            || enmPointingHid == PointingHIDType_USBMultiTouchScreenPlusPad)
+        {
+            InsertConfigNode(pUsbDevices, "HidMouse", &pDev);
+            InsertConfigNode(pDev,     "0", &pInst);
+            InsertConfigNode(pInst,    "Config", &pCfg);
+
+            if (enmPointingHid == PointingHIDType_USBMouse)
+                InsertConfigString(pCfg,   "Mode", "relative");
+            else
+                InsertConfigString(pCfg,   "Mode", "absolute");
+            InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+            InsertConfigString(pLunL0, "Driver",        "MouseQueue");
+            InsertConfigNode(pLunL0,   "Config", &pCfg);
+            InsertConfigInteger(pCfg,  "QueueSize",            128);
+
+            InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
+            InsertConfigString(pLunL1, "Driver",        "MainMouse");
+        }
+        if (   enmPointingHid == PointingHIDType_USBMultiTouch
+            || enmPointingHid == PointingHIDType_USBMultiTouchScreenPlusPad)
+        {
+            InsertConfigNode(pDev,     "1", &pInst);
+            InsertConfigNode(pInst,    "Config", &pCfg);
+
+            InsertConfigString(pCfg,   "Mode", "multitouch");
+            InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+            InsertConfigString(pLunL0, "Driver",        "MouseQueue");
+            InsertConfigNode(pLunL0,   "Config", &pCfg);
+            InsertConfigInteger(pCfg,  "QueueSize",            128);
+
+            InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
+            InsertConfigString(pLunL1, "Driver",        "MainMouse");
+        }
+        if (enmPointingHid == PointingHIDType_USBMultiTouchScreenPlusPad)
+        {
+            InsertConfigNode(pDev,     "2", &pInst);
+            InsertConfigNode(pInst,    "Config", &pCfg);
+
+            InsertConfigString(pCfg,   "Mode", "touchpad");
+            InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+            InsertConfigString(pLunL0, "Driver",        "MouseQueue");
+            InsertConfigNode(pLunL0,   "Config", &pCfg);
+            InsertConfigInteger(pCfg,  "QueueSize",            128);
+
+            InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
+            InsertConfigString(pLunL1, "Driver",        "MainMouse");
+        }
+
+        /* Virtual USB Keyboard */
+        if (enmKbdHid == KeyboardHIDType_USBKeyboard)
+        {
+            InsertConfigNode(pUsbDevices, "HidKeyboard", &pDev);
+            InsertConfigNode(pDev,     "0", &pInst);
+            InsertConfigNode(pInst,    "Config", &pCfg);
+
+            InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+            InsertConfigString(pLunL0, "Driver",               "KeyboardQueue");
+            InsertConfigNode(pLunL0,   "Config", &pCfg);
+            InsertConfigInteger(pCfg,  "QueueSize",            64);
+
+            InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
+            InsertConfigString(pLunL1, "Driver",               "MainKeyboard");
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+int Console::i_configGuestDbg(ComPtr<IVirtualBox> pVBox, ComPtr<IMachine> pMachine, PCFGMNODE pRoot)
+{
+    PCFGMNODE pDbgf;
+    InsertConfigNode(pRoot, "DBGF", &pDbgf);
+
+    /* Paths to search for debug info and such things. */
+    Bstr bstr;
+    HRESULT hrc = pMachine->COMGETTER(SettingsFilePath)(bstr.asOutParam());          H();
+    Utf8Str strSettingsPath(bstr);
+    bstr.setNull();
+    strSettingsPath.stripFilename();
+    strSettingsPath.append("/");
+
+    char szHomeDir[RTPATH_MAX + 1];
+    int vrc2 = RTPathUserHome(szHomeDir, sizeof(szHomeDir) - 1);
+    if (RT_FAILURE(vrc2))
+        szHomeDir[0] = '\0';
+    RTPathEnsureTrailingSeparator(szHomeDir, sizeof(szHomeDir));
+
+
+    Utf8Str strPath;
+    strPath.append(strSettingsPath).append("debug/;");
+    strPath.append(strSettingsPath).append(";");
+    strPath.append("cache*").append(strSettingsPath).append("dbgcache/;"); /* handy for symlinking to actual cache */
+    strPath.append(szHomeDir);
+
+    InsertConfigString(pDbgf, "Path", strPath.c_str());
+
+    /* Tracing configuration. */
+    BOOL fTracingEnabled;
+    hrc = pMachine->COMGETTER(TracingEnabled)(&fTracingEnabled);                    H();
+    if (fTracingEnabled)
+        InsertConfigInteger(pDbgf, "TracingEnabled", 1);
+
+    hrc = pMachine->COMGETTER(TracingConfig)(bstr.asOutParam());                    H();
+    if (fTracingEnabled)
+        InsertConfigString(pDbgf, "TracingConfig", bstr);
+
+    /* Debugger console config. */
+    PCFGMNODE pDbgc;
+    InsertConfigNode(pRoot, "DBGC", &pDbgc);
+
+    hrc = pVBox->COMGETTER(HomeFolder)(bstr.asOutParam());                          H();
+    Utf8Str strVBoxHome = bstr;
+    bstr.setNull();
+    if (strVBoxHome.isNotEmpty())
+        strVBoxHome.append("/");
+    else
+    {
+        strVBoxHome = szHomeDir;
+        strVBoxHome.append("/.vbox");
+    }
+
+    Utf8Str strFile(strVBoxHome);
+    strFile.append("dbgc-history");
+    InsertConfigString(pDbgc, "HistoryFile", strFile);
+
+    strFile = strSettingsPath;
+    strFile.append("dbgc-init");
+    InsertConfigString(pDbgc, "LocalInitScript", strFile);
+
+    strFile = strVBoxHome;
+    strFile.append("dbgc-init");
+    InsertConfigString(pDbgc, "GlobalInitScript", strFile);
+
+    /*
+     * Configure guest debug settings.
+     */
+    ComObjPtr<IGuestDebugControl> ptrGstDbgCtrl;
+    GuestDebugProvider_T enmGstDbgProvider = GuestDebugProvider_None;
+
+    hrc = pMachine->COMGETTER(GuestDebugControl)(ptrGstDbgCtrl.asOutParam());           H();
+    hrc = ptrGstDbgCtrl->COMGETTER(DebugProvider)(&enmGstDbgProvider);                  H();
+    if (enmGstDbgProvider != GuestDebugProvider_None)
+    {
+        GuestDebugIoProvider_T enmGstDbgIoProvider = GuestDebugIoProvider_None;
+        hrc = ptrGstDbgCtrl->COMGETTER(DebugIoProvider)(&enmGstDbgIoProvider);          H();
+        hrc = ptrGstDbgCtrl->COMGETTER(DebugAddress)(bstr.asOutParam());                H();
+        Utf8Str strAddress = bstr;
+        bstr.setNull();
+
+        ULONG ulPort = 0;
+        hrc = ptrGstDbgCtrl->COMGETTER(DebugPort)(&ulPort);                             H();
+
+        PCFGMNODE pDbgSettings;
+        InsertConfigNode(pDbgc, "Dbg", &pDbgSettings);
+        InsertConfigString(pDbgSettings, "Address", strAddress);
+        InsertConfigInteger(pDbgSettings, "Port", ulPort);
+
+        switch (enmGstDbgProvider)
+        {
+            case GuestDebugProvider_Native:
+                InsertConfigString(pDbgSettings, "StubType", "Native");
+                break;
+            case GuestDebugProvider_GDB:
+                InsertConfigString(pDbgSettings, "StubType", "Gdb");
+                break;
+            case GuestDebugProvider_KD:
+                InsertConfigString(pDbgSettings, "StubType", "Kd");
+                break;
+            default:
+                AssertFailed();
+                break;
+        }
+
+        switch (enmGstDbgIoProvider)
+        {
+            case GuestDebugIoProvider_TCP:
+                InsertConfigString(pDbgSettings, "Provider", "tcp");
+                break;
+            case GuestDebugIoProvider_UDP:
+                InsertConfigString(pDbgSettings, "Provider", "udp");
+                break;
+            case GuestDebugIoProvider_IPC:
+                InsertConfigString(pDbgSettings, "Provider", "ipc");
+                break;
+            default:
+                AssertFailed();
+                break;
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
 #undef H
 #undef VRC
 
