@@ -757,7 +757,7 @@ private:
                                    const ComPtr<IMachine> &ptrMachine,
                                    const ComPtr<IGraphicsAdapter> &ptrGraphicsAdapter,
                                    const ComPtr<IFirmwareSettings> &ptrFirmwareSettings,
-                                   bool fHMEnabled);
+                                   bool fForceVmSvga3 = false, bool fExposeLegacyVga = true);
     int i_checkMediumLocation(IMedium *pMedium, bool *pfUseHostIOCache);
     int i_unmountMediumFromGuest(PUVM pUVM, PCVMMR3VTABLE pVMM, StorageBus_T enmBus, DeviceType_T enmDevType,
                                  const char *pcszDevice, unsigned uInstance, unsigned uLUN,
