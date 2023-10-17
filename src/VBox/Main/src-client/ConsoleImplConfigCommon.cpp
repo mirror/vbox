@@ -3915,7 +3915,7 @@ int Console::i_configAudioCtrl(ComPtr<IVirtualBox> pVBox, ComPtr<IMachine> pMach
 }
 
 
-int Console::i_configVmmDev(ComPtr<IMachine> pMachine, BusAssignmentManager *pBusMgr, PCFGMNODE pDevices)
+int Console::i_configVmmDev(ComPtr<IMachine> pMachine, BusAssignmentManager *pBusMgr, PCFGMNODE pDevices, bool fMmioReq)
 {
     VMMDev *pVMMDev = m_pVMMDev; Assert(pVMMDev);
 
@@ -3933,6 +3933,8 @@ int Console::i_configVmmDev(ComPtr<IMachine> pMachine, BusAssignmentManager *pBu
     InsertConfigNode(pInst,    "Config", &pCfg);
     InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
     HRESULT hrc = pBusMgr->assignPCIDevice("VMMDev", pInst);                            H();
+    if (fMmioReq)
+        InsertConfigInteger(pCfg,  "MmioReq",          1);
 
     Bstr hwVersion;
     hrc = pMachine->COMGETTER(HardwareVersion)(hwVersion.asOutParam());                 H();

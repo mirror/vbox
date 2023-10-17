@@ -855,7 +855,7 @@ private:
 
     int i_configAudioCtrl(ComPtr<IVirtualBox> pVBox, ComPtr<IMachine> pMachine, BusAssignmentManager *pBusMgr, PCFGMNODE pDevices,
                           bool fOsXGuest, bool *pfAudioEnabled);
-    int i_configVmmDev(ComPtr<IMachine> pMachine, BusAssignmentManager *pBusMgr, PCFGMNODE pDevices);
+    int i_configVmmDev(ComPtr<IMachine> pMachine, BusAssignmentManager *pBusMgr, PCFGMNODE pDevices, bool fMmioReq = false);
     int i_configPdm(ComPtr<IMachine> pMachine, PCVMMR3VTABLE pVMM, PUVM pUVM, PCFGMNODE pRoot);
     int i_configUsb(ComPtr<IMachine> pMachine, BusAssignmentManager *pBusMgr, PCFGMNODE pRoot, PCFGMNODE pDevices,
                     KeyboardHIDType_T enmKbdHid, PointingHIDType_T enmPointingHid, PCFGMNODE *ppUsbDevices);
