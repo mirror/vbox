@@ -328,10 +328,6 @@ int main(int argc, char *argv[])
      *     tstOVF: error: x86-specific platform settings are not available on this platform
      *     tstOVF: error: Details: code VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED (0x80bb0012), component PlatformWrap, interface IPlatform
      * */
-#if !defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86)
-    RTPrintf("TODO: Make it work on non x86 hosts as well, skipping for now\n");
-    return RTEXITCODE_SKIPPED;
-#endif
 
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
     HRESULT rc = S_OK;
