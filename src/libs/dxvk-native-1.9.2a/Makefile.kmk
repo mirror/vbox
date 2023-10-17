@@ -82,7 +82,7 @@ VBox-DxVkNativeUtil_DEFS          += \
 	DXVK_PLATFORM_LINUX \
 	DXVK_WSI_HEADLESS
 VBox-DxVkNativeUtil_CXXFLAGS.linux += \
-	-std=c++17
+	-std=c++17 -Wno-deprecated-declarations # The latter is for std::iterator in util_bit.h.
 VBox-DxVkNativeUtil_CXXFLAGS.darwin += \
 	-std=c++17
 VBox-DxVkNativeUtil_INCS           = \
@@ -167,7 +167,7 @@ VBox-DxVkNativeDxVk_DEFS           += \
 	DXVK_PLATFORM_LINUX \
 	DXVK_WSI_HEADLESS
 VBox-DxVkNativeDxVk_CXXFLAGS.linux += \
-	-std=c++17
+	-std=c++17 -Wno-deprecated-declarations # The latter is for std::iterator in util_bit.h.
 VBox-DxVkNativeDxVk_CXXFLAGS.darwin += \
 	-std=c++17
 VBox-DxVkNativeDxVk_INCS           = \
@@ -293,7 +293,7 @@ VBox-DxVkNativeD3D11_DEFS           += \
 	DXVK_PLATFORM_LINUX \
 	DXVK_WSI_HEADLESS
 VBox-DxVkNativeD3D11_CXXFLAGS.linux += \
-	-std=c++17
+	-std=c++17 -Wno-deprecated-declarations # The latter is for std::iterator in util_bit.h.
 VBox-DxVkNativeD3D11_CXXFLAGS.darwin += \
 	-std=c++17
 VBox-DxVkNativeD3D11_INCS            = \
