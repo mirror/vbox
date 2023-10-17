@@ -252,6 +252,44 @@ static const DeviceAssignmentRule g_aIch9Rules[] =
 };
 
 
+/* Virtual Armv8 platform chipset rules */
+static const DeviceAssignmentRule g_aArmv8Rules[] =
+{
+    /* VGA controller */
+    {"vga",           0,  0, 0,  0},
+
+    /* VMM device */
+    {"VMMDev",        0,  1, 0,  0},
+
+    /* Audio controllers */
+    {"ichac97",       0,  2, 0,  0},
+    {"hda",           0,  2, 0,  0},
+
+    /* Storage controllers */
+    {"virtio-scsi",   0,  3, 0,  1},
+    {"nvme",          0,  4, 0,  1},
+    {"ahci",          0, 16, 0,  1},
+    {"lsilogicsas",   0, 17, 0,  1},
+
+    /* USB controllers */
+    {"usb-ehci",      0,  5,  0, 0},
+    {"usb-xhci",      0,  6,  0, 0},
+    {"usb-ohci",      0,  7,  0, 0},
+
+    /* Network controllers */
+    {"nic",           0,  8,  0, 1},
+    {"nic",           0,  9,  0, 1},
+    {"nic",           0, 10,  0, 1},
+    {"nic",           0, 11,  0, 1},
+    {"nic",           0, 12,  0, 1},
+    {"nic",           0, 13,  0, 1},
+    {"nic",           0, 14,  0, 1},
+    {"nic",           0, 15,  0, 1},
+
+    { NULL,          -1, -1, -1,  0}
+};
+
+
 #ifdef VBOX_WITH_IOMMU_AMD
 /*
  * AMD IOMMU and LSI Logic controller rules.
@@ -409,6 +447,7 @@ HRESULT BusAssignmentManager::State::init(PCVMMR3VTABLE pVMM, ChipsetType_T chip
             mpszBridgeName = "pcibridge";
             break;
         case ChipsetType_ICH9:
+        case ChipsetType_ARMv8Virtual:
             mpszBridgeName = "ich9pcibridge";
             break;
         default:
@@ -482,6 +521,9 @@ void BusAssignmentManager::State::addMatchingRules(const char *pszName, PCIRules
             }
             break;
         }
+        case ChipsetType_ARMv8Virtual:
+            aArrays[0] = g_aArmv8Rules;
+            break;
         default:
             AssertFailed();
             break;
