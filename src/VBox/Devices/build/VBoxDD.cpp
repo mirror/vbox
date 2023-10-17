@@ -272,6 +272,10 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     if (RT_FAILURE(rc))
         return rc;
 
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DevicePciGenericEcamBridge);
+    if (RT_FAILURE(rc))
+        return rc;
+
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DevicePlatform);
     if (RT_FAILURE(rc))
         return rc;

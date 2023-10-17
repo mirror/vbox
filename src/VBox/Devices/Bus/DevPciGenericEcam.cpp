@@ -98,18 +98,11 @@ DECLINLINE(bool) pciGenEcamGetIrqLvl(PDEVPCIROOT pPciRoot, uint8_t u8IrqPin)
 }
 
 
-/**
- * @interface_method_impl{PDMPCIBUSREGCC,pfnSetIrqR3}
- */
-static DECLCALLBACK(void) pciGenEcamSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
+static void pciGenEcamSetIrqInternal(PPDMDEVINS pDevIns, PDEVPCIROOT pPciRoot, PDEVPCIBUSCC pBusCC,
+                                     uint8_t uDevFn, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
 {
-    PDEVPCIROOT pPciRoot = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
     PDEVPCIBUS  pBus = &pPciRoot->PciBus;
-    PDEVPCIBUSCC pBusCC = PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC);
-    uint8_t uDevFn = pPciDev->uDevFn;
     uint16_t const uBusDevFn = PCIBDF_MAKE(pBus->iBus, uDevFn);
-
-    LogFlowFunc(("invoked by %p/%d: iIrq=%d iLevel=%d uTagSrc=%#x\n", pDevIns, pDevIns->iInstance, iIrq, iLevel, uTagSrc));
 
     /* If MSI or MSI-X is enabled, PCI INTx# signals are disabled regardless of the PCI command
      * register interrupt bit state.
@@ -163,6 +156,49 @@ static DECLCALLBACK(void) pciGenEcamSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDe
             pBusCC->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pDevIns, uBusDevFn, u32IrqNr, fIrqLvl, uTagSrc);
         }
     }
+}
+
+
+/**
+ * @interface_method_impl{PDMPCIBUSREGCC,pfnSetIrqR3}
+ */
+static DECLCALLBACK(void) pciGenEcamSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
+{
+    LogFlowFunc(("invoked by %p/%d: iIrq=%d iLevel=%d uTagSrc=%#x\n", pDevIns, pDevIns->iInstance, iIrq, iLevel, uTagSrc));
+    pciGenEcamSetIrqInternal(pDevIns, PDMINS_2_DATA(pDevIns, PDEVPCIROOT), PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC),
+                             pPciDev->uDevFn, pPciDev, iIrq, iLevel, uTagSrc);
+}
+
+
+static DECLCALLBACK(void) pciGenEcamBridgeSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
+{
+    /*
+     * The PCI-to-PCI bridge specification defines how the interrupt pins
+     * are routed from the secondary to the primary bus (see chapter 9).
+     * iIrq gives the interrupt pin the pci device asserted.
+     * We change iIrq here according to the spec and call the SetIrq function
+     * of our parent passing the device which asserted the interrupt instead of the device of the bridge.
+     *
+     * See ich9pciBiosInitAllDevicesOnBus for corresponding configuration code.
+     */
+    PDEVPCIBUS pBus;
+    uint8_t    uDevFnBridge;
+    int        iIrqPinBridge;
+    PPDMDEVINS pDevInsBus = devpcibridgeCommonSetIrqRootWalk(pDevIns, pPciDev, iIrq, &pBus, &uDevFnBridge, &iIrqPinBridge);
+    AssertReturnVoid(pDevInsBus);
+    AssertMsg(pBus->iBus == 0, ("This is not the host pci bus iBus=%d\n", pBus->iBus));
+    Assert(pDevInsBus->pReg == &g_DevicePciGenericEcam); /* ASSUMPTION: Same style root bus.  Need callback interface to mix types. */
+
+    /*
+     * For MSI/MSI-X enabled devices the iIrq doesn't denote the pin but rather a vector which is completely
+     * orthogonal to the pin based approach. The vector is not subject to the pin based routing with PCI bridges.
+     */
+    int iIrqPinVector = iIrqPinBridge;
+    if (   MsiIsEnabled(pPciDev)
+        || MsixIsEnabled(pPciDev))
+        iIrqPinVector = iIrq;
+    pciGenEcamSetIrqInternal(pDevIns, DEVPCIBUS_2_DEVPCIROOT(pBus), PDMINS_2_DATA_CC(pDevInsBus, PDEVPCIBUSCC),
+                             uDevFnBridge, pPciDev, iIrqPinVector, iLevel, uTagSrc);
 }
 
 
@@ -427,6 +463,218 @@ static DECLCALLBACK(void) pciGenEcamR3Reset(PPDMDEVINS pDevIns)
     devpciR3CommonResetBridge(pDevIns);
 }
 
+
+/**
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
+ */
+static DECLCALLBACK(void *) pciGenEcamBridgeQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+{
+    PPDMDEVINS pDevIns = RT_FROM_MEMBER(pInterface, PDMDEVINS, IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDevIns->IBase);
+
+    /* HACK ALERT! Special access to the PDMPCIDEV structure of an ich9pcibridge
+       instance (see PDMIICH9BRIDGEPDMPCIDEV_IID for details). */
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIICH9BRIDGEPDMPCIDEV, pDevIns->apPciDevs[0]);
+    return NULL;
+}
+
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnDestruct}
+ */
+static DECLCALLBACK(int) pciGenEcamBridgeR3Destruct(PPDMDEVINS pDevIns)
+{
+    PDEVPCIBUS pBus = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
+    if (pBus->papBridgesR3)
+    {
+        PDMDevHlpMMHeapFree(pDevIns, pBus->papBridgesR3);
+        pBus->papBridgesR3 = NULL;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnConstruct}
+ */
+static DECLCALLBACK(int) pciGenEcamBridgeR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+
+    /*
+     * Validate and read configuration.
+     */
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "ExpressEnabled|ExpressPortType", "");
+
+    /* check if we're supposed to implement a PCIe bridge. */
+    bool fExpress;
+    int rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "ExpressEnabled", &fExpress, false);
+    AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query boolean value \"ExpressEnabled\"")));
+
+    char szExpressPortType[80];
+    rc = pHlp->pfnCFGMQueryStringDef(pCfg, "ExpressPortType", szExpressPortType, sizeof(szExpressPortType), "RootCmplxIntEp");
+    AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: failed to read \"ExpressPortType\" as string")));
+
+    uint8_t const uExpressPortType = devpciR3BridgeCommonGetExpressPortTypeFromString(szExpressPortType);
+    Log(("PCI/bridge#%u: fR0Enabled=%RTbool fRCEnabled=%RTbool fExpress=%RTbool uExpressPortType=%u (%s)\n",
+         iInstance, pDevIns->fR0Enabled, pDevIns->fRCEnabled, fExpress, uExpressPortType, szExpressPortType));
+
+    /*
+     * Init data and register the PCI bus.
+     */
+    pDevIns->IBase.pfnQueryInterface = pciGenEcamBridgeQueryInterface;
+
+    PDEVPCIBUSCC pBusCC = PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC);
+    PDEVPCIBUS   pBus   = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
+
+    pBus->enmType     = DEVPCIBUSTYPE_ICH9;
+    pBus->fPureBridge = true;
+    pBusCC->pDevInsR3 = pDevIns;
+    pBus->papBridgesR3 = (PPDMPCIDEV *)PDMDevHlpMMHeapAllocZ(pDevIns, sizeof(PPDMPCIDEV) * RT_ELEMENTS(pBus->apDevices));
+    AssertLogRelReturn(pBus->papBridgesR3, VERR_NO_MEMORY);
+
+    PDMPCIBUSREGCC PciBusReg;
+    PciBusReg.u32Version                 = PDM_PCIBUSREGCC_VERSION;
+    PciBusReg.pfnRegisterR3              = devpcibridgeR3CommonRegisterDevice;
+    PciBusReg.pfnRegisterMsiR3           = NULL;
+    PciBusReg.pfnIORegionRegisterR3      = devpciR3CommonIORegionRegister;
+    PciBusReg.pfnInterceptConfigAccesses = devpciR3CommonInterceptConfigAccesses;
+    PciBusReg.pfnConfigWrite             = devpciR3CommonConfigWrite;
+    PciBusReg.pfnConfigRead              = devpciR3CommonConfigRead;
+    PciBusReg.pfnSetIrqR3                = pciGenEcamBridgeSetIrq;
+    PciBusReg.u32EndVersion              = PDM_PCIBUSREGCC_VERSION;
+    rc = PDMDevHlpPCIBusRegister(pDevIns, &PciBusReg, &pBusCC->pPciHlpR3, &pBus->iBus);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to register ourselves as a PCI Bus"));
+    Assert(pBus->iBus == (uint32_t)iInstance + 1); /* Can be removed when adding support for multiple bridge implementations. */
+    if (pBusCC->pPciHlpR3->u32Version != PDM_PCIHLPR3_VERSION)
+        return PDMDevHlpVMSetError(pDevIns, VERR_VERSION_MISMATCH, RT_SRC_POS,
+                                   N_("PCI helper version mismatch; got %#x expected %#x"),
+                                   pBusCC->pPciHlpR3->u32Version, PDM_PCIHLPR3_VERSION);
+
+    LogRel(("PCI: Registered bridge instance #%u as PDM bus no %u.\n", iInstance, pBus->iBus));
+
+
+    /* Disable default device locking. */
+    rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
+
+    /** @todo r=aeichner This is the same as the ICH9 bridge. */
+    /*
+     * Fill in PCI configs and add them to the bus.
+     */
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+
+    PDMPciDevSetVendorId(  pPciDev, 0x8086); /* Intel */
+    if (fExpress)
+    {
+        PDMPciDevSetDeviceId(pPciDev, 0x29e1); /* 82X38/X48 Express Host-Primary PCI Express Bridge. */
+        PDMPciDevSetRevisionId(pPciDev, 0x01);
+    }
+    else
+    {
+        PDMPciDevSetDeviceId(pPciDev, 0x2448); /* 82801 Mobile PCI bridge. */
+        PDMPciDevSetRevisionId(pPciDev, 0xf2);
+    }
+    PDMPciDevSetClassSub(  pPciDev,   0x04); /* pci2pci */
+    PDMPciDevSetClassBase( pPciDev,   0x06); /* PCI_bridge */
+    if (fExpress)
+        PDMPciDevSetClassProg(pPciDev, 0x00); /* Normal decoding. */
+    else
+        PDMPciDevSetClassProg(pPciDev, 0x01); /* Supports subtractive decoding. */
+    PDMPciDevSetHeaderType(pPciDev,   0x01); /* Single function device which adheres to the PCI-to-PCI bridge spec. */
+    if (fExpress)
+    {
+        PDMPciDevSetCommand(pPciDev, VBOX_PCI_COMMAND_SERR);
+        PDMPciDevSetStatus(pPciDev, VBOX_PCI_STATUS_CAP_LIST); /* Has capabilities. */
+        PDMPciDevSetByte(pPciDev, VBOX_PCI_CACHE_LINE_SIZE, 8); /* 32 bytes */
+        /* PCI Express */
+        PDMPciDevSetByte(pPciDev, 0xa0 + 0, VBOX_PCI_CAP_ID_EXP); /* PCI_Express */
+        PDMPciDevSetByte(pPciDev, 0xa0 + 1, 0); /* next */
+        PDMPciDevSetWord(pPciDev, 0xa0 + 2,
+                        /* version */ 0x2
+                      | (uExpressPortType << 4));
+        PDMPciDevSetDWord(pPciDev, 0xa0 + 4, VBOX_PCI_EXP_DEVCAP_RBE); /* Device capabilities. */
+        PDMPciDevSetWord(pPciDev, 0xa0 + 8, 0x0000); /* Device control. */
+        PDMPciDevSetWord(pPciDev, 0xa0 + 10, 0x0000); /* Device status. */
+        PDMPciDevSetDWord(pPciDev, 0xa0 + 12,
+                         /* Max Link Speed */ 2
+                       | /* Maximum Link Width */ (16 << 4)
+                       | /* Active State Power Management (ASPM) Sopport */ (0 << 10)
+                       | VBOX_PCI_EXP_LNKCAP_LBNC
+                       | /* Port Number */ ((2 + iInstance) << 24)); /* Link capabilities. */
+        PDMPciDevSetWord(pPciDev, 0xa0 + 16, VBOX_PCI_EXP_LNKCTL_CLOCK); /* Link control. */
+        PDMPciDevSetWord(pPciDev, 0xa0 + 18,
+                        /* Current Link Speed */ 2
+                      | /* Negotiated Link Width */ (16 << 4)
+                      | VBOX_PCI_EXP_LNKSTA_SL_CLK); /* Link status. */
+        PDMPciDevSetDWord(pPciDev, 0xa0 + 20,
+                         /* Slot Power Limit Value */ (75 << 7)
+                       | /* Physical Slot Number */ (0 << 19)); /* Slot capabilities. */
+        PDMPciDevSetWord(pPciDev, 0xa0 + 24, 0x0000); /* Slot control. */
+        PDMPciDevSetWord(pPciDev, 0xa0 + 26, 0x0000); /* Slot status. */
+        PDMPciDevSetWord(pPciDev, 0xa0 + 28, 0x0000); /* Root control. */
+        PDMPciDevSetWord(pPciDev, 0xa0 + 30, 0x0000); /* Root capabilities. */
+        PDMPciDevSetDWord(pPciDev, 0xa0 + 32, 0x00000000); /* Root status. */
+        PDMPciDevSetDWord(pPciDev, 0xa0 + 36, 0x00000000); /* Device capabilities 2. */
+        PDMPciDevSetWord(pPciDev, 0xa0 + 40, 0x0000); /* Device control 2. */
+        PDMPciDevSetWord(pPciDev, 0xa0 + 42, 0x0000); /* Device status 2. */
+        PDMPciDevSetDWord(pPciDev, 0xa0 + 44,
+                         /* Supported Link Speeds Vector */ (2 << 1)); /* Link capabilities 2. */
+        PDMPciDevSetWord(pPciDev, 0xa0 + 48,
+                        /* Target Link Speed */ 2); /* Link control 2. */
+        PDMPciDevSetWord(pPciDev, 0xa0 + 50, 0x0000); /* Link status 2. */
+        PDMPciDevSetDWord(pPciDev, 0xa0 + 52, 0x00000000); /* Slot capabilities 2. */
+        PDMPciDevSetWord(pPciDev, 0xa0 + 56, 0x0000); /* Slot control 2. */
+        PDMPciDevSetWord(pPciDev, 0xa0 + 58, 0x0000); /* Slot status 2. */
+        PDMPciDevSetCapabilityList(pPciDev, 0xa0);
+    }
+    else
+    {
+        PDMPciDevSetCommand(pPciDev, 0x00);
+        PDMPciDevSetStatus(pPciDev, 0x20); /* 66MHz Capable. */
+    }
+    PDMPciDevSetInterruptLine(pPciDev, 0x00); /* This device does not assert interrupts. */
+
+    /*
+     * This device does not generate interrupts. Interrupt delivery from
+     * devices attached to the bus is unaffected.
+     */
+    PDMPciDevSetInterruptPin (pPciDev, 0x00);
+
+    if (fExpress)
+    {
+        /** @todo r=klaus set up the PCIe config space beyond the old 256 byte
+         * limit, containing additional capability descriptors. */
+    }
+
+    /*
+     * Register this PCI bridge. The called function will take care on which bus we will get registered.
+     */
+    rc = PDMDevHlpPCIRegisterEx(pDevIns, pPciDev, PDMPCIDEVREG_F_PCI_BRIDGE, PDMPCIDEVREG_DEV_NO_FIRST_UNUSED,
+                                PDMPCIDEVREG_FUN_NO_FIRST_UNUSED, "pci-generic-ecam-bridge");
+    AssertLogRelRCReturn(rc, rc);
+
+    pPciDev->Int.s.pfnBridgeConfigRead  = devpciR3BridgeCommonConfigRead;
+    pPciDev->Int.s.pfnBridgeConfigWrite = devpciR3BridgeCommonConfigWrite;
+
+    /*
+     * Register SSM handlers. We use the same saved state version as for the host bridge
+     * to make changes easier.
+     */
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, VBOX_PCIGENECAM_SAVED_STATE_VERSION,
+                                sizeof(*pBus) + 16*128,
+                                "pgm" /* before */,
+                                NULL, NULL, NULL,
+                                NULL, devpciR3BridgeCommonSaveExec, NULL,
+                                NULL, devpciR3BridgeCommonLoadExec, NULL);
+    AssertLogRelRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
+}
+
 #else  /* !IN_RING3 */
 
 /**
@@ -457,6 +705,32 @@ DECLCALLBACK(int) pciGenEcamRZConstruct(PPDMDEVINS pDevIns)
         rc = PDMDevHlpMmioSetUpContext(pDevIns, pPciRoot->hMmioMcfg, devpciCommonMcfgMmioWrite, devpciCommonMcfgMmioRead, NULL /*pvUser*/);
         AssertLogRelRCReturn(rc, rc);
     }
+
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int) pciGenEcamBridgeRZConstruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PDEVPCIBUS   pBus   = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
+    PDEVPCIBUSCC pBusCC = PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC);
+
+    /* Mirror the ring-3 device lock disabling: */
+    int rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
+
+    /* Set up the RZ PCI bus callbacks: */
+    PDMPCIBUSREGCC PciBusReg;
+    PciBusReg.u32Version    = PDM_PCIBUSREGCC_VERSION;
+    PciBusReg.iBus          = pBus->iBus;
+    PciBusReg.pfnSetIrq     = pciGenEcamBridgeSetIrq;
+    PciBusReg.u32EndVersion = PDM_PCIBUSREGCC_VERSION;
+    rc = PDMDevHlpPCIBusSetUpContext(pDevIns, &PciBusReg, &pBusCC->CTX_SUFF(pPciHlp));
+    AssertRCReturn(rc, rc);
 
     return rc;
 }
@@ -522,6 +796,80 @@ const PDMDEVREG g_DevicePciGenericEcam =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RC)
     /* .pfnConstruct = */           pciGenEcamRZConstruct,
+    /* .pfnReserved0 = */           NULL,
+    /* .pfnReserved1 = */           NULL,
+    /* .pfnReserved2 = */           NULL,
+    /* .pfnReserved3 = */           NULL,
+    /* .pfnReserved4 = */           NULL,
+    /* .pfnReserved5 = */           NULL,
+    /* .pfnReserved6 = */           NULL,
+    /* .pfnReserved7 = */           NULL,
+#else
+# error "Not in IN_RING3, IN_RING0 or IN_RC!"
+#endif
+    /* .u32VersionEnd = */          PDM_DEVREG_VERSION
+};
+
+/**
+ * The device registration structure
+ * for the PCI-to-PCI bridge.
+ */
+const PDMDEVREG g_DevicePciGenericEcamBridge =
+{
+    /* .u32Version = */             PDM_DEVREG_VERSION,
+    /* .uReserved0 = */             0,
+    /* .szName = */                 "pci-generic-ecam-bridge",
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ | PDM_DEVREG_FLAGS_NEW_STYLE,
+    /* .fClass = */                 PDM_DEVREG_CLASS_BUS_PCI,
+    /* .cMaxInstances = */          ~0U,
+    /* .uSharedVersion = */         42,
+    /* .cbInstanceShared = */       sizeof(DEVPCIBUS),
+    /* .cbInstanceCC = */           sizeof(CTX_SUFF(DEVPCIBUS)),
+    /* .cbInstanceRC = */           0,
+    /* .cMaxPciDevices = */         1,
+    /* .cMaxMsixVectors = */        0,
+    /* .pszDescription = */         "Generic ECAM PCI to PCI bridge",
+#if defined(IN_RING3)
+    /* .pszRCMod = */               "VBoxDDRC.rc",
+    /* .pszR0Mod = */               "VBoxDDR0.r0",
+    /* .pfnConstruct = */           pciGenEcamBridgeR3Construct,
+    /* .pfnDestruct = */            pciGenEcamBridgeR3Destruct,
+    /* .pfnRelocate = */            NULL,
+    /* .pfnMemSetup = */            NULL,
+    /* .pfnPowerOn = */             NULL,
+    /* .pfnReset = */               NULL, /* Must be NULL, to make sure only bus driver handles reset */
+    /* .pfnSuspend = */             NULL,
+    /* .pfnResume = */              NULL,
+    /* .pfnAttach = */              NULL,
+    /* .pfnDetach = */              NULL,
+    /* .pfnQueryInterface = */      NULL,
+    /* .pfnInitComplete = */        NULL,
+    /* .pfnPowerOff = */            NULL,
+    /* .pfnSoftReset = */           NULL,
+    /* .pfnReserved0 = */           NULL,
+    /* .pfnReserved1 = */           NULL,
+    /* .pfnReserved2 = */           NULL,
+    /* .pfnReserved3 = */           NULL,
+    /* .pfnReserved4 = */           NULL,
+    /* .pfnReserved5 = */           NULL,
+    /* .pfnReserved6 = */           NULL,
+    /* .pfnReserved7 = */           NULL,
+#elif defined(IN_RING0)
+    /* .pfnEarlyConstruct = */      NULL,
+    /* .pfnConstruct = */           pciGenEcamBridgeRZConstruct,
+    /* .pfnDestruct = */            NULL,
+    /* .pfnFinalDestruct = */       NULL,
+    /* .pfnRequest = */             NULL,
+    /* .pfnReserved0 = */           NULL,
+    /* .pfnReserved1 = */           NULL,
+    /* .pfnReserved2 = */           NULL,
+    /* .pfnReserved3 = */           NULL,
+    /* .pfnReserved4 = */           NULL,
+    /* .pfnReserved5 = */           NULL,
+    /* .pfnReserved6 = */           NULL,
+    /* .pfnReserved7 = */           NULL,
+#elif defined(IN_RC)
+    /* .pfnConstruct = */           pciGenEcamBridgeRZConstruct,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,

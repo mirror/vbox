@@ -1181,7 +1181,7 @@ DECL_HIDDEN_CALLBACK(int) devpciR3CommonSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE 
 }
 
 
-static DECLCALLBACK(int) ich9pcibridgeR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+DECL_HIDDEN_CALLBACK(int) devpciR3BridgeCommonSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PDEVPCIBUS      pThis = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
     PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
@@ -1193,8 +1193,8 @@ static DECLCALLBACK(int) ich9pcibridgeR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE 
 /**
  * @callback_method_impl{FNPCIBRIDGECONFIGWRITE}
  */
-static DECLCALLBACK(VBOXSTRICTRC) ich9pcibridgeConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice,
-                                                           uint32_t u32Address, unsigned cb, uint32_t u32Value)
+DECL_HIDDEN_CALLBACK(VBOXSTRICTRC) devpciR3BridgeCommonConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice,
+                                                                   uint32_t u32Address, unsigned cb, uint32_t u32Value)
 {
     PDEVPCIBUS   pBus     = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
@@ -1233,8 +1233,8 @@ static DECLCALLBACK(VBOXSTRICTRC) ich9pcibridgeConfigWrite(PPDMDEVINSR3 pDevIns,
 /**
  * @callback_method_impl{FNPCIBRIDGECONFIGREAD}
  */
-static DECLCALLBACK(VBOXSTRICTRC) ich9pcibridgeConfigRead(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice,
-                                                          uint32_t u32Address, unsigned cb, uint32_t *pu32Value)
+DECL_HIDDEN_CALLBACK(VBOXSTRICTRC) devpciR3BridgeCommonConfigRead(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice,
+                                                                  uint32_t u32Address, unsigned cb, uint32_t *pu32Value)
 {
     PDEVPCIBUS   pBus     = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
@@ -1777,7 +1777,7 @@ DECL_HIDDEN_CALLBACK(int) devpciR3CommonLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE 
     return ich9pciR3CommonLoadExec(pDevIns, pBus, pSSM, uVersion, uPass);
 }
 
-static DECLCALLBACK(int) ich9pcibridgeR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+DECL_HIDDEN_CALLBACK(int) devpciR3BridgeCommonLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     PDEVPCIBUS pThis = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
     return ich9pciR3CommonLoadExec(pDevIns, pThis, pSSM, uVersion, uPass);
@@ -3550,7 +3550,7 @@ void devpciR3ResetDevice(PPDMDEVINS pDevIns, PPDMPCIDEV pDev)
  * @returns PCI express encoding.
  * @param   pszExpressPortType    The string identifier for the port/device type.
  */
-static uint8_t ich9pcibridgeR3GetExpressPortTypeFromString(const char *pszExpressPortType)
+DECLHIDDEN(uint8_t) devpciR3BridgeCommonGetExpressPortTypeFromString(const char *pszExpressPortType)
 {
     if (!RTStrCmp(pszExpressPortType, "EndPtDev"))
         return VBOX_PCI_EXP_TYPE_ENDPOINT;
@@ -3673,7 +3673,7 @@ static DECLCALLBACK(int) ich9pcibridgeR3Construct(PPDMDEVINS pDevIns, int iInsta
     rc = pHlp->pfnCFGMQueryStringDef(pCfg, "ExpressPortType", szExpressPortType, sizeof(szExpressPortType), "RootCmplxIntEp");
     AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: failed to read \"ExpressPortType\" as string")));
 
-    uint8_t const uExpressPortType = ich9pcibridgeR3GetExpressPortTypeFromString(szExpressPortType);
+    uint8_t const uExpressPortType = devpciR3BridgeCommonGetExpressPortTypeFromString(szExpressPortType);
     Log(("PCI/bridge#%u: fR0Enabled=%RTbool fRCEnabled=%RTbool fExpress=%RTbool uExpressPortType=%u (%s)\n",
          iInstance, pDevIns->fR0Enabled, pDevIns->fRCEnabled, fExpress, uExpressPortType, szExpressPortType));
 
@@ -3813,8 +3813,8 @@ static DECLCALLBACK(int) ich9pcibridgeR3Construct(PPDMDEVINS pDevIns, int iInsta
                                 PDMPCIDEVREG_FUN_NO_FIRST_UNUSED, "ich9pcibridge");
     AssertLogRelRCReturn(rc, rc);
 
-    pPciDev->Int.s.pfnBridgeConfigRead  = ich9pcibridgeConfigRead;
-    pPciDev->Int.s.pfnBridgeConfigWrite = ich9pcibridgeConfigWrite;
+    pPciDev->Int.s.pfnBridgeConfigRead  = devpciR3BridgeCommonConfigRead;
+    pPciDev->Int.s.pfnBridgeConfigWrite = devpciR3BridgeCommonConfigWrite;
 
     /*
      * Register SSM handlers. We use the same saved state version as for the host bridge
@@ -3824,8 +3824,8 @@ static DECLCALLBACK(int) ich9pcibridgeR3Construct(PPDMDEVINS pDevIns, int iInsta
                                 sizeof(*pBus) + 16*128,
                                 "pgm" /* before */,
                                 NULL, NULL, NULL,
-                                NULL, ich9pcibridgeR3SaveExec, NULL,
-                                NULL, ich9pcibridgeR3LoadExec, NULL);
+                                NULL, devpciR3BridgeCommonSaveExec, NULL,
+                                NULL, devpciR3BridgeCommonLoadExec, NULL);
     AssertLogRelRCReturn(rc, rc);
 
     return VINF_SUCCESS;
@@ -4046,4 +4046,3 @@ const PDMDEVREG g_DevicePciIch9Bridge =
 #endif
     /* .u32VersionEnd = */          PDM_DEVREG_VERSION
 };
-

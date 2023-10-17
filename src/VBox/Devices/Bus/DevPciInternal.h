@@ -293,6 +293,16 @@ DECLHIDDEN(void) devpciR3CommonResetBridge(PPDMDEVINS pDevIns);
 DECL_HIDDEN_CALLBACK(int) devpciR3CommonSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 DECL_HIDDEN_CALLBACK(int) devpciR3CommonLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 
+DECL_HIDDEN_CALLBACK(int) devpciR3BridgeCommonSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
+DECL_HIDDEN_CALLBACK(int) devpciR3BridgeCommonLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
+
+DECL_HIDDEN_CALLBACK(VBOXSTRICTRC) devpciR3BridgeCommonConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice,
+                                                                   uint32_t u32Address, unsigned cb, uint32_t u32Value);
+DECL_HIDDEN_CALLBACK(VBOXSTRICTRC) devpciR3BridgeCommonConfigRead(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice,
+                                                                  uint32_t u32Address, unsigned cb, uint32_t *pu32Value);
+
+DECLHIDDEN(uint8_t) devpciR3BridgeCommonGetExpressPortTypeFromString(const char *pszExpressPortType);
+
 
 DECLINLINE(uint8_t) devpciR3GetByte(PPDMPCIDEV pPciDev, int32_t iRegister)
 {
