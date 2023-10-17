@@ -37,12 +37,6 @@
 #define LOG_GROUP LOG_GROUP_MAIN_CONSOLE
 #include "LoggingNew.h"
 
-// VBoxNetCfg-win.h needs winsock2.h and thus MUST be included before any other
-// header file includes Windows.h.
-#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
-# include <VBox/VBoxNetCfg-win.h>
-#endif
-
 #include "ConsoleImpl.h"
 #include "DisplayImpl.h"
 #include "NvramStoreImpl.h"
@@ -87,51 +81,11 @@
 #include <VBox/vmm/pdmstorageifs.h>
 #include <VBox/vmm/gcm.h>
 #include <VBox/version.h>
-#ifdef VBOX_WITH_GUEST_PROPS
-# include <VBox/HostServices/GuestPropertySvc.h>
-# include <VBox/com/defs.h>
-# include <VBox/com/array.h>
-# include <vector>
-#endif /* VBOX_WITH_GUEST_PROPS */
-#include <VBox/intnet.h>
 
 #include <VBox/com/com.h>
 #include <VBox/com/string.h>
 #include <VBox/com/array.h>
 
-#ifdef VBOX_WITH_NETFLT
-# if defined(RT_OS_SOLARIS)
-#  include <zone.h>
-# elif defined(RT_OS_LINUX)
-#  include <unistd.h>
-#  include <sys/ioctl.h>
-#  include <sys/socket.h>
-#  include <linux/types.h>
-#  include <linux/if.h>
-# elif defined(RT_OS_FREEBSD)
-#  include <unistd.h>
-#  include <sys/types.h>
-#  include <sys/ioctl.h>
-#  include <sys/socket.h>
-#  include <net/if.h>
-#  include <net80211/ieee80211_ioctl.h>
-# endif
-# if defined(RT_OS_WINDOWS)
-#  include <iprt/win/ntddndis.h>
-#  include <devguid.h>
-# else
-#  include <HostNetworkInterfaceImpl.h>
-#  include <netif.h>
-#  include <stdlib.h>
-# endif
-#endif /* VBOX_WITH_NETFLT */
-
-#ifdef VBOX_WITH_AUDIO_VRDE
-# include "DrvAudioVRDE.h"
-#endif
-#ifdef VBOX_WITH_AUDIO_RECORDING
-# include "DrvAudioRec.h"
-#endif
 #include "NetworkServiceRunner.h"
 #include "BusAssignmentManager.h"
 #ifdef VBOX_WITH_EXTPACK
