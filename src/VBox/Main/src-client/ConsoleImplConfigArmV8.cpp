@@ -524,11 +524,16 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
             }
         }
 
+        BOOL fRTCUseUTC;
+        hrc = platform->COMGETTER(RTCUseUTC)(&fRTCUseUTC);                                  H();
+
         InsertConfigNode(pDevices, "arm-pl031-rtc", &pDev);
         InsertConfigNode(pDev,     "0",            &pInst);
         InsertConfigNode(pInst,    "Config",        &pCfg);
         InsertConfigInteger(pCfg,  "Irq",               2);
         InsertConfigInteger(pCfg,  "MmioBase", 0x09010000);
+        InsertConfigInteger(pCfg,  "UtcOffset", fRTCUseUTC ? 1 : 0);
+
         vrc = RTFdtNodeAddF(hFdt, "pl032@%RX32", 0x09010000);                               VRC();
         vrc = RTFdtNodePropertyAddString(  hFdt, "clock-names", "apb_pclk");                VRC();
         vrc = RTFdtNodePropertyAddU32(     hFdt, "clocks", idPHandleAbpPClk);               VRC();
