@@ -842,6 +842,8 @@ private:
     int i_configUsb(ComPtr<IMachine> pMachine, BusAssignmentManager *pBusMgr, PCFGMNODE pRoot, PCFGMNODE pDevices,
                     KeyboardHIDType_T enmKbdHid, PointingHIDType_T enmPointingHid, PCFGMNODE *ppUsbDevices);
     int i_configGuestDbg(ComPtr<IVirtualBox> pVBox, ComPtr<IMachine> pMachine, PCFGMNODE pRoot);
+    int i_configStorageCtrls(ComPtr<IMachine> pMachine, BusAssignmentManager *pBusMgr, PCVMMR3VTABLE pVMM, PUVM pUVM,
+                             PCFGMNODE pDevices, PCFGMNODE pUsbDevices, PCFGMNODE pBiosCfg, bool *pfFdcEnabled);
 
     static DECLCALLBACK(void) i_vmstateChangeCallback(PUVM pUVM, PCVMMR3VTABLE pVMM, VMSTATE enmState,
                                                       VMSTATE enmOldState, void *pvUser);
