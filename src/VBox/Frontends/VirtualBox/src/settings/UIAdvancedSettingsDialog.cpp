@@ -244,6 +244,7 @@ private:
 UIModeCheckBox::UIModeCheckBox(QWidget *pParent)
     : QCheckBox(pParent)
 {
+    setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 }
 
 bool UIModeCheckBox::event(QEvent *pEvent)
@@ -278,8 +279,10 @@ void UIModeCheckBox::paintEvent(QPaintEvent *pEvent)
     /* Acquire useful properties: */
     const QPalette pal = QGuiApplication::palette();
     QRect contentRect = pEvent->rect();
+#ifdef VBOX_WS_MAC
     contentRect.setLeft(contentRect.left() + 2); /// @todo justify!
     contentRect.setWidth(contentRect.width() - 10); /// @todo justify!
+#endif
 
     /* Prepare painter: */
     QPainter painter(this);
