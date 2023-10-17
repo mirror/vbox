@@ -826,8 +826,13 @@ HRESULT PlatformProperties::getSupportedAudioControllerTypes(std::vector<AudioCo
 
         case PlatformArchitecture_ARM:
         {
-            /** @todo None yet / needs to be tested first. */
-            aSupportedAudioControllerTypes.clear();
+            static const AudioControllerType_T aAudioControllerTypes[] =
+            {
+                AudioControllerType_AC97,
+                AudioControllerType_HDA,
+            };
+            aSupportedAudioControllerTypes.assign(aAudioControllerTypes,
+                                                  aAudioControllerTypes + RT_ELEMENTS(aAudioControllerTypes));
             break;
         }
 
