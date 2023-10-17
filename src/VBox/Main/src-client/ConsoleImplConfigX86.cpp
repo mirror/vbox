@@ -1149,88 +1149,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
          * PDM config.
          *  Load drivers in VBoxC.[so|dll]
          */
-        PCFGMNODE pPDM;
-        PCFGMNODE pNode;
-        PCFGMNODE pMod;
-        InsertConfigNode(pRoot,    "PDM", &pPDM);
-        InsertConfigNode(pPDM,     "Devices", &pNode);
-        InsertConfigNode(pPDM,     "Drivers", &pNode);
-        InsertConfigNode(pNode,    "VBoxC", &pMod);
-#ifdef VBOX_WITH_XPCOM
-        // VBoxC is located in the components subdirectory
-        char szPathVBoxC[RTPATH_MAX];
-        vrc = RTPathAppPrivateArch(szPathVBoxC, RTPATH_MAX);                                VRC();
-        vrc = RTPathAppend(szPathVBoxC, RTPATH_MAX, "/components/VBoxC");                   VRC();
-        InsertConfigString(pMod,   "Path",  szPathVBoxC);
-#else
-        InsertConfigString(pMod,   "Path",  "VBoxC");
-#endif
-
-
-        /*
-         * Block cache settings.
-         */
-        PCFGMNODE pPDMBlkCache;
-        InsertConfigNode(pPDM, "BlkCache", &pPDMBlkCache);
-
-        /* I/O cache size */
-        ULONG ioCacheSize = 5;
-        hrc = pMachine->COMGETTER(IOCacheSize)(&ioCacheSize);                               H();
-        InsertConfigInteger(pPDMBlkCache, "CacheSize", ioCacheSize * _1M);
-
-        /*
-         * Bandwidth groups.
-         */
-        ComPtr<IBandwidthControl> bwCtrl;
-
-        hrc = pMachine->COMGETTER(BandwidthControl)(bwCtrl.asOutParam());                   H();
-
-        com::SafeIfaceArray<IBandwidthGroup> bwGroups;
-        hrc = bwCtrl->GetAllBandwidthGroups(ComSafeArrayAsOutParam(bwGroups));              H();
-
-        PCFGMNODE pAc;
-        InsertConfigNode(pPDM, "AsyncCompletion", &pAc);
-        PCFGMNODE pAcFile;
-        InsertConfigNode(pAc,  "File", &pAcFile);
-        PCFGMNODE pAcFileBwGroups;
-        InsertConfigNode(pAcFile,  "BwGroups", &pAcFileBwGroups);
-#ifdef VBOX_WITH_NETSHAPER
-        PCFGMNODE pNetworkShaper;
-        InsertConfigNode(pPDM, "NetworkShaper",  &pNetworkShaper);
-        PCFGMNODE pNetworkBwGroups;
-        InsertConfigNode(pNetworkShaper, "BwGroups", &pNetworkBwGroups);
-#endif /* VBOX_WITH_NETSHAPER */
-
-        for (size_t i = 0; i < bwGroups.size(); i++)
-        {
-            Bstr strName;
-            hrc = bwGroups[i]->COMGETTER(Name)(strName.asOutParam());                       H();
-            if (strName.isEmpty())
-                return pVMM->pfnVMR3SetError(pUVM, VERR_CFGM_NO_NODE, RT_SRC_POS, N_("No bandwidth group name specified"));
-
-            BandwidthGroupType_T enmType = BandwidthGroupType_Null;
-            hrc = bwGroups[i]->COMGETTER(Type)(&enmType);                                   H();
-            LONG64 cMaxBytesPerSec = 0;
-            hrc = bwGroups[i]->COMGETTER(MaxBytesPerSec)(&cMaxBytesPerSec);                 H();
-
-            if (enmType == BandwidthGroupType_Disk)
-            {
-                PCFGMNODE pBwGroup;
-                InsertConfigNode(pAcFileBwGroups, Utf8Str(strName).c_str(), &pBwGroup);
-                InsertConfigInteger(pBwGroup, "Max", cMaxBytesPerSec);
-                InsertConfigInteger(pBwGroup, "Start", cMaxBytesPerSec);
-                InsertConfigInteger(pBwGroup, "Step", 0);
-            }
-#ifdef VBOX_WITH_NETSHAPER
-            else if (enmType == BandwidthGroupType_Network)
-            {
-                /* Network bandwidth groups. */
-                PCFGMNODE pBwGroup;
-                InsertConfigNode(pNetworkBwGroups, Utf8Str(strName).c_str(), &pBwGroup);
-                InsertConfigInteger(pBwGroup, "Max", cMaxBytesPerSec);
-            }
-#endif /* VBOX_WITH_NETSHAPER */
-        }
+        vrc = i_configPdm(pMachine, pVMM, pUVM, pRoot);                                          VRC();
 
         /*
          * Devices
@@ -2939,11 +2858,6 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
             hrc = pMachine->COMGETTER(TracingConfig)(bstr.asOutParam());                    H();
             if (fTracingEnabled)
                 InsertConfigString(pDbgf, "TracingConfig", bstr);
-
-            BOOL fAllowTracingToAccessVM;
-            hrc = pMachine->COMGETTER(AllowTracingToAccessVM)(&fAllowTracingToAccessVM);    H();
-            if (fAllowTracingToAccessVM)
-                InsertConfigInteger(pPDM, "AllowTracingToAccessVM", 1);
 
             /* Debugger console config. */
             PCFGMNODE pDbgc;

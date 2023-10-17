@@ -3428,6 +3428,101 @@ int Console::i_configSerialPort(PCFGMNODE pInst, PortMode_T ePortMode, const cha
 #define H()     AssertLogRelMsgReturn(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), VERR_MAIN_CONFIG_CONSTRUCTOR_COM_ERROR)
 #define VRC()   AssertLogRelMsgReturn(RT_SUCCESS(vrc), ("vrc=%Rrc\n", vrc), vrc)
 
+int Console::i_configPdm(ComPtr<IMachine> pMachine, PCVMMR3VTABLE pVMM, PUVM pUVM, PCFGMNODE pRoot)
+{
+    PCFGMNODE pPDM;
+    PCFGMNODE pNode;
+    PCFGMNODE pMod;
+    InsertConfigNode(pRoot,    "PDM", &pPDM);
+    InsertConfigNode(pPDM,     "Devices", &pNode);
+    InsertConfigNode(pPDM,     "Drivers", &pNode);
+    InsertConfigNode(pNode,    "VBoxC", &pMod);
+#ifdef VBOX_WITH_XPCOM
+    // VBoxC is located in the components subdirectory
+    char szPathVBoxC[RTPATH_MAX];
+    int vrc = RTPathAppPrivateArch(szPathVBoxC, RTPATH_MAX);                            VRC();
+    vrc = RTPathAppend(szPathVBoxC, RTPATH_MAX, "/components/VBoxC");                   VRC();
+    InsertConfigString(pMod,   "Path",  szPathVBoxC);
+#else
+    InsertConfigString(pMod,   "Path",  "VBoxC");
+#endif
+
+
+    /*
+     * Block cache settings.
+     */
+    PCFGMNODE pPDMBlkCache;
+    InsertConfigNode(pPDM, "BlkCache", &pPDMBlkCache);
+
+    /* I/O cache size */
+    ULONG ioCacheSize = 5;
+    HRESULT hrc = pMachine->COMGETTER(IOCacheSize)(&ioCacheSize);                       H();
+    InsertConfigInteger(pPDMBlkCache, "CacheSize", ioCacheSize * _1M);
+
+    /*
+     * Bandwidth groups.
+     */
+    ComPtr<IBandwidthControl> bwCtrl;
+
+    hrc = pMachine->COMGETTER(BandwidthControl)(bwCtrl.asOutParam());                   H();
+
+    com::SafeIfaceArray<IBandwidthGroup> bwGroups;
+    hrc = bwCtrl->GetAllBandwidthGroups(ComSafeArrayAsOutParam(bwGroups));              H();
+
+    PCFGMNODE pAc;
+    InsertConfigNode(pPDM, "AsyncCompletion", &pAc);
+    PCFGMNODE pAcFile;
+    InsertConfigNode(pAc,  "File", &pAcFile);
+    PCFGMNODE pAcFileBwGroups;
+    InsertConfigNode(pAcFile,  "BwGroups", &pAcFileBwGroups);
+#ifdef VBOX_WITH_NETSHAPER
+    PCFGMNODE pNetworkShaper;
+    InsertConfigNode(pPDM, "NetworkShaper",  &pNetworkShaper);
+    PCFGMNODE pNetworkBwGroups;
+    InsertConfigNode(pNetworkShaper, "BwGroups", &pNetworkBwGroups);
+#endif /* VBOX_WITH_NETSHAPER */
+
+    for (size_t i = 0; i < bwGroups.size(); i++)
+    {
+        Bstr strName;
+        hrc = bwGroups[i]->COMGETTER(Name)(strName.asOutParam());                       H();
+        if (strName.isEmpty())
+            return pVMM->pfnVMR3SetError(pUVM, VERR_CFGM_NO_NODE, RT_SRC_POS, N_("No bandwidth group name specified"));
+
+        BandwidthGroupType_T enmType = BandwidthGroupType_Null;
+        hrc = bwGroups[i]->COMGETTER(Type)(&enmType);                                   H();
+        LONG64 cMaxBytesPerSec = 0;
+        hrc = bwGroups[i]->COMGETTER(MaxBytesPerSec)(&cMaxBytesPerSec);                 H();
+
+        if (enmType == BandwidthGroupType_Disk)
+        {
+            PCFGMNODE pBwGroup;
+            InsertConfigNode(pAcFileBwGroups, Utf8Str(strName).c_str(), &pBwGroup);
+            InsertConfigInteger(pBwGroup, "Max", cMaxBytesPerSec);
+            InsertConfigInteger(pBwGroup, "Start", cMaxBytesPerSec);
+            InsertConfigInteger(pBwGroup, "Step", 0);
+        }
+#ifdef VBOX_WITH_NETSHAPER
+        else if (enmType == BandwidthGroupType_Network)
+        {
+            /* Network bandwidth groups. */
+            PCFGMNODE pBwGroup;
+            InsertConfigNode(pNetworkBwGroups, Utf8Str(strName).c_str(), &pBwGroup);
+            InsertConfigInteger(pBwGroup, "Max", cMaxBytesPerSec);
+        }
+#endif /* VBOX_WITH_NETSHAPER */
+    }
+
+    /** @todo r=aeichner Looks like this setting is completely unused in VMM/PDM. */
+    BOOL fAllowTracingToAccessVM;
+    hrc = pMachine->COMGETTER(AllowTracingToAccessVM)(&fAllowTracingToAccessVM);        H();
+    if (fAllowTracingToAccessVM)
+        InsertConfigInteger(pPDM, "AllowTracingToAccessVM", 1);
+
+    return VINF_SUCCESS;
+}
+
+
 int Console::i_configAudioCtrl(ComPtr<IVirtualBox> pVBox, ComPtr<IMachine> pMachine, BusAssignmentManager *pBusMgr, PCFGMNODE pDevices,
                                bool fOsXGuest, bool *pfAudioEnabled)
 {
