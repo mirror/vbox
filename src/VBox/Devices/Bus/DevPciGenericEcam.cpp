@@ -98,6 +98,18 @@ DECLINLINE(bool) pciGenEcamGetIrqLvl(PDEVPCIROOT pPciRoot, uint8_t u8IrqPin)
 }
 
 
+/**
+ * Internal IRQ update worker for the root bus and bridges.
+ *
+ * @param   pDevIns     The PDM device instance updating the interrupt.
+ * @param   pPciRoot    The PCI root bus.
+ * @param   pBusCC      Current context PCI bus data.
+ * @param   uDevFn      Device and function number of the device/bridge updating the interrupt on the root bus.
+ * @param   pPciDev     The PCI device data of the device updating the interrupt.
+ * @param   iIrq        The interrupt number or MSI message.
+ * @param   iLevel      The level of the interrupt.
+ * @param   uTagSrc     The source tag of the interrupt.
+ */
 static void pciGenEcamSetIrqInternal(PPDMDEVINS pDevIns, PDEVPCIROOT pPciRoot, PDEVPCIBUSCC pBusCC,
                                      uint8_t uDevFn, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
 {
