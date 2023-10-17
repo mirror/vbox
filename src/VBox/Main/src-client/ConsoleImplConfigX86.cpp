@@ -46,13 +46,6 @@
 #include "ConsoleImpl.h"
 #include "DisplayImpl.h"
 #include "NvramStoreImpl.h"
-#ifdef VBOX_WITH_SHARED_CLIPBOARD
-# include "GuestShClPrivate.h"
-#endif
-#ifdef VBOX_WITH_DRAG_AND_DROP
-# include "GuestImpl.h"
-# include "GuestDnDPrivate.h"
-#endif
 #include "PlatformImpl.h"
 #include "VMMDev.h"
 #include "Global.h"
@@ -94,9 +87,6 @@
 #include <VBox/vmm/pdmstorageifs.h>
 #include <VBox/vmm/gcm.h>
 #include <VBox/version.h>
-#ifdef VBOX_WITH_SHARED_CLIPBOARD
-# include <VBox/HostServices/VBoxClipboardSvc.h>
-#endif
 #ifdef VBOX_WITH_GUEST_PROPS
 # include <VBox/HostServices/GuestPropertySvc.h>
 # include <VBox/com/defs.h>
@@ -471,7 +461,6 @@ HRESULT Console::i_attachRawPCIDevices(PUVM pUVM, BusAssignmentManager *pBusMgr,
 int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, AutoWriteLock *pAlock)
 {
     RT_NOREF(pVM /* when everything is disabled */);
-    VMMDev         *pVMMDev   = m_pVMMDev; Assert(pVMMDev);
     ComPtr<IMachine> pMachine = i_machine();
 
     int             vrc;
@@ -2678,32 +2667,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
             }
         }
 
-        /*
-         * VMM Device
-         */
-        InsertConfigNode(pDevices, "VMMDev", &pDev);
-        InsertConfigNode(pDev,     "0", &pInst);
-        InsertConfigNode(pInst,    "Config", &pCfg);
-        InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
-        hrc = pBusMgr->assignPCIDevice("VMMDev", pInst);                                    H();
-
-        Bstr hwVersion;
-        hrc = pMachine->COMGETTER(HardwareVersion)(hwVersion.asOutParam());                 H();
-        if (hwVersion.compare(Bstr("1").raw()) == 0) /* <= 2.0.x */
-            InsertConfigInteger(pCfg, "HeapEnabled", 0);
-        Bstr snapshotFolder;
-        hrc = pMachine->COMGETTER(SnapshotFolder)(snapshotFolder.asOutParam());             H();
-        InsertConfigString(pCfg, "GuestCoreDumpDir", snapshotFolder);
-
-        /* the VMM device's Main driver */
-        InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-        InsertConfigString(pLunL0, "Driver",               "HGCM");
-        InsertConfigNode(pLunL0,   "Config", &pCfg);
-
-        /*
-         * Attach the status driver.
-         */
-        i_attachStatusDriver(pInst, DeviceType_SharedFolder);
+        vrc = i_configVmmDev(pMachine, pBusMgr, pDevices);                                      VRC();
 
         /*
          * Audio configuration.
@@ -2711,107 +2675,6 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
         bool fAudioEnabled = false;
         vrc = i_configAudioCtrl(virtualBox, pMachine, pBusMgr, pDevices,
                                 fOsXGuest, &fAudioEnabled);                                     VRC();
-
-#ifdef VBOX_WITH_SHARED_CLIPBOARD
-        /*
-         * Shared Clipboard.
-         */
-        {
-            ClipboardMode_T enmClipboardMode = ClipboardMode_Disabled;
-            hrc = pMachine->COMGETTER(ClipboardMode)(&enmClipboardMode); H();
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-            BOOL fFileTransfersEnabled;
-            hrc = pMachine->COMGETTER(ClipboardFileTransfersEnabled)(&fFileTransfersEnabled); H();
-#endif
-
-            /* Load the service */
-            vrc = pVMMDev->hgcmLoadService("VBoxSharedClipboard", "VBoxSharedClipboard");
-            if (RT_SUCCESS(vrc))
-            {
-                LogRel(("Shared Clipboard: Service loaded\n"));
-
-                /* Set initial clipboard mode. */
-                vrc = i_changeClipboardMode(enmClipboardMode);
-                AssertLogRelMsg(RT_SUCCESS(vrc), ("Shared Clipboard: Failed to set initial clipboard mode (%d): vrc=%Rrc\n",
-                                                 enmClipboardMode, vrc));
-
-                /* Setup the service. */
-                VBOXHGCMSVCPARM parm;
-                HGCMSvcSetU32(&parm, !i_useHostClipboard());
-                vrc = pVMMDev->hgcmHostCall("VBoxSharedClipboard", VBOX_SHCL_HOST_FN_SET_HEADLESS, 1, &parm);
-                AssertLogRelMsg(RT_SUCCESS(vrc), ("Shared Clipboard: Failed to set initial headless mode (%RTbool): vrc=%Rrc\n",
-                                                 !i_useHostClipboard(), vrc));
-
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-                vrc = i_changeClipboardFileTransferMode(RT_BOOL(fFileTransfersEnabled));
-                AssertLogRelMsg(RT_SUCCESS(vrc), ("Shared Clipboard: Failed to set initial file transfer mode (%u): vrc=%Rrc\n",
-                                                 fFileTransfersEnabled, vrc));
-# endif
-                GuestShCl::createInstance(this /* pConsole */);
-                vrc = HGCMHostRegisterServiceExtension(&m_hHgcmSvcExtShCl, "VBoxSharedClipboard",
-                                                       &GuestShCl::hgcmDispatcher,
-                                                       GuestShClInst());
-                if (RT_FAILURE(vrc))
-                    Log(("Cannot register VBoxSharedClipboard extension, vrc=%Rrc\n", vrc));
-            }
-            else
-                LogRel(("Shared Clipboard: Not available, vrc=%Rrc\n", vrc));
-            vrc = VINF_SUCCESS;  /* None of the potential failures above are fatal. */
-        }
-#endif /* VBOX_WITH_SHARED_CLIPBOARD */
-
-        /*
-         * HGCM HostChannel.
-         */
-        {
-            Bstr value;
-            hrc = pMachine->GetExtraData(Bstr("HGCM/HostChannel").raw(),
-                                         value.asOutParam());
-
-            if (   hrc   == S_OK
-                && value == "1")
-            {
-                vrc = pVMMDev->hgcmLoadService("VBoxHostChannel", "VBoxHostChannel");
-                if (RT_FAILURE(vrc))
-                {
-                    LogRel(("VBoxHostChannel is not available, vrc=%Rrc\n", vrc));
-                    /* That is not a fatal failure. */
-                    vrc = VINF_SUCCESS;
-                }
-            }
-        }
-
-#ifdef VBOX_WITH_DRAG_AND_DROP
-        /*
-         * Drag and Drop.
-         */
-        {
-            DnDMode_T enmMode = DnDMode_Disabled;
-            hrc = pMachine->COMGETTER(DnDMode)(&enmMode);                                   H();
-
-            /* Load the service */
-            vrc = pVMMDev->hgcmLoadService("VBoxDragAndDropSvc", "VBoxDragAndDropSvc");
-            if (RT_FAILURE(vrc))
-            {
-                LogRel(("Drag and drop service is not available, vrc=%Rrc\n", vrc));
-                /* That is not a fatal failure. */
-                vrc = VINF_SUCCESS;
-            }
-            else
-            {
-                vrc = HGCMHostRegisterServiceExtension(&m_hHgcmSvcExtDragAndDrop, "VBoxDragAndDropSvc",
-                                                       &GuestDnD::notifyDnDDispatcher,
-                                                       GuestDnDInst());
-                if (RT_FAILURE(vrc))
-                    Log(("Cannot register VBoxDragAndDropSvc extension, vrc=%Rrc\n", vrc));
-                else
-                {
-                    LogRel(("Drag and drop service loaded\n"));
-                    vrc = i_changeDnDMode(enmMode);
-                }
-            }
-        }
-#endif /* VBOX_WITH_DRAG_AND_DROP */
 
 #if defined(VBOX_WITH_TPM)
         /*
