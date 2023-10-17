@@ -869,6 +869,22 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                         i, a);
                             break;
 
+                        case VirtualSystemDescriptionType_HardDiskControllerNVMe:
+                            if (fIgnoreThis)
+                            {
+                                RTPrintf(Appliance::tr("%2u: NVMe controller, type %ls -- disabled\n"),
+                                         a,
+                                         aVBoxValues[a]);
+                                aEnabled[a] = false;
+                            }
+                            else
+                                RTPrintf(Appliance::tr("%2u: NVMe controller, type %ls\n"
+                                            "    (disable with \"--vsys %u --unit %u --ignore\")\n"),
+                                        a,
+                                        aVBoxValues[a],
+                                        i, a);
+                            break;
+
                         case VirtualSystemDescriptionType_HardDiskImage:
                             if (fIgnoreThis)
                             {

@@ -498,6 +498,7 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     case KVirtualSystemDescriptionType_HardDiskControllerSCSI: value = UIApplianceEditorWidget::tr("Storage Controller (SCSI)"); break;
                     case KVirtualSystemDescriptionType_HardDiskControllerVirtioSCSI:  value = UIApplianceEditorWidget::tr("Storage Controller (VirtioSCSI)"); break;
                     case KVirtualSystemDescriptionType_HardDiskControllerSAS:  value = UIApplianceEditorWidget::tr("Storage Controller (SAS)"); break;
+                    case KVirtualSystemDescriptionType_HardDiskControllerNVMe:  value = UIApplianceEditorWidget::tr("Storage Controller (NVMe)"); break;
                     case KVirtualSystemDescriptionType_CDROM:                  value = UIApplianceEditorWidget::tr("DVD"); break;
                     case KVirtualSystemDescriptionType_Floppy:                 value = UIApplianceEditorWidget::tr("Floppy"); break;
                     case KVirtualSystemDescriptionType_NetworkAdapter:         value = UIApplianceEditorWidget::tr("Network Adapter"); break;
@@ -673,6 +674,7 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     case KVirtualSystemDescriptionType_HardDiskControllerSCSI: value = UIIconPool::iconSet(":/scsi_16px.png"); break;
                     case KVirtualSystemDescriptionType_HardDiskControllerVirtioSCSI:  value = UIIconPool::iconSet(":/virtio_scsi_16px.png"); break;
                     case KVirtualSystemDescriptionType_HardDiskControllerSAS:  value = UIIconPool::iconSet(":/sas_16px.png"); break;
+                    case KVirtualSystemDescriptionType_HardDiskControllerNVMe:  value = UIIconPool::iconSet(":/pcie_16px.png"); break;
                     case KVirtualSystemDescriptionType_HardDiskImage:          value = UIIconPool::iconSet(":/hd_16px.png"); break;
                     case KVirtualSystemDescriptionType_CDROM:                  value = UIIconPool::iconSet(":/cd_16px.png"); break;
                     case KVirtualSystemDescriptionType_Floppy:                 value = UIIconPool::iconSet(":/fd_16px.png"); break;
@@ -1360,7 +1362,8 @@ UIApplianceModel::UIApplianceModel(QVector<CVirtualSystemDescription>& aVSDs, QI
                     types[i] == KVirtualSystemDescriptionType_HardDiskControllerSATA ||
                     types[i] == KVirtualSystemDescriptionType_HardDiskControllerSCSI ||
                     types[i] == KVirtualSystemDescriptionType_HardDiskControllerVirtioSCSI ||
-                    types[i] == KVirtualSystemDescriptionType_HardDiskControllerSAS)
+                    types[i] == KVirtualSystemDescriptionType_HardDiskControllerSAS ||
+                    types[i] == KVirtualSystemDescriptionType_HardDiskControllerNVMe)
                     controllerMap[i] = pHardwareItem;
             }
         }
@@ -1702,6 +1705,7 @@ KVirtualSystemDescriptionType UIApplianceSortProxyModel::s_aSortList[] =
     KVirtualSystemDescriptionType_HardDiskControllerSCSI,
     KVirtualSystemDescriptionType_HardDiskControllerVirtioSCSI,
     KVirtualSystemDescriptionType_HardDiskControllerSAS,
+    KVirtualSystemDescriptionType_HardDiskControllerNVMe,
     /* OCI */
     KVirtualSystemDescriptionType_CloudProfileName,
     KVirtualSystemDescriptionType_CloudBucket,

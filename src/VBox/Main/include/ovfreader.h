@@ -567,8 +567,8 @@ struct HardDiskController
 {
     RTCString               strIdController;    // instance ID (Item/InstanceId); this gets referenced from VirtualDisk
 
-    enum ControllerSystemType { IDE, SATA, SCSI, VIRTIOSCSI };
-    ControllerSystemType    system;             // one of IDE, SATA, SCSI, VIRTIOSCSI
+    enum ControllerSystemType { IDE, SATA, SCSI, VIRTIOSCSI, NVMe };
+    ControllerSystemType    system;             // one of IDE, SATA, SCSI, VIRTIOSCSI, NVMe
 
     RTCString               strControllerType;
             // controller subtype (Item/ResourceSubType); e.g. "LsiLogic"; can be empty (esp. for IDE)

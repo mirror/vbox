@@ -57,6 +57,7 @@ public:
             << KVirtualSystemDescriptionType_HardDiskControllerSCSI
             << KVirtualSystemDescriptionType_HardDiskControllerVirtioSCSI
             << KVirtualSystemDescriptionType_HardDiskControllerSAS
+            << KVirtualSystemDescriptionType_HardDiskControllerNVMe
             << KVirtualSystemDescriptionType_CloudProfileName;
     }
 };

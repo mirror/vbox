@@ -418,7 +418,7 @@ HRESULT Appliance::interpret()
                     PlatformProperties::s_getMaxNetworkAdapters(pNewDesc->m->pConfig->hardwareMachine.platformSettings.chipsetType);
 
                 const settings::NetworkAdaptersList &llNetworkAdapters = pNewDesc->m->pConfig->hardwareMachine.llNetworkAdapters;
-                /* Check for the constrains */
+                /* Check for the constraints */
                 if (llNetworkAdapters.size() > maxNetworkAdapters)
                     i_addWarning(tr("Virtual appliance \"%s\" was configured with %zu network adapters however "
                                     "VirtualBox supports a maximum of %u network adapters.", "", llNetworkAdapters.size()),
@@ -448,7 +448,7 @@ HRESULT Appliance::interpret()
                 size_t cEthernetAdapters = vsysThis.llEthernetAdapters.size();
                 uint32_t const maxNetworkAdapters = PlatformProperties::s_getMaxNetworkAdapters(ChipsetType_PIIX3); /** @todo BUGBUG x86 only for now. */
 
-                /* Check for the constrains */
+                /* Check for the constraints */
                 if (cEthernetAdapters > maxNetworkAdapters)
                     i_addWarning(tr("Virtual appliance \"%s\" was configured with %zu network adapters however "
                                     "VirtualBox supports a maximum of %u network adapters.", "", cEthernetAdapters),
@@ -581,6 +581,7 @@ HRESULT Appliance::interpret()
             uint16_t cSATAused = 0; NOREF(cSATAused);
             uint16_t cSCSIused = 0; NOREF(cSCSIused);
             uint16_t cVIRTIOSCSIused = 0; NOREF(cVIRTIOSCSIused);
+            uint16_t cNVMeused = 0; NOREF(cNVMeused);
 
             ovf::ControllersMap::const_iterator hdcIt;
             /* Iterate through all storage controllers */
@@ -593,7 +594,7 @@ HRESULT Appliance::interpret()
                 switch (hdc.system)
                 {
                     case ovf::HardDiskController::IDE:
-                        /* Check for the constrains */
+                        /* Check for the constraints */
                         if (cIDEused < 4)
                         {
                             /// @todo figure out the IDE types
@@ -620,7 +621,7 @@ HRESULT Appliance::interpret()
                     break;
 
                     case ovf::HardDiskController::SATA:
-                        /* Check for the constrains */
+                        /* Check for the constraints */
                         if (cSATAused < 1)
                         {
                             /// @todo figure out the SATA types
@@ -644,7 +645,7 @@ HRESULT Appliance::interpret()
                     break;
 
                     case ovf::HardDiskController::SCSI:
-                        /* Check for the constrains */
+                        /* Check for the constraints */
                         if (cSCSIused < 1)
                         {
                             VirtualSystemDescriptionType_T vsdet = VirtualSystemDescriptionType_HardDiskControllerSCSI;
@@ -673,7 +674,7 @@ HRESULT Appliance::interpret()
                     break;
 
                     case ovf::HardDiskController::VIRTIOSCSI:
-                        /* Check for the constrains */
+                        /* Check for the constraints */
                         if (cVIRTIOSCSIused < 1)
                         {
                             pNewDesc->i_addEntry(VirtualSystemDescriptionType_HardDiskControllerVirtioSCSI,
@@ -692,6 +693,28 @@ HRESULT Appliance::interpret()
 
                         }
                         ++cVIRTIOSCSIused;
+                    break;
+
+                    case ovf::HardDiskController::NVMe:
+                        /* Check for the constraints */
+                        if (cNVMeused < 1)
+                        {
+                            pNewDesc->i_addEntry(VirtualSystemDescriptionType_HardDiskControllerNVMe,
+                                                 hdc.strIdController,
+                                                 hdc.strControllerType,
+                                                 "NVMe");
+                        }
+                        else
+                        {
+                            /* Warn only once */
+                            if (cNVMeused == 1)
+                                i_addWarning(tr("Virtual appliance \"%s\" was configured with more than one "
+                                                "NVMe controller however VirtualBox supports a maximum "
+                                                "of one NVMe controller."),
+                                                vsysThis.strName.c_str());
+
+                        }
+                        ++cNVMeused;
                     break;
 
                 }
@@ -4853,6 +4876,29 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         }
         else
             throw setError(VBOX_E_FILE_ERROR, tr("Invalid VirtioSCSI controller type \"%s\""), hdcVBox.c_str());
+    }
+
+    /* Storage controller NVMe */
+    std::list<VirtualSystemDescriptionEntry*> vsdeHDCNVMe =
+        vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskControllerNVMe);
+    if (vsdeHDCNVMe.size() > 1)
+        throw setError(VBOX_E_FILE_ERROR,
+                       tr("Too many NVMe controllers in OVF; import facility only supports one"));
+    if (!vsdeHDCNVMe.empty())
+    {
+        ComPtr<IStorageController> pController;
+        Utf8Str strName("NVMe");
+        const Utf8Str &hdcVBox = vsdeHDCNVMe.front()->strVBoxCurrent;
+        if (hdcVBox == "NVMe")
+        {
+            hrc = pNewMachine->AddStorageController(Bstr(strName).raw(), StorageBus_PCIe, pController.asOutParam());
+            if (FAILED(hrc)) throw hrc;
+
+            hrc = pController->COMSETTER(ControllerType)(StorageControllerType_NVMe);
+            if (FAILED(hrc)) throw hrc;
+        }
+        else
+            throw setError(VBOX_E_FILE_ERROR, tr("Invalid NVMe controller type \"%s\""), hdcVBox.c_str());
     }
 
     /* Now its time to register the machine before we add any storage devices */

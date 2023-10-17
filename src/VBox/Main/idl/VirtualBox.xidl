@@ -4667,6 +4667,7 @@
     <const name="CloudInstanceFreeFormTags" value="55" />
     <const name="CloudImageFreeFormTags" value="56" />
     <const name="HardDiskControllerVirtioSCSI" value="60" />
+    <const name="HardDiskControllerNVMe" value="61" />
   </enum>
 
   <enum

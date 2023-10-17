@@ -208,6 +208,10 @@ static void importOVF(const char *pcszPrefix,
                     pcszType = "virtio-scsi";
                 break;
 
+                case VirtualSystemDescriptionType_HardDiskControllerNVMe:
+                    pcszType = "nvme";
+                break;
+
                 case VirtualSystemDescriptionType_HardDiskImage:
                     pcszType = "hd";
                 break;
