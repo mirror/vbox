@@ -130,6 +130,9 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
     ComPtr<IHost> host;
     hrc = virtualBox->COMGETTER(Host)(host.asOutParam());                                   H();
 
+    PlatformArchitecture_T platformArchHost;
+    hrc = host->COMGETTER(Architecture)(&platformArchHost);                                 H();
+
     ComPtr<ISystemProperties> systemProperties;
     hrc = virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());           H();
 
@@ -148,14 +151,25 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
     hrc = pMachine->COMGETTER(MemorySize)(&cRamMBs);                                        H();
     uint64_t const cbRam   = cRamMBs * (uint64_t)_1M;
 
-    ComPtr<IPlatform> pPlatform;
-    hrc = pMachine->COMGETTER(Platform)(pPlatform.asOutParam());                            H();
+    ComPtr<IPlatform> platform;
+    hrc = pMachine->COMGETTER(Platform)(platform.asOutParam());                             H();
+
+    /* Note: Should be guarded by VBOX_WITH_VIRT_ARMV8, but we check this anyway here. */
+#if 1 /* For now we only support running ARM VMs on ARM hosts. */
+    PlatformArchitecture_T platformArchMachine;
+    hrc = platform->COMGETTER(Architecture)(&platformArchMachine);                          H();
+    if (platformArchMachine != platformArchHost)
+        return pVMM->pfnVMR3SetError(pUVM, VERR_PLATFORM_ARCH_NOT_SUPPORTED, RT_SRC_POS,
+                                     N_("VM platform architecture (%s) not supported on this host (%s)."),
+                                     Global::stringifyPlatformArchitecture(platformArchMachine),
+                                     Global::stringifyPlatformArchitecture(platformArchHost));
+#endif
 
     ComPtr<IPlatformProperties> pPlatformProperties;
-    hrc = pPlatform->COMGETTER(Properties)(pPlatformProperties.asOutParam());               H();
+    hrc = platform->COMGETTER(Properties)(pPlatformProperties.asOutParam());                H();
 
     ChipsetType_T chipsetType;
-    hrc = pPlatform->COMGETTER(ChipsetType)(&chipsetType);                                  H();
+    hrc = platform->COMGETTER(ChipsetType)(&chipsetType);                                   H();
 
     ULONG cCpus = 1;
     hrc = pMachine->COMGETTER(CPUCount)(&cCpus);                                            H();
