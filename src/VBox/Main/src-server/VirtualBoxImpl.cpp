@@ -2235,9 +2235,19 @@ HRESULT VirtualBox::createMachine(const com::Utf8Str &aSettingsFile,
                                   const com::Utf8Str &aPassword,
                                   ComPtr<IMachine> &aMachine)
 {
+    if (aArchitecture == PlatformArchitecture_None)
+        return setError(E_INVALIDARG, tr("'Must specify a valid platform architecture"));
+
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aSettingsFile=\"%s\", aName=\"%s\", aArchitecture=%#x, aOsTypeId =\"%s\", aCreateFlags=\"%s\"\n",
                      aSettingsFile.c_str(), aName.c_str(), aArchitecture, aOsTypeId.c_str(), aFlags.c_str()));
+
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+    if (aArchitecture != PlatformArchitecture_x86)/* x86 hosts only allows creating x86 VMs for now. */
+        return setError(VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED, tr("'Creating VMs for platform architecture %s not supported on %s"),
+                        Global::stringifyPlatformArchitecture(aArchitecture),
+                        Global::stringifyPlatformArchitecture(PlatformArchitecture_x86));
+#endif
 
     StringsList llGroups;
     HRESULT hrc = i_convertMachineGroups(aGroups, &llGroups);
