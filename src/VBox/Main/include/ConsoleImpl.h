@@ -92,6 +92,7 @@ class ResourceStore;
 # include <VBox/vrdpusb.h>
 #endif
 #include <VBox/VBoxCryptoIf.h>
+#include <VBox/pci.h>
 
 #if    defined(VBOX_WITH_GUEST_PROPS) || defined(VBOX_WITH_SHARED_CLIPBOARD) \
     || defined(VBOX_WITH_DRAG_AND_DROP)
@@ -127,6 +128,23 @@ typedef struct VUSBIRHCONFIG *PVUSBIRHCONFIG;
 
 // Console
 ///////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Simple class for storing network boot information.
+ */
+struct BootNic
+{
+    ULONG          mInstance;
+    PCIBusAddress  mPCIAddress;
+
+    ULONG          mBootPrio;
+    bool operator < (const BootNic &rhs) const
+    {
+        ULONG lval = mBootPrio     - 1; /* 0 will wrap around and get the lowest priority. */
+        ULONG rval = rhs.mBootPrio - 1;
+        return lval < rval; /* Zero compares as highest number (lowest prio). */
+    }
+};
 
 class ConsoleMouseInterface
 {
@@ -844,6 +862,9 @@ private:
     int i_configGuestDbg(ComPtr<IVirtualBox> pVBox, ComPtr<IMachine> pMachine, PCFGMNODE pRoot);
     int i_configStorageCtrls(ComPtr<IMachine> pMachine, BusAssignmentManager *pBusMgr, PCVMMR3VTABLE pVMM, PUVM pUVM,
                              PCFGMNODE pDevices, PCFGMNODE pUsbDevices, PCFGMNODE pBiosCfg, bool *pfFdcEnabled);
+    int i_configNetworkCtrls(ComPtr<IMachine> pMachine, ComPtr<IPlatformProperties> pPlatformProperties,
+                             ChipsetType_T enmChipset, BusAssignmentManager *pBusMgr, PCVMMR3VTABLE pVMM, PUVM pUVM,
+                             PCFGMNODE pDevices, std::list<BootNic> &llBootNics);
 
     static DECLCALLBACK(void) i_vmstateChangeCallback(PUVM pUVM, PCVMMR3VTABLE pVMM, VMSTATE enmState,
                                                       VMSTATE enmOldState, void *pvUser);
