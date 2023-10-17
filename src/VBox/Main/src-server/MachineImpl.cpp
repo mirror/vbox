@@ -316,7 +316,7 @@ void Machine::FinalRelease()
  *  @param strConfigFile        Local file system path to the VM settings (can be relative to the VirtualBox config directory).
  *  @param strName              Name for the machine.
  *  @param aArchitecture        Architecture to use for the machine.
- *                              If a valid guest OS type is set via @aOsType, the guest OS' type will be used instead then.
+ *                              If a valid guest OS type is set via \a aOsType, the guest OS' type will be used instead then.
  *  @param llGroups             list of groups for the machine.
  *  @param strOsType            OS Type string (stored as is if aOsType is NULL).
  *  @param aOsType              OS Type of this machine or NULL.
