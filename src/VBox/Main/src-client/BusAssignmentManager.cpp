@@ -286,6 +286,96 @@ static const DeviceAssignmentRule g_aArmv8Rules[] =
     {"nic",           0, 14,  0, 1},
     {"nic",           0, 15,  0, 1},
 
+    /* to make sure rule never used before rules assigning devices on it */
+    {"pci-generic-ecam-bridge", 0, 24, 0,  10},
+    {"pci-generic-ecam-bridge", 0, 25, 0,  10},
+    {"pci-generic-ecam-bridge", 2, 24, 0,   9}, /* Bridges must be instantiated depth */
+    {"pci-generic-ecam-bridge", 2, 25, 0,   9}, /* first (assumption in PDM and other */
+    {"pci-generic-ecam-bridge", 4, 24, 0,   8}, /* places), so make sure that nested */
+    {"pci-generic-ecam-bridge", 4, 25, 0,   8}, /* bridges are added to the last bridge */
+    {"pci-generic-ecam-bridge", 6, 24, 0,   7}, /* only, avoiding the need to re-sort */
+    {"pci-generic-ecam-bridge", 6, 25, 0,   7}, /* everything before starting the VM. */
+    {"pci-generic-ecam-bridge", 8, 24, 0,   6},
+    {"pci-generic-ecam-bridge", 8, 25, 0,   6},
+    {"pci-generic-ecam-bridge", 10, 24, 0,  5},
+    {"pci-generic-ecam-bridge", 10, 25, 0,  5},
+
+    /* Storage controllers */
+    {"ahci",          1,  0, 0,   0},
+    {"ahci",          1,  1, 0,   0},
+    {"ahci",          1,  2, 0,   0},
+    {"ahci",          1,  3, 0,   0},
+    {"ahci",          1,  4, 0,   0},
+    {"ahci",          1,  5, 0,   0},
+    {"ahci",          1,  6, 0,   0},
+    {"lsilogic",      1,  7, 0,   0},
+    {"lsilogic",      1,  8, 0,   0},
+    {"lsilogic",      1,  9, 0,   0},
+    {"lsilogic",      1, 10, 0,   0},
+    {"lsilogic",      1, 11, 0,   0},
+    {"lsilogic",      1, 12, 0,   0},
+    {"lsilogic",      1, 13, 0,   0},
+    {"buslogic",      1, 14, 0,   0},
+    {"buslogic",      1, 15, 0,   0},
+    {"buslogic",      1, 16, 0,   0},
+    {"buslogic",      1, 17, 0,   0},
+    {"buslogic",      1, 18, 0,   0},
+    {"buslogic",      1, 19, 0,   0},
+    {"buslogic",      1, 20, 0,   0},
+    {"lsilogicsas",   1, 21, 0,   0},
+    {"lsilogicsas",   1, 26, 0,   0},
+    {"lsilogicsas",   1, 27, 0,   0},
+    {"lsilogicsas",   1, 28, 0,   0},
+    {"lsilogicsas",   1, 29, 0,   0},
+    {"lsilogicsas",   1, 30, 0,   0},
+    {"lsilogicsas",   1, 31, 0,   0},
+
+    /* NICs */
+    {"nic",           2,  0, 0,   0},
+    {"nic",           2,  1, 0,   0},
+    {"nic",           2,  2, 0,   0},
+    {"nic",           2,  3, 0,   0},
+    {"nic",           2,  4, 0,   0},
+    {"nic",           2,  5, 0,   0},
+    {"nic",           2,  6, 0,   0},
+    {"nic",           2,  7, 0,   0},
+    {"nic",           2,  8, 0,   0},
+    {"nic",           2,  9, 0,   0},
+    {"nic",           2, 10, 0,   0},
+    {"nic",           2, 11, 0,   0},
+    {"nic",           2, 12, 0,   0},
+    {"nic",           2, 13, 0,   0},
+    {"nic",           2, 14, 0,   0},
+    {"nic",           2, 15, 0,   0},
+    {"nic",           2, 16, 0,   0},
+    {"nic",           2, 17, 0,   0},
+    {"nic",           2, 18, 0,   0},
+    {"nic",           2, 19, 0,   0},
+    {"nic",           2, 20, 0,   0},
+    {"nic",           2, 21, 0,   0},
+    {"nic",           2, 26, 0,   0},
+    {"nic",           2, 27, 0,   0},
+    {"nic",           2, 28, 0,   0},
+    {"nic",           2, 29, 0,   0},
+    {"nic",           2, 30, 0,   0},
+    {"nic",           2, 31, 0,   0},
+
+    /* Storage controller #2 (NVMe, virtio-scsi) */
+    {"nvme",          3,  0, 0,   0},
+    {"nvme",          3,  1, 0,   0},
+    {"nvme",          3,  2, 0,   0},
+    {"nvme",          3,  3, 0,   0},
+    {"nvme",          3,  4, 0,   0},
+    {"nvme",          3,  5, 0,   0},
+    {"nvme",          3,  6, 0,   0},
+    {"virtio-scsi",   3,  7, 0,   0},
+    {"virtio-scsi",   3,  8, 0,   0},
+    {"virtio-scsi",   3,  9, 0,   0},
+    {"virtio-scsi",   3, 10, 0,   0},
+    {"virtio-scsi",   3, 11, 0,   0},
+    {"virtio-scsi",   3, 12, 0,   0},
+    {"virtio-scsi",   3, 13, 0,   0},
+
     { NULL,          -1, -1, -1,  0}
 };
 
@@ -447,8 +537,10 @@ HRESULT BusAssignmentManager::State::init(PCVMMR3VTABLE pVMM, ChipsetType_T chip
             mpszBridgeName = "pcibridge";
             break;
         case ChipsetType_ICH9:
-        case ChipsetType_ARMv8Virtual:
             mpszBridgeName = "ich9pcibridge";
+            break;
+        case ChipsetType_ARMv8Virtual:
+            mpszBridgeName = "pci-generic-ecam-bridge";
             break;
         default:
             mpszBridgeName = "unknownbridge";
@@ -714,7 +806,7 @@ HRESULT BusAssignmentManager::assignPCIDeviceImpl(const char *pszDevName,
     {
         PCFGMNODE pDevices = pVMM->pfnCFGMR3GetParent(pVMM->pfnCFGMR3GetParent(pCfg));
         AssertLogRelMsgReturn(pDevices, ("BusAssignmentManager: cannot find base device configuration\n"), E_UNEXPECTED);
-        PCFGMNODE pBridges = pVMM->pfnCFGMR3GetChild(pDevices, "ich9pcibridge");
+        PCFGMNODE pBridges = pVMM->pfnCFGMR3GetChild(pDevices, pState->mpszBridgeName);
         AssertLogRelMsgReturn(pBridges, ("BusAssignmentManager: cannot find bridge configuration base\n"), E_UNEXPECTED);
 
         /* Device should be on a not yet existing bus, add it automatically */

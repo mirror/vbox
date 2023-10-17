@@ -232,11 +232,6 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                                              "arm,psci-1.0", "arm,psci-0.2", "arm,psci");   VRC();
         vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
-        /* Configure some misc system wide properties. */
-        vrc = RTFdtNodeAdd(hFdt, "chosen");                                                 VRC();
-        vrc = RTFdtNodePropertyAddString(hFdt, "stdout-path",      "/pl011@9000000");       VRC();
-        vrc = RTFdtNodeFinalize(hFdt);
-
         /* Configure the timer and clock. */
         vrc = RTFdtNodeAdd(hFdt, "timer");                                                  VRC();
         vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupts", 12,
@@ -358,6 +353,8 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         PCFGMNODE pLunL0 = NULL;        /* /Devices/Dev/0/LUN#0/ */
 
         InsertConfigNode(pRoot, "Devices", &pDevices);
+
+        InsertConfigNode(pDevices, "pci-generic-ecam-bridge", NULL);
 
         InsertConfigNode(pDevices, "platform",              &pDev);
         InsertConfigNode(pDev,     "0",                     &pInst);
@@ -558,6 +555,7 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 4, 0, 0x09030000, 0, 0x1000);       VRC();
         vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
+        uint32_t aPinIrqs[] = { 3, 4, 5, 6 };
         InsertConfigNode(pDevices, "pci-generic-ecam",  &pDev);
         InsertConfigNode(pDev,     "0",            &pInst);
         InsertConfigNode(pInst,    "Config",        &pCfg);
@@ -565,29 +563,38 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         InsertConfigInteger(pCfg,  "MmioEcamLength", 0x01000000);
         InsertConfigInteger(pCfg,  "MmioPioBase",    0x3eff0000);
         InsertConfigInteger(pCfg,  "MmioPioSize",    0x0000ffff);
-        InsertConfigInteger(pCfg,  "IntPinA",        3);
-        InsertConfigInteger(pCfg,  "IntPinB",        4);
-        InsertConfigInteger(pCfg,  "IntPinC",        5);
-        InsertConfigInteger(pCfg,  "IntPinD",        6);
+        InsertConfigInteger(pCfg,  "IntPinA",        aPinIrqs[0]);
+        InsertConfigInteger(pCfg,  "IntPinB",        aPinIrqs[1]);
+        InsertConfigInteger(pCfg,  "IntPinC",        aPinIrqs[2]);
+        InsertConfigInteger(pCfg,  "IntPinD",        aPinIrqs[3]);
         vrc = RTFdtNodeAddF(hFdt, "pcie@%RX32", 0x10000000);                                VRC();
-        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupt-map-mask", 4, 0x1800, 0, 0, 7); VRC();
-        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupt-map", 16 * 10,
-                                           0x00,   0x00, 0x00, 0x01, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x03, 0x04,
-                                           0x00,   0x00, 0x00, 0x02, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x04, 0x04,
-                                           0x00,   0x00, 0x00, 0x03, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x05, 0x04,
-                                           0x00,   0x00, 0x00, 0x04, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x06, 0x04,
-                                           0x800,  0x00, 0x00, 0x01, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x04, 0x04,
-                                           0x800,  0x00, 0x00, 0x02, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x05, 0x04,
-                                           0x800,  0x00, 0x00, 0x03, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x06, 0x04,
-                                           0x800,  0x00, 0x00, 0x04, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x03, 0x04,
-                                           0x1000, 0x00, 0x00, 0x01, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x05, 0x04,
-                                           0x1000, 0x00, 0x00, 0x02, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x06, 0x04,
-                                           0x1000, 0x00, 0x00, 0x03, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x03, 0x04,
-                                           0x1000, 0x00, 0x00, 0x04, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x04, 0x04,
-                                           0x1800, 0x00, 0x00, 0x01, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x06, 0x04,
-                                           0x1800, 0x00, 0x00, 0x02, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x03, 0x04,
-                                           0x1800, 0x00, 0x00, 0x03, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x04, 0x04,
-                                           0x1800, 0x00, 0x00, 0x04, idPHandleIntCtrl, 0x00, 0x00, 0x00, 0x05, 0x04); VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupt-map-mask", 4, 0xf800, 0, 0, 7); VRC();
+
+        uint32_t aIrqCells[32 * 4 * 10]; RT_ZERO(aIrqCells); /* Maximum of 32 devices on the root bus, each supporting 4 interrupts (INTA# ... INTD#). */
+        uint32_t *pau32IrqCell = &aIrqCells[0];
+        uint32_t iIrqPinSwizzle = 0;
+
+        for (uint32_t i = 0; i < 32; i++)
+        {
+            for (uint32_t iIrqPin = 0; iIrqPin < 4; iIrqPin++)
+            {
+                pau32IrqCell[0] = i << 11; /* The dev part, composed as dev.fn. */
+                pau32IrqCell[1] = 0;
+                pau32IrqCell[2] = 0;
+                pau32IrqCell[3] = iIrqPin + 1;
+                pau32IrqCell[4] = idPHandleIntCtrl;
+                pau32IrqCell[5] = 0;
+                pau32IrqCell[6] = 0;
+                pau32IrqCell[7] = 0;
+                pau32IrqCell[8] = aPinIrqs[(iIrqPinSwizzle + iIrqPin) % RT_ELEMENTS(aPinIrqs)];
+                pau32IrqCell[9] = 0x04;
+                pau32IrqCell += 10;
+            }
+
+            iIrqPinSwizzle++;
+        }
+
+        vrc = RTFdtNodePropertyAddCellsU32AsArray(hFdt, "interrupt-map", RT_ELEMENTS(aIrqCells), &aIrqCells[0]);
         vrc = RTFdtNodePropertyAddU32(     hFdt, "#interrupt-cells", 1);                    VRC();
         vrc = RTFdtNodePropertyAddCellsU32(hFdt, "ranges", 14,
                                            0x1000000, 0, 0, 0, 0x3eff0000, 0, 0x10000,
