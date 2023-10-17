@@ -201,6 +201,14 @@ public:
     static const char *stringifyDeviceType(DeviceType_T aType);
 
     /**
+     * Stringify a platform architecture to a string.
+     *
+     * @returns Platform architecture as a string.
+     * @param   aEnmArchitecture        Platform architecture to convert.
+     */
+    static const char *stringifyPlatformArchitecture(PlatformArchitecture_T aEnmArchitecture);
+
+    /**
      * Stringify a storage controller type.
      *
      * Drop the Global:: prefix and include StringifyEnums.h for an untranslated

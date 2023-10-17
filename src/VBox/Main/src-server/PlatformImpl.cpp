@@ -527,7 +527,7 @@ HRESULT Platform::i_loadSettings(const settings::Platform &data)
     }
 
     return setErrorBoth(VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED, VERR_PLATFORM_ARCH_NOT_SUPPORTED,
-                        "Platform '%s' not supported", Platform::s_platformArchitectureToStr(m->bd->architectureType));
+                        "Platform '%s' not supported", Global::stringifyPlatformArchitecture(m->bd->architectureType));
 }
 
 /**
@@ -563,7 +563,7 @@ HRESULT Platform::i_saveSettings(settings::Platform &data)
     }
 
     return setErrorBoth(VBOX_E_PLATFORM_ARCH_NOT_SUPPORTED, VERR_PLATFORM_ARCH_NOT_SUPPORTED,
-                            "Platform '%s' not supported", Platform::s_platformArchitectureToStr(m->bd->architectureType));
+                            "Platform '%s' not supported", Global::stringifyPlatformArchitecture(m->bd->architectureType));
 }
 
 void Platform::i_rollback()
@@ -750,7 +750,7 @@ HRESULT Platform::i_initArchitecture(PlatformArchitecture_T aArchitecture, Platf
     if (SUCCEEDED(hrc))
     {
         m->bd->architectureType = aArchitecture;
-        LogRel(("Platform architecture set to '%s'\n", Platform::s_platformArchitectureToStr(m->bd->architectureType)));
+        LogRel(("Platform architecture set to '%s'\n", Global::stringifyPlatformArchitecture(m->bd->architectureType)));
     }
 
     return hrc;
@@ -845,25 +845,5 @@ HRESULT Platform::i_applyDefaults(GuestOSType *aOsType)
     Assert(enmChipsetType != ChipsetType_Null);
 
     return hrc;
-}
-
-/**
- * Converts a platform architecture to a string.
- *
- * @returns Platform architecture as a string.
- * @param   enmArchitecture         Platform architecture to convert.
- */
-/* static */
-const char *Platform::s_platformArchitectureToStr(PlatformArchitecture_T enmArchitecture)
-{
-    switch (enmArchitecture)
-    {
-        case PlatformArchitecture_x86: return "x86";
-        case PlatformArchitecture_ARM: return "ARM";
-        default:
-            break;
-    }
-
-    AssertFailedReturn("<None>");
 }
 

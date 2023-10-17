@@ -766,6 +766,20 @@ Global::stringifyDeviceType(DeviceType_T aType)
     }
 }
 
+/* static */ const char *
+Global::stringifyPlatformArchitecture(PlatformArchitecture_T aEnmArchitecture)
+{
+    switch (aEnmArchitecture)
+    {
+        case PlatformArchitecture_x86: return "x86";
+        case PlatformArchitecture_ARM: return "ARM";
+        default:
+            break;
+    }
+
+    AssertFailedReturn("<None>");
+}
+
 #if 0 /* unused */
 
 /*static*/ const char *
