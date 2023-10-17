@@ -46,6 +46,7 @@
 #include "ConsoleImpl.h"
 #include "DisplayImpl.h"
 #include "NvramStoreImpl.h"
+#include "BusAssignmentManager.h"
 #ifdef VBOX_WITH_DRAG_AND_DROP
 # include "GuestImpl.h"
 # include "GuestDnDPrivate.h"
@@ -3420,6 +3421,403 @@ int Console::i_configSerialPort(PCFGMNODE pInst, PortMode_T ePortMode, const cha
     return VINF_SUCCESS;
 }
 
+
+#define H()     AssertLogRelMsgReturn(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), VERR_MAIN_CONFIG_CONSTRUCTOR_COM_ERROR)
+#define VRC()   AssertLogRelMsgReturn(RT_SUCCESS(vrc), ("vrc=%Rrc\n", vrc), vrc)
+
+int Console::i_configAudioCtrl(ComPtr<IVirtualBox> pVBox, ComPtr<IMachine> pMachine, BusAssignmentManager *pBusMgr, PCFGMNODE pDevices,
+                               bool fOsXGuest, bool *pfAudioEnabled)
+{
+    Utf8Str strTmp;
+    PCFGMNODE pDev = NULL;          /* /Devices/Dev/ */
+    PCFGMNODE pInst = NULL;         /* /Devices/Dev/0/ */
+    PCFGMNODE pCfg = NULL;          /* /Devices/Dev/.../Config/ */
+    PCFGMNODE pLunL0 = NULL;        /* /Devices/Dev/0/LUN#0/ */
+
+    /*
+     * AC'97 ICH / SoundBlaster16 audio / Intel HD Audio.
+     */
+    ComPtr<IAudioSettings> audioSettings;
+    HRESULT hrc = pMachine->COMGETTER(AudioSettings)(audioSettings.asOutParam());        H();
+
+    BOOL fAudioEnabled = FALSE;
+    ComPtr<IAudioAdapter> audioAdapter;
+    hrc = audioSettings->COMGETTER(Adapter)(audioAdapter.asOutParam());                 H();
+    if (audioAdapter)
+    {
+        hrc = audioAdapter->COMGETTER(Enabled)(&fAudioEnabled);                         H();
+    }
+
+    if (fAudioEnabled)
+    {
+        *pfAudioEnabled = true;
+
+        AudioControllerType_T enmAudioController;
+        hrc = audioAdapter->COMGETTER(AudioController)(&enmAudioController);            H();
+        AudioCodecType_T enmAudioCodec;
+        hrc = audioAdapter->COMGETTER(AudioCodec)(&enmAudioCodec);                      H();
+
+        GetExtraDataBoth(pVBox, pMachine, "VBoxInternal2/Audio/Device/TimerHz", &strTmp);
+        const uint64_t uTimerHz = strTmp.toUInt64();
+
+        GetExtraDataBoth(pVBox, pMachine, "VBoxInternal2/Audio/Device/BufSizeInMs", &strTmp);
+        const uint64_t uBufSizeInMs = strTmp.toUInt64();
+
+        GetExtraDataBoth(pVBox, pMachine, "VBoxInternal2/Audio/Device/BufSizeOutMs", &strTmp);
+        const uint64_t uBufSizeOutMs = strTmp.toUInt64();
+
+        GetExtraDataBoth(pVBox, pMachine, "VBoxInternal2/Audio/Debug/Enabled", &strTmp);
+        const bool fDebugEnabled = strTmp.equalsIgnoreCase("true") || strTmp.equalsIgnoreCase("1");
+
+        GetExtraDataBoth(pVBox, pMachine, "VBoxInternal2/Audio/Debug/Level", &strTmp);
+        const uint32_t uDebugLevel = strTmp.toUInt32();
+
+        Utf8Str strDebugPathOut;
+        GetExtraDataBoth(pVBox, pMachine, "VBoxInternal2/Audio/Debug/PathOut", &strDebugPathOut);
+
+#ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
+        GetExtraDataBoth(pVBox, pMachine, "VBoxInternal2/Audio/VaKit/Enabled", &strTmp); /* Deprecated; do not use! */
+        if (strTmp.isEmpty())
+            GetExtraDataBoth(pVBox, pMachine, "VBoxInternal2/Audio/ValKit/Enabled", &strTmp);
+        /* Whether the Validation Kit audio backend runs as the primary backend.
+         * Can also be used with VBox release builds. */
+        const bool fValKitEnabled = strTmp.equalsIgnoreCase("true") || strTmp.equalsIgnoreCase("1");
+#endif
+        /** @todo Implement an audio device class, similar to the audio backend class, to construct the common stuff
+         *        without duplicating (more) code. */
+
+        const char *pszAudioDevice;
+        switch (enmAudioController)
+        {
+            case AudioControllerType_AC97:
+            {
+                /* ICH AC'97. */
+                pszAudioDevice = "ichac97";
+
+                InsertConfigNode(pDevices,      pszAudioDevice,         &pDev);
+                InsertConfigNode(pDev,          "0",                    &pInst);
+                InsertConfigInteger(pInst,      "Trusted",              1); /* boolean */
+                hrc = pBusMgr->assignPCIDevice(pszAudioDevice, pInst);              H();
+                InsertConfigNode(pInst,         "Config",               &pCfg);
+                switch (enmAudioCodec)
+                {
+                    case AudioCodecType_STAC9700:
+                        InsertConfigString(pCfg, "Codec",               "STAC9700");
+                        break;
+                    case AudioCodecType_AD1980:
+                        InsertConfigString(pCfg, "Codec",               "AD1980");
+                        break;
+                    default: AssertFailedBreak();
+                }
+                if (uTimerHz)
+                    InsertConfigInteger(pCfg,   "TimerHz",              uTimerHz);
+                if (uBufSizeInMs)
+                    InsertConfigInteger(pCfg,   "BufSizeInMs",          uBufSizeInMs);
+                if (uBufSizeOutMs)
+                    InsertConfigInteger(pCfg,   "BufSizeOutMs",         uBufSizeOutMs);
+                InsertConfigInteger(pCfg,       "DebugEnabled",         fDebugEnabled);
+                if (strDebugPathOut.isNotEmpty())
+                    InsertConfigString(pCfg,    "DebugPathOut",         strDebugPathOut);
+                break;
+            }
+            case AudioControllerType_SB16:
+            {
+                /* Legacy SoundBlaster16. */
+                pszAudioDevice = "sb16";
+
+                InsertConfigNode(pDevices,      pszAudioDevice,         &pDev);
+                InsertConfigNode(pDev,          "0", &pInst);
+                InsertConfigInteger(pInst,      "Trusted",              1); /* boolean */
+                InsertConfigNode(pInst,         "Config",               &pCfg);
+                InsertConfigInteger(pCfg,       "IRQ",                  5);
+                InsertConfigInteger(pCfg,       "DMA",                  1);
+                InsertConfigInteger(pCfg,       "DMA16",                5);
+                InsertConfigInteger(pCfg,       "Port",                 0x220);
+                InsertConfigInteger(pCfg,       "Version",              0x0405);
+                if (uTimerHz)
+                    InsertConfigInteger(pCfg,   "TimerHz",              uTimerHz);
+                InsertConfigInteger(pCfg,       "DebugEnabled",         fDebugEnabled);
+                if (strDebugPathOut.isNotEmpty())
+                    InsertConfigString(pCfg,    "DebugPathOut",         strDebugPathOut);
+                break;
+            }
+            case AudioControllerType_HDA:
+            {
+                /* Intel HD Audio. */
+                pszAudioDevice = "hda";
+
+                InsertConfigNode(pDevices,      pszAudioDevice,         &pDev);
+                InsertConfigNode(pDev,          "0",                    &pInst);
+                InsertConfigInteger(pInst,      "Trusted",              1); /* boolean */
+                hrc = pBusMgr->assignPCIDevice(pszAudioDevice, pInst);              H();
+                InsertConfigNode(pInst,         "Config",               &pCfg);
+                if (uBufSizeInMs)
+                    InsertConfigInteger(pCfg,   "BufSizeInMs",          uBufSizeInMs);
+                if (uBufSizeOutMs)
+                    InsertConfigInteger(pCfg,   "BufSizeOutMs",         uBufSizeOutMs);
+                InsertConfigInteger(pCfg,       "DebugEnabled",         fDebugEnabled);
+                if (strDebugPathOut.isNotEmpty())
+                    InsertConfigString(pCfg,    "DebugPathOut",         strDebugPathOut);
+
+                /* macOS guests uses a different HDA variant to make 10.14+ (or maybe 10.13?) recognize the device. */
+                if (fOsXGuest)
+                    InsertConfigString(pCfg,    "DeviceName",           "Intel Sunrise Point");
+                break;
+            }
+            default:
+                pszAudioDevice = "oops";
+                AssertFailedBreak();
+        }
+
+        PCFGMNODE pCfgAudioAdapter = NULL;
+        InsertConfigNode(pInst, "AudioConfig", &pCfgAudioAdapter);
+        SafeArray<BSTR> audioProps;
+        hrc = audioAdapter->COMGETTER(PropertiesList)(ComSafeArrayAsOutParam(audioProps));  H();
+
+        std::list<Utf8Str> audioPropertyNamesList;
+        for (size_t i = 0; i < audioProps.size(); ++i)
+        {
+            Bstr bstrValue;
+            audioPropertyNamesList.push_back(Utf8Str(audioProps[i]));
+            hrc = audioAdapter->GetProperty(audioProps[i], bstrValue.asOutParam());
+            Utf8Str strKey(audioProps[i]);
+            InsertConfigString(pCfgAudioAdapter, strKey.c_str(), bstrValue);
+        }
+
+        /*
+         * The audio driver.
+         */
+        const char *pszAudioDriver = NULL;
+#ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
+        if (fValKitEnabled)
+        {
+            pszAudioDriver = "ValidationKitAudio";
+            LogRel(("Audio: ValidationKit driver active\n"));
+        }
+#endif
+        /* If nothing else was selected before, ask the API. */
+        if (pszAudioDriver == NULL)
+        {
+            AudioDriverType_T enmAudioDriver;
+            hrc = audioAdapter->COMGETTER(AudioDriver)(&enmAudioDriver);                    H();
+
+            /* The "Default" audio driver needs special treatment, as we need to figure out which driver to use
+             * by default on the current platform. */
+            bool const fUseDefaultDrv = enmAudioDriver == AudioDriverType_Default;
+
+            AudioDriverType_T const enmDefaultAudioDriver = settings::MachineConfigFile::getHostDefaultAudioDriver();
+
+            if (fUseDefaultDrv)
+            {
+                enmAudioDriver = enmDefaultAudioDriver;
+                if (enmAudioDriver == AudioDriverType_Null)
+                    LogRel(("Audio: Warning: No default driver detected for current platform -- defaulting to Null audio backend\n"));
+            }
+
+            switch (enmAudioDriver)
+            {
+                case AudioDriverType_Default: /* Can't happen, but handle it anyway. */
+                    RT_FALL_THROUGH();
+                case AudioDriverType_Null:
+                    pszAudioDriver = "NullAudio";
+                    break;
+#ifdef RT_OS_WINDOWS
+# ifdef VBOX_WITH_WINMM
+                case AudioDriverType_WinMM:
+#  error "Port WinMM audio backend!" /** @todo Still needed? */
+                    break;
+# endif
+                case AudioDriverType_DirectSound:
+                    /* Use the Windows Audio Session (WAS) API rather than Direct Sound on Windows
+                       versions we've tested it on (currently W7+).  Since Vista, Direct Sound has
+                       been emulated on top of WAS according to the docs, so better use WAS directly.
+
+                       Set extradata value "VBoxInternal2/Audio/WindowsDrv" "dsound" to no use WasAPI.
+
+                       Keep this hack for backwards compatibility (introduced < 7.0).
+                    */
+                    GetExtraDataBoth(pVBox, pMachine, "VBoxInternal2/Audio/WindowsDrv", &strTmp); H();
+                    if (   enmDefaultAudioDriver == AudioDriverType_WAS
+                        && (   strTmp.isEmpty()
+                            || strTmp.equalsIgnoreCase("was")
+                            || strTmp.equalsIgnoreCase("wasapi")) )
+                    {
+                        /* Nothing to do here, fall through to WAS driver. */
+                    }
+                    else
+                    {
+                        pszAudioDriver = "DSoundAudio";
+                        break;
+                    }
+                    RT_FALL_THROUGH();
+                case AudioDriverType_WAS:
+                    if (enmDefaultAudioDriver == AudioDriverType_WAS) /* WAS supported? */
+                        pszAudioDriver = "HostAudioWas";
+                    else if (enmDefaultAudioDriver == AudioDriverType_DirectSound)
+                    {
+                        LogRel(("Audio: Warning: Windows Audio Session (WAS) not supported, defaulting to DirectSound backend\n"));
+                        pszAudioDriver = "DSoundAudio";
+                    }
+                    break;
+#endif /* RT_OS_WINDOWS */
+#ifdef RT_OS_SOLARIS
+                case AudioDriverType_SolAudio:
+                    /* Should not happen, as the Solaris Audio backend is not around anymore.
+                     * Remove this sometime later. */
+                    LogRel(("Audio: Warning: Solaris Audio is deprecated, please switch to OSS!\n"));
+                    LogRel(("Audio: Automatically setting host audio backend to OSS\n"));
+
+                    /* Manually set backend to OSS for now. */
+                    pszAudioDriver = "OSSAudio";
+                    break;
+#endif
+#ifdef VBOX_WITH_AUDIO_OSS
+                case AudioDriverType_OSS:
+                    pszAudioDriver = "OSSAudio";
+                    break;
+#endif
+#ifdef VBOX_WITH_AUDIO_ALSA
+                case AudioDriverType_ALSA:
+                    pszAudioDriver = "ALSAAudio";
+                    break;
+#endif
+#ifdef VBOX_WITH_AUDIO_PULSE
+                case AudioDriverType_Pulse:
+                    pszAudioDriver = "PulseAudio";
+                    break;
+#endif
+#ifdef RT_OS_DARWIN
+                case AudioDriverType_CoreAudio:
+                    pszAudioDriver = "CoreAudio";
+                    break;
+#endif
+                default:
+                    pszAudioDriver = "oops";
+                    AssertFailedBreak();
+            }
+
+            if (fUseDefaultDrv)
+                LogRel(("Audio: Detected default audio driver type is '%s'\n", pszAudioDriver));
+        }
+
+        BOOL fAudioEnabledIn = FALSE;
+        hrc = audioAdapter->COMGETTER(EnabledIn)(&fAudioEnabledIn);                            H();
+        BOOL fAudioEnabledOut = FALSE;
+        hrc = audioAdapter->COMGETTER(EnabledOut)(&fAudioEnabledOut);                          H();
+
+        unsigned idxAudioLun = 0;
+
+        InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", idxAudioLun);
+        i_configAudioDriver(pVBox, pMachine, pLunL0, pszAudioDriver, !!fAudioEnabledIn, !!fAudioEnabledOut);
+        idxAudioLun++;
+
+#ifdef VBOX_WITH_AUDIO_VRDE
+        /* Insert dummy audio driver to have the LUN configured. */
+        InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", idxAudioLun);
+        InsertConfigString(pLunL0, "Driver", "AUDIO");
+        {
+            AudioDriverCfg DrvCfgVRDE(pszAudioDevice, 0 /* Instance */, idxAudioLun, "AudioVRDE",
+                                      !!fAudioEnabledIn, !!fAudioEnabledOut);
+            int vrc = mAudioVRDE->InitializeConfig(&DrvCfgVRDE);
+            AssertRCStmt(vrc, throw ConfigError(__FUNCTION__, vrc, "mAudioVRDE->InitializeConfig failed"));
+        }
+        idxAudioLun++;
+#endif
+
+#ifdef VBOX_WITH_AUDIO_RECORDING
+        /* Insert dummy audio driver to have the LUN configured. */
+        InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", idxAudioLun);
+        InsertConfigString(pLunL0, "Driver", "AUDIO");
+        {
+            AudioDriverCfg DrvCfgVideoRec(pszAudioDevice, 0 /* Instance */, idxAudioLun, "AudioVideoRec",
+                                          false /*a_fEnabledIn*/, true /*a_fEnabledOut*/);
+            int vrc = mRecording.mAudioRec->InitializeConfig(&DrvCfgVideoRec);
+            AssertRCStmt(vrc, throw ConfigError(__FUNCTION__, vrc, "Recording.mAudioRec->InitializeConfig failed"));
+        }
+        idxAudioLun++;
+#endif
+
+        if (fDebugEnabled)
+        {
+#ifdef VBOX_WITH_AUDIO_DEBUG
+# ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
+            /*
+             * When both, ValidationKit and Debug mode (for audio) are enabled,
+             * skip configuring the Debug audio driver, as both modes can
+             * mess with the audio data and would lead to side effects.
+             *
+             * The ValidationKit audio driver has precedence over the Debug audio driver.
+             *
+             * This also can (and will) be used in VBox release builds.
+             */
+            if (fValKitEnabled)
+            {
+                LogRel(("Audio: Warning: ValidationKit running and Debug mode enabled -- disabling Debug driver\n"));
+            }
+            else /* Debug mode active -- run both (nice for catching errors / doing development). */
+            {
+                /*
+                 * The ValidationKit backend.
+                 */
+                InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", idxAudioLun);
+                i_configAudioDriver(pVBox, pMachine, pLunL0, "ValidationKitAudio",
+                                    !!fAudioEnabledIn, !!fAudioEnabledOut);
+                idxAudioLun++;
+# endif /* VBOX_WITH_AUDIO_VALIDATIONKIT */
+                /*
+                 * The Debug audio backend.
+                 */
+                InsertConfigNodeF(pInst, &pLunL0, "LUN#%u", idxAudioLun);
+                i_configAudioDriver(pVBox, pMachine, pLunL0, "DebugAudio",
+                                    !!fAudioEnabledIn, !!fAudioEnabledOut);
+                idxAudioLun++;
+# ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
+            }
+# endif /* VBOX_WITH_AUDIO_VALIDATIONKIT */
+#endif /* VBOX_WITH_AUDIO_DEBUG */
+
+            /*
+             * Tweak the logging groups.
+             */
+            Utf8Str strGroups("drv_audio.e.l.l2.l3.f"
+                              " audio_mixer.e.l.l2.l3.f"
+                              " dev_hda_codec.e.l.l2.l3.f"
+                              " dev_hda.e.l.l2.l3.f"
+                              " dev_ac97.e.l.l2.l3.f"
+                              " dev_sb16.e.l.l2.l3.f");
+
+            LogRel(("Audio: Debug level set to %RU32\n", uDebugLevel));
+
+            switch (uDebugLevel)
+            {
+                case 0:
+                    strGroups += " drv_host_audio.e.l.l2.l3.f";
+                    break;
+                case 1:
+                    RT_FALL_THROUGH();
+                case 2:
+                    RT_FALL_THROUGH();
+                case 3:
+                    strGroups += " drv_host_audio.e.l.l2.l3.f+audio_test.e.l.l2.l3.f";
+                    break;
+                case 4:
+                    RT_FALL_THROUGH();
+                default:
+                    strGroups += " drv_host_audio.e.l.l2.l3.l4.f+audio_test.e.l.l2.l3.l4.f";
+                    break;
+            }
+
+            int vrc = RTLogGroupSettings(RTLogRelGetDefaultInstance(), strGroups.c_str());
+            if (RT_FAILURE(vrc))
+                LogRel(("Audio: Setting debug logging failed, vrc=%Rrc\n", vrc));
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+#undef H
+#undef VRC
 
 #ifndef VBOX_WITH_EFI_IN_DD2
 DECLHIDDEN(int) findEfiRom(IVirtualBox* vbox, PlatformArchitecture_T aPlatformArchitecture, FirmwareType_T aFirmwareType, Utf8Str *pEfiRomFile)
