@@ -2679,7 +2679,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrLogicalImm(uint32_t u2Opc, uint32_t i
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAndImm(uint32_t iRegResult, uint32_t iRegSrc,
                                                   uint32_t uImm7SizeLen, uint32_t uImm6Rotations = 0, bool f64Bit = true)
 {
-    return Armv8A64MkInstrLogicalImm(0, iRegResult, iRegSrc, uImm7SizeLen, uImm5Rotation, f64Bit);
+    return Armv8A64MkInstrLogicalImm(0, iRegResult, iRegSrc, uImm7SizeLen, uImm6Rotations, f64Bit);
 }
 
 
@@ -2688,7 +2688,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAndImm(uint32_t iRegResult, uint32_t 
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrOrrImm(uint32_t iRegResult, uint32_t iRegSrc,
                                                   uint32_t uImm7SizeLen, uint32_t uImm6Rotations = 0, bool f64Bit = true)
 {
-    return Armv8A64MkInstrLogicalImm(1, iRegResult, iRegSrc, uImm7SizeLen, uImm5Rotation, f64Bit);
+    return Armv8A64MkInstrLogicalImm(1, iRegResult, iRegSrc, uImm7SizeLen, uImm6Rotations, f64Bit);
 }
 
 
@@ -2697,7 +2697,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrOrrImm(uint32_t iRegResult, uint32_t 
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrEorImm(uint32_t iRegResult, uint32_t iRegSrc,
                                                   uint32_t uImm7SizeLen, uint32_t uImm6Rotations = 0, bool f64Bit = true)
 {
-    return Armv8A64MkInstrLogicalImm(2, iRegResult, iRegSrc, uImm7SizeLen, uImm5Rotation, f64Bit);
+    return Armv8A64MkInstrLogicalImm(2, iRegResult, iRegSrc, uImm7SizeLen, uImm6Rotations, f64Bit);
 }
 
 
@@ -2706,7 +2706,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrEorImm(uint32_t iRegResult, uint32_t 
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAndsImm(uint32_t iRegResult, uint32_t iRegSrc,
                                                    uint32_t uImm7SizeLen, uint32_t uImm6Rotations = 0, bool f64Bit = true)
 {
-    return Armv8A64MkInstrLogicalImm(3, iRegResult, iRegSrc, uImm7SizeLen, uImm5Rotation, f64Bit);
+    return Armv8A64MkInstrLogicalImm(3, iRegResult, iRegSrc, uImm7SizeLen, uImm6Rotations, f64Bit);
 }
 
 
