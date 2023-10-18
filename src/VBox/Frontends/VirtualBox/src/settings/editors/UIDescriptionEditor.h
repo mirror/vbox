@@ -57,6 +57,11 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE;
 
+    /** Returns the minimum widget size hint. */
+    virtual QSize minimumSizeHint() const RT_OVERRIDE;
+    /** Returns the widget size hint. */
+    virtual QSize sizeHint() const RT_OVERRIDE;
+
 private:
 
     /** Prepares all. */
