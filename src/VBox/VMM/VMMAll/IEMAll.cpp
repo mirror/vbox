@@ -8256,13 +8256,8 @@ VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PVMCPUCC pVCpu, uint8_t bRm, uint32_t cbImmAn
                 }
 
             }
-            if (pVCpu->iem.s.enmEffAddrMode == IEMMODE_32BIT)
-                *pGCPtrEff = u32EffAddr;
-            else
-            {
-                Assert(pVCpu->iem.s.enmEffAddrMode == IEMMODE_16BIT);
-                *pGCPtrEff = u32EffAddr & UINT16_MAX;
-            }
+            Assert(pVCpu->iem.s.enmEffAddrMode == IEMMODE_32BIT);
+            *pGCPtrEff = u32EffAddr;
         }
     }
     else
@@ -8559,14 +8554,9 @@ RTGCPTR iemOpHlpCalcRmEffAddrJmp(PVMCPUCC pVCpu, uint8_t bRm, uint32_t cbImmAndR
             }
         }
 
-        if (pVCpu->iem.s.enmEffAddrMode == IEMMODE_32BIT)
-        {
-            Log5(("iemOpHlpCalcRmEffAddrJmp: EffAddr=%#010RX32\n", u32EffAddr));
-            return u32EffAddr;
-        }
-        Assert(pVCpu->iem.s.enmEffAddrMode == IEMMODE_16BIT);
-        Log5(("iemOpHlpCalcRmEffAddrJmp: EffAddr=%#06RX32\n", u32EffAddr & UINT16_MAX));
-        return u32EffAddr & UINT16_MAX;
+        Assert(pVCpu->iem.s.enmEffAddrMode == IEMMODE_32BIT);
+        Log5(("iemOpHlpCalcRmEffAddrJmp: EffAddr=%#010RX32\n", u32EffAddr));
+        return u32EffAddr;
     }
 
     uint64_t u64EffAddr;
@@ -8873,13 +8863,8 @@ VBOXSTRICTRC iemOpHlpCalcRmEffAddrEx(PVMCPUCC pVCpu, uint8_t bRm, uint32_t cbImm
                 }
 
             }
-            if (pVCpu->iem.s.enmEffAddrMode == IEMMODE_32BIT)
-                *pGCPtrEff = u32EffAddr;
-            else
-            {
-                Assert(pVCpu->iem.s.enmEffAddrMode == IEMMODE_16BIT);
-                *pGCPtrEff = u32EffAddr & UINT16_MAX;
-            }
+            Assert(pVCpu->iem.s.enmEffAddrMode == IEMMODE_32BIT);
+            *pGCPtrEff = u32EffAddr;
         }
     }
     else
