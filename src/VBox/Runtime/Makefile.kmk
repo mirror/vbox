@@ -2550,7 +2550,7 @@ RuntimeBldProg_SOURCES          = \
 	r3/init.cpp \
 	r3/init-data.cpp \
 	r3/process-data.cpp \
-	r3/mempage-heap.cpp \
+	r3/mempage-direct.cpp \
 	r3/memsafer-r3.cpp \
 	r3/path.cpp \
 	r3/RTPathTemp.cpp \
