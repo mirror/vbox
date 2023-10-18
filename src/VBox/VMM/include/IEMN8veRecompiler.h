@@ -123,7 +123,7 @@
 /** @def IEMNATIVE_REG_FIXED_MASK
  * Mask GPRs with fixes assignments, either by us or dictated by the CPU/OS
  * architecture. */
-#ifdef RT_ARCH_AMD64
+#if defined(RT_ARCH_AMD64) && !defined(DOXYGEN_RUNNING)
 # define IEMNATIVE_REG_FIXED_PVMCPU         X86_GREG_xBX
 # define IEMNATIVE_REG_FIXED_TMP0           X86_GREG_x11
 # define IEMNATIVE_REG_FIXED_MASK          (  RT_BIT_32(IEMNATIVE_REG_FIXED_PVMCPU) \
