@@ -220,6 +220,11 @@ typedef struct NEM
      *  us to use the debug execution loop. */
     bool                        fUseDebugLoop;
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+    /** The PPI interrupt number of the vTimer. */
+    uint32_t                    u32GicPpiVTimer;
+#endif
+
 #if defined(RT_OS_LINUX)
     /** The '/dev/kvm' file descriptor.   */
     int32_t                     fdKvm;

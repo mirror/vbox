@@ -71,10 +71,6 @@
 *********************************************************************************************************************************/
 
 
-/** @todo The vTimer PPI for the virt platform, make it configurable. */
-#define NEM_DARWIN_VTIMER_GIC_PPI_IRQ           11
-
-
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
@@ -1411,7 +1407,7 @@ static VBOXSTRICTRC nemR3DarwinHandleExit(PVM pVM, PVMCPU pVCpu)
             LogFlowFunc(("vTimer got activated\n"));
             TMCpuSetVTimerNextActivation(pVCpu, UINT64_MAX);
             pVCpu->nem.s.fVTimerActivated = true;
-            return GICPpiSet(pVCpu, NEM_DARWIN_VTIMER_GIC_PPI_IRQ, true /*fAsserted*/);
+            return GICPpiSet(pVCpu, pVM->nem.s.u32GicPpiVTimer, true /*fAsserted*/);
         }
         default:
             AssertReleaseFailed();
@@ -1476,7 +1472,7 @@ static VBOXSTRICTRC nemR3DarwinPreRunGuest(PVM pVM, PVMCPU pVCpu, bool fSingleSt
             != (ARMV8_CNTV_CTL_EL0_AARCH64_ENABLE | ARMV8_CNTV_CTL_EL0_AARCH64_ISTATUS))
         {
             /* Clear the interrupt. */
-            GICPpiSet(pVCpu, NEM_DARWIN_VTIMER_GIC_PPI_IRQ, false /*fAsserted*/);
+            GICPpiSet(pVCpu, pVM->nem.s.u32GicPpiVTimer, false /*fAsserted*/);
 
             pVCpu->nem.s.fVTimerActivated = false;
             hrc = hv_vcpu_set_vtimer_mask(pVCpu->nem.s.hVCpu, false /*vtimer_is_masked*/);

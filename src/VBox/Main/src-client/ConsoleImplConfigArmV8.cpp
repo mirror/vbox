@@ -199,6 +199,12 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         InsertConfigInteger(pRoot, "CpuExecutionCap",      ulCpuExecutionCap);
         InsertConfigInteger(pRoot, "TimerMillies",         10);
 
+        /*
+         * NEM
+         */
+        PCFGMNODE pNEM;
+        InsertConfigNode(pRoot, "NEM", &pNEM);
+
         uint32_t idPHandleIntCtrl = RTFdtPHandleAllocate(hFdt);
         Assert(idPHandleIntCtrl != UINT32_MAX);
         uint32_t idPHandleIntCtrlMsi = RTFdtPHandleAllocate(hFdt);
@@ -233,6 +239,7 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
         /* Configure the timer and clock. */
+        InsertConfigInteger(pNEM, "VTimerInterrupt", 0xb);
         vrc = RTFdtNodeAdd(hFdt, "timer");                                                  VRC();
         vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupts", 12,
                                            0x01, 0x0d, 0x104,
@@ -262,12 +269,6 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
         vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
-
-        /*
-         * NEM
-         */
-        PCFGMNODE pNEM;
-        InsertConfigNode(pRoot, "NEM", &pNEM);
 
         /*
          * MM values.
