@@ -1502,7 +1502,6 @@ else
  # Preliminary arm64 Linux guest additions build.
  #
  ifdef VBOX_WITH_LNX_ARM64_ADDITIONS
-  # @todo r=aeichner Remove --exclude=kBuild/bin/linux.arm64/** when we have official binaries in the external repository.
   additions-build-linux.arm64.rsync-into-vm:
 	$(TIME) -- $(call VBOX_RSYNC_IN_FN,linux,*) \
  		'--exclude=src/VBox/Additions/WINNT/**' \
@@ -1541,7 +1540,6 @@ else
  		'--exclude=src/libs/TestFloat-**' \
  		'--exclude=src/libs/xpcom18a4/**' \
  		'--exclude=src/apps/**' \
- 		'--exclude=kBuild/bin/linux.arm64/**' \
  		. $(VBOX_BLD_VM_LNX_ARM64_IP):/home/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
 
   additions-build-linux.arm64.build-it: additions-build-linux.arm64.rsync-into-vm
