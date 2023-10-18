@@ -158,7 +158,7 @@ struct UIDataSettingsMachineNetwork
 
 
 /** Machine settings: Network Adapter tab. */
-class UIMachineSettingsNetwork : public QIWithRetranslateUI<QWidget>
+class UIMachineSettingsNetwork : public UIEditor
 {
     Q_OBJECT;
 
@@ -175,8 +175,9 @@ signals:
 
 public:
 
-    /** Constructs tab passing @a pParent to the base-class. */
-    UIMachineSettingsNetwork(UIMachineSettingsNetworkPage *pParent);
+    /** Constructs tab passing @a pParent to the base-class.
+      * @param  pParentPage  Holds the parent page reference allowing to access some of API there. */
+    UIMachineSettingsNetwork(QITabWidget *pParent, UIMachineSettingsNetworkPage *pParentPage);
 
     /** Loads adapter data from @a adapterCache. */
     void getAdapterDataFromCache(const UISettingsCacheMachineNetworkAdapter &adapterCache);
@@ -224,7 +225,7 @@ private:
     void prepareConnections();
 
     /** Holds parent page reference. */
-    UIMachineSettingsNetworkPage *m_pParent;
+    UIMachineSettingsNetworkPage *m_pParentPage;
 
     /** Holds tab slot number. */
     int  m_iSlot;
@@ -238,9 +239,9 @@ private:
 *   Class UIMachineSettingsNetwork implementation.                                                                               *
 *********************************************************************************************************************************/
 
-UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage *pParent)
-    : QIWithRetranslateUI<QWidget>(0)
-    , m_pParent(pParent)
+UIMachineSettingsNetwork::UIMachineSettingsNetwork(QITabWidget *pParent, UIMachineSettingsNetworkPage *pParentPage)
+    : UIEditor(pParent)
+    , m_pParentPage(pParentPage)
     , m_iSlot(-1)
     , m_pEditorNetworkSettings(0)
 {
@@ -484,23 +485,23 @@ QString UIMachineSettingsNetwork::alternativeName(KNetworkAttachmentType enmType
 void UIMachineSettingsNetwork::polishTab()
 {
     if (   m_pEditorNetworkSettings
-        && m_pParent)
+        && m_pParentPage)
     {
         /* General stuff: */
-        m_pEditorNetworkSettings->setFeatureAvailable(m_pParent->isMachineOffline());
+        m_pEditorNetworkSettings->setFeatureAvailable(m_pParentPage->isMachineOffline());
 
         /* Attachment stuff: */
-        m_pEditorNetworkSettings->setAttachmentOptionsAvailable(m_pParent->isMachineInValidMode());
+        m_pEditorNetworkSettings->setAttachmentOptionsAvailable(m_pParentPage->isMachineInValidMode());
 
         /* Advanced stuff: */
-        m_pEditorNetworkSettings->setAdvancedOptionsAvailable(m_pParent->isMachineInValidMode());
-        m_pEditorNetworkSettings->setAdapterOptionsAvailable(m_pParent->isMachineOffline());
+        m_pEditorNetworkSettings->setAdvancedOptionsAvailable(m_pParentPage->isMachineInValidMode());
+        m_pEditorNetworkSettings->setAdapterOptionsAvailable(m_pParentPage->isMachineOffline());
         m_pEditorNetworkSettings->setPromiscuousOptionsAvailable(   attachmentType() != KNetworkAttachmentType_Null
                                                                  && attachmentType() != KNetworkAttachmentType_Generic
                                                                  && attachmentType() != KNetworkAttachmentType_NAT);
-        m_pEditorNetworkSettings->setMACOptionsAvailable(m_pParent->isMachineOffline());
+        m_pEditorNetworkSettings->setMACOptionsAvailable(m_pParentPage->isMachineOffline());
         m_pEditorNetworkSettings->setGenericPropertiesAvailable(attachmentType() == KNetworkAttachmentType_Generic);
-        m_pEditorNetworkSettings->setCableOptionsAvailable(m_pParent->isMachineInValidMode());
+        m_pEditorNetworkSettings->setCableOptionsAvailable(m_pParentPage->isMachineInValidMode());
         m_pEditorNetworkSettings->setForwardingOptionsAvailable(attachmentType() == KNetworkAttachmentType_NAT);
     }
 }
@@ -508,18 +509,18 @@ void UIMachineSettingsNetwork::polishTab()
 void UIMachineSettingsNetwork::reloadAlternatives()
 {
     if (   m_pEditorNetworkSettings
-        && m_pParent)
+        && m_pParentPage)
     {
-        m_pEditorNetworkSettings->setValueNames(KNetworkAttachmentType_Bridged, m_pParent->bridgedAdapterList());
-        m_pEditorNetworkSettings->setValueNames(KNetworkAttachmentType_Internal, m_pParent->internalNetworkList());
-        m_pEditorNetworkSettings->setValueNames(KNetworkAttachmentType_HostOnly, m_pParent->hostInterfaceList());
-        m_pEditorNetworkSettings->setValueNames(KNetworkAttachmentType_Generic, m_pParent->genericDriverList());
-        m_pEditorNetworkSettings->setValueNames(KNetworkAttachmentType_NATNetwork, m_pParent->natNetworkList());
+        m_pEditorNetworkSettings->setValueNames(KNetworkAttachmentType_Bridged, m_pParentPage->bridgedAdapterList());
+        m_pEditorNetworkSettings->setValueNames(KNetworkAttachmentType_Internal, m_pParentPage->internalNetworkList());
+        m_pEditorNetworkSettings->setValueNames(KNetworkAttachmentType_HostOnly, m_pParentPage->hostInterfaceList());
+        m_pEditorNetworkSettings->setValueNames(KNetworkAttachmentType_Generic, m_pParentPage->genericDriverList());
+        m_pEditorNetworkSettings->setValueNames(KNetworkAttachmentType_NATNetwork, m_pParentPage->natNetworkList());
 #ifdef VBOX_WITH_CLOUD_NET
-        m_pEditorNetworkSettings->setValueNames(KNetworkAttachmentType_Cloud, m_pParent->cloudNetworkList());
+        m_pEditorNetworkSettings->setValueNames(KNetworkAttachmentType_Cloud, m_pParentPage->cloudNetworkList());
 #endif
 #ifdef VBOX_WITH_VMNET
-        m_pEditorNetworkSettings->setValueNames(KNetworkAttachmentType_HostOnlyNetwork, m_pParent->hostOnlyNetworkList());
+        m_pEditorNetworkSettings->setValueNames(KNetworkAttachmentType_HostOnlyNetwork, m_pParentPage->hostOnlyNetworkList());
 #endif
     }
 }
@@ -585,7 +586,10 @@ void UIMachineSettingsNetwork::prepareWidgets()
         /* Prepare settings editor: */
         m_pEditorNetworkSettings = new UINetworkSettingsEditor(this);
         if (m_pEditorNetworkSettings)
+        {
+            addEditor(m_pEditorNetworkSettings);
             pLayout->addWidget(m_pEditorNetworkSettings);
+        }
 
         pLayout->addStretch();
     }
@@ -920,7 +924,7 @@ void UIMachineSettingsNetworkPage::prepare()
             for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
             {
                 /* Create adapter tab: */
-                UIMachineSettingsNetwork *pTab = new UIMachineSettingsNetwork(this);
+                UIMachineSettingsNetwork *pTab = new UIMachineSettingsNetwork(m_pTabWidget, this);
                 if (pTab)
                 {
                     /* Tab connections: */
@@ -932,6 +936,7 @@ void UIMachineSettingsNetworkPage::prepare()
                             this, &UIMachineSettingsNetworkPage::revalidate);
 
                     /* Add tab into tab-widget: */
+                    addEditor(pTab);
                     m_pTabWidget->addTab(pTab, pTab->tabTitle());
                 }
             }

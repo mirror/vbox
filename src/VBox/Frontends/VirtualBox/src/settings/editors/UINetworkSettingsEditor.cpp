@@ -313,12 +313,18 @@ void UINetworkSettingsEditor::prepareWidgets()
                 /* Prepare attachment type editor: */
                 m_pEditorNetworkAttachment = new UINetworkAttachmentEditor(m_pWidgetSettings);
                 if (m_pEditorNetworkAttachment)
+                {
+                    addEditor(m_pEditorNetworkAttachment);
                     pLayoutAdapterSettings->addWidget(m_pEditorNetworkAttachment);
+                }
 
                 /* Prepare advanced settingseditor: */
                 m_pEditorNetworkFeatures = new UINetworkFeaturesEditor(m_pWidgetSettings);
                 if (m_pEditorNetworkFeatures)
+                {
+                    addEditor(m_pEditorNetworkFeatures);
                     pLayoutAdapterSettings->addWidget(m_pEditorNetworkFeatures);
+                }
             }
 
             pLayout->addWidget(m_pWidgetSettings, 1, 1);
