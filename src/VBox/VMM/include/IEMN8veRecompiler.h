@@ -595,20 +595,34 @@ DECL_FORCE_INLINE(PIEMNATIVEINSTR) iemNativeInstrBufEnsure(PIEMRECOMPILERSTATE p
  * Emit a simple marker instruction to more easily tell where something starts
  * in the disassembly.
  */
-DECLINLINE(uint32_t) iemNativeEmitMarker(PIEMRECOMPILERSTATE pReNative, uint32_t off)
+DECLINLINE(uint32_t) iemNativeEmitMarker(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t uInfo)
 {
 #ifdef RT_ARCH_AMD64
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
     AssertReturn(pbCodeBuf, UINT32_MAX);
-    /* nop */
-    pbCodeBuf[off++] = 0x90;
-
+    if (uInfo == 0)
+    {
+        /* nop */
+        pbCodeBuf[off++] = 0x90;
+    }
+    else
+    {
+        /* nop [disp32] */
+        pbCodeBuf[off++] = 0x0f;
+        pbCodeBuf[off++] = 0x1f;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM0, 0, 5);
+        pbCodeBuf[off++] = RT_BYTE1(uInfo);
+        pbCodeBuf[off++] = RT_BYTE2(uInfo);
+        pbCodeBuf[off++] = RT_BYTE3(uInfo);
+        pbCodeBuf[off++] = RT_BYTE4(uInfo);
+    }
 #elif RT_ARCH_ARM64
     uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
     AssertReturn(pu32CodeBuf, UINT32_MAX);
     /* nop */
     pu32CodeBuf[off++] = 0xd503201f;
 
+    RT_NOREF(uInfo);
 #else
 # error "port me"
 #endif
@@ -1242,6 +1256,43 @@ DECLINLINE(uint32_t) iemNativeEmitSubGprImm(PIEMRECOMPILERSTATE pReNative, uint3
 
 
 /**
+ * Emits a 64-bit GPR additions with a 8-bit signed immediate.
+ */
+DECLINLINE(uint32_t ) iemNativeEmitAddGprImm8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, int8_t iImm8)
+{
+#if defined(RT_ARCH_AMD64)
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
+    /* add or inc */
+    pbCodeBuf[off++] = iGprDst < 8 ? X86_OP_REX_W : X86_OP_REX_W | X86_OP_REX_B;
+    if (iImm8 != 1)
+    {
+        pbCodeBuf[off++] = 0x83;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, iGprDst & 7);
+        pbCodeBuf[off++] = (uint8_t)iImm8;
+    }
+    else
+    {
+        pbCodeBuf[off++] = 0xff;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, iGprDst & 7);
+    }
+
+#elif defined(RT_ARCH_ARM64)
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    AssertReturn(pu32CodeBuf, UINT32_MAX);
+    if (iImm8 >= 0)
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(false /*fSub*/, iGprDst, iGprDst, (uint8_t)iImm8);
+    else
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, iGprDst, iGprDst, (uint8_t)-iImm8);
+
+#else
+# error "Port me"
+#endif
+    return off;
+}
+
+
+/**
  * Emits a 32-bit GPR additions with a 8-bit signed immediate.
  * @note Bits 32 thru 63 in the GPR will be zero after the operation.
  */
@@ -1250,11 +1301,20 @@ DECLINLINE(uint32_t ) iemNativeEmitAddGpr32Imm8(PIEMRECOMPILERSTATE pReNative, u
 #if defined(RT_ARCH_AMD64)
     uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
     AssertReturn(pbCodeBuf, UINT32_MAX);
+    /* add or inc */
     if (iGprDst >= 8)
         pbCodeBuf[off++] = X86_OP_REX_B;
-    pbCodeBuf[off++] = 0x83;
-    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, iGprDst & 7);
-    pbCodeBuf[off++] = (uint8_t)iImm8;
+    if (iImm8 != 1)
+    {
+        pbCodeBuf[off++] = 0x83;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, iGprDst & 7);
+        pbCodeBuf[off++] = (uint8_t)iImm8;
+    }
+    else
+    {
+        pbCodeBuf[off++] = 0xff;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, iGprDst & 7);
+    }
 
 #elif defined(RT_ARCH_ARM64)
     uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
@@ -1264,6 +1324,33 @@ DECLINLINE(uint32_t ) iemNativeEmitAddGpr32Imm8(PIEMRECOMPILERSTATE pReNative, u
     else
         pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, iGprDst, iGprDst, (uint8_t)-iImm8, false /*f64Bit*/);
 
+#else
+# error "Port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits code for clearing bits 16 thru 63 in the GPR.
+ */
+DECLINLINE(uint32_t ) iemNativeEmitClear16UpGpr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst)
+{
+#if defined(RT_ARCH_AMD64)
+    /* movzx reg32, reg16 */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
+    if (iGprDst >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_B | X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x0f;
+    pbCodeBuf[off++] = 0xb7;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprDst & 7);
+
+#elif defined(RT_ARCH_ARM64)
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    AssertReturn(pu32CodeBuf, UINT32_MAX);
+    /* This produces 0xffff; 0x4f: N=1 imms=001111 (immr=0) => size=64 length=15 */
+    pu32CodeBuf[off++] = Armv8A64MkInstrAndImm(iGrpDst, iGrpDst, 0x4f);
 #else
 # error "Port me"
 #endif

@@ -2645,6 +2645,72 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBics(uint32_t iRegResult, uint32_t iR
 
 
 /**
+ * A64: Encodes a logical instruction with an complicated immediate mask.
+ *
+ * @returns The encoded instruction.
+ * @param   u2Opc           The logical operation to perform.
+ * @param   fNot            Whether to complement the 2nd operand.
+ * @param   iRegResult      The output register.
+ * @param   iRegSrc         The 1st register operand.
+ * @param   uImm7SizeLen    The size/pattern length.  We've combined the 1-bit N
+ *                          field at the top of the 6-bit 'imms' field.
+ * @param   uImm6Rotations  The rotation count.
+ * @param   f64Bit          true for 64-bit GPRs, @c false for 32-bit GPRs.
+ * @see https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/
+ *      https://gist.githubusercontent.com/dinfuehr/51a01ac58c0b23e4de9aac313ed6a06a/raw/1892a274aa3238d55f83eec5b3828da2aec5f229/aarch64-logical-immediates.txt
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrLogicalImm(uint32_t u2Opc, uint32_t iRegResult, uint32_t iRegSrc,
+                                                      uint32_t uImm7SizeLen, uint32_t uImm6Rotations, bool f64Bit)
+{
+    Assert(u2Opc < 4); Assert(uImm7SizeLen < (f64Bit ? UINT32_C(0x7f) : UINT32_C(0x3f)));
+    Assert(uImm6Rotations < UINT32_C(0x3f)); Assert(iRegResult < 32); Assert(iRegSrc < 32);
+    return ((uint32_t)f64Bit   << 31)
+         | (u2Opc              << 29)
+         | UINT32_C(0x12000000)
+         | (uImm7SizeLen       << 16)
+         | (uImm6Rotations     << 10)
+         | (iRegSrc            <<  5)
+         | iRegResult;
+}
+
+
+/** A64: Encodes an AND instruction w/ complicated immediate mask.
+ * @see Armv8A64MkInstrLogicalImm for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAndImm(uint32_t iRegResult, uint32_t iRegSrc,
+                                                  uint32_t uImm7SizeLen, uint32_t uImm6Rotations = 0, bool f64Bit = true)
+{
+    return Armv8A64MkInstrLogicalImm(0, iRegResult, iRegSrc, uImm7SizeLen, uImm5Rotation, f64Bit);
+}
+
+
+/** A64: Encodes an ORR instruction w/ complicated immediate mask.
+ * @see Armv8A64MkInstrLogicalImm for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrOrrImm(uint32_t iRegResult, uint32_t iRegSrc,
+                                                  uint32_t uImm7SizeLen, uint32_t uImm6Rotations = 0, bool f64Bit = true)
+{
+    return Armv8A64MkInstrLogicalImm(1, iRegResult, iRegSrc, uImm7SizeLen, uImm5Rotation, f64Bit);
+}
+
+
+/** A64: Encodes an EOR instruction w/ complicated immediate mask.
+ * @see Armv8A64MkInstrLogicalImm for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrEorImm(uint32_t iRegResult, uint32_t iRegSrc,
+                                                  uint32_t uImm7SizeLen, uint32_t uImm6Rotations = 0, bool f64Bit = true)
+{
+    return Armv8A64MkInstrLogicalImm(2, iRegResult, iRegSrc, uImm7SizeLen, uImm5Rotation, f64Bit);
+}
+
+
+/** A64: Encodes an ANDS instruction w/ complicated immediate mask.
+ * @see Armv8A64MkInstrLogicalImm for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAndsImm(uint32_t iRegResult, uint32_t iRegSrc,
+                                                   uint32_t uImm7SizeLen, uint32_t uImm6Rotations = 0, bool f64Bit = true)
+{
+    return Armv8A64MkInstrLogicalImm(3, iRegResult, iRegSrc, uImm7SizeLen, uImm5Rotation, f64Bit);
+}
+
+
+/**
  * A64: Encodes either add, adds, sub or subs with unsigned 12-bit immediate.
  *
  * @returns The encoded instruction.

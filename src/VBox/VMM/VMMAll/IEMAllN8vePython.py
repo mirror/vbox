@@ -50,12 +50,12 @@ g_dMcStmtThreaded = {
     'IEM_MC_DEFER_TO_CIMPL_2_RET_THREADED':                      (None, True,  True,  ),
     'IEM_MC_DEFER_TO_CIMPL_3_RET_THREADED':                      (None, True,  True,  ),
 
-    'IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC16':               (None, True,  False, ),
+    'IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC16':               (None, True,  True,  ),
     'IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC32':               (None, True,  True,  ),
-    'IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC64':               (None, True,  False, ),
+    'IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC64':               (None, True,  True,  ),
 
     'IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC16_WITH_FLAGS':    (None, True,  False, ),
-    'IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC32_WITH_FLAGS':    (None, True,  False,  ),
+    'IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC32_WITH_FLAGS':    (None, True,  False, ),
     'IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC64_WITH_FLAGS':    (None, True,  False, ),
 
     'IEM_MC_CALC_RM_EFF_ADDR_THREADED_16_ADDR32':                (None, False, False, ),
@@ -75,7 +75,7 @@ g_dMcStmtThreaded = {
     'IEM_MC_CALL_CIMPL_5_THREADED':                              (None, True,  False, ),
 
     'IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC16':                (None, True,  False, ),
-    'IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC32':                (None, True,  False, ),
+    'IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC32':                (None, True,  False,  ),
     'IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC64':                (None, True,  False, ),
     'IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC16':               (None, True,  False, ),
     'IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC32':               (None, True,  False, ),

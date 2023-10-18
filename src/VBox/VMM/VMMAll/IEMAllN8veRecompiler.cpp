@@ -172,14 +172,15 @@ typedef struct GDBJITSYMFILE
 #  ifndef IEMNATIVE_USE_GDB_JIT_ET_DYN
     Elf64_Shdr          aShdrs[5];
 #  else
-    Elf64_Shdr          aShdrs[6];
-    Elf64_Phdr          aPhdrs[3];
+    Elf64_Shdr          aShdrs[7];
+    Elf64_Phdr          aPhdrs[2];
 #  endif
     /** The dwarf ehframe data for the chunk. */
     uint8_t             abEhFrame[512];
     char                szzStrTab[128];
-    Elf64_Sym           aSymbols[1];
+    Elf64_Sym           aSymbols[3];
 #  ifdef IEMNATIVE_USE_GDB_JIT_ET_DYN
+    Elf64_Sym           aDynSyms[2];
     Elf64_Dyn           aDyn[6];
 #  endif
 } GDBJITSYMFILE;
@@ -352,7 +353,7 @@ typedef IEMEXECMEMALLOCATOR *PIEMEXECMEMALLOCATOR;
 #define IEMEXECMEMALLOCATOR_MAGIC UINT32_C(0x19490412)
 
 
-static int iemExecMemAllocatorGrow(PIEMEXECMEMALLOCATOR pExecMemAllocator);
+static int iemExecMemAllocatorGrow(PVMCPUCC pVCpu, PIEMEXECMEMALLOCATOR pExecMemAllocator);
 
 
 /**
@@ -519,7 +520,7 @@ static void *iemExecMemAllocatorAlloc(PVMCPU pVCpu, uint32_t cbReq)
      */
     if (pExecMemAllocator->cChunks < pExecMemAllocator->cMaxChunks)
     {
-        int rc = iemExecMemAllocatorGrow(pExecMemAllocator);
+        int rc = iemExecMemAllocatorGrow(pVCpu, pExecMemAllocator);
         AssertLogRelRCReturn(rc, NULL);
 
         uint32_t const idxChunk = pExecMemAllocator->cChunks - 1;
@@ -640,8 +641,11 @@ void iemExecMemAllocatorFree(PVMCPU pVCpu, void *pv, size_t cb)
  * Initializes the unwind info structures for windows hosts.
  */
 static int
-iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecMemAllocator, void *pvChunk, uint32_t idxChunk)
+iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PVMCPUCC pVCpu, PIEMEXECMEMALLOCATOR pExecMemAllocator,
+                                                     void *pvChunk, uint32_t idxChunk)
 {
+    RT_NOREF(pVCpu);
+
     /*
      * The AMD64 unwind opcodes.
      *
@@ -820,7 +824,8 @@ DECLINLINE(RTPTRUNION) iemDwarfPutCfaSignedOffset(RTPTRUNION Ptr, uint32_t uReg,
  * Initializes the unwind info section for non-windows hosts.
  */
 static int
-iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecMemAllocator, void *pvChunk, uint32_t idxChunk)
+iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PVMCPUCC pVCpu, PIEMEXECMEMALLOCATOR pExecMemAllocator,
+                                                     void *pvChunk, uint32_t idxChunk)
 {
     PIEMEXECMEMCHUNKEHFRAME const pEhFrame = &pExecMemAllocator->paEhFrames[idxChunk];
     pExecMemAllocator->aChunks[idxChunk].pvUnwindInfo = pEhFrame; /* not necessary, but whatever */
@@ -950,7 +955,10 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecM
     unsigned const offSymFileInChunk = (uintptr_t)pSymFile - (uintptr_t)pvChunk;
 
     RT_ZERO(*pSymFile);
-    /* The ELF header: */
+
+    /*
+     * The ELF header:
+     */
     pSymFile->EHdr.e_ident[0]           = ELFMAG0;
     pSymFile->EHdr.e_ident[1]           = ELFMAG1;
     pSymFile->EHdr.e_ident[2]           = ELFMAG2;
@@ -996,7 +1004,17 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecM
 #define APPEND_STR(a_szStr) do { \
         memcpy(&pSymFile->szzStrTab[offStrTab], a_szStr, sizeof(a_szStr)); \
         offStrTab += sizeof(a_szStr); \
+        Assert(offStrTab < sizeof(pSymFile->szzStrTab)); \
     } while (0)
+#define APPEND_STR_FMT(a_szStr, ...) do { \
+        offStrTab += RTStrPrintf(&pSymFile->szzStrTab[offStrTab], sizeof(pSymFile->szzStrTab) - offStrTab, a_szStr, __VA_ARGS__); \
+        offStrTab++; \
+        Assert(offStrTab < sizeof(pSymFile->szzStrTab)); \
+    } while (0)
+
+    /*
+     * Section headers.
+     */
     /* Section header #0: NULL */
     unsigned i = 0;
     APPEND_STR("");
@@ -1047,13 +1065,8 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecM
 
     /* Section header: .symbols */
     pSymFile->aShdrs[i].sh_name         = offStrTab;
-#   if defined(IEMNATIVE_USE_GDB_JIT_ET_DYN)
-    APPEND_STR(".dynsym");
-    pSymFile->aShdrs[i].sh_type         = SHT_DYNSYM;
-#   else
     APPEND_STR(".symtab");
     pSymFile->aShdrs[i].sh_type         = SHT_SYMTAB;
-#   endif
     pSymFile->aShdrs[i].sh_flags        = SHF_ALLOC;
     pSymFile->aShdrs[i].sh_offset
         = pSymFile->aShdrs[i].sh_addr   = RT_UOFFSETOF(GDBJITSYMFILE, aSymbols);
@@ -1063,6 +1076,22 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecM
     pSymFile->aShdrs[i].sh_addralign    = sizeof(pSymFile->aSymbols[0].st_value);
     pSymFile->aShdrs[i].sh_entsize      = sizeof(pSymFile->aSymbols[0]);
     i++;
+
+#   if defined(IEMNATIVE_USE_GDB_JIT_ET_DYN)
+    /* Section header: .symbols */
+    pSymFile->aShdrs[i].sh_name         = offStrTab;
+    APPEND_STR(".dynsym");
+    pSymFile->aShdrs[i].sh_type         = SHT_DYNSYM;
+    pSymFile->aShdrs[i].sh_flags        = SHF_ALLOC;
+    pSymFile->aShdrs[i].sh_offset
+        = pSymFile->aShdrs[i].sh_addr   = RT_UOFFSETOF(GDBJITSYMFILE, aDynSyms);
+    pSymFile->aShdrs[i].sh_size         = sizeof(pSymFile->aDynSyms);
+    pSymFile->aShdrs[i].sh_link         = iShStrTab;
+    pSymFile->aShdrs[i].sh_info         = RT_ELEMENTS(pSymFile->aDynSyms);
+    pSymFile->aShdrs[i].sh_addralign    = sizeof(pSymFile->aDynSyms[0].st_value);
+    pSymFile->aShdrs[i].sh_entsize      = sizeof(pSymFile->aDynSyms[0]);
+    i++;
+#   endif
 
 #   if defined(IEMNATIVE_USE_GDB_JIT_ET_DYN)
     /* Section header: .dynamic */
@@ -1081,6 +1110,7 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecM
 #   endif
 
     /* Section header: .text */
+    unsigned const iShText = i;
     pSymFile->aShdrs[i].sh_name         = offStrTab;
     APPEND_STR(".text");
     pSymFile->aShdrs[i].sh_type         = SHT_PROGBITS;
@@ -1105,7 +1135,7 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecM
     /*
      * The program headers:
      */
-    /* Headers and whatnot up to .dynamic: */
+    /* Everything in a single LOAD segment: */
     i = 0;
     pSymFile->aPhdrs[i].p_type          = PT_LOAD;
     pSymFile->aPhdrs[i].p_flags         = PF_X | PF_R;
@@ -1113,10 +1143,10 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecM
         = pSymFile->aPhdrs[i].p_vaddr
         = pSymFile->aPhdrs[i].p_paddr   = 0;
     pSymFile->aPhdrs[i].p_filesz         /* Size of segment in file. */
-        = pSymFile->aPhdrs[i].p_memsz   = RT_UOFFSETOF(GDBJITSYMFILE, aDyn);
+        = pSymFile->aPhdrs[i].p_memsz   = pExecMemAllocator->cbChunk - offSymFileInChunk;
     pSymFile->aPhdrs[i].p_align         = HOST_PAGE_SIZE;
     i++;
-    /* .dynamic */
+    /* The .dynamic segment. */
     pSymFile->aPhdrs[i].p_type          = PT_DYNAMIC;
     pSymFile->aPhdrs[i].p_flags         = PF_R;
     pSymFile->aPhdrs[i].p_offset
@@ -1126,24 +1156,16 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecM
         = pSymFile->aPhdrs[i].p_memsz   = sizeof(pSymFile->aDyn);
     pSymFile->aPhdrs[i].p_align         = sizeof(pSymFile->aDyn[0].d_tag);
     i++;
-    /* The rest of the chunk. */
-    pSymFile->aPhdrs[i].p_type          = PT_LOAD;
-    pSymFile->aPhdrs[i].p_flags         = PF_X | PF_R;
-    pSymFile->aPhdrs[i].p_offset
-        = pSymFile->aPhdrs[i].p_vaddr
-        = pSymFile->aPhdrs[i].p_paddr   = sizeof(GDBJITSYMFILE);
-    pSymFile->aPhdrs[i].p_filesz         /* Size of segment in file. */
-        = pSymFile->aPhdrs[i].p_memsz   = pExecMemAllocator->cbChunk - offSymFileInChunk - sizeof(GDBJITSYMFILE);
-    pSymFile->aPhdrs[i].p_align         = 1;
-    i++;
 
     Assert(i == RT_ELEMENTS(pSymFile->aPhdrs));
 
-    /* The dynamic section: */
+    /*
+     * The dynamic section:
+     */
     i = 0;
     pSymFile->aDyn[i].d_tag             = DT_SONAME;
     pSymFile->aDyn[i].d_un.d_val        = offStrTab;
-    APPEND_STR("iem-native.so");
+    APPEND_STR_FMT("iem-exec-chunk-%u-%u", pVCpu->idCpu, idxChunk);
     i++;
     pSymFile->aDyn[i].d_tag             = DT_STRTAB;
     pSymFile->aDyn[i].d_un.d_ptr        = RT_UOFFSETOF(GDBJITSYMFILE, szzStrTab);
@@ -1152,30 +1174,64 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecM
     pSymFile->aDyn[i].d_un.d_val        = sizeof(pSymFile->szzStrTab);
     i++;
     pSymFile->aDyn[i].d_tag             = DT_SYMTAB;
-    pSymFile->aDyn[i].d_un.d_ptr        = RT_UOFFSETOF(GDBJITSYMFILE, aSymbols);
+    pSymFile->aDyn[i].d_un.d_ptr        = RT_UOFFSETOF(GDBJITSYMFILE, aDynSyms);
     i++;
     pSymFile->aDyn[i].d_tag             = DT_SYMENT;
-    pSymFile->aDyn[i].d_un.d_val        = sizeof(pSymFile->aSymbols[0]);
+    pSymFile->aDyn[i].d_un.d_val        = sizeof(pSymFile->aDynSyms[0]);
     i++;
     pSymFile->aDyn[i].d_tag             = DT_NULL;
     i++;
     Assert(i == RT_ELEMENTS(pSymFile->aDyn));
-#   endif
+#   endif /* IEMNATIVE_USE_GDB_JIT_ET_DYN */
 
-    /* Symbol table: */
+    /*
+     * Symbol tables:
+     */
+    /** @todo gdb doesn't seem to really like this ...   */
     i = 0;
-    pSymFile->aSymbols[i].st_name       = offStrTab;
-    APPEND_STR("iem_exec_chunk");
+    pSymFile->aSymbols[i].st_name       = 0;
+    pSymFile->aSymbols[i].st_shndx      = SHN_UNDEF;
+    pSymFile->aSymbols[i].st_value      = 0;
+    pSymFile->aSymbols[i].st_size       = 0;
+    pSymFile->aSymbols[i].st_info       = ELF64_ST_INFO(STB_LOCAL, STT_NOTYPE);
+    pSymFile->aSymbols[i].st_other      = 0 /* STV_DEFAULT */;
+#   ifdef IEMNATIVE_USE_GDB_JIT_ET_DYN
+    pSymFile->aDynSyms[0] = pSymFile->aSymbols[i];
+#   endif
+    i++;
+
+    pSymFile->aSymbols[i].st_name       = 0;
     pSymFile->aSymbols[i].st_shndx      = SHN_ABS;
-    pSymFile->aSymbols[i].st_value      = (uintptr_t)pvChunk;
-    pSymFile->aSymbols[i].st_size       = pExecMemAllocator->cbChunk;
-    pSymFile->aSymbols[i].st_info       = ELF64_ST_INFO(STB_LOCAL, STT_FUNC);
+    pSymFile->aSymbols[i].st_value      = 0;
+    pSymFile->aSymbols[i].st_size       = 0;
+    pSymFile->aSymbols[i].st_info       = ELF64_ST_INFO(STB_LOCAL, STT_FILE);
     pSymFile->aSymbols[i].st_other      = 0 /* STV_DEFAULT */;
     i++;
+
+    pSymFile->aSymbols[i].st_name       = offStrTab;
+    APPEND_STR_FMT("iem_exec_chunk_%u_%u", pVCpu->idCpu, idxChunk);
+#   if 0
+    pSymFile->aSymbols[i].st_shndx      = iShText;
+    pSymFile->aSymbols[i].st_value      = 0;
+#   else
+    pSymFile->aSymbols[i].st_shndx      = SHN_ABS;
+    pSymFile->aSymbols[i].st_value      = (uintptr_t)(pSymFile + 1);
+#   endif
+    pSymFile->aSymbols[i].st_size       = pSymFile->aShdrs[iShText].sh_size;
+    pSymFile->aSymbols[i].st_info       = ELF64_ST_INFO(STB_GLOBAL, STT_FUNC);
+    pSymFile->aSymbols[i].st_other      = 0 /* STV_DEFAULT */;
+#   ifdef IEMNATIVE_USE_GDB_JIT_ET_DYN
+    pSymFile->aDynSyms[1] = pSymFile->aSymbols[i];
+    pSymFile->aDynSyms[1].st_value      = (uintptr_t)(pSymFile + 1);
+#   endif
+    i++;
+
     Assert(i == RT_ELEMENTS(pSymFile->aSymbols));
     Assert(offStrTab < sizeof(pSymFile->szzStrTab));
 
-    /* The GDB JIT entry: */
+    /*
+     * The GDB JIT entry and informing GDB.
+     */
     pEhFrame->GdbJitEntry.pbSymFile = (uint8_t *)pSymFile;
 #   if 1
     pEhFrame->GdbJitEntry.cbSymFile = pExecMemAllocator->cbChunk - ((uintptr_t)pSymFile - (uintptr_t)pvChunk);
@@ -1200,7 +1256,9 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecM
     __jit_debug_descriptor.enmAction = kGdbJitaction_NoAction;
     RTCritSectLeave(&g_IemNativeGdbJitLock);
 
-#  endif /* IEMNATIVE_USE_GDB_JIT */
+#  else  /* !IEMNATIVE_USE_GDB_JIT */
+    RT_NOREF(pVCpu);
+#  endif /* !IEMNATIVE_USE_GDB_JIT */
 
     return VINF_SUCCESS;
 }
@@ -1215,7 +1273,7 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecM
  * This is used by the init code for the initial allocation and later by the
  * regular allocator function when it's out of memory.
  */
-static int iemExecMemAllocatorGrow(PIEMEXECMEMALLOCATOR pExecMemAllocator)
+static int iemExecMemAllocatorGrow(PVMCPUCC pVCpu, PIEMEXECMEMALLOCATOR pExecMemAllocator)
 {
     /* Check that we've room for growth. */
     uint32_t const idxChunk = pExecMemAllocator->cChunks;
@@ -1321,7 +1379,7 @@ static int iemExecMemAllocatorGrow(PIEMEXECMEMALLOCATOR pExecMemAllocator)
              * Initialize the unwind information (this cannot really fail atm).
              * (This sets pvUnwindInfo.)
              */
-            rc = iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(pExecMemAllocator, pvChunk, idxChunk);
+            rc = iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(pVCpu, pExecMemAllocator, pvChunk, idxChunk);
             if (RT_SUCCESS(rc))
 #endif
             {
@@ -1343,6 +1401,7 @@ static int iemExecMemAllocatorGrow(PIEMEXECMEMALLOCATOR pExecMemAllocator)
     }
 #endif
     RTMemPageFree(pvChunk, pExecMemAllocator->cbChunk);
+    RT_NOREF(pVCpu);
     return rc;
 }
 
@@ -1458,7 +1517,7 @@ int iemExecMemAllocatorInit(PVMCPU pVCpu, uint64_t cbMax, uint64_t cbInitial, ui
      */
     while (cbInitial < (uint64_t)pExecMemAllocator->cChunks * pExecMemAllocator->cbChunk)
     {
-        int rc = iemExecMemAllocatorGrow(pExecMemAllocator);
+        int rc = iemExecMemAllocatorGrow(pVCpu, pExecMemAllocator);
         AssertLogRelRCReturn(rc, rc);
     }
 
@@ -2867,10 +2926,8 @@ static int32_t iemNativeEmitCImplCall(PIEMRECOMPILERSTATE pReNative, uint32_t of
                                       uintptr_t pfnCImpl, uint8_t cbInstr, uint8_t cAddParams,
                                       uint64_t uParam0, uint64_t uParam1, uint64_t uParam2)
 {
-#ifdef VBOX_STRICT
-    off = iemNativeEmitMarker(pReNative, off);
-    AssertReturn(off != UINT32_MAX, UINT32_MAX);
-#endif
+    iemNativeRegFlushGuestShadows(pReNative, UINT64_MAX); /** @todo optimize this */
+    off = iemNativeRegMoveAndFreeAndFlushAtCall(pReNative, off, 4, false /*fFreeArgVars*/);
 
     /*
      * Load the parameters.
@@ -2942,10 +2999,6 @@ static int32_t iemNativeEmitCImplCall(PIEMRECOMPILERSTATE pReNative, uint32_t of
  */
 static int32_t iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, PCIEMTHRDEDCALLENTRY pCallEntry)
 {
-#ifdef VBOX_STRICT
-    off = iemNativeEmitMarker(pReNative, off);
-    AssertReturn(off != UINT32_MAX, UINT32_MAX);
-#endif
     iemNativeRegFlushGuestShadows(pReNative, UINT64_MAX); /** @todo optimize this */
     off = iemNativeRegMoveAndFreeAndFlushAtCall(pReNative, off, 4, false /*fFreeArgVars*/);
     uint8_t const cParams = g_acIemThreadedFunctionUsedArgs[pCallEntry->enmFunction];
@@ -3358,12 +3411,27 @@ DECLINLINE(uint32_t) iemNativeEmitFinishClearingRF(PIEMRECOMPILERSTATE pReNative
 #endif
 
 
+/** Same as iemRegAddToRip64AndFinishingNoFlags. */
+DECLINLINE(uint32_t) iemNativeEmitAddToRip64AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr)
+{
+    /* Allocate a temporary PC register. */
+    uint8_t const idxPcReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc, kIemNativeGstRegUse_ForUpdate);
+    AssertReturn(idxPcReg != UINT8_MAX, UINT32_MAX);
+
+    /* Perform the addition and store the result. */
+    off = iemNativeEmitAddGprImm8(pReNative, off, idxPcReg, cbInstr);
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
+
+    /* Free but don't flush the PC register. */
+    iemNativeRegFreeTmp(pReNative, idxPcReg);
+
+    return off;
+}
+
 /** Same as iemRegAddToEip32AndFinishingNoFlags. */
 DECLINLINE(uint32_t) iemNativeEmitAddToEip32AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr)
 {
     /* Allocate a temporary PC register. */
-    /** @todo this is not strictly required on AMD64, we could emit alternative
-     *        code here if we don't get a tmp register... */
     uint8_t const idxPcReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc, kIemNativeGstRegUse_ForUpdate);
     AssertReturn(idxPcReg != UINT8_MAX, UINT32_MAX);
 
@@ -3376,6 +3444,26 @@ DECLINLINE(uint32_t) iemNativeEmitAddToEip32AndFinishingNoFlags(PIEMRECOMPILERST
 
     return off;
 }
+
+
+/** Same as iemRegAddToIp16AndFinishingNoFlags. */
+DECLINLINE(uint32_t) iemNativeEmitAddToIp16AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr)
+{
+    /* Allocate a temporary PC register. */
+    uint8_t const idxPcReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc, kIemNativeGstRegUse_ForUpdate);
+    AssertReturn(idxPcReg != UINT8_MAX, UINT32_MAX);
+
+    /* Perform the addition and store the result. */
+    off = iemNativeEmitAddGpr32Imm8(pReNative, off, idxPcReg, cbInstr);
+    off = iemNativeEmitClear16UpGpr(pReNative, off, idxPcReg);
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxPcReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.rip));
+
+    /* Free but don't flush the PC register. */
+    iemNativeRegFreeTmp(pReNative, idxPcReg);
+
+    return off;
+}
+
 
 /*
  * MC definitions for the native recompiler.
@@ -3473,6 +3561,10 @@ PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb)
     uint32_t             cCallsLeft = pTb->Thrd.cCalls;
     while (cCallsLeft-- > 0)
     {
+#ifdef VBOX_STRICT
+        off = iemNativeEmitMarker(pReNative, off, RT_MAKE_U32(pTb->Thrd.cCalls - cCallsLeft - 1, pCallEntry->enmFunction));
+        AssertReturn(off != UINT32_MAX, pTb);
+#endif
         PFNIEMNATIVERECOMPFUNC const pfnRecom = g_apfnIemNativeRecompileFunctions[pCallEntry->enmFunction];
         if (pfnRecom) /** @todo stats on this.   */
         {

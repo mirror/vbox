@@ -1589,8 +1589,12 @@ class ThreadedFunction(object):
                 aoCases.append(Case('IEMMODE_16BIT | 32', ThrdFnVar.ksVariation_16f));
 
         if ThrdFnVar.ksVariation_16_Pre386 in dByVari:
+            if not fSimple:
+                aoCases.append(Case('IEMMODE_16BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 16', None)); # fall thru
             aoCases.append(Case('IEMMODE_16BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK', ThrdFnVar.ksVariation_16_Pre386));
         if ThrdFnVar.ksVariation_16f_Pre386 in dByVari:  # should be nested under previous if, but line too long.
+            if not fSimple:
+                aoCases.append(Case('IEMMODE_16BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 32 | 16', None)); # fall thru
             aoCases.append(Case('IEMMODE_16BIT | IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK | 32', ThrdFnVar.ksVariation_16f_Pre386));
 
         #
