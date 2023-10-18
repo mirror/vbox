@@ -1200,8 +1200,7 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PIEMEXECMEMALLOCATOR pExecM
     __jit_debug_descriptor.enmAction = kGdbJitaction_NoAction;
     RTCritSectLeave(&g_IemNativeGdbJitLock);
 
-    RT_BREAKPOINT();
-#  endif
+#  endif /* IEMNATIVE_USE_GDB_JIT */
 
     return VINF_SUCCESS;
 }
@@ -2011,7 +2010,6 @@ DECLHIDDEN(uint8_t) iemNativeRegAllocTmp(PIEMRECOMPILERSTATE pReNative, uint32_t
                    & (~IEMNATIVE_REG_FIXED_MASK & IEMNATIVE_HST_GREG_MASK);
     if (fRegs)
     {
-fPreferVolatile = false; /// @todo DO NOT COMMIT THIS
         if (fPreferVolatile)
             idxReg = (uint8_t)ASMBitFirstSetU32(  fRegs & IEMNATIVE_CALL_VOLATILE_GREG_MASK
                                                 ? fRegs & IEMNATIVE_CALL_VOLATILE_GREG_MASK : fRegs) - 1;
@@ -2740,6 +2738,66 @@ DECLHIDDEN(uint32_t) iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE p
 
 
 /**
+ * Flushes a set of guest register shadow copies.
+ *
+ * This is usually done after calling a threaded function or a C-implementation
+ * of an instruction.
+ *
+ * @param   pReNative       The native recompile state.
+ * @param   fGstRegs        Set of guest registers to flush.
+ */
+DECLHIDDEN(void) iemNativeRegFlushGuestShadows(PIEMRECOMPILERSTATE pReNative, uint64_t fGstRegs) RT_NOEXCEPT
+{
+    /*
+     * Reduce the mask by what's currently shadowed
+     */
+    fGstRegs &= pReNative->bmGstRegShadows;
+    if (fGstRegs)
+    {
+        pReNative->bmGstRegShadows &= ~fGstRegs;
+        if (pReNative->bmGstRegShadows)
+        {
+            /*
+             * Partial.
+             */
+            do
+            {
+                unsigned const idxGstReg = ASMBitFirstSetU64(fGstRegs) - 1;
+                uint8_t const  idxHstReg = pReNative->aidxGstRegShadows[idxGstReg];
+                Assert(idxHstReg < RT_ELEMENTS(pReNative->aidxGstRegShadows));
+                Assert(pReNative->bmHstRegsWithGstShadow & RT_BIT_32(idxHstReg));
+                Assert(pReNative->aHstRegs[idxHstReg].fGstRegShadows & RT_BIT_64(idxGstReg));
+
+                uint64_t const fInThisHstReg = (pReNative->aHstRegs[idxHstReg].fGstRegShadows & fGstRegs) | RT_BIT_64(idxGstReg);
+                fGstRegs &= ~fInThisHstReg;
+                pReNative->aHstRegs[idxHstReg].fGstRegShadows &= fInThisHstReg;
+                if (!pReNative->aHstRegs[idxHstReg].fGstRegShadows)
+                    pReNative->bmHstRegsWithGstShadow &= ~RT_BIT_32(idxHstReg);
+            } while (fGstRegs != 0);
+        }
+        else
+        {
+            /*
+             * Clear all.
+             */
+            do
+            {
+                unsigned const idxGstReg = ASMBitFirstSetU64(fGstRegs) - 1;
+                uint8_t const  idxHstReg = pReNative->aidxGstRegShadows[idxGstReg];
+                Assert(idxHstReg < RT_ELEMENTS(pReNative->aidxGstRegShadows));
+                Assert(pReNative->bmHstRegsWithGstShadow & RT_BIT_32(idxHstReg));
+                Assert(pReNative->aHstRegs[idxHstReg].fGstRegShadows & RT_BIT_64(idxGstReg));
+
+                fGstRegs &= ~(pReNative->aHstRegs[idxHstReg].fGstRegShadows | RT_BIT_64(idxGstReg));
+                pReNative->aHstRegs[idxHstReg].fGstRegShadows = 0;
+            } while (fGstRegs != 0);
+            pReNative->bmHstRegsWithGstShadow = 0;
+        }
+    }
+}
+
+
+/**
  * Emits a code for checking the return code of a call and rcPassUp, returning
  * from the code if either are non-zero.
  */
@@ -2888,7 +2946,7 @@ static int32_t iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_t
     off = iemNativeEmitMarker(pReNative, off);
     AssertReturn(off != UINT32_MAX, UINT32_MAX);
 #endif
-/** @todo Must flush all shadow guest registers as well. */
+    iemNativeRegFlushGuestShadows(pReNative, UINT64_MAX); /** @todo optimize this */
     off = iemNativeRegMoveAndFreeAndFlushAtCall(pReNative, off, 4, false /*fFreeArgVars*/);
     uint8_t const cParams = g_acIemThreadedFunctionUsedArgs[pCallEntry->enmFunction];
 
