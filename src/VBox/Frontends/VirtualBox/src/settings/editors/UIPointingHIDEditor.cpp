@@ -41,7 +41,7 @@
 
 
 UIPointingHIDEditor::UIPointingHIDEditor(QWidget *pParent /* = 0 */)
-    : UIEditor(pParent)
+    : UIEditor(pParent, true /* show in basic mode? */)
     , m_enmValue(KPointingHIDType_Max)
     , m_pLabel(0)
     , m_pCombo(0)

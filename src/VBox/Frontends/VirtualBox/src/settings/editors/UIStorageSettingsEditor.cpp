@@ -2919,7 +2919,7 @@ const QString UIStorageSettingsEditor::s_strControllerMimeType = QString("applic
 const QString UIStorageSettingsEditor::s_strAttachmentMimeType = QString("application/virtualbox;value=StorageAttachmentID");
 
 UIStorageSettingsEditor::UIStorageSettingsEditor(QWidget *pParent /* = 0 */)
-    : UIEditor(pParent)
+    : UIEditor(pParent, true /* show in basic mode? */)
     , m_fLoadingInProgress(0)
     , m_enmConfigurationAccessLevel(ConfigurationAccessLevel_Null)
     , m_pActionPool(0)

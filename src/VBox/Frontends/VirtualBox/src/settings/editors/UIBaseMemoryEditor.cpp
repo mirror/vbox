@@ -248,7 +248,7 @@ int UIBaseMemorySlider::calcPageStep(int iMaximum) const
 *********************************************************************************************************************************/
 
 UIBaseMemoryEditor::UIBaseMemoryEditor(QWidget *pParent /* = 0 */)
-    : UIEditor(pParent)
+    : UIEditor(pParent, true /* show in basic mode? */)
     , m_iValue(0)
     , m_pLayout(0)
     , m_pLabelMemory(0)

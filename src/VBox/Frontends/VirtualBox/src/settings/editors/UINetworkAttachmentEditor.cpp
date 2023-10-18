@@ -53,7 +53,7 @@
 QString UINetworkAttachmentEditor::s_strEmptyItemId = QString("#empty#");
 
 UINetworkAttachmentEditor::UINetworkAttachmentEditor(QWidget *pParent /* = 0 */)
-    : UIEditor(pParent)
+    : UIEditor(pParent, true /* show in basic mode? */)
     , m_enmRestrictedNetworkAttachmentTypes(UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid)
     , m_enmType(KNetworkAttachmentType_Max)
     , m_pLayout(0)

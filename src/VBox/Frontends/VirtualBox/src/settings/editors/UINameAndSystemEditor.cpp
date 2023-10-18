@@ -56,7 +56,7 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent,
                                              bool fChooseImage /* = false */,
                                              bool fChooseEdition /* = false */,
                                              bool fChooseType /* = true */)
-    : UIEditor(pParent)
+    : UIEditor(pParent, true /* show in basic mode? */)
     , m_fChooseName(fChooseName)
     , m_fChoosePath(fChoosePath)
     , m_fChooseImage(fChooseImage)

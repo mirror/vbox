@@ -275,7 +275,7 @@ void SFTreeViewItem::processColumn(int iColumn)
 *********************************************************************************************************************************/
 
 UISharedFoldersEditor::UISharedFoldersEditor(QWidget *pParent /* = 0 */)
-    : UIEditor(pParent)
+    : UIEditor(pParent, true /* show in basic mode? */)
     , m_pLayoutTree(0)
     , m_pTreeWidget(0)
     , m_pToolbar(0)

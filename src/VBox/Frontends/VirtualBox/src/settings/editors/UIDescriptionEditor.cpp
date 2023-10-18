@@ -34,7 +34,7 @@
 
 
 UIDescriptionEditor::UIDescriptionEditor(QWidget *pParent /* = 0 */)
-    : UIEditor(pParent)
+    : UIEditor(pParent, true /* show in basic mode? */)
     , m_pTextEdit(0)
 {
     prepare();

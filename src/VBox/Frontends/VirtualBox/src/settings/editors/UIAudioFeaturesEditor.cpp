@@ -35,7 +35,7 @@
 
 
 UIAudioFeaturesEditor::UIAudioFeaturesEditor(QWidget *pParent /* = 0 */)
-    : UIEditor(pParent)
+    : UIEditor(pParent, true /* show in basic mode? */)
     , m_fEnableOutput(false)
     , m_fEnableInput(false)
     , m_pLabel(0)

@@ -443,7 +443,7 @@ UIBootItemDataList UIBootDataTools::bootItemsFromSerializedString(const QString 
 *********************************************************************************************************************************/
 
 UIBootOrderEditor::UIBootOrderEditor(QWidget *pParent /* = 0 */)
-    : UIEditor(pParent)
+    : UIEditor(pParent, true /* show in basic mode? */)
     , m_pLayout(0)
     , m_pLabel(0)
     , m_pTable(0)

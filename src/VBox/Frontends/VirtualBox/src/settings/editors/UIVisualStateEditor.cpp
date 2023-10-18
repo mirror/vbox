@@ -39,7 +39,7 @@
 
 
 UIVisualStateEditor::UIVisualStateEditor(QWidget *pParent /* = 0 */)
-    : UIEditor(pParent)
+    : UIEditor(pParent, true /* show in basic mode? */)
     , m_enmValue(UIVisualStateType_Invalid)
     , m_pLayout(0)
     , m_pLabel(0)
