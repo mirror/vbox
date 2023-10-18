@@ -1132,6 +1132,7 @@ void UIAdvancedSettingsDialog::prepareSelector()
 
     /* Make sure there is a serious spacing between selector and pages: */
     m_pLayoutMain->setColumnMinimumWidth(1, 20);
+    m_pLayoutMain->setRowStretch(1, 1);
 
     /* Prepare mode checkbox: */
     m_pCheckBoxMode = new UIModeCheckBox(centralWidget());
