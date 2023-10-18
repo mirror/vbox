@@ -204,10 +204,8 @@
  *  VMX_EXIT_RSM
  *  VMX_EXIT_MONITOR (APIC access VM-exit caused by MONITOR pending)
  *  VMX_EXIT_ERR_MACHINE_CHECK (we never need to raise this?)
- *  VMX_EXIT_RDRAND
  *  VMX_EXIT_VMFUNC
  *  VMX_EXIT_ENCLS
- *  VMX_EXIT_RDSEED
  *  VMX_EXIT_PML_FULL
  *  VMX_EXIT_XSAVES
  *  VMX_EXIT_XRSTORS
@@ -2448,7 +2446,12 @@ static uint32_t iemVmxGetExitInstrInfo(PVMCPUCC pVCpu, uint32_t uExitReason, VMX
         case VMX_EXIT_RDRAND:
         case VMX_EXIT_RDSEED:
         {
+            Assert(VMXINSTRID_IS_VALID(uInstrId));
+            Assert(VMXINSTRID_GET_ID(uInstrId) == (uInstrId & 0x3));
             Assert(ExitInstrInfo.RdrandRdseed.u2OperandSize != 3);
+            ExitInstrInfo.RdrandRdseed.u3Undef0  = 0;
+            ExitInstrInfo.RdrandRdseed.u4Undef0  = 0;
+            ExitInstrInfo.RdrandRdseed.u19Undef0 = 0;
             break;
         }
     }
