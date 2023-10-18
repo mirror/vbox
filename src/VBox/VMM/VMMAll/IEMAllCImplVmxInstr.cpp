@@ -7101,7 +7101,10 @@ static int iemVmxVmentryLoadGuestNonRegState(PVMCPUCC pVCpu, const char *pszInst
     if (pVmcs->u32GuestIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI)
     {
         if (pVmcs->u32PinCtls & VMX_PIN_CTLS_VIRT_NMI)
+        {
             pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtNmiBlocking = true;
+            Assert(!CPUMAreInterruptsInhibitedByNmi(&pVCpu->cpum.GstCtx));
+        }
         else
         {
             pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtNmiBlocking = false;
@@ -7109,7 +7112,10 @@ static int iemVmxVmentryLoadGuestNonRegState(PVMCPUCC pVCpu, const char *pszInst
         }
     }
     else
+    {
         pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtNmiBlocking = false;
+        Assert(!CPUMAreInterruptsInhibitedByNmi(&pVCpu->cpum.GstCtx));
+    }
 
     /* SMI blocking is irrelevant. We don't support SMIs yet. */
 
