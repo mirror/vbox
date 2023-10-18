@@ -1210,6 +1210,7 @@ VBOX_RSYNC_IN_FN = $(if-expr "$(3)" != "nossh",$(VBOX_RSYNC),$(VBOX_RSYNC_NOSSH)
 # VM IP addresses.
 #
 VBOX_BLD_VM_LNX_IP               := 192.168.27.2
+VBOX_BLD_VM_LNX_ARM64_IP         := 192.168.27.26
 VBOX_BLD_VM_OS2_IP               := 192.168.27.3
 VBOX_BLD_VM_SOLARIS_IP           := 192.168.27.4
 VBOX_BLD_VM_DARWIN_X86_IP        := 192.168.27.5
@@ -1255,6 +1256,9 @@ additions-fetch:
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=darwin  VBOX_ONLY_ADDITIONS=1 #VBOX_DEF_MACOSX_VERSION_MIN=10.5
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=linux   VBOX_ONLY_ADDITIONS=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=linux   VBOX_ONLY_ADDITIONS=1
+ifdef VBOX_WITH_LNX_ARM64_ADDITIONS
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=arm64 KBUILD_TARGET=linux   VBOX_ONLY_ADDITIONS=1
+endif
 ifdef VBOX_WITH_OS2_ADD_BUILD
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=os2     VBOX_ONLY_ADDITIONS=1
 endif
@@ -1276,14 +1280,16 @@ additions-build: \
 		additions-build-os2.x86 \
 		additions-build-linux \
 		additions-build-darwin.x86 \
-		additions-build-darwin.amd64
+		additions-build-darwin.amd64 \
+		$(if $(VBOX_WITH_LNX_ARM64_ADDITIONS), additions-build-linux.arm64,)
 
 additions-build-rsync-into-vms: \
 		additions-build-solaris.rsync-into-vm \
 		additions-build-os2.rsync-into-vm \
 		additions-build-darwin.x86.rsync-into-vm \
 		additions-build-darwin.amd64.rsync-into-vm \
-		additions-build-linux.rsync-into-vm
+		additions-build-linux.rsync-into-vm \
+		$(if $(VBOX_WITH_LNX_ARM64_ADDITIONS), additions-build-linux.arm64.rsync-into-vm,)
 	$(call MSG_L1,Rsynced the sources + tools into the VMs.)
 .NOTPARALLEL: additions-build-rsync-into-vms
 .PHONY: additions-build-rsync-into-vms
@@ -1294,6 +1300,11 @@ VBOX_ADDITIONS_BUILD.amd64 = VBOX_ONLY_ADDITIONS=1 VBOX_WITHOUT_ADDITIONS_ISO=1 
 
 VBOX_ADDITIONS_BUILD.x86 = VBOX_ONLY_ADDITIONS=1 VBOX_WITHOUT_ADDITIONS_ISO=1 \
 	KBUILD_TYPE=$(KBUILD_TYPE) KBUILD_TARGET_ARCH=x86 VBOX_SVN_REV=$(VBOX_SVN_REV)
+
+ifdef VBOX_WITH_LNX_ARM64_ADDITIONS
+ VBOX_ADDITIONS_BUILD.arm64 = VBOX_ONLY_ADDITIONS=1 VBOX_WITHOUT_ADDITIONS_ISO=1 \
+ 	KBUILD_TYPE=$(KBUILD_TYPE) KBUILD_TARGET_ARCH=arm64 VBOX_SVN_REV=$(VBOX_SVN_REV)
+endif
 
 # Automatically determine the additions build subdir name. Used for figuring
 # out directory names inside the additions building VMs.
@@ -1409,6 +1420,12 @@ ifeq ($(KBUILD_TARGET),linux)
  additions-build-linux: additions-build-linux.x86 additions-build-linux.amd64
 	+ $(TIME) -- $(KMK) $(VBOX_ADDITIONS_BUILD.x86) all $(VBOX_ADD_HOST_BUILD_TWEAK)
 	+ $(TIME) -- $(KMK) $(VBOX_ADDITIONS_BUILD.x86) packing VBOX_WITH_COMBINED_LINUX_GUEST_PACKAGE=1
+
+ ifdef VBOX_WITH_LNX_ARM64_ADDITIONS
+  additions-build-linux.arm64:
+	+ $(TIME) -- $(KMK) $(VBOX_ADDITIONS_BUILD.arm64) all $(VBOX_ADD_HOST_BUILD_TWEAK)
+	+ $(TIME) -- $(KMK) $(VBOX_ADDITIONS_BUILD.arm64) packing
+ endif
 else
  additions-build-linux.rsync-into-vm:
 	$(TIME) -- $(call VBOX_RSYNC_IN_FN,linux,*) \
@@ -1480,6 +1497,66 @@ else
  .PHONY: additions-build-linux.rsync-into-vm additions-build-linux.rsync-out-of-vm additions-build-linux.build-it
 
  additions-build-linux: additions-build-linux.rsync-out-of-vm
+
+ #
+ # Preliminary arm64 Linux guest additions build.
+ #
+ ifdef VBOX_WITH_LNX_ARM64_ADDITIONS
+  # @todo r=aeichner Remove --exclude=kBuild/bin/linux.arm64/** when we have official binaries in the external repository.
+  additions-build-linux.arm64.rsync-into-vm:
+	$(TIME) -- $(call VBOX_RSYNC_IN_FN,linux,*) \
+ 		'--exclude=src/VBox/Additions/WINNT/**' \
+ 		'--include=src/VBox/Devices/' \
+ 		'--include=src/VBox/Devices/Audio/' \
+ 		'--include=src/VBox/Devices/Audio/**' \
+ 		'--include=src/VBox/Devices/build/' \
+ 		'--include=src/VBox/Devices/build/**' \
+ 		'--exclude=src/VBox/Devices/**' \
+ 		'--exclude=src/VBox/Debugger/**' \
+ 		'--exclude=src/VBox/ExtPacks/**' \
+ 		'--exclude=src/VBox/Frontends/**' \
+ 		'--exclude=src/VBox/HostService/**' \
+ 		'--exclude=src/VBox/ImageMounter/**' \
+ 		'--exclude=src/VBox/NetworkServices/**' \
+ 		'--exclude=src/VBox/RDP/**' \
+ 		'--exclude=src/VBox/Storage/**' \
+ 		'--include=src/VBox/ValidationKit/' \
+ 		'--include=src/VBox/ValidationKit/Config.kmk' \
+ 		'--include=src/VBox/ValidationKit/utils/' \
+ 		'--include=src/VBox/ValidationKit/utils/audio/' \
+ 		'--include=src/VBox/ValidationKit/utils/audio/**' \
+ 		'--exclude=src/VBox/ValidationKit/**' \
+ 		'--exclude=src/VBox/VMM/**' \
+ 		'--exclude=src/libs/dxvk-native-**' \
+ 		'--exclude=src/libs/curl-**' \
+ 		'--exclude=src/libs/libjpeg-turbo-**' \
+ 		'--exclude=src/libs/libogg-**' \
+ 		'--exclude=src/libs/libpng-**' \
+ 		'--exclude=src/libs/libssh-**' \
+ 		'--exclude=src/libs/libtpms-**' \
+ 		'--exclude=src/libs/libvorbis-**' \
+ 		'--exclude=src/libs/libvpx-**' \
+ 		'--exclude=src/libs/libxml-**' \
+ 		'--exclude=src/libs/softfloat-**' \
+ 		'--exclude=src/libs/TestFloat-**' \
+ 		'--exclude=src/libs/xpcom18a4/**' \
+ 		'--exclude=src/apps/**' \
+ 		'--exclude=kBuild/bin/linux.arm64/**' \
+ 		. $(VBOX_BLD_VM_LNX_ARM64_IP):/home/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
+
+  additions-build-linux.arm64.build-it: additions-build-linux.arm64.rsync-into-vm
+	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/arm64 additions build+pack)
+	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_LNX_ARM64_IP)       'cd /home/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.arm64) VBOX_WITH_WARNINGS_AS_ERRORS= VBOX_WITHOUT_LINUX_TEST_BUILDS=1 VBOX_WITH_LNX_ARM64_ADDITIONS=1 all packing'
+	$(call VBOX_BLD_VM_MSG_END__,Linux/arm64 additions build+pack)
+
+  additions-build-linux.arm64.rsync-out-of-vm: additions-build-linux.arm64.build-it
+	$(TIME) -- $(VBOX_RSYNC) -a --delete $(VBOX_BLD_VM_LNX_ARM64_IP):/home/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/linux.arm64 out/
+
+  .NOTPARALLEL: additions-build-linux.arm64.rsync-into-vm
+  .PHONY: additions-build-linux.arm64.rsync-into-vm additions-build-linux.arm64.rsync-out-of-vm additions-build-linux.arm64.build-it
+
+  additions-build-linux.arm64: additions-build-linux.arm64.rsync-out-of-vm
+ endif
 endif
 
 # Darwin
@@ -1606,7 +1683,9 @@ additions-packing:
 		VBOX_WITH_ADDITIONS_ISO.freebsd.x86= \
 		VBOX_WITH_ADDITIONS_ISO.linux.amd64= \
 		VBOX_WITH_ADDITIONS_ISO.linux.x86=1 \
+		VBOX_WITH_ADDITIONS_ISO.linux.arm64= \
 		VBOX_WITH_COMBINED_LINUX_GUEST_PACKAGE=1 \
+		$(if $(VBOX_WITH_LNX_ARM64_ADDITIONS), VBOX_WITH_LNX_ARM64_ADDITIONS=1,) \
 		VBOX_WITH_ADDITIONS_ISO.os2.x86=1 \
 		VBOX_WITH_ADDITIONS_ISO.solaris.amd64=1 \
 		VBOX_WITH_ADDITIONS_ISO.solaris.x86=1 \
@@ -1626,6 +1705,7 @@ additions-packing:
 		additions-build-linux.amd64 \
 		additions-build-linux.x86 \
 		additions-build-linux.x86.combined \
+		$(if $(VBOX_WITH_LNX_ARM64_ADDITIONS), additions-build-linux.arm64,) \
 		additions-build-darwin \
 		additions-build-darwin.x86 \
 		additions-build-darwin.amd64 \
