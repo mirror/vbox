@@ -721,6 +721,55 @@ QPixmap UIIconPoolGeneral::guestOSTypePixmapDefault(const QString &strOSTypeID, 
             pixmap = icon.pixmap(iconSize);
     }
 
+    //overlayArchitectureTextOnPixmap("A64", pixmap);
     /* Return pixmap: */
     return pixmap;
+}
+
+void UIIconPoolGeneral::overlayArchitectureTextOnPixmap(const QString &strArch, QPixmap &pixmap) const
+{
+#if 0
+    /* First create a pixmap and draw a background and text on it: */
+    QFontMetrics fontMetrics = qApp->fontMetrics();
+    QRect rect(0, 0, fontMetrics.boundingRect(strArch).width(), fontMetrics.boundingRect(strArch).height());
+    QPixmap textPixmap(rect.size());
+
+    QPainter painter(&textPixmap);
+    QFont font = qApp->font();
+    font.setBold(true);
+    painter.setFont(font);
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform);
+    painter.setRenderHint(QPainter::TextAntialiasing);
+    painter.setPen(QPen(Qt::black, 1));
+    painter.setBrush(QColor(255, 255, 255, 80));
+    painter.drawRect(rect);
+    painter.drawText(rect, Qt::AlignHCenter | Qt::AlignVCenter, strArch);
+
+    /* Now draw that^^ pixmap onto our original pixmap:*/
+    QPainter originalPixmapPainter(&pixmap);
+    originalPixmapPainter.setRenderHint(QPainter::Antialiasing);
+    originalPixmapPainter.setRenderHint(QPainter::SmoothPixmapTransform);
+    QRect targetRect(QPoint(0, 0), QSize(0.34 * pixmap.rect().width(), 0.3 * pixmap.rect().height()));
+    originalPixmapPainter.drawPixmap(targetRect, textPixmap, textPixmap.rect());
+#endif
+#if 1
+    QFont font = qApp->font();
+    /* Set font' size wrt. @p pixmap height: */
+    font.setPixelSize(0.3 * pixmap.rect().height());
+    font.setBold(true);
+    QPainter painter(&pixmap);
+    painter.setFont(font);
+    /* Make a rectangle just a bit larger than text's bounding rect. to have some spacing around the text: */
+    int w = 1.2 * painter.fontMetrics().boundingRect(strArch).size().width();
+    int h = 1.0 * painter.fontMetrics().boundingRect(strArch).size().height();
+    QRect textRect(QPoint(0, 0), QSize(w, h));
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform);
+    painter.setRenderHint(QPainter::TextAntialiasing);
+    painter.setPen(QPen(Qt::black, 1));
+    painter.setBrush(QColor(255, 255, 255, 200));
+    painter.drawRect(textRect);
+    painter.drawText(textRect, Qt::AlignHCenter | Qt::AlignVCenter, strArch);
+#endif
 }
