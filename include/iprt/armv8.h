@@ -2708,7 +2708,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAddSubReg(bool fSub, uint32_t iRegRes
                                                      ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_kLsl)
 {
     Assert(iRegResult < 32); Assert(iRegSrc1 < 32); Assert(iRegSrc2 < 32);
-    Assert(cShift <= (f64Bit ? 31 : 63)); Assert(enmShift != kArmv8A64InstrShift_kRor);
+    Assert(cShift < (f64Bit ? 64U : 32U)); Assert(enmShift != kArmv8A64InstrShift_kRor);
 
     return ((uint32_t)f64Bit       << 31)
          | ((uint32_t)fSub         << 30)
