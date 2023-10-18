@@ -2268,7 +2268,11 @@ static VBOXSTRICTRC iemTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_MAY_LONGJ
 # ifdef LOG_ENABLED
         iemThreadedLogCurInstr(pVCpu, "EXn", 0);
 # endif
+# ifdef RT_ARCH_AMD64
         VBOXSTRICTRC const rcStrict = ((PFNIEMTBNATIVE)pTb->Native.paInstructions)(pVCpu);
+# else
+        VBOXSTRICTRC const rcStrict = ((PFNIEMTBNATIVE)pTb->Native.paInstructions)(pVCpu, &pVCpu->cpum.GstCtx);
+# endif
         if (RT_LIKELY(   rcStrict == VINF_SUCCESS
                       && pVCpu->iem.s.rcPassUp == VINF_SUCCESS /** @todo this isn't great. */))
         { /* likely */ }

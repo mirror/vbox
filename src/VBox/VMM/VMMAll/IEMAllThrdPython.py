@@ -54,20 +54,51 @@ if sys.version_info[0] >= 3:
 g_kcThreadedParams = 3;
 
 g_kdTypeInfo = {
-    # type name:    (cBits, fSigned, C-type       )
-    'int8_t':       (    8,    True, 'int8_t',    ),
-    'int16_t':      (   16,    True, 'int16_t',   ),
-    'int32_t':      (   32,    True, 'int32_t',   ),
-    'int64_t':      (   64,    True, 'int64_t',   ),
-    'uint4_t':      (    4,   False, 'uint8_t',   ),
-    'uint8_t':      (    8,   False, 'uint8_t',   ),
-    'uint16_t':     (   16,   False, 'uint16_t',  ),
-    'uint32_t':     (   32,   False, 'uint32_t',  ),
-    'uint64_t':     (   64,   False, 'uint64_t',  ),
-    'uintptr_t':    (   64,   False, 'uintptr_t', ), # ASSUMES 64-bit host pointer size.
-    'bool':         (    1,   False, 'bool',      ),
-    'IEMMODE':      (    2,   False, 'IEMMODE',   ),
+    # type name:        (cBits, fSigned, C-type      )
+    'int8_t':           (    8,    True, 'int8_t',   ),
+    'int16_t':          (   16,    True, 'int16_t',  ),
+    'int32_t':          (   32,    True, 'int32_t',  ),
+    'int64_t':          (   64,    True, 'int64_t',  ),
+    'uint4_t':          (    4,   False, 'uint8_t',  ),
+    'uint8_t':          (    8,   False, 'uint8_t',  ),
+    'uint16_t':         (   16,   False, 'uint16_t', ),
+    'uint32_t':         (   32,   False, 'uint32_t', ),
+    'uint64_t':         (   64,   False, 'uint64_t', ),
+    'uintptr_t':        (   64,   False, 'uintptr_t',), # ASSUMES 64-bit host pointer size.
+    'bool':             (    1,   False, 'bool',     ),
+    'IEMMODE':          (    2,   False, 'IEMMODE',  ),
 };
+
+# Only for getTypeBitCount/variables.
+g_kdTypeInfo2 = {
+    'RTFLOAT32U':       (   32,   False, 'RTFLOAT32U',      ),
+    'RTFLOAT64U':       (   64,   False, 'RTFLOAT64U',      ),
+    'RTUINT64U':        (   64,   False, 'RTUINT64U',       ),
+    'RTGCPTR':          (   64,   False, 'RTGCPTR',         ),
+    'RTPBCD80U':        (   80,   False, 'RTPBCD80U',       ),
+    'RTFLOAT80U':       (   80,   False, 'RTFLOAT80U',      ),
+    'IEMFPURESULT':     (80+16,   False, 'IEMFPURESULT',    ),
+    'IEMFPURESULTTWO':  (80+16+80,False, 'IEMFPURESULTTWO', ),
+    'RTUINT128U':       (  128,   False, 'RTUINT128U',      ),
+    'X86XMMREG':        (  128,   False, 'X86XMMREG',       ),
+    'IEMSSERESULT':     ( 128+32, False, 'IEMSSERESULT',    ),
+    'IEMMEDIAF2XMMSRC': (  256,   False, 'IEMMEDIAF2XMMSRC',),
+    'RTUINT256U':       (  256,   False, 'RTUINT256U',      ),
+    'IEMPCMPISTRXSRC':  (  256,   False, 'IEMPCMPISTRXSRC', ),
+    'IEMPCMPESTRXSRC':  (  384,   False, 'IEMPCMPESTRXSRC', ),
+} | g_kdTypeInfo;
+
+def getTypeBitCount(sType):
+    """
+    Translate a type to size in bits
+    """
+    if sType in g_kdTypeInfo2:
+        return g_kdTypeInfo2[sType][0];
+    if '*' in sType or sType[0] == 'P':
+        return 64;
+    #raise Exception('Unknown type: %s' % (sType,));
+    print('error: Unknown type: %s' % (sType,));
+    return 64;
 
 g_kdIemFieldToType = {
     # Illegal ones:
@@ -1750,6 +1781,36 @@ class IEMThreadedGenerator(object):
                         cNative += 1;
             print('debug: %.1f%% / %u out of %u threaded function variations are recompilable'
                   % (cNative * 100.0 / cTotal, cNative, cTotal));
+
+        # Gather arguments + variable statistics for the MC blocks.
+        cMaxArgs         = 0;
+        cMaxVars         = 0;
+        cMaxVarsAndArgs  = 0;
+        cbMaxArgs        = 0;
+        cbMaxVars        = 0;
+        cbMaxVarsAndArgs = 0;
+        for oThreadedFunction in self.aoThreadedFuncs:
+            if oThreadedFunction.oMcBlock.cLocals >= 0:
+                assert oThreadedFunction.oMcBlock.cArgs >= 0;
+                cMaxVars        = max(cMaxVars, oThreadedFunction.oMcBlock.cLocals);
+                cMaxArgs        = max(cMaxArgs, oThreadedFunction.oMcBlock.cArgs);
+                cMaxVarsAndArgs = max(cMaxVarsAndArgs, oThreadedFunction.oMcBlock.cLocals + oThreadedFunction.oMcBlock.cArgs);
+                # Calc stack allocation size:
+                cbArgs = 0;
+                for oArg in oThreadedFunction.oMcBlock.aoArgs:
+                    cbArgs += (getTypeBitCount(oArg.sType) + 63) // 64 * 8;
+                cbVars = 0;
+                for oVar in oThreadedFunction.oMcBlock.aoLocals:
+                     cbVars += (getTypeBitCount(oVar.sType) + 63) // 64 * 8;
+                cbMaxVars        = max(cbMaxVars, cbVars);
+                cbMaxArgs        = max(cbMaxArgs, cbArgs);
+                cbMaxVarsAndArgs = max(cbMaxVarsAndArgs, cbVars + cbArgs);
+                if cbMaxVarsAndArgs >= 0xc0:
+                    raise Exception('%s potentially uses too much stack: cbMaxVars=%#x cbMaxArgs=%#x'
+                                    % (oThreadedFunction.oMcBlock.oFunction.sName, cbMaxVars, cbMaxArgs,));
+
+        print('debug: max vars+args: %u bytes / %u; max vars: %u bytes / %u; max args: %u bytes / %u'
+              % (cbMaxVarsAndArgs, cMaxVarsAndArgs, cbMaxVars, cMaxVars, cbMaxArgs, cMaxArgs,));
 
         return True;
 

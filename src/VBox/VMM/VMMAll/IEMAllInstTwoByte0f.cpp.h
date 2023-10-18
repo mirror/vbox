@@ -10614,6 +10614,10 @@ FNIEMOP_DEF(iemOp_movzx_Gv_Ew)
     /** @todo Not entirely sure how the operand size prefix is handled here,
      *        assuming that it will be ignored. Would be nice to have a few
      *        test for this. */
+
+    /** @todo There should be no difference in the behaviour whether REX.W is
+     *        present or not... */
+
     /*
      * If rm is denoting a register, no more instruction bytes.
      */

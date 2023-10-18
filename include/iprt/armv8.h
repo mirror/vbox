@@ -2454,13 +2454,13 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrStLdRUOff(ARMV8A64INSTRLDSTTYPE enmTy
 typedef enum
 {
     kArmv8A64InstrLdStExtend_Uxtw   = 2, /**< Zero-extend (32-bit) word. */
-    kArmv8A64InstrLdStExtend_Lsl    = 3, /**< Not valid for bytes. */
+    kArmv8A64InstrLdStExtend_Lsl    = 3, /**< Shift left (64-bit). */
     kArmv8A64InstrLdStExtend_Sxtw   = 6, /**< Sign-extend (32-bit) word. */
     kArmv8A64InstrLdStExtend_Sxtx   = 7  /**< Sign-extend (64-bit) dword (to 128-bit SIMD&FP reg, presumably). */
 } ARMV8A64INSTRLDSTEXTEND;
 
 /**
- * A64: Encodes load/store w/ scaled 12-bit unsigned address displacement.
+ * A64: Encodes load/store w/ index register.
  *
  * @returns The encoded instruction.
  * @param   enmType     The load/store instruction type.
@@ -2645,7 +2645,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBics(uint32_t iRegResult, uint32_t iR
 
 
 /**
- * A64: Encodes either add, adds, sub or subs.
+ * A64: Encodes either add, adds, sub or subs with unsigned 12-bit immediate.
  *
  * @returns The encoded instruction.
  * @param   fSub                    true for sub and subs, false for add and
@@ -2656,7 +2656,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBics(uint32_t iRegResult, uint32_t iR
  * @param   iRegSrc                 The register containing the augend (@a fSub
  *                                  = false) or minuend (@a fSub = true).  SP is
  *                                  a valid registers for all variations.
- * @param   uImm12AddendSubtrahend  The addended (@a fSub = false) or subtrahend
+ * @param   uImm12AddendSubtrahend  The addend (@a fSub = false) or subtrahend
  *                                  (@a fSub = true).
  * @param   f64Bit                  true for 64-bit GRPs (default), false for
  *                                  32-bit GPRs.
@@ -2665,9 +2665,9 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBics(uint32_t iRegResult, uint32_t iR
  * @param   fShift12                Whether to shift uImm12AddendSubtrahend 12
  *                                  bits to the left, or not (default).
  */
-DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAddSub(bool fSub, uint32_t iRegResult, uint32_t iRegSrc,
-                                                  uint32_t uImm12AddendSubtrahend, bool f64Bit = true, bool fSetFlags = false,
-                                                  bool fShift12 = false)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAddSubUImm12(bool fSub, uint32_t iRegResult, uint32_t iRegSrc,
+                                                        uint32_t uImm12AddendSubtrahend, bool f64Bit = true,
+                                                        bool fSetFlags = false, bool fShift12 = false)
 {
     Assert(uImm12AddendSubtrahend < 4096); Assert(iRegSrc < 32); Assert(iRegResult < 32);
     return ((uint32_t)f64Bit       << 31)
@@ -2677,6 +2677,47 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAddSub(bool fSub, uint32_t iRegResult
          | ((uint32_t)fShift12     << 22)
          | (uImm12AddendSubtrahend << 10)
          | (iRegSrc                <<  5)
+         | iRegResult;
+}
+
+/**
+ * A64: Encodes either add, adds, sub or subs with shifted register.
+ *
+ * @returns The encoded instruction.
+ * @param   fSub                    true for sub and subs, false for add and
+ *                                  adds.
+ * @param   iRegResult              The register to store the result in.
+ *                                  SP is NOT valid, but ZR is.
+ * @param   iRegSrc1                The register containing the augend (@a fSub
+ *                                  = false) or minuend (@a fSub = true).
+ *                                  SP is NOT valid, but ZR is.
+ * @param   iRegSrc2                The register containing the addened (@a fSub
+ *                                  = false) or subtrahend (@a fSub = true).
+ *                                  SP is NOT valid, but ZR is.
+ * @param   f64Bit                  true for 64-bit GRPs (default), false for
+ *                                  32-bit GPRs.
+ * @param   fSetFlags               Whether to set flags (adds / subs) or not
+ *                                  (add / sub - default).
+ * @param   cShift                  The shift count to apply to @a iRegSrc2.
+ * @param   enmShift                The shift type to apply to the @a iRegSrc2
+ *                                  register. kArmv8A64InstrShift_kRor is
+ *                                  reserved.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAddSubReg(bool fSub, uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2,
+                                                     bool f64Bit = true, bool fSetFlags = false, uint32_t cShift = 0,
+                                                     ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_kLsl)
+{
+    Assert(iRegResult < 32); Assert(iRegSrc1 < 32); Assert(iRegSrc2 < 32);
+    Assert(cShift <= (f64Bit ? 31 : 63)); Assert(enmShift != kArmv8A64InstrShift_kRor);
+
+    return ((uint32_t)f64Bit       << 31)
+         | ((uint32_t)fSub         << 30)
+         | ((uint32_t)fSetFlags    << 29)
+         | UINT32_C(0x13000000)
+         | ((uint32_t)enmShift     << 22)
+         | (iRegSrc2               << 16)
+         | (cShift                 << 10)
+         | (iRegSrc1               <<  5)
          | iRegResult;
 }
 
@@ -2749,6 +2790,19 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCbzCbnz(bool fJmpIfNotZero, int32_t i
          | ((uint32_t)fJmpIfNotZero      << 24)
          | (((uint32_t)iImm19 & 0x7ffff) <<  5)
          | iReg;
+}
+
+/**
+ * A64: Encodes the BRK instruction.
+ *
+ * @returns The encoded instruction.
+ * @param   uImm16          Unsigned immediate value.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBrk(uint32_t uImm16)
+{
+    Assert(uImm16 < _64K);
+    return UINT32_C(0xd4200000)
+         | (uImm16 << 5);
 }
 
 

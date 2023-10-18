@@ -51,7 +51,7 @@ g_dMcStmtThreaded = {
     'IEM_MC_DEFER_TO_CIMPL_3_RET_THREADED':                      (None, True,  True,  ),
 
     'IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC16':               (None, True,  False, ),
-    'IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC32':               (None, True,  False, ), # True ),
+    'IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC32':               (None, True,  True,  ),
     'IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC64':               (None, True,  False, ),
 
     'IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC16_WITH_FLAGS':    (None, True,  False, ),

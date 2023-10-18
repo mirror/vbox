@@ -195,6 +195,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_MC_ARG(a_Type, a_Name, a_iArg)              a_Type a_Name
 #define IEM_MC_ARG_CONST(a_Type, a_Name, a_Value, a_iArg)       a_Type const a_Name = (a_Value)
 #define IEM_MC_ARG_LOCAL_REF(a_Type, a_Name, a_Local, a_iArg)   a_Type const a_Name = &(a_Local)
+/** @note IEMAllInstPython.py duplicates the expansion. */
 #define IEM_MC_ARG_LOCAL_EFLAGS(a_pName, a_Name, a_iArg) \
     uint32_t a_Name; \
     uint32_t *a_pName = &a_Name
@@ -1971,67 +1972,6 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_MC_CALL_AIMPL_3(a_rc, a_pfn, a0, a1, a2)      (a_rc) = (a_pfn)((a0), (a1), (a2))
 #define IEM_MC_CALL_AIMPL_4(a_rc, a_pfn, a0, a1, a2, a3)  (a_rc) = (a_pfn)((a0), (a1), (a2), (a3))
 
-/** @name IEM_CIMPL_F_XXX - State change clues for CIMPL calls.
- *
- * These clues are mainly for the recompiler, so that it can emit correct code.
- *
- * They are processed by the python script and which also automatically
- * calculates flags for MC blocks based on the statements, extending the use of
- * these flags to describe MC block behavior to the recompiler core.  The python
- * script pass the flags to the IEM_MC2_END_EMIT_CALLS macro, but mainly for
- * error checking purposes.  The script emits the necessary fEndTb = true and
- * similar statements as this reduces compile time a tiny bit.
- *
- * @{ */
-/** Flag set if direct branch, clear if absolute or indirect. */
-#define IEM_CIMPL_F_BRANCH_DIRECT        RT_BIT_32(0)
-/** Flag set if indirect branch, clear if direct or relative.
- * This is also used for all system control transfers (SYSCALL, SYSRET, INT, ++)
- * as well as for return instructions (RET, IRET, RETF). */
-#define IEM_CIMPL_F_BRANCH_INDIRECT      RT_BIT_32(1)
-/** Flag set if relative branch, clear if absolute or indirect. */
-#define IEM_CIMPL_F_BRANCH_RELATIVE      RT_BIT_32(2)
-/** Flag set if conditional branch, clear if unconditional. */
-#define IEM_CIMPL_F_BRANCH_CONDITIONAL   RT_BIT_32(3)
-/** Flag set if it's a far branch (changes CS). */
-#define IEM_CIMPL_F_BRANCH_FAR           RT_BIT_32(4)
-/** Convenience: Testing any kind of branch. */
-#define IEM_CIMPL_F_BRANCH_ANY          (IEM_CIMPL_F_BRANCH_DIRECT | IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_RELATIVE)
-
-/** Execution flags may change (IEMCPU::fExec). */
-#define IEM_CIMPL_F_MODE                RT_BIT_32(5)
-/** May change significant portions of RFLAGS. */
-#define IEM_CIMPL_F_RFLAGS              RT_BIT_32(6)
-/** May change the status bits (X86_EFL_STATUS_BITS) in RFLAGS. */
-#define IEM_CIMPL_F_STATUS_FLAGS        RT_BIT_32(7)
-/** May trigger interrupt shadowing. */
-#define IEM_CIMPL_F_INHIBIT_SHADOW      RT_BIT_32(8)
-/** May enable interrupts, so recheck IRQ immediately afterwards executing
- *  the instruction. */
-#define IEM_CIMPL_F_CHECK_IRQ_AFTER     RT_BIT_32(9)
-/** May disable interrupts, so recheck IRQ immediately before executing the
- *  instruction. */
-#define IEM_CIMPL_F_CHECK_IRQ_BEFORE    RT_BIT_32(10)
-/** Convenience: Check for IRQ both before and after an instruction. */
-#define IEM_CIMPL_F_CHECK_IRQ_BEFORE_AND_AFTER (IEM_CIMPL_F_CHECK_IRQ_BEFORE | IEM_CIMPL_F_CHECK_IRQ_AFTER)
-/** May trigger a VM exit (treated like IEM_CIMPL_F_MODE atm). */
-#define IEM_CIMPL_F_VMEXIT              RT_BIT_32(11)
-/** May modify FPU state.
- * @todo Not sure if this is useful yet.  */
-#define IEM_CIMPL_F_FPU                 RT_BIT_32(12)
-/** REP prefixed instruction which may yield before updating PC.
- * @todo Not sure if this is useful, REP functions now return non-zero
- *       status if they don't update the PC. */
-#define IEM_CIMPL_F_REP                 RT_BIT_32(13)
-/** I/O instruction.
- * @todo Not sure if this is useful yet.  */
-#define IEM_CIMPL_F_IO                  RT_BIT_32(14)
-/** Force end of TB after the instruction. */
-#define IEM_CIMPL_F_END_TB              RT_BIT_32(15)
-/** Convenience: Raise exception (technically unnecessary, since it shouldn't return VINF_SUCCESS). */
-#define IEM_CIMPL_F_XCPT \
-    (IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT)
-/** @} */
 
 /** @def IEM_MC_CALL_CIMPL_HLP_RET
  * Helper macro for check that all important IEM_CIMPL_F_XXX bits are set.
@@ -2442,7 +2382,8 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 
 
 /** Declares implicit arguments for IEM_MC_CALL_AVX_AIMPL_2,
- *  IEM_MC_CALL_AVX_AIMPL_3, IEM_MC_CALL_AVX_AIMPL_4, ... */
+ *  IEM_MC_CALL_AVX_AIMPL_3, IEM_MC_CALL_AVX_AIMPL_4, ...
+ * @note IEMAllInstPython.py duplicates the expansion.  */
 #define IEM_MC_IMPLICIT_AVX_AIMPL_ARGS() \
     IEM_MC_ARG_CONST(PX86XSAVEAREA, pXState, &pVCpu->cpum.GstCtx.XState, 0)
 

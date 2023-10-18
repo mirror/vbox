@@ -143,6 +143,7 @@ typedef struct {
 #define EM_X86_64       62      /* Advanced Micro Devices x86-64 */
 #define EM_AMD64    EM_X86_64   /* SunOS compatibility (added by Ramshankar) */
 #define EM_ALPHA        0x9026  /* Alpha (written in the absence of an ABI */
+#define EM_AARCH64      183     /* 64-bit ARM */
 
 /* Special section indexes. */
 #define SHN_UNDEF            0          /* Undefined, missing, irrelevant. */

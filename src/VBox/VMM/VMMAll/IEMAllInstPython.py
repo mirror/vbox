@@ -2002,8 +2002,12 @@ class McBlock(object):
         self.asLines      = []              # type: List[str]
         ## IEM_MC_BEGIN: Argument count.
         self.cArgs        = -1;
+        ## IEM_MC_ARG, IEM_MC_ARG_CONST, IEM_MC_ARG_LOCAL_REF, IEM_MC_ARG_LOCAL_EFLAGS.
+        self.aoArgs       = []              # type: List[McStmtArg]
         ## IEM_MC_BEGIN: Locals count.
         self.cLocals      = -1;
+        ## IEM_MC_LOCAL, IEM_MC_LOCAL_CONST, IEM_MC_ARG_LOCAL_EFLAGS.
+        self.aoLocals     = []              # type: List[McStmtVar]
         ## IEM_MC_BEGIN: IEM_MC_F_XXX dictionary
         self.dsMcFlags    = {}              # type: Dict[str, bool]
         ## IEM_MC_[DEFER_TO|CALL]_CIMPL_XXX: IEM_CIMPL_F_XXX dictionary
@@ -2078,42 +2082,63 @@ class McBlock(object):
     def parseMcArg(oSelf, sName, asParams):
         """ IEM_MC_ARG """
         oSelf.checkStmtParamCount(sName, asParams, 3);
-        return McStmtArg(sName, asParams, asParams[0], asParams[1], int(asParams[2]));
+        oStmt = McStmtArg(sName, asParams, asParams[0], asParams[1], int(asParams[2]));
+        oSelf.aoArgs.append(oStmt);
+        return oStmt;
 
     @staticmethod
     def parseMcArgConst(oSelf, sName, asParams):
         """ IEM_MC_ARG_CONST """
         oSelf.checkStmtParamCount(sName, asParams, 4);
-        return McStmtArg(sName, asParams, asParams[0], asParams[1], int(asParams[3]), sConstValue = asParams[2]);
+        oStmt = McStmtArg(sName, asParams, asParams[0], asParams[1], int(asParams[3]), sConstValue = asParams[2]);
+        oSelf.aoArgs.append(oStmt);
+        return oStmt;
 
     @staticmethod
     def parseMcArgLocalRef(oSelf, sName, asParams):
         """ IEM_MC_ARG_LOCAL_REF """
         oSelf.checkStmtParamCount(sName, asParams, 4);
-        return McStmtArg(sName, asParams, asParams[0], asParams[1], int(asParams[3]), sRef = asParams[2], sRefType = 'local');
+        oStmt = McStmtArg(sName, asParams, asParams[0], asParams[1], int(asParams[3]), sRef = asParams[2], sRefType = 'local');
+        oSelf.aoArgs.append(oStmt);
+        return oStmt;
 
     @staticmethod
     def parseMcArgLocalEFlags(oSelf, sName, asParams):
         """ IEM_MC_ARG_LOCAL_EFLAGS """
         oSelf.checkStmtParamCount(sName, asParams, 3);
         # Note! We split this one up into IEM_MC_LOCAL_VAR and IEM_MC_ARG_LOCAL_REF.
-        return (
-            McStmtVar('IEM_MC_LOCAL', ['uint32_t', asParams[1],], 'uint32_t', asParams[1]),
-            McStmtArg('IEM_MC_ARG_LOCAL_REF', ['uint32_t *', asParams[0], asParams[1], asParams[2]],
-                      'uint32_t *', asParams[0], int(asParams[2]), sRef = asParams[1], sRefType = 'local'),
-        );
+        oStmtLocal = McStmtVar('IEM_MC_LOCAL', ['uint32_t', asParams[1],], 'uint32_t', asParams[1]);
+        oSelf.aoLocals.append(oStmtLocal);
+        oStmtArg   = McStmtArg('IEM_MC_ARG_LOCAL_REF', ['uint32_t *', asParams[0], asParams[1], asParams[2]],
+                               'uint32_t *', asParams[0], int(asParams[2]), sRef = asParams[1], sRefType = 'local');
+        oSelf.aoArgs.append(oStmtArg);
+        return (oStmtLocal, oStmtArg,);
+
+    @staticmethod
+    def parseMcImplicitAvxAArgs(oSelf, sName, asParams):
+        """ IEM_MC_IMPLICIT_AVX_AIMPL_ARGS """
+        oSelf.checkStmtParamCount(sName, asParams, 0);
+        # Note! Translate to IEM_MC_ARG_CONST
+        oStmt = McStmtArg('IEM_MC_ARG_CONST', ['PX86XSAVEAREA', 'pXState', '&pVCpu->cpum.GstCtx.XState', '0'],
+                          'PX86XSAVEAREA', 'pXState', 0,  '&pVCpu->cpum.GstCtx.XState');
+        oSelf.aoArgs.append(oStmt);
+        return oStmt;
 
     @staticmethod
     def parseMcLocal(oSelf, sName, asParams):
         """ IEM_MC_LOCAL """
         oSelf.checkStmtParamCount(sName, asParams, 2);
-        return McStmtVar(sName, asParams, asParams[0], asParams[1]);
+        oStmt = McStmtVar(sName, asParams, asParams[0], asParams[1]);
+        oSelf.aoLocals.append(oStmt);
+        return oStmt;
 
     @staticmethod
     def parseMcLocalConst(oSelf, sName, asParams):
         """ IEM_MC_LOCAL_CONST """
         oSelf.checkStmtParamCount(sName, asParams, 3);
-        return McStmtVar(sName, asParams, asParams[0], asParams[1], sConstValue = asParams[2]);
+        oStmt = McStmtVar(sName, asParams, asParams[0], asParams[1], sConstValue = asParams[2]);
+        oSelf.aoLocals.append(oStmt);
+        return oStmt;
 
     @staticmethod
     def parseMcCallAImpl(oSelf, sName, asParams):
@@ -2880,7 +2905,7 @@ g_dMcStmtParsers = {
     'IEM_MC_IF_RCX_IS_NZ_AND_EFL_BIT_SET':                       (McBlock.parseMcGenericCond,       True,  False, ),
     'IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80':                   (McBlock.parseMcGenericCond,       True,  False, ),
     'IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST':             (McBlock.parseMcGenericCond,       True,  False, ),
-    'IEM_MC_IMPLICIT_AVX_AIMPL_ARGS':                            (McBlock.parseMcGeneric,           False, False, ),
+    'IEM_MC_IMPLICIT_AVX_AIMPL_ARGS':                            (McBlock.parseMcImplicitAvxAArgs,  False, False, ),
     'IEM_MC_INT_CLEAR_ZMM_256_UP':                               (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_LOCAL':                                              (McBlock.parseMcLocal,             False, False, ),
     'IEM_MC_LOCAL_CONST':                                        (McBlock.parseMcLocalConst,        False, False, ),

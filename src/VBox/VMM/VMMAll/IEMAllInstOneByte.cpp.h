@@ -5763,20 +5763,43 @@ FNIEMOP_DEF(iemOp_mov_Sw_Ev)
 
     /*
      * If rm is denoting a register, no more instruction bytes.
+     *
+     * Note! Using IEMOP_MOV_SW_EV_REG_BODY here to specify different
+     *       IEM_CIMPL_F_XXX values depending on the CPU mode and target
+     *       register. This is a restriction of the current recompiler
+     *       approach.
      */
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
-        /** @todo Only set IEM_CIMPL_F_INHIBIT_SHADOW when it actually applies... */
-        IEM_MC_BEGIN(2, 0, 0, 0);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-        IEM_MC_ARG_CONST(uint8_t, iSRegArg, iSegReg, 0);
-        IEM_MC_ARG(uint16_t,      u16Value,          1);
-        IEM_MC_FETCH_GREG_U16(u16Value, IEM_GET_MODRM_RM(pVCpu, bRm));
-        if (iSRegArg >= X86_SREG_FS || !IEM_IS_32BIT_CODE(pVCpu))
-            IEM_MC_CALL_CIMPL_2(IEM_CIMPL_F_INHIBIT_SHADOW,                    iemCImpl_load_SReg, iSRegArg, u16Value);
+#define IEMOP_MOV_SW_EV_REG_BODY(a_fCImplFlags) \
+            IEM_MC_BEGIN(2, 0, 0, a_fCImplFlags); \
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
+            IEM_MC_ARG_CONST(uint8_t, iSRegArg, iSegReg, 0); \
+            IEM_MC_ARG(uint16_t,      u16Value,          1); \
+            IEM_MC_FETCH_GREG_U16(u16Value, IEM_GET_MODRM_RM(pVCpu, bRm)); \
+            IEM_MC_CALL_CIMPL_2(a_fCImplFlags, iemCImpl_load_SReg, iSRegArg, u16Value); \
+            IEM_MC_END()
+
+        if (iSegReg == X86_SREG_SS)
+        {
+            if (IEM_IS_32BIT_CODE(pVCpu))
+            {
+                IEMOP_MOV_SW_EV_REG_BODY(IEM_CIMPL_F_INHIBIT_SHADOW | IEM_CIMPL_F_MODE);
+            }
+            else
+            {
+                IEMOP_MOV_SW_EV_REG_BODY(IEM_CIMPL_F_INHIBIT_SHADOW);
+            }
+        }
+        else if (iSegReg >= X86_SREG_FS || !IEM_IS_32BIT_CODE(pVCpu))
+        {
+            IEMOP_MOV_SW_EV_REG_BODY(0);
+        }
         else
-            IEM_MC_CALL_CIMPL_2(IEM_CIMPL_F_INHIBIT_SHADOW | IEM_CIMPL_F_MODE, iemCImpl_load_SReg, iSRegArg, u16Value);
-        IEM_MC_END();
+        {
+            IEMOP_MOV_SW_EV_REG_BODY(IEM_CIMPL_F_MODE);
+        }
+#undef IEMOP_MOV_SW_EV_REG_BODY
     }
     else
     {
@@ -5784,19 +5807,37 @@ FNIEMOP_DEF(iemOp_mov_Sw_Ev)
          * We're loading the register from memory.  The access is word sized
          * regardless of operand size prefixes.
          */
-        /** @todo Only set IEM_CIMPL_F_INHIBIT_SHADOW when it actually applies... */
-        IEM_MC_BEGIN(2, 1, 0, 0);
-        IEM_MC_ARG_CONST(uint8_t, iSRegArg, iSegReg, 0);
-        IEM_MC_ARG(uint16_t,      u16Value,          1);
-        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
-        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
-        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-        IEM_MC_FETCH_MEM_U16(u16Value, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-        if (iSRegArg >= X86_SREG_FS || !IEM_IS_32BIT_CODE(pVCpu))
-            IEM_MC_CALL_CIMPL_2(IEM_CIMPL_F_INHIBIT_SHADOW,                    iemCImpl_load_SReg, iSRegArg, u16Value);
+#define IEMOP_MOV_SW_EV_MEM_BODY(a_fCImplFlags) \
+            IEM_MC_BEGIN(2, 1, 0, a_fCImplFlags); \
+            IEM_MC_ARG_CONST(uint8_t, iSRegArg, iSegReg, 0); \
+            IEM_MC_ARG(uint16_t,      u16Value,          1); \
+            IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0); \
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
+            IEM_MC_FETCH_MEM_U16(u16Value, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
+            IEM_MC_CALL_CIMPL_2(a_fCImplFlags, iemCImpl_load_SReg, iSRegArg, u16Value); \
+            IEM_MC_END()
+
+        if (iSegReg == X86_SREG_SS)
+        {
+            if (IEM_IS_32BIT_CODE(pVCpu))
+            {
+                IEMOP_MOV_SW_EV_MEM_BODY(IEM_CIMPL_F_INHIBIT_SHADOW | IEM_CIMPL_F_MODE);
+            }
+            else
+            {
+                IEMOP_MOV_SW_EV_MEM_BODY(IEM_CIMPL_F_INHIBIT_SHADOW);
+            }
+        }
+        else if (iSegReg >= X86_SREG_FS || !IEM_IS_32BIT_CODE(pVCpu))
+        {
+            IEMOP_MOV_SW_EV_MEM_BODY(0);
+        }
         else
-            IEM_MC_CALL_CIMPL_2(IEM_CIMPL_F_INHIBIT_SHADOW | IEM_CIMPL_F_MODE, iemCImpl_load_SReg, iSRegArg, u16Value);
-        IEM_MC_END();
+        {
+            IEMOP_MOV_SW_EV_MEM_BODY(IEM_CIMPL_F_MODE);
+        }
+#undef IEMOP_MOV_SW_EV_MEM_BODY
     }
 }
 

@@ -546,6 +546,7 @@ AssertCompileSizeAlignment(IEMTLB, 64);
 
 
 /** @name IEM_MC_F_XXX - MC block flags/clues.
+ * @todo Merge with IEM_CIMPL_F_XXX
  * @{ */
 #define IEM_MC_F_ONLY_8086          RT_BIT_32(0)
 #define IEM_MC_F_MIN_186            RT_BIT_32(1)
@@ -558,6 +559,68 @@ AssertCompileSizeAlignment(IEMTLB, 64);
 #define IEM_MC_F_MIN_CORE           IEM_MC_F_MIN_PENTIUM
 #define IEM_MC_F_64BIT              RT_BIT_32(6)
 #define IEM_MC_F_NOT_64BIT          RT_BIT_32(7)
+/** @} */
+
+/** @name IEM_CIMPL_F_XXX - State change clues for CIMPL calls.
+ *
+ * These clues are mainly for the recompiler, so that it can emit correct code.
+ *
+ * They are processed by the python script and which also automatically
+ * calculates flags for MC blocks based on the statements, extending the use of
+ * these flags to describe MC block behavior to the recompiler core.  The python
+ * script pass the flags to the IEM_MC2_END_EMIT_CALLS macro, but mainly for
+ * error checking purposes.  The script emits the necessary fEndTb = true and
+ * similar statements as this reduces compile time a tiny bit.
+ *
+ * @{ */
+/** Flag set if direct branch, clear if absolute or indirect. */
+#define IEM_CIMPL_F_BRANCH_DIRECT        RT_BIT_32(0)
+/** Flag set if indirect branch, clear if direct or relative.
+ * This is also used for all system control transfers (SYSCALL, SYSRET, INT, ++)
+ * as well as for return instructions (RET, IRET, RETF). */
+#define IEM_CIMPL_F_BRANCH_INDIRECT      RT_BIT_32(1)
+/** Flag set if relative branch, clear if absolute or indirect. */
+#define IEM_CIMPL_F_BRANCH_RELATIVE      RT_BIT_32(2)
+/** Flag set if conditional branch, clear if unconditional. */
+#define IEM_CIMPL_F_BRANCH_CONDITIONAL   RT_BIT_32(3)
+/** Flag set if it's a far branch (changes CS). */
+#define IEM_CIMPL_F_BRANCH_FAR           RT_BIT_32(4)
+/** Convenience: Testing any kind of branch. */
+#define IEM_CIMPL_F_BRANCH_ANY          (IEM_CIMPL_F_BRANCH_DIRECT | IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_RELATIVE)
+
+/** Execution flags may change (IEMCPU::fExec). */
+#define IEM_CIMPL_F_MODE                RT_BIT_32(5)
+/** May change significant portions of RFLAGS. */
+#define IEM_CIMPL_F_RFLAGS              RT_BIT_32(6)
+/** May change the status bits (X86_EFL_STATUS_BITS) in RFLAGS. */
+#define IEM_CIMPL_F_STATUS_FLAGS        RT_BIT_32(7)
+/** May trigger interrupt shadowing. */
+#define IEM_CIMPL_F_INHIBIT_SHADOW      RT_BIT_32(8)
+/** May enable interrupts, so recheck IRQ immediately afterwards executing
+ *  the instruction. */
+#define IEM_CIMPL_F_CHECK_IRQ_AFTER     RT_BIT_32(9)
+/** May disable interrupts, so recheck IRQ immediately before executing the
+ *  instruction. */
+#define IEM_CIMPL_F_CHECK_IRQ_BEFORE    RT_BIT_32(10)
+/** Convenience: Check for IRQ both before and after an instruction. */
+#define IEM_CIMPL_F_CHECK_IRQ_BEFORE_AND_AFTER (IEM_CIMPL_F_CHECK_IRQ_BEFORE | IEM_CIMPL_F_CHECK_IRQ_AFTER)
+/** May trigger a VM exit (treated like IEM_CIMPL_F_MODE atm). */
+#define IEM_CIMPL_F_VMEXIT              RT_BIT_32(11)
+/** May modify FPU state.
+ * @todo Not sure if this is useful yet.  */
+#define IEM_CIMPL_F_FPU                 RT_BIT_32(12)
+/** REP prefixed instruction which may yield before updating PC.
+ * @todo Not sure if this is useful, REP functions now return non-zero
+ *       status if they don't update the PC. */
+#define IEM_CIMPL_F_REP                 RT_BIT_32(13)
+/** I/O instruction.
+ * @todo Not sure if this is useful yet.  */
+#define IEM_CIMPL_F_IO                  RT_BIT_32(14)
+/** Force end of TB after the instruction. */
+#define IEM_CIMPL_F_END_TB              RT_BIT_32(15)
+/** Convenience: Raise exception (technically unnecessary, since it shouldn't return VINF_SUCCESS). */
+#define IEM_CIMPL_F_XCPT \
+    (IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT)
 /** @} */
 
 
@@ -778,13 +841,30 @@ typedef struct IEMTHRDEDCALLENTRY *PIEMTHRDEDCALLENTRY;
 /** Pointer to a const threaded call entry. */
 typedef IEMTHRDEDCALLENTRY const *PCIEMTHRDEDCALLENTRY;
 
-/** Native IEM TB 'function' typedef.
- * This will throw/longjmp on occation.  */
-#if RT_CPLUSPLUS_PREREQ(201700)
-typedef int FNIEMTBNATIVE(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP;
+/**
+ * Native IEM TB 'function' typedef.
+ *
+ * This will throw/longjmp on occation.
+ *
+ * @note    AMD64 doesn't have that many non-volatile registers and does sport
+ *          32-bit address displacments, so we don't need pCtx.
+ *
+ *          On ARM64 pCtx allows us to directly address the whole register
+ *          context without requiring a separate indexing register holding the
+ *          offset. This saves an instruction loading the offset for each guest
+ *          CPU context access, at the cost of a non-volatile register.
+ *          Fortunately, ARM64 has quite a lot more registers.
+ */
+typedef
+#ifdef RT_ARCH_AMD64
+int FNIEMTBNATIVE(PVMCPUCC pVCpu)
 #else
-typedef int FNIEMTBNATIVE(PVMCPUCC pVCpu);
+int FNIEMTBNATIVE(PVMCPUCC pVCpu, PCPUMCTX pCtx)
 #endif
+#if RT_CPLUSPLUS_PREREQ(201700)
+    IEM_NOEXCEPT_MAY_LONGJMP
+#endif
+    ;
 /** Pointer to a native IEM TB entry point function.
  * This will throw/longjmp on occation.  */
 typedef FNIEMTBNATIVE *PFNIEMTBNATIVE;

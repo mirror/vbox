@@ -40,8 +40,9 @@
 /** @name Stack Frame Layout
  *
  * @{  */
-/** The size of the area for stack variables and spills and stuff. */
-#define IEMNATIVE_FRAME_VAR_SIZE            0x40
+/** The size of the area for stack variables and spills and stuff.
+ * @note This limit is duplicated in the python script(s). */
+#define IEMNATIVE_FRAME_VAR_SIZE            0xc0
 #ifdef RT_ARCH_AMD64
 /** Number of stack arguments slots for calls made from the frame. */
 # define IEMNATIVE_FRAME_STACK_ARG_COUNT    4
@@ -112,17 +113,35 @@
 /** @name Fixed Register Allocation(s)
  * @{ */
 /** @def IEMNATIVE_REG_FIXED_PVMCPU
- * The register number hold in pVCpu pointer.  */
+ * The number of the register holding the pVCpu pointer.  */
+/** @def IEMNATIVE_REG_FIXED_PCPUMCTX
+ * The number of the register holding the &pVCpu->cpum.GstCtx pointer.
+ * @note This not available on AMD64, only ARM64. */
 /** @def IEMNATIVE_REG_FIXED_TMP0
  * Dedicated temporary register.
  * @todo replace this by a register allocator and content tracker.  */
+/** @def IEMNATIVE_REG_FIXED_MASK
+ * Mask GPRs with fixes assignments, either by us or dictated by the CPU/OS
+ * architecture. */
 #ifdef RT_ARCH_AMD64
 # define IEMNATIVE_REG_FIXED_PVMCPU         X86_GREG_xBX
 # define IEMNATIVE_REG_FIXED_TMP0           X86_GREG_x11
+# define IEMNATIVE_REG_FIXED_MASK          (  RT_BIT_32(IEMNATIVE_REG_FIXED_PVMCPU) \
+                                            | RT_BIT_32(IEMNATIVE_REG_FIXED_TMP0) \
+                                            | RT_BIT_32(X86_GREG_xSP) \
+                                            | RT_BIT_32(X86_GREG_xBP) )
 
-#elif defined(RT_ARCH_ARM64)
+#elif defined(RT_ARCH_ARM64) || defined(DOXYGEN_RUNNING)
 # define IEMNATIVE_REG_FIXED_PVMCPU         ARMV8_A64_REG_X28
+# define IEMNATIVE_REG_FIXED_PCPUMCTX       ARMV8_A64_REG_X27
 # define IEMNATIVE_REG_FIXED_TMP0           ARMV8_A64_REG_X15
+# define IEMNATIVE_REG_FIXED_MASK           (  RT_BIT_32(ARMV8_A64_REG_SP) \
+                                             | RT_BIT_32(ARMV8_A64_REG_LR) \
+                                             | RT_BIT_32(ARMV8_A64_REG_BP) \
+                                             | RT_BIT_32(IEMNATIVE_REG_FIXED_PVMCPU) \
+                                             | RT_BIT_32(IEMNATIVE_REG_FIXED_PCPUMCTX) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X18) \
+                                             | RT_BIT_32(IEMNATIVE_REG_FIXED_TMP0) )
 
 #else
 # error "port me"
@@ -143,6 +162,8 @@
  * The general purpose register carrying argument \#2. */
 /** @def IEMNATIVE_CALL_ARG3_GREG
  * The general purpose register carrying argument \#3. */
+/** @def IEMNATIVE_CALL_VOLATILE_GREG_MASK
+ * Mask of registers the callee will not save and may trash. */
 #ifdef RT_ARCH_AMD64
 # define IEMNATIVE_CALL_RET_GREG             X86_GREG_xAX
 
@@ -152,6 +173,13 @@
 #  define IEMNATIVE_CALL_ARG1_GREG          X86_GREG_xDX
 #  define IEMNATIVE_CALL_ARG2_GREG          X86_GREG_x8
 #  define IEMNATIVE_CALL_ARG3_GREG          X86_GREG_x9
+#  define IEMNATIVE_CALL_VOLATILE_GREG_MASK (  RT_BIT_32(X86_GREG_xAX) \
+                                             | RT_BIT_32(X86_GREG_xCX) \
+                                             | RT_BIT_32(X86_GREG_xDX) \
+                                             | RT_BIT_32(X86_GREG_x8) \
+                                             | RT_BIT_32(X86_GREG_x9) \
+                                             | RT_BIT_32(X86_GREG_x10) \
+                                             | RT_BIT_32(X86_GREG_x11) )
 # else
 #  define IEMNATIVE_CALL_ARG_GREG_COUNT     6
 #  define IEMNATIVE_CALL_ARG0_GREG          X86_GREG_xDI
@@ -160,6 +188,15 @@
 #  define IEMNATIVE_CALL_ARG3_GREG          X86_GREG_xCX
 #  define IEMNATIVE_CALL_ARG4_GREG          X86_GREG_x8
 #  define IEMNATIVE_CALL_ARG5_GREG          X86_GREG_x9
+#  define IEMNATIVE_CALL_VOLATILE_GREG_MASK (  RT_BIT_32(X86_GREG_xAX) \
+                                             | RT_BIT_32(X86_GREG_xCX) \
+                                             | RT_BIT_32(X86_GREG_xDX) \
+                                             | RT_BIT_32(X86_GREG_xDI) \
+                                             | RT_BIT_32(X86_GREG_xSI) \
+                                             | RT_BIT_32(X86_GREG_x8) \
+                                             | RT_BIT_32(X86_GREG_x9) \
+                                             | RT_BIT_32(X86_GREG_x10) \
+                                             | RT_BIT_32(X86_GREG_x11) )
 # endif
 
 #elif defined(RT_ARCH_ARM64)
@@ -173,10 +210,46 @@
 # define IEMNATIVE_CALL_ARG5_GREG           ARMV8_A64_REG_X5
 # define IEMNATIVE_CALL_ARG6_GREG           ARMV8_A64_REG_X6
 # define IEMNATIVE_CALL_ARG7_GREG           ARMV8_A64_REG_X7
+# define IEMNATIVE_CALL_VOLATILE_GREG_MASK  (  RT_BIT_32(ARMV8_A64_REG_X0) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X1) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X2) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X3) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X4) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X5) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X6) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X7) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X8) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X9) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X10) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X11) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X12) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X13) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X14) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X15) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X16) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X17) )
 
 #endif
 
 /** @} */
+
+
+/** @def IEMNATIVE_HST_GREG_COUNT
+ * Number of host general purpose registers we tracker. */
+/** @def IEMNATIVE_HST_GREG_MASK
+ * Mask corresponding to IEMNATIVE_HST_GREG_COUNT that can be applied to
+ * inverted register masks and such to get down to a correct set of regs. */
+#ifdef RT_ARCH_AMD64
+# define IEMNATIVE_HST_GREG_COUNT           16
+# define IEMNATIVE_HST_GREG_MASK            UINT32_C(0xffff)
+
+#elif defined(RT_ARCH_ARM64)
+# define IEMNATIVE_HST_GREG_COUNT           32
+# define IEMNATIVE_HST_GREG_MASK            UINT32_MAX
+#else
+# error "Port me!"
+#endif
+
 
 /** Native code generator label types. */
 typedef enum
@@ -231,6 +304,165 @@ typedef struct IEMNATIVEFIXUP
 /** Pointer to a native code generator fixup. */
 typedef IEMNATIVEFIXUP *PIEMNATIVEFIXUP;
 
+
+/**
+ * Guest registers that can be shadowed in GPRs.
+ */
+typedef enum IEMNATIVEGSTREG : uint8_t
+{
+    kIemNativeGstReg_GprFirst      = 0,
+    kIemNativeGstReg_GprLast       = 15,
+    kIemNativeGstReg_Pc,
+    kIemNativeGstReg_Rflags,
+    /* gap: 18..23 */
+    kIemNativeGstReg_SegSelFirst   = 24,
+    kIemNativeGstReg_SegSelLast    = 29,
+    kIemNativeGstReg_SegBaseFirst  = 30,
+    kIemNativeGstReg_SegBaseLast   = 35,
+    kIemNativeGstReg_SegLimitFirst = 36,
+    kIemNativeGstReg_SegLimitLast  = 41,
+    kIemNativeGstReg_End
+} IEMNATIVEGSTREG;
+
+/**
+ * Guest registers (classes) that can be referenced.
+ */
+typedef enum IEMNATIVEGSTREGREF : uint8_t
+{
+    kIemNativeGstRegRef_Invalid = 0,
+    kIemNativeGstRegRef_Gpr,
+    kIemNativeGstRegRef_GprHighByte,    /**< AH, CH, DH, BH*/
+    kIemNativeGstRegRef_EFlags,
+    kIemNativeGstRegRef_MxCsr,
+    kIemNativeGstRegRef_FpuReg,
+    kIemNativeGstRegRef_MReg,
+    kIemNativeGstRegRef_XReg,
+    kIemNativeGstRegRef_YReg,
+    kIemNativeGstRegRef_End
+} IEMNATIVEGSTREGREF;
+
+
+/** Variable kinds. */
+typedef enum IEMNATIVEVARKIND : uint8_t
+{
+    /** Customary invalid zero value. */
+    kIemNativeVarKind_Invalid = 0,
+    /** This is either in a register or on the stack. */
+    kIemNativeVarKind_Stack,
+    /** Immediate value - loaded into register when needed, or can live on the
+     *  stack if referenced (in theory). */
+    kIemNativeVarKind_Immediate,
+    /** Variable reference - loaded into register when needed, never stack. */
+    kIemNativeVarKind_VarRef,
+    /** Guest register reference - loaded into register when needed, never stack. */
+    kIemNativeVarKind_GstRegRef,
+    /** End of valid values. */
+    kIemNativeVarKind_End
+} IEMNATIVEVARKIND;
+
+
+/** Variable or argument. */
+typedef struct IEMNATIVEVAR
+{
+    /** The kind of variable. */
+    IEMNATIVEVARKIND    enmKind;
+    /** The variable size in bytes. */
+    uint8_t             cbVar;
+    /** The first stack slot (uint64_t), except for immediate and references
+     *  where it usually is UINT8_MAX. */
+    uint8_t             idxStackSlot;
+    /** The host register allocated for the variable, UINT8_MAX if not. */
+    uint8_t             idxReg;
+    /** The argument number if argument, UINT8_MAX if regular variable. */
+    uint8_t             uArgNo;
+    /** If referenced, the index of the variable referencing this one, otherwise
+     *  UINT8_MAX.  A referenced variable must only be placed on the stack and
+     *  must be either kIemNativeVarKind_Stack or kIemNativeVarKind_Immediate. */
+    uint8_t             idxReferrerVar;
+    /** Guest register being shadowed here, kIemNativeGstReg_End(/UINT8_MAX) if not. */
+    IEMNATIVEGSTREG     enmGstReg;
+    uint8_t             bAlign;
+
+    union
+    {
+        /** kIemNativeVarKind_Immediate: The immediate value. */
+        uint64_t            uValue;
+        /** kIemNativeVarKind_VarRef: The index of the variable being referenced. */
+        uint8_t             idxRefVar;
+        /** kIemNativeVarKind_GstRegRef: The guest register being referrenced. */
+        struct
+        {
+            /** The class of register. */
+            IEMNATIVEGSTREGREF  enmClass;
+            /** Index within the class. */
+            uint8_t             idx;
+        } GstRegRef;
+    } u;
+} IEMNATIVEVAR;
+
+/** What is being kept in a host register. */
+typedef enum IEMNATIVEWHAT : uint8_t
+{
+    /** The traditional invalid zero value. */
+    kIemNativeWhat_Invalid = 0,
+    /** Mapping a variable (IEMNATIVEHSTREG::idxVar). */
+    kIemNativeWhat_Var,
+    /** Temporary register, this is typically freed when a MC completes. */
+    kIemNativeWhat_Tmp,
+    /** Call argument w/o a variable mapping.  This is free (via
+     * IEMNATIVE_CALL_VOLATILE_GREG_MASK) after the call is emitted. */
+    kIemNativeWhat_Arg,
+    /** Return status code.
+     * @todo not sure if we need this... */
+    kIemNativeWhat_rc,
+    /** The fixed pVCpu (PVMCPUCC) register.
+     * @todo consider offsetting this on amd64 to use negative offsets to access
+     *       more members using 8-byte disp. */
+    kIemNativeWhat_pVCpuFixed,
+    /** The fixed pCtx (PCPUMCTX) register.
+     * @todo consider offsetting this on amd64 to use negative offsets to access
+     *       more members using 8-byte disp. */
+    kIemNativeWhat_pCtxFixed,
+    /** Fixed temporary register. */
+    kIemNativeWhat_FixedTmp,
+    /** Register reserved by the CPU or OS architecture. */
+    kIemNativeWhat_FixedReserved,
+    /** End of valid values. */
+    kIemNativeWhat_End
+} IEMNATIVEWHAT;
+
+/**
+ * Host general register entry.
+ *
+ * The actual allocation status is kept in IEMRECOMPILERSTATE::bmHstRegs.
+ *
+ * @todo Track immediate values in host registers similarlly to how we track the
+ *       guest register shadow copies. For it to be real helpful, though,
+ *       we probably need to know which will be reused and put them into
+ *       non-volatile registers, otherwise it's going to be more or less
+ *       restricted to an instruction or two.
+ */
+typedef struct IEMNATIVEHSTREG
+{
+    /** Set of guest registers this one shadows.
+     *
+     * Using a bitmap here so we can designate the same host register as a copy
+     * for more than one guest register.  This is expected to be useful in
+     * situations where one value is copied to several registers in a sequence.
+     * If the mapping is 1:1, then we'd have to pick which side of a 'MOV SRC,DST'
+     * sequence we'd want to let this register follow to be a copy of and there
+     * will always be places where we'd be picking the wrong one.
+     */
+    uint64_t        fGstRegShadows;
+    /** What is being kept in this register. */
+    IEMNATIVEWHAT   enmWhat;
+    /** Variable index if holding a variable, otherwise UINT8_MAX. */
+    uint8_t         idxVar;
+    /** Alignment padding. */
+    uint8_t         abAlign[6];
+} IEMNATIVEHSTREG;
+
+
 /**
  * Native recompiler state.
  */
@@ -259,6 +491,36 @@ typedef struct IEMRECOMPILERSTATE
 
     /** The translation block being recompiled. */
     PCIEMTB                     pTbOrg;
+
+    /** Allocation bitmap fro aHstRegs. */
+    uint32_t                    bmHstRegs;
+
+    /** Bitmap marking which host register contains guest register shadow copies.
+     * This is used during register allocation to try preserve copies.  */
+    uint32_t                    bmHstRegsWithGstShadow;
+    /** Bitmap marking valid entries in aidxGstRegShadows. */
+    uint64_t                    bmGstRegShadows;
+
+    /** Allocation bitmap for aVars. */
+    uint32_t                    bmVars;
+    uint32_t                    u32Align;
+    union
+    {
+        /** Index of variable arguments, UINT8_MAX if not valid. */
+        uint8_t                 aidxArgVars[8];
+        /** For more efficient resetting. */
+        uint64_t                u64ArgVars;
+    };
+
+    /** Host register allocation tracking. */
+    IEMNATIVEHSTREG             aHstRegs[IEMNATIVE_HST_GREG_COUNT];
+    /** Maps a guest register to a host GPR (index by IEMNATIVEGSTREG).
+     * Entries are only valid if the corresponding bit in bmGstRegShadows is set.
+     * (A shadow copy of a guest register can only be held in a one host register,
+     * there are no duplicate copies or ambiguities like that). */
+    uint8_t                     aidxGstRegShadows[kIemNativeGstReg_End];
+    /** Variables and arguments. */
+    IEMNATIVEVAR                aVars[16];
 } IEMRECOMPILERSTATE;
 /** Pointer to a native recompiler state. */
 typedef IEMRECOMPILERSTATE *PIEMRECOMPILERSTATE;
@@ -292,6 +554,17 @@ DECLHIDDEN(bool)            iemNativeAddFixup(PIEMRECOMPILERSTATE pReNative, uin
                                               IEMNATIVEFIXUPTYPE enmType, int8_t offAddend = 0) RT_NOEXCEPT;
 DECLHIDDEN(PIEMNATIVEINSTR) iemNativeInstrBufEnsureSlow(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                         uint32_t cInstrReq) RT_NOEXCEPT;
+
+DECLHIDDEN(uint8_t)         iemNativeRegAllocTmp(PIEMRECOMPILERSTATE pReNative, uint32_t *poff,
+                                                 bool fPreferVolatile = true) RT_NOEXCEPT;
+DECLHIDDEN(uint8_t)         iemNativeRegAllocTmpForGuest(PIEMRECOMPILERSTATE pReNative, uint32_t *poff,
+                                                         IEMNATIVEGSTREG enmGstReg) RT_NOEXCEPT;
+DECLHIDDEN(uint8_t)         iemNativeRegAllocVar(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, uint8_t idxVar) RT_NOEXCEPT;
+DECLHIDDEN(uint32_t)        iemNativeRegAllocArgs(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs) RT_NOEXCEPT;
+DECLHIDDEN(uint8_t)         iemNativeRegAssignRc(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg) RT_NOEXCEPT;
+DECLHIDDEN(void)            iemNativeRegFree(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg) RT_NOEXCEPT;
+DECLHIDDEN(void)            iemNativeRegFreeTmp(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg) RT_NOEXCEPT;
+DECLHIDDEN(void)            iemNativeRegFreeAndFlushMask(PIEMRECOMPILERSTATE pReNative, uint32_t fHstRegMask) RT_NOEXCEPT;
 
 DECLHIDDEN(uint32_t)        iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                                uint8_t idxInstr) RT_NOEXCEPT;
@@ -467,57 +740,263 @@ DECLINLINE(uint32_t) iemNativeEmitLoadGprImm64(PIEMRECOMPILERSTATE pReNative, ui
 }
 
 
-/**
- * Emits a 32-bit GPR load of a VCpu value.
- */
-DECLINLINE(uint32_t) iemNativeEmitLoadGprFromVCpuU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr, uint32_t offVCpu)
-{
 #ifdef RT_ARCH_AMD64
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
-    AssertReturn(pbCodeBuf, UINT32_MAX);
-
-    /* mov reg32, mem32 */
-    if (iGpr >= 8)
-        pbCodeBuf[off++] = X86_OP_REX_R;
-    pbCodeBuf[off++] = 0x8b;
+/**
+ * Common bit of iemNativeEmitLoadGprFromVCpuU64 and friends.
+ */
+DECL_FORCE_INLINE(uint32_t) iemNativeEmitGprByVCpuDisp(uint8_t *pbCodeBuf, uint32_t off, uint8_t iGprReg, uint32_t offVCpu)
+{
     if (offVCpu < 128)
     {
-        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM1, iGpr & 7, IEMNATIVE_REG_FIXED_PVMCPU);
-        pbCodeBuf[off++] = (uint8_t)offVCpu;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM1, iGprReg & 7, IEMNATIVE_REG_FIXED_PVMCPU);
+        pbCodeBuf[off++] = (uint8_t)(int8_t)offVCpu;
     }
     else
     {
-        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM4, iGpr & 7, IEMNATIVE_REG_FIXED_PVMCPU);
-        pbCodeBuf[off++] = RT_BYTE1(offVCpu);
-        pbCodeBuf[off++] = RT_BYTE2(offVCpu);
-        pbCodeBuf[off++] = RT_BYTE3(offVCpu);
-        pbCodeBuf[off++] = RT_BYTE4(offVCpu);
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM4, iGprReg & 7, IEMNATIVE_REG_FIXED_PVMCPU);
+        pbCodeBuf[off++] = RT_BYTE1((uint32_t)offVCpu);
+        pbCodeBuf[off++] = RT_BYTE2((uint32_t)offVCpu);
+        pbCodeBuf[off++] = RT_BYTE3((uint32_t)offVCpu);
+        pbCodeBuf[off++] = RT_BYTE4((uint32_t)offVCpu);
     }
-
+    return off;
+}
 #elif RT_ARCH_ARM64
+/**
+ * Common bit of iemNativeEmitLoadGprFromVCpuU64 and friends.
+ */
+DECL_FORCE_INLINE(uint32_t) iemNativeEmitGprByVCpuLdSt(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprReg,
+                                                       uint32_t offVCpu, ARMV8A64INSTRLDSTTYPE enmOperation, unsigned cbData)
+{
     /*
      * There are a couple of ldr variants that takes an immediate offset, so
      * try use those if we can, otherwise we have to use the temporary register
      * help with the addressing.
      */
-    if (offVCpu < _16K)
+    if (offVCpu < _4K * cbData && !(offVCpu & (cbData - 1)))
     {
         /* Use the unsigned variant of ldr Wt, [<Xn|SP>, #off]. */
         uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
         AssertReturn(pu32CodeBuf, UINT32_MAX);
-        pu32CodeBuf[off++] = UINT32_C(0xb9400000) | (offVCpu << 10) | (IEMNATIVE_REG_FIXED_PVMCPU << 5) | iGpr;
+        pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(enmOperation, iGrp, IEMNATIVE_REG_FIXED_PVMCPU, offVCpu / cbData);
+    }
+    else if (offVCpu - RT_UOFFSETOF(VMCPU, cpum.GstCtx) < (unsigned)(_4K * cbData) && !(offVCpu & (cbData - 1)))
+    {
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        AssertReturn(pu32CodeBuf, UINT32_MAX);
+        pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(enmOperation, iGrp, IEMNATIVE_REG_FIXED_PCPUMCTX,
+                                                      (offVCpu - RT_UOFFSETOF(VMCPU, cpum.GstCtx)) / cbData);
     }
     else
     {
         /* The offset is too large, so we must load it into a register and use
-           ldr Wt, [<Xn|SP>, (<Wm>|<Xm>). */
+           ldr Wt, [<Xn|SP>, (<Wm>|<Xm>)]. */
         /** @todo reduce by offVCpu by >> 3 or >> 2? if it saves instructions? */
         off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, offVCpu);
+
         uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
         AssertReturn(pu32CodeBuf, UINT32_MAX);
-        pu32CodeBuf[off++] = UINT32_C(0xb8600800) | ((uint32_t)IEMNATIVE_REG_FIXED_TMP0 << 16)
-                           | ((uint32_t)IEMNATIVE_REG_FIXED_PVMCPU << 5) | iGpr;
+        pu32CodeBuf[off++] = Armv8A64MkInstrStLdRegIdx(enmOperation, iGpr, IEMNATIVE_REG_FIXED_PVMCPU, IEMNATIVE_REG_FIXED_TMP);
     }
+    return off;
+}
+#endif
+
+
+/**
+ * Emits a 64-bit GPR load of a VCpu value.
+ */
+DECLINLINE(uint32_t) iemNativeEmitLoadGprFromVCpuU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr, uint32_t offVCpu)
+{
+#ifdef RT_ARCH_AMD64
+    /* mov reg64, mem64 */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
+    if (iGpr < 8)
+        pbCodeBuf[off++] = X86_OP_REX_W;
+    else
+        pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x8b;
+    off = iemNativeEmitGprByVCpuDisp(pbCodeBuf,off,iGpr, offVCpu);
+
+#elif RT_ARCH_ARM64
+    off = iemNativeEmitGprByVCpuLdSt(pReNative, off, iGpr, offVCpu, kArmv8A64InstrLdStType_Ld_Dword, sizeof(uint64_t));
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 32-bit GPR load of a VCpu value.
+ * @note Bits 32 thru 63 in the GPR will be zero after the operation.
+ */
+DECLINLINE(uint32_t) iemNativeEmitLoadGprFromVCpuU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr, uint32_t offVCpu)
+{
+#ifdef RT_ARCH_AMD64
+    /* mov reg32, mem32 */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
+    if (iGpr >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x8b;
+    off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, iGpr, offVCpu);
+
+#elif RT_ARCH_ARM64
+    off = iemNativeEmitGprByVCpuLdSt(pReNative, off, iGpr, offVCpu, kArmv8A64InstrLdStType_Ld_Word, sizeof(uint32_t));
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 16-bit GPR load of a VCpu value.
+ * @note Bits 16 thru 63 in the GPR will be zero after the operation.
+ */
+DECLINLINE(uint32_t) iemNativeEmitLoadGprFromVCpuU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr, uint32_t offVCpu)
+{
+#ifdef RT_ARCH_AMD64
+    /* movzx reg32, mem16 */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
+    if (iGpr >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x0f;
+    pbCodeBuf[off++] = 0xb7;
+    off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, iGpr, offVCpu);
+
+#elif RT_ARCH_ARM64
+    off = iemNativeEmitGprByVCpuLdSt(pReNative, off, iGpr, offVCpu, kArmv8A64InstrLdStType_Ld_Half, sizeof(uint16_t));
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a 8-bit GPR load of a VCpu value.
+ * @note Bits 8 thru 63 in the GPR will be zero after the operation.
+ */
+DECLINLINE(uint32_t) iemNativeEmitLoadGprFromVCpuU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr, uint32_t offVCpu)
+{
+#ifdef RT_ARCH_AMD64
+    /* movzx reg32, mem8 */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
+    if (iGpr >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x0f;
+    pbCodeBuf[off++] = 0xb6;
+    off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, iGpr, offVCpu);
+
+#elif RT_ARCH_ARM64
+    off = iemNativeEmitGprByVCpuLdSt(pReNative, off, iGpr, offVCpu, kArmv8A64InstrLdStType_Ld_Byte, sizeof(uint8_t));
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a store of a GPR value to a 64-bit VCpu field.
+ */
+DECLINLINE(uint32_t) iemNativeEmitStoreGprToVCpuU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr, uint32_t offVCpu)
+{
+#ifdef RT_ARCH_AMD64
+    /* mov mem64, reg64 */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
+    if (iGpr < 8)
+        pbCodeBuf[off++] = X86_OP_REX_W;
+    else
+        pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x89;
+    off = iemNativeEmitGprByVCpuDisp(pbCodeBuf,off,iGpr, offVCpu);
+
+#elif RT_ARCH_ARM64
+    off = iemNativeEmitGprByVCpuLdSt(pReNative, off, iGpr, offVCpu, kArmv8A64InstrLdStType_St_Dword, sizeof(uint64_t));
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a store of a GPR value to a 32-bit VCpu field.
+ */
+DECLINLINE(uint32_t) iemNativeEmitStoreGprFromVCpuU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr, uint32_t offVCpu)
+{
+#ifdef RT_ARCH_AMD64
+    /* mov mem32, reg32 */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
+    if (iGpr >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x89;
+    off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, iGpr, offVCpu);
+
+#elif RT_ARCH_ARM64
+    off = iemNativeEmitGprByVCpuLdSt(pReNative, off, iGpr, offVCpu, kArmv8A64InstrLdStType_St_Word, sizeof(uint32_t));
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a store of a GPR value to a 16-bit VCpu field.
+ */
+DECLINLINE(uint32_t) iemNativeEmitStoreGprFromVCpuU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr, uint32_t offVCpu)
+{
+#ifdef RT_ARCH_AMD64
+    /* mov mem16, reg16 */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
+    pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+    if (iGpr >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x89;
+    off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, iGpr, offVCpu);
+
+#elif RT_ARCH_ARM64
+    off = iemNativeEmitGprByVCpuLdSt(pReNative, off, iGpr, offVCpu, kArmv8A64InstrLdStType_St_Half, sizeof(uint16_t));
+
+#else
+# error "port me"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits a store of a GPR value to a 8-bit VCpu field.
+ */
+DECLINLINE(uint32_t) iemNativeEmitStoreGprFromVCpuU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr, uint32_t offVCpu)
+{
+#ifdef RT_ARCH_AMD64
+    /* mov mem8, reg8 */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
+    if (iGpr >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x88;
+    off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, iGpr, offVCpu);
+
+#elif RT_ARCH_ARM64
+    off = iemNativeEmitGprByVCpuLdSt(pReNative, off, iGpr, offVCpu, kArmv8A64InstrLdStType_St_Byte, sizeof(uint8_t));
 
 #else
 # error "port me"
@@ -738,7 +1217,7 @@ DECLINLINE(uint32_t) iemNativeEmitSubGprImm(PIEMRECOMPILERSTATE pReNative, uint3
     /* sub gprdst, imm8/imm32 */
     uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
     AssertReturn(pbCodeBuf, UINT32_MAX);
-    if (iGprDst < 7)
+    if (iGprDst < 8)
         pbCodeBuf[off++] = X86_OP_REX_W;
     else
         pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_B;
@@ -760,6 +1239,36 @@ DECLINLINE(uint32_t) iemNativeEmitSubGprImm(PIEMRECOMPILERSTATE pReNative, uint3
     return off;
 }
 #endif
+
+
+/**
+ * Emits a 32-bit GPR additions with a 8-bit signed immediate.
+ * @note Bits 32 thru 63 in the GPR will be zero after the operation.
+ */
+DECLINLINE(uint32_t ) iemNativeEmitAddGpr32Imm8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, int8_t iImm8)
+{
+#if defined(RT_ARCH_AMD64)
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
+    if (iGprDst >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_B;
+    pbCodeBuf[off++] = 0x83;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, iGprDst & 7);
+    pbCodeBuf[off++] = (uint8_t)iImm8;
+
+#elif defined(RT_ARCH_ARM64)
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    AssertReturn(pu32CodeBuf, UINT32_MAX);
+    if (iImm8 >= 0)
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(false /*fSub*/, iGprDst, iGprDst, (uint8_t)iImm8, false /*f64Bit*/);
+    else
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, iGprDst, iGprDst, (uint8_t)-iImm8, false /*f64Bit*/);
+
+#else
+# error "Port me"
+#endif
+    return off;
+}
 
 /** @} */
 
