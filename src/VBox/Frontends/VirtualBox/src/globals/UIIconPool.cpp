@@ -766,8 +766,8 @@ void UIIconPoolGeneral::overlayArchitectureTextOnPixmap(const QString &strArch, 
 #endif
 #if 1
     QFont font = qApp->font();
-    /* Set font' size wrt. @p pixmap height: */
-    font.setPixelSize(0.31 * pixmap.rect().height());
+    /* Set font' size wrt. @p pixmap height/dpr: */
+    font.setPixelSize(0.31 * pixmap.height() / pixmap.devicePixelRatio());
     font.setBold(true);
     QPainter painter(&pixmap);
     painter.setFont(font);
