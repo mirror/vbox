@@ -165,7 +165,8 @@ private:
     virtual ~UIIconPoolGeneral() /* override final */;
     /** Overlay text @p strArch on top of @p pixmap. */
     void overlayArchitectureTextOnPixmap(const QString &strArch, QPixmap &pixmap) const;
-
+    /** Returns the architecture text we overlay on guest OS type id icon.*/
+    QString determineOSArchString(const QString &osTypeId) const;
     /** Holds the singleton instance. */
     static UIIconPoolGeneral *s_pInstance;
 

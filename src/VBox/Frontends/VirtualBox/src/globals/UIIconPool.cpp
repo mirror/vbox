@@ -721,9 +721,20 @@ QPixmap UIIconPoolGeneral::guestOSTypePixmapDefault(const QString &strOSTypeID, 
             pixmap = icon.pixmap(iconSize);
     }
 
-    //overlayArchitectureTextOnPixmap("A64", pixmap);
+    overlayArchitectureTextOnPixmap(determineOSArchString(strOSTypeID), pixmap);
     /* Return pixmap: */
     return pixmap;
+}
+
+QString UIIconPoolGeneral::determineOSArchString(const QString &osTypeId) const
+{
+    if (osTypeId.contains("_x64") || osTypeId.contains("_64"))
+        return QString("x64");
+    else if (osTypeId.contains("arm32"))
+        return QString("A32");
+    else if (osTypeId.contains("arm64"))
+        return QString("A64");
+    return QString("32");
 }
 
 void UIIconPoolGeneral::overlayArchitectureTextOnPixmap(const QString &strArch, QPixmap &pixmap) const
@@ -756,7 +767,7 @@ void UIIconPoolGeneral::overlayArchitectureTextOnPixmap(const QString &strArch, 
 #if 1
     QFont font = qApp->font();
     /* Set font' size wrt. @p pixmap height: */
-    font.setPixelSize(0.3 * pixmap.rect().height());
+    font.setPixelSize(0.31 * pixmap.rect().height());
     font.setBold(true);
     QPainter painter(&pixmap);
     painter.setFont(font);
