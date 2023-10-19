@@ -228,7 +228,9 @@ endif
 ifdef VBOX_WITH_LNX_ARM64_ADDITIONS
  ifdef VBOX_WITH_ADDITIONS_ISO.linux.arm64
   VBOX_PATH_ADDITIONS.linux.arm64 = $(PATH_OUT_BASE)/linux.arm64/$(KBUILD_TYPE)/bin/additions
-  ifdef VBOX_WITH_COMBINED_LINUX_GUEST_PACKAGE
+  # Use specific check for arm64 platform because it currently is built separately and
+  # therefore cannot be combined into the x86/amd64 installer package.
+  ifdef VBOX_WITH_COMBINED_LINUX_GUEST_PACKAGE_INCLUDING_ARM64
    VBOX_LNX_ADD_ARM64_RUN_PKG = VBoxLinuxAdditions.run
   else
    VBOX_LNX_ADD_ARM64_RUN_PKG = VBoxLinuxAdditions-arm64.run

@@ -426,7 +426,7 @@ endif
 # Don't create the additions ISO.
 # (Used by the additions build server, don't invert it.)
 #VBOX_WITHOUT_ADDITIONS_ISO = 1
-# Include and build he Linux arm64 guest additions.
+# Include and build the Linux arm64 guest additions.
 VBOX_WITH_LNX_ARM64_ADDITIONS = 1
 ## @}
 
