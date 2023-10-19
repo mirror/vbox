@@ -153,14 +153,17 @@ void UIGlobalSettingsGeneral::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
+void UIGlobalSettingsGeneral::filterOut(bool fExpertMode, const QString &strFilter)
+{
+    /* Call to base-class: */
+    UIEditor::filterOut(fExpertMode, strFilter);
+
+    updateMinimumLayoutHint();
+}
+
 void UIGlobalSettingsGeneral::retranslateUi()
 {
-    /* These editors have own labels, but we want them to be properly layouted according to each other: */
-    int iMinimumLayoutHint = 0;
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorDefaultMachineFolder->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorVRDEAuthLibrary->minimumLabelHorizontalHint());
-    m_pEditorDefaultMachineFolder->setMinimumLayoutIndent(iMinimumLayoutHint);
-    m_pEditorVRDEAuthLibrary->setMinimumLayoutIndent(iMinimumLayoutHint);
+    updateMinimumLayoutHint();
 }
 
 void UIGlobalSettingsGeneral::prepare()
@@ -248,4 +251,18 @@ bool UIGlobalSettingsGeneral::saveData()
     }
     /* Return result: */
     return fSuccess;
+}
+
+void UIGlobalSettingsGeneral::updateMinimumLayoutHint()
+{
+    /* These editors have own labels, but we want them to be properly layouted according to each other: */
+    int iMinimumLayoutHint = 0;
+    if (m_pEditorDefaultMachineFolder && !m_pEditorDefaultMachineFolder->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorDefaultMachineFolder->minimumLabelHorizontalHint());
+    if (m_pEditorVRDEAuthLibrary && !m_pEditorVRDEAuthLibrary->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorVRDEAuthLibrary->minimumLabelHorizontalHint());
+    if (m_pEditorDefaultMachineFolder)
+        m_pEditorDefaultMachineFolder->setMinimumLayoutIndent(iMinimumLayoutHint);
+    if (m_pEditorVRDEAuthLibrary)
+        m_pEditorVRDEAuthLibrary->setMinimumLayoutIndent(iMinimumLayoutHint);
 }

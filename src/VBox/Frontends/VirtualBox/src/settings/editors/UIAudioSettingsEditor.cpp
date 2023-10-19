@@ -132,6 +132,14 @@ void UIAudioSettingsEditor::setFeatureOptionsAvailable(bool fAvailable)
         m_pEditorAudioFeatures->setEnabled(fAvailable);
 }
 
+void UIAudioSettingsEditor::filterOut(bool fExpertMode, const QString &strFilter)
+{
+    /* Call to base-class: */
+    UIEditor::filterOut(fExpertMode, strFilter);
+
+    updateMinimumLayoutHint();
+}
+
 void UIAudioSettingsEditor::retranslateUi()
 {
     if (m_pCheckboxFeature)
@@ -141,20 +149,7 @@ void UIAudioSettingsEditor::retranslateUi()
                                           "and will communicate with the host audio system using the specified driver."));
     }
 
-    /* These editors have own labels, but we want them to be properly layouted according to each other: */
-    int iMinimumLayoutHint = 0;
-    if (m_pEditorAudioHostDriver)
-        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorAudioHostDriver->minimumLabelHorizontalHint());
-    if (m_pEditorAudioController)
-        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorAudioController->minimumLabelHorizontalHint());
-    if (m_pEditorAudioFeatures)
-        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorAudioFeatures->minimumLabelHorizontalHint());
-    if (m_pEditorAudioHostDriver)
-        m_pEditorAudioHostDriver->setMinimumLayoutIndent(iMinimumLayoutHint);
-    if (m_pEditorAudioController)
-        m_pEditorAudioController->setMinimumLayoutIndent(iMinimumLayoutHint);
-    if (m_pEditorAudioFeatures)
-        m_pEditorAudioFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
+    updateMinimumLayoutHint();
 }
 
 void UIAudioSettingsEditor::sltHandleFeatureToggled()
@@ -244,4 +239,22 @@ void UIAudioSettingsEditor::prepareConnections()
 void UIAudioSettingsEditor::updateFeatureAvailability()
 {
     m_pWidgetSettings->setEnabled(m_pCheckboxFeature->isChecked());
+}
+
+void UIAudioSettingsEditor::updateMinimumLayoutHint()
+{
+    /* These editors have own labels, but we want them to be properly layouted according to each other: */
+    int iMinimumLayoutHint = 0;
+    if (m_pEditorAudioHostDriver && !m_pEditorAudioHostDriver->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorAudioHostDriver->minimumLabelHorizontalHint());
+    if (m_pEditorAudioController && !m_pEditorAudioController->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorAudioController->minimumLabelHorizontalHint());
+    if (m_pEditorAudioFeatures && !m_pEditorAudioFeatures->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorAudioFeatures->minimumLabelHorizontalHint());
+    if (m_pEditorAudioHostDriver)
+        m_pEditorAudioHostDriver->setMinimumLayoutIndent(iMinimumLayoutHint);
+    if (m_pEditorAudioController)
+        m_pEditorAudioController->setMinimumLayoutIndent(iMinimumLayoutHint);
+    if (m_pEditorAudioFeatures)
+        m_pEditorAudioFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
 }

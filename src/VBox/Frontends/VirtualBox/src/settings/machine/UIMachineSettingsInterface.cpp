@@ -332,14 +332,17 @@ void UIMachineSettingsInterface::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
+void UIMachineSettingsInterface::filterOut(bool fExpertMode, const QString &strFilter)
+{
+    /* Call to base-class: */
+    UIEditor::filterOut(fExpertMode, strFilter);
+
+    updateMinimumLayoutHint();
+}
+
 void UIMachineSettingsInterface::retranslateUi()
 {
-    /* These editors have own labels, but we want them to be properly layouted according to each other: */
-    int iMinimumLayoutHint = 0;
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorVisualState->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorMiniToolabSettings->minimumLabelHorizontalHint());
-    m_pEditorVisualState->setMinimumLayoutIndent(iMinimumLayoutHint);
-    m_pEditorMiniToolabSettings->setMinimumLayoutIndent(iMinimumLayoutHint);
+    updateMinimumLayoutHint();
 }
 
 void UIMachineSettingsInterface::polishPage()
@@ -597,4 +600,18 @@ bool UIMachineSettingsInterface::saveVisualStateData()
     }
     /* Return result: */
     return fSuccess;
+}
+
+void UIMachineSettingsInterface::updateMinimumLayoutHint()
+{
+    /* These editors have own labels, but we want them to be properly layouted according to each other: */
+    int iMinimumLayoutHint = 0;
+    if (m_pEditorVisualState && !m_pEditorVisualState->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorVisualState->minimumLabelHorizontalHint());
+    if (m_pEditorMiniToolabSettings && !m_pEditorMiniToolabSettings->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorMiniToolabSettings->minimumLabelHorizontalHint());
+    if (m_pEditorVisualState)
+        m_pEditorVisualState->setMinimumLayoutIndent(iMinimumLayoutHint);
+    if (m_pEditorMiniToolabSettings)
+        m_pEditorMiniToolabSettings->setMinimumLayoutIndent(iMinimumLayoutHint);
 }

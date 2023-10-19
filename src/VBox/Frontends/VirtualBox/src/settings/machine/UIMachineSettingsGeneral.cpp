@@ -462,6 +462,14 @@ void UIMachineSettingsGeneral::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pEditorDragAndDrop, m_pEditorDescription);
 }
 
+void UIMachineSettingsGeneral::filterOut(bool fExpertMode, const QString &strFilter)
+{
+    /* Call to base-class: */
+    UIEditor::filterOut(fExpertMode, strFilter);
+
+    updateMinimumLayoutHint();
+}
+
 void UIMachineSettingsGeneral::retranslateUi()
 {
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabBasic), tr("Basi&c"));
@@ -469,14 +477,7 @@ void UIMachineSettingsGeneral::retranslateUi()
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabDescription), tr("D&escription"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabEncryption), tr("Disk Enc&ryption"));
 
-    /* These editors have own labels, but we want them to be properly layouted according to each other: */
-    int iMinimumLayoutHint = 0;
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorSnapshotFolder->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorClipboard->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorDragAndDrop->minimumLabelHorizontalHint());
-    m_pEditorSnapshotFolder->setMinimumLayoutIndent(iMinimumLayoutHint);
-    m_pEditorClipboard->setMinimumLayoutIndent(iMinimumLayoutHint);
-    m_pEditorDragAndDrop->setMinimumLayoutIndent(iMinimumLayoutHint);
+    updateMinimumLayoutHint();
 }
 
 void UIMachineSettingsGeneral::polishPage()
@@ -1049,4 +1050,22 @@ bool UIMachineSettingsGeneral::saveEncryptionData()
     }
     /* Return result: */
     return fSuccess;
+}
+
+void UIMachineSettingsGeneral::updateMinimumLayoutHint()
+{
+    /* These editors have own labels, but we want them to be properly layouted according to each other: */
+    int iMinimumLayoutHint = 0;
+    if (m_pEditorSnapshotFolder && !m_pEditorSnapshotFolder->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorSnapshotFolder->minimumLabelHorizontalHint());
+    if (m_pEditorClipboard && !m_pEditorClipboard->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorClipboard->minimumLabelHorizontalHint());
+    if (m_pEditorDragAndDrop && !m_pEditorDragAndDrop->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorDragAndDrop->minimumLabelHorizontalHint());
+    if (m_pEditorSnapshotFolder)
+        m_pEditorSnapshotFolder->setMinimumLayoutIndent(iMinimumLayoutHint);
+    if (m_pEditorClipboard)
+        m_pEditorClipboard->setMinimumLayoutIndent(iMinimumLayoutHint);
+    if (m_pEditorDragAndDrop)
+        m_pEditorDragAndDrop->setMinimumLayoutIndent(iMinimumLayoutHint);
 }

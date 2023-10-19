@@ -609,38 +609,21 @@ void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pEditorParavirtProvider, m_pEditorAccelerationFeatures);
 }
 
+void UIMachineSettingsSystem::filterOut(bool fExpertMode, const QString &strFilter)
+{
+    /* Call to base-class: */
+    UIEditor::filterOut(fExpertMode, strFilter);
+
+    updateMinimumLayoutHint();
+}
+
 void UIMachineSettingsSystem::retranslateUi()
 {
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabMotherboard), tr("&Motherboard"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabProcessor), tr("&Processor"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabAcceleration), tr("Acce&leration"));
 
-    /* These editors have own labels, but we want them to be properly layouted according to each other: */
-    int iMinimumLayoutHint = 0;
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorBaseMemory->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorBootOrder->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorChipset->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorTpm->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorPointingHID->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorMotherboardFeatures->minimumLabelHorizontalHint());
-    m_pEditorBaseMemory->setMinimumLayoutIndent(iMinimumLayoutHint);
-    m_pEditorBootOrder->setMinimumLayoutIndent(iMinimumLayoutHint);
-    m_pEditorChipset->setMinimumLayoutIndent(iMinimumLayoutHint);
-    m_pEditorTpm->setMinimumLayoutIndent(iMinimumLayoutHint);
-    m_pEditorPointingHID->setMinimumLayoutIndent(iMinimumLayoutHint);
-    m_pEditorMotherboardFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
-    iMinimumLayoutHint = 0;
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorVCPU->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorExecCap->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorProcessorFeatures->minimumLabelHorizontalHint());
-    m_pEditorVCPU->setMinimumLayoutIndent(iMinimumLayoutHint);
-    m_pEditorExecCap->setMinimumLayoutIndent(iMinimumLayoutHint);
-    m_pEditorProcessorFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
-    iMinimumLayoutHint = 0;
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorParavirtProvider->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorAccelerationFeatures->minimumLabelHorizontalHint());
-    m_pEditorParavirtProvider->setMinimumLayoutIndent(iMinimumLayoutHint);
-    m_pEditorAccelerationFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
+    updateMinimumLayoutHint();
 }
 
 void UIMachineSettingsSystem::polishPage()
@@ -1184,4 +1167,58 @@ bool UIMachineSettingsSystem::saveAccelerationData()
     }
     /* Return result: */
     return fSuccess;
+}
+
+void UIMachineSettingsSystem::updateMinimumLayoutHint()
+{
+    /* These editors have own labels, but we want them to be properly layouted according to each other: */
+    int iMinimumLayoutHint = 0;
+    if (m_pEditorBaseMemory && !m_pEditorBaseMemory->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorBaseMemory->minimumLabelHorizontalHint());
+    if (m_pEditorBootOrder && !m_pEditorBootOrder->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorBootOrder->minimumLabelHorizontalHint());
+    if (m_pEditorChipset && !m_pEditorChipset->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorChipset->minimumLabelHorizontalHint());
+    if (m_pEditorTpm && !m_pEditorTpm->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorTpm->minimumLabelHorizontalHint());
+    if (m_pEditorPointingHID && !m_pEditorPointingHID->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorPointingHID->minimumLabelHorizontalHint());
+    if (m_pEditorMotherboardFeatures && !m_pEditorMotherboardFeatures->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorMotherboardFeatures->minimumLabelHorizontalHint());
+    if (m_pEditorBaseMemory)
+        m_pEditorBaseMemory->setMinimumLayoutIndent(iMinimumLayoutHint);
+    if (m_pEditorBootOrder)
+        m_pEditorBootOrder->setMinimumLayoutIndent(iMinimumLayoutHint);
+    if (m_pEditorChipset)
+        m_pEditorChipset->setMinimumLayoutIndent(iMinimumLayoutHint);
+    if (m_pEditorTpm)
+        m_pEditorTpm->setMinimumLayoutIndent(iMinimumLayoutHint);
+    if (m_pEditorPointingHID)
+        m_pEditorPointingHID->setMinimumLayoutIndent(iMinimumLayoutHint);
+    if (m_pEditorMotherboardFeatures)
+        m_pEditorMotherboardFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
+
+    iMinimumLayoutHint = 0;
+    if (m_pEditorVCPU && !m_pEditorVCPU->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorVCPU->minimumLabelHorizontalHint());
+    if (m_pEditorExecCap && !m_pEditorExecCap->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorExecCap->minimumLabelHorizontalHint());
+    if (m_pEditorProcessorFeatures && !m_pEditorProcessorFeatures->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorProcessorFeatures->minimumLabelHorizontalHint());
+    if (m_pEditorVCPU)
+        m_pEditorVCPU->setMinimumLayoutIndent(iMinimumLayoutHint);
+    if (m_pEditorExecCap)
+        m_pEditorExecCap->setMinimumLayoutIndent(iMinimumLayoutHint);
+    if (m_pEditorProcessorFeatures)
+        m_pEditorProcessorFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
+
+    iMinimumLayoutHint = 0;
+    if (m_pEditorParavirtProvider && !m_pEditorParavirtProvider->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorParavirtProvider->minimumLabelHorizontalHint());
+    if (m_pEditorAccelerationFeatures && !m_pEditorAccelerationFeatures->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorAccelerationFeatures->minimumLabelHorizontalHint());
+    if (m_pEditorParavirtProvider)
+        m_pEditorParavirtProvider->setMinimumLayoutIndent(iMinimumLayoutHint);
+    if (m_pEditorAccelerationFeatures)
+        m_pEditorAccelerationFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
 }

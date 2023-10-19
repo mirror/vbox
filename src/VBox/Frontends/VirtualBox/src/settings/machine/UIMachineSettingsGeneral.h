@@ -85,6 +85,11 @@ protected:
     /** Defines TAB order for passed @a pWidget. */
     virtual void setOrderAfter(QWidget *pWidget) RT_OVERRIDE;
 
+    /** Filters out contents.
+      * @param  fExpertMode  Brings whether settings expert mode is requested.
+      * @param  strFilter    Brings the filter description should correspond to. */
+    virtual void filterOut(bool fExpertMode, const QString &strFilter) RT_OVERRIDE;
+
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE;
 
@@ -127,6 +132,9 @@ private:
     bool saveDescriptionData();
     /** Saves existing 'Encryption' data from cache. */
     bool saveEncryptionData();
+
+    /** Updates minimum layout hint. */
+    void updateMinimumLayoutHint();
 
     /** Holds whether the encryption cipher was changed.
       * We are holding that argument here because we do not know

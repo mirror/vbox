@@ -750,6 +750,14 @@ void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pEditorVRDESettings, m_pEditorRecordingSettings);
 }
 
+void UIMachineSettingsDisplay::filterOut(bool fExpertMode, const QString &strFilter)
+{
+    /* Call to base-class: */
+    UIEditor::filterOut(fExpertMode, strFilter);
+
+    updateMinimumLayoutHint();
+}
+
 void UIMachineSettingsDisplay::retranslateUi()
 {
     /* Translate tab-widget: */
@@ -757,22 +765,7 @@ void UIMachineSettingsDisplay::retranslateUi()
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabRemoteDisplay), tr("&Remote Display"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabRecording), tr("Re&cording"));
 
-    /* These editors have own labels, but we want them to be properly layouted according to each other: */
-    int iMinimumLayoutHint = 0;
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorVideoMemorySize->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorMonitorCount->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorScaleFactor->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorGraphicsController->minimumLabelHorizontalHint());
-#ifdef VBOX_WITH_3D_ACCELERATION
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorDisplayScreenFeatures->minimumLabelHorizontalHint());
-#endif
-    m_pEditorVideoMemorySize->setMinimumLayoutIndent(iMinimumLayoutHint);
-    m_pEditorMonitorCount->setMinimumLayoutIndent(iMinimumLayoutHint);
-    m_pEditorScaleFactor->setMinimumLayoutIndent(iMinimumLayoutHint);
-    m_pEditorGraphicsController->setMinimumLayoutIndent(iMinimumLayoutHint);
-#ifdef VBOX_WITH_3D_ACCELERATION
-    m_pEditorDisplayScreenFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
-#endif
+    updateMinimumLayoutHint();
 }
 
 void UIMachineSettingsDisplay::polishPage()
@@ -1457,4 +1450,34 @@ bool UIMachineSettingsDisplay::saveRecordingData()
 
     /* Return result: */
     return fSuccess;
+}
+
+void UIMachineSettingsDisplay::updateMinimumLayoutHint()
+{
+    /* These editors have own labels, but we want them to be properly layouted according to each other: */
+    int iMinimumLayoutHint = 0;
+    if (m_pEditorVideoMemorySize && !m_pEditorVideoMemorySize->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorVideoMemorySize->minimumLabelHorizontalHint());
+    if (m_pEditorMonitorCount && !m_pEditorMonitorCount->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorMonitorCount->minimumLabelHorizontalHint());
+    if (m_pEditorScaleFactor && !m_pEditorScaleFactor->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorScaleFactor->minimumLabelHorizontalHint());
+    if (m_pEditorGraphicsController && !m_pEditorGraphicsController->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorGraphicsController->minimumLabelHorizontalHint());
+#ifdef VBOX_WITH_3D_ACCELERATION
+    if (m_pEditorDisplayScreenFeatures && !m_pEditorDisplayScreenFeatures->isHidden())
+        iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorDisplayScreenFeatures->minimumLabelHorizontalHint());
+#endif
+    if (m_pEditorVideoMemorySize)
+        m_pEditorVideoMemorySize->setMinimumLayoutIndent(iMinimumLayoutHint);
+    if (m_pEditorMonitorCount)
+        m_pEditorMonitorCount->setMinimumLayoutIndent(iMinimumLayoutHint);
+    if (m_pEditorScaleFactor)
+        m_pEditorScaleFactor->setMinimumLayoutIndent(iMinimumLayoutHint);
+    if (m_pEditorGraphicsController)
+        m_pEditorGraphicsController->setMinimumLayoutIndent(iMinimumLayoutHint);
+#ifdef VBOX_WITH_3D_ACCELERATION
+    if (m_pEditorDisplayScreenFeatures)
+        m_pEditorDisplayScreenFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
+#endif
 }
