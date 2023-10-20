@@ -44,11 +44,10 @@
 #include <string.h>
 #include <stropts.h>
 #include <unistd.h>
-#include <paths.h>
 #include <libgen.h>
 #include <getopt.h>
 
-#define VBOXMSLNK_MUXID_FILE    _PATH_SYSVOL "/vboxmslnk.muxid"
+#define VBOXMSLNK_MUXID_FILE    "/system/volatile/vboxmslnk.muxid"
 
 static const char *g_pszProgName;
 
