@@ -114,8 +114,18 @@ extern "C" void *__deregister_frame_info(void *pvBegin);           /* (returns p
 #endif
 
 
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 /** Always count instructions for now. */
 #define IEMNATIVE_WITH_INSTRUCTION_COUNTING
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static uint32_t iemNativeEmitGuestRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                uint8_t idxReg, IEMNATIVEGSTREG enmGstReg);
 
 
 /*********************************************************************************************************************************
@@ -1832,6 +1842,11 @@ DECLHIDDEN(PIEMNATIVEINSTR) iemNativeInstrBufEnsureSlow(PIEMRECOMPILERSTATE pReN
 }
 
 
+
+/*********************************************************************************************************************************
+*   Register Allocator                                                                                                           *
+*********************************************************************************************************************************/
+
 /**
  * Register parameter indexes (indexed by argument number).
  */
@@ -1883,6 +1898,81 @@ DECL_HIDDEN_CONST(uint32_t) const g_afIemNativeCallRegs[] =
 #   endif
 #  endif
 # endif
+#endif
+};
+
+/**
+ * Info about shadowed guest register values.
+ * @see IEMNATIVEGSTREG
+ */
+static struct
+{
+    /** Offset in VMCPU. */
+    uint32_t    off;
+    /** The field size. */
+    uint8_t     cb;
+    /** Name (for logging). */
+    const char *pszName;
+} const g_aGstShadowInfo[] =
+{
+#define CPUMCTX_OFF_AND_SIZE(a_Reg) RT_UOFFSETOF(VMCPU, cpum.GstCtx. a_Reg), RT_SIZEOFMEMB(VMCPU, cpum.GstCtx. a_Reg)
+    /* [kIemNativeGstReg_GprFirst + X86_GREG_xAX] = */  { CPUMCTX_OFF_AND_SIZE(rax),                "rax", },
+    /* [kIemNativeGstReg_GprFirst + X86_GREG_xCX] = */  { CPUMCTX_OFF_AND_SIZE(rcx),                "rcx", },
+    /* [kIemNativeGstReg_GprFirst + X86_GREG_xDX] = */  { CPUMCTX_OFF_AND_SIZE(rdx),                "rdx", },
+    /* [kIemNativeGstReg_GprFirst + X86_GREG_xBX] = */  { CPUMCTX_OFF_AND_SIZE(rbx),                "rbx", },
+    /* [kIemNativeGstReg_GprFirst + X86_GREG_xSP] = */  { CPUMCTX_OFF_AND_SIZE(rsp),                "rsp", },
+    /* [kIemNativeGstReg_GprFirst + X86_GREG_xBP] = */  { CPUMCTX_OFF_AND_SIZE(rbp),                "rbp", },
+    /* [kIemNativeGstReg_GprFirst + X86_GREG_xSI] = */  { CPUMCTX_OFF_AND_SIZE(rsi),                "rsi", },
+    /* [kIemNativeGstReg_GprFirst + X86_GREG_xDI] = */  { CPUMCTX_OFF_AND_SIZE(rdi),                "rdi", },
+    /* [kIemNativeGstReg_GprFirst + X86_GREG_x8 ] = */  { CPUMCTX_OFF_AND_SIZE(r8),                 "r8", },
+    /* [kIemNativeGstReg_GprFirst + X86_GREG_x9 ] = */  { CPUMCTX_OFF_AND_SIZE(r9),                 "r9", },
+    /* [kIemNativeGstReg_GprFirst + X86_GREG_x10] = */  { CPUMCTX_OFF_AND_SIZE(r10),                "r10", },
+    /* [kIemNativeGstReg_GprFirst + X86_GREG_x11] = */  { CPUMCTX_OFF_AND_SIZE(r11),                "r11", },
+    /* [kIemNativeGstReg_GprFirst + X86_GREG_x12] = */  { CPUMCTX_OFF_AND_SIZE(r12),                "r12", },
+    /* [kIemNativeGstReg_GprFirst + X86_GREG_x13] = */  { CPUMCTX_OFF_AND_SIZE(r13),                "r13", },
+    /* [kIemNativeGstReg_GprFirst + X86_GREG_x14] = */  { CPUMCTX_OFF_AND_SIZE(r14),                "r14", },
+    /* [kIemNativeGstReg_GprFirst + X86_GREG_x15] = */  { CPUMCTX_OFF_AND_SIZE(r15),                "r15", },
+    /* [kIemNativeGstReg_Pc] = */                       { CPUMCTX_OFF_AND_SIZE(rip),                "rip", },
+    /* [kIemNativeGstReg_Rflags] = */                   { CPUMCTX_OFF_AND_SIZE(rflags),             "rflags", },
+    /* [18] = */                                        { UINT32_C(0xfffffff7),                  0, NULL, },
+    /* [19] = */                                        { UINT32_C(0xfffffff5),                  0, NULL, },
+    /* [20] = */                                        { UINT32_C(0xfffffff3),                  0, NULL, },
+    /* [21] = */                                        { UINT32_C(0xfffffff1),                  0, NULL, },
+    /* [22] = */                                        { UINT32_C(0xffffffef),                  0, NULL, },
+    /* [23] = */                                        { UINT32_C(0xffffffed),                  0, NULL, },
+    /* [kIemNativeGstReg_SegSelFirst + 0] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[0].Sel),      "es", },
+    /* [kIemNativeGstReg_SegSelFirst + 1] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[1].Sel),      "cs", },
+    /* [kIemNativeGstReg_SegSelFirst + 2] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[2].Sel),      "ss", },
+    /* [kIemNativeGstReg_SegSelFirst + 3] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[3].Sel),      "ds", },
+    /* [kIemNativeGstReg_SegSelFirst + 4] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[4].Sel),      "fs", },
+    /* [kIemNativeGstReg_SegSelFirst + 5] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[5].Sel),      "gs", },
+    /* [kIemNativeGstReg_SegBaseFirst + 0] = */         { CPUMCTX_OFF_AND_SIZE(aSRegs[0].u64Base),  "es_base", },
+    /* [kIemNativeGstReg_SegBaseFirst + 1] = */         { CPUMCTX_OFF_AND_SIZE(aSRegs[1].u64Base),  "cs_base", },
+    /* [kIemNativeGstReg_SegBaseFirst + 2] = */         { CPUMCTX_OFF_AND_SIZE(aSRegs[2].u64Base),  "ss_base", },
+    /* [kIemNativeGstReg_SegBaseFirst + 3] = */         { CPUMCTX_OFF_AND_SIZE(aSRegs[3].u64Base),  "ds_base", },
+    /* [kIemNativeGstReg_SegBaseFirst + 4] = */         { CPUMCTX_OFF_AND_SIZE(aSRegs[4].u64Base),  "fs_base", },
+    /* [kIemNativeGstReg_SegBaseFirst + 5] = */         { CPUMCTX_OFF_AND_SIZE(aSRegs[5].u64Base),  "gs_base", },
+    /* [kIemNativeGstReg_SegLimitFirst + 0] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[0].u32Limit), "es_limit", },
+    /* [kIemNativeGstReg_SegLimitFirst + 1] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[1].u32Limit), "cs_limit", },
+    /* [kIemNativeGstReg_SegLimitFirst + 2] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[2].u32Limit), "ss_limit", },
+    /* [kIemNativeGstReg_SegLimitFirst + 3] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[3].u32Limit), "ds_limit", },
+    /* [kIemNativeGstReg_SegLimitFirst + 4] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[4].u32Limit), "fs_limit", },
+    /* [kIemNativeGstReg_SegLimitFirst + 5] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[5].u32Limit), "gs_limit", },
+#undef CPUMCTX_OFF_AND_SIZE
+};
+AssertCompile(RT_ELEMENTS(g_aGstShadowInfo) == kIemNativeGstReg_End);
+
+
+/** Host CPU general purpose register names. */
+const char * const g_apszIemNativeHstRegNames[] =
+{
+#ifdef RT_ARCH_AMD64
+    "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"
+#elif RT_ARCH_ARM64
+    "x0",  "x1",  "x2",  "x3",  "x4",  "x5",  "x6",  "x7",  "x8",  "x9",  "x10", "x11", "x12", "x13", "x14", "x15",
+    "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27", "x28", "bp",  "lr",  "sp/xzr",
+#else
+# error "port me"
 #endif
 };
 
@@ -2146,238 +2236,6 @@ DECLHIDDEN(uint8_t) iemNativeRegAllocTmpImm(PIEMRECOMPILERSTATE pReNative, uint3
     }
     return idxReg;
 }
-
-
-/**
- * Info about shadowed guest register values.
- * @see IEMNATIVEGSTREG
- */
-static struct
-{
-    /** Offset in VMCPU. */
-    uint32_t    off;
-    /** The field size. */
-    uint8_t     cb;
-    /** Name (for logging). */
-    const char *pszName;
-} const g_aGstShadowInfo[] =
-{
-#define CPUMCTX_OFF_AND_SIZE(a_Reg) RT_UOFFSETOF(VMCPU, cpum.GstCtx. a_Reg), RT_SIZEOFMEMB(VMCPU, cpum.GstCtx. a_Reg)
-    /* [kIemNativeGstReg_GprFirst + X86_GREG_xAX] = */  { CPUMCTX_OFF_AND_SIZE(rax),                "rax", },
-    /* [kIemNativeGstReg_GprFirst + X86_GREG_xCX] = */  { CPUMCTX_OFF_AND_SIZE(rcx),                "rcx", },
-    /* [kIemNativeGstReg_GprFirst + X86_GREG_xDX] = */  { CPUMCTX_OFF_AND_SIZE(rdx),                "rdx", },
-    /* [kIemNativeGstReg_GprFirst + X86_GREG_xBX] = */  { CPUMCTX_OFF_AND_SIZE(rbx),                "rbx", },
-    /* [kIemNativeGstReg_GprFirst + X86_GREG_xSP] = */  { CPUMCTX_OFF_AND_SIZE(rsp),                "rsp", },
-    /* [kIemNativeGstReg_GprFirst + X86_GREG_xBP] = */  { CPUMCTX_OFF_AND_SIZE(rbp),                "rbp", },
-    /* [kIemNativeGstReg_GprFirst + X86_GREG_xSI] = */  { CPUMCTX_OFF_AND_SIZE(rsi),                "rsi", },
-    /* [kIemNativeGstReg_GprFirst + X86_GREG_xDI] = */  { CPUMCTX_OFF_AND_SIZE(rdi),                "rdi", },
-    /* [kIemNativeGstReg_GprFirst + X86_GREG_x8 ] = */  { CPUMCTX_OFF_AND_SIZE(r8),                 "r8", },
-    /* [kIemNativeGstReg_GprFirst + X86_GREG_x9 ] = */  { CPUMCTX_OFF_AND_SIZE(r9),                 "r9", },
-    /* [kIemNativeGstReg_GprFirst + X86_GREG_x10] = */  { CPUMCTX_OFF_AND_SIZE(r10),                "r10", },
-    /* [kIemNativeGstReg_GprFirst + X86_GREG_x11] = */  { CPUMCTX_OFF_AND_SIZE(r11),                "r11", },
-    /* [kIemNativeGstReg_GprFirst + X86_GREG_x12] = */  { CPUMCTX_OFF_AND_SIZE(r12),                "r12", },
-    /* [kIemNativeGstReg_GprFirst + X86_GREG_x13] = */  { CPUMCTX_OFF_AND_SIZE(r13),                "r13", },
-    /* [kIemNativeGstReg_GprFirst + X86_GREG_x14] = */  { CPUMCTX_OFF_AND_SIZE(r14),                "r14", },
-    /* [kIemNativeGstReg_GprFirst + X86_GREG_x15] = */  { CPUMCTX_OFF_AND_SIZE(r15),                "r15", },
-    /* [kIemNativeGstReg_Pc] = */                       { CPUMCTX_OFF_AND_SIZE(rip),                "rip", },
-    /* [kIemNativeGstReg_Rflags] = */                   { CPUMCTX_OFF_AND_SIZE(rflags),             "rflags", },
-    /* [18] = */                                        { UINT32_C(0xfffffff7),                  0, NULL, },
-    /* [19] = */                                        { UINT32_C(0xfffffff5),                  0, NULL, },
-    /* [20] = */                                        { UINT32_C(0xfffffff3),                  0, NULL, },
-    /* [21] = */                                        { UINT32_C(0xfffffff1),                  0, NULL, },
-    /* [22] = */                                        { UINT32_C(0xffffffef),                  0, NULL, },
-    /* [23] = */                                        { UINT32_C(0xffffffed),                  0, NULL, },
-    /* [kIemNativeGstReg_SegSelFirst + 0] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[0].Sel),      "es", },
-    /* [kIemNativeGstReg_SegSelFirst + 1] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[1].Sel),      "cs", },
-    /* [kIemNativeGstReg_SegSelFirst + 2] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[2].Sel),      "ss", },
-    /* [kIemNativeGstReg_SegSelFirst + 3] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[3].Sel),      "ds", },
-    /* [kIemNativeGstReg_SegSelFirst + 4] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[4].Sel),      "fs", },
-    /* [kIemNativeGstReg_SegSelFirst + 5] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[5].Sel),      "gs", },
-    /* [kIemNativeGstReg_SegBaseFirst + 0] = */         { CPUMCTX_OFF_AND_SIZE(aSRegs[0].u64Base),  "es_base", },
-    /* [kIemNativeGstReg_SegBaseFirst + 1] = */         { CPUMCTX_OFF_AND_SIZE(aSRegs[1].u64Base),  "cs_base", },
-    /* [kIemNativeGstReg_SegBaseFirst + 2] = */         { CPUMCTX_OFF_AND_SIZE(aSRegs[2].u64Base),  "ss_base", },
-    /* [kIemNativeGstReg_SegBaseFirst + 3] = */         { CPUMCTX_OFF_AND_SIZE(aSRegs[3].u64Base),  "ds_base", },
-    /* [kIemNativeGstReg_SegBaseFirst + 4] = */         { CPUMCTX_OFF_AND_SIZE(aSRegs[4].u64Base),  "fs_base", },
-    /* [kIemNativeGstReg_SegBaseFirst + 5] = */         { CPUMCTX_OFF_AND_SIZE(aSRegs[5].u64Base),  "gs_base", },
-    /* [kIemNativeGstReg_SegLimitFirst + 0] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[0].u32Limit), "es_limit", },
-    /* [kIemNativeGstReg_SegLimitFirst + 1] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[1].u32Limit), "cs_limit", },
-    /* [kIemNativeGstReg_SegLimitFirst + 2] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[2].u32Limit), "ss_limit", },
-    /* [kIemNativeGstReg_SegLimitFirst + 3] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[3].u32Limit), "ds_limit", },
-    /* [kIemNativeGstReg_SegLimitFirst + 4] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[4].u32Limit), "fs_limit", },
-    /* [kIemNativeGstReg_SegLimitFirst + 5] = */        { CPUMCTX_OFF_AND_SIZE(aSRegs[5].u32Limit), "gs_limit", },
-#undef CPUMCTX_OFF_AND_SIZE
-};
-AssertCompile(RT_ELEMENTS(g_aGstShadowInfo) == kIemNativeGstReg_End);
-
-
-/** Host CPU general purpose register names. */
-const char * const g_apszIemNativeHstRegNames[] =
-{
-#ifdef RT_ARCH_AMD64
-    "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"
-#elif RT_ARCH_ARM64
-    "x0",  "x1",  "x2",  "x3",  "x4",  "x5",  "x6",  "x7",  "x8",  "x9",  "x10", "x11", "x12", "x13", "x14", "x15",
-    "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27", "x28", "bp",  "lr",  "sp/xzr",
-#else
-# error "port me"
-#endif
-};
-
-/**
- * Loads the guest shadow register @a enmGstReg into host reg @a idxHstReg, zero
- * extending to 64-bit width.
- *
- * @returns New code buffer offset on success, UINT32_MAX on failure.
- * @param   pReNative   .
- * @param   off         The current code buffer position.
- * @param   idxHstReg   The host register to load the guest register value into.
- * @param   enmGstReg   The guest register to load.
- *
- * @note This does not mark @a idxHstReg as having a shadow copy of @a enmGstReg,
- *       that is something the caller needs to do if applicable.
- */
-DECLHIDDEN(uint32_t) iemNativeEmitLoadGprWithGstShadowReg(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                                                          uint8_t idxHstReg, IEMNATIVEGSTREG enmGstReg)
-{
-    Assert((unsigned)enmGstReg < RT_ELEMENTS(g_aGstShadowInfo));
-    Assert(g_aGstShadowInfo[enmGstReg].cb != 0);
-
-    switch (g_aGstShadowInfo[enmGstReg].cb)
-    {
-        case sizeof(uint64_t):
-            return iemNativeEmitLoadGprFromVCpuU64(pReNative, off, idxHstReg, g_aGstShadowInfo[enmGstReg].off);
-        case sizeof(uint32_t):
-            return iemNativeEmitLoadGprFromVCpuU32(pReNative, off, idxHstReg, g_aGstShadowInfo[enmGstReg].off);
-        case sizeof(uint16_t):
-            return iemNativeEmitLoadGprFromVCpuU16(pReNative, off, idxHstReg, g_aGstShadowInfo[enmGstReg].off);
-#if 0 /* not present in the table. */
-        case sizeof(uint8_t):
-            return iemNativeEmitLoadGprFromVCpuU8(pReNative, off, idxHstReg, g_aGstShadowInfo[enmGstReg].off);
-#endif
-        default:
-            AssertFailedReturn(UINT32_MAX);
-    }
-}
-
-
-#ifdef VBOX_STRICT
-/**
- * Emitting code that checks that the content of register @a idxReg is the same
- * as what's in the guest register @a enmGstReg, resulting in a breakpoint
- * instruction if that's not the case.
- *
- * @note May of course trash IEMNATIVE_REG_FIXED_TMP0.
- *       Trashes EFLAGS on AMD64.
- */
-static uint32_t iemNativeEmitGuestRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                                                uint8_t idxReg, IEMNATIVEGSTREG enmGstReg)
-{
-# ifdef RT_ARCH_AMD64
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 32);
-    AssertReturn(pbCodeBuf, UINT32_MAX);
-
-    /* cmp reg, [mem] */
-    if (g_aGstShadowInfo[enmGstReg].cb == sizeof(uint8_t))
-    {
-        if (idxReg >= 8)
-            pbCodeBuf[off++] = X86_OP_REX_R;
-        pbCodeBuf[off++] = 0x38;
-    }
-    else
-    {
-        if (g_aGstShadowInfo[enmGstReg].cb == sizeof(uint64_t))
-            pbCodeBuf[off++] = X86_OP_REX_W | (idxReg < 8 ? 0 : X86_OP_REX_R);
-        else
-        {
-            if (g_aGstShadowInfo[enmGstReg].cb == sizeof(uint16_t))
-                pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
-            else
-                AssertReturn(g_aGstShadowInfo[enmGstReg].cb == sizeof(uint32_t), UINT32_MAX);
-            if (idxReg >= 8)
-                pbCodeBuf[off++] = X86_OP_REX_R;
-        }
-        pbCodeBuf[off++] = 0x39;
-    }
-    off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, idxReg, g_aGstShadowInfo[enmGstReg].off);
-
-    /* je/jz +1 */
-    pbCodeBuf[off++] = 0x74;
-    pbCodeBuf[off++] = 0x01;
-
-    /* int3 */
-    pbCodeBuf[off++] = 0xcc;
-
-    /* For values smaller than the register size, we must check that the rest
-       of the register is all zeros. */
-    if (g_aGstShadowInfo[enmGstReg].cb < sizeof(uint32_t))
-    {
-        /* test reg64, imm32 */
-        pbCodeBuf[off++] = X86_OP_REX_W | (idxReg < 8 ? 0 : X86_OP_REX_B);
-        pbCodeBuf[off++] = 0xf7;
-        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, idxReg & 7);
-        pbCodeBuf[off++] = 0;
-        pbCodeBuf[off++] = g_aGstShadowInfo[enmGstReg].cb > sizeof(uint8_t) ? 0 : 0xff;
-        pbCodeBuf[off++] = 0xff;
-        pbCodeBuf[off++] = 0xff;
-
-        /* je/jz +1 */
-        pbCodeBuf[off++] = 0x74;
-        pbCodeBuf[off++] = 0x01;
-
-        /* int3 */
-        pbCodeBuf[off++] = 0xcc;
-    }
-    else if (g_aGstShadowInfo[enmGstReg].cb == sizeof(uint32_t))
-    {
-        /* rol reg64, 32 */
-        pbCodeBuf[off++] = X86_OP_REX_W | (idxReg < 8 ? 0 : X86_OP_REX_B);
-        pbCodeBuf[off++] = 0xc1;
-        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, idxReg & 7);
-        pbCodeBuf[off++] = 32;
-
-        /* test reg32, ffffffffh */
-        if (idxReg >= 8)
-            pbCodeBuf[off++] = X86_OP_REX_B;
-        pbCodeBuf[off++] = 0xf7;
-        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, idxReg & 7);
-        pbCodeBuf[off++] = 0xff;
-        pbCodeBuf[off++] = 0xff;
-        pbCodeBuf[off++] = 0xff;
-        pbCodeBuf[off++] = 0xff;
-
-        /* je/jz +1 */
-        pbCodeBuf[off++] = 0x74;
-        pbCodeBuf[off++] = 0x01;
-
-        /* int3 */
-        pbCodeBuf[off++] = 0xcc;
-
-        /* rol reg64, 32 */
-        pbCodeBuf[off++] = X86_OP_REX_W | (idxReg < 8 ? 0 : X86_OP_REX_B);
-        pbCodeBuf[off++] = 0xc1;
-        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, idxReg & 7);
-        pbCodeBuf[off++] = 32;
-    }
-
-# elif defined(RT_ARCH_ARM64)
-    /* mov TMP0, [gstreg] */
-    off = iemNativeEmitLoadGprWithGstShadowReg(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, enmGstReg);
-
-    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
-    AssertReturn(pu32CodeBuf, UINT32_MAX);
-    /* sub tmp0, tmp0, idxReg */
-    pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(true /*fSub*/, IEMNATIVE_REG_FIXED_TMP0, IEMNATIVE_REG_FIXED_TMP0, idxReg);
-    /* cbz tmp0, +1 */
-    pu32CodeBuf[off++] = Armv8A64MkInstrCbzCbnz(false /*fJmpIfNotZero*/, 1, IEMNATIVE_REG_FIXED_TMP0);
-    /* brk #0x1000+enmGstReg */
-    pu32CodeBuf[off++] = Armv8A64MkInstrBrk((uint32_t)enmGstReg | UINT32_C(0x1000));
-
-# else
-#  error "Port me!"
-# endif
-    return off;
-}
-#endif /* VBOX_STRICT */
 
 
 /**
@@ -2945,6 +2803,168 @@ DECLHIDDEN(uint32_t) iemNativeRegFlushPendingWrites(PIEMRECOMPILERSTATE pReNativ
 }
 
 
+/*********************************************************************************************************************************
+*   Code Emitters (larger snippets)                                                                                              *
+*********************************************************************************************************************************/
+
+/**
+ * Loads the guest shadow register @a enmGstReg into host reg @a idxHstReg, zero
+ * extending to 64-bit width.
+ *
+ * @returns New code buffer offset on success, UINT32_MAX on failure.
+ * @param   pReNative   .
+ * @param   off         The current code buffer position.
+ * @param   idxHstReg   The host register to load the guest register value into.
+ * @param   enmGstReg   The guest register to load.
+ *
+ * @note This does not mark @a idxHstReg as having a shadow copy of @a enmGstReg,
+ *       that is something the caller needs to do if applicable.
+ */
+DECLHIDDEN(uint32_t) iemNativeEmitLoadGprWithGstShadowReg(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                          uint8_t idxHstReg, IEMNATIVEGSTREG enmGstReg) RT_NOEXCEPT
+{
+    Assert((unsigned)enmGstReg < RT_ELEMENTS(g_aGstShadowInfo));
+    Assert(g_aGstShadowInfo[enmGstReg].cb != 0);
+
+    switch (g_aGstShadowInfo[enmGstReg].cb)
+    {
+        case sizeof(uint64_t):
+            return iemNativeEmitLoadGprFromVCpuU64(pReNative, off, idxHstReg, g_aGstShadowInfo[enmGstReg].off);
+        case sizeof(uint32_t):
+            return iemNativeEmitLoadGprFromVCpuU32(pReNative, off, idxHstReg, g_aGstShadowInfo[enmGstReg].off);
+        case sizeof(uint16_t):
+            return iemNativeEmitLoadGprFromVCpuU16(pReNative, off, idxHstReg, g_aGstShadowInfo[enmGstReg].off);
+#if 0 /* not present in the table. */
+        case sizeof(uint8_t):
+            return iemNativeEmitLoadGprFromVCpuU8(pReNative, off, idxHstReg, g_aGstShadowInfo[enmGstReg].off);
+#endif
+        default:
+            AssertFailedReturn(UINT32_MAX);
+    }
+}
+
+
+#ifdef VBOX_STRICT
+/**
+ * Emitting code that checks that the content of register @a idxReg is the same
+ * as what's in the guest register @a enmGstReg, resulting in a breakpoint
+ * instruction if that's not the case.
+ *
+ * @note May of course trash IEMNATIVE_REG_FIXED_TMP0.
+ *       Trashes EFLAGS on AMD64.
+ */
+static uint32_t iemNativeEmitGuestRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                uint8_t idxReg, IEMNATIVEGSTREG enmGstReg)
+{
+# ifdef RT_ARCH_AMD64
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 32);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
+
+    /* cmp reg, [mem] */
+    if (g_aGstShadowInfo[enmGstReg].cb == sizeof(uint8_t))
+    {
+        if (idxReg >= 8)
+            pbCodeBuf[off++] = X86_OP_REX_R;
+        pbCodeBuf[off++] = 0x38;
+    }
+    else
+    {
+        if (g_aGstShadowInfo[enmGstReg].cb == sizeof(uint64_t))
+            pbCodeBuf[off++] = X86_OP_REX_W | (idxReg < 8 ? 0 : X86_OP_REX_R);
+        else
+        {
+            if (g_aGstShadowInfo[enmGstReg].cb == sizeof(uint16_t))
+                pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+            else
+                AssertReturn(g_aGstShadowInfo[enmGstReg].cb == sizeof(uint32_t), UINT32_MAX);
+            if (idxReg >= 8)
+                pbCodeBuf[off++] = X86_OP_REX_R;
+        }
+        pbCodeBuf[off++] = 0x39;
+    }
+    off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, idxReg, g_aGstShadowInfo[enmGstReg].off);
+
+    /* je/jz +1 */
+    pbCodeBuf[off++] = 0x74;
+    pbCodeBuf[off++] = 0x01;
+
+    /* int3 */
+    pbCodeBuf[off++] = 0xcc;
+
+    /* For values smaller than the register size, we must check that the rest
+       of the register is all zeros. */
+    if (g_aGstShadowInfo[enmGstReg].cb < sizeof(uint32_t))
+    {
+        /* test reg64, imm32 */
+        pbCodeBuf[off++] = X86_OP_REX_W | (idxReg < 8 ? 0 : X86_OP_REX_B);
+        pbCodeBuf[off++] = 0xf7;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, idxReg & 7);
+        pbCodeBuf[off++] = 0;
+        pbCodeBuf[off++] = g_aGstShadowInfo[enmGstReg].cb > sizeof(uint8_t) ? 0 : 0xff;
+        pbCodeBuf[off++] = 0xff;
+        pbCodeBuf[off++] = 0xff;
+
+        /* je/jz +1 */
+        pbCodeBuf[off++] = 0x74;
+        pbCodeBuf[off++] = 0x01;
+
+        /* int3 */
+        pbCodeBuf[off++] = 0xcc;
+    }
+    else if (g_aGstShadowInfo[enmGstReg].cb == sizeof(uint32_t))
+    {
+        /* rol reg64, 32 */
+        pbCodeBuf[off++] = X86_OP_REX_W | (idxReg < 8 ? 0 : X86_OP_REX_B);
+        pbCodeBuf[off++] = 0xc1;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, idxReg & 7);
+        pbCodeBuf[off++] = 32;
+
+        /* test reg32, ffffffffh */
+        if (idxReg >= 8)
+            pbCodeBuf[off++] = X86_OP_REX_B;
+        pbCodeBuf[off++] = 0xf7;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, idxReg & 7);
+        pbCodeBuf[off++] = 0xff;
+        pbCodeBuf[off++] = 0xff;
+        pbCodeBuf[off++] = 0xff;
+        pbCodeBuf[off++] = 0xff;
+
+        /* je/jz +1 */
+        pbCodeBuf[off++] = 0x74;
+        pbCodeBuf[off++] = 0x01;
+
+        /* int3 */
+        pbCodeBuf[off++] = 0xcc;
+
+        /* rol reg64, 32 */
+        pbCodeBuf[off++] = X86_OP_REX_W | (idxReg < 8 ? 0 : X86_OP_REX_B);
+        pbCodeBuf[off++] = 0xc1;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, idxReg & 7);
+        pbCodeBuf[off++] = 32;
+    }
+
+# elif defined(RT_ARCH_ARM64)
+    /* mov TMP0, [gstreg] */
+    off = iemNativeEmitLoadGprWithGstShadowReg(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, enmGstReg);
+
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
+    AssertReturn(pu32CodeBuf, UINT32_MAX);
+    /* sub tmp0, tmp0, idxReg */
+    pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(true /*fSub*/, IEMNATIVE_REG_FIXED_TMP0, IEMNATIVE_REG_FIXED_TMP0, idxReg);
+    /* cbz tmp0, +1 */
+    pu32CodeBuf[off++] = Armv8A64MkInstrCbzCbnz(false /*fJmpIfNotZero*/, 1, IEMNATIVE_REG_FIXED_TMP0);
+    /* brk #0x1000+enmGstReg */
+    pu32CodeBuf[off++] = Armv8A64MkInstrBrk((uint32_t)enmGstReg | UINT32_C(0x1000));
+
+# else
+#  error "Port me!"
+# endif
+    return off;
+}
+#endif /* VBOX_STRICT */
+
+
+
 /**
  * Emits a code for checking the return code of a call and rcPassUp, returning
  * from the code if either are non-zero.
@@ -2959,28 +2979,18 @@ DECLHIDDEN(uint32_t) iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReN
 
     /* edx = rcPassUp */
     off = iemNativeEmitLoadGprFromVCpuU32(pReNative, off, X86_GREG_xDX, RT_UOFFSETOF(VMCPUCC, iem.s.rcPassUp));
-    AssertReturn(off != UINT32_MAX, UINT32_MAX);
-
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
-    AssertReturn(pbCodeBuf, UINT32_MAX);
+# ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+    off = iemNativeEmitLoadGpr8Imm(pReNative, off, X86_GREG_xCX, idxInstr);
+# endif
 
     /* edx = eax | rcPassUp */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
     pbCodeBuf[off++] = 0x0b;                    /* or edx, eax */
     pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, X86_GREG_xDX, X86_GREG_xAX);
 
-    /* Jump to non-zero status return path, loading cl with the instruction number. */
-    pbCodeBuf[off++] = 0xb0 + X86_GREG_xCX;     /* mov cl, imm8 (pCallEntry->idxInstr) */
-    pbCodeBuf[off++] = idxInstr;
-
-    pbCodeBuf[off++] = 0x0f;                    /* jnz rel32 */
-    pbCodeBuf[off++] = 0x85;
-    uint32_t const idxLabel = iemNativeMakeLabel(pReNative, kIemNativeLabelType_NonZeroRetOrPassUp);
-    AssertReturn(idxLabel != UINT32_MAX, UINT32_MAX);
-    AssertReturn(iemNativeAddFixup(pReNative, off, idxLabel, kIemNativeFixupType_Rel32, -4), UINT32_MAX);
-    pbCodeBuf[off++] = 0x00;
-    pbCodeBuf[off++] = 0x00;
-    pbCodeBuf[off++] = 0x00;
-    pbCodeBuf[off++] = 0x00;
+    /* Jump to non-zero status return path. */
+    off = iemNativeEmitJnzToNewLabel(pReNative, off, kIemNativeLabelType_NonZeroRetOrPassUp);
 
     /* done. */
 
@@ -3260,12 +3270,8 @@ static uint32_t iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_
     if (cParams > 2)
         off = iemNativeEmitLoadGprImm64(pReNative, off, X86_GREG_xCX, pCallEntry->auParams[2]);
 # endif
-    off = iemNativeEmitLoadGprImm64(pReNative, off, X86_GREG_xAX, (uintptr_t)g_apfnIemThreadedFunctions[pCallEntry->enmFunction]);
 
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
-    AssertReturn(pbCodeBuf, UINT32_MAX);
-    pbCodeBuf[off++] = 0xff;                    /* call rax */
-    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 2, X86_GREG_xAX);
+    off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)g_apfnIemThreadedFunctions[pCallEntry->enmFunction]);
 
 # if defined(VBOXSTRICTRC_STRICT_ENABLED) && defined(RT_OS_WINDOWS)
     off = iemNativeEmitLoadGprByBpU32(pReNative, off, X86_GREG_xAX, IEMNATIVE_FP_OFF_IN_SHADOW_ARG0); /* rcStrict (see above) */
@@ -3282,13 +3288,8 @@ static uint32_t iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_
         off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_CALL_ARG2_GREG, pCallEntry->auParams[1]);
     if (cParams > 2)
         off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_CALL_ARG3_GREG, pCallEntry->auParams[2]);
-    off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_REG_FIXED_TMP0,
-                                    (uintptr_t)g_apfnIemThreadedFunctions[pCallEntry->enmFunction]);
 
-    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-    AssertReturn(pu32CodeBuf, UINT32_MAX);
-
-    pu32CodeBuf[off++] = Armv8A64MkInstrBlr(IEMNATIVE_REG_FIXED_TMP0);
+    off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)g_apfnIemThreadedFunctions[pCallEntry->enmFunction]);
 
 #else
 # error "port me"
@@ -3320,33 +3321,10 @@ static uint32_t iemNativeEmitRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t of
 #ifndef IEMNATIVE_WITH_INSTRUCTION_COUNTING
         off = iemNativeEmitLoadGpr8Imm(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, 0);
 #endif
-#ifdef RT_ARCH_AMD64
-        off = iemNativeEmitLoadGprImm64(pReNative, off, X86_GREG_xAX, (uintptr_t)iemNativeHlpExecRaiseGp0);
-        AssertReturn(off != UINT32_MAX, UINT32_MAX);
-
-        /* call rax */
-        uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
-        AssertReturn(pbCodeBuf, UINT32_MAX);
-        pbCodeBuf[off++] = 0xff;
-        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 2, X86_GREG_xAX);
-
-#elif defined(RT_ARCH_ARM64)
-        off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, (uintptr_t)iemNativeHlpExecRaiseGp0);
-        AssertReturn(off != UINT32_MAX, UINT32_MAX);
-        pu32CodeBuf[off++] = Armv8A64MkInstrBlr(IEMNATIVE_REG_FIXED_TMP0);
-#else
-# error "Port me"
-#endif
+        off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpExecRaiseGp0);
 
         /* jump back to the return sequence. */
         off = iemNativeEmitJmpToLabel(pReNative, off, iemNativeFindLabel(pReNative, kIemNativeLabelType_Return));
-
-#ifdef RT_ARCH_AMD64
-        /* int3 poison */
-        pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-        AssertReturn(pbCodeBuf, UINT32_MAX);
-        pbCodeBuf[off++] = 0xcc;
-#endif
     }
     return off;
 }
@@ -3376,69 +3354,37 @@ static uint32_t iemNativeEmitRcFiddling(PIEMRECOMPILERSTATE pReNative, uint32_t 
 
         /* Call helper and jump to return point. */
 # ifdef RT_OS_WINDOWS
+#  ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
         off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_x8,  X86_GREG_xCX); /* cl = instruction number */
-        AssertReturn(off != UINT32_MAX, UINT32_MAX);
+#  endif
         off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xCX, IEMNATIVE_REG_FIXED_PVMCPU);
-        AssertReturn(off != UINT32_MAX, UINT32_MAX);
         off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xDX, X86_GREG_xAX);
-        AssertReturn(off != UINT32_MAX, UINT32_MAX);
 # else
         off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xDI, IEMNATIVE_REG_FIXED_PVMCPU);
-        AssertReturn(off != UINT32_MAX, UINT32_MAX);
         off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xSI, X86_GREG_xAX);
-        AssertReturn(off != UINT32_MAX, UINT32_MAX);
+#  ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
         off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xDX, X86_GREG_xCX); /* cl = instruction number */
-        AssertReturn(off != UINT32_MAX, UINT32_MAX);
+#  endif
 # endif
-        off = iemNativeEmitLoadGprImm64(pReNative, off, X86_GREG_xAX, (uintptr_t)iemNativeHlpExecStatusCodeFiddling);
-        AssertReturn(off != UINT32_MAX, UINT32_MAX);
-
-        pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
-        AssertReturn(pbCodeBuf, UINT32_MAX);
-        pbCodeBuf[off++] = 0xff;                    /* call rax */
-        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 2, X86_GREG_xAX);
-
-        /* Jump to common return point. */
-        uint32_t offRel = pReNative->paLabels[idxReturnLabel].off - (off + 2);
-        if (-(int32_t)offRel <= 127)
-        {
-            pbCodeBuf[off++] = 0xeb;                /* jmp rel8 */
-            pbCodeBuf[off++] = (uint8_t)offRel;
-            off++;
-        }
-        else
-        {
-            offRel -= 3;
-            pbCodeBuf[off++] = 0xe9;                /* jmp rel32 */
-            pbCodeBuf[off++] = RT_BYTE1(offRel);
-            pbCodeBuf[off++] = RT_BYTE2(offRel);
-            pbCodeBuf[off++] = RT_BYTE3(offRel);
-            pbCodeBuf[off++] = RT_BYTE4(offRel);
-        }
-        pbCodeBuf[off++] = 0xcc;                    /* int3 poison */
+# ifndef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+        off = iemNativeEmitLoadGpr8Imm(pReNative, off, X86_GREG_xCX, 0);
+# endif
 
 #elif defined(RT_ARCH_ARM64)
         /*
          * ARM64:
          */
         off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, IEMNATIVE_CALL_RET_GREG);
-        AssertReturn(off != UINT32_MAX, UINT32_MAX);
         off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
-        AssertReturn(off != UINT32_MAX, UINT32_MAX);
         /* IEMNATIVE_CALL_ARG2_GREG is already set. */
         off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, (uintptr_t)iemNativeHlpExecStatusCodeFiddling);
         AssertReturn(off != UINT32_MAX, UINT32_MAX);
-
-        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
-        AssertReturn(pu32CodeBuf, UINT32_MAX);
-        pu32CodeBuf[off++] = Armv8A64MkInstrBlr(IEMNATIVE_REG_FIXED_TMP0);
-
-        /* Jump back to the common return point. */
-        int32_t const offRel = pReNative->paLabels[idxReturnLabel].off - off;
-        pu32CodeBuf[off++] = Armv8A64MkInstrB(offRel);
 #else
 # error "port me"
 #endif
+
+        off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpExecStatusCodeFiddling);
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxReturnLabel);
     }
     return off;
 }
