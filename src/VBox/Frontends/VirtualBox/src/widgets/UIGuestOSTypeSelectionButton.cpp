@@ -118,14 +118,14 @@ void UIGuestOSTypeSelectionButton::populateMenu()
     {
         const QPair<QString, QString> &familyInfo = familyList[i];
         QMenu *pSubMenu = m_pMainMenu->addMenu(familyInfo.second);
-        QStringList variantList = uiCommon().guestOSTypeManager().getVariantListForFamilyId(familyInfo.first);
+        QStringList subtypeList = uiCommon().guestOSTypeManager().getSubtypeListForFamilyId(familyInfo.first);
 
-        if (variantList.isEmpty())
+        if (subtypeList.isEmpty())
             createOSTypeMenu(uiCommon().guestOSTypeManager().getTypeListForFamilyId(familyInfo.first), pSubMenu);
         else
         {
-            foreach (const QString &strVariant, variantList)
-                createOSTypeMenu(uiCommon().guestOSTypeManager().getTypeListForVariant(strVariant), pSubMenu->addMenu(strVariant));
+            foreach (const QString &strSubtype, subtypeList)
+                createOSTypeMenu(uiCommon().guestOSTypeManager().getTypeListForSubtype(strSubtype), pSubMenu->addMenu(strSubtype));
         }
     }
 }

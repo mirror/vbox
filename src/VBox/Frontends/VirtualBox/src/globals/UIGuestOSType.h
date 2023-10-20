@@ -55,7 +55,7 @@ public:
     const QString &getFamilyId() const;
     const QString &getFamilyDescription() const;
     const QString &getId() const;
-    const QString &getVariant() const;
+    const QString &getSubtype() const;
     const QString &getDescription() const;
 
     /** @name Wrapper getters for CGuestOSType member.
@@ -80,7 +80,7 @@ private:
         mutable QString m_strFamilyId;
         mutable QString m_strFamilyDescription;
         mutable QString m_strId;
-        mutable QString m_strVariant;
+        mutable QString m_strSubtype;
         mutable QString m_strDescription;
     /** @} */
 
@@ -89,8 +89,8 @@ private:
 
 
 /** A wrapper and manager class for Guest OS types (IGuestOSType). Logically we structure os types into families
-  *  e.g. Window, Linux etc. Some families have so-called variants which for Linux corresponds to distros, while some
-  *  families have no variant. Under variants (and when no variant exists direcly under family) we have guest os
+  *  e.g. Window, Linux etc. Some families have so-called subtypes which for Linux corresponds to distros, while some
+  *  families have no subtype. Under subtypes (and when no subtype exists direcly under family) we have guest os
   *  types, e.g. Debian12_x64 etc. */
 class SHARED_LIBRARY_STUFF UIGuestOSTypeManager
 {
@@ -110,19 +110,19 @@ public:
 
     /** Returns a list of all families (id and description). */
     const UIGuestOSTypeFamilyInfo &getFamilies() const;
-    /** Returns the list of variants for @p strFamilyId. This may be an empty list. */
-    QStringList                    getVariantListForFamilyId(const QString &strFamilyId) const;
+    /** Returns the list of subtypes for @p strFamilyId. This may be an empty list. */
+    QStringList                    getSubtypeListForFamilyId(const QString &strFamilyId) const;
     /** Returns a list of OS types for the @p strFamilyId. */
     UIGuestOSTypeInfo              getTypeListForFamilyId(const QString &strFamilyId) const;
-    /** Returns a list of OS types for the @p strVariant. */
-    UIGuestOSTypeInfo              getTypeListForVariant(const QString &strVariant) const;
+    /** Returns a list of OS types for the @p strSubtype. */
+    UIGuestOSTypeInfo              getTypeListForSubtype(const QString &strSubtype) const;
 
     static bool isDOSType(const QString &strOSTypeId);
 
     /** @name Getters for UIGuestOSType properties. They utilize a map for faster access to UIGuestOSType instance with @p strTypeId
       * @{ */
         QString                 getFamilyId(const QString &strTypeId) const;
-        QString                 getVariant(const QString  &strTypeId) const;
+        QString                 getSubtype(const QString  &strTypeId) const;
         KGraphicsControllerType getRecommendedGraphicsController(const QString &strTypeId) const;
         ULONG                   getRecommendedRAM(const QString &strTypeId) const;
         ULONG                   getRecommendedCPUCount(const QString &strTypeId) const;

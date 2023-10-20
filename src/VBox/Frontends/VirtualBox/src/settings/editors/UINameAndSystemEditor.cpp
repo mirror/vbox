@@ -70,14 +70,14 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent,
     , m_pLabelFamily(0)
     , m_pLabelType(0)
     , m_pIconType(0)
-    , m_pLabelVariant(0)
+    , m_pLabelSubtype(0)
     , m_pEditorName(0)
     , m_pSelectorPath(0)
     , m_pSelectorImage(0)
     , m_pComboEdition(0)
     , m_pComboFamily(0)
     , m_pComboType(0)
-    , m_pComboVariant(0)
+    , m_pComboSubtype(0)
 {
     prepare();
 }
@@ -174,21 +174,21 @@ bool UINameAndSystemEditor::setGuestOSTypeByTypeId(const QString &strTypeId)
     /* Bail out if family combo has no such item: */
     if (iFamilyComboIndex == -1)
         return false;
-    /* Set the family combo's index. This will cause variant combo to be populated accordingly: */
+    /* Set the family combo's index. This will cause subtype combo to be populated accordingly: */
     m_pComboFamily->setCurrentIndex(iFamilyComboIndex);
 
-    /* If variant is not empty then try to select correct index. This will populate type combo: */
-    QString strVariant = uiCommon().guestOSTypeManager().getVariant(strTypeId);
-    if (!strVariant.isEmpty())
+    /* If subtype is not empty then try to select correct index. This will populate type combo: */
+    QString strSubtype = uiCommon().guestOSTypeManager().getSubtype(strTypeId);
+    if (!strSubtype.isEmpty())
     {
         int index = -1;
-        for (int i = 0; i < m_pComboVariant->count() && index == -1; ++i)
+        for (int i = 0; i < m_pComboSubtype->count() && index == -1; ++i)
         {
-            if (strVariant == m_pComboVariant->itemText(i))
+            if (strSubtype == m_pComboSubtype->itemText(i))
                 index = i;
         }
         if (index != -1)
-            m_pComboVariant->setCurrentIndex(index);
+            m_pComboSubtype->setCurrentIndex(index);
         else
             return false;
     }
@@ -284,8 +284,8 @@ void UINameAndSystemEditor::retranslateUi()
         m_pLabelFamily->setText(tr("&Type:"));
     if (m_pLabelType)
         m_pLabelType->setText(tr("&Version:"));
-    if (m_pLabelVariant)
-        m_pLabelVariant->setText(tr("&Kind:"));
+    if (m_pLabelSubtype)
+        m_pLabelSubtype->setText(tr("&Subtype:"));
 
     if (m_pEditorName)
         m_pEditorName->setToolTip(tr("Holds the name for virtual machine."));
@@ -306,53 +306,53 @@ void UINameAndSystemEditor::retranslateUi()
 void UINameAndSystemEditor::sltFamilyChanged(int index)
 {
     AssertReturnVoid(m_pComboFamily);
-    AssertReturnVoid(m_pComboVariant);
+    AssertReturnVoid(m_pComboSubtype);
 
     m_strFamilyId = m_pComboFamily->itemData(index, FamilyID).toString();
 
     AssertReturnVoid(!m_strFamilyId.isEmpty());
 
-    m_pComboVariant->blockSignals(true);
-    m_pLabelVariant->setEnabled(true);
+    m_pComboSubtype->blockSignals(true);
+    m_pLabelSubtype->setEnabled(true);
 
-    m_pComboVariant->setEnabled(true);
-    m_pComboVariant->clear();
+    m_pComboSubtype->setEnabled(true);
+    m_pComboSubtype->clear();
 
-    const QStringList variantList = uiCommon().guestOSTypeManager().getVariantListForFamilyId(m_strFamilyId);
+    const QStringList subtypeList = uiCommon().guestOSTypeManager().getSubtypeListForFamilyId(m_strFamilyId);
 
-    if (variantList.isEmpty())
+    if (subtypeList.isEmpty())
     {
-        m_pComboVariant->setEnabled(false);
-        m_pLabelVariant->setEnabled(false);
-        /* If variant list is empty the all the types of the family are added to typ selection combo: */
+        m_pComboSubtype->setEnabled(false);
+        m_pLabelSubtype->setEnabled(false);
+        /* If subtype list is empty the all the types of the family are added to typ selection combo: */
         populateTypeCombo(uiCommon().guestOSTypeManager().getTypeListForFamilyId(m_strFamilyId));
     }
     else
     {
-        /* Populate variant combo: */
-        /* If family is Linux then select Oracle Linux as variant: */
+        /* Populate subtype combo: */
+        /* If family is Linux then select Oracle Linux as subtype: */
         int iOracleIndex = -1;
-        foreach (const QString &strVariant, variantList)
+        foreach (const QString &strSubtype, subtypeList)
         {
-            m_pComboVariant->addItem(strVariant);
-            if (strVariant.contains(QRegularExpression("Oracle.*Linux")))
-                iOracleIndex = m_pComboVariant->count() - 1;
+            m_pComboSubtype->addItem(strSubtype);
+            if (strSubtype.contains(QRegularExpression("Oracle.*Linux")))
+                iOracleIndex = m_pComboSubtype->count() - 1;
         }
         if (iOracleIndex != -1)
-            m_pComboVariant->setCurrentIndex(iOracleIndex);
+            m_pComboSubtype->setCurrentIndex(iOracleIndex);
 
-        populateTypeCombo(uiCommon().guestOSTypeManager().getTypeListForVariant(m_pComboVariant->currentText()));
+        populateTypeCombo(uiCommon().guestOSTypeManager().getTypeListForSubtype(m_pComboSubtype->currentText()));
     }
-    m_pComboVariant->blockSignals(false);
+    m_pComboSubtype->blockSignals(false);
 
     /* Notify listeners about this change: */
     emit sigOSFamilyChanged(m_strFamilyId);
 }
 
-void UINameAndSystemEditor::sltVariantChanged(const QString &strVariant)
+void UINameAndSystemEditor::sltSubtypeChanged(const QString &strSubtype)
 {
-    m_strVariant = strVariant;
-    populateTypeCombo(uiCommon().guestOSTypeManager().getTypeListForVariant(strVariant));
+    m_strSubtype = strSubtype;
+    populateTypeCombo(uiCommon().guestOSTypeManager().getTypeListForSubtype(strSubtype));
 }
 
 void UINameAndSystemEditor::populateTypeCombo(const UIGuestOSTypeManager::UIGuestOSTypeInfo &typeList)
@@ -385,7 +385,7 @@ void UINameAndSystemEditor::selectPreferredType()
         }
     }
     /* Or select Oracle Linux item for Linux family as default: */
-    if (m_strVariant == "Oracle")
+    if (m_strSubtype == "Oracle")
     {
         QString strDefaultID = GUEST_OS_ID_STR_X64("Oracle");
         const int iIndexOracle = m_pComboType->findData(strDefaultID, TypeID);
@@ -564,21 +564,21 @@ void UINameAndSystemEditor::prepareWidgets()
             }
             ++iRow;
 
-            /* Prepare VM OS variant label: */
-            m_pLabelVariant = new QLabel(this);
-            if (m_pLabelVariant)
+            /* Prepare VM OS subtype label: */
+            m_pLabelSubtype = new QLabel(this);
+            if (m_pLabelSubtype)
             {
-                m_pLabelVariant->setAlignment(Qt::AlignRight);
-                m_pLabelVariant->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+                m_pLabelSubtype->setAlignment(Qt::AlignRight);
+                m_pLabelSubtype->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
 
-                m_pLayout->addWidget(m_pLabelVariant, iRow, 0);
+                m_pLayout->addWidget(m_pLabelSubtype, iRow, 0);
             }
-            /* Prepare VM OS variant combo: */
-            m_pComboVariant = new QComboBox(this);
-            if (m_pComboVariant)
+            /* Prepare VM OS subtype combo: */
+            m_pComboSubtype = new QComboBox(this);
+            if (m_pComboSubtype)
             {
-                m_pLabelVariant->setBuddy(m_pComboVariant);
-                m_pLayout->addWidget(m_pComboVariant, iRow, 1);
+                m_pLabelSubtype->setBuddy(m_pComboSubtype);
+                m_pLayout->addWidget(m_pComboSubtype, iRow, 1);
             }
             ++iRow;
 
@@ -668,9 +668,9 @@ void UINameAndSystemEditor::prepareConnections()
     if (m_pComboFamily)
         connect(m_pComboFamily, &QComboBox::currentIndexChanged,
                 this, &UINameAndSystemEditor::sltFamilyChanged);
-    if (m_pComboVariant)
-        connect(m_pComboVariant, &QComboBox::currentTextChanged,
-                this, &UINameAndSystemEditor::sltVariantChanged);
+    if (m_pComboSubtype)
+        connect(m_pComboSubtype, &QComboBox::currentTextChanged,
+                this, &UINameAndSystemEditor::sltSubtypeChanged);
     if (m_pComboType)
         connect(m_pComboType, &QComboBox::currentIndexChanged,
                 this, &UINameAndSystemEditor::sltTypeChanged);

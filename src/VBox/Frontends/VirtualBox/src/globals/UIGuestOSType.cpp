@@ -71,18 +71,18 @@ const UIGuestOSTypeManager::UIGuestOSTypeFamilyInfo &UIGuestOSTypeManager::getFa
     return m_guestOSFamilies;
 }
 
-QStringList UIGuestOSTypeManager::getVariantListForFamilyId(const QString &strFamilyId) const
+QStringList UIGuestOSTypeManager::getSubtypeListForFamilyId(const QString &strFamilyId) const
 {
-    QStringList variantList;
+    QStringList subtypeList;
     foreach (const UIGuestOSType &type, m_guestOSTypes)
     {
         if (type.getFamilyId() != strFamilyId)
             continue;
-        const QString &strVariant = type.getVariant();
-        if (!strVariant.isEmpty() && !variantList.contains(strVariant))
-            variantList << strVariant;
+        const QString &strSubtype = type.getSubtype();
+        if (!strSubtype.isEmpty() && !subtypeList.contains(strSubtype))
+            subtypeList << strSubtype;
     }
-    return variantList;
+    return subtypeList;
 }
 
 UIGuestOSTypeManager::UIGuestOSTypeInfo UIGuestOSTypeManager::getTypeListForFamilyId(const QString &strFamilyId) const
@@ -100,15 +100,15 @@ UIGuestOSTypeManager::UIGuestOSTypeInfo UIGuestOSTypeManager::getTypeListForFami
     return typeInfoList;
 }
 
-UIGuestOSTypeManager::UIGuestOSTypeInfo UIGuestOSTypeManager::getTypeListForVariant(const QString &strVariant) const
+UIGuestOSTypeManager::UIGuestOSTypeInfo UIGuestOSTypeManager::getTypeListForSubtype(const QString &strSubtype) const
 {
     UIGuestOSTypeInfo typeInfoList;
-    if (strVariant.isEmpty())
+    if (strSubtype.isEmpty())
         return typeInfoList;
 
     foreach (const UIGuestOSType &type, m_guestOSTypes)
     {
-        if (type.getVariant() != strVariant)
+        if (type.getSubtype() != strSubtype)
             continue;
         QPair<QString, QString> info(type.getId(), type.getDescription());
         if (!typeInfoList.contains(info))
@@ -123,9 +123,9 @@ QString UIGuestOSTypeManager::getFamilyId(const QString &strTypeId) const
     return m_guestOSTypes.value(m_typeIdIndexMap.value(strTypeId, -1)).getFamilyId();
 }
 
-QString UIGuestOSTypeManager::getVariant(const QString  &strTypeId) const
+QString UIGuestOSTypeManager::getSubtype(const QString  &strTypeId) const
 {
-    return m_guestOSTypes.value(m_typeIdIndexMap.value(strTypeId, -1)).getVariant();
+    return m_guestOSTypes.value(m_typeIdIndexMap.value(strTypeId, -1)).getSubtype();
 }
 
 KGraphicsControllerType UIGuestOSTypeManager::getRecommendedGraphicsController(const QString &strTypeId) const
@@ -244,11 +244,11 @@ const QString &UIGuestOSType::getId() const
     return m_strId;
 }
 
-const QString &UIGuestOSType::getVariant() const
+const QString &UIGuestOSType::getSubtype() const
 {
-    if (m_strVariant.isEmpty() && m_comGuestOSType.isOk())
-        m_strVariant = m_comGuestOSType.GetVariant();
-    return m_strVariant;
+    if (m_strSubtype.isEmpty() && m_comGuestOSType.isOk())
+        m_strSubtype = m_comGuestOSType.GetVariant();
+    return m_strSubtype;
 }
 
 const QString &UIGuestOSType::getDescription() const
