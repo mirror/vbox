@@ -4718,38 +4718,45 @@ int Console::i_configNetworkCtrls(ComPtr<IMachine> pMachine, ComPtr<IPlatformPro
 
         InsertConfigNode(pDev, Utf8StrFmt("%u", uInstance).c_str(), &pInst);
         InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
-        /* the first network card gets the PCI ID 3, the next 3 gets 8..10,
-         * next 4 get 16..19. */
+
         int iPCIDeviceNo;
-        switch (uInstance)
+        if (enmChipset == ChipsetType_ICH9 || enmChipset == ChipsetType_PIIX3)
         {
-            case 0:
-                iPCIDeviceNo = 3;
-                break;
-            case 1: case 2: case 3:
-                iPCIDeviceNo = uInstance - 1 + 8;
-                break;
-            case 4: case 5: case 6: case 7:
-                iPCIDeviceNo = uInstance - 4 + 16;
-                break;
-            default:
-                /* auto assignment */
-                iPCIDeviceNo = -1;
-                break;
-        }
+            /* the first network card gets the PCI ID 3, the next 3 gets 8..10,
+             * next 4 get 16..19. */
+            switch (uInstance)
+            {
+                case 0:
+                    iPCIDeviceNo = 3;
+                    break;
+                case 1: case 2: case 3:
+                    iPCIDeviceNo = uInstance - 1 + 8;
+                    break;
+                case 4: case 5: case 6: case 7:
+                    iPCIDeviceNo = uInstance - 4 + 16;
+                    break;
+                default:
+                    /* auto assignment */
+                    iPCIDeviceNo = -1;
+                    break;
+            }
 #ifdef VMWARE_NET_IN_SLOT_11
-        /*
-         * Dirty hack for PCI slot compatibility with VMWare,
-         * it assigns slot 0x11 to the first network controller.
-         */
-        if (iPCIDeviceNo == 3 && adapterType == NetworkAdapterType_I82545EM)
-        {
-            iPCIDeviceNo = 0x11;
-            fSwapSlots3and11 = true;
-        }
-        else if (iPCIDeviceNo == 0x11 && fSwapSlots3and11)
-            iPCIDeviceNo = 3;
+            /*
+             * Dirty hack for PCI slot compatibility with VMWare,
+             * it assigns slot 0x11 to the first network controller.
+             */
+            if (iPCIDeviceNo == 3 && adapterType == NetworkAdapterType_I82545EM)
+            {
+                iPCIDeviceNo = 0x11;
+                fSwapSlots3and11 = true;
+            }
+            else if (iPCIDeviceNo == 0x11 && fSwapSlots3and11)
+                iPCIDeviceNo = 3;
 #endif
+        }
+        else /* Platforms other than x86 just use the auto assignment, no slot swap hack there. */
+            iPCIDeviceNo = -1;
+
         PCIBusAddress PCIAddr = PCIBusAddress(0, iPCIDeviceNo, 0);
         hrc = pBusMgr->assignPCIDevice(pszAdapterName, pInst, PCIAddr);                 H();
 
