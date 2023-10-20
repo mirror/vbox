@@ -4974,6 +4974,7 @@ AssertCompile((X86_SIB_SCALE_MASK >> X86_SIB_SCALE_SHIFT) == X86_SIB_SCALE_SMASK
 #define X86_OP_PRF_LOCK         UINT8_C(0xf0)
 #define X86_OP_PRF_REPZ         UINT8_C(0xf3)
 #define X86_OP_PRF_REPNZ        UINT8_C(0xf2)
+#define X86_OP_REX              UINT8_C(0x40)
 #define X86_OP_REX_B            UINT8_C(0x41)
 #define X86_OP_REX_X            UINT8_C(0x42)
 #define X86_OP_REX_R            UINT8_C(0x44)

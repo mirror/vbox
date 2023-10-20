@@ -2231,13 +2231,13 @@ typedef enum
 {
     /** Add @a iImm7*sizeof(reg) to @a iBaseReg after the store/load,
      * and update the register. */
-    kArm64InstrStLdPairType_kPostIndex = 1,
+    kArm64InstrStLdPairType_PostIndex = 1,
     /** Add @a iImm7*sizeof(reg) to @a iBaseReg before the store/load,
      * but don't update the register. */
-    kArm64InstrStLdPairType_kSigned    = 2,
+    kArm64InstrStLdPairType_Signed    = 2,
     /** Add @a iImm7*sizeof(reg) to @a iBaseReg before the store/load,
      * and update the register. */
-    kArm64InstrStLdPairType_kPreIndex  = 3
+    kArm64InstrStLdPairType_PreIndex  = 3
 } ARM64INSTRSTLDPAIRTYPE;
 
 /**
@@ -2532,10 +2532,10 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrLdrLitteral(ARMV8A64INSTRLDRLITTERAL 
 
 typedef enum
 {
-    kArmv8A64InstrShift_kLsl = 0,
-    kArmv8A64InstrShift_kLsr,
-    kArmv8A64InstrShift_kAsr,
-    kArmv8A64InstrShift_kRor
+    kArmv8A64InstrShift_Lsl = 0,
+    kArmv8A64InstrShift_Lsr,
+    kArmv8A64InstrShift_Asr,
+    kArmv8A64InstrShift_Ror
 } ARMV8A64INSTRSHIFT;
 
 
@@ -2575,7 +2575,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrLogicalShiftedReg(uint32_t u2Opc, boo
 /** A64: Encodes an AND instruction.
  * @see Armv8A64MkInstrLogicalShiftedReg for parameter details.  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAnd(uint32_t iRegResult, uint32_t iReg1, uint32_t iReg2Shifted, bool f64Bit = true,
-                                               uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_kLsl)
+                                               uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_Lsl)
 {
     return Armv8A64MkInstrLogicalShiftedReg(0, false /*fNot*/, iRegResult, iReg1, iReg2Shifted, f64Bit, offShift6, enmShift);
 }
@@ -2584,7 +2584,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAnd(uint32_t iRegResult, uint32_t iRe
 /** A64: Encodes an BIC instruction.
  * @see Armv8A64MkInstrLogicalShiftedReg for parameter details.  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBic(uint32_t iRegResult, uint32_t iReg1, uint32_t iReg2Shifted, bool f64Bit = true,
-                                               uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_kLsl)
+                                               uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_Lsl)
 {
     return Armv8A64MkInstrLogicalShiftedReg(0, true /*fNot*/, iRegResult, iReg1, iReg2Shifted, f64Bit, offShift6, enmShift);
 }
@@ -2593,7 +2593,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBic(uint32_t iRegResult, uint32_t iRe
 /** A64: Encodes an ORR instruction.
  * @see Armv8A64MkInstrLogicalShiftedReg for parameter details.  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrOrr(uint32_t iRegResult, uint32_t iReg1, uint32_t iReg2Shifted, bool f64Bit = true,
-                                               uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_kLsl)
+                                               uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_Lsl)
 {
     return Armv8A64MkInstrLogicalShiftedReg(1, false /*fNot*/, iRegResult, iReg1, iReg2Shifted, f64Bit, offShift6, enmShift);
 }
@@ -2602,7 +2602,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrOrr(uint32_t iRegResult, uint32_t iRe
 /** A64: Encodes an ORN instruction.
  * @see Armv8A64MkInstrLogicalShiftedReg for parameter details.  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrOrn(uint32_t iRegResult, uint32_t iReg1, uint32_t iReg2Shifted, bool f64Bit = true,
-                                               uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_kLsl)
+                                               uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_Lsl)
 {
     return Armv8A64MkInstrLogicalShiftedReg(1, true /*fNot*/, iRegResult, iReg1, iReg2Shifted, f64Bit, offShift6, enmShift);
 }
@@ -2611,7 +2611,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrOrn(uint32_t iRegResult, uint32_t iRe
 /** A64: Encodes an EOR instruction.
  * @see Armv8A64MkInstrLogicalShiftedReg for parameter details.  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrEor(uint32_t iRegResult, uint32_t iReg1, uint32_t iReg2Shifted, bool f64Bit = true,
-                                               uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_kLsl)
+                                               uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_Lsl)
 {
     return Armv8A64MkInstrLogicalShiftedReg(2, false /*fNot*/, iRegResult, iReg1, iReg2Shifted, f64Bit, offShift6, enmShift);
 }
@@ -2620,7 +2620,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrEor(uint32_t iRegResult, uint32_t iRe
 /** A64: Encodes an EON instruction.
  * @see Armv8A64MkInstrLogicalShiftedReg for parameter details.  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrEon(uint32_t iRegResult, uint32_t iReg1, uint32_t iReg2Shifted, bool f64Bit = true,
-                                               uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_kLsl)
+                                               uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_Lsl)
 {
     return Armv8A64MkInstrLogicalShiftedReg(2, true /*fNot*/, iRegResult, iReg1, iReg2Shifted, f64Bit, offShift6, enmShift);
 }
@@ -2629,7 +2629,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrEon(uint32_t iRegResult, uint32_t iRe
 /** A64: Encodes an ANDS instruction.
  * @see Armv8A64MkInstrLogicalShiftedReg for parameter details.  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAnds(uint32_t iRegResult, uint32_t iReg1, uint32_t iReg2Shifted, bool f64Bit = true,
-                                                uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_kLsl)
+                                                uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_Lsl)
 {
     return Armv8A64MkInstrLogicalShiftedReg(3, false /*fNot*/, iRegResult, iReg1, iReg2Shifted, f64Bit, offShift6, enmShift);
 }
@@ -2638,7 +2638,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAnds(uint32_t iRegResult, uint32_t iR
 /** A64: Encodes an BICS instruction.
  * @see Armv8A64MkInstrLogicalShiftedReg for parameter details.  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBics(uint32_t iRegResult, uint32_t iReg1, uint32_t iReg2Shifted, bool f64Bit = true,
-                                                uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_kLsl)
+                                                uint32_t offShift6 = 0, ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_Lsl)
 {
     return Armv8A64MkInstrLogicalShiftedReg(3, true /*fNot*/, iRegResult, iReg1, iReg2Shifted, f64Bit, offShift6, enmShift);
 }
@@ -2711,6 +2711,100 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAndsImm(uint32_t iRegResult, uint32_t
 
 
 /**
+ * A64: Encodes a bitfield instruction.
+ *
+ * @returns The encoded instruction.
+ * @param   u2Opc           The bitfield operation to perform.
+ * @param   iRegResult      The output register.
+ * @param   iRegSrc         The 1st register operand.
+ * @param   cImm6Ror        The right rotation count.
+ * @param   uImm6S          The leftmost bit to be moved.
+ * @param   f64Bit          true for 64-bit GPRs, @c false for 32-bit GPRs.
+ * @param   uN1             This must match @a f64Bit for all instructions
+ *                          currently specified.
+ * @see https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/
+ *      https://gist.githubusercontent.com/dinfuehr/51a01ac58c0b23e4de9aac313ed6a06a/raw/1892a274aa3238d55f83eec5b3828da2aec5f229/aarch64-logical-immediates.txt
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBitfieldImm(uint32_t u2Opc, uint32_t iRegResult, uint32_t iRegSrc,
+                                                       uint32_t cImm6Ror, uint32_t uImm6S, bool f64Bit, uint32_t uN1)
+{
+    Assert(cImm6Ror < (f64Bit ? UINT32_C(0x3f) : UINT32_C(0x1f))); Assert(iRegResult < 32); Assert(u2Opc < 4);
+    Assert(uImm6S < (f64Bit ? UINT32_C(0x3f) : UINT32_C(0x1f))); Assert(iRegSrc    < 32); Assert(uN1 <= (unsigned)f64Bit);
+    return ((uint32_t)f64Bit   << 31)
+         | (u2Opc              << 29)
+         | UINT32_C(0x13000000)
+         | (uN1                << 22)
+         | (cImm6Ror           << 16)
+         | (uImm6S             << 10)
+         | (iRegSrc            <<  5)
+         | iRegResult;
+}
+
+
+/** A64: Encodes a SBFM instruction immediates.
+ * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSbfmImm(uint32_t iRegResult, uint32_t iRegSrc, uint32_t cImm6Ror, uint32_t uImm6S,
+                                                   bool f64Bit = true, uint32_t uN1 = UINT32_MAX)
+{
+    return Armv8A64MkInstrBitfieldImm(0, iRegResult, iRegSrc, cImm6Ror, uImm6S, f64Bit, uN1 == UINT32_MAX ? f64Bit : uN1);
+}
+
+
+/** A64: Encodes a BFM instruction immediates.
+ * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBfmImm(uint32_t iRegResult, uint32_t iRegSrc, uint32_t cImm6Ror, uint32_t uImm6S,
+                                                  bool f64Bit = true, uint32_t uN1 = UINT32_MAX)
+{
+    return Armv8A64MkInstrBitfieldImm(1, iRegResult, iRegSrc, cImm6Ror, uImm6S, f64Bit, uN1 == UINT32_MAX ? f64Bit : uN1);
+}
+
+
+/** A64: Encodes an UBFM instruction immediates.
+ * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrUbfmImm(uint32_t iRegResult, uint32_t iRegSrc, uint32_t cImm6Ror, uint32_t uImm6S,
+                                                   bool f64Bit = true, uint32_t uN1 = UINT32_MAX)
+{
+    return Armv8A64MkInstrBitfieldImm(2, iRegResult, iRegSrc, cImm6Ror, uImm6S, f64Bit, uN1 == UINT32_MAX ? f64Bit : uN1);
+}
+
+
+/** A64: Encodes an LSL instruction w/ immediate shift value.
+ * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrLslImm(uint32_t iRegResult, uint32_t iRegSrc, uint32_t cShift, bool f64Bit = true)
+{
+    uint32_t const cWidth = f64Bit ? 63 : 31;
+    Assert(cShift > 0); Assert(cShift <= cWidth);
+    return Armv8A64MkInstrBitfieldImm(2, iRegResult, iRegSrc, (uint32_t)-cShift & cWidth, cWidth - cShift /*uImm6S*/, false, 0);
+}
+
+
+/** A64: Encodes an LSR instruction w/ immediate shift value.
+ * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrLsrImm(uint32_t iRegResult, uint32_t iRegSrc, uint32_t cShift, bool f64Bit = true)
+{
+    uint32_t const cWidth = f64Bit ? 63 : 31;
+    Assert(cShift > 0); Assert(cShift <= cWidth);
+    return Armv8A64MkInstrBitfieldImm(2, iRegResult, iRegSrc, cShift, cWidth /*uImm6S*/, f64Bit, f64Bit);
+}
+
+
+/** A64: Encodes an UXTB instruction - zero extend byte (8-bit).
+ * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrUxtb(uint32_t iRegResult, uint32_t iRegSrc, bool f64Bit = false)
+{
+    return Armv8A64MkInstrBitfieldImm(2, iRegResult, iRegSrc, 0, 7, f64Bit, f64Bit);
+}
+
+
+/** A64: Encodes an UXTH instruction - zero extend half word (16-bit).
+ * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrUxth(uint32_t iRegResult, uint32_t iRegSrc, bool f64Bit = false)
+{
+    return Armv8A64MkInstrBitfieldImm(2, iRegResult, iRegSrc, 0, 15, f64Bit, f64Bit);
+}
+
+
+/**
  * A64: Encodes either add, adds, sub or subs with unsigned 12-bit immediate.
  *
  * @returns The encoded instruction.
@@ -2766,15 +2860,15 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAddSubUImm12(bool fSub, uint32_t iReg
  *                                  (add / sub - default).
  * @param   cShift                  The shift count to apply to @a iRegSrc2.
  * @param   enmShift                The shift type to apply to the @a iRegSrc2
- *                                  register. kArmv8A64InstrShift_kRor is
+ *                                  register. kArmv8A64InstrShift_Ror is
  *                                  reserved.
  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAddSubReg(bool fSub, uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2,
                                                      bool f64Bit = true, bool fSetFlags = false, uint32_t cShift = 0,
-                                                     ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_kLsl)
+                                                     ARMV8A64INSTRSHIFT enmShift = kArmv8A64InstrShift_Lsl)
 {
     Assert(iRegResult < 32); Assert(iRegSrc1 < 32); Assert(iRegSrc2 < 32);
-    Assert(cShift < (f64Bit ? 64U : 32U)); Assert(enmShift != kArmv8A64InstrShift_kRor);
+    Assert(cShift < (f64Bit ? 64U : 32U)); Assert(enmShift != kArmv8A64InstrShift_Ror);
 
     return ((uint32_t)f64Bit       << 31)
          | ((uint32_t)fSub         << 30)
@@ -2857,6 +2951,44 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCbzCbnz(bool fJmpIfNotZero, int32_t i
          | (((uint32_t)iImm19 & 0x7ffff) <<  5)
          | iReg;
 }
+
+/** Armv8 Condition codes.    */
+typedef enum ARMV8INSTRCOND
+{
+    kArmv8InstrCond_Eq = 0,                     /**< Equal - Zero set. */
+    kArmv8InstrCond_Cs,                         /**< Carry set (also known as 'HS'). */
+    kArmv8InstrCond_Hs = kArmv8InstrCond_Cs,    /**< Unsigned higher or same. */
+    kArmv8InstrCond_Mi,                         /**< Negative result (minus). */
+    kArmv8InstrCond_Vs,                         /**< Overflow set. */
+    kArmv8InstrCond_Hi,                         /**< Unsigned higher. */
+    kArmv8InstrCond_Ge,                         /**< Signed greater or equal. */
+    kArmv8InstrCond_Le,                         /**< Signed less or equal. */
+
+    kArmv8InstrCond_Ne,                         /**< Not equal - Zero clear. */
+    kArmv8InstrCond_Cc,                         /**< Carry clear (also known as 'LO'). */
+    kArmv8InstrCond_Lo = kArmv8InstrCond_Cc,    /**< Unsigned lower. */
+    kArmv8InstrCond_Pl,                         /**< Positive or zero result (plus). */
+    kArmv8InstrCond_Vc,                         /**< Overflow clear. */
+    kArmv8InstrCond_Ls,                         /**< Unsigned lower or same. */
+    kArmv8InstrCond_Lt,                         /**< Signed less than. */
+    kArmv8InstrCond_Al                          /**< Condition is always true. */
+} ARMV8INSTRCOND;
+
+/**
+ * A64: Encodes conditional branch instruction w/ immediate target.
+ *
+ * @returns The encoded instruction.
+ * @param   enmCond         The branch condition.
+ * @param   iImm19          Signed number of instruction to jump (i.e. *4).
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBCond(ARMV8INSTRCOND enmCond, int32_t iImm19)
+{
+    Assert(enmCond >= 0 && enmCond < 16);
+    return UINT32_C(0x54000000)
+         | (((uint32_t)iImm19 & 0x7ffff) <<  5)
+         | (uint32_t)enmCond;
+}
+
 
 /**
  * A64: Encodes the BRK instruction.

@@ -8034,7 +8034,7 @@ FNIEMOP_DEF(iemOp_Grp11_Eb_Ib)
 FNIEMOP_DEF(iemOp_Grp11_Ev_Iz)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if ((bRm & X86_MODRM_REG_MASK) != (0 << X86_MODRM_REG_SHIFT)) /* only mov Eb,Ib in this group. */
+    if ((bRm & X86_MODRM_REG_MASK) != (0 << X86_MODRM_REG_SHIFT)) /* only mov Eb,Iz in this group. */
         IEMOP_RAISE_INVALID_OPCODE_RET();
     IEMOP_MNEMONIC(mov_Ev_Iz, "mov Ev,Iz");
 
