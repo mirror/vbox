@@ -1683,12 +1683,22 @@ SUPR0_EXPORT_SYMBOL(SUPR0PrintfV);
 SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void)
 {
     uint32_t fFlags = 0;
+    /* Note! bird 2023-10-20: Apparently, with CONFIG_PAX_KERNEXEC these days,
+             not only is the regular GDT read-only, but the one returned by
+             get_current_gdt_rw() is also read-only despite the name.
+
+             We don't know exactly when this started, or if it was always like
+             this, but getting hold of the relevant patches isn't all that
+             straight forward any longer it seems (which is weird for linux
+             patches), so, we've just enabled slow-mode for all PAX_KERNEXEC
+             kernels regardless of kernel version. */
 #ifdef CONFIG_PAX_KERNEXEC
     fFlags |= SUPKERNELFEATURES_GDT_READ_ONLY;
 #endif
 #if RTLNX_VER_MIN(4,12,0)
     fFlags |= SUPKERNELFEATURES_GDT_NEED_WRITABLE;
 #endif
+
 #if defined(VBOX_STRICT) || defined(VBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV)
     fFlags |= SUPKERNELFEATURES_SMAP;
 #elif defined(CONFIG_X86_SMAP)
