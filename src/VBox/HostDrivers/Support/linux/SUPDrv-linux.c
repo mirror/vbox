@@ -1772,7 +1772,7 @@ SUPR0_EXPORT_SYMBOL(SUPR0FpuEnd);
 
 int VBOXCALL    supdrvOSGetCurrentGdtRw(RTHCUINTPTR *pGdtRw)
 {
-#if RTLNX_VER_MIN(4,12,0)
+#if RTLNX_VER_MIN(4,12,0) && !defined(CONFIG_PAX_KERNEXEC)
     *pGdtRw = (RTHCUINTPTR)get_current_gdt_rw();
     return VINF_SUCCESS;
 #else
