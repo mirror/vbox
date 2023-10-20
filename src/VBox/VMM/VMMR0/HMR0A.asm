@@ -438,8 +438,8 @@ BEGINPROC VMXRestoreHostState
 
 ALIGNCODE(8)
 .gdt_readonly_or_need_writable:
-        test    edi, VMX_RESTORE_HOST_GDT_NEED_WRITABLE
-        jnz     .gdt_readonly_need_writable
+        test    edi, VMX_RESTORE_HOST_GDT_READ_ONLY
+        jz      .gdt_readonly_need_writable
 .gdt_readonly:
         mov     rcx, cr0
         mov     r9, rcx
