@@ -2959,6 +2959,7 @@ static uint32_t iemNativeEmitGuestRegValueCheck(PIEMRECOMPILERSTATE pReNative, u
 # else
 #  error "Port me!"
 # endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 #endif /* VBOX_STRICT */
@@ -2988,6 +2989,7 @@ DECLHIDDEN(uint32_t) iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReN
     AssertReturn(pbCodeBuf, UINT32_MAX);
     pbCodeBuf[off++] = 0x0b;                    /* or edx, eax */
     pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, X86_GREG_xDX, X86_GREG_xAX);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
     /* Jump to non-zero status return path. */
     off = iemNativeEmitJnzToNewLabel(pReNative, off, kIemNativeLabelType_NonZeroRetOrPassUp);
@@ -3014,6 +3016,7 @@ DECLHIDDEN(uint32_t) iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReN
 #else
 # error "port me"
 #endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 
@@ -3200,27 +3203,10 @@ static int32_t iemNativeEmitCImplCall(PIEMRECOMPILERSTATE pReNative, uint32_t of
     /*
      * Make the call.
      */
-#ifdef RT_ARCH_AMD64
-    off = iemNativeEmitLoadGprImm64(pReNative, off, X86_GREG_xAX, pfnCImpl);
+    off = iemNativeEmitCallImm(pReNative, off, pfnCImpl);
 
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
-    AssertReturn(pbCodeBuf, UINT32_MAX);
-    pbCodeBuf[off++] = 0xff;                    /* call rax */
-    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 2, X86_GREG_xAX);
-
-# if defined(VBOXSTRICTRC_STRICT_ENABLED) && defined(RT_OS_WINDOWS)
+#if defined(RT_ARCH_AMD64) && defined(VBOXSTRICTRC_STRICT_ENABLED) && defined(RT_OS_WINDOWS)
     off = iemNativeEmitLoadGprByBpU32(pReNative, off, X86_GREG_xAX, IEMNATIVE_FP_OFF_IN_SHADOW_ARG0); /* rcStrict (see above) */
-# endif
-
-#elif defined(RT_ARCH_ARM64)
-    off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, pfnCImpl);
-
-    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-    AssertReturn(pu32CodeBuf, UINT32_MAX);
-    pu32CodeBuf[off++] = Armv8A64MkInstrBlr(IEMNATIVE_REG_FIXED_TMP0);
-
-#else
-# error "Port me!"
 #endif
 
     /*
@@ -3346,13 +3332,6 @@ static uint32_t iemNativeEmitRcFiddling(PIEMRECOMPILERSTATE pReNative, uint32_t 
 
         /* iemNativeHlpExecStatusCodeFiddling(PVMCPUCC pVCpu, int rc, uint8_t idxInstr) */
 #ifdef RT_ARCH_AMD64
-        /*
-         * AMD64:
-         */
-        uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 20);
-        AssertReturn(pbCodeBuf, UINT32_MAX);
-
-        /* Call helper and jump to return point. */
 # ifdef RT_OS_WINDOWS
 #  ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
         off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_x8,  X86_GREG_xCX); /* cl = instruction number */
@@ -3370,17 +3349,10 @@ static uint32_t iemNativeEmitRcFiddling(PIEMRECOMPILERSTATE pReNative, uint32_t 
         off = iemNativeEmitLoadGpr8Imm(pReNative, off, X86_GREG_xCX, 0);
 # endif
 
-#elif defined(RT_ARCH_ARM64)
-        /*
-         * ARM64:
-         */
+#else
         off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, IEMNATIVE_CALL_RET_GREG);
         off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
         /* IEMNATIVE_CALL_ARG2_GREG is already set. */
-        off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, (uintptr_t)iemNativeHlpExecStatusCodeFiddling);
-        AssertReturn(off != UINT32_MAX, UINT32_MAX);
-#else
-# error "port me"
 #endif
 
         off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpExecStatusCodeFiddling);
@@ -3476,6 +3448,7 @@ static uint32_t iemNativeEmitEpilog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 #else
 # error "port me"
 #endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
     return iemNativeEmitRcFiddling(pReNative, off, idxReturn);
 }
@@ -3582,6 +3555,7 @@ static uint32_t iemNativeEmitProlog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 #else
 # error "port me"
 #endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 

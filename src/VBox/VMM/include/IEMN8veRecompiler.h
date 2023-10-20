@@ -472,7 +472,12 @@ typedef struct IEMRECOMPILERSTATE
     /** Size of the buffer that pbNativeRecompileBufR3 points to in
      * IEMNATIVEINSTR units. */
     uint32_t                    cInstrBufAlloc;
-    uint32_t                    uPadding; /* We don't keep track of this here... */
+#ifdef VBOX_STRICT
+    /** Strict: How far the last iemNativeInstrBufEnsure() checked. */
+    uint32_t                    offInstrBufChecked;
+#else
+    uint32_t                    uPadding; /* We don't keep track of the size here... */
+#endif
     /** Fixed temporary code buffer for native recompilation. */
     PIEMNATIVEINSTR             pInstrBuf;
 
@@ -594,10 +599,23 @@ DECLHIDDEN(uint32_t)        iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTA
  */
 DECL_FORCE_INLINE(PIEMNATIVEINSTR) iemNativeInstrBufEnsure(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t cInstrReq)
 {
-    if (RT_LIKELY(off + (uint64_t)cInstrReq <= pReNative->cInstrBufAlloc))
+    uint64_t const offChecked = off + (uint64_t)cInstrReq;
+    if (RT_LIKELY(offChecked <= pReNative->cInstrBufAlloc))
+    {
+#ifdef VBOX_STRICT
+        pReNative->offInstrBufChecked = offChecked;
+#endif
         return pReNative->pInstrBuf;
+    }
     return iemNativeInstrBufEnsureSlow(pReNative, off, cInstrReq);
 }
+
+/**
+ * Checks that we didn't exceed the space requested in the last
+ * iemNativeInstrBufEnsure() call. */
+#define IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(a_pReNative, a_off) \
+    AssertMsg((a_off) <= (a_pReNative)->offInstrBufChecked, \
+              ("off=%#x offInstrBufChecked=%#x\n", (a_off), (a_pReNative)->offInstrBufChecked))
 
 
 /**
@@ -635,6 +653,7 @@ DECLINLINE(uint32_t) iemNativeEmitMarker(PIEMRECOMPILERSTATE pReNative, uint32_t
 #else
 # error "port me"
 #endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 
@@ -662,7 +681,7 @@ DECLINLINE(uint32_t) iemNativeEmitGprZero(PIEMRECOMPILERSTATE pReNative, uint32_
 #else
 # error "port me"
 #endif
-    RT_NOREF(pReNative);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 
@@ -759,6 +778,7 @@ DECLINLINE(uint32_t) iemNativeEmitLoadGprImm64(PIEMRECOMPILERSTATE pReNative, ui
 #else
 # error "port me"
 #endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 
@@ -790,6 +810,7 @@ DECLINLINE(uint32_t) iemNativeEmitLoadGpr8Imm(PIEMRECOMPILERSTATE pReNative, uin
 #else
 # error "port me"
 #endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 
@@ -852,6 +873,7 @@ DECL_FORCE_INLINE(uint32_t) iemNativeEmitGprByVCpuLdSt(PIEMRECOMPILERSTATE pReNa
         AssertReturn(pu32CodeBuf, UINT32_MAX);
         pu32CodeBuf[off++] = Armv8A64MkInstrStLdRegIdx(enmOperation, iGpr, IEMNATIVE_REG_FIXED_PVMCPU, IEMNATIVE_REG_FIXED_TMP);
     }
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 #endif
@@ -872,6 +894,7 @@ DECLINLINE(uint32_t) iemNativeEmitLoadGprFromVCpuU64(PIEMRECOMPILERSTATE pReNati
         pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_R;
     pbCodeBuf[off++] = 0x8b;
     off = iemNativeEmitGprByVCpuDisp(pbCodeBuf,off,iGpr, offVCpu);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
 #elif RT_ARCH_ARM64
     off = iemNativeEmitGprByVCpuLdSt(pReNative, off, iGpr, offVCpu, kArmv8A64InstrLdStType_Ld_Dword, sizeof(uint64_t));
@@ -897,6 +920,7 @@ DECLINLINE(uint32_t) iemNativeEmitLoadGprFromVCpuU32(PIEMRECOMPILERSTATE pReNati
         pbCodeBuf[off++] = X86_OP_REX_R;
     pbCodeBuf[off++] = 0x8b;
     off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, iGpr, offVCpu);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
 #elif RT_ARCH_ARM64
     off = iemNativeEmitGprByVCpuLdSt(pReNative, off, iGpr, offVCpu, kArmv8A64InstrLdStType_Ld_Word, sizeof(uint32_t));
@@ -923,6 +947,7 @@ DECLINLINE(uint32_t) iemNativeEmitLoadGprFromVCpuU16(PIEMRECOMPILERSTATE pReNati
     pbCodeBuf[off++] = 0x0f;
     pbCodeBuf[off++] = 0xb7;
     off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, iGpr, offVCpu);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
 #elif RT_ARCH_ARM64
     off = iemNativeEmitGprByVCpuLdSt(pReNative, off, iGpr, offVCpu, kArmv8A64InstrLdStType_Ld_Half, sizeof(uint16_t));
@@ -949,6 +974,7 @@ DECLINLINE(uint32_t) iemNativeEmitLoadGprFromVCpuU8(PIEMRECOMPILERSTATE pReNativ
     pbCodeBuf[off++] = 0x0f;
     pbCodeBuf[off++] = 0xb6;
     off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, iGpr, offVCpu);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
 #elif RT_ARCH_ARM64
     off = iemNativeEmitGprByVCpuLdSt(pReNative, off, iGpr, offVCpu, kArmv8A64InstrLdStType_Ld_Byte, sizeof(uint8_t));
@@ -975,6 +1001,7 @@ DECLINLINE(uint32_t) iemNativeEmitStoreGprToVCpuU64(PIEMRECOMPILERSTATE pReNativ
         pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_R;
     pbCodeBuf[off++] = 0x89;
     off = iemNativeEmitGprByVCpuDisp(pbCodeBuf,off,iGpr, offVCpu);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
 #elif RT_ARCH_ARM64
     off = iemNativeEmitGprByVCpuLdSt(pReNative, off, iGpr, offVCpu, kArmv8A64InstrLdStType_St_Dword, sizeof(uint64_t));
@@ -999,6 +1026,7 @@ DECLINLINE(uint32_t) iemNativeEmitStoreGprFromVCpuU32(PIEMRECOMPILERSTATE pReNat
         pbCodeBuf[off++] = X86_OP_REX_R;
     pbCodeBuf[off++] = 0x89;
     off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, iGpr, offVCpu);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
 #elif RT_ARCH_ARM64
     off = iemNativeEmitGprByVCpuLdSt(pReNative, off, iGpr, offVCpu, kArmv8A64InstrLdStType_St_Word, sizeof(uint32_t));
@@ -1024,6 +1052,7 @@ DECLINLINE(uint32_t) iemNativeEmitStoreGprFromVCpuU16(PIEMRECOMPILERSTATE pReNat
         pbCodeBuf[off++] = X86_OP_REX_R;
     pbCodeBuf[off++] = 0x89;
     off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, iGpr, offVCpu);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
 #elif RT_ARCH_ARM64
     off = iemNativeEmitGprByVCpuLdSt(pReNative, off, iGpr, offVCpu, kArmv8A64InstrLdStType_St_Half, sizeof(uint16_t));
@@ -1048,6 +1077,7 @@ DECLINLINE(uint32_t) iemNativeEmitStoreGprFromVCpuU8(PIEMRECOMPILERSTATE pReNati
         pbCodeBuf[off++] = X86_OP_REX_R;
     pbCodeBuf[off++] = 0x88;
     off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, iGpr, offVCpu);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
 #elif RT_ARCH_ARM64
     off = iemNativeEmitGprByVCpuLdSt(pReNative, off, iGpr, offVCpu, kArmv8A64InstrLdStType_St_Byte, sizeof(uint8_t));
@@ -1086,6 +1116,7 @@ DECLINLINE(uint32_t) iemNativeEmitLoadGprFromGpr(PIEMRECOMPILERSTATE pReNative, 
 #else
 # error "port me"
 #endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 
@@ -1093,7 +1124,8 @@ DECLINLINE(uint32_t) iemNativeEmitLoadGprFromGpr(PIEMRECOMPILERSTATE pReNative, 
 /**
  * Common bit of iemNativeEmitLoadGprByBp and friends.
  */
-DECL_FORCE_INLINE(uint32_t) iemNativeEmitGprByBpDisp(uint8_t *pbCodeBuf, uint32_t off, uint8_t iGprReg, int32_t offDisp)
+DECL_FORCE_INLINE(uint32_t) iemNativeEmitGprByBpDisp(uint8_t *pbCodeBuf, uint32_t off, uint8_t iGprReg, int32_t offDisp,
+                                                     PIEMRECOMPILERSTATE pReNativeAssert)
 {
     if (offDisp < 128 && offDisp >= -128)
     {
@@ -1108,6 +1140,7 @@ DECL_FORCE_INLINE(uint32_t) iemNativeEmitGprByBpDisp(uint8_t *pbCodeBuf, uint32_
         pbCodeBuf[off++] = RT_BYTE3((uint32_t)offDisp);
         pbCodeBuf[off++] = RT_BYTE4((uint32_t)offDisp);
     }
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNativeAssert, off); RT_NOREF(pReNativeAssert);
     return off;
 }
 #endif
@@ -1127,7 +1160,7 @@ DECLINLINE(uint32_t) iemNativeEmitLoadGprByBp(PIEMRECOMPILERSTATE pReNative, uin
     else
         pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_R;
     pbCodeBuf[off++] = 0x8b;
-    return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprDst, offDisp);
+    return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprDst, offDisp, pReNative);
 }
 #endif
 
@@ -1144,7 +1177,7 @@ DECLINLINE(uint32_t) iemNativeEmitLoadGprByBpU32(PIEMRECOMPILERSTATE pReNative, 
     if (iGprDst >= 8)
         pbCodeBuf[off++] = X86_OP_REX_R;
     pbCodeBuf[off++] = 0x8b;
-    return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprDst, offDisp);
+    return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprDst, offDisp, pReNative);
 }
 #endif
 
@@ -1163,7 +1196,7 @@ DECLINLINE(uint32_t) iemNativeEmitLeaGrpByBp(PIEMRECOMPILERSTATE pReNative, uint
     else
         pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_R;
     pbCodeBuf[off++] = 0x8d;
-    return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprDst, offDisp);
+    return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprDst, offDisp, pReNative);
 }
 #endif
 
@@ -1184,7 +1217,7 @@ DECLINLINE(uint32_t) iemNativeEmitStoreGprByBp(PIEMRECOMPILERSTATE pReNative, ui
     else
         pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_R;
     pbCodeBuf[off++] = 0x89;
-    return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprSrc, offDisp);
+    return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprSrc, offDisp, pReNative);
 
 #elif defined(RT_ARCH_ARM64)
     if (offDisp >= 0 && offDisp < 4096 * 8 && !((uint32_t)offDisp & 7))
@@ -1211,6 +1244,7 @@ DECLINLINE(uint32_t) iemNativeEmitStoreGprByBp(PIEMRECOMPILERSTATE pReNative, ui
         pu32CodeBuf[off++] = Armv8A64MkInstrStLdRegIdx(kArmv8A64InstrLdStType_St_Dword, iGprSrc, ARMV8_A64_REG_BP,
                                                        IEMNATIVE_REG_FIXED_TMP0, kArmv8A64InstrLdStExtend_Sxtw);
     }
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 
 #else
@@ -1252,6 +1286,7 @@ DECLINLINE(uint32_t) iemNativeEmitStoreImm64ByBp(PIEMRECOMPILERSTATE pReNative, 
         pbCodeBuf[off++] = RT_BYTE2(uImm64);
         pbCodeBuf[off++] = RT_BYTE3(uImm64);
         pbCodeBuf[off++] = RT_BYTE4(uImm64);
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
         return off;
     }
 #endif
@@ -1290,6 +1325,7 @@ DECLINLINE(uint32_t) iemNativeEmitSubGprImm(PIEMRECOMPILERSTATE pReNative, uint3
         pbCodeBuf[off++] = RT_BYTE3(iSubtrahend);
         pbCodeBuf[off++] = RT_BYTE4(iSubtrahend);
     }
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 #endif
@@ -1318,6 +1354,7 @@ DECLINLINE(uint32_t ) iemNativeEmitAddTwoGprs(PIEMRECOMPILERSTATE pReNative, uin
 #else
 # error "Port me"
 #endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 
@@ -1355,6 +1392,7 @@ DECLINLINE(uint32_t ) iemNativeEmitAddGprImm8(PIEMRECOMPILERSTATE pReNative, uin
 #else
 # error "Port me"
 #endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 
@@ -1394,6 +1432,7 @@ DECLINLINE(uint32_t ) iemNativeEmitAddGpr32Imm8(PIEMRECOMPILERSTATE pReNative, u
 #else
 # error "Port me"
 #endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 
@@ -1464,6 +1503,7 @@ DECLINLINE(uint32_t ) iemNativeEmitAddGprImm(PIEMRECOMPILERSTATE pReNative, uint
 #else
 # error "Port me"
 #endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 
@@ -1517,6 +1557,7 @@ DECLINLINE(uint32_t ) iemNativeEmitAddGpr32Imm(PIEMRECOMPILERSTATE pReNative, ui
 #else
 # error "Port me"
 #endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 
@@ -1548,6 +1589,7 @@ DECLINLINE(uint32_t ) iemNativeEmitClear16UpGpr(PIEMRECOMPILERSTATE pReNative, u
 #else
 # error "Port me"
 #endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 
@@ -1574,6 +1616,7 @@ DECLINLINE(uint32_t ) iemNativeEmitShiftGprRight(PIEMRECOMPILERSTATE pReNative, 
 #else
 # error "Port me"
 #endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 
@@ -1590,6 +1633,7 @@ DECLINLINE(uint32_t) iemNativeEmitCmpArm64(PIEMRECOMPILERSTATE pReNative, uint32
     AssertReturn(pu32CodeBuf, UINT32_MAX);
     pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(true /*fSub*/, ARMV8_A64_REG_XZR /*iRegResult*/, iGprLeft, iGprRight,
                                                   f64Bit, true /*fSetFlags*/, cShift, enmShift);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 #endif
@@ -1608,6 +1652,7 @@ DECLINLINE(uint32_t) iemNativeEmitCmpGprWithGpr(PIEMRECOMPILERSTATE pReNative, u
     pbCodeBuf[off++] = X86_OP_REX_W | (iGprLeft >= 8 ? X86_OP_REX_R : 0) | (iGprRight >= 8 ? X86_OP_REX_B : 0);
     pbCodeBuf[off++] = 0x3b;
     pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprLeft & 7, iGprRight & 7);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
 #elif defined(RT_ARCH_ARM64)
     off = iemNativeEmitCmpArm64(pReNative, off, iGprLeft, iGprRight, false /*f64Bit*/);
@@ -1634,6 +1679,7 @@ DECLINLINE(uint32_t) iemNativeEmitCmpGpr32WithGpr(PIEMRECOMPILERSTATE pReNative,
         pbCodeBuf[off++] = (iGprLeft >= 8 ? X86_OP_REX_R : 0) | (iGprRight >= 8 ? X86_OP_REX_B : 0);
     pbCodeBuf[off++] = 0x3b;
     pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprLeft & 7, iGprRight & 7);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
 
 #elif defined(RT_ARCH_ARM64)
     off = iemNativeEmitCmpArm64(pReNative, off, iGprLeft, iGprRight, false /*f64Bit*/);
@@ -1699,6 +1745,7 @@ DECLINLINE(uint32_t) iemNativeEmitJmpToLabel(PIEMRECOMPILERSTATE pReNative, uint
 #else
 # error "Port me!"
 #endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 
@@ -1753,6 +1800,7 @@ DECLINLINE(uint32_t) iemNativeEmitJccToLabel(PIEMRECOMPILERSTATE pReNative, uint
 #else
 # error "Port me!"
 #endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 
@@ -1867,6 +1915,7 @@ DECLINLINE(uint32_t) iemNativeEmitJccToFixed(PIEMRECOMPILERSTATE pReNative, uint
 #else
 # error "Port me!"
 #endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 
@@ -1992,6 +2041,7 @@ DECLINLINE(uint32_t) iemNativeEmitCallImm(PIEMRECOMPILERSTATE pReNative, uint32_
 #else
 # error "port me"
 #endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 
