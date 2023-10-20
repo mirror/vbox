@@ -780,7 +780,8 @@ void UIIconPoolGeneral::overlayArchitectureTextOnPixmap(const QString &strArch, 
     painter.setRenderHint(QPainter::TextAntialiasing);
     painter.setPen(QPen(Qt::black, 1));
     painter.setBrush(QColor(255, 255, 255, 200));
-    painter.drawRect(textRect);
+    /* x and y radii are relative to rectangle's width and height and should be in [0, 100]: */
+    painter.drawRoundedRect(textRect, 50 /* xRadius */, 50 /* yRadius*/, Qt::RelativeSize);
     painter.drawText(textRect, Qt::AlignHCenter | Qt::AlignVCenter, strArch);
 #endif
 }
