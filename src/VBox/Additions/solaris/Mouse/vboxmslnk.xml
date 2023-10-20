@@ -68,13 +68,13 @@
     <exec_method
         type='method'
         name='start'
-        exec='/usr/sbin/vboxmslnk'
+        exec='/usr/sbin/vboxmslnk --start'
         timeout_seconds='30' />
 
     <exec_method
         type='method'
         name='stop'
-        exec=':true'
+        exec='/usr/sbin/vboxmslnk --stop'
         timeout_seconds='60' />
 
     <property_group name='startd' type='framework'>

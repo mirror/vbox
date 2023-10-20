@@ -44,87 +44,175 @@
 #include <string.h>
 #include <stropts.h>
 #include <unistd.h>
+#include <paths.h>
+#include <libgen.h>
+#include <getopt.h>
 
-static void handleArgs(int argc, char *argv[], int *pfNoLogo);
+#define VBOXMSLNK_MUXID_FILE    _PATH_SYSVOL "/vboxmslnk.muxid"
 
-int main(int argc, char *argv[])
+static const char *g_pszProgName;
+
+
+static void vboxmslnk_fatal(const char *fmt, ...)
 {
-    int fNoLogo, hVBoxMS, hConsMS, idConnection;
+    va_list ap;
 
-    handleArgs(argc, argv, &fNoLogo);
+    va_start(ap, fmt);
+    (void) vfprintf(stderr, fmt, ap);
+    if (fmt[strlen(fmt) - 1] != '\n')
+        (void) fprintf(stderr, "  The error reported was: %s\n", strerror(errno));
+    va_end(ap);
+
+    exit(EXIT_FAILURE);
+}
+
+static void vboxmslnk_start(bool fNoLogo)
+{
     /* Open our pointer integration driver (vboxms). */
-    hVBoxMS = open("/dev/vboxms", O_RDWR);
+    int hVBoxMS = open("/dev/vboxms", O_RDWR);
     if (hVBoxMS < 0)
-    {
-        printf("Failed to open /dev/vboxms - please make sure that the node exists and that\n"
-               "you have permission to open it.  The error reported was:\n"
-               "%s\n", strerror(errno));
-        exit(1);
-    }
+        vboxmslnk_fatal("Failed to open /dev/vboxms - please make sure that the node exists and that\n"
+                        "you have permission to open it.");
+
     /* Open the Solaris virtual mouse driver (consms). */
-    hConsMS = open("/dev/mouse", O_RDWR);
+    int hConsMS = open("/dev/mouse", O_RDWR);
     if (hConsMS < 0)
-    {
-        printf("Failed to open /dev/mouse - please make sure that the node exists and that\n"
-               "you have permission to open it.  The error reported was:\n"
-               "%s\n", strerror(errno));
-        exit(1);
-    }
+        vboxmslnk_fatal("Failed to open /dev/mouse - please make sure that the node exists and that\n"
+                        "you have permission to open it.");
+
     /* Link vboxms to consms from below.  What this means is that vboxms is
      * added to the list of input sources multiplexed by consms, and vboxms
      * will receive any control messages (such as information about guest
      * resolution changes) sent to consms.  The link can only be broken
      * explicitly using the connection ID returned from the IOCtl. */
-    idConnection = ioctl(hConsMS, I_PLINK, hVBoxMS);
+    int idConnection = ioctl(hConsMS, I_PLINK, hVBoxMS);
     if (idConnection < 0)
-    {
-        printf("Failed to add /dev/vboxms (the pointer integration driver) to /dev/mouse\n"
-               "(the Solaris virtual master mouse).  The error reported was:\n"
-               "%s\n", strerror(errno));
-        exit(1);
-    }
-    close(hVBoxMS);
+        vboxmslnk_fatal("Failed to add /dev/vboxms (the pointer integration driver) to /dev/mouse\n"
+                        "(the Solaris virtual master mouse).");
+
+    (void) close(hVBoxMS);
+    (void) close(hConsMS);
+
     if (!fNoLogo)
-        printf("Successfully enabled pointer integration.  Connection ID number to the\n"
-               "Solaris virtual master mouse:\n");
-    printf("%d\n", idConnection);
-    exit(0);
+        (void) printf("Successfully enabled pointer integration.  Connection ID number to the\n"
+                      "Solaris virtual master mouse is:\n");
+    (void) printf("%d\n", idConnection);
+
+    /* Save the connection ID (aka mux ID) so it can be retrieved later. */
+    FILE *fp = fopen(VBOXMSLNK_MUXID_FILE, "w");
+    if (fp == NULL)
+        vboxmslnk_fatal("Failed to open %s for writing the connection ID.", VBOXMSLNK_MUXID_FILE);
+    int rc = fprintf(fp, "%d\n", idConnection);
+    if (rc <= 0)
+        vboxmslnk_fatal("Failed to write the connection ID to %s.", VBOXMSLNK_MUXID_FILE);
+    (void) fclose(fp);
 }
 
-void handleArgs(int argc, char *argv[], int *pfNoLogo)
+static void vboxmslnk_stop()
 {
-    int fNoLogo = 0, fShowUsage = 0, fShowVersion = 0;
+   /* Open the Solaris virtual mouse driver (consms). */
+    int hConsMS = open("/dev/mouse", O_RDWR);
+    if (hConsMS < 0)
+        vboxmslnk_fatal("Failed to open /dev/mouse - please make sure that the node exists and that\n"
+                        "you have permission to open it.");
 
-    if (argc != 1 && argc != 2)
-        fShowUsage = 1;
-    if (argc == 2)
+    /* Open the vboxmslnk.muxid file and retrieve the saved mux ID. */
+    FILE *fp = fopen(VBOXMSLNK_MUXID_FILE, "r");
+    if (fp == NULL)
+        vboxmslnk_fatal("Failed to open %s for reading the connection ID.", VBOXMSLNK_MUXID_FILE);
+    int idConnection;
+    int rc = fscanf(fp, "%d\n", &idConnection);
+    if (rc <= 0)
+        vboxmslnk_fatal("Failed to read the connection ID from %s.", VBOXMSLNK_MUXID_FILE);
+    (void) fclose(fp);
+    (void) unlink(VBOXMSLNK_MUXID_FILE);
+
+    /* Unlink vboxms from consms so that vboxms is able to be unloaded. */
+    rc = ioctl(hConsMS, I_PUNLINK, idConnection);
+    if (rc < 0)
+        vboxmslnk_fatal("Failed to disconnect /dev/vboxms (the pointer integration driver) from\n"
+                        "/dev/mouse (the Solaris virtual master mouse).");
+    (void) close(hConsMS);
+}
+
+static void vboxmslnk_usage()
+{
+    (void) printf("Usage:\n"
+           "  %s [--nologo] <--start | --stop>\n"
+           "  %s [-V|--version]\n\n"
+           "  -V|--version  print the tool version.\n"
+           "  --nologo      do not display the logo text and only output the connection\n"
+           "                ID number needed to disable pointer integration\n"
+           "                again.\n"
+           "  --start       Connect the VirtualBox pointer integration kernel module\n"
+           "                to the Solaris mouse driver kernel module.\n"
+           "  --stop        Disconnect the VirtualBox pointer integration kernel module\n"
+           "                from the Solaris mouse driver kernel module.\n"
+           "  -h|--help     display this help text.\n",
+           g_pszProgName, g_pszProgName);
+    exit(EXIT_FAILURE);
+}
+
+int main(int argc, char *argv[])
+{
+    bool fShowVersion = false, fNoLogo = false, fStart = false, fStop = false;
+    int c;
+
+    g_pszProgName = basename(argv[0]);
+
+    static const struct option vboxmslnk_lopts[] = {
+        {"version",     no_argument,            0, 'V'  },
+        {"nologo",      no_argument,            0, 'n'  },
+        {"start",       no_argument,            0, 's'  },
+        {"stop",        no_argument,            0, 't'  },
+        {"help",        no_argument,            0, 'h'  },
+        { 0, 0, 0, 0}
+    };
+
+    while ((c = getopt_long(argc, argv, "Vh", vboxmslnk_lopts, NULL)) != -1)
     {
-        if (!strcmp(argv[1], "--nologo"))
-            fNoLogo = 1;
-        else if (!strcmp(argv[1], "-V") || !strcmp(argv[1], "--version"))
-            fShowVersion = 1;
-        else
-            fShowUsage = 1;
+        switch (c)
+        {
+        case 'V':
+            fShowVersion = true;
+            break;
+        case 'n':
+            fNoLogo = true;
+            break;
+        case 's':
+            fStart = true;
+            break;
+        case 't':
+            fStop = true;
+            break;
+        case 'h':
+        default:
+            vboxmslnk_usage();
+        }
     }
+
+    if (   (!fStart && !fStop && !fShowVersion)
+        || (fStart && fStop)
+        || (fShowVersion && (fNoLogo || fStart || fStop)))
+        vboxmslnk_usage();
+
     if (fShowVersion)
     {
-        printf("%sr%u\n", VBOX_VERSION_STRING, RTBldCfgRevision());
-        exit(0);
+        (void) printf("%sr%u\n", VBOX_VERSION_STRING, RTBldCfgRevision());
+        exit(EXIT_SUCCESS);
     }
-    if (!fNoLogo)
-        printf(VBOX_PRODUCT
-               " Guest Additions enabling utility for Solaris pointer\nintegration Version "
-               VBOX_VERSION_STRING "\n"
-               "Copyright (C) " VBOX_C_YEAR " " VBOX_VENDOR "\n\n");
-    if (fShowUsage)
-    {
-        printf("Usage:\n  -V|--version  print the tool version.\n"
-               "  --nologo      do not display the logo text and only output the connection\n"
-               "                ID number needed to disable pointer integration\n"
-               "                again.\n"
-               "  -h|--help     display this help text.\n");
-        exit(0);
-    }
-    *pfNoLogo = fNoLogo;
-}
 
+    if (!fNoLogo)
+        (void) printf(VBOX_PRODUCT
+                      " Guest Additions utility for enabling Solaris pointer\nintegration Version "
+                      VBOX_VERSION_STRING "\n"
+                      "Copyright (C) " VBOX_C_YEAR " " VBOX_VENDOR "\n\n");
+
+    if (fStart)
+        vboxmslnk_start(fNoLogo);
+
+    if (fStop)
+        vboxmslnk_stop();
+
+    exit(EXIT_SUCCESS);
+}
