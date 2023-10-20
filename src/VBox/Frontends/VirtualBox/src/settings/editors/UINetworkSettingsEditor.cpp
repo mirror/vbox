@@ -102,17 +102,6 @@ void UINetworkSettingsEditor::setAttachmentOptionsAvailable(bool fAvailable)
         m_pEditorNetworkAttachment->setEnabled(fAvailable);
 }
 
-void UINetworkSettingsEditor::setAdvancedButtonExpanded(bool fExpanded)
-{
-    if (m_pEditorNetworkFeatures)
-        m_pEditorNetworkFeatures->setAdvancedButtonExpanded(fExpanded);
-}
-
-bool UINetworkSettingsEditor::advancedButtonExpanded() const
-{
-    return m_pEditorNetworkFeatures ? m_pEditorNetworkFeatures->advancedButtonExpanded() : false;
-}
-
 void UINetworkSettingsEditor::setAdapterType(const KNetworkAdapterType &enmType)
 {
     if (m_pEditorNetworkFeatures)
@@ -177,12 +166,6 @@ void UINetworkSettingsEditor::setPortForwardingRules(const UIPortForwardingDataL
 UIPortForwardingDataList UINetworkSettingsEditor::portForwardingRules() const
 {
     return m_pEditorNetworkFeatures ? m_pEditorNetworkFeatures->portForwardingRules() : UIPortForwardingDataList();
-}
-
-void UINetworkSettingsEditor::setAdvancedOptionsAvailable(bool fAvailable)
-{
-    if (m_pEditorNetworkFeatures)
-        m_pEditorNetworkFeatures->setAdvancedOptionsAvailable(fAvailable);
 }
 
 void UINetworkSettingsEditor::setAdapterOptionsAvailable(bool fAvailable)
@@ -342,9 +325,6 @@ void UINetworkSettingsEditor::prepareConnections()
     if (m_pEditorNetworkAttachment)
         connect(m_pEditorNetworkAttachment, &UINetworkAttachmentEditor::sigValueNameChanged,
                 this, &UINetworkSettingsEditor::sigAlternativeNameChanged);
-    if (m_pEditorNetworkFeatures)
-        connect(m_pEditorNetworkFeatures, &UINetworkFeaturesEditor::sigAdvancedButtonStateChange,
-                this, &UINetworkSettingsEditor::sigAdvancedButtonStateChange);
     if (m_pEditorNetworkFeatures)
         connect(m_pEditorNetworkFeatures, &UINetworkFeaturesEditor::sigMACAddressChanged,
                 this, &UINetworkSettingsEditor::sigMACAddressChanged);

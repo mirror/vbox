@@ -111,8 +111,6 @@ private slots:
 
     /** Handles adapter alternative name change. */
     void sltHandleAlternativeNameChange();
-    /** Handles whether the advanced button is @a fExpanded. */
-    void sltHandleAdvancedButtonStateChange(bool fExpanded);
 
 private:
 

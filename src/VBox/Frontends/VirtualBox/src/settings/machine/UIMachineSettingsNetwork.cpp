@@ -167,9 +167,6 @@ signals:
     /** Notifies about alternative name was changed. */
     void sigAlternativeNameChanged();
 
-    /** Notifies about advanced button state change to @a fExpanded. */
-    void sigAdvancedButtonStateChange(bool fExpanded);
-
     /** Notifies about validity changed. */
     void sigValidityChanged();
 
@@ -201,9 +198,6 @@ public:
     void polishTab();
     /** Reloads tab alternatives. */
     void reloadAlternatives();
-
-    /** Defines whether the advanced button is @a fExpanded. */
-    void setAdvancedButtonExpanded(bool fExpanded);
 
 protected:
 
@@ -494,7 +488,6 @@ void UIMachineSettingsNetwork::polishTab()
         m_pEditorNetworkSettings->setAttachmentOptionsAvailable(m_pParentPage->isMachineInValidMode());
 
         /* Advanced stuff: */
-        m_pEditorNetworkSettings->setAdvancedOptionsAvailable(m_pParentPage->isMachineInValidMode());
         m_pEditorNetworkSettings->setAdapterOptionsAvailable(m_pParentPage->isMachineOffline());
         m_pEditorNetworkSettings->setPromiscuousOptionsAvailable(   attachmentType() != KNetworkAttachmentType_Null
                                                                  && attachmentType() != KNetworkAttachmentType_Generic
@@ -523,12 +516,6 @@ void UIMachineSettingsNetwork::reloadAlternatives()
         m_pEditorNetworkSettings->setValueNames(KNetworkAttachmentType_HostOnlyNetwork, m_pParentPage->hostOnlyNetworkList());
 #endif
     }
-}
-
-void UIMachineSettingsNetwork::setAdvancedButtonExpanded(bool fExpanded)
-{
-    if (m_pEditorNetworkSettings)
-        m_pEditorNetworkSettings->setAdvancedButtonExpanded(fExpanded);
 }
 
 void UIMachineSettingsNetwork::retranslateUi()
@@ -608,8 +595,6 @@ void UIMachineSettingsNetwork::prepareConnections()
                 this, &UIMachineSettingsNetwork::sltHandleAlternativeNameChange);
 
         /* Advanced connections: */
-        connect(m_pEditorNetworkSettings, &UINetworkSettingsEditor::sigAdvancedButtonStateChange,
-                this, &UIMachineSettingsNetwork::sigAdvancedButtonStateChange);
         connect(m_pEditorNetworkSettings, &UINetworkSettingsEditor::sigMACAddressChanged,
                 this, &UIMachineSettingsNetwork::sigValidityChanged);
     }
@@ -895,21 +880,6 @@ void UIMachineSettingsNetworkPage::sltHandleAlternativeNameChange()
     }
 }
 
-void UIMachineSettingsNetworkPage::sltHandleAdvancedButtonStateChange(bool fExpanded)
-{
-    /* Sanity check: */
-    if (!m_pTabWidget)
-        return;
-
-    /* Update the advanced button states for all the pages: */
-    for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
-    {
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
-        AssertPtrReturnVoid(pTab);
-        pTab->setAdvancedButtonExpanded(fExpanded);
-    }
-}
-
 void UIMachineSettingsNetworkPage::prepare()
 {
     /* Prepare cache: */
@@ -941,8 +911,6 @@ void UIMachineSettingsNetworkPage::prepare()
                     /* Tab connections: */
                     connect(pTab, &UIMachineSettingsNetwork::sigAlternativeNameChanged,
                             this, &UIMachineSettingsNetworkPage::sltHandleAlternativeNameChange);
-                    connect(pTab, &UIMachineSettingsNetwork::sigAdvancedButtonStateChange,
-                            this, &UIMachineSettingsNetworkPage::sltHandleAdvancedButtonStateChange);
                     connect(pTab, &UIMachineSettingsNetwork::sigValidityChanged,
                             this, &UIMachineSettingsNetworkPage::revalidate);
 

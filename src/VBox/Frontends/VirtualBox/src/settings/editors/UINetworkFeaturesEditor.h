@@ -44,7 +44,6 @@ class QComboBox;
 class QGridLayout;
 class QLabel;
 class QTextEdit;
-class QIArrowButtonSwitch;
 class QILineEdit;
 class QIToolButton;
 
@@ -55,8 +54,6 @@ class SHARED_LIBRARY_STUFF UINetworkFeaturesEditor : public UIEditor
 
 signals:
 
-    /** Notifies about the advanced button state change to @a fExpanded. */
-    void sigAdvancedButtonStateChange(bool fExpanded);
     /** Notifies about MAC address changed. */
     void sigMACAddressChanged();
 
@@ -64,11 +61,6 @@ public:
 
     /** Constructs editor passing @a pParent to the base-class. */
     UINetworkFeaturesEditor(QWidget *pParent = 0);
-
-    /** Defines whether advanced button @a fExpanded. */
-    void setAdvancedButtonExpanded(bool fExpanded);
-    /** Returns whether advanced button expanded. */
-    bool advancedButtonExpanded() const;
 
     /** Defines adapter @a enmType. */
     void setAdapterType(const KNetworkAdapterType &enmType);
@@ -100,8 +92,6 @@ public:
     /** Returns list of port forwarding rules. */
     UIPortForwardingDataList portForwardingRules() const;
 
-    /** Defines whether advanced options @a fAvailable. */
-    void setAdvancedOptionsAvailable(bool fAvailable);
     /** Defines whether adapter options @a fAvailable. */
     void setAdapterOptionsAvailable(bool fAvailable);
     /** Defines whether promiscuous options @a fAvailable. */
@@ -132,8 +122,6 @@ protected:
 
 private slots:
 
-    /** Handles advanced button state change to expanded. */
-    void sltHandleAdvancedButtonStateChange();
     /** Handles request to open port forwarding dialog. */
     void sltOpenPortForwardingDlg();
 
@@ -149,8 +137,6 @@ private:
 
     /** @name Values
      * @{ */
-        /** Holds whether advanced button expanded. */
-        bool                              m_fAdvancedButtonExpanded;
         /** Holds the adapter type to be set. */
         KNetworkAdapterType               m_enmAdapterType;
         /** Holds the promisc mode to be set. */
@@ -167,34 +153,30 @@ private:
 
     /** @name Widgets
      * @{ */
-        /** Holds the advanced button instance. */
-        QIArrowButtonSwitch *m_pButtonAdvanced;
-        /** Holds the settings widget instance. */
-        QWidget             *m_pWidgetSettings;
         /** Holds the settings layout instance. */
-        QGridLayout         *m_pLayoutSettings;
+        QGridLayout  *m_pLayoutSettings;
         /** Holds the adapter type label instance. */
-        QLabel              *m_pLabelAdapterType;
+        QLabel       *m_pLabelAdapterType;
         /** Holds the adapter type editor instance. */
-        QComboBox           *m_pComboAdapterType;
+        QComboBox    *m_pComboAdapterType;
         /** Holds the promiscuous mode label instance. */
-        QLabel              *m_pLabelPromiscuousMode;
+        QLabel       *m_pLabelPromiscuousMode;
         /** Holds the promiscuous mode combo instance. */
-        QComboBox           *m_pComboPromiscuousMode;
+        QComboBox    *m_pComboPromiscuousMode;
         /** Holds the MAC label instance. */
-        QLabel              *m_pLabelMAC;
+        QLabel       *m_pLabelMAC;
         /** Holds the MAC editor instance. */
-        QILineEdit          *m_pEditorMAC;
+        QILineEdit   *m_pEditorMAC;
         /** Holds the MAC button instance. */
-        QIToolButton        *m_pButtonMAC;
+        QIToolButton *m_pButtonMAC;
         /** Holds the generic properties label instance. */
-        QLabel              *m_pLabelGenericProperties;
+        QLabel       *m_pLabelGenericProperties;
         /** Holds the generic properties editor instance. */
-        QTextEdit           *m_pEditorGenericProperties;
+        QTextEdit    *m_pEditorGenericProperties;
         /** Holds the cable connected check-box instance. */
-        QCheckBox           *m_pCheckBoxCableConnected;
+        QCheckBox    *m_pCheckBoxCableConnected;
         /** Holds the port forwarding button instance. */
-        QPushButton         *m_pButtonPortForwarding;
+        QPushButton  *m_pButtonPortForwarding;
     /** @} */
 };
 
