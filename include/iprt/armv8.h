@@ -2649,7 +2649,6 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBics(uint32_t iRegResult, uint32_t iR
  *
  * @returns The encoded instruction.
  * @param   u2Opc           The logical operation to perform.
- * @param   fNot            Whether to complement the 2nd operand.
  * @param   iRegResult      The output register.
  * @param   iRegSrc         The 1st register operand.
  * @param   uImm7SizeLen    The size/pattern length.  We've combined the 1-bit N
