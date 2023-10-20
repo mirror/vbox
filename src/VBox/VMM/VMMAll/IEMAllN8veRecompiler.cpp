@@ -114,6 +114,10 @@ extern "C" void *__deregister_frame_info(void *pvBegin);           /* (returns p
 #endif
 
 
+/** Always count instructions for now. */
+#define IEMNATIVE_WITH_INSTRUCTION_COUNTING
+
+
 /*********************************************************************************************************************************
 *   Executable Memory Allocator                                                                                                  *
 *********************************************************************************************************************************/

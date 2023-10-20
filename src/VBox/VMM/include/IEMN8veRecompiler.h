@@ -1813,7 +1813,6 @@ DECLINLINE(uint32_t) iemNativeEmitJccToFixed(PIEMRECOMPILERSTATE pReNative, uint
     AssertReturn(pbCodeBuf, UINT32_MAX);
     if (offTarget < 128 && offTarget >= -128)
     {
-        pbCodeBuf[off++] = 0x0f;
         pbCodeBuf[off++] = enmCond | 0x70;
         pbCodeBuf[off++] = RT_BYTE1((uint32_t)offTarget);
     }
