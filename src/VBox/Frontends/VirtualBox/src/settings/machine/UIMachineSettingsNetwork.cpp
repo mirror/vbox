@@ -853,6 +853,17 @@ void UIMachineSettingsNetworkPage::polishPage()
     }
 }
 
+void UIMachineSettingsNetworkPage::filterOut(bool fExpertMode, const QString &strFilter)
+{
+    /* Call to base class: */
+    UISettingsPageMachine::filterOut(fExpertMode, strFilter);
+
+    /* Show tabs from 2nd to 4th in expert mode only: */
+    if (m_pTabWidget)
+        for (int i = 1; i < m_pTabWidget->count(); ++i)
+            m_pTabWidget->setTabVisible(i, m_fInExpertMode);
+}
+
 void UIMachineSettingsNetworkPage::sltHandleAlternativeNameChange()
 {
     /* Sanity check: */
