@@ -887,7 +887,6 @@ static void iemTbAllocatorFreeInner(PVMCPUCC pVCpu, PIEMTBALLOCATOR pTbAllocator
     pTb->Gen.uPtr           = 0;
     pTb->Gen.uData          = 0;
     pTb->cbOpcodes          = 0;
-    pTb->cbOpcodesAllocated = 0;
     pTb->pabOpcodes         = NULL;
 
     ASMBitClear(&pTbAllocator->bmAllocated, IEMTBALLOC_IDX_MAKE(pTbAllocator, idxChunk, idxInChunk));
@@ -1201,8 +1200,8 @@ static PIEMTB iemThreadedTbAlloc(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysPc, u
             pTb->pabOpcodes = (uint8_t *)RTMemAlloc(cCalls * 16);
             if (pTb->pabOpcodes)
             {
+                pVCpu->iem.s.cbOpcodesAllocated = cCalls * 16;
                 pTb->Thrd.cAllocated        = cCalls;
-                pTb->cbOpcodesAllocated     = cCalls * 16;
                 pTb->Thrd.cCalls            = 0;
                 pTb->cbOpcodes              = 0;
                 pTb->pNext                  = NULL;
@@ -1298,7 +1297,6 @@ static PIEMTB iemThreadedTbDuplicate(PVMCC pVM, PVMCPUCC pVCpu, PCIEMTB pTbSrc)
             if (pTb->pabOpcodes)
             {
                 pTb->Thrd.cAllocated    = cCalls;
-                pTb->cbOpcodesAllocated = cbOpcodes;
                 pTb->pNext              = NULL;
                 pTb->cUsed              = 0;
                 pTb->msLastUsed         = pVCpu->iem.s.msRecompilerPollNow;
@@ -1946,7 +1944,7 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
         iemThreadedCopyOpcodeBytesInline(pVCpu, &pTb->pabOpcodes[offOpcode], cbInstr);
         pTb->cbOpcodes                    = offOpcode + cbInstr;
         pTb->aRanges[idxRange].cbOpcodes += cbInstr;
-        Assert(pTb->cbOpcodes <= pTb->cbOpcodesAllocated);
+        Assert(pTb->cbOpcodes <= pVCpu->iem.s.cbOpcodesAllocated);
     }
 
     /*
@@ -1966,7 +1964,7 @@ bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb)
      */
     iemThreadedCopyOpcodeBytesInline(pVCpu, &pTb->pabOpcodes[offOpcode], cbInstr);
     pTb->cbOpcodes = offOpcode + cbInstr;
-    Assert(pTb->cbOpcodes <= pTb->cbOpcodesAllocated);
+    Assert(pTb->cbOpcodes <= pVCpu->iem.s.cbOpcodesAllocated);
 
     return true;
 }
@@ -2195,7 +2193,7 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
 
         /* Still space in the TB? */
         if (   pTb->Thrd.cCalls + 5 < pTb->Thrd.cAllocated
-            && pTb->cbOpcodes + 16 <= pTb->cbOpcodesAllocated)
+            && pTb->cbOpcodes + 16 <= pVCpu->iem.s.cbOpcodesAllocated)
             iemThreadedCompileInitDecoder(pVCpu, true /*fReInit*/, 0);
         else
         {

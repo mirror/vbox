@@ -207,7 +207,7 @@
             memcpy(&pTb->pabOpcodes[offOpcodeMc2], pVCpu->iem.s.abOpcode, pVCpu->iem.s.offOpcode); \
             pTb->cbOpcodes                       = offOpcodeMc2 + pVCpu->iem.s.offOpcode; \
             pTb->aRanges[idxRangeMc2].cbOpcodes += cbInstrMc2; \
-            Assert(pTb->cbOpcodes <= pTb->cbOpcodesAllocated); \
+            Assert(pTb->cbOpcodes <= pVCpu->iem.s.cbOpcodesAllocated); \
         } \
         else if (iemThreadedCompileBeginEmitCallsComplications(pVCpu, pTb)) \
         { /* likely */ } \

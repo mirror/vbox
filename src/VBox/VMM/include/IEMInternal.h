@@ -886,12 +886,6 @@ typedef struct IEMTB
     uint32_t            cUsed;
     /** The IEMCPU::msRecompilerPollNow last time it was used. */
     uint32_t            msLastUsed;
-    /** The allocation chunk this TB belongs to. */
-    uint8_t             idxAllocChunk;
-
-    uint8_t             abUnused[3];
-    uint32_t            uUnused;
-
 
     /** @name What uniquely identifies the block.
      * @{ */
@@ -940,12 +934,18 @@ typedef struct IEMTB
         } Gen;
     };
 
-    /** Number of bytes of opcodes stored in pabOpcodes. */
+    /** The allocation chunk this TB belongs to. */
+    uint8_t             idxAllocChunk;
+    uint8_t             bUnused;
+
+    /** Number of bytes of opcodes stored in pabOpcodes.
+     * @todo this field isn't really needed, aRanges keeps the actual info. */
     uint16_t            cbOpcodes;
-    /** The max storage available in the pabOpcodes block. */
-    uint16_t            cbOpcodesAllocated;
     /** Pointer to the opcode bytes this block was recompiled from. */
     uint8_t            *pabOpcodes;
+
+    /** Debug info or smth. */
+    void               *pvDbg;
 
     /* --- 64 byte cache line end --- */
 
@@ -980,13 +980,15 @@ typedef struct IEMTB
     /** Physical pages that this TB covers.
      * The GCPhysPc w/o page offset is element zero, so starting here with 1. */
     RTGCPHYS            aGCPhysPages[2];
+
 } IEMTB;
 #pragma pack()
-AssertCompileMemberOffset(IEMTB, x86, 36);
-AssertCompileMemberOffset(IEMTB, cRanges, 38);
-AssertCompileMemberOffset(IEMTB, Thrd, 40);
-AssertCompileMemberOffset(IEMTB, Thrd.cCalls, 48);
-AssertCompileMemberOffset(IEMTB, cbOpcodes, 52);
+AssertCompileMemberAlignment(IEMTB, GCPhysPc, sizeof(RTGCPHYS));
+AssertCompileMemberAlignment(IEMTB, Thrd, sizeof(void *));
+AssertCompileMemberAlignment(IEMTB, pabOpcodes, sizeof(void *));
+AssertCompileMemberAlignment(IEMTB, pvDbg, sizeof(void *));
+AssertCompileMemberAlignment(IEMTB, aGCPhysPages, sizeof(RTGCPHYS));
+AssertCompileMemberOffset(IEMTB, aRanges[0], 64);
 AssertCompileMemberSize(IEMTB, aRanges[0], 6);
 #if 1
 AssertCompileSize(IEMTB, 128);
@@ -1502,8 +1504,10 @@ typedef struct IEMCPU
     /** Indicates that the current instruction is an STI.  This is set by the
      * iemCImpl_sti code and subsequently cleared by the recompiler. */
     bool                    fTbCurInstrIsSti;
+    /** The size of the IEMTB::pabOpcodes allocation in pThrdCompileTbR3. */
+    uint16_t                cbOpcodesAllocated;
     /** Spaced reserved for recompiler data / alignment. */
-    bool                    afRecompilerStuff1[2+4];
+    bool                    afRecompilerStuff1[4];
     /** The virtual sync time at the last timer poll call. */
     uint32_t                msRecompilerPollNow;
     /** The IEM_CIMPL_F_XXX mask for the current instruction. */

@@ -3780,10 +3780,7 @@ DECLINLINE(uint32_t) iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(PIEMRECOM
 
     /* Truncate the result to 16-bit IP if the operand size is 16-bit. */
     if (enmEffOpSize == IEMMODE_16BIT)
-    {
-        Assert(enmEffOpSize == IEMMODE_16BIT);
         off = iemNativeEmitClear16UpGpr(pReNative, off, idxPcReg);
-    }
 
     /* Perform limit checking, potentially raising #GP(0) and exit the TB. */
     off = iemNativeEmitCheckGpr32AgainstSegLimitMaybeRaiseGp0(pReNative, off, idxPcReg, X86_SREG_CS, idxInstr);
