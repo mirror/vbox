@@ -1586,6 +1586,8 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
                                       ;
     pReNative->bmHstRegsWithGstShadow = 0;
     pReNative->bmGstRegShadows        = 0;
+    pReNative->cCondDepth             = 0;
+    pReNative->uCondSeqNo             = 0;
     pReNative->bmVars                 = 0;
     pReNative->u64ArgVars             = UINT64_MAX;
 
@@ -1933,7 +1935,7 @@ static struct
     /* [kIemNativeGstReg_GprFirst + X86_GREG_x14] = */  { CPUMCTX_OFF_AND_SIZE(r14),                "r14", },
     /* [kIemNativeGstReg_GprFirst + X86_GREG_x15] = */  { CPUMCTX_OFF_AND_SIZE(r15),                "r15", },
     /* [kIemNativeGstReg_Pc] = */                       { CPUMCTX_OFF_AND_SIZE(rip),                "rip", },
-    /* [kIemNativeGstReg_Rflags] = */                   { CPUMCTX_OFF_AND_SIZE(rflags),             "rflags", },
+    /* [kIemNativeGstReg_EFlags] = */                   { CPUMCTX_OFF_AND_SIZE(eflags),             "eflags", },
     /* [18] = */                                        { UINT32_C(0xfffffff7),                  0, NULL, },
     /* [19] = */                                        { UINT32_C(0xfffffff5),                  0, NULL, },
     /* [20] = */                                        { UINT32_C(0xfffffff3),                  0, NULL, },
@@ -3568,9 +3570,15 @@ static uint32_t iemNativeEmitProlog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 #define IEM_MC_BEGIN(a_cArgs, a_cLocals, a_fMcFlags, a_fCImplFlags) \
     {
 
+/** We have to get to the end in recompilation mode, as otherwise we won't
+ * generate code for all the IEM_MC_IF_XXX branches. */
 #define IEM_MC_END() \
-    } AssertFailedReturn(UINT32_MAX /* shouldn't be reached! */)
+    } return off
 
+
+/*
+ * Standalone CImpl deferals.
+ */
 
 #define IEM_MC_DEFER_TO_CIMPL_0_RET_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl) \
     return iemNativeEmitCImplCall0(pReNative, off, pCallEntry->idxInstr, (uintptr_t)a_pfnCImpl, a_cbInstr) /** @todo not used ... */
@@ -3611,7 +3619,8 @@ DECLINLINE(uint32_t) iemNativeEmitCImplCall3(PIEMRECOMPILERSTATE pReNative, uint
  */
 
 #define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC64(a_cbInstr) \
-    return iemNativeEmitAddToRip64AndFinishingNoFlags(pReNative, off, (a_cbInstr))
+    off = iemNativeEmitAddToRip64AndFinishingNoFlags(pReNative, off, (a_cbInstr)); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX)
 
 /** Same as iemRegAddToRip64AndFinishingNoFlags. */
 DECLINLINE(uint32_t) iemNativeEmitAddToRip64AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr)
@@ -3632,7 +3641,8 @@ DECLINLINE(uint32_t) iemNativeEmitAddToRip64AndFinishingNoFlags(PIEMRECOMPILERST
 
 
 #define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC32(a_cbInstr) \
-    return iemNativeEmitAddToEip32AndFinishingNoFlags(pReNative, off, (a_cbInstr))
+    off = iemNativeEmitAddToEip32AndFinishingNoFlags(pReNative, off, (a_cbInstr)); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX)
 
 /** Same as iemRegAddToEip32AndFinishingNoFlags. */
 DECLINLINE(uint32_t) iemNativeEmitAddToEip32AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr)
@@ -3653,7 +3663,8 @@ DECLINLINE(uint32_t) iemNativeEmitAddToEip32AndFinishingNoFlags(PIEMRECOMPILERST
 
 
 #define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC16(a_cbInstr) \
-    return iemNativeEmitAddToIp16AndFinishingNoFlags(pReNative, off, (a_cbInstr))
+    off = iemNativeEmitAddToIp16AndFinishingNoFlags(pReNative, off, (a_cbInstr)); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX)
 
 /** Same as iemRegAddToIp16AndFinishingNoFlags. */
 DECLINLINE(uint32_t) iemNativeEmitAddToIp16AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr)
@@ -3679,13 +3690,20 @@ DECLINLINE(uint32_t) iemNativeEmitAddToIp16AndFinishingNoFlags(PIEMRECOMPILERSTA
  */
 
 #define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC64(a_i8, a_cbInstr, a_enmEffOpSize) \
-    return iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int8_t)(a_i8), (a_enmEffOpSize), pCallEntry->idxInstr)
+    off = iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int8_t)(a_i8), \
+                                                            (a_enmEffOpSize), pCallEntry->idxInstr); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX)
+
 
 #define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC64(a_i16, a_cbInstr) \
-    return iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int16_t)(a_i16), IEMMODE_16BIT, pCallEntry->idxInstr)
+    off =  iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int16_t)(a_i16), \
+                                                             IEMMODE_16BIT, pCallEntry->idxInstr); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX)
 
 #define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC64(a_i32, a_cbInstr) \
-    return iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (a_i32), IEMMODE_64BIT, pCallEntry->idxInstr)
+    off =  iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (a_i32), \
+                                                             IEMMODE_64BIT, pCallEntry->idxInstr); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX)
 
 /** Same as iemRegRip64RelativeJumpS8AndFinishNoFlags,
  *  iemRegRip64RelativeJumpS16AndFinishNoFlags and
@@ -3727,13 +3745,19 @@ DECLINLINE(uint32_t) iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(PIEMRECOM
 
 
 #define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC32(a_i8, a_cbInstr, a_enmEffOpSize) \
-    return iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int8_t)(a_i8), (a_enmEffOpSize), pCallEntry->idxInstr)
+    off = iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int8_t)(a_i8), \
+                                                            (a_enmEffOpSize), pCallEntry->idxInstr); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX)
 
 #define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC32(a_i16, a_cbInstr) \
-    return iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int16_t)(a_i16), IEMMODE_16BIT, pCallEntry->idxInstr)
+    off = iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int16_t)(a_i16), \
+                                                            IEMMODE_16BIT, pCallEntry->idxInstr); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX)
 
 #define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC32(a_i32, a_cbInstr) \
-    return iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (a_i32), IEMMODE_32BIT, pCallEntry->idxInstr)
+    off = iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (a_i32), \
+                                                            IEMMODE_32BIT, pCallEntry->idxInstr); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX)
 
 /** Same as iemRegEip32RelativeJumpS8AndFinishNoFlags,
  *  iemRegEip32RelativeJumpS16AndFinishNoFlags and
@@ -3774,13 +3798,16 @@ DECLINLINE(uint32_t) iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(PIEMRECOM
 
 
 #define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC16(a_i8, a_cbInstr) \
-    return iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int8_t)(a_i8), pCallEntry->idxInstr)
+    off = iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int8_t)(a_i8), pCallEntry->idxInstr); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX)
 
 #define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC16(a_i16, a_cbInstr) \
-    return iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int16_t)(a_i16), pCallEntry->idxInstr)
+    off = iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int16_t)(a_i16), pCallEntry->idxInstr); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX)
 
 #define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC16(a_i32, a_cbInstr) \
-    return iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (a_i32), pCallEntry->idxInstr)
+    off = iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (a_i32), pCallEntry->idxInstr); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX)
 
 /** Same as iemRegIp16RelativeJumpS8AndFinishNoFlags. */
 DECLINLINE(uint32_t) iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off,
@@ -3801,6 +3828,115 @@ DECLINLINE(uint32_t) iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(PIEMRECOMP
 
     /* Free but don't flush the PC register. */
     iemNativeRegFreeTmp(pReNative, idxPcReg);
+
+    return off;
+}
+
+
+/*
+ * Conditionals.
+ */
+
+/**
+ * Pushes an IEM_MC_IF_XXX onto the condition stack.
+ *
+ * @returns Pointer to the condition stack entry on success, NULL on failure
+ *          (too many nestings)
+ */
+DECLINLINE(PIEMNATIVECOND) iemNativeCondPushIf(PIEMRECOMPILERSTATE pReNative)
+{
+    uint32_t const idxStack = pReNative->cCondDepth;
+    AssertReturn(idxStack < RT_ELEMENTS(pReNative->aCondStack), NULL);
+
+    PIEMNATIVECOND const pEntry = &pReNative->aCondStack[idxStack];
+    pReNative->cCondDepth = (uint8_t)(idxStack + 1);
+
+    uint16_t const uCondSeqNo = ++pReNative->uCondSeqNo;
+    pEntry->fInElse       = false;
+    pEntry->idxLabelElse  = iemNativeMakeLabel(pReNative, kIemNativeLabelType_Else, UINT32_MAX /*offWhere*/, uCondSeqNo);
+    AssertReturn(pEntry->idxLabelElse != UINT32_MAX, NULL);
+    pEntry->idxLabelEndIf = iemNativeMakeLabel(pReNative, kIemNativeLabelType_Endif, UINT32_MAX /*offWhere*/, uCondSeqNo);
+    AssertReturn(pEntry->idxLabelEndIf != UINT32_MAX, NULL);
+
+    return pEntry;
+}
+
+
+#define IEM_MC_ELSE() } while (0); \
+        off = iemNativeEmitElse(pReNative, off); \
+        AssertReturn(off != UINT32_MAX, UINT32_MAX); \
+        do {
+
+/** Emits code related to IEM_MC_ELSE. */
+DECLINLINE(uint32_t) iemNativeEmitElse(PIEMRECOMPILERSTATE pReNative, uint32_t off)
+{
+    /* Check sanity and get the conditional stack entry. */
+    Assert(off != UINT32_MAX);
+    Assert(pReNative->cCondDepth > 0 && pReNative->cCondDepth <= RT_ELEMENTS(pReNative->aCondStack));
+    PIEMNATIVECOND const pEntry = &pReNative->aCondStack[pReNative->cCondDepth - 1];
+    Assert(!pEntry->fInElse);
+
+    /* Jump to the endif */
+    off = iemNativeEmitJmpToLabel(pReNative, off, pEntry->idxLabelEndIf);
+
+    /* Define the else label and enter the else part of the condition. */
+    pReNative->paLabels[pEntry->idxLabelElse].off = off;
+    pEntry->fInElse = true;
+
+    return off;
+}
+
+
+#define IEM_MC_ENDIF() } while (0); \
+        off = iemNativeEmitEndIf(pReNative, off); \
+        AssertReturn(off != UINT32_MAX, UINT32_MAX)
+
+/** Emits code related to IEM_MC_ENDIF. */
+DECLINLINE(uint32_t) iemNativeEmitEndIf(PIEMRECOMPILERSTATE pReNative, uint32_t off)
+{
+    /* Check sanity and get the conditional stack entry. */
+    Assert(off != UINT32_MAX);
+    Assert(pReNative->cCondDepth > 0 && pReNative->cCondDepth <= RT_ELEMENTS(pReNative->aCondStack));
+    PIEMNATIVECOND const pEntry = &pReNative->aCondStack[pReNative->cCondDepth - 1];
+
+    /* Define the endif label and maybe the else one if we're still in the 'if' part. */
+    if (!pEntry->fInElse)
+        pReNative->paLabels[pEntry->idxLabelElse].off = off;
+    else
+        Assert(pReNative->paLabels[pEntry->idxLabelElse].off <= off);
+    pReNative->paLabels[pEntry->idxLabelEndIf].off    = off;
+
+    /* Pop the conditional stack.*/
+    pReNative->cCondDepth -= 1;
+
+    return off;
+}
+
+
+#define IEM_MC_IF_EFL_BIT_SET(a_fBit) \
+        off = iemNativeEmitIfEflagsBitSet(pReNative, off, (a_fBit)); \
+        AssertReturn(off != UINT32_MAX, UINT32_MAX); \
+        do {
+
+/** Emits code for IEM_MC_IF_EFL_BIT_SET. */
+DECLINLINE(uint32_t) iemNativeEmitIfEflagsBitSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitInEfl)
+{
+    PIEMNATIVECOND pEntry = iemNativeCondPushIf(pReNative);
+    AssertReturn(pEntry, UINT32_MAX);
+
+    /* Get the eflags. */
+    uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
+                                                              kIemNativeGstRegUse_ReadOnly);
+    AssertReturn(idxEflReg != UINT8_MAX, UINT32_MAX);
+
+    unsigned const iBitNo = ASMBitFirstSetU32(fBitInEfl) - 1;
+    Assert(RT_BIT_32(iBitNo) == fBitInEfl);
+
+    /* Test and jump. */
+    off = iemNativeEmitTestBitInGprAndJmpToLabelIfSet(pReNative, off, idxEflReg, iBitNo, pEntry->idxLabelElse);
+
+    /* Free but don't flush the EFlags register. */
+    iemNativeRegFreeTmp(pReNative, idxEflReg);
 
     return off;
 }
@@ -3894,6 +4030,7 @@ PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb)
         else
             off = iemNativeEmitThreadedCall(pReNative, off, pCallEntry);
         AssertReturn(off != UINT32_MAX, pTb);
+        Assert(pReNative->cCondDepth == 0);
 
         pCallEntry++;
     }

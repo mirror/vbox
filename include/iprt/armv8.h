@@ -2952,6 +2952,30 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrCbzCbnz(bool fJmpIfNotZero, int32_t i
          | iReg;
 }
 
+
+/**
+ * A64: Encodes TBZ and TBNZ (conditional branch w/ immediate) instructions.
+ *
+ * @returns The encoded instruction.
+ * @param   fJmpIfNotZero   false to jump if register is zero, true to jump if
+ *                          its not zero.
+ * @param   iImm14          Signed number of instruction to jump (i.e. *4).
+ * @param   iReg            The GPR to check for zero / non-zero value.
+ * @param   iBitNo          The bit to test for.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrTbzTbnz(bool fJmpIfNotZero, int32_t iImm14, uint32_t iReg, uint32_t iBitNo)
+{
+    Assert(iReg < 32); Assert(iImm14 >= -8192 && iImm14 < 8192); Assert(iBitNo < 64);
+    return ((uint32_t)(iBitNo & 0x20)   << (31-5))
+         | UINT32_C(0x36000000)
+         | ((uint32_t)fJmpIfNotZero     << 24)
+         | ((iBitNo & 0x1f)             << 19)
+         | (((uint32_t)iImm14 & 0x3fff) <<  5)
+         | iReg;
+}
+
+
+
 /** Armv8 Condition codes.    */
 typedef enum ARMV8INSTRCOND
 {
