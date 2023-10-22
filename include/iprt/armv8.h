@@ -3007,7 +3007,7 @@ typedef enum ARMV8INSTRCOND
  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBCond(ARMV8INSTRCOND enmCond, int32_t iImm19)
 {
-    Assert(enmCond >= 0 && enmCond < 16);
+    Assert((int)enmCond >= 0 && (int)enmCond < 16);
     return UINT32_C(0x54000000)
          | (((uint32_t)iImm19 & 0x7ffff) <<  5)
          | (uint32_t)enmCond;
