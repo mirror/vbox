@@ -791,7 +791,7 @@ DECLINLINE(bool) pgmRZPoolMonitorIsReused(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pC
         return true;
     }
 
-    LogFlow(("Reused instr %RGv %d at %RGv param1.fUse=%llx param1.reg=%d\n", pCtx->rip, pDis->pCurInstr->uOpcode, pvFault, pDis->Param1.fUse,  pDis->Param1.arch.x86.Base.idxGenReg));
+    LogFlow(("Reused instr %RGv %d at %RGv param1.fUse=%llx param1.reg=%d\n", pCtx->rip, pDis->pCurInstr->uOpcode, pvFault, pDis->Param1.fUse,  pDis->Param1.x86.Base.idxGenReg));
 
     /* Non-supervisor mode write means it's used for something else. */
     if (CPUMGetGuestCPL(pVCpu) == 3)
@@ -823,7 +823,7 @@ DECLINLINE(bool) pgmRZPoolMonitorIsReused(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pC
             return true;
         case OP_MOVSWD:
         case OP_STOSWD:
-            if (    pDis->arch.x86.fPrefix == (DISPREFIX_REP|DISPREFIX_REX)
+            if (    pDis->x86.fPrefix == (DISPREFIX_REP|DISPREFIX_REX)
                 &&  pCtx->rcx >= 0x40
                )
             {
@@ -840,7 +840,7 @@ DECLINLINE(bool) pgmRZPoolMonitorIsReused(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pC
              */
             if (    (    (pDis->Param1.fUse & DISUSE_REG_GEN32)
                      ||  (pDis->Param1.fUse & DISUSE_REG_GEN64))
-                &&  (pDis->Param1.arch.x86.Base.idxGenReg == DISGREG_ESP))
+                &&  (pDis->Param1.x86.Base.idxGenReg == DISGREG_ESP))
             {
                 Log4(("pgmRZPoolMonitorIsReused: ESP\n"));
                 return true;
@@ -940,14 +940,14 @@ static int pgmRZPoolAccessPfHandlerFlush(PVMCC pVM, PVMCPUCC pVCpu, PPGMPOOL pPo
 DECLINLINE(int) pgmRZPoolAccessPfHandlerSTOSD(PVMCC pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage, PDISSTATE pDis,
                                               PCPUMCTX pCtx, RTGCPHYS GCPhysFault, RTGCPTR pvFault)
 {
-    unsigned uIncrement = pDis->Param1.arch.x86.cb;
+    unsigned uIncrement = pDis->Param1.x86.cb;
     NOREF(pVM);
 
     Assert(pDis->uCpuMode == DISCPUMODE_32BIT || pDis->uCpuMode == DISCPUMODE_64BIT);
     Assert(pCtx->rcx <= 0x20);
 
 # ifdef VBOX_STRICT
-    if (pDis->arch.x86.uOpMode == DISCPUMODE_32BIT)
+    if (pDis->x86.uOpMode == DISCPUMODE_32BIT)
         Assert(uIncrement == 4);
     else
         Assert(uIncrement == 8);
@@ -1185,7 +1185,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVMCC pVM, PVMCPUCC pVCpu, R
     pVCpu->pgm.s.cPoolAccessHandler++;
     if (    pPage->GCPtrLastAccessHandlerRip >= pCtx->rip - 0x40      /* observed loops in Windows 7 x64 */
         &&  pPage->GCPtrLastAccessHandlerRip <  pCtx->rip + 0x40
-        &&  pvFault == (pPage->GCPtrLastAccessHandlerFault + pDis->Param1.arch.x86.cb)
+        &&  pvFault == (pPage->GCPtrLastAccessHandlerFault + pDis->Param1.x86.cb)
         &&  pVCpu->pgm.s.cPoolAccessHandler == pPage->cLastAccessHandler + 1)
     {
         Log(("Possible page reuse cMods=%d -> %d (locked=%d type=%s)\n", pPage->cModifications, pPage->cModifications * 2, pgmPoolIsPageLocked(pPage), pgmPoolPoolKindToStr(pPage->enmKind)));
@@ -1217,7 +1217,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVMCC pVM, PVMCPUCC pVCpu, R
         /*
          * Simple instructions, no REP prefix.
          */
-        if (!(pDis->arch.x86.fPrefix & (DISPREFIX_REP | DISPREFIX_REPNE)))
+        if (!(pDis->x86.fPrefix & (DISPREFIX_REP | DISPREFIX_REPNE)))
         {
             rc = pgmRZPoolAccessPfHandlerSimple(pVM, pVCpu, pPool, pPage, pDis, pCtx, GCPhysFault, &fReused);
             if (fReused)
@@ -1260,13 +1260,13 @@ DECLCALLBACK(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVMCC pVM, PVMCPUCC pVCpu, R
          */
         if (    pDis->pCurInstr->uOpcode == OP_STOSWD
             &&  !pCtx->eflags.Bits.u1DF
-            &&  pDis->arch.x86.uOpMode == pDis->uCpuMode
-            &&  pDis->arch.x86.uAddrMode == pDis->uCpuMode)
+            &&  pDis->x86.uOpMode == pDis->uCpuMode
+            &&  pDis->x86.uAddrMode == pDis->uCpuMode)
         {
             bool fValidStosd = false;
 
             if (    pDis->uCpuMode == DISCPUMODE_32BIT
-                &&  pDis->arch.x86.fPrefix == DISPREFIX_REP
+                &&  pDis->x86.fPrefix == DISPREFIX_REP
                 &&  pCtx->ecx <= 0x20
                 &&  pCtx->ecx * 4 <= GUEST_PAGE_SIZE - ((uintptr_t)pvFault & GUEST_PAGE_OFFSET_MASK)
                 &&  !((uintptr_t)pvFault & 3)
@@ -1278,7 +1278,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVMCC pVM, PVMCPUCC pVCpu, R
             }
             else
             if (    pDis->uCpuMode == DISCPUMODE_64BIT
-                &&  pDis->arch.x86.fPrefix == (DISPREFIX_REP | DISPREFIX_REX)
+                &&  pDis->x86.fPrefix == (DISPREFIX_REP | DISPREFIX_REX)
                 &&  pCtx->rcx <= 0x20
                 &&  pCtx->rcx * 8 <= GUEST_PAGE_SIZE - ((uintptr_t)pvFault & GUEST_PAGE_OFFSET_MASK)
                 &&  !((uintptr_t)pvFault & 7)
@@ -1300,7 +1300,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVMCC pVM, PVMCPUCC pVCpu, R
         /* REP prefix, don't bother. */
         STAM_COUNTER_INC(&pPool->StatMonitorPfRZRepPrefix);
         Log4(("pgmRZPoolAccessPfHandler: eax=%#x ecx=%#x edi=%#x esi=%#x rip=%RGv opcode=%d prefix=%#x\n",
-              pCtx->eax, pCtx->ecx, pCtx->edi, pCtx->esi, (RTGCPTR)pCtx->rip, pDis->pCurInstr->uOpcode, pDis->arch.x86.fPrefix));
+              pCtx->eax, pCtx->ecx, pCtx->edi, pCtx->esi, (RTGCPTR)pCtx->rip, pDis->pCurInstr->uOpcode, pDis->x86.fPrefix));
         fNotReusedNotForking = true;
     }
 

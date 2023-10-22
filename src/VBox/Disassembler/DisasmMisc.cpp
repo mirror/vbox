@@ -43,11 +43,11 @@
 
 DISDECL(uint8_t) DISGetParamSize(PCDISSTATE pDis, PCDISOPPARAM pParam)
 {
-    unsigned subtype = OP_PARM_VSUBTYPE(pParam->arch.x86.fParam);
+    unsigned subtype = OP_PARM_VSUBTYPE(pParam->x86.fParam);
     switch (subtype)
     {
         case OP_PARM_v:
-            switch (pDis->arch.x86.uOpMode)
+            switch (pDis->x86.uOpMode)
             {
                 case DISCPUMODE_32BIT:
                     return 4;
@@ -86,9 +86,9 @@ DISDECL(uint8_t) DISGetParamSize(PCDISSTATE pDis, PCDISOPPARAM pParam)
             return 0;
 
         case OP_PARM_p: /* far pointer */
-            if (pDis->arch.x86.uAddrMode == DISCPUMODE_32BIT)
+            if (pDis->x86.uAddrMode == DISCPUMODE_32BIT)
                 return 6;   /* 16:32 */
-            if (pDis->arch.x86.uAddrMode == DISCPUMODE_64BIT)
+            if (pDis->x86.uAddrMode == DISCPUMODE_64BIT)
                 return 12;  /* 16:64 */
             return 4;       /* 16:16 */
 
@@ -96,7 +96,7 @@ DISDECL(uint8_t) DISGetParamSize(PCDISSTATE pDis, PCDISOPPARAM pParam)
             return pDis->uCpuMode == DISCPUMODE_64BIT ? 2 + 8 : 2 + 4;
 
         case OP_PARM_a:
-            return pDis->arch.x86.uOpMode == DISCPUMODE_16BIT ? 2 + 2 : 4 + 4;
+            return pDis->x86.uOpMode == DISCPUMODE_16BIT ? 2 + 2 : 4 + 4;
 
         case OP_PARM_pi:
             return 8;
@@ -108,21 +108,21 @@ DISDECL(uint8_t) DISGetParamSize(PCDISSTATE pDis, PCDISOPPARAM pParam)
         case OP_PARM_x:
         case OP_PARM_pd:
         case OP_PARM_ps:
-            return VEXREG_IS256B(pDis->arch.x86.bVexDestReg) ? 32 : 16; //??
+            return VEXREG_IS256B(pDis->x86.bVexDestReg) ? 32 : 16; //??
 
         case OP_PARM_y:
-            return pDis->arch.x86.uOpMode == DISCPUMODE_64BIT ? 4 : 8;  //??
+            return pDis->x86.uOpMode == DISCPUMODE_64BIT ? 4 : 8;  //??
 
         case OP_PARM_z:
-            if (pParam->arch.x86.cb)
-                return pParam->arch.x86.cb;
-            return pDis->arch.x86.uOpMode == DISCPUMODE_16BIT ? 2 : 4;  //??
+            if (pParam->x86.cb)
+                return pParam->x86.cb;
+            return pDis->x86.uOpMode == DISCPUMODE_16BIT ? 2 : 4;  //??
 
         default:
-            if (pParam->arch.x86.cb)
-                return pParam->arch.x86.cb;
+            if (pParam->x86.cb)
+                return pParam->x86.cb;
             /// @todo dangerous!!!
-            AssertMsgFailed(("subtype=%#x fParam=%#x fUse=%#RX64 op=%#x\n", subtype, pParam->arch.x86.fParam, pParam->fUse,
+            AssertMsgFailed(("subtype=%#x fParam=%#x fUse=%#RX64 op=%#x\n", subtype, pParam->x86.fParam, pParam->fUse,
                              pDis->pCurInstr ? pDis->pCurInstr->uOpcode : 0));
             return 4;
     }
@@ -131,9 +131,9 @@ DISDECL(uint8_t) DISGetParamSize(PCDISSTATE pDis, PCDISOPPARAM pParam)
 #if 0 /* currently unused */
 DISDECL(DISSELREG) DISDetectSegReg(PCDISSTATE pDis, PCDISOPPARAM pParam)
 {
-    if (pDis->arch.x86.fPrefix & DISPREFIX_SEG)
+    if (pDis->x86.fPrefix & DISPREFIX_SEG)
         /* Use specified SEG: prefix. */
-        return (DISSELREG)pDis->arch.x86.idxSegPrefix;
+        return (DISSELREG)pDis->x86.idxSegPrefix;
 
     /* Guess segment register by parameter type. */
     if (pParam->fUse & (DISUSE_REG_GEN32|DISUSE_REG_GEN64|DISUSE_REG_GEN16))
@@ -142,7 +142,7 @@ DISDECL(DISSELREG) DISDetectSegReg(PCDISSTATE pDis, PCDISOPPARAM pParam)
         AssertCompile(DISGREG_EBP == DISGREG_RBP);
         AssertCompile(DISGREG_ESP == DISGREG_SP);
         AssertCompile(DISGREG_EBP == DISGREG_BP);
-        if (pParam->arch.x86.Base.idxGenReg == DISGREG_ESP || pParam->arch.x86.Base.idxGenReg == DISGREG_EBP)
+        if (pParam->x86.Base.idxGenReg == DISGREG_ESP || pParam->x86.Base.idxGenReg == DISGREG_EBP)
             return DISSELREG_SS;
     }
     /* Default is use DS: for data access. */
@@ -152,8 +152,8 @@ DISDECL(DISSELREG) DISDetectSegReg(PCDISSTATE pDis, PCDISOPPARAM pParam)
 
 DISDECL(uint8_t) DISQuerySegPrefixByte(PCDISSTATE pDis)
 {
-    Assert(pDis->arch.x86.fPrefix & DISPREFIX_SEG);
-    switch (pDis->arch.x86.idxSegPrefix)
+    Assert(pDis->x86.fPrefix & DISPREFIX_SEG);
+    switch (pDis->x86.idxSegPrefix)
     {
     case DISSELREG_ES:
         return 0x26;

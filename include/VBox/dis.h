@@ -107,8 +107,8 @@ typedef struct DISOPCODE
     uint8_t     idxParse3;
     /** Parameter \#4 parser index.  */
     uint8_t     idxParse4;
-    /** The opcode identifier. This DIS specific, @see grp_dis_opcodes and
-     * VBox/disopcode-x86-amd64.h. */
+    /** The opcode identifier (enum OPCODESX86) - this is DIS specific.
+     * @see grp_dis_opcodes, VBox/disopcode-x86-amd64.h */
     uint16_t    uOpcode;
     /** Parameter \#1 info, @see grp_dis_opparam. */
     uint16_t    fParam1;
@@ -245,14 +245,13 @@ typedef struct DISOPPARAM
     /** Architecture specific parameter state. */
     union
     {
-        /** x86/amd64 specific state. */
-        DISOPPARAMX86   x86;
+        /** x86/AMD64 specific state. */
+        DIS_OP_PARAM_X86_T      x86;
 #if defined(VBOX_DIS_WITH_ARMV8)
         /** ARMv8 specific state. */
-        DISOPPARAMARMV8 armv8;
+        DIS_OP_PARAM_ARMV8_T    armv8;
 #endif
-    } arch;
-
+    };
 } DISOPPARAM;
 AssertCompileSize(DISOPPARAM, 32);
 /** Pointer to opcode parameter. */
@@ -262,7 +261,7 @@ typedef const DISOPPARAM *PCDISOPPARAM;
 /**
  * Callback for reading instruction bytes.
  *
- * @returns VBox status code, bytes in DISSTATE::u::abInstr and byte count in
+ * @returns VBox status code, bytes in DISSTATE::Instr::ab and byte count in
  *          DISSTATE::cbCachedInstr.
  * @param   pDis            Pointer to the disassembler state.  The user
  *                          argument can be found in DISSTATE::pvUser if needed.
@@ -272,7 +271,7 @@ typedef const DISOPPARAM *PCDISOPPARAM;
  *                          DISSTATE::uInstrAddr.
  *
  *                          To calculate the destination buffer address, use it
- *                          as an index into DISSTATE::abInstr.
+ *                          as an index into DISSTATE::Instr::ab.
  *
  * @param   cbMinRead       The minimum number of bytes to read.
  * @param   cbMaxRead       The maximum number of bytes that may be read.
@@ -287,22 +286,24 @@ typedef FNDISREADBYTES *PFNDISREADBYTES;
  */
 typedef struct DISSTATE
 {
-    /** The instruction as different views. */
+    /** The different instruction views.
+     * @sa cbCachedInstr, FNDISREADBYTES */
     union
     {
-        /** The instruction bytes. */
-        uint8_t         abInstr[16];
+        /** Byte (8-bit) view.
+         * This is the one referred to by FNDISREADBYTES and cbCached. */
+        uint8_t         ab[16];
         /** Single 16-bit view. */
         uint16_t        u16;
         /** Single 32-bit view. */
         uint32_t        u32;
         /** 16-bit view. */
-        uint16_t        au16Instr[8];
+        uint16_t        au16[8];
         /** 32-bit view. */
-        uint32_t        au32Instr[4];
+        uint32_t        au32[4];
         /** 64-bit view. */
-        uint64_t        au64Instr[2];
-    } u;
+        uint64_t        au64[2];
+    } Instr;
 
     /** Pointer to the current instruction. */
     PCDISOPCODE         pCurInstr;
@@ -315,7 +316,7 @@ typedef struct DISSTATE
     DISOPPARAM          Param3;
     DISOPPARAM          Param4;
 
-    /** The number of valid bytes in abInstr. */
+    /** The number of valid bytes in DISSTATE::Instr. */
     uint8_t             cbCachedInstr;
     /** The CPU mode (DISCPUMODE). */
     uint8_t             uCpuMode;
@@ -334,7 +335,7 @@ typedef struct DISSTATE
     uint32_t            uPadding3;
 #endif
     /** User data supplied as an argument to the APIs. */
-    void                *pvUser;
+    void               *pvUser;
 #if ARCH_BITS == 32
     uint32_t            uPadding4;
 #endif
@@ -342,16 +343,15 @@ typedef struct DISSTATE
     /** Architecture specific state. */
     union
     {
-        /** x86/amd64 specific state. */
-        DISSTATEX86     x86;
+        /** x86/AMD64 specific state. */
+        DIS_STATE_X86_T     x86;
 #if defined(VBOX_DIS_WITH_ARMV8)
         /** ARMv8 specific state. */
-        DISSTATEARMV8   armv8;
+        DIS_STATE_ARMV8_T   armv8;
 #endif
-    } arch;
-
+    };
 } DISSTATE;
-AssertCompileMemberAlignment(DISSTATE, arch, 8);
+AssertCompileMemberAlignment(DISSTATE, x86, 8);
 AssertCompileSize(DISSTATE, 0xd8);
 
 

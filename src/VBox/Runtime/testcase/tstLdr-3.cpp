@@ -164,7 +164,7 @@ static DECLCALLBACK(int) MyReadBytes(PDISSTATE pDis, uint8_t offInstr, uint8_t c
 {
     RT_NOREF1(cbMaxRead);
     uint8_t const *pbSrc = (uint8_t const *)((uintptr_t)pDis->uInstrAddr + (uintptr_t)pDis->pvUser + offInstr);
-    memcpy(&pDis->u.abInstr[offInstr], pbSrc, cbMinRead);
+    memcpy(&pDis->Instr.ab[offInstr], pbSrc, cbMinRead);
     pDis->cbCachedInstr = offInstr + cbMinRead;
     return VINF_SUCCESS;
 }

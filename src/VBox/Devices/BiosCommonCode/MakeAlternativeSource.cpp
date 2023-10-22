@@ -934,11 +934,11 @@ static size_t disHandleYasmDifferences(PDISSTATE pDis, uint32_t uFlatAddr, uint3
     /** @todo Group 1a and 11 seems to be disassembled incorrectly when
      *        modrm.reg != 0. Those encodings should be invalid AFAICT. */
 
-    if (   (   pDis->arch.x86.bOpCode  == 0x8f            /* group 1a */
-            || pDis->arch.x86.bOpCode  == 0xc7            /* group 11 */
-            || pDis->arch.x86.bOpCode  == 0xc6            /* group 11 - not verified */
+    if (   (   pDis->x86.bOpCode  == 0x8f       /* group 1a */
+            || pDis->x86.bOpCode  == 0xc7       /* group 11 */
+            || pDis->x86.bOpCode  == 0xc6       /* group 11 - not verified */
            )
-        && pDis->arch.x86.ModRM.Bits.Reg != 0)
+        && pDis->x86.ModRM.Bits.Reg != 0)
         fDifferent = true;
     /*
      * Check these out and consider adding them to DISFormatYasmIsOddEncoding.
@@ -998,7 +998,7 @@ static DECLCALLBACK(int) disReadOpcodeBytes(PDISSTATE pDis, uint8_t offInstr, ui
         else
             cbToRead = g_cbImg - offBios;
     }
-    memcpy(&pDis->u.abInstr[offInstr], &g_pbImg[offBios], cbToRead);
+    memcpy(&pDis->Instr.ab[offInstr], &g_pbImg[offBios], cbToRead);
     pDis->cbCachedInstr = (uint8_t)(offInstr + cbToRead);
     return VINF_SUCCESS;
 }
@@ -1137,7 +1137,7 @@ static bool disCode(uint32_t uFlatAddr, uint32_t cb, bool fIs16Bit)
         {
             unsigned cbInstr;
             DISSTATE Dis;
-            Dis.arch.x86.ModRM.Bits.Mod = 3;
+            Dis.x86.ModRM.Bits.Mod = 3;
             int rc = DISInstrWithReader(uFlatAddr, fIs16Bit ? DISCPUMODE_16BIT : DISCPUMODE_32BIT,
                                         disReadOpcodeBytes, NULL, &Dis, &cbInstr);
             if (   RT_SUCCESS(rc)
@@ -1145,7 +1145,7 @@ static bool disCode(uint32_t uFlatAddr, uint32_t cb, bool fIs16Bit)
                 && Dis.pCurInstr
                 && Dis.pCurInstr->uOpcode != OP_INVALID
                 && Dis.pCurInstr->uOpcode != OP_ILLUD2
-                && (   !(Dis.arch.x86.fPrefix & DISPREFIX_ADDRSIZE)
+                && (   !(Dis.x86.fPrefix & DISPREFIX_ADDRSIZE)
                     || disAccessesMemory(&Dis)))
             {
                 char szTmp[4096];

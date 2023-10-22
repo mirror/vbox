@@ -54,7 +54,7 @@ static DECLCALLBACK(int) disReadBytesDefault(PDISSTATE pDis, uint8_t offInstr, u
 #if 0 /*def IN_RING0 - why? */
     RT_NOREF_PV(cbMinRead);
     AssertMsgFailed(("disReadWord with no read callback in ring 0!!\n"));
-    RT_BZERO(&pDis->u.abInstr[offInstr], cbMaxRead);
+    RT_BZERO(&pDis->Instr.ab[offInstr], cbMaxRead);
     pDis->cbCachedInstr = offInstr + cbMaxRead;
     return VERR_DIS_NO_READ_CALLBACK;
 #else
@@ -65,7 +65,7 @@ static DECLCALLBACK(int) disReadBytesDefault(PDISSTATE pDis, uint8_t offInstr, u
                                  : cbLeftOnPage <= cbMinRead
                                  ? cbMinRead
                                  : (uint8_t)cbLeftOnPage;
-    memcpy(&pDis->u.abInstr[offInstr], pbSrc, cbToRead);
+    memcpy(&pDis->Instr.ab[offInstr], pbSrc, cbToRead);
     pDis->cbCachedInstr = offInstr + cbToRead;
     return VINF_SUCCESS;
 #endif
@@ -73,12 +73,12 @@ static DECLCALLBACK(int) disReadBytesDefault(PDISSTATE pDis, uint8_t offInstr, u
 
 
 /**
- * Read more bytes into the DISSTATE::u.abInstr buffer, advance
+ * Read more bytes into the DISSTATE::Instr.ab buffer, advance
  * DISSTATE::cbCachedInstr.
  *
  * Will set DISSTATE::rc on failure, but still advance cbCachedInstr.
  *
- * The caller shall fend off reads beyond the DISSTATE::u.abInstr buffer.
+ * The caller shall fend off reads beyond the DISSTATE::Instr.ab buffer.
  *
  * @param   pDis                The disassembler state.
  * @param   offInstr            The offset of the read request.
@@ -87,7 +87,7 @@ static DECLCALLBACK(int) disReadBytesDefault(PDISSTATE pDis, uint8_t offInstr, u
  */
 DECLHIDDEN(void) disReadMore(PDISSTATE pDis, uint8_t offInstr, uint8_t cbMin)
 {
-    Assert(cbMin + offInstr <= sizeof(pDis->u.abInstr));
+    Assert(cbMin + offInstr <= sizeof(pDis->Instr.ab));
 
     /*
      * Adjust the incoming request to not overlap with bytes that has already
@@ -107,14 +107,14 @@ DECLHIDDEN(void) disReadMore(PDISSTATE pDis, uint8_t offInstr, uint8_t cbMin)
 
     /*
      * Do the read.
-     * (No need to zero anything on failure as u.abInstr is already zeroed by the
+     * (No need to zero anything on failure as Instr.ab is already zeroed by the
      * DISInstrEx API.)
      */
-    int rc = pDis->pfnReadBytes(pDis, offInstr, cbMin, sizeof(pDis->u.abInstr) - offInstr);
+    int rc = pDis->pfnReadBytes(pDis, offInstr, cbMin, sizeof(pDis->Instr.ab) - offInstr);
     if (RT_SUCCESS(rc))
     {
         Assert(pDis->cbCachedInstr >= offInstr + cbMin);
-        Assert(pDis->cbCachedInstr <= sizeof(pDis->u.abInstr));
+        Assert(pDis->cbCachedInstr <= sizeof(pDis->Instr.ab));
     }
     else
     {
@@ -137,14 +137,14 @@ DECLHIDDEN(uint8_t) disReadByteSlow(PDISSTATE pDis, size_t offInstr)
     if (RT_LIKELY(offInstr < DIS_MAX_INSTR_LENGTH))
     {
         disReadMore(pDis, (uint8_t)offInstr, 1);
-        return pDis->u.abInstr[offInstr];
+        return pDis->Instr.ab[offInstr];
     }
 
     Log(("disReadByte: too long instruction...\n"));
     pDis->rc = VERR_DIS_TOO_LONG_INSTR;
-    ssize_t cbLeft = (ssize_t)(sizeof(pDis->u.abInstr) - offInstr);
+    ssize_t cbLeft = (ssize_t)(sizeof(pDis->Instr.ab) - offInstr);
     if (cbLeft > 0)
-        return pDis->u.abInstr[offInstr];
+        return pDis->Instr.ab[offInstr];
     return 0;
 }
 
@@ -163,22 +163,22 @@ DECLHIDDEN(uint16_t) disReadWordSlow(PDISSTATE pDis, size_t offInstr)
     {
         disReadMore(pDis, (uint8_t)offInstr, 2);
 #ifdef DIS_HOST_UNALIGNED_ACCESS_OK
-        return *(uint16_t const *)&pDis->u.abInstr[offInstr];
+        return *(uint16_t const *)&pDis->Instr.ab[offInstr];
 #else
-        return RT_MAKE_U16(pDis->u.abInstr[offInstr], pDis->u.abInstr[offInstr + 1]);
+        return RT_MAKE_U16(pDis->Instr.ab[offInstr], pDis->Instr.ab[offInstr + 1]);
 #endif
     }
 
     Log(("disReadWord: too long instruction...\n"));
     pDis->rc = VERR_DIS_TOO_LONG_INSTR;
-    ssize_t cbLeft = (ssize_t)(sizeof(pDis->u.abInstr) - offInstr);
+    ssize_t cbLeft = (ssize_t)(sizeof(pDis->Instr.ab) - offInstr);
     switch (cbLeft)
     {
         case 1:
-            return pDis->u.abInstr[offInstr];
+            return pDis->Instr.ab[offInstr];
         default:
             if (cbLeft >= 2)
-                return RT_MAKE_U16(pDis->u.abInstr[offInstr], pDis->u.abInstr[offInstr + 1]);
+                return RT_MAKE_U16(pDis->Instr.ab[offInstr], pDis->Instr.ab[offInstr + 1]);
             return 0;
     }
 }
@@ -198,28 +198,28 @@ DECLHIDDEN(uint32_t) disReadDWordSlow(PDISSTATE pDis, size_t offInstr)
     {
         disReadMore(pDis, (uint8_t)offInstr, 4);
 #ifdef DIS_HOST_UNALIGNED_ACCESS_OK
-        return *(uint32_t const *)&pDis->u.abInstr[offInstr];
+        return *(uint32_t const *)&pDis->Instr.ab[offInstr];
 #else
-        return RT_MAKE_U32_FROM_U8(pDis->u.abInstr[offInstr    ], pDis->u.abInstr[offInstr + 1],
-                                   pDis->u.abInstr[offInstr + 2], pDis->u.abInstr[offInstr + 3]);
+        return RT_MAKE_U32_FROM_U8(pDis->Instr.ab[offInstr    ], pDis->Instr.ab[offInstr + 1],
+                                   pDis->Instr.ab[offInstr + 2], pDis->Instr.ab[offInstr + 3]);
 #endif
     }
 
     Log(("disReadDWord: too long instruction...\n"));
     pDis->rc = VERR_DIS_TOO_LONG_INSTR;
-    ssize_t cbLeft = (ssize_t)(sizeof(pDis->u.abInstr) - offInstr);
+    ssize_t cbLeft = (ssize_t)(sizeof(pDis->Instr.ab) - offInstr);
     switch (cbLeft)
     {
         case 1:
-            return RT_MAKE_U32_FROM_U8(pDis->u.abInstr[offInstr], 0, 0, 0);
+            return RT_MAKE_U32_FROM_U8(pDis->Instr.ab[offInstr], 0, 0, 0);
         case 2:
-            return RT_MAKE_U32_FROM_U8(pDis->u.abInstr[offInstr], pDis->u.abInstr[offInstr + 1], 0, 0);
+            return RT_MAKE_U32_FROM_U8(pDis->Instr.ab[offInstr], pDis->Instr.ab[offInstr + 1], 0, 0);
         case 3:
-            return RT_MAKE_U32_FROM_U8(pDis->u.abInstr[offInstr], pDis->u.abInstr[offInstr + 1], pDis->u.abInstr[offInstr + 2], 0);
+            return RT_MAKE_U32_FROM_U8(pDis->Instr.ab[offInstr], pDis->Instr.ab[offInstr + 1], pDis->Instr.ab[offInstr + 2], 0);
         default:
             if (cbLeft >= 4)
-                return RT_MAKE_U32_FROM_U8(pDis->u.abInstr[offInstr    ], pDis->u.abInstr[offInstr + 1],
-                                           pDis->u.abInstr[offInstr + 2], pDis->u.abInstr[offInstr + 3]);
+                return RT_MAKE_U32_FROM_U8(pDis->Instr.ab[offInstr    ], pDis->Instr.ab[offInstr + 1],
+                                           pDis->Instr.ab[offInstr + 2], pDis->Instr.ab[offInstr + 3]);
             return 0;
     }
 }
@@ -239,51 +239,51 @@ DECLHIDDEN(uint64_t) disReadQWordSlow(PDISSTATE pDis, size_t offInstr)
     {
         disReadMore(pDis, (uint8_t)offInstr, 8);
 #ifdef DIS_HOST_UNALIGNED_ACCESS_OK
-        return *(uint64_t const *)&pDis->u.abInstr[offInstr];
+        return *(uint64_t const *)&pDis->Instr.ab[offInstr];
 #else
-        return RT_MAKE_U64_FROM_U8(pDis->u.abInstr[offInstr    ], pDis->u.abInstr[offInstr + 1],
-                                   pDis->u.abInstr[offInstr + 2], pDis->u.abInstr[offInstr + 3],
-                                   pDis->u.abInstr[offInstr + 4], pDis->u.abInstr[offInstr + 5],
-                                   pDis->u.abInstr[offInstr + 6], pDis->u.abInstr[offInstr + 7]);
+        return RT_MAKE_U64_FROM_U8(pDis->Instr.ab[offInstr    ], pDis->Instr.ab[offInstr + 1],
+                                   pDis->Instr.ab[offInstr + 2], pDis->Instr.ab[offInstr + 3],
+                                   pDis->Instr.ab[offInstr + 4], pDis->Instr.ab[offInstr + 5],
+                                   pDis->Instr.ab[offInstr + 6], pDis->Instr.ab[offInstr + 7]);
 #endif
     }
 
     Log(("disReadQWord: too long instruction...\n"));
     pDis->rc = VERR_DIS_TOO_LONG_INSTR;
-    ssize_t cbLeft = (ssize_t)(sizeof(pDis->u.abInstr) - offInstr);
+    ssize_t cbLeft = (ssize_t)(sizeof(pDis->Instr.ab) - offInstr);
     switch (cbLeft)
     {
         case 1:
-            return RT_MAKE_U64_FROM_U8(pDis->u.abInstr[offInstr], 0, 0, 0,   0, 0, 0, 0);
+            return RT_MAKE_U64_FROM_U8(pDis->Instr.ab[offInstr], 0, 0, 0,   0, 0, 0, 0);
         case 2:
-            return RT_MAKE_U64_FROM_U8(pDis->u.abInstr[offInstr], pDis->u.abInstr[offInstr + 1], 0, 0,   0, 0, 0, 0);
+            return RT_MAKE_U64_FROM_U8(pDis->Instr.ab[offInstr], pDis->Instr.ab[offInstr + 1], 0, 0,   0, 0, 0, 0);
         case 3:
-            return RT_MAKE_U64_FROM_U8(pDis->u.abInstr[offInstr    ], pDis->u.abInstr[offInstr + 1],
-                                       pDis->u.abInstr[offInstr + 2], 0,   0, 0, 0, 0);
+            return RT_MAKE_U64_FROM_U8(pDis->Instr.ab[offInstr    ], pDis->Instr.ab[offInstr + 1],
+                                       pDis->Instr.ab[offInstr + 2], 0,   0, 0, 0, 0);
         case 4:
-            return RT_MAKE_U64_FROM_U8(pDis->u.abInstr[offInstr    ], pDis->u.abInstr[offInstr + 1],
-                                       pDis->u.abInstr[offInstr + 2], pDis->u.abInstr[offInstr + 3],
+            return RT_MAKE_U64_FROM_U8(pDis->Instr.ab[offInstr    ], pDis->Instr.ab[offInstr + 1],
+                                       pDis->Instr.ab[offInstr + 2], pDis->Instr.ab[offInstr + 3],
                                        0, 0, 0, 0);
         case 5:
-            return RT_MAKE_U64_FROM_U8(pDis->u.abInstr[offInstr    ], pDis->u.abInstr[offInstr + 1],
-                                       pDis->u.abInstr[offInstr + 2], pDis->u.abInstr[offInstr + 3],
-                                       pDis->u.abInstr[offInstr + 4], 0, 0, 0);
+            return RT_MAKE_U64_FROM_U8(pDis->Instr.ab[offInstr    ], pDis->Instr.ab[offInstr + 1],
+                                       pDis->Instr.ab[offInstr + 2], pDis->Instr.ab[offInstr + 3],
+                                       pDis->Instr.ab[offInstr + 4], 0, 0, 0);
         case 6:
-            return RT_MAKE_U64_FROM_U8(pDis->u.abInstr[offInstr    ], pDis->u.abInstr[offInstr + 1],
-                                       pDis->u.abInstr[offInstr + 2], pDis->u.abInstr[offInstr + 3],
-                                       pDis->u.abInstr[offInstr + 4], pDis->u.abInstr[offInstr + 5],
+            return RT_MAKE_U64_FROM_U8(pDis->Instr.ab[offInstr    ], pDis->Instr.ab[offInstr + 1],
+                                       pDis->Instr.ab[offInstr + 2], pDis->Instr.ab[offInstr + 3],
+                                       pDis->Instr.ab[offInstr + 4], pDis->Instr.ab[offInstr + 5],
                                        0, 0);
         case 7:
-            return RT_MAKE_U64_FROM_U8(pDis->u.abInstr[offInstr    ], pDis->u.abInstr[offInstr + 1],
-                                       pDis->u.abInstr[offInstr + 2], pDis->u.abInstr[offInstr + 3],
-                                       pDis->u.abInstr[offInstr + 4], pDis->u.abInstr[offInstr + 5],
-                                       pDis->u.abInstr[offInstr + 6], 0);
+            return RT_MAKE_U64_FROM_U8(pDis->Instr.ab[offInstr    ], pDis->Instr.ab[offInstr + 1],
+                                       pDis->Instr.ab[offInstr + 2], pDis->Instr.ab[offInstr + 3],
+                                       pDis->Instr.ab[offInstr + 4], pDis->Instr.ab[offInstr + 5],
+                                       pDis->Instr.ab[offInstr + 6], 0);
         default:
             if (cbLeft >= 8)
-                return RT_MAKE_U64_FROM_U8(pDis->u.abInstr[offInstr    ], pDis->u.abInstr[offInstr + 1],
-                                           pDis->u.abInstr[offInstr + 2], pDis->u.abInstr[offInstr + 3],
-                                           pDis->u.abInstr[offInstr + 4], pDis->u.abInstr[offInstr + 5],
-                                           pDis->u.abInstr[offInstr + 6], pDis->u.abInstr[offInstr + 7]);
+                return RT_MAKE_U64_FROM_U8(pDis->Instr.ab[offInstr    ], pDis->Instr.ab[offInstr + 1],
+                                           pDis->Instr.ab[offInstr + 2], pDis->Instr.ab[offInstr + 3],
+                                           pDis->Instr.ab[offInstr + 4], pDis->Instr.ab[offInstr + 5],
+                                           pDis->Instr.ab[offInstr + 6], pDis->Instr.ab[offInstr + 7]);
             return 0;
     }
 }
@@ -423,14 +423,14 @@ DISDECL(int) DISInstrWithPrefetchedBytes(RTUINTPTR uInstrAddr, DISCPUMODE enmCpu
         disPrefetchBytes(pDis);
     else
     {
-        if (cbPretched >= sizeof(pDis->u.abInstr))
+        if (cbPretched >= sizeof(pDis->Instr.ab))
         {
-            memcpy(pDis->u.abInstr, pvPrefetched, sizeof(pDis->u.abInstr));
-            pDis->cbCachedInstr = (uint8_t)sizeof(pDis->u.abInstr);
+            memcpy(pDis->Instr.ab, pvPrefetched, sizeof(pDis->Instr.ab));
+            pDis->cbCachedInstr = (uint8_t)sizeof(pDis->Instr.ab);
         }
         else
         {
-            memcpy(pDis->u.abInstr, pvPrefetched, cbPretched);
+            memcpy(pDis->Instr.ab, pvPrefetched, cbPretched);
             pDis->cbCachedInstr = (uint8_t)cbPretched;
         }
     }

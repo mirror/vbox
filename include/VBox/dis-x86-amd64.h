@@ -303,11 +303,11 @@ typedef enum
 
 
 /**
- * Opcode parameter (operand) details.
+ * Opcode parameter (operand) details for x86/AMD64.
  */
-typedef struct DISOPPARAMX86
+typedef struct
 {
-    /** Disposition.  */
+    /** Disposition. */
     union
     {
         /** 64-bit displacement, applicable if DISUSE_DISPLACEMENT64 is set in fUse.  */
@@ -371,18 +371,18 @@ typedef struct DISOPPARAMX86
         uint8_t     idxYmmReg;
     } Index;
     /** 2, 4 or 8, if DISUSE_SCALE is set in fUse. */
-    uint8_t           uScale;
+    uint8_t         uScale;
     /** Parameter size. */
-    uint8_t           cb;
+    uint8_t         cb;
     /** Copy of the corresponding DISOPCODE::fParam1 / DISOPCODE::fParam2 /
      * DISOPCODE::fParam3. */
-    uint32_t          fParam;
-} DISOPPARAMX86;
-AssertCompileSize(DISOPPARAMX86, 16);
+    uint32_t        fParam;
+} DIS_OP_PARAM_X86_T;
+AssertCompileSize(DIS_OP_PARAM_X86_T, 16);
 /** Pointer to opcode parameter. */
-typedef DISOPPARAMX86 *PDISOPPARAMX86;
+typedef DIS_OP_PARAM_X86_T *PDIS_OP_PARAM_X86_T;
 /** Pointer to opcode parameter. */
-typedef const DISOPPARAMX86 *PCDISOPPARAMX86;
+typedef const DIS_OP_PARAM_X86_T *PCDIS_OP_PARAM_X86_T;
 
 
 /** Parser callback.
@@ -395,9 +395,9 @@ typedef FNDISPARSEX86 *PFNDISPARSEX86;
 typedef PFNDISPARSEX86 const *PCPFNDISPARSEX86;
 
 /**
- * The x86/amd64 specific disassembler state and result.
+ * The x86/AMD64 specific disassembler state and result.
  */
-typedef struct DISSTATEX86
+typedef struct
 {
     /** SIB fields. */
     union
@@ -451,9 +451,8 @@ typedef struct DISSTATEX86
 #if ARCH_BITS == 32
     uint32_t        uPtrPadding1;
 #endif
-
-} DISSTATEX86;
-AssertCompileSize(DISSTATEX86, 32);
+} DIS_STATE_X86_T;
+AssertCompileSize(DIS_STATE_X86_T, 32);
 
 
 

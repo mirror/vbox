@@ -73,16 +73,16 @@ static const char *disasmFormatArmV8Reg(PCDISSTATE pDis, PCDISOPPARAM pParam, si
     {
         case DISUSE_REG_GEN32:
         {
-            Assert(pParam->arch.armv8.Reg.idxGenReg < RT_ELEMENTS(g_aszArmV8RegGen32));
-            const char *psz = g_aszArmV8RegGen32[pParam->arch.armv8.Reg.idxGenReg];
+            Assert(pParam->armv8.Reg.idxGenReg < RT_ELEMENTS(g_aszArmV8RegGen32));
+            const char *psz = g_aszArmV8RegGen32[pParam->armv8.Reg.idxGenReg];
             *pcchReg = 2 + !!psz[2];
             return psz;
         }
 
         case DISUSE_REG_GEN64:
         {
-            Assert(pParam->arch.armv8.Reg.idxGenReg < RT_ELEMENTS(g_aszArmV8RegGen64));
-            const char *psz = g_aszArmV8RegGen64[pParam->arch.armv8.Reg.idxGenReg];
+            Assert(pParam->armv8.Reg.idxGenReg < RT_ELEMENTS(g_aszArmV8RegGen64));
+            const char *psz = g_aszArmV8RegGen64[pParam->armv8.Reg.idxGenReg];
             *pcchReg = 2 + !!psz[2];
             return psz;
             return psz;

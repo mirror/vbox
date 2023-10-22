@@ -52,38 +52,38 @@ RT_C_DECLS_BEGIN
 /**
  * Opcode parameter (operand) details.
  */
-typedef struct DISOPPARAMARMV8
+typedef struct
 {
     /** The register operand. */
     union
     {
         /** General register index (DISGREG_XXX), applicable if DISUSE_REG_GEN32
          * or DISUSE_REG_GEN64 is set in fUse. */
-        uint8_t     idxGenReg;
+        uint8_t         idxGenReg;
     } Reg;
     /** Scale factor. */
-    uint8_t           uScale;
+    uint8_t         uScale;
     /** Parameter size. */
-    uint8_t           cb;
-    /** Copy of the corresponding DISOPCODE::fParam1 / DISOPCODE::fParam2 /
-     * DISOPCODE::fParam3. */
-    uint32_t          fParam;
-} DISOPPARAMARMV8;
-//AssertCompileSize(DISOPPARAMARMV8, 16);
+    uint8_t         cb;
+    uint8_t         bPadding;
+    /** Copy of the corresponding DISOPCODE::fParam1 / DISOPCODE::fParam2 / DISOPCODE::fParam3. */
+    uint32_t        fParam;
+} DIS_OP_PARAM_ARMV8_T;
+AssertCompile(sizeof(DIS_OP_PARAM_ARMV8_T) <= 16);
 /** Pointer to opcode parameter. */
-typedef DISOPPARAMARMV8 *PDISOPPARAMARMV8;
+typedef DIS_OP_PARAM_ARMV8_T *PDIS_OP_PARAM_ARMV8_T;
 /** Pointer to opcode parameter. */
-typedef const DISOPPARAMARMV8 *PCDISOPPARAMARMV8;
+typedef const DIS_OP_PARAM_ARMV8_T *PCDIS_OP_PARAM_ARMV8_T;
 
 
 /**
  * The armv8 specific disassembler state and result.
  */
-typedef struct DISSTATEARMV8
+typedef struct
 {
-    uint8_t bDummy;
-} DISSTATEARMV8;
-//AssertCompileSize(DISSTATEARMV8, 32);
+    uint8_t         bDummy;
+} DIS_STATE_ARMV8_T;
+AssertCompile(sizeof(DIS_STATE_ARMV8_T) <= 32);
 
 
 /** @} */

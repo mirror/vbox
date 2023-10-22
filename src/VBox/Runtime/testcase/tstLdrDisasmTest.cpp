@@ -96,7 +96,7 @@ static DECLCALLBACK(int) DisasmTest1ReadCode(PDISSTATE pDis, uint8_t offInstr, u
     size_t cb = cbMaxRead;
     if (cb + pDis->uInstrAddr + offInstr > sizeof(g_ab32BitCode))
         cb = cbMinRead;
-    memcpy(&pDis->u.abInstr[offInstr], &g_ab32BitCode[pDis->uInstrAddr + offInstr], cb);
+    memcpy(&pDis->Instr.ab[offInstr], &g_ab32BitCode[pDis->uInstrAddr + offInstr], cb);
     pDis->cbCachedInstr = offInstr + (uint8_t)cb;
     return VINF_SUCCESS;
 }
@@ -111,7 +111,7 @@ DECLINLINE(int) MyDisasm(uintptr_t CodeIndex, PDISSTATE pDis, uint32_t *pcb)
     int rc = DISInstrWithReader(CodeIndex, DISCPUMODE_32BIT, DisasmTest1ReadCode, 0, pDis, &cb);
     *pcb = cb;
     MY_PRINTF(("DISCoreOneEx -> rc=%d cb=%d  Cpu: bOpCode=%#x pCurInstr=%p (42=%d)\n", \
-               rc, cb, pDis->arch.x86.bOpCode, pDis->pCurInstr, 42)); \
+               rc, cb, pDis->x86.bOpCode, pDis->pCurInstr, 42)); \
     return rc;
 }
 

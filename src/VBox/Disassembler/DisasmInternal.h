@@ -44,7 +44,7 @@
  * @{
  */
 
-/** This must be less or equal to DISSTATE::u.abInstr.
+/** This must be less or equal to DISSTATE::Instr.ab.
  * See Vol3A/Table 6-2 and Vol3B/Section22.25 for instance.  */
 #define DIS_MAX_INSTR_LENGTH    15
 
@@ -102,7 +102,7 @@ DECL_FORCE_INLINE(uint8_t) disReadByte(PDISSTATE pDis, size_t offInstr)
 {
     if (offInstr >= pDis->cbCachedInstr)
         return disReadByteSlow(pDis, offInstr);
-    return pDis->u.abInstr[offInstr];
+    return pDis->Instr.ab[offInstr];
 }
 
 
@@ -120,9 +120,9 @@ DECL_FORCE_INLINE(uint16_t) disReadWord(PDISSTATE pDis, size_t offInstr)
         return disReadWordSlow(pDis, offInstr);
 
 #ifdef DIS_HOST_UNALIGNED_ACCESS_OK
-    return *(uint16_t const *)&pDis->u.abInstr[offInstr];
+    return *(uint16_t const *)&pDis->Instr.ab[offInstr];
 #else
-    return RT_MAKE_U16(pDis->u.abInstr[offInstr], pDis->u.abInstr[offInstr + 1]);
+    return RT_MAKE_U16(pDis->Instr.ab[offInstr], pDis->Instr.ab[offInstr + 1]);
 #endif
 }
 
@@ -141,10 +141,10 @@ DECL_FORCE_INLINE(uint32_t) disReadDWord(PDISSTATE pDis, size_t offInstr)
         return disReadDWordSlow(pDis, offInstr);
 
 #ifdef DIS_HOST_UNALIGNED_ACCESS_OK
-    return *(uint32_t const *)&pDis->u.abInstr[offInstr];
+    return *(uint32_t const *)&pDis->Instr.ab[offInstr];
 #else
-    return RT_MAKE_U32_FROM_U8(pDis->u.abInstr[offInstr    ], pDis->u.abInstr[offInstr + 1],
-                               pDis->u.abInstr[offInstr + 2], pDis->u.abInstr[offInstr + 3]);
+    return RT_MAKE_U32_FROM_U8(pDis->Instr.ab[offInstr    ], pDis->Instr.ab[offInstr + 1],
+                               pDis->Instr.ab[offInstr + 2], pDis->Instr.ab[offInstr + 3]);
 #endif
 }
 
@@ -162,12 +162,12 @@ DECL_FORCE_INLINE(uint64_t) disReadQWord(PDISSTATE pDis, size_t offInstr)
         return disReadQWordSlow(pDis, offInstr);
 
 #ifdef DIS_HOST_UNALIGNED_ACCESS_OK
-    return *(uint64_t const *)&pDis->u.abInstr[offInstr];
+    return *(uint64_t const *)&pDis->Instr.ab[offInstr];
 #else
-    return RT_MAKE_U64_FROM_U8(pDis->u.abInstr[offInstr    ], pDis->u.abInstr[offInstr + 1],
-                               pDis->u.abInstr[offInstr + 2], pDis->u.abInstr[offInstr + 3],
-                               pDis->u.abInstr[offInstr + 4], pDis->u.abInstr[offInstr + 5],
-                               pDis->u.abInstr[offInstr + 6], pDis->u.abInstr[offInstr + 7]);
+    return RT_MAKE_U64_FROM_U8(pDis->Instr.ab[offInstr    ], pDis->Instr.ab[offInstr + 1],
+                               pDis->Instr.ab[offInstr + 2], pDis->Instr.ab[offInstr + 3],
+                               pDis->Instr.ab[offInstr + 4], pDis->Instr.ab[offInstr + 5],
+                               pDis->Instr.ab[offInstr + 6], pDis->Instr.ab[offInstr + 7]);
 #endif
 }
 
@@ -188,11 +188,11 @@ DECL_FORCE_INLINE(void) disPrefetchBytes(PDISSTATE pDis)
      * has gone wrong since this is what would happen if we didn't precharge
      * the cache here.)
      */
-    int rc = pDis->pfnReadBytes(pDis, 0, 1, sizeof(pDis->u.abInstr));
+    int rc = pDis->pfnReadBytes(pDis, 0, 1, sizeof(pDis->Instr.ab));
     if (RT_SUCCESS(rc))
     {
         Assert(pDis->cbCachedInstr >= 1);
-        Assert(pDis->cbCachedInstr <= sizeof(pDis->u.abInstr));
+        Assert(pDis->cbCachedInstr <= sizeof(pDis->Instr.ab));
     }
     else
     {
@@ -203,12 +203,10 @@ DECL_FORCE_INLINE(void) disPrefetchBytes(PDISSTATE pDis)
 
 
 #if defined(VBOX_DIS_WITH_X86_AMD64)
-/* x86/amd64 */
 DECLHIDDEN(PCDISOPCODE) disInitializeStateX86(PDISSTATE pDis, DISCPUMODE enmCpuMode, uint32_t fFilter);
 DECLHIDDEN(int)         disInstrWorkerX86(PDISSTATE pDis, PCDISOPCODE paOneByteMap, uint32_t *pcbInstr);
 #endif
 #if defined(VBOX_DIS_WITH_ARMV8)
-/* x86/amd64 */
 DECLHIDDEN(PCDISOPCODE) disInitializeStateArmV8(PDISSTATE pDis, DISCPUMODE enmCpuMode, uint32_t fFilter);
 DECLHIDDEN(int)         disInstrWorkerArmV8(PDISSTATE pDis, PCDISOPCODE paOneByteMap, uint32_t *pcbInstr);
 #endif

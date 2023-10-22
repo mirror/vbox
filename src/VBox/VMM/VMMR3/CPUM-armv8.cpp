@@ -28,7 +28,7 @@
 /** @page pg_cpum CPUM - CPU Monitor / Manager
  *
  * The CPU Monitor / Manager keeps track of all the CPU registers.
- * This is the ARMv8 variant which is doing much less than its x86/amd64
+ * This is the ARMv8 variant which is doing much less than its x86/AMD6464
  * counterpart due to the fact that we currently only support the NEM backends
  * for running ARM guests. It might become complex iff we decide to implement our
  * own hypervisor.

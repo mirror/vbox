@@ -78,9 +78,9 @@ size_t disFormatBytes(PCDISSTATE pDis, char *pszDst, size_t cchDst, uint32_t fFl
     for (uint32_t i = 0; i < cb; i++)
     {
         if (i != 0 && (fFlags & DIS_FMT_FLAGS_BYTES_SPACED))
-            PUT_NUM(3, " %02x", pDis->u.abInstr[i]);
+            PUT_NUM(3, " %02x", pDis->Instr.ab[i]);
         else
-            PUT_NUM(2, "%02x", pDis->u.abInstr[i]);
+            PUT_NUM(2, "%02x", pDis->Instr.ab[i]);
     }
 
     if (fFlags & DIS_FMT_FLAGS_BYTES_BRACKETS)

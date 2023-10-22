@@ -88,7 +88,7 @@ static void testDisas(const char *pszSub, uint8_t const *pabInstrs, uintptr_t uE
         uint32_t        cbOnly = 1;
         DISSTATE        DisOnly;
         rc = DISInstrWithPrefetchedBytes((uintptr_t)&pabInstrs[off], enmDisCpuMode,  0 /*fFilter - none */,
-                                         Dis.u.abInstr, Dis.cbCachedInstr, NULL, NULL, &DisOnly, &cbOnly);
+                                         Dis.Instr.ab, Dis.cbCachedInstr, NULL, NULL, &DisOnly, &cbOnly);
 
         RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
         RTTESTI_CHECK(cbOnly == DisOnly.cbInstr);
@@ -108,7 +108,7 @@ static void testDisas(const char *pszSub, uint8_t const *pabInstrs, uintptr_t uE
 static DECLCALLBACK(int) testReadBytes(PDISSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
     RT_NOREF1(cbMinRead);
-    memcpy(&pDis->u.abInstr[offInstr], (void *)((uintptr_t)pDis->uInstrAddr + offInstr), cbMaxRead);
+    memcpy(&pDis->Instr.ab[offInstr], (void *)((uintptr_t)pDis->uInstrAddr + offInstr), cbMaxRead);
     pDis->cbCachedInstr = offInstr + cbMaxRead;
     return VINF_SUCCESS;
 }

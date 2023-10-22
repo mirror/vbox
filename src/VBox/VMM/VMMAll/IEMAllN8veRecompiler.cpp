@@ -50,10 +50,12 @@
 #define VMM_INCLUDED_SRC_include_IEMMc_h /* block IEMMc.h inclusion. */
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/cpum.h>
+#include <VBox/vmm/dbgf.h>
 #include "IEMInternal.h"
 #include <VBox/vmm/vmcc.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
+#include <VBox/dis.h>
 #include <VBox/param.h>
 #include <iprt/assert.h>
 #include <iprt/heap.h>
@@ -3976,6 +3978,126 @@ static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_DeferToCImpl0)
 *********************************************************************************************************************************/
 
 
+/** @callback_method_impl{FNDISREADBYTES, Dummy.} */
+static DECLCALLBACK(int) iemNativeDisasReadBytesDummy(PDISSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
+{
+    RT_BZERO(&pDis->Instr.ab[offInstr], cbMaxRead);
+    pDis->cbCachedInstr += cbMaxRead;
+    RT_NOREF(cbMinRead);
+    return VERR_NO_DATA;
+}
+
+
+
+void iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp)
+{
+    AssertReturnVoid((pTb->fFlags & IEMTB_F_TYPE_MASK) == IEMTB_F_TYPE_NATIVE);
+
+    char                    szDisBuf[512];
+    DISSTATE                Dis;
+    PCIEMNATIVEINSTR const  paInstrs      = pTb->Native.paInstructions;
+    uint32_t const          cInstrs       = pTb->Native.cInstructions;
+    PCIEMTBDBG const        pDbgInfo      = pTb->pDbgInfo;
+    DISCPUMODE              enmGstCpuMode = (pTb->fFlags & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_16BIT ? DISCPUMODE_16BIT
+                                          : (pTb->fFlags & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_32BIT ? DISCPUMODE_32BIT
+                                          :                                                            DISCPUMODE_64BIT;
+#ifdef RT_ARCH_AMD64
+    DISCPUMODE const        enmHstCpuMode = DISCPUMODE_64BIT;
+#elif defined(RT_ARCH_ARM64)
+    DISCPUMODE const        enmHstCpuMode = DISCPUMODE_ARMV8_A64;
+#else
+# error "Port me"
+#endif
+
+    pHlp->pfnPrintf(pHlp,
+                    "pTb=%p: GCPhysPc=%RGp cInstructions=%u LB %#x cRanges=%u\n"
+                    "pTb=%p: fFlags=%#010x cUsed=%u msLastUsed=%u\n",
+                    pTb, pTb->GCPhysPc, pTb->cInstructions, pTb->cbOpcodes, pTb->cRanges,
+                    pTb, pTb->fFlags, pTb->cUsed, pTb->msLastUsed);
+    if (pDbgInfo)
+    {
+
+
+    }
+    else
+    {
+        /*
+         * No debug info, just disassemble the x86 code and then the native code.
+         */
+        /* The guest code. */
+        for (unsigned i = 0; i < pTb->cRanges; i++)
+        {
+            RTGCPHYS GCPhysPc = pTb->aRanges[i].offPhysPage
+                              + (pTb->aRanges[i].idxPhysPage == 0
+                                 ? pTb->GCPhysPc & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK
+                                 : pTb->aGCPhysPages[pTb->aRanges[i].idxPhysPage - 1]);
+            pHlp->pfnPrintf(pHlp, "  Range #%u: GCPhysPc=%RGp LB %#x [idxPg=%d]\n",
+                            i, GCPhysPc, pTb->aRanges[i].cbOpcodes, pTb->aRanges[i].idxPhysPage);
+            unsigned       off       = pTb->aRanges[i].offOpcodes;
+            unsigned const cbOpcodes = pTb->aRanges[i].cbOpcodes + off;
+            while (off < cbOpcodes)
+            {
+                uint32_t cbInstr = 1;
+                int rc = DISInstrWithPrefetchedBytes(GCPhysPc, enmGstCpuMode, DISOPTYPE_ALL,
+                                                     &pTb->pabOpcodes[off], cbOpcodes - off,
+                                                     iemNativeDisasReadBytesDummy, NULL, &Dis, &cbInstr);
+                if (RT_SUCCESS(rc))
+                {
+                    DISFormatYasmEx(&Dis, szDisBuf, sizeof(szDisBuf),
+                                    DIS_FMT_FLAGS_BYTES_LEFT | DIS_FMT_FLAGS_RELATIVE_BRANCH,
+                                    NULL /*pfnGetSymbol*/, NULL /*pvUser*/);
+                    pHlp->pfnPrintf(pHlp, "    %s\n", szDisBuf);
+                    off += cbInstr;
+                }
+                else
+                {
+                    pHlp->pfnPrintf(pHlp, "    %.*Rhxs - disassembly failure %Rrc\n",
+                                    cbOpcodes - off, &pTb->pabOpcodes[off], rc);
+                    break;
+                }
+            }
+        }
+
+        /* The native code: */
+        pHlp->pfnPrintf(pHlp, "  Native code %p L %#x\n", paInstrs, cInstrs);
+        for (uint32_t offNative = 0; offNative < cInstrs; )
+        {
+            uint32_t  cbInstr = sizeof(paInstrs[0]);
+            int const rc      = DISInstr(&paInstrs[offNative], enmHstCpuMode, &Dis, &cbInstr);
+            if (RT_SUCCESS(rc))
+            {
+# if defined(RT_ARCH_AMD64) && 0
+                if (Dis.pCurInstr->uOpcode == )
+                {
+                }
+                else
+# endif
+                {
+                    DISFormatYasmEx(&Dis, szDisBuf, sizeof(szDisBuf),
+                                    DIS_FMT_FLAGS_BYTES_LEFT | DIS_FMT_FLAGS_RELATIVE_BRANCH,
+                                    NULL /*pfnGetSymbol*/, NULL /*pvUser*/);
+                    pHlp->pfnPrintf(pHlp, "    %p: %s\n", &paInstrs[offNative], szDisBuf);
+                }
+            }
+            else
+            {
+# if defined(RT_ARCH_AMD64)
+                pHlp->pfnPrintf(pHlp, "    %p:  %.*Rhxs - disassembly failure %Rrc\n",
+                                &paInstrs[offNative], RT_MIN(cInstrs - offNative, 16), &paInstrs[offNative], rc);
+# elif defined(RT_ARCH_ARM64)
+                pHlp->pfnPrintf(pHlp, "    %p:  %#010RX32 - disassembly failure %Rrc\n",
+                                &paInstrs[offNative], paInstrs[offNative], rc);
+# else
+#  error "Port me"
+#endif
+                cbInstr = sizeof(paInstrs[0]);
+            }
+            offNative += cbInstr / sizeof(paInstrs[0]);
+        }
+    }
+}
+
+
 /**
  * Recompiles the given threaded TB into a native one.
  *
@@ -4104,12 +4226,6 @@ PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb)
     }
 
     iemExecMemAllocatorReadyForUse(pVCpu, paFinalInstrBuf, off * sizeof(IEMNATIVEINSTR));
-#ifdef LOG_ENABLED
-    if (LogIs3Enabled())
-    {
-
-    }
-#endif
 
     /*
      * Convert the translation block.
@@ -4124,6 +4240,14 @@ PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb)
     pTbAllocator->cThreadedTbs -= 1;
     pTbAllocator->cNativeTbs   += 1;
     Assert(pTbAllocator->cNativeTbs <= pTbAllocator->cTotalTbs);
+
+#ifdef LOG_ENABLED
+    /*
+     * Disassemble to the log if enabled.
+     */
+    if (LogIs3Enabled())
+        iemNativeDisassembleTb(pTb, DBGFR3InfoLogHlp());
+#endif
 
     return pTb;
 }

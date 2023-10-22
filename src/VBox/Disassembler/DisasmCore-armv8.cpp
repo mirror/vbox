@@ -151,17 +151,17 @@ static int disArmV8ParseImm(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNCLAS
     pParam->uValue = disArmV8ExtractBitVecFromInsn(u32Insn, pInsnParm->idxBitStart, pInsnParm->cBits);
     if (pInsnParm->cBits <= 8)
     {
-        pParam->arch.armv8.cb = sizeof(uint8_t);
+        pParam->armv8.cb = sizeof(uint8_t);
         pParam->fUse |= DISUSE_IMMEDIATE8;
     }
     else if (pInsnParm->cBits <= 16)
     {
-        pParam->arch.armv8.cb = sizeof(uint16_t);
+        pParam->armv8.cb = sizeof(uint16_t);
         pParam->fUse |= DISUSE_IMMEDIATE16;
     }
     else if (pInsnParm->cBits <= 32)
     {
-        pParam->arch.armv8.cb = sizeof(uint32_t);
+        pParam->armv8.cb = sizeof(uint32_t);
         pParam->fUse |= DISUSE_IMMEDIATE32;
     }
     else
@@ -180,17 +180,17 @@ static int disArmV8ParseImmRel(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNC
     pParam->uValue = (int64_t)disArmV8ExtractBitVecFromInsnSignExtend(u32Insn, pInsnParm->idxBitStart, pInsnParm->cBits);
     if (pInsnParm->cBits <= 8)
     {
-        pParam->arch.armv8.cb = sizeof(int8_t);
+        pParam->armv8.cb = sizeof(int8_t);
         pParam->fUse |= DISUSE_IMMEDIATE8_REL;
     }
     else if (pInsnParm->cBits <= 16)
     {
-        pParam->arch.armv8.cb = sizeof(int16_t);
+        pParam->armv8.cb = sizeof(int16_t);
         pParam->fUse |= DISUSE_IMMEDIATE16_REL;
     }
     else if (pInsnParm->cBits <= 32)
     {
-        pParam->arch.armv8.cb = sizeof(int32_t);
+        pParam->armv8.cb = sizeof(int32_t);
         pParam->fUse |= DISUSE_IMMEDIATE32_REL;
     }
     else
@@ -214,8 +214,8 @@ static int disArmV8ParseImmAdr(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNC
 static int disArmV8ParseReg(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8INSNCLASS pInsnClass, PDISOPPARAM pParam, PCDISARMV8INSNPARAM pInsnParm, bool f64Bit)
 {
     RT_NOREF(pDis, pInsnClass);
-    pParam->arch.armv8.Reg.idxGenReg = disArmV8ExtractBitVecFromInsn(u32Insn, pInsnParm->idxBitStart, pInsnParm->cBits);
-    pParam->arch.armv8.cb            = f64Bit ? sizeof(uint64_t) : sizeof(uint32_t);
+    pParam->armv8.Reg.idxGenReg = disArmV8ExtractBitVecFromInsn(u32Insn, pInsnParm->idxBitStart, pInsnParm->cBits);
+    pParam->armv8.cb            = f64Bit ? sizeof(uint64_t) : sizeof(uint32_t);
     pParam->fUse |= f64Bit ? DISUSE_REG_GEN64 : DISUSE_REG_GEN32;
     return VINF_SUCCESS;
 }
@@ -237,7 +237,7 @@ static int disArmV8ParseImmsImmrN(PDISSTATE pDis, uint32_t u32Insn, PCDISARMV8IN
 
     /** @todo Decode according to spec. */
     pParam->uValue        = u32ImmRaw;
-    pParam->arch.armv8.cb = sizeof(uint32_t);
+    pParam->armv8.cb = sizeof(uint32_t);
     pParam->fUse         |= DISUSE_IMMEDIATE32;
     return VINF_SUCCESS;
 }
@@ -300,10 +300,10 @@ static int disArmV8A64ParseInstruction(PDISSTATE pDis, uint32_t u32Insn, PCDISAR
     Assert((u32Insn & pOp->fMask) == pOp->fValue);
 
     /* Should contain the parameter type on input. */
-    pDis->Param1.arch.armv8.fParam = pOp->Opc.fParam1;
-    pDis->Param2.arch.armv8.fParam = pOp->Opc.fParam2;
-    pDis->Param3.arch.armv8.fParam = pOp->Opc.fParam3;
-    pDis->Param4.arch.armv8.fParam = pOp->Opc.fParam4;
+    pDis->Param1.armv8.fParam = pOp->Opc.fParam1;
+    pDis->Param2.armv8.fParam = pOp->Opc.fParam2;
+    pDis->Param3.armv8.fParam = pOp->Opc.fParam3;
+    pDis->Param4.armv8.fParam = pOp->Opc.fParam4;
 
     pDis->pCurInstr = &pOp->Opc;
     Assert(&pOp->Opc != &g_ArmV8A64InvalidOpcode[0]);
@@ -336,10 +336,10 @@ static int disArmV8A64ParseInstruction(PDISSTATE pDis, uint32_t u32Insn, PCDISAR
     {
         pDis->pCurInstr = &g_ArmV8A64InvalidOpcode[0];
 
-        pDis->Param1.arch.armv8.fParam = g_ArmV8A64InvalidOpcode[0].fParam1;
-        pDis->Param2.arch.armv8.fParam = g_ArmV8A64InvalidOpcode[0].fParam2;
-        pDis->Param3.arch.armv8.fParam = g_ArmV8A64InvalidOpcode[0].fParam3;
-        pDis->Param4.arch.armv8.fParam = g_ArmV8A64InvalidOpcode[0].fParam4;
+        pDis->Param1.armv8.fParam = g_ArmV8A64InvalidOpcode[0].fParam1;
+        pDis->Param2.armv8.fParam = g_ArmV8A64InvalidOpcode[0].fParam2;
+        pDis->Param3.armv8.fParam = g_ArmV8A64InvalidOpcode[0].fParam3;
+        pDis->Param4.armv8.fParam = g_ArmV8A64InvalidOpcode[0].fParam4;
     }
     pDis->rc = rc;
     return rc;
@@ -437,8 +437,9 @@ DECLHIDDEN(int) disInstrWorkerArmV8(PDISSTATE pDis, PCDISOPCODE paOneByteMap, ui
         if (RT_FAILURE(pDis->rc))
             return pDis->rc;
 
-        pDis->u.u32   = RT_LE2H_U32(u32Insn);
-        pDis->cbInstr = sizeof(u32Insn);
+        /** @todo r=bird: This is a waste of time if the host is little endian... */
+        pDis->Instr.u32 = RT_LE2H_U32(u32Insn);
+        pDis->cbInstr   = sizeof(u32Insn);
 
         return disInstrArmV8DecodeWorker(pDis, u32Insn, &g_ArmV8A64DecodeL0.Hdr);
     }

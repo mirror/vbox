@@ -36,31 +36,30 @@ endif
 
 LIBRARIES              += DisasmR3
 DisasmR3_TEMPLATE       = VBoxR3Dll
-DisasmR3_DEFS           = IN_DIS VBOX_DIS_WITH_X86_AMD64
+DisasmR3_DEFS           = IN_DIS
 DisasmR3_SOURCES        = \
 	Disasm.cpp \
+	DisasmMisc.cpp \
+	DisasmFormatBytes.cpp
+if 1
+ DisasmR3_DEFS         += VBOX_DIS_WITH_X86_AMD64
+ DisasmR3_SOURCES      += \
 	DisasmCore-x86-amd64.cpp \
 	DisasmTables-x86-amd64.cpp \
 	DisasmTablesX64.cpp \
-	DisasmMisc.cpp \
-	DisasmFormatBytes.cpp \
 	DisasmFormatYasm.cpp
+endif
+if 1
+ DisasmR3_DEFS          += VBOX_DIS_WITH_ARMV8
+ DisasmR3_SOURCES       += \
+ 	DisasmCore-armv8.cpp \
+ 	DisasmTables-armv8-a64.cpp \
+ 	DisasmFormatArmV8.cpp
+endif
 
 LIBRARIES              += DisasmR3Static
 DisasmR3Static_TEMPLATE = VBoxR3Static
 DisasmR3Static_EXTENDS  = DisasmR3
-
-ifdef VBOX_WITH_VIRT_ARMV8
- LIBRARIES              += DisasmR3-armv8
- DisasmR3-armv8_TEMPLATE       = VBoxR3Dll
- DisasmR3-armv8_DEFS           = IN_DIS VBOX_DIS_WITH_ARMV8
- DisasmR3-armv8_SOURCES        = \
- 	Disasm.cpp \
- 	DisasmCore-armv8.cpp \
- 	DisasmTables-armv8-a64.cpp \
- 	DisasmFormatBytes.cpp \
- 	DisasmFormatArmV8.cpp
-endif
 
 ifndef VBOX_ONLY_VALIDATIONKIT
 
