@@ -246,7 +246,7 @@ static void *supR3HardenedMainPosixGetStartBySymbol(const char *pszSymbol, PFNSU
     int rc = DISInstr(pbSym, DISCPUMODE_64BIT, &Dis, &cbInstr);
     if (   RT_FAILURE(rc)
         || Dis.pCurInstr->uOpcode != OP_JMP
-        || !(Dis.arch.x86.ModRM.Bits.Mod == 0 && Dis.arch.x86.ModRM.Bits.Rm == 5 /* wrt RIP */))
+        || !(Dis.x86.ModRM.Bits.Mod == 0 && Dis.arch.x86.ModRM.Bits.Rm == 5 /* wrt RIP */))
         return NULL;
 
     /* Extract start address. */

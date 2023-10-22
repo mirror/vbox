@@ -243,7 +243,7 @@ typedef struct DISOPPARAM
     uint64_t            uValue;
 
     /** Architecture specific parameter state. */
-    union
+    RT_GCC_EXTENSION union
     {
         /** x86/AMD64 specific state. */
         DIS_OP_PARAM_X86_T      x86;
@@ -341,7 +341,7 @@ typedef struct DISSTATE
 #endif
 
     /** Architecture specific state. */
-    union
+    RT_GCC_EXTENSION union
     {
         /** x86/AMD64 specific state. */
         DIS_STATE_X86_T     x86;

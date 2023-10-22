@@ -85,7 +85,6 @@ static const char *disasmFormatArmV8Reg(PCDISSTATE pDis, PCDISOPPARAM pParam, si
             const char *psz = g_aszArmV8RegGen64[pParam->armv8.Reg.idxGenReg];
             *pcchReg = 2 + !!psz[2];
             return psz;
-            return psz;
         }
 
         default:
