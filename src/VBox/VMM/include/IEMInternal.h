@@ -1086,7 +1086,7 @@ AssertCompileMemberAlignment(IEMTB, Thrd, sizeof(void *));
 AssertCompileMemberAlignment(IEMTB, pabOpcodes, sizeof(void *));
 AssertCompileMemberAlignment(IEMTB, pDbgInfo, sizeof(void *));
 AssertCompileMemberAlignment(IEMTB, aGCPhysPages, sizeof(RTGCPHYS));
-AssertCompileMemberOffset(IEMTB, aRanges[0], 64);
+AssertCompileMemberOffset(IEMTB, aRanges, 64);
 AssertCompileMemberSize(IEMTB, aRanges[0], 6);
 #if 1
 AssertCompileSize(IEMTB, 128);
