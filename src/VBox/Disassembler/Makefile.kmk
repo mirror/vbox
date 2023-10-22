@@ -44,10 +44,10 @@ DisasmR3_SOURCES        = \
 if 1
  DisasmR3_DEFS         += VBOX_DIS_WITH_X86_AMD64
  DisasmR3_SOURCES      += \
-	DisasmCore-x86-amd64.cpp \
-	DisasmTables-x86-amd64.cpp \
-	DisasmTablesX64.cpp \
-	DisasmFormatYasm.cpp
+ 	DisasmCore-x86-amd64.cpp \
+ 	DisasmTables-x86-amd64.cpp \
+ 	DisasmTablesX64.cpp \
+ 	DisasmFormatYasm.cpp
 endif
 if 1
  DisasmR3_DEFS          += VBOX_DIS_WITH_ARMV8
