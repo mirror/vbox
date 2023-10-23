@@ -366,11 +366,10 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                     Assert(cchTmp == (cch) || cchDst == 1); \
                  } \
             } while (0)
-/** @todo add two flags for choosing between %X / %x and h / 0x. */
-#define PUT_NUM_8(num)  PUT_NUM(4,  "0%02xh", (uint8_t)(num))
-#define PUT_NUM_16(num) PUT_NUM(6,  "0%04xh", (uint16_t)(num))
-#define PUT_NUM_32(num) PUT_NUM(10, "0%08xh", (uint32_t)(num))
-#define PUT_NUM_64(num) PUT_NUM(18, "0%016RX64h", (uint64_t)(num))
+#define PUT_NUM_8(num)  PUT_NUM(4,  !(fFlags & DIS_FMT_FLAGS_C_HEX) ? "0%02xh"     : "%#04x",     (uint8_t)(num))
+#define PUT_NUM_16(num) PUT_NUM(6,  !(fFlags & DIS_FMT_FLAGS_C_HEX) ? "0%04xh"     : "%#06x",     (uint16_t)(num))
+#define PUT_NUM_32(num) PUT_NUM(10, !(fFlags & DIS_FMT_FLAGS_C_HEX) ? "0%08xh"     : "%#010x",    (uint32_t)(num))
+#define PUT_NUM_64(num) PUT_NUM(18, !(fFlags & DIS_FMT_FLAGS_C_HEX) ? "0%016RX64h" : "%#018RX64", (uint64_t)(num))
 
 #define PUT_NUM_SIGN(cch, fmt, num, stype, utype) \
             do { \
@@ -385,10 +384,10 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                     PUT_NUM(cch, fmt, (utype)-(stype)(num)); \
                 } \
             } while (0)
-#define PUT_NUM_S8(num)  PUT_NUM_SIGN(4,  "0%02xh", num, int8_t,  uint8_t)
-#define PUT_NUM_S16(num) PUT_NUM_SIGN(6,  "0%04xh", num, int16_t, uint16_t)
-#define PUT_NUM_S32(num) PUT_NUM_SIGN(10, "0%08xh", num, int32_t, uint32_t)
-#define PUT_NUM_S64(num) PUT_NUM_SIGN(18, "0%016RX64h", num, int64_t, uint64_t)
+#define PUT_NUM_S8(num)  PUT_NUM_SIGN(4,  !(fFlags & DIS_FMT_FLAGS_C_HEX) ? "0%02xh"     : "%#04x",     num, int8_t,  uint8_t)
+#define PUT_NUM_S16(num) PUT_NUM_SIGN(6,  !(fFlags & DIS_FMT_FLAGS_C_HEX) ? "0%04xh"     : "%#06x",     num, int16_t, uint16_t)
+#define PUT_NUM_S32(num) PUT_NUM_SIGN(10, !(fFlags & DIS_FMT_FLAGS_C_HEX) ? "0%08xh"     : "%#010x",    num, int32_t, uint32_t)
+#define PUT_NUM_S64(num) PUT_NUM_SIGN(18, !(fFlags & DIS_FMT_FLAGS_C_HEX) ? "0%016RX64h" : "%#018RX64", num, int64_t, uint64_t)
 
 #define PUT_SYMBOL_TWO(a_rcSym, a_szStart, a_chEnd) \
         do { \
@@ -456,7 +455,10 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
         }
 
         /* Some padding to align the instruction. */
-        size_t cchPadding = (7 * (2 + !!(fFlags & DIS_FMT_FLAGS_BYTES_SPACED)))
+        uint32_t cbWidth = (fFlags & DIS_FMT_FLAGS_BYTES_WIDTH_MASK) >> DIS_FMT_FLAGS_BYTES_WIDTH_SHIFT;
+        if (!cbWidth)
+            cbWidth = 7;
+        size_t cchPadding = (cbWidth * (2 + !!(fFlags & DIS_FMT_FLAGS_BYTES_SPACED)))
                           + !!(fFlags & DIS_FMT_FLAGS_BYTES_BRACKETS) * 2
                           + 2;
         cchPadding = cchTmp + 1 >= cchPadding ? 1 : cchPadding - cchTmp;
@@ -594,12 +596,12 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                 else if (pDis->x86.bOpCode == 0x1f)
                 {
                     Assert(pDis->cbInstr >= 3);
-                    PUT_SZ("db 00fh, 01fh,");
-                    PUT_NUM_8(MAKE_MODRM(pDis->x86.ModRM.Bits.Mod, pDis->x86.ModRM.Bits.Reg, pDis->x86.ModRM.Bits.Rm));
-                    for (unsigned i = 3; i < pDis->cbInstr; i++)
+                    PUT_SZ("db 00fh, 01fh");
+                    for (unsigned off = 2; off < pDis->cbInstr; off++)
                     {
                         PUT_C(',');
-                        PUT_NUM_8(0x90); /// @todo fixme.
+                        PUT_C(' ');
+                        PUT_NUM_8(pDis->Instr.ab[off]);
                     }
                     pszFmt = "";
                 }

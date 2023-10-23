@@ -504,7 +504,8 @@ typedef FNDISGETSYMBOL *PFNDISGETSYMBOL;
 #define DIS_FMT_SEL_FROM_VALUE(Sel)         ( (Sel) & 0xffff )
 
 
-/** @name Flags for use with DISFormatYasmEx(), DISFormatMasmEx() and DISFormatGasEx().
+/** @name Flags for use with DISFormatYasmEx(), DISFormatMasmEx(),
+ *        DISFormatGasEx() and DISFormatArmV8Ex().
  * @{
  */
 /** Put the address to the right. */
@@ -525,16 +526,26 @@ typedef FNDISGETSYMBOL *PFNDISGETSYMBOL;
 #define DIS_FMT_FLAGS_BYTES_BRACKETS        RT_BIT_32(6)
 /** Put spaces between the bytes. */
 #define DIS_FMT_FLAGS_BYTES_SPACED          RT_BIT_32(7)
+/** Gives the width (in opcode bytes) of the opcode bytes area if on the left
+ * side. If zero, then a default of 7 will be used. */
+#define DIS_FMT_FLAGS_BYTES_WIDTH_MASK      UINT32_C(0x00001f00)
+/** Shift count of the bytes width field. */
+#define DIS_FMT_FLAGS_BYTES_WIDTH_SHIFT     8
+/** Helper that makes shift the width count. */
+#define DIS_FMT_FLAGS_BYTES_WIDTH_MAKE(a_cb) ((uint32_t)(a_cb) << DIS_FMT_FLAGS_BYTES_WIDTH_SHIFT)
 /** Display the relative +/- offset of branch instructions that uses relative addresses,
  * and put the target address in parenthesis. */
-#define DIS_FMT_FLAGS_RELATIVE_BRANCH       RT_BIT_32(8)
+#define DIS_FMT_FLAGS_RELATIVE_BRANCH       RT_BIT_32(13)
 /** Strict assembly. The assembly should, when ever possible, make the
  * assembler reproduce the exact same binary. (Refers to the yasm
  * strict keyword.) */
-#define DIS_FMT_FLAGS_STRICT                RT_BIT_32(9)
+#define DIS_FMT_FLAGS_STRICT                RT_BIT_32(14)
+/** C-style hex formatting (0x01), rather than assembly style (001h). */
+#define DIS_FMT_FLAGS_C_HEX                 RT_BIT_32(15)
+
 /** Checks if the given flags are a valid combination. */
 #define DIS_FMT_FLAGS_IS_VALID(fFlags) \
-    (   !((fFlags) & ~UINT32_C(0x000003ff)) \
+    (   !((fFlags) & ~UINT32_C(0x0000ffff)) \
      && ((fFlags) & (DIS_FMT_FLAGS_ADDR_RIGHT  | DIS_FMT_FLAGS_ADDR_LEFT))  != (DIS_FMT_FLAGS_ADDR_RIGHT  | DIS_FMT_FLAGS_ADDR_LEFT) \
      && (   !((fFlags) & DIS_FMT_FLAGS_ADDR_COMMENT) \
          || (fFlags & (DIS_FMT_FLAGS_ADDR_RIGHT | DIS_FMT_FLAGS_ADDR_LEFT)) ) \
