@@ -263,6 +263,9 @@ typedef enum
 {
     kIemNativeLabelType_Invalid = 0,
     kIemNativeLabelType_Return,
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    kIemNativeLabelType_If,
+#endif
     kIemNativeLabelType_Else,
     kIemNativeLabelType_Endif,
     kIemNativeLabelType_NonZeroRetOrPassUp,
@@ -476,16 +479,64 @@ typedef struct IEMNATIVEHSTREG
 
 
 /**
+ * Core state for the native recompiler, that is, things that needs careful
+ * handling when dealing with branches.
+ */
+typedef struct IEMNATIVECORESTATE
+{
+    /** Allocation bitmap for aHstRegs. */
+    uint32_t                    bmHstRegs;
+
+    /** Bitmap marking which host register contains guest register shadow copies.
+     * This is used during register allocation to try preserve copies.  */
+    uint32_t                    bmHstRegsWithGstShadow;
+    /** Bitmap marking valid entries in aidxGstRegShadows. */
+    uint64_t                    bmGstRegShadows;
+
+    union
+    {
+        /** Index of variable arguments, UINT8_MAX if not valid. */
+        uint8_t                 aidxArgVars[8];
+        /** For more efficient resetting. */
+        uint64_t                u64ArgVars;
+    };
+
+    /** Allocation bitmap for aVars. */
+    uint32_t                    bmVars;
+
+    /** Maps a guest register to a host GPR (index by IEMNATIVEGSTREG).
+     * Entries are only valid if the corresponding bit in bmGstRegShadows is set.
+     * (A shadow copy of a guest register can only be held in a one host register,
+     * there are no duplicate copies or ambiguities like that). */
+    uint8_t                     aidxGstRegShadows[kIemNativeGstReg_End];
+
+    /** Host register allocation tracking. */
+    IEMNATIVEHSTREG             aHstRegs[IEMNATIVE_HST_GREG_COUNT];
+
+    /** Variables and arguments. */
+    IEMNATIVEVAR                aVars[9];
+} IEMNATIVECORESTATE;
+/** Pointer to core state. */
+typedef IEMNATIVECORESTATE *PIEMNATIVECORESTATE;
+/** Pointer to const core state. */
+typedef IEMNATIVECORESTATE const *PCIEMNATIVECORESTATE;
+
+
+/**
  * Conditional stack entry.
  */
 typedef struct IEMNATIVECOND
 {
     /** Set if we're in the "else" part, clear if we're in the "if" before it. */
-    bool     fInElse;
+    bool                        fInElse;
     /** The label for the IEM_MC_ELSE. */
-    uint32_t idxLabelElse;
+    uint32_t                    idxLabelElse;
     /** The label for the IEM_MC_ENDIF. */
-    uint32_t idxLabelEndIf;
+    uint32_t                    idxLabelEndIf;
+    /** The initial state snapshot as the if-block starts executing. */
+    IEMNATIVECORESTATE          InitialState;
+    /** The state snapshot at the end of the if-block. */
+    IEMNATIVECORESTATE          IfFinalState;
 } IEMNATIVECOND;
 /** Pointer to a condition stack entry. */
 typedef IEMNATIVECOND *PIEMNATIVECOND;
@@ -503,7 +554,7 @@ typedef struct IEMRECOMPILERSTATE
     /** Strict: How far the last iemNativeInstrBufEnsure() checked. */
     uint32_t                    offInstrBufChecked;
 #else
-    uint32_t                    uPadding; /* We don't keep track of the size here... */
+    uint32_t                    uPadding1; /* We don't keep track of the size here... */
 #endif
     /** Fixed temporary code buffer for native recompilation. */
     PIEMNATIVEINSTR             pInstrBuf;
@@ -530,52 +581,23 @@ typedef struct IEMRECOMPILERSTATE
     uint32_t                    uPadding;
     /** Debug info. */
     PIEMTBDBG                   pDbgInfo;
-#else
-    uint32_t                    abPadding1[2];
-    uintptr_t                   uPtrPadding2;
 #endif
 
     /** The translation block being recompiled. */
     PCIEMTB                     pTbOrg;
 
-    /** Allocation bitmap fro aHstRegs. */
-    uint32_t                    bmHstRegs;
-
-    /** Bitmap marking which host register contains guest register shadow copies.
-     * This is used during register allocation to try preserve copies.  */
-    uint32_t                    bmHstRegsWithGstShadow;
-    /** Bitmap marking valid entries in aidxGstRegShadows. */
-    uint64_t                    bmGstRegShadows;
-
     /** The current condition stack depth (aCondStack). */
     uint8_t                     cCondDepth;
-    uint8_t                     bPadding;
+    uint8_t                     bPadding2;
     /** Condition sequence number (for generating unique labels). */
     uint16_t                    uCondSeqNo;
+    uint32_t                    uPadding3;
 
-    /** Allocation bitmap for aVars. */
-    uint32_t                    bmVars;
-    union
-    {
-        /** Index of variable arguments, UINT8_MAX if not valid. */
-        uint8_t                 aidxArgVars[8];
-        /** For more efficient resetting. */
-        uint64_t                u64ArgVars;
-    };
-
-    /** Host register allocation tracking. */
-    IEMNATIVEHSTREG             aHstRegs[IEMNATIVE_HST_GREG_COUNT];
-    /** Maps a guest register to a host GPR (index by IEMNATIVEGSTREG).
-     * Entries are only valid if the corresponding bit in bmGstRegShadows is set.
-     * (A shadow copy of a guest register can only be held in a one host register,
-     * there are no duplicate copies or ambiguities like that). */
-    uint8_t                     aidxGstRegShadows[kIemNativeGstReg_End];
+    /** Core state requiring care with branches. */
+    IEMNATIVECORESTATE          Core;
 
     /** The condition nesting stack. */
-    IEMNATIVECOND               aCondStack[4];
-
-    /** Variables and arguments. */
-    IEMNATIVEVAR                aVars[16];
+    IEMNATIVECOND               aCondStack[2];
 } IEMRECOMPILERSTATE;
 /** Pointer to a native recompiler state. */
 typedef IEMRECOMPILERSTATE *PIEMRECOMPILERSTATE;
@@ -1520,7 +1542,7 @@ DECLINLINE(uint32_t ) iemNativeEmitAddGprImm(PIEMRECOMPILERSTATE pReNative, uint
     {
         /* Best to use a temporary register to deal with this in the simplest way: */
         uint8_t iTmpReg = iemNativeRegAllocTmpImm(pReNative, &off, (uint64_t)iAddend);
-        AssertReturn(iTmpReg < RT_ELEMENTS(pReNative->aHstRegs), UINT32_MAX);
+        AssertReturn(iTmpReg < RT_ELEMENTS(pReNative->Core.aHstRegs), UINT32_MAX);
 
         /* add dst, tmpreg  */
         uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
@@ -1547,7 +1569,7 @@ DECLINLINE(uint32_t ) iemNativeEmitAddGprImm(PIEMRECOMPILERSTATE pReNative, uint
     {
         /* Use temporary register for the immediate. */
         uint8_t iTmpReg = iemNativeRegAllocTmpImm(pReNative, &off, (uint64_t)iAddend);
-        AssertReturn(iTmpReg < RT_ELEMENTS(pReNative->aHstRegs), UINT32_MAX);
+        AssertReturn(iTmpReg < RT_ELEMENTS(pReNative->Core.aHstRegs), UINT32_MAX);
 
         /* add gprdst, gprdst, tmpreg */
         uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
@@ -1601,7 +1623,7 @@ DECLINLINE(uint32_t ) iemNativeEmitAddGpr32Imm(PIEMRECOMPILERSTATE pReNative, ui
     {
         /* Use temporary register for the immediate. */
         uint8_t iTmpReg = iemNativeRegAllocTmpImm(pReNative, &off, (uint32_t)iAddend);
-        AssertReturn(iTmpReg < RT_ELEMENTS(pReNative->aHstRegs), UINT32_MAX);
+        AssertReturn(iTmpReg < RT_ELEMENTS(pReNative->Core.aHstRegs), UINT32_MAX);
 
         /* add gprdst, gprdst, tmpreg */
         uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);

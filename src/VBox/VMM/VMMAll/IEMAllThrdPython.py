@@ -1795,10 +1795,15 @@ class IEMThreadedGenerator(object):
         cbMaxVarsAndArgs = 0;
         for oThreadedFunction in self.aoThreadedFuncs:
             if oThreadedFunction.oMcBlock.cLocals >= 0:
+                # Counts.
                 assert oThreadedFunction.oMcBlock.cArgs >= 0;
                 cMaxVars        = max(cMaxVars, oThreadedFunction.oMcBlock.cLocals);
                 cMaxArgs        = max(cMaxArgs, oThreadedFunction.oMcBlock.cArgs);
                 cMaxVarsAndArgs = max(cMaxVarsAndArgs, oThreadedFunction.oMcBlock.cLocals + oThreadedFunction.oMcBlock.cArgs);
+                if cMaxVarsAndArgs > 9:
+                    raise Exception('%s potentially uses too many variables / args: %u, max 10 - %u vars and %u args'
+                                    % (oThreadedFunction.oMcBlock.oFunction.sName, cMaxVarsAndArgs,
+                                       oThreadedFunction.oMcBlock.cLocals, oThreadedFunction.oMcBlock.cArgs));
                 # Calc stack allocation size:
                 cbArgs = 0;
                 for oArg in oThreadedFunction.oMcBlock.aoArgs:
