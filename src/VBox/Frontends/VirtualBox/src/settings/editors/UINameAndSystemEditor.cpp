@@ -678,7 +678,7 @@ void UINameAndSystemEditor::prepareConnections()
         connect(m_pSelectorImage, &UIFilePathSelector::pathChanged,
                 this, &UINameAndSystemEditor::sigImageChanged);
     if (m_pComboEdition)
-        connect(m_pComboEdition, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+        connect(m_pComboEdition, &QComboBox::currentIndexChanged,
                 this, &UINameAndSystemEditor::sltSelectedEditionsChanged);
 }
 

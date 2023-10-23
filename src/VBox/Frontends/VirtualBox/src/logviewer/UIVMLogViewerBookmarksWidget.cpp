@@ -183,8 +183,7 @@ void UIVMLogViewerBookmarksWidget::prepareWidgets()
 
 void UIVMLogViewerBookmarksWidget::prepareConnections()
 {
-    connect(m_pBookmarksComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &UIVMLogViewerBookmarksWidget::sltBookmarkSelected);
+    connect(m_pBookmarksComboBox, &QComboBox::currentIndexChanged, this, &UIVMLogViewerBookmarksWidget::sltBookmarkSelected);
 
     connect(m_pGotoSelectedBookmark, &QIToolButton::clicked, this, &UIVMLogViewerBookmarksWidget::sltGotoSelectedBookmark);
     connect(m_pNextButton, &QIToolButton::clicked, this, &UIVMLogViewerBookmarksWidget::sltGotoNextBookmark);

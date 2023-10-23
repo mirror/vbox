@@ -145,10 +145,10 @@ QWidget *UIWizardNewVMDiskPage::createNewDiskWidgets()
 void UIWizardNewVMDiskPage::createConnections()
 {
     if (m_pDiskSourceButtonGroup)
-        connect(m_pDiskSourceButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
+        connect(m_pDiskSourceButtonGroup, &QButtonGroup::buttonClicked,
                 this, &UIWizardNewVMDiskPage::sltSelectedDiskSourceChanged);
     if (m_pDiskSelector)
-        connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
+        connect(m_pDiskSelector, &UIMediaComboBox::currentIndexChanged,
                 this, &UIWizardNewVMDiskPage::sltMediaComboBoxIndexChanged);
     if (m_pDiskSelectionButton)
         connect(m_pDiskSelectionButton, &QIToolButton::clicked,

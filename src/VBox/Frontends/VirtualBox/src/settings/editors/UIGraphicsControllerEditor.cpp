@@ -126,9 +126,8 @@ void UIGraphicsControllerEditor::prepare()
                 if (m_pLabel)
                     m_pLabel->setBuddy(m_pCombo);
                 m_pCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-                connect(m_pCombo, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+                connect(m_pCombo, &QComboBox::currentIndexChanged,
                         this, &UIGraphicsControllerEditor::sltHandleCurrentIndexChanged);
-
                 pLayoutCombo->addWidget(m_pCombo);
             }
 

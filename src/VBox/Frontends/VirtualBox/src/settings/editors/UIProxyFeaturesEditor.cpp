@@ -226,7 +226,7 @@ void UIProxyFeaturesEditor::prepare()
     }
 
     /* Prepare connections: */
-    connect(m_pButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+    connect(m_pButtonGroup, &QButtonGroup::buttonClicked,
             this, &UIProxyFeaturesEditor::sltHandleProxyModeChanged);
     connect(m_pEditorHost, &QILineEdit::textEdited,
             this, &UIProxyFeaturesEditor::sigProxyHostChanged);

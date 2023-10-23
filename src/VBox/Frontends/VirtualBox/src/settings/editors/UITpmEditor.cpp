@@ -119,7 +119,7 @@ void UITpmEditor::prepare()
                 m_pCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
                 if (m_pLabel)
                     m_pLabel->setBuddy(m_pCombo);
-                connect(m_pCombo, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+                connect(m_pCombo, &QComboBox::currentIndexChanged,
                         this, &UITpmEditor::sigValueChanged);
                 pComboLayout->addWidget(m_pCombo);
             }

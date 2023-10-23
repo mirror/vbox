@@ -410,17 +410,17 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
             this, &UIWizardExportAppPageExpert::sltHandleVMItemSelectionChanged);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged,
             this, &UIWizardExportAppPageExpert::sltHandleFileSelectorChange);
-    connect(m_pFormatComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+    connect(m_pFormatComboBox, &QIComboBox::currentIndexChanged,
             this, &UIWizardExportAppPageExpert::sltHandleFormatComboChange);
-    connect(m_pMACComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+    connect(m_pMACComboBox, &QIComboBox::currentIndexChanged,
             this, &UIWizardExportAppPageExpert::sltHandleMACAddressExportPolicyComboChange);
     connect(m_pManifestCheckbox, &QCheckBox::stateChanged,
             this, &UIWizardExportAppPageExpert::sltHandleManifestCheckBoxChange);
     connect(m_pIncludeISOsCheckbox, &QCheckBox::stateChanged,
             this, &UIWizardExportAppPageExpert::sltHandleIncludeISOsCheckBoxChange);
-    connect(m_pProfileComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+    connect(m_pProfileComboBox, &QIComboBox::currentIndexChanged,
             this, &UIWizardExportAppPageExpert::sltHandleProfileComboChange);
-    connect(m_pExportModeButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*, bool)>(&QButtonGroup::buttonToggled),
+    connect(m_pExportModeButtonGroup, &QButtonGroup::buttonToggled,
             this, &UIWizardExportAppPageExpert::sltHandleRadioButtonToggled);
     connect(m_pProfileToolButton, &QIToolButton::clicked,
             this, &UIWizardExportAppPageExpert::sltHandleProfileButtonClick);

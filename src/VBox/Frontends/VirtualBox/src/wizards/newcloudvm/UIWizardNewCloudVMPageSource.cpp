@@ -462,7 +462,7 @@ UIWizardNewCloudVMPageSource::UIWizardNewCloudVMPageSource()
             this, &UIWizardNewCloudVMPageSource::sltHandleProviderComboChange);
     connect(m_pProviderComboBox, &QIComboBox::activated,
             this, &UIWizardNewCloudVMPageSource::sltHandleProviderComboChange);
-    connect(m_pProfileComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+    connect(m_pProfileComboBox, &QIComboBox::currentIndexChanged,
             this, &UIWizardNewCloudVMPageSource::sltHandleProfileComboChange);
     connect(m_pProfileToolButton, &QIToolButton::clicked,
             this, &UIWizardNewCloudVMPageSource::sltHandleProfileButtonClick);

@@ -198,7 +198,7 @@ void UIMaximumGuestScreenSizeEditor::prepare()
         {
             if (m_pLabelPolicy)
                 m_pLabelPolicy->setBuddy(m_pComboPolicy);
-            connect(m_pComboPolicy, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
+            connect(m_pComboPolicy, &QComboBox::activated,
                     this, &UIMaximumGuestScreenSizeEditor::sltHandleCurrentPolicyIndexChanged);
 
             m_pLayout->addWidget(m_pComboPolicy, 0, 1);

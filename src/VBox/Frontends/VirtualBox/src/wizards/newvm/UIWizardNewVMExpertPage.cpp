@@ -305,7 +305,7 @@ void UIWizardNewVMExpertPage::createConnections()
 
     /* Virtual disk related connections: */
     if (m_pDiskSourceButtonGroup)
-        connect(m_pDiskSourceButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
+        connect(m_pDiskSourceButtonGroup, &QButtonGroup::buttonClicked,
                 this, &UIWizardNewVMExpertPage::sltSelectedDiskSourceChanged);
 
     if (m_pSkipUnattendedCheckBox)
@@ -327,7 +327,7 @@ void UIWizardNewVMExpertPage::createConnections()
                 this, &UIWizardNewVMExpertPage::sltGetWithFileOpenDialog);
 
     if (m_pDiskSelector)
-        connect(m_pDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
+        connect(m_pDiskSelector, &UIMediaComboBox::currentIndexChanged,
                 this, &UIWizardNewVMExpertPage::sltMediaComboBoxIndexChanged);
 
     if (m_pFormatComboBox)

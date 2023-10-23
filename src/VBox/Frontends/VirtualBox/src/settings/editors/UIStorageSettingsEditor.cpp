@@ -5000,13 +5000,13 @@ void UIStorageSettingsEditor::prepareConnections()
     /* Configure widgets: */
     connect(m_pMediumIdHolder, &UIMediumIDHolder::sigChanged,
             this, &UIStorageSettingsEditor::sltSetInformation);
-    connect(m_pSpinboxPortCount, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+    connect(m_pSpinboxPortCount, &QSpinBox::valueChanged,
             this, &UIStorageSettingsEditor::sltSetInformation);
     connect(m_pEditorName, &QLineEdit::textEdited,
             this, &UIStorageSettingsEditor::sltSetInformation);
-    connect(m_pComboType, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
+    connect(m_pComboType, &QComboBox::activated,
             this, &UIStorageSettingsEditor::sltSetInformation);
-    connect(m_pComboSlot, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
+    connect(m_pComboSlot, &QComboBox::activated,
             this, &UIStorageSettingsEditor::sltSetInformation);
     connect(m_pCheckBoxIoCache, &QCheckBox::stateChanged,
             this, &UIStorageSettingsEditor::sltSetInformation);

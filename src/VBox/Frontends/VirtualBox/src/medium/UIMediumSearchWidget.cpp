@@ -127,11 +127,9 @@ void UIMediumSearchWidget::prepareWidgets()
         m_pSearchComboxBox->setEditable(false);
         m_pSearchComboxBox->insertItem(SearchByName, "Search By Name");
         m_pSearchComboxBox->insertItem(SearchByUUID, "Search By UUID");
-        pLayout->addWidget(m_pSearchComboxBox);
-
-        connect(m_pSearchComboxBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+        connect(m_pSearchComboxBox, &QComboBox::currentIndexChanged,
                 this, &UIMediumSearchWidget::sigPerformSearch);
-
+        pLayout->addWidget(m_pSearchComboxBox);
     }
 
     m_pSearchTermLineEdit = new UISearchLineEdit;

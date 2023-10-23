@@ -1244,8 +1244,7 @@ void UIKeyboardLayoutEditor::prepareObjects()
     m_pPhysicalLayoutLabel->setBuddy(m_pPhysicalLayoutCombo);
     m_pEditorLayout->addWidget(m_pPhysicalLayoutLabel, 4, 0, 1, 1);
     m_pEditorLayout->addWidget(m_pPhysicalLayoutCombo, 4, 1, 1, 1);
-    connect(m_pPhysicalLayoutCombo, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &UIKeyboardLayoutEditor::sltPhysicalLayoutChanged);
+    connect(m_pPhysicalLayoutCombo, &QComboBox::currentIndexChanged, this, &UIKeyboardLayoutEditor::sltPhysicalLayoutChanged);
 
     m_pSelectedKeyGroupBox = new QGroupBox;
     m_pSelectedKeyGroupBox->setEnabled(false);

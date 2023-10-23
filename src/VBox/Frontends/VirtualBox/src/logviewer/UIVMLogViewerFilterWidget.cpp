@@ -556,10 +556,11 @@ void UIVMLogViewerFilterWidget::prepareRadioButtonGroup(QVBoxLayout *pLayout)
 
 void UIVMLogViewerFilterWidget::prepareConnections()
 {
-    connect(m_pAddFilterTermButton, &QIToolButton::clicked, this,  &UIVMLogViewerFilterWidget::sltAddFilterTerm);
-    connect(m_pButtonGroup, static_cast<void (QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
+    connect(m_pAddFilterTermButton, &QIToolButton::clicked,
+            this, &UIVMLogViewerFilterWidget::sltAddFilterTerm);
+    connect(m_pButtonGroup, &QButtonGroup::buttonClicked,
             this, &UIVMLogViewerFilterWidget::sltOperatorButtonChanged);
-    connect(m_pFilterComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+    connect(m_pFilterComboBox, &QComboBox::currentIndexChanged,
             this, &UIVMLogViewerFilterWidget::sltAddFilterTerm);
     connect(m_pFilterTermsLineEdit, &UIVMFilterLineEdit::sigFilterTermRemoved,
             this, &UIVMLogViewerFilterWidget::sltRemoveFilterTerm);

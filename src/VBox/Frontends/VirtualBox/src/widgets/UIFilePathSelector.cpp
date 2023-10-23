@@ -110,7 +110,7 @@ UIFilePathSelector::UIFilePathSelector(QWidget *pParent /* = 0 */)
     setMinimumWidth(200);
 
     /* Setup connections: */
-    connect(this, static_cast<void(UIFilePathSelector::*)(int)>(&UIFilePathSelector::activated), this, &UIFilePathSelector::onActivated);
+    connect(this, &UIFilePathSelector::activated, this, &UIFilePathSelector::onActivated);
     connect(m_pCopyAction, &QAction::triggered, this, &UIFilePathSelector::copyToClipboard);
     connect(&uiCommon(), &UICommon::sigRecentMediaListUpdated, this, &UIFilePathSelector::sltRecentMediaListUpdated);
 

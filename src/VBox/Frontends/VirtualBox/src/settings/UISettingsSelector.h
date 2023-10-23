@@ -311,8 +311,6 @@ private slots:
 
     /** Handles selector section change to @a pAction. */
     void sltSettingsGroupChanged(QAction *pAction);
-    /** Handles selector section change to @a iIndex. */
-    void sltSettingsGroupChanged(int iIndex);
 
 private:
 

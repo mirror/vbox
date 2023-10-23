@@ -249,7 +249,7 @@ void UIDiskEncryptionSettingsEditor::prepareConnections()
         connect(m_pCheckboxFeature, &QCheckBox::toggled,
                 this, &UIDiskEncryptionSettingsEditor::sltHandleFeatureToggled);
     if (m_pComboCipherType)
-        connect(m_pComboCipherType, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+        connect(m_pComboCipherType, &QComboBox::currentIndexChanged,
                 this, &UIDiskEncryptionSettingsEditor::sigCipherChanged);
     if (m_pEditorPassword1)
         connect(m_pEditorPassword1, &QLineEdit::textEdited,

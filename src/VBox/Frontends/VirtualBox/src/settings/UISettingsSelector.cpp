@@ -1417,24 +1417,6 @@ void UISettingsSelectorToolBar::sltSettingsGroupChanged(QAction *pAction)
         emit sigCategoryChanged(pItem->id());
 }
 
-void UISettingsSelectorToolBar::sltSettingsGroupChanged(int iIndex)
-{
-    const UISelectorActionItem *pItem = findActionItemByTabWidget(qobject_cast<QTabWidget*>(sender()), iIndex);
-    if (pItem)
-    {
-        if (pItem->page() &&
-            !pItem->tabWidget())
-            emit sigCategoryChanged(pItem->id());
-        else
-        {
-            const UISelectorActionItem *pChild = static_cast<UISelectorActionItem*>(
-                findItemByPage(static_cast<UISettingsPage*>(pItem->tabWidget()->currentWidget())));
-            if (pChild)
-                emit sigCategoryChanged(pChild->id());
-        }
-    }
-}
-
 void UISettingsSelectorToolBar::prepare()
 {
     /* Install tool-bar button accessibility interface factory: */
@@ -1457,7 +1439,7 @@ void UISettingsSelectorToolBar::prepare()
         {
             m_pActionGroup->setExclusive(true);
             connect(m_pActionGroup, &QActionGroup::triggered,
-                    this, static_cast<void(UISettingsSelectorToolBar::*)(QAction*)>(&UISettingsSelectorToolBar::sltSettingsGroupChanged));
+                    this, &UISettingsSelectorToolBar::sltSettingsGroupChanged);
         }
     }
 }

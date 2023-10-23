@@ -719,7 +719,7 @@ ChoiceEditor::ChoiceEditor(QWidget *pParent /* = 0 */)
     /* Make sure QIStyledDelegate aware of us: */
     setProperty("has_sigCommitData", true);
     /* Configure connections: */
-    connect(this, static_cast<void(ChoiceEditor::*)(int)>(&ChoiceEditor::currentIndexChanged),
+    connect(this, &ChoiceEditor::currentIndexChanged,
             this, &ChoiceEditor::sltCurrentIndexChanged);
 }
 

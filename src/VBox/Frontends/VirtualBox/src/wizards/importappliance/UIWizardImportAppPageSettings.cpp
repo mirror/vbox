@@ -435,7 +435,7 @@ UIWizardImportAppPageSettings::UIWizardImportAppPageSettings(const QString &strF
     /* Setup connections: */
     connect(m_pEditorImportFilePath, &UIFilePathSelector::pathChanged,
             this, &UIWizardImportAppPageSettings::sltHandleImportPathEditorChange);
-    connect(m_pComboMACImportPolicy, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+    connect(m_pComboMACImportPolicy, &QIComboBox::currentIndexChanged,
             this, &UIWizardImportAppPageSettings::sltHandleMACImportPolicyComboChange);
     connect(m_pCheckboxImportHDsAsVDI, &QCheckBox::stateChanged,
             this, &UIWizardImportAppPageSettings::sltHandleImportHDsAsVDICheckBoxChange);

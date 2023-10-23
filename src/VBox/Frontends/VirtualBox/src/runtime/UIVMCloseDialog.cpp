@@ -415,10 +415,8 @@ void UIVMCloseDialog::prepareChoiceLayout()
         /* Create button-group: */
         QButtonGroup *pButtonGroup = new QButtonGroup(this);
         if (pButtonGroup)
-        {
-            connect(pButtonGroup, static_cast<void (QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
+            connect(pButtonGroup, &QButtonGroup::buttonClicked,
                     this, &UIVMCloseDialog::sltUpdateWidgetAvailability);
-        }
 
         /* Create 'detach' icon label: */
         m_pLabelIconDetach = new QLabel;

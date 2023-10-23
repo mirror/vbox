@@ -394,7 +394,6 @@ void UIDetailsWidgetCloudNetwork::prepareThis()
                 m_pLabelNetworkName->setBuddy(m_pEditorNetworkName);
             connect(m_pEditorNetworkName, &QLineEdit::textEdited,
                     this, &UIDetailsWidgetCloudNetwork::sltNetworkNameChanged);
-
             pLayout->addWidget(m_pEditorNetworkName, 0, 1, 1, 2);
         }
 
@@ -411,9 +410,8 @@ void UIDetailsWidgetCloudNetwork::prepareThis()
         {
             if (m_pLabelProviderName)
                 m_pLabelProviderName->setBuddy(m_pComboProviderName);
-            connect(m_pComboProviderName, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            connect(m_pComboProviderName, &QComboBox::currentIndexChanged,
                     this, &UIDetailsWidgetCloudNetwork::sltCloudProviderNameChanged);
-
             pLayout->addWidget(m_pComboProviderName, 1, 1, 1, 2);
         }
 
@@ -430,9 +428,8 @@ void UIDetailsWidgetCloudNetwork::prepareThis()
         {
             if (m_pLabelProfileName)
                 m_pLabelProfileName->setBuddy(m_pComboProfileName);
-            connect(m_pComboProfileName, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            connect(m_pComboProfileName, &QComboBox::currentIndexChanged,
                     this, &UIDetailsWidgetCloudNetwork::sltCloudProfileNameChanged);
-
             pLayout->addWidget(m_pComboProfileName, 2, 1, 1, 2);
         }
 
@@ -451,7 +448,6 @@ void UIDetailsWidgetCloudNetwork::prepareThis()
                 m_pLabelNetworkId->setBuddy(m_pEditorNetworkId);
             connect(m_pEditorNetworkId, &QLineEdit::textChanged,
                     this, &UIDetailsWidgetCloudNetwork::sltNetworkIdChanged);
-
             pLayout->addWidget(m_pEditorNetworkId, 3, 1);
         }
         /* Prepare network id button: */
@@ -461,7 +457,6 @@ void UIDetailsWidgetCloudNetwork::prepareThis()
             m_pButtonNetworkId->setIcon(UIIconPool::iconSet(":/subnet_16px.png"));
             connect(m_pButtonNetworkId, &QIToolButton::clicked,
                     this, &UIDetailsWidgetCloudNetwork::sltNetworkIdListRequested);
-
             pLayout->addWidget(m_pButtonNetworkId, 3, 2);
         }
 
@@ -474,7 +469,6 @@ void UIDetailsWidgetCloudNetwork::prepareThis()
             {
                 m_pButtonBoxOptions->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
                 connect(m_pButtonBoxOptions, &QIDialogButtonBox::clicked, this, &UIDetailsWidgetCloudNetwork::sltHandleButtonBoxClick);
-
                 pLayout->addWidget(m_pButtonBoxOptions, 4, 0, 1, 2);
             }
         }

@@ -405,26 +405,12 @@ void QIComboBox::prepare()
         {
             /* Configure combo-box: */
             setFocusProxy(m_pComboBox);
-            connect(m_pComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
-                    this, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated));
-#ifdef VBOX_IS_QT6_OR_LATER /* textActivated was added in 5.14 actually */
-            connect(m_pComboBox, &QComboBox::textActivated,
-                    this, &QIComboBox::textActivated);
-#else
-            connect(m_pComboBox, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::activated),
-                    this, static_cast<void(QIComboBox::*)(const QString &)>(&QIComboBox::textActivated));
-#endif
-            connect(m_pComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-                    this, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged));
+            connect(m_pComboBox, &QComboBox::activated, this, &QIComboBox::activated);
+            connect(m_pComboBox, &QComboBox::textActivated, this, &QIComboBox::textActivated);
+            connect(m_pComboBox, &QComboBox::currentIndexChanged, this, &QIComboBox::currentIndexChanged);
             connect(m_pComboBox, &QComboBox::currentTextChanged, this, &QIComboBox::currentTextChanged);
             connect(m_pComboBox, &QComboBox::editTextChanged, this, &QIComboBox::editTextChanged);
-#ifdef VBOX_IS_QT6_OR_LATER /* textHighlighted was added in 5.14 actually */
-            connect(m_pComboBox, &QComboBox::textHighlighted,
-                    this, &QIComboBox::textHighlighted);
-#else
-            connect(m_pComboBox, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::highlighted),
-                    this, static_cast<void(QIComboBox::*)(const QString &)>(&QIComboBox::textHighlighted));
-#endif
+            connect(m_pComboBox, &QComboBox::textHighlighted, this, &QIComboBox::textHighlighted);
             /* Add combo-box into layout: */
             pLayout->addWidget(m_pComboBox);
         }

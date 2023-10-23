@@ -634,7 +634,7 @@ void UIDiskFormatsGroupBox::createFormatWidgets()
     }
 
     setMediumFormat(m_formatList[0].m_comFormat);
-    connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
+    connect(m_pFormatButtonGroup, &QButtonGroup::buttonClicked,
             this, &UIDiskFormatsGroupBox::sigMediumFormatChanged);
 }
 
@@ -658,7 +658,7 @@ void UIDiskFormatsComboBox::prepare()
         addItem(format.m_comFormat.GetName());
     }
 
-    connect(this, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+    connect(this, &QIComboBox::currentIndexChanged,
             this, &UIDiskFormatsComboBox::sigMediumFormatChanged);
 
     retranslateUi();

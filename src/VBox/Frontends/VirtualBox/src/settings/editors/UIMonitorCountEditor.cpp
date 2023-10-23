@@ -200,7 +200,7 @@ void UIMonitorCountEditor::prepare()
         connect(m_pSlider, &QIAdvancedSlider::valueChanged,
                 this, &UIMonitorCountEditor::sltHandleSliderChange);
     if (m_pSpinBox)
-        connect(m_pSpinBox, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+        connect(m_pSpinBox, &QSpinBox::valueChanged,
                 this, &UIMonitorCountEditor::sltHandleSpinBoxChange);
 
     /* Apply language settings: */

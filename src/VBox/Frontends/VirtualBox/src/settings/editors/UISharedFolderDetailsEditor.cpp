@@ -326,7 +326,7 @@ void UISharedFolderDetailsEditor::prepareConnections()
 {
     if (m_pSelectorPath)
     {
-        connect(m_pSelectorPath, static_cast<void(UIFilePathSelector::*)(int)>(&UIFilePathSelector::currentIndexChanged),
+        connect(m_pSelectorPath, &UIFilePathSelector::currentIndexChanged,
                 this, &UISharedFolderDetailsEditor::sltSelectPath);
         connect(m_pSelectorPath, &UIFilePathSelector::pathChanged,
                 this, &UISharedFolderDetailsEditor::sltSelectPath);

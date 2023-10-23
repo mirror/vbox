@@ -438,21 +438,15 @@ void UISerialSettingsEditor::prepareConnections()
     if (m_pCheckBoxPort)
         connect(m_pCheckBoxPort, &QCheckBox::toggled,
                 this, &UISerialSettingsEditor::sltHandlePortAvailabilityToggled);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     if (m_pComboNumber)
-        connect(m_pComboNumber, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::textActivated),
+        connect(m_pComboNumber, &QComboBox::textActivated,
                 this, &UISerialSettingsEditor::sltHandleStandardPortOptionActivated);
-#else
-    if (m_pComboNumber)
-        connect(m_pComboNumber, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::activated),
-                this, &UISerialSettingsEditor::sltHandleStandardPortOptionActivated);
-#endif
     if (m_pLineEditIRQ)
         connect(m_pLineEditIRQ, &QLineEdit::textChanged, this, &UISerialSettingsEditor::sigPortIRQChanged);
     if (m_pLineEditIOAddress)
         connect(m_pLineEditIOAddress, &QLineEdit::textChanged, this, &UISerialSettingsEditor::sigPortIOAddressChanged);
     if (m_pComboMode)
-        connect(m_pComboMode, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
+        connect(m_pComboMode, &QComboBox::activated,
                 this, &UISerialSettingsEditor::sltHandleModeChange);
     if (m_pEditorPath)
         connect(m_pEditorPath, &QLineEdit::textChanged, this, &UISerialSettingsEditor::sigPathChanged);

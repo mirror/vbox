@@ -816,21 +816,21 @@ void UIRecordingSettingsEditor::prepareConnections()
 {
     connect(m_pCheckboxFeature, &QCheckBox::toggled,
             this, &UIRecordingSettingsEditor::sltHandleFeatureToggled);
-    connect(m_pComboMode, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+    connect(m_pComboMode, &QComboBox::currentIndexChanged,
             this, &UIRecordingSettingsEditor::sltHandleModeComboChange);
-    connect(m_pComboFrameSize, static_cast<void(QComboBox::*)(int)>(&QComboBox:: currentIndexChanged),
+    connect(m_pComboFrameSize, &QComboBox:: currentIndexChanged,
             this, &UIRecordingSettingsEditor::sltHandleVideoFrameSizeComboChange);
-    connect(m_pSpinboxFrameWidth, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+    connect(m_pSpinboxFrameWidth, &QSpinBox::valueChanged,
             this, &UIRecordingSettingsEditor::sltHandleVideoFrameWidthChange);
-    connect(m_pSpinboxFrameHeight, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+    connect(m_pSpinboxFrameHeight, &QSpinBox::valueChanged,
             this, &UIRecordingSettingsEditor::sltHandleVideoFrameHeightChange);
     connect(m_pSliderFrameRate, &QIAdvancedSlider::valueChanged,
             this, &UIRecordingSettingsEditor::sltHandleVideoFrameRateSliderChange);
-    connect(m_pSpinboxFrameRate, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+    connect(m_pSpinboxFrameRate, &QSpinBox::valueChanged,
             this, &UIRecordingSettingsEditor::sltHandleVideoFrameRateSpinboxChange);
     connect(m_pSliderVideoQuality, &QIAdvancedSlider::valueChanged,
             this, &UIRecordingSettingsEditor::sltHandleVideoBitRateSliderChange);
-    connect(m_pSpinboxVideoQuality, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+    connect(m_pSpinboxVideoQuality, &QSpinBox::valueChanged,
             this, &UIRecordingSettingsEditor::sltHandleVideoBitRateSpinboxChange);
 }
 

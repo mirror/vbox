@@ -303,7 +303,7 @@ void UINetworkAttachmentEditor::prepare()
             {
                 if (m_pLabelType)
                     m_pLabelType->setBuddy(m_pComboType);
-                connect(m_pComboType, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+                connect(m_pComboType, &QComboBox::currentIndexChanged,
                         this, &UINetworkAttachmentEditor::sltHandleCurrentTypeChanged);
                 pComboLayout->addWidget(m_pComboType);
             }
@@ -327,7 +327,7 @@ void UINetworkAttachmentEditor::prepare()
             if (m_pLabelName)
                 m_pLabelName->setBuddy(m_pComboName);
             m_pComboName->setInsertPolicy(QComboBox::NoInsert);
-            connect(m_pComboName, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            connect(m_pComboName, &QComboBox::currentIndexChanged,
                     this, &UINetworkAttachmentEditor::sltHandleCurrentNameChanged);
             connect(m_pComboName, &QComboBox::editTextChanged,
                     this, &UINetworkAttachmentEditor::sltHandleCurrentNameChanged);

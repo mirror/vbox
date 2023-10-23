@@ -161,8 +161,7 @@ void UIVMLogViewerPreferencesWidget::prepareConnections()
     if (m_pWrapLinesCheckBox)
         connect(m_pWrapLinesCheckBox, &QCheckBox::toggled, this, &UIVMLogViewerPreferencesWidget::sigWrapLines);
     if (m_pFontSizeSpinBox)
-        connect(m_pFontSizeSpinBox, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
-                this, &UIVMLogViewerPreferencesWidget::sigChangeFontSizeInPoints);
+        connect(m_pFontSizeSpinBox, &QSpinBox::valueChanged, this, &UIVMLogViewerPreferencesWidget::sigChangeFontSizeInPoints);
     if (m_pOpenFontDialogButton)
         connect(m_pOpenFontDialogButton, &QIToolButton::clicked, this, &UIVMLogViewerPreferencesWidget::sltOpenFontDialog);
     if (m_pResetToDefaultsButton)

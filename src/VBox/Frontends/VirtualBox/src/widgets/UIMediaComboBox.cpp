@@ -229,7 +229,7 @@ void UIMediaComboBox::prepare()
             this, &UIMediaComboBox::sltHandleMediumEnumerated);
 
     /* Setup other connections: */
-    connect(this, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::activated),
+    connect(this, &UIMediaComboBox::activated,
             this, &UIMediaComboBox::sltHandleComboActivated);
     connect(view(), &QAbstractItemView::entered,
             this, &UIMediaComboBox::sltHandleComboHovered);

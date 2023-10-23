@@ -210,7 +210,7 @@ void UIExecutionCapEditor::prepare()
             m_pSpinBox->setMinimum(m_uMinExecCap);
             m_pSpinBox->setMaximum(m_uMaxExecCap);
             uiCommon().setMinimumWidthAccordingSymbolCount(m_pSpinBox, 4);
-            connect(m_pSpinBox, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+            connect(m_pSpinBox, &QSpinBox::valueChanged,
                     this, &UIExecutionCapEditor::sltHandleSpinBoxChange);
             m_pLayout->addWidget(m_pSpinBox, 0, 2);
         }

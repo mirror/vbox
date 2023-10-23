@@ -151,7 +151,7 @@ UIWizardAddCloudVMPageExpert::UIWizardAddCloudVMPageExpert()
             this, &UIWizardAddCloudVMPageExpert::sltHandleProviderComboChange);
     connect(m_pProviderComboBox, &QIComboBox::activated,
             this, &UIWizardAddCloudVMPageExpert::sltHandleProviderComboChange);
-    connect(m_pProfileComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+    connect(m_pProfileComboBox, &QIComboBox::currentIndexChanged,
             this, &UIWizardAddCloudVMPageExpert::sltHandleProfileComboChange);
     connect(m_pProfileToolButton, &QIToolButton::clicked,
             this, &UIWizardAddCloudVMPageExpert::sltHandleProfileButtonClick);

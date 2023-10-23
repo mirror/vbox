@@ -301,7 +301,7 @@ void UIVideoMemoryEditor::prepare()
                 m_pLabelMemory->setBuddy(m_pSpinBox);
             m_pSpinBox->setMinimum(m_iMinVRAM);
             m_pSpinBox->setMaximum(m_iMaxVRAMVisible);
-            connect(m_pSpinBox, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+            connect(m_pSpinBox, &QSpinBox::valueChanged,
                     this, &UIVideoMemoryEditor::sltHandleSpinBoxChange);
             m_pLayout->addWidget(m_pSpinBox, 0, 2);
         }

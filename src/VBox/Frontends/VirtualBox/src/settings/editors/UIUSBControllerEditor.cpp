@@ -132,7 +132,7 @@ void UIUSBControllerEditor::prepare()
                 pLayout->addWidget(m_pRadioButtonUSB3);
             }
 
-            connect(pButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+            connect(pButtonGroup, &QButtonGroup::buttonClicked,
                     this, &UIUSBControllerEditor::sigValueChanged);
         }
     }

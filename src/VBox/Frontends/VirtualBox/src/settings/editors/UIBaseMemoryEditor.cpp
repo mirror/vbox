@@ -420,7 +420,7 @@ void UIBaseMemoryEditor::prepare()
                 m_pLabelMemory->setBuddy(m_pSpinBox);
             m_pSpinBox->setMinimum(m_pSlider->minRAM());
             m_pSpinBox->setMaximum(m_pSlider->maxRAM());
-            connect(m_pSpinBox, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+            connect(m_pSpinBox, &QSpinBox::valueChanged,
                     this, &UIBaseMemoryEditor::sltHandleSpinBoxChange);
             m_pLayout->addWidget(m_pSpinBox, 0, 2);
         }
