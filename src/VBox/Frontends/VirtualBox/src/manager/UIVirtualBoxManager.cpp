@@ -39,11 +39,9 @@
 #include <QStyle>
 #include <QTextEdit>
 #include <QVBoxLayout>
+#include <QWindow>
 #ifndef VBOX_WS_WIN
 # include <QRegExp>
-#endif
-#ifdef VBOX_IS_QT6_OR_LATER
-# include <QWindow>
 #endif
 
 /* GUI includes: */

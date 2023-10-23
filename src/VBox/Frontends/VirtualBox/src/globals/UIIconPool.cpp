@@ -31,9 +31,7 @@
 #include <QPainter>
 #include <QStyle>
 #include <QWidget>
-#ifdef VBOX_IS_QT6_OR_LATER
-# include <QWindow>
-#endif
+#include <QWindow>
 
 /* GUI includes: */
 #include "UIIconPool.h"

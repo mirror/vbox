@@ -32,11 +32,9 @@
 #include <QLocale>
 #include <QProcess>
 #include <QThread>
+#include <QWindow>
 #ifdef VBOX_WS_MAC
 # include <QPushButton>
-#endif
-#ifdef VBOX_IS_QT6_OR_LATER
-# include <QWindow>
 #endif
 
 /* GUI includes: */

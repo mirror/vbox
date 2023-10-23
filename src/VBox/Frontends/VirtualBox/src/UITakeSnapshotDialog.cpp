@@ -31,9 +31,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QStyle>
-#ifdef VBOX_IS_QT6_OR_LATER
-# include <QWindow>
-#endif
+#include <QWindow>
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"

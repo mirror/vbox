@@ -30,9 +30,7 @@
 #include <QGraphicsView>
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
-#ifdef VBOX_IS_QT6_OR_LATER
-# include <QWindow>
-#endif
+#include <QWindow>
 
 /* GUI includes: */
 #include "UIChooserItemGlobal.h"

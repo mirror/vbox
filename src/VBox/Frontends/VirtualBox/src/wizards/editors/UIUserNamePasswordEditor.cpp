@@ -30,9 +30,7 @@
 #include <QLabel>
 #include <QStyle>
 #include <QVBoxLayout>
-#ifdef VBOX_IS_QT6_OR_LATER
-# include <QWindow>
-#endif
+#include <QWindow>
 
 /* GUI includes: */
 #include "QILineEdit.h"

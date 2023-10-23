@@ -32,11 +32,9 @@
 #include <QIcon>
 #include <QPainter>
 #include <QStyle>
+#include <QWindow>
 #ifdef VBOX_WS_MAC
 # include <QContextMenuEvent>
-#endif /* VBOX_WS_MAC */
-#ifdef VBOX_IS_QT6_OR_LATER
-# include <QWindow>
 #endif
 
 /* GUI includes: */

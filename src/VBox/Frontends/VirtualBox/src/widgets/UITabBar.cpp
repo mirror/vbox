@@ -41,11 +41,9 @@
 #include <QPainter>
 #include <QStyle>
 #include <QToolButton>
+#include <QWindow>
 #ifdef VBOX_WS_MAC
 # include <QStackedLayout>
-#endif
-#ifdef VBOX_IS_QT6_OR_LATER
-# include <QWindow>
 #endif
 
 /* GUI includes: */
