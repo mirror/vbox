@@ -4216,7 +4216,7 @@ static DECLCALLBACK(int) iemNativeDisasReadBytesDummy(PDISSTATE pDis, uint8_t of
  * @returns pszBuf.
  * @param   fFlags  The flags.
  * @param   pszBuf  The output buffer.
- * @param   cchBuf  The output buffer length.  At least 32 bytes.
+ * @param   cbBuf   The output buffer size.  At least 32 bytes.
  */
 const char *iemTbFlagsToString(uint32_t fFlags, char *pszBuf, size_t cbBuf)
 {
@@ -4367,9 +4367,7 @@ void iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp)
                         case kIemTbDbgEntryType_GuestInstruction:
                         {
                             /* Did the exec flag change? */
-                            if (fExec == pDbgInfo->aEntries[iDbgEntry].GuestInstruction.fExec)
-                            {} //pHlp->pfnPrintf(pHlp, "\n");
-                            else
+                            if (fExec != pDbgInfo->aEntries[iDbgEntry].GuestInstruction.fExec)
                             {
                                 pHlp->pfnPrintf(pHlp,
                                                 "  fExec change %#08x -> %#08x %s\n",
@@ -4511,7 +4509,7 @@ void iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp)
             int const rc      = DISInstr(&paNative[offNative], enmHstCpuMode, &Dis, &cbInstr);
             if (RT_SUCCESS(rc))
             {
-#  if defined(RT_ARCH_AMD64)
+# if defined(RT_ARCH_AMD64)
                 if (Dis.pCurInstr->uOpcode == OP_NOP && cbInstr == 7) /* iemNativeEmitMarker */
                 {
                     uint32_t const uInfo = *(uint32_t const *)&Dis.Instr.ab[3];
@@ -4523,7 +4521,7 @@ void iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp)
                         pHlp->pfnPrintf(pHlp, "    %p: nop ; unknown marker: %#x (%d)\n", &paNative[offNative], uInfo, uInfo);
                 }
                 else
-#  endif
+# endif
                 {
                     DISFormatYasmEx(&Dis, szDisBuf, sizeof(szDisBuf),
                                     DIS_FMT_FLAGS_BYTES_WIDTH_MAKE(10) | DIS_FMT_FLAGS_BYTES_LEFT
@@ -4534,14 +4532,14 @@ void iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp)
             }
             else
             {
-#  if defined(RT_ARCH_AMD64)
+# if defined(RT_ARCH_AMD64)
                 pHlp->pfnPrintf(pHlp, "    %p:  %.*Rhxs - disassembly failure %Rrc\n",
                                 &paNative[offNative], RT_MIN(cNative - offNative, 16), &paNative[offNative], rc);
-#  elif defined(RT_ARCH_ARM64)
+# elif defined(RT_ARCH_ARM64)
                 pHlp->pfnPrintf(pHlp, "    %p:  %#010RX32 - disassembly failure %Rrc\n",
                                 &paNative[offNative], paNative[offNative], rc);
-#  else
-#   error "Port me"
+# else
+#  error "Port me"
 # endif
                 cbInstr = sizeof(paNative[0]);
             }
