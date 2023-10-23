@@ -101,12 +101,8 @@ void QILineEdit::mark(bool fError, const QString &strErrorMessage /* = QString()
         /* Update label content, visibility & position: */
         const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) * .625;
         const int iShift = height() > iIconMetric ? (height() - iIconMetric) / 2 : 0;
-#ifndef VBOX_IS_QT6_OR_LATER /* QIcon::pixmap taking QWindow is deprecated in Qt6 */
-        m_pIconLabel->setPixmap(m_markIcon.pixmap(windowHandle(), QSize(iIconMetric, iIconMetric)));
-#else
         const qreal fDevicePixelRatio = window() && window()->windowHandle() ? window()->windowHandle()->devicePixelRatio() : 1;
         m_pIconLabel->setPixmap(m_markIcon.pixmap(QSize(iIconMetric, iIconMetric), fDevicePixelRatio));
-#endif
         m_pIconLabel->setToolTip(m_strErrorMessage);
         m_pIconLabel->move(width() - iIconMetric - iShift, iShift);
         m_pIconLabel->show();
@@ -251,19 +247,11 @@ void UIMarkableLineEdit::mark(bool fError, const QString &strErrorMessage /* = Q
     m_pIconLabel->setVisible(true);
     AssertReturnVoid(m_pIconLabel);
     const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
-
-#ifndef VBOX_IS_QT6_OR_LATER /* QIcon::pixmap taking QWindow is deprecated in Qt6 */
-    if (fError)
-        m_pIconLabel->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(windowHandle(), QSize(iIconMetric, iIconMetric)));
-    else
-        m_pIconLabel->setPixmap(UIIconPool::iconSet(":/status_check_16px.png").pixmap(windowHandle(), QSize(iIconMetric, iIconMetric)));
-#else
     const qreal fDevicePixelRatio = window() && window()->windowHandle() ? window()->windowHandle()->devicePixelRatio() : 1;
     if (fError)
         m_pIconLabel->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(iIconMetric, iIconMetric), fDevicePixelRatio));
     else
         m_pIconLabel->setPixmap(UIIconPool::iconSet(":/status_check_16px.png").pixmap(QSize(iIconMetric, iIconMetric), fDevicePixelRatio));
-#endif
     m_pIconLabel->setToolTip(strErrorMessage);
 }
 

@@ -621,12 +621,8 @@ void UIToolsItem::updatePixmap()
 
     /* Prepare new pixmap size: */
     const QSize pixmapSize = QSize(iIconMetric, iIconMetric);
-#ifndef VBOX_IS_QT6_OR_LATER /* QIcon::pixmap taking QWindow is deprecated in Qt6 */
-    const QPixmap pixmap = m_icon.pixmap(gpManager->windowHandle(), pixmapSize, isEnabled() ? QIcon::Normal : QIcon::Disabled);
-#else
     const qreal fDevicePixelRatio = gpManager->windowHandle() ? gpManager->windowHandle()->devicePixelRatio() : 1;
     const QPixmap pixmap = m_icon.pixmap(pixmapSize, fDevicePixelRatio, isEnabled() ? QIcon::Normal : QIcon::Disabled);
-#endif
     /* Update linked values: */
     if (m_pixmapSize != pixmapSize)
     {

@@ -822,12 +822,8 @@ void UIDetailsElement::updateIcon()
         const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
         m_pixmapSize = QSize(iIconMetric, iIconMetric);
         /* Acquire the icon of corresponding size (taking top-level widget DPI into account): */
-#ifndef VBOX_IS_QT6_OR_LATER /* QIcon::pixmap taking QWindow is deprecated in Qt6 */
-        m_pixmap = icon.pixmap(gpManager->windowHandle(), m_pixmapSize);
-#else
         const qreal fDevicePixelRatio = gpManager->windowHandle() ? gpManager->windowHandle()->devicePixelRatio() : 1;
         m_pixmap = icon.pixmap(m_pixmapSize, fDevicePixelRatio);
-#endif
     }
 
     /* Update linked values: */

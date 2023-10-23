@@ -411,17 +411,8 @@ void UIStatusBarEditorButton::updatePixmap()
 {
     /* Recache pixmap for assigned type: */
     const QIcon icon = gpConverter->toIcon(m_enmType);
-    if (window())
-#ifndef VBOX_IS_QT6_OR_LATER /* QIcon::pixmap taking QWindow is deprecated in Qt6 */
-        m_pixmap = icon.pixmap(window()->windowHandle(), m_pixmapSize);
-#else
-    {
-        const qreal fDevicePixelRatio = window()->windowHandle() ? window()->windowHandle()->devicePixelRatio() : 1;
-        m_pixmap = icon.pixmap(m_pixmapSize, fDevicePixelRatio);
-    }
-#endif
-    else
-        m_pixmap = icon.pixmap(m_pixmapSize);
+    const qreal fDevicePixelRatio = window() && window()->windowHandle() ? window()->windowHandle()->devicePixelRatio() : 1;
+    m_pixmap = icon.pixmap(m_pixmapSize, fDevicePixelRatio);
 }
 
 

@@ -447,12 +447,8 @@ void UIChooserItemGlobal::updatePixmap()
 
     /* Create new icon, then acquire pixmap: */
     const QIcon icon = UIIconPool::iconSet(":/tools_global_32px.png");
-#ifndef VBOX_IS_QT6_OR_LATER /* QIcon::pixmap taking QWindow is deprecated in Qt6 */
-    const QPixmap pixmap = icon.pixmap(gpManager->windowHandle(), pixmapSize);
-#else
     const qreal fDevicePixelRatio = gpManager->windowHandle() ? gpManager->windowHandle()->devicePixelRatio() : 1;
     const QPixmap pixmap = icon.pixmap(pixmapSize, fDevicePixelRatio);
-#endif
 
     /* Update linked values: */
     if (m_pixmapSize != pixmapSize)
@@ -476,12 +472,8 @@ void UIChooserItemGlobal::updateToolPixmap()
     const QIcon toolIcon = UIIconPool::iconSet(":/tools_menu_24px.png");
     AssertReturnVoid(!toolIcon.isNull());
     const QSize toolPixmapSize = QSize(iIconMetric, iIconMetric);
-#ifndef VBOX_IS_QT6_OR_LATER /* QIcon::pixmap taking QWindow is deprecated in Qt6 */
-    const QPixmap toolPixmap = toolIcon.pixmap(gpManager->windowHandle(), toolPixmapSize);
-#else
     const qreal fDevicePixelRatio = gpManager->windowHandle() ? gpManager->windowHandle()->devicePixelRatio() : 1;
     const QPixmap toolPixmap = toolIcon.pixmap(toolPixmapSize, fDevicePixelRatio);
-#endif
     /* Update linked values: */
     if (m_toolPixmapSize != toolPixmapSize)
     {
@@ -503,12 +495,8 @@ void UIChooserItemGlobal::updatePinPixmap()
     const QIcon pinIcon = UIIconPool::iconSet(isFavorite() ? ":/favorite_pressed_24px.png" : ":/favorite_24px.png");
     AssertReturnVoid(!pinIcon.isNull());
     const QSize pinPixmapSize = QSize(iIconMetric, iIconMetric);
-#ifndef VBOX_IS_QT6_OR_LATER /* QIcon::pixmap taking QWindow is deprecated in Qt6 */
-    const QPixmap pinPixmap = pinIcon.pixmap(gpManager->windowHandle(), pinPixmapSize);
-#else
     const qreal fDevicePixelRatio = gpManager->windowHandle() ? gpManager->windowHandle()->devicePixelRatio() : 1;
     const QPixmap pinPixmap = pinIcon.pixmap(pinPixmapSize, fDevicePixelRatio);
-#endif
     /* Update linked values: */
     if (m_pinPixmapSize != pinPixmapSize)
     {

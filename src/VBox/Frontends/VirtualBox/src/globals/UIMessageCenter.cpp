@@ -387,20 +387,14 @@ bool UIMessageCenter::showModalProgressDialog(CProgress &progress,
 
     /* Gather suitable dialog parent: */
     QWidget *pDlgParent = windowManager().realParentWindow(pParent ? pParent : windowManager().mainWindowShown());
-#ifdef VBOX_IS_QT6_OR_LATER
-    const qreal fDevicePixelRatio = pDlgParent && pDlgParent->windowHandle() ? pDlgParent->windowHandle()->devicePixelRatio() : 1;
-#endif
 
     /* Prepare pixmap: */
     QPixmap pixmap;
     if (!strImage.isEmpty())
-        pixmap = pDlgParent
-#ifndef VBOX_IS_QT6_OR_LATER /* QIcon::pixmap taking QWindow is deprecated in Qt6 */
-               ? UIIconPool::iconSet(strImage).pixmap(pDlgParent->windowHandle(), QSize(90, 90))
-#else
-               ? UIIconPool::iconSet(strImage).pixmap(QSize(90, 90), fDevicePixelRatio)
-#endif
-               : UIIconPool::iconSet(strImage).pixmap(QSize(90, 90));
+    {
+        const qreal fDevicePixelRatio = pDlgParent && pDlgParent->windowHandle() ? pDlgParent->windowHandle()->devicePixelRatio() : 1;
+        pixmap = UIIconPool::iconSet(strImage).pixmap(QSize(90, 90), fDevicePixelRatio);
+    }
 
     /* Create progress-dialog: */
     QPointer<UIProgressDialog> pProgressDlg = new UIProgressDialog(progress, strTitle, &pixmap, cMinDuration, pDlgParent);
