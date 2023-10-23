@@ -127,7 +127,9 @@ extern "C" void *__deregister_frame_info(void *pvBegin);           /* (returns p
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static uint32_t iemNativeEmitGuestRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                                                uint8_t idxReg, IEMNATIVEGSTREG enmGstReg);
+                                                uint8_t idxReg, IEMNATIVEGSTREG enmGstReg) RT_NOEXCEPT;
+static bool iemNativeDbgInfoAddNativeOffset(PIEMRECOMPILERSTATE pReNative, uint32_t off) RT_NOEXCEPT;
+static bool iemNativeDbgInfoAddLabel(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType, uint16_t uData) RT_NOEXCEPT;
 
 
 /*********************************************************************************************************************************
@@ -1579,6 +1581,9 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     pReNative->cLabels                = 0;
     pReNative->bmLabelTypes           = 0;
     pReNative->cFixups                = 0;
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    pReNative->pDbgInfo->cEntries     = 0;
+#endif
     pReNative->pTbOrg                 = pTb;
 
     pReNative->bmHstRegs              = IEMNATIVE_REG_FIXED_MASK
@@ -1651,9 +1656,16 @@ static PIEMRECOMPILERSTATE iemNativeInit(PVMCPUCC pVCpu, PCIEMTB pTb)
     pReNative->pInstrBuf = (PIEMNATIVEINSTR)RTMemAllocZ(_64K);
     pReNative->paLabels  = (PIEMNATIVELABEL)RTMemAllocZ(sizeof(IEMNATIVELABEL) * _8K);
     pReNative->paFixups  = (PIEMNATIVEFIXUP)RTMemAllocZ(sizeof(IEMNATIVEFIXUP) * _16K);
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    pReNative->pDbgInfo  = (PIEMTBDBG)RTMemAllocZ(RT_UOFFSETOF_DYN(IEMTBDBG, aEntries[_16K]));
+#endif
     if (RT_LIKELY(   pReNative->pInstrBuf
                   && pReNative->paLabels
-                  && pReNative->paFixups))
+                  && pReNative->paFixups)
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+        && pReNative->pDbgInfo
+#endif
+       )
     {
         /*
          * Set the buffer & array sizes on success.
@@ -1661,6 +1673,9 @@ static PIEMRECOMPILERSTATE iemNativeInit(PVMCPUCC pVCpu, PCIEMTB pTb)
         pReNative->cInstrBufAlloc = _64K / sizeof(IEMNATIVEINSTR);
         pReNative->cLabelsAlloc   = _8K;
         pReNative->cFixupsAlloc   = _16K;
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+        pReNative->cDbgInfoAlloc  = _16K;
+#endif
 
         /*
          * Done, just need to save it and reinit it.
@@ -1676,13 +1691,19 @@ static PIEMRECOMPILERSTATE iemNativeInit(PVMCPUCC pVCpu, PCIEMTB pTb)
     RTMemFree(pReNative->pInstrBuf);
     RTMemFree(pReNative->paLabels);
     RTMemFree(pReNative->paFixups);
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    RTMemFree(pReNative->pDbgInfo);
+#endif
     RTMemFree(pReNative);
     return NULL;
 }
 
 
 /**
- * Defines a label.
+ * Creates a label
+ *
+ * If the label does not yet have a defined position,
+ * call iemNativeLabelDefine() later to set it.
  *
  * @returns Label ID.
  * @param   pReNative   The native recompile state.
@@ -1692,26 +1713,38 @@ static PIEMRECOMPILERSTATE iemNativeInit(PVMCPUCC pVCpu, PCIEMTB pTb)
  * @param   uData       Data associated with the lable. Only applicable to
  *                      certain type of labels. Default is zero.
  */
-DECLHIDDEN(uint32_t) iemNativeMakeLabel(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType,
-                                        uint32_t offWhere /*= UINT32_MAX*/, uint16_t uData /*= 0*/) RT_NOEXCEPT
+DECLHIDDEN(uint32_t) iemNativeLabelCreate(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType,
+                                          uint32_t offWhere /*= UINT32_MAX*/, uint16_t uData /*= 0*/) RT_NOEXCEPT
 {
     /*
-     * Do we have the label already?
+     * Locate existing label definition.
+     *
+     * This is only allowed for forward declarations where offWhere=UINT32_MAX
+     * and uData is zero.
      */
     PIEMNATIVELABEL paLabels = pReNative->paLabels;
     uint32_t const  cLabels  = pReNative->cLabels;
-    for (uint32_t i = 0; i < cLabels; i++)
-        if (   paLabels[i].enmType == enmType
-            && paLabels[i].uData   == uData)
-        {
-            if (paLabels[i].off == offWhere || offWhere == UINT32_MAX)
-                return i;
-            if (paLabels[i].off == UINT32_MAX)
+    if (   pReNative->bmLabelTypes & RT_BIT_64(enmType)
+#ifndef VBOX_STRICT
+        && offWhere == UINT32_MAX
+        && uData    == 0
+#endif
+        )
+    {
+        /** @todo Since this is only used for labels with uData = 0, just use a
+         *        lookup array? */
+        for (uint32_t i = 0; i < cLabels; i++)
+            if (   paLabels[i].enmType == enmType
+                && paLabels[i].uData   == uData)
             {
-                paLabels[i].off = offWhere;
+#ifdef VBOX_STRICT
+                AssertReturn(uData == 0, UINT32_MAX);
+                AssertReturn(offWhere == UINT32_MAX, UINT32_MAX);
+#endif
+                AssertReturn(paLabels[i].off == UINT32_MAX, UINT32_MAX);
                 return i;
             }
-        }
+    }
 
     /*
      * Make sure we've got room for another label.
@@ -1741,7 +1774,35 @@ DECLHIDDEN(uint32_t) iemNativeMakeLabel(PIEMRECOMPILERSTATE pReNative, IEMNATIVE
 
     Assert(enmType >= 0 && enmType < 64);
     pReNative->bmLabelTypes |= RT_BIT_64(enmType);
+
+    if (offWhere != UINT32_MAX)
+    {
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+        iemNativeDbgInfoAddNativeOffset(pReNative, offWhere);
+        iemNativeDbgInfoAddLabel(pReNative, enmType, uData);
+#endif
+    }
     return cLabels;
+}
+
+
+/**
+ * Defines the location of an existing label.
+ *
+ * @param   pReNative   The native recompile state.
+ * @param   idxLabel    The label to define.
+ * @param   offWhere    The position.
+ */
+DECLHIDDEN(void) iemNativeLabelDefine(PIEMRECOMPILERSTATE pReNative, uint32_t idxLabel, uint32_t offWhere) RT_NOEXCEPT
+{
+    AssertReturnVoid(idxLabel < pReNative->cLabels);
+    PIEMNATIVELABEL const pLabel = &pReNative->paLabels[idxLabel];
+    AssertReturnVoid(pLabel->off == UINT32_MAX);
+    pLabel->off = offWhere;
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    iemNativeDbgInfoAddNativeOffset(pReNative, offWhere);
+    iemNativeDbgInfoAddLabel(pReNative, (IEMNATIVELABELTYPE)pLabel->enmType, pLabel->uData);
+#endif
 }
 
 
@@ -1750,7 +1811,7 @@ DECLHIDDEN(uint32_t) iemNativeMakeLabel(PIEMRECOMPILERSTATE pReNative, IEMNATIVE
  *
  * @returns Label ID if found, UINT32_MAX if not.
  */
-static uint32_t iemNativeFindLabel(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType,
+static uint32_t iemNativeLabelFind(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType,
                                    uint32_t offWhere = UINT32_MAX, uint16_t uData = 0) RT_NOEXCEPT
 {
     Assert(enmType >= 0 && enmType < 64);
@@ -1845,6 +1906,141 @@ DECLHIDDEN(PIEMNATIVEINSTR) iemNativeInstrBufEnsureSlow(PIEMRECOMPILERSTATE pReN
     return pReNative->pInstrBuf = (PIEMNATIVEINSTR)pvNew;
 }
 
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+
+/**
+ * Grows the static debug info array used during recompilation.
+ * @returns Pointer to the new debug info block, NULL on failure.
+ */
+DECL_NO_INLINE(static, PIEMTBDBG) iemNativeDbgInfoGrow(PIEMRECOMPILERSTATE pReNative, PIEMTBDBG pDbgInfo) RT_NOEXCEPT
+{
+    uint32_t cNew = pReNative->cDbgInfoAlloc * 2;
+    AssertReturn(cNew < _1M && cNew != 0, NULL);
+    pDbgInfo = (PIEMTBDBG)RTMemRealloc(pDbgInfo, RT_UOFFSETOF_DYN(IEMTBDBG, aEntries[cNew]));
+    AssertReturn(pDbgInfo, NULL);
+    pReNative->pDbgInfo      = pDbgInfo;
+    pReNative->cDbgInfoAlloc = cNew;
+    return pDbgInfo;
+}
+
+
+/**
+ * Adds a new debug info uninitialized entry, returning the pointer to it.
+ */
+DECLINLINE(PIEMTBDBGENTRY) iemNativeDbgInfoAddNewEntry(PIEMRECOMPILERSTATE pReNative, PIEMTBDBG pDbgInfo)
+{
+    if (RT_LIKELY(pDbgInfo->cEntries < pReNative->cDbgInfoAlloc))
+    { /* likely */ }
+    else
+    {
+        pDbgInfo = iemNativeDbgInfoGrow(pReNative, pDbgInfo);
+        AssertReturn(pDbgInfo, NULL);
+    }
+    return &pDbgInfo->aEntries[pDbgInfo->cEntries++];
+}
+
+
+/**
+ * Debug Info: Adds a native offset record, if necessary.
+ */
+static bool iemNativeDbgInfoAddNativeOffset(PIEMRECOMPILERSTATE pReNative, uint32_t off) RT_NOEXCEPT
+{
+    PIEMTBDBG pDbgInfo = pReNative->pDbgInfo;
+
+    /*
+     * Search backwards to see if we've got a similar record already.
+     */
+    uint32_t idx     = pDbgInfo->cEntries;
+    uint32_t idxStop = idx > 8 ? idx - 8 : 0;
+    while (idx-- > idxStop)
+        if (pDbgInfo->aEntries[idx].Gen.uType == kIemTbDbgEntryType_NativeOffset)
+        {
+            if (pDbgInfo->aEntries[idx].NativeOffset.offNative == off)
+                return true;
+            AssertReturn(pDbgInfo->aEntries[idx].NativeOffset.offNative < off, false);
+            break;
+        }
+
+    /*
+     * Add it.
+     */
+    PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pDbgInfo);
+    AssertReturn(pEntry, false);
+    pEntry->NativeOffset.uType     = kIemTbDbgEntryType_NativeOffset;
+    pEntry->NativeOffset.offNative = off;
+
+    return true;
+}
+
+
+/**
+ * Debug Info: Record info about a label.
+ */
+static bool iemNativeDbgInfoAddLabel(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType, uint16_t uData) RT_NOEXCEPT
+{
+    PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pReNative->pDbgInfo);
+    AssertReturn(pEntry, false);
+
+    pEntry->Label.uType    = kIemTbDbgEntryType_Label;
+    pEntry->Label.uUnused  = 0;
+    pEntry->Label.enmLabel = (uint8_t)enmType;
+    pEntry->Label.uData    = uData;
+
+    return true;
+}
+
+
+/**
+ * Debug Info: Record info about a threaded call.
+ */
+static bool iemNativeDbgInfoAddThreadedCall(PIEMRECOMPILERSTATE pReNative, IEMTHREADEDFUNCS enmCall) RT_NOEXCEPT
+{
+    PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pReNative->pDbgInfo);
+    AssertReturn(pEntry, false);
+
+    pEntry->ThreadedCall.uType   = kIemTbDbgEntryType_ThreadedCall;
+    pEntry->ThreadedCall.uUnused = 0;
+    pEntry->ThreadedCall.enmCall = (uint16_t)enmCall;
+
+    return true;
+}
+
+
+/**
+ * Debug Info: Record info about a new guest instruction.
+ */
+static bool iemNativeDbgInfoAddGuestInstruction(PIEMRECOMPILERSTATE pReNative, uint32_t fExec) RT_NOEXCEPT
+{
+    PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pReNative->pDbgInfo);
+    AssertReturn(pEntry, false);
+
+    pEntry->GuestInstruction.uType   = kIemTbDbgEntryType_GuestInstruction;
+    pEntry->GuestInstruction.uUnused = 0;
+    pEntry->GuestInstruction.fExec   = fExec;
+
+    return true;
+}
+
+
+/**
+ * Debug Info: Record info about guest register shadowing.
+ */
+static bool iemNativeDbgInfoAddGuestRegShadowing(PIEMRECOMPILERSTATE pReNative, IEMNATIVEGSTREG enmGstReg,
+                                                 uint8_t idxHstReg = UINT8_MAX, uint8_t idxHstRegPrev = UINT8_MAX) RT_NOEXCEPT
+{
+    PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pReNative->pDbgInfo);
+    AssertReturn(pEntry, false);
+
+    pEntry->GuestRegShadowing.uType         = kIemTbDbgEntryType_GuestRegShadowing;
+    pEntry->GuestRegShadowing.uUnused       = 0;
+    pEntry->GuestRegShadowing.idxGstReg     = enmGstReg;
+    pEntry->GuestRegShadowing.idxHstReg     = idxHstReg;
+    pEntry->GuestRegShadowing.idxHstRegPrev = idxHstRegPrev;
+
+    return true;
+}
+
+#endif /* IEMNATIVE_WITH_TB_DEBUG_INFO */
 
 
 /*********************************************************************************************************************************
@@ -2250,7 +2446,7 @@ DECLHIDDEN(uint8_t) iemNativeRegAllocTmpImm(PIEMRECOMPILERSTATE pReNative, uint3
  * host register before calling.
  */
 DECL_FORCE_INLINE(void)
-iemNativeRegMarkAsGstRegShadow(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg, IEMNATIVEGSTREG enmGstReg)
+iemNativeRegMarkAsGstRegShadow(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg, IEMNATIVEGSTREG enmGstReg, uint32_t off)
 {
     Assert(!(pReNative->bmGstRegShadows & RT_BIT_64(enmGstReg)));
 
@@ -2258,6 +2454,12 @@ iemNativeRegMarkAsGstRegShadow(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg,
     pReNative->aHstRegs[idxHstReg].fGstRegShadows = RT_BIT_64(enmGstReg);
     pReNative->bmGstRegShadows                   |= RT_BIT_64(enmGstReg);
     pReNative->bmHstRegsWithGstShadow            |= RT_BIT_32(idxHstReg);
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    iemNativeDbgInfoAddNativeOffset(pReNative, off);
+    iemNativeDbgInfoAddGuestRegShadowing(pReNative, enmGstReg, idxHstReg);
+#else
+    RT_NOREF(off);
+#endif
 }
 
 
@@ -2267,12 +2469,28 @@ iemNativeRegMarkAsGstRegShadow(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg,
  * The register does not need to be shadowing any guest registers.
  */
 DECL_FORCE_INLINE(void)
-iemNativeRegClearGstRegShadowing(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg)
+iemNativeRegClearGstRegShadowing(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg, uint32_t off)
 {
     Assert(   (pReNative->bmGstRegShadows & pReNative->aHstRegs[idxHstReg].fGstRegShadows)
            == pReNative->aHstRegs[idxHstReg].fGstRegShadows);
     Assert(   RT_BOOL(pReNative->bmHstRegsWithGstShadow & RT_BIT_32(idxHstReg))
            == RT_BOOL(pReNative->aHstRegs[idxHstReg].fGstRegShadows));
+
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    uint64_t fGstRegs = pReNative->aHstRegs[idxHstReg].fGstRegShadows;
+    if (fGstRegs)
+    {
+        iemNativeDbgInfoAddNativeOffset(pReNative, off);
+        while (fGstRegs)
+        {
+            unsigned const iGstReg = ASMBitFirstSetU64(fGstRegs) - 1;
+            fGstRegs &= ~RT_BIT_64(iGstReg);
+            iemNativeDbgInfoAddGuestRegShadowing(pReNative, (IEMNATIVEGSTREG)iGstReg, UINT8_MAX, idxHstReg);
+        }
+    }
+#else
+    RT_NOREF(off);
+#endif
 
     pReNative->bmHstRegsWithGstShadow            &= ~RT_BIT_32(idxHstReg);
     pReNative->bmGstRegShadows                   &= ~pReNative->aHstRegs[idxHstReg].fGstRegShadows;
@@ -2285,7 +2503,8 @@ iemNativeRegClearGstRegShadowing(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstRe
  * to @a idxRegTo.
  */
 DECL_FORCE_INLINE(void)
-iemNativeRegTransferGstRegShadowing(PIEMRECOMPILERSTATE pReNative, uint8_t idxRegFrom, uint8_t idxRegTo, IEMNATIVEGSTREG enmGstReg)
+iemNativeRegTransferGstRegShadowing(PIEMRECOMPILERSTATE pReNative, uint8_t idxRegFrom, uint8_t idxRegTo,
+                                    IEMNATIVEGSTREG enmGstReg, uint32_t off)
 {
     Assert(pReNative->aHstRegs[idxRegFrom].fGstRegShadows & RT_BIT_64(enmGstReg));
     Assert(   (pReNative->bmGstRegShadows & pReNative->aHstRegs[idxRegFrom].fGstRegShadows)
@@ -2296,6 +2515,12 @@ iemNativeRegTransferGstRegShadowing(PIEMRECOMPILERSTATE pReNative, uint8_t idxRe
     pReNative->aHstRegs[idxRegFrom].fGstRegShadows &= ~RT_BIT_64(enmGstReg);
     pReNative->aHstRegs[idxRegTo].fGstRegShadows    = RT_BIT_64(enmGstReg);
     pReNative->aidxGstRegShadows[enmGstReg]         = idxRegTo;
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    iemNativeDbgInfoAddNativeOffset(pReNative, off);
+    iemNativeDbgInfoAddGuestRegShadowing(pReNative, enmGstReg, idxRegTo, idxRegFrom);
+#else
+    RT_NOREF(off);
+#endif
 }
 
 
@@ -2388,7 +2613,7 @@ DECLHIDDEN(uint8_t) iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNativ
                            g_apszIemNativeHstRegNames[idxReg], g_aGstShadowInfo[enmGstReg].pszName, s_pszIntendedUse[enmIntendedUse]));
                 else
                 {
-                    iemNativeRegClearGstRegShadowing(pReNative, idxReg);
+                    iemNativeRegClearGstRegShadowing(pReNative, idxReg, *poff);
                     Log12(("iemNativeRegAllocTmpForGuestReg: Grabbing %s for guest %s - destructive calc\n",
                            g_apszIemNativeHstRegNames[idxReg], g_aGstShadowInfo[enmGstReg].pszName));
                 }
@@ -2417,7 +2642,7 @@ DECLHIDDEN(uint8_t) iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNativ
                        g_apszIemNativeHstRegNames[idxRegNew], s_pszIntendedUse[enmIntendedUse]));
             else
             {
-                iemNativeRegTransferGstRegShadowing(pReNative, idxReg, idxRegNew, enmGstReg);
+                iemNativeRegTransferGstRegShadowing(pReNative, idxReg, idxRegNew, enmGstReg, *poff);
                 Log12(("iemNativeRegAllocTmpForGuestReg: Moved %s for guest %s into %s for update\n",
                        g_apszIemNativeHstRegNames[idxReg], g_aGstShadowInfo[enmGstReg].pszName,
                        g_apszIemNativeHstRegNames[idxRegNew]));
@@ -2446,7 +2671,7 @@ DECLHIDDEN(uint8_t) iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNativ
     AssertReturn(off != UINT32_MAX, UINT8_MAX);
 
     if (enmIntendedUse != kIemNativeGstRegUse_Calculation)
-        iemNativeRegMarkAsGstRegShadow(pReNative, idxRegNew, enmGstReg);
+        iemNativeRegMarkAsGstRegShadow(pReNative, idxRegNew, enmGstReg, off);
     Log12(("iemNativeRegAllocTmpForGuestReg: Allocated %s for guest %s %s\n",
            g_apszIemNativeHstRegNames[idxRegNew], g_aGstShadowInfo[enmGstReg].pszName, s_pszIntendedUse[enmIntendedUse]));
 
@@ -2858,7 +3083,7 @@ DECLHIDDEN(uint32_t) iemNativeEmitLoadGprWithGstShadowReg(PIEMRECOMPILERSTATE pR
  *       Trashes EFLAGS on AMD64.
  */
 static uint32_t iemNativeEmitGuestRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                                                uint8_t idxReg, IEMNATIVEGSTREG enmGstReg)
+                                                uint8_t idxReg, IEMNATIVEGSTREG enmGstReg) RT_NOEXCEPT
 {
 # ifdef RT_ARCH_AMD64
     uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 32);
@@ -3012,7 +3237,7 @@ DECLHIDDEN(uint32_t) iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReN
 
     pu32CodeBuf[off++] = Armv8A64MkInstrOrr(ARMV8_A64_REG_X4, ARMV8_A64_REG_X3, ARMV8_A64_REG_X0, false /*f64Bit*/);
 
-    uint32_t const idxLabel = iemNativeMakeLabel(pReNative, kIemNativeLabelType_NonZeroRetOrPassUp);
+    uint32_t const idxLabel = iemNativeLabelCreate(pReNative, kIemNativeLabelType_NonZeroRetOrPassUp);
     AssertReturn(idxLabel != UINT32_MAX, UINT32_MAX);
     AssertReturn(iemNativeAddFixup(pReNative, off, idxLabel, kIemNativeFixupType_RelImm19At5), UINT32_MAX);
     pu32CodeBuf[off++] = Armv8A64MkInstrCbzCbnz(true /*fJmpIfNotZero*/, ARMV8_A64_REG_X4, false /*f64Bit*/);
@@ -3300,11 +3525,10 @@ static uint32_t iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_
  */
 static uint32_t iemNativeEmitRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 {
-    uint32_t idxLabel = iemNativeFindLabel(pReNative, kIemNativeLabelType_RaiseGp0);
+    uint32_t const idxLabel = iemNativeLabelFind(pReNative, kIemNativeLabelType_RaiseGp0);
     if (idxLabel != UINT32_MAX)
     {
-        Assert(pReNative->paLabels[idxLabel].off == UINT32_MAX);
-        pReNative->paLabels[idxLabel].off = off;
+        iemNativeLabelDefine(pReNative, idxLabel, off);
 
         /* iemNativeHlpExecRaiseGp0(PVMCPUCC pVCpu, uint8_t idxInstr) */
         off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
@@ -3314,7 +3538,7 @@ static uint32_t iemNativeEmitRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t of
         off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpExecRaiseGp0);
 
         /* jump back to the return sequence. */
-        off = iemNativeEmitJmpToLabel(pReNative, off, iemNativeFindLabel(pReNative, kIemNativeLabelType_Return));
+        off = iemNativeEmitJmpToLabel(pReNative, off, iemNativeLabelFind(pReNative, kIemNativeLabelType_Return));
     }
     return off;
 }
@@ -3328,11 +3552,10 @@ static uint32_t iemNativeEmitRcFiddling(PIEMRECOMPILERSTATE pReNative, uint32_t 
     /*
      * Generate the rc + rcPassUp fiddling code if needed.
      */
-    uint32_t idxLabel = iemNativeFindLabel(pReNative, kIemNativeLabelType_NonZeroRetOrPassUp);
+    uint32_t const idxLabel = iemNativeLabelFind(pReNative, kIemNativeLabelType_NonZeroRetOrPassUp);
     if (idxLabel != UINT32_MAX)
     {
-        Assert(pReNative->paLabels[idxLabel].off == UINT32_MAX);
-        pReNative->paLabels[idxLabel].off = off;
+        iemNativeLabelDefine(pReNative, idxLabel, off);
 
         /* iemNativeHlpExecStatusCodeFiddling(PVMCPUCC pVCpu, int rc, uint8_t idxInstr) */
 #ifdef RT_ARCH_AMD64
@@ -3380,7 +3603,7 @@ static uint32_t iemNativeEmitEpilog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
     /*
      * Define label for common return point.
      */
-    uint32_t const idxReturn = iemNativeMakeLabel(pReNative, kIemNativeLabelType_Return, off);
+    uint32_t const idxReturn = iemNativeLabelCreate(pReNative, kIemNativeLabelType_Return, off);
     AssertReturn(idxReturn != UINT32_MAX, UINT32_MAX);
 
     /*
@@ -3852,9 +4075,9 @@ DECLINLINE(PIEMNATIVECOND) iemNativeCondPushIf(PIEMRECOMPILERSTATE pReNative)
 
     uint16_t const uCondSeqNo = ++pReNative->uCondSeqNo;
     pEntry->fInElse       = false;
-    pEntry->idxLabelElse  = iemNativeMakeLabel(pReNative, kIemNativeLabelType_Else, UINT32_MAX /*offWhere*/, uCondSeqNo);
+    pEntry->idxLabelElse  = iemNativeLabelCreate(pReNative, kIemNativeLabelType_Else, UINT32_MAX /*offWhere*/, uCondSeqNo);
     AssertReturn(pEntry->idxLabelElse != UINT32_MAX, NULL);
-    pEntry->idxLabelEndIf = iemNativeMakeLabel(pReNative, kIemNativeLabelType_Endif, UINT32_MAX /*offWhere*/, uCondSeqNo);
+    pEntry->idxLabelEndIf = iemNativeLabelCreate(pReNative, kIemNativeLabelType_Endif, UINT32_MAX /*offWhere*/, uCondSeqNo);
     AssertReturn(pEntry->idxLabelEndIf != UINT32_MAX, NULL);
 
     return pEntry;
@@ -3879,7 +4102,7 @@ DECLINLINE(uint32_t) iemNativeEmitElse(PIEMRECOMPILERSTATE pReNative, uint32_t o
     off = iemNativeEmitJmpToLabel(pReNative, off, pEntry->idxLabelEndIf);
 
     /* Define the else label and enter the else part of the condition. */
-    pReNative->paLabels[pEntry->idxLabelElse].off = off;
+    iemNativeLabelDefine(pReNative, pEntry->idxLabelElse, off);
     pEntry->fInElse = true;
 
     return off;
@@ -3900,10 +4123,10 @@ DECLINLINE(uint32_t) iemNativeEmitEndIf(PIEMRECOMPILERSTATE pReNative, uint32_t 
 
     /* Define the endif label and maybe the else one if we're still in the 'if' part. */
     if (!pEntry->fInElse)
-        pReNative->paLabels[pEntry->idxLabelElse].off = off;
+        iemNativeLabelDefine(pReNative, pEntry->idxLabelElse, off);
     else
         Assert(pReNative->paLabels[pEntry->idxLabelElse].off <= off);
-    pReNative->paLabels[pEntry->idxLabelEndIf].off    = off;
+    iemNativeLabelDefine(pReNative, pEntry->idxLabelEndIf, off);
 
     /* Pop the conditional stack.*/
     pReNative->cCondDepth -= 1;
@@ -3988,6 +4211,95 @@ static DECLCALLBACK(int) iemNativeDisasReadBytesDummy(PDISSTATE pDis, uint8_t of
 }
 
 
+/**
+ * Formats TB flags (IEM_F_XXX and IEMTB_F_XXX) to string.
+ * @returns pszBuf.
+ * @param   fFlags  The flags.
+ * @param   pszBuf  The output buffer.
+ * @param   cchBuf  The output buffer length.  At least 32 bytes.
+ */
+const char *iemTbFlagsToString(uint32_t fFlags, char *pszBuf, size_t cbBuf)
+{
+    Assert(cbBuf >= 32);
+    static RTSTRTUPLE const s_aModes[] =
+    {
+        /* [00] = */ { RT_STR_TUPLE("16BIT") },
+        /* [01] = */ { RT_STR_TUPLE("32BIT") },
+        /* [02] = */ { RT_STR_TUPLE("!2!") },
+        /* [03] = */ { RT_STR_TUPLE("!3!") },
+        /* [04] = */ { RT_STR_TUPLE("16BIT_PRE_386") },
+        /* [05] = */ { RT_STR_TUPLE("32BIT_FLAT") },
+        /* [06] = */ { RT_STR_TUPLE("!6!") },
+        /* [07] = */ { RT_STR_TUPLE("!7!") },
+        /* [08] = */ { RT_STR_TUPLE("16BIT_PROT") },
+        /* [09] = */ { RT_STR_TUPLE("32BIT_PROT") },
+        /* [0a] = */ { RT_STR_TUPLE("64BIT") },
+        /* [0b] = */ { RT_STR_TUPLE("!b!") },
+        /* [0c] = */ { RT_STR_TUPLE("16BIT_PROT_PRE_386") },
+        /* [0d] = */ { RT_STR_TUPLE("32BIT_PROT_FLAT") },
+        /* [0e] = */ { RT_STR_TUPLE("!e!") },
+        /* [0f] = */ { RT_STR_TUPLE("!f!") },
+        /* [10] = */ { RT_STR_TUPLE("!10!") },
+        /* [11] = */ { RT_STR_TUPLE("!11!") },
+        /* [12] = */ { RT_STR_TUPLE("!12!") },
+        /* [13] = */ { RT_STR_TUPLE("!13!") },
+        /* [14] = */ { RT_STR_TUPLE("!14!") },
+        /* [15] = */ { RT_STR_TUPLE("!15!") },
+        /* [16] = */ { RT_STR_TUPLE("!16!") },
+        /* [17] = */ { RT_STR_TUPLE("!17!") },
+        /* [18] = */ { RT_STR_TUPLE("16BIT_PROT_V86") },
+        /* [19] = */ { RT_STR_TUPLE("32BIT_PROT_V86") },
+        /* [1a] = */ { RT_STR_TUPLE("!1a!") },
+        /* [1b] = */ { RT_STR_TUPLE("!1b!") },
+        /* [1c] = */ { RT_STR_TUPLE("!1c!") },
+        /* [1d] = */ { RT_STR_TUPLE("!1d!") },
+        /* [1e] = */ { RT_STR_TUPLE("!1e!") },
+        /* [1f] = */ { RT_STR_TUPLE("!1f!") },
+    };
+    AssertCompile(RT_ELEMENTS(s_aModes) == IEM_F_MODE_MASK + 1);
+    memcpy(pszBuf, s_aModes[fFlags & IEM_F_MODE_MASK].psz, s_aModes[fFlags & IEM_F_MODE_MASK].cch);
+    unsigned off = s_aModes[fFlags & IEM_F_MODE_MASK].cch;
+
+    pszBuf[off++] = ' ';
+    pszBuf[off++] = 'C';
+    pszBuf[off++] = 'P';
+    pszBuf[off++] = 'L';
+    pszBuf[off++] = '0' + ((fFlags >> IEM_F_X86_CPL_SHIFT) & IEM_F_X86_CPL_SMASK);
+    Assert(off < 32);
+
+    fFlags &= ~(IEM_F_MODE_MASK | IEM_F_X86_CPL_SMASK);
+
+    static struct { const char *pszName; uint32_t cchName; uint32_t fFlag; } const s_aFlags[] =
+    {
+        { RT_STR_TUPLE("BYPASS_HANDLERS"),      IEM_F_BYPASS_HANDLERS    },
+        { RT_STR_TUPLE("PENDING_BRK_INSTR"),    IEM_F_PENDING_BRK_INSTR  },
+        { RT_STR_TUPLE("PENDING_BRK_DATA"),     IEM_F_PENDING_BRK_DATA   },
+        { RT_STR_TUPLE("PENDING_BRK_X86_IO"),   IEM_F_PENDING_BRK_X86_IO },
+        { RT_STR_TUPLE("X86_DISREGARD_LOCK"),   IEM_F_X86_DISREGARD_LOCK },
+        { RT_STR_TUPLE("X86_CTX_VMX"),          IEM_F_X86_CTX_VMX        },
+        { RT_STR_TUPLE("X86_CTX_SVM"),          IEM_F_X86_CTX_SVM        },
+        { RT_STR_TUPLE("X86_CTX_IN_GUEST"),     IEM_F_X86_CTX_IN_GUEST   },
+        { RT_STR_TUPLE("X86_CTX_SMM"),          IEM_F_X86_CTX_SMM        },
+        { RT_STR_TUPLE("INHIBIT_SHADOW"),       IEMTB_F_INHIBIT_SHADOW   },
+        { RT_STR_TUPLE("INHIBIT_NMI"),          IEMTB_F_INHIBIT_NMI      },
+        { RT_STR_TUPLE("CS_LIM_CHECKS"),        IEMTB_F_CS_LIM_CHECKS    },
+        { RT_STR_TUPLE("TYPE_THREADED"),        IEMTB_F_TYPE_THREADED    },
+        { RT_STR_TUPLE("TYPE_NATIVE"),          IEMTB_F_TYPE_NATIVE      },
+    };
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aFlags) && fFlags; i++)
+        if (s_aFlags[i].fFlag & fFlags)
+        {
+            AssertReturnStmt(off + 1 + s_aFlags[i].cchName + 1 <= cbBuf, pszBuf[off] = '\0', pszBuf);
+            pszBuf[off++] = ' ';
+            memcpy(&pszBuf[off], s_aFlags[i].pszName, s_aFlags[i].cchName);
+            off += s_aFlags[i].cchName;
+            fFlags &= ~s_aFlags[i].fFlag;
+        }
+    pszBuf[off] = '\0';
+
+    return pszBuf;
+}
+
 
 void iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp)
 {
@@ -3995,9 +4307,12 @@ void iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp)
 
     char                    szDisBuf[512];
     DISSTATE                Dis;
-    PCIEMNATIVEINSTR const  paInstrs      = pTb->Native.paInstructions;
-    uint32_t const          cInstrs       = pTb->Native.cInstructions;
+    PCIEMNATIVEINSTR const  paNative      = pTb->Native.paInstructions;
+    uint32_t const          cNative       = pTb->Native.cInstructions;
+    uint32_t                offNative     = 0;
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
     PCIEMTBDBG const        pDbgInfo      = pTb->pDbgInfo;
+#endif
     DISCPUMODE              enmGstCpuMode = (pTb->fFlags & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_16BIT ? DISCPUMODE_16BIT
                                           : (pTb->fFlags & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_32BIT ? DISCPUMODE_32BIT
                                           :                                                            DISCPUMODE_64BIT;
@@ -4009,17 +4324,232 @@ void iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp)
 # error "Port me"
 #endif
 
+    /*
+     * Print TB info.
+     */
     pHlp->pfnPrintf(pHlp,
                     "pTb=%p: GCPhysPc=%RGp cInstructions=%u LB %#x cRanges=%u\n"
-                    "pTb=%p: fFlags=%#010x cUsed=%u msLastUsed=%u\n",
+                    "pTb=%p: cUsed=%u msLastUsed=%u fFlags=%#010x %s\n",
                     pTb, pTb->GCPhysPc, pTb->cInstructions, pTb->cbOpcodes, pTb->cRanges,
-                    pTb, pTb->fFlags, pTb->cUsed, pTb->msLastUsed);
-    if (pDbgInfo)
+                    pTb, pTb->cUsed, pTb->msLastUsed, pTb->fFlags, iemTbFlagsToString(pTb->fFlags, szDisBuf, sizeof(szDisBuf)));
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    if (pDbgInfo && pDbgInfo->cEntries > 1)
     {
+        Assert(pDbgInfo->aEntries[0].Gen.uType == kIemTbDbgEntryType_NativeOffset);
 
+        /*
+         * This disassembly is driven by the debug info which follows the native
+         * code and indicates when it starts with the next guest instructions,
+         * where labels are and such things.
+         */
+        uint32_t                idxThreadedCall  = 0;
+        uint32_t                fExec            = pTb->fFlags & UINT32_C(0x00ffffff);
+        uint8_t                 idxRange         = UINT8_MAX;
+        uint8_t const           cRanges          = RT_MIN(pTb->cRanges, RT_ELEMENTS(pTb->aRanges));
+        uint32_t                offRange         = 0;
+        uint32_t                offOpcodes       = 0;
+        RTGCPHYS                GCPhysPc         = pTb->GCPhysPc;
+        uint32_t const          cDbgEntries      = pDbgInfo->cEntries;
+        uint32_t                iDbgEntry        = 1;
+        uint32_t                offDbgNativeNext = pDbgInfo->aEntries[0].NativeOffset.offNative;
 
+        while (offNative < cNative)
+        {
+            /* If we're at or have passed the point where the next chunk of debug
+               info starts, process it. */
+            if (offDbgNativeNext <= offNative)
+            {
+                offDbgNativeNext = UINT32_MAX;
+                for (; iDbgEntry < cDbgEntries; iDbgEntry++)
+                {
+                    switch (pDbgInfo->aEntries[iDbgEntry].Gen.uType)
+                    {
+                        case kIemTbDbgEntryType_GuestInstruction:
+                        {
+                            /* Did the exec flag change? */
+                            if (fExec == pDbgInfo->aEntries[iDbgEntry].GuestInstruction.fExec)
+                            {} //pHlp->pfnPrintf(pHlp, "\n");
+                            else
+                            {
+                                pHlp->pfnPrintf(pHlp,
+                                                "  fExec change %#08x -> %#08x %s\n",
+                                                fExec, pDbgInfo->aEntries[iDbgEntry].GuestInstruction.fExec,
+                                                iemTbFlagsToString(pDbgInfo->aEntries[iDbgEntry].GuestInstruction.fExec,
+                                                                   szDisBuf, sizeof(szDisBuf)));
+                                fExec = pDbgInfo->aEntries[iDbgEntry].GuestInstruction.fExec;
+                                enmGstCpuMode = (fExec & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_16BIT ? DISCPUMODE_16BIT
+                                              : (fExec & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_32BIT ? DISCPUMODE_32BIT
+                                              :                                                      DISCPUMODE_64BIT;
+                            }
+
+                            /* New opcode range? We need to fend up a spurious debug info entry here for cases
+                               where the compilation was aborted before the opcode was recorded and the actual
+                               instruction was translated to a threaded call.  This may happen when we run out
+                               of ranges, or when some complicated interrupts/FFs are found to be pending or
+                               similar.  So, we just deal with it here rather than in the compiler code as it
+                               is a lot simpler to do up here. */
+                            if (   idxRange == UINT8_MAX
+                                || idxRange >= cRanges
+                                || offRange >= pTb->aRanges[idxRange].cbOpcodes)
+                            {
+                                idxRange += 1;
+                                if (idxRange < cRanges)
+                                    offRange = 0;
+                                else
+                                    continue;
+                                Assert(offOpcodes == pTb->aRanges[idxRange].offOpcodes);
+                                GCPhysPc = pTb->aRanges[idxRange].offPhysPage
+                                         + (pTb->aRanges[idxRange].idxPhysPage == 0
+                                            ? pTb->GCPhysPc & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK
+                                            : pTb->aGCPhysPages[pTb->aRanges[idxRange].idxPhysPage - 1]);
+                                pHlp->pfnPrintf(pHlp, "  Range #%u: GCPhysPc=%RGp LB %#x [idxPg=%d]\n",
+                                                idxRange, GCPhysPc, pTb->aRanges[idxRange].cbOpcodes,
+                                                pTb->aRanges[idxRange].idxPhysPage);
+                            }
+
+                            /* Disassemble the instruction. */
+                            uint8_t const cbInstrMax = RT_MIN(pTb->aRanges[idxRange].cbOpcodes - offRange, 15);
+                            uint32_t      cbInstr    = 1;
+                            int rc = DISInstrWithPrefetchedBytes(GCPhysPc, enmGstCpuMode, DISOPTYPE_ALL,
+                                                                 &pTb->pabOpcodes[offOpcodes], cbInstrMax,
+                                                                 iemNativeDisasReadBytesDummy, NULL, &Dis, &cbInstr);
+                            if (RT_SUCCESS(rc))
+                            {
+                                size_t cch = DISFormatYasmEx(&Dis, szDisBuf, sizeof(szDisBuf),
+                                                             DIS_FMT_FLAGS_BYTES_WIDTH_MAKE(10) | DIS_FMT_FLAGS_BYTES_LEFT
+                                                             | DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_C_HEX,
+                                                             NULL /*pfnGetSymbol*/, NULL /*pvUser*/);
+
+                                static unsigned const s_offMarker  = 55;
+                                static char const     s_szMarker[] = " ; <--- guest";
+                                if (cch < s_offMarker)
+                                {
+                                    memset(&szDisBuf[cch], ' ', s_offMarker - cch);
+                                    cch = s_offMarker;
+                                }
+                                if (cch + sizeof(s_szMarker) <= sizeof(szDisBuf))
+                                    memcpy(&szDisBuf[cch], s_szMarker, sizeof(s_szMarker));
+
+                                pHlp->pfnPrintf(pHlp, "  %%%%%RGp: %s\n", GCPhysPc, szDisBuf);
+                            }
+                            else
+                            {
+                                pHlp->pfnPrintf(pHlp, "  %%%%%RGp: %.*Rhxs - guest disassembly failure %Rrc\n",
+                                                GCPhysPc, cbInstrMax, &pTb->pabOpcodes[offOpcodes], rc);
+                                cbInstr = 1;
+                            }
+                            GCPhysPc   += cbInstr;
+                            offOpcodes += cbInstr;
+                            offRange   += cbInstr;
+                            continue;
+                        }
+
+                        case kIemTbDbgEntryType_ThreadedCall:
+                            pHlp->pfnPrintf(pHlp,
+                                            "  Call #%u to %s (%u args)\n",
+                                            idxThreadedCall,
+                                            g_apszIemThreadedFunctions[pDbgInfo->aEntries[iDbgEntry].ThreadedCall.enmCall],
+                                            g_acIemThreadedFunctionUsedArgs[pDbgInfo->aEntries[iDbgEntry].ThreadedCall.enmCall]);
+                            idxThreadedCall++;
+                            continue;
+
+                        case kIemTbDbgEntryType_GuestRegShadowing:
+                        {
+                            PCIEMTBDBGENTRY const pEntry    = &pDbgInfo->aEntries[iDbgEntry];
+                            const char * const    pszGstReg = g_aGstShadowInfo[pEntry->GuestRegShadowing.idxGstReg].pszName;
+                            if (pEntry->GuestRegShadowing.idxHstReg == UINT8_MAX)
+                                pHlp->pfnPrintf(pHlp, "  Guest register %s != host register %s\n", pszGstReg,
+                                                g_apszIemNativeHstRegNames[pEntry->GuestRegShadowing.idxHstRegPrev]);
+                            else if (pEntry->GuestRegShadowing.idxHstRegPrev == UINT8_MAX)
+                                pHlp->pfnPrintf(pHlp, "  Guest register %s == host register %s\n", pszGstReg,
+                                                g_apszIemNativeHstRegNames[pEntry->GuestRegShadowing.idxHstReg]);
+                            else
+                                pHlp->pfnPrintf(pHlp, "  Guest register %s == host register %s (previously in %s)\n", pszGstReg,
+                                                g_apszIemNativeHstRegNames[pEntry->GuestRegShadowing.idxHstReg],
+                                                g_apszIemNativeHstRegNames[pEntry->GuestRegShadowing.idxHstRegPrev]);
+                            continue;
+                        }
+
+                        case kIemTbDbgEntryType_Label:
+                        {
+                            const char *pszName   = "what_the_fudge";
+                            bool        fNumbered = pDbgInfo->aEntries[iDbgEntry].Label.uData != 0;
+                            switch ((IEMNATIVELABELTYPE)pDbgInfo->aEntries[iDbgEntry].Label.enmLabel)
+                            {
+                                case kIemNativeLabelType_Return:             pszName = "Return"; break;
+                                case kIemNativeLabelType_Else:               pszName = "Else";  fNumbered = true; break;
+                                case kIemNativeLabelType_Endif:              pszName = "Endif"; fNumbered = true; break;
+                                case kIemNativeLabelType_NonZeroRetOrPassUp: pszName = "NonZeroRetOrPassUp"; break;
+                                case kIemNativeLabelType_RaiseGp0:           pszName = "RaiseGp0"; break;
+                                case kIemNativeLabelType_Invalid:            break;
+                                case kIemNativeLabelType_End:                break;
+                            }
+                            if (fNumbered)
+                                pHlp->pfnPrintf(pHlp, "  %s_%u:\n", pszName, pDbgInfo->aEntries[iDbgEntry].Label.uData);
+                            else
+                                pHlp->pfnPrintf(pHlp, "  %s:\n", pszName);
+                            continue;
+                        }
+
+                        case kIemTbDbgEntryType_NativeOffset:
+                            offDbgNativeNext = pDbgInfo->aEntries[iDbgEntry].NativeOffset.offNative;
+                            Assert(offDbgNativeNext > offNative);
+                            break;
+
+                        default:
+                            AssertFailed();
+                    }
+                    iDbgEntry++;
+                    break;
+                }
+            }
+
+            /*
+             * Disassemble the next native instruction.
+             */
+            uint32_t  cbInstr = sizeof(paNative[0]);
+            int const rc      = DISInstr(&paNative[offNative], enmHstCpuMode, &Dis, &cbInstr);
+            if (RT_SUCCESS(rc))
+            {
+#  if defined(RT_ARCH_AMD64)
+                if (Dis.pCurInstr->uOpcode == OP_NOP && cbInstr == 7) /* iemNativeEmitMarker */
+                {
+                    uint32_t const uInfo = *(uint32_t const *)&Dis.Instr.ab[3];
+                    if (RT_HIWORD(uInfo) < kIemThreadedFunc_End)
+                        pHlp->pfnPrintf(pHlp, "    %p: nop ; marker: call #%u to %s (%u args)\n",
+                                        &paNative[offNative], RT_LOWORD(uInfo), g_apszIemThreadedFunctions[RT_HIWORD(uInfo)],
+                                        g_acIemThreadedFunctionUsedArgs[RT_HIWORD(uInfo)]);
+                    else
+                        pHlp->pfnPrintf(pHlp, "    %p: nop ; unknown marker: %#x (%d)\n", &paNative[offNative], uInfo, uInfo);
+                }
+                else
+#  endif
+                {
+                    DISFormatYasmEx(&Dis, szDisBuf, sizeof(szDisBuf),
+                                    DIS_FMT_FLAGS_BYTES_WIDTH_MAKE(10) | DIS_FMT_FLAGS_BYTES_LEFT
+                                    | DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_C_HEX,
+                                    NULL /*pfnGetSymbol*/, NULL /*pvUser*/);
+                    pHlp->pfnPrintf(pHlp, "    %p: %s\n", &paNative[offNative], szDisBuf);
+                }
+            }
+            else
+            {
+#  if defined(RT_ARCH_AMD64)
+                pHlp->pfnPrintf(pHlp, "    %p:  %.*Rhxs - disassembly failure %Rrc\n",
+                                &paNative[offNative], RT_MIN(cNative - offNative, 16), &paNative[offNative], rc);
+#  elif defined(RT_ARCH_ARM64)
+                pHlp->pfnPrintf(pHlp, "    %p:  %#010RX32 - disassembly failure %Rrc\n",
+                                &paNative[offNative], paNative[offNative], rc);
+#  else
+#   error "Port me"
+# endif
+                cbInstr = sizeof(paNative[0]);
+            }
+            offNative += cbInstr / sizeof(paNative[0]);
+        }
     }
     else
+#endif /* IEMNATIVE_WITH_TB_DEBUG_INFO */
     {
         /*
          * No debug info, just disassemble the x86 code and then the native code.
@@ -4044,55 +4574,65 @@ void iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp)
                 if (RT_SUCCESS(rc))
                 {
                     DISFormatYasmEx(&Dis, szDisBuf, sizeof(szDisBuf),
-                                    DIS_FMT_FLAGS_BYTES_LEFT | DIS_FMT_FLAGS_RELATIVE_BRANCH,
+                                    DIS_FMT_FLAGS_BYTES_WIDTH_MAKE(10) | DIS_FMT_FLAGS_BYTES_LEFT
+                                    | DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_C_HEX,
                                     NULL /*pfnGetSymbol*/, NULL /*pvUser*/);
-                    pHlp->pfnPrintf(pHlp, "    %s\n", szDisBuf);
-                    off += cbInstr;
+                    pHlp->pfnPrintf(pHlp, "    %RGp: %s\n", GCPhysPc, szDisBuf);
+                    GCPhysPc += cbInstr;
+                    off      += cbInstr;
                 }
                 else
                 {
-                    pHlp->pfnPrintf(pHlp, "    %.*Rhxs - disassembly failure %Rrc\n",
-                                    cbOpcodes - off, &pTb->pabOpcodes[off], rc);
+                    pHlp->pfnPrintf(pHlp, "    %RGp: %.*Rhxs - disassembly failure %Rrc\n",
+                                    GCPhysPc, cbOpcodes - off, &pTb->pabOpcodes[off], rc);
                     break;
                 }
             }
         }
 
         /* The native code: */
-        pHlp->pfnPrintf(pHlp, "  Native code %p L %#x\n", paInstrs, cInstrs);
-        for (uint32_t offNative = 0; offNative < cInstrs; )
+        pHlp->pfnPrintf(pHlp, "  Native code %p L %#x\n", paNative, cNative);
+        while(offNative < cNative)
         {
-            uint32_t  cbInstr = sizeof(paInstrs[0]);
-            int const rc      = DISInstr(&paInstrs[offNative], enmHstCpuMode, &Dis, &cbInstr);
+            uint32_t  cbInstr = sizeof(paNative[0]);
+            int const rc      = DISInstr(&paNative[offNative], enmHstCpuMode, &Dis, &cbInstr);
             if (RT_SUCCESS(rc))
             {
-# if defined(RT_ARCH_AMD64) && 0
-                if (Dis.pCurInstr->uOpcode == )
+# if defined(RT_ARCH_AMD64)
+                if (Dis.pCurInstr->uOpcode == OP_NOP && cbInstr == 7) /* iemNativeEmitMarker */
                 {
+                    uint32_t const uInfo = *(uint32_t const *)&Dis.Instr.ab[3];
+                    if (RT_HIWORD(uInfo) < kIemThreadedFunc_End)
+                        pHlp->pfnPrintf(pHlp, "\n    %p: nop ; marker: call #%u to %s (%u args)\n",
+                                        &paNative[offNative], RT_LOWORD(uInfo), g_apszIemThreadedFunctions[RT_HIWORD(uInfo)],
+                                        g_acIemThreadedFunctionUsedArgs[RT_HIWORD(uInfo)]);
+                    else
+                        pHlp->pfnPrintf(pHlp, "    %p: nop ; unknown marker: %#x (%d)\n", &paNative[offNative], uInfo, uInfo);
                 }
                 else
 # endif
                 {
                     DISFormatYasmEx(&Dis, szDisBuf, sizeof(szDisBuf),
-                                    DIS_FMT_FLAGS_BYTES_LEFT | DIS_FMT_FLAGS_RELATIVE_BRANCH,
+                                    DIS_FMT_FLAGS_BYTES_WIDTH_MAKE(10) | DIS_FMT_FLAGS_BYTES_LEFT
+                                    | DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_C_HEX,
                                     NULL /*pfnGetSymbol*/, NULL /*pvUser*/);
-                    pHlp->pfnPrintf(pHlp, "    %p: %s\n", &paInstrs[offNative], szDisBuf);
+                    pHlp->pfnPrintf(pHlp, "    %p: %s\n", &paNative[offNative], szDisBuf);
                 }
             }
             else
             {
 # if defined(RT_ARCH_AMD64)
                 pHlp->pfnPrintf(pHlp, "    %p:  %.*Rhxs - disassembly failure %Rrc\n",
-                                &paInstrs[offNative], RT_MIN(cInstrs - offNative, 16), &paInstrs[offNative], rc);
+                                &paNative[offNative], RT_MIN(cNative - offNative, 16), &paNative[offNative], rc);
 # elif defined(RT_ARCH_ARM64)
                 pHlp->pfnPrintf(pHlp, "    %p:  %#010RX32 - disassembly failure %Rrc\n",
-                                &paInstrs[offNative], paInstrs[offNative], rc);
+                                &paNative[offNative], paNative[offNative], rc);
 # else
 #  error "Port me"
 #endif
-                cbInstr = sizeof(paInstrs[0]);
+                cbInstr = sizeof(paNative[0]);
             }
-            offNative += cbInstr / sizeof(paInstrs[0]);
+            offNative += cbInstr / sizeof(paNative[0]);
         }
     }
 }
@@ -4132,14 +4672,42 @@ PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb)
     /*
      * Convert the calls to native code.
      */
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    int32_t              iGstInstr  = -1;
+    uint32_t             fExec      = pTb->fFlags;
+#endif
     PCIEMTHRDEDCALLENTRY pCallEntry = pTb->Thrd.paCalls;
     uint32_t             cCallsLeft = pTb->Thrd.cCalls;
+#ifdef LOG_ENABLED
+    uint32_t const       cCallsOrg  = cCallsLeft;
+#endif
     while (cCallsLeft-- > 0)
     {
+        /*
+         * Debug info and assembly markup.
+         */
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+        if (pCallEntry->enmFunction == kIemThreadedFunc_BltIn_CheckMode)
+            fExec = pCallEntry->auParams[0];
+        iemNativeDbgInfoAddNativeOffset(pReNative, off);
+        if (iGstInstr < (int32_t)pCallEntry->idxInstr)
+        {
+            if (iGstInstr < (int32_t)pTb->cInstructions)
+                iemNativeDbgInfoAddGuestInstruction(pReNative, fExec);
+            else
+                Assert(iGstInstr == pTb->cInstructions);
+            iGstInstr = pCallEntry->idxInstr;
+        }
+        iemNativeDbgInfoAddThreadedCall(pReNative, (IEMTHREADEDFUNCS)pCallEntry->enmFunction);
+#endif
+
 #ifdef VBOX_STRICT
         off = iemNativeEmitMarker(pReNative, off, RT_MAKE_U32(pTb->Thrd.cCalls - cCallsLeft - 1, pCallEntry->enmFunction));
         AssertReturn(off != UINT32_MAX, pTb);
 #endif
+        /*
+         * Actual work.
+         */
         PFNIEMNATIVERECOMPFUNC const pfnRecom = g_apfnIemNativeRecompileFunctions[pCallEntry->enmFunction];
         if (pfnRecom) /** @todo stats on this.   */
         {
@@ -4151,6 +4719,9 @@ PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb)
         AssertReturn(off != UINT32_MAX, pTb);
         Assert(pReNative->cCondDepth == 0);
 
+        /*
+         * Advance.
+         */
         pCallEntry++;
     }
 
@@ -4235,6 +4806,10 @@ PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb)
     pTb->Native.paInstructions  = paFinalInstrBuf;
     pTb->Native.cInstructions   = off;
     pTb->fFlags                 = (pTb->fFlags & ~IEMTB_F_TYPE_MASK) | IEMTB_F_TYPE_NATIVE;
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    pTb->pDbgInfo               = (PIEMTBDBG)RTMemDup(pReNative->pDbgInfo, /* non-fatal, so not return check. */
+                                                      RT_UOFFSETOF_DYN(IEMTBDBG, aEntries[pReNative->pDbgInfo->cEntries]));
+#endif
 
     Assert(pTbAllocator->cThreadedTbs > 0);
     pTbAllocator->cThreadedTbs -= 1;
@@ -4246,7 +4821,10 @@ PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb)
      * Disassemble to the log if enabled.
      */
     if (LogIs3Enabled())
+    {
+        Log3(("----------------------------------------- %d calls ---------------------------------------\n", cCallsOrg));
         iemNativeDisassembleTb(pTb, DBGFR3InfoLogHlp());
+    }
 #endif
 
     return pTb;

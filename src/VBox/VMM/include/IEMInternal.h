@@ -878,14 +878,17 @@ typedef FNIEMTBNATIVE *PFNIEMTBNATIVE;
 typedef enum IEMTBDBGENTRYTYPE
 {
     kIemTbDbgEntryType_Invalid = 0,
+    /** The entry is for marking a native code position.
+     * Entries following this all apply to this position. */
+    kIemTbDbgEntryType_NativeOffset,
     /** The entry is for a new guest instruction. */
     kIemTbDbgEntryType_GuestInstruction,
-    /** Marks the start of a native call. */
-    kIemTbDbgEntryType_ThreadedCall1,
-    /** 2nd entry for the start of a native call. */
-    kIemTbDbgEntryType_ThreadedCall2,
+    /** Marks the start of a threaded call. */
+    kIemTbDbgEntryType_ThreadedCall,
+    /** Marks the location of a label. */
+    kIemTbDbgEntryType_Label,
     /** Info about a host register shadowing a guest register. */
-    kIemTbDbgEntryType_GuestRegShadow,
+    kIemTbDbgEntryType_GuestRegShadowing,
     kIemTbDbgEntryType_End
 } IEMTBDBGENTRYTYPE;
 
@@ -907,47 +910,59 @@ typedef union IEMTBDBGENTRY
 
     struct
     {
-        /** kIemTbDbgEntryType_GuestInstruction. */
-        uint32_t    uType      : 4;
-        /** Index into IEMTB::aRanges. */
-        uint32_t    idxRange   : 4;
-        /** Offset relative to the start of the range. */
-        uint32_t    offOpcodes : 12;
-        /** Number of opcode bytes for the instruction. */
-        uint32_t    cbOpcodes  : 4;
-        /** Basic CPU mode for the disassembler (low 8 bits IEM_F_XXX). */
-        uint32_t    fCpuMode   : 8;
-    } GuestInstruction;
-
-    struct
-    {
         /** kIemTbDbgEntryType_ThreadedCall1. */
         uint32_t    uType      : 4;
         /** Native code offset. */
         uint32_t    offNative  : 28;
-    } ThreadedCall1;
+    } NativeOffset;
 
     struct
     {
-        /* kIemTbDbgEntryType_ThreadedCall2. */
+        /** kIemTbDbgEntryType_GuestInstruction. */
         uint32_t    uType      : 4;
+        uint32_t    uUnused    : 4;
+        /** The IEM_F_XXX flags. */
+        uint32_t    fExec      : 24;
+    } GuestInstruction;
+
+    struct
+    {
+        /* kIemTbDbgEntryType_ThreadedCall. */
+        uint32_t    uType      : 4;
+        uint32_t    uUnused    : 12;
         /** The threaded call number (IEMTHREADEDFUNCS). */
         uint32_t    enmCall    : 16;
-    } ThreadedCall2;
+    } ThreadedCall;
 
     struct
     {
-        /* kIemTbDbgEntryType_GuestRegShadow. */
+        /* kIemTbDbgEntryType_Label. */
         uint32_t    uType      : 4;
-        uint32_t    uPadding   : 4;
-        /** The host register number. */
-        uint32_t    idxHstReg  : 8;
+        uint32_t    uUnused    : 4;
+        /** The label type (IEMNATIVELABELTYPE).   */
+        uint32_t    enmLabel   : 8;
+        /** The label data. */
+        uint32_t    uData      : 16;
+    } Label;
+
+    struct
+    {
+        /* kIemTbDbgEntryType_GuestRegShadowing. */
+        uint32_t    uType         : 4;
+        uint32_t    uUnused       : 4;
         /** The guest register being shadowed (IEMNATIVEGSTREG). */
-        uint32_t    idxGstReg  : 8;
-        uint32_t    uUnused    : 8;
-    } GuestRegShadow;
+        uint32_t    idxGstReg     : 8;
+        /** The host new register number, UINT8_MAX if dropped. */
+        uint32_t    idxHstReg     : 8;
+        /** The previous host register number, UINT8_MAX if new.   */
+        uint32_t    idxHstRegPrev : 8;
+    } GuestRegShadowing;
 } IEMTBDBGENTRY;
 AssertCompileSize(IEMTBDBGENTRY, sizeof(uint32_t));
+/** Pointer to a debug info entry. */
+typedef IEMTBDBGENTRY *PIEMTBDBGENTRY;
+/** Pointer to a const debug info entry. */
+typedef IEMTBDBGENTRY const *PCIEMTBDBGENTRY;
 
 /**
  * Translation block debug info.
@@ -956,8 +971,6 @@ typedef struct IEMTBDBG
 {
     /** Number of entries in aEntries. */
     uint32_t        cEntries;
-    /** Number of entries we've allocated. */
-    uint32_t        cAllocated;
     /** Debug info entries. */
     RT_FLEXIBLE_ARRAY_EXTENSION
     IEMTBDBGENTRY   aEntries[RT_FLEXIBLE_ARRAY];

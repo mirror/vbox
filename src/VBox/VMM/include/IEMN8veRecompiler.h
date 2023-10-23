@@ -37,6 +37,13 @@
  * @{
  */
 
+/** @def IEMNATIVE_WITH_TB_DEBUG_INFO
+ * Enables generating internal debug info for better TB disassembly dumping. */
+#if defined(DEBUG) || defined(DOXYGEN_RUNNING)
+# define IEMNATIVE_WITH_TB_DEBUG_INFO
+#endif
+
+
 /** @name Stack Frame Layout
  *
  * @{  */
@@ -517,6 +524,17 @@ typedef struct IEMRECOMPILERSTATE
     /** Buffer used by the recompiler for recording fixups when generating code. */
     PIEMNATIVEFIXUP             paFixups;
 
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+    /** Number of debug info entries allocated for pDbgInfo. */
+    uint32_t                    cDbgInfoAlloc;
+    uint32_t                    uPadding;
+    /** Debug info. */
+    PIEMTBDBG                   pDbgInfo;
+#else
+    uint32_t                    abPadding1[2];
+    uintptr_t                   uPtrPadding2;
+#endif
+
     /** The translation block being recompiled. */
     PCIEMTB                     pTbOrg;
 
@@ -585,8 +603,9 @@ typedef FNIEMNATIVERECOMPFUNC *PFNIEMNATIVERECOMPFUNC;
 #define IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(a_Name) FNIEMNATIVERECOMPFUNC a_Name
 
 
-DECLHIDDEN(uint32_t)        iemNativeMakeLabel(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType,
-                                               uint32_t offWhere = UINT32_MAX, uint16_t uData = 0) RT_NOEXCEPT;
+DECLHIDDEN(uint32_t)        iemNativeLabelCreate(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType,
+                                                 uint32_t offWhere = UINT32_MAX, uint16_t uData = 0) RT_NOEXCEPT;
+DECLHIDDEN(void)            iemNativeLabelDefine(PIEMRECOMPILERSTATE pReNative, uint32_t idxLabel, uint32_t offWhere) RT_NOEXCEPT;
 DECLHIDDEN(bool)            iemNativeAddFixup(PIEMRECOMPILERSTATE pReNative, uint32_t offWhere, uint32_t idxLabel,
                                               IEMNATIVEFIXUPTYPE enmType, int8_t offAddend = 0) RT_NOEXCEPT;
 DECLHIDDEN(PIEMNATIVEINSTR) iemNativeInstrBufEnsureSlow(PIEMRECOMPILERSTATE pReNative, uint32_t off,
@@ -1761,7 +1780,6 @@ DECLINLINE(uint32_t) iemNativeEmitJmpToLabel(PIEMRECOMPILERSTATE pReNative, uint
         {
             pbCodeBuf[off++] = 0xeb;                /* jmp rel8 */
             pbCodeBuf[off++] = (uint8_t)offRel;
-            off++;
         }
         else
         {
@@ -1809,7 +1827,7 @@ DECLINLINE(uint32_t) iemNativeEmitJmpToLabel(PIEMRECOMPILERSTATE pReNative, uint
 DECLINLINE(uint32_t) iemNativeEmitJmpToNewLabel(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                 IEMNATIVELABELTYPE enmLabelType, uint16_t uData = 0)
 {
-    uint32_t const idxLabel = iemNativeMakeLabel(pReNative, enmLabelType, UINT32_MAX /*offWhere*/, uData);
+    uint32_t const idxLabel = iemNativeLabelCreate(pReNative, enmLabelType, UINT32_MAX /*offWhere*/, uData);
     AssertReturn(idxLabel != UINT32_MAX, UINT32_MAX);
     return iemNativeEmitJmpToLabel(pReNative, off, idxLabel);
 }
@@ -1882,7 +1900,7 @@ DECLINLINE(uint32_t) iemNativeEmitJccToLabel(PIEMRECOMPILERSTATE pReNative, uint
 DECLINLINE(uint32_t) iemNativeEmitJccToNewLabel(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                 IEMNATIVELABELTYPE enmLabelType, uint16_t uData, IEMNATIVEINSTRCOND enmCond)
 {
-    uint32_t const idxLabel = iemNativeMakeLabel(pReNative, enmLabelType, UINT32_MAX /*offWhere*/, uData);
+    uint32_t const idxLabel = iemNativeLabelCreate(pReNative, enmLabelType, UINT32_MAX /*offWhere*/, uData);
     AssertReturn(idxLabel != UINT32_MAX, UINT32_MAX);
     return iemNativeEmitJccToLabel(pReNative, off, idxLabel, enmCond);
 }
