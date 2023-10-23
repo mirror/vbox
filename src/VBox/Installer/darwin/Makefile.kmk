@@ -46,11 +46,7 @@ else
 endif
 VBOX_PATH_DIST_OTHER = $(error VBOX_PATH_DIST_OTHER used in a non-combined package deal)
 
-ifdef VBOX_WITH_QT6
- VBOX_QT_VERSION_MAJOR = A
-else
- VBOX_QT_VERSION_MAJOR = 5
-endif
+VBOX_QT_VERSION_MAJOR = A
 
 ifeq ($(KBUILD_TARGET_ARCH),arm64)
  VBOX_DI_TARGET_ARCH = arm64
