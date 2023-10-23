@@ -381,6 +381,10 @@
                   Source="$(env.PATH_OUT)\bin\Qt6Widgets$(var.VBOX_QT_INFIX).dll" />
             <File Id="file_Qt6PrintSupport$(var.VBOX_QT_INFIX).dll" Name="Qt6PrintSupport$(var.VBOX_QT_INFIX).dll"
                   Source="$(env.PATH_OUT)\bin\Qt6PrintSupport$(var.VBOX_QT_INFIX).dll" />
+            <File Id="file_Qt6StateMachine$(var.VBOX_QT_INFIX).dll" Name="Qt6StateMachine$(var.VBOX_QT_INFIX).dll"
+                  Source="$(env.PATH_OUT)\bin\Qt6StateMachine$(var.VBOX_QT_INFIX).dll" />
+            <File Id="file_Qt6Core5Compat$(var.VBOX_QT_INFIX).dll" Name="Qt6Core5Compat$(var.VBOX_QT_INFIX).dll"
+                  Source="$(env.PATH_OUT)\bin\Qt6Core5Compat$(var.VBOX_QT_INFIX).dll" />
             <File Id="file_Qt6Help$(var.VBOX_QT_INFIX).dll" Name="Qt6Help$(var.VBOX_QT_INFIX).dll"
                   Source="$(env.PATH_OUT)\bin\Qt6Help$(var.VBOX_QT_INFIX).dll" />
             <File Id="file_vSql$(var.VBOX_QT_INFIX).dll" Name="Qt6Sql$(var.VBOX_QT_INFIX).dll"
