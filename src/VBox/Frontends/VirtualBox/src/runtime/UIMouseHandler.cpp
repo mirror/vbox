@@ -649,11 +649,7 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                 {
                     /* Get mouse-event: */
                     QMouseEvent *pOldMouseEvent = static_cast<QMouseEvent*>(pEvent);
-#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::globalPos was replaced with QSinglePointEvent::globalPosition in Qt6 */
-                    const QPoint gPos = pOldMouseEvent->globalPos();
-#else
                     const QPoint gPos = pOldMouseEvent->globalPosition().toPoint();
-#endif
 
                     /* Check which viewport(s) we *probably* hover: */
                     QWidgetList probablyHoveredViewports;
@@ -735,15 +731,9 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                     if (pEvent->type() != QEvent::MouseMove)
                         m_iLastMouseWheelDelta = 0;
 
-#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::globalPos was replaced with QSinglePointEvent::globalPosition in Qt6 */
-                    if (mouseEvent(pMouseEvent->type(), uScreenId,
-                                   pMouseEvent->pos(), pMouseEvent->globalPos(),
-                                   pMouseEvent->buttons(), 0, Qt::Horizontal))
-#else
                     if (mouseEvent(pMouseEvent->type(), uScreenId,
                                    pMouseEvent->position().toPoint(), pMouseEvent->globalPosition().toPoint(),
                                    pMouseEvent->buttons(), 0, Qt::Horizontal))
-#endif
                         return true;
                     break;
                 }
@@ -1257,11 +1247,7 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
         if (fTouchScreen)
         {
             /* Get absolute touch-point origin: */
-#ifndef VBOX_IS_QT6_OR_LATER /* QEventPoint::pos was replaced with QEventPoint::position in Qt6 */
-            QPoint currentTouchPoint = touchPoint.pos().toPoint();
-#else
             QPoint currentTouchPoint = touchPoint.position().toPoint();
-#endif
 
             /* Pass absolute touch-point data: */
             LogRelFlow(("UIMouseHandler::multiTouchEvent: TouchScreen, Origin: %dx%d, Id: %d, State: %d\n",
@@ -1273,11 +1259,7 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
                                                               0);
         } else {
             /* Get relative touch-point normalized position: */
-#ifndef VBOX_IS_QT6_OR_LATER /* QEventPoint::pos was replaced with QEventPoint::position in Qt6 */
-            QPointF rawTouchPoint = touchPoint.normalizedPos();
-#else
             QPointF rawTouchPoint = touchPoint.normalizedPosition();
-#endif
 
             /* Pass relative touch-point data as Normalized Integer: */
             uint16_t xNorm = rawTouchPoint.x() * 0xffff;

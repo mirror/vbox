@@ -543,11 +543,7 @@ void UITabBarItem::mousePressEvent(QMouseEvent *pEvent)
         return QWidget::mousePressEvent(pEvent);
 
     /* Remember mouse-press position: */
-#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::globalPos was replaced with QSinglePointEvent::globalPosition in Qt6 */
-    m_mousePressPosition = pEvent->globalPos();
-#else
     m_mousePressPosition = pEvent->globalPosition().toPoint();
-#endif
 }
 
 void UITabBarItem::mouseReleaseEvent(QMouseEvent *pEvent)
@@ -570,11 +566,7 @@ void UITabBarItem::mouseMoveEvent(QMouseEvent *pEvent)
         return QWidget::mouseMoveEvent(pEvent);
 
     /* Make sure item is now being dragged: */
-#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::globalPos was replaced with QSinglePointEvent::globalPosition in Qt6 */
-    const QPoint gPos = pEvent->globalPos();
-#else
     const QPoint gPos = pEvent->globalPosition().toPoint();
-#endif
     if (QLineF(gPos, m_mousePressPosition).length() < QApplication::startDragDistance())
         return QWidget::mouseMoveEvent(pEvent);
 
@@ -906,11 +898,7 @@ void UITabBar::dragMoveEvent(QDragMoveEvent *pEvent)
 {
     /* Make sure event is valid: */
     AssertPtrReturnVoid(pEvent);
-#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::pos was replaced with QSinglePointEvent::position in Qt6 */
-    const QPoint lPos = pEvent->pos();
-#else
     const QPoint lPos = pEvent->position().toPoint();
-#endif
 
     /* And mime-data is set: */
     const QMimeData *pMimeData = pEvent->mimeData();

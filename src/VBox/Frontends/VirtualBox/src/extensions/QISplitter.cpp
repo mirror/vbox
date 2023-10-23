@@ -315,11 +315,7 @@ bool QISplitter::eventFilter(QObject *pWatched, QEvent *pEvent)
             {
                 const int margin = 3;
                 QMouseEvent *pMouseEvent = static_cast<QMouseEvent*>(pEvent);
-#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::globalPos was replaced with QSinglePointEvent::globalPosition in Qt6 */
-                const QPoint gPos = pMouseEvent->globalPos();
-#else
                 const QPoint gPos = pMouseEvent->globalPosition().toPoint();
-#endif
                 for (int i=1; i < count(); ++i)
                 {
                     QWidget *pHandle = handle(i);

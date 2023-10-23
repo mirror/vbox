@@ -2010,11 +2010,7 @@ void UIMachineView::dragEnterEvent(QDragEnterEvent *pEvent)
     if (RT_SUCCESS(rc))
     {
         /* Get mouse-pointer location. */
-#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::pos was replaced with QSinglePointEvent::position in Qt6 */
-        const QPoint &cpnt = viewportToContents(pEvent->pos());
-#else
         const QPoint &cpnt = viewportToContents(pEvent->position().toPoint());
-#endif
 
         /* Ask the target for starting a DnD event. */
         Qt::DropAction result = m_pDnDHandler->dragEnter(screenId(),
@@ -2040,11 +2036,7 @@ void UIMachineView::dragMoveEvent(QDragMoveEvent *pEvent)
     if (RT_SUCCESS(rc))
     {
         /* Get mouse-pointer location. */
-#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::pos was replaced with QSinglePointEvent::position in Qt6 */
-        const QPoint &cpnt = viewportToContents(pEvent->pos());
-#else
         const QPoint &cpnt = viewportToContents(pEvent->position().toPoint());
-#endif
 
         /* Ask the guest for moving the drop cursor. */
         Qt::DropAction result = m_pDnDHandler->dragMove(screenId(),
@@ -2085,11 +2077,7 @@ void UIMachineView::dropEvent(QDropEvent *pEvent)
     if (RT_SUCCESS(rc))
     {
         /* Get mouse-pointer location. */
-#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::pos was replaced with QSinglePointEvent::position in Qt6 */
-        const QPoint &cpnt = viewportToContents(pEvent->pos());
-#else
         const QPoint &cpnt = viewportToContents(pEvent->position().toPoint());
-#endif
 
         /* Ask the guest for dropping data. */
         Qt::DropAction result = m_pDnDHandler->dragDrop(screenId(),

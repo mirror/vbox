@@ -4061,13 +4061,8 @@ void UIStorageSettingsEditor::sltHandleMouseMove(QMouseEvent *pEvent)
 {
     /* Make sure event is valid: */
     AssertPtrReturnVoid(pEvent);
-#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::globalPos was replaced with QSinglePointEvent::globalPosition in Qt6 */
-    const QPoint gPos = pEvent->globalPos();
-    const QPoint lPos = pEvent->pos();
-#else
     const QPoint gPos = pEvent->globalPosition().toPoint();
     const QPoint lPos = pEvent->position().toPoint();
-#endif
 
     const QModelIndex index = m_pTreeViewStorage->indexAt(lPos);
     const QRect indexRect = m_pTreeViewStorage->visualRect(index);
@@ -4193,13 +4188,8 @@ void UIStorageSettingsEditor::sltHandleMouseClick(QMouseEvent *pEvent)
 {
     /* Make sure event is valid: */
     AssertPtrReturnVoid(pEvent);
-#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::globalPos was replaced with QSinglePointEvent::globalPosition in Qt6 */
-    const QPoint gPos = pEvent->globalPos();
-    const QPoint lPos = pEvent->pos();
-#else
     const QPoint gPos = pEvent->globalPosition().toPoint();
     const QPoint lPos = pEvent->position().toPoint();
-#endif
 
     /* Acquire indexes: */
     const QModelIndex currentIndex = m_pTreeViewStorage->currentIndex();
@@ -4299,11 +4289,7 @@ void UIStorageSettingsEditor::sltHandleDragMove(QDragMoveEvent *pEvent)
     const QString strAttachmentId = pMimeData->data(UIStorageSettingsEditor::s_strAttachmentMimeType);
 
     /* Check what item we are hovering currently: */
-#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::pos was replaced with QSinglePointEvent::position in Qt6 */
-    QModelIndex index = m_pTreeViewStorage->indexAt(pEvent->pos());
-#else
     QModelIndex index = m_pTreeViewStorage->indexAt(pEvent->position().toPoint());
-#endif
     AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer());
     /* And make sure this is controller item, we are supporting dropping for this kind only: */
     ControllerItem *pItemController = qobject_cast<ControllerItem*>(pItem);
@@ -4331,11 +4317,7 @@ void UIStorageSettingsEditor::sltHandleDragDrop(QDropEvent *pEvent)
     AssertPtrReturnVoid(pMimeData);
 
     /* Check what item we are hovering currently: */
-#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::pos was replaced with QSinglePointEvent::position in Qt6 */
-    QModelIndex index = m_pTreeViewStorage->indexAt(pEvent->pos());
-#else
     QModelIndex index = m_pTreeViewStorage->indexAt(pEvent->position().toPoint());
-#endif
     AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer());
     /* And make sure this is controller item, we are supporting dropping for this kind only: */
     ControllerItem *pItemController = qobject_cast<ControllerItem*>(pItem);

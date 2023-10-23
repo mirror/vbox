@@ -302,11 +302,7 @@ void UIStatusBarEditorButton::mousePressEvent(QMouseEvent *pEvent)
         return;
 
     /* Remember mouse-press position: */
-#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::globalPos was replaced with QSinglePointEvent::globalPosition in Qt6 */
-    const QPoint gPos = pEvent->globalPos();
-#else
     const QPoint gPos = pEvent->globalPosition().toPoint();
-#endif
     m_mousePressPosition = gPos;
 }
 
@@ -358,11 +354,7 @@ void UIStatusBarEditorButton::mouseMoveEvent(QMouseEvent *pEvent)
         return QWidget::mouseMoveEvent(pEvent);
 
     /* Make sure item is really dragged: */
-#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::globalPos was replaced with QSinglePointEvent::globalPosition in Qt6 */
-    const QPoint gPos = pEvent->globalPos();
-#else
     const QPoint gPos = pEvent->globalPosition().toPoint();
-#endif
     if (QLineF(gPos, m_mousePressPosition).length() <
         QApplication::startDragDistance())
         return QWidget::mouseMoveEvent(pEvent);
@@ -641,11 +633,7 @@ void UIStatusBarEditorWidget::dragMoveEvent(QDragMoveEvent *pEvent)
     m_fDropAfterTokenButton = true;
 
     /* Get event position: */
-#ifndef VBOX_IS_QT6_OR_LATER /* QMouseEvent::pos was replaced with QSinglePointEvent::position in Qt6 */
-    const QPoint lPos = pEvent->pos();
-#else
     const QPoint lPos = pEvent->position().toPoint();
-#endif
     /* Search for most suitable button: */
     foreach (const IndicatorType &enmType, m_order)
     {
