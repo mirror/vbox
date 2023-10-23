@@ -130,12 +130,8 @@ ifndef VBOX_ONLY_DOCS
   #VBoxManage_INTERMEDIATES += \
   #	$(addsuffix /VBoxManageBuiltInHelp.h,$(addprefix $(VBoxManage_0_OUTDIR)/,$(VBOX_APPROVED_VBOXMANAGE_DOCBOOK_LANGUAGES)))
 
-  # define qt tools for translation
-  ifndef VBOX_WITH_QT6
-   USES += qt5
-  else
-   USES += qt6
-  endif
+  # define qt6 tools for translation
+  USES += qt6
 
   PROGRAMS += VBoxManageNls
   VBoxManageNls_TEMPLATE = VBoxNLS
