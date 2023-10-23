@@ -668,7 +668,6 @@ define def_vbox_compile_wixobj
 		-E 'VBOX_SIGNING_MODE=$(strip $(if $(VBOX_SIGNING_MODE),$(VBOX_SIGNING_MODE),none))' \
 		-E 'VBOX_CAB_COMPRESSION_LEVEL=$(if-expr $(lang) == "en_US",$(VBOX_CAB_COMPRESSION_LEVEL),none)' \
 		-E 'VBOX_CAB_COMPRESSION_LEVEL_COMMON=$(if-expr $(lang) == "en_US" && $(KBUILD_TARGET_ARCH) == "amd64",$(VBOX_CAB_COMPRESSION_LEVEL),none)' \
-		-E 'VBOX_GUI_USE_QGL=$(if $(VBOX_GUI_USE_QGL),yes,no)' \
 		-E 'VBOX_MIDL_PROXY_CLSID=$(VBOX_MIDL_PROXY_CLSID)' \
 		$(if-expr defined(VBOX_WITH_MSM_INSTALL), \
 			$(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
@@ -701,7 +700,6 @@ define def_vbox_compile_wixobj
 		-E 'VBOX_WITH_NETFLT=$(if $(VBOX_WITH_NETFLT),yes,no)' \
 		-E 'VBOX_WITH_PYTHON=$(if $(VBOX_WITH_PYTHON),yes,no)' \
 		-E 'VBOX_WITH_QTGUI=$(if $(VBOX_WITH_QTGUI),yes,no)' \
-		-E 'VBOX_WITH_QT6=$(if $(VBOX_WITH_QT6),yes,no)' \
 		-E 'VBOX_WITH_RAW_MODE=$(if $(VBOX_WITH_RAW_MODE),yes,no)' \
 		-E 'VBOX_WITH_SERIALNUMBER_INSTALL=$(if $(VBOX_WITH_SERIALNUMBER_INSTALL),yes,no)' \
 		-E 'VBOX_WITH_VIDEOHWACCEL=$(if $(VBOX_WITH_VIDEOHWACCEL),yes,no)' \
@@ -834,7 +832,6 @@ define def_vbox_compile_msm
 		-E 'VBOX_SIGNING_MODE=$(strip $(if $(VBOX_SIGNING_MODE),$(VBOX_SIGNING_MODE),none))' \
 		-E 'VBOX_CAB_COMPRESSION_LEVEL=$(VBOX_CAB_COMPRESSION_LEVEL)' \
 		-E 'VBOX_CAB_COMPRESSION_LEVEL_COMMON=$(VBOX_CAB_COMPRESSION_LEVEL)' \
-		-E 'VBOX_GUI_USE_QGL=$(if $(VBOX_GUI_USE_QGL),yes,no)' \
 		-E 'VBOX_MIDL_PROXY_CLSID=$(VBOX_MIDL_PROXY_CLSID)' \
 		-E 'VBOX_WINDOWS_ICON_FILE=$(subst /,\,$(VBOX_WINDOWS_ICON_FILE))' \
 		-E 'VBOX_QT_INFIX=$(VBOX_QT_INFIX)' \
@@ -864,7 +861,6 @@ define def_vbox_compile_msm
 		-E 'VBOX_WITH_NETFLT=$(if $(VBOX_WITH_NETFLT),yes,no)' \
 		-E 'VBOX_WITH_PYTHON=$(if $(VBOX_WITH_PYTHON),yes,no)' \
 		-E 'VBOX_WITH_QTGUI=$(if $(VBOX_WITH_QTGUI),yes,no)' \
-		-E 'VBOX_WITH_QT6=$(if $(VBOX_WITH_QT6),yes,no)' \
 		-E 'VBOX_WITH_RAW_MODE=$(if $(VBOX_WITH_RAW_MODE),yes,no)' \
 		-E 'VBOX_WITH_SERIALNUMBER_INSTALL=$(if $(VBOX_WITH_SERIALNUMBER_INSTALL),yes,no)' \
 		-E 'VBOX_WITH_VIDEOHWACCEL=$(if $(VBOX_WITH_VIDEOHWACCEL),yes,no)' \
