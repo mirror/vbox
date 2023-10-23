@@ -950,14 +950,8 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   #
 
   # Enable Qt and locate the Qt help generator.
-  ifdef VBOX_WITH_QT6
-   USES += qt6
-   VBOX_QHELPGENERATOR = $(PATH_TOOL_QT6_LIBEXEC)/qhelpgenerator
-  else
-   USES += qt5
-   VBOX_QHELPGENERATOR_VERSION_MINOR = $(shell $(REDIRECT) -E QT_QPA_PLATFORM_PLUGIN_PATH=$(PATH_SDK_QT5)/plugins -- $(PATH_TOOL_QT5_BIN)/qhelpgenerator -v 2>/dev/null | $(SED) -ne 's/.*(Qt [1-9][0-9]*\.\([1-9][0-9]*\)\.[1-9][0-9]*).*$$/\1/p')
-   VBOX_QHELPGENERATOR = $(PATH_TOOL_QT5_BIN)/$(if-expr $(VBOX_QHELPGENERATOR_VERSION_MINOR) >= 12,qhelpgenerator,qcollectiongenerator)
-  endif
+  USES += qt6
+  VBOX_QHELPGENERATOR = $(PATH_TOOL_QT6_LIBEXEC)/qhelpgenerator
 
   ## Build QHelp version of manual for given language.
   # @param 1   Language
@@ -1023,11 +1017,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
    		$(2)/UserManual.qhp
 	$$(call MSG_L1,$$(notdir $$(VBOX_QHELPGENERATOR)) $$<,=> $$@)
 	$$(QUIET)$$(RM) -f -- "$$@"
-   ifdef VBOX_WITH_QT6
 	$$(QUIET)$$(REDIRECT) -E "QT_PLUGIN_PATH=$$(PATH_SDK_QT6)/plugins" -E "QT_QPA_PLATFORM_PLUGIN_PATH=$$(PATH_SDK_QT6)/plugins/platforms" -- $$(VBOX_QHELPGENERATOR) $$<
-   else
-	$$(QUIET)$$(REDIRECT) -E QT_QPA_PLATFORM_PLUGIN_PATH=$$(PATH_SDK_QT5)/plugins -- $$(VBOX_QHELPGENERATOR) $$<
-   endif
 	$$(call MSG_L1,Fresh QCH is now at $$@)
 
   endef # def_vbox_usermanual_as_qhelp
