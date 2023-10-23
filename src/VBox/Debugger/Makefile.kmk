@@ -140,17 +140,10 @@ if defined(VBOX_WITH_QTGUI) && defined(VBOX_WITH_DEBUGGER_GUI)
  #
  # Debugger GUI component (Qt).
  #
- ifndef VBOX_WITH_QT6
-  USES += qt5
- else
-  USES += qt6
- endif
+ USES += qt6
  DLLS += VBoxDbg
  VBoxDbg_TEMPLATE = VBoxQtGuiDll
  VBoxDbg_DEFS = IN_DBG_R3
- ifdef VBOX_WITH_QT6
-  VBoxDbg_DEFS += VBOX_IS_QT6_OR_LATER
- endif
  VBoxDbg_INCS = .
  VBoxDbg_QT_MODULES = Core Gui Widgets
  VBoxDbg_QT_MOCHDRS = \
@@ -163,9 +156,7 @@ if defined(VBOX_WITH_QTGUI) && defined(VBOX_WITH_DEBUGGER_GUI)
  	VBoxDbgBase.cpp \
  	VBoxDbgConsole.cpp \
  	VBoxDbgStatsQt.cpp
- ifdef VBOX_WITH_QT6
-  VBoxDbg_CXXFLAGS.win += /permissive-
- endif
+ VBoxDbg_CXXFLAGS.win += /permissive-
  VBoxDbg_LDFLAGS.darwin = \
  	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDbg.dylib
  $(call VBOX_SET_VER_INFO_DLL,VBoxDbg,VirtualBox Debugger GUI)
