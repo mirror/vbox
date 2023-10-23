@@ -1191,19 +1191,11 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
     if (!m_views.contains(uScreenId) || !m_viewports.contains(uScreenId))
         return true;
 
-#ifndef VBOX_IS_QT6_OR_LATER /* QTouchEvent::TouchPoint was replaced by QEventPoint in 6.0 */
-    QVector<LONG64> contacts(pTouchEvent->touchPoints().size());
-#else
     QVector<LONG64> contacts(pTouchEvent->points().size());
-#endif
 
     long xShift = 0, yShift = 0;
 
-#ifdef VBOX_IS_QT6_OR_LATER /* QTouchDevice was consumed by QInputDevice in 6.0 */
     bool fTouchScreen = (pTouchEvent->device()->type() == QInputDevice::DeviceType::TouchScreen);
-#else
-    bool fTouchScreen = (pTouchEvent->device()->type() == QTouchDevice::TouchScreen);
-#endif
     /* Compatibility with previous behavior. If there is no touchpad configured
      * then treat all multitouch events as touchscreen ones: */
     fTouchScreen |= !uimachine()->isMouseSupportsTouchPad();
@@ -1217,25 +1209,15 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
 
     /* Pass all multi-touch events into guest: */
     int iTouchPointIndex = 0;
-#ifdef VBOX_IS_QT6_OR_LATER /* QTouchEvent::TouchPoint was replaced by QEventPoint in 6.0 */
     foreach (const QEventPoint &touchPoint, pTouchEvent->points())
-#else
-    foreach (const QTouchEvent::TouchPoint &touchPoint, pTouchEvent->touchPoints())
-#endif
     {
         /* Get touch-point state: */
         LONG iTouchPointState = KTouchContactState_None;
         switch (touchPoint.state())
         {
-#ifdef VBOX_IS_QT6_OR_LATER /* QTouchEvent::TouchPoint was replaced by QEventPoint in 6.0 */
             case QEventPoint::Pressed:
             case QEventPoint::Updated:
             case QEventPoint::Stationary:
-#else
-            case Qt::TouchPointPressed:
-            case Qt::TouchPointMoved:
-            case Qt::TouchPointStationary:
-#endif
                 iTouchPointState = KTouchContactState_InContact;
                 if (fTouchScreen)
                     iTouchPointState |= KTouchContactState_InRange;
