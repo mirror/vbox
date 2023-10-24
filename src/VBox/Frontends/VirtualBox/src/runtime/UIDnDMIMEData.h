@@ -104,11 +104,7 @@ protected:
 
     virtual bool hasFormat(const QString &mimeType) const;
 
-#ifndef VBOX_IS_QT6_OR_LATER /* QVariant::Type is replaced with QMetaType in Qt6 for retrieveData */
-    virtual QVariant retrieveData(const QString &strMIMEType, QVariant::Type enmType) const RT_OVERRIDE;
-#else
     virtual QVariant retrieveData(const QString &strMIMEType, QMetaType metaType) const RT_OVERRIDE;
-#endif
     /** @}  */
 
 public:

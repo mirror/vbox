@@ -96,15 +96,6 @@ bool UIDnDMIMEData::hasFormat(const QString &strMIMEType) const
  *
  * @return QVariant
  */
-#ifndef VBOX_IS_QT6_OR_LATER /* QVariant::Type is replaced with QMetaType in Qt6 for retrieveData */
-QVariant UIDnDMIMEData::retrieveData(const QString &strMIMEType, QVariant::Type enmType) const
-{
-    /* Acquire QMetaType::Type: */
-    const QMetaType::Type vaType = (QMetaType::Type)enmType;
-
-    LogFlowFunc(("state=%RU32, curAction=0x%x, defAction=0x%x, mimeType=%s, type=%d (%s)\n",
-                 m_enmState, m_curAction, m_defAction, strMIMEType.toStdString().c_str(), vaType, QVariant::typeToName(vaType)));
-#else
 QVariant UIDnDMIMEData::retrieveData(const QString &strMIMEType, QMetaType metaType) const
 {
     /* Acquire QMetaType::Type: */
@@ -112,7 +103,6 @@ QVariant UIDnDMIMEData::retrieveData(const QString &strMIMEType, QMetaType metaT
 
     LogFlowFunc(("state=%RU32, curAction=0x%x, defAction=0x%x, mimeType=%s, type=%d (%s)\n",
                  m_enmState, m_curAction, m_defAction, strMIMEType.toStdString().c_str(), vaType, metaType.name()));
-#endif
 
     int rc = VINF_SUCCESS;
 
@@ -170,11 +160,7 @@ QVariant UIDnDMIMEData::retrieveData(const QString &strMIMEType, QMetaType metaT
                    || vaType == QMetaType::QVariantList
                    || vaType == QMetaType::QStringList))
         {
-# ifndef VBOX_IS_QT6_OR_LATER /* QVariant is replaced with QMetaType in Qt6 */
-            LogRel(("DnD: Unsupported data type '%s'\n", QVariant::typeToName(vaType)));
-# else
             LogRel(("DnD: Unsupported data type '%s'\n", metaType.name()));
-# endif
             rc = VERR_NOT_SUPPORTED;
         }
 #endif
@@ -188,13 +174,8 @@ QVariant UIDnDMIMEData::retrieveData(const QString &strMIMEType, QMetaType metaT
         rc = emit sigGetData(Qt::CopyAction, strMIMEType, vaType, vaData);
         if (RT_SUCCESS(rc))
         {
-#ifndef VBOX_IS_QT6_OR_LATER /* QVariant is replaced with QMetaType in Qt6 */
-            LogRel3(("DnD: Returning data for MIME type=%s, variant type=%s, rc=%Rrc\n",
-                     strMIMEType.toStdString().c_str(), QVariant::typeToName(vaData.type()), rc));
-#else
             LogRel3(("DnD: Returning data for MIME type=%s, variant type=%s, rc=%Rrc\n",
                      strMIMEType.toStdString().c_str(), metaType.name(), rc));
-#endif
 
             return vaData;
         }
@@ -229,11 +210,7 @@ QMetaType::Type UIDnDMIMEData::getMetaType(const QString &strMIMEType)
     else
         vaType = QMetaType::UnknownType;
 
-#ifndef VBOX_IS_QT6_OR_LATER /* QVariant is replaced with QMetaType in Qt6 */
-    LogFlowFunc(("strMIMEType=%s -> vaType=%s\n", qPrintable(strMIMEType), QVariant::typeToName(vaType)));
-#else
     LogFlowFunc(("strMIMEType=%s -> vaType=%s\n", qPrintable(strMIMEType), QMetaType(vaType).name()));
-#endif
     return vaType;
 }
 
@@ -244,13 +221,8 @@ int UIDnDMIMEData::getDataAsVariant(const QVector<uint8_t> &vecData,
                                           QVariant         &vaData)
 {
     RT_NOREF(strMIMEType);
-#ifndef VBOX_IS_QT6_OR_LATER /* QVariant is replaced with QMetaType in Qt6 */
-    LogFlowFunc(("vecDataSize=%d, strMIMEType=%s vaType=%s\n",
-                 vecData.size(), qPrintable(strMIMEType), QVariant::typeToName(vaType)));
-#else
     LogFlowFunc(("vecDataSize=%d, strMIMEType=%s vaType=%s\n",
                  vecData.size(), qPrintable(strMIMEType), QMetaType(vaType).name()));
-#endif
 
     int rc = VINF_SUCCESS;
 
@@ -259,11 +231,7 @@ int UIDnDMIMEData::getDataAsVariant(const QVector<uint8_t> &vecData,
         case QMetaType::QString:
         {
             vaData = QVariant::fromValue(QString(reinterpret_cast<const char *>(vecData.constData())));
-#ifndef VBOX_IS_QT6_OR_LATER /* type() is replaced with typeId() in Qt6 */
-            Assert(vaData.type() == QVariant::String);
-#else
             Assert(vaData.typeId() == QMetaType::QString);
-#endif
 
             break;
         }
@@ -273,11 +241,7 @@ int UIDnDMIMEData::getDataAsVariant(const QVector<uint8_t> &vecData,
             QByteArray ba(reinterpret_cast<const char*>(vecData.constData()), vecData.size());
 
             vaData = QVariant::fromValue(ba);
-#ifndef VBOX_IS_QT6_OR_LATER /* type() is replaced with typeId() in Qt6 */
-            Assert(vaData.type() == QVariant::ByteArray);
-#else
             Assert(vaData.typeId() == QMetaType::QByteArray);
-#endif
             break;
         }
 
@@ -296,20 +260,12 @@ int UIDnDMIMEData::getDataAsVariant(const QVector<uint8_t> &vecData,
             Q_FOREACH(const QString& strCur, lstString)
             {
                 QVariant vaURL = QVariant::fromValue(QUrl(strCur));
-#ifndef VBOX_IS_QT6_OR_LATER /* type() is replaced with typeId() in Qt6 */
-                Assert(vaURL.type() == QVariant::Url);
-#else
                 Assert(vaURL.typeId() == QMetaType::QUrl);
-#endif
                 lstVariant.append(vaURL);
             }
 
             vaData = QVariant::fromValue(lstVariant);
-#ifndef VBOX_IS_QT6_OR_LATER /* type() is replaced with typeId() in Qt6 */
-            Assert(vaData.type() == QVariant::List);
-#else
             Assert(vaData.typeId() == QMetaType::QVariantList);
-#endif
             break;
         }
 
@@ -328,23 +284,14 @@ int UIDnDMIMEData::getDataAsVariant(const QVector<uint8_t> &vecData,
                 LogFlowFunc(("\t\tString: %s\n", qPrintable(strCur)));
 #endif
             vaData = QVariant::fromValue(lstString);
-#ifndef VBOX_IS_QT6_OR_LATER /* type() is replaced with typeId() in Qt6 */
-            Assert(vaData.type() == QVariant::StringList);
-#else
             Assert(vaData.typeId() == QMetaType::QStringList);
-#endif
             break;
         }
 
         default:
         {
-#ifndef VBOX_IS_QT6_OR_LATER /* QVariant is replaced with QMetaType in Qt6 */
-            LogRel2(("DnD: Converting data (%d bytes) from guest to variant type '%s' not supported\n",
-                     vecData.size(), QVariant::typeToName(vaType) ? QVariant::typeToName(vaType) : "<Invalid>"));
-#else
             LogRel2(("DnD: Converting data (%d bytes) from guest to variant type '%s' not supported\n",
                      vecData.size(), QMetaType(vaType).name() ? QMetaType(vaType).name() : "<Invalid>"));
-#endif
 
             rc = VERR_NOT_SUPPORTED;
             break;
