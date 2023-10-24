@@ -92,11 +92,7 @@ public:
     {}
 
     /** Handles all native events. */
-# ifdef VBOX_IS_QT6_OR_LATER /* long replaced with qintptr since 6.0 */
     virtual bool nativeEventFilter(const QByteArray &eventType, void *pMessage, qintptr *pResult) RT_OVERRIDE
-# else
-    virtual bool nativeEventFilter(const QByteArray &eventType, void *pMessage, long *pResult) RT_OVERRIDE
-# endif
     {
         /* Redirect event to parent: */
         return m_pParent->nativeEvent(eventType, pMessage, pResult);
@@ -189,11 +185,7 @@ QString UINativeHotKey::toString(int iKeyCode)
     }
     WCHAR wszKeyName[256];
     if (::GetKeyNameTextW(iScan, wszKeyName, RT_ELEMENTS(wszKeyName)))
-#ifndef VBOX_IS_QT6_OR_LATER
-        strKeyName = QString::fromUtf16((const ushort *)wszKeyName);
-#else
         strKeyName = QString::fromUtf16((const char16_t *)wszKeyName);
-#endif
     else
     {
         AssertMsgFailed(("That key have no name!\n"));
@@ -635,11 +627,7 @@ void UIHostComboEditorPrivate::sltClear()
     emit sigDataChanged();
 }
 
-#ifdef VBOX_IS_QT6_OR_LATER /* long replaced with qintptr since 6.0 */
 bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pMessage, qintptr *pResult)
-#else
-bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult)
-#endif
 {
 # if defined(VBOX_WS_MAC)
 

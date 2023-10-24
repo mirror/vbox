@@ -398,11 +398,7 @@ protected:
         ~BSTROut()
         {
             if (bstr) {
-#ifndef VBOX_IS_QT6_OR_LATER
-                str = QString::fromUtf16((const ushort *)bstr);
-#else
                 str = QString::fromUtf16((const char16_t *)bstr);
-#endif
                 SysFreeString(bstr);
             }
         }
@@ -446,11 +442,7 @@ protected:
         ~GuidAsBStrOut()
         {
             if (bstr) {
-#ifndef VBOX_IS_QT6_OR_LATER
-                uuid = QUuid(QString::fromUtf16((const ushort *)bstr));
-#else
                 uuid = QUuid(QString::fromUtf16((const char16_t *)bstr));
-#endif
                 SysFreeString(bstr);
             }
         }

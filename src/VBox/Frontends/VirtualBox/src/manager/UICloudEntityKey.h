@@ -67,11 +67,7 @@ struct UICloudEntityKey
     QUuid m_uMachineId;
 };
 
-#ifdef VBOX_IS_QT6_OR_LATER /* uint replaced with size_t since 6.0 */
 inline size_t qHash(const UICloudEntityKey &key, size_t uSeed)
-#else
-inline uint qHash(const UICloudEntityKey &key, uint uSeed)
-#endif
 {
     return qHash(key.toString(), uSeed);
 }

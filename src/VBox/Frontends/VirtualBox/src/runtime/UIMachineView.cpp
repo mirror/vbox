@@ -113,11 +113,7 @@ public:
     {}
 
     /** Redirects all the native events to parent. */
-#ifdef VBOX_IS_QT6_OR_LATER /* long replaced with qintptr since 6.0 */
     bool nativeEventFilter(const QByteArray &eventType, void *pMessage, qintptr*)
-#else
-    bool nativeEventFilter(const QByteArray &eventType, void *pMessage, long*)
-#endif
     {
         return m_pParent->nativeEventPreprocessor(eventType, pMessage);
     }
