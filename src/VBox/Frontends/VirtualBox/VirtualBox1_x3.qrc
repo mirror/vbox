@@ -485,20 +485,5 @@
         <file alias="ide_add_16px_x3.png">images/x3/ide_add_16px_x3.png</file>
         <file alias="ide_add_disabled_16px_x3.png">images/x3/ide_add_disabled_16px_x3.png</file>
         <file alias="ide_collapse_16px_x3.png">images/x3/ide_collapse_16px_x3.png</file>
-        <file alias="ide_expand_16px_x3.png">images/x3/ide_expand_16px_x3.png</file>
-        <file alias="import_16px_x3.png">images/x3/import_16px_x3.png</file>
-        <file alias="import_32px_x3.png">images/x3/import_32px_x3.png</file>
-        <file alias="import_disabled_16px_x3.png">images/x3/import_disabled_16px_x3.png</file>
-        <file alias="import_disabled_32px_x3.png">images/x3/import_disabled_32px_x3.png</file>
-        <file alias="interface_16px_x3.png">images/x3/interface_16px_x3.png</file>
-        <file alias="interface_24px_x3.png">images/x3/interface_24px_x3.png</file>
-        <file alias="interface_32px_x3.png">images/x3/interface_32px_x3.png</file>
-        <file alias="interface_warning_16px_x3.png">images/x3/interface_warning_16px_x3.png</file>
-        <file alias="keep_object_16px_x3.png">images/x3/keep_object_16px_x3.png</file>
-        <file alias="keyboard_16px_x3.png">images/x3/keyboard_16px_x3.png</file>
-        <file alias="keyboard_24px_x3.png">images/x3/keyboard_24px_x3.png</file>
-        <file alias="keyboard_32px_x3.png">images/x3/keyboard_32px_x3.png</file>
-        <file alias="keyboard_settings_16px_x3.png">images/x3/keyboard_settings_16px_x3.png</file>
-        <file alias="keyboard_settings_disabled_16px_x3.png">images/x3/keyboard_settings_disabled_16px_x3.png</file>
     </qresource>
 </RCC>

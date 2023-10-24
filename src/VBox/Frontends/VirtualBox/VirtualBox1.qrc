@@ -498,21 +498,5 @@
         <file alias="keyboard_16px.png">images/keyboard_16px.png</file>
         <file alias="keyboard_24px.png">images/keyboard_24px.png</file>
         <file alias="keyboard_32px.png">images/keyboard_32px.png</file>
-        <file alias="keyboard_settings_16px.png">images/keyboard_settings_16px.png</file>
-        <file alias="keyboard_settings_disabled_16px.png">images/keyboard_settings_disabled_16px.png</file>
-        <file alias="launch_vm_16px.png">images/launch_vm_16px.png</file>
-        <file alias="list_movedown_16px.png">images/list_movedown_16px.png</file>
-        <file alias="list_movedown_disabled_16px.png">images/list_movedown_disabled_16px.png</file>
-        <file alias="list_moveup_16px.png">images/list_moveup_16px.png</file>
-        <file alias="list_moveup_disabled_16px.png">images/list_moveup_disabled_16px.png</file>
-        <file alias="log_viewer_bookmark_16px.png">images/log_viewer_bookmark_16px.png</file>
-        <file alias="log_viewer_bookmark_32px.png">images/log_viewer_bookmark_32px.png</file>
-        <file alias="log_viewer_bookmark_disabled_16px.png">images/log_viewer_bookmark_disabled_16px.png</file>
-        <file alias="log_viewer_bookmark_disabled_32px.png">images/log_viewer_bookmark_disabled_32px.png</file>
-        <file alias="log_viewer_bookmark_off_16px.png">images/log_viewer_bookmark_off_16px.png</file>
-        <file alias="log_viewer_bookmark_on_16px.png">images/log_viewer_bookmark_on_16px.png</file>
-        <file alias="log_viewer_choose_font_16px.png">images/log_viewer_choose_font_16px.png</file>
-        <file alias="log_viewer_delete_all_bookmarks_16px.png">images/log_viewer_delete_all_bookmarks_16px.png</file>
-        <file alias="log_viewer_delete_all_filters_16px.png">images/log_viewer_delete_all_filters_16px.png</file>
     </qresource>
 </RCC>
