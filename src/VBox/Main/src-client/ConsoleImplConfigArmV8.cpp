@@ -288,9 +288,7 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         InsertConfigInteger(pMemRegion, "Size", cbRam);
 
         vrc = RTFdtNodeAddF(hFdt, "memory@%RX32", 0x40000000);                              VRC();
-        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 4,
-                                           0, 0x40000000,
-                                           (uint32_t)(cbRam >> 32), cbRam & UINT32_MAX);    VRC();
+        vrc = RTFdtNodePropertyAddCellsU64(hFdt, "reg", 2, 0x40000000, cbRam);              VRC();
         vrc = RTFdtNodePropertyAddString(  hFdt, "device_type",      "memory");             VRC();
         vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
@@ -408,10 +406,10 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
 
         vrc = RTFdtNodeAddF(hFdt, "intc@%RX32", 0x08000000);                                VRC();
         vrc = RTFdtNodePropertyAddU32(     hFdt, "phandle",          idPHandleIntCtrl);     VRC();
-        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 8,
-                                           0, 0x08000000, 0, 0x10000,
-                                           0, 0x080a0000, 0, 0xf60000);                     VRC();
-        vrc = RTFdtNodePropertyAddU32(     hFdt, "#redistributor-regions",   1);             VRC();
+        vrc = RTFdtNodePropertyAddCellsU64(hFdt, "reg", 4,
+                                           0x08000000, 0x10000,   /* Distributor */
+                                           0x080a0000, 0xf60000); /* Re-Distributor */      VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "#redistributor-regions", 1);              VRC();
         vrc = RTFdtNodePropertyAddString(  hFdt, "compatible",       "arm,gic-v3");         VRC();
         vrc = RTFdtNodePropertyAddEmpty(   hFdt, "ranges");                                 VRC();
         vrc = RTFdtNodePropertyAddU32(     hFdt, "#size-cells",      2);                    VRC();
@@ -445,7 +443,7 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
 
             vrc = RTFdtNodeAddF(hFdt, "fw-cfg@%RX32", 0x09020000);                          VRC();
             vrc = RTFdtNodePropertyAddEmpty(   hFdt, "dma-coherent");                       VRC();
-            vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 4, 0, 0x09020000, 0, 0x18);     VRC();
+            vrc = RTFdtNodePropertyAddCellsU64(hFdt, "reg", 2, 0x09020000, 0x18);           VRC();
             vrc = RTFdtNodePropertyAddString(  hFdt, "compatible", "qemu,fw-cfg-mmio");     VRC();
             vrc = RTFdtNodeFinalize(hFdt);                                                  VRC();
         }
@@ -462,9 +460,9 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
 
         vrc = RTFdtNodeAddF(hFdt, "flash@%RX32", 0);                                        VRC();
         vrc = RTFdtNodePropertyAddU32(     hFdt, "bank-width", 4);                          VRC();
-        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 8,
-                                           0,          0, 0, 0x04000000,
-                                           0, 0x04000000, 0, 0x04000000);                   VRC();
+        vrc = RTFdtNodePropertyAddCellsU64(hFdt, "reg", 4,
+                                           0,          0x04000000,  /* First region (EFI). */
+                                           0x04000000, 0x04000000); /* Second region (NVRAM). */ VRC();
         vrc = RTFdtNodePropertyAddString(  hFdt, "compatible", "cfi-flash");                VRC();
         vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
@@ -496,7 +494,7 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
             vrc = RTFdtNodePropertyAddCellsU32(hFdt, "clocks", 2,
                                                idPHandleAbpPClk, idPHandleAbpPClk);             VRC();
             vrc = RTFdtNodePropertyAddCellsU32(hFdt, "interrupts", 3, 0x00, 0x01, 0x04);        VRC();
-            vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 4, 0, 0x09000000, 0, 0x1000);       VRC();
+            vrc = RTFdtNodePropertyAddCellsU64(hFdt, "reg", 2, 0x09000000, _4K);                VRC();
             vrc = RTFdtNodePropertyAddStringList(hFdt, "compatible", 2,
                                                  "arm,pl011", "arm,primecell");                 VRC();
             vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
@@ -550,7 +548,7 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         vrc = RTFdtNodePropertyAddU32(     hFdt, "#gpio-cells", 2);                         VRC();
         vrc = RTFdtNodePropertyAddStringList(hFdt, "compatible", 2,
                                              "arm,pl061", "arm,primecell");                 VRC();
-        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 4, 0, 0x09030000, 0, 0x1000);       VRC();
+        vrc = RTFdtNodePropertyAddCellsU64(hFdt, "reg", 2, 0x09030000, _4K);                VRC();
         vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
         uint32_t aPinIrqs[] = { 3, 4, 5, 6 };
@@ -598,7 +596,7 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                                            0x1000000, 0, 0, 0, 0x3eff0000, 0, 0x10000,
                                            0x2000000, 0, 0x10000000, 0, 0x10000000, 0,
                                            0x2eff0000);                                     VRC();
-        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 4, 0, 0x3f000000, 0, 0x1000000);    VRC();
+        vrc = RTFdtNodePropertyAddCellsU64(hFdt, "reg", 2, 0x3f000000, 0x1000000);          VRC();
         /** @todo msi-map */
         vrc = RTFdtNodePropertyAddEmpty(   hFdt, "dma-coherent");                           VRC();
         vrc = RTFdtNodePropertyAddCellsU32(hFdt, "bus-range", 2, 0, 0xf);                   VRC();
