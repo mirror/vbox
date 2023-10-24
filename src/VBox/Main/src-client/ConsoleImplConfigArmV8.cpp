@@ -364,8 +364,8 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         InsertConfigString(pLunL0, "Driver",                "ResourceStore");
 
         /* Add the resources. */
-        PCFGMNODE pResources = NULL;    /* /Devices/efi-armv8/Config/Resources */
-        PCFGMNODE pRes = NULL;          /* /Devices/efi-armv8/Config/Resources/<Resource> */
+        PCFGMNODE pResources = NULL;    /* /Devices/platform/Config/Resources */
+        PCFGMNODE pRes = NULL;          /* /Devices/platform/Config/Resources/<Resource> */
         InsertConfigString(pCfg,        "ResourceNamespace",     "resources");
         InsertConfigNode(pCfg,          "Resources",             &pResources);
         InsertConfigNode(pResources,    "EfiRom",                &pRes);
@@ -396,15 +396,9 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         InsertConfigInteger(pRes,       "GCPhysLoadAddress",     UINT64_MAX); /* End of physical address space. */
         InsertConfigString(pRes,        "ResourceId",            "VBoxArmV8Desc");
 
-        vrc = RTFdtNodeAddF(hFdt, "platform-bus@%RX32", 0x0c000000);                        VRC();
-        vrc = RTFdtNodePropertyAddU32(     hFdt, "interrupt-parent", idPHandleIntCtrl);     VRC();
-        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "ranges", 4, 0, 0, 0x0c000000, 0x02000000); VRC();
-        vrc = RTFdtNodePropertyAddU32(     hFdt, "#address-cells",   1);                    VRC();
-        vrc = RTFdtNodePropertyAddU32(     hFdt, "#size-cells",      1);                    VRC();
-        vrc = RTFdtNodePropertyAddStringList(hFdt, "compatible",     2,
-                                             "qemu,platform", "simple-bus");                VRC();
-        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
-
+        /*
+         * Configure the interrupt controller.
+         */
         InsertConfigNode(pDevices, "gic",                   &pDev);
         InsertConfigNode(pDev,     "0",                     &pInst);
         InsertConfigInteger(pInst, "Trusted",               1);
@@ -437,26 +431,24 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
 
         vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
-
-        InsertConfigNode(pDevices, "qemu-fw-cfg",   &pDev);
-        InsertConfigNode(pDev,     "0",            &pInst);
-        InsertConfigNode(pInst,    "Config",        &pCfg);
-        InsertConfigInteger(pCfg,  "MmioSize",       4096);
-        InsertConfigInteger(pCfg,  "MmioBase", 0x09020000);
-        InsertConfigInteger(pCfg,  "DmaEnabled",        1);
-        InsertConfigInteger(pCfg,  "QemuRamfbSupport",  enmGraphicsController == GraphicsControllerType_QemuRamFB ? 1 : 0);
         if (enmGraphicsController == GraphicsControllerType_QemuRamFB)
         {
+            InsertConfigNode(pDevices, "qemu-fw-cfg",   &pDev);
+            InsertConfigNode(pDev,     "0",            &pInst);
+            InsertConfigNode(pInst,    "Config",        &pCfg);
+            InsertConfigInteger(pCfg,  "MmioSize",       4096);
+            InsertConfigInteger(pCfg,  "MmioBase", 0x09020000);
+            InsertConfigInteger(pCfg,  "DmaEnabled",        1);
+            InsertConfigInteger(pCfg,  "QemuRamfbSupport",  1);
             InsertConfigNode(pInst,    "LUN#0",           &pLunL0);
             InsertConfigString(pLunL0, "Driver",          "MainDisplay");
+
+            vrc = RTFdtNodeAddF(hFdt, "fw-cfg@%RX32", 0x09020000);                          VRC();
+            vrc = RTFdtNodePropertyAddEmpty(   hFdt, "dma-coherent");                       VRC();
+            vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 4, 0, 0x09020000, 0, 0x18);     VRC();
+            vrc = RTFdtNodePropertyAddString(  hFdt, "compatible", "qemu,fw-cfg-mmio");     VRC();
+            vrc = RTFdtNodeFinalize(hFdt);                                                  VRC();
         }
-
-        vrc = RTFdtNodeAddF(hFdt, "fw-cfg@%RX32", 0x09020000);                              VRC();
-        vrc = RTFdtNodePropertyAddEmpty(   hFdt, "dma-coherent");                           VRC();
-        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "reg", 4, 0, 0x09020000, 0, 0x18);         VRC();
-        vrc = RTFdtNodePropertyAddString(  hFdt, "compatible", "qemu,fw-cfg-mmio");         VRC();
-        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
-
 
         InsertConfigNode(pDevices, "flash-cfi",         &pDev);
         InsertConfigNode(pDev,     "0",            &pInst);
