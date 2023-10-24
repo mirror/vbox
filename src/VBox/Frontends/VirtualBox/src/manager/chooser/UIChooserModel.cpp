@@ -438,17 +438,10 @@ void UIChooserModel::makeSureNoItemWithCertainIdSelected(const QUuid &uId)
             matchedItems << pNode->item();
 
     /* If we have at least one of those items currently selected: */
-#ifdef VBOX_IS_QT6_OR_LATER /* we have to use range constructors since 6.0 */
-    {
-        QList<UIChooserItem *> selectedItemsList = selectedItems();
-        QSet<UIChooserItem *> selectedItemsSet(selectedItemsList.begin(), selectedItemsList.end());
-        if (selectedItemsSet.intersects(matchedItems))
-            setSelectedItem(findClosestUnselectedItem());
-    }
-#else
-    if (selectedItems().toSet().intersects(matchedItems))
+    const QList<UIChooserItem*> selectedItemsList = selectedItems();
+    const QSet<UIChooserItem*> selectedItemsSet(selectedItemsList.begin(), selectedItemsList.end());
+    if (selectedItemsSet.intersects(matchedItems))
         setSelectedItem(findClosestUnselectedItem());
-#endif
 
     /* If global item is currently chosen, selection should be invalidated: */
     if (firstSelectedItem() && firstSelectedItem()->type() == UIChooserNodeType_Global)

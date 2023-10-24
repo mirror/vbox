@@ -276,12 +276,6 @@ void UIIconPool::addName(QIcon &icon, const QString &strName,
     /* Add pixmap: */
     icon.addPixmap(pixmap, mode, state);
 
-#if defined(VBOX_WS_MAC) && !defined(VBOX_IS_QT6_OR_LATER)
-    /* Test if HiDPI icons are enabled on macOS @ Qt5 only: */
-    if (!qApp->testAttribute(Qt::AA_UseHighDpiPixmaps))
-        return;
-#endif /* VBOX_WS_MAC */
-
     /* Parse name to prefix and suffix: */
     QString strPrefix = strName.section('.', 0, -2);
     QString strSuffix = strName.section('.', -1, -1);

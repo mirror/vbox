@@ -1127,11 +1127,7 @@ void UIMachineView::sltMousePointerShapeChange()
          * compose the cursor on the basis of shape and mask both: */
         updateMousePointerPixmapScaling(pixmapShape, uXHot, uYHot);
         /// @todo updateMousePointerPixmapScaling(pixmapMask, uXHot, uYHot);
-#ifdef VBOX_IS_QT6_OR_LATER /* since qt6 explicit constructor is replaced with QBitmap::fromPixmap static method */
         m_cursor = QCursor(QBitmap::fromPixmap(pixmapShape), QBitmap::fromPixmap(pixmapMask), uXHot, uYHot);
-#else
-        m_cursor = QCursor(pixmapShape, pixmapMask, uXHot, uYHot);
-#endif
     }
 
     /* Let the listeners know: */

@@ -468,17 +468,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         /* Install Qt console message handler: */
         qInstallMessageHandler(QtMessageOutput);
 
-        /* Enable HiDPI support: */
-#ifndef VBOX_IS_QT6_OR_LATER
-        QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
-# if (!defined(DEBUG_bird) || defined(RT_OS_DARWIN))
-#  ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
-        /* This shouldn't be enabled for customer WM, since Qt has conflicts in that case. */
-        QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-#  endif
-# endif
-#else
-# ifdef VBOX_WS_NIX
+#ifdef VBOX_WS_NIX
         // WORKAROUND:
         // Some Desktop Environments forcing this variable which was useful in Qt5 case.
         // But in Qt6 case this variable is additional multiplier to scale-factor
@@ -486,8 +476,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         // No idea how to proceed, probably we will ignore this variable for now, by
         // setting it to be always equal to 1.
         qputenv("QT_SCALE_FACTOR", "1");
-# endif
-#endif
+#endif /* VBOX_WS_NIX */
 
         /* Create application: */
         QApplication a(argc, argv);

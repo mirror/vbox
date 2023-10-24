@@ -264,9 +264,6 @@ void UIPopupStack::prepareContent()
             m_pScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
             //m_pScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
             QPalette pal = m_pScrollArea->palette();
-#ifndef VBOX_IS_QT6_OR_LATER /** @todo Qt::transparent glitches in qt6? */
-            pal.setColor(QPalette::Window, QColor(Qt::transparent));
-#endif
             m_pScrollArea->setPalette(pal);
             /* Create scroll-viewport: */
             m_pScrollViewport = new UIPopupStackViewport;

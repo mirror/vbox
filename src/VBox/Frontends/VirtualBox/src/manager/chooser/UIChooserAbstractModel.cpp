@@ -751,13 +751,9 @@ void UIChooserAbstractModel::sltLocalMachineGroupsChanged(const QUuid &uMachineI
     //       newGroupList.join(", ").toUtf8().constData());
 
     /* Re-register VM if required: */
-#ifdef VBOX_IS_QT6_OR_LATER /* we have to use range constructors since 6.0 */
     QSet<QString> newGroupSet(newGroupList.begin(), newGroupList.end());
     QSet<QString> oldGroupSet(oldGroupList.begin(), oldGroupList.end());
     if (newGroupSet != oldGroupSet)
-#else
-    if (newGroupList.toSet() != oldGroupList.toSet())
-#endif
     {
         sltLocalMachineRegistrationChanged(uMachineId, false);
         sltLocalMachineRegistrationChanged(uMachineId, true);

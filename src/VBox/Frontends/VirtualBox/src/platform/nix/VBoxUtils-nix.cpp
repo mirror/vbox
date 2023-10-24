@@ -35,11 +35,7 @@
 # include <QtXml/QDomElement>
 #endif /* VBOX_WITH_SCREENSAVER_CONTROL */
 #include <QWidget>
-#ifdef VBOX_IS_QT6_OR_LATER /** @todo qt6: ... */
-# include <QGuiApplication>
-#else
-# include <QX11Info>
-#endif
+#include <QGuiApplication>
 
 /* GUI includes: */
 #include "VBoxUtils-nix.h"
@@ -707,7 +703,6 @@ void NativeWindowSubsystem::setXwaylandMayGrabKeyboardFlag(bool fIsXServerAvaila
 
 Display *NativeWindowSubsystem::X11GetDisplay()
 {
-#ifdef VBOX_IS_QT6_OR_LATER /** QX11Info is replaced with QNativeInterface::QX11Application since qt6 */
     Display *pDisplay = 0;
     if (qApp)
     {
@@ -715,16 +710,12 @@ Display *NativeWindowSubsystem::X11GetDisplay()
         if (pX11App)
             pDisplay = pX11App->display();
     }
-#else
-    Display *pDisplay = QX11Info::display();
-#endif
     Assert(pDisplay);
     return pDisplay;
 }
 
 xcb_connection_t *NativeWindowSubsystem::X11GetConnection()
 {
-#ifdef VBOX_IS_QT6_OR_LATER /** QX11Info is replaced with QNativeInterface::QX11Application since qt6 */
     xcb_connection_t *pConnection = 0;
     if (qApp)
     {
@@ -732,23 +723,15 @@ xcb_connection_t *NativeWindowSubsystem::X11GetConnection()
         if (pX11App)
             pConnection = pX11App->connection();
     }
-#else
-    xcb_connection_t *pConnection = QX11Info::connection();
-#endif
     Assert(pConnection);
     return pConnection;
 }
 
 uint32_t NativeWindowSubsystem::X11GetAppRootWindow()
 {
-#ifdef VBOX_IS_QT6_OR_LATER /** QX11Info is replaced with QNativeInterface::QX11Application since qt6 */
     Window idWindow = 0;
     Display *pDisplay = NativeWindowSubsystem::X11GetDisplay();
     if (pDisplay)
         idWindow = DefaultRootWindow(pDisplay);
     return idWindow;
-#else
-    return QX11Info::appRootWindow();
-#endif
 }
-

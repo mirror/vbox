@@ -31,11 +31,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QPainter>
-#ifdef VBOX_IS_QT6_OR_LATER /* fromWildcard is available since 6.0 */
-# include <QRegularExpression>
-#else
-# include <QRegExp>
-#endif
+#include <QRegularExpression>
 
 /* GUI includes: */
 #include "QIToolButton.h"
@@ -80,12 +76,8 @@ public:
             strValue = pMediumItem->name();
         else
             return false;
-#ifdef VBOX_IS_QT6_OR_LATER /* fromWildcard is available since 6.0 */
         QRegularExpression searchRegEx = QRegularExpression::fromWildcard(m_strSearchTerm, Qt::CaseInsensitive,
                                                                           QRegularExpression::UnanchoredWildcardConversion);
-#else
-        QRegExp searchRegEx(m_strSearchTerm, Qt::CaseInsensitive, QRegExp::Wildcard);
-#endif
         if (strValue.contains(searchRegEx))
             return true;
         return false;

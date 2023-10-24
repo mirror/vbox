@@ -457,20 +457,12 @@ void UIHelpViewer::emitHistoryChangedSignal()
     emit backwardAvailable(true);
 }
 
-#ifdef VBOX_IS_QT6_OR_LATER /* it was setSource before 6.0 */
 void UIHelpViewer::doSetSource(const QUrl &url, QTextDocument::ResourceType type)
-#else
-void UIHelpViewer::setSource(const QUrl &url)
-#endif
 {
     clearOverlay();
     if (url.scheme() != "qthelp")
         return;
-#ifdef VBOX_IS_QT6_OR_LATER /* it was setSource before 6.0 */
     QTextBrowser::doSetSource(url, type);
-#else
-    QTextBrowser::setSource(url);
-#endif
     QTextDocument *pDocument = document();
     if (!pDocument || pDocument->isEmpty())
     {
