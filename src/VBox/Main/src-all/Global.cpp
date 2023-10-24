@@ -248,6 +248,12 @@ const Global::OSType Global::sOSTypes[] =
       1, a_Memory, a_Vram, a_Diskspace * _1G64, GraphicsControllerType_VMSVGA, a_NetworkAdapter, 0, StorageControllerType_PIIX4, StorageBus_IDE, \
       a_HDStorageController, a_HDStorageBusType, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_AD1980  }
 
+#define VBOX_LINUX_SUBTYPE_TEMPLATE_A64(a_szVariant, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
+                                        a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \
+    { "Linux",   "Linux", a_szVariant, GUEST_OS_ID_STR_A64(#a_Id), a_Description, VBOX_OSTYPE_ARM64(a_OStype), a_OSHint, \
+      1, a_Memory, a_Vram, a_Diskspace * _1G64, GraphicsControllerType_VMSVGA, a_NetworkAdapter, 0, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI, \
+      a_HDStorageController, a_HDStorageBusType, ChipsetType_ARMv8Virtual, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  }
+
 #define VBOX_LINUX_SUBTYPE_TEMPLATE_ARM64(a_szVariant, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
                                           a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \
     { "Linux",   "Linux", a_szVariant, GUEST_OS_ID_STR_A64(#a_Id), a_Description, VBOX_OSTYPE_ARM64(a_OStype), a_OSHint, \
@@ -277,7 +283,7 @@ const Global::OSType Global::sOSTypes[] =
                                     NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
 #define VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_A64(a_szVariant, a_Id, a_Description, a_OStype, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szVariant, a_Id, a_Description, a_OStype, VBOX_LINUX_OSHINTS_A_X64, a_Memory, a_Vram, a_Diskspace, \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_A64(a_szVariant, a_Id, a_Description, a_OStype, VBOX_LINUX_OSHINTS_A_X64, a_Memory, a_Vram, a_Diskspace, \
                                     NetworkAdapterType_I82540EM, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI)
 
 /* Linux x86 32-bit sub-type template defaulting to 1 CPU with PS/2-mouse/PAE-NX/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
