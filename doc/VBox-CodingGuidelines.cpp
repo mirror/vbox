@@ -809,7 +809,8 @@
  *        sometimes written 'a' in parts of the source code that does not use
  *        the array prefix.
  *
- *   <li> The 'p' prefix means pointer.  For instance 'pVM' is pointer to VM.
+ *   <li> The 'p' prefix means pointer.  For instance 'pVM' is pointer to VM,
+ *        'pidx' means pointer to an index and 'pv' is a generic void pointer.
  *
  *   <li> The 'r' prefix means that something is passed by reference.
  *
