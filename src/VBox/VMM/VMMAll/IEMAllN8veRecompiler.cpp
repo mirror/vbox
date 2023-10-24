@@ -4414,14 +4414,6 @@ DECLINLINE(uint32_t) iemNativeEmitIfEflagsTwoBitsComp(PIEMRECOMPILERSTATE pReNat
         off = iemNativeEmitShiftGpr32Left(pReNative, off, idxTmpReg, iBitNo2 - iBitNo1);
     off = iemNativeEmitXorGpr32ByGpr32(pReNative, off, idxTmpReg, idxEflReg);
 
-    /* Test and jump. */
-    if (fNotEqual)
-        off = iemNativeEmitTestBitInGprAndJmpToLabelIfSet(pReNative, off, idxTmpReg, iBitNo1, pEntry->idxLabelElse);
-    else
-        off = iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet(pReNative, off, idxTmpReg, iBitNo1, pEntry->idxLabelElse);
-
-    iemNativeRegFreeTmp(pReNative, idxTmpReg);
-
 #elif defined(RT_ARCH_ARM64)
     uint8_t const idxTmpReg = iemNativeRegAllocTmp(pReNative, &off);
     AssertReturn(idxTmpReg != UINT8_MAX, UINT32_MAX);
@@ -4432,29 +4424,28 @@ DECLINLINE(uint32_t) iemNativeEmitIfEflagsTwoBitsComp(PIEMRECOMPILERSTATE pReNat
     /* and tmpreg, eflreg, #1<<iBitNo1 */
     pu32CodeBuf[off++] = Armv8A64MkInstrAndImm(idxTmpReg, idxEflReg, 0 /*uImm7SizeLen -> 32*/, 32 - iBitNo1, false /*f64Bit*/);
 
-    /* eeyore tmpreg, eflreg, LSL/LSR, #abs(iBitNo2 - iBitNo1) */
+    /* eeyore tmpreg, eflreg, tmpreg, LSL/LSR, #abs(iBitNo2 - iBitNo1) */
     if (iBitNo1 > iBitNo2)
-        pu32CodeBuf[off++] = Armv8A64MkInstrEor(idxTmpReg, idxTmpReg, idxEflReg, false /*64bit*/,
-                                                iBitNo1 - iBitNo2, kArmv8A64InstrShift_Lsl);
+        pu32CodeBuf[off++] = Armv8A64MkInstrEor(idxTmpReg, idxEflReg, idxTmpReg, false /*64bit*/,
+                                                iBitNo1 - iBitNo2, kArmv8A64InstrShift_Lsr);
     else
-        pu32CodeBuf[off++] = Armv8A64MkInstrEor(idxTmpReg, idxTmpReg, idxEflReg, false /*64bit*/,
-                                                iBitNo2 - iBitNo1, kArmv8A64InstrShift_Lsr);
+        pu32CodeBuf[off++] = Armv8A64MkInstrEor(idxTmpReg, idxEflReg, idxTmpReg, false /*64bit*/,
+                                                iBitNo2 - iBitNo1, kArmv8A64InstrShift_Lsl);
 
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
-
-    /* Test and jump. */
-    if (fNotEqual)
-        off = iemNativeEmitTestBitInGprAndJmpToLabelIfSet(pReNative, off, idxTmpReg, iBitNo1, pEntry->idxLabelElse);
-    else
-        off = iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet(pReNative, off, idxTmpReg, iBitNo1, pEntry->idxLabelElse);
-
-    iemNativeRegFreeTmp(pReNative, idxTmpReg);
 
 #else
 # error "Port me"
 #endif
 
-    /* Free but don't flush the EFlags register. */
+    /* Test and jump. */
+    if (fNotEqual)
+        off = iemNativeEmitTestBitInGprAndJmpToLabelIfSet(pReNative, off, idxTmpReg, iBitNo2, pEntry->idxLabelElse);
+    else
+        off = iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet(pReNative, off, idxTmpReg, iBitNo2, pEntry->idxLabelElse);
+
+    /* Free but don't flush the EFlags and tmp registers. */
+    iemNativeRegFreeTmp(pReNative, idxTmpReg);
     iemNativeRegFreeTmp(pReNative, idxEflReg);
 
     /* Make a copy of the core state now as we start the if-block. */
