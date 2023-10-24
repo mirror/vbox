@@ -4281,6 +4281,35 @@ DECLINLINE(uint32_t) iemNativeEmitIfEflagAnysBitsSet(PIEMRECOMPILERSTATE pReNati
 }
 
 
+#define IEM_MC_IF_EFL_NO_BITS_SET(a_fBits) \
+        off = iemNativeEmitIfEflagNoBitsSet(pReNative, off, (a_fBits)); \
+        AssertReturn(off != UINT32_MAX, UINT32_MAX); \
+        do {
+
+/** Emits code for IEM_MC_IF_EFL_NO_BITS_SET. */
+DECLINLINE(uint32_t) iemNativeEmitIfEflagNoBitsSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitsInEfl)
+{
+    PIEMNATIVECOND pEntry = iemNativeCondPushIf(pReNative);
+    AssertReturn(pEntry, UINT32_MAX);
+
+    /* Get the eflags. */
+    uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
+                                                              kIemNativeGstRegUse_ReadOnly);
+    AssertReturn(idxEflReg != UINT8_MAX, UINT32_MAX);
+
+    /* Test and jump. */
+    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfAnySet(pReNative, off, idxEflReg, fBitsInEfl, pEntry->idxLabelElse);
+
+    /* Free but don't flush the EFlags register. */
+    iemNativeRegFreeTmp(pReNative, idxEflReg);
+
+    /* Make a copy of the core state now as we start the if-block. */
+    iemNativeCondStartIfBlock(pReNative, off);
+
+    return off;
+}
+
+
 #define IEM_MC_IF_EFL_BIT_SET(a_fBit) \
         off = iemNativeEmitIfEflagsBitSet(pReNative, off, (a_fBit)); \
         AssertReturn(off != UINT32_MAX, UINT32_MAX); \

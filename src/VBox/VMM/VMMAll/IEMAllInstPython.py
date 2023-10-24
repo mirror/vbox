@@ -2892,7 +2892,7 @@ g_dMcStmtParsers = {
     'IEM_MC_IF_EFL_BIT_SET_OR_BITS_NE':                          (McBlock.parseMcGenericCond,       True,  False, ),
     'IEM_MC_IF_EFL_BITS_EQ':                                     (McBlock.parseMcGenericCond,       True,  False, ),
     'IEM_MC_IF_EFL_BITS_NE':                                     (McBlock.parseMcGenericCond,       True,  False, ),
-    'IEM_MC_IF_EFL_NO_BITS_SET':                                 (McBlock.parseMcGenericCond,       True,  False, ),
+    'IEM_MC_IF_EFL_NO_BITS_SET':                                 (McBlock.parseMcGenericCond,       True,  True,  ),
     'IEM_MC_IF_FCW_IM':                                          (McBlock.parseMcGenericCond,       True,  False, ),
     'IEM_MC_IF_FPUREG_IS_EMPTY':                                 (McBlock.parseMcGenericCond,       True,  False, ),
     'IEM_MC_IF_FPUREG_NOT_EMPTY':                                (McBlock.parseMcGenericCond,       True,  False, ),
