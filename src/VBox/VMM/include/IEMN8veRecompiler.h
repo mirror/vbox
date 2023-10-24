@@ -659,6 +659,9 @@ DECLHIDDEN(uint32_t)        iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTA
  *
  * This will reallocate the buffer if needed and allowed.
  *
+ * @note    Always use IEMNATIVE_ASSERT_INSTR_BUF_ENSURE when done to check the
+ *          allocation size.
+ *
  * @returns Pointer to the instruction output buffer on success, NULL on
  *          failure.
  * @param   pReNative   The native recompile state.
@@ -2230,12 +2233,13 @@ DECLINLINE(uint32_t) iemNativeEmitTestBitInGprAndJmpToLabelIfCc(PIEMRECOMPILERST
 #else
 # error "Port me!"
 #endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 
 
 /**
- * Emits a jump to @a idxLabel con the condition that bit@a iBitNo _is_ _set_ in
+ * Emits a jump to @a idxLabel on the condition that bit @a iBitNo _is_ _set_ in
  * @a iGprSrc.
  *
  * @note On ARM64 the range is only +/-8191 instructions.
@@ -2248,7 +2252,7 @@ DECLINLINE(uint32_t) iemNativeEmitTestBitInGprAndJmpToLabelIfSet(PIEMRECOMPILERS
 
 
 /**
- * Emits a jump to @a idxLabel con the condition that bit@a iBitNo _is_ _not_
+ * Emits a jump to @a idxLabel on the condition that bit @a iBitNo _is_ _not_
  * _set_ in @a iGprSrc.
  *
  * @note On ARM64 the range is only +/-8191 instructions.
@@ -2257,6 +2261,112 @@ DECLINLINE(uint32_t) iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet(PIEMRECOMPIL
                                                                     uint8_t iGprSrc, uint8_t iBitNo, uint32_t idxLabel)
 {
     return iemNativeEmitTestBitInGprAndJmpToLabelIfCc(pReNative, off, iGprSrc, iBitNo, idxLabel, true /*fJmpIfSet*/);
+}
+
+
+/**
+ * Emits a test for any of the bits from @a fBits in @a iGprSrc, setting CPU
+ * flags accordingly.
+ */
+DECLINLINE(uint32_t) iemNativeEmitTestAnyBitsInGpr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprSrc, uint64_t fBits)
+{
+    Assert(fBits != 0);
+#ifdef RT_ARCH_AMD64
+
+    if (fBits >= UINT32_MAX)
+    {
+        uint8_t iTmpReg = iemNativeRegAllocTmpImm(pReNative, &off, fBits);
+        AssertReturn(iTmpReg < RT_ELEMENTS(pReNative->Core.aHstRegs), UINT32_MAX);
+
+        /* test Ev,Gv */
+        uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5);
+        AssertReturn(pbCodeBuf, UINT32_MAX);
+        pbCodeBuf[off++] = X86_OP_REX_W | (iGprSrc < 8 ? 0 : X86_OP_REX_R) | (iTmpReg < 8 ? 0 : X86_OP_REX_B);
+        pbCodeBuf[off++] = 0x85;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprSrc & 8, iTmpReg & 7);
+
+        iemNativeRegFreeTmpImm(pReNative, iTmpReg);
+    }
+    else
+    {
+        /* test Eb, imm8 or test Ev, imm32 */
+        uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
+        AssertReturn(pbCodeBuf, UINT32_MAX);
+        if (iGprSrc >= 8)
+            pbCodeBuf[off++] = X86_OP_REX_B;
+        if (fBits <= UINT8_MAX)
+        {
+            pbCodeBuf[off++] = 0xf6;
+            pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, iGprSrc & 7);
+            pbCodeBuf[off++] = (uint8_t)fBits;
+        }
+        else
+        {
+            pbCodeBuf[off++] = 0xf7;
+            pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, iGprSrc & 7);
+            pbCodeBuf[off++] = RT_BYTE1(fBits);
+            pbCodeBuf[off++] = RT_BYTE2(fBits);
+            pbCodeBuf[off++] = RT_BYTE3(fBits);
+            pbCodeBuf[off++] = RT_BYTE4(fBits);
+        }
+    }
+
+#elif defined(RT_ARCH_ARM64)
+
+    if (false)
+    {
+        /** @todo figure out how to work the immr / N:imms constants. */
+    }
+    else
+    {
+        uint8_t iTmpReg = iemNativeRegAllocTmpImm(pReNative, &off, fBits);
+        AssertReturn(iTmpReg < RT_ELEMENTS(pReNative->Core.aHstRegs), UINT32_MAX);
+
+        /* ands Zr, iGprSrc, iTmpReg */
+        uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        AssertReturn(pu32CodeBuf, UINT32_MAX);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAnds(ARMV8_A64_REG_XZR, iGprSrc, iTmpReg);
+
+        iemNativeRegFreeTmpImm(pReNative, iTmpReg);
+    }
+
+#else
+# error "Port me!"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Emits a jump to @a idxLabel on the condition _any_ of the bits in @a fBits
+ * are set in @a iGprSrc.
+ */
+DECLINLINE(uint32_t) iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfAnySet(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                                        uint8_t iGprSrc, uint64_t fBits, uint32_t idxLabel)
+{
+    Assert(fBits); Assert(!RT_IS_POWER_OF_TWO(fBits));
+
+    off = iemNativeEmitTestAnyBitsInGpr(pReNative, off, iGprSrc, fBits);
+    off = iemNativeEmitJnzToLabel(pReNative, off, idxLabel);
+
+    return off;
+}
+
+
+/**
+ * Emits a jump to @a idxLabel on the condition _none_ of the bits in @a fBits
+ * are set in @a iGprSrc.
+ */
+DECLINLINE(uint32_t) iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfNoneSet(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                                         uint8_t iGprSrc, uint64_t fBits, uint32_t idxLabel)
+{
+    Assert(fBits); Assert(!RT_IS_POWER_OF_TWO(fBits));
+
+    off = iemNativeEmitTestAnyBitsInGpr(pReNative, off, iGprSrc, fBits);
+    off = iemNativeEmitJzToLabel(pReNative, off, idxLabel);
+
+    return off;
 }
 
 

@@ -2885,7 +2885,7 @@ g_dMcStmtParsers = {
     'IEM_MC_IF_ECX_IS_NZ':                                       (McBlock.parseMcGenericCond,       True,  False, ),
     'IEM_MC_IF_ECX_IS_NZ_AND_EFL_BIT_NOT_SET':                   (McBlock.parseMcGenericCond,       True,  False, ),
     'IEM_MC_IF_ECX_IS_NZ_AND_EFL_BIT_SET':                       (McBlock.parseMcGenericCond,       True,  False, ),
-    'IEM_MC_IF_EFL_ANY_BITS_SET':                                (McBlock.parseMcGenericCond,       True,  False, ),
+    'IEM_MC_IF_EFL_ANY_BITS_SET':                                (McBlock.parseMcGenericCond,       True,  True,  ),
     'IEM_MC_IF_EFL_BIT_NOT_SET':                                 (McBlock.parseMcGenericCond,       True,  False, ),
     'IEM_MC_IF_EFL_BIT_NOT_SET_AND_BITS_EQ':                     (McBlock.parseMcGenericCond,       True,  False, ),
     'IEM_MC_IF_EFL_BIT_SET':                                     (McBlock.parseMcGenericCond,       True,  True,  ),
