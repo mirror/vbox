@@ -4374,6 +4374,96 @@ DECLINLINE(uint32_t) iemNativeEmitIfEflagsBitNotSet(PIEMRECOMPILERSTATE pReNativ
 }
 
 
+#define IEM_MC_IF_EFL_BITS_EQ(a_fBit1, a_fBit2)         \
+    off = iemNativeEmitIfEflagsTwoBitsComp(pReNative, off, a_fBit1, a_fBit2, false /*fNotEqual*/); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX); \
+    do {
+
+#define IEM_MC_IF_EFL_BITS_NE(a_fBit1, a_fBit2)         \
+    off = iemNativeEmitIfEflagsTwoBitsComp(pReNative, off, a_fBit1, a_fBit2, true /*fNotEqual*/); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX); \
+    do {
+
+/** Emits code for IEM_MC_IF_EFL_BITS_EQ and IEM_MC_IF_EFL_BITS_NE. */
+DECLINLINE(uint32_t) iemNativeEmitIfEflagsTwoBitsComp(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                      uint32_t fBit1InEfl, uint32_t fBit2InEfl, bool fNotEqual)
+{
+    PIEMNATIVECOND pEntry = iemNativeCondPushIf(pReNative);
+    AssertReturn(pEntry, UINT32_MAX);
+
+    /* Get the eflags. */
+    uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
+                                                              kIemNativeGstRegUse_ReadOnly);
+    AssertReturn(idxEflReg != UINT8_MAX, UINT32_MAX);
+
+    unsigned const iBitNo1 = ASMBitFirstSetU32(fBit1InEfl) - 1;
+    Assert(RT_BIT_32(iBitNo1) == fBit1InEfl);
+
+    unsigned const iBitNo2 = ASMBitFirstSetU32(fBit2InEfl) - 1;
+    Assert(RT_BIT_32(iBitNo2) == fBit2InEfl);
+    Assert(iBitNo1 != iBitNo2);
+
+#ifdef RT_ARCH_AMD64
+    uint8_t const idxTmpReg = iemNativeRegAllocTmpImm(pReNative, &off, fBit1InEfl);
+    AssertReturn(idxTmpReg != UINT8_MAX, UINT32_MAX);
+
+    off = iemNativeEmitAndGpr32ByGpr32(pReNative, off, idxTmpReg, idxEflReg);
+    if (iBitNo1 > iBitNo2)
+        off = iemNativeEmitShiftGpr32Right(pReNative, off, idxTmpReg, iBitNo1 - iBitNo2);
+    else
+        off = iemNativeEmitShiftGpr32Left(pReNative, off, idxTmpReg, iBitNo2 - iBitNo1);
+    off = iemNativeEmitXorGpr32ByGpr32(pReNative, off, idxTmpReg, idxEflReg);
+
+    /* Test and jump. */
+    if (fNotEqual)
+        off = iemNativeEmitTestBitInGprAndJmpToLabelIfSet(pReNative, off, idxTmpReg, iBitNo1, pEntry->idxLabelElse);
+    else
+        off = iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet(pReNative, off, idxTmpReg, iBitNo1, pEntry->idxLabelElse);
+
+    iemNativeRegFreeTmp(pReNative, idxTmpReg);
+
+#elif defined(RT_ARCH_ARM64)
+    uint8_t const idxTmpReg = iemNativeRegAllocTmp(pReNative, &off);
+    AssertReturn(idxTmpReg != UINT8_MAX, UINT32_MAX);
+
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
+    AssertReturn(pu32CodeBuf, UINT32_MAX);
+
+    /* and tmpreg, eflreg, #1<<iBitNo1 */
+    pu32CodeBuf[off++] = Armv8A64MkInstrAndImm(idxTmpReg, idxEflReg, 0 /*uImm7SizeLen -> 32*/, 32 - iBitNo1, false /*f64Bit*/);
+
+    /* eeyore tmpreg, eflreg, LSL/LSR, #abs(iBitNo2 - iBitNo1) */
+    if (iBitNo1 > iBitNo2)
+        pu32CodeBuf[off++] = Armv8A64MkInstrEor(idxTmpReg, idxTmpReg, idxEflReg, false /*64bit*/,
+                                                iBitNo1 - iBitNo2, kArmv8A64InstrShift_Lsl);
+    else
+        pu32CodeBuf[off++] = Armv8A64MkInstrEor(idxTmpReg, idxTmpReg, idxEflReg, false /*64bit*/,
+                                                iBitNo2 - iBitNo1, kArmv8A64InstrShift_Lsr);
+
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+    /* Test and jump. */
+    if (fNotEqual)
+        off = iemNativeEmitTestBitInGprAndJmpToLabelIfSet(pReNative, off, idxTmpReg, iBitNo1, pEntry->idxLabelElse);
+    else
+        off = iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet(pReNative, off, idxTmpReg, iBitNo1, pEntry->idxLabelElse);
+
+    iemNativeRegFreeTmp(pReNative, idxTmpReg);
+
+#else
+# error "Port me"
+#endif
+
+    /* Free but don't flush the EFlags register. */
+    iemNativeRegFreeTmp(pReNative, idxEflReg);
+
+    /* Make a copy of the core state now as we start the if-block. */
+    iemNativeCondStartIfBlock(pReNative, off);
+
+    return off;
+}
+
+
 
 /*********************************************************************************************************************************
 *   Builtin functions                                                                                                            *
