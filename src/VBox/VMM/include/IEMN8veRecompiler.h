@@ -263,9 +263,7 @@ typedef enum
 {
     kIemNativeLabelType_Invalid = 0,
     kIemNativeLabelType_Return,
-#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
     kIemNativeLabelType_If,
-#endif
     kIemNativeLabelType_Else,
     kIemNativeLabelType_Endif,
     kIemNativeLabelType_NonZeroRetOrPassUp,
@@ -2482,7 +2480,7 @@ DECLINLINE(uint32_t) iemNativeEmitTestBitInGprAndJmpToLabelIfCc(PIEMRECOMPILERST
 DECLINLINE(uint32_t) iemNativeEmitTestBitInGprAndJmpToLabelIfSet(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                                  uint8_t iGprSrc, uint8_t iBitNo, uint32_t idxLabel)
 {
-    return iemNativeEmitTestBitInGprAndJmpToLabelIfCc(pReNative, off, iGprSrc, iBitNo, idxLabel, false /*fJmpIfSet*/);
+    return iemNativeEmitTestBitInGprAndJmpToLabelIfCc(pReNative, off, iGprSrc, iBitNo, idxLabel, true /*fJmpIfSet*/);
 }
 
 
@@ -2495,7 +2493,7 @@ DECLINLINE(uint32_t) iemNativeEmitTestBitInGprAndJmpToLabelIfSet(PIEMRECOMPILERS
 DECLINLINE(uint32_t) iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                                     uint8_t iGprSrc, uint8_t iBitNo, uint32_t idxLabel)
 {
-    return iemNativeEmitTestBitInGprAndJmpToLabelIfCc(pReNative, off, iGprSrc, iBitNo, idxLabel, true /*fJmpIfSet*/);
+    return iemNativeEmitTestBitInGprAndJmpToLabelIfCc(pReNative, off, iGprSrc, iBitNo, idxLabel, false /*fJmpIfSet*/);
 }
 
 
