@@ -2604,6 +2604,60 @@ DECLINLINE(uint32_t) iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfNoneSet(PIEMREC
 
 
 /**
+ * Emits code that jumps to @a idxLabel if @a iGprSrc is zero.
+ *
+ * The operand size is given by @a f64Bit.
+ */
+DECLINLINE(uint32_t) iemNativeEmitTestIfGprIsZeroAndJmpToLabel(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                               uint8_t iGprSrc, bool f64Bit, uint32_t idxLabel)
+{
+    Assert(idxLabel < pReNative->cLabels);
+
+#ifdef RT_ARCH_AMD64
+    /* test reg32,reg32  / test reg64,reg64 */
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
+    if (f64Bit)
+        pbCodeBuf[off++] = X86_OP_REX_W | (iGprSrc < 8 ? 0 : X86_OP_REX_R | X86_OP_REX_B);
+    else if (iGprSrc >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_R | X86_OP_REX_B;
+    pbCodeBuf[off++] = 0x85;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprSrc & 7, iGprSrc & 7);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+    /* jz idxLabel  */
+    off = iemNativeEmitJzToLabel(pReNative, off, idxLabel);
+
+#elif defined(RT_ARCH_ARM64)
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    AssertReturn(pu32CodeBuf, UINT32_MAX);
+    AssertReturn(iemNativeAddFixup(pReNative, off, idxLabel, kIemNativeFixupType_RelImm19At5), UINT32_MAX);
+    pu32CodeBuf[off++] = Armv8A64MkInstrCbzCbnz(false /*fJmpIfNotZero*/, 0, f64Bit);
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+#else
+# error "Port me!"
+#endif
+    return off;
+}
+
+
+/**
+ * Emits code that jumps to a new label if @a iGprSrc is zero.
+ *
+ * The operand size is given by @a f64Bit.
+ */
+DECLINLINE(uint32_t) iemNativeEmitTestIfGprIsZeroAndJmpToNewLabel(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprSrc,
+                                                                  bool f64Bit, IEMNATIVELABELTYPE enmLabelType, uint16_t uData)
+{
+    uint32_t const idxLabel = iemNativeLabelCreate(pReNative, enmLabelType, UINT32_MAX /*offWhere*/, uData);
+    AssertReturn(idxLabel != UINT32_MAX, UINT32_MAX);
+    return iemNativeEmitTestIfGprIsZeroAndJmpToLabel(pReNative, off, iGprSrc, f64Bit, idxLabel);
+}
+
+
+
+/**
  * Emits a call to a 64-bit address.
  */
 DECLINLINE(uint32_t) iemNativeEmitCallImm(PIEMRECOMPILERSTATE pReNative, uint32_t off, uintptr_t uPfn)
@@ -2629,7 +2683,6 @@ DECLINLINE(uint32_t) iemNativeEmitCallImm(PIEMRECOMPILERSTATE pReNative, uint32_
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
-
 
 
 /** @} */

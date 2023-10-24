@@ -4560,8 +4560,7 @@ DECLINLINE(uint32_t) iemNativeEmitIfEflagsBitNotSetAndTwoBitsEqual(PIEMRECOMPILE
     AssertReturn(off != UINT32_MAX, UINT32_MAX); \
     do {
 
-/** Emits code for IEM_MC_IF_EFL_BIT_NOT_SET_AND_BITS_EQ and
- *  IEM_MC_IF_EFL_BIT_SET_OR_BITS_NE. */
+/** Emits code for IEM_MC_IF_CX_IS_NZ. */
 DECLINLINE(uint32_t) iemNativeEmitIfCxIsNotZero(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 {
     PIEMNATIVECOND pEntry = iemNativeCondPushIf(pReNative);
@@ -4572,6 +4571,34 @@ DECLINLINE(uint32_t) iemNativeEmitIfCxIsNotZero(PIEMRECOMPILERSTATE pReNative, u
                                                                  kIemNativeGstRegUse_ReadOnly);
     AssertReturn(idxGstRcxReg != UINT8_MAX, UINT32_MAX);
     off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfNoneSet(pReNative, off, idxGstRcxReg, UINT16_MAX, pEntry->idxLabelElse);
+    iemNativeRegFreeTmp(pReNative, idxGstRcxReg);
+
+    iemNativeCondStartIfBlock(pReNative, off);
+    return off;
+}
+
+
+#define IEM_MC_IF_ECX_IS_NZ() \
+    off = iemNativeEmitIfRcxEcxIsNotZero(pReNative, off, false /*f64Bit*/); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX); \
+    do {
+
+#define IEM_MC_IF_RCX_IS_NZ() \
+    off = iemNativeEmitIfRcxEcxIsNotZero(pReNative, off, true /*f64Bit*/); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX); \
+    do {
+
+/** Emits code for IEM_MC_IF_ECX_IS_NZ and IEM_MC_IF_RCX_IS_NZ. */
+DECLINLINE(uint32_t) iemNativeEmitIfRcxEcxIsNotZero(PIEMRECOMPILERSTATE pReNative, uint32_t off, bool f64Bit)
+{
+    PIEMNATIVECOND pEntry = iemNativeCondPushIf(pReNative);
+    AssertReturn(pEntry, UINT32_MAX);
+
+    uint8_t const idxGstRcxReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off,
+                                                                 (IEMNATIVEGSTREG)(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                                 kIemNativeGstRegUse_ReadOnly);
+    AssertReturn(idxGstRcxReg != UINT8_MAX, UINT32_MAX);
+    off = iemNativeEmitTestIfGprIsZeroAndJmpToLabel(pReNative, off, idxGstRcxReg, f64Bit, pEntry->idxLabelElse);
     iemNativeRegFreeTmp(pReNative, idxGstRcxReg);
 
     iemNativeCondStartIfBlock(pReNative, off);
