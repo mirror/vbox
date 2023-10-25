@@ -580,7 +580,7 @@ typedef struct UDFANCHORVOLUMEDESCPTR
 {
     /** 0x00: The descriptor tag (UDF_TAG_ID_ANCHOR_VOLUME_DESC_PTR). */
     UDFTAG          Tag;
-    /** 0x10: The extent descripting the main volume descriptor sequence. */
+    /** 0x10: The extent describing the main volume descriptor sequence. */
     UDFEXTENTAD     MainVolumeDescSeq;
     /** 0x18: Location of the backup descriptor sequence. */
     UDFEXTENTAD     ReserveVolumeDescSeq;
@@ -967,7 +967,7 @@ typedef UDFTERMINATINGDESC const *PCUDFTERMINATINGDESC;
  */
 typedef struct UDFLOGICALVOLINTEGRITYDESC
 {
-    /** 0x00: The descriptor tag (UDF_TAG_ID_TERMINATING_DESC). */
+    /** 0x00: The descriptor tag (UDF_TAG_ID_LOGICAL_VOLUME_INTEGRITY_DESC). */
     UDFTAG          Tag;
     /** 0x10: Recording timestamp. */
     UDFTIMESTAMP    RecordingTimestamp;
