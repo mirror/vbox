@@ -3529,17 +3529,17 @@
       </param>
     </method>
 
-    <method name="getGuestOSVariantsByFamilyId">
+    <method name="getGuestOSSubtypesByFamilyId">
       <rest request="get" path="/server/methods/"/>
       <desc>
-        Returns a list of guest OS family variants for a corresponding
+        Returns a list of guest OS family subtypes for a corresponding
         guest OS family ID type.
 
         The <link to="IVirtualBox::guestOSTypes"/> collection contains all
         available guest OS type objects. Each object has an
         <link to="IGuestOSType::familyId"/> attribute which contains a
         the guest OS family this object describes.  The guest OS family
-        variant is contained in the <link to="IGuestOSType::variant"/>
+        subtype is contained in the <link to="IGuestOSType::subtype"/>
         attribute.
 
         <result name="E_INVALIDARG">
@@ -3550,34 +3550,34 @@
       <param name="family" type="wstring" dir="in">
         <desc>Guest OS type ID string.</desc>
       </param>
-      <param name="OSvariants" type="wstring" safearray="yes" dir="return">
-        <desc>Array of guest OS family variants associated with the specified guest OS family ID.</desc>
+      <param name="OSsubtypes" type="wstring" safearray="yes" dir="return">
+        <desc>Array of guest OS family subtypes associated with the specified guest OS family ID.</desc>
       </param>
     </method>
 
-    <method name="getGuestOSDescsByVariant">
+    <method name="getGuestOSDescsBySubtype">
       <rest request="get" path="/server/methods/"/>
       <desc>
         Returns a list of guest OS family descriptions for a corresponding
-        guest OS family variant.
+        guest OS family subtype.
 
         The <link to="IVirtualBox::guestOSTypes"/> collection contains all
         available guest OS type objects. Each object has an
-        <link to="IGuestOSType::variant"/> attribute which contains a
-        human readable description of the guest OS variant this object describes.
+        <link to="IGuestOSType::subtype"/> attribute which contains a
+        human readable description of the guest OS subtype this object describes.
         The guest OS family description is contained in the
         <link to="IGuestOSType::familyDescription"/> attribute.
 
         <result name="E_INVALIDARG">
-          @a OSVariant is not a valid guest OS variant.
+          @a OSSubtype is not a valid guest OS subtype.
         </result>
 
       </desc>
-      <param name="OSVariant" type="wstring" dir="in">
-        <desc>Guest OS variant.</desc>
+      <param name="OSSubtype" type="wstring" dir="in">
+        <desc>Guest OS subtype.</desc>
       </param>
       <param name="GuestOSDescs" type="wstring" safearray="yes" dir="return">
-        <desc>Array of guest OS descriptions associated with the specified guest OS variant.</desc>
+        <desc>Array of guest OS descriptions associated with the specified guest OS subtype.</desc>
       </param>
     </method>
 
@@ -13578,8 +13578,8 @@
       <desc>Guest OS identifier string.</desc>
     </attribute>
 
-    <attribute name="variant" type="wstring" readonly="yes">
-      <desc>Guest OS variant string.</desc>
+    <attribute name="subtype" type="wstring" readonly="yes">
+      <desc>Guest OS subtype string.</desc>
     </attribute>
 
     <attribute name="description" type="wstring" readonly="yes">

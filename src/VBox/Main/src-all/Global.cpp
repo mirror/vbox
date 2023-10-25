@@ -236,88 +236,88 @@ const Global::OSType Global::sOSTypes[] =
 #define VBOX_LINUX_OSHINTS_D_X86  (VBOXOSHINT_RTCUTC | VBOXOSHINT_X86_PAE)
 #define VBOX_LINUX_OSHINTS_D_X64  (VBOXOSHINT_RTCUTC | VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC)
 
-#define VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_szVariant, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_szSubtype, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
                                         a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \
-    { "Linux",   "Linux", a_szVariant, GUEST_OS_ID_STR_X86(#a_Id), a_Description, VBOX_OSTYPE_X86(a_OStype), a_OSHint, \
+    { "Linux",   "Linux", a_szSubtype, GUEST_OS_ID_STR_X86(#a_Id), a_Description, VBOX_OSTYPE_X86(a_OStype), a_OSHint, \
       1, a_Memory, a_Vram, a_Diskspace * _1G64, GraphicsControllerType_VMSVGA, a_NetworkAdapter, 0, StorageControllerType_PIIX4, StorageBus_IDE, \
       a_HDStorageController, a_HDStorageBusType, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_AD1980  }
 
-#define VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szVariant, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szSubtype, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
                                         a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \
-    { "Linux",   "Linux", a_szVariant, GUEST_OS_ID_STR_X64(#a_Id), a_Description, VBOX_OSTYPE_X64(a_OStype), a_OSHint, \
+    { "Linux",   "Linux", a_szSubtype, GUEST_OS_ID_STR_X64(#a_Id), a_Description, VBOX_OSTYPE_X64(a_OStype), a_OSHint, \
       1, a_Memory, a_Vram, a_Diskspace * _1G64, GraphicsControllerType_VMSVGA, a_NetworkAdapter, 0, StorageControllerType_PIIX4, StorageBus_IDE, \
       a_HDStorageController, a_HDStorageBusType, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_AD1980  }
 
-#define VBOX_LINUX_SUBTYPE_TEMPLATE_A64(a_szVariant, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_TEMPLATE_A64(a_szSubtype, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
                                         a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \
-    { "Linux",   "Linux", a_szVariant, GUEST_OS_ID_STR_A64(#a_Id), a_Description, VBOX_OSTYPE_ARM64(a_OStype), a_OSHint, \
+    { "Linux",   "Linux", a_szSubtype, GUEST_OS_ID_STR_A64(#a_Id), a_Description, VBOX_OSTYPE_ARM64(a_OStype), a_OSHint, \
       1, a_Memory, a_Vram, a_Diskspace * _1G64, GraphicsControllerType_VMSVGA, a_NetworkAdapter, 0, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI, \
       a_HDStorageController, a_HDStorageBusType, ChipsetType_ARMv8Virtual, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  }
 
-#define VBOX_LINUX_SUBTYPE_TEMPLATE_ARM64(a_szVariant, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_TEMPLATE_ARM64(a_szSubtype, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
                                           a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \
-    { "Linux",   "Linux", a_szVariant, GUEST_OS_ID_STR_A64(#a_Id), a_Description, VBOX_OSTYPE_ARM64(a_OStype), a_OSHint, \
+    { "Linux",   "Linux", a_szSubtype, GUEST_OS_ID_STR_A64(#a_Id), a_Description, VBOX_OSTYPE_ARM64(a_OStype), a_OSHint, \
       1, a_Memory, a_Vram, a_Diskspace * _1G64, GraphicsControllerType_VMSVGA, a_NetworkAdapter, 0, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI, \
       a_HDStorageController, a_HDStorageBusType, ChipsetType_ARMv8Virtual, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221 }
 
 /* Linux x86 32-bit sub-type template defaulting to 1 CPU with USB-tablet-mouse/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_A_X86(a_szVariant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_szVariant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_A_X86, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_A_X86(a_szSubtype, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_szSubtype, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_A_X86, a_Memory, a_Vram, a_Diskspace, \
                                      NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
 /* Linux x86 64-bit sub-type template defaulting to 1 CPU with USB-tablet-mouse/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_A_X64(a_szVariant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szVariant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_A_X64, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_A_X64(a_szSubtype, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szSubtype, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_A_X64, a_Memory, a_Vram, a_Diskspace, \
                                      NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
-#define VBOX_LINUX_SUBTYPE_A_A64(a_szVariant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_ARM64(a_szVariant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_A_ARM64, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_A_A64(a_szSubtype, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_ARM64(a_szSubtype, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_A_ARM64, a_Memory, a_Vram, a_Diskspace, \
                                       NetworkAdapterType_I82540EM, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI)
 
-#define VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_X86(a_szVariant, a_Id, a_Description, a_OStype, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_szVariant, a_Id, a_Description, a_OStype, VBOX_LINUX_OSHINTS_A_X86, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_X86(a_szSubtype, a_Id, a_Description, a_OStype, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_szSubtype, a_Id, a_Description, a_OStype, VBOX_LINUX_OSHINTS_A_X86, a_Memory, a_Vram, a_Diskspace, \
                                     NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
-#define VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_X64(a_szVariant, a_Id, a_Description, a_OStype, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szVariant, a_Id, a_Description, a_OStype, VBOX_LINUX_OSHINTS_A_X64, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_X64(a_szSubtype, a_Id, a_Description, a_OStype, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szSubtype, a_Id, a_Description, a_OStype, VBOX_LINUX_OSHINTS_A_X64, a_Memory, a_Vram, a_Diskspace, \
                                     NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
-#define VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_A64(a_szVariant, a_Id, a_Description, a_OStype, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_A64(a_szVariant, a_Id, a_Description, a_OStype, VBOX_LINUX_OSHINTS_A_ARM64, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_A64(a_szSubtype, a_Id, a_Description, a_OStype, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_A64(a_szSubtype, a_Id, a_Description, a_OStype, VBOX_LINUX_OSHINTS_A_ARM64, a_Memory, a_Vram, a_Diskspace, \
                                     NetworkAdapterType_I82540EM, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI)
 
 /* Linux x86 32-bit sub-type template defaulting to 1 CPU with PS/2-mouse/PAE-NX/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_B_X86(a_szVariant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_szVariant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_B_X86, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_B_X86(a_szSubtype, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_szSubtype, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_B_X86, a_Memory, a_Vram, a_Diskspace, \
                                     NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
 /* Linux 64-bit sub-type template defaulting to 1 CPU with PS/2-mouse/PAE-NX/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_B_X64(a_szVariant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szVariant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_B_X64, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_B_X64(a_szSubtype, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szSubtype, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_B_X64, a_Memory, a_Vram, a_Diskspace, \
                                     NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
-#define VBOX_LINUX_SUBTYPE_B_A64(a_szVariant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_ARM64(a_szVariant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_B_ARM64, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_B_A64(a_szSubtype, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_ARM64(a_szSubtype, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_B_ARM64, a_Memory, a_Vram, a_Diskspace, \
                                       NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
 /* Linux 32-bit sub-type template defaulting to 1 CPU with PS/2-mouse/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_C_X86(a_szVariant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_szVariant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_C_X86, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_C_X86(a_szSubtype, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_szSubtype, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_C_X86, a_Memory, a_Vram, a_Diskspace, \
                                     NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
 /* Linux 64-bit sub-type template defaulting to 1 CPU with PS/2-mouse/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_C_X64(a_szVariant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szVariant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_C_X64, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_C_X64(a_szSubtype, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szSubtype, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_C_X64, a_Memory, a_Vram, a_Diskspace, \
                                     NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
 /* Linux 32-bit sub-type template defaulting to 1 CPU with PS/2-mouse/VMSVGA/PCnet-FASTIII/PIIX4+IDE DVD/PIIX4+IDE disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_D_X86(a_szVariant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_szVariant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_D_X86, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_D_X86(a_szSubtype, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_szSubtype, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_D_X86, a_Memory, a_Vram, a_Diskspace, \
                                     NetworkAdapterType_Am79C973, StorageControllerType_PIIX4, StorageBus_IDE)
 
 /* Linux 64-bit sub-type template defaulting to 1 CPU with PS/2-mouse/VMSVGA/PCnet-FASTIII/PIIX4+IDE DVD/PIIX4+IDE disk/AC97 */
-#define VBOX_LINUX_SUBTYPE_D_X64(a_szVariant, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szVariant, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_D_X64, a_Memory, a_Vram, a_Diskspace, \
+#define VBOX_LINUX_SUBTYPE_D_X64(a_szSubtype, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szSubtype, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_D_X64, a_Memory, a_Vram, a_Diskspace, \
                                     NetworkAdapterType_I82540EM, StorageControllerType_PIIX4, StorageBus_IDE)
 
     VBOX_LINUX_SUBTYPE_D_X86("Linux 2.2",    Linux22,            "Linux 2.2 (32-bit)",                      64,  4, 2),

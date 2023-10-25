@@ -4517,17 +4517,17 @@ HRESULT VirtualBox::i_findGuestOSType(const Utf8Str &strOSType,
 
 /**
  * Walk the list of GuestOSType objects and return a list of guest OS
- * variants which correspond to the supplied guest OS family ID.
+ * subtypes which correspond to the supplied guest OS family ID.
  *
  * @param strOSFamily    Guest OS family ID.
- * @param aOSVariants    Where to store the list of guest OS variants.
+ * @param aOSSubtypes    Where to store the list of guest OS subtypes.
  *
  * @note Locks the guest OS types list for reading.
  */
-HRESULT VirtualBox::getGuestOSVariantsByFamilyId(const Utf8Str &strOSFamily,
-                                                 std::vector<com::Utf8Str> &aOSVariants)
+HRESULT VirtualBox::getGuestOSSubtypesByFamilyId(const Utf8Str &strOSFamily,
+                                                 std::vector<com::Utf8Str> &aOSSubtypes)
 {
-    std::list<com::Utf8Str> allOSVariants;
+    std::list<com::Utf8Str> allOSSubtypes;
 
     AutoReadLock alock(m->allGuestOSTypes.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
@@ -4555,66 +4555,66 @@ HRESULT VirtualBox::getGuestOSVariantsByFamilyId(const Utf8Str &strOSFamily,
         AssertMsg(!familyId.isEmpty(), ("familfyId must not be NULL"));
         if (familyId.compare(strOSFamily, Utf8Str::CaseInsensitive) == 0)
         {
-            const Utf8Str &strOSVariant = (*it)->i_variant();
-            if (!strOSVariant.isEmpty())
-                allOSVariants.push_back(strOSVariant);
+            const Utf8Str &strOSSubtype = (*it)->i_subtype();
+            if (!strOSSubtype.isEmpty())
+                allOSSubtypes.push_back(strOSSubtype);
         }
     }
 
     /* throw out any duplicates */
-    allOSVariants.sort();
-    allOSVariants.unique();
+    allOSSubtypes.sort();
+    allOSSubtypes.unique();
 
-    aOSVariants.resize(allOSVariants.size());
+    aOSSubtypes.resize(allOSSubtypes.size());
     size_t i = 0;
-    for (std::list<com::Utf8Str>::const_iterator it = allOSVariants.begin();
-         it != allOSVariants.end(); ++it, ++i)
-        aOSVariants[i] = (*it);
+    for (std::list<com::Utf8Str>::const_iterator it = allOSSubtypes.begin();
+         it != allOSSubtypes.end(); ++it, ++i)
+        aOSSubtypes[i] = (*it);
 
     return S_OK;
 }
 
 /**
  * Walk the list of GuestOSType objects and return a list of guest OS
- * descriptions which correspond to the supplied guest OS variant.
+ * descriptions which correspond to the supplied guest OS subtype.
  *
- * @param strOSVariant     Guest OS variant.
+ * @param strOSSubtype     Guest OS subtype.
  * @param aGuestOSDescs    Where to store the list of guest OS descriptions..
  *
  * @note Locks the guest OS types list for reading.
  */
-HRESULT VirtualBox::getGuestOSDescsByVariant(const Utf8Str &strOSVariant,
+HRESULT VirtualBox::getGuestOSDescsBySubtype(const Utf8Str &strOSSubtype,
                                              std::vector<com::Utf8Str> &aGuestOSDescs)
 {
     std::list<com::Utf8Str> allOSDescs;
 
     AutoReadLock alock(m->allGuestOSTypes.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
-    bool fFoundGuestOSVariant = false;
+    bool fFoundGuestOSSubtype = false;
     for (GuestOSTypesOList::const_iterator it = m->allGuestOSTypes.begin();
          it != m->allGuestOSTypes.end(); ++it)
     {
-        const Utf8Str &guestOSVariant = (*it)->i_variant();
-        /* Only some guest OS types have a populated variant value. */
-        if (guestOSVariant.isNotEmpty() &&
-            guestOSVariant.compare(strOSVariant, Utf8Str::CaseInsensitive) == 0)
+        const Utf8Str &guestOSSubtype = (*it)->i_subtype();
+        /* Only some guest OS types have a populated subtype value. */
+        if (guestOSSubtype.isNotEmpty() &&
+            guestOSSubtype.compare(strOSSubtype, Utf8Str::CaseInsensitive) == 0)
         {
-            fFoundGuestOSVariant = true;
+            fFoundGuestOSSubtype = true;
             break;
         }
     }
 
-    if (!fFoundGuestOSVariant)
+    if (!fFoundGuestOSSubtype)
        return setError(VBOX_E_OBJECT_NOT_FOUND,
-                       tr("'%s' is not a valid guest OS variant."), strOSVariant.c_str());
+                       tr("'%s' is not a valid guest OS subtype."), strOSSubtype.c_str());
 
     for (GuestOSTypesOList::const_iterator it = m->allGuestOSTypes.begin();
          it != m->allGuestOSTypes.end(); ++it)
     {
-        const Utf8Str &guestOSVariant = (*it)->i_variant();
-        /* Only some guest OS types have a populated variant value. */
-        if (guestOSVariant.isNotEmpty() &&
-            guestOSVariant.compare(strOSVariant, Utf8Str::CaseInsensitive) == 0)
+        const Utf8Str &guestOSSubtype = (*it)->i_subtype();
+        /* Only some guest OS types have a populated subtype value. */
+        if (guestOSSubtype.isNotEmpty() &&
+            guestOSSubtype.compare(strOSSubtype, Utf8Str::CaseInsensitive) == 0)
         {
             const Utf8Str &strOSDesc = (*it)->i_description();
             allOSDescs.push_back(strOSDesc);

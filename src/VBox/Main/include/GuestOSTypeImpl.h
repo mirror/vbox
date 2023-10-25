@@ -52,7 +52,7 @@ public:
     // public methods only for internal purposes
     const Utf8Str &i_id() const { return mID; }
     const Utf8Str &i_familyId() const { return mFamilyID; }
-    const Utf8Str &i_variant() const { return mOSVariant; }
+    const Utf8Str &i_subtype() const { return mOSSubtype; }
     const Utf8Str &i_description() const { return mDescription; }
     bool i_is64Bit() const { return !!(mOSHint & VBOXOSHINT_64BIT); }
     PlatformArchitecture_T i_platformArchitecture() const;
@@ -70,7 +70,7 @@ private:
     // Wrapped IGuestOSType properties
     HRESULT getFamilyId(com::Utf8Str &aFamilyId);
     HRESULT getFamilyDescription(com::Utf8Str &aFamilyDescription);
-    HRESULT getVariant(com::Utf8Str &aVariant);
+    HRESULT getSubtype(com::Utf8Str &aSubtype);
     HRESULT getId(com::Utf8Str &aId);
     HRESULT getDescription(com::Utf8Str &aDescription);
     HRESULT getIs64Bit(BOOL *aIs64Bit);
@@ -111,7 +111,7 @@ private:
 
     const Utf8Str mFamilyID;
     const Utf8Str mFamilyDescription;
-    const Utf8Str mOSVariant;
+    const Utf8Str mOSSubtype;
     const Utf8Str mID;
     const Utf8Str mDescription;
     const VBOXOSTYPE mOSType;

@@ -822,10 +822,10 @@ static HRESULT listGuestOSTypes(const com::SafeIfaceArray<IGuestOSType> &aGuestO
         Bstr familyDescription;
         guestOS->COMGETTER(FamilyDescription)(familyDescription.asOutParam());
         RTPrintf(List::tr("Family Desc: %ls\n"), familyDescription.raw());
-        Bstr guestOSVariant;
-        guestOS->COMGETTER(Variant)(guestOSVariant.asOutParam());
-        if (guestOSVariant.isNotEmpty())
-            RTPrintf(List::tr("OS Variant:  %ls\n"), guestOSVariant.raw());
+        Bstr guestOSSubtype;
+        guestOS->COMGETTER(Subtype)(guestOSSubtype.asOutParam());
+        if (guestOSSubtype.isNotEmpty())
+            RTPrintf(List::tr("OS Subtype:  %ls\n"), guestOSSubtype.raw());
         BOOL is64Bit;
         guestOS->COMGETTER(Is64Bit)(&is64Bit);
         RTPrintf(List::tr("64 bit:      %RTbool\n"), is64Bit);
@@ -2061,7 +2061,7 @@ enum ListType_T
     kListVMs,
     kListRunningVMs,
     kListOsTypes,
-    kListOsVariants,
+    kListOsSubtypes,
     kListHostDvds,
     kListHostFloppies,
     kListInternalNetworks,
@@ -2207,7 +2207,7 @@ static HRESULT produceList(enum ListType_T enmCommand, bool fOptLong, bool fOptS
             break;
         }
 
-        case kListOsVariants:
+        case kListOsSubtypes:
         {
             com::SafeArray<BSTR> GuestOSFamilies;
             CHECK_ERROR(pVirtualBox, COMGETTER(GuestOSFamilies)(ComSafeArrayAsOutParam(GuestOSFamilies)));
@@ -2216,20 +2216,20 @@ static HRESULT produceList(enum ListType_T enmCommand, bool fOptLong, bool fOptS
                 for (size_t i = 0; i < GuestOSFamilies.size(); ++i)
                 {
                     const Bstr bstrOSFamily = GuestOSFamilies[i];
-                    com::SafeArray<BSTR> GuestOSVariants;
+                    com::SafeArray<BSTR> GuestOSSubtypes;
                     CHECK_ERROR(pVirtualBox,
-                                GetGuestOSVariantsByFamilyId(bstrOSFamily.raw(),
-                                                             ComSafeArrayAsOutParam(GuestOSVariants)));
+                                GetGuestOSSubtypesByFamilyId(bstrOSFamily.raw(),
+                                                             ComSafeArrayAsOutParam(GuestOSSubtypes)));
                     if (SUCCEEDED(hrc))
                     {
                         RTPrintf("%ls\n", bstrOSFamily.raw());
-                        for (size_t j = 0; j < GuestOSVariants.size(); ++j)
+                        for (size_t j = 0; j < GuestOSSubtypes.size(); ++j)
                         {
-                            RTPrintf("\t%ls\n", GuestOSVariants[j]);
+                            RTPrintf("\t%ls\n", GuestOSSubtypes[j]);
                             com::SafeArray<BSTR> GuestOSDescs;
-                            const Bstr bstrOSVariant = GuestOSVariants[j];
+                            const Bstr bstrOSSubtype = GuestOSSubtypes[j];
                             CHECK_ERROR(pVirtualBox,
-                                        GetGuestOSDescsByVariant(bstrOSVariant.raw(),
+                                        GetGuestOSDescsBySubtype(bstrOSSubtype.raw(),
                                                                  ComSafeArrayAsOutParam(GuestOSDescs)));
                             if (SUCCEEDED(hrc))
                                 for (size_t k = 0; k < GuestOSDescs.size(); ++k)
@@ -2477,7 +2477,7 @@ RTEXITCODE handleList(HandlerArg *a)
         { "vms",                kListVMs,                RTGETOPT_REQ_NOTHING },
         { "runningvms",         kListRunningVMs,         RTGETOPT_REQ_NOTHING },
         { "ostypes",            kListOsTypes,            RTGETOPT_REQ_NOTHING },
-        { "osvariants",         kListOsVariants,         RTGETOPT_REQ_NOTHING },
+        { "ossubtypes",         kListOsSubtypes,         RTGETOPT_REQ_NOTHING },
         { "hostdvds",           kListHostDvds,           RTGETOPT_REQ_NOTHING },
         { "hostfloppies",       kListHostFloppies,       RTGETOPT_REQ_NOTHING },
         { "intnets",            kListInternalNetworks,   RTGETOPT_REQ_NOTHING },
@@ -2544,7 +2544,7 @@ RTEXITCODE handleList(HandlerArg *a)
             case kListVMs:
             case kListRunningVMs:
             case kListOsTypes:
-            case kListOsVariants:
+            case kListOsSubtypes:
             case kListHostDvds:
             case kListHostFloppies:
             case kListInternalNetworks:

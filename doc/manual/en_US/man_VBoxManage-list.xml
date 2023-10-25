@@ -74,7 +74,7 @@
         <arg choice="plain">intnets</arg>
         <arg choice="plain">natnets</arg>
         <arg choice="plain">ostypes</arg>
-        <arg choice="plain">osvariants</arg>
+        <arg choice="plain">ossubtypes</arg>
         <arg choice="plain">runningvms</arg>
         <arg choice="plain">screenshotformats</arg>
         <arg choice="plain">systemproperties</arg>
@@ -411,19 +411,19 @@
         modifyvm</command> command.
       </para>
     </refsect2>
-    <refsect2 id="vboxmanage-list-osvariants">
-      <title>List the Guest Operating System Variants</title>
-      <cmdsynopsis id="synopsis-vboxmanage-list-osvariants">
+    <refsect2 id="vboxmanage-list-ossubtypes">
+      <title>List the Guest Operating System Subtypes</title>
+      <cmdsynopsis id="synopsis-vboxmanage-list-ossubtypes">
         <command>VBoxManage list</command>
-        <arg choice="plain">osvariants</arg>
+        <arg choice="plain">ossubtypes</arg>
       </cmdsynopsis>
       <para>
-        The <command>VBoxManage list osvariants</command> command lists
-        all guest operating system (OS) variants along with the
+        The <command>VBoxManage list ossubtypes</command> command lists
+        all guest operating system (OS) subtypes along with the
         associated guest OS descriptions that are known to &product-name;.
         Each list entry includes a guest OS family identifier, the guest
-        OS variants associated with that OS family (if any), and a
-        description the guest OSes associated with that OS variant.
+        OS subtypes associated with that OS family (if any), and a
+        description the guest OSes associated with that OS subtype.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-list-runningvms">

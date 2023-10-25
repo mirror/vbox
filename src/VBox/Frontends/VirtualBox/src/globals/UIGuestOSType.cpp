@@ -247,7 +247,7 @@ const QString &UIGuestOSType::getId() const
 const QString &UIGuestOSType::getSubtype() const
 {
     if (m_strSubtype.isEmpty() && m_comGuestOSType.isOk())
-        m_strSubtype = m_comGuestOSType.GetVariant();
+        m_strSubtype = m_comGuestOSType.GetSubtype();
     return m_strSubtype;
 }
 
