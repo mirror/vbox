@@ -37,7 +37,7 @@
 
 /* Forward declarations: */
 class QITabWidget;
-class UIMachineSettingsNetwork;
+class UINetworkSettingsEditor;
 struct UIDataSettingsMachineNetwork;
 struct UIDataSettingsMachineNetworkAdapter;
 typedef UISettingsCache<UIDataPortForwardingRule> UISettingsCachePortForwardingRule;
@@ -122,9 +122,28 @@ private:
     /** Prepare tab. */
     void prepareTab();
     /** Prepares connections. */
-    void prepareConnections(UIMachineSettingsNetwork *pTabEditor);
+    void prepareConnections(UINetworkSettingsEditor *pTabEditor);
     /** Cleanups all. */
     void cleanup();
+
+    /** Performs tab polishing for specified @a iSlot. */
+    void polishTab(int iSlot);
+
+    /** Loads adapter data for specified @a iSlot from @a adapterCache to corresponding widgets. */
+    void getFromCache(int iSlot, const UISettingsCacheMachineNetworkAdapter &adapterCache);
+    /** Saves adapter data for specified @a iSlot from corresponding widgets to @a adapterCache. */
+    void putToCache(int iSlot, UISettingsCacheMachineNetworkAdapter &adapterCache);
+
+    /** Reloads tab alternatives for specified @a iSlot. */
+    void reloadAlternatives(int iSlot);
+
+    /** Returns tab attachment type for specified @a iSlot. */
+    KNetworkAttachmentType attachmentType(int iSlot) const;
+    /** Returne tab alternative name for specified @a iSlot and @a enmType. */
+    QString alternativeName(int iSlot, KNetworkAttachmentType enmType = KNetworkAttachmentType_Null) const;
+
+    /** Performs validation for specified @a iSlot, updates @a messages list if something is wrong. */
+    bool validate(int iSlot, QList<UIValidationMessage> &messages);
 
     /** Repopulates bridged adapter list. */
     void refreshBridgedAdapterList();
@@ -144,6 +163,9 @@ private:
     /** Repopulates host-only network list. */
     void refreshHostOnlyNetworkList();
 #endif
+
+    /** Returns tab title for specified @a iSlot. */
+    static QString tabTitle(int iSlot);
 
     /** Loads generic properties from passed @a adapter. */
     static QString loadGenericProperties(const CNetworkAdapter &adapter);
@@ -184,8 +206,8 @@ private:
     /** Holds the tab-widget instance. */
     QITabWidget *m_pTabWidget;
 
-    /** Holds the list of tab editors. */
-    QList<UIMachineSettingsNetwork*>  m_tabEditors;
+    /** Holds the list of tab-editors. */
+    QList<UINetworkSettingsEditor*>  m_tabEditors;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsNetwork_h */
