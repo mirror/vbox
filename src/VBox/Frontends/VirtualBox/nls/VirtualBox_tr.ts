@@ -14408,7 +14408,7 @@ Oturum Panelini kullanın</translation>
     </message>
 </context>
 <context>
-    <name>UIMachineSettingsNetworkPage</name>
+    <name>UIMachineSettingsNetwork</name>
     <message>
         <source>No host network interface is selected</source>
         <translation type="obsolete">Hiç sunucu ağ arayüzü seçilmedi</translation>

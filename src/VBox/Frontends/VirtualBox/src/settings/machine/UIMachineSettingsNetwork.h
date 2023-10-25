@@ -45,16 +45,16 @@ typedef UISettingsCachePool<UIDataSettingsMachineNetworkAdapter, UISettingsCache
 typedef UISettingsCachePool<UIDataSettingsMachineNetwork, UISettingsCacheMachineNetworkAdapter> UISettingsCacheMachineNetwork;
 
 /** Machine settings: Network page. */
-class SHARED_LIBRARY_STUFF UIMachineSettingsNetworkPage : public UISettingsPageMachine
+class SHARED_LIBRARY_STUFF UIMachineSettingsNetwork : public UISettingsPageMachine
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs Network settings page. */
-    UIMachineSettingsNetworkPage();
+    UIMachineSettingsNetwork();
     /** Destructs Network settings page. */
-    virtual ~UIMachineSettingsNetworkPage() RT_OVERRIDE;
+    virtual ~UIMachineSettingsNetwork() RT_OVERRIDE;
 
     /** Returns the bridged adapter list. */
     const QStringList &bridgedAdapterList() const { return m_bridgedAdapterList; }

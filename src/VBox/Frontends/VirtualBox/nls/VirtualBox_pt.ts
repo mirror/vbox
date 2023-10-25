@@ -11487,7 +11487,7 @@
     </message>
 </context>
 <context>
-    <name>UIMachineSettingsNetworkPage</name>
+    <name>UIMachineSettingsNetwork</name>
     <message>
         <source>No host network interface is selected</source>
         <translation type="obsolete">Nenhum interface de rede do hospedeiro foi seleccionado</translation>

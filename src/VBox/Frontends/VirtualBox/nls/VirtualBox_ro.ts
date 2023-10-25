@@ -10485,7 +10485,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
 </context>
 <context>
-    <name>UIMachineSettingsNetworkPage</name>
+    <name>UIMachineSettingsNetwork</name>
     <message>
         <source>No host network interface is selected</source>
         <translation type="obsolete">Nici o interfață gazdă nu este selectată</translation>

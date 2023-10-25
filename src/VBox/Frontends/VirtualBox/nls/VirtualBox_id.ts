@@ -13469,7 +13469,7 @@
     </message>
 </context>
 <context>
-    <name>UIMachineSettingsNetworkPage</name>
+    <name>UIMachineSettingsNetwork</name>
     <message>
         <source>Internal network name is not set</source>
         <translation type="obsolete">Nama jaringan internal belum di-set</translation>

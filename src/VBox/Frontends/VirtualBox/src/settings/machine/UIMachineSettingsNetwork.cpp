@@ -158,27 +158,27 @@ struct UIDataSettingsMachineNetwork
 
 
 /*********************************************************************************************************************************
-*   Class UIMachineSettingsNetworkPage implementation.                                                                           *
+*   Class UIMachineSettingsNetwork implementation.                                                                               *
 *********************************************************************************************************************************/
 
-UIMachineSettingsNetworkPage::UIMachineSettingsNetworkPage()
+UIMachineSettingsNetwork::UIMachineSettingsNetwork()
     : m_pCache(0)
     , m_pTabWidget(0)
 {
     prepare();
 }
 
-UIMachineSettingsNetworkPage::~UIMachineSettingsNetworkPage()
+UIMachineSettingsNetwork::~UIMachineSettingsNetwork()
 {
     cleanup();
 }
 
-bool UIMachineSettingsNetworkPage::changed() const
+bool UIMachineSettingsNetwork::changed() const
 {
     return m_pCache ? m_pCache->wasChanged() : false;
 }
 
-void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
+void UIMachineSettingsNetwork::loadToCacheFrom(QVariant &data)
 {
     /* Sanity check: */
     if (   !m_pCache
@@ -265,7 +265,7 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-void UIMachineSettingsNetworkPage::getFromCache()
+void UIMachineSettingsNetwork::getFromCache()
 {
     /* Sanity check: */
     if (   !m_pCache
@@ -286,7 +286,7 @@ void UIMachineSettingsNetworkPage::getFromCache()
     revalidate();
 }
 
-void UIMachineSettingsNetworkPage::putToCache()
+void UIMachineSettingsNetwork::putToCache()
 {
     /* Sanity check: */
     if (   !m_pCache
@@ -304,7 +304,7 @@ void UIMachineSettingsNetworkPage::putToCache()
     m_pCache->cacheCurrentData(newNetworkData);
 }
 
-void UIMachineSettingsNetworkPage::saveFromCacheTo(QVariant &data)
+void UIMachineSettingsNetwork::saveFromCacheTo(QVariant &data)
 {
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
@@ -316,7 +316,7 @@ void UIMachineSettingsNetworkPage::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-bool UIMachineSettingsNetworkPage::validate(QList<UIValidationMessage> &messages)
+bool UIMachineSettingsNetwork::validate(QList<UIValidationMessage> &messages)
 {
     /* Sanity check: */
     if (!m_pTabWidget)
@@ -334,7 +334,7 @@ bool UIMachineSettingsNetworkPage::validate(QList<UIValidationMessage> &messages
     return fValid;
 }
 
-void UIMachineSettingsNetworkPage::retranslateUi()
+void UIMachineSettingsNetwork::retranslateUi()
 {
     /* Sanity check: */
     if (!m_pTabWidget)
@@ -347,7 +347,7 @@ void UIMachineSettingsNetworkPage::retranslateUi()
     }
 }
 
-void UIMachineSettingsNetworkPage::polishPage()
+void UIMachineSettingsNetwork::polishPage()
 {
     /* Sanity check: */
     if (   !m_pCache
@@ -365,7 +365,7 @@ void UIMachineSettingsNetworkPage::polishPage()
     }
 }
 
-void UIMachineSettingsNetworkPage::filterOut(bool fExpertMode, const QString &strFilter)
+void UIMachineSettingsNetwork::filterOut(bool fExpertMode, const QString &strFilter)
 {
     /* Call to base class: */
     UISettingsPageMachine::filterOut(fExpertMode, strFilter);
@@ -376,7 +376,7 @@ void UIMachineSettingsNetworkPage::filterOut(bool fExpertMode, const QString &st
             m_pTabWidget->setTabVisible(i, m_fInExpertMode);
 }
 
-void UIMachineSettingsNetworkPage::sltHandleAlternativeNameChange()
+void UIMachineSettingsNetwork::sltHandleAlternativeNameChange()
 {
     /* Sanity check: */
     if (!m_pTabWidget)
@@ -426,7 +426,7 @@ void UIMachineSettingsNetworkPage::sltHandleAlternativeNameChange()
     revalidate();
 }
 
-void UIMachineSettingsNetworkPage::prepare()
+void UIMachineSettingsNetwork::prepare()
 {
     /* Prepare cache: */
     m_pCache = new UISettingsCacheMachineNetwork;
@@ -439,7 +439,7 @@ void UIMachineSettingsNetworkPage::prepare()
     retranslateUi();
 }
 
-void UIMachineSettingsNetworkPage::prepareWidgets()
+void UIMachineSettingsNetwork::prepareWidgets()
 {
     /* Prepare main layout: */
     QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
@@ -465,7 +465,7 @@ void UIMachineSettingsNetworkPage::prepareWidgets()
     }
 }
 
-void UIMachineSettingsNetworkPage::prepareTab()
+void UIMachineSettingsNetwork::prepareTab()
 {
     /* Prepare tab: */
     UIEditor *pTab = new UIEditor(m_pTabWidget);
@@ -500,29 +500,29 @@ void UIMachineSettingsNetworkPage::prepareTab()
     }
 }
 
-void UIMachineSettingsNetworkPage::prepareConnections(UINetworkSettingsEditor *pTabEditor)
+void UIMachineSettingsNetwork::prepareConnections(UINetworkSettingsEditor *pTabEditor)
 {
     /* Attachment connections: */
     connect(pTabEditor, &UINetworkSettingsEditor::sigFeatureStateChanged,
-            this, &UIMachineSettingsNetworkPage::revalidate);
+            this, &UIMachineSettingsNetwork::revalidate);
     connect(pTabEditor, &UINetworkSettingsEditor::sigAttachmentTypeChanged,
-            this, &UIMachineSettingsNetworkPage::revalidate);
+            this, &UIMachineSettingsNetwork::revalidate);
     connect(pTabEditor, &UINetworkSettingsEditor::sigAlternativeNameChanged,
-            this, &UIMachineSettingsNetworkPage::sltHandleAlternativeNameChange);
+            this, &UIMachineSettingsNetwork::sltHandleAlternativeNameChange);
 
     /* Advanced connections: */
     connect(pTabEditor, &UINetworkSettingsEditor::sigMACAddressChanged,
-            this, &UIMachineSettingsNetworkPage::revalidate);
+            this, &UIMachineSettingsNetwork::revalidate);
 }
 
-void UIMachineSettingsNetworkPage::cleanup()
+void UIMachineSettingsNetwork::cleanup()
 {
     /* Cleanup cache: */
     delete m_pCache;
     m_pCache = 0;
 }
 
-void UIMachineSettingsNetworkPage::polishTab(int iSlot)
+void UIMachineSettingsNetwork::polishTab(int iSlot)
 {
     /* Acquire tab-editor: */
     UINetworkSettingsEditor *pTabEditor = m_tabEditors.at(iSlot);
@@ -545,7 +545,7 @@ void UIMachineSettingsNetworkPage::polishTab(int iSlot)
     pTabEditor->setForwardingOptionsAvailable(attachmentType(iSlot) == KNetworkAttachmentType_NAT);
 }
 
-void UIMachineSettingsNetworkPage::getFromCache(int iSlot, const UISettingsCacheMachineNetworkAdapter &adapterCache)
+void UIMachineSettingsNetwork::getFromCache(int iSlot, const UISettingsCacheMachineNetworkAdapter &adapterCache)
 {
     /* Acquire tab-editor: */
     UINetworkSettingsEditor *pTabEditor = m_tabEditors.at(iSlot);
@@ -592,7 +592,7 @@ void UIMachineSettingsNetworkPage::getFromCache(int iSlot, const UISettingsCache
     reloadAlternatives(iSlot);
 }
 
-void UIMachineSettingsNetworkPage::putToCache(int iSlot, UISettingsCacheMachineNetworkAdapter &adapterCache)
+void UIMachineSettingsNetwork::putToCache(int iSlot, UISettingsCacheMachineNetworkAdapter &adapterCache)
 {
     /* Acquire tab-editor: */
     UINetworkSettingsEditor *pTabEditor = m_tabEditors.at(iSlot);
@@ -639,7 +639,7 @@ void UIMachineSettingsNetworkPage::putToCache(int iSlot, UISettingsCacheMachineN
     adapterCache.cacheCurrentData(newAdapterData);
 }
 
-void UIMachineSettingsNetworkPage::reloadAlternatives(int iSlot)
+void UIMachineSettingsNetwork::reloadAlternatives(int iSlot)
 {
     /* Acquire tab-editor: */
     UINetworkSettingsEditor *pTabEditor = m_tabEditors.at(iSlot);
@@ -658,7 +658,7 @@ void UIMachineSettingsNetworkPage::reloadAlternatives(int iSlot)
 #endif
 }
 
-KNetworkAttachmentType UIMachineSettingsNetworkPage::attachmentType(int iSlot) const
+KNetworkAttachmentType UIMachineSettingsNetwork::attachmentType(int iSlot) const
 {
     /* Acquire tab-editor: */
     UINetworkSettingsEditor *pTabEditor = m_tabEditors.at(iSlot);
@@ -666,8 +666,8 @@ KNetworkAttachmentType UIMachineSettingsNetworkPage::attachmentType(int iSlot) c
     return pTabEditor->valueType();
 }
 
-QString UIMachineSettingsNetworkPage::alternativeName(int iSlot,
-                                                      KNetworkAttachmentType enmType /* = KNetworkAttachmentType_Null */) const
+QString UIMachineSettingsNetwork::alternativeName(int iSlot,
+                                                  KNetworkAttachmentType enmType /* = KNetworkAttachmentType_Null */) const
 {
     /* Acquire tab-editor: */
     UINetworkSettingsEditor *pTabEditor = m_tabEditors.at(iSlot);
@@ -677,7 +677,7 @@ QString UIMachineSettingsNetworkPage::alternativeName(int iSlot,
     return pTabEditor->valueName(enmType);
 }
 
-bool UIMachineSettingsNetworkPage::validate(int iSlot, QList<UIValidationMessage> &messages)
+bool UIMachineSettingsNetwork::validate(int iSlot, QList<UIValidationMessage> &messages)
 {
     /* Acquire tab-editor: */
     UINetworkSettingsEditor *pTabEditor = m_tabEditors.at(iSlot);
@@ -803,13 +803,13 @@ bool UIMachineSettingsNetworkPage::validate(int iSlot, QList<UIValidationMessage
     return fPass;
 }
 
-void UIMachineSettingsNetworkPage::refreshBridgedAdapterList()
+void UIMachineSettingsNetwork::refreshBridgedAdapterList()
 {
     /* Reload bridged adapters: */
     m_bridgedAdapterList = UINetworkAttachmentEditor::bridgedAdapters();
 }
 
-void UIMachineSettingsNetworkPage::refreshInternalNetworkList(bool fFullRefresh /* = false */)
+void UIMachineSettingsNetwork::refreshInternalNetworkList(bool fFullRefresh /* = false */)
 {
     /* Sanity check: */
     if (!m_pTabWidget)
@@ -831,7 +831,7 @@ void UIMachineSettingsNetworkPage::refreshInternalNetworkList(bool fFullRefresh 
 }
 
 #ifdef VBOX_WITH_CLOUD_NET
-void UIMachineSettingsNetworkPage::refreshCloudNetworkList()
+void UIMachineSettingsNetwork::refreshCloudNetworkList()
 {
     /* Reload cloud network list: */
     m_cloudNetworkList = UINetworkAttachmentEditor::cloudNetworks();
@@ -839,20 +839,20 @@ void UIMachineSettingsNetworkPage::refreshCloudNetworkList()
 #endif /* VBOX_WITH_CLOUD_NET */
 
 #ifdef VBOX_WITH_VMNET
-void UIMachineSettingsNetworkPage::refreshHostOnlyNetworkList()
+void UIMachineSettingsNetwork::refreshHostOnlyNetworkList()
 {
     /* Reload host-only network list: */
     m_hostOnlyNetworkList = UINetworkAttachmentEditor::hostOnlyNetworks();
 }
 #endif /* VBOX_WITH_VMNET */
 
-void UIMachineSettingsNetworkPage::refreshHostInterfaceList()
+void UIMachineSettingsNetwork::refreshHostInterfaceList()
 {
     /* Reload host interfaces: */
     m_hostInterfaceList = UINetworkAttachmentEditor::hostInterfaces();
 }
 
-void UIMachineSettingsNetworkPage::refreshGenericDriverList(bool fFullRefresh /* = false */)
+void UIMachineSettingsNetwork::refreshGenericDriverList(bool fFullRefresh /* = false */)
 {
     /* Sanity check: */
     if (!m_pTabWidget)
@@ -873,20 +873,20 @@ void UIMachineSettingsNetworkPage::refreshGenericDriverList(bool fFullRefresh /*
     }
 }
 
-void UIMachineSettingsNetworkPage::refreshNATNetworkList()
+void UIMachineSettingsNetwork::refreshNATNetworkList()
 {
     /* Reload nat networks: */
     m_natNetworkList = UINetworkAttachmentEditor::natNetworks();
 }
 
 /* static */
-QString UIMachineSettingsNetworkPage::tabTitle(int iSlot)
+QString UIMachineSettingsNetwork::tabTitle(int iSlot)
 {
     return UICommon::tr("Adapter %1").arg(QString("&%1").arg(iSlot + 1));
 }
 
 /* static */
-QString UIMachineSettingsNetworkPage::loadGenericProperties(const CNetworkAdapter &adapter)
+QString UIMachineSettingsNetwork::loadGenericProperties(const CNetworkAdapter &adapter)
 {
     /* Prepare formatted string: */
     QVector<QString> names;
@@ -905,7 +905,7 @@ QString UIMachineSettingsNetworkPage::loadGenericProperties(const CNetworkAdapte
 }
 
 /* static */
-bool UIMachineSettingsNetworkPage::saveGenericProperties(CNetworkAdapter &comAdapter, const QString &strProperties)
+bool UIMachineSettingsNetwork::saveGenericProperties(CNetworkAdapter &comAdapter, const QString &strProperties)
 {
     /* Prepare result: */
     bool fSuccess = true;
@@ -960,7 +960,7 @@ bool UIMachineSettingsNetworkPage::saveGenericProperties(CNetworkAdapter &comAda
     return fSuccess;
 }
 
-bool UIMachineSettingsNetworkPage::saveData()
+bool UIMachineSettingsNetwork::saveData()
 {
     /* Sanity check: */
     if (   !m_pCache
@@ -980,7 +980,7 @@ bool UIMachineSettingsNetworkPage::saveData()
     return fSuccess;
 }
 
-bool UIMachineSettingsNetworkPage::saveAdapterData(int iSlot)
+bool UIMachineSettingsNetwork::saveAdapterData(int iSlot)
 {
     /* Sanity check: */
     if (!m_pCache)

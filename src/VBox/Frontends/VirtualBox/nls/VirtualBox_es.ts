@@ -14695,7 +14695,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIMachineSettingsNetworkPage</name>
+    <name>UIMachineSettingsNetwork</name>
     <message>
         <source>Internal network name is not set</source>
         <translation type="obsolete">No se a colocado el nombre de red interna</translation>

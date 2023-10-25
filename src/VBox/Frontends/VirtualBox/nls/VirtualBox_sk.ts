@@ -11156,7 +11156,7 @@
     </message>
 </context>
 <context>
-    <name>UIMachineSettingsNetworkPage</name>
+    <name>UIMachineSettingsNetwork</name>
     <message>
         <source>Internal network name is not set</source>
         <translation type="obsolete">Názov internej siete nie je definovaný</translation>

@@ -15162,7 +15162,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIMachineSettingsNetworkPage</name>
+    <name>UIMachineSettingsNetwork</name>
     <message>
         <source>No host network interface is selected</source>
         <translation type="obsolete">Non è stata selezionata alcuna interfaccia di rete dell&apos;host</translation>

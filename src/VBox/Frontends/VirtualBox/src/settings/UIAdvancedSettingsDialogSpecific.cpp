@@ -704,7 +704,7 @@ void UIAdvancedSettingsDialogMachine::prepare()
                 /* Network page: */
                 case MachineSettingsPageType_Network:
                 {
-                    pSettingsPage = new UIMachineSettingsNetworkPage;
+                    pSettingsPage = new UIMachineSettingsNetwork;
                     addItem(":/nw_32px.png", ":/nw_24px.png", ":/nw_16px.png",
                             iPageIndex, "#network", pSettingsPage);
                     addPageHelpKeyword(iPageIndex, "settings-network");
