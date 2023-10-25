@@ -174,7 +174,7 @@ public:
 
     /** Constructs tab passing @a pParent to the base-class.
       * @param  pParentPage  Holds the parent page reference allowing to access some of API there. */
-    UIMachineSettingsNetwork(QITabWidget *pParent, UIMachineSettingsNetworkPage *pParentPage);
+    UIMachineSettingsNetwork(UIEditor *pParent, UIMachineSettingsNetworkPage *pParentPage);
 
     /** Loads adapter data from @a adapterCache. */
     void getAdapterDataFromCache(const UISettingsCacheMachineNetworkAdapter &adapterCache);
@@ -233,7 +233,7 @@ private:
 *   Class UIMachineSettingsNetwork implementation.                                                                               *
 *********************************************************************************************************************************/
 
-UIMachineSettingsNetwork::UIMachineSettingsNetwork(QITabWidget *pParent, UIMachineSettingsNetworkPage *pParentPage)
+UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIEditor *pParent, UIMachineSettingsNetworkPage *pParentPage)
     : UIEditor(pParent)
     , m_pParentPage(pParentPage)
     , m_iSlot(-1)
@@ -563,12 +563,7 @@ void UIMachineSettingsNetwork::prepareWidgets()
     QVBoxLayout *pLayout = new QVBoxLayout(this);
     if (pLayout)
     {
-#ifdef VBOX_WS_MAC
-            /* On Mac OS X we can do a bit of smoothness: */
-            int iLeft, iTop, iRight, iBottom;
-            pLayout->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
-            pLayout->setContentsMargins(iLeft / 2, iTop / 2, iRight / 2, iBottom / 2);
-#endif
+        pLayout->setContentsMargins(0, 0, 0, 0);
 
         /* Prepare settings editor: */
         m_pEditorNetworkSettings = new UINetworkSettingsEditor(this);
@@ -725,7 +720,7 @@ void UIMachineSettingsNetworkPage::getFromCache()
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
         /* Get adapter page: */
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
+        UIMachineSettingsNetwork *pTab = m_tabEditors.at(iSlot);
         AssertPtrReturnVoid(pTab);
 
         /* Load old data from cache: */
@@ -759,7 +754,7 @@ void UIMachineSettingsNetworkPage::putToCache()
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
         /* Get adapter page: */
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
+        UIMachineSettingsNetwork *pTab = m_tabEditors.at(iSlot);
         AssertPtrReturnVoid(pTab);
 
         /* Gather new data: */
@@ -792,9 +787,9 @@ bool UIMachineSettingsNetworkPage::validate(QList<UIValidationMessage> &messages
     bool fValid = true;
 
     /* Delegate validation to adapter tabs: */
-    for (int iIndex = 0; iIndex < m_pTabWidget->count(); ++iIndex)
+    for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iIndex));
+        UIMachineSettingsNetwork *pTab = m_tabEditors.at(iSlot);
         AssertPtrReturn(pTab, false);
         if (!pTab->validate(messages))
             fValid = false;
@@ -812,7 +807,7 @@ void UIMachineSettingsNetworkPage::retranslateUi()
 
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
+        UIMachineSettingsNetwork *pTab = m_tabEditors.at(iSlot);
         AssertPtrReturnVoid(pTab);
         m_pTabWidget->setTabText(iSlot, pTab->tabTitle());
     }
@@ -832,7 +827,7 @@ void UIMachineSettingsNetworkPage::polishPage()
                                     (isMachineInValidMode() &&
                                      m_pCache->childCount() > iSlot &&
                                      m_pCache->child(iSlot).base().m_fAdapterEnabled));
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
+        UIMachineSettingsNetwork *pTab = m_tabEditors.at(iSlot);
         AssertPtrReturnVoid(pTab);
         pTab->polishTab();
     }
@@ -871,7 +866,7 @@ void UIMachineSettingsNetworkPage::sltHandleAlternativeNameChange()
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
         /* Get the iterated tab: */
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
+        UIMachineSettingsNetwork *pTab = m_tabEditors.at(iSlot);
         AssertPtrReturnVoid(pTab);
 
         /* Update all the tabs (except sender): */
@@ -886,12 +881,21 @@ void UIMachineSettingsNetworkPage::prepare()
     m_pCache = new UISettingsCacheMachineNetwork;
     AssertPtrReturnVoid(m_pCache);
 
-    /* Create main layout: */
+    /* Prepare everything: */
+    prepareWidgets();
+
+    /* Apply language settings: */
+    retranslateUi();
+}
+
+void UIMachineSettingsNetworkPage::prepareWidgets()
+{
+    /* Prepare main layout: */
     QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
     if (pLayoutMain)
     {
-        /* Creating tab-widget: */
-        m_pTabWidget = new QITabWidget;
+        /* Prepare tab-widget: */
+        m_pTabWidget = new QITabWidget(this);
         if (m_pTabWidget)
         {
             /* How many adapters to display: */
@@ -903,27 +907,55 @@ void UIMachineSettingsNetworkPage::prepare()
 
             /* Create corresponding adapter tabs: */
             for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
-            {
-                /* Create adapter tab: */
-                UIMachineSettingsNetwork *pTab = new UIMachineSettingsNetwork(m_pTabWidget, this);
-                if (pTab)
-                {
-                    /* Tab connections: */
-                    connect(pTab, &UIMachineSettingsNetwork::sigAlternativeNameChanged,
-                            this, &UIMachineSettingsNetworkPage::sltHandleAlternativeNameChange);
-                    connect(pTab, &UIMachineSettingsNetwork::sigValidityChanged,
-                            this, &UIMachineSettingsNetworkPage::revalidate);
+                prepareTab();
 
-                    /* Add tab into tab-widget: */
-                    addEditor(pTab);
-                    m_pTabWidget->addTab(pTab, pTab->tabTitle());
-                }
-            }
-
-            /* Add tab-widget into layout: */
             pLayoutMain->addWidget(m_pTabWidget);
         }
     }
+}
+
+void UIMachineSettingsNetworkPage::prepareTab()
+{
+    /* Prepare tab: */
+    UIEditor *pTab = new UIEditor(m_pTabWidget);
+    if (pTab)
+    {
+        /* Prepare tab layout: */
+        QVBoxLayout *pLayout = new QVBoxLayout(pTab);
+        if (pLayout)
+        {
+#ifdef VBOX_WS_MAC
+            /* On Mac OS X we can do a bit of smoothness: */
+            int iLeft, iTop, iRight, iBottom;
+            pLayout->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+            pLayout->setContentsMargins(iLeft / 2, iTop / 2, iRight / 2, iBottom / 2);
+#endif
+
+            /* Prepare name and system editor: */
+            UIMachineSettingsNetwork *pEditor = new UIMachineSettingsNetwork(pTab, this);
+            if (pEditor)
+            {
+                m_tabEditors << pEditor;
+                prepareConnections(pEditor);
+                pTab->addEditor(pEditor);
+                pLayout->addWidget(pEditor);
+            }
+
+            pLayout->addStretch();
+        }
+
+        addEditor(pTab);
+        m_pTabWidget->addTab(pTab, QString());
+    }
+}
+
+void UIMachineSettingsNetworkPage::prepareConnections(UIMachineSettingsNetwork *pTabEditor)
+{
+    /* Tab connections: */
+    connect(pTabEditor, &UIMachineSettingsNetwork::sigAlternativeNameChanged,
+            this, &UIMachineSettingsNetworkPage::sltHandleAlternativeNameChange);
+    connect(pTabEditor, &UIMachineSettingsNetwork::sigValidityChanged,
+            this, &UIMachineSettingsNetworkPage::revalidate);
 }
 
 void UIMachineSettingsNetworkPage::cleanup()
@@ -954,7 +986,7 @@ void UIMachineSettingsNetworkPage::refreshInternalNetworkList(bool fFullRefresh 
     /* Append internal network list with names from all the tabs: */
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
+        UIMachineSettingsNetwork *pTab = m_tabEditors.at(iSlot);
         AssertPtrReturnVoid(pTab);
         const QString strName = pTab->alternativeName(KNetworkAttachmentType_Internal);
         if (!strName.isEmpty() && !m_internalNetworkList.contains(strName))
@@ -999,7 +1031,7 @@ void UIMachineSettingsNetworkPage::refreshGenericDriverList(bool fFullRefresh /*
     /* Append generic driver list with names from all the tabs: */
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
-        UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
+        UIMachineSettingsNetwork *pTab = m_tabEditors.at(iSlot);
         AssertPtrReturnVoid(pTab);
         const QString strName = pTab->alternativeName(KNetworkAttachmentType_Generic);
         if (!strName.isEmpty() && !m_genericDriverList.contains(strName))

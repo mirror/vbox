@@ -37,6 +37,7 @@
 
 /* Forward declarations: */
 class QITabWidget;
+class UIMachineSettingsNetwork;
 struct UIDataSettingsMachineNetwork;
 struct UIDataSettingsMachineNetworkAdapter;
 typedef UISettingsCache<UIDataPortForwardingRule> UISettingsCachePortForwardingRule;
@@ -116,6 +117,12 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Prepares widgets. */
+    void prepareWidgets();
+    /** Prepare tab. */
+    void prepareTab();
+    /** Prepares connections. */
+    void prepareConnections(UIMachineSettingsNetwork *pTabEditor);
     /** Cleanups all. */
     void cleanup();
 
@@ -176,6 +183,9 @@ private:
 
     /** Holds the tab-widget instance. */
     QITabWidget *m_pTabWidget;
+
+    /** Holds the list of tab editors. */
+    QList<UIMachineSettingsNetwork*>  m_tabEditors;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsNetwork_h */
