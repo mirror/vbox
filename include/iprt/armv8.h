@@ -2728,7 +2728,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBitfieldImm(uint32_t u2Opc, uint32_t 
                                                        uint32_t cImm6Ror, uint32_t uImm6S, bool f64Bit, uint32_t uN1)
 {
     Assert(cImm6Ror < (f64Bit ? UINT32_C(0x3f) : UINT32_C(0x1f))); Assert(iRegResult < 32); Assert(u2Opc < 4);
-    Assert(uImm6S < (f64Bit ? UINT32_C(0x3f) : UINT32_C(0x1f))); Assert(iRegSrc    < 32); Assert(uN1 <= (unsigned)f64Bit);
+    Assert(uImm6S   < (f64Bit ? UINT32_C(0x3f) : UINT32_C(0x1f))); Assert(iRegSrc    < 32); Assert(uN1 <= (unsigned)f64Bit);
     return ((uint32_t)f64Bit   << 31)
          | (u2Opc              << 29)
          | UINT32_C(0x13000000)
@@ -2740,28 +2740,39 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBitfieldImm(uint32_t u2Opc, uint32_t 
 }
 
 
-/** A64: Encodes a SBFM instruction immediates.
+/** A64: Encodes a SBFM instruction.
  * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
-DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSbfmImm(uint32_t iRegResult, uint32_t iRegSrc, uint32_t cImm6Ror, uint32_t uImm6S,
-                                                   bool f64Bit = true, uint32_t uN1 = UINT32_MAX)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrSbfm(uint32_t iRegResult, uint32_t iRegSrc, uint32_t cImm6Ror, uint32_t uImm6S,
+                                                bool f64Bit = true, uint32_t uN1 = UINT32_MAX)
 {
     return Armv8A64MkInstrBitfieldImm(0, iRegResult, iRegSrc, cImm6Ror, uImm6S, f64Bit, uN1 == UINT32_MAX ? f64Bit : uN1);
 }
 
 
-/** A64: Encodes a BFM instruction immediates.
+/** A64: Encodes a BFM instruction.
  * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
-DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBfmImm(uint32_t iRegResult, uint32_t iRegSrc, uint32_t cImm6Ror, uint32_t uImm6S,
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBfm(uint32_t iRegResult, uint32_t iRegSrc, uint32_t cImm6Ror, uint32_t uImm6S,
                                                   bool f64Bit = true, uint32_t uN1 = UINT32_MAX)
 {
     return Armv8A64MkInstrBitfieldImm(1, iRegResult, iRegSrc, cImm6Ror, uImm6S, f64Bit, uN1 == UINT32_MAX ? f64Bit : uN1);
 }
 
 
-/** A64: Encodes an UBFM instruction immediates.
+/** A64: Encodes a BFI instruction.
  * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
-DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrUbfmImm(uint32_t iRegResult, uint32_t iRegSrc, uint32_t cImm6Ror, uint32_t uImm6S,
-                                                   bool f64Bit = true, uint32_t uN1 = UINT32_MAX)
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBfi(uint32_t iRegResult, uint32_t iRegSrc,
+                                               uint32_t offFirstBit, uint32_t cBitsWidth, bool f64Bit = true)
+{
+    Assert(cBitsWidth > 0U); Assert(cBitsWidth < (f64Bit ? 64U : 32U)); Assert(offFirstBit < (f64Bit ? 64U : 32U));
+    return Armv8A64MkInstrBfm(iRegResult, iRegSrc, (uint32_t)-(int32_t)cBitsWidth & (f64bit ? 0x3f : 0x1f),
+                              cBitsWidth - 1, f64Bit);
+}
+
+
+/** A64: Encodes an UBFM instruction.
+ * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrUbfm(uint32_t iRegResult, uint32_t iRegSrc, uint32_t cImm6Ror, uint32_t uImm6S,
+                                                bool f64Bit = true, uint32_t uN1 = UINT32_MAX)
 {
     return Armv8A64MkInstrBitfieldImm(2, iRegResult, iRegSrc, cImm6Ror, uImm6S, f64Bit, uN1 == UINT32_MAX ? f64Bit : uN1);
 }
@@ -2876,6 +2887,69 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAddSubReg(bool fSub, uint32_t iRegRes
          | UINT32_C(0x13000000)
          | ((uint32_t)enmShift     << 22)
          | (iRegSrc2               << 16)
+         | (cShift                 << 10)
+         | (iRegSrc1               <<  5)
+         | iRegResult;
+}
+
+
+/** Extension option for 'extended register' instructions. */
+typedef enum ARMV8A64INSTREXTEND
+{
+    kArmv8A64InstrExtend_UxtB = 0,
+    kArmv8A64InstrExtend_UxtH,
+    kArmv8A64InstrExtend_UxtW,
+    kArmv8A64InstrExtend_UxtX,
+    kArmv8A64InstrExtend_SxtB,
+    kArmv8A64InstrExtend_SxtH,
+    kArmv8A64InstrExtend_SxtW,
+    kArmv8A64InstrExtend_SxtX,
+    /** The default is either UXTW or UXTX depending on whether the instruction
+     *  is in 32-bit or 64-bit mode.  Thus, this needs to be resolved according
+     *  to the f64Bit value. */
+    kArmv8A64InstrExtend_Default
+} ARMV8A64INSTREXTEND;
+
+
+/**
+ * A64: Encodes either add, adds, sub or subs with extended register encoding.
+ *
+ * @returns The encoded instruction.
+ * @param   fSub                    true for sub and subs, false for add and
+ *                                  adds.
+ * @param   iRegResult              The register to store the result in.
+ *                                  SP is NOT valid, but ZR is.
+ * @param   iRegSrc1                The register containing the augend (@a fSub
+ *                                  = false) or minuend (@a fSub = true).
+ *                                  SP is valid, but ZR is NOT.
+ * @param   iRegSrc2                The register containing the addened (@a fSub
+ *                                  = false) or subtrahend (@a fSub = true).
+ *                                  SP is NOT valid, but ZR is.
+ * @param   f64Bit                  true for 64-bit GRPs (default), false for
+ *                                  32-bit GPRs.
+ * @param   fSetFlags               Whether to set flags (adds / subs) or not
+ *                                  (add / sub - default).
+ * @param   enmExtend               The type of extension to apply to @a
+ *                                  iRegSrc2.
+ * @param   cShift                  The left shift count to apply to @a iRegSrc2
+ *                                  after enmExtend processing is done.
+ *                                  Max shift is 4 for some reason.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAddSubRegExtend(bool fSub, uint32_t iRegResult, uint32_t iRegSrc1, uint32_t iRegSrc2,
+                                                           bool f64Bit = true, bool fSetFlags = false,
+                                                           ARMV8A64INSTREXTEND enmExtend = kArmv8A64InstrExtend_Default,
+                                                           uint32_t cShift = 0)
+{
+    if (enmExtend == kArmv8A64InstrExtend_Default)
+        enmExtend = f64Bit ? kArmv8A64InstrExtend_UxtW : kArmv8A64InstrExtend_UxtX;
+    Assert(iRegResult < 32); Assert(iRegSrc1 < 32); Assert(iRegSrc2 < 32); Assert(cShift <= 4);
+
+    return ((uint32_t)f64Bit       << 31)
+         | ((uint32_t)fSub         << 30)
+         | ((uint32_t)fSetFlags    << 29)
+         | UINT32_C(0x0b200000)
+         | (iRegSrc2               << 16)
+         | ((uint32_t)enmExtend    << 13)
          | (cShift                 << 10)
          | (iRegSrc1               <<  5)
          | iRegResult;

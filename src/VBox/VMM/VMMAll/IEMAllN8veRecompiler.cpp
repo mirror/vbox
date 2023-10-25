@@ -4605,6 +4605,113 @@ DECLINLINE(uint32_t) iemNativeEmitIfRcxEcxIsNotZero(PIEMRECOMPILERSTATE pReNativ
     return off;
 }
 
+#define IEM_MC_IF_CX_IS_NZ_AND_EFL_BIT_SET(a_fBit) \
+    off = iemNativeEmitIfCxIsNotZeroAndTestEflagsBit(pReNative, off, a_fBit, true /*fCheckIfSet*/); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX); \
+    do {
+
+#define IEM_MC_IF_CX_IS_NZ_AND_EFL_BIT_NOT_SET(a_fBit) \
+    off = iemNativeEmitIfCxIsNotZeroAndTestEflagsBit(pReNative, off, a_fBit, false /*fCheckIfSet*/); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX); \
+    do {
+
+/** Emits code for IEM_MC_IF_CX_IS_NZ. */
+DECLINLINE(uint32_t) iemNativeEmitIfCxIsNotZeroAndTestEflagsBit(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                                 uint32_t fBitInEfl, bool fCheckIfSet)
+{
+    PIEMNATIVECOND pEntry = iemNativeCondPushIf(pReNative);
+    AssertReturn(pEntry, UINT32_MAX);
+
+    /* We have to load both RCX and EFLAGS before we can start branching,
+       otherwise we'll end up in the else-block with an inconsistent
+       register allocator state.
+       Doing EFLAGS first as it's more likely to be loaded, right? */
+    uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
+                                                              kIemNativeGstRegUse_ReadOnly);
+    AssertReturn(idxEflReg != UINT8_MAX, UINT32_MAX);
+
+    uint8_t const idxGstRcxReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off,
+                                                                 (IEMNATIVEGSTREG)(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                                 kIemNativeGstRegUse_ReadOnly);
+    AssertReturn(idxGstRcxReg != UINT8_MAX, UINT32_MAX);
+
+    /** @todo we could reduce this to a single branch instruction by spending a
+     *        temporary register and some setnz stuff.  Not sure if loops are
+     *        worth it. */
+    /* Check CX. */
+    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfNoneSet(pReNative, off, idxGstRcxReg, UINT16_MAX, pEntry->idxLabelElse);
+
+    /* Check the EFlags bit. */
+    unsigned const iBitNo = ASMBitFirstSetU32(fBitInEfl) - 1;
+    Assert(RT_BIT_32(iBitNo) == fBitInEfl);
+    off = iemNativeEmitTestBitInGprAndJmpToLabelIfCc(pReNative, off, idxEflReg, iBitNo, pEntry->idxLabelElse,
+                                                     !fCheckIfSet /*fJmpIfSet*/);
+
+    iemNativeRegFreeTmp(pReNative, idxGstRcxReg);
+    iemNativeRegFreeTmp(pReNative, idxEflReg);
+
+    iemNativeCondStartIfBlock(pReNative, off);
+    return off;
+}
+
+
+
+/*
+ * General purpose register manipulation (add, sub).
+ */
+
+#define IEM_MC_SUB_GREG_U16(a_iGReg, a_u16Value) \
+    off = iemNativeEmitSubGregU16(pReNative, off, a_iGReg, a_u16Value); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX)
+
+/** Emits code for IEM_MC_SUB_GREG_U16. */
+DECLINLINE(uint32_t) iemNativeEmitSubGregU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg, uint16_t uSubtrahend)
+{
+    uint8_t const idxGstTmpReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off,
+                                                                 (IEMNATIVEGSTREG)(kIemNativeGstReg_GprFirst + iGReg),
+                                                                  kIemNativeGstRegUse_ForUpdate);
+    AssertReturn(idxGstTmpReg != UINT8_MAX, UINT32_MAX);
+
+#ifdef RT_ARCH_AMD64
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 6);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
+    pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
+    if (idxGstTmpReg >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_B;
+    pbCodeBuf[off++] = 0x81;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 5, idxGstTmpReg & 7);
+    pbCodeBuf[off++] = RT_BYTE1(uSubtrahend);
+    pbCodeBuf[off++] = RT_BYTE2(uSubtrahend);
+
+#else
+    uint8_t const idxTmpReg = iemNativeRegAllocTmpImm(pReNative, &off, uSubtrahend);
+    AssertReturn(idxTmpReg != UINT8_MAX, UINT32_MAX);
+
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
+    AssertReturn(pu32CodeBuf, UINT32_MAX);
+
+    /* sub w2, w1, w2, uxth - kind of performs a 16-bit subtract. */
+    /** @todo could also use sub #imm12 variant here if uSubtrahend is in range,
+     *        avoiding an const mov instruction.  We don't really need the UxtH
+     *        bit either, since the register value is zero extended */
+    pu32CodeBuf[off++] = Armv8A64MkInstrAddSubRegExtend(true /*fSub*/, idxTmpReg, idxGstTmpReg, idxTmpReg2, false /*f64Bit*/,
+                                                        false /*fSetFlags*/, kArmv8A64InstrExtend_UxtH);
+
+    /* bfi w1, w2, 0, 16 - moves bits 15:0 from tmpreg2 to tmpreg. */
+    pu32CodeBuf[off++] = Armv8A64MkInstrBfi(idxGstTmpReg, idxTmpReg, 0, 16);
+
+    iemNativeRegFreeTmp(pReNative, idxTmpReg);
+#endif
+
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxGstTmpReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGReg]));
+
+    iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
+    return off;
+}
+
+
 
 
 /*********************************************************************************************************************************
