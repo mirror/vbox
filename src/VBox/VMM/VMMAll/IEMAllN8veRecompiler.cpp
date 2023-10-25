@@ -4605,6 +4605,7 @@ DECLINLINE(uint32_t) iemNativeEmitIfRcxEcxIsNotZero(PIEMRECOMPILERSTATE pReNativ
     return off;
 }
 
+
 #define IEM_MC_IF_CX_IS_NZ_AND_EFL_BIT_SET(a_fBit) \
     off = iemNativeEmitIfCxIsNotZeroAndTestEflagsBit(pReNative, off, a_fBit, true /*fCheckIfSet*/); \
     AssertReturn(off != UINT32_MAX, UINT32_MAX); \
@@ -4640,6 +4641,69 @@ DECLINLINE(uint32_t) iemNativeEmitIfCxIsNotZeroAndTestEflagsBit(PIEMRECOMPILERST
      *        worth it. */
     /* Check CX. */
     off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfNoneSet(pReNative, off, idxGstRcxReg, UINT16_MAX, pEntry->idxLabelElse);
+
+    /* Check the EFlags bit. */
+    unsigned const iBitNo = ASMBitFirstSetU32(fBitInEfl) - 1;
+    Assert(RT_BIT_32(iBitNo) == fBitInEfl);
+    off = iemNativeEmitTestBitInGprAndJmpToLabelIfCc(pReNative, off, idxEflReg, iBitNo, pEntry->idxLabelElse,
+                                                     !fCheckIfSet /*fJmpIfSet*/);
+
+    iemNativeRegFreeTmp(pReNative, idxGstRcxReg);
+    iemNativeRegFreeTmp(pReNative, idxEflReg);
+
+    iemNativeCondStartIfBlock(pReNative, off);
+    return off;
+}
+
+
+#define IEM_MC_IF_ECX_IS_NZ_AND_EFL_BIT_SET(a_fBit) \
+    off = iemNativeEmitIfRcxEcxIsNotZeroAndTestEflagsBit(pReNative, off, a_fBit, true /*fCheckIfSet*/, false /*f64Bit*/); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX); \
+    do {
+
+#define IEM_MC_IF_ECX_IS_NZ_AND_EFL_BIT_NOT_SET(a_fBit) \
+    off = iemNativeEmitIfRcxEcxIsNotZeroAndTestEflagsBit(pReNative, off, a_fBit, false /*fCheckIfSet*/, false /*f64Bit*/); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX); \
+    do {
+
+#define IEM_MC_IF_RCX_IS_NZ_AND_EFL_BIT_SET(a_fBit) \
+    off = iemNativeEmitIfRcxEcxIsNotZeroAndTestEflagsBit(pReNative, off, a_fBit, true /*fCheckIfSet*/, true /*f64Bit*/); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX); \
+    do {
+
+#define IEM_MC_IF_RCX_IS_NZ_AND_EFL_BIT_NOT_SET(a_fBit) \
+    off = iemNativeEmitIfRcxEcxIsNotZeroAndTestEflagsBit(pReNative, off, a_fBit, false /*fCheckIfSet*/, true /*f64Bit*/); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX); \
+    do {
+
+/** Emits code for IEM_MC_IF_ECX_IS_NZ_AND_EFL_BIT_SET,
+ *  IEM_MC_IF_ECX_IS_NZ_AND_EFL_BIT_NOT_SET,
+ *  IEM_MC_IF_RCX_IS_NZ_AND_EFL_BIT_SET and
+ *  IEM_MC_IF_RCX_IS_NZ_AND_EFL_BIT_NOT_SET. */
+DECLINLINE(uint32_t) iemNativeEmitIfRcxEcxIsNotZeroAndTestEflagsBit(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                                    uint32_t fBitInEfl, bool fCheckIfSet, bool f64Bit)
+{
+    PIEMNATIVECOND pEntry = iemNativeCondPushIf(pReNative);
+    AssertReturn(pEntry, UINT32_MAX);
+
+    /* We have to load both RCX and EFLAGS before we can start branching,
+       otherwise we'll end up in the else-block with an inconsistent
+       register allocator state.
+       Doing EFLAGS first as it's more likely to be loaded, right? */
+    uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
+                                                              kIemNativeGstRegUse_ReadOnly);
+    AssertReturn(idxEflReg != UINT8_MAX, UINT32_MAX);
+
+    uint8_t const idxGstRcxReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off,
+                                                                 (IEMNATIVEGSTREG)(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                                 kIemNativeGstRegUse_ReadOnly);
+    AssertReturn(idxGstRcxReg != UINT8_MAX, UINT32_MAX);
+
+    /** @todo we could reduce this to a single branch instruction by spending a
+     *        temporary register and some setnz stuff.  Not sure if loops are
+     *        worth it. */
+    /* Check RCX/ECX. */
+    off = iemNativeEmitTestIfGprIsZeroAndJmpToLabel(pReNative, off, idxGstRcxReg, f64Bit, pEntry->idxLabelElse);
 
     /* Check the EFlags bit. */
     unsigned const iBitNo = ASMBitFirstSetU32(fBitInEfl) - 1;
