@@ -34,11 +34,7 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 VBOX_VIRTUALBOX_SRC := $(PATH_SUB_CURRENT)
 VBOX_VIRTUALBOX_OUT_DIR := $(PATH_TARGET)/VirtualBox/misc
-ifndef VBOX_WITH_QT6
- USES += qt5
-else
- USES += qt6
-endif
+USES += qt6
 
 
 #
@@ -387,10 +383,7 @@ ifneq ($(KBUILD_TARGET),win)
  VirtualBox_CXXFLAGS += -Wno-switch
 endif
 
-ifdef VBOX_WITH_QT6
- VirtualBox_CXXFLAGS.win += /permissive-
-endif
-
+VirtualBox_CXXFLAGS.win += /permissive-
 VirtualBox_CXXFLAGS.linux += $(VBOX_GCC_Wno-class-memaccess)
 
 ## @todo we're using a number of deprecated APIs, please fix and remove these!
@@ -422,10 +415,7 @@ ifneq ($(KBUILD_TARGET),win)
  VirtualBoxVM_CXXFLAGS += -Wno-switch
 endif
 
-ifdef VBOX_WITH_QT6
- VirtualBoxVM_CXXFLAGS.win += /permissive-
-endif
-
+VirtualBoxVM_CXXFLAGS.win += /permissive-
 VirtualBoxVM_CXXFLAGS.linux += $(VBOX_GCC_Wno-class-memaccess)
 
 ## @todo we're using a number of deprecated APIs, please fix and remove these!
@@ -464,9 +454,7 @@ endif
 UICommon_CXXFLAGS.linux += $(VBOX_GCC_Wno-class-memaccess)
 UICommon_CXXFLAGS.win += -wd4868 # prevents std::stable_sort from using functor/function comparator
 UICommon_CXXFLAGS.win += -bigobj # COMWrappers.cpp fails with too many sections on win64-dep otherwise.
-ifdef VBOX_WITH_QT6
- UICommon_CXXFLAGS.win += /permissive-
-endif
+UICommon_CXXFLAGS.win += /permissive-
 
 ## @todo we're using a number of deprecated APIs, please fix and remove these!
 UICommon_CXXFLAGS.darwin    += -Wno-error=deprecated-declarations
@@ -1647,18 +1635,8 @@ endif
 # The Qt modules we're using.
 # (The include directory and lib/framework for each module will be added by the Qt unit.)
 #
-VirtualBox_QT_MODULES = Core Gui Widgets PrintSupport
-ifdef VBOX_WITH_QT6
- VirtualBox_QT_MODULES     += StateMachine
- VirtualBox_QT_MODULES.win += EntryPoint
-endif
-ifndef VBOX_WITH_QT6
- VirtualBox_QT_MODULES.linux   += X11Extras
- VirtualBox_QT_MODULES.solaris += X11Extras
- VirtualBox_QT_MODULES.freebsd += X11Extras
- VirtualBox_QT_MODULES.darwin  += MacExtras
- VirtualBox_QT_MODULES.win     += WinExtras
-endif
+VirtualBox_QT_MODULES = Core Gui Widgets PrintSupport StateMachine
+VirtualBox_QT_MODULES.win += EntryPoint
 
 
 #
@@ -1666,18 +1644,8 @@ endif
 # The Qt modules we're using.
 # (The include directory and lib/framework for each module will be added by the Qt unit.)
 #
-VirtualBoxVM_QT_MODULES = Core Gui Widgets PrintSupport
-ifdef VBOX_WITH_QT6
- VirtualBoxVM_QT_MODULES     += StateMachine
- VirtualBoxVM_QT_MODULES.win += EntryPoint
-endif
-ifndef VBOX_WITH_QT6
- VirtualBoxVM_QT_MODULES.linux   += X11Extras
- VirtualBoxVM_QT_MODULES.solaris += X11Extras
- VirtualBoxVM_QT_MODULES.freebsd += X11Extras
- VirtualBoxVM_QT_MODULES.darwin  += MacExtras
- VirtualBoxVM_QT_MODULES.win     += WinExtras
-endif
+VirtualBoxVM_QT_MODULES = Core Gui Widgets PrintSupport StateMachine
+VirtualBoxVM_QT_MODULES.win += EntryPoint
 
 
 #
@@ -1685,34 +1653,18 @@ endif
 # The Qt modules we're using.
 # (The include directory and lib/framework for each module will be added by the Qt unit.)
 #
-UICommon_QT_MODULES = Core Gui Widgets Help
-ifdef VBOX_WITH_QT6
- UICommon_QT_MODULES += StateMachine
-endif
-ifndef VBOX_WITH_QT6
- UICommon_QT_MODULES.linux   += X11Extras
-endif
+UICommon_QT_MODULES = Core Gui Widgets Help StateMachine
 ifdef VBOX_WITH_SCREENSAVER_CONTROL
  UICommon_QT_MODULES.linux    += DBus
  UICommon_QT_MODULES.linux    += Xml
-endif
-ifndef VBOX_WITH_QT6
- UICommon_QT_MODULES.solaris += X11Extras
 endif
 ifdef VBOX_WITH_SCREENSAVER_CONTROL
  UICommon_QT_MODULES.solaris  += DBus
  UICommon_QT_MODULES.solaris  += Xml
 endif
-ifndef VBOX_WITH_QT6
- UICommon_QT_MODULES.freebsd += X11Extras
-endif
 ifdef VBOX_WITH_SCREENSAVER_CONTROL
  UICommon_QT_MODULES.freebsd  += DBus
  UICommon_QT_MODULES.freebsd  += Xml
-endif
-ifndef VBOX_WITH_QT6
- UICommon_QT_MODULES.darwin  += MacExtras
- UICommon_QT_MODULES.win     += WinExtras
 endif
 
 
