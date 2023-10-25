@@ -553,6 +553,62 @@ UIIconPoolGeneral::~UIIconPoolGeneral()
     s_pInstance = 0;
 }
 
+/* static */
+QIcon UIIconPoolGeneral::overlayedIconSet(const QString &strGuestOSTypeId,
+                                          const QString &strNormal,
+                                          const QString &strDisabled /* = QString() */,
+                                          const QString &strActive /* = QString() */)
+{
+    /* Prepare fallback icon: */
+    static QIcon nullIcon;
+
+    /* Prepare icon: */
+    QIcon icon;
+
+    /* Add 'normal' pixmap: */
+    AssertReturn(!strNormal.isEmpty(), nullIcon);
+    addNameAndOverlay(icon, strNormal, strGuestOSTypeId, QIcon::Normal);
+
+    /* Add 'disabled' pixmap (if any): */
+    if (!strDisabled.isEmpty())
+        addNameAndOverlay(icon, strDisabled, strGuestOSTypeId, QIcon::Disabled);
+
+    /* Add 'active' pixmap (if any): */
+    if (!strActive.isEmpty())
+        addNameAndOverlay(icon, strActive, strGuestOSTypeId, QIcon::Active);
+
+    /* Return icon: */
+    return icon;
+}
+
+/* static */
+void UIIconPoolGeneral::addNameAndOverlay(QIcon &icon, const QString &strName, const QString &strGuestOSTypeId,
+                                QIcon::Mode mode /* = QIcon::Normal */, QIcon::State state /* = QIcon::Off */ )
+{
+    /* Prepare pixmap on the basis of passed value: */
+    QPixmap pixmap(strName);
+    overlayArchitectureTextOnPixmap(determineOSArchString(strGuestOSTypeId), pixmap);
+    /* Add pixmap: */
+    icon.addPixmap(pixmap, mode, state);
+
+    /* Parse name to prefix and suffix: */
+    QString strPrefix = strName.section('.', 0, -2);
+    QString strSuffix = strName.section('.', -1, -1);
+    /* Prepare HiDPI pixmaps: */
+    const QStringList aPixmapNames = QStringList() << (strPrefix + "_x2." + strSuffix)
+                                                   << (strPrefix + "_x3." + strSuffix)
+                                                   << (strPrefix + "_x4." + strSuffix);
+    foreach (const QString &strPixmapName, aPixmapNames)
+    {
+        QPixmap pixmapHiDPI(strPixmapName);
+        if (!pixmapHiDPI.isNull())
+        {
+            overlayArchitectureTextOnPixmap(determineOSArchString(strGuestOSTypeId), pixmapHiDPI);
+            icon.addPixmap(pixmapHiDPI, mode, state);
+        }
+    }
+}
+
 QIcon UIIconPoolGeneral::userMachineIcon(const CMachine &comMachine) const
 {
     /* Make sure machine is not NULL: */
@@ -653,10 +709,10 @@ QIcon UIIconPoolGeneral::guestOSTypeIcon(const QString &strOSTypeID) const
     {
         /* Compose proper icon if we have that 'guest OS type' known: */
         if (m_guestOSTypeIconNames.contains(strOSTypeID))
-            m_guestOSTypeIcons[strOSTypeID] = iconSet(m_guestOSTypeIconNames[strOSTypeID]);
+            m_guestOSTypeIcons[strOSTypeID] = overlayedIconSet(strOSTypeID, m_guestOSTypeIconNames[strOSTypeID]);
         /* Assign fallback icon if we do NOT have that 'guest OS type' registered: */
         else if (!strOSTypeID.isNull())
-            m_guestOSTypeIcons[strOSTypeID] = iconSet(m_guestOSTypeIconNames[GUEST_OS_ID_STR_X86("Other")]);
+            m_guestOSTypeIcons[strOSTypeID] = overlayedIconSet(strOSTypeID, m_guestOSTypeIconNames[GUEST_OS_ID_STR_X86("Other")]);
         /* Assign fallback icon if we do NOT have that 'guest OS type' known: */
         else
             m_guestOSTypeIcons[strOSTypeID] = iconSet(nullIcon);
@@ -719,12 +775,12 @@ QPixmap UIIconPoolGeneral::guestOSTypePixmapDefault(const QString &strOSTypeID, 
         pixmap = icon.pixmap(iconSize, fDevicePixelRatio);
     }
 
-    overlayArchitectureTextOnPixmap(determineOSArchString(strOSTypeID), pixmap);
     /* Return pixmap: */
     return pixmap;
 }
 
-QString UIIconPoolGeneral::determineOSArchString(const QString &osTypeId) const
+/* static */
+QString UIIconPoolGeneral::determineOSArchString(const QString &osTypeId)
 {
     if (osTypeId.contains("_x64") || osTypeId.contains("_64"))
         return QString("x64");
@@ -735,7 +791,8 @@ QString UIIconPoolGeneral::determineOSArchString(const QString &osTypeId) const
     return QString("32");
 }
 
-void UIIconPoolGeneral::overlayArchitectureTextOnPixmap(const QString &strArch, QPixmap &pixmap) const
+/* static */
+void UIIconPoolGeneral::overlayArchitectureTextOnPixmap(const QString &strArch, QPixmap &pixmap)
 {
 #if 0
     /* First create a pixmap and draw a background and text on it: */
