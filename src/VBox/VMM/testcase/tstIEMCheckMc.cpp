@@ -688,14 +688,12 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEM_MC_REF_FPUREG(a_pr80Dst, a_iSt)             do { (a_pr80Dst) = (PRTFLOAT80U)((uintptr_t)0); CHK_PTYPE(PCRTFLOAT80U, a_pr80Dst); AssertCompile((a_iSt) < 8); (void)fMcBegin; } while (0)
 #define IEM_MC_REF_MXCSR(a_pfMxcsr)                     do { (a_pfMxcsr) = (uint32_t *)((uintptr_t)0); CHK_PTYPE(uint32_t *, a_pfMxcsr); (void)fMcBegin; (void)fSseRead; } while (0)
 
-#define IEM_MC_ADD_GREG_U8(a_iGReg, a_u8Value)          do { CHK_GREG_IDX(a_iGReg); CHK_CONST(uint8_t,  a_u8Value);  (void)fMcBegin; } while (0)
 #define IEM_MC_ADD_GREG_U16(a_iGReg, a_u16Value)        do { CHK_GREG_IDX(a_iGReg); CHK_CONST(uint16_t, a_u16Value); (void)fMcBegin; } while (0)
 #define IEM_MC_ADD_GREG_U32(a_iGReg, a_u32Value)        do { CHK_GREG_IDX(a_iGReg); CHK_CONST(uint32_t, a_u32Value); (void)fMcBegin; } while (0)
 #define IEM_MC_ADD_GREG_U64(a_iGReg, a_u64Value)        do { CHK_GREG_IDX(a_iGReg); CHK_CONST(uint64_t, a_u64Value); (void)fMcBegin; } while (0)
-#define IEM_MC_SUB_GREG_U8(a_iGReg,  a_u8Value)         do { CHK_GREG_IDX(a_iGReg); CHK_CONST(uint8_t,  a_u8Value);  (void)fMcBegin; } while (0)
-#define IEM_MC_SUB_GREG_U16(a_iGReg, a_u16Value)        do { CHK_GREG_IDX(a_iGReg); CHK_CONST(uint16_t, a_u16Value); (void)fMcBegin; } while (0)
-#define IEM_MC_SUB_GREG_U32(a_iGReg, a_u32Value)        do { CHK_GREG_IDX(a_iGReg); CHK_CONST(uint32_t, a_u32Value); (void)fMcBegin; } while (0)
-#define IEM_MC_SUB_GREG_U64(a_iGReg, a_u64Value)        do { CHK_GREG_IDX(a_iGReg); CHK_CONST(uint64_t, a_u64Value); (void)fMcBegin; } while (0)
+#define IEM_MC_SUB_GREG_U16(a_iGReg, a_u8Const)         do { CHK_GREG_IDX(a_iGReg); CHK_CONST(uint8_t, a_u8Const); (void)fMcBegin; } while (0)
+#define IEM_MC_SUB_GREG_U32(a_iGReg, a_u8Const)         do { CHK_GREG_IDX(a_iGReg); CHK_CONST(uint8_t, a_u8Const); (void)fMcBegin; } while (0)
+#define IEM_MC_SUB_GREG_U64(a_iGReg, a_u8Const)         do { CHK_GREG_IDX(a_iGReg); CHK_CONST(uint8_t, a_u8Const); (void)fMcBegin; } while (0)
 #define IEM_MC_SUB_LOCAL_U16(a_u16Value, a_u16Const)    do { CHK_CONST(uint16_t, a_u16Const); (void)fMcBegin; } while (0)
 
 #define IEM_MC_AND_GREG_U8(a_iGReg, a_u8Value)          do { CHK_GREG_IDX(a_iGReg); CHK_CONST(uint8_t,  a_u8Value);  (void)fMcBegin; } while (0)

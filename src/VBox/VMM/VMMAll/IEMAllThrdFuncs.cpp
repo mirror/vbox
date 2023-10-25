@@ -356,16 +356,6 @@
     (a_pu8Dst) = iemGRegRefU8Ex(pVCpu, (a_iGRegEx))
 #undef IEM_MC_REF_GREG_U8
 
-/** Variant of IEM_MC_ADD_GREG_U8 with extended (20) register index. */
-#define IEM_MC_ADD_GREG_U8_THREADED(a_iGRegEx, a_u8Value) \
-    *iemGRegRefU8Ex(pVCpu, (a_iGRegEx)) += (a_u8Value)
-#undef IEM_MC_ADD_GREG_U8
-
-/** Variant of IEM_MC_SUB_GREG_U8 with extended (20) register index. */
-#define IEM_MC_SUB_GREG_U8_THREADED(a_iGRegEx,  a_u8Value) \
-    *iemGRegRefU8Ex(pVCpu, (a_iGRegEx)) -= (a_u8Value)
-#undef IEM_MC_SUB_GREG_U8
-
 /** Variant of IEM_MC_ADD_GREG_U8_TO_LOCAL with extended (20) register index. */
 #define IEM_MC_ADD_GREG_U8_TO_LOCAL_THREADED(a_u8Value, a_iGRegEx) \
     do { (a_u8Value) += iemGRegFetchU8Ex(pVCpu, (a_iGRegEx)); } while (0)

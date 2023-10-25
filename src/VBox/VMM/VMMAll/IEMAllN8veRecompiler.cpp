@@ -4660,12 +4660,12 @@ DECLINLINE(uint32_t) iemNativeEmitIfCxIsNotZeroAndTestEflagsBit(PIEMRECOMPILERST
  * General purpose register manipulation (add, sub).
  */
 
-#define IEM_MC_SUB_GREG_U16(a_iGReg, a_u16Value) \
-    off = iemNativeEmitSubGregU16(pReNative, off, a_iGReg, a_u16Value); \
+#define IEM_MC_SUB_GREG_U16(a_iGReg, a_u8SubtrahendConst) \
+    off = iemNativeEmitSubGregU16(pReNative, off, a_iGReg, a_u8SubtrahendConst); \
     AssertReturn(off != UINT32_MAX, UINT32_MAX)
 
 /** Emits code for IEM_MC_SUB_GREG_U16. */
-DECLINLINE(uint32_t) iemNativeEmitSubGregU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg, uint16_t uSubtrahend)
+DECLINLINE(uint32_t) iemNativeEmitSubGregU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg, uint8_t uSubtrahend)
 {
     uint8_t const idxGstTmpReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off,
                                                                  (IEMNATIVEGSTREG)(kIemNativeGstReg_GprFirst + iGReg),
@@ -4673,29 +4673,33 @@ DECLINLINE(uint32_t) iemNativeEmitSubGregU16(PIEMRECOMPILERSTATE pReNative, uint
     AssertReturn(idxGstTmpReg != UINT8_MAX, UINT32_MAX);
 
 #ifdef RT_ARCH_AMD64
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 6);
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
     AssertReturn(pbCodeBuf, UINT32_MAX);
     pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
     if (idxGstTmpReg >= 8)
         pbCodeBuf[off++] = X86_OP_REX_B;
-    pbCodeBuf[off++] = 0x81;
-    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 5, idxGstTmpReg & 7);
-    pbCodeBuf[off++] = RT_BYTE1(uSubtrahend);
-    pbCodeBuf[off++] = RT_BYTE2(uSubtrahend);
+    if (uSubtrahend)
+    {
+        pbCodeBuf[off++] = 0xff; /* dec */
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 1, idxGstTmpReg & 7);
+    }
+    else
+    {
+        pbCodeBuf[off++] = 0x81;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 5, idxGstTmpReg & 7);
+        pbCodeBuf[off++] = uSubtrahend;
+        pbCodeBuf[off++] = 0;
+    }
 
 #else
-    uint8_t const idxTmpReg = iemNativeRegAllocTmpImm(pReNative, &off, uSubtrahend);
+    uint8_t const idxTmpReg = iemNativeRegAllocTmp(pReNative, &off);
     AssertReturn(idxTmpReg != UINT8_MAX, UINT32_MAX);
 
     uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
     AssertReturn(pu32CodeBuf, UINT32_MAX);
 
-    /* sub w2, w1, w2, uxth - kind of performs a 16-bit subtract. */
-    /** @todo could also use sub #imm12 variant here if uSubtrahend is in range,
-     *        avoiding an const mov instruction.  We don't really need the UxtH
-     *        bit either, since the register value is zero extended */
-    pu32CodeBuf[off++] = Armv8A64MkInstrAddSubRegExtend(true /*fSub*/, idxTmpReg, idxGstTmpReg, idxTmpReg2, false /*f64Bit*/,
-                                                        false /*fSetFlags*/, kArmv8A64InstrExtend_UxtH);
+    /* sub tmp, gstgrp, uSubtrahend */
+    pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, idxTmpReg, idxGstTmpReg, uSubtrahend, false /*f64Bit*/);
 
     /* bfi w1, w2, 0, 16 - moves bits 15:0 from tmpreg2 to tmpreg. */
     pu32CodeBuf[off++] = Armv8A64MkInstrBfi(idxGstTmpReg, idxTmpReg, 0, 16);
@@ -4711,6 +4715,68 @@ DECLINLINE(uint32_t) iemNativeEmitSubGregU16(PIEMRECOMPILERSTATE pReNative, uint
     return off;
 }
 
+
+#define IEM_MC_SUB_GREG_U32(a_iGReg, a_u8Const) \
+    off = iemNativeEmitSubGregU32U64(pReNative, off, a_iGReg, a_u8Const, false /*f64Bit*/); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX)
+
+#define IEM_MC_SUB_GREG_U64(a_iGReg, a_u8Const) \
+    off = iemNativeEmitSubGregU32U64(pReNative, off, a_iGReg, a_u8Const, true /*f64Bit*/); \
+    AssertReturn(off != UINT32_MAX, UINT32_MAX)
+
+/** Emits code for IEM_MC_SUB_GREG_U32 and IEM_MC_SUB_GREG_U64. */
+DECLINLINE(uint32_t) iemNativeEmitSubGregU32U64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg,
+                                                uint8_t uSubtrahend, bool f64Bit)
+{
+    uint8_t const idxGstTmpReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off,
+                                                                 (IEMNATIVEGSTREG)(kIemNativeGstReg_GprFirst + iGReg),
+                                                                  kIemNativeGstRegUse_ForUpdate);
+    AssertReturn(idxGstTmpReg != UINT8_MAX, UINT32_MAX);
+
+#ifdef RT_ARCH_AMD64
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 6);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
+    if (f64Bit)
+        pbCodeBuf[off++] = X86_OP_REX_W | (idxGstTmpReg >= 8 ? X86_OP_REX_B : 0);
+    else if (idxGstTmpReg >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_B;
+    if (uSubtrahend == 1)
+    {
+        /* dec */
+        pbCodeBuf[off++] = 0xff;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 1, idxGstTmpReg & 7);
+    }
+    else if (uSubtrahend < 128)
+    {
+        pbCodeBuf[off++] = 0x83; /* sub */
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 5, idxGstTmpReg & 7);
+        pbCodeBuf[off++] = RT_BYTE1(uSubtrahend);
+    }
+    else
+    {
+        pbCodeBuf[off++] = 0x81; /* sub */
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 5, idxGstTmpReg & 7);
+        pbCodeBuf[off++] = RT_BYTE1(uSubtrahend);
+        pbCodeBuf[off++] = 0;
+        pbCodeBuf[off++] = 0;
+        pbCodeBuf[off++] = 0;
+    }
+
+#else
+    /* sub tmp, gstgrp, uSubtrahend */
+    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    AssertReturn(pu32CodeBuf, UINT32_MAX);
+    pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, idxTmpReg, idxGstTmpReg, uSubtrahend, f64Bit);
+
+#endif
+
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxGstTmpReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGReg]));
+
+    iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
+    return off;
+}
 
 
 

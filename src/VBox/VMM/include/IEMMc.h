@@ -296,7 +296,6 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_MC_REF_EFLAGS(a_pEFlags)                    (a_pEFlags) = &pVCpu->cpum.GstCtx.eflags.uBoth
 #define IEM_MC_REF_MXCSR(a_pfMxcsr)                     (a_pfMxcsr) = &pVCpu->cpum.GstCtx.XState.x87.MXCSR
 
-#define IEM_MC_ADD_GREG_U8(a_iGReg, a_u8Value)          *iemGRegRefU8( pVCpu, (a_iGReg)) += (a_u8Value)
 #define IEM_MC_ADD_GREG_U16(a_iGReg, a_u16Value)        *iemGRegRefU16(pVCpu, (a_iGReg)) += (a_u16Value)
 #define IEM_MC_ADD_GREG_U32(a_iGReg, a_u32Value) \
     do { \
@@ -306,16 +305,15 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     } while (0)
 #define IEM_MC_ADD_GREG_U64(a_iGReg, a_u64Value)        *iemGRegRefU64(pVCpu, (a_iGReg)) += (a_u64Value)
 
-#define IEM_MC_SUB_GREG_U8(a_iGReg,  a_u8Value)         *iemGRegRefU8( pVCpu, (a_iGReg)) -= (a_u8Value)
-#define IEM_MC_SUB_GREG_U16(a_iGReg, a_u16Value)        *iemGRegRefU16(pVCpu, (a_iGReg)) -= (a_u16Value)
-#define IEM_MC_SUB_GREG_U32(a_iGReg, a_u32Value) \
+#define IEM_MC_SUB_GREG_U16(a_iGReg, a_u8Const)         *iemGRegRefU16(pVCpu, (a_iGReg)) -= (a_u8Const)
+#define IEM_MC_SUB_GREG_U32(a_iGReg, a_u8Const) \
     do { \
         uint32_t *pu32Reg = iemGRegRefU32(pVCpu, (a_iGReg)); \
-        *pu32Reg -= (a_u32Value); \
+        *pu32Reg -= (a_u8Const); \
         pu32Reg[1] = 0; /* implicitly clear the high bit. */ \
     } while (0)
-#define IEM_MC_SUB_GREG_U64(a_iGReg, a_u64Value)        *iemGRegRefU64(pVCpu, (a_iGReg)) -= (a_u64Value)
-#define IEM_MC_SUB_LOCAL_U16(a_u16Value, a_u16Const)   do { (a_u16Value) -= a_u16Const; } while (0)
+#define IEM_MC_SUB_GREG_U64(a_iGReg, a_u8Const)          *iemGRegRefU64(pVCpu, (a_iGReg)) -= (a_u8Const)
+#define IEM_MC_SUB_LOCAL_U16(a_u16Value, a_u16Const)     do { (a_u16Value) -= a_u16Const; } while (0)
 
 #define IEM_MC_ADD_GREG_U8_TO_LOCAL(a_u8Value, a_iGReg)    do { (a_u8Value)  += iemGRegFetchU8( pVCpu, (a_iGReg)); } while (0)
 #define IEM_MC_ADD_GREG_U16_TO_LOCAL(a_u16Value, a_iGReg)  do { (a_u16Value) += iemGRegFetchU16(pVCpu, (a_iGReg)); } while (0)
