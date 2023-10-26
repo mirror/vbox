@@ -105,27 +105,27 @@ struct UIDataSettingsMachineSerial
 
 
 /*********************************************************************************************************************************
-*   Class UIMachineSettingsSerialPage implementation.                                                                            *
+*   Class UIMachineSettingsSerial implementation.                                                                                *
 *********************************************************************************************************************************/
 
-UIMachineSettingsSerialPage::UIMachineSettingsSerialPage()
+UIMachineSettingsSerial::UIMachineSettingsSerial()
     : m_pCache(0)
     , m_pTabWidget(0)
 {
     prepare();
 }
 
-UIMachineSettingsSerialPage::~UIMachineSettingsSerialPage()
+UIMachineSettingsSerial::~UIMachineSettingsSerial()
 {
     cleanup();
 }
 
-bool UIMachineSettingsSerialPage::changed() const
+bool UIMachineSettingsSerial::changed() const
 {
     return m_pCache ? m_pCache->wasChanged() : false;
 }
 
-void UIMachineSettingsSerialPage::loadToCacheFrom(QVariant &data)
+void UIMachineSettingsSerial::loadToCacheFrom(QVariant &data)
 {
     /* Sanity check: */
     if (   !m_pCache
@@ -176,7 +176,7 @@ void UIMachineSettingsSerialPage::loadToCacheFrom(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-void UIMachineSettingsSerialPage::getFromCache()
+void UIMachineSettingsSerial::getFromCache()
 {
     /* Sanity check: */
     if (   !m_pCache
@@ -197,7 +197,7 @@ void UIMachineSettingsSerialPage::getFromCache()
     revalidate();
 }
 
-void UIMachineSettingsSerialPage::putToCache()
+void UIMachineSettingsSerial::putToCache()
 {
     /* Sanity check: */
     if (   !m_pCache
@@ -215,7 +215,7 @@ void UIMachineSettingsSerialPage::putToCache()
     m_pCache->cacheCurrentData(newSerialData);
 }
 
-void UIMachineSettingsSerialPage::saveFromCacheTo(QVariant &data)
+void UIMachineSettingsSerial::saveFromCacheTo(QVariant &data)
 {
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
@@ -227,7 +227,7 @@ void UIMachineSettingsSerialPage::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-bool UIMachineSettingsSerialPage::validate(QList<UIValidationMessage> &messages)
+bool UIMachineSettingsSerial::validate(QList<UIValidationMessage> &messages)
 {
     /* Sanity check: */
     if (!m_pTabWidget)
@@ -245,7 +245,7 @@ bool UIMachineSettingsSerialPage::validate(QList<UIValidationMessage> &messages)
     return fValid;
 }
 
-void UIMachineSettingsSerialPage::retranslateUi()
+void UIMachineSettingsSerial::retranslateUi()
 {
     /* Sanity check: */
     if (!m_pTabWidget)
@@ -255,7 +255,7 @@ void UIMachineSettingsSerialPage::retranslateUi()
         m_pTabWidget->setTabText(iSlot, tabTitle(iSlot));
 }
 
-void UIMachineSettingsSerialPage::polishPage()
+void UIMachineSettingsSerial::polishPage()
 {
     /* Sanity check: */
     if (   !m_pCache
@@ -273,19 +273,19 @@ void UIMachineSettingsSerialPage::polishPage()
     }
 }
 
-void UIMachineSettingsSerialPage::sltHandlePortChange()
+void UIMachineSettingsSerial::sltHandlePortChange()
 {
     refreshPorts();
     revalidate();
 }
 
-void UIMachineSettingsSerialPage::sltHandlePathChange()
+void UIMachineSettingsSerial::sltHandlePathChange()
 {
     refreshPaths();
     revalidate();
 }
 
-void UIMachineSettingsSerialPage::prepare()
+void UIMachineSettingsSerial::prepare()
 {
     /* Prepare cache: */
     m_pCache = new UISettingsCacheMachineSerial;
@@ -298,7 +298,7 @@ void UIMachineSettingsSerialPage::prepare()
     retranslateUi();
 }
 
-void UIMachineSettingsSerialPage::prepareWidgets()
+void UIMachineSettingsSerial::prepareWidgets()
 {
     /* Prepare main layout: */
     QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
@@ -320,7 +320,7 @@ void UIMachineSettingsSerialPage::prepareWidgets()
     }
 }
 
-void UIMachineSettingsSerialPage::prepareTab()
+void UIMachineSettingsSerial::prepareTab()
 {
     /* Prepare tab: */
     UIEditor *pTab = new UIEditor(m_pTabWidget);
@@ -355,33 +355,33 @@ void UIMachineSettingsSerialPage::prepareTab()
     }
 }
 
-void UIMachineSettingsSerialPage::prepareConnections(UISerialSettingsEditor *pTabEditor)
+void UIMachineSettingsSerial::prepareConnections(UISerialSettingsEditor *pTabEditor)
 {
     /* Tab connections: */
     connect(pTabEditor, &UISerialSettingsEditor::sigPortAvailabilityChanged,
-            this, &UIMachineSettingsSerialPage::sltHandlePortChange);
+            this, &UIMachineSettingsSerial::sltHandlePortChange);
     connect(pTabEditor, &UISerialSettingsEditor::sigPortAvailabilityChanged,
-            this, &UIMachineSettingsSerialPage::sltHandlePathChange);
+            this, &UIMachineSettingsSerial::sltHandlePathChange);
     connect(pTabEditor, &UISerialSettingsEditor::sigStandardPortOptionChanged,
-            this, &UIMachineSettingsSerialPage::revalidate);
+            this, &UIMachineSettingsSerial::revalidate);
     connect(pTabEditor, &UISerialSettingsEditor::sigPortIRQChanged,
-            this, &UIMachineSettingsSerialPage::sltHandlePortChange);
+            this, &UIMachineSettingsSerial::sltHandlePortChange);
     connect(pTabEditor, &UISerialSettingsEditor::sigPortIOAddressChanged,
-            this, &UIMachineSettingsSerialPage::sltHandlePortChange);
+            this, &UIMachineSettingsSerial::sltHandlePortChange);
     connect(pTabEditor, &UISerialSettingsEditor::sigModeChanged,
-            this, &UIMachineSettingsSerialPage::revalidate);
+            this, &UIMachineSettingsSerial::revalidate);
     connect(pTabEditor, &UISerialSettingsEditor::sigPathChanged,
-            this, &UIMachineSettingsSerialPage::sltHandlePathChange);
+            this, &UIMachineSettingsSerial::sltHandlePathChange);
 }
 
-void UIMachineSettingsSerialPage::cleanup()
+void UIMachineSettingsSerial::cleanup()
 {
     /* Cleanup cache: */
     delete m_pCache;
     m_pCache = 0;
 }
 
-void UIMachineSettingsSerialPage::polishTab(int iSlot)
+void UIMachineSettingsSerial::polishTab(int iSlot)
 {
     /* Acquire tab-editor: */
     UISerialSettingsEditor *pTabEditor = m_tabEditors.at(iSlot);
@@ -399,7 +399,7 @@ void UIMachineSettingsSerialPage::polishTab(int iSlot)
                                         && isMachineOffline());
 }
 
-void UIMachineSettingsSerialPage::getFromCache(int iSlot, const UISettingsCacheMachineSerialPort &portCache)
+void UIMachineSettingsSerial::getFromCache(int iSlot, const UISettingsCacheMachineSerialPort &portCache)
 {
     /* Acquire tab-editor: */
     UISerialSettingsEditor *pTabEditor = m_tabEditors.at(iSlot);
@@ -419,7 +419,7 @@ void UIMachineSettingsSerialPage::getFromCache(int iSlot, const UISettingsCacheM
     pTabEditor->setPortEnabled(oldPortData.m_fPortEnabled);
 }
 
-void UIMachineSettingsSerialPage::putToCache(int iSlot, UISettingsCacheMachineSerialPort &portCache)
+void UIMachineSettingsSerial::putToCache(int iSlot, UISettingsCacheMachineSerialPort &portCache)
 {
     /* Acquire tab-editor: */
     UISerialSettingsEditor *pTabEditor = m_tabEditors.at(iSlot);
@@ -443,7 +443,7 @@ void UIMachineSettingsSerialPage::putToCache(int iSlot, UISettingsCacheMachineSe
     portCache.cacheCurrentData(newPortData);
 }
 
-QString UIMachineSettingsSerialPage::irq(int iSlot) const
+QString UIMachineSettingsSerial::irq(int iSlot) const
 {
     /* Acquire tab-editor: */
     UISerialSettingsEditor *pTabEditor = m_tabEditors.at(iSlot);
@@ -451,7 +451,7 @@ QString UIMachineSettingsSerialPage::irq(int iSlot) const
     return QString::number(pTabEditor->irq());
 }
 
-QString UIMachineSettingsSerialPage::ioAddress(int iSlot) const
+QString UIMachineSettingsSerial::ioAddress(int iSlot) const
 {
     /* Acquire tab-editor: */
     UISerialSettingsEditor *pTabEditor = m_tabEditors.at(iSlot);
@@ -459,7 +459,7 @@ QString UIMachineSettingsSerialPage::ioAddress(int iSlot) const
     return QString::number(pTabEditor->ioAddress());
 }
 
-bool UIMachineSettingsSerialPage::validate(int iSlot, QList<UIValidationMessage> &messages)
+bool UIMachineSettingsSerial::validate(int iSlot, QList<UIValidationMessage> &messages)
 {
     /* Acquire tab-editor: */
     UISerialSettingsEditor *pTabEditor = m_tabEditors.at(iSlot);
@@ -535,7 +535,7 @@ bool UIMachineSettingsSerialPage::validate(int iSlot, QList<UIValidationMessage>
     return fPass;
 }
 
-void UIMachineSettingsSerialPage::refreshPorts()
+void UIMachineSettingsSerial::refreshPorts()
 {
     /* Sanity check: */
     if (!m_pTabWidget)
@@ -553,7 +553,7 @@ void UIMachineSettingsSerialPage::refreshPorts()
     }
 }
 
-void UIMachineSettingsSerialPage::refreshPaths()
+void UIMachineSettingsSerial::refreshPaths()
 {
     /* Sanity check: */
     if (!m_pTabWidget)
@@ -572,12 +572,12 @@ void UIMachineSettingsSerialPage::refreshPaths()
 }
 
 /* static */
-QString UIMachineSettingsSerialPage::tabTitle(int iSlot)
+QString UIMachineSettingsSerial::tabTitle(int iSlot)
 {
     return QString(tr("Port %1", "serial ports")).arg(QString("&%1").arg(iSlot + 1));
 }
 
-bool UIMachineSettingsSerialPage::saveData()
+bool UIMachineSettingsSerial::saveData()
 {
     /* Sanity check: */
     if (   !m_pCache
@@ -597,7 +597,7 @@ bool UIMachineSettingsSerialPage::saveData()
     return fSuccess;
 }
 
-bool UIMachineSettingsSerialPage::savePortData(int iSlot)
+bool UIMachineSettingsSerial::savePortData(int iSlot)
 {
     /* Sanity check: */
     if (!m_pCache)

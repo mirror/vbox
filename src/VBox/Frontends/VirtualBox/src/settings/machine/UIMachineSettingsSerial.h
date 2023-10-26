@@ -43,16 +43,16 @@ typedef UISettingsCache<UIDataSettingsMachineSerialPort> UISettingsCacheMachineS
 typedef UISettingsCachePool<UIDataSettingsMachineSerial, UISettingsCacheMachineSerialPort> UISettingsCacheMachineSerial;
 
 /** Machine settings: Serial page. */
-class SHARED_LIBRARY_STUFF UIMachineSettingsSerialPage : public UISettingsPageMachine
+class SHARED_LIBRARY_STUFF UIMachineSettingsSerial : public UISettingsPageMachine
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs Serial settings page. */
-    UIMachineSettingsSerialPage();
+    UIMachineSettingsSerial();
     /** Destructs Serial settings page. */
-    virtual ~UIMachineSettingsSerialPage() RT_OVERRIDE;
+    virtual ~UIMachineSettingsSerial() RT_OVERRIDE;
 
     /** Returns ports. */
     QVector<QPair<QString, QString> > ports() const { return m_ports; }

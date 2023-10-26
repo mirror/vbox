@@ -720,7 +720,7 @@ void UIAdvancedSettingsDialogMachine::prepare()
                 /* Serial page: */
                 case MachineSettingsPageType_Serial:
                 {
-                    pSettingsPage = new UIMachineSettingsSerialPage;
+                    pSettingsPage = new UIMachineSettingsSerial;
                     addItem(":/serial_port_32px.png", ":/serial_port_24px.png", ":/serial_port_16px.png",
                             iPageIndex, "#serialPorts", pSettingsPage, MachineSettingsPageType_Ports);
                     addPageHelpKeyword(iPageIndex, "serialports");
