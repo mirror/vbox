@@ -2397,34 +2397,6 @@ typedef struct PDMIVFSCONNECTOR
 /** PDMIVFSCONNECTOR interface ID. */
 #define PDMIVFSCONNECTOR_IID               "a1fc51e0-414a-4e78-8388-8053b9dc6521"
 
-
-/** Pointer to an GPIO ports interface. */
-typedef struct PDMIGPIOPORTS      *PPDMIGPIOPORTS;
-/**
- * Interface for GPIO ports (down).
- * Pair with PDMIGPIOCONNECTORS.
- */
-typedef struct PDMIGPIOPORTS
-{
-    uint32_t uDummy;
-} PDMIGPIOPORTS;
-/** PDMIGPIOPORTS interface ID. */
-#define PDMIGPIOPORTS_IID                       "75e0017c-4cda-47a4-8160-f4cc436025c4"
-
-
-/** Pointer to an GPIO connectors interface. */
-typedef struct PDMIGPIOCONNECTORS *PPDMIGPIOCONNECTORS;
-/**
- * GPIO connector interface (up).
- * Pair with PDMIGPIOPORTS.
- */
-typedef struct PDMIGPIOCONNECTOR
-{
-    uint32_t uDummy;
-} PDMIGPIOCONNECTOR;
-/** PDMIGPIOCONNECTOR interface ID. */
-#define PDMIGPIOCONNECTOR_IID                   "504bff7e-489f-4829-8cc3-f9b080d39133"
-
 /** @} */
 
 RT_C_DECLS_END

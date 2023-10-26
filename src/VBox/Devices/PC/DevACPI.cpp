@@ -1237,7 +1237,7 @@ static DECLCALLBACK(int) acpiR3Port_BatteryStatusChangeEvent(PPDMIACPIPORT pInte
 
 
 /**
- * @interface_method_impl{PDMIEVENTBUTTONPORT,pfnQueryGuestCanHandleButtonEvents}
+ * @interface_method_impl{PDMIACPIPORT,pfnQueryGuestCanHandleButtonEvents}
  */
 static DECLCALLBACK(int) acpiR3Port_QueryGuestCanHandleButtonEvents(PPDMIEVENTBUTTONPORT pInterface, bool *pfCanHandleButtonEvents)
 {
