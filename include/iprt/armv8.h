@@ -2763,7 +2763,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBfm(uint32_t iRegResult, uint32_t iRe
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBfi(uint32_t iRegResult, uint32_t iRegSrc,
                                                uint32_t offFirstBit, uint32_t cBitsWidth, bool f64Bit = true)
 {
-    Assert(cBitsWidth > 0U); Assert(cBitsWidth < (f64Bit ? 64U : 32U)); Assert(offFirstBit < (f64Bit ? 64U : 32U));
+    Assert(cBitsWidth > 0U); Assert(cBitsWidth < (f64Bit ? 64U : 32U)); Assert(offFirstBit < (f64Bit ? 64U : 32U)); RT_NOREF(offFirstBit);
     return Armv8A64MkInstrBfm(iRegResult, iRegSrc, (uint32_t)-(int32_t)cBitsWidth & (f64Bit ? 0x3f : 0x1f),
                               cBitsWidth - 1, f64Bit);
 }
