@@ -2718,7 +2718,7 @@ HRESULT Console::powerButton()
         if (RT_SUCCESS(vrc))
         {
             Assert(pBase);
-            PPDMIACPIPORT pPort = PDMIBASE_QUERY_INTERFACE(pBase, PDMIACPIPORT);
+            PPDMIEVENTBUTTONPORT pPort = PDMIBASE_QUERY_INTERFACE(pBase, PDMIEVENTBUTTONPORT);
             if (pPort)
                 vrc = pPort->pfnPowerButtonPress(pPort);
             else
@@ -2760,11 +2760,11 @@ HRESULT Console::getPowerButtonHandled(BOOL *aHandled)
         if (RT_SUCCESS(vrc))
         {
             Assert(pBase);
-            PPDMIACPIPORT pPort = PDMIBASE_QUERY_INTERFACE(pBase, PDMIACPIPORT);
+            PPDMIEVENTBUTTONPORT pPort = PDMIBASE_QUERY_INTERFACE(pBase, PDMIEVENTBUTTONPORT);
             if (pPort)
             {
                 bool fHandled = false;
-                vrc = pPort->pfnGetPowerButtonHandled(pPort, &fHandled);
+                vrc = pPort->pfnQueryPowerButtonHandled(pPort, &fHandled);
                 if (RT_SUCCESS(vrc))
                     *aHandled = fHandled;
             }
@@ -2852,7 +2852,7 @@ HRESULT Console::sleepButton()
         if (RT_SUCCESS(vrc))
         {
             Assert(pBase);
-            PPDMIACPIPORT pPort = PDMIBASE_QUERY_INTERFACE(pBase, PDMIACPIPORT);
+            PPDMIEVENTBUTTONPORT pPort = PDMIBASE_QUERY_INTERFACE(pBase, PDMIEVENTBUTTONPORT);
             if (pPort)
                 vrc = pPort->pfnSleepButtonPress(pPort);
             else

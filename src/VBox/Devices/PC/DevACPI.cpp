@@ -570,6 +570,8 @@ typedef struct ACPISTATER3
     PDMIBASE            IBase;
     /** ACPI port interface. */
     PDMIACPIPORT        IACPIPort;
+    /** The button event interface for power button events. */
+    PDMIEVENTBUTTONPORT IButtonEventPort;
     /** Pointer to the device instance so we can get our bearings from
      *  interface functions. */
     PPDMDEVINSR3        pDevIns;
@@ -1160,40 +1162,6 @@ static VBOXSTRICTRC acpiR3DoSleep(PPDMDEVINS pDevIns, PACPISTATE pThis)
 
 
 /**
- * @interface_method_impl{PDMIACPIPORT,pfnPowerButtonPress}
- */
-static DECLCALLBACK(int) acpiR3Port_PowerButtonPress(PPDMIACPIPORT pInterface)
-{
-    PACPISTATER3 pThisCC = RT_FROM_MEMBER(pInterface, ACPISTATER3, IACPIPort);
-    PPDMDEVINS   pDevIns = pThisCC->pDevIns;
-    PACPISTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
-    DEVACPI_LOCK_R3(pDevIns, pThis);
-
-    Log(("acpiR3Port_PowerButtonPress: handled=%d status=%x\n", pThis->fPowerButtonHandled, pThis->pm1a_sts));
-    pThis->fPowerButtonHandled = false;
-    acpiUpdatePm1a(pDevIns, pThis, pThis->pm1a_sts | PWRBTN_STS, pThis->pm1a_en);
-
-    DEVACPI_UNLOCK(pDevIns, pThis);
-    return VINF_SUCCESS;
-}
-
-/**
- * @interface_method_impl{PDMIACPIPORT,pfnGetPowerButtonHandled}
- */
-static DECLCALLBACK(int) acpiR3Port_GetPowerButtonHandled(PPDMIACPIPORT pInterface, bool *pfHandled)
-{
-    PACPISTATER3 pThisCC = RT_FROM_MEMBER(pInterface, ACPISTATER3, IACPIPort);
-    PPDMDEVINS   pDevIns = pThisCC->pDevIns;
-    PACPISTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
-    DEVACPI_LOCK_R3(pDevIns, pThis);
-
-    *pfHandled = pThis->fPowerButtonHandled;
-
-    DEVACPI_UNLOCK(pDevIns, pThis);
-    return VINF_SUCCESS;
-}
-
-/**
  * @interface_method_impl{PDMIACPIPORT,pfnGetGuestEnteredACPIMode, Check if the
  *                       Guest entered into G0 (working) or G1 (sleeping)}
  */
@@ -1226,24 +1194,6 @@ static DECLCALLBACK(int) acpiR3Port_GetCpuStatus(PPDMIACPIPORT pInterface, unsig
     return VINF_SUCCESS;
 }
 
-/**
- * Send an ACPI sleep button event.
- *
- * @returns VBox status code
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- */
-static DECLCALLBACK(int) acpiR3Port_SleepButtonPress(PPDMIACPIPORT pInterface)
-{
-    PACPISTATER3 pThisCC = RT_FROM_MEMBER(pInterface, ACPISTATER3, IACPIPort);
-    PPDMDEVINS   pDevIns = pThisCC->pDevIns;
-    PACPISTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
-    DEVACPI_LOCK_R3(pDevIns, pThis);
-
-    acpiUpdatePm1a(pDevIns, pThis, pThis->pm1a_sts | SLPBTN_STS, pThis->pm1a_en);
-
-    DEVACPI_UNLOCK(pDevIns, pThis);
-    return VINF_SUCCESS;
-}
 
 /**
  * Send an ACPI monitor hot-plug event.
@@ -1284,6 +1234,78 @@ static DECLCALLBACK(int) acpiR3Port_BatteryStatusChangeEvent(PPDMIACPIPORT pInte
     DEVACPI_UNLOCK(pDevIns, pThis);
     return VINF_SUCCESS;
 }
+
+
+/**
+ * @interface_method_impl{PDMIACPIPORT,pfnQueryGuestCanHandleButtonEvents}
+ */
+static DECLCALLBACK(int) acpiR3Port_QueryGuestCanHandleButtonEvents(PPDMIEVENTBUTTONPORT pInterface, bool *pfCanHandleButtonEvents)
+{
+    PACPISTATER3 pThisCC = RT_FROM_MEMBER(pInterface, ACPISTATER3, IButtonEventPort);
+    PPDMDEVINS   pDevIns = pThisCC->pDevIns;
+    PACPISTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
+    DEVACPI_LOCK_R3(pDevIns, pThis);
+
+    /* Just checks whether the guest has entered ACPI mode. */
+    *pfCanHandleButtonEvents = (pThis->pm1a_ctl & SCI_EN) != 0;
+
+    DEVACPI_UNLOCK(pDevIns, pThis);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMIEVENTBUTTONPORT,pfnPowerButtonPress}
+ */
+static DECLCALLBACK(int) acpiR3Port_PowerButtonPress(PPDMIEVENTBUTTONPORT pInterface)
+{
+    PACPISTATER3 pThisCC = RT_FROM_MEMBER(pInterface, ACPISTATER3, IButtonEventPort);
+    PPDMDEVINS   pDevIns = pThisCC->pDevIns;
+    PACPISTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
+    DEVACPI_LOCK_R3(pDevIns, pThis);
+
+    Log(("acpiR3Port_PowerButtonPress: handled=%d status=%x\n", pThis->fPowerButtonHandled, pThis->pm1a_sts));
+    pThis->fPowerButtonHandled = false;
+    acpiUpdatePm1a(pDevIns, pThis, pThis->pm1a_sts | PWRBTN_STS, pThis->pm1a_en);
+
+    DEVACPI_UNLOCK(pDevIns, pThis);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMIEVENTBUTTONPORT,pfnSleepButtonPress}
+ */
+static DECLCALLBACK(int) acpiR3Port_SleepButtonPress(PPDMIEVENTBUTTONPORT pInterface)
+{
+    PACPISTATER3 pThisCC = RT_FROM_MEMBER(pInterface, ACPISTATER3, IButtonEventPort);
+    PPDMDEVINS   pDevIns = pThisCC->pDevIns;
+    PACPISTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
+    DEVACPI_LOCK_R3(pDevIns, pThis);
+
+    acpiUpdatePm1a(pDevIns, pThis, pThis->pm1a_sts | SLPBTN_STS, pThis->pm1a_en);
+
+    DEVACPI_UNLOCK(pDevIns, pThis);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMIEVENTBUTTONPORT,pfnQueryPowerButtonHandled}
+ */
+static DECLCALLBACK(int) acpiR3Port_QueryPowerButtonHandled(PPDMIEVENTBUTTONPORT pInterface, bool *pfHandled)
+{
+    PACPISTATER3 pThisCC = RT_FROM_MEMBER(pInterface, ACPISTATER3, IButtonEventPort);
+    PPDMDEVINS   pDevIns = pThisCC->pDevIns;
+    PACPISTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PACPISTATE);
+    DEVACPI_LOCK_R3(pDevIns, pThis);
+
+    *pfHandled = pThis->fPowerButtonHandled;
+
+    DEVACPI_UNLOCK(pDevIns, pThis);
+    return VINF_SUCCESS;
+}
+
 
 /**
  * Used by acpiR3PmTimer to re-arm the PM timer.
@@ -2847,6 +2869,7 @@ static DECLCALLBACK(void *) acpiR3QueryInterface(PPDMIBASE pInterface, const cha
     PACPISTATER3 pThisCC = RT_FROM_MEMBER(pInterface, ACPISTATER3, IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThisCC->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIACPIPORT, &pThisCC->IACPIPort);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIEVENTBUTTONPORT, &pThisCC->IButtonEventPort);
     return NULL;
 }
 
@@ -4264,15 +4287,17 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     VMCPUSET_ADD(&pThis->CpuSetLocked, 0);
 
     /* IBase */
-    pThisCC->IBase.pfnQueryInterface               = acpiR3QueryInterface;
+    pThisCC->IBase.pfnQueryInterface                             = acpiR3QueryInterface;
     /* IACPIPort */
-    pThisCC->IACPIPort.pfnSleepButtonPress         = acpiR3Port_SleepButtonPress;
-    pThisCC->IACPIPort.pfnPowerButtonPress         = acpiR3Port_PowerButtonPress;
-    pThisCC->IACPIPort.pfnGetPowerButtonHandled    = acpiR3Port_GetPowerButtonHandled;
-    pThisCC->IACPIPort.pfnGetGuestEnteredACPIMode  = acpiR3Port_GetGuestEnteredACPIMode;
-    pThisCC->IACPIPort.pfnGetCpuStatus             = acpiR3Port_GetCpuStatus;
-    pThisCC->IACPIPort.pfnMonitorHotPlugEvent      = acpiR3Port_MonitorHotPlugEvent;
-    pThisCC->IACPIPort.pfnBatteryStatusChangeEvent = acpiR3Port_BatteryStatusChangeEvent;
+    pThisCC->IACPIPort.pfnGetGuestEnteredACPIMode                = acpiR3Port_GetGuestEnteredACPIMode;
+    pThisCC->IACPIPort.pfnGetCpuStatus                           = acpiR3Port_GetCpuStatus;
+    pThisCC->IACPIPort.pfnMonitorHotPlugEvent                    = acpiR3Port_MonitorHotPlugEvent;
+    pThisCC->IACPIPort.pfnBatteryStatusChangeEvent               = acpiR3Port_BatteryStatusChangeEvent;
+    /* IButtonEventPort */
+    pThisCC->IButtonEventPort.pfnSleepButtonPress                = acpiR3Port_SleepButtonPress;
+    pThisCC->IButtonEventPort.pfnPowerButtonPress                = acpiR3Port_PowerButtonPress;
+    pThisCC->IButtonEventPort.pfnQueryPowerButtonHandled         = acpiR3Port_QueryPowerButtonHandled;
+    pThisCC->IButtonEventPort.pfnQueryGuestCanHandleButtonEvents = acpiR3Port_QueryGuestCanHandleButtonEvents;
 
     /*
      * Set the default critical section to NOP (related to the PM timer).
