@@ -30,6 +30,7 @@
 #include <QAbstractItemModel>
 #include <QAbstractItemView>
 #include <QLabel>
+#include <QLayout>
 #include <QRegularExpression>
 #include <QTabWidget>
 #include <QTextEdit>
@@ -104,6 +105,11 @@ void UIEditor::filterOut(bool fExpertMode, const QString &strFilter)
     /* Otherwise update widget visibility usual way: */
     else
         setVisible(fVisible);
+
+    /* Finally make sure layouts are freshly
+     * activated after visibility changes: */
+    foreach (QLayout *pLayout, findChildren<QLayout*>())
+        pLayout->activate();
 }
 
 QStringList UIEditor::description() const
