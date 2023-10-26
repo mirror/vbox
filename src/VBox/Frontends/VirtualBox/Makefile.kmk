@@ -1080,7 +1080,6 @@ UICommon_QT_MOCSRCS = \
 	src/settings/editors/UIStatusBarEditor.cpp \
 	src/settings/editors/UIStorageSettingsEditor.cpp \
 	src/settings/editors/UIUSBFiltersEditor.cpp \
-	src/settings/machine/UIMachineSettingsSerial.cpp \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/widgets/UIFileTableNavigationWidget.cpp \
 	src/widgets/UIFilmContainer.cpp \

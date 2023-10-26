@@ -36,7 +36,7 @@
 
 /* Forward declarations: */
 class QITabWidget;
-class UIMachineSettingsSerial;
+class UISerialSettingsEditor;
 struct UIDataSettingsMachineSerial;
 struct UIDataSettingsMachineSerialPort;
 typedef UISettingsCache<UIDataSettingsMachineSerialPort> UISettingsCacheMachineSerialPort;
@@ -103,14 +103,33 @@ private:
     /** Prepare tab. */
     void prepareTab();
     /** Prepares connections. */
-    void prepareConnections(UIMachineSettingsSerial *pTabEditor);
+    void prepareConnections(UISerialSettingsEditor *pTabEditor);
     /** Cleanups all. */
     void cleanup();
+
+    /** Performs tab polishing for specified @a iSlot. */
+    void polishTab(int iSlot);
+
+    /** Loads port data for specified @a iSlot from @a portCache to corresponding widgets. */
+    void getFromCache(int iSlot, const UISettingsCacheMachineSerialPort &portCache);
+    /** Saves port data for specified @a iSlot from corresponding widgets to @a portCache. */
+    void putToCache(int iSlot, UISettingsCacheMachineSerialPort &portCache);
+
+    /** Returns IRQ for specified @a iSlot. */
+    QString irq(int iSlot) const;
+    /** Returns IO address for specified @a iSlot. */
+    QString ioAddress(int iSlot) const;
+
+    /** Performs validation for specified @a iSlot, updates @a messages list if something is wrong. */
+    bool validate(int iSlot, QList<UIValidationMessage> &messages);
 
     /** Repopulates ports. */
     void refreshPorts();
     /** Repopulates paths. */
     void refreshPaths();
+
+    /** Returns tab title for specified @a iSlot. */
+    static QString tabTitle(int iSlot);
 
     /** Saves existing data from cache. */
     bool saveData();
@@ -129,7 +148,7 @@ private:
     QITabWidget *m_pTabWidget;
 
     /** Holds the list of tab-editors. */
-    QList<UIMachineSettingsSerial*>  m_tabEditors;
+    QList<UISerialSettingsEditor*>  m_tabEditors;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsSerial_h */

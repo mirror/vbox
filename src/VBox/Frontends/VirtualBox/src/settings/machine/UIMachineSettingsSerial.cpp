@@ -104,316 +104,6 @@ struct UIDataSettingsMachineSerial
 };
 
 
-/** Machine settings: Serial Port tab. */
-class UIMachineSettingsSerial : public UIEditor
-{
-    Q_OBJECT;
-
-signals:
-
-    /** Notifies about port changed. */
-    void sigPortChanged();
-
-    /** Notifies about path changed. */
-    void sigPathChanged();
-
-    /** Notifies about validity changed. */
-    void sigValidityChanged();
-
-public:
-
-    /** Constructs tab passing @a pParent to the base-class.
-      * @param  pParentPage  Holds the parent page reference allowing to access some of API there. */
-    UIMachineSettingsSerial(UIEditor *pParent, UIMachineSettingsSerialPage *pParentPage);
-
-    /** Loads port data from @a portCache. */
-    void getPortDataFromCache(const UISettingsCacheMachineSerialPort &portCache);
-    /** Saves port data to @a portCache. */
-    void putPortDataToCache(UISettingsCacheMachineSerialPort &portCache);
-
-    /** Performs validation, updates @a messages list if something is wrong. */
-    bool validate(QList<UIValidationMessage> &messages);
-
-    /** Configures tab order according to passed @a pWidget. */
-    QWidget *setOrderAfter(QWidget *pWidget);
-
-    /** Returns tab title. */
-    QString tabTitle() const;
-    /** Returns whether port is enabled. */
-    bool isPortEnabled() const;
-    /** Returns IRQ. */
-    QString irq() const;
-    /** Returns IO address. */
-    QString ioAddress() const;
-    /** Returns path. */
-    QString path() const;
-
-    /** Performs tab polishing. */
-    void polishTab();
-
-protected:
-
-    /** Handles translation event. */
-    void retranslateUi() {}
-
-private:
-
-    /** Prepares all. */
-    void prepare();
-    /** Prepares widgets. */
-    void prepareWidgets();
-    /** Prepares connections. */
-    void prepareConnections();
-
-    /** Holds the parent page reference. */
-    UIMachineSettingsSerialPage *m_pParentPage;
-
-    /** Holds the port slot number. */
-    int  m_iSlot;
-
-    /** Holds the serial settings editor instance. */
-    UISerialSettingsEditor *m_pEditorSerialSettings;
-};
-
-
-/*********************************************************************************************************************************
-*   Class UIMachineSettingsSerial implementation.                                                                                *
-*********************************************************************************************************************************/
-
-UIMachineSettingsSerial::UIMachineSettingsSerial(UIEditor *pParent, UIMachineSettingsSerialPage *pParentPage)
-    : UIEditor(pParent)
-    , m_pParentPage(pParentPage)
-    , m_iSlot(-1)
-    , m_pEditorSerialSettings(0)
-{
-    prepare();
-}
-
-void UIMachineSettingsSerial::getPortDataFromCache(const UISettingsCacheMachineSerialPort &portCache)
-{
-    /* Get old data: */
-    const UIDataSettingsMachineSerialPort &oldPortData = portCache.base();
-
-    /* Load port number: */
-    m_iSlot = oldPortData.m_iSlot;
-
-    if (m_pEditorSerialSettings)
-    {
-        /* Load port data: */
-        m_pEditorSerialSettings->setPortByIRQAndIOAddress(oldPortData.m_uIRQ, oldPortData.m_uIOAddress);
-        m_pEditorSerialSettings->setIRQ(oldPortData.m_uIRQ);
-        m_pEditorSerialSettings->setIOAddress(oldPortData.m_uIOAddress);
-        m_pEditorSerialSettings->setHostMode(oldPortData.m_hostMode);
-        m_pEditorSerialSettings->setServerEnabled(oldPortData.m_fServer);
-        m_pEditorSerialSettings->setPath(oldPortData.m_strPath);
-        // Should be done in th end to finalize availability:
-        m_pEditorSerialSettings->setPortEnabled(oldPortData.m_fPortEnabled);
-    }
-}
-
-void UIMachineSettingsSerial::putPortDataToCache(UISettingsCacheMachineSerialPort &portCache)
-{
-    /* Prepare new data: */
-    UIDataSettingsMachineSerialPort newPortData;
-
-    /* Save port number: */
-    newPortData.m_iSlot = m_iSlot;
-
-    if (m_pEditorSerialSettings)
-    {
-        /* Save port data: */
-        newPortData.m_fPortEnabled = m_pEditorSerialSettings->isPortEnabled();
-        newPortData.m_uIRQ = m_pEditorSerialSettings->irq();
-        newPortData.m_uIOAddress = m_pEditorSerialSettings->ioAddress();
-        newPortData.m_fServer = m_pEditorSerialSettings->isServerEnabled();
-        newPortData.m_hostMode = m_pEditorSerialSettings->hostMode();
-        newPortData.m_strPath = m_pEditorSerialSettings->path();
-    }
-
-    /* Cache new data: */
-    portCache.cacheCurrentData(newPortData);
-}
-
-bool UIMachineSettingsSerial::validate(QList<UIValidationMessage> &messages)
-{
-    /* Pass by default: */
-    bool fPass = true;
-
-    /* Prepare message: */
-    UIValidationMessage message;
-    message.first = UITranslator::removeAccelMark(tabTitle());
-
-    /* Validate enabled port only: */
-    if (   m_pEditorSerialSettings
-        && m_pEditorSerialSettings->isPortEnabled())
-    {
-        /* Check the port attribute emptiness & uniqueness: */
-        const QString strIRQ = irq();
-        const QString strIOAddress = ioAddress();
-        const QPair<QString, QString> port = qMakePair(strIRQ, strIOAddress);
-
-        if (strIRQ.isEmpty())
-        {
-            message.second << UIMachineSettingsSerial::tr("No IRQ is currently specified.");
-            fPass = false;
-        }
-        if (strIOAddress.isEmpty())
-        {
-            message.second << UIMachineSettingsSerial::tr("No I/O port is currently specified.");
-            fPass = false;
-        }
-        if (   !strIRQ.isEmpty()
-            && !strIOAddress.isEmpty())
-        {
-            QVector<QPair<QString, QString> > ports;
-            if (m_pParentPage)
-            {
-                ports = m_pParentPage->ports();
-                ports.removeAt(m_iSlot);
-            }
-            if (ports.contains(port))
-            {
-                message.second << UIMachineSettingsSerial::tr("Two or more ports have the same settings.");
-                fPass = false;
-            }
-        }
-
-        const KPortMode enmMode = m_pEditorSerialSettings->hostMode();
-        if (enmMode != KPortMode_Disconnected)
-        {
-            const QString strPath = m_pEditorSerialSettings->path();
-
-            if (strPath.isEmpty())
-            {
-                message.second << UIMachineSettingsSerial::tr("No port path is currently specified.");
-                fPass = false;
-            }
-            else
-            {
-                QVector<QString> paths;
-                if (m_pParentPage)
-                {
-                    paths = m_pParentPage->paths();
-                    paths.removeAt(m_iSlot);
-                }
-                if (paths.contains(strPath))
-                {
-                    message.second << UIMachineSettingsSerial::tr("There are currently duplicate port paths specified.");
-                    fPass = false;
-                }
-            }
-        }
-    }
-
-    /* Serialize message: */
-    if (!message.second.isEmpty())
-        messages << message;
-
-    /* Return result: */
-    return fPass;
-}
-
-QWidget *UIMachineSettingsSerial::setOrderAfter(QWidget *pWidget)
-{
-    setTabOrder(pWidget, m_pEditorSerialSettings);
-    return m_pEditorSerialSettings;
-}
-
-QString UIMachineSettingsSerial::tabTitle() const
-{
-    return QString(tr("Port %1", "serial ports")).arg(QString("&%1").arg(m_iSlot + 1));
-}
-
-bool UIMachineSettingsSerial::isPortEnabled() const
-{
-    return m_pEditorSerialSettings->isPortEnabled();
-}
-
-QString UIMachineSettingsSerial::irq() const
-{
-    return QString::number(m_pEditorSerialSettings->irq());
-}
-
-QString UIMachineSettingsSerial::ioAddress() const
-{
-    return QString::number(m_pEditorSerialSettings->ioAddress());
-}
-
-QString UIMachineSettingsSerial::path() const
-{
-    return m_pEditorSerialSettings->path();
-}
-
-void UIMachineSettingsSerial::polishTab()
-{
-    if (   m_pEditorSerialSettings
-        && m_pParentPage)
-    {
-        /* Polish port page: */
-        const bool fStd = m_pEditorSerialSettings->isPortStandardOne();
-        const KPortMode enmMode = m_pEditorSerialSettings->hostMode();
-        m_pEditorSerialSettings->setPortOptionsAvailable(m_pParentPage->isMachineOffline());
-        m_pEditorSerialSettings->setIRQAndIOAddressOptionsAvailable(!fStd && m_pParentPage->isMachineOffline());
-        m_pEditorSerialSettings->setHostModeOptionsAvailable(m_pParentPage->isMachineOffline());
-        m_pEditorSerialSettings->setPipeOptionsAvailable(   (enmMode == KPortMode_HostPipe || enmMode == KPortMode_TCP)
-                                                         && m_pParentPage->isMachineOffline());
-        m_pEditorSerialSettings->setPathOptionsAvailable(   enmMode != KPortMode_Disconnected
-                                                         && m_pParentPage->isMachineOffline());
-    }
-}
-
-void UIMachineSettingsSerial::prepare()
-{
-    /* Prepare everything: */
-    prepareWidgets();
-    prepareConnections();
-
-    /* Apply language settings: */
-    retranslateUi();
-}
-
-void UIMachineSettingsSerial::prepareWidgets()
-{
-    /* Prepare main layout: */
-    QVBoxLayout *pLayout = new QVBoxLayout(this);
-    if (pLayout)
-    {
-        pLayout->setContentsMargins(0, 0, 0, 0);
-
-        /* Prepare settings editor: */
-        m_pEditorSerialSettings = new UISerialSettingsEditor(this);
-        if (m_pEditorSerialSettings)
-        {
-            addEditor(m_pEditorSerialSettings);
-            pLayout->addWidget(m_pEditorSerialSettings);
-        }
-
-        pLayout->addStretch();
-    }
-}
-
-void UIMachineSettingsSerial::prepareConnections()
-{
-    if (m_pEditorSerialSettings)
-    {
-        connect(m_pEditorSerialSettings, &UISerialSettingsEditor::sigPortAvailabilityChanged,
-                this, &UIMachineSettingsSerial::sigPortChanged);
-        connect(m_pEditorSerialSettings, &UISerialSettingsEditor::sigPortAvailabilityChanged,
-                this, &UIMachineSettingsSerial::sigPathChanged);
-        connect(m_pEditorSerialSettings, &UISerialSettingsEditor::sigStandardPortOptionChanged,
-                this, &UIMachineSettingsSerial::sigValidityChanged);
-        connect(m_pEditorSerialSettings, &UISerialSettingsEditor::sigPortIRQChanged,
-                this, &UIMachineSettingsSerial::sigPortChanged);
-        connect(m_pEditorSerialSettings, &UISerialSettingsEditor::sigPortIOAddressChanged,
-                this, &UIMachineSettingsSerial::sigPortChanged);
-        connect(m_pEditorSerialSettings, &UISerialSettingsEditor::sigModeChanged,
-                this, &UIMachineSettingsSerial::sigValidityChanged);
-        connect(m_pEditorSerialSettings, &UISerialSettingsEditor::sigPathChanged,
-                this, &UIMachineSettingsSerial::sigPathChanged);
-    }
-}
-
-
 /*********************************************************************************************************************************
 *   Class UIMachineSettingsSerialPage implementation.                                                                            *
 *********************************************************************************************************************************/
@@ -493,24 +183,9 @@ void UIMachineSettingsSerialPage::getFromCache()
         || !m_pTabWidget)
         return;
 
-    /* Setup tab order: */
-    AssertPtrReturnVoid(firstWidget());
-    setTabOrder(firstWidget(), m_pTabWidget->focusProxy());
-    QWidget *pLastFocusWidget = m_pTabWidget->focusProxy();
-
-    /* For each port: */
+    /* Load old data from cache: */
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
-    {
-        /* Get port page: */
-        UIMachineSettingsSerial *pTabEditor = m_tabEditors.at(iSlot);
-        AssertPtrReturnVoid(pTabEditor);
-
-        /* Load old data from cache: */
-        pTabEditor->getPortDataFromCache(m_pCache->child(iSlot));
-
-        /* Setup tab order: */
-        pLastFocusWidget = pTabEditor->setOrderAfter(pLastFocusWidget);
-    }
+        getFromCache(iSlot, m_pCache->child(iSlot));
 
     /* Apply language settings: */
     retranslateUi();
@@ -532,16 +207,9 @@ void UIMachineSettingsSerialPage::putToCache()
     /* Prepare new data: */
     UIDataSettingsMachineSerial newSerialData;
 
-    /* For each port: */
+    /* Gather new data to cache: */
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
-    {
-        /* Getting port page: */
-        UIMachineSettingsSerial *pTabEditor = m_tabEditors.at(iSlot);
-        AssertPtrReturnVoid(pTabEditor);
-
-        /* Gather new data: */
-        pTabEditor->putPortDataToCache(m_pCache->child(iSlot));
-    }
+        putToCache(iSlot, m_pCache->child(iSlot));
 
     /* Cache new data: */
     m_pCache->cacheCurrentData(newSerialData);
@@ -570,12 +238,8 @@ bool UIMachineSettingsSerialPage::validate(QList<UIValidationMessage> &messages)
 
     /* Delegate validation to adapter tabs: */
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
-    {
-        UIMachineSettingsSerial *pTabEditor = m_tabEditors.at(iSlot);
-        AssertPtrReturn(pTabEditor, false);
-        if (!pTabEditor->validate(messages))
+        if (!validate(iSlot, messages))
             fValid = false;
-    }
 
     /* Return result: */
     return fValid;
@@ -588,11 +252,7 @@ void UIMachineSettingsSerialPage::retranslateUi()
         return;
 
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
-    {
-        UIMachineSettingsSerial *pTabEditor = m_tabEditors.at(iSlot);
-        AssertPtrReturnVoid(pTabEditor);
-        m_pTabWidget->setTabText(iSlot, pTabEditor->tabTitle());
-    }
+        m_pTabWidget->setTabText(iSlot, tabTitle(iSlot));
 }
 
 void UIMachineSettingsSerialPage::polishPage()
@@ -609,9 +269,7 @@ void UIMachineSettingsSerialPage::polishPage()
                                     (isMachineInValidMode() &&
                                      m_pCache->childCount() > iSlot &&
                                      m_pCache->child(iSlot).base().m_fPortEnabled));
-        UIMachineSettingsSerial *pTabEditor = m_tabEditors.at(iSlot);
-        AssertPtrReturnVoid(pTabEditor);
-        pTabEditor->polishTab();
+        polishTab(iSlot);
     }
 }
 
@@ -680,7 +338,7 @@ void UIMachineSettingsSerialPage::prepareTab()
 #endif
 
             /* Create port tab-editor: */
-            UIMachineSettingsSerial *pEditor = new UIMachineSettingsSerial(pTab, this);
+            UISerialSettingsEditor *pEditor = new UISerialSettingsEditor(this);
             if (pEditor)
             {
                 m_tabEditors << pEditor;
@@ -697,15 +355,23 @@ void UIMachineSettingsSerialPage::prepareTab()
     }
 }
 
-void UIMachineSettingsSerialPage::prepareConnections(UIMachineSettingsSerial *pTabEditor)
+void UIMachineSettingsSerialPage::prepareConnections(UISerialSettingsEditor *pTabEditor)
 {
     /* Tab connections: */
-    connect(pTabEditor, &UIMachineSettingsSerial::sigPortChanged,
+    connect(pTabEditor, &UISerialSettingsEditor::sigPortAvailabilityChanged,
             this, &UIMachineSettingsSerialPage::sltHandlePortChange);
-    connect(pTabEditor, &UIMachineSettingsSerial::sigPathChanged,
+    connect(pTabEditor, &UISerialSettingsEditor::sigPortAvailabilityChanged,
             this, &UIMachineSettingsSerialPage::sltHandlePathChange);
-    connect(pTabEditor, &UIMachineSettingsSerial::sigValidityChanged,
+    connect(pTabEditor, &UISerialSettingsEditor::sigStandardPortOptionChanged,
             this, &UIMachineSettingsSerialPage::revalidate);
+    connect(pTabEditor, &UISerialSettingsEditor::sigPortIRQChanged,
+            this, &UIMachineSettingsSerialPage::sltHandlePortChange);
+    connect(pTabEditor, &UISerialSettingsEditor::sigPortIOAddressChanged,
+            this, &UIMachineSettingsSerialPage::sltHandlePortChange);
+    connect(pTabEditor, &UISerialSettingsEditor::sigModeChanged,
+            this, &UIMachineSettingsSerialPage::revalidate);
+    connect(pTabEditor, &UISerialSettingsEditor::sigPathChanged,
+            this, &UIMachineSettingsSerialPage::sltHandlePathChange);
 }
 
 void UIMachineSettingsSerialPage::cleanup()
@@ -713,6 +379,160 @@ void UIMachineSettingsSerialPage::cleanup()
     /* Cleanup cache: */
     delete m_pCache;
     m_pCache = 0;
+}
+
+void UIMachineSettingsSerialPage::polishTab(int iSlot)
+{
+    /* Acquire tab-editor: */
+    UISerialSettingsEditor *pTabEditor = m_tabEditors.at(iSlot);
+    AssertPtrReturnVoid(pTabEditor);
+
+    /* Polish port page: */
+    const bool fStd = pTabEditor->isPortStandardOne();
+    const KPortMode enmMode = pTabEditor->hostMode();
+    pTabEditor->setPortOptionsAvailable(isMachineOffline());
+    pTabEditor->setIRQAndIOAddressOptionsAvailable(!fStd && isMachineOffline());
+    pTabEditor->setHostModeOptionsAvailable(isMachineOffline());
+    pTabEditor->setPipeOptionsAvailable(   (enmMode == KPortMode_HostPipe || enmMode == KPortMode_TCP)
+                                        && isMachineOffline());
+    pTabEditor->setPathOptionsAvailable(   enmMode != KPortMode_Disconnected
+                                        && isMachineOffline());
+}
+
+void UIMachineSettingsSerialPage::getFromCache(int iSlot, const UISettingsCacheMachineSerialPort &portCache)
+{
+    /* Acquire tab-editor: */
+    UISerialSettingsEditor *pTabEditor = m_tabEditors.at(iSlot);
+    AssertPtrReturnVoid(pTabEditor);
+
+    /* Get old data: */
+    const UIDataSettingsMachineSerialPort &oldPortData = portCache.base();
+
+    /* Load port data: */
+    pTabEditor->setPortByIRQAndIOAddress(oldPortData.m_uIRQ, oldPortData.m_uIOAddress);
+    pTabEditor->setIRQ(oldPortData.m_uIRQ);
+    pTabEditor->setIOAddress(oldPortData.m_uIOAddress);
+    pTabEditor->setHostMode(oldPortData.m_hostMode);
+    pTabEditor->setServerEnabled(oldPortData.m_fServer);
+    pTabEditor->setPath(oldPortData.m_strPath);
+    // Should be done in th end to finalize availability:
+    pTabEditor->setPortEnabled(oldPortData.m_fPortEnabled);
+}
+
+void UIMachineSettingsSerialPage::putToCache(int iSlot, UISettingsCacheMachineSerialPort &portCache)
+{
+    /* Acquire tab-editor: */
+    UISerialSettingsEditor *pTabEditor = m_tabEditors.at(iSlot);
+    AssertPtrReturnVoid(pTabEditor);
+
+    /* Prepare new data: */
+    UIDataSettingsMachineSerialPort newPortData;
+
+    /* Save port number: */
+    newPortData.m_iSlot = iSlot;
+
+    /* Save port data: */
+    newPortData.m_fPortEnabled = pTabEditor->isPortEnabled();
+    newPortData.m_uIRQ = pTabEditor->irq();
+    newPortData.m_uIOAddress = pTabEditor->ioAddress();
+    newPortData.m_fServer = pTabEditor->isServerEnabled();
+    newPortData.m_hostMode = pTabEditor->hostMode();
+    newPortData.m_strPath = pTabEditor->path();
+
+    /* Cache new data: */
+    portCache.cacheCurrentData(newPortData);
+}
+
+QString UIMachineSettingsSerialPage::irq(int iSlot) const
+{
+    /* Acquire tab-editor: */
+    UISerialSettingsEditor *pTabEditor = m_tabEditors.at(iSlot);
+    AssertPtrReturn(pTabEditor, QString());
+    return QString::number(pTabEditor->irq());
+}
+
+QString UIMachineSettingsSerialPage::ioAddress(int iSlot) const
+{
+    /* Acquire tab-editor: */
+    UISerialSettingsEditor *pTabEditor = m_tabEditors.at(iSlot);
+    AssertPtrReturn(pTabEditor, QString());
+    return QString::number(pTabEditor->ioAddress());
+}
+
+bool UIMachineSettingsSerialPage::validate(int iSlot, QList<UIValidationMessage> &messages)
+{
+    /* Acquire tab-editor: */
+    UISerialSettingsEditor *pTabEditor = m_tabEditors.at(iSlot);
+    AssertPtrReturn(pTabEditor, false);
+
+    /* Pass by default: */
+    bool fPass = true;
+
+    /* Prepare message: */
+    UIValidationMessage message;
+    message.first = UITranslator::removeAccelMark(tabTitle(iSlot));
+
+    /* Validate enabled port only: */
+    if (pTabEditor->isPortEnabled())
+    {
+        /* Check the port attribute emptiness & uniqueness: */
+        const QString strIRQ = irq(iSlot);
+        const QString strIOAddress = ioAddress(iSlot);
+        const QPair<QString, QString> port = qMakePair(strIRQ, strIOAddress);
+
+        if (strIRQ.isEmpty())
+        {
+            message.second << tr("No IRQ is currently specified.");
+            fPass = false;
+        }
+        if (strIOAddress.isEmpty())
+        {
+            message.second << tr("No I/O port is currently specified.");
+            fPass = false;
+        }
+        if (   !strIRQ.isEmpty()
+            && !strIOAddress.isEmpty())
+        {
+            QVector<QPair<QString, QString> > currentPorts;
+            currentPorts = ports();
+            currentPorts.removeAt(iSlot);
+            if (currentPorts.contains(port))
+            {
+                message.second << tr("Two or more ports have the same settings.");
+                fPass = false;
+            }
+        }
+
+        const KPortMode enmMode = pTabEditor->hostMode();
+        if (enmMode != KPortMode_Disconnected)
+        {
+            const QString strPath = pTabEditor->path();
+
+            if (strPath.isEmpty())
+            {
+                message.second << tr("No port path is currently specified.");
+                fPass = false;
+            }
+            else
+            {
+                QVector<QString> currentPaths;
+                currentPaths = paths();
+                currentPaths.removeAt(iSlot);
+                if (currentPaths.contains(strPath))
+                {
+                    message.second << tr("There are currently duplicate port paths specified.");
+                    fPass = false;
+                }
+            }
+        }
+    }
+
+    /* Serialize message: */
+    if (!message.second.isEmpty())
+        messages << message;
+
+    /* Return result: */
+    return fPass;
 }
 
 void UIMachineSettingsSerialPage::refreshPorts()
@@ -727,9 +547,9 @@ void UIMachineSettingsSerialPage::refreshPorts()
     /* Append port list with data from all the tabs: */
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
-        UIMachineSettingsSerial *pTabEditor = m_tabEditors.at(iSlot);
+        UISerialSettingsEditor *pTabEditor = m_tabEditors.at(iSlot);
         AssertPtrReturnVoid(pTabEditor);
-        m_ports[iSlot] = pTabEditor->isPortEnabled() ? qMakePair(pTabEditor->irq(), pTabEditor->ioAddress()) : qMakePair(QString(), QString());
+        m_ports[iSlot] = pTabEditor->isPortEnabled() ? qMakePair(irq(iSlot), ioAddress(iSlot)) : qMakePair(QString(), QString());
     }
 }
 
@@ -745,10 +565,16 @@ void UIMachineSettingsSerialPage::refreshPaths()
     /* Append path list with data from all the tabs: */
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
-        UIMachineSettingsSerial *pTabEditor = m_tabEditors.at(iSlot);
+        UISerialSettingsEditor *pTabEditor = m_tabEditors.at(iSlot);
         AssertPtrReturnVoid(pTabEditor);
         m_paths[iSlot] = pTabEditor->isPortEnabled() ? pTabEditor->path() : QString();
     }
+}
+
+/* static */
+QString UIMachineSettingsSerialPage::tabTitle(int iSlot)
+{
+    return QString(tr("Port %1", "serial ports")).arg(QString("&%1").arg(iSlot + 1));
 }
 
 bool UIMachineSettingsSerialPage::saveData()
@@ -857,5 +683,3 @@ bool UIMachineSettingsSerialPage::savePortData(int iSlot)
     /* Return result: */
     return fSuccess;
 }
-
-# include "UIMachineSettingsSerial.moc"
