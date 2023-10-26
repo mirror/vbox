@@ -554,39 +554,36 @@ void UIMachineSettingsNetwork::getFromCache(int iSlot, const UISettingsCacheMach
     /* Get old data: */
     const UIDataSettingsMachineNetworkAdapter &oldAdapterData = adapterCache.base();
 
-    if (pTabEditor)
-    {
-        /* Load adapter activity state: */
-        pTabEditor->setFeatureEnabled(oldAdapterData.m_fAdapterEnabled);
+    /* Load adapter activity state: */
+    pTabEditor->setFeatureEnabled(oldAdapterData.m_fAdapterEnabled);
 
-        /* Load attachment type: */
-        pTabEditor->setValueType(oldAdapterData.m_attachmentType);
-        /* Load alternative names: */
-        pTabEditor->setValueName(KNetworkAttachmentType_Bridged, wipedOutString(oldAdapterData.m_strBridgedAdapterName));
-        pTabEditor->setValueName(KNetworkAttachmentType_Internal, wipedOutString(oldAdapterData.m_strInternalNetworkName));
-        pTabEditor->setValueName(KNetworkAttachmentType_HostOnly, wipedOutString(oldAdapterData.m_strHostInterfaceName));
-        pTabEditor->setValueName(KNetworkAttachmentType_Generic, wipedOutString(oldAdapterData.m_strGenericDriverName));
-        pTabEditor->setValueName(KNetworkAttachmentType_NATNetwork, wipedOutString(oldAdapterData.m_strNATNetworkName));
+    /* Load attachment type: */
+    pTabEditor->setValueType(oldAdapterData.m_attachmentType);
+    /* Load alternative names: */
+    pTabEditor->setValueName(KNetworkAttachmentType_Bridged, wipedOutString(oldAdapterData.m_strBridgedAdapterName));
+    pTabEditor->setValueName(KNetworkAttachmentType_Internal, wipedOutString(oldAdapterData.m_strInternalNetworkName));
+    pTabEditor->setValueName(KNetworkAttachmentType_HostOnly, wipedOutString(oldAdapterData.m_strHostInterfaceName));
+    pTabEditor->setValueName(KNetworkAttachmentType_Generic, wipedOutString(oldAdapterData.m_strGenericDriverName));
+    pTabEditor->setValueName(KNetworkAttachmentType_NATNetwork, wipedOutString(oldAdapterData.m_strNATNetworkName));
 #ifdef VBOX_WITH_CLOUD_NET
-        pTabEditor->setValueName(KNetworkAttachmentType_Cloud, wipedOutString(oldAdapterData.m_strCloudNetworkName));
+    pTabEditor->setValueName(KNetworkAttachmentType_Cloud, wipedOutString(oldAdapterData.m_strCloudNetworkName));
 #endif
 #ifdef VBOX_WITH_VMNET
-        pTabEditor->setValueName(KNetworkAttachmentType_HostOnlyNetwork, wipedOutString(oldAdapterData.m_strHostOnlyNetworkName));
+    pTabEditor->setValueName(KNetworkAttachmentType_HostOnlyNetwork, wipedOutString(oldAdapterData.m_strHostOnlyNetworkName));
 #endif
 
-        /* Load settings: */
-        pTabEditor->setAdapterType(oldAdapterData.m_adapterType);
-        pTabEditor->setPromiscuousMode(oldAdapterData.m_promiscuousMode);
-        pTabEditor->setMACAddress(oldAdapterData.m_strMACAddress);
-        pTabEditor->setGenericProperties(oldAdapterData.m_strGenericProperties);
-        pTabEditor->setCableConnected(oldAdapterData.m_fCableConnected);
+    /* Load settings: */
+    pTabEditor->setAdapterType(oldAdapterData.m_adapterType);
+    pTabEditor->setPromiscuousMode(oldAdapterData.m_promiscuousMode);
+    pTabEditor->setMACAddress(oldAdapterData.m_strMACAddress);
+    pTabEditor->setGenericProperties(oldAdapterData.m_strGenericProperties);
+    pTabEditor->setCableConnected(oldAdapterData.m_fCableConnected);
 
-        /* Load port forwarding rules: */
-        UIPortForwardingDataList portForwardingRules;
-        for (int i = 0; i < adapterCache.childCount(); ++i)
-            portForwardingRules << adapterCache.child(i).base();
-        pTabEditor->setPortForwardingRules(portForwardingRules);
-    }
+    /* Load port forwarding rules: */
+    UIPortForwardingDataList portForwardingRules;
+    for (int i = 0; i < adapterCache.childCount(); ++i)
+        portForwardingRules << adapterCache.child(i).base();
+    pTabEditor->setPortForwardingRules(portForwardingRules);
 
     /* Reload alternatives: */
     reloadAlternatives(iSlot);
@@ -604,36 +601,33 @@ void UIMachineSettingsNetwork::putToCache(int iSlot, UISettingsCacheMachineNetwo
     /* Save slot number: */
     newAdapterData.m_iSlot = iSlot;
 
-    if (pTabEditor)
-    {
-        /* Save adapter activity state: */
-        newAdapterData.m_fAdapterEnabled = pTabEditor->isFeatureEnabled();
+    /* Save adapter activity state: */
+    newAdapterData.m_fAdapterEnabled = pTabEditor->isFeatureEnabled();
 
-        /* Save attachment type & alternative name: */
-        newAdapterData.m_attachmentType = attachmentType(iSlot);
-        newAdapterData.m_strBridgedAdapterName = pTabEditor->valueName(KNetworkAttachmentType_Bridged);
-        newAdapterData.m_strInternalNetworkName = pTabEditor->valueName(KNetworkAttachmentType_Internal);
-        newAdapterData.m_strHostInterfaceName = pTabEditor->valueName(KNetworkAttachmentType_HostOnly);
-        newAdapterData.m_strGenericDriverName = pTabEditor->valueName(KNetworkAttachmentType_Generic);
-        newAdapterData.m_strNATNetworkName = pTabEditor->valueName(KNetworkAttachmentType_NATNetwork);
+    /* Save attachment type & alternative name: */
+    newAdapterData.m_attachmentType = attachmentType(iSlot);
+    newAdapterData.m_strBridgedAdapterName = pTabEditor->valueName(KNetworkAttachmentType_Bridged);
+    newAdapterData.m_strInternalNetworkName = pTabEditor->valueName(KNetworkAttachmentType_Internal);
+    newAdapterData.m_strHostInterfaceName = pTabEditor->valueName(KNetworkAttachmentType_HostOnly);
+    newAdapterData.m_strGenericDriverName = pTabEditor->valueName(KNetworkAttachmentType_Generic);
+    newAdapterData.m_strNATNetworkName = pTabEditor->valueName(KNetworkAttachmentType_NATNetwork);
 #ifdef VBOX_WITH_CLOUD_NET
-        newAdapterData.m_strCloudNetworkName = pTabEditor->valueName(KNetworkAttachmentType_Cloud);
+    newAdapterData.m_strCloudNetworkName = pTabEditor->valueName(KNetworkAttachmentType_Cloud);
 #endif
 #ifdef VBOX_WITH_VMNET
-        newAdapterData.m_strHostOnlyNetworkName = pTabEditor->valueName(KNetworkAttachmentType_HostOnlyNetwork);
+    newAdapterData.m_strHostOnlyNetworkName = pTabEditor->valueName(KNetworkAttachmentType_HostOnlyNetwork);
 #endif
 
-        /* Save settings: */
-        newAdapterData.m_adapterType = pTabEditor->adapterType();
-        newAdapterData.m_promiscuousMode = pTabEditor->promiscuousMode();
-        newAdapterData.m_strMACAddress = pTabEditor->macAddress();
-        newAdapterData.m_strGenericProperties = pTabEditor->genericProperties();
-        newAdapterData.m_fCableConnected = pTabEditor->cableConnected();
+    /* Save settings: */
+    newAdapterData.m_adapterType = pTabEditor->adapterType();
+    newAdapterData.m_promiscuousMode = pTabEditor->promiscuousMode();
+    newAdapterData.m_strMACAddress = pTabEditor->macAddress();
+    newAdapterData.m_strGenericProperties = pTabEditor->genericProperties();
+    newAdapterData.m_fCableConnected = pTabEditor->cableConnected();
 
-        /* Save port forwarding rules: */
-        foreach (const UIDataPortForwardingRule &rule, pTabEditor->portForwardingRules())
-            adapterCache.child(rule.name).cacheCurrentData(rule);
-    }
+    /* Save port forwarding rules: */
+    foreach (const UIDataPortForwardingRule &rule, pTabEditor->portForwardingRules())
+        adapterCache.child(rule.name).cacheCurrentData(rule);
 
     /* Cache new data: */
     adapterCache.cacheCurrentData(newAdapterData);
@@ -691,8 +685,7 @@ bool UIMachineSettingsNetwork::validate(int iSlot, QList<UIValidationMessage> &m
     message.first = UITranslator::removeAccelMark(tabTitle(iSlot));
 
     /* Validate enabled adapter only: */
-    if (   pTabEditor
-        && pTabEditor->isFeatureEnabled())
+    if (pTabEditor->isFeatureEnabled())
     {
         /* Validate alternatives: */
         switch (attachmentType(iSlot))
