@@ -124,7 +124,7 @@ public:
 
     /** Constructs tab passing @a pParent to the base-class.
       * @param  pParentPage  Holds the parent page reference allowing to access some of API there. */
-    UIMachineSettingsSerial(QITabWidget *pParent, UIMachineSettingsSerialPage *pParentPage);
+    UIMachineSettingsSerial(UIEditor *pParent, UIMachineSettingsSerialPage *pParentPage);
 
     /** Loads port data from @a portCache. */
     void getPortDataFromCache(const UISettingsCacheMachineSerialPort &portCache);
@@ -180,7 +180,7 @@ private:
 *   Class UIMachineSettingsSerial implementation.                                                                                *
 *********************************************************************************************************************************/
 
-UIMachineSettingsSerial::UIMachineSettingsSerial(QITabWidget *pParent, UIMachineSettingsSerialPage *pParentPage)
+UIMachineSettingsSerial::UIMachineSettingsSerial(UIEditor *pParent, UIMachineSettingsSerialPage *pParentPage)
     : UIEditor(pParent)
     , m_pParentPage(pParentPage)
     , m_iSlot(-1)
@@ -378,12 +378,7 @@ void UIMachineSettingsSerial::prepareWidgets()
     QVBoxLayout *pLayout = new QVBoxLayout(this);
     if (pLayout)
     {
-#ifdef VBOX_WS_MAC
-            /* On Mac OS X we can do a bit of smoothness: */
-            int iLeft, iTop, iRight, iBottom;
-            pLayout->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
-            pLayout->setContentsMargins(iLeft / 2, iTop / 2, iRight / 2, iBottom / 2);
-#endif
+        pLayout->setContentsMargins(0, 0, 0, 0);
 
         /* Prepare settings editor: */
         m_pEditorSerialSettings = new UISerialSettingsEditor(this);
@@ -507,14 +502,14 @@ void UIMachineSettingsSerialPage::getFromCache()
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
         /* Get port page: */
-        UIMachineSettingsSerial *pTab = qobject_cast<UIMachineSettingsSerial*>(m_pTabWidget->widget(iSlot));
-        AssertPtrReturnVoid(pTab);
+        UIMachineSettingsSerial *pTabEditor = m_tabEditors.at(iSlot);
+        AssertPtrReturnVoid(pTabEditor);
 
         /* Load old data from cache: */
-        pTab->getPortDataFromCache(m_pCache->child(iSlot));
+        pTabEditor->getPortDataFromCache(m_pCache->child(iSlot));
 
         /* Setup tab order: */
-        pLastFocusWidget = pTab->setOrderAfter(pLastFocusWidget);
+        pLastFocusWidget = pTabEditor->setOrderAfter(pLastFocusWidget);
     }
 
     /* Apply language settings: */
@@ -541,11 +536,11 @@ void UIMachineSettingsSerialPage::putToCache()
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
         /* Getting port page: */
-        UIMachineSettingsSerial *pTab = qobject_cast<UIMachineSettingsSerial*>(m_pTabWidget->widget(iSlot));
-        AssertPtrReturnVoid(pTab);
+        UIMachineSettingsSerial *pTabEditor = m_tabEditors.at(iSlot);
+        AssertPtrReturnVoid(pTabEditor);
 
         /* Gather new data: */
-        pTab->putPortDataToCache(m_pCache->child(iSlot));
+        pTabEditor->putPortDataToCache(m_pCache->child(iSlot));
     }
 
     /* Cache new data: */
@@ -574,11 +569,11 @@ bool UIMachineSettingsSerialPage::validate(QList<UIValidationMessage> &messages)
     bool fValid = true;
 
     /* Delegate validation to adapter tabs: */
-    for (int iIndex = 0; iIndex < m_pTabWidget->count(); ++iIndex)
+    for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
-        UIMachineSettingsSerial *pTab = qobject_cast<UIMachineSettingsSerial*>(m_pTabWidget->widget(iIndex));
-        AssertPtrReturn(pTab, false);
-        if (!pTab->validate(messages))
+        UIMachineSettingsSerial *pTabEditor = m_tabEditors.at(iSlot);
+        AssertPtrReturn(pTabEditor, false);
+        if (!pTabEditor->validate(messages))
             fValid = false;
     }
 
@@ -594,9 +589,9 @@ void UIMachineSettingsSerialPage::retranslateUi()
 
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
-        UIMachineSettingsSerial *pTab = qobject_cast<UIMachineSettingsSerial*>(m_pTabWidget->widget(iSlot));
-        AssertPtrReturnVoid(pTab);
-        m_pTabWidget->setTabText(iSlot, pTab->tabTitle());
+        UIMachineSettingsSerial *pTabEditor = m_tabEditors.at(iSlot);
+        AssertPtrReturnVoid(pTabEditor);
+        m_pTabWidget->setTabText(iSlot, pTabEditor->tabTitle());
     }
 }
 
@@ -614,9 +609,9 @@ void UIMachineSettingsSerialPage::polishPage()
                                     (isMachineInValidMode() &&
                                      m_pCache->childCount() > iSlot &&
                                      m_pCache->child(iSlot).base().m_fPortEnabled));
-        UIMachineSettingsSerial *pTab = qobject_cast<UIMachineSettingsSerial*>(m_pTabWidget->widget(iSlot));
-        AssertPtrReturnVoid(pTab);
-        pTab->polishTab();
+        UIMachineSettingsSerial *pTabEditor = m_tabEditors.at(iSlot);
+        AssertPtrReturnVoid(pTabEditor);
+        pTabEditor->polishTab();
     }
 }
 
@@ -638,12 +633,21 @@ void UIMachineSettingsSerialPage::prepare()
     m_pCache = new UISettingsCacheMachineSerial;
     AssertPtrReturnVoid(m_pCache);
 
-    /* Create main layout: */
+    /* Prepare everything: */
+    prepareWidgets();
+
+    /* Apply language settings: */
+    retranslateUi();
+}
+
+void UIMachineSettingsSerialPage::prepareWidgets()
+{
+    /* Prepare main layout: */
     QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
     if (pLayoutMain)
     {
-        /* Creating tab-widget: */
-        m_pTabWidget = new QITabWidget;
+        /* Prepare tab-widget: */
+        m_pTabWidget = new QITabWidget(this);
         if (m_pTabWidget)
         {
             /* How many ports to display: */
@@ -651,29 +655,57 @@ void UIMachineSettingsSerialPage::prepare()
 
             /* Create corresponding port tabs: */
             for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
-            {
-                /* Create port tab: */
-                UIMachineSettingsSerial *pTab = new UIMachineSettingsSerial(m_pTabWidget, this);
-                if (pTab)
-                {
-                    /* Tab connections: */
-                    connect(pTab, &UIMachineSettingsSerial::sigPortChanged,
-                            this, &UIMachineSettingsSerialPage::sltHandlePortChange);
-                    connect(pTab, &UIMachineSettingsSerial::sigPathChanged,
-                            this, &UIMachineSettingsSerialPage::sltHandlePathChange);
-                    connect(pTab, &UIMachineSettingsSerial::sigValidityChanged,
-                            this, &UIMachineSettingsSerialPage::revalidate);
+                prepareTab();
 
-                    /* Add tab into tab-widget: */
-                    addEditor(pTab);
-                    m_pTabWidget->addTab(pTab, pTab->tabTitle());
-                }
-            }
-
-            /* Add tab-widget into layout: */
             pLayoutMain->addWidget(m_pTabWidget);
         }
     }
+}
+
+void UIMachineSettingsSerialPage::prepareTab()
+{
+    /* Prepare tab: */
+    UIEditor *pTab = new UIEditor(m_pTabWidget);
+    if (pTab)
+    {
+        /* Prepare tab layout: */
+        QVBoxLayout *pLayout = new QVBoxLayout(pTab);
+        if (pLayout)
+        {
+#ifdef VBOX_WS_MAC
+            /* On Mac OS X we can do a bit of smoothness: */
+            int iLeft, iTop, iRight, iBottom;
+            pLayout->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+            pLayout->setContentsMargins(iLeft / 2, iTop / 2, iRight / 2, iBottom / 2);
+#endif
+
+            /* Create port tab-editor: */
+            UIMachineSettingsSerial *pEditor = new UIMachineSettingsSerial(pTab, this);
+            if (pEditor)
+            {
+                m_tabEditors << pEditor;
+                prepareConnections(pEditor);
+                pTab->addEditor(pEditor);
+                pLayout->addWidget(pEditor);
+            }
+
+            pLayout->addStretch();
+        }
+
+        addEditor(pTab);
+        m_pTabWidget->addTab(pTab, QString());
+    }
+}
+
+void UIMachineSettingsSerialPage::prepareConnections(UIMachineSettingsSerial *pTabEditor)
+{
+    /* Tab connections: */
+    connect(pTabEditor, &UIMachineSettingsSerial::sigPortChanged,
+            this, &UIMachineSettingsSerialPage::sltHandlePortChange);
+    connect(pTabEditor, &UIMachineSettingsSerial::sigPathChanged,
+            this, &UIMachineSettingsSerialPage::sltHandlePathChange);
+    connect(pTabEditor, &UIMachineSettingsSerial::sigValidityChanged,
+            this, &UIMachineSettingsSerialPage::revalidate);
 }
 
 void UIMachineSettingsSerialPage::cleanup()
@@ -695,9 +727,9 @@ void UIMachineSettingsSerialPage::refreshPorts()
     /* Append port list with data from all the tabs: */
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
-        UIMachineSettingsSerial *pTab = qobject_cast<UIMachineSettingsSerial*>(m_pTabWidget->widget(iSlot));
-        AssertPtrReturnVoid(pTab);
-        m_ports[iSlot] = pTab->isPortEnabled() ? qMakePair(pTab->irq(), pTab->ioAddress()) : qMakePair(QString(), QString());
+        UIMachineSettingsSerial *pTabEditor = m_tabEditors.at(iSlot);
+        AssertPtrReturnVoid(pTabEditor);
+        m_ports[iSlot] = pTabEditor->isPortEnabled() ? qMakePair(pTabEditor->irq(), pTabEditor->ioAddress()) : qMakePair(QString(), QString());
     }
 }
 
@@ -713,9 +745,9 @@ void UIMachineSettingsSerialPage::refreshPaths()
     /* Append path list with data from all the tabs: */
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
-        UIMachineSettingsSerial *pTab = qobject_cast<UIMachineSettingsSerial*>(m_pTabWidget->widget(iSlot));
-        AssertPtrReturnVoid(pTab);
-        m_paths[iSlot] = pTab->isPortEnabled() ? pTab->path() : QString();
+        UIMachineSettingsSerial *pTabEditor = m_tabEditors.at(iSlot);
+        AssertPtrReturnVoid(pTabEditor);
+        m_paths[iSlot] = pTabEditor->isPortEnabled() ? pTabEditor->path() : QString();
     }
 }
 

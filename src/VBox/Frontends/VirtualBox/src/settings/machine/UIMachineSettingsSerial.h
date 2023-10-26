@@ -36,7 +36,7 @@
 
 /* Forward declarations: */
 class QITabWidget;
-class UIMachineSettingsSerialPage;
+class UIMachineSettingsSerial;
 struct UIDataSettingsMachineSerial;
 struct UIDataSettingsMachineSerialPort;
 typedef UISettingsCache<UIDataSettingsMachineSerialPort> UISettingsCacheMachineSerialPort;
@@ -98,6 +98,12 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Prepares widgets. */
+    void prepareWidgets();
+    /** Prepare tab. */
+    void prepareTab();
+    /** Prepares connections. */
+    void prepareConnections(UIMachineSettingsSerial *pTabEditor);
     /** Cleanups all. */
     void cleanup();
 
@@ -121,6 +127,9 @@ private:
 
     /** Holds the tab-widget instance. */
     QITabWidget *m_pTabWidget;
+
+    /** Holds the list of tab-editors. */
+    QList<UIMachineSettingsSerial*>  m_tabEditors;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsSerial_h */
