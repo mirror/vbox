@@ -136,8 +136,11 @@ static DECLCALLBACK(int) drvGpioButton_SleepButtonPress(PPDMIEVENTBUTTONPORT pIn
 {
     PDRVGPIOBUTTON pThis = RT_FROM_MEMBER(pInterface, DRVGPIOBUTTON, IEventButtonPort);
 
-    /** @todo Reset to 0. */
-    return pThis->pGpioPort->pfnGpioLineChange(pThis->pGpioPort, pThis->uSleepButtonGpio, true /*fVal*/);
+    ASMAtomicOrU32(&pThis->fButtonsPressed, DRV_GPIO_BUTTON_PRESSED_SLEEP);
+    int rc = pThis->pGpioPort->pfnGpioLineChange(pThis->pGpioPort, pThis->uSleepButtonGpio, true /*fVal*/);
+    if (RT_SUCCESS(rc))
+        rc = PDMDrvHlpTimerSetMillies(pThis->pDrvIns, pThis->hTimerDepress, 250);
+    return rc;
 }
 
 
