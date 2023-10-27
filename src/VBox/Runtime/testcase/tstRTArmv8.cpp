@@ -42,6 +42,7 @@
 #include <iprt/armv8.h>
 
 #include <iprt/test.h>
+#include <iprt/rand.h>
 #include <iprt/stream.h>
 #include <iprt/sort.h>
 
@@ -74,6 +75,45 @@ static DECLCALLBACK(int) cmpu32(void const *pvElement1, void const *pvElement2, 
 }
 
 
+/** @callback_method_impl{FNRTSORTCMP}   */
+static DECLCALLBACK(int) cmpu64(void const *pvElement1, void const *pvElement2, void *pvUser)
+{
+    RT_NOREF(pvUser);
+    if (*(uint64_t const *)pvElement1 < *(uint64_t const *)pvElement2)
+        return -1;
+    if (*(uint64_t const *)pvElement1 > *(uint64_t const *)pvElement2)
+        return 1;
+    return 0;
+}
+
+
+static unsigned BinarySearchU64(uint64_t uValue, uint64_t const *pauEntries, unsigned idxEnd)
+{
+    unsigned idxStart = 0;
+    for (;;)
+    {
+        unsigned const idx    = (idxEnd - idxStart) / 2 + idxStart;
+        uint64_t const uEntry = pauEntries[idx];
+        if (uValue < uEntry)
+        {
+            if (idx > idxStart)
+                idxEnd = idx;
+            else
+                return ~0U;
+        }
+        else if (uValue > uEntry)
+        {
+            if (idx + 1 < idxEnd)
+                idxStart = idx + 1;
+            else
+                return ~0U;
+        }
+        else
+            return idx;
+    }
+}
+
+
 void tstLogicalMask32(void)
 {
     RTTestISub("32-bit logical masks");
@@ -94,7 +134,7 @@ void tstLogicalMask32(void)
             {
                 uint32_t const uImmS = cOneBits | uImmSElmnLength;
                 uint32_t const uMask = Armv8A64ConvertImmRImmS2Mask32(uImmS, cRotations);
-                Assert(cValidMasks < RT_ELEMENTS(s_auValidMasks));
+                RTTESTI_CHECK_RETV(cValidMasks < RT_ELEMENTS(s_auValidMasks));
                 s_auValidMasks[cValidMasks++] = uMask;
 
                 if (g_cVerbosity > 1)
@@ -156,6 +196,8 @@ void tstLogicalMask32(void)
 void tstLogicalMask64(void)
 {
     RTTestISub("64-bit logical masks");
+    static uint64_t s_auValidMasks[5376];
+    unsigned        cValidMasks = 0;
 
     /* Test all legal combinations, both directions. */
     char     szMask[128];
@@ -171,6 +213,9 @@ void tstLogicalMask64(void)
             {
                 uint32_t const uImmS = cOneBits | uImmSElmnLength;
                 uint64_t const uMask = Armv8A64ConvertImmRImmS2Mask64(uImmS, cRotations);
+                RTTESTI_CHECK_RETV(cValidMasks < RT_ELEMENTS(s_auValidMasks));
+                s_auValidMasks[cValidMasks++] = uMask;
+
                 if (g_cVerbosity > 1)
                     RTPrintf("%016llx %s size=%02u length=%02u rotation=%02u N=%u immr=%s imms=%s\n",
                              uMask, tobin(uMask, 64, szMask), cBitsElement, cOneBits, cRotations, !!(uImmSElmnLength & 0x40),
@@ -189,6 +234,34 @@ void tstLogicalMask64(void)
         uImmSElmnLength = (uImmSElmnLength << 1) & 0x3f;
         if (cBitsElementLog2 == 5)
             uImmSElmnLength = 0x40;
+    }
+
+    /* Now the other way around, using random masks. */
+    RTSortShell(s_auValidMasks, cValidMasks, sizeof(s_auValidMasks[0]), cmpu64, NULL);
+
+    for (unsigned iRand = 0; iRand < _32M; iRand++)
+    {
+        uint64_t const uMask    = RTRandU64();
+        unsigned const idxMask  = BinarySearchU64(uMask, s_auValidMasks, cValidMasks);
+        uint32_t       uImmSRev = UINT32_MAX;
+        uint32_t       uImmRRev = UINT32_MAX;
+        if (!Armv8A64ConvertMask64ToImmRImmS(uMask, &uImmSRev, &uImmRRev))
+        {
+            if (RT_LIKELY(idxMask == ~0U))
+            { }
+            else
+            {
+                RTTestIFailed("uMask=%#018llx - false negative\n", uMask);
+                break;
+            }
+        }
+        else if (RT_LIKELY(idxMask < cValidMasks))
+        { /* likely */ }
+        else
+        {
+            RTTestIFailed("uMask=%#018llx - false positive\n", uMask);
+            break;
+        }
     }
 }
 
