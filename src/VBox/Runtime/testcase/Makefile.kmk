@@ -66,6 +66,7 @@ ifdef VBOX_WITH_TESTCASES # The whole file
  #
  ifndef VBOX_ONLY_VALIDATIONKIT
   PROGRAMS += \
+  	tstRTArmv8 \
   	tstRTAssertCompile \
   	tstRTAvl \
   	tstRTBase64 \
@@ -276,6 +277,8 @@ ifdef VBOX_WITH_TESTCASES # The whole file
  #
  # Target configs in almost alphabetical order.
  #
+ tstRTArmv8_TEMPLATE = VBoxR3TstExe
+ tstRTArmv8_SOURCES = tstRTArmv8.cpp
 
  tstRTAssertCompile_TEMPLATE = VBoxR3TstExe
  tstRTAssertCompile_INSTTYPE = none

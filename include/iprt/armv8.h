@@ -2645,7 +2645,221 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBics(uint32_t iRegResult, uint32_t iR
 
 
 /**
+ * Converts immS and immR values (to logical instructions) to a 32-bit mask.
+ *
+ * @returns The decoded mask.
+ * @param   uImm6SizeLen    The immS value from the instruction.  (No N part
+ *                          here, as that must be zero for instructions
+ *                          operating on 32-bit wide registers.)
+ * @param   uImm6Rotations  The immR value from the instruction.
+ */
+DECLEXPORT(uint32_t) Armv8A64ConvertImmRImmS2Mask32(uint32_t uImm6SizeLen, uint32_t uImm6Rotations)
+{
+    Assert(uImm6SizeLen < 64); Assert(uImm6Rotations < 64);
+
+    /* Determine the element size. */
+    unsigned const cBitsElementLog2 = ASMBitLastSetU32(uImm6SizeLen ^ 0x3f) - 1U;
+    Assert(cBitsElementLog2 + 1U != 0U);
+
+    unsigned const cBitsElement = RT_BIT_32(cBitsElementLog2);
+    Assert(uImm6Rotations < cBitsElement);
+
+    /* Extract the number of bits set to 1: */
+    unsigned const cBitsSetTo1  = (uImm6SizeLen & (cBitsElement - 1U)) + 1;
+    Assert(cBitsSetTo1 < cBitsElement);
+    uint32_t const uElement     = RT_BIT_32(cBitsSetTo1) - 1U;
+
+    /* Produce the unrotated pattern. */
+    static const uint32_t s_auReplicate[]
+        = { UINT32_MAX, UINT32_MAX / 3, UINT32_MAX / 15, UINT32_MAX / 255, UINT32_MAX / 65535, 1 };
+    uint32_t const uPattern     = s_auReplicate[cBitsElementLog2] * uElement;
+
+    /* Rotate it and return. */
+    return ASMRotateRightU32(uPattern, uImm6Rotations & (cBitsElement - 1U));
+}
+
+
+/**
+ * Converts N+immS and immR values (to logical instructions) to a 64-bit mask.
+ *
+ * @returns The decoded mask.
+ * @param   uImm7SizeLen    The N:immS value from the instruction.
+ * @param   uImm6Rotations  The immR value from the instruction.
+ */
+DECLEXPORT(uint64_t) Armv8A64ConvertImmRImmS2Mask64(uint32_t uImm7SizeLen, uint32_t uImm6Rotations)
+{
+    Assert(uImm7SizeLen < 128); Assert(uImm6Rotations < 64);
+
+    /* Determine the element size. */
+    unsigned const cBitsElementLog2 = ASMBitLastSetU32(uImm7SizeLen ^ 0x3f) - 1U;
+    Assert(cBitsElementLog2 + 1U != 0U);
+
+    unsigned const cBitsElement = RT_BIT_32(cBitsElementLog2);
+    Assert(uImm6Rotations < cBitsElement);
+
+    /* Extract the number of bits set to 1: */
+    unsigned const cBitsSetTo1  = (uImm7SizeLen & (cBitsElement - 1U)) + 1;
+    Assert(cBitsSetTo1 < cBitsElement);
+    uint64_t const uElement     = RT_BIT_64(cBitsSetTo1) - 1U;
+
+    /* Produce the unrotated pattern. */
+    static const uint64_t s_auReplicate[]
+        = { UINT64_MAX, UINT64_MAX / 3, UINT64_MAX / 15, UINT64_MAX / 255, UINT64_MAX / 65535, UINT64_MAX / UINT32_MAX, 1 };
+    uint64_t const uPattern     = s_auReplicate[cBitsElementLog2] * uElement;
+
+    /* Rotate it and return. */
+    return ASMRotateRightU64(uPattern, uImm6Rotations & (cBitsElement - 1U));
+}
+
+
+/**
+ * Variant of Armv8A64ConvertImmRImmS2Mask64 where the N bit is separate from
+ * the immS value.
+ */
+DECLEXPORT(uint64_t) Armv8A64ConvertImmRImmS2Mask64(uint32_t uN, uint32_t uImm6SizeLen, uint32_t uImm6Rotations)
+{
+    return Armv8A64ConvertImmRImmS2Mask64((uN << 6) | uImm6SizeLen, uImm6Rotations);
+}
+
+
+/**
+ * Helper for Armv8A64MkInstrLogicalImm and friends that tries to convert a
+ * 32-bit bitmask to a set of immediates for those instructions.
+ *
+ * @returns true if successful, false if not.
+ * @param   fMask           The mask value to convert.
+ * @param   puImm6SizeLen   Where to return the immS part (N is always zero for
+ *                          32-bit wide masks).
+ * @param   puImm6Rotations Where to return the immR.
+ */
+DECLINLINE(bool) Armv8A64ConvertMask32ToImmRImmS(uint32_t fMask, uint32_t *puImm6SizeLen, uint32_t *puImm6Rotations)
+{
+    /* Fend off 0 and UINT32_MAX as these cannot be represented. */
+    if ((uint32_t)(fMask + 1U) <= 1)
+        return false;
+
+    /* Rotate the value will we get all 1s at the bottom and the zeros at the top. */
+    unsigned const cRor = ASMCountTrailingZerosU32(fMask);
+    unsigned const cRol = ASMCountLeadingZerosU32(~fMask);
+    if (cRor)
+        fMask = ASMRotateRightU32(fMask, cRor);
+    else
+        fMask = ASMRotateLeftU32(fMask, cRol);
+    Assert(fMask & RT_BIT_32(0));
+    Assert(!(fMask & RT_BIT_32(31)));
+
+    /* Count the trailing ones and leading zeros. */
+    unsigned const cOnes  = ASMCountTrailingZerosU32(~fMask);
+    unsigned const cZeros = ASMCountLeadingZerosU32(fMask);
+
+    /* The potential element length is then the sum of the two above. */
+    unsigned const cBitsElement = cOnes + cZeros;
+    if (!RT_IS_POWER_OF_TWO(cBitsElement) || cBitsElement < 2)
+        return false;
+
+    /* Special case: 32 bits element size. Since we're done here. */
+    if (cBitsElement == 32)
+        *puImm6SizeLen = cOnes - 1;
+    else
+    {
+        /* Extract the element bits and check that these are replicated in the whole pattern. */
+        uint32_t const uElement         = RT_BIT_32(cOnes) - 1U;
+        unsigned const cBitsElementLog2 = ASMBitFirstSetU32(cBitsElement) - 1;
+
+        static const uint32_t s_auReplicate[]
+            = { UINT32_MAX, UINT32_MAX / 3, UINT32_MAX / 15, UINT32_MAX / 255, UINT32_MAX / 65535, 1 };
+        if (s_auReplicate[cBitsElementLog2] * uElement == fMask)
+            *puImm6SizeLen = (cOnes - 1) | ((0x3e << cBitsElementLog2) & 0x3f);
+        else
+            return false;
+    }
+    *puImm6Rotations = cRor ? cBitsElement - cRor : cRol;
+
+    return true;
+}
+
+
+/**
+ * Helper for Armv8A64MkInstrLogicalImm and friends that tries to convert a
+ * 64-bit bitmask to a set of immediates for those instructions.
+ *
+ * @returns true if successful, false if not.
+ * @param   fMask           The mask value to convert.
+ * @param   puImm7SizeLen   Where to return the N:immS part.
+ * @param   puImm6Rotations Where to return the immR.
+ */
+DECLINLINE(bool) Armv8A64ConvertMask64ToImmRImmS(uint64_t fMask, uint32_t *puImm7SizeLen, uint32_t *puImm6Rotations)
+{
+    /* Fend off 0 and UINT64_MAX as these cannot be represented. */
+    if ((uint64_t)(fMask + 1U) <= 1)
+        return false;
+
+    /* Rotate the value will we get all 1s at the bottom and the zeros at the top. */
+    unsigned const cRor = ASMCountTrailingZerosU64(fMask);
+    unsigned const cRol = ASMCountLeadingZerosU64(~fMask);
+    if (cRor)
+        fMask = ASMRotateRightU64(fMask, cRor);
+    else
+        fMask = ASMRotateLeftU64(fMask, cRol);
+    Assert(fMask & RT_BIT_64(0));
+    Assert(!(fMask & RT_BIT_64(63)));
+
+    /* Count the trailing ones and leading zeros. */
+    unsigned const cOnes  = ASMCountTrailingZerosU64(~fMask);
+    unsigned const cZeros = ASMCountLeadingZerosU64(fMask);
+
+    /* The potential element length is then the sum of the two above. */
+    unsigned const cBitsElement = cOnes + cZeros;
+    if (!RT_IS_POWER_OF_TWO(cBitsElement) || cBitsElement < 2)
+        return false;
+
+    /* Special case: 64 bits element size. Since we're done here. */
+    if (cBitsElement == 64)
+        *puImm7SizeLen = (cOnes - 1) | 0x40 /*N*/;
+    else
+    {
+        /* Extract the element bits and check that these are replicated in the whole pattern. */
+        uint64_t const uElement         = RT_BIT_64(cOnes) - 1U;
+        unsigned const cBitsElementLog2 = ASMBitFirstSetU64(cBitsElement) - 1;
+
+        static const uint64_t s_auReplicate[]
+            = { UINT64_MAX, UINT64_MAX / 3, UINT64_MAX / 15, UINT64_MAX / 255, UINT64_MAX / 65535, UINT64_MAX / UINT32_MAX, 1 };
+        if (s_auReplicate[cBitsElementLog2] * uElement == fMask)
+            *puImm7SizeLen = (cOnes - 1) | ((0x3e << cBitsElementLog2) & 0x3f);
+        else
+            return false;
+    }
+    *puImm6Rotations = cRor ? cBitsElement - cRor : cRol;
+
+    return true;
+}
+
+
+/**
  * A64: Encodes a logical instruction with an complicated immediate mask.
+ *
+ * The @a uImm7SizeLen parameter specifies two things:
+ *      1. the element size and
+ *      2. the number of bits set to 1 in the pattern.
+ *
+ * The element size is extracted by NOT'ing bits 5:0 (excludes the N bit at the
+ * top) and using the position of the first bit set as a power of two.
+ *
+ * | N | 5 | 4 | 3 | 2 | 1 | 0 | element size |
+ * |---|---|---|---|---|---|---|--------------|
+ * | 0 | 1 | 1 | 1 | 1 | 0 | x | 2 bits       |
+ * | 0 | 1 | 1 | 1 | 0 | x | x | 4 bits       |
+ * | 0 | 1 | 1 | 0 | x | x | x | 8 bits       |
+ * | 0 | 1 | 0 | x | x | x | x | 16 bits      |
+ * | 0 | 0 | x | x | x | x | x | 32 bits      |
+ * | 1 | x | x | x | x | x | x | 64 bits      |
+ *
+ * The 'x' forms the number of 1 bits in the pattern, minus one (i.e.
+ * there is always one zero bit in the pattern).
+ *
+ * The @a uImm6Rotations parameter specifies how many bits to the right,
+ * the element pattern is rotated. The rotation count must be less than the
+ * element bit count (size).
  *
  * @returns The encoded instruction.
  * @param   u2Opc           The logical operation to perform.
@@ -2653,6 +2867,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBics(uint32_t iRegResult, uint32_t iR
  * @param   iRegSrc         The 1st register operand.
  * @param   uImm7SizeLen    The size/pattern length.  We've combined the 1-bit N
  *                          field at the top of the 6-bit 'imms' field.
+ *
  * @param   uImm6Rotations  The rotation count.
  * @param   f64Bit          true for 64-bit GPRs, @c false for 32-bit GPRs.
  * @see https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/
@@ -2763,8 +2978,8 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBfm(uint32_t iRegResult, uint32_t iRe
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBfi(uint32_t iRegResult, uint32_t iRegSrc,
                                                uint32_t offFirstBit, uint32_t cBitsWidth, bool f64Bit = true)
 {
-    Assert(cBitsWidth > 0U); Assert(cBitsWidth < (f64Bit ? 64U : 32U)); Assert(offFirstBit < (f64Bit ? 64U : 32U)); RT_NOREF(offFirstBit);
-    return Armv8A64MkInstrBfm(iRegResult, iRegSrc, (uint32_t)-(int32_t)cBitsWidth & (f64Bit ? 0x3f : 0x1f),
+    Assert(cBitsWidth > 0U); Assert(cBitsWidth < (f64Bit ? 64U : 32U)); Assert(offFirstBit < (f64Bit ? 64U : 32U));
+    return Armv8A64MkInstrBfm(iRegResult, iRegSrc, (uint32_t)-(int32_t)offFirstBit & (f64Bit ? 0x3f : 0x1f),
                               cBitsWidth - 1, f64Bit);
 }
 

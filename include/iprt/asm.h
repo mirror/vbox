@@ -7755,7 +7755,7 @@ DECLINLINE(unsigned) ASMCountLeadingZerosU16(uint16_t u16) RT_NOTHROW_DEF
  *
  * The counting starts with the least significate bit, i.e. the zero bit.
  *
- * @returns Number of lest significant zero bits.
+ * @returns Number of least significant zero bits.
  * @returns 32 if all bits are cleared.
  * @param   u32     Integer to consider.
  * @remarks Similar to __builtin_ctz() in gcc, except defined zero input result.
