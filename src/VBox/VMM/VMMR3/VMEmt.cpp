@@ -600,6 +600,10 @@ static DECLCALLBACK(int) vmR3HaltMethod1Halt(PUVMCPU pUVCpu, const uint32_t fMas
             break;
         }
 
+#if defined(VBOX_VMM_TARGET_ARMV8)
+        cNsVTimerActivate -= cNsElapsedTimers;
+#endif
+
         /*
          * Estimate time left to the next event.
          */
