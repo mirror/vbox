@@ -263,6 +263,7 @@ typedef enum
 {
     kIemNativeLabelType_Invalid = 0,
     kIemNativeLabelType_Return,
+    kIemNativeLabelType_ReturnBreak,
     kIemNativeLabelType_If,
     kIemNativeLabelType_Else,
     kIemNativeLabelType_Endif,
@@ -1733,6 +1734,64 @@ DECLINLINE(uint32_t ) iemNativeEmitAndGpr32ByGpr32(PIEMRECOMPILERSTATE pReNative
 
 
 /**
+ * Emits code for AND'ing an 32-bit GPRs with a constant.
+ */
+DECLINLINE(uint32_t ) iemNativeEmitAndGpr32ByImm(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint32_t uImm)
+{
+#if defined(RT_ARCH_AMD64)
+    /* and Ev, imm */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
+    if (iGprDst >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_R;
+    if (uImm < 128)
+    {
+        pbCodeBuf[off++] = 0x83;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 4, iGprDst & 7);
+        pbCodeBuf[off++] = (uint8_t)uImm;
+    }
+    else
+    {
+        pbCodeBuf[off++] = 0x81;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 4, iGprDst & 7);
+        pbCodeBuf[off++] = RT_BYTE1(uImm);
+        pbCodeBuf[off++] = RT_BYTE2(uImm);
+        pbCodeBuf[off++] = RT_BYTE3(uImm);
+        pbCodeBuf[off++] = RT_BYTE4(uImm);
+    }
+
+#elif defined(RT_ARCH_ARM64)
+    uint32_t uImmR     = 0;
+    uint32_t uImmNandS = 0;
+    if (Armv8A64ConvertMaskToImmRImmS(uImm, &uImmNandS, &uImmR))
+    {
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        AssertReturn(pu32CodeBuf, UINT32_MAX);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAndImm(iGprDst, iGprDst, uImmNandS, uImmR, false /*f64Bit*/);
+    }
+    else
+    {
+        /* Use temporary register for the immediate. */
+        uint8_t iTmpReg = iemNativeRegAllocTmpImm(pReNative, &off, uImm);
+        AssertReturn(iTmpReg < RT_ELEMENTS(pReNative->Core.aHstRegs), UINT32_MAX);
+
+        /* and gprdst, gprdst, tmpreg */
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        AssertReturn(pu32CodeBuf, UINT32_MAX);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAnd(iGprDst, iGprDst, iTmpReg, false /*f64Bit*/);
+
+        iemNativeRegFreeTmpImm(pReNative, iTmpReg);
+    }
+
+#else
+# error "Port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
  * Emits code for XOR'ing two 64-bit GPRs.
  */
 DECLINLINE(uint32_t ) iemNativeEmitXorGprByGpr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc)
@@ -2012,6 +2071,150 @@ DECLINLINE(uint32_t) iemNativeEmitCmpGpr32WithGpr(PIEMRECOMPILERSTATE pReNative,
 #else
 # error "Port me!"
 #endif
+    return off;
+}
+
+
+/**
+ * Emits a compare of a 64-bit GPR with a constant value, settings status
+ * flags/whatever for use with conditional instruction.
+ */
+DECLINLINE(uint32_t) iemNativeEmitCmpGprWithImm(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprLeft, uint64_t uImm)
+{
+#ifdef RT_ARCH_AMD64
+    if (uImm <= UINT32_C(0xff))
+    {
+        /* cmp Ev, Ib */
+        uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
+        AssertReturn(pbCodeBuf, UINT32_MAX);
+        pbCodeBuf[off++] = X86_OP_REX_W | (iGprLeft >= 8 ? X86_OP_REX_B : 0);
+        pbCodeBuf[off++] = 0x83;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 7, iGprLeft & 7);
+        pbCodeBuf[off++] = (uint8_t)uImm;
+    }
+    else if ((int64_t)uImm == (int32_t)uImm)
+    {
+        /* cmp Ev, imm */
+        uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
+        AssertReturn(pbCodeBuf, UINT32_MAX);
+        pbCodeBuf[off++] = X86_OP_REX_W | (iGprLeft >= 8 ? X86_OP_REX_B : 0);
+        pbCodeBuf[off++] = 0x81;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 7, iGprLeft & 7);
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+        pbCodeBuf[off++] = RT_BYTE1(uImm);
+        pbCodeBuf[off++] = RT_BYTE2(uImm);
+        pbCodeBuf[off++] = RT_BYTE3(uImm);
+        pbCodeBuf[off++] = RT_BYTE4(uImm);
+    }
+    else
+    {
+        /* Use temporary register for the immediate. */
+        uint8_t iTmpReg = iemNativeRegAllocTmpImm(pReNative, &off, uImm);
+        AssertReturn(iTmpReg < RT_ELEMENTS(pReNative->Core.aHstRegs), UINT32_MAX);
+
+        off = iemNativeEmitCmpGprWithGpr(pReNative, off, iGprLeft, iTmpReg);
+
+        iemNativeRegFreeTmpImm(pReNative, iTmpReg);
+    }
+
+#elif defined(RT_ARCH_ARM64)
+    /** @todo guess there are clevere things we can do here...   */
+    if (uImm < _4K)
+    {
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        AssertReturn(pu32CodeBuf, UINT32_MAX);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, ARMV8_A64_REG_XZR, iGprLeft, (uint32_t)uImm,
+                                                         true /*64Bit*/, true /*fSetFlags*/);
+    }
+    else if (uImm < RT_BIT_32(12+12) && (uImm & (_4K - 1)) == 0)
+    {
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        AssertReturn(pu32CodeBuf, UINT32_MAX);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, ARMV8_A64_REG_XZR, iGprLeft, (uint32_t)uImm,
+                                                         true /*64Bit*/, true /*fSetFlags*/, true /*fShift12*/);
+    }
+    else
+    {
+        /* Use temporary register for the immediate. */
+        uint8_t iTmpReg = iemNativeRegAllocTmpImm(pReNative, &off, uImm);
+        AssertReturn(iTmpReg < RT_ELEMENTS(pReNative->Core.aHstRegs), UINT32_MAX);
+
+        off = iemNativeEmitCmpGprWithGpr(pReNative, off, iGprLeft, iTmpReg);
+
+        iemNativeRegFreeTmpImm(pReNative, iTmpReg);
+    }
+
+#else
+# error "Port me!"
+#endif
+
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Emits a compare of a 32-bit GPR with a constant value, settings status
+ * flags/whatever for use with conditional instruction.
+ */
+DECLINLINE(uint32_t) iemNativeEmitCmpGpr32WithImm(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprLeft, uint32_t uImm)
+{
+#ifdef RT_ARCH_AMD64
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
+    AssertReturn(pbCodeBuf, UINT32_MAX);
+    if (iGprLeft >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_B;
+    if (uImm <= UINT32_C(0xff))
+    {
+        /* cmp Ev, Ib */
+        pbCodeBuf[off++] = 0x83;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 7, iGprLeft & 7);
+        pbCodeBuf[off++] = (uint8_t)uImm;
+    }
+    else
+    {
+        /* cmp Ev, imm */
+        pbCodeBuf[off++] = 0x81;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 7, iGprLeft & 7);
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+        pbCodeBuf[off++] = RT_BYTE1(uImm);
+        pbCodeBuf[off++] = RT_BYTE2(uImm);
+        pbCodeBuf[off++] = RT_BYTE3(uImm);
+        pbCodeBuf[off++] = RT_BYTE4(uImm);
+    }
+
+#elif defined(RT_ARCH_ARM64)
+    /** @todo guess there are clevere things we can do here...   */
+    if (uImm < _4K)
+    {
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        AssertReturn(pu32CodeBuf, UINT32_MAX);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, ARMV8_A64_REG_XZR, iGprLeft, (uint32_t)uImm,
+                                                         false /*64Bit*/, true /*fSetFlags*/);
+    }
+    else if (uImm < RT_BIT_32(12+12) && (uImm & (_4K - 1)) == 0)
+    {
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        AssertReturn(pu32CodeBuf, UINT32_MAX);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, ARMV8_A64_REG_XZR, iGprLeft, (uint32_t)uImm,
+                                                         false /*64Bit*/, true /*fSetFlags*/, true /*fShift12*/);
+    }
+    else
+    {
+        /* Use temporary register for the immediate. */
+        uint8_t iTmpReg = iemNativeRegAllocTmpImm(pReNative, &off, uImm);
+        AssertReturn(iTmpReg < RT_ELEMENTS(pReNative->Core.aHstRegs), UINT32_MAX);
+
+        off = iemNativeEmitCmpGpr32WithGpr(pReNative, off, iGprLeft, iTmpReg);
+
+        iemNativeRegFreeTmpImm(pReNative, iTmpReg);
+    }
+
+#else
+# error "Port me!"
+#endif
+
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
 
@@ -2648,11 +2851,90 @@ DECLINLINE(uint32_t) iemNativeEmitTestIfGprIsZeroAndJmpToLabel(PIEMRECOMPILERSTA
  * The operand size is given by @a f64Bit.
  */
 DECLINLINE(uint32_t) iemNativeEmitTestIfGprIsZeroAndJmpToNewLabel(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprSrc,
-                                                                  bool f64Bit, IEMNATIVELABELTYPE enmLabelType, uint16_t uData)
+                                                                  bool f64Bit, IEMNATIVELABELTYPE enmLabelType,
+                                                                  uint16_t uData = 0)
 {
     uint32_t const idxLabel = iemNativeLabelCreate(pReNative, enmLabelType, UINT32_MAX /*offWhere*/, uData);
     AssertReturn(idxLabel != UINT32_MAX, UINT32_MAX);
     return iemNativeEmitTestIfGprIsZeroAndJmpToLabel(pReNative, off, iGprSrc, f64Bit, idxLabel);
+}
+
+
+/**
+ * Emits code that jumps to the given label if @a iGprLeft and @a iGprRight
+ * differs.
+ */
+DECLINLINE(uint32_t) iemNativeEmitTestIfGprNotEqualGprAndJmpToLabel(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                                     uint8_t iGprLeft, uint8_t iGprRight, uint32_t idxLabel)
+{
+    off = iemNativeEmitCmpGprWithGpr(pReNative, off, iGprLeft, iGprRight);
+    off = iemNativeEmitJnzToLabel(pReNative, off, idxLabel);
+    return off;
+}
+
+
+/**
+ * Emits code that jumps to a new label if @a iGprLeft and @a iGprRight differs.
+ */
+DECLINLINE(uint32_t) iemNativeEmitTestIfGprNotEqualGprAndJmpToNewLabel(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                                       uint8_t iGprLeft, uint8_t iGprRight,
+                                                                       IEMNATIVELABELTYPE enmLabelType, uint16_t uData = 0)
+{
+    uint32_t const idxLabel = iemNativeLabelCreate(pReNative, enmLabelType, UINT32_MAX /*offWhere*/, uData);
+    AssertReturn(idxLabel != UINT32_MAX, UINT32_MAX);
+    return iemNativeEmitTestIfGprNotEqualGprAndJmpToLabel(pReNative, off, iGprLeft, iGprRight, idxLabel);
+}
+
+
+/**
+ * Emits code that jumps to the given label if @a iGprSrc differs from @a uImm.
+ */
+DECLINLINE(uint32_t) iemNativeEmitTestIfGprNotEqualImmAndJmpToLabel(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                                    uint8_t iGprSrc, uint64_t uImm, uint32_t idxLabel)
+{
+    off = iemNativeEmitCmpGprWithImm(pReNative, off, iGprSrc, uImm);
+    off = iemNativeEmitJnzToLabel(pReNative, off, idxLabel);
+    return off;
+}
+
+
+/**
+ * Emits code that jumps to a new label if @a iGprSrc differs from @a uImm.
+ */
+DECLINLINE(uint32_t) iemNativeEmitTestIfGprNotEqualImmAndJmpToNewLabel(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                                       uint8_t iGprSrc, uint64_t uImm,
+                                                                       IEMNATIVELABELTYPE enmLabelType, uint16_t uData = 0)
+{
+    uint32_t const idxLabel = iemNativeLabelCreate(pReNative, enmLabelType, UINT32_MAX /*offWhere*/, uData);
+    AssertReturn(idxLabel != UINT32_MAX, UINT32_MAX);
+    return iemNativeEmitTestIfGprNotEqualImmAndJmpToLabel(pReNative, off, iGprSrc, uImm, idxLabel);
+}
+
+
+/**
+ * Emits code that jumps to the given label if 32-bit @a iGprSrc differs from
+ * @a uImm.
+ */
+DECLINLINE(uint32_t) iemNativeEmitTestIfGpr32NotEqualImmAndJmpToLabel(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                                      uint8_t iGprSrc, uint32_t uImm, uint32_t idxLabel)
+{
+    off = iemNativeEmitCmpGpr32WithImm(pReNative, off, iGprSrc, uImm);
+    off = iemNativeEmitJnzToLabel(pReNative, off, idxLabel);
+    return off;
+}
+
+
+/**
+ * Emits code that jumps to a new label if 32-bit @a iGprSrc differs from
+ * @a uImm.
+ */
+DECLINLINE(uint32_t) iemNativeEmitTestIfGpr32NotEqualImmAndJmpToNewLabel(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                                         uint8_t iGprSrc, uint32_t uImm,
+                                                                         IEMNATIVELABELTYPE enmLabelType, uint16_t uData = 0)
+{
+    uint32_t const idxLabel = iemNativeLabelCreate(pReNative, enmLabelType, UINT32_MAX /*offWhere*/, uData);
+    AssertReturn(idxLabel != UINT32_MAX, UINT32_MAX);
+    return iemNativeEmitTestIfGpr32NotEqualImmAndJmpToLabel(pReNative, off, iGprSrc, uImm, idxLabel);
 }
 
 

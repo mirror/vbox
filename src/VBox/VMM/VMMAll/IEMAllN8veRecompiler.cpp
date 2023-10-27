@@ -3524,7 +3524,7 @@ static uint32_t iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_
 /**
  * Emits the code at the RaiseGP0 label.
  */
-static uint32_t iemNativeEmitRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t off)
+static uint32_t iemNativeEmitRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxReturnLabel)
 {
     uint32_t const idxLabel = iemNativeLabelFind(pReNative, kIemNativeLabelType_RaiseGp0);
     if (idxLabel != UINT32_MAX)
@@ -3539,7 +3539,26 @@ static uint32_t iemNativeEmitRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t of
         off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)iemNativeHlpExecRaiseGp0);
 
         /* jump back to the return sequence. */
-        off = iemNativeEmitJmpToLabel(pReNative, off, iemNativeLabelFind(pReNative, kIemNativeLabelType_Return));
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxReturnLabel);
+    }
+    return off;
+}
+
+
+/**
+ * Emits the code at the ReturnBreak label (returns VINF_IEM_REEXEC_BREAK).
+ */
+static uint32_t iemNativeEmitReturnBreak(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxReturnLabel)
+{
+    uint32_t const idxLabel = iemNativeLabelFind(pReNative, kIemNativeLabelType_ReturnBreak);
+    if (idxLabel != UINT32_MAX)
+    {
+        iemNativeLabelDefine(pReNative, idxLabel, off);
+
+        off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_CALL_RET_GREG, VINF_IEM_REEXEC_BREAK);
+
+        /* jump back to the return sequence. */
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxReturnLabel);
     }
     return off;
 }
@@ -3593,8 +3612,10 @@ static uint32_t iemNativeEmitRcFiddling(PIEMRECOMPILERSTATE pReNative, uint32_t 
 /**
  * Emits a standard epilog.
  */
-static uint32_t iemNativeEmitEpilog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
+static uint32_t iemNativeEmitEpilog(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t *pidxReturnLabel)
 {
+    *pidxReturnLabel = UINT32_MAX;
+
     /*
      * Successful return, so clear the return register (eax, w0).
      */
@@ -3606,6 +3627,7 @@ static uint32_t iemNativeEmitEpilog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
      */
     uint32_t const idxReturn = iemNativeLabelCreate(pReNative, kIemNativeLabelType_Return, off);
     AssertReturn(idxReturn != UINT32_MAX, UINT32_MAX);
+    *pidxReturnLabel = idxReturn;
 
     /*
      * Restore registers and return.
@@ -4859,6 +4881,24 @@ static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_DeferToCImpl0)
 }
 
 
+/**
+ * Built-in function checks if IEMCPU::fExec has the expected value.
+ */
+static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckMode)
+{
+    uint32_t const fExpectedExec = (uint32_t)pCallEntry->auParams[0];
+
+    uint8_t idxTmpReg = iemNativeRegAllocTmp(pReNative, &off);
+    AssertReturn(idxTmpReg < RT_ELEMENTS(pReNative->Core.aHstRegs), UINT32_MAX);
+    off = iemNativeEmitLoadGprFromVCpuU32(pReNative, off, idxTmpReg, RT_UOFFSETOF(VMCPUCC, iem.s.fExec));
+    off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxTmpReg, IEMTB_F_KEY_MASK);
+    off = iemNativeEmitTestIfGpr32NotEqualImmAndJmpToNewLabel(pReNative, off, idxTmpReg, fExpectedExec & IEMTB_F_KEY_MASK,
+                                                              kIemNativeLabelType_ReturnBreak);
+    iemNativeRegFreeTmp(pReNative, idxTmpReg);
+    return off;
+}
+
+
 
 /*********************************************************************************************************************************
 *   The native code generator functions for each MC block.                                                                       *
@@ -5160,6 +5200,9 @@ void iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp)
                                 case kIemNativeLabelType_Return:
                                     pszName = "Return";
                                     break;
+                                case kIemNativeLabelType_ReturnBreak:
+                                    pszName = "ReturnBreak";
+                                    break;
                                 case kIemNativeLabelType_If:
                                     pszName = "If";
                                     fNumbered = true;
@@ -5427,15 +5470,21 @@ PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb)
     /*
      * Emit the epilog code.
      */
-    off = iemNativeEmitEpilog(pReNative, off);
+    uint32_t idxReturnLabel;
+    off = iemNativeEmitEpilog(pReNative, off, &idxReturnLabel);
     AssertReturn(off != UINT32_MAX, pTb);
 
     /*
      * Generate special jump labels.
      */
+    if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_ReturnBreak))
+    {
+        off = iemNativeEmitReturnBreak(pReNative, off, idxReturnLabel);
+        AssertReturn(off != UINT32_MAX, pTb);
+    }
     if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_RaiseGp0))
     {
-        off = iemNativeEmitRaiseGp0(pReNative, off);
+        off = iemNativeEmitRaiseGp0(pReNative, off, idxReturnLabel);
         AssertReturn(off != UINT32_MAX, pTb);
     }
 

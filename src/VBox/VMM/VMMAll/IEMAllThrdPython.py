@@ -1877,7 +1877,7 @@ class IEMThreadedGenerator(object):
     katBltIns = (
         ( 'DeferToCImpl0',                                      2, True  ),
         ( 'CheckIrq',                                           0, False ),
-        ( 'CheckMode',                                          1, False ),
+        ( 'CheckMode',                                          1, True  ),
         ( 'CheckHwInstrBps',                                    0, False ),
         ( 'CheckCsLim',                                         1, False ),
 
