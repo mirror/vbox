@@ -80,7 +80,7 @@ endif
 if   defined(VBOX_WITH_LIBSSH) \
   && !defined(VBOX_ONLY_BUILD) \
   && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
- include $(PATH_SUB_CURRENT)/libssh-0.9.6/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/libssh-0.10.5/Makefile.kmk
 endif
 
 

@@ -754,7 +754,7 @@ static int drvCloudTunnelReceiveCallback(ssh_session session, ssh_channel channe
     return len;
 }
 
-static int channelWriteWontblockCallback(ssh_session, ssh_channel, size_t, void *)
+static int channelWriteWontblockCallback(ssh_session, ssh_channel, unsigned int, void *)
 {
     return 0;
 }
