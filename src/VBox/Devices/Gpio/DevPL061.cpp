@@ -32,7 +32,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_DEV_SERIAL /** @todo */
+#define LOG_GROUP LOG_GROUP_DEV_GPIO
 #include <VBox/vmm/pdmdev.h>
 #include <iprt/assert.h>
 #include <iprt/uuid.h>
@@ -52,9 +52,31 @@
 
 /** PL061 MMIO region size in bytes. */
 #define PL061_MMIO_SIZE                         _4K
+/** PL061 number of GPIO pins. */
+#define PL061_GPIO_NUM                          8
 
-/** The offset of the GPIODATA register from the beginning of the region. */
+/** The offset of the GPIODATA (data) register from the beginning of the region. */
 #define PL061_REG_GPIODATA_INDEX                0x0
+/** The last offset of the GPIODATA (data) register from the beginning of the region. */
+#define PL061_REG_GPIODATA_INDEX_END            0x3fc
+/** The offset of the GPIODIR (data direction) register from the beginning of the region. */
+#define PL061_REG_GPIODIR_INDEX                 0x400
+/** The offset of the GPIOIS (interrupt sense) register from the beginning of the region. */
+#define PL061_REG_GPIOIS_INDEX                  0x404
+/** The offset of the GPIOIBE (interrupt both edges) register from the beginning of the region. */
+#define PL061_REG_GPIOIBE_INDEX                 0x408
+/** The offset of the GPIOIEV (interrupt event) register from the beginning of the region. */
+#define PL061_REG_GPIOIEV_INDEX                 0x40c
+/** The offset of the GPIOIE (interrupt mask) register from the beginning of the region. */
+#define PL061_REG_GPIOIE_INDEX                  0x410
+/** The offset of the GPIORIS (raw interrupt status) register from the beginning of the region. */
+#define PL061_REG_GPIORIS_INDEX                 0x414
+/** The offset of the GPIOMIS (masked interrupt status) register from the beginning of the region. */
+#define PL061_REG_GPIOMIS_INDEX                 0x418
+/** The offset of the GPIOIC (interrupt clear) register from the beginning of the region. */
+#define PL061_REG_GPIOIC_INDEX                  0x41c
+/** The offset of the GPIOAFSEL (mode control select) register from the beginning of the region. */
+#define PL061_REG_GPIOAFSEL_INDEX               0x420
 
 /** The offset of the GPIOPeriphID0 register from the beginning of the region. */
 #define PL061_REG_GPIO_PERIPH_ID0_INDEX         0xfe0
@@ -97,7 +119,22 @@ typedef struct DEVPL061
 
     /** @name Registers.
      * @{ */
-    /** @todo */
+    /** Data register. */
+    uint8_t                         u8RegData;
+    /** Direction register. */
+    uint8_t                         u8RegDir;
+    /** Interrupt sense register. */
+    uint8_t                         u8RegIs;
+    /** Interrupt both edges register. */
+    uint8_t                         u8RegIbe;
+    /** Interrupt event register. */
+    uint8_t                         u8RegIev;
+    /** Interrupt mask register. */
+    uint8_t                         u8RegIe;
+    /** Raw interrupt status register. */
+    uint8_t                         u8RegRis;
+    /** Mode control select register. */
+    uint8_t                         u8RegAfsel;
     /** @} */
 } DEVPL061;
 /** Pointer to the shared serial device state. */
@@ -111,8 +148,12 @@ typedef struct DEVPL061R3
 {
     /** LUN\#0: The base interface. */
     PDMIBASE                        IBase;
+    /** GPIO port interface. */
+    PDMIGPIOPORT                    IGpioPort;
     /** Pointer to the attached base driver. */
     R3PTRTYPE(PPDMIBASE)            pDrvBase;
+    /** Pointer to the attached GPIO connector interface. */
+    R3PTRTYPE(PPDMIGPIOCONNECTOR)   pDrvGpio;
     /** Pointer to the device instance - only for getting our bearings in
      *  interface methods. */
     PPDMDEVINS                      pDevIns;
@@ -126,7 +167,7 @@ typedef DEVPL061R3 *PDEVPL061R3;
  */
 typedef struct DEVPL061R0
 {
-    /** Dummy .*/
+    /** Dummy. */
     uint8_t                         bDummy;
 } DEVPL061R0;
 /** Pointer to the PL061 device state for ring-0. */
@@ -138,7 +179,7 @@ typedef DEVPL061R0 *PDEVPL061R0;
  */
 typedef struct DEVPL061RC
 {
-    /** Dummy .*/
+    /** Dummy. */
     uint8_t                         bDummy;
 } DEVPL061RC;
 /** Pointer to the serial device state for raw-mode. */
@@ -156,20 +197,41 @@ typedef CTX_SUFF(PDEVPL061) PDEVPL061CC;
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
-#if 0 /* unused */
 /**
  * Updates the IRQ state based on the current device state.
  *
  * @param   pDevIns             The device instance.
  * @param   pThis               The shared PL061 instance data.
- * @param   pThisCC             The PL061 instance data for the current context.
  */
-static void pl061IrqUpdate(PPDMDEVINS pDevIns, PDEVPL061 pThis, PDEVPL061CC pThisCC)
+DECLINLINE(void) pl061IrqUpdate(PPDMDEVINS pDevIns, PDEVPL061 pThis)
 {
-    LogFlowFunc(("pThis=%#p\n", pThis));
-    RT_NOREF(pDevIns, pThis, pThisCC);
+    LogFlowFunc(("pThis=%#p u8RegRis=%#x u8RegIe=%#x -> %RTbool\n",
+                 pThis, pThis->u8RegRis, pThis->u8RegIe,
+                 RT_BOOL(pThis->u8RegRis & pThis->u8RegIe)));
+
+    if (pThis->u8RegRis & pThis->u8RegIe)
+        PDMDevHlpISASetIrqNoWait(pDevIns, pThis->u16Irq, 1);
+    else
+        PDMDevHlpISASetIrqNoWait(pDevIns, pThis->u16Irq, 0);
 }
-#endif
+
+
+static void pl061InputUpdate(PPDMDEVINS pDevIns, PDEVPL061 pThis, uint8_t u8OldData)
+{
+    /* Edge interrupts. */
+    uint8_t u8ChangedData = pThis->u8RegData ^ u8OldData;
+    if (~pThis->u8RegIs & u8ChangedData)
+    {
+        /* Both edge interrupts can be treated easily. */
+        pThis->u8RegRis |= u8ChangedData & pThis->u8RegIbe;
+
+        /** @todo Single edge. */
+    }
+
+    /* Level interrupts. */
+    pThis->u8RegRis |= (pThis->u8RegIs & pThis->u8RegData) & pThis->u8RegIev;
+    pl061IrqUpdate(pDevIns, pThis);
+}
 
 
 /* -=-=-=-=-=- MMIO callbacks -=-=-=-=-=- */
@@ -185,13 +247,49 @@ static DECLCALLBACK(VBOXSTRICTRC) pl061MmioRead(PPDMDEVINS pDevIns, void *pvUser
     Assert(cb == 4);
     Assert(!(off & (cb - 1))); RT_NOREF(cb);
 
-    LogFlowFunc(("%RGp cb=%u\n", off, cb));
+    /*
+     * From the spec:
+     *     Similarly, the values read from this register are determined for each bit, by the mask bit derived from the
+     *     address used to access the data register, PADDR[9:2]. Bits that are 1 in the address mask cause the corresponding
+     *     bits in GPIODATA to be read, and bits that are 0 in the address mask cause the corresponding bits in GPIODATA
+     *     to be read as 0, regardless of their value.
+     */
+    if (    off >= PL061_REG_GPIODATA_INDEX
+        &&  off < PL061_REG_GPIODATA_INDEX_END + sizeof(uint32_t))
+    {
+        *(uint32_t *)pv = pThis->u8RegData & (uint8_t)(off >> 2);
+        LogFlowFunc(("%RGp cb=%u u32=%RX32\n", off, cb, *(uint32_t *)pv));
+        return VINF_SUCCESS;
+    }
 
     uint32_t u32Val = 0;
     VBOXSTRICTRC rc = VINF_SUCCESS;
     switch (off)
     {
-        /** @todo */ RT_NOREF(pThis);
+        case PL061_REG_GPIODIR_INDEX:
+            u32Val = pThis->u8RegDir;
+            break;
+        case PL061_REG_GPIOIS_INDEX:
+            u32Val = pThis->u8RegIs;
+            break;
+        case PL061_REG_GPIOIBE_INDEX:
+            u32Val = pThis->u8RegIbe;
+            break;
+        case PL061_REG_GPIOIEV_INDEX:
+            u32Val = pThis->u8RegIev;
+            break;
+        case PL061_REG_GPIOIE_INDEX:
+            u32Val = pThis->u8RegIe;
+            break;
+        case PL061_REG_GPIORIS_INDEX:
+            u32Val = pThis->u8RegRis;
+            break;
+        case PL061_REG_GPIOMIS_INDEX:
+            u32Val = pThis->u8RegRis & pThis->u8RegIe;
+            break;
+        case PL061_REG_GPIOAFSEL_INDEX:
+            u32Val = pThis->u8RegAfsel;
+            break;
         case PL061_REG_GPIO_PERIPH_ID0_INDEX:
             u32Val = 0x61;
             break;
@@ -223,6 +321,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pl061MmioRead(PPDMDEVINS pDevIns, void *pvUser
     if (rc == VINF_SUCCESS)
         *(uint32_t *)pv = u32Val;
 
+    LogFlowFunc(("%RGp cb=%u u32=%RX32 -> %Rrc\n", off, cb, u32Val, rc));
     return rc;
 }
 
@@ -233,17 +332,61 @@ static DECLCALLBACK(VBOXSTRICTRC) pl061MmioRead(PPDMDEVINS pDevIns, void *pvUser
 static DECLCALLBACK(VBOXSTRICTRC) pl061MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
     PDEVPL061   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVPL061);
-    PDEVPL061CC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVPL061CC);
     LogFlowFunc(("cb=%u reg=%RGp val=%llx\n", cb, off, cb == 4 ? *(uint32_t *)pv : cb == 8 ? *(uint64_t *)pv : 0xdeadbeef));
     RT_NOREF(pvUser);
-    Assert(cb == 4 || cb == 8);
+    Assert(cb == 4 || cb == 8); RT_NOREF(cb);
     Assert(!(off & (cb - 1)));
 
+    /*
+     * From the spec:
+     *     In order to write to GPIODATA, the corresponding bits in the mask, resulting from the address bus, PADDR[9:2],
+     *     must be HIGH. Otherwise the bit values remain unchanged by the write.
+     */
+    if (    off >= PL061_REG_GPIODATA_INDEX
+        &&  off < PL061_REG_GPIODATA_INDEX_END + sizeof(uint32_t))
+    {
+        uint8_t uMask = (uint8_t)(off >> 2);
+        uint8_t uNewValue = (*(const uint32_t *)pv & uMask) | (pThis->u8RegData & ~uMask);
+        if (pThis->u8RegData ^ uNewValue)
+        {
+            /** @todo Reflect changes. */
+        }
+
+        pThis->u8RegData = uNewValue & pThis->u8RegDir; /* Filter out all pins configured as input. */
+        return VINF_SUCCESS;
+    }
+
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
-    uint32_t u32Val = *(uint32_t *)pv;
+    uint8_t u8Val = (uint8_t)*(uint32_t *)pv;
     switch (off)
     {
-        /** @todo */ RT_NOREF(pThis, pThisCC, u32Val, cb);
+        case PL061_REG_GPIODIR_INDEX:
+            pThis->u8RegDir = u8Val;
+            pl061IrqUpdate(pDevIns, pThis);
+            break;
+        case PL061_REG_GPIOIS_INDEX:
+            pThis->u8RegIs = u8Val;
+            pl061IrqUpdate(pDevIns, pThis);
+            break;
+        case PL061_REG_GPIOIBE_INDEX:
+            pThis->u8RegIbe = u8Val;
+            pl061IrqUpdate(pDevIns, pThis);
+            break;
+        case PL061_REG_GPIOIEV_INDEX:
+            pThis->u8RegIev = u8Val;
+            pl061IrqUpdate(pDevIns, pThis);
+            break;
+        case PL061_REG_GPIOIE_INDEX:
+            pThis->u8RegIe = u8Val;
+            pl061IrqUpdate(pDevIns, pThis);
+            break;
+        case PL061_REG_GPIOIC_INDEX:
+            pThis->u8RegRis &= ~u8Val;
+            pl061IrqUpdate(pDevIns, pThis);
+            break;
+        case PL061_REG_GPIOAFSEL_INDEX:
+            pThis->u8RegAfsel = u8Val;
+            break;
         default:
             break;
 
@@ -263,8 +406,63 @@ static DECLCALLBACK(void *) pl061R3QueryInterface(PPDMIBASE pInterface, const ch
 {
     PDEVPL061CC pThisCC = RT_FROM_MEMBER(pInterface, DEVPL061CC, IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThisCC->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIGPIOPORT, &pThisCC->IGpioPort);
     return NULL;
 }
+
+
+
+/* -=-=-=-=-=-=-=-=- PDMIGPIOPORT -=-=-=-=-=-=-=-=- */
+
+/**
+ * @interface_method_impl{PDMIGPIOPORT,pfnGpioLineChange}
+ */
+static DECLCALLBACK(int) pl061R3GpioPort_GpioLineChange(PPDMIGPIOPORT pInterface, uint32_t idGpio, bool fVal)
+{
+    PDEVPL061CC pThisCC = RT_FROM_MEMBER(pInterface, DEVPL061CC, IGpioPort);
+    PPDMDEVINS  pDevIns = pThisCC->pDevIns;
+    PDEVPL061   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVPL061);
+
+    LogFlowFunc(("pInterface=%p idGpio=%u fVal=%RTbool\n", pInterface, idGpio, fVal));
+
+    AssertReturn(idGpio < PL061_GPIO_NUM, VERR_INVALID_PARAMETER);
+
+    int const rcLock = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, pDevIns->pCritSectRoR3, rcLock);
+
+    /* Only trigger an update on an actual change and if the GPIO line is configured as an input. */
+    if (   RT_BOOL(pThis->u8RegData & RT_BIT(idGpio)) != fVal
+        && !(RT_BIT(idGpio) & pThis->u8RegDir))
+    {
+        uint8_t u8OldData = pThis->u8RegData;
+
+        if (fVal)
+            PL061_REG_SET(pThis->u8RegData, RT_BIT(idGpio));
+        else
+            PL061_REG_CLR(pThis->u8RegData, RT_BIT(idGpio));
+
+        pl061InputUpdate(pDevIns, pThis, u8OldData);
+    }
+
+    PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMIGPIOPORT,pfnGpioLineIsInput}
+ */
+static DECLCALLBACK(bool) pl061R3GpioPort_GpioLineIsInput(PPDMIGPIOPORT pInterface, uint32_t idGpio)
+{
+    PDEVPL061CC pThisCC = RT_FROM_MEMBER(pInterface, DEVPL061CC, IGpioPort);
+    PPDMDEVINS  pDevIns = pThisCC->pDevIns;
+    PDEVPL061   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVPL061);
+
+    AssertReturn(idGpio < PL061_GPIO_NUM, VERR_INVALID_PARAMETER);
+
+    return !RT_BOOL(pThis->u8RegDir & RT_BIT(idGpio)); /* Bit cleared means input. */
+}
+
 
 
 /* -=-=-=-=-=-=-=-=- Saved State -=-=-=-=-=-=-=-=- */
@@ -295,6 +493,15 @@ static DECLCALLBACK(int) pl061R3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     pHlp->pfnSSMPutU16(pSSM, pThis->u16Irq);
     pHlp->pfnSSMPutGCPhys(pSSM, pThis->GCPhysMmioBase);
 
+    pHlp->pfnSSMPutU8(pSSM, pThis->u8RegData);
+    pHlp->pfnSSMPutU8(pSSM, pThis->u8RegDir);
+    pHlp->pfnSSMPutU8(pSSM, pThis->u8RegIs);
+    pHlp->pfnSSMPutU8(pSSM, pThis->u8RegIbe);
+    pHlp->pfnSSMPutU8(pSSM, pThis->u8RegIev);
+    pHlp->pfnSSMPutU8(pSSM, pThis->u8RegIe);
+    pHlp->pfnSSMPutU8(pSSM, pThis->u8RegRis);
+    pHlp->pfnSSMPutU8(pSSM, pThis->u8RegAfsel);
+
     return pHlp->pfnSSMPutU32(pSSM, UINT32_MAX); /* sanity/terminator */
 }
 
@@ -316,7 +523,14 @@ static DECLCALLBACK(int) pl061R3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
     pHlp->pfnSSMGetGCPhys(pSSM, &GCPhysMmioBase);
     if (uPass == SSM_PASS_FINAL)
     {
-        rc = VINF_SUCCESS;
+        pHlp->pfnSSMGetU8(pSSM, &pThis->u8RegData);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->u8RegDir);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->u8RegIs);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->u8RegIbe);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->u8RegIev);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->u8RegIe);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->u8RegRis);
+        rc = pHlp->pfnSSMGetU8(pSSM, &pThis->u8RegAfsel);
         AssertRCReturn(rc, rc);
     }
 
@@ -363,10 +577,15 @@ static DECLCALLBACK(int) pl061R3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(void) pl061R3Reset(PPDMDEVINS pDevIns)
 {
     PDEVPL061   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVPL061);
-    PDEVPL061CC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVPL061CC);
 
-    /** @todo */
-    RT_NOREF(pThis, pThisCC);
+    pThis->u8RegData  = 0;
+    pThis->u8RegDir   = 0;
+    pThis->u8RegIs    = 0;
+    pThis->u8RegIbe   = 0;
+    pThis->u8RegIev   = 0;
+    pThis->u8RegIe    = 0;
+    pThis->u8RegRis   = 0;
+    pThis->u8RegAfsel = 0;
 }
 
 
@@ -375,7 +594,6 @@ static DECLCALLBACK(void) pl061R3Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) pl061R3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    PDEVPL061   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVPL061);
     PDEVPL061CC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVPL061CC);
     RT_NOREF(fFlags);
     AssertReturn(iLUN == 0, VERR_PDM_LUN_NOT_FOUND);
@@ -383,7 +601,12 @@ static DECLCALLBACK(int) pl061R3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
     int rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pThisCC->IBase, &pThisCC->pDrvBase, "PL016 Gpio");
     if (RT_SUCCESS(rc))
     {
-        /** @todo */ RT_NOREF(pThis);
+        pThisCC->pDrvGpio = PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMIGPIOCONNECTOR);
+        if (!pThisCC->pDrvGpio)
+        {
+            AssertLogRelMsgFailed(("PL061#%d: instance %d has no GPIO interface!\n", pDevIns->iInstance));
+            return VERR_PDM_MISSING_INTERFACE;
+        }
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
     {
@@ -402,14 +625,13 @@ static DECLCALLBACK(int) pl061R3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
  */
 static DECLCALLBACK(void) pl061R3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    PDEVPL061   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVPL061);
     PDEVPL061CC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVPL061CC);
     RT_NOREF(fFlags);
     AssertReturnVoid(iLUN == 0);
 
     /* Zero out important members. */
     pThisCC->pDrvBase   = NULL;
-    /** @todo */ RT_NOREF(pThis);
+    pThisCC->pDrvGpio   = NULL;
 }
 
 
@@ -442,8 +664,9 @@ static DECLCALLBACK(int) pl061R3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
     /* IBase */
     pThisCC->IBase.pfnQueryInterface                = pl061R3QueryInterface;
-
-    /** @todo Interface. */
+    /* IGpioPort */
+    pThisCC->IGpioPort.pfnGpioLineChange            = pl061R3GpioPort_GpioLineChange;
+    pThisCC->IGpioPort.pfnGpioLineIsInput           = pl061R3GpioPort_GpioLineIsInput;
 
     /*
      * Validate and read the configuration.
@@ -487,11 +710,17 @@ static DECLCALLBACK(int) pl061R3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = PDMDevHlpDriverAttach(pDevIns, 0 /*iLUN*/, &pThisCC->IBase, &pThisCC->pDrvBase, "GPIO");
     if (RT_SUCCESS(rc))
     {
-        /** @todo */
+        pThisCC->pDrvGpio = PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMIGPIOCONNECTOR);
+        if (!pThisCC->pDrvGpio)
+        {
+            AssertLogRelMsgFailed(("Configuration error: instance %d has no GPIO interface!\n", iInstance));
+            return VERR_PDM_MISSING_INTERFACE;
+        }
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
     {
         pThisCC->pDrvBase   = NULL;
+        pThisCC->pDrvGpio   = NULL;
         LogRel(("PL061#%d: no unit\n", iInstance));
     }
     else
@@ -533,7 +762,7 @@ const PDMDEVREG g_DevicePl061Gpio =
     /* .uReserved0 = */             0,
     /* .szName = */                 "arm-pl061-gpio",
     /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ | PDM_DEVREG_FLAGS_NEW_STYLE,
-    /* .fClass = */                 PDM_DEVREG_CLASS_SERIAL, /** @todo */
+    /* .fClass = */                 PDM_DEVREG_CLASS_GPIO,
     /* .cMaxInstances = */          UINT32_MAX,
     /* .uSharedVersion = */         42,
     /* .cbInstanceShared = */       sizeof(DEVPL061),

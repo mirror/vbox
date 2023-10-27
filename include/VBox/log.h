@@ -124,6 +124,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_DEV_FLASH,
     /** Guest Interface Manager Device group. */
     LOG_GROUP_DEV_GIM,
+    /** General Purpose I/O controller Device group. */
+    LOG_GROUP_DEV_GPIO,
     /** HDA Device group. */
     LOG_GROUP_DEV_HDA,
     /** HDA Codec Device group. */
@@ -216,6 +218,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_DRV_DISPLAY,
     /** Floppy media driver group. */
     LOG_GROUP_DRV_FLOPPY,
+    /** General Purpose I/O driver group. */
+    LOG_GROUP_DRV_GPIO,
     /** Host Audio driver group. */
     LOG_GROUP_DRV_HOST_AUDIO,
     /** Host Base block driver group. */
@@ -895,6 +899,7 @@ typedef enum VBOXLOGGROUP
     "DEV_FDC", \
     "DEV_FLASH", \
     "DEV_GIM", \
+    "DEV_GPIO", \
     "DEV_HDA", \
     "DEV_HDA_CODEC", \
     "DEV_HPET", \
@@ -941,6 +946,7 @@ typedef enum VBOXLOGGROUP
     "DRV_DISK_INTEGRITY", \
     "DRV_DISPLAY", \
     "DRV_FLOPPY", \
+    "DRV_GPIO", \
     "DRV_HOST_AUDIO", \
     "DRV_HOST_BASE", \
     "DRV_HOST_DVD", \

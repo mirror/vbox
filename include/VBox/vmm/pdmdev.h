@@ -535,6 +535,8 @@ typedef PDMDEVREGR3 const *PCPDMDEVREGR3;
 #define PDM_DEVREG_CLASS_PARALLEL               RT_BIT(17)
 /** Host PCI pass-through device */
 #define PDM_DEVREG_CLASS_HOST_DEV               RT_BIT(18)
+/** GPIO device */
+#define PDM_DEVREG_CLASS_GPIO                   RT_BIT(19)
 /** Misc devices (always last). */
 #define PDM_DEVREG_CLASS_MISC                   RT_BIT(31)
 /** @} */

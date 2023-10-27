@@ -2397,6 +2397,53 @@ typedef struct PDMIVFSCONNECTOR
 /** PDMIVFSCONNECTOR interface ID. */
 #define PDMIVFSCONNECTOR_IID               "a1fc51e0-414a-4e78-8388-8053b9dc6521"
 
+
+/** Pointer to an GPIO port interface. */
+typedef struct PDMIGPIOPORT       *PPDMIGPIOPORT;
+/**
+ * Interface for GPIO ports (down).
+ * Pair with PDMIGPIOCONNECTORS.
+ */
+typedef struct PDMIGPIOPORT
+{
+
+    /**
+     * Changes the state of the indicated GPIO line to the given value.
+     *
+     * @returns VBox status code.
+     * @param   pInterface          Pointer to this interface.
+     * @param   idGpio              The GPIO line ID to change.
+     * @param   fVal                The value to change the GPIO line to.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnGpioLineChange, (PPDMIGPIOPORT pInterface, uint32_t idGpio, bool fVal));
+
+    /**
+     * Returns whether the given GPIO line is configured as an input.
+     *
+     * @returns true if the line is configured as an input, false if output.
+     * @param   pInterface          Pointer to this interface.
+     * @param   idGpio              The GPIO line ID to check.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnGpioLineIsInput, (PPDMIGPIOPORT pInterface, uint32_t idGpio));
+
+} PDMIGPIOPORT;
+/** PDMIGPIOPORT interface ID. */
+#define PDMIGPIOPORT_IID                        "75e0017c-4cda-47a4-8160-f4cc436025c4"
+
+
+/** Pointer to an GPIO connectors interface. */
+typedef struct PDMIGPIOCONNECTOR *PPDMIGPIOCONNECTOR;
+/**
+ * GPIO connector interface (up).
+ * Pair with PDMIGPIOPORT.
+ */
+typedef struct PDMIGPIOCONNECTOR
+{
+    uint32_t uDummy;
+} PDMIGPIOCONNECTOR;
+/** PDMIGPIOCONNECTOR interface ID. */
+#define PDMIGPIOCONNECTOR_IID                   "504bff7e-489f-4829-8cc3-f9b080d39133"
+
 /** @} */
 
 RT_C_DECLS_END
