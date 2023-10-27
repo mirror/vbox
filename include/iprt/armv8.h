@@ -2654,7 +2654,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBics(uint32_t iRegResult, uint32_t iR
  *                          operating on 32-bit wide registers.)
  * @param   uImm6Rotations  The immR value from the instruction.
  */
-DECLEXPORT(uint32_t) Armv8A64ConvertImmRImmS2Mask32(uint32_t uImm6SizeLen, uint32_t uImm6Rotations)
+DECLINLINE(uint32_t) Armv8A64ConvertImmRImmS2Mask32(uint32_t uImm6SizeLen, uint32_t uImm6Rotations)
 {
     Assert(uImm6SizeLen < 64); Assert(uImm6Rotations < 64);
 
@@ -2687,7 +2687,7 @@ DECLEXPORT(uint32_t) Armv8A64ConvertImmRImmS2Mask32(uint32_t uImm6SizeLen, uint3
  * @param   uImm7SizeLen    The N:immS value from the instruction.
  * @param   uImm6Rotations  The immR value from the instruction.
  */
-DECLEXPORT(uint64_t) Armv8A64ConvertImmRImmS2Mask64(uint32_t uImm7SizeLen, uint32_t uImm6Rotations)
+DECLINLINE(uint64_t) Armv8A64ConvertImmRImmS2Mask64(uint32_t uImm7SizeLen, uint32_t uImm6Rotations)
 {
     Assert(uImm7SizeLen < 128); Assert(uImm6Rotations < 64);
 
@@ -2717,7 +2717,7 @@ DECLEXPORT(uint64_t) Armv8A64ConvertImmRImmS2Mask64(uint32_t uImm7SizeLen, uint3
  * Variant of Armv8A64ConvertImmRImmS2Mask64 where the N bit is separate from
  * the immS value.
  */
-DECLEXPORT(uint64_t) Armv8A64ConvertImmRImmS2Mask64(uint32_t uN, uint32_t uImm6SizeLen, uint32_t uImm6Rotations)
+DECLINLINE(uint64_t) Armv8A64ConvertImmRImmS2Mask64(uint32_t uN, uint32_t uImm6SizeLen, uint32_t uImm6Rotations)
 {
     return Armv8A64ConvertImmRImmS2Mask64((uN << 6) | uImm6SizeLen, uImm6Rotations);
 }
