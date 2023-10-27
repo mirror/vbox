@@ -242,6 +242,8 @@ extern const PDMDEVREG g_DeviceFlashCFI;
 extern const PDMDEVREG g_DevicePciGenericEcam;
 extern const PDMDEVREG g_DevicePciGenericEcamBridge;
 extern const PDMDEVREG g_DevicePlatform;
+
+extern const PDMDRVREG g_DrvGpioButton;
 #endif
 
 /* VBoxAcpi.cpp */

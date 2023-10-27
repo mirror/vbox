@@ -929,6 +929,7 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
   	Bus/DevPciGenericEcam.cpp \
   	EFI/DevEFI-armv8.cpp \
   	Gpio/DevPL061.cpp \
+  	Gpio/DrvGpioButton.cpp \
   	Misc/DevFlashCFI.cpp \
   	Misc/DevPL031.cpp \
   	Misc/DevPlatform.cpp \

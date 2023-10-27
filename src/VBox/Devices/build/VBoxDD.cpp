@@ -491,6 +491,11 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
 # endif
 #endif
 
+#ifdef VBOX_WITH_VIRT_ARMV8
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvGpioButton);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif
     return VINF_SUCCESS;
 }
 
