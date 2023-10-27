@@ -43,6 +43,7 @@
 
 #include <iprt/test.h>
 #include <iprt/stream.h>
+#include <iprt/sort.h>
 
 
 /*********************************************************************************************************************************
@@ -61,9 +62,23 @@ const char *tobin(uint64_t uValue, unsigned cchWidth, char *pszBuf)
 }
 
 
+/** @callback_method_impl{FNRTSORTCMP}   */
+static DECLCALLBACK(int) cmpu32(void const *pvElement1, void const *pvElement2, void *pvUser)
+{
+    RT_NOREF(pvUser);
+    if (*(uint32_t const *)pvElement1 < *(uint32_t const *)pvElement2)
+        return -1;
+    if (*(uint32_t const *)pvElement1 > *(uint32_t const *)pvElement2)
+        return 1;
+    return 0;
+}
+
+
 void tstLogicalMask32(void)
 {
     RTTestISub("32-bit logical masks");
+    static uint32_t s_auValidMasks[1312];
+    unsigned        cValidMasks = 0;
 
     /* Test all legal combinations, both directions. */
     char     szMask[128];
@@ -79,6 +94,8 @@ void tstLogicalMask32(void)
             {
                 uint32_t const uImmS = cOneBits | uImmSElmnLength;
                 uint32_t const uMask = Armv8A64ConvertImmRImmS2Mask32(uImmS, cRotations);
+                Assert(cValidMasks < RT_ELEMENTS(s_auValidMasks));
+                s_auValidMasks[cValidMasks++] = uMask;
 
                 if (g_cVerbosity > 1)
                     RTPrintf("%08x %s size=%02u length=%02u rotation=%02u N=%u immr=%s imms=%s\n",
@@ -97,6 +114,42 @@ void tstLogicalMask32(void)
         }
         uImmSElmnLength = (uImmSElmnLength << 1) & 0x3f;
     }
+
+    /* Now the other way around. */
+    RTSortShell(s_auValidMasks, cValidMasks, sizeof(s_auValidMasks[0]), cmpu32, NULL);
+    unsigned iValidMask     = 0;
+    uint32_t uNextValidMask = s_auValidMasks[iValidMask];
+    uint32_t uMask          = 0;
+    do
+    {
+        uint32_t uImmSRev = UINT32_MAX;
+        uint32_t uImmRRev = UINT32_MAX;
+        if (!Armv8A64ConvertMask32ToImmRImmS(uMask, &uImmSRev, &uImmRRev))
+        {
+            if (RT_LIKELY(uMask < uNextValidMask || iValidMask >= cValidMasks))
+            { }
+            else
+            {
+                RTTestIFailed("uMask=%#x - false negative\n", uMask);
+                break;
+            }
+        }
+        else if (RT_LIKELY(uMask == uNextValidMask && iValidMask < cValidMasks))
+        {
+            if (iValidMask + 1 < cValidMasks)
+                uNextValidMask = s_auValidMasks[++iValidMask];
+            else
+            {
+                iValidMask     = cValidMasks;
+                uNextValidMask = UINT32_MAX;
+            }
+        }
+        else
+        {
+            RTTestIFailed("uMask=%#x - false positive\n", uMask);
+            break;
+        }
+    } while (uMask++ < UINT32_MAX);
 }
 
 
