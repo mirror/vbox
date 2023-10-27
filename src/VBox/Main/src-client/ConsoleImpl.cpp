@@ -2715,6 +2715,9 @@ HRESULT Console::powerButton()
         /* get the acpi device interface and press the button. */
         PPDMIBASE pBase = NULL;
         int vrc = ptrVM.vtable()->pfnPDMR3QueryDeviceLun(ptrVM.rawUVM(), "acpi", 0, 0, &pBase);
+        /** @todo r=aeichner Think about a prettier way to do this without relying on hardocded device/driver names. */
+        if (vrc == VERR_PDM_DEVICE_INSTANCE_NOT_FOUND) /* Try GPIO device for ARM VMs */
+            vrc = ptrVM.vtable()->pfnPDMR3QueryDriverOnLun(ptrVM.rawUVM(), "arm-pl061-gpio", 0, 0, "GpioButton", &pBase);
         if (RT_SUCCESS(vrc))
         {
             Assert(pBase);
@@ -2822,6 +2825,28 @@ HRESULT Console::getGuestEnteredACPIMode(BOOL *aEntered)
             else
                 vrc = VERR_PDM_MISSING_INTERFACE;
         }
+
+        if (vrc == VERR_PDM_DEVICE_INSTANCE_NOT_FOUND)
+        {
+            /* Might be an ARM VM. */
+            /** @todo r=aeichner Think about a prettier way to do this without relying on hardocded device/driver names,
+             *                   and this shouldn't be here as it is not about ACPI but needs a dedicated interface. */
+            vrc = ptrVM.vtable()->pfnPDMR3QueryDriverOnLun(ptrVM.rawUVM(), "arm-pl061-gpio", 0, 0, "GpioButton", &pBase);
+            if (RT_SUCCESS(vrc))
+            {
+                Assert(pBase);
+                PPDMIEVENTBUTTONPORT pPort = PDMIBASE_QUERY_INTERFACE(pBase, PDMIEVENTBUTTONPORT);
+                if (pPort)
+                {
+                    bool fEntered = false;
+                    vrc = pPort->pfnQueryGuestCanHandleButtonEvents(pPort, &fEntered);
+                    if (RT_SUCCESS(vrc))
+                        *aEntered = fEntered;
+                }
+                else
+                    vrc = VERR_PDM_MISSING_INTERFACE;
+            }
+        }
     }
 
     LogFlowThisFuncLeave();
@@ -2849,6 +2874,9 @@ HRESULT Console::sleepButton()
         /* get the acpi device interface and press the sleep button. */
         PPDMIBASE pBase = NULL;
         int vrc = ptrVM.vtable()->pfnPDMR3QueryDeviceLun(ptrVM.rawUVM(), "acpi", 0, 0, &pBase);
+        /** @todo r=aeichner Think about a prettier way to do this without relying on hardocded device/driver names. */
+        if (vrc == VERR_PDM_DEVICE_INSTANCE_NOT_FOUND) /* Try GPIO device for ARM VMs */
+            vrc = ptrVM.vtable()->pfnPDMR3QueryDriverOnLun(ptrVM.rawUVM(), "arm-pl061-gpio", 0, 0, "GpioButton", &pBase);
         if (RT_SUCCESS(vrc))
         {
             Assert(pBase);

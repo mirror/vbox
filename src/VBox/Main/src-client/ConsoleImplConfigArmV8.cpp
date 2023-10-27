@@ -247,7 +247,7 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                                            0x01, 0x0b, 0x104,
                                            0x01, 0x0a, 0x104);                              VRC();
         vrc = RTFdtNodePropertyAddEmpty(   hFdt, "always-on");                              VRC();
-        vrc = RTFdtNodePropertyAddString(  hFdt, "compatible",       "arm,armv7-timer");    VRC();
+        vrc = RTFdtNodePropertyAddString(  hFdt, "compatible",       "arm,armv8-timer");    VRC();
         vrc = RTFdtNodeFinalize(hFdt);
 
         vrc = RTFdtNodeAdd(hFdt, "apb-clk");                                                VRC();
@@ -257,18 +257,6 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         vrc = RTFdtNodePropertyAddU32(     hFdt, "#clock-cells",       0);                  VRC();
         vrc = RTFdtNodePropertyAddString(  hFdt, "compatible",         "fixed-clock");      VRC();
         vrc = RTFdtNodeFinalize(hFdt);
-
-        /* Configure gpio keys (non functional at the moment). */
-        vrc = RTFdtNodeAdd(hFdt, "gpio-keys");                                              VRC();
-        vrc = RTFdtNodePropertyAddString(hFdt, "compatible",           "gpio-keys");        VRC();
-
-        vrc = RTFdtNodeAdd(hFdt, "poweroff");                                               VRC();
-        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "gpios", 3, idPHandleGpio, 3, 0);          VRC();
-        vrc = RTFdtNodePropertyAddU32(     hFdt, "linux,code", 0x74);                       VRC();
-        vrc = RTFdtNodePropertyAddString(  hFdt, "label",      "GPIO Key Poweroff");        VRC();
-        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
-
-        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
         /*
          * MM values.
@@ -534,6 +522,7 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                                              "arm,pl031", "arm,primecell");                 VRC();
         vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
+        /* Configure gpio keys. */
         InsertConfigNode(pDevices, "arm-pl061-gpio",&pDev);
         InsertConfigNode(pDev,     "0",            &pInst);
         InsertConfigNode(pInst,    "Config",        &pCfg);
@@ -549,6 +538,29 @@ int Console::i_configConstructorArmV8(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         vrc = RTFdtNodePropertyAddStringList(hFdt, "compatible", 2,
                                              "arm,pl061", "arm,primecell");                 VRC();
         vrc = RTFdtNodePropertyAddCellsU64(hFdt, "reg", 2, 0x09030000, _4K);                VRC();
+        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
+
+        InsertConfigNode(pInst,    "LUN#0",           &pLunL0);
+        InsertConfigString(pLunL0, "Driver",          "GpioButton");
+        InsertConfigNode(pLunL0,   "Config",          &pCfg);
+        InsertConfigInteger(pCfg,  "PowerButtonGpio", 3);
+        InsertConfigInteger(pCfg,  "SleepButtonGpio", 4);
+
+        vrc = RTFdtNodeAdd(hFdt, "gpio-keys");                                              VRC();
+        vrc = RTFdtNodePropertyAddString(hFdt, "compatible",           "gpio-keys");        VRC();
+
+        vrc = RTFdtNodeAdd(hFdt, "poweroff");                                               VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "gpios", 3, idPHandleGpio, 3, 0);          VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "linux,code", 0x74);                       VRC();
+        vrc = RTFdtNodePropertyAddString(  hFdt, "label",      "GPIO Key Poweroff");        VRC();
+        vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
+
+        vrc = RTFdtNodeAdd(hFdt, "suspend");                                                VRC();
+        vrc = RTFdtNodePropertyAddCellsU32(hFdt, "gpios", 3, idPHandleGpio, 4, 0);          VRC();
+        vrc = RTFdtNodePropertyAddU32(     hFdt, "linux,code", 0xcd);                       VRC();
+        vrc = RTFdtNodePropertyAddString(  hFdt, "label",      "GPIO Key Suspend");         VRC();
+        vrc = RTFdtNodeFinalize(hFdt);  
+
         vrc = RTFdtNodeFinalize(hFdt);                                                      VRC();
 
         uint32_t aPinIrqs[] = { 3, 4, 5, 6 };
