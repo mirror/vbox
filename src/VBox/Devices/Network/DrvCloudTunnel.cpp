@@ -754,11 +754,7 @@ static int drvCloudTunnelReceiveCallback(ssh_session session, ssh_channel channe
     return len;
 }
 
-#ifdef WIN32
 static int channelWriteWontblockCallback(ssh_session, ssh_channel, unsigned int, void *)
-#else
-static int channelWriteWontblockCallback(ssh_session, ssh_channel, size_t, void *)
-#endif
 {
     return 0;
 }
