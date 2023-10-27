@@ -68,7 +68,7 @@ const Global::OSType Global::sOSTypes[] =
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700 },
 
     { "Other",   "Other",             "",               GUEST_OS_ID_STR_A64("Other"),           "Other/Unknown (ARM 64-bit)",
-      VBOXOSTYPE_Unknown_arm64,       VBOXOSHINT_64BIT | VBOXOSHINT_EFI,
+      VBOXOSTYPE_Unknown_arm64,       VBOXOSHINT_64BIT | VBOXOSHINT_EFI | VBOXOSHINT_USB3,
       1,   1024, 128,  2 * _1G64, GraphicsControllerType_VMSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI,
       StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI, ChipsetType_ARMv8Virtual, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221 },
 
