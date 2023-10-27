@@ -349,7 +349,7 @@ typedef PDMDRVREG const *PCPDMDRVREG;
 /** Generic raw PCI device driver. */
 #define PDM_DRVREG_CLASS_PCIRAW         RT_BIT(16)
 /** GPIO driver. */
-#define PDM_DRVREG_CLASS_GPIO           RT_BIT(16)
+#define PDM_DRVREG_CLASS_GPIO           RT_BIT(17)
 /** @} */
 
 
