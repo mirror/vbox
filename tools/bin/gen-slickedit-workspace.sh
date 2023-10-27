@@ -57,6 +57,7 @@ MY_DBG=""
 MY_WINDOWS_HOST=""
 MY_OPT_MINIMAL=""
 MY_OPT_USE_WILDCARDS="yes"
+MY_OPT_ONLY_USERCPP=""
 
 
 ##
@@ -427,7 +428,7 @@ my_generate_usercpp_h()
         MY_USERCPP_H_FULL=""
     fi
 
-    # Generate our
+    # Generate our stuff.
     MY_FILE="${MY_USERCPP_H}"
     ${MY_CAT} > ${MY_FILE} <<EOF
 #define IN_SLICKEDIT
@@ -530,10 +531,33 @@ EOF
 #define RT_IPRT_FORMAT_ATTR(a_iFmt, a_iArgs)
 #define RT_IPRT_FORMAT_ATTR_MAYBE_NULL(a_iFmt, a_iArgs)
 #define RT_NOCRT(a_Name)                a_Name
+#define DECLASM(type)                   type
 #define DECLINLINE(type)                inline type
 #define DECL_INLINE_THROW(type)         inline type
 #define DECL_FORCE_INLINE(type)         inline type
+#define DECL_FORCE_INLINE_THROW(type)   inline type
 #define DECL_INVALID(type)              type
+#define DECLCALLBACK(a_RetType)         a_RetType
+#define DECLCALLBACKMEMBER(a_RetType, a_Name, a_Args)                   a_RetType (*a_Name) a_Args
+#define DECLCALLBACKMEMBER_EX(a_RetType, a_CallConv, a_Name, a_Args)    a_RetType (*a_Name) a_Args
+#define DECLR0CALLBACKMEMBER(a_RetType, a_CallConv, a_Name, a_Args)     a_RetType (*a_Name) a_Args
+#define DECLR3CALLBACKMEMBER(a_RetType, a_CallConv, a_Name, a_Args)     a_RetType (*a_Name) a_Args
+#define DECLRCCALLBACKMEMBER(a_RetType, a_CallConv, a_Name, a_Args)     a_RetType (*a_Name) a_Args
+#define DECLRGCALLBACKMEMBER(a_RetType, a_CallConv, a_Name, a_Args)     a_RetType (*a_Name) a_Args
+#define DECLCALLBACKPTR(a_RetType, a_Name, a_Args)                      a_RetType (*a_Name) a_Args
+#define DECLCALLBACKPTR_EX(a_RetType, a_CallConv, a_Name, a_Args)       a_RetType (*a_Name) a_Args
+#define DECLCALLBACKTYPE(a_RetType, a_Name, a_Args)                     a_RetType   a_Name  a_Args
+#define DECLCALLBACKTYPE_EX(a_RetType, a_CallConv, a_Name, a_Args)      a_RetType   a_Name  a_Args
+#define DECLEXPORT(a_RetType)           a_RetType
+#define DECL_EXPORT_NOTHROW(a_RetType)  a_RetType
+#define DECLHIDDEN(a_RetType)           a_RetType
+#define DECL_HIDDEN_CALLBACK(a_RetType) a_RetType
+#define DECL_HIDDEN_NOTHROW(a_RetType)  a_RetType
+#define DECL_HIDDEN_THROW(a_RetType)    a_RetType
+#define DECLIMPORT(a_RetType)           a_RetType
+#define DECL_IMPORT_NOTHROW(a_RetType)  a_RetType
+
+#define DECLVBGL(a_RetType)             a_RetType
 
 #define PDMDEVINSINT_DECLARED           1
 #define VBOX_WITH_HGCM                  1
@@ -737,6 +761,7 @@ EOF
         -e '/__cdecl/d' \
         -e '/^ *# *define.*DECL/!d' \
         -e '/DECLS/d' \
+        -e '/DECLINED/d' \
         -e '/DECLARE_CLS_/d' \
         -e '/_SRC_POS_DECL/d' \
         -e '/declspec/d' \
@@ -746,24 +771,38 @@ EOF
         -e '/ DECLEXPORT_CLASS/d' \
         -e 's/ *VBOXCALL//' \
         -e 's/ *RTCALL//' \
-        -e '/ DECLASM(type) type/d' \
-        -e '/define  *DECL..CALLBACKMEMBER(type[^)]*) *RT/d' \
-        -e '/define  *DECLINLINE(type)/d' \
-        -e '/define  *DECL_FORCE_INLINE(type)/d' \
-        -e '/  *DECL_INVALID(/d' \
+        -e '/define  *DECLASM(/d' \
+        -e '/define  *DECL..CALLBACKMEMBER([^)]*) *RT/d' \
+        -e '/define  *DECLINLINE(/d' \
+        -e '/define  *DECL_INLINE_THROW(/d' \
+        -e '/define  *DECL_FORCE_INLINE(/d' \
+        -e '/define  *DECL_FORCE_INLINE_THROW(/d' \
+        -e '/define  *DECLCALLBACK(/d' \
+        -e '/define  *DECLCALLBACKMEMBER(/d' \
+        -e '/define  *DECLCALLBACKMEMBER_EX(/d' \
+        -e '/define  *DECLR[03CG]CALLBACKMEMBER(/d' \
+        -e '/define  *DECLCALLBACKPTR(/d' \
+        -e '/define  *DECLCALLBACKPTR_EX(/d' \
+        -e '/define  *DECLCALLBACKTYPE(/d' \
+        -e '/define  *DECLCALLBACKTYPE_EX(/d' \
+        -e '/define  *DECLEXPORT(/d' \
+        -e '/define  *DECL_EXPORT_THROW(/d' \
+        -e '/define  *DECLHIDDEN(/d' \
+        -e '/define  *DECL_HIDDEN_CALLBACK(/d' \
+        -e '/define  *DECL_HIDDEN_NOTHROW(/d' \
+        -e '/define  *DECL_HIDDEN_THROW(/d' \
+        -e '/define  *DECLIMPORT(/d' \
+        -e '/define  *DECL_IMPORT_NOTHROW(/d' \
+        -e '/ DECL_INVALID(/d' \
         \
-        -e 's/(type) DECLHIDDEN(type)/(type) type/' \
-        -e 's/(type) DECLEXPORT(type)/(type) type/' \
-        -e 's/(type) DECLIMPORT(type)/(type) type/' \
-        -e 's/(type) DECL_HIDDEN_NOTHROW(type)/(type) type/' \
-        -e 's/(type) DECL_EXPORT_NOTHROW(type)/(type) type/' \
-        -e 's/(type) DECL_IMPORT_NOTHROW(type)/(type) type/' \
-        -e 's/(a_Type) DECLHIDDEN(a_Type)/(a_Type) a_Type/' \
-        -e 's/(a_Type) DECLEXPORT(a_Type)/(a_Type) a_Type/' \
-        -e 's/(a_Type) DECLIMPORT(a_Type)/(a_Type) a_Type/' \
-        -e 's/(a_Type) DECL_HIDDEN_NOTHROW(a_Type)/(a_Type) a_Type/' \
-        -e 's/(a_Type) DECL_EXPORT_NOTHROW(a_Type)/(a_Type) a_Type/' \
-        -e 's/(a_Type) DECL_IMPORT_NOTHROW(a_Type)/(a_Type) a_Type/' \
+        -e 's/(\([a-zA-Z_]*\)) DECL_NOTHROW(\1)/(\1) \1/' \
+        -e 's/(\([a-zA-Z_]*\)) DECLHIDDEN(DECL_NOTHROW(\1))/(\1) \1/' \
+        -e 's/(\([a-zA-Z_]*\)) DECLHIDDEN(\1)/(\1) \1/' \
+        -e 's/(\([a-zA-Z_]*\)) DECLEXPORT(\([a-zA-Z_]*\))/(\1) \1/' \
+        -e 's/(\([a-zA-Z_]*\)) DECLIMPORT(\([a-zA-Z_]*\))/(\1) \1/' \
+        -e 's/(\([a-zA-Z_]*\)) DECL_HIDDEN_NOTHROW(\([a-zA-Z_]*\))/(\1) \1/' \
+        -e 's/(\([a-zA-Z_]*\)) DECL_EXPORT_NOTHROW(\([a-zA-Z_]*\))/(\1) \1/' \
+        -e 's/(\([a-zA-Z_]*\)) DECL_IMPORT_NOTHROW(\([a-zA-Z_]*\))/(\1) \1/' \
         \
         --append "${MY_FILE}" \
         ${MY_HDR_FILES}
@@ -871,6 +910,10 @@ do
             shift
             ;;
 
+        --only-usercpp)
+            MY_OPT_ONLY_USERCPP=1
+            ;;
+
         # usage
         --h*|-h*|-?|--?)
             echo "usage: $0 [--rootdir <rootdir>] [--outdir <outdir>] [--project-base <prefix>] [--workspace <name>] [--minimal] [--slickedit-config <DIR>]"
@@ -893,14 +936,15 @@ done
 #
 set -e
 
-
 #
 # Make sure the output directory exists, is valid and clean.
 #
-${MY_RM} -f \
-    "${MY_OUT_DIR}/${MY_PRJ_PRF}"*.vpj \
-    "${MY_OUT_DIR}/${MY_WS_NAME}" \
-    "${MY_OUT_DIR}/`echo ${MY_WS_NAME} | ${MY_SED} -e 's/\.vpw$/.vtg/'`"
+if test -z "${MY_OPT_ONLY_USERCPP}"; then
+    ${MY_RM} -f \
+        "${MY_OUT_DIR}/${MY_PRJ_PRF}"*.vpj \
+        "${MY_OUT_DIR}/${MY_WS_NAME}" \
+        "${MY_OUT_DIR}/`echo ${MY_WS_NAME} | ${MY_SED} -e 's/\.vpw$/.vtg/'`"
+fi
 ${MY_MKDIR} -p "${MY_OUT_DIR}"
 cd "${MY_OUT_DIR}"
 
@@ -919,26 +963,28 @@ fi
 #
 # Generate the projects (common code) and workspace.
 #
-my_generate_all_projects # in common-gen-workspace-projects.inc.sh
-my_generate_workspace
-
+if test -z "${MY_OPT_ONLY_USERCPP}"; then
+    my_generate_all_projects # in common-gen-workspace-projects.inc.sh
+    my_generate_workspace
+fi
 
 #
 # Update the history file if present.
 #
-MY_FILE="${MY_WS_NAME}histu"
-if test -f "${MY_FILE}"; then
-    echo "Updating ${MY_FILE}..."
-    ${MY_MV} -f "${MY_FILE}" "${MY_FILE}.old"
-    ${MY_SED} -n \
-        -e '/PROJECT_CACHE/d' \
-        -e '/\[TreeExpansion2\]/d' \
-        -e '/^\[/p' \
-        -e '/: /p' \
-        -e '/^CurrentProject/p' \
-        "${MY_FILE}.old" > "${MY_FILE}"
+if test -z "${MY_OPT_ONLY_USERCPP}"; then
+    MY_FILE="${MY_WS_NAME}histu"
+    if test -f "${MY_FILE}"; then
+        echo "Updating ${MY_FILE}..."
+        ${MY_MV} -f "${MY_FILE}" "${MY_FILE}.old"
+        ${MY_SED} -n \
+            -e '/PROJECT_CACHE/d' \
+            -e '/\[TreeExpansion2\]/d' \
+            -e '/^\[/p' \
+            -e '/: /p' \
+            -e '/^CurrentProject/p' \
+            "${MY_FILE}.old" > "${MY_FILE}"
+    fi
 fi
-
 
 #
 # Generate and update the usercpp.h/unxcpp.h file.
