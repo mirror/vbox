@@ -197,6 +197,16 @@ QStringList UINetworkAttachmentEditor::hostOnlyNetworks()
 }
 #endif /* VBOX_WITH_VMNET */
 
+void UINetworkAttachmentEditor::filterOut(bool fExpertMode, const QString &strFilter)
+{
+    /* Call to base-class: */
+    UIEditor::filterOut(fExpertMode, strFilter);
+
+    /* Repopulate type combo to make
+     * sure excessive types removed: */
+    populateTypeCombo();
+}
+
 void UINetworkAttachmentEditor::retranslateUi()
 {
     /* Translate type label: */
@@ -357,6 +367,19 @@ void UINetworkAttachmentEditor::populateTypeCombo()
     /* Load currently supported network attachment types (system-properties getter): */
     CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
     QVector<KNetworkAttachmentType> supportedTypes = comProperties.GetSupportedNetworkAttachmentTypes();
+    /* Filter out types unrelated to current experience mode: */
+    if (!m_fInExpertMode)
+    {
+        /* Keep only allowed types but in the same order they came from CSystemProperties: */
+        const QVector<KNetworkAttachmentType> allowedTypes =  QVector<KNetworkAttachmentType>()
+                                                           << KNetworkAttachmentType_NAT
+                                                           << KNetworkAttachmentType_Bridged;
+        QVector<KNetworkAttachmentType> resultingTypes;
+        foreach (KNetworkAttachmentType enmType, supportedTypes)
+            if (allowedTypes.contains(enmType))
+                resultingTypes << enmType;
+        supportedTypes = resultingTypes;
+    }
     /* Take currently requested type into account if it's different from initial one: */
     if (!supportedTypes.contains(m_enmType) && m_enmType != KNetworkAttachmentType_Max)
         supportedTypes.prepend(m_enmType);
