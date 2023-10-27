@@ -473,18 +473,18 @@ AssertCompileSizeAlignment(VMCPU, 16384);
 
 #if defined(VBOX_VMM_TARGET_ARMV8)
 /** This action forces the VM to inject an IRQ into the guest. */
-# define VMCPU_FF_INTERRUPT_IRQ              RT_BIT_64(VMCPU_FF_INTERRUPT_IRQ_BIT)
-# define VMCPU_FF_INTERRUPT_IRQ_BIT          0
+# define VMCPU_FF_INTERRUPT_IRQ             RT_BIT_64(VMCPU_FF_INTERRUPT_IRQ_BIT)
+# define VMCPU_FF_INTERRUPT_IRQ_BIT         0
 /** This action forces the VM to inject an FIQ into the guest. */
-# define VMCPU_FF_INTERRUPT_FIQ              RT_BIT_64(VMCPU_FF_INTERRUPT_FIQ_BIT)
-# define VMCPU_FF_INTERRUPT_FIQ_BIT          1
+# define VMCPU_FF_INTERRUPT_FIQ             RT_BIT_64(VMCPU_FF_INTERRUPT_FIQ_BIT)
+# define VMCPU_FF_INTERRUPT_FIQ_BIT         1
 #else
 /** This action forces the VM to check any pending interrupts on the APIC. */
-# define VMCPU_FF_INTERRUPT_APIC             RT_BIT_64(VMCPU_FF_INTERRUPT_APIC_BIT)
-# define VMCPU_FF_INTERRUPT_APIC_BIT         0
+# define VMCPU_FF_INTERRUPT_APIC            RT_BIT_64(VMCPU_FF_INTERRUPT_APIC_BIT)
+# define VMCPU_FF_INTERRUPT_APIC_BIT        0
 /** This action forces the VM to check any pending interrups on the PIC. */
-# define VMCPU_FF_INTERRUPT_PIC              RT_BIT_64(VMCPU_FF_INTERRUPT_PIC_BIT)
-# define VMCPU_FF_INTERRUPT_PIC_BIT          1
+# define VMCPU_FF_INTERRUPT_PIC             RT_BIT_64(VMCPU_FF_INTERRUPT_PIC_BIT)
+# define VMCPU_FF_INTERRUPT_PIC_BIT         1
 #endif
 /** This action forces the VM to schedule and run pending timer (TM).
  * @remarks Don't move - PATM compatibility.  */
@@ -573,12 +573,14 @@ AssertCompileSizeAlignment(VMCPU, 16384);
 /** VMX-preemption timer expired. */
 #define VMCPU_FF_VMX_PREEMPT_TIMER          RT_BIT_64(VMCPU_FF_VMX_PREEMPT_TIMER_BIT)
 #define VMCPU_FF_VMX_PREEMPT_TIMER_BIT      31
-/** Pending MTF (Monitor Trap Flag) event.  */
+/** Pending MTF (Monitor Trap Flag) event.
+ * @todo r=bird: Not part of VMCPU_FF_ALL_MASK, explain?  */
 #define VMCPU_FF_VMX_MTF                    RT_BIT_64(VMCPU_FF_VMX_MTF_BIT)
 #define VMCPU_FF_VMX_MTF_BIT                32
 /** VMX APIC-write emulation pending.
  * @todo possible candidate for internal EFLAGS, or maybe just a summary bit
- *       (see also VMCPU_FF_VMX_INT_WINDOW). */
+ *       (see also VMCPU_FF_VMX_INT_WINDOW).
+ * @todo r=bird: Not part of VMCPU_FF_ALL_MASK, explain?  */
 #define VMCPU_FF_VMX_APIC_WRITE             RT_BIT_64(VMCPU_FF_VMX_APIC_WRITE_BIT)
 #define VMCPU_FF_VMX_APIC_WRITE_BIT         33
 /** VMX interrupt-window event pending.
@@ -589,11 +591,13 @@ AssertCompileSizeAlignment(VMCPU, 16384);
  *
  * @todo Change the IEM side of this to not poll but to track down the places
  *       where it can be generated and set an internal EFLAGS bit that causes it
- *       to be checked out when finishing the current instruction. */
+ *       to be checked out when finishing the current instruction.
+ * @todo r=bird: Not part of VMCPU_FF_ALL_MASK, explain?  */
 #define VMCPU_FF_VMX_INT_WINDOW             RT_BIT_64(VMCPU_FF_VMX_INT_WINDOW_BIT)
 #define VMCPU_FF_VMX_INT_WINDOW_BIT         34
 /** VMX NMI-window event pending.
- * Same "pending" comment and todo in VMCPU_FF_VMX_INT_WINDOW. */
+ * Same "pending" comment and todo in VMCPU_FF_VMX_INT_WINDOW.
+ * @todo r=bird: Not part of VMCPU_FF_ALL_MASK, explain?  */
 #define VMCPU_FF_VMX_NMI_WINDOW             RT_BIT_64(VMCPU_FF_VMX_NMI_WINDOW_BIT)
 #define VMCPU_FF_VMX_NMI_WINDOW_BIT         35
 
@@ -625,14 +629,14 @@ AssertCompileSizeAlignment(VMCPU, 16384);
                                                  | VM_FF_EMT_RENDEZVOUS )
 /** High priority VMCPU pre-execution actions. */
 #if defined(VBOX_VMM_TARGET_ARMV8)
-# define VMCPU_FF_HIGH_PRIORITY_PRE_MASK         (  VMCPU_FF_TIMER        | VMCPU_FF_INTERRUPT_IRQ     | VMCPU_FF_INTERRUPT_FIQ \
-                                                  | VMCPU_FF_DBGF )
+# define VMCPU_FF_HIGH_PRIORITY_PRE_MASK        (  VMCPU_FF_TIMER        | VMCPU_FF_INTERRUPT_IRQ     | VMCPU_FF_INTERRUPT_FIQ \
+                                                 | VMCPU_FF_DBGF )
 #else
-# define VMCPU_FF_HIGH_PRIORITY_PRE_MASK         (  VMCPU_FF_TIMER        | VMCPU_FF_INTERRUPT_APIC     | VMCPU_FF_INTERRUPT_PIC \
-                                                  | VMCPU_FF_UPDATE_APIC  | VMCPU_FF_DBGF \
-                                                  | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL \
-                                                  | VMCPU_FF_INTERRUPT_NESTED_GUEST | VMCPU_FF_VMX_MTF  | VMCPU_FF_VMX_APIC_WRITE \
-                                                  | VMCPU_FF_VMX_PREEMPT_TIMER | VMCPU_FF_VMX_NMI_WINDOW | VMCPU_FF_VMX_INT_WINDOW )
+# define VMCPU_FF_HIGH_PRIORITY_PRE_MASK        (  VMCPU_FF_TIMER        | VMCPU_FF_INTERRUPT_APIC     | VMCPU_FF_INTERRUPT_PIC \
+                                                 | VMCPU_FF_UPDATE_APIC  | VMCPU_FF_DBGF \
+                                                 | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL \
+                                                 | VMCPU_FF_INTERRUPT_NESTED_GUEST | VMCPU_FF_VMX_MTF  | VMCPU_FF_VMX_APIC_WRITE \
+                                                 | VMCPU_FF_VMX_PREEMPT_TIMER | VMCPU_FF_VMX_NMI_WINDOW | VMCPU_FF_VMX_INT_WINDOW )
 #endif
 
 /** High priority VM pre raw-mode execution mask. */
@@ -715,7 +719,10 @@ AssertCompileSizeAlignment(VMCPU, 16384);
 
 /** All the forced VM flags. */
 #define VM_FF_ALL_MASK                          (UINT32_MAX)
-/** All the forced VMCPU flags. */
+/** All the forced VMCPU flags.
+ * @todo r=bird: VMCPU_FF_VMX_MTF, VMCPU_FF_VMX_APIC_WRITE,
+ *       VMCPU_FF_VMX_INT_WINDOW and VMCPU_FF_VMX_NMI_WINDOW are not a part
+ *       of this mask for some unexplained reason. */
 #define VMCPU_FF_ALL_MASK                       (UINT32_MAX)
 
 /** All the forced VM flags except those related to raw-mode and hardware
