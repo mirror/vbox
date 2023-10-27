@@ -2643,6 +2643,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBics(uint32_t iRegResult, uint32_t iR
     return Armv8A64MkInstrLogicalShiftedReg(3, true /*fNot*/, iRegResult, iReg1, iReg2Shifted, f64Bit, offShift6, enmShift);
 }
 
+# ifdef IPRT_INCLUDED_asm_h /* don't want this to be automatically included here. */
 
 /**
  * Converts immS and immR values (to logical instructions) to a 32-bit mask.
@@ -2834,6 +2835,7 @@ DECLINLINE(bool) Armv8A64ConvertMask64ToImmRImmS(uint64_t fMask, uint32_t *puImm
     return true;
 }
 
+# endif /* IPRT_INCLUDED_asm_h */
 
 /**
  * A64: Encodes a logical instruction with an complicated immediate mask.
