@@ -70,7 +70,7 @@ const Global::OSType Global::sOSTypes[] =
     { "Other",   "Other",             "",               GUEST_OS_ID_STR_A64("Other"),           "Other/Unknown (ARM 64-bit)",
       VBOXOSTYPE_Unknown_arm64,       VBOXOSHINT_64BIT | VBOXOSHINT_EFI,
       1,   1024, 128,  2 * _1G64, GraphicsControllerType_VMSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI,
-      StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI, ChipsetType_ARMv8Virtual, IommuType_None, AudioControllerType_VirtioSound, AudioCodecType_Null },
+      StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI, ChipsetType_ARMv8Virtual, IommuType_None, AudioControllerType_HDA, AudioCodecType_Null },
 
     { "Windows", "Microsoft Windows", "",               GUEST_OS_ID_STR_X86("Windows31"),       "Windows 3.1",
       VBOXOSTYPE_Win31,           VBOXOSHINT_FLOPPY,
