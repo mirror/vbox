@@ -527,7 +527,7 @@ const Global::OSType Global::sOSTypes[] =
       1, 1024,  16, 16 * _1G64, GraphicsControllerType_VMSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "BSD",     "BSD",       "OpenBSD",         GUEST_OS_ID_STR_A64("OpenBSD"),        "OpenBSD ( ARM64-bit)",
+    { "BSD",     "BSD",       "OpenBSD",         GUEST_OS_ID_STR_A64("OpenBSD"),        "OpenBSD (ARM 64-bit)",
       VBOXOSTYPE_OpenBSD_arm64,     VBOXOSHINT_64BIT | VBOXOSHINT_USBHID,
       1, 1024,  16, 16 * _1G64, GraphicsControllerType_VMSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI,
       StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI, ChipsetType_ARMv8Virtual, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  },
