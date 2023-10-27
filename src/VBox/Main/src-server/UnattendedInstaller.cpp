@@ -77,7 +77,9 @@ UnattendedInstaller::createInstance(VBOXOSTYPE enmDetectedOSType, const Utf8Str 
         pUinstaller = new UnattendedOs2Installer(pParent, strDetectedOSHints);
     else
     {
-        if (enmDetectedOSType >= VBOXOSTYPE_Debian && enmDetectedOSType <= VBOXOSTYPE_Debian_latest_x64)
+        if (   enmDetectedOSType >= VBOXOSTYPE_Debian
+            && (   enmDetectedOSType <= VBOXOSTYPE_Debian_latest_x64
+                || enmDetectedOSType <= VBOXOSTYPE_Debian_latest_arm64))
             pUinstaller = new UnattendedDebianInstaller(pParent);
         else if (enmDetectedOSType >= VBOXOSTYPE_Ubuntu && enmDetectedOSType <= VBOXOSTYPE_Ubuntu_latest_x64)
             pUinstaller = new UnattendedUbuntuInstaller(pParent);
@@ -1286,13 +1288,23 @@ HRESULT UnattendedDebianInstaller::editDebianGrubCfg(GeneralTextScript *pEditor)
     {
         /* Set timeouts to 4 seconds. */
         std::vector<size_t> vecLineNumbers = pEditor->findTemplate("set timeout", RTCString::CaseInsensitive);
-        for (size_t i = 0; i < vecLineNumbers.size(); ++i)
-            if (pEditor->getContentOfLine(vecLineNumbers[i]).startsWithWord("set timeout", RTCString::CaseInsensitive))
-            {
-                HRESULT hrc = pEditor->setContentOfLine(vecLineNumbers.at(i), "set timeout=4");
-                if (FAILED(hrc))
-                    return hrc;
-            }
+        if (vecLineNumbers.size() > 0)
+        {
+            for (size_t i = 0; i < vecLineNumbers.size(); ++i)
+                if (pEditor->getContentOfLine(vecLineNumbers[i]).startsWithWord("set timeout", RTCString::CaseInsensitive))
+                {
+                    HRESULT hrc = pEditor->setContentOfLine(vecLineNumbers.at(i), "set timeout=4");
+                    if (FAILED(hrc))
+                        return hrc;
+                }
+        }
+        else
+        {
+            /* Append timeout if not set (happens with arm64 iso images at least). */
+            HRESULT hrc = pEditor->appendLine("set timeout=4");
+            if (FAILED(hrc))
+                return hrc;
+        }
 
         /* Modify kernel lines assuming that they starts with 'linux' keyword and 2nd word is the kernel command.*
          * we remove whatever comes after command and add our own command line options. */

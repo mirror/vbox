@@ -140,6 +140,7 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_Debian12_x64     = 0x5510a,
     VBOXOSTYPE_Debian12_arm64   = 0x5530a,
     VBOXOSTYPE_Debian_latest_x64 = VBOXOSTYPE_Debian12_x64,
+    VBOXOSTYPE_Debian_latest_arm64 = VBOXOSTYPE_Debian12_arm64,
     VBOXOSTYPE_OpenSUSE         = 0x56000,
     VBOXOSTYPE_OpenSUSE_x64     = 0x56100,
     VBOXOSTYPE_OpenSUSE_Leap_x64         = 0x56101,  // 64-bit only
@@ -227,6 +228,7 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_Ubuntu23_x64     = 0x5C117,  // 64-bit only
     VBOXOSTYPE_Ubuntu23_arm64   = 0x5C317,
     VBOXOSTYPE_Ubuntu_latest_x64 = VBOXOSTYPE_Ubuntu23_x64,
+    VBOXOSTYPE_Ubuntu_latest_arm64 = VBOXOSTYPE_Ubuntu23_arm64,
     VBOXOSTYPE_Xandros          = 0x5D000,
     VBOXOSTYPE_Xandros_x64      = 0x5D100,
     VBOXOSTYPE_Oracle           = 0x5E000,

@@ -2054,6 +2054,8 @@ HRESULT Unattended::i_innerDetectIsoOSLinuxFedora(RTVFS hVfsIso, DETECTBUFFER *p
                             mEnmOsType = (VBOXOSTYPE)((mEnmOsType & ~VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_x86);
                         else if (pNtHdrs->FileHeader.Machine == IMAGE_FILE_MACHINE_AMD64)
                             mEnmOsType = (VBOXOSTYPE)((mEnmOsType & ~VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_x64);
+                        else if (pNtHdrs->FileHeader.Machine == IMAGE_FILE_MACHINE_ARM64)
+                            mEnmOsType = (VBOXOSTYPE)((mEnmOsType & ~VBOXOSTYPE_ArchitectureMask) | VBOXOSTYPE_arm64);
                         else
                             AssertFailed();
                     }
@@ -2631,7 +2633,8 @@ HRESULT Unattended::prepare()
     }
 
     /* We don't support guest OSes w/ EFI, as that requires UDF remastering support we don't have yet. */
-    if (osHint & VBOXOSHINT_EFI)
+    if (   (osHint & VBOXOSHINT_EFI)
+        && (enmIsoOSType & VBOXOSTYPE_ArchitectureMask) != VBOXOSTYPE_arm64)
         return setError(E_FAIL, tr("The detected guest OS type requires EFI to boot and therefore is not supported yet"));
 
     /*
@@ -3946,12 +3949,6 @@ HRESULT Unattended::getIsUnattendedInstallSupported(BOOL *aIsUnattendedInstallSu
 
     /* Unattended is disabled by default if we could not detect OS type. */
     if (mStrDetectedOSTypeId.isEmpty())
-        return S_OK;
-
-    /* For now we don't support unattended installation for ARM guests. */
-    const VBOXOSTYPE enmArchitectureMasked = (VBOXOSTYPE)(mEnmOsType & VBOXOSTYPE_ArchitectureMask);
-    if (   enmArchitectureMasked == VBOXOSTYPE_arm32
-        || enmArchitectureMasked == VBOXOSTYPE_arm64)
         return S_OK;
 
     const VBOXOSTYPE enmOsTypeMasked = (VBOXOSTYPE)(mEnmOsType & VBOXOSTYPE_OsTypeMask);
