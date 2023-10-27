@@ -298,7 +298,7 @@ const Global::OSType Global::sOSTypes[] =
 
 #define VBOX_LINUX_SUBTYPE_B_A64(a_szSubtype, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
     VBOX_LINUX_SUBTYPE_TEMPLATE_ARM64(a_szSubtype, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_B_ARM64, a_Memory, a_Vram, a_Diskspace, \
-                                      NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
+                                      NetworkAdapterType_I82540EM, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI)
 
 /* Linux 32-bit sub-type template defaulting to 1 CPU with PS/2-mouse/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
 #define VBOX_LINUX_SUBTYPE_C_X86(a_szSubtype, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
