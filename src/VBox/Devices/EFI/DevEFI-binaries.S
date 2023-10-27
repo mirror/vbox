@@ -71,7 +71,7 @@ NAME(g_cbEfiFirmware64):
 .type g_cbEfiFirmware64 object
 #endif
 
-#ifdef VBOX_VMM_TARGET_ARMV8
+#ifdef VBOX_WITH_VIRT_ARMV8
 ;
 ; The ARMv8 bits
 ;

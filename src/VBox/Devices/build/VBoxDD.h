@@ -233,7 +233,7 @@ extern const PDMDEVREG g_DeviceIommuAmd;
 extern const PDMDEVREG g_DeviceIommuIntel;
 #endif
 
-#ifdef VBOX_VMM_TARGET_ARMV8
+#ifdef VBOX_WITH_VIRT_ARMV8
 extern const PDMDEVREG g_DeviceEfiArmV8;
 extern const PDMDEVREG g_DevicePl011;
 extern const PDMDEVREG g_DevicePl031Rtc;

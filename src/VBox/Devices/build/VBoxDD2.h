@@ -59,7 +59,7 @@ extern DECLEXPORT(const unsigned char)  g_abEfiFirmware32[];
 extern DECLEXPORT(const unsigned)       g_cbEfiFirmware32;
 extern DECLEXPORT(const unsigned char)  g_abEfiFirmware64[];
 extern DECLEXPORT(const unsigned)       g_cbEfiFirmware64;
-#  ifdef VBOX_VMM_TARGET_ARMV8
+#  ifdef VBOX_WITH_VIRT_ARMV8
 extern DECLEXPORT(const unsigned char)  g_abEfiFirmwareAArch32[];
 extern DECLEXPORT(const unsigned)       g_cbEfiFirmwareAArch32;
 extern DECLEXPORT(const unsigned char)  g_abEfiFirmwareAArch64[];
@@ -88,7 +88,7 @@ extern DECLIMPORT(const unsigned char)  g_abEfiFirmware32[];
 extern DECLIMPORT(const unsigned)       g_cbEfiFirmware32;
 extern DECLIMPORT(const unsigned char)  g_abEfiFirmware64[];
 extern DECLIMPORT(const unsigned)       g_cbEfiFirmware64;
-#  ifdef VBOX_VMM_TARGET_ARMV8
+#  ifdef VBOX_WITH_VIRT_ARMV8
 extern DECLIMPORT(const unsigned char)  g_abEfiFirmwareAArch32[];
 extern DECLIMPORT(const unsigned)       g_cbEfiFirmwareAArch32;
 extern DECLIMPORT(const unsigned char)  g_abEfiFirmwareAArch64[];

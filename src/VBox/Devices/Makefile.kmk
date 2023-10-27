@@ -924,7 +924,7 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
 
  # --- ARMv8 bits. ---
  if defined(VBOX_WITH_VIRT_ARMV8)
-  VBoxDD_DEFS       += VBOX_VMM_TARGET_ARMV8
+  VBoxDD_DEFS       += VBOX_WITH_VIRT_ARMV8
   VBoxDD_SOURCES    += \
   	Bus/DevPciGenericEcam.cpp \
   	EFI/DevEFI-armv8.cpp \
@@ -1216,7 +1216,7 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
  VBoxDD2_DEFS            = \
  	IN_VBOXDD2 \
  	$(if $(VBOX_WITH_PXE_ROM),VBOX_WITH_PXE_ROM,) \
- 	$(if $(VBOX_WITH_VIRT_ARMV8),VBOX_VMM_TARGET_ARMV8,)
+ 	$(if $(VBOX_WITH_VIRT_ARMV8),VBOX_WITH_VIRT_ARMV8,)
  VBoxDD2_INCS           := \
  	build \
  	$(PATH_SUB_CURRENT)
