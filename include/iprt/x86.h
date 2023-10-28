@@ -4920,6 +4920,15 @@ AssertCompile((X86_MODRM_MOD_MASK >> X86_MODRM_MOD_SHIFT) == X86_MODRM_MOD_SMASK
 #define X86_SIB_SCALE_SMASK   UINT8_C(0x03)
 #define X86_SIB_SCALE_SHIFT   6
 #ifndef VBOX_FOR_DTRACE_LIB
+/** @def X86_MODRM_SIB
+ * @param   a_BaseReg   The base register value (0..7).
+ * @param   a_IndexReg  The index register value (0..7).
+ * @param   a_Scale     The left shift (0..3) to be applied to the index
+ *                      register (0 = none, 1 = x2, 2 = x4, 3 = x8).
+ *  */
+# define X86_SIB_MAKE(a_BaseReg, a_IndexReg, a_Scale) \
+    (((a_Scale) << X86_SIB_SCALE_SHIFT) | ((a_IndexReg) << X86_SIB_INDEX_SHIFT) | (a_BaseReg))
+
 AssertCompile((X86_SIB_BASE_MASK | X86_SIB_INDEX_MASK | X86_SIB_SCALE_MASK) == 0xff);
 AssertCompile((X86_SIB_INDEX_MASK >> X86_SIB_INDEX_SHIFT) == X86_SIB_INDEX_SMASK);
 AssertCompile((X86_SIB_SCALE_MASK >> X86_SIB_SCALE_SHIFT) == X86_SIB_SCALE_SMASK);

@@ -1587,6 +1587,7 @@ static PIEMRECOMPILERSTATE iemNativeReInit(PIEMRECOMPILERSTATE pReNative, PCIEMT
     pReNative->pTbOrg                      = pTb;
     pReNative->cCondDepth                  = 0;
     pReNative->uCondSeqNo                  = 0;
+    pReNative->uCheckIrqSeqNo              = 0;
 
     pReNative->Core.bmHstRegs              = IEMNATIVE_REG_FIXED_MASK
 #if IEMNATIVE_HST_GREG_COUNT < 32
@@ -1993,14 +1994,15 @@ static bool iemNativeDbgInfoAddLabel(PIEMRECOMPILERSTATE pReNative, IEMNATIVELAB
 /**
  * Debug Info: Record info about a threaded call.
  */
-static bool iemNativeDbgInfoAddThreadedCall(PIEMRECOMPILERSTATE pReNative, IEMTHREADEDFUNCS enmCall) RT_NOEXCEPT
+static bool iemNativeDbgInfoAddThreadedCall(PIEMRECOMPILERSTATE pReNative, IEMTHREADEDFUNCS enmCall, bool fRecompiled) RT_NOEXCEPT
 {
     PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pReNative->pDbgInfo);
     AssertReturn(pEntry, false);
 
-    pEntry->ThreadedCall.uType   = kIemTbDbgEntryType_ThreadedCall;
-    pEntry->ThreadedCall.uUnused = 0;
-    pEntry->ThreadedCall.enmCall = (uint16_t)enmCall;
+    pEntry->ThreadedCall.uType       = kIemTbDbgEntryType_ThreadedCall;
+    pEntry->ThreadedCall.fRecompiled = fRecompiled;
+    pEntry->ThreadedCall.uUnused     = 0;
+    pEntry->ThreadedCall.enmCall     = (uint16_t)enmCall;
 
     return true;
 }
@@ -2525,27 +2527,8 @@ iemNativeRegTransferGstRegShadowing(PIEMRECOMPILERSTATE pReNative, uint8_t idxRe
 }
 
 
-
 /**
- * Intended use statement for iemNativeRegAllocTmpForGuestReg().
- */
-typedef enum IEMNATIVEGSTREGUSE
-{
-    /** The usage is read-only, the register holding the guest register
-     * shadow copy will not be modified by the caller. */
-    kIemNativeGstRegUse_ReadOnly = 0,
-    /** The caller will update the guest register (think: PC += cbInstr).
-     * The guest shadow copy will follow the returned register. */
-    kIemNativeGstRegUse_ForUpdate,
-    /** The caller will use the guest register value as input in a calculation
-     * and the host register will be modified.
-     * This means that the returned host register will not be marked as a shadow
-     * copy of the guest register. */
-    kIemNativeGstRegUse_Calculation
-} IEMNATIVEGSTREGUSE;
-
-/**
- * Allocates a temporary host general purpose register for updating a guest
+ * Allocates a temporary host general purpose register for keeping a guest
  * register value.
  *
  * Since we may already have a register holding the guest register value,
@@ -2560,6 +2543,7 @@ typedef enum IEMNATIVEGSTREGUSE
  *                          the request.
  * @param   enmGstReg       The guest register that will is to be updated.
  * @param   enmIntendedUse  How the caller will be using the host register.
+ * @sa      iemNativeRegAllocTmpForGuestRegIfAlreadyPresent
  */
 DECLHIDDEN(uint8_t) iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff,
                                                     IEMNATIVEGSTREG enmGstReg, IEMNATIVEGSTREGUSE enmIntendedUse) RT_NOEXCEPT
@@ -2677,6 +2661,68 @@ DECLHIDDEN(uint8_t) iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNativ
            g_apszIemNativeHstRegNames[idxRegNew], g_aGstShadowInfo[enmGstReg].pszName, s_pszIntendedUse[enmIntendedUse]));
 
     return idxRegNew;
+}
+
+
+/**
+ * Allocates a temporary host general purpose register that already holds the
+ * given guest register value.
+ *
+ * The use case for this function is places where the shadowing state cannot be
+ * modified due to branching and such.  This will fail if the we don't have a
+ * current shadow copy handy or if it's incompatible.  The only code that will
+ * be emitted here is value checking code in strict builds.
+ *
+ * The intended use can only be readonly!
+ *
+ * @returns The host register number, UINT8_MAX on failure.
+ * @param   pReNative       The native recompile state.
+ * @param   poff            Pointer to the instruction buffer offset.
+ *                          Will be updated in strict builds if a register is
+ *                          found.
+ * @param   enmGstReg       The guest register that will is to be updated.
+ * @sa iemNativeRegAllocTmpForGuestReg
+ */
+DECLHIDDEN(uint8_t) iemNativeRegAllocTmpForGuestRegIfAlreadyPresent(PIEMRECOMPILERSTATE pReNative, uint32_t *poff,
+                                                                    IEMNATIVEGSTREG enmGstReg) RT_NOEXCEPT
+{
+    Assert(enmGstReg < kIemNativeGstReg_End && g_aGstShadowInfo[enmGstReg].cb != 0);
+
+    /*
+     * First check if the guest register value is already in a host register.
+     */
+    if (pReNative->Core.bmGstRegShadows & RT_BIT_64(enmGstReg))
+    {
+        uint8_t idxReg = pReNative->Core.aidxGstRegShadows[enmGstReg];
+        Assert(idxReg < RT_ELEMENTS(pReNative->Core.aHstRegs));
+        Assert(pReNative->Core.aHstRegs[idxReg].fGstRegShadows & RT_BIT_64(enmGstReg));
+        Assert(pReNative->Core.bmHstRegsWithGstShadow & RT_BIT_32(idxReg));
+
+        if (!(pReNative->Core.bmHstRegs & RT_BIT_32(idxReg)))
+        {
+            /*
+             * We only do readonly use here, so easy compared to the other
+             * variant of this code.
+             */
+            pReNative->Core.bmHstRegs |= RT_BIT_32(idxReg);
+            pReNative->Core.aHstRegs[idxReg].enmWhat = kIemNativeWhat_Tmp;
+            pReNative->Core.aHstRegs[idxReg].idxVar  = UINT8_MAX;
+            Log12(("iemNativeRegAllocTmpForGuestRegIfAlreadyPresent: Reusing %s for guest %s readonly\n",
+                   g_apszIemNativeHstRegNames[idxReg], g_aGstShadowInfo[enmGstReg].pszName));
+
+#ifdef VBOX_STRICT
+            /* Strict builds: Check that the value is correct. */
+            uint32_t off = *poff;
+            *poff = off = iemNativeEmitGuestRegValueCheck(pReNative, off, idxReg, enmGstReg);
+            AssertReturn(off != UINT32_MAX, UINT8_MAX);
+#else
+            RT_NOREF(poff);
+#endif
+            return idxReg;
+        }
+    }
+
+    return UINT8_MAX;
 }
 
 
@@ -4882,13 +4928,110 @@ static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_DeferToCImpl0)
 
 
 /**
+ * Built-in function that checks for pending interrupts that can be delivered or
+ * forced action flags.
+ *
+ * This triggers after the completion of an instruction, so EIP is already at
+ * the next instruction.  If an IRQ or important FF is pending, this will return
+ * a non-zero status that stops TB execution.
+ */
+static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckIrq)
+{
+    RT_NOREF(pCallEntry);
+//pReNative->pInstrBuf[off++] = 0xcc;
+
+    /* It's too convenient to use iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet below
+       and I'm too lazy to create a 'Fixed' version of that one. */
+    uint32_t const idxLabelVmCheck = iemNativeLabelCreate(pReNative, kIemNativeLabelType_CheckIrq,
+                                                          UINT32_MAX, pReNative->uCheckIrqSeqNo++);
+    AssertReturn(idxLabelVmCheck != UINT32_MAX, UINT32_MAX);
+
+    uint32_t const idxLabelReturnBreak = iemNativeLabelCreate(pReNative, kIemNativeLabelType_ReturnBreak);
+    AssertReturn(idxLabelReturnBreak != UINT32_MAX, UINT32_MAX);
+
+    /* Again, we need to load the extended EFLAGS before we actually need them
+       in case we jump.  We couldn't use iemNativeRegAllocTmpForGuestReg if we
+       loaded them inside the check, as the shadow state would not be correct
+       when the code branches before the load.  Ditto PC. */
+    uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
+                                                              kIemNativeGstRegUse_ReadOnly);
+    AssertReturn(idxEflReg != UINT8_MAX, UINT32_MAX);
+
+    uint8_t const idxPcReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc,
+                                                             kIemNativeGstRegUse_ReadOnly);
+    AssertReturn(idxPcReg != UINT8_MAX, UINT32_MAX);
+
+    uint8_t idxTmpReg = iemNativeRegAllocTmp(pReNative, &off);
+    AssertReturn(idxTmpReg < RT_ELEMENTS(pReNative->Core.aHstRegs), UINT32_MAX);
+
+    /*
+     * Start by checking the local forced actions of the EMT we're on for IRQs
+     * and other FFs that needs servicing.
+     */
+    /** @todo this isn't even close to the NMI and interrupt conditions in EM! */
+    /* Load FFs in to idxTmpReg and AND with all relevant flags. */
+    off = iemNativeEmitLoadGprFromVCpuU64(pReNative, off, idxTmpReg, RT_UOFFSETOF(VMCPUCC, fLocalForcedActions));
+    off = iemNativeEmitAndGprByImm(pReNative, off, idxTmpReg,
+                                   VMCPU_FF_ALL_MASK & ~(  VMCPU_FF_PGM_SYNC_CR3
+                                                         | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
+                                                         | VMCPU_FF_TLB_FLUSH
+                                                         | VMCPU_FF_UNHALT ),
+                                   true /*fSetFlags*/);
+    /* If we end up with ZERO in idxTmpReg there is nothing to do.*/
+    uint32_t const offFixupJumpToVmCheck1 = off;
+    off = iemNativeEmitJzToFixed(pReNative, off, 0);
+
+    /* Some relevant FFs are set, but if's only APIC or/and PIC being set,
+       these may be supressed by EFLAGS.IF or CPUMIsInInterruptShadow. */
+    off = iemNativeEmitAndGprByImm(pReNative, off, idxTmpReg,
+                                   ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC), true /*fSetFlags*/);
+    /* Return VINF_IEM_REEXEC_BREAK if other FFs are set. */
+    off = iemNativeEmitJnzToLabel(pReNative, off, idxLabelReturnBreak);
+
+    /* So, it's only interrupt releated FFs and we need to see if IRQs are being
+       suppressed by the CPU or not. */
+    off = iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet(pReNative, off, idxEflReg, X86_EFL_IF_BIT, idxLabelVmCheck);
+    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfNoneSet(pReNative, off, idxEflReg, CPUMCTX_INHIBIT_SHADOW,
+                                                              idxLabelReturnBreak);
+
+    /* We've got shadow flags set, so we must check that the PC they are valid
+       for matches our current PC value. */
+    /** @todo AMD64 can do this more efficiently w/o loading uRipInhibitInt into
+     *        a register. */
+    off = iemNativeEmitLoadGprFromVCpuU64(pReNative, off, idxTmpReg, RT_UOFFSETOF(VMCPUCC, cpum.GstCtx.uRipInhibitInt));
+    off = iemNativeEmitTestIfGprNotEqualGprAndJmpToLabel(pReNative, off, idxTmpReg, idxPcReg, idxLabelReturnBreak);
+
+    /*
+     * Now check the force flags of the VM.
+     */
+    iemNativeLabelDefine(pReNative, idxLabelVmCheck, off);
+    iemNativeFixupFixedJump(pReNative, offFixupJumpToVmCheck1, off);
+    off = iemNativeEmitLoadGprFromVCpuU64(pReNative, off, idxTmpReg, RT_UOFFSETOF(VMCPUCC, CTX_SUFF(pVM))); /* idxTmpReg = pVM */
+    off = iemNativeEmitLoadGpr32ByGpr(pReNative, off, idxTmpReg, idxTmpReg, RT_UOFFSETOF(VMCC, fGlobalForcedActions));
+    off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxTmpReg, VM_FF_ALL_MASK, true /*fSetFlags*/);
+    off = iemNativeEmitJnzToLabel(pReNative, off, idxLabelReturnBreak);
+
+    /** @todo STAM_REL_COUNTER_INC(&pVCpu->iem.s.StatCheckIrqBreaks); */
+
+    /*
+     * We're good, no IRQs or FFs pending.
+     */
+    iemNativeRegFreeTmp(pReNative, idxTmpReg);
+    iemNativeRegFreeTmp(pReNative, idxEflReg);
+    iemNativeRegFreeTmp(pReNative, idxPcReg);
+
+    return off;
+}
+
+
+/**
  * Built-in function checks if IEMCPU::fExec has the expected value.
  */
 static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckMode)
 {
     uint32_t const fExpectedExec = (uint32_t)pCallEntry->auParams[0];
-
     uint8_t idxTmpReg = iemNativeRegAllocTmp(pReNative, &off);
+
     AssertReturn(idxTmpReg < RT_ELEMENTS(pReNative->Core.aHstRegs), UINT32_MAX);
     off = iemNativeEmitLoadGprFromVCpuU32(pReNative, off, idxTmpReg, RT_UOFFSETOF(VMCPUCC, iem.s.fExec));
     off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxTmpReg, IEMTB_F_KEY_MASK);
@@ -5166,10 +5309,11 @@ void iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp)
 
                         case kIemTbDbgEntryType_ThreadedCall:
                             pHlp->pfnPrintf(pHlp,
-                                            "  Call #%u to %s (%u args)\n",
+                                            "  Call #%u to %s (%u args)%s\n",
                                             idxThreadedCall,
                                             g_apszIemThreadedFunctions[pDbgInfo->aEntries[iDbgEntry].ThreadedCall.enmCall],
-                                            g_acIemThreadedFunctionUsedArgs[pDbgInfo->aEntries[iDbgEntry].ThreadedCall.enmCall]);
+                                            g_acIemThreadedFunctionUsedArgs[pDbgInfo->aEntries[iDbgEntry].ThreadedCall.enmCall],
+                                            pDbgInfo->aEntries[iDbgEntry].ThreadedCall.fRecompiled ? " - recompiled" : "");
                             idxThreadedCall++;
                             continue;
 
@@ -5203,6 +5347,12 @@ void iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp)
                                 case kIemNativeLabelType_ReturnBreak:
                                     pszName = "ReturnBreak";
                                     break;
+                                case kIemNativeLabelType_NonZeroRetOrPassUp:
+                                    pszName = "NonZeroRetOrPassUp";
+                                    break;
+                                case kIemNativeLabelType_RaiseGp0:
+                                    pszName = "RaiseGp0";
+                                    break;
                                 case kIemNativeLabelType_If:
                                     pszName = "If";
                                     fNumbered = true;
@@ -5216,11 +5366,9 @@ void iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp)
                                     pszName = "Endif";
                                     fNumbered = true;
                                     break;
-                                case kIemNativeLabelType_NonZeroRetOrPassUp:
-                                    pszName = "NonZeroRetOrPassUp";
-                                    break;
-                                case kIemNativeLabelType_RaiseGp0:
-                                    pszName = "RaiseGp0";
+                                case kIemNativeLabelType_CheckIrq:
+                                    pszName = "CheckIrq_CheckVM";
+                                    fNumbered = true;
                                     break;
                                 case kIemNativeLabelType_Invalid:
                                 case kIemNativeLabelType_End:
@@ -5258,9 +5406,10 @@ void iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp)
                 {
                     uint32_t const uInfo = *(uint32_t const *)&Dis.Instr.ab[3];
                     if (RT_HIWORD(uInfo) < kIemThreadedFunc_End)
-                        pHlp->pfnPrintf(pHlp, "    %p: nop ; marker: call #%u to %s (%u args)\n",
-                                        &paNative[offNative], RT_LOWORD(uInfo), g_apszIemThreadedFunctions[RT_HIWORD(uInfo)],
-                                        g_acIemThreadedFunctionUsedArgs[RT_HIWORD(uInfo)]);
+                        pHlp->pfnPrintf(pHlp, "    %p: nop ; marker: call #%u to %s (%u args)%s\n",
+                                        &paNative[offNative], uInfo & 0x7fff, g_apszIemThreadedFunctions[RT_HIWORD(uInfo)],
+                                        g_acIemThreadedFunctionUsedArgs[RT_HIWORD(uInfo)],
+                                        uInfo & 0x8000 ? " - recompiled" : "");
                     else
                         pHlp->pfnPrintf(pHlp, "    %p: nop ; unknown marker: %#x (%d)\n", &paNative[offNative], uInfo, uInfo);
                 }
@@ -5345,9 +5494,10 @@ void iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp)
                 {
                     uint32_t const uInfo = *(uint32_t const *)&Dis.Instr.ab[3];
                     if (RT_HIWORD(uInfo) < kIemThreadedFunc_End)
-                        pHlp->pfnPrintf(pHlp, "\n    %p: nop ; marker: call #%u to %s (%u args)\n",
-                                        &paNative[offNative], RT_LOWORD(uInfo), g_apszIemThreadedFunctions[RT_HIWORD(uInfo)],
-                                        g_acIemThreadedFunctionUsedArgs[RT_HIWORD(uInfo)]);
+                        pHlp->pfnPrintf(pHlp, "\n    %p: nop ; marker: call #%u to %s (%u args)%s\n",
+                                        &paNative[offNative], uInfo & 0x7fff, g_apszIemThreadedFunctions[RT_HIWORD(uInfo)],
+                                        g_acIemThreadedFunctionUsedArgs[RT_HIWORD(uInfo)],
+                                        uInfo & 0x8000 ? " - recompiled" : "");
                     else
                         pHlp->pfnPrintf(pHlp, "    %p: nop ; unknown marker: %#x (%d)\n", &paNative[offNative], uInfo, uInfo);
                 }
@@ -5425,6 +5575,8 @@ PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb)
 #endif
     while (cCallsLeft-- > 0)
     {
+        PFNIEMNATIVERECOMPFUNC const pfnRecom = g_apfnIemNativeRecompileFunctions[pCallEntry->enmFunction];
+
         /*
          * Debug info and assembly markup.
          */
@@ -5440,17 +5592,19 @@ PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb)
                 Assert(iGstInstr == pTb->cInstructions);
             iGstInstr = pCallEntry->idxInstr;
         }
-        iemNativeDbgInfoAddThreadedCall(pReNative, (IEMTHREADEDFUNCS)pCallEntry->enmFunction);
+        iemNativeDbgInfoAddThreadedCall(pReNative, (IEMTHREADEDFUNCS)pCallEntry->enmFunction, pfnRecom != NULL);
 #endif
 
 #ifdef VBOX_STRICT
-        off = iemNativeEmitMarker(pReNative, off, RT_MAKE_U32(pTb->Thrd.cCalls - cCallsLeft - 1, pCallEntry->enmFunction));
+        off = iemNativeEmitMarker(pReNative, off,
+                                  RT_MAKE_U32((pTb->Thrd.cCalls - cCallsLeft - 1) | (pfnRecom ? 0x8000 : 0),
+                                              pCallEntry->enmFunction));
         AssertReturn(off != UINT32_MAX, pTb);
 #endif
+
         /*
          * Actual work.
          */
-        PFNIEMNATIVERECOMPFUNC const pfnRecom = g_apfnIemNativeRecompileFunctions[pCallEntry->enmFunction];
         if (pfnRecom) /** @todo stats on this.   */
         {
             //STAM_COUNTER_INC()

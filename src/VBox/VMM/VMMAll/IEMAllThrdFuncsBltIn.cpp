@@ -129,7 +129,6 @@ IEM_DECL_IEMTHREADEDFUNC_DEF(iemThreadedFunc_BltIn_CheckIrq)
 }
 
 
-
 /**
  * Built-in function that compares the fExec mask against uParam0.
  *

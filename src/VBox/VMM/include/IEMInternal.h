@@ -928,10 +928,13 @@ typedef union IEMTBDBGENTRY
     struct
     {
         /* kIemTbDbgEntryType_ThreadedCall. */
-        uint32_t    uType      : 4;
-        uint32_t    uUnused    : 12;
+        uint32_t    uType       : 4;
+        /** Set if the call was recompiled to native code, clear if just calling
+         *  threaded function. */
+        uint32_t    fRecompiled : 1;
+        uint32_t    uUnused     : 11;
         /** The threaded call number (IEMTHREADEDFUNCS). */
-        uint32_t    enmCall    : 16;
+        uint32_t    enmCall     : 16;
     } ThreadedCall;
 
     struct
