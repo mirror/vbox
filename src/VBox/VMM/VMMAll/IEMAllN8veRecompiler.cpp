@@ -126,10 +126,14 @@ extern "C" void *__deregister_frame_info(void *pvBegin);           /* (returns p
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+#ifdef VBOX_STRICT
 static uint32_t iemNativeEmitGuestRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off,
                                                 uint8_t idxReg, IEMNATIVEGSTREG enmGstReg) RT_NOEXCEPT;
+#endif
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
 static bool iemNativeDbgInfoAddNativeOffset(PIEMRECOMPILERSTATE pReNative, uint32_t off) RT_NOEXCEPT;
 static bool iemNativeDbgInfoAddLabel(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType, uint16_t uData) RT_NOEXCEPT;
+#endif
 
 
 /*********************************************************************************************************************************
