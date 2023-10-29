@@ -360,6 +360,10 @@ my_generate_usercpp_h()
             MY_USERCPP_H="unxcpp.h"
             MY_VSLICK_DB="vslick.sta" # was .stu earlier, 24 is using .sta.
             MY_VSLICK_DB_OLD="vslick.stu"
+        elif test -d "${HOMEDRIVE}${HOMEPATH}/AppData/Local/SlickEdit"; then
+            MY_SLICKDIR_="${HOMEDRIVE}${HOMEPATH}/AppData/Local/SlickEdit"
+            MY_USERCPP_H="usercpp.h"
+            MY_VSLICK_DB="vslick.sta"
         elif test -d "${HOMEDRIVE}${HOMEPATH}/Documents/My SlickEdit Config"; then
             MY_SLICKDIR_="${HOMEDRIVE}${HOMEPATH}/Documents/My SlickEdit Config"
             MY_USERCPP_H="usercpp.h"
