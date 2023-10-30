@@ -31,9 +31,6 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QPointer>
-
 /* GUI includes: */
 #include "UIAdvancedSettingsDialog.h"
 
@@ -83,9 +80,6 @@ private:
     /** Returns whether page with certain @a iPageId is available. */
     bool isPageAvailable(int iPageId) const;
 };
-
-/** Safe pointer to cloud machine settings dialog. */
-typedef QPointer<UIAdvancedSettingsDialogGlobal> UISafePointerSettingsDialogGlobal;
 
 
 /** UIAdvancedSettingsDialog extension encapsulating all the specific functionality of the Machine Settings. */
@@ -177,9 +171,6 @@ private:
     /** Holds the console reference. */
     CConsole  m_console;
 };
-
-/** Safe pointer to cloud machine settings dialog. */
-typedef QPointer<UIAdvancedSettingsDialogMachine> UISafePointerSettingsDialogMachine;
 
 
 #endif /* !FEQT_INCLUDED_SRC_settings_UIAdvancedSettingsDialogSpecific_h */
