@@ -1403,6 +1403,7 @@ DECLINLINE(PRTUINT128U) RTUInt128DivRem(PRTUINT128U pQuotient, PRTUINT128U pRema
         if (!pValue2->s.Lo)
         {
             RTUInt128SetZero(pRemainder);
+            RTUInt128SetZero(pQuotient);
             return NULL;
         }
 
