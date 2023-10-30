@@ -1072,6 +1072,59 @@ public:
         return false;
     }
 
+    /**
+     * Adds trusted self-signed certificates from the system.
+     *
+     * @returns boolean success indicator.
+     */
+    bool addIntermediateCertsFromSystem(PRTERRINFOSTATIC pStaticErrInfo)
+    {
+        bool fRc = true;
+        RTCRSTOREID const s_aenmStoreIds[] = { RTCRSTOREID_SYSTEM_INTERMEDIATE_CAS, RTCRSTOREID_USER_INTERMEDIATE_CAS };
+        for (size_t i = 0; i < RT_ELEMENTS(s_aenmStoreIds); i++)
+        {
+            CryptoStore Tmp;
+            int rc = RTCrStoreCreateSnapshotById(&Tmp.m_hStore, s_aenmStoreIds[i], RTErrInfoInitStatic(pStaticErrInfo));
+            if (RT_SUCCESS(rc))
+            {
+                RTCRSTORECERTSEARCH Search;
+                rc = RTCrStoreCertFindAll(Tmp.m_hStore, &Search);
+                if (RT_SUCCESS(rc))
+                {
+                    PCRTCRCERTCTX pCertCtx;
+                    while ((pCertCtx = RTCrStoreCertSearchNext(Tmp.m_hStore, &Search)) != NULL)
+                    {
+                        /* Skip selfsigned certs as they're useless as intermediate certs (IIRC). */
+                        if (   pCertCtx->pCert
+                            && !RTCrX509Certificate_IsSelfSigned(pCertCtx->pCert))
+                        {
+                            int rc2 = RTCrStoreCertAddEncoded(this->m_hStore,
+                                                              pCertCtx->fFlags | RTCRCERTCTX_F_ADD_IF_NOT_FOUND,
+                                                              pCertCtx->pabEncoded, pCertCtx->cbEncoded, NULL);
+                            if (RT_FAILURE(rc2))
+                                RTMsgWarning("RTCrStoreCertAddEncoded failed for a certificate: %Rrc", rc2);
+                        }
+                        RTCrCertCtxRelease(pCertCtx);
+                    }
+
+                    int rc2 = RTCrStoreCertSearchDestroy(Tmp.m_hStore, &Search);
+                    AssertRC(rc2);
+                }
+                else
+                {
+                    RTMsgError("RTCrStoreCertFindAll/%d failed: %Rrc", s_aenmStoreIds[i], rc);
+                    fRc = false;
+                }
+            }
+            else
+            {
+                RTMsgError("RTCrStoreCreateSnapshotById/%d failed: %Rrc%#RTeim", s_aenmStoreIds[i], rc, &pStaticErrInfo->Core);
+                fRc = false;
+            }
+        }
+        return fRc;
+    }
+
 };
 
 
@@ -3587,6 +3640,9 @@ static RTEXITCODE RootExtractWorker2(SIGNTOOLPKCS7 *pThis, RootExtractState *pSt
                 rc = RTCrX509CertPathsSetTrustAnchorChecks(hCertPaths, true /*fEnable*/);
                 if (RT_SUCCESS(rc))
                 {
+                    /* Seems we might need this for the sha-1 certs and such. */
+                    RTCrX509CertPathsSetValidTimeSpec(hCertPaths, NULL);
+
                     /* Build the paths: */
                     rc = RTCrX509CertPathsBuild(hCertPaths, RTErrInfoInitStatic(pStaticErrInfo));
                     if (RT_SUCCESS(rc))
@@ -3709,7 +3765,7 @@ static RTEXITCODE HelpExtractRootCommon(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel
     RT_NOREF_PV(enmLevel);
     RTStrmWrappedPrintf(pStrm, RTSTRMWRAPPED_F_HANGING_INDENT,
                         "extract-%s-root [-v|--verbose] [-q|--quiet] [--signature-index|-i <num>] [--root <root-cert.der>] "
-                        "[--self-signed-roots-from-system] [--additional <supp-cert.der>] "
+                        "[--self-signed-roots-from-system] [--additional <supp-cert.der>] [--intermediate-certs-from-system] "
                         "[--input] <signed-file> [-f|--force] [--output|-o] <outfile.cer>\n",
                         fTimestamp ? "timestamp" : "signer");
     if (enmLevel == RTSIGNTOOLHELP_FULL)
@@ -3733,13 +3789,16 @@ static RTEXITCODE HelpExtractRootCommon(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel
                             "    Use the certificate(s) in the specified file as a trusted root(s). "
                             "The file format can be PEM or DER.\n"
                             "  -R, --self-signed-roots-from-system\n"
-                            "    Use all self-signed trusted root certificates found in the system and associated with the "
+                            "    Use all self-signed trusted root certificates found on the system and associated with the "
                             "current user as trusted roots.  This is limited to self-signed certificates, so that we get "
                             "a full chain even if a non-end-entity certificate is present in any of those system stores for "
                             "some reason.\n"
                             "  -a <supp-cert.file>, --additional <supp-cert.file>\n"
                             "    Use the certificate(s) in the specified file as a untrusted intermediate certificates. "
                             "The file format can be PEM or DER.\n"
+                            "  -A, --intermediate-certs-from-system\n"
+                            "    Use all certificates found on the system and associated with the current user as intermediate "
+                            "certification authorities.\n"
                             "  --input <signed-file>\n"
                             "    Signed executable or security cabinet file to examine.  The '--input' option bit is optional "
                             "and there to allow more flexible parameter ordering.\n"
@@ -3763,6 +3822,7 @@ static RTEXITCODE HandleExtractRootCommon(int cArgs, char **papszArgs, bool fTim
         { "--root",                          'r', RTGETOPT_REQ_STRING },
         { "--self-signed-roots-from-system", 'R', RTGETOPT_REQ_NOTHING },
         { "--additional",                    'a', RTGETOPT_REQ_STRING },
+        { "--intermediate-certs-from-system",'A', RTGETOPT_REQ_NOTHING },
         { "--add",                           'a', RTGETOPT_REQ_STRING },
         { "--input",                         'I', RTGETOPT_REQ_STRING },
         { "--output",                        'o', RTGETOPT_REQ_STRING  },
@@ -3786,6 +3846,11 @@ static RTEXITCODE HandleExtractRootCommon(int cArgs, char **papszArgs, bool fTim
         {
             case 'a':
                 if (!State.AdditionalStore.addFromFile(ValueUnion.psz, &StaticErrInfo))
+                    return RTEXITCODE_FAILURE;
+                break;
+
+            case 'A':
+                if (!State.AdditionalStore.addIntermediateCertsFromSystem(&StaticErrInfo))
                     return RTEXITCODE_FAILURE;
                 break;
 
