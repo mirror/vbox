@@ -208,7 +208,7 @@ define def_vbox_validationkit_common_files
    VBOX_VALIDATIONKIT_FILESPEC += \
    	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/loadgeneratorR0.r0
   endif
-  ifn1of ($(os), os2) ## not compiling bootsectors, no yasm.  could fix this better.
+  ifn1of ($(os).$(arch), os2.x86 linux.arm64) ## not compiling bootsectors, no yasm.  could fix this better.
    VBOX_VALIDATIONKIT_FILESPEC += \
    	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/bs3-timing-1$(TMP_SUFF_EXE)
   endif
