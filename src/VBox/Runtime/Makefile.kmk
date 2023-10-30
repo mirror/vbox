@@ -811,7 +811,6 @@ RuntimeBaseR3_SOURCES      := \
 	r3/init.cpp \
 	r3/init-data.cpp \
 	r3/process-data.cpp \
-	r3/mempage-heap.cpp \
 	r3/memsafer-r3.cpp \
 	r3/path.cpp \
 	r3/RTPathTemp.cpp \
@@ -829,6 +828,13 @@ RuntimeBaseR3_SOURCES      := \
 ifdef VBOX_WITH_LIBLZMA
  RuntimeBaseR3_SOURCES += \
  	common/zip/lzmavfs.cpp
+endif
+if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), linux.arm64)
+ RuntimeBaseR3_SOURCES += \
+	r3/mempage-direct.cpp
+else
+ RuntimeBaseR3_SOURCES += \
+	r3/mempage-heap.cpp
 endif
 
 
@@ -1206,10 +1212,12 @@ else
  	r3/linux/semevent-linux.cpp \
  	r3/linux/semeventmulti-linux.cpp
  RuntimeBaseR3_SOURCES.linux.arm64 += \
+ 	generic/RTMpGetDescription-generic-stub.cpp \
  	r3/posix/system-page-size-posix.cpp \
  	r3/linux/semevent-linux.cpp \
  	r3/linux/semeventmulti-linux.cpp
  RuntimeBaseR3_SOURCES.linux.arm32 += \
+ 	generic/RTMpGetDescription-generic-stub.cpp \
  	r3/posix/system-page-size-posix.cpp \
  	r3/linux/semevent-linux.cpp \
  	r3/linux/semeventmulti-linux.cpp
