@@ -764,7 +764,7 @@ static void rtCrX509CertPathsGetIssuers(PRTCRX509CERTPATHSINT pThis, PRTCRX509CE
      * Untrusted store.
      */
     if (pThis->hUntrustedStore != NIL_RTCRSTORE)
-        rtCrX509CertPathsGetIssuersFromStore(pThis, pNode, pIssuer, pThis->hTrustedStore,
+        rtCrX509CertPathsGetIssuersFromStore(pThis, pNode, pIssuer, pThis->hUntrustedStore,
                                              RTCRX509CERTPATHNODE_SRC_UNTRUSTED_STORE);
 
     /*
