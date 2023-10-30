@@ -1952,6 +1952,7 @@ validationkit-fetch:
 #	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=freebsd VBOX_ONLY_VALIDATIONKIT=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=linux   VBOX_ONLY_VALIDATIONKIT=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=linux   VBOX_ONLY_VALIDATIONKIT=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=arm64 KBUILD_TARGET=linux   VBOX_ONLY_VALIDATIONKIT=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=os2     VBOX_ONLY_VALIDATIONKIT=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=solaris VBOX_ONLY_VALIDATIONKIT=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=solaris VBOX_ONLY_VALIDATIONKIT=1
@@ -1967,6 +1968,7 @@ validationkit-build: \
 		validationkit-build-win.amd64 \
 		validationkit-build-os2.x86 \
 		validationkit-build-linux \
+		validationkit-build-linux.arm64 \
 		validationkit-build-freebsd.amd64 \
 		validationkit-build-freebsd.x86 \
 		validationkit-build-darwin.amd64 \
@@ -1976,7 +1978,8 @@ validationkit-build: \
 validationkit-build-rsync-into-vms: \
 		validationkit-build-solaris.rsync-into-vm \
 		validationkit-build-os2.rsync-into-vm \
-		validationkit-build-linux.rsync-into-vm
+		validationkit-build-linux.rsync-into-vm \
+		validationkit-build-linux.arm64.rsync-into-vm
 	$(call MSG_L1,Rsynced the sources + tools into the VMs.)
 .NOTPARALLEL: validationkit-build-rsync-into-vms
 .PHONY: validationkit-build-rsync-into-vms
@@ -2123,6 +2126,40 @@ else
  .PHONY: validationkit-build-linux.rsync-out-of-vm validationkit-build-linux.rsync-into-vm validationkit-build-linux.build-it
 
  validationkit-build-linux: validationkit-build-linux.rsync-out-of-vm
+
+
+ #
+ # ValidationKit build for Linux ARM.
+ #
+ validationkit-build-linux.arm64.rsync-into-vm: $(VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST)
+	$(TIME) -- $(call VBOX_RSYNC_IN_FN,linux,*) \
+		'--exclude=src/VBox/Additions/**' \
+		'--exclude=src/VBox/Debugger/**' \
+		'--exclude=src/VBox/Frontends/**' \
+		'--exclude=src/VBox/GuestHost/**' \
+		'--exclude=src/VBox/HostServices/**' \
+		'--exclude=src/VBox/ImageMounter/**' \
+		'--include=src/VBox/Main/' \
+		'--include=src/VBox/Main/idl**' \
+		'--exclude=src/VBox/Main/**' \
+		'--exclude=src/VBox/NetworkServices/**' \
+		'--exclude=src/VBox/RDP/**' \
+		'--exclude=src/VBox/Storage/**' \
+		'--exclude=src/VBox/VMM/**' \
+		'--exclude=src/app/**' \
+		. $(VBOX_BLD_VM_LNX_ARM64_IP):/home/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)
+
+ validationkit-build-linux.arm64.build-it: validationkit-build-linux.arm64.rsync-into-vm
+	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/arm64 Validation Kit)
+	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_LNX_ARM64_IP)   'cd /home/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.arm64) all '
+	$(call VBOX_BLD_VM_MSG_END__,Linux/arm64 Validation Kit)
+
+ validationkit-build-linux.arm64.rsync-out-of-vm: validationkit-build-linux.arm64.build-it
+	$(TIME) -- $(VBOX_RSYNC) -a --delete $(VBOX_BLD_VM_LNX_ARM64_IP):/home/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/linux.arm64 out/
+
+ .PHONY: validationkit-build-linux.arm64.rsync-out-of-vm validationkit-build-linux.arm64.rsync-into-vm validationkit-build-linux.arm64.build-it
+
+ validationkit-build-linux.arm64: validationkit-build-linux.arm64.rsync-out-of-vm
 endif
 
 validationkit-build-freebsd.amd64: $(VBOX_VALIDATIONKIT_BUILD_WIN_HOST_FIRST)
@@ -2186,6 +2223,7 @@ validationkit-packing:
 		VBOX_WITH_VALIDATIONKIT_PACKING.freebsd.x86= \
 		VBOX_WITH_VALIDATIONKIT_PACKING.linux.amd64=1 \
 		VBOX_WITH_VALIDATIONKIT_PACKING.linux.x86=1 \
+		VBOX_WITH_VALIDATIONKIT_PACKING.linux.arm64=1 \
 		VBOX_WITH_VALIDATIONKIT_PACKING.os2.x86=1 \
 		VBOX_WITH_VALIDATIONKIT_PACKING.solaris.amd64=1 \
 		VBOX_WITH_VALIDATIONKIT_PACKING.solaris.x86=1 \
@@ -2204,6 +2242,7 @@ validationkit-packing:
 		validationkit-build-linux \
 		validationkit-build-linux.amd64 \
 		validationkit-build-linux.x86 \
+		validationkit-build-linux.arm64 \
 		validationkit-build-freebsd.amd64 \
 		validationkit-build-freebsd.x86 \
 		validationkit-build-darwin.amd64 \
