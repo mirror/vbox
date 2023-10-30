@@ -624,14 +624,14 @@ void UIAdvancedSettingsDialog::accept()
 
     /* Close if there is no ongoing serialization: */
     if (!isSerializationInProgress())
-        close();
+        sltClose();
 }
 
 void UIAdvancedSettingsDialog::reject()
 {
     /* Close if there is no ongoing serialization: */
     if (!isSerializationInProgress())
-        close();
+        sltClose();
 }
 
 void UIAdvancedSettingsDialog::sltCategoryChanged(int cId)
@@ -787,19 +787,9 @@ void UIAdvancedSettingsDialog::closeEvent(QCloseEvent *pEvent)
     /* Ignore event initially: */
     pEvent->ignore();
 
-    /* Check whether serialization was clean (save)
-     * or there are no unsaved settings to be lost (cancel): */
-    if (   m_fSerializationClean
-        || !isSettingsChanged()
-        || msgCenter().confirmSettingsDiscarding(this))
-    {
-        /* Tell the listener to close us (once): */
-        if (!m_fClosed)
-        {
-            m_fClosed = true;
-            emit sigClose();
-        }
-    }
+    /* Use pure QWidget close functionality,
+     * QWindow stuff is kind of overkill here.. */
+    sltClose();
 }
 
 void UIAdvancedSettingsDialog::choosePageAndTab(bool fKeepPreviousByDefault /* = false */)
@@ -1016,6 +1006,24 @@ bool UIAdvancedSettingsDialog::isSettingsChanged()
     return fIsSettingsChanged;
 }
 
+void UIAdvancedSettingsDialog::sltClose()
+{
+    /* Check whether serialization was clean (save)
+     * or there are no unsaved settings to be lost (cancel): */
+    if (   m_fSerializationClean
+        || !isSettingsChanged()
+        || msgCenter().confirmSettingsDiscarding(this))
+    {
+        /* Tell the listener to close us (once): */
+        if (!m_fClosed)
+        {
+            m_fClosed = true;
+            emit sigClose();
+            return;
+        }
+    }
+}
+
 void UIAdvancedSettingsDialog::sltHandleValidityChange(UISettingsPageValidator *pValidator)
 {
     /* Determine which settings-page had called for revalidation: */
@@ -1222,7 +1230,7 @@ void UIAdvancedSettingsDialog::prepareButtonBox()
 #endif
         m_pButtonBox->button(QDialogButtonBox::Ok)->setShortcut(Qt::Key_Return);
         m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
-        connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIAdvancedSettingsDialog::close);
+        connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIAdvancedSettingsDialog::sltClose);
         connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UIAdvancedSettingsDialog::accept);
 #ifndef VBOX_WS_MAC
         connect(m_pButtonBox->button(QDialogButtonBox::Help), &QAbstractButton::pressed,

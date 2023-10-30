@@ -172,6 +172,11 @@ protected:
 
 private slots:
 
+    /** Handles request to close dialog as QWidget, not QWindow.
+      * No need for QWindow destruction functionality.
+      * Parent will handle destruction itself. */
+    void sltClose();
+
     /** Handles validity change for certain @a pValidator. */
     void sltHandleValidityChange(UISettingsPageValidator *pValidator);
 
