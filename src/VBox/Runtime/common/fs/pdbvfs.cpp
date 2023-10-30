@@ -1168,7 +1168,7 @@ static int rtFsPdbVolLoadStream3(PRTFSPDBVOL pThis, PRTERRINFO pErrInfo)
     else
     {
         /* Convert old header to new to new. */
-        if (cbRead >= sizeof(Hdr.Old))
+        if (cbRead < sizeof(Hdr.Old))
             return RTERRINFO_LOG_SET_F(pErrInfo, rc, "Bogus DBI header size: cbRead=%#zx, expected %#zx",
                                        cbRead, sizeof(Hdr.Old));
         Log(("rtFsPdbVolLoadStream3: Old DBI header\n"));
