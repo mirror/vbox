@@ -831,10 +831,10 @@ ifdef VBOX_WITH_LIBLZMA
 endif
 if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), linux.arm64)
  RuntimeBaseR3_SOURCES += \
-	r3/mempage-direct.cpp
+ 	r3/mempage-direct.cpp
 else
  RuntimeBaseR3_SOURCES += \
-	r3/mempage-heap.cpp
+ 	r3/mempage-heap.cpp
 endif
 
 
