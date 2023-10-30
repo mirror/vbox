@@ -401,7 +401,7 @@ private:
 /** UISoftKeyboardKey is a place holder for a keyboard key. Graphical key represantations are drawn according to this class.
   * The position of a key within the physical layout is read from the layout file. Note that UISoftKeyboardKey usually does not have
   * caption field(s). Captions are kept by UISoftKeyboardLayout since same keys may (and usually do) have different captions in
-  * different layouts. So called static captions are exections. They are defined in physical layout files and kept as member of
+  * different layouts. So called static captions are exceptions. They are defined in physical layout files and kept as member of
   * UISoftKeyboardKey. When a static caption exits captions (if any) from the keyboard layout files are ignored. */
 class UISoftKeyboardKey
 {
@@ -448,7 +448,7 @@ public:
     const QString &staticCaption() const;
 
     void setImageByName(const QString &strCaption);
-    const QImage &image() const;
+    QPixmap image() const;
 
     void setParentWidget(UISoftKeyboardWidget* pParent);
     QVector<LONG> scanCodeWithPrefix() const;
@@ -516,7 +516,7 @@ private:
     QString m_strStaticCaption;
     bool    m_fIsOSMenuKey;
     double  m_fCornerRadius;
-    QImage  m_image;
+    QIcon   m_icon;
 };
 
 
@@ -1732,12 +1732,26 @@ void UISoftKeyboardKey::setImageByName(const QString &strImageFileName)
 {
     if (strImageFileName.isEmpty())
         return;
-    m_image = QImage(QString(":/%1").arg(strImageFileName));
+    m_icon = UIIconPool::iconSet(QString(":/%1").arg(strImageFileName));
 }
 
-const QImage &UISoftKeyboardKey::image() const
+QPixmap UISoftKeyboardKey::image() const
 {
-    return m_image;
+    QPixmap pixmap;
+
+    /* Check whether we have valid icon: */
+    if (!m_icon.isNull())
+    {
+        /* Determine desired icon size: */
+        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
+        const QSize iconSize = QSize(iIconMetric, iIconMetric);
+        /* Get pixmap of requested size (take into account the DPI of the main shown window, if possible): */
+        const qreal fDevicePixelRatio = windowManager().mainWindowShown() && windowManager().mainWindowShown()->windowHandle()
+                                      ? windowManager().mainWindowShown()->windowHandle()->devicePixelRatio() : 1;
+        pixmap = m_icon.pixmap(iconSize, fDevicePixelRatio);
+    }
+
+    return pixmap;
 }
 
 void UISoftKeyboardKey::setParentWidget(UISoftKeyboardWidget* pParent)
@@ -2184,7 +2198,7 @@ void UISoftKeyboardLayout::drawKeyImageInRect(const UISoftKeyboardKey &key, QPai
     const QRect &keyGeometry = key.keyGeometry();
     int iMargin = 0.1 * qMax(keyGeometry.width(), keyGeometry.height());
     int size = qMin(keyGeometry.width() - 2 * iMargin, keyGeometry.height() - 2 * iMargin);
-    painter.drawImage(QRect(0.5 * (keyGeometry.width() - size), 0.5 * (keyGeometry.height() - size),
+    painter.drawPixmap(QRect(0.5 * (keyGeometry.width() - size), 0.5 * (keyGeometry.height() - size),
                             size, size), key.image());
 }
 
