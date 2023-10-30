@@ -51,7 +51,9 @@ VBOX_VALIDATIONKIT_INSTALLS := $(INSTALLS)
 include $(PATH_SUB_CURRENT)/tests/Makefile.kmk
 ifneq ($(KBUILD_HOST),os2)            # needs yasm
  if1of ($(KBUILD_TARGET_ARCH), amd64 x86 arm64) # needs yasm
-  include $(PATH_SUB_CURRENT)/bootsectors/Makefile.kmk
+  ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), linux.arm64) # No yasm for linux.arm64 right now
+   include $(PATH_SUB_CURRENT)/bootsectors/Makefile.kmk
+  endif
  endif
 endif
 include $(PATH_SUB_CURRENT)/utils/Makefile.kmk
