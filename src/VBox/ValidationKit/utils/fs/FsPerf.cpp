@@ -479,6 +479,12 @@ static const RTGETOPTDEF g_aCmdOptions[] =
 
 /** The test handle. */
 static RTTEST       g_hTest;
+/** The page size of the system. */
+static uint32_t     g_cbPage;
+/** Page offset mask. */
+static uintptr_t    g_fPageOffset;
+/** Page shift in bits. */
+static uint32_t     g_cPageShift;
 /** The number of nanoseconds a RTTimeNanoTS call takes.
  * This is used for adjusting loop count estimates.  */
 static uint64_t     g_nsPerNanoTSCall = 1;
@@ -3913,9 +3919,9 @@ static void fsPerfSendFile(RTFILE hFile1, uint64_t cbFile)
 {
     RTTestISub("sendfile");
 # ifdef RT_OS_LINUX
-    uint64_t const cbFileMax = RT_MIN(cbFile, UINT32_MAX - PAGE_OFFSET_MASK);
+    uint64_t const cbFileMax = RT_MIN(cbFile, UINT32_MAX - g_fPageOffset);
 # else
-    uint64_t const cbFileMax = RT_MIN(cbFile, SSIZE_MAX - PAGE_OFFSET_MASK);
+    uint64_t const cbFileMax = RT_MIN(cbFile, SSIZE_MAX - g_fPageOffset);
 # endif
     signal(SIGPIPE, SIG_IGN);
 
@@ -3958,7 +3964,7 @@ static void fsPerfSendFile(RTFILE hFile1, uint64_t cbFile)
         fsPerfSendFileOne(&Args, hFile1, 0, cbToSend, cbToSend, bFiller, true /*fCheckBuf*/, __LINE__);
 
         cbToSend /= 2;
-    } while (cbToSend >= PAGE_SIZE && ((unsigned)bFiller - 0xf7U) < 64);
+    } while (cbToSend >= g_cbPage && ((unsigned)bFiller - 0xf7U) < 64);
 
     /*
      * Restore buffer content
@@ -4173,7 +4179,7 @@ static void fsPerfSpliceToPipe(RTFILE hFile1, uint64_t cbFile)
         return;
     }
 
-    uint64_t const cbFileMax = RT_MIN(cbFile, UINT32_MAX - PAGE_OFFSET_MASK);
+    uint64_t const cbFileMax = RT_MIN(cbFile, UINT32_MAX - g_fPageOffset);
     signal(SIGPIPE, SIG_IGN);
 
     /*
@@ -4215,7 +4221,7 @@ static void fsPerfSpliceToPipe(RTFILE hFile1, uint64_t cbFile)
         fsPerfSpliceToPipeOne(&Args, hFile1, 0, cbToSend, cbToSend, bFiller, true /*fCheckBuf*/, __LINE__);
 
         cbToSend /= 2;
-    } while (cbToSend >= PAGE_SIZE && ((unsigned)bFiller - 0xf7U) < 64);
+    } while (cbToSend >= g_cbPage && ((unsigned)bFiller - 0xf7U) < 64);
 
     /*
      * Restore buffer content
@@ -4397,7 +4403,7 @@ static void fsPerfSpliceToFile(RTFILE hFile1, uint64_t cbFile)
         return;
     }
 
-    uint64_t const cbFileMax = RT_MIN(cbFile, UINT32_MAX - PAGE_OFFSET_MASK);
+    uint64_t const cbFileMax = RT_MIN(cbFile, UINT32_MAX - g_fPageOffset);
     signal(SIGPIPE, SIG_IGN);
 
     /*
@@ -4781,16 +4787,15 @@ static void fsPerfRead(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
     /*
      * Do uncached access, must be page aligned.
      */
-    uint32_t cbPage = PAGE_SIZE;
     memset(pbBuf, 0x66, cbBuf);
     if (!g_fIgnoreNoCache || hFileNoCache != NIL_RTFILE)
     {
         RTTESTI_CHECK_RC(RTFileSeek(hFileNoCache, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
         for (size_t offBuf = 0; offBuf < cbBuf; )
         {
-            uint32_t const cPagesLeft   = (uint32_t)((cbBuf - offBuf) / cbPage);
+            uint32_t const cPagesLeft   = (uint32_t)((cbBuf - offBuf) / g_cbPage);
             uint32_t const cPagesToRead = RTRandU32Ex(1, cPagesLeft);
-            size_t const   cbToRead     = cPagesToRead * (size_t)cbPage;
+            size_t const   cbToRead     = cPagesToRead * (size_t)g_cbPage;
             size_t cbActual = 0;
             RTTESTI_CHECK_RC(RTFileRead(hFileNoCache, &pbBuf[offBuf], cbToRead, &cbActual), VINF_SUCCESS);
             if (cbActual == cbToRead)
@@ -4802,8 +4807,8 @@ static void fsPerfRead(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
                     offBuf += cbActual;
                 else
                 {
-                    memset(&pbBuf[offBuf], 0x11, cbPage);
-                    offBuf += cbPage;
+                    memset(&pbBuf[offBuf], 0x11, g_cbPage);
+                    offBuf += g_cbPage;
                 }
             }
         }
@@ -4898,8 +4903,8 @@ static void fsPerfRead(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
             uint32_t iAlign = RTRandU32Ex(0, 3);
             if (iAlign & 2) /* end is page aligned */
             {
-                cbLeft -= (uintptr_t)pbCur & PAGE_OFFSET_MASK;
-                pbCur  -= (uintptr_t)pbCur & PAGE_OFFSET_MASK;
+                cbLeft -= (uintptr_t)pbCur & g_fPageOffset;
+                pbCur  -= (uintptr_t)pbCur & g_fPageOffset;
             }
 
             size_t cbSegOthers = (cSegs - iSeg) * _8K;
@@ -4908,7 +4913,7 @@ static void fsPerfRead(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
                                : cbLeft;
             size_t cbSeg       = cbLeft != 0 ? RTRandU32Ex(0, cbSegMax) : 0;
             if (iAlign & 1) /* start is page aligned */
-                cbSeg += ((uintptr_t)pbCur - cbSeg) & PAGE_OFFSET_MASK;
+                cbSeg += ((uintptr_t)pbCur - cbSeg) & g_fPageOffset;
 
             if (iSeg - iZeroSeg < cZeroSegs)
                 cbSeg = 0;
@@ -5160,12 +5165,11 @@ static void fsPerfWrite(RTFILE hFile1, RTFILE hFileNoCache, RTFILE hFileWriteThr
         fsPerfCheckReadBuf(__LINE__, 0, pbBuf, cbBuf, bFiller);
         RTTESTI_CHECK_RC(RTFileSeek(ahFiles[iFile], 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
 
-        uint32_t cbPage = PAGE_SIZE;
         for (size_t offBuf = 0; offBuf < cbBuf; )
         {
-            uint32_t const cPagesLeft    = (uint32_t)((cbBuf - offBuf) / cbPage);
+            uint32_t const cPagesLeft    = (uint32_t)((cbBuf - offBuf) / g_cbPage);
             uint32_t const cPagesToWrite = RTRandU32Ex(1, cPagesLeft);
-            size_t const   cbToWrite     = cPagesToWrite * (size_t)cbPage;
+            size_t const   cbToWrite     = cPagesToWrite * (size_t)g_cbPage;
             size_t cbActual = 0;
             RTTESTI_CHECK_RC(RTFileWrite(ahFiles[iFile], &pbBuf[offBuf], cbToWrite, &cbActual), VINF_SUCCESS);
             if (cbActual == cbToWrite)
@@ -5181,8 +5185,8 @@ static void fsPerfWrite(RTFILE hFile1, RTFILE hFileNoCache, RTFILE hFileWriteThr
                     offBuf += cbActual;
                 else
                 {
-                    memset(&pbBuf[offBuf], 0x11, cbPage);
-                    offBuf += cbPage;
+                    memset(&pbBuf[offBuf], 0x11, g_cbPage);
+                    offBuf += g_cbPage;
                 }
             }
         }
@@ -5271,8 +5275,8 @@ static void fsPerfWrite(RTFILE hFile1, RTFILE hFileNoCache, RTFILE hFileWriteThr
             uint32_t iAlign = RTRandU32Ex(0, 3);
             if (iAlign & 2) /* end is page aligned */
             {
-                cbLeft -= (uintptr_t)pbCur & PAGE_OFFSET_MASK;
-                pbCur  -= (uintptr_t)pbCur & PAGE_OFFSET_MASK;
+                cbLeft -= (uintptr_t)pbCur & g_fPageOffset;
+                pbCur  -= (uintptr_t)pbCur & g_fPageOffset;
             }
 
             size_t cbSegOthers = (cSegs - iSeg) * _8K;
@@ -5281,7 +5285,7 @@ static void fsPerfWrite(RTFILE hFile1, RTFILE hFileNoCache, RTFILE hFileWriteThr
                                : cbLeft;
             size_t cbSeg       = cbLeft != 0 ? RTRandU32Ex(0, cbSegMax) : 0;
             if (iAlign & 1) /* start is page aligned */
-                cbSeg += ((uintptr_t)pbCur - cbSeg) & PAGE_OFFSET_MASK;
+                cbSeg += ((uintptr_t)pbCur - cbSeg) & g_fPageOffset;
 
             if (iSeg - iZeroSeg < cZeroSegs)
                 cbSeg = 0;
@@ -5370,7 +5374,7 @@ static void fsPerfFSync(RTFILE hFile1, uint64_t cbFile)
 
     PROFILE_FN(RTFileFlush(hFile1), g_nsTestRun, "RTFileFlush");
 
-    size_t   cbBuf = PAGE_SIZE;
+    size_t   cbBuf = g_cbPage;
     uint8_t *pbBuf = (uint8_t *)RTMemPageAlloc(cbBuf);
     RTTESTI_CHECK_RETV(pbBuf != NULL);
     memset(pbBuf, 0xf4, cbBuf);
@@ -5390,7 +5394,7 @@ static void fsPerfFSync(RTFILE hFile1, uint64_t cbFile)
 DECL_FORCE_INLINE(int) fsPerfMSyncWorker(uint8_t *pbMapping, size_t offMapping, size_t cbFlush, size_t *pcbFlushed)
 {
     uint8_t *pbCur = &pbMapping[offMapping];
-    for (size_t offFlush = 0; offFlush < cbFlush; offFlush += PAGE_SIZE)
+    for (size_t offFlush = 0; offFlush < cbFlush; offFlush += g_cbPage)
         *(size_t volatile *)&pbCur[offFlush + 8] = cbFlush;
 # ifdef RT_OS_WINDOWS
     CHECK_WINAPI_CALL(FlushViewOfFile(pbCur, cbFlush) == TRUE);
@@ -5472,11 +5476,11 @@ static void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
         /*
          * Time page-ins just for fun.
          */
-        size_t const cPages = cbMapping >> PAGE_SHIFT;
+        size_t const cPages = cbMapping >> g_cPageShift;
         size_t uDummy = 0;
         uint64_t ns = RTTimeNanoTS();
         for (size_t iPage = 0; iPage < cPages; iPage++)
-            uDummy += ASMAtomicReadU8(&pbMapping[iPage << PAGE_SHIFT]);
+            uDummy += ASMAtomicReadU8(&pbMapping[iPage << g_cPageShift]);
         ns = RTTimeNanoTS() - ns;
         RTTestIValueF(ns / cPages, RTTESTUNIT_NS_PER_OCCURRENCE,  "page-in %s", s_apszStates[enmState]);
 
@@ -5510,7 +5514,7 @@ static void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
              */
             if (enmState == kMMap_ReadWrite)
             {
-                static size_t const s_acbFlush[] = { PAGE_SIZE, PAGE_SIZE * 2, PAGE_SIZE * 3, PAGE_SIZE * 8, PAGE_SIZE * 16, _2M };
+                static size_t const s_acbFlush[] = { g_cbPage, g_cbPage * 2, g_cbPage * 3, g_cbPage * 8, g_cbPage * 16, _2M };
                 for (unsigned iFlushSize = 0 ; iFlushSize < RT_ELEMENTS(s_acbFlush); iFlushSize++)
                 {
                     size_t const cbFlush = s_acbFlush[iFlushSize];
@@ -5548,7 +5552,7 @@ static void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
                                 size_t cbToRead = RT_MIN(cbBuf, cbToCheck - offBuf);
                                 RTTESTI_CHECK_RC(RTFileRead(hFileNoCache, pbBuf, cbToRead, NULL), VINF_SUCCESS);
 
-                                for (size_t offFlush = 0; offFlush < cbToRead; offFlush += PAGE_SIZE)
+                                for (size_t offFlush = 0; offFlush < cbToRead; offFlush += g_cbPage)
                                     if (*(size_t volatile *)&pbBuf[offFlush + 8] != cbFlush)
                                     {
                                         RTTestIFailed("Flush issue at offset #%zx: %#zx, expected %#zx (cbFlush=%#zx, %#RX64)",
@@ -5641,109 +5645,112 @@ static void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
     /*
      * Memory mappings without open handles (pretty common).
      */
-    for (uint32_t i = 0; i < 32; i++)
+    char *pbContentUnaligned = (char *)RTMemAlloc(256*1024 + g_cbPage - 1);
+    RTTESTI_CHECK(pbContentUnaligned != NULL);
+    if (pbContentUnaligned)
     {
-        /* Create a new file, 256 KB in size, and fill it with random bytes.
-           Try uncached access if we can to force the page-in to do actual reads. */
-        char szFile2[FSPERF_MAX_PATH + 32];
-        memcpy(szFile2, g_szDir, g_cchDir);
-        RTStrPrintf(&szFile2[g_cchDir], sizeof(szFile2) - g_cchDir, "mmap-%u.noh", i);
-        RTFILE hFile2 = NIL_RTFILE;
-        int rc = (i & 3) == 3 ? VERR_TRY_AGAIN
-               : RTFileOpen(&hFile2, szFile2, RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_NO_CACHE);
-        if (RT_FAILURE(rc))
+        for (uint32_t i = 0; i < 32; i++)
         {
-            RTTESTI_CHECK_RC_BREAK(RTFileOpen(&hFile2, szFile2, RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE),
-                                   VINF_SUCCESS);
-        }
+            /* Create a new file, 256 KB in size, and fill it with random bytes.
+               Try uncached access if we can to force the page-in to do actual reads. */
+            char szFile2[FSPERF_MAX_PATH + 32];
+            memcpy(szFile2, g_szDir, g_cchDir);
+            RTStrPrintf(&szFile2[g_cchDir], sizeof(szFile2) - g_cchDir, "mmap-%u.noh", i);
+            RTFILE hFile2 = NIL_RTFILE;
+            int rc = (i & 3) == 3 ? VERR_TRY_AGAIN
+                   : RTFileOpen(&hFile2, szFile2, RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_NO_CACHE);
+            if (RT_FAILURE(rc))
+            {
+                RTTESTI_CHECK_RC_BREAK(RTFileOpen(&hFile2, szFile2, RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE),
+                                       VINF_SUCCESS);
+            }
 
-        static char  s_abContentUnaligned[256*1024 + PAGE_SIZE - 1];
-        char * const pbContent = &s_abContentUnaligned[PAGE_SIZE - ((uintptr_t)&s_abContentUnaligned[0] & PAGE_OFFSET_MASK)];
-        size_t const cbContent = 256*1024;
-        RTRandBytes(pbContent, cbContent);
-        RTTESTI_CHECK_RC(rc = RTFileWrite(hFile2, pbContent, cbContent, NULL), VINF_SUCCESS);
-        RTTESTI_CHECK_RC(RTFileClose(hFile2), VINF_SUCCESS);
-        if (RT_SUCCESS(rc))
-        {
-            /* Reopen the file with normal caching.  Every second time, we also
-               does a read-only open of it to confuse matters. */
-            RTFILE hFile3 = NIL_RTFILE;
-            if ((i & 3) == 3)
-                RTTESTI_CHECK_RC(RTFileOpen(&hFile3, szFile2, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE), VINF_SUCCESS);
-            hFile2 = NIL_RTFILE;
-            RTTESTI_CHECK_RC_BREAK(RTFileOpen(&hFile2, szFile2, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE),
-                                   VINF_SUCCESS);
-            if ((i & 3) == 1)
-                RTTESTI_CHECK_RC(RTFileOpen(&hFile3, szFile2, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE), VINF_SUCCESS);
+            char * const pbContent = &pbContentUnaligned[g_cbPage - ((uintptr_t)&pbContentUnaligned[0] & g_fPageOffset)];
+            size_t const cbContent = 256*1024;
+            RTRandBytes(pbContent, cbContent);
+            RTTESTI_CHECK_RC(rc = RTFileWrite(hFile2, pbContent, cbContent, NULL), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(RTFileClose(hFile2), VINF_SUCCESS);
+            if (RT_SUCCESS(rc))
+            {
+                /* Reopen the file with normal caching.  Every second time, we also
+                   does a read-only open of it to confuse matters. */
+                RTFILE hFile3 = NIL_RTFILE;
+                if ((i & 3) == 3)
+                    RTTESTI_CHECK_RC(RTFileOpen(&hFile3, szFile2, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE), VINF_SUCCESS);
+                hFile2 = NIL_RTFILE;
+                RTTESTI_CHECK_RC_BREAK(RTFileOpen(&hFile2, szFile2, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE),
+                                       VINF_SUCCESS);
+                if ((i & 3) == 1)
+                    RTTESTI_CHECK_RC(RTFileOpen(&hFile3, szFile2, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE), VINF_SUCCESS);
 
-            /* Memory map it read-write (no COW). */
+                /* Memory map it read-write (no COW). */
 #ifdef RT_OS_WINDOWS
-            HANDLE hSection = CreateFileMapping((HANDLE)RTFileToNative(hFile2), NULL, PAGE_READWRITE, 0, cbContent, NULL);
-            CHECK_WINAPI_CALL(hSection != NULL);
-            uint8_t *pbMapping = (uint8_t *)MapViewOfFile(hSection, FILE_MAP_WRITE, 0, 0, cbContent);
-            CHECK_WINAPI_CALL(pbMapping != NULL);
-            CHECK_WINAPI_CALL(CloseHandle(hSection) == TRUE);
+                HANDLE hSection = CreateFileMapping((HANDLE)RTFileToNative(hFile2), NULL, PAGE_READWRITE, 0, cbContent, NULL);
+                CHECK_WINAPI_CALL(hSection != NULL);
+                uint8_t *pbMapping = (uint8_t *)MapViewOfFile(hSection, FILE_MAP_WRITE, 0, 0, cbContent);
+                CHECK_WINAPI_CALL(pbMapping != NULL);
+                CHECK_WINAPI_CALL(CloseHandle(hSection) == TRUE);
 # else
-            uint8_t *pbMapping = (uint8_t *)mmap(NULL, cbContent, PROT_READ | PROT_WRITE, MAP_SHARED,
-                                                 (int)RTFileToNative(hFile2), 0);
-            if ((void *)pbMapping == MAP_FAILED)
-                pbMapping = NULL;
-            RTTESTI_CHECK_MSG(pbMapping != NULL, ("errno=%s (%d)\n", strerror(errno), errno));
+                uint8_t *pbMapping = (uint8_t *)mmap(NULL, cbContent, PROT_READ | PROT_WRITE, MAP_SHARED,
+                                                     (int)RTFileToNative(hFile2), 0);
+                if ((void *)pbMapping == MAP_FAILED)
+                    pbMapping = NULL;
+                RTTESTI_CHECK_MSG(pbMapping != NULL, ("errno=%s (%d)\n", strerror(errno), errno));
 # endif
 
-            /* Close the file handles. */
-            if ((i & 7) == 7)
-            {
-                RTTESTI_CHECK_RC(RTFileClose(hFile3), VINF_SUCCESS);
-                hFile3 = NIL_RTFILE;
-            }
-            RTTESTI_CHECK_RC(RTFileClose(hFile2), VINF_SUCCESS);
-            if ((i & 7) == 5)
-            {
-                RTTESTI_CHECK_RC(RTFileClose(hFile3), VINF_SUCCESS);
-                hFile3 = NIL_RTFILE;
-            }
-            if (pbMapping)
-            {
-                RTThreadSleep(2); /* fudge for cleanup/whatever */
-
-                /* Page in the mapping by comparing with the content we wrote above. */
-                RTTESTI_CHECK(memcmp(pbMapping, pbContent, cbContent) == 0);
-
-                /* Now dirty everything by inverting everything. */
-                size_t *puCur = (size_t *)pbMapping;
-                size_t  cLeft = cbContent / sizeof(*puCur);
-                while (cLeft-- > 0)
+                /* Close the file handles. */
+                if ((i & 7) == 7)
                 {
-                    *puCur = ~*puCur;
-                    puCur++;
+                    RTTESTI_CHECK_RC(RTFileClose(hFile3), VINF_SUCCESS);
+                    hFile3 = NIL_RTFILE;
                 }
+                RTTESTI_CHECK_RC(RTFileClose(hFile2), VINF_SUCCESS);
+                if ((i & 7) == 5)
+                {
+                    RTTESTI_CHECK_RC(RTFileClose(hFile3), VINF_SUCCESS);
+                    hFile3 = NIL_RTFILE;
+                }
+                if (pbMapping)
+                {
+                    RTThreadSleep(2); /* fudge for cleanup/whatever */
 
-                /* Sync it all. */
+                    /* Page in the mapping by comparing with the content we wrote above. */
+                    RTTESTI_CHECK(memcmp(pbMapping, pbContent, cbContent) == 0);
+
+                    /* Now dirty everything by inverting everything. */
+                    size_t *puCur = (size_t *)pbMapping;
+                    size_t  cLeft = cbContent / sizeof(*puCur);
+                    while (cLeft-- > 0)
+                    {
+                        *puCur = ~*puCur;
+                        puCur++;
+                    }
+
+                    /* Sync it all. */
 #  ifdef RT_OS_WINDOWS
-                //CHECK_WINAPI_CALL(FlushViewOfFile(pbMapping, cbContent) == TRUE);
-                SetLastError(0);
-                if (FlushViewOfFile(pbMapping, cbContent) != TRUE)
-                    RTTestIFailed("line %u, i=%u: FlushViewOfFile(%p, %#zx) failed: %u / %#x", __LINE__, i,
-                                  pbMapping, cbContent, GetLastError(), RTNtLastStatusValue());
+                    //CHECK_WINAPI_CALL(FlushViewOfFile(pbMapping, cbContent) == TRUE);
+                    SetLastError(0);
+                    if (FlushViewOfFile(pbMapping, cbContent) != TRUE)
+                        RTTestIFailed("line %u, i=%u: FlushViewOfFile(%p, %#zx) failed: %u / %#x", __LINE__, i,
+                                      pbMapping, cbContent, GetLastError(), RTNtLastStatusValue());
 #  else
-                RTTESTI_CHECK(msync(pbMapping, cbContent, MS_SYNC) == 0);
+                    RTTESTI_CHECK(msync(pbMapping, cbContent, MS_SYNC) == 0);
 #  endif
 
-                /* Unmap it. */
+                    /* Unmap it. */
 # ifdef RT_OS_WINDOWS
-                CHECK_WINAPI_CALL(UnmapViewOfFile(pbMapping) == TRUE);
+                    CHECK_WINAPI_CALL(UnmapViewOfFile(pbMapping) == TRUE);
 # else
-                RTTESTI_CHECK(munmap(pbMapping, cbContent) == 0);
+                    RTTESTI_CHECK(munmap(pbMapping, cbContent) == 0);
 # endif
+                }
+
+                if (hFile3 != NIL_RTFILE)
+                    RTTESTI_CHECK_RC(RTFileClose(hFile3), VINF_SUCCESS);
             }
-
-            if (hFile3 != NIL_RTFILE)
-                RTTESTI_CHECK_RC(RTFileClose(hFile3), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(RTFileDelete(szFile2), VINF_SUCCESS);
         }
-        RTTESTI_CHECK_RC(RTFileDelete(szFile2), VINF_SUCCESS);
     }
-
 
 #else
     RTTestSkipped(g_hTest,  "not supported/implemented");
@@ -6385,6 +6392,11 @@ int main(int argc, char *argv[])
     if (rc)
         return rc;
     RTListInit(&g_ManyTreeHead);
+
+    /* Query page size, offset mask and page shift of the system. */
+    g_cbPage      = RTSystemGetPageSize();
+    g_fPageOffset = RTSystemGetPageOffsetMask();
+    g_cPageShift  = RTSystemGetPageShift();
 
     /*
      * Default values.
