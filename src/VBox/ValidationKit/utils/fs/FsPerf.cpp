@@ -480,11 +480,11 @@ static const RTGETOPTDEF g_aCmdOptions[] =
 /** The test handle. */
 static RTTEST       g_hTest;
 /** The page size of the system. */
-static uint32_t     g_cbPage;
+static uint32_t     g_cbPage = 0;
 /** Page offset mask. */
-static uintptr_t    g_fPageOffset;
+static uintptr_t    g_fPageOffset = 0;
 /** Page shift in bits. */
-static uint32_t     g_cPageShift;
+static uint32_t     g_cPageShift = 0;
 /** The number of nanoseconds a RTTimeNanoTS call takes.
  * This is used for adjusting loop count estimates.  */
 static uint64_t     g_nsPerNanoTSCall = 1;
