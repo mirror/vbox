@@ -48,7 +48,9 @@ VBOX_PATH_RUNTIME_SRC        ?= $(PATH_ROOT)/src/VBox/Runtime
 #
 # Targets
 #
-LIBRARIES += SUPR3 SUPR3Static
+ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), linux.arm64) # @todo Required by LoadGenerator in the validationkit but uses PAGE_SIZE++
+ LIBRARIES += SUPR3 SUPR3Static
+endif
 if   defined(VBOX_WITH_HARDENING) \
   && !defined(VBOX_ONLY_VALIDATIONKIT)
  LIBRARIES += SUPR3HardenedStatic

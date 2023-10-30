@@ -34,7 +34,9 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_VALIDATIONKIT)
 endif
 
 
-LIBRARIES              += DisasmR3
+ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), linux.arm64) # @todo Required by cidet in the validationkit but uses PAGE_OFFSET_MASK
+ LIBRARIES             += DisasmR3
+endif
 DisasmR3_TEMPLATE       = VBoxR3Dll
 DisasmR3_DEFS           = IN_DIS
 DisasmR3_SOURCES        = \
@@ -57,7 +59,9 @@ if 1
  	DisasmFormatArmV8.cpp
 endif
 
-LIBRARIES              += DisasmR3Static
+ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), linux.arm64)
+ LIBRARIES             += DisasmR3Static
+endif
 DisasmR3Static_TEMPLATE = VBoxR3Static
 DisasmR3Static_EXTENDS  = DisasmR3
 
