@@ -86,7 +86,8 @@ g_kdTypeInfo2 = {
     'RTUINT256U':       (  256,   False, 'RTUINT256U',      ),
     'IEMPCMPISTRXSRC':  (  256,   False, 'IEMPCMPISTRXSRC', ),
     'IEMPCMPESTRXSRC':  (  384,   False, 'IEMPCMPESTRXSRC', ),
-} | g_kdTypeInfo;
+}; #| g_kdTypeInfo; - requires 3.9
+g_kdTypeInfo2.update(g_kdTypeInfo);
 
 def getTypeBitCount(sType):
     """
@@ -1784,7 +1785,7 @@ class IEMThreadedGenerator(object):
                     if oVariation.oNativeRecomp and oVariation.oNativeRecomp.isRecompilable():
                         cNative += 1;
             print('debug: %.1f%% / %u out of %u threaded function variations are recompilable'
-                  % (cNative * 100.0 / cTotal, cNative, cTotal));
+                  % (cNative * 100.0 / cTotal, cNative, cTotal), file = sys.stderr);
 
         # Gather arguments + variable statistics for the MC blocks.
         cMaxArgs         = 0;
@@ -1819,7 +1820,7 @@ class IEMThreadedGenerator(object):
                                     % (oThreadedFunction.oMcBlock.oFunction.sName, cbMaxVars, cbMaxArgs,));
 
         print('debug: max vars+args: %u bytes / %u; max vars: %u bytes / %u; max args: %u bytes / %u'
-              % (cbMaxVarsAndArgs, cMaxVarsAndArgs, cbMaxVars, cMaxVars, cbMaxArgs, cMaxArgs,));
+              % (cbMaxVarsAndArgs, cMaxVarsAndArgs, cbMaxVars, cMaxVars, cbMaxArgs, cMaxArgs,), file = sys.stderr);
 
         return True;
 
@@ -2472,7 +2473,7 @@ class IEMThreadedGenerator(object):
                                      % (__version__.split()[1], iai.__version__.split()[1],),
                              help    = 'Displays the version/revision of the script and exit.');
         self.oOptions = oParser.parse_args(asArgs[1:]);
-        print("oOptions=%s" % (self.oOptions,));
+        print("oOptions=%s" % (self.oOptions,), file = sys.stderr);
 
         #
         # Process the instructions specified in the IEM sources.

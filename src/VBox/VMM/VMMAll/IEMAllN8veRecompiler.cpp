@@ -612,8 +612,8 @@ void iemExecMemAllocatorFree(PVMCPU pVCpu, void *pv, size_t cb)
         if (fFound)
         {
 #ifdef IEMEXECMEM_USE_ALT_SUB_ALLOCATOR
-            uint32_t const idxFirst  = offChunk >> IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT;
-            uint32_t const cReqUnits = cb       >> IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT;
+            uint32_t const idxFirst  = (uint32_t)offChunk >> IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT;
+            uint32_t const cReqUnits = (uint32_t)cb       >> IEMEXECMEM_ALT_SUB_ALLOC_UNIT_SHIFT;
 
             /* Check that it's valid and free it. */
             uint64_t * const pbmAlloc = &pExecMemAllocator->pbmAlloc[pExecMemAllocator->cBitmapElementsPerChunk * idxChunk];
@@ -749,9 +749,9 @@ iemExecMemAllocatorInitAndRegisterUnwindInfoForChunk(PVMCPUCC pVCpu, PIEMEXECMEM
      * Register it.
      */
     uint8_t fRet = RtlAddFunctionTable(paFunctions, cFunctionEntries, (uintptr_t)pvChunk);
-    AssertReturn(fRet, NULL); /* Nothing to clean up on failure, since its within the chunk itself. */
+    AssertReturn(fRet, VERR_INTERNAL_ERROR_3); /* Nothing to clean up on failure, since its within the chunk itself. */
 
-    return paFunctions;
+    return VINF_SUCCESS;
 }
 
 
@@ -1571,7 +1571,9 @@ IEM_DECL_IMPL_DEF(int, iemNativeHlpExecRaiseGp0,(PVMCPUCC pVCpu, uint8_t idxInst
 {
     pVCpu->iem.s.cInstructions += idxInstr;
     iemRaiseGeneralProtectionFault0Jmp(pVCpu);
+#ifndef _MSC_VER
     return VINF_IEM_RAISED_XCPT; /* not reached */
+#endif
 }
 
 
@@ -1898,7 +1900,7 @@ DECLHIDDEN(PIEMNATIVEINSTR) iemNativeInstrBufEnsureSlow(PIEMRECOMPILERSTATE pReN
     while (cNew < off + cInstrReq);
 
     uint32_t const cbNew = cNew * sizeof(IEMNATIVEINSTR);
-#if RT_ARCH_ARM64
+#ifdef RT_ARCH_ARM64
     AssertReturn(cbNew <= _1M, NULL); /* Limited by the branch instruction range (18+2 bits). */
 #else
     AssertReturn(cbNew <= _2M, NULL);
@@ -2121,7 +2123,7 @@ static struct
     const char *pszName;
 } const g_aGstShadowInfo[] =
 {
-#define CPUMCTX_OFF_AND_SIZE(a_Reg) RT_UOFFSETOF(VMCPU, cpum.GstCtx. a_Reg), RT_SIZEOFMEMB(VMCPU, cpum.GstCtx. a_Reg)
+#define CPUMCTX_OFF_AND_SIZE(a_Reg) (uint32_t)RT_UOFFSETOF(VMCPU, cpum.GstCtx. a_Reg), RT_SIZEOFMEMB(VMCPU, cpum.GstCtx. a_Reg)
     /* [kIemNativeGstReg_GprFirst + X86_GREG_xAX] = */  { CPUMCTX_OFF_AND_SIZE(rax),                "rax", },
     /* [kIemNativeGstReg_GprFirst + X86_GREG_xCX] = */  { CPUMCTX_OFF_AND_SIZE(rcx),                "rcx", },
     /* [kIemNativeGstReg_GprFirst + X86_GREG_xDX] = */  { CPUMCTX_OFF_AND_SIZE(rdx),                "rdx", },
@@ -3461,7 +3463,7 @@ static int32_t iemNativeEmitCImplCall(PIEMRECOMPILERSTATE pReNative, uint32_t of
         off = iemNativeEmitStoreImm64ByBp(pReNative, off, IEMNATIVE_FP_OFF_STACK_ARG0, uParam1);
     if (cAddParams > 2)
         off = iemNativeEmitStoreImm64ByBp(pReNative, off, IEMNATIVE_FP_OFF_STACK_ARG1, uParam2);
-    off = iemNativeEmitLeaGrpByBp(pReNative, off, X86_GREG_xCX, IEMNATIVE_FP_OFF_IN_SHADOW_ARG0); /* rcStrict */
+    off = iemNativeEmitLeaGprByBp(pReNative, off, X86_GREG_xCX, IEMNATIVE_FP_OFF_IN_SHADOW_ARG0); /* rcStrict */
 
 #else
     AssertCompile(IEMNATIVE_CALL_ARG_GREG_COUNT >= 4);
@@ -3525,7 +3527,7 @@ static uint32_t iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_
     if (cParams > 2)
         off = iemNativeEmitLoadGprImm64(pReNative, off, X86_GREG_x10, pCallEntry->auParams[2]);
     off = iemNativeEmitStoreGprByBp(pReNative, off, IEMNATIVE_FP_OFF_STACK_ARG0, X86_GREG_x10);
-    off = iemNativeEmitLeaGrpByBp(pReNative, off, X86_GREG_xCX, IEMNATIVE_FP_OFF_IN_SHADOW_ARG0); /* rcStrict */
+    off = iemNativeEmitLeaGprByBp(pReNative, off, X86_GREG_xCX, IEMNATIVE_FP_OFF_IN_SHADOW_ARG0); /* rcStrict */
 #  endif /* VBOXSTRICTRC_STRICT_ENABLED */
 # else
     off = iemNativeEmitLoadGprFromGpr(pReNative, off, X86_GREG_xDI, IEMNATIVE_REG_FIXED_PVMCPU);
@@ -5124,7 +5126,7 @@ const char *iemTbFlagsToString(uint32_t fFlags, char *pszBuf, size_t cbBuf)
     };
     AssertCompile(RT_ELEMENTS(s_aModes) == IEM_F_MODE_MASK + 1);
     memcpy(pszBuf, s_aModes[fFlags & IEM_F_MODE_MASK].psz, s_aModes[fFlags & IEM_F_MODE_MASK].cch);
-    unsigned off = s_aModes[fFlags & IEM_F_MODE_MASK].cch;
+    size_t off = s_aModes[fFlags & IEM_F_MODE_MASK].cch;
 
     pszBuf[off++] = ' ';
     pszBuf[off++] = 'C';
@@ -5597,9 +5599,7 @@ PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb)
             iGstInstr = pCallEntry->idxInstr;
         }
         iemNativeDbgInfoAddThreadedCall(pReNative, (IEMTHREADEDFUNCS)pCallEntry->enmFunction, pfnRecom != NULL);
-#endif
-
-#ifdef VBOX_STRICT
+#elif defined(VBOX_STRICT)
         off = iemNativeEmitMarker(pReNative, off,
                                   RT_MAKE_U32((pTb->Thrd.cCalls - cCallsLeft - 1) | (pfnRecom ? 0x8000 : 0),
                                               pCallEntry->enmFunction));

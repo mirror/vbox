@@ -2871,8 +2871,8 @@ DECLINLINE(uint32_t) iemNativeEmitTestBitInGprAndJmpToLabelIfCc(PIEMRECOMPILERST
     if (iBitNo < 8)
     {
         /* test Eb, imm8 */
-        if (iGprSrc >= 8)
-            pbCodeBuf[off++] = X86_OP_REX_B;
+        if (iGprSrc >= 4)
+            pbCodeBuf[off++] = iGprSrc >= 8 ? X86_OP_REX_B : X86_OP_REX;
         pbCodeBuf[off++] = 0xf6;
         pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, iGprSrc & 7);
         pbCodeBuf[off++] = (uint8_t)1 << iBitNo;
@@ -2961,16 +2961,18 @@ DECLINLINE(uint32_t) iemNativeEmitTestAnyBitsInGpr(PIEMRECOMPILERSTATE pReNative
         /* test Eb, imm8 or test Ev, imm32 */
         uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
         AssertReturn(pbCodeBuf, UINT32_MAX);
-        if (iGprSrc >= 8)
-            pbCodeBuf[off++] = X86_OP_REX_B;
         if (fBits <= UINT8_MAX)
         {
+            if (iGprSrc >= 4)
+                pbCodeBuf[off++] = iGprSrc >= 8 ? X86_OP_REX_B : X86_OP_REX;
             pbCodeBuf[off++] = 0xf6;
             pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, iGprSrc & 7);
             pbCodeBuf[off++] = (uint8_t)fBits;
         }
         else
         {
+            if (iGprSrc >= 8)
+                pbCodeBuf[off++] = X86_OP_REX_B;
             pbCodeBuf[off++] = 0xf7;
             pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 0, iGprSrc & 7);
             pbCodeBuf[off++] = RT_BYTE1(fBits);
