@@ -46,6 +46,7 @@ VBox-liblzma_INCS += \
 	simple \
 	vbox
 VBox-liblzma_DEFS = \
+	IN_RT \
 	TUKLIB_SYMBOL_PREFIX=lzma_ \
 	ASSUME_RAM=128 \
 	HAVE_CHECK_CRC32=1 \
