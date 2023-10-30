@@ -5514,7 +5514,7 @@ static void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
              */
             if (enmState == kMMap_ReadWrite)
             {
-                static size_t const s_acbFlush[] = { g_cbPage, g_cbPage * 2, g_cbPage * 3, g_cbPage * 8, g_cbPage * 16, _2M };
+                size_t const s_acbFlush[] = { g_cbPage, g_cbPage * 2, g_cbPage * 3, g_cbPage * 8, g_cbPage * 16, _2M };
                 for (unsigned iFlushSize = 0 ; iFlushSize < RT_ELEMENTS(s_acbFlush); iFlushSize++)
                 {
                     size_t const cbFlush = s_acbFlush[iFlushSize];
