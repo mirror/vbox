@@ -1,0 +1,67 @@
+; $Id$
+;; @file
+; Definitions for libgtk-3.so lazy import library.
+;
+
+;
+; Copyright (C) 2023 Oracle and/or its affiliates.
+;
+; This file is part of VirtualBox base platform packages, as
+; available from https://www.virtualbox.org.
+;
+; This program is free software; you can redistribute it and/or
+; modify it under the terms of the GNU General Public License
+; as published by the Free Software Foundation, in version 3 of the
+; License.
+;
+; This program is distributed in the hope that it will be useful, but
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with this program; if not, see <https://www.gnu.org/licenses>.
+;
+; SPDX-License-Identifier: GPL-3.0-only
+;
+
+LIBRARY libgtk.so.ignoredByDef2LazyLoad
+EXPORTS
+    gdk_atom_intern
+    gdk_atom_name
+    gdk_threads_add_timeout
+    gtk_application_new
+    gtk_application_window_new
+    gtk_box_get_type
+    gtk_box_new
+    gtk_box_pack_start
+    gtk_button_new
+    gtk_clipboard_get
+    gtk_clipboard_request_contents
+    gtk_clipboard_set_with_data
+    gtk_clipboard_store
+    gtk_clipboard_wait_for_targets
+    gtk_container_add
+    gtk_container_get_type
+    gtk_init
+    gtk_main
+    gtk_main_quit
+    gtk_selection_data_get_data
+    gtk_selection_data_get_data_type
+    gtk_selection_data_get_data_with_length
+    gtk_selection_data_get_target
+    gtk_selection_data_set
+    gtk_target_list_add
+    gtk_target_list_new
+    gtk_target_list_unref
+    gtk_target_table_free
+    gtk_target_table_new_from_list
+    gtk_widget_destroy
+    gtk_widget_get_type
+    gtk_widget_set_opacity
+    gtk_widget_show_all
+    gtk_window_get_type
+    gtk_window_iconify
+    gtk_window_present
+    gtk_window_resize
+    gtk_window_set_default_size
