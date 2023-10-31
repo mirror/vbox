@@ -1,0 +1,50 @@
+; $Id$
+;; @file
+; Definitions for libwayland-client.so lazy import library.
+;
+
+;
+; Copyright (C) 2023 Oracle and/or its affiliates.
+;
+; This file is part of VirtualBox base platform packages, as
+; available from https://www.virtualbox.org.
+;
+; This program is free software; you can redistribute it and/or
+; modify it under the terms of the GNU General Public License
+; as published by the Free Software Foundation, in version 3 of the
+; License.
+;
+; This program is distributed in the hope that it will be useful, but
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with this program; if not, see <https://www.gnu.org/licenses>.
+;
+; SPDX-License-Identifier: GPL-3.0-only
+;
+
+LIBRARY libwayland-client.so.ignoredByDef2LazyLoad
+EXPORTS
+    wl_display_connect
+    wl_display_disconnect
+    wl_proxy_destroy
+    wl_proxy_add_listener
+    wl_display_roundtrip
+    wl_display_dispatch
+    wl_display_flush
+    wl_proxy_set_user_data
+    wl_proxy_get_user_data
+    wl_proxy_get_version
+    wl_display_cancel_read
+    wl_proxy_set_queue
+    wl_display_create_queue
+    wl_display_roundtrip_queue
+    wl_display_get_fd
+    wl_display_prepare_read
+    wl_display_read_events
+    wl_display_dispatch_pending
+    wl_proxy_marshal_constructor
+    wl_proxy_marshal_constructor_versioned
+    wl_proxy_marshal_flags
