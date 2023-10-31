@@ -184,7 +184,7 @@ private:
 
     /** Holds the tree-view instance. */
     UISelectorTreeView *m_pTreeView;
-    /** Holds the tree-view instance. */
+    /** Holds the model instance. */
     UISelectorModel    *m_pModel;
 };
 

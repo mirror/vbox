@@ -615,7 +615,7 @@ QVariant UISelectorModel::data(const QModelIndex &specifiedIndex, int iRole) con
         {
             if (UISelectorTreeViewItem *pItem = indexToItem(specifiedIndex))
                 return pItem->id();
-            return QUuid();
+            return 0;
         }
         case R_ItemPixmap:
         {
@@ -989,34 +989,34 @@ QString UISettingsSelectorTreeView::itemText(int iID) const
 int UISettingsSelectorTreeView::currentId() const
 {
     int iID = -1;
-    const QModelIndex currentIndex = m_pTreeView->currentIndex();
-    if (currentIndex.isValid())
-        iID = m_pModel->data(currentIndex, UISelectorModel::R_ItemId).toString().toInt();
+    const QModelIndex index = m_pTreeView->currentIndex();
+    if (index.isValid())
+        iID = m_pModel->data(index, UISelectorModel::R_ItemId).toString().toInt();
     return iID;
 }
 
 int UISettingsSelectorTreeView::linkToId(const QString &strLink) const
 {
     int iID = -1;
-    const QModelIndex specifiedIndex = m_pModel->findItem(strLink);
-    if (specifiedIndex.isValid())
-        iID = m_pModel->data(specifiedIndex, UISelectorModel::R_ItemId).toString().toInt();
+    const QModelIndex index = m_pModel->findItem(strLink);
+    if (index.isValid())
+        iID = m_pModel->data(index, UISelectorModel::R_ItemId).toString().toInt();
     return iID;
 }
 
 void UISettingsSelectorTreeView::selectById(int iID)
 {
-    const QModelIndex specifiedIndex = m_pModel->findItem(iID);
-    if (specifiedIndex.isValid())
-        m_pTreeView->setCurrentIndex(specifiedIndex);
+    const QModelIndex index = m_pModel->findItem(iID);
+    if (index.isValid())
+        m_pTreeView->setCurrentIndex(index);
 }
 
-void UISettingsSelectorTreeView::sltHandleCurrentChanged(const QModelIndex &currentIndex,
+void UISettingsSelectorTreeView::sltHandleCurrentChanged(const QModelIndex &index,
                                                          const QModelIndex & /* previousIndex */)
 {
-    if (currentIndex.isValid())
+    if (index.isValid())
     {
-        const int iID = m_pModel->data(currentIndex, UISelectorModel::R_ItemId).toString().toInt();
+        const int iID = m_pModel->data(index, UISelectorModel::R_ItemId).toString().toInt();
         Assert(iID >= 0);
         emit sigCategoryChanged(iID);
     }
