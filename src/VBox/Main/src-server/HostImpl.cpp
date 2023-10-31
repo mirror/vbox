@@ -72,7 +72,7 @@
 # include "PerformanceImpl.h"
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
-#if defined(RT_OS_DARWIN) && ARCH_BITS == 32
+#if defined(RT_OS_DARWIN)
 # include <sys/types.h>
 # include <sys/sysctl.h>
 #endif
@@ -419,6 +419,26 @@ HRESULT Host::init(VirtualBox *aParent)
             }
         }
     }
+#elif defined(RT_ARCH_ARM64)
+    m->fLongModeSupported = true; /* Misnomer but means 64-bit guest support, we are running on 64-bit so it must be available. */
+
+# if defined(RT_OS_DARWIN)
+    /*
+     * The kern.hv_support parameter indicates support for the hypervisor API in the
+     * kernel, which is the only way for virtualization on macOS on Apple Silicon.
+     */
+    int32_t fHvSupport = 0;
+    size_t  cbOld = sizeof(fHvSupport);
+    if (sysctlbyname("kern.hv_support", &fHvSupport, &cbOld, NULL, 0) == 0)
+    {
+        if (fHvSupport != 0)
+        {
+            m->fVTSupported                = true;
+            m->fUnrestrictedGuestSupported = true;
+            m->fNestedPagingSupported      = true;
+        }
+    }
+# endif
 #endif /* defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) */
 
 
@@ -1229,6 +1249,7 @@ HRESULT Host::getProcessorDescription(ULONG aCpuId, com::Utf8Str &aDescription)
  */
 void Host::i_updateProcessorFeatures()
 {
+#ifndef RT_ARCH_ARM64
     /* Perhaps the driver is available now... */
     int vrc = SUPR3InitEx(SUPR3INIT_F_LIMITED, NULL);
     if (RT_SUCCESS(vrc))
@@ -1262,6 +1283,7 @@ void Host::i_updateProcessorFeatures()
         m->fVirtVmsaveVmload           = (fVTCaps & SUPVTCAPS_AMDV_VIRT_VMSAVE_VMLOAD) != 0;
         m->fRecheckVTSupported = false; /* No need to try again, we cached everything. */
     }
+#endif
 }
 
 /**
