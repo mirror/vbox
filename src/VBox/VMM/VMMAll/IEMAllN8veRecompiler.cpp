@@ -128,11 +128,11 @@ extern "C" void *__deregister_frame_info(void *pvBegin);           /* (returns p
 *********************************************************************************************************************************/
 #ifdef VBOX_STRICT
 static uint32_t iemNativeEmitGuestRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                                                uint8_t idxReg, IEMNATIVEGSTREG enmGstReg) RT_NOEXCEPT;
+                                                uint8_t idxReg, IEMNATIVEGSTREG enmGstReg);
 #endif
 #ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
-static bool iemNativeDbgInfoAddNativeOffset(PIEMRECOMPILERSTATE pReNative, uint32_t off) RT_NOEXCEPT;
-static bool iemNativeDbgInfoAddLabel(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType, uint16_t uData) RT_NOEXCEPT;
+static void iemNativeDbgInfoAddNativeOffset(PIEMRECOMPILERSTATE pReNative, uint32_t off);
+static void iemNativeDbgInfoAddLabel(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType, uint16_t uData);
 #endif
 
 
@@ -1712,7 +1712,8 @@ static PIEMRECOMPILERSTATE iemNativeInit(PVMCPUCC pVCpu, PCIEMTB pTb)
  * If the label does not yet have a defined position,
  * call iemNativeLabelDefine() later to set it.
  *
- * @returns Label ID.
+ * @returns Label ID. Throws VBox status code on failure, so no need to check
+ *          the return value.
  * @param   pReNative   The native recompile state.
  * @param   enmType     The label type.
  * @param   offWhere    The instruction offset of the label.  UINT32_MAX if the
@@ -1720,8 +1721,9 @@ static PIEMRECOMPILERSTATE iemNativeInit(PVMCPUCC pVCpu, PCIEMTB pTb)
  * @param   uData       Data associated with the lable. Only applicable to
  *                      certain type of labels. Default is zero.
  */
-DECLHIDDEN(uint32_t) iemNativeLabelCreate(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType,
-                                          uint32_t offWhere /*= UINT32_MAX*/, uint16_t uData /*= 0*/) RT_NOEXCEPT
+DECL_HIDDEN_THROW(uint32_t)
+iemNativeLabelCreate(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType,
+                     uint32_t offWhere /*= UINT32_MAX*/, uint16_t uData /*= 0*/)
 {
     /*
      * Locate existing label definition.
@@ -1745,10 +1747,10 @@ DECLHIDDEN(uint32_t) iemNativeLabelCreate(PIEMRECOMPILERSTATE pReNative, IEMNATI
                 && paLabels[i].uData   == uData)
             {
 #ifdef VBOX_STRICT
-                AssertReturn(uData == 0, UINT32_MAX);
-                AssertReturn(offWhere == UINT32_MAX, UINT32_MAX);
+                AssertStmt(uData == 0, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_LABEL_IPE_1));
+                AssertStmt(offWhere == UINT32_MAX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_LABEL_IPE_1));
 #endif
-                AssertReturn(paLabels[i].off == UINT32_MAX, UINT32_MAX);
+                AssertStmt(paLabels[i].off == UINT32_MAX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_LABEL_IPE_2));
                 return i;
             }
     }
@@ -1761,12 +1763,12 @@ DECLHIDDEN(uint32_t) iemNativeLabelCreate(PIEMRECOMPILERSTATE pReNative, IEMNATI
     else
     {
         uint32_t cNew = pReNative->cLabelsAlloc;
-        AssertReturn(cNew, UINT32_MAX);
-        AssertReturn(cLabels == cNew, UINT32_MAX);
+        AssertStmt(cNew, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_LABEL_IPE_3));
+        AssertStmt(cLabels == cNew, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_LABEL_IPE_3));
         cNew *= 2;
-        AssertReturn(cNew <= _64K, UINT32_MAX); /* IEMNATIVEFIXUP::idxLabel type restrict this */
+        AssertStmt(cNew <= _64K, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_LABEL_TOO_MANY)); /* IEMNATIVEFIXUP::idxLabel type restrict this */
         paLabels = (PIEMNATIVELABEL)RTMemRealloc(paLabels, cNew * sizeof(paLabels[0]));
-        AssertReturn(paLabels, UINT32_MAX);
+        AssertStmt(paLabels, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_LABEL_OUT_OF_MEMORY));
         pReNative->paLabels     = paLabels;
         pReNative->cLabelsAlloc = cNew;
     }
@@ -1800,11 +1802,11 @@ DECLHIDDEN(uint32_t) iemNativeLabelCreate(PIEMRECOMPILERSTATE pReNative, IEMNATI
  * @param   idxLabel    The label to define.
  * @param   offWhere    The position.
  */
-DECLHIDDEN(void) iemNativeLabelDefine(PIEMRECOMPILERSTATE pReNative, uint32_t idxLabel, uint32_t offWhere) RT_NOEXCEPT
+DECL_HIDDEN_THROW(void) iemNativeLabelDefine(PIEMRECOMPILERSTATE pReNative, uint32_t idxLabel, uint32_t offWhere)
 {
-    AssertReturnVoid(idxLabel < pReNative->cLabels);
+    AssertStmt(idxLabel < pReNative->cLabels, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_LABEL_IPE_4));
     PIEMNATIVELABEL const pLabel = &pReNative->paLabels[idxLabel];
-    AssertReturnVoid(pLabel->off == UINT32_MAX);
+    AssertStmt(pLabel->off == UINT32_MAX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_LABEL_IPE_5));
     pLabel->off = offWhere;
 #ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
     iemNativeDbgInfoAddNativeOffset(pReNative, offWhere);
@@ -1838,19 +1840,19 @@ static uint32_t iemNativeLabelFind(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABEL
 }
 
 
-
 /**
  * Adds a fixup.
  *
- * @returns Success indicator.
+ * @throws  VBox status code (int) on failure.
  * @param   pReNative   The native recompile state.
  * @param   offWhere    The instruction offset of the fixup location.
  * @param   idxLabel    The target label ID for the fixup.
  * @param   enmType     The fixup type.
  * @param   offAddend   Fixup addend if applicable to the type. Default is 0.
  */
-DECLHIDDEN(bool) iemNativeAddFixup(PIEMRECOMPILERSTATE pReNative, uint32_t offWhere, uint32_t idxLabel,
-                                   IEMNATIVEFIXUPTYPE enmType, int8_t offAddend /*= 0*/) RT_NOEXCEPT
+DECL_HIDDEN_THROW(void)
+iemNativeAddFixup(PIEMRECOMPILERSTATE pReNative, uint32_t offWhere, uint32_t idxLabel,
+                  IEMNATIVEFIXUPTYPE enmType, int8_t offAddend /*= 0*/)
 {
     Assert(idxLabel <= UINT16_MAX);
     Assert((unsigned)enmType <= UINT8_MAX);
@@ -1865,12 +1867,12 @@ DECLHIDDEN(bool) iemNativeAddFixup(PIEMRECOMPILERSTATE pReNative, uint32_t offWh
     else
     {
         uint32_t cNew = pReNative->cFixupsAlloc;
-        AssertReturn(cNew, false);
-        AssertReturn(cFixups == cNew, false);
+        AssertStmt(cNew, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_FIXUP_IPE_1));
+        AssertStmt(cFixups == cNew, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_FIXUP_IPE_1));
         cNew *= 2;
-        AssertReturn(cNew <= _128K, false);
+        AssertStmt(cNew <= _128K, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_FIXUP_TOO_MANY));
         paFixups = (PIEMNATIVEFIXUP)RTMemRealloc(paFixups, cNew * sizeof(paFixups[0]));
-        AssertReturn(paFixups, false);
+        AssertStmt(paFixups, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_FIXUP_OUT_OF_MEMORY));
         pReNative->paFixups     = paFixups;
         pReNative->cFixupsAlloc = cNew;
     }
@@ -1883,14 +1885,13 @@ DECLHIDDEN(bool) iemNativeAddFixup(PIEMRECOMPILERSTATE pReNative, uint32_t offWh
     paFixups[cFixups].enmType   = enmType;
     paFixups[cFixups].offAddend = offAddend;
     pReNative->cFixups = cFixups + 1;
-    return true;
 }
+
 
 /**
  * Slow code path for iemNativeInstrBufEnsure.
  */
-DECLHIDDEN(PIEMNATIVEINSTR) iemNativeInstrBufEnsureSlow(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                                                        uint32_t cInstrReq) RT_NOEXCEPT
+DECL_HIDDEN_THROW(PIEMNATIVEINSTR) iemNativeInstrBufEnsureSlow(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t cInstrReq)
 {
     /* Double the buffer size till we meet the request. */
     uint32_t cNew = pReNative->cInstrBufAlloc;
@@ -1901,13 +1902,14 @@ DECLHIDDEN(PIEMNATIVEINSTR) iemNativeInstrBufEnsureSlow(PIEMRECOMPILERSTATE pReN
 
     uint32_t const cbNew = cNew * sizeof(IEMNATIVEINSTR);
 #ifdef RT_ARCH_ARM64
-    AssertReturn(cbNew <= _1M, NULL); /* Limited by the branch instruction range (18+2 bits). */
+    uint32_t const cbMaxInstrBuf = _1M; /* Limited by the branch instruction range (18+2 bits). */
 #else
-    AssertReturn(cbNew <= _2M, NULL);
+    uint32_t const cbMaxInstrBuf = _2M;
 #endif
+    AssertStmt(cbNew <= cbMaxInstrBuf, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_INSTR_BUF_TOO_LARGE));
 
     void *pvNew = RTMemRealloc(pReNative->pInstrBuf, cbNew);
-    AssertReturn(pvNew, NULL);
+    AssertStmt(pvNew, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_INSTR_BUF_OUT_OF_MEMORY));
 
     pReNative->cInstrBufAlloc   = cNew;
     return pReNative->pInstrBuf = (PIEMNATIVEINSTR)pvNew;
@@ -1917,14 +1919,16 @@ DECLHIDDEN(PIEMNATIVEINSTR) iemNativeInstrBufEnsureSlow(PIEMRECOMPILERSTATE pReN
 
 /**
  * Grows the static debug info array used during recompilation.
- * @returns Pointer to the new debug info block, NULL on failure.
+ *
+ * @returns Pointer to the new debug info block; throws VBox status code on
+ *          failure, so no need to check the return value.
  */
-DECL_NO_INLINE(static, PIEMTBDBG) iemNativeDbgInfoGrow(PIEMRECOMPILERSTATE pReNative, PIEMTBDBG pDbgInfo) RT_NOEXCEPT
+DECL_NO_INLINE(static, PIEMTBDBG) iemNativeDbgInfoGrow(PIEMRECOMPILERSTATE pReNative, PIEMTBDBG pDbgInfo)
 {
     uint32_t cNew = pReNative->cDbgInfoAlloc * 2;
-    AssertReturn(cNew < _1M && cNew != 0, NULL);
+    AssertStmt(cNew < _1M && cNew != 0, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_DBGINFO_IPE_1));
     pDbgInfo = (PIEMTBDBG)RTMemRealloc(pDbgInfo, RT_UOFFSETOF_DYN(IEMTBDBG, aEntries[cNew]));
-    AssertReturn(pDbgInfo, NULL);
+    AssertStmt(pDbgInfo, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_DBGINFO_OUT_OF_MEMORY));
     pReNative->pDbgInfo      = pDbgInfo;
     pReNative->cDbgInfoAlloc = cNew;
     return pDbgInfo;
@@ -1934,15 +1938,12 @@ DECL_NO_INLINE(static, PIEMTBDBG) iemNativeDbgInfoGrow(PIEMRECOMPILERSTATE pReNa
 /**
  * Adds a new debug info uninitialized entry, returning the pointer to it.
  */
-DECLINLINE(PIEMTBDBGENTRY) iemNativeDbgInfoAddNewEntry(PIEMRECOMPILERSTATE pReNative, PIEMTBDBG pDbgInfo)
+DECL_INLINE_THROW(PIEMTBDBGENTRY) iemNativeDbgInfoAddNewEntry(PIEMRECOMPILERSTATE pReNative, PIEMTBDBG pDbgInfo)
 {
     if (RT_LIKELY(pDbgInfo->cEntries < pReNative->cDbgInfoAlloc))
     { /* likely */ }
     else
-    {
         pDbgInfo = iemNativeDbgInfoGrow(pReNative, pDbgInfo);
-        AssertReturn(pDbgInfo, NULL);
-    }
     return &pDbgInfo->aEntries[pDbgInfo->cEntries++];
 }
 
@@ -1950,7 +1951,7 @@ DECLINLINE(PIEMTBDBGENTRY) iemNativeDbgInfoAddNewEntry(PIEMRECOMPILERSTATE pReNa
 /**
  * Debug Info: Adds a native offset record, if necessary.
  */
-static bool iemNativeDbgInfoAddNativeOffset(PIEMRECOMPILERSTATE pReNative, uint32_t off) RT_NOEXCEPT
+static void iemNativeDbgInfoAddNativeOffset(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 {
     PIEMTBDBG pDbgInfo = pReNative->pDbgInfo;
 
@@ -1963,8 +1964,9 @@ static bool iemNativeDbgInfoAddNativeOffset(PIEMRECOMPILERSTATE pReNative, uint3
         if (pDbgInfo->aEntries[idx].Gen.uType == kIemTbDbgEntryType_NativeOffset)
         {
             if (pDbgInfo->aEntries[idx].NativeOffset.offNative == off)
-                return true;
-            AssertReturn(pDbgInfo->aEntries[idx].NativeOffset.offNative < off, false);
+                return;
+            AssertStmt(pDbgInfo->aEntries[idx].NativeOffset.offNative < off,
+                       IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_DBGINFO_IPE_2));
             break;
         }
 
@@ -1972,80 +1974,61 @@ static bool iemNativeDbgInfoAddNativeOffset(PIEMRECOMPILERSTATE pReNative, uint3
      * Add it.
      */
     PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pDbgInfo);
-    AssertReturn(pEntry, false);
     pEntry->NativeOffset.uType     = kIemTbDbgEntryType_NativeOffset;
     pEntry->NativeOffset.offNative = off;
-
-    return true;
 }
 
 
 /**
  * Debug Info: Record info about a label.
  */
-static bool iemNativeDbgInfoAddLabel(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType, uint16_t uData) RT_NOEXCEPT
+static void iemNativeDbgInfoAddLabel(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType, uint16_t uData)
 {
     PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pReNative->pDbgInfo);
-    AssertReturn(pEntry, false);
-
     pEntry->Label.uType    = kIemTbDbgEntryType_Label;
     pEntry->Label.uUnused  = 0;
     pEntry->Label.enmLabel = (uint8_t)enmType;
     pEntry->Label.uData    = uData;
-
-    return true;
 }
 
 
 /**
  * Debug Info: Record info about a threaded call.
  */
-static bool iemNativeDbgInfoAddThreadedCall(PIEMRECOMPILERSTATE pReNative, IEMTHREADEDFUNCS enmCall, bool fRecompiled) RT_NOEXCEPT
+static void iemNativeDbgInfoAddThreadedCall(PIEMRECOMPILERSTATE pReNative, IEMTHREADEDFUNCS enmCall, bool fRecompiled)
 {
     PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pReNative->pDbgInfo);
-    AssertReturn(pEntry, false);
-
     pEntry->ThreadedCall.uType       = kIemTbDbgEntryType_ThreadedCall;
     pEntry->ThreadedCall.fRecompiled = fRecompiled;
     pEntry->ThreadedCall.uUnused     = 0;
     pEntry->ThreadedCall.enmCall     = (uint16_t)enmCall;
-
-    return true;
 }
 
 
 /**
  * Debug Info: Record info about a new guest instruction.
  */
-static bool iemNativeDbgInfoAddGuestInstruction(PIEMRECOMPILERSTATE pReNative, uint32_t fExec) RT_NOEXCEPT
+static void iemNativeDbgInfoAddGuestInstruction(PIEMRECOMPILERSTATE pReNative, uint32_t fExec)
 {
     PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pReNative->pDbgInfo);
-    AssertReturn(pEntry, false);
-
     pEntry->GuestInstruction.uType   = kIemTbDbgEntryType_GuestInstruction;
     pEntry->GuestInstruction.uUnused = 0;
     pEntry->GuestInstruction.fExec   = fExec;
-
-    return true;
 }
 
 
 /**
  * Debug Info: Record info about guest register shadowing.
  */
-static bool iemNativeDbgInfoAddGuestRegShadowing(PIEMRECOMPILERSTATE pReNative, IEMNATIVEGSTREG enmGstReg,
-                                                 uint8_t idxHstReg = UINT8_MAX, uint8_t idxHstRegPrev = UINT8_MAX) RT_NOEXCEPT
+static void iemNativeDbgInfoAddGuestRegShadowing(PIEMRECOMPILERSTATE pReNative, IEMNATIVEGSTREG enmGstReg,
+                                                 uint8_t idxHstReg = UINT8_MAX, uint8_t idxHstRegPrev = UINT8_MAX)
 {
     PIEMTBDBGENTRY const pEntry = iemNativeDbgInfoAddNewEntry(pReNative, pReNative->pDbgInfo);
-    AssertReturn(pEntry, false);
-
     pEntry->GuestRegShadowing.uType         = kIemTbDbgEntryType_GuestRegShadowing;
     pEntry->GuestRegShadowing.uUnused       = 0;
     pEntry->GuestRegShadowing.idxGstReg     = enmGstReg;
     pEntry->GuestRegShadowing.idxHstReg     = idxHstReg;
     pEntry->GuestRegShadowing.idxHstRegPrev = idxHstRegPrev;
-
-    return true;
 }
 
 #endif /* IEMNATIVE_WITH_TB_DEBUG_INFO */
@@ -2202,8 +2185,11 @@ DECL_FORCE_INLINE(uint8_t) iemNativeRegMarkAllocated(PIEMRECOMPILERSTATE pReNati
  *
  * This ASSUMES the caller has done the minimal/optimal allocation checks and
  * failed.
+ *
+ * @returns Host register number on success; throws VBox status code on failure, so no
+ *          need to check the return value.
  */
-static uint8_t iemNativeRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, bool fAllowVolatile) RT_NOEXCEPT
+static uint8_t iemNativeRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, bool fAllowVolatile)
 {
     uint32_t fRegMask = fAllowVolatile
                       ? IEMNATIVE_HST_GREG_MASK & ~IEMNATIVE_REG_FIXED_MASK
@@ -2256,13 +2242,12 @@ static uint8_t iemNativeRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint32_t
 
                 if (pReNative->Core.aVars[idxVar].enmKind == kIemNativeVarKind_Stack)
                 {
-                    AssertReturn(pReNative->Core.aVars[idxVar].idxStackSlot != UINT8_MAX, UINT8_MAX);
-                    uint32_t off = *poff;
-                    *poff = off = iemNativeEmitStoreGprByBp(pReNative, off,
-                                                              pReNative->Core.aVars[idxVar].idxStackSlot * sizeof(uint64_t)
-                                                            - IEMNATIVE_FP_OFF_STACK_VARS,
-                                                            idxReg);
-                    AssertReturn(off != UINT32_MAX, UINT8_MAX);
+                    AssertStmt(pReNative->Core.aVars[idxVar].idxStackSlot != UINT8_MAX,
+                               IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_REG_IPE_8));
+                    *poff = iemNativeEmitStoreGprByBp(pReNative, *poff,
+                                                        pReNative->Core.aVars[idxVar].idxStackSlot * sizeof(uint64_t)
+                                                      - IEMNATIVE_FP_OFF_STACK_VARS,
+                                                      idxReg);
                 }
 
                 pReNative->Core.aVars[idxVar].idxReg    = UINT8_MAX;
@@ -2275,7 +2260,7 @@ static uint8_t iemNativeRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint32_t
         }
     }
 
-    AssertFailedReturn(UINT8_MAX);
+    AssertFailedStmt(IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_REG_OUT_OF_REGISTERS));
 }
 
 
@@ -2351,12 +2336,11 @@ static uint32_t iemNativeRegMoveOrSpillStackVar(PIEMRECOMPILERSTATE pReNative, u
      */
     else
     {
-        AssertReturn(pReNative->Core.aVars[idxVar].idxStackSlot != UINT8_MAX, UINT32_MAX);
+        AssertStmt(pReNative->Core.aVars[idxVar].idxStackSlot != UINT8_MAX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_REG_IPE_7));
         off = iemNativeEmitStoreGprByBp(pReNative, off,
                                           pReNative->Core.aVars[idxVar].idxStackSlot * sizeof(uint64_t)
                                         - IEMNATIVE_FP_OFF_STACK_VARS,
                                         idxRegOld);
-        AssertReturn(off != UINT32_MAX, UINT32_MAX);
 
         pReNative->Core.bmHstRegsWithGstShadow &= ~RT_BIT_32(idxRegOld);
         pReNative->Core.bmGstRegShadows        &= ~pReNative->Core.aHstRegs[idxRegOld].fGstRegShadows;
@@ -2374,7 +2358,8 @@ static uint32_t iemNativeRegMoveOrSpillStackVar(PIEMRECOMPILERSTATE pReNative, u
  * This may emit code to save register content onto the stack in order to free
  * up a register.
  *
- * @returns The host register number, UINT8_MAX on failure.
+ * @returns The host register number; throws VBox status code on failure,
+ *          so no need to check the return value.
  * @param   pReNative       The native recompile state.
  * @param   poff            Pointer to the variable with the code buffer position.
  *                          This will be update if we need to move a variable from
@@ -2383,8 +2368,7 @@ static uint32_t iemNativeRegMoveOrSpillStackVar(PIEMRECOMPILERSTATE pReNative, u
  *                          registers (@c true, default) or the other way around
  *                          (@c false, for iemNativeRegAllocTmpForGuestReg()).
  */
-DECLHIDDEN(uint8_t) iemNativeRegAllocTmp(PIEMRECOMPILERSTATE pReNative, uint32_t *poff,
-                                         bool fPreferVolatile /*= true*/) RT_NOEXCEPT
+DECL_HIDDEN_THROW(uint8_t) iemNativeRegAllocTmp(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, bool fPreferVolatile /*= true*/)
 {
     /*
      * Try find a completely unused register, preferably a call-volatile one.
@@ -2407,7 +2391,7 @@ DECLHIDDEN(uint8_t) iemNativeRegAllocTmp(PIEMRECOMPILERSTATE pReNative, uint32_t
     else
     {
         idxReg = iemNativeRegAllocFindFree(pReNative, poff, true /*fAllowVolatile*/);
-        AssertReturn(idxReg != UINT8_MAX, UINT8_MAX);
+        AssertStmt(idxReg != UINT8_MAX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_REG_ALLOCATOR_NO_FREE_TMP));
     }
     return iemNativeRegMarkAllocated(pReNative, idxReg, kIemNativeWhat_Tmp);
 }
@@ -2422,7 +2406,8 @@ DECLHIDDEN(uint8_t) iemNativeRegAllocTmp(PIEMRECOMPILERSTATE pReNative, uint32_t
  * The caller will not modify the returned register, it must be considered
  * read-only.  Free using iemNativeRegFreeTmpImm.
  *
- * @returns The host register number, UINT8_MAX on failure.
+ * @returns The host register number; throws VBox status code on failure, so no
+ *          need to check the return value.
  * @param   pReNative       The native recompile state.
  * @param   poff            Pointer to the variable with the code buffer position.
  * @param   uImm            The immediate value that the register must hold upon
@@ -2433,16 +2418,11 @@ DECLHIDDEN(uint8_t) iemNativeRegAllocTmp(PIEMRECOMPILERSTATE pReNative, uint32_t
  *
  * @note    Reusing immediate values has not been implemented yet.
  */
-DECLHIDDEN(uint8_t) iemNativeRegAllocTmpImm(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, uint64_t uImm,
-                                            bool fPreferVolatile /*= true*/) RT_NOEXCEPT
+DECL_HIDDEN_THROW(uint8_t)
+iemNativeRegAllocTmpImm(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, uint64_t uImm, bool fPreferVolatile /*= true*/)
 {
-    uint8_t idxReg = iemNativeRegAllocTmp(pReNative, poff, fPreferVolatile);
-    if (idxReg < RT_ELEMENTS(pReNative->Core.aHstRegs))
-    {
-        uint32_t off = *poff;
-        *poff = off = iemNativeEmitLoadGprImm64(pReNative, off, idxReg, uImm);
-        AssertReturnStmt(off != UINT32_MAX, iemNativeRegFreeTmp(pReNative, idxReg), UINT8_MAX);
-    }
+    uint8_t const idxReg = iemNativeRegAllocTmp(pReNative, poff, fPreferVolatile);
+    *poff = iemNativeEmitLoadGprImm64(pReNative, *poff, idxReg, uImm);
     return idxReg;
 }
 
@@ -2541,7 +2521,8 @@ iemNativeRegTransferGstRegShadowing(PIEMRECOMPILERSTATE pReNative, uint8_t idxRe
  * code will be emitted to do the loading if that's not the case. Code may also
  * be emitted if we have to free up a register to satify the request.
  *
- * @returns The host register number, UINT8_MAX on failure.
+ * @returns The host register number; throws VBox status code on failure, so no
+ *          need to check the return value.
  * @param   pReNative       The native recompile state.
  * @param   poff            Pointer to the variable with the code buffer
  *                          position. This will be update if we need to move a
@@ -2551,8 +2532,9 @@ iemNativeRegTransferGstRegShadowing(PIEMRECOMPILERSTATE pReNative, uint8_t idxRe
  * @param   enmIntendedUse  How the caller will be using the host register.
  * @sa      iemNativeRegAllocTmpForGuestRegIfAlreadyPresent
  */
-DECLHIDDEN(uint8_t) iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff,
-                                                    IEMNATIVEGSTREG enmGstReg, IEMNATIVEGSTREGUSE enmIntendedUse) RT_NOEXCEPT
+DECL_HIDDEN_THROW(uint8_t)
+iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNative, uint32_t *poff,
+                                IEMNATIVEGSTREG enmGstReg, IEMNATIVEGSTREGUSE enmIntendedUse)
 {
     Assert(enmGstReg < kIemNativeGstReg_End && g_aGstShadowInfo[enmGstReg].cb != 0);
 #ifdef LOG_ENABLED
@@ -2583,11 +2565,8 @@ DECLHIDDEN(uint8_t) iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNativ
                     & (~IEMNATIVE_REG_FIXED_MASK & IEMNATIVE_HST_GREG_MASK)))
             {
                 uint8_t const idxRegNew = iemNativeRegAllocTmp(pReNative, poff);
-                Assert(idxRegNew < RT_ELEMENTS(pReNative->Core.aHstRegs));
 
-                uint32_t off = *poff;
-                *poff = off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegNew, idxReg);
-                AssertReturn(off != UINT32_MAX, UINT8_MAX);
+                *poff = iemNativeEmitLoadGprFromGpr(pReNative, *poff, idxRegNew, idxReg);
 
                 Log12(("iemNativeRegAllocTmpForGuestReg: Duplicated %s for guest %s into %s for destructive calc\n",
                        g_apszIemNativeHstRegNames[idxReg], g_aGstShadowInfo[enmGstReg].pszName,
@@ -2621,11 +2600,8 @@ DECLHIDDEN(uint8_t) iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNativ
              */
             /** @todo share register for readonly access. */
             uint8_t const idxRegNew = iemNativeRegAllocTmp(pReNative, poff, enmIntendedUse == kIemNativeGstRegUse_Calculation);
-            AssertReturn(idxRegNew < RT_ELEMENTS(pReNative->Core.aHstRegs), UINT8_MAX);
 
-            uint32_t off = *poff;
-            *poff = off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegNew, idxReg);
-            AssertReturn(off != UINT32_MAX, UINT8_MAX);
+            *poff = iemNativeEmitLoadGprFromGpr(pReNative, *poff, idxRegNew, idxReg);
 
             if (enmIntendedUse != kIemNativeGstRegUse_ForUpdate)
                 Log12(("iemNativeRegAllocTmpForGuestReg: Duplicated %s for guest %s into %s for %s\n",
@@ -2643,9 +2619,7 @@ DECLHIDDEN(uint8_t) iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNativ
 
 #ifdef VBOX_STRICT
         /* Strict builds: Check that the value is correct. */
-        uint32_t off = *poff;
-        *poff = off = iemNativeEmitGuestRegValueCheck(pReNative, off, idxReg, enmGstReg);
-        AssertReturn(off != UINT32_MAX, UINT8_MAX);
+        *poff = iemNativeEmitGuestRegValueCheck(pReNative, *poff, idxReg, enmGstReg);
 #endif
 
         return idxReg;
@@ -2655,14 +2629,11 @@ DECLHIDDEN(uint8_t) iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNativ
      * Allocate a new register, load it with the guest value and designate it as a copy of the
      */
     uint8_t const idxRegNew = iemNativeRegAllocTmp(pReNative, poff, enmIntendedUse == kIemNativeGstRegUse_Calculation);
-    AssertReturn(idxRegNew < RT_ELEMENTS(pReNative->Core.aHstRegs), UINT8_MAX);
 
-    uint32_t off = *poff;
-    *poff = off = iemNativeEmitLoadGprWithGstShadowReg(pReNative, off, idxRegNew, enmGstReg);
-    AssertReturn(off != UINT32_MAX, UINT8_MAX);
+    *poff = iemNativeEmitLoadGprWithGstShadowReg(pReNative, *poff, idxRegNew, enmGstReg);
 
     if (enmIntendedUse != kIemNativeGstRegUse_Calculation)
-        iemNativeRegMarkAsGstRegShadow(pReNative, idxRegNew, enmGstReg, off);
+        iemNativeRegMarkAsGstRegShadow(pReNative, idxRegNew, enmGstReg, *poff);
     Log12(("iemNativeRegAllocTmpForGuestReg: Allocated %s for guest %s %s\n",
            g_apszIemNativeHstRegNames[idxRegNew], g_aGstShadowInfo[enmGstReg].pszName, s_pszIntendedUse[enmIntendedUse]));
 
@@ -2681,16 +2652,18 @@ DECLHIDDEN(uint8_t) iemNativeRegAllocTmpForGuestReg(PIEMRECOMPILERSTATE pReNativ
  *
  * The intended use can only be readonly!
  *
- * @returns The host register number, UINT8_MAX on failure.
+ * @returns The host register number, UINT8_MAX if not present.
  * @param   pReNative       The native recompile state.
  * @param   poff            Pointer to the instruction buffer offset.
  *                          Will be updated in strict builds if a register is
  *                          found.
  * @param   enmGstReg       The guest register that will is to be updated.
+ * @note    In strict builds, this may throw instruction buffer growth failures.
+ *          Non-strict builds will not throw anything.
  * @sa iemNativeRegAllocTmpForGuestReg
  */
-DECLHIDDEN(uint8_t) iemNativeRegAllocTmpForGuestRegIfAlreadyPresent(PIEMRECOMPILERSTATE pReNative, uint32_t *poff,
-                                                                    IEMNATIVEGSTREG enmGstReg) RT_NOEXCEPT
+DECL_HIDDEN_THROW(uint8_t)
+iemNativeRegAllocTmpForGuestRegIfAlreadyPresent(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, IEMNATIVEGSTREG enmGstReg)
 {
     Assert(enmGstReg < kIemNativeGstReg_End && g_aGstShadowInfo[enmGstReg].cb != 0);
 
@@ -2718,9 +2691,7 @@ DECLHIDDEN(uint8_t) iemNativeRegAllocTmpForGuestRegIfAlreadyPresent(PIEMRECOMPIL
 
 #ifdef VBOX_STRICT
             /* Strict builds: Check that the value is correct. */
-            uint32_t off = *poff;
-            *poff = off = iemNativeEmitGuestRegValueCheck(pReNative, off, idxReg, enmGstReg);
-            AssertReturn(off != UINT32_MAX, UINT8_MAX);
+            *poff = iemNativeEmitGuestRegValueCheck(pReNative, *poff, idxReg, enmGstReg);
 #else
             RT_NOREF(poff);
 #endif
@@ -2732,20 +2703,22 @@ DECLHIDDEN(uint8_t) iemNativeRegAllocTmpForGuestRegIfAlreadyPresent(PIEMRECOMPIL
 }
 
 
-DECLHIDDEN(uint8_t)         iemNativeRegAllocVar(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, uint8_t idxVar) RT_NOEXCEPT;
+DECL_HIDDEN_THROW(uint8_t) iemNativeRegAllocVar(PIEMRECOMPILERSTATE pReNative, uint32_t *poff, uint8_t idxVar);
 
 
 /**
  * Allocates argument registers for a function call.
  *
- * @returns New code buffer offset on success, UINT32_MAX on failure.
+ * @returns New code buffer offset on success; throws VBox status code on failure, so no
+ *          need to check the return value.
  * @param   pReNative   The native recompile state.
  * @param   off         The current code buffer offset.
  * @param   cArgs       The number of arguments the function call takes.
  */
-DECLHIDDEN(uint32_t) iemNativeRegAllocArgs(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs) RT_NOEXCEPT
+DECL_HIDDEN_THROW(uint32_t) iemNativeRegAllocArgs(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs)
 {
-    AssertReturn(cArgs <= IEMNATIVE_CALL_ARG_GREG_COUNT + IEMNATIVE_FRAME_STACK_ARG_COUNT, false);
+    AssertStmt(cArgs <= IEMNATIVE_CALL_ARG_GREG_COUNT + IEMNATIVE_FRAME_STACK_ARG_COUNT,
+               IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_REG_IPE_4));
     Assert(RT_ELEMENTS(g_aidxIemNativeCallRegs) == IEMNATIVE_CALL_ARG_GREG_COUNT);
     Assert(RT_ELEMENTS(g_afIemNativeCallRegs) == IEMNATIVE_CALL_ARG_GREG_COUNT);
 
@@ -2779,7 +2752,8 @@ DECLHIDDEN(uint32_t) iemNativeRegAllocArgs(PIEMRECOMPILERSTATE pReNative, uint32
                     case kIemNativeWhat_Var:
                     {
                         uint8_t const idxVar = pReNative->Core.aHstRegs[idxReg].idxVar;
-                        AssertReturn(idxVar < RT_ELEMENTS(pReNative->Core.aVars), false);
+                        AssertStmt(idxVar < RT_ELEMENTS(pReNative->Core.aVars),
+                                   IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_REG_IPE_5));
                         Assert(pReNative->Core.aVars[idxVar].idxReg == idxReg);
                         Assert(pReNative->Core.bmVars & RT_BIT_32(idxVar));
 
@@ -2788,7 +2762,6 @@ DECLHIDDEN(uint32_t) iemNativeRegAllocArgs(PIEMRECOMPILERSTATE pReNative, uint32
                         else
                         {
                             off = iemNativeRegMoveOrSpillStackVar(pReNative, off, idxVar);
-                            AssertReturn(off != UINT32_MAX, false);
                             Assert(!(pReNative->Core.bmHstRegsWithGstShadow & RT_BIT_32(idxReg)));
                         }
                         break;
@@ -2797,9 +2770,9 @@ DECLHIDDEN(uint32_t) iemNativeRegAllocArgs(PIEMRECOMPILERSTATE pReNative, uint32
                     case kIemNativeWhat_Tmp:
                     case kIemNativeWhat_Arg:
                     case kIemNativeWhat_rc:
-                        AssertFailedReturn(false);
+                        AssertFailedStmt(IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_REG_IPE_5));
                     default:
-                        AssertFailedReturn(false);
+                        AssertFailedStmt(IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_REG_IPE_6));
                 }
 
             }
@@ -2821,7 +2794,7 @@ DECLHIDDEN(uint32_t) iemNativeRegAllocArgs(PIEMRECOMPILERSTATE pReNative, uint32
 }
 
 
-DECLHIDDEN(uint8_t)         iemNativeRegAssignRc(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg) RT_NOEXCEPT;
+DECL_HIDDEN_THROW(uint8_t)  iemNativeRegAssignRc(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg);
 
 
 #if 0
@@ -2902,13 +2875,13 @@ DECLHIDDEN(void) iemNativeRegFreeTmpImm(PIEMRECOMPILERSTATE pReNative, uint8_t i
  *                          just freeing.
  * @param   fFreeArgVars    Whether to free argument variables for the call.
  */
-DECLHIDDEN(uint32_t) iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                                                           uint8_t cArgs, bool fFreeArgVars) RT_NOEXCEPT
+DECL_HIDDEN_THROW(uint32_t)
+iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cArgs, bool fFreeArgVars)
 {
     /*
      * Free argument variables first (simplified).
      */
-    AssertReturn(cArgs <= RT_ELEMENTS(pReNative->Core.aidxArgVars), UINT32_MAX);
+    AssertStmt(cArgs <= RT_ELEMENTS(pReNative->Core.aidxArgVars), IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_LABEL_IPE_6));
     if (fFreeArgVars && cArgs > 0)
     {
         for (uint32_t i = 0; i < cArgs; i++)
@@ -2956,10 +2929,7 @@ DECLHIDDEN(uint32_t) iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE p
                     if (pReNative->Core.aVars[idxVar].enmKind != kIemNativeVarKind_Stack)
                         pReNative->Core.aVars[idxVar].idxReg = UINT8_MAX;
                     else
-                    {
                         off = iemNativeRegMoveOrSpillStackVar(pReNative, off, idxVar);
-                        AssertReturn(off != UINT32_MAX, UINT32_MAX);
-                    }
                     continue;
                 }
 
@@ -2978,9 +2948,9 @@ DECLHIDDEN(uint32_t) iemNativeRegMoveAndFreeAndFlushAtCall(PIEMRECOMPILERSTATE p
                 case kIemNativeWhat_FixedReserved:
                 case kIemNativeWhat_Invalid:
                 case kIemNativeWhat_End:
-                    AssertFailedReturn(UINT32_MAX);
+                    AssertFailedStmt(IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_REG_IPE_1));
             }
-            AssertFailedReturn(UINT32_MAX);
+            AssertFailedStmt(IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_REG_IPE_2));
         }
 
     /*
@@ -3078,7 +3048,7 @@ DECLHIDDEN(void) iemNativeRegFlushGuestShadows(PIEMRECOMPILERSTATE pReNative, ui
  * This optimization has not yet been implemented.  The first target would be
  * RIP updates, since these are the most common ones.
  */
-DECLHIDDEN(uint32_t) iemNativeRegFlushPendingWrites(PIEMRECOMPILERSTATE pReNative, uint32_t off) RT_NOEXCEPT
+DECL_HIDDEN_THROW(uint32_t) iemNativeRegFlushPendingWrites(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 {
     RT_NOREF(pReNative, off);
     return off;
@@ -3102,8 +3072,8 @@ DECLHIDDEN(uint32_t) iemNativeRegFlushPendingWrites(PIEMRECOMPILERSTATE pReNativ
  * @note This does not mark @a idxHstReg as having a shadow copy of @a enmGstReg,
  *       that is something the caller needs to do if applicable.
  */
-DECLHIDDEN(uint32_t) iemNativeEmitLoadGprWithGstShadowReg(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                                                          uint8_t idxHstReg, IEMNATIVEGSTREG enmGstReg) RT_NOEXCEPT
+DECL_HIDDEN_THROW(uint32_t)
+iemNativeEmitLoadGprWithGstShadowReg(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxHstReg, IEMNATIVEGSTREG enmGstReg)
 {
     Assert((unsigned)enmGstReg < RT_ELEMENTS(g_aGstShadowInfo));
     Assert(g_aGstShadowInfo[enmGstReg].cb != 0);
@@ -3121,7 +3091,7 @@ DECLHIDDEN(uint32_t) iemNativeEmitLoadGprWithGstShadowReg(PIEMRECOMPILERSTATE pR
             return iemNativeEmitLoadGprFromVCpuU8(pReNative, off, idxHstReg, g_aGstShadowInfo[enmGstReg].off);
 #endif
         default:
-            AssertFailedReturn(UINT32_MAX);
+            AssertFailedStmt(IEMNATIVE_DO_LONGJMP(pReNative, VERR_IPE_NOT_REACHED_DEFAULT_CASE));
     }
 }
 
@@ -3135,12 +3105,11 @@ DECLHIDDEN(uint32_t) iemNativeEmitLoadGprWithGstShadowReg(PIEMRECOMPILERSTATE pR
  * @note May of course trash IEMNATIVE_REG_FIXED_TMP0.
  *       Trashes EFLAGS on AMD64.
  */
-static uint32_t iemNativeEmitGuestRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                                                uint8_t idxReg, IEMNATIVEGSTREG enmGstReg) RT_NOEXCEPT
+static uint32_t
+iemNativeEmitGuestRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxReg, IEMNATIVEGSTREG enmGstReg)
 {
 # ifdef RT_ARCH_AMD64
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 32);
-    AssertReturn(pbCodeBuf, UINT32_MAX);
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 32);
 
     /* cmp reg, [mem] */
     if (g_aGstShadowInfo[enmGstReg].cb == sizeof(uint8_t))
@@ -3158,7 +3127,8 @@ static uint32_t iemNativeEmitGuestRegValueCheck(PIEMRECOMPILERSTATE pReNative, u
             if (g_aGstShadowInfo[enmGstReg].cb == sizeof(uint16_t))
                 pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
             else
-                AssertReturn(g_aGstShadowInfo[enmGstReg].cb == sizeof(uint32_t), UINT32_MAX);
+                AssertStmt(g_aGstShadowInfo[enmGstReg].cb == sizeof(uint32_t),
+                           IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_LABEL_IPE_7));
             if (idxReg >= 8)
                 pbCodeBuf[off++] = X86_OP_REX_R;
         }
@@ -3229,8 +3199,7 @@ static uint32_t iemNativeEmitGuestRegValueCheck(PIEMRECOMPILERSTATE pReNative, u
     /* mov TMP0, [gstreg] */
     off = iemNativeEmitLoadGprWithGstShadowReg(pReNative, off, IEMNATIVE_REG_FIXED_TMP0, enmGstReg);
 
-    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
-    AssertReturn(pu32CodeBuf, UINT32_MAX);
+    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
     /* sub tmp0, tmp0, idxReg */
     pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(true /*fSub*/, IEMNATIVE_REG_FIXED_TMP0, IEMNATIVE_REG_FIXED_TMP0, idxReg);
     /* cbz tmp0, +1 */
@@ -3252,8 +3221,8 @@ static uint32_t iemNativeEmitGuestRegValueCheck(PIEMRECOMPILERSTATE pReNative, u
  * Emits a code for checking the return code of a call and rcPassUp, returning
  * from the code if either are non-zero.
  */
-DECLHIDDEN(uint32_t) iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                                                        uint8_t idxInstr) RT_NOEXCEPT
+DECL_HIDDEN_THROW(uint32_t)
+iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr)
 {
 #ifdef RT_ARCH_AMD64
     /*
@@ -3268,7 +3237,6 @@ DECLHIDDEN(uint32_t) iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReN
 
     /* edx = eax | rcPassUp */
     uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
-    AssertReturn(pbCodeBuf, UINT32_MAX);
     pbCodeBuf[off++] = 0x0b;                    /* or edx, eax */
     pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, X86_GREG_xDX, X86_GREG_xAX);
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
@@ -3286,13 +3254,11 @@ DECLHIDDEN(uint32_t) iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReN
     off = iemNativeEmitLoadGprFromVCpuU32(pReNative, off, ARMV8_A64_REG_X3, RT_UOFFSETOF(VMCPUCC, iem.s.rcPassUp));
 
     uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
-    AssertReturn(pu32CodeBuf, UINT32_MAX);
 
     pu32CodeBuf[off++] = Armv8A64MkInstrOrr(ARMV8_A64_REG_X4, ARMV8_A64_REG_X3, ARMV8_A64_REG_X0, false /*f64Bit*/);
 
     uint32_t const idxLabel = iemNativeLabelCreate(pReNative, kIemNativeLabelType_NonZeroRetOrPassUp);
-    AssertReturn(idxLabel != UINT32_MAX, UINT32_MAX);
-    AssertReturn(iemNativeAddFixup(pReNative, off, idxLabel, kIemNativeFixupType_RelImm19At5), UINT32_MAX);
+    iemNativeAddFixup(pReNative, off, idxLabel, kIemNativeFixupType_RelImm19At5);
     pu32CodeBuf[off++] = Armv8A64MkInstrCbzCbnz(true /*fJmpIfNotZero*/, ARMV8_A64_REG_X4, false /*f64Bit*/);
 
 #else
@@ -3313,8 +3279,8 @@ DECLHIDDEN(uint32_t) iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReN
  * @param   idxAddrReg      The host register with the address to check.
  * @param   idxInstr        The current instruction.
  */
-DECLHIDDEN(uint32_t) iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                                                                 uint8_t idxAddrReg, uint8_t idxInstr)
+DECL_HIDDEN_THROW(uint32_t)
+iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxAddrReg, uint8_t idxInstr)
 {
     RT_NOREF(idxInstr);
 
@@ -3331,7 +3297,6 @@ DECLHIDDEN(uint32_t) iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(PIEMRECOMPILERS
      * ---- this wariant avoid loading a 64-bit immediate, but is an instruction longer.
      */
     uint8_t const iTmpReg = iemNativeRegAllocTmp(pReNative, &off);
-    AssertReturn(iTmpReg < RT_ELEMENTS(pReNative->Core.aHstRegs), UINT32_MAX);
 
     off = iemNativeEmitLoadGprFromGpr(pReNative, off, iTmpReg, idxAddrReg);
     off = iemNativeEmitShiftGprRight(pReNative, off, iTmpReg, 32);
@@ -3367,7 +3332,6 @@ DECLHIDDEN(uint32_t) iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(PIEMRECOMPILERS
      * .Lnoexcept:
      */
     uint8_t const iTmpReg = iemNativeRegAllocTmp(pReNative, &off);
-    AssertReturn(iTmpReg < RT_ELEMENTS(pReNative->Core.aHstRegs), UINT32_MAX);
 
     off = iemNativeEmitLoadGprImm64(pReNative, off, iTmpReg, UINT64_C(0x800000000000));
     off = iemNativeEmitAddTwoGprs(pReNative, off, iTmpReg, idxAddrReg);
@@ -3405,8 +3369,9 @@ DECLHIDDEN(uint32_t) iemNativeEmitCheckGprCanonicalMaybeRaiseGp0(PIEMRECOMPILERS
  *                          against.
  * @param   idxInstr        The current instruction.
  */
-DECLHIDDEN(uint32_t) iemNativeEmitCheckGpr32AgainstSegLimitMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                                                                         uint8_t idxAddrReg, uint8_t idxSegReg, uint8_t idxInstr)
+DECL_HIDDEN_THROW(uint32_t)
+iemNativeEmitCheckGpr32AgainstSegLimitMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                    uint8_t idxAddrReg, uint8_t idxSegReg, uint8_t idxInstr)
 {
     /*
      * Make sure we don't have any outstanding guest register writes as we may
@@ -3415,12 +3380,11 @@ DECLHIDDEN(uint32_t) iemNativeEmitCheckGpr32AgainstSegLimitMaybeRaiseGp0(PIEMREC
     off = iemNativeRegFlushPendingWrites(pReNative, off);
 
     /** @todo implement expand down/whatnot checking */
-    AssertReturn(idxSegReg == X86_SREG_CS, UINT32_MAX);
+    AssertStmt(idxSegReg == X86_SREG_CS, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_EMIT_CASE_NOT_IMPLEMENTED_1));
 
     uint8_t const iTmpLimReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off,
                                                                (IEMNATIVEGSTREG)(kIemNativeGstReg_SegLimitFirst + idxSegReg),
                                                                kIemNativeGstRegUse_ForUpdate);
-    AssertReturn(iTmpLimReg < RT_ELEMENTS(pReNative->Core.aHstRegs), UINT32_MAX);
 
     off = iemNativeEmitCmpGpr32WithGpr(pReNative, off, idxAddrReg, iTmpLimReg);
 
@@ -3480,7 +3444,6 @@ static int32_t iemNativeEmitCImplCall(PIEMRECOMPILERSTATE pReNative, uint32_t of
         off = iemNativeEmitStoreImm64ByBp(pReNative, off, IEMNATIVE_FP_OFF_STACK_ARG0, uParam2);
 # endif
 #endif
-    AssertReturn(off != UINT32_MAX, off);
 
     /*
      * Make the call.
@@ -3567,7 +3530,6 @@ static uint32_t iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_
      * Check the status code.
      */
     off = iemNativeEmitCheckCallRetAndPassUp(pReNative, off, pCallEntry->idxInstr);
-    AssertReturn(off != UINT32_MAX, off);
 
     return off;
 }
@@ -3672,21 +3634,18 @@ static uint32_t iemNativeEmitEpilog(PIEMRECOMPILERSTATE pReNative, uint32_t off,
      * Successful return, so clear the return register (eax, w0).
      */
     off = iemNativeEmitGprZero(pReNative,off, IEMNATIVE_CALL_RET_GREG);
-    AssertReturn(off != UINT32_MAX, UINT32_MAX);
 
     /*
      * Define label for common return point.
      */
     uint32_t const idxReturn = iemNativeLabelCreate(pReNative, kIemNativeLabelType_Return, off);
-    AssertReturn(idxReturn != UINT32_MAX, UINT32_MAX);
     *pidxReturnLabel = idxReturn;
 
     /*
      * Restore registers and return.
      */
 #ifdef RT_ARCH_AMD64
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 20);
-    AssertReturn(pbCodeBuf, UINT32_MAX);
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 20);
 
     /* Reposition esp at the r15 restore point. */
     pbCodeBuf[off++] = X86_OP_REX_W;
@@ -3713,8 +3672,7 @@ static uint32_t iemNativeEmitEpilog(PIEMRECOMPILERSTATE pReNative, uint32_t off,
     pbCodeBuf[off++] = 0xcc;                    /* int3 poison */
 
 #elif RT_ARCH_ARM64
-    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
-    AssertReturn(pu32CodeBuf, UINT32_MAX);
+    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
 
     /* ldp x19, x20, [sp #IEMNATIVE_FRAME_VAR_SIZE]! ; Unallocate the variable space and restore x19+x20. */
     AssertCompile(IEMNATIVE_FRAME_VAR_SIZE < 64*8);
@@ -3770,8 +3728,7 @@ static uint32_t iemNativeEmitProlog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
      * Since we always do the same register spilling, we can use the same
      * unwind description for all the code.
      */
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 32);
-    AssertReturn(pbCodeBuf, UINT32_MAX);
+    uint8_t *const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 32);
     pbCodeBuf[off++] = 0x50 + X86_GREG_xBP;     /* push rbp */
     pbCodeBuf[off++] = X86_OP_REX_W;            /* mov rbp, rsp */
     pbCodeBuf[off++] = 0x8b;
@@ -3813,8 +3770,7 @@ static uint32_t iemNativeEmitProlog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
      * We set up a stack frame exactly like on x86, only we have to push the
      * return address our selves here.  We save all non-volatile registers.
      */
-    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
-    AssertReturn(pu32CodeBuf, UINT32_MAX);
+    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 10);
 
 # ifdef RT_OS_DARWIN /** @todo This seems to be requirement by libunwind for JIT FDEs. Investigate further as been unable
                       * to figure out where the BRK following AUTHB*+XPACB* stuff comes from in libunwind.  It's
@@ -3887,8 +3843,8 @@ static uint32_t iemNativeEmitProlog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 #define IEM_MC_DEFER_TO_CIMPL_1_RET_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl, a0) \
     return iemNativeEmitCImplCall1(pReNative, off, pCallEntry->idxInstr, (uintptr_t)a_pfnCImpl, a_cbInstr, a0)
 
-DECLINLINE(uint32_t) iemNativeEmitCImplCall1(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr,
-                                             uintptr_t pfnCImpl, uint8_t cbInstr, uint64_t uArg0)
+DECL_INLINE_THROW(uint32_t) iemNativeEmitCImplCall1(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr,
+                                                    uintptr_t pfnCImpl, uint8_t cbInstr, uint64_t uArg0)
 {
     return iemNativeEmitCImplCall(pReNative, off, idxInstr, pfnCImpl, cbInstr, 1, uArg0, 0, 0);
 }
@@ -3897,8 +3853,8 @@ DECLINLINE(uint32_t) iemNativeEmitCImplCall1(PIEMRECOMPILERSTATE pReNative, uint
 #define IEM_MC_DEFER_TO_CIMPL_2_RET_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl, a0, a1) \
     return iemNativeEmitCImplCall2(pReNative, off, pCallEntry->idxInstr, (uintptr_t)a_pfnCImpl, a_cbInstr, a0, a1)
 
-DECLINLINE(uint32_t) iemNativeEmitCImplCall2(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr,
-                                             uintptr_t pfnCImpl, uint8_t cbInstr, uint64_t uArg0, uint64_t uArg1)
+DECL_INLINE_THROW(uint32_t) iemNativeEmitCImplCall2(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr,
+                                                    uintptr_t pfnCImpl, uint8_t cbInstr, uint64_t uArg0, uint64_t uArg1)
 {
     return iemNativeEmitCImplCall(pReNative, off, idxInstr, pfnCImpl, cbInstr, 2, uArg0, uArg1, 0);
 }
@@ -3907,8 +3863,9 @@ DECLINLINE(uint32_t) iemNativeEmitCImplCall2(PIEMRECOMPILERSTATE pReNative, uint
 #define IEM_MC_DEFER_TO_CIMPL_3_RET_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl, a0, a1, a2) \
     return iemNativeEmitCImplCall3(pReNative, off, pCallEntry->idxInstr, (uintptr_t)a_pfnCImpl, a_cbInstr, a0, a1, a2)
 
-DECLINLINE(uint32_t) iemNativeEmitCImplCall3(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr,
-                                             uintptr_t pfnCImpl, uint8_t cbInstr, uint64_t uArg0, uint64_t uArg1, uint64_t uArg2)
+DECL_INLINE_THROW(uint32_t) iemNativeEmitCImplCall3(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr,
+                                                    uintptr_t pfnCImpl, uint8_t cbInstr, uint64_t uArg0, uint64_t uArg1,
+                                                    uint64_t uArg2)
 {
     return iemNativeEmitCImplCall(pReNative, off, idxInstr, pfnCImpl, cbInstr, 3, uArg0, uArg1, uArg2);
 }
@@ -3919,15 +3876,14 @@ DECLINLINE(uint32_t) iemNativeEmitCImplCall3(PIEMRECOMPILERSTATE pReNative, uint
  */
 
 #define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC64(a_cbInstr) \
-    off = iemNativeEmitAddToRip64AndFinishingNoFlags(pReNative, off, (a_cbInstr)); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX)
+    off = iemNativeEmitAddToRip64AndFinishingNoFlags(pReNative, off, (a_cbInstr))
 
 /** Same as iemRegAddToRip64AndFinishingNoFlags. */
-DECLINLINE(uint32_t) iemNativeEmitAddToRip64AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr)
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitAddToRip64AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr)
 {
     /* Allocate a temporary PC register. */
     uint8_t const idxPcReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc, kIemNativeGstRegUse_ForUpdate);
-    AssertReturn(idxPcReg != UINT8_MAX, UINT32_MAX);
 
     /* Perform the addition and store the result. */
     off = iemNativeEmitAddGprImm8(pReNative, off, idxPcReg, cbInstr);
@@ -3941,15 +3897,14 @@ DECLINLINE(uint32_t) iemNativeEmitAddToRip64AndFinishingNoFlags(PIEMRECOMPILERST
 
 
 #define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC32(a_cbInstr) \
-    off = iemNativeEmitAddToEip32AndFinishingNoFlags(pReNative, off, (a_cbInstr)); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX)
+    off = iemNativeEmitAddToEip32AndFinishingNoFlags(pReNative, off, (a_cbInstr))
 
 /** Same as iemRegAddToEip32AndFinishingNoFlags. */
-DECLINLINE(uint32_t) iemNativeEmitAddToEip32AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr)
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitAddToEip32AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr)
 {
     /* Allocate a temporary PC register. */
     uint8_t const idxPcReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc, kIemNativeGstRegUse_ForUpdate);
-    AssertReturn(idxPcReg != UINT8_MAX, UINT32_MAX);
 
     /* Perform the addition and store the result. */
     off = iemNativeEmitAddGpr32Imm8(pReNative, off, idxPcReg, cbInstr);
@@ -3963,15 +3918,14 @@ DECLINLINE(uint32_t) iemNativeEmitAddToEip32AndFinishingNoFlags(PIEMRECOMPILERST
 
 
 #define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC16(a_cbInstr) \
-    off = iemNativeEmitAddToIp16AndFinishingNoFlags(pReNative, off, (a_cbInstr)); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX)
+    off = iemNativeEmitAddToIp16AndFinishingNoFlags(pReNative, off, (a_cbInstr))
 
 /** Same as iemRegAddToIp16AndFinishingNoFlags. */
-DECLINLINE(uint32_t) iemNativeEmitAddToIp16AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr)
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitAddToIp16AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr)
 {
     /* Allocate a temporary PC register. */
     uint8_t const idxPcReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc, kIemNativeGstRegUse_ForUpdate);
-    AssertReturn(idxPcReg != UINT8_MAX, UINT32_MAX);
 
     /* Perform the addition and store the result. */
     off = iemNativeEmitAddGpr32Imm8(pReNative, off, idxPcReg, cbInstr);
@@ -3991,26 +3945,23 @@ DECLINLINE(uint32_t) iemNativeEmitAddToIp16AndFinishingNoFlags(PIEMRECOMPILERSTA
 
 #define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC64(a_i8, a_cbInstr, a_enmEffOpSize) \
     off = iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int8_t)(a_i8), \
-                                                            (a_enmEffOpSize), pCallEntry->idxInstr); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX)
+                                                            (a_enmEffOpSize), pCallEntry->idxInstr)
 
 
 #define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC64(a_i16, a_cbInstr) \
     off =  iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int16_t)(a_i16), \
-                                                             IEMMODE_16BIT, pCallEntry->idxInstr); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX)
+                                                             IEMMODE_16BIT, pCallEntry->idxInstr)
 
 #define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC64(a_i32, a_cbInstr) \
     off =  iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (a_i32), \
-                                                             IEMMODE_64BIT, pCallEntry->idxInstr); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX)
+                                                             IEMMODE_64BIT, pCallEntry->idxInstr)
 
 /** Same as iemRegRip64RelativeJumpS8AndFinishNoFlags,
  *  iemRegRip64RelativeJumpS16AndFinishNoFlags and
  *  iemRegRip64RelativeJumpS32AndFinishNoFlags. */
-DECLINLINE(uint32_t) iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                                                                       uint8_t cbInstr, int32_t offDisp, IEMMODE enmEffOpSize,
-                                                                       uint8_t idxInstr)
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr,
+                                                  int32_t offDisp, IEMMODE enmEffOpSize, uint8_t idxInstr)
 {
     Assert(enmEffOpSize == IEMMODE_64BIT || enmEffOpSize == IEMMODE_16BIT);
 
@@ -4019,7 +3970,6 @@ DECLINLINE(uint32_t) iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(PIEMRECOM
 
     /* Allocate a temporary PC register. */
     uint8_t const idxPcReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc, kIemNativeGstRegUse_ForUpdate);
-    AssertReturn(idxPcReg != UINT8_MAX, UINT32_MAX);
 
     /* Perform the addition. */
     off = iemNativeEmitAddGprImm(pReNative, off, idxPcReg, (int64_t)offDisp + cbInstr);
@@ -4046,25 +3996,22 @@ DECLINLINE(uint32_t) iemNativeEmitRip64RelativeJumpAndFinishingNoFlags(PIEMRECOM
 
 #define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC32(a_i8, a_cbInstr, a_enmEffOpSize) \
     off = iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int8_t)(a_i8), \
-                                                            (a_enmEffOpSize), pCallEntry->idxInstr); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX)
+                                                            (a_enmEffOpSize), pCallEntry->idxInstr)
 
 #define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC32(a_i16, a_cbInstr) \
     off = iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int16_t)(a_i16), \
-                                                            IEMMODE_16BIT, pCallEntry->idxInstr); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX)
+                                                            IEMMODE_16BIT, pCallEntry->idxInstr)
 
 #define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC32(a_i32, a_cbInstr) \
     off = iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (a_i32), \
-                                                            IEMMODE_32BIT, pCallEntry->idxInstr); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX)
+                                                            IEMMODE_32BIT, pCallEntry->idxInstr)
 
 /** Same as iemRegEip32RelativeJumpS8AndFinishNoFlags,
  *  iemRegEip32RelativeJumpS16AndFinishNoFlags and
  *  iemRegEip32RelativeJumpS32AndFinishNoFlags. */
-DECLINLINE(uint32_t) iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                                                                       uint8_t cbInstr, int32_t offDisp, IEMMODE enmEffOpSize,
-                                                                       uint8_t idxInstr)
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr,
+                                                  int32_t offDisp, IEMMODE enmEffOpSize, uint8_t idxInstr)
 {
     Assert(enmEffOpSize == IEMMODE_32BIT || enmEffOpSize == IEMMODE_16BIT);
 
@@ -4073,7 +4020,6 @@ DECLINLINE(uint32_t) iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(PIEMRECOM
 
     /* Allocate a temporary PC register. */
     uint8_t const idxPcReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc, kIemNativeGstRegUse_ForUpdate);
-    AssertReturn(idxPcReg != UINT8_MAX, UINT32_MAX);
 
     /* Perform the addition. */
     off = iemNativeEmitAddGpr32Imm(pReNative, off, idxPcReg, offDisp + cbInstr);
@@ -4095,27 +4041,24 @@ DECLINLINE(uint32_t) iemNativeEmitEip32RelativeJumpAndFinishingNoFlags(PIEMRECOM
 
 
 #define IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC16(a_i8, a_cbInstr) \
-    off = iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int8_t)(a_i8), pCallEntry->idxInstr); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX)
+    off = iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int8_t)(a_i8), pCallEntry->idxInstr)
 
 #define IEM_MC_REL_JMP_S16_AND_FINISH_THREADED_PC16(a_i16, a_cbInstr) \
-    off = iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int16_t)(a_i16), pCallEntry->idxInstr); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX)
+    off = iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (int16_t)(a_i16), pCallEntry->idxInstr)
 
 #define IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC16(a_i32, a_cbInstr) \
-    off = iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (a_i32), pCallEntry->idxInstr); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX)
+    off = iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(pReNative, off, (a_cbInstr), (a_i32), pCallEntry->idxInstr)
 
 /** Same as iemRegIp16RelativeJumpS8AndFinishNoFlags. */
-DECLINLINE(uint32_t) iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                                                                      uint8_t cbInstr, int32_t offDisp, uint8_t idxInstr)
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                 uint8_t cbInstr, int32_t offDisp, uint8_t idxInstr)
 {
     /* We speculatively modify PC and may raise #GP(0), so make sure the right value is in CPUMCTX. */
     off = iemNativeRegFlushPendingWrites(pReNative, off);
 
     /* Allocate a temporary PC register. */
     uint8_t const idxPcReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc, kIemNativeGstRegUse_ForUpdate);
-    AssertReturn(idxPcReg != UINT8_MAX, UINT32_MAX);
 
     /* Perform the addition, clamp the result, check limit (may #GP(0) + exit TB) and store the result. */
     off = iemNativeEmitAddGpr32Imm(pReNative, off, idxPcReg, offDisp + cbInstr);
@@ -4140,10 +4083,10 @@ DECLINLINE(uint32_t) iemNativeEmitIp16RelativeJumpAndFinishingNoFlags(PIEMRECOMP
  * @returns Pointer to the condition stack entry on success, NULL on failure
  *          (too many nestings)
  */
-DECLINLINE(PIEMNATIVECOND) iemNativeCondPushIf(PIEMRECOMPILERSTATE pReNative)
+DECL_INLINE_THROW(PIEMNATIVECOND) iemNativeCondPushIf(PIEMRECOMPILERSTATE pReNative)
 {
     uint32_t const idxStack = pReNative->cCondDepth;
-    AssertReturn(idxStack < RT_ELEMENTS(pReNative->aCondStack), NULL);
+    AssertStmt(idxStack < RT_ELEMENTS(pReNative->aCondStack), IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_COND_TOO_DEEPLY_NESTED));
 
     PIEMNATIVECOND const pEntry = &pReNative->aCondStack[idxStack];
     pReNative->cCondDepth = (uint8_t)(idxStack + 1);
@@ -4151,9 +4094,7 @@ DECLINLINE(PIEMNATIVECOND) iemNativeCondPushIf(PIEMRECOMPILERSTATE pReNative)
     uint16_t const uCondSeqNo = ++pReNative->uCondSeqNo;
     pEntry->fInElse       = false;
     pEntry->idxLabelElse  = iemNativeLabelCreate(pReNative, kIemNativeLabelType_Else, UINT32_MAX /*offWhere*/, uCondSeqNo);
-    AssertReturn(pEntry->idxLabelElse != UINT32_MAX, NULL);
     pEntry->idxLabelEndIf = iemNativeLabelCreate(pReNative, kIemNativeLabelType_Endif, UINT32_MAX /*offWhere*/, uCondSeqNo);
-    AssertReturn(pEntry->idxLabelEndIf != UINT32_MAX, NULL);
 
     return pEntry;
 }
@@ -4162,7 +4103,8 @@ DECLINLINE(PIEMNATIVECOND) iemNativeCondPushIf(PIEMRECOMPILERSTATE pReNative)
 /**
  * Start of the if-block, snapshotting the register and variable state.
  */
-DECLINLINE(void) iemNativeCondStartIfBlock(PIEMRECOMPILERSTATE pReNative, uint32_t offIfBlock, uint32_t idxLabelIf = UINT32_MAX)
+DECL_INLINE_THROW(void)
+iemNativeCondStartIfBlock(PIEMRECOMPILERSTATE pReNative, uint32_t offIfBlock, uint32_t idxLabelIf = UINT32_MAX)
 {
     Assert(offIfBlock != UINT32_MAX);
     Assert(pReNative->cCondDepth > 0 && pReNative->cCondDepth <= RT_ELEMENTS(pReNative->aCondStack));
@@ -4186,11 +4128,10 @@ DECLINLINE(void) iemNativeCondStartIfBlock(PIEMRECOMPILERSTATE pReNative, uint32
 
 #define IEM_MC_ELSE() } while (0); \
         off = iemNativeEmitElse(pReNative, off); \
-        AssertReturn(off != UINT32_MAX, UINT32_MAX); \
         do {
 
 /** Emits code related to IEM_MC_ELSE. */
-DECLINLINE(uint32_t) iemNativeEmitElse(PIEMRECOMPILERSTATE pReNative, uint32_t off)
+DECL_INLINE_THROW(uint32_t) iemNativeEmitElse(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 {
     /* Check sanity and get the conditional stack entry. */
     Assert(off != UINT32_MAX);
@@ -4215,11 +4156,10 @@ DECLINLINE(uint32_t) iemNativeEmitElse(PIEMRECOMPILERSTATE pReNative, uint32_t o
 
 
 #define IEM_MC_ENDIF() } while (0); \
-        off = iemNativeEmitEndIf(pReNative, off); \
-        AssertReturn(off != UINT32_MAX, UINT32_MAX)
+        off = iemNativeEmitEndIf(pReNative, off)
 
 /** Emits code related to IEM_MC_ENDIF. */
-DECLINLINE(uint32_t) iemNativeEmitEndIf(PIEMRECOMPILERSTATE pReNative, uint32_t off)
+DECL_INLINE_THROW(uint32_t) iemNativeEmitEndIf(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 {
     /* Check sanity and get the conditional stack entry. */
     Assert(off != UINT32_MAX);
@@ -4307,10 +4247,10 @@ DECLINLINE(uint32_t) iemNativeEmitEndIf(PIEMRECOMPILERSTATE pReNative, uint32_t 
         }
 
         /* Finally, check that the host register allocations matches. */
-        AssertMsgReturn(pReNative->Core.bmHstRegs == pOther->bmHstRegs,
-                        ("Core.bmHstRegs=%#x pOther->bmHstRegs=%#x - %#x\n",
-                         pReNative->Core.bmHstRegs, pOther->bmHstRegs, pReNative->Core.bmHstRegs ^ pOther->bmHstRegs),
-                        UINT32_MAX);
+        AssertMsgStmt(pReNative->Core.bmHstRegs == pOther->bmHstRegs,
+                      ("Core.bmHstRegs=%#x pOther->bmHstRegs=%#x - %#x\n",
+                       pReNative->Core.bmHstRegs, pOther->bmHstRegs, pReNative->Core.bmHstRegs ^ pOther->bmHstRegs),
+                      IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_COND_ENDIF_RECONCILIATION_FAILED));
     }
 
     /*
@@ -4331,19 +4271,16 @@ DECLINLINE(uint32_t) iemNativeEmitEndIf(PIEMRECOMPILERSTATE pReNative, uint32_t 
 
 #define IEM_MC_IF_EFL_ANY_BITS_SET(a_fBits) \
         off = iemNativeEmitIfEflagAnysBitsSet(pReNative, off, (a_fBits)); \
-        AssertReturn(off != UINT32_MAX, UINT32_MAX); \
         do {
 
 /** Emits code for IEM_MC_IF_EFL_ANY_BITS_SET. */
-DECLINLINE(uint32_t) iemNativeEmitIfEflagAnysBitsSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitsInEfl)
+DECL_INLINE_THROW(uint32_t) iemNativeEmitIfEflagAnysBitsSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitsInEfl)
 {
-    PIEMNATIVECOND pEntry = iemNativeCondPushIf(pReNative);
-    AssertReturn(pEntry, UINT32_MAX);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
 
     /* Get the eflags. */
     uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
                                                               kIemNativeGstRegUse_ReadOnly);
-    AssertReturn(idxEflReg != UINT8_MAX, UINT32_MAX);
 
     /* Test and jump. */
     off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfNoneSet(pReNative, off, idxEflReg, fBitsInEfl, pEntry->idxLabelElse);
@@ -4360,19 +4297,16 @@ DECLINLINE(uint32_t) iemNativeEmitIfEflagAnysBitsSet(PIEMRECOMPILERSTATE pReNati
 
 #define IEM_MC_IF_EFL_NO_BITS_SET(a_fBits) \
         off = iemNativeEmitIfEflagNoBitsSet(pReNative, off, (a_fBits)); \
-        AssertReturn(off != UINT32_MAX, UINT32_MAX); \
         do {
 
 /** Emits code for IEM_MC_IF_EFL_NO_BITS_SET. */
-DECLINLINE(uint32_t) iemNativeEmitIfEflagNoBitsSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitsInEfl)
+DECL_INLINE_THROW(uint32_t) iemNativeEmitIfEflagNoBitsSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitsInEfl)
 {
-    PIEMNATIVECOND pEntry = iemNativeCondPushIf(pReNative);
-    AssertReturn(pEntry, UINT32_MAX);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
 
     /* Get the eflags. */
     uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
                                                               kIemNativeGstRegUse_ReadOnly);
-    AssertReturn(idxEflReg != UINT8_MAX, UINT32_MAX);
 
     /* Test and jump. */
     off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfAnySet(pReNative, off, idxEflReg, fBitsInEfl, pEntry->idxLabelElse);
@@ -4389,19 +4323,16 @@ DECLINLINE(uint32_t) iemNativeEmitIfEflagNoBitsSet(PIEMRECOMPILERSTATE pReNative
 
 #define IEM_MC_IF_EFL_BIT_SET(a_fBit) \
         off = iemNativeEmitIfEflagsBitSet(pReNative, off, (a_fBit)); \
-        AssertReturn(off != UINT32_MAX, UINT32_MAX); \
         do {
 
 /** Emits code for IEM_MC_IF_EFL_BIT_SET. */
-DECLINLINE(uint32_t) iemNativeEmitIfEflagsBitSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitInEfl)
+DECL_INLINE_THROW(uint32_t) iemNativeEmitIfEflagsBitSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitInEfl)
 {
-    PIEMNATIVECOND pEntry = iemNativeCondPushIf(pReNative);
-    AssertReturn(pEntry, UINT32_MAX);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
 
     /* Get the eflags. */
     uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
                                                               kIemNativeGstRegUse_ReadOnly);
-    AssertReturn(idxEflReg != UINT8_MAX, UINT32_MAX);
 
     unsigned const iBitNo = ASMBitFirstSetU32(fBitInEfl) - 1;
     Assert(RT_BIT_32(iBitNo) == fBitInEfl);
@@ -4421,19 +4352,16 @@ DECLINLINE(uint32_t) iemNativeEmitIfEflagsBitSet(PIEMRECOMPILERSTATE pReNative, 
 
 #define IEM_MC_IF_EFL_BIT_NOT_SET(a_fBit) \
         off = iemNativeEmitIfEflagsBitNotSet(pReNative, off, (a_fBit)); \
-        AssertReturn(off != UINT32_MAX, UINT32_MAX); \
         do {
 
 /** Emits code for IEM_MC_IF_EFL_BIT_NOT_SET. */
-DECLINLINE(uint32_t) iemNativeEmitIfEflagsBitNotSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitInEfl)
+DECL_INLINE_THROW(uint32_t) iemNativeEmitIfEflagsBitNotSet(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitInEfl)
 {
-    PIEMNATIVECOND pEntry = iemNativeCondPushIf(pReNative);
-    AssertReturn(pEntry, UINT32_MAX);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
 
     /* Get the eflags. */
     uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
                                                               kIemNativeGstRegUse_ReadOnly);
-    AssertReturn(idxEflReg != UINT8_MAX, UINT32_MAX);
 
     unsigned const iBitNo = ASMBitFirstSetU32(fBitInEfl) - 1;
     Assert(RT_BIT_32(iBitNo) == fBitInEfl);
@@ -4453,25 +4381,22 @@ DECLINLINE(uint32_t) iemNativeEmitIfEflagsBitNotSet(PIEMRECOMPILERSTATE pReNativ
 
 #define IEM_MC_IF_EFL_BITS_EQ(a_fBit1, a_fBit2)         \
     off = iemNativeEmitIfEflagsTwoBitsEqual(pReNative, off, a_fBit1, a_fBit2, false /*fInverted*/); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX); \
     do {
 
 #define IEM_MC_IF_EFL_BITS_NE(a_fBit1, a_fBit2)         \
     off = iemNativeEmitIfEflagsTwoBitsEqual(pReNative, off, a_fBit1, a_fBit2, true /*fInverted*/); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX); \
     do {
 
 /** Emits code for IEM_MC_IF_EFL_BITS_EQ and IEM_MC_IF_EFL_BITS_NE. */
-DECLINLINE(uint32_t) iemNativeEmitIfEflagsTwoBitsEqual(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                                                       uint32_t fBit1InEfl, uint32_t fBit2InEfl, bool fInverted)
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitIfEflagsTwoBitsEqual(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                  uint32_t fBit1InEfl, uint32_t fBit2InEfl, bool fInverted)
 {
-    PIEMNATIVECOND pEntry = iemNativeCondPushIf(pReNative);
-    AssertReturn(pEntry, UINT32_MAX);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
 
     /* Get the eflags. */
     uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
                                                               kIemNativeGstRegUse_ReadOnly);
-    AssertReturn(idxEflReg != UINT8_MAX, UINT32_MAX);
 
     unsigned const iBitNo1 = ASMBitFirstSetU32(fBit1InEfl) - 1;
     Assert(RT_BIT_32(iBitNo1) == fBit1InEfl);
@@ -4482,7 +4407,6 @@ DECLINLINE(uint32_t) iemNativeEmitIfEflagsTwoBitsEqual(PIEMRECOMPILERSTATE pReNa
 
 #ifdef RT_ARCH_AMD64
     uint8_t const idxTmpReg = iemNativeRegAllocTmpImm(pReNative, &off, fBit1InEfl);
-    AssertReturn(idxTmpReg != UINT8_MAX, UINT32_MAX);
 
     off = iemNativeEmitAndGpr32ByGpr32(pReNative, off, idxTmpReg, idxEflReg);
     if (iBitNo1 > iBitNo2)
@@ -4492,11 +4416,8 @@ DECLINLINE(uint32_t) iemNativeEmitIfEflagsTwoBitsEqual(PIEMRECOMPILERSTATE pReNa
     off = iemNativeEmitXorGpr32ByGpr32(pReNative, off, idxTmpReg, idxEflReg);
 
 #elif defined(RT_ARCH_ARM64)
-    uint8_t const idxTmpReg = iemNativeRegAllocTmp(pReNative, &off);
-    AssertReturn(idxTmpReg != UINT8_MAX, UINT32_MAX);
-
-    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
-    AssertReturn(pu32CodeBuf, UINT32_MAX);
+    uint8_t const    idxTmpReg   = iemNativeRegAllocTmp(pReNative, &off);
+    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
 
     /* and tmpreg, eflreg, #1<<iBitNo1 */
     pu32CodeBuf[off++] = Armv8A64MkInstrAndImm(idxTmpReg, idxEflReg, 0 /*uImm7SizeLen -> 32*/, 32 - iBitNo1, false /*f64Bit*/);
@@ -4532,31 +4453,27 @@ DECLINLINE(uint32_t) iemNativeEmitIfEflagsTwoBitsEqual(PIEMRECOMPILERSTATE pReNa
 
 #define IEM_MC_IF_EFL_BIT_NOT_SET_AND_BITS_EQ(a_fBit, a_fBit1, a_fBit2) \
     off = iemNativeEmitIfEflagsBitNotSetAndTwoBitsEqual(pReNative, off, a_fBit, a_fBit1, a_fBit2, false /*fInverted*/); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX); \
     do {
 
 #define IEM_MC_IF_EFL_BIT_SET_OR_BITS_NE(a_fBit, a_fBit1, a_fBit2) \
     off = iemNativeEmitIfEflagsBitNotSetAndTwoBitsEqual(pReNative, off, a_fBit, a_fBit1, a_fBit2, true /*fInverted*/); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX); \
     do {
 
 /** Emits code for IEM_MC_IF_EFL_BIT_NOT_SET_AND_BITS_EQ and
  *  IEM_MC_IF_EFL_BIT_SET_OR_BITS_NE. */
-DECLINLINE(uint32_t) iemNativeEmitIfEflagsBitNotSetAndTwoBitsEqual(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitInEfl,
-                                                                  uint32_t fBit1InEfl, uint32_t fBit2InEfl, bool fInverted)
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitIfEflagsBitNotSetAndTwoBitsEqual(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitInEfl,
+                                              uint32_t fBit1InEfl, uint32_t fBit2InEfl, bool fInverted)
 {
-    PIEMNATIVECOND pEntry = iemNativeCondPushIf(pReNative);
-    AssertReturn(pEntry, UINT32_MAX);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
 
     /* We need an if-block label for the non-inverted variant. */
     uint32_t const idxLabelIf = fInverted ? iemNativeLabelCreate(pReNative, kIemNativeLabelType_If, UINT32_MAX,
                                                                  pReNative->paLabels[pEntry->idxLabelElse].uData) : UINT32_MAX;
-    AssertReturn(idxLabelIf != UINT32_MAX || !fInverted, UINT32_MAX);
 
     /* Get the eflags. */
     uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
                                                               kIemNativeGstRegUse_ReadOnly);
-    AssertReturn(idxEflReg != UINT8_MAX, UINT32_MAX);
 
     /* Translate the flag masks to bit numbers. */
     unsigned const iBitNo = ASMBitFirstSetU32(fBitInEfl) - 1;
@@ -4576,7 +4493,6 @@ DECLINLINE(uint32_t) iemNativeEmitIfEflagsBitNotSetAndTwoBitsEqual(PIEMRECOMPILE
 #elif defined(RT_ARCH_ARM64)
     uint8_t const idxTmpReg = iemNativeRegAllocTmp(pReNative, &off);
 #endif
-    AssertReturn(idxTmpReg != UINT8_MAX, UINT32_MAX);
 
     /* Check for the lone bit first. */
     if (!fInverted)
@@ -4594,8 +4510,7 @@ DECLINLINE(uint32_t) iemNativeEmitIfEflagsBitNotSetAndTwoBitsEqual(PIEMRECOMPILE
     off = iemNativeEmitXorGpr32ByGpr32(pReNative, off, idxTmpReg, idxEflReg);
 
 #elif defined(RT_ARCH_ARM64)
-    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
-    AssertReturn(pu32CodeBuf, UINT32_MAX);
+    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
 
     /* and tmpreg, eflreg, #1<<iBitNo1 */
     pu32CodeBuf[off++] = Armv8A64MkInstrAndImm(idxTmpReg, idxEflReg, 0 /*uImm7SizeLen -> 32*/, 32 - iBitNo1, false /*f64Bit*/);
@@ -4631,19 +4546,16 @@ DECLINLINE(uint32_t) iemNativeEmitIfEflagsBitNotSetAndTwoBitsEqual(PIEMRECOMPILE
 
 #define IEM_MC_IF_CX_IS_NZ() \
     off = iemNativeEmitIfCxIsNotZero(pReNative, off); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX); \
     do {
 
 /** Emits code for IEM_MC_IF_CX_IS_NZ. */
-DECLINLINE(uint32_t) iemNativeEmitIfCxIsNotZero(PIEMRECOMPILERSTATE pReNative, uint32_t off)
+DECL_INLINE_THROW(uint32_t) iemNativeEmitIfCxIsNotZero(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 {
-    PIEMNATIVECOND pEntry = iemNativeCondPushIf(pReNative);
-    AssertReturn(pEntry, UINT32_MAX);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
 
     uint8_t const idxGstRcxReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off,
                                                                  (IEMNATIVEGSTREG)(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                                  kIemNativeGstRegUse_ReadOnly);
-    AssertReturn(idxGstRcxReg != UINT8_MAX, UINT32_MAX);
     off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfNoneSet(pReNative, off, idxGstRcxReg, UINT16_MAX, pEntry->idxLabelElse);
     iemNativeRegFreeTmp(pReNative, idxGstRcxReg);
 
@@ -4654,24 +4566,20 @@ DECLINLINE(uint32_t) iemNativeEmitIfCxIsNotZero(PIEMRECOMPILERSTATE pReNative, u
 
 #define IEM_MC_IF_ECX_IS_NZ() \
     off = iemNativeEmitIfRcxEcxIsNotZero(pReNative, off, false /*f64Bit*/); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX); \
     do {
 
 #define IEM_MC_IF_RCX_IS_NZ() \
     off = iemNativeEmitIfRcxEcxIsNotZero(pReNative, off, true /*f64Bit*/); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX); \
     do {
 
 /** Emits code for IEM_MC_IF_ECX_IS_NZ and IEM_MC_IF_RCX_IS_NZ. */
-DECLINLINE(uint32_t) iemNativeEmitIfRcxEcxIsNotZero(PIEMRECOMPILERSTATE pReNative, uint32_t off, bool f64Bit)
+DECL_INLINE_THROW(uint32_t) iemNativeEmitIfRcxEcxIsNotZero(PIEMRECOMPILERSTATE pReNative, uint32_t off, bool f64Bit)
 {
-    PIEMNATIVECOND pEntry = iemNativeCondPushIf(pReNative);
-    AssertReturn(pEntry, UINT32_MAX);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
 
     uint8_t const idxGstRcxReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off,
                                                                  (IEMNATIVEGSTREG)(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                                  kIemNativeGstRegUse_ReadOnly);
-    AssertReturn(idxGstRcxReg != UINT8_MAX, UINT32_MAX);
     off = iemNativeEmitTestIfGprIsZeroAndJmpToLabel(pReNative, off, idxGstRcxReg, f64Bit, pEntry->idxLabelElse);
     iemNativeRegFreeTmp(pReNative, idxGstRcxReg);
 
@@ -4682,33 +4590,27 @@ DECLINLINE(uint32_t) iemNativeEmitIfRcxEcxIsNotZero(PIEMRECOMPILERSTATE pReNativ
 
 #define IEM_MC_IF_CX_IS_NZ_AND_EFL_BIT_SET(a_fBit) \
     off = iemNativeEmitIfCxIsNotZeroAndTestEflagsBit(pReNative, off, a_fBit, true /*fCheckIfSet*/); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX); \
     do {
 
 #define IEM_MC_IF_CX_IS_NZ_AND_EFL_BIT_NOT_SET(a_fBit) \
     off = iemNativeEmitIfCxIsNotZeroAndTestEflagsBit(pReNative, off, a_fBit, false /*fCheckIfSet*/); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX); \
     do {
 
 /** Emits code for IEM_MC_IF_CX_IS_NZ. */
-DECLINLINE(uint32_t) iemNativeEmitIfCxIsNotZeroAndTestEflagsBit(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                                                                 uint32_t fBitInEfl, bool fCheckIfSet)
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitIfCxIsNotZeroAndTestEflagsBit(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t fBitInEfl, bool fCheckIfSet)
 {
-    PIEMNATIVECOND pEntry = iemNativeCondPushIf(pReNative);
-    AssertReturn(pEntry, UINT32_MAX);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
 
     /* We have to load both RCX and EFLAGS before we can start branching,
        otherwise we'll end up in the else-block with an inconsistent
        register allocator state.
        Doing EFLAGS first as it's more likely to be loaded, right? */
-    uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
-                                                              kIemNativeGstRegUse_ReadOnly);
-    AssertReturn(idxEflReg != UINT8_MAX, UINT32_MAX);
-
+    uint8_t const idxEflReg    = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
+                                                                 kIemNativeGstRegUse_ReadOnly);
     uint8_t const idxGstRcxReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off,
                                                                  (IEMNATIVEGSTREG)(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                                  kIemNativeGstRegUse_ReadOnly);
-    AssertReturn(idxGstRcxReg != UINT8_MAX, UINT32_MAX);
 
     /** @todo we could reduce this to a single branch instruction by spending a
      *        temporary register and some setnz stuff.  Not sure if loops are
@@ -4732,46 +4634,39 @@ DECLINLINE(uint32_t) iemNativeEmitIfCxIsNotZeroAndTestEflagsBit(PIEMRECOMPILERST
 
 #define IEM_MC_IF_ECX_IS_NZ_AND_EFL_BIT_SET(a_fBit) \
     off = iemNativeEmitIfRcxEcxIsNotZeroAndTestEflagsBit(pReNative, off, a_fBit, true /*fCheckIfSet*/, false /*f64Bit*/); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX); \
     do {
 
 #define IEM_MC_IF_ECX_IS_NZ_AND_EFL_BIT_NOT_SET(a_fBit) \
     off = iemNativeEmitIfRcxEcxIsNotZeroAndTestEflagsBit(pReNative, off, a_fBit, false /*fCheckIfSet*/, false /*f64Bit*/); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX); \
     do {
 
 #define IEM_MC_IF_RCX_IS_NZ_AND_EFL_BIT_SET(a_fBit) \
     off = iemNativeEmitIfRcxEcxIsNotZeroAndTestEflagsBit(pReNative, off, a_fBit, true /*fCheckIfSet*/, true /*f64Bit*/); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX); \
     do {
 
 #define IEM_MC_IF_RCX_IS_NZ_AND_EFL_BIT_NOT_SET(a_fBit) \
     off = iemNativeEmitIfRcxEcxIsNotZeroAndTestEflagsBit(pReNative, off, a_fBit, false /*fCheckIfSet*/, true /*f64Bit*/); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX); \
     do {
 
 /** Emits code for IEM_MC_IF_ECX_IS_NZ_AND_EFL_BIT_SET,
  *  IEM_MC_IF_ECX_IS_NZ_AND_EFL_BIT_NOT_SET,
  *  IEM_MC_IF_RCX_IS_NZ_AND_EFL_BIT_SET and
  *  IEM_MC_IF_RCX_IS_NZ_AND_EFL_BIT_NOT_SET. */
-DECLINLINE(uint32_t) iemNativeEmitIfRcxEcxIsNotZeroAndTestEflagsBit(PIEMRECOMPILERSTATE pReNative, uint32_t off,
-                                                                    uint32_t fBitInEfl, bool fCheckIfSet, bool f64Bit)
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitIfRcxEcxIsNotZeroAndTestEflagsBit(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                               uint32_t fBitInEfl, bool fCheckIfSet, bool f64Bit)
 {
-    PIEMNATIVECOND pEntry = iemNativeCondPushIf(pReNative);
-    AssertReturn(pEntry, UINT32_MAX);
+    PIEMNATIVECOND const pEntry = iemNativeCondPushIf(pReNative);
 
     /* We have to load both RCX and EFLAGS before we can start branching,
        otherwise we'll end up in the else-block with an inconsistent
        register allocator state.
        Doing EFLAGS first as it's more likely to be loaded, right? */
-    uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
-                                                              kIemNativeGstRegUse_ReadOnly);
-    AssertReturn(idxEflReg != UINT8_MAX, UINT32_MAX);
-
+    uint8_t const idxEflReg    = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
+                                                                 kIemNativeGstRegUse_ReadOnly);
     uint8_t const idxGstRcxReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off,
                                                                  (IEMNATIVEGSTREG)(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                                  kIemNativeGstRegUse_ReadOnly);
-    AssertReturn(idxGstRcxReg != UINT8_MAX, UINT32_MAX);
 
     /** @todo we could reduce this to a single branch instruction by spending a
      *        temporary register and some setnz stuff.  Not sure if loops are
@@ -4799,8 +4694,7 @@ DECLINLINE(uint32_t) iemNativeEmitIfRcxEcxIsNotZeroAndTestEflagsBit(PIEMRECOMPIL
  */
 
 #define IEM_MC_SUB_GREG_U16(a_iGReg, a_u8SubtrahendConst) \
-    off = iemNativeEmitSubGregU16(pReNative, off, a_iGReg, a_u8SubtrahendConst); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX)
+    off = iemNativeEmitSubGregU16(pReNative, off, a_iGReg, a_u8SubtrahendConst)
 
 /** Emits code for IEM_MC_SUB_GREG_U16. */
 DECLINLINE(uint32_t) iemNativeEmitSubGregU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg, uint8_t uSubtrahend)
@@ -4808,11 +4702,9 @@ DECLINLINE(uint32_t) iemNativeEmitSubGregU16(PIEMRECOMPILERSTATE pReNative, uint
     uint8_t const idxGstTmpReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off,
                                                                  (IEMNATIVEGSTREG)(kIemNativeGstReg_GprFirst + iGReg),
                                                                   kIemNativeGstRegUse_ForUpdate);
-    AssertReturn(idxGstTmpReg != UINT8_MAX, UINT32_MAX);
 
 #ifdef RT_ARCH_AMD64
-    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
-    AssertReturn(pbCodeBuf, UINT32_MAX);
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
     pbCodeBuf[off++] = X86_OP_PRF_SIZE_OP;
     if (idxGstTmpReg >= 8)
         pbCodeBuf[off++] = X86_OP_REX_B;
@@ -4830,11 +4722,8 @@ DECLINLINE(uint32_t) iemNativeEmitSubGregU16(PIEMRECOMPILERSTATE pReNative, uint
     }
 
 #else
-    uint8_t const idxTmpReg = iemNativeRegAllocTmp(pReNative, &off);
-    AssertReturn(idxTmpReg != UINT8_MAX, UINT32_MAX);
-
-    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
-    AssertReturn(pu32CodeBuf, UINT32_MAX);
+    uint8_t const    idxTmpReg   = iemNativeRegAllocTmp(pReNative, &off);
+    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
 
     /* sub tmp, gstgrp, uSubtrahend */
     pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, idxTmpReg, idxGstTmpReg, uSubtrahend, false /*f64Bit*/);
@@ -4855,25 +4744,21 @@ DECLINLINE(uint32_t) iemNativeEmitSubGregU16(PIEMRECOMPILERSTATE pReNative, uint
 
 
 #define IEM_MC_SUB_GREG_U32(a_iGReg, a_u8Const) \
-    off = iemNativeEmitSubGregU32U64(pReNative, off, a_iGReg, a_u8Const, false /*f64Bit*/); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX)
+    off = iemNativeEmitSubGregU32U64(pReNative, off, a_iGReg, a_u8Const, false /*f64Bit*/)
 
 #define IEM_MC_SUB_GREG_U64(a_iGReg, a_u8Const) \
-    off = iemNativeEmitSubGregU32U64(pReNative, off, a_iGReg, a_u8Const, true /*f64Bit*/); \
-    AssertReturn(off != UINT32_MAX, UINT32_MAX)
+    off = iemNativeEmitSubGregU32U64(pReNative, off, a_iGReg, a_u8Const, true /*f64Bit*/)
 
 /** Emits code for IEM_MC_SUB_GREG_U32 and IEM_MC_SUB_GREG_U64. */
-DECLINLINE(uint32_t) iemNativeEmitSubGregU32U64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg,
-                                                uint8_t uSubtrahend, bool f64Bit)
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitSubGregU32U64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg, uint8_t uSubtrahend, bool f64Bit)
 {
     uint8_t const idxGstTmpReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off,
                                                                  (IEMNATIVEGSTREG)(kIemNativeGstReg_GprFirst + iGReg),
                                                                   kIemNativeGstRegUse_ForUpdate);
-    AssertReturn(idxGstTmpReg != UINT8_MAX, UINT32_MAX);
 
 #ifdef RT_ARCH_AMD64
     uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 6);
-    AssertReturn(pbCodeBuf, UINT32_MAX);
     if (f64Bit)
         pbCodeBuf[off++] = X86_OP_REX_W | (idxGstTmpReg >= 8 ? X86_OP_REX_B : 0);
     else if (idxGstTmpReg >= 8)
@@ -4903,7 +4788,6 @@ DECLINLINE(uint32_t) iemNativeEmitSubGregU32U64(PIEMRECOMPILERSTATE pReNative, u
 #else
     /* sub tmp, gstgrp, uSubtrahend */
     uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-    AssertReturn(pu32CodeBuf, UINT32_MAX);
     pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, idxTmpReg, idxGstTmpReg, uSubtrahend, f64Bit);
 
 #endif
@@ -4944,16 +4828,13 @@ static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_DeferToCImpl0)
 static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckIrq)
 {
     RT_NOREF(pCallEntry);
-//pReNative->pInstrBuf[off++] = 0xcc;
 
     /* It's too convenient to use iemNativeEmitTestBitInGprAndJmpToLabelIfNotSet below
        and I'm too lazy to create a 'Fixed' version of that one. */
     uint32_t const idxLabelVmCheck = iemNativeLabelCreate(pReNative, kIemNativeLabelType_CheckIrq,
                                                           UINT32_MAX, pReNative->uCheckIrqSeqNo++);
-    AssertReturn(idxLabelVmCheck != UINT32_MAX, UINT32_MAX);
 
     uint32_t const idxLabelReturnBreak = iemNativeLabelCreate(pReNative, kIemNativeLabelType_ReturnBreak);
-    AssertReturn(idxLabelReturnBreak != UINT32_MAX, UINT32_MAX);
 
     /* Again, we need to load the extended EFLAGS before we actually need them
        in case we jump.  We couldn't use iemNativeRegAllocTmpForGuestReg if we
@@ -4961,14 +4842,10 @@ static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckIrq)
        when the code branches before the load.  Ditto PC. */
     uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
                                                               kIemNativeGstRegUse_ReadOnly);
-    AssertReturn(idxEflReg != UINT8_MAX, UINT32_MAX);
 
-    uint8_t const idxPcReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc,
-                                                             kIemNativeGstRegUse_ReadOnly);
-    AssertReturn(idxPcReg != UINT8_MAX, UINT32_MAX);
+    uint8_t const idxPcReg  = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_Pc, kIemNativeGstRegUse_ReadOnly);
 
     uint8_t idxTmpReg = iemNativeRegAllocTmp(pReNative, &off);
-    AssertReturn(idxTmpReg < RT_ELEMENTS(pReNative->Core.aHstRegs), UINT32_MAX);
 
     /*
      * Start by checking the local forced actions of the EMT we're on for IRQs
@@ -5036,9 +4913,8 @@ static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckIrq)
 static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_CheckMode)
 {
     uint32_t const fExpectedExec = (uint32_t)pCallEntry->auParams[0];
-    uint8_t idxTmpReg = iemNativeRegAllocTmp(pReNative, &off);
+    uint8_t const  idxTmpReg     = iemNativeRegAllocTmp(pReNative, &off);
 
-    AssertReturn(idxTmpReg < RT_ELEMENTS(pReNative->Core.aHstRegs), UINT32_MAX);
     off = iemNativeEmitLoadGprFromVCpuU32(pReNative, off, idxTmpReg, RT_UOFFSETOF(VMCPUCC, iem.s.fExec));
     off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxTmpReg, IEMTB_F_KEY_MASK);
     off = iemNativeEmitTestIfGpr32NotEqualImmAndJmpToNewLabel(pReNative, off, idxTmpReg, fExpectedExec & IEMTB_F_KEY_MASK,
@@ -5086,7 +4962,7 @@ static DECLCALLBACK(int) iemNativeDisasReadBytesDummy(PDISSTATE pDis, uint8_t of
  * @param   pszBuf  The output buffer.
  * @param   cbBuf   The output buffer size.  At least 32 bytes.
  */
-const char *iemTbFlagsToString(uint32_t fFlags, char *pszBuf, size_t cbBuf)
+DECLHIDDEN(const char *) iemTbFlagsToString(uint32_t fFlags, char *pszBuf, size_t cbBuf) RT_NOEXCEPT
 {
     Assert(cbBuf >= 32);
     static RTSTRTUPLE const s_aModes[] =
@@ -5172,7 +5048,7 @@ const char *iemTbFlagsToString(uint32_t fFlags, char *pszBuf, size_t cbBuf)
 }
 
 
-void iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp)
+DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEXCEPT
 {
     AssertReturnVoid((pTb->fFlags & IEMTB_F_TYPE_MASK) == IEMTB_F_TYPE_NATIVE);
 
@@ -5546,7 +5422,7 @@ void iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp)
  *                  thread.
  * @param   pTb     The threaded translation to recompile to native.
  */
-PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb)
+DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
 {
     /*
      * The first time thru, we allocate the recompiler state, the other times
@@ -5562,89 +5438,96 @@ PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb)
     }
 
     /*
-     * Emit prolog code (fixed).
+     * Recompiling and emitting code is done using try/throw/catch or setjmp/longjmp
+     * for aborting if an error happens.
      */
-    uint32_t off = iemNativeEmitProlog(pReNative, 0);
-    AssertReturn(off != UINT32_MAX, pTb);
-
-    /*
-     * Convert the calls to native code.
-     */
-#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
-    int32_t              iGstInstr  = -1;
-    uint32_t             fExec      = pTb->fFlags;
-#endif
-    PCIEMTHRDEDCALLENTRY pCallEntry = pTb->Thrd.paCalls;
-    uint32_t             cCallsLeft = pTb->Thrd.cCalls;
+    uint32_t        cCallsLeft = pTb->Thrd.cCalls;
 #ifdef LOG_ENABLED
-    uint32_t const       cCallsOrg  = cCallsLeft;
+    uint32_t const  cCallsOrg  = cCallsLeft;
 #endif
-    while (cCallsLeft-- > 0)
+    uint32_t        off        = 0;
+    int             rc         = VINF_SUCCESS;
+    IEMNATIVE_TRY_SETJMP(pReNative, rc)
     {
-        PFNIEMNATIVERECOMPFUNC const pfnRecom = g_apfnIemNativeRecompileFunctions[pCallEntry->enmFunction];
+        /*
+         * Emit prolog code (fixed).
+         */
+        off = iemNativeEmitProlog(pReNative, off);
 
         /*
-         * Debug info and assembly markup.
+         * Convert the calls to native code.
          */
 #ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
-        if (pCallEntry->enmFunction == kIemThreadedFunc_BltIn_CheckMode)
-            fExec = pCallEntry->auParams[0];
-        iemNativeDbgInfoAddNativeOffset(pReNative, off);
-        if (iGstInstr < (int32_t)pCallEntry->idxInstr)
+        int32_t  iGstInstr  = -1;
+        uint32_t fExec      = pTb->fFlags;
+#endif
+        PCIEMTHRDEDCALLENTRY pCallEntry = pTb->Thrd.paCalls;
+        while (cCallsLeft-- > 0)
         {
-            if (iGstInstr < (int32_t)pTb->cInstructions)
-                iemNativeDbgInfoAddGuestInstruction(pReNative, fExec);
-            else
-                Assert(iGstInstr == pTb->cInstructions);
-            iGstInstr = pCallEntry->idxInstr;
-        }
-        iemNativeDbgInfoAddThreadedCall(pReNative, (IEMTHREADEDFUNCS)pCallEntry->enmFunction, pfnRecom != NULL);
+            PFNIEMNATIVERECOMPFUNC const pfnRecom = g_apfnIemNativeRecompileFunctions[pCallEntry->enmFunction];
+
+            /*
+             * Debug info and assembly markup.
+             */
+#ifdef IEMNATIVE_WITH_TB_DEBUG_INFO
+            if (pCallEntry->enmFunction == kIemThreadedFunc_BltIn_CheckMode)
+                fExec = pCallEntry->auParams[0];
+            iemNativeDbgInfoAddNativeOffset(pReNative, off);
+            if (iGstInstr < (int32_t)pCallEntry->idxInstr)
+            {
+                if (iGstInstr < (int32_t)pTb->cInstructions)
+                    iemNativeDbgInfoAddGuestInstruction(pReNative, fExec);
+                else
+                    Assert(iGstInstr == pTb->cInstructions);
+                iGstInstr = pCallEntry->idxInstr;
+            }
+            iemNativeDbgInfoAddThreadedCall(pReNative, (IEMTHREADEDFUNCS)pCallEntry->enmFunction, pfnRecom != NULL);
 #elif defined(VBOX_STRICT)
-        off = iemNativeEmitMarker(pReNative, off,
-                                  RT_MAKE_U32((pTb->Thrd.cCalls - cCallsLeft - 1) | (pfnRecom ? 0x8000 : 0),
-                                              pCallEntry->enmFunction));
-        AssertReturn(off != UINT32_MAX, pTb);
+            off = iemNativeEmitMarker(pReNative, off,
+                                      RT_MAKE_U32((pTb->Thrd.cCalls - cCallsLeft - 1) | (pfnRecom ? 0x8000 : 0),
+                                                  pCallEntry->enmFunction));
 #endif
 
-        /*
-         * Actual work.
-         */
-        if (pfnRecom) /** @todo stats on this.   */
-        {
-            //STAM_COUNTER_INC()
-            off = pfnRecom(pReNative, off, pCallEntry);
+            /*
+             * Actual work.
+             */
+            if (pfnRecom) /** @todo stats on this.   */
+            {
+                //STAM_COUNTER_INC()
+                off = pfnRecom(pReNative, off, pCallEntry);
+            }
+            else
+                off = iemNativeEmitThreadedCall(pReNative, off, pCallEntry);
+            Assert(off <= pReNative->cInstrBufAlloc);
+            Assert(pReNative->cCondDepth == 0);
+
+            /*
+             * Advance.
+             */
+            pCallEntry++;
         }
-        else
-            off = iemNativeEmitThreadedCall(pReNative, off, pCallEntry);
-        AssertReturn(off != UINT32_MAX, pTb);
-        Assert(pReNative->cCondDepth == 0);
 
         /*
-         * Advance.
+         * Emit the epilog code.
          */
-        pCallEntry++;
-    }
+        uint32_t idxReturnLabel;
+        off = iemNativeEmitEpilog(pReNative, off, &idxReturnLabel);
 
-    /*
-     * Emit the epilog code.
-     */
-    uint32_t idxReturnLabel;
-    off = iemNativeEmitEpilog(pReNative, off, &idxReturnLabel);
-    AssertReturn(off != UINT32_MAX, pTb);
-
-    /*
-     * Generate special jump labels.
-     */
-    if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_ReturnBreak))
-    {
-        off = iemNativeEmitReturnBreak(pReNative, off, idxReturnLabel);
-        AssertReturn(off != UINT32_MAX, pTb);
+        /*
+         * Generate special jump labels.
+         */
+        if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_ReturnBreak))
+            off = iemNativeEmitReturnBreak(pReNative, off, idxReturnLabel);
+        if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_RaiseGp0))
+            off = iemNativeEmitRaiseGp0(pReNative, off, idxReturnLabel);
     }
-    if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_RaiseGp0))
+    IEMNATIVE_CATCH_LONGJMP_BEGIN(pReNative, rc);
     {
-        off = iemNativeEmitRaiseGp0(pReNative, off, idxReturnLabel);
-        AssertReturn(off != UINT32_MAX, pTb);
+        Log(("iemNativeRecompile: Caught %Rrc while recompiling!\n", rc));
+        return pTb;
     }
+    IEMNATIVE_CATCH_LONGJMP_END(pReNative);
+    Assert(off <= pReNative->cInstrBufAlloc);
 
     /*
      * Make sure all labels has been defined.

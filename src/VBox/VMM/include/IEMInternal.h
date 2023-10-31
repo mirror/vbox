@@ -1844,12 +1844,12 @@ typedef IEMCPU const *PCIEMCPU;
 # else  /* !IEM_WITH_THROW_CATCH */
 #  define IEM_TRY_SETJMP(a_pVCpu, a_rcTarget) \
         jmp_buf  JmpBuf; \
-        jmp_buf * volatile pSavedJmpBuf = pVCpu->iem.s.CTX_SUFF(pJmpBuf); \
-        pVCpu->iem.s.CTX_SUFF(pJmpBuf) = &JmpBuf; \
+        jmp_buf * volatile pSavedJmpBuf = (a_pVCpu)->iem.s.CTX_SUFF(pJmpBuf); \
+        (a_pVCpu)->iem.s.CTX_SUFF(pJmpBuf) = &JmpBuf; \
         if ((rcStrict = setjmp(JmpBuf)) == 0)
 #  define IEM_TRY_SETJMP_AGAIN(a_pVCpu, a_rcTarget) \
-        pSavedJmpBuf = pVCpu->iem.s.CTX_SUFF(pJmpBuf); \
-        pVCpu->iem.s.CTX_SUFF(pJmpBuf) = &JmpBuf; \
+        pSavedJmpBuf = (a_pVCpu)->iem.s.CTX_SUFF(pJmpBuf); \
+        (a_pVCpu)->iem.s.CTX_SUFF(pJmpBuf) = &JmpBuf; \
         if ((rcStrict = setjmp(JmpBuf)) == 0)
 #  define IEM_CATCH_LONGJMP_BEGIN(a_pVCpu, a_rcTarget) \
         else \
@@ -5589,9 +5589,9 @@ bool iemThreadedCompileEmitIrqCheckBefore(PVMCPUCC pVCpu, PIEMTB pTb);
 bool iemThreadedCompileBeginEmitCallsComplications(PVMCPUCC pVCpu, PIEMTB pTb);
 
 /* Native recompiler public bits: */
-PIEMTB iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb);
-int    iemExecMemAllocatorInit(PVMCPU pVCpu, uint64_t cbMax, uint64_t cbInitial, uint32_t cbChunk);
-void   iemExecMemAllocatorFree(PVMCPU pVCpu, void *pv, size_t cb);
+DECLHIDDEN(PIEMTB)  iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT;
+int                 iemExecMemAllocatorInit(PVMCPU pVCpu, uint64_t cbMax, uint64_t cbInitial, uint32_t cbChunk);
+void                iemExecMemAllocatorFree(PVMCPU pVCpu, void *pv, size_t cb);
 
 
 /** @} */

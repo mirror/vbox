@@ -2507,6 +2507,68 @@
 #define VINF_IEM_RECOMPILE_END_TB                   (5311)
 /** Recompiler: Translation block allocation failed. */
 #define VERR_IEM_TB_ALLOC_FAILED                    (-5312)
+/** Recompiler: Too deeply nested conditionals. */
+#define VERR_IEM_COND_TOO_DEEPLY_NESTED             (-5313)
+/** Recompiler: Failed to reconcile the register/variable state on endif. */
+#define VERR_IEM_COND_ENDIF_RECONCILIATION_FAILED   (-5314)
+/** Recompiler: Failed to allocate more memory for debug info. */
+#define VERR_IEM_DBGINFO_OUT_OF_MEMORY              (-5315)
+/** Recompiler: Debug info internal processing error \#1. */
+#define VERR_IEM_DBGINFO_IPE_1                      (-5316)
+/** Recompiler: Debug info internal processing error \#2. */
+#define VERR_IEM_DBGINFO_IPE_2                      (-5317)
+/** Recompiler: Fixup internal processing error \#1. */
+#define VERR_IEM_FIXUP_IPE_1                        (-5318)
+/** Recompiler: Too many fixups. */
+#define VERR_IEM_FIXUP_TOO_MANY                     (-5319)
+/** Recompiler: Out of memory. */
+#define VERR_IEM_FIXUP_OUT_OF_MEMORY                (-5320)
+/** Recompiler: Hit instruction buffer size limit. */
+#define VERR_IEM_INSTR_BUF_TOO_LARGE                (-5321)
+/** Recompiler: Out of memory for the instruction buffer (regular heap). */
+#define VERR_IEM_INSTR_BUF_OUT_OF_MEMORY            (-5322)
+/** Recompiler: Too many labels. */
+#define VERR_IEM_LABEL_TOO_MANY                     (-5323)
+/** Recompiler: Out of memory for labels.   */
+#define VERR_IEM_LABEL_OUT_OF_MEMORY                (-5324)
+/** Recompiler: Label internal processing error \#1. */
+#define VERR_IEM_LABEL_IPE_1                        (-5325)
+/** Recompiler: Label internal processing error \#2. */
+#define VERR_IEM_LABEL_IPE_2                        (-5326)
+/** Recompiler: Label internal processing error \#3. */
+#define VERR_IEM_LABEL_IPE_3                        (-5327)
+/** Recompiler: Label internal processing error \#4. */
+#define VERR_IEM_LABEL_IPE_4                        (-5328)
+/** Recompiler: Label internal processing error \#5. */
+#define VERR_IEM_LABEL_IPE_5                        (-5329)
+/** Recompiler: Label internal processing error \#6. */
+#define VERR_IEM_LABEL_IPE_6                        (-5330)
+/** Recompiler: Label internal processing error \#7. */
+#define VERR_IEM_LABEL_IPE_7                        (-5331)
+
+/** Recompiler: Out of host register. */
+#define VERR_IEM_REG_OUT_OF_REGISTERS               (-5340)
+/** Recompiler: No temporary host register available. */
+#define VERR_IEM_REG_ALLOCATOR_NO_FREE_TMP          (-5341)
+/** Recompiler: Register allocator internal processing error \#1. */
+#define VERR_IEM_REG_IPE_1                          (-5342)
+/** Recompiler: Register allocator internal processing error \#2. */
+#define VERR_IEM_REG_IPE_2                          (-5343)
+/** Recompiler: Register allocator internal processing error \#3. */
+#define VERR_IEM_REG_IPE_3                          (-5344)
+/** Recompiler: Register allocator internal processing error \#4. */
+#define VERR_IEM_REG_IPE_4                          (-5345)
+/** Recompiler: Register allocator internal processing error \#5. */
+#define VERR_IEM_REG_IPE_5                          (-5346)
+/** Recompiler: Register allocator internal processing error \#6. */
+#define VERR_IEM_REG_IPE_6                          (-5347)
+/** Recompiler: Register allocator internal processing error \#7. */
+#define VERR_IEM_REG_IPE_7                          (-5348)
+/** Recompiler: Register allocator internal processing error \#8. */
+#define VERR_IEM_REG_IPE_8                          (-5349)
+
+/** Recompiler: Unimplemented case. */
+#define VERR_IEM_EMIT_CASE_NOT_IMPLEMENTED_1        (-5360)
 
 /** Restart the current instruction. For testing only. */
 #define VERR_IEM_RESTART_INSTRUCTION                (-5389)
