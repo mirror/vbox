@@ -97,28 +97,29 @@ HRESULT GuestOSType::init(const Global::OSType &ostype)
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    unconst(mFamilyID)                  = ostype.familyId;
-    unconst(mFamilyDescription)         = ostype.familyDescription;
-    unconst(mOSSubtype)                 = ostype.subtype;
-    unconst(mID)                        = ostype.id;
-    unconst(mDescription)               = ostype.description;
-    unconst(mOSType)                    = ostype.osType;
-    unconst(mOSHint)                    = ostype.osHint;
-    unconst(mRAMSize)                   = ostype.recommendedRAM;
-    unconst(mCPUCount)                  = ostype.recommendedCPUCount;
-    unconst(mHDDSize)                   = ostype.recommendedHDD;
-    unconst(mGraphicsControllerType)    = ostype.graphicsControllerType;
-    unconst(mVRAMSize)                  = ostype.recommendedVRAM;
-    unconst(mNetworkAdapterType)        = ostype.networkAdapterType;
-    unconst(mNumSerialEnabled)          = ostype.numSerialEnabled;
-    unconst(mDVDStorageControllerType)  = ostype.dvdStorageControllerType;
-    unconst(mDVDStorageBusType)         = ostype.dvdStorageBusType;
-    unconst(mHDStorageControllerType)   = ostype.hdStorageControllerType;
-    unconst(mHDStorageBusType)          = ostype.hdStorageBusType;
-    unconst(mChipsetType)               = ostype.chipsetType;
-    unconst(mIommuType)                 = ostype.iommuType;
-    unconst(mAudioControllerType)       = ostype.audioControllerType;
-    unconst(mAudioCodecType)            = ostype.audioCodecType;
+    unconst(mFamilyID)                          = ostype.familyId;
+    unconst(mFamilyDescription)                 = ostype.familyDescription;
+    unconst(mOSSubtype)                         = ostype.subtype;
+    unconst(mID)                                = ostype.id;
+    unconst(mDescription)                       = ostype.description;
+    unconst(mOSType)                            = ostype.osType;
+    unconst(mOSHint)                            = ostype.osHint;
+    unconst(mRAMSize)                           = ostype.recommendedRAM;
+    unconst(mCPUCount)                          = ostype.recommendedCPUCount;
+    unconst(mHDDSize)                           = ostype.recommendedHDD;
+    unconst(mGraphicsControllerType)            = ostype.graphicsControllerType;
+    unconst(mVRAMSize)                          = ostype.recommendedVRAM;
+    unconst(mNetworkAdapterType)                = ostype.networkAdapterType;
+    unconst(mNumSerialEnabled)                  = ostype.numSerialEnabled;
+    unconst(mDVDStorageControllerType)          = ostype.dvdStorageControllerType;
+    unconst(mDVDStorageBusType)                 = ostype.dvdStorageBusType;
+    unconst(mHDStorageControllerType)           = ostype.hdStorageControllerType;
+    unconst(mHDStorageBusType)                  = ostype.hdStorageBusType;
+    unconst(mChipsetType)                       = ostype.chipsetType;
+    unconst(mIommuType)                         = ostype.iommuType;
+    unconst(mAudioControllerType)               = ostype.audioControllerType;
+    unconst(mAudioCodecType)                    = ostype.audioCodecType;
+    unconst(mGuestAdditionsInstallPackageName)  = ostype.guestAdditionsInstallPkgName;
 
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
@@ -495,6 +496,13 @@ HRESULT GuestOSType::getRecommendedWDDMGraphics(BOOL *aRecommendedWDDMGraphics)
     /* Value is constant during life time, no need to lock */
     *aRecommendedWDDMGraphics = !!(mOSHint & VBOXOSHINT_WDDM_GRAPHICS);
 
+    return S_OK;
+}
+
+HRESULT GuestOSType::getGuestAdditionsInstallPackageName(com::Utf8Str &aGuestAdditionsInstallPkgName)
+{
+    /* mGuestAdditionsInstallPackageName is constant during life time, no need to lock */
+    aGuestAdditionsInstallPkgName = mGuestAdditionsInstallPackageName;
     return S_OK;
 }
 

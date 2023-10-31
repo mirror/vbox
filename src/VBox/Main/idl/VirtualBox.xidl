@@ -13557,7 +13557,7 @@
 
   <interface
     name="IGuestOSType" extends="$unknown"
-    uuid="4799a50c-9451-4cbe-b80b-73df6c21ac06"
+    uuid="ceb482fc-41b9-42a8-8538-9835ea33b6f2"
     wsmap="struct"
     rest="managed"
     reservedAttributes="16"
@@ -13722,6 +13722,10 @@
     <attribute name="recommendedWDDMGraphics" type="boolean" readonly="yes">
       <desc>Returns @c true if this OS usually has a WDDM graphics driver
         from guest additions.</desc>
+    </attribute>
+
+    <attribute name="guestAdditionsInstallPackageName" type="wstring" readonly="yes">
+      <desc>The guest additions install package name as a string.</desc>
     </attribute>
 
   </interface>

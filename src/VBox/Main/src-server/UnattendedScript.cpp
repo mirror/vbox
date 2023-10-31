@@ -718,6 +718,8 @@ int UnattendedScriptTemplate::queryVariable(const char *pchName, size_t cchName,
         pszValue = rstrTmp.assign(mpUnattended->i_getHostname(), mpUnattended->i_getHostname().find(".") + 1).c_str();
     else if (IS_MATCH("PROXY"))
         pszValue = mpUnattended->i_getProxy().c_str();
+    else if (IS_MATCH("ADDITIONS_INSTALL_PACKAGE_NAME"))
+        pszValue = mpUnattended->i_getAdditionsInstallPackage().c_str();
     /*
      * Indicator variables.
      */

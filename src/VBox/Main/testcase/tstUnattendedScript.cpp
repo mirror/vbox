@@ -86,6 +86,7 @@ Unattended::Unattended()
     mStrDetectedOSFlavor                = "server";
     //mDetectedOSLanguages                = "en_UK"
     mStrDetectedOSHints                 = "nudge nudge wink wink";
+    mStrAdditionsInstallPackage         = "Something-none-existing.run";
 }
 
 Unattended::~Unattended()
@@ -605,6 +606,11 @@ Utf8Str const &Unattended::i_getAuxiliaryInstallDir() const
 Utf8Str const &Unattended::i_getExtraInstallKernelParameters() const
 {
     return mStrExtraInstallKernelParameters;
+}
+
+Utf8Str const &Unattended::i_getAdditionsInstallPackage() const
+{
+    return mStrAdditionsInstallPackage;
 }
 
 bool Unattended::i_isRtcUsingUtc() const

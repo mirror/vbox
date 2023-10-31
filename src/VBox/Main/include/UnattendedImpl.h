@@ -104,6 +104,7 @@ public:
      * located, from the perspective of the running unattended install. */
     Utf8Str const &i_getAuxiliaryInstallDir() const;
     Utf8Str const &i_getExtraInstallKernelParameters() const;
+    Utf8Str const &i_getAdditionsInstallPackage() const;
 
     bool           i_isRtcUsingUtc() const;
     bool           i_isGuestOs64Bit() const;
@@ -148,6 +149,7 @@ private:
     Utf8Str         mStrPostInstallCommand;
     Utf8Str         mStrExtraInstallKernelParameters;
     Utf8Str         mStrProxy;
+    Utf8Str         mStrAdditionsInstallPackage;
 
     bool            mfDoneDetectIsoOS;         /**< Set by detectIsoOS(), cleared by setIsoPath(). */
     Utf8Str         mStrDetectedOSTypeId;
