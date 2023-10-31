@@ -31,6 +31,31 @@
 # pragma once
 #endif
 
+#include <VBox/GuestHost/SharedClipboard-x11.h>
+#include <VBox/VBoxGuestLib.h>
+#include <iprt/thread.h>
+
+/**
+ * Callback to notify guest that host has new clipboard data in the specified formats.
+ *
+ * @returns VBox status code.
+ * @param   fFormats        The formats available.
+ *                          Optional and can be NULL.
+ */
+typedef DECLCALLBACKTYPE(int, FNHOSTCLIPREPORTFMTS, (SHCLFORMATS fFormats));
+typedef FNHOSTCLIPREPORTFMTS *PFNHOSTCLIPREPORTFMTS;
+
+/**
+ * Callback to notify guest that host wants to read clipboard data in specified format.
+ *
+ * @returns VBox status code.
+ * @param   uFmt            The format in which the data should be read
+ *                          (VBOX_SHCL_FMT_XXX).
+ */
+typedef DECLCALLBACKTYPE(int, FNHOSTCLIPREAD, (SHCLFORMAT uFmt));
+typedef FNHOSTCLIPREAD *PFNHOSTCLIPREAD;
+
+
 /**
  * Struct keeping am X11 Shared Clipboard context.
  */
@@ -56,5 +81,38 @@ struct SHCLCONTEXT
 /** Shared Clipboard context.
  *  Only one context is supported at a time for now. */
 extern SHCLCONTEXT g_Ctx;
+
+/**
+ * Create thread and wait until it started.
+ *
+ * @returns IPRT status code.
+ * @param   pThread     Pointer to thread data.
+ * @param   pfnThread   Pointer to thread main loop function.
+ * @param   pszName     Thread name.
+ * @param   pvUser      User data.
+ */
+extern RTDECL(int) VBClClipboardThreadStart(PRTTHREAD pThread, PFNRTTHREAD pfnThread, const char *pszName, void *pvUser);
+
+/**
+ * Read and process one event from the host clipboard service.
+ *
+ * @returns VBox status code.
+ * @param   pCtx            Host Shared Clipboard service connection context.
+ * @param   ppfnCallbacks   Callbacks to reach guest Shared Clipboard service.
+ */
+extern RTDECL(int) VBClClipboardReadHostEvent(PSHCLCONTEXT pCtx, const PFNHOSTCLIPREPORTFMTS pfnReportHostFmts,
+                                              const PFNHOSTCLIPREAD pfnReadGuestFmt);
+
+/**
+ * Read entire host clipboard buffer in given format.
+ *
+ * This function will allocate clipboard buffer of necessary size and
+ * place host clipboard content into it. Buffer needs to be freed by caller.
+ *
+ * @returns VBox status code.
+ * @param   pCtx            Host Shared Clipboard service connection context.
+ * @param   ppfnCallbacks   Callbacks to reach guest Shared Clipboard service.
+ */
+extern RTDECL(int) VBClClipboardReadHostClipboard(PVBGLR3SHCLCMDCTX pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb);
 
 #endif /* !GA_INCLUDED_SRC_x11_VBoxClient_clipboard_h */
