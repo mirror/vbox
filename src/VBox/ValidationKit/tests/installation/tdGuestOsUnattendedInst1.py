@@ -88,8 +88,8 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
     ## IRQ delay extra data config for win2k VMs.
     kasIdeIrqDelay     = [ 'VBoxInternal/Devices/piix3ide/0/Config/IRQDelay:1', ];
 
-    def __init__(self, oSet, sVmName, sKind, sInstallIso, fFlags = 0):
-        vboxtestvms.BaseTestVm.__init__(self, sVmName, oSet = oSet, sKind = sKind,
+    def __init__(self, oSet, sVmName, sKind, sInstallIso, fFlags = 0, sPlatformArchitecture = 'x86'):
+        vboxtestvms.BaseTestVm.__init__(self, sVmName, sPlatformArchitecture, oSet = oSet, sKind = sKind,
                                         fRandomPvPModeCrap = (fFlags & self.kfNoWin81Paravirt) == 0);
         self.sInstallIso            = sInstallIso;
         self.fInstVmFlags           = fFlags;
@@ -547,6 +547,19 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             #
             UnattendedVm(oSet, 'tst-acp2',              'OS2Warp45', '7.0/uaisos/acp2_us_cd2.iso'),                  # ~400MiB
             ## @todo mcp2 too?
+
+
+            #
+            #
+            # ARM VMs
+            #
+            #
+
+            #
+            # Debian
+            #
+            UnattendedVm(oSet, 'tst-debian-11.8-arm64', 'Debian_arm64', '7.1/uaisos/debian-11.8.0-arm64-DVD-1.iso',  # >=6GiB?
+                         UnattendedVm.kfAvoidNetwork, "ARM"),
         ]);
         # pylint: enable=line-too-long
         self.oTestVmSet = oSet;
