@@ -27,6 +27,9 @@
 
 --filter-out-files /undefined_*
 
+# wlInclude
+/wlInclude/*: --external-copyright --no-convert-tabs --strip-no-trailing-lines --no-strip-trailing-blanks --no-fix-flower-box-markers --no-convert-eol --no-force-final-eol --dont-set-svn-eol --dont-set-svn-keywords --no-fix-header-guards --skip-unicode-checks
+
 # x11include
 --filter-out-files /x11include/*README
 /x11include/*: --external-copyright --no-convert-tabs --strip-no-trailing-lines --no-strip-trailing-blanks --no-fix-flower-box-markers --no-convert-eol --no-force-final-eol --dont-set-svn-eol --dont-set-svn-keywords --no-fix-header-guards --skip-unicode-checks
