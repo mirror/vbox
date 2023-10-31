@@ -40,6 +40,7 @@
 /* Forward declarations: */
 class QAction;
 class QActionGroup;
+class QSortFilterProxyModel;
 class QTabWidget;
 class QTreeWidget;
 class QTreeWidgetItem;
@@ -183,9 +184,11 @@ private:
     void cleanup();
 
     /** Holds the tree-view instance. */
-    UISelectorTreeView *m_pTreeView;
+    UISelectorTreeView    *m_pTreeView;
     /** Holds the model instance. */
-    UISelectorModel    *m_pModel;
+    UISelectorModel       *m_pModel;
+    /** Holds the proxy-model instance. */
+    QSortFilterProxyModel *m_pModelProxy;
 };
 
 

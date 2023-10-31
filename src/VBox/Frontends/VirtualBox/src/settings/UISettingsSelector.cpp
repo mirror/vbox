@@ -34,6 +34,7 @@
 #include <QItemDelegate>
 #include <QLayout>
 #include <QPainter>
+#include <QSortFilterProxyModel>
 #include <QTabWidget>
 #include <QToolButton>
 
@@ -245,9 +246,6 @@ public:
     /** Returns item with certain @a strLink. */
     QModelIndex findItem(const QString &strLink);
 
-    /** Sorts the contents of model by @a iColumn and @a enmOrder. */
-    virtual void sort(int iColumn = 0, Qt::SortOrder enmOrder = Qt::AscendingOrder) RT_OVERRIDE;
-
 private:
 
     /** Returns model flags for @a specifiedIndex. */
@@ -437,14 +435,21 @@ UISelectorDelegate::UISelectorDelegate(QObject *pParent)
 {
 }
 
-void UISelectorDelegate::paint(QPainter *pPainter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+void UISelectorDelegate::paint(QPainter *pPainter, const QStyleOptionViewItem &option, const QModelIndex &proxyIndex) const
 {
     /* Sanity checks: */
     AssertPtrReturnVoid(pPainter);
-    AssertReturnVoid(index.isValid());
+    AssertReturnVoid(proxyIndex.isValid());
 
     /* Acquire model: */
-    const UISelectorModel *pModel = qobject_cast<const UISelectorModel*>(index.model());
+    const QSortFilterProxyModel *pProxyModel = qobject_cast<const QSortFilterProxyModel*>(proxyIndex.model());
+    AssertPtrReturnVoid(pProxyModel);
+    const UISelectorModel *pModel = qobject_cast<const UISelectorModel*>(pProxyModel->sourceModel());
+    AssertPtrReturnVoid(pModel);
+
+    /* Acquire model index: */
+    const QModelIndex index = pProxyModel->mapToSource(proxyIndex);
+    AssertReturnVoid(index.isValid());
 
     /* Acquire item properties: */
     const QPalette palette = QGuiApplication::palette();
@@ -724,43 +729,6 @@ QModelIndex UISelectorModel::findItem(const QString &strLink)
     return pItem ? createIndex(iItemPosition, 0, pItem) : QModelIndex();
 }
 
-void UISelectorModel::sort(int /* iColumn */, Qt::SortOrder enmOrder)
-{
-    /* Prepare empty list for sorted items: */
-    QList<UISelectorTreeViewItem*> sortedItems;
-
-    /* For each of items: */
-    const int iItemCount = m_pRootItem->childCount();
-    for (int iItemPos = 0; iItemPos < iItemCount; ++iItemPos)
-    {
-        /* Get iterated item/id: */
-        UISelectorTreeViewItem *pItem = m_pRootItem->childItem(iItemPos);
-        const int iID = pItem->id();
-
-        /* Gather suitable position in the list of sorted items: */
-        int iInsertPosition = 0;
-        for (; iInsertPosition < sortedItems.size(); ++iInsertPosition)
-        {
-            /* Get sorted item/id: */
-            UISelectorTreeViewItem *pSortedItem = sortedItems.at(iInsertPosition);
-            const int iSortedID = pSortedItem->id();
-
-            /* Apply sorting rule: */
-            if (   ((enmOrder == Qt::AscendingOrder) && (iID < iSortedID))
-                || ((enmOrder == Qt::DescendingOrder) && (iID > iSortedID)))
-                break;
-        }
-
-        /* Insert iterated item into sorted position: */
-        sortedItems.insert(iInsertPosition, pItem);
-    }
-
-    /* Update corresponding model-indexes: */
-    m_pRootItem->setChildren(sortedItems);
-    beginMoveRows(root(), 0, iItemCount - 1, root(), 0);
-    endMoveRows();
-}
-
 Qt::ItemFlags UISelectorModel::flags(const QModelIndex &specifiedIndex) const
 {
     return !specifiedIndex.isValid() ? QAbstractItemModel::flags(specifiedIndex)
@@ -789,7 +757,9 @@ UISelectorTreeView::UISelectorTreeView(QWidget *pParent)
 QSize UISelectorTreeView::minimumSizeHint() const
 {
     /* Sanity check: */
-    UISelectorModel *pModel = qobject_cast<UISelectorModel*>(model());
+    QSortFilterProxyModel *pProxyModel = qobject_cast<QSortFilterProxyModel*>(model());
+    AssertPtrReturn(pProxyModel, QITreeView::minimumSizeHint());
+    UISelectorModel *pModel = qobject_cast<UISelectorModel*>(pProxyModel->sourceModel());
     AssertPtrReturn(pModel, QITreeView::minimumSizeHint());
 
     /* Calculate largest column width: */
@@ -819,6 +789,8 @@ QSize UISelectorTreeView::sizeHint() const
 void UISelectorTreeView::prepare()
 {
     /* Configure tree-view: */
+    setSortingEnabled(true);
+    sortByColumn(0, Qt::AscendingOrder);
     setFrameShape(QFrame::NoFrame);
     viewport()->setAutoFillBackground(false);
     setContextMenuPolicy(Qt::PreventContextMenu);
@@ -924,6 +896,7 @@ UISettingsSelectorTreeView::UISettingsSelectorTreeView(QWidget *pParent /* = 0 *
     : UISettingsSelector(pParent)
     , m_pTreeView(0)
     , m_pModel(0)
+    , m_pModelProxy(0)
 {
     prepare();
 }
@@ -989,7 +962,8 @@ QString UISettingsSelectorTreeView::itemText(int iID) const
 int UISettingsSelectorTreeView::currentId() const
 {
     int iID = -1;
-    const QModelIndex index = m_pTreeView->currentIndex();
+    const QModelIndex proxyIndex = m_pTreeView->currentIndex();
+    const QModelIndex index = m_pModelProxy->mapToSource(proxyIndex);
     if (index.isValid())
         iID = m_pModel->data(index, UISelectorModel::R_ItemId).toString().toInt();
     return iID;
@@ -1007,13 +981,15 @@ int UISettingsSelectorTreeView::linkToId(const QString &strLink) const
 void UISettingsSelectorTreeView::selectById(int iID)
 {
     const QModelIndex index = m_pModel->findItem(iID);
-    if (index.isValid())
-        m_pTreeView->setCurrentIndex(index);
+    const QModelIndex proxyIndex = m_pModelProxy->mapFromSource(index);
+    if (proxyIndex.isValid())
+        m_pTreeView->setCurrentIndex(proxyIndex);
 }
 
-void UISettingsSelectorTreeView::sltHandleCurrentChanged(const QModelIndex &index,
+void UISettingsSelectorTreeView::sltHandleCurrentChanged(const QModelIndex &proxyIndex,
                                                          const QModelIndex & /* previousIndex */)
 {
+    const QModelIndex index = m_pModelProxy->mapToSource(proxyIndex);
     if (index.isValid())
     {
         const int iID = m_pModel->data(index, UISelectorModel::R_ItemId).toString().toInt();
@@ -1032,8 +1008,17 @@ void UISettingsSelectorTreeView::prepare()
         m_pModel = new UISelectorModel(m_pTreeView);
         if (m_pModel)
         {
-            m_pTreeView->setModel(m_pModel);
-            m_pTreeView->setRootIndex(m_pModel->root());
+            /* Create proxy-model: */
+            m_pModelProxy = new QSortFilterProxyModel(m_pTreeView);
+            if (m_pModelProxy)
+            {
+                /* Configure proxy-model: */
+                m_pModelProxy->setSortRole(UISelectorModel::R_ItemId);
+                m_pModelProxy->setSourceModel(m_pModel);
+                m_pTreeView->setModel(m_pModelProxy);
+            }
+            const QModelIndex proxyIndex = m_pModelProxy->mapFromSource(m_pModel->root());
+            m_pTreeView->setRootIndex(proxyIndex);
         }
 
         /* Setup connections: */
