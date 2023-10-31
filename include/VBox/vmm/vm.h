@@ -573,14 +573,12 @@ AssertCompileSizeAlignment(VMCPU, 16384);
 /** VMX-preemption timer expired. */
 #define VMCPU_FF_VMX_PREEMPT_TIMER          RT_BIT_64(VMCPU_FF_VMX_PREEMPT_TIMER_BIT)
 #define VMCPU_FF_VMX_PREEMPT_TIMER_BIT      31
-/** Pending MTF (Monitor Trap Flag) event.
- * @todo r=bird: Not part of VMCPU_FF_ALL_MASK, explain?  */
+/** Pending MTF (Monitor Trap Flag) event. */
 #define VMCPU_FF_VMX_MTF                    RT_BIT_64(VMCPU_FF_VMX_MTF_BIT)
 #define VMCPU_FF_VMX_MTF_BIT                32
 /** VMX APIC-write emulation pending.
  * @todo possible candidate for internal EFLAGS, or maybe just a summary bit
- *       (see also VMCPU_FF_VMX_INT_WINDOW).
- * @todo r=bird: Not part of VMCPU_FF_ALL_MASK, explain?  */
+ *       (see also VMCPU_FF_VMX_INT_WINDOW). */
 #define VMCPU_FF_VMX_APIC_WRITE             RT_BIT_64(VMCPU_FF_VMX_APIC_WRITE_BIT)
 #define VMCPU_FF_VMX_APIC_WRITE_BIT         33
 /** VMX interrupt-window event pending.
@@ -591,13 +589,11 @@ AssertCompileSizeAlignment(VMCPU, 16384);
  *
  * @todo Change the IEM side of this to not poll but to track down the places
  *       where it can be generated and set an internal EFLAGS bit that causes it
- *       to be checked out when finishing the current instruction.
- * @todo r=bird: Not part of VMCPU_FF_ALL_MASK, explain?  */
+ *       to be checked out when finishing the current instruction. */
 #define VMCPU_FF_VMX_INT_WINDOW             RT_BIT_64(VMCPU_FF_VMX_INT_WINDOW_BIT)
 #define VMCPU_FF_VMX_INT_WINDOW_BIT         34
 /** VMX NMI-window event pending.
- * Same "pending" comment and todo in VMCPU_FF_VMX_INT_WINDOW.
- * @todo r=bird: Not part of VMCPU_FF_ALL_MASK, explain?  */
+ * Same "pending" comment and todo in VMCPU_FF_VMX_INT_WINDOW. */ 
 #define VMCPU_FF_VMX_NMI_WINDOW             RT_BIT_64(VMCPU_FF_VMX_NMI_WINDOW_BIT)
 #define VMCPU_FF_VMX_NMI_WINDOW_BIT         35
 
@@ -719,11 +715,10 @@ AssertCompileSizeAlignment(VMCPU, 16384);
 
 /** All the forced VM flags. */
 #define VM_FF_ALL_MASK                          (UINT32_MAX)
-/** All the forced VMCPU flags.
- * @todo r=bird: VMCPU_FF_VMX_MTF, VMCPU_FF_VMX_APIC_WRITE,
- *       VMCPU_FF_VMX_INT_WINDOW and VMCPU_FF_VMX_NMI_WINDOW are not a part
- *       of this mask for some unexplained reason. */
-#define VMCPU_FF_ALL_MASK                       (UINT32_MAX)
+/** All the forced VMCPU flags. */
+#define VMCPU_FF_ALL_MASK                       (  UINT32_MAX \
+                                                | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_INT_WINDOW \
+                                                | VMCPU_FF_VMX_NMI_WINDOW )
 
 /** All the forced VM flags except those related to raw-mode and hardware
  * assisted execution. */
