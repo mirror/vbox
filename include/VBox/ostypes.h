@@ -246,6 +246,7 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_Oracle9_x64      = 0x5E106,  // 64-bit only
     VBOXOSTYPE_Oracle9_arm64    = 0x5E306,
     VBOXOSTYPE_Oracle_latest_x64 = VBOXOSTYPE_Oracle9_x64,
+    VBOXOSTYPE_Oracle_latest_arm64 = VBOXOSTYPE_Oracle9_arm64,
     VBOXOSTYPE_FreeBSD          = 0x60000,
     VBOXOSTYPE_FreeBSD_x64      = 0x60100,
     VBOXOSTYPE_FreeBSD_arm64    = 0x60300,
