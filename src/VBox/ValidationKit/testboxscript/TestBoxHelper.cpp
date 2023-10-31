@@ -380,6 +380,8 @@ static RTEXITCODE handlerReport(int argc, char **argv)
         }
     }
     RTPrintf("\n");
+#else
+#endif
 
     /*
      * DMI info.
@@ -405,9 +407,6 @@ static RTEXITCODE handlerReport(int argc, char **argv)
             RTPrintf("%25s: %s [rc=%Rrc]\n", s_aDmiStrings[iDmiString].pszName, RTStrStrip(szTmp), rc);
     }
     RTPrintf("\n");
-
-#else
-#endif
 
     /*
      * Dump the environment.
@@ -470,7 +469,7 @@ static RTEXITCODE handlerMemSize(int argc, char **argv)
     return RTEXITCODE_FAILURE;
 }
 
-typedef enum { HWVIRTTYPE_NONE, HWVIRTTYPE_VTX, HWVIRTTYPE_AMDV } HWVIRTTYPE;
+typedef enum { HWVIRTTYPE_NONE, HWVIRTTYPE_VTX, HWVIRTTYPE_AMDV, HVIRTTYPE_ARMV8 } HWVIRTTYPE;
 static HWVIRTTYPE isHwVirtSupported(void)
 {
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
@@ -493,6 +492,20 @@ static HWVIRTTYPE isHwVirtSupported(void)
         if (uEcx & X86_CPUID_AMD_FEATURE_ECX_SVM)
             return HWVIRTTYPE_AMDV;
     }
+#elif defined(RT_ARCH_ARM64)
+# if defined(RT_OS_DARWIN)
+    /*
+     * The kern.hv_support parameter indicates support for the hypervisor API in the
+     * kernel, which is the only way for virtualization on macOS on Apple Silicon.
+     */
+    int32_t fHvSupport = 0;
+    size_t  cbOld = sizeof(fHvSupport);
+    if (sysctlbyname("kern.hv_support", &fHvSupport, &cbOld, NULL, 0) == 0)
+    {
+        if (fHvSupport != 0)
+            return HVIRTTYPE_ARMV8;
+    }
+# endif
 #endif
 
     return HWVIRTTYPE_NONE;
@@ -514,8 +527,8 @@ static RTEXITCODE handlerCpuNestedPaging(int argc, char **argv)
     NOREF(argc); NOREF(argv);
     int         fSupported = -1;
 
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     HWVIRTTYPE  enmHwVirt  = isHwVirtSupported();
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     if (enmHwVirt == HWVIRTTYPE_AMDV)
     {
         uint32_t uEax, uEbx, uEcx, uEdx;
@@ -594,6 +607,10 @@ static RTEXITCODE handlerCpuNestedPaging(int argc, char **argv)
         }
     }
 # endif
+#elif defined(RT_ARCH_ARM64)
+    /* On ARM nested paging is always supported if virtualization is there. */
+    if (enmHwVirt == HVIRTTYPE_ARMV8)
+        fSupported = 1;
 #endif
 
     int cch = RTPrintf(fSupported == 1 ? "true\n" : fSupported == 0 ? "false\n" : "dunno\n");
@@ -647,6 +664,8 @@ static RTEXITCODE handlerCpuLongMode(int argc, char **argv)
                 }
             }
         }
+#elif defined(RT_ARCH_ARM64)
+        fSupported = 1; /** @todo LongMode is a misnomer here but in general means 64-bit guest capable. */
 #endif
     }
 
@@ -707,6 +726,16 @@ static RTEXITCODE handlerCpuVendor(int argc, char **argv)
     uint32_t uEax, uEbx, uEcx, uEdx;
     ASMCpuId(0, &uEax, &uEbx, &uEcx, &uEdx);
     int cch = RTPrintf("%.04s%.04s%.04s\n", &uEbx, &uEdx, &uEcx);
+#elif defined(RT_ARCH_ARM64) && defined(RT_OS_DARWIN)
+    /*
+     * There is machdep.cpu.brand_string we could query but that identifies
+     * the whole CPU and not just the vendor.
+     *
+     * Running on macOS using the arm64 architecture is a pretty safe bet that
+     * we are also running on Apple Silicon (there is the possibility that
+     * this runs in a macOS VM on some other hardware but this is highly unlikely).
+     */
+    int cch = RTPrintf("Apple\n");
 #else
     int cch = RTPrintf("%s\n", RTBldCfgTargetArch());
 #endif
