@@ -103,7 +103,8 @@ UINotificationObjectItem::UINotificationObjectItem(QWidget *pParent, UINotificat
                 m_pButtonForget->setIcon(UIIconPool::iconSet(":/close_popup_16px.png"));
                 m_pButtonForget->setIconSize(QSize(10, 10));
                 connect(m_pButtonForget, &QIToolButton::clicked,
-                        m_pObject, &UINotificationObject::dismiss);
+                        m_pObject, &UINotificationObject::dismiss,
+                        Qt::QueuedConnection);
 
                 m_pLayoutUpper->addWidget(m_pButtonForget);
             }
@@ -115,7 +116,8 @@ UINotificationObjectItem::UINotificationObjectItem(QWidget *pParent, UINotificat
                 m_pButtonClose->setIcon(UIIconPool::iconSet(":/close_16px.png"));
                 m_pButtonClose->setIconSize(QSize(10, 10));
                 connect(m_pButtonClose, &QIToolButton::clicked,
-                        m_pObject, &UINotificationObject::close);
+                        m_pObject, &UINotificationObject::close,
+                        Qt::QueuedConnection);
 
                 m_pLayoutUpper->addWidget(m_pButtonClose);
             }
