@@ -137,7 +137,13 @@ class tdBenchmark2(vbox.TestDriver):
         # Large pages only work with nested paging.
         afLargePages = [False, ];
         try:
-            if oVM.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_NestedPaging):
+            fNestedPaging = False;
+            if self.fpApiVer >= 7.1:
+                fNestedPaging = oVM.platform.x86.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_NestedPaging);
+            else:
+                fNestedPaging = oVM.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_NestedPaging);
+
+            if fNestedPaging:
                 afLargePages = [True, False];
         except:
             return reporter.errorXcpt("Failed to get HWVirtExPropertyType_NestedPaging");
