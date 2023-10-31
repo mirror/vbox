@@ -927,6 +927,10 @@ void UIAdvancedSettingsDialog::addItem(const QString &strBigIcon,
 
             /* Remember page-frame for referencing: */
             m_frames[cId] = pFrame;
+
+            /* Notify about frame visibility changes: */
+            connect(pFrame, &UISettingsPageFrame::sigVisibilityChange,
+                    this, &UIAdvancedSettingsDialog::sltHandleFrameVisibilityChange);
         }
     }
 
@@ -1090,6 +1094,17 @@ void UIAdvancedSettingsDialog::sltHandleModeOrFilterChanged()
     /* Filter-out page contents: */
     foreach (UISettingsPageFrame *pFrame, m_frames.values())
         pFrame->filterOut(m_pCheckBoxMode->isChecked(), m_pEditorFilter->text());
+}
+
+void UIAdvancedSettingsDialog::sltHandleFrameVisibilityChange(bool fVisible)
+{
+    /* Acquire frame: */
+    UISettingsPageFrame *pFrame = qobject_cast<UISettingsPageFrame*>(sender());
+    AssertPtrReturnVoid(pFrame);
+
+    /* Update selector item visibility: */
+    const int iId = m_frames.key(pFrame);
+    m_pSelector->setItemVisible(iId, fVisible);
 }
 
 void UIAdvancedSettingsDialog::prepare()

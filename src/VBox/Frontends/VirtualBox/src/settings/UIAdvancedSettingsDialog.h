@@ -199,6 +199,8 @@ private slots:
 
     /** Handles changes done to mode checkbox or filter editor. */
     void sltHandleModeOrFilterChanged();
+    /** Handles frame visivility changes. */
+    void sltHandleFrameVisibilityChange(bool fVisible);
 
 private:
 

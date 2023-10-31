@@ -42,6 +42,11 @@ class SHARED_LIBRARY_STUFF UIEditor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies listeners about visibility changes. */
+    void sigVisibilityChange(bool fVisible);
+
 public:
 
     /** Constructs editor to be injected into @a pTabWidget. */

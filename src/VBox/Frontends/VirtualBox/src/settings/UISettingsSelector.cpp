@@ -143,6 +143,11 @@ public:
     /** Defines item @a strText. */
     virtual void setText(const QString &strText) { m_strText = strText; }
 
+    /** Returns whether item is hidden. */
+    virtual bool isHidden() const { return m_fHidden; }
+    /** Defines item is @a fHidden. */
+    virtual void setHidden(bool fHidden) { m_fHidden = fHidden; }
+
     /** Returns the number of children. */
     virtual int childCount() const RT_OVERRIDE { return m_children.size(); }
     /** Returns the child item with @a iIndex. */
@@ -170,6 +175,8 @@ private:
     QString  m_strLink;
     /** Holds the item text. */
     QString  m_strText;
+    /** Holds whether item is hidden. */
+    bool     m_fHidden;
 
     /** Holds the list of children. */
     QList<UISelectorTreeViewItem*>  m_children;
@@ -212,6 +219,7 @@ public:
         R_ItemPixmapRect,
         R_ItemName,
         R_ItemNamePoint,
+        R_ItemHidden,
     };
 
     /** Constructs selector model passing @a pParent to the base-class. */
@@ -391,6 +399,7 @@ protected:
 
 UISelectorTreeViewItem::UISelectorTreeViewItem(QITreeView *pParent)
     : QITreeViewItem(pParent)
+    , m_fHidden(false)
 {
 }
 
@@ -402,6 +411,7 @@ UISelectorTreeViewItem::UISelectorTreeViewItem(UISelectorTreeViewItem *pParentIt
     , m_iID(iID)
     , m_icon(icon)
     , m_strLink(strLink)
+    , m_fHidden(false)
 {
     if (pParentItem)
         pParentItem->addChild(this);
@@ -656,6 +666,12 @@ QVariant UISelectorModel::data(const QModelIndex &specifiedIndex, int iRole) con
             return QPoint(iMargin + iIconSize + iSpacing,
                           sizeHint.height() / 2 + fm.ascent() / 2 - 1 /* base line */);
         }
+        case R_ItemHidden:
+        {
+            if (UISelectorTreeViewItem *pItem = indexToItem(specifiedIndex))
+                return pItem->isHidden() ? "hide" : "show";
+            return QString();
+        }
 
         default:
             break;
@@ -677,6 +693,16 @@ bool UISelectorModel::setData(const QModelIndex &specifiedIndex, const QVariant 
             if (UISelectorTreeViewItem *pItem = indexToItem(specifiedIndex))
             {
                 pItem->setText(aValue.toString());
+                emit dataChanged(specifiedIndex, specifiedIndex);
+                return true;
+            }
+            return false;
+        }
+        case R_ItemHidden:
+        {
+            if (UISelectorTreeViewItem *pItem = indexToItem(specifiedIndex))
+            {
+                pItem->setHidden(aValue.toBool());
                 emit dataChanged(specifiedIndex, specifiedIndex);
                 return true;
             }
@@ -940,6 +966,14 @@ QWidget *UISettingsSelectorTreeView::addItem(const QString & /* strBigIcon */,
     return pResult;
 }
 
+void UISettingsSelectorTreeView::setItemVisible(int iID, bool fVisible)
+{
+    /* Look for the tree-view item to assign the text: */
+    QModelIndex specifiedIndex = m_pModel->findItem(iID);
+    if (specifiedIndex.isValid())
+        m_pModel->setData(specifiedIndex, !fVisible, UISelectorModel::R_ItemHidden);
+}
+
 void UISettingsSelectorTreeView::setItemText(int iID, const QString &strText)
 {
     /* Call to base-class: */
@@ -1014,6 +1048,8 @@ void UISettingsSelectorTreeView::prepare()
             {
                 /* Configure proxy-model: */
                 m_pModelProxy->setSortRole(UISelectorModel::R_ItemId);
+                m_pModelProxy->setFilterRole(UISelectorModel::R_ItemHidden);
+                m_pModelProxy->setFilterFixedString("show");
                 m_pModelProxy->setSourceModel(m_pModel);
                 m_pTreeView->setModel(m_pModelProxy);
             }
