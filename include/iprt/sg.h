@@ -1,5 +1,5 @@
 /** @file
- * IPRT - S/G buffer handling.
+ * IPRT - Scatter / Gather Buffers.
  */
 
 /*
