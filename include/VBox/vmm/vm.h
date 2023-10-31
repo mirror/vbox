@@ -593,7 +593,7 @@ AssertCompileSizeAlignment(VMCPU, 16384);
 #define VMCPU_FF_VMX_INT_WINDOW             RT_BIT_64(VMCPU_FF_VMX_INT_WINDOW_BIT)
 #define VMCPU_FF_VMX_INT_WINDOW_BIT         34
 /** VMX NMI-window event pending.
- * Same "pending" comment and todo in VMCPU_FF_VMX_INT_WINDOW. */ 
+ * Same "pending" comment and todo in VMCPU_FF_VMX_INT_WINDOW. */
 #define VMCPU_FF_VMX_NMI_WINDOW             RT_BIT_64(VMCPU_FF_VMX_NMI_WINDOW_BIT)
 #define VMCPU_FF_VMX_NMI_WINDOW_BIT         35
 
