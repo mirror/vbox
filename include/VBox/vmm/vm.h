@@ -717,8 +717,8 @@ AssertCompileSizeAlignment(VMCPU, 16384);
 #define VM_FF_ALL_MASK                          (UINT32_MAX)
 /** All the forced VMCPU flags. */
 #define VMCPU_FF_ALL_MASK                       (  UINT32_MAX \
-                                                | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_INT_WINDOW \
-                                                | VMCPU_FF_VMX_NMI_WINDOW )
+                                                 | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_INT_WINDOW \
+                                                 | VMCPU_FF_VMX_NMI_WINDOW )
 
 /** All the forced VM flags except those related to raw-mode and hardware
  * assisted execution. */
