@@ -274,7 +274,7 @@ const Global::OSType Global::sOSTypes[] =
 
 /* Linux x86 64-bit sub-type template defaulting to 1 CPU with USB-tablet-mouse/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
 #define VBOX_LINUX_SUBTYPE_A_X64(a_szSubtype, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szSubtype, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_ARM64, a_Memory, a_Vram, a_Diskspace, \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szSubtype, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_A_X64, a_Memory, a_Vram, a_Diskspace, \
                                      NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
 #define VBOX_LINUX_SUBTYPE_A_A64(a_szSubtype, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
