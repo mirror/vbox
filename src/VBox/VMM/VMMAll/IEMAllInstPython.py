@@ -1837,7 +1837,7 @@ class McStmtCond(McStmt):
         return sRet;
 
 class McStmtVar(McStmt):
-    """ IEM_MC_LOCAL_VAR, IEM_MC_LOCAL_CONST """
+    """ IEM_MC_LOCAL, IEM_MC_LOCAL_CONST """
     def __init__(self, sName, asParams, sType, sVarName, sConstValue = None):
         McStmt.__init__(self, sName, asParams);
         self.sType       = sType;
@@ -2720,10 +2720,10 @@ g_dMcStmtParsers = {
     'IEM_MC_AND_LOCAL_U32':                                      (McBlock.parseMcGeneric,           False, False, ),
     'IEM_MC_AND_LOCAL_U64':                                      (McBlock.parseMcGeneric,           False, False, ),
     'IEM_MC_AND_LOCAL_U8':                                       (McBlock.parseMcGeneric,           False, False, ),
-    'IEM_MC_ARG':                                                (McBlock.parseMcArg,               False, False, ),
-    'IEM_MC_ARG_CONST':                                          (McBlock.parseMcArgConst,          False, False, ),
-    'IEM_MC_ARG_LOCAL_EFLAGS':                                   (McBlock.parseMcArgLocalEFlags,    False, False, ),
-    'IEM_MC_ARG_LOCAL_REF':                                      (McBlock.parseMcArgLocalRef,       False, False, ),
+    'IEM_MC_ARG':                                                (McBlock.parseMcArg,               False, True,  ),
+    'IEM_MC_ARG_CONST':                                          (McBlock.parseMcArgConst,          False, True,  ),
+    'IEM_MC_ARG_LOCAL_EFLAGS':                                   (McBlock.parseMcArgLocalEFlags,    False, True,  ),
+    'IEM_MC_ARG_LOCAL_REF':                                      (McBlock.parseMcArgLocalRef,       False, True,  ),
     'IEM_MC_ASSIGN':                                             (McBlock.parseMcGeneric,           False, False, ),
     'IEM_MC_ASSIGN_TO_SMALLER':                                  (McBlock.parseMcGeneric,           False, False, ),
     'IEM_MC_ASSIGN_U8_SX_U64':                                   (McBlock.parseMcGeneric,           False, False, ),
@@ -2906,8 +2906,8 @@ g_dMcStmtParsers = {
     'IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST':             (McBlock.parseMcGenericCond,       True,  False, ),
     'IEM_MC_IMPLICIT_AVX_AIMPL_ARGS':                            (McBlock.parseMcImplicitAvxAArgs,  False, False, ),
     'IEM_MC_INT_CLEAR_ZMM_256_UP':                               (McBlock.parseMcGeneric,           True,  False, ),
-    'IEM_MC_LOCAL':                                              (McBlock.parseMcLocal,             False, False, ),
-    'IEM_MC_LOCAL_CONST':                                        (McBlock.parseMcLocalConst,        False, False, ),
+    'IEM_MC_LOCAL':                                              (McBlock.parseMcLocal,             False, True,  ),
+    'IEM_MC_LOCAL_CONST':                                        (McBlock.parseMcLocalConst,        False, True,  ),
     'IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT':                       (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE':                   (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_MAYBE_RAISE_FPU_XCPT':                               (McBlock.parseMcGeneric,           True,  False, ),

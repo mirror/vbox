@@ -93,7 +93,7 @@ g_dMcStmtThreaded = {
     'IEM_MC_REL_JMP_S32_AND_FINISH_THREADED_PC64_WITH_FLAGS':    (None, True,  False, ),
 
     'IEM_MC_STORE_GREG_U8_THREADED':                             (None, True,  False, ),
-    'IEM_MC_STORE_GREG_U8_CONST_THREADED':                       (None, True,  False, ),
+    'IEM_MC_STORE_GREG_U8_CONST_THREADED':                       (None, True,  True,  ),
     'IEM_MC_FETCH_GREG_U8_THREADED':                             (None, False, False, ),
     'IEM_MC_FETCH_GREG_U8_SX_U16_THREADED':                      (None, False, False, ),
     'IEM_MC_FETCH_GREG_U8_SX_U32_THREADED':                      (None, False, False, ),
@@ -163,20 +163,12 @@ g_dMcStmtThreaded = {
     # Flat Stack:
     'IEM_MC_FLAT64_PUSH_U16':                                    (None, True,  False, ),
     'IEM_MC_FLAT64_PUSH_U64':                                    (None, True,  False, ),
-    'IEM_MC_FLAT64_PUSH_U16':                                    (None, True,  False, ),
-    'IEM_MC_FLAT64_PUSH_U64':                                    (None, True,  False, ),
     'IEM_MC_FLAT64_POP_U16':                                     (None, True,  False, ),
     'IEM_MC_FLAT64_POP_U64':                                     (None, True,  False, ),
-    'IEM_MC_FLAT64_POP_U16':                                     (None, True,  False, ),
-    'IEM_MC_FLAT64_POP_U64':                                     (None, True,  False, ),
-    'IEM_MC_FLAT64_PUSH_U16':                                    (None, True,  False, ),
-    'IEM_MC_FLAT64_PUSH_U64':                                    (None, True,  False, ),
-    'IEM_MC_FLAT64_PUSH_U16':                                    (None, True,  False, ),
-    'IEM_MC_FLAT64_PUSH_U64':                                    (None, True,  False, ),
     'IEM_MC_FLAT32_PUSH_U16':                                    (None, True,  False, ),
-    'IEM_MC_FLAT64_PUSH_U16':                                    (None, True,  False, ),
     'IEM_MC_FLAT32_PUSH_U32':                                    (None, True,  False, ),
-    'IEM_MC_FLAT64_PUSH_U64':                                    (None, True,  False, ),
+    'IEM_MC_FLAT32_POP_U16':                                     (None, True,  False, ),
+    'IEM_MC_FLAT32_POP_U32':                                     (None, True,  False, ),
 };
 
 class NativeRecompFunctionVariation(object):
@@ -210,7 +202,9 @@ class NativeRecompFunctionVariation(object):
     def checkStatements(aoStmts, sHostArch):
         """
         Checks that all the given statements are supported by the native recompiler.
+        Returns dictionary with the unsupported statments.
         """
+        dRet = {};
         _ = sHostArch;
         for oStmt in aoStmts:   # type: McStmt
             if not oStmt.isCppStmt():
@@ -220,22 +214,27 @@ class NativeRecompFunctionVariation(object):
                     if not aInfo:
                         raise Exception('Unknown statement: %s' % (oStmt.sName, ));
                 if aInfo[2] is False:
-                    return False;
-                if aInfo[2] is not True:
+                    dRet[oStmt.sName] = 1;
+                elif aInfo[2] is not True:
                     if isinstance(aInfo[2], str):
                         if aInfo[2] != sHostArch:
-                            return False;
+                            dRet[oStmt.sName] = 1;
                     elif sHostArch not in aInfo[2]:
-                        return False;
+                        dRet[oStmt.sName] = 1;
             #elif not self.fDecode:
 
             if isinstance(oStmt, iai.McStmtCond):
-                if not NativeRecompFunctionVariation.checkStatements(oStmt.aoIfBranch, sHostArch):
-                    return False;
-                if not NativeRecompFunctionVariation.checkStatements(oStmt.aoElseBranch, sHostArch):
-                    return False;
-        return True;
+                dRet.update(NativeRecompFunctionVariation.checkStatements(oStmt.aoIfBranch, sHostArch));
+                dRet.update(NativeRecompFunctionVariation.checkStatements(oStmt.aoElseBranch, sHostArch));
 
+        return dRet;
+
+
+## Statistics: Number of MC blocks (value) depending on each unsupported statement (key).
+g_dUnsupportedMcStmtStats = {}
+
+## Statistics: List of variations (value) that is only missing this one statement (key).
+g_dUnsupportedMcStmtLastOneStats = {}
 
 
 def analyzeVariantForNativeRecomp(oVariation,
@@ -245,24 +244,28 @@ def analyzeVariantForNativeRecomp(oVariation,
     NativeRecompFunctionVariation instance for it, unless it's not
     possible to recompile at present.
 
-    Returns NativeRecompFunctionVariation or None.
+    Returns NativeRecompFunctionVariation or the number of unsupported MCs.
     """
 
     #
     # Analyze the statements.
     #
     aoStmts = oVariation.aoStmtsForThreadedFunction # type: list(McStmt)
-    if NativeRecompFunctionVariation.checkStatements(aoStmts, sHostArch):
+    dUnsupportedStmts = NativeRecompFunctionVariation.checkStatements(aoStmts, sHostArch);
+    if not dUnsupportedStmts:
         return NativeRecompFunctionVariation(oVariation, sHostArch);
 
-    # The simplest case are the IEM_MC_DEFER_TO_CIMPL_*_RET_THREADED ones, just pass them thru:
-    #if (    len(aoStmts) == 1
-    #    and aoStmts[0].sName.startswith('IEM_MC_DEFER_TO_CIMPL_')
-    #    and aoStmts[0].sName.endswith('_RET_THREADED')):
-    #    return NativeRecompFunctionVariation(oVariation, sHostArch);
+    #
+    # Update the statistics.
+    #
+    for sStmt in dUnsupportedStmts:
+        g_dUnsupportedMcStmtStats[sStmt] = 1 + g_dUnsupportedMcStmtStats.get(sStmt, 0);
 
-
-    # g_dMcStmtParsers
-
+    if len(dUnsupportedStmts) == 1:
+        for sStmt in dUnsupportedStmts:
+            if sStmt in g_dUnsupportedMcStmtLastOneStats:
+                g_dUnsupportedMcStmtLastOneStats[sStmt].append(oVariation);
+            else:
+                g_dUnsupportedMcStmtLastOneStats[sStmt] = [oVariation,];
 
     return None;

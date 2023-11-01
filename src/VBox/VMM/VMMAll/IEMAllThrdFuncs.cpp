@@ -346,7 +346,7 @@
     *iemGRegRefU8Ex(pVCpu, (a_iGRegEx)) = (a_u8Value)
 #undef IEM_MC_STORE_GREG_U8
 
-/** Variant of IEM_MC_STORE_GREG_U8 with extended (20) register index. */
+/** Variant of IEM_MC_STORE_GREG_U8_CONST with extended (20) register index. */
 #define IEM_MC_STORE_GREG_U8_CONST_THREADED(a_iGRegEx, a_u8Value) \
     *iemGRegRefU8Ex(pVCpu, (a_iGRegEx)) = (a_u8Value)
 #undef IEM_MC_STORE_GREG_U8
