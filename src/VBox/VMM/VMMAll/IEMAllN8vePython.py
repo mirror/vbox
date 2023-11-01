@@ -54,9 +54,9 @@ g_dMcStmtThreaded = {
     'IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC32':               (None, True,  True,  ),
     'IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC64':               (None, True,  True,  ),
 
-    'IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC16_WITH_FLAGS':    (None, True,  False, ),
-    'IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC32_WITH_FLAGS':    (None, True,  False, ),
-    'IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC64_WITH_FLAGS':    (None, True,  False, ),
+    'IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC16_WITH_FLAGS':    (None, True,  True,  ),
+    'IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC32_WITH_FLAGS':    (None, True,  True,  ),
+    'IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC64_WITH_FLAGS':    (None, True,  True,  ),
 
     'IEM_MC_CALC_RM_EFF_ADDR_THREADED_16_ADDR32':                (None, False, False, ),
     'IEM_MC_CALC_RM_EFF_ADDR_THREADED_16_PRE386':                (None, False, False, ),
@@ -236,6 +236,9 @@ g_dUnsupportedMcStmtStats = {}
 ## Statistics: List of variations (value) that is only missing this one statement (key).
 g_dUnsupportedMcStmtLastOneStats = {}
 
+## Statistics: List of variations (value) with vars/args that is only missing this one statement (key).
+g_dUnsupportedMcStmtLastOneVarStats = {}
+
 
 def analyzeVariantForNativeRecomp(oVariation,
                                   sHostArch): # type: (ThreadedFunctionVariation, str) -> NativeRecompFunctionVariation
@@ -267,5 +270,17 @@ def analyzeVariantForNativeRecomp(oVariation,
                 g_dUnsupportedMcStmtLastOneStats[sStmt].append(oVariation);
             else:
                 g_dUnsupportedMcStmtLastOneStats[sStmt] = [oVariation,];
+
+    if (    len(dUnsupportedStmts) == 1
+        and iai.McStmt.findStmtByNames(aoStmts,
+                                       { 'IEM_MC_LOCAL': 1, 'IEM_MC_LOCAL_CONST': 1, 'IEM_MC_ARG': 1, 'IEM_MC_ARG_CONST': 1,
+                                         'IEM_MC_ARG_LOCAL_REF': 1, 'IEM_MC_ARG_LOCAL_EFLAGS': 1, })):
+        for sStmt in dUnsupportedStmts:
+            if sStmt in g_dUnsupportedMcStmtLastOneVarStats:
+                g_dUnsupportedMcStmtLastOneVarStats[sStmt].append(oVariation);
+            else:
+                g_dUnsupportedMcStmtLastOneVarStats[sStmt] = [oVariation,];
+
+
 
     return None;

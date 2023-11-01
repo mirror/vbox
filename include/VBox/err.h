@@ -2501,50 +2501,55 @@
 /** Returns by rep-prefixed string instruction if they yield because of
  *  pending FFs.  The status code is internal to IEM. */
 #define VINF_IEM_YIELD_PENDING_FF                   (5306)
+
 /** Recompiled execution: Break out of current TB execution. */
 #define VINF_IEM_REEXEC_BREAK                       (5310)
+/** Recompiled execution: Debug related (hidden) EFLAGS are set and needs
+ *  handling. */
+#define VINF_IEM_REEXEC_FINISH_WITH_FLAGS           (5311)
+
 /** Recompilation: End translation block. */
-#define VINF_IEM_RECOMPILE_END_TB                   (5311)
+#define VINF_IEM_RECOMPILE_END_TB                   (5319)
 /** Recompiler: Translation block allocation failed. */
-#define VERR_IEM_TB_ALLOC_FAILED                    (-5312)
+#define VERR_IEM_TB_ALLOC_FAILED                    (-5320)
 /** Recompiler: Too deeply nested conditionals. */
-#define VERR_IEM_COND_TOO_DEEPLY_NESTED             (-5313)
+#define VERR_IEM_COND_TOO_DEEPLY_NESTED             (-5321)
 /** Recompiler: Failed to reconcile the register/variable state on endif. */
-#define VERR_IEM_COND_ENDIF_RECONCILIATION_FAILED   (-5314)
+#define VERR_IEM_COND_ENDIF_RECONCILIATION_FAILED   (-5322)
 /** Recompiler: Failed to allocate more memory for debug info. */
-#define VERR_IEM_DBGINFO_OUT_OF_MEMORY              (-5315)
+#define VERR_IEM_DBGINFO_OUT_OF_MEMORY              (-5323)
 /** Recompiler: Debug info internal processing error \#1. */
-#define VERR_IEM_DBGINFO_IPE_1                      (-5316)
+#define VERR_IEM_DBGINFO_IPE_1                      (-5324)
 /** Recompiler: Debug info internal processing error \#2. */
-#define VERR_IEM_DBGINFO_IPE_2                      (-5317)
+#define VERR_IEM_DBGINFO_IPE_2                      (-5325)
 /** Recompiler: Fixup internal processing error \#1. */
-#define VERR_IEM_FIXUP_IPE_1                        (-5318)
+#define VERR_IEM_FIXUP_IPE_1                        (-5326)
 /** Recompiler: Too many fixups. */
-#define VERR_IEM_FIXUP_TOO_MANY                     (-5319)
+#define VERR_IEM_FIXUP_TOO_MANY                     (-5327)
 /** Recompiler: Out of memory. */
-#define VERR_IEM_FIXUP_OUT_OF_MEMORY                (-5320)
+#define VERR_IEM_FIXUP_OUT_OF_MEMORY                (-5328)
 /** Recompiler: Hit instruction buffer size limit. */
-#define VERR_IEM_INSTR_BUF_TOO_LARGE                (-5321)
+#define VERR_IEM_INSTR_BUF_TOO_LARGE                (-5329)
 /** Recompiler: Out of memory for the instruction buffer (regular heap). */
-#define VERR_IEM_INSTR_BUF_OUT_OF_MEMORY            (-5322)
+#define VERR_IEM_INSTR_BUF_OUT_OF_MEMORY            (-5330)
 /** Recompiler: Too many labels. */
-#define VERR_IEM_LABEL_TOO_MANY                     (-5323)
+#define VERR_IEM_LABEL_TOO_MANY                     (-5331)
 /** Recompiler: Out of memory for labels.   */
-#define VERR_IEM_LABEL_OUT_OF_MEMORY                (-5324)
+#define VERR_IEM_LABEL_OUT_OF_MEMORY                (-5332)
 /** Recompiler: Label internal processing error \#1. */
-#define VERR_IEM_LABEL_IPE_1                        (-5325)
+#define VERR_IEM_LABEL_IPE_1                        (-5333)
 /** Recompiler: Label internal processing error \#2. */
-#define VERR_IEM_LABEL_IPE_2                        (-5326)
+#define VERR_IEM_LABEL_IPE_2                        (-5334)
 /** Recompiler: Label internal processing error \#3. */
-#define VERR_IEM_LABEL_IPE_3                        (-5327)
+#define VERR_IEM_LABEL_IPE_3                        (-5335)
 /** Recompiler: Label internal processing error \#4. */
-#define VERR_IEM_LABEL_IPE_4                        (-5328)
+#define VERR_IEM_LABEL_IPE_4                        (-5336)
 /** Recompiler: Label internal processing error \#5. */
-#define VERR_IEM_LABEL_IPE_5                        (-5329)
+#define VERR_IEM_LABEL_IPE_5                        (-5337)
 /** Recompiler: Label internal processing error \#6. */
-#define VERR_IEM_LABEL_IPE_6                        (-5330)
+#define VERR_IEM_LABEL_IPE_6                        (-5338)
 /** Recompiler: Label internal processing error \#7. */
-#define VERR_IEM_LABEL_IPE_7                        (-5331)
+#define VERR_IEM_LABEL_IPE_7                        (-5339)
 
 /** Recompiler: Out of host register. */
 #define VERR_IEM_REG_OUT_OF_REGISTERS               (-5340)

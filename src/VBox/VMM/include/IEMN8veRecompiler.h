@@ -265,6 +265,7 @@ typedef enum
     /* Labels w/o data, only once instance per TB: */
     kIemNativeLabelType_Return,
     kIemNativeLabelType_ReturnBreak,
+    kIemNativeLabelType_ReturnWithFlags,
     kIemNativeLabelType_NonZeroRetOrPassUp,
     kIemNativeLabelType_RaiseGp0,
     /* Labels with data, potentially multiple instances per TB: */
@@ -1177,7 +1178,7 @@ iemNativeEmitStoreGprToVCpuU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
  * Emits a store of a GPR value to a 32-bit VCpu field.
  */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitStoreGprFromVCpuU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr, uint32_t offVCpu)
+iemNativeEmitStoreGprToVCpuU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr, uint32_t offVCpu)
 {
 #ifdef RT_ARCH_AMD64
     /* mov mem32, reg32 */
@@ -1202,7 +1203,7 @@ iemNativeEmitStoreGprFromVCpuU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, ui
  * Emits a store of a GPR value to a 16-bit VCpu field.
  */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitStoreGprFromVCpuU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr, uint32_t offVCpu)
+iemNativeEmitStoreGprToVCpuU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr, uint32_t offVCpu)
 {
 #ifdef RT_ARCH_AMD64
     /* mov mem16, reg16 */
@@ -1228,7 +1229,7 @@ iemNativeEmitStoreGprFromVCpuU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, ui
  * Emits a store of a GPR value to a 8-bit VCpu field.
  */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitStoreGprFromVCpuU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr, uint32_t offVCpu)
+iemNativeEmitStoreGprToVCpuU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGpr, uint32_t offVCpu)
 {
 #ifdef RT_ARCH_AMD64
     /* mov mem8, reg8 */

@@ -1821,6 +1821,21 @@ class IEMThreadedGenerator(object):
                           file = sys.stderr);
                 print('todo:', file = sys.stderr);
 
+            if ian.g_dUnsupportedMcStmtLastOneVarStats:
+                asTopKeys = sorted(ian.g_dUnsupportedMcStmtLastOneVarStats, reverse = True,
+                                   key = lambda sSortKey: len(ian.g_dUnsupportedMcStmtLastOneVarStats[sSortKey]))[:10];
+                print('todo:', file = sys.stderr);
+                print('todo: Top %s variations with variables and one unsupported statement dependency:' % (len(asTopKeys),),
+                      file = sys.stderr);
+                cchMaxKey = max([len(sKey) for sKey in asTopKeys]);
+                for sKey in asTopKeys:
+                    print('todo: %*s = %s (%s%s)'
+                          % (cchMaxKey, sKey, len(ian.g_dUnsupportedMcStmtLastOneVarStats[sKey]),
+                             ', '.join([oVar.getShortName() for oVar in ian.g_dUnsupportedMcStmtLastOneVarStats[sKey][:5]]),
+                             ',...' if len(ian.g_dUnsupportedMcStmtLastOneVarStats[sKey]) >= 5 else '', )
+                             , file = sys.stderr);
+
+
         # Gather arguments + variable statistics for the MC blocks.
         cMaxArgs         = 0;
         cMaxVars         = 0;

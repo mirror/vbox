@@ -3560,6 +3560,26 @@ static uint32_t iemNativeEmitRaiseGp0(PIEMRECOMPILERSTATE pReNative, uint32_t of
 
 
 /**
+ * Emits the code at the ReturnWithFlags label (returns
+ * VINF_IEM_REEXEC_FINISH_WITH_FLAGS).
+ */
+static uint32_t iemNativeEmitReturnWithFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxReturnLabel)
+{
+    uint32_t const idxLabel = iemNativeLabelFind(pReNative, kIemNativeLabelType_ReturnWithFlags);
+    if (idxLabel != UINT32_MAX)
+    {
+        iemNativeLabelDefine(pReNative, idxLabel, off);
+
+        off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_CALL_RET_GREG, VINF_IEM_REEXEC_FINISH_WITH_FLAGS);
+
+        /* jump back to the return sequence. */
+        off = iemNativeEmitJmpToLabel(pReNative, off, idxReturnLabel);
+    }
+    return off;
+}
+
+
+/**
  * Emits the code at the ReturnBreak label (returns VINF_IEM_REEXEC_BREAK).
  */
 static uint32_t iemNativeEmitReturnBreak(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t idxReturnLabel)
@@ -3875,8 +3895,47 @@ DECL_INLINE_THROW(uint32_t) iemNativeEmitCImplCall3(PIEMRECOMPILERSTATE pReNativ
  * Advancing PC/RIP/EIP/IP.
  */
 
+/** Emits the flags check for IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC64_WITH_FLAGS
+ *  and the other _WITH_FLAGS MCs, see iemRegFinishClearingRF. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitFinishInstructionFlagsCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off)
+{
+    /*
+     * If its not just X86_EFL_RF and CPUMCTX_INHIBIT_SHADOW that are set, we
+     * return with special status code and make the execution loop deal with
+     * this.  If TF or CPUMCTX_DBG_HIT_DRX_MASK triggers, we have to raise an
+     * exception and won't continue execution.  While CPUMCTX_DBG_DBGF_MASK
+     * could continue w/o interruption, it probably will drop into the
+     * debugger, so not worth the effort of trying to services it here and we
+     * just lump it in with the handling of the others.
+     *
+     * To simplify the code and the register state management even more (wrt
+     * immediate in AND operation), we always update the flags and skip the
+     * extra check associated conditional jump.
+     */
+    AssertCompile(   (X86_EFL_TF | X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW | CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_DBG_DBGF_MASK)
+                  <= UINT32_MAX);
+    uint8_t const idxEflReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, kIemNativeGstReg_EFlags,
+                                                             kIemNativeGstRegUse_ForUpdate);
+    off = iemNativeEmitTestAnyBitsInGprAndJmpToLabelIfAnySet(pReNative, off, idxEflReg,
+                                                             X86_EFL_TF | CPUMCTX_DBG_HIT_DRX_MASK | CPUMCTX_DBG_DBGF_MASK,
+                                                             iemNativeLabelCreate(pReNative, kIemNativeLabelType_ReturnWithFlags));
+    off = iemNativeEmitAndGpr32ByImm(pReNative, off, idxEflReg, ~(uint32_t)(X86_EFL_RF | CPUMCTX_INHIBIT_SHADOW));
+    off = iemNativeEmitStoreGprToVCpuU32(pReNative, off, idxEflReg, RT_UOFFSETOF(VMCPU, cpum.GstCtx.eflags));
+
+    /* Free but don't flush the EFLAGS register. */
+    iemNativeRegFreeTmp(pReNative, idxEflReg);
+
+    return off;
+}
+
+
 #define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC64(a_cbInstr) \
     off = iemNativeEmitAddToRip64AndFinishingNoFlags(pReNative, off, (a_cbInstr))
+
+#define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC64_WITH_FLAGS(a_cbInstr) \
+    off = iemNativeEmitAddToRip64AndFinishingNoFlags(pReNative, off, (a_cbInstr)); \
+    off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off)
 
 /** Same as iemRegAddToRip64AndFinishingNoFlags. */
 DECL_INLINE_THROW(uint32_t)
@@ -3899,6 +3958,10 @@ iemNativeEmitAddToRip64AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32
 #define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC32(a_cbInstr) \
     off = iemNativeEmitAddToEip32AndFinishingNoFlags(pReNative, off, (a_cbInstr))
 
+#define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC32_WITH_FLAGS(a_cbInstr) \
+    off = iemNativeEmitAddToEip32AndFinishingNoFlags(pReNative, off, (a_cbInstr)); \
+    off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off)
+
 /** Same as iemRegAddToEip32AndFinishingNoFlags. */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitAddToEip32AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr)
@@ -3919,6 +3982,10 @@ iemNativeEmitAddToEip32AndFinishingNoFlags(PIEMRECOMPILERSTATE pReNative, uint32
 
 #define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC16(a_cbInstr) \
     off = iemNativeEmitAddToIp16AndFinishingNoFlags(pReNative, off, (a_cbInstr))
+
+#define IEM_MC_ADVANCE_RIP_AND_FINISH_THREADED_PC16_WITH_FLAGS(a_cbInstr) \
+    off = iemNativeEmitAddToIp16AndFinishingNoFlags(pReNative, off, (a_cbInstr)); \
+    off = iemNativeEmitFinishInstructionFlagsCheck(pReNative, off)
 
 /** Same as iemRegAddToIp16AndFinishingNoFlags. */
 DECL_INLINE_THROW(uint32_t)
@@ -5307,6 +5374,9 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
                                 case kIemNativeLabelType_ReturnBreak:
                                     pszName = "ReturnBreak";
                                     break;
+                                case kIemNativeLabelType_ReturnWithFlags:
+                                    pszName = "ReturnWithFlags";
+                                    break;
                                 case kIemNativeLabelType_NonZeroRetOrPassUp:
                                     pszName = "NonZeroRetOrPassUp";
                                     break;
@@ -5596,6 +5666,8 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
          */
         if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_ReturnBreak))
             off = iemNativeEmitReturnBreak(pReNative, off, idxReturnLabel);
+        if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_ReturnWithFlags))
+            off = iemNativeEmitReturnWithFlags(pReNative, off, idxReturnLabel);
         if (pReNative->bmLabelTypes & RT_BIT_64(kIemNativeLabelType_RaiseGp0))
             off = iemNativeEmitRaiseGp0(pReNative, off, idxReturnLabel);
     }
