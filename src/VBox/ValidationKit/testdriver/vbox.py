@@ -3862,7 +3862,14 @@ class TestDriver(base.TestDriver):                                              
         self.importVBoxApi();
         if self.fpApiVer >= 5.0:
             try:
-                fVBox = self.oVBox.systemProperties.rawModeSupported;
+                if self.fpApiVer >= 7.1:
+                    # @todo r=aeichner Not entirely correct as we can support multiple platforms on a single host
+                    #                  each having an individual raw-mode status. Not relevant right now because
+                    #                  there is no raw-mode at all currently.
+                    oPlatformProperties = self.oVBox.getPlatformProperties(self.oVBox.host.architecture);
+                    fVBox = oPlatformProperties.rawModeSupported;
+                else:
+                    fVBox = self.oVBox.systemProperties.rawModeSupported;
             except:
                 if not fQuiet:
                     reporter.logXcpt();
