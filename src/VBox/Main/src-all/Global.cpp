@@ -231,17 +231,17 @@ const Global::OSType Global::sOSTypes[] =
 
 #define VBOX_LINUX_OSHINTS_A_X86   (VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET | VBOXOSHINT_X86_X2APIC | VBOXOSHINT_X86_PAE)
 #define VBOX_LINUX_OSHINTS_A_X64   (VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET | VBOXOSHINT_X86_X2APIC | VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC)
-#define VBOX_LINUX_OSHINTS_A_ARM64 (VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET | VBOXOSHINT_USBHID | VBOXOSHINT_EFI | VBOXOSHINT_64BIT | VBOXOSHINT_USB3)
 
 #define VBOX_LINUX_OSHINTS_B_X86   (VBOXOSHINT_RTCUTC | VBOXOSHINT_X86_PAE | VBOXOSHINT_X86_X2APIC)
 #define VBOX_LINUX_OSHINTS_B_X64   (VBOXOSHINT_RTCUTC | VBOXOSHINT_X86_PAE | VBOXOSHINT_X86_X2APIC | VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC)
-#define VBOX_LINUX_OSHINTS_B_ARM64 (VBOXOSHINT_RTCUTC | VBOXOSHINT_USBHID | VBOXOSHINT_64BIT | VBOXOSHINT_USB3)
 
 #define VBOX_LINUX_OSHINTS_C_X86  (VBOXOSHINT_RTCUTC | VBOXOSHINT_X86_X2APIC | VBOXOSHINT_X86_PAE)
 #define VBOX_LINUX_OSHINTS_C_X64  (VBOXOSHINT_RTCUTC | VBOXOSHINT_X86_X2APIC | VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC)
 
 #define VBOX_LINUX_OSHINTS_D_X86  (VBOXOSHINT_RTCUTC | VBOXOSHINT_X86_PAE)
 #define VBOX_LINUX_OSHINTS_D_X64  (VBOXOSHINT_RTCUTC | VBOXOSHINT_64BIT | VBOXOSHINT_X86_HWVIRTEX | VBOXOSHINT_X86_IOAPIC)
+
+#define VBOX_LINUX_OSHINTS_ARM64  (VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET | VBOXOSHINT_USBHID | VBOXOSHINT_EFI | VBOXOSHINT_64BIT | VBOXOSHINT_USB3)
 
 #define VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_szSubtype, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
                                         a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \
@@ -255,14 +255,14 @@ const Global::OSType Global::sOSTypes[] =
       1, a_Memory, a_Vram, a_Diskspace * _1G64, GraphicsControllerType_VMSVGA, a_NetworkAdapter, 0, StorageControllerType_PIIX4, StorageBus_IDE, \
       a_HDStorageController, a_HDStorageBusType, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_AD1980  }
 
-#define VBOX_LINUX_SUBTYPE_TEMPLATE_A64(a_szSubtype, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
-                                        a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \
+#define VBOX_LINUX_SUBTYPE_TEMPLATE_A64_QEMURAMFB(a_szSubtype, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
+                                                  a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \
     { "Linux",   "Linux", a_szSubtype, GUEST_OS_ID_STR_A64(#a_Id), a_Description, VBOX_GUEST_ADDITIONS_NAME_LNX_A64, VBOX_OSTYPE_ARM64(a_OStype), a_OSHint, \
-      1, a_Memory, a_Vram, a_Diskspace * _1G64, GraphicsControllerType_VMSVGA, a_NetworkAdapter, 0, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI, \
+      1, a_Memory, a_Vram, a_Diskspace * _1G64, GraphicsControllerType_QemuRamFB, a_NetworkAdapter, 0, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI, \
       a_HDStorageController, a_HDStorageBusType, ChipsetType_ARMv8Virtual, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221  }
 
-#define VBOX_LINUX_SUBTYPE_TEMPLATE_ARM64(a_szSubtype, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
-                                          a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \
+#define VBOX_LINUX_SUBTYPE_TEMPLATE_A64(a_szSubtype, a_Id, a_Description, a_OStype, a_OSHint, a_Memory, a_Vram, a_Diskspace, \
+                                        a_NetworkAdapter, a_HDStorageController, a_HDStorageBusType) \
     { "Linux",   "Linux", a_szSubtype, GUEST_OS_ID_STR_A64(#a_Id), a_Description,  VBOX_GUEST_ADDITIONS_NAME_LNX_A64, VBOX_OSTYPE_ARM64(a_OStype), a_OSHint, \
       1, a_Memory, a_Vram, a_Diskspace * _1G64, GraphicsControllerType_VMSVGA, a_NetworkAdapter, 0, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI, \
       a_HDStorageController, a_HDStorageBusType, ChipsetType_ARMv8Virtual, IommuType_None, AudioControllerType_HDA, AudioCodecType_STAC9221 }
@@ -274,12 +274,12 @@ const Global::OSType Global::sOSTypes[] =
 
 /* Linux x86 64-bit sub-type template defaulting to 1 CPU with USB-tablet-mouse/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
 #define VBOX_LINUX_SUBTYPE_A_X64(a_szSubtype, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szSubtype, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_A_X64, a_Memory, a_Vram, a_Diskspace, \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_X64(a_szSubtype, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_ARM64, a_Memory, a_Vram, a_Diskspace, \
                                      NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
 #define VBOX_LINUX_SUBTYPE_A_A64(a_szSubtype, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_ARM64(a_szSubtype, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_A_ARM64, a_Memory, a_Vram, a_Diskspace, \
-                                      NetworkAdapterType_I82540EM, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI)
+    VBOX_LINUX_SUBTYPE_TEMPLATE_A64(a_szSubtype, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_ARM64, a_Memory, a_Vram, a_Diskspace, \
+                                    NetworkAdapterType_I82540EM, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI)
 
 #define VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_X86(a_szSubtype, a_Id, a_Description, a_OStype, a_Memory, a_Vram, a_Diskspace) \
     VBOX_LINUX_SUBTYPE_TEMPLATE_X86(a_szSubtype, a_Id, a_Description, a_OStype, VBOX_LINUX_OSHINTS_A_X86, a_Memory, a_Vram, a_Diskspace, \
@@ -290,7 +290,7 @@ const Global::OSType Global::sOSTypes[] =
                                     NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
 #define VBOX_LINUX_SUBTYPE_A_WITH_OSTYPE_A64(a_szSubtype, a_Id, a_Description, a_OStype, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_A64(a_szSubtype, a_Id, a_Description, a_OStype, VBOX_LINUX_OSHINTS_A_ARM64, a_Memory, a_Vram, a_Diskspace, \
+    VBOX_LINUX_SUBTYPE_TEMPLATE_A64(a_szSubtype, a_Id, a_Description, a_OStype, VBOX_LINUX_OSHINTS_ARM64, a_Memory, a_Vram, a_Diskspace, \
                                     NetworkAdapterType_I82540EM, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI)
 
 /* Linux x86 32-bit sub-type template defaulting to 1 CPU with PS/2-mouse/PAE-NX/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
@@ -304,8 +304,8 @@ const Global::OSType Global::sOSTypes[] =
                                     NetworkAdapterType_I82540EM, StorageControllerType_IntelAhci, StorageBus_SATA)
 
 #define VBOX_LINUX_SUBTYPE_B_A64(a_szSubtype, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
-    VBOX_LINUX_SUBTYPE_TEMPLATE_ARM64(a_szSubtype, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_B_ARM64, a_Memory, a_Vram, a_Diskspace, \
-                                      NetworkAdapterType_I82540EM, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI)
+    VBOX_LINUX_SUBTYPE_TEMPLATE_A64_QEMURAMFB(a_szSubtype, a_Id, a_Description, a_Id, VBOX_LINUX_OSHINTS_ARM64, a_Memory, a_Vram, a_Diskspace, \
+                                              NetworkAdapterType_I82540EM, StorageControllerType_VirtioSCSI, StorageBus_VirtioSCSI)
 
 /* Linux 32-bit sub-type template defaulting to 1 CPU with PS/2-mouse/VMSVGA/Intel-Pro1000/PIIX4+IDE DVD/AHCI+SATA disk/AC97 */
 #define VBOX_LINUX_SUBTYPE_C_X86(a_szSubtype, a_Id, a_Description, a_Memory, a_Vram, a_Diskspace) \
@@ -415,7 +415,7 @@ const Global::OSType Global::sOSTypes[] =
     VBOX_LINUX_SUBTYPE_A_A64("openSUSE",    OpenSUSE_Leap,       "openSUSE Leap (ARM 64-bit)",      2048, 16, 8),  // 64-bit only
     VBOX_LINUX_SUBTYPE_A_X86("openSUSE",    OpenSUSE_Tumbleweed, "openSUSE Tumbleweed (32-bit)",    2048, 16, 8),
     VBOX_LINUX_SUBTYPE_A_X64("openSUSE",    OpenSUSE_Tumbleweed, "openSUSE Tumbleweed (64-bit)",    2048, 16, 8),
-    VBOX_LINUX_SUBTYPE_A_A64("openSUSE",    OpenSUSE_Tumbleweed, "openSUSE Tumbleweed (ARM 64-bit)", 2048, 16, 8),
+    VBOX_LINUX_SUBTYPE_B_A64("openSUSE",    OpenSUSE_Tumbleweed, "openSUSE Tumbleweed (ARM 64-bit)", 2048, 16, 8),
     VBOX_LINUX_SUBTYPE_A_X86("SUSE",        SUSE_LE,             "SUSE Linux Enterprise (32-bit)",  2048, 16, 8),
     VBOX_LINUX_SUBTYPE_A_X64("SUSE",        SUSE_LE,             "SUSE Linux Enterprise (64-bit)",  2048, 16, 8),
 
