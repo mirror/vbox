@@ -560,6 +560,12 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             #
             UnattendedVm(oSet, 'tst-debian-11.8-arm64', 'Debian_arm64', '7.1/uaisos/debian-11.8.0-arm64-DVD-1.iso',  # >=6GiB?
                          UnattendedVm.kfAvoidNetwork, "ARM"),
+
+            #
+            # OracleLinux
+            #
+            UnattendedVm(oSet, 'tst-ol-9_2-arm64', 'Oracle_arm64', '7.1/uaisos/OracleLinux-R9-U2-aarch64-dvd.iso',
+                         0, "ARM"),
         ]);
         # pylint: enable=line-too-long
         self.oTestVmSet = oSet;
