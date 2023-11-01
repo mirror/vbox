@@ -993,6 +993,95 @@ HRESULT UnattendedLinuxInstaller::editIsoLinuxCommon(GeneralTextScript *pEditor)
 }
 
 
+HRESULT UnattendedLinuxInstaller::editGrubCfg(GeneralTextScript *pEditor)
+{
+    /* Default menu entry of grub.cfg is set in /etc/deafult/grub file. */
+    try
+    {
+        /* Set timeouts to 4 seconds. */
+        std::vector<size_t> vecLineNumbers = pEditor->findTemplate("set timeout", RTCString::CaseInsensitive);
+        if (vecLineNumbers.size() > 0)
+        {
+            for (size_t i = 0; i < vecLineNumbers.size(); ++i)
+                if (pEditor->getContentOfLine(vecLineNumbers[i]).startsWithWord("set timeout", RTCString::CaseInsensitive))
+                {
+                    HRESULT hrc = pEditor->setContentOfLine(vecLineNumbers.at(i), "set timeout=4");
+                    if (FAILED(hrc))
+                        return hrc;
+                }
+        }
+        else
+        {
+            /* Append timeout if not set (happens with arm64 iso images at least). */
+            HRESULT hrc = pEditor->appendLine("set timeout=4");
+            if (FAILED(hrc))
+                return hrc;
+        }
+
+        /* Modify kernel lines assuming that they starts with 'linux' keyword and 2nd word is the kernel command.*
+         * we remove whatever comes after command and add our own command line options. */
+        vecLineNumbers = pEditor->findTemplate("linux", RTCString::CaseInsensitive);
+        if (vecLineNumbers.size() > 0)
+        {
+            Utf8Str const &rStrAppend = mpParent->i_getExtraInstallKernelParameters().isNotEmpty()
+                                      ? mpParent->i_getExtraInstallKernelParameters()
+                                      : mStrDefaultExtraInstallKernelParameters;
+
+            for (size_t i = 0; i < vecLineNumbers.size(); ++i)
+            {
+                HRESULT hrc = S_OK;
+                if (pEditor->getContentOfLine(vecLineNumbers[i]).startsWithWord("linux", RTCString::CaseInsensitive))
+                {
+                    Utf8Str strLine = pEditor->getContentOfLine(vecLineNumbers[i]);
+                    size_t cbPos = strLine.find("linux") + strlen("linux");
+                    bool fSecondWord = false;
+                    /* Find the end of 2nd word assuming that it is kernel command. */
+                    while (cbPos < strLine.length())
+                    {
+                        if (!fSecondWord)
+                        {
+                            if (strLine[cbPos] != '\t' && strLine[cbPos] != ' ')
+                                fSecondWord = true;
+                        }
+                        else
+                        {
+                            if (strLine[cbPos] == '\t' || strLine[cbPos] == ' ')
+                                break;
+                        }
+                        ++cbPos;
+                    }
+                    if (!fSecondWord)
+                        hrc = E_FAIL;
+
+                    if (SUCCEEDED(hrc))
+                    {
+                        strLine.erase(cbPos, strLine.length() - cbPos);
+
+                        /* Do the appending. */
+                        if (rStrAppend.isNotEmpty())
+                        {
+                            if (!rStrAppend.startsWith(" ") && !strLine.endsWith(" "))
+                                strLine.append(' ');
+                            strLine.append(rStrAppend);
+                        }
+
+                        /* Update line. */
+                        hrc = pEditor->setContentOfLine(vecLineNumbers.at(i), strLine);
+                    }
+                    if (FAILED(hrc))
+                        return hrc;
+                }
+            }
+        }
+    }
+    catch (std::bad_alloc &)
+    {
+        return E_OUTOFMEMORY;
+    }
+    return S_OK;
+}
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 /*
 *
@@ -1131,7 +1220,7 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
         if (SUCCEEDED(hrc))
         {
             if (fMenuConfigIsGrub)
-                hrc = editDebianGrubCfg(&Editor);
+                hrc = editGrubCfg(&Editor);
             else
                     hrc = editDebianMenuCfg(&Editor);
             if (SUCCEEDED(hrc))
@@ -1287,93 +1376,6 @@ bool UnattendedDebianInstaller::modifyLabelLine(GeneralTextScript *pEditor, cons
     return false;
 }
 
-HRESULT UnattendedDebianInstaller::editDebianGrubCfg(GeneralTextScript *pEditor)
-{
-    /* Default menu entry of grub.cfg is set in /etc/deafult/grub file. */
-    try
-    {
-        /* Set timeouts to 4 seconds. */
-        std::vector<size_t> vecLineNumbers = pEditor->findTemplate("set timeout", RTCString::CaseInsensitive);
-        if (vecLineNumbers.size() > 0)
-        {
-            for (size_t i = 0; i < vecLineNumbers.size(); ++i)
-                if (pEditor->getContentOfLine(vecLineNumbers[i]).startsWithWord("set timeout", RTCString::CaseInsensitive))
-                {
-                    HRESULT hrc = pEditor->setContentOfLine(vecLineNumbers.at(i), "set timeout=4");
-                    if (FAILED(hrc))
-                        return hrc;
-                }
-        }
-        else
-        {
-            /* Append timeout if not set (happens with arm64 iso images at least). */
-            HRESULT hrc = pEditor->appendLine("set timeout=4");
-            if (FAILED(hrc))
-                return hrc;
-        }
-
-        /* Modify kernel lines assuming that they starts with 'linux' keyword and 2nd word is the kernel command.*
-         * we remove whatever comes after command and add our own command line options. */
-        vecLineNumbers = pEditor->findTemplate("linux", RTCString::CaseInsensitive);
-        if (vecLineNumbers.size() > 0)
-        {
-            Utf8Str const &rStrAppend = mpParent->i_getExtraInstallKernelParameters().isNotEmpty()
-                                      ? mpParent->i_getExtraInstallKernelParameters()
-                                      : mStrDefaultExtraInstallKernelParameters;
-
-            for (size_t i = 0; i < vecLineNumbers.size(); ++i)
-            {
-                HRESULT hrc = S_OK;
-                if (pEditor->getContentOfLine(vecLineNumbers[i]).startsWithWord("linux", RTCString::CaseInsensitive))
-                {
-                    Utf8Str strLine = pEditor->getContentOfLine(vecLineNumbers[i]);
-                    size_t cbPos = strLine.find("linux") + strlen("linux");
-                    bool fSecondWord = false;
-                    /* Find the end of 2nd word assuming that it is kernel command. */
-                    while (cbPos < strLine.length())
-                    {
-                        if (!fSecondWord)
-                        {
-                            if (strLine[cbPos] != '\t' && strLine[cbPos] != ' ')
-                                fSecondWord = true;
-                        }
-                        else
-                        {
-                            if (strLine[cbPos] == '\t' || strLine[cbPos] == ' ')
-                                break;
-                        }
-                        ++cbPos;
-                    }
-                    if (!fSecondWord)
-                        hrc = E_FAIL;
-
-                    if (SUCCEEDED(hrc))
-                    {
-                        strLine.erase(cbPos, strLine.length() - cbPos);
-
-                        /* Do the appending. */
-                        if (rStrAppend.isNotEmpty())
-                        {
-                            if (!rStrAppend.startsWith(" ") && !strLine.endsWith(" "))
-                                strLine.append(' ');
-                            strLine.append(rStrAppend);
-                        }
-
-                        /* Update line. */
-                        hrc = pEditor->setContentOfLine(vecLineNumbers.at(i), strLine);
-                    }
-                    if (FAILED(hrc))
-                        return hrc;
-                }
-            }
-        }
-    }
-    catch (std::bad_alloc &)
-    {
-        return E_OUTOFMEMORY;
-    }
-    return S_OK;
-}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 /*

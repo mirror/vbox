@@ -552,6 +552,14 @@ protected:
      * @param   pEditor         Editor with the isolinux.cfg file loaded and parsed.
      */
     virtual HRESULT editIsoLinuxCommon(GeneralTextScript *pEditor);
+
+    /**
+     * Performs basic edits on grub configuration file (grub.cfg).
+     *
+     * @returns COM status code
+     * @param   pEditor                 Editor with the grub.cfg file loaded and parsed.
+     */
+    virtual HRESULT editGrubCfg(GeneralTextScript *pEditor);
 };
 
 
@@ -604,13 +612,6 @@ protected:
      * @param   pEditor                  Editor with the menu config. file loaded and parsed.
      */
     HRESULT editDebianMenuCfg(GeneralTextScript *pEditor);
-    /**
-     * Performs basic edits on grub configuration file (grub.cfg).
-     *
-     * @returns COM status code
-     * @param   pEditor                 Editor with the grub.cfg file loaded and parsed.
-     */
-    HRESULT editDebianGrubCfg(GeneralTextScript *pEditor);
 
     /**
      * Performs basic edits on a isolinux.cfg file.
