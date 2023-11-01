@@ -237,7 +237,7 @@ log_command_in_target systemctl enable cloud-final.service
 echo "--------------------------------------------------" >> "${MY_LOGFILE}"
 echo '** Installing VirtualBox Guest Additions...' | tee -a "${MY_LOGFILE}"
 MY_IGNORE_EXITCODE=2  # returned if modules already loaded and reboot required.
-log_command_in_target /bin/bash "${MY_CHROOT_CDROM}/vboxadditions/VBoxLinuxAdditions.run" --nox11
+log_command_in_target /bin/bash "${MY_CHROOT_CDROM}/vboxadditions/@@VBOX_INSERT_ADDITIONS_INSTALL_PACKAGE_NAME@@" --nox11
 log_command_in_target /bin/bash -c "udevadm control --reload-rules" # GAs doesn't yet do this.
 log_command_in_target /bin/bash -c "udevadm trigger"                 # (ditto)
 MY_IGNORE_EXITCODE=

@@ -1388,7 +1388,27 @@ bool UnattendedDebianInstaller::modifyLabelLine(GeneralTextScript *pEditor, cons
 HRESULT UnattendedRhelInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &rVecArgs, RTCList<RTCString> &rVecFiles,
                                                           RTVFS hVfsOrgIso, bool fOverwrite)
 {
-    Utf8Str strIsoLinuxCfg;
+    /*
+     * Figure out the name of the menu config file that we have to edit.
+     */
+    bool        fMenuConfigIsGrub     = false;
+    const char *pszMenuConfigFilename = "/isolinux/isolinux.cfg";
+    if (!hlpVfsFileExists(hVfsOrgIso, pszMenuConfigFilename))
+    {
+        /* arm64 variants of Oracle Linux 9 have grub. */
+        if (hlpVfsFileExists(hVfsOrgIso, "/EFI/BOOT/grub.cfg"))
+        {
+            pszMenuConfigFilename     =  "/EFI/BOOT/grub.cfg";
+            fMenuConfigIsGrub         = true;
+        }
+        else
+            AssertFailed();
+    }
+
+    /*
+     * VISO bits and filenames.
+     */
+    RTCString strBootCfg;
     try
     {
 #if 1
@@ -1402,12 +1422,23 @@ HRESULT UnattendedRhelInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &rV
         rVecArgs.append() = "--file-mode=0444";
         rVecArgs.append() = "--dir-mode=0555";
 
-        /* We replace isolinux.cfg with our edited version (see further down). */
-        rVecArgs.append() = "isolinux/isolinux.cfg=:must-remove:";
-        strIsoLinuxCfg = mpParent->i_getAuxiliaryBasePath();
-        strIsoLinuxCfg.append("isolinux-isolinux.cfg");
-        rVecArgs.append().append("isolinux/isolinux.cfg=").append(strIsoLinuxCfg);
-
+        /* Replace the grub.cfg/isolinux.cfg configuration file. */
+        if (fMenuConfigIsGrub)
+        {
+            /* Replace menu configuration file as well. */
+            rVecArgs.append().assign(pszMenuConfigFilename).append("=:must-remove:");
+            strBootCfg = mpParent->i_getAuxiliaryBasePath();
+            strBootCfg.append("grub.cfg");
+            rVecArgs.append().assign(pszMenuConfigFilename).append("=").append(strBootCfg);
+        }
+        else
+        {
+            /* First remove. */
+            rVecArgs.append() = "isolinux/isolinux.cfg=:must-remove:";
+            strBootCfg = mpParent->i_getAuxiliaryBasePath();
+            strBootCfg.append("isolinux-isolinux.cfg");
+            rVecArgs.append().append("isolinux/isolinux.cfg=").append(strBootCfg);
+        }
 #else
         /** @todo Maybe we should just remaster the ISO for redhat derivatives too?
          *        One less CDROM to mount. */
@@ -1422,9 +1453,9 @@ HRESULT UnattendedRhelInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &rV
         /* We replace isolinux.cfg with our edited version (see further down). */
         rVecArgs.append() = "/isolinux/isolinux.cfg=:must-remove:";
 
-        strIsoLinuxCfg = mpParent->i_getAuxiliaryBasePath();
-        strIsoLinuxCfg.append("isolinux-isolinux.cfg");
-        rVecArgs.append().append("/isolinux/isolinux.cfg=").append(strIsoLinuxCfg);
+        strBootCfg = mpParent->i_getAuxiliaryBasePath();
+        strBootCfg.append("isolinux-isolinux.cfg");
+        rVecArgs.append().append("/isolinux/isolinux.cfg=").append(strBootCfg);
 
         /* Configure booting /isolinux/isolinux.bin. */
         rVecArgs.append() = "--eltorito-boot";
@@ -1443,27 +1474,29 @@ HRESULT UnattendedRhelInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &rV
         return E_OUTOFMEMORY;
     }
 
-    /*
-     * Edit isolinux.cfg and save it.
-     */
     {
         GeneralTextScript Editor(mpParent);
-        HRESULT hrc = loadAndParseFileFromIso(hVfsOrgIso, "/isolinux/isolinux.cfg", &Editor);
-        if (SUCCEEDED(hrc))
-            hrc = editIsoLinuxCfg(&Editor);
+        HRESULT hrc = loadAndParseFileFromIso(hVfsOrgIso, pszMenuConfigFilename, &Editor);
         if (SUCCEEDED(hrc))
         {
-            hrc = Editor.save(strIsoLinuxCfg, fOverwrite);
+            if (fMenuConfigIsGrub)
+                hrc = editGrubCfg(&Editor);
+            else
+                hrc = editIsoLinuxCfg(&Editor);
             if (SUCCEEDED(hrc))
             {
-                try
+                hrc = Editor.save(strBootCfg, fOverwrite);
+                if (SUCCEEDED(hrc))
                 {
-                    rVecFiles.append(strIsoLinuxCfg);
-                }
-                catch (std::bad_alloc &)
-                {
-                    RTFileDelete(strIsoLinuxCfg.c_str());
-                    hrc = E_OUTOFMEMORY;
+                    try
+                    {
+                        rVecFiles.append(strBootCfg);
+                    }
+                    catch (std::bad_alloc &)
+                    {
+                        RTFileDelete(strBootCfg.c_str());
+                        hrc = E_OUTOFMEMORY;
+                    }
                 }
             }
         }
