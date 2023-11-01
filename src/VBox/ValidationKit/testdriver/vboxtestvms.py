@@ -599,14 +599,11 @@ class BaseTestVm(object):
 
     def getGuestArch(self):
         """ Same as util.getHostArch. """
-        if self.sKind.find('_arm64') >= 0:
-            return 'arm64';
-        elif self.sKind.find('_arm32') >= 0:
-            return 'arm32';
-        elif self.sKind.find('_64') >= 0:
-            return 'amd64';
-        else:
-            return 'x86';
+        if self.sKind.find('_arm64') >= 0: return 'arm64';
+        if self.sKind.find('_arm32') >= 0: return 'arm32';
+        if self.sKind.find('_64') >= 0:    return 'amd64';
+
+        return 'x86';
 
     def getGuestOs(self):
         """ Same as util.getHostOs. """
@@ -1310,7 +1307,11 @@ class TestVm(object):
 
     def getGuestArch(self):
         """ Same as util.getHostArch. """
-        return 'amd64' if self.sKind.find('_64') >= 0 else 'x86';
+        if self.sKind.find('_arm64') >= 0: return 'arm64';
+        if self.sKind.find('_arm32') >= 0: return 'arm32';
+        if self.sKind.find('_64') >= 0:    return 'amd64';
+
+        return 'x86';
 
     def getGuestOs(self):
         """ Same as util.getHostOs. """
