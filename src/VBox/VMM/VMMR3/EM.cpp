@@ -1937,6 +1937,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 
             fWakeupPending = true;
             rc2 = VINF_EM_RESCHEDULE;
+            UPDATE_RC();
         }
 #endif /* VBOX_VMM_TARGET_ARMV8 */
 
