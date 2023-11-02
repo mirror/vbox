@@ -70,11 +70,11 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent,
     // widgets: edition
     , m_pLabelEdition(0)
     , m_pComboEdition(0)
-    // widgets/ family, subtype, type
+    // widgets/ family, distribution, type
     , m_pLabelFamily(0)
     , m_pComboFamily(0)
-    , m_pLabelSubtype(0)
-    , m_pComboSubtype(0)
+    , m_pLabelDistribution(0)
+    , m_pComboDistribution(0)
     , m_pLabelType(0)
     , m_pComboType(0)
     , m_pIconType(0)
@@ -191,21 +191,21 @@ bool UINameAndSystemEditor::setGuestOSTypeByTypeId(const QString &strTypeId)
     /* Bail out if family combo has no such item: */
     if (iFamilyComboIndex == -1)
         return false;
-    /* Set the family combo's index. This will cause subtype combo to be populated accordingly: */
+    /* Set the family combo's index. This will cause distribution combo to be populated accordingly: */
     m_pComboFamily->setCurrentIndex(iFamilyComboIndex);
 
-    /* If subtype is not empty then try to select correct index. This will populate type combo: */
-    QString strSubtype = uiCommon().guestOSTypeManager().getSubtype(strTypeId);
-    if (!strSubtype.isEmpty())
+    /* If distribution is not empty then try to select correct index. This will populate type combo: */
+    QString strDistribution = uiCommon().guestOSTypeManager().getSubtype(strTypeId);
+    if (!strDistribution.isEmpty())
     {
         int index = -1;
-        for (int i = 0; i < m_pComboSubtype->count() && index == -1; ++i)
+        for (int i = 0; i < m_pComboDistribution->count() && index == -1; ++i)
         {
-            if (strSubtype == m_pComboSubtype->itemText(i))
+            if (strDistribution == m_pComboDistribution->itemText(i))
                 index = i;
         }
         if (index != -1)
-            m_pComboSubtype->setCurrentIndex(index);
+            m_pComboDistribution->setCurrentIndex(index);
         else
             return false;
     }
@@ -272,8 +272,8 @@ void UINameAndSystemEditor::retranslateUi()
         m_pLabelEdition->setText(tr("&Edition:"));
     if (m_pLabelFamily)
         m_pLabelFamily->setText(tr("&Type:"));
-    if (m_pLabelSubtype)
-        m_pLabelSubtype->setText(tr("&Subtype:"));
+    if (m_pLabelDistribution)
+        m_pLabelDistribution->setText(tr("&Subtype:"));
     if (m_pLabelType)
         m_pLabelType->setText(tr("&Version:"));
 
@@ -302,56 +302,56 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(m_pComboFamily);
-    AssertPtrReturnVoid(m_pComboSubtype);
+    AssertPtrReturnVoid(m_pComboDistribution);
 
     /* Acquire new family ID: */
     m_strFamilyId = m_pComboFamily->itemData(iIndex).toString();
     AssertReturnVoid(!m_strFamilyId.isEmpty());
 
-    m_pComboSubtype->blockSignals(true);
-    m_pLabelSubtype->setEnabled(true);
+    m_pComboDistribution->blockSignals(true);
+    m_pLabelDistribution->setEnabled(true);
 
-    m_pComboSubtype->setEnabled(true);
-    m_pComboSubtype->clear();
+    m_pComboDistribution->setEnabled(true);
+    m_pComboDistribution->clear();
 
-    const QStringList subtypeList = uiCommon().guestOSTypeManager().getSubtypeListForFamilyId(m_strFamilyId);
+    const QStringList distributionList = uiCommon().guestOSTypeManager().getSubtypeListForFamilyId(m_strFamilyId);
 
-    if (subtypeList.isEmpty())
+    if (distributionList.isEmpty())
     {
-        m_pComboSubtype->setEnabled(false);
-        m_pLabelSubtype->setEnabled(false);
+        m_pComboDistribution->setEnabled(false);
+        m_pLabelDistribution->setEnabled(false);
         /* If subtype list is empty the all the types of the family are added to typ selection combo: */
         populateTypeCombo(uiCommon().guestOSTypeManager().getTypeListForFamilyId(m_strFamilyId));
     }
     else
     {
-        /* Populate subtype combo: */
+        /* Populate distribution combo: */
         /* If family is Linux then select Oracle Linux as subtype: */
         int iOracleIndex = -1;
-        foreach (const QString &strSubtype, subtypeList)
+        foreach (const QString &strDistribution, distributionList)
         {
-            m_pComboSubtype->addItem(strSubtype);
-            if (strSubtype.contains(QRegularExpression("Oracle.*Linux")))
-                iOracleIndex = m_pComboSubtype->count() - 1;
+            m_pComboDistribution->addItem(strDistribution);
+            if (strDistribution.contains(QRegularExpression("Oracle.*Linux")))
+                iOracleIndex = m_pComboDistribution->count() - 1;
         }
         if (iOracleIndex != -1)
-            m_pComboSubtype->setCurrentIndex(iOracleIndex);
+            m_pComboDistribution->setCurrentIndex(iOracleIndex);
 
-        populateTypeCombo(uiCommon().guestOSTypeManager().getTypeListForSubtype(m_pComboSubtype->currentText()));
+        populateTypeCombo(uiCommon().guestOSTypeManager().getTypeListForSubtype(m_pComboDistribution->currentText()));
     }
-    m_pComboSubtype->blockSignals(false);
+    m_pComboDistribution->blockSignals(false);
 
     /* Notify listeners about this change: */
     emit sigOSFamilyChanged(m_strFamilyId);
 }
 
-void UINameAndSystemEditor::sltSubtypeChanged(const QString &strSubtype)
+void UINameAndSystemEditor::sltDistributionChanged(const QString &strDistribution)
 {
-    /* Save new subtype: */
-    m_strSubtype = strSubtype;
+    /* Save new distribution: */
+    m_strDistribution = strDistribution;
 
     /* Populate type combo: */
-    populateTypeCombo(uiCommon().guestOSTypeManager().getTypeListForSubtype(strSubtype));
+    populateTypeCombo(uiCommon().guestOSTypeManager().getTypeListForSubtype(strDistribution));
 }
 
 void UINameAndSystemEditor::sltTypeChanged(int iIndex)
@@ -501,20 +501,20 @@ void UINameAndSystemEditor::prepareWidgets()
             }
             ++iRow;
 
-            /* Prepare VM OS subtype label: */
-            m_pLabelSubtype = new QLabel(this);
-            if (m_pLabelSubtype)
+            /* Prepare VM OS distribution label: */
+            m_pLabelDistribution = new QLabel(this);
+            if (m_pLabelDistribution)
             {
-                m_pLabelSubtype->setAlignment(Qt::AlignRight);
-                m_pLabelSubtype->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-                m_pLayout->addWidget(m_pLabelSubtype, iRow, 0);
+                m_pLabelDistribution->setAlignment(Qt::AlignRight);
+                m_pLabelDistribution->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+                m_pLayout->addWidget(m_pLabelDistribution, iRow, 0);
             }
-            /* Prepare VM OS subtype combo: */
-            m_pComboSubtype = new QComboBox(this);
-            if (m_pComboSubtype)
+            /* Prepare VM OS distribution combo: */
+            m_pComboDistribution = new QComboBox(this);
+            if (m_pComboDistribution)
             {
-                m_pLabelSubtype->setBuddy(m_pComboSubtype);
-                m_pLayout->addWidget(m_pComboSubtype, iRow, 1);
+                m_pLabelDistribution->setBuddy(m_pComboDistribution);
+                m_pLayout->addWidget(m_pComboDistribution, iRow, 1);
             }
             ++iRow;
 
@@ -588,9 +588,9 @@ void UINameAndSystemEditor::prepareConnections()
     if (m_pComboFamily)
         connect(m_pComboFamily, &QComboBox::currentIndexChanged,
                 this, &UINameAndSystemEditor::sltFamilyChanged);
-    if (m_pComboSubtype)
-        connect(m_pComboSubtype, &QComboBox::currentTextChanged,
-                this, &UINameAndSystemEditor::sltSubtypeChanged);
+    if (m_pComboDistribution)
+        connect(m_pComboDistribution, &QComboBox::currentTextChanged,
+                this, &UINameAndSystemEditor::sltDistributionChanged);
     if (m_pComboType)
         connect(m_pComboType, &QComboBox::currentIndexChanged,
                 this, &UINameAndSystemEditor::sltTypeChanged);
@@ -666,8 +666,8 @@ void UINameAndSystemEditor::selectPreferredType()
             return;
         }
     }
-    /* Oracle Linux for Oracle subtype: */
-    else if (m_strSubtype == "Oracle")
+    /* Oracle Linux for Oracle distribution: */
+    else if (m_strDistribution == "Oracle")
     {
         const QString strDefaultID = GUEST_OS_ID_STR_X64("Oracle");
         const int iIndexOracle = m_pComboType->findData(strDefaultID);
