@@ -1939,7 +1939,7 @@ iemNativeEmitAndGprByImm(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iG
     {
         /* and Ev, imm8 */
         uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
-        pbCodeBuf[off++] = X86_OP_REX_W | (iGprDst < 8 ? 0 : X86_OP_REX_R);
+        pbCodeBuf[off++] = X86_OP_REX_W | (iGprDst < 8 ? 0 : X86_OP_REX_B);
         pbCodeBuf[off++] = 0x83;
         pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 4, iGprDst & 7);
         pbCodeBuf[off++] = (uint8_t)uImm;
@@ -1948,7 +1948,7 @@ iemNativeEmitAndGprByImm(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iG
     {
         /* and Ev, imm32 */
         uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
-        pbCodeBuf[off++] = X86_OP_REX_W | (iGprDst < 8 ? 0 : X86_OP_REX_R);
+        pbCodeBuf[off++] = X86_OP_REX_W | (iGprDst < 8 ? 0 : X86_OP_REX_B);
         pbCodeBuf[off++] = 0x81;
         pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 4, iGprDst & 7);
         pbCodeBuf[off++] = RT_BYTE1(uImm);
@@ -2002,7 +2002,7 @@ iemNativeEmitAndGpr32ByImm(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t 
     /* and Ev, imm */
     uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
     if (iGprDst >= 8)
-        pbCodeBuf[off++] = X86_OP_REX_R;
+        pbCodeBuf[off++] = X86_OP_REX_B;
     if ((int32_t)uImm == (int8_t)uImm)
     {
         pbCodeBuf[off++] = 0x83;
