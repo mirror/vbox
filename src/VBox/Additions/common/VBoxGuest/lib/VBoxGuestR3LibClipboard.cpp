@@ -158,6 +158,7 @@ VBGLR3DECL(int) VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx, uint64_t fGuest
                     && (pCtx->fGuestFeatures & VBOX_SHCL_GF_0_TRANSFERS) )
                 {
                     VBoxShClParmNegotiateChunkSize MsgChunkSize;
+                    RT_ZERO(MsgChunkSize);
                     do
                     {
                         VBGL_HGCM_HDR_INIT(&MsgChunkSize.hdr, pCtx->idClient, VBOX_SHCL_GUEST_FN_NEGOTIATE_CHUNK_SIZE,
@@ -224,6 +225,9 @@ VBGLR3DECL(int) VbglR3ClipboardReportFeatures(uint32_t idClient, uint64_t fGuest
             HGCMFunctionParameter   f64Features0;
             HGCMFunctionParameter   f64Features1;
         } Msg;
+
+        RT_ZERO(Msg);
+
         VBGL_HGCM_HDR_INIT(&Msg.Hdr, idClient, VBOX_SHCL_GUEST_FN_REPORT_FEATURES, 2);
         VbglHGCMParmUInt64Set(&Msg.f64Features0, fGuestFeatures);
         VbglHGCMParmUInt64Set(&Msg.f64Features1, VBOX_SHCL_GF_1_MUST_BE_ONE);
@@ -298,6 +302,8 @@ static int vbglR3ClipboardFormatsReportRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLFORMATS
         HGCMFunctionParameter   f32Formats;
     } Msg;
 
+    RT_ZERO(Msg);
+
     VBGL_HGCM_HDR_INIT(&Msg.Hdr, pCtx->idClient, VBOX_SHCL_GUEST_FN_MSG_GET, 2);
     Msg.id64Context.SetUInt32(VBOX_SHCL_HOST_MSG_FORMATS_REPORT);
     Msg.f32Formats.SetUInt32(0);
@@ -332,6 +338,8 @@ static int vbglR3ClipboardFetchReadDataCid(PVBGLR3SHCLCMDCTX pCtx, PSHCLFORMAT p
         HGCMFunctionParameter   id64Context;
         HGCMFunctionParameter   f32Format;
     } Msg;
+
+    RT_ZERO(Msg);
 
     VBGL_HGCM_HDR_INIT(&Msg.Hdr, pCtx->idClient, VBOX_SHCL_GUEST_FN_MSG_GET, 2);
     Msg.id64Context.SetUInt64(VBOX_SHCL_HOST_MSG_READ_DATA_CID);
@@ -448,6 +456,8 @@ VBGLR3DECL(int) VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat,
         VBGLIOCHGCMCALL      Hdr;
         VBoxShClParmDataRead Parms;
     } Msg;
+
+    RT_ZERO(Msg);
 
     VBGL_HGCM_HDR_INIT(&Msg.Hdr, idClient, VBOX_SHCL_GUEST_FN_DATA_READ, VBOX_SHCL_CPARMS_DATA_READ);
     VbglHGCMParmUInt32Set(&Msg.Parms.f32Format,  fFormat);
@@ -571,6 +581,9 @@ static int vbglR3ClipboardMsgPeekEx(PVBGLR3SHCLCMDCTX pCtx, bool fWait, uint32_t
         HGCMFunctionParameter cParameters;
     } Msg;
     int rc;
+
+    RT_ZERO(Msg);
+
     if (!pCtx->fUseLegacyProtocol)
     {
         VBGL_HGCM_HDR_INIT(&Msg.Hdr, pCtx->idClient,
@@ -2793,6 +2806,8 @@ VBGLR3DECL(int) VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFo
         VBoxShClParmReportFormats   Parms;
     } Msg;
 
+    RT_ZERO(Msg);
+
     VBGL_HGCM_HDR_INIT(&Msg.Hdr, idClient, VBOX_SHCL_GUEST_FN_REPORT_FORMATS, VBOX_SHCL_CPARMS_REPORT_FORMATS);
     VbglHGCMParmUInt32Set(&Msg.Parms.f32Formats, fFormats);
 
@@ -2867,6 +2882,8 @@ VBGLR3DECL(int) VbglR3ClipboardWriteDataEx(PVBGLR3SHCLCMDCTX pCtx, SHCLFORMAT fF
             VBGLIOCHGCMCALL         Hdr;
             VBoxShClParmDataWrite   Parms;
         } Msg;
+
+        RT_ZERO(Msg);
 
         VBGL_HGCM_HDR_INIT(&Msg.Hdr, pCtx->idClient, VBOX_SHCL_GUEST_FN_DATA_WRITE, VBOX_SHCL_CPARMS_DATA_WRITE);
         Msg.Parms.id64Context.SetUInt64(pCtx->idContext);

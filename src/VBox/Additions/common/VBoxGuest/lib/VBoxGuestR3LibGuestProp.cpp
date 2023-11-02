@@ -961,6 +961,8 @@ VBGLR3DECL(int) VbglR3GuestPropWait(HGCMCLIENTID idClient,
      * Create the GET_NOTIFICATION message and call the host.
      */
     GuestPropMsgGetNotification Msg;
+    RT_ZERO(Msg);
+
     VBGL_HGCM_HDR_INIT_TIMED(&Msg.hdr, idClient, GUEST_PROP_FN_GET_NOTIFICATION, 4, cMillies);
 
     VbglHGCMParmPtrSetString(&Msg.patterns, pszPatterns);

@@ -299,6 +299,9 @@ static int vbglR3Init(const char *pszDeviceName)
      */
     {
         VBGLIOCDRIVERVERSIONINFO VerInfo;
+
+        RT_ZERO(VerInfo);
+
         VBGLREQHDR_INIT(&VerInfo.Hdr, DRIVER_VERSION_INFO);
         VerInfo.u.In.uMinVersion    = VBGL_IOC_VERSION & UINT32_C(0xffff0000);
         VerInfo.u.In.uReqVersion    = VBGL_IOC_VERSION;
