@@ -57,27 +57,34 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent,
                                              bool fChooseEdition /* = false */,
                                              bool fChooseType /* = true */)
     : UIEditor(pParent, true /* show in basic mode? */)
+    // options
     , m_fChooseName(fChooseName)
     , m_fChoosePath(fChoosePath)
     , m_fChooseImage(fChooseImage)
     , m_fChooseEdition(fChooseEdition)
     , m_fChooseType(fChooseType)
+    // widgets
     , m_pLayout(0)
+    // widgets: name
     , m_pLabelName(0)
-    , m_pLabelPath(0)
-    , m_pLabelImage(0)
-    , m_pLabelEdition(0)
-    , m_pLabelFamily(0)
-    , m_pLabelType(0)
-    , m_pIconType(0)
-    , m_pLabelSubtype(0)
     , m_pEditorName(0)
+    // widgets: path
+    , m_pLabelPath(0)
     , m_pSelectorPath(0)
+    // widgets: image
+    , m_pLabelImage(0)
     , m_pSelectorImage(0)
+    // widgets: edition
+    , m_pLabelEdition(0)
     , m_pComboEdition(0)
+    // widgets/ family, subtype, type
+    , m_pLabelFamily(0)
     , m_pComboFamily(0)
-    , m_pComboType(0)
+    , m_pLabelSubtype(0)
     , m_pComboSubtype(0)
+    , m_pLabelType(0)
+    , m_pComboType(0)
+    , m_pIconType(0)
 {
     prepare();
 }
@@ -118,6 +125,21 @@ void UINameAndSystemEditor::setOSTypeStuffEnabled(bool fEnabled)
         m_pComboType->setEnabled(fEnabled);
 }
 
+void UINameAndSystemEditor::setEditionSelectorEnabled(bool fEnabled)
+{
+    if (m_pComboEdition)
+        m_pComboEdition->setEnabled(fEnabled);
+    if (m_pLabelEdition)
+        m_pLabelEdition->setEnabled(fEnabled);
+}
+
+bool UINameAndSystemEditor::isEditionsSelectorEmpty() const
+{
+    if (m_pComboEdition)
+        return m_pComboEdition->count() == 0;
+    return true;
+}
+
 void UINameAndSystemEditor::setName(const QString &strName)
 {
     if (!m_pEditorName)
@@ -152,6 +174,7 @@ void UINameAndSystemEditor::setISOImagePath(const QString &strPath)
         m_pSelectorImage->setPath(strPath);
     emit sigImageChanged(strPath);
 }
+
 QString UINameAndSystemEditor::ISOImagePath() const
 {
     if (!m_pSelectorImage)
@@ -205,16 +228,16 @@ bool UINameAndSystemEditor::setGuestOSTypeByTypeId(const QString &strTypeId)
     return true;
 }
 
-QString UINameAndSystemEditor::typeId() const
-{
-    return m_strTypeId;
-}
-
 QString UINameAndSystemEditor::familyId() const
 {
     if (!m_pComboFamily)
         return QString();
     return m_strFamilyId;
+}
+
+QString UINameAndSystemEditor::typeId() const
+{
+    return m_strTypeId;
 }
 
 void UINameAndSystemEditor::markNameEditor(bool fError)
@@ -235,21 +258,6 @@ void UINameAndSystemEditor::setEditionNameAndIndices(const QVector<QString> &nam
     m_pComboEdition->clear();
     for (int i = 0; i < names.size(); ++i)
         m_pComboEdition->addItem(names[i], QVariant::fromValue(ids[i]) /* user data */);
-}
-
-void UINameAndSystemEditor::setEditionSelectorEnabled(bool fEnabled)
-{
-    if (m_pComboEdition)
-        m_pComboEdition->setEnabled(fEnabled);
-    if (m_pLabelEdition)
-        m_pLabelEdition->setEnabled(fEnabled);
-}
-
-bool UINameAndSystemEditor::isEditionsSelectorEmpty() const
-{
-    if (m_pComboEdition)
-        return m_pComboEdition->count() == 0;
-    return true;
 }
 
 int UINameAndSystemEditor::firstColumnWidth() const
@@ -301,6 +309,11 @@ void UINameAndSystemEditor::retranslateUi()
     if (m_pSelectorImage)
         m_pSelectorImage->setToolTip(tr("Selects an ISO image to be attached to the "
                                         "virtual machine or used in unattended install."));
+}
+
+void UINameAndSystemEditor::sltSelectedEditionsChanged(int)
+{
+    emit sigEditionChanged(selectedEditionIndex());
 }
 
 void UINameAndSystemEditor::sltFamilyChanged(int index)
@@ -355,56 +368,6 @@ void UINameAndSystemEditor::sltSubtypeChanged(const QString &strSubtype)
     populateTypeCombo(uiCommon().guestOSTypeManager().getTypeListForSubtype(strSubtype));
 }
 
-void UINameAndSystemEditor::populateTypeCombo(const UIGuestOSTypeManager::UIGuestOSTypeInfo &typeList)
-{
-    AssertReturnVoid(m_pComboType);
-    AssertReturnVoid(!typeList.isEmpty());
-
-    m_pComboType->blockSignals(true);
-    m_pComboType->clear();
-    for (int i = 0; i < typeList.size(); ++i)
-    {
-        m_pComboType->addItem(typeList[i].second);
-        m_pComboType->setItemData(i, typeList[i].first, TypeID);
-    }
-    m_pComboType->blockSignals(false);
-    selectPreferredType();
-    sltTypeChanged(m_pComboType->currentIndex());
-}
-
-void UINameAndSystemEditor::selectPreferredType()
-{
-    if (m_strFamilyId == "Windows")
-    {
-        QString strDefaultID = GUEST_OS_ID_STR_X64("Windows11");
-        const int iIndexWin = m_pComboType->findData(strDefaultID, TypeID);
-        if (iIndexWin != -1)
-        {
-            m_pComboType->setCurrentIndex(iIndexWin);
-            return;
-        }
-    }
-    /* Or select Oracle Linux item for Linux family as default: */
-    if (m_strSubtype == "Oracle")
-    {
-        QString strDefaultID = GUEST_OS_ID_STR_X64("Oracle");
-        const int iIndexOracle = m_pComboType->findData(strDefaultID, TypeID);
-        if (iIndexOracle != -1)
-        {
-            m_pComboType->setCurrentIndex(iIndexOracle);
-            return;
-        }
-    }
-
-    /* Else try to pick the first 64-bit one if it exists.: */
-    QString strDefaultID = GUEST_OS_ID_STR_X64("");
-    const int iIndexAll = m_pComboType->findData(strDefaultID, TypeID, Qt::MatchContains);
-    if (iIndexAll != -1)
-        m_pComboType->setCurrentIndex(iIndexAll);
-    else
-        m_pComboType->setCurrentIndex(0);
-}
-
 void UINameAndSystemEditor::sltTypeChanged(int iIndex)
 {
     AssertPtrReturnVoid(m_pComboType);
@@ -422,21 +385,11 @@ void UINameAndSystemEditor::sltTypeChanged(int iIndex)
     emit sigOsTypeChanged();
 }
 
-void UINameAndSystemEditor::sltSelectedEditionsChanged(int)
-{
-    emit sigEditionChanged(selectedEditionIndex());
-}
-
 void UINameAndSystemEditor::prepare()
 {
-    prepareThis();
     prepareWidgets();
     prepareConnections();
     retranslateUi();
-}
-
-void UINameAndSystemEditor::prepareThis()
-{
 }
 
 void UINameAndSystemEditor::prepareWidgets()
@@ -636,26 +589,6 @@ void UINameAndSystemEditor::prepareWidgets()
     }
 }
 
-void UINameAndSystemEditor::prepareFamilyCombo()
-{
-    AssertPtrReturnVoid(m_pComboFamily);
-
-    /* Acquire family IDs: */
-    const UIGuestOSTypeManager::UIGuestOSTypeFamilyInfo &families = uiCommon().guestOSTypeManager().getFamilies();
-
-    /* For each known family ID: */
-    for (int i = 0; i < families.size(); ++i)
-    {
-        m_pComboFamily->addItem(families[i].second);
-        m_pComboFamily->setItemData(i, families[i].first, FamilyID);
-    }
-
-    /* Choose the 1st item to be the current: */
-    m_pComboFamily->setCurrentIndex(0);
-    /* And update the linked widgets accordingly: */
-    sltFamilyChanged(m_pComboFamily->currentIndex());
-}
-
 void UINameAndSystemEditor::prepareConnections()
 {
     /* Prepare connections: */
@@ -687,4 +620,74 @@ ulong UINameAndSystemEditor::selectedEditionIndex() const
     if (!m_pComboEdition || m_pComboEdition->count() == 0)
         return 0;
     return m_pComboEdition->currentData().value<ulong>();
+}
+
+void UINameAndSystemEditor::prepareFamilyCombo()
+{
+    AssertPtrReturnVoid(m_pComboFamily);
+
+    /* Acquire family IDs: */
+    const UIGuestOSTypeManager::UIGuestOSTypeFamilyInfo &families = uiCommon().guestOSTypeManager().getFamilies();
+
+    /* For each known family ID: */
+    for (int i = 0; i < families.size(); ++i)
+    {
+        m_pComboFamily->addItem(families[i].second);
+        m_pComboFamily->setItemData(i, families[i].first, FamilyID);
+    }
+
+    /* Choose the 1st item to be the current: */
+    m_pComboFamily->setCurrentIndex(0);
+    /* And update the linked widgets accordingly: */
+    sltFamilyChanged(m_pComboFamily->currentIndex());
+}
+
+void UINameAndSystemEditor::populateTypeCombo(const UIGuestOSTypeManager::UIGuestOSTypeInfo &typeList)
+{
+    AssertReturnVoid(m_pComboType);
+    AssertReturnVoid(!typeList.isEmpty());
+
+    m_pComboType->blockSignals(true);
+    m_pComboType->clear();
+    for (int i = 0; i < typeList.size(); ++i)
+    {
+        m_pComboType->addItem(typeList[i].second);
+        m_pComboType->setItemData(i, typeList[i].first, TypeID);
+    }
+    m_pComboType->blockSignals(false);
+    selectPreferredType();
+    sltTypeChanged(m_pComboType->currentIndex());
+}
+
+void UINameAndSystemEditor::selectPreferredType()
+{
+    if (m_strFamilyId == "Windows")
+    {
+        QString strDefaultID = GUEST_OS_ID_STR_X64("Windows11");
+        const int iIndexWin = m_pComboType->findData(strDefaultID, TypeID);
+        if (iIndexWin != -1)
+        {
+            m_pComboType->setCurrentIndex(iIndexWin);
+            return;
+        }
+    }
+    /* Or select Oracle Linux item for Linux family as default: */
+    if (m_strSubtype == "Oracle")
+    {
+        QString strDefaultID = GUEST_OS_ID_STR_X64("Oracle");
+        const int iIndexOracle = m_pComboType->findData(strDefaultID, TypeID);
+        if (iIndexOracle != -1)
+        {
+            m_pComboType->setCurrentIndex(iIndexOracle);
+            return;
+        }
+    }
+
+    /* Else try to pick the first 64-bit one if it exists.: */
+    QString strDefaultID = GUEST_OS_ID_STR_X64("");
+    const int iIndexAll = m_pComboType->findData(strDefaultID, TypeID, Qt::MatchContains);
+    if (iIndexAll != -1)
+        m_pComboType->setCurrentIndex(iIndexAll);
+    else
+        m_pComboType->setCurrentIndex(0);
 }
