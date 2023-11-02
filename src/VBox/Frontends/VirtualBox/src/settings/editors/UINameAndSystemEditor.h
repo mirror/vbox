@@ -168,10 +168,14 @@ private:
 
     /** Pupulates VM OS family combo. */
     void populateFamilyCombo();
+    /** Pupulates VM OS distribution combo. */
+    void populateDistributionCombo();
     /** Pupulates VM OS type combo.
       * @param  types  Brings the list of type pairs. */
     void populateTypeCombo(const QList<QPair<QString, QString> > &types);
 
+    /** Selects preferred distribution. */
+    void selectPreferredDistribution();
     /** Selects preferred type. */
     void selectPreferredType();
 
@@ -198,8 +202,12 @@ private:
         /** Holds the VM OS type ID. */
         QString  m_strTypeId;
 
+        /** Holds the currently chosen OS distributions on per-family basis. */
+        QMap<QString, QString>  m_familyToDistribution;
         /** Holds the currently chosen OS type IDs on per-family basis. */
-        QMap<QString, QString>  m_currentIds;
+        QMap<QString, QString>  m_familyToType;
+        /** Holds the currently chosen OS type IDs on per-distribution basis. */
+        QMap<QString, QString>  m_distributionToType;
     /** @} */
 
     /** @name Widgets

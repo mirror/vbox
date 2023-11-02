@@ -108,10 +108,14 @@ void UINameAndSystemEditor::setOSTypeStuffEnabled(bool fEnabled)
 {
     if (m_pLabelFamily)
         m_pLabelFamily->setEnabled(fEnabled);
+    if (m_pLabelDistribution)
+        m_pLabelDistribution->setEnabled(fEnabled);
     if (m_pLabelType)
         m_pLabelType->setEnabled(fEnabled);
     if (m_pComboFamily)
         m_pComboFamily->setEnabled(fEnabled);
+    if (m_pComboDistribution)
+        m_pComboDistribution->setEnabled(fEnabled);
     if (m_pComboType)
         m_pComboType->setEnabled(fEnabled);
     if (m_pIconType)
@@ -255,6 +259,8 @@ int UINameAndSystemEditor::firstColumnWidth() const
         iWidth = qMax(iWidth, m_pLabelEdition->width());
     if (m_pLabelFamily)
         iWidth = qMax(iWidth, m_pLabelFamily->width());
+    if (m_pLabelDistribution)
+        iWidth = qMax(iWidth, m_pLabelDistribution->width());
     if (m_pLabelType)
         iWidth = qMax(iWidth, m_pLabelType->width());
     return iWidth;
@@ -284,6 +290,9 @@ void UINameAndSystemEditor::retranslateUi()
     if (m_pComboFamily)
         m_pComboFamily->setToolTip(tr("Selects the operating system type that "
                                       "you plan to install into this virtual machine."));
+    if (m_pComboDistribution)
+        m_pComboDistribution->setToolTip(tr("Selects the operating system subtype that "
+                                            "you plan to install into this virtual machine."));
     if (m_pComboType)
         m_pComboType->setToolTip(tr("Selects the operating system version that "
                                     "you plan to install into this virtual machine "
@@ -302,47 +311,16 @@ void UINameAndSystemEditor::sltFamilyChanged(int iIndex)
 {
     /* Sanity check: */
     AssertPtrReturnVoid(m_pComboFamily);
-    AssertPtrReturnVoid(m_pComboDistribution);
 
     /* Acquire new family ID: */
     m_strFamilyId = m_pComboFamily->itemData(iIndex).toString();
     AssertReturnVoid(!m_strFamilyId.isEmpty());
 
-    m_pComboDistribution->blockSignals(true);
-    m_pLabelDistribution->setEnabled(true);
-
-    m_pComboDistribution->setEnabled(true);
-    m_pComboDistribution->clear();
-
-    const QStringList distributionList = uiCommon().guestOSTypeManager().getSubtypeListForFamilyId(m_strFamilyId);
-
-    if (distributionList.isEmpty())
-    {
-        m_pComboDistribution->setEnabled(false);
-        m_pLabelDistribution->setEnabled(false);
-        /* If subtype list is empty the all the types of the family are added to typ selection combo: */
-        populateTypeCombo(uiCommon().guestOSTypeManager().getTypeListForFamilyId(m_strFamilyId));
-    }
-    else
-    {
-        /* Populate distribution combo: */
-        /* If family is Linux then select Oracle Linux as subtype: */
-        int iOracleIndex = -1;
-        foreach (const QString &strDistribution, distributionList)
-        {
-            m_pComboDistribution->addItem(strDistribution);
-            if (strDistribution.contains(QRegularExpression("Oracle.*Linux")))
-                iOracleIndex = m_pComboDistribution->count() - 1;
-        }
-        if (iOracleIndex != -1)
-            m_pComboDistribution->setCurrentIndex(iOracleIndex);
-
-        populateTypeCombo(uiCommon().guestOSTypeManager().getTypeListForSubtype(m_pComboDistribution->currentText()));
-    }
-    m_pComboDistribution->blockSignals(false);
-
     /* Notify listeners about this change: */
     emit sigOSFamilyChanged(m_strFamilyId);
+
+    /* Pupulate distribution combo: */
+    populateDistributionCombo();
 }
 
 void UINameAndSystemEditor::sltDistributionChanged(const QString &strDistribution)
@@ -350,8 +328,17 @@ void UINameAndSystemEditor::sltDistributionChanged(const QString &strDistributio
     /* Save new distribution: */
     m_strDistribution = strDistribution;
 
+    /* If distribution list is empty, all the types of the family are added to type combo: */
+    const UIGuestOSTypeManager::UIGuestOSTypeInfo types
+         = m_strDistribution.isEmpty()
+         ? uiCommon().guestOSTypeManager().getTypeListForFamilyId(m_strFamilyId)
+         : uiCommon().guestOSTypeManager().getTypeListForSubtype(m_strDistribution);
+
+    /* Save the most recently used item: */
+    m_familyToDistribution[m_strFamilyId] = m_strDistribution;
+
     /* Populate type combo: */
-    populateTypeCombo(uiCommon().guestOSTypeManager().getTypeListForSubtype(strDistribution));
+    populateTypeCombo(types);
 }
 
 void UINameAndSystemEditor::sltTypeChanged(int iIndex)
@@ -367,9 +354,12 @@ void UINameAndSystemEditor::sltTypeChanged(int iIndex)
     m_pIconType->setPixmap(generalIconPool().guestOSTypePixmapDefault(m_strTypeId));
 
     /* Save the most recently used item: */
-    m_currentIds[m_strFamilyId] = m_strTypeId;
+    if (m_strDistribution.isEmpty())
+        m_familyToType[m_strFamilyId] = m_strTypeId;
+    else
+        m_distributionToType[m_strDistribution] = m_strTypeId;
 
-    /* Notifies listeners about OS type change: */
+    /* Notifies listeners about this change: */
     emit sigOsTypeChanged();
 }
 
@@ -633,6 +623,33 @@ void UINameAndSystemEditor::populateFamilyCombo()
     sltFamilyChanged(m_pComboFamily->currentIndex());
 }
 
+void UINameAndSystemEditor::populateDistributionCombo()
+{
+    /* Sanity check: */
+    AssertPtrReturnVoid(m_pComboDistribution);
+
+    /* Acquire a list of suitable sub-types: */
+    const QStringList distributions = uiCommon().guestOSTypeManager().getSubtypeListForFamilyId(m_strFamilyId);
+    m_pLabelDistribution->setEnabled(!distributions.isEmpty());
+    m_pComboDistribution->setEnabled(!distributions.isEmpty());
+
+    /* Block signals initially and clear the combo: */
+    m_pComboDistribution->blockSignals(true);
+    m_pComboDistribution->clear();
+
+    /* Populate distribution combo: */
+    m_pComboDistribution->addItems(distributions);
+
+    /* Unblock signals finally: */
+    m_pComboDistribution->blockSignals(false);
+
+    /* Select preferred OS distribution: */
+    selectPreferredDistribution();
+
+    /* Trigger distribution change handler manually: */
+    sltDistributionChanged(m_pComboDistribution->currentText());
+}
+
 void UINameAndSystemEditor::populateTypeCombo(const UIGuestOSTypeManager::UIGuestOSTypeInfo &types)
 {
     /* Sanity check: */
@@ -660,10 +677,37 @@ void UINameAndSystemEditor::populateTypeCombo(const UIGuestOSTypeManager::UIGues
     sltTypeChanged(m_pComboType->currentIndex());
 }
 
+void UINameAndSystemEditor::selectPreferredDistribution()
+{
+    /* Try to restore current distribution if possible: */
+    if (m_familyToDistribution.contains(m_strFamilyId))
+        m_pComboDistribution->setCurrentText(m_familyToDistribution.value(m_strFamilyId));
+    /* Oracle Linux for Linux family: */
+    else if (m_strFamilyId == "Linux")
+    {
+        const int iOracleIndex = m_pComboDistribution->findText("Oracle", Qt::MatchContains);
+        if (iOracleIndex != -1)
+            m_pComboDistribution->setCurrentIndex(iOracleIndex);
+    }
+}
+
 void UINameAndSystemEditor::selectPreferredType()
 {
+    /* Try to restore current type if possible: */
+    if (   m_familyToType.contains(m_strFamilyId)
+        || m_distributionToType.contains(m_strDistribution))
+    {
+        const QString strCurrentType = m_familyToType.contains(m_strFamilyId)
+                                     ? m_familyToType.value(m_strFamilyId)
+                                     : m_distributionToType.contains(m_strDistribution)
+                                     ? m_distributionToType.value(m_strDistribution)
+                                     : QString();
+        const int iCurrentIndex = m_pComboType->findData(strCurrentType);
+        if (iCurrentIndex != -1)
+            m_pComboType->setCurrentIndex(iCurrentIndex);
+    }
     /* Windows 11 for Windows family: */
-    if (m_strFamilyId == "Windows")
+    else if (m_strFamilyId == "Windows")
     {
         const QString strDefaultID = GUEST_OS_ID_STR_X64("Windows11");
         const int iIndexWin11 = m_pComboType->findData(strDefaultID);
