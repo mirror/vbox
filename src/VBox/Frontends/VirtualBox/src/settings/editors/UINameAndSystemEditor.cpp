@@ -117,20 +117,20 @@ void UINameAndSystemEditor::setOSTypeStuffEnabled(bool fEnabled)
         m_pLabelFamily->setEnabled(fEnabled);
     if (m_pLabelType)
         m_pLabelType->setEnabled(fEnabled);
-    if (m_pIconType)
-        m_pIconType->setEnabled(fEnabled);
     if (m_pComboFamily)
         m_pComboFamily->setEnabled(fEnabled);
     if (m_pComboType)
         m_pComboType->setEnabled(fEnabled);
+    if (m_pIconType)
+        m_pIconType->setEnabled(fEnabled);
 }
 
 void UINameAndSystemEditor::setEditionSelectorEnabled(bool fEnabled)
 {
-    if (m_pComboEdition)
-        m_pComboEdition->setEnabled(fEnabled);
     if (m_pLabelEdition)
         m_pLabelEdition->setEnabled(fEnabled);
+    if (m_pComboEdition)
+        m_pComboEdition->setEnabled(fEnabled);
 }
 
 bool UINameAndSystemEditor::isEditionsSelectorEmpty() const
@@ -290,10 +290,10 @@ void UINameAndSystemEditor::retranslateUi()
         m_pLabelEdition->setText(tr("&Edition:"));
     if (m_pLabelFamily)
         m_pLabelFamily->setText(tr("&Type:"));
-    if (m_pLabelType)
-        m_pLabelType->setText(tr("&Version:"));
     if (m_pLabelSubtype)
         m_pLabelSubtype->setText(tr("&Subtype:"));
+    if (m_pLabelType)
+        m_pLabelType->setText(tr("&Version:"));
 
     if (m_pEditorName)
         m_pEditorName->setToolTip(tr("Holds the name for virtual machine."));
@@ -412,7 +412,6 @@ void UINameAndSystemEditor::prepareWidgets()
             {
                 m_pLabelName->setAlignment(Qt::AlignRight);
                 m_pLabelName->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-
                 m_pLayout->addWidget(m_pLabelName, iRow, 0);
             }
             /* Prepare name editor: */
@@ -433,7 +432,6 @@ void UINameAndSystemEditor::prepareWidgets()
             {
                 m_pLabelPath->setAlignment(Qt::AlignRight);
                 m_pLabelPath->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-
                 m_pLayout->addWidget(m_pLabelPath, iRow, 0);
             }
             /* Prepare path selector: */
@@ -444,7 +442,6 @@ void UINameAndSystemEditor::prepareWidgets()
                 QString strDefaultMachineFolder = uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
                 m_pSelectorPath->setPath(strDefaultMachineFolder);
                 m_pSelectorPath->setDefaultPath(strDefaultMachineFolder);
-
                 m_pLayout->addWidget(m_pSelectorPath, iRow, 1, 1, 2);
             }
             ++iRow;
@@ -505,7 +502,6 @@ void UINameAndSystemEditor::prepareWidgets()
             {
                 m_pLabelFamily->setAlignment(Qt::AlignRight);
                 m_pLabelFamily->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-
                 m_pLayout->addWidget(m_pLabelFamily, iRow, 0);
             }
             /* Prepare VM OS family combo: */
@@ -523,7 +519,6 @@ void UINameAndSystemEditor::prepareWidgets()
             {
                 m_pLabelSubtype->setAlignment(Qt::AlignRight);
                 m_pLabelSubtype->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-
                 m_pLayout->addWidget(m_pLabelSubtype, iRow, 0);
             }
             /* Prepare VM OS subtype combo: */
@@ -541,7 +536,6 @@ void UINameAndSystemEditor::prepareWidgets()
             {
                 m_pLabelType->setAlignment(Qt::AlignRight);
                 m_pLabelType->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-
                 m_pLayout->addWidget(m_pLabelType, iRow, 0);
             }
             /* Prepare VM OS type combo: */
@@ -598,6 +592,12 @@ void UINameAndSystemEditor::prepareConnections()
     if (m_pSelectorPath)
         connect(m_pSelectorPath, &UIFilePathSelector::pathChanged,
                 this, &UINameAndSystemEditor::sigPathChanged);
+    if (m_pSelectorImage)
+        connect(m_pSelectorImage, &UIFilePathSelector::pathChanged,
+                this, &UINameAndSystemEditor::sigImageChanged);
+    if (m_pComboEdition)
+        connect(m_pComboEdition, &QComboBox::currentIndexChanged,
+                this, &UINameAndSystemEditor::sltSelectedEditionsChanged);
     if (m_pComboFamily)
         connect(m_pComboFamily, &QComboBox::currentIndexChanged,
                 this, &UINameAndSystemEditor::sltFamilyChanged);
@@ -607,12 +607,6 @@ void UINameAndSystemEditor::prepareConnections()
     if (m_pComboType)
         connect(m_pComboType, &QComboBox::currentIndexChanged,
                 this, &UINameAndSystemEditor::sltTypeChanged);
-    if (m_pSelectorImage)
-        connect(m_pSelectorImage, &UIFilePathSelector::pathChanged,
-                this, &UINameAndSystemEditor::sigImageChanged);
-    if (m_pComboEdition)
-        connect(m_pComboEdition, &QComboBox::currentIndexChanged,
-                this, &UINameAndSystemEditor::sltSelectedEditionsChanged);
 }
 
 ulong UINameAndSystemEditor::selectedEditionIndex() const
