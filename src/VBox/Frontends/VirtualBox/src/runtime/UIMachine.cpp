@@ -758,6 +758,16 @@ bool UIMachine::setClipboardMode(KClipboardMode enmMode)
     return uisession()->setClipboardMode(enmMode);
 }
 
+bool UIMachine::toggleClipboardFileTransfer(bool fEnabled)
+{
+    return uisession()->toggleClipboardFileTransfer(fEnabled);
+}
+
+bool UIMachine::isClipboardFileTransferEnabled()
+{
+    return uisession()->isClipboardFileTransferEnabled();
+}
+
 bool UIMachine::acquireDnDMode(KDnDMode &enmMode)
 {
     return uisession()->acquireDnDMode(enmMode);

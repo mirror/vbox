@@ -314,6 +314,10 @@ public:
         bool acquireClipboardMode(KClipboardMode &enmMode);
         /** Defines clipboard mode. */
         bool setClipboardMode(KClipboardMode enmMode);
+        /** En/disables guest clipboard file transfers. */
+        bool toggleClipboardFileTransfer(bool fEnabled);
+        /** Returns true if clipboard file transfer is enabled. Returns false otherwise or in case of an error. */
+        bool isClipboardFileTransferEnabled();
 
         /** Acquires D&D mode. */
         bool acquireDnDMode(KDnDMode &enmMode);

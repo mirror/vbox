@@ -764,6 +764,7 @@ UIMachineLogic::UIMachineLogic(UIMachine *pMachine)
     , m_pRunningOrPausedActions(0)
     , m_pRunningOrPausedOrStuckActions(0)
     , m_pSharedClipboardActions(0)
+    , m_pFileTransferToggleAction(0)
     , m_pDragAndDropActions(0)
     , m_fIsWindowsCreated(false)
 #ifdef VBOX_WS_MAC
@@ -2286,6 +2287,11 @@ void UIMachineLogic::sltChangeSharedClipboardType(QAction *pAction)
     uimachine()->setClipboardMode(pAction->data().value<KClipboardMode>());
 }
 
+void UIMachineLogic::sltFileTransferToggled(bool fChecked)
+{
+    uimachine()->toggleClipboardFileTransfer(fChecked);
+}
+
 void UIMachineLogic::sltToggleNetworkAdapterConnection(bool fChecked)
 {
     /* Get and check 'the sender' action object: */
@@ -2834,12 +2840,26 @@ void UIMachineLogic::updateMenuDevicesSharedClipboard(QMenu *pMenu)
         }
         /* Connect action-group trigger: */
         connect(m_pSharedClipboardActions, &QActionGroup::triggered, this, &UIMachineLogic::sltChangeSharedClipboardType);
+        m_pFileTransferToggleAction = new QAction(QApplication::translate("UIActionPool", "Enable clipboard file transfers"));
+        m_pFileTransferToggleAction->setCheckable(true);
+        m_pFileTransferToggleAction->setChecked(uimachine()->isClipboardFileTransferEnabled());
+        /* pMenu takes the ownership of the m_pFileTransferToggleAction. */
+        pMenu->addAction(m_pFileTransferToggleAction);
+        connect(m_pFileTransferToggleAction, &QAction::toggled, this, &UIMachineLogic::sltFileTransferToggled);
     }
     /* Subsequent runs: */
     else
+    {
+        if (m_pFileTransferToggleAction)
+        {
+            m_pFileTransferToggleAction->blockSignals(true);
+            m_pFileTransferToggleAction->setChecked(uimachine()->isClipboardFileTransferEnabled());
+            m_pFileTransferToggleAction->blockSignals(false);
+        }
         foreach (QAction *pAction, m_pSharedClipboardActions->actions())
             if (pAction->data().value<KClipboardMode>() == enmCurrentMode)
                 pAction->setChecked(true);
+    }
 }
 
 void UIMachineLogic::updateMenuDevicesDragAndDrop(QMenu *pMenu)

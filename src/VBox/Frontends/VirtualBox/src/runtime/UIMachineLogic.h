@@ -286,6 +286,7 @@ private slots:
     void sltAttachUSBDevice();
     void sltAttachWebcamDevice();
     void sltChangeSharedClipboardType(QAction *pAction);
+    void sltFileTransferToggled(bool fChecked);
     void sltToggleNetworkAdapterConnection(bool fChecked);
     void sltChangeDragAndDropType(QAction *pAction);
     void sltInstallGuestAdditions();
@@ -374,6 +375,7 @@ private:
     QActionGroup *m_pRunningOrPausedActions;
     QActionGroup *m_pRunningOrPausedOrStuckActions;
     QActionGroup *m_pSharedClipboardActions;
+    QAction      *m_pFileTransferToggleAction;
     QActionGroup *m_pDragAndDropActions;
 
     /** Holds the map of menu update-handlers. */

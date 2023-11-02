@@ -605,6 +605,29 @@ bool UISession::setClipboardMode(KClipboardMode enmMode)
     return fSuccess;
 }
 
+bool UISession::toggleClipboardFileTransfer(bool fEnabled)
+{
+    CMachine comMachine = machine();
+    comMachine.SetClipboardFileTransfersEnabled(fEnabled);
+    const bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+    return fSuccess;
+}
+
+bool UISession::isClipboardFileTransferEnabled()
+{
+    CMachine comMachine = machine();
+    bool fEnabled = comMachine.GetClipboardFileTransfersEnabled();
+    const bool fSuccess = comMachine.isOk();
+    if (!fSuccess)
+    {
+        UINotificationMessage::cannotAcquireMachineParameter(comMachine);
+        return false;
+    }
+    return fEnabled;
+}
+
 bool UISession::acquireDnDMode(KDnDMode &enmMode)
 {
     CMachine comMachine = machine();
