@@ -7413,10 +7413,9 @@ FNIEMOP_DEF(iemOp_scaswd_eAX_Xv)
 FNIEMOP_DEF_1(iemOpCommonMov_r8_Ib, uint8_t, iFixedReg)
 {
     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
-    IEM_MC_BEGIN(0, 1, 0, 0);
+    IEM_MC_BEGIN(0, 0, 0, 0);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_LOCAL_CONST(uint8_t, u8Value,/*=*/ u8Imm);
-    IEM_MC_STORE_GREG_U8(iFixedReg, u8Value);
+    IEM_MC_STORE_GREG_U8_CONST(iFixedReg, u8Imm);
     IEM_MC_ADVANCE_RIP_AND_FINISH();
     IEM_MC_END();
 }
@@ -7510,21 +7509,19 @@ FNIEMOP_DEF_1(iemOpCommonMov_Rv_Iv, uint8_t, iFixedReg)
     switch (pVCpu->iem.s.enmEffOpSize)
     {
         case IEMMODE_16BIT:
-            IEM_MC_BEGIN(0, 1, 0, 0);
+            IEM_MC_BEGIN(0, 0, 0, 0);
             uint16_t u16Imm; IEM_OPCODE_GET_NEXT_U16(&u16Imm);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_LOCAL_CONST(uint16_t, u16Value,/*=*/ u16Imm);
-            IEM_MC_STORE_GREG_U16(iFixedReg, u16Value);
+            IEM_MC_STORE_GREG_U16_CONST(iFixedReg, u16Imm);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
             break;
 
         case IEMMODE_32BIT:
-            IEM_MC_BEGIN(0, 1, IEM_MC_F_MIN_386, 0);
+            IEM_MC_BEGIN(0, 0, IEM_MC_F_MIN_386, 0);
             uint32_t u32Imm; IEM_OPCODE_GET_NEXT_U32(&u32Imm);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_LOCAL_CONST(uint32_t, u32Value,/*=*/ u32Imm);
-            IEM_MC_STORE_GREG_U32(iFixedReg, u32Value);
+            IEM_MC_STORE_GREG_U32_CONST(iFixedReg, u32Imm);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
             break;
@@ -7533,8 +7530,7 @@ FNIEMOP_DEF_1(iemOpCommonMov_Rv_Iv, uint8_t, iFixedReg)
             IEM_MC_BEGIN(0, 1, IEM_MC_F_64BIT, 0);
             uint64_t u64Imm; IEM_OPCODE_GET_NEXT_U64(&u64Imm); /* 64-bit immediate! */
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_LOCAL_CONST(uint64_t, u64Value,/*=*/ u64Imm);
-            IEM_MC_STORE_GREG_U64(iFixedReg, u64Value);
+            IEM_MC_STORE_GREG_U64_CONST(iFixedReg, u64Imm);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
             break;
@@ -8009,7 +8005,7 @@ FNIEMOP_DEF(iemOp_Grp11_Eb_Ib)
         uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
         IEM_MC_BEGIN(0, 0, 0, 0);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-        IEM_MC_STORE_GREG_U8(IEM_GET_MODRM_RM(pVCpu, bRm), u8Imm);
+        IEM_MC_STORE_GREG_U8_CONST(IEM_GET_MODRM_RM(pVCpu, bRm), u8Imm);
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
@@ -8047,7 +8043,7 @@ FNIEMOP_DEF(iemOp_Grp11_Ev_Iz)
                 IEM_MC_BEGIN(0, 0, 0, 0);
                 uint16_t u16Imm; IEM_OPCODE_GET_NEXT_U16(&u16Imm);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_STORE_GREG_U16(IEM_GET_MODRM_RM(pVCpu, bRm), u16Imm);
+                IEM_MC_STORE_GREG_U16_CONST(IEM_GET_MODRM_RM(pVCpu, bRm), u16Imm);
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
@@ -8056,7 +8052,7 @@ FNIEMOP_DEF(iemOp_Grp11_Ev_Iz)
                 IEM_MC_BEGIN(0, 0, IEM_MC_F_MIN_386, 0);
                 uint32_t u32Imm; IEM_OPCODE_GET_NEXT_U32(&u32Imm);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_RM(pVCpu, bRm), u32Imm);
+                IEM_MC_STORE_GREG_U32_CONST(IEM_GET_MODRM_RM(pVCpu, bRm), u32Imm);
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
@@ -8065,7 +8061,7 @@ FNIEMOP_DEF(iemOp_Grp11_Ev_Iz)
                 IEM_MC_BEGIN(0, 0, IEM_MC_F_64BIT, 0);
                 uint64_t u64Imm; IEM_OPCODE_GET_NEXT_S32_SX_U64(&u64Imm);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_STORE_GREG_U64(IEM_GET_MODRM_RM(pVCpu, bRm), u64Imm);
+                IEM_MC_STORE_GREG_U64_CONST(IEM_GET_MODRM_RM(pVCpu, bRm), u64Imm);
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
