@@ -1086,14 +1086,15 @@ void UIAdvancedSettingsDialog::sltHandleExperienceModeChanged()
     m_pCheckBoxMode->blockSignals(false);
 
     /* Reapply mode: */
-    sltHandleModeOrFilterChanged();
+    sltApplyFilteringRules();
 }
 
-void UIAdvancedSettingsDialog::sltHandleModeOrFilterChanged()
+void UIAdvancedSettingsDialog::sltApplyFilteringRules()
 {
     /* Filter-out page contents: */
     foreach (UISettingsPageFrame *pFrame, m_frames.values())
-        pFrame->filterOut(m_pCheckBoxMode->isChecked(), m_pEditorFilter->text());
+        pFrame->filterOut(m_pCheckBoxMode->isChecked(),
+                          m_pEditorFilter->text());
 }
 
 void UIAdvancedSettingsDialog::sltHandleFrameVisibilityChange(bool fVisible)
@@ -1182,7 +1183,7 @@ void UIAdvancedSettingsDialog::prepareSelector()
     if (m_pEditorFilter)
     {
         connect(m_pEditorFilter, &UIFilterEditor::sigTextChanged,
-                this, &UIAdvancedSettingsDialog::sltHandleModeOrFilterChanged);
+                this, &UIAdvancedSettingsDialog::sltApplyFilteringRules);
         m_pLayoutMain->addWidget(m_pEditorFilter, 0, 2);
     }
 #endif /* !VBOX_GUI_WITH_TOOLBAR_SETTINGS */

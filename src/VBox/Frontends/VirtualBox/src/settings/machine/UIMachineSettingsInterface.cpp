@@ -332,15 +332,12 @@ void UIMachineSettingsInterface::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-void UIMachineSettingsInterface::filterOut(bool fExpertMode, const QString &strFilter)
+void UIMachineSettingsInterface::retranslateUi()
 {
-    /* Call to base-class: */
-    UIEditor::filterOut(fExpertMode, strFilter);
-
     updateMinimumLayoutHint();
 }
 
-void UIMachineSettingsInterface::retranslateUi()
+void UIMachineSettingsInterface::handleFilterChange()
 {
     updateMinimumLayoutHint();
 }

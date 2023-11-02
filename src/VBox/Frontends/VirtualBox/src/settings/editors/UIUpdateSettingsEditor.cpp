@@ -66,13 +66,6 @@ VBoxUpdateData UIUpdateSettingsEditor::value() const
     return VBoxUpdateData(isCheckEnabled(), updatePeriod(), updateChannel());
 }
 
-void UIUpdateSettingsEditor::filterOut(bool fExpertMode, const QString &strFilter)
-{
-    /* Call to base-class: */
-    UIEditor::filterOut(fExpertMode, strFilter);
-    fetchValue();
-}
-
 void UIUpdateSettingsEditor::retranslateUi()
 {
     /* Translate check-box: */
@@ -128,6 +121,11 @@ void UIUpdateSettingsEditor::retranslateUi()
                                                                            "pre-release versions and testing builds of "
                                                                            "VirtualBox."));
     }
+}
+
+void UIUpdateSettingsEditor::handleFilterChange()
+{
+    fetchValue();
 }
 
 void UIUpdateSettingsEditor::sltHandleUpdateToggle(bool fEnabled)

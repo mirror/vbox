@@ -189,15 +189,12 @@ void UIGlobalSettingsDisplay::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
-void UIGlobalSettingsDisplay::filterOut(bool fExpertMode, const QString &strFilter)
+void UIGlobalSettingsDisplay::retranslateUi()
 {
-    /* Call to base-class: */
-    UIEditor::filterOut(fExpertMode, strFilter);
-
     updateMinimumLayoutHint();
 }
 
-void UIGlobalSettingsDisplay::retranslateUi()
+void UIGlobalSettingsDisplay::handleFilterChange()
 {
     updateMinimumLayoutHint();
 }

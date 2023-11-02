@@ -204,14 +204,6 @@ void UINetworkSettingsEditor::setForwardingOptionsAvailable(bool fAvailable)
         m_pEditorNetworkFeatures->setForwardingOptionsAvailable(fAvailable);
 }
 
-void UINetworkSettingsEditor::filterOut(bool fExpertMode, const QString &strFilter)
-{
-    /* Call to base-class: */
-    UIEditor::filterOut(fExpertMode, strFilter);
-
-    updateMinimumLayoutHint();
-}
-
 void UINetworkSettingsEditor::retranslateUi()
 {
     if (m_pCheckboxFeature)
@@ -220,6 +212,11 @@ void UINetworkSettingsEditor::retranslateUi()
         m_pCheckboxFeature->setToolTip(tr("When checked, plugs this virtual network adapter into the virtual machine."));
     }
 
+    updateMinimumLayoutHint();
+}
+
+void UINetworkSettingsEditor::handleFilterChange()
+{
     updateMinimumLayoutHint();
 }
 

@@ -132,14 +132,6 @@ void UIAudioSettingsEditor::setFeatureOptionsAvailable(bool fAvailable)
         m_pEditorAudioFeatures->setEnabled(fAvailable);
 }
 
-void UIAudioSettingsEditor::filterOut(bool fExpertMode, const QString &strFilter)
-{
-    /* Call to base-class: */
-    UIEditor::filterOut(fExpertMode, strFilter);
-
-    updateMinimumLayoutHint();
-}
-
 void UIAudioSettingsEditor::retranslateUi()
 {
     if (m_pCheckboxFeature)
@@ -149,6 +141,11 @@ void UIAudioSettingsEditor::retranslateUi()
                                           "and will communicate with the host audio system using the specified driver."));
     }
 
+    updateMinimumLayoutHint();
+}
+
+void UIAudioSettingsEditor::handleFilterChange()
+{
     updateMinimumLayoutHint();
 }
 

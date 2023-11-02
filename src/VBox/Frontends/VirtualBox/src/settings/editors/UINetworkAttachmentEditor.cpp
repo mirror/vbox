@@ -197,16 +197,6 @@ QStringList UINetworkAttachmentEditor::hostOnlyNetworks()
 }
 #endif /* VBOX_WITH_VMNET */
 
-void UINetworkAttachmentEditor::filterOut(bool fExpertMode, const QString &strFilter)
-{
-    /* Call to base-class: */
-    UIEditor::filterOut(fExpertMode, strFilter);
-
-    /* Repopulate type combo to make
-     * sure excessive types removed: */
-    populateTypeCombo();
-}
-
 void UINetworkAttachmentEditor::retranslateUi()
 {
     /* Translate type label: */
@@ -230,6 +220,13 @@ void UINetworkAttachmentEditor::retranslateUi()
 
     /* Translate name combo: */
     retranslateNameDescription();
+}
+
+void UINetworkAttachmentEditor::handleFilterChange()
+{
+    /* Repopulate type combo to make
+     * sure excessive types removed: */
+    populateTypeCombo();
 }
 
 void UINetworkAttachmentEditor::sltHandleCurrentTypeChanged()

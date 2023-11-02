@@ -462,14 +462,6 @@ void UIMachineSettingsGeneral::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pEditorDragAndDrop, m_pEditorDescription);
 }
 
-void UIMachineSettingsGeneral::filterOut(bool fExpertMode, const QString &strFilter)
-{
-    /* Call to base-class: */
-    UIEditor::filterOut(fExpertMode, strFilter);
-
-    updateMinimumLayoutHint();
-}
-
 void UIMachineSettingsGeneral::retranslateUi()
 {
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabBasic), tr("Basi&c"));
@@ -477,6 +469,11 @@ void UIMachineSettingsGeneral::retranslateUi()
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabDescription), tr("D&escription"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabEncryption), tr("Disk Enc&ryption"));
 
+    updateMinimumLayoutHint();
+}
+
+void UIMachineSettingsGeneral::handleFilterChange()
+{
     updateMinimumLayoutHint();
 }
 

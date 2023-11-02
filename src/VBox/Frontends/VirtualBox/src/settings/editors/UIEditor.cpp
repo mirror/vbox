@@ -115,6 +115,9 @@ void UIEditor::filterOut(bool fExpertMode, const QString &strFilter)
      * activated after visibility changes: */
     foreach (QLayout *pLayout, findChildren<QLayout*>())
         pLayout->activate();
+
+    /* Call for filter change handler finally: */
+    handleFilterChange();
 }
 
 QStringList UIEditor::description() const

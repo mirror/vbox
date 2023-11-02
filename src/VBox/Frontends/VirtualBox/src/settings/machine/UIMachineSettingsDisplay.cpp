@@ -750,14 +750,6 @@ void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pEditorVRDESettings, m_pEditorRecordingSettings);
 }
 
-void UIMachineSettingsDisplay::filterOut(bool fExpertMode, const QString &strFilter)
-{
-    /* Call to base-class: */
-    UIEditor::filterOut(fExpertMode, strFilter);
-
-    updateMinimumLayoutHint();
-}
-
 void UIMachineSettingsDisplay::retranslateUi()
 {
     /* Translate tab-widget: */
@@ -765,6 +757,11 @@ void UIMachineSettingsDisplay::retranslateUi()
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabRemoteDisplay), tr("&Remote Display"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabRecording), tr("Re&cording"));
 
+    updateMinimumLayoutHint();
+}
+
+void UIMachineSettingsDisplay::handleFilterChange()
+{
     updateMinimumLayoutHint();
 }
 

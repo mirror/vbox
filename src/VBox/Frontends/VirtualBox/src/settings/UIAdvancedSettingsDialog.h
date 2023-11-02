@@ -197,8 +197,9 @@ private slots:
     /** Handles experience mode change. */
     void sltHandleExperienceModeChanged();
 
-    /** Handles changes done to mode checkbox or filter editor. */
-    void sltHandleModeOrFilterChanged();
+    /** Applies filtering rules, which can be changed as
+      * a result of changes in experience mode and filter editor. */
+    void sltApplyFilteringRules();
     /** Handles frame visivility changes. */
     void sltHandleFrameVisibilityChange(bool fVisible);
 

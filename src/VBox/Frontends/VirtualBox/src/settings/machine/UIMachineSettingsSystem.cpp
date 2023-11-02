@@ -609,20 +609,17 @@ void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pEditorParavirtProvider, m_pEditorAccelerationFeatures);
 }
 
-void UIMachineSettingsSystem::filterOut(bool fExpertMode, const QString &strFilter)
-{
-    /* Call to base-class: */
-    UIEditor::filterOut(fExpertMode, strFilter);
-
-    updateMinimumLayoutHint();
-}
-
 void UIMachineSettingsSystem::retranslateUi()
 {
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabMotherboard), tr("&Motherboard"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabProcessor), tr("&Processor"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabAcceleration), tr("Acce&leration"));
 
+    updateMinimumLayoutHint();
+}
+
+void UIMachineSettingsSystem::handleFilterChange()
+{
     updateMinimumLayoutHint();
 }
 
