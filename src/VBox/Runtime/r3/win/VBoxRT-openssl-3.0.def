@@ -390,3 +390,41 @@
     RSA_get0_crt_params
     RSA_set0_crt_params
     RSA_set0_factors
+    ; since 0.10.5 also:
+    EC_KEY_up_ref
+    ENGINE_by_id
+    ENGINE_free
+    ENGINE_init
+    ENGINE_load_builtin_engines
+    EVP_default_properties_is_fips_enabled
+    EVP_PKEY_CTX_free
+    EVP_PKEY_CTX_new_from_name
+    EVP_PKEY_CTX_new_from_pkey
+    EVP_PKEY_CTX_set_params
+    EVP_PKEY_derive
+    EVP_PKEY_derive_init
+    EVP_PKEY_derive_set_peer
+    EVP_PKEY_eq
+    EVP_PKEY_fromdata
+    EVP_PKEY_fromdata_init
+    EVP_PKEY_generate
+    EVP_PKEY_get_bits
+    EVP_PKEY_get_bn_param
+    EVP_PKEY_keygen_init
+    EVP_PKEY_new_mac_key
+    EVP_PKEY_paramgen_init
+    EVP_PKEY_set_bn_param
+    EVP_PKEY_todata
+    EVP_PKEY_up_ref
+    OSSL_PARAM_BLD_free
+    OSSL_PARAM_BLD_new
+    OSSL_PARAM_BLD_push_BN
+    OSSL_PARAM_BLD_to_param
+    OSSL_PARAM_construct_end
+    OSSL_PARAM_construct_int
+    OSSL_PARAM_construct_uint
+    OSSL_PARAM_free
+    OSSL_PARAM_get_BN
+    OSSL_PARAM_locate_const
+    OSSL_PARAM_merge
+
