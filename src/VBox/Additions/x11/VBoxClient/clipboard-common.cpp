@@ -57,16 +57,16 @@ RTDECL(int) VBClClipboardThreadStart(PRTTHREAD pThread, PFNRTTHREAD pfnThread, c
     return rc;
 }
 
-RTDECL(int) VBClClipboardReadHostEvent(PSHCLCONTEXT pCtx, const PFNHOSTCLIPREPORTFMTS pfnReportHostFmts,
-                                       const PFNHOSTCLIPREAD pfnReadGuestFmt)
+RTDECL(int) VBClClipboardReadHostEvent(PSHCLCONTEXT pCtx, const PFNHOSTCLIPREPORTFMTS pfnHGClipReport,
+                                       const PFNHOSTCLIPREAD pfnGHClipRead)
 {
     int rc;
 
     uint32_t idMsg  = 0;
     uint32_t cParms = 0;
 
-    AssertPtrReturn(pfnReportHostFmts, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pfnReadGuestFmt, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pfnHGClipReport, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pfnGHClipRead, VERR_INVALID_PARAMETER);
 
     PVBGLR3CLIPBOARDEVENT pEvent = (PVBGLR3CLIPBOARDEVENT)RTMemAllocZ(sizeof(VBGLR3CLIPBOARDEVENT));
     AssertPtrReturn(pEvent, VERR_NO_MEMORY);
@@ -82,14 +82,14 @@ RTDECL(int) VBClClipboardReadHostEvent(PSHCLCONTEXT pCtx, const PFNHOSTCLIPREPOR
             /* Host reports new clipboard data is now available. */
             case VBGLR3CLIPBOARDEVENTTYPE_REPORT_FORMATS:
             {
-                rc = pfnReportHostFmts(pEvent->u.fReportedFormats);
+                rc = pfnHGClipReport(pEvent->u.fReportedFormats);
                 break;
             }
 
             /* Host wants to read data from guest clipboard. */
             case VBGLR3CLIPBOARDEVENTTYPE_READ_DATA:
             {
-                rc = pfnReadGuestFmt(pEvent->u.fReadData);
+                rc = pfnGHClipRead(pEvent->u.fReadData);
                 break;
             }
 
@@ -130,9 +130,8 @@ RTDECL(int) VBClClipboardReadHostClipboard(PVBGLR3SHCLCMDCTX pCtx, SHCLFORMAT uF
         if (rc == VINF_BUFFER_OVERFLOW)
         {
             /* cbRead contains the size required. */
-
+            pvData = RTMemReallocZ(pvData, cbData, cbRead);
             cbData = cbRead;
-            pvData = RTMemReallocZ(pvData, cbRead, cbRead);
             if (pvData)
             {
                 rc = VbglR3ClipboardReadDataEx(pCtx, uFmt, pvData, cbData, &cbRead);

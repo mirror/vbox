@@ -98,11 +98,11 @@ extern RTDECL(int) VBClClipboardThreadStart(PRTTHREAD pThread, PFNRTTHREAD pfnTh
  *
  * @returns VBox status code.
  * @param   pCtx                Host Shared Clipboard service connection context.
- * @param   pfnReportHostFmts   A callback to notify guest about new content in host clipboard.
- * @param   pfnReadGuestFmt     A callback to notify guest when host requests guest clipboard content.
+ * @param   pfnHGClipReport     A callback to notify guest about new content in host clipboard.
+ * @param   pfnGHClipRead       A callback to notify guest when host requests guest clipboard content.
  */
-extern RTDECL(int) VBClClipboardReadHostEvent(PSHCLCONTEXT pCtx, const PFNHOSTCLIPREPORTFMTS pfnReportHostFmts,
-                                              const PFNHOSTCLIPREAD pfnReadGuestFmt);
+extern RTDECL(int) VBClClipboardReadHostEvent(PSHCLCONTEXT pCtx, const PFNHOSTCLIPREPORTFMTS pfnHGClipReport,
+                                              const PFNHOSTCLIPREAD pfnGHClipRead);
 
 /**
  * Read entire host clipboard buffer in given format.
