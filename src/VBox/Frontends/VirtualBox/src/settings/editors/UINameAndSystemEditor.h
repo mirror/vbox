@@ -66,7 +66,7 @@ signals:
     void sigImageChanged(const QString &strImage);
 
     /** Notifies listeners about edition change. */
-    void sigEditionChanged(ulong selectedEditionIndex);
+    void sigEditionChanged(ulong uIndex);
 
     /** Notifies listeners about VM OS family change. */
     void sigOSFamilyChanged(const QString &strFamilyId);
@@ -121,9 +121,9 @@ public:
     /* strTypeId should be one of the type ids defined in Global.cpp and returned by IGuestOSType::getId(). */
     bool setGuestOSTypeByTypeId(const QString &strTypeId);
     /** Returns the VM OS family ID. */
-    QString familyId() const;
+    QString familyId() const { return m_strFamilyId; }
     /** Returns the VM OS type ID. */
-    QString typeId() const;
+    QString typeId() const { return m_strTypeId; }
 
     /** Passes the @p fError to QILineEdit::mark(bool) effectively marking it for error. */
     void markNameEditor(bool fError);
@@ -145,10 +145,10 @@ protected:
 private slots:
 
     /** Handles VM OS edition @a iIndex change. */
-    void sltSelectedEditionsChanged(int);
+    void sltSelectedEditionsChanged(int iIndex);
 
     /** Handles VM OS family @a iIndex change. */
-    void sltFamilyChanged(int index);
+    void sltFamilyChanged(int iIndex);
     /** Handles VM OS @a strSubtype change. */
     void sltSubtypeChanged(const QString &strSubtype);
     /** Handles VM OS type @a iIndex change. */
@@ -166,11 +166,11 @@ private:
     /** Returns selected editions index. */
     ulong selectedEditionIndex() const;
 
-    /** Prepares VM OS family combo. */
-    void prepareFamilyCombo();
+    /** Pupulates VM OS family combo. */
+    void populateFamilyCombo();
     /** Pupulates VM OS type combo.
       * @param  types  Brings the list of type pairs. */
-    void populateTypeCombo(const QList<QPair<QString, QString> > &typeList);
+    void populateTypeCombo(const QList<QPair<QString, QString> > &types);
 
     /** Selects preferred type. */
     void selectPreferredType();
