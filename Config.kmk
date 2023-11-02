@@ -5067,7 +5067,7 @@ ifdef VBOX_WITH_BLD_RTSIGNTOOL_SIGNING
  SDK_VBoxOpenSslBldProg_INCS          ?= $(SDK_VBoxOpenSslStatic_VBOX_DEFAULT_INCS)
  SDK_VBoxOpenSslBldProg_ORDERDEPS     ?= $(crypto-headers_1_TARGET)
  if   !defined(VBOX_ONLY_SDK) \
-   && ("$(SDK_VBoxOpenSsl_INCS)" == "$(SDK_VBoxOpenSslStatic_VBOX_DEFAULT_INCS)")
+   && ("$(SDK_VBoxOpenSslStatic_INCS)" == "$(SDK_VBoxOpenSslStatic_VBOX_DEFAULT_INCS)")
   SDK_VBoxOpenSslBldProg_DEPS         ?= $(SDK_VBoxOpenSslStatic_INCS)/openssl/openssl-mangling.h
  endif
  SDK_VBoxOpenSslBldProg_LIBS          ?= \
@@ -5077,7 +5077,7 @@ endif
 
 SDK_VBoxOpenSsl              := This is what you should be using!  It links against VBoxRT.
 SDK_VBoxOpenSsl_EXTENDS      := VBoxOpenSslStatic
-if "$(SDK_VBoxOpenSsl_INCS)" == "$(SDK_VBoxOpenSslStatic_VBOX_DEFAULT_INCS)"
+if "$(SDK_VBoxOpenSslStatic_INCS)" == "$(SDK_VBoxOpenSslStatic_VBOX_DEFAULT_INCS)"
  SDK_VBoxOpenSsl_LIBS         = $(NO_SUCH_VARIABLE)
 endif
 
