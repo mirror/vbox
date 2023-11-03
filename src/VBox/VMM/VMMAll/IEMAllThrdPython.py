@@ -1767,13 +1767,13 @@ class IEMThreadedGenerator(object):
     # Processing.
     #
 
-    def processInputFiles(self, sNativeRecompilerArch = None):
+    def processInputFiles(self, sHostArch, fNativeRecompilerEnabled):
         """
         Process the input files.
         """
 
         # Parse the files.
-        self.aoParsers = iai.parseFiles(self.oOptions.asInFiles);
+        self.aoParsers = iai.parseFiles(self.oOptions.asInFiles, sHostArch);
 
         # Create threaded functions for the MC blocks.
         self.aoThreadedFuncs = [ThreadedFunction(oMcBlock) for oMcBlock in iai.g_aoMcBlocks];
@@ -1805,14 +1805,14 @@ class IEMThreadedGenerator(object):
                 oThreadedFunction  = self.getThreadedFunctionByIndex(iThreadedFunction);
 
         # Analyze the threaded functions and their variations for native recompilation.
-        if sNativeRecompilerArch:
+        if fNativeRecompilerEnabled:
             print('todo:', file = sys.stderr);
             cTotal  = 0;
             cNative = 0;
             for oThreadedFunction in self.aoThreadedFuncs:
                 for oVariation in oThreadedFunction.aoVariations:
                     cTotal += 1;
-                    oVariation.oNativeRecomp = ian.analyzeVariantForNativeRecomp(oVariation, sNativeRecompilerArch);
+                    oVariation.oNativeRecomp = ian.analyzeVariantForNativeRecomp(oVariation, sHostArch);
                     if oVariation.oNativeRecomp and oVariation.oNativeRecomp.isRecompilable():
                         cNative += 1;
             print('todo: %.1f%% / %u out of %u threaded function variations are recompilable'
@@ -2222,7 +2222,7 @@ class IEMThreadedGenerator(object):
         Generates the native recompiler functions header file.
         Returns success indicator.
         """
-        if not self.oOptions.sNativeRecompilerArch:
+        if not self.oOptions.fNativeRecompilerEnabled:
             return True;
 
         asLines = self.generateLicenseHeader();
@@ -2241,7 +2241,7 @@ class IEMThreadedGenerator(object):
         Generates the native recompiler functions source file.
         Returns success indicator.
         """
-        if not self.oOptions.sNativeRecompilerArch:
+        if not self.oOptions.fNativeRecompilerEnabled:
             return True;
 
         #
@@ -2388,7 +2388,7 @@ class IEMThreadedGenerator(object):
                 #
                 elif oThreadedFunction.oMcBlock.iBeginLine != oThreadedFunction.oMcBlock.iEndLine:
                     assert (   (sLine.count('IEM_MC_') - sLine.count('IEM_MC_F_') == 1)
-                            or oThreadedFunction.oMcBlock.iMacroExp == iai.McBlock.kMacroExp_Partial), 'sLine="%s"' % (sLine,);
+                            or oThreadedFunction.oMcBlock.iMacroExp == iai.McBlock.kiMacroExp_Partial), 'sLine="%s"' % (sLine,);
                     oOut.write(sLine[:oThreadedFunction.oMcBlock.offBeginLine]);
                     sModified = oThreadedFunction.generateInputCode().strip();
                     oOut.write(sModified);
@@ -2397,7 +2397,7 @@ class IEMThreadedGenerator(object):
                     sLine = oParser.asLines[iLine - 1];
                     assert (   sLine.count('IEM_MC_') - sLine.count('IEM_MC_F_') == 1
                             or len(oThreadedFunction.oMcBlock.aoStmts) == 1
-                            or oThreadedFunction.oMcBlock.iMacroExp == iai.McBlock.kMacroExp_Partial);
+                            or oThreadedFunction.oMcBlock.iMacroExp == iai.McBlock.kiMacroExp_Partial);
                     oOut.write(sLine[oThreadedFunction.oMcBlock.offAfterEnd : ]);
 
                     # Advance
@@ -2483,6 +2483,13 @@ class IEMThreadedGenerator(object):
                              default = [os.path.join(sScriptDir, aoInfo[0])
                                         for aoInfo in iai.g_aaoAllInstrFilesAndDefaultMapAndSet],
                              help    = "Selection of VMMAll/IEMAllInst*.cpp.h files to use as input.");
+        oParser.add_argument('--host-arch',
+                             metavar = 'arch',
+                             dest    = 'sHostArch',
+                             action  = 'store',
+                             default = None,
+                             help    = 'The host architecture.');
+
         oParser.add_argument('--out-thrd-funcs-hdr',
                              metavar = 'file-thrd-funcs.h',
                              dest    = 'sOutFileThrdFuncsHdr',
@@ -2507,13 +2514,11 @@ class IEMThreadedGenerator(object):
                              action  = 'store',
                              default = '-',
                              help    = 'The output C++ file for the native recompiler functions.');
-        oParser.add_argument('--native-arch',
-                             metavar = 'arch',
-                             dest    = 'sNativeRecompilerArch',
-                             action  = 'store',
-                             default = None,
-                             help    = 'The host architecture for the native recompiler. No default as it enables/disables '
-                                     + 'generating the files related to native recompilation.');
+        oParser.add_argument('--native',
+                             dest    = 'fNativeRecompilerEnabled',
+                             action  = 'store_true',
+                             default = False,
+                             help    = 'Enables generating the files related to native recompilation.');
         oParser.add_argument('--out-mod-input1',
                              metavar = 'file-instr.cpp.h',
                              dest    = 'sOutFileModInput1',
@@ -2552,7 +2557,7 @@ class IEMThreadedGenerator(object):
         #
         # Process the instructions specified in the IEM sources.
         #
-        if self.processInputFiles(self.oOptions.sNativeRecompilerArch):
+        if self.processInputFiles(self.oOptions.sHostArch, self.oOptions.fNativeRecompilerEnabled):
             #
             # Generate the output files.
             #

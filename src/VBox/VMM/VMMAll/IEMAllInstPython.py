@@ -1983,9 +1983,9 @@ class McBlock(object):
 
     ## @name Macro expansion types.
     ## @{
-    kMacroExp_None    = 0;
-    kMacroExp_Entire  = 1; ##< Entire block (iBeginLine == iEndLine), original line may contain multiple blocks.
-    kMacroExp_Partial = 2; ##< Partial/mixed (cmpxchg16b), safe to assume single block.
+    kiMacroExp_None    = 0;
+    kiMacroExp_Entire  = 1; ##< Entire block (iBeginLine == iEndLine), original line may contain multiple blocks.
+    kiMacroExp_Partial = 2; ##< Partial/mixed (cmpxchg16b), safe to assume single block.
     ## @}
 
     def __init__(self, sSrcFile, iBeginLine, offBeginLine, oFunction, iInFunction, cchIndent = None):
@@ -2010,9 +2010,9 @@ class McBlock(object):
         self.cchIndent    = cchIndent if cchIndent else offBeginLine;
         ##< The raw lines the block is made up of.
         self.asLines      = []              # type: List[str]
-        ## Indicates whether the block includes macro expansion parts (kMacroExp_None,
-        ## kMacroExp_Entrie, kMacroExp_Partial).
-        self.iMacroExp    = self.kMacroExp_None;
+        ## Indicates whether the block includes macro expansion parts (kiMacroExp_None,
+        ## kiMacroExp_Entrie, kiMacroExp_Partial).
+        self.iMacroExp    = self.kiMacroExp_None;
         ## IEM_MC_BEGIN: Argument count.
         self.cArgs        = -1;
         ## IEM_MC_ARG, IEM_MC_ARG_CONST, IEM_MC_ARG_LOCAL_REF, IEM_MC_ARG_LOCAL_EFLAGS.
@@ -3163,8 +3163,188 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
             return sBody;
 
+    class PreprocessorConditional(object):
+        """ Preprocessor conditional (#if/#ifdef/#ifndef/#elif/#else/#endif). """
 
-    def __init__(self, sSrcFile, asLines, sDefaultMap, oInheritMacrosFrom = None):
+        ## Known defines.
+        #   - A value of 1 indicates that it's always defined.
+        #   - A value of 0 if it's always undefined
+        #   - A value of -1 if it's an arch and it depends of script parameters.
+        #   - A value of -2 if it's not recognized when filtering MC blocks.
+        kdKnownDefines = {
+            'IEM_WITH_ONE_BYTE_TABLE':          1,
+            'IEM_WITH_TWO_BYTE_TABLE':          1,
+            'IEM_WITH_THREE_0F_38':             1,
+            'IEM_WITH_THREE_0F_3A':             1,
+            'IEM_WITH_THREE_BYTE_TABLES':       1,
+            'IEM_WITH_3DNOW':                   1,
+            'IEM_WITH_3DNOW_TABLE':             1,
+            'IEM_WITH_VEX':                     1,
+            'IEM_WITH_VEX_TABLES':              1,
+            'VBOX_WITH_NESTED_HWVIRT_VMX':      1,
+            'VBOX_WITH_NESTED_HWVIRT_VMX_EPT':  1,
+            'VBOX_WITH_NESTED_HWVIRT_SVM':      1,
+            'LOG_ENABLED':                      1,
+            'RT_WITHOUT_PRAGMA_ONCE':           0,
+            'TST_IEM_CHECK_MC':                 0,
+            'IEM_WITHOUT_ASSEMBLY':            -2, ##< @todo ??
+            'RT_ARCH_AMD64':                   -1,
+            'RT_ARCH_ARM64':                   -1,
+            'RT_ARCH_ARM32':                   -1,
+            'RT_ARCH_X86':                     -1,
+            'RT_ARCH_SPARC':                   -1,
+            'RT_ARCH_SPARC64':                 -1,
+        };
+        kdBuildArchToIprt = {
+            'amd64':   'RT_ARCH_AMD64',
+            'arm64':   'RT_ARCH_ARM64',
+            'sparc32': 'RT_ARCH_SPARC64',
+        };
+        ## For parsing the next defined(xxxx).
+        koMatchDefined = re.compile(r'\s*defined\s*\(\s*([^ \t)]+)\s*\)\s*');
+
+        def __init__(self, sType, sExpr):
+            self.sType   = sType;
+            self.sExpr   = sExpr;   ##< Expression without command and no leading or trailing spaces.
+            self.aoElif  = []       # type: List[PreprocessorConditional]
+            self.fInElse = [];
+            if sType in ('if', 'elif'):
+                self.checkExpression(sExpr);
+            else:
+                self.checkSupportedDefine(sExpr)
+
+        @staticmethod
+        def checkSupportedDefine(sDefine):
+            """ Checks that sDefine is one that we support. Raises exception if unuspported. """
+            #print('debug: checkSupportedDefine: %s' % (sDefine,), file = sys.stderr);
+            if sDefine in SimpleParser.PreprocessorConditional.kdKnownDefines:
+                return True;
+            if sDefine.startswith('VMM_INCLUDED_') and sDefine.endswith('_h'):
+                return True;
+            raise Exception('Unsupported define: %s' % (sDefine,));
+
+        @staticmethod
+        def checkExpression(sExpr):
+            """ Check that the expression is supported. Raises exception if not. """
+            #print('debug: checkExpression: %s' % (sExpr,), file = sys.stderr);
+            if sExpr in ('0', '1'):
+                return True;
+
+            off = 0;
+            cParan = 0;
+            while off < len(sExpr):
+                ch = sExpr[off];
+
+                # Unary operator or parentheses:
+                if ch in ('(', '!'):
+                    if ch == '(':
+                        cParan += 1;
+                    off += 1;
+                else:
+                    # defined(xxxx)
+                    oMatch = SimpleParser.PreprocessorConditional.koMatchDefined.match(sExpr, off);
+                    if oMatch:
+                        SimpleParser.PreprocessorConditional.checkSupportedDefine(oMatch.group(1));
+                    elif sExpr[off:] != '1':
+                        raise Exception('Cannot grok: \'%s\' (at %u in: \'%s\')' % (sExpr[off:10], off + 1, sExpr,));
+                    off = oMatch.end();
+
+                    # Look for closing parentheses.
+                    while off < len(sExpr) and sExpr[off].isspace():
+                        off += 1;
+                    if cParan > 0:
+                        while off < len(sExpr) and sExpr[off] == ')':
+                            if cParan <= 0:
+                                raise Exception('Unbalanced parentheses at %u in \'%s\'' % (off + 1, sExpr,));
+                            cParan -= 1;
+                            off    += 1;
+                            while off < len(sExpr) and sExpr[off].isspace():
+                                off += 1;
+
+                    # Look for binary operator.
+                    if off >= len(sExpr):
+                        break;
+                    if sExpr[off:off + 2] in ('||', '&&'):
+                        off += 2;
+                    else:
+                        raise Exception('Cannot grok operator: \'%s\' (at %u in: \'%s\')' % (sExpr[off:2], off + 1, sExpr,));
+
+                # Skip spaces.
+                while off < len(sExpr) and sExpr[off].isspace():
+                    off += 1;
+            if cParan != 0:
+                raise Exception('Unbalanced parentheses at %u in \'%s\'' % (off + 1, sExpr,));
+            return True;
+
+        @staticmethod
+        def isArchIncludedInExpr(sExpr, sArch):
+            """ Checks if sArch is included in the given expression. """
+            # We only grok defined() [|| defined()...] and [1|0] at the moment.
+            if sExpr == '0':
+                return False;
+            if sExpr == '1':
+                return True;
+            off = 0;
+            while off < len(sExpr):
+                # defined(xxxx)
+                oMatch = SimpleParser.PreprocessorConditional.koMatchDefined.match(sExpr, off);
+                if not oMatch:
+                    if sExpr[off:] == '1':
+                        return True;
+                    raise Exception('Cannot grok: %s (at %u in: %s)' % (sExpr[off:10], off + 1, sExpr,));
+                if SimpleParser.PreprocessorConditional.matchDefined(oMatch.group(1), sArch):
+                    return True;
+                off = oMatch.end();
+
+                # Look for OR operator.
+                while off + 1 < len(sExpr) and sExpr[off + 1].isspace():
+                    off += 1;
+                if off >= len(sExpr):
+                    break;
+                if sExpr.startswith('||'):
+                    off += 2;
+                else:
+                    raise Exception('Cannot grok: %s (at %u in: %s)' % (sExpr[off:10], off + 1, sExpr,));
+
+            return False;
+
+        @staticmethod
+        def matchArch(sDefine, sArch):
+            """ Compares sDefine (RT_ARCH_XXXX) and sArch (x86, amd64, arm64, ++). """
+            return SimpleParser.PreprocessorConditional.kdBuildArchToIprt[sArch] == sDefine;
+
+        @staticmethod
+        def matchDefined(sExpr, sArch):
+            """ Check the result of an ifdef/ifndef expression, given sArch. """
+            iDefine = SimpleParser.PreprocessorConditional.kdKnownDefines.get(sExpr, 0);
+            if iDefine == -2:
+                raise Exception('Unsupported define for MC block filtering: %s' % (sExpr,));
+            return iDefine == 1 or (iDefine == -1 and SimpleParser.PreprocessorConditional.matchArch(sExpr, sArch));
+
+        def isArchIncludedInPrimaryBlock(self, sArch):
+            """ Checks if sArch is included in the (primary) 'if' block. """
+            if self.sType == 'ifdef':
+                return self.matchDefined(self.sExpr, sArch);
+            if self.sType == 'ifndef':
+                return not self.matchDefined(self.sExpr, sArch);
+            return self.isArchIncludedInExpr(self.sExpr, sArch);
+
+        @staticmethod
+        def isInBlockForArch(aoCppCondStack, sArch):
+            """ Checks if sArch is included in the current conditional block. """
+            for oCond in aoCppCondStack:
+                if oCond.isArchIncludedInPrimaryBlock(sArch):
+                    if oCond.aoElif or oCond.fInElse:
+                        return False;
+                else:
+                    for oElifCond in oCond.aoElif:
+                        if oElifCond.isArchIncludedInPrimaryBlock(sArch):
+                            if oElifCond is not oCond.aoElif[-1] or oCond.fInElse:
+                                return False;
+
+            return True;
+
+    def __init__(self, sSrcFile, asLines, sDefaultMap, sHostArch, oInheritMacrosFrom = None):
         self.sSrcFile       = sSrcFile;
         self.asLines        = asLines;
         self.iLine          = 0;
@@ -3180,6 +3360,8 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         if oInheritMacrosFrom:
             self.dMacros    = dict(oInheritMacrosFrom.dMacros);
             self.oReMacros  = oInheritMacrosFrom.oReMacros;
+        self.aoCppCondStack = []    # type: List[PreprocessorConditional] ##< Preprocessor conditional stack.
+        self.sHostArch      = sHostArch;
 
         assert sDefaultMap in g_dInstructionMaps;
         self.oDefaultMap    = g_dInstructionMaps[sDefaultMap];
@@ -3197,14 +3379,12 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         self.oReDisEnum     = re.compile('^OP_[A-Z0-9_]+$');
         self.oReFunTable    = re.compile('^(IEM_STATIC|static) +const +PFNIEMOP +g_apfn[A-Za-z0-9_]+ *\[ *\d* *\] *= *$');
         self.oReComment     = re.compile('//.*?$|/\*.*?\*/'); ## Full comments.
-        self.oReHashDefine  = re.compile('^\s*#\s*define\s+(.*)$');
         self.oReHashDefine2 = re.compile('(?s)\A\s*([A-Za-z_][A-Za-z0-9_]*)\(([^)]*)\)\s*(.*)\Z'); ##< With arguments.
         self.oReHashDefine3 = re.compile('(?s)\A\s*([A-Za-z_][A-Za-z0-9_]*)[^(]\s*(.*)\Z');        ##< Simple, no arguments.
-        self.oReHashUndef   = re.compile('^\s*#\s*undef\s+(.*)$');
         self.oReMcBeginEnd  = re.compile(r'\bIEM_MC_(BEGIN|END|DEFER_TO_CIMPL_[1-5]_RET)\s*\('); ##> Not DEFER_TO_CIMPL_0_RET!
         self.fDebug         = True;
         self.fDebugMc       = False;
-        self.fDebugPreProc  = False;
+        self.fDebugPreproc  = False;
 
         self.dTagHandlers   = {
             '@opbrief':     self.parseTagOpBrief,
@@ -4842,10 +5022,18 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         #self.debug('cchIndent=%s offPrevNewline=%s sFunc=%s' % (cchIndent, offPrevNewline, self.oCurFunction.sName));
 
         # Start a new block.
+        # But don't add it to the list unless the context matches the host architecture.
         self.oCurMcBlock = McBlock(self.sSrcFile, self.iLine, offBeginStatementInLine,
                                    self.oCurFunction, self.iMcBlockInFunc, cchIndent);
-        g_aoMcBlocks.append(self.oCurMcBlock);
-        self.cTotalMcBlocks += 1;
+        try:
+            if (   not self.aoCppCondStack
+                or not self.sHostArch
+                or self.PreprocessorConditional.isInBlockForArch(self.aoCppCondStack, self.sHostArch)):
+                g_aoMcBlocks.append(self.oCurMcBlock);
+                self.cTotalMcBlocks += 1;
+        except Exception as oXcpt:
+            self.raiseError(oXcpt.args[0]);
+
         self.iMcBlockInFunc += 1;
         return True;
 
@@ -4904,10 +5092,10 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
                                                                         offEndStatementInLine
                                                                       + sum(len(s) for s in asLines)
                                                                       - len(asLines[-1]));
-                    self.oCurMcBlock.iMacroExp = McBlock.kMacroExp_Partial;
+                    self.oCurMcBlock.iMacroExp = McBlock.kiMacroExp_Partial;
                     break;
         else:
-            self.oCurMcBlock.iMacroExp = McBlock.kMacroExp_Entire;
+            self.oCurMcBlock.iMacroExp = McBlock.kiMacroExp_Entire;
             asLines = self.extractLinesFromMacroExpansionLine(self.asLines[self.iLine - 1],
                                                               self.oCurMcBlock.offBeginLine, offEndStatementInLine);
 
@@ -5174,7 +5362,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
         return False;
 
-    def workerPreProcessRecreateMacroRegex(self):
+    def workerPreprocessorRecreateMacroRegex(self):
         """
         Recreates self.oReMacros when self.dMacros changes.
         """
@@ -5195,10 +5383,11 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
             self.oReMacros = None;
         return True;
 
-    def workerPreProcessDefine(self, sRest):
+    def workerPreprocessorDefine(self, sRest):
         """
         Handles a macro #define, the sRest is what follows after the directive word.
         """
+        assert sRest[-1] == '\n';
 
         #
         # If using line continutation, just concat all the lines together,
@@ -5208,7 +5397,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         while sRest.endswith('\\\n') and self.iLine < len(self.asLines):
             sRest = sRest[0:-2].rstrip() + '\n' + self.asLines[self.iLine];
             self.iLine += 1;
-        #self.debug('workerPreProcessDefine: sRest=%s<EOS>' % (sRest,));
+        #self.debug('workerPreprocessorDefine: sRest=%s<EOS>' % (sRest,));
 
         #
         # Use regex to split out the name, argument list and body.
@@ -5222,13 +5411,13 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         else:
             oMatch = self.oReHashDefine3.match(sRest);
             if not oMatch:
-                self.debug('workerPreProcessDefine: wtf? sRest=%s' % (sRest,));
+                self.debug('workerPreprocessorDefine: wtf? sRest=%s' % (sRest,));
                 return self.error('bogus macro definition: %s' % (sRest,));
             asArgs = None;
             sBody  = oMatch.group(2);
         sName = oMatch.group(1);
         assert sName == sName.strip();
-        #self.debug('workerPreProcessDefine: sName=%s asArgs=%s sBody=%s<EOS>' % (sName, asArgs, sBody));
+        #self.debug('workerPreprocessorDefine: sName=%s asArgs=%s sBody=%s<EOS>' % (sName, asArgs, sBody));
 
         #
         # Is this of any interest to us?  We do NOT support MC blocks wihtin
@@ -5244,18 +5433,18 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         #       Also, this way we don't produce lots of unnecessary threaded functions.
         #
         if sBody.find("IEM_MC_BEGIN") < 0 and sBody.find("IEM_MC_END") < 0:
-            #self.debug('workerPreProcessDefine: irrelevant (%s: %s)' % (sName, sBody));
+            #self.debug('workerPreprocessorDefine: irrelevant (%s: %s)' % (sName, sBody));
             return True;
 
         #
         # Add the macro.
         #
-        if self.fDebugPreProc:
+        if self.fDebugPreproc:
             self.debug('#define %s on line %u' % (sName, self.iLine,));
         self.dMacros[sName] = SimpleParser.Macro(sName, asArgs, sBody.strip(), iLineStart);
-        return self.workerPreProcessRecreateMacroRegex();
+        return self.workerPreprocessorRecreateMacroRegex();
 
-    def workerPreProcessUndef(self, sRest):
+    def workerPreprocessorUndef(self, sRest):
         """
         Handles a macro #undef, the sRest is what follows after the directive word.
         """
@@ -5267,24 +5456,112 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
         # Remove the macro if we're clocking it.
         if sName in self.dMacros:
-            if self.fDebugPreProc:
+            if self.fDebugPreproc:
                 self.debug('#undef %s on line %u' % (sName, self.iLine,));
             del self.dMacros[sName];
-            return self.workerPreProcessRecreateMacroRegex();
+            return self.workerPreprocessorRecreateMacroRegex();
 
         return True;
 
-    def checkPreProcessorDirectiveForDefineUndef(self, sLine):
+    def workerPreprocessorIfOrElif(self, sDirective, sRest):
+        """
+        Handles an #if, #ifdef, #ifndef or #elif directive.
+        """
+        #
+        # Sanity check #elif.
+        #
+        if sDirective == 'elif':
+            if len(self.aoCppCondStack) == 0:
+                self.raiseError('#elif without #if');
+            if self.aoCppCondStack[-1].fInElse:
+                self.raiseError('#elif after #else');
+
+        #
+        # If using line continutation, just concat all the lines together,
+        # stripping both the newline and escape characters.
+        #
+        while sRest.endswith('\\\n') and self.iLine < len(self.asLines):
+            sRest = sRest[0:-2].rstrip() + ' ' + self.asLines[self.iLine];
+            self.iLine += 1;
+
+        # Strip it of all comments and leading and trailing blanks.
+        sRest = self.stripComments(sRest).strip();
+
+        #
+        # Stash it.
+        #
+        try:
+            oPreprocCond = self.PreprocessorConditional(sDirective, sRest);
+        except Exception as oXcpt:
+            self.raiseError(oXcpt.args[0]);
+
+        if sDirective == 'elif':
+            self.aoCppCondStack[-1].aoElif.append(oPreprocCond);
+        else:
+            self.aoCppCondStack.append(oPreprocCond);
+
+        return True;
+
+    def workerPreprocessorElse(self):
+        """
+        Handles an #else directive.
+        """
+        if len(self.aoCppCondStack) == 0:
+            self.raiseError('#else without #if');
+        if self.aoCppCondStack[-1].fInElse:
+            self.raiseError('Another #else after #else');
+
+        self.aoCppCondStack[-1].fInElse = True;
+        return True;
+
+    def workerPreprocessorEndif(self):
+        """
+        Handles an #endif directive.
+        """
+        if len(self.aoCppCondStack) == 0:
+            self.raiseError('#endif without #if');
+
+        self.aoCppCondStack.pop();
+        return True;
+
+    def checkPreprocessorDirective(self, sLine):
         """
         Handles a preprocessor directive.
         """
-        oMatch = self.oReHashDefine.match(sLine);
-        if oMatch:
-            return self.workerPreProcessDefine(oMatch.group(1) + '\n');
+        # Skip past the preprocessor hash.
+        off = sLine.find('#');
+        assert off >= 0;
+        off += 1;
+        while off < len(sLine) and sLine[off].isspace():
+            off += 1;
 
-        oMatch = self.oReHashUndef.match(sLine);
-        if oMatch:
-            return self.workerPreProcessUndef(oMatch.group(1) + '\n');
+        # Extract the directive.
+        offDirective = off;
+        while off < len(sLine) and not sLine[off].isspace():
+            off += 1;
+        sDirective = sLine[offDirective:off];
+        if self.fDebugPreproc:
+            self.debug('line %d: #%s...' % (self.iLine, sDirective));
+
+        # Skip spaces following it to where the arguments/whatever starts.
+        while off + 1 < len(sLine) and sLine[off + 1].isspace():
+            off += 1;
+        sTail = sLine[off:];
+
+        # Handle the directive.
+        if sDirective == 'define':
+            return self.workerPreprocessorDefine(sTail);
+        if sDirective == 'undef':
+            return self.workerPreprocessorUndef(sTail);
+        if sDirective in ('if', 'ifdef', 'ifndef', 'elif',):
+            return self.workerPreprocessorIfOrElif(sDirective, sTail);
+        if sDirective == 'else':
+            return self.workerPreprocessorElse();
+        if sDirective == 'endif':
+            return self.workerPreprocessorEndif();
+
+        if self.fDebugPreproc:
+            self.debug('line %d: Unknown preprocessor directive: %s' % (self.iLine, sDirective));
         return False;
 
     def expandMacros(self, sLine, oMatch):
@@ -5307,7 +5584,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         # Deal with simple macro invocations w/o parameters.
         #
         if not fWithArgs:
-            if self.fDebugPreProc:
+            if self.fDebugPreproc:
                 self.debug('expanding simple macro %s on line %u' % (sName, self.iLine,));
             return sLine[:offMatch] + oMacro.expandMacro(self) + sLine[oMatch.end():];
 
@@ -5342,7 +5619,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         #
         # Do the expanding.
         #
-        if self.fDebugPreProc:
+        if self.fDebugPreproc:
             self.debug('expanding macro %s on line %u with arguments %s' % (sName, self.iLine, asArgs));
         return sLine[:offMatch] + oMacro.expandMacro(self, asArgs) + sLine[offCur + 1 :];
 
@@ -5371,80 +5648,80 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
                 oMatch = self.oReMacros.search(sLine);
                 if oMatch:
                     sLine = self.expandMacros(sLine, oMatch);
-                    if self.fDebugPreProc:
+                    if self.fDebugPreproc:
                         self.debug('line %d: expanded\n%s ==>\n%s' % (self.iLine, self.asLines[self.iLine - 1], sLine[:-1],));
                     self.asLines[self.iLine - 1] = sLine;
 
-            # Look for comments.
-            offSlash = sLine.find('/');
-            if offSlash >= 0:
-                if offSlash + 1 >= len(sLine)  or  sLine[offSlash + 1] != '/'  or  self.iState != self.kiCode:
-                    offLine = 0;
-                    while offLine < len(sLine):
-                        if self.iState == self.kiCode:
-                            # Look for substantial multiline comment so we pass the following MC as a whole line:
-                            #   IEM_MC_ARG_CONST(uint8_t, bImmArg, /*=*/ bImm,   2);
-                            # Note! We ignore C++ comments here, assuming these aren't used in lines with C-style comments.
-                            offHit = sLine.find('/*', offLine);
-                            while offHit >= 0:
-                                offEnd = sLine.find('*/', offHit + 2);
-                                if offEnd < 0 or offEnd - offHit >= 16: # 16 chars is a bit random.
-                                    break;
-                                offHit = sLine.find('/*', offEnd);
+            # Check for preprocessor directives before comments and other stuff.
+            # ASSUMES preprocessor directives doesn't end with multiline comments.
+            if self.iState == self.kiCode and sLine.lstrip().startswith('#'):
+                if self.fDebugPreproc:
+                    self.debug('line %d: preproc' % (self.iLine,));
+                self.checkPreprocessorDirective(sLine);
+            else:
+                # Look for comments.
+                offSlash = sLine.find('/');
+                if offSlash >= 0:
+                    if offSlash + 1 >= len(sLine)  or  sLine[offSlash + 1] != '/'  or  self.iState != self.kiCode:
+                        offLine = 0;
+                        while offLine < len(sLine):
+                            if self.iState == self.kiCode:
+                                # Look for substantial multiline comment so we pass the following MC as a whole line:
+                                #   IEM_MC_ARG_CONST(uint8_t, bImmArg, /*=*/ bImm,   2);
+                                # Note! We ignore C++ comments here, assuming these aren't used in lines with C-style comments.
+                                offHit = sLine.find('/*', offLine);
+                                while offHit >= 0:
+                                    offEnd = sLine.find('*/', offHit + 2);
+                                    if offEnd < 0 or offEnd - offHit >= 16: # 16 chars is a bit random.
+                                        break;
+                                    offHit = sLine.find('/*', offEnd);
 
-                            if offHit >= 0:
-                                self.checkCodeForMacro(sLine[offLine:offHit], offLine);
-                                self.sComment     = '';
-                                self.iCommentLine = self.iLine;
-                                self.iState       = self.kiCommentMulti;
-                                offLine = offHit + 2;
+                                if offHit >= 0:
+                                    self.checkCodeForMacro(sLine[offLine:offHit], offLine);
+                                    self.sComment     = '';
+                                    self.iCommentLine = self.iLine;
+                                    self.iState       = self.kiCommentMulti;
+                                    offLine = offHit + 2;
+                                else:
+                                    self.checkCodeForMacro(sLine[offLine:], offLine);
+                                    offLine = len(sLine);
+
+                            elif self.iState == self.kiCommentMulti:
+                                offHit = sLine.find('*/', offLine);
+                                if offHit >= 0:
+                                    self.sComment += sLine[offLine:offHit];
+                                    self.iState    = self.kiCode;
+                                    offLine = offHit + 2;
+                                    self.parseComment();
+                                else:
+                                    self.sComment += sLine[offLine:];
+                                    offLine = len(sLine);
                             else:
-                                self.checkCodeForMacro(sLine[offLine:], offLine);
-                                offLine = len(sLine);
+                                assert False;
+                    # C++ line comment.
+                    elif offSlash > 0:
+                        self.checkCodeForMacro(sLine[:offSlash], 0);
 
-                        elif self.iState == self.kiCommentMulti:
-                            offHit = sLine.find('*/', offLine);
-                            if offHit >= 0:
-                                self.sComment += sLine[offLine:offHit];
-                                self.iState    = self.kiCode;
-                                offLine = offHit + 2;
-                                self.parseComment();
-                            else:
-                                self.sComment += sLine[offLine:];
-                                offLine = len(sLine);
-                        else:
-                            assert False;
-                # C++ line comment.
-                elif offSlash > 0:
-                    self.checkCodeForMacro(sLine[:offSlash], 0);
+                # No slash, but append the line if in multi-line comment.
+                elif self.iState == self.kiCommentMulti:
+                    #self.debug('line %d: multi' % (self.iLine,));
+                    self.sComment += sLine;
 
-            # No slash, but append the line if in multi-line comment.
-            elif self.iState == self.kiCommentMulti:
-                #self.debug('line %d: multi' % (self.iLine,));
-                self.sComment += sLine;
+                # No slash, but check code line for relevant macro.
+                elif (     self.iState == self.kiCode
+                      and (sLine.find('IEMOP_') >= 0 or sLine.find('FNIEMOPRM_DEF') >= 0 or sLine.find('IEM_MC') >= 0)):
+                    #self.debug('line %d: macro' % (self.iLine,));
+                    self.checkCodeForMacro(sLine, 0);
 
-            # No slash, but check if this is a macro #define or #undef, since we
-            # need to be able to selectively expand the ones containing MC blocks.
-            elif self.iState == self.kiCode and sLine.lstrip().startswith('#'):
-                if self.fDebugPreProc:
-                    self.debug('line %d: pre-proc' % (self.iLine,));
-                self.checkPreProcessorDirectiveForDefineUndef(sLine);
+                # If the line is a '}' in the first position, complete the instructions.
+                elif self.iState == self.kiCode and sLine[0] == '}':
+                    #self.debug('line %d: }' % (self.iLine,));
+                    self.doneInstructions(fEndOfFunction = True);
 
-            # No slash, but check code line for relevant macro.
-            elif (     self.iState == self.kiCode
-                  and (sLine.find('IEMOP_') >= 0 or sLine.find('FNIEMOPRM_DEF') >= 0 or sLine.find('IEM_MC') >= 0)):
-                #self.debug('line %d: macro' % (self.iLine,));
-                self.checkCodeForMacro(sLine, 0);
-
-            # If the line is a '}' in the first position, complete the instructions.
-            elif self.iState == self.kiCode and sLine[0] == '}':
-                #self.debug('line %d: }' % (self.iLine,));
-                self.doneInstructions(fEndOfFunction = True);
-
-            # Look for instruction table on the form 'IEM_STATIC const PFNIEMOP g_apfnVexMap3'
-            # so we can check/add @oppfx info from it.
-            elif self.iState == self.kiCode and sLine.find('PFNIEMOP') > 0 and self.oReFunTable.match(sLine):
-                self.parseFunctionTable(sLine);
+                # Look for instruction table on the form 'IEM_STATIC const PFNIEMOP g_apfnVexMap3'
+                # so we can check/add @oppfx info from it.
+                elif self.iState == self.kiCode and sLine.find('PFNIEMOP') > 0 and self.oReFunTable.match(sLine):
+                    self.parseFunctionTable(sLine);
 
         self.doneInstructions(fEndOfFunction = True);
         self.debug('%3s%% / %3s stubs out of %4s instructions and %4s MC blocks in %s'
@@ -5455,7 +5732,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 ## The parsed content of IEMAllInstCommonBodyMacros.h.
 g_oParsedCommonBodyMacros = None # type: SimpleParser
 
-def __parseFileByName(sSrcFile, sDefaultMap):
+def __parseFileByName(sSrcFile, sDefaultMap, sHostArch):
     """
     Parses one source file for instruction specfications.
     """
@@ -5493,7 +5770,7 @@ def __parseFileByName(sSrcFile, sDefaultMap):
 
         # Parse it.
         try:
-            oParser = SimpleParser(sCommonBodyMacros, asIncFiles, 'one');
+            oParser = SimpleParser(sCommonBodyMacros, asIncFiles, 'one', sHostArch);
             if oParser.parse() != 0:
                 raise ParserException('%s: errors: See above' % (sCommonBodyMacros, ));
             if oParser.cTotalInstr != 0 or oParser.cTotalStubs != 0 or oParser.cTotalTagged != 0 or oParser.cTotalMcBlocks != 0:
@@ -5511,7 +5788,7 @@ def __parseFileByName(sSrcFile, sDefaultMap):
     # Do the parsing.
     #
     try:
-        oParser = SimpleParser(sSrcFile, asLines, sDefaultMap, g_oParsedCommonBodyMacros);
+        oParser = SimpleParser(sSrcFile, asLines, sDefaultMap, sHostArch, g_oParsedCommonBodyMacros);
         return (oParser.parse(), oParser) ;
     except ParserException as oXcpt:
         print(str(oXcpt), file = sys.stderr);
@@ -5572,7 +5849,7 @@ g_aaoAllInstrFilesAndDefaultMapAndSet = (
     ( 'IEMAllInstVexMap3.cpp.h',   'vexmap3',    4, ),
 );
 
-def __parseFilesWorker(asFilesAndDefaultMap):
+def __parseFilesWorker(asFilesAndDefaultMap, sHostArch):
     """
     Parses all the IEMAllInstruction*.cpp.h files.
 
@@ -5585,7 +5862,7 @@ def __parseFilesWorker(asFilesAndDefaultMap):
     for sFilename, sDefaultMap in asFilesAndDefaultMap:
         if not os.path.split(sFilename)[0] and not os.path.exists(sFilename):
             sFilename = os.path.join(sSrcDir, sFilename);
-        cThisErrors, oParser = __parseFileByName(sFilename, sDefaultMap);
+        cThisErrors, oParser = __parseFileByName(sFilename, sDefaultMap, sHostArch);
         cErrors += cThisErrors;
         aoParsers.append(oParser);
     cErrors += __doTestCopying();
@@ -5604,7 +5881,7 @@ def __parseFilesWorker(asFilesAndDefaultMap):
     return aoParsers;
 
 
-def parseFiles(asFiles):
+def parseFiles(asFiles, sHostArch = None):
     """
     Parses a selection of IEMAllInstruction*.cpp.h files.
 
@@ -5624,17 +5901,17 @@ def parseFiles(asFiles):
             raise Exception('Unable to classify file: %s' % (sFilename,));
         asFilesAndDefaultMap.append((sFilename, sMap));
 
-    return __parseFilesWorker(asFilesAndDefaultMap);
+    return __parseFilesWorker(asFilesAndDefaultMap, sHostArch);
 
 
-def parseAll():
+def parseAll(sHostArch = None):
     """
     Parses all the IEMAllInstruction*.cpp.h files.
 
     Returns a list of the parsers on success.
     Raises exception on failure.
     """
-    return __parseFilesWorker([aoInfo[0:2] for aoInfo in g_aaoAllInstrFilesAndDefaultMapAndSet]);
+    return __parseFilesWorker([aoInfo[0:2] for aoInfo in g_aaoAllInstrFilesAndDefaultMapAndSet], sHostArch);
 
 
 #

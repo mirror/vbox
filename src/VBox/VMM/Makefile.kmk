@@ -628,6 +628,7 @@ ifdef VBOX_WITH_IEM_RECOMPILER
 	$(QUIET)$(MKDIR) -p -- "$(dir $@)"
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(REDIRECT) -0 /dev/null -- $(VBOX_BLD_PYTHON) $< $(filter %.cpp.h,$^) \
+		--host-arch "$(KBUILD_TARGET_ARCH)" \
 		--out-thrd-funcs-hdr "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.h.ts" \
 		--out-thrd-funcs-cpp "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedFunctions.cpp.h.ts" \
 		--out-mod-input1 "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions1.cpp.h.ts" \
@@ -635,7 +636,7 @@ ifdef VBOX_WITH_IEM_RECOMPILER
 		--out-mod-input3 "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions3.cpp.h.ts" \
 		--out-mod-input4 "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMThreadedInstructions4.cpp.h.ts" \
 		$(if-expr defined(VBOX_WITH_IEM_NATIVE_RECOMPILER), \
-			--native-arch "$(KBUILD_TARGET_ARCH)" \
+			--native \
 			--out-n8ve-funcs-hdr "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions.h.ts" \
 			--out-n8ve-funcs-cpp "$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMNativeFunctions.cpp.h.ts" \
 		,)
