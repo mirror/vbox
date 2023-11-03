@@ -738,7 +738,7 @@ HRESULT PlatformProperties::getSupportedNetworkAdapterPromiscModePolicies(std::v
     };
 
     aSupportedNetworkAdapterPromiscModePolicies.assign(aNetworkAdapterPromiscModePolicies,
-                                                       aNetworkAdapterPromiscModePolicies + RT_ELEMENTS(aSupportedNetworkAdapterPromiscModePolicies));
+                                                       aNetworkAdapterPromiscModePolicies + RT_ELEMENTS(aNetworkAdapterPromiscModePolicies));
     return S_OK;
 }
 
