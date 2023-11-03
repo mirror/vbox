@@ -166,7 +166,6 @@ NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/pr/include/nspr.h \
 	nsprpub/lib/ds/plarena.h \
 	nsprpub/lib/ds/plarenas.h \
-	nsprpub/lib/libc/include/plbase64.h \
 	nsprpub/lib/ds/plhash.h \
 	nsprpub/lib/libc/include/plstr.h \
 	nsprpub/pr/include/pratom.h \
@@ -580,8 +579,7 @@ VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/lib/libc/src/strpbrk.c \
 	nsprpub/lib/libc/src/strstr.c \
 	nsprpub/lib/libc/src/strcstr.c \
-	nsprpub/lib/libc/src/strtok.c \
-	nsprpub/lib/libc/src/base64.c
+	nsprpub/lib/libc/src/strtok.c
 
 ifeq ($(filter-out darwin freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # unixish
  VBox-xpcom-nspr_SOURCES += \
