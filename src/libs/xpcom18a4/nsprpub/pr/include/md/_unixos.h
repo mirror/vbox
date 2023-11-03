@@ -484,9 +484,6 @@ extern void _MD_query_fd_inheritable(PRFileDesc *fd);
 extern PRStatus _MD_gethostname(char *name, PRUint32 namelen);
 #define _MD_GETHOSTNAME		_MD_gethostname
 
-extern PRStatus _MD_getsysinfo(PRSysInfo cmd, char *name, PRUint32 namelen);
-#define _MD_GETSYSINFO		_MD_getsysinfo
-
 extern int _MD_unix_get_nonblocking_connect_error(int osfd);
 
 /* Memory-mapped files */

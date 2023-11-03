@@ -3480,25 +3480,6 @@ PR_IMPLEMENT(PRStatus) _MD_gethostname(char *name, PRUint32 namelen)
     return PR_FAILURE;
 }
 
-PR_IMPLEMENT(PRStatus) _MD_getsysinfo(PRSysInfo cmd, char *name, PRUint32 namelen)
-{
-	struct utsname info;
-
-	PR_ASSERT((cmd == PR_SI_SYSNAME) || (cmd == PR_SI_RELEASE));
-
-	if (uname(&info) == -1) {
-		_PR_MD_MAP_DEFAULT_ERROR(errno);
-    	return PR_FAILURE;
-	}
-	if (PR_SI_SYSNAME == cmd)
-		(void)PR_snprintf(name, namelen, info.sysname);
-	else if (PR_SI_RELEASE == cmd)
-		(void)PR_snprintf(name, namelen, info.release);
-	else
-		return PR_FAILURE;
-    return PR_SUCCESS;
-}
-
 /*
  *******************************************************************
  *

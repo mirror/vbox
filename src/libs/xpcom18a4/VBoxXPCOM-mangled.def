@@ -573,7 +573,6 @@ EXPORTS
     _MD_TLockFile
     _MD_UnlockFile
     _MD_gethostname
-    _MD_getsysinfo
     _MD_unix_map_accept_error
     _MD_unix_map_access_error
     _MD_unix_map_bind_error
