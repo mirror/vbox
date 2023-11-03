@@ -728,6 +728,20 @@ HRESULT PlatformProperties::getSupportedGuestOSTypes(std::vector<ComPtr<IGuestOS
 #endif
 }
 
+HRESULT PlatformProperties::getSupportedNetworkAdapterPromiscModePolicies(std::vector<NetworkAdapterPromiscModePolicy_T> &aSupportedNetworkAdapterPromiscModePolicies)
+{
+    static const NetworkAdapterPromiscModePolicy_T aNetworkAdapterPromiscModePolicies[] =
+    {
+        NetworkAdapterPromiscModePolicy_Deny,
+        NetworkAdapterPromiscModePolicy_AllowNetwork,
+        NetworkAdapterPromiscModePolicy_AllowAll
+    };
+
+    aSupportedNetworkAdapterPromiscModePolicies.assign(aNetworkAdapterPromiscModePolicies,
+                                                       aNetworkAdapterPromiscModePolicies + RT_ELEMENTS(aSupportedNetworkAdapterPromiscModePolicies));
+    return S_OK;
+}
+
 HRESULT PlatformProperties::getSupportedNetworkAdapterTypes(std::vector<NetworkAdapterType_T> &aSupportedNetworkAdapterTypes)
 {
     switch (mPlatformArchitecture)

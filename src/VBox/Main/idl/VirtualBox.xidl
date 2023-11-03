@@ -12722,7 +12722,7 @@
   <interface
     name="IPlatformProperties"
     extends="$unknown"
-    uuid="6bf432a7-b9e6-4317-ba51-52373dac02de"
+    uuid="4c1c92fe-c486-475a-93d3-03be5e5dda3b"
     wsmap="managed"
     rest="managed"
     reservedMethods="4" reservedAttributes="16"
@@ -12804,6 +12804,13 @@
     <attribute name="supportedGraphicsControllerTypes" type="GraphicsControllerType" safearray="yes" readonly="yes">
       <desc>
         Returns an array of officially supported values for enum <link to="GraphicsControllerType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedNetworkAdapterPromiscModePolicies" type="NetworkAdapterPromiscModePolicy" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="NetworkAdapterPromiscModePolicy"/>,
         in the sense of what is e.g. worth offering in the VirtualBox GUI.
       </desc>
     </attribute>
