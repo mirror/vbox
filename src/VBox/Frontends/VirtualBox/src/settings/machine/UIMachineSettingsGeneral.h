@@ -50,6 +50,11 @@ class SHARED_LIBRARY_STUFF UIMachineSettingsGeneral : public UISettingsPageMachi
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies listeners about platform @a enmArch changed. */
+    void sigPlatformArchitectureChanged(KPlatformArchitecture enmArch);
+
 public:
 
     /** Constructs General settings page. */
@@ -95,6 +100,9 @@ protected:
     virtual void polishPage() RT_OVERRIDE;
 
 private slots:
+
+    /** Handles OS type change. */
+    void sltHandleOsTypeChanged();
 
     /** Handles encryption cipher change. */
     void sltHandleEncryptionCipherChanged();

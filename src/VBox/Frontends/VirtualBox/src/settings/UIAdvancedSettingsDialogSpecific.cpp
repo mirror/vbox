@@ -621,6 +621,19 @@ void UIAdvancedSettingsDialogMachine::sltMachineDataChanged(const QUuid &uMachin
     load();
 }
 
+void UIAdvancedSettingsDialogMachine::sltHandlePlatformArchitectureChanged(KPlatformArchitecture enmArch)
+{
+    /* Update optional flags accordingly: */
+    QMap<QString, QVariant> optFlags = optionalFlags();
+    /* For x86 we no need the flag at all, removing if present: */
+    if (enmArch == KPlatformArchitecture_x86)
+        optFlags.remove("arch");
+    /* For ARM (and potentially rest) we need the flag: */
+    else if (enmArch == KPlatformArchitecture_ARM)
+        optFlags["arch"] = QVariant::fromValue(enmArch);
+    setOptionalFlags(optFlags);
+}
+
 void UIAdvancedSettingsDialogMachine::prepare()
 {
 #ifndef VBOX_WS_MAC
@@ -659,10 +672,12 @@ void UIAdvancedSettingsDialogMachine::prepare()
                 /* General page: */
                 case MachineSettingsPageType_General:
                 {
-                    pSettingsPage = new UIMachineSettingsGeneral;
+                    UIMachineSettingsGeneral *pSettingsPageGeneral = new UIMachineSettingsGeneral;
                     addItem(":/machine_32px.png", ":/machine_24px.png", ":/machine_16px.png",
-                            iPageIndex, "#general", pSettingsPage);
+                            iPageIndex, "#general", pSettingsPageGeneral);
                     addPageHelpKeyword(iPageIndex, "generalsettings");
+                    connect(pSettingsPageGeneral, &UIMachineSettingsGeneral::sigPlatformArchitectureChanged,
+                            this, &UIAdvancedSettingsDialogMachine::sltHandlePlatformArchitectureChanged);
                     break;
                 }
                 /* System page: */

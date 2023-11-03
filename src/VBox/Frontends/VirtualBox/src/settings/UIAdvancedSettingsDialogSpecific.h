@@ -143,6 +143,9 @@ private slots:
     /** Handles machine data change for machine with certain @a uMachineId. */
     void sltMachineDataChanged(const QUuid &uMachineId);
 
+    /** Handles platform @a enmArch change. */
+    void sltHandlePlatformArchitectureChanged(KPlatformArchitecture enmArch);
+
 private:
 
     /** Prepares all. */
