@@ -12722,7 +12722,7 @@
   <interface
     name="IPlatformProperties"
     extends="$unknown"
-    uuid="4c1c92fe-c486-475a-93d3-03be5e5dda3b"
+    uuid="da633d5f-4858-42cf-9914-64bd4a2c9c7a"
     wsmap="managed"
     rest="managed"
     reservedMethods="4" reservedAttributes="16"
@@ -12808,7 +12808,7 @@
       </desc>
     </attribute>
 
-    <attribute name="supportedNetAdpPromiscModePolicies" type="NetworkAdapterPromiscModePolicy" safearray="yes" readonly="yes">
+    <attribute name="getSupportedNetAdpPromiscModePols" type="NetworkAdapterPromiscModePolicy" safearray="yes" readonly="yes">
       <desc>
         Returns an array of officially supported values for enum <link to="NetworkAdapterPromiscModePolicy"/>,
         in the sense of what is e.g. worth offering in the VirtualBox GUI.
