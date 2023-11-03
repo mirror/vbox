@@ -206,7 +206,6 @@ NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/pr/include/prtpool.h \
 	nsprpub/pr/include/prtrace.h \
 	nsprpub/pr/include/prtypes.h \
-	nsprpub/pr/include/prvrsion.h \
 	nsprpub/pr/include/prwin16.h \
 	nsprpub/pr/include/md/_vbox.cfg=>prcpucfg.h
 NSPRPUB-MD-HEADERS_INST = $(INST_SDK)bindings/xpcom/include/nsprpub/md/
@@ -569,7 +568,6 @@ VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/pr/src/threads/prcmon.c \
 	nsprpub/pr/src/threads/prrwlock.c \
 	nsprpub/pr/src/threads/prtpd.c \
-	nsprpub/pr/src/prvrsion.c \
 	nsprpub/lib/ds/plarena.c \
 	nsprpub/lib/ds/plhash.c \
 	nsprpub/lib/libc/src/strlen.c \
@@ -611,22 +609,7 @@ VBox-xpcom-nspr_SOURCES.solaris = nsprpub/pr/src/md/unix/solaris.c
 VBox-xpcom-nspr_SOURCES.solaris.x86 = nsprpub/pr/src/md/unix/os_SunOS_x86.s
 VBox-xpcom-nspr_SOURCES.solaris.amd64 = nsprpub/pr/src/md/unix/os_SunOS_x86_64.s
 
-# generate build stamps
-nsprpub/pr/src/prvrsion.c_DEPS = $(VBox-xpcom-nspr_0_OUTDIR)/_pr_bld.h
-nsprpub/lib/ds/plvrsion.c_DEPS = $(VBox-xpcom-nspr_0_OUTDIR)/_pl_bld.h
-VBox-xpcom-nspr_CLEAN += \
-	$(VBox-xpcom-nspr_0_OUTDIR)/_pr_bld.h \
-	$(VBox-xpcom-nspr_0_OUTDIR)/_pl_bld.h
-
 $(call KB_FN_DO_PASS0_ON_TARGET,VBox-xpcom-nspr)
-
-$$(VBox-xpcom-nspr_0_OUTDIR)/_pr_bld.h: | $$(VBox-xpcom-nspr_0_OUTDIR)/
-	$(call MSG_GENERATE,,$@)
-	$(QUIET)$(APPEND) -t $@ '#define _BUILD_STRING "$(date +%Y-%m-%d %T)"'
-
-$$(VBox-xpcom-nspr_0_OUTDIR)/_pl_bld.h: | $$(VBox-xpcom-nspr_0_OUTDIR)/
-	$(call MSG_GENERATE,,$@)
-	$(QUIET)$(APPEND) -t $@ '#define _BUILD_STRING "$(date +%Y-%m-%d %T)"'
 
 $(evalcall2 VBOX_XPCOM_X86,VBox-xpcom-nspr)
 
