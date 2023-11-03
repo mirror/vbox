@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT Testcase - S/G Buffers.
+ * IPRT Testcase - Scatter / Gather Buffers.
  */
 
 /*
@@ -197,12 +197,15 @@ static void testBasic(void)
             if (iRun > 1)
             {
                 size_t const cbInitial = (size_t)RTRandU64Ex(iRun, cbSgBuf1);
-                RTTESTI_CHECK(RTSgBufAdvance(pSgBuf1, cbInitial) == cbInitial);
+                size_t cbAdvanced = RTSgBufAdvance(pSgBuf1, cbInitial);
+                RTTESTI_CHECK_MSG(cbAdvanced == cbInitial, ("cbAdvanced=%zu, cbInitial=%zu\n", cbAdvanced, cbInitial));
+                /* should probably print part of pSgBuf1 values... */
                 cbLeft -= cbInitial;
             }
             for (;;)
             {
-                RTTESTI_CHECK(RTSgBufCalcLengthLeft(pSgBuf1) == cbLeft);
+                RTTESTI_CHECK_MSG(RTSgBufCalcLengthLeft(pSgBuf1) == cbLeft, ("pSgBuf1_calcLen=%zu, cbLeft=%zu\n",
+                                                                             RTSgBufCalcLengthLeft(pSgBuf1), cbLeft));
                 size_t cbThisSeg = 0;
                 void *pvThisSeg = RTSgBufGetNextSegment(pSgBuf1, &cbThisSeg);
                 if (!pvThisSeg)
@@ -211,7 +214,7 @@ static void testBasic(void)
                 RTTESTI_CHECK(cbThisSeg <= cbLeft);
                 cbLeft -= cbThisSeg;
             }
-            RTTESTI_CHECK(cbLeft == 0);
+            RTTESTI_CHECK_MSG(cbLeft == 0, ("cbLeft=%zu\n", cbLeft));
             RTTESTI_CHECK(RTSgBufIsAtEnd(pSgBuf1));
             RTTESTI_CHECK(RTSgBufCalcLengthLeft(pSgBuf1) == 0);
             RTTESTI_CHECK(!RTSgBufIsAtStartOfSegment(pSgBuf1));
@@ -233,7 +236,9 @@ static void testBasic(void)
                 if (iRun > 1)
                 {
                     cbInitial = (size_t)RTRandU64Ex(iRun, cbSgBuf1);
-                    RTTESTI_CHECK(RTSgBufAdvance(pSgBuf1, cbInitial) == cbInitial);
+                    size_t cbAdvanced = RTSgBufAdvance(pSgBuf1, cbInitial);
+                    RTTESTI_CHECK_MSG(cbAdvanced == cbInitial, ("cbAdvanced=%zu, cbInitial=%zu\n",
+                                                                cbAdvanced, cbInitial));
                     cbLeft -= cbInitial;
                 }
 
@@ -248,10 +253,13 @@ static void testBasic(void)
 
                 RTTESTI_CHECK(cbCopied <= cbLeft);
                 RTTESTI_CHECK(cbCopied <= cbToCopy);
-                RTTESTI_CHECK(cbCopied == RT_MIN(cbToCopy, cbLeft));
+                RTTESTI_CHECK_MSG(cbCopied == RT_MIN(cbToCopy, cbLeft), ("cbCopied=%zu, cbToCopy=%zu, cbLeft=%zu\n",
+                                                                         cbCopied, cbToCopy, cbLeft));
                 RTTESTI_CHECK(memcmp(&pbSrc[cbInitial], pbDst, cbCopied) == 0);
 
-                RTTESTI_CHECK(RTSgBufCalcLengthLeft(pSgBuf1) == cbLeft - cbCopied);
+                RTTESTI_CHECK_MSG(RTSgBufCalcLengthLeft(pSgBuf1) == cbLeft - cbCopied,
+                                  ("pSgBuf1_calcLen=%zu cbLeft=%zu cbCopied=%zu\n",
+                                   RTSgBufCalcLengthLeft(pSgBuf1), cbLeft, cbCopied));
             }
 
             RTTestGuardedFree(g_hTest, pvTmp);
