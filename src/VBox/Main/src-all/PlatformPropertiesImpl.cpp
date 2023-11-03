@@ -728,7 +728,7 @@ HRESULT PlatformProperties::getSupportedGuestOSTypes(std::vector<ComPtr<IGuestOS
 #endif
 }
 
-HRESULT PlatformProperties::getSupportedNetworkAdapterPromiscModePolicies(std::vector<NetworkAdapterPromiscModePolicy_T> &aSupportedNetworkAdapterPromiscModePolicies)
+HRESULT PlatformProperties::getSupportedNetAdpPromiscModePolicies(std::vector<NetworkAdapterPromiscModePolicy_T> &aSupportedNetworkAdapterPromiscModePolicies)
 {
     static const NetworkAdapterPromiscModePolicy_T aNetworkAdapterPromiscModePolicies[] =
     {

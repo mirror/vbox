@@ -12808,7 +12808,7 @@
       </desc>
     </attribute>
 
-    <attribute name="supportedNetworkAdapterPromiscModePolicies" type="NetworkAdapterPromiscModePolicy" safearray="yes" readonly="yes">
+    <attribute name="supportedNetAdpPromiscModePolicies" type="NetworkAdapterPromiscModePolicy" safearray="yes" readonly="yes">
       <desc>
         Returns an array of officially supported values for enum <link to="NetworkAdapterPromiscModePolicy"/>,
         in the sense of what is e.g. worth offering in the VirtualBox GUI.
