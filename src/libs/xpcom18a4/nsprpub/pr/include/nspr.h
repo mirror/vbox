@@ -61,7 +61,6 @@
 #include "prnetdb.h"
 #include "prprf.h"
 #include "prproces.h"
-#include "prrng.h"
 #include "prrwlock.h"
 #include "prshm.h"
 #include "prshma.h"
