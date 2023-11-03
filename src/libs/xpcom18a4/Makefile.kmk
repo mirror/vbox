@@ -190,7 +190,6 @@ NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/pr/include/prmon.h \
 	nsprpub/pr/include/prmwait.h \
 	nsprpub/pr/include/prnetdb.h \
-	nsprpub/pr/include/prolock.h \
 	nsprpub/pr/include/prpdce.h \
 	nsprpub/pr/include/prprf.h \
 	nsprpub/pr/include/prproces.h \
@@ -552,7 +551,6 @@ VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/pr/src/misc/prlog2.c \
 	nsprpub/pr/src/misc/prlong.c \
 	nsprpub/pr/src/misc/prnetdb.c \
-	nsprpub/pr/src/misc/prolock.c \
 	nsprpub/pr/src/misc/prtime.c \
 	nsprpub/pr/src/misc/prthinfo.c \
 	nsprpub/pr/src/misc/prtpool.c \
