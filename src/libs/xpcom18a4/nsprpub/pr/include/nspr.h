@@ -64,7 +64,6 @@
 #include "prrwlock.h"
 #include "prshm.h"
 #include "prshma.h"
-#include "prsystem.h"
 #include "prthread.h"
 #include "prtime.h"
 #include "prtpool.h"
