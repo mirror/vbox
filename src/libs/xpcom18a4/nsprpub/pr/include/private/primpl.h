@@ -2098,9 +2098,6 @@ NSPR_API(PRInt32) _PR_MD_GET_SOCKET_ERROR(void);
 extern PRStatus _PR_MD_GETHOSTNAME(char *name, PRUint32 namelen);
 #define    _PR_MD_GETHOSTNAME _MD_GETHOSTNAME
 
-extern PRStatus _PR_MD_GETSYSINFO(PRSysInfo cmd, char *name, PRUint32 namelen);
-#define    _PR_MD_GETSYSINFO _MD_GETSYSINFO
-
 /* File descriptor inheritance */
 
 /*
