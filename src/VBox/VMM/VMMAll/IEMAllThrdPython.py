@@ -418,6 +418,9 @@ class ThreadedFunctionVariation(object):
         'IEM_CIMPL_F_IO':                           False,
         'IEM_CIMPL_F_END_TB':                       True,
         'IEM_CIMPL_F_XCPT':                         True,
+        'IEM_CIMPL_F_CALLS_CIMPL':                  False,
+        'IEM_CIMPL_F_CALLS_AIMPL':                  False,
+        'IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE':     False,
     };
 
     def __init__(self, oThreadedFunction, sVariation = ksVariation_Default):
@@ -1330,6 +1333,21 @@ class ThreadedFunction(object):
                 if fSeenConditional:
                     self.dsCImplFlags['IEM_CIMPL_F_BRANCH_CONDITIONAL'] = True;
 
+            # Check for CIMPL and AIMPL calls.
+            if oStmt.sName.startswith('IEM_MC_CALL_'):
+                if oStmt.sName.startswith('IEM_MC_CALL_CIMPL_'):
+                    self.dsCImplFlags['IEM_CIMPL_F_CALLS_CIMPL'] = True;
+                elif (   oStmt.sName.startswith('IEM_MC_CALL_VOID_AIMPL_')
+                      or oStmt.sName.startswith('IEM_MC_CALL_AIMPL_')
+                      or oStmt.sName.startswith('IEM_MC_CALL_AVX_AIMPL_')):
+                    self.dsCImplFlags['IEM_CIMPL_F_CALLS_AIMPL'] = True;
+                elif (   oStmt.sName.startswith('IEM_MC_CALL_SSE_AIMPL_')
+                      or oStmt.sName.startswith('IEM_MC_CALL_MMX_AIMPL_')
+                      or oStmt.sName.startswith('IEM_MC_CALL_FPU_AIMPL_')):
+                    self.dsCImplFlags['IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE'] = True;
+                else:
+                    raise Exception('Unknown IEM_MC_CALL_* statement: %s' % (oStmt.sName,));
+
             # Process branches of conditionals recursively.
             if isinstance(oStmt, iai.McStmtCond):
                 self.analyzeCodeOperation(oStmt.aoIfBranch, True);
@@ -1360,6 +1378,10 @@ class ThreadedFunction(object):
         # Scan the code for IEM_CIMPL_F_ and other clues.
         self.dsCImplFlags = self.oMcBlock.dsCImplFlags.copy();
         self.analyzeCodeOperation(aoStmts);
+        if (   ('IEM_CIMPL_F_CALLS_CIMPL' in self.dsCImplFlags)
+             + ('IEM_CIMPL_F_CALLS_AIMPL' in self.dsCImplFlags)
+             + ('IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE' in self.dsCImplFlags) > 1):
+            self.raiseProblem('Mixing CIMPL/AIMPL/AIMPL_WITH_FXSTATE calls');
 
         # Create variations as needed.
         if iai.McStmt.findStmtByNames(aoStmts,
@@ -1823,9 +1845,9 @@ class IEMThreadedGenerator(object):
 
             if ian.g_dUnsupportedMcStmtLastOneVarStats:
                 asTopKeys = sorted(ian.g_dUnsupportedMcStmtLastOneVarStats, reverse = True,
-                                   key = lambda sSortKey: len(ian.g_dUnsupportedMcStmtLastOneVarStats[sSortKey]))[:10];
+                                   key = lambda sSortKey: len(ian.g_dUnsupportedMcStmtLastOneVarStats[sSortKey]))[:16];
                 print('todo:', file = sys.stderr);
-                print('todo: Top %s variations with variables and one unsupported statement dependency:' % (len(asTopKeys),),
+                print('todo: Top %s variations with variables and 1-2 unsupported statement dependency:' % (len(asTopKeys),),
                       file = sys.stderr);
                 cchMaxKey = max([len(sKey) for sKey in asTopKeys]);
                 for sKey in asTopKeys:
@@ -1860,7 +1882,7 @@ class IEMThreadedGenerator(object):
                     cbArgs += (getTypeBitCount(oArg.sType) + 63) // 64 * 8;
                 cbVars = 0;
                 for oVar in oThreadedFunction.oMcBlock.aoLocals:
-                     cbVars += (getTypeBitCount(oVar.sType) + 63) // 64 * 8;
+                    cbVars += (getTypeBitCount(oVar.sType) + 63) // 64 * 8;
                 cbMaxVars        = max(cbMaxVars, cbVars);
                 cbMaxArgs        = max(cbMaxArgs, cbArgs);
                 cbMaxVarsAndArgs = max(cbMaxVarsAndArgs, cbVars + cbArgs);
@@ -2365,14 +2387,17 @@ class IEMThreadedGenerator(object):
                 # Single MC block.  Just extract it and insert the replacement.
                 #
                 elif oThreadedFunction.oMcBlock.iBeginLine != oThreadedFunction.oMcBlock.iEndLine:
-                    assert sLine.count('IEM_MC_') - sLine.count('IEM_MC_F_') == 1, 'sLine="%s"' % (sLine,);
+                    assert (   (sLine.count('IEM_MC_') - sLine.count('IEM_MC_F_') == 1)
+                            or oThreadedFunction.oMcBlock.iMacroExp == iai.McBlock.kMacroExp_Partial), 'sLine="%s"' % (sLine,);
                     oOut.write(sLine[:oThreadedFunction.oMcBlock.offBeginLine]);
                     sModified = oThreadedFunction.generateInputCode().strip();
                     oOut.write(sModified);
 
                     iLine = oThreadedFunction.oMcBlock.iEndLine;
                     sLine = oParser.asLines[iLine - 1];
-                    assert sLine.count('IEM_MC_') - sLine.count('IEM_MC_F_') == 1 or len(oThreadedFunction.oMcBlock.aoStmts) == 1;
+                    assert (   sLine.count('IEM_MC_') - sLine.count('IEM_MC_F_') == 1
+                            or len(oThreadedFunction.oMcBlock.aoStmts) == 1
+                            or oThreadedFunction.oMcBlock.iMacroExp == iai.McBlock.kMacroExp_Partial);
                     oOut.write(sLine[oThreadedFunction.oMcBlock.offAfterEnd : ]);
 
                     # Advance

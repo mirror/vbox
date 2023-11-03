@@ -37,7 +37,7 @@ SPDX-License-Identifier: GPL-3.0-only
 __version__ = "$Revision$"
 
 # Standard python imports:
-#import sys;
+import copy;
 
 # Out python imports:
 import IEMAllInstPython as iai;
@@ -195,7 +195,15 @@ class NativeRecompFunctionVariation(object):
         """
         Returns the native recompiler function body for this threaded variant.
         """
-        aoStmts = self.oVariation.aoStmtsForThreadedFunction # type: list(McStmt)
+        # Take the threaded function statement list and add detected
+        # IEM_CIMPL_F_XXX flags to the IEM_MC_BEGIN statement.
+        aoStmts = list(self.oVariation.aoStmtsForThreadedFunction) # type: list(McStmt)
+        for iStmt, oStmt in enumerate(aoStmts):
+            if oStmt.sName == 'IEM_MC_BEGIN' and self.oVariation.oParent.dsCImplFlags:
+                oNewStmt = copy.deepcopy(oStmt);
+                oNewStmt.asParams[3] = ' | '.join(sorted(self.oVariation.oParent.dsCImplFlags.keys()));
+                aoStmts[iStmt] = oNewStmt;
+
         return iai.McStmt.renderCodeForList(aoStmts, cchIndent);
 
     @staticmethod
@@ -271,7 +279,7 @@ def analyzeVariantForNativeRecomp(oVariation,
             else:
                 g_dUnsupportedMcStmtLastOneStats[sStmt] = [oVariation,];
 
-    if (    len(dUnsupportedStmts) == 1
+    if (    len(dUnsupportedStmts) in (1,2)
         and iai.McStmt.findStmtByNames(aoStmts,
                                        { 'IEM_MC_LOCAL': 1, 'IEM_MC_LOCAL_CONST': 1, 'IEM_MC_ARG': 1, 'IEM_MC_ARG_CONST': 1,
                                          'IEM_MC_ARG_LOCAL_REF': 1, 'IEM_MC_ARG_LOCAL_EFLAGS': 1, })):

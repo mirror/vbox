@@ -1972,11 +1972,21 @@ g_kdCImplFlags = {
     'IEM_CIMPL_F_END_TB':               (),
     'IEM_CIMPL_F_XCPT':                 ('IEM_CIMPL_F_BRANCH_INDIRECT', 'IEM_CIMPL_F_BRANCH_FAR',
                                          'IEM_CIMPL_F_MODE', 'IEM_CIMPL_F_RFLAGS', 'IEM_CIMPL_F_VMEXIT', ),
+    'IEM_CIMPL_F_CALLS_CIMPL':              (),
+    'IEM_CIMPL_F_CALLS_AIMPL':              (),
+    'IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE': (),
 };
 class McBlock(object):
     """
     Microcode block (IEM_MC_BEGIN ... IEM_MC_END, IEM_MC_DEFER_TO_CIMPL_x_RET).
     """
+
+    ## @name Macro expansion types.
+    ## @{
+    kMacroExp_None    = 0;
+    kMacroExp_Entire  = 1; ##< Entire block (iBeginLine == iEndLine), original line may contain multiple blocks.
+    kMacroExp_Partial = 2; ##< Partial/mixed (cmpxchg16b), safe to assume single block.
+    ## @}
 
     def __init__(self, sSrcFile, iBeginLine, offBeginLine, oFunction, iInFunction, cchIndent = None):
         ## The source file containing the block.
@@ -2000,6 +2010,9 @@ class McBlock(object):
         self.cchIndent    = cchIndent if cchIndent else offBeginLine;
         ##< The raw lines the block is made up of.
         self.asLines      = []              # type: List[str]
+        ## Indicates whether the block includes macro expansion parts (kMacroExp_None,
+        ## kMacroExp_Entrie, kMacroExp_Partial).
+        self.iMacroExp    = self.kMacroExp_None;
         ## IEM_MC_BEGIN: Argument count.
         self.cArgs        = -1;
         ## IEM_MC_ARG, IEM_MC_ARG_CONST, IEM_MC_ARG_LOCAL_REF, IEM_MC_ARG_LOCAL_EFLAGS.
@@ -4869,7 +4882,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
             self.raiseError('IEM_MC_END w/o IEM_MC_BEGIN.');
 
         #
-        # HACK ALERT! For blocks orginating from macro expansion the start and
+        # HACK ALERT! For blocks originating from macro expansion the start and
         #             end line will be the same, but the line has multiple
         #             newlines inside it.  So, we have to do some extra tricks
         #             to get the lines out of there. We ASSUME macros aren't
@@ -4879,7 +4892,22 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
             asLines = self.asLines[self.oCurMcBlock.iBeginLine - 1 : self.iLine];
             if not asLines[0].strip().startswith('IEM_MC_BEGIN'):
                 self.raiseError('IEM_MC_BEGIN is not the first word on the line');
+
+            # Hack alert! Detect mixed tail/head macros a la cmpxchg16b and split up the lines
+            #             so we can deal correctly with IEM_MC_END below and everything else.
+            for sLine in asLines:
+                cNewLines = sLine.count('\n');
+                assert cNewLines > 0;
+                if cNewLines > 1:
+                    asLines = self.extractLinesFromMacroExpansionLine(''.join(asLines),
+                                                                      self.oCurMcBlock.offBeginLine,
+                                                                        offEndStatementInLine
+                                                                      + sum(len(s) for s in asLines)
+                                                                      - len(asLines[-1]));
+                    self.oCurMcBlock.iMacroExp = McBlock.kMacroExp_Partial;
+                    break;
         else:
+            self.oCurMcBlock.iMacroExp = McBlock.kMacroExp_Entire;
             asLines = self.extractLinesFromMacroExpansionLine(self.asLines[self.iLine - 1],
                                                               self.oCurMcBlock.offBeginLine, offEndStatementInLine);
 
@@ -5206,6 +5234,8 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         # Is this of any interest to us?  We do NOT support MC blocks wihtin
         # nested macro expansion, just to avoid lots of extra work.
         #
+        # There is only limited support for macros expanding to partial MC blocks.
+        #
         # Note! IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX and other macros someone making
         #       use of IEMOP_RAISE_INVALID_LOCK_PREFIX_RET() will be ignored here and
         #       dealt with by overriding IEMOP_RAISE_INVALID_LOCK_PREFIX_RET and its
@@ -5213,7 +5243,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         #       expansion and lots of heuristics for locating all the relevant macros.
         #       Also, this way we don't produce lots of unnecessary threaded functions.
         #
-        if sBody.find("IEM_MC_BEGIN") < 0:
+        if sBody.find("IEM_MC_BEGIN") < 0 and sBody.find("IEM_MC_END") < 0:
             #self.debug('workerPreProcessDefine: irrelevant (%s: %s)' % (sName, sBody));
             return True;
 

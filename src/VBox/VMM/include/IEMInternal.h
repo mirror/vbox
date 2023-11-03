@@ -621,6 +621,22 @@ AssertCompileSizeAlignment(IEMTLB, 64);
 /** Convenience: Raise exception (technically unnecessary, since it shouldn't return VINF_SUCCESS). */
 #define IEM_CIMPL_F_XCPT \
     (IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT)
+
+/** The block calls a C-implementation instruction function with two implicit arguments.
+ * Mutually exclusive with IEM_CIMPL_F_CALLS_AIMPL and
+ * IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE.
+ * @note The python scripts will add this is missing.  */
+#define IEM_CIMPL_F_CALLS_CIMPL                 RT_BIT_32(16)
+/** The block calls an ASM-implementation instruction function.
+ * Mutually exclusive with IEM_CIMPL_F_CALLS_CIMPL and
+ * IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE.
+ * @note The python scripts will add this is missing.  */
+#define IEM_CIMPL_F_CALLS_AIMPL                 RT_BIT_32(17)
+/** The block calls an ASM-implementation instruction function with an implicit
+ * X86FXSTATE pointer argument.
+ * Mutually exclusive with IEM_CIMPL_F_CALLS_CIMPL and IEM_CIMPL_F_CALLS_AIMPL.
+ * @note The python scripts will add this is missing.  */
+#define IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE    RT_BIT_32(18)
 /** @} */
 
 
