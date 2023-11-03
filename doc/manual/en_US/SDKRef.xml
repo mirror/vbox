@@ -71,15 +71,13 @@
 
       <para>At the bottom of the stack resides the hypervisor -- the core of
       the virtualization engine, controlling execution of the virtual machines
-      and making sure they do not conflict with each other or whatever the
-      host computer is doing otherwise.</para>
+      and making sure they do not conflict with each other or with whatever else
+      the host computer is doing.</para>
 
       <para>On top of the hypervisor, additional internal modules provide
       extra functionality. For example, the RDP server, which can deliver the
       graphical output of a VM remotely to an RDP client, is a separate module
-      that is only loosely tacked into the virtual graphics device. Live
-      Migration and Resource Monitor are additional modules currently in the
-      process of being added to VirtualBox.</para>
+      that is only loosely tacked onto the virtual graphics device.</para>
 
       <para>What is primarily of interest for purposes of the SDK is the API
       layer block that sits on top of all the previously mentioned blocks.
@@ -169,14 +167,14 @@
             Object Model (COM), </emphasis> an interprocess mechanism for
             software components originally introduced by Microsoft for
             Microsoft Windows. On a Windows host, VirtualBox will use
-            Microsoft COM; on other hosts where COM is not present, it ships
-            with XPCOM, a free software implementation of COM originally
+            Microsoft COM; on other hosts where COM is not present, VirtualBox
+            ships with XPCOM, a free software implementation of COM originally
             created by the Mozilla project for their browsers.</para>
 
-            <para>So, if you are familiar with COM and the C++ programming
+            <para>So if you are familiar with COM and the C++ programming
             language (or with any other programming language that can handle
             COM/XPCOM objects, such as Java, Visual Basic or C#), then you can
-            use the COM/XPCOM API directly. VirtualBox comes with all
+            use the COM/XPCOM API directly. VirtualBox comes with all the
             necessary files and documentation to build fully functional COM
             applications. For an introduction, please see <xref
             linkend="api_com"/> below.</para>
@@ -189,7 +187,7 @@
           </listitem>
         </orderedlist></para>
 
-      <para>If you wonder which way to choose, here are a few
+      <para>If you are wondering which approach to choose, here are a few
       comparisons:<table>
           <title>Comparison web service vs. COM/XPCOM</title>
 
@@ -234,7 +232,7 @@
 
       <para>In the following chapters, we will describe the different ways in
       which to program VirtualBox, starting with the method that is easiest to
-      use and then increase complexity as we go along.</para>
+      use and then increasing in complexity as we go along.</para>
     </sect1>
 
     <sect1 id="api_soap_intro">
@@ -269,17 +267,17 @@
 
       <para>In order to successfully use a web service, a number of things are
       required -- primarily, a web service accepting connections; service
-      descriptions; and then a client that connects to that web service. The
-      connections are governed by the SOAP standard, which describes how
-      messages are to be exchanged between a service and its clients; the
-      service descriptions are governed by WSDL.</para>
+      descriptions; and a client that connects to that web service. Connections
+      to the VirtualBox web service are governed by the SOAP standard, which
+      describes how messages are to be exchanged between a service and its
+      clients; the service descriptions are governed by WSDL.</para>
 
       <para>In the case of VirtualBox, this translates into the following
       three components:<orderedlist>
           <listitem>
             <para>The VirtualBox web service (the "server"): this is the
             <computeroutput>vboxwebsrv</computeroutput> executable shipped
-            with VirtualBox. Once you start this executable (which acts as a
+            with VirtualBox. Once you start this executable (which acts as an
             HTTP server on a specific TCP/IP port), clients can connect to the
             web service and thus control a VirtualBox installation.</para>
           </listitem>
@@ -292,7 +290,7 @@
             that are shipped with most programming languages and enable you to
             easily access a web service even if you don't use our
             object-oriented client layers. VirtualBox is shipped with
-            pregenerated web service glue code for several languages (Python,
+            pre-generated web service glue code for several languages (Python,
             Perl, Java).</para>
           </listitem>
 
@@ -300,7 +298,7 @@
             <para>A client that connects to the web service in order to
             control the VirtualBox installation.</para>
 
-            <para>Unless you play with some of the samples shipped with
+            <para>Unless you use some of the samples shipped with
             VirtualBox, this needs to be written by you.</para>
           </listitem>
         </orderedlist></para>
@@ -309,17 +307,17 @@
     <sect1 id="runvboxwebsrv">
       <title>Running the web service</title>
 
-      <para>The web service ships in an stand-alone executable,
+      <para>The web service ships in a stand-alone executable,
       <computeroutput>vboxwebsrv</computeroutput>, that, when running, acts as
-      a HTTP server, accepts SOAP connections and processes them -- remotely
-      or from the same machine.<note>
-          <para>The web service executable is not contained with the
+      an HTTP server, accepts SOAP connections, remotely or from the same machine,
+      and processes them.<note>
+          <para>The web service executable is not delivered with the
           VirtualBox SDK, but instead ships with the standard VirtualBox
-          binary package for your specific platform. Since the SDK contains
-          only platform-independent text files and documentation, the binaries
-          are instead shipped with the platform-specific packages. For this
-          reason the information how to run it as a service is included in the
-          VirtualBox documentation.</para>
+          binary package for your specific platform. The SDK contains only
+          platform-independent text files and documentation so thus the vboxwebsrv
+          binary is shipped with the platform-specific packages.  Therefore the
+          information on how to run vboxwebsrv as a service is included in the
+          VirtualBox documentation and not the SDK.</para>
         </note></para>
 
       <para>The <computeroutput>vboxwebsrv</computeroutput> program, which
@@ -541,7 +539,7 @@
         performs the actual authentication.</para>
 
         <para>For testing purposes, it is recommended that you first disable
-        authentication with this command:
+        authentication with the command:
         <screen>VBoxManage setproperty websrvauthlibrary null</screen></para>
 
         <para><warning>
@@ -564,18 +562,18 @@
 
         <para>By default, after installation, the web service uses the
         VBoxAuth module that ships with VirtualBox. This module uses PAM on
-        Linux hosts to authenticate users. Any valid username/password
-        combination is accepted, it does not have to be the username and
-        password of the user running the web service daemon. Unless
-        <computeroutput>vboxwebsrv</computeroutput> runs as root, PAM
-        authentication can fail, because sometimes the file
-        <computeroutput>/etc/shadow</computeroutput>, which is used by PAM, is
-        not readable. On most Linux distribution PAM uses a suid root helper
-        internally, so make sure you test this before deploying it. One can
-        override this behavior by setting the environment variable
-        <computeroutput>VBOX_PAM_ALLOW_INACTIVE</computeroutput> which will
-        suppress failures when unable to read the shadow password file. Please
-        use this variable carefully, and only if you fully understand what
+        FreeBSD, Linux, and Solaris hosts to authenticate users. Any valid
+        username/password combination is accepted, it does not have to be the
+        username and password of the user running the web service daemon. If
+        <computeroutput>vboxwebsrv</computeroutput> doesn't run as root PAM
+        authentication can fail, because the
+        <computeroutput>/etc/shadow</computeroutput> file, which is used by PAM,
+        is only readable by root. On most Linux distributions PAM uses a suid
+        root helper internally, so make sure you test this before deploying it.
+        One can override authentication failures due to lack of read privileges
+        of the shadow password file by setting the environment variable
+        <computeroutput>VBOX_PAM_ALLOW_INACTIVE</computeroutput>.
+        Please use this variable carefully and only if you fully understand what
         you're doing.</para>
       </sect2>
     </sect1>
@@ -813,8 +811,8 @@
         COM/XPCOM Python API requires a suitable Python bridge for your Python
         installation (VirtualBox ships the most important ones for each
         platform<footnote>
-            <para>On On Mac OS X only the Python versions bundled with the OS
-            are officially supported. This means 2.6 and 2.7 for 10.9 and later.</para>
+            <para>On Mac OS X only the Python versions bundled with the OS
+            are officially supported.</para>
           </footnote>). On Windows, you can use the Main API from Python if the
           Win32 extensions package for Python<footnote>
             <para>See <ulink
@@ -828,28 +826,25 @@
         implementation (see <ulink
         url="http://pywebsvcs.sourceforge.net/zsi.html">http://pywebsvcs.sourceforge.net/zsi.html</ulink>),
         which you will need to install locally before trying the examples.
-        Most Linux distributions come with package for ZSI, such as
+        Most Linux distributions come with a package for ZSI, such as
         <computeroutput>python-zsi</computeroutput> in Ubuntu.</para>
 
         <para>To get started, open a terminal and change to the
-        <computeroutput>bindings/glue/python/sample</computeroutput>
+        <computeroutput>sdk/bindings/glue/python/sample</computeroutput>
         directory, which contains an example of a simple interactive shell
         able to control a VirtualBox instance. The shell is written using the
         API layer, thereby hiding different implementation details, so it is
-        actually an example of code share among XPCOM, MSCOM and web services.
+        actually an example of code shared among XPCOM, MSCOM and web services.
         If you are interested in how to interact with the web services layer
         directly, have a look at
         <computeroutput>install/vboxapi/__init__.py</computeroutput> which
         contains the glue layer for all target platforms (i.e. XPCOM, MSCOM
         and web services).</para>
 
-        <para>To start the shell, perform the following commands:
-        <screen>/opt/VirtualBox/vboxwebsrv -t 0
-            # start web service with object autocollection disabled
-export VBOX_PROGRAM_PATH=/opt/VirtualBox
-            # your VirtualBox installation directory
-export VBOX_SDK_PATH=/home/youruser/vbox-sdk
-            # where you've extracted the SDK
+        <para>To start the shell, run the following commands:
+        <screen>/opt/VirtualBox/vboxwebsrv -t 0 # start web service with object autocollection disabled
+export VBOX_PROGRAM_PATH=/opt/VirtualBox        # your VirtualBox installation directory
+export VBOX_SDK_PATH=/home/youruser/vbox-sdk    # where you've extracted the SDK
 ./vboxshell.py -w        </screen>
         See <xref linkend="vboxshell"/> for more
         details on the shell's functionality. For you, as a VirtualBox
@@ -882,11 +877,10 @@ export VBOX_SDK_PATH=/home/youruser/vbox-sdk
       without the object-oriented client-side code that was described in the
       previous chapter.</para>
 
-      <para>Generally, when reading the documentation in <xref
-      linkend="sdkref_classes"/> and <xref linkend="sdkref_enums"/>, due to
-      the limitations of SOAP and WSDL lined out in <xref
-      linkend="rawws-conventions"/>, please have the following notes in
-      mind:</para>
+      <para>Due to the limitations of SOAP and WSDL outlined in
+      <xref linkend="rawws-conventions"/>, keep the following notes in
+      mind when reading the documentation in <xref linkend="sdkref_classes"/>
+      and <xref linkend="sdkref_enums"/>:</para>
 
       <para><orderedlist>
           <listitem>
@@ -936,15 +930,16 @@ export VBOX_SDK_PATH=/home/youruser/vbox-sdk
         <para>Axis is an older web service toolkit created by the Apache
         foundation. If your distribution does not have it installed, you can
         get a binary from <ulink
-        url="http://www.apache.org">http://www.apache.org</ulink>. The
+        url="http://axis.apache.org">http://axis.apache.org</ulink>. The
         following examples assume that you have Axis 1.4 installed.</para>
 
         <para>The VirtualBox SDK ships with an example for Axis that, again,
         is called <computeroutput>clienttest.java</computeroutput> and that
-        imitates a few of the commands of
-        <computeroutput>VBoxManage</computeroutput> over the wire.</para>
+        imitates a few <computeroutput>VBoxManage</computeroutput> commands
+        and sends them to the VirtualBox web service.</para>
 
-        <para>Then perform the following steps:<orderedlist>
+        <para>To try out the raw web service with Axis complete the following
+        steps:<orderedlist>
             <listitem>
               <para>Create a working directory somewhere. Under your
               VirtualBox installation directory, find the
@@ -1036,8 +1031,8 @@ export VBOX_SDK_PATH=/home/youruser/vbox-sdk
         directory contains a pre-generated Perl module that allows for
         communicating with the web service from Perl. You can generate such a
         module yourself using the "stubmaker" tool that comes with SOAP::Lite,
-        but since that tool is slow as well as sometimes unreliable, we are
-        shipping a working module with the SDK for your convenience.</para>
+        but since that tool is slow as well as sometimes unreliable, we ship a
+        working module with the SDK for your convenience.</para>
 
         <para>Perform the following steps:<orderedlist>
             <listitem>
@@ -1088,11 +1083,11 @@ export VBOX_SDK_PATH=/home/youruser/vbox-sdk
         <sect3 id="rawws-conventions">
           <title>Fundamental conventions</title>
 
-          <para>If you are familiar with other web services, you may find the
-          VirtualBox web service to behave a bit differently to accommodate
-          for the fact that VirtualBox web service more or less maps the
-          VirtualBox Main COM API. The following main differences had to be
-          taken care of:<itemizedlist>
+          <para>If you are familiar with other web services, you may find that the
+          VirtualBox web service behaves a bit differently to accommodate
+          for the fact that the VirtualBox web service more or less maps the
+          VirtualBox Main COM API. The primary challenges in mapping the VirtualBox
+          Main COM API to the web service are as follows:<itemizedlist>
               <listitem>
                 <para>Web services, as expressed by WSDL, are not
                 object-oriented. Even worse, they are normally stateless (or,
@@ -1120,14 +1115,14 @@ export VBOX_SDK_PATH=/home/youruser/vbox-sdk
                 method name, joined together by an underscore. This is because
                 there are only functions ("operations") in WSDL, but no
                 classes, interfaces, or methods.</para>
+              </listitem>
 
-                <para>In addition, all calls to the VirtualBox web service
-                (except for logon, see below) take a <emphasis
-                role="bold">managed object reference</emphasis> as the first
-                argument, representing the object upon which the underlying
-                method is invoked. (Managed object references are explained in
-                detail below; see <xref
-                linkend="managed-object-references"/>.)</para>
+              <listitem>
+                <para>All calls to the VirtualBox web service (except for logon, see
+                below) take a <emphasis role="bold">managed object reference</emphasis>
+                as the first argument, representing the object upon which the underlying
+                method is invoked. (Managed object references are explained in detail
+                below; see <xref linkend="managed-object-references"/>.)</para>
 
                 <para>So, when one would normally code, in the pseudo-code of
                 an object-oriented language, to invoke a method upon an
@@ -1208,11 +1203,11 @@ oVirtualBox = webservice.IWebsessionManager_logon("user", "pass");</screen>
               </listitem>
 
               <listitem>
-                <para>The VirtualBox Main API documentation says that the
+                <para>The VirtualBox Main API documentation explains that the
                 <computeroutput>IVirtualBox</computeroutput> interface has a
                 <link linkend="IVirtualBox__version">version</link>
                 attribute, which is a string. For each attribute, there is a
-                "get" and a "set" method in COM, which maps to according
+                "get" and a "set" method in COM, which maps to the corresponding
                 operations in the web service. So, to retrieve the "version"
                 attribute of this <computeroutput>IVirtualBox</computeroutput>
                 object, the web service client does this:
@@ -1361,31 +1356,29 @@ string result = service.SayHello("Peter");  // invoke remote procedure</screen>
 
             <para><orderedlist>
                 <listitem>
-                  <para>prepare a connection to a web service running on port
-                  18083 of "localhost";</para>
+                  <para>Prepare a connection to the web service running on port
+                  18083 of "localhost".</para>
                 </listitem>
 
                 <listitem>
-                  <para>for the <computeroutput>SayHello()</computeroutput>
-                  function of the web service, generate a SOAP message like in
-                  the above example by encoding all arguments of the remote
-                  procedure call (which could involve all kinds of type
-                  conversions and complex marshalling for arrays and
-                  structures);</para>
+                    <para>Generate a SOAP message similar to the above example for the
+                    <computeroutput>SayHello()</computeroutput> function of the web service
+                    by encoding all arguments of the remote procedure call (which could
+                    involve all kinds of type conversions and complex marshalling for arrays
+                    and structures).</para>
                 </listitem>
 
                 <listitem>
-                  <para>connect to the web service via HTTP and send that
-                  message;</para>
+                  <para>Connect to the web service via HTTP and then send that
+                  message.</para>
                 </listitem>
 
                 <listitem>
-                  <para>wait for the web service to send a response
-                  message;</para>
+                  <para>Wait for the web service to send a response message.</para>
                 </listitem>
 
                 <listitem>
-                  <para>decode that response message and put the return value
+                  <para>Decode that response message and put the return value
                   of the remote procedure into the "result" variable.</para>
                 </listitem>
               </orderedlist></para>
@@ -1394,7 +1387,7 @@ string result = service.SayHello("Peter");  // invoke remote procedure</screen>
           <sect4 id="wsdl">
             <title>Service descriptions in WSDL</title>
 
-            <para>In the above explanations about SOAP, it was left open how
+            <para>In the above explanations about SOAP, it wasn't explained how
             the programming language learns about how to translate function
             calls in its own syntax into proper SOAP messages. In other words,
             the programming language needs to know what operations the web
@@ -1403,7 +1396,7 @@ string result = service.SayHello("Peter");  // invoke remote procedure</screen>
             deserialize the data to and from the web service. For example, if
             a web service operation expects a number in "double" floating
             point format for a particular parameter, the programming language
-            cannot send to it a string instead.</para>
+            cannot send it a string instead.</para>
 
             <para>For this, the Web Service Definition Language (WSDL) was
             invented, another XML substandard that describes exactly what
@@ -1416,13 +1409,13 @@ string result = service.SayHello("Peter");  // invoke remote procedure</screen>
             <para>So, if it is said that a programming language "supports" web
             services, this typically means that a programming language has
             support for parsing WSDL files and somehow integrating the remote
-            procedure calls into the native language syntax -- for example,
-            like in the Java sample shown in <xref
+            procedure calls into the native language syntax -- for example, as
+            shown in the Java sample in <xref
             linkend="webservice-java-sample"/>.</para>
 
             <para>For details about how programming languages support web
             services, please refer to the documentation that comes with the
-            individual languages. Here are a few pointers:</para>
+            individual language. Here are a few pointers:</para>
 
             <orderedlist>
               <listitem>
@@ -1475,10 +1468,10 @@ string result = service.SayHello("Peter");  // invoke remote procedure</screen>
 
       <para>COM has several advantages: it is language-neutral, meaning that
       even though all of VirtualBox is internally written in C++, programs
-      written in other languages could communicate with it. COM also cleanly
-      separates interface from implementation, so that external programs need
-      not know anything about the messy and complicated details of VirtualBox
-      internals.</para>
+      written in other languages can communicate with it. COM also cleanly
+      separates interface from implementation, so that external programs do
+      not need to know anything about the messy and complicated details of
+      VirtualBox internals.</para>
 
       <para>On a Windows host, all parts of VirtualBox will use the COM
       functionality that is native to Windows. On other hosts (including
@@ -1493,18 +1486,18 @@ string result = service.SayHello("Peter");  // invoke remote procedure</screen>
         <title>Python COM API</title>
 
         <para>On Windows, Python scripts can use COM and VirtualBox interfaces
-        to control almost all aspects of virtual machine execution. As an
-        example, use the following commands to instantiate the VirtualBox
-        object and start a VM: <screen>
+        to control almost all aspects of virtual machine execution. For example,
+        you can use the following commands to instantiate the VirtualBox object
+        and start a VM: <screen>
        vbox = win32com.client.Dispatch("VirtualBox.VirtualBox")
        session = win32com.client.Dispatch("VirtualBox.Session")
        mach = vbox.findMachine("uuid or name  of machine to start")
        progress = mach.launchVMProcess(session, "gui", "")
        progress.waitForCompletion(-1)
       </screen> Also, see
-        <computeroutput>/bindings/glue/python/samples/vboxshell.py</computeroutput>
+        <computeroutput>sdk/bindings/glue/python/samples/vboxshell.py</computeroutput>
         for more advanced usage scenarious. However, unless you have specific
-        requirements, we strongly recommend to use the generic glue layer
+        requirements, we strongly recommend that you use the generic glue layer
         described in the next section to access MS COM objects.</para>
       </sect2>
 
@@ -1513,7 +1506,7 @@ string result = service.SayHello("Peter");  // invoke remote procedure</screen>
 
         <para>As different wrappers ultimately provide access to the same
         underlying API, and to simplify porting and development of Python
-        application using the VirtualBox Main API, we developed a common glue
+        applications using the VirtualBox Main API, we developed a common glue
         layer that abstracts out most platform-specific details from the
         application and allows the developer to focus on application logic.
         The VirtualBox installer automatically sets up this glue layer for the
@@ -1554,7 +1547,7 @@ virtualBoxManager = VirtualBoxManager("WEBSERVICE",
         defaults to usable platform bindings (MS COM on Windows, XPCOM on
         other platforms). The second argument defines parameters, passed to
         the platform-specific module, as we do in the second example, where we
-        pass username and password to be used to authenticate against the web
+        pass a username and password to be used to authenticate against the web
         service.</para>
 
         <para>After obtaining the
@@ -1573,8 +1566,8 @@ progress.waitForCompletion(-1)
 mgr.closeMachineSession(session)
         </screen>
         <para>
-          Following code will print all registered machines and their log
-          folders
+          The following code will print all registered machines and their log
+          folders:
         </para>
         <screen>from vboxapi import VirtualBoxManager
 mgr = VirtualBoxManager(None, None)
@@ -1584,22 +1577,22 @@ for m in mgr.getArray(vbox, 'machines'):
     print "Machine '%s' logs in '%s'" %(m.name, m.logFolder)
         </screen>
 
-        <para>Code above demonstrates cross-platform access to array properties
-        (certain limitations prevent one from using
+        <para>The code above demonstrates cross-platform access to array
+        properties (certain limitations prevent one from using
         <computeroutput>vbox.machines</computeroutput> to access a list of
-        available virtual machines in case of XPCOM), and a mechanism of
-        uniform session creation and closing
+        available virtual machines in the case of XPCOM), and a mechanism for
+        uniform session creation and closure
         (<computeroutput>mgr.getSessionObject()</computeroutput>).</para>
 
         <sect3 id="glue-python-setup">
           <title>Manual or subsequent setup</title>
 
-          <para>In case you want to use the glue layer with a different Python
-            installation or the installer failed to set it up, use these steps
+          <para>If you want to use the glue layer with a different Python
+            installation or the installer failed to set it up, then use these steps
             in a shell to install the necessary files:</para>
 
         <screen>    # cd VBOX_INSTALL_PATH/sdk/installer
-    # PYTHON vboxapisetup.py install</screen>
+    # python vboxapisetup.py install</screen>
 
            <note> <para>On Windows hosts, a Python distribution along with the
              win32api bindings package need to be installed as a prerequisite. </para></note>
@@ -1618,9 +1611,9 @@ for m in mgr.getArray(vbox, 'machines'):
         <para>VirtualBox ships with sample programs that demonstrate how to
         use the Main API to implement a number of tasks on your host platform.
         These samples can be found in the
-        <computeroutput>/bindings/xpcom/samples</computeroutput> directory for
+        <computeroutput>sdk/bindings/xpcom/samples</computeroutput> directory for
         Linux, Mac OS X and Solaris and
-        <computeroutput>/bindings/mscom/samples</computeroutput> for Windows.
+        <computeroutput>sdk/bindings/mscom/samples</computeroutput> for Windows.
         The two samples are actually different, because the one for Windows
         uses native COM, whereas the other uses our XPCOM implementation, as
         described above.</para>
@@ -1702,12 +1695,13 @@ for m in mgr.getArray(vbox, 'machines'):
       <sect2 id="event-queue">
         <title>Event queue processing</title>
 
-        <para>Both VirtualBox client programs and frontends should
+        <para>Both VirtualBox client programs and front-ends should
         periodically perform processing of the main event queue, and do that
-        on the application's main thread. In case of a typical GUI Windows/Mac
-        OS application this happens automatically in the GUI's dispatch loop.
-        However, for CLI only application, the appropriate actions have to be
-        taken. For C++ applications, the VirtualBox SDK provided glue method
+        on the application's main thread. In the case of a typical GUI
+        Windows/Mac OS application this happens automatically in the GUI's
+        dispatch loop. However, for CLI only application, the appropriate actions
+        have to be taken. For C++ applications, the VirtualBox SDK provided glue
+        method
         <screen>
             int EventQueue::processEventQueue(uint32_t cMsTimeout)
          </screen> can be used for both blocking and non-blocking operations.
@@ -1718,13 +1712,13 @@ for m in mgr.getArray(vbox, 'machines'):
         <para>Things get somewhat more complicated for situations where an
         application using VirtualBox cannot directly control the main event
         loop and the main event queue is separated from the event queue of the
-        programming librarly (for example in case of Qt on Unix platforms). In
+        programming library (for example in case of Qt on Unix platforms). In
         such a case, the application developer is advised to use a
         platform/toolkit specific event injection mechanism to force event
-        queue checks either based on periodical timer events delivered to the
+        queue checks either based on periodic timer events delivered to the
         main thread, or by using custom platform messages to notify the main
-        thread when events are available. See the VBoxSDL and Qt (VirtualBox)
-        frontends as examples.</para>
+        thread when events are available. See the Qt (VirtualBox) front-end as
+        an example.</para>
       </sect2>
 
       <sect2 id="vbcom">
@@ -1743,13 +1737,13 @@ for m in mgr.getArray(vbox, 'machines'):
             alternatively provide conversion APIs.</para>
           </footnote></para>
 
-        <para>VBS is scripting language available in any recent Windows
-        environment. As an example, the following VBS code will print
+        <para>VBS is a scripting language available in any recent Windows
+        environment. As an example, the following VBS code will print the
         VirtualBox version: <screen>
          set vb = CreateObject("VirtualBox.VirtualBox")
          Wscript.Echo "VirtualBox version " &amp; vb.version
        </screen> See
-        <computeroutput>bindings/mscom/vbs/sample/vboxinfo.vbs</computeroutput>
+        <computeroutput>sdk/bindings/mscom/vbs/sample/vboxinfo.vbs</computeroutput>
         for the complete sample.</para>
 
         <para>Visual Basic is a popular high level language capable of
@@ -1763,23 +1757,23 @@ for m in mgr.getArray(vbox, 'machines'):
             m = m &amp; " " &amp; m.Name
          Next
        </screen> See
-        <computeroutput>bindings/mscom/vb/sample/vboxinfo.vb</computeroutput>
+        <computeroutput>sdk/bindings/mscom/vb/sample/vboxinfo.vb</computeroutput>
         for the complete sample.</para>
       </sect2>
 
       <sect2 id="cbinding">
-        <title>C binding to VirtualBox API</title>
+        <title>C bindings to the VirtualBox API</title>
 
-        <para>The VirtualBox API originally is designed as object oriented,
-        using XPCOM or COM as the middleware, which translates natively to C++.
-        This means that in order to use it from C there needs to be some
-        helper code to bridge the language differences and reduce the
-        differences between platforms.</para>
+        <para>The VirtualBox API was originally designed to be object oriented
+        and leverages XPCOM or COM as the middleware to natively map the API to
+        C++.  This means that in order to use the VirtualBox API from C there
+        needs to be some helper code to bridge the language differences and
+        reduce the differences between platforms.</para>
 
         <sect3 id="capi_glue">
-          <title>Cross-platform C binding to VirtualBox API</title>
+          <title>Cross-platform C bindings to the VirtualBox API</title>
 
-            <para>Starting with version 4.3, VirtualBox offers a C binding
+            <para>Starting with version 4.3, VirtualBox offers C bindings
             which allows using the same C client sources for all platforms,
             covering Windows, Linux, Mac OS X and Solaris. It is the
             preferred way to write API clients, even though the old style
@@ -1799,7 +1793,7 @@ for m in mgr.getArray(vbox, 'machines'):
           <computeroutput>tstCAPIGlue.c</computeroutput> is provided in the
           directory <computeroutput>sdk/bindings/c/samples</computeroutput>
           which demonstrates
-          using the C binding to initialize the API, get handles for
+          using the C bindings to initialize the API, get handles for
           VirtualBox and Session objects, make calls to list and start virtual
           machines, monitor events, and uninitialize resources when done. The
           sample program is trying to illustrate all relevant concepts, so it
@@ -1824,9 +1818,9 @@ for m in mgr.getArray(vbox, 'machines'):
           solutions.</para>
 
           <para>The following sections document the important concepts needed
-          to correctly use the C binding, as it is vital for developing API
+          to correctly use the C bindings, as it is vital for developing API
           client code which manages memory correctly, updates the reference
-          counters correctly, avoiding crashes and memory leaks. Often API
+          counters correctly, and avoids crashes and memory leaks. Often API
           clients need to handle events, so the C API specifics are also
           described below.</para>
         </sect3>
@@ -1836,20 +1830,16 @@ for m in mgr.getArray(vbox, 'machines'):
 
           <para>Just like in C++, the API and the underlying middleware needs
           to be initialized before it can be used. The
-          <computeroutput>VBoxCAPI_v4_3.h</computeroutput> header provides the
-          interface to the C binding, but you can alternatively and more
-          conveniently also include
+          <computeroutput>VBoxCAPI_v&VBOX_VERSION_MAJOR;_&VBOX_VERSION_MINOR;.h</computeroutput>
+          header file provides the interface to the C bindings, but you can
+          alternatively and more conveniently just include
           <computeroutput>VBoxCAPIGlue.h</computeroutput>,
           as this avoids the VirtualBox version dependent header file name and
-          makes sure the global variable <code>g_pVBoxFuncs</code> contains a
+          makes sure that the global variable <code>g_pVBoxFuncs</code> contains a
           pointer to the structure which contains the helper function pointers.
           Here's how to initialize the C API:<screen>#include "VBoxCAPIGlue.h"
 ...
 IVirtualBoxClient *vboxclient   = NULL;
-IVirtualBox *vbox               = NULL;
-ISession *session               = NULL;
-HRESULT rc;
-ULONG revision;
 
 /*
  * VBoxCGlueInit() loads the necessary dynamic library, handles errors
@@ -1892,12 +1882,13 @@ if (!vboxclient)
           uninitialized with
           <code>g_pVBoxFuncs->pfnClientThreadUninitialize()</code>. You don't
           have to use these functions in worker threads created by COM/XPCOM
-          (which you might observe if your code uses active event handling),
-          everything is initialized correctly already. On Windows the C
+          (which you might utilize if your code uses active event handling),
+          since everything is initialized correctly already. On Windows the C
           bindings create a marshaller which supports a wide range of COM
-          threading models, from STA to MTA, so you don't have to worry about
+          threading models, from Single-Threaded Apartments (STA) to
+          Multithreaded Apartments (MTA), so you don't have to worry about
           these details unless you plan to use active event handlers. See
-          the sample code how to get this to work reliably (in other words
+          the sample code for how to get this to work reliably (in other words
           think twice if passive event handling isn't the better solution after
           you looked at the sample code).</para>
         </sect3>
@@ -1905,13 +1896,13 @@ if (!vboxclient)
         <sect3 id="c-invocation">
           <title>C API attribute and method invocation</title>
 
-          <para>Method invocation is straightforward. It looks pretty much
-          like the C++ way, by using a macro which internally accesses the
-          vtable, and additionally needs to be passed a pointer to the objecti
-          as the first argument to serve as the
+          <para>Method invocation is straightforward. It looks very similar
+          to the C++ mechanism since it also uses a macro which internally
+          accesses the vtable and additionally needs to be passed a pointer to the
+          object as the first argument to serve as the
           <computeroutput>this</computeroutput> pointer.</para>
 
-          <para>Using the C binding, all method invocations return a numeric
+          <para>Using the C bindings all method invocations return a numeric
           result code of type <code>HRESULT</code> (with a few exceptions
           which normally are not relevant).</para>
 
@@ -1931,7 +1922,14 @@ if (!vboxclient)
           reference and read the
           <link linkend="IVirtualBox__revision">IVirtualBox::revision</link>
           attribute:
-          <screen>rc = IVirtualBoxClient_get_VirtualBox(vboxclient, &amp;vbox);
+          <screen>
+IVirtualBox *vbox               = NULL;
+ISession *session               = NULL;
+HRESULT rc;
+ULONG revision;
+
+rc = IVirtualBoxClient_get_VirtualBox(vboxclient, &amp;vbox);
+
 if (FAILED(rc) || !vbox)
 {
     PrintErrorInfo(argv[0], "FATAL: could not get VirtualBox reference", rc);
@@ -1950,9 +1948,9 @@ if (SUCCEEDED(rc))
     printf("Revision: %u\n", revision);
 }</screen></para>
 
-          <para>The convenience macros for calling a method are named by
-          prepending the method name with the interface name (using
-          <code>_</code>as the separator).</para>
+          <para>The convenience macros for calling a method are named by prepending
+          the method name with the interface name (using <code>_</code> as the
+          separator).</para>
 
           <para>So far only attribute getters were illustrated, but generic
           method calls are straightforward, too:
@@ -2066,9 +2064,9 @@ for (i = 0; i &lt; machineCnt; ++i)
 }
 free(machines);</screen></para>
 
-          <para>Handling output parameters needs more special effort than
-          input parameters, thus only for the former there are special helpers,
-          and the latter is handled through the generic array support.</para>
+          <para>Handling output parameters needs more special handling than
+          input parameters, thus only for the former are there special helpers
+          while the latter is handled through the generic array support.</para>
         </sect3>
 
         <sect3 id="c-eventhandling">
@@ -2083,13 +2081,13 @@ free(machines);</screen></para>
           is much simpler, it relies on an event loop, fetching events and
           triggering the necessary handlers explicitly in the API client code.
           Both approaches depend on an event loop to make sure that events
-          get delivered in a timely manner, with differences what exactly needs
-          to be done.</para>
+          get delivered in a timely manner but otherwise differ in what
+          else is required to implement the respective event handler type.</para>
 
           <para>The C API sample contains code for both event handling styles,
           and one has to modify the appropriate <code>#define</code> to select
           which style is actually used by the compiled program. It allows a
-          good comparison between the two variants, and the code sequences are
+          good comparison between the two variants and the code sequences are
           probably worth reusing without much change in other API clients
           with only minor adaptions.</para>
 
@@ -2100,7 +2098,7 @@ free(machines);</screen></para>
           <para>The actual event handler implementation is quite tedious, as
           it has to implement a complete API interface. Especially on Windows
           it is a lot of work to implement the complicated
-          <code>IDispatch</code> interface, requiring to load COM type
+          <code>IDispatch</code> interface, requiring loading COM type
           information and using it in the <code>IDispatch</code> method
           implementation. Overall this is quite tedious compared to passive
           event handling.</para>
@@ -2115,7 +2113,7 @@ free(machines);</screen></para>
           <screen>rc = IEventSource_EventProcessed(pEventSource, pListener, pEvent);</screen></para>
 
           <para>This is vital for vetoable events, as they would be stuck
-          otherwise, waiting whether the veto comes or not. It does not do any
+          otherwise, waiting on whether the veto comes or not. It does not do any
           harm for other event types, and in the end is cheaper than checking
           if the event at hand is vetoable or not.</para>
 
@@ -2126,10 +2124,10 @@ free(machines);</screen></para>
           use both types of event handling, active and passive, from a C
           application. Additional hints are in the comments documenting
           the helper methods in
-          <computeroutput>VBoxCAPI_v4_3.h</computeroutput>. The code complexity
-          of active event handling (and its inherenly platform/compiler
-          specific aspects) should be motivation to use passive event handling
-          whereever possible.</para>
+          <computeroutput>VBoxCAPI_v&VBOX_VERSION_MAJOR;_&VBOX_VERSION_MINOR;.h</computeroutput>.
+          The code complexity of active event handling (and its inherently
+          platform/compiler specific aspects) should be motivation to use passive
+          event handling wherever possible.</para>
         </sect3>
 
         <sect3 id="c-uninitialization">
@@ -2137,8 +2135,8 @@ free(machines);</screen></para>
 
           <para>Uninitialization is performed by
           <computeroutput>g_pVBoxFuncs-&gt;pfnClientUninitialize().</computeroutput>
-          If your program can exit from more than one place, it is a good idea
-          to install this function as an exit handler with Standard C's
+          If your program can exit in more than one place, it is a good idea
+          to install this function as an exit handler using the C library function
           <computeroutput>atexit()</computeroutput> just after calling
           <computeroutput>g_pVBoxFuncs-&gt;pfnClientInitialize()</computeroutput>
           , e.g. <screen>#include &lt;stdlib.h&gt;
@@ -2167,7 +2165,7 @@ if (atexit(g_pVBoxFuncs-&gt;pfnClientUninitialize()) != 0) {
           your program and at the end of
           <computeroutput>main.</computeroutput></para>
 
-          <para>If you expect the program to be terminated by a signal (e.g.
+          <para>If you expect your program to be terminated by a signal (e.g. a
           user types CTRL-C sending SIGINT) you might want to install a signal
           handler setting a flag noting that a signal was sent and then
           calling
@@ -2178,14 +2176,14 @@ if (atexit(g_pVBoxFuncs-&gt;pfnClientUninitialize()) != 0) {
           <computeroutput>g_pVBoxFuncs-&gt;pfnClientUninitialize()</computeroutput>
           before it terminates, there is a mechanism in place which will
           eventually release references held by the client. On Windows it can
-          take quite a while, in the order of 6-7 minutes.</para>
+          take quite a while, on the order of 6-7 minutes.</para>
         </sect3>
 
         <sect3 id="c-linking">
           <title>Compiling and linking</title>
 
           <para>A program using the C binding has to open the library during
-          runtime using the help of glue code provided and as shown in the
+          runtime using the help of the glue code provided and as shown in the
           example <computeroutput>tstCAPIGlue.c</computeroutput>.
           Compilation and linking can be achieved with a makefile fragment
           similar to:<screen># Where is the SDK directory?
@@ -2219,33 +2217,34 @@ program: program.o VBoxCAPICGlue.o VirtualBox_i.o
         </sect3>
 
         <sect3 id="capi_conversion">
-          <title>Conversion of code using legacy C binding</title>
+          <title>Conversion of code using legacy C bindings</title>
 
-          <para>This section aims to make the task of converting code using
-          the legacy C binding to the new style a breeze, by pointing out some
-          key steps.</para>
+          <para>This section aims to make the task of converting code using the
+          legacy C bindings to the new style a breeze by following these key
+          steps.</para>
 
           <para>One necessary change is adjusting your Makefile to reflect the
-          different include paths. See above. There are now 3 relevant include
-          directories, and most of it is pointing to the C binding directory.
-          The XPCOM include directory is still relevant for platforms where
-          the XPCOM middleware is used, but most of the include files live
-          elsewhere now, so it's good to have it last. Additionally the
-          <computeroutput>VirtualBox_i.c</computeroutput> file needs to be
-          compiled and linked to the program, it contains the IIDs relevant
-          for the VirtualBox API, making sure they are not replicated endlessly
-          if the code refers to them frequently.</para>
+          different include paths. As shown in the makefile fragment above, there
+          are now three relevant include directories.  The XPCOM include directory
+          is still relevant for platforms where the XPCOM middleware is used but
+          most of its include files live elsewhere now so it's good to have it
+          last. Additionally the <computeroutput>VirtualBox_i.c</computeroutput>
+          file needs to be compiled and linked to the program since it contains
+          the interface IDs (IIDs) relevant for the VirtualBox API, making sure
+          they are not replicated endlessly if the code refers to them
+          frequently.</para>
 
           <para>The C API client code should include
           <computeroutput>VBoxCAPIGlue.h</computeroutput> instead of
           <computeroutput>VBoxXPCOMCGlue.h</computeroutput> or
-          <computeroutput>VBoxCAPI_v4_3.h</computeroutput>, as this makes sure
-          the correct macros and internal translations are selected.</para>
+          <computeroutput>VBoxCAPI_v&VBOX_VERSION_MAJOR;_&VBOX_VERSION_MINOR;.h</computeroutput>,
+          as this makes sure the correct macros and internal translations are
+          selected.</para>
 
           <para>All API method calls (anything mentioning <code>vtbl</code>)
           should be rewritten using the convenience macros for calling methods,
-          as these hide the internal details, are generally easier to use and
-          shorter to type. You should remove as many as possible
+          as these hide the internal details, are generally easier to
+          use, and are shorter to type. You should remove as many as possible
           <code>(nsISupports **)</code> or similar typecasts, as the new style
           should use the correct type in most places, increasing the type
           safety in case of an error in the source code.</para>
@@ -2262,25 +2261,25 @@ program: program.o VBoxCAPICGlue.o VirtualBox_i.o
           <para>Finally adjust the string and array handling to use the new
           helpers, as these make sure the code works without changes with
           both COM and XPCOM, which are significantly different in this area.
-          The code should be double checked if it uses the correct way to
-          manage memory, and is freeing it only after the last use.</para>
+          The code should be double checked to see that it uses the correct way to
+          manage memory and is freeing it only after the last use.</para>
         </sect3>
 
         <sect3 id="xpcom_cbinding">
-          <title>Legacy C binding to VirtualBox API for XPCOM</title>
+          <title>Legacy C bindings to VirtualBox API for XPCOM</title>
 
           <note>
             <para>This section applies to Linux, Mac OS X and Solaris
             hosts only and describes deprecated use of the API from C.</para>
           </note>
 
-          <para>Starting with version 2.2, VirtualBox offers a C binding for
+          <para>Starting with version 2.2, VirtualBox offers C bindings for
           its API which works only on platforms using XPCOM. Refer to the
           old SDK documentation (included in the SDK packages for version 4.3.6
-          or earlier), it still applies unchanged. The fundamental concepts are
-          similar (but the syntactical details are quite different) to the
-          newer cross-platform C binding which should be used for all new code,
-          as the support for the old C binding will go away in a major release
+          or earlier) since it still applies unchanged. The fundamental concepts
+          are similar (but the syntactical details are quite different) to the
+          newer cross-platform C bindings which should be used for all new code,
+          as the support for the old C bindings will go away in a major release
           after version 4.3.</para>
         </sect3>
       </sect2>
@@ -2336,7 +2335,7 @@ String name = machine.getName();</screen>
     <sect1>
       <title>Changing machine settings: Sessions</title>
 
-      <para>As said in the previous section, to read a machine's attribute,
+      <para>As described in the previous section, to read a machine's attribute,
       one invokes the corresponding "get" method. One would think that to
       change settings of a machine, it would suffice to call the corresponding
       "set" method -- for example, to set a VM's memory to 1024 MB, one would
@@ -2384,7 +2383,7 @@ String name = machine.getName();</screen>
       <para>Finally, it is important to always unlock the machine again, by
       calling
       <link linkend="ISession__unlockMachine">ISession::unlockMachine()</link>.
-      Otherwise, when the calling process end, the machine will receive the
+      Otherwise, when the calling process exits, the machine will be moved to the
       "aborted" state, which can lead to loss of data.</para>
 
       <para>So, as an example, the sequence to change a machine's memory to
@@ -2405,10 +2404,10 @@ session.unlockMachine();</screen></para>
 
       <para>To launch a virtual machine, you call
       <link linkend="IMachine__launchVMProcess">IMachine::launchVMProcess()</link>.
-      In doing so, the caller instructs the VirtualBox engine to start a new
-      process with the virtual machine in it, since to the host, each virtual
-      machine looks like single process, even if it has hundreds of its own
-      processes inside. (This new VM process in turn obtains a write lock on
+      This instructs the VirtualBox engine to start a new process containing the
+      virtual machine. The host system sees each virtual machine as a single
+      process, even if the virtual machine has hundreds of its own processes
+      running inside it. (This new VM process in turn obtains a write lock on
       the machine, as described above, to prevent conflicting changes from
       other processes; this is why opening another session will fail while the
       VM is running.)</para>
@@ -2445,19 +2444,19 @@ if (prog.getResultCode() != 0)  // check success
 
       <para>The IEvent interface is an abstract parent interface for all
       events that can occur in VirtualBox. The actual events that the server
-      sends out are then of one of the specific subclasses, for example
+      sends out belong to one of the specific subclasses, for example
       <link linkend="IMachineStateChangedEvent">IMachineStateChangedEvent</link>
       or
       <link linkend="IMediumChangedEvent">IMediumChangedEvent</link>.</para>
 
-      <para>As an example, the VirtualBox GUI waits for machine events and can
-      thus update its display when the machine state changes or machine
-      settings are modified, even if this happens in another client. This is
-      how the GUI can automatically refresh its display even if you manipulate
-      a machine from another client, for example, from VBoxManage.</para>
+      <para>As an example, the VirtualBox GUI waits for machine events so it can
+      update its display when the machine state changes or machine settings are
+      modified, even if this happens in another client. This is how the GUI can
+      automatically refresh its display even if you manipulate a machine from
+      a different client such as VBoxManage.</para>
 
-      <para>To register an event listener to listen to events, use code like
-      this:<screen>EventSource es = console.getEventSource();
+      <para>To register an event listener to listen for events, you would use code
+      similar to the following:<screen>EventSource es = console.getEventSource();
 IEventListener listener = es.createListener();
 VBoxEventType aTypes[] = (VBoxEventType.OnMachineStateChanged);
         // list of event types to listen for
@@ -2476,23 +2475,25 @@ if (ev != null)
 ...
 es.unregisterListener(listener); </screen></para>
 
-      <para>A graphical user interface would probably best start its own
-      thread to wait for events and then process these in a loop.</para>
+      <para>A graphical user interface application would most likely want to start
+      its own thread to wait for events and then process these in a loop.</para>
 
       <para>The events mechanism was introduced with VirtualBox 3.3 and
       replaces various callback interfaces which were called for each event in
       the interface. The callback mechanism was not compatible with scripting
-      languages, local Java bindings and remote web services as they do not
+      languages, local Java bindings, and remote web services as they do not
       support callbacks. The new mechanism with events and event listeners
       works with all of these.</para>
 
-      <para>To simplify developement of application using events, concept of
-      event aggregator was introduced. Essentially it's mechanism to aggregate
-      multiple event sources into single one, and then work with this single
-      aggregated event source instead of original sources. As an example, one
-      can evaluate demo recorder in VirtualBox Python shell, shipped with SDK
-      - it records mouse and keyboard events, represented as separate event
-      sources. Code is essentially like this:<screen>
+      <para>To simplify development of applications using events, the concept of
+      an event aggregator was introduced. Essentially it's a mechanism to
+      aggregate multiple event sources into one single event source, and then work
+      with this single aggregated event source instead of the original sources. As
+      an example, one can try out the VirtualBox Python shell's
+      <computeroutput>recordDemo</computeroutput> option which records mouse and
+      keyboard events using an event aggregator and displays them as separate event
+      sources. The VirtualBox Python shell (vboxshell.py) is shipped with the SDK.
+      The <computeroutput>recordDemo</computeroutput> code is essentially:<screen>
           listener = console.eventSource.createListener()
           agg = console.eventSource.createAggregator([console.keyboard.eventSource, console.mouse.eventSource])
           agg.registerListener(listener, [ctx['global'].constants.VBoxEventType_Any], False)
@@ -2502,28 +2503,28 @@ es.unregisterListener(listener); </screen></para>
               ev = agg.getEvent(listener, 1000)
               processEent(ev)
           agg.unregisterListener(listener)</screen> Without using aggregators
-      consumer have to poll on both sources, or start multiple threads to
-      block on those sources.</para>
+      consumers would have to either poll on both sources or start multiple
+      threads to block on those sources.</para>
     </sect1>
   </chapter>
 
   <chapter id="vboxshell">
     <title>The VirtualBox shell</title>
 
-    <para>VirtualBox comes with an extensible shell, which allows you to
+    <para>VirtualBox comes with an extensible shell which allows you to
     control your virtual machines from the command line. It is also a
-    nontrivial example of how to use the VirtualBox APIs from Python, for all
-    three COM/XPCOM/WS styles of the API.</para>
+    non-trivial example of how to use the VirtualBox APIs from Python for all
+    three styles of the API (COM/XPCOM/WS).</para>
 
-    <para>You can easily extend this shell with your own commands. Create a
-    subdirectory named
-    <computeroutput>.config/VirtualBox/shexts</computeroutput> below your home
-    directory (respectively <computeroutput>.VirtualBox/shexts</computeroutput>
-    on a Windows system and
-    <computeroutput>Library/VirtualBox/shexts</computeroutput> on OS X) and put
-    a Python file implementing your shell extension commands in this directory.
-    This file must contain an array named
-    <computeroutput>commands</computeroutput> containing your command
+    <para>You can easily extend this shell with your own commands.  Simply create
+    a subdirectory named
+    <computeroutput>.config/VirtualBox/shexts</computeroutput> in your home
+    directory (<computeroutput>.VirtualBox/shexts</computeroutput>
+    on Windows systems and
+    <computeroutput>Library/VirtualBox/shexts</computeroutput> on macOS systems)
+    and put a Python file implementing your shell extension commands in this
+    directory.  This file must have an array named
+    <computeroutput>commands</computeroutput> which contains your command
     definitions: <screen>
         commands = {
         'cmd1': ['Command cmd1 help', cmd1],
@@ -2569,11 +2570,11 @@ es.unregisterListener(listener); </screen></para>
       commands = {
         'myCreateHDD': ['Create virtual HDD, createHdd size location type', createHdd]
         }
-      </screen> Just store the above text in the file
+      </screen> Just store the above text in a file named
     <computeroutput>createHdd</computeroutput> (or any other meaningful name)
-    in <computeroutput>.config/VirtualBox/shexts/</computeroutput>. Start the
-    VirtualBox shell, or just issue the
-    <computeroutput>reloadExts</computeroutput> command, if the shell is
+    in the <computeroutput>shexts</computeroutput> directory located as
+    described above and then start the VirtualBox shell or just issue the
+    <computeroutput>reloadExts</computeroutput> command if the shell is
     already running. Your new command will now be available.</para>
   </chapter>
 
@@ -2811,25 +2812,27 @@ es.unregisterListener(listener); </screen></para>
         </listitem>
       </itemizedlist></para>
 
-    <para>The shared library contains a so called HGCM service. The guest HGCM
-    clients establish connections to the service to call it. When calling a
-    HGCM service the client supplies a function code and a number of
-    parameters for the function.</para>
+    <para>The shared library on the host contains a so called HGCM service.
+    The guest HGCM client establishes a connection to the HGCM service on the
+    host in order to call that HGCM service's entry point.  When calling an
+    HGCM service the client supplies a function code, the number of parameters
+    for the function, and an array of the parameter arguments.</para>
 
     <sect1>
       <title>Virtual hardware implementation</title>
 
-      <para>HGCM uses the VMM virtual PCI device to exchange data between the
-      guest and the host. The guest always acts as an initiator of requests. A
-      request is constructed in the guest physical memory, which must be
-      locked by the guest. The physical address is passed to the VMM device
-      using a 32-bit <computeroutput>out edx, eax</computeroutput>
-      instruction. The physical memory must be allocated below 4GB by 64-bit
+      <para>HGCM uses the Virtual Machine Monitor (VMM) virtual PCI device to
+      exchange data between the guest and the host. The guest always acts as an
+      initiator of requests. A request is constructed in the guest's physical
+      memory which must be locked by the guest. The physical address is passed
+      to the VMM device using a 32-bit
+      <computeroutput>out edx, eax</computeroutput>
+      instruction. The physical memory must be allocated below 4GB on 64-bit
       guests.</para>
 
       <para>The host parses the request header and data and queues the request
-      for a host HGCM service. The guest continues execution and usually waits
-      on a HGCM event semaphore.</para>
+      for the corresponding host HGCM service type. The guest continues
+      execution and usually waits on an HGCM event semaphore.</para>
 
       <para>When the request has been processed by the HGCM service, the VMM
       device sets the completion flag in the request header, sets the HGCM
@@ -2843,7 +2846,7 @@ es.unregisterListener(listener); </screen></para>
       <title>Protocol specification</title>
 
       <para>The HGCM protocol definitions are contained in the
-      <computeroutput>VBox/VBoxGuest.h</computeroutput></para>
+      <computeroutput>VBox/VBoxGuest.h</computeroutput> header file.</para>
 
       <sect2>
         <title>Request header</title>
@@ -2943,7 +2946,7 @@ es.unregisterListener(listener); </screen></para>
                   <entry>VMMDevReq_HGCMConnect
                   (<computeroutput>60</computeroutput>)</entry>
 
-                  <entry>Connect to a HGCM service.</entry>
+                  <entry>Connect to an HGCM service.</entry>
                 </row>
 
                 <row>
@@ -2957,7 +2960,7 @@ es.unregisterListener(listener); </screen></para>
                   <entry>VMMDevReq_HGCMCall32
                   (<computeroutput>62</computeroutput>)</entry>
 
-                  <entry>Call a HGCM function using the 32-bit
+                  <entry>Call an HGCM function using the 32-bit
                   interface.</entry>
                 </row>
 
@@ -2965,7 +2968,7 @@ es.unregisterListener(listener); </screen></para>
                   <entry>VMMDevReq_HGCMCall64
                   (<computeroutput>63</computeroutput>)</entry>
 
-                  <entry>Call a HGCM function using the 64-bit
+                  <entry>Call an HGCM function using the 64-bit
                   interface.</entry>
                 </row>
 
@@ -2973,7 +2976,7 @@ es.unregisterListener(listener); </screen></para>
                   <entry>VMMDevReq_HGCMCancel
                   (<computeroutput>64</computeroutput>)</entry>
 
-                  <entry>Cancel a HGCM request currently being processed by a
+                  <entry>Cancel an HGCM request currently being processed by a
                   host HGCM service.</entry>
                 </row>
               </tbody>
@@ -3205,9 +3208,9 @@ es.unregisterListener(listener); </screen></para>
           </table></para>
 
         <para>The 32-bit parameter description (HGCMFunctionParameter32)
-        consists of 32-bit type field and 8 bytes of an opaque value, so 12
+        consists of a 32-bit type field and 8 bytes of an opaque value, so 12
         bytes in total. The 64-bit variant (HGCMFunctionParameter64) consists
-        of the type and 12 bytes of a value, so 16 bytes in total.</para>
+        of the 32-bit type and 12 bytes of a value, so 16 bytes in total.</para>
 
         <para><table>
             <title>Parameter types</title>
@@ -3286,7 +3289,6 @@ es.unregisterListener(listener); </screen></para>
             </tgroup>
           </table></para>
 
-        <para>The</para>
       </sect2>
 
       <sect2>
@@ -3319,37 +3321,40 @@ es.unregisterListener(listener); </screen></para>
     <sect1>
       <title>Guest software interface</title>
 
-      <para>The guest HGCM clients can call HGCM services from both drivers
+      <para>Guest HGCM clients can call HGCM services from both drivers
       and applications.</para>
 
       <sect2>
         <title>The guest driver interface</title>
 
         <para>The driver interface is implemented in the VirtualBox guest
-        additions driver (VBoxGuest), which works with the VMM virtual device.
-        Drivers must use the VBox Guest Library (VBGL), which provides an API
+        additions driver (VBoxGuest) which works with the VMM virtual device.
+        Drivers must use the VBox Guest Library (VBGL) which provides an API
         for HGCM clients (<computeroutput>VBox/VBoxGuestLib.h</computeroutput>
-        and <computeroutput>VBox/VBoxGuest.h</computeroutput>).</para>
+        and <computeroutput>VBox/VBoxGuest.h</computeroutput>). The key VBGL API
+        routines are as follows:</para>
 
         <para><screen>
 DECLR0VBGL(int) VbglR0HGCMConnect(VBGLHGCMHANDLE *pHandle, const char *pszServiceName, HGCMCLIENTID *pidClient);
-          </screen> Connects to the service: <screen>
+          </screen> VbglR0HGCMConnect() connects to the HGCM service on the host. An
+          example of a guest driver connecting to the VirtualBox Shared Folder
+          HGCM service follows:<screen>
     VBoxGuestHGCMConnectInfo data;
 
     memset(&amp;data, sizeof(VBoxGuestHGCMConnectInfo));
 
     data.result   = VINF_SUCCESS;
     data.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
-    strcpy (data.Loc.u.host.achName, "VBoxSharedFolders");
+    strcpy(data.Loc.u.host.achName, "VBoxSharedFolders");
 
-    rc = VbglHGCMConnect (&amp;handle, "VBoxSharedFolders"&amp;data);
+    rc = VbglR0HGCMConnect(&amp;handle, "VBoxSharedFolders"&amp;, data);
 
-    if (RT_SUCCESS (rc))
+    if (RT_SUCCESS(rc))
     {
         rc = data.result;
     }
 
-    if (RT_SUCCESS (rc))
+    if (RT_SUCCESS(rc))
     {
         /* Get the assigned client identifier. */
         ulClientID = data.u32ClientID;
@@ -3357,21 +3362,27 @@ DECLR0VBGL(int) VbglR0HGCMConnect(VBGLHGCMHANDLE *pHandle, const char *pszServic
           </screen></para>
 
         <para><screen>
-DECLVBGL(int) VbglHGCMDisconnect (VBGLHGCMHANDLE handle, VBoxGuestHGCMDisconnectInfo *pData);
-          </screen> Disconnects from the service. <screen>
+DECLVBGL(int) VbglR0HGCMDisconnect(VBGLHGCMHANDLE handle, VBoxGuestHGCMDisconnectInfo *pData);
+          </screen> VbglR0HGCMDisconnect() disconnects from the HGCM service on the
+          host.  An example of a guest driver disconnecting from an HGCM service
+          using the client identifier from an earlier call to VbglR0HGCMConnect()
+          follows:<screen>
     VBoxGuestHGCMDisconnectInfo data;
 
-    RtlZeroMemory (&amp;data, sizeof (VBoxGuestHGCMDisconnectInfo));
+    RtlZeroMemory(&amp;data, sizeof (VBoxGuestHGCMDisconnectInfo));
 
     data.result      = VINF_SUCCESS;
     data.u32ClientID = ulClientID;
 
-    rc = VbglHGCMDisconnect (handle, &amp;data);
+    rc = VbglR0HGCMDisconnect(handle, &amp;data);
           </screen></para>
 
         <para><screen>
-DECLVBGL(int) VbglHGCMCall (VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfo *pData, uint32_t cbData);
-          </screen> Calls a function in the service. <screen>
+DECLVBGL(int) VbglR0HGCMCall(VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfo *pData, uint32_t cbData);
+          </screen> VbglR0HGCMCall() calls a function specified in the
+          VBoxGuestHGCMCallInfo argument in the HGCM service on the host. An
+          example of a guest driver calling the Shared Folders HGCM service to
+          issue a read of an object in a shared folder follows:<screen>
 typedef struct _VBoxSFRead
 {
     VBoxGuestHGCMCallInfo callInfo;
@@ -3433,9 +3444,9 @@ typedef struct _VBoxSFRead
     data.buffer.u.Pointer.size          = *pcbBuffer;
     data.buffer.u.Pointer.u.linearAddr  = (uintptr_t)pBuffer;
 
-    rc = VbglHGCMCall (handle, &amp;data.callInfo, sizeof (data));
+    rc = VbglR0HGCMCall(handle, &amp;data.callInfo, sizeof (data));
 
-    if (RT_SUCCESS (rc))
+    if (RT_SUCCESS(rc))
     {
         rc = data.callInfo.result;
         *pcbBuffer = data.cb.u.value32; /* This is returned by the HGCM service. */
@@ -3447,28 +3458,29 @@ typedef struct _VBoxSFRead
         <title>Guest application interface</title>
 
         <para>Applications call the VirtualBox Guest Additions driver to
-        utilize the HGCM interface. There are IOCTL's which correspond to the
-        <computeroutput>Vbgl*</computeroutput> functions: <itemizedlist>
+        utilize the HGCM interface. The following IOCTLs correspond to the
+        <computeroutput>VbglR0HGCM*</computeroutput> functions listed above:
+        <itemizedlist>
             <listitem>
-              <para><computeroutput>VBOXGUEST_IOCTL_HGCM_CONNECT</computeroutput></para>
+              <para><computeroutput>VBGL_IOCTL_HGCM_CONNECT =>
+              VbglR0HGCMConnect()</computeroutput></para>
             </listitem>
 
             <listitem>
-              <para><computeroutput>VBOXGUEST_IOCTL_HGCM_DISCONNECT</computeroutput></para>
+              <para><computeroutput>VBGL_IOCTL_HGCM_DISCONNECT =>
+              VbglR0HGCMDisconnect()</computeroutput></para>
             </listitem>
 
             <listitem>
-              <para><computeroutput>VBOXGUEST_IOCTL_HGCM_CALL</computeroutput></para>
+              <para><computeroutput>VBGL_IOCTL_HGCM_CALL =>
+              VbglR0HGCMCall()</computeroutput></para>
             </listitem>
           </itemizedlist></para>
 
-        <para>These IOCTL's get the same input buffer as
-        <computeroutput>VbglHGCM*</computeroutput> functions and the output
+        <para>These IOCTLs get the same input buffer as the
+        <computeroutput>VbglR0HGCM*</computeroutput> functions and the output
         buffer has the same format as the input buffer. The same address can
-        be used as the input and output buffers.</para>
-
-        <para>For example see the guest part of shared clipboard, which runs
-        as an application and uses the HGCM interface.</para>
+        be used for both the input and output buffers.</para>
       </sect2>
     </sect1>
 
@@ -3478,21 +3490,22 @@ typedef struct _VBoxSFRead
       <para>The HGCM service is a shared library with a specific set of entry
       points. The library must export the
       <computeroutput>VBoxHGCMSvcLoad</computeroutput> entry point: <screen>
-extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *ptable)
+extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *ptable)
       </screen></para>
 
       <para>The service must check the
       <computeroutput>ptable-&gt;cbSize</computeroutput> and
       <computeroutput>ptable-&gt;u32Version</computeroutput> fields of the
-      input structure and fill the remaining fields with function pointers of
-      entry points and the size of the required client buffer size.</para>
+      input structure and fill in the remaining fields with function pointers of
+      service entry points (listed below) and the size of the required client
+      buffer size.</para>
 
-      <para>The HGCM service gets a dedicated thread, which calls service
-      entry points synchronously, that is the service will be called again
-      only when a previous call has returned. However, the guest calls can be
-      processed asynchronously. The service must call a completion callback
-      when the operation is actually completed. The callback can be issued
-      from another thread as well.</para>
+      <para>The HGCM service gets a dedicated thread which calls service
+      entry points synchronously, thus the service entry point will only be called
+      again once a previous call has returned. However, the guest calls can be
+      processed asynchronously. Therefore the service must call a completion
+      callback when the operation is actually completed. The callback can be
+      issued from another thread as well.</para>
 
       <para>Service entry points are listed in the
       <computeroutput>VBox/hgcmsvc.h</computeroutput> in the
@@ -3502,19 +3515,20 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
           <tgroup cols="2">
             <tbody>
               <row>
-                <entry><emphasis role="bold">Entry</emphasis></entry>
+                <entry><emphasis role="bold">Entry Point</emphasis></entry>
 
                 <entry><emphasis role="bold">Description</emphasis></entry>
               </row>
 
               <row>
-                <entry>pfnUnload</entry>
+                <entry>int pfnUnload(void *pvService)</entry>
 
                 <entry>The service is being unloaded.</entry>
               </row>
 
               <row>
-                <entry>pfnConnect</entry>
+                <entry>int pfnConnect(void *pvService, uint32_t u32ClientID, void *pvClient,
+                uint32_t fRequestor, bool fRestoring)</entry>
 
                 <entry>A client <computeroutput>u32ClientID</computeroutput>
                 is connected to the service. The
@@ -3524,13 +3538,17 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
               </row>
 
               <row>
-                <entry>pfnDisconnect</entry>
+                <entry>int pfnDisconnect(void *pvService, uint32_t u32ClientID,
+                void *pvClient)</entry>
 
                 <entry>A client is being disconnected.</entry>
               </row>
 
               <row>
-                <entry>pfnCall</entry>
+                <entry>void pfnCall(void *pvService, VBOXHGCMCALLHANDLE callHandle,
+                uint32_t u32ClientID, void *pvClient, uint32_t function,
+                uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+                uint64_t tsArrival)</entry>
 
                 <entry>A guest client calls a service function. The
                 <computeroutput>callHandle</computeroutput> must be used in
@@ -3539,7 +3557,8 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
               </row>
 
               <row>
-                <entry>pfnHostCall</entry>
+                <entry>int pfnHostCall(void *pvService, uint32_t function, uint32_t cParms,
+                VBOXHGCMSVCPARM paParms[])</entry>
 
                 <entry>Called by the VirtualBox host components to perform
                 functions which should be not accessible by the guest. Usually
@@ -3548,7 +3567,8 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
               </row>
 
               <row>
-                <entry>pfnSaveState</entry>
+                <entry>int pfnSaveState(void *pvService, uint32_t u32ClientID, void *pvClient,
+                PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM)</entry>
 
                 <entry>The VM state is being saved and the service must save
                 relevant information using the SSM API
@@ -3556,7 +3576,8 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
               </row>
 
               <row>
-                <entry>pfnLoadState</entry>
+                <entry>int pfnLoadState(void *pvService, uint32_t u32ClientID, void *pvClient,
+                PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM, uint32_t uVersion)</entry>
 
                 <entry>The VM is being restored from the saved state and the
                 service must load the saved information and be able to
@@ -3572,16 +3593,16 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
     <title>RDP Web Control</title>
 
     <para>The VirtualBox <emphasis>RDP Web Control</emphasis> (RDPWeb)
-    provides remote access to a running VM. RDPWeb is a RDP (Remote Desktop
+    provides remote access to a running VM. RDPWeb is an RDP (Remote Desktop
     Protocol) client based on Flash technology and can be used from a Web
     browser with a Flash plugin.</para>
 
     <sect1>
       <title>RDPWeb features</title>
 
-      <para>RDPWeb is embedded into a Web page and can connect to VRDP server
-      in order to displays the VM screen and pass keyboard and mouse events to
-      the VM.</para>
+      <para>RDPWeb is embedded into a Web page and connects to a VRDP server
+      in order to display the remote VM screen and pass keyboard and mouse events
+      to the VM.</para>
     </sect1>
 
     <sect1>
@@ -3589,12 +3610,12 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
 
       <para>RDPWeb consists of two required components:<itemizedlist>
           <listitem>
-            <para>Flash movie
+            <para>Flash movie file
             <computeroutput>RDPClientUI.swf</computeroutput></para>
           </listitem>
 
           <listitem>
-            <para>JavaScript helpers
+            <para>JavaScript helpers contained in
             <computeroutput>webclient.js</computeroutput></para>
           </listitem>
         </itemizedlist></para>
@@ -3602,12 +3623,12 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
       <para>The VirtualBox SDK contains sample HTML code
       including:<itemizedlist>
           <listitem>
-            <para>JavaScript library for embedding Flash content
+            <para>A JavaScript library for embedding Flash content:
             <computeroutput>SWFObject.js</computeroutput></para>
           </listitem>
 
           <listitem>
-            <para>Sample HTML page
+            <para>A sample HTML page:
             <computeroutput>webclient3.html</computeroutput></para>
           </listitem>
         </itemizedlist></para>
@@ -3616,21 +3637,22 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         <title>RDPWeb functions</title>
 
         <para><computeroutput>RDPClientUI.swf</computeroutput> and
-        <computeroutput>webclient.js</computeroutput> work with each other.
-        JavaScript code is responsible for a proper SWF initialization,
-        delivering mouse events to the SWF and processing resize requests from
-        the SWF. On the other hand, the SWF contains a few JavaScript callable
-        methods, which are used both from
-        <computeroutput>webclient.js</computeroutput> and the user HTML
+        <computeroutput>webclient.js</computeroutput> work together to provide the
+        RDP Web Control functionality.  The JavaScript code is responsible for
+        proper Flash initialization, delivering mouse events to the Flash object,
+        and processing resize requests from the Flash object. On the other hand,
+        the SWF file contains a few JavaScript callable methods, which are used
+        both from <computeroutput>webclient.js</computeroutput> and the user HTML
         page.</para>
 
         <sect3>
           <title>JavaScript functions</title>
 
-          <para><computeroutput>webclient.js</computeroutput> contains helper
-          functions. In the following table ElementId refers to an HTML
-          element name or attribute, and Element to the HTML element itself.
-          HTML code<programlisting>
+          <para>The <computeroutput>webclient.js</computeroutput> file contains
+          several helper JavaScript functions. In the following table ElementId
+          refers to an HTML element name or attribute, and Element to the HTML
+          element itself.
+          The HTML code<programlisting>
     &lt;div id="FlashRDP"&gt;
     &lt;/div&gt;
 </programlisting> would have ElementId equal to FlashRDP and Element equal to
@@ -3640,30 +3662,30 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
               <listitem>
                 <programlisting>RDPWebClient.embedSWF(SWFFileName, ElementId)</programlisting>
 
-                <para>Uses SWFObject library to replace the HTML element with
-                the Flash movie.</para>
+                <para>Uses the open-source SWFObject library to replace the HTML
+                element with the Flash movie.</para>
               </listitem>
 
               <listitem>
                 <programlisting>RDPWebClient.isRDPWebControlById(ElementId)</programlisting>
 
-                <para>Returns true if the given id refers to a RDPWeb Flash
-                element.</para>
+                <para>Returns true if the given ElementId refers to an RDPWeb
+                Flash element.</para>
               </listitem>
 
               <listitem>
                 <programlisting>RDPWebClient.isRDPWebControlByElement(Element)</programlisting>
 
-                <para>Returns true if the given element is a RDPWeb Flash
+                <para>Returns true if the given Element is an RDPWeb Flash
                 element.</para>
               </listitem>
 
               <listitem>
                 <programlisting>RDPWebClient.getFlashById(ElementId)</programlisting>
 
-                <para>Returns an element, which is referenced by the given id.
-                This function will try to resolve any element, event if it is
-                not a Flash movie.</para>
+                <para>Returns an element, which is referenced by the given
+                ElementId.  This function will try to resolve any element, even if
+                it is not a Flash movie.</para>
               </listitem>
             </itemizedlist></para>
         </sect3>
@@ -3671,8 +3693,8 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         <sect3>
           <title>Flash methods callable from JavaScript</title>
 
-          <para><computeroutput>RDPWebClienUI.swf</computeroutput> methods can
-          be called directly from JavaScript code on a HTML page.</para>
+          <para>The <computeroutput>RDPWebClienUI.swf</computeroutput> methods can
+          be called directly from JavaScript code on an HTML page:</para>
 
           <itemizedlist>
             <listitem>
@@ -3708,13 +3730,13 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
       <sect2>
         <title>Embedding RDPWeb in an HTML page</title>
 
-        <para>It is necessary to include
+        <para>It is necessary to include the
         <computeroutput>webclient.js</computeroutput> helper script. If
-        SWFObject library is used, the
-        <computeroutput>swfobject.js</computeroutput> must be also included
-        and RDPWeb flash content can be embedded to a Web page using dynamic
-        HTML. The HTML must include a "placeholder", which consists of 2
-        <computeroutput>div</computeroutput> elements.</para>
+        the SWFObject library is used, the
+        <computeroutput>swfobject.js</computeroutput> must also be included.
+        Using the SWFObject library allows RDPWeb flash content to be embedded in
+        a Web page using dynamic HTML. The HTML must include a "placeholder",
+        which consists of 2 <computeroutput>div</computeroutput> elements.</para>
       </sect2>
     </sect1>
 
@@ -3776,40 +3798,38 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
   <chapter id="dnd">
     <title>Drag and Drop</title>
 
-    <para>Since VirtualBox 4.2 it's possible to transfer files from host to the
-    Linux guests by dragging files, directories or text from the host into the
-    guest's screen. This is called <emphasis>drag and drop
+    <para>As of VirtualBox 4.2 it's possible to transfer files from the host to
+    Linux, Solaris, and macOS guests by dragging files, directories, or text
+    from the host into the guest's screen. This is called <emphasis>drag and drop
     (DnD)</emphasis>.</para>
 
-    <para>In version 5.0 support for Windows guests has been added, as well as
-    the ability to transfer data the other way around, that is, from the guest
-    to the host.</para>
+    <para>VirtualBox 5.0 added support for Windows guests as well as the ability
+    to transfer data in the opposite direction, that is, from the guest to the
+    host.</para>
 
-    <note><para>Currently only the VirtualBox Manager frontend supports drag and
+    <note><para>Currently only the VirtualBox Manager front-end supports drag and
       drop.</para></note>
 
     <para>This chapter will show how to use the required interfaces provided
     by VirtualBox for adding drag and drop functionality to third-party
-    frontends.</para>
+    front-ends.</para>
 
     <sect1>
       <title>Basic concepts</title>
 
       <para>In order to use the interfaces provided by VirtualBox, some basic
-      concepts needs to be understood first: To successfully initiate a
-      drag and drop operation at least two sides needs to be involved, a
-      <emphasis>source</emphasis> and a <emphasis>target</emphasis>:</para>
+      concepts need to be understood first: a drag and drop operation logically
+      contains both a <emphasis>source</emphasis> and a
+      <emphasis>target</emphasis>:</para>
 
-      <para>The <emphasis>source</emphasis> is the side which provides the
-      data, e.g. is the origin of data. This data can be stored within the
-      source directly or can be retrieved on-demand by the source itself. Other
-      interfaces don't care where the data from this source actually came
-      from.</para>
+      <para>The <emphasis>source</emphasis> provides the data, i.e., it is the
+      origin of data. This data can be stored within the source directly or it can
+      be retrieved on-demand by the source itself.</para>
 
-      <para>The <emphasis>target</emphasis> on the other hand is the side which
-      provides the source a visual representation where the user can drop the
-      data the source offers. This representation can be a window (or just a
-      certain part of it), for example.</para>
+      <para>The <emphasis>target</emphasis> on the other hand provides a visual
+      representation to the source where the user can drop the data the source
+      offers. This representation can be a window (or just a certain part of
+      it), for example.</para>
 
       <para>The source and the target have abstract interfaces called
       <link linkend="IDnDSource">IDnDSource</link> and
@@ -3817,7 +3837,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
       provides implementations of both interfaces, called
       <link linkend="IGuestDnDSource">IGuestDnDSource</link> and
       <link linkend="IGuestDnDTarget">IGuestDnDTarget</link>. Both
-      implementations are also used in the VirtualBox Manager frontend.</para>
+      implementations are used in the VirtualBox Manager front-end.</para>
     </sect1>
 
     <sect1>
@@ -3825,15 +3845,15 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
 
       <para>As the target needs to perform specific actions depending on the
       data the source provided, the target first needs to know what type of
-      data it actually is going to retrieve. It might be that the source offers
+      data it is actually going to retrieve. It might be that the source offers
       data the target cannot (or intentionally does not want to)
       support.</para>
 
-      <para>VirtualBox handles those data types by providing so-called
-      <emphasis>MIME types</emphasis> -- these MIME types were originally
-      defined in
+      <para>VirtualBox describes the data types using
+      <emphasis>MIME types</emphasis> -- which were originally defined in
       <ulink url="https://tools.ietf.org/html/rfc2046">RFC 2046</ulink> and
-      are also called <emphasis>Content-types</emphasis>.
+      are also called <emphasis>Content-types</emphasis> or
+      <emphasis>media types</emphasis>.
       <link linkend="IGuestDnDSource">IGuestDnDSource</link> and
       <link linkend="IGuestDnDTarget">IGuestDnDTarget</link> support
       the following MIME types by default:<itemizedlist>
@@ -3864,7 +3884,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
       <link linkend="IDnDBase">IDnDBase</link> which provide adding,
       removing and enumerating specific formats.
       <note><para>Registering new or removing default formats on the guest side
-      currently is not implemented.</para></note></para>
+      is not currently implemented.</para></note></para>
     </sect1>
 
   </chapter>
@@ -3873,23 +3893,25 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
     <title>VirtualBox external authentication modules</title>
 
     <para>VirtualBox supports arbitrary external modules to perform
-    authentication. The module is used when the authentication method is set
-    to "external" for a particular VM VRDE access and the library was
-    specified with <computeroutput>VBoxManage setproperty
-    vrdeauthlibrary</computeroutput>. Web service also use the authentication
-    module which was specified with <computeroutput>VBoxManage setproperty
-    websrvauthlibrary</computeroutput>.</para>
+    authentication. External authentication modules are used for remote
+    desktop access to a VM when the VRDE authentication type is set to
+    "external". VRDE authentication will then use the authentication module
+    which was specified with
+    <computeroutput>VBoxManage setproperty vrdeauthlibrary</computeroutput>.
+    The web service will use the external authentication module specified with
+    <computeroutput>VBoxManage setproperty websrvauthlibrary</computeroutput>.
+    </para>
 
     <para>This library will be loaded by the VM or web service process on
     demand, i.e. when the first remote desktop connection is made by a client
     or when a client that wants to use the web service logs on.</para>
 
-    <para>External authentication is the most flexible as the external handler
-    can both choose to grant access to everyone (like the "null"
-    authentication method would) and delegate the request to the guest
-    authentication component. When delegating the request to the guest
-    component, the handler will still be called afterwards with the option to
-    override the result.</para>
+    <para>External authentication is the most flexible authentication type
+    since the external handler can choose to both grant access to everyone
+    (like the "null" authentication method) as well as delegate the request to
+    the guest authentication component. When delegating the request to the guest
+    component the external handler will still be called afterwards with the
+    option to override the result.</para>
 
     <para>An authentication library is required to implement exactly one entry
     point:</para>
@@ -3945,20 +3967,20 @@ AuthResult AUTHCALL AuthEntry(
     <computeroutput>pUuid</computeroutput> argument: VirtualBox uses a
     consistent binary representation of UUIDs on all platforms. For this
     reason the integer fields comprising the UUID are stored as little endian
-    values. If you want to pass such UUIDs to code which assumes that the
+    values. If you want to pass such UUIDs to code which assumes that
     integer fields are big endian (often also called network byte order), you
-    need to adjust the contents of the UUID to e.g. achieve the same string
+    need to adjust the contents of the UUID to achieve the same string
     representation. The required changes are:<itemizedlist>
         <listitem>
-          <para>reverse the order of byte 0, 1, 2 and 3</para>
+          <para>reverse the order of bytes 0, 1, 2 and 3</para>
         </listitem>
 
         <listitem>
-          <para>reverse the order of byte 4 and 5</para>
+          <para>reverse the order of bytes 4 and 5</para>
         </listitem>
 
         <listitem>
-          <para>reverse the order of byte 6 and 7.</para>
+          <para>reverse the order of bytes 6 and 7.</para>
         </listitem>
       </itemizedlist>Using this conversion you will get identical results when
     converting the binary UUID to the string representation.</para>
@@ -3966,26 +3988,26 @@ AuthResult AUTHCALL AuthEntry(
     <para>The <computeroutput>guestJudgement</computeroutput> argument
     contains information about the guest authentication status. For the first
     call, it is always set to
-    <computeroutput>AuthGuestNotAsked</computeroutput>. In case the
+    <computeroutput>AuthGuestNotAsked</computeroutput>. If the
     <computeroutput>AuthEntry</computeroutput> function returns
     <computeroutput>AuthResultDelegateToGuest</computeroutput>, a guest
     authentication will be attempted and another call to the
-    <computeroutput>AuthEntry</computeroutput> is made with its result. This
-    can be either granted / denied or no judgement (the guest component chose
-    for whatever reason to not make a decision). In case there is a problem
-    with the guest authentication module (e.g. the Additions are not installed
-    or not running or the guest did not respond within a timeout), the "not
-    reacted" status will be returned.</para>
+    <computeroutput>AuthEntry</computeroutput> is made with its result.  The
+    guest authentication can return either granted, denied, or no judgement
+    (the guest component chose for whatever reason to not make a decision).
+    In case there is a problem with the guest authentication module (e.g. the
+    Guest Additions are not installed or not running or the guest did not
+    respond within a timeout), the "not reacted" status will be returned.</para>
   </chapter>
 
   <chapter id="javaapi">
-    <title>Using Java API</title>
+    <title>Using the Java API</title>
 
     <sect1>
       <title>Introduction</title>
 
-      <para>VirtualBox can be controlled by a Java API, both locally
-      (COM/XPCOM) and from remote (SOAP) clients. As with the Python bindings,
+      <para>VirtualBox can be controlled by a Java API, both locally using
+      COM/XPCOM and remotely using SOAP. As with the Python bindings,
       a generic glue layer tries to hide all platform differences, allowing
       for source and binary compatibility on different platforms.</para>
     </sect1>
@@ -3996,18 +4018,18 @@ AuthResult AUTHCALL AuthEntry(
       <para>To use the Java bindings, there are certain requirements depending
       on the platform. First of all, you need JDK 1.5 (Java 5) or later. Also
       please make sure that the version of the VirtualBox API .jar file
-      exactly matches the version of VirtualBox you use. To avoid confusion,
+      exactly matches the version of VirtualBox in use. To avoid confusion,
       the VirtualBox API provides versioning in the Java package name, e.g.
       the package is named <computeroutput>org.virtualbox_3_2</computeroutput>
       for VirtualBox version 3.2. <itemizedlist>
           <listitem>
-            <para><emphasis role="bold">XPCOM</emphasis> - for all platforms,
-            but Microsoft Windows. A Java bridge based on JavaXPCOM is shipped
+            <para><emphasis role="bold">XPCOM</emphasis> - for all platforms
+            except Microsoft Windows. A Java bridge based on JavaXPCOM is shipped
             with VirtualBox. The classpath must contain
             <computeroutput>vboxjxpcom.jar</computeroutput> and the
-            <computeroutput>vbox.home</computeroutput> property must be set to
+            <computeroutput>vbox.home</computeroutput> property must be set to the
             location where the VirtualBox binaries are. Please make sure that
-            the JVM bitness matches bitness of VirtualBox you use as the XPCOM
+            the JVM bitness matches the bitness of VirtualBox in use as the XPCOM
             bridge relies on native libraries.</para>
 
             <para>Start your application like this: <programlisting>
@@ -4018,11 +4040,11 @@ AuthResult AUTHCALL AuthEntry(
           <listitem>
             <para><emphasis role="bold">COM</emphasis> - for Microsoft
             Windows. We rely on <computeroutput>Jacob</computeroutput> - a
-            generic Java to COM bridge - which has to be installed seperately.
+            generic Java to COM bridge - which has to be installed separately.
             See <ulink
             url="http://sourceforge.net/projects/jacob-project/">http://sourceforge.net/projects/jacob-project/</ulink>
             for installation instructions. Also, the VirtualBox provided
-            <computeroutput>vboxjmscom.jar</computeroutput> must be in the
+            <computeroutput>vboxjmscom.jar</computeroutput> file must be in the
             class path.</para>
 
             <para>Start your application like this:
@@ -4031,7 +4053,7 @@ AuthResult AUTHCALL AuthEntry(
 
           <listitem>
             <para><emphasis role="bold">SOAP</emphasis> - all platforms. Java
-            6 is required, as it comes with builtin support for SOAP via the
+            6 is required as it comes with built-in support for SOAP via the
             JAX-WS library. Also, the VirtualBox provided
             <computeroutput>vbojws.jar</computeroutput> must be in the class
             path. In the SOAP case it's possible to create several
@@ -4045,10 +4067,10 @@ AuthResult AUTHCALL AuthEntry(
         </itemizedlist></para>
 
       <para>Exception handling is also generalized by the generic glue layer,
-      so that all methods could throw
-      <computeroutput>VBoxException</computeroutput> containing human-readable
+      so that all methods can throw
+      <computeroutput>VBoxException</computeroutput> containing a human-readable
       text message (see <computeroutput>getMessage()</computeroutput> method)
-      along with wrapped original exception (see
+      along with the wrapped original exception (see
       <computeroutput>getWrapped()</computeroutput> method).</para>
     </sect1>
 
@@ -4056,7 +4078,7 @@ AuthResult AUTHCALL AuthEntry(
       <title>Example</title>
 
       <para>This example shows a simple use case of the Java API. Differences
-      for SOAP vs. local version are minimal, and limited to the connection
+      for SOAP vs. local execution are minimal and limited to the connection
       setup phase (see <computeroutput>ws</computeroutput> variable). In the
       SOAP case it's possible to create several VirtualBoxManager instances to
       communicate with multiple VirtualBox hosts. <programlisting>
@@ -4083,24 +4105,24 @@ AuthResult AUTHCALL AuthEntry(
               mgr.disconnect();
 
           mgr.cleanup();
-        </programlisting> For more a complete example, see
+        </programlisting> For a more complete example, see
       <computeroutput>TestVBox.java</computeroutput>, shipped with the
-      SDK. It contains exception handling and error printing code, which
+      SDK. It contains exception handling and error printing code which
       is important for reliable larger scale projects.</para>
 
       <para>It is good practice in long-running API clients to process the
-      system events every now and then in the main thread (does not work
+      system events every now and then in the main thread (this does not work
       in other threads). As a rule of thumb it makes sense to process them
       every few 100msec to every few seconds). This is done by
       calling<programlisting>
         mgr.waitForEvents(0);
         </programlisting>
-      This avoids that a large number of system events accumulate, which can
-      need a significant amount of memory, and as they also play a role in
+      This helps prevent a large number of system events from accumulating which
+      can need a significant amount of memory, and as they also play a role in
       object cleanup it helps freeing additional memory in a timely manner
       which is used by the API implementation itself. Java's garbage collection
       approach already needs more memory due to the delayed freeing of memory
-      used by no longer accessible objects, and not processing the system
+      used by no longer accessible objects and not processing the system
       events exacerbates the memory usage. The
       <computeroutput>TestVBox.java</computeroutput> example code sprinkles
       such lines over the code to achieve the desired effect. In multi-threaded
@@ -4120,7 +4142,7 @@ AuthResult AUTHCALL AuthEntry(
     application code.</para>
 
     <para>The Java files under
-    <computeroutput>bindings/webservice/java/jax-ws/</computeroutput> (library
+    <computeroutput>sdk/bindings/webservice/java/jax-ws/</computeroutput> (library
     files for the object-oriented web service) are, by contrast, licensed
     under the GNU Lesser General Public License (LGPL) V2.1.</para>
 
@@ -4307,7 +4329,7 @@ AuthResult AUTHCALL AuthEntry(
         </para></listitem>
 
         <listitem><para>The webservice version of the <link linkend="ISharedFolder">ISharedFolder</link>
-          interface was changed from a struct to a managed object. This causes incompatiblities on the
+          interface was changed from a struct to a managed object. This causes incompatibilities on the
           protocol level as the shared folder attributes are not returned in the responses of
           <link linkend="IVirtualBox__sharedFolders">IVirtualBox::getSharedFolders</link> and
           <link linkend="IMachine__sharedFolders">IMachine::getSharedFolders</link> anymore. They
@@ -4325,14 +4347,53 @@ AuthResult AUTHCALL AuthEntry(
       <itemizedlist>
         <listitem><para>ProcessCreateFlag::NoProfile has been renamed to
           <link linkend="ProcessCreateFlag__Profile">ProcessCreateFlag::Profile</link>,
-          whereas the semantics also has been changed: ProcessCreateFlag::NoProfile
-          explicitly <emphasis role="bold">did not</emphasis> utilize the guest user's profile data,
-          which in turn <link linkend="ProcessCreateFlag__Profile">ProcessCreateFlag::Profile</link>
-          explicitly <emphasis role="bold">does now</emphasis>.</para>
+          and the semantics have also been changed: ProcessCreateFlag::NoProfile
+          explicitly <emphasis role="bold">did not</emphasis> utilize the guest user's profile data
+          whereas <link linkend="ProcessCreateFlag__Profile">ProcessCreateFlag::Profile</link>
+          explicitly <emphasis role="bold">does</emphasis> utilize the guest
+          user’s profile data.</para>
         </listitem>
       </itemizedlist>
 
     </sect1>
+
+    <sect1>
+      <title>Incompatible API changes with version 5.1.28</title>
+
+      <itemizedlist>
+        <listitem><para>The Host-Guest Communication Manager (HGCM) guest driver
+          interfaces were renamed:
+          <itemizedlist>
+            <listitem><para>VbglHGCMConnect() was renamed to VbglR0HGCMConnect()
+            </para></listitem>
+            <listitem><para>VbglHGCMDisconnect() was renamed to VbglR0HGCMDisconnect()
+            </para></listitem>
+            <listitem><para>VbglHGCMCall() was renamed to VbglR0HGCMCall()
+            </para></listitem>
+          </itemizedlist>
+          </para>
+        </listitem>
+
+        <listitem><para>The Host-Guest Communication Manager (HGCM) guest
+          application interface IOCTLs were renamed:
+          <itemizedlist>
+            <listitem><para>VBOXGUEST_IOCTL_HGCM_CONNECT was renamed to
+              VBGL_IOCTL_HGCM_CONNECT
+            </para></listitem>
+            <listitem><para>VBOXGUEST_IOCTL_HGCM_DISCONNECT was renamed to
+              VBGL_IOCTL_HGCM_DISCONNECT
+            </para></listitem>
+            <listitem><para>VBOXGUEST_IOCTL_HGCM_CALL was renamed to
+              VBGL_IOCTL_HGCM_CALL
+            </para></listitem>
+          </itemizedlist>
+          </para>
+        </listitem>
+
+      </itemizedlist>
+
+    </sect1>
+
 
     <sect1>
       <title>Incompatible API changes with version 5.0</title>
@@ -4517,7 +4578,7 @@ AuthResult AUTHCALL AuthEntry(
         </listitem>
 
         <listitem><para>IDisplay and IFramebuffer interfaces were changed to
-          allow IFramebuffer object to reside in a separate frontend
+          allow IFramebuffer object to reside in a separate front-end
           process:<itemizedlist>
 
           <listitem><para>
@@ -4832,9 +4893,9 @@ AuthResult AUTHCALL AuthEntry(
           <link linkend="IMachine__launchVMProcess">IMachine::launchVMProcess()</link>
           the meaning of the <computeroutput>type</computeroutput> parameter
           has changed slightly. Empty string now means that the per-VM or
-          global default frontend is launched. Most callers of this method
+          global default front-end is launched. Most callers of this method
           should use the empty string now, unless they really want to override
-          the default and launch a particular frontend.</para>
+          the default and launch a particular front-end.</para>
         </listitem>
 
         <listitem>
@@ -4908,7 +4969,7 @@ AuthResult AUTHCALL AuthEntry(
           <link linkend="IGuestSession">IGuestSession</link>,
           <link linkend="IGuestProcess">IGuestProcess</link> and so on - now
           emit own events to provide clients much finer control and the ability
-          to write own frontends for guest operations. The event
+          to write own front-ends for guest operations. The event
           <link linkend="IGuestSessionEvent">IGuestSessionEvent</link> acts as
           an abstract base class for all guest control events. Certain guest
           events contain a
