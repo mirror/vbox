@@ -12716,7 +12716,7 @@
     </attribute>
     <attribute name="architecture" type="CPUArchitecture" readonly="yes">
       <desc>The CPU architecture.</desc>
-    </attribute>    
+    </attribute>
   </interface>
 
   <interface
