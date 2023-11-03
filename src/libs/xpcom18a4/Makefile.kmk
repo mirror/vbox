@@ -197,6 +197,7 @@ NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/pr/include/prrwlock.h \
 	nsprpub/pr/include/prshm.h \
 	nsprpub/pr/include/prshma.h \
+	nsprpub/pr/include/prsystem.h \
 	nsprpub/pr/include/prthread.h \
 	nsprpub/pr/include/prtime.h \
 	nsprpub/pr/include/prtpool.h \
