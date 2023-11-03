@@ -637,7 +637,6 @@ ifeq ($(filter-out darwin freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET))
 endif
 
 VBox-xpcom-nspr_SOURCES.darwin = nsprpub/pr/src/md/unix/darwin.c
-VBox-xpcom-nspr_SOURCES.darwin.x86 = nsprpub/pr/src/md/unix/os_Darwin_x86.s
 
 VBox-xpcom-nspr_SOURCES.freebsd = nsprpub/pr/src/md/unix/freebsd.c
 
@@ -797,8 +796,6 @@ if defined(VBOX_WITH_HARDENING) && defined(VBOX_PATH_APP_PRIVATE_ARCH)
   VBox-xpcom-io_DEFS += MOZ_DEFAULT_VBOX_XPCOM_HOME=\"$(VBOX_PATH_APP_PRIVATE_ARCH)\"
  endif
 endif
-VBox-xpcom-io_INCS.darwin = \
-	xpcom/MoreFiles
 VBox-xpcom-io_SOURCES = \
 	xpcom/io/nsAppFileLocationProvider.cpp \
 	xpcom/io/nsBinaryStream.cpp \
@@ -820,10 +817,6 @@ VBox-xpcom-io_SOURCES = \
 	xpcom/io/nsStringStream.cpp \
 	xpcom/io/nsUnicharInputStream.cpp \
 	xpcom/io/nsNativeCharsetUtils.cpp
-VBox-xpcom-io_SOURCES.darwin.x86 = \
-	xpcom/io/nsLocalFileOSX.cpp \
-	xpcom/MoreFiles/FSCopyObject.c \
-	xpcom/MoreFiles/MoreFilesX.c
 if1of ($(KBUILD_TARGET) $(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), freebsd linux netbsd openbsd solaris darwin.amd64 darwin.arm64)
  VBox-xpcom-io_SOURCES += \
  	xpcom/io/nsLocalFileUnix.cpp
@@ -883,8 +876,6 @@ VBox-xpcom-xptcall_DEFS.darwin           = KEEP_STACK_16_BYTE_ALIGNED
 VBox-xpcom-xptcall_DEFS.os2              = MOZ_NEED_LEADING_UNDERSCORE
 VBox-xpcom-xptcall_INCS.os2              = xpcom/reflect/xptcall/src/md/unix
 VBox-xpcom-xptcall_SOURCES               = xpcom/reflect/xptcall/src/xptcall.cpp
-VBox-xpcom-xptcall_SOURCES.darwin.x86    = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_unixish_x86.cpp \
-	xpcom/reflect/xptcall/src/md/unix/xptcstubs_unixish_x86.cpp
 VBox-xpcom-xptcall_SOURCES.freebsd.x86   = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_gcc_x86_unix.cpp \
 	xpcom/reflect/xptcall/src/md/unix/xptcstubs_gcc_x86_unix.cpp
 VBox-xpcom-xptcall_SOURCES.linux.x86     = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_gcc_x86_unix.cpp \
