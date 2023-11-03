@@ -12716,13 +12716,13 @@
     </attribute>
     <attribute name="architecture" type="CPUArchitecture" readonly="yes">
       <desc>The CPU architecture.</desc>
-    </attribute>
+    </attribute>    
   </interface>
 
   <interface
     name="IPlatformProperties"
     extends="$unknown"
-    uuid="da633d5f-4858-42cf-9914-64bd4a2c9c7a"
+    uuid="25cf8416-1e5b-4d01-ae9d-1dc34ef737c8"
     wsmap="managed"
     rest="managed"
     reservedMethods="4" reservedAttributes="16"
@@ -12808,7 +12808,7 @@
       </desc>
     </attribute>
 
-    <attribute name="getSupportedNetAdpPromiscModePols" type="NetworkAdapterPromiscModePolicy" safearray="yes" readonly="yes">
+    <attribute name="supportedNetAdpPromiscModePols" type="NetworkAdapterPromiscModePolicy" safearray="yes" readonly="yes">
       <desc>
         Returns an array of officially supported values for enum <link to="NetworkAdapterPromiscModePolicy"/>,
         in the sense of what is e.g. worth offering in the VirtualBox GUI.
