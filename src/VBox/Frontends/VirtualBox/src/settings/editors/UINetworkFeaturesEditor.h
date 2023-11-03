@@ -120,6 +120,9 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE;
 
+    /** Handles filter change. */
+    virtual void handleFilterChange() RT_OVERRIDE;
+
 private slots:
 
     /** Handles request to open port forwarding dialog. */
@@ -130,10 +133,10 @@ private:
     /** Prepares all. */
     void prepare();
 
-    /** Repopulates adapter type combo. */
-    void repopulateAdapterTypeCombo();
-    /** Repopulates promiscuous mode combo. */
-    void repopulatePromiscuousModeCombo();
+    /** Populates adapter type combo. */
+    void populateAdapterTypeCombo();
+    /** Populates promiscuous mode combo. */
+    void populatePromiscuousModeCombo();
 
     /** @name Values
      * @{ */

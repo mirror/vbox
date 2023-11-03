@@ -92,6 +92,11 @@ void UIGraphicsControllerEditor::retranslateUi()
     }
 }
 
+void UIGraphicsControllerEditor::handleFilterChange()
+{
+    populateCombo();
+}
+
 void UIGraphicsControllerEditor::sltHandleCurrentIndexChanged()
 {
     if (m_pCombo)
@@ -154,11 +159,10 @@ void UIGraphicsControllerEditor::populateCombo()
         m_pCombo->clear();
 
         /* Load currently supported graphics controller types: */
-#ifdef VBOX_WITH_VIRT_ARMV8 /** @todo BUGBUG Quick'n dirty fix to make it run on ARM. Needs proper fixing / re-structuring. */
-        CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_ARM);
-#else
-        CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
-#endif
+        const KPlatformArchitecture enmArch = m_flags.contains("arch")
+                                            ? m_flags.value("arch").value<KPlatformArchitecture>()
+                                            : KPlatformArchitecture_x86;
+        CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(enmArch);
         m_supportedValues = comProperties.GetSupportedGraphicsControllerTypes();
 
         /* Make sure requested value if sane is present as well: */
