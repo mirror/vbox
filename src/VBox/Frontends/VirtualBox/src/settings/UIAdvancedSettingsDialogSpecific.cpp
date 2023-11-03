@@ -67,6 +67,7 @@
 /* COM includes: */
 #include "CExtPackManager.h"
 #include "CGraphicsAdapter.h"
+#include "CPlatform.h"
 #include "CUSBController.h"
 
 #ifdef VBOX_WS_MAC
@@ -761,6 +762,28 @@ void UIAdvancedSettingsDialogMachine::prepare()
 
     /* Calculate initial configuration access level: */
     setConfigurationAccessLevel(::configurationAccessLevel(m_enmSessionState, m_enmMachineState));
+
+    /* Define initial dialog platform, for now it's constant.
+     * Who knows, maybe we will be able to change it dynamically one day: */
+    const CPlatform comPlatform = m_machine.GetPlatform();
+    if (comPlatform.isNotNull())
+    {
+        const KPlatformArchitecture enmArch = comPlatform.GetArchitecture();
+        Assert(enmArch != KPlatformArchitecture_None);
+        if (enmArch != KPlatformArchitecture_None)
+        {
+            /* Push platform flag through whole UIEditor hierarchy: */
+            QMap<QString, QVariant> optFlags = optionalFlags();
+            switch (enmArch)
+            {
+                /* For x86 we no need the flag at all, removing if present: */
+                case KPlatformArchitecture_x86: optFlags.remove("arch"); break;
+                /* For rest of platforms we need the flag: */
+                default: optFlags["arch"] = QVariant::fromValue(enmArch); break;
+            }
+            setOptionalFlags(optFlags);
+        }
+    }
 
     /* Apply language settings: */
     retranslateUi();
