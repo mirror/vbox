@@ -222,8 +222,6 @@ NSPRPUB-MD-HEADERS_SOURCES = \
 	nsprpub/pr/include/md/_macos.h \
 	nsprpub/pr/include/md/_netbsd.h \
 	nsprpub/pr/include/md/_openbsd.h \
-	nsprpub/pr/include/md/_os2_errors.h \
-	nsprpub/pr/include/md/_os2.h \
 	nsprpub/pr/include/md/_pcos.h \
 	nsprpub/pr/include/md/_solaris.h \
 	nsprpub/pr/include/md/_unix_errors.h \
@@ -236,7 +234,6 @@ NSPRPUB-MD-HEADERS_SOURCES = \
 	nsprpub/pr/include/md/_darwin.cfg \
 	nsprpub/pr/include/md/_netbsd.cfg \
 	nsprpub/pr/include/md/_openbsd.cfg \
-	nsprpub/pr/include/md/_os2.cfg \
 	nsprpub/pr/include/md/_solaris32.cfg \
 	nsprpub/pr/include/md/_solaris64.cfg
 NSPRPUB-OBS-HEADERS_INST = $(INST_SDK)bindings/xpcom/include/nsprpub/obsolete/
@@ -453,50 +450,22 @@ xpidl_SOURCES = \
 	xpcom/typelib/xpt/src/xpt_struct.c \
 	xpcom/typelib/xpt/src/xpt_xdr.c
 
-ifeq ($(KBUILD_TARGET),os2)
- # glib and libIDL needed by XPCOM on OS/2.
- ifeq ($(VBOX_PATH_GLIB),)
-  VBOX_PATH_GLIB := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/glibidl/*/glibidl/gcc335)))
- endif
- VBOX_PATH_LIBIDL ?= $(VBOX_PATH_GLIB)
- ifeq ($(wildcard $(VBOX_PATH_GLIB)),)
-  $(warning VBOX_PATH_GLIB is "$(VBOX_PATH_GLIB)" which is not a valid directory!)
- endif
- ifeq ($(wildcard $(VBOX_PATH_LIBIDL)),)
-  $(warning VBOX_PATH_LIBIDL is "$(VBOX_PATH_LIBIDL)" which is not a valid directory!)
- endif
- xpidl_INCS = \
- 	$(VBOX_PATH_LIBIDL)/include \
- 	$(VBOX_PATH_GLIB)/include
- xpidl_LIBS = \
- 	$(VBOX_PATH_LIBIDL)/lib/libidl.lib \
- 	$(VBOX_PATH_LIBIDL)/lib/glib.lib
- # install necessary DLLs to the same place where xpidl goes
- INSTALLS += xpidl-DLLS
- xpidl_ORDERDEPS = $(xpidl-DLLS_1_TARGET)
- xpidl-DLLS_INST = $(xpidl_INST)
- # static libraries of these may be provided instead,
- # so copy DLLs only when they are present
- xpidl-DLLS_SOURCES += $(wildcard $(VBOX_PATH_GLIB)/lib/glib.dll)
- xpidl-DLLS_SOURCES += $(wildcard $(VBOX_PATH_LIBIDL)/lib/libIDL.dll)
+# We do these ONCE.
+libIDL_config_cflags := $(shell $(VBOX_LIBIDL_CONFIG) --cflags)
+libIDL_config_libs   := $(shell $(VBOX_LIBIDL_CONFIG) --libs)
+xpidl_CFLAGS = \
+	$(libIDL_config_cflags)
+if1of ($(KBUILD_HOST), linux solaris)
+ xpidl_LDFLAGS = \
+ 	$(filter-out -l%,$(libIDL_config_libs))
+ xpidl_LIBS.$(KBUILD_HOST) += \
+ 	$(subst -l,,$(filter -l%,$(libIDL_config_libs)))
 else
- # We do these ONCE.
- libIDL_config_cflags := $(shell $(VBOX_LIBIDL_CONFIG) --cflags)
- libIDL_config_libs   := $(shell $(VBOX_LIBIDL_CONFIG) --libs)
- xpidl_CFLAGS = \
- 	$(libIDL_config_cflags)
- if1of ($(KBUILD_HOST), linux solaris)
-  xpidl_LDFLAGS = \
-  	$(filter-out -l%,$(libIDL_config_libs))
-  xpidl_LIBS.$(KBUILD_HOST) += \
-  	$(subst -l,,$(filter -l%,$(libIDL_config_libs)))
- else
-  xpidl_LDFLAGS = \
-  	$(libIDL_config_libs)
- endif
- xpidl_LDFLAGS.linux = \
- 	$(VBOX_LD_as_needed)
+ xpidl_LDFLAGS = \
+ 	$(libIDL_config_libs)
 endif
+xpidl_LDFLAGS.linux = \
+	$(VBOX_LD_as_needed)
 
 #
 # The XPT linker.
@@ -551,7 +520,6 @@ VBox-xpcom-nspr_DEFS.netbsd = \
 	_PR_PTHREADS
 VBox-xpcom-nspr_DEFS.openbsd = \
 	_PR_PTHREADS
-VBox-xpcom-nspr_DEFS.os2 =
 VBox-xpcom-nspr_DEFS.solaris = \
 	HAVE_FCNTL_FILE_LOCKING=1 \
 	HAVE_SOCKLEN_T=1 \
@@ -643,39 +611,6 @@ VBox-xpcom-nspr_SOURCES.freebsd = nsprpub/pr/src/md/unix/freebsd.c
 VBox-xpcom-nspr_SOURCES.linux = nsprpub/pr/src/md/unix/linux.c
 VBox-xpcom-nspr_SOURCES.linux.x86 = nsprpub/pr/src/md/unix/os_Linux_x86.s
 VBox-xpcom-nspr_SOURCES.linux.amd64 = nsprpub/pr/src/md/unix/os_Linux_x86_64.s
-
-VBox-xpcom-nspr_SOURCES.os2 = \
-	nsprpub/pr/src/io/prdir.c \
-	nsprpub/pr/src/io/prfile.c \
-	nsprpub/pr/src/io/prio.c \
-	nsprpub/pr/src/io/prsocket.c \
-	nsprpub/pr/src/md/os2/os2misc.c \
-	nsprpub/pr/src/md/os2/os2sem.c \
-	nsprpub/pr/src/md/os2/os2inrval.c \
-	nsprpub/pr/src/md/os2/os2gc.c \
-	nsprpub/pr/src/md/os2/os2thred.c \
-	nsprpub/pr/src/md/os2/os2io.c \
-	nsprpub/pr/src/md/os2/os2cv.c \
-	nsprpub/pr/src/md/os2/os2sock.c \
-	nsprpub/pr/src/md/os2/os2_errors.c \
-	nsprpub/pr/src/md/os2/os2poll.c \
-	nsprpub/pr/src/md/os2/os2rng.c \
-	nsprpub/pr/src/threads/prdump.c \
-	nsprpub/pr/src/threads/prmon.c \
-	nsprpub/pr/src/threads/prsem.c \
-	nsprpub/pr/src/threads/prcthr.c \
-	nsprpub/pr/src/threads/combined/prucpu.c \
-	nsprpub/pr/src/threads/combined/prucv.c \
-	nsprpub/pr/src/threads/combined/prulock.c \
-	nsprpub/pr/src/threads/combined/prustack.c \
-	nsprpub/pr/src/threads/combined/pruthr.c
-# gcc/emx sources
-VBox-xpcom-nspr_SOURCES.os2 += \
-	nsprpub/pr/src/md/os2/os2emx.s \
-	nsprpub/pr/src/md/os2/os2vaclegacy.s
-# IBM VAC sources (not used)
-#VBox-xpcom-nspr_SOURCES.os2  += \
-#	nsprpub/pr/src/md/os2/os2vacpp.asm
 
 VBox-xpcom-nspr_SOURCES.solaris = nsprpub/pr/src/md/unix/solaris.c
 VBox-xpcom-nspr_SOURCES.solaris.x86 = nsprpub/pr/src/md/unix/os_SunOS_x86.s
@@ -821,8 +756,6 @@ if1of ($(KBUILD_TARGET) $(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), freebsd linux ne
  VBox-xpcom-io_SOURCES += \
  	xpcom/io/nsLocalFileUnix.cpp
 endif
-VBox-xpcom-io_SOURCES.os2 = \
-	xpcom/io/nsLocalFileOS2.cpp
 $(evalcall VBOX_XPCOM_X86,VBox-xpcom-io)
 
 VBox-xpcom-components_TEMPLATE = XPComDll
@@ -873,15 +806,11 @@ VBox-xpcom-xptcall_TEMPLATE = XPComDllYasm
 VBox-xpcom-xptcall_INSTTYPE = none
 VBox-xpcom-xptcall_DEFS                  = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTC_API
 VBox-xpcom-xptcall_DEFS.darwin           = KEEP_STACK_16_BYTE_ALIGNED
-VBox-xpcom-xptcall_DEFS.os2              = MOZ_NEED_LEADING_UNDERSCORE
-VBox-xpcom-xptcall_INCS.os2              = xpcom/reflect/xptcall/src/md/unix
 VBox-xpcom-xptcall_SOURCES               = xpcom/reflect/xptcall/src/xptcall.cpp
 VBox-xpcom-xptcall_SOURCES.freebsd.x86   = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_gcc_x86_unix.cpp \
 	xpcom/reflect/xptcall/src/md/unix/xptcstubs_gcc_x86_unix.cpp
 VBox-xpcom-xptcall_SOURCES.linux.x86     = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_gcc_x86_unix.cpp \
 	xpcom/reflect/xptcall/src/md/unix/xptcstubs_gcc_x86_unix.cpp
-VBox-xpcom-xptcall_SOURCES.os2           = xpcom/reflect/xptcall/src/md/os2/xptcinvoke_gcc_x86_os2.cpp \
-	xpcom/reflect/xptcall/src/md/os2/xptcstubs_gcc_x86_os2.cpp
 VBox-xpcom-xptcall_SOURCES.solaris.x86   = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_x86_solaris.cpp \
 	xpcom/reflect/xptcall/src/md/unix/xptcstubs_x86_solaris.cpp
 VBox-xpcom-xptcall_SOURCES.amd64         = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_amd64_vbox.asm
@@ -976,8 +905,6 @@ VBoxXPCOM_SOURCES = \
 	xpcom/build/nsXPComInit.cpp \
 	xpcom/build/nsStringAPI.cpp
 VBoxXPCOM_SOURCES.darwin = \
-	vboxdeps.cpp
-VBoxXPCOM_SOURCES.os2 = \
 	vboxdeps.cpp
 VBoxXPCOM_SOURCES.solaris = \
 	vboxdeps.cpp
@@ -1162,7 +1089,6 @@ $(evalcall VBOX_XPCOM_X86,VBox-xpcom-ipcshared)
 # DCONNECT client shared object
 #
 VBoxXPCOMIPCC_TEMPLATE = XPComIpcDll
-VBoxXPCOMIPCC_NAME.os2 = VBoxIPCC
 VBoxXPCOMIPCC_INST = $(INST_BIN)components/
 #VBoxXPCOMIPCC_DEFS = HAVE_DEPENDENT_LIBS - dependentLibs.h is linux specific, so this cannot be required.
 VBoxXPCOMIPCC_SOURCES = \
