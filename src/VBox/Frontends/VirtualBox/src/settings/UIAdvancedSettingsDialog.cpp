@@ -906,6 +906,19 @@ void UIAdvancedSettingsDialog::setConfigurationAccessLevel(ConfigurationAccessLe
         pPage->setConfigurationAccessLevel(configurationAccessLevel());
 }
 
+void UIAdvancedSettingsDialog::setOptionalFlags(const QMap<QString, QVariant> &flags)
+{
+    /* Avoid excessive calls: */
+    if (m_flags == flags)
+        return;
+
+    /* Save new flags: */
+    m_flags = flags;
+
+    /* Reapply optional flags: */
+    sltApplyFilteringRules();
+}
+
 void UIAdvancedSettingsDialog::addItem(const QString &strBigIcon,
                                        const QString &strMediumIcon,
                                        const QString &strSmallIcon,
@@ -1094,7 +1107,8 @@ void UIAdvancedSettingsDialog::sltApplyFilteringRules()
     /* Filter-out page contents: */
     foreach (UISettingsPageFrame *pFrame, m_frames.values())
         pFrame->filterOut(m_pCheckBoxMode->isChecked(),
-                          m_pEditorFilter->text());
+                          m_pEditorFilter->text(),
+                          m_flags);
 }
 
 void UIAdvancedSettingsDialog::sltHandleFrameVisibilityChange(bool fVisible)

@@ -60,8 +60,11 @@ public:
 
     /** Filters out contents.
       * @param  fExpertMode  Brings whether editor is in expert mode.
-      * @param  strFilter    Brings the filter description should match to. */
-    virtual void filterOut(bool fExpertMode, const QString &strFilter);
+      * @param  strFilter    Brings the filter description should match to.
+      * @param  flags        Brings the optional flags for this editor. */
+    virtual void filterOut(bool fExpertMode,
+                           const QString &strFilter,
+                           const QMap<QString, QVariant> &flags);
 
 protected:
 
@@ -80,6 +83,9 @@ protected:
     bool  m_fShowInBasicMode;
     /** Holds whether editor is in expert mode. */
     bool  m_fInExpertMode;
+
+    /** Holds the editor optional flags. */
+    QMap<QString, QVariant>  m_flags;
 
     /** Holds the parent tab-widget if any. */
     QTabWidget *m_pTabWidget;

@@ -59,14 +59,16 @@ void UIEditor::addEditor(UIEditor *pEditor)
     m_editors << pEditor;
 }
 
-void UIEditor::filterOut(bool fExpertMode, const QString &strFilter)
+void UIEditor::filterOut(bool fExpertMode, const QString &strFilter, const QMap<QString, QVariant> &flags)
 {
     /* Save if editor is in expert mode: */
     m_fInExpertMode = fExpertMode;
+    /* Save editor's optional flags: */
+    m_flags = flags;
 
     /* Propagate filter towards all the children: */
     foreach (UIEditor *pEditor, m_editors)
-        pEditor->filterOut(m_fInExpertMode, strFilter);
+        pEditor->filterOut(m_fInExpertMode, strFilter, m_flags);
 
     /* Make sure the editor is visible if mode and filter are suitable: */
     bool fVisible = (m_fInExpertMode || m_fShowInBasicMode) && strFilter.isEmpty();

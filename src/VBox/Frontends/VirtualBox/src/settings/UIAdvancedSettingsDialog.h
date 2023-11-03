@@ -140,6 +140,11 @@ protected:
     /** Returns whether the serialization is in progress. */
     bool isSerializationInProgress() const { return m_fSerializationIsInProgress; }
 
+    /** Returns dialog optional flags. */
+    QMap<QString, QVariant> optionalFlags() const { return m_flags; }
+    /** Defines dialog optional @a flags. */
+    void setOptionalFlags(const QMap<QString, QVariant> &flags);
+
     /** Returns the dialog title extension. */
     virtual QString titleExtension() const = 0;
     /** Returns the dialog title. */
@@ -234,6 +239,9 @@ private:
     bool  m_fSerializationClean;
     /** Holds whether the dialod had emitted signal to be closed. */
     bool  m_fClosed;
+
+    /** Holds the dialog optional flags. */
+    QMap<QString, QVariant>  m_flags;
 
     /** Holds the status-bar widget instance. */
     QStackedWidget         *m_pStatusBar;
