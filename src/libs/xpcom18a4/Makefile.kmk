@@ -168,7 +168,6 @@ NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/lib/ds/plarenas.h \
 	nsprpub/lib/libc/include/plbase64.h \
 	nsprpub/lib/ds/plhash.h \
-	nsprpub/lib/libc/include/plresolv.h \
 	nsprpub/lib/libc/include/plstr.h \
 	nsprpub/pr/include/pratom.h \
 	nsprpub/pr/include/prbit.h \
