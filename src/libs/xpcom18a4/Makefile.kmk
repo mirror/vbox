@@ -197,7 +197,6 @@ NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/pr/include/prsystem.h \
 	nsprpub/pr/include/prthread.h \
 	nsprpub/pr/include/prtime.h \
-	nsprpub/pr/include/prtpool.h \
 	nsprpub/pr/include/prtrace.h \
 	nsprpub/pr/include/prtypes.h \
 	nsprpub/pr/include/prwin16.h \
@@ -546,7 +545,6 @@ VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/pr/src/misc/prnetdb.c \
 	nsprpub/pr/src/misc/prtime.c \
 	nsprpub/pr/src/misc/prthinfo.c \
-	nsprpub/pr/src/misc/prtpool.c \
 	nsprpub/pr/src/misc/prtrace.c \
 	nsprpub/pr/src/threads/prcmon.c \
 	nsprpub/pr/src/threads/prtpd.c \
