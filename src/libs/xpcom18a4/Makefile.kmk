@@ -565,7 +565,6 @@ ifeq ($(filter-out darwin freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET))
  	nsprpub/pr/src/md/unix/unix_errors.c \
  	nsprpub/pr/src/md/unix/uxproces.c \
  	nsprpub/pr/src/md/unix/uxshm.c \
- 	nsprpub/pr/src/md/unix/uxwrap.c \
  	nsprpub/pr/src/pthreads/ptio.c \
  	nsprpub/pr/src/pthreads/ptsynch.c \
  	nsprpub/pr/src/pthreads/ptthread.c
