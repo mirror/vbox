@@ -68,7 +68,6 @@
 #define PR_SuspendAll VBoxNsprPR_SuspendAll
 #define PR_ResumeAll VBoxNsprPR_ResumeAll
 #define PR_GetSP VBoxNsprPR_GetSP
-#define PR_GetGCRegisters VBoxNsprPR_GetGCRegisters
 #define GetExecutionEnvironment VBoxNsprGetExecutionEnvironment
 #define SetExecutionEnvironment VBoxNsprSetExecutionEnvironment
 #define PR_EnumerateThreads VBoxNsprPR_EnumerateThreads
@@ -237,21 +236,6 @@ NSPR_API(void) PR_ResumeAll(void);
 NSPR_API(void *) PR_GetSP(PRThread *thread);
 
 /*
-** Save the registers that the GC would find interesting into the thread
-** "t". isCurrent will be non-zero if the thread state that is being
-** saved is the currently executing thread. Return the address of the
-** first register to be scanned as well as the number of registers to
-** scan in "np".
-**
-** If "isCurrent" is non-zero then it is allowed for the thread context
-** area to be used as scratch storage to hold just the registers
-** necessary for scanning.
-**
-** This function simply calls the internal function _MD_HomeGCRegisters().
-*/
-NSPR_API(PRWord *) PR_GetGCRegisters(PRThread *t, int isCurrent, int *np);
-
-/*
 ** (Get|Set)ExecutionEnvironent
 **
 ** Used by Java to associate it's execution environment so garbage collector
@@ -271,39 +255,6 @@ NSPR_API(void) SetExecutionEnvironment(PRThread* thread, void *environment);
 */
 typedef PRStatus (PR_CALLBACK *PREnumerator)(PRThread *t, int i, void *arg);
 NSPR_API(PRStatus) PR_EnumerateThreads(PREnumerator func, void *arg);
-
-/* 
-** Signature of a thread stack scanning function. It is applied to every
-** contiguous group of potential pointers within a thread. Count denotes the
-** number of pointers. 
-*/
-typedef PRStatus 
-(PR_CALLBACK *PRScanStackFun)(PRThread* t,
-			      void** baseAddr, PRUword count, void* closure);
-
-/*
-** Applies scanFun to all contiguous groups of potential pointers 
-** within a thread. This includes the stack, registers, and thread-local
-** data. If scanFun returns a status value other than PR_SUCCESS the scan
-** is aborted, and the status value is returned. 
-*/
-NSPR_API(PRStatus)
-PR_ThreadScanStackPointers(PRThread* t,
-                           PRScanStackFun scanFun, void* scanClosure);
-
-/* 
-** Calls PR_ThreadScanStackPointers for every thread.
-*/
-NSPR_API(PRStatus)
-PR_ScanStackPointers(PRScanStackFun scanFun, void* scanClosure);
-
-/*
-** Returns a conservative estimate on the amount of stack space left
-** on a thread in bytes, sufficient for making decisions about whether 
-** to continue recursing or not.
-*/
-NSPR_API(PRUword)
-PR_GetStackSpaceLeft(PRThread* t);
 
 /*---------------------------------------------------------------------------
 ** THREAD CPU PRIVATE FUNCTIONS             
@@ -354,48 +305,8 @@ NSPR_API(PRIntn) PR_GetMonitorEntryCount(PRMonitor *mon);
 NSPR_API(PRMonitor*) PR_CTestAndEnterMonitor(void *address);
 
 /*---------------------------------------------------------------------------
-** PLATFORM-SPECIFIC THREAD SYNCHRONIZATION FUNCTIONS
----------------------------------------------------------------------------*/
-#if defined(XP_MAC)
-
-NSPR_API(void) PR_Mac_WaitForAsyncNotify(PRIntervalTime timeout);
-NSPR_API(void) PR_Mac_PostAsyncNotify(PRThread *thread);
-
-#endif /* XP_MAC */
-
-/*---------------------------------------------------------------------------
 ** PLATFORM-SPECIFIC INITIALIZATION FUNCTIONS
 ---------------------------------------------------------------------------*/
-#if defined(IRIX)
-/*
-** Irix specific initialization funtion to be called before PR_Init
-** is called by the application. Sets the CONF_INITUSERS and CONF_INITSIZE
-** attributes of the shared arena set up by nspr.
-**
-** The environment variables _NSPR_IRIX_INITUSERS and _NSPR_IRIX_INITSIZE
-** can also be used to set these arena attributes. If _NSPR_IRIX_INITUSERS
-** is set, but not _NSPR_IRIX_INITSIZE, the value of the CONF_INITSIZE
-** attribute of the nspr arena is scaled as a function of the
-** _NSPR_IRIX_INITUSERS value.
-** 
-** If the _PR_Irix_Set_Arena_Params() is called in addition to setting the
-** environment variables, the values of the environment variables are used.
-** 
-*/
-NSPR_API(void) _PR_Irix_Set_Arena_Params(PRInt32 initusers, PRInt32 initsize);
-
-#endif /* IRIX */
-
-#if defined(XP_OS2)
-/*
-** These functions need to be called at the start and end of a thread.
-** An EXCEPTIONREGISTRATIONRECORD must be declared on the stack and its
-** address passed to the two functions.
-*/
-NSPR_API(void) PR_OS2_SetFloatExcpHandler(EXCEPTIONREGISTRATIONRECORD* e);
-NSPR_API(void) PR_OS2_UnsetFloatExcpHandler(EXCEPTIONREGISTRATIONRECORD* e);
-#endif /* XP_OS2 */
-
 /* I think PR_GetMonitorEntryCount is useless. All you really want is this... */
 #define PR_InMonitor(m)		(PR_GetMonitorEntryCount(m) > 0)
 

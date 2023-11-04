@@ -544,7 +544,6 @@ VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/pr/src/misc/prlong.c \
 	nsprpub/pr/src/misc/prnetdb.c \
 	nsprpub/pr/src/misc/prtime.c \
-	nsprpub/pr/src/misc/prthinfo.c \
 	nsprpub/pr/src/misc/prtrace.c \
 	nsprpub/pr/src/threads/prcmon.c \
 	nsprpub/pr/src/threads/prtpd.c \
