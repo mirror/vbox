@@ -44,11 +44,15 @@
 #if defined(_PR_PTHREADS)
 
 #include "primpl.h"
-#include "obsolete/prsem.h"
 
 #include <string.h>
 #include <pthread.h>
 #include <sys/time.h>
+
+#ifdef VBOX
+/* From the removed obsolete/prsem.h */
+typedef struct PRSemaphore PRSemaphore;
+#endif
 
 static pthread_mutexattr_t _pt_mattr;
 static pthread_condattr_t _pt_cvar_attr;
