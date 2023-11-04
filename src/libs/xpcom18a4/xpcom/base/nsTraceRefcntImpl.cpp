@@ -583,10 +583,6 @@ static PRBool LogThisType(const char* aTypeName)
 
 static PRInt32 GetSerialNumber(void* aPtr, PRBool aCreate)
 {
-#ifdef GC_LEAK_DETECTOR
-  // need to disguise this pointer, so the table won't keep the object alive.
-  aPtr = (void*) ~PLHashNumber(aPtr);
-#endif
   PLHashEntry** hep = PL_HashTableRawLookup(gSerialNumbers, PLHashNumber(NS_PTR_TO_INT32(aPtr)), aPtr);
   if (hep && *hep) {
     return PRInt32((NS_REINTERPRET_CAST(serialNumberRecord*,(*hep)->value))->serialNumber);
@@ -606,10 +602,6 @@ static PRInt32 GetSerialNumber(void* aPtr, PRBool aCreate)
 
 static PRInt32* GetRefCount(void* aPtr)
 {
-#ifdef GC_LEAK_DETECTOR
-  // need to disguise this pointer, so the table won't keep the object alive.
-  aPtr = (void*) ~PLHashNumber(aPtr);
-#endif
   PLHashEntry** hep = PL_HashTableRawLookup(gSerialNumbers, PLHashNumber(NS_PTR_TO_INT32(aPtr)), aPtr);
   if (hep && *hep) {
     return &((NS_REINTERPRET_CAST(serialNumberRecord*,(*hep)->value))->refCount);
@@ -620,10 +612,6 @@ static PRInt32* GetRefCount(void* aPtr)
 
 static PRInt32* GetCOMPtrCount(void* aPtr)
 {
-#ifdef GC_LEAK_DETECTOR
-  // need to disguise this pointer, so the table won't keep the object alive.
-  aPtr = (void*) ~PLHashNumber(aPtr);
-#endif
   PLHashEntry** hep = PL_HashTableRawLookup(gSerialNumbers, PLHashNumber(NS_PTR_TO_INT32(aPtr)), aPtr);
   if (hep && *hep) {
     return &((NS_REINTERPRET_CAST(serialNumberRecord*,(*hep)->value))->COMPtrCount);
@@ -634,10 +622,6 @@ static PRInt32* GetCOMPtrCount(void* aPtr)
 
 static void RecycleSerialNumberPtr(void* aPtr)
 {
-#ifdef GC_LEAK_DETECTOR
-  // need to disguise this pointer, so the table won't keep the object alive.
-  aPtr = (void*) ~PLHashNumber(aPtr);
-#endif
   PL_HashTableRemove(gSerialNumbers, aPtr);
 }
 

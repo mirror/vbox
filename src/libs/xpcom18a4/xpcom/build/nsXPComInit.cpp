@@ -109,9 +109,6 @@
 
 #include "nsVariant.h"
 
-#ifdef GC_LEAK_DETECTOR
-#include "nsLeakDetector.h"
-#endif
 #include "nsRecyclingAllocator.h"
 
 #include "SpecialSystemDirectory.h"
@@ -633,11 +630,6 @@ nsresult NS_COM NS_InitXPCOM2(nsIServiceManager* *result,
     rv = compMgr->RegisterService(kComponentManagerCID, NS_STATIC_CAST(nsIComponentManager*, compMgr));
     if (NS_FAILED(rv)) return rv;
 
-#ifdef GC_LEAK_DETECTOR
-  rv = NS_InitLeakDetector();
-    if (NS_FAILED(rv)) return rv;
-#endif
-
     // 2. Register the global services with the component manager so that
     //    clients can create new objects.
 
@@ -969,11 +961,6 @@ nsresult NS_COM NS_ShutdownXPCOM(nsIServiceManager* servMgr)
     nsTraceRefcntImpl::DumpStatistics();
     nsTraceRefcntImpl::ResetStatistics();
     nsTraceRefcntImpl::Shutdown();
-#endif
-
-#ifdef GC_LEAK_DETECTOR
-    // Shutdown the Leak detector.
-    NS_ShutdownLeakDetector();
 #endif
 
     return NS_OK;
