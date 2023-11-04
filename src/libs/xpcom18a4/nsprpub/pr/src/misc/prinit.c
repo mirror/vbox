@@ -178,9 +178,6 @@ static void _PR_InitStuff(void)
 #ifdef VBOX_USE_IPRT_IN_NSPR
     RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
 #endif
-#ifdef _PR_ZONE_ALLOCATOR
-    _PR_InitZones();
-#endif
 #ifdef WINNT
     _pr_SetNativeThreadsOnlyMode();
 #endif
