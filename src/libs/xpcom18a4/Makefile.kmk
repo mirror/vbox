@@ -219,6 +219,7 @@ NSPRPUB-MD-HEADERS_SOURCES = \
 	nsprpub/pr/include/md/_darwin.cfg \
 	nsprpub/pr/include/md/_netbsd.cfg \
 	nsprpub/pr/include/md/_openbsd.cfg \
+	nsprpub/pr/include/md/_solaris32.cfg \
 	nsprpub/pr/include/md/_solaris64.cfg
 NSPRPUB-OBS-HEADERS_INST = $(INST_SDK)bindings/xpcom/include/nsprpub/obsolete/
 NSPRPUB-OBS-HEADERS_IFFLAGS = -m 644
