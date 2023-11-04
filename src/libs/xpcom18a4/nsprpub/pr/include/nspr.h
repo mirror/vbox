@@ -57,7 +57,6 @@
 #include "prlong.h"
 #include "prmem.h"
 #include "prmon.h"
-#include "prnetdb.h"
 #include "prprf.h"
 #include "prproces.h"
 #include "prshm.h"
