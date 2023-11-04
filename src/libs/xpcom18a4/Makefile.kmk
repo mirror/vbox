@@ -653,7 +653,6 @@ VBox-xpcom-ds_SOURCES = \
 	xpcom/ds/nsUnicharBuffer.cpp \
 	xpcom/ds/nsVariant.cpp \
 	xpcom/ds/nsVoidArray.cpp \
-	xpcom/ds/nsTextFormatter.cpp \
 	xpcom/ds/nsTimelineService.cpp \
 	xpcom/ds/nsValueArray.cpp \
 	xpcom/ds/nsCOMArray.cpp \
