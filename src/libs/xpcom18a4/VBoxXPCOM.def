@@ -440,7 +440,6 @@ EXPORTS
     PR_Send
     PR_SendFile
     PR_SendTo
-    PR_SetConcurrency
     PR_SetEnv
     PR_SetError
     PR_SetErrorText

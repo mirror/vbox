@@ -54,7 +54,6 @@
 #define PR_Initialize VBoxNsprPR_Initialize
 #define PR_Initialized VBoxNsprPR_Initialized
 #define PR_VersionCheck VBoxNsprPR_VersionCheck
-#define PR_SetConcurrency VBoxNsprPR_SetConcurrency
 #define PR_SetFDCacheSize VBoxNsprPR_SetFDCacheSize
 #define PR_ProcessExit VBoxNsprPR_ProcessExit
 #define PR_CallOnce VBoxNsprPR_CallOnce
@@ -198,11 +197,6 @@ NSPR_API(void) PR_BlockClockInterrupts(void);
 **		Unblocks the timer signal used for pre-emptive scheduling
 */
 NSPR_API(void) PR_UnblockClockInterrupts(void);
-
-/*
-** Create extra virtual processor threads. Generally used with MP systems.
-*/
-NSPR_API(void) PR_SetConcurrency(PRUintn numCPUs);
 
 /*
 ** Control the method and size of the file descriptor (PRFileDesc*)

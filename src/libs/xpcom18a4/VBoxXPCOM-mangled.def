@@ -403,7 +403,6 @@ EXPORTS
     VBoxNsprPR_Send
     VBoxNsprPR_SendFile
     VBoxNsprPR_SendTo
-    VBoxNsprPR_SetConcurrency
     VBoxNsprPR_SetEnv
     VBoxNsprPR_SetError
     VBoxNsprPR_SetErrorText

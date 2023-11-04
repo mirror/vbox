@@ -203,7 +203,6 @@ static void _PR_InitStuff(void)
     _PR_InitLocks();
     _PR_InitAtomic();
     _PR_InitSegs();
-    _PR_InitStacks();
 	_PR_InitTPD();
     _PR_InitEnv();
     _PR_InitLayerCache();
@@ -213,10 +212,6 @@ static void _PR_InitStuff(void)
     PR_ASSERT(NULL != _pr_sleeplock);
 
     _PR_InitThreads(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
-
-#ifndef _PR_GLOBAL_THREADS_ONLY
-	_PR_InitCPUs();
-#endif
 
     _PR_InitCMon();
     _PR_InitIO();
