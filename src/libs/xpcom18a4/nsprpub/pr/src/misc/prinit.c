@@ -215,17 +215,12 @@ static void _PR_InitStuff(void)
 
     _PR_InitCMon();
     _PR_InitIO();
-    _PR_InitNet();
     _PR_InitLog();
     _PR_InitLinker();
     _PR_InitCallOnce();
     _PR_InitDtoa();
 
     nspr_InitializePRErrorTable();
-
-#if !defined(_PR_INET6) || defined(_PR_INET6_PROBE)
-	_pr_init_ipv6();
-#endif
 
     _PR_MD_FINAL_INIT();
 }
@@ -428,7 +423,6 @@ PR_IMPLEMENT(PRStatus) PR_Cleanup()
          * Ideally, for each _PR_InitXXX(), there should be a corresponding
          * _PR_XXXCleanup() that we can call here.
          */
-        _PR_CleanupNet();
         _PR_CleanupIO();
 #ifdef WINNT
         _PR_CleanupCPUs();

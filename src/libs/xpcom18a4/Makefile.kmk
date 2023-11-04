@@ -188,7 +188,6 @@ NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/pr/include/prlong.h \
 	nsprpub/pr/include/prmem.h \
 	nsprpub/pr/include/prmon.h \
-	nsprpub/pr/include/prnetdb.h \
 	nsprpub/pr/include/prpdce.h \
 	nsprpub/pr/include/prprf.h \
 	nsprpub/pr/include/prproces.h \
@@ -514,7 +513,6 @@ VBox-xpcom-nspr_INCS = \
 VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/pr/src/io/prfdcach.c \
 	nsprpub/pr/src/io/priometh.c \
-	nsprpub/pr/src/io/pripv6.c \
 	nsprpub/pr/src/io/prmapopt.c \
 	nsprpub/pr/src/io/prlayer.c \
 	nsprpub/pr/src/io/prlog.c \
@@ -539,7 +537,6 @@ VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/pr/src/misc/pripc.c \
 	nsprpub/pr/src/misc/prlog2.c \
 	nsprpub/pr/src/misc/prlong.c \
-	nsprpub/pr/src/misc/prnetdb.c \
 	nsprpub/pr/src/misc/prtime.c \
 	nsprpub/pr/src/threads/prcmon.c \
 	nsprpub/pr/src/threads/prtpd.c \

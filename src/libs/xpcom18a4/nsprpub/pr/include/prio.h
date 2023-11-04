@@ -102,9 +102,6 @@
 #define PR_MkDir VBoxNsprPR_MkDir
 #define PR_MakeDir VBoxNsprPR_MakeDir
 #define PR_RmDir VBoxNsprPR_RmDir
-#define PR_NewUDPSocket VBoxNsprPR_NewUDPSocket
-#define PR_NewTCPSocket VBoxNsprPR_NewTCPSocket
-#define PR_OpenUDPSocket VBoxNsprPR_OpenUDPSocket
 #define PR_OpenTCPSocket VBoxNsprPR_OpenTCPSocket
 #define PR_ConnectContinue VBoxNsprPR_ConnectContinue
 #define PR_GetConnectStatus VBoxNsprPR_GetConnectStatus
@@ -115,7 +112,6 @@
 #define PR_SendTo VBoxNsprPR_SendTo
 #define PR_TransmitFile VBoxNsprPR_TransmitFile
 #define PR_SendFile VBoxNsprPR_SendFile
-#define PR_NewTCPSocketPair VBoxNsprPR_NewTCPSocketPair
 #define PR_GetSockName VBoxNsprPR_GetSockName
 #define PR_GetPeerName VBoxNsprPR_GetPeerName
 #define PR_GetSocketOption VBoxNsprPR_GetSocketOption
@@ -1254,64 +1250,6 @@ NSPR_API(PRStatus) PR_RmDir(const char *name);
 
 /*
  *************************************************************************
- * FUNCTION: PR_NewUDPSocket
- * DESCRIPTION:
- *     Create a new UDP socket.
- * INPUTS:
- *     None
- * OUTPUTS:
- *     None
- * RETURN: PRFileDesc*
- *     Upon successful completion, PR_NewUDPSocket returns a pointer
- *     to the PRFileDesc created for the newly opened UDP socket.
- *     Returns a NULL pointer if the creation of a new UDP socket failed.
- *
- **************************************************************************
- */
-
-NSPR_API(PRFileDesc*)    PR_NewUDPSocket(void);
-
-/*
- *************************************************************************
- * FUNCTION: PR_NewTCPSocket
- * DESCRIPTION:
- *     Create a new TCP socket.
- * INPUTS:
- *     None
- * OUTPUTS:
- *     None
- * RETURN: PRFileDesc*
- *     Upon successful completion, PR_NewTCPSocket returns a pointer
- *     to the PRFileDesc created for the newly opened TCP socket.
- *     Returns a NULL pointer if the creation of a new TCP socket failed.
- *
- **************************************************************************
- */
-
-NSPR_API(PRFileDesc*)    PR_NewTCPSocket(void);
-
-/*
- *************************************************************************
- * FUNCTION: PR_OpenUDPSocket
- * DESCRIPTION:
- *     Create a new UDP socket of the specified address family.
- * INPUTS:
- *     PRIntn af
- *       Address family
- * OUTPUTS:
- *     None
- * RETURN: PRFileDesc*
- *     Upon successful completion, PR_OpenUDPSocket returns a pointer
- *     to the PRFileDesc created for the newly opened UDP socket.
- *     Returns a NULL pointer if the creation of a new UDP socket failed.
- *
- **************************************************************************
- */
-
-NSPR_API(PRFileDesc*)    PR_OpenUDPSocket(PRIntn af);
-
-/*
- *************************************************************************
  * FUNCTION: PR_OpenTCPSocket
  * DESCRIPTION:
  *     Create a new TCP socket of the specified address family.
@@ -1797,28 +1735,6 @@ NSPR_API(PRInt32) PR_SendFile(
 NSPR_API(PRInt32) PR_AcceptRead(
     PRFileDesc *listenSock, PRFileDesc **acceptedSock,
     PRNetAddr **peerAddr, void *buf, PRInt32 amount, PRIntervalTime timeout);
-
-/*
-*************************************************************************
-** FUNCTION: PR_NewTCPSocketPair
-** DESCRIPTION:
-**    Create a new TCP socket pair. The returned descriptors can be used
-**    interchangeably; they are interconnected full-duplex descriptors: data
-**    written to one can be read from the other and vice-versa.
-**
-** INPUTS:
-**    None
-** OUTPUTS:
-**    PRFileDesc *fds[2]
-**        The file descriptor pair for the newly created TCP sockets.
-** RETURN: PRStatus
-**     Upon successful completion of TCP socket pair, PR_NewTCPSocketPair 
-**     returns PR_SUCCESS.  Otherwise, it returns PR_FAILURE.  Further
-**     failure information can be obtained by calling PR_GetError().
-** XXX can we implement this on windoze and mac?
-**************************************************************************
-**/
-NSPR_API(PRStatus) PR_NewTCPSocketPair(PRFileDesc *fds[2]);
 
 /*
 *************************************************************************

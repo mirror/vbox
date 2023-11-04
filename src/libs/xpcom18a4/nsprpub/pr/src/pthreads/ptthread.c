@@ -965,7 +965,6 @@ PR_IMPLEMENT(PRStatus) PR_Cleanup(void)
         _PR_CleanupCallOnce();
         _PR_ShutdownLinker();
         _PR_LogCleanup();
-        _PR_CleanupNet();
         /* Close all the fd's before calling _PR_CleanupIO */
         _PR_CleanupIO();
 
