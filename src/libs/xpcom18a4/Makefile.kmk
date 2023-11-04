@@ -210,10 +210,8 @@ NSPRPUB-MD-HEADERS_SOURCES = \
 	nsprpub/pr/include/md/_darwin.h \
 	nsprpub/pr/include/md/_freebsd.h \
 	nsprpub/pr/include/md/_linux.h \
-	nsprpub/pr/include/md/_macos.h \
 	nsprpub/pr/include/md/_netbsd.h \
 	nsprpub/pr/include/md/_openbsd.h \
-	nsprpub/pr/include/md/_pcos.h \
 	nsprpub/pr/include/md/_solaris.h \
 	nsprpub/pr/include/md/_unix_errors.h \
 	nsprpub/pr/include/md/_unixos.h \
