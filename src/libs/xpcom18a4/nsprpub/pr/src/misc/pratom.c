@@ -43,6 +43,8 @@
 #include "pratom.h"
 #include "primpl.h"
 
+#include <string.h>
+
 void _PR_InitAtomic(void)
 {
     _PR_MD_INIT_ATOMIC();
