@@ -247,7 +247,6 @@ static void _PR_InitStuff(void)
     _PR_InitLinker();
     _PR_InitCallOnce();
     _PR_InitDtoa();
-    _PR_InitMW();
 
     nspr_InitializePRErrorTable();
 
@@ -424,7 +423,6 @@ PR_IMPLEMENT(PRStatus) PR_Cleanup()
     	PR_ASSERT((_PR_IS_NATIVE_THREAD(me)) || (me->cpu->id == 0));
 #endif
 
-        _PR_CleanupMW();
         _PR_CleanupDtoa();
         _PR_CleanupCallOnce();
 		_PR_ShutdownLinker();
