@@ -39,14 +39,6 @@
 #include <string.h>
 
 PR_IMPLEMENT(char *)
-PL_strcpy(char *dest, const char *src)
-{
-    if( ((char *)0 == dest) || ((const char *)0 == src) ) return (char *)0;
-
-    return strcpy(dest, src);
-}
-
-PR_IMPLEMENT(char *)
 PL_strncpy(char *dest, const char *src, PRUint32 max)
 {
     char *rv;

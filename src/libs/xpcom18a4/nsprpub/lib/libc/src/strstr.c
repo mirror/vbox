@@ -39,15 +39,6 @@
 #include <string.h>
 
 PR_IMPLEMENT(char *)
-PL_strstr(const char *big, const char *little)
-{
-    if( ((const char *)0 == big) || ((const char *)0 == little) ) return (char *)0;
-    if( ((char)0 == *big) || ((char)0 == *little) ) return (char *)0;
-
-    return strstr(big, little);
-}
-
-PR_IMPLEMENT(char *)
 PL_strrstr(const char *big, const char *little)
 {
     const char *p;
@@ -87,31 +78,6 @@ PL_strnstr(const char *big, const char *little, PRUint32 max)
         if( *little == *big )
             if( 0 == strncmp(big, little, ll) )
                 return (char *)big;
-
-    return (char *)0;
-}
-
-PR_IMPLEMENT(char *)
-PL_strnrstr(const char *big, const char *little, PRUint32 max)
-{
-    const char *p;
-    size_t ll;
-
-    if( ((const char *)0 == big) || ((const char *)0 == little) ) return (char *)0;
-    if( ((char)0 == *big) || ((char)0 == *little) ) return (char *)0;
-
-    ll = strlen(little);
-
-    for( p = big; max && *p; p++, max-- )
-        ;
-
-    p -= ll;
-    if( p < big ) return (char *)0;
-
-    for( ; p >= big; p-- )
-        if( *little == *p )
-            if( 0 == strncmp(p, little, ll) )
-                return (char *)p;
 
     return (char *)0;
 }

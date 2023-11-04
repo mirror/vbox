@@ -15,7 +15,7 @@
 uintptr_t deps[] =
 {
     (uintptr_t)PL_strncpy,
-    (uintptr_t)PL_strchr,
+    (uintptr_t)PL_strrchr,
     (uintptr_t)PL_strncpyz,
     (uintptr_t)PL_HashString,
     (uintptr_t)PR_DestroyPollableEvent,

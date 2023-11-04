@@ -74,26 +74,11 @@
 #define PL_strrchr VBoxNsplPL_strrchr
 #define PL_strcaserstr VBoxNsplPL_strcaserstr
 #define PL_strcasestr VBoxNsplPL_strcasestr
-#define PL_strcat VBoxNsplPL_strcat
-#define PL_strcatn VBoxNsplPL_strcatn
-#define PL_strchr VBoxNsplPL_strchr
-#define PL_strcpy VBoxNsplPL_strcpy
-#define PL_strncaserstr VBoxNsplPL_strncaserstr
-#define PL_strncasestr VBoxNsplPL_strncasestr
-#define PL_strncat VBoxNsplPL_strncat
-#define PL_strnchr VBoxNsplPL_strnchr
 #define PL_strndup VBoxNsplPL_strndup
 #define PL_strnlen VBoxNsplPL_strnlen
-#define PL_strnpbrk VBoxNsplPL_strnpbrk
-#define PL_strnprbrk VBoxNsplPL_strnprbrk
-#define PL_strnrchr VBoxNsplPL_strnrchr
-#define PL_strnrstr VBoxNsplPL_strnrstr
 #define PL_strnstr VBoxNsplPL_strnstr
 #define PL_strpbrk VBoxNsplPL_strpbrk
-#define PL_strprbrk VBoxNsplPL_strprbrk
 #define PL_strrstr VBoxNsplPL_strrstr
-#define PL_strstr VBoxNsplPL_strstr
-#define PL_strtok_r VBoxNsplPL_strtok_r
 #endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 
 PR_BEGIN_EXTERN_C
@@ -116,17 +101,6 @@ PL_strlen(const char *str);
 
 PR_EXTERN(PRUint32)
 PL_strnlen(const char *str, PRUint32 max);
-
-/*
- * PL_strcpy
- *
- * Copies the source string, up to and including the trailing '\0', into the
- * destination buffer.  It does not (can not) verify that the destination
- * buffer is large enough.  It returns the "dest" argument.
- */
-
-PR_EXTERN(char *)
-PL_strcpy(char *dest, const char *src);
 
 /*
  * PL_strncpy
@@ -203,47 +177,6 @@ PR_EXTERN(char *)
 PL_strndup(const char *s, PRUint32 max);
 
 /*
- * PL_strcat
- *
- * Appends a copy of the string pointed to by the second argument to the
- * end of the string pointed to by the first.  The destination buffer is
- * not (can not be) checked for sufficient size.  A null destination
- * argument returns null; otherwise, the first argument is returned.
- */
-
-PR_EXTERN(char *)
-PL_strcat(char *dst, const char *src);
-
-/*
- * PL_strncat
- *
- * Appends a copy of the string pointed to by the second argument, up to
- * the maximum size specified, to the end of the string pointed to by the
- * first.  The destination buffer is not (can not be) checked for sufficient
- * size.  A null destination argument returns null; otherwise, the first 
- * argument is returned.  If the maximum size limits the copy, then the
- * result will *not* be null-terminated (JLRU).  A null destination
- * returns null; otherwise, the destination argument is returned.
- */
-
-PR_EXTERN(char *)
-PL_strncat(char *dst, const char *src, PRUint32 max);
-
-/*
- * PL_strcatn
- *
- * Appends a copy of the string pointed to by the third argument, to the
- * end of the string pointed to by the first.  The second argument specifies
- * the maximum size of the destination buffer, including the null termination.
- * If the existing string in dst is longer than the max, no action is taken.
- * The resulting string will be null-terminated.  A null destination returns
- * null; otherwise, the destination argument is returned.
- */
-
-PR_EXTERN(char *)
-PL_strcatn(char *dst, PRUint32 max, const char *src);
-
-/*
  * PL_strcmp
  *
  * Returns an integer, the sign of which -- positive, zero, or negative --
@@ -294,17 +227,6 @@ PR_EXTERN(PRIntn)
 PL_strncasecmp(const char *a, const char *b, PRUint32 max);
 
 /*
- * PL_strchr
- *
- * Returns a pointer to the first instance of the specified character in the
- * provided string.  It returns null if the character is not found, or if the
- * provided string is null.  The character may be the null character.
- */
-
-PR_EXTERN(char *)
-PL_strchr(const char *s, char c);
-
-/*
  * PL_strrchr
  *
  * Returns a pointer to the last instance of the specified character in the
@@ -314,30 +236,6 @@ PL_strchr(const char *s, char c);
 
 PR_EXTERN(char *)
 PL_strrchr(const char *s, char c);
-
-/*
- * PL_strnchr
- * 
- * Returns a pointer to the first instance of the specified character within the
- * first n characters of the provided string.  It returns null if the character
- * is not found, or if the provided string is null.  The character may be the
- * null character.
- */
-
-PR_EXTERN(char *)
-PL_strnchr(const char *s, char c, PRUint32 n);
-
-/*
- * PL_strnrchr
- *
- * Returns a pointer to the last instance of the specified character within the
- * first n characters of the provided string.  It returns null if the character is
- * not found, or if the provided string is null.  The character may be the null
- * character.
- */
-
-PR_EXTERN(char *)
-PL_strnrchr(const char *s, char c, PRUint32 n);
 
 /*
  * NOTE: Looking for strcasechr, strcaserchr, strncasechr, or strncaserchr?
@@ -354,49 +252,6 @@ PL_strnrchr(const char *s, char c, PRUint32 n);
 
 PR_EXTERN(char *)
 PL_strpbrk(const char *s, const char *list);
-
-/*
- * PL_strprbrk
- *
- * Returns a pointer to the last instance in the first string of any character
- * (not including the terminating null character) of the second string.  It returns
- * null if either string is null.
- */
-
-PR_EXTERN(char *)
-PL_strprbrk(const char *s, const char *list);
-
-/*
- * PL_strnpbrk
- *
- * Returns a pointer to the first instance (within the first n characters) of any
- * character (not including the terminating null character) of the second string.
- * It returns null if either string is null.
- */
-
-PR_EXTERN(char *)
-PL_strnpbrk(const char *s, const char *list, PRUint32 n);
-
-/*
- * PL_strnprbrk
- *
- * Returns a pointer to the last instance (within the first n characters) of any
- * character (not including the terminating null character) of the second string.
- * It returns null if either string is null.
- */
-
-PR_EXTERN(char *)
-PL_strnprbrk(const char *s, const char *list, PRUint32 n);
-
-/*
- * PL_strstr
- *
- * Returns a pointer to the first instance of the little string within the
- * big one.  It returns null if either string is null.
- */
-
-PR_EXTERN(char *)
-PL_strstr(const char *big, const char *little);
 
 /*
  * PL_strrstr
@@ -420,17 +275,6 @@ PR_EXTERN(char *)
 PL_strnstr(const char *big, const char *little, PRUint32 n);
 
 /*
- * PL_strnrstr
- *
- * Returns a pointer to the last instance of the little string within the first
- * n characters of the big one.  It returns null if either string is null.  It
- * returns null if the length of the little string is greater than n.
- */
-
-PR_EXTERN(char *)
-PL_strnrstr(const char *big, const char *little, PRUint32 max);
-
-/*
  * PL_strcasestr
  *
  * Returns a pointer to the first instance of the little string within the big one,
@@ -439,60 +283,6 @@ PL_strnrstr(const char *big, const char *little, PRUint32 max);
 
 PR_EXTERN(char *)
 PL_strcasestr(const char *big, const char *little);
-
-/*
- * PL_strcaserstr
- *
- * Returns a pointer to the last instance of the little string within the big one,
- * ignoring case.  It returns null if either string is null.
- */
-
-PR_EXTERN(char *)
-PL_strcaserstr(const char *big, const char *little);
-
-/*
- * PL_strncasestr
- *
- * Returns a pointer to the first instance of the listtle string within the first
- * n characters of the big one, ignoring case.  It returns null if either string is 
- * null.  It returns null if the length of the little string is greater than n.
- */
-
-PR_EXTERN(char *)
-PL_strncasestr(const char *big, const char *little, PRUint32 max);
-
-/*
- * PL_strncaserstr
- *
- * Returns a pointer to the last instance of the little string within the first
- * n characters of the big one, ignoring case.  It returns null if either string is
- * null.  It returns null if the length of the little string is greater than n.
- */
-
-PR_EXTERN(char *)
-PL_strncaserstr(const char *big, const char *little, PRUint32 max);
-
-/*
- * PL_strtok_r
- *
- * Splits the string s1 into tokens, separated by one or more characters
- * from the separator string s2.  The argument lasts points to a
- * user-supplied char * pointer in which PL_strtok_r stores information
- * for it to continue scanning the same string.
- *
- * In the first call to PL_strtok_r, s1 points to a string and the value
- * of *lasts is ignored.  PL_strtok_r returns a pointer to the first
- * token, writes '\0' into the character following the first token, and
- * updates *lasts.
- *
- * In subsequent calls, s1 is null and lasts must stay unchanged from the
- * previous call.  The separator string s2 may be different from call to
- * call.  PL_strtok_r returns a pointer to the next token in s1.  When no
- * token remains in s1, PL_strtok_r returns null.
- */
-
-PR_EXTERN(char *)
-PL_strtok_r(char *s1, const char *s2, char **lasts);
 
 /*
  * Things not (yet?) included: strspn/strcspn, strsep.
