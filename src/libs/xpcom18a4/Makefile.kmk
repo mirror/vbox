@@ -576,8 +576,6 @@ VBox-xpcom-nspr_SOURCES.darwin = nsprpub/pr/src/md/unix/darwin.c
 VBox-xpcom-nspr_SOURCES.freebsd = nsprpub/pr/src/md/unix/freebsd.c
 
 VBox-xpcom-nspr_SOURCES.linux = nsprpub/pr/src/md/unix/linux.c
-VBox-xpcom-nspr_SOURCES.linux.x86 = nsprpub/pr/src/md/unix/os_Linux_x86.s
-VBox-xpcom-nspr_SOURCES.linux.amd64 = nsprpub/pr/src/md/unix/os_Linux_x86_64.s
 
 VBox-xpcom-nspr_SOURCES.solaris = nsprpub/pr/src/md/unix/solaris.c
 VBox-xpcom-nspr_SOURCES.solaris.x86 = nsprpub/pr/src/md/unix/os_SunOS_x86.s
