@@ -232,14 +232,6 @@ static void _PR_InitStuff(void)
 	_PR_InitCPUs();
 #endif
 
-/*
- * XXX: call _PR_InitMem only on those platforms for which nspr implements
- *	malloc, for now.
- */
-#ifdef _PR_OVERRIDE_MALLOC
-    _PR_InitMem();
-#endif
-
     _PR_InitCMon();
     _PR_InitIO();
     _PR_InitNet();
