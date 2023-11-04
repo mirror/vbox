@@ -177,24 +177,7 @@ NSPR_API(PRIntervalTime) _MD_Solaris_GetInterval(void);
 NSPR_API(PRIntervalTime) _MD_Solaris_TicksPerSecond(void);
 #define _MD_INTERVAL_PER_SEC              _MD_Solaris_TicksPerSecond
 
-#if defined(_PR_HAVE_ATOMIC_OPS)
-/*
-** Atomic Operations
-*/
-#define _MD_INIT_ATOMIC()
-
-NSPR_API(PRInt32) _MD_AtomicIncrement(PRInt32 *val);
-#define _MD_ATOMIC_INCREMENT _MD_AtomicIncrement
-
-NSPR_API(PRInt32) _MD_AtomicAdd(PRInt32 *ptr, PRInt32 val);
-#define _MD_ATOMIC_ADD _MD_AtomicAdd
-
-NSPR_API(PRInt32) _MD_AtomicDecrement(PRInt32 *val);
-#define _MD_ATOMIC_DECREMENT _MD_AtomicDecrement
-
-NSPR_API(PRInt32) _MD_AtomicSet(PRInt32 *val, PRInt32 newval);
-#define _MD_ATOMIC_SET _MD_AtomicSet
-#endif /* _PR_HAVE_ATOMIC_OPS */
+#include "_iprt_atomic.h"
 
 #if defined(_PR_PTHREADS)
 

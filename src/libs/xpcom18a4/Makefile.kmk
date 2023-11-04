@@ -219,7 +219,6 @@ NSPRPUB-MD-HEADERS_SOURCES = \
 	nsprpub/pr/include/md/_darwin.cfg \
 	nsprpub/pr/include/md/_netbsd.cfg \
 	nsprpub/pr/include/md/_openbsd.cfg \
-	nsprpub/pr/include/md/_solaris32.cfg \
 	nsprpub/pr/include/md/_solaris64.cfg
 NSPRPUB-OBS-HEADERS_INST = $(INST_SDK)bindings/xpcom/include/nsprpub/obsolete/
 NSPRPUB-OBS-HEADERS_IFFLAGS = -m 644
@@ -563,15 +562,10 @@ ifeq ($(filter-out darwin freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET))
  	nsprpub/pr/src/pthreads/ptthread.c
 endif
 
-VBox-xpcom-nspr_SOURCES.darwin = nsprpub/pr/src/md/unix/darwin.c
-
+VBox-xpcom-nspr_SOURCES.darwin  = nsprpub/pr/src/md/unix/darwin.c
 VBox-xpcom-nspr_SOURCES.freebsd = nsprpub/pr/src/md/unix/freebsd.c
-
-VBox-xpcom-nspr_SOURCES.linux = nsprpub/pr/src/md/unix/linux.c
-
+VBox-xpcom-nspr_SOURCES.linux   = nsprpub/pr/src/md/unix/linux.c
 VBox-xpcom-nspr_SOURCES.solaris = nsprpub/pr/src/md/unix/solaris.c
-VBox-xpcom-nspr_SOURCES.solaris.x86 = nsprpub/pr/src/md/unix/os_SunOS_x86.s
-VBox-xpcom-nspr_SOURCES.solaris.amd64 = nsprpub/pr/src/md/unix/os_SunOS_x86_64.s
 
 $(call KB_FN_DO_PASS0_ON_TARGET,VBox-xpcom-nspr)
 
