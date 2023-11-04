@@ -525,7 +525,6 @@ VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/pr/src/io/prscanf.c \
 	nsprpub/pr/src/io/prstdio.c \
 	nsprpub/pr/src/linking/prlink.c \
-	nsprpub/pr/src/malloc/prmem.c \
 	nsprpub/pr/src/md/prosdep.c \
 	nsprpub/pr/src/memory/prseg.c \
 	nsprpub/pr/src/memory/prshm.c \

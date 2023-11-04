@@ -46,6 +46,7 @@
 #include "prtypes.h"
 #include <stddef.h>
 #include <stdlib.h>
+#include <iprt/mem.h>
 
 #ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
 #define PR_Malloc VBoxNsprPR_Malloc
@@ -63,21 +64,29 @@ PR_BEGIN_EXTERN_C
 ** thread safe (and are not declared here - look in stdlib.h).
 */
 
-/*
-** PR_Malloc, PR_Calloc, PR_Realloc, and PR_Free have the same signatures
-** as their libc equivalent malloc, calloc, realloc, and free, and have
-** the same semantics.  (Note that the argument type size_t is replaced
-** by PRUint32.)  Memory allocated by PR_Malloc, PR_Calloc, or PR_Realloc
-** must be freed by PR_Free.
-*/
+#ifdef VBOX
+DECL_FORCE_INLINE(void *) PR_Malloc(PRUint32 size)
+{
+    return RTMemAlloc(RT_MAX(size, 1));
+}
 
-NSPR_API(void *) PR_Malloc(PRUint32 size);
+DECL_FORCE_INLINE(void *) PR_Calloc(PRUint32 nelem, PRUint32 elsize)
+{
+    return RTMemAllocZ(RT_MAX(nelem * (size_t)elsize, 1));
+}
 
-NSPR_API(void *) PR_Calloc(PRUint32 nelem, PRUint32 elsize);
+DECL_FORCE_INLINE(void *) PR_Realloc(void *ptr, PRUint32 size)
+{
+    return RTMemRealloc(ptr, size);
+}
 
-NSPR_API(void *) PR_Realloc(void *ptr, PRUint32 size);
-
-NSPR_API(void) PR_Free(void *ptr);
+DECL_FORCE_INLINE(void) PR_Free(void *ptr)
+{
+    RTMemFree(ptr);
+}
+#else
+# error "Not supported"
+#endif
 
 /*
 ** The following are some convenience macros defined in terms of
