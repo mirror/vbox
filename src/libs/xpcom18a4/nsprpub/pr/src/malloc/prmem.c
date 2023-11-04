@@ -40,9 +40,7 @@
 */
 
 #include "primpl.h"
-#ifdef VBOX_USE_IPRT_IN_NSPR
-# include <iprt/mem.h>
-#endif
+#include <iprt/mem.h>
 
 /*
 ** The PR_Malloc, PR_Calloc, PR_Realloc, and PR_Free functions simply
@@ -54,54 +52,21 @@
 */
 PR_IMPLEMENT(void *) PR_Malloc(PRUint32 size)
 {
-#if defined (WIN16)
-    return PR_MD_malloc( (size_t) size);
-#else
-# ifdef VBOX_USE_IPRT_IN_NSPR
     return RTMemAlloc(RT_MAX(size, 1));
-# else
-    return malloc(size);
-# endif
-#endif
 }
 
 PR_IMPLEMENT(void *) PR_Calloc(PRUint32 nelem, PRUint32 elsize)
 {
-#if defined (WIN16)
-    return PR_MD_calloc( (size_t)nelem, (size_t)elsize );
-
-#else
-# ifdef VBOX_USE_IPRT_IN_NSPR
     return RTMemAllocZ(RT_MAX(nelem * (size_t)elsize, 1));
-# else
-    return calloc(nelem, elsize);
-# endif
-#endif
 }
 
 PR_IMPLEMENT(void *) PR_Realloc(void *ptr, PRUint32 size)
 {
-#if defined (WIN16)
-    return PR_MD_realloc( ptr, (size_t) size);
-#else
-# ifdef VBOX_USE_IPRT_IN_NSPR
     return RTMemRealloc(ptr, size);
-# else
-    return realloc(ptr, size);
-# endif
-#endif
 }
 
 PR_IMPLEMENT(void) PR_Free(void *ptr)
 {
-#if defined (WIN16)
-    PR_MD_free( ptr );
-#else
-# ifdef VBOX_USE_IPRT_IN_NSPR
     RTMemFree(ptr);
-# else
-    free(ptr);
-# endif
-#endif
 }
 
