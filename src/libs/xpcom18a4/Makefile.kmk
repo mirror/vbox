@@ -193,7 +193,6 @@ NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/pr/include/prpdce.h \
 	nsprpub/pr/include/prprf.h \
 	nsprpub/pr/include/prproces.h \
-	nsprpub/pr/include/prrwlock.h \
 	nsprpub/pr/include/prshm.h \
 	nsprpub/pr/include/prshma.h \
 	nsprpub/pr/include/prsystem.h \
@@ -556,7 +555,6 @@ VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/pr/src/misc/prtpool.c \
 	nsprpub/pr/src/misc/prtrace.c \
 	nsprpub/pr/src/threads/prcmon.c \
-	nsprpub/pr/src/threads/prrwlock.c \
 	nsprpub/pr/src/threads/prtpd.c \
 	nsprpub/lib/ds/plarena.c \
 	nsprpub/lib/ds/plhash.c \

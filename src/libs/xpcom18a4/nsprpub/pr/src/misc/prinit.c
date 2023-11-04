@@ -248,7 +248,6 @@ static void _PR_InitStuff(void)
     _PR_InitCallOnce();
     _PR_InitDtoa();
     _PR_InitMW();
-    _PR_InitRWLocks();
 
     nspr_InitializePRErrorTable();
 
