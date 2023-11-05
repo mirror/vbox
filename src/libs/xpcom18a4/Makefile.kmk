@@ -330,7 +330,6 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/ds/nsStaticAtom.h \
 	xpcom/components/nsStaticComponent.h \
 	xpcom/ds/nsStaticNameTable.h \
-	xpcom/io/nsStorageStream.h \
 	xpcom/ds/nsStringEnumerator.h \
 	xpcom/io/nsStringIO.h \
 	xpcom/io/nsStringStream.h \
@@ -657,7 +656,6 @@ VBox-xpcom-io_SOURCES = \
 	xpcom/io/nsScriptableInputStream.cpp \
 	xpcom/io/nsSegmentedBuffer.cpp \
 	xpcom/io/SpecialSystemDirectory.cpp \
-	xpcom/io/nsStorageStream.cpp \
 	xpcom/io/nsStringStream.cpp \
 	xpcom/io/nsUnicharInputStream.cpp \
 	xpcom/io/nsNativeCharsetUtils.cpp
@@ -1175,7 +1173,6 @@ VBOX_XPTFILES = $(addprefix $(PATH_TARGET)/VBox-xpcom-xpt-files/, \
 		nsIObjectInputStream.xpt \
 		nsIObjectOutputStream.xpt \
 		nsISeekableStream.xpt \
-		nsIStorageStream.xpt \
 		nsIStringStream.xpt \
 		nsIStreamBufferAccess.xpt \
 		nsIAsyncInputStream.xpt \
