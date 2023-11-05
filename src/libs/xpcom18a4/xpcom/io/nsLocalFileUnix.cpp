@@ -78,7 +78,6 @@
 #include "nsXPIDLString.h"
 #include "prproces.h"
 #include "nsISimpleEnumerator.h"
-#include "nsITimelineService.h"
 
 #include "nsNativeCharsetUtils.h"
 
@@ -1537,12 +1536,7 @@ nsLocalFile::Load(PRLibrary **_retval)
     CHECK_mPath();
     NS_ENSURE_ARG_POINTER(_retval);
 
-    NS_TIMELINE_START_TIMER("PR_LoadLibrary");
-
     *_retval = PR_LoadLibrary(mPath.get());
-
-    NS_TIMELINE_STOP_TIMER("PR_LoadLibrary");
-    NS_TIMELINE_MARK_TIMER1("PR_LoadLibrary", mPath.get());
 
     if (!*_retval)
         return NS_ERROR_FAILURE;

@@ -644,7 +644,6 @@ VBox-xpcom-ds_SOURCES = \
 	xpcom/ds/nsUnicharBuffer.cpp \
 	xpcom/ds/nsVariant.cpp \
 	xpcom/ds/nsVoidArray.cpp \
-	xpcom/ds/nsTimelineService.cpp \
 	xpcom/ds/nsValueArray.cpp \
 	xpcom/ds/nsCOMArray.cpp \
 	xpcom/ds/nsArray.cpp \
@@ -1194,7 +1193,6 @@ VBOX_XPTFILES = $(addprefix $(PATH_TARGET)/VBox-xpcom-xpt-files/, \
 		nsIStringEnumerator.xpt \
 		nsISupportsArray.xpt \
 		nsISupportsIterators.xpt \
-		nsITimelineService.xpt \
 		nsIArray.xpt \
 		nsIObserverService.xpt \
 		nsIObserver.xpt \

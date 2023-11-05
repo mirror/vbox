@@ -105,7 +105,6 @@
 #include "nsAtomService.h"
 #include "nsAtomTable.h"
 #include "nsTraceRefcnt.h"
-#include "nsTimelineService.h"
 
 #include "nsVariant.h"
 
@@ -196,10 +195,6 @@ NS_GENERIC_FACTORY_CONSTRUCTOR(nsStorageStream)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsVariant)
 
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsRecyclingAllocatorImpl)
-
-#ifdef MOZ_TIMELINE
-NS_GENERIC_FACTORY_CONSTRUCTOR(nsTimelineService)
-#endif
 
 static NS_METHOD
 nsXPTIInterfaceInfoManagerGetSingleton(nsISupports* outer,
@@ -368,9 +363,6 @@ static const nsModuleComponentInfo components[] = {
     COMPONENT(CONSOLESERVICE, nsConsoleServiceConstructor),
     COMPONENT(EXCEPTIONSERVICE, nsExceptionServiceConstructor),
     COMPONENT(ATOMSERVICE, nsAtomServiceConstructor),
-#ifdef MOZ_TIMELINE
-    COMPONENT(TIMELINESERVICE, nsTimelineServiceConstructor),
-#endif
     COMPONENT(OBSERVERSERVICE, nsObserverService::Create),
     COMPONENT(GENERICFACTORY, nsGenericFactory::Create),
     COMPONENT(EVENTQUEUESERVICE, nsEventQueueServiceImplConstructor),

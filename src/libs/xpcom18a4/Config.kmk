@@ -411,7 +411,6 @@ XPCOM_IDLFILES = \
 	xpcom/ds/nsISupportsPrimitives.idl \
 	xpcom/ds/nsISupportsIterators.idl \
 	xpcom/ds/nsIVariant.idl \
-	xpcom/ds/nsITimelineService.idl \
 	xpcom/ds/nsIArray.idl \
 	xpcom/ds/nsIPropertyBag.idl \
 	xpcom/ds/nsIHashable.idl \

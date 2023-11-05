@@ -67,7 +67,6 @@
 
 #include "nsXPIDLString.h"
 #include "prproces.h"
-#include "nsITimelineService.h"
 
 #include "nsAutoLock.h"
 #include "SpecialSystemDirectory.h"
@@ -1338,11 +1337,7 @@ nsLocalFile::Load(PRLibrary * *_retval)
     if (! isFile)
         return NS_ERROR_FILE_IS_DIRECTORY;
 
-    NS_TIMELINE_START_TIMER("PR_LoadLibrary");
     *_retval =  PR_LoadLibrary(mResolvedPath.get());
-    NS_TIMELINE_STOP_TIMER("PR_LoadLibrary");
-    NS_TIMELINE_MARK_TIMER1("PR_LoadLibrary", mResolvedPath.get());
-
     if (*_retval)
         return NS_OK;
 
