@@ -44,7 +44,6 @@
 #include "nsObserverService.h"
 #include "nsProperties.h"
 #include "nsIProperties.h"
-#include "nsPersistentProperties.h"
 #include "nsScriptableInputStream.h"
 #include "nsBinaryStream.h"
 
@@ -336,9 +335,6 @@ static const nsModuleComponentInfo components[] = {
 
 #define NS_PROPERTIES_CLASSNAME  "Properties"
     COMPONENT(PROPERTIES, nsProperties::Create),
-
-#define NS_PERSISTENTPROPERTIES_CID NS_IPERSISTENTPROPERTIES_CID /* sigh */
-    COMPONENT(PERSISTENTPROPERTIES, nsPersistentProperties::Create),
 
     COMPONENT(SUPPORTSARRAY, nsSupportsArray::Create),
     COMPONENT(ARRAY, nsArrayConstructor),

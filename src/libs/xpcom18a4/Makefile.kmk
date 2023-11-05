@@ -611,7 +611,6 @@ VBox-xpcom-ds_SOURCES = \
 	xpcom/ds/nsObserverList.cpp \
 	xpcom/ds/nsObserverService.cpp \
 	xpcom/ds/nsProperties.cpp \
-	xpcom/ds/nsPersistentProperties.cpp \
 	xpcom/ds/nsQuickSort.cpp \
 	xpcom/ds/nsStaticNameTable.cpp \
 	xpcom/ds/nsStringEnumerator.cpp \
@@ -1149,7 +1148,6 @@ VBOX_XPTFILES = $(addprefix $(PATH_TARGET)/VBox-xpcom-xpt-files/, \
 		nsIAtomService.xpt \
 		nsICollection.xpt \
 		nsIEnumerator.xpt \
-		nsIPersistentProperties2.xpt \
 		nsIPropertyBag.xpt \
 		nsIVariant.xpt \
 		nsISerializable.xpt \
