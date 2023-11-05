@@ -316,7 +316,6 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/io/nsLocalFileUnix.h \
 	xpcom/io/nsLocalFileOSX.h \
 	xpcom/components/nsModule.h \
-	xpcom/io/nsMultiplexInputStream.h \
 	xpcom/io/nsNativeCharsetUtils.h \
 	xpcom/components/nsNativeComponentLoader.h \
 	xpcom/ds/nsObserverService.h \
@@ -652,7 +651,6 @@ VBox-xpcom-io_SOURCES = \
 	xpcom/io/nsDirectoryService.cpp \
 	xpcom/io/nsInputStreamTee.cpp \
 	xpcom/io/nsLocalFileCommon.cpp \
-	xpcom/io/nsMultiplexInputStream.cpp \
 	xpcom/io/nsScriptableInputStream.cpp \
 	xpcom/io/nsSegmentedBuffer.cpp \
 	xpcom/io/SpecialSystemDirectory.cpp \
@@ -1169,7 +1167,6 @@ VBOX_XPTFILES = $(addprefix $(PATH_TARGET)/VBox-xpcom-xpt-files/, \
 		nsIByteArrayInputStream.xpt \
 		nsIInputStreamTee.xpt \
 		nsILineInputStream.xpt \
-		nsIMultiplexInputStream.xpt \
 		nsIObjectInputStream.xpt \
 		nsIObjectOutputStream.xpt \
 		nsISeekableStream.xpt \
