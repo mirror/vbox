@@ -301,15 +301,12 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/ds/nsHashKeys.h \
 	xpcom/ds/nsHashSets.h \
 	xpcom/ds/nsHashtable.h \
-	xpcom/ds/nsIByteBuffer.h \
 	xpcom/base/nsID.h \
 	xpcom/base/nsIID.h \
 	xpcom/components/nsIServiceManagerObsolete.h \
 	xpcom/components/nsIServiceManagerUtils.h \
 	xpcom/base/nsISupportsBase.h \
 	xpcom/base/nsISupportsObsolete.h \
-	xpcom/ds/nsIUnicharBuffer.h \
-	xpcom/io/nsIUnicharInputStream.h \
 	xpcom/ds/nsInt64.h \
 	xpcom/ds/nsInterfaceHashtable.h \
 	xpcom/io/nsLocalFile.h \
@@ -599,7 +596,6 @@ VBox-xpcom-ds_SOURCES = \
 	xpcom/ds/pldhash.c \
 	xpcom/ds/nsAtomTable.cpp \
 	xpcom/ds/nsAtomService.cpp \
-	xpcom/ds/nsByteBuffer.cpp \
 	xpcom/ds/nsCheapSets.cpp \
 	xpcom/ds/nsCRT.cpp \
 	xpcom/ds/nsDeque.cpp \
@@ -654,7 +650,6 @@ VBox-xpcom-io_SOURCES = \
 	xpcom/io/nsSegmentedBuffer.cpp \
 	xpcom/io/SpecialSystemDirectory.cpp \
 	xpcom/io/nsStringStream.cpp \
-	xpcom/io/nsUnicharInputStream.cpp \
 	xpcom/io/nsNativeCharsetUtils.cpp
 if1of ($(KBUILD_TARGET) $(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), freebsd linux netbsd openbsd solaris darwin.amd64 darwin.arm64)
  VBox-xpcom-io_SOURCES += \
