@@ -78,9 +78,3 @@ void _MD_EarlyInit(void)
 {
 }
 
-PRWord *_MD_HomeGCRegisters(PRThread *t, PRIntn isCurrent, PRIntn *np)
-{
-	*np = 0;
-	return NULL;
-}
-

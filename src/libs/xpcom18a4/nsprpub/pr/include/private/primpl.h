@@ -674,21 +674,6 @@ extern PRInt32 _PR_MD_ATOMIC_DECREMENT(PRInt32 *);
 extern PRInt32 _PR_MD_ATOMIC_SET(PRInt32 *, PRInt32);
 #define    _PR_MD_ATOMIC_SET _MD_ATOMIC_SET
 
-/* Garbage collection */
-
-/*
-** Save the registers that the GC would find interesting into the thread
-** "t". isCurrent will be non-zero if the thread state that is being
-** saved is the currently executing thread. Return the address of the
-** first register to be scanned as well as the number of registers to
-** scan in "np".
-**
-** If "isCurrent" is non-zero then it is allowed for the thread context
-** area to be used as scratch storage to hold just the registers
-** necessary for scanning.
-*/
-extern PRWord *_MD_HomeGCRegisters(PRThread *t, int isCurrent, int *np);
-
 /* Time intervals */
 
 extern PRIntervalTime _PR_MD_GET_INTERVAL(void);
