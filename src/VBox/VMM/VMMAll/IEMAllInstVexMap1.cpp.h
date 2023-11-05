@@ -1216,9 +1216,9 @@ FNIEMOP_DEF(iemOp_vmovddup_Vx_Wx)
          */
         if (pVCpu->iem.s.uVexLength == 0)
         {
-            IEM_MC_BEGIN(1, 0, IEM_MC_F_NOT_286_OR_OLDER, 0);
+            IEM_MC_BEGIN(0, 1, IEM_MC_F_NOT_286_OR_OLDER, 0);
             IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx);
-            IEM_MC_ARG(uint64_t,                    uSrc, 0);
+            IEM_MC_LOCAL(uint64_t,                  uSrc);
 
             IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
             IEM_MC_PREPARE_AVX_USAGE();
@@ -1254,9 +1254,9 @@ FNIEMOP_DEF(iemOp_vmovddup_Vx_Wx)
          */
         if (pVCpu->iem.s.uVexLength == 0)
         {
-            IEM_MC_BEGIN(1, 1, IEM_MC_F_NOT_286_OR_OLDER, 0);
+            IEM_MC_BEGIN(0, 2, IEM_MC_F_NOT_286_OR_OLDER, 0);
             IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
-            IEM_MC_ARG(uint64_t,                    uSrc, 0);
+            IEM_MC_LOCAL(uint64_t,                  uSrc);
 
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
             IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx);

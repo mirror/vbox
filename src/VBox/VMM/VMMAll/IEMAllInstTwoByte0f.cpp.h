@@ -2692,9 +2692,9 @@ FNIEMOP_DEF(iemOp_movddup_Vdq_Wdq)
         /*
          * XMM128, XMM64.
          */
-        IEM_MC_BEGIN(1, 0, 0, 0);
+        IEM_MC_BEGIN(0, 1, 0, 0);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse3);
-        IEM_MC_ARG(uint64_t,                    uSrc, 0);
+        IEM_MC_LOCAL(uint64_t,                  uSrc);
 
         IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
         IEM_MC_PREPARE_SSE_USAGE();
@@ -2711,9 +2711,9 @@ FNIEMOP_DEF(iemOp_movddup_Vdq_Wdq)
         /*
          * XMM128, [mem64].
          */
-        IEM_MC_BEGIN(1, 1, 0, 0);
+        IEM_MC_BEGIN(0, 2, 0, 0);
         IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
-        IEM_MC_ARG(uint64_t,                    uSrc, 0);
+        IEM_MC_LOCAL(uint64_t,                  uSrc);
 
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse3);
@@ -10021,10 +10021,10 @@ FNIEMOP_DEF_1(iemOp_Grp15_rdfsbase, uint8_t, bRm)
     IEMOP_MNEMONIC(rdfsbase, "rdfsbase Ry");
     if (pVCpu->iem.s.enmEffOpSize == IEMMODE_64BIT)
     {
-        IEM_MC_BEGIN(1, 0, IEM_MC_F_64BIT, 0);
+        IEM_MC_BEGIN(0, 1, IEM_MC_F_64BIT, 0);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fFsGsBase);
         IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT();
-        IEM_MC_ARG(uint64_t, u64Dst, 0);
+        IEM_MC_LOCAL(uint64_t, u64Dst);
         IEM_MC_FETCH_SREG_BASE_U64(u64Dst, X86_SREG_FS);
         IEM_MC_STORE_GREG_U64(IEM_GET_MODRM_RM(pVCpu, bRm), u64Dst);
         IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -10032,10 +10032,10 @@ FNIEMOP_DEF_1(iemOp_Grp15_rdfsbase, uint8_t, bRm)
     }
     else
     {
-        IEM_MC_BEGIN(1, 0, IEM_MC_F_NOT_286_OR_OLDER, 0);
+        IEM_MC_BEGIN(0, 1, IEM_MC_F_NOT_286_OR_OLDER, 0);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fFsGsBase);
         IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT();
-        IEM_MC_ARG(uint32_t, u32Dst, 0);
+        IEM_MC_LOCAL(uint32_t, u32Dst);
         IEM_MC_FETCH_SREG_BASE_U32(u32Dst, X86_SREG_FS);
         IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_RM(pVCpu, bRm), u32Dst);
         IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -10050,10 +10050,10 @@ FNIEMOP_DEF_1(iemOp_Grp15_rdgsbase, uint8_t, bRm)
     IEMOP_MNEMONIC(rdgsbase, "rdgsbase Ry");
     if (pVCpu->iem.s.enmEffOpSize == IEMMODE_64BIT)
     {
-        IEM_MC_BEGIN(1, 0, IEM_MC_F_64BIT, 0);
+        IEM_MC_BEGIN(0, 1, IEM_MC_F_64BIT, 0);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fFsGsBase);
         IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT();
-        IEM_MC_ARG(uint64_t, u64Dst, 0);
+        IEM_MC_LOCAL(uint64_t, u64Dst);
         IEM_MC_FETCH_SREG_BASE_U64(u64Dst, X86_SREG_GS);
         IEM_MC_STORE_GREG_U64(IEM_GET_MODRM_RM(pVCpu, bRm), u64Dst);
         IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -10061,10 +10061,10 @@ FNIEMOP_DEF_1(iemOp_Grp15_rdgsbase, uint8_t, bRm)
     }
     else
     {
-        IEM_MC_BEGIN(1, 0, IEM_MC_F_NOT_286_OR_OLDER, 0);
+        IEM_MC_BEGIN(0, 1, IEM_MC_F_NOT_286_OR_OLDER, 0);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fFsGsBase);
         IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT();
-        IEM_MC_ARG(uint32_t, u32Dst, 0);
+        IEM_MC_LOCAL(uint32_t, u32Dst);
         IEM_MC_FETCH_SREG_BASE_U32(u32Dst, X86_SREG_GS);
         IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_RM(pVCpu, bRm), u32Dst);
         IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -10079,10 +10079,10 @@ FNIEMOP_DEF_1(iemOp_Grp15_wrfsbase, uint8_t, bRm)
     IEMOP_MNEMONIC(wrfsbase, "wrfsbase Ry");
     if (pVCpu->iem.s.enmEffOpSize == IEMMODE_64BIT)
     {
-        IEM_MC_BEGIN(1, 0, IEM_MC_F_64BIT, 0);
+        IEM_MC_BEGIN(0, 1, IEM_MC_F_64BIT, 0);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fFsGsBase);
         IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT();
-        IEM_MC_ARG(uint64_t, u64Dst, 0);
+        IEM_MC_LOCAL(uint64_t, u64Dst);
         IEM_MC_FETCH_GREG_U64(u64Dst, IEM_GET_MODRM_RM(pVCpu, bRm));
         IEM_MC_MAYBE_RAISE_NON_CANONICAL_ADDR_GP0(u64Dst);
         IEM_MC_STORE_SREG_BASE_U64(X86_SREG_FS, u64Dst);
@@ -10091,10 +10091,10 @@ FNIEMOP_DEF_1(iemOp_Grp15_wrfsbase, uint8_t, bRm)
     }
     else
     {
-        IEM_MC_BEGIN(1, 0, IEM_MC_F_NOT_286_OR_OLDER, 0);
+        IEM_MC_BEGIN(0, 1, IEM_MC_F_NOT_286_OR_OLDER, 0);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fFsGsBase);
         IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT();
-        IEM_MC_ARG(uint32_t, u32Dst, 0);
+        IEM_MC_LOCAL(uint32_t, u32Dst);
         IEM_MC_FETCH_GREG_U32(u32Dst, IEM_GET_MODRM_RM(pVCpu, bRm));
         IEM_MC_STORE_SREG_BASE_U64(X86_SREG_FS, u32Dst);
         IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -10109,10 +10109,10 @@ FNIEMOP_DEF_1(iemOp_Grp15_wrgsbase, uint8_t, bRm)
     IEMOP_MNEMONIC(wrgsbase, "wrgsbase Ry");
     if (pVCpu->iem.s.enmEffOpSize == IEMMODE_64BIT)
     {
-        IEM_MC_BEGIN(1, 0, IEM_MC_F_64BIT, 0);
+        IEM_MC_BEGIN(0, 1, IEM_MC_F_64BIT, 0);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fFsGsBase);
         IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT();
-        IEM_MC_ARG(uint64_t, u64Dst, 0);
+        IEM_MC_LOCAL(uint64_t, u64Dst);
         IEM_MC_FETCH_GREG_U64(u64Dst, IEM_GET_MODRM_RM(pVCpu, bRm));
         IEM_MC_MAYBE_RAISE_NON_CANONICAL_ADDR_GP0(u64Dst);
         IEM_MC_STORE_SREG_BASE_U64(X86_SREG_GS, u64Dst);
@@ -10121,10 +10121,10 @@ FNIEMOP_DEF_1(iemOp_Grp15_wrgsbase, uint8_t, bRm)
     }
     else
     {
-        IEM_MC_BEGIN(1, 0, IEM_MC_F_NOT_286_OR_OLDER, 0);
+        IEM_MC_BEGIN(0, 1, IEM_MC_F_NOT_286_OR_OLDER, 0);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fFsGsBase);
         IEM_MC_MAYBE_RAISE_FSGSBASE_XCPT();
-        IEM_MC_ARG(uint32_t, u32Dst, 0);
+        IEM_MC_LOCAL(uint32_t, u32Dst);
         IEM_MC_FETCH_GREG_U32(u32Dst, IEM_GET_MODRM_RM(pVCpu, bRm));
         IEM_MC_STORE_SREG_BASE_U64(X86_SREG_GS, u32Dst);
         IEM_MC_ADVANCE_RIP_AND_FINISH();
