@@ -197,7 +197,6 @@ NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/pr/include/prthread.h \
 	nsprpub/pr/include/prtime.h \
 	nsprpub/pr/include/prtypes.h \
-	nsprpub/pr/include/prwin16.h \
 	nsprpub/pr/include/md/_vbox.cfg=>prcpucfg.h
 NSPRPUB-MD-HEADERS_INST = $(INST_SDK)bindings/xpcom/include/nsprpub/md/
 NSPRPUB-MD-HEADERS_IFFLAGS = -m 644
