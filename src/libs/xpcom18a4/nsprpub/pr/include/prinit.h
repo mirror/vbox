@@ -40,7 +40,6 @@
 
 #include "prthread.h"
 #include "prtypes.h"
-#include "prwin16.h"
 #include <stdio.h>
 
 #ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
