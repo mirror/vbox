@@ -594,8 +594,7 @@ VBox-xpcom-base_SOURCES = \
 	xpcom/base/nsExceptionService.cpp \
 	xpcom/base/nsID.cpp \
 	xpcom/base/nsMemoryImpl.cpp \
-	xpcom/base/nsTraceRefcntImpl.cpp \
-	xpcom/base/nsStackFrameUnix.cpp
+	xpcom/base/nsTraceRefcntImpl.cpp
 $(evalcall VBOX_XPCOM_X86,VBox-xpcom-base)
 
 VBox-xpcom-ds_TEMPLATE = XPComDll
