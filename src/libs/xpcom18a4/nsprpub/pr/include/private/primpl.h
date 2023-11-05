@@ -701,51 +701,6 @@ extern PRStatus _PR_MD_MEM_UNMAP(void *addr, PRUint32 size);
 extern PRStatus _PR_MD_CLOSE_FILE_MAP(PRFileMap *fmap);
 #define _PR_MD_CLOSE_FILE_MAP _MD_CLOSE_FILE_MAP
 
-/* Named Shared Memory */
-
-/*
-** Declare PRSharedMemory.
-*/
-struct PRSharedMemory
-{
-    char        *ipcname; /* after conversion to native */
-    PRSize      size;  /* from open */
-    PRIntn      mode;  /* from open */
-    PRIntn      flags; /* from open */
-#if defined(PR_HAVE_POSIX_NAMED_SHARED_MEMORY)
-    int         id;
-#elif defined(PR_HAVE_SYSV_NAMED_SHARED_MEMORY)
-    int         id;
-#elif defined(PR_HAVE_WIN32_NAMED_SHARED_MEMORY)
-    HANDLE      handle;
-#else
-    PRUint32    nothing; /* placeholder, nothing behind here */
-#endif
-    PRUint32    ident; /* guard word at end of struct */
-#define _PR_SHM_IDENT 0xdeadbad
-};
-
-extern PRSharedMemory * _MD_OpenSharedMemory(
-    const char *name,
-    PRSize      size,
-    PRIntn      flags,
-    PRIntn      mode
-);
-#define _PR_MD_OPEN_SHARED_MEMORY _MD_OpenSharedMemory
-
-extern void * _MD_AttachSharedMemory( PRSharedMemory *shm, PRIntn flags );
-#define _PR_MD_ATTACH_SHARED_MEMORY _MD_AttachSharedMemory
-
-extern PRStatus _MD_DetachSharedMemory( PRSharedMemory *shm, void *addr );
-#define _PR_MD_DETACH_SHARED_MEMORY _MD_DetachSharedMemory
-
-extern PRStatus _MD_CloseSharedMemory( PRSharedMemory *shm );
-#define _PR_MD_CLOSE_SHARED_MEMORY _MD_CloseSharedMemory
-
-extern PRStatus _MD_DeleteSharedMemory( const char *name );
-#define _PR_MD_DELETE_SHARED_MEMORY  _MD_DeleteSharedMemory
-
-
 
 /* Interprocess communications (IPC) */
 
