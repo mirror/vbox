@@ -321,7 +321,6 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/io/nsLinebreakConverter.h \
 	xpcom/io/nsLocalFile.h \
 	xpcom/io/nsLocalFileUnix.h \
-	xpcom/io/nsLocalFileOS2.h \
 	xpcom/io/nsLocalFileOSX.h \
 	xpcom/components/nsModule.h \
 	xpcom/io/nsMultiplexInputStream.h \

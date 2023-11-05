@@ -68,16 +68,10 @@
 #include <errno.h>
 #include "nsILocalFile.h"
 
-#ifdef XP_WIN
-#include "nsLocalFileWin.h"
-#elif defined(XP_MACOSX) && !defined(VBOX_MACOSX_FOLLOWS_UNIX_IO)
+#if defined(XP_MACOSX) && !defined(VBOX_MACOSX_FOLLOWS_UNIX_IO)
 #include "nsLocalFileOSX.h"
-#elif defined(XP_MAC)
-#include "nsLocalFileMac.h"
 #elif defined(XP_UNIX) || defined(XP_BEOS)
 #include "nsLocalFileUnix.h"
-#elif defined(XP_OS2)
-#include "nsLocalFileOS2.h"
 #else
 #error NOT_IMPLEMENTED
 #endif
