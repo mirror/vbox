@@ -80,7 +80,6 @@
 #include "nsIInterfaceInfoManager.h"
 
 #include "nsThread.h"
-#include "nsProcess.h"
 
 #include "nsEmptyEnumerator.h"
 
@@ -131,7 +130,6 @@ static NS_DEFINE_CID(kComponentManagerCID, NS_COMPONENTMANAGER_CID);
 static NS_DEFINE_CID(kMemoryCID, NS_MEMORY_CID);
 static NS_DEFINE_CID(kEventQueueServiceCID, NS_EVENTQUEUESERVICE_CID);
 
-NS_GENERIC_FACTORY_CONSTRUCTOR(nsProcess)
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsEventQueueServiceImpl, Init)
 
 #define NS_ENVIRONMENT_CLASSNAME "Environment Service"
@@ -386,7 +384,6 @@ static const nsModuleComponentInfo components[] = {
     COMPONENT(LOCAL_FILE, nsLocalFile::nsLocalFileConstructor),
 #define NS_DIRECTORY_SERVICE_CLASSNAME  "nsIFile Directory Service"
     COMPONENT(DIRECTORY_SERVICE, nsDirectoryService::Create),
-    COMPONENT(PROCESS, nsProcessConstructor),
 
     COMPONENT(STRINGINPUTSTREAM, nsStringInputStreamConstructor),
     COMPONENT(MULTIPLEXINPUTSTREAM, nsMultiplexInputStreamConstructor),

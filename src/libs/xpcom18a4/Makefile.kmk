@@ -321,7 +321,6 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/components/nsNativeComponentLoader.h \
 	xpcom/ds/nsObserverService.h \
 	xpcom/components/nsObsoleteModuleLoading.h \
-	xpcom/threads/nsProcess.h \
 	xpcom/proxy/public/nsProxiedService.h \
 	xpcom/proxy/public/nsProxyEvent.h \
 	xpcom/proxy/public/nsProxyRelease.h \
@@ -689,8 +688,7 @@ VBox-xpcom-threads_SOURCES = \
 	xpcom/threads/nsAutoLock.cpp \
 	xpcom/threads/nsEventQueue.cpp \
 	xpcom/threads/nsEventQueueService.cpp \
-	xpcom/threads/nsThread.cpp \
-	xpcom/threads/nsProcessCommon.cpp
+	xpcom/threads/nsThread.cpp
 $(evalcall VBOX_XPCOM_X86,VBox-xpcom-threads)
 
 VBox-xpcom-xptinfo_TEMPLATE = XPComDll
@@ -1204,7 +1202,6 @@ VBOX_XPTFILES = $(addprefix $(PATH_TARGET)/VBox-xpcom-xpt-files/, \
 		nsIEventTarget.xpt \
 		nsIEventQueue.xpt \
 		nsIEventQueueService.xpt \
-		nsIProcess.xpt \
 		nsIInterfaceInfo.xpt \
 		nsIInterfaceInfoManager.xpt \
 		nsIXPTLoader.xpt)
