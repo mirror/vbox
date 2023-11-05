@@ -1185,7 +1185,6 @@ VBOX_XPTFILES = $(addprefix $(PATH_TARGET)/VBox-xpcom-xpt-files/, \
 		nsIMultiplexInputStream.xpt \
 		nsIObjectInputStream.xpt \
 		nsIObjectOutputStream.xpt \
-		nsIPipe.xpt \
 		nsISeekableStream.xpt \
 		nsIStorageStream.xpt \
 		nsIStringStream.xpt \
