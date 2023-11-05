@@ -455,10 +455,6 @@ struct PRThread {
     PRUint32 interrupt_blocked;     /* interrupt blocked */
     struct pollfd *syspoll_list;    /* Unix polling list used by PR_Poll */
     PRUint32 syspoll_count;         /* number of elements in syspoll_list */
-#if defined(_PR_POLL_WITH_SELECT)
-    int *selectfd_list;             /* Unix fd's that PR_Poll selects on */
-    PRUint32 selectfd_count;        /* number of elements in selectfd_list */
-#endif
 };
 
 struct PRProcessAttr {
