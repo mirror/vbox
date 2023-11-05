@@ -133,9 +133,6 @@ typedef struct _MDThread _MDThread;
 typedef struct _MDThreadStack _MDThreadStack;
 typedef struct _MDSemaphore _MDSemaphore;
 typedef struct _MDDir _MDDir;
-#ifdef MOZ_UNICODE
-typedef struct _MDDirUTF16 _MDDirUTF16;
-#endif /* MOZ_UNICODE */
 typedef struct _MDFileDesc _MDFileDesc;
 typedef struct _MDProcess _MDProcess;
 typedef struct _MDFileMap _MDFileMap;
@@ -542,13 +539,6 @@ struct PRDir {
     PRDirEntry d;
     _MDDir md;
 };
-
-#ifdef MOZ_UNICODE
-struct PRDirUTF16 {
-    PRDirEntry d;
-    _MDDirUTF16 md;
-};
-#endif /* MOZ_UNICODE */
 
 extern void _PR_InitSegs(void);
 extern void _PR_InitStacks(void);

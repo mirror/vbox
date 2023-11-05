@@ -128,10 +128,6 @@ PR_BEGIN_EXTERN_C
 /* Typedefs */
 typedef struct PRDir            PRDir;
 typedef struct PRDirEntry       PRDirEntry;
-#ifdef MOZ_UNICODE
-typedef struct PRDirUTF16       PRDirUTF16;
-typedef struct PRDirEntryUTF16  PRDirEntryUTF16;
-#endif /* MOZ_UNICODE */
 typedef struct PRFileDesc       PRFileDesc;
 typedef struct PRFileInfo       PRFileInfo;
 typedef struct PRFileInfo64     PRFileInfo64;
@@ -739,14 +735,6 @@ NSPR_API(PRFileDesc*) PR_Open(const char *name, PRIntn flags, PRIntn mode);
 NSPR_API(PRFileDesc*) PR_OpenFile(
     const char *name, PRIntn flags, PRIntn mode);
 
-#ifdef MOZ_UNICODE
-/*
- * EXPERIMENTAL: This function may be removed in a future release.
- */
-NSPR_API(PRFileDesc*) PR_OpenFileUTF16(
-    const PRUnichar *name, PRIntn flags, PRIntn mode);
-#endif /* MOZ_UNICODE */
-
 /*
  **************************************************************************
  * FUNCTION: PR_Close
@@ -927,13 +915,6 @@ struct PRFileInfo64 {
 NSPR_API(PRStatus) PR_GetFileInfo(const char *fn, PRFileInfo *info);
 NSPR_API(PRStatus) PR_GetFileInfo64(const char *fn, PRFileInfo64 *info);
 
-#ifdef MOZ_UNICODE
-/*
- * EXPERIMENTAL: This function may be removed in a future release.
- */
-NSPR_API(PRStatus) PR_GetFileInfo64UTF16(const PRUnichar *fn, PRFileInfo64 *info);
-#endif /* MOZ_UNICODE */
-
 /*
  **************************************************************************
  * FUNCTION: PR_GetOpenFileInfo, PR_GetOpenFileInfo64
@@ -1088,13 +1069,6 @@ struct PRDirEntry {
     const char *name;        /* name of entry, relative to directory name */
 };
 
-#ifdef MOZ_UNICODE
-struct PRDirEntryUTF16 {
-    const PRUnichar *name;   /* name of entry in UTF16, relative to
-                              * directory name */
-};
-#endif /* MOZ_UNICODE */
-
 #if !defined(NO_NSPR_10_SUPPORT)
 #define PR_DirName(dirEntry)	(dirEntry->name)
 #endif
@@ -1120,13 +1094,6 @@ struct PRDirEntryUTF16 {
  */
 
 NSPR_API(PRDir*) PR_OpenDir(const char *name);
-
-#ifdef MOZ_UNICODE
-/*
- * EXPERIMENTAL: This function may be removed in a future release.
- */
-NSPR_API(PRDirUTF16*) PR_OpenDirUTF16(const PRUnichar *name);
-#endif /* MOZ_UNICODE */
 
 /*
  *************************************************************************
@@ -1161,13 +1128,6 @@ typedef enum PRDirFlags {
 
 NSPR_API(PRDirEntry*) PR_ReadDir(PRDir *dir, PRDirFlags flags);
 
-#ifdef MOZ_UNICODE
-/*
- * EXPERIMENTAL: This function may be removed in a future release.
- */
-NSPR_API(PRDirEntryUTF16*) PR_ReadDirUTF16(PRDirUTF16 *dir, PRDirFlags flags);
-#endif /* MOZ_UNICODE */
-
 /*
  *************************************************************************
  * FUNCTION: PR_CloseDir
@@ -1186,13 +1146,6 @@ NSPR_API(PRDirEntryUTF16*) PR_ReadDirUTF16(PRDirUTF16 *dir, PRDirFlags flags);
  */
 
 NSPR_API(PRStatus) PR_CloseDir(PRDir *dir);
-
-#ifdef MOZ_UNICODE
-/*
- * EXPERIMENTAL: This function may be removed in a future release.
- */
-NSPR_API(PRStatus) PR_CloseDirUTF16(PRDirUTF16 *dir);
-#endif /* MOZ_UNICODE */
 
 /*
  *************************************************************************
