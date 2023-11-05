@@ -191,7 +191,6 @@ NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/pr/include/prprf.h \
 	nsprpub/pr/include/prproces.h \
 	nsprpub/pr/include/prshm.h \
-	nsprpub/pr/include/prshma.h \
 	nsprpub/pr/include/prsystem.h \
 	nsprpub/pr/include/prthread.h \
 	nsprpub/pr/include/prtime.h \
@@ -508,7 +507,6 @@ VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/pr/src/linking/prlink.c \
 	nsprpub/pr/src/md/prosdep.c \
 	nsprpub/pr/src/memory/prshm.c \
-	nsprpub/pr/src/memory/prshma.c \
 	nsprpub/pr/src/misc/pratom.c \
 	nsprpub/pr/src/misc/prdtoa.c \
 	nsprpub/pr/src/misc/prenv.c \

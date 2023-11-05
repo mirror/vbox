@@ -745,25 +745,6 @@ extern PRStatus _MD_CloseSharedMemory( PRSharedMemory *shm );
 extern PRStatus _MD_DeleteSharedMemory( const char *name );
 #define _PR_MD_DELETE_SHARED_MEMORY  _MD_DeleteSharedMemory
 
-extern PRFileMap* _md_OpenAnonFileMap(
-    const char *dirName,
-    PRSize      size,
-    PRFileMapProtect prot
-);
-#define _PR_MD_OPEN_ANON_FILE_MAP _md_OpenAnonFileMap
-
-extern PRStatus _md_ExportFileMapAsString(
-    PRFileMap *fm,
-    PRSize    bufSize,
-    char      *buf
-);
-#define _PR_MD_EXPORT_FILE_MAP_AS_STRING _md_ExportFileMapAsString
-
-extern PRFileMap * _md_ImportFileMapFromString(
-    const char *fmstring
-);
-#define _PR_MD_IMPORT_FILE_MAP_FROM_STRING _md_ImportFileMapFromString
-
 
 
 /* Interprocess communications (IPC) */
