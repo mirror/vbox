@@ -128,7 +128,6 @@ if !defined(VBOX_ONLY_SDK) && (!defined(VBOX_ONLY_EXTPACKS) || !defined(VBOX_ONL
   	tstTestHashtables \
   	tstTestID \
   	tstTestObserverService \
-  	tstTestPipes \
   	tstTestThreads \
   	tstTestXPIDLString \
   	tstTestXPTCInvoke \
@@ -336,7 +335,6 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/components/nsStaticComponent.h \
 	xpcom/ds/nsStaticNameTable.h \
 	xpcom/io/nsStorageStream.h \
-	xpcom/io/nsStreamUtils.h \
 	xpcom/ds/nsStringEnumerator.h \
 	xpcom/io/nsStringIO.h \
 	xpcom/io/nsStringStream.h \
@@ -664,8 +662,6 @@ VBox-xpcom-io_SOURCES = \
 	xpcom/io/nsLinebreakConverter.cpp \
 	xpcom/io/nsLocalFileCommon.cpp \
 	xpcom/io/nsMultiplexInputStream.cpp \
-	xpcom/io/nsPipe3.cpp \
-	xpcom/io/nsStreamUtils.cpp \
 	xpcom/io/nsScriptableInputStream.cpp \
 	xpcom/io/nsSegmentedBuffer.cpp \
 	xpcom/io/SpecialSystemDirectory.cpp \
@@ -1110,8 +1106,6 @@ tstTestObserverService_TEMPLATE = XPComTstExe
 tstTestObserverService_SOURCES = xpcom/tests/TestObserverService.cpp
 tstTestPermanentAtoms_TEMPLATE = XPComTstExe
 tstTestPermanentAtoms_SOURCES  = xpcom/tests/TestPermanentAtoms.cpp
-tstTestPipes_TEMPLATE          = XPComTstExe
-tstTestPipes_SOURCES           = xpcom/tests/TestPipes.cpp
 tstTestServMgr_TEMPLATE        = XPComTstExe
 tstTestServMgr_SOURCES         = xpcom/tests/TestServMgr.cpp
 tstTestServMgr_INCS            = xpcom/tests/services
