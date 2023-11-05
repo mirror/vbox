@@ -172,7 +172,6 @@ static void _PR_InitStuff(void)
 
     _PR_InitLocks();
     _PR_InitAtomic();
-    _PR_InitSegs();
 	_PR_InitTPD();
     _PR_InitEnv();
     _PR_InitLayerCache();
@@ -198,47 +197,22 @@ static void _PR_InitStuff(void)
 void _PR_ImplicitInitialization(void)
 {
 	_PR_InitStuff();
-
-    /* Enable interrupts */
-#if !defined(_PR_PTHREADS) && !defined(_PR_GLOBAL_THREADS_ONLY)
-    _PR_MD_START_INTERRUPTS();
-#endif
-
 }
 
 PR_IMPLEMENT(void) PR_DisableClockInterrupts(void)
 {
-#if !defined(_PR_PTHREADS) && !defined(_PR_BTHREADS)
-	if (!_pr_initialized) {
-		_PR_InitStuff();
-	} else {
-    	_PR_MD_DISABLE_CLOCK_INTERRUPTS();
-	}
-#endif
 }
 
 PR_IMPLEMENT(void) PR_EnableClockInterrupts(void)
 {
-#if !defined(_PR_PTHREADS) && !defined(_PR_BTHREADS)
-	if (!_pr_initialized) {
-		_PR_InitStuff();
-	}
-    _PR_MD_ENABLE_CLOCK_INTERRUPTS();
-#endif
 }
 
 PR_IMPLEMENT(void) PR_BlockClockInterrupts(void)
 {
-#if !defined(_PR_PTHREADS) && !defined(_PR_BTHREADS)
-    	_PR_MD_BLOCK_CLOCK_INTERRUPTS();
-#endif
 }
 
 PR_IMPLEMENT(void) PR_UnblockClockInterrupts(void)
 {
-#if !defined(_PR_PTHREADS) && !defined(_PR_BTHREADS)
-    	_PR_MD_UNBLOCK_CLOCK_INTERRUPTS();
-#endif
 }
 
 PR_IMPLEMENT(void) PR_Init(

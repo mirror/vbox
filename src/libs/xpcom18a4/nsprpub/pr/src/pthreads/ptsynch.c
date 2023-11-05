@@ -41,8 +41,6 @@
 ** Exports:            prlock.h, prcvar.h, prmon.h, prcmon.h
 */
 
-#if defined(_PR_PTHREADS)
-
 #include "primpl.h"
 
 #include <string.h>
@@ -1124,7 +1122,5 @@ PR_IMPLEMENT(PRStatus) PRP_NakedBroadcast(PRCondVar *cvar)
     PR_ASSERT(0 == rv);
     return PR_SUCCESS;
 }  /* PRP_NakedBroadcast */
-
-#endif  /* defined(_PR_PTHREADS) */
 
 /* ptsynch.c */

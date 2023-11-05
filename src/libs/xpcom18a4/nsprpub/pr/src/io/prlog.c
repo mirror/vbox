@@ -71,30 +71,8 @@
  * This can lead to infinite recursion.
  */
 static PRLock *_pr_logLock;
-#if defined(_PR_PTHREADS) || defined(_PR_BTHREADS)
 #define _PR_LOCK_LOG() PR_Lock(_pr_logLock);
 #define _PR_UNLOCK_LOG() PR_Unlock(_pr_logLock);
-#elif defined(_PR_GLOBAL_THREADS_ONLY)
-#define _PR_LOCK_LOG() { _PR_LOCK_LOCK(_pr_logLock)
-#define _PR_UNLOCK_LOG() _PR_LOCK_UNLOCK(_pr_logLock); }
-#else
-
-#define _PR_LOCK_LOG() \
-{ \
-    PRIntn _is; \
-    PRThread *_me = _PR_MD_CURRENT_THREAD(); \
-    if (!_PR_IS_NATIVE_THREAD(_me)) \
-        _PR_INTSOFF(_is); \
-    _PR_LOCK_LOCK(_pr_logLock)
-
-#define _PR_UNLOCK_LOG() \
-    _PR_LOCK_UNLOCK(_pr_logLock); \
-    PR_ASSERT(_me == _PR_MD_CURRENT_THREAD()); \
-    if (!_PR_IS_NATIVE_THREAD(_me)) \
-        _PR_INTSON(_is); \
-}
-
-#endif
 
 #if defined(XP_PC)
 #define strcasecmp stricmp

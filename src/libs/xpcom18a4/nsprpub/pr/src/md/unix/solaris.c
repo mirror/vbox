@@ -74,7 +74,6 @@ PRIntervalTime _MD_Solaris_GetInterval(void)
     return ticks;
 }
 
-#ifdef _PR_PTHREADS
 void _MD_EarlyInit(void)
 {
 }
@@ -84,7 +83,6 @@ PRWord *_MD_HomeGCRegisters(PRThread *t, PRIntn isCurrent, PRIntn *np)
 	*np = 0;
 	return NULL;
 }
-#endif /* _PR_PTHREADS */
 
 #if !defined(i386) && !defined(IS_64)
 #if defined(_PR_HAVE_ATOMIC_OPS)
@@ -635,129 +633,6 @@ void _MD_Suspend(PRThread *thr)
    close(lwp_main_proc_fd);
 }
 
-#ifdef OLD_CODE
-
-void _MD_SuspendAll()
-{
-    /* On solaris there are threads, and there are LWPs. 
-     * Calling _PR_DoSingleThread would freeze all of the threads bound to LWPs
-     * but not necessarily stop all LWPs (for example if someone did
-     * an attachthread of a thread which was not bound to an LWP).
-     * So now go through all the LWPs for this process and freeze them.
-     *
-     * Note that if any thread which is capable of having the GC run on it must
-     * had better be a LWP with a single bound thread on it.  Otherwise, this 
-     * might not stop that thread from being run.
-     */
-    PRThread *current = _PR_MD_CURRENT_THREAD();
-    prstatus_t status, lwpstatus;
-    int result, index, lwp_fd;
-    lwpid_t me = _lwp_self();
-    int err;
-    int lwp_main_proc_fd;
-
-    solaris_preempt_off();
-
-    /* run at highest prio so I cannot be preempted */
-    thr_getprio(thr_self(), &gcprio);
-    thr_setprio(thr_self(), 0x7fffffff); 
-
-    current->md.sp = (uint_t)&me;	/* set my own stack pointer */
-
-    if ( (lwp_main_proc_fd = solaris_open_main_proc_fd()) < 0) {
-        PR_ASSERT(0);
-        solaris_preempt_on();
-        return;   /* XXXMB ARGH, we're hosed! */
-    }
-
-    if ( (result = syscall(SYS_ioctl, lwp_main_proc_fd, PIOCSTATUS, &status)) < 0) {
-        err = errno;
-        PR_ASSERT(0);
-        goto failure;   /* XXXMB ARGH, we're hosed! */
-    }
-
-    num_lwps = status.pr_nlwp;
-
-    if ( (all_lwps = (lwpid_t *)PR_MALLOC((num_lwps+1) * sizeof(lwpid_t)))==NULL) {
-        PR_ASSERT(0);
-        goto failure;   /* XXXMB ARGH, we're hosed! */
-    }
-           
-    if ( (result = syscall(SYS_ioctl, lwp_main_proc_fd, PIOCLWPIDS, all_lwps)) < 0) {
-        PR_ASSERT(0);
-        PR_DELETE(all_lwps);
-        goto failure;   /* XXXMB ARGH, we're hosed! */
-    }
-
-    for (index=0; index< num_lwps; index++) {
-        if (all_lwps[index] != me)  {
-            if (_lwp_suspend(all_lwps[index]) < 0) { 
-                /* could happen if lwp exited */
-                all_lwps[index] = me;	/* dummy it up */
-            }
-        }
-    }
-
-    /* Turns out that lwp_suspend is not a blocking call.
-     * Go through the list and make sure they are all stopped.
-     */
-    for (index=0; index< num_lwps; index++) {
-        if (all_lwps[index] != me)  {
-            if ( (lwp_fd = solaris_open_lwp(all_lwps[index], lwp_main_proc_fd)) < 0) {
-                PR_ASSERT(0);
-                PR_DELETE(all_lwps);
-                all_lwps = NULL;
-                goto failure;   /* XXXMB ARGH, we're hosed! */
-            }
-
-            if ( (result = syscall(SYS_ioctl, lwp_fd, PIOCSTATUS, &lwpstatus)) < 0) {
-                /* Hopefully the thread just died... */
-                close(lwp_fd);
-                continue;
-            }
-            while ( !(lwpstatus.pr_flags & PR_STOPPED) ) {
-                if ( (result = syscall(SYS_ioctl, lwp_fd, PIOCSTATUS, &lwpstatus)) < 0) {
-                    PR_ASSERT(0);  /* ARGH SOMETHING WRONG! */
-                    break;
-                }
-                solaris_msec_sleep(1);
-            }
-            solaris_record_regs(&lwpstatus);
-            close(lwp_fd);
-        }
-    }
-
-    close(lwp_main_proc_fd);
-
-    return;
-failure:
-    solaris_preempt_on();
-    thr_setprio(thr_self(), gcprio);
-    close(lwp_main_proc_fd);
-    return;
-}
-
-void _MD_ResumeAll()
-{
-    int i;
-    lwpid_t me = _lwp_self();
- 
-    for (i=0; i < num_lwps; i++) {
-        if (all_lwps[i] == me)
-            continue;
-        if ( _lwp_continue(all_lwps[i]) < 0) {
-            PR_ASSERT(0);  /* ARGH, we are hosed! */
-        }
-    }
-
-    /* restore priority and sigmask */
-    thr_setprio(thr_self(), gcprio);
-    solaris_preempt_on();
-    PR_DELETE(all_lwps);
-    all_lwps = NULL;
-}
-#endif /* OLD_CODE */
-
 #ifdef USE_SETJMP
 PRWord *_MD_HomeGCRegisters(PRThread *t, int isCurrent, int *np)
 {
@@ -861,29 +736,3 @@ PRWord *_MD_HomeGCRegisters(PRThread *t, PRIntn isCurrent, PRIntn *np)
 #endif  /* _PR_LOCAL_THREADS_ONLY */
 
 #endif /* _PR_GLOBAL_THREADS_ONLY */
-
-#ifndef _PR_PTHREADS
-#if defined(i386) && defined(SOLARIS2_4)
-/* 
- * Because clock_gettime() on Solaris/x86 2.4 always generates a
- * segmentation fault, we use an emulated version _pr_solx86_clock_gettime(),
- * which is implemented using gettimeofday().
- */
-
-int
-_pr_solx86_clock_gettime(clockid_t clock_id, struct timespec *tp)
-{
-    struct timeval tv;
-
-    if (clock_id != CLOCK_REALTIME) {
-	errno = EINVAL;
-	return -1;
-    }
-
-    gettimeofday(&tv, NULL);
-    tp->tv_sec = tv.tv_sec;
-    tp->tv_nsec = tv.tv_usec * 1000;
-    return 0;
-}
-#endif  /* i386 && SOLARIS2_4 */
-#endif  /* _PR_PTHREADS */

@@ -41,8 +41,6 @@
 ** Exports:            ptthread.h
 */
 
-#if defined(_PR_PTHREADS) || defined(_PR_DCETHREADS)
-
 #include "prlog.h"
 #include "primpl.h"
 #include "prpdce.h"
@@ -1558,7 +1556,5 @@ PR_IMPLEMENT(void*)PR_GetSP(PRThread *thred)
 }  /* PR_GetSP */
 
 #endif /* !defined(_PR_DCETHREADS) */
-
-#endif  /* defined(_PR_PTHREADS) || defined(_PR_DCETHREADS) */
 
 /* ptthread.c */

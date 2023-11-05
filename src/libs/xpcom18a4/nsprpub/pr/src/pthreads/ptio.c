@@ -40,8 +40,6 @@
 ** Descritpion:  Implemenation of I/O methods for pthreads
 */
 
-#if defined(_PR_PTHREADS)
-
 #if defined(_PR_POLL_WITH_SELECT)
 #if !(defined(HPUX) && defined(_USE_BIG_FDS))
 /* set fd limit for select(), before including system header files */
@@ -4179,7 +4177,6 @@ retry:
     }
     return rv;
 }
-#endif /* defined(_PR_PTHREADS) */
 
 #ifdef MOZ_UNICODE
 /* ================ UTF16 Interfaces ================================ */
