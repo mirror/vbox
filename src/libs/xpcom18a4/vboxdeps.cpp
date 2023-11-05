@@ -10,6 +10,7 @@
 #include "xpcom/proxy/src/nsProxyEventPrivate.h"
 #include "nsTraceRefcnt.h"
 #include "nsDebug.h"
+#include "nsString.h"
 
 uintptr_t deps[] =
 {
@@ -69,6 +70,10 @@ void foodep(void)
     foobardep *d = new foobardep();
     nsXPTCStubBase *e = d;
     e->Release();
+
+    // Dragged in by TestCRT.
+    nsAutoString t1; 
+    t1.AssignWithConversion(NULL);
 }
 
 
