@@ -49,7 +49,6 @@
 #ifndef __PYXPCOM_H__
 #define __PYXPCOM_H__
 
-#include "nsIAllocator.h"
 #include "nsIWeakReference.h"
 #include "nsIInterfaceInfoManager.h"
 #include "nsIClassInfo.h"
