@@ -106,8 +106,6 @@
 
 #include "nsVariant.h"
 
-#include "nsRecyclingAllocator.h"
-
 #include "SpecialSystemDirectory.h"
 
 #include "ipcdclient.h"
@@ -191,8 +189,6 @@ NS_GENERIC_FACTORY_CONSTRUCTOR(nsBinaryInputStream)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsStorageStream)
 
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsVariant)
-
-NS_GENERIC_FACTORY_CONSTRUCTOR(nsRecyclingAllocatorImpl)
 
 static NS_METHOD
 nsXPTIInterfaceInfoManagerGetSingleton(nsISupports* outer,
@@ -407,8 +403,6 @@ static const nsModuleComponentInfo components[] = {
 
     COMPONENT(VARIANT, nsVariantConstructor),
     COMPONENT(INTERFACEINFOMANAGER_SERVICE, nsXPTIInterfaceInfoManagerGetSingleton),
-
-    COMPONENT(RECYCLINGALLOCATOR, nsRecyclingAllocatorImplConstructor),
 
 #if 0 /// @todo later
   { IPC_SERVICE_CLASSNAME,

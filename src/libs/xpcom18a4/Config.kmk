@@ -406,7 +406,6 @@ XPCOM_IDLFILES = \
 	xpcom/ds/nsIAtomService.idl \
 	xpcom/ds/nsIProperties.idl \
 	xpcom/ds/nsIPersistentProperties2.idl \
-	xpcom/ds/nsIRecyclingAllocator.idl \
 	xpcom/ds/nsIStringEnumerator.idl \
 	xpcom/ds/nsISupportsPrimitives.idl \
 	xpcom/ds/nsISupportsIterators.idl \

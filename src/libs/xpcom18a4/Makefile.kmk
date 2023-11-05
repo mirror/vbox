@@ -327,7 +327,6 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/proxy/public/nsProxyEvent.h \
 	xpcom/proxy/public/nsProxyRelease.h \
 	xpcom/ds/nsQuickSort.h \
-	xpcom/ds/nsRecyclingAllocator.h \
 	xpcom/ds/nsRefPtrHashtable.h \
 	xpcom/io/nsScriptableInputStream.h \
 	xpcom/ds/nsStaticAtom.h \
@@ -620,7 +619,6 @@ VBox-xpcom-ds_SOURCES = \
 	xpcom/ds/nsProperties.cpp \
 	xpcom/ds/nsPersistentProperties.cpp \
 	xpcom/ds/nsQuickSort.cpp \
-	xpcom/ds/nsRecyclingAllocator.cpp \
 	xpcom/ds/nsStaticNameTable.cpp \
 	xpcom/ds/nsStringEnumerator.cpp \
 	xpcom/ds/nsSupportsArray.cpp \
@@ -1165,7 +1163,6 @@ VBOX_XPTFILES = $(addprefix $(PATH_TARGET)/VBox-xpcom-xpt-files/, \
 		nsIEnumerator.xpt \
 		nsIPersistentProperties2.xpt \
 		nsIPropertyBag.xpt \
-		nsIRecyclingAllocator.xpt \
 		nsIVariant.xpt \
 		nsISerializable.xpt \
 		nsIStringEnumerator.xpt \
