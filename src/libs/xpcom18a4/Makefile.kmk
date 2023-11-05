@@ -313,7 +313,6 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/io/nsIUnicharInputStream.h \
 	xpcom/ds/nsInt64.h \
 	xpcom/ds/nsInterfaceHashtable.h \
-	xpcom/io/nsLinebreakConverter.h \
 	xpcom/io/nsLocalFile.h \
 	xpcom/io/nsLocalFileUnix.h \
 	xpcom/io/nsLocalFileOSX.h \
@@ -659,7 +658,6 @@ VBox-xpcom-io_SOURCES = \
 	xpcom/io/nsByteArrayInputStream.cpp \
 	xpcom/io/nsDirectoryService.cpp \
 	xpcom/io/nsInputStreamTee.cpp \
-	xpcom/io/nsLinebreakConverter.cpp \
 	xpcom/io/nsLocalFileCommon.cpp \
 	xpcom/io/nsMultiplexInputStream.cpp \
 	xpcom/io/nsScriptableInputStream.cpp \
