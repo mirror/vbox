@@ -42,6 +42,13 @@
 # include <iprt/initterm.h>
 #endif
 
+#ifdef VBOX
+#include <iprt/err.h>
+#include <iprt/env.h>
+#include <iprt/file.h>
+#include <iprt/process.h>
+#endif
+
 PRLogModuleInfo *_pr_clock_lm;
 PRLogModuleInfo *_pr_cmon_lm;
 PRLogModuleInfo *_pr_io_lm;
@@ -288,25 +295,6 @@ PR_ProcessAttrSetStdioRedirect(
     }
 }
 
-/*
- * OBSOLETE
- */
-PR_IMPLEMENT(void)
-PR_SetStdioRedirect(
-    PRProcessAttr *attr,
-    PRSpecialFD stdioFd,
-    PRFileDesc *redirectFd)
-{
-#if defined(DEBUG)
-    static PRBool warn = PR_TRUE;
-    if (warn) {
-        warn = _PR_Obsolete("PR_SetStdioRedirect()",
-                "PR_ProcessAttrSetStdioRedirect()");
-    }
-#endif
-    PR_ProcessAttrSetStdioRedirect(attr, stdioFd, redirectFd);
-}
-
 PR_IMPLEMENT(PRStatus)
 PR_ProcessAttrSetCurrentDirectory(
     PRProcessAttr *attr,
@@ -469,58 +457,68 @@ PR_IMPLEMENT(PRFileDesc *) PR_GetInheritedFD(
     }
 }
 
-PR_IMPLEMENT(PRProcess*) PR_CreateProcess(
-    const char *path,
-    char *const *argv,
-    char *const *envp,
-    const PRProcessAttr *attr)
-{
-    return _PR_MD_CREATE_PROCESS(path, argv, envp, attr);
-}  /* PR_CreateProcess */
-
 PR_IMPLEMENT(PRStatus) PR_CreateProcessDetached(
     const char *path,
     char *const *argv,
     char *const *envp,
     const PRProcessAttr *attr)
 {
-#ifndef _PR_MD_CREATE_PROCESS_DETACHED
-    PRProcess *process;
-    PRStatus rv;
-s
-#ifdef XP_OS2
-    process = _PR_CreateOS2ProcessEx(path, argv, envp, attr, PR_TRUE);
-#else
-    process = PR_CreateProcess(path, argv, envp, attr);
-#endif
-    if (NULL == process) {
-        return PR_FAILURE;
+    int vrc;
+    int nEnv, idx;
+    RTENV childEnv;
+    RTENV newEnv = RTENV_DEFAULT;
+
+    /* this code doesn't support all attributes */
+    PR_ASSERT(!attr || !attr->currentDirectory);
+    /* no custom environment, please */
+    PR_ASSERT(!envp);
+
+    childEnv = RTENV_DEFAULT;
+    if (attr && attr->fdInheritBuffer) {
+        vrc = RTEnvClone(&newEnv, childEnv);
+        if (RT_FAILURE(vrc))
+            return PR_FAILURE;
+        vrc = RTEnvPutEx(newEnv, attr->fdInheritBuffer);
+        if (RT_FAILURE(vrc))
+        {
+            RTEnvDestroy(newEnv);
+            return PR_FAILURE;
+        }
+        childEnv = newEnv;
     }
-    rv = PR_DetachProcess(process);
-    PR_ASSERT(PR_SUCCESS == rv);
-    if (rv == PR_FAILURE) {
-        PR_DELETE(process);
-        return PR_FAILURE;
+
+    PRTHANDLE pStdIn = NULL, pStdOut = NULL, pStdErr = NULL;
+    RTHANDLE hStdIn, hStdOut, hStdErr;
+    if (attr && attr->stdinFd)
+    {
+        hStdIn.enmType = RTHANDLETYPE_FILE;
+        RTFileFromNative(&hStdIn.u.hFile, attr->stdinFd->secret->md.osfd);
+        pStdIn = &hStdIn;
     }
-    return PR_SUCCESS;
-#else /* _PR_MD_CREATE_PROCESS_DETACHED */
-    return _PR_MD_CREATE_PROCESS_DETACHED(path, argv, envp, attr);
-#endif /* _PR_MD_CREATE_PROCESS_DETACHED */
-}
+    if (attr && attr->stdoutFd)
+    {
+        hStdOut.enmType = RTHANDLETYPE_FILE;
+        RTFileFromNative(&hStdOut.u.hFile, attr->stdoutFd->secret->md.osfd);
+        pStdOut = &hStdOut;
+    }
+    if (attr && attr->stderrFd)
+    {
+        hStdErr.enmType = RTHANDLETYPE_FILE;
+        RTFileFromNative(&hStdErr.u.hFile, attr->stderrFd->secret->md.osfd);
+        pStdErr = &hStdErr;
+    }
 
-PR_IMPLEMENT(PRStatus) PR_DetachProcess(PRProcess *process)
-{
-    return _PR_MD_DETACH_PROCESS(process);
-}
-
-PR_IMPLEMENT(PRStatus) PR_WaitProcess(PRProcess *process, PRInt32 *exitCode)
-{
-    return _PR_MD_WAIT_PROCESS(process, exitCode);
-}  /* PR_WaitProcess */
-
-PR_IMPLEMENT(PRStatus) PR_KillProcess(PRProcess *process)
-{
-    return _PR_MD_KILL_PROCESS(process);
+    vrc = RTProcCreateEx(path, (const char **)argv, childEnv,
+                         RTPROC_FLAGS_DETACHED, pStdIn, pStdOut, pStdErr,
+                         NULL /* pszAsUser */, NULL /* pszPassword */, NULL /* pExtraData */,
+                         NULL /* phProcess */);
+    if (newEnv != RTENV_DEFAULT) {
+        RTEnvDestroy(newEnv);
+    }
+    if (RT_SUCCESS(vrc))
+        return PR_SUCCESS;
+    else
+        return PR_FAILURE;
 }
 
 /*

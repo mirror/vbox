@@ -1138,15 +1138,6 @@ void _MD_EarlyInit(void)
 #endif
 }
 
-#if defined(LINUX)
-extern void _MD_unix_terminate_waitpid_daemon(void);
-
-void _MD_CleanupBeforeExit(void)
-{
-    _MD_unix_terminate_waitpid_daemon();
-}
-#endif
-
 #if defined(SOLARIS)
 PRIntervalTime _MD_Solaris_TicksPerSecond(void)
 {

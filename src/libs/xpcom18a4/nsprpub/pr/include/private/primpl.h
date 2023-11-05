@@ -622,25 +622,9 @@ NSPR_API(void) _PR_MD_FINAL_INIT(void);
 
 /* Process control */
 
-extern PRProcess * _PR_MD_CREATE_PROCESS(
-    const char *path,
-    char *const *argv,
-    char *const *envp,
-    const PRProcessAttr *attr);
-#define    _PR_MD_CREATE_PROCESS _MD_CREATE_PROCESS
-
 #ifdef _MD_CREATE_PROCESS_DETACHED
 # define _PR_MD_CREATE_PROCESS_DETACHED _MD_CREATE_PROCESS_DETACHED
 #endif
-
-extern PRStatus _PR_MD_DETACH_PROCESS(PRProcess *process);
-#define    _PR_MD_DETACH_PROCESS _MD_DETACH_PROCESS
-
-extern PRStatus _PR_MD_WAIT_PROCESS(PRProcess *process, PRInt32 *exitCode);
-#define    _PR_MD_WAIT_PROCESS _MD_WAIT_PROCESS
-
-extern PRStatus _PR_MD_KILL_PROCESS(PRProcess *process);
-#define    _PR_MD_KILL_PROCESS _MD_KILL_PROCESS
 
 /* Current Time */
 NSPR_API(PRTime) _PR_MD_NOW(void);

@@ -48,12 +48,7 @@
 #define PR_NewProcessAttr VBoxNsprPR_NewProcessAttr
 #define PR_ResetProcessAttr VBoxNsprPR_ResetProcessAttr
 #define PR_ProcessAttrSetStdioRedirect VBoxNsprPR_ProcessAttrSetStdioRedirect
-#define PR_SetStdioRedirect VBoxNsprPR_SetStdioRedirect
 #define PR_ProcessAttrSetCurrentDirectory VBoxNsprPR_ProcessAttrSetCurrentDirectory
-#define PR_CreateProcess VBoxNsprPR_CreateProcess
-#define PR_DetachProcess VBoxNsprPR_DetachProcess
-#define PR_WaitProcess VBoxNsprPR_WaitProcess
-#define PR_KillProcess VBoxNsprPR_KillProcess
 #endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 
 PR_BEGIN_EXTERN_C
@@ -77,15 +72,6 @@ NSPR_API(void) PR_ProcessAttrSetStdioRedirect(
     PRFileDesc *redirectFd
 );
 
-/*
- * OBSOLETE -- use PR_ProcessAttrSetStdioRedirect instead.
- */
-NSPR_API(void) PR_SetStdioRedirect(
-    PRProcessAttr *attr,
-    PRSpecialFD stdioFd,
-    PRFileDesc *redirectFd
-);
-
 NSPR_API(PRStatus) PR_ProcessAttrSetCurrentDirectory(
     PRProcessAttr *attr,
     const char *dir
@@ -97,36 +83,11 @@ NSPR_API(PRStatus) PR_ProcessAttrSetInheritableFD(
     const char *name
 );
 
-/*
-** Create a new process
-**
-** Create a new process executing the file specified as 'path' and with
-** the supplied arguments and environment.
-**
-** This function may fail because of illegal access (permissions),
-** invalid arguments or insufficient resources.
-**
-** A process may be created such that the creator can later synchronize its
-** termination using PR_WaitProcess(). 
-*/
-
-NSPR_API(PRProcess*) PR_CreateProcess(
-    const char *path,
-    char *const *argv,
-    char *const *envp,
-    const PRProcessAttr *attr);
-
 NSPR_API(PRStatus) PR_CreateProcessDetached(
     const char *path,
     char *const *argv,
     char *const *envp,
     const PRProcessAttr *attr);
-
-NSPR_API(PRStatus) PR_DetachProcess(PRProcess *process);
-
-NSPR_API(PRStatus) PR_WaitProcess(PRProcess *process, PRInt32 *exitCode);
-
-NSPR_API(PRStatus) PR_KillProcess(PRProcess *process);
 
 PR_END_EXTERN_C
 
