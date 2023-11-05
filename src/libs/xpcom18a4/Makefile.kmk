@@ -299,8 +299,6 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/ds/nsEnumeratorUtils.h \
 	xpcom/base/nsError.h \
 	xpcom/threads/nsEventQueueUtils.h \
-	xpcom/io/nsFastLoadPtr.h \
-	xpcom/io/nsFastLoadService.h \
 	xpcom/ds/nsFixedSizeAllocator.h \
 	xpcom/ds/nsHashKeys.h \
 	xpcom/ds/nsHashSets.h \
@@ -668,8 +666,6 @@ VBox-xpcom-io_SOURCES = \
 	xpcom/io/nsBinaryStream.cpp \
 	xpcom/io/nsByteArrayInputStream.cpp \
 	xpcom/io/nsDirectoryService.cpp \
-	xpcom/io/nsFastLoadFile.cpp \
-	xpcom/io/nsFastLoadService.cpp \
 	xpcom/io/nsInputStreamTee.cpp \
 	xpcom/io/nsLinebreakConverter.cpp \
 	xpcom/io/nsLocalFileCommon.cpp \

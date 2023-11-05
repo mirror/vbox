@@ -100,8 +100,6 @@
 #include "nsStringStream.h"
 #include "nsMultiplexInputStream.h"
 
-#include "nsFastLoadService.h"
-
 #include "nsAtomService.h"
 #include "nsAtomTable.h"
 #include "nsTraceRefcnt.h"
@@ -407,7 +405,6 @@ static const nsModuleComponentInfo components[] = {
     COMPONENT(STRINGINPUTSTREAM, nsStringInputStreamConstructor),
     COMPONENT(MULTIPLEXINPUTSTREAM, nsMultiplexInputStreamConstructor),
 
-    COMPONENT(FASTLOADSERVICE, nsFastLoadService::Create),
     COMPONENT(VARIANT, nsVariantConstructor),
     COMPONENT(INTERFACEINFOMANAGER_SERVICE, nsXPTIInterfaceInfoManagerGetSingleton),
 
