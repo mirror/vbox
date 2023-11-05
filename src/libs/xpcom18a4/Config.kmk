@@ -430,7 +430,6 @@ XPCOM_IDLFILES = \
 	xpcom/io/nsISeekableStream.idl \
 	xpcom/io/nsIInputStreamTee.idl \
 	xpcom/io/nsIMultiplexInputStream.idl \
-	xpcom/io/nsIPipe.idl \
 	xpcom/io/nsIAsyncInputStream.idl \
 	xpcom/io/nsIAsyncOutputStream.idl \
 	xpcom/io/nsIScriptableInputStream.idl \
