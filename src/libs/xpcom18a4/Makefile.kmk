@@ -694,9 +694,7 @@ VBox-xpcom-threads_SOURCES = \
 	xpcom/threads/nsEventQueue.cpp \
 	xpcom/threads/nsEventQueueService.cpp \
 	xpcom/threads/nsThread.cpp \
-	xpcom/threads/nsTimerImpl.cpp \
-	xpcom/threads/nsProcessCommon.cpp \
-	xpcom/threads/TimerThread.cpp
+	xpcom/threads/nsProcessCommon.cpp
 $(evalcall VBOX_XPCOM_X86,VBox-xpcom-threads)
 
 VBox-xpcom-xptinfo_TEMPLATE = XPComDll
@@ -1206,9 +1204,6 @@ VBOX_XPTFILES = $(addprefix $(PATH_TARGET)/VBox-xpcom-xpt-files/, \
 		nsIComponentManager.xpt \
 		nsICategoryManager.xpt \
 		nsIThread.xpt \
-		nsITimer.xpt \
-		nsITimerInternal.xpt \
-		nsITimerManager.xpt \
 		nsIRunnable.xpt \
 		nsIEventTarget.xpt \
 		nsIEventQueue.xpt \

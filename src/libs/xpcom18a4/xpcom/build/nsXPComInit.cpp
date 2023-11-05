@@ -79,9 +79,6 @@
 #include "xptinfo.h"
 #include "nsIInterfaceInfoManager.h"
 
-#include "nsTimerImpl.h"
-#include "TimerThread.h"
-
 #include "nsThread.h"
 #include "nsProcess.h"
 #include "nsEnvironment.h"
@@ -182,8 +179,6 @@ NS_GENERIC_FACTORY_CONSTRUCTOR(nsArray)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsConsoleService)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsAtomService)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsExceptionService)
-NS_GENERIC_FACTORY_CONSTRUCTOR(nsTimerImpl)
-NS_GENERIC_FACTORY_CONSTRUCTOR(nsTimerManager)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsBinaryOutputStream)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsBinaryInputStream)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsStorageStream)
@@ -366,9 +361,6 @@ static const nsModuleComponentInfo components[] = {
 #define NS_XPCOMPROXY_CID NS_PROXYEVENT_MANAGER_CID
     COMPONENT(XPCOMPROXY, nsProxyObjectManager::Create),
 
-    COMPONENT(TIMER, nsTimerImplConstructor),
-    COMPONENT(TIMERMANAGER, nsTimerManagerConstructor),
-
 #define COMPONENT_SUPPORTS(TYPE, Type)                                         \
   COMPONENT(SUPPORTS_##TYPE, nsSupports##Type##ImplConstructor)
 
@@ -514,10 +506,6 @@ nsresult NS_COM NS_InitXPCOM2(nsIServiceManager* *result,
     // Establish the main thread here.
     rv = nsIThread::SetMainThread();
     if (NS_FAILED(rv)) return rv;
-
-    // Set up the timer globals/timer thread
-    rv = nsTimerImpl::Startup();
-    NS_ENSURE_SUCCESS(rv, rv);
 
     // Startup the memory manager
     rv = nsMemoryImpl::Startup();
@@ -895,10 +883,6 @@ nsresult NS_COM NS_ShutdownXPCOM(nsIServiceManager* servMgr)
 #ifdef XP_UNIX
     NS_ShutdownNativeCharsetUtils();
 #endif
-
-    // Shutdown the timer thread and all timers that might still be alive before
-    // shutting down the component manager
-    nsTimerImpl::Shutdown();
 
     CallExitRoutines();
 

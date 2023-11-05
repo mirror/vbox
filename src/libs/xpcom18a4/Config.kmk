@@ -441,10 +441,7 @@ XPCOM_IDLFILES = \
 	xpcom/threads/nsIEventTarget.idl \
 	xpcom/threads/nsIRunnable.idl \
 	xpcom/threads/nsIThread.idl \
-	xpcom/threads/nsITimer.idl \
 	xpcom/threads/nsIEnvironment.idl \
-	xpcom/threads/nsITimerInternal.idl \
-	xpcom/threads/nsITimerManager.idl \
 	xpcom/threads/nsIProcess.idl \
 	xpcom/reflect/xptinfo/public/nsIInterfaceInfo.idl \
 	xpcom/reflect/xptinfo/public/nsIInterfaceInfoManager.idl \
