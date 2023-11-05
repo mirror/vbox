@@ -81,7 +81,6 @@
 
 #include "nsThread.h"
 #include "nsProcess.h"
-#include "nsEnvironment.h"
 
 #include "nsEmptyEnumerator.h"
 
@@ -388,7 +387,6 @@ static const nsModuleComponentInfo components[] = {
 #define NS_DIRECTORY_SERVICE_CLASSNAME  "nsIFile Directory Service"
     COMPONENT(DIRECTORY_SERVICE, nsDirectoryService::Create),
     COMPONENT(PROCESS, nsProcessConstructor),
-    COMPONENT(ENVIRONMENT, nsEnvironment::Create),
 
     COMPONENT(STRINGINPUTSTREAM, nsStringInputStreamConstructor),
     COMPONENT(MULTIPLEXINPUTSTREAM, nsMultiplexInputStreamConstructor),

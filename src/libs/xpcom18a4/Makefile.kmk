@@ -687,7 +687,6 @@ VBox-xpcom-threads_DEFS = _IMPL_NS_COM
 VBox-xpcom-threads_SOURCES = \
 	xpcom/threads/plevent.c \
 	xpcom/threads/nsAutoLock.cpp \
-	xpcom/threads/nsEnvironment.cpp \
 	xpcom/threads/nsEventQueue.cpp \
 	xpcom/threads/nsEventQueueService.cpp \
 	xpcom/threads/nsThread.cpp \
@@ -1205,7 +1204,6 @@ VBOX_XPTFILES = $(addprefix $(PATH_TARGET)/VBox-xpcom-xpt-files/, \
 		nsIEventTarget.xpt \
 		nsIEventQueue.xpt \
 		nsIEventQueueService.xpt \
-		nsIEnvironment.xpt \
 		nsIProcess.xpt \
 		nsIInterfaceInfo.xpt \
 		nsIInterfaceInfoManager.xpt \
