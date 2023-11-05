@@ -112,8 +112,7 @@ typedef struct pr_PidRecord {
  * also not necessary.
  */
 
-#if defined(_PR_GLOBAL_THREADS_ONLY) \
-	|| (defined(_PR_PTHREADS) && !defined(LINUX))
+#if defined(_PR_PTHREADS) && !defined(LINUX)
 #define _PR_NATIVE_THREADS
 #endif
 

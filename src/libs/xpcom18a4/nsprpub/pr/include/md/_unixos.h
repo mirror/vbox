@@ -137,10 +137,6 @@ extern PRInt32 _PR_WaitForMultipleFDs(
     PRIntervalTime timeout);
 extern void _PR_Unblock_IO_Wait(struct PRThread *thr);
 
-#if defined(_PR_LOCAL_THREADS_ONLY) || defined(_PR_GLOBAL_THREADS_ONLY)
-#define _MD_CHECK_FOR_EXIT()
-#endif
-
 extern fd_set _pr_md_read_set, _pr_md_write_set, _pr_md_exception_set;
 extern PRInt16 _pr_md_read_cnt[], _pr_md_write_cnt[], _pr_md_exception_cnt[];
 extern PRInt32 _pr_md_ioq_max_osfd;
@@ -288,10 +284,6 @@ extern void		_MD_Wakeup_CPUs(void);
 #define _MD_WAKEUP_CPUS _MD_Wakeup_CPUs
 
 #define _MD_PAUSE_CPU			_MD_PauseCPU
-
-#if defined(_PR_LOCAL_THREADS_ONLY) || defined(_PR_GLOBAL_THREADS_ONLY)
-#define _MD_CLEANUP_BEFORE_EXIT()
-#endif
 
 #ifndef IRIX
 #define _MD_EXIT(status)		_exit(status)

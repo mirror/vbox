@@ -44,13 +44,6 @@
 #define _PR_DELETE_LOCK_ENV()
 #define _PR_LOCK_ENV()
 #define _PR_UNLOCK_ENV()
-#elif defined(_PR_LOCAL_THREADS_ONLY)
-extern _PRCPU * _pr_primordialCPU;
-static PRIntn _is;
-#define _PR_NEW_LOCK_ENV()
-#define _PR_DELETE_LOCK_ENV()
-#define _PR_LOCK_ENV() if (_pr_primordialCPU) _PR_INTSOFF(_is);
-#define _PR_UNLOCK_ENV() if (_pr_primordialCPU) _PR_INTSON(_is);
 #else
 static PRLock *_pr_envLock = NULL;
 #define _PR_NEW_LOCK_ENV() {_pr_envLock = PR_NewLock();}

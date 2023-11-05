@@ -46,16 +46,10 @@
 #define _PR_LOCK_MCACHE()
 #define _PR_UNLOCK_MCACHE()
 #else
-#ifdef _PR_LOCAL_THREADS_ONLY
-#define _PR_NEW_LOCK_MCACHE()
-#define _PR_LOCK_MCACHE() { PRIntn _is; _PR_INTSOFF(_is)
-#define _PR_UNLOCK_MCACHE() _PR_INTSON(_is); }
-#else
 PRLock *_pr_mcacheLock;
 #define _PR_NEW_LOCK_MCACHE() (_pr_mcacheLock = PR_NewLock())
 #define _PR_LOCK_MCACHE() PR_Lock(_pr_mcacheLock)
 #define _PR_UNLOCK_MCACHE() PR_Unlock(_pr_mcacheLock)
-#endif
 #endif
 
 /************************************************************************/
