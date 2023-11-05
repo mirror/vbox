@@ -558,11 +558,6 @@ ifeq ($(filter-out darwin freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET))
  	nsprpub/pr/src/pthreads/ptthread.c
 endif
 
-VBox-xpcom-nspr_SOURCES.darwin  = nsprpub/pr/src/md/unix/darwin.c
-VBox-xpcom-nspr_SOURCES.freebsd = nsprpub/pr/src/md/unix/freebsd.c
-VBox-xpcom-nspr_SOURCES.linux   = nsprpub/pr/src/md/unix/linux.c
-VBox-xpcom-nspr_SOURCES.solaris = nsprpub/pr/src/md/unix/solaris.c
-
 $(call KB_FN_DO_PASS0_ON_TARGET,VBox-xpcom-nspr)
 
 $(evalcall2 VBOX_XPCOM_X86,VBox-xpcom-nspr)

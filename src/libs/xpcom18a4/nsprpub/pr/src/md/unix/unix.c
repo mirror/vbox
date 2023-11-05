@@ -60,6 +60,10 @@
 #include <sys/statvfs.h>
 #endif
 
+#if defined(FREEBSD)
+# include <signal.h>
+#endif
+
 #ifdef VBOX
 # include <iprt/mem.h>
 #endif
@@ -1117,3 +1121,62 @@ int poll(struct pollfd *filedes, unsigned long nfds, int timeout)
     return rv;
 }
 #endif /* _PR_NEED_FAKE_POLL */
+
+void _MD_EarlyInit(void)
+{
+#if defined(FREEBSD) || defined(NETBSD) || defined(OPENBSD)
+    /*
+     * Ignore FPE because coercion of a NaN to an int causes SIGFPE
+     * to be raised.
+     */
+    struct sigaction act;
+
+    act.sa_handler = SIG_IGN;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = SA_RESTART;
+    sigaction(SIGFPE, &act, 0);
+#endif
+}
+
+#if defined(LINUX)
+extern void _MD_unix_terminate_waitpid_daemon(void);
+
+void _MD_CleanupBeforeExit(void)
+{
+    _MD_unix_terminate_waitpid_daemon();
+}
+#endif
+
+#if defined(SOLARIS)
+PRIntervalTime _MD_Solaris_TicksPerSecond(void)
+{
+    /*
+     * Ticks have a 10-microsecond resolution.  So there are
+     * 100000 ticks per second.
+     */
+    return 100000UL;
+}
+
+/* Interval timers, implemented using gethrtime() */
+
+PRIntervalTime _MD_Solaris_GetInterval(void)
+{
+    union {
+	hrtime_t hrt;  /* hrtime_t is a 64-bit (long long) integer */
+	PRInt64 pr64;
+    } time;
+    PRInt64 resolution;
+    PRIntervalTime ticks;
+
+    time.hrt = gethrtime();  /* in nanoseconds */
+    /*
+     * Convert from nanoseconds to ticks.  A tick's resolution is
+     * 10 microseconds, or 10000 nanoseconds.
+     */
+    LL_I2L(resolution, 10000);
+    LL_DIV(time.pr64, time.pr64, resolution);
+    LL_L2UI(ticks, time.pr64);
+    return ticks;
+}
+#endif
+
