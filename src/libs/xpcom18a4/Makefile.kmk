@@ -614,7 +614,6 @@ VBox-xpcom-ds_SOURCES = \
 	xpcom/ds/nsSupportsArrayEnumerator.cpp \
 	xpcom/ds/nsSupportsPrimitives.cpp \
 	xpcom/ds/nsTHashtable.cpp \
-	xpcom/ds/nsUnicharBuffer.cpp \
 	xpcom/ds/nsVariant.cpp \
 	xpcom/ds/nsVoidArray.cpp \
 	xpcom/ds/nsValueArray.cpp \
