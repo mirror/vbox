@@ -773,7 +773,7 @@ static void vboxwl_parse_params(int argc, char *argv[])
     if (RT_SUCCESS(rc)) \
     { \
         rc = _fn; \
-        if (RT_FAILURE(rc) && _error != NULL) \
+        if (RT_FAILURE(rc)) \
             RTPrintf("%s, rc=%Rrc\n", _error, rc); \
     }
 
@@ -807,7 +807,7 @@ int main(int argc, char *argv[])
     /* Set custom log prefix. */
     VBClLogSetLogPrefix(pszLogPrefix);
 
-    VBOXWL_INIT(vboxwl_run_command(),                   NULL);
+    VBOXWL_INIT(vboxwl_run_command(),                   "cannot run command");
 
     return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
