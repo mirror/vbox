@@ -467,29 +467,6 @@ extern PRStatus _MD_gethostname(char *name, PRUint32 namelen);
 
 extern int _MD_unix_get_nonblocking_connect_error(int osfd);
 
-/* Memory-mapped files */
-
-struct _MDFileMap {
-    PRIntn prot;
-    PRIntn flags;
-    PRBool isAnonFM; /* when true, PR_CloseFileMap() must close the related fd */
-};
-
-extern PRStatus _MD_CreateFileMap(struct PRFileMap *fmap, PRInt64 size);
-#define _MD_CREATE_FILE_MAP _MD_CreateFileMap
-
-#define _MD_GET_MEM_MAP_ALIGNMENT() PR_GetPageSize()
-
-extern void * _MD_MemMap(struct PRFileMap *fmap, PRInt64 offset,
-        PRUint32 len);
-#define _MD_MEM_MAP _MD_MemMap
-
-extern PRStatus _MD_MemUnmap(void *addr, PRUint32 size);
-#define _MD_MEM_UNMAP _MD_MemUnmap
-
-extern PRStatus _MD_CloseFileMap(struct PRFileMap *fmap);
-#define _MD_CLOSE_FILE_MAP _MD_CloseFileMap
-
 /*
  * The standard (XPG4) gettimeofday() (from BSD) takes two arguments.
  * On some SVR4 derivatives, gettimeofday() takes only one argument.

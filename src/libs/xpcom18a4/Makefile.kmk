@@ -486,7 +486,6 @@ VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/pr/src/io/prmapopt.c \
 	nsprpub/pr/src/io/prlayer.c \
 	nsprpub/pr/src/io/prlog.c \
-	nsprpub/pr/src/io/prmmap.c \
 	nsprpub/pr/src/io/prpolevt.c \
 	nsprpub/pr/src/io/prprf.c \
 	nsprpub/pr/src/io/prscanf.c \

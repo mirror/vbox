@@ -110,11 +110,6 @@
 #define PR_GetSockName VBoxNsprPR_GetSockName
 #define PR_GetPeerName VBoxNsprPR_GetPeerName
 #define PR_GetSocketOption VBoxNsprPR_GetSocketOption
-#define PR_CreateFileMap VBoxNsprPR_CreateFileMap
-#define PR_GetMemMapAlignment VBoxNsprPR_GetMemMapAlignment
-#define PR_MemMap VBoxNsprPR_MemMap
-#define PR_MemUnmap VBoxNsprPR_MemUnmap
-#define PR_CloseFileMap VBoxNsprPR_CloseFileMap
 #define PR_CreatePipe VBoxNsprPR_CreatePipe
 #endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 
@@ -1528,45 +1523,6 @@ NSPR_API(PRStatus) PR_SetFDInheritable(
  *************************************************************************
  */
 NSPR_API(PRFileDesc *) PR_GetInheritedFD(const char *name);
-
-/*
- *********************************************************************
- *
- * Memory-mapped files
- *
- *********************************************************************
- */
-
-typedef struct PRFileMap PRFileMap;
-
-/*
- * protection options for read and write accesses of a file mapping
- */
-typedef enum PRFileMapProtect {
-    PR_PROT_READONLY,     /* read only */
-    PR_PROT_READWRITE,    /* readable, and write is shared */
-    PR_PROT_WRITECOPY     /* readable, and write is private (copy-on-write) */
-} PRFileMapProtect;
-
-NSPR_API(PRFileMap *) PR_CreateFileMap(
-    PRFileDesc *fd,
-    PRInt64 size,
-    PRFileMapProtect prot);
-
-/*
- * return the alignment (in bytes) of the offset argument to PR_MemMap
- */
-NSPR_API(PRInt32) PR_GetMemMapAlignment(void);
-
-NSPR_API(void *) PR_MemMap(
-    PRFileMap *fmap,
-    PROffset64 offset,  /* must be aligned and sized according to the
-                         * return value of PR_GetMemMapAlignment() */
-    PRUint32 len);
-
-NSPR_API(PRStatus) PR_MemUnmap(void *addr, PRUint32 len);
-
-NSPR_API(PRStatus) PR_CloseFileMap(PRFileMap *fmap);
 
 /*
  ******************************************************************

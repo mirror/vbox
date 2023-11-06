@@ -465,12 +465,6 @@ struct PRProcess {
     _MDProcess md;
 };
 
-struct PRFileMap {
-    PRFileDesc *fd;
-    PRFileMapProtect prot;
-    _MDFileMap md;
-};
-
 /************************************************************************/
 
 /*
@@ -674,27 +668,6 @@ extern PRStatus _PR_MD_TLOCKFILE(PRInt32 osfd);
 
 extern PRStatus _PR_MD_UNLOCKFILE(PRInt32 osfd);
 #define    _PR_MD_UNLOCKFILE _MD_UNLOCKFILE
-
-/* Memory-mapped files */
-
-extern PRStatus _PR_MD_CREATE_FILE_MAP(PRFileMap *fmap, PRInt64 size);
-#define _PR_MD_CREATE_FILE_MAP _MD_CREATE_FILE_MAP
-
-extern PRInt32 _PR_MD_GET_MEM_MAP_ALIGNMENT(void);
-#define _PR_MD_GET_MEM_MAP_ALIGNMENT _MD_GET_MEM_MAP_ALIGNMENT
-
-extern void * _PR_MD_MEM_MAP(
-    PRFileMap *fmap,
-    PROffset64 offset,
-    PRUint32 len);
-#define _PR_MD_MEM_MAP _MD_MEM_MAP
-
-extern PRStatus _PR_MD_MEM_UNMAP(void *addr, PRUint32 size);
-#define _PR_MD_MEM_UNMAP _MD_MEM_UNMAP
-
-extern PRStatus _PR_MD_CLOSE_FILE_MAP(PRFileMap *fmap);
-#define _PR_MD_CLOSE_FILE_MAP _MD_CLOSE_FILE_MAP
-
 
 /* Interprocess communications (IPC) */
 
