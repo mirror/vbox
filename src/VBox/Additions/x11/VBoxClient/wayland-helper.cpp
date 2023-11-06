@@ -48,16 +48,15 @@ static const char *g_pcszSessionDescClipardCopyToHost       = "Copy clipboard to
 
  * Each time when either host (via VBoxClient) or Wayland client
  * initiates a new data transfer (such as clipboard sharing or drag-n-drop
- * operation) a new session should be started. Due to current 
- * implementation,
+ * operation) a new session should be started. Due to current implementation,
  * no more than one session can run in the same time. Therefore, before
  * starting new session, previous one needs to be ended.
 
  * When either VBoxClient or Wayland thread needs to access session data,
- * it need to join session at first. Multiple threads can join the same 
+ * it need to join session at first. Multiple threads can join the same
  * session in parallel.
 
- * When sequence of operations which were required to transfer data to 
+ * When sequence of operations which were required to transfer data to
  * either side is complete, session should be ended.
  *
  * Session has the following attributes:
@@ -99,8 +98,6 @@ static const char *g_pcszSessionDescClipardCopyToHost       = "Copy clipboard to
 
 /**
  * Try atomically enter session state within time interval.
- *
- * 
  *
  * @returns IPRT status code.
  * @param   pSessionState   Session state.

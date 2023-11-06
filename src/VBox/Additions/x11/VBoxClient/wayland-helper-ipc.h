@@ -421,5 +421,5 @@ namespace vbcl
  */
 RTDECL(int) vbcl_wayland_hlp_gtk_ipc_srv_name(char *szBuf, size_t cbBuf);
 
-#endif /* GA_INCLUDED_SRC_x11_VBoxClient_wayland_helper_ipc_h */
+#endif /* !GA_INCLUDED_SRC_x11_VBoxClient_wayland_helper_ipc_h */
 
