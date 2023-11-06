@@ -40,13 +40,8 @@
 
 #include "nsMemory.h"
 #include "nsISupportsArray.h"
-#include "nsIRunnable.h"
-#include "nsIThread.h"
 #include "nsCOMPtr.h"
 #include "plevent.h"
-
-struct PRLock;
-class MemoryFlusher;
 
 class nsMemoryImpl : public nsIMemory
 {
@@ -55,8 +50,6 @@ public:
     NS_DECL_NSIMEMORY
 
     nsMemoryImpl();
-
-    nsresult FlushMemory(const PRUnichar* aReason, PRBool aImmediate);
 
     // called from xpcom initialization/finalization:
     static nsresult Startup();
@@ -67,25 +60,6 @@ public:
 
 private:
     ~nsMemoryImpl();
-
-protected:
-    MemoryFlusher* mFlusher;
-    nsCOMPtr<nsIThread> mFlusherThread;
-
-    PRLock* mFlushLock;
-    PRBool  mIsFlushing;
-
-    struct FlushEvent {
-        PLEvent mEvent;
-        const PRUnichar* mReason;
-    };
-
-    FlushEvent mFlushEvent;
-
-    static nsresult RunFlushers(nsMemoryImpl* aSelf, const PRUnichar* aReason);
-
-    static void* PR_CALLBACK HandleFlushEvent(PLEvent* aEvent);
-    static void  PR_CALLBACK DestroyFlushEvent(PLEvent* aEvent);
 };
 
 #endif // nsMemoryImpl_h__
