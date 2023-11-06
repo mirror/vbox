@@ -565,7 +565,9 @@ nsresult
 IPC_Disconnect()
 {
     // Must disconnect on same thread used to connect!
+#ifdef DEBUG
     Assert(gMainThread == RTThreadSelf());
+#endif
 
     if (!gConnState || !gConnThread)
       return NS_ERROR_NOT_INITIALIZED;
