@@ -50,12 +50,10 @@
 #include <string.h>
 #include <signal.h>
 
-#ifdef VBOX_USE_IPRT_IN_NSPR
-# include <iprt/thread.h>
-# include <iprt/mem.h>
-# include <iprt/asm.h>
-# include <iprt/err.h>
-#endif /* VBOX_USE_IPRT_IN_NSPR */
+#include <iprt/thread.h>
+#include <iprt/mem.h>
+#include <iprt/asm.h>
+#include <iprt/err.h>
 
 /*
  * Record whether or not we have the privilege to set the scheduling
@@ -74,28 +72,18 @@ static struct _PT_Bookeeping
     PRUintn this_many;          /* number of threads allowed for exit */
     pthread_key_t key;          /* private private data key */
     PRThread *first, *last;     /* list of threads we know about */
-#if defined(_PR_DCETHREADS) || defined(_POSIX_THREAD_PRIORITY_SCHEDULING)
+#if defined(_POSIX_THREAD_PRIORITY_SCHEDULING)
     PRInt32 minPrio, maxPrio;   /* range of scheduling priorities */
 #endif
 } pt_book = {0};
 
 static void _pt_thread_death(void *arg);
-static void init_pthread_gc_support(void);
 
-#if defined(_PR_DCETHREADS) || defined(_POSIX_THREAD_PRIORITY_SCHEDULING)
+#if defined(_POSIX_THREAD_PRIORITY_SCHEDULING)
 static PRIntn pt_PriorityMap(PRThreadPriority pri)
 {
-#ifdef NTO
-    /* This priority algorithm causes lots of problems on Neutrino
-     * for now I have just hard coded everything to run at priority 10
-     * until I can come up with a new algorithm.
-     *     Jerry.Kirk@Nexwarecorp.com
-     */
-    return 10;
-#else
     return pt_book.minPrio +
 	    pri * (pt_book.maxPrio - pt_book.minPrio) / PR_PRIORITY_LAST;
-#endif
 }
 #endif
 
@@ -137,21 +125,6 @@ static void *_pt_root(void *arg)
      * write should be safe.
      */
     thred->id = pthread_self();
-
-    /*
-    ** DCE Threads can't detach during creation, so do it late.
-    ** I would like to do it only here, but that doesn't seem
-    ** to work.
-    */
-#if defined(_PR_DCETHREADS)
-    if (detached)
-    {
-        /* pthread_detach() modifies its argument, so we must pass a copy */
-        pthread_t self = thred->id;
-        rv = pthread_detach(&self);
-        PR_ASSERT(0 == rv);
-    }
-#endif /* defined(_PR_DCETHREADS) */
 
     /* Set up the thread stack information */
     _PR_InitializeStack(thred->stack);
@@ -221,7 +194,6 @@ static void *_pt_root(void *arg)
     return NULL;
 }  /* _pt_root */
 
-#ifdef VBOX_USE_IPRT_IN_NSPR
 static DECLCALLBACK(int) _pt_iprt_root(
     RTTHREAD Thread, void *pvUser)
 {
@@ -229,7 +201,6 @@ static DECLCALLBACK(int) _pt_iprt_root(
     _pt_root(thred);
     return VINF_SUCCESS;
 }
-#endif /* VBOX_USE_IPRT_IN_NSPR */
 
 static PRThread* pt_AttachThread(void)
 {
@@ -278,14 +249,10 @@ static PRThread* _PR_CreateThread(
 {
     int rv;
     PRThread *thred;
-#ifndef VBOX_USE_IPRT_IN_NSPR
-    pthread_attr_t tattr;
-#else
     static uint32_t volatile s_iThread = 0;
     RTTHREADTYPE enmType;
     RTTHREAD hThread;
     uint32_t fFlags = 0;
-#endif
 
     if (!_pr_initialized) _PR_ImplicitInitialization();
 
@@ -294,39 +261,6 @@ static PRThread* _PR_CreateThread(
     else if ((PRIntn)PR_PRIORITY_LAST < (PRIntn)priority)
         priority = PR_PRIORITY_LAST;
 
-#ifndef VBOX_USE_IPRT_IN_NSPR
-    rv = _PT_PTHREAD_ATTR_INIT(&tattr);
-    PR_ASSERT(0 == rv);
-
-    if (EPERM != pt_schedpriv)
-    {
-#if !defined(_PR_DCETHREADS) && defined(_POSIX_THREAD_PRIORITY_SCHEDULING)
-        struct sched_param schedule;
-#endif
-
-#if defined(_POSIX_THREAD_PRIORITY_SCHEDULING)
-        rv = pthread_attr_setinheritsched(&tattr, PTHREAD_EXPLICIT_SCHED);
-        PR_ASSERT(0 == rv);
-#endif
-
-        /* Use the default scheduling policy */
-
-#if defined(_PR_DCETHREADS)
-        rv = pthread_attr_setprio(&tattr, pt_PriorityMap(priority));
-        PR_ASSERT(0 == rv);
-#elif defined(_POSIX_THREAD_PRIORITY_SCHEDULING)
-        rv = pthread_attr_getschedparam(&tattr, &schedule);
-        PR_ASSERT(0 == rv);
-        schedule.sched_priority = pt_PriorityMap(priority);
-        rv = pthread_attr_setschedparam(&tattr, &schedule);
-        PR_ASSERT(0 == rv);
-#ifdef NTO
-        rv = pthread_attr_setschedpolicy(&tattr, SCHED_RR); /* Round Robin */
-        PR_ASSERT(0 == rv);
-#endif
-#endif /* !defined(_PR_DCETHREADS) */
-    }
-#else  /* VBOX_USE_IPRT_IN_NSPR */
     /* calc priority */
     switch (priority)
     {
@@ -336,37 +270,9 @@ static PRThread* _PR_CreateThread(
         case PR_PRIORITY_HIGH:      enmType = RTTHREADTYPE_MAIN_WORKER; break;
         case PR_PRIORITY_URGENT:    enmType = RTTHREADTYPE_IO; break;
     }
-#endif /* VBOX_USE_IPRT_IN_NSPR */
 
-#ifndef VBOX_USE_IPRT_IN_NSPR
-    /*
-     * DCE threads can't set detach state before creating the thread.
-     * AIX can't set detach late. Why can't we all just get along?
-     */
-#if !defined(_PR_DCETHREADS)
-    rv = pthread_attr_setdetachstate(&tattr,
-        ((PR_JOINABLE_THREAD == state) ?
-            PTHREAD_CREATE_JOINABLE : PTHREAD_CREATE_DETACHED));
-    PR_ASSERT(0 == rv);
-#endif /* !defined(_PR_DCETHREADS) */
-#else
     if (state == PR_JOINABLE_THREAD)
         fFlags |= RTTHREADFLAGS_WAITABLE;
-#endif /* !VBOX_USE_IPRT_IN_NSPR */
-
-#ifndef VBOX_USE_IPRT_IN_NSPR /* We let stackSize stay zero and let IPRT choose a default size. */
-    if (0 == stackSize) stackSize = (64 * 1024);  /* default == 64K */
-#ifdef _MD_MINIMUM_STACK_SIZE
-    if (stackSize < _MD_MINIMUM_STACK_SIZE) stackSize = _MD_MINIMUM_STACK_SIZE;
-#endif
-    /*
-     * Linux doesn't have pthread_attr_setstacksize.
-     */
-#ifndef LINUX
-    rv = pthread_attr_setstacksize(&tattr, stackSize);
-    PR_ASSERT(0 == rv);
-#endif
-#endif /* !VBOX_USE_IPRT_IN_NSPR */
 
     thred = PR_NEWZAP(PRThread);
     if (NULL == thred)
@@ -386,25 +292,6 @@ static PRThread* _PR_CreateThread(
 
         if (PR_LOCAL_THREAD == scope)
         	scope = PR_GLOBAL_THREAD;
-			
-#ifndef VBOX_USE_IPRT_IN_NSPR
-        if (PR_GLOBAL_BOUND_THREAD == scope) {
-#if defined(_POSIX_THREAD_PRIORITY_SCHEDULING)
-    		rv = pthread_attr_setscope(&tattr, PTHREAD_SCOPE_SYSTEM);
-			if (rv) {
-				/*
-				 * system scope not supported
-				 */
-        		scope = PR_GLOBAL_THREAD;
-				/*
-				 * reset scope
-				 */
-    			rv = pthread_attr_setscope(&tattr, PTHREAD_SCOPE_PROCESS);
-    			PR_ASSERT(0 == rv);
-			}
-#endif
-		}
-#endif /* !VBOX_USE_IPRT_IN_NSPR */
         if (PR_GLOBAL_THREAD == scope)
             thred->state |= PT_THREAD_GLOBAL;
         else if (PR_GLOBAL_BOUND_THREAD == scope)
@@ -444,54 +331,16 @@ static PRThread* _PR_CreateThread(
          * to pthread_create() because who knows what wacky things
          * pthread_create() may be doing to its argument.
          */
-#ifndef VBOX_USE_IPRT_IN_NSPR
-        rv = _PT_PTHREAD_CREATE(&id, tattr, _pt_root, thred);
-
-#if !defined(_PR_DCETHREADS)
-        if (EPERM == rv)
-        {
-#if defined(IRIX)
-        	if (PR_GLOBAL_BOUND_THREAD == scope) {
-				/*
-				 * SCOPE_SYSTEM requires appropriate privilege
-				 * reset to process scope and try again
-				 */
-    			rv = pthread_attr_setscope(&tattr, PTHREAD_SCOPE_PROCESS);
-    			PR_ASSERT(0 == rv);
-            	thred->state &= ~PT_THREAD_BOUND;
-			}
-#else
-            /* Remember that we don't have thread scheduling privilege. */
-            pt_schedpriv = EPERM;
-            PR_LOG(_pr_thread_lm, PR_LOG_MIN,
-                ("_PR_CreateThread: no thread scheduling privilege"));
-            /* Try creating the thread again without setting priority. */
-#if defined(_POSIX_THREAD_PRIORITY_SCHEDULING)
-            rv = pthread_attr_setinheritsched(&tattr, PTHREAD_INHERIT_SCHED);
-            PR_ASSERT(0 == rv);
-#endif
-#endif	/* IRIX */
-            rv = _PT_PTHREAD_CREATE(&id, tattr, _pt_root, thred);
-        }
-#endif
-#else  /* VBOX_USE_IPRT_IN_NSPR */
 		rv = RTThreadCreateF(&hThread, _pt_iprt_root, thred, stackSize, enmType, fFlags, "nspr-%u", ASMAtomicIncU32(&s_iThread));
 		if (RT_SUCCESS(rv)) {
-#ifdef VBOX_USE_IPRT_IN_NSPR
 			RTMEM_WILL_LEAK(hThread);
-#endif
 			id = (pthread_t)RTThreadGetNative(hThread);
             rv = 0;
         } 
-#endif /* VBOX_USE_IPRT_IN_NSPR */
 
         if (0 != rv)
         {
-#if defined(_PR_DCETHREADS)
-            PRIntn oserr = errno;
-#else
             PRIntn oserr = rv;
-#endif
             PR_Lock(pt_book.ml);
             if (thred->state & PT_THREAD_SYSTEM)
                 pt_book.system -= 1;
@@ -527,11 +376,6 @@ static PRThread* _PR_CreateThread(
     }
 
 done:
-#ifndef VBOX_USE_IPRT_IN_NSPR
-    rv = _PT_PTHREAD_ATTR_DESTROY(&tattr);
-    PR_ASSERT(0 == rv);
-#endif
-
     return thred;
 }  /* _PR_CreateThread */
 
@@ -543,32 +387,6 @@ PR_IMPLEMENT(PRThread*) PR_CreateThread(
     return _PR_CreateThread(
         type, start, arg, priority, scope, state, stackSize, PR_FALSE);
 } /* PR_CreateThread */
-
-PR_IMPLEMENT(PRThread*) PR_CreateThreadGCAble(
-    PRThreadType type, void (*start)(void *arg), void *arg, 
-    PRThreadPriority priority, PRThreadScope scope,
-    PRThreadState state, PRUint32 stackSize)
-{
-    return _PR_CreateThread(
-        type, start, arg, priority, scope, state, stackSize, PR_TRUE);
-}  /* PR_CreateThreadGCAble */
-
-PR_IMPLEMENT(void*) GetExecutionEnvironment(PRThread *thred)
-{
-    return thred->environment;
-}  /* GetExecutionEnvironment */
- 
-PR_IMPLEMENT(void) SetExecutionEnvironment(PRThread *thred, void *env)
-{
-    thred->environment = env;
-}  /* SetExecutionEnvironment */
-
-PR_IMPLEMENT(PRThread*) PR_AttachThread(
-    PRThreadType type, PRThreadPriority priority, PRThreadStack *stack)
-{
-    return PR_GetCurrentThread();
-}  /* PR_AttachThread */
-
 
 PR_IMPLEMENT(PRStatus) PR_JoinThread(PRThread *thred)
 {
@@ -592,37 +410,6 @@ PR_IMPLEMENT(PRStatus) PR_JoinThread(PRThread *thred)
     }
     else
     {
-#ifndef VBOX_USE_IPRT_IN_NSPR
-        pthread_t id = thred->id;
-        rv = pthread_join(id, &result);
-        PR_ASSERT(rv == 0 && result == NULL);
-        if (0 == rv)
-        {
-#ifdef _PR_DCETHREADS
-            rv = pthread_detach(&id);
-            PR_ASSERT(0 == rv);
-#endif
-            _pt_thread_death(thred);
-        }
-        else
-        {
-            PRErrorCode prerror;
-            switch (rv)
-            {
-                case EINVAL:  /* not a joinable thread */
-                case ESRCH:   /* no thread with given ID */
-                    prerror = PR_INVALID_ARGUMENT_ERROR;
-                    break;
-                case EDEADLK: /* a thread joining with itself */
-                    prerror = PR_DEADLOCK_ERROR;
-                    break;
-                default:
-                    prerror = PR_UNKNOWN_ERROR;
-                    break;
-            }
-            PR_SetError(prerror, rv);
-        }
-#else  /* VBOX_USE_IPRT_IN_NSPR */
         rv = VERR_INVALID_HANDLE;
         RTTHREAD hThread = RTThreadFromNative((RTNATIVETHREAD)thred->id);
         if (hThread != NIL_RTTHREAD)
@@ -641,12 +428,9 @@ PR_IMPLEMENT(PRStatus) PR_JoinThread(PRThread *thred)
                             : PR_UNKNOWN_ERROR, 
                             rv);
         }
-#endif /* VBOX_USE_IPRT_IN_NSPR */
     }
     return (0 == rv) ? PR_SUCCESS : PR_FAILURE;
 }  /* PR_JoinThread */
-
-PR_IMPLEMENT(void) PR_DetachThread(void) { }  /* PR_DetachThread */
 
 PR_IMPLEMENT(PRThread*) PR_GetCurrentThread(void)
 {
@@ -695,10 +479,7 @@ PR_IMPLEMENT(void) PR_SetThreadPriority(PRThread *thred, PRThreadPriority newPri
     else if ((PRIntn)PR_PRIORITY_LAST < (PRIntn)newPri)
         newPri = PR_PRIORITY_LAST;
 
-#if defined(_PR_DCETHREADS)
-    rv = pthread_setprio(thred->id, pt_PriorityMap(newPri));
-    /* pthread_setprio returns the old priority */
-#elif defined(_POSIX_THREAD_PRIORITY_SCHEDULING)
+#if defined(_POSIX_THREAD_PRIORITY_SCHEDULING)
     if (EPERM != pt_schedpriv)
     {
         int policy;
@@ -854,18 +635,7 @@ void _PR_InitThreads(
     int rv;
     PRThread *thred;
 
-#ifdef _PR_NEED_PTHREAD_INIT
-    /*
-     * On BSD/OS (3.1 and 4.0), the pthread subsystem is lazily
-     * initialized, but pthread_self() fails to initialize
-     * pthreads and hence returns a null thread ID if invoked
-     * by the primordial thread before any other pthread call.
-     * So we explicitly initialize pthreads here.
-     */
-    pthread_init();
-#endif
-
-#if defined(_PR_DCETHREADS) || defined(_POSIX_THREAD_PRIORITY_SCHEDULING)
+#if defined(_POSIX_THREAD_PRIORITY_SCHEDULING)
 #if defined(FREEBSD)
     {
     pthread_attr_t attr;
@@ -982,574 +752,5 @@ PR_IMPLEMENT(PRStatus) PR_Cleanup(void)
     }
     return PR_FAILURE;
 }  /* PR_Cleanup */
-
-PR_IMPLEMENT(void) PR_ProcessExit(PRIntn status)
-{
-    _exit(status);
-}
-
-PR_IMPLEMENT(PRUint32) PR_GetThreadID(PRThread *thred)
-{
-#if defined(_PR_DCETHREADS)
-    return (PRUint32)&thred->id;  /* this is really a sham! */
-#else
-    return (PRUint32)thred->id;  /* and I don't know what they will do with it */
-#endif
-}
-
-/*
- * $$$
- * The following two thread-to-processor affinity functions are not
- * yet implemented for pthreads.  By the way, these functions should return
- * PRStatus rather than PRInt32 to indicate the success/failure status.
- * $$$
- */
-
-PR_IMPLEMENT(PRInt32) PR_GetThreadAffinityMask(PRThread *thread, PRUint32 *mask)
-{
-    return 0;  /* not implemented */
-}
-
-PR_IMPLEMENT(PRInt32) PR_SetThreadAffinityMask(PRThread *thread, PRUint32 mask )
-{
-    return 0;  /* not implemented */
-}
-
-PR_IMPLEMENT(void)
-PR_SetThreadDumpProc(PRThread* thread, PRThreadDumpProc dump, void *arg)
-{
-    thread->dump = dump;
-    thread->dumpArg = arg;
-}
-
-/* 
- * Garbage collection support follows.
- */
-
-#if defined(_PR_DCETHREADS)
-
-/*
- * statics for Garbage Collection support.  We don't need to protect these
- * signal masks since the garbage collector itself is protected by a lock
- * and multiple threads will not be garbage collecting at the same time.
- */
-static sigset_t javagc_vtalarm_sigmask;
-static sigset_t javagc_intsoff_sigmask;
-
-#else /* defined(_PR_DCETHREADS) */
-
-/* a bogus signal mask for forcing a timed wait */
-/* Not so bogus in AIX as we really do a sigwait */
-static sigset_t sigwait_set;
-
-static struct timespec onemillisec = {0, 1000000L};
-#ifndef PT_NO_SIGTIMEDWAIT
-static struct timespec hundredmillisec = {0, 100000000L};
-#endif
-
-static void suspend_signal_handler(PRIntn sig);
-
-#ifdef PT_NO_SIGTIMEDWAIT
-static void null_signal_handler(PRIntn sig);
-#endif
-
-#endif /* defined(_PR_DCETHREADS) */
-
-/*
- * Linux pthreads use SIGUSR1 and SIGUSR2 internally, which
- * conflict with the use of these two signals in our GC support.
- * So we don't know how to support GC on Linux pthreads.
- */
-static void init_pthread_gc_support(void)
-{
-    PRIntn rv;
-
-#if defined(_PR_DCETHREADS)
-	rv = sigemptyset(&javagc_vtalarm_sigmask);
-    PR_ASSERT(0 == rv);
-	rv = sigaddset(&javagc_vtalarm_sigmask, SIGVTALRM);
-    PR_ASSERT(0 == rv);
-#else  /* defined(_PR_DCETHREADS) */
-	{
-	    struct sigaction sigact_usr2;
-
-	    sigact_usr2.sa_handler = suspend_signal_handler;
-	    sigact_usr2.sa_flags = SA_RESTART;
-	    sigemptyset (&sigact_usr2.sa_mask);
-
-        rv = sigaction (SIGUSR2, &sigact_usr2, NULL);
-        PR_ASSERT(0 == rv);
-
-        sigemptyset (&sigwait_set);
-#if defined(PT_NO_SIGTIMEDWAIT)
-        sigaddset (&sigwait_set, SIGUSR1);
-#else
-        sigaddset (&sigwait_set, SIGUSR2);
-#endif  /* defined(PT_NO_SIGTIMEDWAIT) */
-	}
-#if defined(PT_NO_SIGTIMEDWAIT)
-	{
-	    struct sigaction sigact_null;
-	    sigact_null.sa_handler = null_signal_handler;
-	    sigact_null.sa_flags = SA_RESTART;
-	    sigemptyset (&sigact_null.sa_mask);
-        rv = sigaction (SIGUSR1, &sigact_null, NULL);
-	    PR_ASSERT(0 ==rv); 
-    }
-#endif  /* defined(PT_NO_SIGTIMEDWAIT) */
-#endif /* defined(_PR_DCETHREADS) */
-}
-
-PR_IMPLEMENT(void) PR_SetThreadGCAble(void)
-{
-    PR_Lock(pt_book.ml);
-	PR_CurrentThread()->state |= PT_THREAD_GCABLE;
-    PR_Unlock(pt_book.ml);
-}
-
-PR_IMPLEMENT(void) PR_ClearThreadGCAble(void)
-{
-    PR_Lock(pt_book.ml);
-	PR_CurrentThread()->state &= (~PT_THREAD_GCABLE);
-    PR_Unlock(pt_book.ml);
-}
-
-#if defined(DEBUG)
-static PRBool suspendAllOn = PR_FALSE;
-#endif
-
-static PRBool suspendAllSuspended = PR_FALSE;
-
-PR_IMPLEMENT(PRStatus) PR_EnumerateThreads(PREnumerator func, void *arg)
-{
-    PRIntn count = 0;
-    PRStatus rv = PR_SUCCESS;
-    PRThread* thred = pt_book.first;
-    PRThread *me = PR_CurrentThread();
-
-    PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, ("Begin PR_EnumerateThreads\n"));
-    /*
-     * $$$
-     * Need to suspend all threads other than me before doing this.
-     * This is really a gross and disgusting thing to do. The only
-     * good thing is that since all other threads are suspended, holding
-     * the lock during a callback seems like child's play.
-     * $$$
-     */
-    PR_ASSERT(suspendAllOn);
-
-    while (thred != NULL)
-    {
-        /* Steve Morse, 4-23-97: Note that we can't walk a queue by taking
-         * qp->next after applying the function "func".  In particular, "func"
-         * might remove the thread from the queue and put it into another one in
-         * which case qp->next no longer points to the next entry in the original
-         * queue.
-         *
-         * To get around this problem, we save qp->next in qp_next before applying
-         * "func" and use that saved value as the next value after applying "func".
-         */
-        PRThread* next = thred->next;
-
-        if (_PT_IS_GCABLE_THREAD(thred))
-        {
-#if !defined(_PR_DCETHREADS)
-            PR_ASSERT((thred == me) || (thred->suspend & PT_THREAD_SUSPENDED));
-#endif
-            PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, 
-                   ("In PR_EnumerateThreads callback thread %X thid = %X\n", 
-                    thred, thred->id));
-
-            rv = func(thred, count++, arg);
-            if (rv != PR_SUCCESS)
-                return rv;
-        }
-        thred = next;
-    }
-    PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, 
-	   ("End PR_EnumerateThreads count = %d \n", count));
-    return rv;
-}  /* PR_EnumerateThreads */
-
-/*
- * PR_SuspendAll and PR_ResumeAll are called during garbage collection.  The strategy 
- * we use is to send a SIGUSR2 signal to every gc able thread that we intend to suspend.
- * The signal handler will record the stack pointer and will block until resumed by
- * the resume call.  Since the signal handler is the last routine called for the
- * suspended thread, the stack pointer will also serve as a place where all the
- * registers have been saved on the stack for the previously executing routines.
- *
- * Through global variables, we also make sure that PR_Suspend and PR_Resume does not
- * proceed until the thread is suspended or resumed.
- */
-
-#if !defined(_PR_DCETHREADS)
-
-/*
- * In the signal handler, we can not use condition variable notify or wait.
- * This does not work consistently across all pthread platforms.  We also can not 
- * use locking since that does not seem to work reliably across platforms.
- * Only thing we can do is yielding while testing for a global condition
- * to change.  This does work on pthread supported platforms.  We may have
- * to play with priortities if there are any problems detected.
- */
-
- /* 
-  * In AIX, you cannot use ANY pthread calls in the signal handler except perhaps
-  * pthread_yield. But that is horribly inefficient. Hence we use only sigwait, no
-  * sigtimedwait is available. We need to use another user signal, SIGUSR1. Actually
-  * SIGUSR1 is also used by exec in Java. So our usage here breaks the exec in Java,
-  * for AIX. You cannot use pthread_cond_wait or pthread_delay_np in the signal
-  * handler as all synchronization mechanisms just break down. 
-  */
-
-#if defined(PT_NO_SIGTIMEDWAIT)
-static void null_signal_handler(PRIntn sig)
-{
-	return;
-}
-#endif
-
-static void suspend_signal_handler(PRIntn sig)
-{
-	PRThread *me = PR_CurrentThread();
-
-	PR_ASSERT(me != NULL);
-	PR_ASSERT(_PT_IS_GCABLE_THREAD(me));
-	PR_ASSERT((me->suspend & PT_THREAD_SUSPENDED) == 0);
-
-	PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, 
-        ("Begin suspend_signal_handler thred %X thread id = %X\n", 
-		me, me->id));
-
-	/*
-	 * save stack pointer
-	 */
-	me->sp = &me;
-
-	/* 
-	   At this point, the thread's stack pointer has been saved,
-	   And it is going to enter a wait loop until it is resumed.
-	   So it is _really_ suspended 
-	*/
-
-	me->suspend |= PT_THREAD_SUSPENDED;
-
-	/*
-	 * now, block current thread
-	 */
-#if defined(PT_NO_SIGTIMEDWAIT)
-	pthread_cond_signal(&me->suspendResumeCV);
-	while (me->suspend & PT_THREAD_SUSPENDED)
-	{
-#if !defined(FREEBSD) && !defined(NETBSD) && !defined(OPENBSD) \
-    && !defined(BSDI) && !defined(VMS) && !defined(UNIXWARE) && !defined(DARWIN)  /*XXX*/
-        PRIntn rv;
-	    sigwait(&sigwait_set, &rv);
-#endif
-	}
-	me->suspend |= PT_THREAD_RESUMED;
-	pthread_cond_signal(&me->suspendResumeCV);
-#else /* defined(PT_NO_SIGTIMEDWAIT) */
-	while (me->suspend & PT_THREAD_SUSPENDED)
-	{
-		PRIntn rv = sigtimedwait(&sigwait_set, NULL, &hundredmillisec);
-    	PR_ASSERT(-1 == rv);
-	}
-	me->suspend |= PT_THREAD_RESUMED;
-#endif
-
-    /*
-     * At this point, thread has been resumed, so set a global condition.
-     * The ResumeAll needs to know that this has really been resumed. 
-     * So the signal handler sets a flag which PR_ResumeAll will reset. 
-     * The PR_ResumeAll must reset this flag ...
-     */
-
-    PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, 
-        ("End suspend_signal_handler thred = %X tid = %X\n", me, me->id));
-}  /* suspend_signal_handler */
-
-static void pt_SuspendSet(PRThread *thred)
-{
-    PRIntn rv;
-
-    PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, 
-	   ("pt_SuspendSet thred %X thread id = %X\n", thred, thred->id));
-
-
-    /*
-     * Check the thread state and signal the thread to suspend
-     */
-
-    PR_ASSERT((thred->suspend & PT_THREAD_SUSPENDED) == 0);
-
-    PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, 
-	   ("doing pthread_kill in pt_SuspendSet thred %X tid = %X\n",
-	   thred, thred->id));
-#if defined(VMS)
-    rv = thread_suspend(thred);
-#else
-    rv = pthread_kill (thred->id, SIGUSR2);
-#endif
-    PR_ASSERT(0 == rv);
-}
-
-static void pt_SuspendTest(PRThread *thred)
-{
-    PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, 
-	   ("Begin pt_SuspendTest thred %X thread id = %X\n", thred, thred->id));
-
-
-    /*
-     * Wait for the thread to be really suspended. This happens when the
-     * suspend signal handler stores the stack pointer and sets the state
-     * to suspended. 
-     */
-
-#if defined(PT_NO_SIGTIMEDWAIT)
-    pthread_mutex_lock(&thred->suspendResumeMutex);
-    while ((thred->suspend & PT_THREAD_SUSPENDED) == 0)
-    {
-	    pthread_cond_timedwait(
-	        &thred->suspendResumeCV, &thred->suspendResumeMutex, &onemillisec);
-	}
-	pthread_mutex_unlock(&thred->suspendResumeMutex);
-#else
-    while ((thred->suspend & PT_THREAD_SUSPENDED) == 0)
-    {
-		PRIntn rv = sigtimedwait(&sigwait_set, NULL, &onemillisec);
-    	PR_ASSERT(-1 == rv);
-	}
-#endif
-
-    PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS,
-        ("End pt_SuspendTest thred %X tid %X\n", thred, thred->id));
-}  /* pt_SuspendTest */
-
-static void pt_ResumeSet(PRThread *thred)
-{
-    PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, 
-	   ("pt_ResumeSet thred %X thread id = %X\n", thred, thred->id));
-
-    /*
-     * Clear the global state and set the thread state so that it will
-     * continue past yield loop in the suspend signal handler
-     */
-
-    PR_ASSERT(thred->suspend & PT_THREAD_SUSPENDED);
-
-
-    thred->suspend &= ~PT_THREAD_SUSPENDED;
-
-#if defined(PT_NO_SIGTIMEDWAIT)
-#if defined(VMS)
-	thread_resume(thred);
-#else
-	pthread_kill(thred->id, SIGUSR1);
-#endif
-#endif
-
-}  /* pt_ResumeSet */
-
-static void pt_ResumeTest(PRThread *thred)
-{
-    PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, 
-	   ("Begin pt_ResumeTest thred %X thread id = %X\n", thred, thred->id));
-
-    /*
-     * Wait for the threads resume state to change
-     * to indicate it is really resumed 
-     */
-#if defined(PT_NO_SIGTIMEDWAIT)
-    pthread_mutex_lock(&thred->suspendResumeMutex);
-    while ((thred->suspend & PT_THREAD_RESUMED) == 0)
-    {
-	    pthread_cond_timedwait(
-	        &thred->suspendResumeCV, &thred->suspendResumeMutex, &onemillisec);
-    }
-    pthread_mutex_unlock(&thred->suspendResumeMutex);
-#else
-    while ((thred->suspend & PT_THREAD_RESUMED) == 0) {
-		PRIntn rv = sigtimedwait(&sigwait_set, NULL, &onemillisec);
-    	PR_ASSERT(-1 == rv);
-	}
-#endif
-
-    thred->suspend &= ~PT_THREAD_RESUMED;
-
-    PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, (
-        "End pt_ResumeTest thred %X tid %X\n", thred, thred->id));
-}  /* pt_ResumeTest */
-
-static pthread_once_t pt_gc_support_control = PTHREAD_ONCE_INIT;
-
-PR_IMPLEMENT(void) PR_SuspendAll(void)
-{
-#ifdef DEBUG
-    PRIntervalTime stime, etime;
-#endif
-    PRThread* thred = pt_book.first;
-    PRThread *me = PR_CurrentThread();
-    int rv;
-
-    rv = pthread_once(&pt_gc_support_control, init_pthread_gc_support);
-    PR_ASSERT(0 == rv);
-    PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, ("Begin PR_SuspendAll\n"));
-    /*
-     * Stop all threads which are marked GC able.
-     */
-    PR_Lock(pt_book.ml);
-#ifdef DEBUG
-    suspendAllOn = PR_TRUE;
-    stime = PR_IntervalNow();
-#endif
-    while (thred != NULL)
-    {
-	    if ((thred != me) && _PT_IS_GCABLE_THREAD(thred))
-    		pt_SuspendSet(thred);
-        thred = thred->next;
-    }
-
-    /* Wait till they are really suspended */
-    thred = pt_book.first;
-    while (thred != NULL)
-    {
-	    if ((thred != me) && _PT_IS_GCABLE_THREAD(thred))
-            pt_SuspendTest(thred);
-        thred = thred->next;
-    }
-
-    suspendAllSuspended = PR_TRUE;
-
-#ifdef DEBUG
-    etime = PR_IntervalNow();
-    PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS,\
-        ("End PR_SuspendAll (time %dms)\n",
-        PR_IntervalToMilliseconds(etime - stime)));
-#endif
-}  /* PR_SuspendAll */
-
-PR_IMPLEMENT(void) PR_ResumeAll(void)
-{
-#ifdef DEBUG
-    PRIntervalTime stime, etime;
-#endif
-    PRThread* thred = pt_book.first;
-    PRThread *me = PR_CurrentThread();
-    PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, ("Begin PR_ResumeAll\n"));
-    /*
-     * Resume all previously suspended GC able threads.
-     */
-    suspendAllSuspended = PR_FALSE;
-#ifdef DEBUG
-    stime = PR_IntervalNow();
-#endif
-
-    while (thred != NULL)
-    {
-	    if ((thred != me) && _PT_IS_GCABLE_THREAD(thred))
-    	    pt_ResumeSet(thred);
-        thred = thred->next;
-    }
-
-    thred = pt_book.first;
-    while (thred != NULL)
-    {
-	    if ((thred != me) && _PT_IS_GCABLE_THREAD(thred))
-    	    pt_ResumeTest(thred);
-        thred = thred->next;
-    }
-
-    PR_Unlock(pt_book.ml);
-#ifdef DEBUG
-    suspendAllOn = PR_FALSE;
-    etime = PR_IntervalNow();
-    PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS,
-        ("End PR_ResumeAll (time %dms)\n",
-        PR_IntervalToMilliseconds(etime - stime)));
-#endif
-}  /* PR_ResumeAll */
-
-/* Return the stack pointer for the given thread- used by the GC */
-PR_IMPLEMENT(void *)PR_GetSP(PRThread *thred)
-{
-    PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, 
-	    ("in PR_GetSP thred %X thid = %X, sp = %X \n", 
-	    thred, thred->id, thred->sp));
-    return thred->sp;
-}  /* PR_GetSP */
-
-#else /* !defined(_PR_DCETHREADS) */
-
-static pthread_once_t pt_gc_support_control = pthread_once_init;
-
-/*
- * For DCE threads, there is no pthread_kill or a way of suspending or resuming a
- * particular thread.  We will just disable the preemption (virtual timer alarm) and
- * let the executing thread finish the garbage collection.  This stops all other threads
- * (GC able or not) and is very inefficient but there is no other choice.
- */
-PR_IMPLEMENT(void) PR_SuspendAll()
-{
-    PRIntn rv;
-
-    rv = pthread_once(&pt_gc_support_control, init_pthread_gc_support);
-    PR_ASSERT(0 == rv);  /* returns -1 on failure */
-#ifdef DEBUG
-    suspendAllOn = PR_TRUE;
-#endif
-    PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, ("Begin PR_SuspendAll\n"));
-    /* 
-     * turn off preemption - i.e add virtual alarm signal to the set of 
-     * blocking signals 
-     */
-    rv = sigprocmask(
-        SIG_BLOCK, &javagc_vtalarm_sigmask, &javagc_intsoff_sigmask);
-    PR_ASSERT(0 == rv);
-    suspendAllSuspended = PR_TRUE;
-    PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, ("End PR_SuspendAll\n"));
-}  /* PR_SuspendAll */
-
-PR_IMPLEMENT(void) PR_ResumeAll()
-{
-    PRIntn rv;
-    
-    suspendAllSuspended = PR_FALSE;
-    PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, ("Begin PR_ResumeAll\n"));
-    /* turn on preemption - i.e re-enable virtual alarm signal */
-
-    rv = sigprocmask(SIG_SETMASK, &javagc_intsoff_sigmask, (sigset_t *)NULL);
-    PR_ASSERT(0 == rv);
-#ifdef DEBUG
-    suspendAllOn = PR_FALSE;
-#endif
-
-    PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, ("End PR_ResumeAll\n"));
-}  /* PR_ResumeAll */
-
-/* Return the stack pointer for the given thread- used by the GC */
-PR_IMPLEMENT(void*)PR_GetSP(PRThread *thred)
-{
-	pthread_t tid = thred->id;
-	char *thread_tcb, *top_sp;
-
-	/*
-	 * For HPUX DCE threads, pthread_t is a struct with the
-	 * following three fields (see pthread.h, dce/cma.h):
-	 *     cma_t_address       field1;
-	 *     short int           field2;
-	 *     short int           field3;
-	 * where cma_t_address is typedef'd to be either void*
-	 * or char*.
-	 */
-	PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, ("Begin PR_GetSP\n"));
-	thread_tcb = (char*)tid.field1;
-	top_sp = *(char**)(thread_tcb + 128);
-	PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, ("End PR_GetSP %X \n", top_sp));
-	return top_sp;
-}  /* PR_GetSP */
-
-#endif /* !defined(_PR_DCETHREADS) */
 
 /* ptthread.c */

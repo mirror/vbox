@@ -204,7 +204,6 @@ NSPR_API(void) PR_LogFlush(void);
 */
 #if (defined(DEBUG) || defined(FORCE_PR_LOG)) && !defined(WIN16)
 #define PR_LOGGING 1
-
 #define PR_LOG_TEST(_module,_level) \
     ((_module)->level >= (_level))
 

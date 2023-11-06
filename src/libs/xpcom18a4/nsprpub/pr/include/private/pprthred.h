@@ -52,7 +52,6 @@
 #endif
 
 #ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
-#define PR_AttachThread VBoxNsprPR_AttachThread
 #define PR_DetachThread VBoxNsprPR_DetachThread
 #define PR_GetThreadID VBoxNsprPR_GetThreadID
 #define PR_SetThreadDumpProc VBoxNsprPR_SetThreadDumpProc
@@ -60,17 +59,6 @@
 #define PR_SetThreadAffinityMask VBoxNsprPR_SetThreadAffinityMask
 #define PR_SetCPUAffinityMask VBoxNsprPR_SetCPUAffinityMask
 #define PR_ShowStatus VBoxNsprPR_ShowStatus
-#define PR_SetThreadRecycleMode VBoxNsprPR_SetThreadRecycleMode
-#define PR_CreateThreadGCAble VBoxNsprPR_CreateThreadGCAble
-#define PR_AttachThreadGCAble VBoxNsprPR_AttachThreadGCAble
-#define PR_SetThreadGCAble VBoxNsprPR_SetThreadGCAble
-#define PR_ClearThreadGCAble VBoxNsprPR_ClearThreadGCAble
-#define PR_SuspendAll VBoxNsprPR_SuspendAll
-#define PR_ResumeAll VBoxNsprPR_ResumeAll
-#define PR_GetSP VBoxNsprPR_GetSP
-#define GetExecutionEnvironment VBoxNsprGetExecutionEnvironment
-#define SetExecutionEnvironment VBoxNsprSetExecutionEnvironment
-#define PR_EnumerateThreads VBoxNsprPR_EnumerateThreads
 #define PR_ThreadScanStackPointers VBoxNsprPR_ThreadScanStackPointers
 #define PR_ScanStackPointers VBoxNsprPR_ScanStackPointers
 #define PR_GetStackSpaceLeft VBoxNsprPR_GetStackSpaceLeft
@@ -78,11 +66,6 @@
 #define PR_TestAndLock VBoxNsprPR_TestAndLock
 #define PR_TestAndEnterMonitor VBoxNsprPR_TestAndEnterMonitor
 #define PR_GetMonitorEntryCount VBoxNsprPR_GetMonitorEntryCount
-#define PR_CTestAndEnterMonitor VBoxNsprPR_CTestAndEnterMonitor
-#define PR_Mac_WaitForAsyncNotify VBoxNsprPR_Mac_WaitForAsyncNotify
-#define PR_Mac_PostAsyncNotify VBoxNsprPR_Mac_PostAsyncNotify
-#define PR_OS2_SetFloatExcpHandler VBoxNsprPR_OS2_SetFloatExcpHandler
-#define PR_OS2_UnsetFloatExcpHandler VBoxNsprPR_OS2_UnsetFloatExcpHandler
 #endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 
 PR_BEGIN_EXTERN_C
@@ -90,36 +73,6 @@ PR_BEGIN_EXTERN_C
 /*---------------------------------------------------------------------------
 ** THREAD PRIVATE FUNCTIONS
 ---------------------------------------------------------------------------*/
-
-/*
-** Associate a thread object with an existing native thread.
-** 	"type" is the type of thread object to attach
-** 	"priority" is the priority to assign to the thread
-** 	"stack" defines the shape of the threads stack
-**
-** This can return NULL if some kind of error occurs, or if memory is
-** tight. This call invokes "start(obj,arg)" and returns when the
-** function returns. The thread object is automatically destroyed.
-**
-** This call is not normally needed unless you create your own native
-** thread. PR_Init does this automatically for the primordial thread.
-*/
-NSPR_API(PRThread*) PR_AttachThread(PRThreadType type,
-                                     PRThreadPriority priority,
-				     PRThreadStack *stack);
-
-/*
-** Detach the nspr thread from the currently executing native thread.
-** The thread object will be destroyed and all related data attached
-** to it. The exit procs will be invoked.
-**
-** This call is not normally needed unless you create your own native
-** thread. PR_Exit will automatially detach the nspr thread object
-** created by PR_Init for the primordial thread.
-**
-** This call returns after the nspr thread object is destroyed.
-*/
-NSPR_API(void) PR_DetachThread(void);
 
 /*
 ** Get the id of the named thread. Each thread is assigned a unique id
@@ -159,105 +112,6 @@ NSPR_API(PRInt32) PR_SetThreadAffinityMask(PRThread *thread, PRUint32 mask );
 */
 NSPR_API(PRInt32) PR_SetCPUAffinityMask(PRUint32 mask);
 
-/*
-** Show status of all threads to standard error output.
-*/
-NSPR_API(void) PR_ShowStatus(void);
-
-/*
-** Set thread recycle mode to on (1) or off (0)
-*/
-NSPR_API(void) PR_SetThreadRecycleMode(PRUint32 flag);
-
-
-/*---------------------------------------------------------------------------
-** THREAD PRIVATE FUNCTIONS FOR GARBAGE COLLECTIBLE THREADS           
----------------------------------------------------------------------------*/
-
-/* 
-** Only Garbage collectible threads participate in resume all, suspend all and 
-** enumeration operations.  They are also different during creation when
-** platform specific action may be needed (For example, all Solaris GC able
-** threads are bound threads).
-*/
-
-/*
-** Same as PR_CreateThread except that the thread is marked as garbage
-** collectible.
-*/
-NSPR_API(PRThread*) PR_CreateThreadGCAble(PRThreadType type,
-				     void (*start)(void *arg),
-				     void *arg,
-				     PRThreadPriority priority,
-				     PRThreadScope scope,
-				     PRThreadState state,
-				     PRUint32 stackSize);
-
-/*
-** Same as PR_AttachThread except that the thread being attached is marked as 
-** garbage collectible.
-*/
-NSPR_API(PRThread*) PR_AttachThreadGCAble(PRThreadType type,
-					PRThreadPriority priority,
-					PRThreadStack *stack);
-
-/*
-** Mark the thread as garbage collectible.
-*/
-NSPR_API(void) PR_SetThreadGCAble(void);
-
-/*
-** Unmark the thread as garbage collectible.
-*/
-NSPR_API(void) PR_ClearThreadGCAble(void);
-
-/*
-** This routine prevents all other GC able threads from running. This call is needed by 
-** the garbage collector.
-*/
-NSPR_API(void) PR_SuspendAll(void);
-
-/*
-** This routine unblocks all other GC able threads that were suspended from running by 
-** PR_SuspendAll(). This call is needed by the garbage collector.
-*/
-NSPR_API(void) PR_ResumeAll(void);
-
-/*
-** Return the thread stack pointer of the given thread. 
-** Needed by the garbage collector.
-*/
-NSPR_API(void *) PR_GetSP(PRThread *thread);
-
-/*
-** (Get|Set)ExecutionEnvironent
-**
-** Used by Java to associate it's execution environment so garbage collector
-** can find it. If return is NULL, then it's probably not a collectable thread.
-**
-** There's no locking required around these calls.
-*/
-NSPR_API(void*) GetExecutionEnvironment(PRThread *thread);
-NSPR_API(void) SetExecutionEnvironment(PRThread* thread, void *environment);
-
-/*
-** Enumeration function that applies "func(thread,i,arg)" to each active
-** thread in the process. The enumerator returns PR_SUCCESS if the enumeration
-** should continue, any other value is considered failure, and enumeration
-** stops, returning the failure value from PR_EnumerateThreads.
-** Needed by the garbage collector.
-*/
-typedef PRStatus (PR_CALLBACK *PREnumerator)(PRThread *t, int i, void *arg);
-NSPR_API(PRStatus) PR_EnumerateThreads(PREnumerator func, void *arg);
-
-/*---------------------------------------------------------------------------
-** THREAD CPU PRIVATE FUNCTIONS             
----------------------------------------------------------------------------*/
-
-/*
-** Get a pointer to the primordial CPU.
-*/
-NSPR_API(struct _PRCPU *) _PR_GetPrimordialCPU(void);
 
 /*---------------------------------------------------------------------------
 ** THREAD SYNCHRONIZATION PRIVATE FUNCTIONS
@@ -291,12 +145,6 @@ NSPR_API(PRBool) PR_TestAndEnterMonitor(PRMonitor *mon);
 ** mutex. Returns zero if the current thread has not entered the mutex.
 */
 NSPR_API(PRIntn) PR_GetMonitorEntryCount(PRMonitor *mon);
-
-/*
-** Just like PR_CEnterMonitor except that if the monitor is owned by
-** another thread NULL is returned.
-*/
-NSPR_API(PRMonitor*) PR_CTestAndEnterMonitor(void *address);
 
 /*---------------------------------------------------------------------------
 ** PLATFORM-SPECIFIC INITIALIZATION FUNCTIONS
