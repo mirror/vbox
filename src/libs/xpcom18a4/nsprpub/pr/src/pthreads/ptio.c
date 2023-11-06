@@ -2671,6 +2671,30 @@ PR_IMPLEMENT(PRStatus) PR_DestroySocketPollFd(PRFileDesc *fd)
     return PR_SUCCESS;
 }  /* PR_DestroySocketPollFd */
 
+#ifdef VBOX
+PR_IMPLEMENT(PRFileDesc*) PR_GetIdentitiesLayer(PRFileDesc* fd, PRDescIdentity id)
+{
+    PRFileDesc *layer = fd;
+
+    if (PR_TOP_IO_LAYER == id) {
+    	if (PR_IO_LAYER_HEAD == fd->identity)
+			return fd->lower;
+		else 
+			return fd;
+	}
+
+    for (layer = fd; layer != NULL; layer = layer->lower)
+    {
+        if (id == layer->identity) return layer;
+    }
+    for (layer = fd; layer != NULL; layer = layer->higher)
+    {
+        if (id == layer->identity) return layer;
+    }
+    return NULL;
+}  /* PR_GetIdentitiesLayer */
+#endif
+
 PR_IMPLEMENT(PRInt32) PR_FileDesc2NativeHandle(PRFileDesc *bottom)
 {
     PRInt32 osfd = -1;

@@ -153,7 +153,6 @@ static void _PR_InitStuff(void)
     _PR_InitAtomic();
 	_PR_InitTPD();
     _PR_InitEnv();
-    _PR_InitLayerCache();
     _PR_InitClock();
 
     _pr_sleeplock = PR_NewLock();
