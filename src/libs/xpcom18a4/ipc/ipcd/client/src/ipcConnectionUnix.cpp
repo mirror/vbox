@@ -50,6 +50,9 @@
 # include <iprt/err.h>
 # include <iprt/env.h>
 # include <iprt/log.h>
+# include <iprt/mem.h>
+# include <iprt/pipe.h>
+# include <iprt/string.h>
 # include <iprt/thread.h>
 
 # include <stdio.h>
@@ -115,6 +118,9 @@ DoSecurityCheck(PRFileDesc *fd, const char *path)
 
 //-----------------------------------------------------------------------------
 
+/* Character written for wakeup. */
+static const char magicChar = '\x38';
+
 struct ipcCallback : public ipcListNode<ipcCallback>
 {
   ipcCallbackFunc  func;
@@ -128,6 +134,7 @@ typedef ipcList<ipcCallback> ipcCallbackQ;
 struct ipcConnectionState
 {
   RTCRITSECT   CritSect;
+  RTPIPE       hWakeupPipeW;
   PRPollDesc   fds[2];
   ipcCallbackQ callback_queue;
   ipcMessageQ  send_queue;
@@ -154,47 +161,58 @@ static void ConnDestroy(ipcConnectionState *s)
     delete s->in_msg;
 
   s->send_queue.DeleteAll();
-  delete s;
+  RTMemFree(s);
 }
 
 static ipcConnectionState *ConnCreate(PRFileDesc *fd)
 {
-  ipcConnectionState *s = new ipcConnectionState;
-  if (!s)
+    ipcConnectionState *s = (ipcConnectionState *)RTMemAllocZ(sizeof(*s));
+    if (!s)
+      return NULL;
+
+    int vrc = RTCritSectInit(&s->CritSect);
+    if (RT_SUCCESS(vrc))
+    {
+        RTPIPE hPipeR;
+
+        vrc = RTPipeCreate(&hPipeR, &s->hWakeupPipeW, 0 /*fFlags*/);
+        if (RT_SUCCESS(vrc))
+        {
+            s->fds[SOCK].fd = NULL;
+            s->fds[POLL].fd = PR_AllocFileDesc((PRInt32)RTPipeToNative(hPipeR), PR_GetPipeMethods());
+            s->send_offset = 0;
+            s->in_msg = NULL;
+            s->shutdown = PR_FALSE;
+
+            if (s->fds[POLL].fd)
+            {
+                /* NSPR has taken over the pipe. */
+                vrc = RTPipeCloseEx(hPipeR, true /*fLeaveOpen*/); AssertRC(vrc);
+
+                // disable inheritance of the IPC socket by children started
+                // using non-NSPR process API
+                PRStatus status = PR_SetFDInheritable(fd, PR_FALSE);
+                if (status == PR_SUCCESS)
+                {
+                    // store this only if we are going to succeed.
+                    s->fds[SOCK].fd = fd;
+
+                    return s;
+                }
+
+                PR_Close(s->fds[POLL].fd);
+                s->fds[POLL].fd = NULL;
+                LOG(("coudn't make IPC socket non-inheritable [err=%d]\n", PR_GetError()));
+            }
+
+            vrc = RTPipeClose(hPipeR);          AssertRC(vrc);
+            vrc = RTPipeClose(s->hWakeupPipeW); AssertRC(vrc);
+        }
+
+        ConnDestroy(s);
+    }
+
     return NULL;
-
-  int vrc = RTCritSectInit(&s->CritSect);
-  if (RT_FAILURE(vrc))
-  {
-    ConnDestroy(s);
-    return NULL;
-  }
-
-  s->fds[SOCK].fd = NULL;
-  s->fds[POLL].fd = PR_NewPollableEvent();
-  s->send_offset = 0;
-  s->in_msg = NULL;
-  s->shutdown = PR_FALSE;
-
-  if (!s->fds[1].fd)
-  {
-    ConnDestroy(s);
-    return NULL;
-  }
-
-  // disable inheritance of the IPC socket by children started
-  // using non-NSPR process API
-  PRStatus status = PR_SetFDInheritable(fd, PR_FALSE);
-  if (status != PR_SUCCESS)
-  {
-    LOG(("coudn't make IPC socket non-inheritable [err=%d]\n", PR_GetError()));
-    return NULL;
-  }
-
-  // store this only if we are going to succeed.
-  s->fds[SOCK].fd = fd;
-
-  return s;
 }
 
 static nsresult
@@ -349,7 +367,21 @@ static DECLCALLBACK(int) ipcConnThread(RTTHREAD hSelf, void *pvArg)
 
       if (s->fds[POLL].out_flags & PR_POLL_READ)
       {
-        PR_WaitForPollableEvent(s->fds[POLL].fd);
+        /* Drain wakeup pipe. */
+        uint8_t buf[32];
+#ifdef DEBUG
+        PRIntn i;
+#endif
+        PRInt32 nBytes = PR_Read(s->fds[POLL].fd, buf, sizeof(buf));
+        Assert(nBytes > 0);
+
+#ifdef DEBUG
+        /* Make sure this is not written with something else. */
+        for (i = 0; i < nBytes; i++) {
+            Assert(buf[i] == magicChar);
+        }
+#endif
+
         RTCritSectEnter(&s->CritSect);
 
         if (!s->send_queue.IsEmpty())
@@ -532,58 +564,64 @@ end:
 nsresult
 IPC_Disconnect()
 {
-  // Must disconnect on same thread used to connect!
-  Assert(gMainThread == RTThreadSelf());
+    // Must disconnect on same thread used to connect!
+    Assert(gMainThread == RTThreadSelf());
 
-  if (!gConnState || !gConnThread)
-    return NS_ERROR_NOT_INITIALIZED;
+    if (!gConnState || !gConnThread)
+      return NS_ERROR_NOT_INITIALIZED;
 
-  RTCritSectEnter(&gConnState->CritSect);
-  gConnState->shutdown = PR_TRUE;
-  PR_SetPollableEvent(gConnState->fds[POLL].fd);
-  RTCritSectLeave(&gConnState->CritSect);
+    RTCritSectEnter(&gConnState->CritSect);
+    gConnState->shutdown = PR_TRUE;
+    size_t cbWrittenIgn = 0;
+    int vrc = RTPipeWrite(gConnState->hWakeupPipeW, &magicChar, sizeof(magicChar), &cbWrittenIgn);
+    AssertRC(vrc);
+    RTCritSectLeave(&gConnState->CritSect);
 
-  int rcThread;
-  RTThreadWait(gConnThread, RT_INDEFINITE_WAIT, &rcThread);
-  AssertRC(rcThread);
+    int rcThread;
+    RTThreadWait(gConnThread, RT_INDEFINITE_WAIT, &rcThread);
+    AssertRC(rcThread);
 
-  ConnDestroy(gConnState);
+    ConnDestroy(gConnState);
 
-  gConnState = NULL;
-  gConnThread = NULL;
-  return NS_OK;
+    gConnState = NULL;
+    gConnThread = NULL;
+    return NS_OK;
 }
 
 nsresult
 IPC_SendMsg(ipcMessage *msg)
 {
-  if (!gConnState || !gConnThread)
-    return NS_ERROR_NOT_INITIALIZED;
+    if (!gConnState || !gConnThread)
+      return NS_ERROR_NOT_INITIALIZED;
 
-  RTCritSectEnter(&gConnState->CritSect);
-  gConnState->send_queue.Append(msg);
-  PR_SetPollableEvent(gConnState->fds[POLL].fd);
-  RTCritSectLeave(&gConnState->CritSect);
+    RTCritSectEnter(&gConnState->CritSect);
+    gConnState->send_queue.Append(msg);
+    size_t cbWrittenIgn = 0;
+    int vrc = RTPipeWrite(gConnState->hWakeupPipeW, &magicChar, sizeof(magicChar), &cbWrittenIgn);
+    AssertRC(vrc);
+    RTCritSectLeave(&gConnState->CritSect);
 
-  return NS_OK;
+    return NS_OK;
 }
 
 nsresult
 IPC_DoCallback(ipcCallbackFunc func, void *arg)
 {
-  if (!gConnState || !gConnThread)
-    return NS_ERROR_NOT_INITIALIZED;
-  
-  ipcCallback *callback = new ipcCallback;
-  if (!callback)
-    return NS_ERROR_OUT_OF_MEMORY;
-  callback->func = func;
-  callback->arg = arg;
+    if (!gConnState || !gConnThread)
+      return NS_ERROR_NOT_INITIALIZED;
+    
+    ipcCallback *callback = new ipcCallback;
+    if (!callback)
+      return NS_ERROR_OUT_OF_MEMORY;
+    callback->func = func;
+    callback->arg = arg;
 
-  RTCritSectEnter(&gConnState->CritSect);
-  gConnState->callback_queue.Append(callback);
-  PR_SetPollableEvent(gConnState->fds[POLL].fd);
-  RTCritSectLeave(&gConnState->CritSect);
-  return NS_OK;
+    RTCritSectEnter(&gConnState->CritSect);
+    gConnState->callback_queue.Append(callback);
+    size_t cbWrittenIgn = 0;
+    int vrc = RTPipeWrite(gConnState->hWakeupPipeW, &magicChar, sizeof(magicChar), &cbWrittenIgn);
+    AssertRC(vrc);
+    RTCritSectLeave(&gConnState->CritSect);
+    return NS_OK;
 }
 
