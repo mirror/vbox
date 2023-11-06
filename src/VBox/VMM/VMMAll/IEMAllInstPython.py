@@ -2780,7 +2780,6 @@ g_dMcStmtParsers = {
     'IEM_MC_CLEAR_EFL_BIT':                                      (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_CLEAR_FSW_EX':                                       (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_CLEAR_HIGH_GREG_U64':                                (McBlock.parseMcGeneric,           True,  False, ),
-    'IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF':                         (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_CLEAR_XREG_U32_MASK':                                (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_CLEAR_YREG_128_UP':                                  (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_COMMIT_EFLAGS':                                      (McBlock.parseMcGeneric,           True,  False, ),

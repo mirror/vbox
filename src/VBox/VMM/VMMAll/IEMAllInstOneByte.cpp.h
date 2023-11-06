@@ -298,7 +298,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
                 IEM_MC_REF_EFLAGS(pEFlags); \
                 IEM_MC_CALL_VOID_AIMPL_3(a_fnNormalU32, pu32Dst, u32Src, pEFlags); \
                 \
-                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst); \
+                IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_RM(pVCpu, bRm)); \
                 IEM_MC_ADVANCE_RIP_AND_FINISH(); \
                 IEM_MC_END(); \
                 break; \
@@ -686,7 +686,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
             IEM_MC_CALL_VOID_AIMPL_3(a_fnNormalU32, pu32Dst, u32Src, pEFlags); \
             \
             if (a_fModifiesDstReg) \
-                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst); \
+                IEM_MC_CLEAR_HIGH_GREG_U64(X86_GREG_xAX); \
             IEM_MC_ADVANCE_RIP_AND_FINISH(); \
             IEM_MC_END(); \
         } \
@@ -1787,7 +1787,7 @@ FNIEMOP_DEF(iemOp_aas)
             IEM_MC_REF_GREG_U32(pu32Dst, a_iReg); \
             IEM_MC_REF_EFLAGS(pEFlags); \
             IEM_MC_CALL_VOID_AIMPL_2(a_fnNormalU32, pu32Dst, pEFlags); \
-            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst); \
+            IEM_MC_CLEAR_HIGH_GREG_U64(a_iReg); \
             IEM_MC_ADVANCE_RIP_AND_FINISH(); \
             IEM_MC_END(); \
             break; \
@@ -2350,7 +2350,7 @@ FNIEMOP_DEF_1(iemOpCommonPopGReg, uint8_t, iReg)
             IEM_MC_LOCAL(uint32_t *, pu32Dst);
             IEM_MC_REF_GREG_U32(pu32Dst, iReg);
             IEM_MC_POP_U32(pu32Dst);
-            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst); /** @todo testcase*/
+            IEM_MC_CLEAR_HIGH_GREG_U64(iReg); /** @todo testcase*/
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
             break;
@@ -4128,7 +4128,7 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_80)
                 IEM_MC_REF_GREG_U32(pu32Dst, IEM_GET_MODRM_RM(pVCpu, bRm)); \
                 IEM_MC_REF_EFLAGS(pEFlags); \
                 IEM_MC_CALL_VOID_AIMPL_3(a_fnNormalU32, pu32Dst, u32Src, pEFlags); \
-                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst); \
+                IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_RM(pVCpu, bRm)); \
                 \
                 IEM_MC_ADVANCE_RIP_AND_FINISH(); \
                 IEM_MC_END(); \
@@ -4644,7 +4644,7 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_82)
                 IEM_MC_REF_GREG_U32(pu32Dst, IEM_GET_MODRM_RM(pVCpu, bRm)); \
                 IEM_MC_REF_EFLAGS(pEFlags); \
                 IEM_MC_CALL_VOID_AIMPL_3(a_fnNormalU32, pu32Dst, u32Src, pEFlags); \
-                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst); \
+                IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_RM(pVCpu, bRm)); \
                 \
                 IEM_MC_ADVANCE_RIP_AND_FINISH(); \
                 IEM_MC_END(); \
@@ -7732,7 +7732,7 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_Ib)
                 IEM_MC_REF_GREG_U32(pu32Dst, IEM_GET_MODRM_RM(pVCpu, bRm));
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, cShiftArg, pEFlags);
-                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
+                IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_RM(pVCpu, bRm));
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
@@ -8329,7 +8329,7 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_1)
                 IEM_MC_REF_GREG_U32(pu32Dst, IEM_GET_MODRM_RM(pVCpu, bRm));
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, cShiftArg, pEFlags);
-                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
+                IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_RM(pVCpu, bRm));
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
@@ -8532,7 +8532,7 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_CL)
                 IEM_MC_FETCH_GREG_U8(cShiftArg, X86_GREG_xCX);
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, cShiftArg, pEFlags);
-                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
+                IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_RM(pVCpu, bRm));
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
@@ -12455,7 +12455,7 @@ FNIEMOP_DEF(iemOp_cmc)
                 IEM_MC_REF_GREG_U32(pu32Dst, IEM_GET_MODRM_RM(pVCpu, bRm)); \
                 IEM_MC_REF_EFLAGS(pEFlags); \
                 IEM_MC_CALL_VOID_AIMPL_2(a_fnNormalU32, pu32Dst, pEFlags); \
-                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst); \
+                IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_RM(pVCpu, bRm)); \
                 IEM_MC_ADVANCE_RIP_AND_FINISH(); \
                 IEM_MC_END(); \
                 break; \
@@ -12766,8 +12766,8 @@ FNIEMOP_DEF_2(iemOpCommonGrp3MulDivEv, uint8_t, bRm, PCIEMOPMULDIVSIZES, pImpl)
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_AIMPL_4(rc, pImpl->pfnU32, pu32AX, pu32DX, u32Value, pEFlags);
                 IEM_MC_IF_LOCAL_IS_Z(rc) {
-                    IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32AX);
-                    IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32DX);
+                    IEM_MC_CLEAR_HIGH_GREG_U64(X86_GREG_xAX);
+                    IEM_MC_CLEAR_HIGH_GREG_U64(X86_GREG_xDX);
                     IEM_MC_ADVANCE_RIP_AND_FINISH();
                 } IEM_MC_ELSE() {
                     IEM_MC_RAISE_DIVIDE_ERROR();
@@ -12849,8 +12849,8 @@ FNIEMOP_DEF_2(iemOpCommonGrp3MulDivEv, uint8_t, bRm, PCIEMOPMULDIVSIZES, pImpl)
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_AIMPL_4(rc, pImpl->pfnU32, pu32AX, pu32DX, u32Value, pEFlags);
                 IEM_MC_IF_LOCAL_IS_Z(rc) {
-                    IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32AX);
-                    IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32DX);
+                    IEM_MC_CLEAR_HIGH_GREG_U64(X86_GREG_xAX);
+                    IEM_MC_CLEAR_HIGH_GREG_U64(X86_GREG_xDX);
                     IEM_MC_ADVANCE_RIP_AND_FINISH();
                 } IEM_MC_ELSE() {
                     IEM_MC_RAISE_DIVIDE_ERROR();

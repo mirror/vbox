@@ -5464,11 +5464,8 @@ iemNativeEmitCallCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cAr
      * Free all argument variables (simplified).
      * Their lifetime always expires with the call they are for.
      */
-    /** @todo Unfortunately we have some high 32-bit register clears using
-     *        register references held by argument vars. Almost all the
-     *        IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF uses are stupid!  However we need to
-     *        add checks to the python scripts to ensure argument vars aren't used
-     *        after a call. That's a bit of work. */
+    /** @todo Make the python script check that arguments aren't used after
+     *        IEM_MC_CALL_XXXX. */
     for (uint32_t i = cHiddenArgs; i < cArgs; i++)
     {
         uint8_t idxVar = pReNative->Core.aidxArgVars[i];

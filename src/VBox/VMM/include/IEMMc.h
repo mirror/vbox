@@ -263,7 +263,6 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_MC_STORE_GREG_U32_CONST                     IEM_MC_STORE_GREG_U32
 #define IEM_MC_STORE_GREG_U64_CONST                     IEM_MC_STORE_GREG_U64
 #define IEM_MC_CLEAR_HIGH_GREG_U64(a_iGReg)             *iemGRegRefU64(pVCpu, (a_iGReg)) &= UINT32_MAX
-#define IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(a_pu32Dst)    do { (a_pu32Dst)[1] = 0; } while (0)
 /** @todo IEM_MC_STORE_SREG_BASE_U64 & IEM_MC_STORE_SREG_BASE_U32 aren't worth it... */
 #define IEM_MC_STORE_SREG_BASE_U64(a_iSReg, a_u64Value) do { \
         IEM_CTX_IMPORT_NORET(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(a_iSReg)); \
@@ -282,7 +281,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_MC_REF_GREG_U16(a_pu16Dst, a_iGReg)         (a_pu16Dst) = iemGRegRefU16(pVCpu, (a_iGReg))
 #define IEM_MC_REF_GREG_U16_CONST(a_pu16Dst, a_iGReg)   (a_pu16Dst) = (uint16_t const *)iemGRegRefU16(pVCpu, (a_iGReg))
 /** @todo User of IEM_MC_REF_GREG_U32 needs to clear the high bits on commit.
- *        Use IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF! */
+ *        Use IEM_MC_CLEAR_HIGH_GREG_U64! */
 #define IEM_MC_REF_GREG_U32(a_pu32Dst, a_iGReg)         (a_pu32Dst) = iemGRegRefU32(pVCpu, (a_iGReg))
 #define IEM_MC_REF_GREG_U32_CONST(a_pu32Dst, a_iGReg)   (a_pu32Dst) = (uint32_t const *)iemGRegRefU32(pVCpu, (a_iGReg))
 #define IEM_MC_REF_GREG_I32(a_pi32Dst, a_iGReg)         (a_pi32Dst) = (int32_t        *)iemGRegRefU32(pVCpu, (a_iGReg))

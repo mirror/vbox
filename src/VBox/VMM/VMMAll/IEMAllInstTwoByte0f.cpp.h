@@ -8963,7 +8963,7 @@ FNIEMOP_DEF(iemOp_cpuid)
                 IEM_MC_REF_EFLAGS(pEFlags); \
                 IEM_MC_CALL_VOID_AIMPL_3(a_fnNormalU32, pu32Dst, u32Src, pEFlags); \
                 \
-                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst); \
+                IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_RM(pVCpu, bRm)); \
                 IEM_MC_ADVANCE_RIP_AND_FINISH(); \
                 IEM_MC_END(); \
                 break; \
@@ -9401,7 +9401,7 @@ FNIEMOP_DEF_1(iemOpCommonShldShrd_Ib, PCIEMOPSHIFTDBLSIZES, pImpl)
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_4(pImpl->pfnNormalU32, pu32Dst, u32Src, cShiftArg, pEFlags);
 
-                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
+                IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_RM(pVCpu, bRm));
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
@@ -9552,7 +9552,7 @@ FNIEMOP_DEF_1(iemOpCommonShldShrd_CL, PCIEMOPSHIFTDBLSIZES, pImpl)
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_4(pImpl->pfnNormalU32, pu32Dst, u32Src, cShiftArg, pEFlags);
 
-                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
+                IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_RM(pVCpu, bRm));
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
@@ -10302,9 +10302,9 @@ FNIEMOP_DEF(iemOp_cmpxchg_Ev_Gv)
                     IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg_u32_locked, pu32Dst, pu32Eax, u32Src, pEFlags);
 
                 IEM_MC_IF_EFL_BIT_SET(X86_EFL_ZF) {
-                    IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
+                    IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_RM(pVCpu, bRm));
                 } IEM_MC_ELSE() {
-                    IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Eax);
+                    IEM_MC_CLEAR_HIGH_GREG_U64(X86_GREG_xAX);
                 } IEM_MC_ENDIF();
 
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -10756,7 +10756,7 @@ FNIEMOP_DEF(iemOp_Grp10)
                 IEM_MC_REF_EFLAGS(pEFlags); \
                 IEM_MC_CALL_VOID_AIMPL_3(a_fnNormalU32, pu32Dst, u32Src, pEFlags); \
                 \
-                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst); \
+                IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_RM(pVCpu, bRm)); \
                 IEM_MC_ADVANCE_RIP_AND_FINISH(); \
                 IEM_MC_END(); \
                 break; \
@@ -11194,7 +11194,7 @@ FNIEMOP_DEF_1(iemOpHlpBitScanOperator_rv_rm, PCIEMOPBINSIZES, pImpl)
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, u32Src, pEFlags);
                 IEM_MC_IF_EFL_BIT_NOT_SET(X86_EFL_ZF) {
-                    IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
+                    IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_REG(pVCpu, bRm));
                 } IEM_MC_ENDIF();
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
@@ -11259,7 +11259,7 @@ FNIEMOP_DEF_1(iemOpHlpBitScanOperator_rv_rm, PCIEMOPBINSIZES, pImpl)
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, u32Src, pEFlags);
 
                 IEM_MC_IF_EFL_BIT_NOT_SET(X86_EFL_ZF) {
-                    IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
+                    IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_REG(pVCpu, bRm));
                 } IEM_MC_ENDIF();
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
@@ -11632,8 +11632,8 @@ FNIEMOP_DEF(iemOp_xadd_Ev_Gv)
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_xadd_u32, pu32Dst, pu32Reg, pEFlags);
 
-                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
-                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Reg);
+                IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_RM(pVCpu, bRm));
+                IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_REG(pVCpu, bRm));
                 IEM_MC_ADVANCE_RIP_AND_FINISH();
                 IEM_MC_END();
                 break;
@@ -12742,7 +12742,7 @@ FNIEMOP_DEF_1(iemOpCommonBswapGReg, uint8_t, iReg)
             IEM_MC_ARG(uint32_t *,  pu32Dst, 0);
             IEM_MC_REF_GREG_U32(pu32Dst, iReg);
             IEM_MC_CALL_VOID_AIMPL_1(iemAImpl_bswap_u32, pu32Dst);
-            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
+            IEM_MC_CLEAR_HIGH_GREG_U64(iReg);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
             break;

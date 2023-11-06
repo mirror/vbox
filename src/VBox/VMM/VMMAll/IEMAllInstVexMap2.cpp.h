@@ -1673,7 +1673,7 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
             IEM_MC_REF_EFLAGS(pEFlags);
             IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fBmi1, iemAImpl_andn_u32, iemAImpl_andn_u32_fallback),
                                      pDst, uSrc1, uSrc2, pEFlags);
-            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pDst);
+            IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
         }
@@ -1718,7 +1718,7 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
             IEM_MC_REF_EFLAGS(pEFlags);
             IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fBmi1, iemAImpl_andn_u32, iemAImpl_andn_u32_fallback),
                                      pDst, uSrc1, uSrc2, pEFlags);
-            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pDst);
+            IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
         }
@@ -1770,7 +1770,7 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
             IEM_MC_REF_EFLAGS(pEFlags); \
             IEM_MC_CALL_VOID_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fBmi1, iemAImpl_ ## a_Instr ## _u32, \
                                                                  iemAImpl_ ## a_Instr ## _u32_fallback), pDst, uSrc, pEFlags); \
-            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pDst); \
+            IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
             IEM_MC_ADVANCE_RIP_AND_FINISH(); \
             IEM_MC_END(); \
         } \
@@ -1811,7 +1811,7 @@ FNIEMOP_DEF(iemOp_andn_Gy_By_Ey)
             IEM_MC_REF_EFLAGS(pEFlags); \
             IEM_MC_CALL_VOID_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(fBmi1, iemAImpl_ ## a_Instr ## _u32, \
                                                                  iemAImpl_ ## a_Instr ## _u32_fallback), pDst, uSrc, pEFlags); \
-            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pDst); \
+            IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
             IEM_MC_ADVANCE_RIP_AND_FINISH(); \
             IEM_MC_END(); \
         } \
@@ -1927,7 +1927,7 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
             IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(a_fFeatureMember, iemAImpl_ ## a_Instr ## _u32, \
                                                                  iemAImpl_ ## a_Instr ## _u32_fallback), \
                                      pDst, uSrc1, uSrc2, pEFlags); \
-            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pDst); \
+            IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_REG(pVCpu, bRm)); \
             IEM_MC_ADVANCE_RIP_AND_FINISH(); \
             IEM_MC_END(); \
         } \
@@ -1974,7 +1974,7 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
             IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(a_fFeatureMember, iemAImpl_ ## a_Instr ## _u32, \
                                                                  iemAImpl_ ## a_Instr ## _u32_fallback), \
                                      pDst, uSrc1, uSrc2, pEFlags); \
-            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pDst); \
+            IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_REG(pVCpu, bRm)); \
             IEM_MC_ADVANCE_RIP_AND_FINISH(); \
             IEM_MC_END(); \
         } \
@@ -2017,7 +2017,7 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
             IEM_MC_FETCH_GREG_U32(uSrc2, IEM_GET_EFFECTIVE_VVVV(pVCpu)); \
             IEM_MC_CALL_VOID_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(a_fFeatureMember, iemAImpl_ ## a_Instr ## _u32, \
                                                                  iemAImpl_ ## a_Instr ## _u32_fallback), pDst, uSrc1, uSrc2); \
-            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pDst); \
+            IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_REG(pVCpu, bRm)); \
             IEM_MC_ADVANCE_RIP_AND_FINISH(); \
             IEM_MC_END(); \
         } \
@@ -2058,7 +2058,7 @@ FNIEMOP_DEF(iemOp_VGrp17_f3)
             IEM_MC_REF_GREG_U32(pDst,    IEM_GET_MODRM_REG(pVCpu, bRm)); \
             IEM_MC_CALL_VOID_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(a_fFeatureMember, iemAImpl_ ## a_Instr ## _u32, \
                                                                  iemAImpl_ ## a_Instr ## _u32_fallback), pDst, uSrc1, uSrc2); \
-            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pDst); \
+            IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_REG(pVCpu, bRm)); \
             IEM_MC_ADVANCE_RIP_AND_FINISH(); \
             IEM_MC_END(); \
         } \
@@ -2111,7 +2111,7 @@ FNIEMOP_DEF(iemOp_bzhi_Gy_Ey_By)
             IEM_MC_CALL_VOID_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(a_fFeatureMember, \
                                                                  iemAImpl_ ## a_Instr ## _u32, \
                                                                  iemAImpl_ ## a_Instr ## _u32_fallback), pDst, uSrc1, uSrc2); \
-            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pDst); \
+            IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_REG(pVCpu, bRm)); \
             IEM_MC_ADVANCE_RIP_AND_FINISH(); \
             IEM_MC_END(); \
         } \
@@ -2154,7 +2154,7 @@ FNIEMOP_DEF(iemOp_bzhi_Gy_Ey_By)
             IEM_MC_CALL_VOID_AIMPL_3(IEM_SELECT_HOST_OR_FALLBACK(a_fFeatureMember, \
                                                                  iemAImpl_ ## a_Instr ## _u32, \
                                                                  iemAImpl_ ## a_Instr ## _u32_fallback), pDst, uSrc1, uSrc2); \
-            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pDst); \
+            IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_REG(pVCpu, bRm)); \
             IEM_MC_ADVANCE_RIP_AND_FINISH(); \
             IEM_MC_END(); \
         } \
@@ -2224,8 +2224,8 @@ FNIEMOP_DEF(iemOp_mulx_By_Gy_rDX_Ey)
             IEM_MC_FETCH_GREG_U32(uSrc2, IEM_GET_MODRM_RM(pVCpu, bRm));
             IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fBmi2, iemAImpl_mulx_u32, iemAImpl_mulx_u32_fallback),
                                      pDst1, pDst2, uSrc1, uSrc2);
-            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pDst2);
-            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pDst1);
+            IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_EFFECTIVE_VVVV(pVCpu));
+            IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
         }
@@ -2270,8 +2270,8 @@ FNIEMOP_DEF(iemOp_mulx_By_Gy_rDX_Ey)
             IEM_MC_REF_GREG_U32(pDst1,   IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_CALL_VOID_AIMPL_4(IEM_SELECT_HOST_OR_FALLBACK(fBmi2, iemAImpl_mulx_u32, iemAImpl_mulx_u32_fallback),
                                      pDst1, pDst2, uSrc1, uSrc2);
-            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pDst2);
-            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pDst1);
+            IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_EFFECTIVE_VVVV(pVCpu));
+            IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
         }
