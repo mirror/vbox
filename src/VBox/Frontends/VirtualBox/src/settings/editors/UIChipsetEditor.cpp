@@ -93,6 +93,11 @@ void UIChipsetEditor::retranslateUi()
     }
 }
 
+void UIChipsetEditor::handleFilterChange()
+{
+    populateCombo();
+}
+
 void UIChipsetEditor::prepare()
 {
     /* Create main layout: */
@@ -149,7 +154,10 @@ void UIChipsetEditor::populateCombo()
         m_pCombo->clear();
 
         /* Load currently supported values: */
-        CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+        const KPlatformArchitecture enmArch = m_flags.contains("arch")
+                                            ? m_flags.value("arch").value<KPlatformArchitecture>()
+                                            : KPlatformArchitecture_x86;
+        CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(enmArch);
         m_supportedValues = comProperties.GetSupportedChipsetTypes();
 
         /* Make sure requested value if sane is present as well: */

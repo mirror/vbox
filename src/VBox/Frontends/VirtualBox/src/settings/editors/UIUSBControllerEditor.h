@@ -68,6 +68,9 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE;
 
+    /** Handles filter change. */
+    virtual void handleFilterChange() RT_OVERRIDE;
+
 private:
 
     /** Prepares all. */

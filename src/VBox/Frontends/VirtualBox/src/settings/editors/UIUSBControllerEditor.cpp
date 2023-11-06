@@ -95,6 +95,11 @@ void UIUSBControllerEditor::retranslateUi()
     }
 }
 
+void UIUSBControllerEditor::handleFilterChange()
+{
+    updateButtonSet();
+}
+
 void UIUSBControllerEditor::prepare()
 {
     /* Create main layout: */
@@ -147,7 +152,10 @@ void UIUSBControllerEditor::prepare()
 void UIUSBControllerEditor::updateButtonSet()
 {
     /* Load currently supported types: */
-    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+    const KPlatformArchitecture enmArch = m_flags.contains("arch")
+                                        ? m_flags.value("arch").value<KPlatformArchitecture>()
+                                        : KPlatformArchitecture_x86;
+    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(enmArch);
     m_supportedValues = comProperties.GetSupportedUSBControllerTypes();
 
     /* Make sure requested value if sane is present as well: */

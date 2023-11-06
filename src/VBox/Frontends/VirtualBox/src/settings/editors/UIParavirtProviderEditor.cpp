@@ -92,6 +92,11 @@ void UIParavirtProviderEditor::retranslateUi()
     }
 }
 
+void UIParavirtProviderEditor::handleFilterChange()
+{
+    populateCombo();
+}
+
 void UIParavirtProviderEditor::prepare()
 {
     /* Create main layout: */
@@ -146,7 +151,10 @@ void UIParavirtProviderEditor::populateCombo()
         m_pCombo->clear();
 
         /* Load currently supported paravirt provider types: */
-        CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+        const KPlatformArchitecture enmArch = m_flags.contains("arch")
+                                            ? m_flags.value("arch").value<KPlatformArchitecture>()
+                                            : KPlatformArchitecture_x86;
+        CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(enmArch);
         m_supportedValues = comProperties.GetSupportedParavirtProviders();
 
         /* Make sure requested value if sane is present as well: */

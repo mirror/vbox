@@ -91,6 +91,11 @@ void UITpmEditor::retranslateUi()
     }
 }
 
+void UITpmEditor::handleFilterChange()
+{
+    populateCombo();
+}
+
 void UITpmEditor::prepare()
 {
     /* Create main layout: */
@@ -147,7 +152,10 @@ void UITpmEditor::populateCombo()
         m_pCombo->clear();
 
         /* Load currently supported values: */
-        CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+        const KPlatformArchitecture enmArch = m_flags.contains("arch")
+                                            ? m_flags.value("arch").value<KPlatformArchitecture>()
+                                            : KPlatformArchitecture_x86;
+        CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(enmArch);
         m_supportedValues = comProperties.GetSupportedTpmTypes();
 
         /* Make sure requested value if sane is present as well: */
