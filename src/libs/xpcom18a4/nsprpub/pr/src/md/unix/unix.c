@@ -94,7 +94,6 @@
 ** aren't thread safe (like libc, libX, etc).
 */
 static PRLock *_pr_rename_lock = NULL;
-static PRMonitor *_pr_Xfe_mon = NULL;
 
 static PRInt64 minus_one;
 
@@ -467,54 +466,7 @@ struct _MD_IOVector _md_iovector = { open };
 ** The checking might be pre- or post-op, depending on the semantics.
 */
 
-#if defined(SOLARIS2_5)
-
-static PRIntn _MD_solaris25_fstat64(PRIntn osfd, _MDStat64 *buf)
-{
-    PRInt32 rv;
-    struct stat sb;
-
-    rv = fstat(osfd, &sb);
-    if (rv >= 0)
-    {
-        /*
-        ** I'm only copying the fields that are immediately needed.
-        ** If somebody else calls this function, some of the fields
-        ** may not be defined.
-        */
-        (void)memset(buf, 0, sizeof(_MDStat64));
-        buf->st_mode = sb.st_mode;
-        buf->st_ctim = sb.st_ctim;
-        buf->st_mtim = sb.st_mtim;
-        buf->st_size = sb.st_size;
-    }
-    return rv;
-}  /* _MD_solaris25_fstat64 */
-
-static PRIntn _MD_solaris25_stat64(const char *fn, _MDStat64 *buf)
-{
-    PRInt32 rv;
-    struct stat sb;
-
-    rv = stat(fn, &sb);
-    if (rv >= 0)
-    {
-        /*
-        ** I'm only copying the fields that are immediately needed.
-        ** If somebody else calls this function, some of the fields
-        ** may not be defined.
-        */
-        (void)memset(buf, 0, sizeof(_MDStat64));
-        buf->st_mode = sb.st_mode;
-        buf->st_ctim = sb.st_ctim;
-        buf->st_mtim = sb.st_mtim;
-        buf->st_size = sb.st_size;
-    }
-    return rv;
-}  /* _MD_solaris25_stat64 */
-#endif /* defined(SOLARIS2_5) */
-
-#if defined(_PR_NO_LARGE_FILES) || defined(SOLARIS2_5)
+#if defined(_PR_NO_LARGE_FILES)
 
 static PROffset64 _MD_Unix_lseek64(PRIntn osfd, PROffset64 offset, PRIntn whence)
 {
@@ -538,67 +490,18 @@ static void* _MD_Unix_mmap64(
     PR_SetError(PR_FILE_TOO_BIG_ERROR, 0);
     return NULL;
 }  /* _MD_Unix_mmap64 */
-#endif /* defined(_PR_NO_LARGE_FILES) || defined(SOLARIS2_5) */
-
-#if defined(OSF1) && defined(__GNUC__)
-
-/*
- * On OSF1 V5.0A, <sys/stat.h> defines stat and fstat as
- * macros when compiled under gcc, so it is rather tricky to
- * take the addresses of the real functions the macros expend
- * to.  A simple solution is to define forwarder functions
- * and take the addresses of the forwarder functions instead.
- */
-
-static int stat_forwarder(const char *path, struct stat *buffer)
-{
-    return stat(path, buffer);
-}
-
-static int fstat_forwarder(int filedes, struct stat *buffer)
-{
-    return fstat(filedes, buffer);
-}
-
-#endif
+#endif /* defined(_PR_NO_LARGE_FILES) */
 
 static void _PR_InitIOV(void)
 {
-#if defined(SOLARIS2_5)
-    PRLibrary *lib;
-    void *open64_func;
-
-    open64_func = PR_FindSymbolAndLibrary("open64", &lib);
-    if (NULL != open64_func)
-    {
-        PR_ASSERT(NULL != lib);
-        _md_iovector._open64 = (_MD_Open64)open64_func;
-        _md_iovector._mmap64 = (_MD_Mmap64)PR_FindSymbol(lib, "mmap64");
-        _md_iovector._fstat64 = (_MD_Fstat64)PR_FindSymbol(lib, "fstat64");
-        _md_iovector._stat64 = (_MD_Stat64)PR_FindSymbol(lib, "stat64");
-        _md_iovector._lseek64 = (_MD_Lseek64)PR_FindSymbol(lib, "lseek64");
-        (void)PR_UnloadLibrary(lib);
-    }
-    else
-    {
-        _md_iovector._open64 = open;
-        _md_iovector._mmap64 = _MD_Unix_mmap64;
-        _md_iovector._fstat64 = _MD_solaris25_fstat64;
-        _md_iovector._stat64 = _MD_solaris25_stat64;
-        _md_iovector._lseek64 = _MD_Unix_lseek64;
-    }
-#elif defined(_PR_NO_LARGE_FILES)
+#if defined(_PR_NO_LARGE_FILES)
     _md_iovector._open64 = open;
     _md_iovector._mmap64 = _MD_Unix_mmap64;
     _md_iovector._fstat64 = fstat;
     _md_iovector._stat64 = stat;
     _md_iovector._lseek64 = _MD_Unix_lseek64;
 #elif defined(_PR_HAVE_OFF64_T)
-#if defined(IRIX5_3)
-    _md_iovector._open64 = open;
-#else
     _md_iovector._open64 = open64;
-#endif
     _md_iovector._mmap64 = mmap64;
     _md_iovector._fstat64 = fstat64;
     _md_iovector._stat64 = stat64;
@@ -606,13 +509,8 @@ static void _PR_InitIOV(void)
 #elif defined(_PR_HAVE_LARGE_OFF_T)
     _md_iovector._open64 = open;
     _md_iovector._mmap64 = mmap;
-#if defined(OSF1) && defined(__GNUC__)
-    _md_iovector._fstat64 = fstat_forwarder;
-    _md_iovector._stat64 = stat_forwarder;
-#else
     _md_iovector._fstat64 = fstat;
     _md_iovector._stat64 = stat;
-#endif
     _md_iovector._lseek64 = lseek;
 #else
 #error "I don't know yet"
@@ -635,12 +533,6 @@ void _PR_UnixInit(void)
 
     _pr_rename_lock = PR_NewLock();
     PR_ASSERT(NULL != _pr_rename_lock);
-    _pr_Xfe_mon = PR_NewMonitor();
-    PR_ASSERT(NULL != _pr_Xfe_mon);
-#ifdef VBOX
-    RTMEM_MAY_LEAK(_pr_rename_lock);
-    RTMEM_MAY_LEAK(_pr_Xfe_mon);
-#endif
 
     _PR_InitIOV();  /* one last hack */
 }
@@ -710,42 +602,6 @@ int _MD_unix_get_nonblocking_connect_error(int osfd)
 }
 
 /************************************************************************/
-
-/*
-** Special hacks for xlib. Xlib/Xt/Xm is not re-entrant nor is it thread
-** safe.  Unfortunately, neither is mozilla. To make these programs work
-** in a pre-emptive threaded environment, we need to use a lock.
-*/
-
-void PR_XLock(void)
-{
-    PR_EnterMonitor(_pr_Xfe_mon);
-}
-
-void PR_XUnlock(void)
-{
-    PR_ExitMonitor(_pr_Xfe_mon);
-}
-
-PRBool PR_XIsLocked(void)
-{
-    return (PR_InMonitor(_pr_Xfe_mon)) ? PR_TRUE : PR_FALSE;
-}
-
-void PR_XWait(int ms)
-{
-    PR_Wait(_pr_Xfe_mon, PR_MillisecondsToInterval(ms));
-}
-
-void PR_XNotify(void)
-{
-    PR_Notify(_pr_Xfe_mon);
-}
-
-void PR_XNotifyAll(void)
-{
-    PR_NotifyAll(_pr_Xfe_mon);
-}
 
 PR_IMPLEMENT(PRStatus) _MD_gethostname(char *name, PRUint32 namelen)
 {

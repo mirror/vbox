@@ -83,12 +83,6 @@
 #define PR_Mac_PostAsyncNotify VBoxNsprPR_Mac_PostAsyncNotify
 #define PR_OS2_SetFloatExcpHandler VBoxNsprPR_OS2_SetFloatExcpHandler
 #define PR_OS2_UnsetFloatExcpHandler VBoxNsprPR_OS2_UnsetFloatExcpHandler
-#define PR_XLock VBoxNsprPR_XLock
-#define PR_XUnlock VBoxNsprPR_XUnlock
-#define PR_XIsLocked VBoxNsprPR_XIsLocked
-#define PR_XWait VBoxNsprPR_XWait
-#define PR_XNotify VBoxNsprPR_XNotify
-#define PR_XNotifyAll VBoxNsprPR_XNotifyAll
 #endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 
 PR_BEGIN_EXTERN_C
@@ -309,16 +303,6 @@ NSPR_API(PRMonitor*) PR_CTestAndEnterMonitor(void *address);
 ---------------------------------------------------------------------------*/
 /* I think PR_GetMonitorEntryCount is useless. All you really want is this... */
 #define PR_InMonitor(m)		(PR_GetMonitorEntryCount(m) > 0)
-
-/*---------------------------------------------------------------------------
-** Special X-Lock hack for client
----------------------------------------------------------------------------*/
-
-#ifdef XP_UNIX
-extern void PR_XLock(void);
-extern void PR_XUnlock(void);
-extern PRBool PR_XIsLocked(void);
-#endif /* XP_UNIX */
 
 PR_END_EXTERN_C
 
