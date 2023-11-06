@@ -134,8 +134,6 @@ static void _PR_InitStuff(void)
     RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
 #endif
 
-    (void) PR_GetPageSize();
-
 	_pr_clock_lm = PR_NewLogModule("clock");
 	_pr_cmon_lm = PR_NewLogModule("cmon");
 	_pr_io_lm = PR_NewLogModule("io");

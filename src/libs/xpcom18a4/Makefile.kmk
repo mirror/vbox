@@ -189,7 +189,6 @@ NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/pr/include/prpdce.h \
 	nsprpub/pr/include/prprf.h \
 	nsprpub/pr/include/prproces.h \
-	nsprpub/pr/include/prsystem.h \
 	nsprpub/pr/include/prthread.h \
 	nsprpub/pr/include/prtime.h \
 	nsprpub/pr/include/prtypes.h \
@@ -207,7 +206,6 @@ NSPRPUB-MD-HEADERS_SOURCES = \
 	nsprpub/pr/include/md/_unix_errors.h \
 	nsprpub/pr/include/md/_unixos.h \
 	nsprpub/pr/include/md/_pth.h \
-	nsprpub/pr/include/md/prosdep.h \
 	\
 	nsprpub/pr/include/md/_freebsd.cfg \
 	nsprpub/pr/include/md/_linux.cfg \
@@ -491,7 +489,6 @@ VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/pr/src/io/prscanf.c \
 	nsprpub/pr/src/io/prstdio.c \
 	nsprpub/pr/src/linking/prlink.c \
-	nsprpub/pr/src/md/prosdep.c \
 	nsprpub/pr/src/misc/pratom.c \
 	nsprpub/pr/src/misc/prdtoa.c \
 	nsprpub/pr/src/misc/prenv.c \

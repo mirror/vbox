@@ -48,7 +48,6 @@
 
 #include "prmem.h"
 #include "prerror.h"
-#include "prsystem.h"           // PR_GetDirectorySeparator
 #include "nsNativeComponentLoader.h"
 #include "nsComponentManager.h"
 #include "nsCOMPtr.h"
