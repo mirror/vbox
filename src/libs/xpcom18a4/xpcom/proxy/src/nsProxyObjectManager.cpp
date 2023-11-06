@@ -59,7 +59,6 @@
 #include "nsCOMPtr.h"
 
 #include "nsIEventQueueService.h"
-#include "nsIThread.h"
 
 
 static NS_DEFINE_CID(kEventQueueServiceCID, NS_EVENTQUEUESERVICE_CID);

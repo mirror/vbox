@@ -62,7 +62,6 @@
 #include "nsIServiceManager.h"
 #include "nsMemory.h"
 #include "nsIEventQueueService.h"
-#include "nsIThread.h"
 
 #include "nsIAtom.h"  //hack!  Need a way to define a component as threadsafe (ie. sta).
 
