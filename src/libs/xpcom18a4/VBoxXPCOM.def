@@ -91,6 +91,7 @@ EXPORTS
     NS_GetMemoryManager
     NS_GetServiceManager
     NS_GetTraceRefcnt
+    NS_IsXPCOMInitialized
     NS_InitXPCOM2
     NS_MeanAndStdDev
     NS_NewByteInputStream

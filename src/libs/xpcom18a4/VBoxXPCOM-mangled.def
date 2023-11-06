@@ -488,6 +488,7 @@ EXPORTS
     VBoxNsxpNS_GetMemoryManager
     VBoxNsxpNS_GetServiceManager
     VBoxNsxpNS_GetTraceRefcnt
+    VBoxNsxpNS_IsXPCOMInitialized
     VBoxNsxpNS_InitXPCOM2
     VBoxNsxpNS_MeanAndStdDev
     VBoxNsxpNS_NewByteInputStream

@@ -42,6 +42,7 @@
 #include "nsXPCOMCID.h"
 
 #ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define NS_IsXPCOMInitialized VBoxNsxpNS_IsXPCOMInitialized
 #define NS_InitXPCOM2 VBoxNsxpNS_InitXPCOM2
 #define NS_ShutdownXPCOM VBoxNsxpNS_ShutdownXPCOM
 #define NS_NewNativeLocalFile VBoxNsxpNS_NewNativeLocalFile
