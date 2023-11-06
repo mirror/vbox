@@ -302,7 +302,6 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/components/nsIServiceManagerObsolete.h \
 	xpcom/components/nsIServiceManagerUtils.h \
 	xpcom/base/nsISupportsBase.h \
-	xpcom/base/nsISupportsObsolete.h \
 	xpcom/ds/nsInt64.h \
 	xpcom/ds/nsInterfaceHashtable.h \
 	xpcom/io/nsLocalFile.h \
