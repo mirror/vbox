@@ -87,28 +87,6 @@ static PRIntn pt_PriorityMap(PRThreadPriority pri)
 }
 #endif
 
-/*
-** Initialize a stack for a native pthread thread
-*/
-static void _PR_InitializeStack(PRThreadStack *ts)
-{
-    if( ts && (ts->stackTop == 0) ) {
-        ts->allocBase = (char *) &ts;
-        ts->allocSize = ts->stackSize;
-
-        /*
-        ** Setup stackTop and stackBottom values.
-        */
-#ifdef HAVE_STACK_GROWING_UP
-        ts->stackBottom = ts->allocBase + ts->stackSize;
-        ts->stackTop = ts->allocBase;
-#else
-        ts->stackTop    = ts->allocBase;
-        ts->stackBottom = ts->allocBase - ts->stackSize;
-#endif
-    }
-}
-
 static void *_pt_root(void *arg)
 {
     PRIntn rv;
@@ -125,9 +103,6 @@ static void *_pt_root(void *arg)
      * write should be safe.
      */
     thred->id = pthread_self();
-
-    /* Set up the thread stack information */
-    _PR_InitializeStack(thred->stack);
 
     /*
      * Set within the current thread the pointer to our object.
@@ -303,17 +278,6 @@ static PRThread* _PR_CreateThread(
 
         thred->suspend =(isGCAble) ? PT_THREAD_SETGCABLE : 0;
 
-        thred->stack = PR_NEWZAP(PRThreadStack);
-        if (thred->stack == NULL) {
-            PRIntn oserr = errno;
-            PR_Free(thred);  /* all that work ... poof! */
-            PR_SetError(PR_OUT_OF_MEMORY_ERROR, oserr);
-            thred = NULL;  /* and for what? */
-            goto done;
-        }
-        thred->stack->stackSize = stackSize;
-        thred->stack->thr = thred;
-
 #ifdef PT_NO_SIGTIMEDWAIT
         pthread_mutex_init(&thred->suspendResumeMutex,NULL);
         pthread_cond_init(&thred->suspendResumeCV,NULL);
@@ -348,7 +312,6 @@ static PRThread* _PR_CreateThread(
                 PR_NotifyAllCondVar(pt_book.cv);
             PR_Unlock(pt_book.ml);
 
-            PR_Free(thred->stack);
             PR_Free(thred);  /* all that work ... poof! */
             PR_SetError(PR_INSUFFICIENT_RESOURCES_ERROR, oserr);
             thred = NULL;  /* and for what? */
@@ -594,7 +557,6 @@ static void _pt_thread_death(void *arg)
     PR_Free(thred->privateData);
     if (NULL != thred->errorString)
         PR_Free(thred->errorString);
-    PR_Free(thred->stack);
     if (NULL != thred->syspoll_list)
         PR_Free(thred->syspoll_list);
 #if defined(DEBUG)
@@ -659,12 +621,6 @@ void _PR_InitThreads(
     }
     thred->next = thred->prev = NULL;
     pt_book.first = pt_book.last = thred;
-
-    thred->stack = PR_NEWZAP(PRThreadStack);
-    PR_ASSERT(thred->stack != NULL);
-    thred->stack->stackSize = 0;
-    thred->stack->thr = thred;
-	_PR_InitializeStack(thred->stack);
 
     /*
      * Create a key for our use to store a backpointer in the pthread

@@ -52,16 +52,6 @@
 #endif
 
 #ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
-#define PR_DetachThread VBoxNsprPR_DetachThread
-#define PR_GetThreadID VBoxNsprPR_GetThreadID
-#define PR_SetThreadDumpProc VBoxNsprPR_SetThreadDumpProc
-#define PR_GetThreadAffinityMask VBoxNsprPR_GetThreadAffinityMask
-#define PR_SetThreadAffinityMask VBoxNsprPR_SetThreadAffinityMask
-#define PR_SetCPUAffinityMask VBoxNsprPR_SetCPUAffinityMask
-#define PR_ShowStatus VBoxNsprPR_ShowStatus
-#define PR_ThreadScanStackPointers VBoxNsprPR_ThreadScanStackPointers
-#define PR_ScanStackPointers VBoxNsprPR_ScanStackPointers
-#define PR_GetStackSpaceLeft VBoxNsprPR_GetStackSpaceLeft
 #define PR_NewNamedMonitor VBoxNsprPR_NewNamedMonitor
 #define PR_TestAndLock VBoxNsprPR_TestAndLock
 #define PR_TestAndEnterMonitor VBoxNsprPR_TestAndEnterMonitor
@@ -69,49 +59,6 @@
 #endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 
 PR_BEGIN_EXTERN_C
-
-/*---------------------------------------------------------------------------
-** THREAD PRIVATE FUNCTIONS
----------------------------------------------------------------------------*/
-
-/*
-** Get the id of the named thread. Each thread is assigned a unique id
-** when it is created or attached.
-*/
-NSPR_API(PRUint32) PR_GetThreadID(PRThread *thread);
-
-/*
-** Set the procedure that is called when a thread is dumped. The procedure
-** will be applied to the argument, arg, when called. Setting the procedure
-** to NULL effectively removes it.
-*/
-typedef void (*PRThreadDumpProc)(PRFileDesc *fd, PRThread *t, void *arg);
-NSPR_API(void) PR_SetThreadDumpProc(
-    PRThread* thread, PRThreadDumpProc dump, void *arg);
-
-/*
-** Get this thread's affinity mask.  The affinity mask is a 32 bit quantity
-** marking a bit for each processor this process is allowed to run on.
-** The processor mask is returned in the mask argument.
-** The least-significant-bit represents processor 0.
-**
-** Returns 0 on success, -1 on failure.
-*/
-NSPR_API(PRInt32) PR_GetThreadAffinityMask(PRThread *thread, PRUint32 *mask);
-
-/*
-** Set this thread's affinity mask.  
-**
-** Returns 0 on success, -1 on failure.
-*/
-NSPR_API(PRInt32) PR_SetThreadAffinityMask(PRThread *thread, PRUint32 mask );
-
-/*
-** Set the default CPU Affinity mask.
-**
-*/
-NSPR_API(PRInt32) PR_SetCPUAffinityMask(PRUint32 mask);
-
 
 /*---------------------------------------------------------------------------
 ** THREAD SYNCHRONIZATION PRIVATE FUNCTIONS

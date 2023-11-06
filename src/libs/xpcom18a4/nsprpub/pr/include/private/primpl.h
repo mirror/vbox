@@ -393,21 +393,6 @@ struct PRStackStr {
 
 /************************************************************************/
 
-/* XXX this needs to be exported (sigh) */
-struct PRThreadStack {
-    PRCList links;
-    PRUintn flags;
-
-    char *allocBase;            /* base of stack's allocated memory */
-    PRUint32 allocSize;         /* size of stack's allocated memory */
-    char *stackBottom;          /* bottom of stack from C's point of view */
-    char *stackTop;             /* top of stack from C's point of view */
-    PRUint32 stackSize;         /* size of usable portion of the stack */
-
-    PRSegment *seg;
-        PRThread* thr;          /* back pointer to thread owning this stack */
-};
-
 extern void _PR_DestroyThreadPrivate(PRThread*);
 
 typedef void (PR_CALLBACK *_PRStartFn)(void *);
@@ -419,11 +404,7 @@ struct PRThread {
     void *arg;                      /* argument to the client's entry point */
     _PRStartFn startFunc;           /* the root of the client's thread */
 
-    PRThreadStack *stack;           /* info about thread's stack (for GC) */
     void *environment;              /* pointer to execution environment */
-
-    PRThreadDumpProc dump;          /* dump thread info out */
-    void *dumpArg;                  /* argument for the dump function */
 
     /*
     ** Per thread private data
