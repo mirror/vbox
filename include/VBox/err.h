@@ -2548,32 +2548,53 @@
 #define VERR_IEM_LABEL_IPE_5                        (-5337)
 /** Recompiler: Label internal processing error \#6. */
 #define VERR_IEM_LABEL_IPE_6                        (-5338)
-/** Recompiler: Label internal processing error \#7. */
-#define VERR_IEM_LABEL_IPE_7                        (-5339)
 
-/** Recompiler: Out of host register. */
-#define VERR_IEM_REG_OUT_OF_REGISTERS               (-5340)
 /** Recompiler: No temporary host register available. */
-#define VERR_IEM_REG_ALLOCATOR_NO_FREE_TMP          (-5341)
+#define VERR_IEM_REG_ALLOCATOR_NO_FREE_TMP          (-5340)
+/** Recompiler: No host register available for variables. */
+#define VERR_IEM_REG_ALLOCATOR_NO_FREE_VAR          (-5341)
 /** Recompiler: Register allocator internal processing error \#1. */
-#define VERR_IEM_REG_IPE_1                          (-5342)
+#define VERR_IEM_REG_IPE_1                          (-5343)
 /** Recompiler: Register allocator internal processing error \#2. */
-#define VERR_IEM_REG_IPE_2                          (-5343)
+#define VERR_IEM_REG_IPE_2                          (-5344)
 /** Recompiler: Register allocator internal processing error \#3. */
-#define VERR_IEM_REG_IPE_3                          (-5344)
+#define VERR_IEM_REG_IPE_3                          (-5345)
 /** Recompiler: Register allocator internal processing error \#4. */
-#define VERR_IEM_REG_IPE_4                          (-5345)
+#define VERR_IEM_REG_IPE_4                          (-5346)
 /** Recompiler: Register allocator internal processing error \#5. */
-#define VERR_IEM_REG_IPE_5                          (-5346)
+#define VERR_IEM_REG_IPE_5                          (-5347)
 /** Recompiler: Register allocator internal processing error \#6. */
-#define VERR_IEM_REG_IPE_6                          (-5347)
+#define VERR_IEM_REG_IPE_6                          (-5348)
 /** Recompiler: Register allocator internal processing error \#7. */
-#define VERR_IEM_REG_IPE_7                          (-5348)
+#define VERR_IEM_REG_IPE_7                          (-5349)
 /** Recompiler: Register allocator internal processing error \#8. */
-#define VERR_IEM_REG_IPE_8                          (-5349)
+#define VERR_IEM_REG_IPE_8                          (-5350)
+/** Recompiler: Register allocator internal processing error \#9. */
+#define VERR_IEM_REG_IPE_9                          (-5351)
+/** Recompiler: Register allocator internal processing error \#10. */
+#define VERR_IEM_REG_IPE_10                         (-5352)
+/** Recompiler: Register allocator internal processing error \#11. */
+#define VERR_IEM_REG_IPE_11                         (-5353)
+
+/** Recompiler: Out of variables. */
+#define VERR_IEM_VAR_EXHAUSTED                      (-5360)
+/** Recompiler: Duplicate argument variable number. */
+#define VERR_IEM_VAR_DUP_ARG_NO                     (-5361)
+/** Recompiler: Out of stack slots. */
+#define VERR_IEM_VAR_OUT_OF_STACK_SLOTS             (-5362)
+/** Recompiler: Variable management internal processing error \#1. */
+#define VERR_IEM_VAR_IPE_1                          (-5363)
+/** Recompiler: Variable management internal processing error \#2. */
+#define VERR_IEM_VAR_IPE_2                          (-5364)
+/** Recompiler: Variable management internal processing error \#3. */
+#define VERR_IEM_VAR_IPE_3                          (-5365)
+/** Recompiler: Variable management internal processing error \#4. */
+#define VERR_IEM_VAR_IPE_4                          (-5366)
+/** Recompiler: Variable management internal processing error \#5. */
+#define VERR_IEM_VAR_IPE_5                          (-5367)
 
 /** Recompiler: Unimplemented case. */
-#define VERR_IEM_EMIT_CASE_NOT_IMPLEMENTED_1        (-5360)
+#define VERR_IEM_EMIT_CASE_NOT_IMPLEMENTED_1        (-5370)
 
 /** Restart the current instruction. For testing only. */
 #define VERR_IEM_RESTART_INSTRUCTION                (-5389)

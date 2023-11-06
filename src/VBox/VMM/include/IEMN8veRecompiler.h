@@ -48,14 +48,24 @@
  *
  * @{  */
 /** The size of the area for stack variables and spills and stuff.
- * @note This limit is duplicated in the python script(s). */
-#define IEMNATIVE_FRAME_VAR_SIZE            0xc0
+ * @note This limit is duplicated in the python script(s).  We add 0x40 for
+ *       alignment padding. */
+#define IEMNATIVE_FRAME_VAR_SIZE            (0xc0 + 0x40)
+/** Number of 64-bit variable slots (0x100 / 8 = 32. */
+#define IEMNATIVE_FRAME_VAR_SLOTS           (IEMNATIVE_FRAME_VAR_SIZE / 8)
+AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
+
 #ifdef RT_ARCH_AMD64
-/** Number of stack arguments slots for calls made from the frame. */
-# define IEMNATIVE_FRAME_STACK_ARG_COUNT    4
 /** An stack alignment adjustment (between non-volatile register pushes and
  *  the stack variable area, so the latter better aligned). */
 # define IEMNATIVE_FRAME_ALIGN_SIZE         8
+
+/** Number of stack arguments slots for calls made from the frame. */
+# ifdef RT_OS_WINDOWS
+#  define IEMNATIVE_FRAME_STACK_ARG_COUNT   4
+# else
+#  define IEMNATIVE_FRAME_STACK_ARG_COUNT   2
+# endif
 /** Number of any shadow arguments (spill area) for calls we make. */
 # ifdef RT_OS_WINDOWS
 #  define IEMNATIVE_FRAME_SHADOW_ARG_COUNT  4
@@ -76,10 +86,12 @@
 # define IEMNATIVE_FP_OFF_STACK_ARG0        (IEMNATIVE_FP_OFF_STACK_VARS - IEMNATIVE_FRAME_STACK_ARG_COUNT * 8)
 /** Frame pointer (RBP) relative offset of the second stack argument for calls. */
 # define IEMNATIVE_FP_OFF_STACK_ARG1        (IEMNATIVE_FP_OFF_STACK_ARG0 + 8)
+# ifdef RT_OS_WINDOWS
 /** Frame pointer (RBP) relative offset of the third stack argument for calls. */
-# define IEMNATIVE_FP_OFF_STACK_ARG2        (IEMNATIVE_FP_OFF_STACK_ARG0 + 16)
+#  define IEMNATIVE_FP_OFF_STACK_ARG2       (IEMNATIVE_FP_OFF_STACK_ARG0 + 16)
 /** Frame pointer (RBP) relative offset of the fourth stack argument for calls. */
-# define IEMNATIVE_FP_OFF_STACK_ARG3        (IEMNATIVE_FP_OFF_STACK_ARG0 + 24)
+#  define IEMNATIVE_FP_OFF_STACK_ARG3       (IEMNATIVE_FP_OFF_STACK_ARG0 + 24)
+# endif
 
 # ifdef RT_OS_WINDOWS
 /** Frame pointer (RBP) relative offset of the first incoming shadow argument. */
@@ -93,7 +105,9 @@
 # endif
 
 #elif RT_ARCH_ARM64
-/** No stack argument slots, enough got 8 registers for arguments.  */
+/** No alignment padding needed for arm64. */
+# define IEMNATIVE_FRAME_ALIGN_SIZE         0
+/** No stack argument slots, got 8 registers for arguments will suffice. */
 # define IEMNATIVE_FRAME_STACK_ARG_COUNT    0
 /** There are no argument spill area. */
 # define IEMNATIVE_FRAME_SHADOW_ARG_COUNT   0
@@ -238,6 +252,8 @@
 
 #endif
 
+/** This is the maximum argument count we'll ever be needing. */
+#define IEMNATIVE_CALL_MAX_ARG_COUNT        7
 /** @} */
 
 
@@ -373,7 +389,7 @@ typedef enum IEMNATIVEGSTREGREF : uint8_t
     kIemNativeGstRegRef_FpuReg,
     kIemNativeGstRegRef_MReg,
     kIemNativeGstRegRef_XReg,
-    kIemNativeGstRegRef_YReg,
+    //kIemNativeGstRegRef_YReg, - doesn't work.
     kIemNativeGstRegRef_End
 } IEMNATIVEGSTREGREF;
 
@@ -522,6 +538,8 @@ typedef struct IEMNATIVECORESTATE
         uint64_t                u64ArgVars;
     };
 
+    /** Allocation bitmap for the stack. */
+    uint32_t                    bmStack;
     /** Allocation bitmap for aVars. */
     uint32_t                    bmVars;
 
@@ -614,7 +632,14 @@ typedef struct IEMRECOMPILERSTATE
     uint16_t                    uCondSeqNo;
     /** Check IRQ seqeunce number (for generating unique lables). */
     uint16_t                    uCheckIrqSeqNo;
-    uint16_t                    uPadding3;
+    uint8_t                     bPadding3;
+
+    /** The argument count + hidden regs from the IEM_MC_BEGIN statement. */
+    uint8_t                     cArgs;
+    /** The IEM_CIMPL_F_XXX flags from the IEM_MC_BEGIN statement. */
+    uint32_t                    fCImpl;
+    /** The IEM_MC_F_XXX flags from the IEM_MC_BEGIN statement. */
+    uint32_t                    fMc;
 
     /** Core state requiring care with branches. */
     IEMNATIVECORESTATE          Core;
@@ -1251,6 +1276,50 @@ iemNativeEmitStoreGprToVCpuU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
 
 
 /**
+ * Emits a load effective address to a GRP of a VCpu field.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitLeaGprByVCpu(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint32_t offVCpu)
+{
+#ifdef RT_ARCH_AMD64
+    /* lea gprdst, [rbx + offDisp] */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
+    if (iGprDst < 8)
+        pbCodeBuf[off++] = X86_OP_REX_W;
+    else
+        pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x8d;
+    off = iemNativeEmitGprByVCpuDisp(pbCodeBuf, off, iGprDst, offVCpu);
+
+#elif defined(RT_ARCH_ARM64)
+    if (offVCpu < (unsigned)_4K)
+    {
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(false /*fSub*/, iGprDst, IEMNATIVE_REG_FIXED_PVMCPU, offVCpu);
+    }
+    else if (offVCpu - RT_UOFFSETOF(VMCPU, cpum.GstCtx) < (unsigned)_4K)
+    {
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(false /*fSub*/, iGprDst, IEMNATIVE_REG_FIXED_PCPUMCTX,
+                                                         offVCpu - RT_UOFFSETOF(VMCPU, cpum.GstCtx));
+    }
+    else
+    {
+        Assert(iGprDst != IEMNATIVE_REG_FIXED_PVMCPU);
+        off = iemNativeEmitLoadGprImm64(pReNative, off, iGprDst, offVCpu);
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(false /*fSub*/, iGprDst, IEMNATIVE_REG_FIXED_PCPUMCTX, iGprDst);
+    }
+
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
  * Emits a gprdst = gprsrc load.
  */
 DECL_INLINE_THROW(uint32_t)
@@ -1270,8 +1339,8 @@ iemNativeEmitLoadGprFromGpr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t
 
 #elif RT_ARCH_ARM64
     /* mov dst, src;   alias for: orr dst, xzr, src */
-    uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-    pu32CodeBuf[off++] = UINT32_C(0xaa000000) | ((uint32_t)iGprSrc << 16) | ((uint32_t)ARMV8_A64_REG_XZR << 5) | iGprDst;
+    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    pu32CodeBuf[off++] = Armv8A64MkInstrOrr(iGprDst, ARMV8_A64_REG_XZR, iGprSrc);
 
 #else
 # error "port me"
@@ -1279,6 +1348,144 @@ iemNativeEmitLoadGprFromGpr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
+
+
+/**
+ * Emits a gprdst = gprsrc[31:0] load.
+ * @note Bits 63 thru 32 are cleared.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprFromGpr32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc)
+{
+#ifdef RT_ARCH_AMD64
+    /* mov gprdst, gprsrc */
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
+    if ((iGprDst | iGprSrc) >= 8)
+        pbCodeBuf[off++] = iGprDst < 8  ? X86_OP_REX_B
+                         : iGprSrc >= 8 ? X86_OP_REX_R | X86_OP_REX_B
+                         :                X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x8b;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprSrc & 7);
+
+#elif RT_ARCH_ARM64
+    /* mov dst32, src32;   alias for: orr dst32, wzr, src32 */
+    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    pu32CodeBuf[off++] = Armv8A64MkInstrOrr(iGprDst, ARMV8_A64_REG_WZR, iGprSrc, false /*f64bit*/);
+
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Emits a gprdst = gprsrc[15:0] load.
+ * @note Bits 63 thru 15 are cleared.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprFromGpr16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc)
+{
+#ifdef RT_ARCH_AMD64
+    /* movzx Gv,Ew */
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
+    if ((iGprDst | iGprSrc) >= 8)
+        pbCodeBuf[off++] = iGprDst < 8  ? X86_OP_REX_B
+                         : iGprSrc >= 8 ? X86_OP_REX_R | X86_OP_REX_B
+                         :                X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x0f;
+    pbCodeBuf[off++] = 0xb7;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprSrc & 7);
+
+#elif RT_ARCH_ARM64
+    /* and gprdst, gprsrc, #0xffff */
+    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+# if 1
+    Assert(Armv8A64ConvertImmRImmS2Mask32(0x0f, 0) == UINT16_MAX);
+    pu32CodeBuf[off++] = Armv8A64MkInstrAndImm(iGprDst, iGprSrc, 0x0f, 0, false /*f64Bit*/);
+# else
+    Assert(Armv8A64ConvertImmRImmS2Mask64(0x4f, 0) == UINT16_MAX);
+    pu32CodeBuf[off++] = Armv8A64MkInstrAndImm(iGprDst, iGprSrc, 0x4f, 0);
+# endif
+
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
+/**
+ * Emits a gprdst = gprsrc[7:0] load.
+ * @note Bits 63 thru 8 are cleared.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprFromGpr8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc)
+{
+#ifdef RT_ARCH_AMD64
+    /* movzx Gv,Eb */
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
+    if ((iGprDst | iGprSrc) >= 8)
+        pbCodeBuf[off++] = iGprDst < 8  ? X86_OP_REX_B
+                         : iGprSrc >= 8 ? X86_OP_REX_R | X86_OP_REX_B
+                         :                X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x0f;
+    pbCodeBuf[off++] = 0xb6;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprSrc & 7);
+
+#elif RT_ARCH_ARM64
+    /* and gprdst, gprsrc, #0xff */
+    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+# if 1
+    Assert(Armv8A64ConvertImmRImmS2Mask32(0x07, 0) == UINT8_MAX);
+    pu32CodeBuf[off++] = Armv8A64MkInstrAndImm(iGprDst, iGprSrc, 0x07, 0, false /*f64Bit*/);
+# else
+    Assert(Armv8A64ConvertImmRImmS2Mask64(0x47, 0) == UINT8_MAX);
+    pu32CodeBuf[off++] = Armv8A64MkInstrAndImm(iGprDst, iGprSrc, 0x47, 0);
+# endif
+
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+#if 0 /** @todo */
+/**
+ * Emits a gprdst = gprsrc[15:8] load (ah, ch, dh, bh).
+ * @note Bits 63 thru 8 are cleared.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprFromGpr8hi(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc)
+{
+#ifdef RT_ARCH_AMD64
+    /* movzx Gv,Eb */
+    /** @todo */
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
+    if ((iGprDst | iGprSrc) >= 8)
+        pbCodeBuf[off++] = iGprDst < 8  ? X86_OP_REX_B
+                         : iGprSrc >= 8 ? X86_OP_REX_R | X86_OP_REX_B
+                         :                X86_OP_REX_R;
+    pbCodeBuf[off++] = 0x0f;
+    pbCodeBuf[off++] = 0xb6;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprSrc & 7);
+
+#elif RT_ARCH_ARM64
+    /* ubfx gprdst, gprsrc, #8, #8 */
+    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+    Assert(Armv8A64ConvertImmRImmS2Mask64(0x47, 0) == UINT8_MAX);
+    pu32CodeBuf[off++] = /** @todo ubfx */;
+
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+#endif
 
 #ifdef RT_ARCH_AMD64
 /**
@@ -1342,13 +1549,13 @@ iemNativeEmitLoadGprByBpU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t
 #endif
 
 
-#ifdef RT_ARCH_AMD64
 /**
  * Emits a load effective address to a GRP with an BP relative source address.
  */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitLeaGprByBp(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, int32_t offDisp)
 {
+#ifdef RT_ARCH_AMD64
     /* lea gprdst, [rbp + offDisp] */
     uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
     if (iGprDst < 8)
@@ -1356,9 +1563,37 @@ iemNativeEmitLeaGprByBp(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGp
     else
         pbCodeBuf[off++] = X86_OP_REX_W | X86_OP_REX_R;
     pbCodeBuf[off++] = 0x8d;
-    return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprDst, offDisp, pReNative);
-}
+    off = iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprDst, offDisp, pReNative);
+
+#elif defined(RT_ARCH_ARM64)
+    if ((uint32_t)offDisp < (unsigned)_4K)
+    {
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(false /*fSub*/, iGprDst, ARMV8_A64_REG_SP, (uint32_t)offDisp);
+    }
+    else if ((uint32_t)-offDisp < (unsigned)_4K)
+    {
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, iGprDst, ARMV8_A64_REG_SP, (uint32_t)-offDisp);
+    }
+    else
+    {
+        Assert(iGprDst != IEMNATIVE_REG_FIXED_PVMCPU);
+        off = iemNativeEmitLoadGprImm64(pReNative, off, iGprDst, offDisp >= 0 ? (uint32_t)offDisp : (uint32_t)-offDisp);
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        if (offDisp >= 0)
+            pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(false /*fSub*/, iGprDst, ARMV8_A64_REG_SP, iGprDst);
+        else
+            pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(true /*fSub*/, iGprDst, ARMV8_A64_REG_SP, iGprDst);
+    }
+
+#else
+# error "port me"
 #endif
+
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
 
 
 /**
@@ -1843,7 +2078,7 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmitClear16UpGpr(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst)
 {
 #if defined(RT_ARCH_AMD64)
-    /* movzx reg32, reg16 */
+    /* movzx Gv,Ew */
     uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
     if (iGprDst >= 8)
         pbCodeBuf[off++] = X86_OP_REX_B | X86_OP_REX_R;
