@@ -329,7 +329,6 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/ds/nsSupportsArray.h \
 	xpcom/ds/nsSupportsPrimitives.h \
 	xpcom/ds/nsTHashtable.h \
-	xpcom/ds/nsTime.h \
 	xpcom/base/nsTraceRefcntImpl.h \
 	xpcom/ds/nsValueArray.h \
 	xpcom/ds/nsVariant.h \
