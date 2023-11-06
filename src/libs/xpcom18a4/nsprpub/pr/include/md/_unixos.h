@@ -355,12 +355,6 @@ extern PRInt32	_MD_mkdir(const char *name, PRIntn mode);
 extern PRInt32	_MD_rmdir(const char *name);
 extern PRInt32	_MD_accept_read(PRInt32 sock, PRInt32 *newSock,
 				PRNetAddr **raddr, void *buf, PRInt32 amount);
-extern PRInt32 	_PR_UnixSendFile(PRFileDesc *sd, PRSendFileData *sfd,
-			PRTransmitFileFlags flags, PRIntervalTime timeout);
-
-extern PRStatus _MD_LockFile(PRInt32 osfd);
-extern PRStatus _MD_TLockFile(PRInt32 osfd);
-extern PRStatus _MD_UnlockFile(PRInt32 osfd);
 
 #define _MD_OPEN_DIR(dir, name)		    _MD_open_dir(dir, name)
 #define _MD_CLOSE_DIR(dir)		        _MD_close_dir(dir)
@@ -382,11 +376,6 @@ extern PRInt32 _MD_write(PRFileDesc *fd, const void *buf, PRInt32 amount);
 #define _MD_MAKE_DIR(name, mode)		_MD_mkdir(name, mode)
 #define _MD_RMDIR(name)			        _MD_rmdir(name)
 #define _MD_ACCEPT_READ(sock, newSock, raddr, buf, amount)	_MD_accept_read(sock, newSock, raddr, buf, amount)
-
-#define _MD_LOCKFILE _MD_LockFile
-#define _MD_TLOCKFILE _MD_TLockFile
-#define _MD_UNLOCKFILE _MD_UnlockFile
-
 
 extern PRInt32		_MD_socket(int af, int type, int flags);
 #define _MD_SOCKET	_MD_socket

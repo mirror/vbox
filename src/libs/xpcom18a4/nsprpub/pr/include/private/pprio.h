@@ -158,48 +158,11 @@ NSPR_API(PRStatus) PR_DestroySocketPollFd(PRFileDesc *fd);
 */
 NSPR_API(PRFileDesc*)	PR_Socket(PRInt32 domain, PRInt32 type, PRInt32 proto);
 
-/* FUNCTION: PR_LockFile
-** DESCRIPTION:
-**    Lock a file for exclusive access.
-** RETURNS:
-**    PR_SUCCESS when the lock is held
-**    PR_FAILURE otherwise
-*/
-NSPR_API(PRStatus) PR_LockFile(PRFileDesc *fd);
-
-/* FUNCTION: PR_TLockFile
-** DESCRIPTION:
-**    Test and Lock a file for exclusive access.  Do not block if the
-**    file cannot be locked immediately.
-** RETURNS:
-**    PR_SUCCESS when the lock is held
-**    PR_FAILURE otherwise
-*/
-NSPR_API(PRStatus) PR_TLockFile(PRFileDesc *fd);
-
-/* FUNCTION: PR_UnlockFile
-** DESCRIPTION:
-**    Unlock a file which has been previously locked successfully by this
-**    process.
-** RETURNS:
-**    PR_SUCCESS when the lock is released
-**    PR_FAILURE otherwise
-*/
-NSPR_API(PRStatus) PR_UnlockFile(PRFileDesc *fd);
-
 /*
 ** Emulate acceptread by accept and recv.
 */
 NSPR_API(PRInt32) PR_EmulateAcceptRead(PRFileDesc *sd, PRFileDesc **nd,
     PRNetAddr **raddr, void *buf, PRInt32 amount, PRIntervalTime timeout);
-
-/*
-** Emulate sendfile by reading from the file and writing to the socket.
-** The file is memory-mapped if memory-mapped files are supported.
-*/
-NSPR_API(PRInt32) PR_EmulateSendFile(
-    PRFileDesc *networkSocket, PRSendFileData *sendData,
-    PRTransmitFileFlags flags, PRIntervalTime timeout);
 
 PR_END_EXTERN_C
 

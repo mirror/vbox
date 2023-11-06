@@ -111,7 +111,6 @@
 #define PR_RecvFrom VBoxNsprPR_RecvFrom
 #define PR_SendTo VBoxNsprPR_SendTo
 #define PR_TransmitFile VBoxNsprPR_TransmitFile
-#define PR_SendFile VBoxNsprPR_SendFile
 #define PR_GetSockName VBoxNsprPR_GetSockName
 #define PR_GetPeerName VBoxNsprPR_GetPeerName
 #define PR_GetSocketOption VBoxNsprPR_GetSocketOption
@@ -135,7 +134,6 @@ typedef union  PRNetAddr        PRNetAddr;
 typedef struct PRIOMethods      PRIOMethods;
 typedef struct PRPollDesc       PRPollDesc;
 typedef struct PRFilePrivate    PRFilePrivate;
-typedef struct PRSendFileData   PRSendFileData;
 
 /*
 ***************************************************************************
@@ -421,18 +419,12 @@ typedef PRInt16 (PR_CALLBACK *PRPollFN)(
 typedef PRInt32 (PR_CALLBACK *PRAcceptreadFN)(
     PRFileDesc *sd, PRFileDesc **nd, PRNetAddr **raddr,
     void *buf, PRInt32 amount, PRIntervalTime t);
-typedef PRInt32 (PR_CALLBACK *PRTransmitfileFN)(
-     PRFileDesc *sd, PRFileDesc *fd, const void *headers,
-     PRInt32 hlen, PRTransmitFileFlags flags, PRIntervalTime t);
 typedef PRStatus (PR_CALLBACK *PRGetsocknameFN)(PRFileDesc *fd, PRNetAddr *addr);
 typedef PRStatus (PR_CALLBACK *PRGetpeernameFN)(PRFileDesc *fd, PRNetAddr *addr);
 typedef PRStatus (PR_CALLBACK *PRGetsocketoptionFN)(
     PRFileDesc *fd, PRSocketOptionData *data);
 typedef PRStatus (PR_CALLBACK *PRSetsocketoptionFN)(
     PRFileDesc *fd, const PRSocketOptionData *data);
-typedef PRInt32 (PR_CALLBACK *PRSendfileFN)(
-	PRFileDesc *networkSocket, PRSendFileData *sendData,
-	PRTransmitFileFlags flags, PRIntervalTime timeout);
 typedef PRStatus (PR_CALLBACK *PRConnectcontinueFN)(
     PRFileDesc *fd, PRInt16 out_flags);
 typedef PRIntn (PR_CALLBACK *PRReservedFN)(PRFileDesc *fd);
@@ -461,7 +453,6 @@ struct PRIOMethods {
     PRSendtoFN sendto;              /* Send bytes to (net) address specified    */
     PRPollFN poll;                  /* Test the fd to see if it is ready        */
     PRAcceptreadFN acceptread;      /* Accept and read on a new (net) fd        */
-    PRTransmitfileFN transmitfile;  /* Transmit at entire file                  */
     PRGetsocknameFN getsockname;    /* Get (net) address associated with fd     */
     PRGetpeernameFN getpeername;    /* Get peer's (net) address                 */
     PRReservedFN reserved_fn_6;     /* reserved for future use */
@@ -470,7 +461,6 @@ struct PRIOMethods {
                                     /* Get current setting of specified option  */
     PRSetsocketoptionFN setsocketoption;
                                     /* Set value of specified option            */
-    PRSendfileFN sendfile;			/* Send a (partial) file with header/trailer*/
     PRConnectcontinueFN connectcontinue;
                                     /* Continue a nonblocking connect */
     PRReservedFN reserved_fn_3;		/* reserved for future use */
@@ -1529,98 +1519,6 @@ NSPR_API(PRInt32) PR_RecvFrom(
 NSPR_API(PRInt32) PR_SendTo(
     PRFileDesc *fd, const void *buf, PRInt32 amount, PRIntn flags,
     const PRNetAddr *addr, PRIntervalTime timeout);
-
-/*
-*************************************************************************
-** FUNCTION: PR_TransmitFile
-** DESCRIPTION:
-**    Transmitfile sends a complete file (sourceFile) across a socket 
-**    (networkSocket).  If headers is non-NULL, the headers will be sent across
-**    the socket prior to sending the file.
-** 
-**    Optionally, the PR_TRANSMITFILE_CLOSE_SOCKET flag may be passed to
-**    transmitfile.  This flag specifies that transmitfile should close the
-**    socket after sending the data.
-**
-** INPUTS:
-**    PRFileDesc *networkSocket
-**        The socket to send data over
-**    PRFileDesc *sourceFile
-**        The file to send
-**    const void *headers
-**        A pointer to headers to be sent before sending data
-**    PRInt32       hlen
-**        length of header buffers in bytes.
-**    PRTransmitFileFlags       flags
-**        If the flags indicate that the connection should be closed,
-**        it will be done immediately after transferring the file, unless
-**        the operation is unsuccessful. 
-.*     PRIntervalTime timeout
- *        Time limit for completion of the transmit operation.
-**
-** RETURNS:
-**    Returns the number of bytes written or -1 if the operation failed.
-**    If an error occurs while sending the file, the PR_TRANSMITFILE_CLOSE_
-**    SOCKET flag is ignored. The reason for the failure is obtained
-**    by calling PR_GetError().
-**************************************************************************
-*/
-
-NSPR_API(PRInt32) PR_TransmitFile(
-    PRFileDesc *networkSocket, PRFileDesc *sourceFile,
-    const void *headers, PRInt32 hlen, PRTransmitFileFlags flags,
-    PRIntervalTime timeout);
-
-/*
-*************************************************************************
-** FUNCTION: PR_SendFile
-** DESCRIPTION:
-**    PR_SendFile sends data from a file (sendData->fd) across a socket 
-**    (networkSocket).  If specified, a header and/or trailer buffer are sent
-**	  before and after the file, respectively. The file offset, number of bytes
-** 	  of file data to send, the header and trailer buffers are specified in the
-**	  sendData argument.
-** 
-**    Optionally, if the PR_TRANSMITFILE_CLOSE_SOCKET flag is passed, the
-**    socket is closed after successfully sending the data.
-**
-** INPUTS:
-**    PRFileDesc *networkSocket
-**        The socket to send data over
-**    PRSendFileData *sendData
-**        Contains the FD, file offset and length, header and trailer
-**		  buffer specifications.
-**    PRTransmitFileFlags       flags
-**        If the flags indicate that the connection should be closed,
-**        it will be done immediately after transferring the file, unless
-**        the operation is unsuccessful. 
-.*     PRIntervalTime timeout
- *        Time limit for completion of the send operation.
-**
-** RETURNS:
-**    Returns the number of bytes written or -1 if the operation failed.
-**    If an error occurs while sending the file, the PR_TRANSMITFILE_CLOSE_
-**    SOCKET flag is ignored. The reason for the failure is obtained
-**    by calling PR_GetError().
-**************************************************************************
-*/
-
-struct PRSendFileData {
-	PRFileDesc	*fd;			/* file to send							*/
-	PRUint32	file_offset;	/* file offset							*/
-	PRSize		file_nbytes;	/* number of bytes of file data to send	*/
-								/* if 0, send data from file_offset to	*/
-								/* end-of-file.							*/
-	const void	*header;		/* header buffer						*/
-	PRInt32		hlen;			/* header len							*/
-	const void	*trailer;		/* trailer buffer						*/
-	PRInt32		tlen;			/* trailer len							*/
-};
-
-
-NSPR_API(PRInt32) PR_SendFile(
-    PRFileDesc *networkSocket, PRSendFileData *sendData,
-	PRTransmitFileFlags flags, PRIntervalTime timeout);
 
 /*
 *************************************************************************

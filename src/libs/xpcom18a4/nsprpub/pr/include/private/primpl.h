@@ -54,7 +54,6 @@
 typedef struct PRSegment PRSegment;
 
 #include "md/prosdep.h"
-#include "obsolete/probslet.h"
 
 #ifdef _PR_HAVE_POSIX_SEMAPHORES
 #include <semaphore.h>

@@ -366,17 +366,6 @@ static PRInt32 PR_CALLBACK pl_DefAcceptread (
 	}
 }
 
-static PRInt32 PR_CALLBACK pl_DefTransmitfile (
-    PRFileDesc *sd, PRFileDesc *fd, const void *headers, PRInt32 hlen,
-    PRTransmitFileFlags flags, PRIntervalTime t)
-{
-    PR_ASSERT(sd != NULL);
-    PR_ASSERT(sd->lower != NULL);
-
-    return sd->lower->methods->transmitfile(
-        sd->lower, fd, headers, hlen, flags, t);
-}
-
 static PRStatus PR_CALLBACK pl_DefGetsockname (PRFileDesc *fd, PRNetAddr *addr)
 {
     PR_ASSERT(fd != NULL);
@@ -411,17 +400,6 @@ static PRStatus PR_CALLBACK pl_DefSetsocketoption (
     return (fd->lower->methods->setsocketoption)(fd->lower, data);
 }
 
-static PRInt32 PR_CALLBACK pl_DefSendfile (
-	PRFileDesc *sd, PRSendFileData *sfd,
-	PRTransmitFileFlags flags, PRIntervalTime timeout)
-{
-    PR_ASSERT(sd != NULL);
-    PR_ASSERT(sd->lower != NULL);
-
-    return sd->lower->methods->sendfile(
-        sd->lower, sfd, flags, timeout);
-}
-
 /* Methods for the top of the stack.  Just call down to the next fd. */
 static PRIOMethods pl_methods = {
     PR_DESC_LAYERED,
@@ -447,14 +425,12 @@ static PRIOMethods pl_methods = {
     pl_DefSendto,
     pl_DefPoll,
     pl_DefAcceptread,
-    pl_DefTransmitfile,
     pl_DefGetsockname,
     pl_DefGetpeername,
     (PRReservedFN)_PR_InvalidInt,
     (PRReservedFN)_PR_InvalidInt,
     pl_DefGetsocketoption,
     pl_DefSetsocketoption,
-    pl_DefSendfile,
     pl_DefConnectcontinue,
     (PRReservedFN)_PR_InvalidInt,
     (PRReservedFN)_PR_InvalidInt,
