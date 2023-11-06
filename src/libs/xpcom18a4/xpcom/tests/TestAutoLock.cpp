@@ -42,19 +42,28 @@
  */
 
 #include "nsAutoLock.h"
-#include "prthread.h"
+
+#include <iprt/assert.h>
+#include <iprt/errcore.h>
+#include <iprt/initterm.h>
+#include <iprt/message.h>
+#include <iprt/thread.h>
 
 PRLock* gLock;
 int gCount;
 
-static void PR_CALLBACK run(void* arg)
+static DECLCALLBACK(int) run(RTTHREAD hSelf, void* arg)
 {
+    RT_NOREF(hSelf, arg);
+
     for (int i = 0; i < 1000000; ++i) {
         nsAutoLock guard(gLock);
         ++gCount;
-        PR_ASSERT(gCount == 1);
+        AssertRelease(gCount == 1);
         --gCount;
     }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -62,6 +71,10 @@ int main(int argc, char** argv)
 {
     gLock = PR_NewLock();
     gCount = 0;
+
+    int vrc = RTR3InitExe(argc, &argv, 0);
+    if (RT_FAILURE(vrc))
+        return RTMsgInitFailure(vrc);
 
     // This shouldn't compile
     //nsAutoLock* l1 = new nsAutoLock(theLock);
@@ -73,19 +86,17 @@ int main(int argc, char** argv)
     }
 
     // Fork a thread to access the shared variable in a tight loop
-    PRThread* t1 =
-        PR_CreateThread(PR_SYSTEM_THREAD,
-                        run,
-                        nsnull,
-                        PR_PRIORITY_NORMAL,
-                        PR_GLOBAL_THREAD,
-                        PR_JOINABLE_THREAD,
-                        0);
+    RTTHREAD hThread = NIL_RTTHREAD;
+    vrc = RTThreadCreate(&hThread, run, NULL, 0 /*cbStack*/,
+                         RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "AutoLockTest");
 
     // ...and now do the same thing ourselves
-    run(nsnull);
+    run(NIL_RTTHREAD, nsnull);
 
     // Wait for the background thread to finish, if necessary.
-    PR_JoinThread(t1);
+    int rcThread;
+    RTThreadWait(hThread, RT_INDEFINITE_WAIT, &rcThread);
+    AssertRC(rcThread);
+
     return 0;
 }
