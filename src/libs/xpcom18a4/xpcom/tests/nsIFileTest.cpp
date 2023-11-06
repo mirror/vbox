@@ -10,7 +10,6 @@
 #include "nsIComponentManager.h"
 #include "nsIComponentRegistrar.h"
 #include "nsIServiceManager.h"
-#include "nsIMemory.h"
 
 #include "nsComponentManagerUtils.h"
 #include "nsCOMPtr.h"
