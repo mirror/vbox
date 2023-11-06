@@ -210,7 +210,7 @@ public:
     }
 };
 
-#include "prcmon.h"
+#include "prmon.h"
 #include "nsError.h"
 #include "nsDebug.h"
 
@@ -309,69 +309,6 @@ private:
     nsAutoMonitor(void);
     nsAutoMonitor(const nsAutoMonitor& /*aMon*/);
     nsAutoMonitor& operator =(const nsAutoMonitor& /*aMon*/);
-
-    // Not meant to be implemented. This makes it a compiler error to
-    // attempt to create an nsAutoLock object on the heap.
-    static void* operator new(size_t /*size*/) CPP_THROW_NEW;
-    static void operator delete(void* /*memory*/);
-};
-
-////////////////////////////////////////////////////////////////////////////////
-// Once again, this time with a cache...
-// (Using this avoids the need to allocate a PRMonitor, which may be useful when
-// a large number of objects of the same class need associated monitors.)
-
-#include "prcmon.h"
-#include "nsError.h"
-
-class NS_COM nsAutoCMonitor : public nsAutoLockBase {
-public:
-    nsAutoCMonitor(void* lockObject)
-        : nsAutoLockBase(lockObject, eAutoCMonitor),
-          mLockObject(lockObject), mLockCount(0)
-    {
-        NS_ASSERTION(lockObject, "null lock object");
-        PR_CEnterMonitor(mLockObject);
-        mLockCount = 1;
-    }
-
-    ~nsAutoCMonitor() {
-        if (mLockCount) {
-#ifdef DEBUG
-            PRStatus status =
-#endif
-            PR_CExitMonitor(mLockObject);
-            NS_ASSERTION(status == PR_SUCCESS, "PR_CExitMonitor failed");
-        }
-    }
-
-    void Enter();
-    void Exit();
-
-    nsresult Wait(PRIntervalTime interval = PR_INTERVAL_NO_TIMEOUT) {
-        return PR_CWait(mLockObject, interval) == PR_SUCCESS
-            ? NS_OK : NS_ERROR_FAILURE;
-    }
-
-    nsresult Notify() {
-        return PR_CNotify(mLockObject) == PR_SUCCESS
-            ? NS_OK : NS_ERROR_FAILURE;
-    }
-
-    nsresult NotifyAll() {
-        return PR_CNotifyAll(mLockObject) == PR_SUCCESS
-            ? NS_OK : NS_ERROR_FAILURE;
-    }
-
-private:
-    void*   mLockObject;
-    PRInt32 mLockCount;
-
-    // Not meant to be implemented. This makes it a compiler error to
-    // construct or assign an nsAutoLock object incorrectly.
-    nsAutoCMonitor(void);
-    nsAutoCMonitor(const nsAutoCMonitor& /*aMon*/);
-    nsAutoCMonitor& operator =(const nsAutoCMonitor& /*aMon*/);
 
     // Not meant to be implemented. This makes it a compiler error to
     // attempt to create an nsAutoLock object on the heap.

@@ -510,7 +510,6 @@ extern void _PR_InitStacks(void);
 extern void _PR_InitTPD(void);
 extern void _PR_InitMem(void);
 extern void _PR_InitEnv(void);
-extern void _PR_InitCMon(void);
 extern void _PR_InitIO(void);
 extern void _PR_InitLog(void);
 extern void _PR_InitNet(void);

@@ -41,7 +41,6 @@
 #include "pratom.h"
 #include "prbit.h"
 #include "prclist.h"
-#include "prcmon.h"
 #include "prcvar.h"
 #include "prdtoa.h"
 #include "prenv.h"

@@ -162,7 +162,6 @@ static void InitAutoLockStatics()
         PL_HashTableDestroy(OrderTable);
         OrderTable = 0;
     }
-    PR_CSetOnMonitorRecycle(OnMonitorRecycle);
 }
 
 void _FreeAutoLockStatics()
@@ -171,7 +170,6 @@ void _FreeAutoLockStatics()
     if (!table) return;
 
     // Called at shutdown, so we don't need to lock.
-    PR_CSetOnMonitorRecycle(0);
     PR_DestroyLock(OrderTableLock);
     OrderTableLock = 0;
     PL_HashTableDestroy(table);
@@ -407,29 +405,3 @@ void nsAutoMonitor::Exit()
     mLockCount -= 1;
 }
 
-// XXX we don't worry about cached monitors being destroyed behind our back.
-// XXX current NSPR (mozilla/nsprpub/pr/src/threads/prcmon.c) never destroys
-// XXX a cached monitor! potential resource pig in conjunction with necko...
-
-void nsAutoCMonitor::Enter()
-{
-#ifdef DEBUG
-    nsAutoLockBase* stackTop =
-        (nsAutoLockBase*) PR_GetThreadPrivate(LockStackTPI);
-    NS_ASSERTION(stackTop == mDown, "non-LIFO nsAutoCMonitor::Enter");
-    mDown = stackTop;
-    (void) PR_SetThreadPrivate(LockStackTPI, this);
-#endif
-    PR_CEnterMonitor(mLockObject);
-    mLockCount += 1;
-}
-
-void nsAutoCMonitor::Exit()
-{
-#ifdef DEBUG
-    (void) PR_SetThreadPrivate(LockStackTPI, mDown);
-#endif
-    PRStatus status = PR_CExitMonitor(mLockObject);
-    NS_ASSERTION(status == PR_SUCCESS, "PR_CExitMonitor failed");
-    mLockCount -= 1;
-}

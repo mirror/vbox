@@ -160,7 +160,6 @@ static void _PR_InitStuff(void)
 
     _PR_InitThreads(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
 
-    _PR_InitCMon();
     _PR_InitIO();
     _PR_InitLog();
     _PR_InitLinker();
