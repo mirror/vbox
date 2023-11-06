@@ -279,7 +279,6 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/ds/nsCOMArray.h \
 	xpcom/ds/nsCRT.h \
 	xpcom/components/nsCategoryManagerUtils.h \
-	xpcom/ds/nsCheapSets.h \
 	xpcom/ds/nsClassHashtable.h \
 	xpcom/base/nsCom.h \
 	xpcom/components/nsComponentManagerObsolete.h \
@@ -586,7 +585,6 @@ VBox-xpcom-ds_SOURCES = \
 	xpcom/ds/pldhash.c \
 	xpcom/ds/nsAtomTable.cpp \
 	xpcom/ds/nsAtomService.cpp \
-	xpcom/ds/nsCheapSets.cpp \
 	xpcom/ds/nsCRT.cpp \
 	xpcom/ds/nsDeque.cpp \
 	xpcom/ds/nsEmptyEnumerator.cpp \
