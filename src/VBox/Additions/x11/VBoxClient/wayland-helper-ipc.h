@@ -293,8 +293,8 @@ namespace vbcl
                      * Send available clipboard formats over IPC.
                      *
                      * @returns IPRT status code.
-                     * @param   uSessionId  IPC session ID.
-                     * @param   uSessionId  IPC connection handle.
+                     * @param   uSessionId      IPC session ID.
+                     * @param   hIpcSession     IPC connection handle.
                      */
                     int send_formats(uint32_t uSessionId, RTLOCALIPCSESSION hIpcSession);
 
@@ -302,8 +302,8 @@ namespace vbcl
                      * Receive available clipboard formats over IPC.
                      *
                      * @returns IPRT status code.
-                     * @param   uSessionId  IPC session ID.
-                     * @param   uSessionId  IPC connection handle.
+                     * @param   uSessionId      IPC session ID.
+                     * @param   hIpcSession     IPC connection handle.
                      */
                     int recv_formats(uint32_t uSessionId, RTLOCALIPCSESSION hIpcSession);
 
@@ -311,18 +311,17 @@ namespace vbcl
                      * Send requested clipboard format over IPC.
                      *
                      * @returns IPRT status code.
-                     * @param   uSessionId  IPC session ID.
-                     * @param   uSessionId  IPC connection handle.
+                     * @param   uSessionId      IPC session ID.
+                     * @param   hIpcSession     IPC connection handle.
                      */
                     int send_format(uint32_t uSessionId, RTLOCALIPCSESSION hIpcSession);
-
 
                     /**
                      * Receive requested clipboard format over IPC.
                      *
                      * @returns IPRT status code.
-                     * @param   uSessionId  IPC session ID.
-                     * @param   uSessionId  IPC connection handle.
+                     * @param   uSessionId      IPC session ID.
+                     * @param   hIpcSession     IPC connection handle.
                      */
                     int recv_format(uint32_t uSessionId, RTLOCALIPCSESSION hIpcSession);
 
@@ -330,8 +329,8 @@ namespace vbcl
                      * Send clipboard buffer over IPC.
                      *
                      * @returns IPRT status code.
-                     * @param   uSessionId  IPC session ID.
-                     * @param   uSessionId  IPC connection handle.
+                     * @param   uSessionId      IPC session ID.
+                     * @param   hIpcSession     IPC connection handle.
                      */
                     int send_data(uint32_t uSessionId, RTLOCALIPCSESSION hIpcSession);
 
@@ -339,8 +338,8 @@ namespace vbcl
                      * Receive clipboard buffer over IPC.
                      *
                      * @returns IPRT status code.
-                     * @param   uSessionId  IPC session ID.
-                     * @param   uSessionId  IPC connection handle.
+                     * @param   uSessionId      IPC session ID.
+                     * @param   hIpcSession     IPC connection handle.
                      */
                     int recv_data(uint32_t uSessionId, RTLOCALIPCSESSION hIpcSession);
 
@@ -413,7 +412,7 @@ namespace vbcl
  *
  * This function should be used by both IPC server and client code
  * in order to connect one to another. Output string will be in
- * format: GtkHlpIpcServer-<active tty>-<user name>.
+ * format: GtkHlpIpcServer-&lt;active tty&gt;-&lt;user name&gt;.
  *
  * @returns     IPRT status code.
  * @param       szBuf   Where to store generated name string.

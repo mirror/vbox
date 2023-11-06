@@ -65,7 +65,7 @@ typedef struct
 
 /**
  * A set of objects required to handle clipboard sharing over
- * and drag-n-drop using Gtk library.. */
+ * and drag-n-drop using Gtk library. */
 typedef struct
 {
     /** Wayland event loop thread. */

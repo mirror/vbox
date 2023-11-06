@@ -351,8 +351,8 @@ RTDECL(int) vbcl_wayland_hlp_dcp_read_wl_fd(int fd, void **ppvBuf, size_t *pcbBu
  *
  * @returns IPRT status code.
  * @param   fd                  A file descriptor to write data to.
- * @param   ppvBuf              Data buffer.
- * @param   pcbBuf              Size of data buffer.
+ * @param   pvBuf               Data buffer.
+ * @param   cbBuf               Size of data buffer.
  */
 RTDECL(int) vbcl_wayland_hlp_dcp_write_wl_fd(int fd, void *pvBuf, size_t cbBuf)
 {
@@ -454,7 +454,6 @@ static int vbcl_wayland_hlp_dcp_next_event(vbox_wl_dcp_ctx_t *pCtx)
 /**
  * Release session resources.
  *
- * @returns IPRT status code.
  * @param   pSession        Session data.
  */
 static void vbcl_wayland_hlp_dcp_session_release(vbox_wl_dcp_session_t *pSession)
@@ -481,7 +480,6 @@ static void vbcl_wayland_hlp_dcp_session_release(vbox_wl_dcp_session_t *pSession
 /**
  * Initialize session.
  *
- * @returns IPRT status code.
  * @param   pSession        Session data.
  */
 static void vbcl_wayland_hlp_dcp_session_init(vbox_wl_dcp_session_t *pSession)
@@ -497,40 +495,12 @@ static void vbcl_wayland_hlp_dcp_session_init(vbox_wl_dcp_session_t *pSession)
 /**
  * Reset previously initialized session.
  *
- * @returns IPRT status code.
  * @param   pSession        Session data.
  */
 static void vbcl_wayland_hlp_dcp_session_prepare(vbox_wl_dcp_session_t *pSession)
 {
     vbcl_wayland_hlp_dcp_session_release(pSession);
     vbcl_wayland_hlp_dcp_session_init(pSession);
-#if 0
-    void *pvData;
-
-    if (!RTListIsEmpty(&pSession->clip.mimeTypesList.Node))
-    {
-        vbox_wl_dcp_mime_t *pEntry, *pNextEntry;
-
-        RTListForEachSafe(&pSession->clip.mimeTypesList.Node, pEntry, pNextEntry, vbox_wl_dcp_mime_t, Node)
-        {
-            RTListNodeRemove(&pEntry->Node);
-            RTStrFree(pEntry->pszMimeType);
-            RTMemFree(pEntry);
-        }
-    }
-
-    pvData = (void *)pSession->clip.pvClipboardBuf.reset();
-    if (RT_VALID_PTR(pvData))
-        RTMemFree(pvData);
-
-
-    RTListInit(&pSession->clip.mimeTypesList.Node);
-
-    pSession->clip.fFmts.init(VBOX_SHCL_FMT_NONE, VBCL_WAYLAND_VALUE_WAIT_TIMEOUT_MS);
-    pSession->clip.uFmt.init(VBOX_SHCL_FMT_NONE, VBCL_WAYLAND_VALUE_WAIT_TIMEOUT_MS);
-    pSession->clip.pvClipboardBuf.init(0, VBCL_WAYLAND_DATA_WAIT_TIMEOUT_MS);
-    pSession->clip.cbClipboardBuf.init(0, VBCL_WAYLAND_DATA_WAIT_TIMEOUT_MS);
-#endif
 }
 
 /**
@@ -770,6 +740,7 @@ static char *vbcl_wayland_hlp_dcp_match_mime_type(SHCLFORMAT uFmt, vbox_wl_dcp_m
  * @returns IPRT status code.
  * @param   pCtx            DCP context data.
  * @param   pOffer          Data offer object.
+ * @param   uFmt            Clipboard format in VBox representation.
  * @param   pszMimeType     Requested mime-type in string representation.
  */
 static int vbcl_wayland_hlp_dcp_receive_offer(
@@ -975,9 +946,9 @@ static DECLCALLBACK(void) vbcl_wayland_hlp_dcp_data_device_selection(
  * @param pDevice           Wayland Data Control Device object.
  */
 static void vbcl_wayland_hlp_dcp_data_device_finished(
-    void *data, struct zwlr_data_control_device_v1 *pDevice)
+    void *pvUser, struct zwlr_data_control_device_v1 *pDevice)
 {
-    RT_NOREF(data);
+    RT_NOREF(pvUser);
 
     VBCL_LOG_CALLBACK;
 
@@ -1024,7 +995,7 @@ static const struct zwlr_data_control_device_v1_listener g_data_device_listener 
  * data from us.
  *
  * @param pvUser            VBox private data.
- * @param pSourceSource     Wayland Data Control Source object.
+ * @param pDataSource,      Wayland Data Control Source object.
  * @param sMimeType         A mime-type of requested data.
  * @param fd                A file descriptor to write clipboard content into.
  */
