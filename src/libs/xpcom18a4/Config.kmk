@@ -429,7 +429,6 @@ XPCOM_IDLFILES = \
 	xpcom/io/nsIAsyncInputStream.idl \
 	xpcom/io/nsIAsyncOutputStream.idl \
 	xpcom/io/nsIScriptableInputStream.idl \
-	xpcom/io/nsIStringStream.idl \
 	xpcom/io/nsILineInputStream.idl \
 	xpcom/proxy/public/nsIProxyObjectManager.idl \
 	xpcom/threads/nsIEventQueueService.idl \

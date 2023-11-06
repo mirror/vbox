@@ -88,7 +88,6 @@
 #include "nsDirectoryServiceDefs.h"
 #include "nsCategoryManager.h"
 #include "nsICategoryManager.h"
-#include "nsStringStream.h"
 
 #include "nsAtomService.h"
 #include "nsAtomTable.h"
@@ -374,8 +373,6 @@ static const nsModuleComponentInfo components[] = {
     COMPONENT(LOCAL_FILE, nsLocalFile::nsLocalFileConstructor),
 #define NS_DIRECTORY_SERVICE_CLASSNAME  "nsIFile Directory Service"
     COMPONENT(DIRECTORY_SERVICE, nsDirectoryService::Create),
-
-    COMPONENT(STRINGINPUTSTREAM, nsStringInputStreamConstructor),
 
     COMPONENT(VARIANT, nsVariantConstructor),
     COMPONENT(INTERFACEINFOMANAGER_SERVICE, nsXPTIInterfaceInfoManagerGetSingleton),

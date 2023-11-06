@@ -324,7 +324,6 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/ds/nsStaticNameTable.h \
 	xpcom/ds/nsStringEnumerator.h \
 	xpcom/io/nsStringIO.h \
-	xpcom/io/nsStringStream.h \
 	xpcom/ds/nsSupportsArray.h \
 	xpcom/ds/nsSupportsPrimitives.h \
 	xpcom/ds/nsTHashtable.h \
@@ -634,7 +633,6 @@ VBox-xpcom-io_SOURCES = \
 	xpcom/io/nsLocalFileCommon.cpp \
 	xpcom/io/nsScriptableInputStream.cpp \
 	xpcom/io/SpecialSystemDirectory.cpp \
-	xpcom/io/nsStringStream.cpp \
 	xpcom/io/nsNativeCharsetUtils.cpp
 if1of ($(KBUILD_TARGET) $(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), freebsd linux netbsd openbsd solaris darwin.amd64 darwin.arm64)
  VBox-xpcom-io_SOURCES += \
@@ -1147,7 +1145,6 @@ VBOX_XPTFILES = $(addprefix $(PATH_TARGET)/VBox-xpcom-xpt-files/, \
 		nsIObjectInputStream.xpt \
 		nsIObjectOutputStream.xpt \
 		nsISeekableStream.xpt \
-		nsIStringStream.xpt \
 		nsIStreamBufferAccess.xpt \
 		nsIAsyncInputStream.xpt \
 		nsIAsyncOutputStream.xpt \
