@@ -2384,7 +2384,7 @@ static uint32_t iemNativeRegMoveOrSpillStackVar(PIEMRECOMPILERSTATE pReNative, u
             pReNative->Core.bmHstRegsWithGstShadow |= RT_BIT_32(idxRegNew);
             while (fGstRegShadows)
             {
-                unsigned const idxGstReg = ASMBitFirstSetU64(fGstRegShadows);
+                unsigned const idxGstReg = ASMBitFirstSetU64(fGstRegShadows) - 1;
                 fGstRegShadows &= ~RT_BIT_64(idxGstReg);
 
                 Assert(pReNative->Core.aidxGstRegShadows[idxGstReg] == idxRegOld);
@@ -4866,7 +4866,7 @@ iemNativeEmitIfRcxEcxIsNotZeroAndTestEflagsBit(PIEMRECOMPILERSTATE pReNative, ui
 #define IEM_MC_ARG(a_Type, a_Name, a_iArg) \
     uint8_t const a_Name = iemNativeArgAlloc(pReNative, (a_iArg), sizeof(a_Type))
 
-#define IEM_MC_ARG_CONST(a_Type, a_Name, a_iArg) \
+#define IEM_MC_ARG_CONST(a_Type, a_Name, a_Value, a_iArg) \
     uint8_t const a_Name = iemNativeArgAllocConst(pReNative, (a_iArg), sizeof(a_Type), (a_Value))
 
 #define IEM_MC_ARG_LOCAL_REF(a_Type, a_Name, a_iArg) \
@@ -4902,7 +4902,7 @@ DECLINLINE(uint8_t) iemNativeArgGetHiddenArgCount(PIEMRECOMPILERSTATE pReNative)
 static uint8_t iemNativeVarAllocInt(PIEMRECOMPILERSTATE pReNative, uint8_t cbType)
 {
     Assert(cbType > 0 && cbType <= 64);
-    unsigned const idxVar = ASMBitFirstSetU32(~pReNative->Core.bmVars);
+    unsigned const idxVar = ASMBitFirstSetU32(~pReNative->Core.bmVars) - 1;
     AssertStmt(idxVar < RT_ELEMENTS(pReNative->Core.aVars), IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_EXHAUSTED));
     pReNative->Core.bmVars |= RT_BIT_32(idxVar);
     pReNative->Core.aVars[idxVar].enmKind        = kIemNativeVarKind_Invalid;
@@ -4959,7 +4959,7 @@ static void iemNativeVarSetKindToStack(PIEMRECOMPILERSTATE pReNative, uint8_t id
         {
             if (pReNative->Core.aVars[idxVar].cbVar <= sizeof(uint64_t))
             {
-                unsigned const iSlot = ASMBitFirstSetU32(~pReNative->Core.bmStack);
+                unsigned const iSlot = ASMBitFirstSetU32(~pReNative->Core.bmStack) - 1;
                 AssertStmt(iSlot < IEMNATIVE_FRAME_VAR_SLOTS, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_OUT_OF_STACK_SLOTS));
                 pReNative->Core.bmStack |= RT_BIT_32(iSlot);
                 pReNative->Core.aVars[idxVar].idxStackSlot = iSlot;
@@ -5332,10 +5332,13 @@ iemNativeEmitCallCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cAr
             else
             {
                 uint8_t const idxVar = pReNative->Core.aidxArgVars[i];
-                if (pReNative->Core.aVars[idxVar].uArgNo < RT_ELEMENTS(pReNative->Core.aHstRegs))
+                if (pReNative->Core.aVars[idxVar].idxReg < RT_ELEMENTS(pReNative->Core.aHstRegs))
                 {
                     Assert(pReNative->Core.aVars[idxVar].enmKind == kIemNativeVarKind_Stack);
                     off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxArgReg, pReNative->Core.aVars[idxVar].idxReg);
+                    pReNative->Core.bmHstRegs = (pReNative->Core.bmHstRegs & ~RT_BIT_32(pReNative->Core.aVars[idxVar].idxReg))
+                                              | RT_BIT_32(idxArgReg);
+                    pReNative->Core.aVars[idxVar].idxReg = idxArgReg;
                 }
                 else
                 {
@@ -5401,10 +5404,12 @@ iemNativeEmitCallCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cAr
         {
             uint8_t const idxVar    = pReNative->Core.aidxArgVars[i];
             int32_t const offBpDisp = g_aoffIemNativeCallStackArgBpDisp[i - IEMNATIVE_CALL_ARG_GREG_COUNT];
-            if (pReNative->Core.aVars[idxVar].uArgNo < RT_ELEMENTS(pReNative->Core.aHstRegs))
+            if (pReNative->Core.aVars[idxVar].idxReg < RT_ELEMENTS(pReNative->Core.aHstRegs))
             {
                 Assert(pReNative->Core.aVars[idxVar].enmKind == kIemNativeVarKind_Stack); /* Imm as well? */
-                off = iemNativeEmitStoreGprByBp(pReNative, off, offBpDisp, pReNative->Core.aVars[idxVar].uArgNo);
+                off = iemNativeEmitStoreGprByBp(pReNative, off, offBpDisp, pReNative->Core.aVars[idxVar].idxReg);
+                pReNative->Core.bmHstRegs &= ~RT_BIT_32(pReNative->Core.aVars[idxVar].idxReg);
+                pReNative->Core.aVars[idxVar].idxReg = UINT8_MAX;
             }
             else
             {
@@ -5470,8 +5475,6 @@ iemNativeEmitCallCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cAr
         Assert(idxVar < RT_ELEMENTS(pReNative->Core.aVars));
         pReNative->Core.aidxArgVars[i] = UINT8_MAX;
         pReNative->Core.bmVars        &= ~RT_BIT_32(idxVar);
-        Assert(   pReNative->Core.aVars[idxVar].idxReg
-               == (i < RT_ELEMENTS(g_aidxIemNativeCallRegs) ? g_aidxIemNativeCallRegs[i] : UINT8_MAX));
     }
     Assert(pReNative->Core.u64ArgVars == UINT64_MAX);
 
@@ -5490,7 +5493,6 @@ iemNativeEmitCallCImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
                              uintptr_t pfnCImpl, uint8_t cArgs)
 
 {
-//pReNative->pInstrBuf[off++] = 0xcc;
     /*
      * Do all the call setup and cleanup.
      */
@@ -5563,6 +5565,7 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmitCallCImpl3(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, uint8_t idxInstr,
                         uintptr_t pfnCImpl, uint8_t idxArg0, uint8_t idxArg1, uint8_t idxArg2)
 {
+pReNative->pInstrBuf[off++] = 0xcc;
     Assert(idxArg0 < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxArg0)));
     Assert(pReNative->Core.aVars[idxArg0].uArgNo == 0 + IEM_CIMPL_HIDDEN_ARGS);
     RT_NOREF_PV(idxArg0);
@@ -5587,6 +5590,7 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmitCallCImpl4(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, uint8_t idxInstr,
                         uintptr_t pfnCImpl, uint8_t idxArg0, uint8_t idxArg1, uint8_t idxArg2, uint8_t idxArg3)
 {
+pReNative->pInstrBuf[off++] = 0xcc;
     Assert(idxArg0 < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxArg0)));
     Assert(pReNative->Core.aVars[idxArg0].uArgNo == 0 + IEM_CIMPL_HIDDEN_ARGS);
     RT_NOREF_PV(idxArg0);
@@ -5615,6 +5619,7 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmitCallCImpl5(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, uint8_t idxInstr,
                         uintptr_t pfnCImpl, uint8_t idxArg0, uint8_t idxArg1, uint8_t idxArg2, uint8_t idxArg3, uint8_t idxArg4)
 {
+pReNative->pInstrBuf[off++] = 0xcc;
     Assert(idxArg0 < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxArg0)));
     Assert(pReNative->Core.aVars[idxArg0].uArgNo == 0 + IEM_CIMPL_HIDDEN_ARGS);
     RT_NOREF_PV(idxArg0);
