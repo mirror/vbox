@@ -295,7 +295,6 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/ds/nsEnumeratorUtils.h \
 	xpcom/base/nsError.h \
 	xpcom/threads/nsEventQueueUtils.h \
-	xpcom/ds/nsFixedSizeAllocator.h \
 	xpcom/ds/nsHashKeys.h \
 	xpcom/ds/nsHashSets.h \
 	xpcom/ds/nsHashtable.h \
@@ -594,7 +593,6 @@ VBox-xpcom-ds_SOURCES = \
 	xpcom/ds/nsDeque.cpp \
 	xpcom/ds/nsEmptyEnumerator.cpp \
 	xpcom/ds/nsEnumeratorUtils.cpp \
-	xpcom/ds/nsFixedSizeAllocator.cpp \
 	xpcom/ds/nsHashSets.cpp \
 	xpcom/ds/nsHashtable.cpp \
 	xpcom/ds/nsObserverList.cpp \
