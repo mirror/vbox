@@ -89,7 +89,7 @@ typedef enum
     /** Announce clipboard formats to the host. */
     VBCL_WL_CLIPBOARD_SESSION_TYPE_ANNOUNCE_TO_HOST,
     /** Copy clipboard data to the host. */
-    VBCL_WL_CLIPBOARD_SESSION_TYPE_COPY_TO_HOST,
+    VBCL_WL_CLIPBOARD_SESSION_TYPE_COPY_TO_HOST
 } vbcl_wl_session_type_t;
 
 /** Session private data. */

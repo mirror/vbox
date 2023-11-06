@@ -69,7 +69,7 @@ static char *g_pszProgName;
 
 /** A session ID which will be specified in communication messages
  * with VBoxClient instance. */
-static uint32_t g_uSessionId = 0;;
+static uint32_t g_uSessionId = 0;
 
 /** One-shot session type. */
 static vbcl_wl_session_type_t g_enmSessionType = VBCL_WL_SESSION_TYPE_INVALID;
