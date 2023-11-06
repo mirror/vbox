@@ -18,7 +18,7 @@ uintptr_t deps[] =
     (uintptr_t)PL_strrchr,
     (uintptr_t)PL_strncpyz,
     (uintptr_t)PL_HashString,
-    (uintptr_t)PR_DestroyPollableEvent,
+    (uintptr_t)PR_Close,
     (uintptr_t)NS_ProxyRelease,
     (uintptr_t)nsTraceRefcnt::LogRelease,
     (uintptr_t)nsDebug::Assertion,
