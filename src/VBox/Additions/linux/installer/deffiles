@@ -36,6 +36,7 @@ DEFAULT_FILE_NAMES=" \
     /usr/bin/vboxadd-xclient \
     /usr/bin/VBoxAudioTest \
     /usr/bin/VBoxClient \
+    /usr/bin/vboxwl \
     /usr/bin/VBoxDRMClient \
     /usr/bin/VBoxControl \
     /usr/sbin/vbox-greeter \
