@@ -63,7 +63,6 @@ class nsIServiceManager;
 class nsIFile;
 class nsILocalFile;
 class nsIDirectoryServiceProvider;
-class nsIMemory;
 class nsIDebug;
 class nsITraceRefcnt;
 

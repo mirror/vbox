@@ -87,7 +87,6 @@ typedef nsresult   (* ShutdownFunc)(nsIServiceManager* servMgr);
 typedef nsresult   (* GetServiceManagerFunc)(nsIServiceManager* *result);
 typedef nsresult   (* GetComponentManagerFunc)(nsIComponentManager* *result);
 typedef nsresult   (* GetComponentRegistrarFunc)(nsIComponentRegistrar* *result);
-typedef nsresult   (* GetMemoryManagerFunc)(nsIMemory* *result);
 typedef nsresult   (* NewLocalFileFunc)(const nsAString &path, PRBool followLinks, nsILocalFile* *result);
 typedef nsresult   (* NewNativeLocalFileFunc)(const nsACString &path, PRBool followLinks, nsILocalFile* *result);
 
