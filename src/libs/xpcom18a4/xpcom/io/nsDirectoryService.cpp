@@ -43,18 +43,7 @@
 #include "nsDebug.h"
 #include "nsStaticAtom.h"
 
-#if defined(XP_MAC)
-#include <Folders.h>
-#include <Files.h>
-#include <Memory.h>
-#include <Processes.h>
-#include <Gestalt.h>
-#elif defined(XP_WIN)
-#include <windows.h>
-#include <shlobj.h>
-#include <stdlib.h>
-#include <stdio.h>
-#elif defined(XP_UNIX) || defined(XP_MACOSX)
+#if defined(XP_UNIX) || defined(XP_MACOSX)
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/param.h>
@@ -72,44 +61,21 @@
 #include <CFURL.h>
 #include <InternetConfig.h>
 #endif
-#elif defined(XP_OS2)
-#define MAX_PATH _MAX_PATH
-#elif defined(XP_BEOS)
-#include <FindDirectory.h>
-#include <Path.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <sys/param.h>
-#include <OS.h>
-#include <image.h>
-#include "prenv.h"
 #endif
 
 #include "SpecialSystemDirectory.h"
 #include "nsAppFileLocationProvider.h"
 
-#if defined(XP_MAC)
-#define COMPONENT_REGISTRY_NAME NS_LITERAL_CSTRING("Component Registry")
-#define COMPONENT_DIRECTORY     NS_LITERAL_CSTRING("Components")
-#else
 #define COMPONENT_REGISTRY_NAME NS_LITERAL_CSTRING("compreg.dat")
 #define COMPONENT_DIRECTORY     NS_LITERAL_CSTRING("components")
-#endif
 
 #define XPTI_REGISTRY_NAME      NS_LITERAL_CSTRING("xpti.dat")
 
 // define home directory
-// For Windows platform, We are choosing Appdata folder as HOME
-#if defined (XP_WIN)
-#define HOME_DIR NS_WIN_APPDATA_DIR
-#elif defined (XP_MAC) || defined (XP_MACOSX)
+#if defined (XP_MACOSX)
 #define HOME_DIR NS_OSX_HOME_DIR
 #elif defined (XP_UNIX)
 #define HOME_DIR NS_UNIX_HOME_DIR
-#elif defined (XP_OS2)
-#define HOME_DIR NS_OS2_HOME_DIR
-#elif defined (XP_BEOS)
-#define HOME_DIR NS_BEOS_HOME_DIR
 #endif
 
 //----------------------------------------------------------------------------------------
@@ -151,49 +117,7 @@ nsDirectoryService::GetCurrentProcessDirectory(nsILocalFile** aFile)
 
 
 
-#ifdef XP_WIN
-    char buf[MAX_PATH];
-    if ( ::GetModuleFileName(0, buf, sizeof(buf)) ) {
-        // chop of the executable name by finding the rightmost backslash
-        char* lastSlash = PL_strrchr(buf, '\\');
-        if (lastSlash)
-            *(lastSlash + 1) = '\0';
-
-        localFile->InitWithNativePath(nsDependentCString(buf));
-        *aFile = localFile;
-        return NS_OK;
-    }
-
-#elif defined(XP_MAC)
-    // get info for the the current process to determine the directory
-    // its located in
-    OSErr err;
-    ProcessSerialNumber psn = {kNoProcess, kCurrentProcess};
-    ProcessInfoRec pInfo;
-    FSSpec         tempSpec;
-
-    // initialize ProcessInfoRec before calling
-    // GetProcessInformation() or die horribly.
-    pInfo.processName = nil;
-    pInfo.processAppSpec = &tempSpec;
-    pInfo.processInfoLength = sizeof(ProcessInfoRec);
-
-    err = GetProcessInformation(&psn, &pInfo);
-    if (!err)
-    {
-        // create an FSSpec from the volume and dirid of the app.
-        FSSpec appFSSpec;
-        ::FSMakeFSSpec(pInfo.processAppSpec->vRefNum, pInfo.processAppSpec->parID, 0, &appFSSpec);
-
-        nsCOMPtr<nsILocalFileMac> localFileMac = do_QueryInterface((nsIFile*)localFile);
-        if (localFileMac)
-        {
-            localFileMac->InitWithFSSpec(&appFSSpec);
-            *aFile = localFile;
-            return NS_OK;
-        }
-    }
-#elif defined(XP_MACOSX)
+#if defined(XP_MACOSX)
 # ifdef MOZ_DEFAULT_VBOX_XPCOM_HOME
     rv = localFile->InitWithNativePath(nsDependentCString(MOZ_DEFAULT_VBOX_XPCOM_HOME));
     if (NS_SUCCEEDED(rv))
@@ -215,9 +139,6 @@ nsDirectoryService::GetCurrentProcessDirectory(nsILocalFile** aFile)
                 char buffer[PATH_MAX];
                 if (CFURLGetFileSystemRepresentation(parentURL, PR_TRUE, (UInt8 *)buffer, sizeof(buffer)))
                 {
-#ifdef DEBUG_conrad
-                    printf("nsDirectoryService - CurrentProcessDir is: %s\n", buffer);
-#endif
                     rv = localFile->InitWithNativePath(nsDependentCString(buffer));
                     if (NS_SUCCEEDED(rv))
                         *aFile = localFile;
@@ -240,85 +161,6 @@ nsDirectoryService::GetCurrentProcessDirectory(nsILocalFile** aFile)
     //	- if VBOX_XPCOM_HOME is defined, that is it
     //	- else give the current directory
     char buf[MAXPATHLEN];
-
-#if 0 /* we need .so location. */
-    // Actually we have a way on linux.
-    static volatile bool fPathSet = false;
-    static char szPath[MAXPATHLEN];
-    if (!fPathSet)
-    {
-        char buf2[MAXPATHLEN + 3];
-        buf2[0] = '\0';
-
-        /*
-         * Env.var. VBOX_XPCOM_HOME first.
-         */
-        char *psz = PR_GetEnv("VBOX_XPCOM_HOME");
-        if (psz)
-        {
-            if (strlen(psz) < MAXPATHLEN)
-            {
-                if (!realpath(psz, buf2))
-                    strcpy(buf2, psz);
-                strcat(buf2, "/x"); /* for the filename stripping */
-            }
-        }
-
-        /*
-         * The dynamic loader.
-         */
-        if (!buf2[0])
-        {
-            Dl_info DlInfo = {0};
-            if (    !dladdr((void *)nsDirectoryService::mService, &DlInfo)
-                &&  DlInfo.dli_fname)
-            {
-                if (!realpath(DlInfo.dli_fname, buf2))
-                    buf2[0] = '\0';
-            }
-        }
-
-        /*
-         * Executable location.
-         */
-        if (!buf2[0])
-        {
-            char buf[MAXPATHLEN];
-            int cchLink = readlink("/proc/self/exe", buf, sizeof(buf) - 1);
-            if (cchLink > 0 || cchLink != sizeof(buf) - 1)
-             {
-                buf[cchLink] = '\0';
-                if (!realpath(buf, buf2))
-                    buf2[0] = '\0';
-            }
-        }
-
-        /*
-         * Copy to static buffer on success.
-         */
-        if (buf2[0])
-        {
-            char *p = strrchr(buf2, '/');
-            if (p)
-            {
-                p[p == buf2] = '\0';
-            #ifdef DEBUG
-                printf("debug: (1) VBOX_XPCOM_HOME=%s\n", buf2);
-            #endif
-                strcpy(szPath, buf2);
-                fPathSet = true;
-            }
-        }
-    }
-    if (fPathSet)
-    {
-        localFile->InitWithNativePath(nsDependentCString(szPath));
-        *aFile = localFile;
-        return NS_OK;
-    }
-
-#endif
-
 
     // The MOZ_DEFAULT_VBOX_XPCOM_HOME variable can be set at configure time with
     // a --with-default-mozilla-five-home=foo autoconf flag.
@@ -360,47 +202,6 @@ nsDirectoryService::GetCurrentProcessDirectory(nsILocalFile** aFile)
         localFile->InitWithNativePath(nsDependentCString(buf));
         *aFile = localFile;
         return NS_OK;
-    }
-
-#elif defined(XP_OS2)
-    PPIB ppib;
-    PTIB ptib;
-    char buffer[CCHMAXPATH];
-    DosGetInfoBlocks( &ptib, &ppib);
-    DosQueryModuleName( ppib->pib_hmte, CCHMAXPATH, buffer);
-    *strrchr( buffer, '\\') = '\0'; // XXX DBCS misery
-    localFile->InitWithNativePath(nsDependentCString(buffer));
-    *aFile = localFile;
-    return NS_OK;
-
-#elif defined(XP_BEOS)
-
-    char *moz5 = getenv("VBOX_XPCOM_HOME");
-    if (moz5)
-    {
-        localFile->InitWithNativePath(nsDependentCString(moz5));
-        localFile->Normalize();
-        *aFile = localFile;
-        return NS_OK;
-    }
-    else
-    {
-      static char buf[MAXPATHLEN];
-      int32 cookie = 0;
-      image_info info;
-      char *p;
-      *buf = 0;
-      if(get_next_image_info(0, &cookie, &info) == B_OK)
-      {
-        strcpy(buf, info.name);
-        if((p = strrchr(buf, '/')) != 0)
-        {
-          *p = 0;
-          localFile->InitWithNativePath(nsDependentCString(buf));
-          *aFile = localFile;
-          return NS_OK;
-        }
-      }
     }
 
 #endif
@@ -454,48 +255,10 @@ nsIAtom*  nsDirectoryService::sPictureDocumentsDirectory = nsnull;
 nsIAtom*  nsDirectoryService::sMovieDocumentsDirectory = nsnull;
 nsIAtom*  nsDirectoryService::sMusicDocumentsDirectory = nsnull;
 nsIAtom*  nsDirectoryService::sInternetSitesDirectory = nsnull;
-#elif defined (XP_WIN)
-nsIAtom*  nsDirectoryService::sSystemDirectory = nsnull;
-nsIAtom*  nsDirectoryService::sWindowsDirectory = nsnull;
-nsIAtom*  nsDirectoryService::sHomeDirectory = nsnull;
-nsIAtom*  nsDirectoryService::sDesktop = nsnull;
-nsIAtom*  nsDirectoryService::sPrograms = nsnull;
-nsIAtom*  nsDirectoryService::sControls = nsnull;
-nsIAtom*  nsDirectoryService::sPrinters = nsnull;
-nsIAtom*  nsDirectoryService::sPersonal = nsnull;
-nsIAtom*  nsDirectoryService::sFavorites = nsnull;
-nsIAtom*  nsDirectoryService::sStartup = nsnull;
-nsIAtom*  nsDirectoryService::sRecent = nsnull;
-nsIAtom*  nsDirectoryService::sSendto = nsnull;
-nsIAtom*  nsDirectoryService::sBitbucket = nsnull;
-nsIAtom*  nsDirectoryService::sStartmenu = nsnull;
-nsIAtom*  nsDirectoryService::sDesktopdirectory = nsnull;
-nsIAtom*  nsDirectoryService::sDrives = nsnull;
-nsIAtom*  nsDirectoryService::sNetwork = nsnull;
-nsIAtom*  nsDirectoryService::sNethood = nsnull;
-nsIAtom*  nsDirectoryService::sFonts = nsnull;
-nsIAtom*  nsDirectoryService::sTemplates = nsnull;
-nsIAtom*  nsDirectoryService::sCommon_Startmenu = nsnull;
-nsIAtom*  nsDirectoryService::sCommon_Programs = nsnull;
-nsIAtom*  nsDirectoryService::sCommon_Startup = nsnull;
-nsIAtom*  nsDirectoryService::sCommon_Desktopdirectory = nsnull;
-nsIAtom*  nsDirectoryService::sAppdata = nsnull;
-nsIAtom*  nsDirectoryService::sPrinthood = nsnull;
-nsIAtom*  nsDirectoryService::sWinCookiesDirectory = nsnull;
 #elif defined (XP_UNIX)
 nsIAtom*  nsDirectoryService::sLocalDirectory = nsnull;
 nsIAtom*  nsDirectoryService::sLibDirectory = nsnull;
 nsIAtom*  nsDirectoryService::sHomeDirectory = nsnull;
-#elif defined (XP_OS2)
-nsIAtom*  nsDirectoryService::sSystemDirectory = nsnull;
-nsIAtom*  nsDirectoryService::sOS2Directory = nsnull;
-nsIAtom*  nsDirectoryService::sHomeDirectory = nsnull;
-nsIAtom*  nsDirectoryService::sDesktopDirectory = nsnull;
-#elif defined (XP_BEOS)
-nsIAtom*  nsDirectoryService::sSettingsDirectory = nsnull;
-nsIAtom*  nsDirectoryService::sHomeDirectory = nsnull;
-nsIAtom*  nsDirectoryService::sDesktopDirectory = nsnull;
-nsIAtom*  nsDirectoryService::sSystemDirectory = nsnull;
 #endif
 
 
@@ -563,48 +326,10 @@ static const nsStaticAtom directory_atoms[] = {
     { NS_OSX_MOVIE_DOCUMENTS_DIR,         &nsDirectoryService::sMovieDocumentsDirectory },
     { NS_OSX_MUSIC_DOCUMENTS_DIR,         &nsDirectoryService::sMusicDocumentsDirectory },
     { NS_OSX_INTERNET_SITES_DIR,          &nsDirectoryService::sInternetSitesDirectory },
-#elif defined (XP_WIN)
-    { NS_OS_SYSTEM_DIR,            &nsDirectoryService::sSystemDirectory },
-    { NS_WIN_WINDOWS_DIR,          &nsDirectoryService::sWindowsDirectory },
-    { NS_WIN_HOME_DIR,             &nsDirectoryService::sHomeDirectory },
-    { NS_WIN_DESKTOP_DIR,          &nsDirectoryService::sDesktop },
-    { NS_WIN_PROGRAMS_DIR,         &nsDirectoryService::sPrograms },
-    { NS_WIN_CONTROLS_DIR,         &nsDirectoryService::sControls },
-    { NS_WIN_PRINTERS_DIR,         &nsDirectoryService::sPrinters },
-    { NS_WIN_PERSONAL_DIR,         &nsDirectoryService::sPersonal },
-    { NS_WIN_FAVORITES_DIR,        &nsDirectoryService::sFavorites },
-    { NS_WIN_STARTUP_DIR,          &nsDirectoryService::sStartup },
-    { NS_WIN_RECENT_DIR,           &nsDirectoryService::sRecent },
-    { NS_WIN_SEND_TO_DIR,          &nsDirectoryService::sSendto },
-    { NS_WIN_BITBUCKET_DIR,        &nsDirectoryService::sBitbucket },
-    { NS_WIN_STARTMENU_DIR,        &nsDirectoryService::sStartmenu },
-    { NS_WIN_DESKTOP_DIRECTORY,    &nsDirectoryService::sDesktopdirectory },
-    { NS_WIN_DRIVES_DIR,           &nsDirectoryService::sDrives },
-    { NS_WIN_NETWORK_DIR,          &nsDirectoryService::sNetwork },
-    { NS_WIN_NETHOOD_DIR,          &nsDirectoryService::sNethood },
-    { NS_WIN_FONTS_DIR,            &nsDirectoryService::sFonts },
-    { NS_WIN_TEMPLATES_DIR,        &nsDirectoryService::sTemplates },
-    { NS_WIN_COMMON_STARTMENU_DIR, &nsDirectoryService::sCommon_Startmenu },
-    { NS_WIN_COMMON_PROGRAMS_DIR,  &nsDirectoryService::sCommon_Programs },
-    { NS_WIN_COMMON_STARTUP_DIR,   &nsDirectoryService::sCommon_Startup },
-    { NS_WIN_COMMON_DESKTOP_DIRECTORY, &nsDirectoryService::sCommon_Desktopdirectory },
-    { NS_WIN_APPDATA_DIR,          &nsDirectoryService::sAppdata },
-    { NS_WIN_PRINTHOOD,            &nsDirectoryService::sPrinthood },
-    { NS_WIN_COOKIES_DIR,          &nsDirectoryService::sWinCookiesDirectory },
 #elif defined (XP_UNIX)
     { NS_UNIX_LOCAL_DIR,           &nsDirectoryService::sLocalDirectory },
     { NS_UNIX_LIB_DIR,             &nsDirectoryService::sLibDirectory },
     { NS_UNIX_HOME_DIR,            &nsDirectoryService::sHomeDirectory },
-#elif defined (XP_OS2)
-    { NS_OS_SYSTEM_DIR,            &nsDirectoryService::sSystemDirectory },
-    { NS_OS2_DIR,                  &nsDirectoryService::sOS2Directory },
-    { NS_OS2_HOME_DIR,             &nsDirectoryService::sHomeDirectory },
-    { NS_OS2_DESKTOP_DIR,          &nsDirectoryService::sDesktopDirectory },
-#elif defined (XP_BEOS)
-    { NS_OS_SYSTEM_DIR,            &nsDirectoryService::sSystemDirectory },
-    { NS_BEOS_SETTINGS_DIR,        &nsDirectoryService::sSettingsDirectory },
-    { NS_BEOS_HOME_DIR,            &nsDirectoryService::sHomeDirectory },
-    { NS_BEOS_DESKTOP_DIR,         &nsDirectoryService::sDesktopDirectory },
 #endif
 };
 
@@ -1061,115 +786,6 @@ nsDirectoryService::GetFile(const char *prop, PRBool *persistent, nsIFile **_ret
     {
         rv = GetOSXFolderType(kUserDomain, kInternetSitesFolderType, getter_AddRefs(localFile));
     }
-#elif defined (XP_WIN)
-    else if (inAtom == nsDirectoryService::sSystemDirectory)
-    {
-        rv = GetSpecialSystemDirectory(Win_SystemDirectory, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sWindowsDirectory)
-    {
-        rv = GetSpecialSystemDirectory(Win_WindowsDirectory, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sHomeDirectory)
-    {
-        rv = GetSpecialSystemDirectory(Win_HomeDirectory, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sDesktop)
-    {
-        rv = GetSpecialSystemDirectory(Win_Desktop, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sPrograms)
-    {
-        rv = GetSpecialSystemDirectory(Win_Programs, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sControls)
-    {
-        rv = GetSpecialSystemDirectory(Win_Controls, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sPrinters)
-    {
-        rv = GetSpecialSystemDirectory(Win_Printers, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sPersonal)
-    {
-        rv = GetSpecialSystemDirectory(Win_Personal, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sFavorites)
-    {
-        rv = GetSpecialSystemDirectory(Win_Favorites, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sStartup)
-    {
-        rv = GetSpecialSystemDirectory(Win_Startup, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sRecent)
-    {
-        rv = GetSpecialSystemDirectory(Win_Recent, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sSendto)
-    {
-        rv = GetSpecialSystemDirectory(Win_Sendto, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sBitbucket)
-    {
-        rv = GetSpecialSystemDirectory(Win_Bitbucket, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sStartmenu)
-    {
-        rv = GetSpecialSystemDirectory(Win_Startmenu, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sDesktopdirectory)
-    {
-        rv = GetSpecialSystemDirectory(Win_Desktopdirectory, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sDrives)
-    {
-        rv = GetSpecialSystemDirectory(Win_Drives, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sNetwork)
-    {
-        rv = GetSpecialSystemDirectory(Win_Network, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sNethood)
-    {
-        rv = GetSpecialSystemDirectory(Win_Nethood, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sFonts)
-    {
-        rv = GetSpecialSystemDirectory(Win_Fonts, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sTemplates)
-    {
-        rv = GetSpecialSystemDirectory(Win_Templates, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sCommon_Startmenu)
-    {
-        rv = GetSpecialSystemDirectory(Win_Common_Startmenu, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sCommon_Programs)
-    {
-        rv = GetSpecialSystemDirectory(Win_Common_Programs, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sCommon_Startup)
-    {
-        rv = GetSpecialSystemDirectory(Win_Common_Startup, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sCommon_Desktopdirectory)
-    {
-        rv = GetSpecialSystemDirectory(Win_Common_Desktopdirectory, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sAppdata)
-    {
-        rv = GetSpecialSystemDirectory(Win_Appdata, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sPrinthood)
-    {
-        rv = GetSpecialSystemDirectory(Win_Printhood, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sWinCookiesDirectory)
-    {
-        rv = GetSpecialSystemDirectory(Win_Cookies, getter_AddRefs(localFile));
-    }
 #elif defined (XP_UNIX)
 
     else if (inAtom == nsDirectoryService::sLocalDirectory)
@@ -1184,40 +800,6 @@ nsDirectoryService::GetFile(const char *prop, PRBool *persistent, nsIFile **_ret
     {
         rv = GetSpecialSystemDirectory(Unix_HomeDirectory, getter_AddRefs(localFile));
     }
-#elif defined (XP_OS2)
-    else if (inAtom == nsDirectoryService::sSystemDirectory)
-    {
-        rv = GetSpecialSystemDirectory(OS2_SystemDirectory, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sOS2Directory)
-    {
-        rv = GetSpecialSystemDirectory(OS2_OS2Directory, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sHomeDirectory)
-    {
-        rv = GetSpecialSystemDirectory(OS2_HomeDirectory, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sDesktopDirectory)
-    {
-        rv = GetSpecialSystemDirectory(OS2_DesktopDirectory, getter_AddRefs(localFile));
-    }
-#elif defined (XP_BEOS)
-    else if (inAtom == nsDirectoryService::sSettingsDirectory)
-    {
-        rv = GetSpecialSystemDirectory(BeOS_SettingsDirectory, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sHomeDirectory)
-    {
-        rv = GetSpecialSystemDirectory(BeOS_HomeDirectory, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sDesktopDirectory)
-    {
-        rv = GetSpecialSystemDirectory(BeOS_DesktopDirectory, getter_AddRefs(localFile));
-    }
-    else if (inAtom == nsDirectoryService::sSystemDirectory)
-    {
-        rv = GetSpecialSystemDirectory(BeOS_SystemDirectory, getter_AddRefs(localFile));
-    }
 #endif
 
 
@@ -1225,9 +807,7 @@ nsDirectoryService::GetFile(const char *prop, PRBool *persistent, nsIFile **_ret
 
 	if (localFile && NS_SUCCEEDED(rv))
 		return localFile->QueryInterface(NS_GET_IID(nsIFile), (void**)_retval);
-#ifdef DEBUG_dougt
-    printf("Failed to find directory for key: %s\n", prop);
-#endif
+
 	return rv;
 }
 
