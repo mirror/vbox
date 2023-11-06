@@ -55,6 +55,9 @@ public:
       * @param  fShowInBasicMode  Brings whether widget should be shown in basic mode. */
     UIEditor(QWidget *pParent = 0, bool fShowInBasicMode = false);
 
+    /** Returns editor optional flags. */
+    QMap<QString, QVariant> optionalFlags() const { return m_flags; }
+
     /** Adds @a pEditor into list of sub-editor. */
     void addEditor(UIEditor *pEditor);
 

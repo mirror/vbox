@@ -152,8 +152,8 @@ void UIUSBControllerEditor::prepare()
 void UIUSBControllerEditor::updateButtonSet()
 {
     /* Load currently supported types: */
-    const KPlatformArchitecture enmArch = m_flags.contains("arch")
-                                        ? m_flags.value("arch").value<KPlatformArchitecture>()
+    const KPlatformArchitecture enmArch = optionalFlags().contains("arch")
+                                        ? optionalFlags().value("arch").value<KPlatformArchitecture>()
                                         : KPlatformArchitecture_x86;
     CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(enmArch);
     m_supportedValues = comProperties.GetSupportedUSBControllerTypes();
