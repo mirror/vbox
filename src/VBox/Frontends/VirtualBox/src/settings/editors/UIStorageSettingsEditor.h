@@ -180,6 +180,9 @@ public:
     /** Destructs editor. */
     virtual ~UIStorageSettingsEditor() RT_OVERRIDE;
 
+    /** Returns platform architecture. */
+    KPlatformArchitecture arch() const;
+
     /** Defines @a pActionPool. */
     void setActionPool(UIActionPool *pActionPool);
 

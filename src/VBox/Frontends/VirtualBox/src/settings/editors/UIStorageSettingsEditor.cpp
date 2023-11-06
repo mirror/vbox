@@ -327,13 +327,18 @@ class ControllerItem : public AbstractItem
 public:
 
     /** Constructs sub-level item passing @a pParentItem to the base-class.
-      * @param  strName  Brings the name.
-      * @param  enmBus   Brings the bus.
-      * @param  enmType  Brings the type. */
-    ControllerItem(AbstractItem *pParentItem, const QString &strName,
+      * @param  pStorageModel Brings the storage model this item belongs to.
+      * @param  strName       Brings the name.
+      * @param  enmBus        Brings the bus.
+      * @param  enmType       Brings the type. */
+    ControllerItem(StorageModel *pStorageModel,
+                   AbstractItem *pParentItem, const QString &strName,
                    KStorageBus enmBus, KStorageControllerType enmType);
     /** Destructs item. */
     virtual ~ControllerItem() RT_OVERRIDE;
+
+    /** Returns platform architecture. */
+    KPlatformArchitecture arch() const;
 
     /** Defines current @a strName. */
     void setName(const QString &strName);
@@ -412,6 +417,9 @@ private:
     void updateTypeInfo();
     /** Updates pixmaps of possible buses. */
     void updatePixmaps();
+
+    /** Holds the storage model this item belongs to. */
+    StorageModel *m_pStorageModel;
 
     /** Holds the current name. */
     QString  m_strName;
@@ -670,10 +678,14 @@ public:
         ToolTipType_FDAdder  = 4
     };
 
-    /** Constructs storage model passing @a pParentTree to the base-class. */
-    StorageModel(QITreeView *pParentTree);
+    /** Constructs storage model passing @a pParentTree to the base-class.
+      * @param  pParentEditor  Brings the parent editor this model belongs to. */
+    StorageModel(QITreeView *pParentTree, UIStorageSettingsEditor *pParentEditor);
     /** Destructs storage model. */
     virtual ~StorageModel() RT_OVERRIDE;
+
+    /** Returns platform architecture. */
+    KPlatformArchitecture arch() const;
 
     /** Returns row count for the passed @a parentIndex. */
     int rowCount(const QModelIndex &parentIndex = QModelIndex()) const;
@@ -740,6 +752,9 @@ private:
 
     /** Returns model flags for @a specifiedIndex. */
     Qt::ItemFlags flags(const QModelIndex &specifiedIndex) const;
+
+    /** Holds the parent editor this model belongs to. */
+    UIStorageSettingsEditor *m_pParentEditor;
 
     /** Holds the root item instance. */
     AbstractItem *m_pRootItem;
@@ -1157,9 +1172,11 @@ void RootItem::delChild(AbstractItem *pItem)
 *   Class ControllerItem implementation.                                                                                         *
 *********************************************************************************************************************************/
 
-ControllerItem::ControllerItem(AbstractItem *pParentItem, const QString &strName,
+ControllerItem::ControllerItem(StorageModel *pStorageModel,
+                               AbstractItem *pParentItem, const QString &strName,
                                KStorageBus enmBus, KStorageControllerType enmType)
     : AbstractItem(pParentItem)
+    , m_pStorageModel(pStorageModel)
     , m_strName(strName)
     , m_enmBus(enmBus)
     , m_enmType(enmType)
@@ -1183,6 +1200,11 @@ ControllerItem::~ControllerItem()
 {
     while (!m_attachments.isEmpty())
         delete m_attachments.first();
+}
+
+KPlatformArchitecture ControllerItem::arch() const
+{
+    return m_pStorageModel ? m_pStorageModel->arch() : KPlatformArchitecture_x86;
 }
 
 void ControllerItem::setName(const QString &strName)
@@ -1234,7 +1256,7 @@ ControllerTypeList ControllerItem::types(KStorageBus enmBus) const
 void ControllerItem::setPortCount(uint uPortCount)
 {
     /* Limit maximum port count: */
-    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(arch());
     m_uPortCount = qMin(uPortCount, (uint)comProperties.GetMaxPortCountForStorageBus(bus()));
 }
 
@@ -1252,7 +1274,7 @@ uint ControllerItem::portCount()
 
 uint ControllerItem::maxPortCount()
 {
-    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(arch());
     return (uint)comProperties.GetMaxPortCountForStorageBus(bus());
 }
 
@@ -1269,7 +1291,7 @@ bool ControllerItem::useIoCache() const
 SlotsList ControllerItem::allSlots() const
 {
     SlotsList allSlots;
-    CPlatformProperties comProps = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+    CPlatformProperties comProps = uiCommon().virtualBox().GetPlatformProperties(arch());
     for (ULONG i = 0; i < comProps.GetMaxPortCountForStorageBus(bus()); ++ i)
         for (ULONG j = 0; j < comProps.GetMaxDevicesPerPortForStorageBus(bus()); ++ j)
             allSlots << StorageSlot(bus(), i, j);
@@ -1286,7 +1308,7 @@ SlotsList ControllerItem::usedSlots() const
 
 DeviceTypeList ControllerItem::deviceTypeList() const
 {
-    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(arch());
     return comProperties.GetDeviceTypesForStorageBus(m_enmBus).toList();
 }
 
@@ -1367,7 +1389,7 @@ void ControllerItem::updateBusInfo()
     m_buses.clear();
 
     /* Load currently supported storage buses: */
-    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(arch());
     const QVector<KStorageBus> supportedBuses = comProperties.GetSupportedStorageBuses();
 
     /* If current bus is NOT KStorageBus_Floppy: */
@@ -1389,7 +1411,7 @@ void ControllerItem::updateTypeInfo()
     m_types.clear();
 
     /* Load currently supported storage buses & types: */
-    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(arch());
     const QVector<KStorageBus> supportedBuses = comProperties.GetSupportedStorageBuses();
     const QVector<KStorageControllerType> supportedTypes = comProperties.GetSupportedStorageControllerTypes();
 
@@ -1707,8 +1729,9 @@ void AttachmentItem::delChild(AbstractItem * /* pItem */)
 *   Class StorageModel implementation.                                                                                           *
 *********************************************************************************************************************************/
 
-StorageModel::StorageModel(QITreeView *pParentTree)
+StorageModel::StorageModel(QITreeView *pParentTree, UIStorageSettingsEditor *pParentEditor)
     : QAbstractItemModel(pParentTree)
+    , m_pParentEditor(pParentEditor)
     , m_pRootItem(new RootItem(pParentTree))
     , m_enmToolTipType(ToolTipType_Default)
     , m_enmChipsetType(KChipsetType_PIIX3)
@@ -1719,6 +1742,11 @@ StorageModel::StorageModel(QITreeView *pParentTree)
 StorageModel::~StorageModel()
 {
     delete m_pRootItem;
+}
+
+KPlatformArchitecture StorageModel::arch() const
+{
+    return m_pParentEditor ? m_pParentEditor->arch() : KPlatformArchitecture_x86;
 }
 
 int StorageModel::rowCount(const QModelIndex &parentIndex) const
@@ -1882,56 +1910,56 @@ QVariant StorageModel::data(const QModelIndex &specifiedIndex, int iRole) const
         }
         case R_IsMoreIDEControllersPossible:
         {
-            CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+            CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(arch());
             return (m_enmConfigurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (qobject_cast<RootItem*>(m_pRootItem)->childCount(KStorageBus_IDE) <
                     comProperties.GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_IDE));
         }
         case R_IsMoreSATAControllersPossible:
         {
-            CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+            CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(arch());
             return (m_enmConfigurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (qobject_cast<RootItem*>(m_pRootItem)->childCount(KStorageBus_SATA) <
                     comProperties.GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_SATA));
         }
         case R_IsMoreSCSIControllersPossible:
         {
-            CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+            CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(arch());
             return (m_enmConfigurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (qobject_cast<RootItem*>(m_pRootItem)->childCount(KStorageBus_SCSI) <
                     comProperties.GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_SCSI));
         }
         case R_IsMoreFloppyControllersPossible:
         {
-            CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+            CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(arch());
             return (m_enmConfigurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (qobject_cast<RootItem*>(m_pRootItem)->childCount(KStorageBus_Floppy) <
                     comProperties.GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_Floppy));
         }
         case R_IsMoreSASControllersPossible:
         {
-            CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+            CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(arch());
             return (m_enmConfigurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (qobject_cast<RootItem*>(m_pRootItem)->childCount(KStorageBus_SAS) <
                     comProperties.GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_SAS));
         }
         case R_IsMoreUSBControllersPossible:
         {
-            CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+            CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(arch());
             return (m_enmConfigurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (qobject_cast<RootItem*>(m_pRootItem)->childCount(KStorageBus_USB) <
                     comProperties.GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_USB));
         }
         case R_IsMoreNVMeControllersPossible:
         {
-            CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+            CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(arch());
             return (m_enmConfigurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (qobject_cast<RootItem*>(m_pRootItem)->childCount(KStorageBus_PCIe) <
                     comProperties.GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_PCIe));
         }
         case R_IsMoreVirtioSCSIControllersPossible:
         {
-            CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+            CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(arch());
             return (m_enmConfigurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (qobject_cast<RootItem*>(m_pRootItem)->childCount(KStorageBus_VirtioSCSI) <
                     comProperties.GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_VirtioSCSI));
@@ -1943,7 +1971,7 @@ QVariant StorageModel::data(const QModelIndex &specifiedIndex, int iRole) const
                 if (pItem->rtti() == AbstractItem::Type_ControllerItem)
                 {
                     ControllerItem *pItemController = qobject_cast<ControllerItem*>(pItem);
-                    CPlatformProperties comProps = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+                    CPlatformProperties comProps = uiCommon().virtualBox().GetPlatformProperties(arch());
                     const bool fIsMoreAttachmentsPossible = (ULONG)rowCount(specifiedIndex) <
                                                             (comProps.GetMaxPortCountForStorageBus(pItemController->bus()) *
                                                              comProps.GetMaxDevicesPerPortForStorageBus(pItemController->bus()));
@@ -2289,7 +2317,7 @@ bool StorageModel::setData(const QModelIndex &specifiedIndex, const QVariant &aV
                     }
 
                     /* Lets make sure there is enough of place for all the remaining attachments: */
-                    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+                    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(arch());
                     const uint uMaxPortCount =
                         (uint)comProperties.GetMaxPortCountForStorageBus(enmNewCtrBusType);
                     const uint uMaxDevicePerPortCount =
@@ -2444,7 +2472,7 @@ bool StorageModel::setData(const QModelIndex &specifiedIndex, const QVariant &aV
 QModelIndex StorageModel::addController(const QString &aCtrName, KStorageBus enmBus, KStorageControllerType enmType)
 {
     beginInsertRows(root(), m_pRootItem->childCount(), m_pRootItem->childCount());
-    new ControllerItem(m_pRootItem, aCtrName, enmBus, enmType);
+    new ControllerItem(this, m_pRootItem, aCtrName, enmBus, enmType);
     endInsertRows();
     return index(m_pRootItem->childCount() - 1, 0, root());
 }
@@ -2688,7 +2716,7 @@ QMap<KStorageBus, int> StorageModel::currentControllerTypes() const
 QMap<KStorageBus, int> StorageModel::maximumControllerTypes() const
 {
     QMap<KStorageBus, int> maximumMap;
-    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(arch());
     for (int iStorageBusType = KStorageBus_IDE; iStorageBusType < KStorageBus_Max; ++iStorageBusType)
         maximumMap.insert((KStorageBus)iStorageBusType,
                           comProperties.GetMaxInstancesOfStorageBus(chipsetType(), (KStorageBus)iStorageBusType));
@@ -2984,6 +3012,13 @@ UIStorageSettingsEditor::UIStorageSettingsEditor(QWidget *pParent /* = 0 */)
 UIStorageSettingsEditor::~UIStorageSettingsEditor()
 {
     cleanup();
+}
+
+KPlatformArchitecture UIStorageSettingsEditor::arch() const
+{
+    return   optionalFlags().contains("arch")
+           ? optionalFlags().value("arch").value<KPlatformArchitecture>()
+           : KPlatformArchitecture_x86;
 }
 
 void UIStorageSettingsEditor::setActionPool(UIActionPool *pActionPool)
@@ -3358,7 +3393,7 @@ void UIStorageSettingsEditor::sltHandleMediumDeleted(const QUuid &uMediumId)
 void UIStorageSettingsEditor::sltAddController()
 {
     /* Load currently supported storage buses and types: */
-    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+    CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(arch());
     const QVector<KStorageBus> supportedBuses = comProperties.GetSupportedStorageBuses();
     const QVector<KStorageControllerType> supportedTypes = comProperties.GetSupportedStorageControllerTypes();
 
@@ -4433,7 +4468,7 @@ void UIStorageSettingsEditor::prepareTreeView()
         m_pTreeViewStorage->setContextMenuPolicy(Qt::CustomContextMenu);
 
         /* Prepare storage model: */
-        m_pModelStorage = new StorageModel(m_pTreeViewStorage);
+        m_pModelStorage = new StorageModel(m_pTreeViewStorage, this);
         if (m_pModelStorage)
         {
             m_pTreeViewStorage->setModel(m_pModelStorage);
