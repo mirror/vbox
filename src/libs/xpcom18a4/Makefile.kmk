@@ -640,7 +640,6 @@ VBox-xpcom-io_SOURCES = \
 	xpcom/io/nsInputStreamTee.cpp \
 	xpcom/io/nsLocalFileCommon.cpp \
 	xpcom/io/nsScriptableInputStream.cpp \
-	xpcom/io/nsSegmentedBuffer.cpp \
 	xpcom/io/SpecialSystemDirectory.cpp \
 	xpcom/io/nsStringStream.cpp \
 	xpcom/io/nsNativeCharsetUtils.cpp
