@@ -155,7 +155,7 @@ static void ConnDestroy(ipcConnectionState *s)
     PR_Close(s->fds[SOCK].fd);
 
   if (s->fds[POLL].fd)
-    PR_DestroyPollableEvent(s->fds[POLL].fd);
+    PR_Close(s->fds[POLL].fd);
 
   if (s->in_msg)
     delete s->in_msg;
