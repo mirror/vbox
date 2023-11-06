@@ -125,7 +125,6 @@ typedef struct XPCOMFunctions{
     GetServiceManagerFunc getServiceManager;
     GetComponentManagerFunc getComponentManager;
     GetComponentRegistrarFunc getComponentRegistrar;
-    GetMemoryManagerFunc getMemoryManager;
     NewLocalFileFunc newLocalFile;
     NewNativeLocalFileFunc newNativeLocalFile;
 

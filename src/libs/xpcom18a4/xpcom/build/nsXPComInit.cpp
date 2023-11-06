@@ -928,7 +928,6 @@ NS_GetFrozenFunctions(XPCOMFunctions *functions, const char* libraryPath)
     GET_FUNC(getServiceManager,     GetServiceManagerFunc,          "VBoxNsxpNS_GetServiceManager");
     GET_FUNC(getComponentManager,   GetComponentManagerFunc,        "VBoxNsxpNS_GetComponentManager");
     GET_FUNC(getComponentRegistrar, GetComponentRegistrarFunc,      "VBoxNsxpNS_GetComponentRegistrar");
-    GET_FUNC(getMemoryManager,      GetMemoryManagerFunc,           "VBoxNsxpNS_GetMemoryManager");
     GET_FUNC(newLocalFile,          NewLocalFileFunc,               "VBoxNsxpNS_NewLocalFile");
     GET_FUNC(newNativeLocalFile,    NewNativeLocalFileFunc,         "VBoxNsxpNS_NewNativeLocalFile");
     GET_FUNC(registerExitRoutine,   RegisterXPCOMExitRoutineFunc,   "VBoxNsxpNS_RegisterXPCOMExitRoutine");
@@ -939,7 +938,6 @@ NS_GetFrozenFunctions(XPCOMFunctions *functions, const char* libraryPath)
     GET_FUNC(getServiceManager,     GetServiceManagerFunc,          "NS_GetServiceManager");
     GET_FUNC(getComponentManager,   GetComponentManagerFunc,        "NS_GetComponentManager");
     GET_FUNC(getComponentRegistrar, GetComponentRegistrarFunc,      "NS_GetComponentRegistrar");
-    GET_FUNC(getMemoryManager,      GetMemoryManagerFunc,           "NS_GetMemoryManager");
     GET_FUNC(newLocalFile,          NewLocalFileFunc,               "NS_NewLocalFile");
     GET_FUNC(newNativeLocalFile,    NewNativeLocalFileFunc,         "NS_NewNativeLocalFile");
     GET_FUNC(registerExitRoutine,   RegisterXPCOMExitRoutineFunc,   "NS_RegisterXPCOMExitRoutine");
