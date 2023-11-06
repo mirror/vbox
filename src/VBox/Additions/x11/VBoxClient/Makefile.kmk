@@ -286,15 +286,20 @@ ifdef VBOX_WITH_WAYLAND_ADDITIONS
 
  VBOX_VBOXWL_LIBWAYLANDCLIENT_VER = 0
  VBOX_VBOXWL_LIBGTK3_VER = 0
+ VBOX_VBOXWL_LIBGIO20_VER = 0
+ VBOX_VBOXWL_LIBGOBJECT20_VER = 0
+ VBOX_VBOXWL_LIBGLIB20_VER = 0
 
  ## Dynamic import no. 5: libwayland-client.so
  $(evalcall2 def_libToLazyLoad2,$(PATH_ROOT)/src/VBox/GuestHost/libwayland-client.def,libwayland-client,$(VBOX_VBOXWL_LIBWAYLANDCLIENT_VER))
  ## Dynamic import no. 6: libgtk-3.so
  $(evalcall2 def_libToLazyLoad2,$(PATH_ROOT)/src/VBox/GuestHost/libgtk-3.def,libgtk-3,$(VBOX_VBOXWL_LIBGTK3_VER))
-
- vboxwl_LIBS.linux += glib-2.0
- vboxwl_LIBS.linux += gobject-2.0
- vboxwl_LIBS.linux += gio-2.0
+ ## Dynamic import no. 7: libgio-2.0.so
+ $(evalcall2 def_libToLazyLoad2,$(PATH_ROOT)/src/VBox/GuestHost/libgio-2.0.def,libgio-2.0,$(VBOX_VBOXWL_LIBGIO20_VER))
+ ## Dynamic import no. 8: libgobject-2.0.so
+ $(evalcall2 def_libToLazyLoad2,$(PATH_ROOT)/src/VBox/GuestHost/libgobject-2.0.def,libgobject-2.0,$(VBOX_VBOXWL_LIBGOBJECT20_VER))
+ ## Dynamic import no. 9: libglib-2.0.so
+ $(evalcall2 def_libToLazyLoad2,$(PATH_ROOT)/src/VBox/GuestHost/libglib-2.0.def,libglib-2.0,$(VBOX_VBOXWL_LIBGLIB20_VER))
 endif
 
 if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
