@@ -37,9 +37,6 @@
 
 #include "private/pprio.h"
 #include "prerror.h"
-#include "prthread.h"
-#include "prlock.h"
-#include "prlog.h" // for PR_ASSERT (we don't actually use NSPR logging)
 #include "prio.h"
 
 #include "ipcConnection.h"
@@ -48,9 +45,14 @@
 #include "ipcLog.h"
 
 #ifdef VBOX
-# include "prenv.h"
+# include <iprt/assert.h>
+# include <iprt/critsect.h>
+# include <iprt/err.h>
+# include <iprt/env.h>
+# include <iprt/log.h>
+# include <iprt/thread.h>
+
 # include <stdio.h>
-# include <VBox/log.h>
 #endif
 
 
@@ -63,20 +65,12 @@
 //-----------------------------------------------------------------------------
 
 
-// single user systems, like OS/2, don't need these security checks.
-#ifndef XP_OS2
-#define IPC_SKIP_SECURITY_CHECKS
-#endif
-
-#ifndef IPC_SKIP_SECURITY_CHECKS
 #include <unistd.h>
 #include <sys/stat.h>
-#endif
 
 static PRStatus
 DoSecurityCheck(PRFileDesc *fd, const char *path)
 {
-#ifndef IPC_SKIP_SECURITY_CHECKS
     //
     // now that we have a connected socket; do some security checks on the
     // file descriptor.
@@ -115,7 +109,7 @@ DoSecurityCheck(PRFileDesc *fd, const char *path)
             return PR_FAILURE;
         }
     }
-#endif
+
     return PR_SUCCESS;
 }
 
@@ -133,7 +127,7 @@ typedef ipcList<ipcCallback> ipcCallbackQ;
 
 struct ipcConnectionState
 {
-  PRLock      *lock;
+  RTCRITSECT   CritSect;
   PRPollDesc   fds[2];
   ipcCallbackQ callback_queue;
   ipcMessageQ  send_queue;
@@ -145,11 +139,10 @@ struct ipcConnectionState
 #define SOCK 0
 #define POLL 1
 
-static void
-ConnDestroy(ipcConnectionState *s)
+static void ConnDestroy(ipcConnectionState *s)
 {
-  if (s->lock)
-    PR_DestroyLock(s->lock);  
+  if (RTCritSectIsInitialized(&s->CritSect))
+    RTCritSectDelete(&s->CritSect);
 
   if (s->fds[SOCK].fd)
     PR_Close(s->fds[SOCK].fd);
@@ -164,21 +157,26 @@ ConnDestroy(ipcConnectionState *s)
   delete s;
 }
 
-static ipcConnectionState *
-ConnCreate(PRFileDesc *fd)
+static ipcConnectionState *ConnCreate(PRFileDesc *fd)
 {
   ipcConnectionState *s = new ipcConnectionState;
   if (!s)
     return NULL;
 
-  s->lock = PR_NewLock();
+  int vrc = RTCritSectInit(&s->CritSect);
+  if (RT_FAILURE(vrc))
+  {
+    ConnDestroy(s);
+    return NULL;
+  }
+
   s->fds[SOCK].fd = NULL;
   s->fds[POLL].fd = PR_NewPollableEvent();
   s->send_offset = 0;
   s->in_msg = NULL;
   s->shutdown = PR_FALSE;
 
-  if (!s->lock || !s->fds[1].fd)
+  if (!s->fds[1].fd)
   {
     ConnDestroy(s);
     return NULL;
@@ -250,7 +248,7 @@ ConnRead(ipcConnectionState *s)
           break;
         }
 
-        PR_ASSERT(PRUint32(n) >= bytesRead);
+        Assert(PRUint32(n) >= bytesRead);
         n -= bytesRead;
         pdata += bytesRead;
 
@@ -275,7 +273,7 @@ ConnWrite(ipcConnectionState *s)
 {
   nsresult rv = NS_OK;
 
-  PR_Lock(s->lock);
+  RTCritSectEnter(&s->CritSect);
 
   // write one message and then return.
   if (s->send_queue.First())
@@ -311,17 +309,18 @@ ConnWrite(ipcConnectionState *s)
     }
   }
 
-  PR_Unlock(s->lock);
+  RTCritSectLeave(&s->CritSect);
   return rv;
 }
 
-PR_STATIC_CALLBACK(void)
-ConnThread(void *arg)
+static DECLCALLBACK(int) ipcConnThread(RTTHREAD hSelf, void *pvArg)
 {
+  RT_NOREF(hSelf);
+
   PRInt32 num;
   nsresult rv = NS_OK;
 
-  ipcConnectionState *s = (ipcConnectionState *) arg;
+  ipcConnectionState *s = (ipcConnectionState *)pvArg;
 
   // we monitor two file descriptors in this thread.  the first (at index 0) is
   // the socket connection with the IPC daemon.  the second (at index 1) is the
@@ -351,7 +350,7 @@ ConnThread(void *arg)
       if (s->fds[POLL].out_flags & PR_POLL_READ)
       {
         PR_WaitForPollableEvent(s->fds[POLL].fd);
-        PR_Lock(s->lock);
+        RTCritSectEnter(&s->CritSect);
 
         if (!s->send_queue.IsEmpty())
           s->fds[SOCK].in_flags |= PR_POLL_WRITE;
@@ -359,7 +358,7 @@ ConnThread(void *arg)
         if (!s->callback_queue.IsEmpty())
           s->callback_queue.MoveTo(cbs_to_run);
 
-        PR_Unlock(s->lock);
+        RTCritSectLeave(&s->CritSect);
       }
 
       // check if we can read...
@@ -381,10 +380,10 @@ ConnThread(void *arg)
       // check if we should exit this thread.  delay processing a shutdown
       // request until after all queued up messages have been sent and until
       // after all queued up callbacks have been run.
-      PR_Lock(s->lock);
+      RTCritSectEnter(&s->CritSect);
       if (s->shutdown && s->send_queue.IsEmpty() && s->callback_queue.IsEmpty())
         rv = NS_ERROR_ABORT;
-      PR_Unlock(s->lock);
+      RTCritSectLeave(&s->CritSect);
     }
     else
     {
@@ -400,6 +399,7 @@ ConnThread(void *arg)
   IPC_OnConnectionEnd(rv);
 
   LOG(("IPC thread exiting\n"));
+  return VINF_SUCCESS;
 }
 
 //-----------------------------------------------------------------------------
@@ -407,10 +407,10 @@ ConnThread(void *arg)
 //-----------------------------------------------------------------------------
 
 static ipcConnectionState *gConnState = NULL;
-static PRThread *gConnThread = NULL;
+static RTTHREAD gConnThread = NULL;
 
 #ifdef DEBUG
-static PRThread *gMainThread = NULL;
+static RTTHREAD gMainThread = NULL;
 #endif
 
 static nsresult
@@ -435,7 +435,7 @@ TryConnect(PRFileDesc **result)
     goto end;
 
 #ifdef VBOX
-  if (PR_GetEnv("TESTBOX_UUID"))
+  if (RTEnvExist("TESTBOX_UUID"))
     fprintf(stderr, "IPC socket path: %s\n", addr.local.path);
   LogRel(("IPC socket path: %s\n", addr.local.path));
 #endif
@@ -466,6 +466,7 @@ IPC_Connect(const char *daemonPath)
 
   PRFileDesc *fd = NULL;
   nsresult rv = NS_ERROR_FAILURE;
+  int vrc = VINF_SUCCESS;
 
   if (gConnState)
     return NS_ERROR_ALREADY_INITIALIZED;
@@ -504,21 +505,16 @@ IPC_Connect(const char *daemonPath)
   }
   fd = NULL; // connection state now owns the socket
 
-  gConnThread = PR_CreateThread(PR_USER_THREAD,
-                                ConnThread,
-                                gConnState,
-                                PR_PRIORITY_NORMAL,
-                                PR_GLOBAL_THREAD,
-                                PR_JOINABLE_THREAD,
-                                0);
-  if (!gConnThread)
+  vrc = RTThreadCreate(&gConnThread, ipcConnThread, gConnState, 0 /*cbStack*/,
+                       RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "Ipc-Conn");
+  if (RT_FAILURE(vrc))
   {
     rv = NS_ERROR_OUT_OF_MEMORY;
     goto end;
   }
 
 #ifdef DEBUG
-  gMainThread = PR_GetCurrentThread();
+  gMainThread = RTThreadSelf();
 #endif
   return NS_OK;
 
@@ -537,17 +533,19 @@ nsresult
 IPC_Disconnect()
 {
   // Must disconnect on same thread used to connect!
-  PR_ASSERT(gMainThread == PR_GetCurrentThread());
+  Assert(gMainThread == RTThreadSelf());
 
   if (!gConnState || !gConnThread)
     return NS_ERROR_NOT_INITIALIZED;
 
-  PR_Lock(gConnState->lock);
+  RTCritSectEnter(&gConnState->CritSect);
   gConnState->shutdown = PR_TRUE;
   PR_SetPollableEvent(gConnState->fds[POLL].fd);
-  PR_Unlock(gConnState->lock);
+  RTCritSectLeave(&gConnState->CritSect);
 
-  PR_JoinThread(gConnThread);
+  int rcThread;
+  RTThreadWait(gConnThread, RT_INDEFINITE_WAIT, &rcThread);
+  AssertRC(rcThread);
 
   ConnDestroy(gConnState);
 
@@ -562,10 +560,10 @@ IPC_SendMsg(ipcMessage *msg)
   if (!gConnState || !gConnThread)
     return NS_ERROR_NOT_INITIALIZED;
 
-  PR_Lock(gConnState->lock);
+  RTCritSectEnter(&gConnState->CritSect);
   gConnState->send_queue.Append(msg);
   PR_SetPollableEvent(gConnState->fds[POLL].fd);
-  PR_Unlock(gConnState->lock);
+  RTCritSectLeave(&gConnState->CritSect);
 
   return NS_OK;
 }
@@ -582,34 +580,10 @@ IPC_DoCallback(ipcCallbackFunc func, void *arg)
   callback->func = func;
   callback->arg = arg;
 
-  PR_Lock(gConnState->lock);
+  RTCritSectEnter(&gConnState->CritSect);
   gConnState->callback_queue.Append(callback);
   PR_SetPollableEvent(gConnState->fds[POLL].fd);
-  PR_Unlock(gConnState->lock);
+  RTCritSectLeave(&gConnState->CritSect);
   return NS_OK;
 }
 
-//-----------------------------------------------------------------------------
-
-#ifdef TEST_STANDALONE
-
-void IPC_OnConnectionFault(nsresult rv)
-{
-  LOG(("IPC_OnConnectionFault [rv=%x]\n", rv));
-}
-
-void IPC_OnMessageAvailable(ipcMessage *msg)
-{
-  LOG(("IPC_OnMessageAvailable\n"));
-  delete msg;
-}
-
-int main()
-{
-  IPC_InitLog(">>>");
-  IPC_Connect("/builds/moz-trunk/seamonkey-debug-build/dist/bin/mozilla-ipcd");
-  IPC_Disconnect();
-  return 0;
-}
-
-#endif
