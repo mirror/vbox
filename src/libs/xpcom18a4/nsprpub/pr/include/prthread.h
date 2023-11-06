@@ -261,22 +261,6 @@ NSPR_API(void*) PR_GetThreadPrivate(PRUintn tpdIndex);
 NSPR_API(PRStatus) PR_Interrupt(PRThread *thread);
 
 /*
-** Clear the interrupt request for the calling thread. If no such request
-** is pending, this operation is a noop.
-*/
-NSPR_API(void) PR_ClearInterrupt(void);
-
-/*
-** Block the interrupt for the calling thread.
-*/
-NSPR_API(void) PR_BlockInterrupt(void);
-
-/*
-** Unblock the interrupt for the calling thread.
-*/
-NSPR_API(void) PR_UnblockInterrupt(void);
-
-/*
 ** Make the current thread sleep until "ticks" time amount of time
 ** has expired. If "ticks" is PR_INTERVAL_NO_WAIT then the call is
 ** equivalent to calling PR_Yield. Calling PR_Sleep with an argument

@@ -544,32 +544,6 @@ PR_IMPLEMENT(PRStatus) PR_Interrupt(PRThread *thred)
     return PR_SUCCESS;
 }  /* PR_Interrupt */
 
-PR_IMPLEMENT(void) PR_ClearInterrupt(void)
-{
-    PRThread *me = PR_CurrentThread();
-    me->state &= ~PT_THREAD_ABORTED;
-}  /* PR_ClearInterrupt */
-
-PR_IMPLEMENT(void) PR_BlockInterrupt(void)
-{
-    PRThread *me = PR_CurrentThread();
-    _PT_THREAD_BLOCK_INTERRUPT(me);
-}  /* PR_BlockInterrupt */
-
-PR_IMPLEMENT(void) PR_UnblockInterrupt(void)
-{
-    PRThread *me = PR_CurrentThread();
-    _PT_THREAD_UNBLOCK_INTERRUPT(me);
-}  /* PR_UnblockInterrupt */
-
-PR_IMPLEMENT(PRStatus) PR_Yield(void)
-{
-    static PRBool warning = PR_TRUE;
-    if (warning) warning = _PR_Obsolete(
-        "PR_Yield()", "PR_Sleep(PR_INTERVAL_NO_WAIT)");
-    return PR_Sleep(PR_INTERVAL_NO_WAIT);
-}
-
 PR_IMPLEMENT(PRStatus) PR_Sleep(PRIntervalTime ticks)
 {
     PRStatus rv = PR_SUCCESS;
