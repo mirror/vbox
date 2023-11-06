@@ -35,55 +35,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "nsXPCOM.h"
 #include "nsMemory.h"
-#include "nsXPCOMPrivate.h"
 
-static nsIMemory* gMemory = nsnull;
-
-static NS_METHOD FreeGlobalMemory(void)
-{
-    NS_ASSERTION(gMemory, "must be not null after SetupGlobalMemory");
-    NS_IF_RELEASE(gMemory);
-    return NS_OK;
-}
-
-#define ENSURE_ALLOCATOR \
-  (gMemory ? PR_TRUE : (PRBool)(SetupGlobalMemory() != nsnull))
-
-static nsIMemory*
-SetupGlobalMemory()
-{
-    NS_ASSERTION(!gMemory, "must be called once");
-    if (!gMemory)
-    {
-        NS_GetMemoryManager(&gMemory);
-        NS_ASSERTION(gMemory, "can't get memory manager!");
-        if (gMemory)
-            NS_RegisterXPCOMExitRoutine(FreeGlobalMemory, 0);
-    }
-    return gMemory;
-}
-
-#ifdef XPCOM_GLUE
-nsresult GlueStartupMemory() 
-{
-    NS_ASSERTION(!gMemory, "must be called once");
-    if (!gMemory)
-    {
-        NS_GetMemoryManager(&gMemory);
-        NS_ASSERTION(gMemory, "can't get memory manager!");
-        if (!gMemory)
-            return NS_ERROR_FAILURE;
-    }
-    return NS_OK;
-}
-
-void GlueShutdownMemory()
-{
-    NS_IF_RELEASE(gMemory);
-}
-#endif
+#include <iprt/mem.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // nsMemory static helper routines
@@ -91,60 +45,25 @@ void GlueShutdownMemory()
 NS_COM void*
 nsMemory::Alloc(PRSize size)
 {
-    if (!ENSURE_ALLOCATOR)
-        return nsnull;
- 
-   return gMemory->Alloc(size);
+    return RTMemAlloc(size);
 }
 
 NS_COM void*
 nsMemory::Realloc(void* ptr, PRSize size)
 {
-    if (!ENSURE_ALLOCATOR)
-        return nsnull;    
-
-    return gMemory->Realloc(ptr, size);
+    return RTMemRealloc(ptr, size);
 }
 
 NS_COM void
 nsMemory::Free(void* ptr)
 {
-    if (!ENSURE_ALLOCATOR)
-        return;    
-
-    gMemory->Free(ptr);
-}
-
-NS_COM nsresult
-nsMemory::HeapMinimize(PRBool aImmediate)
-{
-    if (!ENSURE_ALLOCATOR)
-        return NS_ERROR_FAILURE;    
-
-    return gMemory->HeapMinimize(aImmediate);
+    RTMemFree(ptr);
 }
 
 NS_COM void*
 nsMemory::Clone(const void* ptr, PRSize size)
 {
-    if (!ENSURE_ALLOCATOR)
-        return nsnull;    
-
-    void* newPtr = gMemory->Alloc(size);
-    if (newPtr)
-        memcpy(newPtr, ptr, size);
-    return newPtr;
-}
-
-NS_COM nsIMemory*
-nsMemory::GetGlobalMemoryService()
-{
-    if (!ENSURE_ALLOCATOR)
-        return nsnull;    
-   
-    nsIMemory* result = gMemory;
-    NS_IF_ADDREF(result);
-    return result;
+    return RTMemDup(ptr, size);
 }
 
 //----------------------------------------------------------------------

@@ -372,7 +372,6 @@ TEMPLATE_XPComDllYasm-x86_LIBS         = $(subst $(LIB_RUNTIME),$(VBOX_LIB_RUNTI
 XPCOM_IDLFILES = \
 	xpcom/base/nsIDebug.idl \
 	xpcom/base/nsIInterfaceRequestor.idl \
-	xpcom/base/nsIMemory.idl \
 	xpcom/base/nsIProgrammingLanguage.idl \
 	xpcom/base/nsISupports.idl \
 	xpcom/base/nsITraceRefcnt.idl \

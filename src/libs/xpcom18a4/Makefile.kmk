@@ -579,7 +579,6 @@ VBox-xpcom-base_SOURCES = \
 	xpcom/base/nsErrorService.cpp \
 	xpcom/base/nsExceptionService.cpp \
 	xpcom/base/nsID.cpp \
-	xpcom/base/nsMemoryImpl.cpp \
 	xpcom/base/nsTraceRefcntImpl.cpp
 $(evalcall VBOX_XPCOM_X86,VBox-xpcom-base)
 
@@ -1125,7 +1124,6 @@ VBOX_XPTFILES = $(addprefix $(PATH_TARGET)/VBox-xpcom-xpt-files/, \
 		nsIExceptionService.xpt \
 		nsIDebug.xpt \
 		nsIInterfaceRequestor.xpt \
-		nsIMemory.xpt \
 		nsIProgrammingLanguage.xpt \
 		nsISupports.xpt \
 		nsITraceRefcnt.xpt \

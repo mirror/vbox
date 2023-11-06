@@ -47,7 +47,6 @@
 #include "nsScriptableInputStream.h"
 #include "nsBinaryStream.h"
 
-#include "nsMemoryImpl.h"
 #include "nsDebugImpl.h"
 #include "nsTraceRefcntImpl.h"
 #include "nsErrorService.h"
@@ -123,7 +122,6 @@ extern void _FreeAutoLockStatics();
 #endif
 
 static NS_DEFINE_CID(kComponentManagerCID, NS_COMPONENTMANAGER_CID);
-static NS_DEFINE_CID(kMemoryCID, NS_MEMORY_CID);
 static NS_DEFINE_CID(kEventQueueServiceCID, NS_EVENTQUEUESERVICE_CID);
 
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsEventQueueServiceImpl, Init)
@@ -325,7 +323,6 @@ static PRBool gXPCOMInitialized = PR_FALSE;
    &NS_CLASSINFO_NAME(Class) }
 
 static const nsModuleComponentInfo components[] = {
-    COMPONENT(MEMORY, nsMemoryImpl::Create),
     COMPONENT(DEBUG,  nsDebugImpl::Create),
 #define NS_ERRORSERVICE_CLASSNAME NS_ERRORSERVICE_NAME
     COMPONENT(ERRORSERVICE, nsErrorService::Create),
@@ -419,21 +416,6 @@ static const nsModuleComponentInfo components[] = {
 
 const int components_length = sizeof(components) / sizeof(components[0]);
 
-// gMemory will be freed during shutdown.
-static nsIMemory* gMemory = nsnull;
-nsresult NS_COM NS_GetMemoryManager(nsIMemory* *result)
-{
-    nsresult rv = NS_OK;
-    if (!gMemory)
-    {
-        rv = nsMemoryImpl::Create(nsnull,
-                                  NS_GET_IID(nsIMemory),
-                                  (void**)&gMemory);
-    }
-    NS_IF_ADDREF(*result = gMemory);
-    return rv;
-}
-
 // gDebug will be freed during shutdown.
 static nsIDebug* gDebug = nsnull;
 nsresult NS_COM NS_GetDebug(nsIDebug** result)
@@ -499,10 +481,6 @@ nsresult NS_COM NS_InitXPCOM2(nsIServiceManager* *result,
 
     // Establish the main thread here.
     rv = nsIThread::SetMainThread();
-    if (NS_FAILED(rv)) return rv;
-
-    // Startup the memory manager
-    rv = nsMemoryImpl::Startup();
     if (NS_FAILED(rv)) return rv;
 
     // If the locale hasn't already been setup by our embedder,
@@ -585,12 +563,6 @@ nsresult NS_COM NS_InitXPCOM2(nsIServiceManager* *result,
             NS_ADDREF(*result = serviceManager);
         }
     }
-
-    nsCOMPtr<nsIMemory> memory;
-    NS_GetMemoryManager(getter_AddRefs(memory));
-    // dougt - these calls will be moved into a new interface when nsIComponentManager is frozen.
-    rv = compMgr->RegisterService(kMemoryCID, memory);
-    if (NS_FAILED(rv)) return rv;
 
     rv = compMgr->RegisterService(kComponentManagerCID, NS_STATIC_CAST(nsIComponentManager*, compMgr));
     if (NS_FAILED(rv)) return rv;
@@ -913,8 +885,6 @@ nsresult NS_COM NS_ShutdownXPCOM(nsIServiceManager* servMgr)
     ShutdownSpecialSystemDirectory();
 
     EmptyEnumeratorImpl::Shutdown();
-    nsMemoryImpl::Shutdown();
-    NS_IF_RELEASE(gMemory);
 
     nsThread::Shutdown();
     NS_PurgeAtomTable();

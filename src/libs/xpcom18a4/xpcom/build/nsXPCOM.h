@@ -170,19 +170,6 @@ extern "C" NS_COM nsresult
 NS_GetComponentRegistrar(nsIComponentRegistrar* *result);
 
 /**
- * Public Method to access to the memory manager.  See nsIMemory
- * 
- * @status FROZEN
- * @param result Interface pointer to the memory manager 
- *
- * @return NS_OK for success;
- *         other error codes indicate a failure during initialisation.
- *
- */
-extern "C" NS_COM nsresult
-NS_GetMemoryManager(nsIMemory* *result);
-
-/**
  * Public Method to create an instance of a nsILocalFile.  This function
  * may be called prior to NS_InitXPCOM2.  
  * 
