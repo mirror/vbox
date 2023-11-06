@@ -79,7 +79,6 @@
 #include "nsReadableUtils.h"
 #include "nsString.h"
 #include "nsXPIDLString.h"
-#include "prcmon.h"
 #include "xptinfo.h" // this after nsISupports, to pick up IID so that xpt stuff doesn't try to define it itself...
 
 #include "nsInt64.h"
