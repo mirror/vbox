@@ -91,6 +91,9 @@ extern "C" void  __register_frame_info(void *pvBegin, void *pvObj); /* found no 
 extern "C" void *__deregister_frame_info(void *pvBegin);           /* (returns pvObj from __register_frame_info call) */
 # endif
 #endif
+#ifdef VBOX_WITH_IEM_USING_CAPSTONE_DISASSEMBLER
+# include "/opt/local/include/capstone/capstone.h"
+#endif
 
 #include "IEMInline.h"
 #include "IEMThreadedFunctions.h"
@@ -114,6 +117,12 @@ extern "C" void *__deregister_frame_info(void *pvBegin);           /* (returns p
 #ifndef IEM_WITH_SETJMP
 # error The setjmp approach must be enabled for the recompiler.
 #endif
+
+/** @todo eliminate this clang build hack. */
+#if RT_CLANG_PREREQ(4, 0)
+# pragma GCC diagnostic ignored "-Wunused-function"
+#endif
+
 
 
 /*********************************************************************************************************************************
@@ -1783,7 +1792,7 @@ iemNativeLabelCreate(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType,
     paLabels[cLabels].uData   = uData;
     pReNative->cLabels = cLabels + 1;
 
-    Assert(enmType >= 0 && enmType < 64);
+    Assert((unsigned)enmType < 64);
     pReNative->bmLabelTypes |= RT_BIT_64(enmType);
 
     if (offWhere != UINT32_MAX)
@@ -1825,7 +1834,7 @@ DECL_HIDDEN_THROW(void) iemNativeLabelDefine(PIEMRECOMPILERSTATE pReNative, uint
 static uint32_t iemNativeLabelFind(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType,
                                    uint32_t offWhere = UINT32_MAX, uint16_t uData = 0) RT_NOEXCEPT
 {
-    Assert(enmType >= 0 && enmType < 64);
+    Assert((unsigned)enmType < 64);
     if (RT_BIT_64(enmType) & pReNative->bmLabelTypes)
     {
         PIEMNATIVELABEL paLabels = pReNative->paLabels;
@@ -3248,7 +3257,7 @@ iemNativeEmitGuestRegValueCheck(PIEMRECOMPILERSTATE pReNative, uint32_t off, uin
     /* sub tmp0, tmp0, idxReg */
     pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(true /*fSub*/, IEMNATIVE_REG_FIXED_TMP0, IEMNATIVE_REG_FIXED_TMP0, idxReg);
     /* cbz tmp0, +1 */
-    pu32CodeBuf[off++] = Armv8A64MkInstrCbzCbnz(false /*fJmpIfNotZero*/, 1, IEMNATIVE_REG_FIXED_TMP0);
+    pu32CodeBuf[off++] = Armv8A64MkInstrCbzCbnz(false /*fJmpIfNotZero*/, 2, IEMNATIVE_REG_FIXED_TMP0);
     /* brk #0x1000+enmGstReg */
     pu32CodeBuf[off++] = Armv8A64MkInstrBrk((uint32_t)enmGstReg | UINT32_C(0x1000));
 
@@ -5857,7 +5866,7 @@ iemNativeEmitSubGregU32U64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t 
 #else
     /* sub tmp, gstgrp, uSubtrahend */
     uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-    pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, idxTmpReg, idxGstTmpReg, uSubtrahend, f64Bit);
+    pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, idxGstTmpReg, idxGstTmpReg, uSubtrahend, f64Bit);
 
 #endif
 
@@ -6132,12 +6141,22 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
     DISCPUMODE              enmGstCpuMode = (pTb->fFlags & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_16BIT ? DISCPUMODE_16BIT
                                           : (pTb->fFlags & IEM_F_MODE_CPUMODE_MASK) == IEMMODE_32BIT ? DISCPUMODE_32BIT
                                           :                                                            DISCPUMODE_64BIT;
-#ifdef RT_ARCH_AMD64
+#if   defined(RT_ARCH_AMD64) && !defined(VBOX_WITH_IEM_USING_CAPSTONE_DISASSEMBLER)
     DISCPUMODE const        enmHstCpuMode = DISCPUMODE_64BIT;
-#elif defined(RT_ARCH_ARM64)
+#elif defined(RT_ARCH_ARM64) && !defined(VBOX_WITH_IEM_USING_CAPSTONE_DISASSEMBLER)
     DISCPUMODE const        enmHstCpuMode = DISCPUMODE_ARMV8_A64;
-#else
+#elif !defined(VBOX_WITH_IEM_USING_CAPSTONE_DISASSEMBLER)
 # error "Port me"
+#else
+    csh                     hDisasm       = ~(size_t)0;
+# if defined(RT_ARCH_AMD64)
+    cs_err                  rcCs          = cs_open(CS_ARCH_X86, CS_MODE_LITTLE_ENDIAN | CS_MODE_64, &hDisasm);
+# elif defined(RT_ARCH_ARM64)
+    cs_err                  rcCs          = cs_open(CS_ARCH_ARM64, CS_MODE_LITTLE_ENDIAN, &hDisasm);
+# else
+#  error "Port me"
+# endif
+    AssertMsgReturnVoid(rcCs == CS_ERR_OK, ("%d (%#x)\n", rcCs, rcCs));
 #endif
 
     /*
@@ -6351,46 +6370,84 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
             /*
              * Disassemble the next native instruction.
              */
-            uint32_t  cbInstr = sizeof(paNative[0]);
-            int const rc      = DISInstr(&paNative[offNative], enmHstCpuMode, &Dis, &cbInstr);
+            PCIEMNATIVEINSTR const pNativeCur = &paNative[offNative];
+# ifndef VBOX_WITH_IEM_USING_CAPSTONE_DISASSEMBLER
+            uint32_t               cbInstr    = sizeof(paNative[0]);
+            int const              rc         = DISInstr(pNativeCur, enmHstCpuMode, &Dis, &cbInstr);
             if (RT_SUCCESS(rc))
             {
-# if defined(RT_ARCH_AMD64)
+#  if defined(RT_ARCH_AMD64)
                 if (Dis.pCurInstr->uOpcode == OP_NOP && cbInstr == 7) /* iemNativeEmitMarker */
                 {
                     uint32_t const uInfo = *(uint32_t const *)&Dis.Instr.ab[3];
                     if (RT_HIWORD(uInfo) < kIemThreadedFunc_End)
                         pHlp->pfnPrintf(pHlp, "    %p: nop ; marker: call #%u to %s (%u args)%s\n",
-                                        &paNative[offNative], uInfo & 0x7fff, g_apszIemThreadedFunctions[RT_HIWORD(uInfo)],
+                                        pNativeCur, uInfo & 0x7fff, g_apszIemThreadedFunctions[RT_HIWORD(uInfo)],
                                         g_acIemThreadedFunctionUsedArgs[RT_HIWORD(uInfo)],
                                         uInfo & 0x8000 ? " - recompiled" : "");
                     else
-                        pHlp->pfnPrintf(pHlp, "    %p: nop ; unknown marker: %#x (%d)\n", &paNative[offNative], uInfo, uInfo);
+                        pHlp->pfnPrintf(pHlp, "    %p: nop ; unknown marker: %#x (%d)\n", pNativeCur, uInfo, uInfo);
                 }
                 else
-# endif
+#  endif
                 {
+#  ifdef RT_ARCH_AMD64
                     DISFormatYasmEx(&Dis, szDisBuf, sizeof(szDisBuf),
                                     DIS_FMT_FLAGS_BYTES_WIDTH_MAKE(10) | DIS_FMT_FLAGS_BYTES_LEFT
                                     | DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_C_HEX,
                                     NULL /*pfnGetSymbol*/, NULL /*pvUser*/);
-                    pHlp->pfnPrintf(pHlp, "    %p: %s\n", &paNative[offNative], szDisBuf);
+#  elif defined(RT_ARCH_ARM64)
+                    DISFormatArmV8Ex(&Dis, szDisBuf, sizeof(szDisBuf),
+                                     DIS_FMT_FLAGS_BYTES_LEFT | DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_C_HEX,
+                                     NULL /*pfnGetSymbol*/, NULL /*pvUser*/);
+#  else
+#   error "Port me"
+#  endif
+                    pHlp->pfnPrintf(pHlp, "    %p: %s\n", pNativeCur, szDisBuf);
                 }
             }
             else
             {
-# if defined(RT_ARCH_AMD64)
+#  if defined(RT_ARCH_AMD64)
                 pHlp->pfnPrintf(pHlp, "    %p:  %.*Rhxs - disassembly failure %Rrc\n",
-                                &paNative[offNative], RT_MIN(cNative - offNative, 16), &paNative[offNative], rc);
-# elif defined(RT_ARCH_ARM64)
-                pHlp->pfnPrintf(pHlp, "    %p:  %#010RX32 - disassembly failure %Rrc\n",
-                                &paNative[offNative], paNative[offNative], rc);
-# else
-#  error "Port me"
-# endif
+                                pNativeCur, RT_MIN(cNative - offNative, 16), pNativeCur, rc);
+#  elif defined(RT_ARCH_ARM64)
+                pHlp->pfnPrintf(pHlp, "    %p:  %#010RX32 - disassembly failure %Rrc\n", pNativeCur, *pNativeCur, rc);
+#  else
+#   error "Port me"
+#  endif
                 cbInstr = sizeof(paNative[0]);
             }
             offNative += cbInstr / sizeof(paNative[0]);
+
+#  else  /* VBOX_WITH_IEM_USING_CAPSTONE_DISASSEMBLER */
+            cs_insn *pInstr;
+            size_t   cInstrs = cs_disasm(hDisasm, (const uint8_t *)pNativeCur, (cNative - offNative) * sizeof(*pNativeCur),
+                                         (uintptr_t)pNativeCur, 1, &pInstr);
+            if (cInstrs > 0)
+            {
+                Assert(cInstrs == 1);
+#  if defined(RT_ARCH_AMD64)
+                pHlp->pfnPrintf(pHlp, "    %p: %.*Rhxs %-7s %s\n",
+                                pNativeCur, pInstr->size, pNativeCur, pInstr->mnemonic, pInstr->op_str);
+#  else
+                pHlp->pfnPrintf(pHlp, "    %p: %#010RX32 %-7s %s\n",
+                                pNativeCur, *pNativeCur, pInstr->mnemonic, pInstr->op_str);
+#  endif
+                offNative += pInstr->size / sizeof(*pNativeCur);
+                cs_free(pInstr, cInstrs);
+            }
+            else
+            {
+#  if defined(RT_ARCH_AMD64)
+                pHlp->pfnPrintf(pHlp, "    %p:  %.*Rhxs - disassembly failure %d\n",
+                                pNativeCur, RT_MIN(cNative - offNative, 16), pNativeCur, cs_errno(hDisasm)));
+#  else
+                pHlp->pfnPrintf(pHlp, "    %p:  %#010RX32 - disassembly failure %d\n", pNativeCur, *pNativeCur, cs_errno(hDisasm));
+#  endif
+                offNative++;
+            }
+# endif /* VBOX_WITH_IEM_USING_CAPSTONE_DISASSEMBLER */
         }
     }
     else
@@ -6398,8 +6455,9 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
     {
         /*
          * No debug info, just disassemble the x86 code and then the native code.
+         *
+         * First the guest code:
          */
-        /* The guest code. */
         for (unsigned i = 0; i < pTb->cRanges; i++)
         {
             RTGCPHYS GCPhysPc = pTb->aRanges[i].offPhysPage
@@ -6435,52 +6493,95 @@ DECLHIDDEN(void) iemNativeDisassembleTb(PCIEMTB pTb, PCDBGFINFOHLP pHlp) RT_NOEX
             }
         }
 
-        /* The native code: */
+        /*
+         * Then the native code:
+         */
         pHlp->pfnPrintf(pHlp, "  Native code %p L %#x\n", paNative, cNative);
-        while(offNative < cNative)
+        while (offNative < cNative)
         {
-            uint32_t  cbInstr = sizeof(paNative[0]);
-            int const rc      = DISInstr(&paNative[offNative], enmHstCpuMode, &Dis, &cbInstr);
+            PCIEMNATIVEINSTR const pNativeCur = &paNative[offNative];
+# ifndef VBOX_WITH_IEM_USING_CAPSTONE_DISASSEMBLER
+            uint32_t               cbInstr    = sizeof(paNative[0]);
+            int const              rc         = DISInstr(pNativeCur, enmHstCpuMode, &Dis, &cbInstr);
             if (RT_SUCCESS(rc))
             {
-# if defined(RT_ARCH_AMD64)
+#  if defined(RT_ARCH_AMD64)
                 if (Dis.pCurInstr->uOpcode == OP_NOP && cbInstr == 7) /* iemNativeEmitMarker */
                 {
                     uint32_t const uInfo = *(uint32_t const *)&Dis.Instr.ab[3];
                     if (RT_HIWORD(uInfo) < kIemThreadedFunc_End)
                         pHlp->pfnPrintf(pHlp, "\n    %p: nop ; marker: call #%u to %s (%u args)%s\n",
-                                        &paNative[offNative], uInfo & 0x7fff, g_apszIemThreadedFunctions[RT_HIWORD(uInfo)],
+                                        pNativeCur, uInfo & 0x7fff, g_apszIemThreadedFunctions[RT_HIWORD(uInfo)],
                                         g_acIemThreadedFunctionUsedArgs[RT_HIWORD(uInfo)],
                                         uInfo & 0x8000 ? " - recompiled" : "");
                     else
-                        pHlp->pfnPrintf(pHlp, "    %p: nop ; unknown marker: %#x (%d)\n", &paNative[offNative], uInfo, uInfo);
+                        pHlp->pfnPrintf(pHlp, "    %p: nop ; unknown marker: %#x (%d)\n", pNativeCur, uInfo, uInfo);
                 }
                 else
-# endif
+#  endif
                 {
+#  ifdef RT_ARCH_AMD64
                     DISFormatYasmEx(&Dis, szDisBuf, sizeof(szDisBuf),
                                     DIS_FMT_FLAGS_BYTES_WIDTH_MAKE(10) | DIS_FMT_FLAGS_BYTES_LEFT
                                     | DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_C_HEX,
                                     NULL /*pfnGetSymbol*/, NULL /*pvUser*/);
-                    pHlp->pfnPrintf(pHlp, "    %p: %s\n", &paNative[offNative], szDisBuf);
+#  elif defined(RT_ARCH_ARM64)
+                    DISFormatArmV8Ex(&Dis, szDisBuf, sizeof(szDisBuf),
+                                     DIS_FMT_FLAGS_BYTES_LEFT | DIS_FMT_FLAGS_RELATIVE_BRANCH | DIS_FMT_FLAGS_C_HEX,
+                                     NULL /*pfnGetSymbol*/, NULL /*pvUser*/);
+#  else
+#   error "Port me"
+#  endif
+                    pHlp->pfnPrintf(pHlp, "    %p: %s\n", pNativeCur, szDisBuf);
                 }
             }
             else
             {
-# if defined(RT_ARCH_AMD64)
+#  if defined(RT_ARCH_AMD64)
                 pHlp->pfnPrintf(pHlp, "    %p:  %.*Rhxs - disassembly failure %Rrc\n",
-                                &paNative[offNative], RT_MIN(cNative - offNative, 16), &paNative[offNative], rc);
-# elif defined(RT_ARCH_ARM64)
-                pHlp->pfnPrintf(pHlp, "    %p:  %#010RX32 - disassembly failure %Rrc\n",
-                                &paNative[offNative], paNative[offNative], rc);
-# else
-#  error "Port me"
-#endif
+                                pNativeCur, RT_MIN(cNative - offNative, 16), pNativeCur, rc);
+#  else
+                pHlp->pfnPrintf(pHlp, "    %p:  %#010RX32 - disassembly failure %Rrc\n", pNativeCur, *pNativeCur, rc);
+#  endif
                 cbInstr = sizeof(paNative[0]);
             }
             offNative += cbInstr / sizeof(paNative[0]);
+
+# else  /* VBOX_WITH_IEM_USING_CAPSTONE_DISASSEMBLER */
+            cs_insn *pInstr;
+            size_t   cInstrs = cs_disasm(hDisasm, (const uint8_t *)pNativeCur, (cNative - offNative) * sizeof(*pNativeCur),
+                                         (uintptr_t)pNativeCur, 1, &pInstr);
+            if (cInstrs > 0)
+            {
+                Assert(cInstrs == 1);
+#  if defined(RT_ARCH_AMD64)
+                pHlp->pfnPrintf(pHlp, "    %p: %.*Rhxs %-7s %s\n",
+                                pNativeCur, pInstr->size, pNativeCur, pInstr->mnemonic, pInstr->op_str);
+#  else
+                pHlp->pfnPrintf(pHlp, "    %p: %#010RX32 %-7s %s\n",
+                                pNativeCur, *pNativeCur, pInstr->mnemonic, pInstr->op_str);
+#  endif
+                offNative += pInstr->size / sizeof(*pNativeCur);
+                cs_free(pInstr, cInstrs);
+            }
+            else
+            {
+#  if defined(RT_ARCH_AMD64)
+                pHlp->pfnPrintf(pHlp, "    %p:  %.*Rhxs - disassembly failure %d\n",
+                                pNativeCur, RT_MIN(cNative - offNative, 16), pNativeCur, cs_errno(hDisasm)));
+#  else
+                pHlp->pfnPrintf(pHlp, "    %p:  %#010RX32 - disassembly failure %d\n", pNativeCur, *pNativeCur, cs_errno(hDisasm));
+#  endif
+                offNative++;
+            }
+# endif /* VBOX_WITH_IEM_USING_CAPSTONE_DISASSEMBLER */
         }
     }
+
+#ifdef VBOX_WITH_IEM_USING_CAPSTONE_DISASSEMBLER
+    /* Cleanup. */
+    cs_close(&hDisasm);
+#endif
 }
 
 
@@ -6554,7 +6655,8 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
                 iGstInstr = pCallEntry->idxInstr;
             }
             iemNativeDbgInfoAddThreadedCall(pReNative, (IEMTHREADEDFUNCS)pCallEntry->enmFunction, pfnRecom != NULL);
-#elif defined(VBOX_STRICT)
+#endif
+#if defined(VBOX_STRICT) && 1
             off = iemNativeEmitMarker(pReNative, off,
                                       RT_MAKE_U32((pTb->Thrd.cCalls - cCallsLeft - 1) | (pfnRecom ? 0x8000 : 0),
                                                   pCallEntry->enmFunction));
@@ -6643,14 +6745,33 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
                 continue;
 
 #elif defined(RT_ARCH_ARM64)
+            case kIemNativeFixupType_RelImm26At0:
+            {
+                Assert(paFixups[i].off < off);
+                int32_t const offDisp = paLabels[paFixups[i].idxLabel].off - paFixups[i].off + paFixups[i].offAddend;
+                Assert(offDisp >= -262144 && offDisp < 262144);
+                *Ptr.pu32 = (*Ptr.pu32 & UINT32_C(0xfc000000)) | ((uint32_t)offDisp & UINT32_C(0x03ffffff));
+                continue;
+            }
+
             case kIemNativeFixupType_RelImm19At5:
             {
                 Assert(paFixups[i].off < off);
                 int32_t const offDisp = paLabels[paFixups[i].idxLabel].off - paFixups[i].off + paFixups[i].offAddend;
                 Assert(offDisp >= -262144 && offDisp < 262144);
-                *Ptr.pu32 = (*Ptr.pu32 & UINT32_C(0xff00001f)) | (offDisp << 5);
+                *Ptr.pu32 = (*Ptr.pu32 & UINT32_C(0xff00001f)) | (((uint32_t)offDisp & UINT32_C(0x0007ffff)) << 5);
                 continue;
             }
+
+            case kIemNativeFixupType_RelImm14At5:
+            {
+                Assert(paFixups[i].off < off);
+                int32_t const offDisp = paLabels[paFixups[i].idxLabel].off - paFixups[i].off + paFixups[i].offAddend;
+                Assert(offDisp >= -8192 && offDisp < 8192);
+                *Ptr.pu32 = (*Ptr.pu32 & UINT32_C(0xfff8001f)) | (((uint32_t)offDisp & UINT32_C(0x00003fff)) << 5);
+                continue;
+            }
+
 #endif
             case kIemNativeFixupType_Invalid:
             case kIemNativeFixupType_End:

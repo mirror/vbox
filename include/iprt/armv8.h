@@ -3101,7 +3101,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAddSubReg(bool fSub, uint32_t iRegRes
     return ((uint32_t)f64Bit       << 31)
          | ((uint32_t)fSub         << 30)
          | ((uint32_t)fSetFlags    << 29)
-         | UINT32_C(0x13000000)
+         | UINT32_C(0x0b000000)
          | ((uint32_t)enmShift     << 22)
          | (iRegSrc2               << 16)
          | (cShift                 << 10)
