@@ -46,7 +46,6 @@ class nsStringContainer;
 class nsCStringContainer;
 
 #ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
-#define NS_GetFrozenFunctions VBoxNsxpNS_GetFrozenFunctions
 #define NS_RegisterXPCOMExitRoutine VBoxNsxpNS_RegisterXPCOMExitRoutine
 #define NS_UnregisterXPCOMExitRoutine VBoxNsxpNS_UnregisterXPCOMExitRoutine
 #endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
@@ -80,84 +79,6 @@ NS_RegisterXPCOMExitRoutine(XPCOMExitRoutine exitRoutine, PRUint32 priority);
 extern "C" NS_COM nsresult
 NS_UnregisterXPCOMExitRoutine(XPCOMExitRoutine exitRoutine);
 
-
-// PUBLIC
-typedef nsresult   (* InitFunc)(nsIServiceManager* *result, nsIFile* binDirectory, nsIDirectoryServiceProvider* appFileLocationProvider);
-typedef nsresult   (* ShutdownFunc)(nsIServiceManager* servMgr);
-typedef nsresult   (* GetServiceManagerFunc)(nsIServiceManager* *result);
-typedef nsresult   (* GetComponentManagerFunc)(nsIComponentManager* *result);
-typedef nsresult   (* GetComponentRegistrarFunc)(nsIComponentRegistrar* *result);
-typedef nsresult   (* NewLocalFileFunc)(const nsAString &path, PRBool followLinks, nsILocalFile* *result);
-typedef nsresult   (* NewNativeLocalFileFunc)(const nsACString &path, PRBool followLinks, nsILocalFile* *result);
-
-typedef nsresult   (* GetDebugFunc)(nsIDebug* *result);
-typedef nsresult   (* GetTraceRefcntFunc)(nsITraceRefcnt* *result);
-
-typedef nsresult   (* StringContainerInitFunc)(nsStringContainer&);
-typedef void       (* StringContainerFinishFunc)(nsStringContainer&);
-typedef PRUint32   (* StringGetDataFunc)(const nsAString&, const PRUnichar**, PRBool*);
-typedef PRUnichar* (* StringCloneDataFunc)(const nsAString&);
-typedef nsresult   (* StringSetDataFunc)(nsAString&, const PRUnichar*, PRUint32);
-typedef nsresult   (* StringSetDataRangeFunc)(nsAString&, PRUint32, PRUint32, const PRUnichar*, PRUint32);
-typedef nsresult   (* StringCopyFunc)(nsAString &, const nsAString &);
-
-typedef nsresult   (* CStringContainerInitFunc)(nsCStringContainer&);
-typedef void       (* CStringContainerFinishFunc)(nsCStringContainer&);
-typedef PRUint32   (* CStringGetDataFunc)(const nsACString&, const char**, PRBool*);
-typedef char*      (* CStringCloneDataFunc)(const nsACString&);
-typedef nsresult   (* CStringSetDataFunc)(nsACString&, const char*, PRUint32);
-typedef nsresult   (* CStringSetDataRangeFunc)(nsACString&, PRUint32, PRUint32, const char*, PRUint32);
-typedef nsresult   (* CStringCopyFunc)(nsACString &, const nsACString &);
-
-typedef nsresult   (* CStringToUTF16)(const nsACString &, PRUint32, const nsAString &);
-typedef nsresult   (* UTF16ToCString)(const nsAString &, PRUint32, const nsACString &);
-
-// PRIVATE
-typedef nsresult   (* RegisterXPCOMExitRoutineFunc)(XPCOMExitRoutine exitRoutine, PRUint32 priority);
-typedef nsresult   (* UnregisterXPCOMExitRoutineFunc)(XPCOMExitRoutine exitRoutine);
-
-typedef struct XPCOMFunctions{
-    PRUint32 version;
-    PRUint32 size;
-
-    InitFunc init;
-    ShutdownFunc shutdown;
-    GetServiceManagerFunc getServiceManager;
-    GetComponentManagerFunc getComponentManager;
-    GetComponentRegistrarFunc getComponentRegistrar;
-    NewLocalFileFunc newLocalFile;
-    NewNativeLocalFileFunc newNativeLocalFile;
-
-    RegisterXPCOMExitRoutineFunc registerExitRoutine;
-    UnregisterXPCOMExitRoutineFunc unregisterExitRoutine;
-
-    // Added for Mozilla 1.5
-    GetDebugFunc getDebug;
-    GetTraceRefcntFunc getTraceRefcnt;
-
-    // Added for Mozilla 1.7
-    StringContainerInitFunc stringContainerInit;
-    StringContainerFinishFunc stringContainerFinish;
-    StringGetDataFunc stringGetData;
-    StringSetDataFunc stringSetData;
-    StringSetDataRangeFunc stringSetDataRange;
-    StringCopyFunc stringCopy;
-    CStringContainerInitFunc cstringContainerInit;
-    CStringContainerFinishFunc cstringContainerFinish;
-    CStringGetDataFunc cstringGetData;
-    CStringSetDataFunc cstringSetData;
-    CStringSetDataRangeFunc cstringSetDataRange;
-    CStringCopyFunc cstringCopy;
-    CStringToUTF16 cstringToUTF16;
-    UTF16ToCString utf16ToCString;
-    StringCloneDataFunc stringCloneData;
-    CStringCloneDataFunc cstringCloneData;
-   
-} XPCOMFunctions;
-
-typedef nsresult (PR_CALLBACK *GetFrozenFunctionsFunc)(XPCOMFunctions *entryPoints, const char* libraryPath);
-extern "C" NS_COM nsresult
-NS_GetFrozenFunctions(XPCOMFunctions *entryPoints, const char* libraryPath);
 
 // think hard before changing this
 #define XPCOM_GLUE_VERSION 1
