@@ -125,28 +125,6 @@ PR_IMPLEMENT(PRBool) PR_Initialized(void)
 
 PRInt32 _native_threads_only = 0;
 
-#ifdef WINNT
-static void _pr_SetNativeThreadsOnlyMode(void)
-{
-    HMODULE mainExe;
-    PRBool *globalp;
-    char *envp;
-
-    mainExe = GetModuleHandle(NULL);
-    PR_ASSERT(NULL != mainExe);
-    globalp = (PRBool *) GetProcAddress(mainExe, "nspr_native_threads_only");
-    if (globalp) {
-        _native_threads_only = (*globalp != PR_FALSE);
-    } else if (envp = getenv("NSPR_NATIVE_THREADS_ONLY")) {
-        _native_threads_only = (atoi(envp) == 1);
-    }
-}
-#endif
-
-#if !defined(_PR_INET6) || defined(_PR_INET6_PROBE)
-extern PRStatus _pr_init_ipv6(void);
-#endif
-
 static void _PR_InitStuff(void)
 {
 
@@ -155,10 +133,6 @@ static void _PR_InitStuff(void)
 #ifdef VBOX_USE_IPRT_IN_NSPR
     RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
 #endif
-#ifdef WINNT
-    _pr_SetNativeThreadsOnlyMode();
-#endif
-
 
     (void) PR_GetPageSize();
 
@@ -225,20 +199,12 @@ PR_IMPLEMENT(void) PR_UnblockClockInterrupts(void)
 PR_IMPLEMENT(void) PR_Init(
     PRThreadType type, PRThreadPriority priority, PRUintn maxPTDs)
 {
-#if defined(XP_MAC)
-#pragma unused (type, priority, maxPTDs)
-#endif
-
     _PR_ImplicitInitialization();
 }
 
 PR_IMPLEMENT(PRIntn) PR_Initialize(
     PRPrimordialFn prmain, PRIntn argc, char **argv, PRUintn maxPTDs)
 {
-#if defined(XP_MAC)
-#pragma unused (maxPTDs)
-#endif
-
     PRIntn rv;
     _PR_ImplicitInitialization();
     rv = prmain(argc, argv);
@@ -601,13 +567,9 @@ PR_IMPLEMENT(PRStatus) PR_CallOnceWithArg(
 PRBool _PR_Obsolete(const char *obsolete, const char *preferred)
 {
 #if defined(DEBUG)
-#ifndef XP_MAC
     PR_fprintf(
         PR_STDERR, "'%s' is obsolete. Use '%s' instead.\n",
         obsolete, (NULL == preferred) ? "something else" : preferred);
-#else
-#pragma unused (obsolete, preferred)
-#endif
 #endif
     return PR_FALSE;
 }  /* _PR_Obsolete */

@@ -172,11 +172,7 @@ NSPR_API(void)        PR_FD_NCLR(PRInt32 osfd, PR_fd_set *set);
 NSPR_API(PRInt32)     PR_FD_NISSET(PRInt32 osfd, PR_fd_set *set);
 
 #ifndef NO_NSPR_10_SUPPORT
-#ifdef XP_MAC
-#include <stat.h>
-#else
 #include <sys/stat.h>
-#endif
 
 NSPR_API(PRInt32) PR_Stat(const char *path, struct stat *buf);
 #endif /* NO_NSPR_10_SUPPORT */

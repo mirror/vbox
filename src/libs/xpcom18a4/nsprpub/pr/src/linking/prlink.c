@@ -195,8 +195,8 @@ PR_GetLibraryPath(void)
 
     /* initialize pr_currentLibPath */
 
-#if defined(XP_UNIX) || defined(XP_BEOS)
-#if defined(USE_DLFCN) || defined(USE_MACH_DYLD) || defined(XP_BEOS)
+#if defined(XP_UNIX)
+#if defined(USE_DLFCN) || defined(USE_MACH_DYLD)
     {
     char *p=NULL;
     int len;
@@ -250,7 +250,7 @@ PR_GetLibraryName(const char *path, const char *lib)
 {
     char *fullname;
 
-#if defined(XP_UNIX) || defined(XP_BEOS)
+#if defined(XP_UNIX)
     if (strstr(lib, PR_DLL_SUFFIX) == NULL)
     {
         if (path) {
@@ -265,7 +265,7 @@ PR_GetLibraryName(const char *path, const char *lib)
             fullname = PR_smprintf("%s", lib);
         }
     }
-#endif /* XP_UNIX || XP_BEOS */
+#endif /* XP_UNIX */
     return fullname;
 }
 

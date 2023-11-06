@@ -150,17 +150,8 @@ NSPR_API(PRStatus) PR_DestroySocketPollFd(PRFileDesc *fd);
 ** Socket types: PR_SOCK_STREAM, PR_SOCK_DGRAM
 */
 
-#ifdef WIN32
-
-#define PR_SOCK_STREAM 1
-#define PR_SOCK_DGRAM 2
-
-#else /* WIN32 */
-
 #define PR_SOCK_STREAM SOCK_STREAM
 #define PR_SOCK_DGRAM SOCK_DGRAM
-
-#endif /* WIN32 */
 
 /*
 ** Create a new Socket; this function is obsolete.
@@ -209,85 +200,6 @@ NSPR_API(PRInt32) PR_EmulateAcceptRead(PRFileDesc *sd, PRFileDesc **nd,
 NSPR_API(PRInt32) PR_EmulateSendFile(
     PRFileDesc *networkSocket, PRSendFileData *sendData,
     PRTransmitFileFlags flags, PRIntervalTime timeout);
-
-#ifdef WIN32
-/* FUNCTION: PR_NTFast_AcceptRead
-** DESCRIPTION:
-**    NT has the notion of an "accept context", which is only needed in
-**    order to make certain calls.  By default, a socket connected via
-**    AcceptEx can only do a limited number of things without updating
-**    the acceptcontext.  The generic version of PR_AcceptRead always
-**    updates the accept context.  This version does not.
-**/
-NSPR_API(PRInt32) PR_NTFast_AcceptRead(PRFileDesc *sd, PRFileDesc **nd,
-              PRNetAddr **raddr, void *buf, PRInt32 amount, PRIntervalTime t);
-
-typedef void (*_PR_AcceptTimeoutCallback)(void *);
-
-/* FUNCTION: PR_NTFast_AcceptRead_WithTimeoutCallback
-** DESCRIPTION:
-**    The AcceptEx call combines the accept with the read function.  However,
-**    our daemon threads need to be able to wakeup and reliably flush their
-**    log buffers if the Accept times out.  However, with the current blocking
-**    interface to AcceptRead, there is no way for us to timeout the Accept;
-**    this is because when we timeout the Read, we can close the newly 
-**    socket and continue; but when we timeout the accept itself, there is no
-**    new socket to timeout.  So instead, this version of the function is
-**    provided.  After the initial timeout period elapses on the accept()
-**    portion of the function, it will call the callback routine and then
-**    continue the accept.   If the timeout occurs on the read, it will 
-**    close the connection and return error.
-*/
-NSPR_API(PRInt32) PR_NTFast_AcceptRead_WithTimeoutCallback(
-              PRFileDesc *sd, 
-              PRFileDesc **nd,
-              PRNetAddr **raddr, 
-              void *buf, 
-              PRInt32 amount, 
-              PRIntervalTime t,
-              _PR_AcceptTimeoutCallback callback, 
-              void *callback_arg);
-
-/* FUNCTION: PR_NTFast_Accept
-** DESCRIPTION:
-**    NT has the notion of an "accept context", which is only needed in
-**    order to make certain calls.  By default, a socket connected via
-**    AcceptEx can only do a limited number of things without updating
-**    the acceptcontext.  The generic version of PR_Accept always
-**    updates the accept context.  This version does not.
-**/
-NSPR_API(PRFileDesc*)	PR_NTFast_Accept(PRFileDesc *fd, PRNetAddr *addr,
-                                                PRIntervalTime timeout);
-
-/* FUNCTION: PR_NTFast_Update
-** DESCRIPTION:
-**    For sockets accepted with PR_NTFast_Accept or PR_NTFastAcceptRead,
-**    this function will update the accept context for those sockets,
-**    so that the socket can make general purpose socket calls.
-**    Without calling this, the only operations supported on the socket
-**    Are PR_Read, PR_Write, PR_Transmitfile, and PR_Close.
-*/
-NSPR_API(void) PR_NTFast_UpdateAcceptContext(PRFileDesc *acceptSock, 
-                                        PRFileDesc *listenSock);
-
-
-/* FUNCTION: PR_NT_CancelIo
-** DESCRIPTION:
-**    Cancel IO operations on fd.
-*/
-NSPR_API(PRStatus) PR_NT_CancelIo(PRFileDesc *fd);
-
-
-#endif /* WIN32 */
-
-/*
-** Need external access to this on Mac so we can first set up our faux
-** environment vars
-*/
-#ifdef XP_MAC
-NSPR_API(void) PR_Init_Log(void);
-#endif
-
 
 PR_END_EXTERN_C
 

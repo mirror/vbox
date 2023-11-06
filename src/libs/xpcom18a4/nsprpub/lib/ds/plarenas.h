@@ -55,32 +55,6 @@ PR_BEGIN_EXTERN_C
 typedef struct PLArenaPool      PLArenaPool;
 
 /*
-** Allocate an arena pool as specified by the parameters.
-**
-** This is equivelant to allocating the space yourself and then
-** calling PL_InitArenaPool().
-**
-** This function may fail (and return a NULL) for a variety of
-** reasons. The reason for a particular failure can be discovered
-** by calling PR_GetError().
-*/
-#if 0  /* Not implemented */
-PR_EXTERN(PLArenaPool*) PL_AllocArenaPool(
-    const char *name, PRUint32 size, PRUint32 align);
-#endif
-
-/*
-** Destroy an arena pool previously allocated by PL_AllocArenaPool().
-**
-** This function may fail if the arena is not empty and the caller
-** wishes to check for empty upon descruction.
-*/
-#if 0  /* Not implemented */
-PR_EXTERN(PRStatus) PL_DestroyArenaPool(PLArenaPool *pool, PRBool checkEmpty);
-#endif
-
-
-/*
 ** Initialize an arena pool with the given name for debugging and metering,
 ** with a minimum size per arena of size bytes.
 **/

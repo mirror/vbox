@@ -51,13 +51,6 @@
 #include <string.h>
 #include <ctype.h>
 
-#ifdef XP_MAC
-#include <time.h>
-#endif
-
-
-
-
 /*
  * Static variables used by functions in this file
  */
@@ -246,11 +239,7 @@ PR_ExplodeTime(
  *
  *------------------------------------------------------------------------
  */
-#if defined(HAVE_WATCOM_BUG_2)
-PRTime __pascal __export __loadds
-#else
 PR_IMPLEMENT(PRTime)
-#endif
 PR_ImplodeTime(const PRExplodedTime *exploded)
 {
     PRExplodedTime copy;
@@ -565,10 +554,6 @@ PR_NormalizeTime(PRExplodedTime *time, PRTimeParamFn params)
 
 #else
 
-#if defined(XP_MAC)
-extern struct tm *Maclocaltime(const time_t * t);
-#endif
-
 static PRLock *monitor = NULL;
 
 static struct tm *MT_safe_localtime(const time_t *clock, struct tm *result)
@@ -601,26 +586,12 @@ static struct tm *MT_safe_localtime(const time_t *clock, struct tm *result)
      * structs returned for timezones west of Greenwich when clock == 0.
      */
     
-#if defined(XP_MAC)
-    tmPtr = Maclocaltime(clock);
-#else
     tmPtr = localtime(clock);
-#endif
-
-#if defined(WIN16) || defined(XP_OS2_EMX)
-    if ( (PRInt32) *clock < 0 ||
-         ( (PRInt32) *clock == 0 && tmPtr->tm_year != 70))
-        result = NULL;
-    else
-        *result = *tmPtr;
-#else
     if (tmPtr) {
         *result = *tmPtr;
     } else {
         result = NULL;
     }
-#endif /* WIN16 */
-
     if (needLock) PR_Unlock(monitor);
 
     return result;
@@ -628,7 +599,7 @@ static struct tm *MT_safe_localtime(const time_t *clock, struct tm *result)
 
 #endif  /* definition of MT_safe_localtime() */
 
-#if defined(XP_UNIX) || defined(XP_PC) || defined(XP_BEOS)
+#if defined(XP_UNIX)
 
 PR_IMPLEMENT(PRTimeParameters)
 PR_LocalTimeParameters(const PRExplodedTime *gmt)
@@ -763,7 +734,7 @@ PR_LocalTimeParameters(const PRExplodedTime *gmt)
     return retVal;
 }
 
-#endif    /* defined(XP_UNIX) !! defined(XP_PC) */
+#endif    /* defined(XP_UNIX) */
 
 /*
  *------------------------------------------------------------------------
@@ -883,10 +854,6 @@ PR_USPacificTimeParameters(const PRExplodedTime *gmt)
 PR_IMPLEMENT(PRTimeParameters)
 PR_GMTParameters(const PRExplodedTime *gmt)
 {
-#if defined(XP_MAC)
-#pragma unused (gmt)
-#endif
-
     PRTimeParameters retVal = { 0, 0 };
     return retVal;
 }
@@ -1588,16 +1555,6 @@ PR_ParseTimeString(
                   secs = mktime(&localTime);
                   if (secs != (time_t) -1)
                     {
-#if defined(XP_MAC) && (__MSL__ < 0x6000)
-                      /*
-                       * The mktime() routine in MetroWerks MSL C
-                       * Runtime library returns seconds since midnight,
-                       * 1 Jan. 1900, not 1970 - in versions of MSL (Metrowerks Standard
-                       * Library) prior to version 6.  Only for older versions of
-                       * MSL do we adjust the value of secs to the NSPR epoch
-                       */
-                      secs -= ((365 * 70UL) + 17) * 24 * 60 * 60;
-#endif
                       LL_I2L(*result, secs);
                       LL_I2L(usec_per_sec, PR_USEC_PER_SEC);
                       LL_MUL(*result, *result, usec_per_sec);
@@ -1670,7 +1627,7 @@ PR_FormatTime(char *buf, int buflen, const char *fmt, const PRExplodedTime *tm)
  * fields: tm_zone and tm_gmtoff.
  */
 
-#if defined(SUNOS4) || (__GLIBC__ >= 2) || defined(XP_BEOS) \
+#if defined(SUNOS4) || (__GLIBC__ >= 2) \
         || defined(NETBSD) || defined(OPENBSD) || defined(FREEBSD) \
         || defined(DARWIN)
     a.tm_zone = NULL;

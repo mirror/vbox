@@ -53,13 +53,8 @@
 
 typedef struct PRSegment PRSegment;
 
-#ifdef XP_MAC
-#include "prosdep.h"
-#include "probslet.h"
-#else
 #include "md/prosdep.h"
 #include "obsolete/probslet.h"
-#endif  /* XP_MAC */
 
 #ifdef _PR_HAVE_POSIX_SEMAPHORES
 #include <semaphore.h>
@@ -746,23 +741,6 @@ extern PRStatus _PR_MD_GETHOSTNAME(char *name, PRUint32 namelen);
  */
 extern void _PR_MD_QUERY_FD_INHERITABLE(PRFileDesc *fd);
 #define    _PR_MD_QUERY_FD_INHERITABLE _MD_QUERY_FD_INHERITABLE
-
-#ifdef XP_BEOS
-
-extern PRLock *_connectLock;
-
-typedef struct _ConnectListNode {
-	PRInt32		osfd;
-	PRNetAddr	addr;
-	PRUint32	addrlen;
-	PRIntervalTime	timeout;
-} ConnectListNode;
-
-extern ConnectListNode connectList[64];
-
-extern PRUint32 connectCount;
-
-#endif /* XP_BEOS */
 
 PR_END_EXTERN_C
 

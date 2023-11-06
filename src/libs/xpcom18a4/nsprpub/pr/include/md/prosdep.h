@@ -45,34 +45,9 @@
 
 PR_BEGIN_EXTERN_C
 
-#ifdef XP_PC
+#if defined(XP_UNIX)
 
-#include "md/_pcos.h"
-#ifdef WINNT
-#include "md/_winnt.h"
-#include "md/_win32_errors.h"
-#elif defined(WIN95)
-#include "md/_win95.h"
-#include "md/_win32_errors.h"
-#elif defined(WIN16)
-#include "md/_win16.h"
-#elif defined(OS2)
-#include "md/_os2.h"
-#include "md/_os2_errors.h"
-#else
-#error unknown Windows platform
-#endif
-
-#elif defined XP_MAC
-
-#include "_macos.h"
-
-#elif defined(XP_UNIX)
-
-#if defined(AIX)
-#include "md/_aix.h"
-
-#elif defined(FREEBSD)
+#if defined(FREEBSD)
 #include "md/_freebsd.h"
 
 #elif defined(NETBSD)
@@ -81,62 +56,14 @@ PR_BEGIN_EXTERN_C
 #elif defined(OPENBSD)
 #include "md/_openbsd.h"
 
-#elif defined(BSDI)
-#include "md/_bsdi.h"
-
-#elif defined(HPUX)
-#include "md/_hpux.h"
-
-#elif defined(IRIX)
-#include "md/_irix.h"
-
 #elif defined(LINUX)
 #include "md/_linux.h"
-
-#elif defined(OSF1)
-#include "md/_osf1.h"
 
 #elif defined(DARWIN)
 #include "md/_darwin.h"
 
-#elif defined(NEXTSTEP)
-#include "md/_nextstep.h"
-
 #elif defined(SOLARIS)
 #include "md/_solaris.h"
-
-#elif defined(SUNOS4)
-#include "md/_sunos4.h"
-
-#elif defined(SNI)
-#include "md/_reliantunix.h"
-
-#elif defined(SONY)
-#include "md/_sony.h"
-
-#elif defined(NEC)
-#include "md/_nec.h"
-
-#elif defined(SCO)
-#include "md/_scoos.h"
-
-#elif defined(UNIXWARE)
-#include "md/_unixware.h"
-
-#elif defined(NCR)
-#include "md/_ncr.h"
-
-#elif defined(DGUX)
-#include "md/_dgux.h"
-
-#elif defined(QNX)
-#include "md/_qnx.h"
-
-#elif defined(VMS)
-#include "md/_openvms.h"
-
-#elif defined(NTO)
-#include "md/_nto.h"
 
 #else
 #error unknown Unix flavor
@@ -144,11 +71,6 @@ PR_BEGIN_EXTERN_C
 #endif
 
 #include "md/_unixos.h"
-#include "md/_unix_errors.h"
-
-#elif defined(XP_BEOS)
-
-#include "md/_beos.h"
 #include "md/_unix_errors.h"
 
 #else

@@ -57,28 +57,9 @@
 ** beyond the high water mark, an error will be returned.
 */
 
-/*
-** As of this time, BeOS has its own TPD implementation.  Integrating
-** this standard one is a TODO for anyone with a bit of spare time on
-** their hand.  For now, we just #ifdef out this whole file and use
-** the routines in pr/src/btthreads/
-*/
-
-#ifndef XP_BEOS
-
 #include "primpl.h"
 
 #include <string.h>
-
-#if defined(WIN95)
-/*
-** Some local variables report warnings on Win95 because the code paths 
-** using them are conditioned on HAVE_CUSTOME_USER_THREADS.
-** The pragma suppresses the warning.
-** 
-*/
-#pragma warning(disable : 4101)
-#endif
 
 #define _PR_TPD_LIMIT 128               /* arbitary limit on the TPD slots */
 static PRInt32 _pr_tpd_length = 0;      /* current length of destructor vector */
@@ -277,4 +258,3 @@ void _PR_DestroyThreadPrivate(PRThread* self)
     }
 }  /* _PR_DestroyThreadPrivate */
 
-#endif /* !XP_BEOS */

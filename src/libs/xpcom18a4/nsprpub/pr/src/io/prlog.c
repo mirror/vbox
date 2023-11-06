@@ -74,30 +74,6 @@ static PRLock *_pr_logLock;
 #define _PR_LOCK_LOG() PR_Lock(_pr_logLock);
 #define _PR_UNLOCK_LOG() PR_Unlock(_pr_logLock);
 
-#if defined(XP_PC)
-#define strcasecmp stricmp
-#define strncasecmp strnicmp
-#endif
-
-/*
- * On NT, we can't define _PUT_LOG as PR_Write or _PR_MD_WRITE,
- * because every asynchronous file io operation leads to a fiber context
- * switch.  So we define _PUT_LOG as fputs (from stdio.h).  A side
- * benefit is that fputs handles the LF->CRLF translation.  This
- * code can also be used on other platforms with file stream io.
- */
-#if defined(WIN32) || defined(XP_OS2)
-#define _PR_USE_STDIO_FOR_LOGGING
-#endif
-
-/*
-** Coerce Win32 log output to use OutputDebugString() when
-** NSPR_LOG_FILE is set to "WinDebug".
-*/
-#if defined(XP_PC)
-#define WIN32_DEBUG_FILE (FILE*)-2
-#endif
-
 /*
 ** Use the IPRT logging facility when
 ** NSPR_LOG_FILE is set to "WinDebug". The default IPRT log instance
@@ -130,8 +106,6 @@ static PRLock *_pr_logLock;
 #define __PUT_LOG(fd, buf, nb) {fwrite(buf, 1, nb, fd); fflush(fd);}
 #elif defined(_PR_PTHREADS)
 #define __PUT_LOG(fd, buf, nb) PR_Write(fd, buf, nb)
-#elif defined(XP_MAC)
-#define __PUT_LOG(fd, buf, nb) _PR_MD_WRITE_SYNC(fd, buf, nb)
 #else
 #define __PUT_LOG(fd, buf, nb) _PR_MD_WRITE(fd, buf, nb)
 #endif
@@ -164,55 +138,6 @@ static PRFileDesc *logFile = 0;
 
 #define LINE_BUF_SIZE           512
 #define DEFAULT_BUF_SIZE        16384
-
-#ifdef _PR_NEED_STRCASECMP
-
-/*
- * strcasecmp is defined in /usr/ucblib/libucb.a on some platforms
- * such as NCR and Unixware.  Linking with both libc and libucb
- * may cause some problem, so I just provide our own implementation
- * of strcasecmp here.
- */
-
-static const unsigned char uc[] =
-{
-    '\000', '\001', '\002', '\003', '\004', '\005', '\006', '\007',
-    '\010', '\011', '\012', '\013', '\014', '\015', '\016', '\017',
-    '\020', '\021', '\022', '\023', '\024', '\025', '\026', '\027',
-    '\030', '\031', '\032', '\033', '\034', '\035', '\036', '\037',
-    ' ',    '!',    '"',    '#',    '$',    '%',    '&',    '\'',
-    '(',    ')',    '*',    '+',    ',',    '-',    '.',    '/',
-    '0',    '1',    '2',    '3',    '4',    '5',    '6',    '7',
-    '8',    '9',    ':',    ';',    '<',    '=',    '>',    '?',
-    '@',    'A',    'B',    'C',    'D',    'E',    'F',    'G',
-    'H',    'I',    'J',    'K',    'L',    'M',    'N',    'O',
-    'P',    'Q',    'R',    'S',    'T',    'U',    'V',    'W',
-    'X',    'Y',    'Z',    '[',    '\\',   ']',    '^',    '_',
-    '`',    'A',    'B',    'C',    'D',    'E',    'F',    'G',
-    'H',    'I',    'J',    'K',    'L',    'M',    'N',    'O',
-    'P',    'Q',    'R',    'S',    'T',    'U',    'V',    'W',
-    'X',    'Y',    'Z',    '{',    '|',    '}',    '~',    '\177'
-};
-
-PRIntn strcasecmp(const char *a, const char *b)
-{
-    const unsigned char *ua = (const unsigned char *)a;
-    const unsigned char *ub = (const unsigned char *)b;
-
-    if( ((const char *)0 == a) || (const char *)0 == b )
-        return (PRIntn)(a-b);
-
-    while( (uc[*ua] == uc[*ub]) && ('\0' != *a) )
-    {
-        a++;
-        ua++;
-        ub++;
-    }
-
-    return (PRIntn)(uc[*ua] - uc[*ub]);
-}
-
-#endif /* _PR_NEED_STRCASECMP */
 
 void _PR_InitLog(void)
 {
@@ -270,15 +195,7 @@ void _PR_InitLog(void)
         ev = PR_GetEnv("NSPR_LOG_FILE");
         if (ev && ev[0]) {
             if (!PR_SetLogFile(ev)) {
-#ifdef XP_PC
-                char* str = PR_smprintf("Unable to create nspr log file '%s'\n", ev);
-                if (str) {
-                    OutputDebugString(str);
-                    PR_smprintf_free(str);
-                }
-#else
                 fprintf(stderr, "Unable to create nspr log file '%s'\n", ev);
-#endif
             }
         } else {
 #ifdef _PR_USE_STDIO_FOR_LOGGING
@@ -454,9 +371,6 @@ PR_IMPLEMENT(PRBool) PR_SetLogFile(const char *file)
             PR_Close(logFile);
         }
         logFile = newLogFile;
-#if defined(XP_MAC)
-        SetLogFileTypeCreator(file);
-#endif
     }
     return (PRBool) (newLogFile != 0);
 
@@ -492,30 +406,13 @@ PR_IMPLEMENT(void) PR_LogPrint(const char *fmt, ...)
     va_start(ap, fmt);
     me = PR_GetCurrentThread();
     nb = PR_snprintf(line, sizeof(line)-1, "%ld[%p]: ",
-#if defined(_PR_DCETHREADS)
-             /* The problem is that for _PR_DCETHREADS, pthread_t is not a
-              * pointer, but a structure; so you can't easily print it...
-              */
-                     me ? &(me->id): 0L, me);
-#elif defined(_PR_BTHREADS)
-		     me, me);
-#else
                      me ? me->id : 0L, me);
-#endif
 
     nb += PR_vsnprintf(line+nb, sizeof(line)-nb-1, fmt, ap);
     if (nb > 0) {
         if (line[nb-1] != '\n') {
-#ifndef XP_MAC
-            line[nb++] = '\n';
-#else
             line[nb++] = '\015';
-#endif
             line[nb] = '\0';
-        } else {
-#ifdef XP_MAC
-            line[nb-1] = '\015';
-#endif
         }
     }
     va_end(ap);
@@ -553,43 +450,12 @@ PR_IMPLEMENT(void) PR_Abort(void)
     abort();
 }
 
-#if defined(XP_OS2)
-/*
- * Added definitions for DebugBreak() for 2 different OS/2 compilers.
- * Doing the int3 on purpose for Visual Age so that a developer can
- * step over the instruction if so desired.  Not always possible if
- * trapping due to exception handling IBM-AKR
- */
-#if defined(XP_OS2_VACPP)
-#include <builtin.h>
-static void DebugBreak(void) { _interrupt(3); }
-#elif defined(XP_OS2_EMX)
-static void DebugBreak(void) { asm("int $3"); }
-#else
-static void DebugBreak(void) { }
-#endif
-#endif /* XP_OS2 */
-
 PR_IMPLEMENT(void) PR_Assert(const char *s, const char *file, PRIntn ln)
 {
     PR_LogPrint("Assertion failure: %s, at %s:%d\n", s, file, ln);
-#if defined(XP_UNIX) || defined(XP_OS2) || defined(XP_BEOS)
+#if defined(XP_UNIX)
     fprintf(stderr, "Assertion failure: %s, at %s:%d\n", s, file, ln);
 #endif
-#ifdef XP_MAC
-    dprintf("Assertion failure: %s, at %s:%d\n", s, file, ln);
-#endif
-#if defined(WIN32) || defined(XP_OS2)
-    DebugBreak();
-#endif
-#ifndef XP_MAC
     abort();
-#endif
 }
 
-#ifdef XP_MAC
-PR_IMPLEMENT(void) PR_Init_Log(void)
-{
-	_PR_InitLog();
-}
-#endif

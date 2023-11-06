@@ -59,7 +59,7 @@
 #ifndef prinet_h__
 #define prinet_h__
 
-#if defined(XP_UNIX) || defined(XP_OS2) || defined(XP_BEOS)
+#if defined(XP_UNIX)
 #ifdef LINUX
 #undef __STRICT_ANSI__
 #define __STRICT_ANSI__
@@ -67,55 +67,12 @@
 #include <sys/types.h>
 #include <sys/socket.h>		/* AF_INET */
 #include <netinet/in.h>         /* INADDR_ANY, ..., ntohl(), ... */
-#ifdef XP_OS2
-#include <sys/ioctl.h>
-#endif
-#ifdef XP_UNIX
-#ifdef AIX
-/*
- * On AIX 4.3, the header <arpa/inet.h> refers to struct
- * ether_addr and struct sockaddr_dl that are not declared.
- * The following struct declarations eliminate the compiler
- * warnings.
- */
-struct ether_addr;
-struct sockaddr_dl;
-#endif /* AIX */
 #include <arpa/inet.h>
-#endif /* XP_UNIX */
 #include <netdb.h>
 
-#if defined(FREEBSD) || defined(BSDI) || defined(QNX)
+#if defined(FREEBSD)
 #include <rpc/types.h> /* the only place that defines INADDR_LOOPBACK */
 #endif
-
-/*
- * OS/2 hack.  For some reason INADDR_LOOPBACK is not defined in the
- * socket headers.
- */
-#if defined(OS2) && !defined(INADDR_LOOPBACK)
-#define INADDR_LOOPBACK 0x7f000001
-#endif
-
-/*
- * Prototypes of ntohl() etc. are declared in <machine/endian.h>
- * on these platforms.
- */
-#if defined(BSDI) || defined(OSF1)
-#include <machine/endian.h>
-#endif
-
-#elif defined(WIN32)
-
-/* Do not include any system header files. */
-
-#elif defined(WIN16)
-
-#include <winsock.h>
-
-#elif defined(XP_MAC)
-
-#include "macsocket.h"
 
 #else
 

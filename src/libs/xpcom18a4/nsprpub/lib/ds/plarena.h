@@ -59,35 +59,11 @@ struct PLArena {
     PRUword     avail;          /* points to next available byte */
 };
 
-#ifdef PL_ARENAMETER
-typedef struct PLArenaStats PLArenaStats;
-
-struct PLArenaStats {
-    PLArenaStats  *next;        /* next in arenaStats list */
-    char          *name;        /* name for debugging */
-    PRUint32      narenas;      /* number of arenas in pool */
-    PRUint32      nallocs;      /* number of PL_ARENA_ALLOCATE() calls */
-    PRUint32      nreclaims;    /* number of reclaims from freeArenas */
-    PRUint32      nmallocs;     /* number of malloc() calls */
-    PRUint32      ndeallocs;    /* number of lifetime deallocations */
-    PRUint32      ngrows;       /* number of PL_ARENA_GROW() calls */
-    PRUint32      ninplace;     /* number of in-place growths */
-    PRUint32      nreleases;    /* number of PL_ARENA_RELEASE() calls */
-    PRUint32      nfastrels;    /* number of "fast path" releases */
-    PRUint32      nbytes;       /* total bytes allocated */
-    PRUint32      maxalloc;     /* maximum allocation size in bytes */
-    PRFloat64     variance;     /* size variance accumulator */
-};
-#endif
-
 struct PLArenaPool {
     PLArena     first;          /* first arena in pool list */
     PLArena     *current;       /* arena from which to allocate space */
     PRUint32    arenasize;      /* net exact size of a new arena */
     PRUword     mask;           /* alignment mask (power-of-2 - 1) */
-#ifdef PL_ARENAMETER
-    PLArenaStats stats;
-#endif
 };
 
 /*
@@ -170,11 +146,7 @@ struct PLArenaPool {
         PL_ArenaCountRelease(pool, _m); \
     PR_END_MACRO
 
-#ifdef PL_ARENAMETER
-#define PL_COUNT_ARENA(pool,op) ((pool)->stats.narenas op)
-#else
 #define PL_COUNT_ARENA(pool,op)
-#endif
 
 #define PL_ARENA_DESTROY(pool, a, pnext) \
     PR_BEGIN_MACRO \
@@ -186,33 +158,11 @@ struct PLArenaPool {
         (a) = 0; \
     PR_END_MACRO
 
-#ifdef PL_ARENAMETER
-
-#include <stdio.h>
-
-PR_EXTERN(void) PL_ArenaCountAllocation(PLArenaPool *pool, PRUint32 nb);
-
-PR_EXTERN(void) PL_ArenaCountInplaceGrowth(
-    PLArenaPool *pool, PRUint32 size, PRUint32 incr);
-
-PR_EXTERN(void) PL_ArenaCountGrowth(
-    PLArenaPool *pool, PRUint32 size, PRUint32 incr);
-
-PR_EXTERN(void) PL_ArenaCountRelease(PLArenaPool *pool, char *mark);
-
-PR_EXTERN(void) PL_ArenaCountRetract(PLArenaPool *pool, char *mark);
-
-PR_EXTERN(void) PL_DumpArenaStats(FILE *fp);
-
-#else  /* !PL_ARENAMETER */
-
 #define PL_ArenaCountAllocation(ap, nb)                 /* nothing */
 #define PL_ArenaCountInplaceGrowth(ap, size, incr)      /* nothing */
 #define PL_ArenaCountGrowth(ap, size, incr)             /* nothing */
 #define PL_ArenaCountRelease(ap, mark)                  /* nothing */
 #define PL_ArenaCountRetract(ap, mark)                  /* nothing */
-
-#endif /* !PL_ARENAMETER */
 
 PR_END_EXTERN_C
 

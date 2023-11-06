@@ -65,40 +65,24 @@
 static void * PR_CALLBACK
 DefaultAllocTable(void *pool, PRSize size)
 {
-#if defined(XP_MAC)
-#pragma unused (pool)
-#endif
-
     return PR_MALLOC(size);
 }
 
 static void PR_CALLBACK
 DefaultFreeTable(void *pool, void *item)
 {
-#if defined(XP_MAC)
-#pragma unused (pool)
-#endif
-
     PR_Free(item);
 }
 
 static PLHashEntry * PR_CALLBACK
 DefaultAllocEntry(void *pool, const void *key)
 {
-#if defined(XP_MAC)
-#pragma unused (pool,key)
-#endif
-
     return PR_NEW(PLHashEntry);
 }
 
 static void PR_CALLBACK
 DefaultFreeEntry(void *pool, PLHashEntry *he, PRUintn flag)
 {
-#if defined(XP_MAC)
-#pragma unused (pool)
-#endif
-
     if (flag == HT_FREE_ENTRY)
         PR_Free(he);
 }
@@ -132,12 +116,7 @@ PL_NewHashTable(PRUint32 n, PLHashFunction keyHash,
     memset(ht, 0, sizeof *ht);
     ht->shift = PL_HASH_BITS - n;
     n = 1 << n;
-#if defined(WIN16)
-    if (n > 16000) {
-        (*allocOps->freeTable)(allocPriv, ht);
-        return 0;
-    }
-#endif  /* WIN16 */
+
     nb = n * sizeof(PLHashEntry *);
     ht->buckets = (PLHashEntry**)((*allocOps->allocTable)(allocPriv, nb));
     if (!ht->buckets) {
@@ -190,9 +169,6 @@ PL_HashTableRawLookup(PLHashTable *ht, PLHashNumber keyHash, const void *key)
     PLHashEntry *he, **hep, **hep0;
     PLHashNumber h;
 
-#ifdef HASHMETER
-    ht->nlookups++;
-#endif
     h = keyHash * GOLDEN_RATIO;
     h >>= ht->shift;
     hep = hep0 = &ht->buckets[h];
@@ -207,9 +183,6 @@ PL_HashTableRawLookup(PLHashTable *ht, PLHashNumber keyHash, const void *key)
             return hep0;
         }
         hep = &he->next;
-#ifdef HASHMETER
-        ht->nsteps++;
-#endif
     }
     return hep;
 }
@@ -224,9 +197,6 @@ PL_HashTableRawLookupConst(PLHashTable *ht, PLHashNumber keyHash,
     PLHashEntry *he, **hep;
     PLHashNumber h;
 
-#ifdef HASHMETER
-    ht->nlookups++;
-#endif
     h = keyHash * GOLDEN_RATIO;
     h >>= ht->shift;
     hep = &ht->buckets[h];
@@ -235,9 +205,6 @@ PL_HashTableRawLookupConst(PLHashTable *ht, PLHashNumber keyHash,
             break;
         }
         hep = &he->next;
-#ifdef HASHMETER
-        ht->nsteps++;
-#endif
     }
     return hep;
 }
@@ -254,10 +221,7 @@ PL_HashTableRawAdd(PLHashTable *ht, PLHashEntry **hep,
     n = NBUCKETS(ht);
     if (ht->nentries >= OVERLOADED(n)) {
         oldbuckets = ht->buckets;
-#if defined(WIN16)
-        if (2 * n > 16000)
-            return 0;
-#endif  /* WIN16 */
+
         nb = 2 * n * sizeof(PLHashEntry *);
         ht->buckets = (PLHashEntry**)
             ((*ht->allocOps->allocTable)(ht->allocPriv, nb));
@@ -266,9 +230,6 @@ PL_HashTableRawAdd(PLHashTable *ht, PLHashEntry **hep,
             return 0;
         }
         memset(ht->buckets, 0, nb);
-#ifdef HASHMETER
-        ht->ngrows++;
-#endif
         ht->shift--;
 
         for (i = 0; i < n; i++) {
@@ -344,9 +305,6 @@ PL_HashTableRawRemove(PLHashTable *ht, PLHashEntry **hep, PLHashEntry *he)
             return;
         }
         memset(ht->buckets, 0, nb);
-#ifdef HASHMETER
-        ht->nshrinks++;
-#endif
         ht->shift++;
 
         for (i = 0; i < n; i++) {
@@ -454,65 +412,12 @@ out:
     return n;
 }
 
-#ifdef HASHMETER
-#include <math.h>
-#include <stdio.h>
-
-PR_IMPLEMENT(void)
-PL_HashTableDumpMeter(PLHashTable *ht, PLHashEnumerator dump, FILE *fp)
-{
-    double mean, variance;
-    PRUint32 nchains, nbuckets;
-    PRUint32 i, n, maxChain, maxChainLen;
-    PLHashEntry *he;
-
-    variance = 0;
-    nchains = 0;
-    maxChainLen = 0;
-    nbuckets = NBUCKETS(ht);
-    for (i = 0; i < nbuckets; i++) {
-        he = ht->buckets[i];
-        if (!he)
-            continue;
-        nchains++;
-        for (n = 0; he; he = he->next)
-            n++;
-        variance += n * n;
-        if (n > maxChainLen) {
-            maxChainLen = n;
-            maxChain = i;
-        }
-    }
-    mean = (double)ht->nentries / nchains;
-    variance = fabs(variance / nchains - mean * mean);
-
-    fprintf(fp, "\nHash table statistics:\n");
-    fprintf(fp, "     number of lookups: %u\n", ht->nlookups);
-    fprintf(fp, "     number of entries: %u\n", ht->nentries);
-    fprintf(fp, "       number of grows: %u\n", ht->ngrows);
-    fprintf(fp, "     number of shrinks: %u\n", ht->nshrinks);
-    fprintf(fp, "   mean steps per hash: %g\n", (double)ht->nsteps
-                                                / ht->nlookups);
-    fprintf(fp, "mean hash chain length: %g\n", mean);
-    fprintf(fp, "    standard deviation: %g\n", sqrt(variance));
-    fprintf(fp, " max hash chain length: %u\n", maxChainLen);
-    fprintf(fp, "        max hash chain: [%u]\n", maxChain);
-
-    for (he = ht->buckets[maxChain], i = 0; he; he = he->next, i++)
-        if ((*dump)(he, i, fp) != HT_ENUMERATE_NEXT)
-            break;
-}
-#endif /* HASHMETER */
-
 PR_IMPLEMENT(int)
 PL_HashTableDump(PLHashTable *ht, PLHashEnumerator dump, FILE *fp)
 {
     int count;
 
     count = PL_HashTableEnumerateEntries(ht, dump, fp);
-#ifdef HASHMETER
-    PL_HashTableDumpMeter(ht, dump, fp);
-#endif
     return count;
 }
 
