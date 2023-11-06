@@ -2153,6 +2153,7 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
         iemThreadedLogCurInstr(pVCpu, "CC", pTb->cInstructions);
         uint16_t const uCsLog  = pVCpu->cpum.GstCtx.cs.Sel;
         uint64_t const uRipLog = pVCpu->cpum.GstCtx.rip;
+        Assert(uCsLog != 0 || uRipLog > 0x400 || !IEM_IS_REAL_OR_V86_MODE(pVCpu)); /* Detect executing RM interrupt table. */
 #endif
         uint8_t b; IEM_OPCODE_GET_FIRST_U8(&b);
         uint16_t const cCallsPrev = pTb->Thrd.cCalls;

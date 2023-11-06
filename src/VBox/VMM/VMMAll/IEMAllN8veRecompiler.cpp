@@ -3313,7 +3313,7 @@ iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
 
     uint32_t const idxLabel = iemNativeLabelCreate(pReNative, kIemNativeLabelType_NonZeroRetOrPassUp);
     iemNativeAddFixup(pReNative, off, idxLabel, kIemNativeFixupType_RelImm19At5);
-    pu32CodeBuf[off++] = Armv8A64MkInstrCbzCbnz(true /*fJmpIfNotZero*/, ARMV8_A64_REG_X4, false /*f64Bit*/);
+    pu32CodeBuf[off++] = Armv8A64MkInstrCbzCbnz(true /*fJmpIfNotZero*/, 0, ARMV8_A64_REG_X4, false /*f64Bit*/);
 
 #else
 # error "port me"

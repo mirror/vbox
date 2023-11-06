@@ -3270,23 +3270,31 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrTbzTbnz(bool fJmpIfNotZero, int32_t i
 /** Armv8 Condition codes.    */
 typedef enum ARMV8INSTRCOND
 {
-    kArmv8InstrCond_Eq = 0,                     /**< Equal - Zero set. */
-    kArmv8InstrCond_Cs,                         /**< Carry set (also known as 'HS'). */
-    kArmv8InstrCond_Hs = kArmv8InstrCond_Cs,    /**< Unsigned higher or same. */
-    kArmv8InstrCond_Mi,                         /**< Negative result (minus). */
-    kArmv8InstrCond_Vs,                         /**< Overflow set. */
-    kArmv8InstrCond_Hi,                         /**< Unsigned higher. */
-    kArmv8InstrCond_Ge,                         /**< Signed greater or equal. */
-    kArmv8InstrCond_Le,                         /**< Signed less or equal. */
+    kArmv8InstrCond_Eq = 0,                     /**< 0 - Equal - Zero set. */
+    kArmv8InstrCond_Ne,                         /**< 1 - Not equal - Zero clear. */
 
-    kArmv8InstrCond_Ne,                         /**< Not equal - Zero clear. */
-    kArmv8InstrCond_Cc,                         /**< Carry clear (also known as 'LO'). */
-    kArmv8InstrCond_Lo = kArmv8InstrCond_Cc,    /**< Unsigned lower. */
-    kArmv8InstrCond_Pl,                         /**< Positive or zero result (plus). */
-    kArmv8InstrCond_Vc,                         /**< Overflow clear. */
-    kArmv8InstrCond_Ls,                         /**< Unsigned lower or same. */
-    kArmv8InstrCond_Lt,                         /**< Signed less than. */
-    kArmv8InstrCond_Al                          /**< Condition is always true. */
+    kArmv8InstrCond_Cs,                         /**< 2 - Carry set (also known as 'HS'). */
+    kArmv8InstrCond_Hs = kArmv8InstrCond_Cs,    /**< 2 - Unsigned higher or same. */
+    kArmv8InstrCond_Cc,                         /**< 3 - Carry clear (also known as 'LO'). */
+    kArmv8InstrCond_Lo = kArmv8InstrCond_Cc,    /**< 3 - Unsigned lower. */
+
+    kArmv8InstrCond_Mi,                         /**< 4 - Negative result (minus). */
+    kArmv8InstrCond_Pl,                         /**< 5 - Positive or zero result (plus). */
+
+    kArmv8InstrCond_Vs,                         /**< 6 - Overflow set. */
+    kArmv8InstrCond_Vc,                         /**< 7 - Overflow clear. */
+
+    kArmv8InstrCond_Hi,                         /**< 8 - Unsigned higher. */
+    kArmv8InstrCond_Ls,                         /**< 9 - Unsigned lower or same. */
+
+    kArmv8InstrCond_Ge,                         /**< a - Signed greater or equal. */
+    kArmv8InstrCond_Lt,                         /**< b - Signed less than. */
+
+    kArmv8InstrCond_Gt,                         /**< c - Signed less or equal. */
+    kArmv8InstrCond_Le,                         /**< d - Signed less or equal. */
+
+    kArmv8InstrCond_Al,                         /**< e - Condition is always true. */
+    kArmv8InstrCond_Al1                         /**< f - Condition is always true. */
 } ARMV8INSTRCOND;
 
 /**
