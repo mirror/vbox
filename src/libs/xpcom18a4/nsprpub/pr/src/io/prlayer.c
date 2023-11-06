@@ -126,14 +126,6 @@ static PRInt32 PR_CALLBACK pl_DefAvailable (PRFileDesc *fd)
     return (fd->lower->methods->available)(fd->lower);
 }
 
-static PRInt64 PR_CALLBACK pl_DefAvailable64 (PRFileDesc *fd)
-{
-    PR_ASSERT(fd != NULL);
-    PR_ASSERT(fd->lower != NULL);
-
-    return (fd->lower->methods->available64)(fd->lower);
-}
-
 static PRStatus PR_CALLBACK pl_DefFsync (PRFileDesc *fd)
 {
     PR_ASSERT(fd != NULL);
@@ -290,28 +282,6 @@ static PRInt32 PR_CALLBACK pl_DefSend (
     return (fd->lower->methods->send)(fd->lower, buf, amount, flags, timeout);
 }
 
-static PRInt32 PR_CALLBACK pl_DefRecvfrom (
-    PRFileDesc *fd, void *buf, PRInt32 amount,
-    PRIntn flags, PRNetAddr *addr, PRIntervalTime timeout)
-{
-    PR_ASSERT(fd != NULL);
-    PR_ASSERT(fd->lower != NULL);
-
-    return (fd->lower->methods->recvfrom)(
-        fd->lower, buf, amount, flags, addr, timeout);
-}
-
-static PRInt32 PR_CALLBACK pl_DefSendto (
-    PRFileDesc *fd, const void *buf, PRInt32 amount, PRIntn flags,
-    const PRNetAddr *addr, PRIntervalTime timeout)
-{
-    PR_ASSERT(fd != NULL);
-    PR_ASSERT(fd->lower != NULL);
-
-    return (fd->lower->methods->sendto)(
-        fd->lower, buf, amount, flags, addr, timeout);
-}
-
 static PRInt16 PR_CALLBACK pl_DefPoll (
     PRFileDesc *fd, PRInt16 in_flags, PRInt16 *out_flags)
 {
@@ -319,51 +289,6 @@ static PRInt16 PR_CALLBACK pl_DefPoll (
     PR_ASSERT(fd->lower != NULL);
 
     return (fd->lower->methods->poll)(fd->lower, in_flags, out_flags);
-}
-
-static PRInt32 PR_CALLBACK pl_DefAcceptread (
-    PRFileDesc *sd, PRFileDesc **nd, PRNetAddr **raddr, void *buf,
-    PRInt32 amount, PRIntervalTime t)
-{
-    PRInt32 nbytes;
-    PRStatus rv;
-    PRFileDesc *newstack;
-    PRFileDesc *layer = sd;
-	PRBool newstyle_stack = PR_FALSE;
-
-    PR_ASSERT(sd != NULL);
-    PR_ASSERT(sd->lower != NULL);
-
-	/* test for new style stack */
-	while (NULL != layer->higher)
-		layer = layer->higher;
-	newstyle_stack = (PR_IO_LAYER_HEAD == layer->identity) ? PR_TRUE : PR_FALSE;
-    newstack = PR_NEW(PRFileDesc);
-    if (NULL == newstack)
-    {
-        PR_SetError(PR_OUT_OF_MEMORY_ERROR, 0);
-        return -1;
-    }
-    *newstack = *sd;  /* make a copy of the accepting layer */
-
-    nbytes = sd->lower->methods->acceptread(
-        sd->lower, nd, raddr, buf, amount, t);
-    if (-1 == nbytes)
-    {
-        PR_DELETE(newstack);
-        return nbytes;
-    }
-    if (newstyle_stack) {
-		newstack->lower = *nd;
-		(*nd)->higher = newstack;
-		*nd = newstack;
-		return nbytes;
-	} else {
-		/* this PR_PushIOLayer call cannot fail */
-		rv = PR_PushIOLayer(*nd, PR_TOP_IO_LAYER, newstack);
-		PR_ASSERT(PR_SUCCESS == rv);
-		return nbytes;
-	}
 }
 
 static PRStatus PR_CALLBACK pl_DefGetsockname (PRFileDesc *fd, PRNetAddr *addr)
@@ -407,7 +332,6 @@ static PRIOMethods pl_methods = {
     pl_DefRead,
     pl_DefWrite,
     pl_DefAvailable,
-    pl_DefAvailable64,
     pl_DefFsync,
     pl_DefSeek,
     pl_DefSeek64,
@@ -421,10 +345,7 @@ static PRIOMethods pl_methods = {
     pl_DefShutdown,
     pl_DefRecv,
     pl_DefSend,
-    pl_DefRecvfrom,
-    pl_DefSendto,
     pl_DefPoll,
-    pl_DefAcceptread,
     pl_DefGetsockname,
     pl_DefGetpeername,
     (PRReservedFN)_PR_InvalidInt,

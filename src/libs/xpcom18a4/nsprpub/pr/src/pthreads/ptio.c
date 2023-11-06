@@ -613,41 +613,6 @@ static PRBool pt_writev_cont(pt_Continuation *op, PRInt16 revents)
     else return PR_FALSE;
 }  /* pt_writev_cont */
 
-static PRBool pt_sendto_cont(pt_Continuation *op, PRInt16 revents)
-{
-    PRIntn bytes = sendto(
-        op->arg1.osfd, op->arg2.buffer, op->arg3.amount, op->arg4.flags,
-        (struct sockaddr*)op->arg5.addr, PR_NETADDR_SIZE(op->arg5.addr));
-    op->syserrno = errno;
-    if (bytes >= 0)  /* this is progress */
-    {
-        char *bp = (char*)op->arg2.buffer;
-        bp += bytes;  /* adjust the buffer pointer */
-        op->arg2.buffer = bp;
-        op->result.code += bytes;  /* accumulate the number sent */
-        op->arg3.amount -= bytes;  /* and reduce the required count */
-        return (0 == op->arg3.amount) ? PR_TRUE : PR_FALSE;
-    }
-    else if ((EWOULDBLOCK != op->syserrno) && (EAGAIN != op->syserrno))
-    {
-        op->result.code = -1;
-        return PR_TRUE;
-    }
-    else return PR_FALSE;
-}  /* pt_sendto_cont */
-
-static PRBool pt_recvfrom_cont(pt_Continuation *op, PRInt16 revents)
-{
-    pt_SockLen addr_len = sizeof(PRNetAddr);
-    op->result.code = recvfrom(
-        op->arg1.osfd, op->arg2.buffer, op->arg3.amount,
-        op->arg4.flags, (struct sockaddr*)op->arg5.addr, &addr_len);
-    op->syserrno = errno;
-    return ((-1 == op->result.code) &&
-            (EWOULDBLOCK == op->syserrno || EAGAIN == op->syserrno)) ?
-        PR_FALSE : PR_TRUE;
-}  /* pt_recvfrom_cont */
-
 void _PR_InitIO(void)
 {
 #if defined(DEBUG)
@@ -997,25 +962,6 @@ static PRInt32 pt_Available_f(PRFileDesc *fd)
     return result;
 }  /* pt_Available_f */
 
-static PRInt64 pt_Available64_f(PRFileDesc *fd)
-{
-    PRInt64 result, cur, end;
-    PRInt64 minus_one;
-
-    LL_I2L(minus_one, -1);
-    cur = _PR_MD_LSEEK64(fd, LL_ZERO, PR_SEEK_CUR);
-
-    if (LL_GE_ZERO(cur))
-        end = _PR_MD_LSEEK64(fd, LL_ZERO, PR_SEEK_END);
-
-    if (!LL_GE_ZERO(cur) || !LL_GE_ZERO(end)) return minus_one;
-
-    LL_SUB(result, end, cur);
-    (void)_PR_MD_LSEEK64(fd, cur, PR_SEEK_SET);
-
-    return result;
-}  /* pt_Available64_f */
-
 static PRInt32 pt_Available_s(PRFileDesc *fd)
 {
     PRInt32 rv, bytes = -1;
@@ -1027,13 +973,6 @@ static PRInt32 pt_Available_s(PRFileDesc *fd)
         pt_MapError(_PR_MD_MAP_SOCKETAVAILABLE_ERROR, errno);
     return bytes;
 }  /* pt_Available_s */
-
-static PRInt64 pt_Available64_s(PRFileDesc *fd)
-{
-    PRInt64 rv;
-    LL_I2L(rv, pt_Available_s(fd));
-    return rv;
-}  /* pt_Available64_s */
 
 static PRStatus pt_FileInfo(PRFileDesc *fd, PRFileInfo *info)
 {
@@ -1472,24 +1411,6 @@ static PRInt32 pt_SocketWrite(PRFileDesc *fd, const void *buf, PRInt32 amount)
     return pt_Send(fd, buf, amount, 0, PR_INTERVAL_NO_TIMEOUT);
 }  /* pt_SocketWrite */
 
-static PRInt32 pt_AcceptRead(
-    PRFileDesc *sd, PRFileDesc **nd, PRNetAddr **raddr,
-    void *buf, PRInt32 amount, PRIntervalTime timeout)
-{
-    PRInt32 rv = -1;
-
-    if (pt_TestAbort()) return rv;
-    /* The socket must be in blocking mode. */
-    if (sd->secret->nonblocking)
-    {
-        PR_SetError(PR_INVALID_ARGUMENT_ERROR, 0);
-        return rv;
-    }
-
-    rv = PR_EmulateAcceptRead(sd, nd, raddr, buf, amount, timeout);
-    return rv;
-}  /* pt_AcceptRead */
-
 static PRStatus pt_GetSockName(PRFileDesc *fd, PRNetAddr *addr)
 {
     PRIntn rv = -1;
@@ -1789,7 +1710,6 @@ static PRIOMethods _pr_file_methods = {
     pt_Read,
     pt_Write,
     pt_Available_f,
-    pt_Available64_f,
     pt_Fsync,
     pt_Seek,
     pt_Seek64,
@@ -1803,10 +1723,7 @@ static PRIOMethods _pr_file_methods = {
     (PRShutdownFN)_PR_InvalidStatus,
     (PRRecvFN)_PR_InvalidInt,
     (PRSendFN)_PR_InvalidInt,
-    (PRRecvfromFN)_PR_InvalidInt,
-    (PRSendtoFN)_PR_InvalidInt,
     pt_Poll,
-    (PRAcceptreadFN)_PR_InvalidInt,
     (PRGetsocknameFN)_PR_InvalidStatus,
     (PRGetpeernameFN)_PR_InvalidStatus,
     (PRReservedFN)_PR_InvalidInt,
@@ -1826,7 +1743,6 @@ static PRIOMethods _pr_pipe_methods = {
     pt_Read,
     pt_Write,
     pt_Available_s,
-    pt_Available64_s,
     pt_Synch,
     (PRSeekFN)_PR_InvalidInt,
     (PRSeek64FN)_PR_InvalidInt64,
@@ -1840,10 +1756,7 @@ static PRIOMethods _pr_pipe_methods = {
     (PRShutdownFN)_PR_InvalidStatus,
     (PRRecvFN)_PR_InvalidInt,
     (PRSendFN)_PR_InvalidInt,
-    (PRRecvfromFN)_PR_InvalidInt,
-    (PRSendtoFN)_PR_InvalidInt,
     pt_Poll,
-    (PRAcceptreadFN)_PR_InvalidInt,
     (PRGetsocknameFN)_PR_InvalidStatus,
     (PRGetpeernameFN)_PR_InvalidStatus,
     (PRReservedFN)_PR_InvalidInt,
@@ -1863,7 +1776,6 @@ static PRIOMethods _pr_tcp_methods = {
     pt_SocketRead,
     pt_SocketWrite,
     pt_Available_s,
-    pt_Available64_s,
     pt_Synch,
     (PRSeekFN)_PR_InvalidInt,
     (PRSeek64FN)_PR_InvalidInt64,
@@ -1877,10 +1789,7 @@ static PRIOMethods _pr_tcp_methods = {
     pt_Shutdown,
     pt_Recv,
     pt_Send,
-    (PRRecvfromFN)_PR_InvalidInt,
-    (PRSendtoFN)_PR_InvalidInt,
     pt_Poll,
-    pt_AcceptRead,
     pt_GetSockName,
     pt_GetPeerName,
     (PRReservedFN)_PR_InvalidInt,
@@ -1900,7 +1809,6 @@ static PRIOMethods _pr_socketpollfd_methods = {
     (PRReadFN)_PR_InvalidInt,
     (PRWriteFN)_PR_InvalidInt,
     (PRAvailableFN)_PR_InvalidInt,
-    (PRAvailable64FN)_PR_InvalidInt64,
     (PRFsyncFN)_PR_InvalidStatus,
     (PRSeekFN)_PR_InvalidInt,
     (PRSeek64FN)_PR_InvalidInt64,
@@ -1914,10 +1822,7 @@ static PRIOMethods _pr_socketpollfd_methods = {
     (PRShutdownFN)_PR_InvalidStatus,
     (PRRecvFN)_PR_InvalidInt,
     (PRSendFN)_PR_InvalidInt,
-    (PRRecvfromFN)_PR_InvalidInt,
-    (PRSendtoFN)_PR_InvalidInt,
 	pt_Poll,
-    (PRAcceptreadFN)_PR_InvalidInt,
     (PRGetsocknameFN)_PR_InvalidStatus,
     (PRGetpeernameFN)_PR_InvalidStatus,
     (PRReservedFN)_PR_InvalidInt,

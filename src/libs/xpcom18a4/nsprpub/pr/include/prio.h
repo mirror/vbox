@@ -72,7 +72,6 @@
 #define PR_Bind VBoxNsprPR_Bind
 #define PR_Listen VBoxNsprPR_Listen
 #define PR_Accept VBoxNsprPR_Accept
-#define PR_AcceptRead VBoxNsprPR_AcceptRead
 #define PR_OpenDir VBoxNsprPR_OpenDir
 #define PR_ReadDir VBoxNsprPR_ReadDir
 #define PR_CloseDir VBoxNsprPR_CloseDir
@@ -97,7 +96,6 @@
 #define PR_GetOpenFileInfo VBoxNsprPR_GetOpenFileInfo
 #define PR_GetOpenFileInfo64 VBoxNsprPR_GetOpenFileInfo64
 #define PR_Available VBoxNsprPR_Available
-#define PR_Available64 VBoxNsprPR_Available64
 #define PR_Sync VBoxNsprPR_Sync
 #define PR_MkDir VBoxNsprPR_MkDir
 #define PR_MakeDir VBoxNsprPR_MakeDir
@@ -108,8 +106,6 @@
 #define PR_Shutdown VBoxNsprPR_Shutdown
 #define PR_Recv VBoxNsprPR_Recv
 #define PR_Send VBoxNsprPR_Send
-#define PR_RecvFrom VBoxNsprPR_RecvFrom
-#define PR_SendTo VBoxNsprPR_SendTo
 #define PR_TransmitFile VBoxNsprPR_TransmitFile
 #define PR_GetSockName VBoxNsprPR_GetSockName
 #define PR_GetPeerName VBoxNsprPR_GetPeerName
@@ -386,7 +382,6 @@ typedef PRStatus (PR_CALLBACK *PRCloseFN)(PRFileDesc *fd);
 typedef PRInt32 (PR_CALLBACK *PRReadFN)(PRFileDesc *fd, void *buf, PRInt32 amount);
 typedef PRInt32 (PR_CALLBACK *PRWriteFN)(PRFileDesc *fd, const void *buf, PRInt32 amount);
 typedef PRInt32 (PR_CALLBACK *PRAvailableFN)(PRFileDesc *fd);
-typedef PRInt64 (PR_CALLBACK *PRAvailable64FN)(PRFileDesc *fd);
 typedef PRStatus (PR_CALLBACK *PRFsyncFN)(PRFileDesc *fd);
 typedef PROffset32 (PR_CALLBACK *PRSeekFN)(PRFileDesc *fd, PROffset32 offset, PRSeekWhence how);
 typedef PROffset64 (PR_CALLBACK *PRSeek64FN)(PRFileDesc *fd, PROffset64 offset, PRSeekWhence how);
@@ -408,17 +403,8 @@ typedef PRInt32 (PR_CALLBACK *PRRecvFN)(
 typedef PRInt32 (PR_CALLBACK *PRSendFN) (
     PRFileDesc *fd, const void *buf, PRInt32 amount,
     PRIntn flags, PRIntervalTime timeout);
-typedef PRInt32 (PR_CALLBACK *PRRecvfromFN)(
-    PRFileDesc *fd, void *buf, PRInt32 amount,
-    PRIntn flags, PRNetAddr *addr, PRIntervalTime timeout);
-typedef PRInt32 (PR_CALLBACK *PRSendtoFN)(
-    PRFileDesc *fd, const void *buf, PRInt32 amount,
-    PRIntn flags, const PRNetAddr *addr, PRIntervalTime timeout);
 typedef PRInt16 (PR_CALLBACK *PRPollFN)(
     PRFileDesc *fd, PRInt16 in_flags, PRInt16 *out_flags);
-typedef PRInt32 (PR_CALLBACK *PRAcceptreadFN)(
-    PRFileDesc *sd, PRFileDesc **nd, PRNetAddr **raddr,
-    void *buf, PRInt32 amount, PRIntervalTime t);
 typedef PRStatus (PR_CALLBACK *PRGetsocknameFN)(PRFileDesc *fd, PRNetAddr *addr);
 typedef PRStatus (PR_CALLBACK *PRGetpeernameFN)(PRFileDesc *fd, PRNetAddr *addr);
 typedef PRStatus (PR_CALLBACK *PRGetsocketoptionFN)(
@@ -435,7 +421,6 @@ struct PRIOMethods {
     PRReadFN read;                  /* read up to specified bytes into buffer   */
     PRWriteFN write;                /* write specified bytes from buffer        */
     PRAvailableFN available;        /* determine number of bytes available      */
-    PRAvailable64FN available64;    /*          ditto, 64 bit                   */
     PRFsyncFN fsync;                /* flush all buffers to permanent store     */
     PRSeekFN seek;                  /* position the file to the desired place   */
     PRSeek64FN seek64;              /*           ditto, 64 bit                  */
@@ -449,10 +434,7 @@ struct PRIOMethods {
     PRShutdownFN shutdown;          /* Shutdown a (net) connection              */
     PRRecvFN recv;                  /* Solicit up the the specified bytes       */
     PRSendFN send;                  /* Send all the bytes specified             */
-    PRRecvfromFN recvfrom;          /* Solicit (net) bytes and report source    */
-    PRSendtoFN sendto;              /* Send bytes to (net) address specified    */
     PRPollFN poll;                  /* Test the fd to see if it is ready        */
-    PRAcceptreadFN acceptread;      /* Accept and read on a new (net) fd        */
     PRGetsocknameFN getsockname;    /* Get (net) address associated with fd     */
     PRGetpeernameFN getpeername;    /* Get peer's (net) address                 */
     PRReservedFN reserved_fn_6;     /* reserved for future use */
@@ -1019,7 +1001,6 @@ NSPR_API(PROffset64) PR_Seek64(PRFileDesc *fd, PROffset64 offset, PRSeekWhence w
  */
 
 NSPR_API(PRInt32) PR_Available(PRFileDesc *fd);
-NSPR_API(PRInt64) PR_Available64(PRFileDesc *fd);
 
 /*
  ************************************************************************
@@ -1450,129 +1431,6 @@ NSPR_API(PRInt32)    PR_Recv(PRFileDesc *fd, void *buf, PRInt32 amount,
 
 NSPR_API(PRInt32)    PR_Send(PRFileDesc *fd, const void *buf, PRInt32 amount,
                                 PRIntn flags, PRIntervalTime timeout);
-
-/*
- *************************************************************************
- * FUNCTION: PR_RecvFrom
- * DESCRIPTION:
- *     Receive up to a specified number of bytes from socket which may
- *     or may not be connected.
- *     The operation will block until one or more bytes are 
- *     transferred, a time out has occurred, or there is an error. 
- *     No more than 'amount' bytes will be transferred.
- * INPUTS:
- *     PRFileDesc *fd
- *       points to a PRFileDesc object representing a socket.
- *     void *buf
- *       pointer to a buffer to hold the data received.
- *     PRInt32 amount
- *       the size of 'buf' (in bytes)
- *     PRIntn flags
- *        (OBSOLETE - must always be zero)
- *     PRNetAddr *addr
- *       Specifies the address of the sending peer. It may be NULL.
- *     PRIntervalTime timeout
- *       Time limit for completion of the receive operation.
- * OUTPUTS:
- *     None
- * RETURN: PRInt32
- *         a positive number indicates the number of bytes actually received.
- *         0 means the network connection is closed.
- *         -1 indicates a failure. The reason for the failure is obtained
- *         by calling PR_GetError().
- **************************************************************************
- */
-
-NSPR_API(PRInt32) PR_RecvFrom(
-    PRFileDesc *fd, void *buf, PRInt32 amount, PRIntn flags,
-    PRNetAddr *addr, PRIntervalTime timeout);
-
-/*
- *************************************************************************
- * FUNCTION: PR_SendTo
- * DESCRIPTION:
- *    Send a specified number of bytes from an unconnected socket.
- *    The operation will block until all bytes are 
- *    sent, a time out has occurred, or there is an error. 
- * INPUTS:
- *     PRFileDesc *fd
- *       points to a PRFileDesc object representing an unconnected socket.
- *     void *buf
- *       pointer to a buffer from where the data is sent.
- *     PRInt32 amount
- *       the size of 'buf' (in bytes)
- *     PRIntn flags
- *        (OBSOLETE - must always be zero)
- *     PRNetAddr *addr
- *       Specifies the address of the peer.
-.*     PRIntervalTime timeout
- *       Time limit for completion of the send operation.
- * OUTPUTS:
- *     None
- * RETURN: PRInt32
- *     A positive number indicates the number of bytes successfully sent.
- *     -1 indicates a failure. The reason for the failure is obtained
- *     by calling PR_GetError().
- **************************************************************************
- */
-
-NSPR_API(PRInt32) PR_SendTo(
-    PRFileDesc *fd, const void *buf, PRInt32 amount, PRIntn flags,
-    const PRNetAddr *addr, PRIntervalTime timeout);
-
-/*
-*************************************************************************
-** FUNCTION: PR_AcceptRead
-** DESCRIPTION:
-**    AcceptRead accepts a new connection, returns the newly created
-**    socket's descriptor and also returns the connecting peer's address.
-**    AcceptRead, as its name suggests, also receives the first block of data 
-**    sent by the peer.
-**
-** INPUTS:
-**    PRFileDesc *listenSock
-**        A socket descriptor that has been called with the PR_Listen() 
-**        function, also known as the rendezvous socket.
-**    void *buf
-**        A pointer to a buffer to receive data sent by the client.  This 
-**        buffer must be large enough to receive <amount> bytes of data
-**        and two PRNetAddr structures, plus an extra 32 bytes. See:
-**        PR_ACCEPT_READ_BUF_OVERHEAD.
-**    PRInt32 amount
-**        The number of bytes of client data to receive.  Does not include
-**        the size of the PRNetAddr structures.  If 0, no data will be read
-**        from the client.
-**    PRIntervalTime timeout
-**        The timeout interval only applies to the read portion of the 
-**        operation.  PR_AcceptRead will block indefinitely until the 
-**        connection is accepted; the read will timeout after the timeout 
-**        interval elapses.
-** OUTPUTS:
-**    PRFileDesc **acceptedSock
-**        The file descriptor for the newly connected socket.  This parameter
-**        will only be valid if the function return does not indicate failure.
-**    PRNetAddr  **peerAddr,
-**        The address of the remote socket.  This parameter will only be
-**        valid if the function return does not indicate failure.  The
-**        returned address is not guaranteed to be properly aligned.
-** 
-** RETURNS:
-**     The number of bytes read from the client or -1 on failure.  The reason 
-**     for the failure is obtained by calling PR_GetError().
-**************************************************************************
-**/       
-/* define buffer overhead constant. Add this value to the user's 
-** data length when allocating a buffer to accept data.
-**    Example:
-**    #define USER_DATA_SIZE 10
-**    char buf[USER_DATA_SIZE + PR_ACCEPT_READ_BUF_OVERHEAD];
-**    bytesRead = PR_AcceptRead( s, fd, &a, &p, USER_DATA_SIZE, ...);
-*/
-#define PR_ACCEPT_READ_BUF_OVERHEAD (32+(2*sizeof(PRNetAddr)))
-
-NSPR_API(PRInt32) PR_AcceptRead(
-    PRFileDesc *listenSock, PRFileDesc **acceptedSock,
-    PRNetAddr **peerAddr, void *buf, PRInt32 amount, PRIntervalTime timeout);
 
 /*
 *************************************************************************

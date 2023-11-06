@@ -63,17 +63,6 @@
 #define PR_CreateSocketPollFd VBoxNsprPR_CreateSocketPollFd
 #define PR_DestroySocketPollFd VBoxNsprPR_DestroySocketPollFd
 #define PR_Socket VBoxNsprPR_Socket
-#define PR_LockFile VBoxNsprPR_LockFile
-#define PR_TLockFile VBoxNsprPR_TLockFile
-#define PR_UnlockFile VBoxNsprPR_UnlockFile
-#define PR_EmulateAcceptRead VBoxNsprPR_EmulateAcceptRead
-#define PR_EmulateSendFile VBoxNsprPR_EmulateSendFile
-#define PR_NTFast_AcceptRead VBoxNsprPR_NTFast_AcceptRead
-#define PR_NTFast_AcceptRead_WithTimeoutCallback VBoxNsprPR_NTFast_AcceptRead_WithTimeoutCallback
-#define PR_NTFast_Accept VBoxNsprPR_NTFast_Accept
-#define PR_NTFast_UpdateAcceptContext VBoxNsprPR_NTFast_UpdateAcceptContext
-#define PR_NT_CancelIo VBoxNsprPR_NT_CancelIo
-#define PR_Init_Log VBoxNsprPR_Init_Log
 #endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 
 PR_BEGIN_EXTERN_C
@@ -157,12 +146,6 @@ NSPR_API(PRStatus) PR_DestroySocketPollFd(PRFileDesc *fd);
 ** Create a new Socket; this function is obsolete.
 */
 NSPR_API(PRFileDesc*)	PR_Socket(PRInt32 domain, PRInt32 type, PRInt32 proto);
-
-/*
-** Emulate acceptread by accept and recv.
-*/
-NSPR_API(PRInt32) PR_EmulateAcceptRead(PRFileDesc *sd, PRFileDesc **nd,
-    PRNetAddr **raddr, void *buf, PRInt32 amount, PRIntervalTime timeout);
 
 PR_END_EXTERN_C
 

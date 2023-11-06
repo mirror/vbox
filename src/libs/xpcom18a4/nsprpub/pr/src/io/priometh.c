@@ -48,7 +48,6 @@ PRIOMethods _pr_faulty_methods = {
     (PRReadFN)_PR_InvalidInt,
     (PRWriteFN)_PR_InvalidInt,
     (PRAvailableFN)_PR_InvalidInt,
-    (PRAvailable64FN)_PR_InvalidInt64,
     (PRFsyncFN)_PR_InvalidStatus,
     (PRSeekFN)_PR_InvalidInt,
     (PRSeek64FN)_PR_InvalidInt64,
@@ -62,10 +61,7 @@ PRIOMethods _pr_faulty_methods = {
     (PRShutdownFN)_PR_InvalidStatus,    
     (PRRecvFN)_PR_InvalidInt,        
     (PRSendFN)_PR_InvalidInt,        
-    (PRRecvfromFN)_PR_InvalidInt,    
-    (PRSendtoFN)_PR_InvalidInt,        
     (PRPollFN)_PR_InvalidInt16,
-    (PRAcceptreadFN)_PR_InvalidInt,   
     (PRGetsocknameFN)_PR_InvalidStatus,    
     (PRGetpeernameFN)_PR_InvalidStatus,    
     (PRReservedFN)_PR_InvalidInt,    
@@ -159,11 +155,6 @@ PR_IMPLEMENT(PRInt32) PR_Available(PRFileDesc *fd)
 	return((fd->methods->available)(fd));
 }
 
-PR_IMPLEMENT(PRInt64) PR_Available64(PRFileDesc *fd)
-{
-	return((fd->methods->available64)(fd));
-}
-
 PR_IMPLEMENT(PRStatus) PR_GetOpenFileInfo(PRFileDesc *fd, PRFileInfo *info)
 {
 	return((fd->methods->fileInfo)(fd, info));
@@ -235,26 +226,6 @@ PRInt32 iov_size, PRIntervalTime timeout)
 	return((fd->methods->writev)(fd,iov,iov_size,timeout));
 }
 
-PR_IMPLEMENT(PRInt32) PR_RecvFrom(PRFileDesc *fd, void *buf, PRInt32 amount,
-PRIntn flags, PRNetAddr *addr, PRIntervalTime timeout)
-{
-	return((fd->methods->recvfrom)(fd,buf,amount,flags,addr,timeout));
-}
-
-PR_IMPLEMENT(PRInt32) PR_SendTo(
-    PRFileDesc *fd, const void *buf, PRInt32 amount,
-    PRIntn flags, const PRNetAddr *addr, PRIntervalTime timeout)
-{
-	return((fd->methods->sendto)(fd,buf,amount,flags,addr,timeout));
-}
-
-PR_IMPLEMENT(PRInt32) PR_AcceptRead(
-    PRFileDesc *sd, PRFileDesc **nd, PRNetAddr **raddr,
-    void *buf, PRInt32 amount, PRIntervalTime timeout)
-{
-	return((sd->methods->acceptread)(sd, nd, raddr, buf, amount,timeout));
-}
-
 PR_IMPLEMENT(PRStatus) PR_GetSockName(PRFileDesc *fd, PRNetAddr *addr)
 {
 	return((fd->methods->getsockname)(fd,addr));
@@ -275,37 +246,6 @@ PR_IMPLEMENT(PRStatus) PR_SetSocketOption(
     PRFileDesc *fd, const PRSocketOptionData *data)
 {
 	return((fd->methods->setsocketoption)(fd, data));
-}
-
-PR_IMPLEMENT(PRInt32) PR_EmulateAcceptRead(
-    PRFileDesc *sd, PRFileDesc **nd, PRNetAddr **raddr,
-    void *buf, PRInt32 amount, PRIntervalTime timeout)
-{
-    PRInt32 rv = -1;
-    PRNetAddr remote;
-    PRFileDesc *accepted = NULL;
-
-    /*
-    ** The timeout does not apply to the accept portion of the
-    ** operation - it waits indefinitely.
-    */
-    accepted = PR_Accept(sd, &remote, PR_INTERVAL_NO_TIMEOUT);
-    if (NULL == accepted) return rv;
-
-    rv = PR_Recv(accepted, buf, amount, 0, timeout);
-    if (rv >= 0)
-    {
-        /* copy the new info out where caller can see it */
-#define AMASK ((PRPtrdiff)7)  /* mask for alignment of PRNetAddr */
-        PRPtrdiff aligned = (PRPtrdiff)buf + amount + AMASK;
-        *raddr = (PRNetAddr*)(aligned & ~AMASK);
-        memcpy(*raddr, &remote, PR_NETADDR_SIZE(&remote));
-        *nd = accepted;
-        return rv;
-    }
-
-    PR_Close(accepted);
-    return rv;
 }
 
 /* priometh.c */
