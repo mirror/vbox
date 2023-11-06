@@ -528,9 +528,6 @@ struct PLEvent {
     PRLock*             lock;
     PRCondVar*          condVar;
     PRBool              handled;
-#ifdef PL_POST_TIMINGS
-    PRIntervalTime      postTime;
-#endif
 #ifdef XP_UNIX
     unsigned long       id;
 #endif /* XP_UNIX */

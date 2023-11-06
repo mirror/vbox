@@ -521,9 +521,6 @@ PL_InitEvent(PLEvent* self, void* owner,
              PLHandleEventProc handler,
              PLDestroyEventProc destructor)
 {
-#ifdef PL_POST_TIMINGS
-    self->postTime = PR_IntervalNow();
-#endif
     PR_INIT_CLIST(&self->link);
     self->handler = handler;
     self->destructor = destructor;
@@ -567,10 +564,6 @@ PL_HandleEvent(PLEvent* self)
         PL_DestroyEvent(self);
     }
 }
-#ifdef PL_POST_TIMINGS
-static long s_eventCount = 0;
-static long s_totalTime  = 0;
-#endif
 
 PR_IMPLEMENT(void)
 PL_DestroyEvent(PLEvent* self)
@@ -585,12 +578,6 @@ PL_DestroyEvent(PLEvent* self)
       PR_DestroyCondVar(self->condVar);
     if(self->lock)
       PR_DestroyLock(self->lock);
-
-#ifdef PL_POST_TIMINGS
-    s_totalTime += PR_IntervalNow() - self->postTime;
-    s_eventCount++;
-    printf("$$$ running avg (%d) \n", PR_IntervalToMilliseconds(s_totalTime/s_eventCount));
-#endif
 
     self->destructor(self);
 }
