@@ -205,7 +205,14 @@ static int vboxClientXLibIOErrorHandler(Display *pDisplay)
  */
 static void vboxClientSignalHandler(int iSignal)
 {
-    int rc = RTCritSectEnter(&g_csSignalHandler);
+    int rc;
+
+    /* On Wayland, SIGPIPE might be issued if compositor no longer wants
+     * to communicate. This should not be a reason for process termination. */
+    if (iSignal == SIGPIPE)
+        return;
+
+    rc = RTCritSectEnter(&g_csSignalHandler);
     if (RT_SUCCESS(rc))
     {
         if (g_fSignalHandlerCalled)

@@ -38,6 +38,9 @@
 
 #include <VBox/GuestHost/DisplayServerType.h>
 
+/** A shortcut to log callback entering. */
+#define VBCL_LOG_CALLBACK VBClLogVerbose(3, "%s\n", __func__)
+
 int VBClShowNotify(const char *pszHeader, const char *pszBody);
 
 void VBClLogInfo(const char *pszFormat, ...);

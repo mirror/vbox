@@ -48,6 +48,10 @@ PROGRAMS += VBoxClient
 #
 PROGRAMS.linux += VBoxDRMClient
 
+ifdef VBOX_WITH_WAYLAND_ADDITIONS
+ PROGRAMS.linux += vboxwl
+endif
+
 # Common Guest / Host sources.
 VBOX_GH_SOURCES := \
 	$(PATH_ROOT)/src/VBox/GuestHost/DisplayServerType.cpp
@@ -74,10 +78,15 @@ VBoxClient_SOURCES = \
 
 ifdef VBOX_WITH_WAYLAND_ADDITIONS
  VBoxClient_DEFS += VBOX_WITH_WAYLAND_ADDITIONS
+ VBoxClient_INCS += ../wlInclude/
  VBoxClient_SOURCES += \
  	wayland-helper-dcp.cpp \
  	wayland-helper-gtk.cpp \
- 	wayland.cpp
+ 	wayland-helper.cpp \
+ 	wayland.cpp \
+ 	wayland-helper-ipc.cpp \
+ 	../wlInclude/wayland-protocol.c \
+ 	../wlInclude/wlr-data-control-unstable-v1.c
 endif
 
 VBoxClient_SOURCES += $(VBOX_GH_SOURCES)
@@ -115,6 +124,10 @@ ifdef VBOX_WITH_DISTRO_XRAND_XINERAMA
  ifndef VBOX_WITH_VBOXCLIENT_LAZY_LOAD
   VBoxClient_LIBS += Xrandr
  endif
+endif
+ifdef VBOX_WITH_WAYLAND_ADDITIONS
+ VBoxClient_LIBS.linux += glib-2.0
+ VBoxClient_LIBS.linux += gobject-2.0
 endif
 
 # XXX: -L comes from the template, but not rpath
@@ -184,12 +197,14 @@ ifdef VBOX_WITH_SHARED_CLIPBOARD
  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp \
  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-x11.cpp \
  	clipboard.cpp \
+ 	clipboard-common.cpp \
  	clipboard-x11.cpp
  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
   VBoxClient_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS VBOX_WITH_SHARED_CLIPBOARD_GUEST
   VBoxClient_SOURCES += \
   	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers.cpp \
-  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp
+  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp \
+  	$(PATH_ROOT)/src/VBox/GuestHost/common/mime-type-converter.cpp
   ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
    VBoxClient_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
    VBoxClient_SOURCES += \
@@ -225,6 +240,7 @@ ifdef VBOX_WITH_VBOXCLIENT_LAZY_LOAD
   VBOX_VBOXCLIENT_LIBXT_VER = 6
   VBOX_VBOXCLIENT_LIBXMU_VER = 6
   VBOX_VBOXCLIENT_LIBXRANDR_VER = 2
+  VBOX_VBOXCLIENT_LIBWAYLANDCLIENT_VER = 0
  endif
  ## Dynamic import no. 1: libX11.so
  $(evalcall2 def_libToLazyLoad,$(PATH_ROOT)/src/VBox/GuestHost/libX11.def,libX11,$(VBOX_VBOXCLIENT_LIBX11_VER))
@@ -234,6 +250,51 @@ ifdef VBOX_WITH_VBOXCLIENT_LAZY_LOAD
  $(evalcall2 def_libToLazyLoad,$(PATH_ROOT)/src/VBox/GuestHost/libXmu.def,libXmu,$(VBOX_VBOXCLIENT_LIBXMU_VER))
  ## Dynamic import no. 4: libXrandr.so
  $(evalcall2 def_libToLazyLoad,$(PATH_ROOT)/src/VBox/GuestHost/libXrandr.def,libXrandr,$(VBOX_VBOXCLIENT_LIBXRANDR_VER))
+ ## Dynamic import no. 5: libwayland-client.so
+ $(evalcall2 def_libToLazyLoad,$(PATH_ROOT)/src/VBox/GuestHost/libwayland-client.def,libwayland-client,$(VBOX_VBOXCLIENT_LIBWAYLANDCLIENT_VER))
+endif
+
+ifdef VBOX_WITH_WAYLAND_ADDITIONS
+ define def_libToLazyLoad2
+  vboxwl_SOURCES       += \
+  	$$(vboxwl_0_OUTDIR)/$(2)LazyLoad.asm
+  vboxwl_CLEAN         += \
+  	$$(vboxwl_0_OUTDIR)/$(2)LazyLoad.asm
+  $$$$(vboxwl_0_OUTDIR)/$(2)LazyLoad.asm: $$(PATH_ROOT)/src/VBox/GuestHost/$(2).def $(VBOX_DEF_2_LAZY_LOAD) | $$$$(dir $$@)
+	$$(call MSG_TOOL,VBoxDef2LazyLoad,$$(PATH_ROOT)/src/VBox/GuestHost/$(2).def,$$@)
+	$$(eval VBOX_VBOXWL_LIB_TO_LAZYLOAD_SUFF=$$$$(if $(3),$(SUFF_DLL).$(3),$(SUFF_DLL)))
+	$$(QUIET)$$(RM) -f -- "$$@"
+	$$(VBOX_DEF_2_LAZY_LOAD) --system --library $(2)$$(VBOX_VBOXWL_LIB_TO_LAZYLOAD_SUFF) --output "$$@" $$(PATH_ROOT)/src/VBox/GuestHost/$(2).def
+ endef
+
+ vboxwl_TEMPLATE = VBoxGuestR3Exe
+ vboxwl_DEFS += VBOX_WITH_SHARED_CLIPBOARD
+ ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+  vboxwl_DEFS += VBOX_BUILD_TARGET="$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)"
+ else
+  vboxwl_DEFS += VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
+ endif
+ vboxwl_SOURCES = \
+ 	vboxwl.cpp \
+ 	logging.cpp \
+ 	clipboard-common.cpp \
+ 	wayland-helper-ipc.cpp \
+ 	wayland-helper.cpp \
+ 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp \
+ 	$(PATH_ROOT)/src/VBox/GuestHost/common/mime-type-converter.cpp
+ vboxwl_SOURCES += $(VBOX_GH_SOURCES)
+
+ VBOX_VBOXWL_LIBWAYLANDCLIENT_VER = 0
+ VBOX_VBOXWL_LIBGTK3_VER = 0
+
+ ## Dynamic import no. 5: libwayland-client.so
+ $(evalcall2 def_libToLazyLoad2,$(PATH_ROOT)/src/VBox/GuestHost/libwayland-client.def,libwayland-client,$(VBOX_VBOXWL_LIBWAYLANDCLIENT_VER))
+ ## Dynamic import no. 6: libgtk-3.so
+ $(evalcall2 def_libToLazyLoad2,$(PATH_ROOT)/src/VBox/GuestHost/libgtk-3.def,libgtk-3,$(VBOX_VBOXWL_LIBGTK3_VER))
+
+ vboxwl_LIBS.linux += glib-2.0
+ vboxwl_LIBS.linux += gobject-2.0
+ vboxwl_LIBS.linux += gio-2.0
 endif
 
 if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)

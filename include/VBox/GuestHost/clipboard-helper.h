@@ -44,6 +44,9 @@
 
 #include <VBox/GuestHost/SharedClipboard.h>
 
+/** Guest property which is set by GUI in order to notify guest about VM window focus change.  */
+#define VBOX_GUI_FOCUS_CHANGE_GUEST_PROP_NAME   "/VirtualBox/GuestAdd/GuiOnFocus"
+
 /** Constants needed for string conversions done by the Linux/Mac clipboard code. */
 enum
 {
