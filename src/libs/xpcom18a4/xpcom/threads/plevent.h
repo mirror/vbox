@@ -191,16 +191,6 @@ and to ensure that no more events will be delivered for that owner.
 #include "prcvar.h"
 #include "prmon.h"
 
-/* For HWND */
-#if defined(XP_WIN32)
-#include <windef.h>
-#elif defined(XP_OS2)
-#define INCL_DOSMISC
-#define INCL_DOSPROCESS
-#define INCL_DOSERRORS
-#include <os2.h>
-#endif
-
 #ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
 #define PL_DestroyEvent VBoxNsplPL_DestroyEvent
 #define PL_HandleEvent VBoxNsplPL_HandleEvent
@@ -549,34 +539,6 @@ struct PLEvent {
 
 /******************************************************************************/
 
-/*
-** Returns the event queue associated with the main thread.
-** 
-*/
-#if defined(XP_WIN) || defined(XP_OS2)
-/* -----------------------------------------------------------------------
-** FUNCTION: PL_GetNativeEventReceiverWindow()
-** 
-** DESCRIPTION:
-** PL_GetNativeEventReceiverWindow() returns the windows
-** handle of the event receiver window associated with the
-** referenced PLEventQueue argument.
-** 
-** INPUTS: 
-**  PLEventQueue pointer
-**
-** RETURNS:
-**  event receiver window handle.
-** 
-** RESTRICTIONS: MS-Windows ONLY.
-** 
-*/
-PR_EXTERN(HWND) 
-    PL_GetNativeEventReceiverWindow( 
-        PLEventQueue *eqp 
-    );
-#endif /* XP_WIN || XP_OS2 */
-
 #ifdef XP_UNIX
 /* -----------------------------------------------------------------------
 ** FUNCTION: PL_ProcessEventsBeforeID()
@@ -648,42 +610,6 @@ PL_UnregisterEventIDFunc(PLEventQueue *aSelf);
 
 
 /* ----------------------------------------------------------------------- */
-
-#if defined(NO_NSPR_10_SUPPORT)
-#else
-/********* ???????????????? FIX ME       ??????????????????????????? *****/
-/********************** Some old definitions *****************************/
-
-/* Re: prevent.h->plevent.h */
-#define PREvent PLEvent
-#define PREventQueue PLEventQueue
-#define PR_CreateEventQueue PL_CreateEventQueue
-#define PR_DestroyEventQueue PL_DestroyEventQueue
-#define PR_GetEventQueueMonitor PL_GetEventQueueMonitor
-#define PR_ENTER_EVENT_QUEUE_MONITOR PL_ENTER_EVENT_QUEUE_MONITOR
-#define PR_EXIT_EVENT_QUEUE_MONITOR PL_EXIT_EVENT_QUEUE_MONITOR
-#define PR_PostEvent PL_PostEvent
-#define PR_PostSynchronousEvent PL_PostSynchronousEvent
-#define PR_GetEvent PL_GetEvent
-#define PR_EventAvailable PL_EventAvailable
-#define PREventFunProc PLEventFunProc
-#define PR_MapEvents PL_MapEvents
-#define PR_RevokeEvents PL_RevokeEvents
-#define PR_ProcessPendingEvents PL_ProcessPendingEvents
-#define PR_WaitForEvent PL_WaitForEvent
-#define PR_EventLoop PL_EventLoop
-#define PR_GetEventQueueSelectFD PL_GetEventQueueSelectFD
-#define PRHandleEventProc PLHandleEventProc
-#define PRDestroyEventProc PLDestroyEventProc
-#define PR_InitEvent PL_InitEvent
-#define PR_GetEventOwner PL_GetEventOwner
-#define PR_HandleEvent PL_HandleEvent
-#define PR_DestroyEvent PL_DestroyEvent
-#define PR_DequeueEvent PL_DequeueEvent
-#define PR_GetMainEventQueue PL_GetMainEventQueue
-
-/********* ????????????? End Fix me ?????????????????????????????? *****/
-#endif /* NO_NSPR_10_SUPPORT */
 
 PR_END_EXTERN_C
 
