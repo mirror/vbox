@@ -50,7 +50,6 @@
 #include "prinit.h"
 #include "prinrval.h"
 #include "prio.h"
-#include "pripcsem.h"
 #include "prlink.h"
 #include "prlock.h"
 #include "prlog.h"

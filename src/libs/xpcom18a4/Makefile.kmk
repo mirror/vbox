@@ -179,7 +179,6 @@ NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/pr/include/prinit.h \
 	nsprpub/pr/include/prinrval.h \
 	nsprpub/pr/include/prio.h \
-	nsprpub/pr/include/pripcsem.h \
 	nsprpub/pr/include/prlink.h \
 	nsprpub/pr/include/prlock.h \
 	nsprpub/pr/include/prlog.h \
