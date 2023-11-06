@@ -974,15 +974,8 @@ VBoxXPCOMIPCC_SOURCES = \
 	ipc/ipcd/extensions/transmngr/src/tmTransactionService.cpp \
 	\
 	ipc/ipcd/extensions/transmngr/common/tmTransaction.cpp \
-	ipc/ipcd/extensions/transmngr/common/tmVector.cpp
-
-ifeq ($(KBUILD_TARGET),win)
- VBoxXPCOMIPCC_SOURCES += \
- 	ipc/ipcd/client/src/ipcConnectionWin.cpp
-else
- VBoxXPCOMIPCC_SOURCES += \
- 	ipc/ipcd/client/src/ipcConnectionUnix.cpp
-endif
+	ipc/ipcd/extensions/transmngr/common/tmVector.cpp \
+	ipc/ipcd/client/src/ipcConnectionUnix.cpp
 VBoxXPCOMIPCC_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/components/VBoxXPCOMIPCC.dylib
 VBoxXPCOMIPCC_LIBS = \
 	$(VBox-xpcom-ipcshared_1_TARGET)
@@ -1001,14 +994,8 @@ VBoxXPCOMIPCD_SOURCES = \
 	ipc/ipcd/daemon/src/ipcd.cpp \
 	ipc/ipcd/daemon/src/ipcClient.cpp \
 	ipc/ipcd/daemon/src/ipcModuleReg.cpp \
-	ipc/ipcd/daemon/src/ipcCommandModule.cpp
-ifeq ($(KBUILD_TARGET),win)
- VBoxXPCOMIPCD_SOURCES += \
- 	ipc/ipcd/daemon/src/ipcdWin.cpp
-else
- VBoxXPCOMIPCD_SOURCES += \
- 	ipc/ipcd/daemon/src/ipcdUnix.cpp
-endif
+	ipc/ipcd/daemon/src/ipcCommandModule.cpp \
+	ipc/ipcd/daemon/src/ipcdUnix.cpp
 
 
 #
