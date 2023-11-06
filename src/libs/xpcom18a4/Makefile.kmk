@@ -206,6 +206,7 @@ NSPRPUB-MD-HEADERS_SOURCES = \
 	nsprpub/pr/include/md/_unix_errors.h \
 	nsprpub/pr/include/md/_unixos.h \
 	nsprpub/pr/include/md/_pth.h \
+	nsprpub/pr/include/md/prosdep.h \
 	\
 	nsprpub/pr/include/md/_freebsd.cfg \
 	nsprpub/pr/include/md/_linux.cfg \
