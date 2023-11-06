@@ -46,8 +46,6 @@
 // (c) 2000, ActiveState corp.
 
 #include "PyXPCOM_std.h"
-#include <prthread.h>
-#include "nsIThread.h"
 #include "nsILocalFile.h"
 
 #ifdef XP_WIN
@@ -293,38 +291,11 @@ PRBool PyXPCOM_Globals_Ensure()
 
 	static PRBool bHaveInitXPCOM = PR_FALSE;
 	if (!bHaveInitXPCOM) {
-		nsCOMPtr<nsIThread> thread_check;
-		// xpcom appears to assert if already initialized
-		// Is there an official way to determine this?
-		if (NS_FAILED(nsIThread::GetMainThread(getter_AddRefs(thread_check)))) {
-			// not already initialized.
-#ifdef XP_WIN
-			// On Windows, we need to locate the Mozilla bin
-			// directory.  This by using locating a Moz DLL we depend
-			// on, and assume it lives in that bin dir.  Different
-			// moz build types (eg, xulrunner, suite) package
-			// XPCOM itself differently - but all appear to require
-			// nspr4.dll - so this is what we use.
-			char landmark[MAX_PATH+1];
-			HMODULE hmod = GetModuleHandle("nspr4.dll");
-			if (hmod==NULL) {
-				PyErr_SetString(PyExc_RuntimeError, "We dont appear to be linked against nspr4.dll.");
-				return PR_FALSE;
-			}
-			GetModuleFileName(hmod, landmark, sizeof(landmark)/sizeof(landmark[0]));
-			char *end = landmark + (strlen(landmark)-1);
-			while (end > landmark && *end != '\\')
-				end--;
-			if (end > landmark) *end = '\0';
 
-			nsCOMPtr<nsILocalFile> ns_bin_dir;
-			NS_ConvertASCIItoUCS2 strLandmark(landmark);
-			NS_NewLocalFile(strLandmark, PR_FALSE, getter_AddRefs(ns_bin_dir));
-			nsresult rv = NS_InitXPCOM2(nsnull, ns_bin_dir, nsnull);
-#else
+		if (!NS_IsXPCOMInitialized()) {
+			// not already initialized.
 			// Elsewhere, Mozilla can find it itself (we hope!)
 			nsresult rv = NS_InitXPCOM2(nsnull, nsnull, nsnull);
-#endif // XP_WIN
 			if (NS_FAILED(rv)) {
 				PyErr_SetString(PyExc_RuntimeError, "The XPCOM subsystem could not be initialized");
 				return PR_FALSE;

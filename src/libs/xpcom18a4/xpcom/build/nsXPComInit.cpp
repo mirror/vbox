@@ -309,6 +309,9 @@ ipcDConnectServiceUnregisterProc(nsIComponentManager *aCompMgr,
 nsComponentManagerImpl* nsComponentManagerImpl::gComponentManager = NULL;
 nsIProperties     *gDirectoryService = NULL;
 PRBool gXPCOMShuttingDown = PR_FALSE;
+#ifdef VBOX
+static PRBool gXPCOMInitialized = PR_FALSE;
+#endif
 
 // For each class that wishes to support nsIClassInfo, add a line like this
 // NS_DECL_CLASSINFO(nsMyClass)
@@ -467,6 +470,13 @@ nsresult NS_COM NS_GetTraceRefcnt(nsITraceRefcnt** result)
     return NS_ERROR_NOT_INITIALIZED;
 #endif
 }
+
+#ifdef VBOX
+PRBool NS_COM NS_IsXPCOMInitialized(void)
+{
+    return gXPCOMInitialized;
+}
+#endif
 
 nsresult NS_COM NS_InitXPCOM(nsIServiceManager* *result,
                              nsIFile* binDirectory)
@@ -731,6 +741,9 @@ nsresult NS_COM NS_InitXPCOM2(nsIServiceManager* *result,
                                   nsnull,
                                   NS_XPCOM_STARTUP_OBSERVER_ID);
 
+#ifdef VBOX
+    gXPCOMInitialized = PR_TRUE;
+#endif
     return NS_OK;
 }
 
@@ -914,6 +927,9 @@ nsresult NS_COM NS_ShutdownXPCOM(nsIServiceManager* servMgr)
     nsTraceRefcntImpl::Shutdown();
 #endif
 
+#ifdef VBOX
+    gXPCOMInitialized = PR_FALSE;
+#endif
     return NS_OK;
 }
 

@@ -67,6 +67,14 @@ class nsIMemory;
 class nsIDebug;
 class nsITraceRefcnt;
 
+#ifdef VBOX
+/**
+ * Checks whether XPCOM was initialized by a call to NS_InitXPCOM2().
+ */
+extern "C" NS_COM PRBool
+NS_IsXPCOMInitialized(void);
+#endif
+
 /**
  * Initialises XPCOM. You must call this method before proceeding 
  * to use xpcom. The one exception is that you may call 
