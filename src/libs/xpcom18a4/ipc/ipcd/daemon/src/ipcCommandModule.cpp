@@ -39,7 +39,6 @@
 #include <string.h>
 #include "ipcLog.h"
 #include "ipcCommandModule.h"
-#include "ipcModule.h"
 #include "ipcClient.h"
 #include "ipcMessage.h"
 #include "ipcMessageUtils.h"
