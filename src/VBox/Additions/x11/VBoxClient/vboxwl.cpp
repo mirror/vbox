@@ -633,12 +633,46 @@ static void vboxwl_usage(void)
     RTPrintf("  %-20s Announce clipboard content to the host\n", VBOXWL_ARG_CLIP_GH_ANNOUNCE);
     RTPrintf("  %-20s Copy content from clipboard\n", VBOXWL_ARG_CLIP_GH_COPY);
 
+    RTPrintf("  --check              Check if active Wayland session is running\n");
     RTPrintf("  --verbose            Increase verbosity level\n");
     RTPrintf("  --version            Print version number and exit\n");
     RTPrintf("  --help               Print this message\n");
     RTPrintf("\n");
 
     exit(1);
+}
+
+/**
+ * Check if active Wayland session is running.
+ *
+ * This check is used in order to detect whether X11 or Wayland
+ * version of VBoxClient should be started when user logs-in.
+ * It will print out either WL or X11 and exit. Startup script(s)
+ * should rely on this output.
+ */
+static void vboxwl_check(void)
+{
+    VBGHDISPLAYSERVERTYPE enmType = VBGHDisplayServerTypeDetect();
+    bool fWayland = false;
+
+    /* In pure Wayland environment X11 version of VBoxClient will not
+     * work, so fallback on Wayland version. */
+    if (enmType == VBGHDISPLAYSERVERTYPE_PURE_WAYLAND)
+        fWayland = true;
+    else if (enmType == VBGHDISPLAYSERVERTYPE_XWAYLAND)
+    {
+        /* In case of XWayland, X11 version of VBoxClient still can
+         * work, however with some DEs, such as Plasma on Wayland,
+         * this will no longer work. Detect such DEs here. */
+
+        /* Try to detect Plasma. */
+        const char *pcszDesktopSession = RTEnvGet(VBGH_ENV_DESKTOP_SESSION);
+        if (RT_VALID_PTR(pcszDesktopSession) && RTStrIStr(pcszDesktopSession, "plasmawayland"))
+            fWayland = true;
+    }
+
+    RTPrintf("%s\n", fWayland ? "WL" : "X11");
+    exit (0);
 }
 
 /**
@@ -665,6 +699,7 @@ static void vboxwl_parse_params(int argc, char *argv[])
         { VBOXWL_ARG_CLIP_GH_ANNOUNCE,  'a', RTGETOPT_REQ_NOTHING },
         { VBOXWL_ARG_CLIP_GH_COPY,      'c', RTGETOPT_REQ_NOTHING },
         { VBOXWL_ARG_SESSION_ID,        's', RTGETOPT_REQ_UINT32  },
+        { "--check",                    'C', RTGETOPT_REQ_NOTHING },
         { "--help",                     'h', RTGETOPT_REQ_NOTHING },
         { "--version",                  'V', RTGETOPT_REQ_NOTHING },
         { "--verbose",                  'v', RTGETOPT_REQ_NOTHING },
@@ -706,6 +741,12 @@ static void vboxwl_parse_params(int argc, char *argv[])
                 case 's':
                 {
                     g_uSessionId = ValueUnion.u32;
+                    break;
+                }
+
+                case 'C':
+                {
+                    vboxwl_check();
                     break;
                 }
 
