@@ -271,7 +271,7 @@ static DECLCALLBACK(int) vbcl_wayland_hlp_gtk_worker_join_cb(
     PRTLOCALIPCSESSION phIpcSession = (RTLOCALIPCSESSION *)pvUser;
     AssertPtrReturn(phIpcSession, VERR_INVALID_PARAMETER);
 
-    const vbcl::ipc::flow_t     *pFlow;
+    const vbcl::ipc::flow_t *pFlow;
 
     int rc = VINF_SUCCESS;
 
@@ -288,10 +288,13 @@ static DECLCALLBACK(int) vbcl_wayland_hlp_gtk_worker_join_cb(
     else if (enmSessionType == VBCL_WL_CLIPBOARD_SESSION_TYPE_COPY_TO_HOST)
         pFlow = vbcl::ipc::clipboard::GHCopyFlow;
     else
+    {
+        pFlow = NULL;
         rc = VERR_INVALID_PARAMETER;
+    }
 
     /* Proceed with selected flow. */
-    if (RT_SUCCESS(rc))
+    if (RT_VALID_PTR(pFlow))
         rc = g_GtkCtx.Session.oClipboardIpc->flow(pFlow, *phIpcSession);
 
     return rc;
