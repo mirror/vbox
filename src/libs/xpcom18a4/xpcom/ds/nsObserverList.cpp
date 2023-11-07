@@ -48,13 +48,15 @@
 nsObserverList::nsObserverList()
 {
     MOZ_COUNT_CTOR(nsObserverList);
-    mLock = PR_NewLock();
+    int vrc = RTSemFastMutexCreate(&m_hLock);
+    AssertRC(vrc); RT_NOREF(vrc);
 }
 
 nsObserverList::~nsObserverList(void)
 {
     MOZ_COUNT_DTOR(nsObserverList);
-    PR_DestroyLock(mLock);
+    int vrc = RTSemFastMutexDestroy(m_hLock);
+    AssertRC(vrc); RT_NOREF(vrc);
 }
 
 nsresult
@@ -65,7 +67,7 @@ nsObserverList::AddObserver(nsIObserver* anObserver, PRBool ownsWeak)
     
     NS_ENSURE_ARG(anObserver);
 
-    nsAutoLock lock(mLock);
+    nsAutoLock lock(m_hLock);
 
     if (!mObserverList) {
         rv = NS_NewISupportsArray(getter_AddRefs(mObserverList));
@@ -105,7 +107,7 @@ nsObserverList::RemoveObserver(nsIObserver* anObserver)
     
     NS_ENSURE_ARG(anObserver);
 
-    nsAutoLock lock(mLock);
+    nsAutoLock lock(m_hLock);
 
     if (!mObserverList)
        return NS_ERROR_FAILURE;
@@ -134,7 +136,7 @@ nsObserverList::RemoveObserver(nsIObserver* anObserver)
 nsresult
 nsObserverList::GetObserverList(nsISimpleEnumerator** anEnumerator)
 {
-    nsAutoLock lock(mLock);
+    nsAutoLock lock(m_hLock);
 
     ObserverListEnumerator * enumerator= new ObserverListEnumerator(mObserverList);
     *anEnumerator = enumerator;

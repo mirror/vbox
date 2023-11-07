@@ -63,16 +63,16 @@ protected:
 class nsObserverList
 {
 public:
-  nsObserverList();
-  ~nsObserverList();
+    nsObserverList();
+    ~nsObserverList();
 
-  nsresult AddObserver(nsIObserver* anObserver, PRBool ownsWeak);
-  nsresult RemoveObserver(nsIObserver* anObserver);
-  nsresult GetObserverList(nsISimpleEnumerator** anEnumerator);
-     
+    nsresult AddObserver(nsIObserver* anObserver, PRBool ownsWeak);
+    nsresult RemoveObserver(nsIObserver* anObserver);
+    nsresult GetObserverList(nsISimpleEnumerator** anEnumerator);
+
 protected:
-  PRLock* mLock;
-  nsCOMPtr<nsISupportsArray>  mObserverList;
+    RTSEMFASTMUTEX              m_hLock;
+    nsCOMPtr<nsISupportsArray>  mObserverList;
 };
 
 
