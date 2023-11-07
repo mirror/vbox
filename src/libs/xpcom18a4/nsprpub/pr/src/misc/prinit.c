@@ -67,55 +67,7 @@ PRFileDesc *_pr_stderr;
 
 PRLock *_pr_sleeplock;  /* used in PR_Sleep(), classic and pthreads */
 
-static void _PR_InitCallOnce(void);
-
 PRBool _pr_initialized = PR_FALSE;
-
-
-PR_IMPLEMENT(PRBool) PR_VersionCheck(const char *importedVersion)
-{
-    /*
-    ** This is the secret handshake algorithm.
-    **
-    ** This release has a simple version compatibility
-    ** check algorithm.  This release is not backward
-    ** compatible with previous major releases.  It is
-    ** not compatible with future major, minor, or
-    ** patch releases.
-    */
-    int vmajor = 0, vminor = 0, vpatch = 0;
-    const char *ptr = importedVersion;
-
-    while (isdigit(*ptr)) {
-        vmajor = 10 * vmajor + *ptr - '0';
-        ptr++;
-    }
-    if (*ptr == '.') {
-        ptr++;
-        while (isdigit(*ptr)) {
-            vminor = 10 * vminor + *ptr - '0';
-            ptr++;
-        }
-        if (*ptr == '.') {
-            ptr++;
-            while (isdigit(*ptr)) {
-                vpatch = 10 * vpatch + *ptr - '0';
-                ptr++;
-            }
-        }
-    }
-
-    if (vmajor != PR_VMAJOR) {
-        return PR_FALSE;
-    }
-    if (vmajor == PR_VMAJOR && vminor > PR_VMINOR) {
-        return PR_FALSE;
-    }
-    if (vmajor == PR_VMAJOR && vminor == PR_VMINOR && vpatch > PR_VPATCH) {
-        return PR_FALSE;
-    }
-    return PR_TRUE;
-}  /* PR_VersionCheck */
 
 
 PR_IMPLEMENT(PRBool) PR_Initialized(void)
@@ -162,7 +114,6 @@ static void _PR_InitStuff(void)
 
     _PR_InitIO();
     _PR_InitLog();
-    _PR_InitCallOnce();
     _PR_InitDtoa();
 
     nspr_InitializePRErrorTable();
@@ -173,22 +124,6 @@ static void _PR_InitStuff(void)
 void _PR_ImplicitInitialization(void)
 {
 	_PR_InitStuff();
-}
-
-PR_IMPLEMENT(void) PR_DisableClockInterrupts(void)
-{
-}
-
-PR_IMPLEMENT(void) PR_EnableClockInterrupts(void)
-{
-}
-
-PR_IMPLEMENT(void) PR_BlockClockInterrupts(void)
-{
-}
-
-PR_IMPLEMENT(void) PR_UnblockClockInterrupts(void)
-{
 }
 
 PR_IMPLEMENT(void) PR_Init(
@@ -482,93 +417,5 @@ PR_IMPLEMENT(PRStatus) PR_CreateProcessDetached(
         return PR_FAILURE;
 }
 
-/*
- ********************************************************************
- *
- * Module initialization
- *
- ********************************************************************
- */
-
-static struct {
-    PRLock *ml;
-    PRCondVar *cv;
-} mod_init;
-
-static void _PR_InitCallOnce(void) {
-    mod_init.ml = PR_NewLock();
-    PR_ASSERT(NULL != mod_init.ml);
-    mod_init.cv = PR_NewCondVar(mod_init.ml);
-    PR_ASSERT(NULL != mod_init.cv);
-}
-
-void _PR_CleanupCallOnce()
-{
-    PR_DestroyLock(mod_init.ml);
-    mod_init.ml = NULL;
-    PR_DestroyCondVar(mod_init.cv);
-    mod_init.cv = NULL;
-}
-
-PR_IMPLEMENT(PRStatus) PR_CallOnce(
-    PRCallOnceType *once,
-    PRCallOnceFN    func)
-{
-    if (!_pr_initialized) _PR_ImplicitInitialization();
-
-    if (!once->initialized) {
-	if (PR_AtomicSet(&once->inProgress, 1) == 0) {
-	    once->status = (*func)();
-	    PR_Lock(mod_init.ml);
-	    once->initialized = 1;
-	    PR_NotifyAllCondVar(mod_init.cv);
-	    PR_Unlock(mod_init.ml);
-	} else {
-	    PR_Lock(mod_init.ml);
-	    while (!once->initialized) {
-		PR_WaitCondVar(mod_init.cv, PR_INTERVAL_NO_TIMEOUT);
-            }
-	    PR_Unlock(mod_init.ml);
-	}
-    }
-    return once->status;
-}
-
-PR_IMPLEMENT(PRStatus) PR_CallOnceWithArg(
-    PRCallOnceType      *once,
-    PRCallOnceWithArgFN  func,
-    void                *arg)
-{
-    if (!_pr_initialized) _PR_ImplicitInitialization();
-
-    if (!once->initialized) {
-	if (PR_AtomicSet(&once->inProgress, 1) == 0) {
-	    once->status = (*func)(arg);
-	    PR_Lock(mod_init.ml);
-	    once->initialized = 1;
-	    PR_NotifyAllCondVar(mod_init.cv);
-	    PR_Unlock(mod_init.ml);
-	} else {
-	    PR_Lock(mod_init.ml);
-	    while (!once->initialized) {
-		PR_WaitCondVar(mod_init.cv, PR_INTERVAL_NO_TIMEOUT);
-            }
-	    PR_Unlock(mod_init.ml);
-	}
-    }
-    return once->status;
-}
-
-PRBool _PR_Obsolete(const char *obsolete, const char *preferred)
-{
-#if defined(DEBUG)
-    PR_fprintf(
-        PR_STDERR, "'%s' is obsolete. Use '%s' instead.\n",
-        obsolete, (NULL == preferred) ? "something else" : preferred);
-#endif
-    return PR_FALSE;
-}  /* _PR_Obsolete */
-
 /* prinit.c */
-
 

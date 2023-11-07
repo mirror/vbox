@@ -45,18 +45,10 @@
 #ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
 #define PR_Abort VBoxNsprPR_Abort
 #define PR_Cleanup VBoxNsprPR_Cleanup
-#define PR_DisableClockInterrupts VBoxNsprPR_DisableClockInterrupts
-#define PR_EnableClockInterrupts VBoxNsprPR_EnableClockInterrupts
-#define PR_BlockClockInterrupts VBoxNsprPR_BlockClockInterrupts
-#define PR_UnblockClockInterrupts VBoxNsprPR_UnblockClockInterrupts
 #define PR_Init VBoxNsprPR_Init
 #define PR_Initialize VBoxNsprPR_Initialize
 #define PR_Initialized VBoxNsprPR_Initialized
-#define PR_VersionCheck VBoxNsprPR_VersionCheck
 #define PR_SetFDCacheSize VBoxNsprPR_SetFDCacheSize
-#define PR_ProcessExit VBoxNsprPR_ProcessExit
-#define PR_CallOnce VBoxNsprPR_CallOnce
-#define PR_CallOnceWithArg VBoxNsprPR_CallOnceWithArg
 #endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 
 PR_BEGIN_EXTERN_C
@@ -84,35 +76,6 @@ PR_BEGIN_EXTERN_C
 #define PR_VMINOR   6
 #define PR_VPATCH   0
 #define PR_BETA     PR_TRUE
-
-/*
-** PRVersionCheck
-**
-** The basic signature of the function that is called to provide version
-** checking. The result will be a boolean that indicates the likelihood
-** that the underling library will perform as the caller expects.
-**
-** The only argument is a string, which should be the verson identifier
-** of the library in question. That string will be compared against an
-** equivalent string that represents the actual build version of the
-** exporting library.
-**
-** The result will be the logical union of the directly called library
-** and all dependent libraries.
-*/
-
-typedef PRBool (*PRVersionCheck)(const char*);
-
-/*
-** PR_VersionCheck
-**
-** NSPR's existance proof of the version check function.
-**
-** Note that NSPR has no cooperating dependencies.
-*/
-
-NSPR_API(PRBool) PR_VersionCheck(const char *importedVersion);
-
 
 /************************************************************************/
 /*******************************INITIALIZATION***************************/
@@ -174,30 +137,6 @@ NSPR_API(PRBool) PR_Initialized(void);
 NSPR_API(PRStatus) PR_Cleanup(void);
 
 /*
-** Disable Interrupts
-**		Disables timer signals used for pre-emptive scheduling.
-*/
-NSPR_API(void) PR_DisableClockInterrupts(void);
-
-/*
-** Enables Interrupts
-**		Enables timer signals used for pre-emptive scheduling.
-*/
-NSPR_API(void) PR_EnableClockInterrupts(void);
-
-/*
-** Block Interrupts
-**		Blocks the timer signal used for pre-emptive scheduling
-*/
-NSPR_API(void) PR_BlockClockInterrupts(void);
-
-/*
-** Unblock Interrupts
-**		Unblocks the timer signal used for pre-emptive scheduling
-*/
-NSPR_API(void) PR_UnblockClockInterrupts(void);
-
-/*
 ** Control the method and size of the file descriptor (PRFileDesc*)
 ** cache used by the runtime. Setting 'high' to zero is for performance,
 ** any other value probably for debugging (see memo on FD caching).
@@ -205,48 +144,11 @@ NSPR_API(void) PR_UnblockClockInterrupts(void);
 NSPR_API(PRStatus) PR_SetFDCacheSize(PRIntn low, PRIntn high);
 
 /*
- * Cause an immediate, nongraceful, forced termination of the process.
- * It takes a PRIntn argument, which is the exit status code of the
- * process.
- */
-NSPR_API(void) PR_ProcessExit(PRIntn status);
-
-/*
 ** Abort the process in a non-graceful manner. This will cause a core file,
 ** call to the debugger or other moral equivalent as well as causing the
 ** entire process to stop.
 */
 NSPR_API(void) PR_Abort(void);
-
-/*
- ****************************************************************
- *
- * Module initialization:
- *
- ****************************************************************
- */
-
-typedef struct PRCallOnceType {
-    PRIntn initialized;
-    PRInt32 inProgress;
-    PRStatus status;
-} PRCallOnceType;
-
-typedef PRStatus (PR_CALLBACK *PRCallOnceFN)(void);
-
-typedef PRStatus (PR_CALLBACK *PRCallOnceWithArgFN)(void *arg);
-
-NSPR_API(PRStatus) PR_CallOnce(
-    PRCallOnceType *once,
-    PRCallOnceFN    func
-);
-
-NSPR_API(PRStatus) PR_CallOnceWithArg(
-    PRCallOnceType      *once,
-    PRCallOnceWithArgFN  func,
-    void                *arg
-);
-
 
 PR_END_EXTERN_C
 

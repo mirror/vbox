@@ -515,7 +515,6 @@ extern void _PR_InitDtoa(void);
 extern void _PR_InitMW(void);
 extern void _PR_NotifyCondVar(PRCondVar *cvar, PRThread *me);
 extern void _PR_CleanupThread(PRThread *thread);
-extern void _PR_CleanupCallOnce(void);
 extern void _PR_CleanupMW(void);
 extern void _PR_CleanupDtoa(void);
 extern void _PR_CleanupEnv(void);
@@ -534,7 +533,6 @@ extern void _PR_InitLayerCache(void);
 
 extern PRBool _pr_initialized;
 extern void _PR_ImplicitInitialization(void);
-extern PRBool _PR_Obsolete(const char *obsolete, const char *preferred);
 
 /************************************************************************/
 
