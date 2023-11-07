@@ -38,8 +38,22 @@
 #ifndef IPCD_H__
 #define IPCD_H__
 
-#include "ipcModule.h"
 #include "ipcMessage.h"
+
+//
+// a client handle is used to efficiently reference a client instance object
+// used by the daemon to represent a connection with a particular client app.
+//
+// modules should treat it as an opaque type.
+//
+typedef class ipcClient *ipcClientHandle;
+
+//
+// enumeration functions may return FALSE to stop enumeration.
+//
+typedef PRBool (* ipcClientEnumFunc)       (void *closure, ipcClientHandle client, PRUint32 clientID);
+typedef PRBool (* ipcClientNameEnumFunc)   (void *closure, ipcClientHandle client, const char *name);
+typedef PRBool (* ipcClientTargetEnumFunc) (void *closure, ipcClientHandle client, const nsID &target);
 
 //-----------------------------------------------------------------------------
 // IPC daemon methods (see struct ipcDaemonMethods)
