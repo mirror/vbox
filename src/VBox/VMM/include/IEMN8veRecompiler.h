@@ -769,6 +769,8 @@ DECL_HIDDEN_THROW(uint32_t) iemNativeEmitLoadGprWithGstShadowReg(PIEMRECOMPILERS
                                                                  uint8_t idxHstReg, IEMNATIVEGSTREG enmGstReg);
 DECL_HIDDEN_THROW(uint32_t) iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr);
 
+extern DECL_HIDDEN_DATA(const char * const) g_apszIemNativeHstRegNames[];
+
 
 /**
  * Ensures that there is sufficient space in the instruction output buffer.

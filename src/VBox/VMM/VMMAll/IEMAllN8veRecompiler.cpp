@@ -2189,7 +2189,7 @@ AssertCompile(RT_ELEMENTS(g_aGstShadowInfo) == kIemNativeGstReg_End);
 
 
 /** Host CPU general purpose register names. */
-const char * const g_apszIemNativeHstRegNames[] =
+DECL_HIDDEN_CONST(const char * const) g_apszIemNativeHstRegNames[] =
 {
 #ifdef RT_ARCH_AMD64
     "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"
