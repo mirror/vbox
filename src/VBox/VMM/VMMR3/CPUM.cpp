@@ -1693,31 +1693,40 @@ static bool cpumR3AreVmxCpuFeaturesCompatible(PVM pVM, PCCPUMFEATURES pBase, PCC
                                              | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxEptXcptVe          , 46) \
                                              | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxConcealVmxFromPt   , 47) \
                                              | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxXsavesXrstors      , 48) \
-                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxModeBasedExecuteEpt, 49) \
-                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxSppEpt             , 50) \
-                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxPtEpt              , 51) \
-                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxUseTscScaling      , 52) \
-                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxUserWaitPause      , 53) \
-                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxEnclvExit          , 54) \
-                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxLoadIwKeyExit      , 55) \
-                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxEntryLoadDebugCtls , 56) \
-                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxIa32eModeGuest     , 57) \
-                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxEntryLoadEferMsr   , 58) \
-                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxEntryLoadPatMsr    , 59) \
-                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxExitSaveDebugCtls  , 60) \
-                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxHostAddrSpaceSize  , 61) \
-                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxExitAckExtInt      , 62) \
-                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxExitSavePatMsr     , 63))
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxPasidTranslate     , 49) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxModeBasedExecuteEpt, 50) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxSppEpt             , 51) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxPtEpt              , 52) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxUseTscScaling      , 53) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxUserWaitPause      , 54) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxPconfig            , 55) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxEnclvExit          , 56) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxBusLockDetect      , 57) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxInstrTimeout       , 58) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxLoadIwKeyExit      , 59) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxHlat               , 60) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxEptPagingWrite     , 61) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxGstPagingVerify    , 62) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxIpiVirt            , 63))
 
-#define CPUM_VMX_MAKE_FEATURES_2(a_pFeat)   (  CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxExitLoadPatMsr     ,  0) \
-                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxExitSaveEferMsr    ,  1) \
-                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxExitLoadEferMsr    ,  2) \
-                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxSavePreemptTimer   ,  3) \
-                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxSecondaryExitCtls  ,  4) \
-                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxExitSaveEferLma    ,  5) \
-                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxPt                 ,  6) \
-                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxVmwriteAll         ,  7) \
-                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxEntryInjectSoftInt ,  8))
+#define CPUM_VMX_MAKE_FEATURES_2(a_pFeat)   (  CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxVirtSpecCtrl       ,  0) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxEntryLoadDebugCtls ,  1) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxIa32eModeGuest     ,  2) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxEntryLoadEferMsr   ,  3) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxEntryLoadPatMsr    ,  4) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxExitSaveDebugCtls  ,  5) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxHostAddrSpaceSize  ,  6) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxExitAckExtInt      ,  7) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxExitSavePatMsr     ,  8) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxExitLoadPatMsr     ,  9) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxExitSaveEferMsr    , 10) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxExitLoadEferMsr    , 12) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxSavePreemptTimer   , 13) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxSecondaryExitCtls  , 14) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxExitSaveEferLma    , 15) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxPt                 , 16) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxVmwriteAll         , 17) \
+                                             | CPUM_VMX_FEAT_SHIFT(a_pFeat, fVmxEntryInjectSoftInt , 18))
 
     /* Check first set of feature bits. */
     {
