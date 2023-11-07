@@ -49,7 +49,7 @@
 #include <iprt/message.h>
 #include <iprt/thread.h>
 
-PRLock* gLock;
+RTSEMFASTMUTEX gLock;
 int gCount;
 
 static DECLCALLBACK(int) run(RTTHREAD hSelf, void* arg)
@@ -69,12 +69,15 @@ static DECLCALLBACK(int) run(RTTHREAD hSelf, void* arg)
 
 int main(int argc, char** argv)
 {
-    gLock = PR_NewLock();
-    gCount = 0;
-
     int vrc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(vrc))
         return RTMsgInitFailure(vrc);
+
+    vrc = RTSemFastMutexCreate(&gLock);
+    if (RT_FAILURE(vrc))
+        return RTMsgInitFailure(vrc);
+
+    gCount = 0;
 
     // This shouldn't compile
     //nsAutoLock* l1 = new nsAutoLock(theLock);
@@ -97,6 +100,8 @@ int main(int argc, char** argv)
     int rcThread;
     RTThreadWait(hThread, RT_INDEFINITE_WAIT, &rcThread);
     AssertRC(rcThread);
+
+    RTSemFastMutexDestroy(gLock);
 
     return 0;
 }
