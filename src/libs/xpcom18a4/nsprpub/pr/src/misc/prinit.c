@@ -162,7 +162,6 @@ static void _PR_InitStuff(void)
 
     _PR_InitIO();
     _PR_InitLog();
-    _PR_InitLinker();
     _PR_InitCallOnce();
     _PR_InitDtoa();
 
