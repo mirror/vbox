@@ -56,20 +56,12 @@
 #include "nsString.h"
 #include "nsModule.h"
 #ifdef DEBUG
-#if defined(VMS)
-#include <lib$routines.h>
-#include <ssdef.h>
-#elif defined(XP_MACOSX)
+#if defined(XP_MACOSX)
 #include <signal.h>
 #endif
 #endif /* defined(DEBUG) */
 
 #include "nsTraceRefcntImpl.h"
-
-#define UNLOAD_DEPENDENT_LIBS
-#ifdef HPUX
-#undef UNLOAD_DEPENDENT_LIBS
-#endif
 
 #include "nsNativeComponentLoader.h"
 #ifdef VBOX_USE_IPRT_IN_XPCOM
@@ -148,8 +140,6 @@ PRBool nsDll::Load(void)
     //   component is loaded into memory, we can release our hold
     //   on the dependent libraries with the assumption that the
     //   component library holds a reference via the OS so loader.
-
-#if defined(XP_UNIX)
     nsCOMPtr<nsIComponentLoaderManager> manager = do_QueryInterface(m_loader->mCompMgr);
     if (!manager)
         return PR_TRUE;
@@ -157,9 +147,7 @@ PRBool nsDll::Load(void)
     nsXPIDLCString extraData;
     manager->GetOptionalData(m_dllSpec, nsnull, getter_Copies(extraData));
 
-#ifdef UNLOAD_DEPENDENT_LIBS
     nsVoidArray dependentLibArray;
-#endif
 
     // if there was any extra data, treat it as a listing of dependent libs
     if (extraData != nsnull)
@@ -179,11 +167,7 @@ PRBool nsDll::Load(void)
         // stupid right now, so that later we can just set the leaf name.
         file->AppendNative(NS_LITERAL_CSTRING("dummy"));
 
-# ifdef VBOX_USE_IPRT_IN_XPCOM
         char *buffer = (char *)nsMemory::Clone(extraData, strlen(extraData) + 1);
-# else
-        char *buffer = strdup(extraData);
-# endif
         if (!buffer)
             return NS_ERROR_OUT_OF_MEMORY;
 
@@ -226,41 +210,29 @@ PRBool nsDll::Load(void)
             // if we couldn't load the dependent library.  We did the best we
             // can.  Now just let us fail later if this really was a required
             // dependency.
-#ifdef UNLOAD_DEPENDENT_LIBS
             if (lib)
                 dependentLibArray.AppendElement((void*)lib);
-#endif
 
             token = nsCRT::strtok(newStr, " ", &newStr);
         }
-# ifdef VBOX_USE_IPRT_IN_XPCOM
         nsMemory::Free(buffer);
-# else
-        free(buffer);
-# endif
     }
-#endif
 
     // load the component
     nsCOMPtr<nsILocalFile> lf(do_QueryInterface(m_dllSpec));
     NS_ASSERTION(lf, "nsIFile here must implement a nsILocalFile");
     lf->Load(&m_instance);
 
-#if defined(XP_UNIX)
     // Unload any of library dependencies we loaded earlier. The assumption
     // here is that the component will have a "internal" reference count to
     // the dependency library we just loaded.
     // XXX should we unload later - or even at all?
-
-#ifdef UNLOAD_DEPENDENT_LIBS
     if (extraData != nsnull)
     {
         PRInt32 arrayCount = dependentLibArray.Count();
         for (PRInt32 index = 0; index < arrayCount; index++)
             PR_UnloadLibrary((PRLibrary*)dependentLibArray.ElementAt(index));
     }
-#endif
-#endif
 
 #ifdef NS_BUILD_REFCNT_LOGGING
         nsTraceRefcntImpl::SetActivityIsLegal(PR_TRUE);
@@ -273,15 +245,6 @@ PRBool nsDll::Load(void)
         }
 #endif
     }
-
-#ifdef SHOULD_IMPLEMENT_BREAKAFTERLOAD
-    // Debugging help for components. Component dlls need to have their
-    // symbols loaded before we can put a breakpoint in the debugger.
-    // This will help figureing out the point when the dll was loaded.
-    nsXPIDLCString displayPath;
-    GetDisplayPath(displayPath);
-    BreakAfterLoad(displayPath.get());
-#endif
 
     return ((m_instance == NULL) ? PR_FALSE : PR_TRUE);
 }
@@ -375,13 +338,6 @@ nsresult nsDll::GetModule(nsISupports *servMgr, nsIModule **cobj)
     return rv;
 }
 
-
-// These are used by BreakAfterLoad, below.
-#ifdef SHOULD_IMPLEMENT_BREAKAFTERLOAD
-static nsCString *sBreakList[16];
-static int sBreakListCount = 0;
-#endif
-
 nsresult nsDll::Shutdown(void)
 {
     // Release the module object if we got one
@@ -391,66 +347,8 @@ nsresult nsDll::Shutdown(void)
         NS_RELEASE2(m_moduleObject, refcnt);
         NS_ASSERTION(refcnt == 0, "Dll moduleObject refcount non zero");
     }
-#ifdef SHOULD_IMPLEMENT_BREAKAFTERLOAD
-    for (int i = 0; i < sBreakListCount; i++)
-    {
-        delete sBreakList[i];
-        sBreakList[i] = nsnull;
-    }
-    sBreakListCount = 0;
-#endif
+
     return NS_OK;
 
 }
-#ifdef SHOULD_IMPLEMENT_BREAKAFTERLOAD
-void nsDll::BreakAfterLoad(const char *nsprPath)
-{
-    static PRBool firstTime = PR_TRUE;
 
-    // return if invalid input
-    if (!nsprPath || !*nsprPath) return;
-
-    // return if nothing to break on
-    if (!firstTime && sBreakListCount == 0) return;
-
-    if (firstTime)
-    {
-        firstTime = PR_FALSE;
-        // Form the list of dlls to break on load
-        nsCAutoString envList(getenv("XPCOM_BREAK_ON_LOAD"));
-        if (envList.IsEmpty()) return;
-        PRInt32 ofset = 0;
-        PRInt32 start = 0;
-        do
-        {
-            ofset = envList.FindChar(':', start);
-            sBreakList[sBreakListCount] = new nsCString();
-            envList.Mid(*(sBreakList[sBreakListCount]), start, ofset);
-            sBreakListCount++;
-            start = ofset + 1;
-        }
-        while (ofset != -1 && 16 > sBreakListCount); // avoiding vc6.0 compiler issue. count < thinks it is starting a template
-    }
-
-    // Find the dllname part of the string
-    nsCString currentPath(nsprPath);
-    PRInt32 lastSep = currentPath.RFindCharInSet(":\\/");
-
-    for (int i=0; i<sBreakListCount; i++)
-        if (currentPath.Find(*(sBreakList[i]), PR_TRUE, lastSep) > 0)
-        {
-            // Loading a dll that we want to break on
-            // Put your breakpoint here
-            fprintf(stderr, "...Loading module %s\n", nsprPath);
-            // Break in the debugger here.
-#if defined(__i386) && defined(__GNUC__)
-            asm("int $3");
-#elif defined(VMS)
-            lib$signal(SS$_DEBUG);
-#elif defined(XP_MACOSX)
-            raise(SIGTRAP);
-#endif
-        }
-    return;
-}
-#endif /* SHOULD_IMPLEMENT_BREAKAFTERLOAD */

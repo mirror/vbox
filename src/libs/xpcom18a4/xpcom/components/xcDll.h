@@ -55,10 +55,6 @@
 
 class nsNativeComponentLoader;
 
-#if defined(DEBUG) && !defined(XP_BEOS)
-#define SHOULD_IMPLEMENT_BREAKAFTERLOAD
-#endif
-
 class nsIModule;
 class nsIServiceManager;
 
@@ -81,10 +77,6 @@ private:
     PRBool                    m_markForUnload;
 
     void Init(nsIFile *dllSpec);
-
-#ifdef SHOULD_IMPLEMENT_BREAKAFTERLOAD
-    void BreakAfterLoad(const char *nsprPath);
-#endif
 
 public:
  
