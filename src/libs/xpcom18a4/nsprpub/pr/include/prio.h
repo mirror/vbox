@@ -53,7 +53,6 @@
 #ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
 #define PR_GetInheritedFD VBoxNsprPR_GetInheritedFD
 #define PR_SetFDInheritable VBoxNsprPR_SetFDInheritable
-#define PR_Access VBoxNsprPR_Access
 #define PR_Open VBoxNsprPR_Open
 #define PR_Read VBoxNsprPR_Read
 #define PR_Write VBoxNsprPR_Write
@@ -90,16 +89,12 @@
 #define PR_OpenFile VBoxNsprPR_OpenFile
 #define PR_Writev VBoxNsprPR_Writev
 #define PR_Delete VBoxNsprPR_Delete
-#define PR_Rename VBoxNsprPR_Rename
 #define PR_GetFileInfo VBoxNsprPR_GetFileInfo
 #define PR_GetFileInfo64 VBoxNsprPR_GetFileInfo64
 #define PR_GetOpenFileInfo VBoxNsprPR_GetOpenFileInfo
 #define PR_GetOpenFileInfo64 VBoxNsprPR_GetOpenFileInfo64
 #define PR_Available VBoxNsprPR_Available
 #define PR_Sync VBoxNsprPR_Sync
-#define PR_MkDir VBoxNsprPR_MkDir
-#define PR_MakeDir VBoxNsprPR_MakeDir
-#define PR_RmDir VBoxNsprPR_RmDir
 #define PR_OpenTCPSocket VBoxNsprPR_OpenTCPSocket
 #define PR_ConnectContinue VBoxNsprPR_ConnectContinue
 #define PR_GetConnectStatus VBoxNsprPR_GetConnectStatus
@@ -890,56 +885,6 @@ NSPR_API(PRStatus) PR_GetOpenFileInfo(PRFileDesc *fd, PRFileInfo *info);
 NSPR_API(PRStatus) PR_GetOpenFileInfo64(PRFileDesc *fd, PRFileInfo64 *info);
 
 /*
- **************************************************************************
- * FUNCTION: PR_Rename
- * DESCRIPTION:
- *     Rename a file from the old name 'from' to the new name 'to'.
- * INPUTS:
- *     const char *from
- *         The old name of the file to be renamed.
- *     const char *to
- *         The new name of the file.
- * OUTPUTS:
- *     None.
- * RETURN: PRStatus
- **************************************************************************
- */
-
-NSPR_API(PRStatus)    PR_Rename(const char *from, const char *to);
-
-/*
- *************************************************************************
- * FUNCTION: PR_Access
- * DESCRIPTION:
- *     Determine accessibility of a file.
- * INPUTS:
- *     const char *name
- *         path name of the file
- *     PRAccessHow how
- *         specifies which access permission to check for.
- *         It can be one of the following values:
- *             PR_ACCESS_READ_OK       Test for read permission
- *             PR_ACCESS_WRITE_OK      Test for write permission
- *             PR_ACCESS_EXISTS        Check existence of file
- * OUTPUTS:
- *     None.
- * RETURN: PRStatus
- *     PR_SUCCESS is returned if the requested access is permitted.
- *     Otherwise, PR_FAILURE is returned. Additional information
- *     regarding the reason for the failure may be retrieved from
- *     PR_GetError().
- *************************************************************************
- */
-
-typedef enum PRAccessHow {
-    PR_ACCESS_EXISTS = 1,
-    PR_ACCESS_WRITE_OK = 2,
-    PR_ACCESS_READ_OK = 3
-} PRAccessHow;
-
-NSPR_API(PRStatus) PR_Access(const char *name, PRAccessHow how);
-
-/*
  *************************************************************************
  * FUNCTION: PR_Seek, PR_Seek64
  * DESCRIPTION:
@@ -1099,60 +1044,6 @@ NSPR_API(PRDirEntry*) PR_ReadDir(PRDir *dir, PRDirFlags flags);
  */
 
 NSPR_API(PRStatus) PR_CloseDir(PRDir *dir);
-
-/*
- *************************************************************************
- * FUNCTION: PR_MkDir
- * DESCRIPTION:
- *     Create a new directory with the given name and access mode.
- * INPUTS:
- *     const char *name
- *        The name of the directory to be created. All the path components
- *        up to but not including the leaf component must already exist.
- *     PRIntn mode
- *        See 'mode' definiton in PR_Open().
- * OUTPUTS:
- *     None
- * RETURN: PRStatus
- *        If successful, will return a status of PR_SUCCESS. Otherwise
- *        a value of PR_FAILURE. The reason for the failure may be re-
- *        trieved using PR_GetError().
- *************************************************************************
- */
-
-NSPR_API(PRStatus) PR_MkDir(const char *name, PRIntn mode);
-
-/*
- *************************************************************************
- * FUNCTION: PR_MakeDir
- * DESCRIPTION:
- *     Create a new directory with the given name and access mode.
- *     PR_MakeDir has the same prototype as PR_MkDir but implements
- *     the specified access mode where possible.
- *************************************************************************
- */
-
-NSPR_API(PRStatus) PR_MakeDir(const char *name, PRIntn mode);
-
-/*
- *************************************************************************
- * FUNCTION: PR_RmDir
- * DESCRIPTION:
- *     Remove a directory by the given name.
- * INPUTS:
- *     const char *name
- *        The name of the directory to be removed. All the path components
- *        must already exist. Only the leaf component will be removed.
- * OUTPUTS:
- *     None
- * RETURN: PRStatus
- *        If successful, will return a status of PR_SUCCESS. Otherwise
- *        a value of PR_FAILURE. The reason for the failure may be re-
- *        trieved using PR_GetError().
- **************************************************************************
- */
-
-NSPR_API(PRStatus) PR_RmDir(const char *name);
 
 /*
  *************************************************************************

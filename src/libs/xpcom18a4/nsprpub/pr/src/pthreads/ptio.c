@@ -115,8 +115,6 @@ static PRBool _pr_ipv6_v6only_on_by_default;
 static PRFileDesc *pt_SetMethods(
     PRIntn osfd, PRDescType type, PRBool isAcceptedSocket, PRBool imported);
 
-static PRLock *_pr_flock_lock;  /* For PR_LockFile() etc. */
-static PRCondVar *_pr_flock_cv;  /* For PR_LockFile() etc. */
 static PRLock *_pr_rename_lock;  /* For PR_Rename() */
 
 /**************************************************************************/
@@ -620,10 +618,6 @@ void _PR_InitIO(void)
     pt_debug.timeStarted = PR_Now();
 #endif
 
-    _pr_flock_lock = PR_NewLock();
-    PR_ASSERT(NULL != _pr_flock_lock);
-    _pr_flock_cv = PR_NewCondVar(_pr_flock_lock);
-    PR_ASSERT(NULL != _pr_flock_cv);
     _pr_rename_lock = PR_NewLock();
     PR_ASSERT(NULL != _pr_rename_lock);
 
@@ -667,16 +661,6 @@ void _PR_CleanupIO(void)
 
     _PR_CleanupFdCache();
 
-    if (_pr_flock_cv)
-    {
-        PR_DestroyCondVar(_pr_flock_cv);
-        _pr_flock_cv = NULL;
-    }
-    if (_pr_flock_lock)
-    {
-        PR_DestroyLock(_pr_flock_lock);
-        _pr_flock_lock = NULL;
-    }
     if (_pr_rename_lock)
     {
         PR_DestroyLock(_pr_rename_lock);
@@ -2100,30 +2084,6 @@ PR_IMPLEMENT(PRStatus) PR_Delete(const char *name)
         return PR_SUCCESS;
 }  /* PR_Delete */
 
-PR_IMPLEMENT(PRStatus) PR_Access(const char *name, PRAccessHow how)
-{
-    PRIntn rv;
-
-    if (pt_TestAbort()) return PR_FAILURE;
-
-    switch (how)
-    {
-    case PR_ACCESS_READ_OK:
-        rv =  access(name, R_OK);
-        break;
-    case PR_ACCESS_WRITE_OK:
-        rv = access(name, W_OK);
-        break;
-    case PR_ACCESS_EXISTS:
-    default:
-        rv = access(name, F_OK);
-    }
-    if (0 == rv) return PR_SUCCESS;
-    pt_MapError(_PR_MD_MAP_ACCESS_ERROR, errno);
-    return PR_FAILURE;
-
-}  /* PR_Access */
-
 PR_IMPLEMENT(PRStatus) PR_GetFileInfo(const char *fn, PRFileInfo *info)
 {
     PRInt32 rv = _PR_MD_GETFILEINFO(fn, info);
@@ -2138,37 +2098,6 @@ PR_IMPLEMENT(PRStatus) PR_GetFileInfo64(const char *fn, PRFileInfo64 *info)
     rv = _PR_MD_GETFILEINFO64(fn, info);
     return (0 == rv) ? PR_SUCCESS : PR_FAILURE;
 }  /* PR_GetFileInfo64 */
-
-PR_IMPLEMENT(PRStatus) PR_Rename(const char *from, const char *to)
-{
-    PRIntn rv = -1;
-
-    if (pt_TestAbort()) return PR_FAILURE;
-
-    /*
-    ** We have to acquire a lock here to stiffle anybody trying to create
-    ** a new file at the same time. And we have to hold that lock while we
-    ** test to see if the file exists and do the rename. The other place
-    ** where the lock is held is in PR_Open() when possibly creating a
-    ** new file.
-    */
-
-    PR_Lock(_pr_rename_lock);
-    rv = access(to, F_OK);
-    if (0 == rv)
-    {
-        PR_SetError(PR_FILE_EXISTS_ERROR, 0);
-        rv = -1;
-    }
-    else
-    {
-        rv = rename(from, to);
-        if (rv == -1)
-            pt_MapError(_PR_MD_MAP_RENAME_ERROR, errno);
-    }
-    PR_Unlock(_pr_rename_lock);
-    return (-1 == rv) ? PR_FAILURE : PR_SUCCESS;
-}  /* PR_Rename */
 
 PR_IMPLEMENT(PRStatus) PR_CloseDir(PRDir *dir)
 {
@@ -2186,48 +2115,6 @@ PR_IMPLEMENT(PRStatus) PR_CloseDir(PRDir *dir)
     }
     return PR_SUCCESS;
 }  /* PR_CloseDir */
-
-PR_IMPLEMENT(PRStatus) PR_MakeDir(const char *name, PRIntn mode)
-{
-    PRInt32 rv = -1;
-
-    if (pt_TestAbort()) return PR_FAILURE;
-
-    /*
-    ** This lock is used to enforce rename semantics as described
-    ** in PR_Rename.
-    */
-    if (NULL !=_pr_rename_lock)
-        PR_Lock(_pr_rename_lock);
-    rv = mkdir(name, mode);
-    if (-1 == rv)
-        pt_MapError(_PR_MD_MAP_MKDIR_ERROR, errno);
-    if (NULL !=_pr_rename_lock)
-        PR_Unlock(_pr_rename_lock);
-
-    return (-1 == rv) ? PR_FAILURE : PR_SUCCESS;
-}  /* PR_Makedir */
-
-PR_IMPLEMENT(PRStatus) PR_MkDir(const char *name, PRIntn mode)
-{
-    return PR_MakeDir(name, mode);
-}  /* PR_Mkdir */
-
-PR_IMPLEMENT(PRStatus) PR_RmDir(const char *name)
-{
-    PRInt32 rv;
-
-    if (pt_TestAbort()) return PR_FAILURE;
-
-    rv = rmdir(name);
-    if (0 == rv) {
-    return PR_SUCCESS;
-    } else {
-    pt_MapError(_PR_MD_MAP_RMDIR_ERROR, errno);
-    return PR_FAILURE;
-    }
-}  /* PR_Rmdir */
-
 
 PR_IMPLEMENT(PRDir*) PR_OpenDir(const char *name)
 {

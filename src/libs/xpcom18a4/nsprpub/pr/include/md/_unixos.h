@@ -350,7 +350,6 @@ extern PRInt32  _MD_getfileinfo64(const char *fn, PRFileInfo64 *info);
 extern PRInt32  _MD_getopenfileinfo(const PRFileDesc *fd, PRFileInfo *info);
 extern PRInt32  _MD_getopenfileinfo64(const PRFileDesc *fd, PRFileInfo64 *info);
 extern PRInt32	_MD_rename(const char *from, const char *to);
-extern PRInt32	_MD_access(const char *name, PRAccessHow how);
 extern PRInt32	_MD_mkdir(const char *name, PRIntn mode);
 extern PRInt32	_MD_rmdir(const char *name);
 extern PRInt32	_MD_accept_read(PRInt32 sock, PRInt32 *newSock,
@@ -371,7 +370,6 @@ extern PRInt32 _MD_write(PRFileDesc *fd, const void *buf, PRInt32 amount);
 #define _MD_GETOPENFILEINFO(fd, info)	_MD_getopenfileinfo(fd, info)
 #define _MD_GETOPENFILEINFO64(fd, info)	_MD_getopenfileinfo64(fd, info)
 #define _MD_RENAME(from, to)		    _MD_rename(from, to)
-#define _MD_ACCESS(name, how)		    _MD_access(name, how)
 #define _MD_MKDIR(name, mode)		    _MD_mkdir(name, mode)
 #define _MD_MAKE_DIR(name, mode)		_MD_mkdir(name, mode)
 #define _MD_RMDIR(name)			        _MD_rmdir(name)
