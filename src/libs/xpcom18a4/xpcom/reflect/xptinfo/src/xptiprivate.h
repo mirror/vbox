@@ -889,12 +889,12 @@ public:
     void   GetSearchPath(nsISupportsArray** aSearchPath)
         {NS_ADDREF(*aSearchPath = mSearchPath);}
 
-    static PRLock* GetResolveLock(xptiInterfaceInfoManager* self = nsnull) 
+    static RTSEMFASTMUTEX GetResolveLock(xptiInterfaceInfoManager* self = nsnull) 
         {if(!self && !(self = GetInterfaceInfoManagerNoAddRef())) 
             return nsnull;
          return self->mResolveLock;}
 
-    static PRLock* GetAutoRegLock(xptiInterfaceInfoManager* self = nsnull) 
+    static RTSEMFASTMUTEX GetAutoRegLock(xptiInterfaceInfoManager* self = nsnull) 
         {if(!self && !(self = GetInterfaceInfoManagerNoAddRef())) 
             return nsnull;
          return self->mAutoRegLock;}
@@ -961,10 +961,10 @@ private:
     nsCOMPtr<nsILocalFile>       mStatsLogFile;
     nsCOMPtr<nsILocalFile>       mAutoRegLogFile;
     PRFileDesc*                  mOpenLogFile;
-    PRLock*                      mResolveLock;
-    PRLock*                      mAutoRegLock;
+    RTSEMFASTMUTEX               mResolveLock;
+    RTSEMFASTMUTEX               mAutoRegLock;
     PRMonitor*                   mInfoMonitor;
-    PRLock*                      mAdditionalManagersLock;
+    RTSEMFASTMUTEX               mAdditionalManagersLock;
     nsSupportsArray              mAdditionalManagers;
     nsCOMPtr<nsISupportsArray>   mSearchPath;
 };

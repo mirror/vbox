@@ -110,21 +110,30 @@ PRBool
 xptiInterfaceInfoManager::IsValid()
 {
     return mWorkingSet.IsValid() &&
-           mResolveLock &&
-           mAutoRegLock &&
+           mResolveLock != NIL_RTSEMFASTMUTEX &&
+           mAutoRegLock != NIL_RTSEMFASTMUTEX &&
            mInfoMonitor &&
-           mAdditionalManagersLock;
+           mAdditionalManagersLock != NIL_RTSEMFASTMUTEX;
 }        
 
 xptiInterfaceInfoManager::xptiInterfaceInfoManager(nsISupportsArray* aSearchPath)
     :   mWorkingSet(aSearchPath),
         mOpenLogFile(nsnull),
-        mResolveLock(PR_NewLock()),
-        mAutoRegLock(PR_NewLock()),
+        mResolveLock(NIL_RTSEMFASTMUTEX),
+        mAutoRegLock(NIL_RTSEMFASTMUTEX),
         mInfoMonitor(nsAutoMonitor::NewMonitor("xptiInfoMonitor")),
-        mAdditionalManagersLock(PR_NewLock()),
+        mAdditionalManagersLock(NIL_RTSEMFASTMUTEX),
         mSearchPath(aSearchPath)
 {
+    int vrc = RTSemFastMutexCreate(&mResolveLock);
+    AssertRC(vrc); RT_NOREF(vrc);
+
+    vrc = RTSemFastMutexCreate(&mAutoRegLock);
+    AssertRC(vrc); RT_NOREF(vrc);
+
+    vrc = RTSemFastMutexCreate(&mAdditionalManagersLock);
+    AssertRC(vrc); RT_NOREF(vrc);
+
     const char* statsFilename = PR_GetEnv("MOZILLA_XPTI_STATS");
     if(statsFilename)
     {
@@ -163,14 +172,14 @@ xptiInterfaceInfoManager::~xptiInterfaceInfoManager()
     // We only do this on shutdown of the service.
     mWorkingSet.InvalidateInterfaceInfos();
 
-    if(mResolveLock)
-        PR_DestroyLock(mResolveLock);
+    if(mResolveLock != NIL_RTSEMFASTMUTEX)
+        RTSemFastMutexDestroy(mResolveLock);
     if(mAutoRegLock)
-        PR_DestroyLock(mAutoRegLock);
+        RTSemFastMutexDestroy(mAutoRegLock);
     if(mInfoMonitor)
         nsAutoMonitor::DestroyMonitor(mInfoMonitor);
     if(mAdditionalManagersLock)
-        PR_DestroyLock(mAdditionalManagersLock);
+        RTSemFastMutexDestroy(mAdditionalManagersLock);
 
     gInterfaceInfoManager = nsnull;
 #ifdef DEBUG
