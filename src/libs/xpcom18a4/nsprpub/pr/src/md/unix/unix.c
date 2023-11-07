@@ -89,12 +89,6 @@
 #error "Cannot determine architecture"
 #endif
 
-/*
-** Global lock variable used to bracket calls into rusty libraries that
-** aren't thread safe (like libc, libX, etc).
-*/
-static PRLock *_pr_rename_lock = NULL;
-
 static PRInt64 minus_one;
 
 sigset_t timer_set;
@@ -530,9 +524,6 @@ void _PR_UnixInit(void)
     sigact.sa_flags = 0;
     rv = sigaction(SIGPIPE, &sigact, 0);
     PR_ASSERT(0 == rv);
-
-    _pr_rename_lock = PR_NewLock();
-    PR_ASSERT(NULL != _pr_rename_lock);
 
     _PR_InitIOV();  /* one last hack */
 }
