@@ -119,7 +119,7 @@ extern nsTHashtable<nsDepCharHashKey>* gJavaKeywords;
 // The Java garbage collector runs in a separate thread.  Since it calls the
 // finalizeProxy() function in nsJavaWrapper.cpp, we need to make sure that
 // all the structures touched by finalizeProxy() are multithread aware.
-extern PRLock* gJavaXPCOMLock;
+extern RTSEMFASTMUTEX gJavaXPCOMLock;
 
 extern PRBool gJavaXPCOMInitialized;
 
