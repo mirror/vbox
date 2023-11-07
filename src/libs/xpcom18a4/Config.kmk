@@ -376,9 +376,6 @@ XPCOM_IDLFILES = \
 	xpcom/base/nsISupports.idl \
 	xpcom/base/nsITraceRefcnt.idl \
 	xpcom/base/nsIWeakReference.idl \
-	xpcom/base/nsIConsoleMessage.idl \
-	xpcom/base/nsIConsoleService.idl \
-	xpcom/base/nsIConsoleListener.idl \
 	xpcom/base/nsIErrorService.idl \
 	xpcom/base/nsIException.idl \
 	xpcom/base/nsIExceptionService.idl \

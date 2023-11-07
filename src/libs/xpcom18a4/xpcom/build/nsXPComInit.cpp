@@ -54,7 +54,6 @@
 #include "nsSupportsArray.h"
 #include "nsArray.h"
 #include "nsSupportsPrimitives.h"
-#include "nsConsoleService.h"
 #include "nsExceptionService.h"
 
 #include "nsComponentManager.h"
@@ -162,7 +161,6 @@ NS_GENERIC_FACTORY_CONSTRUCTOR(nsSupportsVoidImpl)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsSupportsInterfacePointerImpl)
 
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsArray)
-NS_GENERIC_FACTORY_CONSTRUCTOR(nsConsoleService)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsAtomService)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsExceptionService)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsBinaryOutputStream)
@@ -331,7 +329,6 @@ static const nsModuleComponentInfo components[] = {
 
     COMPONENT(SUPPORTSARRAY, nsSupportsArray::Create),
     COMPONENT(ARRAY, nsArrayConstructor),
-    COMPONENT(CONSOLESERVICE, nsConsoleServiceConstructor),
     COMPONENT(EXCEPTIONSERVICE, nsExceptionServiceConstructor),
     COMPONENT(ATOMSERVICE, nsAtomServiceConstructor),
     COMPONENT(OBSERVERSERVICE, nsObserverService::Create),

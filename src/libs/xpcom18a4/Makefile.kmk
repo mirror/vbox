@@ -553,8 +553,6 @@ VBox-xpcom-base_TEMPLATE = XPComDll
 VBox-xpcom-base_INSTTYPE = none
 VBox-xpcom-base_DEFS = _IMPL_NS_COM
 VBox-xpcom-base_SOURCES = \
-	xpcom/base/nsConsoleMessage.cpp \
-	xpcom/base/nsConsoleService.cpp \
 	xpcom/base/nsDebugImpl.cpp \
 	xpcom/base/nsErrorService.cpp \
 	xpcom/base/nsExceptionService.cpp \
@@ -1080,9 +1078,6 @@ OTHER_CLEAN += \
 #
 INSTALLS += VBoxXPCOMBase-xpt-inst
 VBOX_XPTFILES = $(addprefix $(PATH_TARGET)/VBox-xpcom-xpt-files/, \
-		nsIConsoleListener.xpt \
-		nsIConsoleMessage.xpt \
-		nsIConsoleService.xpt \
 		nsIErrorService.xpt \
 		nsIException.xpt \
 		nsIExceptionService.xpt \
