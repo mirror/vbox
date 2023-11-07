@@ -47,7 +47,6 @@
 
 #include "PyXPCOM_std.h"
 #include "nsReadableUtils.h"
-#include <nsIConsoleService.h>
 #ifdef VBOX
 # include <nsIExceptionService.h>
 # include <iprt/err.h>
@@ -63,9 +62,6 @@ static char *PyTraceback_AsString(PyObject *exc_tb);
 // Only used in really bad situations!
 static void _PanicErrorWrite(const char *msg)
 {
-	nsCOMPtr<nsIConsoleService> consoleService = do_GetService(NS_CONSOLESERVICE_CONTRACTID);
-	if (consoleService)
-		consoleService->LogStringMessage(NS_ConvertASCIItoUCS2(msg).get());
 	PR_fprintf(PR_STDERR,"%s\n", msg);
 }
 

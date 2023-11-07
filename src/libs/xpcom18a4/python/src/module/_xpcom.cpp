@@ -51,7 +51,6 @@
 #include "nsIFile.h"
 #include "nsIComponentRegistrar.h"
 #include "nsIComponentManagerObsolete.h"
-#include "nsIConsoleService.h"
 #include "nspr.h" // PR_fprintf
 #ifdef VBOX
 # include "nsEventQueueUtils.h"
