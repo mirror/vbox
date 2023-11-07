@@ -125,10 +125,6 @@ ifdef VBOX_WITH_DISTRO_XRAND_XINERAMA
   VBoxClient_LIBS += Xrandr
  endif
 endif
-ifdef VBOX_WITH_WAYLAND_ADDITIONS
- VBoxClient_LIBS.linux += glib-2.0
- VBoxClient_LIBS.linux += gobject-2.0
-endif
 
 # XXX: -L comes from the template, but not rpath
 VBoxClient_LDFLAGS.netbsd = \
