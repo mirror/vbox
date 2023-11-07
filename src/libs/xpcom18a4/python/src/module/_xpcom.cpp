@@ -550,32 +550,6 @@ PyObject *AllocateBuffer(PyObject *self, PyObject *args)
 #endif
 }
 
-// Writes a message to the console service.  This could be done via pure
-// Python code, but is useful when the logging code is actually the
-// xpcom .py framework itself (ie, we don't want our logging framework to
-// call back into the very code generating the log messages!
-PyObject *LogConsoleMessage(PyObject *self, PyObject *args)
-{
-	char *msg;
-	if (!PyArg_ParseTuple(args, "s", &msg))
-		return NULL;
-
-	nsCOMPtr<nsIConsoleService> consoleService = do_GetService(NS_CONSOLESERVICE_CONTRACTID);
-	if (consoleService)
-		consoleService->LogStringMessage(NS_ConvertASCIItoUCS2(msg).get());
-	else {
-	// This either means no such service, or in shutdown - hardly worth
-	// the warning, and not worth reporting an error to Python about - its
-	// log handler would just need to catch and ignore it.
-	// And as this is only called by this logging setup, any messages should
-	// still go to stderr or a logfile.
-		NS_WARNING("pyxpcom can't log console message.");
-	}
-
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
 #ifdef VBOX
 
 #  include <VBox/com/NativeEventQueue.h>
@@ -739,7 +713,6 @@ static struct PyMethodDef xpcom_methods[]=
 	{"GetProxyForObject", PyXPCOMMethod_GetProxyForObject, 1},
 	{"GetSpecialDirectory", PyGetSpecialDirectory, 1},
 	{"AllocateBuffer", AllocateBuffer, 1},
-	{"LogConsoleMessage", LogConsoleMessage, 1, "Write a message to the xpcom console service"},
 	{"MakeVariant", PyXPCOMMethod_MakeVariant, 1},
 	{"GetVariantValue", PyXPCOMMethod_GetVariantValue, 1},
 #ifdef VBOX

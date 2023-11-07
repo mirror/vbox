@@ -89,43 +89,20 @@ class ServerException(Exception):
             errno = nsError.NS_ERROR_FAILURE
         Exception.__init__(self, errno, *args, **kw)
 
-# Logging support - setup the 'xpcom' logger to write to the Mozilla
-# console service, and also to sys.stderr, or optionally a file.
+# Logging support - setup the 'xpcom' logger to write to sys.stderr,
+# or optionally a file.
 # Environment variables supports:
 # PYXPCOM_LOG_FILE=filename - if set, used instead of sys.stderr.
 # PYXPCOM_LOG_LEVEL=level - level may be a number or a logging level
 #                           constant (eg, 'debug', 'error')
 # Later it may make sense to allow a different log level to be set for
-# the file than for the console service.
+# the file.
 import logging
-class ConsoleServiceStream:
-    # enough of a stream to keep logging happy
-    def flush(self):
-        pass
-    def write(self, msg):
-        import xpcom._xpcom as _xpcom
-        _xpcom.LogConsoleMessage(msg)
-    def close(self):
-        pass
-
 def setupLogging():
     import os
     if sys.version_info[0] <= 2:
         import threading, thread
-    hdlr = logging.StreamHandler(ConsoleServiceStream())
-    fmt = logging.Formatter(logging.BASIC_FORMAT)
-    hdlr.setFormatter(fmt)
-    # There is a bug in 2.3 and 2.4.x logging module in that it doesn't
-    # use an RLock, leading to deadlocks in some cases (specifically,
-    # logger.warning("ob is %r", ob), and where repr(ob) itself tries to log)
-    # Later versions of logging use an RLock, so we detect an "old" style
-    # handler and update its lock
-    if sys.version_info[0] <= 2:
-        if type(hdlr.lock) == thread.LockType:
-            hdlr.lock = threading.RLock()
 
-    logger.addHandler(hdlr)
-    # The console handler in mozilla does not go to the console!?
     # Add a handler to print to stderr, or optionally a file
     # PYXPCOM_LOG_FILE can specify a filename
     filename = os.environ.get("PYXPCOM_LOG_FILE")
@@ -170,4 +147,4 @@ if len(logger.handlers) == 0:
 
 # Cleanup namespace - but leave 'logger' there for people to use, so they
 # don't need to know the exact name of the logger.
-del ConsoleServiceStream, logging, setupLogging
+del logging, setupLogging
