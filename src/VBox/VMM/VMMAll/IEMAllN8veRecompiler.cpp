@@ -5009,6 +5009,7 @@ static void iemNativeVarSetKindToStack(PIEMRECOMPILERSTATE pReNative, uint8_t id
  *
  * @param   pReNative   The recompiler state.
  * @param   idxVar      The variable.
+ * @param   uValue      The immediate value.
  * @throws  VERR_IEM_VAR_OUT_OF_STACK_SLOTS, VERR_IEM_VAR_IPE_2
  */
 static void iemNativeVarSetKindToConst(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar, uint64_t uValue)
@@ -5030,6 +5031,8 @@ static void iemNativeVarSetKindToConst(PIEMRECOMPILERSTATE pReNative, uint8_t id
  *
  * @param   pReNative   The recompiler state.
  * @param   idxVar      The variable.
+ * @param   idxOtherVar The variable to take the (stack) address of.
+ *
  * @throws  VERR_IEM_VAR_OUT_OF_STACK_SLOTS, VERR_IEM_VAR_IPE_2
  */
 static void iemNativeVarSetKindToLocalRef(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar, uint8_t idxOtherVar)
