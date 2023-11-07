@@ -71,9 +71,6 @@
 #define PR_Bind VBoxNsprPR_Bind
 #define PR_Listen VBoxNsprPR_Listen
 #define PR_Accept VBoxNsprPR_Accept
-#define PR_OpenDir VBoxNsprPR_OpenDir
-#define PR_ReadDir VBoxNsprPR_ReadDir
-#define PR_CloseDir VBoxNsprPR_CloseDir
 #define PR_CreatePipe VBoxNsprPR_CreatePipe
 #define PR_GetDescType VBoxNsprPR_GetDescType
 #define PR_GetSpecialFD VBoxNsprPR_GetSpecialFD
@@ -960,90 +957,6 @@ NSPR_API(PRInt32) PR_Available(PRFileDesc *fd);
  */
 
 NSPR_API(PRStatus)	PR_Sync(PRFileDesc *fd);
-
-/************************************************************************/
-
-struct PRDirEntry {
-    const char *name;        /* name of entry, relative to directory name */
-};
-
-#if !defined(NO_NSPR_10_SUPPORT)
-#define PR_DirName(dirEntry)	(dirEntry->name)
-#endif
-
-/*
- *************************************************************************
- * FUNCTION: PR_OpenDir
- * DESCRIPTION:
- *     Open the directory by the given name
- * INPUTS:
- *     const char *name
- *         path name of the directory to be opened
- * OUTPUTS:
- *     None
- * RETURN: PRDir *
- *     If the directory is sucessfully opened, a PRDir object is
- *     dynamically allocated and a pointer to it is returned.
- *     If the directory cannot be opened, a NULL pointer is returned.
- * MEMORY:
- *     Upon successful completion, the return value points to
- *     dynamically allocated memory.
- *************************************************************************
- */
-
-NSPR_API(PRDir*) PR_OpenDir(const char *name);
-
-/*
- *************************************************************************
- * FUNCTION: PR_ReadDir
- * DESCRIPTION:
- * INPUTS:
- *     PRDir *dir
- *         pointer to a PRDir object that designates an open directory
- *     PRDirFlags flags
- *           PR_SKIP_NONE     Do not skip any files
- *           PR_SKIP_DOT      Skip the directory entry "." that
- *                            represents the current directory
- *           PR_SKIP_DOT_DOT  Skip the directory entry ".." that
- *                            represents the parent directory.
- *           PR_SKIP_BOTH     Skip both '.' and '..'
- *           PR_SKIP_HIDDEN   Skip hidden files
- * OUTPUTS:
- * RETURN: PRDirEntry*
- *     Returns a pointer to the next entry in the directory.  Returns
- *     a NULL pointer upon reaching the end of the directory or when an
- *     error occurs. The actual reason can be retrieved via PR_GetError().
- *************************************************************************
- */
-
-typedef enum PRDirFlags {
-    PR_SKIP_NONE = 0x0,
-    PR_SKIP_DOT = 0x1,
-    PR_SKIP_DOT_DOT = 0x2,
-    PR_SKIP_BOTH = 0x3,
-    PR_SKIP_HIDDEN = 0x4
-} PRDirFlags;
-
-NSPR_API(PRDirEntry*) PR_ReadDir(PRDir *dir, PRDirFlags flags);
-
-/*
- *************************************************************************
- * FUNCTION: PR_CloseDir
- * DESCRIPTION:
- *     Close the specified directory.
- * INPUTS:
- *     PRDir *dir
- *        The directory to be closed.
- * OUTPUTS:
- *     None
- * RETURN: PRStatus
- *        If successful, will return a status of PR_SUCCESS. Otherwise
- *        a value of PR_FAILURE. The reason for the failure may be re-
- *        trieved using PR_GetError().
- *************************************************************************
- */
-
-NSPR_API(PRStatus) PR_CloseDir(PRDir *dir);
 
 /*
  *************************************************************************

@@ -500,11 +500,6 @@ struct PRFilePrivate {
 #endif
 };
 
-struct PRDir {
-    PRDirEntry d;
-    _MDDir md;
-};
-
 extern void _PR_InitSegs(void);
 extern void _PR_InitStacks(void);
 extern void _PR_InitTPD(void);

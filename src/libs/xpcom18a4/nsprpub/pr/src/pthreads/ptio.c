@@ -2099,41 +2099,6 @@ PR_IMPLEMENT(PRStatus) PR_GetFileInfo64(const char *fn, PRFileInfo64 *info)
     return (0 == rv) ? PR_SUCCESS : PR_FAILURE;
 }  /* PR_GetFileInfo64 */
 
-PR_IMPLEMENT(PRStatus) PR_CloseDir(PRDir *dir)
-{
-    if (pt_TestAbort()) return PR_FAILURE;
-
-    if (NULL != dir->md.d)
-    {
-        if (closedir(dir->md.d) == -1)
-        {
-            _PR_MD_MAP_CLOSEDIR_ERROR(errno);
-            return PR_FAILURE;
-        }
-        dir->md.d = NULL;
-        PR_DELETE(dir);
-    }
-    return PR_SUCCESS;
-}  /* PR_CloseDir */
-
-PR_IMPLEMENT(PRDir*) PR_OpenDir(const char *name)
-{
-    DIR *osdir;
-    PRDir *dir = NULL;
-
-    if (pt_TestAbort()) return dir;
-
-    osdir = opendir(name);
-    if (osdir == NULL)
-        pt_MapError(_PR_MD_MAP_OPENDIR_ERROR, errno);
-    else
-    {
-        dir = PR_NEWZAP(PRDir);
-        dir->md.d = osdir;
-    }
-    return dir;
-}  /* PR_OpenDir */
-
 static PRInt32 _pr_poll_with_poll(
     PRPollDesc *pds, PRIntn npds, PRIntervalTime timeout)
 {
@@ -2386,31 +2351,6 @@ PR_IMPLEMENT(PRInt32) PR_Poll(
 {
 	return(_pr_poll_with_poll(pds, npds, timeout));
 }
-
-PR_IMPLEMENT(PRDirEntry*) PR_ReadDir(PRDir *dir, PRDirFlags flags)
-{
-    struct dirent *dp;
-
-    if (pt_TestAbort()) return NULL;
-
-    for (;;)
-    {
-        dp = readdir(dir->md.d);
-        if (NULL == dp) return NULL;
-        if ((flags & PR_SKIP_DOT)
-            && ('.' == dp->d_name[0])
-            && (0 == dp->d_name[1])) continue;
-        if ((flags & PR_SKIP_DOT_DOT)
-            && ('.' == dp->d_name[0])
-            && ('.' == dp->d_name[1])
-            && (0 == dp->d_name[2])) continue;
-        if ((flags & PR_SKIP_HIDDEN) && ('.' == dp->d_name[0]))
-            continue;
-        break;
-    }
-    dir->d.name = dp->d_name;
-    return &dir->d;
-}  /* PR_ReadDir */
 
 PR_IMPLEMENT(PRFileDesc*) PR_OpenTCPSocket(PRIntn af)
 {
