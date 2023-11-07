@@ -110,6 +110,9 @@
 #include "prlock.h"
 #include "prlog.h"
 
+#include <iprt/assert.h>
+#include <iprt/semaphore.h>
+
 /**
  * nsAutoLockBase
  * This is the base class for the stack-based locking objects.
@@ -120,23 +123,8 @@ protected:
     nsAutoLockBase() {}
     enum nsAutoLockType {eAutoLock, eAutoMonitor, eAutoCMonitor};
 
-#ifdef DEBUG
-    nsAutoLockBase(void* addr, nsAutoLockType type);
-    ~nsAutoLockBase();
-
-    void            Show();
-    void            Hide();
-
-    void*           mAddr;
-    nsAutoLockBase* mDown;
-    nsAutoLockType  mType;
-#else
     nsAutoLockBase(void* addr, nsAutoLockType type) {}
     ~nsAutoLockBase() {}
-
-    void            Show() {}
-    void            Hide() {}
-#endif
 };
 
 /** 
@@ -146,6 +134,8 @@ protected:
 class NS_COM nsAutoLock : public nsAutoLockBase {
 private:
     PRLock* mLock;
+    /** The IPRT fast mutex. */
+    RTSEMFASTMUTEX m_hMtx;
     PRBool mLocked;
 
     // Not meant to be implemented. This makes it a compiler error to
@@ -171,6 +161,7 @@ public:
     nsAutoLock(PRLock* aLock)
         : nsAutoLockBase(aLock, eAutoLock),
           mLock(aLock),
+          m_hMtx(NIL_RTSEMFASTMUTEX),
           mLocked(PR_TRUE) {
         PR_ASSERT(mLock);
 
@@ -178,10 +169,25 @@ public:
         // to re-enter the lock.
         PR_Lock(mLock);
     }
-    
+
+    nsAutoLock(RTSEMFASTMUTEX hMtx)
+        : nsAutoLockBase(hMtx, eAutoLock),
+          mLock(NULL),
+          m_hMtx(hMtx),
+          mLocked(PR_TRUE) {
+        PR_ASSERT(mLock);
+
+        RTSemFastMutexRequest(m_hMtx);
+    }
+
     ~nsAutoLock(void) {
         if (mLocked)
-            PR_Unlock(mLock);
+        {
+            if (m_hMtx != NIL_RTSEMFASTMUTEX)
+                RTSemFastMutexRelease(m_hMtx);
+            else
+                PR_Unlock(mLock);
+        }
     }
 
     /** 
@@ -190,9 +196,11 @@ public:
      * note that attempting to aquire a locked lock will hang or crash.
      **/  
     void lock() {
-        Show();
         PR_ASSERT(!mLocked);
-        PR_Lock(mLock);
+        if (m_hMtx != NIL_RTSEMFASTMUTEX)
+            RTSemFastMutexRequest(m_hMtx);
+        else
+            PR_Lock(mLock);
         mLocked = PR_TRUE;
     }
 
@@ -204,15 +212,16 @@ public:
      **/ 
      void unlock() {
         PR_ASSERT(mLocked);
-        PR_Unlock(mLock);
+        if (m_hMtx != NIL_RTSEMFASTMUTEX)
+            RTSemFastMutexRelease(m_hMtx);
+        else
+            PR_Unlock(mLock);
         mLocked = PR_FALSE;
-        Hide();
     }
 };
 
 #include "prmon.h"
 #include "nsError.h"
-#include "nsDebug.h"
 
 class NS_COM nsAutoMonitor : public nsAutoLockBase {
 public:
@@ -241,7 +250,7 @@ public:
         : nsAutoLockBase((void*)mon, eAutoMonitor),
           mMonitor(mon), mLockCount(0)
     {
-        NS_ASSERTION(mMonitor, "null monitor");
+        AssertMsg(mMonitor, ("null monitor"));
         if (mMonitor) {
             PR_EnterMonitor(mMonitor);
             mLockCount = 1;
@@ -249,13 +258,9 @@ public:
     }
 
     ~nsAutoMonitor() {
-        NS_ASSERTION(mMonitor, "null monitor");
+        AssertMsg(mMonitor, ("null monitor"));
         if (mMonitor && mLockCount) {
-#ifdef DEBUG
-            PRStatus status = 
-#endif
             PR_ExitMonitor(mMonitor);
-            NS_ASSERTION(status == PR_SUCCESS, "PR_ExitMonitor failed");
         }
     }
 
@@ -309,6 +314,57 @@ private:
     nsAutoMonitor(void);
     nsAutoMonitor(const nsAutoMonitor& /*aMon*/);
     nsAutoMonitor& operator =(const nsAutoMonitor& /*aMon*/);
+
+    // Not meant to be implemented. This makes it a compiler error to
+    // attempt to create an nsAutoLock object on the heap.
+    static void* operator new(size_t /*size*/) CPP_THROW_NEW;
+    static void operator delete(void* /*memory*/);
+};
+
+
+/**
+ * Cut down version of the nsAutoMonitor where the passed monitor can be NULL.
+ * Used in exactly one place because the regular nsAutoMonitor would assert in that place
+ * during shutdown (see nsComponentManager::NS_GetServiceManager for an explanation while
+ * the assertion is nothing to orry about actually).
+ */
+class NS_COM nsAutoMonitorCanBeNull : public nsAutoLockBase {
+public:
+
+    
+    /**
+     * Constructor
+     * The constructor locks the given monitor.  During destruction
+     * the monitor will be unlocked.
+     * 
+     * @param mon A valid PRMonitor* returned from 
+     *        nsAutoMonitor::NewMonitor().
+     **/
+    nsAutoMonitorCanBeNull(PRMonitor* mon)
+        : nsAutoLockBase((void*)mon, eAutoMonitor),
+          mMonitor(mon), mLockCount(0)
+    {
+        if (mMonitor) {
+            PR_EnterMonitor(mMonitor);
+            mLockCount = 1;
+        }
+    }
+
+    ~nsAutoMonitorCanBeNull() {
+        if (mMonitor && mLockCount) {
+            PR_ExitMonitor(mMonitor);
+        }
+    }
+
+private:
+    PRMonitor*  mMonitor;
+    PRInt32     mLockCount;
+
+    // Not meant to be implemented. This makes it a compiler error to
+    // construct or assign an nsAutoLock object incorrectly.
+    nsAutoMonitorCanBeNull(void);
+    nsAutoMonitorCanBeNull(const nsAutoMonitorCanBeNull& /*aMon*/);
+    nsAutoMonitorCanBeNull& operator =(const nsAutoMonitorCanBeNull& /*aMon*/);
 
     // Not meant to be implemented. This makes it a compiler error to
     // attempt to create an nsAutoLock object on the heap.

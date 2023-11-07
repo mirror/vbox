@@ -116,10 +116,6 @@
 extern nsresult NS_RegistryGetFactory(nsIFactory** aFactory);
 extern nsresult NS_CategoryManagerGetFactory( nsIFactory** );
 
-#ifdef DEBUG
-extern void _FreeAutoLockStatics();
-#endif
-
 static NS_DEFINE_CID(kComponentManagerCID, NS_COMPONENTMANAGER_CID);
 static NS_DEFINE_CID(kEventQueueServiceCID, NS_EVENTQUEUESERVICE_CID);
 
@@ -874,10 +870,6 @@ nsresult NS_COM NS_ShutdownXPCOM(nsIServiceManager* servMgr)
       NS_WARN_IF_FALSE(cnt == 0, "Component Manager being held past XPCOM shutdown.");
     }
     nsComponentManagerImpl::gComponentManager = nsnull;
-
-#ifdef DEBUG
-    _FreeAutoLockStatics();
-#endif
 
     ShutdownSpecialSystemDirectory();
 

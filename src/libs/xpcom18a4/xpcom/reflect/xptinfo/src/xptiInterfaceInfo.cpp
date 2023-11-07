@@ -787,7 +787,7 @@ xptiInterfaceInfo::Release(void)
     NS_LOG_RELEASE(this, cnt, "xptiInterfaceInfo");
     if(!cnt)
     {
-        nsAutoMonitor lock(xptiInterfaceInfoManager::GetInfoMonitor());
+        nsAutoMonitorCanBeNull lock(xptiInterfaceInfoManager::GetInfoMonitor());
         LOG_INFO_MONITOR_ENTRY;
         
         // If GetInterfaceInfo added and *released* a reference before we 
