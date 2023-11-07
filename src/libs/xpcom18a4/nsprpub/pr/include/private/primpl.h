@@ -640,32 +640,6 @@ extern PRStatus _PR_MD_TLOCKFILE(PRInt32 osfd);
 extern PRStatus _PR_MD_UNLOCKFILE(PRInt32 osfd);
 #define    _PR_MD_UNLOCKFILE _MD_UNLOCKFILE
 
-/* Interprocess communications (IPC) */
-
-/*
- * The maximum length of an NSPR IPC name, including the
- * terminating null byte.
- */
-#define PR_IPC_NAME_SIZE 1024
-
-/*
- * Types of NSPR IPC objects
- */
-typedef enum {
-    _PRIPCSem,  /* semaphores */
-    _PRIPCShm   /* shared memory segments */
-} _PRIPCType;
-
-/*
- * Make a native IPC name from an NSPR IPC name.
- */
-extern PRStatus _PR_MakeNativeIPCName(
-    const char *name,  /* NSPR IPC name */
-    char *result,      /* result buffer */
-    PRIntn size,       /* size of result buffer */
-    _PRIPCType type    /* type of IPC object */
-);
-
 /* Socket call error code */
 
 NSPR_API(PRInt32) _PR_MD_GET_SOCKET_ERROR(void);

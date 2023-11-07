@@ -489,7 +489,6 @@ VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/pr/src/misc/prerrortable.c \
 	nsprpub/pr/src/misc/prinit.c \
 	nsprpub/pr/src/misc/prinrval.c \
-	nsprpub/pr/src/misc/pripc.c \
 	nsprpub/pr/src/misc/prlog2.c \
 	nsprpub/pr/src/misc/prlong.c \
 	nsprpub/pr/src/misc/prtime.c \
