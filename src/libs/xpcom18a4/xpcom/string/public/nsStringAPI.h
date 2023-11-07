@@ -589,13 +589,7 @@ enum nsCStringEncoding {
   NS_CSTRING_ENCODING_ASCII = 0,
 
   /* Conversion between UTF-8 and UTF-16 is non-lossy. */
-  NS_CSTRING_ENCODING_UTF8 = 1,
-
-  /* Conversion from UTF-16 to the native filesystem charset may result in a
-   * loss of information.  No attempt is made to protect against data loss in
-   * this case.  The native filesystem charset applies to strings passed to
-   * the "Native" method variants on nsIFile and nsILocalFile. */
-  NS_CSTRING_ENCODING_NATIVE_FILESYSTEM = 2
+  NS_CSTRING_ENCODING_UTF8 = 1
 };
 
 /**

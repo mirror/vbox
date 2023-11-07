@@ -227,9 +227,6 @@ NS_CStringToUTF16(const nsACString &aSrc,
     case NS_CSTRING_ENCODING_UTF8:
       CopyUTF8toUTF16(aSrc, aDest);
       break;
-    case NS_CSTRING_ENCODING_NATIVE_FILESYSTEM:
-      NS_CopyNativeToUnicode(aSrc, aDest);
-      break;
     default:
       return NS_ERROR_NOT_IMPLEMENTED;
   }
@@ -249,9 +246,6 @@ NS_UTF16ToCString(const nsAString &aSrc,
       break;
     case NS_CSTRING_ENCODING_UTF8:
       CopyUTF16toUTF8(aSrc, aDest);
-      break;
-    case NS_CSTRING_ENCODING_NATIVE_FILESYSTEM:
-      NS_CopyUnicodeToNative(aSrc, aDest);
       break;
     default:
       return NS_ERROR_NOT_IMPLEMENTED;
