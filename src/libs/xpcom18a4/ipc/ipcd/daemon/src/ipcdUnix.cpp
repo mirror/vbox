@@ -64,7 +64,6 @@
 #include "ipcLog.h"
 #include "ipcMessage.h"
 #include "ipcClient.h"
-#include "ipcModuleReg.h"
 #include "ipcdPrivate.h"
 #include "ipcd.h"
 
@@ -531,8 +530,6 @@ int main(int argc, char **argv)
         LOG(("PR_Bind failed [%d]\n", PR_GetError()));
     }
     else {
-        IPC_InitModuleReg(argv[0]);
-
 #ifdef VBOX
         // Use large backlog, as otherwise local sockets can reject connection
         // attempts. Usually harmless, but causes an unnecessary start attempt
@@ -577,8 +574,6 @@ int main(int argc, char **argv)
 
             PollLoop(listenFD);
         }
-
-        IPC_ShutdownModuleReg();
     }
 
     //IPC_Sleep(5);

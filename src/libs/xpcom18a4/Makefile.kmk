@@ -359,8 +359,6 @@ IPCD-HEADERS_SOURCES = \
 	ipc/ipcd/extensions/lock/public/ipcLockCID.h \
 	ipc/ipcd/util/public/ipcMessageReader.h \
 	ipc/ipcd/util/public/ipcMessageWriter.h \
-	ipc/ipcd/daemon/public/ipcModule.h \
-	ipc/ipcd/daemon/public/ipcModuleUtil.h \
 	ipc/ipcd/client/public/ipcdclient.h
 
 
@@ -985,7 +983,6 @@ VBoxXPCOMIPCD_TEMPLATE = XPComIpcExe
 VBoxXPCOMIPCD_SOURCES = \
 	ipc/ipcd/daemon/src/ipcd.cpp \
 	ipc/ipcd/daemon/src/ipcClient.cpp \
-	ipc/ipcd/daemon/src/ipcModuleReg.cpp \
 	ipc/ipcd/daemon/src/ipcCommandModule.cpp \
 	ipc/ipcd/daemon/src/ipcdUnix.cpp
 

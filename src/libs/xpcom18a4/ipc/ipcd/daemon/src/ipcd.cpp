@@ -42,8 +42,6 @@
 #include "ipcLog.h"
 #include "ipcMessage.h"
 #include "ipcClient.h"
-#include "ipcModuleReg.h"
-#include "ipcModule.h"
 #include "ipcCommandModule.h"
 #include "ipcdPrivate.h"
 #include "ipcd.h"
@@ -83,7 +81,7 @@ IPC_DispatchMsg(ipcClient *client, const ipcMessage *msg)
         return PR_SUCCESS;
     }
 
-    return IPC_DispatchMsg(client, msg->Target(), msg->Data(), msg->DataLen());
+    return PR_SUCCESS;
 }
 
 PRStatus
@@ -119,9 +117,6 @@ IPC_NotifyClientUp(ipcClient *client)
 {
     LOG(("IPC_NotifyClientUp: clientID=%d\n", client->ID()));
 
-    // notify modules before other clients
-    IPC_NotifyModulesClientUp(client);
-
     for (int i=0; i<ipcClientCount; ++i) {
         if (&ipcClients[i] != client)
             IPC_SendMsg(&ipcClients[i],
@@ -133,9 +128,6 @@ void
 IPC_NotifyClientDown(ipcClient *client)
 {
     LOG(("IPC_NotifyClientDown: clientID=%d\n", client->ID()));
-
-    // notify modules before other clients
-    IPC_NotifyModulesClientDown(client);
 
     for (int i=0; i<ipcClientCount; ++i) {
         if (&ipcClients[i] != client)

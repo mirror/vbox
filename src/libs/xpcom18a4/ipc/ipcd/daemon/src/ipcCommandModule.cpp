@@ -43,7 +43,6 @@
 #include "ipcClient.h"
 #include "ipcMessage.h"
 #include "ipcMessageUtils.h"
-#include "ipcModuleReg.h"
 #include "ipcd.h"
 #include "ipcm.h"
 
