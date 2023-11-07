@@ -39,9 +39,6 @@
 #include "nsCRT.h"
 #include <stdio.h>
 
-/**************************************************************
-  Now define the token deallocator class...
- **************************************************************/
 class _TestDeque {
 public:
   _TestDeque() {
@@ -53,12 +50,6 @@ public:
   nsresult AssignFlaw();
 };
 static _TestDeque sTestDeque;
-
-class _Dealloc: public nsDequeFunctor {
-  virtual void* operator()(void* aObject) {
-    return 0;
-  }
-};
 
 /**
  * conduct automated self test for this class
@@ -80,7 +71,7 @@ nsresult _TestDeque::OriginalTest() {
   int count=sizeof(ints)/sizeof(int);
   int i=0;
   int* temp;
-  nsDeque theDeque(new _Dealloc); //construct a simple one...
+  nsDeque theDeque; //construct a simple one...
  
   for (i=0;i<count;i++) { //initialize'em
     ints[i]=10*(1+i);
@@ -110,7 +101,7 @@ nsresult _TestDeque::OriginalFlaw() {
   int ints[200];
   int i=0;
   int* temp;
-  nsDeque secondDeque(new _Dealloc);
+  nsDeque secondDeque;
   /**
    * Test 1. Origin near end, semi full, call Peek().
    * you start, mCapacity is 8
@@ -145,7 +136,7 @@ nsresult _TestDeque::OriginalFlaw() {
 }
 
 nsresult _TestDeque::AssignFlaw() {
-  nsDeque src(new _Dealloc),dest(new _Dealloc);
+  nsDeque src, dest;
   return NS_OK;
 }
 

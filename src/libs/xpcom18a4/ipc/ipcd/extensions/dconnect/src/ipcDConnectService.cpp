@@ -1524,7 +1524,7 @@ public:
     , mInstance(aInstance)
     , mPeerID(aPeerID)
     , mCachedISupports(0)
-    , mRefCntLevels(0)
+    , mRefCntLevels()
     {}
 
   NS_HIDDEN ~DConnectStub();
