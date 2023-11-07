@@ -2883,7 +2883,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrLogicalImm(uint32_t u2Opc, uint32_t i
     return ((uint32_t)f64Bit                << 31)
          | (u2Opc                           << 29)
          | UINT32_C(0x12000000)
-         | ((uImm7SizeLen & UINT32_C(0x40)) << (17 - 6))
+         | ((uImm7SizeLen & UINT32_C(0x40)) << (22 - 6))
          | (uImm6Rotations                  << 16)
          | ((uImm7SizeLen & UINT32_C(0x3f)) << 10)
          | (iRegSrc                         <<  5)
@@ -3307,9 +3307,9 @@ typedef enum ARMV8INSTRCOND
  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBCond(ARMV8INSTRCOND enmCond, int32_t iImm19)
 {
-    Assert((int)enmCond >= 0 && (int)enmCond < 16);
+    Assert((unsigned)enmCond < 16);
     return UINT32_C(0x54000000)
-         | (((uint32_t)iImm19 & 0x7ffff) <<  5)
+         | (((uint32_t)iImm19 & 0x7ffff) << 5)
          | (uint32_t)enmCond;
 }
 
