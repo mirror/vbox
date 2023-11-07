@@ -3129,9 +3129,13 @@ DECLINLINE(void) iemNativeFixupFixedJump(PIEMRECOMPILERSTATE pReNative, uint32_t
 
 # elif defined(RT_ARCH_ARM64)
     uint32_t * const pu32CodeBuf = pReNative->pInstrBuf;
-    Assert((uint32_t)RT_ABS((int32_t)(offTarget - offFixup)) < RT_BIT_32(18)); /* off by one for negative jumps, but not relevant here */
-    pu32CodeBuf[offFixup] = (pu32CodeBuf[offFixup] & ~((RT_BIT_32(19) - 1U) << 5))
-                          | (((offTarget - offFixup) & (RT_BIT_32(19) - 1U)) << 5);
+
+    int32_t const offDisp = offTarget - offFixup;
+    Assert(offDisp >= -262144 && offDisp < 262144);
+    Assert((pu32CodeBuf[offFixup] & UINT32_C(0xff000000)) == UINT32_C(0x54000000)); /* B.COND + BC.COND */
+
+    pu32CodeBuf[offFixup] = (pu32CodeBuf[offFixup] & UINT32_C(0xff00001f))
+                          | (((uint32_t)offDisp    & UINT32_C(0x0007ffff)) << 5);
 
 # endif
 }

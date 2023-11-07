@@ -566,6 +566,7 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 
 #define IEM_MC_END() \
     }
+#define IEM_MC_NO_NATIVE_RECOMPILE()                    ((void)0)
 
 #define IEM_MC_ADVANCE_RIP_AND_FINISH()                 do { (void)fMcBegin; return VINF_SUCCESS; } while (0)
 #define IEM_MC_REL_JMP_S8_AND_FINISH(a_i8)              do { (void)fMcBegin; CHK_TYPE(int8_t, a_i8); return VINF_SUCCESS; } while (0)

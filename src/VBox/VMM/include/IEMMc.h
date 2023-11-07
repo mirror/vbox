@@ -55,6 +55,9 @@
     } while (0)
 
 
+/** Dummy MC that prevents native recompilation. */
+#define IEM_MC_NO_NATIVE_RECOMPILE()                    ((void)0)
+
 /** Advances RIP, finishes the instruction and returns.
  * This may include raising debug exceptions and such. */
 #define IEM_MC_ADVANCE_RIP_AND_FINISH()                 return iemRegAddToRipAndFinishingClearingRF(pVCpu, IEM_GET_INSTR_LEN(pVCpu))

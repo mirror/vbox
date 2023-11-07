@@ -3096,6 +3096,7 @@ g_dMcStmtParsers = {
     'IEM_MC_UPDATE_FSW_THEN_POP_POP':                            (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_UPDATE_FSW_WITH_MEM_OP':                             (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP':                    (McBlock.parseMcGeneric,           True,  False, ),
+    'IEM_MC_NO_NATIVE_RECOMPILE':                                (McBlock.parseMcGeneric,           False, False, ),
 };
 
 ## List of microcode blocks.
