@@ -212,9 +212,12 @@ void PyXPCOM_DLLAddRef(void)
 				Py_XDECREF(str);
 			}
 
+			/* Done automatically since python 3.7 and deprecated since python 3.9. */
+#if PY_VERSION_HEX < 0x03090000
 			// Must force Python to start using thread locks, as
 			// we are free-threaded (maybe, I think, sometimes :-)
 			PyEval_InitThreads();
+#endif
 #ifndef PYXPCOM_USE_PYGILSTATE
 			// Release Python lock, as first thing we do is re-get it.
 			ptsGlobal = PyEval_SaveThread();

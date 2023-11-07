@@ -774,8 +774,11 @@ init_xpcom() {
 		return NULL;
 #endif
 
+	/* Done automatically since python 3.7 and deprecated since python 3.9. */
+#if PY_VERSION_HEX < 0x03090000
 	// Must force Python to start using thread locks
 	PyEval_InitThreads();
+#endif
 
 	// Create the module and add the functions
 #if PY_MAJOR_VERSION <= 2
