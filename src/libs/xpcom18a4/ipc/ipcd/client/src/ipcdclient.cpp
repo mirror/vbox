@@ -58,10 +58,7 @@
 #include "prproces.h"
 #include "pratom.h"
 
-#ifdef VBOX
-# include <iprt/critsect.h>
-# define VBOX_WITH_IPCCLIENT_RW_CS
-#endif
+#include <iprt/critsect.h>
 
 /* ------------------------------------------------------------------------- */
 
@@ -151,27 +148,10 @@ public:
 
   ~ipcClientState()
   {
-#ifndef VBOX_WITH_IPCCLIENT_RW_CS
-    if (monitor)
-      nsAutoMonitor::DestroyMonitor(monitor);
-#else
     RTCritSectRwDelete(&critSect);
-#endif
   }
 
-#ifndef VBOX_WITH_IPCCLIENT_RW_CS
-  //
-  // the monitor protects the targetMap and the connected and shutdown flags.
-  //
-  // NOTE: we use a PRMonitor for this instead of a PRLock because we need
-  //       the lock to be re-entrant.  since we don't ever need to wait on
-  //       this monitor, it might be worth it to implement a re-entrant
-  //       wrapper for PRLock.
-  //
-  PRMonitor    *monitor;
-#else  /* VBOX_WITH_IPCCLIENT_RW_CS */
   RTCRITSECTRW  critSect;
-#endif /* VBOX_WITH_IPCCLIENT_RW_CS */
   ipcTargetMap  targetMap;
   PRBool        connected;
   PRBool        shutdown;
@@ -184,19 +164,12 @@ public:
 private:
 
   ipcClientState()
-#ifndef VBOX_WITH_IPCCLIENT_RW_CS
-    : monitor(nsAutoMonitor::NewMonitor("ipcClientState"))
-    , connected(PR_FALSE)
-#else
     : connected(PR_FALSE)
-#endif
     , shutdown(PR_FALSE)
     , selfID(0)
   {
-#ifdef VBOX_WITH_IPCCLIENT_RW_CS
     /* Not employing the lock validator here to keep performance up in debug builds. */
     RTCritSectRwInitEx(&critSect, RTCRITSECT_FLAGS_NO_LOCK_VAL, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, NULL);
-#endif
   }
 };
 
@@ -207,11 +180,7 @@ ipcClientState::Create()
   if (!cs)
     return NULL;
 
-#ifndef VBOX_WITH_IPCCLIENT_RW_CS
-  if (!cs->monitor || !cs->targetMap.Init())
-#else
   if (!RTCritSectRwIsInitialized(&cs->critSect) || !cs->targetMap.Init())
-#endif
   {
     delete cs;
     return NULL;
@@ -227,42 +196,27 @@ static ipcClientState *gClientState;
 static PRBool
 GetTarget(const nsID &aTarget, ipcTargetData **td)
 {
-#ifndef VBOX_WITH_IPCCLIENT_RW_CS
-  nsAutoMonitor mon(gClientState->monitor);
-  return gClientState->targetMap.Get(nsIDHashKey(&aTarget).GetKey(), td);
-#else
   RTCritSectRwEnterShared(&gClientState->critSect);
   PRBool fRc = gClientState->targetMap.Get(nsIDHashKey(&aTarget).GetKey(), td);
   RTCritSectRwLeaveShared(&gClientState->critSect);
   return fRc;
-#endif
 }
 
 static PRBool
 PutTarget(const nsID &aTarget, ipcTargetData *td)
 {
-#ifndef VBOX_WITH_IPCCLIENT_RW_CS
-  nsAutoMonitor mon(gClientState->monitor);
-  return gClientState->targetMap.Put(nsIDHashKey(&aTarget).GetKey(), td);
-#else
   RTCritSectRwEnterExcl(&gClientState->critSect);
   PRBool fRc = gClientState->targetMap.Put(nsIDHashKey(&aTarget).GetKey(), td);
   RTCritSectRwLeaveExcl(&gClientState->critSect);
   return fRc;
-#endif
 }
 
 static void
 DelTarget(const nsID &aTarget)
 {
-#ifndef VBOX_WITH_IPCCLIENT_RW_CS
-  nsAutoMonitor mon(gClientState->monitor);
-  gClientState->targetMap.Remove(nsIDHashKey(&aTarget).GetKey());
-#else
   RTCritSectRwEnterExcl(&gClientState->critSect);
   gClientState->targetMap.Remove(nsIDHashKey(&aTarget).GetKey());
   RTCritSectRwLeaveExcl(&gClientState->critSect);
-#endif
 }
 
 /* ------------------------------------------------------------------------- */
@@ -856,18 +810,10 @@ IPC_Shutdown()
       // first, set the shutdown flag and unblock any calls to WaitTarget.
       // all targets but IPCM will not be able to use WaitTarget any more.
 
-#ifndef VBOX_WITH_IPCCLIENT_RW_CS
-      nsAutoMonitor mon(gClientState->monitor);
-#else
       RTCritSectRwEnterExcl(&gClientState->critSect);
-#endif
-
       gClientState->shutdown = PR_TRUE;
       gClientState->targetMap.EnumerateRead(EnumerateTargetMapAndNotify, nsnull);
-
-#ifdef VBOX_WITH_IPCCLIENT_RW_CS
       RTCritSectRwLeaveExcl(&gClientState->critSect);
-#endif
     }
 
     // inform all client observers that we're being shutdown to let interested
@@ -1356,18 +1302,10 @@ IPC_OnConnectionEnd(nsresult error)
   // now, go through the target map, and tickle each monitor.  that should
   // unblock any calls to WaitTarget.
 
-#ifndef VBOX_WITH_IPCCLIENT_RW_CS
-  nsAutoMonitor mon(gClientState->monitor);
-#else
   RTCritSectRwEnterExcl(&gClientState->critSect);
-#endif
-
   gClientState->connected = PR_FALSE;
   gClientState->targetMap.EnumerateRead(EnumerateTargetMapAndNotify, nsnull);
-
-#ifdef VBOX_WITH_IPCCLIENT_RW_CS
   RTCritSectRwLeaveExcl(&gClientState->critSect);
-#endif
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1468,19 +1406,11 @@ IPC_OnMessageAvailable(ipcMessage *msg)
         // pending event queue.  that unblocks all WaitTarget calls (on all
         // targets) giving them an opportuninty to finish wait cycle because of
         // the peer client death, when appropriate.
-#ifndef VBOX_WITH_IPCCLIENT_RW_CS
-        nsAutoMonitor mon(gClientState->monitor);
-#else
         RTCritSectRwEnterShared(&gClientState->critSect);
-#endif
-
         gClientState->targetMap.EnumerateRead(EnumerateTargetMapAndPlaceMsg, msg);
-
-#ifdef VBOX_WITH_IPCCLIENT_RW_CS
         RTCritSectRwLeaveShared(&gClientState->critSect);
-#endif
-        delete msg;
 
+        delete msg;
         return;
       }
     }
