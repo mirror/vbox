@@ -111,6 +111,7 @@
 #include "prlog.h"
 
 #include <iprt/assert.h>
+#include <iprt/errcore.h>
 #include <iprt/semaphore.h>
 
 /**
@@ -163,7 +164,7 @@ public:
           mLock(aLock),
           m_hMtx(NIL_RTSEMFASTMUTEX),
           mLocked(PR_TRUE) {
-        PR_ASSERT(mLock);
+        Assert(mLock);
 
         // This will assert deep in the bowels of NSPR if you attempt
         // to re-enter the lock.
@@ -175,7 +176,7 @@ public:
           mLock(NULL),
           m_hMtx(hMtx),
           mLocked(PR_TRUE) {
-        PR_ASSERT(mLock);
+        Assert(hMtx != NIL_RTSEMFASTMUTEX);
 
         RTSemFastMutexRequest(m_hMtx);
     }
