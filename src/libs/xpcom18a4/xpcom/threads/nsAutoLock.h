@@ -107,8 +107,6 @@
 #define nsAutoLock_h__
 
 #include "nscore.h"
-#include "prlock.h"
-#include "prlog.h"
 
 #include <iprt/assert.h>
 #include <iprt/errcore.h>
@@ -134,10 +132,9 @@ protected:
  **/
 class NS_COM nsAutoLock : public nsAutoLockBase {
 private:
-    PRLock* mLock;
     /** The IPRT fast mutex. */
     RTSEMFASTMUTEX m_hMtx;
-    PRBool mLocked;
+    bool           m_fLocked;
 
     // Not meant to be implemented. This makes it a compiler error to
     // construct or assign an nsAutoLock object incorrectly.
@@ -156,39 +153,19 @@ public:
      * The constructor aquires the given lock.  The destructor
      * releases the lock.
      * 
-     * @param aLock A valid PRLock* returned from the NSPR's 
-     * PR_NewLock() function.
+     * @param hMtx A valid IPRT fast mutex.
      **/
-    nsAutoLock(PRLock* aLock)
-        : nsAutoLockBase(aLock, eAutoLock),
-          mLock(aLock),
-          m_hMtx(NIL_RTSEMFASTMUTEX),
-          mLocked(PR_TRUE) {
-        Assert(mLock);
-
-        // This will assert deep in the bowels of NSPR if you attempt
-        // to re-enter the lock.
-        PR_Lock(mLock);
-    }
-
     nsAutoLock(RTSEMFASTMUTEX hMtx)
         : nsAutoLockBase(hMtx, eAutoLock),
-          mLock(NULL),
           m_hMtx(hMtx),
-          mLocked(PR_TRUE) {
+          m_fLocked(true) {
         Assert(hMtx != NIL_RTSEMFASTMUTEX);
-
         RTSemFastMutexRequest(m_hMtx);
     }
 
     ~nsAutoLock(void) {
-        if (mLocked)
-        {
-            if (m_hMtx != NIL_RTSEMFASTMUTEX)
-                RTSemFastMutexRelease(m_hMtx);
-            else
-                PR_Unlock(mLock);
-        }
+        if (m_fLocked)
+            RTSemFastMutexRelease(m_hMtx);
     }
 
     /** 
@@ -197,12 +174,10 @@ public:
      * note that attempting to aquire a locked lock will hang or crash.
      **/  
     void lock() {
-        PR_ASSERT(!mLocked);
-        if (m_hMtx != NIL_RTSEMFASTMUTEX)
-            RTSemFastMutexRequest(m_hMtx);
-        else
-            PR_Lock(mLock);
-        mLocked = PR_TRUE;
+        Assert(!m_fLocked);
+        Assert(m_hMtx != NIL_RTSEMFASTMUTEX);
+        RTSemFastMutexRequest(m_hMtx);
+        m_fLocked = true;
     }
 
 
@@ -212,12 +187,10 @@ public:
      * note unlocking an unlocked lock has undefined results.
      **/ 
      void unlock() {
-        PR_ASSERT(mLocked);
-        if (m_hMtx != NIL_RTSEMFASTMUTEX)
-            RTSemFastMutexRelease(m_hMtx);
-        else
-            PR_Unlock(mLock);
-        mLocked = PR_FALSE;
+        Assert(m_fLocked);
+        Assert(m_hMtx != NIL_RTSEMFASTMUTEX);
+        RTSemFastMutexRelease(m_hMtx);
+        m_fLocked = false;
     }
 };
 
