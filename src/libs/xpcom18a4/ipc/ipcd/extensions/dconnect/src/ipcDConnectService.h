@@ -257,8 +257,8 @@ public:
   // public only for DConnectStub::CallMethod()
   NS_HIDDEN_(PRBool)   CheckInstanceAndAddRef(DConnectInstance *, PRUint32);
 
-  PRLock *StubLock() { return mStubLock; }
-  PRLock *StubQILock() { return mStubQILock; }
+  RTSEMFASTMUTEX StubLock() { return mStubLock; }
+  RTSEMFASTMUTEX StubQILock() { return mStubQILock; }
 
   static nsRefPtr <ipcDConnectService> GetInstance() {
     return nsRefPtr <ipcDConnectService> (mInstance);
@@ -294,7 +294,7 @@ private:
   nsCOMPtr<nsIInterfaceInfoManager> mIIM;
 
   // lock to protect access to instance sets and the disconnected flag
-  PRLock *mLock;
+  RTSEMFASTMUTEX mLock;
 
   // table of local object instances allocated on behalf of a peer
   // (keys are interface pointers of real objects these instances represent)
@@ -305,7 +305,7 @@ private:
 
   // lock to protect access to mStubs and DConnectStub::mRefCntLevels
   // (also guards every DConnectStub::Release call to provide atomicity)
-  PRLock *mStubLock;
+  RTSEMFASTMUTEX mStubLock;
 
   // table of remote object stubs allocated to communicate with peer's instances
   DConnectStubMap mStubs;
@@ -323,7 +323,7 @@ private:
   // global lock to protect access to protect DConnectStub::QueryInterface()
   // (we cannot use mStubLock because it isn't supposed to be held long,
   // like in case of an IPC call and such)
-  PRLock *mStubQILock;
+  RTSEMFASTMUTEX mStubQILock;
 
 #if defined(DCONNECT_MULTITHREADED)
 # if defined(DCONNECT_WITH_IPRT_REQ_POOL)

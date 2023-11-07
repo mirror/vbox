@@ -2399,7 +2399,7 @@ DConnectStub::QueryInterface(const nsID &aIID, void **aInstancePtr)
     // XXX it would be sufficient to use cmpxchg here to protect access to
     // mCachedISupports, but NSPR doesn't provide cross-platform cmpxchg
     // functionality, so we have to use a shared lock instead...
-    PR_Lock(dConnect->StubQILock());
+    RTSemFastMutexRequest(dConnect->StubQILock());
 
     // check if we have already got a nsISupports stub for this object
     if (mCachedISupports != 0)
@@ -2407,7 +2407,7 @@ DConnectStub::QueryInterface(const nsID &aIID, void **aInstancePtr)
       *aInstancePtr = mCachedISupports;
       NS_ADDREF(mCachedISupports);
 
-      PR_Unlock(dConnect->StubQILock());
+      RTSemFastMutexRelease(dConnect->StubQILock());
       return NS_OK;
     }
 
@@ -2428,7 +2428,7 @@ DConnectStub::QueryInterface(const nsID &aIID, void **aInstancePtr)
         // cache ourselves weakly
         mCachedISupports = this;
 
-        PR_Unlock(dConnect->StubQILock());
+        RTSemFastMutexRelease(dConnect->StubQILock());
         return NS_OK;
       }
       if (iid)
@@ -2475,7 +2475,7 @@ DConnectStub::QueryInterface(const nsID &aIID, void **aInstancePtr)
         NS_ADDREF(mCachedISupports);
     }
 
-    PR_Unlock(dConnect->StubQILock());
+    RTSemFastMutexRelease(dConnect->StubQILock());
   }
 
   return rv;
@@ -3008,10 +3008,10 @@ ipcDConnectService::CreateWorker()
 //-----------------------------------------------------------------------------
 
 ipcDConnectService::ipcDConnectService()
- : mLock(NULL)
- , mStubLock(NULL)
+ : mLock(NIL_RTSEMFASTMUTEX)
+ , mStubLock(NIL_RTSEMFASTMUTEX)
  , mDisconnected(PR_TRUE)
- , mStubQILock(NULL)
+ , mStubQILock(NIL_RTSEMFASTMUTEX)
 #if defined(DCONNECT_WITH_IPRT_REQ_POOL)
  , mhReqPool(NIL_RTREQPOOL)
 #endif
@@ -3047,9 +3047,13 @@ ipcDConnectService::~ipcDConnectService()
     Shutdown();
 
   mInstance = nsnull;
-  PR_DestroyLock(mStubQILock);
-  PR_DestroyLock(mStubLock);
-  PR_DestroyLock(mLock);
+  if (mStubQILock != NIL_RTSEMFASTMUTEX)
+    RTSemFastMutexDestroy(mStubQILock);
+  if (mStubLock != NIL_RTSEMFASTMUTEX)
+    RTSemFastMutexDestroy(mStubLock);
+  if (mLock != NIL_RTSEMFASTMUTEX)
+    RTSemFastMutexDestroy(mLock);
+
 #if defined(DCONNECT_WITH_IPRT_REQ_POOL)
   RTReqPoolRelease(mhReqPool);
   mhReqPool = NIL_RTREQPOOL;
@@ -3073,8 +3077,8 @@ ipcDConnectService::Init()
   if (NS_FAILED(rv))
     return rv;
 
-  mLock = PR_NewLock();
-  if (!mLock)
+  int vrc = RTSemFastMutexCreate(&mLock);
+  if (RT_FAILURE(vrc))
     return NS_ERROR_OUT_OF_MEMORY;
 
   if (!mInstances.Init())
@@ -3082,8 +3086,8 @@ ipcDConnectService::Init()
   if (!mInstanceSet.Init())
     return NS_ERROR_OUT_OF_MEMORY;
 
-  mStubLock = PR_NewLock();
-  if (!mStubLock)
+  vrc = RTSemFastMutexCreate(&mStubLock);
+  if (RT_FAILURE(vrc))
     return NS_ERROR_OUT_OF_MEMORY;
 
   if (!mStubs.Init())
@@ -3093,8 +3097,8 @@ ipcDConnectService::Init()
   if (NS_FAILED(rv))
     return rv;
 
-  mStubQILock = PR_NewLock();
-  if (!mStubQILock)
+  vrc = RTSemFastMutexCreate(&mStubQILock);
+  if (RT_FAILURE(vrc))
     return NS_ERROR_OUT_OF_MEMORY;
 
 #if defined(DCONNECT_MULTITHREADED)
@@ -3331,7 +3335,7 @@ ipcDConnectService::DeleteInstance(DConnectInstance *wrapper,
                                    PRBool locked /* = PR_FALSE */)
 {
   if (!locked)
-    PR_Lock(mLock);
+    RTSemFastMutexRequest(mLock);
 
 #ifdef IPC_LOGGING
   if (IPC_LOG_ENABLED())
@@ -3347,7 +3351,7 @@ ipcDConnectService::DeleteInstance(DConnectInstance *wrapper,
   mInstanceSet.Remove(wrapper);
 
   if (!locked)
-    PR_Unlock(mLock);
+    RTSemFastMutexRelease(mLock);
 }
 
 PRBool
