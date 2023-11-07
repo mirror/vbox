@@ -45,10 +45,10 @@ SILENTUNLOAD=""
 MODNAME="vboxguest"
 VFSMODNAME="vboxfs"
 VMSMODNAME="vboxms"
-MODDIR32="/usr/kernel/drv"
-MODDIR64="/usr/kernel/drv/amd64"
-VFSDIR32="/usr/kernel/fs"
-VFSDIR64="/usr/kernel/fs/amd64"
+MODDIR32="${PKG_INSTALL_ROOT}/usr/kernel/drv"
+MODDIR64="${PKG_INSTALL_ROOT}/usr/kernel/drv/amd64"
+VFSDIR32="${PKG_INSTALL_ROOT}/usr/kernel/fs"
+VFSDIR64="${PKG_INSTALL_ROOT}/usr/kernel/fs/amd64"
 
 abort()
 {
@@ -78,6 +78,10 @@ module_loaded()
 {
     if test -z "$1"; then
         abort "missing argument to module_loaded()"
+    fi
+
+    if test "$REMOTE_INST" -eq 1; then
+        return 1
     fi
 
     modname=$1
@@ -121,6 +125,13 @@ check_root()
 
 start_module()
 {
+    if test "$REMOTE_INST" -eq 1; then
+        /usr/sbin/add_drv $BASEDIR_OPT -i'pci80ee,cafe' -m'* 0666 root sys' $MODNAME 2>/dev/null || \
+            abort "Failed to install VirtualBox guest kernel module into ${PKG_INSTALL_ROOT}."
+        info "VirtualBox guest kernel module installed."
+        return
+    fi
+
     /usr/sbin/add_drv -i'pci80ee,cafe' -m'* 0666 root sys' $MODNAME
     if test ! vboxguest_loaded; then
         abort "Failed to load VirtualBox guest kernel module."
@@ -133,6 +144,12 @@ start_module()
 
 stop_module()
 {
+    if test "$REMOTE_INST" -eq 1; then
+        /usr/sbin/rem_drv $BASEDIR_OPT $MODNAME || abort "Failed to uninstall VirtualBox guest kernel module."
+        info "VirtualBox guest kernel module uninstalled."
+        return
+    fi
+
     if vboxguest_loaded; then
         /usr/sbin/rem_drv $MODNAME || abort "Failed to unload VirtualBox guest kernel module."
         info "VirtualBox guest kernel module unloaded."
@@ -143,6 +160,10 @@ stop_module()
 
 start_vboxfs()
 {
+    if test "$REMOTE_INST" -eq 1; then
+        return
+    fi
+
     if vboxfs_loaded; then
         info "VirtualBox FileSystem kernel module already loaded."
     else
@@ -157,6 +178,10 @@ start_vboxfs()
 
 stop_vboxfs()
 {
+    if test "$REMOTE_INST" -eq 1; then
+        return
+    fi
+
     if vboxfs_loaded; then
         vboxfs_mod_id=`/usr/sbin/modinfo | grep $VFSMODNAME | cut -f 1 -d ' ' `
         if test -n "$vboxfs_mod_id"; then
@@ -170,6 +195,13 @@ stop_vboxfs()
 
 start_vboxms()
 {
+    if test "$REMOTE_INST" -eq 1; then
+        /usr/sbin/add_drv $BASEDIR_OPT -m'* 0666 root sys' $VMSMODNAME 2>/dev/null ||
+            abort "Failed to install VirtualBox pointer integration module."
+        info "VirtualBox pointer integration module installed."
+        return
+    fi
+
     /usr/sbin/add_drv -m'* 0666 root sys' $VMSMODNAME
     if test ! vboxms_loaded; then
         abort "Failed to load VirtualBox pointer integration module."
@@ -182,6 +214,12 @@ start_vboxms()
 
 stop_vboxms()
 {
+    if test "$REMOTE_INST" -eq 1; then
+        /usr/sbin/rem_drv $BASEDIR_OPT $VMSMODNAME || abort "Failed to uninstall VirtualBox pointer integration module."
+        info "VirtualBox pointer integration module uninstalled."
+        return
+    fi
+
     if vboxms_loaded; then
         /usr/sbin/rem_drv $VMSMODNAME || abort "Failed to unload VirtualBox pointer integration module."
         info "VirtualBox pointer integration module unloaded."
@@ -215,6 +253,16 @@ restart_all()
     start_vboxms
     return 0
 }
+
+# "Remote" installs ('pkgadd -R') can skip many of the steps below.
+REMOTE_INST=0
+BASEDIR_OPT=""
+if test "x${PKG_INSTALL_ROOT:-/}" != "x/"; then
+    BASEDIR_OPT="-b $PKG_INSTALL_ROOT"
+    REMOTE_INST=1
+fi
+export REMOTE_INST
+export BASEDIR_OPT
 
 check_root
 check_if_installed

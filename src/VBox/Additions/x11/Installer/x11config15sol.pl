@@ -56,6 +56,11 @@ my $driver_name = $ARGV[0];
 # most likely -only- one of the 2 config files (/etc/X11/xorg.conf, /etc/X11/.xorg.conf).
 foreach $cfg (@cfg_files)
 {
+
+    if (($os_type =~ 'SunOS') && (defined $ENV{PKG_INSTALL_ROOT}))
+    {
+        $cfg = $ENV{PKG_INSTALL_ROOT}.$cfg;
+    }
     if (open(CFG, $cfg))
     {
         open(TMP, ">$temp") or die "Can't create $TMP: $!\n";
@@ -97,14 +102,22 @@ foreach $cfg (@cfg_files)
         unlink $temp;
 
         # Solaris specific: Rename our modified .xorg.conf to xorg.conf for it to be used
-        if (($os_type =~ 'SunOS') && ($cfg =~ '/etc/X11/.xorg.conf'))
+        if ((defined $ENV{PKG_INSTALL_ROOT}) &&
+            ($os_type =~ 'SunOS') && ($cfg =~ "$ENV{PKG_INSTALL_ROOT}/etc/X11/.xorg.conf"))
         {
-            system("mv -f $cfg /etc/X11/xorg.conf");
+                system("mv -f $cfg $ENV{PKG_INSTALL_ROOT}/etc/X11/xorg.conf");
+        }
+        else
+        {
+            if (($os_type =~ 'SunOS') && ($cfg =~ '/etc/X11/.xorg.conf'))
+            {
+                system("mv -f $cfg /etc/X11/xorg.conf");
+            }
         }
 
         $config_count++;
     }
 }
 
-$config_count != 0 or die "Could not find any X11 configuration files";
+$config_count != 0 or die "Could not find any X11 configuration files.";
 

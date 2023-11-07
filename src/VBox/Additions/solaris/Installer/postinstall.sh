@@ -42,6 +42,16 @@ export LC_ALL
 LANG=C
 export LANG
 
+# "Remote" installs ('pkgadd -R') can skip many of the steps below.
+REMOTE_INST=0
+BASEDIR_OPT=""
+if test "x${PKG_INSTALL_ROOT:-/}" != "x/"; then
+    BASEDIR_OPT="-R $PKG_INSTALL_ROOT"
+    REMOTE_INST=1
+fi
+export REMOTE_INST
+export BASEDIR_OPT
+
 # uncompress(directory, file)
 # Updates package metadata and uncompresses the file.
 uncompress_file()
@@ -52,10 +62,10 @@ uncompress_file()
     fi
 
     # Remove compressed path from the pkg
-    /usr/sbin/removef $PKGINST "$1/$2.Z" 1>/dev/null
+    /usr/sbin/removef $BASEDIR_OPT $PKGINST "$1/$2.Z" 1>/dev/null
 
     # Add uncompressed path to the pkg
-    /usr/sbin/installf -c none $PKGINST "$1/$2" f
+    /usr/sbin/installf $BASEDIR_OPT -c none $PKGINST "$1/$2" f
 
     # Uncompress the file (removes compressed file when done)
     uncompress -f "$1/$2.Z" > /dev/null 2>&1
@@ -71,7 +81,7 @@ uncompress_files()
 
 solaris64dir="amd64"
 solaris32dir="i386"
-vboxadditions_path="$BASEDIR/opt/VirtualBoxAdditions"
+vboxadditions_path="${PKG_INSTALL_ROOT}/opt/VirtualBoxAdditions"
 vboxadditions32_path=$vboxadditions_path/$solaris32dir
 vboxadditions64_path=$vboxadditions_path/$solaris64dir
 
@@ -103,8 +113,11 @@ fi
 if test "$currentzone" = "global"; then
     # vboxguest.sh would've been installed, we just need to call it.
     echo "Configuring VirtualBox guest kernel module..."
-    # stop all previous modules (vboxguest, vboxfs) and start only starts vboxguest
-    $vboxadditions_path/vboxguest.sh stopall silentunload
+    # stop all previous modules (vboxguest, vboxfs) and load vboxguest
+    # ('vboxguest.sh start' only starts vboxguest).
+    if test "$REMOTE_INST" -eq 0; then
+        $vboxadditions_path/vboxguest.sh stopall silentunload
+    fi
     $vboxadditions_path/vboxguest.sh start
 
     # Figure out group to use for /etc/devlink.tab (before Solaris 11 SRU6
@@ -120,32 +133,31 @@ if test "$currentzone" = "global"; then
         unset refgroup
     fi
 
-    sed -e '/name=vboxguest/d' /etc/devlink.tab > /etc/devlink.vbox
-    echo "type=ddi_pseudo;name=vboxguest	\D" >> /etc/devlink.vbox
-    chmod 0644 /etc/devlink.vbox
-    chown root:$group /etc/devlink.vbox
-    mv -f /etc/devlink.vbox /etc/devlink.tab
+    sed -e '/name=vboxguest/d' ${PKG_INSTALL_ROOT}/etc/devlink.tab > ${PKG_INSTALL_ROOT}/etc/devlink.vbox
+    echo "type=ddi_pseudo;name=vboxguest	\D" >> ${PKG_INSTALL_ROOT}/etc/devlink.vbox
+    chmod 0644 ${PKG_INSTALL_ROOT}/etc/devlink.vbox
+    chown root:$group ${PKG_INSTALL_ROOT}/etc/devlink.vbox
+    mv -f ${PKG_INSTALL_ROOT}/etc/devlink.vbox ${PKG_INSTALL_ROOT}/etc/devlink.tab
 
     # create the device link
-    /usr/sbin/devfsadm -i vboxguest
-fi
-
-
-# check if X.Org exists (snv_130 and higher have /usr/X11/* as /usr/*)
-if test -f "/usr/bin/Xorg"; then
-    xorgbin="/usr/bin/Xorg"
-elif test -f "/usr/X11/bin/Xorg"; then
-    xorgbin="/usr/X11/bin/Xorg"
-else
-    xorgbin=""
-    retval=0
+    /usr/sbin/devfsadm $BASEDIR_OPT -i vboxguest
 fi
 
 # create links
 echo "Creating links..."
 if test "$currentzone" = "global"; then
-    /usr/sbin/installf -c none $PKGINST /dev/vboxguest=../devices/pci@0,0/pci80ee,cafe@4:vboxguest s
-    /usr/sbin/installf -c none $PKGINST /dev/vboxms=../devices/pseudo/vboxms@0:vboxms s
+    /usr/sbin/installf $BASEDIR_OPT -c none $PKGINST /dev/vboxguest=../devices/pci@0,0/pci80ee,cafe@4:vboxguest s
+    /usr/sbin/installf $BASEDIR_OPT -c none $PKGINST /dev/vboxms=../devices/pseudo/vboxms@0:vboxms s
+fi
+
+# check if X.Org exists (snv_130 and higher have /usr/X11/* as /usr/*)
+if test -f "${PKG_INSTALL_ROOT}/usr/bin/Xorg"; then
+    xorgbin="${PKG_INSTALL_ROOT}/usr/bin/Xorg"
+elif test -f "${PKG_INSTALL_ROOT}/usr/X11/bin/Xorg"; then
+    xorgbin="${PKG_INSTALL_ROOT}/usr/X11/bin/Xorg"
+else
+    xorgbin=""
+    retval=0
 fi
 
 # Install Xorg components to the required places
@@ -158,7 +170,7 @@ if test ! -z "$xorgbin"; then
     fi
 
     # "X.Y.Z" - strip off all numerics after the 2nd '.' character, e.g. "1.11.3" -> "1.11"
-    # Then the next sed, strips of all '.' characters, "1.11" -> "111".
+    # The second sed invocation removes all '.' characters, e.g. "1.11" -> "111".
     fileversion=`echo $xorgversion | sed "s/\.[0-9]*//2" | sed "s/\.//"`
     vboxvideo_src="vboxvideo_drv_$fileversion.so"
 
@@ -183,16 +195,21 @@ if test ! -z "$xorgbin"; then
         # Exit as partially failed installation
         retval=2
     elif test ! -f "$vboxadditions32_path/$vboxvideo_src" && test ! -f "$vboxadditions64_path/$vboxvideo_src"; then
-        # Xorg 1.19 and later already contain a driver for vboxvideo.
-        echo "As of X.Org Server 1.19, the VirtualBox graphics driver (vboxvideo) is part"
-        echo "of Solaris.  Please install it from the package repository if necessary."
+        if test ! -f "${PKG_INSTALL_ROOT}/usr/lib/xorg/modules/drivers/vboxvideo_drv.so"; then
+            # Xorg 1.19 and later (delivered first in st_006) already contain a driver
+            # for vboxvideo so advise users to install the required package if it isn't
+            # already present.
+            echo "As of X.Org Server 1.19, the VirtualBox graphics driver (vboxvideo) is part"
+            echo "of Solaris.  Please install the package pkg:/x11/server/xorg/driver/xorg-video-vboxvideo"
+            echo "from the package repository for the vboxvideo_drv.so graphics driver."
+        fi
     else
         echo "Installing video driver for X.Org $xorgversion..."
 
         # Determine destination paths (snv_130 and above use "/usr/lib/xorg", older use "/usr/X11/lib"
-        vboxvideo32_dest_base="/usr/lib/xorg/modules/drivers"
+        vboxvideo32_dest_base="${PKG_INSTALL_ROOT}/usr/lib/xorg/modules/drivers"
         if test ! -d $vboxvideo32_dest_base; then
-            vboxvideo32_dest_base="/usr/X11/lib/modules/drivers"
+            vboxvideo32_dest_base="${PKG_INSTALL_ROOT}/usr/X11/lib/modules/drivers"
         fi
 
         vboxvideo64_dest_base=$vboxvideo32_dest_base/$solaris64dir
@@ -224,29 +241,30 @@ if test ! -z "$xorgbin"; then
             # 32-bit x11 drivers
             if test "$skip32" = "no" && test -f "$vboxadditions32_path/$vboxvideo_src"; then
                 vboxvideo_dest="$vboxvideo32_dest_base/vboxvideo_drv.so"
-                /usr/sbin/installf -c none $PKGINST "$vboxvideo_dest" f
+                /usr/sbin/installf $BASEDIR_OPT -c none $PKGINST "$vboxvideo_dest" f
                 cp "$vboxadditions32_path/$vboxvideo_src" "$vboxvideo_dest"
 
                 # Removing redundant names from pkg and files from disk
-                /usr/sbin/removef $PKGINST $vboxadditions32_path/vboxvideo_drv_* 1>/dev/null
+                /usr/sbin/removef $BASEDIR_OPT $PKGINST $vboxadditions32_path/vboxvideo_drv_* 1>/dev/null
                 rm -f $vboxadditions32_path/vboxvideo_drv_*
             fi
 
             # 64-bit x11 drivers
             if test -f "$vboxadditions64_path/$vboxvideo_src"; then
                 vboxvideo_dest="$vboxvideo64_dest_base/vboxvideo_drv.so"
-                /usr/sbin/installf -c none $PKGINST "$vboxvideo_dest" f
+                /usr/sbin/installf $BASEDIR_OPT -c none $PKGINST "$vboxvideo_dest" f
                 cp "$vboxadditions64_path/$vboxvideo_src" "$vboxvideo_dest"
 
                 # Removing redundant names from pkg and files from disk
-                /usr/sbin/removef $PKGINST $vboxadditions64_path/vboxvideo_drv_* 1>/dev/null
+                /usr/sbin/removef $BASEDIR_OPT $PKGINST $vboxadditions64_path/vboxvideo_drv_* 1>/dev/null
                 rm -f $vboxadditions64_path/vboxvideo_drv_*
             fi
 
             # Some distros like Indiana have no xorg.conf, deal with this
-            if test ! -f '/etc/X11/xorg.conf' && test ! -f '/etc/X11/.xorg.conf'; then
+            if  test ! -f '${PKG_INSTALL_ROOT}/etc/X11/xorg.conf' && \
+                test ! -f '${PKG_INSTALL_ROOT}/etc/X11/.xorg.conf'; then
 
-                # Xorg 1.3.x+ should use the modeline less Xorg confs while older should
+                # Xorg 1.3.x+ should use the modeline-less Xorg confs while older should
                 # use ones with all the video modelines in place. Argh.
                 xorgconf_file="solaris_xorg_modeless.conf"
                 xorgconf_unfit="solaris_xorg.conf"
@@ -257,21 +275,21 @@ if test ! -z "$xorgbin"; then
                         ;;
                 esac
 
-                /usr/sbin/removef $PKGINST $vboxadditions_path/$xorgconf_file 1>/dev/null
-                mv -f $vboxadditions_path/$xorgconf_file /etc/X11/.xorg.conf
+                /usr/sbin/removef $BASEDIR_OPT $PKGINST $vboxadditions_path/$xorgconf_file 1>/dev/null
+                mv -f $vboxadditions_path/$xorgconf_file ${PKG_INSTALL_ROOT}/etc/X11/.xorg.conf
 
-                /usr/sbin/removef $PKGINST $vboxadditions_path/$xorgconf_unfit 1>/dev/null
+                /usr/sbin/removef $BASEDIR_OPT $PKGINST $vboxadditions_path/$xorgconf_unfit 1>/dev/null
                 rm -f $vboxadditions_path/$xorgconf_unfit
             fi
 
             # Check for VirtualBox graphics card
             # S10u10's prtconf doesn't support the '-d' option, so let's use -v even though it's slower.
-            is_vboxgraphics=`prtconf -v | grep -i pci80ee,beef`
+            is_vboxgraphics=`${PKG_INSTALL_ROOT}/usr/sbin/prtconf -v | grep -i pci80ee,beef`
             if test "$?" -eq 0; then
                 drivername="vboxvideo"
             else
                 # Check for VMware graphics card
-                is_vmwaregraphics=`prtconf -v | grep -i pci15ad,405`
+                is_vmwaregraphics=`${PKG_INSTALL_ROOT}/usr/sbin/prtconf -v | grep -i pci15ad,405`
                 if test "$?" -eq 0; then
                     echo "Configuring X.Org to use VMware SVGA graphics driver..."
                     drivername="vmware"
@@ -292,23 +310,23 @@ if test ! -z "$xorgbin"; then
     # Setup our VBoxClient
     echo "Configuring client..."
     vboxclient_src=$vboxadditions_path
-    vboxclient_dest="/usr/share/gnome/autostart"
+    vboxclient_dest="${PKG_INSTALL_ROOT}/usr/share/gnome/autostart"
     clientinstalled=0
     if test -d "$vboxclient_dest"; then
-        /usr/sbin/installf -c none $PKGINST $vboxclient_dest/vboxclient.desktop=$vboxadditions_path/vboxclient.desktop s
+        /usr/sbin/installf $BASEDIR_OPT -c none $PKGINST $vboxclient_dest/vboxclient.desktop=$vboxadditions_path/vboxclient.desktop s
         clientinstalled=1
     fi
-    vboxclient_dest="/usr/dt/config/Xsession.d"
+    vboxclient_dest="${PKG_INSTALL_ROOT}/usr/dt/config/Xsession.d"
     if test -d "$vboxclient_dest"; then
-        /usr/sbin/installf -c none $PKGINST $vboxclient_dest/1099.vboxclient=$vboxadditions_path/1099.vboxclient s
+        /usr/sbin/installf $BASEDIR_OPT -c none $PKGINST $vboxclient_dest/1099.vboxclient=$vboxadditions_path/1099.vboxclient s
         clientinstalled=1
     fi
 
     # Try other autostart locations if none of the above ones work
     if test $clientinstalled -eq 0; then
-        vboxclient_dest="/etc/xdg/autostart"
+        vboxclient_dest="${PKG_INSTALL_ROOT}/etc/xdg/autostart"
         if test -d "$vboxclient_dest"; then
-            /usr/sbin/installf -c none $PKGINST $vboxclient_dest/1099.vboxclient=$vboxadditions_path/1099.vboxclient s
+            /usr/sbin/installf $BASEDIR_OPT -c none $PKGINST $vboxclient_dest/1099.vboxclient=$vboxadditions_path/1099.vboxclient s
             clientinstalled=1
         else
             echo "*** Failed to configure client, couldn't find any autostart directory!"
@@ -334,77 +352,81 @@ fi
 # 64-bit shared folder module
 if test -f "$vboxadditions64_path/$vboxfsmod"; then
     echo "Installing 64-bit shared folders module..."
-    /usr/sbin/installf -c none $PKGINST "/usr/kernel/fs/$solaris64dir/vboxfs" f
-    mv -f $vboxadditions64_path/$vboxfsmod /usr/kernel/fs/$solaris64dir/vboxfs
-    /usr/sbin/removef $PKGINST $vboxadditions64_path/$vboxfsmod 1>/dev/null
-    /usr/sbin/removef $PKGINST $vboxadditions64_path/$vboxfsunused 1>/dev/null
+    /usr/sbin/installf $BASEDIR_OPT -c none $PKGINST "/usr/kernel/fs/$solaris64dir/vboxfs" f
+    mv -f $vboxadditions64_path/$vboxfsmod ${PKG_INSTALL_ROOT}/usr/kernel/fs/$solaris64dir/vboxfs
+    /usr/sbin/removef $BASEDIR_OPT $PKGINST $vboxadditions64_path/$vboxfsmod 1>/dev/null
+    /usr/sbin/removef $BASEDIR_OPT $PKGINST $vboxadditions64_path/$vboxfsunused 1>/dev/null
     rm -f $vboxadditions64_path/$vboxfsunused
 fi
 
 # 32-bit shared folder module
 if test -f "$vboxadditions32_path/$vboxfsmod"; then
     echo "Installing 32-bit shared folders module..."
-    /usr/sbin/installf -c none $PKGINST "/usr/kernel/fs/vboxfs" f
-    mv -f $vboxadditions32_path/$vboxfsmod /usr/kernel/fs/vboxfs
-    /usr/sbin/removef $PKGINST $vboxadditions32_path/$vboxfsmod 1>/dev/null
-    /usr/sbin/removef $PKGINST $vboxadditions32_path/$vboxfsunused 1>/dev/null
+    /usr/sbin/installf $BASEDIR_OPT -c none $PKGINST "/usr/kernel/fs/vboxfs" f
+    mv -f $vboxadditions32_path/$vboxfsmod ${PKG_INSTALL_ROOT}/usr/kernel/fs/vboxfs
+    /usr/sbin/removef $BASEDIR_OPT $PKGINST $vboxadditions32_path/$vboxfsmod 1>/dev/null
+    /usr/sbin/removef $BASEDIR_OPT $PKGINST $vboxadditions32_path/$vboxfsunused 1>/dev/null
     rm -f $vboxadditions32_path/$vboxfsunused
 fi
 
 # Add a group "vboxsf" for Shared Folders access
 # All users which want to access the auto-mounted Shared Folders have to
 # be added to this group.
-groupadd vboxsf >/dev/null 2>&1
+if test "$REMOTE_INST" -eq 0; then
+    groupadd vboxsf >/dev/null 2>&1
+fi
 
 # Move the pointer integration module to kernel/drv & remove the unused module name from pkg and file from disk
 
 # Finalize
-/usr/sbin/removef -f $PKGINST
-/usr/sbin/installf -f $PKGINST
+/usr/sbin/removef $BASEDIR_OPT -f $PKGINST
+/usr/sbin/installf $BASEDIR_OPT -f $PKGINST
 
 
 if test "$currentzone" = "global"; then
-    /usr/sbin/devfsadm -i vboxguest
+    /usr/sbin/devfsadm $BASEDIR_OPT -i vboxguest
 
     # Setup VBoxService and vboxmslnk and start the services automatically
-    echo "Configuring services (this might take a while)..."
+    echo "Configuring VBoxService and vboxmslnk services (this might take a while)..."
     cmax=32
     cslept=0
     success=0
     sync
 
-    # Since S11 the way to import a manifest is via restarting manifest-import which is asynchronous and can
-    # take a while to complete, using disable/enable -s doesn't work either. So we restart it, and poll in
-    # 1 second intervals to see if our service has been successfully imported and timeout after 'cmax' seconds.
-    /usr/sbin/svcadm restart svc:system/manifest-import:default
-    /usr/bin/svcs virtualbox/vboxservice >/dev/null 2>&1 && /usr/bin/svcs virtualbox/vboxmslnk >/dev/null 2>&1
-    while test "$?" -ne 0;
-    do
-        sleep 1
-        cslept=`expr $cslept + 1`
-        if test "$cslept" -eq "$cmax"; then
-            success=1
-            break
-        fi
+    if test "$REMOTE_INST" -eq 0; then
+        # Since S11 the way to import a manifest is via restarting manifest-import which is asynchronous and can
+        # take a while to complete, using disable/enable -s doesn't work either. So we restart it, and poll in
+        # 1 second intervals to see if our service has been successfully imported and timeout after 'cmax' seconds.
+        /usr/sbin/svcadm restart svc:system/manifest-import:default
         /usr/bin/svcs virtualbox/vboxservice >/dev/null 2>&1 && /usr/bin/svcs virtualbox/vboxmslnk >/dev/null 2>&1
-    done
-    if test "$success" -eq 0; then
-        echo "Enabling services..."
-        /usr/sbin/svcadm enable -s virtualbox/vboxservice
-        /usr/sbin/svcadm enable -s virtualbox/vboxmslnk
-    else
-        echo "## Service import failed."
-        echo "## See /var/svc/log/system-manifest-import:default.log for details."
-        # Exit as partially failed installation
-        retval=2
+        while test "$?" -ne 0;
+        do
+            sleep 1
+            cslept=`expr $cslept + 1`
+            if test "$cslept" -eq "$cmax"; then
+                success=1
+                break
+            fi
+            /usr/bin/svcs virtualbox/vboxservice >/dev/null 2>&1 && /usr/bin/svcs virtualbox/vboxmslnk >/dev/null 2>&1
+        done
+        if test "$success" -eq 0; then
+            echo "Enabling services..."
+            /usr/sbin/svcadm enable -s virtualbox/vboxservice
+            /usr/sbin/svcadm enable -s virtualbox/vboxmslnk
+        else
+            echo "## Service import failed."
+            echo "## See /var/svc/log/system-manifest-import:default.log for details."
+            # Exit as partially failed installation
+            retval=2
+        fi
     fi
 
     # Update boot archive
     BOOTADMBIN=/sbin/bootadm
     if test -x "$BOOTADMBIN"; then
-        if test -h "/dev/vboxguest"; then
+        if test -h "${PKG_INSTALL_ROOT}/dev/vboxguest"; then
             echo "Updating boot archive..."
-            $BOOTADMBIN update-archive > /dev/null
+            $BOOTADMBIN update-archive $BASEDIR_OPT > /dev/null
         else
             echo "## Guest kernel module doesn't seem to be up. Skipped explicit boot-archive update."
         fi
@@ -414,11 +436,13 @@ if test "$currentzone" = "global"; then
 fi
 
 echo "Done."
-if test $retval -eq 0; then
-    if test ! -z "$xorgbin"; then
-        echo "Please re-login to activate the X11 guest additions."
+if test "$REMOTE_INST" -eq 0; then
+    if test $retval -eq 0; then
+        if test ! -z "$xorgbin"; then
+            echo "Please re-login to activate the X11 guest additions."
+        fi
+        echo "If you have just un-installed the previous guest additions a REBOOT is required."
     fi
-    echo "If you have just un-installed the previous guest additions a REBOOT is required."
 fi
 exit $retval
 
