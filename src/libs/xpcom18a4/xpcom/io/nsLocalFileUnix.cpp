@@ -57,14 +57,6 @@
 #include <dirent.h>
 #include <ctype.h>
 #include <locale.h>
-#ifdef XP_BEOS
-    #include <Path.h>
-    #include <Entry.h>
-    #include <Roster.h>
-#endif
-#if defined(VMS)
-    #include <fabdef.h>
-#endif
 
 #include "nsDirectoryServiceDefs.h"
 #include "nsCRT.h"
@@ -81,15 +73,10 @@
 
 #include "nsNativeCharsetUtils.h"
 
-// On some platforms file/directory name comparisons need to
-// be case-blind.
-#if defined(VMS)
-    #define FILE_STRCMP strcasecmp
-    #define FILE_STRNCMP strncasecmp
-#else
-    #define FILE_STRCMP strcmp
-    #define FILE_STRNCMP strncmp
-#endif
+#include <iprt/errcore.h>
+
+#define FILE_STRCMP strcmp
+#define FILE_STRNCMP strncmp
 
 #define VALIDATE_STAT_CACHE()                   \
     PR_BEGIN_MACRO                              \
@@ -1531,15 +1518,17 @@ nsLocalFile::GetDirectoryEntries(nsISimpleEnumerator **entries)
 }
 
 NS_IMETHODIMP
-nsLocalFile::Load(PRLibrary **_retval)
+nsLocalFile::Load(RTLDRMOD *phMod)
 {
     CHECK_mPath();
-    NS_ENSURE_ARG_POINTER(_retval);
+    NS_ENSURE_ARG_POINTER(phMod);
 
-    *_retval = PR_LoadLibrary(mPath.get());
-
-    if (!*_retval)
+    RTLDRMOD hMod = NIL_RTLDRMOD;
+    int vrc = RTLdrLoad(mPath.get(), &hMod);
+    if (RT_FAILURE(vrc))
         return NS_ERROR_FAILURE;
+
+    *phMod = hMod;
     return NS_OK;
 }
 

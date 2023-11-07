@@ -37,7 +37,6 @@
 
 #include <iostream.h>
 #include "plstr.h"
-#include "prlink.h"
 #include "nsIComponentRegistrar.h"
 #include "nsIComponentManager.h"
 #include "nsIServiceManager.h"

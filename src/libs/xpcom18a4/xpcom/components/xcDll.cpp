@@ -70,7 +70,7 @@
 
 nsDll::nsDll(nsIFile *dllSpec, nsNativeComponentLoader *loader)
     : m_dllSpec(do_QueryInterface(dllSpec)),
-      m_instance(NULL),
+      m_hMod(NIL_RTLDRMOD),
       m_moduleObject(NULL),
       m_loader(loader),
       m_markForUnload(PR_FALSE)
@@ -80,6 +80,7 @@ nsDll::nsDll(nsIFile *dllSpec, nsNativeComponentLoader *loader)
 
 nsDll::~nsDll(void)
 {
+    /** @todo r=aeichner Does this need fixing at all? */
     //#if DEBUG_dougt
     // The dll gets deleted when the dllStore is destroyed. This happens on
     // app shutdown. At that point, unloading dlls can cause crashes if we have
@@ -119,11 +120,9 @@ nsDll::HasChanged()
 
 PRBool nsDll::Load(void)
 {
-	if (m_instance != NULL)
-	{
-		// Already loaded
-		return (PR_TRUE);
-	}
+    /* Already loaded? Nothing to do. */
+    if (m_hMod != NIL_RTLDRMOD)
+        return PR_TRUE;
 
     if (m_dllSpec)
     {
@@ -131,128 +130,131 @@ PRBool nsDll::Load(void)
         nsTraceRefcntImpl::SetActivityIsLegal(PR_FALSE);
 #endif
 
-    // Load any library dependencies
-    //   The Component Loader Manager may hold onto some extra data
-    //   set by either the native component loader or the native
-    //   component.  We assume that this data is a space delimited
-    //   listing of dependent libraries which are required to be
-    //   loaded prior to us loading the given component.  Once, the
-    //   component is loaded into memory, we can release our hold
-    //   on the dependent libraries with the assumption that the
-    //   component library holds a reference via the OS so loader.
-    nsCOMPtr<nsIComponentLoaderManager> manager = do_QueryInterface(m_loader->mCompMgr);
-    if (!manager)
-        return PR_TRUE;
+        // Load any library dependencies
+        //   The Component Loader Manager may hold onto some extra data
+        //   set by either the native component loader or the native
+        //   component.  We assume that this data is a space delimited
+        //   listing of dependent libraries which are required to be
+        //   loaded prior to us loading the given component.  Once, the
+        //   component is loaded into memory, we can release our hold
+        //   on the dependent libraries with the assumption that the
+        //   component library holds a reference via the OS so loader.
+        nsCOMPtr<nsIComponentLoaderManager> manager = do_QueryInterface(m_loader->mCompMgr);
+        if (!manager)
+            return PR_TRUE;
 
-    nsXPIDLCString extraData;
-    manager->GetOptionalData(m_dllSpec, nsnull, getter_Copies(extraData));
+        nsXPIDLCString extraData;
+        manager->GetOptionalData(m_dllSpec, nsnull, getter_Copies(extraData));
 
-    nsVoidArray dependentLibArray;
+        nsVoidArray dependentLibArray;
 
-    // if there was any extra data, treat it as a listing of dependent libs
-    if (extraData != nsnull)
-    {
-        // all dependent libraries are suppose to be in the "gre" directory.
-        // note that the gre directory is the same as the "bin" directory,
-        // when there isn't a real "gre" found.
-
-        nsXPIDLCString path;
-        nsCOMPtr<nsIFile> file;
-        NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(file));
-
-        if (!file)
-            return NS_ERROR_FAILURE;
-
-        // we are talking about a file in the GRE dir.  Lets append something
-        // stupid right now, so that later we can just set the leaf name.
-        file->AppendNative(NS_LITERAL_CSTRING("dummy"));
-
-        char *buffer = (char *)nsMemory::Clone(extraData, strlen(extraData) + 1);
-        if (!buffer)
-            return NS_ERROR_OUT_OF_MEMORY;
-
-        char* newStr;
-        char *token = nsCRT::strtok(buffer, " ", &newStr);
-        while (token!=nsnull)
+        // if there was any extra data, treat it as a listing of dependent libs
+        if (extraData != nsnull)
         {
-            nsCStringKey key(token);
-            if (m_loader->mLoadedDependentLibs.Get(&key)) {
-                token = nsCRT::strtok(newStr, " ", &newStr);
-                continue;
-            }
+            // all dependent libraries are suppose to be in the "gre" directory.
+            // note that the gre directory is the same as the "bin" directory,
+            // when there isn't a real "gre" found.
 
-            m_loader->mLoadedDependentLibs.Put(&key, (void*)1);
+            nsXPIDLCString path;
+            nsCOMPtr<nsIFile> file;
+            NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(file));
 
-            nsXPIDLCString libpath;
-            file->SetNativeLeafName(nsDependentCString(token));
-            file->GetNativePath(path);
-            if (!path)
+            if (!file)
                 return NS_ERROR_FAILURE;
 
-            // Load this dependent library with the global flag and stash
-            // the result for later so that we can unload it.
-            PRLibSpec libSpec;
-            libSpec.type = PR_LibSpec_Pathname;
+            // we are talking about a file in the GRE dir.  Lets append something
+            // stupid right now, so that later we can just set the leaf name.
+            file->AppendNative(NS_LITERAL_CSTRING("dummy"));
 
-            // if the depend library path starts with a / we are
-            // going to assume that it is a full path and should
-            // be loaded without prepending the gre diretory
-            // location.  We could have short circuited the
-            // SetNativeLeafName above, but this is clearer and
-            // the common case is a relative path.
+            char *buffer = (char *)nsMemory::Clone(extraData, strlen(extraData) + 1);
+            if (!buffer)
+                return NS_ERROR_OUT_OF_MEMORY;
 
-            if (token[0] == '/')
-                libSpec.value.pathname = token;
-            else
-                libSpec.value.pathname = path;
+            char* newStr;
+            char *token = nsCRT::strtok(buffer, " ", &newStr);
+            while (token!=nsnull)
+            {
+                nsCStringKey key(token);
+                if (m_loader->mLoadedDependentLibs.Get(&key)) {
+                    token = nsCRT::strtok(newStr, " ", &newStr);
+                    continue;
+                }
 
-            PRLibrary* lib = PR_LoadLibraryWithFlags(libSpec, PR_LD_LAZY|PR_LD_GLOBAL);
-            // if we couldn't load the dependent library.  We did the best we
-            // can.  Now just let us fail later if this really was a required
-            // dependency.
-            if (lib)
-                dependentLibArray.AppendElement((void*)lib);
+                m_loader->mLoadedDependentLibs.Put(&key, (void*)1);
 
-            token = nsCRT::strtok(newStr, " ", &newStr);
+                nsXPIDLCString libpath;
+                file->SetNativeLeafName(nsDependentCString(token));
+                file->GetNativePath(path);
+                if (!path)
+                    return NS_ERROR_FAILURE;
+
+                // Load this dependent library with the global flag and stash
+                // the result for later so that we can unload it.
+                const char *pszFilename = NULL;
+
+                // if the depend library path starts with a / we are
+                // going to assume that it is a full path and should
+                // be loaded without prepending the gre diretory
+                // location.  We could have short circuited the
+                // SetNativeLeafName above, but this is clearer and
+                // the common case is a relative path.
+                if (token[0] == '/')
+                    pszFilename = token;
+                else
+                    pszFilename = path;
+
+                RTLDRMOD hMod = NIL_RTLDRMOD;
+                RTERRINFOSTATIC ErrInfo;
+                RTErrInfoInitStatic(&ErrInfo);
+
+                int vrc = RTLdrLoadEx(pszFilename, &hMod, RTLDRLOAD_FLAGS_LOCAL, &ErrInfo.Core);
+                // if we couldn't load the dependent library.  We did the best we
+                // can.  Now just let us fail later if this really was a required
+                // dependency.
+                if (RT_SUCCESS(vrc))
+                    dependentLibArray.AppendElement((void*)hMod);
+
+                token = nsCRT::strtok(newStr, " ", &newStr);
+            }
+            nsMemory::Free(buffer);
         }
-        nsMemory::Free(buffer);
-    }
 
-    // load the component
-    nsCOMPtr<nsILocalFile> lf(do_QueryInterface(m_dllSpec));
-    NS_ASSERTION(lf, "nsIFile here must implement a nsILocalFile");
-    lf->Load(&m_instance);
+        // load the component
+        nsCOMPtr<nsILocalFile> lf(do_QueryInterface(m_dllSpec));
+        NS_ASSERTION(lf, "nsIFile here must implement a nsILocalFile");
+        lf->Load(&m_hMod);
 
-    // Unload any of library dependencies we loaded earlier. The assumption
-    // here is that the component will have a "internal" reference count to
-    // the dependency library we just loaded.
-    // XXX should we unload later - or even at all?
-    if (extraData != nsnull)
-    {
-        PRInt32 arrayCount = dependentLibArray.Count();
-        for (PRInt32 index = 0; index < arrayCount; index++)
-            PR_UnloadLibrary((PRLibrary*)dependentLibArray.ElementAt(index));
-    }
+        // Unload any of library dependencies we loaded earlier. The assumption
+        // here is that the component will have a "internal" reference count to
+        // the dependency library we just loaded.
+        // XXX should we unload later - or even at all?
+        if (extraData != nsnull)
+        {
+            PRInt32 arrayCount = dependentLibArray.Count();
+            for (PRInt32 index = 0; index < arrayCount; index++)
+                RTLdrClose((RTLDRMOD)dependentLibArray.ElementAt(index));
+        }
 
 #ifdef NS_BUILD_REFCNT_LOGGING
         nsTraceRefcntImpl::SetActivityIsLegal(PR_TRUE);
-        if (m_instance) {
+        if (m_hMod != NIL_RTLDRMOD)
+        {
             // Inform refcnt tracer of new library so that calls through the
             // new library can be traced.
             nsXPIDLCString displayPath;
             GetDisplayPath(displayPath);
-            nsTraceRefcntImpl::LoadLibrarySymbols(displayPath.get(), m_instance);
+            nsTraceRefcntImpl::LoadLibrarySymbols(displayPath.get(), m_hMod);
         }
 #endif
     }
 
-    return ((m_instance == NULL) ? PR_FALSE : PR_TRUE);
+    return ((m_hMod == NIL_RTLDRMOD) ? PR_FALSE : PR_TRUE);
 }
 
 PRBool nsDll::Unload(void)
 {
-	if (m_instance == NULL)
-		return (PR_FALSE);
+    if (m_hMod == NULL)
+        return PR_FALSE;
 
     // Shutdown the dll
     Shutdown();
@@ -260,30 +262,34 @@ PRBool nsDll::Unload(void)
 #ifdef NS_BUILD_REFCNT_LOGGING
     nsTraceRefcntImpl::SetActivityIsLegal(PR_FALSE);
 #endif
-	PRStatus ret = PR_UnloadLibrary(m_instance);
+    int vrc = RTLdrClose(m_hMod);
 #ifdef NS_BUILD_REFCNT_LOGGING
     nsTraceRefcntImpl::SetActivityIsLegal(PR_TRUE);
 #endif
 
-	if (ret == PR_SUCCESS)
-	{
-		m_instance = NULL;
-		return (PR_TRUE);
-	}
-	else
-		return (PR_FALSE);
+    if (RT_SUCCESS(vrc))
+    {
+        m_hMod = NIL_RTLDRMOD;
+        return PR_TRUE;
+    }
+
+    return PR_FALSE;
 }
 
 void * nsDll::FindSymbol(const char *symbol)
 {
-	if (symbol == NULL)
-		return (NULL);
+    if (symbol == NULL)
+        return NULL;
 
-	// If not already loaded, load it now.
-	if (Load() != PR_TRUE)
-		return (NULL);
+    // If not already loaded, load it now.
+    if (Load() != PR_TRUE)
+        return NULL;
 
-    return(PR_FindSymbol(m_instance, symbol));
+    void *pvSym = NULL;
+    int vrc = RTLdrGetSymbol(m_hMod, symbol, &pvSym);
+    RT_NOREF(vrc);
+
+    return pvSym;
 }
 
 
@@ -314,8 +320,8 @@ nsresult nsDll::GetModule(nsISupports *servMgr, nsIModule **cobj)
         return NS_OK;
     }
 
-	// If not already loaded, load it now.
-	if (Load() != PR_TRUE) return NS_ERROR_FAILURE;
+    // If not already loaded, load it now.
+    if (Load() != PR_TRUE) return NS_ERROR_FAILURE;
 
     // We need a nsIFile for location
     if (!m_dllSpec)
