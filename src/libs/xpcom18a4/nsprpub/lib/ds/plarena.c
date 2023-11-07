@@ -44,19 +44,20 @@
 #include <stdlib.h>
 #include <string.h>
 #include "plarena.h"
-#include "prmem.h"
 #include "prbit.h"
-#include "prlog.h"
-#include "prlock.h"
-#include "prinit.h"
+
+#include <iprt/assert.h>
+#include <iprt/errcore.h>
+#include <iprt/mem.h>
+#include <iprt/once.h>
+#include <iprt/semaphore.h>
 
 static PLArena *arena_freelist;
 
-#define COUNT(pool,what)
 #define PL_ARENA_DEFAULT_ALIGN  sizeof(double)
 
-static PRLock    *arenaLock;
-static PRCallOnceType once;
+static RTSEMFASTMUTEX g_hMtxArena = NIL_RTSEMFASTMUTEX;
+static RTONCE         g_rtOnce    = RTONCE_INITIALIZER;
 
 /*
 ** InitializeArenas() -- Initialize arena operations.
@@ -72,28 +73,27 @@ static PRCallOnceType once;
 ** or recover.
 **
 */
-static PRStatus InitializeArenas( void )
+static DECLCALLBACK(int) InitializeArenas(void *pvUser)
 {
-    PR_ASSERT( arenaLock == NULL );
-    arenaLock = PR_NewLock();
-    if ( arenaLock == NULL )
-        return PR_FAILURE;
-    else
-        return PR_SUCCESS;
+    RT_NOREF(pvUser);
+    Assert(g_hMtxArena == NIL_RTSEMFASTMUTEX);
+
+    return RTSemFastMutexCreate(&g_hMtxArena);
 } /* end ArenaInitialize() */
 
 static PRStatus LockArena( void )
 {
-    PRStatus rc = PR_CallOnce( &once, InitializeArenas );
+    int vrc = RTOnce(&g_rtOnce, InitializeArenas, NULL /*pvUser*/);
+    if (RT_FAILURE(vrc))
+        return PR_FAILURE;
 
-    if ( PR_FAILURE != rc )
-        PR_Lock( arenaLock );
-    return(rc);
+    RTSemFastMutexRequest(g_hMtxArena);
+    return PR_SUCCESS;
 } /* end LockArena() */
 
 static void UnlockArena( void )
 {
-    PR_Unlock( arenaLock );
+    RTSemFastMutexRelease(g_hMtxArena);
     return;
 } /* end UnlockArena() */
 
@@ -146,8 +146,8 @@ PR_IMPLEMENT(void *) PL_ArenaAllocate(PLArenaPool *pool, PRUint32 nb)
     char *rp;     /* returned pointer */
     PRUint32 nbOld;
 
-    PR_ASSERT((nb & pool->mask) == 0);
-    
+    Assert((nb & pool->mask) == 0);
+
     nbOld = nb;
     nb = (PRUword)PL_ARENA_ALIGN(pool, nb); /* force alignment */
     if (nb < nbOld)
@@ -201,13 +201,13 @@ PR_IMPLEMENT(void *) PL_ArenaAllocate(PLArenaPool *pool, PRUint32 nb)
     {  
         PRUint32 sz = PR_MAX(pool->arenasize, nb);
         sz += sizeof *a + pool->mask;  /* header and alignment slop */
-        a = (PLArena*)PR_MALLOC(sz);
+        a = (PLArena*)RTMemAlloc(sz);
         if ( NULL != a )  {
             a->limit = (PRUword)a + sz;
             a->base = a->avail = (PRUword)PL_ARENA_ALIGN(pool, a + 1);
             rp = (char *)a->avail;
             a->avail += nb;
-            PR_ASSERT(a->avail <= a->limit);
+            Assert(a->avail <= a->limit);
             /* the newly allocated arena is linked after pool->current 
             *  and becomes pool->current */
             a->next = pool->current->next;
@@ -216,7 +216,6 @@ PR_IMPLEMENT(void *) PL_ArenaAllocate(PLArenaPool *pool, PRUint32 nb)
             if ( NULL == pool->first.next )
                 pool->first.next = a;
             PL_COUNT_ARENA(pool,++);
-            COUNT(pool, nmallocs);
             return(rp);
         }
     }
@@ -253,7 +252,7 @@ static void FreeArenaList(PLArenaPool *pool, PLArena *head, PRBool reallyFree)
 
 #ifdef DEBUG
     do {
-        PR_ASSERT(a->base <= a->avail && a->avail <= a->limit);
+        Assert(a->base <= a->avail && a->avail <= a->limit);
         a->avail = a->base;
         PL_CLEAR_UNUSED(a);
     } while ((a = a->next) != 0);
@@ -265,7 +264,7 @@ static void FreeArenaList(PLArenaPool *pool, PLArena *head, PRBool reallyFree)
             *ap = a->next;
             PL_CLEAR_ARENA(a);
             PL_COUNT_ARENA(pool,--);
-            PR_DELETE(a);
+            RTMemFree(a);
         } while ((a = *ap) != 0);
     } else {
         /* Insert the whole arena chain at the front of the freelist. */
@@ -298,7 +297,6 @@ PR_IMPLEMENT(void) PL_ArenaRelease(PLArenaPool *pool, char *mark)
 PR_IMPLEMENT(void) PL_FreeArenaPool(PLArenaPool *pool)
 {
     FreeArenaList(pool, &pool->first, PR_FALSE);
-    COUNT(pool, ndeallocs);
 }
 
 PR_IMPLEMENT(void) PL_FinishArenaPool(PLArenaPool *pool)
@@ -316,13 +314,13 @@ PR_IMPLEMENT(void) PL_ArenaFinish(void)
 
     for (a = arena_freelist; a; a = next) {
         next = a->next;
-        PR_DELETE(a);
+        RTMemFree(a);
     }
     arena_freelist = NULL;
 
-    if (arenaLock) {
-        PR_DestroyLock(arenaLock);
-        arenaLock = NULL;
+    if (g_hMtxArena != NIL_RTSEMFASTMUTEX) {
+        RTSemFastMutexDestroy(g_hMtxArena);
+        g_hMtxArena = NIL_RTSEMFASTMUTEX;
     }
 }
 

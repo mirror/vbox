@@ -122,9 +122,9 @@ struct PLArenaPool {
 
 #ifdef DEBUG
 #define PL_FREE_PATTERN 0xDA
-#define PL_CLEAR_UNUSED(a) (PR_ASSERT((a)->avail <= (a)->limit), \
+#define PL_CLEAR_UNUSED(a) Assert((a)->avail <= (a)->limit); \
                            memset((void*)(a)->avail, PL_FREE_PATTERN, \
-                           (a)->limit - (a)->avail))
+                           (a)->limit - (a)->avail)
 #define PL_CLEAR_ARENA(a)  memset((void*)(a), PL_FREE_PATTERN, \
                            (a)->limit - (PRUword)(a))
 #else
