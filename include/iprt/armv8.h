@@ -2880,12 +2880,13 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrLogicalImm(uint32_t u2Opc, uint32_t i
 {
     Assert(u2Opc < 4); Assert(uImm7SizeLen < (f64Bit ? UINT32_C(0x7f) : UINT32_C(0x3f)));
     Assert(uImm6Rotations < UINT32_C(0x3f)); Assert(iRegResult < 32); Assert(iRegSrc < 32);
-    return ((uint32_t)f64Bit   << 31)
-         | (u2Opc              << 29)
+    return ((uint32_t)f64Bit                << 31)
+         | (u2Opc                           << 29)
          | UINT32_C(0x12000000)
-         | (uImm7SizeLen       << 16)
-         | (uImm6Rotations     << 10)
-         | (iRegSrc            <<  5)
+         | ((uImm7SizeLen & UINT32_C(0x40)) << (17 - 6))
+         | (uImm6Rotations                  << 16)
+         | ((uImm7SizeLen & UINT32_C(0x3f)) << 10)
+         | (iRegSrc                         <<  5)
          | iRegResult;
 }
 
