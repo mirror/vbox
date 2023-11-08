@@ -166,7 +166,6 @@ NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/lib/ds/plarenas.h \
 	nsprpub/lib/ds/plhash.h \
 	nsprpub/lib/libc/include/plstr.h \
-	nsprpub/pr/include/pratom.h \
 	nsprpub/pr/include/prbit.h \
 	nsprpub/pr/include/prclist.h \
 	nsprpub/pr/include/prcvar.h \
@@ -191,7 +190,6 @@ NSPRPUB-HEADERS_SOURCES = \
 NSPRPUB-MD-HEADERS_INST = $(INST_SDK)bindings/xpcom/include/nsprpub/md/
 NSPRPUB-MD-HEADERS_IFFLAGS = -m 644
 NSPRPUB-MD-HEADERS_SOURCES = \
-	nsprpub/pr/include/md/_iprt_atomic.h \
 	nsprpub/pr/include/md/_darwin.h \
 	nsprpub/pr/include/md/_freebsd.h \
 	nsprpub/pr/include/md/_linux.h \
@@ -479,7 +477,6 @@ VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/pr/src/io/prprf.c \
 	nsprpub/pr/src/io/prscanf.c \
 	nsprpub/pr/src/io/prstdio.c \
-	nsprpub/pr/src/misc/pratom.c \
 	nsprpub/pr/src/misc/prdtoa.c \
 	nsprpub/pr/src/misc/prerr.c \
 	nsprpub/pr/src/misc/prerror.c \

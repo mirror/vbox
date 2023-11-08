@@ -88,8 +88,6 @@
 #define HAVE_DLL
 #define USE_DLFCN
 
-#include "_iprt_atomic.h"
-
 #define USE_SETJMP
 #if defined(__GLIBC__) && __GLIBC__ >= 2
 #define _PR_POLL_AVAILABLE

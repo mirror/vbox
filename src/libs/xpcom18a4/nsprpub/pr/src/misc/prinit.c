@@ -102,7 +102,6 @@ static void _PR_InitStuff(void)
     _PR_MD_EARLY_INIT();
 
     _PR_InitLocks();
-    _PR_InitAtomic();
     _PR_InitClock();
 
     _pr_sleeplock = PR_NewLock();

@@ -497,7 +497,6 @@ extern void _PR_InitIO(void);
 extern void _PR_InitLog(void);
 extern void _PR_InitNet(void);
 extern void _PR_InitClock(void);
-extern void _PR_InitAtomic(void);
 extern void _PR_InitCPUs(void);
 extern void _PR_InitDtoa(void);
 extern void _PR_InitMW(void);

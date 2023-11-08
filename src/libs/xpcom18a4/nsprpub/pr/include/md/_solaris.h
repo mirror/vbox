@@ -177,8 +177,6 @@ NSPR_API(PRIntervalTime) _MD_Solaris_GetInterval(void);
 NSPR_API(PRIntervalTime) _MD_Solaris_TicksPerSecond(void);
 #define _MD_INTERVAL_PER_SEC              _MD_Solaris_TicksPerSecond
 
-#include "_iprt_atomic.h"
-
 NSPR_API(void)		_MD_EarlyInit(void);
 
 #define _MD_EARLY_INIT		_MD_EarlyInit

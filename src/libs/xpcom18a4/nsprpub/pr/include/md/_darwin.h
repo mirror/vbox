@@ -117,34 +117,6 @@
 #define IPV6_V6ONLY 27
 #endif
 
-#ifdef VBOX_USE_MORE_IPRT_IN_NSPR
-# include "_iprt_atomic.h"
-#else  /* !VBOX_USE_MORE_IPRT_IN_NSPR */
-#if defined(__ppc__)
-#define _PR_HAVE_ATOMIC_OPS
-#define _MD_INIT_ATOMIC()
-extern PRInt32 _PR_DarwinPPC_AtomicIncrement(PRInt32 *val);
-#define _MD_ATOMIC_INCREMENT(val)   _PR_DarwinPPC_AtomicIncrement(val)
-extern PRInt32 _PR_DarwinPPC_AtomicDecrement(PRInt32 *val);
-#define _MD_ATOMIC_DECREMENT(val)   _PR_DarwinPPC_AtomicDecrement(val)
-extern PRInt32 _PR_DarwinPPC_AtomicSet(PRInt32 *val, PRInt32 newval);
-#define _MD_ATOMIC_SET(val, newval) _PR_DarwinPPC_AtomicSet(val, newval)
-extern PRInt32 _PR_DarwinPPC_AtomicAdd(PRInt32 *ptr, PRInt32 val);
-#define _MD_ATOMIC_ADD(ptr, val)    _PR_DarwinPPC_AtomicAdd(ptr, val)
-#elif defined(__i386__)
-#define _PR_HAVE_ATOMIC_OPS
-#define _MD_INIT_ATOMIC()
-extern PRInt32 _PR_Darwin_x86_AtomicIncrement(PRInt32 *val);
-#define _MD_ATOMIC_INCREMENT(val)   _PR_Darwin_x86_AtomicIncrement(val)
-extern PRInt32 _PR_Darwin_x86_AtomicDecrement(PRInt32 *val);
-#define _MD_ATOMIC_DECREMENT(val)   _PR_Darwin_x86_AtomicDecrement(val)
-extern PRInt32 _PR_Darwin_x86_AtomicSet(PRInt32 *val, PRInt32 newval);
-#define _MD_ATOMIC_SET(val, newval) _PR_Darwin_x86_AtomicSet(val, newval)
-extern PRInt32 _PR_Darwin_x86_AtomicAdd(PRInt32 *ptr, PRInt32 val);
-#define _MD_ATOMIC_ADD(ptr, val)    _PR_Darwin_x86_AtomicAdd(ptr, val)
-#endif /* __i386__ */
-#endif /* !VBOX_USE_MORE_IPRT_IN_NSPR */
-
 #define USE_SETJMP
 
 #if !defined(_PR_PTHREADS)
