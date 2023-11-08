@@ -1837,12 +1837,12 @@ class McStmtCond(McStmt):
         return sRet;
 
 class McStmtVar(McStmt):
-    """ IEM_MC_LOCAL, IEM_MC_LOCAL_CONST """
-    def __init__(self, sName, asParams, sType, sVarName, sConstValue = None):
+    """ IEM_MC_LOCAL, IEM_MC_LOCAL_ASSIGN, IEM_MC_LOCAL_CONST """
+    def __init__(self, sName, asParams, sType, sVarName, sValue = None):
         McStmt.__init__(self, sName, asParams);
         self.sType       = sType;
         self.sVarName    = sVarName;
-        self.sConstValue = sConstValue;     ##< None if not const.
+        self.sValue      = sValue;              ##< None if no assigned / const value.
 
 class McStmtArg(McStmtVar):
     """ IEM_MC_ARG, IEM_MC_ARG_CONST, IEM_MC_ARG_LOCAL_REF """
@@ -2146,10 +2146,18 @@ class McBlock(object):
         return oStmt;
 
     @staticmethod
+    def parseMcLocalAssign(oSelf, sName, asParams):
+        """ IEM_MC_LOCAL_ASSIGN """
+        oSelf.checkStmtParamCount(sName, asParams, 3);
+        oStmt = McStmtVar(sName, asParams, asParams[0], asParams[1], sValue = asParams[2]);
+        oSelf.aoLocals.append(oStmt);
+        return oStmt;
+
+    @staticmethod
     def parseMcLocalConst(oSelf, sName, asParams):
         """ IEM_MC_LOCAL_CONST """
         oSelf.checkStmtParamCount(sName, asParams, 3);
-        oStmt = McStmtVar(sName, asParams, asParams[0], asParams[1], sConstValue = asParams[2]);
+        oStmt = McStmtVar(sName, asParams, asParams[0], asParams[1], sValue = asParams[2]);
         oSelf.aoLocals.append(oStmt);
         return oStmt;
 
@@ -2919,6 +2927,7 @@ g_dMcStmtParsers = {
     'IEM_MC_IMPLICIT_AVX_AIMPL_ARGS':                            (McBlock.parseMcImplicitAvxAArgs,  False, False, ),
     'IEM_MC_INT_CLEAR_ZMM_256_UP':                               (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_LOCAL':                                              (McBlock.parseMcLocal,             False, True,  ),
+    'IEM_MC_LOCAL_ASSIGN':                                       (McBlock.parseMcLocalAssign,       False, True,  ),
     'IEM_MC_LOCAL_CONST':                                        (McBlock.parseMcLocalConst,        False, True,  ),
     'IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT':                       (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE':                   (McBlock.parseMcGeneric,           True,  False, ),

@@ -961,7 +961,7 @@ class ThreadedFunctionVariation(object):
                 continue;
 
             if isinstance(oStmt, iai.McStmtVar):
-                if oStmt.sConstValue is None:
+                if oStmt.sValue is None:
                     continue;
                 aiSkipParams = { 0: True, 1: True, 3: True };
             else:

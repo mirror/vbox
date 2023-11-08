@@ -595,6 +595,9 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEM_MC_LOCAL_CONST(a_Type, a_Name, a_Value) (void)fMcBegin; \
     a_Type const a_Name = (a_Value); \
     NOREF(a_Name)
+#define IEM_MC_LOCAL_ASSIGN(a_Type, a_Name, a_Value) (void)fMcBegin; \
+    a_Type a_Name = (a_Value); \
+    NOREF(a_Name)
 #define IEM_MC_REF_LOCAL(a_pRefArg, a_Local) (void)fMcBegin; \
     (a_pRefArg) = &(a_Local)
 
