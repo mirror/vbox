@@ -43,6 +43,8 @@
 #include "nsCOMPtr.h"
 #include "nsIServiceManager.h"
 
+#include <iprt/thread.h>
+
 class nsRunner : public nsIRunnable {
 public:
     NS_DECL_ISUPPORTS
@@ -58,7 +60,7 @@ public:
 
         // if we don't do something slow, we'll never see the other
         // worker threads run
-        PR_Sleep(PR_MillisecondsToInterval(100));
+        RTThreadSleep(100);
 
         return rv;
     }
@@ -125,7 +127,7 @@ TestThreads()
         printf("shouldn't have been able to join an unjoinable thread\n");        
     }
 
-    PR_Sleep(PR_MillisecondsToInterval(100));       // hopefully the runner will quit here
+    RTThreadSleep(100);       // hopefully the runner will quit here
 
     return NS_OK;
 }

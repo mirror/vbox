@@ -299,8 +299,8 @@ nsThread::Sleep(PRUint32 msec)
 {
     if (PR_GetCurrentThread() != mThread)
         return NS_ERROR_FAILURE;
-    
-    if (PR_Sleep(PR_MillisecondsToInterval(msec)) != PR_SUCCESS)
+
+    if (RTThreadSleep(msec) != VINF_SUCCESS)
         return NS_ERROR_FAILURE;
 
     return NS_OK;

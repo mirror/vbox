@@ -78,6 +78,8 @@
 #endif
 #endif
 
+#include <iprt/thread.h>
+
 #ifdef DARWIN
 static PRBool _pr_ipv6_v6only_on_by_default;
 /* The IPV6_V6ONLY socket option is not defined on Mac OS X 10.1. */
@@ -2135,7 +2137,7 @@ static PRInt32 _pr_poll_with_poll(
 
     if (pt_TestAbort()) return -1;
 
-    if (0 == npds) PR_Sleep(timeout);
+    if (0 == npds) RTThreadSleep(PR_IntervalToMilliseconds(timeout));
     else
     {
 #define STACK_POLL_DESC_COUNT 64

@@ -67,19 +67,6 @@
 #include "ipcdPrivate.h"
 #include "ipcd.h"
 
-#if 0
-static void
-IPC_Sleep(int seconds)
-{
-    while (seconds > 0) {
-        LOG(("\rsleeping for %d seconds...", seconds));
-        PR_Sleep(PR_SecondsToInterval(1));
-        --seconds;
-    }
-    LOG(("\ndone sleeping\n"));
-}
-#endif
-
 //-----------------------------------------------------------------------------
 // ipc directory and locking...
 //-----------------------------------------------------------------------------

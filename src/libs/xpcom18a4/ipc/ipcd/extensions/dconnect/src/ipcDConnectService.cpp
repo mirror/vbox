@@ -3548,7 +3548,7 @@ ipcDConnectService::OnMessageAvailable(PRUint32 aSenderID,
   mon.Exit();
 
   // Yield the cpu so a worker can get a chance to start working without too much fuss.
-  PR_Sleep(PR_INTERVAL_NO_WAIT);
+  RTThreadYield();
   mon.Enter();
   // examine the queue
   if (mPendingQ.Count() > mWaitingWorkers)
