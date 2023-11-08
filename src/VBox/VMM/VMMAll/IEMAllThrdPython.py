@@ -406,6 +406,8 @@ class ThreadedFunctionVariation(object):
         'IEM_CIMPL_F_BRANCH_FAR':                   True,
         'IEM_CIMPL_F_BRANCH_CONDITIONAL':           False,
         # IEM_CIMPL_F_BRANCH_ANY should only be used for testing, so not included here.
+        'IEM_CIMPL_F_BRANCH_STACK':                 False,
+        'IEM_CIMPL_F_BRANCH_STACK_FAR':             False,
         'IEM_CIMPL_F_RFLAGS':                       False,
         'IEM_CIMPL_F_INHIBIT_SHADOW':               False,
         'IEM_CIMPL_F_CHECK_IRQ_AFTER':              False,
@@ -1125,6 +1127,7 @@ class ThreadedFunctionVariation(object):
                                   or sRef.startswith('IEM_CIMPL_F_')
                                   or sRef.startswith('g_')
                                   or sRef.startswith('iemAImpl_')
+                                  or sRef.startswith('kIemNativeGstReg_')
                                   or sRef in ( 'int8_t',    'int16_t',    'int32_t',    'int64_t',
                                                'INT8_C',    'INT16_C',    'INT32_C',    'INT64_C',
                                                'UINT8_C',   'UINT16_C',   'UINT32_C',   'UINT64_C',
@@ -1132,7 +1135,8 @@ class ThreadedFunctionVariation(object):
                                                'INT8_MAX',  'INT16_MAX',  'INT32_MAX',  'INT64_MAX',
                                                'INT8_MIN',  'INT16_MIN',  'INT32_MIN',  'INT64_MIN',
                                                'sizeof',    'NOREF',      'RT_NOREF',   'IEMMODE_64BIT',
-                                               'RT_BIT_32', 'true',       'false',      'NIL_RTGCPTR',) ):
+                                               'RT_BIT_32', 'RT_BIT_64',  'true',       'false',
+                                               'NIL_RTGCPTR',) ):
                                 pass;
 
                             # Skip certain macro invocations.

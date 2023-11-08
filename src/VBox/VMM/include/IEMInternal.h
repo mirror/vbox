@@ -618,25 +618,31 @@ AssertCompileSizeAlignment(IEMTLB, 64);
 #define IEM_CIMPL_F_IO                  RT_BIT_32(14)
 /** Force end of TB after the instruction. */
 #define IEM_CIMPL_F_END_TB              RT_BIT_32(15)
+/** Flag set if a branch may also modify the stack (push/pop return address). */
+#define IEM_CIMPL_F_BRANCH_STACK        RT_BIT_32(16)
+/** Flag set if a branch may also modify the stack (push/pop return address)
+ *  and switch it (load/restore SS:RSP). */
+#define IEM_CIMPL_F_BRANCH_STACK_FAR    RT_BIT_32(17)
 /** Convenience: Raise exception (technically unnecessary, since it shouldn't return VINF_SUCCESS). */
 #define IEM_CIMPL_F_XCPT \
-    (IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT)
+    (IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_STACK_FAR \
+     | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT)
 
 /** The block calls a C-implementation instruction function with two implicit arguments.
  * Mutually exclusive with IEM_CIMPL_F_CALLS_AIMPL and
  * IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE.
  * @note The python scripts will add this is missing.  */
-#define IEM_CIMPL_F_CALLS_CIMPL                 RT_BIT_32(16)
+#define IEM_CIMPL_F_CALLS_CIMPL                 RT_BIT_32(18)
 /** The block calls an ASM-implementation instruction function.
  * Mutually exclusive with IEM_CIMPL_F_CALLS_CIMPL and
  * IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE.
  * @note The python scripts will add this is missing.  */
-#define IEM_CIMPL_F_CALLS_AIMPL                 RT_BIT_32(17)
+#define IEM_CIMPL_F_CALLS_AIMPL                 RT_BIT_32(19)
 /** The block calls an ASM-implementation instruction function with an implicit
  * X86FXSTATE pointer argument.
  * Mutually exclusive with IEM_CIMPL_F_CALLS_CIMPL and IEM_CIMPL_F_CALLS_AIMPL.
  * @note The python scripts will add this is missing.  */
-#define IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE    RT_BIT_32(18)
+#define IEM_CIMPL_F_CALLS_AIMPL_WITH_FXSTATE    RT_BIT_32(20)
 /** @} */
 
 
@@ -1304,7 +1310,7 @@ typedef IEMTBCACHE *PIEMTBCACHE;
 
 /** @name IEMBRANCHED_F_XXX - Branched indicator (IEMCPU::fTbBranched).
  *
- * These flags parallels IEM_CIMPL_F_BRANCH_XXX.
+ * These flags parallels the main IEM_CIMPL_F_BRANCH_XXX flags.
  *
  * @{ */
 /** Value if no branching happened recently. */
@@ -1319,8 +1325,12 @@ typedef IEMTBCACHE *PIEMTBCACHE;
 #define IEMBRANCHED_F_CONDITIONAL   UINT8_C(0x08)
 /** Flag set if it's a far branch. */
 #define IEMBRANCHED_F_FAR           UINT8_C(0x10)
+/** Flag set if the stack pointer is modified. */
+#define IEMBRANCHED_F_STACK         UINT8_C(0x20)
+/** Flag set if the stack pointer and (maybe) the stack segment are modified. */
+#define IEMBRANCHED_F_STACK_FAR     UINT8_C(0x40)
 /** Flag set (by IEM_MC_REL_JMP_XXX) if it's a zero bytes relative jump. */
-#define IEMBRANCHED_F_ZERO          UINT8_C(0x20)
+#define IEMBRANCHED_F_ZERO          UINT8_C(0x80)
 /** @} */
 
 
@@ -4919,7 +4929,7 @@ IEM_CIMPL_DEF_0(iemCImplRaiseInvalidOpcode);
  *
  * @return  Strict VBox status code.
  */
-#define IEMOP_RAISE_DIVIDE_ERROR_RET()      IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_XCPT, iemCImplRaiseDivideError)
+#define IEMOP_RAISE_DIVIDE_ERROR_RET()          IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_XCPT, 0, iemCImplRaiseDivideError)
 
 /**
  * Macro for calling iemCImplRaiseInvalidLockPrefix().
@@ -4929,7 +4939,7 @@ IEM_CIMPL_DEF_0(iemCImplRaiseInvalidOpcode);
  *
  * @return  Strict VBox status code.
  */
-#define IEMOP_RAISE_INVALID_LOCK_PREFIX_RET() IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_XCPT, iemCImplRaiseInvalidLockPrefix)
+#define IEMOP_RAISE_INVALID_LOCK_PREFIX_RET()   IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_XCPT, 0, iemCImplRaiseInvalidLockPrefix)
 
 /**
  * Macro for calling iemCImplRaiseInvalidOpcode() for decode/static \#UDs.
@@ -4939,7 +4949,7 @@ IEM_CIMPL_DEF_0(iemCImplRaiseInvalidOpcode);
  *
  * @return  Strict VBox status code.
  */
-#define IEMOP_RAISE_INVALID_OPCODE_RET()    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_XCPT, iemCImplRaiseInvalidOpcode)
+#define IEMOP_RAISE_INVALID_OPCODE_RET()        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_XCPT, 0, iemCImplRaiseInvalidOpcode)
 
 /**
  * Macro for calling iemCImplRaiseInvalidOpcode() for runtime-style \#UDs.
@@ -4950,7 +4960,7 @@ IEM_CIMPL_DEF_0(iemCImplRaiseInvalidOpcode);
  * @return  Strict VBox status code.
  * @see     IEMOP_RAISE_INVALID_OPCODE_RET
  */
-#define IEMOP_RAISE_INVALID_OPCODE_RUNTIME_RET()   IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_XCPT, iemCImplRaiseInvalidOpcode)
+#define IEMOP_RAISE_INVALID_OPCODE_RUNTIME_RET() IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_XCPT, 0, iemCImplRaiseInvalidOpcode)
 
 /** @} */
 

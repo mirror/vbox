@@ -2100,10 +2100,12 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * This shall be used without any IEM_MC_BEGIN or IEM_END macro surrounding it.
  *
  * @param   a_fFlags        IEM_CIMPL_F_XXX.
+ * @param   a_fGstShwFlush  Guest shadow register copies needing to be flushed
+ *                          in the native recompiler.
  * @param   a_pfnCImpl      The pointer to the C routine.
  * @sa      IEM_DECL_IMPL_C_TYPE_0 and IEM_CIMPL_DEF_0.
  */
-#define IEM_MC_DEFER_TO_CIMPL_0_RET(a_fFlags, a_pfnCImpl) \
+#define IEM_MC_DEFER_TO_CIMPL_0_RET(a_fFlags, a_fGstShwFlush, a_pfnCImpl) \
     IEM_MC_CALL_CIMPL_HLP_RET(a_fFlags, (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu)))
 
 /**
@@ -2113,10 +2115,12 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * This shall be used without any IEM_MC_BEGIN or IEM_END macro surrounding it.
  *
  * @param   a_fFlags        IEM_CIMPL_F_XXX.
+ * @param   a_fGstShwFlush  Guest shadow register copies needing to be flushed
+ *                          in the native recompiler.
  * @param   a_pfnCImpl      The pointer to the C routine.
  * @param   a0              The argument.
  */
-#define IEM_MC_DEFER_TO_CIMPL_1_RET(a_fFlags, a_pfnCImpl, a0) \
+#define IEM_MC_DEFER_TO_CIMPL_1_RET(a_fFlags, a_fGstShwFlush, a_pfnCImpl, a0) \
     IEM_MC_CALL_CIMPL_HLP_RET(a_fFlags, (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu), a0))
 
 /**
@@ -2126,11 +2130,13 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * This shall be used without any IEM_MC_BEGIN or IEM_END macro surrounding it.
  *
  * @param   a_fFlags        IEM_CIMPL_F_XXX.
+ * @param   a_fGstShwFlush  Guest shadow register copies needing to be flushed
+ *                          in the native recompiler.
  * @param   a_pfnCImpl      The pointer to the C routine.
  * @param   a0              The first extra argument.
  * @param   a1              The second extra argument.
  */
-#define IEM_MC_DEFER_TO_CIMPL_2_RET(a_fFlags, a_pfnCImpl, a0, a1) \
+#define IEM_MC_DEFER_TO_CIMPL_2_RET(a_fFlags, a_fGstShwFlush, a_pfnCImpl, a0, a1) \
     IEM_MC_CALL_CIMPL_HLP_RET(a_fFlags, (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu), a0, a1))
 
 /**
@@ -2140,12 +2146,14 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * This shall be used without any IEM_MC_BEGIN or IEM_END macro surrounding it.
  *
  * @param   a_fFlags        IEM_CIMPL_F_XXX.
+ * @param   a_fGstShwFlush  Guest shadow register copies needing to be flushed
+ *                          in the native recompiler.
  * @param   a_pfnCImpl      The pointer to the C routine.
  * @param   a0              The first extra argument.
  * @param   a1              The second extra argument.
  * @param   a2              The third extra argument.
  */
-#define IEM_MC_DEFER_TO_CIMPL_3_RET(a_fFlags, a_pfnCImpl, a0, a1, a2) \
+#define IEM_MC_DEFER_TO_CIMPL_3_RET(a_fFlags, a_fGstShwFlush, a_pfnCImpl, a0, a1, a2) \
     IEM_MC_CALL_CIMPL_HLP_RET(a_fFlags, (a_pfnCImpl)(pVCpu, IEM_GET_INSTR_LEN(pVCpu), a0, a1, a2))
 
 

@@ -300,7 +300,7 @@
  * IEMOP_RAISE_INVALID_OPCODE and their users.
  */
 #undef IEM_MC_DEFER_TO_CIMPL_0_RET
-#define IEM_MC_DEFER_TO_CIMPL_0_RET(a_fFlags, a_pfnCImpl) \
+#define IEM_MC_DEFER_TO_CIMPL_0_RET(a_fFlags, a_fGstShwFlush, a_pfnCImpl) \
     return iemThreadedRecompilerMcDeferToCImpl0(pVCpu, a_fFlags, a_pfnCImpl)
 
 DECLINLINE(VBOXSTRICTRC) iemThreadedRecompilerMcDeferToCImpl0(PVMCPUCC pVCpu, uint32_t fFlags, PFNIEMCIMPL0 pfnCImpl)

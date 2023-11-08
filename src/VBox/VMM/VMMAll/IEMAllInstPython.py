@@ -1958,6 +1958,8 @@ g_kdCImplFlags = {
     'IEM_CIMPL_F_BRANCH_FAR':           (),
     'IEM_CIMPL_F_BRANCH_ANY':           ('IEM_CIMPL_F_BRANCH_DIRECT', 'IEM_CIMPL_F_BRANCH_INDIRECT',
                                          'IEM_CIMPL_F_BRANCH_RELATIVE',),
+    'IEM_CIMPL_F_BRANCH_STACK':         (),
+    'IEM_CIMPL_F_BRANCH_STACK_FAR':     (),
     'IEM_CIMPL_F_MODE':                 (),
     'IEM_CIMPL_F_RFLAGS':               (),
     'IEM_CIMPL_F_INHIBIT_SHADOW':       (),
@@ -2213,8 +2215,12 @@ class McBlock(object):
             #print('debug: %s: %s' % (self.oFunction.sName,' | '.join(''.join(sFlags.split()).split('|')),));
             for sFlag in sFlags.split('|'):
                 sFlag = sFlag.strip();
+                if sFlag[0] == '(':  sFlag = sFlag[1:].strip();
+                if sFlag[-1] == ')': sFlag = sFlag[:-1].strip();
                 #print('debug:   %s' % sFlag)
                 if sFlag not in g_kdCImplFlags:
+                    if sFlag == '0':
+                        continue;
                     self.raiseStmtError(sName, 'Unknown flag: %s' % (sFlag, ));
                 self.dsCImplFlags[sFlag] = True;
                 for sFlag2 in g_kdCImplFlags[sFlag]:
@@ -2232,11 +2238,12 @@ class McBlock(object):
     @staticmethod
     def parseMcDeferToCImpl(oSelf, sName, asParams):
         """ IEM_MC_DEFER_TO_CIMPL_[0|1|2|3]_RET """
+        # Note! This code is called by workerIemMcDeferToCImplXRet.
         #print('debug: %s, %s,...' % (sName, asParams[0],));
         cArgs = int(sName[-5]);
-        oSelf.checkStmtParamCount(sName, asParams, 2 + cArgs);
+        oSelf.checkStmtParamCount(sName, asParams, 3 + cArgs);
         oSelf.parseCImplFlags(sName, asParams[0]);
-        return McStmtCall(sName, asParams, 1);
+        return McStmtCall(sName, asParams, 2);
 
     @staticmethod
     def stripComments(sCode):
@@ -5185,9 +5192,9 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
         asArgs, offAfter, cLines = self.findAndParseMacroInvocationEx(sCode, sStmt, offBeginStatementInCodeStr);
         if asArgs is None:
             self.raiseError('%s: Closing parenthesis not found!' % (sStmt,));
-        if len(asArgs) != cParams + 3:
-            self.raiseError('%s: findAndParseMacroInvocationEx returns %s args, expected %s!'
-                            % (sStmt, len(asArgs), cParams + 3,));
+        if len(asArgs) != cParams + 4:
+            self.raiseError('%s: findAndParseMacroInvocationEx returns %s args, expected %s! (%s)'
+                            % (sStmt, len(asArgs), cParams + 4, asArgs));
 
         oMcBlock.aoStmts = [ McBlock.parseMcDeferToCImpl(oMcBlock, asArgs[0], asArgs[1:]), ];
 

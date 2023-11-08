@@ -1199,7 +1199,8 @@ FNIEMOPRM_DEF(iemOp_Grp6_sldt)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         IEMOP_HLP_DECODED_NL_1(OP_SLDT, IEMOPFORM_M_REG, OP_PARM_Ew, DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP);
-        IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_sldt_reg, IEM_GET_MODRM_RM(pVCpu, bRm), pVCpu->iem.s.enmEffOpSize);
+        IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT,  0,
+                                    iemCImpl_sldt_reg, IEM_GET_MODRM_RM(pVCpu, bRm), pVCpu->iem.s.enmEffOpSize);
     }
 
     /* Ignore operand size here, memory refs are always 16-bit. */
@@ -1224,7 +1225,8 @@ FNIEMOPRM_DEF(iemOp_Grp6_str)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         IEMOP_HLP_DECODED_NL_1(OP_STR, IEMOPFORM_M_REG, OP_PARM_Ew, DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP);
-        IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_str_reg, IEM_GET_MODRM_RM(pVCpu, bRm), pVCpu->iem.s.enmEffOpSize);
+        IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT, 0,
+                                    iemCImpl_str_reg, IEM_GET_MODRM_RM(pVCpu, bRm), pVCpu->iem.s.enmEffOpSize);
     }
 
     /* Ignore operand size here, memory refs are always 16-bit. */
@@ -1396,7 +1398,7 @@ FNIEMOP_DEF(iemOp_Grp7_vmcall)
              want all hypercalls regardless of instruction used, and if a
              hypercall isn't handled by GIM or HMSvm will raise an #UD.
              (NEM/win makes ASSUMPTIONS about this behavior.)  */
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT, iemCImpl_vmcall);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_END_TB, 0, iemCImpl_vmcall);
 }
 
 
@@ -1409,7 +1411,7 @@ FNIEMOP_DEF(iemOp_Grp7_vmlaunch)
     IEMOP_HLP_VMX_INSTR("vmlaunch", kVmxVDiag_Vmentry);
     IEMOP_HLP_DONE_DECODING();
     IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR
-                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_END_TB,
+                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_END_TB, 0,
                                 iemCImpl_vmlaunch);
 }
 #else
@@ -1430,7 +1432,7 @@ FNIEMOP_DEF(iemOp_Grp7_vmresume)
     IEMOP_HLP_VMX_INSTR("vmresume", kVmxVDiag_Vmentry);
     IEMOP_HLP_DONE_DECODING();
     IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR
-                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_END_TB,
+                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_END_TB, 0,
                                 iemCImpl_vmresume);
 }
 #else
@@ -1450,7 +1452,7 @@ FNIEMOP_DEF(iemOp_Grp7_vmxoff)
     IEMOP_HLP_IN_VMX_OPERATION("vmxoff", kVmxVDiag_Vmxoff);
     IEMOP_HLP_VMX_INSTR("vmxoff", kVmxVDiag_Vmxoff);
     IEMOP_HLP_DONE_DECODING();
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_vmxoff);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, 0, iemCImpl_vmxoff);
 }
 #else
 FNIEMOP_DEF(iemOp_Grp7_vmxoff)
@@ -1482,7 +1484,7 @@ FNIEMOP_DEF(iemOp_Grp7_monitor)
 {
     IEMOP_MNEMONIC(monitor, "monitor");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); /** @todo Verify that monitor is allergic to lock prefixes. */
-    IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_monitor, pVCpu->iem.s.iEffSeg);
+    IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT, 0, iemCImpl_monitor, pVCpu->iem.s.iEffSeg);
 }
 
 
@@ -1491,7 +1493,7 @@ FNIEMOP_DEF(iemOp_Grp7_mwait)
 {
     IEMOP_MNEMONIC(mwait, "mwait"); /** @todo Verify that mwait is allergic to lock prefixes. */
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_END_TB | IEM_CIMPL_F_VMEXIT, iemCImpl_mwait);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_END_TB | IEM_CIMPL_F_VMEXIT, 0, iemCImpl_mwait);
 }
 
 
@@ -1523,7 +1525,10 @@ FNIEMOP_DEF(iemOp_Grp7_xgetbv)
 /** @todo testcase: test prefixes and exceptions. currently not checking for the
  *        OPSIZE one ... */
         IEMOP_HLP_DONE_DECODING_NO_LOCK_REPZ_OR_REPNZ_PREFIXES();
-        IEM_MC_DEFER_TO_CIMPL_0_RET(0, iemCImpl_xgetbv);
+        IEM_MC_DEFER_TO_CIMPL_0_RET(0,
+                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX)
+                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDX),
+                                    iemCImpl_xgetbv);
     }
     IEMOP_RAISE_INVALID_OPCODE_RET();
 }
@@ -1541,7 +1546,7 @@ FNIEMOP_DEF(iemOp_Grp7_xsetbv)
 /** @todo testcase: test prefixes and exceptions. currently not checking for the
  *        OPSIZE one ... */
         IEMOP_HLP_DONE_DECODING_NO_LOCK_REPZ_OR_REPNZ_PREFIXES();
-        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_xsetbv);
+        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, 0, iemCImpl_xsetbv);
     }
     IEMOP_RAISE_INVALID_OPCODE_RET();
 }
@@ -1570,7 +1575,7 @@ FNIEMOP_DEF(iemOp_Grp7_Amd_vmrun)
     IEMOP_MNEMONIC(vmrun, "vmrun");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); /** @todo check prefix effect on the SVM instructions. ASSUMING no lock for now. */
     IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR
-                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_END_TB,
+                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_END_TB, 0,
                                 iemCImpl_vmrun);
 }
 #else
@@ -1590,7 +1595,7 @@ FNIEMOP_DEF(iemOp_Grp7_Amd_vmmcall)
              want all hypercalls regardless of instruction used, and if a
              hypercall isn't handled by GIM or HMSvm will raise an #UD.
              (NEM/win makes ASSUMPTIONS about this behavior.) */
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_vmmcall);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_END_TB, 0, iemCImpl_vmmcall);
 }
 
 /** Opcode 0x0f 0x01 0xda. */
@@ -1599,7 +1604,7 @@ FNIEMOP_DEF(iemOp_Grp7_Amd_vmload)
 {
     IEMOP_MNEMONIC(vmload, "vmload");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); /** @todo check prefix effect on the SVM instructions. ASSUMING no lock for now. */
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_vmload);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, 0, iemCImpl_vmload);
 }
 #else
 FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmload);
@@ -1612,7 +1617,7 @@ FNIEMOP_DEF(iemOp_Grp7_Amd_vmsave)
 {
     IEMOP_MNEMONIC(vmsave, "vmsave");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); /** @todo check prefix effect on the SVM instructions. ASSUMING no lock for now. */
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_vmsave);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, 0, iemCImpl_vmsave);
 }
 #else
 FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmsave);
@@ -1625,7 +1630,7 @@ FNIEMOP_DEF(iemOp_Grp7_Amd_stgi)
 {
     IEMOP_MNEMONIC(stgi, "stgi");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); /** @todo check prefix effect on the SVM instructions. ASSUMING no lock for now. */
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_stgi);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, 0, iemCImpl_stgi);
 }
 #else
 FNIEMOP_UD_STUB(iemOp_Grp7_Amd_stgi);
@@ -1638,7 +1643,7 @@ FNIEMOP_DEF(iemOp_Grp7_Amd_clgi)
 {
     IEMOP_MNEMONIC(clgi, "clgi");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); /** @todo check prefix effect on the SVM instructions. ASSUMING no lock for now. */
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_clgi);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, 0, iemCImpl_clgi);
 }
 #else
 FNIEMOP_UD_STUB(iemOp_Grp7_Amd_clgi);
@@ -1651,7 +1656,7 @@ FNIEMOP_DEF(iemOp_Grp7_Amd_invlpga)
 {
     IEMOP_MNEMONIC(invlpga, "invlpga");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); /** @todo check prefix effect on the SVM instructions. ASSUMING no lock for now. */
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_invlpga);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, 0, iemCImpl_invlpga);
 }
 #else
 FNIEMOP_UD_STUB(iemOp_Grp7_Amd_invlpga);
@@ -1664,7 +1669,7 @@ FNIEMOP_DEF(iemOp_Grp7_Amd_skinit)
 {
     IEMOP_MNEMONIC(skinit, "skinit");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); /** @todo check prefix effect on the SVM instructions. ASSUMING no lock for now. */
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_skinit);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, 0, iemCImpl_skinit);
 }
 #else
 FNIEMOP_UD_STUB(iemOp_Grp7_Amd_skinit);
@@ -1679,7 +1684,8 @@ FNIEMOP_DEF_1(iemOp_Grp7_smsw, uint8_t, bRm)
     if (IEM_IS_MODRM_REG_MODE(bRm))
     {
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-        IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_smsw_reg, IEM_GET_MODRM_RM(pVCpu, bRm), pVCpu->iem.s.enmEffOpSize);
+        IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT, 0,
+                                    iemCImpl_smsw_reg, IEM_GET_MODRM_RM(pVCpu, bRm), pVCpu->iem.s.enmEffOpSize);
     }
 
     /* Ignore operand size here, memory refs are always 16-bit. */
@@ -1744,7 +1750,7 @@ FNIEMOP_DEF(iemOp_Grp7_swapgs)
     IEMOP_MNEMONIC(swapgs, "swapgs");
     IEMOP_HLP_ONLY_64BIT();
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_0_RET(0, iemCImpl_swapgs);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(0, RT_BIT_64(kIemNativeGstReg_SegBaseFirst + X86_SREG_GS), iemCImpl_swapgs);
 }
 
 
@@ -1753,7 +1759,11 @@ FNIEMOP_DEF(iemOp_Grp7_rdtscp)
 {
     IEMOP_MNEMONIC(rdtscp, "rdtscp");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_rdtscp);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT,
+                                  RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX)
+                                | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDX)
+                                | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                iemCImpl_rdtscp);
 }
 
 
@@ -1957,8 +1967,8 @@ FNIEMOP_DEF(iemOp_syscall)
 {
     IEMOP_MNEMONIC(syscall, "syscall"); /** @todo 286 LOADALL   */
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR
-                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_END_TB,
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_STACK_FAR
+                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_END_TB, 0,
                                 iemCImpl_syscall);
 }
 
@@ -1968,7 +1978,7 @@ FNIEMOP_DEF(iemOp_clts)
 {
     IEMOP_MNEMONIC(clts, "clts");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_clts);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, 0, iemCImpl_clts);
 }
 
 
@@ -1977,8 +1987,8 @@ FNIEMOP_DEF(iemOp_sysret)
 {
     IEMOP_MNEMONIC(sysret, "sysret");  /** @todo 386 LOADALL   */
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR
-                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_END_TB,
+    IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_STACK_FAR
+                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_END_TB, 0,
                                 iemCImpl_sysret, pVCpu->iem.s.enmEffOpSize);
 }
 
@@ -1989,7 +1999,7 @@ FNIEMOP_DEF(iemOp_invd)
     IEMOP_MNEMONIC0(FIXED, INVD, invd, DISOPTYPE_PRIVILEGED, 0);
     IEMOP_HLP_MIN_486();
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_invd);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, 0, iemCImpl_invd);
 }
 
 
@@ -1999,7 +2009,7 @@ FNIEMOP_DEF(iemOp_wbinvd)
     IEMOP_MNEMONIC0(FIXED, WBINVD, wbinvd, DISOPTYPE_PRIVILEGED, 0);
     IEMOP_HLP_MIN_486();
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_wbinvd);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, 0, iemCImpl_wbinvd);
 }
 
 
@@ -3283,6 +3293,7 @@ FNIEMOP_DEF(iemOp_nop_Ev)
 FNIEMOP_DEF(iemOp_mov_Rd_Cd)
 {
     /* mod is ignored, as is operand size overrides. */
+/** @todo testcase: check memory encoding. */
     IEMOP_MNEMONIC(mov_Rd_Cd, "mov Rd,Cd");
     IEMOP_HLP_MIN_386();
     if (IEM_IS_64BIT_CODE(pVCpu))
@@ -3308,20 +3319,25 @@ FNIEMOP_DEF(iemOp_mov_Rd_Cd)
     }
     IEMOP_HLP_DONE_DECODING();
 
-    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_mov_Rd_Cd, IEM_GET_MODRM_RM(pVCpu, bRm), iCrReg);
+    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT,
+                                RT_BIT_64(kIemNativeGstReg_GprFirst + IEM_GET_MODRM_RM(pVCpu, bRm)),
+                                iemCImpl_mov_Rd_Cd, IEM_GET_MODRM_RM(pVCpu, bRm), iCrReg);
 }
 
 
 /** Opcode 0x0f 0x21. */
 FNIEMOP_DEF(iemOp_mov_Rd_Dd)
 {
+/** @todo testcase: check memory encoding. */
     IEMOP_MNEMONIC(mov_Rd_Dd, "mov Rd,Dd");
     IEMOP_HLP_MIN_386();
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_REX_R)
         IEMOP_RAISE_INVALID_OPCODE_RET();
-    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_mov_Rd_Dd, IEM_GET_MODRM_RM(pVCpu, bRm), IEM_GET_MODRM_REG_8(bRm));
+    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT,
+                                RT_BIT_64(kIemNativeGstReg_GprFirst + IEM_GET_MODRM_RM(pVCpu, bRm)),
+                                iemCImpl_mov_Rd_Dd, IEM_GET_MODRM_RM(pVCpu, bRm), IEM_GET_MODRM_REG_8(bRm));
 }
 
 
@@ -3355,10 +3371,10 @@ FNIEMOP_DEF(iemOp_mov_Cd_Rd)
     IEMOP_HLP_DONE_DECODING();
 
     if (iCrReg & (2 | 8))
-        IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT,
+        IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT, 0,
                                     iemCImpl_mov_Cd_Rd, iCrReg, IEM_GET_MODRM_RM(pVCpu, bRm));
     else
-        IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT,
+        IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT, 0,
                                     iemCImpl_mov_Cd_Rd, iCrReg, IEM_GET_MODRM_RM(pVCpu, bRm));
 }
 
@@ -3372,7 +3388,7 @@ FNIEMOP_DEF(iemOp_mov_Dd_Rd)
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     if (pVCpu->iem.s.fPrefixes & IEM_OP_PRF_REX_R)
         IEMOP_RAISE_INVALID_OPCODE_RET();
-    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT,
+    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT, 0,
                                 iemCImpl_mov_Dd_Rd, IEM_GET_MODRM_REG_8(bRm), IEM_GET_MODRM_RM(pVCpu, bRm));
 }
 
@@ -3386,7 +3402,8 @@ FNIEMOP_DEF(iemOp_mov_Rd_Td)
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     if (RT_LIKELY(IEM_GET_TARGET_CPU(pVCpu) >= IEMTARGETCPU_PENTIUM))
         IEMOP_RAISE_INVALID_OPCODE_RET();
-    IEM_MC_DEFER_TO_CIMPL_2_RET(0, iemCImpl_mov_Rd_Td, IEM_GET_MODRM_RM(pVCpu, bRm), IEM_GET_MODRM_REG_8(bRm));
+    IEM_MC_DEFER_TO_CIMPL_2_RET(0, RT_BIT_64(kIemNativeGstReg_GprFirst + IEM_GET_MODRM_RM(pVCpu, bRm)),
+                                iemCImpl_mov_Rd_Td, IEM_GET_MODRM_RM(pVCpu, bRm), IEM_GET_MODRM_REG_8(bRm));
 }
 
 
@@ -3399,7 +3416,7 @@ FNIEMOP_DEF(iemOp_mov_Td_Rd)
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     if (RT_LIKELY(IEM_GET_TARGET_CPU(pVCpu) >= IEMTARGETCPU_PENTIUM))
         IEMOP_RAISE_INVALID_OPCODE_RET();
-    IEM_MC_DEFER_TO_CIMPL_2_RET(0, iemCImpl_mov_Td_Rd, IEM_GET_MODRM_REG_8(bRm), IEM_GET_MODRM_RM(pVCpu, bRm));
+    IEM_MC_DEFER_TO_CIMPL_2_RET(0, 0, iemCImpl_mov_Td_Rd, IEM_GET_MODRM_REG_8(bRm), IEM_GET_MODRM_RM(pVCpu, bRm));
 }
 
 
@@ -5138,7 +5155,7 @@ FNIEMOP_DEF(iemOp_wrmsr)
 {
     IEMOP_MNEMONIC(wrmsr, "wrmsr");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_wrmsr);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, 0, iemCImpl_wrmsr);
 }
 
 
@@ -5147,7 +5164,10 @@ FNIEMOP_DEF(iemOp_rdtsc)
 {
     IEMOP_MNEMONIC(rdtsc, "rdtsc");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_rdtsc);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT,
+                                  RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX)
+                                | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDX),
+                                iemCImpl_rdtsc);
 }
 
 
@@ -5156,7 +5176,10 @@ FNIEMOP_DEF(iemOp_rdmsr)
 {
     IEMOP_MNEMONIC(rdmsr, "rdmsr");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_rdmsr);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT,
+                                  RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX)
+                                | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDX),
+                                iemCImpl_rdmsr);
 }
 
 
@@ -5165,7 +5188,10 @@ FNIEMOP_DEF(iemOp_rdpmc)
 {
     IEMOP_MNEMONIC(rdpmc, "rdpmc");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_rdpmc);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT,
+                                  RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX)
+                                | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDX),
+                                iemCImpl_rdpmc);
 }
 
 
@@ -5174,8 +5200,8 @@ FNIEMOP_DEF(iemOp_sysenter)
 {
     IEMOP_MNEMONIC0(FIXED, SYSENTER, sysenter, DISOPTYPE_CONTROLFLOW | DISOPTYPE_UNCOND_CONTROLFLOW, 0);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR
-                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_END_TB,
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_STACK_FAR
+                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_END_TB, 0,
                                 iemCImpl_sysenter);
 }
 
@@ -5184,8 +5210,8 @@ FNIEMOP_DEF(iemOp_sysexit)
 {
     IEMOP_MNEMONIC0(FIXED, SYSEXIT, sysexit, DISOPTYPE_CONTROLFLOW | DISOPTYPE_UNCOND_CONTROLFLOW, 0);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR
-                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_END_TB,
+    IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_STACK_FAR
+                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_END_TB, 0,
                                 iemCImpl_sysexit, pVCpu->iem.s.enmEffOpSize);
 }
 
@@ -8900,7 +8926,12 @@ FNIEMOP_DEF(iemOp_pop_fs)
     IEMOP_MNEMONIC(pop_fs, "pop fs");
     IEMOP_HLP_MIN_386();
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_2_RET(0, iemCImpl_pop_Sreg, X86_SREG_FS, pVCpu->iem.s.enmEffOpSize);
+    IEM_MC_DEFER_TO_CIMPL_2_RET(0,
+                                  RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP)
+                                | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_FS)
+                                | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_FS)
+                                | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_FS),
+                                iemCImpl_pop_Sreg, X86_SREG_FS, pVCpu->iem.s.enmEffOpSize);
 }
 
 
@@ -8910,7 +8941,12 @@ FNIEMOP_DEF(iemOp_cpuid)
     IEMOP_MNEMONIC(cpuid, "cpuid");
     IEMOP_HLP_MIN_486(); /* not all 486es. */
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_cpuid);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT,
+                                  RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX)
+                                | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX)
+                                | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDX)
+                                | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xBX),
+                                iemCImpl_cpuid);
 }
 
 
@@ -9691,7 +9727,12 @@ FNIEMOP_DEF(iemOp_pop_gs)
     IEMOP_MNEMONIC(pop_gs, "pop gs");
     IEMOP_HLP_MIN_386();
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_2_RET(0, iemCImpl_pop_Sreg, X86_SREG_GS, pVCpu->iem.s.enmEffOpSize);
+    IEM_MC_DEFER_TO_CIMPL_2_RET(0,
+                                  RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP)
+                                | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_GS)
+                                | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_GS)
+                                | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_GS),
+                                iemCImpl_pop_Sreg, X86_SREG_GS, pVCpu->iem.s.enmEffOpSize);
 }
 
 
@@ -9701,8 +9742,8 @@ FNIEMOP_DEF(iemOp_rsm)
     IEMOP_MNEMONIC0(FIXED, RSM, rsm, DISOPTYPE_HARMLESS, 0);
     IEMOP_HLP_MIN_386(); /* 386SL and later. */
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR
-                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_END_TB,
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_STACK_FAR
+                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_END_TB, 0,
                                 iemCImpl_rsm);
 }
 

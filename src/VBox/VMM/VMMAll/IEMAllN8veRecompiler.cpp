@@ -2159,12 +2159,6 @@ static struct
     /* [kIemNativeGstReg_GprFirst + X86_GREG_x15] = */  { CPUMCTX_OFF_AND_SIZE(r15),                "r15", },
     /* [kIemNativeGstReg_Pc] = */                       { CPUMCTX_OFF_AND_SIZE(rip),                "rip", },
     /* [kIemNativeGstReg_EFlags] = */                   { CPUMCTX_OFF_AND_SIZE(eflags),             "eflags", },
-    /* [18] = */                                        { UINT32_C(0xfffffff7),                  0, NULL, },
-    /* [19] = */                                        { UINT32_C(0xfffffff5),                  0, NULL, },
-    /* [20] = */                                        { UINT32_C(0xfffffff3),                  0, NULL, },
-    /* [21] = */                                        { UINT32_C(0xfffffff1),                  0, NULL, },
-    /* [22] = */                                        { UINT32_C(0xffffffef),                  0, NULL, },
-    /* [23] = */                                        { UINT32_C(0xffffffed),                  0, NULL, },
     /* [kIemNativeGstReg_SegSelFirst + 0] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[0].Sel),      "es", },
     /* [kIemNativeGstReg_SegSelFirst + 1] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[1].Sel),      "cs", },
     /* [kIemNativeGstReg_SegSelFirst + 2] = */          { CPUMCTX_OFF_AND_SIZE(aSRegs[2].Sel),      "ss", },
@@ -3459,13 +3453,44 @@ iemNativeEmitCheckGpr32AgainstSegLimitMaybeRaiseGp0(PIEMRECOMPILERSTATE pReNativ
 
 
 /**
+ * Converts IEM_CIMPL_F_XXX flags into a guest register shadow copy flush mask.
+ *
+ * @returns The flush mask.
+ * @param   fCImpl          The IEM_CIMPL_F_XXX flags.
+ * @param   fGstShwFlush    The starting flush mask.
+ */
+DECL_FORCE_INLINE(uint64_t) iemNativeCImplFlagsToGuestShadowFlushMask(uint32_t fCImpl, uint64_t fGstShwFlush)
+{
+    if (fCImpl & IEM_CIMPL_F_BRANCH_FAR)
+        fGstShwFlush |= RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_CS)
+                     |  RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_CS)
+                     |  RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_CS);
+    if (fCImpl & IEM_CIMPL_F_BRANCH_STACK_FAR)
+        fGstShwFlush |= RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP)
+                     |  RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_SS)
+                     |  RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_SS)
+                     |  RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_SS);
+    else if (fCImpl & IEM_CIMPL_F_BRANCH_STACK)
+        fGstShwFlush |= RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP);
+    if (fCImpl & (IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_STATUS_FLAGS | IEM_CIMPL_F_INHIBIT_SHADOW))
+        fGstShwFlush |= RT_BIT_64(kIemNativeGstReg_EFlags);
+    return fGstShwFlush;
+}
+
+
+/**
  * Emits a call to a CImpl function or something similar.
  */
-static int32_t iemNativeEmitCImplCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr,
+static int32_t iemNativeEmitCImplCall(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr, uint64_t fGstShwFlush,
                                       uintptr_t pfnCImpl, uint8_t cbInstr, uint8_t cAddParams,
                                       uint64_t uParam0, uint64_t uParam1, uint64_t uParam2)
 {
-    iemNativeRegFlushGuestShadows(pReNative, UINT64_MAX); /** @todo optimize this */
+    /*
+     * Flush stuff.
+     */
+    fGstShwFlush = iemNativeCImplFlagsToGuestShadowFlushMask(pReNative->fCImpl, fGstShwFlush | RT_BIT_64(kIemNativeGstReg_Pc));
+    iemNativeRegFlushGuestShadows(pReNative, fGstShwFlush);
+
     off = iemNativeRegMoveAndFreeAndFlushAtCall(pReNative, off, 4);
 
     /*
@@ -3915,46 +3940,51 @@ static uint32_t iemNativeEmitProlog(PIEMRECOMPILERSTATE pReNative, uint32_t off)
 *   Emitters for standalone C-implementation deferals (IEM_MC_DEFER_TO_CIMPL_XXXX)                                               *
 *********************************************************************************************************************************/
 
-#define IEM_MC_DEFER_TO_CIMPL_0_RET_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl) \
+#define IEM_MC_DEFER_TO_CIMPL_0_RET_THREADED(a_cbInstr, a_fFlags, a_fGstShwFlush, a_pfnCImpl) \
     pReNative->fMc    = 0; \
     pReNative->fCImpl = (a_fFlags); \
-    return iemNativeEmitCImplCall0(pReNative, off, pCallEntry->idxInstr, (uintptr_t)a_pfnCImpl, a_cbInstr) /** @todo not used ... */
+    return iemNativeEmitCImplCall0(pReNative, off, pCallEntry->idxInstr, a_fGstShwFlush, (uintptr_t)a_pfnCImpl, a_cbInstr) /** @todo not used ... */
 
 
-#define IEM_MC_DEFER_TO_CIMPL_1_RET_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl, a0) \
+#define IEM_MC_DEFER_TO_CIMPL_1_RET_THREADED(a_cbInstr, a_fFlags, a_fGstShwFlush, a_pfnCImpl, a0) \
     pReNative->fMc    = 0; \
     pReNative->fCImpl = (a_fFlags); \
-    return iemNativeEmitCImplCall1(pReNative, off, pCallEntry->idxInstr, (uintptr_t)a_pfnCImpl, a_cbInstr, a0)
+    return iemNativeEmitCImplCall1(pReNative, off, pCallEntry->idxInstr, a_fGstShwFlush, (uintptr_t)a_pfnCImpl, a_cbInstr, a0)
 
-DECL_INLINE_THROW(uint32_t) iemNativeEmitCImplCall1(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr,
+DECL_INLINE_THROW(uint32_t) iemNativeEmitCImplCall1(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                    uint8_t idxInstr, uint64_t a_fGstShwFlush,
                                                     uintptr_t pfnCImpl, uint8_t cbInstr, uint64_t uArg0)
 {
-    return iemNativeEmitCImplCall(pReNative, off, idxInstr, pfnCImpl, cbInstr, 1, uArg0, 0, 0);
+    return iemNativeEmitCImplCall(pReNative, off, idxInstr, a_fGstShwFlush, pfnCImpl, cbInstr, 1, uArg0, 0, 0);
 }
 
 
-#define IEM_MC_DEFER_TO_CIMPL_2_RET_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl, a0, a1) \
+#define IEM_MC_DEFER_TO_CIMPL_2_RET_THREADED(a_cbInstr, a_fFlags, a_fGstShwFlush, a_pfnCImpl, a0, a1) \
     pReNative->fMc    = 0; \
     pReNative->fCImpl = (a_fFlags); \
-    return iemNativeEmitCImplCall2(pReNative, off, pCallEntry->idxInstr, (uintptr_t)a_pfnCImpl, a_cbInstr, a0, a1)
+    return iemNativeEmitCImplCall2(pReNative, off, pCallEntry->idxInstr, a_fGstShwFlush, \
+                                   (uintptr_t)a_pfnCImpl, a_cbInstr, a0, a1)
 
-DECL_INLINE_THROW(uint32_t) iemNativeEmitCImplCall2(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr,
+DECL_INLINE_THROW(uint32_t) iemNativeEmitCImplCall2(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                    uint8_t idxInstr, uint64_t a_fGstShwFlush,
                                                     uintptr_t pfnCImpl, uint8_t cbInstr, uint64_t uArg0, uint64_t uArg1)
 {
-    return iemNativeEmitCImplCall(pReNative, off, idxInstr, pfnCImpl, cbInstr, 2, uArg0, uArg1, 0);
+    return iemNativeEmitCImplCall(pReNative, off, idxInstr, a_fGstShwFlush, pfnCImpl, cbInstr, 2, uArg0, uArg1, 0);
 }
 
 
-#define IEM_MC_DEFER_TO_CIMPL_3_RET_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl, a0, a1, a2) \
+#define IEM_MC_DEFER_TO_CIMPL_3_RET_THREADED(a_cbInstr, a_fFlags, a_fGstShwFlush, a_pfnCImpl, a0, a1, a2) \
     pReNative->fMc    = 0; \
     pReNative->fCImpl = (a_fFlags); \
-    return iemNativeEmitCImplCall3(pReNative, off, pCallEntry->idxInstr, (uintptr_t)a_pfnCImpl, a_cbInstr, a0, a1, a2)
+    return iemNativeEmitCImplCall3(pReNative, off, pCallEntry->idxInstr, a_fGstShwFlush, \
+                                   (uintptr_t)a_pfnCImpl, a_cbInstr, a0, a1, a2)
 
-DECL_INLINE_THROW(uint32_t) iemNativeEmitCImplCall3(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr,
+DECL_INLINE_THROW(uint32_t) iemNativeEmitCImplCall3(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                                    uint8_t idxInstr, uint64_t a_fGstShwFlush,
                                                     uintptr_t pfnCImpl, uint8_t cbInstr, uint64_t uArg0, uint64_t uArg1,
                                                     uint64_t uArg2)
 {
-    return iemNativeEmitCImplCall(pReNative, off, idxInstr, pfnCImpl, cbInstr, 3, uArg0, uArg1, uArg2);
+    return iemNativeEmitCImplCall(pReNative, off, idxInstr, a_fGstShwFlush, pfnCImpl, cbInstr, 3, uArg0, uArg1, uArg2);
 }
 
 
@@ -5536,12 +5566,7 @@ iemNativeEmitCallCImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
 #endif
 /** @todo Always flush EFLAGS if this is an xxF variation. */
     iemNativeRegFlushGuestShadows(pReNative,
-                                    RT_BIT_64(kIemNativeGstReg_Pc)
-                                  | (pReNative->fCImpl & (  IEM_CIMPL_F_RFLAGS
-                                                          | IEM_CIMPL_F_STATUS_FLAGS
-                                                          | IEM_CIMPL_F_INHIBIT_SHADOW)
-                                     ? RT_BIT_64(kIemNativeGstReg_EFlags) : 0)
-                                  );
+                                  iemNativeCImplFlagsToGuestShadowFlushMask(pReNative->fCImpl, RT_BIT_64(kIemNativeGstReg_Pc)) );
 
     return iemNativeEmitCheckCallRetAndPassUp(pReNative, off, idxInstr);
 }
@@ -5923,7 +5948,9 @@ static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_DeferToCImpl0)
 {
     PFNIEMCIMPL0 const pfnCImpl = (PFNIEMCIMPL0)(uintptr_t)pCallEntry->auParams[0];
     uint8_t const      cbInstr  = (uint8_t)pCallEntry->auParams[1];
-    return iemNativeEmitCImplCall(pReNative, off, pCallEntry->idxInstr, (uintptr_t)pfnCImpl, cbInstr, 0, 0, 0, 0);
+    /** @todo Drop this crap hack?
+     *  We don't have the flush mask here so we we must pass UINT64_MAX. */
+    return iemNativeEmitCImplCall(pReNative, off, pCallEntry->idxInstr, UINT64_MAX, (uintptr_t)pfnCImpl, cbInstr, 0, 0, 0, 0);
 }
 
 

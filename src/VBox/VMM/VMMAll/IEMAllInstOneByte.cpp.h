@@ -834,7 +834,12 @@ FNIEMOP_DEF(iemOp_pop_ES)
     IEMOP_MNEMONIC1(FIXED, POP, pop, ES, DISOPTYPE_HARMLESS | DISOPTYPE_X86_INVALID_64, 0);
     IEMOP_HLP_NO_64BIT();
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_MODE, iemCImpl_pop_Sreg, X86_SREG_ES, pVCpu->iem.s.enmEffOpSize);
+    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_MODE,
+                                  RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP)
+                                | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_ES)
+                                | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_ES)
+                                | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_ES),
+                                iemCImpl_pop_Sreg, X86_SREG_ES, pVCpu->iem.s.enmEffOpSize);
 }
 
 
@@ -1003,6 +1008,8 @@ FNIEMOP_DEF(iemOp_2byteEscape)
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     /** @todo eliminate END_TB here */
     IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_END_TB,
+                                  RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP)
+                                | RT_BIT_64(kIemNativeGstReg_SegSelFirst + X86_SREG_CS),
                                 iemCImpl_pop_Sreg, X86_SREG_CS, pVCpu->iem.s.enmEffOpSize);
 }
 
@@ -1123,6 +1130,10 @@ FNIEMOP_DEF(iemOp_pop_SS)
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_NO_64BIT();
     IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_MODE | IEM_CIMPL_F_INHIBIT_SHADOW,
+                                  RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP)
+                                | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_SS)
+                                | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_SS)
+                                | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_SS),
                                 iemCImpl_pop_Sreg, X86_SREG_SS, pVCpu->iem.s.enmEffOpSize);
 }
 
@@ -1228,7 +1239,12 @@ FNIEMOP_DEF(iemOp_pop_DS)
     IEMOP_MNEMONIC1(FIXED, POP, pop, DS, DISOPTYPE_HARMLESS | DISOPTYPE_X86_INVALID_64 | DISOPTYPE_RRM_DANGEROUS, 0);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_NO_64BIT();
-    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_MODE, iemCImpl_pop_Sreg, X86_SREG_DS, pVCpu->iem.s.enmEffOpSize);
+    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_MODE,
+                                  RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP)
+                                | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_DS)
+                                | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_DS)
+                                | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_DS),
+                                iemCImpl_pop_Sreg, X86_SREG_DS, pVCpu->iem.s.enmEffOpSize);
 }
 
 
@@ -1356,7 +1372,7 @@ FNIEMOP_DEF(iemOp_daa)
     IEMOP_HLP_NO_64BIT();
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF);
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_daa);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_STATUS_FLAGS, RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX), iemCImpl_daa);
 }
 
 
@@ -1466,7 +1482,7 @@ FNIEMOP_DEF(iemOp_das)
     IEMOP_HLP_NO_64BIT();
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF);
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_das);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_STATUS_FLAGS, RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX), iemCImpl_das);
 }
 
 
@@ -1627,7 +1643,7 @@ FNIEMOP_DEF(iemOp_aaa)
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF);
 
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_aaa);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_STATUS_FLAGS, RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX), iemCImpl_aaa);
 }
 
 
@@ -1755,7 +1771,7 @@ FNIEMOP_DEF(iemOp_aas)
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF | X86_EFL_OF);
 
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_aas);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_STATUS_FLAGS, RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX), iemCImpl_aas);
 }
 
 
@@ -2504,9 +2520,9 @@ FNIEMOP_DEF(iemOp_pusha)
     IEMOP_HLP_MIN_186();
     IEMOP_HLP_NO_64BIT();
     if (pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT)
-        IEM_MC_DEFER_TO_CIMPL_0_RET(0, iemCImpl_pusha_16);
+        IEM_MC_DEFER_TO_CIMPL_0_RET(0, RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP), iemCImpl_pusha_16);
     Assert(pVCpu->iem.s.enmEffOpSize == IEMMODE_32BIT);
-    IEM_MC_DEFER_TO_CIMPL_0_RET(0, iemCImpl_pusha_32);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(0, RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP), iemCImpl_pusha_32);
 }
 
 
@@ -2521,9 +2537,27 @@ FNIEMOP_DEF(iemOp_popa__mvex)
         IEMOP_HLP_MIN_186();
         IEMOP_HLP_NO_64BIT();
         if (pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT)
-            IEM_MC_DEFER_TO_CIMPL_0_RET(0, iemCImpl_popa_16);
+            IEM_MC_DEFER_TO_CIMPL_0_RET(0,
+                                          RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX)
+                                        | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX)
+                                        | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDX)
+                                        | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xBX)
+                                        | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP)
+                                        | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xBP)
+                                        | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                        | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI),
+                                        iemCImpl_popa_16);
         Assert(pVCpu->iem.s.enmEffOpSize == IEMMODE_32BIT);
-        IEM_MC_DEFER_TO_CIMPL_0_RET(0, iemCImpl_popa_32);
+        IEM_MC_DEFER_TO_CIMPL_0_RET(0,
+                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX)
+                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX)
+                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDX)
+                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xBX)
+                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP)
+                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xBP)
+                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI),
+                                    iemCImpl_popa_32);
     }
     IEMOP_MNEMONIC(mvex, "mvex");
     Log(("mvex prefix is not supported!\n"));
@@ -3283,12 +3317,21 @@ FNIEMOP_DEF(iemOp_insb_Yb_DX)
         IEMOP_MNEMONIC(rep_insb_Yb_DX, "rep ins Yb,DX");
         switch (pVCpu->iem.s.enmEffAddrMode)
         {
-            case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
-                                                            iemCImpl_rep_ins_op8_addr16, false);
-            case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
-                                                            iemCImpl_rep_ins_op8_addr32, false);
-            case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
-                                                            iemCImpl_rep_ins_op8_addr64, false);
+            case IEMMODE_16BIT:
+                IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_rep_ins_op8_addr16, false);
+            case IEMMODE_32BIT:
+                IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_rep_ins_op8_addr32, false);
+            case IEMMODE_64BIT:
+                IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_rep_ins_op8_addr64, false);
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
@@ -3297,12 +3340,18 @@ FNIEMOP_DEF(iemOp_insb_Yb_DX)
         IEMOP_MNEMONIC(ins_Yb_DX, "ins Yb,DX");
         switch (pVCpu->iem.s.enmEffAddrMode)
         {
-            case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
-                                                            iemCImpl_ins_op8_addr16, false);
-            case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
-                                                            iemCImpl_ins_op8_addr32, false);
-            case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
-                                                            iemCImpl_ins_op8_addr64, false);
+            case IEMMODE_16BIT:
+                IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                            RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI),
+                                            iemCImpl_ins_op8_addr16, false);
+            case IEMMODE_32BIT:
+                IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                            RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI),
+                                            iemCImpl_ins_op8_addr32, false);
+            case IEMMODE_64BIT:
+                IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                            RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI),
+                                            iemCImpl_ins_op8_addr64, false);
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
@@ -3326,12 +3375,18 @@ FNIEMOP_DEF(iemOp_inswd_Yv_DX)
                 {
                     case IEMMODE_16BIT:
                         IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_rep_ins_op16_addr16, false);
                     case IEMMODE_32BIT:
                         IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_rep_ins_op16_addr32, false);
                     case IEMMODE_64BIT:
                         IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_rep_ins_op16_addr64, false);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
@@ -3342,12 +3397,18 @@ FNIEMOP_DEF(iemOp_inswd_Yv_DX)
                 {
                     case IEMMODE_16BIT:
                         IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_rep_ins_op32_addr16, false);
                     case IEMMODE_32BIT:
                         IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_rep_ins_op32_addr32, false);
                     case IEMMODE_64BIT:
                         IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_rep_ins_op32_addr64, false);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
@@ -3363,12 +3424,18 @@ FNIEMOP_DEF(iemOp_inswd_Yv_DX)
             case IEMMODE_16BIT:
                 switch (pVCpu->iem.s.enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
-                                                                    iemCImpl_ins_op16_addr16, false);
-                    case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
-                                                                    iemCImpl_ins_op16_addr32, false);
-                    case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
-                                                                    iemCImpl_ins_op16_addr64, false);
+                    case IEMMODE_16BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                    RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI),
+                                                    iemCImpl_ins_op16_addr16, false);
+                    case IEMMODE_32BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                    RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI),
+                                                    iemCImpl_ins_op16_addr32, false);
+                    case IEMMODE_64BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                    RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI),
+                                                    iemCImpl_ins_op16_addr64, false);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
                 break;
@@ -3376,12 +3443,18 @@ FNIEMOP_DEF(iemOp_inswd_Yv_DX)
             case IEMMODE_32BIT:
                 switch (pVCpu->iem.s.enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
-                                                                    iemCImpl_ins_op32_addr16, false);
-                    case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
-                                                                    iemCImpl_ins_op32_addr32, false);
-                    case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
-                                                                    iemCImpl_ins_op32_addr64, false);
+                    case IEMMODE_16BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                    RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI),
+                                                    iemCImpl_ins_op32_addr16, false);
+                    case IEMMODE_32BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                    RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI),
+                                                    iemCImpl_ins_op32_addr32, false);
+                    case IEMMODE_64BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                    RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI),
+                                                    iemCImpl_ins_op32_addr64, false);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
                 break;
@@ -3405,12 +3478,18 @@ FNIEMOP_DEF(iemOp_outsb_Yb_DX)
         {
             case IEMMODE_16BIT:
                 IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                             iemCImpl_rep_outs_op8_addr16, pVCpu->iem.s.iEffSeg, false);
             case IEMMODE_32BIT:
                 IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                             iemCImpl_rep_outs_op8_addr32, pVCpu->iem.s.iEffSeg, false);
             case IEMMODE_64BIT:
                 IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                             iemCImpl_rep_outs_op8_addr64, pVCpu->iem.s.iEffSeg, false);
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
@@ -3422,12 +3501,15 @@ FNIEMOP_DEF(iemOp_outsb_Yb_DX)
         {
             case IEMMODE_16BIT:
                 IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                            RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI),
                                             iemCImpl_outs_op8_addr16, pVCpu->iem.s.iEffSeg, false);
             case IEMMODE_32BIT:
                 IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                            RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI),
                                             iemCImpl_outs_op8_addr32, pVCpu->iem.s.iEffSeg, false);
             case IEMMODE_64BIT:
                 IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                            RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI),
                                             iemCImpl_outs_op8_addr64, pVCpu->iem.s.iEffSeg, false);
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
@@ -3452,12 +3534,18 @@ FNIEMOP_DEF(iemOp_outswd_Yv_DX)
                 {
                     case IEMMODE_16BIT:
                         IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_rep_outs_op16_addr16, pVCpu->iem.s.iEffSeg, false);
                     case IEMMODE_32BIT:
                         IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_rep_outs_op16_addr32, pVCpu->iem.s.iEffSeg, false);
                     case IEMMODE_64BIT:
                         IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_rep_outs_op16_addr64, pVCpu->iem.s.iEffSeg, false);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
@@ -3468,12 +3556,18 @@ FNIEMOP_DEF(iemOp_outswd_Yv_DX)
                 {
                     case IEMMODE_16BIT:
                         IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_rep_outs_op32_addr16, pVCpu->iem.s.iEffSeg, false);
                     case IEMMODE_32BIT:
                         IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_rep_outs_op32_addr32, pVCpu->iem.s.iEffSeg, false);
                     case IEMMODE_64BIT:
                         IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_rep_outs_op32_addr64, pVCpu->iem.s.iEffSeg, false);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
@@ -3491,12 +3585,15 @@ FNIEMOP_DEF(iemOp_outswd_Yv_DX)
                 {
                     case IEMMODE_16BIT:
                         IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                    RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI),
                                                     iemCImpl_outs_op16_addr16, pVCpu->iem.s.iEffSeg, false);
                     case IEMMODE_32BIT:
                         IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                    RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI),
                                                     iemCImpl_outs_op16_addr32, pVCpu->iem.s.iEffSeg, false);
                     case IEMMODE_64BIT:
                         IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                    RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI),
                                                     iemCImpl_outs_op16_addr64, pVCpu->iem.s.iEffSeg, false);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
@@ -3507,12 +3604,15 @@ FNIEMOP_DEF(iemOp_outswd_Yv_DX)
                 {
                     case IEMMODE_16BIT:
                         IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                    RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI),
                                                     iemCImpl_outs_op32_addr16, pVCpu->iem.s.iEffSeg, false);
                     case IEMMODE_32BIT:
                         IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                    RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI),
                                                     iemCImpl_outs_op32_addr32, pVCpu->iem.s.iEffSeg, false);
                     case IEMMODE_64BIT:
                         IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                                    RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI),
                                                     iemCImpl_outs_op32_addr64, pVCpu->iem.s.iEffSeg, false);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
@@ -6137,11 +6237,11 @@ FNIEMOP_DEF(iemOp_nop)
         { /* probable */ }
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
         else if (pVCpu->iem.s.fExec & IEM_F_X86_CTX_VMX)
-            IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_vmx_pause);
+            IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, 0, iemCImpl_vmx_pause);
 #endif
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
         else if (pVCpu->iem.s.fExec & IEM_F_X86_CTX_SVM)
-            IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_svm_pause);
+            IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_VMEXIT, 0, iemCImpl_svm_pause);
 #endif
     }
     else
@@ -6342,9 +6442,10 @@ FNIEMOP_DEF(iemOp_call_Ap)
         IEM_OPCODE_GET_NEXT_U16_ZX_U32(&off32Seg);
     uint16_t u16Sel;  IEM_OPCODE_GET_NEXT_U16(&u16Sel);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_BRANCH_DIRECT | IEM_CIMPL_F_BRANCH_FAR
-                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT,
+    IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_BRANCH_DIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_STACK
+                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT, UINT64_MAX,
                                 iemCImpl_callf, u16Sel, off32Seg, pVCpu->iem.s.enmEffOpSize);
+    /** @todo make task-switches, ring-switches, ++ return non-zero status */
 }
 
 
@@ -6369,7 +6470,8 @@ FNIEMOP_DEF(iemOp_pushf_Fv)
     IEMOP_MNEMONIC(pushf_Fv, "pushf Fv");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
-    IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT, iemCImpl_pushf, pVCpu->iem.s.enmEffOpSize);
+    IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT, RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP),
+                                iemCImpl_pushf, pVCpu->iem.s.enmEffOpSize);
 }
 
 
@@ -6382,6 +6484,7 @@ FNIEMOP_DEF(iemOp_popf_Fv)
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
     IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_CHECK_IRQ_BEFORE_AND_AFTER,
+                                RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP),
                                 iemCImpl_popf, pVCpu->iem.s.enmEffOpSize);
 }
 
@@ -6641,9 +6744,24 @@ FNIEMOP_DEF(iemOp_movsb_Xb_Yb)
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffAddrMode)
         {
-            case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_rep_movs_op8_addr16, pVCpu->iem.s.iEffSeg);
-            case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_rep_movs_op8_addr32, pVCpu->iem.s.iEffSeg);
-            case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_rep_movs_op8_addr64, pVCpu->iem.s.iEffSeg);
+            case IEMMODE_16BIT:
+                IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_rep_movs_op8_addr16, pVCpu->iem.s.iEffSeg);
+            case IEMMODE_32BIT:
+                IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_rep_movs_op8_addr32, pVCpu->iem.s.iEffSeg);
+            case IEMMODE_64BIT:
+                IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_rep_movs_op8_addr64, pVCpu->iem.s.iEffSeg);
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
@@ -6680,26 +6798,66 @@ FNIEMOP_DEF(iemOp_movswd_Xv_Yv)
             case IEMMODE_16BIT:
                 switch (pVCpu->iem.s.enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_rep_movs_op16_addr16, pVCpu->iem.s.iEffSeg);
-                    case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_rep_movs_op16_addr32, pVCpu->iem.s.iEffSeg);
-                    case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_rep_movs_op16_addr64, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_16BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_rep_movs_op16_addr16, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_32BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_rep_movs_op16_addr32, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_64BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_rep_movs_op16_addr64, pVCpu->iem.s.iEffSeg);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
                 break;
             case IEMMODE_32BIT:
                 switch (pVCpu->iem.s.enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_rep_movs_op32_addr16, pVCpu->iem.s.iEffSeg);
-                    case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_rep_movs_op32_addr32, pVCpu->iem.s.iEffSeg);
-                    case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_rep_movs_op32_addr64, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_16BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_rep_movs_op32_addr16, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_32BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_rep_movs_op32_addr32, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_64BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_rep_movs_op32_addr64, pVCpu->iem.s.iEffSeg);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
             case IEMMODE_64BIT:
                 switch (pVCpu->iem.s.enmEffAddrMode)
                 {
                     case IEMMODE_16BIT: AssertFailedReturn(VERR_IEM_IPE_6);
-                    case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_rep_movs_op64_addr32, pVCpu->iem.s.iEffSeg);
-                    case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_rep_movs_op64_addr64, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_32BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_rep_movs_op64_addr32, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_64BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_rep_movs_op64_addr64, pVCpu->iem.s.iEffSeg);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -6791,9 +6949,24 @@ FNIEMOP_DEF(iemOp_cmpsb_Xb_Yb)
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffAddrMode)
         {
-            case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_cmps_op8_addr16, pVCpu->iem.s.iEffSeg);
-            case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_cmps_op8_addr32, pVCpu->iem.s.iEffSeg);
-            case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_cmps_op8_addr64, pVCpu->iem.s.iEffSeg);
+            case IEMMODE_16BIT:
+                IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_repe_cmps_op8_addr16, pVCpu->iem.s.iEffSeg);
+            case IEMMODE_32BIT:
+                IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_repe_cmps_op8_addr32, pVCpu->iem.s.iEffSeg);
+            case IEMMODE_64BIT:
+                IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_repe_cmps_op8_addr64, pVCpu->iem.s.iEffSeg);
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
@@ -6803,9 +6976,24 @@ FNIEMOP_DEF(iemOp_cmpsb_Xb_Yb)
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffAddrMode)
         {
-            case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_cmps_op8_addr16, pVCpu->iem.s.iEffSeg);
-            case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_cmps_op8_addr32, pVCpu->iem.s.iEffSeg);
-            case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_cmps_op8_addr64, pVCpu->iem.s.iEffSeg);
+            case IEMMODE_16BIT:
+                IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_repne_cmps_op8_addr16, pVCpu->iem.s.iEffSeg);
+            case IEMMODE_32BIT:
+                IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_repne_cmps_op8_addr32, pVCpu->iem.s.iEffSeg);
+            case IEMMODE_64BIT:
+                IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_repne_cmps_op8_addr64, pVCpu->iem.s.iEffSeg);
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
@@ -6841,26 +7029,66 @@ FNIEMOP_DEF(iemOp_cmpswd_Xv_Yv)
             case IEMMODE_16BIT:
                 switch (pVCpu->iem.s.enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_cmps_op16_addr16, pVCpu->iem.s.iEffSeg);
-                    case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_cmps_op16_addr32, pVCpu->iem.s.iEffSeg);
-                    case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_cmps_op16_addr64, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_16BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repe_cmps_op16_addr16, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_32BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repe_cmps_op16_addr32, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_64BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repe_cmps_op16_addr64, pVCpu->iem.s.iEffSeg);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
                 break;
             case IEMMODE_32BIT:
                 switch (pVCpu->iem.s.enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_cmps_op32_addr16, pVCpu->iem.s.iEffSeg);
-                    case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_cmps_op32_addr32, pVCpu->iem.s.iEffSeg);
-                    case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_cmps_op32_addr64, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_16BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repe_cmps_op32_addr16, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_32BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repe_cmps_op32_addr32, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_64BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repe_cmps_op32_addr64, pVCpu->iem.s.iEffSeg);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
             case IEMMODE_64BIT:
                 switch (pVCpu->iem.s.enmEffAddrMode)
                 {
                     case IEMMODE_16BIT: AssertFailedReturn(VERR_IEM_IPE_4);
-                    case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_cmps_op64_addr32, pVCpu->iem.s.iEffSeg);
-                    case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_cmps_op64_addr64, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_32BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repe_cmps_op64_addr32, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_64BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repe_cmps_op64_addr64, pVCpu->iem.s.iEffSeg);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -6876,26 +7104,66 @@ FNIEMOP_DEF(iemOp_cmpswd_Xv_Yv)
             case IEMMODE_16BIT:
                 switch (pVCpu->iem.s.enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_cmps_op16_addr16, pVCpu->iem.s.iEffSeg);
-                    case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_cmps_op16_addr32, pVCpu->iem.s.iEffSeg);
-                    case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_cmps_op16_addr64, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_16BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repne_cmps_op16_addr16, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_32BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repne_cmps_op16_addr32, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_64BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repne_cmps_op16_addr64, pVCpu->iem.s.iEffSeg);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
                 break;
             case IEMMODE_32BIT:
                 switch (pVCpu->iem.s.enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_cmps_op32_addr16, pVCpu->iem.s.iEffSeg);
-                    case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_cmps_op32_addr32, pVCpu->iem.s.iEffSeg);
-                    case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_cmps_op32_addr64, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_16BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repne_cmps_op32_addr16, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_32BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repne_cmps_op32_addr32, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_64BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repne_cmps_op32_addr64, pVCpu->iem.s.iEffSeg);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
             case IEMMODE_64BIT:
                 switch (pVCpu->iem.s.enmEffAddrMode)
                 {
                     case IEMMODE_16BIT: AssertFailedReturn(VERR_IEM_IPE_2);
-                    case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_cmps_op64_addr32, pVCpu->iem.s.iEffSeg);
-                    case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_cmps_op64_addr64, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_32BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repne_cmps_op64_addr32, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_64BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repne_cmps_op64_addr64, pVCpu->iem.s.iEffSeg);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -6997,9 +7265,21 @@ FNIEMOP_DEF(iemOp_stosb_Yb_AL)
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffAddrMode)
         {
-            case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP, iemCImpl_stos_al_m16);
-            case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP, iemCImpl_stos_al_m32);
-            case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP, iemCImpl_stos_al_m64);
+            case IEMMODE_16BIT:
+                IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_stos_al_m16);
+            case IEMMODE_32BIT:
+                IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_stos_al_m32);
+            case IEMMODE_64BIT:
+                IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_stos_al_m64);
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
@@ -7035,26 +7315,58 @@ FNIEMOP_DEF(iemOp_stoswd_Yv_eAX)
             case IEMMODE_16BIT:
                 switch (pVCpu->iem.s.enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_REP, iemCImpl_stos_ax_m16);
-                    case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_REP, iemCImpl_stos_ax_m32);
-                    case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_REP, iemCImpl_stos_ax_m64);
+                    case IEMMODE_16BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_stos_ax_m16);
+                    case IEMMODE_32BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_stos_ax_m32);
+                    case IEMMODE_64BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_stos_ax_m64);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
                 break;
             case IEMMODE_32BIT:
                 switch (pVCpu->iem.s.enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_REP, iemCImpl_stos_eax_m16);
-                    case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_REP, iemCImpl_stos_eax_m32);
-                    case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_REP, iemCImpl_stos_eax_m64);
+                    case IEMMODE_16BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_stos_eax_m16);
+                    case IEMMODE_32BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_stos_eax_m32);
+                    case IEMMODE_64BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_stos_eax_m64);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
             case IEMMODE_64BIT:
                 switch (pVCpu->iem.s.enmEffAddrMode)
                 {
                     case IEMMODE_16BIT: AssertFailedReturn(VERR_IEM_IPE_9);
-                    case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_REP, iemCImpl_stos_rax_m32);
-                    case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_REP, iemCImpl_stos_rax_m64);
+                    case IEMMODE_32BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_stos_rax_m32);
+                    case IEMMODE_64BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_stos_rax_m64);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -7134,9 +7446,24 @@ FNIEMOP_DEF(iemOp_lodsb_AL_Xb)
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffAddrMode)
         {
-            case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_lods_al_m16, pVCpu->iem.s.iEffSeg);
-            case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_lods_al_m32, pVCpu->iem.s.iEffSeg);
-            case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_lods_al_m64, pVCpu->iem.s.iEffSeg);
+            case IEMMODE_16BIT:
+                IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_lods_al_m16, pVCpu->iem.s.iEffSeg);
+            case IEMMODE_32BIT:
+                IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_lods_al_m32, pVCpu->iem.s.iEffSeg);
+            case IEMMODE_64BIT:
+                IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_lods_al_m64, pVCpu->iem.s.iEffSeg);
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
@@ -7172,26 +7499,66 @@ FNIEMOP_DEF(iemOp_lodswd_eAX_Xv)
             case IEMMODE_16BIT:
                 switch (pVCpu->iem.s.enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_lods_ax_m16, pVCpu->iem.s.iEffSeg);
-                    case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_lods_ax_m32, pVCpu->iem.s.iEffSeg);
-                    case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_lods_ax_m64, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_16BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_lods_ax_m16, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_32BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_lods_ax_m32, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_64BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_lods_ax_m64, pVCpu->iem.s.iEffSeg);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
                 break;
             case IEMMODE_32BIT:
                 switch (pVCpu->iem.s.enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_lods_eax_m16, pVCpu->iem.s.iEffSeg);
-                    case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_lods_eax_m32, pVCpu->iem.s.iEffSeg);
-                    case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_lods_eax_m64, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_16BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_lods_eax_m16, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_32BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_lods_eax_m32, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_64BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_lods_eax_m64, pVCpu->iem.s.iEffSeg);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
             case IEMMODE_64BIT:
                 switch (pVCpu->iem.s.enmEffAddrMode)
                 {
                     case IEMMODE_16BIT: AssertFailedReturn(VERR_IEM_IPE_7);
-                    case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_lods_rax_m32, pVCpu->iem.s.iEffSeg);
-                    case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP, iemCImpl_lods_rax_m64, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_32BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_lods_rax_m32, pVCpu->iem.s.iEffSeg);
+                    case IEMMODE_64BIT:
+                        IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_REP,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_lods_rax_m64, pVCpu->iem.s.iEffSeg);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -7277,9 +7644,21 @@ FNIEMOP_DEF(iemOp_scasb_AL_Xb)
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffAddrMode)
         {
-            case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_scas_al_m16);
-            case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_scas_al_m32);
-            case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_scas_al_m64);
+            case IEMMODE_16BIT:
+                IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_repe_scas_al_m16);
+            case IEMMODE_32BIT:
+                IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_repe_scas_al_m32);
+            case IEMMODE_64BIT:
+                IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_repe_scas_al_m64);
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
@@ -7289,9 +7668,21 @@ FNIEMOP_DEF(iemOp_scasb_AL_Xb)
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
         switch (pVCpu->iem.s.enmEffAddrMode)
         {
-            case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_scas_al_m16);
-            case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_scas_al_m32);
-            case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_scas_al_m64);
+            case IEMMODE_16BIT:
+                IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_repne_scas_al_m16);
+            case IEMMODE_32BIT:
+                IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_repne_scas_al_m32);
+            case IEMMODE_64BIT:
+                IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                            | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                            iemCImpl_repne_scas_al_m64);
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
@@ -7327,26 +7718,58 @@ FNIEMOP_DEF(iemOp_scaswd_eAX_Xv)
             case IEMMODE_16BIT:
                 switch (pVCpu->iem.s.enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_scas_ax_m16);
-                    case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_scas_ax_m32);
-                    case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_scas_ax_m64);
+                    case IEMMODE_16BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repe_scas_ax_m16);
+                    case IEMMODE_32BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repe_scas_ax_m32);
+                    case IEMMODE_64BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repe_scas_ax_m64);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
                 break;
             case IEMMODE_32BIT:
                 switch (pVCpu->iem.s.enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_scas_eax_m16);
-                    case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_scas_eax_m32);
-                    case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_scas_eax_m64);
+                    case IEMMODE_16BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repe_scas_eax_m16);
+                    case IEMMODE_32BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repe_scas_eax_m32);
+                    case IEMMODE_64BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repe_scas_eax_m64);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
             case IEMMODE_64BIT:
                 switch (pVCpu->iem.s.enmEffAddrMode)
                 {
                     case IEMMODE_16BIT: AssertFailedReturn(VERR_IEM_IPE_6); /** @todo It's this wrong, we can do 16-bit addressing in 64-bit mode, but not 32-bit. right? */
-                    case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_scas_rax_m32);
-                    case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repe_scas_rax_m64);
+                    case IEMMODE_32BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repe_scas_rax_m32);
+                    case IEMMODE_64BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repe_scas_rax_m64);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -7361,26 +7784,58 @@ FNIEMOP_DEF(iemOp_scaswd_eAX_Xv)
             case IEMMODE_16BIT:
                 switch (pVCpu->iem.s.enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_scas_ax_m16);
-                    case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_scas_ax_m32);
-                    case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_scas_ax_m64);
+                    case IEMMODE_16BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repne_scas_ax_m16);
+                    case IEMMODE_32BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repne_scas_ax_m32);
+                    case IEMMODE_64BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repne_scas_ax_m64);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
                 break;
             case IEMMODE_32BIT:
                 switch (pVCpu->iem.s.enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_scas_eax_m16);
-                    case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_scas_eax_m32);
-                    case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_scas_eax_m64);
+                    case IEMMODE_16BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repne_scas_eax_m16);
+                    case IEMMODE_32BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repne_scas_eax_m32);
+                    case IEMMODE_64BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repne_scas_eax_m64);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
             case IEMMODE_64BIT:
                 switch (pVCpu->iem.s.enmEffAddrMode)
                 {
                     case IEMMODE_16BIT: AssertFailedReturn(VERR_IEM_IPE_5);
-                    case IEMMODE_32BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_scas_rax_m32);
-                    case IEMMODE_64BIT: IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_repne_scas_rax_m64);
+                    case IEMMODE_32BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repne_scas_rax_m32);
+                    case IEMMODE_64BIT:
+                        IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                    | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
+                                                    iemCImpl_repne_scas_rax_m64);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -7868,11 +8323,11 @@ FNIEMOP_DEF(iemOp_retn_Iw)
     switch (pVCpu->iem.s.enmEffOpSize)
     {
         case IEMMODE_16BIT:
-            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_INDIRECT, iemCImpl_retn_iw_16, u16Imm);
+            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, 0, iemCImpl_retn_iw_16, u16Imm);
         case IEMMODE_32BIT:
-            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_INDIRECT, iemCImpl_retn_iw_32, u16Imm);
+            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, 0, iemCImpl_retn_iw_32, u16Imm);
         case IEMMODE_64BIT:
-            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_INDIRECT, iemCImpl_retn_iw_64, u16Imm);
+            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, 0, iemCImpl_retn_iw_64, u16Imm);
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
 }
@@ -7889,11 +8344,11 @@ FNIEMOP_DEF(iemOp_retn)
     switch (pVCpu->iem.s.enmEffOpSize)
     {
         case IEMMODE_16BIT:
-            IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT, iemCImpl_retn_16);
+            IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, 0, iemCImpl_retn_16);
         case IEMMODE_32BIT:
-            IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT, iemCImpl_retn_32);
+            IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, 0, iemCImpl_retn_32);
         case IEMMODE_64BIT:
-            IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT, iemCImpl_retn_64);
+            IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, 0, iemCImpl_retn_64);
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
 }
@@ -8152,7 +8607,10 @@ FNIEMOP_DEF(iemOp_enter_Iw_Ib)
     uint16_t cbFrame;        IEM_OPCODE_GET_NEXT_U16(&cbFrame);
     uint8_t  u8NestingLevel; IEM_OPCODE_GET_NEXT_U8(&u8NestingLevel);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_3_RET(0, iemCImpl_enter, pVCpu->iem.s.enmEffOpSize, cbFrame, u8NestingLevel);
+    IEM_MC_DEFER_TO_CIMPL_3_RET(0,
+                                  RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP)
+                                | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xBP),
+                                iemCImpl_enter, pVCpu->iem.s.enmEffOpSize, cbFrame, u8NestingLevel);
 }
 
 
@@ -8165,7 +8623,10 @@ FNIEMOP_DEF(iemOp_leave)
     IEMOP_HLP_MIN_186();
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_1_RET(0, iemCImpl_leave, pVCpu->iem.s.enmEffOpSize);
+    IEM_MC_DEFER_TO_CIMPL_1_RET(0,
+                                  RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSP)
+                                | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xBP),
+                                iemCImpl_leave, pVCpu->iem.s.enmEffOpSize);
 }
 
 
@@ -8177,7 +8638,20 @@ FNIEMOP_DEF(iemOp_retf_Iw)
     IEMOP_MNEMONIC(retf_Iw, "retf Iw");
     uint16_t u16Imm; IEM_OPCODE_GET_NEXT_U16(&u16Imm);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_MODE,
+    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_STACK
+                                | IEM_CIMPL_F_MODE,
+                                  RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_DS)
+                                | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_ES)
+                                | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_FS)
+                                | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_GS)
+                                | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_DS)
+                                | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_ES)
+                                | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_FS)
+                                | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_GS)
+                                | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_DS)
+                                | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_ES)
+                                | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_FS)
+                                | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_GS),
                                 iemCImpl_retf, pVCpu->iem.s.enmEffOpSize, u16Imm);
 }
 
@@ -8189,7 +8663,20 @@ FNIEMOP_DEF(iemOp_retf)
 {
     IEMOP_MNEMONIC(retf, "retf");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_MODE,
+    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_STACK
+                                | IEM_CIMPL_F_MODE,
+                                  RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_DS)
+                                | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_ES)
+                                | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_FS)
+                                | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_GS)
+                                | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_DS)
+                                | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_ES)
+                                | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_FS)
+                                | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_GS)
+                                | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_DS)
+                                | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_ES)
+                                | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_FS)
+                                | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_GS),
                                 iemCImpl_retf, pVCpu->iem.s.enmEffOpSize, 0);
 }
 
@@ -8201,8 +8688,8 @@ FNIEMOP_DEF(iemOp_int3)
 {
     IEMOP_MNEMONIC(int3, "int3");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR
-                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_RFLAGS,
+    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_STACK_FAR
+                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_END_TB, 0,
                                 iemCImpl_int, X86_XCPT_BP, IEMINT_INT3);
 }
 
@@ -8215,9 +8702,10 @@ FNIEMOP_DEF(iemOp_int_Ib)
     IEMOP_MNEMONIC(int_Ib, "int Ib");
     uint8_t u8Int; IEM_OPCODE_GET_NEXT_U8(&u8Int);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR
-                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_RFLAGS,
+    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_STACK_FAR
+                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_RFLAGS, UINT64_MAX,
                                 iemCImpl_int, u8Int, IEMINT_INTN);
+    /** @todo make task-switches, ring-switches, ++ return non-zero status */
 }
 
 
@@ -8228,9 +8716,11 @@ FNIEMOP_DEF(iemOp_into)
 {
     IEMOP_MNEMONIC(into, "into");
     IEMOP_HLP_NO_64BIT();
-    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_CONDITIONAL
-                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_RFLAGS,
+    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_STACK_FAR
+                                | IEM_CIMPL_F_BRANCH_CONDITIONAL | IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_RFLAGS,
+                                UINT64_MAX,
                                 iemCImpl_int, X86_XCPT_OF, IEMINT_INTO);
+    /** @todo make task-switches, ring-switches, ++ return non-zero status */
 }
 
 
@@ -8241,9 +8731,23 @@ FNIEMOP_DEF(iemOp_iret)
 {
     IEMOP_MNEMONIC(iret, "iret");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR
+    IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_STACK_FAR
                                 | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_CHECK_IRQ_BEFORE | IEM_CIMPL_F_VMEXIT,
+                                  RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_DS)
+                                | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_DS)
+                                | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_DS)
+                                | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_ES)
+                                | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_ES)
+                                | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_ES)
+                                | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_FS)
+                                | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_FS)
+                                | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_FS)
+                                | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + X86_SREG_GS)
+                                | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + X86_SREG_GS)
+                                | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + X86_SREG_GS),
                                 iemCImpl_iret, pVCpu->iem.s.enmEffOpSize);
+    /* Segment registers are sanitized when returning to an outer ring, or fully
+       reloaded when returning  to v86 mode.  Thus the large flush list above. */
 }
 
 
@@ -8664,7 +9168,7 @@ FNIEMOP_DEF(iemOp_aam_Ib)
     IEMOP_HLP_NO_64BIT();
     if (!bImm)
         IEMOP_RAISE_DIVIDE_ERROR_RET();
-    IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_aam, bImm);
+    IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_STATUS_FLAGS, RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX), iemCImpl_aam, bImm);
 }
 
 
@@ -8677,7 +9181,7 @@ FNIEMOP_DEF(iemOp_aad_Ib)
     uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_HLP_NO_64BIT();
-    IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_STATUS_FLAGS, iemCImpl_aad, bImm);
+    IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_STATUS_FLAGS, RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX), iemCImpl_aad, bImm);
 }
 
 
@@ -10570,7 +11074,7 @@ FNIEMOP_DEF(iemOp_fninit)
 {
     IEMOP_MNEMONIC(fninit, "fninit");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_FPU, iemCImpl_finit, false /*fCheckXcpts*/);
+    IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_FPU, 0, iemCImpl_finit, false /*fCheckXcpts*/);
 }
 
 
@@ -10607,7 +11111,7 @@ FNIEMOP_DEF(iemOp_frstpm)
 FNIEMOP_DEF_1(iemOp_fucomi_stN, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fucomi_st0_stN, "fucomi st0,stN");
-    IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_FPU | IEM_CIMPL_F_STATUS_FLAGS,
+    IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_FPU | IEM_CIMPL_F_STATUS_FLAGS, 0,
                                 iemCImpl_fcomi_fucomi, IEM_GET_MODRM_RM_8(bRm), true /*fUCmp*/,
                                 0 /*fPop*/ | pVCpu->iem.s.uFpuOpcode);
 }
@@ -10617,7 +11121,7 @@ FNIEMOP_DEF_1(iemOp_fucomi_stN, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_fcomi_stN,  uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fcomi_st0_stN, "fcomi st0,stN");
-    IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_FPU | IEM_CIMPL_F_STATUS_FLAGS,
+    IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_FPU | IEM_CIMPL_F_STATUS_FLAGS, 0,
                                 iemCImpl_fcomi_fucomi, IEM_GET_MODRM_RM_8(bRm), false /*fUCmp*/,
                                 false /*fPop*/ | pVCpu->iem.s.uFpuOpcode);
 }
@@ -11538,7 +12042,7 @@ FNIEMOP_DEF(iemOp_fnstsw_ax)
 FNIEMOP_DEF_1(iemOp_fucomip_st0_stN, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fucomip_st0_stN, "fucomip st0,stN");
-    IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_FPU | IEM_CIMPL_F_STATUS_FLAGS,
+    IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_FPU | IEM_CIMPL_F_STATUS_FLAGS, 0,
                                 iemCImpl_fcomi_fucomi, IEM_GET_MODRM_RM_8(bRm), false /*fUCmp*/,
                                 RT_BIT_32(31) /*fPop*/ | pVCpu->iem.s.uFpuOpcode);
 }
@@ -11548,7 +12052,7 @@ FNIEMOP_DEF_1(iemOp_fucomip_st0_stN, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_fcomip_st0_stN,  uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fcomip_st0_stN, "fcomip st0,stN");
-    IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_FPU | IEM_CIMPL_F_STATUS_FLAGS,
+    IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_FPU | IEM_CIMPL_F_STATUS_FLAGS, 0,
                                 iemCImpl_fcomi_fucomi, IEM_GET_MODRM_RM_8(bRm), false /*fUCmp*/,
                                 RT_BIT_32(31) /*fPop*/ | pVCpu->iem.s.uFpuOpcode);
 }
@@ -12118,7 +12622,7 @@ FNIEMOP_DEF(iemOp_in_AL_Ib)
     IEMOP_MNEMONIC(in_AL_Ib, "in AL,Ib");
     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+    IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO, RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX),
                                 iemCImpl_in, u8Imm, 1, 0x80 /* fImm */ | pVCpu->iem.s.enmEffAddrMode);
 }
 
@@ -12129,7 +12633,7 @@ FNIEMOP_DEF(iemOp_in_eAX_Ib)
     IEMOP_MNEMONIC(in_eAX_Ib, "in eAX,Ib");
     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+    IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO, RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX),
                                 iemCImpl_in, u8Imm, pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT ? 2 : 4,
                                 0x80 /* fImm */ | pVCpu->iem.s.enmEffAddrMode);
 }
@@ -12141,7 +12645,7 @@ FNIEMOP_DEF(iemOp_out_Ib_AL)
     IEMOP_MNEMONIC(out_Ib_AL, "out Ib,AL");
     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+    IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO, 0,
                                 iemCImpl_out, u8Imm, 1, 0x80 /* fImm */ | pVCpu->iem.s.enmEffAddrMode);
 }
 
@@ -12152,7 +12656,7 @@ FNIEMOP_DEF(iemOp_out_Ib_eAX)
     IEMOP_MNEMONIC(out_Ib_eAX, "out Ib,eAX");
     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+    IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO, 0,
                                 iemCImpl_out, u8Imm, pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT ? 2 : 4,
                                 0x80 /* fImm */ | pVCpu->iem.s.enmEffAddrMode);
 }
@@ -12170,19 +12674,22 @@ FNIEMOP_DEF(iemOp_call_Jv)
         case IEMMODE_16BIT:
         {
             uint16_t u16Imm; IEM_OPCODE_GET_NEXT_U16(&u16Imm);
-            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_RELATIVE, iemCImpl_call_rel_16, (int16_t)u16Imm);
+            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_RELATIVE | IEM_CIMPL_F_BRANCH_STACK, 0,
+                                        iemCImpl_call_rel_16, (int16_t)u16Imm);
         }
 
         case IEMMODE_32BIT:
         {
             uint32_t u32Imm; IEM_OPCODE_GET_NEXT_U32(&u32Imm);
-            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_RELATIVE, iemCImpl_call_rel_32, (int32_t)u32Imm);
+            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_RELATIVE | IEM_CIMPL_F_BRANCH_STACK, 0,
+                                        iemCImpl_call_rel_32, (int32_t)u32Imm);
         }
 
         case IEMMODE_64BIT:
         {
             uint64_t u64Imm; IEM_OPCODE_GET_NEXT_S32_SX_U64(&u64Imm);
-            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_RELATIVE, iemCImpl_call_rel_64, u64Imm);
+            IEM_MC_DEFER_TO_CIMPL_1_RET(IEM_CIMPL_F_BRANCH_RELATIVE | IEM_CIMPL_F_BRANCH_STACK, 0,
+                                        iemCImpl_call_rel_64, u64Imm);
         }
 
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -12238,8 +12745,9 @@ FNIEMOP_DEF(iemOp_jmp_Ap)
     uint16_t u16Sel;  IEM_OPCODE_GET_NEXT_U16(&u16Sel);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_DEFER_TO_CIMPL_3_RET(IEM_CIMPL_F_BRANCH_DIRECT | IEM_CIMPL_F_BRANCH_FAR
-                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT,
+                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT, UINT64_MAX,
                                 iemCImpl_FarJmp, u16Sel, off32Seg, pVCpu->iem.s.enmEffOpSize);
+    /** @todo make task-switches, ring-switches, ++ return non-zero status */
 }
 
 
@@ -12265,6 +12773,7 @@ FNIEMOP_DEF(iemOp_in_AL_DX)
     IEMOP_MNEMONIC(in_AL_DX, "in  AL,DX");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX),
                                 iemCImpl_in_eAX_DX, 1, pVCpu->iem.s.enmEffAddrMode);
 }
 
@@ -12275,6 +12784,7 @@ FNIEMOP_DEF(iemOp_in_eAX_DX)
     IEMOP_MNEMONIC(in_eAX_DX, "in  eAX,DX");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+                                RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xAX),
                                 iemCImpl_in_eAX_DX, pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT ? 2 : 4,
                                 pVCpu->iem.s.enmEffAddrMode);
 }
@@ -12285,7 +12795,7 @@ FNIEMOP_DEF(iemOp_out_DX_AL)
 {
     IEMOP_MNEMONIC(out_DX_AL, "out DX,AL");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO, 0,
                                 iemCImpl_out_DX_eAX, 1, pVCpu->iem.s.enmEffAddrMode);
 }
 
@@ -12295,7 +12805,7 @@ FNIEMOP_DEF(iemOp_out_DX_eAX)
 {
     IEMOP_MNEMONIC(out_DX_eAX, "out DX,eAX");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO,
+    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_IO, 0,
                                 iemCImpl_out_DX_eAX, pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT ? 2 : 4,
                                 pVCpu->iem.s.enmEffAddrMode);
 }
@@ -12326,8 +12836,8 @@ FNIEMOP_DEF(iemOp_int1)
      * LOADALL memo.  Needs some testing. */
     IEMOP_HLP_MIN_386();
     /** @todo testcase! */
-    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR
-                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_RFLAGS,
+    IEM_MC_DEFER_TO_CIMPL_2_RET(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_BRANCH_STACK_FAR
+                                | IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_END_TB, 0,
                                 iemCImpl_int, X86_XCPT_DB, IEMINT_INT1);
 }
 
@@ -12377,7 +12887,7 @@ FNIEMOP_DEF(iemOp_hlt)
 {
     IEMOP_MNEMONIC(hlt, "hlt");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_END_TB | IEM_CIMPL_F_VMEXIT, iemCImpl_hlt);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_END_TB | IEM_CIMPL_F_VMEXIT, 0, iemCImpl_hlt);
 }
 
 
@@ -13202,7 +13712,7 @@ FNIEMOP_DEF(iemOp_cli)
 {
     IEMOP_MNEMONIC(cli, "cli");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_CHECK_IRQ_BEFORE, iemCImpl_cli);
+    IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_CHECK_IRQ_BEFORE, 0, iemCImpl_cli);
 }
 
 
@@ -13211,7 +13721,7 @@ FNIEMOP_DEF(iemOp_sti)
     IEMOP_MNEMONIC(sti, "sti");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_DEFER_TO_CIMPL_0_RET(  IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_CHECK_IRQ_AFTER
-                                | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_INHIBIT_SHADOW, iemCImpl_sti);
+                                | IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_INHIBIT_SHADOW, 0, iemCImpl_sti);
 }
 
 
@@ -13319,7 +13829,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint16_t, u16Target, 0);
                 IEM_MC_FETCH_GREG_U16(u16Target, IEM_GET_MODRM_RM(pVCpu, bRm));
-                IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_BRANCH_INDIRECT, iemCImpl_call_16, u16Target);
+                IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, iemCImpl_call_16, u16Target);
                 IEM_MC_END();
                 break;
 
@@ -13328,7 +13838,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint32_t, u32Target, 0);
                 IEM_MC_FETCH_GREG_U32(u32Target, IEM_GET_MODRM_RM(pVCpu, bRm));
-                IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_BRANCH_INDIRECT, iemCImpl_call_32, u32Target);
+                IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, iemCImpl_call_32, u32Target);
                 IEM_MC_END();
                 break;
 
@@ -13337,7 +13847,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_ARG(uint64_t, u64Target, 0);
                 IEM_MC_FETCH_GREG_U64(u64Target, IEM_GET_MODRM_RM(pVCpu, bRm));
-                IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_BRANCH_INDIRECT, iemCImpl_call_64, u64Target);
+                IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, iemCImpl_call_64, u64Target);
                 IEM_MC_END();
                 break;
 
@@ -13356,7 +13866,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_FETCH_MEM_U16(u16Target, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-                IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_BRANCH_INDIRECT, iemCImpl_call_16, u16Target);
+                IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, iemCImpl_call_16, u16Target);
                 IEM_MC_END();
                 break;
 
@@ -13367,7 +13877,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_FETCH_MEM_U32(u32Target, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-                IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_BRANCH_INDIRECT, iemCImpl_call_32, u32Target);
+                IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, iemCImpl_call_32, u32Target);
                 IEM_MC_END();
                 break;
 
@@ -13378,7 +13888,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
                 IEM_MC_FETCH_MEM_U64(u64Target, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-                IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_BRANCH_INDIRECT, iemCImpl_call_64, u64Target);
+                IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_STACK, iemCImpl_call_64, u64Target);
                 IEM_MC_END();
                 break;
 
@@ -13387,7 +13897,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
     }
 }
 
-#define IEMOP_BODY_GRP5_FAR_EP(a_bRm, a_fnCImpl) \
+#define IEMOP_BODY_GRP5_FAR_EP(a_bRm, a_fnCImpl, a_fCImplExtra) \
     /* Registers? How?? */ \
     if (RT_LIKELY(IEM_IS_MODRM_MEM_MODE(a_bRm))) \
     { /* likely */ } \
@@ -13415,7 +13925,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
             IEM_MC_FETCH_MEM_U16(offSeg, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
             IEM_MC_FETCH_MEM_U16_DISP(u16Sel, pVCpu->iem.s.iEffSeg, GCPtrEffSrc, 2); \
             IEM_MC_HINT_FLUSH_GUEST_SHADOW_GREG(X86_GREG_xSP); \
-            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR \
+            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | (a_fCImplExtra) \
                                 | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT, \
                                 a_fnCImpl, u16Sel, offSeg, enmEffOpSize); \
             IEM_MC_END(); \
@@ -13432,7 +13942,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
             IEM_MC_FETCH_MEM_U32(offSeg, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
             IEM_MC_FETCH_MEM_U16_DISP(u16Sel, pVCpu->iem.s.iEffSeg, GCPtrEffSrc, 4); \
             IEM_MC_HINT_FLUSH_GUEST_SHADOW_GREG(X86_GREG_xSP); \
-            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR \
+            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | (a_fCImplExtra) \
                                 | IEM_CIMPL_F_MODE | IEM_CIMPL_F_RFLAGS | IEM_CIMPL_F_VMEXIT, \
                                 a_fnCImpl, u16Sel, offSeg, enmEffOpSize); \
             IEM_MC_END(); \
@@ -13450,7 +13960,8 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
             IEM_MC_FETCH_MEM_U64(offSeg, pVCpu->iem.s.iEffSeg, GCPtrEffSrc); \
             IEM_MC_FETCH_MEM_U16_DISP(u16Sel, pVCpu->iem.s.iEffSeg, GCPtrEffSrc, 8); \
             IEM_MC_HINT_FLUSH_GUEST_SHADOW_GREG(X86_GREG_xSP); \
-            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | IEM_CIMPL_F_MODE /* no gates */, \
+            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_BRANCH_INDIRECT | IEM_CIMPL_F_BRANCH_FAR | (a_fCImplExtra) \
+                                | IEM_CIMPL_F_MODE /* no gates */, \
                                 a_fnCImpl, u16Sel, offSeg, enmEffOpSize); \
             IEM_MC_END(); \
             break; \
@@ -13466,7 +13977,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_Grp5_callf_Ep, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(callf_Ep, "callf Ep");
-    IEMOP_BODY_GRP5_FAR_EP(bRm, iemCImpl_callf);
+    IEMOP_BODY_GRP5_FAR_EP(bRm, iemCImpl_callf, IEM_CIMPL_F_BRANCH_STACK);
 }
 
 
@@ -13565,7 +14076,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_jmpn_Ev, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_Grp5_jmpf_Ep, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(jmpf_Ep, "jmpf Ep");
-    IEMOP_BODY_GRP5_FAR_EP(bRm, iemCImpl_FarJmp);
+    IEMOP_BODY_GRP5_FAR_EP(bRm, iemCImpl_FarJmp, 0);
 }
 
 

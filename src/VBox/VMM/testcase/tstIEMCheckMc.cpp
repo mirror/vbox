@@ -940,10 +940,10 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
     do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); CHK_CALL_ARG(a3, 3); (void)fMcBegin; return VINF_SUCCESS; } while (0)
 #define IEM_MC_CALL_CIMPL_5(a_fFlags, a_pfnCImpl, a0, a1, a2, a3, a4) \
     do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); CHK_CALL_ARG(a3, 3); CHK_CALL_ARG(a4, 4); (void)fMcBegin; return VINF_SUCCESS; } while (0)
-#define IEM_MC_DEFER_TO_CIMPL_0_RET(a_fFlags, a_pfnCImpl)                   return VINF_SUCCESS
-#define IEM_MC_DEFER_TO_CIMPL_1_RET(a_fFlags, a_pfnCImpl, a0)               return VINF_SUCCESS
-#define IEM_MC_DEFER_TO_CIMPL_2_RET(a_fFlags, a_pfnCImpl, a0, a1)           return VINF_SUCCESS
-#define IEM_MC_DEFER_TO_CIMPL_3_RET(a_fFlags, a_pfnCImpl, a0, a1, a2)       return VINF_SUCCESS
+#define IEM_MC_DEFER_TO_CIMPL_0_RET(a_fFlags, a_fGstShwFlush, a_pfnCImpl)                       return VINF_SUCCESS
+#define IEM_MC_DEFER_TO_CIMPL_1_RET(a_fFlags, a_fGstShwFlush, a_pfnCImpl, a0)                   return VINF_SUCCESS
+#define IEM_MC_DEFER_TO_CIMPL_2_RET(a_fFlags, a_fGstShwFlush, a_pfnCImpl, a0, a1)               return VINF_SUCCESS
+#define IEM_MC_DEFER_TO_CIMPL_3_RET(a_fFlags, a_fGstShwFlush, a_pfnCImpl, a0, a1, a2)           return VINF_SUCCESS
 
 #define IEM_MC_CALL_FPU_AIMPL_1(a_pfnAImpl, a0) \
     do { (void)fFpuHost; (void)fFpuWrite; CHK_CALL_ARG(a0, 0);  (void)fMcBegin; } while (0)

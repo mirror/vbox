@@ -347,16 +347,15 @@ typedef IEMNATIVEFIXUP *PIEMNATIVEFIXUP;
 typedef enum IEMNATIVEGSTREG : uint8_t
 {
     kIemNativeGstReg_GprFirst      = 0,
-    kIemNativeGstReg_GprLast       = 15,
+    kIemNativeGstReg_GprLast       = kIemNativeGstReg_GprFirst + 15,
     kIemNativeGstReg_Pc,
-    kIemNativeGstReg_EFlags,            /**< This one is problematic since the higher bits are used internally. */
-    /* gap: 18..23 */
-    kIemNativeGstReg_SegSelFirst   = 24,
-    kIemNativeGstReg_SegSelLast    = 29,
-    kIemNativeGstReg_SegBaseFirst  = 30,
-    kIemNativeGstReg_SegBaseLast   = 35,
-    kIemNativeGstReg_SegLimitFirst = 36,
-    kIemNativeGstReg_SegLimitLast  = 41,
+    kIemNativeGstReg_EFlags,            /**< 32-bit, includes internal flags.  */
+    kIemNativeGstReg_SegSelFirst,
+    kIemNativeGstReg_SegSelLast    = kIemNativeGstReg_SegSelFirst + 5,
+    kIemNativeGstReg_SegBaseFirst,
+    kIemNativeGstReg_SegBaseLast   = kIemNativeGstReg_SegBaseFirst + 5,
+    kIemNativeGstReg_SegLimitFirst,
+    kIemNativeGstReg_SegLimitLast  = kIemNativeGstReg_SegLimitFirst + 5,
     kIemNativeGstReg_End
 } IEMNATIVEGSTREG;
 
