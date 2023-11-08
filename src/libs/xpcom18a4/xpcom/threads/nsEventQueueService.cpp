@@ -56,22 +56,13 @@
 #include "nsIThread.h"
 #include "nsPIEventQueueChain.h"
 
-#include "prlog.h"
-
-#if defined(PR_LOGGING) || defined(DEBUG_danm)
-extern PRLogModuleInfo* gEventQueueLog;
-extern PRUint32 gEventQueueLogCount;
-#endif
+#include <VBox/log.h>
 
 static NS_DEFINE_CID(kEventQueueCID, NS_EVENTQUEUE_CID);
 
 nsEventQueueServiceImpl::nsEventQueueServiceImpl()
 {
   mEventQMonitor = PR_NewMonitor();
-#if defined(PR_LOGGING) && defined(DEBUG_danm)
-  if (!gEventQueueLog)
-    gEventQueueLog = PR_NewLogModule("nseventqueue");
-#endif
 }
 
 PR_STATIC_CALLBACK(PLDHashOperator)
@@ -300,12 +291,10 @@ nsEventQueueServiceImpl::PushThreadEventQueue(nsIEventQueue **aNewQueue)
 
   *aNewQueue = newQueue;
 
-#if defined(PR_LOGGING) && defined(DEBUG_danm)
+#ifdef LOG_ENABLED
   PLEventQueue *equeue;
   (*aNewQueue)->GetPLEventQueue(&equeue);
-  PR_LOG(gEventQueueLog, PR_LOG_DEBUG,
-         ("EventQueue: Service push queue [queue=%lx]",(long)equeue));
-  ++gEventQueueLogCount;
+  Log(("EventQueue: Service push queue [queue=%lx]",(long)equeue));
 #endif
 
   // Release the EventQ lock...
@@ -336,12 +325,10 @@ nsEventQueueServiceImpl::PopThreadEventQueue(nsIEventQueue *aQueue)
   if (!eldestQueue)
     return NS_ERROR_FAILURE;
 
-#if defined(PR_LOGGING) && defined(DEBUG_danm)
+#ifdef LOG_ENABLED
   PLEventQueue *equeue;
   aQueue->GetPLEventQueue(&equeue);
-  PR_LOG(gEventQueueLog, PR_LOG_DEBUG,
-         ("EventQueue: Service pop queue [queue=%lx]",(long)equeue));
-  ++gEventQueueLogCount;
+  Log(("EventQueue: Service pop queue [queue=%lx]",(long)equeue));
 #endif
   aQueue->StopAcceptingEvents();
   aQueue->ProcessPendingEvents(); // make sure we don't orphan any events
