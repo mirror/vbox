@@ -42,9 +42,11 @@
 #include "nsVariant.h"
 #include "nsString.h"
 #include "prprf.h"
-#include "prdtoa.h"
 #include <math.h>
 #include "nsCRT.h"
+
+#include <iprt/errcore.h>
+#include <iprt/string.h>
 
 /***************************************************************************/
 // Helpers for static convert functions...
@@ -52,8 +54,9 @@
 static nsresult String2Double(const char* aString, double* retval)
 {
     char* next;
-    double value = PR_strtod(aString, &next);
-    if(next == aString)
+    double value;
+    int vrc = RTStrToDoubleEx(aString, &next, 0 /*cchMax*/, &value);
+    if (RT_FAILURE(vrc))
         return NS_ERROR_CANNOT_CONVERT_DATA;
     *retval = value;
     return NS_OK;
