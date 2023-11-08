@@ -3066,7 +3066,7 @@ DECLHIDDEN(void) iemNativeRegFlushGuestShadows(PIEMRECOMPILERSTATE pReNative, ui
 
                 uint64_t const fInThisHstReg = (pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows & fGstRegs) | RT_BIT_64(idxGstReg);
                 fGstRegs &= ~fInThisHstReg;
-                pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows &= fInThisHstReg;
+                pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows &= ~fInThisHstReg;
                 if (!pReNative->Core.aHstRegs[idxHstReg].fGstRegShadows)
                     pReNative->Core.bmHstRegsWithGstShadow &= ~RT_BIT_32(idxHstReg);
             } while (fGstRegs != 0);
@@ -5524,11 +5524,25 @@ iemNativeEmitCallCImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
 
     /*
      * Make the call and check the return code.
+     *
+     * Shadow PC copies are always flushed here, other stuff depends on flags.
+     * Segment and general purpose registers are explictily flushed via the
+     * IEM_MC_HINT_FLUSH_GUEST_SHADOW_GREG and IEM_MC_HINT_FLUSH_GUEST_SHADOW_SREG
+     * macros.
      */
     off = iemNativeEmitCallImm(pReNative, off, (uintptr_t)pfnCImpl);
 #if defined(VBOXSTRICTRC_STRICT_ENABLED) && defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64)
     off = iemNativeEmitLoadGprByBpU32(pReNative, off, X86_GREG_xAX, IEMNATIVE_FP_OFF_IN_SHADOW_ARG0); /* rcStrict (see above) */
 #endif
+/** @todo Always flush EFLAGS if this is an xxF variation. */
+    iemNativeRegFlushGuestShadows(pReNative,
+                                    RT_BIT_64(kIemNativeGstReg_Pc)
+                                  | (pReNative->fCImpl & (  IEM_CIMPL_F_RFLAGS
+                                                          | IEM_CIMPL_F_STATUS_FLAGS
+                                                          | IEM_CIMPL_F_INHIBIT_SHADOW)
+                                     ? RT_BIT_64(kIemNativeGstReg_EFlags) : 0)
+                                  );
+
     return iemNativeEmitCheckCallRetAndPassUp(pReNative, off, idxInstr);
 }
 
@@ -5654,6 +5668,18 @@ pReNative->pInstrBuf[off++] = 0xcc;
 
     return iemNativeEmitCallCImplCommon(pReNative, off, cbInstr, idxInstr, pfnCImpl, 5);
 }
+
+
+/** Flush guest GPR shadow copy. */
+#define IEM_MC_HINT_FLUSH_GUEST_SHADOW_GREG(a_iGReg) \
+    iemNativeRegFlushGuestShadows(pReNative, RT_BIT_64(kIemNativeGstReg_GprFirst + (a_iGReg)) )
+
+/** Flush guest segment register (hidden and non-hidden bits) shadow copy. */
+#define IEM_MC_HINT_FLUSH_GUEST_SHADOW_SREG(a_iSReg) \
+    iemNativeRegFlushGuestShadows(pReNative, \
+                                    RT_BIT_64(kIemNativeGstReg_SegSelFirst   + (a_iSReg)) \
+                                  | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + (a_iSReg)) \
+                                  | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + (a_iSReg)) )
 
 
 

@@ -2895,6 +2895,8 @@ g_dMcStmtParsers = {
     'IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP':                       (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP_POP':                   (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_FPU_TO_MMX_MODE':                                    (McBlock.parseMcGeneric,           True,  False, ),
+    'IEM_MC_HINT_FLUSH_GUEST_SHADOW_GREG':                       (McBlock.parseMcGeneric,           True,  True,  ),
+    'IEM_MC_HINT_FLUSH_GUEST_SHADOW_SREG':                       (McBlock.parseMcGeneric,           True,  True,  ),
     'IEM_MC_IF_CX_IS_NZ':                                        (McBlock.parseMcGenericCond,       True,  True,  ),
     'IEM_MC_IF_CX_IS_NZ_AND_EFL_BIT_NOT_SET':                    (McBlock.parseMcGenericCond,       True,  True,  ),
     'IEM_MC_IF_CX_IS_NZ_AND_EFL_BIT_SET':                        (McBlock.parseMcGenericCond,       True,  True,  ),

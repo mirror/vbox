@@ -1042,6 +1042,9 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEM_MC_ELSE()                                                   } else {
 #define IEM_MC_ENDIF()                                                  } do { (void)fMcBegin; } while (0)
 
+#define IEM_MC_HINT_FLUSH_GUEST_SHADOW_GREG(a_iGReg)                    ((void)fMcBegin)
+#define IEM_MC_HINT_FLUSH_GUEST_SHADOW_SREG(a_iSReg)                    ((void)fMcBegin)
+
 /** @}  */
 
 #include "../VMMAll/IEMAllIntprTables1.cpp"

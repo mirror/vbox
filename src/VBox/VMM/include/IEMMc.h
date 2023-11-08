@@ -2493,6 +2493,12 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_MC_ELSE()                                   } else {
 #define IEM_MC_ENDIF()                                  } do {} while (0)
 
+
+/** Native recompiler GREG shadow copy flush hint related to CIMPL calls. */
+#define IEM_MC_HINT_FLUSH_GUEST_SHADOW_GREG(a_iGReg)    ((void)0)
+/** Native recompiler SREG shadow copy flush hint related to CIMPL calls. */
+#define IEM_MC_HINT_FLUSH_GUEST_SHADOW_SREG(a_iSReg)    ((void)0)
+
 /** @}  */
 
 #endif /* !VMM_INCLUDED_SRC_include_IEMMc_h */

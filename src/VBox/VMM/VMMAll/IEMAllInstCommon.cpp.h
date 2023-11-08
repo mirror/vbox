@@ -938,48 +938,85 @@ FNIEMOP_DEF_2(iemOpCommonLoadSRegAndGreg, uint8_t, iSegReg, uint8_t, bRm)
     switch (pVCpu->iem.s.enmEffOpSize)
     {
         case IEMMODE_16BIT:
-            IEM_MC_BEGIN(5, 1, 0, 0);
-            IEM_MC_ARG(uint16_t,        uSel,                                    0);
-            IEM_MC_ARG(uint16_t,        offSeg,                                  1);
-            IEM_MC_ARG_CONST(uint8_t,   iSegRegArg,/*=*/iSegReg,                 2);
-            IEM_MC_ARG_CONST(uint8_t,   iGRegArg,  /*=*/iGReg,                   3);
-            IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pVCpu->iem.s.enmEffOpSize, 4);
-            IEM_MC_LOCAL(RTGCPTR,       GCPtrEff);
-            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_FETCH_MEM_U16(offSeg, pVCpu->iem.s.iEffSeg, GCPtrEff);
-            IEM_MC_FETCH_MEM_U16_DISP(uSel, pVCpu->iem.s.iEffSeg, GCPtrEff, 2);
-            if (iSegReg >= X86_SREG_FS || !IEM_IS_32BIT_CODE(pVCpu))
+            if (iSegReg >= X86_SREG_FS || !IEM_IS_32BIT_CODE(pVCpu)) /* IEM_CIMPL_F_XXX flag are combined for whole MC block, */
+            {                                                        /* thus the duplication. */
+                IEM_MC_BEGIN(5, 1, 0, 0);
+                IEM_MC_LOCAL(RTGCPTR,       GCPtrEff);
+                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEM_MC_ARG(uint16_t,        offSeg,                                  1);
+                IEM_MC_FETCH_MEM_U16(offSeg, pVCpu->iem.s.iEffSeg, GCPtrEff); /** @todo check memory access pattern */
+                IEM_MC_ARG(uint16_t,        uSel,                                    0);
+                IEM_MC_FETCH_MEM_U16_DISP(uSel, pVCpu->iem.s.iEffSeg, GCPtrEff, 2);
+                IEM_MC_ARG_CONST(uint8_t,   iSegRegArg,/*=*/iSegReg,                 2);
+                IEM_MC_ARG_CONST(uint8_t,   iGRegArg,  /*=*/iGReg,                   3);
+                IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pVCpu->iem.s.enmEffOpSize, 4);
+                IEM_MC_HINT_FLUSH_GUEST_SHADOW_GREG(iGReg);
+                IEM_MC_HINT_FLUSH_GUEST_SHADOW_SREG(iSegReg);
                 IEM_MC_CALL_CIMPL_5(               0, iemCImpl_load_SReg_Greg, uSel, offSeg, iSegRegArg, iGRegArg, enmEffOpSize);
+                IEM_MC_END();
+            }
             else
+            {
+                IEM_MC_BEGIN(5, 1, 0, 0);
+                IEM_MC_LOCAL(RTGCPTR,       GCPtrEff);
+                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEM_MC_ARG(uint16_t,        offSeg,                                  1);
+                IEM_MC_FETCH_MEM_U16(offSeg, pVCpu->iem.s.iEffSeg, GCPtrEff); /** @todo check memory access pattern */
+                IEM_MC_ARG(uint16_t,        uSel,                                    0);
+                IEM_MC_FETCH_MEM_U16_DISP(uSel, pVCpu->iem.s.iEffSeg, GCPtrEff, 2);
+                IEM_MC_ARG_CONST(uint8_t,   iSegRegArg,/*=*/iSegReg,                 2);
+                IEM_MC_ARG_CONST(uint8_t,   iGRegArg,  /*=*/iGReg,                   3);
+                IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pVCpu->iem.s.enmEffOpSize, 4);
+                IEM_MC_HINT_FLUSH_GUEST_SHADOW_GREG(iGReg);
+                IEM_MC_HINT_FLUSH_GUEST_SHADOW_SREG(iSegReg);
                 IEM_MC_CALL_CIMPL_5(IEM_CIMPL_F_MODE, iemCImpl_load_SReg_Greg, uSel, offSeg, iSegRegArg, iGRegArg, enmEffOpSize);
-            IEM_MC_END();
+                IEM_MC_END();
+            }
 
         case IEMMODE_32BIT:
-            IEM_MC_BEGIN(5, 1, IEM_MC_F_MIN_386, 0);
-            IEM_MC_ARG(uint16_t,        uSel,                                    0);
-            IEM_MC_ARG(uint32_t,        offSeg,                                  1);
-            IEM_MC_ARG_CONST(uint8_t,   iSegRegArg,/*=*/iSegReg,                 2);
-            IEM_MC_ARG_CONST(uint8_t,   iGRegArg,  /*=*/iGReg,                   3);
-            IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pVCpu->iem.s.enmEffOpSize, 4);
-            IEM_MC_LOCAL(RTGCPTR,       GCPtrEff);
-            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_FETCH_MEM_U32(offSeg, pVCpu->iem.s.iEffSeg, GCPtrEff);
-            IEM_MC_FETCH_MEM_U16_DISP(uSel, pVCpu->iem.s.iEffSeg, GCPtrEff, 4);
             if (iSegReg >= X86_SREG_FS || !IEM_IS_32BIT_CODE(pVCpu))
+            {
+                IEM_MC_BEGIN(5, 1, IEM_MC_F_MIN_386, 0);
+                IEM_MC_LOCAL(RTGCPTR,       GCPtrEff);
+                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEM_MC_ARG(uint32_t,        offSeg,                                  1);    /** @todo check memory access pattern */
+                IEM_MC_FETCH_MEM_U32(offSeg, pVCpu->iem.s.iEffSeg, GCPtrEff);
+                IEM_MC_ARG(uint16_t,        uSel,                                    0);
+                IEM_MC_FETCH_MEM_U16_DISP(uSel, pVCpu->iem.s.iEffSeg, GCPtrEff, 4);
+                IEM_MC_ARG_CONST(uint8_t,   iSegRegArg,/*=*/iSegReg,                 2);
+                IEM_MC_ARG_CONST(uint8_t,   iGRegArg,  /*=*/iGReg,                   3);
+                IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pVCpu->iem.s.enmEffOpSize, 4);
+                IEM_MC_HINT_FLUSH_GUEST_SHADOW_GREG(iGReg);
+                IEM_MC_HINT_FLUSH_GUEST_SHADOW_SREG(iSegReg);
                 IEM_MC_CALL_CIMPL_5(               0, iemCImpl_load_SReg_Greg, uSel, offSeg, iSegRegArg, iGRegArg, enmEffOpSize);
+                IEM_MC_END();
+            }
             else
+            {
+                IEM_MC_BEGIN(5, 1, IEM_MC_F_MIN_386, 0);
+                IEM_MC_LOCAL(RTGCPTR,       GCPtrEff);
+                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEM_MC_ARG(uint32_t,        offSeg,                                  1);    /** @todo check memory access pattern */
+                IEM_MC_FETCH_MEM_U32(offSeg, pVCpu->iem.s.iEffSeg, GCPtrEff);
+                IEM_MC_ARG(uint16_t,        uSel,                                    0);
+                IEM_MC_FETCH_MEM_U16_DISP(uSel, pVCpu->iem.s.iEffSeg, GCPtrEff, 4);
+                IEM_MC_ARG_CONST(uint8_t,   iSegRegArg,/*=*/iSegReg,                 2);
+                IEM_MC_ARG_CONST(uint8_t,   iGRegArg,  /*=*/iGReg,                   3);
+                IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pVCpu->iem.s.enmEffOpSize, 4);
+                IEM_MC_HINT_FLUSH_GUEST_SHADOW_GREG(iGReg);
+                IEM_MC_HINT_FLUSH_GUEST_SHADOW_SREG(iSegReg);
                 IEM_MC_CALL_CIMPL_5(IEM_CIMPL_F_MODE, iemCImpl_load_SReg_Greg, uSel, offSeg, iSegRegArg, iGRegArg, enmEffOpSize);
-            IEM_MC_END();
+                IEM_MC_END();
+            }
 
         case IEMMODE_64BIT:
             IEM_MC_BEGIN(5, 1, IEM_MC_F_64BIT, 0);
             IEM_MC_ARG(uint16_t,        uSel,                                    0);
             IEM_MC_ARG(uint64_t,        offSeg,                                  1);
-            IEM_MC_ARG_CONST(uint8_t,   iSegRegArg,/*=*/iSegReg,                 2);
-            IEM_MC_ARG_CONST(uint8_t,   iGRegArg,  /*=*/iGReg,                   3);
-            IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pVCpu->iem.s.enmEffOpSize, 4);
             IEM_MC_LOCAL(RTGCPTR,       GCPtrEff);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -988,6 +1025,11 @@ FNIEMOP_DEF_2(iemOpCommonLoadSRegAndGreg, uint8_t, iSegReg, uint8_t, bRm)
             else
                 IEM_MC_FETCH_MEM_U64(offSeg, pVCpu->iem.s.iEffSeg, GCPtrEff);
             IEM_MC_FETCH_MEM_U16_DISP(uSel, pVCpu->iem.s.iEffSeg, GCPtrEff, 8);
+            IEM_MC_ARG_CONST(uint8_t,   iSegRegArg,/*=*/iSegReg,                 2);
+            IEM_MC_ARG_CONST(uint8_t,   iGRegArg,  /*=*/iGReg,                   3);
+            IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pVCpu->iem.s.enmEffOpSize, 4);
+            IEM_MC_HINT_FLUSH_GUEST_SHADOW_GREG(iGReg);
+            IEM_MC_HINT_FLUSH_GUEST_SHADOW_SREG(iSegReg);
             IEM_MC_CALL_CIMPL_5(0, iemCImpl_load_SReg_Greg, uSel, offSeg, iSegRegArg, iGRegArg, enmEffOpSize);
             IEM_MC_END();
 
