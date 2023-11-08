@@ -41,7 +41,6 @@
 #include "nsISupports.h"
 #include "nsVoidArray.h"
 #include "prprf.h"
-#include "prlog.h"
 #include "plstr.h"
 #include <stdlib.h>
 #include "nsCOMPtr.h"
