@@ -37,8 +37,9 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "prlog.h"
 #include "ipcLockProtocol.h"
+
+#include <iprt/assert.h>
 
 //-----------------------------------------------------------------------------
 
@@ -80,7 +81,7 @@ IPC_FlattenLockMsg(const ipcLockMsg *msg, PRUint32 *bufLen)
 void
 IPC_UnflattenLockMsg(const PRUint8 *buf, PRUint32 bufLen, ipcLockMsg *msg)
 {
-    PR_ASSERT(bufLen > 2); // malformed buffer otherwise
+    Assert(bufLen > 2); // malformed buffer otherwise
     msg->opcode = get_opcode(buf);
     msg->flags = get_flags(buf);
     msg->key = get_key(buf);

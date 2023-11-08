@@ -117,7 +117,7 @@ public:
     *          slot is empty.
     */
   void* operator[](PRUint32 index) { 
-    PR_ASSERT(index < mNext);
+    Assert(index < mNext);
     return mElements[index]; 
   }
 

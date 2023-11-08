@@ -41,8 +41,9 @@
 #include "nscore.h"
 #include "nsError.h"
 #include "nsID.h"
-#include "prlog.h"
 #include <stdio.h>
+
+#include <iprt/assert.h>
 
 // UUID used to identify the Transaction Module in both daemon and client
 // not part of the XPCOM hooks, but rather a means of identifying

@@ -35,7 +35,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "prlog.h"
 #include "prio.h"
 
 #include "ipcConfig.h"
@@ -45,6 +44,8 @@
 #include "ipcCommandModule.h"
 #include "ipcdPrivate.h"
 #include "ipcd.h"
+
+#include <iprt/assert.h>
 
 //-----------------------------------------------------------------------------
 
@@ -64,13 +65,13 @@ IPC_NotifyParent()
 PRStatus
 IPC_DispatchMsg(ipcClient *client, const ipcMessage *msg)
 {
-    PR_ASSERT(client);
-    PR_ASSERT(msg);
+    Assert(client);
+    Assert(msg);
 
     // remember if client is expecting SYNC_REPLY.  we'll add that flag to the
     // next message sent to the client.
     if (msg->TestFlag(IPC_MSG_FLAG_SYNC_QUERY)) {
-        PR_ASSERT(client->GetExpectsSyncReply() == PR_FALSE);
+        Assert(client->GetExpectsSyncReply() == PR_FALSE);
         // XXX shouldn't we remember the TargetID as well, and only set the
         //     SYNC_REPLY flag on the next message sent to the same TargetID?
         client->SetExpectsSyncReply(PR_TRUE);
@@ -87,7 +88,7 @@ IPC_DispatchMsg(ipcClient *client, const ipcMessage *msg)
 PRStatus
 IPC_SendMsg(ipcClient *client, ipcMessage *msg)
 {
-    PR_ASSERT(msg);
+    Assert(msg);
 
     if (client == NULL) {
         //
@@ -171,7 +172,7 @@ IPC_GetClientByName(const char *name)
 void
 IPC_EnumClients(ipcClientEnumFunc func, void *closure)
 {
-    PR_ASSERT(func);
+    Assert(func);
     for (int i = 0; i < ipcClientCount; ++i) {
         if (func(closure, &ipcClients[i], ipcClients[i].ID()) == PR_FALSE)
             break;
@@ -181,30 +182,30 @@ IPC_EnumClients(ipcClientEnumFunc func, void *closure)
 PRUint32
 IPC_GetClientID(ipcClient *client)
 {
-    PR_ASSERT(client);
+    Assert(client);
     return client->ID();
 }
 
 PRBool
 IPC_ClientHasName(ipcClient *client, const char *name)
 {
-    PR_ASSERT(client);
-    PR_ASSERT(name);
+    Assert(client);
+    Assert(name);
     return client->HasName(name);
 }
 
 PRBool
 IPC_ClientHasTarget(ipcClient *client, const nsID &target)
 {
-    PR_ASSERT(client);
+    Assert(client);
     return client->HasTarget(target);
 }
 
 void
 IPC_EnumClientNames(ipcClient *client, ipcClientNameEnumFunc func, void *closure)
 {
-    PR_ASSERT(client);
-    PR_ASSERT(func);
+    Assert(client);
+    Assert(func);
     const ipcStringNode *node = client->Names();
     while (node) {
         if (func(closure, client, node->Value()) == PR_FALSE)
@@ -216,8 +217,8 @@ IPC_EnumClientNames(ipcClient *client, ipcClientNameEnumFunc func, void *closure
 void
 IPC_EnumClientTargets(ipcClient *client, ipcClientTargetEnumFunc func, void *closure)
 {
-    PR_ASSERT(client);
-    PR_ASSERT(func);
+    Assert(client);
+    Assert(func);
     const ipcIDNode *node = client->Targets();
     while (node) {
         if (func(closure, client, node->Value()) == PR_FALSE)
