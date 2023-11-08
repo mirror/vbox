@@ -65,8 +65,6 @@ PRFileDesc *_pr_stdin;
 PRFileDesc *_pr_stdout;
 PRFileDesc *_pr_stderr;
 
-PRLock *_pr_sleeplock;  /* used in PR_Sleep(), classic and pthreads */
-
 PRBool _pr_initialized = PR_FALSE;
 
 
@@ -103,9 +101,6 @@ static void _PR_InitStuff(void)
 
     _PR_InitLocks();
     _PR_InitClock();
-
-    _pr_sleeplock = PR_NewLock();
-    PR_ASSERT(NULL != _pr_sleeplock);
 
     _PR_InitThreads(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
 

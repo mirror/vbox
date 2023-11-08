@@ -62,7 +62,6 @@
  */
 
 static PRIntn pt_schedpriv = 0;
-extern PRLock *_pr_sleeplock;
 
 static struct _PT_Bookeeping
 {
@@ -507,38 +506,6 @@ PR_IMPLEMENT(PRStatus) PR_Interrupt(PRThread *thred)
     return PR_SUCCESS;
 }  /* PR_Interrupt */
 
-PR_IMPLEMENT(PRStatus) PR_Sleep(PRIntervalTime ticks)
-{
-    PRStatus rv = PR_SUCCESS;
-
-    if (!_pr_initialized) _PR_ImplicitInitialization();
-
-    if (PR_INTERVAL_NO_WAIT == ticks)
-    {
-        _PT_PTHREAD_YIELD();
-    }
-    else
-    {
-        PRCondVar *cv;
-        PRIntervalTime timein;
-
-        timein = PR_IntervalNow();
-        cv = PR_NewCondVar(_pr_sleeplock);
-        PR_ASSERT(cv != NULL);
-        PR_Lock(_pr_sleeplock);
-        do
-        {
-            PRIntervalTime now = PR_IntervalNow();
-            PRIntervalTime delta = now - timein;
-            if (delta > ticks) break;
-            rv = PR_WaitCondVar(cv, ticks - delta);
-        } while (PR_SUCCESS == rv);
-        PR_Unlock(_pr_sleeplock);
-        PR_DestroyCondVar(cv);
-    }
-    return rv;
-}  /* PR_Sleep */
-
 static void _pt_thread_death(void *arg)
 {
     PRThread *thred = (PRThread*)arg;
@@ -672,8 +639,7 @@ PR_IMPLEMENT(PRStatus) PR_Cleanup(void)
             PR_DestroyLock(pt_book.ml); pt_book.ml = NULL;
         }
         _pt_thread_death(me);
-        PR_DestroyLock(_pr_sleeplock);
-        _pr_sleeplock = NULL;
+
         _pr_initialized = PR_FALSE;
         return PR_SUCCESS;
     }
