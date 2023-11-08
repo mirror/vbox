@@ -41,7 +41,6 @@
 ** Exports:            ptthread.h
 */
 
-#include "prlog.h"
 #include "primpl.h"
 
 #include <pthread.h>
@@ -54,6 +53,7 @@
 #include <iprt/mem.h>
 #include <iprt/asm.h>
 #include <iprt/err.h>
+#include <VBox/log.h>
 
 /*
  * Record whether or not we have the privilege to set the scheduling
@@ -367,8 +367,7 @@ PR_IMPLEMENT(PRStatus) PR_JoinThread(PRThread *thred)
          * thread deserves all the rath I can muster....
          */
         PR_SetError(PR_INVALID_ARGUMENT_ERROR, 0);
-        PR_LogPrint(
-            "PR_JoinThread: 0x%X not joinable | already smashed\n", thred);
+        Log(("PR_JoinThread: 0x%X not joinable | already smashed\n", thred));
     }
     else
     {
@@ -454,8 +453,7 @@ PR_IMPLEMENT(void) PR_SetThreadPriority(PRThread *thred, PRThreadPriority newPri
 			if (EPERM == rv)
 			{
 				pt_schedpriv = EPERM;
-				PR_LOG(_pr_thread_lm, PR_LOG_MIN,
-					("PR_SetThreadPriority: no thread scheduling privilege"));
+				Log(("PR_SetThreadPriority: no thread scheduling privilege\n"));
 			}
 		}
 		if (rv != 0)
@@ -613,7 +611,7 @@ void _PR_InitThreads(
 PR_IMPLEMENT(PRStatus) PR_Cleanup(void)
 {
     PRThread *me = PR_CurrentThread();
-    PR_LOG(_pr_thread_lm, PR_LOG_MIN, ("PR_Cleanup: shutting down NSPR"));
+    Log(("PR_Cleanup: shutting down NSPR\n"));
     PR_ASSERT(me->state & PT_THREAD_PRIMORD);
     if (me->state & PT_THREAD_PRIMORD)
     {
