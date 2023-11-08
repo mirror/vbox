@@ -37,47 +37,19 @@
 
 #include "nsThread.h"
 #include "prmem.h"
-#include "prlog.h"
 #include "nsAutoLock.h"
 
 #include <iprt/assert.h>
+#include <VBox/log.h>
 
 RTTLS nsThread::kIThreadSelfIndex = NIL_RTTLS;
 static nsIThread *gMainThread = 0;
-
-#if defined(PR_LOGGING)
-//
-// Log module for nsIThread logging...
-//
-// To enable logging (see prlog.h for full details):
-//
-//    set NSPR_LOG_MODULES=nsIThread:5
-//    set NSPR_LOG_FILE=nspr.log
-//
-// this enables PR_LOG_DEBUG level information and places all output in
-// the file nspr.log
-//
-// gSocketLog is defined in nsSocketTransport.cpp
-//
-PRLogModuleInfo* nsIThreadLog = nsnull;
-
-#endif /* PR_LOGGING */
 
 ////////////////////////////////////////////////////////////////////////////////
 
 nsThread::nsThread()
     : mThread(nsnull), mDead(PR_FALSE), mStartLock(nsnull)
 {
-#if defined(PR_LOGGING)
-    //
-    // Initialize the global PRLogModule for nsIThread logging 
-    // if necessary...
-    //
-    if (nsIThreadLog == nsnull) {
-        nsIThreadLog = PR_NewLogModule("nsIThread");
-    }
-#endif /* PR_LOGGING */
-
     // enforce matching of constants to enums in prthread.h
     NS_ASSERTION(int(nsIThread::PRIORITY_LOW)     == int(PR_PRIORITY_LOW) &&
                  int(nsIThread::PRIORITY_NORMAL)  == int(PRIORITY_NORMAL) &&
@@ -95,8 +67,7 @@ nsThread::~nsThread()
     if (mStartLock)
         PR_DestroyLock(mStartLock);
 
-    PR_LOG(nsIThreadLog, PR_LOG_DEBUG,
-           ("nsIThread %p destroyed\n", this));
+    Log(("nsIThread %p destroyed\n", this));
 
     // This code used to free the nsIThreadLog loginfo stuff
     // Don't do that; loginfo structures are owned by nspr
@@ -115,20 +86,16 @@ nsThread::Main(void* arg)
     rv = self->RegisterThreadSelf();
     NS_ASSERTION(rv == NS_OK, "failed to set thread self");
 
-    PR_LOG(nsIThreadLog, PR_LOG_DEBUG,
-           ("nsIThread %p start run %p\n", self, self->mRunnable.get()));
+    Log(("nsIThread %p start run %p\n", self, self->mRunnable.get()));
     rv = self->mRunnable->Run();
     NS_ASSERTION(NS_SUCCEEDED(rv), "runnable failed");
 
-#ifdef DEBUG
+#ifdef LOG_ENABLED
     // Because a thread can die after gMainThread dies and takes nsIThreadLog with it,
     // we need to check for it being null so that we don't crash on shutdown.
-    if (nsIThreadLog) {
-      PRThreadState state;
-      rv = self->GetState(&state);
-      PR_LOG(nsIThreadLog, PR_LOG_DEBUG,
-             ("nsIThread %p end run %p\n", self, self->mRunnable.get()));
-    }
+    PRThreadState state;
+    rv = self->GetState(&state);
+    Log(("nsIThread %p end run %p\n", self, self->mRunnable.get()));
 #endif
 
     // explicitly drop the runnable now in case there are circular references
@@ -148,12 +115,7 @@ nsThread::Exit(void* arg)
 
     self->mDead = PR_TRUE;
 
-#if defined(PR_LOGGING)
-    if (nsIThreadLog) {
-      PR_LOG(nsIThreadLog, PR_LOG_DEBUG,
-             ("nsIThread %p exited\n", self));
-    }
-#endif
+    Log(("nsIThread %p exited\n", self));
     NS_RELEASE(self);
 }
 
@@ -175,15 +137,13 @@ nsThread::Join()
     // don't check for mDead here because nspr calls Exit (cleaning up
     // thread-local storage) before they let us join with the thread
 
-    PR_LOG(nsIThreadLog, PR_LOG_DEBUG,
-           ("nsIThread %p start join\n", this));
+    Log(("nsIThread %p start join\n", this));
     if (!mThread)
         return NS_ERROR_NOT_INITIALIZED;
     PRStatus status = PR_JoinThread(mThread);
     // XXX can't use NS_RELEASE here because the macro wants to set
     // this to null (bad c++)
-    PR_LOG(nsIThreadLog, PR_LOG_DEBUG,
-           ("nsIThread %p end join\n", this));
+    Log(("nsIThread %p end join\n", this));
     if (status == PR_SUCCESS) {
         NS_RELEASE_THIS();   // most likely the final release of this thread 
         return NS_OK;
@@ -278,8 +238,7 @@ nsThread::Init(nsIRunnable* runnable,
     mThread = PR_CreateThread(PR_USER_THREAD, Main, this,
                               priority, scope, state, stackSize);
     PR_Unlock(mStartLock);
-    PR_LOG(nsIThreadLog, PR_LOG_DEBUG,
-           ("nsIThread %p created\n", this));
+    Log(("nsIThread %p created\n", this));
 
     if (mThread == nsnull)
         return NS_ERROR_OUT_OF_MEMORY;
