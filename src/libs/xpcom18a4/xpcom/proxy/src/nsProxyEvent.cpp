@@ -53,7 +53,6 @@
 #include "nsIProxyObjectManager.h"
 #include "nsCRT.h"
 
-#include "pratom.h"
 #include "prmem.h"
 #include "xptcall.h"
 
@@ -93,7 +92,7 @@ nsProxyObjectCallInfo::nsProxyObjectCallInfo( nsProxyObject* owner,
     NS_ASSERTION(methodInfo, "No nsXPTMethodInfo!");
     NS_ASSERTION(event, "No PLEvent!");
 
-    mCompleted        = 0;
+    mCompleted        = false;
     mMethodIndex      = methodIndex;
     mParameterList    = parameterList;
     mParameterCount   = parameterCount;
@@ -231,13 +230,13 @@ nsProxyObjectCallInfo::CopyStrings(PRBool copy)
 PRBool
 nsProxyObjectCallInfo::GetCompleted()
 {
-    return (PRBool)mCompleted;
+    return ASMAtomicReadBool(&mCompleted) ? PR_TRUE : PR_FALSE;
 }
 
 void
 nsProxyObjectCallInfo::SetCompleted()
 {
-    PR_AtomicSet(&mCompleted, 1);
+    ASMAtomicWriteBool(&mCompleted, true);
 }
 
 void
@@ -310,7 +309,7 @@ nsProxyObject::~nsProxyObject()
 void
 nsProxyObject::AddRef()
 {
-  PR_AtomicIncrement((PRInt32 *)&mRefCnt);
+  ASMAtomicIncU32((volatile uint32_t *)&mRefCnt);
   NS_LOG_ADDREF(this, mRefCnt, "nsProxyObject", sizeof(*this));
 }
 
@@ -319,7 +318,7 @@ nsProxyObject::Release(void)
 {
   NS_PRECONDITION(0 != mRefCnt, "dup release");
 
-  nsrefcnt count = PR_AtomicDecrement((PRInt32 *)&mRefCnt);
+  nsrefcnt count = ASMAtomicDecU32((volatile uint32_t *)&mRefCnt);
   NS_LOG_RELEASE(this, count, "nsProxyObject");
 
   if (count == 0)

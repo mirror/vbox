@@ -149,7 +149,7 @@ public:
     {
         NS_PRECONDITION(PRInt32(mRefCnt) >= 0, "illegal refcnt");
         nsrefcnt count;
-        count = PR_AtomicIncrement((PRInt32*)&mRefCnt);
+        count = ASMAtomicIncU32((volatile uint32_t *)&mRefCnt);
         NS_LOG_ADDREF(this, count, "ListenerImpl", sizeof(*this));
         return count;
     }
@@ -158,7 +158,7 @@ public:
     {
         nsrefcnt count;
         NS_PRECONDITION(0 != mRefCnt, "dup release");
-        count = PR_AtomicDecrement((PRInt32 *)&mRefCnt);
+        count = ASMAtomicDecU32((volatile uint32_t *)&mRefCnt);
         NS_LOG_RELEASE(this, count, "ListenerImpl");
         if (0 == count) {
             mRefCnt = 1; /* stabilize */

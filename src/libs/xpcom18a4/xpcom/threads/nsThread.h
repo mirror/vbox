@@ -53,6 +53,8 @@
 #include "nsIThread.h"
 #include "nsCOMPtr.h"
 
+#include "prlock.h"
+
 #include <iprt/thread.h>
 
 class nsThread : public nsIThread 

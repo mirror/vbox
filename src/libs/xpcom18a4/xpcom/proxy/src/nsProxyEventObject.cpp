@@ -487,7 +487,7 @@ nsProxyEventObject::Release(void)
     NS_PRECONDITION(0 != mRefCnt, "dup release");
     // Decrement atomically - in case the Proxy Object Manager has already
     // been deleted and the monitor is unavailable...
-    count = PR_AtomicDecrement((PRInt32 *)&mRefCnt);
+    count = ASMAtomicDecU32((volatile uint32_t *)&mRefCnt);
     NS_LOG_RELEASE(this, count, "nsProxyEventObject");
     if (0 == count) {
         mRefCnt = 1; /* stabilize */

@@ -166,7 +166,7 @@ private:
     nsXPTCVariant   *mParameterList;             /* marshalled in parameter buffer */
     PRUint32         mParameterCount;            /* number of params */
     PLEvent         *mEvent;                     /* the current plevent */       
-    PRInt32          mCompleted;                 /* is true when the method has been called. */
+    volatile bool    mCompleted;                 /* is true when the method has been called. */
        
     nsCOMPtr<nsIEventQueue>  mCallersEventQ;     /* this is the eventQ that we must post a message back to 
                                                     when we are done invoking the method (only PROXY_SYNC). 
