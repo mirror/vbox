@@ -2940,7 +2940,7 @@ nsresult
 nsComponentManagerImpl::UnregisterComponent(const nsCID &aClass,
                                             const char *registryName)
 {
-#ifdef PR_LOGGING
+#ifdef LOG_ENABLED
     char *buf = aClass.ToString();
     Log(("nsComponentManager: UnregisterComponent(%s)", buf));
     if (buf)
