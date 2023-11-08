@@ -834,22 +834,16 @@ FNIEMOP_DEF(iemOp_insertps_Vdq_UdqMd_Ib)
          * XMM, XMM.
          */
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
-        IEM_MC_BEGIN(0, 3, IEM_MC_F_NOT_286_OR_OLDER, 0);
+        IEM_MC_BEGIN(0, 1, IEM_MC_F_NOT_286_OR_OLDER, 0);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse41);
-        IEM_MC_LOCAL(uint32_t,  uSrc);
-        IEM_MC_LOCAL(uint8_t,   uSrcSel);
-        IEM_MC_LOCAL(uint8_t,   uDstSel);
         IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
         IEM_MC_PREPARE_SSE_USAGE();
-        IEM_MC_ASSIGN(uSrcSel, bImm);
-        IEM_MC_SHR_LOCAL_U8(uSrcSel, 6);
-        IEM_MC_AND_LOCAL_U8(uSrcSel, 3);
-        IEM_MC_FETCH_XREG_U32(uSrc, IEM_GET_MODRM_RM(pVCpu, bRm), uSrcSel);
-        IEM_MC_ASSIGN(uDstSel, bImm);
-        IEM_MC_SHR_LOCAL_U8(uDstSel, 4);
-        IEM_MC_AND_LOCAL_U8(uDstSel, 3);
+
+        IEM_MC_LOCAL(uint32_t, uSrc);
+        IEM_MC_FETCH_XREG_U32(uSrc, IEM_GET_MODRM_RM(pVCpu, bRm), (bImm >> 6) & 3);
         IEM_MC_CLEAR_XREG_U32_MASK(IEM_GET_MODRM_REG(pVCpu, bRm), bImm);
-        IEM_MC_STORE_XREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), uDstSel, uSrc);
+        IEM_MC_STORE_XREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), (bImm >> 4) & 3, uSrc);
+
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
@@ -858,23 +852,19 @@ FNIEMOP_DEF(iemOp_insertps_Vdq_UdqMd_Ib)
         /*
          * XMM, [mem32].
          */
-        IEM_MC_BEGIN(0, 3, IEM_MC_F_NOT_286_OR_OLDER, 0);
-        IEM_MC_LOCAL(uint32_t,  uSrc);
+        IEM_MC_BEGIN(0, 2, IEM_MC_F_NOT_286_OR_OLDER, 0);
         IEM_MC_LOCAL(RTGCPTR,   GCPtrEffSrc);
-        IEM_MC_LOCAL(uint8_t,   uDstSel);
-
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 1);
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX_EX(fSse41);
         IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
         IEM_MC_PREPARE_SSE_USAGE();
 
+        IEM_MC_LOCAL(uint32_t,  uSrc);
         IEM_MC_FETCH_MEM_U32(uSrc, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
-        IEM_MC_ASSIGN(uDstSel, bImm);
-        IEM_MC_SHR_LOCAL_U8(uDstSel, 4);
-        IEM_MC_AND_LOCAL_U8(uDstSel, 3);
         IEM_MC_CLEAR_XREG_U32_MASK(IEM_GET_MODRM_REG(pVCpu, bRm), bImm);
-        IEM_MC_STORE_XREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), uDstSel, uSrc);
+        IEM_MC_STORE_XREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), (bImm >> 4) & 3, uSrc);
         IEM_MC_ADVANCE_RIP_AND_FINISH();
         IEM_MC_END();
     }
