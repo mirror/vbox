@@ -50,11 +50,12 @@
 #include "nsReadableUtils.h"
 #include "nsCRT.h"
 #include "nsUTF8Utils.h"
-#include "prdtoa.h"
 #include "prprf.h"
-#ifdef VBOX_USE_IPRT_IN_XPCOM
-# include <iprt/mem.h>
-#endif
+
+#include <iprt/assert.h>
+#include <iprt/errcore.h>
+#include <iprt/mem.h>
+#include <iprt/string.h>
 
 /* ***** BEGIN RICKG BLOCK *****
  *
@@ -803,107 +804,6 @@ RFindCharInSet( const CharT* data, PRUint32 dataLen, const SetCharT* set )
     return kNotFound;
   }
 
-/**
- * This is a copy of |PR_cnvtf| with a bug fixed.  (The second argument
- * of PR_dtoa is 2 rather than 1.)
- *
- * XXXdarin if this is the right thing, then why wasn't it fixed in NSPR?!?
- */
-void
-Modified_cnvtf(char *buf, int bufsz, int prcsn, double fval)
-{
-  PRIntn decpt, sign, numdigits;
-  char *num, *nump;
-  char *bufp = buf;
-  char *endnum;
-
-  /* If anything fails, we store an empty string in 'buf' */
-#ifdef VBOX_USE_IPRT_IN_XPCOM
-  num = (char*)RTMemAlloc(bufsz);
-#else
-  num = (char*)malloc(bufsz);
-#endif
-  if (num == NULL) {
-    buf[0] = '\0';
-    return;
-  }
-  if (PR_dtoa(fval, 2, prcsn, &decpt, &sign, &endnum, num, bufsz)
-      == PR_FAILURE) {
-    buf[0] = '\0';
-    goto done;
-  }
-  numdigits = endnum - num;
-  nump = num;
-
-  /*
-   * The NSPR code had a fancy way of checking that we weren't dealing
-   * with -0.0 or -NaN, but I'll just use < instead.
-   * XXX Should we check !isnan(fval) as well?  Is it portable?  We
-   * probably don't need to bother since NAN isn't portable.
-   */
-  if (sign && fval < 0.0f) {
-    *bufp++ = '-';
-  }
-
-  if (decpt == 9999) {
-    while ((*bufp++ = *nump++) != 0) {} /* nothing to execute */
-    goto done;
-  }
-
-  if (decpt > (prcsn+1) || decpt < -(prcsn-1) || decpt < -5) {
-    *bufp++ = *nump++;
-    if (numdigits != 1) {
-      *bufp++ = '.';
-    }
-
-    while (*nump != '\0') {
-      *bufp++ = *nump++;
-    }
-    *bufp++ = 'e';
-    PR_snprintf(bufp, bufsz - (bufp - buf), "%+d", decpt-1);
-  }
-  else if (decpt >= 0) {
-    if (decpt == 0) {
-      *bufp++ = '0';
-    }
-    else {
-      while (decpt--) {
-        if (*nump != '\0') {
-          *bufp++ = *nump++;
-        }
-        else {
-          *bufp++ = '0';
-        }
-      }
-    }
-    if (*nump != '\0') {
-      *bufp++ = '.';
-      while (*nump != '\0') {
-        *bufp++ = *nump++;
-      }
-    }
-    *bufp++ = '\0';
-  }
-  else if (decpt < 0) {
-    *bufp++ = '0';
-    *bufp++ = '.';
-    while (decpt++) {
-      *bufp++ = '0';
-    }
-
-    while (*nump != '\0') {
-      *bufp++ = *nump++;
-    }
-    *bufp++ = '\0';
-  }
-done:
-#ifdef VBOX_USE_IPRT_IN_XPCOM
-  RTMemFree(num);
-#else
-  free(num);
-#endif
-}
-
   /**
    * this method changes the meaning of |offset| and |count|:
    *
@@ -1140,13 +1040,10 @@ nsCString::ToFloat(PRInt32* aErrorCode) const
     float res = 0.0f;
     if (mLength > 0)
       {
-        char *conv_stopped;
-        const char *str = mData;
-        // Use PR_strtod, not strtod, since we don't want locale involved.
-        res = (float)PR_strtod(str, &conv_stopped);
-        if (conv_stopped == str+mLength)
+        int vrc = RTStrToFloatEx(mData, NULL /*ppstNext*/, 0 /*cchMax*/, &res);
+        if (vrc == VINF_SUCCESS)
           *aErrorCode = (PRInt32) NS_OK;
-        else // Not all the string was scanned
+        else // Illegal value
           *aErrorCode = (PRInt32) NS_ERROR_ILLEGAL_VALUE;
       }
     else
@@ -1164,13 +1061,11 @@ nsString::ToFloat(PRInt32* aErrorCode) const
     char buf[100];
     if (mLength > 0 && mLength < sizeof(buf))
       {
-        char *conv_stopped;
         const char *str = ToCString(buf, sizeof(buf));
-        // Use PR_strtod, not strtod, since we don't want locale involved.
-        res = (float)PR_strtod(str, &conv_stopped);
-        if (conv_stopped == str+mLength)
+        int vrc = RTStrToFloatEx(str, NULL /*ppstNext*/, 0 /*cchMax*/, &res);
+        if (vrc == VINF_SUCCESS)
           *aErrorCode = (PRInt32) NS_OK;
-        else // Not all the string was scanned
+        else // Illegal value
           *aErrorCode = (PRInt32) NS_ERROR_ILLEGAL_VALUE;
       }
     else
@@ -1308,9 +1203,10 @@ void
 nsCString::AppendFloat( double aFloat )
   {
     char buf[40];
-    // Use Modified_cnvtf, which is locale-insensitive, instead of the
-    // locale-sensitive PR_snprintf or sprintf(3)
-    Modified_cnvtf(buf, sizeof(buf), 6, aFloat);
+    RTFLOAT64U r64;
+    r64.rd = aFloat;
+    ssize_t cch = RTStrFormatR64(buf, sizeof(buf), &r64, 0, 6 /*cchPrecision*/, 0 /*fFlags*/);
+    Assert(cch > 0);
     Append(buf);
   }
 
@@ -1318,9 +1214,10 @@ void
 nsString::AppendFloat( double aFloat )
   {
     char buf[40];
-    // Use Modified_cnvtf, which is locale-insensitive, instead of the
-    // locale-sensitive PR_snprintf or sprintf(3)
-    Modified_cnvtf(buf, sizeof(buf), 6, aFloat);
+    RTFLOAT64U r64;
+    r64.rd = aFloat;
+    ssize_t cch = RTStrFormatR64(buf, sizeof(buf), &r64, 0, 6 /*cchPrecision*/, 0 /*fFlags*/);
+    Assert(cch > 0);
     AppendWithConversion(buf);
   }
 
