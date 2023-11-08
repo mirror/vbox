@@ -46,6 +46,9 @@
 #include "nsHashtable.h"
 #include "nsIObserver.h"
 
+#include <iprt/semaphore.h>
+#include <iprt/thread.h>
+
 class nsExceptionManager;
 
 /** Exception Service definition **/
@@ -78,12 +81,12 @@ public:
 
   /* single lock protects both providers hashtable
      and thread list */
-  static PRLock* lock;
+  static RTSEMFASTMUTEX lock;
 
-  static PRUintn tlsIndex;
-  static void PR_CALLBACK ThreadDestruct( void *data );
+  static RTTLS tlsIndex;
+  static DECLCALLBACK(void) ThreadDestruct(void *data);
 #ifdef NS_DEBUG
-  static PRInt32 totalInstances;
+  static volatile uint32_t totalInstances;
 #endif
 
 private:

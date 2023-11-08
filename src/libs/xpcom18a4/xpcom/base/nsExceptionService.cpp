@@ -42,10 +42,12 @@
 #include "nsCOMPtr.h"
 #include "prthread.h"
 #include "prlock.h"
-static const PRUintn BAD_TLS_INDEX = (PRUintn) -1;
 
-#define CHECK_SERVICE_USE_OK() if (tlsIndex == BAD_TLS_INDEX) return NS_ERROR_NOT_INITIALIZED
-#define CHECK_MANAGER_USE_OK() if (!mService || nsExceptionService::tlsIndex == BAD_TLS_INDEX) return NS_ERROR_NOT_INITIALIZED
+#include <iprt/asm.h>
+#include <iprt/errcore.h>
+
+#define CHECK_SERVICE_USE_OK() if (tlsIndex == NIL_RTTLS) return NS_ERROR_NOT_INITIALIZED
+#define CHECK_MANAGER_USE_OK() if (!mService || nsExceptionService::tlsIndex == NIL_RTTLS) return NS_ERROR_NOT_INITIALIZED
 
 // A key for our registered module providers hashtable
 class nsProviderKey : public nsHashKey {
@@ -78,7 +80,7 @@ public:
   nsExceptionManager *mNextThread; // not ref-counted.
   nsExceptionService *mService; // not ref-counted
 #ifdef NS_DEBUG
-  static PRInt32 totalInstances;
+  static volatile uint32_t totalInstances;
 #endif
 
 #ifdef NS_DEBUG
@@ -102,7 +104,7 @@ private:
 
 
 #ifdef NS_DEBUG
-PRInt32 nsExceptionManager::totalInstances = 0;
+volatile uint32_t nsExceptionManager::totalInstances = 0;
 #endif
 
 // Note: the nsExceptionManager object is single threaded - the exception
@@ -124,7 +126,7 @@ nsExceptionManager::nsExceptionManager(nsExceptionService *svc) :
 {
   /* member initializers and constructor code */
 #ifdef NS_DEBUG
-  PR_AtomicIncrement(&totalInstances);
+  ASMAtomicIncU32(&totalInstances);
 #endif
 }
 
@@ -132,7 +134,7 @@ nsExceptionManager::~nsExceptionManager()
 {
   /* destructor code */
 #ifdef NS_DEBUG
-  PR_AtomicDecrement(&totalInstances);
+  ASMAtomicDecU32(&totalInstances);
 #endif // NS_DEBUG
 }
 
@@ -163,12 +165,12 @@ NS_IMETHODIMP nsExceptionManager::GetExceptionFromProvider(nsresult rc, nsIExcep
 
 /* The Exception Service */
 
-PRUintn nsExceptionService::tlsIndex = BAD_TLS_INDEX;
-PRLock *nsExceptionService::lock = nsnull;
+RTTLS nsExceptionService::tlsIndex = NIL_RTTLS;
+RTSEMFASTMUTEX nsExceptionService::lock = NIL_RTSEMFASTMUTEX;
 nsExceptionManager *nsExceptionService::firstThread = nsnull;
 
 #ifdef NS_DEBUG
-PRInt32 nsExceptionService::totalInstances = 0;
+volatile uint32_t nsExceptionService::totalInstances = 0;
 #endif
 
 NS_IMPL_THREADSAFE_ISUPPORTS2(nsExceptionService, nsIExceptionService, nsIObserver)
@@ -177,18 +179,17 @@ nsExceptionService::nsExceptionService()
   : mProviders(4, PR_TRUE) /* small, thread-safe hashtable */
 {
 #ifdef NS_DEBUG
-  if (PR_AtomicIncrement(&totalInstances)!=1) {
+  if (ASMAtomicIncU32(&totalInstances)!=1) {
     NS_ERROR("The nsExceptionService is a singleton!");
   }
 #endif
   /* member initializers and constructor code */
-  if (tlsIndex == BAD_TLS_INDEX) {
-    PRStatus status;
-    status = PR_NewThreadPrivateIndex( &tlsIndex, ThreadDestruct );
-    NS_WARN_IF_FALSE(status==0, "ScriptErrorService could not allocate TLS storage.");
+  if (tlsIndex == NIL_RTTLS) {
+    int vrc = RTTlsAllocEx( &tlsIndex, ThreadDestruct );
+    NS_WARN_IF_FALSE(RT_SUCCESS(vrc), "ScriptErrorService could not allocate TLS storage.");
   }
-  lock = PR_NewLock();
-  NS_WARN_IF_FALSE(lock, "Error allocating ExceptionService lock");
+  int vrc = RTSemFastMutexCreate(&lock);
+  NS_WARN_IF_FALSE(RT_SUCCESS(vrc), "Error allocating ExceptionService lock");
 
   // observe XPCOM shutdown.
   nsCOMPtr<nsIObserverService> observerService = do_GetService("@mozilla.org/observer-service;1");
@@ -200,21 +201,21 @@ nsExceptionService::nsExceptionService()
 nsExceptionService::~nsExceptionService()
 {
   Shutdown();
-  if (lock) {
-    PRLock *tmp = lock;
-    lock = nsnull;
-    PR_DestroyLock(tmp);
+  if (lock != NIL_RTSEMFASTMUTEX) {
+    RTSEMFASTMUTEX tmp = lock;
+    lock = NULL;
+    RTSemFastMutexDestroy(tmp);
   }
   /* destructor code */
 #ifdef NS_DEBUG
-  PR_AtomicDecrement(&totalInstances);
+  ASMAtomicDecU32(&totalInstances);
 #endif
 }
 
 /*static*/
-void nsExceptionService::ThreadDestruct( void *data )
+DECLCALLBACK(void) nsExceptionService::ThreadDestruct( void *data )
 {
-  if (!lock) {
+  if (lock == NIL_RTSEMFASTMUTEX) {
     NS_WARNING("nsExceptionService ignoring thread destruction after shutdown");
     return;
   }
@@ -224,11 +225,11 @@ void nsExceptionService::ThreadDestruct( void *data )
 
 void nsExceptionService::Shutdown()
 {
-  PRUintn tmp = tlsIndex;
-  tlsIndex = BAD_TLS_INDEX;
-  PR_SetThreadPrivate(tmp, nsnull);
+  RTTLS tmp = tlsIndex;
+  tlsIndex = NIL_RTTLS;
+  RTTlsSet(tmp, NULL);
   mProviders.Reset();
-  if (lock) {
+  if (lock != NIL_RTSEMFASTMUTEX) {
     DropAllThreads();
   }
 }
@@ -267,13 +268,13 @@ NS_IMETHODIMP nsExceptionService::GetExceptionFromProvider(nsresult rc,
 NS_IMETHODIMP nsExceptionService::GetCurrentExceptionManager(nsIExceptionManager * *aCurrentScriptManager)
 {
     CHECK_SERVICE_USE_OK();
-    nsExceptionManager *mgr = (nsExceptionManager *)PR_GetThreadPrivate(tlsIndex);
+    nsExceptionManager *mgr = (nsExceptionManager *)RTTlsGet(tlsIndex);
     if (mgr == nsnull) {
         // Stick the new exception object in with no reference count.
         mgr = new nsExceptionManager(this);
         if (mgr == nsnull)
             return NS_ERROR_OUT_OF_MEMORY;
-        PR_SetThreadPrivate(tlsIndex, mgr);
+        RTTlsSet(tlsIndex, mgr);
         // The reference count is held in the thread-list
         AddThread(mgr);
     }
@@ -344,11 +345,11 @@ nsExceptionService::DoGetExceptionFromProvider(nsresult errCode,
 // thread management
 /*static*/ void nsExceptionService::AddThread(nsExceptionManager *thread)
 {
-    PR_Lock(lock);
+    RTSemFastMutexRequest(lock);
     thread->mNextThread = firstThread;
     firstThread = thread;
     NS_ADDREF(thread);
-    PR_Unlock(lock);
+    RTSemFastMutexRelease(lock);
 }
 
 /*static*/ void nsExceptionService::DoDropThread(nsExceptionManager *thread)
@@ -369,15 +370,15 @@ nsExceptionService::DoGetExceptionFromProvider(nsresult errCode,
 
 /*static*/ void nsExceptionService::DropThread(nsExceptionManager *thread)
 {
-    PR_Lock(lock);
+    RTSemFastMutexRequest(lock);
     DoDropThread(thread);
-    PR_Unlock(lock);
+    RTSemFastMutexRelease(lock);
 }
 
 /*static*/ void nsExceptionService::DropAllThreads()
 {
-    PR_Lock(lock);
+    RTSemFastMutexRequest(lock);
     while (firstThread)
         DoDropThread(firstThread);
-    PR_Unlock(lock);
+    RTSemFastMutexRelease(lock);
 }
