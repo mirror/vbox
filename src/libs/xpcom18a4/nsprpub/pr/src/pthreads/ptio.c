@@ -123,7 +123,7 @@ static PRLock *_pr_rename_lock;  /* For PR_Rename() */
 /**************************************************************************/
 
 /* These two functions are only used in assertions. */
-#if defined(DEBUG)
+#ifdef RT_STRICT
 
 PRBool IsValidNetAddr(const PRNetAddr *addr)
 {
