@@ -222,14 +222,6 @@ extern PRInt32 _PR_MD_GETOPENFILEINFO64(const PRFileDesc *fd, PRFileInfo64 *info
 #define _PR_MD_GETOPENFILEINFO64 _MD_GETOPENFILEINFO64
 
 
-/*****************************************************************************/
-/************************** File descriptor caching **************************/
-/*****************************************************************************/
-extern void _PR_InitFdCache(void);
-extern void _PR_CleanupFdCache(void);
-extern PRFileDesc *_PR_Getfd(void);
-extern void _PR_Putfd(PRFileDesc *fd);
-
 /*
  * These flags are used by NSPR temporarily in the poll
  * descriptor's out_flags field to record the mapping of

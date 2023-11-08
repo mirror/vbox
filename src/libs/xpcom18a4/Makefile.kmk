@@ -473,7 +473,6 @@ VBox-xpcom-nspr_INCS = \
 	$(VBox-xpcom-nspr_0_OUTDIR)
 
 VBox-xpcom-nspr_SOURCES  = \
-	nsprpub/pr/src/io/prfdcach.c \
 	nsprpub/pr/src/io/priometh.c \
 	nsprpub/pr/src/io/prmapopt.c \
 	nsprpub/pr/src/io/prlog.c \

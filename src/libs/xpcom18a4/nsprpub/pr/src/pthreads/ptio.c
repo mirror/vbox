@@ -270,6 +270,33 @@ PR_IMPLEMENT(void) PT_FPrintStats(PRFileDesc *debug_out, const char *msg)
 
 #endif  /* DEBUG */
 
+/*
+** Allocate a file descriptor from the heap.
+*/
+static PRFileDesc *_PR_Getfd(void)
+{
+    PRFileDesc *fd = PR_NEW(PRFileDesc);
+    if (NULL != fd)
+    {
+        fd->secret = PR_NEW(PRFilePrivate);
+        if (NULL == fd->secret) PR_DELETE(fd);
+    }
+    if (fd == NULL)
+        return NULL;
+
+    fd->dtor = NULL;
+    fd->lower = fd->higher = NULL;
+    fd->identity = PR_NSPR_IO_LAYER;
+    memset(fd->secret, 0, sizeof(PRFilePrivate));
+    return fd;
+}  /* _PR_Getfd */
+
+static void _PR_Putfd(PRFileDesc *fd)
+{
+    PR_Free(fd->secret);
+    PR_Free(fd);
+}  /* _PR_Putfd */
+
 static void pt_poll_now(pt_Continuation *op)
 {
     PRInt32 msecs;
@@ -621,8 +648,6 @@ void _PR_InitIO(void)
     _pr_rename_lock = PR_NewLock();
     PR_ASSERT(NULL != _pr_rename_lock);
 
-    _PR_InitFdCache();  /* do that */
-
     _pr_stdin = pt_SetMethods(0, PR_DESC_FILE, PR_FALSE, PR_TRUE);
     _pr_stdout = pt_SetMethods(1, PR_DESC_FILE, PR_FALSE, PR_TRUE);
     _pr_stderr = pt_SetMethods(2, PR_DESC_FILE, PR_FALSE, PR_TRUE);
@@ -658,8 +683,6 @@ void _PR_CleanupIO(void)
     _pr_stdout = NULL;
     _PR_Putfd(_pr_stderr);
     _pr_stderr = NULL;
-
-    _PR_CleanupFdCache();
 
     if (_pr_rename_lock)
     {
