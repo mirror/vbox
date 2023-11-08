@@ -53,6 +53,8 @@
 #include "nsIThread.h"
 #include "nsCOMPtr.h"
 
+#include <iprt/thread.h>
+
 class nsThread : public nsIThread 
 {
 public:
@@ -69,10 +71,10 @@ public:
     void WaitUntilReadyToStartMain();
 
     static void PR_CALLBACK Main(void* arg);
-    static void PR_CALLBACK Exit(void* arg);
+    static DECLCALLBACK(void) Exit(void* arg);
     static void PR_CALLBACK Shutdown();
 
-    static PRUintn kIThreadSelfIndex;
+    static RTTLS kIThreadSelfIndex;
 
     static NS_METHOD
     Create(nsISupports* outer, const nsIID& aIID, void* *aInstancePtr);

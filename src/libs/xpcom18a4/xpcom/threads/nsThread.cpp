@@ -40,7 +40,9 @@
 #include "prlog.h"
 #include "nsAutoLock.h"
 
-PRUintn nsThread::kIThreadSelfIndex = 0;
+#include <iprt/assert.h>
+
+RTTLS nsThread::kIThreadSelfIndex = NIL_RTTLS;
 static nsIThread *gMainThread = 0;
 
 #if defined(PR_LOGGING)
@@ -134,7 +136,7 @@ nsThread::Main(void* arg)
     self->mRunnable = nsnull;
 }
 
-void
+DECLCALLBACK(void)
 nsThread::Exit(void* arg)
 {
     nsThread* self = (nsThread*)arg;
@@ -348,15 +350,15 @@ NS_NewThread(nsIThread* *result,
 nsresult
 nsThread::RegisterThreadSelf()
 {
-    PRStatus status;
+    int vrc;
 
-    if (kIThreadSelfIndex == 0) {
-        status = PR_NewThreadPrivateIndex(&kIThreadSelfIndex, Exit);
-        if (status != PR_SUCCESS) return NS_ERROR_FAILURE;
+    if (kIThreadSelfIndex == NIL_RTTLS) {
+        vrc = RTTlsAllocEx(&kIThreadSelfIndex, Exit);
+        if (RT_FAILURE(vrc)) return NS_ERROR_FAILURE;
     }
 
-    status = PR_SetThreadPrivate(kIThreadSelfIndex, this);
-    if (status != PR_SUCCESS) return NS_ERROR_FAILURE;
+    vrc = RTTlsSet(kIThreadSelfIndex, this);
+    if (RT_FAILURE(vrc)) return NS_ERROR_FAILURE;
 
     return NS_OK;
 }
@@ -379,15 +381,14 @@ nsIThread::GetCurrent(nsIThread* *result)
 NS_COM nsresult
 nsIThread::GetIThread(PRThread* prthread, nsIThread* *result)
 {
-    PRStatus status;
     nsThread* thread;
 
-    if (nsThread::kIThreadSelfIndex == 0) {
-        status = PR_NewThreadPrivateIndex(&nsThread::kIThreadSelfIndex, nsThread::Exit);
-        if (status != PR_SUCCESS) return NS_ERROR_FAILURE;
+    if (nsThread::kIThreadSelfIndex == NIL_RTTLS) {
+        int vrc = RTTlsAllocEx(&nsThread::kIThreadSelfIndex, nsThread::Exit);
+        if (RT_FAILURE(vrc)) return NS_ERROR_FAILURE;
     }
 
-    thread = (nsThread*)PR_GetThreadPrivate(nsThread::kIThreadSelfIndex);
+    thread = (nsThread*)RTTlsGet(nsThread::kIThreadSelfIndex);
     if (thread == nsnull) {
         // if the current thread doesn't have an nsIThread associated
         // with it, make one
@@ -449,8 +450,10 @@ nsThread::Shutdown()
         NS_RELEASE2(gMainThread, cnt);
         NS_WARN_IF_FALSE(cnt == 0, "Main thread being held past XPCOM shutdown.");
         gMainThread = nsnull;
-        
-        kIThreadSelfIndex = 0;
+
+        int vrc = RTTlsFree(kIThreadSelfIndex);
+        AssertRC(vrc); RT_NOREF(vrc);
+        kIThreadSelfIndex = NIL_RTTLS;
     }
 }
 
