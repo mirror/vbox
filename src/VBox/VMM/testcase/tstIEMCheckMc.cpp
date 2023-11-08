@@ -632,8 +632,6 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 
 #define IEM_MC_COMMIT_EFLAGS(a_EFlags)                  do { CHK_TYPE(uint32_t, a_EFlags); (void)fMcBegin; } while (0)
 #define IEM_MC_ASSIGN_TO_SMALLER(a_VarOrArg, a_CVariableOrConst)    do { (a_VarOrArg) = (0); (void)fMcBegin; } while (0)
-#define IEM_MC_ASSIGN_U8_SX_U64(a_VarOrArg, a_CVariableOrConst)     do { (a_VarOrArg) = (0); (void)fMcBegin; } while (0)
-#define IEM_MC_ASSIGN_U32_SX_U64(a_VarOrArg, a_CVariableOrConst)    do { (a_VarOrArg) = (0); (void)fMcBegin; } while (0)
 
 #define IEM_MC_FETCH_GREG_U8(a_u8Dst, a_iGReg)          do { (a_u8Dst)  = 0; CHK_TYPE(uint8_t,  a_u8Dst);  CHK_GREG_IDX(a_iGReg); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_GREG_U8_ZX_U16(a_u16Dst, a_iGReg)  do { (a_u16Dst) = 0; CHK_TYPE(uint16_t, a_u16Dst); CHK_GREG_IDX(a_iGReg); (void)fMcBegin; } while (0)
