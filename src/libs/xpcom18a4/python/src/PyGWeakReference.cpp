@@ -48,6 +48,8 @@
 
 #include "PyXPCOM_std.h"
 
+#include <iprt/asm.h>
+
 PyXPCOM_GatewayWeakReference::PyXPCOM_GatewayWeakReference( PyG_Base *base )
 {
 	m_pBase = base;
@@ -73,7 +75,7 @@ PyXPCOM_GatewayWeakReference::~PyXPCOM_GatewayWeakReference()
 nsrefcnt
 PyXPCOM_GatewayWeakReference::AddRef(void)
 {
-	nsrefcnt cnt = (nsrefcnt) PR_AtomicIncrement((PRInt32*)&mRefCnt);
+	nsrefcnt cnt = (nsrefcnt) ASMAtomicIncS32((volatile int32_t *)&mRefCnt);
 #ifdef NS_BUILD_REFCNT_LOGGING
 	NS_LOG_ADDREF(this, cnt, refcntLogRepr, sizeof(*this));
 #endif
@@ -83,7 +85,7 @@ PyXPCOM_GatewayWeakReference::AddRef(void)
 nsrefcnt
 PyXPCOM_GatewayWeakReference::Release(void)
 {
-	nsrefcnt cnt = (nsrefcnt) PR_AtomicDecrement((PRInt32*)&mRefCnt);
+	nsrefcnt cnt = (nsrefcnt) ASMAtomicDecS32((volatile int32_t *)&mRefCnt);
 #ifdef NS_BUILD_REFCNT_LOGGING
 	NS_LOG_RELEASE(this, cnt, refcntLogRepr);
 #endif
