@@ -54,6 +54,7 @@
 #ifdef VBOX
 # include <map>
 # include <list>
+# include <iprt/asm.h>
 # include <iprt/err.h>
 # include <iprt/req.h>
 # include <iprt/mem.h>
@@ -253,7 +254,7 @@ public:
   {
     NS_PRECONDITION(PRInt32(mRefCnt) >= 0, "illegal refcnt");
     nsrefcnt count;
-    count = PR_AtomicIncrement((PRInt32*)&mRefCnt);
+    count = ASMAtomicIncU32((volatile uint32_t *)&mRefCnt);
     return count;
   }
 
@@ -261,7 +262,7 @@ public:
   {
     nsrefcnt count;
     NS_PRECONDITION(0 != mRefCnt, "dup release");
-    count = PR_AtomicDecrement((PRInt32 *)&mRefCnt);
+    count = ASMAtomicDecU32((volatile uint32_t *)&mRefCnt);
     if (0 == count) {
       NS_PRECONDITION(PRInt32(mRefCntIPC) == 0, "non-zero IPC refcnt");
       mRefCnt = 1; /* stabilize */
@@ -277,7 +278,7 @@ public:
   NS_IMETHODIMP_(nsrefcnt) AddRefIPC(void)
   {
     NS_PRECONDITION(PRInt32(mRefCntIPC) >= 0, "illegal refcnt");
-    nsrefcnt count = PR_AtomicIncrement((PRInt32*)&mRefCntIPC);
+    nsrefcnt count = ASMAtomicIncU32((volatile uint32_t *)&mRefCntIPC);
     return count;
   }
 
@@ -286,7 +287,7 @@ public:
   NS_IMETHODIMP_(nsrefcnt) ReleaseIPC(PRBool locked = PR_FALSE)
   {
     NS_PRECONDITION(0 != mRefCntIPC, "dup release");
-    nsrefcnt count = PR_AtomicDecrement((PRInt32 *)&mRefCntIPC);
+    nsrefcnt count = ASMAtomicDecU32((volatile uint32_t *)&mRefCntIPC);
     if (0 == count) {
       // If the last IPC reference is released, remove this instance from the map.
       // ipcDConnectService is guaranteed to still exist here
@@ -1267,8 +1268,8 @@ FinishArrayParam(nsIInterfaceInfo *iinfo, uint16 methodIndex,
 static PRUint32
 NewRequestIndex()
 {
-  static PRInt32 sRequestIndex;
-  return (PRUint32) PR_AtomicIncrement(&sRequestIndex);
+  static volatile uint32_t sRequestIndex = 0;
+  return ASMAtomicIncU32(&sRequestIndex);
 }
 
 //-----------------------------------------------------------------------------
@@ -2254,7 +2255,7 @@ NS_IMETHODIMP_(nsrefcnt)
 DConnectStub::AddRef()
 {
   nsrefcnt count;
-  count = PR_AtomicIncrement((PRInt32*)&mRefCnt);
+  count = ASMAtomicIncU32((volatile uint32_t *)&mRefCnt);
   NS_LOG_ADDREF(this, count, "DConnectStub", sizeof(*this));
   return count;
 }
@@ -2275,7 +2276,7 @@ DConnectStub::Release()
     // destruction).
     nsAutoLock stubLock (dConnect->StubLock());
 
-    count = PR_AtomicDecrement((PRInt32 *)&mRefCnt);
+    count = ASMAtomicDecU32((volatile uint32_t *)&mRefCnt);
     NS_LOG_RELEASE(this, count, "DConnectStub");
 
 
@@ -2334,7 +2335,7 @@ DConnectStub::Release()
   }
   else
   {
-    count = PR_AtomicDecrement((PRInt32 *)&mRefCnt);
+    count = ASMAtomicDecU32((volatile uint32_t *)&mRefCnt);
     NS_LOG_RELEASE(this, count, "DConnectStub");
   }
 

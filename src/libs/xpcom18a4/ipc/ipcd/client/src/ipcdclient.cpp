@@ -56,8 +56,8 @@
 
 #include "prio.h"
 #include "prproces.h"
-#include "pratom.h"
 
+#include <iprt/asm.h>
 #include <iprt/critsect.h>
 
 /* ------------------------------------------------------------------------- */
@@ -72,8 +72,8 @@ public:
   static NS_HIDDEN_(ipcTargetData*) Create();
 
   // threadsafe addref/release
-  NS_HIDDEN_(nsrefcnt) AddRef()  { return PR_AtomicIncrement(&refcnt); }
-  NS_HIDDEN_(nsrefcnt) Release() { PRInt32 r = PR_AtomicDecrement(&refcnt); if (r == 0) delete this; return r; }
+  NS_HIDDEN_(nsrefcnt) AddRef()  { return ASMAtomicIncU32(&refcnt); }
+  NS_HIDDEN_(nsrefcnt) Release() { uint32_t r = ASMAtomicDecU32(&refcnt); if (r == 0) delete this; return r; }
 
   NS_HIDDEN_(void) SetObserver(ipcIMessageObserver *aObserver, PRBool aOnCurrentThread);
 
@@ -108,7 +108,7 @@ private:
       nsAutoMonitor::DestroyMonitor(monitor);
   }
 
-  PRInt32 refcnt;
+  volatile uint32_t refcnt;
 };
 
 ipcTargetData *

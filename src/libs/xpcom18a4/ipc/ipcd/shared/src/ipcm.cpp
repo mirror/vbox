@@ -37,7 +37,8 @@
 
 #include <string.h>
 #include "ipcm.h"
-#include "pratom.h"
+
+#include <iprt/asm.h>
 
 const nsID IPCM_TARGET =
 { /* 753ca8ff-c8c2-4601-b115-8c2944da1150 */
@@ -50,8 +51,8 @@ const nsID IPCM_TARGET =
 PRUint32
 IPCM_NewRequestIndex()
 {
-    static PRInt32 sRequestIndex;
-    return (PRUint32) PR_AtomicIncrement(&sRequestIndex);
+    static volatile uint32_t sRequestIndex = 0;
+    return ASMAtomicIncU32(&sRequestIndex);
 }
 
 #if 0
