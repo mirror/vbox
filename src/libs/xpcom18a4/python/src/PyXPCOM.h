@@ -297,9 +297,9 @@ PYXPCOM_EXPORT PyObject *PyXPCOM_BuildErrorMessage(nsresult r);
 PYXPCOM_EXPORT nsresult PyXPCOM_SetCOMErrorFromPyException();
 
 // Write current exception and traceback to a string.
-PYXPCOM_EXPORT PRBool PyXPCOM_FormatCurrentException(nsCString &streamout);
+PYXPCOM_EXPORT bool PyXPCOM_FormatCurrentException(nsCString &streamout);
 // Write specified exception and traceback to a string.
-PYXPCOM_EXPORT PRBool PyXPCOM_FormatGivenException(nsCString &streamout,
+PYXPCOM_EXPORT bool PyXPCOM_FormatGivenException(nsCString &streamout,
                                 PyObject *exc_typ, PyObject *exc_val,
                                 PyObject *exc_tb);
 
@@ -748,8 +748,8 @@ private:
 
 extern PYXPCOM_EXPORT void AddDefaultGateway(PyObject *instance, nsISupports *gateway);
 
-extern PYXPCOM_EXPORT PRInt32 _PyXPCOM_GetGatewayCount(void);
-extern PYXPCOM_EXPORT PRInt32 _PyXPCOM_GetInterfaceCount(void);
+extern PYXPCOM_EXPORT uint32_t _PyXPCOM_GetGatewayCount(void);
+extern PYXPCOM_EXPORT uint32_t _PyXPCOM_GetInterfaceCount(void);
 #ifdef VBOX_DEBUG_LIFETIMES
 extern PYXPCOM_EXPORT PRInt32 _PyXPCOM_DumpInterfaces(void);
 #endif
@@ -876,12 +876,6 @@ public:
 PYXPCOM_EXPORT void PyXPCOM_MakePendingCalls();
 PYXPCOM_EXPORT PRBool PyXPCOM_Globals_Ensure();
 
-// For 2.3, use the PyGILState_ calls
-#if (PY_VERSION_HEX >= 0x02030000)
-#define PYXPCOM_USE_PYGILSTATE
-#endif
-
-#ifdef PYXPCOM_USE_PYGILSTATE
 class CEnterLeavePython {
 public:
 	CEnterLeavePython() {
@@ -901,54 +895,6 @@ public:
 	}
 	PyGILState_STATE state;
 };
-#else
-
-extern PYXPCOM_EXPORT PyInterpreterState *PyXPCOM_InterpreterState;
-PYXPCOM_EXPORT PRBool PyXPCOM_ThreadState_Ensure();
-PYXPCOM_EXPORT void PyXPCOM_ThreadState_Free();
-PYXPCOM_EXPORT void PyXPCOM_ThreadState_Clear();
-PYXPCOM_EXPORT void PyXPCOM_InterpreterLock_Acquire();
-PYXPCOM_EXPORT void PyXPCOM_InterpreterLock_Release();
-
-// Pre 2.3 thread-state dances.
-class CEnterLeavePython {
-public:
-	CEnterLeavePython() {
-		created = PyXPCOM_ThreadState_Ensure();
-		PyXPCOM_InterpreterLock_Acquire();
-		if (created) {
-			// If pending python calls are waiting as we enter Python,
-			// it will generally mean an asynch signal handler, etc.
-			// We can either call it here, or wait for Python to call it
-			// as part of its "even 'n' opcodes" check.  If we wait for
-			// Python to check it and the pending call raises an exception,
-			// then it is _our_ code that will fail - this is unfair,
-			// as the signal was raised before we were entered - indeed,
-			// we may be directly responding to the signal!
-			// Thus, we flush all the pending calls here, and report any
-			// exceptions via our normal exception reporting mechanism.
-			// We can then execute our code in the knowledge that only
-			// signals raised _while_ we are executing will cause exceptions.
-			PyXPCOM_MakePendingCalls();
-		}
-	}
-	~CEnterLeavePython() {
-	// The interpreter state must be cleared
-	// _before_ we release the lock, as some of
-	// the sys. attributes cleared (eg, the current exception)
-	// may need the lock to invoke their destructors -
-	// specifically, when exc_value is a class instance, and
-	// the exception holds the last reference!
-		if ( created )
-			PyXPCOM_ThreadState_Clear();
-		PyXPCOM_InterpreterLock_Release();
-		if ( created )
-			PyXPCOM_ThreadState_Free();
-	}
-private:
-	PRBool created;
-};
-#endif // PYXPCOM_USE_PYGILSTATE
 
 // Our classes.
 // Hrm - So we can't have templates, eh??

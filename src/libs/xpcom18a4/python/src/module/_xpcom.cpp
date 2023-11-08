@@ -68,10 +68,6 @@
 
 #define LOADER_LINKS_WITH_PYTHON
 
-#ifndef PYXPCOM_USE_PYGILSTATE
-extern PYXPCOM_EXPORT void PyXPCOM_InterpreterState_Ensure();
-#endif
-
 #ifdef VBOX_PYXPCOM
 # include <iprt/cdefs.h>
 # include <VBox/com/com.h>

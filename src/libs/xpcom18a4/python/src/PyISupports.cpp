@@ -48,7 +48,9 @@
 #include "PyXPCOM_std.h"
 #include "nsISupportsPrimitives.h"
 
-static PRInt32 cInterfaces=0;
+#include <iprt/asm.h>
+
+static volatile uint32_t cInterfaces=0;
 static PyObject *g_obFuncMakeInterfaceCount = NULL; // XXX - never released!!!
 
 #ifdef VBOX_DEBUG_LIFETIMES
@@ -122,10 +124,10 @@ PyObject *PyObject_FromNSInterface( nsISupports *aInterface,
 	                                             bMakeNicePyObject);
 }
 
-PRInt32
+uint32_t
 _PyXPCOM_GetInterfaceCount(void)
 {
-	return cInterfaces;
+    return ASMAtomicReadU32(&cInterfaces);
 }
 
 #ifndef Py_LIMITED_API
@@ -143,7 +145,7 @@ Py_nsISupports::Py_nsISupports(nsISupports *punk, const nsIID &iid, PyXPCOM_Type
 	m_obj = punk;
 	m_iid = iid;
 	// refcnt of object managed by caller.
-	PR_AtomicIncrement(&cInterfaces);
+	ASMAtomicIncU32(&cInterfaces);
 	PyXPCOM_DLLAddRef();
 #if 1 /* VBox: Must use for 3.9+, includes _Py_NewReferences. Works for all older versions too. @bugref{10079} */
 	PyObject_Init(this, ob_type);
@@ -171,7 +173,7 @@ Py_nsISupports::~Py_nsISupports()
 #endif
 
 	SafeRelease(this);
-	PR_AtomicDecrement(&cInterfaces);
+	ASMAtomicDecU32(&cInterfaces);
 	PyXPCOM_DLLRelease();
 }
 
