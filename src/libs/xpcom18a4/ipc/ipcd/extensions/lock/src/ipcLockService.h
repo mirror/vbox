@@ -42,6 +42,8 @@
 #include "ipcILockService.h"
 #include "ipcdclient.h"
 
+#include <iprt/thread.h>
+
 //-----------------------------------------------------------------------------
 
 class ipcLockService : public ipcILockService
@@ -55,7 +57,7 @@ public:
     NS_HIDDEN_(nsresult) Init();
 
 private:
-    PRUintn mTPIndex;
+    RTTLS mTPIndex;
 };
 
 //-----------------------------------------------------------------------------

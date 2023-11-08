@@ -43,7 +43,8 @@
 #include "ipcLockService.h"
 #include "ipcLockProtocol.h"
 #include "ipcLog.h"
-#include "prthread.h"
+
+#include <iprt/errcore.h>
 
 static const nsID kLockTargetID = IPC_LOCK_TARGETID;
 
@@ -61,7 +62,8 @@ struct ipcPendingLock
 nsresult
 ipcLockService::Init()
 {
-    if (PR_NewThreadPrivateIndex(&mTPIndex, nsnull) != PR_SUCCESS)
+    mTPIndex = RTTlsAlloc(); /** @todo r=aeichner This doesn't seem to get freed ever. */
+    if (mTPIndex == NIL_RTTLS)
         return NS_ERROR_OUT_OF_MEMORY;
 
     // Configure OnMessageAvailable to be called on the IPC thread.  This is
@@ -93,7 +95,7 @@ ipcLockService::AcquireLock(const char *lockName, PRBool waitIfBusy)
     pendingLock.name = lockName;
     pendingLock.status = 0xDEADBEEF; // something bogus
     pendingLock.complete = PR_FALSE;
-    if (PR_SetThreadPrivate(mTPIndex, &pendingLock) != PR_SUCCESS)
+    if (RTTlsSet(mTPIndex, &pendingLock) != VINF_SUCCESS)
         return NS_ERROR_UNEXPECTED;
 
     // prevent our OnMessageAvailable from being called until we explicitly ask
@@ -151,7 +153,7 @@ ipcLockService::OnMessageAvailable(PRUint32 unused, const nsID &target,
 
     LOG(("ipcLockService::OnMessageAvailable [lock=%s opcode=%u]\n", msg.key, msg.opcode));
 
-    ipcPendingLock *pendingLock = (ipcPendingLock *) PR_GetThreadPrivate(mTPIndex);
+    ipcPendingLock *pendingLock = (ipcPendingLock *) RTTlsGet(mTPIndex);
     if (strcmp(pendingLock->name, msg.key) == 0) {
         pendingLock->complete = PR_TRUE;
         if (msg.opcode == IPC_LOCK_OP_STATUS_ACQUIRED)
