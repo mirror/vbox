@@ -54,11 +54,12 @@
 #define nsHashtable_h__
 
 #include "pldhash.h"
-#include "prlock.h"
 #include "nscore.h"
 #include "nsString.h"
 #include "nsISupportsBase.h"
 #include "nsTraceRefcnt.h"
+
+#include <iprt/semaphore.h>
 
 class nsIObjectInputStream;
 class nsIObjectOutputStream;
@@ -134,7 +135,7 @@ typedef nsresult
 class NS_COM nsHashtable {
   protected:
     // members  
-    PRLock*         mLock;
+    RTSEMFASTMUTEX  mLock;
     PLDHashTable    mHashtable;
     PRBool          mEnumerating;
 

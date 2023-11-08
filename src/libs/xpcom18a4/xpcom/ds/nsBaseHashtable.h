@@ -39,8 +39,11 @@
 #define nsBaseHashtable_h__
 
 #include "nsTHashtable.h"
-#include "prlock.h"
 #include "nsDebug.h"
+
+#include <iprt/assert.h>
+#include <iprt/errcore.h>
+#include <iprt/semaphore.h>
 
 template<class KeyClass,class DataType,class UserDataType>
 class nsBaseHashtable; // forward declaration
@@ -290,7 +293,7 @@ public:
   void Clear();
 
 protected:
-  PRLock* mLock;
+  RTSEMFASTMUTEX mLock;
 };
   
 
@@ -357,8 +360,11 @@ nsBaseHashtable<KeyClass,DataType,UserDataType>::s_EnumStub
 template<class KeyClass,class DataType,class UserDataType>
 nsBaseHashtableMT<KeyClass,DataType,UserDataType>::~nsBaseHashtableMT()
 {
-  if (this->mLock)
-    PR_DestroyLock(this->mLock);
+  if (this->mLock != NIL_RTSEMFASTMUTEX)
+  {
+    RTSemFastMutexDestroy(this->mLock);
+    this->mLock = NIL_RTSEMFASTMUTEX;
+  }
 }
 
 template<class KeyClass,class DataType,class UserDataType>
@@ -368,19 +374,20 @@ nsBaseHashtableMT<KeyClass,DataType,UserDataType>::Init(PRUint32 initSize)
   if (!nsTHashtable<EntryType>::IsInitialized() && !nsTHashtable<EntryType>::Init(initSize))
     return PR_FALSE;
 
-  this->mLock = PR_NewLock();
-  NS_WARN_IF_FALSE(this->mLock, "Error creating lock during nsBaseHashtableL::Init()");
+  this->mLock = NIL_RTSEMFASTMUTEX;
+  int vrc = RTSemFastMutexCreate(&this->mLock);
+  NS_WARN_IF_FALSE(RT_SUCCESS(vrc), "Error creating lock during nsBaseHashtableL::Init()");
 
-  return (this->mLock != nsnull);
+  return (this->mLock != NIL_RTSEMFASTMUTEX);
 }
 
 template<class KeyClass,class DataType,class UserDataType>
 PRUint32
 nsBaseHashtableMT<KeyClass,DataType,UserDataType>::Count() const
 {
-  PR_Lock(this->mLock);
+  RTSemFastMutexRequest(this->mLock);
   PRUint32 count = nsTHashtable<EntryType>::Count();
-  PR_Unlock(this->mLock);
+  RTSemFastMutexRelease(this->mLock);
 
   return count;
 }
@@ -390,10 +397,10 @@ PRBool
 nsBaseHashtableMT<KeyClass,DataType,UserDataType>::Get(KeyType       aKey,
                                                            UserDataType* pData) const
 {
-  PR_Lock(this->mLock);
+  RTSemFastMutexRequest(this->mLock);
   PRBool res =
     nsBaseHashtable<KeyClass,DataType,UserDataType>::Get(aKey, pData);
-  PR_Unlock(this->mLock);
+  RTSemFastMutexRelease(this->mLock);
 
   return res;
 }
@@ -403,10 +410,10 @@ PRBool
 nsBaseHashtableMT<KeyClass,DataType,UserDataType>::Put(KeyType      aKey,
                                                            UserDataType aData)
 {
-  PR_Lock(this->mLock);
+  RTSemFastMutexRequest(this->mLock);
   PRBool res =
     nsBaseHashtable<KeyClass,DataType,UserDataType>::Put(aKey, aData);
-  PR_Unlock(this->mLock);
+  RTSemFastMutexRelease(this->mLock);
 
   return res;
 }
@@ -415,9 +422,9 @@ template<class KeyClass,class DataType,class UserDataType>
 void
 nsBaseHashtableMT<KeyClass,DataType,UserDataType>::Remove(KeyType aKey)
 {
-  PR_Lock(this->mLock);
+  RTSemFastMutexRequest(this->mLock);
   nsBaseHashtable<KeyClass,DataType,UserDataType>::Remove(aKey);
-  PR_Unlock(this->mLock);
+  RTSemFastMutexRelease(this->mLock);
 }
 
 template<class KeyClass,class DataType,class UserDataType>
@@ -425,10 +432,10 @@ PRUint32
 nsBaseHashtableMT<KeyClass,DataType,UserDataType>::EnumerateRead
   (EnumReadFunction fEnumCall, void* userArg) const
 {
-  PR_Lock(this->mLock);
+  RTSemFastMutexRequest(this->mLock);
   PRUint32 count =
     nsBaseHashtable<KeyClass,DataType,UserDataType>::EnumerateRead(fEnumCall, userArg);
-  PR_Unlock(this->mLock);
+  RTSemFastMutexRelease(this->mLock);
 
   return count;
 }
@@ -438,10 +445,10 @@ PRUint32
 nsBaseHashtableMT<KeyClass,DataType,UserDataType>::Enumerate
   (EnumFunction fEnumCall, void* userArg)
 {
-  PR_Lock(this->mLock);
+  RTSemFastMutexRequest(this->mLock);
   PRUint32 count =
     nsBaseHashtable<KeyClass,DataType,UserDataType>::Enumerate(fEnumCall, userArg);
-  PR_Unlock(this->mLock);
+  RTSemFastMutexRelease(this->mLock);
 
   return count;
 }
@@ -450,9 +457,9 @@ template<class KeyClass,class DataType,class UserDataType>
 void
 nsBaseHashtableMT<KeyClass,DataType,UserDataType>::Clear()
 {
-  PR_Lock(this->mLock);
+  RTSemFastMutexRequest(this->mLock);
   nsBaseHashtable<KeyClass,DataType,UserDataType>::Clear();
-  PR_Unlock(this->mLock);
+  RTSemFastMutexRelease(this->mLock);
 }
 
 #endif // nsBaseHashtable_h__

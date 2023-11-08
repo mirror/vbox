@@ -100,12 +100,14 @@ NS_MeanAndStdDev(double n, double sumOfValues, double sumOfSquaredValues,
 #include "plhash.h"
 #include "prmem.h"
 
-#include "prlock.h"
+#include <iprt/assert.h>
+#include <iprt/errcore.h>
+#include <iprt/semaphore.h>
 
-static PRLock* gTraceLock;
+static RTSEMFASTMUTEX gTraceLock = NIL_RTSEMFASTMUTEX;
 
-#define LOCK_TRACELOG()   PR_Lock(gTraceLock)
-#define UNLOCK_TRACELOG() PR_Unlock(gTraceLock)
+#define LOCK_TRACELOG()   RTSemFastMutexRequest(gTraceLock)
+#define UNLOCK_TRACELOG() RTSemFastMutexRelease(gTraceLock)
 
 static PLHashTable* gBloatView;
 static PLHashTable* gTypesToLog;
@@ -827,7 +829,8 @@ static void InitTraceLog(void)
     gLogging = PR_TRUE;
   }
 
-  gTraceLock = PR_NewLock();
+  int vrc = RTSemFastMutexCreate(&gTraceLock);
+  AssertRC(vrc); RT_NOREF(vrc);
 }
 
 #endif

@@ -55,6 +55,9 @@
 #include "nsIObjectOutputStream.h"
 #include "nsCRT.h"
 
+#include <iprt/assert.h>
+#include <iprt/errcore.h>
+
 struct HTEntry : PLDHashEntryHdr
 {
     nsHashKey* key;
@@ -168,14 +171,14 @@ nsHashtable::nsHashtable(PRUint32 aInitSize, PRBool threadSafe)
     // make sure we detect this later
     if (!result)
         mHashtable.ops = nsnull;
-    
-    if (threadSafe) {
-        mLock = PR_NewLock();
-        if (mLock == NULL) {
-            // Cannot create a lock. If running on a multiprocessing system
-            // we are sure to die.
-            PR_ASSERT(mLock != NULL);
-        }
+
+    mLock = NIL_RTSEMFASTMUTEX;
+    if (threadSafe)
+    {
+        int vrc = RTSemFastMutexCreate(&mLock);
+        // Cannot create a lock. If running on a multiprocessing system
+        // we are sure to die.
+        AssertReleaseRC(vrc);
     }
 }
 
@@ -184,12 +187,16 @@ nsHashtable::~nsHashtable() {
     MOZ_COUNT_DTOR(nsHashtable);
     if (mHashtable.ops)
         PL_DHashTableFinish(&mHashtable);
-    if (mLock) PR_DestroyLock(mLock);
+    if (mLock != NIL_RTSEMFASTMUTEX)
+    {
+        int vrc = RTSemFastMutexDestroy(mLock);
+        AssertRC(vrc);
+    }
 }
 
 PRBool nsHashtable::Exists(nsHashKey *aKey)
 {
-    if (mLock) PR_Lock(mLock);
+    if (mLock) RTSemFastMutexRequest(mLock);
 
     if (!mHashtable.ops)
         return PR_FALSE;
@@ -199,7 +206,7 @@ PRBool nsHashtable::Exists(nsHashKey *aKey)
     
     PRBool exists = PL_DHASH_ENTRY_IS_BUSY(entry);
     
-    if (mLock) PR_Unlock(mLock);
+    if (mLock) RTSemFastMutexRelease(mLock);
 
     return exists;
 }
@@ -210,7 +217,7 @@ void *nsHashtable::Put(nsHashKey *aKey, void *aData)
 
     if (!mHashtable.ops) return nsnull;
     
-    if (mLock) PR_Lock(mLock);
+    if (mLock) RTSemFastMutexRequest(mLock);
 
     // shouldn't be adding an item during enumeration
     PR_ASSERT(!mEnumerating);
@@ -231,7 +238,7 @@ void *nsHashtable::Put(nsHashKey *aKey, void *aData)
         }
     }
 
-    if (mLock) PR_Unlock(mLock);
+    if (mLock) RTSemFastMutexRelease(mLock);
 
     return res;
 }
@@ -240,14 +247,14 @@ void *nsHashtable::Get(nsHashKey *aKey)
 {
     if (!mHashtable.ops) return nsnull;
     
-    if (mLock) PR_Lock(mLock);
+    if (mLock) RTSemFastMutexRequest(mLock);
 
     HTEntry* entry =
         NS_STATIC_CAST(HTEntry*,
                        PL_DHashTableOperate(&mHashtable, aKey, PL_DHASH_LOOKUP));
     void *ret = PL_DHASH_ENTRY_IS_BUSY(entry) ? entry->value : nsnull;
     
-    if (mLock) PR_Unlock(mLock);
+    if (mLock) RTSemFastMutexRelease(mLock);
 
     return ret;
 }
@@ -256,7 +263,7 @@ void *nsHashtable::Remove(nsHashKey *aKey)
 {
     if (!mHashtable.ops) return nsnull;
     
-    if (mLock) PR_Lock(mLock);
+    if (mLock) RTSemFastMutexRequest(mLock);
 
     // shouldn't be adding an item during enumeration
     PR_ASSERT(!mEnumerating);
@@ -277,7 +284,7 @@ void *nsHashtable::Remove(nsHashKey *aKey)
         PL_DHashTableRawRemove(&mHashtable, entry);
     }
 
-    if (mLock) PR_Unlock(mLock);
+    if (mLock) RTSemFastMutexRelease(mLock);
 
     return res;
 }
@@ -366,9 +373,10 @@ nsHashtable::nsHashtable(nsIObjectInputStream* aStream,
     PRBool threadSafe;
     nsresult rv = aStream->ReadBoolean(&threadSafe);
     if (NS_SUCCEEDED(rv)) {
-        if (threadSafe) {
-            mLock = PR_NewLock();
-            if (!mLock)
+        if (threadSafe)
+        {
+            int vrc = RTSemFastMutexCreate(&mLock);
+            if (RT_FAILURE(vrc))
                 rv = NS_ERROR_OUT_OF_MEMORY;
         }
 
