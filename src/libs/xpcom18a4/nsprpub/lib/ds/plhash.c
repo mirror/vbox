@@ -40,11 +40,12 @@
  */
 #include "plhash.h"
 #include "prbit.h"
-#include "prlog.h"
 #include "prmem.h"
 #include "prtypes.h"
 #include <stdlib.h>
 #include <string.h>
+
+#include <iprt/assert.h>
 
 /* Compute the number of buckets in ht */
 #define NBUCKETS(ht)    (1 << (PL_HASH_BITS - (ht)->shift))
@@ -236,7 +237,7 @@ PL_HashTableRawAdd(PLHashTable *ht, PLHashEntry **hep,
             for (he = oldbuckets[i]; he; he = next) {
                 next = he->next;
                 hep = PL_HashTableRawLookup(ht, he->keyHash, he->key);
-                PR_ASSERT(*hep == 0);
+                Assert(*hep == 0);
                 he->next = 0;
                 *hep = he;
             }
@@ -311,7 +312,7 @@ PL_HashTableRawRemove(PLHashTable *ht, PLHashEntry **hep, PLHashEntry *he)
             for (he = oldbuckets[i]; he; he = next) {
                 next = he->next;
                 hep = PL_HashTableRawLookup(ht, he->keyHash, he->key);
-                PR_ASSERT(*hep == 0);
+                Assert(*hep == 0);
                 he->next = 0;
                 *hep = he;
             }

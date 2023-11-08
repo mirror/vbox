@@ -37,8 +37,9 @@
 
 #include "plstr.h"
 #include "prtypes.h"
-#include "prlog.h"
 #include <string.h>
+
+#include <iprt/assert.h>
 
 PR_IMPLEMENT(PRUint32)
 PL_strlen(const char *str)
@@ -53,7 +54,7 @@ PL_strlen(const char *str)
      * we don't have ultra long strings that overflow an int32
      */ 
     if( sizeof(PRUint32) < sizeof(size_t) )
-        PR_ASSERT(l < 2147483647);
+        Assert(l < 2147483647);
 
     return (PRUint32)l;
 }
