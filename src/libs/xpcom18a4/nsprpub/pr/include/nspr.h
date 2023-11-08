@@ -48,7 +48,6 @@
 #include "prinrval.h"
 #include "prio.h"
 #include "prlock.h"
-#include "prlog.h"
 #include "prlong.h"
 #include "prmem.h"
 #include "prmon.h"

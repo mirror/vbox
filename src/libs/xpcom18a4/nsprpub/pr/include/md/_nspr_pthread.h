@@ -84,7 +84,7 @@ extern pthread_key_t intsoff_key;
 
 #define _MD_SWITCH_CONTEXT(_thread)  								\
     PR_BEGIN_MACRO 													\
-	PR_ASSERT(_thread->no_sched);									\
+	Assert(_thread->no_sched);										\
 	if (!SAVE_CONTEXT(_thread)) {									\
 		(_thread)->md.errcode = errno;  							\
 		_MD_SET_LAST_THREAD(_thread);								\

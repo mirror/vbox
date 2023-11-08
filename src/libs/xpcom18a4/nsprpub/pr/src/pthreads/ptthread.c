@@ -49,6 +49,7 @@
 #include <signal.h>
 
 #include <iprt/asm.h>
+#include <iprt/assert.h>
 #include <iprt/thread.h>
 #include <iprt/mem.h>
 #include <iprt/asm.h>
@@ -109,7 +110,7 @@ static void *_pt_root(void *arg)
      * whether in a join or detached (see _PR_InitThreads()).
      */
     rv = pthread_setspecific(pt_book.key, thred);
-    PR_ASSERT(0 == rv);
+    Assert(0 == rv);
 
     /* make the thread visible to the rest of the runtime */
     PR_Lock(pt_book.ml);
@@ -162,7 +163,7 @@ static void *_pt_root(void *arg)
     if (PR_FALSE == detached)
     {
         rv = pthread_setspecific(pt_book.key, NULL);
-        PR_ASSERT(0 == rv);
+        Assert(0 == rv);
     }
 
     return NULL;
@@ -200,7 +201,7 @@ static PRThread* pt_AttachThread(void)
         thred->priority = PR_PRIORITY_NORMAL;
         thred->id = pthread_self();
         rv = pthread_setspecific(pt_book.key, thred);
-        PR_ASSERT(0 == rv);
+        Assert(0 == rv);
 
         thred->state = PT_THREAD_GLOBAL | PT_THREAD_FOREIGN;
         PR_Lock(pt_book.ml);
@@ -354,7 +355,7 @@ PR_IMPLEMENT(PRStatus) PR_JoinThread(PRThread *thred)
 {
     int rv = -1;
     void *result = NULL;
-    PR_ASSERT(thred != NULL);
+    Assert(thred != NULL);
 
     if ((0xafafafaf == thred->state)
     || (PT_THREAD_DETACHED == (PT_THREAD_DETACHED & thred->state))
@@ -377,7 +378,7 @@ PR_IMPLEMENT(PRStatus) PR_JoinThread(PRThread *thred)
         {
             int rcThread = 0;
             rv = RTThreadWait(hThread, RT_INDEFINITE_WAIT, &rcThread);
-            PR_ASSERT(RT_SUCCESS(rv) && rcThread == VINF_SUCCESS);
+            Assert(RT_SUCCESS(rv) && rcThread == VINF_SUCCESS);
             if (RT_SUCCESS(rv))
             {
                 rv = 0;
@@ -401,7 +402,7 @@ PR_IMPLEMENT(PRThread*) PR_GetCurrentThread(void)
 
     _PT_PTHREAD_GETSPECIFIC(pt_book.key, thred);
     if (NULL == thred) thred = pt_AttachThread();
-    PR_ASSERT(NULL != thred);
+    Assert(NULL != thred);
     return (PRThread*)thred;
 }  /* PR_GetCurrentThread */
 
@@ -425,7 +426,7 @@ PR_IMPLEMENT(PRThreadState) PR_GetThreadState(const PRThread *thred)
 
 PR_IMPLEMENT(PRThreadPriority) PR_GetThreadPriority(const PRThread *thred)
 {
-    PR_ASSERT(thred != NULL);
+    Assert(thred != NULL);
     return thred->priority;
 }  /* PR_GetThreadPriority */
 
@@ -433,7 +434,7 @@ PR_IMPLEMENT(void) PR_SetThreadPriority(PRThread *thred, PRThreadPriority newPri
 {
     PRIntn rv = -1;
 
-    PR_ASSERT(NULL != thred);
+    Assert(NULL != thred);
 
     if ((PRIntn)PR_PRIORITY_FIRST > (PRIntn)newPri)
         newPri = PR_PRIORITY_FIRST;
@@ -486,7 +487,7 @@ PR_IMPLEMENT(PRStatus) PR_Interrupt(PRThread *thred)
     ** that?
     */
     PRCondVar *cv;
-    PR_ASSERT(NULL != thred);
+    Assert(NULL != thred);
     if (NULL == thred) return PR_FAILURE;
 
     thred->state |= PT_THREAD_ABORTED;
@@ -497,7 +498,7 @@ PR_IMPLEMENT(PRStatus) PR_Interrupt(PRThread *thred)
         PRIntn rv;
         ASMAtomicIncU32(&cv->notify_pending);
         rv = pthread_cond_broadcast(&cv->cv);
-        PR_ASSERT(0 == rv);
+        Assert(0 == rv);
         if (0 > ASMAtomicDecU32(&cv->notify_pending))
             PR_DestroyCondVar(cv);
     }
@@ -546,9 +547,9 @@ void _PR_InitThreads(
     pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
     pthread_attr_getschedpolicy(&attr, &policy);
     pt_book.minPrio = sched_get_priority_min(policy);
-    PR_ASSERT(-1 != pt_book.minPrio);
+    Assert(-1 != pt_book.minPrio);
     pt_book.maxPrio = sched_get_priority_max(policy);
-    PR_ASSERT(-1 != pt_book.maxPrio);
+    Assert(-1 != pt_book.maxPrio);
     pthread_attr_destroy(&attr);
     }
 #else
@@ -560,13 +561,13 @@ void _PR_InitThreads(
 #endif
 #endif
     
-    PR_ASSERT(NULL == pt_book.ml);
+    Assert(NULL == pt_book.ml);
     pt_book.ml = PR_NewLock();
-    PR_ASSERT(NULL != pt_book.ml);
+    Assert(NULL != pt_book.ml);
     pt_book.cv = PR_NewCondVar(pt_book.ml);
-    PR_ASSERT(NULL != pt_book.cv);
+    Assert(NULL != pt_book.cv);
     thred = PR_NEWZAP(PRThread);
-    PR_ASSERT(NULL != thred);
+    Assert(NULL != thred);
     thred->arg = NULL;
     thred->startFunc = NULL;
     thred->priority = priority;
@@ -602,9 +603,9 @@ void _PR_InitThreads(
      * nothing.
      */
     rv = _PT_PTHREAD_KEY_CREATE(&pt_book.key, _pt_thread_death);
-    PR_ASSERT(0 == rv);
+    Assert(0 == rv);
     rv = pthread_setspecific(pt_book.key, thred);
-    PR_ASSERT(0 == rv);    
+    Assert(0 == rv);    
     PR_SetThreadPriority(thred, priority);
 }  /* _PR_InitThreads */
 
@@ -612,7 +613,7 @@ PR_IMPLEMENT(PRStatus) PR_Cleanup(void)
 {
     PRThread *me = PR_CurrentThread();
     Log(("PR_Cleanup: shutting down NSPR\n"));
-    PR_ASSERT(me->state & PT_THREAD_PRIMORD);
+    Assert(me->state & PT_THREAD_PRIMORD);
     if (me->state & PT_THREAD_PRIMORD)
     {
         PR_Lock(pt_book.ml);
@@ -621,7 +622,6 @@ PR_IMPLEMENT(PRStatus) PR_Cleanup(void)
         PR_Unlock(pt_book.ml);
 
         _PR_CleanupDtoa();
-        _PR_LogCleanup();
         /* Close all the fd's before calling _PR_CleanupIO */
         _PR_CleanupIO();
 

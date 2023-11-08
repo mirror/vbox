@@ -43,23 +43,12 @@
 #endif
 
 #ifdef VBOX
+#include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/env.h>
 #include <iprt/file.h>
 #include <iprt/process.h>
 #endif
-
-PRLogModuleInfo *_pr_clock_lm;
-PRLogModuleInfo *_pr_cmon_lm;
-PRLogModuleInfo *_pr_io_lm;
-PRLogModuleInfo *_pr_cvar_lm;
-PRLogModuleInfo *_pr_mon_lm;
-PRLogModuleInfo *_pr_linker_lm;
-PRLogModuleInfo *_pr_sched_lm;
-PRLogModuleInfo *_pr_thread_lm;
-PRLogModuleInfo *_pr_gc_lm;
-PRLogModuleInfo *_pr_shm_lm;
-PRLogModuleInfo *_pr_shma_lm;
 
 PRFileDesc *_pr_stdin;
 PRFileDesc *_pr_stdout;
@@ -84,18 +73,6 @@ static void _PR_InitStuff(void)
     RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
 #endif
 
-	_pr_clock_lm = PR_NewLogModule("clock");
-	_pr_cmon_lm = PR_NewLogModule("cmon");
-	_pr_io_lm = PR_NewLogModule("io");
-	_pr_mon_lm = PR_NewLogModule("mon");
-	_pr_linker_lm = PR_NewLogModule("linker");
-	_pr_cvar_lm = PR_NewLogModule("cvar");
-	_pr_sched_lm = PR_NewLogModule("sched");
-	_pr_thread_lm = PR_NewLogModule("thread");
-	_pr_gc_lm = PR_NewLogModule("gc");
-	_pr_shm_lm = PR_NewLogModule("shm");
-	_pr_shma_lm = PR_NewLogModule("shma");
-
     /* NOTE: These init's cannot depend on _PR_MD_CURRENT_THREAD() */
     _PR_MD_EARLY_INIT();
 
@@ -105,7 +82,6 @@ static void _PR_InitStuff(void)
     _PR_InitThreads(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
 
     _PR_InitIO();
-    _PR_InitLog();
     _PR_InitDtoa();
 
     nspr_InitializePRErrorTable();
@@ -179,7 +155,7 @@ PR_ProcessAttrSetStdioRedirect(
             attr->stderrFd = redirectFd;
             break;
         default:
-            PR_ASSERT(0);
+            AssertFailed();
     }
 }
 
@@ -312,7 +288,7 @@ PR_IMPLEMENT(PRFileDesc *) PR_GetInheritedFD(
                     fd = PR_ImportUDPSocket(osfd);
                     break;
                 default:
-                    PR_ASSERT(0);
+                    AssertFailed();
                     PR_SetError(PR_UNKNOWN_ERROR, 0);
                     fd = NULL;
                     break;
@@ -357,9 +333,9 @@ PR_IMPLEMENT(PRStatus) PR_CreateProcessDetached(
     RTENV newEnv = RTENV_DEFAULT;
 
     /* this code doesn't support all attributes */
-    PR_ASSERT(!attr || !attr->currentDirectory);
+    Assert(!attr || !attr->currentDirectory);
     /* no custom environment, please */
-    PR_ASSERT(!envp);
+    Assert(!envp);
 
     childEnv = RTENV_DEFAULT;
     if (attr && attr->fdInheritBuffer) {

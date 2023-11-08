@@ -522,16 +522,6 @@ struct PRSegment {
 extern PRInt32 _pr_pageSize;
 extern PRInt32 _pr_pageShift;
 
-extern PRLogModuleInfo *_pr_clock_lm;
-extern PRLogModuleInfo *_pr_cmon_lm;
-extern PRLogModuleInfo *_pr_io_lm;
-extern PRLogModuleInfo *_pr_cvar_lm;
-extern PRLogModuleInfo *_pr_mon_lm;
-extern PRLogModuleInfo *_pr_linker_lm;
-extern PRLogModuleInfo *_pr_sched_lm;
-extern PRLogModuleInfo *_pr_thread_lm;
-extern PRLogModuleInfo *_pr_gc_lm;
-
 extern PRFileDesc *_pr_stdin;
 extern PRFileDesc *_pr_stdout;
 extern PRFileDesc *_pr_stderr;
