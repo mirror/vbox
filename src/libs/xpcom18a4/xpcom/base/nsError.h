@@ -295,23 +295,5 @@
 
 #define NS_SUCCESS_LOSS_OF_INSIGNIFICANT_DATA   NS_ERROR_GENERATE_SUCCESS(NS_ERROR_MODULE_XPCOM,  1)
 
-
- /*
-  * This will return the nsresult corresponding to the most recent NSPR failure
-  * returned by PR_GetError.
-  *
-  ***********************************************************************
-  *      Do not depend on this function. It will be going away!
-  ***********************************************************************
-  */
-extern NS_COM nsresult
-NS_ErrorAccordingToNSPR();
-
-
-#ifdef _MSC_VER
-#pragma warning(disable: 4251) /* 'nsCOMPtr<class nsIInputStream>' needs to have dll-interface to be used by clients of class 'nsInputStream' */
-#pragma warning(disable: 4275) /* non dll-interface class 'nsISupports' used as base for dll-interface class 'nsIRDFNode' */
-#endif
-
 #endif
 
