@@ -4234,12 +4234,11 @@ FNIEMOP_STUB_1(iemOp_VGrp15_vldmxcsr, uint8_t, bRm);
 //{
 //    IEMOP_MNEMONIC1(M_MEM, VLDMXCSR, vldmxcsr, MdRO, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES);
 //    IEM_MC_BEGIN(2, 0, IEM_MC_F_NOT_286_OR_OLDER, 0);
-//    IEM_MC_ARG(uint8_t,         iEffSeg,                                 0);
 //    IEM_MC_ARG(RTGCPTR,         GCPtrEff,                                1);
 //    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
 //    IEMOP_HLP_DONE_VEX_DECODING_L0_AND_NO_VVVV_EX(fAvx);
 //    IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
-//    IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+//    IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/ pVCpu->iem.s.iEffSeg,     0);
 //    IEM_MC_CALL_CIMPL_2(iemCImpl_ldmxcsr, iEffSeg, GCPtrEff);
 //    IEM_MC_END();
 //    return VINF_SUCCESS;

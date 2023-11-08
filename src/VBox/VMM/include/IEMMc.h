@@ -206,8 +206,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #define IEM_MC_COMMIT_EFLAGS(a_EFlags) \
    do { pVCpu->cpum.GstCtx.eflags.u = (a_EFlags); Assert(pVCpu->cpum.GstCtx.eflags.u & X86_EFL_1); } while (0)
 
-#define IEM_MC_ASSIGN(a_VarOrArg, a_CVariableOrConst)   (a_VarOrArg) = (a_CVariableOrConst)
-#define IEM_MC_ASSIGN_TO_SMALLER                        IEM_MC_ASSIGN
+#define IEM_MC_ASSIGN_TO_SMALLER(a_VarOrArg, a_CVariableOrConst) (a_VarOrArg) = (a_CVariableOrConst)
 #define IEM_MC_ASSIGN_U8_SX_U64(a_u64VarOrArg, a_u8CVariableOrConst) \
    (a_u64VarOrArg) = (int8_t)(a_u8CVariableOrConst)
 #define IEM_MC_ASSIGN_U32_SX_U64(a_u64VarOrArg, a_u32CVariableOrConst) \

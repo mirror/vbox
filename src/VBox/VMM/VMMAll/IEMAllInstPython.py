@@ -2745,7 +2745,6 @@ g_dMcStmtParsers = {
     'IEM_MC_ARG_CONST':                                          (McBlock.parseMcArgConst,          False, True,  ),
     'IEM_MC_ARG_LOCAL_EFLAGS':                                   (McBlock.parseMcArgLocalEFlags,    False, True,  ),
     'IEM_MC_ARG_LOCAL_REF':                                      (McBlock.parseMcArgLocalRef,       False, True,  ),
-    'IEM_MC_ASSIGN':                                             (McBlock.parseMcGeneric,           False, False, ),
     'IEM_MC_ASSIGN_TO_SMALLER':                                  (McBlock.parseMcGeneric,           False, False, ),
     'IEM_MC_ASSIGN_U8_SX_U64':                                   (McBlock.parseMcGeneric,           False, False, ),
     'IEM_MC_ASSIGN_U32_SX_U64':                                  (McBlock.parseMcGeneric,           False, False, ),
