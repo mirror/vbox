@@ -187,9 +187,11 @@ and to ensure that no more events will be delivered for that owner.
 #include "prtypes.h"
 #include "prclist.h"
 #include "prthread.h"
-#include "prlock.h"
 #include "prcvar.h"
 #include "prmon.h"
+
+#include <iprt/critsect.h>
+#include <iprt/semaphore.h>
 
 #ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
 #define PL_DestroyEvent VBoxNsplPL_DestroyEvent
@@ -525,8 +527,8 @@ struct PLEvent {
     PLDestroyEventProc	destructor;
     void*				owner;
     void*				synchronousResult;
-    PRLock*             lock;
-    PRCondVar*          condVar;
+    RTCRITSECT          lock;
+    RTSEMEVENT          condVar;
     PRBool              handled;
 #ifdef XP_UNIX
     unsigned long       id;

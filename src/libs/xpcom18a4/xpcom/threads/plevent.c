@@ -51,6 +51,8 @@
 
 #include "private/pprthred.h"
 
+#include <iprt/errcore.h>
+
 static PRLogModuleInfo *event_lm = NULL;
 
 /*******************************************************************************
@@ -255,18 +257,19 @@ PL_PostSynchronousEvent(PLEventQueue* self, PLEvent* event)
     else {
         int i, entryCount;
 
-        event->lock = PR_NewLock();
-        if (!event->lock) {
-          return NULL;
-        }
-        event->condVar = PR_NewCondVar(event->lock);
-        if(!event->condVar) {
-          PR_DestroyLock(event->lock);
-          event->lock = NULL;
+        int vrc = RTCritSectInit(&event->lock);
+        if (RT_FAILURE(vrc)) {
           return NULL;
         }
 
-        PR_Lock(event->lock);
+        vrc = RTSemEventCreate(&event->condVar);
+        if(RT_FAILURE(vrc))
+        {
+          RTCritSectDelete(&event->lock);
+          return NULL;
+        }
+
+        RTCritSectEnter(&event->lock);
 
         entryCount = PR_GetMonitorEntryCount(self->monitor);
 
@@ -287,7 +290,9 @@ PL_PostSynchronousEvent(PLEventQueue* self, PLEvent* event)
 
         while (!event->handled) {
             /* wait for event to be handled or destroyed */
-            PR_WaitCondVar(event->condVar, PR_INTERVAL_NO_TIMEOUT);
+            RTCritSectLeave(&event->lock);
+            RTSemEventWait(event->condVar, RT_INDEFINITE_WAIT);
+            RTCritSectEnter(&event->lock);
         }
 
         if (entryCount) {
@@ -297,7 +302,7 @@ PL_PostSynchronousEvent(PLEventQueue* self, PLEvent* event)
 
         result = event->synchronousResult;
         event->synchronousResult = NULL;
-        PR_Unlock(event->lock);
+        RTCritSectLeave(&event->lock);
     }
 
     /* For synchronous events, they're destroyed here on the caller's
@@ -385,11 +390,11 @@ _pl_DestroyEventForOwner(PLEvent* event, void* owner, PLEventQueue* queue)
         PL_DequeueEvent(event, queue);
 
         if (event->synchronousResult == (void*)PR_TRUE) {
-            PR_Lock(event->lock);
+            RTCritSectEnter(&event->lock);
             event->synchronousResult = NULL;
             event->handled = PR_TRUE;
-            PR_NotifyCondVar(event->condVar);
-            PR_Unlock(event->lock);
+            RTSemEventSignal(event->condVar);
+            RTCritSectLeave(&event->lock);
         }
         else {
             PL_DestroyEvent(event);
@@ -527,8 +532,7 @@ PL_InitEvent(PLEvent* self, void* owner,
     self->owner = owner;
     self->synchronousResult = NULL;
     self->handled = PR_FALSE;
-    self->lock = NULL;
-    self->condVar = NULL;
+    self->condVar = NIL_RTSEMEVENT;
 #if defined(XP_UNIX) && !defined(XP_MACOSX)
     self->id = 0;
 #endif
@@ -552,11 +556,11 @@ PL_HandleEvent(PLEvent* self)
 
     result = self->handler(self);
     if (NULL != self->synchronousResult) {
-        PR_Lock(self->lock);
+        RTCritSectEnter(&self->lock);
         self->synchronousResult = result;
         self->handled = PR_TRUE;
-        PR_NotifyCondVar(self->condVar);
-        PR_Unlock(self->lock);
+        RTSemEventSignal(self->condVar);
+        RTCritSectLeave(&self->lock);
     }
     else {
         /* For asynchronous events, they're destroyed by the event-handler
@@ -574,10 +578,10 @@ PL_DestroyEvent(PLEvent* self)
     /* This event better not be on an event queue anymore. */
     PR_ASSERT(PR_CLIST_IS_EMPTY(&self->link));
 
-    if(self->condVar)
-      PR_DestroyCondVar(self->condVar);
-    if(self->lock)
-      PR_DestroyLock(self->lock);
+    if(self->condVar != NIL_RTSEMEVENT)
+      RTSemEventDestroy(self->condVar);
+    if(RTCritSectIsInitialized(&self->lock))
+      RTCritSectDelete(&self->lock);
 
     self->destructor(self);
 }
