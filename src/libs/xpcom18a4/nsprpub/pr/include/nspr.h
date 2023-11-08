@@ -43,7 +43,6 @@
 #include "prclist.h"
 #include "prcvar.h"
 #include "prdtoa.h"
-#include "prenv.h"
 #include "prerror.h"
 #include "prinet.h"
 #include "prinit.h"
