@@ -43,6 +43,7 @@
 /* COM includes: */
 #include "COMEnums.h"
 #include "CMachine.h"
+#include "CPlatform.h"
 #include "CPlatformProperties.h"
 
 
@@ -332,7 +333,9 @@ UIBootItemDataList UIBootDataTools::loadBootItems(const CMachine &comMachine)
                                                                     << KDeviceType_DVD
                                                                     << KDeviceType_HardDisk
                                                                     << KDeviceType_Network;
-    const CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(KPlatformArchitecture_x86);
+    CPlatform comPlatform = comMachine.GetPlatform();
+    const KPlatformArchitecture comArch = comPlatform.GetArchitecture();
+    const CPlatformProperties comProperties = uiCommon().virtualBox().GetPlatformProperties(comArch);
     const int iPossibleBootListSize = qMin((ULONG)4, comProperties.GetMaxBootPosition());
     possibleBootItems.resize(iPossibleBootListSize);
 
