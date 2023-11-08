@@ -86,21 +86,8 @@
 
 #include NEW_H     // for placement new
 
-
-#ifdef XP_BEOS
-#include <FindDirectory.h>
-#include <Path.h>
-#endif
-
-#include "prlog.h"
-
-PRLogModuleInfo* nsComponentManagerLog = nsnull;
-
-#if 0 || defined (DEBUG_timeless)
- #define SHOW_DENIED_ON_SHUTDOWN
- #define SHOW_CI_ON_EXISTING_SERVICE
- #define XPCOM_CHECK_PENDING_CIDS
-#endif
+#include <iprt/assert.h>
+#include <VBox/log.h>
 
 // Loader Types
 #define NS_LOADER_DATA_ALLOC_STEP 6
@@ -714,16 +701,11 @@ nsComponentManagerImpl::nsComponentManagerImpl()
 
 nsresult nsComponentManagerImpl::Init(void)
 {
-    PR_ASSERT(mShuttingDown != NS_SHUTDOWN_INPROGRESS);
+    Assert(mShuttingDown != NS_SHUTDOWN_INPROGRESS);
     if (mShuttingDown == NS_SHUTDOWN_INPROGRESS)
         return NS_ERROR_FAILURE;
 
     mShuttingDown = NS_SHUTDOWN_NEVERHAPPENED;
-
-    if (nsComponentManagerLog == nsnull)
-    {
-        nsComponentManagerLog = PR_NewLogModule("nsComponentManager");
-    }
 
     // Initialize our arena
     PL_INIT_ARENA_POOL(&mArena, "ComponentManagerArena", NS_CM_BLOCK_SIZE);
@@ -836,9 +818,7 @@ nsresult nsComponentManagerImpl::Init(void)
         return NS_ERROR_FAILURE;
     }
 
-    PR_LOG(nsComponentManagerLog, PR_LOG_DEBUG,
-           ("nsComponentManager: Initialized."));
-
+    Log(("nsComponentManager: Initialized.\n"));
     return NS_OK;
 }
 
@@ -850,14 +830,14 @@ PRIntn PR_CALLBACK AutoRegEntryDestroy(nsHashKey *aKey, void *aData, void* aClos
 
 nsresult nsComponentManagerImpl::Shutdown(void)
 {
-    PR_ASSERT(mShuttingDown == NS_SHUTDOWN_NEVERHAPPENED);
+    Assert(mShuttingDown == NS_SHUTDOWN_NEVERHAPPENED);
     if (mShuttingDown != NS_SHUTDOWN_NEVERHAPPENED)
         return NS_ERROR_FAILURE;
 
     mShuttingDown = NS_SHUTDOWN_INPROGRESS;
 
     // Shutdown the component manager
-    PR_LOG(nsComponentManagerLog, PR_LOG_DEBUG, ("nsComponentManager: Beginning Shutdown."));
+    Log(("nsComponentManager: Beginning Shutdown.\n"));
 
     PRInt32 i;
 
@@ -865,10 +845,7 @@ nsresult nsComponentManagerImpl::Shutdown(void)
     if (mRegistryDirty) {
         nsresult rv = WritePersistentRegistry();
         if (NS_FAILED(rv)) {
-            PR_LOG(nsComponentManagerLog, PR_LOG_ERROR, ("nsComponentManager: Could not write out perisistant registry."));
-#ifdef DEBUG
-            printf("Could not write out perisistant registry!\n");
-#endif
+            Log(("nsComponentManager: Could not write out perisistant registry.\n"));
         }
     }
 
@@ -909,22 +886,20 @@ nsresult nsComponentManagerImpl::Shutdown(void)
 
     mShuttingDown = NS_SHUTDOWN_COMPLETE;
 
-    PR_LOG(nsComponentManagerLog, PR_LOG_DEBUG, ("nsComponentManager: Shutdown complete."));
-
+    Log(("nsComponentManager: Shutdown complete.\n"));
     return NS_OK;
 }
 
 nsComponentManagerImpl::~nsComponentManagerImpl()
 {
-    PR_LOG(nsComponentManagerLog, PR_LOG_DEBUG, ("nsComponentManager: Beginning destruction."));
-
+    Log(("nsComponentManager: Beginning destruction.\n"));
     if (mShuttingDown != NS_SHUTDOWN_COMPLETE)
         Shutdown();
 
     if (mMon) {
         nsAutoMonitor::DestroyMonitor(mMon);
     }
-    PR_LOG(nsComponentManagerLog, PR_LOG_DEBUG, ("nsComponentManager: Destroyed."));
+    Log(("nsComponentManager: Destroyed.\n"));
 }
 
 NS_IMPL_THREADSAFE_ISUPPORTS8(nsComponentManagerImpl,
@@ -1555,9 +1530,8 @@ nsComponentManagerImpl::LoadFactory(nsFactoryEntry *aEntry,
     nsresult rv;
     rv = aEntry->GetFactory(aFactory, this);
     if (NS_FAILED(rv)) {
-        PR_LOG(nsComponentManagerLog, PR_LOG_ERROR,
-               ("nsComponentManager: FAILED to load factory from %s (%s)\n",
-                (const char *)aEntry->mLocation, mLoaderData[aEntry->mTypeIndex].type));
+        Log(("nsComponentManager: FAILED to load factory from %s (%s)\n",
+             (const char *)aEntry->mLocation, mLoaderData[aEntry->mTypeIndex].type));
         return rv;
     }
 
@@ -1621,7 +1595,7 @@ nsresult
 nsComponentManagerImpl::FindFactory(const nsCID &aClass,
                                     nsIFactory **aFactory)
 {
-    PR_ASSERT(aFactory != nsnull);
+    Assert(aFactory != nsnull);
 
     nsFactoryEntry *entry = GetFactoryEntry(aClass);
 
@@ -1637,7 +1611,7 @@ nsComponentManagerImpl::FindFactory(const char *contractID,
                                     PRUint32 aContractIDLen,
                                     nsIFactory **aFactory)
 {
-    PR_ASSERT(aFactory != nsnull);
+    Assert(aFactory != nsnull);
 
     nsFactoryEntry *entry = GetFactoryEntry(contractID, aContractIDLen);
 
@@ -1661,26 +1635,21 @@ nsComponentManagerImpl::GetClassObject(const nsCID &aClass, const nsIID &aIID,
 
     nsCOMPtr<nsIFactory> factory;
 
-#ifdef PR_LOGGING
-    if (PR_LOG_TEST(nsComponentManagerLog, PR_LOG_DEBUG))
-    {
-        char *buf = aClass.ToString();
-        PR_LogPrint("nsComponentManager: GetClassObject(%s)", buf);
-        if (buf)
-            PR_Free(buf);
-    }
+#ifdef LOG_ENABLED
+    char *buf = aClass.ToString();
+    LogFlow(("nsComponentManager: GetClassObject(%s)", buf));
+    if (buf)
+        PR_Free(buf);
 #endif
 
-    PR_ASSERT(aResult != nsnull);
+    Assert(aResult != nsnull);
 
     rv = FindFactory(aClass, getter_AddRefs(factory));
     if (NS_FAILED(rv)) return rv;
 
     rv = factory->QueryInterface(aIID, aResult);
 
-    PR_LOG(nsComponentManagerLog, PR_LOG_WARNING,
-           ("\t\tGetClassObject() %s", NS_SUCCEEDED(rv) ? "succeeded" : "FAILED"));
-
+    Log(("\t\tGetClassObject() %s", NS_SUCCEEDED(rv) ? "succeeded" : "FAILED"));
     return rv;
 }
 
@@ -1694,23 +1663,15 @@ nsComponentManagerImpl::GetClassObjectByContractID(const char *contractID,
 
     nsCOMPtr<nsIFactory> factory;
 
-#ifdef PR_LOGGING
-    if (PR_LOG_TEST(nsComponentManagerLog, PR_LOG_DEBUG))
-    {
-        PR_LogPrint("nsComponentManager: GetClassObject(%s)", contractID);
-    }
-#endif
-
-    PR_ASSERT(aResult != nsnull);
+    Log(("nsComponentManager: GetClassObject(%s)", contractID));
+    Assert(aResult != nsnull);
 
     rv = FindFactory(contractID, strlen(contractID), getter_AddRefs(factory));
     if (NS_FAILED(rv)) return rv;
 
     rv = factory->QueryInterface(aIID, aResult);
 
-    PR_LOG(nsComponentManagerLog, PR_LOG_WARNING,
-           ("\t\tGetClassObject() %s", NS_SUCCEEDED(rv) ? "succeeded" : "FAILED"));
-
+    Log(("\t\tGetClassObject() %s", NS_SUCCEEDED(rv) ? "succeeded" : "FAILED"));
     return rv;
 }
 
@@ -1738,17 +1699,14 @@ nsComponentManagerImpl::ContractIDToClassID(const char *aContractID, nsCID *aCla
         *aClass = fe->mCid;
         rv = NS_OK;
     }
-#ifdef PR_LOGGING
-    if (PR_LOG_TEST(nsComponentManagerLog, PR_LOG_WARNING)) {
-        char *buf = 0;
-        if (NS_SUCCEEDED(rv))
-            buf = aClass->ToString();
-        PR_LOG(nsComponentManagerLog, PR_LOG_WARNING,
-               ("nsComponentManager: ContractIDToClassID(%s)->%s", aContractID,
-                NS_SUCCEEDED(rv) ? buf : "[FAILED]"));
-        if (buf)
-            PR_Free(buf);
-    }
+#ifdef LOG_ENABLED
+    char *buf = 0;
+    if (NS_SUCCEEDED(rv))
+        buf = aClass->ToString();
+    Log(("nsComponentManager: ContractIDToClassID(%s)->%s", aContractID,
+         NS_SUCCEEDED(rv) ? buf : "[FAILED]"));
+    if (buf)
+        PR_Free(buf);
 #endif
     return rv;
 }
@@ -1769,16 +1727,13 @@ nsComponentManagerImpl::CLSIDToContractID(const nsCID &aClass,
     NS_WARNING("Need to implement CLSIDToContractID");
 
     nsresult rv = NS_ERROR_FACTORY_NOT_REGISTERED;
-#ifdef PR_LOGGING
-    if (PR_LOG_TEST(nsComponentManagerLog, PR_LOG_WARNING))
-    {
-        char *buf = aClass.ToString();
-        PR_LOG(nsComponentManagerLog, PR_LOG_WARNING,
-               ("nsComponentManager: CLSIDToContractID(%s)->%s", buf,
-                NS_SUCCEEDED(rv) ? *aContractID : "[FAILED]"));
-        if (buf)
-            PR_Free(buf);
-    }
+
+#ifdef LOG_ENABLED
+    char *buf = aClass.ToString();
+    Log(("nsComponentManager: CLSIDToContractID(%s)->%s", buf,
+         NS_SUCCEEDED(rv) ? *aContractID : "[FAILED]"));
+    if (buf)
+        PR_Free(buf);
 #endif
     return rv;
 }
@@ -1881,16 +1836,12 @@ nsComponentManagerImpl::CreateInstance(const nsCID &aClass,
         rv = NS_ERROR_FACTORY_NOT_REGISTERED;
     }
 
-#ifdef PR_LOGGING
-    if (PR_LOG_TEST(nsComponentManagerLog, PR_LOG_WARNING))
-    {
-        char *buf = aClass.ToString();
-        PR_LOG(nsComponentManagerLog, PR_LOG_WARNING,
-               ("nsComponentManager: CreateInstance(%s) %s", buf,
-                NS_SUCCEEDED(rv) ? "succeeded" : "FAILED"));
-        if (buf)
-            PR_Free(buf);
-    }
+#ifdef LOG_ENABLED
+    char *buf = aClass.ToString();
+    Log(("nsComponentManager: CreateInstance(%s) %s", buf,
+         NS_SUCCEEDED(rv) ? "succeeded" : "FAILED"));
+    if (buf)
+        PR_Free(buf);
 #endif
 
     return rv;
@@ -1964,10 +1915,8 @@ nsComponentManagerImpl::CreateInstanceByContractID(const char *aContractID,
             rv = NS_ERROR_FACTORY_NOT_REGISTERED;
     }
 
-    PR_LOG(nsComponentManagerLog, PR_LOG_WARNING,
-           ("nsComponentManager: CreateInstanceByContractID(%s) %s", aContractID,
-            NS_SUCCEEDED(rv) ? "succeeded" : "FAILED"));
-
+    Log(("nsComponentManager: CreateInstanceByContractID(%s) %s", aContractID,
+         NS_SUCCEEDED(rv) ? "succeeded" : "FAILED"));
     return rv;
 }
 
@@ -2464,11 +2413,6 @@ MakeRegistryName(const char *aDllName, const char *prefix, char **regName)
     registryName[registryNameLen] = '\0';
     *regName = registryName;
 
-#ifdef DEBUG_shaver_off
-    fprintf(stderr, "MakeRegistryName(%s, %s, &[%s])\n",
-            aDllName, prefix, *regName);
-#endif
-
     return NS_OK;
 }
 
@@ -2603,16 +2547,12 @@ nsComponentManagerImpl::RegisterFactory(const nsCID &aClass,
                                         PRBool aReplace)
 {
     nsAutoMonitor mon(mMon);
-#ifdef PR_LOGGING
-    if (PR_LOG_TEST(nsComponentManagerLog, PR_LOG_WARNING))
-    {
-        char *buf = aClass.ToString();
-        PR_LOG(nsComponentManagerLog, PR_LOG_WARNING,
-               ("nsComponentManager: RegisterFactory(%s, %s)", buf,
-                (aContractID ? aContractID : "(null)")));
-        if (buf)
-            PR_Free(buf);
-    }
+#ifdef LOG_ENABLED
+    char *buf = aClass.ToString();
+    Log(("nsComponentManager: RegisterFactory(%s, %s)", buf,
+         (aContractID ? aContractID : "(null)")));
+    if (buf)
+        PR_Free(buf);
 #endif
     nsFactoryEntry *entry = nsnull;
     nsFactoryTableEntry* factoryTableEntry = NS_STATIC_CAST(nsFactoryTableEntry*,
@@ -2631,8 +2571,7 @@ nsComponentManagerImpl::RegisterFactory(const nsCID &aClass,
     if (entry && !aReplace)
     {
         // Already registered
-        PR_LOG(nsComponentManagerLog, PR_LOG_ERROR,
-               ("\t\tFactory already registered."));
+        Log(("\t\tFactory already registered."));
         return NS_ERROR_FACTORY_EXISTS;
     }
 
@@ -2652,17 +2591,14 @@ nsComponentManagerImpl::RegisterFactory(const nsCID &aClass,
     if (aContractID) {
         nsresult rv = HashContractID(aContractID, strlen(aContractID), entry);
         if (NS_FAILED(rv)) {
-            PR_LOG(nsComponentManagerLog, PR_LOG_WARNING,
-                   ("\t\tFactory register succeeded. "
-                    "Hashing contractid (%s) FAILED.", aContractID));
+            Log(("\t\tFactory register succeeded. "
+                 "Hashing contractid (%s) FAILED.", aContractID));
             return rv;
         }
     }
 
-    PR_LOG(nsComponentManagerLog, PR_LOG_WARNING,
-           ("\t\tFactory register succeeded contractid=%s.",
-            aContractID ? aContractID : "<none>"));
-
+    Log(("\t\tFactory register succeeded contractid=%s.",
+          aContractID ? aContractID : "<none>"));
     return NS_OK;
 }
 
@@ -2767,22 +2703,16 @@ nsComponentManagerImpl::RegisterComponentCommon(const nsCID &aClass,
     // Normalize proid and classname
     const char *contractID = (aContractID && *aContractID) ? aContractID : nsnull;
     const char *className = (aClassName && *aClassName) ? aClassName : nsnull;
-#ifdef PR_LOGGING
-    if (PR_LOG_TEST(nsComponentManagerLog, PR_LOG_WARNING))
-    {
-        char *buf = aClass.ToString();
-        PR_LOG(nsComponentManagerLog, PR_LOG_WARNING,
-               ("nsComponentManager: RegisterComponentCommon(%s, %s, %s, %s)",
-                buf,
-                contractID ? contractID : "(null)",
-                aRegistryName, aType));
-        if (buf)
-            PR_Free(buf);
-    }
+#ifdef LOG_ENABLED
+    char *buf = aClass.ToString();
+    Log(("nsComponentManager: RegisterComponentCommon(%s, %s, %s, %s)",
+         buf, contractID ? contractID : "(null)",
+         aRegistryName, aType));
+    if (buf)
+        PR_Free(buf);
 #endif
     if (entry && !aReplace) {
-        PR_LOG(nsComponentManagerLog, PR_LOG_ERROR,
-               ("\t\tFactory already registered."));
+        Log(("\t\tFactory already registered."));
         return NS_ERROR_FACTORY_EXISTS;
     }
 
@@ -2791,8 +2721,7 @@ nsComponentManagerImpl::RegisterComponentCommon(const nsCID &aClass,
     nsCOMPtr<nsIComponentLoader> loader;
     nsresult rv = GetLoaderForType(typeIndex, getter_AddRefs(loader));
     if (NS_FAILED(rv)) {
-        PR_LOG(nsComponentManagerLog, PR_LOG_ERROR,
-               ("\t\tgetting loader for %s FAILED\n", aType));
+        Log(("\t\tgetting loader for %s FAILED\n", aType));
         return rv;
     }
 
@@ -2829,8 +2758,7 @@ nsComponentManagerImpl::RegisterComponentCommon(const nsCID &aClass,
     if (contractID) {
         rv = HashContractID(contractID, aContractIDLen, entry);
         if (NS_FAILED(rv)) {
-            PR_LOG(nsComponentManagerLog, PR_LOG_ERROR,
-                   ("\t\tHashContractID(%s) FAILED\n", contractID));
+            Log(("\t\tHashContractID(%s) FAILED\n", contractID));
             return rv;
         }
     }
@@ -2981,15 +2909,11 @@ nsresult
 nsComponentManagerImpl::UnregisterFactory(const nsCID &aClass,
                                           nsIFactory *aFactory)
 {
-#ifdef PR_LOGGING
-    if (PR_LOG_TEST(nsComponentManagerLog, PR_LOG_WARNING))
-    {
-        char *buf = aClass.ToString();
-        PR_LOG(nsComponentManagerLog, PR_LOG_WARNING,
-               ("nsComponentManager: UnregisterFactory(%s)", buf));
-        if (buf)
-            PR_Free(buf);
-    }
+#ifdef LOG_ENABLED
+    char *buf = aClass.ToString();
+    Log(("nsComponentManager: UnregisterFactory(%s)", buf));
+    if (buf)
+        PR_Free(buf);
 #endif
     nsFactoryEntry *old;
 
@@ -3007,9 +2931,8 @@ nsComponentManagerImpl::UnregisterFactory(const nsCID &aClass,
         rv = NS_OK;
     }
 
-    PR_LOG(nsComponentManagerLog, PR_LOG_WARNING,
-           ("\t\tUnregisterFactory() %s",
-            NS_SUCCEEDED(rv) ? "succeeded" : "FAILED"));
+    Log(("\t\tUnregisterFactory() %s",
+         NS_SUCCEEDED(rv) ? "succeeded" : "FAILED"));
     return rv;
 }
 
@@ -3018,14 +2941,10 @@ nsComponentManagerImpl::UnregisterComponent(const nsCID &aClass,
                                             const char *registryName)
 {
 #ifdef PR_LOGGING
-    if (PR_LOG_TEST(nsComponentManagerLog, PR_LOG_WARNING))
-    {
-        char *buf = aClass.ToString();
-        PR_LOG(nsComponentManagerLog, PR_LOG_WARNING,
-               ("nsComponentManager: UnregisterComponent(%s)", buf));
-        if (buf)
-            PR_Free(buf);
-    }
+    char *buf = aClass.ToString();
+    Log(("nsComponentManager: UnregisterComponent(%s)", buf));
+    if (buf)
+        PR_Free(buf);
 #endif
 
     NS_ENSURE_ARG_POINTER(registryName);
@@ -3042,9 +2961,7 @@ nsComponentManagerImpl::UnregisterComponent(const nsCID &aClass,
         PL_DHashTableOperate(&mFactories, &aClass, PL_DHASH_REMOVE);
     }
 
-    PR_LOG(nsComponentManagerLog, PR_LOG_WARNING,
-           ("nsComponentManager: Factory unregister(%s) succeeded.", registryName));
-
+    Log(("nsComponentManager: Factory unregister(%s) succeeded.", registryName));
     return NS_OK;
 }
 
@@ -3073,8 +2990,7 @@ nsComponentManagerImpl::UnloadLibraries(nsIServiceManager *serviceMgr, PRInt32 a
 
     nsAutoMonitor mon(mMon);
 
-    PR_LOG(nsComponentManagerLog, PR_LOG_WARNING,
-           ("nsComponentManager: Unloading Libraries."));
+    Log(("nsComponentManager: Unloading Libraries."));
 
     // UnloadAll the loaders
     /* iterate over all known loaders and ask them to autoregister. */
