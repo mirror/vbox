@@ -59,7 +59,6 @@
 #endif
 
 #include "primpl.h"
-#include "prenv.h"
 #include "prprf.h"
 #include <string.h>
 
@@ -142,7 +141,7 @@ static PRFileDesc *logFile = 0;
 
 void _PR_InitLog(void)
 {
-    char *ev;
+    const char *ev;
 
     _pr_logLock = PR_NewLock();
 
@@ -253,7 +252,7 @@ void _PR_LogCleanup(void)
 
 static void _PR_SetLogModuleLevel( PRLogModuleInfo *lm )
 {
-    char *ev;
+    const char *ev;
 
     ev = RTEnvGet("NSPR_LOG_MODULES");
     if (ev && ev[0]) {

@@ -49,7 +49,6 @@
 #  include <Types.h>
 # endif
 #include "nsILocalFileMac.h"
-#include "prenv.h"
 #endif
 
 

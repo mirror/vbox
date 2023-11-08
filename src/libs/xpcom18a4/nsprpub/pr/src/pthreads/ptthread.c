@@ -673,7 +673,6 @@ PR_IMPLEMENT(PRStatus) PR_Cleanup(void)
         _pt_thread_death(me);
         PR_DestroyLock(_pr_sleeplock);
         _pr_sleeplock = NULL;
-        _PR_CleanupEnv();
         _pr_initialized = PR_FALSE;
         return PR_SUCCESS;
     }

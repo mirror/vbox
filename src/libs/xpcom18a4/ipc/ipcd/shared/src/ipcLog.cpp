@@ -42,7 +42,6 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "prenv.h"
 #include "prprf.h"
 #include "prthread.h"
 #include "plstr.h"

@@ -501,7 +501,6 @@ struct PRFilePrivate {
 extern void _PR_InitSegs(void);
 extern void _PR_InitStacks(void);
 extern void _PR_InitMem(void);
-extern void _PR_InitEnv(void);
 extern void _PR_InitIO(void);
 extern void _PR_InitLog(void);
 extern void _PR_InitNet(void);
@@ -514,7 +513,6 @@ extern void _PR_NotifyCondVar(PRCondVar *cvar, PRThread *me);
 extern void _PR_CleanupThread(PRThread *thread);
 extern void _PR_CleanupMW(void);
 extern void _PR_CleanupDtoa(void);
-extern void _PR_CleanupEnv(void);
 extern void _PR_CleanupIO(void);
 extern void _PR_CleanupNet(void);
 extern void _PR_CleanupLayerCache(void);
