@@ -49,9 +49,12 @@
 #include <stdlib.h>   // mbtowc, wctomb
 #include <locale.h>   // setlocale
 #include "nscore.h"
-#include "prlock.h"
 #include "nsAString.h"
 #include "nsReadableUtils.h"
+
+#include <iprt/assert.h>
+#include <iprt/errcore.h>
+#include <iprt/semaphore.h>
 
 //
 // choose a conversion library.  we used to use mbrtowc/wcrtomb under Linux,
@@ -270,13 +273,13 @@ private:
     static iconv_t gUnicodeToUTF8;
     static iconv_t gUTF8ToUnicode;
 #endif
-    static PRLock *gLock;
+    static RTSEMFASTMUTEX gLock;
     static PRBool  gInitialized;
 
     static void LazyInit();
 
-    static void Lock()   { if (gLock) PR_Lock(gLock);   }
-    static void Unlock() { if (gLock) PR_Unlock(gLock); }
+    static void Lock()   { if (gLock != NILRTSEMFASTMUTEX) RTSemFastMutexRequest(gLock); }
+    static void Unlock() { if (gLock != NILRTSEMFASTMUTEX) RTSemFastMutexRelease(gLock); }
 };
 
 iconv_t nsNativeCharsetConverter::gNativeToUnicode = INVALID_ICONV_T;
@@ -287,7 +290,7 @@ iconv_t nsNativeCharsetConverter::gUTF8ToNative    = INVALID_ICONV_T;
 iconv_t nsNativeCharsetConverter::gUnicodeToUTF8   = INVALID_ICONV_T;
 iconv_t nsNativeCharsetConverter::gUTF8ToUnicode   = INVALID_ICONV_T;
 #endif
-PRLock *nsNativeCharsetConverter::gLock            = nsnull;
+RTSEMFASTMUTEX nsNativeCharsetConverter::gLock     = NIL_RTSEMFASTMUTEX;
 PRBool  nsNativeCharsetConverter::gInitialized     = PR_FALSE;
 
 void
@@ -363,16 +366,16 @@ nsNativeCharsetConverter::LazyInit()
 void
 nsNativeCharsetConverter::GlobalInit()
 {
-    gLock = PR_NewLock();
-    NS_ASSERTION(gLock, "lock creation failed");
+    int vrc = RTSemFastMutexCreate(&gLock);
+    NS_ASSERTION(RT_SUCCESS(vrc), "lock creation failed");
 }
 
 void
 nsNativeCharsetConverter::GlobalShutdown()
 {
-    if (gLock) {
-        PR_DestroyLock(gLock);
-        gLock = nsnull;
+    if (gLock != NIL_RTSEMFASTMUTEX) {
+        RTSemFastMutexDestroy(gLock);
+        gLock = NIL_RTSEMFASTMUTEX;
     }
 
     if (gNativeToUnicode != INVALID_ICONV_T) {
@@ -1278,3 +1281,4 @@ NS_ShutdownNativeCharsetUtils()
 }
 
 #endif
+
