@@ -40,10 +40,11 @@
 #define NSCATEGORYMANAGER_H
 
 #include "prio.h"
-#include "prlock.h"
 #include "plarena.h"
 #include "nsClassHashtable.h"
 #include "nsICategoryManager.h"
+
+#include <iprt/semaphore.h>
 
 #define NS_CATEGORYMANAGER_CLASSNAME     "Category Manager"
 
@@ -94,15 +95,15 @@ public:
                        PRBool aDontPersist);
 
   void Clear() {
-    PR_Lock(mLock);
+    RTSemFastMutexRequest(mLock);
     mTable.Clear();
-    PR_Unlock(mLock);
+    RTSemFastMutexRelease(mLock);
   }
 
   PRUint32 Count() {
-    PR_Lock(mLock);
+    RTSemFastMutexRequest(mLock);
     PRUint32 tCount = mTable.Count();
-    PR_Unlock(mLock);
+    RTSemFastMutexRelease(mLock);
     return tCount;
   }
 
@@ -120,7 +121,7 @@ private:
   void* operator new(size_t aSize, PLArenaPool* aArena);
 
   nsTHashtable<CategoryLeaf> mTable;
-  PRLock* mLock;
+  RTSEMFASTMUTEX mLock;
 };
 
 
@@ -153,7 +154,7 @@ private:
 
   PLArenaPool mArena;
   nsClassHashtable<nsDepCharHashKey, CategoryNode> mTable;
-  PRLock* mLock;
+  RTSEMFASTMUTEX mLock;
 };
 
 #endif

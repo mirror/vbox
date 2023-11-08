@@ -57,6 +57,9 @@
 #include "nsCRT.h"
 #include "nsEnumeratorUtils.h"
 
+#include <iprt/assert.h>
+#include <iprt/errcore.h>
+
 class nsIComponentLoaderManager;
 
 /*
@@ -215,8 +218,9 @@ CategoryNode::Create(PLArenaPool* aArena)
     return nsnull;
   }
 
-  node->mLock = PR_NewLock();
-  if (!node->mLock) {
+  node->mLock = NIL_RTSEMFASTMUTEX;
+  int vrc = RTSemFastMutexCreate(&node->mLock);
+  if (RT_FAILURE(vrc)) {
     delete node;
     return nsnull;
   }
@@ -226,8 +230,11 @@ CategoryNode::Create(PLArenaPool* aArena)
 
 CategoryNode::~CategoryNode()
 {
-  if (mLock)
-    PR_DestroyLock(mLock);
+  if (mLock != NIL_RTSEMFASTMUTEX)
+  {
+    RTSemFastMutexDestroy(mLock);
+    mLock = NIL_RTSEMFASTMUTEX;
+  }
 }
 
 void*
@@ -242,7 +249,7 @@ NS_METHOD
 CategoryNode::GetLeaf(const char* aEntryName,
                       char** _retval)
 {
-  PR_Lock(mLock);
+  RTSemFastMutexRequest(mLock);
   nsresult rv = NS_ERROR_NOT_AVAILABLE;
   CategoryLeaf* ent =
     mTable.GetEntry(aEntryName);
@@ -253,7 +260,7 @@ CategoryNode::GetLeaf(const char* aEntryName,
     if (*_retval)
       rv = NS_OK;
   }
-  PR_Unlock(mLock);
+  RTSemFastMutexRelease(mLock);
 
   return rv;
 }
@@ -266,7 +273,7 @@ CategoryNode::AddLeaf(const char* aEntryName,
                       char** _retval,
                       PLArenaPool* aArena)
 {
-  PR_Lock(mLock);
+  RTSemFastMutexRequest(mLock);
   CategoryLeaf* leaf = 
     mTable.GetEntry(aEntryName);
 
@@ -297,7 +304,7 @@ CategoryNode::AddLeaf(const char* aEntryName,
     }
   }
     
-  PR_Unlock(mLock);
+  RTSemFastMutexRelease(mLock);
   return rv;
 }
 
@@ -307,7 +314,7 @@ CategoryNode::DeleteLeaf(const char* aEntryName,
 {
   // we don't throw any errors, because it normally doesn't matter
   // and it makes JS a lot cleaner
-  PR_Lock(mLock);
+  RTSemFastMutexRequest(mLock);
 
   if (aDontPersist) {
     // we can just remove the entire hash entry without introspection
@@ -325,7 +332,7 @@ CategoryNode::DeleteLeaf(const char* aEntryName,
       }
     }
   }
-  PR_Unlock(mLock);
+  RTSemFastMutexRelease(mLock);
 
   return NS_OK;
 }
@@ -335,9 +342,9 @@ CategoryNode::Enumerate(nsISimpleEnumerator **_retval)
 {
   NS_ENSURE_ARG_POINTER(_retval);
 
-  PR_Lock(mLock);
+  RTSemFastMutexRequest(mLock);
   EntryEnumerator* enumObj = EntryEnumerator::Create(mTable);
-  PR_Unlock(mLock);
+  RTSemFastMutexRelease(mLock);
 
   if (!enumObj)
     return NS_ERROR_OUT_OF_MEMORY;
@@ -384,9 +391,9 @@ CategoryNode::WritePersistentEntries(PRFileDesc* fd, const char* aCategoryName)
     PR_TRUE
   };
 
-  PR_Lock(mLock);
+  RTSemFastMutexRequest(mLock);
   mTable.EnumerateEntries(enumfunc_pentries, &args);
-  PR_Unlock(mLock);
+  RTSemFastMutexRelease(mLock);
 
   return args.success;
 }
@@ -462,9 +469,10 @@ nsCategoryManager::Create()
     return nsnull;
   }
 
-  manager->mLock = PR_NewLock();
-
-  if (!manager->mLock) {
+  manager->mLock = NIL_RTSEMFASTMUTEX;
+  int vrc = RTSemFastMutexCreate(&manager->mLock);
+  if (RT_FAILURE(vrc))
+  {
     delete manager;
     return nsnull;
   }
@@ -474,8 +482,11 @@ nsCategoryManager::Create()
 
 nsCategoryManager::~nsCategoryManager()
 {
-  if (mLock)
-    PR_DestroyLock(mLock);
+  if (mLock != NIL_RTSEMFASTMUTEX)
+  {
+    RTSemFastMutexDestroy(mLock);
+    mLock = NIL_RTSEMFASTMUTEX;
+  }
 
   // the hashtable contains entries that must be deleted before the arena is
   // destroyed, or else you will have PRLocks undestroyed and other Really
@@ -505,9 +516,9 @@ nsCategoryManager::GetCategoryEntry( const char *aCategoryName,
 
   nsresult status = NS_ERROR_NOT_AVAILABLE;
 
-  PR_Lock(mLock);
+  RTSemFastMutexRequest(mLock);
   CategoryNode* category = get_category(aCategoryName);
-  PR_Unlock(mLock);
+  RTSemFastMutexRelease(mLock);
 
   if (category) {
     status = category->GetLeaf(aEntryName, _retval);
@@ -530,7 +541,7 @@ nsCategoryManager::AddCategoryEntry( const char *aCategoryName,
 
   // Before we can insert a new entry, we'll need to
   //  find the |CategoryNode| to put it in...
-  PR_Lock(mLock);
+  RTSemFastMutexRequest(mLock);
   CategoryNode* category = get_category(aCategoryName);
 
   if (!category) {
@@ -540,7 +551,7 @@ nsCategoryManager::AddCategoryEntry( const char *aCategoryName,
     char* categoryName = ArenaStrdup(aCategoryName, &mArena);
     mTable.Put(categoryName, category);
   }
-  PR_Unlock(mLock);
+  RTSemFastMutexRelease(mLock);
 
   if (!category)
     return NS_ERROR_OUT_OF_MEMORY;
@@ -567,9 +578,9 @@ nsCategoryManager::DeleteCategoryEntry( const char *aCategoryName,
     inconveniences JS clients
   */
 
-  PR_Lock(mLock);
+  RTSemFastMutexRequest(mLock);
   CategoryNode* category = get_category(aCategoryName);
-  PR_Unlock(mLock);
+  RTSemFastMutexRelease(mLock);
 
   if (!category)
     return NS_OK;
@@ -587,9 +598,9 @@ nsCategoryManager::DeleteCategory( const char *aCategoryName )
   // actually delete them. We just remove all of the
   // leaf nodes.
 
-  PR_Lock(mLock);
+  RTSemFastMutexRequest(mLock);
   CategoryNode* category = get_category(aCategoryName);
-  PR_Unlock(mLock);
+  RTSemFastMutexRelease(mLock);
 
   if (category)
     category->Clear();
@@ -604,9 +615,9 @@ nsCategoryManager::EnumerateCategory( const char *aCategoryName,
   NS_ENSURE_ARG_POINTER(aCategoryName);
   NS_ENSURE_ARG_POINTER(_retval);
 
-  PR_Lock(mLock);
+  RTSemFastMutexRequest(mLock);
   CategoryNode* category = get_category(aCategoryName);
-  PR_Unlock(mLock);
+  RTSemFastMutexRelease(mLock);
   
   if (!category) {
     return NS_NewEmptyEnumerator(_retval);
@@ -620,9 +631,9 @@ nsCategoryManager::EnumerateCategories(nsISimpleEnumerator **_retval)
 {
   NS_ENSURE_ARG_POINTER(_retval);
 
-  PR_Lock(mLock);
+  RTSemFastMutexRequest(mLock);
   CategoryEnumerator* enumObj = CategoryEnumerator::Create(mTable);
-  PR_Unlock(mLock);
+  RTSemFastMutexRelease(mLock);
 
   if (!enumObj)
     return NS_ERROR_OUT_OF_MEMORY;
@@ -660,9 +671,9 @@ nsCategoryManager::WriteCategoryManagerToRegistry(PRFileDesc* fd)
     PR_TRUE
   };
 
-  PR_Lock(mLock);
+  RTSemFastMutexRequest(mLock);
   mTable.EnumerateRead(enumfunc_categories, &args);
-  PR_Unlock(mLock);
+  RTSemFastMutexRelease(mLock);
 
   if (!args.success) {
     return NS_ERROR_UNEXPECTED;
