@@ -5536,7 +5536,7 @@ iemNativeEmitCallCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cAr
 /** Common emit function for IEM_MC_CALL_CIMPL_XXXX. */
 DECL_HIDDEN_THROW(uint32_t)
 iemNativeEmitCallCImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, uint8_t idxInstr,
-                             uintptr_t pfnCImpl, uint8_t cArgs)
+                             uint64_t fGstShwFlush, uintptr_t pfnCImpl, uint8_t cArgs)
 
 {
     /*
@@ -5568,7 +5568,7 @@ iemNativeEmitCallCImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
 #if defined(VBOXSTRICTRC_STRICT_ENABLED) && defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64)
     off = iemNativeEmitLoadGprByBpU32(pReNative, off, X86_GREG_xAX, IEMNATIVE_FP_OFF_IN_SHADOW_ARG0); /* rcStrict (see above) */
 #endif
-    uint64_t fGstShwFlush = iemNativeCImplFlagsToGuestShadowFlushMask(pReNative->fCImpl, RT_BIT_64(kIemNativeGstReg_Pc));
+    fGstShwFlush = iemNativeCImplFlagsToGuestShadowFlushMask(pReNative->fCImpl, fGstShwFlush | RT_BIT_64(kIemNativeGstReg_Pc));
     if (!(pReNative->fMc & IEM_MC_F_WITHOUT_FLAGS)) /** @todo We don't emit with-flags/without-flags variations for CIMPL calls.  */
         fGstShwFlush |= RT_BIT_64(kIemNativeGstReg_EFlags);
     iemNativeRegFlushGuestShadows(pReNative, fGstShwFlush);
@@ -5577,28 +5577,28 @@ iemNativeEmitCallCImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
 }
 
 
-#define IEM_MC_CALL_CIMPL_1_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl, a0) \
-    off = iemNativeEmitCallCImpl1(pReNative, off, a_cbInstr, pCallEntry->idxInstr, (uintptr_t)a_pfnCImpl, a0)
+#define IEM_MC_CALL_CIMPL_1_THREADED(a_cbInstr, a_fFlags, a_fGstShwFlush, a_pfnCImpl, a0) \
+    off = iemNativeEmitCallCImpl1(pReNative, off, a_cbInstr, pCallEntry->idxInstr, a_fGstShwFlush, (uintptr_t)a_pfnCImpl, a0)
 
 /** Emits code for IEM_MC_CALL_CIMPL_1. */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitCallCImpl1(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, uint8_t idxInstr,
+iemNativeEmitCallCImpl1(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, uint8_t idxInstr, uint64_t fGstShwFlush,
                         uintptr_t pfnCImpl, uint8_t idxArg0)
 {
     Assert(idxArg0 < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxArg0)));
     Assert(pReNative->Core.aVars[idxArg0].uArgNo == 0 + IEM_CIMPL_HIDDEN_ARGS);
     RT_NOREF_PV(idxArg0);
 
-    return iemNativeEmitCallCImplCommon(pReNative, off, cbInstr, idxInstr, pfnCImpl, 1);
+    return iemNativeEmitCallCImplCommon(pReNative, off, cbInstr, idxInstr, fGstShwFlush, pfnCImpl, 1);
 }
 
 
-#define IEM_MC_CALL_CIMPL_2_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl, a0, a1) \
-    off = iemNativeEmitCallCImpl2(pReNative, off, a_cbInstr, pCallEntry->idxInstr, (uintptr_t)a_pfnCImpl, a0, a1)
+#define IEM_MC_CALL_CIMPL_2_THREADED(a_cbInstr, a_fFlags, a_fGstShwFlush, a_pfnCImpl, a0, a1) \
+    off = iemNativeEmitCallCImpl2(pReNative, off, a_cbInstr, pCallEntry->idxInstr, a_fGstShwFlush, (uintptr_t)a_pfnCImpl, a0, a1)
 
 /** Emits code for IEM_MC_CALL_CIMPL_2. */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitCallCImpl2(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, uint8_t idxInstr,
+iemNativeEmitCallCImpl2(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, uint8_t idxInstr, uint64_t fGstShwFlush,
                         uintptr_t pfnCImpl, uint8_t idxArg0, uint8_t idxArg1)
 {
     Assert(idxArg0 < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxArg0)));
@@ -5609,16 +5609,17 @@ iemNativeEmitCallCImpl2(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbI
     Assert(pReNative->Core.aVars[idxArg1].uArgNo == 1 + IEM_CIMPL_HIDDEN_ARGS);
     RT_NOREF_PV(idxArg1);
 
-    return iemNativeEmitCallCImplCommon(pReNative, off, cbInstr, idxInstr, pfnCImpl, 2);
+    return iemNativeEmitCallCImplCommon(pReNative, off, cbInstr, idxInstr, fGstShwFlush, pfnCImpl, 2);
 }
 
 
-#define IEM_MC_CALL_CIMPL_3_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl, a0, a1, a2) \
-    off = iemNativeEmitCallCImpl3(pReNative, off, a_cbInstr, pCallEntry->idxInstr, (uintptr_t)a_pfnCImpl, a0, a1, a2)
+#define IEM_MC_CALL_CIMPL_3_THREADED(a_cbInstr, a_fFlags, a_fGstShwFlush, a_pfnCImpl, a0, a1, a2) \
+    off = iemNativeEmitCallCImpl3(pReNative, off, a_cbInstr, pCallEntry->idxInstr, a_fGstShwFlush, \
+                                  (uintptr_t)a_pfnCImpl, a0, a1, a2)
 
 /** Emits code for IEM_MC_CALL_CIMPL_3. */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitCallCImpl3(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, uint8_t idxInstr,
+iemNativeEmitCallCImpl3(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, uint8_t idxInstr, uint64_t fGstShwFlush,
                         uintptr_t pfnCImpl, uint8_t idxArg0, uint8_t idxArg1, uint8_t idxArg2)
 {
 pReNative->pInstrBuf[off++] = 0xcc;
@@ -5634,16 +5635,17 @@ pReNative->pInstrBuf[off++] = 0xcc;
     Assert(pReNative->Core.aVars[idxArg2].uArgNo == 2 + IEM_CIMPL_HIDDEN_ARGS);
     RT_NOREF_PV(idxArg2);
 
-    return iemNativeEmitCallCImplCommon(pReNative, off, cbInstr, idxInstr, pfnCImpl, 3);
+    return iemNativeEmitCallCImplCommon(pReNative, off, cbInstr, idxInstr, fGstShwFlush, pfnCImpl, 3);
 }
 
 
-#define IEM_MC_CALL_CIMPL_4_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl, a0, a1, a2, a3) \
-    off = iemNativeEmitCallCImpl4(pReNative, off, a_cbInstr, pCallEntry->idxInstr, (uintptr_t)a_pfnCImpl, a0, a1, a2, a3)
+#define IEM_MC_CALL_CIMPL_4_THREADED(a_cbInstr, a_fFlags, a_fGstShwFlush, a_pfnCImpl, a0, a1, a2, a3) \
+    off = iemNativeEmitCallCImpl4(pReNative, off, a_cbInstr, pCallEntry->idxInstr, a_fGstShwFlush, \
+                                  (uintptr_t)a_pfnCImpl, a0, a1, a2, a3)
 
 /** Emits code for IEM_MC_CALL_CIMPL_4. */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitCallCImpl4(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, uint8_t idxInstr,
+iemNativeEmitCallCImpl4(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, uint8_t idxInstr, uint64_t fGstShwFlush,
                         uintptr_t pfnCImpl, uint8_t idxArg0, uint8_t idxArg1, uint8_t idxArg2, uint8_t idxArg3)
 {
 pReNative->pInstrBuf[off++] = 0xcc;
@@ -5663,16 +5665,17 @@ pReNative->pInstrBuf[off++] = 0xcc;
     Assert(pReNative->Core.aVars[idxArg3].uArgNo == 3 + IEM_CIMPL_HIDDEN_ARGS);
     RT_NOREF_PV(idxArg3);
 
-    return iemNativeEmitCallCImplCommon(pReNative, off, cbInstr, idxInstr, pfnCImpl, 4);
+    return iemNativeEmitCallCImplCommon(pReNative, off, cbInstr, idxInstr, fGstShwFlush, pfnCImpl, 4);
 }
 
 
-#define IEM_MC_CALL_CIMPL_5_THREADED(a_cbInstr, a_fFlags, a_pfnCImpl, a0, a1, a2, a3, a4) \
-    off = iemNativeEmitCallCImpl5(pReNative, off, a_cbInstr, pCallEntry->idxInstr, (uintptr_t)a_pfnCImpl, a0, a1, a2, a3, a4)
+#define IEM_MC_CALL_CIMPL_5_THREADED(a_cbInstr, a_fFlags, a_fGstShwFlush, a_pfnCImpl, a0, a1, a2, a3, a4) \
+    off = iemNativeEmitCallCImpl5(pReNative, off, a_cbInstr, pCallEntry->idxInstr, a_fGstShwFlush, \
+                                  (uintptr_t)a_pfnCImpl, a0, a1, a2, a3, a4)
 
 /** Emits code for IEM_MC_CALL_CIMPL_4. */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitCallCImpl5(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, uint8_t idxInstr,
+iemNativeEmitCallCImpl5(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, uint8_t idxInstr, uint64_t fGstShwFlush,
                         uintptr_t pfnCImpl, uint8_t idxArg0, uint8_t idxArg1, uint8_t idxArg2, uint8_t idxArg3, uint8_t idxArg4)
 {
 pReNative->pInstrBuf[off++] = 0xcc;
@@ -5696,20 +5699,13 @@ pReNative->pInstrBuf[off++] = 0xcc;
     Assert(pReNative->Core.aVars[idxArg4].uArgNo == 4 + IEM_CIMPL_HIDDEN_ARGS);
     RT_NOREF_PV(idxArg4);
 
-    return iemNativeEmitCallCImplCommon(pReNative, off, cbInstr, idxInstr, pfnCImpl, 5);
+    return iemNativeEmitCallCImplCommon(pReNative, off, cbInstr, idxInstr, fGstShwFlush, pfnCImpl, 5);
 }
 
 
-/** Flush guest GPR shadow copy. */
-#define IEM_MC_HINT_FLUSH_GUEST_SHADOW_GREG(a_iGReg) \
-    iemNativeRegFlushGuestShadows(pReNative, RT_BIT_64(kIemNativeGstReg_GprFirst + (a_iGReg)) )
+/** Recompiler debugging: Flush guest register shadow copies. */
+#define IEM_MC_HINT_FLUSH_GUEST_SHADOW(g_fGstShwFlush) iemNativeRegFlushGuestShadows(pReNative, g_fGstShwFlush)
 
-/** Flush guest segment register (hidden and non-hidden bits) shadow copy. */
-#define IEM_MC_HINT_FLUSH_GUEST_SHADOW_SREG(a_iSReg) \
-    iemNativeRegFlushGuestShadows(pReNative, \
-                                    RT_BIT_64(kIemNativeGstReg_SegSelFirst   + (a_iSReg)) \
-                                  | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + (a_iSReg)) \
-                                  | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + (a_iSReg)) )
 
 
 

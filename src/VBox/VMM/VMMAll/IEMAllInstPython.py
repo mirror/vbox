@@ -2231,9 +2231,9 @@ class McBlock(object):
     def parseMcCallCImpl(oSelf, sName, asParams):
         """ IEM_MC_CALL_CIMPL_0|1|2|3|4|5 """
         cArgs = int(sName[-1]);
-        oSelf.checkStmtParamCount(sName, asParams, 2 + cArgs);
+        oSelf.checkStmtParamCount(sName, asParams, 3 + cArgs);
         oSelf.parseCImplFlags(sName, asParams[0]);
-        return McStmtCall(sName, asParams, 1);
+        return McStmtCall(sName, asParams, 2);
 
     @staticmethod
     def parseMcDeferToCImpl(oSelf, sName, asParams):
@@ -2902,8 +2902,7 @@ g_dMcStmtParsers = {
     'IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP':                       (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP_POP':                   (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_FPU_TO_MMX_MODE':                                    (McBlock.parseMcGeneric,           True,  False, ),
-    'IEM_MC_HINT_FLUSH_GUEST_SHADOW_GREG':                       (McBlock.parseMcGeneric,           True,  True,  ),
-    'IEM_MC_HINT_FLUSH_GUEST_SHADOW_SREG':                       (McBlock.parseMcGeneric,           True,  True,  ),
+    'IEM_MC_HINT_FLUSH_GUEST_SHADOW':                            (McBlock.parseMcGeneric,           True,  True,  ),
     'IEM_MC_IF_CX_IS_NZ':                                        (McBlock.parseMcGenericCond,       True,  True,  ),
     'IEM_MC_IF_CX_IS_NZ_AND_EFL_BIT_NOT_SET':                    (McBlock.parseMcGenericCond,       True,  True,  ),
     'IEM_MC_IF_CX_IS_NZ_AND_EFL_BIT_SET':                        (McBlock.parseMcGenericCond,       True,  True,  ),

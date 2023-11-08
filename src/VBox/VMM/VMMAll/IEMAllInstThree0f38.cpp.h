@@ -1325,7 +1325,7 @@ FNIEMOP_DEF(iemOp_invept_Gy_Mdq)
             IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/ pVCpu->iem.s.iEffSeg,    0);
             IEM_MC_ARG(uint64_t,        uInveptType,                            2);
             IEM_MC_FETCH_GREG_U64(uInveptType, IEM_GET_MODRM_REG(pVCpu, bRm));
-            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_STATUS_FLAGS,
+            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_STATUS_FLAGS, 0,
                                 iemCImpl_invept, iEffSeg, GCPtrInveptDesc, uInveptType);
             IEM_MC_END();
         }
@@ -1340,7 +1340,7 @@ FNIEMOP_DEF(iemOp_invept_Gy_Mdq)
             IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/ pVCpu->iem.s.iEffSeg,    0);
             IEM_MC_ARG(uint32_t,        uInveptType,                            2);
             IEM_MC_FETCH_GREG_U32(uInveptType, IEM_GET_MODRM_REG(pVCpu, bRm));
-            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_STATUS_FLAGS,
+            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_STATUS_FLAGS, 0,
                                 iemCImpl_invept, iEffSeg, GCPtrInveptDesc, uInveptType);
             IEM_MC_END();
         }
@@ -1374,7 +1374,7 @@ FNIEMOP_DEF(iemOp_invvpid_Gy_Mdq)
             IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/ pVCpu->iem.s.iEffSeg,    0);
             IEM_MC_ARG(uint64_t,        uInvvpidType,                           2);
             IEM_MC_FETCH_GREG_U64(uInvvpidType, IEM_GET_MODRM_REG(pVCpu, bRm));
-            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_STATUS_FLAGS,
+            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_STATUS_FLAGS, 0,
                                 iemCImpl_invvpid, iEffSeg, GCPtrInvvpidDesc, uInvvpidType);
             IEM_MC_END();
         }
@@ -1389,7 +1389,7 @@ FNIEMOP_DEF(iemOp_invvpid_Gy_Mdq)
             IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/ pVCpu->iem.s.iEffSeg,    0);
             IEM_MC_ARG(uint32_t,        uInvvpidType,                           2);
             IEM_MC_FETCH_GREG_U32(uInvvpidType, IEM_GET_MODRM_REG(pVCpu, bRm));
-            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_STATUS_FLAGS,
+            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_STATUS_FLAGS, 0,
                                 iemCImpl_invvpid, iEffSeg, GCPtrInvvpidDesc, uInvvpidType);
             IEM_MC_END();
         }
@@ -1419,7 +1419,7 @@ FNIEMOP_DEF(iemOp_invpcid_Gy_Mdq)
             IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/ pVCpu->iem.s.iEffSeg,    0);
             IEM_MC_ARG(uint64_t,        uInvpcidType,                           2);
             IEM_MC_FETCH_GREG_U64(uInvpcidType, IEM_GET_MODRM_REG(pVCpu, bRm));
-            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT, iemCImpl_invpcid, iEffSeg, GCPtrInvpcidDesc, uInvpcidType);
+            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT, 0, iemCImpl_invpcid, iEffSeg, GCPtrInvpcidDesc, uInvpcidType);
             IEM_MC_END();
         }
         else
@@ -1431,7 +1431,7 @@ FNIEMOP_DEF(iemOp_invpcid_Gy_Mdq)
             IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/ pVCpu->iem.s.iEffSeg,    0);
             IEM_MC_ARG(uint32_t,        uInvpcidType,                           2);
             IEM_MC_FETCH_GREG_U32(uInvpcidType, IEM_GET_MODRM_REG(pVCpu, bRm));
-            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT, iemCImpl_invpcid, iEffSeg, GCPtrInvpcidDesc, uInvpcidType);
+            IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT, 0, iemCImpl_invpcid, iEffSeg, GCPtrInvpcidDesc, uInvpcidType);
             IEM_MC_END();
         }
     }

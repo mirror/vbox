@@ -1039,7 +1039,7 @@ class ThreadedFunctionVariation(object):
 
                 # Skip the hint parameter (first) for IEM_MC_CALL_CIMPL_X.
                 if oStmt.sName.startswith('IEM_MC_CALL_CIMPL_'):
-                    assert oStmt.idxFn == 1;
+                    assert oStmt.idxFn == 2;
                     aiSkipParams[0] = True;
 
 

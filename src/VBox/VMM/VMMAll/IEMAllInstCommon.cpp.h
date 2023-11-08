@@ -951,9 +951,12 @@ FNIEMOP_DEF_2(iemOpCommonLoadSRegAndGreg, uint8_t, iSegReg, uint8_t, bRm)
                 IEM_MC_ARG_CONST(uint8_t,   iSegRegArg,/*=*/iSegReg,                 2);
                 IEM_MC_ARG_CONST(uint8_t,   iGRegArg,  /*=*/iGReg,                   3);
                 IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pVCpu->iem.s.enmEffOpSize, 4);
-                IEM_MC_HINT_FLUSH_GUEST_SHADOW_GREG(iGReg);
-                IEM_MC_HINT_FLUSH_GUEST_SHADOW_SREG(iSegReg);
-                IEM_MC_CALL_CIMPL_5(               0, iemCImpl_load_SReg_Greg, uSel, offSeg, iSegRegArg, iGRegArg, enmEffOpSize);
+                IEM_MC_CALL_CIMPL_5(               0,
+                                      RT_BIT_64(kIemNativeGstReg_GprFirst      + iGReg)
+                                    | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + iSegReg)
+                                    | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + iSegReg)
+                                    | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + iSegReg),
+                                    iemCImpl_load_SReg_Greg, uSel, offSeg, iSegRegArg, iGRegArg, enmEffOpSize);
                 IEM_MC_END();
             }
             else
@@ -969,9 +972,12 @@ FNIEMOP_DEF_2(iemOpCommonLoadSRegAndGreg, uint8_t, iSegReg, uint8_t, bRm)
                 IEM_MC_ARG_CONST(uint8_t,   iSegRegArg,/*=*/iSegReg,                 2);
                 IEM_MC_ARG_CONST(uint8_t,   iGRegArg,  /*=*/iGReg,                   3);
                 IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pVCpu->iem.s.enmEffOpSize, 4);
-                IEM_MC_HINT_FLUSH_GUEST_SHADOW_GREG(iGReg);
-                IEM_MC_HINT_FLUSH_GUEST_SHADOW_SREG(iSegReg);
-                IEM_MC_CALL_CIMPL_5(IEM_CIMPL_F_MODE, iemCImpl_load_SReg_Greg, uSel, offSeg, iSegRegArg, iGRegArg, enmEffOpSize);
+                IEM_MC_CALL_CIMPL_5(IEM_CIMPL_F_MODE,
+                                      RT_BIT_64(kIemNativeGstReg_GprFirst      + iGReg)
+                                    | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + iSegReg)
+                                    | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + iSegReg)
+                                    | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + iSegReg),
+                                    iemCImpl_load_SReg_Greg, uSel, offSeg, iSegRegArg, iGRegArg, enmEffOpSize);
                 IEM_MC_END();
             }
 
@@ -989,9 +995,12 @@ FNIEMOP_DEF_2(iemOpCommonLoadSRegAndGreg, uint8_t, iSegReg, uint8_t, bRm)
                 IEM_MC_ARG_CONST(uint8_t,   iSegRegArg,/*=*/iSegReg,                 2);
                 IEM_MC_ARG_CONST(uint8_t,   iGRegArg,  /*=*/iGReg,                   3);
                 IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pVCpu->iem.s.enmEffOpSize, 4);
-                IEM_MC_HINT_FLUSH_GUEST_SHADOW_GREG(iGReg);
-                IEM_MC_HINT_FLUSH_GUEST_SHADOW_SREG(iSegReg);
-                IEM_MC_CALL_CIMPL_5(               0, iemCImpl_load_SReg_Greg, uSel, offSeg, iSegRegArg, iGRegArg, enmEffOpSize);
+                IEM_MC_CALL_CIMPL_5(               0,
+                                      RT_BIT_64(kIemNativeGstReg_GprFirst      + iGReg)
+                                    | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + iSegReg)
+                                    | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + iSegReg)
+                                    | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + iSegReg),
+                                    iemCImpl_load_SReg_Greg, uSel, offSeg, iSegRegArg, iGRegArg, enmEffOpSize);
                 IEM_MC_END();
             }
             else
@@ -1007,9 +1016,12 @@ FNIEMOP_DEF_2(iemOpCommonLoadSRegAndGreg, uint8_t, iSegReg, uint8_t, bRm)
                 IEM_MC_ARG_CONST(uint8_t,   iSegRegArg,/*=*/iSegReg,                 2);
                 IEM_MC_ARG_CONST(uint8_t,   iGRegArg,  /*=*/iGReg,                   3);
                 IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pVCpu->iem.s.enmEffOpSize, 4);
-                IEM_MC_HINT_FLUSH_GUEST_SHADOW_GREG(iGReg);
-                IEM_MC_HINT_FLUSH_GUEST_SHADOW_SREG(iSegReg);
-                IEM_MC_CALL_CIMPL_5(IEM_CIMPL_F_MODE, iemCImpl_load_SReg_Greg, uSel, offSeg, iSegRegArg, iGRegArg, enmEffOpSize);
+                IEM_MC_CALL_CIMPL_5(IEM_CIMPL_F_MODE,
+                                      RT_BIT_64(kIemNativeGstReg_GprFirst      + iGReg)
+                                    | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + iSegReg)
+                                    | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + iSegReg)
+                                    | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + iSegReg),
+                                    iemCImpl_load_SReg_Greg, uSel, offSeg, iSegRegArg, iGRegArg, enmEffOpSize);
                 IEM_MC_END();
             }
 
@@ -1028,9 +1040,12 @@ FNIEMOP_DEF_2(iemOpCommonLoadSRegAndGreg, uint8_t, iSegReg, uint8_t, bRm)
             IEM_MC_ARG_CONST(uint8_t,   iSegRegArg,/*=*/iSegReg,                 2);
             IEM_MC_ARG_CONST(uint8_t,   iGRegArg,  /*=*/iGReg,                   3);
             IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pVCpu->iem.s.enmEffOpSize, 4);
-            IEM_MC_HINT_FLUSH_GUEST_SHADOW_GREG(iGReg);
-            IEM_MC_HINT_FLUSH_GUEST_SHADOW_SREG(iSegReg);
-            IEM_MC_CALL_CIMPL_5(0, iemCImpl_load_SReg_Greg, uSel, offSeg, iSegRegArg, iGRegArg, enmEffOpSize);
+            IEM_MC_CALL_CIMPL_5(0,
+                                  RT_BIT_64(kIemNativeGstReg_GprFirst      + iGReg)
+                                | RT_BIT_64(kIemNativeGstReg_SegSelFirst   + iSegReg)
+                                | RT_BIT_64(kIemNativeGstReg_SegBaseFirst  + iSegReg)
+                                | RT_BIT_64(kIemNativeGstReg_SegLimitFirst + iSegReg),
+                                iemCImpl_load_SReg_Greg, uSel, offSeg, iSegRegArg, iGRegArg, enmEffOpSize);
             IEM_MC_END();
 
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
