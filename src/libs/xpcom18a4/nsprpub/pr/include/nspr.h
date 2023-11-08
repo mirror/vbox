@@ -38,7 +38,6 @@
 #ifndef nspr_h___
 #define nspr_h___
 
-#include "pratom.h"
 #include "prbit.h"
 #include "prclist.h"
 #include "prcvar.h"
