@@ -103,7 +103,6 @@ static void _PR_InitStuff(void)
 
     _PR_InitLocks();
     _PR_InitAtomic();
-	_PR_InitTPD();
     _PR_InitEnv();
     _PR_InitClock();
 

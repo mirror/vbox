@@ -552,7 +552,7 @@ static void _pt_thread_death(void *arg)
             thred->next->prev = thred->prev;
         PR_Unlock(pt_book.ml);
     }
-    _PR_DestroyThreadPrivate(thred);
+
     PR_Free(thred->privateData);
     if (NULL != thred->errorString)
         PR_Free(thred->errorString);

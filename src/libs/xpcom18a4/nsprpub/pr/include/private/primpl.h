@@ -393,8 +393,6 @@ struct PRStackStr {
 
 /************************************************************************/
 
-extern void _PR_DestroyThreadPrivate(PRThread*);
-
 typedef void (PR_CALLBACK *_PRStartFn)(void *);
 
 struct PRThread {
@@ -502,7 +500,6 @@ struct PRFilePrivate {
 
 extern void _PR_InitSegs(void);
 extern void _PR_InitStacks(void);
-extern void _PR_InitTPD(void);
 extern void _PR_InitMem(void);
 extern void _PR_InitEnv(void);
 extern void _PR_InitIO(void);
