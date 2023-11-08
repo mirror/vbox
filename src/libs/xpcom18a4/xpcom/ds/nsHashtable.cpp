@@ -48,7 +48,6 @@
 
 #include <string.h>
 #include "prmem.h"
-#include "prlog.h"
 #include "nsHashtable.h"
 #include "nsReadableUtils.h"
 #include "nsIObjectInputStream.h"
@@ -220,7 +219,7 @@ void *nsHashtable::Put(nsHashKey *aKey, void *aData)
     if (mLock) RTSemFastMutexRequest(mLock);
 
     // shouldn't be adding an item during enumeration
-    PR_ASSERT(!mEnumerating);
+    Assert(!mEnumerating);
     
     HTEntry* entry =
         NS_STATIC_CAST(HTEntry*,
@@ -266,7 +265,7 @@ void *nsHashtable::Remove(nsHashKey *aKey)
     if (mLock) RTSemFastMutexRequest(mLock);
 
     // shouldn't be adding an item during enumeration
-    PR_ASSERT(!mEnumerating);
+    Assert(!mEnumerating);
 
 
     // need to see if the entry is actually there, in order to get the
