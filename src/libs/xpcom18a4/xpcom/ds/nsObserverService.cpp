@@ -36,8 +36,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "prlog.h"
-#include "prlock.h"
 #include "nsIFactory.h"
 #include "nsIServiceManager.h"
 #include "nsIComponentManager.h"
@@ -47,22 +45,11 @@
 #include "nsHashtable.h"
 #include "nsIWeakReference.h"
 
+#include <VBox/log.h>
+
 #define NS_WEAK_OBSERVERS
 
 
-
-#if defined(PR_LOGGING)
-// Log module for nsObserverService logging...
-//
-// To enable logging (see prlog.h for full details):
-//
-//    set NSPR_LOG_MODULES=ObserverService:5
-//    set NSPR_LOG_FILE=nspr.log
-//
-// this enables PR_LOG_DEBUG level information and places all output in
-// the file nspr.log
-PRLogModuleInfo* observerServiceLog = nsnull;
-#endif /* PR_LOGGING */
 
 ////////////////////////////////////////////////////////////////////////////////
 // nsObserverService Implementation
@@ -84,11 +71,6 @@ nsObserverService::~nsObserverService(void)
 NS_METHOD
 nsObserverService::Create(nsISupports* outer, const nsIID& aIID, void* *aInstancePtr)
 {
-#if defined(PR_LOGGING)
-    if (!observerServiceLog)
-        observerServiceLog = PR_NewLogModule("ObserverService");
-#endif
-
     nsresult rv;
     nsObserverService* os = new nsObserverService();
     if (os == nsnull)
@@ -216,8 +198,7 @@ NS_IMETHODIMP nsObserverService::NotifyObservers( nsISupports *aSubject,
              if ( observer ) 
                 observer->Observe( aSubject, aTopic, someData );
 
-             PR_LOG(observerServiceLog, PR_LOG_DEBUG, ("Notification - %s\n", aTopic ? aTopic : "undefined"));
-
+             Log(("Notification - %s\n", aTopic ? aTopic : "undefined"));
         }
 #endif
     }
