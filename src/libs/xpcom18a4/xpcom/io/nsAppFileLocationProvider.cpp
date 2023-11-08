@@ -45,7 +45,6 @@
 #include "nsString.h"
 #include "nsXPIDLString.h"
 #include "nsISimpleEnumerator.h"
-#include "prenv.h"
 #include "nsCRT.h"
 
 #if (defined(XP_MAC) || defined(XP_MACOSX)) && !defined(VBOX_MACOSX_FOLLOWS_UNIX_IO)
@@ -71,6 +70,7 @@
 #include <storage/FindDirectory.h>
 #endif
 
+#include <iprt/env.h>
 
 // WARNING: These hard coded names need to go away. They need to
 // come from localizable resources
@@ -250,7 +250,7 @@ nsAppFileLocationProvider::GetFile(const char *prop, PRBool *persistant, nsIFile
     {
         NS_ERROR("Don't use nsAppFileLocationProvider::GetFile(NS_ENV_PLUGINS_DIR, ...). "
                  "Use nsAppFileLocationProvider::GetFiles(...).");
-        const char *pathVar = PR_GetEnv("VBOX_XPCOM_PLUGIN_PATH");
+        const char *pathVar = RTEnvGet("VBOX_XPCOM_PLUGIN_PATH");
         if (pathVar)
             rv = NS_NewNativeLocalFile(nsDependentCString(pathVar), PR_TRUE, getter_AddRefs(localFile));
     }
@@ -379,7 +379,7 @@ NS_METHOD nsAppFileLocationProvider::GetProductDirectory(nsILocalFile **aLocalFi
     }
     if (NS_FAILED(rv)) return rv;
 #elif defined(XP_UNIX)
-    rv = NS_NewNativeLocalFile(nsDependentCString(PR_GetEnv("HOME")), PR_TRUE, getter_AddRefs(localDir));
+    rv = NS_NewNativeLocalFile(nsDependentCString(RTEnvGet("HOME")), PR_TRUE, getter_AddRefs(localDir));
     if (NS_FAILED(rv)) return rv;
 #elif defined(XP_BEOS)
     char path[MAXPATHLEN];
@@ -595,7 +595,7 @@ nsAppFileLocationProvider::GetFiles(const char *prop, nsISimpleEnumerator **_ret
         *_retval = new nsAppDirectoryEnumerator(this, keys);
 #else
         static const char* keys[] = { nsnull, NS_APP_PLUGINS_DIR, nsnull };
-        if (!keys[0] && !(keys[0] = PR_GetEnv("VBOX_XPCOM_PLUGIN_PATH"))) {
+        if (!keys[0] && !(keys[0] = RTEnvGet("VBOX_XPCOM_PLUGIN_PATH"))) {
             static const char nullstr = 0;
             keys[0] = &nullstr;
         }

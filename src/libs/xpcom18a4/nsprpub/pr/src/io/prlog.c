@@ -54,6 +54,7 @@
 # include <iprt/log.h>
 #endif
 #ifdef VBOX_USE_IPRT_IN_NSPR
+# include <iprt/env.h>
 # include <iprt/string.h>
 #endif
 
@@ -145,7 +146,7 @@ void _PR_InitLog(void)
 
     _pr_logLock = PR_NewLock();
 
-    ev = PR_GetEnv("NSPR_LOG_MODULES");
+    ev = RTEnvGet("NSPR_LOG_MODULES");
     if (ev && ev[0]) {
         char module[64];  /* Security-Critical: If you change this
                            * size, you must also change the sscanf
@@ -192,7 +193,7 @@ void _PR_InitLog(void)
         }
         PR_SetLogBuffering(isSync ? bufSize : 0);
 
-        ev = PR_GetEnv("NSPR_LOG_FILE");
+        ev = RTEnvGet("NSPR_LOG_FILE");
         if (ev && ev[0]) {
             if (!PR_SetLogFile(ev)) {
                 fprintf(stderr, "Unable to create nspr log file '%s'\n", ev);
@@ -254,7 +255,7 @@ static void _PR_SetLogModuleLevel( PRLogModuleInfo *lm )
 {
     char *ev;
 
-    ev = PR_GetEnv("NSPR_LOG_MODULES");
+    ev = RTEnvGet("NSPR_LOG_MODULES");
     if (ev && ev[0]) {
         char module[64];  /* Security-Critical: If you change this
                            * size, you must also change the sscanf

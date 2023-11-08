@@ -43,6 +43,8 @@
 #include "nsDependentString.h"
 #include "nsString.h"
 
+#include <iprt/env.h>
+
 #define NS_ZIPLOADER_CONTRACTID NS_XPTLOADER_CONTRACTID_PREFIX "zip"
 
 NS_IMPL_THREADSAFE_ISUPPORTS2(xptiInterfaceInfoManager, 
@@ -134,7 +136,7 @@ xptiInterfaceInfoManager::xptiInterfaceInfoManager(nsISupportsArray* aSearchPath
     vrc = RTSemFastMutexCreate(&mAdditionalManagersLock);
     AssertRC(vrc); RT_NOREF(vrc);
 
-    const char* statsFilename = PR_GetEnv("MOZILLA_XPTI_STATS");
+    const char* statsFilename = RTEnvGet("MOZILLA_XPTI_STATS");
     if(statsFilename)
     {
         mStatsLogFile = do_CreateInstance(NS_LOCAL_FILE_CONTRACTID);         
@@ -150,7 +152,7 @@ xptiInterfaceInfoManager::xptiInterfaceInfoManager(nsISupportsArray* aSearchPath
         }
     }
 
-    const char* autoRegFilename = PR_GetEnv("MOZILLA_XPTI_REGLOG");
+    const char* autoRegFilename = RTEnvGet("MOZILLA_XPTI_REGLOG");
     if(autoRegFilename)
     {
         mAutoRegLogFile = do_CreateInstance(NS_LOCAL_FILE_CONTRACTID);         

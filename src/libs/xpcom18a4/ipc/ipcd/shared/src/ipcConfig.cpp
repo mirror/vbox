@@ -46,8 +46,9 @@
 #endif
 #include "ipcConfig.h"
 #include "ipcLog.h"
-#include "prenv.h"
 #include "plstr.h"
+
+#include <iprt/env.h>
 
 #if defined(XP_OS2) && !defined(XP_OS2_NATIVEIPC)
 #ifdef VBOX
@@ -74,7 +75,7 @@ void IPC_GetDefaultSocketPath(char *buf, PRUint32 bufLen)
     buf    += (sizeof(kDefaultSocketPrefix) - 1);
     bufLen -= (sizeof(kDefaultSocketPrefix) - 1);
 
-    logName = PR_GetEnv("VBOX_IPC_SOCKETID");
+    logName = RTEnvGet("VBOX_IPC_SOCKETID");
 #if defined(VBOX) && defined(XP_UNIX)
     if (!logName || !logName[0]) {
         struct passwd *passStruct = getpwuid(getuid());
@@ -83,9 +84,9 @@ void IPC_GetDefaultSocketPath(char *buf, PRUint32 bufLen)
     }
 #endif
     if (!logName || !logName[0]) {
-        logName = PR_GetEnv("LOGNAME");
+        logName = RTEnvGet("LOGNAME");
         if (!logName || !logName[0]) {
-            logName = PR_GetEnv("USER");
+            logName = RTEnvGet("USER");
             if (!logName || !logName[0]) {
                 LOG(("could not determine username from environment\n"));
                 goto end;

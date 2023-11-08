@@ -42,7 +42,6 @@
 #include "nsReadableUtils.h"
 #include "nsCRT.h"
 #include "pldhash.h"
-#include "prenv.h"
 #include "nsVoidArray.h"
 
 #define PL_ARENA_CONST_ALIGN_MASK 3
@@ -263,15 +262,6 @@ void PromoteToPermanent(AtomImpl* aAtom)
 void NS_PurgeAtomTable()
 {
   if (gAtomTable.ops) {
-#ifdef DEBUG
-    if (PR_GetEnv("MOZ_DUMP_ATOM_LEAKS")) {
-      PRUint32 leaked = 0;
-      printf("*** %d atoms still exist (including permanent):\n",
-             gAtomTable.entryCount);
-      PL_DHashTableEnumerate(&gAtomTable, DumpAtomLeaks, &leaked);
-      printf("*** %u non-permanent atoms leaked\n", leaked);
-    }
-#endif
     PL_DHashTableFinish(&gAtomTable);
     gAtomTable.entryCount = 0;
     gAtomTable.ops = nsnull;

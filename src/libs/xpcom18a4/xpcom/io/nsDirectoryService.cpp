@@ -48,7 +48,6 @@
 #include <stdlib.h>
 #include <sys/param.h>
 #include <dlfcn.h>
-#include "prenv.h"
 #ifdef XP_MACOSX
 #include <CoreServices/CoreServices.h>
 #include <Folders.h>
@@ -62,6 +61,8 @@
 #include <InternetConfig.h>
 #endif
 #endif
+
+#include <iprt/env.h>
 
 #include "SpecialSystemDirectory.h"
 #include "nsAppFileLocationProvider.h"
@@ -172,11 +173,11 @@ nsDirectoryService::GetCurrentProcessDirectory(nsILocalFile** aFile)
     // We do this py putenv()ing the default value into the environment.  Note that
     // we only do this if it is not already set.
 #ifdef MOZ_DEFAULT_VBOX_XPCOM_HOME
-    if (PR_GetEnv("VBOX_XPCOM_HOME") == nsnull)
-        PR_SetEnv("VBOX_XPCOM_HOME=" MOZ_DEFAULT_VBOX_XPCOM_HOME);
+    if (RTEnvGet("VBOX_XPCOM_HOME") == nsnull)
+        RTEnvPut("VBOX_XPCOM_HOME=" MOZ_DEFAULT_VBOX_XPCOM_HOME);
 #endif
 
-    char *moz5 = PR_GetEnv("VBOX_XPCOM_HOME");
+    const char *moz5 = RTEnvGet("VBOX_XPCOM_HOME");
 
     if (moz5)
     {

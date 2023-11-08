@@ -47,54 +47,9 @@
 #include "prthread.h"
 #include "plstr.h"
 
-#ifdef VBOX
-# if defined(__OS2__) && defined(PAGE_SIZE)
-#  undef PAGE_SIZE
-# endif
-# include <iprt/initterm.h> // for RTR3InitDll
-#else // !VBOX
-PRBool ipcLogEnabled = PR_FALSE;
-#endif // !VBOX
+#include <iprt/initterm.h> // for RTR3InitDll
 
 char ipcLogPrefix[10] = {0};
-
-#ifndef VBOX
-
-//-----------------------------------------------------------------------------
-// UNIX
-//-----------------------------------------------------------------------------
-#if defined(XP_UNIX) || defined(XP_OS2) || defined(XP_BEOS)
-
-#include <sys/types.h>
-#include <unistd.h>
-
-static inline PRUint32
-WritePrefix(char *buf, PRUint32 bufLen)
-{
-    return PR_snprintf(buf, bufLen, "[%u:%p] %s ",
-                       (unsigned) getpid(),
-                       PR_GetCurrentThread(),
-                       ipcLogPrefix);
-}
-#endif
-
-//-----------------------------------------------------------------------------
-// WIN32
-//-----------------------------------------------------------------------------
-#ifdef XP_WIN
-#include <windows.h>
-
-static inline PRUint32
-WritePrefix(char *buf, PRUint32 bufLen)
-{
-    return PR_snprintf(buf, bufLen, "[%u:%p] %s ",
-                       GetCurrentProcessId(),
-                       PR_GetCurrentThread(),
-                       ipcLogPrefix);
-}
-#endif
-
-#endif // !VBOX
 
 //-----------------------------------------------------------------------------
 // logging API impl
@@ -103,17 +58,10 @@ WritePrefix(char *buf, PRUint32 bufLen)
 void
 IPC_InitLog(const char *prefix)
 {
-#ifdef VBOX
     // initialize VBox Runtime
     RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
 
     PL_strncpyz(ipcLogPrefix, prefix, sizeof(ipcLogPrefix));
-#else
-    if (PR_GetEnv("IPC_LOG_ENABLE")) {
-        ipcLogEnabled = PR_TRUE;
-        PL_strncpyz(ipcLogPrefix, prefix, sizeof(ipcLogPrefix));
-    }
-#endif
 }
 
 void
@@ -124,7 +72,6 @@ IPC_Log(const char *fmt, ... )
     PRUint32 nb = 0;
     char buf[512];
 
-#ifdef VBOX
     if (ipcLogPrefix[0]) {
         nb = strlen(ipcLogPrefix);
         if (nb > sizeof(buf) - 2)
@@ -132,20 +79,11 @@ IPC_Log(const char *fmt, ... )
         PL_strncpy(buf, ipcLogPrefix, nb);
         buf[nb++] = ' ';
     }
-#else
-    if (ipcLogPrefix[0])
-        nb = WritePrefix(buf, sizeof(buf));
-#endif
 
     PR_vsnprintf(buf + nb, sizeof(buf) - nb, fmt, ap);
     buf[sizeof(buf) - 1] = '\0';
 
-#ifdef VBOX
     LogFlow(("%s", buf));
-#else
-    fwrite(buf, strlen(buf), 1, stdout);
-#endif
-
     va_end(ap);
 }
 

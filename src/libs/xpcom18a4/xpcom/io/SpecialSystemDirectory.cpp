@@ -48,12 +48,13 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/param.h>
-#include "prenv.h"
 # if defined(XP_MACOSX) && defined(VBOX_WITH_NEWER_OSX_SDK)
 # include <Folders.h>
 # endif
 
 #endif
+
+#include <iprt/env.h>
 
 NS_COM void StartupSpecialSystemDirectory()
 {
@@ -84,11 +85,11 @@ GetSpecialSystemDirectory(SystemDirectories aSystemSystemDirectory,
         {
             static const char *tPath = nsnull;
             if (!tPath) {
-                tPath = PR_GetEnv("TMPDIR");
+                tPath = RTEnvGet("TMPDIR");
                 if (!tPath || !*tPath) {
-                    tPath = PR_GetEnv("TMP");
+                    tPath = RTEnvGet("TMP");
                     if (!tPath || !*tPath) {
-                        tPath = PR_GetEnv("TEMP");
+                        tPath = RTEnvGet("TEMP");
                         if (!tPath || !*tPath) {
                             tPath = "/tmp/";
                         }
@@ -114,7 +115,7 @@ GetSpecialSystemDirectory(SystemDirectories aSystemSystemDirectory,
                                          aFile);
 
         case Unix_HomeDirectory:
-            return NS_NewNativeLocalFile(nsDependentCString(PR_GetEnv("HOME")), 
+            return NS_NewNativeLocalFile(nsDependentCString(RTEnvGet("HOME")), 
                                              PR_TRUE, 
                                              aFile);
 #endif

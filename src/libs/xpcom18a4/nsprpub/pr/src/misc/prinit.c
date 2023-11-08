@@ -294,7 +294,7 @@ PR_IMPLEMENT(PRFileDesc *) PR_GetInheritedFD(
     int nColons;
     PRIntn fileType;
 
-    envVar = PR_GetEnv("NSPR_INHERIT_FDS");
+    envVar = RTEnvGet("NSPR_INHERIT_FDS");
     if (NULL == envVar || '\0' == envVar[0]) {
         PR_SetError(PR_UNKNOWN_ERROR, 0);
         return NULL;
