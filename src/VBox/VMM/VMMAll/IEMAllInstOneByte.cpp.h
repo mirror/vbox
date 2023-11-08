@@ -2943,18 +2943,18 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev_Iz)
             {
                 /* memory operand */
                 IEM_MC_BEGIN(3, 2, IEM_MC_F_MIN_186, 0);
-                IEM_MC_ARG(uint16_t *,      pu16Dst,            0);
-                IEM_MC_ARG(uint16_t,        u16Src,             1);
-                IEM_MC_ARG(uint32_t *,      pEFlags,            2);
-                IEM_MC_LOCAL(uint16_t,      u16Tmp);
                 IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst);
-
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 2);
+
                 uint16_t u16Imm; IEM_OPCODE_GET_NEXT_U16(&u16Imm);
-                IEM_MC_ASSIGN(u16Src, u16Imm);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+                IEM_MC_LOCAL(uint16_t,      u16Tmp);
                 IEM_MC_FETCH_MEM_U16(u16Tmp, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-                IEM_MC_REF_LOCAL(pu16Dst, u16Tmp);
+
+                IEM_MC_ARG_LOCAL_REF(uint16_t *,    pu16Dst,    u16Tmp, 0);
+                IEM_MC_ARG_CONST(uint16_t,          u16Src,     u16Imm, 1);
+                IEM_MC_ARG(uint32_t *,              pEFlags,            2);
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pfnAImplU16, pu16Dst, u16Src, pEFlags);
                 IEM_MC_STORE_GREG_U16(IEM_GET_MODRM_REG(pVCpu, bRm), u16Tmp);
@@ -2992,18 +2992,18 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev_Iz)
             {
                 /* memory operand */
                 IEM_MC_BEGIN(3, 2, IEM_MC_F_MIN_386, 0);
-                IEM_MC_ARG(uint32_t *,      pu32Dst,            0);
-                IEM_MC_ARG(uint32_t,        u32Src,             1);
-                IEM_MC_ARG(uint32_t *,      pEFlags,            2);
-                IEM_MC_LOCAL(uint32_t,      u32Tmp);
                 IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst);
-
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 4);
+
                 uint32_t u32Imm; IEM_OPCODE_GET_NEXT_U32(&u32Imm);
-                IEM_MC_ASSIGN(u32Src, u32Imm);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+                IEM_MC_LOCAL(uint32_t,      u32Tmp);
                 IEM_MC_FETCH_MEM_U32(u32Tmp, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-                IEM_MC_REF_LOCAL(pu32Dst, u32Tmp);
+
+                IEM_MC_ARG_LOCAL_REF(uint32_t *,    pu32Dst,    u32Tmp, 0);
+                IEM_MC_ARG_CONST(uint32_t,          u32Src,     u32Imm, 1);
+                IEM_MC_ARG(uint32_t *,              pEFlags,            2);
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pfnAImplU32, pu32Dst, u32Src, pEFlags);
                 IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), u32Tmp);
@@ -3145,18 +3145,19 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev_Ib)
             {
                 /* memory operand */
                 IEM_MC_BEGIN(3, 2, IEM_MC_F_MIN_186, 0);
-                IEM_MC_ARG(uint16_t *,      pu16Dst,                    0);
-                IEM_MC_ARG(uint16_t,        u16Src,                     1);
-                IEM_MC_ARG(uint32_t *,      pEFlags,                    2);
-                IEM_MC_LOCAL(uint16_t,      u16Tmp);
-                IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst);
 
+                IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst);
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 1);
+
                 uint16_t u16Imm; IEM_OPCODE_GET_NEXT_S8_SX_U16(&u16Imm);
-                IEM_MC_ASSIGN(u16Src, u16Imm);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+                IEM_MC_LOCAL(uint16_t,      u16Tmp);
                 IEM_MC_FETCH_MEM_U16(u16Tmp, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-                IEM_MC_REF_LOCAL(pu16Dst, u16Tmp);
+
+                IEM_MC_ARG_LOCAL_REF(uint16_t *,    pu16Dst,    u16Tmp, 0);
+                IEM_MC_ARG_CONST(uint16_t,          u16Src,     u16Imm, 1);
+                IEM_MC_ARG(uint32_t *,              pEFlags,            2);
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pfnAImplU16, pu16Dst, u16Src, pEFlags);
                 IEM_MC_STORE_GREG_U16(IEM_GET_MODRM_REG(pVCpu, bRm), u16Tmp);
@@ -3194,18 +3195,18 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev_Ib)
             {
                 /* memory operand */
                 IEM_MC_BEGIN(3, 2, IEM_MC_F_MIN_386, 0);
-                IEM_MC_ARG(uint32_t *,      pu32Dst,                    0);
-                IEM_MC_ARG(uint32_t,        u32Src,                     1);
-                IEM_MC_ARG(uint32_t *,      pEFlags,                    2);
-                IEM_MC_LOCAL(uint32_t,      u32Tmp);
                 IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst);
-
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 1);
+
                 uint32_t u32Imm; IEM_OPCODE_GET_NEXT_S8_SX_U32(&u32Imm);
-                IEM_MC_ASSIGN(u32Src, u32Imm);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+                IEM_MC_LOCAL(uint32_t,      u32Tmp);
                 IEM_MC_FETCH_MEM_U32(u32Tmp, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
-                IEM_MC_REF_LOCAL(pu32Dst, u32Tmp);
+
+                IEM_MC_ARG_LOCAL_REF(uint32_t *,    pu32Dst, u32Tmp,    0);
+                IEM_MC_ARG_CONST(uint32_t,          u32Src,  u32Imm,    1);
+                IEM_MC_ARG(uint32_t *,              pEFlags,            2);
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pfnAImplU32, pu32Dst, u32Src, pEFlags);
                 IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), u32Tmp);
@@ -4166,17 +4167,18 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_80)
                 case IEMMODE_16BIT: \
                 { \
                     IEM_MC_BEGIN(3, 3, 0, 0); \
-                    IEM_MC_ARG(uint16_t *,      pu16Dst,                0); \
-                    IEM_MC_ARG(uint16_t,        u16Src,                 1); \
-                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,        2); \
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
-                    IEM_MC_LOCAL(uint8_t, bUnmapInfo); \
-                    \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 2); \
+                    \
                     uint16_t u16Imm; IEM_OPCODE_GET_NEXT_U16(&u16Imm); \
-                    IEM_MC_ASSIGN(u16Src, u16Imm); \
                     IEMOP_HLP_DONE_DECODING(); \
+                    \
+                    IEM_MC_LOCAL(uint8_t,       bUnmapInfo); \
+                    IEM_MC_ARG(uint16_t *,      pu16Dst,                0); \
                     IEM_MC_MEM_MAP_U16_RW(pu16Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
+                    \
+                    IEM_MC_ARG_CONST(uint16_t,  u16Src,  u16Imm,        1); \
+                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,        2); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_3(a_fnNormalU16, pu16Dst, u16Src, pEFlags); \
                     \
@@ -4190,17 +4192,18 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_80)
                 case IEMMODE_32BIT: \
                 { \
                     IEM_MC_BEGIN(3, 3, IEM_MC_F_MIN_386, 0); \
-                    IEM_MC_ARG(uint32_t *,      pu32Dst,                0); \
-                    IEM_MC_ARG(uint32_t,        u32Src,                 1); \
-                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,        2); \
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
-                    IEM_MC_LOCAL(uint8_t, bUnmapInfo); \
-                    \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 4); \
+                    \
                     uint32_t u32Imm; IEM_OPCODE_GET_NEXT_U32(&u32Imm); \
-                    IEM_MC_ASSIGN(u32Src, u32Imm); \
                     IEMOP_HLP_DONE_DECODING(); \
+                    \
+                    IEM_MC_LOCAL(uint8_t,       bUnmapInfo); \
+                    IEM_MC_ARG(uint32_t *,      pu32Dst,                0); \
                     IEM_MC_MEM_MAP_U32_RW(pu32Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
+                    \
+                    IEM_MC_ARG_CONST(uint32_t,  u32Src,     u32Imm,     1); \
+                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags,    EFlags,     2); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_3(a_fnNormalU32, pu32Dst, u32Src, pEFlags); \
                     \
@@ -4214,17 +4217,19 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_80)
                 case IEMMODE_64BIT: \
                 { \
                     IEM_MC_BEGIN(3, 3, IEM_MC_F_64BIT, 0); \
-                    IEM_MC_ARG(uint64_t *,      pu64Dst,                0); \
-                    IEM_MC_ARG(uint64_t,        u64Src,                 1); \
-                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,        2); \
-                    IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
-                    IEM_MC_LOCAL(uint8_t, bUnmapInfo); \
                     \
+                    IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 4); \
+                    \
                     uint64_t u64Imm; IEM_OPCODE_GET_NEXT_S32_SX_U64(&u64Imm); \
                     IEMOP_HLP_DONE_DECODING(); \
-                    IEM_MC_ASSIGN(u64Src, u64Imm); \
+                    \
+                    IEM_MC_LOCAL(uint8_t,       bUnmapInfo); \
+                    IEM_MC_ARG(uint64_t *,      pu64Dst,                0); \
                     IEM_MC_MEM_MAP_U64_RW(pu64Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
+                    \
+                    IEM_MC_ARG_CONST(uint64_t,  u64Src,  u64Imm,        1); \
+                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,        2); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_3(a_fnNormalU64, pu64Dst, u64Src, pEFlags); \
                     \
@@ -4248,17 +4253,18 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_80)
                 case IEMMODE_16BIT: \
                 { \
                     IEM_MC_BEGIN(3, 3, 0, 0); \
-                    IEM_MC_ARG(uint16_t *,      pu16Dst,                0); \
-                    IEM_MC_ARG(uint16_t,        u16Src,                 1); \
-                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,        2); \
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
-                    IEM_MC_LOCAL(uint8_t, bUnmapInfo); \
-                    \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 2); \
+                    \
                     uint16_t u16Imm; IEM_OPCODE_GET_NEXT_U16(&u16Imm); \
-                    IEM_MC_ASSIGN(u16Src, u16Imm); \
                     IEMOP_HLP_DONE_DECODING(); \
+                    \
+                    IEM_MC_LOCAL(uint8_t,       bUnmapInfo); \
+                    IEM_MC_ARG(uint16_t *,      pu16Dst,                0); \
                     IEM_MC_MEM_MAP_U16_RW(pu16Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
+                    \
+                    IEM_MC_ARG_CONST(uint16_t,  u16Src,  u16Imm,        1); \
+                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,        2); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_3(a_fnLockedU16, pu16Dst, u16Src, pEFlags); \
                     \
@@ -4272,17 +4278,18 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_80)
                 case IEMMODE_32BIT: \
                 { \
                     IEM_MC_BEGIN(3, 3, IEM_MC_F_MIN_386, 0); \
-                    IEM_MC_ARG(uint32_t *,      pu32Dst,                0); \
-                    IEM_MC_ARG(uint32_t,        u32Src,                 1); \
-                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,        2); \
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
-                    IEM_MC_LOCAL(uint8_t, bUnmapInfo); \
-                    \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 4); \
+                    \
                     uint32_t u32Imm; IEM_OPCODE_GET_NEXT_U32(&u32Imm); \
-                    IEM_MC_ASSIGN(u32Src, u32Imm); \
                     IEMOP_HLP_DONE_DECODING(); \
+                    \
+                    IEM_MC_LOCAL(uint8_t,       bUnmapInfo); \
+                    IEM_MC_ARG(uint32_t *,      pu32Dst,                0); \
                     IEM_MC_MEM_MAP_U32_RW(pu32Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
+                    \
+                    IEM_MC_ARG_CONST(uint32_t,  u32Src,  u32Imm,        1); \
+                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,        2); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_3(a_fnLockedU32, pu32Dst, u32Src, pEFlags); \
                     \
@@ -4296,17 +4303,18 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_80)
                 case IEMMODE_64BIT: \
                 { \
                     IEM_MC_BEGIN(3, 3, IEM_MC_F_64BIT, 0); \
-                    IEM_MC_ARG(uint64_t *,      pu64Dst,                0); \
-                    IEM_MC_ARG(uint64_t,        u64Src,                 1); \
-                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,        2); \
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
-                    IEM_MC_LOCAL(uint8_t, bUnmapInfo); \
-                    \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 4); \
+                    \
                     uint64_t u64Imm; IEM_OPCODE_GET_NEXT_S32_SX_U64(&u64Imm); \
                     IEMOP_HLP_DONE_DECODING(); \
-                    IEM_MC_ASSIGN(u64Src, u64Imm); \
+                    \
+                    IEM_MC_LOCAL(uint8_t,       bUnmapInfo); \
+                    IEM_MC_ARG(uint64_t *,      pu64Dst,                0); \
                     IEM_MC_MEM_MAP_U64_RW(pu64Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
+                    \
+                    IEM_MC_ARG_CONST(uint64_t,  u64Src,  u64Imm,        1); \
+                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,        2); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_3(a_fnLockedU64, pu64Dst, u64Src, pEFlags); \
                     \
@@ -4397,17 +4405,18 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_80)
                 case IEMMODE_16BIT: \
                 { \
                     IEM_MC_BEGIN(3, 3, 0, 0); \
-                    IEM_MC_ARG(uint16_t const *, pu16Dst,               0); \
-                    IEM_MC_ARG(uint16_t,         u16Src,                1); \
-                    IEM_MC_ARG_LOCAL_EFLAGS(     pEFlags, EFlags,       2); \
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
-                    IEM_MC_LOCAL(uint8_t, bUnmapInfo); \
-                    \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 2); \
+                    \
                     uint16_t u16Imm; IEM_OPCODE_GET_NEXT_U16(&u16Imm); \
-                    IEM_MC_ASSIGN(u16Src, u16Imm); \
                     IEMOP_HLP_DONE_DECODING(); \
+                    \
+                    IEM_MC_LOCAL(uint8_t, bUnmapInfo); \
+                    IEM_MC_ARG(uint16_t const *, pu16Dst,               0); \
                     IEM_MC_MEM_MAP_U16_RO(pu16Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
+                    \
+                    IEM_MC_ARG_CONST(uint16_t,   u16Src,  u16Imm,       1); \
+                    IEM_MC_ARG_LOCAL_EFLAGS(     pEFlags, EFlags,       2); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_3(a_fnNormalU16, pu16Dst, u16Src, pEFlags); \
                     \
@@ -4421,17 +4430,18 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_80)
                 case IEMMODE_32BIT: \
                 { \
                     IEM_MC_BEGIN(3, 3, IEM_MC_F_MIN_386, 0); \
-                    IEM_MC_ARG(uint32_t const *, pu32Dst,               0); \
-                    IEM_MC_ARG(uint32_t,         u32Src,                1); \
-                    IEM_MC_ARG_LOCAL_EFLAGS(     pEFlags, EFlags,       2); \
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
-                    IEM_MC_LOCAL(uint8_t, bUnmapInfo); \
-                    \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 4); \
+                    \
                     uint32_t u32Imm; IEM_OPCODE_GET_NEXT_U32(&u32Imm); \
-                    IEM_MC_ASSIGN(u32Src, u32Imm); \
                     IEMOP_HLP_DONE_DECODING(); \
+                    \
+                    IEM_MC_LOCAL(uint8_t,        bUnmapInfo); \
+                    IEM_MC_ARG(uint32_t const *, pu32Dst,               0); \
                     IEM_MC_MEM_MAP_U32_RO(pu32Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
+                    \
+                    IEM_MC_ARG_CONST(uint32_t,   u32Src,  u32Imm,       1); \
+                    IEM_MC_ARG_LOCAL_EFLAGS(     pEFlags, EFlags,       2); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_3(a_fnNormalU32, pu32Dst, u32Src, pEFlags); \
                     \
@@ -4445,17 +4455,18 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_80)
                 case IEMMODE_64BIT: \
                 { \
                     IEM_MC_BEGIN(3, 3, IEM_MC_F_64BIT, 0); \
-                    IEM_MC_ARG(uint64_t const *, pu64Dst,               0); \
-                    IEM_MC_ARG(uint64_t,         u64Src,                1); \
-                    IEM_MC_ARG_LOCAL_EFLAGS(     pEFlags, EFlags,       2); \
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
-                    IEM_MC_LOCAL(uint8_t, bUnmapInfo); \
-                    \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 4); \
+                    \
                     uint64_t u64Imm; IEM_OPCODE_GET_NEXT_S32_SX_U64(&u64Imm); \
                     IEMOP_HLP_DONE_DECODING(); \
-                    IEM_MC_ASSIGN(u64Src, u64Imm); \
+                    \
+                    IEM_MC_LOCAL(uint8_t,        bUnmapInfo); \
+                    IEM_MC_ARG(uint64_t const *, pu64Dst,               0); \
                     IEM_MC_MEM_MAP_U64_RO(pu64Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
+                    \
+                    IEM_MC_ARG_CONST(uint64_t,   u64Src,  u64Imm,       1); \
+                    IEM_MC_ARG_LOCAL_EFLAGS(     pEFlags, EFlags,       2); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_3(a_fnNormalU64, pu64Dst, u64Src, pEFlags); \
                     \
@@ -4679,17 +4690,18 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_82)
             { \
                 case IEMMODE_16BIT: \
                     IEM_MC_BEGIN(3, 3, 0, 0); \
-                    IEM_MC_ARG(uint16_t *,      pu16Dst,                    0); \
-                    IEM_MC_ARG(uint16_t,        u16Src,                     1); \
-                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,            2); \
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
-                    IEM_MC_LOCAL(uint8_t, bUnmapInfo); \
-                    \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 1); \
+                    \
                     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm); \
-                    IEM_MC_ASSIGN(u16Src, (int8_t)u8Imm); \
                     IEMOP_HLP_DONE_DECODING(); \
+                    \
+                    IEM_MC_LOCAL(uint8_t,       bUnmapInfo); \
+                    IEM_MC_ARG(uint16_t *,      pu16Dst,                            0); \
                     IEM_MC_MEM_MAP_U16_RW(pu16Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
+                    \
+                    IEM_MC_ARG_CONST(uint16_t,  u16Src,  (int16_t)(int8_t)u8Imm,    1); \
+                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,                    2); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_3(a_fnNormalU16, pu16Dst, u16Src, pEFlags); \
                     \
@@ -4701,17 +4713,18 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_82)
                 \
                 case IEMMODE_32BIT: \
                     IEM_MC_BEGIN(3, 3, IEM_MC_F_MIN_386, 0); \
-                    IEM_MC_ARG(uint32_t *,      pu32Dst,                    0); \
-                    IEM_MC_ARG(uint32_t,        u32Src,                     1); \
-                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,            2); \
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
-                    IEM_MC_LOCAL(uint8_t, bUnmapInfo); \
-                    \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 1); \
+                    \
                     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm); \
-                    IEM_MC_ASSIGN(u32Src, (int8_t)u8Imm); \
                     IEMOP_HLP_DONE_DECODING(); \
+                    \
+                    IEM_MC_LOCAL(uint8_t,       bUnmapInfo); \
+                    IEM_MC_ARG(uint32_t *,      pu32Dst,                            0); \
                     IEM_MC_MEM_MAP_U32_RW(pu32Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
+                    \
+                    IEM_MC_ARG_CONST(uint32_t,  u32Src,  (int32_t)(int8_t)u8Imm,    1); \
+                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,                    2); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_3(a_fnNormalU32, pu32Dst, u32Src, pEFlags); \
                     \
@@ -4723,17 +4736,18 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_82)
                 \
                 case IEMMODE_64BIT: \
                     IEM_MC_BEGIN(3, 3, IEM_MC_F_64BIT, 0); \
-                    IEM_MC_ARG(uint64_t *,      pu64Dst,                    0); \
-                    IEM_MC_ARG(uint64_t,        u64Src,                     1); \
-                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,            2); \
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
-                    IEM_MC_LOCAL(uint8_t, bUnmapInfo); \
-                    \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 1); \
+                    \
                     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm); \
-                    IEM_MC_ASSIGN(u64Src, (int8_t)u8Imm); \
                     IEMOP_HLP_DONE_DECODING(); \
+                    \
+                    IEM_MC_LOCAL(uint8_t,       bUnmapInfo); \
+                    IEM_MC_ARG(uint64_t *,      pu64Dst,                            0); \
                     IEM_MC_MEM_MAP_U64_RW(pu64Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
+                    \
+                    IEM_MC_ARG_CONST(uint64_t,  u64Src,  (int64_t)(int8_t)u8Imm,    1); \
+                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,                    2); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_3(a_fnNormalU64, pu64Dst, u64Src, pEFlags); \
                     \
@@ -4755,17 +4769,18 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_82)
             { \
                 case IEMMODE_16BIT: \
                     IEM_MC_BEGIN(3, 3, 0, 0); \
-                    IEM_MC_ARG(uint16_t *,      pu16Dst,                    0); \
-                    IEM_MC_ARG(uint16_t,        u16Src,                     1); \
-                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,            2); \
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
-                    IEM_MC_LOCAL(uint8_t, bUnmapInfo); \
-                    \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 1); \
+                    \
                     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm); \
-                    IEM_MC_ASSIGN(u16Src, (int8_t)u8Imm); \
                     IEMOP_HLP_DONE_DECODING(); \
+                    \
+                    IEM_MC_LOCAL(uint8_t,       bUnmapInfo); \
+                    IEM_MC_ARG(uint16_t *,      pu16Dst,                            0); \
                     IEM_MC_MEM_MAP_U16_RW(pu16Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
+                    \
+                    IEM_MC_ARG_CONST(uint16_t,  u16Src,  (int16_t)(int8_t)u8Imm,    1); \
+                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,                    2); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_3(a_fnLockedU16, pu16Dst, u16Src, pEFlags); \
                     \
@@ -4777,17 +4792,18 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_82)
                 \
                 case IEMMODE_32BIT: \
                     IEM_MC_BEGIN(3, 3, IEM_MC_F_MIN_386, 0); \
-                    IEM_MC_ARG(uint32_t *,      pu32Dst,                    0); \
-                    IEM_MC_ARG(uint32_t,        u32Src,                     1); \
-                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,            2); \
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
-                    IEM_MC_LOCAL(uint8_t, bUnmapInfo); \
-                    \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 1); \
+                    \
                     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm); \
-                    IEM_MC_ASSIGN(u32Src, (int8_t)u8Imm); \
                     IEMOP_HLP_DONE_DECODING(); \
+                    \
+                    IEM_MC_LOCAL(uint8_t,       bUnmapInfo); \
+                    IEM_MC_ARG(uint32_t *,      pu32Dst,                    0); \
                     IEM_MC_MEM_MAP_U32_RW(pu32Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
+                    \
+                    IEM_MC_ARG_CONST(uint32_t,  u32Src,  (int32_t)(int8_t)u8Imm,    1); \
+                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,                    2); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_3(a_fnLockedU32, pu32Dst, u32Src, pEFlags); \
                     \
@@ -4799,17 +4815,18 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_82)
                 \
                 case IEMMODE_64BIT: \
                     IEM_MC_BEGIN(3, 3, IEM_MC_F_64BIT, 0); \
-                    IEM_MC_ARG(uint64_t *,      pu64Dst,                    0); \
-                    IEM_MC_ARG(uint64_t,        u64Src,                     1); \
-                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,            2); \
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
-                    IEM_MC_LOCAL(uint8_t, bUnmapInfo); \
-                    \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 1); \
+                    \
                     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm); \
-                    IEM_MC_ASSIGN(u64Src, (int8_t)u8Imm); \
                     IEMOP_HLP_DONE_DECODING(); \
+                    \
+                    IEM_MC_LOCAL(uint8_t,       bUnmapInfo); \
+                    IEM_MC_ARG(uint64_t *,      pu64Dst,                            0); \
                     IEM_MC_MEM_MAP_U64_RW(pu64Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
+                    \
+                    IEM_MC_ARG_CONST(uint64_t,  u64Src, (int64_t)(int8_t)u8Imm,     1); \
+                    IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,                    2); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_3(a_fnLockedU64, pu64Dst, u64Src, pEFlags); \
                     \
@@ -4894,17 +4911,18 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_82)
             { \
                 case IEMMODE_16BIT: \
                     IEM_MC_BEGIN(3, 3, 0, 0); \
-                    IEM_MC_ARG(uint16_t const *, pu16Dst,                   0); \
-                    IEM_MC_ARG(uint16_t,         u16Src,                    1); \
-                    IEM_MC_ARG_LOCAL_EFLAGS(     pEFlags, EFlags,           2); \
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
-                    IEM_MC_LOCAL(uint8_t, bUnmapInfo); \
-                    \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 1); \
+                    \
                     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm); \
-                    IEM_MC_ASSIGN(u16Src, (int8_t)u8Imm); \
                     IEMOP_HLP_DONE_DECODING(); \
+                    \
+                    IEM_MC_LOCAL(uint8_t,        bUnmapInfo); \
+                    IEM_MC_ARG(uint16_t const *, pu16Dst,                           0); \
                     IEM_MC_MEM_MAP_U16_RO(pu16Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
+                    \
+                    IEM_MC_ARG_CONST(uint16_t,   u16Src, (int16_t)(int8_t)u8Imm,    1); \
+                    IEM_MC_ARG_LOCAL_EFLAGS(     pEFlags, EFlags,                   2); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_3(a_fnNormalU16, pu16Dst, u16Src, pEFlags); \
                     \
@@ -4916,17 +4934,18 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_82)
                 \
                 case IEMMODE_32BIT: \
                     IEM_MC_BEGIN(3, 3, IEM_MC_F_MIN_386, 0); \
-                    IEM_MC_ARG(uint32_t const *, pu32Dst,                   0); \
-                    IEM_MC_ARG(uint32_t,         u32Src,                    1); \
-                    IEM_MC_ARG_LOCAL_EFLAGS(     pEFlags, EFlags,           2); \
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
-                    IEM_MC_LOCAL(uint8_t, bUnmapInfo); \
-                    \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 1); \
+                    \
                     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm); \
-                    IEM_MC_ASSIGN(u32Src, (int8_t)u8Imm); \
                     IEMOP_HLP_DONE_DECODING(); \
+                    \
+                    IEM_MC_LOCAL(uint8_t,        bUnmapInfo); \
+                    IEM_MC_ARG(uint32_t const *, pu32Dst,                           0); \
                     IEM_MC_MEM_MAP_U32_RO(pu32Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
+                    \
+                    IEM_MC_ARG_CONST(uint32_t,   u32Src, (int32_t)(int8_t)u8Imm,    1); \
+                    IEM_MC_ARG_LOCAL_EFLAGS(     pEFlags, EFlags,                   2); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_3(a_fnNormalU32, pu32Dst, u32Src, pEFlags); \
                     \
@@ -4938,17 +4957,18 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_82)
                 \
                 case IEMMODE_64BIT: \
                     IEM_MC_BEGIN(3, 3, IEM_MC_F_64BIT, 0); \
-                    IEM_MC_ARG(uint64_t const *, pu64Dst,                   0); \
-                    IEM_MC_ARG(uint64_t,         u64Src,                    1); \
-                    IEM_MC_ARG_LOCAL_EFLAGS(     pEFlags, EFlags,           2); \
                     IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst); \
-                    IEM_MC_LOCAL(uint8_t, bUnmapInfo); \
-                    \
                     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 1); \
+                    \
                     uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm); \
-                    IEM_MC_ASSIGN(u64Src, (int8_t)u8Imm); \
                     IEMOP_HLP_DONE_DECODING(); \
+                    \
+                    IEM_MC_LOCAL(uint8_t,        bUnmapInfo); \
+                    IEM_MC_ARG(uint64_t const *, pu64Dst,                       0); \
                     IEM_MC_MEM_MAP_U64_RO(pu64Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
+                    \
+                    IEM_MC_ARG_CONST(uint64_t,  u64Src, (int64_t)(int8_t)u8Imm, 1); \
+                    IEM_MC_ARG_LOCAL_EFLAGS(     pEFlags, EFlags,               2); \
                     IEM_MC_FETCH_EFLAGS(EFlags); \
                     IEM_MC_CALL_VOID_AIMPL_3(a_fnNormalU64, pu64Dst, u64Src, pEFlags); \
                     \
@@ -5879,33 +5899,30 @@ FNIEMOP_DEF_1(iemOp_pop_Ev, uint8_t, bRm)
     {
         case IEMMODE_16BIT:
             IEM_MC_BEGIN(2, 0, 0, 0);
-            IEM_MC_ARG(uint8_t, iEffSeg,     0);
-            IEM_MC_ARG(RTGCPTR, GCPtrEffDst, 1);
+            IEM_MC_ARG(RTGCPTR,         GCPtrEffDst,                        1);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 2 << 8);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+            IEM_MC_ARG_CONST(uint8_t,   iEffSeg,    pVCpu->iem.s.iEffSeg,   0);
             IEM_MC_CALL_CIMPL_2(0, iemCImpl_pop_mem16, iEffSeg, GCPtrEffDst);
             IEM_MC_END();
             break;
 
         case IEMMODE_32BIT:
             IEM_MC_BEGIN(2, 0, IEM_MC_F_MIN_386, 0);
-            IEM_MC_ARG(uint8_t, iEffSeg,     0);
-            IEM_MC_ARG(RTGCPTR, GCPtrEffDst, 1);
+            IEM_MC_ARG(RTGCPTR,         GCPtrEffDst,                        1);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 4 << 8);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+            IEM_MC_ARG_CONST(uint8_t,   iEffSeg,    pVCpu->iem.s.iEffSeg,   0);
             IEM_MC_CALL_CIMPL_2(0, iemCImpl_pop_mem32, iEffSeg, GCPtrEffDst);
             IEM_MC_END();
             break;
 
         case IEMMODE_64BIT:
             IEM_MC_BEGIN(2, 0, IEM_MC_F_64BIT, 0);
-            IEM_MC_ARG(uint8_t, iEffSeg,     0);
-            IEM_MC_ARG(RTGCPTR, GCPtrEffDst, 1);
+            IEM_MC_ARG(RTGCPTR,         GCPtrEffDst,                        1);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 8 << 8);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+            IEM_MC_ARG_CONST(uint8_t,   iEffSeg,    pVCpu->iem.s.iEffSeg,   0);
             IEM_MC_CALL_CIMPL_2(0, iemCImpl_pop_mem64, iEffSeg, GCPtrEffDst);
             IEM_MC_END();
             break;
@@ -7660,17 +7677,18 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_Ib)
     {
         /* memory */
         IEM_MC_BEGIN(3, 3, IEM_MC_F_MIN_186, 0);
-        IEM_MC_ARG(uint8_t *,   pu8Dst,    0);
-        IEM_MC_ARG(uint8_t,     cShiftArg,  1);
-        IEM_MC_ARG_LOCAL_EFLAGS(pEFlags, EFlags, 2);
         IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
-        IEM_MC_LOCAL(uint8_t, bUnmapInfo);
-
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 1);
+
         uint8_t cShift; IEM_OPCODE_GET_NEXT_U8(&cShift);
-        IEM_MC_ASSIGN(cShiftArg, cShift);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+        IEM_MC_LOCAL(uint8_t,   bUnmapInfo);
+        IEM_MC_ARG(uint8_t *,   pu8Dst,    0);
         IEM_MC_MEM_MAP_U8_RW(pu8Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
+
+        IEM_MC_ARG_CONST(uint8_t,   cShiftArg, cShift, 1);
+        IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags,   EFlags, 2);
         IEM_MC_FETCH_EFLAGS(EFlags);
         IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU8, pu8Dst, cShiftArg, pEFlags);
 
@@ -7760,17 +7778,18 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_Ib)
         {
             case IEMMODE_16BIT:
                 IEM_MC_BEGIN(3, 3, 0, 0);
-                IEM_MC_ARG(uint16_t *,  pu16Dst,    0);
-                IEM_MC_ARG(uint8_t,     cShiftArg,  1);
-                IEM_MC_ARG_LOCAL_EFLAGS(pEFlags, EFlags, 2);
                 IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
-                IEM_MC_LOCAL(uint8_t, bUnmapInfo);
-
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 1);
+
                 uint8_t cShift; IEM_OPCODE_GET_NEXT_U8(&cShift);
-                IEM_MC_ASSIGN(cShiftArg, cShift);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+                IEM_MC_LOCAL(uint8_t,       bUnmapInfo);
+                IEM_MC_ARG(uint16_t *,      pu16Dst,            0);
                 IEM_MC_MEM_MAP_U16_RW(pu16Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
+
+                IEM_MC_ARG_CONST(uint8_t,   cShiftArg,  cShift, 1);
+                IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags,    EFlags, 2);
                 IEM_MC_FETCH_EFLAGS(EFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU16, pu16Dst, cShiftArg, pEFlags);
 
@@ -7782,17 +7801,18 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_Ib)
 
             case IEMMODE_32BIT:
                 IEM_MC_BEGIN(3, 3, IEM_MC_F_MIN_386, 0);
-                IEM_MC_ARG(uint32_t *,  pu32Dst,    0);
-                IEM_MC_ARG(uint8_t,     cShiftArg,  1);
-                IEM_MC_ARG_LOCAL_EFLAGS(pEFlags, EFlags, 2);
                 IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
-                IEM_MC_LOCAL(uint8_t, bUnmapInfo);
-
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 1);
+
                 uint8_t cShift; IEM_OPCODE_GET_NEXT_U8(&cShift);
-                IEM_MC_ASSIGN(cShiftArg, cShift);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+                IEM_MC_LOCAL(uint8_t,       bUnmapInfo);
+                IEM_MC_ARG(uint32_t *,      pu32Dst,            0);
                 IEM_MC_MEM_MAP_U32_RW(pu32Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
+
+                IEM_MC_ARG_CONST(uint8_t,   cShiftArg,  cShift, 1);
+                IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags,    EFlags, 2);
                 IEM_MC_FETCH_EFLAGS(EFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, cShiftArg, pEFlags);
 
@@ -7804,17 +7824,18 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_Ib)
 
             case IEMMODE_64BIT:
                 IEM_MC_BEGIN(3, 3, IEM_MC_F_64BIT, 0);
-                IEM_MC_ARG(uint64_t *,  pu64Dst,    0);
-                IEM_MC_ARG(uint8_t,     cShiftArg,  1);
-                IEM_MC_ARG_LOCAL_EFLAGS(pEFlags, EFlags, 2);
                 IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
-                IEM_MC_LOCAL(uint8_t, bUnmapInfo);
-
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 1);
+
                 uint8_t cShift; IEM_OPCODE_GET_NEXT_U8(&cShift);
-                IEM_MC_ASSIGN(cShiftArg, cShift);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+                IEM_MC_LOCAL(uint8_t,       bUnmapInfo);
+                IEM_MC_ARG(uint64_t *,      pu64Dst,            0);
                 IEM_MC_MEM_MAP_U64_RW(pu64Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
+
+                IEM_MC_ARG_CONST(uint8_t,   cShiftArg,  cShift, 1);
+                IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags,    EFlags, 2);
                 IEM_MC_FETCH_EFLAGS(EFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU64, pu64Dst, cShiftArg, pEFlags);
 
@@ -9183,14 +9204,15 @@ FNIEMOP_DEF_1(iemOp_fldenv, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fldenv, "fldenv m14/28byte");
     IEM_MC_BEGIN(3, 0, 0, 0);
-    IEM_MC_ARG_CONST(IEMMODE,           enmEffOpSize, /*=*/ pVCpu->iem.s.enmEffOpSize,  0);
-    IEM_MC_ARG(uint8_t,                 iEffSeg,                                    1);
-    IEM_MC_ARG(RTGCPTR,                 GCPtrEffSrc,                                2);
+    IEM_MC_ARG(RTGCPTR,                 GCPtrEffSrc,                                    2);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
-    IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+
+    IEM_MC_ARG_CONST(IEMMODE,           enmEffOpSize, /*=*/ pVCpu->iem.s.enmEffOpSize,  0);
+    IEM_MC_ARG_CONST(uint8_t,           iEffSeg,      /*=*/ pVCpu->iem.s.iEffSeg,       1);
     IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_FPU, iemCImpl_fldenv, enmEffOpSize, iEffSeg, GCPtrEffSrc);
     IEM_MC_END();
 }
@@ -9202,12 +9224,15 @@ FNIEMOP_DEF_1(iemOp_fldcw, uint8_t, bRm)
     IEMOP_MNEMONIC(fldcw_m2byte, "fldcw m2byte");
     IEM_MC_BEGIN(1, 1, 0, 0);
     IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc);
-    IEM_MC_ARG(uint16_t,                u16Fsw,                                     0);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
+
+    IEM_MC_ARG(uint16_t,                u16Fsw,                                         0);
     IEM_MC_FETCH_MEM_U16(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
     IEM_MC_CALL_CIMPL_1(IEM_CIMPL_F_FPU, iemCImpl_fldcw, u16Fsw);
     IEM_MC_END();
 }
@@ -9218,14 +9243,15 @@ FNIEMOP_DEF_1(iemOp_fnstenv, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fstenv, "fstenv m14/m28byte");
     IEM_MC_BEGIN(3, 0, 0, 0);
-    IEM_MC_ARG_CONST(IEMMODE,           enmEffOpSize, /*=*/ pVCpu->iem.s.enmEffOpSize,  0);
-    IEM_MC_ARG(uint8_t,                 iEffSeg,                                    1);
-    IEM_MC_ARG(RTGCPTR,                 GCPtrEffDst,                                2);
+    IEM_MC_ARG(RTGCPTR,                 GCPtrEffDst,                                    2);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
+
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ();
-    IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+
+    IEM_MC_ARG_CONST(IEMMODE,           enmEffOpSize, /*=*/ pVCpu->iem.s.enmEffOpSize,  0);
+    IEM_MC_ARG_CONST(uint8_t,           iEffSeg,      /*=*/ pVCpu->iem.s.iEffSeg,       1);
     IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_FPU, iemCImpl_fnstenv, enmEffOpSize, iEffSeg, GCPtrEffDst);
     IEM_MC_END();
 }
@@ -11059,14 +11085,15 @@ FNIEMOP_DEF_1(iemOp_frstor,      uint8_t, bRm)
 {
     IEMOP_MNEMONIC(frstor, "frstor m94/108byte");
     IEM_MC_BEGIN(3, 0, 0, 0);
-    IEM_MC_ARG_CONST(IEMMODE,           enmEffOpSize, /*=*/ pVCpu->iem.s.enmEffOpSize,  0);
-    IEM_MC_ARG(uint8_t,                 iEffSeg,                                    1);
-    IEM_MC_ARG(RTGCPTR,                 GCPtrEffSrc,                                2);
+    IEM_MC_ARG(RTGCPTR,                 GCPtrEffSrc,                                    2);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
-    IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+
+    IEM_MC_ARG_CONST(IEMMODE,           enmEffOpSize, /*=*/ pVCpu->iem.s.enmEffOpSize,  0);
+    IEM_MC_ARG_CONST(uint8_t,           iEffSeg,      /*=*/ pVCpu->iem.s.iEffSeg,       1);
     IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_FPU, iemCImpl_frstor, enmEffOpSize, iEffSeg, GCPtrEffSrc);
     IEM_MC_END();
 }
@@ -11077,14 +11104,15 @@ FNIEMOP_DEF_1(iemOp_fnsave,      uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fnsave, "fnsave m94/108byte");
     IEM_MC_BEGIN(3, 0, 0, 0);
-    IEM_MC_ARG_CONST(IEMMODE,           enmEffOpSize, /*=*/ pVCpu->iem.s.enmEffOpSize,  0);
-    IEM_MC_ARG(uint8_t,                 iEffSeg,                                    1);
-    IEM_MC_ARG(RTGCPTR,                 GCPtrEffDst,                                2);
+    IEM_MC_ARG(RTGCPTR,                 GCPtrEffDst,                                    2);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
+
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE(); /* Note! Implicit fninit after the save, do not use FOR_READ here! */
-    IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+
+    IEM_MC_ARG_CONST(IEMMODE,           enmEffOpSize, /*=*/ pVCpu->iem.s.enmEffOpSize,  0);
+    IEM_MC_ARG_CONST(uint8_t,           iEffSeg,      /*=*/ pVCpu->iem.s.iEffSeg,       1);
     IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_FPU, iemCImpl_fnsave, enmEffOpSize, iEffSeg, GCPtrEffDst);
     IEM_MC_END();
 }
@@ -12644,17 +12672,18 @@ FNIEMOP_DEF_1(iemOp_grp3_test_Eb, uint8_t, bRm)
     {
         /* memory access. */
         IEM_MC_BEGIN(3, 3, 0, 0);
-        IEM_MC_ARG(uint8_t const *, pu8Dst,             0);
-        IEM_MC_ARG(uint8_t,         u8Src,              1);
-        IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,    2);
         IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
-        IEM_MC_LOCAL(uint8_t, bUnmapInfo);
-
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 1);
+
         uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
-        IEM_MC_ASSIGN(u8Src, u8Imm);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+        IEM_MC_LOCAL(uint8_t,       bUnmapInfo);
+        IEM_MC_ARG(uint8_t const *, pu8Dst,             0);
         IEM_MC_MEM_MAP_U8_RO(pu8Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
+
+        IEM_MC_ARG_CONST(uint8_t,   u8Src,   u8Imm,     1);
+        IEM_MC_ARG_LOCAL_EFLAGS(    pEFlags, EFlags,    2);
         IEM_MC_FETCH_EFLAGS(EFlags);
         IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_test_u8, pu8Dst, u8Src, pEFlags);
 
@@ -13009,17 +13038,18 @@ FNIEMOP_DEF_1(iemOp_grp3_test_Ev, uint8_t, bRm)
         {
             case IEMMODE_16BIT:
                 IEM_MC_BEGIN(3, 3, 0, 0);
-                IEM_MC_ARG(uint16_t const *, pu16Dst,           0);
-                IEM_MC_ARG(uint16_t,         u16Src,            1);
-                IEM_MC_ARG_LOCAL_EFLAGS(     pEFlags, EFlags,   2);
                 IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
-                IEM_MC_LOCAL(uint8_t, bUnmapInfo);
-
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 2);
+
                 uint16_t u16Imm; IEM_OPCODE_GET_NEXT_U16(&u16Imm);
-                IEM_MC_ASSIGN(u16Src, u16Imm);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+                IEM_MC_LOCAL(uint8_t,        bUnmapInfo);
+                IEM_MC_ARG(uint16_t const *, pu16Dst,           0);
                 IEM_MC_MEM_MAP_U16_RO(pu16Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
+
+                IEM_MC_ARG_CONST(uint16_t,   u16Src,  u16Imm,   1);
+                IEM_MC_ARG_LOCAL_EFLAGS(     pEFlags, EFlags,   2);
                 IEM_MC_FETCH_EFLAGS(EFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_test_u16, pu16Dst, u16Src, pEFlags);
 
@@ -13031,17 +13061,18 @@ FNIEMOP_DEF_1(iemOp_grp3_test_Ev, uint8_t, bRm)
 
             case IEMMODE_32BIT:
                 IEM_MC_BEGIN(3, 3, IEM_MC_F_MIN_386, 0);
-                IEM_MC_ARG(uint32_t const *, pu32Dst,           0);
-                IEM_MC_ARG(uint32_t,         u32Src,            1);
-                IEM_MC_ARG_LOCAL_EFLAGS(     pEFlags, EFlags,   2);
                 IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
-                IEM_MC_LOCAL(uint8_t, bUnmapInfo);
-
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 4);
+
                 uint32_t u32Imm; IEM_OPCODE_GET_NEXT_U32(&u32Imm);
-                IEM_MC_ASSIGN(u32Src, u32Imm);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+                IEM_MC_LOCAL(uint8_t,        bUnmapInfo);
+                IEM_MC_ARG(uint32_t const *, pu32Dst,           0);
                 IEM_MC_MEM_MAP_U32_RO(pu32Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
+
+                IEM_MC_ARG_CONST(uint32_t,   u32Src,  u32Imm,   1);
+                IEM_MC_ARG_LOCAL_EFLAGS(     pEFlags, EFlags,   2);
                 IEM_MC_FETCH_EFLAGS(EFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_test_u32, pu32Dst, u32Src, pEFlags);
 
@@ -13053,17 +13084,18 @@ FNIEMOP_DEF_1(iemOp_grp3_test_Ev, uint8_t, bRm)
 
             case IEMMODE_64BIT:
                 IEM_MC_BEGIN(3, 3, IEM_MC_F_64BIT, 0);
-                IEM_MC_ARG(uint64_t const *, pu64Dst,           0);
-                IEM_MC_ARG(uint64_t,         u64Src,            1);
-                IEM_MC_ARG_LOCAL_EFLAGS(     pEFlags, EFlags,   2);
                 IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
-                IEM_MC_LOCAL(uint8_t, bUnmapInfo);
-
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 4);
+
                 uint64_t u64Imm; IEM_OPCODE_GET_NEXT_S32_SX_U64(&u64Imm);
-                IEM_MC_ASSIGN(u64Src, u64Imm);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+                IEM_MC_ARG(uint64_t const *, pu64Dst,           0);
+                IEM_MC_LOCAL(uint8_t, bUnmapInfo);
                 IEM_MC_MEM_MAP_U64_RO(pu64Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
+
+                IEM_MC_ARG_CONST(uint64_t,   u64Src,  u64Imm,   1);
+                IEM_MC_ARG_LOCAL_EFLAGS(     pEFlags, EFlags,   2);
                 IEM_MC_FETCH_EFLAGS(EFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_test_u64, pu64Dst, u64Src, pEFlags);
 
