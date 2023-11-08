@@ -38,6 +38,7 @@
 #include "primpl.h"
 
 #include <string.h>
+#include <iprt/assert.h>
 
 /*****************************************************************************/
 /************************** Invalid I/O method object ************************/
@@ -77,14 +78,14 @@ PRIOMethods _pr_faulty_methods = {
 
 PRIntn _PR_InvalidInt(void)
 {
-    PR_ASSERT(!"I/O method is invalid");
+    Assert(!"I/O method is invalid");
     PR_SetError(PR_INVALID_METHOD_ERROR, 0);
     return -1;
 }  /* _PR_InvalidInt */
 
 PRInt16 _PR_InvalidInt16(void)
 {
-    PR_ASSERT(!"I/O method is invalid");
+    Assert(!"I/O method is invalid");
     PR_SetError(PR_INVALID_METHOD_ERROR, 0);
     return -1;
 }  /* _PR_InvalidInt */
@@ -93,7 +94,7 @@ PRInt64 _PR_InvalidInt64(void)
 {
     PRInt64 rv;
     LL_I2L(rv, -1);
-    PR_ASSERT(!"I/O method is invalid");
+    Assert(!"I/O method is invalid");
     PR_SetError(PR_INVALID_METHOD_ERROR, 0);
     return rv;
 }  /* _PR_InvalidInt */
@@ -104,7 +105,7 @@ PRInt64 _PR_InvalidInt64(void)
 
 PRStatus _PR_InvalidStatus(void)
 {
-    PR_ASSERT(!"I/O method is invalid");
+    Assert(!"I/O method is invalid");
     PR_SetError(PR_INVALID_METHOD_ERROR, 0);
     return PR_FAILURE;
 }  /* _PR_InvalidDesc */
@@ -115,7 +116,7 @@ PRStatus _PR_InvalidStatus(void)
 
 PRFileDesc *_PR_InvalidDesc(void)
 {
-    PR_ASSERT(!"I/O method is invalid");
+    Assert(!"I/O method is invalid");
     PR_SetError(PR_INVALID_METHOD_ERROR, 0);
     return NULL;
 }  /* _PR_InvalidDesc */

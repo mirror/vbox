@@ -45,6 +45,8 @@
 
 #include "primpl.h"
 
+#include <iprt/assert.h>
+
 PR_IMPLEMENT(PRFileMap *) PR_CreateFileMap(
     PRFileDesc *fd,
     PRInt64 size,
@@ -52,8 +54,8 @@ PR_IMPLEMENT(PRFileMap *) PR_CreateFileMap(
 {
     PRFileMap *fmap;
 
-    PR_ASSERT(prot == PR_PROT_READONLY || prot == PR_PROT_READWRITE
-            || prot == PR_PROT_WRITECOPY);
+    Assert(prot == PR_PROT_READONLY || prot == PR_PROT_READWRITE
+           || prot == PR_PROT_WRITECOPY);
     fmap = PR_NEWZAP(PRFileMap);
     if (NULL == fmap) {
 	PR_SetError(PR_OUT_OF_MEMORY_ERROR, 0);

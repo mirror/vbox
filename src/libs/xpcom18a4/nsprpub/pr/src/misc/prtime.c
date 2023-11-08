@@ -46,10 +46,11 @@
 #include "prtime.h"
 #include "prlock.h"
 #include "prprf.h"
-#include "prlog.h"
 
 #include <string.h>
 #include <ctype.h>
+
+#include <iprt/assert.h>
 
 /*
  * Static variables used by functions in this file
@@ -947,7 +948,7 @@ PR_ParseTimeString(
   int iterations = 0;
 #endif
 
-  PR_ASSERT(string && result);
+  Assert(string && result);
   if (!string || !result) return PR_FAILURE;
 
   while (*rest)
@@ -956,7 +957,7 @@ PR_ParseTimeString(
 #ifdef DEBUG
           if (iterations++ > 1000)
                 {
-                  PR_ASSERT(0);
+                  Assert(0);
                   return PR_FAILURE;
                 }
 #endif
@@ -1476,7 +1477,7 @@ PR_ParseTimeString(
                 case TT_EET: zone_offset =  2 * 60; break;
                 case TT_JST: zone_offset =  9 * 60; break;
                 default:
-                  PR_ASSERT (0);
+                  Assert (0);
                   break;
                 }
         }
@@ -1518,7 +1519,7 @@ PR_ParseTimeString(
           struct tm localTime;
           time_t secs;
 
-          PR_ASSERT(tm.tm_month > -1 
+          Assert(tm.tm_month > -1 
                                    && tm.tm_mday > 0 
                                    && tm.tm_hour > -1
                                    && tm.tm_min > -1

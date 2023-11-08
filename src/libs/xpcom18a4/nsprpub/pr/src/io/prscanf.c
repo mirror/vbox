@@ -53,8 +53,9 @@
 #endif
 #include "prprf.h"
 #include "prdtoa.h"
-#include "prlog.h"
 #include "prerror.h"
+
+#include <iprt/assert.h>
 
 /*
  * A function that reads a character from 'stream'.
@@ -141,7 +142,7 @@ _pr_strtoull(const char *str, char **endptr, int base)
     PRBool negative;
     const char *digitStart;
 
-    PR_ASSERT(base == 0 || base == 8 || base == 10 || base == 16);
+    Assert(base == 0 || base == 8 || base == 10 || base == 16);
     if (base < 0 || base == 1 || base > BASE_MAX) {
         if (endptr) {
             *endptr = (char *) str;
@@ -176,7 +177,7 @@ _pr_strtoull(const char *str, char **endptr, int base)
             base = 8;
         } 
     }
-    PR_ASSERT(base != 0);
+    Assert(base != 0);
     LL_I2L(base64, base);
     digitStart = cPtr;
 
@@ -279,7 +280,7 @@ GetInt(ScanfState *state, int code)
     } else if (base == 8) {
         dlen = 8;
     } else {
-        PR_ASSERT(base == 16);
+        Assert(base == 16);
         dlen = 16 + 6; /* 16 digits, plus 6 in uppercase */
     }
     while (WITHIN_WIDTH(state) && memchr(digits, ch, dlen)) {
@@ -482,7 +483,7 @@ Convert(ScanfState *state, const char *fmt)
                         LL_I2L(*va_arg(state->ap, PRInt64 *), state->nChar);
                         break;
                     default:
-                        PR_ASSERT(0);
+                        Assert(0);
                 }
             }
             break;

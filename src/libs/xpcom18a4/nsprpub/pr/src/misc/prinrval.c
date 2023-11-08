@@ -42,6 +42,8 @@
 
 #include "primpl.h"
 
+#include <iprt/assert.h>
+
 /*
  *-----------------------------------------------------------------------
  *
@@ -58,8 +60,8 @@ void _PR_InitClock(void)
     {
         PRIntervalTime ticksPerSec = PR_TicksPerSecond();
 
-        PR_ASSERT(ticksPerSec >= PR_INTERVAL_MIN);
-        PR_ASSERT(ticksPerSec <= PR_INTERVAL_MAX);
+        Assert(ticksPerSec >= PR_INTERVAL_MIN);
+        Assert(ticksPerSec <= PR_INTERVAL_MAX);
     }
 #endif /* DEBUG */
 }

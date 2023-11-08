@@ -78,6 +78,7 @@
 #endif
 #endif
 
+#include <iprt/assert.h>
 #include <iprt/thread.h>
 
 #ifdef DARWIN
@@ -306,7 +307,7 @@ static void pt_poll_now(pt_Continuation *op)
 	PRBool wait_for_remaining;
     PRThread *self = PR_GetCurrentThread();
 
-	PR_ASSERT(PR_INTERVAL_NO_WAIT != op->timeout);
+	Assert(PR_INTERVAL_NO_WAIT != op->timeout);
 
     switch (op->timeout) {
         case PR_INTERVAL_NO_TIMEOUT:
@@ -444,7 +445,7 @@ static PRIntn pt_Continue(pt_Continuation *op)
 	 * let each thread call poll directly
 	 */
 	pt_poll_now(op);
-	PR_ASSERT(pt_continuation_done == op->status);
+	Assert(pt_continuation_done == op->status);
     return op->result.code;
 }  /* pt_Continue */
 
@@ -648,12 +649,12 @@ void _PR_InitIO(void)
 #endif
 
     _pr_rename_lock = PR_NewLock();
-    PR_ASSERT(NULL != _pr_rename_lock);
+    Assert(NULL != _pr_rename_lock);
 
     _pr_stdin = pt_SetMethods(0, PR_DESC_FILE, PR_FALSE, PR_TRUE);
     _pr_stdout = pt_SetMethods(1, PR_DESC_FILE, PR_FALSE, PR_TRUE);
     _pr_stderr = pt_SetMethods(2, PR_DESC_FILE, PR_FALSE, PR_TRUE);
-    PR_ASSERT(_pr_stdin && _pr_stdout && _pr_stderr);
+    Assert(_pr_stdin && _pr_stdout && _pr_stderr);
 
 #ifdef DARWIN
     /* In Mac OS X v10.3 Panther Beta the IPV6_V6ONLY socket option
@@ -696,7 +697,7 @@ void _PR_CleanupIO(void)
 PR_IMPLEMENT(PRFileDesc*) PR_GetSpecialFD(PRSpecialFD osfd)
 {
     PRFileDesc *result = NULL;
-    PR_ASSERT(osfd >= PR_StandardInput && osfd <= PR_StandardError);
+    Assert(osfd >= PR_StandardInput && osfd <= PR_StandardError);
 
     if (!_pr_initialized) _PR_ImplicitInitialization();
 
@@ -862,7 +863,7 @@ static PRInt32 pt_Writev(
     if (pt_TestAbort()) return rv;
 
     /* Ensured by PR_Writev */
-    PR_ASSERT(iov_len <= PR_MAX_IOVECTOR_SIZE);
+    Assert(iov_len <= PR_MAX_IOVECTOR_SIZE);
 
     /*
      * We can't pass iov to writev because PRIOVec and struct iovec
@@ -902,7 +903,7 @@ static PRInt32 pt_Writev(
                 }
                 bytes -= osiov->iov_len;  /* this one's done cooked */
             }
-            PR_ASSERT(osiov_len > 0 || bytes == 0);
+            Assert(osiov_len > 0 || bytes == 0);
             if (osiov_len > 0)
             {
                 if (PR_INTERVAL_NO_WAIT == timeout)
@@ -1026,7 +1027,7 @@ static PRStatus pt_Connect(
 
     if (pt_TestAbort()) return PR_FAILURE;
 
-    PR_ASSERT(IsValidNetAddr(addr) == PR_TRUE);
+    Assert(IsValidNetAddr(addr) == PR_TRUE);
     addr_len = PR_NETADDR_SIZE(addr);
 
 #ifdef _PR_HAVE_SOCKADDR_LEN
@@ -1078,7 +1079,7 @@ static PRStatus pt_ConnectContinue(
     }
     if ((out_flags & (PR_POLL_WRITE | PR_POLL_EXCEPT | PR_POLL_ERR)) == 0)
     {
-        PR_ASSERT(out_flags == 0);
+        Assert(out_flags == 0);
         PR_SetError(PR_IN_PROGRESS_ERROR, 0);
         return PR_FAILURE;
     }
@@ -1167,8 +1168,8 @@ static PRFileDesc* pt_Accept(
     if (newfd == NULL) close(osfd);  /* $$$ whoops! this doesn't work $$$ */
     else
     {
-        PR_ASSERT(IsValidNetAddr(addr) == PR_TRUE);
-        PR_ASSERT(IsValidNetAddrLen(addr, addr_len) == PR_TRUE);
+        Assert(IsValidNetAddr(addr) == PR_TRUE);
+        Assert(IsValidNetAddrLen(addr, addr_len) == PR_TRUE);
 #ifdef LINUX
         /*
          * On Linux, experiments showed that the accepted sockets
@@ -1197,7 +1198,7 @@ static PRStatus pt_Bind(PRFileDesc *fd, const PRNetAddr *addr)
 
     if (pt_TestAbort()) return PR_FAILURE;
 
-    PR_ASSERT(IsValidNetAddr(addr) == PR_TRUE);
+    Assert(IsValidNetAddr(addr) == PR_TRUE);
     if (addr->raw.family == AF_UNIX)
     {
         /* Disallow relative pathnames */
@@ -1348,7 +1349,7 @@ static PRInt32 pt_Send(
      * write() are fairly equivalent in performance.
      */
 #if defined(SOLARIS)
-    PR_ASSERT(0 == flags);
+    Assert(0 == flags);
 retry:
     bytes = write(fd->secret->md.osfd, PT_SENDBUF_CAST buf, tmp_amount);
 #else
@@ -1441,8 +1442,8 @@ static PRStatus pt_GetSockName(PRFileDesc *fd, PRNetAddr *addr)
         }
 #endif /* _PR_HAVE_SOCKADDR_LEN */
 
-        PR_ASSERT(IsValidNetAddr(addr) == PR_TRUE);
-        PR_ASSERT(IsValidNetAddrLen(addr, addr_len) == PR_TRUE);
+        Assert(IsValidNetAddr(addr) == PR_TRUE);
+        Assert(IsValidNetAddrLen(addr, addr_len) == PR_TRUE);
         return PR_SUCCESS;
     }
 }  /* pt_GetSockName */
@@ -1469,8 +1470,8 @@ static PRStatus pt_GetPeerName(PRFileDesc *fd, PRNetAddr *addr)
         }
 #endif /* _PR_HAVE_SOCKADDR_LEN */
 
-        PR_ASSERT(IsValidNetAddr(addr) == PR_TRUE);
-        PR_ASSERT(IsValidNetAddrLen(addr, addr_len) == PR_TRUE);
+        Assert(IsValidNetAddr(addr) == PR_TRUE);
+        Assert(IsValidNetAddrLen(addr, addr_len) == PR_TRUE);
         return PR_SUCCESS;
     }
 }  /* pt_GetPeerName */
@@ -1502,7 +1503,7 @@ static PRStatus pt_GetSocketOption(PRFileDesc *fd, PRSocketOptionData *data)
                 length = sizeof(linger);
                 rv = getsockopt(
                     fd->secret->md.osfd, level, name, (char *) &linger, &length);
-                PR_ASSERT((-1 == rv) || (sizeof(linger) == length));
+                Assert((-1 == rv) || (sizeof(linger) == length));
                 data->value.linger.polarity =
                     (linger.l_onoff) ? PR_TRUE : PR_FALSE;
                 data->value.linger.linger =
@@ -1518,7 +1519,7 @@ static PRStatus pt_GetSocketOption(PRFileDesc *fd, PRSocketOptionData *data)
                 length = sizeof(PRIntn);
                 rv = getsockopt(
                     fd->secret->md.osfd, level, name, (char*)&value, &length);
-                PR_ASSERT((-1 == rv) || (sizeof(PRIntn) == length));
+                Assert((-1 == rv) || (sizeof(PRIntn) == length));
                 data->value.reuse_addr = (0 == value) ? PR_FALSE : PR_TRUE;
                 break;
             }
@@ -1529,7 +1530,7 @@ static PRStatus pt_GetSocketOption(PRFileDesc *fd, PRSocketOptionData *data)
                 rv = getsockopt(
                     fd->secret->md.osfd, level, name,
                     (char*)&xbool, &length);
-                PR_ASSERT((-1 == rv) || (sizeof(xbool) == length));
+                Assert((-1 == rv) || (sizeof(xbool) == length));
                 data->value.mcast_loopback = (0 == xbool) ? PR_FALSE : PR_TRUE;
                 break;
             }
@@ -1541,7 +1542,7 @@ static PRStatus pt_GetSocketOption(PRFileDesc *fd, PRSocketOptionData *data)
                 length = sizeof(PRIntn);
                 rv = getsockopt(
                     fd->secret->md.osfd, level, name, (char*)&value, &length);
-                PR_ASSERT((-1 == rv) || (sizeof(PRIntn) == length));
+                Assert((-1 == rv) || (sizeof(PRIntn) == length));
                 data->value.recv_buffer_size = value;
                 break;
             }
@@ -1552,7 +1553,7 @@ static PRStatus pt_GetSocketOption(PRFileDesc *fd, PRSocketOptionData *data)
                 rv = getsockopt(
                     fd->secret->md.osfd, level, name,
                     (char*)&data->value.ip_ttl, &length);
-                PR_ASSERT((-1 == rv) || (sizeof(PRIntn) == length));
+                Assert((-1 == rv) || (sizeof(PRIntn) == length));
                 break;
             }
             case PR_SockOpt_McastTimeToLive:
@@ -1562,7 +1563,7 @@ static PRStatus pt_GetSocketOption(PRFileDesc *fd, PRSocketOptionData *data)
                 rv = getsockopt(
                     fd->secret->md.osfd, level, name,
                     (char*)&ttl, &length);
-                PR_ASSERT((-1 == rv) || (sizeof(ttl) == length));
+                Assert((-1 == rv) || (sizeof(ttl) == length));
                 data->value.mcast_ttl = ttl;
                 break;
             }
@@ -1573,7 +1574,7 @@ static PRStatus pt_GetSocketOption(PRFileDesc *fd, PRSocketOptionData *data)
                 length = sizeof(mreq);
                 rv = getsockopt(
                     fd->secret->md.osfd, level, name, (char*)&mreq, &length);
-                PR_ASSERT((-1 == rv) || (sizeof(mreq) == length));
+                Assert((-1 == rv) || (sizeof(mreq) == length));
                 data->value.add_member.mcaddr.inet.ip =
                     mreq.imr_multiaddr.s_addr;
                 data->value.add_member.ifaddr.inet.ip =
@@ -1586,12 +1587,11 @@ static PRStatus pt_GetSocketOption(PRFileDesc *fd, PRSocketOptionData *data)
                 rv = getsockopt(
                     fd->secret->md.osfd, level, name,
                     (char*)&data->value.mcast_if.inet.ip, &length);
-                PR_ASSERT((-1 == rv)
+                Assert((-1 == rv)
                     || (sizeof(data->value.mcast_if.inet.ip) == length));
                 break;
             }
             default:
-                PR_NOT_REACHED("Unknown socket option");
                 break;
         }
         if (-1 == rv) _PR_MD_MAP_GETSOCKOPT_ERROR(errno);
@@ -1701,7 +1701,6 @@ static PRStatus pt_SetSocketOption(PRFileDesc *fd, const PRSocketOptionData *dat
                 break;
             }
             default:
-                PR_NOT_REACHED("Unknown socket option");
                 break;
         }
         if (-1 == rv) _PR_MD_MAP_SETSOCKOPT_ERROR(errno);
@@ -2215,7 +2214,7 @@ static PRInt32 _pr_poll_with_poll(
                     /* now locate the NSPR layer at the bottom of the stack */
                     PRFileDesc *bottom = PR_GetIdentitiesLayer(
                         pds[index].fd, PR_NSPR_IO_LAYER);
-                    PR_ASSERT(NULL != bottom);  /* what to do about that? */
+                    Assert(NULL != bottom);  /* what to do about that? */
                     pds[index].out_flags = 0;  /* pre-condition */
                     if ((NULL != bottom)
                     && (_PR_FILEDESC_OPEN == bottom->secret->state))

@@ -65,6 +65,7 @@
 #endif
 
 #ifdef VBOX
+# include <iprt/assert.h>
 # include <iprt/mem.h>
 #endif
 
@@ -97,9 +98,9 @@ void _MD_query_fd_inheritable(PRFileDesc *fd)
 {
     int flags;
 
-    PR_ASSERT(_PR_TRI_UNKNOWN == fd->secret->inheritable);
+    Assert(_PR_TRI_UNKNOWN == fd->secret->inheritable);
     flags = fcntl(fd->secret->md.osfd, F_GETFD, 0);
-    PR_ASSERT(-1 != flags);
+    Assert(-1 != flags);
     fd->secret->inheritable = (flags & FD_CLOEXEC) ?
         _PR_TRI_FALSE : _PR_TRI_TRUE;
 }
@@ -523,7 +524,7 @@ void _PR_UnixInit(void)
     sigemptyset(&sigact.sa_mask);
     sigact.sa_flags = 0;
     rv = sigaction(SIGPIPE, &sigact, 0);
-    PR_ASSERT(0 == rv);
+    Assert(0 == rv);
 
     _PR_InitIOV();  /* one last hack */
 }
@@ -720,7 +721,7 @@ int poll(struct pollfd *filedes, unsigned long nfds, int timeout)
                 rv++;
             }
         }
-        PR_ASSERT(rv > 0);
+        Assert(rv > 0);
     } else if (rv == -1 && errno == EBADF) {
         rv = 0;
         for (i = 0; i < nfds; i++) {
@@ -733,9 +734,9 @@ int poll(struct pollfd *filedes, unsigned long nfds, int timeout)
                 rv++;
             }
         }
-        PR_ASSERT(rv > 0);
+        Assert(rv > 0);
     }
-    PR_ASSERT(-1 != timeout || rv != 0);
+    Assert(-1 != timeout || rv != 0);
 
     return rv;
 }

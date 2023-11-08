@@ -47,8 +47,9 @@
 #include "primpl.h"
 #include "prprf.h"
 #include "prlong.h"
-#include "prlog.h"
 #include "prmem.h"
+
+#include <iprt/assert.h>
 
 /*
 ** WARNING: This code may *NOT* call PR_LOG (because PR_LOG calls it)
@@ -350,7 +351,7 @@ static int cvt_f(SprintfState *ss, double d, const char *fmt0, const char *fmt1)
     {
         const char *p = fin;
         while (*p) {
-            PR_ASSERT(*p != 'L');
+            Assert(*p != 'L');
             p++;
         }
     }
@@ -567,7 +568,7 @@ static struct NumArg* BuildArgArray( const char *fmt, va_list ap, int* rv, struc
 	case 'E':
 	case 'G':
 	    /* XXX not supported I suppose */
-	    PR_ASSERT(0);
+	    Assert(0);
 	    nas[ cn ].type = TYPE_UNKNOWN;
 	    break;
 
@@ -580,7 +581,7 @@ static struct NumArg* BuildArgArray( const char *fmt, va_list ap, int* rv, struc
 	    break;
 
 	default:
-	    PR_ASSERT(0);
+	    Assert(0);
 	    nas[ cn ].type = TYPE_UNKNOWN;
 	    break;
 	}
@@ -700,7 +701,7 @@ static int dosprintf(SprintfState *ss, const char *fmt, va_list ap)
     nas = BuildArgArray( fmt, ap, &rv, nasArray );
     if( rv < 0 ){
 	/* the fmt contains error Numbered Argument format, jliu@netscape.com */
-	PR_ASSERT(0);
+	Assert(0);
 	return rv;
     }
 
@@ -953,7 +954,7 @@ static int dosprintf(SprintfState *ss, const char *fmt, va_list ap)
 	    } else if (sizeof(void *) == sizeof(int)) {
 		type = TYPE_UINTN;
 	    } else {
-		PR_ASSERT(0);
+		Assert(0);
 		break;
 	    }
 	    radix = 16;
@@ -965,7 +966,7 @@ static int dosprintf(SprintfState *ss, const char *fmt, va_list ap)
 	  case 'E':
 	  case 'G':
 	    /* XXX not supported I suppose */
-	    PR_ASSERT(0);
+	    Assert(0);
 	    break;
 #endif
 
@@ -987,7 +988,7 @@ static int dosprintf(SprintfState *ss, const char *fmt, va_list ap)
 	  default:
 	    /* Not a % token after all... skip it */
 #if 0
-	    PR_ASSERT(0);
+	    Assert(0);
 #endif
 	    rv = (*ss->stuff)(ss, "%", 1);
 	    if (rv < 0) {
@@ -1083,7 +1084,7 @@ static int GrowStuff(SprintfState *ss, const char *sp, PRUint32 len)
 	--len;
 	*ss->cur++ = *sp++;
     }
-    PR_ASSERT((PRUint32)(ss->cur - ss->base) <= ss->maxlen);
+    Assert((PRUint32)(ss->cur - ss->base) <= ss->maxlen);
     return 0;
 }
 
@@ -1154,7 +1155,7 @@ PR_IMPLEMENT(PRUint32) PR_snprintf(char *out, PRUint32 outlen, const char *fmt, 
     va_list ap;
     PRUint32 rv;
 
-    PR_ASSERT((PRInt32)outlen > 0);
+    Assert((PRInt32)outlen > 0);
     if ((PRInt32)outlen <= 0) {
 	return 0;
     }
@@ -1171,7 +1172,7 @@ PR_IMPLEMENT(PRUint32) PR_vsnprintf(char *out, PRUint32 outlen,const char *fmt,
     SprintfState ss;
     PRUint32 n;
 
-    PR_ASSERT((PRInt32)outlen > 0);
+    Assert((PRInt32)outlen > 0);
     if ((PRInt32)outlen <= 0) {
 	return 0;
     }

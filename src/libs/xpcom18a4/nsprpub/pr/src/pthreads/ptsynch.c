@@ -48,6 +48,7 @@
 #include <sys/time.h>
 
 #include <iprt/asm.h>
+#include <iprt/assert.h>
 
 #ifdef VBOX
 /* From the removed obsolete/prsem.h */
@@ -71,17 +72,17 @@ void _PR_InitLocks(void)
 {
     int rv;
     rv = _PT_PTHREAD_MUTEXATTR_INIT(&_pt_mattr); 
-    PR_ASSERT(0 == rv);
+    Assert(0 == rv);
 
 #ifdef LINUX
 #if (__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 2)
     rv = pthread_mutexattr_settype(&_pt_mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
-    PR_ASSERT(0 == rv);
+    Assert(0 == rv);
 #endif
 #endif
 
     rv = _PT_PTHREAD_CONDATTR_INIT(&_pt_cvar_attr);
-    PR_ASSERT(0 == rv);
+    Assert(0 == rv);
 }
 
 static void pt_PostNotifies(PRLock *lock, PRBool unlock)
@@ -108,7 +109,7 @@ static void pt_PostNotifies(PRLock *lock, PRBool unlock)
     if (unlock)
     {
         rv = pthread_mutex_unlock(&lock->mutex);
-        PR_ASSERT(0 == rv);
+        Assert(0 == rv);
     }
 
     notified = &post;  /* this is where we start */
@@ -117,19 +118,19 @@ static void pt_PostNotifies(PRLock *lock, PRBool unlock)
         for (index = 0; index < notified->length; ++index)
         {
             PRCondVar *cv = notified->cv[index].cv;
-            PR_ASSERT(NULL != cv);
-            PR_ASSERT(0 != notified->cv[index].times);
+            Assert(NULL != cv);
+            Assert(0 != notified->cv[index].times);
             if (-1 == notified->cv[index].times)
             {
                 rv = pthread_cond_broadcast(&cv->cv);
-                PR_ASSERT(0 == rv);
+                Assert(0 == rv);
             }
             else
             {
                 while (notified->cv[index].times-- > 0)
                 {
                     rv = pthread_cond_signal(&cv->cv);
-                    PR_ASSERT(0 == rv);
+                    Assert(0 == rv);
                 }
             }
 #if defined(DEBUG)
@@ -161,7 +162,7 @@ PR_IMPLEMENT(PRLock*) PR_NewLock(void)
     if (lock != NULL)
     {
         rv = _PT_PTHREAD_MUTEX_INIT(lock->mutex, _pt_mattr); 
-        PR_ASSERT(0 == rv);
+        Assert(0 == rv);
     }
 #if defined(DEBUG)
     pt_debug.locks_created += 1;
@@ -172,12 +173,12 @@ PR_IMPLEMENT(PRLock*) PR_NewLock(void)
 PR_IMPLEMENT(void) PR_DestroyLock(PRLock *lock)
 {
     PRIntn rv;
-    PR_ASSERT(NULL != lock);
-    PR_ASSERT(PR_FALSE == lock->locked);
-    PR_ASSERT(0 == lock->notified.length);
-    PR_ASSERT(NULL == lock->notified.link);
+    Assert(NULL != lock);
+    Assert(PR_FALSE == lock->locked);
+    Assert(0 == lock->notified.length);
+    Assert(NULL == lock->notified.link);
     rv = pthread_mutex_destroy(&lock->mutex);
-    PR_ASSERT(0 == rv);
+    Assert(0 == rv);
 #if defined(DEBUG)
     memset(lock, 0xaf, sizeof(PRLock));
     pt_debug.locks_destroyed += 1;
@@ -188,12 +189,12 @@ PR_IMPLEMENT(void) PR_DestroyLock(PRLock *lock)
 PR_IMPLEMENT(void) PR_Lock(PRLock *lock)
 {
     PRIntn rv;
-    PR_ASSERT(lock != NULL);
+    Assert(lock != NULL);
     rv = pthread_mutex_lock(&lock->mutex);
-    PR_ASSERT(0 == rv);
-    PR_ASSERT(0 == lock->notified.length);
-    PR_ASSERT(NULL == lock->notified.link);
-    PR_ASSERT(PR_FALSE == lock->locked);
+    Assert(0 == rv);
+    Assert(0 == lock->notified.length);
+    Assert(NULL == lock->notified.link);
+    Assert(PR_FALSE == lock->locked);
     lock->locked = PR_TRUE;
     lock->owner = pthread_self();
 #if defined(DEBUG)
@@ -205,10 +206,10 @@ PR_IMPLEMENT(PRStatus) PR_Unlock(PRLock *lock)
 {
     PRIntn rv;
 
-    PR_ASSERT(lock != NULL);
-    PR_ASSERT(_PT_PTHREAD_MUTEX_IS_LOCKED(lock->mutex));
-    PR_ASSERT(PR_TRUE == lock->locked);
-    PR_ASSERT(pthread_equal(lock->owner, pthread_self()));
+    Assert(lock != NULL);
+    Assert(_PT_PTHREAD_MUTEX_IS_LOCKED(lock->mutex));
+    Assert(PR_TRUE == lock->locked);
+    Assert(pthread_equal(lock->owner, pthread_self()));
 
     if (!lock->locked || !pthread_equal(lock->owner, pthread_self()))
         return PR_FAILURE;
@@ -217,7 +218,7 @@ PR_IMPLEMENT(PRStatus) PR_Unlock(PRLock *lock)
     if (0 == lock->notified.length)  /* shortcut */
     {
         rv = pthread_mutex_unlock(&lock->mutex);
-        PR_ASSERT(0 == rv);
+        Assert(0 == rv);
     }
     else pt_PostNotifies(lock, PR_TRUE);
 
@@ -280,9 +281,9 @@ static void pt_PostNotifyToCvar(PRCondVar *cvar, PRBool broadcast)
     PRIntn index = 0;
     _PT_Notified *notified = &cvar->lock->notified;
 
-    PR_ASSERT(PR_TRUE == cvar->lock->locked);
-    PR_ASSERT(pthread_equal(cvar->lock->owner, pthread_self()));
-    PR_ASSERT(_PT_PTHREAD_MUTEX_IS_LOCKED(cvar->lock->mutex));
+    Assert(PR_TRUE == cvar->lock->locked);
+    Assert(pthread_equal(cvar->lock->owner, pthread_self()));
+    Assert(_PT_PTHREAD_MUTEX_IS_LOCKED(cvar->lock->mutex));
 
     while (1)
     {
@@ -313,18 +314,18 @@ static void pt_PostNotifyToCvar(PRCondVar *cvar, PRBool broadcast)
     notified->length += 1;
 
 finished:
-    PR_ASSERT(PR_TRUE == cvar->lock->locked);
-    PR_ASSERT(pthread_equal(cvar->lock->owner, pthread_self()));
+    Assert(PR_TRUE == cvar->lock->locked);
+    Assert(pthread_equal(cvar->lock->owner, pthread_self()));
 }  /* pt_PostNotifyToCvar */
 
 PR_IMPLEMENT(PRCondVar*) PR_NewCondVar(PRLock *lock)
 {
     PRCondVar *cv = PR_NEW(PRCondVar);
-    PR_ASSERT(lock != NULL);
+    Assert(lock != NULL);
     if (cv != NULL)
     {
         int rv = _PT_PTHREAD_COND_INIT(cv->cv, _pt_cvar_attr); 
-        PR_ASSERT(0 == rv);
+        Assert(0 == rv);
         cv->lock = lock;
         cv->notify_pending = 0;
 #if defined(DEBUG)
@@ -338,7 +339,7 @@ PR_IMPLEMENT(void) PR_DestroyCondVar(PRCondVar *cvar)
 {
     if (0 > ASMAtomicDecU32(&cvar->notify_pending))
     {
-        PRIntn rv = pthread_cond_destroy(&cvar->cv); PR_ASSERT(0 == rv);
+        PRIntn rv = pthread_cond_destroy(&cvar->cv); Assert(0 == rv);
 #if defined(DEBUG)
         memset(cvar, 0xaf, sizeof(PRCondVar));
         pt_debug.cvars_destroyed += 1;
@@ -352,12 +353,12 @@ PR_IMPLEMENT(PRStatus) PR_WaitCondVar(PRCondVar *cvar, PRIntervalTime timeout)
     PRIntn rv;
     PRThread *thred = PR_CurrentThread();
 
-    PR_ASSERT(cvar != NULL);
+    Assert(cvar != NULL);
     /* We'd better be locked */
-    PR_ASSERT(_PT_PTHREAD_MUTEX_IS_LOCKED(cvar->lock->mutex));
-    PR_ASSERT(PR_TRUE == cvar->lock->locked);
+    Assert(_PT_PTHREAD_MUTEX_IS_LOCKED(cvar->lock->mutex));
+    Assert(PR_TRUE == cvar->lock->locked);
     /* and it better be by us */
-    PR_ASSERT(pthread_equal(cvar->lock->owner, pthread_self()));
+    Assert(pthread_equal(cvar->lock->owner, pthread_self()));
 
     if (_PT_THREAD_INTERRUPTED(thred)) goto aborted;
 
@@ -388,11 +389,11 @@ PR_IMPLEMENT(PRStatus) PR_WaitCondVar(PRCondVar *cvar, PRIntervalTime timeout)
         rv = pt_TimedWait(&cvar->cv, &cvar->lock->mutex, timeout);
 
     /* We just got the lock back - this better be empty */
-    PR_ASSERT(PR_FALSE == cvar->lock->locked);
+    Assert(PR_FALSE == cvar->lock->locked);
     cvar->lock->locked = PR_TRUE;
     cvar->lock->owner = pthread_self();
 
-    PR_ASSERT(0 == cvar->lock->notified.length);
+    Assert(0 == cvar->lock->notified.length);
     thred->waiting = NULL;  /* and now we're not */
     if (_PT_THREAD_INTERRUPTED(thred)) goto aborted;
     if (rv != 0)
@@ -410,14 +411,14 @@ aborted:
 
 PR_IMPLEMENT(PRStatus) PR_NotifyCondVar(PRCondVar *cvar)
 {
-    PR_ASSERT(cvar != NULL);   
+    Assert(cvar != NULL);   
     pt_PostNotifyToCvar(cvar, PR_FALSE);
     return PR_SUCCESS;
 }  /* PR_NotifyCondVar */
 
 PR_IMPLEMENT(PRStatus) PR_NotifyAllCondVar(PRCondVar *cvar)
 {
-    PR_ASSERT(cvar != NULL);
+    Assert(cvar != NULL);
     pt_PostNotifyToCvar(cvar, PR_TRUE);
     return PR_SUCCESS;
 }  /* PR_NotifyAllCondVar */
@@ -446,13 +447,13 @@ PR_IMPLEMENT(PRMonitor*) PR_NewMonitor(void)
     {
         int rv;
         rv = _PT_PTHREAD_MUTEX_INIT(mon->lock.mutex, _pt_mattr); 
-        PR_ASSERT(0 == rv);
+        Assert(0 == rv);
 
         _PT_PTHREAD_INVALIDATE_THR_HANDLE(mon->owner);
 
         mon->cvar = cvar;
         rv = _PT_PTHREAD_COND_INIT(mon->cvar->cv, _pt_cvar_attr); 
-        PR_ASSERT(0 == rv);
+        Assert(0 == rv);
         mon->entryCount = 0;
         mon->cvar->lock = &mon->lock;
         if (0 != rv)
@@ -476,9 +477,9 @@ PR_IMPLEMENT(PRMonitor*) PR_NewNamedMonitor(const char* name)
 PR_IMPLEMENT(void) PR_DestroyMonitor(PRMonitor *mon)
 {
     int rv;
-    PR_ASSERT(mon != NULL);
+    Assert(mon != NULL);
     PR_DestroyCondVar(mon->cvar);
-    rv = pthread_mutex_destroy(&mon->lock.mutex); PR_ASSERT(0 == rv);
+    rv = pthread_mutex_destroy(&mon->lock.mutex); Assert(0 == rv);
 #if defined(DEBUG)
         memset(mon, 0xaf, sizeof(PRMonitor));
 #endif
@@ -501,7 +502,7 @@ PR_IMPLEMENT(void) PR_EnterMonitor(PRMonitor *mon)
 {
     pthread_t self = pthread_self();
 
-    PR_ASSERT(mon != NULL);
+    Assert(mon != NULL);
     /*
      * This is safe only if mon->owner (a pthread_t) can be
      * read in one instruction.  Perhaps mon->owner should be
@@ -511,8 +512,8 @@ PR_IMPLEMENT(void) PR_EnterMonitor(PRMonitor *mon)
     {
         PR_Lock(&mon->lock);
         /* and now I have the lock */
-        PR_ASSERT(0 == mon->entryCount);
-        PR_ASSERT(_PT_PTHREAD_THR_HANDLE_IS_INVALID(mon->owner));
+        Assert(0 == mon->entryCount);
+        Assert(_PT_PTHREAD_THR_HANDLE_IS_INVALID(mon->owner));
         _PT_PTHREAD_COPY_THR_HANDLE(self, mon->owner);
     }
     mon->entryCount += 1;
@@ -522,16 +523,16 @@ PR_IMPLEMENT(PRStatus) PR_ExitMonitor(PRMonitor *mon)
 {
     pthread_t self = pthread_self();
 
-    PR_ASSERT(mon != NULL);
+    Assert(mon != NULL);
     /* The lock better be that - locked */
-    PR_ASSERT(_PT_PTHREAD_MUTEX_IS_LOCKED(mon->lock.mutex));
+    Assert(_PT_PTHREAD_MUTEX_IS_LOCKED(mon->lock.mutex));
     /* we'd better be the owner */
-    PR_ASSERT(pthread_equal(mon->owner, self));
+    Assert(pthread_equal(mon->owner, self));
     if (!pthread_equal(mon->owner, self))
         return PR_FAILURE;
 
     /* if it's locked and we have it, then the entries should be > 0 */
-    PR_ASSERT(mon->entryCount > 0);
+    Assert(mon->entryCount > 0);
     mon->entryCount -= 1;  /* reduce by one */
     if (mon->entryCount == 0)
     {
@@ -548,13 +549,13 @@ PR_IMPLEMENT(PRStatus) PR_Wait(PRMonitor *mon, PRIntervalTime timeout)
     PRInt16 saved_entries;
     pthread_t saved_owner;
 
-    PR_ASSERT(mon != NULL);
+    Assert(mon != NULL);
     /* we'd better be locked */
-    PR_ASSERT(_PT_PTHREAD_MUTEX_IS_LOCKED(mon->lock.mutex));
+    Assert(_PT_PTHREAD_MUTEX_IS_LOCKED(mon->lock.mutex));
     /* and the entries better be positive */
-    PR_ASSERT(mon->entryCount > 0);
+    Assert(mon->entryCount > 0);
     /* and it better be by us */
-    PR_ASSERT(pthread_equal(mon->owner, pthread_self()));
+    Assert(pthread_equal(mon->owner, pthread_self()));
 
     /* tuck these away 'till later */
     saved_entries = mon->entryCount; 
@@ -573,13 +574,13 @@ PR_IMPLEMENT(PRStatus) PR_Wait(PRMonitor *mon, PRIntervalTime timeout)
 
 PR_IMPLEMENT(PRStatus) PR_Notify(PRMonitor *mon)
 {
-    PR_ASSERT(NULL != mon);
+    Assert(NULL != mon);
     /* we'd better be locked */
-    PR_ASSERT(_PT_PTHREAD_MUTEX_IS_LOCKED(mon->lock.mutex));
+    Assert(_PT_PTHREAD_MUTEX_IS_LOCKED(mon->lock.mutex));
     /* and the entries better be positive */
-    PR_ASSERT(mon->entryCount > 0);
+    Assert(mon->entryCount > 0);
     /* and it better be by us */
-    PR_ASSERT(pthread_equal(mon->owner, pthread_self()));
+    Assert(pthread_equal(mon->owner, pthread_self()));
 
     pt_PostNotifyToCvar(mon->cvar, PR_FALSE);
 
@@ -588,13 +589,13 @@ PR_IMPLEMENT(PRStatus) PR_Notify(PRMonitor *mon)
 
 PR_IMPLEMENT(PRStatus) PR_NotifyAll(PRMonitor *mon)
 {
-    PR_ASSERT(mon != NULL);
+    Assert(mon != NULL);
     /* we'd better be locked */
-    PR_ASSERT(_PT_PTHREAD_MUTEX_IS_LOCKED(mon->lock.mutex));
+    Assert(_PT_PTHREAD_MUTEX_IS_LOCKED(mon->lock.mutex));
     /* and the entries better be positive */
-    PR_ASSERT(mon->entryCount > 0);
+    Assert(mon->entryCount > 0);
     /* and it better be by us */
-    PR_ASSERT(pthread_equal(mon->owner, pthread_self()));
+    Assert(pthread_equal(mon->owner, pthread_self()));
 
     pt_PostNotifyToCvar(mon->cvar, PR_TRUE);
 
