@@ -4462,7 +4462,7 @@ ifdef VBOX_SIGNING_MODE
   VBOX_SIGN_ADDITIONS   ?= 1
   ## Set if we should include the legacy timestamp CA.
   ifndef VBOX_WITH_VBOX_LEGACY_TS_CA
-   if "$(findstring 55287c0d517e273696d67c690dd5d9f0a1d6d725,$(VBOX_TSA_URL_ARGS))" != ""
+   if "$(findstring 805af82410a4827b71f59479a222670391bec2d5,$(VBOX_TSA_URL_ARGS))" != ""
     VBOX_WITH_VBOX_LEGACY_TS_CA = 1
    endif
   endif
