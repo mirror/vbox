@@ -47,6 +47,8 @@
 #include <pthread.h>
 #include <sys/time.h>
 
+#include <iprt/asm.h>
+
 #ifdef VBOX
 /* From the removed obsolete/prsem.h */
 typedef struct PRSemaphore PRSemaphore;
@@ -132,13 +134,13 @@ static void pt_PostNotifies(PRLock *lock, PRBool unlock)
             }
 #if defined(DEBUG)
             pt_debug.cvars_notified += 1;
-            if (0 > PR_AtomicDecrement(&cv->notify_pending))
+            if (0 > ASMAtomicDecU32(&cv->notify_pending))
             {
                 pt_debug.delayed_cv_deletes += 1;
                 PR_DestroyCondVar(cv);
             }
 #else  /* defined(DEBUG) */
-            if (0 > PR_AtomicDecrement(&cv->notify_pending))
+            if (0 > ASMAtomicDecU32(&cv->notify_pending))
                 PR_DestroyCondVar(cv);
 #endif  /* defined(DEBUG) */
         }
@@ -305,7 +307,7 @@ static void pt_PostNotifyToCvar(PRCondVar *cvar, PRBool broadcast)
     }
 
     /* A brand new entry in the array */
-    (void)PR_AtomicIncrement(&cvar->notify_pending);
+    (void)ASMAtomicIncU32(&cvar->notify_pending);
     notified->cv[index].times = (broadcast) ? -1 : 1;
     notified->cv[index].cv = cvar;
     notified->length += 1;
@@ -334,7 +336,7 @@ PR_IMPLEMENT(PRCondVar*) PR_NewCondVar(PRLock *lock)
 
 PR_IMPLEMENT(void) PR_DestroyCondVar(PRCondVar *cvar)
 {
-    if (0 > PR_AtomicDecrement(&cvar->notify_pending))
+    if (0 > ASMAtomicDecU32(&cvar->notify_pending))
     {
         PRIntn rv = pthread_cond_destroy(&cvar->cv); PR_ASSERT(0 == rv);
 #if defined(DEBUG)

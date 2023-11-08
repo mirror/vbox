@@ -49,6 +49,7 @@
 #include <string.h>
 #include <signal.h>
 
+#include <iprt/asm.h>
 #include <iprt/thread.h>
 #include <iprt/mem.h>
 #include <iprt/asm.h>
@@ -497,10 +498,10 @@ PR_IMPLEMENT(PRStatus) PR_Interrupt(PRThread *thred)
     if ((NULL != cv) && !thred->interrupt_blocked)
     {
         PRIntn rv;
-        (void)PR_AtomicIncrement(&cv->notify_pending);
+        ASMAtomicIncU32(&cv->notify_pending);
         rv = pthread_cond_broadcast(&cv->cv);
         PR_ASSERT(0 == rv);
-        if (0 > PR_AtomicDecrement(&cv->notify_pending))
+        if (0 > ASMAtomicDecU32(&cv->notify_pending))
             PR_DestroyCondVar(cv);
     }
     return PR_SUCCESS;
