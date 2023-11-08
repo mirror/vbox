@@ -51,9 +51,9 @@
 
 #include "private/pprthred.h"
 
+#include <iprt/assert.h>
 #include <iprt/errcore.h>
-
-static PRLogModuleInfo *event_lm = NULL;
+#include <VBox/log.h>
 
 /*******************************************************************************
  * Private Stuff
@@ -116,9 +116,6 @@ static PLEventQueue * _pl_CreateEventQueue(const char *name,
     PRStatus err;
     PLEventQueue* self = NULL;
     PRMonitor* mon = NULL;
-
-    if (event_lm == NULL)
-        event_lm = PR_NewLogModule("event");
 
     self = PR_NEWZAP(PLEventQueue);
     if (self == NULL) return NULL;
@@ -247,7 +244,7 @@ PL_PostSynchronousEvent(PLEventQueue* self, PLEvent* event)
     if (self == NULL)
         return NULL;
 
-    PR_ASSERT(event != NULL);
+    Assert(event != NULL);
 
     if (PR_GetCurrentThread() == self->handlerThread) {
         /* Handle the case where the thread requesting the event handling
@@ -383,10 +380,9 @@ PL_MapEvents(PLEventQueue* self, PLEventFunProc fun, void* data)
 static void PR_CALLBACK
 _pl_DestroyEventForOwner(PLEvent* event, void* owner, PLEventQueue* queue)
 {
-    PR_ASSERT(PR_GetMonitorEntryCount(queue->monitor) > 0);
+    Assert(PR_GetMonitorEntryCount(queue->monitor) > 0);
     if (event->owner == owner) {
-        PR_LOG(event_lm, PR_LOG_DEBUG,
-               ("$$$ \tdestroying event %0x for owner %0x", event, owner));
+        Log(("$$$ \tdestroying event %0x for owner %0x", event, owner));
         PL_DequeueEvent(event, queue);
 
         if (event->synchronousResult == (void*)PR_TRUE) {
@@ -401,8 +397,7 @@ _pl_DestroyEventForOwner(PLEvent* event, void* owner, PLEventQueue* queue)
         }
     }
     else {
-        PR_LOG(event_lm, PR_LOG_DEBUG,
-               ("$$$ \tskipping event %0x for owner %0x", event, owner));
+        Log(("$$$ \tskipping event %0x for owner %0x", event, owner));
     }
 }
 
@@ -412,15 +407,14 @@ PL_RevokeEvents(PLEventQueue* self, void* owner)
     if (self == NULL)
         return;
 
-    PR_LOG(event_lm, PR_LOG_DEBUG,
-         ("$$$ revoking events for owner %0x", owner));
+    Log(("$$$ revoking events for owner %0x", owner));
 
     /*
     ** First we enter the monitor so that no one else can post any events
     ** to the queue:
     */
     PR_EnterMonitor(self->monitor);
-    PR_LOG(event_lm, PR_LOG_DEBUG, ("$$$ owner %0x, entered monitor", owner));
+    Log(("$$$ owner %0x, entered monitor", owner));
 
     /*
     ** Discard any pending events for this owner:
@@ -433,15 +427,14 @@ PL_RevokeEvents(PLEventQueue* self, void* owner)
         while (qp != &self->queue) {
             PLEvent* event = PR_EVENT_PTR(qp);
             qp = qp->next;
-            PR_ASSERT(event->owner != owner);
+            Assert(event->owner != owner);
         }
     }
 #endif /* DEBUG */
 
     PR_ExitMonitor(self->monitor);
 
-    PR_LOG(event_lm, PR_LOG_DEBUG,
-           ("$$$ revoking events for owner %0x", owner));
+    Log(("$$$ revoking events for owner %0x", owner));
 }
 
 static PRInt32
@@ -492,9 +485,9 @@ PL_ProcessPendingEvents(PLEventQueue* self)
         if (event == NULL)
             break;
 
-        PR_LOG(event_lm, PR_LOG_DEBUG, ("$$$ processing event"));
+        Log(("$$$ processing event"));
         PL_HandleEvent(event);
-        PR_LOG(event_lm, PR_LOG_DEBUG, ("$$$ done processing event"));
+        Log(("$$$ done processing event"));
     }
 
     PR_EnterMonitor(self->monitor);
@@ -552,7 +545,7 @@ PL_HandleEvent(PLEvent* self)
         return;
 
     /* This event better not be on an event queue anymore. */
-    PR_ASSERT(PR_CLIST_IS_EMPTY(&self->link));
+    Assert(PR_CLIST_IS_EMPTY(&self->link));
 
     result = self->handler(self);
     if (NULL != self->synchronousResult) {
@@ -576,7 +569,7 @@ PL_DestroyEvent(PLEvent* self)
         return;
 
     /* This event better not be on an event queue anymore. */
-    PR_ASSERT(PR_CLIST_IS_EMPTY(&self->link));
+    Assert(PR_CLIST_IS_EMPTY(&self->link));
 
     if(self->condVar != NIL_RTSEMEVENT)
       RTSemEventDestroy(self->condVar);
@@ -596,11 +589,11 @@ PL_DequeueEvent(PLEvent* self, PLEventQueue* queue)
        client has put it in the queue, they have no idea whether it's
        been processed and destroyed or not. */
 
-    PR_ASSERT(queue->handlerThread == PR_GetCurrentThread());
+    Assert(queue->handlerThread == PR_GetCurrentThread());
 
     PR_EnterMonitor(queue->monitor);
 
-    PR_ASSERT(!PR_CLIST_IS_EMPTY(&self->link));
+    Assert(!PR_CLIST_IS_EMPTY(&self->link));
 
 #if 0
     /*  I do not think that we need to do this anymore.
@@ -644,7 +637,7 @@ PL_WaitForEvent(PLEventQueue* self)
 
     while ((event = PL_GetEvent(self)) == NULL) {
         PRStatus err;
-        PR_LOG(event_lm, PR_LOG_DEBUG, ("$$$ waiting for event"));
+        Log(("$$$ waiting for event"));
         err = PR_Wait(mon, PR_INTERVAL_NO_TIMEOUT);
         if ((err == PR_FAILURE)
             && (PR_PENDING_INTERRUPT_ERROR == PR_GetError())) break;
@@ -667,9 +660,9 @@ PL_EventLoop(PLEventQueue* self)
             return;
         }
 
-        PR_LOG(event_lm, PR_LOG_DEBUG, ("$$$ processing event"));
+        Log(("$$$ processing event"));
         PL_HandleEvent(event);
-        PR_LOG(event_lm, PR_LOG_DEBUG, ("$$$ done processing event"));
+        Log(("$$$ done processing event"));
     }
 }
 
@@ -759,9 +752,7 @@ _pl_NativeNotify(PLEventQueue* self)
         return PR_SUCCESS;
 # endif
 
-    PR_LOG(event_lm, PR_LOG_DEBUG,
-           ("_pl_NativeNotify: self=%p",
-            self));
+    Log(("_pl_NativeNotify: self=%p", self));
     count = write(self->eventPipe[1], buf, 1);
     if (count == 1)
         return PR_SUCCESS;
@@ -788,9 +779,7 @@ _pl_AcknowledgeNativeNotify(PLEventQueue* self)
 
     PRInt32 count;
     unsigned char c;
-    PR_LOG(event_lm, PR_LOG_DEBUG,
-            ("_pl_AcknowledgeNativeNotify: self=%p",
-             self));
+    Log(("_pl_AcknowledgeNativeNotify: self=%p", self));
     /* consume the byte NativeNotify put in our pipe: */
     count = read(self->eventPipe[0], &c, 1);
     if ((count == 1) && (c == NOTIFY_TOKEN))
@@ -864,7 +853,7 @@ static void _md_CreateEventQueue( PLEventQueue *eventQueue )
 
     /* make a run loop source */
     eventQueue->mRunLoopSource = CFRunLoopSourceCreate(kCFAllocatorDefault, 0 /* order */, &sourceContext);
-    PR_ASSERT(eventQueue->mRunLoopSource);
+    Assert(eventQueue->mRunLoopSource);
 
     eventQueue->mMainRunLoop = CFRunLoopGetCurrent();
     CFRetain(eventQueue->mMainRunLoop);
@@ -912,8 +901,7 @@ PL_ProcessEventsBeforeID(PLEventQueue *aSelf, unsigned long aID)
      * number of events currently in the queue
      */
     fullCount = _pl_GetEventCount(aSelf);
-    PR_LOG(event_lm, PR_LOG_DEBUG,
-           ("$$$ fullCount is %d id is %ld\n", fullCount, aID));
+    Log(("$$$ fullCount is %d id is %ld\n", fullCount, aID));
 
     if (fullCount == 0) {
         aSelf->processingEvents = PR_FALSE;
@@ -929,16 +917,15 @@ PL_ProcessEventsBeforeID(PLEventQueue *aSelf, unsigned long aID)
         event = PR_EVENT_PTR(aSelf->queue.next);
         if (event == NULL)
             break;
-        PR_LOG(event_lm, PR_LOG_DEBUG, ("$$$ processing event %ld\n",
-                                        event->id));
+        Log(("$$$ processing event %ld\n", event->id));
         if (event->id >= aID) {
-            PR_LOG(event_lm, PR_LOG_DEBUG, ("$$$ skipping event and breaking"));
+            Log(("$$$ skipping event and breaking"));
             break;
         }
 
         event = PL_GetEvent(aSelf);
         PL_HandleEvent(event);
-        PR_LOG(event_lm, PR_LOG_DEBUG, ("$$$ done processing event"));
+        Log(("$$$ done processing event"));
         count++;
     }
 
