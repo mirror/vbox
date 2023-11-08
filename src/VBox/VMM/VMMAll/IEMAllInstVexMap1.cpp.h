@@ -3771,13 +3771,12 @@ FNIEMOP_DEF(iemOp_vzeroupperv__vzeroallv)
          */
         IEMOP_MNEMONIC(vzeroall, "vzeroall");
         IEM_MC_BEGIN(0, 1, IEM_MC_F_NOT_286_OR_OLDER, 0);
-        IEM_MC_LOCAL(uint32_t,  uZero);
 
         IEMOP_HLP_DONE_VEX_DECODING_NO_VVVV_EX(fAvx);
         IEM_MC_MAYBE_RAISE_AVX_RELATED_XCPT();
         IEM_MC_ACTUALIZE_AVX_STATE_FOR_CHANGE();
 
-        IEM_MC_ASSIGN(uZero, 0);
+        IEM_MC_LOCAL_CONST(uint32_t, uZero, 0);
         IEM_MC_STORE_YREG_U32_ZX_VLMAX(0, uZero);
         IEM_MC_STORE_YREG_U32_ZX_VLMAX(1, uZero);
         IEM_MC_STORE_YREG_U32_ZX_VLMAX(2, uZero);
@@ -4289,12 +4288,11 @@ FNIEMOP_DEF_1(iemOp_VGrp15_vstmxcsr,  uint8_t, bRm)
 {
     IEMOP_MNEMONIC1(VEX_M_MEM, VSTMXCSR, vstmxcsr, Md_WO, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZES | IEMOPHINT_VEX_L_ZERO);
     IEM_MC_BEGIN(2, 0, IEM_MC_F_NOT_286_OR_OLDER, 0);
-    IEM_MC_ARG(uint8_t,         iEffSeg,                                 0);
-    IEM_MC_ARG(RTGCPTR,         GCPtrEff,                                1);
+    IEM_MC_ARG(RTGCPTR,         GCPtrEff,                               1);
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm, 0);
     IEMOP_HLP_DONE_VEX_DECODING_L0_AND_NO_VVVV_EX(fAvx);
     IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
-    IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+    IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/ pVCpu->iem.s.iEffSeg,    0);
     IEM_MC_CALL_CIMPL_2(IEM_CIMPL_F_FPU, iemCImpl_vstmxcsr, iEffSeg, GCPtrEff);
     IEM_MC_END();
 }

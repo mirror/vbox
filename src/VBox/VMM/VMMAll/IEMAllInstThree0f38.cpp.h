@@ -1317,15 +1317,14 @@ FNIEMOP_DEF(iemOp_invept_Gy_Mdq)
         if (pVCpu->iem.s.enmEffOpSize == IEMMODE_64BIT)
         {
             IEM_MC_BEGIN(3, 0, IEM_MC_F_64BIT, 0);
-            IEM_MC_ARG(uint8_t,  iEffSeg,         0);
-            IEM_MC_ARG(RTGCPTR,  GCPtrInveptDesc, 1);
-            IEM_MC_ARG(uint64_t, uInveptType,     2);
-            IEM_MC_FETCH_GREG_U64(uInveptType, IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_ARG(RTGCPTR,         GCPtrInveptDesc,                        1);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrInveptDesc, bRm, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEMOP_HLP_IN_VMX_OPERATION("invept", kVmxVDiag_Invept);
             IEMOP_HLP_VMX_INSTR(       "invept", kVmxVDiag_Invept);
-            IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+            IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/ pVCpu->iem.s.iEffSeg,    0);
+            IEM_MC_ARG(uint64_t,        uInveptType,                            2);
+            IEM_MC_FETCH_GREG_U64(uInveptType, IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_STATUS_FLAGS,
                                 iemCImpl_invept, iEffSeg, GCPtrInveptDesc, uInveptType);
             IEM_MC_END();
@@ -1333,15 +1332,14 @@ FNIEMOP_DEF(iemOp_invept_Gy_Mdq)
         else
         {
             IEM_MC_BEGIN(3, 0, IEM_MC_F_NOT_286_OR_OLDER, 0);
-            IEM_MC_ARG(uint8_t,  iEffSeg,         0);
-            IEM_MC_ARG(RTGCPTR,  GCPtrInveptDesc, 1);
-            IEM_MC_ARG(uint32_t, uInveptType,     2);
-            IEM_MC_FETCH_GREG_U32(uInveptType, IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_ARG(RTGCPTR,         GCPtrInveptDesc,                        1);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrInveptDesc, bRm, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEMOP_HLP_IN_VMX_OPERATION("invept", kVmxVDiag_Invept);
             IEMOP_HLP_VMX_INSTR(       "invept", kVmxVDiag_Invept);
-            IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+            IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/ pVCpu->iem.s.iEffSeg,    0);
+            IEM_MC_ARG(uint32_t,        uInveptType,                            2);
+            IEM_MC_FETCH_GREG_U32(uInveptType, IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_STATUS_FLAGS,
                                 iemCImpl_invept, iEffSeg, GCPtrInveptDesc, uInveptType);
             IEM_MC_END();
@@ -1368,15 +1366,14 @@ FNIEMOP_DEF(iemOp_invvpid_Gy_Mdq)
         if (pVCpu->iem.s.enmEffOpSize == IEMMODE_64BIT)
         {
             IEM_MC_BEGIN(3, 0, IEM_MC_F_64BIT, 0);
-            IEM_MC_ARG(uint8_t,  iEffSeg,          0);
-            IEM_MC_ARG(RTGCPTR,  GCPtrInvvpidDesc, 1);
-            IEM_MC_ARG(uint64_t, uInvvpidType,     2);
-            IEM_MC_FETCH_GREG_U64(uInvvpidType, IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_ARG(RTGCPTR,         GCPtrInvvpidDesc,                       1);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrInvvpidDesc, bRm, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEMOP_HLP_IN_VMX_OPERATION("invvpid", kVmxVDiag_Invvpid);
             IEMOP_HLP_VMX_INSTR("invvpid", kVmxVDiag_Invvpid);
-            IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+            IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/ pVCpu->iem.s.iEffSeg,    0);
+            IEM_MC_ARG(uint64_t,        uInvvpidType,                           2);
+            IEM_MC_FETCH_GREG_U64(uInvvpidType, IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_STATUS_FLAGS,
                                 iemCImpl_invvpid, iEffSeg, GCPtrInvvpidDesc, uInvvpidType);
             IEM_MC_END();
@@ -1384,15 +1381,14 @@ FNIEMOP_DEF(iemOp_invvpid_Gy_Mdq)
         else
         {
             IEM_MC_BEGIN(3, 0, IEM_MC_F_NOT_286_OR_OLDER, 0);
-            IEM_MC_ARG(uint8_t,  iEffSeg,          0);
-            IEM_MC_ARG(RTGCPTR,  GCPtrInvvpidDesc, 1);
-            IEM_MC_ARG(uint32_t, uInvvpidType,     2);
-            IEM_MC_FETCH_GREG_U32(uInvvpidType, IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_ARG(RTGCPTR,         GCPtrInvvpidDesc,                       1);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrInvvpidDesc, bRm, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEMOP_HLP_IN_VMX_OPERATION("invvpid", kVmxVDiag_Invvpid);
             IEMOP_HLP_VMX_INSTR("invvpid", kVmxVDiag_Invvpid);
-            IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+            IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/ pVCpu->iem.s.iEffSeg,    0);
+            IEM_MC_ARG(uint32_t,        uInvvpidType,                           2);
+            IEM_MC_FETCH_GREG_U32(uInvvpidType, IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT | IEM_CIMPL_F_STATUS_FLAGS,
                                 iemCImpl_invvpid, iEffSeg, GCPtrInvvpidDesc, uInvvpidType);
             IEM_MC_END();
@@ -1417,26 +1413,24 @@ FNIEMOP_DEF(iemOp_invpcid_Gy_Mdq)
         if (pVCpu->iem.s.enmEffOpSize == IEMMODE_64BIT)
         {
             IEM_MC_BEGIN(3, 0, IEM_MC_F_64BIT, 0);
-            IEM_MC_ARG(uint8_t,  iEffSeg,          0);
-            IEM_MC_ARG(RTGCPTR,  GCPtrInvpcidDesc, 1);
-            IEM_MC_ARG(uint64_t, uInvpcidType,     2);
-            IEM_MC_FETCH_GREG_U64(uInvpcidType, IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_ARG(RTGCPTR,         GCPtrInvpcidDesc,                       1);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrInvpcidDesc, bRm, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+            IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/ pVCpu->iem.s.iEffSeg,    0);
+            IEM_MC_ARG(uint64_t,        uInvpcidType,                           2);
+            IEM_MC_FETCH_GREG_U64(uInvpcidType, IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT, iemCImpl_invpcid, iEffSeg, GCPtrInvpcidDesc, uInvpcidType);
             IEM_MC_END();
         }
         else
         {
             IEM_MC_BEGIN(3, 0, IEM_MC_F_NOT_286_OR_OLDER, 0);
-            IEM_MC_ARG(uint8_t,  iEffSeg,          0);
-            IEM_MC_ARG(RTGCPTR,  GCPtrInvpcidDesc, 1);
-            IEM_MC_ARG(uint32_t, uInvpcidType,     2);
-            IEM_MC_FETCH_GREG_U32(uInvpcidType, IEM_GET_MODRM_REG(pVCpu, bRm));
+            IEM_MC_ARG(RTGCPTR,         GCPtrInvpcidDesc,                       1);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrInvpcidDesc, bRm, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+            IEM_MC_ARG_CONST(uint8_t,   iEffSeg, /*=*/ pVCpu->iem.s.iEffSeg,    0);
+            IEM_MC_ARG(uint32_t,        uInvpcidType,                           2);
+            IEM_MC_FETCH_GREG_U32(uInvpcidType, IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_CALL_CIMPL_3(IEM_CIMPL_F_VMEXIT, iemCImpl_invpcid, iEffSeg, GCPtrInvpcidDesc, uInvpcidType);
             IEM_MC_END();
         }
