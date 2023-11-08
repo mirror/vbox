@@ -82,6 +82,7 @@
 #endif
 
 #include "IEMThreadedFunctions.h"
+#include "IEMN8veRecompiler.h" /* For a_fGstShwFlush and iemThreadedRecompilerMcDeferToCImpl0. */
 
 
 /*
@@ -301,16 +302,17 @@
  */
 #undef IEM_MC_DEFER_TO_CIMPL_0_RET
 #define IEM_MC_DEFER_TO_CIMPL_0_RET(a_fFlags, a_fGstShwFlush, a_pfnCImpl) \
-    return iemThreadedRecompilerMcDeferToCImpl0(pVCpu, a_fFlags, a_pfnCImpl)
+    return iemThreadedRecompilerMcDeferToCImpl0(pVCpu, a_fFlags, a_fGstShwFlush, a_pfnCImpl)
 
-DECLINLINE(VBOXSTRICTRC) iemThreadedRecompilerMcDeferToCImpl0(PVMCPUCC pVCpu, uint32_t fFlags, PFNIEMCIMPL0 pfnCImpl)
+DECLINLINE(VBOXSTRICTRC)
+iemThreadedRecompilerMcDeferToCImpl0(PVMCPUCC pVCpu, uint32_t fFlags, uint64_t fGstShwFlush, PFNIEMCIMPL0 pfnCImpl)
 {
-    Log8(("CImpl0: %04x:%08RX64 LB %#x: %#x %p\n",
-          pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, IEM_GET_INSTR_LEN(pVCpu), fFlags, pfnCImpl));
+    Log8(("CImpl0: %04x:%08RX64 LB %#x: %#x %#RX64 %p\n",
+          pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, IEM_GET_INSTR_LEN(pVCpu), fFlags, fGstShwFlush, pfnCImpl));
     pVCpu->iem.s.fTbCurInstr = fFlags;
 
     IEM_MC2_BEGIN_EMIT_CALLS(fFlags & IEM_CIMPL_F_CHECK_IRQ_BEFORE);
-    IEM_MC2_EMIT_CALL_2(kIemThreadedFunc_BltIn_DeferToCImpl0, (uintptr_t)pfnCImpl, IEM_GET_INSTR_LEN(pVCpu));
+    IEM_MC2_EMIT_CALL_3(kIemThreadedFunc_BltIn_DeferToCImpl0, (uintptr_t)pfnCImpl, IEM_GET_INSTR_LEN(pVCpu), fGstShwFlush);
     if (   (fFlags & (IEM_CIMPL_F_MODE | IEM_CIMPL_F_VMEXIT))
         && !(fFlags & (IEM_CIMPL_F_END_TB | IEM_CIMPL_F_BRANCH_FAR)))
         IEM_MC2_EMIT_CALL_1(kIemThreadedFunc_BltIn_CheckMode, pVCpu->iem.s.fExec);

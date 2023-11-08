@@ -559,6 +559,11 @@ AssertCompileSizeAlignment(IEMTLB, 64);
 #define IEM_MC_F_MIN_CORE           IEM_MC_F_MIN_PENTIUM
 #define IEM_MC_F_64BIT              RT_BIT_32(6)
 #define IEM_MC_F_NOT_64BIT          RT_BIT_32(7)
+/** This is set by IEMAllN8vePython.py to indicate a variation without the
+ * flags-clearing-and-checking, when there is also a variation with that.
+ * @note Do not use this manully, it's only for python and for testing in
+ *       the native recompiler! */
+#define IEM_MC_F_WITHOUT_FLAGS      RT_BIT_32(8)
 /** @} */
 
 /** @name IEM_CIMPL_F_XXX - State change clues for CIMPL calls.

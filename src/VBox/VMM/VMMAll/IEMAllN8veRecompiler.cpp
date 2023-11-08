@@ -3486,9 +3486,13 @@ static int32_t iemNativeEmitCImplCall(PIEMRECOMPILERSTATE pReNative, uint32_t of
                                       uint64_t uParam0, uint64_t uParam1, uint64_t uParam2)
 {
     /*
-     * Flush stuff.
+     * Flush stuff. PC and EFlags are implictly flushed, the latter because we
+     * don't do with/without flags variants of defer-to-cimpl stuff at the moment.
      */
-    fGstShwFlush = iemNativeCImplFlagsToGuestShadowFlushMask(pReNative->fCImpl, fGstShwFlush | RT_BIT_64(kIemNativeGstReg_Pc));
+    fGstShwFlush = iemNativeCImplFlagsToGuestShadowFlushMask(pReNative->fCImpl,
+                                                             fGstShwFlush
+                                                             | RT_BIT_64(kIemNativeGstReg_Pc)
+                                                             | RT_BIT_64(kIemNativeGstReg_EFlags));
     iemNativeRegFlushGuestShadows(pReNative, fGstShwFlush);
 
     off = iemNativeRegMoveAndFreeAndFlushAtCall(pReNative, off, 4);
@@ -5564,9 +5568,10 @@ iemNativeEmitCallCImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
 #if defined(VBOXSTRICTRC_STRICT_ENABLED) && defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64)
     off = iemNativeEmitLoadGprByBpU32(pReNative, off, X86_GREG_xAX, IEMNATIVE_FP_OFF_IN_SHADOW_ARG0); /* rcStrict (see above) */
 #endif
-/** @todo Always flush EFLAGS if this is an xxF variation. */
-    iemNativeRegFlushGuestShadows(pReNative,
-                                  iemNativeCImplFlagsToGuestShadowFlushMask(pReNative->fCImpl, RT_BIT_64(kIemNativeGstReg_Pc)) );
+    uint64_t fGstShwFlush = iemNativeCImplFlagsToGuestShadowFlushMask(pReNative->fCImpl, RT_BIT_64(kIemNativeGstReg_Pc));
+    if (!(pReNative->fMc & IEM_MC_F_WITHOUT_FLAGS)) /** @todo We don't emit with-flags/without-flags variations for CIMPL calls.  */
+        fGstShwFlush |= RT_BIT_64(kIemNativeGstReg_EFlags);
+    iemNativeRegFlushGuestShadows(pReNative, fGstShwFlush);
 
     return iemNativeEmitCheckCallRetAndPassUp(pReNative, off, idxInstr);
 }
@@ -5946,11 +5951,10 @@ iemNativeEmitSubGregU32U64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t 
  */
 static IEM_DECL_IEMNATIVERECOMPFUNC_DEF(iemNativeRecompFunc_BltIn_DeferToCImpl0)
 {
-    PFNIEMCIMPL0 const pfnCImpl = (PFNIEMCIMPL0)(uintptr_t)pCallEntry->auParams[0];
-    uint8_t const      cbInstr  = (uint8_t)pCallEntry->auParams[1];
-    /** @todo Drop this crap hack?
-     *  We don't have the flush mask here so we we must pass UINT64_MAX. */
-    return iemNativeEmitCImplCall(pReNative, off, pCallEntry->idxInstr, UINT64_MAX, (uintptr_t)pfnCImpl, cbInstr, 0, 0, 0, 0);
+    PFNIEMCIMPL0 const pfnCImpl     = (PFNIEMCIMPL0)(uintptr_t)pCallEntry->auParams[0];
+    uint8_t const      cbInstr      = (uint8_t)pCallEntry->auParams[1];
+    uint64_t const     fGstShwFlush = (uint8_t)pCallEntry->auParams[2];
+    return iemNativeEmitCImplCall(pReNative, off, pCallEntry->idxInstr, fGstShwFlush, (uintptr_t)pfnCImpl, cbInstr, 0, 0, 0, 0);
 }
 
 

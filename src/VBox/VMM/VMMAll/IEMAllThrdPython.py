@@ -473,6 +473,12 @@ class ThreadedFunctionVariation(object):
             return '%s%s' % ( sName, self.sVariation, );
         return '%s_%s%s' % ( sName, self.oParent.oMcBlock.iInFunction, self.sVariation, );
 
+    def isWithFlagsCheckingAndClearingVariation(self):
+        """
+        Checks if this is a variation that checks and clears EFLAGS.
+        """
+        return self.sVariation in ThreadedFunctionVariation.kdVariationsWithEflagsCheckingAndClearing;
+
     #
     # Analysis and code morphing.
     #
@@ -1292,6 +1298,20 @@ class ThreadedFunction(object):
         """ Gets a dummy instance. """
         return ThreadedFunction(iai.McBlock('null', 999999999, 999999999,
                                             iai.DecoderFunction('null', 999999999, 'nil', ('','')), 999999999));
+
+    def hasWithFlagsCheckingAndClearingVariation(self):
+        """
+        Check if there is one or more with flags checking and clearing
+        variations for this threaded function.
+        """
+        for sVarWithFlags in ThreadedFunctionVariation.kdVariationsWithEflagsCheckingAndClearing:
+            if sVarWithFlags in self.dVariations:
+                return True;
+        return False;
+
+    #
+    # Analysis and code morphing.
+    #
 
     def raiseProblem(self, sMessage):
         """ Raises a problem. """
