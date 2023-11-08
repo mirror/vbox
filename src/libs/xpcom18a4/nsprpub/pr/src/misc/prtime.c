@@ -44,6 +44,7 @@
 
 #include "prinit.h"
 #include "prtime.h"
+#include "prlock.h"
 #include "prprf.h"
 #include "prlog.h"
 
@@ -552,7 +553,50 @@ PR_NormalizeTime(PRExplodedTime *time, PRTimeParamFn params)
 #define MT_safe_localtime localtime_r
 
 #else
-# error "VBox: Not supported"
+
+static PRLock *monitor = NULL;
+
+static struct tm *MT_safe_localtime(const time_t *clock, struct tm *result)
+{
+    struct tm *tmPtr;
+    int needLock = PR_Initialized();  /* We need to use a lock to protect
+                                       * against NSPR threads only when the
+                                       * NSPR thread system is activated. */
+
+    if (needLock) {
+        if (monitor == NULL) {
+            monitor = PR_NewLock();
+        }
+        PR_Lock(monitor);
+    }
+
+    /*
+     * Microsoft (all flavors) localtime() returns a NULL pointer if 'clock'
+     * represents a time before midnight January 1, 1970.  In
+     * that case, we also return a NULL pointer and the struct tm
+     * object pointed to by 'result' is not modified.
+     *
+     * Watcom C/C++ 11.0 localtime() treats time_t as unsigned long
+     * hence, does not recognize negative values of clock as pre-1/1/70.
+     * We have to manually check (WIN16 only) for negative value of
+     * clock and return NULL.
+     *
+     * With negative values of clock, emx returns the struct tm for
+     * clock plus ULONG_MAX. So we also have to check for the invalid
+     * structs returned for timezones west of Greenwich when clock == 0.
+     */
+    
+    tmPtr = localtime(clock);
+    if (tmPtr) {
+        *result = *tmPtr;
+    } else {
+        result = NULL;
+    }
+    if (needLock) PR_Unlock(monitor);
+
+    return result;
+}
+
 #endif  /* definition of MT_safe_localtime() */
 
 #if defined(XP_UNIX)
