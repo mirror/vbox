@@ -52,7 +52,6 @@
 #include "md/sunos4.h"  /* for strtoul */
 #endif
 #include "prprf.h"
-#include "prdtoa.h"
 #include "prerror.h"
 
 #include <iprt/assert.h>
