@@ -29,6 +29,7 @@
 #include <iprt/thread.h>
 
 #include <VBox/HostServices/GuestPropertySvc.h>
+#include <VBox/HostServices/VBoxClipboardSvc.h>
 
 #include "VBoxClient.h"
 #include "clipboard.h"
