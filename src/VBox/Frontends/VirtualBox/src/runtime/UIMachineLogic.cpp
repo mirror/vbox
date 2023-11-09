@@ -1488,6 +1488,10 @@ bool UIMachineLogic::eventFilter(QObject *pWatched, QEvent *pEvent)
                     /* Trigger callback synchronously for now! */
                     sltSwitchKeyboardLedsToGuestLeds();
 #endif /* !VBOX_WS_WIN */
+
+                    /* Notify guest about VM window now has input focus. */
+                    if (!uimachine()->notifyGuiFocusChange(true))
+                        LogRel(("GUI: Cannot notify guest about VM window in-focus event\n"));
                     break;
                 }
                 /* Handle *window deactivated* event: */
@@ -1495,6 +1499,10 @@ bool UIMachineLogic::eventFilter(QObject *pWatched, QEvent *pEvent)
                 {
                     /* We should restore lock states to *previous* known: */
                     sltSwitchKeyboardLedsToPreviousLeds();
+
+                    /* Notify guest about VM window has lost input focus. */
+                    if (!uimachine()->notifyGuiFocusChange(false))
+                        LogRel(("GUI: Cannot notify guest about VM window out-of-focus event\n"));
                     break;
                 }
                 /* Default: */

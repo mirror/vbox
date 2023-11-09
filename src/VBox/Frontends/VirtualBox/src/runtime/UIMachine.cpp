@@ -708,6 +708,11 @@ bool UIMachine::acquireGuestAdditionsRevision(ulong &uRevision)
     return uisession()->acquireGuestAdditionsRevision(uRevision);
 }
 
+bool UIMachine::notifyGuiFocusChange(bool fInfocus)
+{
+    return uisession()->notifyGuiFocusChange(fInfocus);
+}
+
 bool UIMachine::putScancode(LONG iCode)
 {
     return uisession()->putScancode(iCode);

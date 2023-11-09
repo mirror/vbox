@@ -89,6 +89,8 @@
 # include <iprt/ldr.h>
 #endif
 
+#include <VBox/GuestHost/clipboard-helper.h>
+
 /* VirtualBox interface declarations: */
 #include <VBox/com/VirtualBox.h>
 
@@ -1359,6 +1361,13 @@ bool UISession::acquireGuestAdditionsRevision(ulong &uRevision)
     else
         uRevision = uGARevision;
     return fSuccess;
+}
+
+bool UISession::notifyGuiFocusChange(bool fInfocus)
+{
+    CMachine comMachine = machine();
+    comMachine.SetGuestProperty(VBOX_GUI_FOCUS_CHANGE_GUEST_PROP_NAME, fInfocus ? "1" : "0", "RDONLYGUEST,TRANSIENT");
+    return comMachine.isOk();
 }
 
 bool UISession::acquireWhetherAudioAdapterPresent(bool &fPresent)

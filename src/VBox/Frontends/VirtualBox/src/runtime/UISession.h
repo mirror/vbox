@@ -403,6 +403,8 @@ public:
         bool acquireGuestAdditionsVersion(QString &strVersion);
         /** Acquires the guest addition's revision. */
         bool acquireGuestAdditionsRevision(ulong &uRevision);
+        /** Notifies GAs about VM window focus changes. */
+        bool notifyGuiFocusChange(bool fInfocus);
     /** @} */
 
     /** @name Audio stuff.
