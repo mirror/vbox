@@ -432,7 +432,6 @@ XPCOM_IDLFILES = \
 	xpcom/threads/nsIEventQueue.idl \
 	xpcom/threads/nsIEventTarget.idl \
 	xpcom/threads/nsIRunnable.idl \
-	xpcom/threads/nsIThread.idl \
 	xpcom/reflect/xptinfo/public/nsIInterfaceInfo.idl \
 	xpcom/reflect/xptinfo/public/nsIInterfaceInfoManager.idl \
 	xpcom/reflect/xptinfo/public/nsIXPTLoader.idl \

@@ -625,8 +625,7 @@ VBox-xpcom-threads_SOURCES = \
 	xpcom/threads/plevent.c \
 	xpcom/threads/nsAutoLock.cpp \
 	xpcom/threads/nsEventQueue.cpp \
-	xpcom/threads/nsEventQueueService.cpp \
-	xpcom/threads/nsThread.cpp
+	xpcom/threads/nsEventQueueService.cpp
 $(evalcall VBOX_XPCOM_X86,VBox-xpcom-threads)
 
 VBox-xpcom-xptinfo_TEMPLATE = XPComDll
@@ -1111,7 +1110,6 @@ VBOX_XPTFILES = $(addprefix $(PATH_TARGET)/VBox-xpcom-xpt-files/, \
 		nsIServiceManager.xpt \
 		nsIComponentManager.xpt \
 		nsICategoryManager.xpt \
-		nsIThread.xpt \
 		nsIRunnable.xpt \
 		nsIEventTarget.xpt \
 		nsIEventQueue.xpt \
