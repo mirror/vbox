@@ -67,6 +67,9 @@
 /** Program name. */
 static char *g_pszProgName;
 
+/** Unused: just for linking purposes. */
+unsigned g_cRespawn = 0;
+
 /** A session ID which will be specified in communication messages
  * with VBoxClient instance. */
 static uint32_t g_uSessionId = 0;
