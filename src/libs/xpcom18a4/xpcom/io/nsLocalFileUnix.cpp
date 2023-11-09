@@ -68,7 +68,6 @@
 #include "nsLocalFile.h"
 #include "nsIComponentManager.h"
 #include "nsXPIDLString.h"
-#include "prproces.h"
 #include "nsISimpleEnumerator.h"
 
 #include "nsNativeCharsetUtils.h"
