@@ -125,7 +125,8 @@ void UIUpdateSettingsEditor::retranslateUi()
 
 void UIUpdateSettingsEditor::handleFilterChange()
 {
-    fetchValue();
+    /* This stuff is for Expert mode only: */
+    m_pWidgetUpdateSettings->setVisible(m_fInExpertMode);
 }
 
 void UIUpdateSettingsEditor::sltHandleUpdateToggle(bool fEnabled)
@@ -308,25 +309,11 @@ void UIUpdateSettingsEditor::fetchValue()
     {
         m_pCheckBox->setChecked(m_guiValue.isCheckEnabled());
 
-        // Too tricky conditions .. update visibility for each button separately:
-        if (m_mapRadioButtons.value(KUpdateChannel_Stable))
-            m_mapRadioButtons.value(KUpdateChannel_Stable)
-                ->setVisible(   m_guiValue.updateChannel() == KUpdateChannel_Stable
-                             || m_guiValue.supportedUpdateChannels().contains(KUpdateChannel_Stable));
-        if (m_mapRadioButtons.value(KUpdateChannel_All))
-            m_mapRadioButtons.value(KUpdateChannel_All)
-                ->setVisible(   m_guiValue.updateChannel() == KUpdateChannel_All
-                             || m_guiValue.supportedUpdateChannels().contains(KUpdateChannel_All));
-        if (m_mapRadioButtons.value(KUpdateChannel_WithBetas))
-            m_mapRadioButtons.value(KUpdateChannel_WithBetas)
-                ->setVisible(   m_guiValue.updateChannel() == KUpdateChannel_WithBetas
-                             || (   m_fInExpertMode
-                                 && m_guiValue.supportedUpdateChannels().contains(KUpdateChannel_WithBetas)));
-        if (m_mapRadioButtons.value(KUpdateChannel_WithTesting))
-            m_mapRadioButtons.value(KUpdateChannel_WithTesting)
-                ->setVisible(   m_guiValue.updateChannel() == KUpdateChannel_WithTesting
-                             || (   m_fInExpertMode
-                                 && m_guiValue.supportedUpdateChannels().contains(KUpdateChannel_WithTesting)));
+        foreach (KUpdateChannel enmChannel, m_mapRadioButtons.keys())
+            if (m_mapRadioButtons.value(enmChannel))
+                m_mapRadioButtons.value(enmChannel)
+                    ->setVisible(   m_guiValue.updateChannel() == enmChannel
+                                 || m_guiValue.supportedUpdateChannels().contains(enmChannel));
 
         if (m_pCheckBox->isChecked())
         {
