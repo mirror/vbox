@@ -49,9 +49,9 @@
 # include <errno.h>
 #endif
 
-#ifdef VBOX
-# include <iprt/initterm.h>
-#endif
+#include <iprt/initterm.h>
+#include <iprt/getopt.h>
+#include <iprt/message.h>
 
 #include "prio.h"
 #include "prerror.h"
@@ -457,10 +457,43 @@ int main(int argc, char **argv)
     PRFileDesc *listenFD = NULL;
     PRNetAddr addr;
 
-#ifdef VBOX
     /* Set up the runtime without loading the support driver. */
-    RTR3InitExe(argc, &argv, 0);
-#endif
+    int vrc = RTR3InitExe(argc, &argv, 0);
+    if (RT_FAILURE(vrc))
+        return RTMsgInitFailure(vrc);
+
+    /*
+     * Parse the command line.
+     */
+    static RTGETOPTDEF const s_aOptions[] =
+    {
+        { "--inherit-startup-pipe", 'f', RTGETOPT_REQ_UINT32 },
+        { "--socket-path",          'p', RTGETOPT_REQ_STRING },
+    };
+
+    RTGETOPTSTATE State;
+    vrc = RTGetOptInit(&State, argc, argv, &s_aOptions[0], RT_ELEMENTS(s_aOptions), 1,  RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptInit failed: %Rrc", vrc);
+
+    uint32_t        uStartupPipeFd = UINT32_MAX;
+    const char      *pszSocketPath = NULL;
+    RTGETOPTUNION   ValueUnion;
+    int             chOpt;
+    while ((chOpt = RTGetOpt(&State, &ValueUnion)) != 0)
+    {
+        switch (chOpt)
+        {
+            case 'f':
+                uStartupPipeFd = ValueUnion.u32;
+                break;
+            case 'p':
+                pszSocketPath = ValueUnion.psz;
+                break;
+            default:
+                return RTGetOptPrintError(chOpt, &ValueUnion);
+        }
+    }
 
     //
     // ignore SIGINT so <ctrl-c> from terminal only kills the client
@@ -481,10 +514,10 @@ int main(int argc, char **argv)
 
     // set socket address
     addr.local.family = PR_AF_LOCAL;
-    if (argc < 2)
+    if (!pszSocketPath)
         IPC_GetDefaultSocketPath(addr.local.path, sizeof(addr.local.path));
     else
-        PL_strncpyz(addr.local.path, argv[1], sizeof(addr.local.path));
+        PL_strncpyz(addr.local.path, pszSocketPath, sizeof(addr.local.path));
 
 #ifdef IPC_USE_FILE_LOCK
     Status status = InitDaemonDir(addr.local.path);
@@ -492,18 +525,16 @@ int main(int argc, char **argv)
         if (status == ELockFileLock) {
             LOG(("Another daemon is already running, exiting.\n"));
             // send a signal to the blocked parent to indicate success
-            IPC_NotifyParent();
+            IPC_NotifyParent(uStartupPipeFd);
             return 0;
         }
         else {
             LOG(("InitDaemonDir failed (status=%d)\n", status));
             // don't notify the parent to cause it to fail in PR_Read() after
             // we terminate
-#ifdef VBOX
             if (status != ELockFileOwner)
                 printf("Cannot create a lock file for '%s'.\n"
                         "Check permissions.\n", addr.local.path);
-#endif
             return 0;
         }
     }
@@ -517,30 +548,16 @@ int main(int argc, char **argv)
         LOG(("PR_Bind failed [%d]\n", PR_GetError()));
     }
     else {
-#ifdef VBOX
         // Use large backlog, as otherwise local sockets can reject connection
         // attempts. Usually harmless, but causes an unnecessary start attempt
         // of IPCD (which will terminate straight away), and the next attempt
         // usually succeeds. But better avoid unnecessary activities.
         if (PR_Listen(listenFD, 128) != PR_SUCCESS) {
-#else /* !VBOX */
-        if (PR_Listen(listenFD, 5) != PR_SUCCESS) {
-#endif /* !VBOX */
             LOG(("PR_Listen failed [%d]\n", PR_GetError()));
         }
         else {
-#ifndef VBOX
-            // redirect all standard file descriptors to /dev/null for
-            // proper daemonizing
-            PR_Close(PR_STDIN);
-            PR_Open("/dev/null", O_RDONLY, 0);
-            PR_Close(PR_STDOUT);
-            PR_Open("/dev/null", O_WRONLY, 0);
-            PR_Close(PR_STDERR);
-            PR_Open("/dev/null", O_WRONLY, 0);
-#endif
 
-            IPC_NotifyParent();
+            IPC_NotifyParent(uStartupPipeFd);
 
 #if defined(VBOX) && !defined(XP_OS2)
             // Increase the file table size to 10240 or as high as possible.

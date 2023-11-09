@@ -46,17 +46,29 @@
 #include "ipcd.h"
 
 #include <iprt/assert.h>
+#include <iprt/errcore.h>
+#include <iprt/pipe.h>
+#include <VBox/log.h>
 
 //-----------------------------------------------------------------------------
 
 void
-IPC_NotifyParent()
+IPC_NotifyParent(uint32_t uPipeFd)
 {
-    PRFileDesc *fd = PR_GetInheritedFD(IPC_STARTUP_PIPE_NAME);
-    if (fd) {
-        char c = IPC_STARTUP_PIPE_MAGIC;
-        PR_Write(fd, &c, 1);
-        PR_Close(fd);
+    if (uPipeFd != UINT32_MAX)
+    {
+        RTPIPE hPipe = NIL_RTPIPE;
+        int vrc = RTPipeFromNative(&hPipe, (RTHCINTPTR)uPipeFd, RTPIPE_N_WRITE);
+        if (RT_SUCCESS(vrc))
+        {
+            char c = IPC_STARTUP_PIPE_MAGIC;
+
+            vrc = RTPipeWriteBlocking(hPipe, &c, sizeof(c), NULL /*pcbWritten*/);
+            AssertRC(vrc); RT_NOREF(vrc);
+
+            vrc = RTPipeClose(hPipe);
+            AssertRC(vrc); RT_NOREF(vrc);
+        }
     }
 }
 
@@ -109,14 +121,14 @@ IPC_SendMsg(ipcClient *client, ipcMessage *msg)
     if (client->HasTarget(msg->Target()))
         return IPC_PlatformSendMsg(client, msg);
 
-    LOG(("  no registered message handler\n"));
+    Log(("  no registered message handler\n"));
     return PR_FAILURE;
 }
 
 void
 IPC_NotifyClientUp(ipcClient *client)
 {
-    LOG(("IPC_NotifyClientUp: clientID=%d\n", client->ID()));
+    Log(("IPC_NotifyClientUp: clientID=%d\n", client->ID()));
 
     for (int i=0; i<ipcClientCount; ++i) {
         if (&ipcClients[i] != client)
@@ -128,7 +140,7 @@ IPC_NotifyClientUp(ipcClient *client)
 void
 IPC_NotifyClientDown(ipcClient *client)
 {
-    LOG(("IPC_NotifyClientDown: clientID=%d\n", client->ID()));
+    Log(("IPC_NotifyClientDown: clientID=%d\n", client->ID()));
 
     for (int i=0; i<ipcClientCount; ++i) {
         if (&ipcClients[i] != client)

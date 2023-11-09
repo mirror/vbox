@@ -60,6 +60,6 @@ PRStatus IPC_PlatformSendMsg(ipcClient  *client, ipcMessage *msg);
 //
 // notify parent that it can connect to the daemon.
 //
-void IPC_NotifyParent();
+void IPC_NotifyParent(uint32_t uPipeFd);
 
 #endif // !ipcdPrivate_h__

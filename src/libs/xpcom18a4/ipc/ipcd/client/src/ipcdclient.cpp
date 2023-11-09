@@ -55,10 +55,14 @@
 #include "nsCOMArray.h"
 
 #include "prio.h"
-#include "prproces.h"
 
 #include <iprt/asm.h>
 #include <iprt/critsect.h>
+#include <iprt/env.h>
+#include <iprt/message.h>
+#include <iprt/pipe.h>
+#include <iprt/process.h>
+#include <iprt/string.h>
 
 /* ------------------------------------------------------------------------- */
 
@@ -1225,59 +1229,55 @@ IPC_ClientExists(PRUint32 aClientID, PRBool *aResult)
 nsresult
 IPC_SpawnDaemon(const char *path)
 {
-  PRFileDesc *readable = nsnull, *writable = nsnull;
-  PRProcessAttr *attr = nsnull;
-  nsresult rv = NS_ERROR_FAILURE;
-  PRFileDesc *devNull;
-  char *const argv[] = { (char *const) path, nsnull };
-  char c;
+    /*
+     * Setup an anonymous pipe that we can use to determine when the daemon
+     * process has started up.  the daemon will write a char to the pipe, and
+     * when we read it, we'll know to proceed with trying to connect to the
+     * daemon.
+     */
+    RTPIPE hPipeWr = NIL_RTPIPE;
+    RTPIPE hPipeRd = NIL_RTPIPE;
+    int vrc = RTPipeCreate(&hPipeRd, &hPipeWr, RTPIPE_C_INHERIT_WRITE);
+    if (RT_SUCCESS(vrc))
+    {
+      char szPipeInheritFd[32]; RT_ZERO(szPipeInheritFd);
+      const char *const s_apszArgs[] = { (char *const) path, "--inherit-startup-pipe", &szPipeInheritFd[0], NULL };
+      char c;
 
-  // setup an anonymous pipe that we can use to determine when the daemon
-  // process has started up.  the daemon will write a char to the pipe, and
-  // when we read it, we'll know to proceed with trying to connect to the
-  // daemon.
+      ssize_t cch = RTStrFormatU32(&szPipeInheritFd[0], sizeof(szPipeInheritFd),
+                                   (uint32_t)RTPipeToNative(hPipeWr), 10 /*uiBase*/,
+                                   0 /*cchWidth*/, 0 /*cchPrecision*/, 0 /*fFlags*/);
+      Assert(cch > 0);
 
-  if (PR_CreatePipe(&readable, &writable) != PR_SUCCESS)
-    goto end;
-  PR_SetFDInheritable(writable, PR_TRUE);
+      RTHANDLE hStdNil;
+      hStdNil.enmType = RTHANDLETYPE_FILE;
+      hStdNil.u.hFile = NIL_RTFILE;
 
-  attr = PR_NewProcessAttr();
-  if (!attr)
-    goto end;
+      vrc = RTProcCreateEx(path, s_apszArgs, RTENV_DEFAULT,
+                           RTPROC_FLAGS_DETACHED, &hStdNil, &hStdNil, &hStdNil,
+                           NULL /* pszAsUser */, NULL /* pszPassword */, NULL /* pExtraData */,
+                           NULL /* phProcess */);
+      if (RT_SUCCESS(vrc))
+      {
+          vrc = RTPipeClose(hPipeWr); AssertRC(vrc); RT_NOREF(vrc);
+          hPipeWr = NIL_RTPIPE;
 
-  if (PR_ProcessAttrSetInheritableFD(attr, writable, IPC_STARTUP_PIPE_NAME) != PR_SUCCESS)
-  goto end;
+          uint8_t ch;
+          vrc = RTPipeReadBlocking(hPipeRd, &ch, sizeof(ch), NULL /*pcbRead*/);
+          if (   RT_SUCCESS(vrc)
+              && ch == IPC_STARTUP_PIPE_MAGIC)
+          {
+            RTPipeClose(hPipeRd);
+            return NS_OK;
+          }
+      }
 
-  devNull = PR_Open("/dev/null", PR_RDWR, 0);
-  if (!devNull)
-    goto end;
+      if (hPipeWr != NIL_RTPIPE)
+          RTPipeClose(hPipeWr);
+      RTPipeClose(hPipeRd);
+    }
 
-  PR_ProcessAttrSetStdioRedirect(attr, PR_StandardInput, devNull);
-  PR_ProcessAttrSetStdioRedirect(attr, PR_StandardOutput, devNull);
-  PR_ProcessAttrSetStdioRedirect(attr, PR_StandardError, devNull);
-
-  if (PR_CreateProcessDetached(path, argv, nsnull, attr) != PR_SUCCESS)
-    goto end;
-
-  // Close /dev/null
-  PR_Close(devNull);
-  // close the child end of the pipe in order to get notification on unexpected
-  // child termination instead of being infinitely blocked in PR_Read().
-  PR_Close(writable);
-  writable = nsnull;
-
-  if ((PR_Read(readable, &c, 1) != 1) || (c != IPC_STARTUP_PIPE_MAGIC))
-    goto end;
-
-  rv = NS_OK;
-end:
-  if (readable)
-    PR_Close(readable);
-  if (writable)
-    PR_Close(writable);
-  if (attr)
-    PR_DestroyProcessAttr(attr);
-  return rv;
+    return NS_ERROR_FAILURE;
 }
 
 /* ------------------------------------------------------------------------- */
