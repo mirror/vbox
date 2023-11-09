@@ -127,7 +127,7 @@ static nsresult vboxsvcSpawnDaemon(void)
         ssize_t cch = RTStrFormatU32(&szPipeInheritFd[0], sizeof(szPipeInheritFd),
                                      (uint32_t)RTPipeToNative(hPipeWr), 10 /*uiBase*/,
                                      0 /*cchWidth*/, 0 /*cchPrecision*/, 0 /*fFlags*/);
-        Assert(cch > 0);
+        Assert(cch > 0); RT_NOREF(cch);
 
         RTHANDLE hStdNil;
         hStdNil.enmType = RTHANDLETYPE_FILE;
