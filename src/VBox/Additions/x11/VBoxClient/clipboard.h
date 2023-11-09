@@ -91,7 +91,7 @@ extern SHCLCONTEXT g_Ctx;
  * @param   pszName     Thread name.
  * @param   pvUser      User data.
  */
-extern RTDECL(int) VBClClipboardThreadStart(PRTTHREAD pThread, PFNRTTHREAD pfnThread, const char *pszName, void *pvUser);
+RTDECL(int) VBClClipboardThreadStart(PRTTHREAD pThread, PFNRTTHREAD pfnThread, const char *pszName, void *pvUser);
 
 /**
  * Read and process one event from the host clipboard service.
@@ -101,7 +101,7 @@ extern RTDECL(int) VBClClipboardThreadStart(PRTTHREAD pThread, PFNRTTHREAD pfnTh
  * @param   pfnHGClipReport     A callback to notify guest about new content in host clipboard.
  * @param   pfnGHClipRead       A callback to notify guest when host requests guest clipboard content.
  */
-extern RTDECL(int) VBClClipboardReadHostEvent(PSHCLCONTEXT pCtx, const PFNHOSTCLIPREPORTFMTS pfnHGClipReport,
+RTDECL(int) VBClClipboardReadHostEvent(PSHCLCONTEXT pCtx, const PFNHOSTCLIPREPORTFMTS pfnHGClipReport,
                                               const PFNHOSTCLIPREAD pfnGHClipRead);
 
 /**
@@ -116,6 +116,6 @@ extern RTDECL(int) VBClClipboardReadHostEvent(PSHCLCONTEXT pCtx, const PFNHOSTCL
  * @param   ppv             Newly allocated output buffer (should be freed by caller).
  * @param   pcb             Output buffer size.
  */
-extern RTDECL(int) VBClClipboardReadHostClipboard(PVBGLR3SHCLCMDCTX pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb);
+RTDECL(int) VBClClipboardReadHostClipboard(PVBGLR3SHCLCMDCTX pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb);
 
 #endif /* !GA_INCLUDED_SRC_x11_VBoxClient_clipboard_h */
