@@ -127,7 +127,6 @@ if !defined(VBOX_ONLY_SDK) && (!defined(VBOX_ONLY_EXTPACKS) || !defined(VBOX_ONL
   	tstTestHashtables \
   	tstTestID \
   	tstTestObserverService \
-  	tstTestThreads \
   	tstTestXPIDLString \
   	tstTestXPTCInvoke \
   	tstTestDeque \
@@ -1022,8 +1021,6 @@ tstTestPermanentAtoms_SOURCES  = xpcom/tests/TestPermanentAtoms.cpp
 tstTestServMgr_TEMPLATE        = XPComTstExe
 tstTestServMgr_SOURCES         = xpcom/tests/TestServMgr.cpp
 tstTestServMgr_INCS            = xpcom/tests/services
-tstTestThreads_TEMPLATE        = XPComTstExe
-tstTestThreads_SOURCES         = xpcom/tests/TestThreads.cpp
 tstTestXPIDLString_TEMPLATE    = XPComTstExe
 tstTestXPIDLString_SOURCES     = xpcom/tests/TestXPIDLString.cpp
 tstTestXPTCInvoke_TEMPLATE     = XPComTstExe
