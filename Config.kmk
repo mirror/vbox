@@ -4468,7 +4468,6 @@ ifdef VBOX_SIGNING_MODE
     VBOX_WITH_VBOX_LEGACY_TS_CA = 1
    endif
   endif
-  VBOX_LEGACY_TS_CA_FILE = $(VBOX_PATH_SRC_CERTIFICATES)/Timestamp-VBoxLegacyWinCA.crt
 
  else ifeq ($(KBUILD_HOST),darwin)
 
