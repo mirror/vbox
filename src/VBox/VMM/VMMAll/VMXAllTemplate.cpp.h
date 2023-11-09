@@ -328,6 +328,7 @@ static const uint32_t g_aVmcsFields[] =
     VMX_VMCS16_POSTED_INT_NOTIFY_VECTOR,
     VMX_VMCS16_EPTP_INDEX,
     VMX_VMCS16_HLAT_PREFIX_SIZE,
+    VMX_VMCS16_LAST_PID_PTR_INDEX,
 
     /* 16-bit guest-state fields. */
     VMX_VMCS16_GUEST_ES_SEL,
@@ -340,6 +341,7 @@ static const uint32_t g_aVmcsFields[] =
     VMX_VMCS16_GUEST_TR_SEL,
     VMX_VMCS16_GUEST_INTR_STATUS,
     VMX_VMCS16_GUEST_PML_INDEX,
+    VMX_VMCS16_GUEST_UINV,
 
     /* 16-bits host-state fields. */
     VMX_VMCS16_HOST_ES_SEL,
@@ -413,6 +415,10 @@ static const uint32_t g_aVmcsFields[] =
     VMX_VMCS64_CTRL_HLAT_PTR_HIGH,
     VMX_VMCS64_CTRL_EXIT2_FULL,
     VMX_VMCS64_CTRL_EXIT2_HIGH,
+    VMX_VMCS64_CTRL_SPEC_CTRL_MASK_FULL,
+    VMX_VMCS64_CTRL_SPEC_CTRL_MASK_HIGH,
+    VMX_VMCS64_CTRL_SPEC_CTRL_SHADOW_FULL,
+    VMX_VMCS64_CTRL_SPEC_CTRL_SHADOW_HIGH,
 
     /* 64-bit read-only data fields. */
     VMX_VMCS64_RO_GUEST_PHYS_ADDR_FULL,
@@ -473,6 +479,7 @@ static const uint32_t g_aVmcsFields[] =
     VMX_VMCS32_CTRL_PROC_EXEC2,
     VMX_VMCS32_CTRL_PLE_GAP,
     VMX_VMCS32_CTRL_PLE_WINDOW,
+    VMX_VMCS32_CTRL_INSTR_TIMEOUT,
 
     /* 32-bits read-only fields. */
     VMX_VMCS32_RO_VM_INSTR_ERROR,
