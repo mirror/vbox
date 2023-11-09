@@ -103,7 +103,7 @@ ifdef VBOX_SIGNING_MODE
 	$(RM) -f -- "$@.cer0" "$@.cer1" "$@.cer2" "$@.array"
  ifdef VBOX_WITH_VBOX_LEGACY_TS_CA
 	$(RM) -f -- "$@.cer_tsca"
-	$(VBOX_RTSIGNTOOL) extract-timestamp-root --signature-index 0 --input "$(PATH_STAGE_SYS)/VBoxSup.sys" --output "$@.cer_tsca" --der
+	$(VBOX_RTSIGNTOOL) extract-timestamp-root --signature-index 0 --input "$(PATH_STAGE_SYS)/VBoxSup.sys" --output "$@.cer_tsca"
 	$(VBOX_BIN2C) -ascii --append VBoxLegacyWinCA "$@.cer_tsca" $@
 	$(RM) -f -- "$@.cer_tsca"
  endif
