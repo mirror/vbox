@@ -12437,12 +12437,10 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg8b_Mq, uint8_t, bRm)
     IEMOP_HLP_DONE_DECODING_EX(fCmpXchg8b);
     IEM_MC_MEM_MAP_U64_RW(pu64MemDst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
 
-    IEM_MC_FETCH_GREG_U32(u64EaxEdx.s.Lo, X86_GREG_xAX);
-    IEM_MC_FETCH_GREG_U32(u64EaxEdx.s.Hi, X86_GREG_xDX);
+    IEM_MC_FETCH_GREG_PAIR_U32(u64EaxEdx, X86_GREG_xAX, X86_GREG_xDX);
     IEM_MC_REF_LOCAL(pu64EaxEdx, u64EaxEdx);
 
-    IEM_MC_FETCH_GREG_U32(u64EbxEcx.s.Lo, X86_GREG_xBX);
-    IEM_MC_FETCH_GREG_U32(u64EbxEcx.s.Hi, X86_GREG_xCX);
+    IEM_MC_FETCH_GREG_PAIR_U32(u64EbxEcx, X86_GREG_xBX, X86_GREG_xCX);
     IEM_MC_REF_LOCAL(pu64EbxEcx, u64EbxEcx);
 
     IEM_MC_FETCH_EFLAGS(EFlags);
@@ -12455,8 +12453,7 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg8b_Mq, uint8_t, bRm)
     IEM_MC_MEM_COMMIT_AND_UNMAP_RW(pu64MemDst, bUnmapInfo);
     IEM_MC_COMMIT_EFLAGS(EFlags);
     IEM_MC_IF_EFL_BIT_NOT_SET(X86_EFL_ZF) {
-        IEM_MC_STORE_GREG_U32(X86_GREG_xAX, u64EaxEdx.s.Lo);
-        IEM_MC_STORE_GREG_U32(X86_GREG_xDX, u64EaxEdx.s.Hi);
+        IEM_MC_STORE_GREG_PAIR_U32(X86_GREG_xAX, X86_GREG_xDX, u64EaxEdx);
     } IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP_AND_FINISH();
 
@@ -12490,12 +12487,10 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg16b_Mdq, uint8_t, bRm)
             IEM_MC_RAISE_GP0_IF_EFF_ADDR_UNALIGNED(GCPtrEffDst, 16); \
             IEM_MC_MEM_MAP(pu128MemDst, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/); \
             \
-            IEM_MC_FETCH_GREG_U64(u128RaxRdx.s.Lo, X86_GREG_xAX); \
-            IEM_MC_FETCH_GREG_U64(u128RaxRdx.s.Hi, X86_GREG_xDX); \
+            IEM_MC_FETCH_GREG_PAIR_U64(u128RaxRdx, X86_GREG_xAX, X86_GREG_xDX); \
             IEM_MC_REF_LOCAL(pu128RaxRdx, u128RaxRdx); \
             \
-            IEM_MC_FETCH_GREG_U64(u128RbxRcx.s.Lo, X86_GREG_xBX); \
-            IEM_MC_FETCH_GREG_U64(u128RbxRcx.s.Hi, X86_GREG_xCX); \
+            IEM_MC_FETCH_GREG_PAIR_U64(u128RbxRcx, X86_GREG_xBX, X86_GREG_xCX); \
             IEM_MC_REF_LOCAL(pu128RbxRcx, u128RbxRcx); \
             \
             IEM_MC_FETCH_EFLAGS(EFlags)
@@ -12504,8 +12499,7 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg16b_Mdq, uint8_t, bRm)
             IEM_MC_MEM_COMMIT_AND_UNMAP(pu128MemDst, IEM_ACCESS_DATA_RW); \
             IEM_MC_COMMIT_EFLAGS(EFlags); \
             IEM_MC_IF_EFL_BIT_NOT_SET(X86_EFL_ZF) { \
-                IEM_MC_STORE_GREG_U64(X86_GREG_xAX, u128RaxRdx.s.Lo); \
-                IEM_MC_STORE_GREG_U64(X86_GREG_xDX, u128RaxRdx.s.Hi); \
+                IEM_MC_STORE_GREG_PAIR_U64(X86_GREG_xAX, X86_GREG_xDX, u128RaxRdx); \
             } IEM_MC_ENDIF(); \
             IEM_MC_ADVANCE_RIP_AND_FINISH(); \
             IEM_MC_END()

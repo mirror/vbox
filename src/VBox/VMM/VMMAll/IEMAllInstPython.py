@@ -2440,9 +2440,10 @@ class McBlock(object):
                                           'Unexpected code following MC statement: %s' % (sRawStmt[offCloseParen + 1:]));
 
                 # Hand it to the handler.
-                fnParser = g_dMcStmtParsers.get(sName)[0];
+                fnParser = g_dMcStmtParsers.get(sName);
                 if not fnParser:
                     self.raiseDecodeError(sRawCode, off, 'Unknown MC statement: %s' % (sName,));
+                fnParser = fnParser[0];
                 oStmt = fnParser(self, sName, asParams);
                 if not isinstance(oStmt, (list, tuple)):
                     aoStmts.append(oStmt);
@@ -2825,6 +2826,8 @@ g_dMcStmtParsers = {
     'IEM_MC_FETCH_GREG_U8_ZX_U16':                               (McBlock.parseMcGeneric,           False, False, ),
     'IEM_MC_FETCH_GREG_U8_ZX_U32':                               (McBlock.parseMcGeneric,           False, False, ),
     'IEM_MC_FETCH_GREG_U8_ZX_U64':                               (McBlock.parseMcGeneric,           False, False, ),
+    'IEM_MC_FETCH_GREG_PAIR_U32':                                (McBlock.parseMcGeneric,           False, False, ),
+    'IEM_MC_FETCH_GREG_PAIR_U64':                                (McBlock.parseMcGeneric,           False, False, ),
     'IEM_MC_FETCH_MEM_D80':                                      (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_FETCH_MEM_I16':                                      (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_FETCH_MEM_I32':                                      (McBlock.parseMcGeneric,           True,  False, ),
@@ -2836,6 +2839,9 @@ g_dMcStmtParsers = {
     'IEM_MC_FETCH_MEM_U128':                                     (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_FETCH_MEM_U128_ALIGN_SSE':                           (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_FETCH_MEM_U128_NO_AC':                               (McBlock.parseMcGeneric,           True,  False, ),
+    'IEM_MC_FETCH_MEM_U128_AND_XREG_U128':                       (McBlock.parseMcGeneric,           True,  False, ),
+    'IEM_MC_FETCH_MEM_U128_AND_XREG_U128_AND_RAX_RDX_U64':       (McBlock.parseMcGeneric,           True,  False, ),
+    'IEM_MC_FETCH_MEM_U128_AND_XREG_U128_AND_EAX_EDX_U32_SX_U64':(McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_FETCH_MEM_U16':                                      (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_FETCH_MEM_U16_DISP':                                 (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_FETCH_MEM_U16_SX_U32':                               (McBlock.parseMcGeneric,           True,  False, ),
@@ -2864,6 +2870,9 @@ g_dMcStmtParsers = {
     'IEM_MC_FETCH_MEM_XMM_NO_AC':                                (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_FETCH_MEM_XMM_U32':                                  (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_FETCH_MEM_XMM_U64':                                  (McBlock.parseMcGeneric,           True,  False, ),
+    'IEM_MC_FETCH_MEM_XMM_ALIGN_SSE_AND_XREG_XMM':               (McBlock.parseMcGeneric,           True,  False, ),
+    'IEM_MC_FETCH_MEM_XMM_U32_AND_XREG_XMM':                     (McBlock.parseMcGeneric,           True,  False, ),
+    'IEM_MC_FETCH_MEM_XMM_U64_AND_XREG_XMM':                     (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_FETCH_MEM_YMM':                                      (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_FETCH_MEM_YMM_ALIGN_AVX':                            (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_FETCH_MEM_YMM_NO_AC':                                (McBlock.parseMcGeneric,           True,  False, ),
@@ -2882,6 +2891,10 @@ g_dMcStmtParsers = {
     'IEM_MC_FETCH_XREG_U64':                                     (McBlock.parseMcGeneric,           False, False, ),
     'IEM_MC_FETCH_XREG_U8':                                      (McBlock.parseMcGeneric,           False, False, ),
     'IEM_MC_FETCH_XREG_XMM':                                     (McBlock.parseMcGeneric,           False, False, ),
+    'IEM_MC_FETCH_XREG_PAIR_U128':                               (McBlock.parseMcGeneric,           False, False, ),
+    'IEM_MC_FETCH_XREG_PAIR_U128_AND_RAX_RDX_U64':               (McBlock.parseMcGeneric,           False, False, ),
+    'IEM_MC_FETCH_XREG_PAIR_U128_AND_EAX_EDX_U32_SX_U64':        (McBlock.parseMcGeneric,           False, False, ),
+    'IEM_MC_FETCH_XREG_PAIR_XMM':                                (McBlock.parseMcGeneric,           False, False, ),
     'IEM_MC_FETCH_YREG_2ND_U64':                                 (McBlock.parseMcGeneric,           False, False, ),
     'IEM_MC_FETCH_YREG_U128':                                    (McBlock.parseMcGeneric,           False, False, ),
     'IEM_MC_FETCH_YREG_U256':                                    (McBlock.parseMcGeneric,           False, False, ),
@@ -3055,6 +3068,8 @@ g_dMcStmtParsers = {
     'IEM_MC_STORE_GREG_U64_CONST':                               (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_STORE_GREG_U8':                                      (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_STORE_GREG_U8_CONST':                                (McBlock.parseMcGeneric,           True,  False, ),
+    'IEM_MC_STORE_GREG_PAIR_U32':                                (McBlock.parseMcGeneric,           True,  False, ),
+    'IEM_MC_STORE_GREG_PAIR_U64':                                (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_STORE_MEM_I16_CONST_BY_REF':                         (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_STORE_MEM_I32_CONST_BY_REF':                         (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_STORE_MEM_I64_CONST_BY_REF':                         (McBlock.parseMcGeneric,           True,  False, ),

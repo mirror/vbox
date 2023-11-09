@@ -140,6 +140,12 @@ g_dMcStmtThreaded = {
     'IEM_MC_FETCH_MEM_FLAT_XMM_ALIGN_SSE':                       (None, True,  False, ),
     'IEM_MC_FETCH_MEM_FLAT_XMM_U32':                             (None, True,  False, ),
     'IEM_MC_FETCH_MEM_FLAT_XMM_U64':                             (None, True,  False, ),
+    'IEM_MC_FETCH_MEM_FLAT_U128_AND_XREG_U128':                  (None, True,  False, ),
+    'IEM_MC_FETCH_MEM_FLAT_XMM_ALIGN_SSE_AND_XREG_XMM':          (None, True,  False, ),
+    'IEM_MC_FETCH_MEM_FLAT_XMM_U32_AND_XREG_XMM':                (None, True,  False, ),
+    'IEM_MC_FETCH_MEM_FLAT_XMM_U64_AND_XREG_XMM':                (None, True,  False, ),
+    'IEM_MC_FETCH_MEM_FLAT_U128_AND_XREG_U128_AND_RAX_RDX_U64':  (None, True,  False, ),
+    'IEM_MC_FETCH_MEM_FLAT_U128_AND_XREG_U128_AND_EAX_EDX_U32_SX_U64': (None, True,  False, ),
     'IEM_MC_MEM_FLAT_MAP_EX':                                    (None, True,  False, ),
     'IEM_MC_MEM_FLAT_MAP':                                       (None, True,  False, ),
     'IEM_MC_MEM_FLAT_MAP_U16_RO':                                (None, True,  False, ),
@@ -290,7 +296,7 @@ def analyzeVariantForNativeRecomp(oVariation,
             else:
                 g_dUnsupportedMcStmtLastOneStats[sStmt] = [oVariation,];
 
-    if (    len(dUnsupportedStmts) in (1,2)
+    if (    len(dUnsupportedStmts) == 1 #in (1,2)
         and iai.McStmt.findStmtByNames(aoStmts,
                                        { 'IEM_MC_LOCAL': 1, 'IEM_MC_LOCAL_CONST': 1, 'IEM_MC_ARG': 1, 'IEM_MC_ARG_CONST': 1,
                                          'IEM_MC_ARG_LOCAL_REF': 1, 'IEM_MC_ARG_LOCAL_EFLAGS': 1, })):
