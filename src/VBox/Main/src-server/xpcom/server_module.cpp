@@ -26,10 +26,6 @@
  */
 
 #define LOG_GROUP LOG_GROUP_MAIN_VBOXSVC
-#ifdef RT_OS_OS2
-# include <prproces.h>
-#endif
-
 #include <nsMemory.h>
 #include <nsString.h>
 #include <nsCOMPtr.h>
@@ -45,7 +41,6 @@
 #include <ipcdclient.h>
 
 #include "prio.h"
-#include "prproces.h"
 
 // official XPCOM headers don't define it yet
 #define IPC_DCONNECTSERVICE_CONTRACTID \
@@ -62,6 +57,7 @@
 #include <iprt/assert.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
+#include <iprt/pipe.h>
 #include <iprt/process.h>
 #include <iprt/env.h>
 #include <iprt/string.h>
@@ -107,66 +103,64 @@ NS_IMPL_CI_INTERFACE_GETTER1(VirtualBoxWrap, IVirtualBox)
 
 static nsresult vboxsvcSpawnDaemon(void)
 {
-    PRFileDesc *readable = nsnull, *writable = nsnull;
-    PRProcessAttr *attr = nsnull;
-    nsresult rv = NS_ERROR_FAILURE;
-    PRFileDesc *devNull;
-    // The ugly casts are necessary because the PR_CreateProcessDetached has
-    // a const array of writable strings as a parameter. It won't write. */
-    char * const args[] = { (char *)VBoxSVCPath, (char *)"--auto-shutdown", 0 };
-
-    // Use a pipe to determine when the daemon process is in the position
-    // to actually process requests. The daemon will write "READY" to the pipe.
-    if (PR_CreatePipe(&readable, &writable) != PR_SUCCESS)
-        goto end;
-    PR_SetFDInheritable(writable, PR_TRUE);
-
-    attr = PR_NewProcessAttr();
-    if (!attr)
-        goto end;
-
-    if (PR_ProcessAttrSetInheritableFD(attr, writable, VBOXSVC_STARTUP_PIPE_NAME) != PR_SUCCESS)
-        goto end;
-
-    devNull = PR_Open("/dev/null", PR_RDWR, 0);
-    if (!devNull)
-        goto end;
-
-    PR_ProcessAttrSetStdioRedirect(attr, PR_StandardInput, devNull);
-    PR_ProcessAttrSetStdioRedirect(attr, PR_StandardOutput, devNull);
-    PR_ProcessAttrSetStdioRedirect(attr, PR_StandardError, devNull);
-
-    if (PR_CreateProcessDetached(VBoxSVCPath, args, nsnull, attr) != PR_SUCCESS)
-        goto end;
-
-    // Close /dev/null
-    PR_Close(devNull);
-    // Close the child end of the pipe to make it the only owner of the
-    // file descriptor, so that unexpected closing can be detected.
-    PR_Close(writable);
-    writable = nsnull;
-
-    char msg[10];
-    RT_ZERO(msg);
-    if (   PR_Read(readable, msg, sizeof(msg)-1) != 5
-        || strcmp(msg, "READY"))
+    /*
+     * Setup an anonymous pipe that we can use to determine when the daemon
+     * process has started up.  the daemon will write a char to the pipe, and
+     * when we read it, we'll know to proceed with trying to connect to the
+     * daemon.
+     */
+    RTPIPE hPipeWr = NIL_RTPIPE;
+    RTPIPE hPipeRd = NIL_RTPIPE;
+    int vrc = RTPipeCreate(&hPipeRd, &hPipeWr, RTPIPE_C_INHERIT_WRITE);
+    if (RT_SUCCESS(vrc))
     {
-        /* If several clients start VBoxSVC simultaneously only one can
-         * succeed. So treat this as success as well. */
-        rv = NS_OK;
-        goto end;
+        char szPipeInheritFd[32]; RT_ZERO(szPipeInheritFd);
+        const char *apszArgs[] =
+        {
+            VBoxSVCPath,
+            "--auto-shutdown",
+            "--inherit-startup-pipe",
+            &szPipeInheritFd[0],
+            NULL
+        };
+
+        ssize_t cch = RTStrFormatU32(&szPipeInheritFd[0], sizeof(szPipeInheritFd),
+                                     (uint32_t)RTPipeToNative(hPipeWr), 10 /*uiBase*/,
+                                     0 /*cchWidth*/, 0 /*cchPrecision*/, 0 /*fFlags*/);
+        Assert(cch > 0);
+
+        RTHANDLE hStdNil;
+        hStdNil.enmType = RTHANDLETYPE_FILE;
+        hStdNil.u.hFile = NIL_RTFILE;
+
+        vrc = RTProcCreateEx(VBoxSVCPath, apszArgs, RTENV_DEFAULT,
+                             RTPROC_FLAGS_DETACHED, &hStdNil, &hStdNil, &hStdNil,
+                             NULL /* pszAsUser */, NULL /* pszPassword */, NULL /* pExtraData */,
+                             NULL /* phProcess */);
+        if (RT_SUCCESS(vrc))
+        {
+            vrc = RTPipeClose(hPipeWr); AssertRC(vrc); RT_NOREF(vrc);
+            hPipeWr = NIL_RTPIPE;
+
+            size_t cbRead = 0;
+            char msg[10];
+            memset(msg, '\0', sizeof(msg));
+            vrc = RTPipeReadBlocking(hPipeRd, &msg[0], sizeof(msg) - 1, &cbRead);
+            if (   RT_SUCCESS(vrc)
+                && cbRead == 5
+                && !strcmp(msg, "READY"))
+            {
+                RTPipeClose(hPipeRd);
+                return NS_OK;
+            }
+        }
+
+        if (hPipeWr != NIL_RTPIPE)
+            RTPipeClose(hPipeWr);
+        RTPipeClose(hPipeRd);
     }
 
-    rv = NS_OK;
-
-end:
-    if (readable)
-        PR_Close(readable);
-    if (writable)
-        PR_Close(writable);
-    if (attr)
-        PR_DestroyProcessAttr(attr);
-    return rv;
+    return NS_ERROR_FAILURE;
 }
 
 

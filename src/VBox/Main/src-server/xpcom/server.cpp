@@ -33,9 +33,6 @@
 
 #include <nsGenericFactory.h>
 
-#include "prio.h"
-#include "prproces.h"
-
 #include "server.h"
 
 #include "LoggingNew.h"
@@ -51,6 +48,8 @@
 #include <iprt/string.h>
 #include <iprt/stream.h>
 #include <iprt/path.h>
+#include <iprt/pipe.h>
+#include <iprt/process.h>
 #include <iprt/timer.h>
 #include <iprt/env.h>
 
@@ -571,71 +570,70 @@ static void signal_handler(int sig)
 
 static nsresult vboxsvcSpawnDaemonByReExec(const char *pszPath, bool fAutoShutdown, const char *pszPidFile)
 {
-    PRFileDesc *readable = nsnull, *writable = nsnull;
-    PRProcessAttr *attr = nsnull;
-    nsresult rv = NS_ERROR_FAILURE;
-    PRFileDesc *devNull;
-    unsigned args_index = 0;
-    // The ugly casts are necessary because the PR_CreateProcessDetached has
-    // a const array of writable strings as a parameter. It won't write. */
-    char * args[1 + 1 + 2 + 1];
-    args[args_index++] = (char *)pszPath;
-    if (fAutoShutdown)
-        args[args_index++] = (char *)"--auto-shutdown";
-    if (pszPidFile)
+    /*
+     * Setup an anonymous pipe that we can use to determine when the daemon
+     * process has started up.  the daemon will write a char to the pipe, and
+     * when we read it, we'll know to proceed with trying to connect to the
+     * daemon.
+     */
+    RTPIPE hPipeWr = NIL_RTPIPE;
+    RTPIPE hPipeRd = NIL_RTPIPE;
+    int vrc = RTPipeCreate(&hPipeRd, &hPipeWr, RTPIPE_C_INHERIT_WRITE);
+    if (RT_SUCCESS(vrc))
     {
-        args[args_index++] = (char *)"--pidfile";
-        args[args_index++] = (char *)pszPidFile;
+        char szPipeInheritFd[32]; RT_ZERO(szPipeInheritFd);
+
+        unsigned cArgs = 0;
+        const char *apszArgs[1 + 1 + 2 + 2 + 1];
+        apszArgs[cArgs++] = pszPath;
+        if (fAutoShutdown)
+            apszArgs[cArgs++] = "--auto-shutdown";
+        if (pszPidFile)
+        {
+            apszArgs[cArgs++] = "--pidfile";
+            apszArgs[cArgs++] = pszPidFile;
+        }
+        apszArgs[cArgs++] = "--inherit-startup-pipe";
+        apszArgs[cArgs++] = &szPipeInheritFd[0];
+        apszArgs[cArgs++] = NULL;
+
+        ssize_t cch = RTStrFormatU32(&szPipeInheritFd[0], sizeof(szPipeInheritFd),
+                                     (uint32_t)RTPipeToNative(hPipeWr), 10 /*uiBase*/,
+                                     0 /*cchWidth*/, 0 /*cchPrecision*/, 0 /*fFlags*/);
+        Assert(cch > 0);
+
+        RTHANDLE hStdNil;
+        hStdNil.enmType = RTHANDLETYPE_FILE;
+        hStdNil.u.hFile = NIL_RTFILE;
+
+        vrc = RTProcCreateEx(pszPath, apszArgs, RTENV_DEFAULT,
+                             RTPROC_FLAGS_DETACHED, &hStdNil, &hStdNil, &hStdNil,
+                             NULL /* pszAsUser */, NULL /* pszPassword */, NULL /* pExtraData */,
+                             NULL /* phProcess */);
+        if (RT_SUCCESS(vrc))
+        {
+            vrc = RTPipeClose(hPipeWr); AssertRC(vrc); RT_NOREF(vrc);
+            hPipeWr = NIL_RTPIPE;
+
+            size_t cbRead = 0;
+            char msg[10];
+            memset(msg, '\0', sizeof(msg));
+            vrc = RTPipeReadBlocking(hPipeRd, &msg[0], sizeof(msg) - 1, &cbRead);
+            if (   RT_SUCCESS(vrc)
+                && cbRead == 5
+                && !strcmp(msg, "READY"))
+            {
+                RTPipeClose(hPipeRd);
+                return NS_OK;
+            }
+        }
+
+        if (hPipeWr != NIL_RTPIPE)
+            RTPipeClose(hPipeWr);
+        RTPipeClose(hPipeRd);
     }
-    args[args_index++] = 0;
 
-    // Use a pipe to determine when the daemon process is in the position
-    // to actually process requests. The daemon will write "READY" to the pipe.
-    if (PR_CreatePipe(&readable, &writable) != PR_SUCCESS)
-        goto end;
-    PR_SetFDInheritable(writable, PR_TRUE);
-
-    attr = PR_NewProcessAttr();
-    if (!attr)
-        goto end;
-
-    if (PR_ProcessAttrSetInheritableFD(attr, writable, VBOXSVC_STARTUP_PIPE_NAME) != PR_SUCCESS)
-        goto end;
-
-    devNull = PR_Open("/dev/null", PR_RDWR, 0);
-    if (!devNull)
-        goto end;
-
-    PR_ProcessAttrSetStdioRedirect(attr, PR_StandardInput, devNull);
-    PR_ProcessAttrSetStdioRedirect(attr, PR_StandardOutput, devNull);
-    PR_ProcessAttrSetStdioRedirect(attr, PR_StandardError, devNull);
-
-    if (PR_CreateProcessDetached(pszPath, (char * const *)args, nsnull, attr) != PR_SUCCESS)
-        goto end;
-
-    // Close /dev/null
-    PR_Close(devNull);
-    // Close the child end of the pipe to make it the only owner of the
-    // file descriptor, so that unexpected closing can be detected.
-    PR_Close(writable);
-    writable = nsnull;
-
-    char msg[10];
-    memset(msg, '\0', sizeof(msg));
-    if (   PR_Read(readable, msg, sizeof(msg)-1) != 5
-        || strcmp(msg, "READY"))
-        goto end;
-
-    rv = NS_OK;
-
-end:
-    if (readable)
-        PR_Close(readable);
-    if (writable)
-        PR_Close(writable);
-    if (attr)
-        PR_DestroyProcessAttr(attr);
-    return rv;
+    return NS_ERROR_FAILURE;
 }
 
 static void showUsage(const char *pcszFileName)
@@ -650,16 +648,17 @@ static void showUsage(const char *pcszFileName)
     RTPrintf("  %s\n", pcszFileName);
     RTPrintf("\n");
     RTPrintf("Options:\n");
-    RTPrintf("  -a, --automate            Start XPCOM on demand and daemonize.\n");
-    RTPrintf("  -A, --auto-shutdown       Shuts down service if no longer in use.\n");
-    RTPrintf("  -d, --daemonize           Starts service in background.\n");
-    RTPrintf("  -D, --shutdown-delay <ms> Sets shutdown delay in ms.\n");
-    RTPrintf("  -h, --help                Displays this help.\n");
-    RTPrintf("  -p, --pidfile <path>      Uses a specific pidfile.\n");
-    RTPrintf("  -F, --logfile <path>      Uses a specific logfile.\n");
-    RTPrintf("  -R, --logrotate <count>   Number of old log files to keep.\n");
-    RTPrintf("  -S, --logsize <bytes>     Maximum size of a log file before rotating.\n");
-    RTPrintf("  -I, --loginterval <s>     Maximum amount of time to put in a log file.\n");
+    RTPrintf("  -a, --automate                      Start XPCOM on demand and daemonize.\n");
+    RTPrintf("  -A, --auto-shutdown                 Shuts down service if no longer in use.\n");
+    RTPrintf("  -d, --daemonize                     Starts service in background.\n");
+    RTPrintf("  -D, --shutdown-delay <ms>           Sets shutdown delay in ms.\n");
+    RTPrintf("  -h, --help                          Displays this help.\n");
+    RTPrintf("  -p, --pidfile <path>                Uses a specific pidfile.\n");
+    RTPrintf("  -F, --logfile <path>                Uses a specific logfile.\n");
+    RTPrintf("  -R, --logrotate <count>             Number of old log files to keep.\n");
+    RTPrintf("  -S, --logsize <bytes>               Maximum size of a log file before rotating.\n");
+    RTPrintf("  -I, --loginterval <s>               Maximum amount of time to put in a log file.\n");
+    RTPrintf("  -P, --inherit-startup-pipe <fd>     The startup pipe file descriptor number when re-starting the daemon\n");
 
     RTPrintf("\n");
 }
@@ -676,24 +675,25 @@ int main(int argc, char **argv)
 
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--automate",         'a', RTGETOPT_REQ_NOTHING },
-        { "--auto-shutdown",    'A', RTGETOPT_REQ_NOTHING },
-        { "--daemonize",        'd', RTGETOPT_REQ_NOTHING },
-        { "--help",             'h', RTGETOPT_REQ_NOTHING },
-        { "--shutdown-delay",   'D', RTGETOPT_REQ_UINT32 },
-        { "--pidfile",          'p', RTGETOPT_REQ_STRING },
-        { "--logfile",          'F', RTGETOPT_REQ_STRING },
-        { "--logrotate",        'R', RTGETOPT_REQ_UINT32 },
-        { "--logsize",          'S', RTGETOPT_REQ_UINT64 },
-        { "--loginterval",      'I', RTGETOPT_REQ_UINT32 }
+        { "--automate",             'a', RTGETOPT_REQ_NOTHING },
+        { "--auto-shutdown",        'A', RTGETOPT_REQ_NOTHING },
+        { "--daemonize",            'd', RTGETOPT_REQ_NOTHING },
+        { "--help",                 'h', RTGETOPT_REQ_NOTHING },
+        { "--shutdown-delay",       'D', RTGETOPT_REQ_UINT32 },
+        { "--pidfile",              'p', RTGETOPT_REQ_STRING },
+        { "--logfile",              'F', RTGETOPT_REQ_STRING },
+        { "--logrotate",            'R', RTGETOPT_REQ_UINT32 },
+        { "--logsize",              'S', RTGETOPT_REQ_UINT64 },
+        { "--loginterval",          'I', RTGETOPT_REQ_UINT32 },
+        { "--inherit-startup-pipe", 'P', RTGETOPT_REQ_UINT32 }
     };
 
     const char      *pszLogFile = NULL;
     uint32_t        cHistory = 10;                  // enable log rotation, 10 files
     uint32_t        uHistoryFileTime = RT_SEC_1DAY; // max 1 day per file
     uint64_t        uHistoryFileSize = 100 * _1M;   // max 100MB per file
+    uint32_t        uStartupPipeFd = UINT32_MAX;
     bool            fDaemonize = false;
-    PRFileDesc      *daemon_pipe_wr = nsnull;
 
     RTGETOPTSTATE   GetOptState;
     vrc = RTGetOptInit(&GetOptState, argc, argv, &s_aOptions[0], RT_ELEMENTS(s_aOptions), 1, 0 /*fFlags*/);
@@ -743,6 +743,10 @@ int main(int argc, char **argv)
 
             case 'I':
                 uHistoryFileTime = ValueUnion.u32;
+                break;
+
+            case 'P':
+                uStartupPipeFd = ValueUnion.u32;
                 break;
 
             case 'h':
@@ -797,9 +801,6 @@ int main(int argc, char **argv)
     static char saBuildID[48];
     RTStrPrintf(saBuildID, sizeof(saBuildID), "%s%s%s%s VirtualBox %s r%u %s%s%s%s",
                 "BU", "IL", "DI", "D", RTBldCfgVersion(), RTBldCfgRevision(), "BU", "IL", "DI", "D");
-
-    daemon_pipe_wr = PR_GetInheritedFD(VBOXSVC_STARTUP_PIPE_NAME);
-    RTEnvUnset("NSPR_INHERIT_FDS");
 
     const nsModuleComponentInfo VirtualBoxInfo = {
         "VirtualBox component",
@@ -902,13 +903,35 @@ int main(int argc, char **argv)
 #endif
         }
 
-        if (daemon_pipe_wr != nsnull)
+        if (uStartupPipeFd == UINT32_MAX)
+        {
+            /* Check the environment variable. */
+            const char *pszStartupPipe = RTEnvGet("VBOX_STARTUP_PIPE_FD");
+            if (pszStartupPipe)
+            {
+                /* Convert it to a number. */
+                vrc = RTStrToUInt32Full(pszStartupPipe, 0, &uStartupPipeFd);
+                if (RT_FAILURE(vrc))
+                {
+                    RTMsgError("Failed to parse VBOX_STARTUP_PIPE_FD=%s! (rc=%Rrc)", pszStartupPipe, vrc);
+                    break;
+                }
+            }
+        }
+        if (uStartupPipeFd != UINT32_MAX)
         {
             RTPrintf("\nStarting event loop....\n[send TERM signal to quit]\n");
-            /* now we're ready, signal the parent process */
-            PR_Write(daemon_pipe_wr, RT_STR_TUPLE("READY"));
-            /* close writing end of the pipe, its job is done */
-            PR_Close(daemon_pipe_wr);
+
+            RTPIPE hPipe = NIL_RTPIPE;
+            vrc = RTPipeFromNative(&hPipe, (RTHCINTPTR)uStartupPipeFd, RTPIPE_N_WRITE);
+            if (RT_SUCCESS(vrc))
+            {
+                vrc = RTPipeWriteBlocking(hPipe, RT_STR_TUPLE("READY"), NULL /*pcbWritten*/);
+                AssertRC(vrc); RT_NOREF(vrc);
+
+                vrc = RTPipeClose(hPipe);
+                AssertRC(vrc); RT_NOREF(vrc);
+            }
         }
         else
             RTPrintf("\nStarting event loop....\n[press Ctrl-C to quit]\n");
