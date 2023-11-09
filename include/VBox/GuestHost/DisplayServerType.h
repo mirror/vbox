@@ -48,6 +48,8 @@
 #define VBGH_ENV_XDG_CURRENT_DESKTOP    "XDG_CURRENT_DESKTOP"
 /** Environment variable which contains information about currently running session (X11, Wayland, etc). */
 #define VBGH_ENV_XDG_SESSION_TYPE       "XDG_SESSION_TYPE"
+/** Another environment variable which may contain information about currently running session. */
+#define VBGH_ENV_DESKTOP_SESSION        "DESKTOP_SESSION"
 
 /**
  * Enumeration holding a guest / host desktop display server type.
