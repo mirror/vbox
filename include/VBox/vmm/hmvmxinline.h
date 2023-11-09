@@ -288,9 +288,10 @@ DECLINLINE(const char *) VMXGetVmcsStateDesc(uint8_t fVmcsState)
 {
     switch (fVmcsState)
     {
-        case VMX_V_VMCS_LAUNCH_STATE_CLEAR:     return "Clear";
-        case VMX_V_VMCS_LAUNCH_STATE_LAUNCHED:  return "Launched";
-        default:                                return "Unknown";
+        case VMX_V_VMCS_LAUNCH_STATE_CLEAR:            return "Clear";
+        case VMX_V_VMCS_LAUNCH_STATE_CLEAR_LEGACY:     return "Clear (Legacy(";
+        case VMX_V_VMCS_LAUNCH_STATE_LAUNCHED:         return "Launched";
+        default:                                       return "Unknown";
     }
 }
 

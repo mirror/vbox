@@ -284,10 +284,7 @@ static int hmR0VmxLoadVmcs(PVMXVMCSINFO pVmcsInfo)
     Assert(pVmcsInfo->HCPhysVmcs != 0 && pVmcsInfo->HCPhysVmcs != NIL_RTHCPHYS);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
-    int rc = VMXLoadVmcs(pVmcsInfo->HCPhysVmcs);
-    if (RT_SUCCESS(rc))
-        pVmcsInfo->fVmcsState |= VMX_V_VMCS_LAUNCH_STATE_CURRENT;
-    return rc;
+    return VMXLoadVmcs(pVmcsInfo->HCPhysVmcs);
 }
 
 
@@ -3012,7 +3009,7 @@ static int hmR0VmxSetupVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNstG
             }
         }
         else
-            LogRelFunc(("Failed to load the %s. rc=%Rrc\n", rc, pszVmcs));
+            LogRelFunc(("Failed to load the %s. rc=%Rrc\n", pszVmcs, rc));
     }
     else
         LogRelFunc(("Failed to clear the %s. rc=%Rrc\n", rc, pszVmcs));

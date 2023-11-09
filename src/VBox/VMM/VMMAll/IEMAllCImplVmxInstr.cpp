@@ -2448,6 +2448,7 @@ static uint32_t iemVmxGetExitInstrInfo(PVMCPUCC pVCpu, uint32_t uExitReason, VMX
         {
             Assert(VMXINSTRID_IS_VALID(uInstrId));
             Assert(VMXINSTRID_GET_ID(uInstrId) == (uInstrId & 0x3));
+            Assert(GCPtrDisp == 0);
             Assert(ExitInstrInfo.RdrandRdseed.u2OperandSize != 3);
             ExitInstrInfo.RdrandRdseed.u3Undef0  = 0;
             ExitInstrInfo.RdrandRdseed.u4Undef0  = 0;
@@ -7821,7 +7822,8 @@ static VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, VMXI
     }
 
     /* Current VMCS is not a shadow VMCS. */
-    if (!pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.u32VmcsRevId.n.fIsShadowVmcs)
+    PVMXVVMCS pVmcs = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
+    if (!pVmcs->u32VmcsRevId.n.fIsShadowVmcs)
     { /* likely */ }
     else
     {
@@ -7846,11 +7848,17 @@ static VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, VMXI
     if (uInstrId == VMXINSTRID_VMLAUNCH)
     {
         /* VMLAUNCH with non-clear VMCS. */
-        if (pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.fVmcsState == VMX_V_VMCS_LAUNCH_STATE_CLEAR)
+        if (pVmcs->fVmcsState == VMX_V_VMCS_LAUNCH_STATE_CLEAR)
         { /* likely */ }
+        else if (pVmcs->fVmcsState == VMX_V_VMCS_LAUNCH_STATE_CLEAR_LEGACY)
+        {
+            /* Convert legacy launch-state value to current value, see @bugref{10318#c114} for reasons.*/
+            pVmcs->fVmcsState = VMX_V_VMCS_LAUNCH_STATE_CLEAR;
+            Log(("vmlaunch: Updated legacy 'VMCLEAR' VMCS launch-state bit to current\n"));
+        }
         else
         {
-            Log(("vmlaunch: VMLAUNCH with non-clear VMCS -> VMFail\n"));
+            Log(("vmlaunch: VMLAUNCH with non-clear VMCS %RGp -> VMFail\n", pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmentry_VmcsClear;
             iemVmxVmFail(pVCpu, VMXINSTRERR_VMLAUNCH_NON_CLEAR_VMCS);
             return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
@@ -7859,7 +7867,7 @@ static VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, VMXI
     else
     {
         /* VMRESUME with non-launched VMCS. */
-        if (pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.fVmcsState == VMX_V_VMCS_LAUNCH_STATE_LAUNCHED)
+        if (pVmcs->fVmcsState == VMX_V_VMCS_LAUNCH_STATE_LAUNCHED)
         { /* likely */ }
         else
         {
@@ -7902,9 +7910,6 @@ static VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, VMXI
              * See Intel spec. 26.7 "VM-entry Failures During or After Loading Guest State"
              */
             iemVmxVmentrySaveNmiBlockingFF(pVCpu);
-
-            PVMXVVMCS pVmcs = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
-            Assert(pVmcs);
 
             rc = iemVmxVmentryCheckGuestState(pVCpu, pszInstr);
             if (RT_SUCCESS(rc))
@@ -8996,6 +9001,13 @@ static VBOXSTRICTRC iemVmxVmptrld(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffS
             /* Notify HM that a new, current VMCS is loaded. */
             if (VM_IS_HM_ENABLED(pVCpu->CTX_SUFF(pVM)))
                 HMNotifyVmxNstGstCurrentVmcsChanged(pVCpu);
+
+            /* Convert legacy launch-state value to current value, see @bugref{10318#c114} for reasons.*/
+            if (pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.fVmcsState == VMX_V_VMCS_LAUNCH_STATE_CLEAR_LEGACY)
+            {
+                pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.fVmcsState = VMX_V_VMCS_LAUNCH_STATE_CLEAR;
+                Log(("vmptrld: Updated legacy 'VMCLEAR' VMCS launch-state bit to current\n"));
+            }
         }
         else
         {
@@ -9004,6 +9016,13 @@ static VBOXSTRICTRC iemVmxVmptrld(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffS
             pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmcs;
             return rc;
         }
+    }
+    else if (   IEM_VMX_HAS_CURRENT_VMCS(pVCpu)
+             && pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.fVmcsState == VMX_V_VMCS_LAUNCH_STATE_CLEAR_LEGACY)
+    {
+        /* Convert legacy launch-state value to current value, see @bugref{10318#c114} for reasons.*/
+        pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.fVmcsState = VMX_V_VMCS_LAUNCH_STATE_CLEAR;
+        Log(("vmptrld: Updated legacy VMCLEAR launch-state bit to current\n"));
     }
 
     Assert(IEM_VMX_HAS_CURRENT_VMCS(pVCpu));

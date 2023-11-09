@@ -3815,19 +3815,14 @@ typedef const VMXEXITAUX *PCVMXEXITAUX;
 
 /** @name VMX_V_VMCS_STATE_XXX - Virtual VMCS launch state.
  * @{ */
+/** VMCS launch state clear legacy value -- deprecated!!!. */
+#define VMX_V_VMCS_LAUNCH_STATE_CLEAR_LEGACY                    RT_BIT(0)
 /** VMCS launch state clear. */
-#define VMX_V_VMCS_LAUNCH_STATE_CLEAR                           RT_BIT(0)
-/** VMCS launch state active. */
-#define VMX_V_VMCS_LAUNCH_STATE_ACTIVE                          RT_BIT(1)
-/** VMCS launch state current. */
-#define VMX_V_VMCS_LAUNCH_STATE_CURRENT                         RT_BIT(2)
+#define VMX_V_VMCS_LAUNCH_STATE_CLEAR                           (0)
+/* Bit 1 used to be "active", no longer used. */
+/* Bit 2 used to be "current", no longer used. */
 /** VMCS launch state launched. */
 #define VMX_V_VMCS_LAUNCH_STATE_LAUNCHED                        RT_BIT(3)
-/** The mask of valid VMCS launch states. */
-#define VMX_V_VMCS_LAUNCH_STATE_MASK                            (  VMX_V_VMCS_LAUNCH_STATE_CLEAR \
-                                                                 | VMX_V_VMCS_LAUNCH_STATE_ACTIVE \
-                                                                 | VMX_V_VMCS_LAUNCH_STATE_CURRENT \
-                                                                 | VMX_V_VMCS_LAUNCH_STATE_LAUNCHED)
 /** @} */
 
 /** CR0 bits set here must always be set when in VMX operation. */

@@ -933,10 +933,7 @@ static int vmxHCLoadShadowVmcs(PVMXVMCSINFO pVmcsInfo)
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(pVmcsInfo->HCPhysShadowVmcs != 0 && pVmcsInfo->HCPhysShadowVmcs != NIL_RTHCPHYS);
 
-    int rc = VMXLoadVmcs(pVmcsInfo->HCPhysShadowVmcs);
-    if (RT_SUCCESS(rc))
-        pVmcsInfo->fShadowVmcsState |= VMX_V_VMCS_LAUNCH_STATE_CURRENT;
-    return rc;
+    return VMXLoadVmcs(pVmcsInfo->HCPhysShadowVmcs);
 }
 
 
