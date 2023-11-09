@@ -176,6 +176,19 @@ ifdef VBOX_WITH_VMSVGA
 endif
 
 ifdef VBOX_WITH_SHARED_CLIPBOARD
+
+ ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+  SharedClipboardTransfersDefs = VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS VBOX_WITH_SHARED_CLIPBOARD_GUEST
+  SharedClipboardTransfersSources = \
+  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers.cpp \
+  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp
+  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
+   SharedClipboardTransfersDefs += VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
+   SharedClipboardTransfersSources += \
+   	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers-http.cpp
+  endif
+ endif
+
  VBoxClient_DEFS     += VBOX_WITH_SHARED_CLIPBOARD
  VBoxClient_SOURCES  += \
  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp \
@@ -183,18 +196,10 @@ ifdef VBOX_WITH_SHARED_CLIPBOARD
  	clipboard.cpp \
  	clipboard-common.cpp \
  	clipboard-x11.cpp
- ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-  VBoxClient_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS VBOX_WITH_SHARED_CLIPBOARD_GUEST
-  VBoxClient_SOURCES += \
-  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers.cpp \
-  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp \
-  	$(PATH_ROOT)/src/VBox/GuestHost/common/mime-type-converter.cpp
-  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
-   VBoxClient_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS_HTTP
-   VBoxClient_SOURCES += \
-   	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers-http.cpp
-  endif
- endif
+
+ VBoxClient_DEFS += $(SharedClipboardTransfersDefs)
+ VBoxClient_SOURCES += $(SharedClipboardTransfersSources)
+
  ifdef VBOX_WITH_WAYLAND_ADDITIONS
   VBoxClient_DEFS += VBOX_WITH_WAYLAND_ADDITIONS
   VBoxClient_INCS += ../wlInclude/
@@ -204,6 +209,7 @@ ifdef VBOX_WITH_SHARED_CLIPBOARD
   	wayland-helper.cpp \
   	wayland.cpp \
   	wayland-helper-ipc.cpp \
+  	$(PATH_ROOT)/src/VBox/GuestHost/common/mime-type-converter.cpp \
   	../wlInclude/wayland-protocol.c \
   	../wlInclude/wlr-data-control-unstable-v1.c
  endif
@@ -279,6 +285,9 @@ ifdef VBOX_WITH_WAYLAND_ADDITIONS
  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp \
  	$(PATH_ROOT)/src/VBox/GuestHost/common/mime-type-converter.cpp
  vboxwl_SOURCES += $(VBOX_GH_SOURCES)
+
+ vboxwl_DEFS += $(SharedClipboardTransfersDefs)
+ vboxwl_SOURCES += $(SharedClipboardTransfersSources)
 
  VBOX_VBOXWL_LIBWAYLANDCLIENT_VER = 0
  VBOX_VBOXWL_LIBGTK3_VER = 0
