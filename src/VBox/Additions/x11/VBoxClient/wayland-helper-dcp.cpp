@@ -537,7 +537,7 @@ static DECLCALLBACK(int) vbcl_wayland_hlp_dcp_session_start_generic_cb(
  * @param sIface            Name of interface implemented by the object.
  * @param uVersion          Interface version.
  */
-static DECLCALLBACK(void) vbcl_wayland_hlp_dcp_registry_global_handler(
+static void vbcl_wayland_hlp_dcp_registry_global_handler(
     void *pvUser, struct wl_registry *pRegistry, uint32_t uName, const char *sIface, uint32_t uVersion)
 {
     vbox_wl_dcp_ctx_t *pCtx = (vbox_wl_dcp_ctx_t *)pvUser;
@@ -564,7 +564,7 @@ static DECLCALLBACK(void) vbcl_wayland_hlp_dcp_registry_global_handler(
  * @param pRegistry         Wayland Registry object.
  * @param uName             Numeric name of the global object.
  */
-static DECLCALLBACK(void) vbcl_wayland_hlp_dcp_registry_global_remove_handler(
+static void vbcl_wayland_hlp_dcp_registry_global_remove_handler(
     void *pvUser, struct wl_registry *pRegistry, uint32_t uName)
 {
     RT_NOREF(pvUser);
@@ -650,7 +650,7 @@ static DECLCALLBACK(int) vbcl_wayland_hlp_dcp_gh_add_fmt_cb(
  * @param pOffer            Wayland Data Control Offer object.
  * @param sMimeType         Mime-type of newly available clipboard data.
  */
-static DECLCALLBACK(void) vbcl_wayland_hlp_dcp_data_control_offer_offer(
+static void vbcl_wayland_hlp_dcp_data_control_offer_offer(
     void *pvUser, struct zwlr_data_control_offer_v1 *pOffer, const char *sMimeType)
 {
     vbox_wl_dcp_ctx_t *pCtx = (vbox_wl_dcp_ctx_t *)pvUser;
@@ -876,7 +876,7 @@ static DECLCALLBACK(int) vbcl_wayland_hlp_dcp_gh_clip_report_cb(
  * @param pDevice           Wayland Data Control Device object.
  * @param pOffer            Wayland Data Control Offer object.
  */
-static DECLCALLBACK(void) vbcl_wayland_hlp_dcp_data_device_data_offer(
+static void vbcl_wayland_hlp_dcp_data_device_data_offer(
     void *pvUser, struct zwlr_data_control_device_v1 *pDevice, struct zwlr_data_control_offer_v1 *pOffer)
 {
     vbox_wl_dcp_ctx_t *pCtx = (vbox_wl_dcp_ctx_t *)pvUser;
@@ -928,7 +928,7 @@ static DECLCALLBACK(void) vbcl_wayland_hlp_dcp_data_device_data_offer(
  * @param pDevice           Wayland Data Control Device object.
  * @param pOffer            Wayland Data Control Offer object.
  */
-static DECLCALLBACK(void) vbcl_wayland_hlp_dcp_data_device_selection(
+static void vbcl_wayland_hlp_dcp_data_device_selection(
     void *pvUser, struct zwlr_data_control_device_v1 *pDevice, struct zwlr_data_control_offer_v1 *pOffer)
 {
     RT_NOREF(pDevice, pvUser, pOffer);
@@ -965,7 +965,7 @@ static void vbcl_wayland_hlp_dcp_data_device_finished(
  * @param pDevice           Wayland Data Control Device object.
  * @param pOffer            Wayland Data Control Offer object.
  */
-static DECLCALLBACK(void) vbcl_wayland_hlp_dcp_data_device_primary_selection(
+static void vbcl_wayland_hlp_dcp_data_device_primary_selection(
     void *pvUser, struct zwlr_data_control_device_v1 *pDevice, struct zwlr_data_control_offer_v1 *pOffer)
 {
     RT_NOREF(pDevice, pvUser, pOffer);
@@ -1000,7 +1000,7 @@ static const struct zwlr_data_control_device_v1_listener g_data_device_listener 
  * @param sMimeType         A mime-type of requested data.
  * @param fd                A file descriptor to write clipboard content into.
  */
-static DECLCALLBACK(void) vbcl_wayland_hlp_dcp_data_source_send(
+static void vbcl_wayland_hlp_dcp_data_source_send(
     void *pvUser, struct zwlr_data_control_source_v1 *pDataSource,
     const char *sMimeType, int32_t fd)
 {
@@ -1035,7 +1035,7 @@ static DECLCALLBACK(void) vbcl_wayland_hlp_dcp_data_source_send(
  * @param pvData            VBox private data.
  * @param pDataSource       Wayland Data Control Source object.
  */
-static DECLCALLBACK(void) vbcl_wayland_hlp_dcp_data_source_cancelled(
+static void vbcl_wayland_hlp_dcp_data_source_cancelled(
     void *pvData, struct zwlr_data_control_source_v1 *pDataSource)
 {
     RT_NOREF(pvData);

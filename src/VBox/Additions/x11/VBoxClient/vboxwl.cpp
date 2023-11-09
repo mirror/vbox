@@ -102,9 +102,9 @@ vbcl::ipc::clipboard::ClipboardIpc *g_oClipboardIpc;
  * @param pSelectionData    Pointer to Gtk selection object.
  * @param pvUser            User data.
  */
-static DECLCALLBACK(void) vboxwl_gtk_clipboard_read(GtkClipboard* pClipboard,
-                                                    GtkSelectionData* pSelectionData,
-                                                    gpointer pvUser)
+static void vboxwl_gtk_clipboard_read(GtkClipboard* pClipboard,
+                                      GtkSelectionData* pSelectionData,
+                                      gpointer pvUser)
 {
     guchar *pData;
     gint cbData = -1;
@@ -256,9 +256,9 @@ static DECLCALLBACK(void) vboxwl_gtk_clipboard_get(GtkClipboard *pClipboard, Gdk
  * @param info              Ignored.
  * @param pvUser            User data.
  */
-static DECLCALLBACK(void) vboxwl_gtk_clipboard_write(GtkClipboard *pClipboard,
-                                                     GtkSelectionData *pSelectionData,
-                                                     guint info, gpointer pvUser)
+static void vboxwl_gtk_clipboard_write(GtkClipboard *pClipboard,
+                                       GtkSelectionData *pSelectionData,
+                                       guint info, gpointer pvUser)
 {
     GdkAtom target = gtk_selection_data_get_target(pSelectionData);
     gchar *sTargetName = gdk_atom_name(target);
@@ -313,7 +313,7 @@ static DECLCALLBACK(void) vboxwl_gtk_clipboard_write(GtkClipboard *pClipboard,
  * @param pClipboard    Pointer to Gtk clipboard object.
  * @param pvUser        User data.
  */
-static DECLCALLBACK(void) vboxwl_gtk_clipboard_write_fini(GtkClipboard *pClipboard, gpointer pvUser)
+static void vboxwl_gtk_clipboard_write_fini(GtkClipboard *pClipboard, gpointer pvUser)
 {
     VBCL_LOG_CALLBACK;
     RT_NOREF(pClipboard, pvUser);
@@ -401,11 +401,9 @@ static DECLCALLBACK(gboolean) vboxwl_gtk_clipboard_set(GtkWidget* pSelf, GdkEven
  * @returns FALSE to stop watchdog, TRUE otherwise.
  * @param   pvUser    User data.
  */
-static DECLCALLBACK(gboolean) vboxwl_gtk_watchdog(gpointer pvUser)
+static gboolean vboxwl_gtk_watchdog(gpointer pvUser)
 {
     RT_NOREF(pvUser);
-
-    //VBCL_LOG_CALLBACK;
 
     if (   g_tsGtkQuit > 0
         && (RTTimeMilliTS() - g_tsGtkQuit) > VBOXWL_EXIT_TIMEOUT_MS)
