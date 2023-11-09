@@ -78,6 +78,11 @@ X86XMMREG           g_XmmZero;
         uint8_t iMySeg = (a_iSeg); NOREF(iMySeg); /** @todo const or variable. grr. */ \
     } while (0)
 
+#define CHK_ST_IDX(a_iStReg) \
+    do { \
+        uint8_t const iMyStReg = (a_iStReg); NOREF(iMyStReg); \
+    } while (0)
+
 #define CHK_GREG_IDX(a_iGReg) \
     do { \
         uint8_t const iMyGReg = (a_iGReg); NOREF(iMyGReg); \
@@ -924,27 +929,27 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEM_MC_POP_U32(a_pu32Value)                                     do { CHK_VAR(a_pu32Value); (void)fMcBegin; } while (0)
 #define IEM_MC_POP_U64(a_pu64Value)                                     do { CHK_VAR(a_pu64Value); (void)fMcBegin; } while (0)
 
-#define IEM_MC_MEM_MAP_U8_RW(a_pu8Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem)   do { (a_pu8Mem)  = NULL; CHK_PTYPE(uint8_t *,        a_pu8Mem);  CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
-#define IEM_MC_MEM_MAP_U8_RO(a_pu8Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem)   do { (a_pu8Mem)  = NULL; CHK_PTYPE(uint8_t const *,  a_pu8Mem);  CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
-#define IEM_MC_MEM_MAP_U8_WO(a_pu8Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem)   do { (a_pu8Mem)  = NULL; CHK_PTYPE(uint8_t *,        a_pu8Mem);  CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
-#define IEM_MC_MEM_MAP_U16_RW(a_pu16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { (a_pu16Mem) = NULL; CHK_PTYPE(uint16_t *,       a_pu16Mem); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
-#define IEM_MC_MEM_MAP_U16_RO(a_pu16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { (a_pu16Mem) = NULL; CHK_PTYPE(uint16_t const *, a_pu16Mem); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
-#define IEM_MC_MEM_MAP_U16_WO(a_pu16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { (a_pu16Mem) = NULL; CHK_PTYPE(uint16_t *,       a_pu16Mem); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
-#define IEM_MC_MEM_MAP_U32_RW(a_pu32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { (a_pu32Mem) = NULL; CHK_PTYPE(uint32_t *,       a_pu32Mem); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
-#define IEM_MC_MEM_MAP_U32_RO(a_pu32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { (a_pu32Mem) = NULL; CHK_PTYPE(uint32_t const *, a_pu32Mem); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
-#define IEM_MC_MEM_MAP_U32_WO(a_pu32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { (a_pu32Mem) = NULL; CHK_PTYPE(uint32_t *,       a_pu32Mem); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
-#define IEM_MC_MEM_MAP_U64_RW(a_pu64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { (a_pu64Mem) = NULL; CHK_PTYPE(uint64_t *,       a_pu64Mem); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
-#define IEM_MC_MEM_MAP_U64_RO(a_pu64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { (a_pu64Mem) = NULL; CHK_PTYPE(uint64_t const *, a_pu64Mem); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
-#define IEM_MC_MEM_MAP_U64_WO(a_pu64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { (a_pu64Mem) = NULL; CHK_PTYPE(uint64_t *,       a_pu64Mem); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_MAP_U8_RW(a_pu8Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem)   do { CHK_VAR(a_pu8Mem);  (a_pu8Mem)  = NULL; CHK_PTYPE(uint8_t *,        a_pu8Mem);  CHK_VAR(a_bUnmapInfo); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_MAP_U8_RO(a_pu8Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem)   do { CHK_VAR(a_pu8Mem);  (a_pu8Mem)  = NULL; CHK_PTYPE(uint8_t const *,  a_pu8Mem);  CHK_VAR(a_bUnmapInfo); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_MAP_U8_WO(a_pu8Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem)   do { CHK_VAR(a_pu8Mem);  (a_pu8Mem)  = NULL; CHK_PTYPE(uint8_t *,        a_pu8Mem);  CHK_VAR(a_bUnmapInfo); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_MAP_U16_RW(a_pu16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { CHK_VAR(a_pu16Mem); (a_pu16Mem) = NULL; CHK_PTYPE(uint16_t *,       a_pu16Mem); CHK_VAR(a_bUnmapInfo); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_MAP_U16_RO(a_pu16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { CHK_VAR(a_pu16Mem); (a_pu16Mem) = NULL; CHK_PTYPE(uint16_t const *, a_pu16Mem); CHK_VAR(a_bUnmapInfo); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_MAP_U16_WO(a_pu16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { CHK_VAR(a_pu16Mem); (a_pu16Mem) = NULL; CHK_PTYPE(uint16_t *,       a_pu16Mem); CHK_VAR(a_bUnmapInfo); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_MAP_U32_RW(a_pu32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { CHK_VAR(a_pu32Mem); (a_pu32Mem) = NULL; CHK_PTYPE(uint32_t *,       a_pu32Mem); CHK_VAR(a_bUnmapInfo); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_MAP_U32_RO(a_pu32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { CHK_VAR(a_pu32Mem); (a_pu32Mem) = NULL; CHK_PTYPE(uint32_t const *, a_pu32Mem); CHK_VAR(a_bUnmapInfo); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_MAP_U32_WO(a_pu32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { CHK_VAR(a_pu32Mem); (a_pu32Mem) = NULL; CHK_PTYPE(uint32_t *,       a_pu32Mem); CHK_VAR(a_bUnmapInfo); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_MAP_U64_RW(a_pu64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { CHK_VAR(a_pu64Mem); (a_pu64Mem) = NULL; CHK_PTYPE(uint64_t *,       a_pu64Mem); CHK_VAR(a_bUnmapInfo); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_MAP_U64_RO(a_pu64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { CHK_VAR(a_pu64Mem); (a_pu64Mem) = NULL; CHK_PTYPE(uint64_t const *, a_pu64Mem); CHK_VAR(a_bUnmapInfo); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_MAP_U64_WO(a_pu64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { CHK_VAR(a_pu64Mem); (a_pu64Mem) = NULL; CHK_PTYPE(uint64_t *,       a_pu64Mem); CHK_VAR(a_bUnmapInfo); CHK_TYPE(uint8_t, a_bUnmapInfo); a_bUnmapInfo = 1; CHK_GCPTR(a_GCPtrMem); CHK_VAR(a_GCPtrMem); CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
 
-#define IEM_MC_MEM_COMMIT_AND_UNMAP_RW(a_pvMem, a_bMapInfo)             do { CHK_TYPE(uint8_t, a_bMapInfo); (void)fMcBegin; } while (0)
-#define IEM_MC_MEM_COMMIT_AND_UNMAP_RO(a_pvMem, a_bMapInfo)             do { CHK_TYPE(uint8_t, a_bMapInfo); (void)fMcBegin; } while (0)
-#define IEM_MC_MEM_COMMIT_AND_UNMAP_WO(a_pvMem, a_bMapInfo)             do { CHK_TYPE(uint8_t, a_bMapInfo); (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_COMMIT_AND_UNMAP_RW(a_pvMem, a_bMapInfo)                do { CHK_VAR(a_pvMem); CHK_VAR(a_bMapInfo); CHK_TYPE(uint8_t, a_bMapInfo); (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_COMMIT_AND_UNMAP_RO(a_pvMem, a_bMapInfo)                do { CHK_VAR(a_pvMem); CHK_VAR(a_bMapInfo); CHK_TYPE(uint8_t, a_bMapInfo); (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_COMMIT_AND_UNMAP_WO(a_pvMem, a_bMapInfo)                do { CHK_VAR(a_pvMem); CHK_VAR(a_bMapInfo); CHK_TYPE(uint8_t, a_bMapInfo); (void)fMcBegin; } while (0)
 
-#define IEM_MC_MEM_MAP(a_pMem, a_fAccess, a_iSeg, a_GCPtrMem, a_iArg)   do { CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
-#define IEM_MC_MEM_MAP_EX(a_pvMem, a_fAccess, a_cbMem, a_iSeg, a_GCPtrMem, a_cbAlign, a_iArg)  do { CHK_SEG_IDX(a_iSeg); (void)fMcBegin; AssertCompile((a_cbAlign) <= (a_cbMem)); } while (0)
-#define IEM_MC_MEM_COMMIT_AND_UNMAP(a_pvMem, a_fAccess)                             do { (void)fMcBegin; } while (0)
-#define IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(a_pvMem, a_fAccess, a_u16FSW)     do { (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_MAP(a_pMem, a_fAccess, a_iSeg, a_GCPtrMem, a_iArg)                          do { CHK_VAR(a_pMem);  CHK_VAR(a_GCPtrMem); CHK_SEG_IDX(a_iSeg); (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_MAP_EX(a_pvMem, a_fAccess, a_cbMem, a_iSeg, a_GCPtrMem, a_cbAlign, a_iArg)  do { CHK_VAR(a_pvMem); CHK_VAR(a_GCPtrMem); CHK_SEG_IDX(a_iSeg); (void)fMcBegin; AssertCompile((a_cbAlign) <= (a_cbMem)); } while (0)
+#define IEM_MC_MEM_COMMIT_AND_UNMAP(a_pvMem, a_fAccess)                                        do { CHK_VAR(a_pvMem); (void)fMcBegin; } while (0)
+#define IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(a_pvMem, a_fAccess, a_u16FSW)                do { CHK_VAR(a_pvMem); (void)fMcBegin; } while (0)
 #define IEM_MC_CALC_RM_EFF_ADDR(a_GCPtrEff, a_bRm, a_cbImmAndRspOffset) do { (a_GCPtrEff) = 0; CHK_GCPTR(a_GCPtrEff); (void)fMcBegin; } while (0)
 #define IEM_MC_CALL_VOID_AIMPL_0(a_pfn)                                 do { (void)fMcBegin; } while (0)
 #define IEM_MC_CALL_VOID_AIMPL_1(a_pfn, a0) \
@@ -981,32 +986,33 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
     do { (void)fFpuHost; (void)fFpuWrite; CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); (void)fMcBegin; } while (0)
 #define IEM_MC_CALL_FPU_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
     do { (void)fFpuHost; (void)fFpuWrite; CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); (void)fMcBegin; } while (0)
-#define IEM_MC_SET_FPU_RESULT(a_FpuData, a_FSW, a_pr80Value)            do { (void)fFpuWrite; (void)fMcBegin; } while (0)
-#define IEM_MC_PUSH_FPU_RESULT(a_FpuData, a_uFpuOpcode)                                         do { (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
-#define IEM_MC_PUSH_FPU_RESULT_MEM_OP(a_FpuData, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode)           do { (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
-#define IEM_MC_PUSH_FPU_RESULT_TWO(a_FpuDataTwo, a_uFpuOpcode)                                  do { (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
-#define IEM_MC_STORE_FPU_RESULT(a_FpuData, a_iStReg, a_uFpuOpcode)                              do { (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
-#define IEM_MC_STORE_FPU_RESULT_THEN_POP(a_FpuData, a_iStReg, a_uFpuOpcode)                     do { (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
-#define IEM_MC_STORE_FPU_RESULT_MEM_OP(a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode) do {(void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
-#define IEM_MC_FPU_STACK_UNDERFLOW(a_iStReg, a_uFpuOpcode)                                      do { (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
-#define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(a_iStReg, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode)        do { (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
-#define IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(a_iStReg, a_uFpuOpcode)                             do { (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
-#define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(a_iStReg, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode) do{(void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
+#define IEM_MC_SET_FPU_RESULT(a_FpuData, a_FSW, a_pr80Value)                                    do { CHK_VAR(a_FpuData); CHK_VAR(a_pr80Value); CHK_CONST(uint16_t, a_FSW); (void)fFpuWrite; (void)fMcBegin; } while (0)
+#define IEM_MC_PUSH_FPU_RESULT(a_FpuData, a_uFpuOpcode)                                         do { CHK_VAR(a_FpuData); (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
+#define IEM_MC_PUSH_FPU_RESULT_MEM_OP(a_FpuData, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode)           do { CHK_VAR(a_FpuData); CHK_SEG_IDX(a_iEffSeg); CHK_VAR(a_GCPtrEff); CHK_GCPTR(a_GCPtrEff); (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
+#define IEM_MC_PUSH_FPU_RESULT_TWO(a_FpuDataTwo, a_uFpuOpcode)                                  do { CHK_VAR(a_FpuDataTwo); (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
+#define IEM_MC_STORE_FPU_RESULT(a_FpuData, a_iStReg, a_uFpuOpcode)                              do { CHK_VAR(a_FpuData); CHK_ST_IDX(a_iStReg); (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
+#define IEM_MC_STORE_FPU_RESULT_THEN_POP(a_FpuData, a_iStReg, a_uFpuOpcode)                     do { CHK_VAR(a_FpuData); CHK_ST_IDX(a_iStReg); (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
+#define IEM_MC_STORE_FPU_RESULT_MEM_OP(a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode) do {CHK_VAR(a_FpuData); CHK_ST_IDX(a_iStReg); CHK_SEG_IDX(a_iEffSeg); CHK_VAR(a_GCPtrEff); CHK_GCPTR(a_GCPtrEff); (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
+#define IEM_MC_FPU_STACK_UNDERFLOW(a_iStReg, a_uFpuOpcode)                                      do { CHK_ST_IDX(a_iStReg); (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
+#define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(a_iStReg, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode)        do { CHK_ST_IDX(a_iStReg); CHK_SEG_IDX(a_iEffSeg); CHK_VAR(a_GCPtrEff); CHK_GCPTR(a_GCPtrEff); (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
+#define IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(a_iStReg, a_uFpuOpcode)                             do { CHK_ST_IDX(a_iStReg); (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
+#define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(a_iStReg, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode) do{CHK_ST_IDX(a_iStReg); CHK_SEG_IDX(a_iEffSeg); CHK_VAR(a_GCPtrEff); CHK_GCPTR(a_GCPtrEff); (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
 #define IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP_POP(a_uFpuOpcode)                                   do { (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
 #define IEM_MC_FPU_STACK_PUSH_UNDERFLOW(a_uFpuOpcode)                                           do { (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
 #define IEM_MC_FPU_STACK_PUSH_UNDERFLOW_TWO(a_uFpuOpcode)                                       do { (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
 #define IEM_MC_FPU_STACK_PUSH_OVERFLOW(a_uFpuOpcode)                                            do { (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
-#define IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(a_iEffSeg, a_GCPtrEff, a_uFpuOpcode)              do { (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
+#define IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(a_iEffSeg, a_GCPtrEff, a_uFpuOpcode)              do { CHK_SEG_IDX(a_iEffSeg); CHK_VAR(a_GCPtrEff); CHK_GCPTR(a_GCPtrEff); (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
 #define IEM_MC_UPDATE_FPU_OPCODE_IP(a_uFpuOpcode)                                               do { (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
 #define IEM_MC_FPU_STACK_DEC_TOP()                                                              do { (void)fFpuWrite; (void)fMcBegin; } while (0)
 #define IEM_MC_FPU_STACK_INC_TOP()                                                              do { (void)fFpuWrite; (void)fMcBegin; } while (0)
-#define IEM_MC_FPU_STACK_FREE(a_iStReg)                                                         do { (void)fFpuWrite; (void)fMcBegin; } while (0)
-#define IEM_MC_UPDATE_FSW(a_u16FSW, a_uFpuOpcode)                                               do { (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
-#define IEM_MC_UPDATE_FSW_CONST(a_u16FSW, a_uFpuOpcode)                                         do { (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
-#define IEM_MC_UPDATE_FSW_WITH_MEM_OP(a_u16FSW, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode)            do { (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
-#define IEM_MC_UPDATE_FSW_THEN_POP(a_u16FSW, a_uFpuOpcode)                                      do { (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
-#define IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(a_u16FSW, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode)   do { (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
-#define IEM_MC_UPDATE_FSW_THEN_POP_POP(a_u16FSW, a_uFpuOpcode)                                  do { (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
+#define IEM_MC_FPU_STACK_FREE(a_iStReg)                                                         do { CHK_ST_IDX(a_iStReg); (void)fFpuWrite; (void)fMcBegin; } while (0)
+#define IEM_MC_UPDATE_FSW(a_u16FSW, a_uFpuOpcode)                                               do { CHK_VAR(a_u16FSW); CHK_TYPE(uint16_t, a_u16FSW); (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
+#define IEM_MC_UPDATE_FSW_CONST(a_u16FSW, a_uFpuOpcode)                                         do { CHK_CONST(uint16_t, a_u16FSW); (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
+#define IEM_MC_UPDATE_FSW_WITH_MEM_OP(a_u16FSW, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode)            do { CHK_VAR(a_u16FSW); CHK_TYPE(uint16_t, a_u16FSW); CHK_SEG_IDX(a_iEffSeg); CHK_VAR(a_GCPtrEff); CHK_GCPTR(a_GCPtrEff); (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
+#define IEM_MC_UPDATE_FSW_THEN_POP(a_u16FSW, a_uFpuOpcode)                                      do { CHK_VAR(a_u16FSW); CHK_TYPE(uint16_t, a_u16FSW); (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
+#define IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(a_u16FSW, a_iEffSeg, a_GCPtrEff, a_uFpuOpcode)   do { CHK_VAR(a_u16FSW); CHK_TYPE(uint16_t, a_u16FSW); CHK_SEG_IDX(a_iEffSeg); CHK_VAR(a_GCPtrEff); CHK_GCPTR(a_GCPtrEff); (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
+#define IEM_MC_UPDATE_FSW_THEN_POP_POP(a_u16FSW, a_uFpuOpcode)                                  do { CHK_VAR(a_u16FSW); CHK_TYPE(uint16_t, a_u16FSW); (void)fFpuWrite; (void)fMcBegin; (void)a_uFpuOpcode; } while (0)
+
 #define IEM_MC_PREPARE_FPU_USAGE() (void)fMcBegin; \
     const int fFpuRead = 1, fFpuWrite = 1, fFpuHost = 1, fSseRead = 1, fSseWrite = 1, fSseHost = 1, fAvxRead = 1, fAvxWrite = 1, fAvxHost = 1
 #define IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ()   (void)fMcBegin; const int fFpuRead = 1, fSseRead = 1
@@ -1055,17 +1061,18 @@ typedef VBOXSTRICTRC (* PFNIEMOPRM)(PVMCPU pVCpu, uint8_t bRm);
 #define IEM_MC_IF_RCX_IS_NZ_AND_EFL_BIT_NOT_SET(a_fBit)                 (void)fMcBegin; if (g_fRandom) {
 #define IEM_MC_IF_LOCAL_IS_Z(a_Local)                                   (void)fMcBegin; if ((a_Local) == 0) {
 #define IEM_MC_IF_GREG_BIT_SET(a_iGReg, a_iBitNo)                       (void)fMcBegin; CHK_GREG_IDX(a_iGReg); if (g_fRandom) {
-#define IEM_MC_IF_FPUREG_NOT_EMPTY(a_iSt)                               (void)fMcBegin; if (g_fRandom != fFpuRead) {
-#define IEM_MC_IF_FPUREG_IS_EMPTY(a_iSt)                                (void)fMcBegin; if (g_fRandom != fFpuRead) {
+#define IEM_MC_IF_FPUREG_NOT_EMPTY(a_iSt)                               (void)fMcBegin; CHK_ST_IDX(a_iSt); if (g_fRandom != fFpuRead) {
+#define IEM_MC_IF_FPUREG_IS_EMPTY(a_iSt)                                (void)fMcBegin; CHK_ST_IDX(a_iSt); if (g_fRandom != fFpuRead) {
 #define IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(a_pr80Dst, a_iSt) (void)fMcBegin; \
-    a_pr80Dst = NULL; \
+    CHK_ST_IDX(a_iSt); \
+    a_pr80Dst = NULL; CHK_VAR(a_pr80Dst); \
     if (g_fRandom != fFpuRead) {
 #define IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(p0, i0, p1, i1) (void)fMcBegin; \
-    p0 = NULL; \
-    p1 = NULL; \
+    p0 = NULL; CHK_VAR(p0); \
+    p1 = NULL; CHK_VAR(p1); \
     if (g_fRandom != fFpuRead) {
 #define IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(p0, i0, i1) (void)fMcBegin; \
-    p0 = NULL; \
+    p0 = NULL; CHK_VAR(p0); \
     if (g_fRandom != fFpuRead) {
 #define IEM_MC_IF_FCW_IM()                                              (void)fMcBegin; if (g_fRandom != fFpuRead) {
 #define IEM_MC_IF_MXCSR_XCPT_PENDING()                                  (void)fMcBegin; if (g_fRandom != fSseRead) {
