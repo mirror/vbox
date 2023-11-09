@@ -2008,13 +2008,6 @@ LOCKPROXY_NATIVE(release) (JNIEnv *env, jclass that, jlong aLockObject)
 {
   // Need to release object on the main thread.
   nsresult rv = NS_ERROR_FAILURE;
-#ifdef VBOX
   rv = NS_ProxyRelease(do_GetMainThreadQueue().get(), reinterpret_cast<nsISupports*>(aLockObject));
-#else
-  nsCOMPtr<nsIThread> thread = do_GetMainThread();
-  if (thread) {
-      rv = NS_ProxyRelease(thread, reinterpret_cast<nsISupports*>(aLockObject));
-  }
-#endif
   NS_ASSERTION(NS_SUCCEEDED(rv), "Failed to release using NS_ProxyRelease");
 }
