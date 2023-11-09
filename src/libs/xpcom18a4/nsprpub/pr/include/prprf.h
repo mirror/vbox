@@ -71,7 +71,6 @@
 #define PR_vsprintf_append VBoxNsprPR_vsprintf_append
 #define PR_vsxprintf VBoxNsprPR_vsxprintf
 #define PR_vfprintf VBoxNsprPR_vfprintf
-#define PR_sscanf VBoxNsprPR_sscanf
 #endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 
 PR_BEGIN_EXTERN_C
@@ -128,41 +127,6 @@ NSPR_API(char*) PR_vsmprintf(const char *fmt, va_list ap);
 NSPR_API(char*) PR_vsprintf_append(char *last, const char *fmt, va_list ap);
 NSPR_API(PRUint32) PR_vsxprintf(PRStuffFunc f, void *arg, const char *fmt, va_list ap);
 NSPR_API(PRUint32) PR_vfprintf(struct PRFileDesc* fd, const char *fmt, va_list ap);
-
-/*
-***************************************************************************
-** FUNCTION: PR_sscanf
-** DESCRIPTION:
-**     PR_sscanf() scans the input character string, performs data
-**     conversions, and stores the converted values in the data objects
-**     pointed to by its arguments according to the format control
-**     string.
-**
-**     PR_sscanf() behaves the same way as the sscanf() function in the
-**     Standard C Library (stdio.h), with the following exceptions:
-**     - PR_sscanf() handles the NSPR integer and floating point types,
-**       such as PRInt16, PRInt32, PRInt64, and PRFloat64, whereas
-**       sscanf() handles the standard C types like short, int, long,
-**       and double.
-**     - PR_sscanf() has no multibyte character support, while sscanf()
-**       does.
-** INPUTS:
-**     const char *buf
-**         a character string holding the input to scan
-**     const char *fmt
-**         the format control string for the conversions
-**     ...
-**         variable number of arguments, each of them is a pointer to
-**         a data object in which the converted value will be stored
-** OUTPUTS: none
-** RETURNS: PRInt32
-**     The number of values converted and stored.
-** RESTRICTIONS:
-**    Multibyte characters in 'buf' or 'fmt' are not allowed.
-***************************************************************************
-*/
-
-NSPR_API(PRInt32) PR_sscanf(const char *buf, const char *fmt, ...);
 
 PR_END_EXTERN_C
 
