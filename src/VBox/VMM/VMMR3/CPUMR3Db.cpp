@@ -229,9 +229,6 @@ static CPUMDBENTRY const * const g_apCpumDbEntries[] =
 #ifdef VBOX_CPUDB_Intel_Pentium_4_3_00GHz_h
     &g_Entry_Intel_Pentium_4_3_00GHz,
 #endif
-#ifdef VBOX_CPUDB_Intel_Pentium_4_3_00GHz_h
-    &g_Entry_Intel_Pentium_4_3_00GHz,
-#endif
 /** @todo pentium, pentium mmx, pentium pro, pentium II, pentium III */
 #ifdef VBOX_CPUDB_Intel_80486_h
     &g_Entry_Intel_80486,
