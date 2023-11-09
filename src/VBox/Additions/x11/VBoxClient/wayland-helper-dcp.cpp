@@ -694,8 +694,8 @@ static SHCLFORMATS vbcl_wayland_hlp_dcp_match_formats(vbox_wl_dcp_mime_t *pList)
         vbox_wl_dcp_mime_t *pEntry;
         RTListForEach(&pList->Node, pEntry, vbox_wl_dcp_mime_t, Node)
         {
-            AssertPtrReturn(pEntry, VERR_INVALID_PARAMETER);
-            AssertPtrReturn(pEntry->pszMimeType, VERR_INVALID_PARAMETER);
+            AssertPtrReturn(pEntry, VBOX_SHCL_FMT_NONE);
+            AssertPtrReturn(pEntry->pszMimeType, VBOX_SHCL_FMT_NONE);
 
             fFmts |= VBoxMimeConvGetIdByMime(pEntry->pszMimeType);
         }
