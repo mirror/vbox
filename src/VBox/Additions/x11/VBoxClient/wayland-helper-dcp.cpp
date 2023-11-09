@@ -575,8 +575,8 @@ static DECLCALLBACK(void) vbcl_wayland_hlp_dcp_registry_global_remove_handler(
 /** Wayland global registry callbacks. */
 static const struct wl_registry_listener g_vbcl_wayland_hlp_registry_cb =
 {
-    vbcl_wayland_hlp_dcp_registry_global_handler,       /* .global */
-    vbcl_wayland_hlp_dcp_registry_global_remove_handler /* .global_remove */
+    &vbcl_wayland_hlp_dcp_registry_global_handler,       /* .global */
+    &vbcl_wayland_hlp_dcp_registry_global_remove_handler /* .global_remove */
 };
 
 
@@ -670,7 +670,7 @@ static DECLCALLBACK(void) vbcl_wayland_hlp_dcp_data_control_offer_offer(
 /** Wayland Data Control Offer interface callbacks. */
 static const struct zwlr_data_control_offer_v1_listener g_data_control_offer_listener =
 {
-    vbcl_wayland_hlp_dcp_data_control_offer_offer,
+    &vbcl_wayland_hlp_dcp_data_control_offer_offer,
 };
 
 
@@ -977,10 +977,10 @@ static DECLCALLBACK(void) vbcl_wayland_hlp_dcp_data_device_primary_selection(
 /** Data Control Device interface callbacks. */
 static const struct zwlr_data_control_device_v1_listener g_data_device_listener =
 {
-    vbcl_wayland_hlp_dcp_data_device_data_offer,
-    vbcl_wayland_hlp_dcp_data_device_selection,
-    vbcl_wayland_hlp_dcp_data_device_finished,
-    vbcl_wayland_hlp_dcp_data_device_primary_selection,
+    &vbcl_wayland_hlp_dcp_data_device_data_offer,
+    &vbcl_wayland_hlp_dcp_data_device_selection,
+    &vbcl_wayland_hlp_dcp_data_device_finished,
+    &vbcl_wayland_hlp_dcp_data_device_primary_selection,
 };
 
 
@@ -1049,8 +1049,8 @@ static DECLCALLBACK(void) vbcl_wayland_hlp_dcp_data_source_cancelled(
 /** Wayland Data Control Source interface callbacks. */
 static const struct zwlr_data_control_source_v1_listener g_data_source_listener =
 {
-    vbcl_wayland_hlp_dcp_data_source_send,
-    vbcl_wayland_hlp_dcp_data_source_cancelled,
+    &vbcl_wayland_hlp_dcp_data_source_send,
+    &vbcl_wayland_hlp_dcp_data_source_cancelled,
 };
 
 
@@ -1530,7 +1530,7 @@ static DECLCALLBACK(int) vbcl_wayland_hlp_dcp_hg_clip_report_join_cb(
 /**
  * @interface_method_impl{VBCLWAYLANDHELPER,pfnHGClipReport}
  */
-static int vbcl_wayland_hlp_dcp_hg_clip_report(SHCLFORMATS fFormats)
+static DECLCALLBACK(int) vbcl_wayland_hlp_dcp_hg_clip_report(SHCLFORMATS fFormats)
 {
     int rc = VERR_NO_DATA;
 
@@ -1612,7 +1612,7 @@ static DECLCALLBACK(int) vbcl_wayland_hlp_dcp_gh_clip_read_join_cb(
 /**
  * @interface_method_impl{VBCLWAYLANDHELPER,pfnGHClipRead}
  */
-static int vbcl_wayland_hlp_dcp_gh_clip_read(SHCLFORMAT uFmt)
+static DECLCALLBACK(int) vbcl_wayland_hlp_dcp_gh_clip_read(SHCLFORMAT uFmt)
 {
     int rc;
 

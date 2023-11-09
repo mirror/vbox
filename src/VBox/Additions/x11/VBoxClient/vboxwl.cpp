@@ -230,7 +230,7 @@ static DECLCALLBACK(void) vboxwl_gtk_clipboard_get(GtkClipboard *pClipboard, Gdk
             /* Find target which matches to host format among reported by guest. */
             GdkAtom gtkFmt = vboxwl_gtk_match_target(pTargets, cTargets, uFmt);
             if (gtkFmt != GDK_NONE)
-                gtk_clipboard_request_contents(pClipboard, gtkFmt, vboxwl_gtk_clipboard_read, pvUser);
+                gtk_clipboard_request_contents(pClipboard, gtkFmt, &vboxwl_gtk_clipboard_read, pvUser);
             else
                 VBClLogVerbose(2, "session %u: will not send format 0x%x to host, not known to the guest\n",
                                g_uSessionId, uFmt);
@@ -375,8 +375,8 @@ static DECLCALLBACK(gboolean) vboxwl_gtk_clipboard_set(GtkWidget* pSelf, GdkEven
 
             /* Announce clipboard content to the guest. */
             fRc = gtk_clipboard_set_with_data(pClipboard, aTargets, cTargets,
-                                              vboxwl_gtk_clipboard_write,
-                                              vboxwl_gtk_clipboard_write_fini, NULL);
+                                              &vboxwl_gtk_clipboard_write,
+                                              &vboxwl_gtk_clipboard_write_fini, NULL);
             if (!fRc)
                 VBClLogVerbose(2, "session %u: cannot announce clipboard to Gtk\n", g_uSessionId);
 
@@ -450,7 +450,7 @@ static DECLCALLBACK(void) vboxwl_gtk_app_start(GtkApplication* pApp, gpointer pv
             gtk_widget_set_opacity(pButton, VBOXWL_WINDOW_ALPHA);
 
             /* Setup watchdog handler. */
-            gdk_threads_add_timeout(VBOXWL_WATCHDOG_INTERVAL_MS, vboxwl_gtk_watchdog, NULL);
+            gdk_threads_add_timeout(VBOXWL_WATCHDOG_INTERVAL_MS, &vboxwl_gtk_watchdog, NULL);
 
             /* Subscribe to Gtk events depending on session type. */
             if (g_enmSessionType == VBCL_WL_CLIPBOARD_SESSION_TYPE_COPY_TO_GUEST)
