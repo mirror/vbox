@@ -65,7 +65,6 @@
 #if defined(DCONNECT_MULTITHREADED)
 
 #if !defined(DCONNECT_WITH_IPRT_REQ_POOL)
-#include "nsIThread.h"
 #include "nsIRunnable.h"
 #endif
 
@@ -2902,11 +2901,20 @@ public:
 
   DConnectWorker(ipcDConnectService *aDConnect) : mDConnect (aDConnect), mIsRunnable (PR_FALSE) {}
   NS_HIDDEN_(nsresult) Init();
-  NS_HIDDEN_(void) Join() { mThread->Join(); };
+  NS_HIDDEN_(void) Join()
+  {
+    int rcThread;
+    int vrc = RTThreadWait(mThread, RT_INDEFINITE_WAIT, &rcThread);
+    AssertRC(vrc); RT_NOREF(vrc);
+    AssertRC(rcThread);
+  };
   NS_HIDDEN_(bool) IsRunning() { return mIsRunnable; };
 
 private:
-  nsCOMPtr <nsIThread> mThread;
+
+  static DECLCALLBACK(int) dconnectWorkerRun(RTTHREAD hSelf, void *pvUser);
+
+  RTTHREAD           mThread;
   ipcDConnectService *mDConnect;
 
   // Indicate if thread might be quickly joined on shutdown.
@@ -2915,10 +2923,24 @@ private:
 
 NS_IMPL_QUERY_INTERFACE1(DConnectWorker, nsIRunnable)
 
+/*static*/
+DECLCALLBACK(int) DConnectWorker::dconnectWorkerRun(RTTHREAD hSelf, void *pvUser)
+{
+  DConnectWorker *pThis = (DConnectWorker *)pvUser;
+  pThis->Run();
+  return VINF_SUCCESS;
+}
+
+
 nsresult
 DConnectWorker::Init()
 {
-  return NS_NewThread(getter_AddRefs(mThread), this, 0, PR_JOINABLE_THREAD);
+  int vrc = RTThreadCreate(&mThread, dconnectWorkerRun, this, 0 /*cbStack*/,
+                           RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "DConWrk");
+  if (RT_FAILURE(vrc))
+    return NS_ERROR_FAILURE;
+
+  return NS_OK;
 }
 
 NS_IMETHODIMP
