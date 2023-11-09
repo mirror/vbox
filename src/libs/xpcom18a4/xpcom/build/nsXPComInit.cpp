@@ -73,8 +73,6 @@
 #include "xptinfo.h"
 #include "nsIInterfaceInfoManager.h"
 
-#include "nsThread.h"
-
 #include "nsEmptyEnumerator.h"
 
 #include "nsILocalFile.h"
@@ -118,6 +116,8 @@ static NS_DEFINE_CID(kComponentManagerCID, NS_COMPONENTMANAGER_CID);
 static NS_DEFINE_CID(kEventQueueServiceCID, NS_EVENTQUEUESERVICE_CID);
 
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsEventQueueServiceImpl, Init)
+
+static RTTHREAD g_hMainThread = 0;
 
 #define NS_ENVIRONMENT_CLASSNAME "Environment Service"
 
@@ -334,7 +334,6 @@ static const nsModuleComponentInfo components[] = {
     COMPONENT(GENERICFACTORY, nsGenericFactory::Create),
     COMPONENT(EVENTQUEUESERVICE, nsEventQueueServiceImplConstructor),
     COMPONENT(EVENTQUEUE, nsEventQueueImpl::Create),
-    COMPONENT(THREAD, nsThread::Create),
 
 #define NS_XPCOMPROXY_CID NS_PROXYEVENT_MANAGER_CID
     COMPONENT(XPCOMPROXY, nsProxyObjectManager::Create),
@@ -449,6 +448,16 @@ PRBool NS_COM NS_IsXPCOMInitialized(void)
 }
 #endif
 
+nsresult NS_COM
+NS_GetMainThread(RTTHREAD *phThreadMain)
+{
+    NS_ASSERTION(phThreadMain, "bad result pointer");
+    if (g_hMainThread == NIL_RTTHREAD)
+        return NS_ERROR_FAILURE;
+    *phThreadMain = g_hMainThread;
+    return NS_OK;
+}
+
 nsresult NS_COM NS_InitXPCOM(nsIServiceManager* *result,
                              nsIFile* binDirectory)
 {
@@ -469,8 +478,7 @@ nsresult NS_COM NS_InitXPCOM2(nsIServiceManager* *result,
 #endif
 
     // Establish the main thread here.
-    rv = nsIThread::SetMainThread();
-    if (NS_FAILED(rv)) return rv;
+    g_hMainThread = RTThreadSelf();
 
     // If the locale hasn't already been setup by our embedder,
     // get us out of the "C" locale and into the system
@@ -871,7 +879,6 @@ nsresult NS_COM NS_ShutdownXPCOM(nsIServiceManager* servMgr)
 
     EmptyEnumeratorImpl::Shutdown();
 
-    nsThread::Shutdown();
     NS_PurgeAtomTable();
 
     NS_IF_RELEASE(gDebug);

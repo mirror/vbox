@@ -186,12 +186,12 @@ and to ensure that no more events will be delivered for that owner.
 
 #include "prtypes.h"
 #include "prclist.h"
-#include "prthread.h"
 #include "prcvar.h"
 #include "prmon.h"
 
 #include <iprt/critsect.h>
 #include <iprt/semaphore.h>
+#include <iprt/thread.h>
 
 #ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
 #define PL_DestroyEvent VBoxNsplPL_DestroyEvent
@@ -237,7 +237,7 @@ typedef struct PLEventQueue PLEventQueue;
 ** Creates a new event queue. Returns NULL on failure.
 */
 PR_EXTERN(PLEventQueue*)
-PL_CreateEventQueue(const char* name, PRThread* handlerThread);
+PL_CreateEventQueue(const char* name, RTTHREAD handlerThread);
 
 
 /* -----------------------------------------------------------------------
@@ -260,7 +260,7 @@ PL_CreateEventQueue(const char* name, PRThread* handlerThread);
 ** INPUTS: 
 **  name:   A name, as a diagnostic aid.
 ** 
-**  handlerThread: A pointer to the PRThread structure for
+**  handlerThread: A pointer to the IPRT thread structure for
 ** the thread that will "handle" events posted to this event
 ** queue.
 **
@@ -271,7 +271,7 @@ PL_CreateEventQueue(const char* name, PRThread* handlerThread);
 PR_EXTERN(PLEventQueue *) 
     PL_CreateNativeEventQueue(
         const char *name, 
-        PRThread *handlerThread
+        RTTHREAD handlerThread
     );
 
 /* -----------------------------------------------------------------------
@@ -289,7 +289,7 @@ PR_EXTERN(PLEventQueue *)
 ** INPUTS: 
 **  name:   A name, as a diagnostic aid.
 ** 
-**  handlerThread: A pointer to the PRThread structure for
+**  handlerThread: A pointer to the IPRT thread structure for
 ** the thread that will "handle" events posted to this event
 ** queue.
 **
@@ -300,7 +300,7 @@ PR_EXTERN(PLEventQueue *)
 PR_EXTERN(PLEventQueue *) 
     PL_CreateMonitoredEventQueue(
         const char *name,
-        PRThread *handlerThread
+        RTTHREAD handlerThread
     );
 
 /*

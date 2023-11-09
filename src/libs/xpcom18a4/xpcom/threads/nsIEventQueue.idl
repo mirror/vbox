@@ -45,7 +45,7 @@
 #include "nsIEventTarget.idl"
 
 %{C++
-#include "prthread.h"
+#include <iprt/thread.h>
 
 // {13D86C61-00A9-11d3-9F2A-00400553EEF0}
 #define NS_EVENTQUEUE_CID \
@@ -59,7 +59,7 @@
 // some forward decls
 //
 [ptr] native PLEventQueuePtr(PLEventQueue);
-[ptr] native PRThreadPtr(PRThread);
+[ptr] native RTTHREAD(RTTHREADINT);
 native PRStatus(PRStatus);
 [ref] native PRBoolRef(PRBool);
 native PLHandleEventProc(PLHandleEventProc);
@@ -88,7 +88,7 @@ interface nsIEventQueue : nsIEventTarget
     [notxpcom] PRInt32 getEventQueueSelectFD();
 
     void init(in boolean aNative);
-    [noscript] void initFromPRThread(in PRThreadPtr thread, 
+    [noscript] void initFromPRThread(in RTTHREAD thread, 
                                      in boolean aNative);
     [noscript] void initFromPLQueue(in PLEventQueuePtr aQueue);
 

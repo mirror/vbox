@@ -38,7 +38,6 @@
 #include "nsCOMPtr.h"
 #include "nsEventQueue.h"
 #include "nsIEventQueueService.h"
-#include "nsIThread.h"
 
 #include "nsIServiceManager.h"
 #include "nsIObserverService.h"
@@ -124,39 +123,33 @@ nsEventQueueImpl::~nsEventQueueImpl()
 NS_IMETHODIMP 
 nsEventQueueImpl::Init(PRBool aNative)
 {
-  PRThread *thread = PR_GetCurrentThread();
+  RTTHREAD hThread = RTThreadSelf();
   if (aNative)
-    mEventQueue = PL_CreateNativeEventQueue("Thread event queue...", thread);
+    mEventQueue = PL_CreateNativeEventQueue("Thread event queue...", hThread);
   else
-    mEventQueue = PL_CreateMonitoredEventQueue("Thread event queue...", thread);
+    mEventQueue = PL_CreateMonitoredEventQueue("Thread event queue...", hThread);
   NotifyObservers(gActivatedNotification);
   return NS_OK;
 }
 
 NS_IMETHODIMP 
-nsEventQueueImpl::InitFromPRThread(PRThread* thread, PRBool aNative)
+nsEventQueueImpl::InitFromPRThread(RTTHREAD hThread, PRBool aNative)
 {
-  if (thread == NS_CURRENT_THREAD) 
+  if (hThread == NS_CURRENT_THREAD) 
   {
-     thread = PR_GetCurrentThread();
+     hThread = RTThreadSelf();
   }
-  else if (thread == NS_UI_THREAD) 
+  else if (hThread == NS_UI_THREAD) 
   {
-    nsCOMPtr<nsIThread>  mainIThread;
-    nsresult rv;
-  
     // Get the primordial thread
-    rv = nsIThread::GetMainThread(getter_AddRefs(mainIThread));
+    nsresult rv = NS_GetMainThread(&hThread);
     if (NS_FAILED(rv)) return rv;
-
-    rv = mainIThread->GetPRThread(&thread);
-    if (NS_FAILED(rv)) return rv;
-  }  
+  } 
 
   if (aNative)
-    mEventQueue = PL_CreateNativeEventQueue("Thread event queue...", thread);
+    mEventQueue = PL_CreateNativeEventQueue("Thread event queue...", hThread);
   else
-    mEventQueue = PL_CreateMonitoredEventQueue("Thread event queue...", thread);
+    mEventQueue = PL_CreateMonitoredEventQueue("Thread event queue...", hThread);
   NotifyObservers(gActivatedNotification);
   return NS_OK;
 }

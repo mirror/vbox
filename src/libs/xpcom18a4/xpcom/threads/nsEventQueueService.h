@@ -64,8 +64,8 @@ private:
              /* Create a queue for the given thread if one does not exist.
                 Addref the descriptor in any case. parameter aNative is
                 ignored if the queue already exists. */
-  NS_IMETHOD CreateEventQueue(PRThread *aThread, PRBool aNative);
-  NS_IMETHOD MakeNewQueue(PRThread* thread, PRBool aNative, nsIEventQueue **aQueue);
+  NS_IMETHOD CreateEventQueue(RTTHREAD aThread, PRBool aNative);
+  NS_IMETHOD MakeNewQueue(RTTHREAD thread, PRBool aNative, nsIEventQueue **aQueue);
   inline nsresult GetYoungestEventQueue(nsIEventQueue *queue, nsIEventQueue **aResult);
 
   nsInterfaceHashtable<nsVoidPtrHashKey, nsIEventQueue> mEventQTable;

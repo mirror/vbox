@@ -41,6 +41,8 @@
 #include "nscore.h"
 #include "nsXPCOMCID.h"
 
+#include <iprt/thread.h>
+
 #ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
 #define NS_IsXPCOMInitialized VBoxNsxpNS_IsXPCOMInitialized
 #define NS_InitXPCOM2 VBoxNsxpNS_InitXPCOM2
@@ -67,12 +69,17 @@ class nsIDirectoryServiceProvider;
 class nsIDebug;
 class nsITraceRefcnt;
 
+typedef RTTHREADINT *RTTHREAD;
+
 #ifdef VBOX
 /**
  * Checks whether XPCOM was initialized by a call to NS_InitXPCOM2().
  */
 extern "C" NS_COM PRBool
 NS_IsXPCOMInitialized(void);
+
+extern "C" NS_COM nsresult
+NS_GetMainThread(RTTHREAD *phThreadMain);
 #endif
 
 /**

@@ -53,8 +53,9 @@
 #include "nsEventQueueService.h"
 #include "prmon.h"
 #include "nsIComponentManager.h"
-#include "nsIThread.h"
 #include "nsPIEventQueueChain.h"
+
+#include "nsXPCOM.h"
 
 #include <VBox/log.h>
 
@@ -106,15 +107,11 @@ nsEventQueueServiceImpl::Init()
   }
   
   // ensure that a main thread event queue exists!
-  nsresult rv;
-  nsCOMPtr<nsIThread> mainThread;
-  rv = nsIThread::GetMainThread(getter_AddRefs(mainThread));
-  if (NS_SUCCEEDED(rv)) {
-    PRThread *thr;
-    rv = mainThread->GetPRThread(&thr);
-    if (NS_SUCCEEDED(rv))
-      rv = CreateEventQueue(thr, PR_TRUE);
-  }
+  RTTHREAD hMainThread;
+  nsresult rv = NS_GetMainThread(&hMainThread);
+  if (NS_SUCCEEDED(rv))
+    rv = CreateEventQueue(hMainThread, PR_TRUE);
+
   return rv;
 }
 
@@ -126,34 +123,31 @@ NS_IMPL_THREADSAFE_ISUPPORTS1(nsEventQueueServiceImpl, nsIEventQueueService)
 NS_IMETHODIMP
 nsEventQueueServiceImpl::CreateThreadEventQueue()
 {
-  return CreateEventQueue(PR_GetCurrentThread(), PR_TRUE);
+  return CreateEventQueue(RTThreadSelf(), PR_TRUE);
 }
 
 NS_IMETHODIMP
 nsEventQueueServiceImpl::CreateMonitoredThreadEventQueue()
 {
-  return CreateEventQueue(PR_GetCurrentThread(), PR_FALSE);
+  return CreateEventQueue(RTThreadSelf(), PR_FALSE);
 }
 
 NS_IMETHODIMP
-nsEventQueueServiceImpl::CreateFromIThread(nsIThread *aThread, PRBool aNative,
+nsEventQueueServiceImpl::CreateFromIThread(RTTHREAD aThread, PRBool aNative,
                                            nsIEventQueue **aResult)
 {
   nsresult rv;
-  PRThread *prThread;
 
-  rv = aThread->GetPRThread(&prThread);
-  if (NS_SUCCEEDED(rv)) {
-    rv = CreateEventQueue(prThread, aNative); // addrefs
-    if (NS_SUCCEEDED(rv))
-      rv = GetThreadEventQueue(prThread, aResult); // addrefs
-  }
+  rv = CreateEventQueue(aThread, aNative); // addrefs
+  if (NS_SUCCEEDED(rv))
+    rv = GetThreadEventQueue(aThread, aResult); // addrefs
+
   return rv;
 }
 
 // private method
 NS_IMETHODIMP
-nsEventQueueServiceImpl::MakeNewQueue(PRThread* thread,
+nsEventQueueServiceImpl::MakeNewQueue(RTTHREAD hThread,
                                       PRBool aNative,
                                       nsIEventQueue **aQueue)
 {
@@ -161,8 +155,8 @@ nsEventQueueServiceImpl::MakeNewQueue(PRThread* thread,
   nsCOMPtr<nsIEventQueue> queue = do_CreateInstance(kEventQueueCID, &rv);
 
   if (NS_SUCCEEDED(rv)) {
-    rv = queue->InitFromPRThread(thread, aNative);
-  }	
+    rv = queue->InitFromPRThread(hThread, aNative);
+  }
   *aQueue = queue;
   NS_IF_ADDREF(*aQueue);
   return rv;
@@ -170,7 +164,7 @@ nsEventQueueServiceImpl::MakeNewQueue(PRThread* thread,
 
 // private method
 NS_IMETHODIMP
-nsEventQueueServiceImpl::CreateEventQueue(PRThread *aThread, PRBool aNative)
+nsEventQueueServiceImpl::CreateEventQueue(RTTHREAD aThread, PRBool aNative)
 {
   nsresult rv = NS_OK;
   /* Enter the lock that protects the EventQ hashtable... */
@@ -199,12 +193,12 @@ nsEventQueueServiceImpl::DestroyThreadEventQueue(void)
   /* Enter the lock that protects the EventQ hashtable... */
   PR_EnterMonitor(mEventQMonitor);
 
-  PRThread* currentThread = PR_GetCurrentThread();
-  nsIEventQueue* queue = mEventQTable.GetWeak(currentThread);
+  RTTHREAD hThread = RTThreadSelf();
+  nsIEventQueue* queue = mEventQTable.GetWeak(hThread);
   if (queue) {
     queue->StopAcceptingEvents(); // tell the queue to stop accepting events
     queue = nsnull; // Queue may die on the next line
-    mEventQTable.Remove(currentThread); // remove nsIEventQueue from hash table (releases)
+    mEventQTable.Remove(hThread); // remove nsIEventQueue from hash table (releases)
   }
 
   // Release the EventQ lock...
@@ -255,7 +249,7 @@ NS_IMETHODIMP
 nsEventQueueServiceImpl::PushThreadEventQueue(nsIEventQueue **aNewQueue)
 {
   nsresult rv = NS_OK;
-  PRThread* currentThread = PR_GetCurrentThread();
+  RTTHREAD hThread = RTThreadSelf();
   PRBool native = PR_TRUE; // native by default as per old comment
 
 
@@ -264,7 +258,7 @@ nsEventQueueServiceImpl::PushThreadEventQueue(nsIEventQueue **aNewQueue)
   /* Enter the lock that protects the EventQ hashtable... */
   PR_EnterMonitor(mEventQMonitor);
 
-  nsIEventQueue* queue = mEventQTable.GetWeak(currentThread);
+  nsIEventQueue* queue = mEventQTable.GetWeak(hThread);
   
   NS_ASSERTION(queue, "pushed event queue on top of nothing");
 
@@ -277,11 +271,11 @@ nsEventQueueServiceImpl::PushThreadEventQueue(nsIEventQueue **aNewQueue)
   }
 
   nsIEventQueue* newQueue = nsnull;
-  MakeNewQueue(currentThread, native, &newQueue); // create new queue; addrefs
+  MakeNewQueue(hThread, native, &newQueue); // create new queue; addrefs
 
   if (!queue) {
     // shouldn't happen. as a fallback, we guess you wanted a native queue
-    mEventQTable.Put(currentThread, newQueue);
+    mEventQTable.Put(hThread, newQueue);
   }
 
   // append to the event queue chain
@@ -306,17 +300,17 @@ nsEventQueueServiceImpl::PushThreadEventQueue(nsIEventQueue **aNewQueue)
 NS_IMETHODIMP
 nsEventQueueServiceImpl::PopThreadEventQueue(nsIEventQueue *aQueue)
 {
-  PRThread* currentThread = PR_GetCurrentThread();
+  RTTHREAD hThread = RTThreadSelf();
 
   /* Enter the lock that protects the EventQ hashtable... */
   PR_EnterMonitor(mEventQMonitor);
 
   nsCOMPtr<nsIEventQueue> eldestQueue;
-  mEventQTable.Get(currentThread, getter_AddRefs(eldestQueue));
+  mEventQTable.Get(hThread, getter_AddRefs(eldestQueue));
 
   // If we are popping the eldest queue, remove its mEventQTable entry.
   if (aQueue == eldestQueue)
-    mEventQTable.Remove(currentThread);
+    mEventQTable.Remove(hThread);
 
   // Exit the monitor before processing pending events to avoid deadlock.
   // Our reference from the eldestQueue nsCOMPtr will keep that object alive.
@@ -337,26 +331,21 @@ nsEventQueueServiceImpl::PopThreadEventQueue(nsIEventQueue *aQueue)
 }
 
 NS_IMETHODIMP
-nsEventQueueServiceImpl::GetThreadEventQueue(PRThread* aThread, nsIEventQueue** aResult)
+nsEventQueueServiceImpl::GetThreadEventQueue(RTTHREAD aThread, nsIEventQueue** aResult)
 {
   /* Parameter validation... */
   if (NULL == aResult) return NS_ERROR_NULL_POINTER;
 
-  PRThread* keyThread = aThread;
+  RTTHREAD keyThread = aThread;
 
   if (keyThread == NS_CURRENT_THREAD)
   {
-     keyThread = PR_GetCurrentThread();
+     keyThread = RTThreadSelf();
   }
   else if (keyThread == NS_UI_THREAD)
   {
-    nsCOMPtr<nsIThread>  mainIThread;
-
     // Get the primordial thread
-    nsresult rv = nsIThread::GetMainThread(getter_AddRefs(mainIThread));
-    if (NS_FAILED(rv)) return rv;
-
-    rv = mainIThread->GetPRThread(&keyThread);
+    nsresult rv = NS_GetMainThread(&keyThread);
     if (NS_FAILED(rv)) return rv;
   }
 

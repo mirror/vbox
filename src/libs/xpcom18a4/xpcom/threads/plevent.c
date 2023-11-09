@@ -73,7 +73,7 @@ struct PLEventQueue {
     const char*         name;
     PRCList             queue;
     PRMonitor*          monitor;
-    PRThread*           handlerThread;
+    RTTHREAD            handlerThread;
     EventQueueType      type;
     PRPackedBool        processingEvents;
     PRPackedBool        notified;
@@ -110,7 +110,7 @@ static PRInt32     _pl_GetEventCount(PLEventQueue* self);
 **
 */
 static PLEventQueue * _pl_CreateEventQueue(const char *name,
-                                           PRThread *handlerThread,
+                                           RTTHREAD handlerThread,
                                            EventQueueType  qtype)
 {
     PRStatus err;
@@ -146,19 +146,19 @@ static PLEventQueue * _pl_CreateEventQueue(const char *name,
 }
 
 PR_IMPLEMENT(PLEventQueue*)
-PL_CreateEventQueue(const char* name, PRThread* handlerThread)
+PL_CreateEventQueue(const char* name, RTTHREAD handlerThread)
 {
     return( _pl_CreateEventQueue( name, handlerThread, EventQueueIsNative ));
 }
 
 PR_EXTERN(PLEventQueue *)
-PL_CreateNativeEventQueue(const char *name, PRThread *handlerThread)
+PL_CreateNativeEventQueue(const char *name, RTTHREAD handlerThread)
 {
     return( _pl_CreateEventQueue( name, handlerThread, EventQueueIsNative ));
 }
 
 PR_EXTERN(PLEventQueue *)
-PL_CreateMonitoredEventQueue(const char *name, PRThread *handlerThread)
+PL_CreateMonitoredEventQueue(const char *name, RTTHREAD handlerThread)
 {
     return( _pl_CreateEventQueue( name, handlerThread, EventQueueIsMonitored ));
 }
@@ -246,7 +246,7 @@ PL_PostSynchronousEvent(PLEventQueue* self, PLEvent* event)
 
     Assert(event != NULL);
 
-    if (PR_GetCurrentThread() == self->handlerThread) {
+    if (RTThreadSelf() == self->handlerThread) {
         /* Handle the case where the thread requesting the event handling
          * is also the thread that's supposed to do the handling. */
         result = event->handler(event);
@@ -589,7 +589,7 @@ PL_DequeueEvent(PLEvent* self, PLEventQueue* queue)
        client has put it in the queue, they have no idea whether it's
        been processed and destroyed or not. */
 
-    Assert(queue->handlerThread == PR_GetCurrentThread());
+    Assert(queue->handlerThread == RTThreadSelf());
 
     PR_EnterMonitor(queue->monitor);
 
@@ -813,8 +813,7 @@ PL_GetEventQueueSelectFD(PLEventQueue* self)
 PR_IMPLEMENT(PRBool)
 PL_IsQueueOnCurrentThread( PLEventQueue *queue )
 {
-    PRThread *me = PR_GetCurrentThread();
-    return me == queue->handlerThread;
+    return queue->handlerThread == RTThreadSelf();
 }
 
 PR_EXTERN(PRBool)
