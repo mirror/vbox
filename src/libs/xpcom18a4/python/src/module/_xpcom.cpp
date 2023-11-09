@@ -818,7 +818,6 @@ init_xpcom() {
 	REGISTER_IID(nsISimpleEnumerator);
 	REGISTER_IID(nsIInterfaceInfo);
 	REGISTER_IID(nsIInputStream);
-	REGISTER_IID(nsIClassInfo);
 	REGISTER_IID(nsIVariant);
 	// for backward compatibility:
 	REGISTER_IID(nsIComponentManagerObsolete);
