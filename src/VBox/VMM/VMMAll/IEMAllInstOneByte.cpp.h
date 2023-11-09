@@ -6569,15 +6569,16 @@ FNIEMOP_DEF(iemOp_mov_AL_Ob)
      * Get the offset.
      */
     IEMOP_MNEMONIC(mov_AL_Ob, "mov AL,Ob");
-    RTGCPTR GCPtrMemOff;
-    IEMOP_FETCH_MOFFS_XX(GCPtrMemOff);
+    RTGCPTR GCPtrMemOffDecode;
+    IEMOP_FETCH_MOFFS_XX(GCPtrMemOffDecode);
 
     /*
      * Fetch AL.
      */
-    IEM_MC_BEGIN(0, 1, 0, 0);
+    IEM_MC_BEGIN(0, 2, 0, 0);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(uint8_t, u8Tmp);
+    IEM_MC_LOCAL_CONST(RTGCPTR, GCPtrMemOff, GCPtrMemOffDecode);
     IEM_MC_FETCH_MEM_U8(u8Tmp, pVCpu->iem.s.iEffSeg, GCPtrMemOff);
     IEM_MC_STORE_GREG_U8(X86_GREG_xAX, u8Tmp);
     IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -6594,8 +6595,8 @@ FNIEMOP_DEF(iemOp_mov_rAX_Ov)
      * Get the offset.
      */
     IEMOP_MNEMONIC(mov_rAX_Ov, "mov rAX,Ov");
-    RTGCPTR GCPtrMemOff;
-    IEMOP_FETCH_MOFFS_XX(GCPtrMemOff);
+    RTGCPTR GCPtrMemOffDecode;
+    IEMOP_FETCH_MOFFS_XX(GCPtrMemOffDecode);
 
     /*
      * Fetch rAX.
@@ -6603,9 +6604,10 @@ FNIEMOP_DEF(iemOp_mov_rAX_Ov)
     switch (pVCpu->iem.s.enmEffOpSize)
     {
         case IEMMODE_16BIT:
-            IEM_MC_BEGIN(0, 1, 0, 0);
+            IEM_MC_BEGIN(0, 2, 0, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint16_t, u16Tmp);
+            IEM_MC_LOCAL_CONST(RTGCPTR, GCPtrMemOff, GCPtrMemOffDecode);
             IEM_MC_FETCH_MEM_U16(u16Tmp, pVCpu->iem.s.iEffSeg, GCPtrMemOff);
             IEM_MC_STORE_GREG_U16(X86_GREG_xAX, u16Tmp);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -6613,9 +6615,10 @@ FNIEMOP_DEF(iemOp_mov_rAX_Ov)
             break;
 
         case IEMMODE_32BIT:
-            IEM_MC_BEGIN(0, 1, IEM_MC_F_MIN_386, 0);
+            IEM_MC_BEGIN(0, 2, IEM_MC_F_MIN_386, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint32_t, u32Tmp);
+            IEM_MC_LOCAL_CONST(RTGCPTR, GCPtrMemOff, GCPtrMemOffDecode);
             IEM_MC_FETCH_MEM_U32(u32Tmp, pVCpu->iem.s.iEffSeg, GCPtrMemOff);
             IEM_MC_STORE_GREG_U32(X86_GREG_xAX, u32Tmp);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -6623,9 +6626,10 @@ FNIEMOP_DEF(iemOp_mov_rAX_Ov)
             break;
 
         case IEMMODE_64BIT:
-            IEM_MC_BEGIN(0, 1, IEM_MC_F_64BIT, 0);
+            IEM_MC_BEGIN(0, 2, IEM_MC_F_64BIT, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint64_t, u64Tmp);
+            IEM_MC_LOCAL_CONST(RTGCPTR, GCPtrMemOff, GCPtrMemOffDecode);
             IEM_MC_FETCH_MEM_U64(u64Tmp, pVCpu->iem.s.iEffSeg, GCPtrMemOff);
             IEM_MC_STORE_GREG_U64(X86_GREG_xAX, u64Tmp);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
@@ -6646,16 +6650,17 @@ FNIEMOP_DEF(iemOp_mov_Ob_AL)
      * Get the offset.
      */
     IEMOP_MNEMONIC(mov_Ob_AL, "mov Ob,AL");
-    RTGCPTR GCPtrMemOff;
-    IEMOP_FETCH_MOFFS_XX(GCPtrMemOff);
+    RTGCPTR GCPtrMemOffDecode;
+    IEMOP_FETCH_MOFFS_XX(GCPtrMemOffDecode);
 
     /*
      * Store AL.
      */
-    IEM_MC_BEGIN(0, 1, 0, 0);
+    IEM_MC_BEGIN(0, 2, 0, 0);
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_LOCAL(uint8_t, u8Tmp);
     IEM_MC_FETCH_GREG_U8(u8Tmp, X86_GREG_xAX);
+    IEM_MC_LOCAL_CONST(RTGCPTR, GCPtrMemOff, GCPtrMemOffDecode);
     IEM_MC_STORE_MEM_U8(pVCpu->iem.s.iEffSeg, GCPtrMemOff, u8Tmp);
     IEM_MC_ADVANCE_RIP_AND_FINISH();
     IEM_MC_END();
@@ -6671,8 +6676,8 @@ FNIEMOP_DEF(iemOp_mov_Ov_rAX)
      * Get the offset.
      */
     IEMOP_MNEMONIC(mov_Ov_rAX, "mov Ov,rAX");
-    RTGCPTR GCPtrMemOff;
-    IEMOP_FETCH_MOFFS_XX(GCPtrMemOff);
+    RTGCPTR GCPtrMemOffDecode;
+    IEMOP_FETCH_MOFFS_XX(GCPtrMemOffDecode);
 
     /*
      * Store rAX.
@@ -6680,30 +6685,33 @@ FNIEMOP_DEF(iemOp_mov_Ov_rAX)
     switch (pVCpu->iem.s.enmEffOpSize)
     {
         case IEMMODE_16BIT:
-            IEM_MC_BEGIN(0, 1, 0, 0);
+            IEM_MC_BEGIN(0, 2, 0, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint16_t, u16Tmp);
             IEM_MC_FETCH_GREG_U16(u16Tmp, X86_GREG_xAX);
+            IEM_MC_LOCAL_CONST(RTGCPTR, GCPtrMemOff, GCPtrMemOffDecode);
             IEM_MC_STORE_MEM_U16(pVCpu->iem.s.iEffSeg, GCPtrMemOff, u16Tmp);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
             break;
 
         case IEMMODE_32BIT:
-            IEM_MC_BEGIN(0, 1, IEM_MC_F_MIN_386, 0);
+            IEM_MC_BEGIN(0, 2, IEM_MC_F_MIN_386, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint32_t, u32Tmp);
             IEM_MC_FETCH_GREG_U32(u32Tmp, X86_GREG_xAX);
+            IEM_MC_LOCAL_CONST(RTGCPTR, GCPtrMemOff, GCPtrMemOffDecode);
             IEM_MC_STORE_MEM_U32(pVCpu->iem.s.iEffSeg, GCPtrMemOff, u32Tmp);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
             break;
 
         case IEMMODE_64BIT:
-            IEM_MC_BEGIN(0, 1, IEM_MC_F_64BIT, 0);
+            IEM_MC_BEGIN(0, 2, IEM_MC_F_64BIT, 0);
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_LOCAL(uint64_t, u64Tmp);
             IEM_MC_FETCH_GREG_U64(u64Tmp, X86_GREG_xAX);
+            IEM_MC_LOCAL_CONST(RTGCPTR, GCPtrMemOff, GCPtrMemOffDecode);
             IEM_MC_STORE_MEM_U64(pVCpu->iem.s.iEffSeg, GCPtrMemOff, u64Tmp);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
