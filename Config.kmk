@@ -894,6 +894,8 @@ VBOX_WITH_LIBOGG = 1
 if defined(VBOX_WITH_LIBVORBIS) && !defined(VBOX_WITH_LIBOGG)
  $(error Need libogg (VBOX_WITH_LIBOGG) in order to build libvorbis (VBOX_WITH_LIBVORBIS))
 endif
+# Enable Wayland support for Guest Additions
+VBOX_WITH_WAYLAND_ADDITIONS = 1
 # Enable shared folders
 VBOX_WITH_SHARED_FOLDERS = 1
 # Enable shared clipboard
