@@ -98,6 +98,7 @@ extern "C" void *__deregister_frame_info(void *pvBegin);           /* (returns p
 #include "IEMInline.h"
 #include "IEMThreadedFunctions.h"
 #include "IEMN8veRecompiler.h"
+#include "IEMN8veRecompilerEmit.h"
 #include "IEMNativeFunctions.h"
 
 
