@@ -201,9 +201,9 @@ ifdef VBOX_WITH_SHARED_CLIPBOARD
  VBoxClient_SOURCES += $(SharedClipboardTransfersSources)
 
  ifdef VBOX_WITH_WAYLAND_ADDITIONS
-  VBoxClient_DEFS += VBOX_WITH_WAYLAND_ADDITIONS
-  VBoxClient_INCS += ../wlInclude/
-  VBoxClient_SOURCES += \
+  VBoxClient_DEFS.linux += VBOX_WITH_WAYLAND_ADDITIONS
+  VBoxClient_INCS.linux += ../wlInclude/
+  VBoxClient_SOURCES.linux += \
   	wayland-helper-dcp.cpp \
   	wayland-helper-gtk.cpp \
   	wayland-helper.cpp \
