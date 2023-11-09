@@ -76,18 +76,6 @@ VBoxClient_SOURCES = \
 	main.cpp \
 	logging.cpp
 
-ifdef VBOX_WITH_WAYLAND_ADDITIONS
- VBoxClient_DEFS += VBOX_WITH_WAYLAND_ADDITIONS
- VBoxClient_INCS += ../wlInclude/
- VBoxClient_SOURCES += \
- 	wayland-helper-dcp.cpp \
- 	wayland-helper-gtk.cpp \
- 	wayland-helper.cpp \
- 	wayland.cpp \
- 	wayland-helper-ipc.cpp \
- 	../wlInclude/wayland-protocol.c \
- 	../wlInclude/wlr-data-control-unstable-v1.c
-endif
 
 VBoxClient_SOURCES += $(VBOX_GH_SOURCES)
 
@@ -206,6 +194,18 @@ ifdef VBOX_WITH_SHARED_CLIPBOARD
    VBoxClient_SOURCES += \
    	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers-http.cpp
   endif
+ endif
+ ifdef VBOX_WITH_WAYLAND_ADDITIONS
+  VBoxClient_DEFS += VBOX_WITH_WAYLAND_ADDITIONS
+  VBoxClient_INCS += ../wlInclude/
+  VBoxClient_SOURCES += \
+  	wayland-helper-dcp.cpp \
+  	wayland-helper-gtk.cpp \
+  	wayland-helper.cpp \
+  	wayland.cpp \
+  	wayland-helper-ipc.cpp \
+  	../wlInclude/wayland-protocol.c \
+  	../wlInclude/wlr-data-control-unstable-v1.c
  endif
 endif
 
