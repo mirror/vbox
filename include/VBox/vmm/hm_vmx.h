@@ -1942,6 +1942,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPTP_, UINT64_C(0), UINT64_MAX,
 #define VMX_VMCS16_POSTED_INT_NOTIFY_VECTOR                     0x0002
 #define VMX_VMCS16_EPTP_INDEX                                   0x0004
 #define VMX_VMCS16_HLAT_PREFIX_SIZE                             0x0006
+#define VMX_VMCS16_LAST_PID_PTR_INDEX                           0x0008
 
 /** 16-bit guest-state fields.  */
 #define VMX_VMCS16_GUEST_ES_SEL                                 0x0800
@@ -1954,6 +1955,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPTP_, UINT64_C(0), UINT64_MAX,
 #define VMX_VMCS16_GUEST_TR_SEL                                 0x080e
 #define VMX_VMCS16_GUEST_INTR_STATUS                            0x0810
 #define VMX_VMCS16_GUEST_PML_INDEX                              0x0812
+#define VMX_VMCS16_GUEST_UINV                                   0x0814
 
 /** 16-bits host-state fields.  */
 #define VMX_VMCS16_HOST_ES_SEL                                  0x0c00
@@ -2027,6 +2029,10 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPTP_, UINT64_C(0), UINT64_MAX,
 #define VMX_VMCS64_CTRL_HLAT_PTR_HIGH                           0x2041
 #define VMX_VMCS64_CTRL_EXIT2_FULL                              0x2044
 #define VMX_VMCS64_CTRL_EXIT2_HIGH                              0x2045
+#define VMX_VMCS64_CTRL_SPEC_CTRL_MASK_FULL                     0x204a
+#define VMX_VMCS64_CTRL_SPEC_CTRL_MASK_HIGH                     0x204b
+#define VMX_VMCS64_CTRL_SPEC_CTRL_SHADOW_FULL                   0x204c
+#define VMX_VMCS64_CTRL_SPEC_CTRL_SHADOW_HIGH                   0x204d
 
 /** 64-bit read-only data fields.  */
 #define VMX_VMCS64_RO_GUEST_PHYS_ADDR_FULL                      0x2400
@@ -2087,6 +2093,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPTP_, UINT64_C(0), UINT64_MAX,
 #define VMX_VMCS32_CTRL_PROC_EXEC2                              0x401e
 #define VMX_VMCS32_CTRL_PLE_GAP                                 0x4020
 #define VMX_VMCS32_CTRL_PLE_WINDOW                              0x4022
+#define VMX_VMCS32_CTRL_INSTR_TIMEOUT                           0x4024
 
 /** 32-bits read-only fields. */
 #define VMX_VMCS32_RO_VM_INSTR_ERROR                            0x4400
