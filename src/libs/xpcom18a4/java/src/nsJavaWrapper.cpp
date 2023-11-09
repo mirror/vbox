@@ -51,7 +51,6 @@
 static nsID nullID =  {0, 0, 0, {0, 0, 0, 0, 0, 0, 0, 0}};
 
 #ifdef VBOX
-#include "nsIThread.h"
 static nsresult
 NS_InvokeByIndex(nsISupports* that, PRUint32 methodIndex,
                  PRUint32 paramCount, nsXPTCVariant* params)
