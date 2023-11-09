@@ -179,7 +179,6 @@ NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/pr/include/prmem.h \
 	nsprpub/pr/include/prmon.h \
 	nsprpub/pr/include/prprf.h \
-	nsprpub/pr/include/prproces.h \
 	nsprpub/pr/include/prthread.h \
 	nsprpub/pr/include/prtime.h \
 	nsprpub/pr/include/prtypes.h \
