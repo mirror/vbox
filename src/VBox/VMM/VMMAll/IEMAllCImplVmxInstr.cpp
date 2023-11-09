@@ -9903,28 +9903,6 @@ IEM_CIMPL_DEF_0(iemCImpl_vmx_pause)
     return iemRegAddToRipAndFinishingClearingRF(pVCpu, cbInstr);
 }
 
-#endif  /* VBOX_WITH_NESTED_HWVIRT_VMX */
-
-
-/**
- * Implements 'VMCALL'.
- */
-IEM_CIMPL_DEF_0(iemCImpl_vmcall)
-{
-    pVCpu->iem.s.cPotentialExits++;
-
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    /* Nested-guest intercept. */
-    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
-        return iemVmxVmexitInstr(pVCpu, VMX_EXIT_VMCALL, cbInstr);
-#endif
-
-    /* Join forces with vmmcall. */
-    return IEM_CIMPL_CALL_1(iemCImpl_Hypercall, OP_VMCALL);
-}
-
-
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 
 /**
  * @callback_method_impl{FNPGMPHYSHANDLER, VMX APIC-access page accesses}
@@ -10103,4 +10081,22 @@ DECLCALLBACK(VBOXSTRICTRC) iemVmxApicAccessPagePfHandler(PVMCC pVM, PVMCPUCC pVC
 # endif /* !IN_RING3 */
 
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
+
+
+/**
+ * Implements 'VMCALL'.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_vmcall)
+{
+    pVCpu->iem.s.cPotentialExits++;
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    /* Nested-guest intercept. */
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+        return iemVmxVmexitInstr(pVCpu, VMX_EXIT_VMCALL, cbInstr);
+#endif
+
+    /* Join forces with vmmcall. */
+    return IEM_CIMPL_CALL_1(iemCImpl_Hypercall, OP_VMCALL);
+}
 
