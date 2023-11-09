@@ -38,7 +38,7 @@
 
 
 UIProxyFeaturesEditor::UIProxyFeaturesEditor(QWidget *pParent /* = 0 */)
-    : UIEditor(pParent, true /* show in basic mode? */)
+    : UIEditor(pParent)
     , m_enmProxyMode(KProxyMode_Max)
     , m_pButtonGroup(0)
     , m_pRadioButtonProxyAuto(0)

@@ -36,7 +36,7 @@
 
 
 UIDefaultMachineFolderEditor::UIDefaultMachineFolderEditor(QWidget *pParent /* = 0 */)
-    : UIEditor(pParent)
+    : UIEditor(pParent, true /* show in basic mode? */)
     , m_strValue(QString())
     , m_pLayout(0)
     , m_pLabel(0)
