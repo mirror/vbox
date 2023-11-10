@@ -6011,14 +6011,13 @@ iemNativeEmitStoreGregU8Const(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8
 }
 
 
-#define IEM_MC_STORE_GREG_U16(a_iGReg, a_u16Value) \
-    off = iemNativeEmitStoreGregU16(pReNative, off, a_iGReg, a_u16Value)
+#define IEM_MC_STORE_GREG_U16_CONST(a_iGReg, a_u16Const) \
+    off = iemNativeEmitStoreGregU16Const(pReNative, off, a_iGReg, a_u16Const)
 
 /** Emits code for IEM_MC_STORE_GREG_U16. */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitStoreGregU16Const(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg, uint16_t uValue)
 {
-pReNative->pInstrBuf[off++] = 0xcc;
     Assert(iGReg < 16);
     uint8_t const idxGstTmpReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off,
                                                                  (IEMNATIVEGSTREG)(kIemNativeGstReg_GprFirst + iGReg),
@@ -6049,6 +6048,9 @@ pReNative->pInstrBuf[off++] = 0xcc;
     return off;
 }
 
+
+#define IEM_MC_STORE_GREG_U16(a_iGReg, a_u16Value) \
+    off = iemNativeEmitStoreGregU16(pReNative, off, a_iGReg, a_u16Value)
 
 /** Emits code for IEM_MC_STORE_GREG_U16. */
 DECL_INLINE_THROW(uint32_t)
