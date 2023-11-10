@@ -34,16 +34,16 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+#define LOG_GROUP LOG_GROUP_IPC
+#include <iprt/assert.h>
+#include <iprt/errcore.h>
+#include <iprt/poll.h>
+#include <VBox/log.h>
 
-#include "ipcLog.h"
 #include "ipcClient.h"
 #include "ipcMessage.h"
 #include "ipcd.h"
 #include "ipcm.h"
-
-#if defined(XP_UNIX) || defined(XP_OS2)
-#include "prio.h"
-#endif
 
 PRUint32 ipcClient::gLastID = 0;
 
@@ -54,12 +54,16 @@ PRUint32 ipcClient::gLastID = 0;
 //  - object's memory has already been zero'd out.
 //
 void
-ipcClient::Init()
+ipcClient::Init(uint32_t idPoll, RTSOCKET hSock)
 {
     mID = ++gLastID;
 
     // every client must be able to handle IPCM messages.
     mTargets.Append(IPCM_TARGET);
+
+    m_hSock  = hSock;
+    m_idPoll = idPoll;
+    m_fUsed  = true;
 
     // although it is tempting to fire off the NotifyClientUp event at this
     // time, we must wait until the client sends us a CLIENT_HELLO event.
@@ -72,21 +76,23 @@ ipcClient::Init()
 void
 ipcClient::Finalize()
 {
+    RTSocketClose(m_hSock);
+    m_hSock = NIL_RTSOCKET;
+
     IPC_NotifyClientDown(this);
 
     mNames.DeleteAll();
     mTargets.DeleteAll();
 
-#if defined(XP_UNIX) || defined(XP_OS2)
     mInMsg.Reset();
     mOutMsgQ.DeleteAll();
-#endif
+    m_fUsed = false;
 }
 
 void
 ipcClient::AddName(const char *name)
 {
-    LOG(("adding client name: %s\n", name));
+    LogFlowFunc(("adding client name: %s\n", name));
 
     if (HasName(name))
         return;
@@ -97,7 +103,7 @@ ipcClient::AddName(const char *name)
 PRBool
 ipcClient::DelName(const char *name)
 {
-    LOG(("deleting client name: %s\n", name));
+    LogFlowFunc(("deleting client name: %s\n", name));
 
     return mNames.FindAndDelete(name);
 }
@@ -105,7 +111,7 @@ ipcClient::DelName(const char *name)
 void
 ipcClient::AddTarget(const nsID &target)
 {
-    LOG(("adding client target\n"));
+    LogFlowFunc(("adding client target\n"));
 
     if (HasTarget(target))
         return;
@@ -116,7 +122,7 @@ ipcClient::AddTarget(const nsID &target)
 PRBool
 ipcClient::DelTarget(const nsID &target)
 {
-    LOG(("deleting client target\n"));
+    LogFlowFunc(("deleting client target\n"));
 
     //
     // cannot remove the IPCM target
@@ -127,13 +133,10 @@ ipcClient::DelTarget(const nsID &target)
     return PR_FALSE;
 }
 
-#if defined(XP_UNIX) || defined(XP_OS2)
-
 //
 // called to process a client socket
 //
 // params:
-//   fd         - the client socket
 //   poll_flags - the state of the client socket
 //
 // return:
@@ -142,59 +145,59 @@ ipcClient::DelTarget(const nsID &target)
 //   PR_POLL_WRITE - to wait for the client socket to become writable
 //
 int
-ipcClient::Process(PRFileDesc *fd, int inFlags)
+ipcClient::Process(uint32_t inFlags)
 {
-    if (inFlags & (PR_POLL_ERR    | PR_POLL_HUP |
-                   PR_POLL_EXCEPT | PR_POLL_NVAL)) {
-        LOG(("client socket appears to have closed\n"));
+    if (inFlags & RTPOLL_EVT_ERROR)
+    {
+        LogFlowFunc(("client socket appears to have closed\n"));
         return 0;
     }
 
     // expect to wait for more data
-    int outFlags = PR_POLL_READ;
+    int outFlags = RTPOLL_EVT_READ;
 
-    if (inFlags & PR_POLL_READ) {
-        LOG(("client socket is now readable\n"));
+    if (inFlags & RTPOLL_EVT_READ) {
+        LogFlowFunc(("client socket is now readable\n"));
 
-        char buf[1024]; // XXX make this larger?
-        PRInt32 n;
+        char buf[_1K];
+        size_t cbRead = 0;
+        int vrc = RTSocketReadNB(m_hSock, &buf[0], sizeof(buf), &cbRead);
+        Assert(vrc != VINF_TRY_AGAIN);
 
-        // find out how much data is available for reading...
-        // n = PR_Available(fd);
-
-        n = PR_Read(fd, buf, sizeof(buf));
-        if (n <= 0)
+        if (RT_FAILURE(vrc) || cbRead == 0)
             return 0; // cancel connection
 
         const char *ptr = buf;
-        while (n) {
+        while (cbRead)
+        {
             PRUint32 nread;
             PRBool complete;
 
-            if (mInMsg.ReadFrom(ptr, PRUint32(n), &nread, &complete) == PR_FAILURE) {
-                LOG(("message appears to be malformed; dropping client connection\n"));
+            if (mInMsg.ReadFrom(ptr, PRUint32(cbRead), &nread, &complete) == PR_FAILURE) {
+                LogFlowFunc(("message appears to be malformed; dropping client connection\n"));
                 return 0;
             }
 
-            if (complete) {
+            if (complete)
+            {
                 IPC_DispatchMsg(this, &mInMsg);
                 mInMsg.Reset();
             }
 
-            n -= nread;
-            ptr += nread;
+            cbRead -= nread;
+            ptr    += nread;
         }
     }
 
-    if (inFlags & PR_POLL_WRITE) {
-        LOG(("client socket is now writable\n"));
+    if (inFlags & RTPOLL_EVT_WRITE) {
+        LogFlowFunc(("client socket is now writable\n"));
 
         if (mOutMsgQ.First())
-            WriteMsgs(fd);
+            WriteMsgs();
     }
 
     if (mOutMsgQ.First())
-        outFlags |= PR_POLL_WRITE;
+        outFlags |= RTPOLL_EVT_WRITE;
 
     return outFlags;
 }
@@ -203,32 +206,41 @@ ipcClient::Process(PRFileDesc *fd, int inFlags)
 // called to write out any messages from the outgoing queue.
 //
 int
-ipcClient::WriteMsgs(PRFileDesc *fd)
+ipcClient::WriteMsgs()
 {
-    while (mOutMsgQ.First()) {
+    while (mOutMsgQ.First())
+    {
         const char *buf = (const char *) mOutMsgQ.First()->MsgBuf();
         PRInt32 bufLen = (PRInt32) mOutMsgQ.First()->MsgLen();
 
-        if (mSendOffset) {
+        if (mSendOffset)
+        {
             buf += mSendOffset;
             bufLen -= mSendOffset;
         }
 
-        PRInt32 nw = PR_Write(fd, buf, bufLen);
-        if (nw <= 0)
+        size_t cbWritten = 0;
+        int vrc = RTSocketWriteNB(m_hSock, buf, bufLen, &cbWritten);
+        if (vrc == VINF_SUCCESS)
+        { /* likely */ Assert(cbWritten > 0); }
+        else
+        {
+            Assert(   RT_FAILURE(vrc)
+                   || (vrc == VINF_TRY_AGAIN && cbWritten == 0));
             break;
+        }
 
-        LOG(("wrote %d bytes\n", nw));
+        LogFlowFunc(("wrote %d bytes\n", cbWritten));
 
-        if (nw == bufLen) {
+        if (cbWritten == bufLen)
+        {
             mOutMsgQ.DeleteFirst();
             mSendOffset = 0;
         }
         else
-            mSendOffset += nw;
+            mSendOffset += cbWritten;
     }
 
     return 0;
 }
 
-#endif

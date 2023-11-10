@@ -38,14 +38,11 @@
 #ifndef ipcClientUnix_h__
 #define ipcClientUnix_h__
 
-#include "prio.h"
+#include <iprt/socket.h>
+
 #include "ipcMessageQ.h"
 #include "ipcStringList.h"
 #include "ipcIDList.h"
-
-#ifdef XP_WIN
-#include <windows.h>
-#endif
 
 //-----------------------------------------------------------------------------
 // ipcClient
@@ -58,7 +55,11 @@
 class ipcClient
 {
 public:
-    void Init();
+    bool     m_fUsed;
+    uint32_t m_idPoll;
+    uint32_t m_fPollEvts;
+
+    void Init(uint32_t idPoll, RTSOCKET hSock);
     void Finalize();
 
     PRUint32 ID() const { return mID; }
@@ -81,35 +82,25 @@ public:
     void   SetExpectsSyncReply(PRBool val) { mExpectsSyncReply = val; }
     PRBool GetExpectsSyncReply() const     { return mExpectsSyncReply; }
 
-#ifdef XP_WIN
-    PRUint32 PID() const { return mPID; }
-    void SetPID(PRUint32 pid) { mPID = pid; }
-
-    HWND Hwnd() const { return mHwnd; }
-    void SetHwnd(HWND hwnd) { mHwnd = hwnd; }
-#endif
-
-#if defined(XP_UNIX) || defined(XP_OS2)
     //
     // called to process a client file descriptor.  the value of pollFlags
     // indicates the state of the socket.
     //
     // returns:
-    //   0             - to cancel client connection
-    //   PR_POLL_READ  - to poll for a readable socket
-    //   PR_POLL_WRITE - to poll for a writable socket
-    //   (both flags)  - to poll for either a readable or writable socket
+    //   0                - to cancel client connection
+    //   RTPOLL_EVT_READ  - to poll for a readable socket
+    //   RTPOLL_EVT_WRITE - to poll for a writable socket
+    //   (both flags)     - to poll for either a readable or writable socket
     //
     // the socket is non-blocking.
     //
-    int Process(PRFileDesc *sockFD, int pollFlags);
+    int Process(uint32_t pollFlags);
 
     //
     // on success or failure, this function takes ownership of |msg| and will
     // delete it when appropriate.
     //
     void EnqueueOutboundMsg(ipcMessage *msg) { mOutMsgQ.Append(msg); }
-#endif
 
 private:
     static PRUint32 gLastID;
@@ -119,26 +110,17 @@ private:
     ipcIDList     mTargets;
     PRBool        mExpectsSyncReply;
 
-#ifdef XP_WIN
-    // on windows, we store the PID of the client process to help us determine
-    // the client from which a message originated.  each message has the PID
-    // encoded in it.
-    PRUint32      mPID;
-
-    // the hwnd of the client's message window.
-    HWND          mHwnd;
-#endif
-
-#if defined(XP_UNIX) || defined(XP_OS2)
     ipcMessage    mInMsg;    // buffer for incoming message
     ipcMessageQ   mOutMsgQ;  // outgoing message queue
 
     // keep track of the amount of the first message sent
     PRUint32      mSendOffset;
 
+    /** Client socket. */
+    RTSOCKET      m_hSock;
+
     // utility function for writing out messages.
-    int WriteMsgs(PRFileDesc *fd);
-#endif
+    int WriteMsgs();
 };
 
 #endif // !ipcClientUnix_h__
