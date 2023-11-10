@@ -88,7 +88,10 @@ protected:
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifdef DEBUG_xpcom_proxy
-static PRMonitor* mon = nsnull;
+
+#include <iprt/semaphore.h>
+
+static RTSEMFASTMUTEX g_hMtxDbg = NIL_RTSEMFASTMUTEX;
 static PRUint32 totalProxyObjects = 0;
 static PRUint32 outstandingProxyObjects = 0;
 
@@ -96,12 +99,13 @@ void
 nsProxyEventObject::DebugDump(const char * message, PRUint32 hashKey)
 {
 
-    if (mon == nsnull)
+    if (g_hMtxDbg == NIL_RTSEMFASTMUTEX)
     {
-        mon = PR_NewMonitor();
+        int vrc = RTSemFastMutexCreate(&g_hMtxDbg);
+        AssertRC(vrc); RT_NOREF(vrc);
     }
 
-    PR_EnterMonitor(mon);
+    RTSemFastMutexRequest(g_hMtxDbg);
 
     if (message)
     {
@@ -152,7 +156,7 @@ nsProxyEventObject::DebugDump(const char * message, PRUint32 hashKey)
     if (message)
         printf("-=-=-=-=-=-=-=-=-=-=-=-=-\n");
 
-    PR_ExitMonitor(mon);
+    RTSemFastMutexRelease(g_hMtxDbg);
 }
 #endif
 
