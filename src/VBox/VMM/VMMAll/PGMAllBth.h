@@ -3007,7 +3007,16 @@ static int PGM_BTH_NAME(NestedSyncPT)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPage,
         /* Determine the right kind of large page to avoid incorrect cached entry reuse. */
         PGMPOOLACCESS enmAccess;
         {
-            Assert(!(pGstWalkAll->u.Ept.Pde.u & EPT_E_USER_EXECUTE));  /* Mode-based execute control for EPT not supported. */
+            /*
+             * Mode-based execute control for EPT not supported. 
+             *  
+             * However, Windows 10 with Hyper-V enabled sets the EPT_E_USER_EXECUTE bit but does 
+             * not enable "mode-based execute control for EPT" in the VT-x secondary VM-execution 
+             * controls. The CPU ignores this bit when the control isn't set. Hence, the assertion 
+             * below is commented out.
+             */
+            /* Assert(!(pGstWalkAll->u.Ept.Pde.u & EPT_E_USER_EXECUTE)); */
+            Assert(!pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fVmxModeBasedExecuteEpt);
             bool const fNoExecute = !(pGstWalkAll->u.Ept.Pde.u & EPT_E_EXECUTE);
             if (pGstWalkAll->u.Ept.Pde.u & EPT_E_WRITE)
                 enmAccess = fNoExecute ? PGMPOOLACCESS_SUPERVISOR_RW_NX : PGMPOOLACCESS_SUPERVISOR_RW;
