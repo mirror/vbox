@@ -3060,7 +3060,7 @@ g_dMcStmtParsers = {
     'IEM_MC_STORE_FPU_RESULT_WITH_MEM_OP_THEN_POP':              (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_STORE_FPUREG_R80_SRC_REF':                           (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_STORE_GREG_I64':                                     (McBlock.parseMcGeneric,           True,  False, ),
-    'IEM_MC_STORE_GREG_U16':                                     (McBlock.parseMcGeneric,           True,  False, ),
+    'IEM_MC_STORE_GREG_U16':                                     (McBlock.parseMcGeneric,           True,  True,  ),
     'IEM_MC_STORE_GREG_U16_CONST':                               (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_STORE_GREG_U32':                                     (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_STORE_GREG_U32_CONST':                               (McBlock.parseMcGeneric,           True,  False, ),

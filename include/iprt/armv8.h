@@ -2532,6 +2532,61 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrLdrLitteral(ARMV8A64INSTRLDRLITTERAL 
 
 typedef enum
 {
+    kArmv8A64InstrMovWide_Not  = 0,     /**< MOVN - reg = ~(imm16 << hw*16; */
+    kArmv8A64InstrMovWide_Zero = 2,     /**< MOVZ - reg =   imm16 << hw*16; */
+    kArmv8A64InstrMovWide_Keep = 3      /**< MOVK - keep the other halfwords. */
+} ARMV8A64INSTRMOVWIDE;
+
+/**
+ * A64: Encode a move wide immediate instruction.
+ *
+ * @returns The encoded instruction.
+ * @param   enmType     The load instruction type.
+ * @param   iReg        The register to mov the immediate into.
+ * @param   uImm16      The immediate value.
+ * @param   iHalfWord   Which of the 4 (@a f64Bit = true) or 2 register (16-bit)
+ *                      half-words to target:
+ *                          - 0 for bits 15:00,
+ *                          - 1 for bits 31:16,
+ *                          - 2 for bits 47:32 (f64Bit=true only),
+ *                          - 3 for bits 63:48 (f64Bit=true only).
+ * @param   f64Bit      true for 64-bit GPRs (default), @c false for 32-bit GPRs.
+ */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrMovWide(ARMV8A64INSTRMOVWIDE enmType, uint32_t iRegDst, uint32_t uImm16,
+                                                   uint32_t iHalfWord = 0, bool f64Bit = true)
+{
+    Assert(iRegDst < 32); Assert(uImm16  <= UINT16_MAX); Assert(iHalfWord   < 2 + (2 * f64Bit));
+    return ((uint32_t)f64Bit    << 31)
+         | UINT32_C(0x11400000)
+         | (Half                << 21)
+         | (uImm16              << 5)
+         | iRegDst;
+}
+
+/** A64: Encodes a MOVN instruction.
+ * @see Armv8A64MkInstrMovWide for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrMovN(uint32_t iRegDst, uint32_t uImm16, uint32_t iHalfWord = 0, bool f64Bit = true)
+{
+    return Armv8A64MkInstrMovWide(kArmv8A64InstrMovWide_Not, iRegDst, uImm16, iHalfWord, f64Bit);
+}
+
+/** A64: Encodes a MOVZ instruction.
+ * @see Armv8A64MkInstrMovWide for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrMovZ(uint32_t iRegDst, uint32_t uImm16, uint32_t iHalfWord = 0, bool f64Bit = true)
+{
+    return Armv8A64MkInstrMovWide(kArmv8A64InstrMovWide_Zero, iRegDst, uImm16, iHalfWord, f64Bit);
+}
+
+/** A64: Encodes a MOVK instruction.
+ * @see Armv8A64MkInstrMovWide for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrMovK(uint32_t iRegDst, uint32_t uImm16, uint32_t iHalfWord = 0, bool f64Bit = true)
+{
+    return Armv8A64MkInstrMovWide(kArmv8A64InstrMovWide_Keep, iRegDst, uImm16, iHalfWord, f64Bit);
+}
+
+
+typedef enum
+{
     kArmv8A64InstrShift_Lsl = 0,
     kArmv8A64InstrShift_Lsr,
     kArmv8A64InstrShift_Asr,

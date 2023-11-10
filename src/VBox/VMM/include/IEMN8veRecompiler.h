@@ -803,10 +803,37 @@ iemNativeInstrBufEnsure(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t cI
 
 /**
  * Checks that we didn't exceed the space requested in the last
- * iemNativeInstrBufEnsure() call. */
+ * iemNativeInstrBufEnsure() call.
+ */
 #define IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(a_pReNative, a_off) \
     AssertMsg((a_off) <= (a_pReNative)->offInstrBufChecked, \
               ("off=%#x offInstrBufChecked=%#x\n", (a_off), (a_pReNative)->offInstrBufChecked))
+
+/**
+ * Checks that a variable index is valid.
+ */
+#define IEMNATIVE_ASSERT_VAR_IDX(a_pReNative, a_idxVar) \
+    AssertMsg(   (unsigned)(a_idxVar) < RT_ELEMENTS((a_pReNative)->Core.aVars) \
+              && ((a_pReNative)->Core.bmVars & RT_BIT_32(a_idxVar)), ("%s=%d\n", #a_idxVar, a_idxVar))
+
+/**
+ * Calculates the stack address of a variable as a [r]BP displacement value.
+ */
+DECL_FORCE_INLINE(int32_t)
+iemNativeStackCalcBpDisp(uint8_t idxStackSlot)
+{
+    Assert(idxStackSlot < IEMNATIVE_FRAME_VAR_SLOTS);
+    return idxStackSlot * sizeof(uint64_t) + IEMNATIVE_FP_OFF_STACK_VARS;
+}
+
+/**
+ * Calculates the stack address of a variable as a [r]BP displacement value.
+ */
+DECL_FORCE_INLINE(int32_t)
+iemNativeVarCalcBpDisp(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar)
+{
+    return iemNativeStackCalcBpDisp(pReNative->Core.aVars[idxVar].idxStackSlot);
+}
 
 /** @} */
 
