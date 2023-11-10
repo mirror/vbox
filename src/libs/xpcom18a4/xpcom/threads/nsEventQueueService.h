@@ -43,6 +43,8 @@
 #include "nsHashKeys.h"
 #include "nsIEventQueue.h"
 
+#include <iprt/semaphore.h>
+
 ////////////////////////////////////////////////////////////////////////////////
 
 class nsEventQueueServiceImpl : public nsIEventQueueService
@@ -69,7 +71,7 @@ private:
   inline nsresult GetYoungestEventQueue(nsIEventQueue *queue, nsIEventQueue **aResult);
 
   nsInterfaceHashtable<nsVoidPtrHashKey, nsIEventQueue> mEventQTable;
-  PRMonitor *mEventQMonitor;
+  RTSEMFASTMUTEX mEventQMonitor;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

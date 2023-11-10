@@ -51,19 +51,21 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "nsEventQueueService.h"
-#include "prmon.h"
 #include "nsIComponentManager.h"
 #include "nsPIEventQueueChain.h"
 
 #include "nsXPCOM.h"
 
+#include <iprt/assert.h>
 #include <VBox/log.h>
 
 static NS_DEFINE_CID(kEventQueueCID, NS_EVENTQUEUE_CID);
 
 nsEventQueueServiceImpl::nsEventQueueServiceImpl()
 {
-  mEventQMonitor = PR_NewMonitor();
+    mEventQMonitor = NIL_RTSEMFASTMUTEX;
+    int vrc = RTSemFastMutexCreate(&mEventQMonitor);
+    AssertRC(vrc); RT_NOREF(vrc);
 }
 
 PR_STATIC_CALLBACK(PLDHashOperator)
@@ -71,46 +73,48 @@ hash_enum_remove_queues(const void *aThread_ptr,
                         nsCOMPtr<nsIEventQueue>& aEldestQueue,
                         void* closure)
 {
-  // 'aQueue' should be the eldest queue.
-  nsCOMPtr<nsPIEventQueueChain> pie(do_QueryInterface(aEldestQueue));
-  nsCOMPtr<nsIEventQueue> q;
+    // 'aQueue' should be the eldest queue.
+    nsCOMPtr<nsPIEventQueueChain> pie(do_QueryInterface(aEldestQueue));
+    nsCOMPtr<nsIEventQueue> q;
 
-  // stop accepting events for youngest to oldest
-  pie->GetYoungest(getter_AddRefs(q));
-  while (q) {
-    q->StopAcceptingEvents();
+    // stop accepting events for youngest to oldest
+    pie->GetYoungest(getter_AddRefs(q));
+    while (q)
+    {
+        q->StopAcceptingEvents();
 
-    nsCOMPtr<nsPIEventQueueChain> pq(do_QueryInterface(q));
-    pq->GetElder(getter_AddRefs(q));
-  }
+        nsCOMPtr<nsPIEventQueueChain> pq(do_QueryInterface(q));
+        pq->GetElder(getter_AddRefs(q));
+    }
 
-  return PL_DHASH_REMOVE;
+    return PL_DHASH_REMOVE;
 }
 
 nsEventQueueServiceImpl::~nsEventQueueServiceImpl()
 {
-  // XXX make it so we only enum over this once
-  mEventQTable.Enumerate(hash_enum_remove_queues, nsnull); // call StopAcceptingEvents on everything and clear out the hashtable
+    // XXX make it so we only enum over this once
+    mEventQTable.Enumerate(hash_enum_remove_queues, nsnull); // call StopAcceptingEvents on everything and clear out the hashtable
 
-  PR_DestroyMonitor(mEventQMonitor);
+    int vrc = RTSemFastMutexDestroy(mEventQMonitor);
+    AssertRC(vrc); RT_NOREF(vrc);
+    mEventQMonitor = NIL_RTSEMFASTMUTEX;
 }
 
 nsresult
 nsEventQueueServiceImpl::Init()
 {
-  NS_ENSURE_TRUE(mEventQMonitor, NS_ERROR_OUT_OF_MEMORY);
+    NS_ENSURE_TRUE(mEventQMonitor != NIL_RTSEMFASTMUTEX, NS_ERROR_OUT_OF_MEMORY);
 
-  // This will only be called once on the main thread, so it's safe to
-  // not enter the monitor here.
-  if (!mEventQTable.Init()) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-  
-  // ensure that a main thread event queue exists!
-  RTTHREAD hMainThread;
-  nsresult rv = NS_GetMainThread(&hMainThread);
-  if (NS_SUCCEEDED(rv))
-    rv = CreateEventQueue(hMainThread, PR_TRUE);
+    // This will only be called once on the main thread, so it's safe to
+    // not enter the monitor here.
+    if (!mEventQTable.Init())
+        return NS_ERROR_OUT_OF_MEMORY;
+
+    // ensure that a main thread event queue exists!
+    RTTHREAD hMainThread;
+    nsresult rv = NS_GetMainThread(&hMainThread);
+    if (NS_SUCCEEDED(rv))
+      rv = CreateEventQueue(hMainThread, PR_TRUE);
 
   return rv;
 }
@@ -123,26 +127,26 @@ NS_IMPL_THREADSAFE_ISUPPORTS1(nsEventQueueServiceImpl, nsIEventQueueService)
 NS_IMETHODIMP
 nsEventQueueServiceImpl::CreateThreadEventQueue()
 {
-  return CreateEventQueue(RTThreadSelf(), PR_TRUE);
+    return CreateEventQueue(RTThreadSelf(), PR_TRUE);
 }
 
 NS_IMETHODIMP
 nsEventQueueServiceImpl::CreateMonitoredThreadEventQueue()
 {
-  return CreateEventQueue(RTThreadSelf(), PR_FALSE);
+    return CreateEventQueue(RTThreadSelf(), PR_FALSE);
 }
 
 NS_IMETHODIMP
 nsEventQueueServiceImpl::CreateFromIThread(RTTHREAD aThread, PRBool aNative,
                                            nsIEventQueue **aResult)
 {
-  nsresult rv;
+    nsresult rv;
 
-  rv = CreateEventQueue(aThread, aNative); // addrefs
-  if (NS_SUCCEEDED(rv))
-    rv = GetThreadEventQueue(aThread, aResult); // addrefs
+    rv = CreateEventQueue(aThread, aNative); // addrefs
+    if (NS_SUCCEEDED(rv))
+      rv = GetThreadEventQueue(aThread, aResult); // addrefs
 
-  return rv;
+    return rv;
 }
 
 // private method
@@ -151,75 +155,79 @@ nsEventQueueServiceImpl::MakeNewQueue(RTTHREAD hThread,
                                       PRBool aNative,
                                       nsIEventQueue **aQueue)
 {
-  nsresult rv;
-  nsCOMPtr<nsIEventQueue> queue = do_CreateInstance(kEventQueueCID, &rv);
+    nsresult rv;
+    nsCOMPtr<nsIEventQueue> queue = do_CreateInstance(kEventQueueCID, &rv);
 
-  if (NS_SUCCEEDED(rv)) {
-    rv = queue->InitFromPRThread(hThread, aNative);
-  }
-  *aQueue = queue;
-  NS_IF_ADDREF(*aQueue);
-  return rv;
+    if (NS_SUCCEEDED(rv))
+        rv = queue->InitFromPRThread(hThread, aNative);
+
+    *aQueue = queue;
+    NS_IF_ADDREF(*aQueue);
+    return rv;
 }
 
 // private method
 NS_IMETHODIMP
 nsEventQueueServiceImpl::CreateEventQueue(RTTHREAD aThread, PRBool aNative)
 {
-  nsresult rv = NS_OK;
-  /* Enter the lock that protects the EventQ hashtable... */
-  PR_EnterMonitor(mEventQMonitor);
+    nsresult rv = NS_OK;
+    /* Enter the lock that protects the EventQ hashtable... */
+    RTSemFastMutexRequest(mEventQMonitor);
 
-  /* create only one event queue chain per thread... */
-  if (!mEventQTable.GetWeak(aThread)) {
-    nsCOMPtr<nsIEventQueue> queue;
+    /* create only one event queue chain per thread... */
+    if (!mEventQTable.GetWeak(aThread))
+    {
+        nsCOMPtr<nsIEventQueue> queue;
 
-    // we don't have one in the table
-    rv = MakeNewQueue(aThread, aNative, getter_AddRefs(queue)); // create new queue
-    mEventQTable.Put(aThread, queue); // add to the table (initial addref)
-  }
+        // we don't have one in the table
+        rv = MakeNewQueue(aThread, aNative, getter_AddRefs(queue)); // create new queue
+        mEventQTable.Put(aThread, queue); // add to the table (initial addref)
+    }
 
-  // Release the EventQ lock...
-  PR_ExitMonitor(mEventQMonitor);
-  return rv;
+    // Release the EventQ lock...
+    RTSemFastMutexRelease(mEventQMonitor);
+    return rv;
 }
 
 
 NS_IMETHODIMP
 nsEventQueueServiceImpl::DestroyThreadEventQueue(void)
 {
-  nsresult rv = NS_OK;
+    nsresult rv = NS_OK;
 
-  /* Enter the lock that protects the EventQ hashtable... */
-  PR_EnterMonitor(mEventQMonitor);
+    /* Enter the lock that protects the EventQ hashtable... */
+    RTSemFastMutexRequest(mEventQMonitor);
 
-  RTTHREAD hThread = RTThreadSelf();
-  nsIEventQueue* queue = mEventQTable.GetWeak(hThread);
-  if (queue) {
-    queue->StopAcceptingEvents(); // tell the queue to stop accepting events
-    queue = nsnull; // Queue may die on the next line
-    mEventQTable.Remove(hThread); // remove nsIEventQueue from hash table (releases)
-  }
+    RTTHREAD hThread = RTThreadSelf();
+    nsIEventQueue* queue = mEventQTable.GetWeak(hThread);
+    if (queue)
+    {
+        queue->StopAcceptingEvents(); // tell the queue to stop accepting events
+        queue = nsnull; // Queue may die on the next line
+        mEventQTable.Remove(hThread); // remove nsIEventQueue from hash table (releases)
+    }
 
-  // Release the EventQ lock...
-  PR_ExitMonitor(mEventQMonitor);
-  return rv;
+    // Release the EventQ lock...
+    RTSemFastMutexRelease(mEventQMonitor);
+    return rv;
 }
 
 NS_IMETHODIMP
 nsEventQueueServiceImpl::CreateFromPLEventQueue(PLEventQueue* aPLEventQueue, nsIEventQueue** aResult)
 {
-	// Create our thread queue using the component manager
-	nsresult rv;
-	nsCOMPtr<nsIEventQueue> queue = do_CreateInstance(kEventQueueCID, &rv);
-	if (NS_FAILED(rv)) return rv;
+    // Create our thread queue using the component manager
+    nsresult rv;
+    nsCOMPtr<nsIEventQueue> queue = do_CreateInstance(kEventQueueCID, &rv);
+    if (NS_FAILED(rv))
+        return rv;
 
-  rv = queue->InitFromPLQueue(aPLEventQueue);
-	if (NS_FAILED(rv)) return rv;
+    rv = queue->InitFromPLQueue(aPLEventQueue);
+    if (NS_FAILED(rv))
+        return rv;
 
-	*aResult = queue;
-  NS_IF_ADDREF(*aResult);
-	return NS_OK;
+    *aResult = queue;
+    NS_IF_ADDREF(*aResult);
+    return NS_OK;
 }
 
 
@@ -227,19 +235,20 @@ nsEventQueueServiceImpl::CreateFromPLEventQueue(PLEventQueue* aPLEventQueue, nsI
 /* inline */
 nsresult nsEventQueueServiceImpl::GetYoungestEventQueue(nsIEventQueue *queue, nsIEventQueue **aResult)
 {
-  nsCOMPtr<nsIEventQueue> answer;
+    nsCOMPtr<nsIEventQueue> answer;
 
-  if (queue) {
-    nsCOMPtr<nsPIEventQueueChain> ourChain(do_QueryInterface(queue));
-    if (ourChain)
-      ourChain->GetYoungestActive(getter_AddRefs(answer));
-    else
-      answer = queue;
-  }
+    if (queue)
+    {
+        nsCOMPtr<nsPIEventQueueChain> ourChain(do_QueryInterface(queue));
+        if (ourChain)
+            ourChain->GetYoungestActive(getter_AddRefs(answer));
+        else
+            answer = queue;
+    }
 
-  *aResult = answer;
-  NS_IF_ADDREF(*aResult);
-  return NS_OK;
+    *aResult = answer;
+    NS_IF_ADDREF(*aResult);
+    return NS_OK;
 }
 
 
@@ -248,179 +257,170 @@ nsresult nsEventQueueServiceImpl::GetYoungestEventQueue(nsIEventQueue *queue, ns
 NS_IMETHODIMP
 nsEventQueueServiceImpl::PushThreadEventQueue(nsIEventQueue **aNewQueue)
 {
-  nsresult rv = NS_OK;
-  RTTHREAD hThread = RTThreadSelf();
-  PRBool native = PR_TRUE; // native by default as per old comment
+    nsresult rv = NS_OK;
+    RTTHREAD hThread = RTThreadSelf();
+    PRBool native = PR_TRUE; // native by default as per old comment
 
+    NS_ASSERTION(aNewQueue, "PushThreadEventQueue called with null param");
 
-  NS_ASSERTION(aNewQueue, "PushThreadEventQueue called with null param");
+    /* Enter the lock that protects the EventQ hashtable... */
+    RTSemFastMutexRequest(mEventQMonitor);
 
-  /* Enter the lock that protects the EventQ hashtable... */
-  PR_EnterMonitor(mEventQMonitor);
+    nsIEventQueue* queue = mEventQTable.GetWeak(hThread);
+    
+    NS_ASSERTION(queue, "pushed event queue on top of nothing");
 
-  nsIEventQueue* queue = mEventQTable.GetWeak(hThread);
-  
-  NS_ASSERTION(queue, "pushed event queue on top of nothing");
-
-  if (queue) { // find out what kind of queue our relatives are
-    nsCOMPtr<nsIEventQueue> youngQueue;
-    GetYoungestEventQueue(queue, getter_AddRefs(youngQueue));
-    if (youngQueue) {
-      youngQueue->IsQueueNative(&native);
+    if (queue)
+    {
+        // find out what kind of queue our relatives are
+        nsCOMPtr<nsIEventQueue> youngQueue;
+        GetYoungestEventQueue(queue, getter_AddRefs(youngQueue));
+        if (youngQueue)
+          youngQueue->IsQueueNative(&native);
     }
-  }
 
-  nsIEventQueue* newQueue = nsnull;
-  MakeNewQueue(hThread, native, &newQueue); // create new queue; addrefs
+    nsIEventQueue* newQueue = nsnull;
+    MakeNewQueue(hThread, native, &newQueue); // create new queue; addrefs
 
-  if (!queue) {
-    // shouldn't happen. as a fallback, we guess you wanted a native queue
-    mEventQTable.Put(hThread, newQueue);
-  }
+    if (!queue)
+    {
+        // shouldn't happen. as a fallback, we guess you wanted a native queue
+        mEventQTable.Put(hThread, newQueue);
+    }
 
-  // append to the event queue chain
-  nsCOMPtr<nsPIEventQueueChain> ourChain(do_QueryInterface(queue)); // QI the queue in the hash table
-  if (ourChain)
-    ourChain->AppendQueue(newQueue); // append new queue to it
+    // append to the event queue chain
+    nsCOMPtr<nsPIEventQueueChain> ourChain(do_QueryInterface(queue)); // QI the queue in the hash table
+    if (ourChain)
+        ourChain->AppendQueue(newQueue); // append new queue to it
 
-  *aNewQueue = newQueue;
+    *aNewQueue = newQueue;
 
 #ifdef LOG_ENABLED
-  PLEventQueue *equeue;
-  (*aNewQueue)->GetPLEventQueue(&equeue);
-  Log(("EventQueue: Service push queue [queue=%lx]",(long)equeue));
+    PLEventQueue *equeue;
+    (*aNewQueue)->GetPLEventQueue(&equeue);
+    Log(("EventQueue: Service push queue [queue=%lx]",(long)equeue));
 #endif
 
-  // Release the EventQ lock...
-  PR_ExitMonitor(mEventQMonitor);
-  return rv;
+    // Release the EventQ lock...
+    RTSemFastMutexRelease(mEventQMonitor);
+    return rv;
 }
 
 // disable and release the given queue (though the last one won't be released)
 NS_IMETHODIMP
 nsEventQueueServiceImpl::PopThreadEventQueue(nsIEventQueue *aQueue)
 {
-  RTTHREAD hThread = RTThreadSelf();
+    RTTHREAD hThread = RTThreadSelf();
 
-  /* Enter the lock that protects the EventQ hashtable... */
-  PR_EnterMonitor(mEventQMonitor);
+    /* Enter the lock that protects the EventQ hashtable... */
+    RTSemFastMutexRequest(mEventQMonitor);
 
-  nsCOMPtr<nsIEventQueue> eldestQueue;
-  mEventQTable.Get(hThread, getter_AddRefs(eldestQueue));
+    nsCOMPtr<nsIEventQueue> eldestQueue;
+    mEventQTable.Get(hThread, getter_AddRefs(eldestQueue));
 
-  // If we are popping the eldest queue, remove its mEventQTable entry.
-  if (aQueue == eldestQueue)
-    mEventQTable.Remove(hThread);
+    // If we are popping the eldest queue, remove its mEventQTable entry.
+    if (aQueue == eldestQueue)
+        mEventQTable.Remove(hThread);
 
-  // Exit the monitor before processing pending events to avoid deadlock.
-  // Our reference from the eldestQueue nsCOMPtr will keep that object alive.
-  // Since it is thread-private, no one else can race with us here.
-  PR_ExitMonitor(mEventQMonitor);
-  if (!eldestQueue)
-    return NS_ERROR_FAILURE;
+    // Exit the monitor before processing pending events to avoid deadlock.
+    // Our reference from the eldestQueue nsCOMPtr will keep that object alive.
+    // Since it is thread-private, no one else can race with us here.
+    RTSemFastMutexRelease(mEventQMonitor);
+    if (!eldestQueue)
+        return NS_ERROR_FAILURE;
 
 #ifdef LOG_ENABLED
-  PLEventQueue *equeue;
-  aQueue->GetPLEventQueue(&equeue);
-  Log(("EventQueue: Service pop queue [queue=%lx]",(long)equeue));
+    PLEventQueue *equeue;
+    aQueue->GetPLEventQueue(&equeue);
+    Log(("EventQueue: Service pop queue [queue=%lx]",(long)equeue));
 #endif
-  aQueue->StopAcceptingEvents();
-  aQueue->ProcessPendingEvents(); // make sure we don't orphan any events
+    aQueue->StopAcceptingEvents();
+    aQueue->ProcessPendingEvents(); // make sure we don't orphan any events
 
-  return NS_OK;
+    return NS_OK;
 }
 
 NS_IMETHODIMP
 nsEventQueueServiceImpl::GetThreadEventQueue(RTTHREAD aThread, nsIEventQueue** aResult)
 {
-  /* Parameter validation... */
-  if (NULL == aResult) return NS_ERROR_NULL_POINTER;
+    /* Parameter validation... */
+    AssertReturn(aResult != NULL, NS_ERROR_NULL_POINTER);
 
-  RTTHREAD keyThread = aThread;
+    RTTHREAD keyThread = aThread;
 
-  if (keyThread == NS_CURRENT_THREAD)
-  {
-     keyThread = RTThreadSelf();
-  }
-  else if (keyThread == NS_UI_THREAD)
-  {
-    // Get the primordial thread
-    nsresult rv = NS_GetMainThread(&keyThread);
-    if (NS_FAILED(rv)) return rv;
-  }
+    if (keyThread == NS_CURRENT_THREAD)
+         keyThread = RTThreadSelf();
+    else if (keyThread == NS_UI_THREAD)
+    {
+        // Get the primordial thread
+        nsresult rv = NS_GetMainThread(&keyThread);
+        if (NS_FAILED(rv))
+            return rv;
+    }
 
-  /* Enter the lock that protects the EventQ hashtable... */
-  PR_EnterMonitor(mEventQMonitor);
+    /* Enter the lock that protects the EventQ hashtable... */
+    RTSemFastMutexRequest(mEventQMonitor);
 
-  nsCOMPtr<nsIEventQueue> queue;
-  mEventQTable.Get(keyThread, getter_AddRefs(queue));
+    nsCOMPtr<nsIEventQueue> queue;
+    mEventQTable.Get(keyThread, getter_AddRefs(queue));
 
-  PR_ExitMonitor(mEventQMonitor);
+    RTSemFastMutexRelease(mEventQMonitor);
 
-  if (queue) {
-    GetYoungestEventQueue(queue, aResult); // get the youngest active queue
-  } else {
-    *aResult = nsnull;
-  }
-  // XXX: Need error code for requesting an event queue when none exists...
-  if (!*aResult) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-  return NS_OK;
+    if (queue)
+      GetYoungestEventQueue(queue, aResult); // get the youngest active queue
+    else
+      *aResult = nsnull;
+
+    // XXX: Need error code for requesting an event queue when none exists...
+    if (!*aResult)
+      return NS_ERROR_NOT_AVAILABLE;
+
+    return NS_OK;
 }
 
 
 NS_IMETHODIMP
 nsEventQueueServiceImpl::ResolveEventQueue(nsIEventQueue* queueOrConstant, nsIEventQueue* *resultQueue)
 {
-  if (queueOrConstant == NS_CURRENT_EVENTQ) {
-    return GetThreadEventQueue(NS_CURRENT_THREAD, resultQueue);
-  }
-  else if (queueOrConstant == NS_UI_THREAD_EVENTQ) {
-    return GetThreadEventQueue(NS_UI_THREAD, resultQueue);
-  }
+    if (queueOrConstant == NS_CURRENT_EVENTQ)
+        return GetThreadEventQueue(NS_CURRENT_THREAD, resultQueue);
+    else if (queueOrConstant == NS_UI_THREAD_EVENTQ)
+        return GetThreadEventQueue(NS_UI_THREAD, resultQueue);
 
-  *resultQueue = queueOrConstant;
-  NS_ADDREF(*resultQueue);
-  return NS_OK;
+    *resultQueue = queueOrConstant;
+    NS_ADDREF(*resultQueue);
+    return NS_OK;
 }
 
 NS_IMETHODIMP
 nsEventQueueServiceImpl::GetSpecialEventQueue(PRInt32 aQueue,
                                               nsIEventQueue* *_retval)
 {
-  nsresult rv;
+    AssertReturn(_retval, NS_ERROR_NULL_POINTER);
 
-  // barf if someone gave us a zero pointer
-  //
-  if (!_retval) {
-    return NS_ERROR_NULL_POINTER;
-  }
-
-  // try and get the requested event queue, returning NS_ERROR_FAILURE if there
-  // is a problem.  GetThreadEventQueue() does the AddRef() for us.
-  //
-  switch (aQueue) {
-  case CURRENT_THREAD_EVENT_QUEUE:
-    rv = GetThreadEventQueue(NS_CURRENT_THREAD, _retval);
-    if (NS_FAILED(rv)) {
-      return NS_ERROR_FAILURE;
+    // try and get the requested event queue, returning NS_ERROR_FAILURE if there
+    // is a problem.  GetThreadEventQueue() does the AddRef() for us.
+    switch (aQueue)
+    {
+        case CURRENT_THREAD_EVENT_QUEUE:
+        {
+            nsresult rv = GetThreadEventQueue(NS_CURRENT_THREAD, _retval);
+            if (NS_FAILED(rv))
+                return NS_ERROR_FAILURE;
+            break;
+        }
+        case UI_THREAD_EVENT_QUEUE:
+        {
+            nsresult rv = GetThreadEventQueue(NS_UI_THREAD, _retval);
+            if (NS_FAILED(rv))
+                return NS_ERROR_FAILURE;
+            break;
+        }
+        /* somebody handed us a bogus constant */
+        default:
+            return NS_ERROR_ILLEGAL_VALUE;
     }
-    break;
 
-  case UI_THREAD_EVENT_QUEUE:
-    rv = GetThreadEventQueue(NS_UI_THREAD, _retval);
-    if (NS_FAILED(rv)) {
-      return NS_ERROR_FAILURE;
-    }
-    break;
-
-    // somebody handed us a bogus constant
-    //
-  default:
-    return NS_ERROR_ILLEGAL_VALUE;
-  }
-
-  return NS_OK;
+    return NS_OK;
 }
 
