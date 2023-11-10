@@ -314,7 +314,7 @@ void UIMachineSettingsGeneral::putToCache()
     /* Gather new 'Description' data: */
     if (m_pEditorDescription)
         newGeneralData.m_strDescription = m_pEditorDescription->value().isEmpty()
-                                 ? QString() : m_pEditorDescription->value();
+                                        ? QString() : m_pEditorDescription->value();
 
     /* Gather new 'Encryption' data: */
     if (m_pEditorDiskEncryptionSettings)
@@ -442,24 +442,22 @@ bool UIMachineSettingsGeneral::validate(QList<UIValidationMessage> &messages)
 void UIMachineSettingsGeneral::setOrderAfter(QWidget *pWidget)
 {
     /* 'Basic' tab: */
-    AssertPtrReturnVoid(pWidget);
-    AssertPtrReturnVoid(m_pTabWidget);
-    AssertPtrReturnVoid(m_pTabWidget->focusProxy());
-    AssertPtrReturnVoid(m_pEditorNameAndSystem);
-    setTabOrder(pWidget, m_pTabWidget->focusProxy());
-    setTabOrder(m_pTabWidget->focusProxy(), m_pEditorNameAndSystem);
+    if (pWidget && m_pTabWidget && m_pTabWidget->focusProxy())
+        setTabOrder(pWidget, m_pTabWidget->focusProxy());
+    if (m_pTabWidget && m_pTabWidget->focusProxy() && m_pEditorNameAndSystem)
+        setTabOrder(m_pTabWidget->focusProxy(), m_pEditorNameAndSystem);
 
     /* 'Advanced' tab: */
-    AssertPtrReturnVoid(m_pEditorSnapshotFolder);
-    AssertPtrReturnVoid(m_pEditorClipboard);
-    AssertPtrReturnVoid(m_pEditorDragAndDrop);
-    setTabOrder(m_pEditorNameAndSystem, m_pEditorSnapshotFolder);
-    setTabOrder(m_pEditorSnapshotFolder, m_pEditorClipboard);
-    setTabOrder(m_pEditorClipboard, m_pEditorDragAndDrop);
+    if (m_pEditorNameAndSystem && m_pEditorSnapshotFolder)
+        setTabOrder(m_pEditorNameAndSystem, m_pEditorSnapshotFolder);
+    if (m_pEditorSnapshotFolder && m_pEditorClipboard)
+        setTabOrder(m_pEditorSnapshotFolder, m_pEditorClipboard);
+    if (m_pEditorClipboard && m_pEditorDragAndDrop)
+        setTabOrder(m_pEditorClipboard, m_pEditorDragAndDrop);
 
     /* 'Description' tab: */
-    AssertPtrReturnVoid(m_pEditorDescription);
-    setTabOrder(m_pEditorDragAndDrop, m_pEditorDescription);
+    if (m_pEditorDragAndDrop && m_pEditorDescription)
+        setTabOrder(m_pEditorDragAndDrop, m_pEditorDescription);
 }
 
 void UIMachineSettingsGeneral::retranslateUi()
@@ -480,26 +478,28 @@ void UIMachineSettingsGeneral::handleFilterChange()
 void UIMachineSettingsGeneral::polishPage()
 {
     /* Polish 'Basic' availability: */
-    AssertPtrReturnVoid(m_pEditorNameAndSystem);
-    m_pEditorNameAndSystem->setNameStuffEnabled(isMachineOffline() || isMachineSaved());
-    m_pEditorNameAndSystem->setPathStuffEnabled(isMachineOffline());
-    m_pEditorNameAndSystem->setOSTypeStuffEnabled(isMachineOffline());
+    if (m_pEditorNameAndSystem)
+    {
+        m_pEditorNameAndSystem->setNameStuffEnabled(isMachineOffline() || isMachineSaved());
+        m_pEditorNameAndSystem->setPathStuffEnabled(isMachineOffline());
+        m_pEditorNameAndSystem->setOSTypeStuffEnabled(isMachineOffline());
+    }
 
     /* Polish 'Advanced' availability: */
-    AssertPtrReturnVoid(m_pEditorSnapshotFolder);
-    AssertPtrReturnVoid(m_pEditorClipboard);
-    AssertPtrReturnVoid(m_pEditorDragAndDrop);
-    m_pEditorSnapshotFolder->setEnabled(isMachineOffline());
-    m_pEditorClipboard->setEnabled(isMachineInValidMode());
-    m_pEditorDragAndDrop->setEnabled(isMachineInValidMode());
+    if (m_pEditorSnapshotFolder)
+        m_pEditorSnapshotFolder->setEnabled(isMachineOffline());
+    if (m_pEditorClipboard)
+        m_pEditorClipboard->setEnabled(isMachineInValidMode());
+    if (m_pEditorDragAndDrop)
+        m_pEditorDragAndDrop->setEnabled(isMachineInValidMode());
 
     /* Polish 'Description' availability: */
-    AssertPtrReturnVoid(m_pEditorDescription);
-    m_pEditorDescription->setEnabled(isMachineInValidMode());
+    if (m_pEditorDescription)
+        m_pEditorDescription->setEnabled(isMachineInValidMode());
 
     /* Polish 'Encryption' availability: */
-    AssertPtrReturnVoid(m_pEditorDiskEncryptionSettings);
-    m_pEditorDiskEncryptionSettings->setEnabled(isMachineOffline());
+    if (m_pEditorDiskEncryptionSettings)
+        m_pEditorDiskEncryptionSettings->setEnabled(isMachineOffline());
 }
 
 void UIMachineSettingsGeneral::sltHandleEncryptionCipherChanged()

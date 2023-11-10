@@ -71,10 +71,10 @@ QSize UIDescriptionEditor::minimumSizeHint() const
 {
     /* Calculate on the basis of font metrics: */
     QFontMetrics fm(m_pTextEdit->font());
-    // approx. 100 symbols, not very precise:
-    const int iWidth = fm.averageCharWidth() * 100;
-    // exact. 5 symbols, quite precise:
-    const int iHeight = fm.lineSpacing() * 5
+    // approx. 50 symbols, not very precise:
+    const int iWidth = fm.averageCharWidth() * 50;
+    // exact. 7 symbols, quite precise:
+    const int iHeight = fm.lineSpacing() * 7
                       + m_pTextEdit->document()->documentMargin() * 2
                       + m_pTextEdit->frameWidth() * 2;
     return QSize(iWidth, iHeight);
@@ -100,9 +100,6 @@ void UIDescriptionEditor::prepare()
             setFocusProxy(m_pTextEdit);
             m_pTextEdit->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
             m_pTextEdit->setAcceptRichText(false);
-#ifdef VBOX_WS_MAC
-            m_pTextEdit->setMinimumHeight(150);
-#endif
 
             pLayout->addWidget(m_pTextEdit);
         }
