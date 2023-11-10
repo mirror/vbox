@@ -152,7 +152,6 @@ int vbcl::ipc::packet_read(uint32_t uSessionId, RTLOCALIPCSESSION hSession, void
     int rc;
 
     vbcl::ipc::packet_t Packet;
-    size_t cbRead;
 
     AssertPtrReturn(ppvData, VERR_INVALID_PARAMETER);
 
@@ -160,12 +159,10 @@ int vbcl::ipc::packet_read(uint32_t uSessionId, RTLOCALIPCSESSION hSession, void
     if (RT_SUCCESS(rc))
     {
         /* Read IPC message header. */
-        rc = RTLocalIpcSessionRead(hSession, &Packet, sizeof(Packet), &cbRead);
+        rc = RTLocalIpcSessionRead(hSession, &Packet, sizeof(Packet), NULL);
         if (RT_SUCCESS(rc))
         {
-            if (cbRead == sizeof(Packet))
-            {
-                bool fCheck = true;
+            bool fCheck = true;
 
 #define _CHECK(_cond, _msg, _ptr) \
     if (fCheck) \
@@ -175,49 +172,43 @@ int vbcl::ipc::packet_read(uint32_t uSessionId, RTLOCALIPCSESSION hSession, void
             VBClLogVerbose(3, _msg "\n", _ptr); \
     }
 
-                _CHECK(Packet.u64Crc > 0,                   "bad crc: 0x%x", Packet.u64Crc);
-                _CHECK(Packet.uSessionId == uSessionId,     "bad session id: %u vs %u", (Packet.uSessionId, uSessionId));
-                _CHECK(Packet.cbData > sizeof(Packet),      "bad cbData: %u", Packet.cbData);
+            _CHECK(Packet.u64Crc > 0,                   "bad crc: 0x%x", Packet.u64Crc);
+            _CHECK(Packet.uSessionId == uSessionId,     "bad session id: %u vs %u", (Packet.uSessionId, uSessionId));
+            _CHECK(Packet.cbData > sizeof(Packet),      "bad cbData: %u", Packet.cbData);
 
-                /* Receive the rest of a message. */
-                if (fCheck)
+            /* Receive the rest of a message. */
+            if (fCheck)
+            {
+                uint8_t *puData;
+
+                puData = (uint8_t *)RTMemAllocZ(Packet.cbData);
+                if (RT_VALID_PTR(puData))
                 {
-                    uint8_t *puData;
+                    /* Add generic header to the beginning of the output buffer
+                     * and receive the rest of the data into it. */
+                    memcpy(puData, &Packet, sizeof(Packet));
 
-                    puData = (uint8_t *)RTMemAllocZ(Packet.cbData);
-                    if (RT_VALID_PTR(puData))
+                    rc = RTLocalIpcSessionRead(hSession, puData + sizeof(Packet),
+                                               Packet.cbData - sizeof(Packet), NULL);
+                    if (RT_SUCCESS(rc))
                     {
-                        /* Add generic header to the beginning of the output buffer
-                         * and receive the rest of the data into it. */
-                        memcpy(puData, &Packet, sizeof(Packet));
-
-                        rc = RTLocalIpcSessionRead(hSession, puData + sizeof(Packet),
-                                                   Packet.cbData - sizeof(Packet), &cbRead);
-                        if (RT_SUCCESS(rc))
+                        if (vbcl::ipc::packet_verify((vbcl::ipc::packet_t *)puData, Packet.cbData))
                         {
-                            if (cbRead == (Packet.cbData - sizeof(Packet)))
-                            {
-                                if (vbcl::ipc::packet_verify((vbcl::ipc::packet_t *)puData, Packet.cbData))
-                                {
-                                    /* Now return received data to the caller. */
-                                    *ppvData = puData;
-                                }
-                                else
-                                    rc = VERR_NOT_EQUAL;
-                            }
-                            else
-                                rc = VERR_BUFFER_UNDERFLOW;
+                            /* Now return received data to the caller. */
+                            *ppvData = puData;
                         }
-
-                        if (RT_FAILURE(rc))
-                            RTMemFree(puData);
+                        else
+                            rc = VERR_NOT_EQUAL;
                     }
-                    else
-                        rc = VERR_NO_MEMORY;
+
+                    if (RT_FAILURE(rc))
+                        RTMemFree(puData);
                 }
                 else
-                    rc = VERR_INVALID_PARAMETER;
+                    rc = VERR_NO_MEMORY;
             }
+            else
+                rc = VERR_INVALID_PARAMETER;
 
             if (RT_FAILURE(rc))
                 vbcl::ipc::packet_dump(&Packet);
