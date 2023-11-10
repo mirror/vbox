@@ -2555,10 +2555,11 @@ typedef enum
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrMovWide(ARMV8A64INSTRMOVWIDE enmType, uint32_t iRegDst, uint32_t uImm16,
                                                    uint32_t iHalfWord = 0, bool f64Bit = true)
 {
-    Assert(iRegDst < 32); Assert(uImm16  <= UINT16_MAX); Assert(iHalfWord   < 2 + (2 * f64Bit));
+    Assert(iRegDst < 32U); Assert(uImm16 <= (uint32_t)UINT16_MAX); Assert(iHalfWord < 2U + (2U * f64Bit));
     return ((uint32_t)f64Bit    << 31)
+         | ((uint32_t)enmType   << 29)
          | UINT32_C(0x11400000)
-         | (Half                << 21)
+         | (iHalfWord           << 21)
          | (uImm16              << 5)
          | iRegDst;
 }
