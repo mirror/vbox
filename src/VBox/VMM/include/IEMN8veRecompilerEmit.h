@@ -795,7 +795,7 @@ iemNativeEmitLoadGprByBp(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iG
     return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprDst, offDisp, pReNative);
 
 #elif defined(RT_ARCH_ARM64)
-    return iemNativeEmitGprByBpLdSt(pReNative, off, iGprDst, offDisp, kArmv8A64InstrLdStType_St_Dword, sizeof(uint64_t));
+    return iemNativeEmitGprByBpLdSt(pReNative, off, iGprDst, offDisp, kArmv8A64InstrLdStType_Ld_Dword, sizeof(uint64_t));
 
 #else
 # error "port me"
@@ -805,6 +805,7 @@ iemNativeEmitLoadGprByBp(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iG
 
 /**
  * Emits a 32-bit GRP load instruction with an BP relative source address.
+ * @note Bits 63 thru 32 of the GPR will be cleared.
  */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitLoadGprByBpU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, int32_t offDisp)
@@ -818,7 +819,55 @@ iemNativeEmitLoadGprByBpU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t
     return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprDst, offDisp, pReNative);
 
 #elif defined(RT_ARCH_ARM64)
-    return iemNativeEmitGprByBpLdSt(pReNative, off, iGprDst, offDisp, kArmv8A64InstrLdStType_St_Word, sizeof(uint32_t));
+    return iemNativeEmitGprByBpLdSt(pReNative, off, iGprDst, offDisp, kArmv8A64InstrLdStType_Ld_Word, sizeof(uint32_t));
+
+#else
+# error "port me"
+#endif
+}
+
+
+/**
+ * Emits a 16-bit GRP load instruction with an BP relative source address.
+ * @note Bits 63 thru 16 of the GPR will be cleared.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprByBpU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, int32_t offDisp)
+{
+#ifdef RT_ARCH_AMD64
+    /* movzx gprdst, word [rbp + offDisp]  */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
+    if (iGprDst >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_R;
+    pbCodeBuf[off++] = 0xb7;
+    return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprDst, offDisp, pReNative);
+
+#elif defined(RT_ARCH_ARM64)
+    return iemNativeEmitGprByBpLdSt(pReNative, off, iGprDst, offDisp, kArmv8A64InstrLdStType_Ld_Half, sizeof(uint32_t));
+
+#else
+# error "port me"
+#endif
+}
+
+
+/**
+ * Emits a 8-bit GRP load instruction with an BP relative source address.
+ * @note Bits 63 thru 8 of the GPR will be cleared.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprByBpU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, int32_t offDisp)
+{
+#ifdef RT_ARCH_AMD64
+    /* movzx gprdst, byte [rbp + offDisp]  */
+    uint8_t *pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
+    if (iGprDst >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_R;
+    pbCodeBuf[off++] = 0xb6;
+    return iemNativeEmitGprByBpDisp(pbCodeBuf, off, iGprDst, offDisp, pReNative);
+
+#elif defined(RT_ARCH_ARM64)
+    return iemNativeEmitGprByBpLdSt(pReNative, off, iGprDst, offDisp, kArmv8A64InstrLdStType_Ld_Byte, sizeof(uint32_t));
 
 #else
 # error "port me"

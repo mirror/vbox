@@ -359,6 +359,14 @@ typedef enum IEMNATIVEGSTREG : uint8_t
     kIemNativeGstReg_End
 } IEMNATIVEGSTREG;
 
+/** @name Helpers for converting register numbers to IEMNATIVEGSTREG values.
+ * @{  */
+#define IEMNATIVEGSTREG_GPR(a_iGpr)             ((IEMNATIVEGSTREG)(kIemNativeGstReg_GprFirst      + (a_iGpr)    ))
+#define IEMNATIVEGSTREG_SEG_SEL(a_iSegReg)      ((IEMNATIVEGSTREG)(kIemNativeGstReg_SegSelFirst   + (a_iSegReg) ))
+#define IEMNATIVEGSTREG_SEG_BASE(a_iSegReg)     ((IEMNATIVEGSTREG)(kIemNativeGstReg_SegBaseFirst  + (a_iSegReg) ))
+#define IEMNATIVEGSTREG_SEG_LIMIT(a_iSegReg)    ((IEMNATIVEGSTREG)(kIemNativeGstReg_SegLimitFirst + (a_iSegReg) ))
+/** @} */
+
 /**
  * Intended use statement for iemNativeRegAllocTmpForGuestReg().
  */
@@ -370,6 +378,9 @@ typedef enum IEMNATIVEGSTREGUSE
     /** The caller will update the guest register (think: PC += cbInstr).
      * The guest shadow copy will follow the returned register. */
     kIemNativeGstRegUse_ForUpdate,
+    /** The call will put an entirely new value in the guest register, so
+     * if new register is allocate it will be returned uninitialized. */
+    kIemNativeGstRegUse_ForFullWrite,
     /** The caller will use the guest register value as input in a calculation
      * and the host register will be modified.
      * This means that the returned host register will not be marked as a shadow
@@ -432,7 +443,8 @@ typedef struct IEMNATIVEVAR
      *  UINT8_MAX.  A referenced variable must only be placed on the stack and
      *  must be either kIemNativeVarKind_Stack or kIemNativeVarKind_Immediate. */
     uint8_t             idxReferrerVar;
-    /** Guest register being shadowed here, kIemNativeGstReg_End(/UINT8_MAX) if not. */
+    /** Guest register being shadowed here, kIemNativeGstReg_End(/UINT8_MAX) if not.
+     * @todo not sure what this really is for...   */
     IEMNATIVEGSTREG     enmGstReg;
     uint8_t             bAlign;
 
