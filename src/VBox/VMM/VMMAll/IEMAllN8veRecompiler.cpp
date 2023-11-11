@@ -6343,7 +6343,6 @@ iemNativeEmitStoreGregU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitStoreGregU32Const(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg, uint32_t uValue)
 {
-pReNative->pInstrBuf[off++] = 0xcc;
     Assert(iGReg < 16);
     uint8_t const idxGstTmpReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(iGReg),
                                                                  kIemNativeGstRegUse_ForFullWrite);

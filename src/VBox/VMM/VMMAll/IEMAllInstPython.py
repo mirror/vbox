@@ -3063,7 +3063,7 @@ g_dMcStmtParsers = {
     'IEM_MC_STORE_GREG_U16':                                     (McBlock.parseMcGeneric,           True,  True,  ),
     'IEM_MC_STORE_GREG_U16_CONST':                               (McBlock.parseMcGeneric,           True,  True,  ),
     'IEM_MC_STORE_GREG_U32':                                     (McBlock.parseMcGeneric,           True,  True,  ),
-    'IEM_MC_STORE_GREG_U32_CONST':                               (McBlock.parseMcGeneric,           True,  False, ),
+    'IEM_MC_STORE_GREG_U32_CONST':                               (McBlock.parseMcGeneric,           True,  True,  ),
     'IEM_MC_STORE_GREG_U64':                                     (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_STORE_GREG_U64_CONST':                               (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_STORE_GREG_U8':                                      (McBlock.parseMcGeneric,           True,  False, ),
