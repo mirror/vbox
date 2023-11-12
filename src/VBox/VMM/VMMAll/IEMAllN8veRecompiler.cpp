@@ -5313,7 +5313,19 @@ DECL_HIDDEN_THROW(uint8_t) iemNativeVarAllocRegister(PIEMRECOMPILERSTATE pReNati
 
     uint8_t idxReg = pReNative->Core.aVars[idxVar].idxReg;
     if (idxReg < RT_ELEMENTS(pReNative->Core.aHstRegs))
+    {
+        Assert(   pReNative->Core.aVars[idxVar].enmKind > kIemNativeVarKind_Invalid
+               && pReNative->Core.aVars[idxVar].enmKind < kIemNativeVarKind_End);
         return idxReg;
+    }
+
+    /*
+     * If the kind of variable has not yet been set, default to 'stack'.
+     */
+    Assert(   pReNative->Core.aVars[idxVar].enmKind >= kIemNativeVarKind_Invalid
+           && pReNative->Core.aVars[idxVar].enmKind < kIemNativeVarKind_End);
+    if (pReNative->Core.aVars[idxVar].enmKind == kIemNativeVarKind_Invalid)
+        iemNativeVarSetKindToStack(pReNative, idxVar);
 
     /*
      * We have to allocate a register for the variable, even if its a stack one
@@ -6544,6 +6556,196 @@ iemNativeEmitSubGregU32U64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t 
     iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
     return off;
 }
+
+
+
+/*********************************************************************************************************************************
+*   Effective Address Calculation                                                                                                *
+*********************************************************************************************************************************/
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_16(a_GCPtrEff, a_bRm, a_u16Disp) \
+    off = iemNativeEmitCalcRmEffAddrThreadedAddr16(pReNative, off, a_bRm, a_u16Disp, a_GCPtrEff)
+
+/** Emit code for IEM_MC_CALC_RM_EFF_ADDR_THREADED_16.
+ * @sa iemOpHlpCalcRmEffAddrThreadedAddr16  */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitCalcRmEffAddrThreadedAddr16(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                         uint8_t bRm, uint16_t u16Disp, uint8_t idxVarRet)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVarRet);
+    uint8_t const idxRegRet = iemNativeVarAllocRegister(pReNative, idxVarRet, &off);
+
+    /* Handle the disp16 form with no registers first. */
+    if ((bRm & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 6)
+        return iemNativeEmitLoadGprImm64(pReNative, off, idxRegRet, u16Disp);
+
+    /* Determin the displacment. */
+    uint16_t u16EffAddr;
+    switch ((bRm >> X86_MODRM_MOD_SHIFT) & X86_MODRM_MOD_SMASK)
+    {
+        case 0:  u16EffAddr = 0;                        break;
+        case 1:  u16EffAddr = (int16_t)(int8_t)u16Disp; break;
+        case 2:  u16EffAddr = u16Disp;                  break;
+        default: AssertFailedStmt(u16EffAddr = 0);
+    }
+
+    /* Determine the registers involved. */
+    uint8_t idxGstRegBase;
+    uint8_t idxGstRegIndex;
+    switch (bRm & X86_MODRM_RM_MASK)
+    {
+        case 0:
+            idxGstRegBase  = X86_GREG_xBX;
+            idxGstRegIndex = X86_GREG_xSI;
+            break;
+        case 1:
+            idxGstRegBase  = X86_GREG_xBX;
+            idxGstRegIndex = X86_GREG_xDI;
+            break;
+        case 2:
+            idxGstRegBase  = X86_GREG_xBP;
+            idxGstRegIndex = X86_GREG_xSI;
+            break;
+        case 3:
+            idxGstRegBase  = X86_GREG_xBP;
+            idxGstRegIndex = X86_GREG_xDI;
+            break;
+        case 4:
+            idxGstRegBase  = X86_GREG_xSI;
+            idxGstRegIndex = UINT8_MAX;
+            break;
+        case 5:
+            idxGstRegBase  = X86_GREG_xDI;
+            idxGstRegIndex = UINT8_MAX;
+            break;
+        case 6:
+            idxGstRegBase  = X86_GREG_xBP;
+            idxGstRegIndex = UINT8_MAX;
+            break;
+#ifdef _MSC_VER  /* lazy compiler, thinks idxGstRegBase and idxGstRegIndex may otherwise be used uninitialized. */
+        default:
+#endif
+        case 7:
+            idxGstRegBase  = X86_GREG_xBX;
+            idxGstRegIndex = UINT8_MAX;
+            break;
+    }
+
+    /*
+     * Now calculate: idxRegRet = (uint16_t)(u16EffAddr + idxGstRegBase [+ idxGstRegIndex])
+     */
+    uint8_t const idxRegBase  = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(idxGstRegBase),
+                                                               kIemNativeGstRegUse_ReadOnly);
+    uint8_t const idxRegIndex = idxGstRegIndex != UINT8_MAX
+                              ? iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(idxGstRegIndex),
+                                                               kIemNativeGstRegUse_ReadOnly)
+                              : UINT8_MAX;
+#ifdef RT_ARCH_AMD64
+    if (idxRegIndex == UINT8_MAX)
+    {
+        if (u16EffAddr == 0)
+        {
+            /* movxz ret, base */
+            off = iemNativeEmitLoadGprFromGpr16(pReNative, off, idxRegRet, idxRegBase);
+        }
+        else
+        {
+            /* lea ret32, [base64 + disp32] */
+            Assert(idxRegBase != X86_GREG_xSP /*SIB*/);
+            uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
+            if (idxRegRet >= 8 || idxRegBase >= 8)
+                pbCodeBuf[off++] = (idxRegRet >= 8 ? X86_OP_REX_R : 0) | (idxRegBase >= 8 ? X86_OP_REX_B : 0);
+            pbCodeBuf[off++] = 0x8d;
+            if (idxRegBase != X86_GREG_x12 /*SIB*/)
+                pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM4, idxRegRet & 7, idxRegBase & 7);
+            else
+            {
+                pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM4, idxRegRet & 7, 4 /*SIB*/);
+                pbCodeBuf[off++] = X86_SIB_MAKE(X86_GREG_x12 & 7, 4 /*no index*/, 0);
+            }
+            pbCodeBuf[off++] = RT_BYTE1(u16EffAddr);
+            pbCodeBuf[off++] = RT_BYTE2(u16EffAddr);
+            pbCodeBuf[off++] = 0;
+            pbCodeBuf[off++] = 0;
+            IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+
+            off = iemNativeEmitClear16UpGpr(pReNative, off, idxRegRet);
+        }
+    }
+    else
+    {
+        /* lea ret32, [index64 + base64 (+ disp32)] */
+        Assert(idxRegIndex != X86_GREG_xSP /*no-index*/);
+        uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
+        if (idxRegRet >= 8 || idxRegBase >= 8 || idxRegIndex >= 8)
+            pbCodeBuf[off++] = (idxRegRet   >= 8 ? X86_OP_REX_R : 0)
+                             | (idxRegBase  >= 8 ? X86_OP_REX_B : 0)
+                             | (idxRegIndex >= 8 ? X86_OP_REX_X : 0);
+        pbCodeBuf[off++] = 0x8d;
+        uint8_t const bMod = u16EffAddr == 0 && (idxRegBase & 7) != X86_GREG_xBP ? X86_MOD_MEM0 : X86_MOD_MEM4;
+        pbCodeBuf[off++] = X86_MODRM_MAKE(bMod, idxRegRet & 7, 4 /*SIB*/);
+        pbCodeBuf[off++] = X86_SIB_MAKE(idxRegBase & 7, idxRegIndex & 7, 0);
+        if (bMod == X86_MOD_MEM4)
+        {
+            pbCodeBuf[off++] = RT_BYTE1(u16EffAddr);
+            pbCodeBuf[off++] = RT_BYTE2(u16EffAddr);
+            pbCodeBuf[off++] = 0;
+            pbCodeBuf[off++] = 0;
+        }
+        IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+        off = iemNativeEmitClear16UpGpr(pReNative, off, idxRegRet);
+    }
+
+#elif defined(RT_ARCH_ARM64)
+    uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 5);
+    if (u16EffAddr == 0)
+    {
+        if (idxRegIndex == UINT8_MAX)
+            pu32CodeBuf[off++] = Armv8A64MkInstrUxth(idxRegRet, idxRegBase);
+        else
+        {
+            pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(false /*fSub*/, idxRegRet, idxRegBase, idxRegIndex, false /*f64Bit*/);
+            pu32CodeBuf[off++] = Armv8A64MkInstrUxth(idxRegRet, idxRegRet);
+        }
+    }
+    else
+    {
+        if ((int16_t)u16Disp < 4096 && (int16_t)u16Disp >= 0)
+            pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(false /*fSub*/, idxRegRet, idxRegBase, u16Disp, false /*f64Bit*/);
+        else if ((int16_t)u16Disp > -4096 && (int16_t)u16Disp < 0)
+            pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, idxRegRet, idxRegBase,
+                                                             (uint16_t)-(int16_t)u16Disp, false /*f64Bit*/);
+        else
+        {
+            pu32CodeBuf[off++] = Armv8A64MkInstrMovZ(idxRegRet, u16Disp);
+            pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(false /*fSub*/, idxRegRet, idxRegRet, idxRegBase, false /*f64Bit*/);
+        }
+        if (idxRegIndex != UINT8_MAX)
+            pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(false /*fSub*/, idxRegRet, idxRegRet, idxRegIndex, false /*f64Bit*/);
+        pu32CodeBuf[off++] = Armv8A64MkInstrUxth(idxRegRet, idxRegRet);
+    }
+
+#else
+# error "port me"
+#endif
+
+    if (idxRegIndex != UINT8_MAX)
+        iemNativeRegFreeTmp(pReNative, idxRegIndex);
+    iemNativeRegFreeTmp(pReNative, idxRegBase);
+    return off;
+}
+
+
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_32(a_GCPtrEff, a_bRm, a_uSibAndRspOffset, a_u32Disp) \
+    off = iemNativeEmitCalcRmEffAddrThreadedAddr32(pReNative, off, a_bRm, a_uSibAndRspOffset, a_u32Disp, a_GCPtrEff)
+
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_64(a_GCPtrEff, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm) \
+    off = iemNativeEmitCalcRmEffAddrThreadedAddr64(pReNative, off, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm, a_GCPtrEff)
+
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_64_FSGS(a_GCPtrEff, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm) \
+    off = iemNativeEmitCalcRmEffAddrThreadedAddr64(pReNative, off, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm, a_GCPtrEff, 64)
+
+#define IEM_MC_CALC_RM_EFF_ADDR_THREADED_64_ADDR32(a_GCPtrEff, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm) \
+    off = iemNativeEmitCalcRmEffAddrThreadedAddr64(pReNative, off, a_bRmEx, a_uSibAndRspOffset, a_u32Disp, a_cbImm, a_GCPtrEff, 32)
 
 
 
