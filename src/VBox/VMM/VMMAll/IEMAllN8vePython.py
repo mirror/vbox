@@ -197,17 +197,224 @@ class NativeRecompFunctionVariation(object):
         """
         return True;
 
-    def renderCode(self, cchIndent):
+    def raiseProblem(self, sMessage):
+        """ Raises a problem. """
+        raise Exception('%s:%s: error: %s'
+                        % (self.oVariation.oParent.oMcBlock.sSrcFile, self.oVariation.oParent.oMcBlock.iBeginLine, sMessage,));
+
+    def __analyzeVariableLiveness(self, aoStmts, dVars, iDepth = 0):
         """
-        Returns the native recompiler function body for this threaded variant.
+        Performs liveness analysis of the given statement list, inserting new
+        statements to signal to the native recompiler that a variable is no
+        longer used and can be freed.
+
+        Returns list of freed variables.
         """
-        # Take the threaded function statement list and add detected
-        # IEM_CIMPL_F_XXX flags to the IEM_MC_BEGIN statement.  Also add
-        # IEM_MC_F_WITHOUT_FLAGS if this isn't a variation with eflags checking
-        # and clearing while there are such variations for this function (this
-        # sounds a bit backwards, but has to be done this way for the use we
-        # make of the flags in CIMPL calls).
-        aoStmts = list(self.oVariation.aoStmtsForThreadedFunction) # type: list(McStmt)
+
+        class VarInfo(object):
+            """ Variable info """
+            def __init__(self, oStmt):
+                self.oStmt         = oStmt;
+                self.fIsArg        = isinstance(oStmt, iai.McStmtArg);
+                self.oReferences   = None       # type: VarInfo
+                self.oReferencedBy = None       # type: VarInfo
+
+            def isArg(self):
+                return self.fIsArg;
+
+            def makeReference(self, oLocal, oParent):
+                if not self.isArg():
+                    oParent.raiseProblem('Attempt to make a reference out of an local variable: %s = &%s'
+                                         % (self.oStmt.sVarName, oLocal.oStmt.sVarName,));
+                if self.oReferences:
+                    oParent.raiseProblem('Can only make a variable a reference once: %s = &%s; now = &%s'
+                                         % (self.oStmt.sVarName, self.oReferences.oStmt.sVarName, oLocal.oStmt.sVarName,));
+                if oLocal.isArg():
+                    oParent.raiseProblem('Attempt to make a reference to an argument: %s = &%s'
+                                         % (self.oStmt.sVarName, oLocal.oStmt.sVarName,));
+                if oLocal.oReferencedBy:
+                    oParent.raiseProblem('%s is already referenced by %s, so cannot make %s reference it as well'
+                                         % (oLocal.oStmt.sVarName, oLocal.oReferencedBy.oStmt.sVarName, self.oStmt.sVarName,));
+                oInfo.oReferences = oLocal;
+                oInfo.oReferences.oReferencedBy = self;
+                return True;
+
+        #
+        # Gather variable declarations and add them to dVars.
+        # Also keep a local list of them for scoping when iDepth > 0.
+        #
+        asVarsInScope = [];
+        for oStmt in aoStmts:
+            if isinstance(oStmt, iai.McStmtVar):
+                if oStmt.sVarName in dVars:
+                    raise Exception('Duplicate variable: %s' % (oStmt.sVarName, ));
+
+                oInfo = VarInfo(oStmt);
+                if oInfo.isArg() and oStmt.sRefType == 'local':
+                    oInfo.makeReference(dVars[oStmt.sRef], self);
+
+                dVars[oStmt.sVarName] = oInfo;
+                asVarsInScope.append(oStmt.sVarName);
+
+            elif oStmt.sName == 'IEM_MC_REF_LOCAL':
+                dVars[oStmt.asParam[0]].makeReference(dVars[oStmt.asParam[1]], self);
+
+        #
+        # Now work the statements backwards and look for the last reference to
+        # each of the variables in dVars.  We remove the variables from the
+        # collections as we go along.
+        #
+        def freeVariable(aoStmts, iStmt, oVarInfo, dFreedVars, dVars, fIncludeReferences = True):
+            sVarName = oVarInfo.oStmt.sVarName;
+            if not oVarInfo.isArg():
+                aoStmts.insert(iStmt + 1, iai.McStmt('IEM_MC_FREE_LOCAL', [sVarName,]));
+                assert not oVarInfo.oReferences;
+            else:
+                aoStmts.insert(iStmt + 1, iai.McStmt('IEM_MC_FREE_ARG', [sVarName,]));
+                if fIncludeReferences and oVarInfo.sReference:
+                    sRefVarName = oVarInfo.oReferences.oStmt.sVarName;
+                    if sRefVarName in dVars:
+                        dFreedVars[sRefVarName] = dVars[sRefVarName];
+                        del dVars[sRefVarName];
+                        aoStmts.insert(iStmt + 1, iai.McStmt('IEM_MC_FREE_LOCAL', [sRefVarName,]));
+            dFreedVars[sVarName] = oVarInfo;
+            if dVars is not None:
+                del dVars[sVarName];
+
+        dFreedVars = {};
+        for iStmt in range(len(aoStmts) - 1, -1, -1):
+            oStmt = aoStmts[iStmt];
+            if isinstance(oStmt, iai.McStmtCond):
+                #
+                # Conditionals requires a bit more work...
+                #
+
+                # Start by replacing the conditional statement by a shallow copy.
+                oStmt = copy.copy(oStmt);
+                oStmt.aoIfBranch   = list(oStmt.aoIfBranch);
+                oStmt.aoElseBranch = list(oStmt.aoElseBranch);
+                aoStmts[iStmt] = oStmt;
+
+                # Check the two branches for final references. Both branches must
+                # start processing with the same dVars set, fortunately as shallow
+                # copy suffices.
+                dFreedInIfBranch   = self.__analyzeVariableLiveness(oStmt.aoIfBranch, dict(dVars), iDepth + 1);
+                dFreedInElseBranch = self.__analyzeVariableLiveness(oStmt.aoElseBranch, dVars, iDepth + 1);
+
+                # Add free statements to the start of the IF-branch for variables use
+                # for the last time in the else branch.
+                for sVarName, oVarInfo in dFreedInElseBranch.items():
+                    if sVarName not in dFreedInIfBranch:
+                        freeVariable(oStmt.aoIfBranch, -1, oVarInfo, dFreedVars, None, False);
+                    else:
+                        dFreedVars[sVarName] = oVarInfo;
+
+                # And vice versa.
+                for sVarName, oVarInfo in dFreedInIfBranch.items():
+                    if sVarName not in dFreedInElseBranch:
+                        freeVariable(oStmt.aoElseBranch, -1, oVarInfo, dFreedVars, dVars, False);
+
+                #
+                # Now check if any remaining variables are used for the last time
+                # in the conditional statement ifself, in which case we need to insert
+                # free statements to both branches.
+                #
+                if not oStmt.isCppStmt():
+                    aoFreeStmts = [];
+                    for sParam in oStmt.asParams:
+                        if sParam in dVars:
+                            freeVariable(aoFreeStmts, -1, dVars[sParam], dFreedVars, dVars);
+                    for oFreeStmt in aoFreeStmts:
+                        oStmt.aoIfBranch.insert(0, oFreeStmt);
+                        oStmt.aoElseBranch.insert(0, oFreeStmt);
+
+            elif not oStmt.isCppStmt():
+                if isinstance(oStmt, iai.McStmtCall):
+                    #
+                    # Call statements will make use of all argument variables and
+                    # will implicitly free them.  So, iterate the variable and
+                    # move them from dVars and onto dFreedVars.
+                    #
+                    # We explictly free any referenced variable that is still in
+                    # dVar at this point (since only arguments can hold variable
+                    # references).
+                    #
+                    for sParam in oStmt.asParams[oStmt.idxParams:]:
+                        oVarInfo = dVars.get(sParam);
+                        if oVarInfo:
+                            if not oVarInfo.isArg():
+                                self.raiseProblem('Argument %s in %s is not an argument!' % (sParam, oStmt.sName,));
+                            if oVarInfo.oReferences:
+                                sRefVarName = oVarInfo.oReferences.oStmt.sVarName;
+                                if sRefVarName in dVars:
+                                    dFreedVars[sRefVarName] = dVars[sRefVarName];
+                                    del dVars[sRefVarName];
+                                    aoStmts.insert(iStmt + 1, iai.McStmt('IEM_MC_FREE_LOCAL', [sRefVarName,]));
+                            dFreedVars[sParam] = oVarInfo;
+                            del dVars[sParam];
+                        elif sParam in dFreedVars:
+                            self.raiseProblem('Argument %s in %s was used after the call!' % (sParam, oStmt.sName,));
+                        else:
+                            self.raiseProblem('Argument %s in %s is not known to us' % (sParam, oStmt.sName,));
+
+                    # Check for stray argument variables.
+                    for oVarInfo in dVars.values():
+                        if oVarInfo.isArg():
+                            self.raiseProblem('Unused argument variable: %s' % (oVarInfo.oStmt.sVarName,));
+                else:
+                    #
+                    # Scan all the parameters of generic statements.
+                    #
+                    for sParam in oStmt.asParams:
+                        if sParam in dVars:
+                            freeVariable(aoStmts, iStmt, dVars[sParam], dFreedVars, dVars);
+
+        #
+        # Free anything left from asVarsInScope that's now going out of scope.
+        #
+        if iDepth > 0:
+            for sVarName in asVarsInScope:
+                if sVarName in dVars:
+                    freeVariable(aoStmts, len(aoStmts) - 1, dVars[sVarName], dFreedVars, dVars);
+        return dFreedVars;
+
+    def __morphStatements(self, aoStmts):
+        """
+        Morphs the given statement list into something more suitable for
+        native recompilation.
+
+        The following is currently done here:
+            - Amend IEM_MC_BEGIN with all the IEM_CIMPL_F_XXX and IEM_MC_F_XXX
+              flags found and derived, including IEM_MC_F_WITHOUT_FLAGS which
+              we determine here.
+            - Insert IEM_MC_FREE_LOCAL when after the last statment a local
+              variable is last used.
+
+        Returns a new list of statements.
+        """
+
+        #
+        # We can skip IEM_MC_DEFER_TO_CIMPL_x_RET stuff.
+        #
+        if self.oVariation.oParent.oMcBlock.fDeferToCImpl:
+            return aoStmts;
+
+        #
+        # We make a shallow copy of the list, and only make deep copies of the
+        # statements we modify.
+        #
+        aoStmts = list(aoStmts) # type: list(iai.McStmt)
+
+        #
+        # First, amend the IEM_MC_BEGIN statment, adding all the flags found
+        # to it so the native recompiler can correctly process ARG and CALL
+        # statements (among other things).
+        #
+        # Also add IEM_MC_F_WITHOUT_FLAGS if this isn't a variation with eflags
+        # checking and clearing while there are such variations for this
+        # function (this sounds a bit backwards, but has to be done this way
+        # for the use we make of the flags in CIMPL calls).
+        #
         for iStmt, oStmt in enumerate(aoStmts):
             if oStmt.sName == 'IEM_MC_BEGIN':
                 fWithoutFlags = (    self.oVariation.isWithFlagsCheckingAndClearingVariation()
@@ -220,8 +427,24 @@ class NativeRecompFunctionVariation(object):
                     if self.oVariation.oParent.dsCImplFlags:
                         oNewStmt.asParams[3] = ' | '.join(sorted(self.oVariation.oParent.dsCImplFlags.keys()));
                     aoStmts[iStmt] = oNewStmt;
+                break;
 
-        return iai.McStmt.renderCodeForList(aoStmts, cchIndent);
+        #
+        # Do a simple liveness analysis of the variable and insert
+        # IEM_MC_FREE_LOCAL statements after the last statements using each
+        # variable.  We do this recursively to best handle conditionals and
+        # scoping related to those.
+        #
+        self.__analyzeVariableLiveness(aoStmts, {});
+
+        return aoStmts;
+
+
+    def renderCode(self, cchIndent):
+        """
+        Returns the native recompiler function body for this threaded variant.
+        """
+        return iai.McStmt.renderCodeForList(self.__morphStatements(self.oVariation.aoStmtsForThreadedFunction), cchIndent);
 
     @staticmethod
     def checkStatements(aoStmts, sHostArch):
@@ -305,7 +528,5 @@ def analyzeVariantForNativeRecomp(oVariation,
                 g_dUnsupportedMcStmtLastOneVarStats[sStmt].append(oVariation);
             else:
                 g_dUnsupportedMcStmtLastOneVarStats[sStmt] = [oVariation,];
-
-
 
     return None;

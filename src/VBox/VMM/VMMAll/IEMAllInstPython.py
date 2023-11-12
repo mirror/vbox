@@ -1990,7 +1990,9 @@ class McBlock(object):
     kiMacroExp_Partial = 2; ##< Partial/mixed (cmpxchg16b), safe to assume single block.
     ## @}
 
-    def __init__(self, sSrcFile, iBeginLine, offBeginLine, oFunction, iInFunction, cchIndent = None):
+    def __init__(self, sSrcFile, iBeginLine, offBeginLine, oFunction, iInFunction, cchIndent = None, fDeferToCImpl = False):
+        ## Set if IEM_MC_DEFER_TO_CIMPL_0_RET and friends, clear if IEM_MC_BEGIN/END block.
+        self.fDeferToCImpl = fDeferToCImpl;
         ## The source file containing the block.
         self.sSrcFile     = sSrcFile;
         ## The line with the IEM_MC_BEGIN/IEM_MC_DEFER_TO_CIMPL_X_RET statement.
@@ -2792,7 +2794,7 @@ g_dMcStmtParsers = {
     'IEM_MC_CALL_VOID_AIMPL_4':                                  (McBlock.parseMcCallVoidAImpl,     True,  False, ),
     'IEM_MC_CLEAR_EFL_BIT':                                      (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_CLEAR_FSW_EX':                                       (McBlock.parseMcGeneric,           True,  False, ),
-    'IEM_MC_CLEAR_HIGH_GREG_U64':                                (McBlock.parseMcGeneric,           True,  False, ),
+    'IEM_MC_CLEAR_HIGH_GREG_U64':                                (McBlock.parseMcGeneric,           True,  True,  ),
     'IEM_MC_CLEAR_XREG_U32_MASK':                                (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_CLEAR_YREG_128_UP':                                  (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_COMMIT_EFLAGS':                                      (McBlock.parseMcGeneric,           True,  False, ),
@@ -5200,7 +5202,7 @@ class SimpleParser(object): # pylint: disable=too-many-instance-attributes
 
         # Start a new block.
         oMcBlock = McBlock(self.sSrcFile, self.iLine, offBeginStatementInLine,
-                           self.oCurFunction, self.iMcBlockInFunc, cchIndent);
+                           self.oCurFunction, self.iMcBlockInFunc, cchIndent, fDeferToCImpl = True);
 
         # Parse the statment.
         asArgs, offAfter, cLines = self.findAndParseMacroInvocationEx(sCode, sStmt, offBeginStatementInCodeStr);

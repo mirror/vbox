@@ -5577,6 +5577,33 @@ DECL_FORCE_INLINE(void) iemNativeVarFreeAll(PIEMRECOMPILERSTATE pReNative)
 }
 
 
+#define IEM_MC_FREE_LOCAL(a_Name)   iemNativeVarFreeLocal(pReNative, a_Name)
+
+/**
+ * This is called by IEM_MC_FREE_LOCAL.
+ */
+DECLINLINE(void) iemNativeVarFreeLocal(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
+    Assert(pReNative->Core.aVars[idxVar].uArgNo == UINT8_MAX);
+    iemNativeVarFreeOneWorker(pReNative, idxVar);
+}
+
+
+#define IEM_MC_FREE_ARG(a_Name)     iemNativeVarFreeArg(pReNative, a_Name)
+
+/**
+ * This is called by IEM_MC_FREE_ARG.
+ */
+DECLINLINE(void) iemNativeVarFreeArg(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
+    Assert(pReNative->Core.aVars[idxVar].uArgNo < RT_ELEMENTS(pReNative->Core.aidxArgVars));
+    iemNativeVarFreeOneWorker(pReNative, idxVar);
+}
+
+
+
 /*********************************************************************************************************************************
 *   Emitters for IEM_MC_CALL_CIMPL_XXX                                                                                           *
 *********************************************************************************************************************************/
@@ -6385,6 +6412,24 @@ iemNativeEmitStoreGregU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
 #ifdef VBOX_STRICT
     off = iemNativeEmitTop32BitsClearCheck(pReNative, off, idxVarReg);
 #endif
+    return off;
+}
+
+
+
+#define IEM_MC_CLEAR_HIGH_GREG_U64(a_iGReg) \
+    off = iemNativeEmitClearHighGregU64(pReNative, off, a_iGReg)
+
+/** Emits code for IEM_MC_CLEAR_HIGH_GREG_U64. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitClearHighGregU64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGReg)
+{
+    Assert(iGReg < 16);
+    uint8_t const idxGstTmpReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(iGReg),
+                                                                 kIemNativeGstRegUse_ForUpdate);
+    off = iemNativeEmitLoadGprFromGpr32(pReNative, off, idxGstTmpReg, idxGstTmpReg);
+    off = iemNativeEmitStoreGprToVCpuU64(pReNative, off, idxGstTmpReg, RT_UOFFSETOF_DYN(VMCPU, cpum.GstCtx.aGRegs[iGReg]));
+    iemNativeRegFreeTmp(pReNative, idxGstTmpReg);
     return off;
 }
 

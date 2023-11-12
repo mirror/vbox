@@ -849,7 +849,9 @@ class ThreadedFunctionVariation(object):
 
                 # ... and IEM_MC_CALL_CIMPL_[0-5] and IEM_MC_DEFER_TO_CIMPL_[0-5]_RET into *_THREADED ...
                 elif oNewStmt.sName.startswith('IEM_MC_CALL_CIMPL_') or oNewStmt.sName.startswith('IEM_MC_DEFER_TO_CIMPL_'):
-                    oNewStmt.sName += '_THREADED';
+                    oNewStmt.sName     += '_THREADED';
+                    oNewStmt.idxFn     += 1;
+                    oNewStmt.idxParams += 1;
                     oNewStmt.asParams.insert(0, self.dParamRefs['cbInstr'][0].sNewName);
 
                 # ... and in FLAT modes we must morph memory access into FLAT accesses ...
