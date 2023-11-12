@@ -1840,57 +1840,7 @@ class IEMThreadedGenerator(object):
 
         # Analyze the threaded functions and their variations for native recompilation.
         if fNativeRecompilerEnabled:
-            print('todo:', file = sys.stderr);
-            cTotal  = 0;
-            cNative = 0;
-            for oThreadedFunction in self.aoThreadedFuncs:
-                for oVariation in oThreadedFunction.aoVariations:
-                    cTotal += 1;
-                    oVariation.oNativeRecomp = ian.analyzeVariantForNativeRecomp(oVariation, sHostArch);
-                    if oVariation.oNativeRecomp and oVariation.oNativeRecomp.isRecompilable():
-                        cNative += 1;
-            print('todo: %.1f%% / %u out of %u threaded function variations are recompilable'
-                  % (cNative * 100.0 / cTotal, cNative, cTotal), file = sys.stderr);
-            if ian.g_dUnsupportedMcStmtLastOneStats:
-                asTopKeys = sorted(ian.g_dUnsupportedMcStmtLastOneStats, reverse = True,
-                                   key = lambda sSortKey: len(ian.g_dUnsupportedMcStmtLastOneStats[sSortKey]))[:16];
-                print('todo:', file = sys.stderr);
-                print('todo: Top %s variations with one unsupported statement dependency:' % (len(asTopKeys),),
-                      file = sys.stderr);
-                cchMaxKey = max([len(sKey) for sKey in asTopKeys]);
-                for sKey in asTopKeys:
-                    print('todo: %*s = %s (%s%s)'
-                          % (cchMaxKey, sKey, len(ian.g_dUnsupportedMcStmtLastOneStats[sKey]),
-                             ', '.join([oVar.getShortName() for oVar in ian.g_dUnsupportedMcStmtLastOneStats[sKey][:5]]),
-                             ',...' if len(ian.g_dUnsupportedMcStmtLastOneStats[sKey]) >= 5 else '', )
-                             , file = sys.stderr);
-
-                asTopKeys = sorted(ian.g_dUnsupportedMcStmtStats, reverse = True,
-                                   key = lambda sSortKey: ian.g_dUnsupportedMcStmtStats[sSortKey])[:16];
-                print('todo:', file = sys.stderr);
-                print('todo: Top %d most used unimplemented statements:' % (len(asTopKeys),), file = sys.stderr);
-                cchMaxKey = max([len(sKey) for sKey in asTopKeys]);
-                for i in range(0, len(asTopKeys), 2):
-                    print('todo:  %*s = %4d  %*s = %4d'
-                          % ( cchMaxKey, asTopKeys[i],     ian.g_dUnsupportedMcStmtStats[asTopKeys[i]],
-                              cchMaxKey, asTopKeys[i + 1], ian.g_dUnsupportedMcStmtStats[asTopKeys[i + 1]],),
-                          file = sys.stderr);
-                print('todo:', file = sys.stderr);
-
-            if ian.g_dUnsupportedMcStmtLastOneVarStats:
-                asTopKeys = sorted(ian.g_dUnsupportedMcStmtLastOneVarStats, reverse = True,
-                                   key = lambda sSortKey: len(ian.g_dUnsupportedMcStmtLastOneVarStats[sSortKey]))[:16];
-                print('todo:', file = sys.stderr);
-                print('todo: Top %s variations with variables and 1-2 unsupported statement dependency:' % (len(asTopKeys),),
-                      file = sys.stderr);
-                cchMaxKey = max([len(sKey) for sKey in asTopKeys]);
-                for sKey in asTopKeys:
-                    print('todo: %*s = %s (%s%s)'
-                          % (cchMaxKey, sKey, len(ian.g_dUnsupportedMcStmtLastOneVarStats[sKey]),
-                             ', '.join([oVar.getShortName() for oVar in ian.g_dUnsupportedMcStmtLastOneVarStats[sKey][:5]]),
-                             ',...' if len(ian.g_dUnsupportedMcStmtLastOneVarStats[sKey]) >= 5 else '', )
-                             , file = sys.stderr);
-
+            ian.displayStatistics(self.aoThreadedFuncs, sHostArch);
 
         # Gather arguments + variable statistics for the MC blocks.
         cMaxArgs         = 0;

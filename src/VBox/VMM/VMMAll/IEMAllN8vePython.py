@@ -38,6 +38,7 @@ __version__ = "$Revision$"
 
 # Standard python imports:
 import copy;
+import sys;
 
 # Out python imports:
 import IEMAllInstPython as iai;
@@ -515,14 +516,72 @@ def analyzeVariantForNativeRecomp(oVariation,
             else:
                 g_dUnsupportedMcStmtLastOneStats[sStmt] = [oVariation,];
 
-    if (    len(dUnsupportedStmts) == 1 #in (1,2)
-        and iai.McStmt.findStmtByNames(aoStmts,
-                                       { 'IEM_MC_LOCAL': 1, 'IEM_MC_LOCAL_CONST': 1, 'IEM_MC_ARG': 1, 'IEM_MC_ARG_CONST': 1,
-                                         'IEM_MC_ARG_LOCAL_REF': 1, 'IEM_MC_ARG_LOCAL_EFLAGS': 1, })):
-        for sStmt in dUnsupportedStmts:
-            if sStmt in g_dUnsupportedMcStmtLastOneVarStats:
-                g_dUnsupportedMcStmtLastOneVarStats[sStmt].append(oVariation);
-            else:
-                g_dUnsupportedMcStmtLastOneVarStats[sStmt] = [oVariation,];
+    #if (    len(dUnsupportedStmts) == 1 #in (1,2)
+    #    and iai.McStmt.findStmtByNames(aoStmts,
+    #                                   { 'IEM_MC_LOCAL': 1, 'IEM_MC_LOCAL_CONST': 1, 'IEM_MC_ARG': 1, 'IEM_MC_ARG_CONST': 1,
+    #                                     'IEM_MC_ARG_LOCAL_REF': 1, 'IEM_MC_ARG_LOCAL_EFLAGS': 1, })):
+    #    for sStmt in dUnsupportedStmts:
+    #        if sStmt in g_dUnsupportedMcStmtLastOneVarStats:
+    #            g_dUnsupportedMcStmtLastOneVarStats[sStmt].append(oVariation);
+    #        else:
+    #            g_dUnsupportedMcStmtLastOneVarStats[sStmt] = [oVariation,];
 
     return None;
+
+
+def displayStatistics(aoThreadedFuncs, sHostArch): # type (list(ThreadedFunction)) -> True
+    """
+    Displays statistics.
+    """
+    print('todo:', file = sys.stderr);
+    cTotal  = 0;
+    cNative = 0;
+    for oThreadedFunction in aoThreadedFuncs:
+        for oVariation in oThreadedFunction.aoVariations:
+            cTotal += 1;
+            oVariation.oNativeRecomp = analyzeVariantForNativeRecomp(oVariation, sHostArch);
+            if oVariation.oNativeRecomp and oVariation.oNativeRecomp.isRecompilable():
+                cNative += 1;
+    print('todo: %.1f%% / %u out of %u threaded function variations are recompilable'
+          % (cNative * 100.0 / cTotal, cNative, cTotal), file = sys.stderr);
+    if g_dUnsupportedMcStmtLastOneStats:
+        asTopKeys = sorted(g_dUnsupportedMcStmtLastOneStats, reverse = True,
+                           key = lambda sSortKey: len(g_dUnsupportedMcStmtLastOneStats[sSortKey]))[:16];
+        print('todo:', file = sys.stderr);
+        print('todo: Top %s variations with one unsupported statement dependency:' % (len(asTopKeys),),
+              file = sys.stderr);
+        cchMaxKey = max([len(sKey) for sKey in asTopKeys]);
+        for sKey in asTopKeys:
+            print('todo: %*s = %s (%s%s)'
+                  % (cchMaxKey, sKey, len(g_dUnsupportedMcStmtLastOneStats[sKey]),
+                     ', '.join([oVar.getShortName() for oVar in g_dUnsupportedMcStmtLastOneStats[sKey][:5]]),
+                     ',...' if len(g_dUnsupportedMcStmtLastOneStats[sKey]) >= 5 else '', )
+                     , file = sys.stderr);
+
+        asTopKeys = sorted(g_dUnsupportedMcStmtStats, reverse = True,
+                           key = lambda sSortKey: g_dUnsupportedMcStmtStats[sSortKey])[:16];
+        print('todo:', file = sys.stderr);
+        print('todo: Top %d most used unimplemented statements:' % (len(asTopKeys),), file = sys.stderr);
+        cchMaxKey = max([len(sKey) for sKey in asTopKeys]);
+        for i in range(0, len(asTopKeys), 2):
+            print('todo:  %*s = %4d  %*s = %4d'
+                  % ( cchMaxKey, asTopKeys[i],     g_dUnsupportedMcStmtStats[asTopKeys[i]],
+                      cchMaxKey, asTopKeys[i + 1], g_dUnsupportedMcStmtStats[asTopKeys[i + 1]],),
+                  file = sys.stderr);
+        print('todo:', file = sys.stderr);
+
+    #if g_dUnsupportedMcStmtLastOneVarStats:
+    #    asTopKeys = sorted(g_dUnsupportedMcStmtLastOneVarStats, reverse = True,
+    #                       key = lambda sSortKey: len(g_dUnsupportedMcStmtLastOneVarStats[sSortKey]))[:16];
+    #    print('todo:', file = sys.stderr);
+    #    print('todo: Top %s variations with variables and 1-2 unsupported statement dependency:' % (len(asTopKeys),),
+    #          file = sys.stderr);
+    #    cchMaxKey = max([len(sKey) for sKey in asTopKeys]);
+    #    for sKey in asTopKeys:
+    #        print('todo: %*s = %s (%s%s)'
+    #              % (cchMaxKey, sKey, len(g_dUnsupportedMcStmtLastOneVarStats[sKey]),
+    #                 ', '.join([oVar.getShortName() for oVar in g_dUnsupportedMcStmtLastOneVarStats[sKey][:5]]),
+    #                 ',...' if len(g_dUnsupportedMcStmtLastOneVarStats[sKey]) >= 5 else '', )
+    #                 , file = sys.stderr);
+
+    return True;
