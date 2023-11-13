@@ -7669,17 +7669,17 @@ FNIEMOP_DEF(iemOp_scasb_AL_Xb)
         {
             case IEMMODE_16BIT:
                 IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
-                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
                                             | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                             iemCImpl_repe_scas_al_m16);
             case IEMMODE_32BIT:
                 IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
-                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
                                             | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                             iemCImpl_repe_scas_al_m32);
             case IEMMODE_64BIT:
                 IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
-                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
                                             | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                             iemCImpl_repe_scas_al_m64);
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -7693,17 +7693,17 @@ FNIEMOP_DEF(iemOp_scasb_AL_Xb)
         {
             case IEMMODE_16BIT:
                 IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
-                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
                                             | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                             iemCImpl_repne_scas_al_m16);
             case IEMMODE_32BIT:
                 IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
-                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
                                             | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                             iemCImpl_repne_scas_al_m32);
             case IEMMODE_64BIT:
                 IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
-                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                              RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
                                             | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                             iemCImpl_repne_scas_al_m64);
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -7743,17 +7743,17 @@ FNIEMOP_DEF(iemOp_scaswd_eAX_Xv)
                 {
                     case IEMMODE_16BIT:
                         IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
-                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
                                                     | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_repe_scas_ax_m16);
                     case IEMMODE_32BIT:
                         IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
-                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
                                                     | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_repe_scas_ax_m32);
                     case IEMMODE_64BIT:
                         IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
-                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
                                                     | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_repe_scas_ax_m64);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -7764,17 +7764,17 @@ FNIEMOP_DEF(iemOp_scaswd_eAX_Xv)
                 {
                     case IEMMODE_16BIT:
                         IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
-                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
                                                     | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_repe_scas_eax_m16);
                     case IEMMODE_32BIT:
                         IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
-                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
                                                     | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_repe_scas_eax_m32);
                     case IEMMODE_64BIT:
                         IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
-                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
                                                     | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_repe_scas_eax_m64);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -7785,12 +7785,12 @@ FNIEMOP_DEF(iemOp_scaswd_eAX_Xv)
                     case IEMMODE_16BIT: AssertFailedReturn(VERR_IEM_IPE_6); /** @todo It's this wrong, we can do 16-bit addressing in 64-bit mode, but not 32-bit. right? */
                     case IEMMODE_32BIT:
                         IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
-                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
                                                     | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_repe_scas_rax_m32);
                     case IEMMODE_64BIT:
                         IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
-                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
                                                     | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_repe_scas_rax_m64);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -7809,17 +7809,17 @@ FNIEMOP_DEF(iemOp_scaswd_eAX_Xv)
                 {
                     case IEMMODE_16BIT:
                         IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
-                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
                                                     | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_repne_scas_ax_m16);
                     case IEMMODE_32BIT:
                         IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
-                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
                                                     | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_repne_scas_ax_m32);
                     case IEMMODE_64BIT:
                         IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
-                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
                                                     | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_repne_scas_ax_m64);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -7830,17 +7830,17 @@ FNIEMOP_DEF(iemOp_scaswd_eAX_Xv)
                 {
                     case IEMMODE_16BIT:
                         IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
-                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
                                                     | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_repne_scas_eax_m16);
                     case IEMMODE_32BIT:
                         IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
-                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
                                                     | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_repne_scas_eax_m32);
                     case IEMMODE_64BIT:
                         IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
-                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
                                                     | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_repne_scas_eax_m64);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
@@ -7851,12 +7851,12 @@ FNIEMOP_DEF(iemOp_scaswd_eAX_Xv)
                     case IEMMODE_16BIT: AssertFailedReturn(VERR_IEM_IPE_5);
                     case IEMMODE_32BIT:
                         IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
-                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
                                                     | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_repne_scas_rax_m32);
                     case IEMMODE_64BIT:
                         IEM_MC_DEFER_TO_CIMPL_0_RET(IEM_CIMPL_F_REP | IEM_CIMPL_F_STATUS_FLAGS,
-                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xSI)
+                                                      RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xDI)
                                                     | RT_BIT_64(kIemNativeGstReg_GprFirst + X86_GREG_xCX),
                                                     iemCImpl_repne_scas_rax_m64);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();

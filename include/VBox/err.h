@@ -2598,6 +2598,12 @@
 #define VERR_IEM_VAR_IPE_6                          (-5369)
 /** Recompiler: Variable management internal processing error \#7. */
 #define VERR_IEM_VAR_IPE_7                          (-5370)
+/** Recompiler: Variable management internal processing error \#8. */
+#define VERR_IEM_VAR_IPE_8                          (-5371)
+/** Recompiler: Variable management internal processing error \#9. */
+#define VERR_IEM_VAR_IPE_9                          (-5372)
+/** Recompiler: Variable management internal processing error \#10. */
+#define VERR_IEM_VAR_IPE_10                         (-5373)
 
 /** Recompiler: Unimplemented case. */
 #define VERR_IEM_EMIT_CASE_NOT_IMPLEMENTED_1        (-5380)

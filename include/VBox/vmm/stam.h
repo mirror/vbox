@@ -247,6 +247,8 @@ typedef enum STAMUNIT
     STAMUNIT_INSTR,
     /** Instructions per translation block. */
     STAMUNIT_INSTR_PER_TB,
+    /** Bytes per translation block. */
+    STAMUNIT_BYTES_PER_TB,
     /** The end (exclusive). */
     STAMUNIT_END
 } STAMUNIT;

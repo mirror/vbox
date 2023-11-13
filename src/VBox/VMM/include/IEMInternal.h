@@ -1675,7 +1675,7 @@ typedef struct IEMCPU
     /** Pointer to the native recompiler state for ring-3. */
     R3PTRTYPE(struct IEMRECOMPILERSTATE *)  pNativeRecompilerStateR3;
     /** Alignment padding. */
-    uint64_t                auAlignment10[4];
+    uint64_t                auAlignment10[3];
     /** Statistics: Times TB execution was broken off before reaching the end. */
     STAMCOUNTER             StatTbExecBreaks;
     /** Statistics: Times BltIn_CheckIrq breaks out of the TB. */
@@ -1686,6 +1686,8 @@ typedef struct IEMCPU
     STAMCOUNTER             StatCheckBranchMisses;
     /** Statistics: Times a jump or page crossing required a TB with CS.LIM checking. */
     STAMCOUNTER             StatCheckNeedCsLimChecking;
+    /** Native TB statistics: Number of fully recompiled TBs. */
+    STAMCOUNTER             StatNativeFullyRecompiledTbs;
     /** Threaded TB statistics: Number of instructions per TB. */
     STAMPROFILE             StatTbThreadedInstr;
     /** Threaded TB statistics: Number of calls per TB. */
@@ -1694,6 +1696,10 @@ typedef struct IEMCPU
     STAMPROFILE             StatTbNativeCode;
     /** Native TB statistics: Profiling native recompilation. */
     STAMPROFILE             StatNativeRecompilation;
+    /** Native TB statistics: Number of calls per TB that were recompiled properly. */
+    STAMPROFILE             StatNativeCallsRecompiled;
+    /** Native TB statistics: Number of threaded calls per TB that weren't recompiled. */
+    STAMPROFILE             StatNativeCallsThreaded;
     /** @} */
 
     /** Data TLB.

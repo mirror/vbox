@@ -3061,6 +3061,7 @@ VMMR3DECL(const char *) STAMR3GetUnit(STAMUNIT enmUnit)
         case STAMUNIT_HZ:                   return "Hz";
         case STAMUNIT_INSTR:                return "instr";
         case STAMUNIT_INSTR_PER_TB:         return "instr/tb";
+        case STAMUNIT_BYTES_PER_TB:         return "bytes/tb";
 
         default:
             AssertMsgFailed(("Unknown unit %d\n", enmUnit));
@@ -3101,6 +3102,7 @@ VMMR3DECL(const char *) STAMR3GetUnit1(STAMUNIT enmUnit)
         case STAMUNIT_HZ:                   return "Hz";
         case STAMUNIT_INSTR:                return "instr";
         case STAMUNIT_INSTR_PER_TB:         return "instr";
+        case STAMUNIT_BYTES_PER_TB:         return "bytes";
 
         default:
             AssertMsgFailed(("Unknown unit %d\n", enmUnit));
@@ -3128,6 +3130,7 @@ VMMR3DECL(const char *) STAMR3GetUnit2(STAMUNIT enmUnit)
         case STAMUNIT_GOOD_BAD:             return "bad";
         case STAMUNIT_CALLS_PER_TB:         return "tbs";
         case STAMUNIT_INSTR_PER_TB:         return "tbs";
+        case STAMUNIT_BYTES_PER_TB:         return "tbs";
         default:
             AssertMsgFailed(("Wrong unit %d\n", enmUnit));
             return "times";
