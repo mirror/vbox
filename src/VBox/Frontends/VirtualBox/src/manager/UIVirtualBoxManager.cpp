@@ -50,6 +50,7 @@
 #include "QILineEdit.h"
 #include "QIRichTextLabel.h"
 #include "UIActionPoolManager.h"
+#include "UIAdvancedSettingsDialogSpecific.h"
 #include "UICloudConsoleManager.h"
 #include "UICloudNetworkingStuff.h"
 #include "UICloudProfileManager.h"
@@ -68,7 +69,6 @@
 #include "UINetworkManager.h"
 #include "UINotificationCenter.h"
 #include "UIQObjectStuff.h"
-#include "UISettingsDialogSpecific.h"
 #include "UIVirtualBoxManager.h"
 #include "UIVirtualBoxManagerWidget.h"
 #include "UIVirtualMachineItemCloud.h"
@@ -883,8 +883,8 @@ void UIVirtualBoxManager::sltHandleChooserPaneIndexChange()
         && m_settings.contains(UISettingsDialog::Type_Machine))
     {
         /* Cast dialog to required type: */
-        UISettingsDialogMachine *pDialog =
-            qobject_cast<UISettingsDialogMachine*>(m_settings.value(UISettingsDialog::Type_Machine));
+        UIAdvancedSettingsDialogMachine *pDialog =
+            qobject_cast<UIAdvancedSettingsDialogMachine*>(m_settings.value(UISettingsDialog::Type_Machine));
         AssertPtrReturnVoid(pDialog);
 
         /* Get current item: */
@@ -1095,8 +1095,8 @@ void UIVirtualBoxManager::sltOpenPreferencesDialog()
     /* Create instance if not yet created: */
     if (!m_settings.contains(UISettingsDialog::Type_Global))
     {
-        m_settings[UISettingsDialog::Type_Global] = new UISettingsDialogGlobal(this);
-        connect(m_settings[UISettingsDialog::Type_Global], &UISettingsDialogGlobal::sigClose,
+        m_settings[UISettingsDialog::Type_Global] = new UIAdvancedSettingsDialogGlobal(this);
+        connect(m_settings[UISettingsDialog::Type_Global], &UIAdvancedSettingsDialogGlobal::sigClose,
                 this, &UIVirtualBoxManager::sltClosePreferencesDialog);
         m_settings.value(UISettingsDialog::Type_Global)->load();
     }
@@ -1293,12 +1293,12 @@ void UIVirtualBoxManager::sltOpenSettingsDialog(QString strCategory /* = QString
             /* Create instance if not yet created: */
             if (!m_settings.contains(UISettingsDialog::Type_Machine))
             {
-                m_settings[UISettingsDialog::Type_Machine] = new UISettingsDialogMachine(this,
-                                                                                         uID.isNull() ? pItem->id() : uID,
-                                                                                         actionPool(),
-                                                                                         strCategory,
-                                                                                         strControl);
-                connect(m_settings[UISettingsDialog::Type_Machine], &UISettingsDialogMachine::sigClose,
+                m_settings[UISettingsDialog::Type_Machine] = new UIAdvancedSettingsDialogMachine(this,
+                                                                                                 uID.isNull() ? pItem->id() : uID,
+                                                                                                 actionPool(),
+                                                                                                 strCategory,
+                                                                                                 strControl);
+                connect(m_settings[UISettingsDialog::Type_Machine], &UIAdvancedSettingsDialogMachine::sigClose,
                         this, &UIVirtualBoxManager::sltCloseSettingsDialog);
                 m_settings.value(UISettingsDialog::Type_Machine)->load();
             }
