@@ -67,9 +67,9 @@ g_dMcStmtThreaded = {
 
     'IEM_MC_CALL_CIMPL_1_THREADED':                              (None, True,  True,  ),
     'IEM_MC_CALL_CIMPL_2_THREADED':                              (None, True,  True,  ),
-    'IEM_MC_CALL_CIMPL_3_THREADED':                              (None, True,  False, ),
-    'IEM_MC_CALL_CIMPL_4_THREADED':                              (None, True,  False, ),
-    'IEM_MC_CALL_CIMPL_5_THREADED':                              (None, True,  False, ),
+    'IEM_MC_CALL_CIMPL_3_THREADED':                              (None, True,  True,  ),
+    'IEM_MC_CALL_CIMPL_4_THREADED':                              (None, True,  True,  ),
+    'IEM_MC_CALL_CIMPL_5_THREADED':                              (None, True,  True,  ),
 
     'IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC16':                (None, True,  True,  ),
     'IEM_MC_REL_JMP_S8_AND_FINISH_THREADED_PC32':                (None, True,  True,  ),

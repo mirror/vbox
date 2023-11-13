@@ -2787,7 +2787,7 @@ g_dMcStmtParsers = {
     'IEM_MC_CALL_MMX_AIMPL_3':                                   (McBlock.parseMcCallMmxAImpl,      True,  False, ),
     'IEM_MC_CALL_SSE_AIMPL_2':                                   (McBlock.parseMcCallSseAImpl,      True,  False, ),
     'IEM_MC_CALL_SSE_AIMPL_3':                                   (McBlock.parseMcCallSseAImpl,      True,  False, ),
-    'IEM_MC_CALL_VOID_AIMPL_0':                                  (McBlock.parseMcCallVoidAImpl,     True,  False, ),
+    'IEM_MC_CALL_VOID_AIMPL_0':                                  (McBlock.parseMcCallVoidAImpl,     True,  True,  ),
     'IEM_MC_CALL_VOID_AIMPL_1':                                  (McBlock.parseMcCallVoidAImpl,     True,  True,  ),
     'IEM_MC_CALL_VOID_AIMPL_2':                                  (McBlock.parseMcCallVoidAImpl,     True,  True,  ),
     'IEM_MC_CALL_VOID_AIMPL_3':                                  (McBlock.parseMcCallVoidAImpl,     True,  True,  ),

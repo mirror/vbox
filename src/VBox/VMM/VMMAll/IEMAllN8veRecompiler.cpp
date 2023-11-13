@@ -6062,10 +6062,7 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmitCallCImpl1(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, uint8_t idxInstr, uint64_t fGstShwFlush,
                         uintptr_t pfnCImpl, uint8_t idxArg0)
 {
-    Assert(idxArg0 < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxArg0)));
-    Assert(pReNative->Core.aVars[idxArg0].uArgNo == 0 + IEM_CIMPL_HIDDEN_ARGS);
-    RT_NOREF_PV(idxArg0);
-
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg0, 0 + IEM_CIMPL_HIDDEN_ARGS);
     return iemNativeEmitCallCImplCommon(pReNative, off, cbInstr, idxInstr, fGstShwFlush, pfnCImpl, 1);
 }
 
@@ -6078,14 +6075,8 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmitCallCImpl2(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, uint8_t idxInstr, uint64_t fGstShwFlush,
                         uintptr_t pfnCImpl, uint8_t idxArg0, uint8_t idxArg1)
 {
-    Assert(idxArg0 < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxArg0)));
-    Assert(pReNative->Core.aVars[idxArg0].uArgNo == 0 + IEM_CIMPL_HIDDEN_ARGS);
-    RT_NOREF_PV(idxArg0);
-
-    Assert(idxArg1 < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxArg1)));
-    Assert(pReNative->Core.aVars[idxArg1].uArgNo == 1 + IEM_CIMPL_HIDDEN_ARGS);
-    RT_NOREF_PV(idxArg1);
-
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg0, 0 + IEM_CIMPL_HIDDEN_ARGS);
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg1, 1 + IEM_CIMPL_HIDDEN_ARGS);
     return iemNativeEmitCallCImplCommon(pReNative, off, cbInstr, idxInstr, fGstShwFlush, pfnCImpl, 2);
 }
 
@@ -6099,19 +6090,9 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmitCallCImpl3(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, uint8_t idxInstr, uint64_t fGstShwFlush,
                         uintptr_t pfnCImpl, uint8_t idxArg0, uint8_t idxArg1, uint8_t idxArg2)
 {
-pReNative->pInstrBuf[off++] = 0xcc;
-    Assert(idxArg0 < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxArg0)));
-    Assert(pReNative->Core.aVars[idxArg0].uArgNo == 0 + IEM_CIMPL_HIDDEN_ARGS);
-    RT_NOREF_PV(idxArg0);
-
-    Assert(idxArg1 < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxArg1)));
-    Assert(pReNative->Core.aVars[idxArg1].uArgNo == 1 + IEM_CIMPL_HIDDEN_ARGS);
-    RT_NOREF_PV(idxArg1);
-
-    Assert(idxArg2 < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxArg2)));
-    Assert(pReNative->Core.aVars[idxArg2].uArgNo == 2 + IEM_CIMPL_HIDDEN_ARGS);
-    RT_NOREF_PV(idxArg2);
-
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg0, 0 + IEM_CIMPL_HIDDEN_ARGS);
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg1, 1 + IEM_CIMPL_HIDDEN_ARGS);
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg2, 2 + IEM_CIMPL_HIDDEN_ARGS);
     return iemNativeEmitCallCImplCommon(pReNative, off, cbInstr, idxInstr, fGstShwFlush, pfnCImpl, 3);
 }
 
@@ -6125,23 +6106,10 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmitCallCImpl4(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, uint8_t idxInstr, uint64_t fGstShwFlush,
                         uintptr_t pfnCImpl, uint8_t idxArg0, uint8_t idxArg1, uint8_t idxArg2, uint8_t idxArg3)
 {
-pReNative->pInstrBuf[off++] = 0xcc;
-    Assert(idxArg0 < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxArg0)));
-    Assert(pReNative->Core.aVars[idxArg0].uArgNo == 0 + IEM_CIMPL_HIDDEN_ARGS);
-    RT_NOREF_PV(idxArg0);
-
-    Assert(idxArg1 < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxArg1)));
-    Assert(pReNative->Core.aVars[idxArg1].uArgNo == 1 + IEM_CIMPL_HIDDEN_ARGS);
-    RT_NOREF_PV(idxArg1);
-
-    Assert(idxArg2 < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxArg2)));
-    Assert(pReNative->Core.aVars[idxArg2].uArgNo == 2 + IEM_CIMPL_HIDDEN_ARGS);
-    RT_NOREF_PV(idxArg2);
-
-    Assert(idxArg3 < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxArg3)));
-    Assert(pReNative->Core.aVars[idxArg3].uArgNo == 3 + IEM_CIMPL_HIDDEN_ARGS);
-    RT_NOREF_PV(idxArg3);
-
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg0, 0 + IEM_CIMPL_HIDDEN_ARGS);
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg1, 1 + IEM_CIMPL_HIDDEN_ARGS);
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg2, 2 + IEM_CIMPL_HIDDEN_ARGS);
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg3, 3 + IEM_CIMPL_HIDDEN_ARGS);
     return iemNativeEmitCallCImplCommon(pReNative, off, cbInstr, idxInstr, fGstShwFlush, pfnCImpl, 4);
 }
 
@@ -6155,27 +6123,11 @@ DECL_INLINE_THROW(uint32_t)
 iemNativeEmitCallCImpl5(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cbInstr, uint8_t idxInstr, uint64_t fGstShwFlush,
                         uintptr_t pfnCImpl, uint8_t idxArg0, uint8_t idxArg1, uint8_t idxArg2, uint8_t idxArg3, uint8_t idxArg4)
 {
-pReNative->pInstrBuf[off++] = 0xcc;
-    Assert(idxArg0 < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxArg0)));
-    Assert(pReNative->Core.aVars[idxArg0].uArgNo == 0 + IEM_CIMPL_HIDDEN_ARGS);
-    RT_NOREF_PV(idxArg0);
-
-    Assert(idxArg1 < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxArg1)));
-    Assert(pReNative->Core.aVars[idxArg1].uArgNo == 1 + IEM_CIMPL_HIDDEN_ARGS);
-    RT_NOREF_PV(idxArg1);
-
-    Assert(idxArg2 < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxArg2)));
-    Assert(pReNative->Core.aVars[idxArg2].uArgNo == 2 + IEM_CIMPL_HIDDEN_ARGS);
-    RT_NOREF_PV(idxArg2);
-
-    Assert(idxArg3 < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxArg3)));
-    Assert(pReNative->Core.aVars[idxArg3].uArgNo == 3 + IEM_CIMPL_HIDDEN_ARGS);
-    RT_NOREF_PV(idxArg3);
-
-    Assert(idxArg4 < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxArg4)));
-    Assert(pReNative->Core.aVars[idxArg4].uArgNo == 4 + IEM_CIMPL_HIDDEN_ARGS);
-    RT_NOREF_PV(idxArg4);
-
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg0, 0 + IEM_CIMPL_HIDDEN_ARGS);
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg1, 1 + IEM_CIMPL_HIDDEN_ARGS);
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg2, 2 + IEM_CIMPL_HIDDEN_ARGS);
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg3, 3 + IEM_CIMPL_HIDDEN_ARGS);
+    IEMNATIVE_ASSERT_ARG_VAR_IDX(pReNative, idxArg4, 4 + IEM_CIMPL_HIDDEN_ARGS);
     return iemNativeEmitCallCImplCommon(pReNative, off, cbInstr, idxInstr, fGstShwFlush, pfnCImpl, 5);
 }
 
@@ -6225,10 +6177,10 @@ iemNativeEmitCallAImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
 
 
 #define IEM_MC_CALL_VOID_AIMPL_0(a_pfn) \
-    off = iemNativeEmitCallAImpl1(pReNative, off, UINT8_MAX /*idxVarRc*/, (uintptr_t)(a_pfn))
+    off = iemNativeEmitCallAImpl0(pReNative, off, UINT8_MAX /*idxVarRc*/, (uintptr_t)(a_pfn))
 
 #define IEM_MC_CALL_AIMPL_0(a_rc, a_pfn) \
-    off = iemNativeEmitCallAImpl1(pReNative, off, a_rc,                   (uintptr_t)(a_pfn))
+    off = iemNativeEmitCallAImpl0(pReNative, off, a_rc,                   (uintptr_t)(a_pfn))
 
 /** Emits code for IEM_MC_CALL_VOID_AIMPL_0 and IEM_MC_CALL_AIMPL_0. */
 DECL_INLINE_THROW(uint32_t)
