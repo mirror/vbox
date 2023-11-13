@@ -661,10 +661,12 @@ iemNativeEmitLoadGprFromGpr8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
 #ifdef RT_ARCH_AMD64
     /* movzx Gv,Eb */
     uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
-    if ((iGprDst | iGprSrc) >= 8)
+    if (iGprDst >= 8 || iGprSrc >= 8)
         pbCodeBuf[off++] = iGprDst < 8  ? X86_OP_REX_B
                          : iGprSrc >= 8 ? X86_OP_REX_R | X86_OP_REX_B
                          :                X86_OP_REX_R;
+    else if (iGprSrc >= 4)
+        pbCodeBuf[off++] = X86_OP_REX;
     pbCodeBuf[off++] = 0x0f;
     pbCodeBuf[off++] = 0xb6;
     pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprSrc & 7);
@@ -687,31 +689,37 @@ iemNativeEmitLoadGprFromGpr8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
     return off;
 }
 
-#if 0 /** @todo */
+
 /**
  * Emits a gprdst = gprsrc[15:8] load (ah, ch, dh, bh).
  * @note Bits 63 thru 8 are cleared.
  */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitLoadGprFromGpr8hi(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc)
+iemNativeEmitLoadGprFromGpr8Hi(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGprDst, uint8_t iGprSrc)
 {
 #ifdef RT_ARCH_AMD64
-    /* movzx Gv,Eb */
-    /** @todo */
-    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 4);
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 8);
+
+    /* movzx Gv,Ew */
     if ((iGprDst | iGprSrc) >= 8)
         pbCodeBuf[off++] = iGprDst < 8  ? X86_OP_REX_B
                          : iGprSrc >= 8 ? X86_OP_REX_R | X86_OP_REX_B
                          :                X86_OP_REX_R;
     pbCodeBuf[off++] = 0x0f;
-    pbCodeBuf[off++] = 0xb6;
+    pbCodeBuf[off++] = 0xb7;
     pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, iGprDst & 7, iGprSrc & 7);
 
+    /* shr Ev,8 */
+    if (iGprDst >= 8)
+        pbCodeBuf[off++] = X86_OP_REX_B;
+    pbCodeBuf[off++] = 0xc1;
+    pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_REG, 5, iGprDst & 7);
+    pbCodeBuf[off++] = 8;
+
 #elif RT_ARCH_ARM64
-    /* ubfx gprdst, gprsrc, #8, #8 */
+    /* bfi gprdst, gprsrc, #8, #8 */
     uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-    Assert(Armv8A64ConvertImmRImmS2Mask64(0x47, 0) == UINT8_MAX);
-    pu32CodeBuf[off++] = /** @todo ubfx */;
+    pu32CodeBuf[off++] = Armv8A64MkInstrBfi(iGprDst, iGprSrc, 8, 8, false /*f64Bit*/);
 
 #else
 # error "port me"
@@ -719,7 +727,7 @@ iemNativeEmitLoadGprFromGpr8hi(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
     IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
     return off;
 }
-#endif
+
 
 #ifdef RT_ARCH_AMD64
 /**

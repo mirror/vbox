@@ -6264,6 +6264,34 @@ iemNativeEmitCallAImpl4(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idx
 *   Emitters for general purpose register fetches (IEM_MC_FETCH_GREG_XXX).                                                       *
 *********************************************************************************************************************************/
 
+#define IEM_MC_FETCH_GREG_U8_THREADED(a_u8Dst, a_iGRegEx) \
+    off = iemNativeEmitFetchGregU8(pReNative, off, a_u8Dst, a_iGRegEx)
+
+/** Emits code for IEM_MC_FETCH_GREG_U8. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitFetchGregU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxDstVar, uint8_t iGRegEx)
+{
+    Assert(idxDstVar < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxDstVar)));
+    Assert(pReNative->Core.aVars[idxDstVar].cbVar == sizeof(uint8_t));
+    Assert(iGRegEx < 20);
+
+    /* Same discussion as in iemNativeEmitFetchGregU16 */
+    uint8_t const idxGstFullReg = iemNativeRegAllocTmpForGuestReg(pReNative, &off, IEMNATIVEGSTREG_GPR(iGRegEx & 15),
+                                                                  kIemNativeGstRegUse_ReadOnly);
+
+    iemNativeVarSetKindToStack(pReNative, idxDstVar);
+    uint8_t const idxVarReg = iemNativeVarAllocRegister(pReNative, idxDstVar, &off);
+
+    if (iGRegEx < 16)
+        off = iemNativeEmitLoadGprFromGpr8(pReNative, off, idxVarReg, idxGstFullReg);
+    else
+        off = iemNativeEmitLoadGprFromGpr8Hi(pReNative, off, idxVarReg, idxGstFullReg);
+
+    iemNativeRegFreeTmp(pReNative, idxGstFullReg);
+    return off;
+}
+
+
 #define IEM_MC_FETCH_GREG_U16(a_u16Dst, a_iGReg) \
     off = iemNativeEmitFetchGregU16(pReNative, off, a_u16Dst, a_iGReg)
 
@@ -6273,6 +6301,7 @@ iemNativeEmitFetchGregU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
 {
     Assert(idxDstVar < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxDstVar)));
     Assert(pReNative->Core.aVars[idxDstVar].cbVar == sizeof(uint16_t));
+    Assert(iGReg < 16);
 
     /*
      * We can either just load the low 16-bit of the GPR into a host register
@@ -6302,6 +6331,7 @@ iemNativeEmitFetchGregU32(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
 {
     Assert(idxDstVar < RT_ELEMENTS(pReNative->Core.aVars) && (pReNative->Core.bmVars & RT_BIT_32(idxDstVar)));
     Assert(pReNative->Core.aVars[idxDstVar].cbVar == sizeof(uint32_t));
+    Assert(iGReg < 16);
 
     /*
      * We can either just load the low 16-bit of the GPR into a host register
