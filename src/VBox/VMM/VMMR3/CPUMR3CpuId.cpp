@@ -2220,6 +2220,53 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
      *        0x80000006 L2 cache information
      */
 
+    uSubLeaf = 0;
+    while ((pCurLeaf = cpumR3CpuIdGetExactLeaf(pCpum, UINT32_C(0x80000006), uSubLeaf)) != NULL)
+    {
+        if (   pCpum->GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD
+            || pCpum->GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_HYGON)
+        {
+            /*
+             * Some AMD CPUs (e.g. Ryzen 7940HS) report zero L3 cache line size here and refer
+             * to CPUID Fn8000_001D. This triggers division by zero in Linux if the
+             * TopologyExtensions aka TOPOEXT bit in Fn8000_0001_ECX is not set, or if the kernel
+             * is old enough (e.g. Linux 3.13) that it does not know about the topology extension
+             * CPUID leaves.
+             * We put a non-zero value in the cache line size here, if possible the actual value
+             * gleaned from Fn8000_001D, or worst case a made-up valid number.
+             */
+            PCPUMCPUIDLEAF  pTopoLeaf;
+            uint32_t        uTopoSubLeaf;
+            uint32_t        uCacheLineSize;
+
+            if ((pCurLeaf->uEdx & 0xff) == 0)
+            {
+                uTopoSubLeaf = 0;
+
+                uCacheLineSize = 64;    /* Use 64-byte line size as a fallback. */
+
+                /* Find L3 cache information. Have to check the cache level in EAX. */
+                while ((pTopoLeaf = cpumR3CpuIdGetExactLeaf(pCpum, UINT32_C(0x8000001d), uTopoSubLeaf)) != NULL)
+                {
+                    if (((pTopoLeaf->uEax >> 5) & 0x07) == 3) {
+                        uCacheLineSize = (pTopoLeaf->uEbx & 0xfff) + 1;
+                        /* Fn8000_0006 can't report power of two line sizes greater than 128. */
+                        if (uCacheLineSize > 128)
+                            uCacheLineSize = 128;
+
+                        break;
+                    }
+                    uTopoSubLeaf++;
+                }
+
+                Assert(uCacheLineSize < 256);
+                pCurLeaf->uEdx |= uCacheLineSize;
+                LogRel(("CPUM: AMD L3 cache line size in CPUID leaf 0x80000006 was zero, adjusting to %u\n", uCacheLineSize));
+            }
+        }
+        uSubLeaf++;
+    }
+
     /* Cpuid 0x80000007: Advanced Power Management Information.
      * AMD:   EAX: Processor feedback capabilities.
      *        EBX: RAS capabilites.
