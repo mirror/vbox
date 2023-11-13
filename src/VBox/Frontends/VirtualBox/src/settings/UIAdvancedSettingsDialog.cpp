@@ -596,6 +596,7 @@ UIAdvancedSettingsDialog::UIAdvancedSettingsDialog(QWidget *pParent,
     , m_fSerializationIsInProgress(false)
     , m_fSerializationClean(false)
     , m_fClosed(false)
+    , m_iPageId(0)
     , m_pStatusBar(0)
     , m_pProcessBar(0)
     , m_pWarningPane(0)
@@ -640,17 +641,20 @@ void UIAdvancedSettingsDialog::sltCategoryChanged(int cId)
     setWindowTitle(title());
 #endif
 
-    /* Let's calculate scroll-bar shift: */
-    int iShift = 0;
+    /* Cache current page ID for reusing: */
+    m_iPageId = cId;
+
+    /* Let's calculate required scroll-bar position: */
+    int iPosition = 0;
     /* We'll have to take upper content's margin into account: */
     int iL, iT, iR, iB;
     m_pScrollViewport->layout()->getContentsMargins(&iL, &iT, &iR, &iB);
-    iShift -= iT;
+    iPosition -= iT;
     /* And actual page position according to parent: */
-    const QPoint pnt = m_frames.value(cId)->pos();
-    iShift += pnt.y();
+    const QPoint pnt = m_frames.value(m_iPageId)->pos();
+    iPosition += pnt.y();
     /* Make sure corresponding page is visible: */
-    m_pScrollArea->requestVerticalScrollBarPosition(iShift);
+    m_pScrollArea->requestVerticalScrollBarPosition(iPosition);
 
 #ifndef VBOX_WS_MAC
     uiCommon().setHelpKeyword(m_pButtonBox->button(QDialogButtonBox::Help), m_pageHelpKeywords.value(cId));
@@ -1109,6 +1113,14 @@ void UIAdvancedSettingsDialog::sltApplyFilteringRules()
         pFrame->filterOut(m_pCheckBoxMode->isChecked(),
                           m_pEditorFilter->text(),
                           m_flags);
+
+    /* Make sure current page chosen again: */
+    /// @todo fix this WORKAROUND properly!
+    // Why the heck simple call to
+    // QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
+    // isn't enough and we still need some time to let system
+    // process the layouts and vertical scroll-bar position?
+    QTimer::singleShot(50, this, SLOT(sltCategoryChangedRepeat()));
 }
 
 void UIAdvancedSettingsDialog::sltHandleFrameVisibilityChange(bool fVisible)

@@ -99,6 +99,8 @@ protected slots:
 
     /** Handles category change to @a cId. */
     virtual void sltCategoryChanged(int cId);
+    /** Repeats handling for category change to cached @a m_iPageId. */
+    virtual void sltCategoryChangedRepeat() { sltCategoryChanged(m_iPageId); }
 
     /** Handles serializartion start. */
     virtual void sltHandleSerializationStarted();
@@ -239,6 +241,9 @@ private:
     bool  m_fSerializationClean;
     /** Holds whether the dialod had emitted signal to be closed. */
     bool  m_fClosed;
+
+    /** Holds the current page ID. */
+    int  m_iPageId;
 
     /** Holds the dialog optional flags. */
     QMap<QString, QVariant>  m_flags;
