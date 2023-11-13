@@ -5513,11 +5513,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 cDesktopPixels += 1;
                 cDesktopPixelsBlue += int(iBlue > iRed and iBlue > iGreen);
 
-        fpRatioDesktop = cDesktopPixels / cPixels;
+        fpRatioDesktop = float(cDesktopPixels) / float(cPixels);
         reporter.log2('Ratio of not too dark or bright pixels %.2f' % (fpRatioDesktop));
 
         if fpRatioDesktop > 0.1:
-            fpRatioBlue = cDesktopPixelsBlue / cDesktopPixels;
+            fpRatioBlue = float(cDesktopPixelsBlue) / float(cDesktopPixels);
             reporter.log2('Ratio of blue pixels %.2f ' % (fpRatioBlue));
             if fpRatioBlue > 0.5:
                 return True
@@ -5537,7 +5537,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             if self.oTstDrv.fpApiVer >= 5.0:
                 iWidth, iHeight, _, _, _, _ = oSession.o.console.display.getScreenResolution(iScreenId);
             else:
-                iWidth, iHeight, _, _, _ = oSession.o.console.display.getScreenResolution(iScreenId)
+                iWidth, iHeight, _, _, _ = oSession.o.console.display.getScreenResolution(iScreenId);
 
             aRGBData = oSession.o.console.display.takeScreenShotToArray(iScreenId, iWidth, iHeight,
                                                                         vboxcon.BitmapFormat_RGBA);
