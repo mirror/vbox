@@ -5547,6 +5547,38 @@ DECL_HIDDEN_THROW(uint8_t) iemNativeVarAllocRegisterForGuestReg(PIEMRECOMPILERST
 
 
 /**
+ * Sets the host register for @a idxVarRc to @a idxReg.
+ *
+ * The register must not be allocated. Any guest register shadowing will be
+ * implictly dropped by this call.
+ *
+ * The variable must not have any register associated with it (causes
+ * VERR_IEM_VAR_IPE_10 to be raised).  Conversion to a stack variable is
+ * implied.
+ *
+ * @param   pReNative   The recompiler state.
+ * @param   idxVar      The variable.
+ * @param   idxReg      The host register (typically IEMNATIVE_CALL_RET_GREG).
+ * @param   off         For recording in debug info.
+ *
+ * @throws  VERR_IEM_VAR_IPE_10, VERR_IEM_VAR_IPE_11
+ */
+DECL_INLINE_THROW(void) iemNativeVarSetRegister(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar, uint8_t idxReg, uint32_t off)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
+    Assert(idxReg < RT_ELEMENTS(pReNative->Core.aHstRegs));
+    AssertStmt(pReNative->Core.aVars[idxVar].idxReg == UINT8_MAX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_IPE_10));
+    AssertStmt(!(pReNative->Core.bmHstRegs & RT_BIT_32(idxReg)), IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_IPE_11));
+
+    iemNativeRegClearGstRegShadowing(pReNative, idxReg, off);
+    iemNativeRegMarkAllocated(pReNative, idxReg, kIemNativeWhat_Var, idxVar);
+
+    iemNativeVarSetKindToStack(pReNative, idxVar);
+    pReNative->Core.aVars[idxVar].idxReg = idxReg;
+}
+
+
+/**
  * Worker that frees the stack slots for variable @a idxVar if any allocated.
  *
  * This is used both by iemNativeVarFreeOneWorker and iemNativeEmitCallCommon.
@@ -6166,9 +6198,8 @@ iemNativeEmitCallAImplCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_
     off = iemNativeEmitCallImm(pReNative, off, pfnAImpl);
     if (idxVarRc < RT_ELEMENTS(pReNative->Core.aVars))
     {
-        iemNativeVarSetKindToStack(pReNative, idxVarRc);
-        AssertStmt(pReNative->Core.aVars[idxVarRc].idxReg == UINT8_MAX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_IPE_10));
-        pReNative->Core.aVars[idxVarRc].idxReg = IEMNATIVE_CALL_RET_GREG;
+pReNative->pInstrBuf[off++] = 0xcc; /** @todo test IEM_MC_CALL_AIMPL_3 and IEM_MC_CALL_AIMPL_4 return codes. */
+        iemNativeVarSetRegister(pReNative, idxVarRc, IEMNATIVE_CALL_RET_GREG, off);
     }
 
     return off;
