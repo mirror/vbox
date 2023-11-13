@@ -6747,6 +6747,28 @@ iemNativeEmitSubGregU32U64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t 
 #define IEM_MC_REF_GREG_U8_CONST_THREADED(a_pu8Dst, a_iGReg) \
     off = iemNativeEmitRefGregU8(pReNative, off, a_pu8Dst, a_iGRegEx, true /*fConst*/)
 
+/** Handles IEM_MC_REF_GREG_U8[_CONST]. */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitRefGregU8(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxVarRef, uint8_t iGRegEx, bool fConst)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVarRef);
+    Assert(pReNative->Core.aVars[idxVarRef].cbVar == sizeof(void *));
+    Assert(iGRegEx < 20);
+
+    if (iGRegEx < 16)
+        iemNativeVarSetKindToGstRegRef(pReNative, idxVarRef, kIemNativeGstRegRef_Gpr, iGRegEx & 15);
+    else
+        iemNativeVarSetKindToGstRegRef(pReNative, idxVarRef, kIemNativeGstRegRef_GprHighByte, iGRegEx & 15);
+
+    /* If we've delayed writing back the register value, flush it now. */
+    off = iemNativeRegFlushPendingSpecificWrite(pReNative, off, kIemNativeGstRegRef_Gpr, iGRegEx & 15);
+
+    /* If it's not a const reference we need to flush the shadow copy of the register now. */
+    if (!fConst)
+        iemNativeRegFlushGuestShadows(pReNative, RT_BIT_64(IEMNATIVEGSTREG_GPR(iGRegEx & 15)));
+
+    return off;
+}
 
 #define IEM_MC_REF_GREG_U16(a_pu16Dst, a_iGReg) \
     off = iemNativeEmitRefGregUxx(pReNative, off, a_pu16Dst, a_iGReg, false /*fConst*/)

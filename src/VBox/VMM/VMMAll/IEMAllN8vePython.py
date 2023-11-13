@@ -98,7 +98,7 @@ g_dMcStmtThreaded = {
     'IEM_MC_FETCH_GREG_U8_ZX_U16_THREADED':                      (None, False, False, ),
     'IEM_MC_FETCH_GREG_U8_ZX_U32_THREADED':                      (None, False, False, ),
     'IEM_MC_FETCH_GREG_U8_ZX_U64_THREADED':                      (None, False, False, ),
-    'IEM_MC_REF_GREG_U8_THREADED':                               (None, True,  False, ),
+    'IEM_MC_REF_GREG_U8_THREADED':                               (None, True,  True,  ),
 
     # Flat Mem:
     'IEM_MC_FETCH_MEM16_FLAT_U8':                                (None, True,  False, ),
