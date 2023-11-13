@@ -1066,6 +1066,7 @@ class TestDriver(base.TestDriver):                                              
         This will try detect an development or installed build if no build has
         been associated with the driver yet.
         """
+        reporter.log2('importVBoxApi started\n')
         if self.fImportedVBoxApi:
             return True;
 
@@ -1112,6 +1113,7 @@ class TestDriver(base.TestDriver):                                              
                 self._stopVBoxSVC();
         else:
             assert(self.oVBoxSvcProcess is None);
+        reporter.log2('importVBoxApi finished\n')
         return self.fImportedVBoxApi;
 
     def _startVBoxSVC(self): # pylint: disable=too-many-statements

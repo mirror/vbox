@@ -452,7 +452,6 @@ class tdUnitTest1(vbox.TestDriver):
         #
         if False is True: ## @todo r=andy ?? # pylint: disable=comparison-of-constants
             if not self.importVBoxApi():
-                reporter.error('Unabled to import the VBox Python API.');
                 return False;
         else:
             self._detectBuild();
@@ -613,8 +612,9 @@ class tdUnitTest1(vbox.TestDriver):
 
     def actionConfig(self):
         # Make sure vboxapi has been imported so we can use the constants.
+        reporter.log2('actionConfig started\n')
         if not self.importVBoxApi():
-            return False;
+            return False
 
         # Do the configuring.
         if self.isRemoteMode():
@@ -632,13 +632,16 @@ class tdUnitTest1(vbox.TestDriver):
             ## @todo Get rid of this as soon as we create test VMs in a descriptive (automated) manner.
             return self.oTestVmSet.actionConfig(self, eNic0AttachType = eNic0AttachType,
                                                 sDvdImage = self.sVBoxValidationKitIso);
+        reporter.log2('actionConfig finished\n')
 
         return True;
 
     def actionExecute(self):
         # Make sure vboxapi has been imported so we can execute the driver without going thru
         # a former configuring step.
+        reporter.log2('actionExecute started\n')
         if not self.importVBoxApi():
+            reporter.log2('failed to import VBox API while actionExecute\n')
             return False;
         if not self._detectPaths():
             return False;
@@ -670,6 +673,7 @@ class tdUnitTest1(vbox.TestDriver):
                 os.environ['LD_LIBRARY_PATH'] = sLdLibraryPath;
 
             fRc = self._testRunUnitTests(None);
+        reporter.log2('actionExecute finished\n')
 
         return fRc;
 
