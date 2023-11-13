@@ -2542,7 +2542,7 @@ typedef enum
  *
  * @returns The encoded instruction.
  * @param   enmType     The load instruction type.
- * @param   iReg        The register to mov the immediate into.
+ * @param   iRegDst     The register to mov the immediate into.
  * @param   uImm16      The immediate value.
  * @param   iHalfWord   Which of the 4 (@a f64Bit = true) or 2 register (16-bit)
  *                      half-words to target:
