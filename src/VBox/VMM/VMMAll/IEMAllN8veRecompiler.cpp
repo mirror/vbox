@@ -6767,16 +6767,16 @@ iemNativeEmitSubGregU32U64(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t 
     off = iemNativeEmitRefGregUxx(pReNative, off, a_pi32Dst, a_iGReg, true /*fConst*/)
 
 #define IEM_MC_REF_GREG_U64(a_pu64Dst, a_iGReg) \
-    off = iemNativeEmitRefGregUxx(pReNative, off, a_u64Dst, a_iGReg, false /*fConst*/)
+    off = iemNativeEmitRefGregUxx(pReNative, off, a_pu64Dst, a_iGReg, false /*fConst*/)
 
 #define IEM_MC_REF_GREG_U64_CONST(a_pu64Dst, a_iGReg) \
-    off = iemNativeEmitRefGregUxx(pReNative, off, a_u64Dst, a_iGReg, true /*fConst*/)
+    off = iemNativeEmitRefGregUxx(pReNative, off, a_pu64Dst, a_iGReg, true /*fConst*/)
 
 #define IEM_MC_REF_GREG_I64(a_pi64Dst, a_iGReg) \
-    off = iemNativeEmitRefGregUxx(pReNative, off, a_i64Dst, a_iGReg, false /*fConst*/)
+    off = iemNativeEmitRefGregUxx(pReNative, off, a_pi64Dst, a_iGReg, false /*fConst*/)
 
 #define IEM_MC_REF_GREG_I64_CONST(a_pi64Dst, a_iGReg) \
-    off = iemNativeEmitRefGregUxx(pReNative, off, a_i64Dst, a_iGReg, true /*fConst*/)
+    off = iemNativeEmitRefGregUxx(pReNative, off, a_pi64Dst, a_iGReg, true /*fConst*/)
 
 /** Handles IEM_MC_REF_GREG_Uxx[_CONST] and IEM_MC_REF_GREG_Ixx[_CONST]. */
 DECL_INLINE_THROW(uint32_t)
