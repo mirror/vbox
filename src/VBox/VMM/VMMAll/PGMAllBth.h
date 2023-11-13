@@ -3008,7 +3008,7 @@ static int PGM_BTH_NAME(NestedSyncPT)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNestedPage,
         PGMPOOLACCESS enmAccess;
         {
             /*
-             * Mode-based execute control for EPT not supported. 
+             * Mode-based execute control for EPT not supported.
              *
              * However, Windows 10 with Hyper-V enabled sets the EPT_E_USER_EXECUTE bit but does
              * not enable "mode-based execute control for EPT" in the VT-x secondary VM-execution
