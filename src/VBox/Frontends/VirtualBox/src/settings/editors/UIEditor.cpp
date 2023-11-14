@@ -107,7 +107,7 @@ void UIEditor::filterOut(bool fExpertMode, const QString &strFilter, const QMap<
     /* Otherwise update widget visibility usual way: */
     else
     {
-        const bool fVisibilityChanged = isVisible() != fVisible;
+        const bool fVisibilityChanged = isVisibleTo(parentWidget()) != fVisible;
         setVisible(fVisible);
         if (fVisibilityChanged)
             emit sigVisibilityChange(fVisible);
