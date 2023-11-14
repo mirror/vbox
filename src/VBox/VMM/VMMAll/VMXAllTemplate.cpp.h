@@ -8443,7 +8443,6 @@ HMVMX_EXIT_DECL vmxHCExitRdmsr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
     Log4Func(("ecx=%#RX32\n", idMsr));
 
 #if defined(VBOX_STRICT) && !defined(IN_NEM_DARWIN)
-    Assert(!pVmxTransient->fIsNestedGuest);
     if (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
     {
         if (   hmR0VmxIsAutoLoadGuestMsr(pVmcsInfo, idMsr)
