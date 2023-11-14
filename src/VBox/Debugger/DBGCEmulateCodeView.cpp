@@ -498,8 +498,8 @@ const DBGCCMD    g_aCmdsCodeView[] =
     { "pa",         1,        1,        &g_aArgStepTraceTo[0], RT_ELEMENTS(g_aArgStepTraceTo), 0,    dbgcCmdStepTraceTo, "<addr> [count] [cmds]","Step to the given address." },
     { "pc",         0,        0,        &g_aArgStepTrace[0], RT_ELEMENTS(g_aArgStepTrace),  0,       dbgcCmdStepTrace,   "[count] [cmds]",       "Step to the next call instruction." },
     { "pt",         0,        0,        &g_aArgStepTrace[0], RT_ELEMENTS(g_aArgStepTrace),  0,       dbgcCmdStepTrace,   "[count] [cmds]",       "Step to the next return instruction." },
-    { "r",          0,        3,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),         0,       dbgcCmdReg,         "[reg [[=] newval]]",   "Show or set register(s) - active reg set." },
-    { "rg",         0,        3,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),         0,       dbgcCmdRegGuest,    "[reg [[=] newval]]",   "Show or set register(s) - guest reg set." },
+    { "r",          0,        3,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),         0,       dbgcCmdReg,         "[reg [[=] newval]]",   "Show or set register(s) - active reg set. Special 'all' register for showing all. Append a dot '.' to display sub-fields and aliases." },
+    { "rg",         0,        3,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),         0,       dbgcCmdRegGuest,    "[reg [[=] newval]]",   "Show or set register(s) - guest reg set. Special 'all' register for showing all. Append a dot '.' to display sub-fields and aliases." },
     { "rg32",       0,        0,        NULL,               0,                              0,       dbgcCmdRegGuest,    "",                     "Show 32-bit guest registers." },
     { "rg64",       0,        0,        NULL,               0,                              0,       dbgcCmdRegGuest,    "",                     "Show 64-bit guest registers." },
     { "rt",         0,        0,        NULL,               0,                              0,       dbgcCmdRegTerse,    "",                     "Toggles terse / verbose register info." },
@@ -2430,6 +2430,7 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
                                           const char *pszPrefix)
 {
     PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+    int   rc;
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs == 1 || cArgs == 2 || cArgs == 3);
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0,    paArgs[0].enmType == DBGCVAR_TYPE_STRING
                                                     || paArgs[0].enmType == DBGCVAR_TYPE_SYMBOL);
@@ -2437,7 +2438,8 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
     /*
      * Parse the register name and kind.
      */
-    const char *pszReg = paArgs[0].u.pszString;
+    bool const  fAllRegs = strcmp(paArgs[0].u.pszString, "all") == 0;
+    const char *pszReg   = paArgs[0].u.pszString;
     if (*pszReg == '@')
         pszReg++;
     VMCPUID idCpu = pDbgc->idCpu;
@@ -2449,35 +2451,180 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
         idCpu |= DBGFREG_HYPER_VMCPUID;
     }
     const char * const pszActualPrefix = idCpu & DBGFREG_HYPER_VMCPUID ? "." : "";
-
-    /*
-     * Query the register type & value (the setter needs the type).
-     */
-    DBGFREGVALTYPE  enmType;
-    DBGFREGVAL      Value;
-    int rc = DBGFR3RegNmQuery(pUVM, idCpu, pszReg, &Value, &enmType);
-    if (RT_FAILURE(rc))
-    {
-        if (rc == VERR_DBGF_REGISTER_NOT_FOUND)
-            return DBGCCmdHlpVBoxError(pCmdHlp, VERR_INVALID_PARAMETER, "Unknown register: '%s%s'.\n",
-                                       pszActualPrefix,  pszReg);
-        return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3RegNmQuery failed querying '%s%s': %Rrc.\n",
-                                   pszActualPrefix,  pszReg, rc);
-    }
     if (cArgs == 1)
     {
         /*
          * Show the register.
+         *
+         * If it ends with a '.' or '.*', we'll show any subfields and aliases as
+         * well.  This is a special VBox twist.
          */
+        size_t cchReg    = strlen(pszReg);
+        size_t cchSuffix = 0;
+        if (cchReg >= 2 && pszReg[cchReg - 1] == '.')
+            cchSuffix = 1;
+        else if (cchReg >= 3 && pszReg[cchReg - 1] == '*' && pszReg[cchReg - 2] == '.')
+            cchSuffix = 2;
+
         char szValue[160];
-        rc = DBGFR3RegFormatValue(szValue, sizeof(szValue), &Value, enmType, true /*fSpecial*/);
-        if (RT_SUCCESS(rc))
-            rc = DBGCCmdHlpPrintf(pCmdHlp, "%s%s=%s\n", pszActualPrefix, pszReg, szValue);
+        if (!cchSuffix && !fAllRegs)
+        {
+            DBGFREGVALTYPE  enmType;
+            DBGFREGVAL      Value;
+            rc = DBGFR3RegNmQuery(pUVM, idCpu, pszReg, &Value, &enmType);
+            if (RT_FAILURE(rc))
+            {
+                if (rc == VERR_DBGF_REGISTER_NOT_FOUND)
+                    return DBGCCmdHlpVBoxError(pCmdHlp, VERR_INVALID_PARAMETER, "Unknown register: '%s%s'.\n",
+                                               pszActualPrefix,  pszReg);
+                return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3RegNmQuery failed querying '%s%s': %Rrc.\n",
+                                           pszActualPrefix,  pszReg, rc);
+            }
+
+            rc = DBGFR3RegFormatValue(szValue, sizeof(szValue), &Value, enmType, true /*fSpecial*/);
+            if (RT_SUCCESS(rc))
+                rc = DBGCCmdHlpPrintf(pCmdHlp, "%s%s=%s\n", pszActualPrefix, pszReg, szValue);
+            else
+                rc = DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3RegFormatValue failed: %Rrc.\n", rc);
+        }
         else
-            rc = DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3RegFormatValue failed: %Rrc.\n", rc);
+        {
+            /*
+             * Register + aliases + subfields OR 'all'.
+             */
+            /* Duplicate the register specifier sans suffix. */
+            char            *pszRegBase = RTStrDupN(pszReg, cchReg - cchSuffix);
+            AssertReturn(pszRegBase, VERR_NO_STR_MEMORY);
+
+            /* Make a rough guess on how many entires we need, or query it in the case of 'all'. */
+            size_t          cRegsAlloc = 128;
+            if (fAllRegs)
+                DBGFR3RegNmQueryAllCount(pUVM, &cRegsAlloc);
+            PDBGFREGENTRYNM paRegs = (PDBGFREGENTRYNM)RTMemTmpAlloc(sizeof(paRegs[0]) * cRegsAlloc);
+            AssertReturnStmt(paRegs, RTStrFree(pszRegBase), VERR_NO_TMP_MEMORY);
+            size_t          cRegs = cRegsAlloc;
+
+            /* Query the registers.*/
+            if (fAllRegs)
+                rc = DBGFR3RegNmQueryAll(pUVM, paRegs, cRegs);
+            else
+                rc = DBGFR3RegNmQueryEx(pUVM, idCpu, pszRegBase, DBGFR3REG_QUERY_EX_F_SUBFIELDS | DBGFR3REG_QUERY_EX_F_ALIASES,
+                                        paRegs, &cRegs);
+            if (rc == VERR_BUFFER_OVERFLOW && !fAllRegs)
+            {
+                RTMemTmpFree(paRegs);
+                cRegsAlloc = cRegs;
+                paRegs = (PDBGFREGENTRYNM)RTMemTmpAlloc(sizeof(paRegs[0]) * cRegsAlloc);
+                AssertReturnStmt(paRegs, RTStrFree(pszRegBase), VERR_NO_TMP_MEMORY);
+                rc = DBGFR3RegNmQueryEx(pUVM, idCpu, pszRegBase,
+                                        DBGFR3REG_QUERY_EX_F_SUBFIELDS | DBGFR3REG_QUERY_EX_F_ALIASES, paRegs, &cRegs);
+            }
+            if (RT_SUCCESS(rc))
+            {
+                /* Find max lengths and sizes for producing pretty columns. */
+                size_t cchMaxNm         = 2;
+                size_t cchMaxSubFieldNm = 2;
+                size_t cMaxSubFieldBits = 1;
+                if (*pszActualPrefix == '\0')
+                    for (uint32_t iReg = 0; iReg < cRegs; iReg++)
+                    {
+                        size_t const cchName = strlen(paRegs[iReg].pszName);
+                        if (cchMaxNm < cchName)
+                            cchMaxNm = cchName;
+                        if (paRegs[iReg].u.s.fSubField)
+                        {
+                            cchMaxSubFieldNm = RT_MAX(cchMaxSubFieldNm, cchName);
+                            cMaxSubFieldBits = RT_MAX(cMaxSubFieldBits, paRegs[iReg].u.s.cBits);
+                        }
+                    }
+
+                /* Output the registers. */
+                size_t   cchMaxSubFieldValue = 2 + (cMaxSubFieldBits + 3) / 4;
+                size_t   cMaxSameLine        = 80 / (2 + cchMaxSubFieldNm + 1 + cchMaxSubFieldValue);
+                unsigned iSameLine           = 0;
+                for (uint32_t iReg = 0; iReg < cRegs; iReg++)
+                {
+                    if (   !paRegs[iReg].u.s.fSubField
+                        || !paRegs[iReg].u.s.cBits)
+                        rc = DBGFR3RegFormatValue(szValue, sizeof(szValue), &paRegs[iReg].Val,
+                                                  paRegs[iReg].enmType, true /*fSpecial*/);
+                    else
+                        rc = DBGFR3RegFormatValueEx(szValue, sizeof(szValue), &paRegs[iReg].Val, paRegs[iReg].enmType,
+                                                    16,
+                                                    (paRegs[iReg].u.s.cBits + 3) / 4,
+                                                    0,
+                                                    (paRegs[iReg].u.s.cBits == 1 ? 0 : RTSTR_F_SPECIAL) | RTSTR_F_WIDTH);
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (!paRegs[iReg].u.s.fSubField)
+                        {
+                            if (iSameLine > 0)
+                                rc = DBGCCmdHlpPrintf(pCmdHlp, "\n");
+                            if (*pszActualPrefix == '\0')
+                                rc = DBGCCmdHlpPrintf(pCmdHlp, "%*s=%s\n", cchMaxNm, paRegs[iReg].pszName, szValue);
+                            else
+                                rc = DBGCCmdHlpPrintf(pCmdHlp, "%s%s=%s\n", pszActualPrefix, paRegs[iReg].pszName, szValue);
+                            iSameLine = 0;
+                        }
+                        else
+                        {
+                            if (*pszActualPrefix == '\0')
+                                rc = DBGCCmdHlpPrintf(pCmdHlp, "  %*s=%s", cchMaxSubFieldNm, paRegs[iReg].pszName, szValue);
+                            else
+                                rc = DBGCCmdHlpPrintf(pCmdHlp, "  %s%s=%s", pszActualPrefix, paRegs[iReg].pszName, szValue);
+                            iSameLine++;
+                            if (iSameLine < cMaxSameLine)
+                            {
+                                size_t cchValue = strlen(szValue);
+                                if (cchValue < cchMaxSubFieldValue)
+                                    rc = DBGCCmdHlpPrintf(pCmdHlp, "%*s", cchMaxSubFieldValue - cchValue, "");
+                            }
+                            else
+                            {
+                                rc = DBGCCmdHlpPrintf(pCmdHlp, "\n");
+                                iSameLine = 0;
+                            }
+                        }
+                    }
+                    else
+                        rc = DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3RegFormatValue[Ex] failed for %s: %Rrc.\n",
+                                                 paRegs[iReg].pszName, rc);
+                }
+                if (iSameLine > 0)
+                    rc = DBGCCmdHlpPrintf(pCmdHlp, "\n");
+            }
+            else if (fAllRegs)
+                rc = DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3RegNmQueryAll failed: %Rrc.\n",
+                                         pszActualPrefix, rc);
+            else if (rc == VERR_DBGF_REGISTER_NOT_FOUND)
+                rc = DBGCCmdHlpVBoxError(pCmdHlp, VERR_INVALID_PARAMETER, "Unknown register: '%s%s'.\n",
+                                         pszActualPrefix, pszRegBase);
+            else
+                rc = DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3RegNmQueryEx failed querying '%s%s': %Rrc.\n",
+                                         pszActualPrefix, pszRegBase, rc);
+            RTStrFree(pszRegBase);
+            RTMemTmpFree(paRegs);
+        }
     }
     else
     {
+        /*
+         * We're about to modify the register.
+         *
+         * First we need to query the register type (see below).
+         */
+        DBGFREGVALTYPE  enmType;
+        DBGFREGVAL      Value;
+        rc = DBGFR3RegNmQuery(pUVM, idCpu, pszReg, &Value, &enmType);
+        if (RT_FAILURE(rc))
+        {
+            if (rc == VERR_DBGF_REGISTER_NOT_FOUND)
+                return DBGCCmdHlpVBoxError(pCmdHlp, VERR_INVALID_PARAMETER, "Unknown register: '%s%s'.\n",
+                                           pszActualPrefix,  pszReg);
+            return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3RegNmQuery failed querying '%s%s': %Rrc.\n",
+                                       pszActualPrefix,  pszReg, rc);
+        }
+
         DBGCVAR   NewValueTmp;
         PCDBGCVAR pNewValue;
         if (cArgs == 3)

@@ -2447,6 +2447,25 @@ typedef struct DBGFREGENTRYNM
     const char     *pszName;
     /** The size of the value in bytes. */
     DBGFREGVALTYPE  enmType;
+    /** Extra info returned by queries, ignored by setters. */
+    union
+    {
+        uint32_t    uInfo;
+        struct
+        {
+            /** The actual value width in bits (if zero, check enmType).
+             * DBGFREGSUBFIELD::cBits + DBGFREGSUBFIELD::cShift  */
+            uint32_t        cBits     : 10;
+            /** Set if this is an alias entry.   */
+            uint32_t        fAlias    : 1;
+            /** Set if this is the main register. */
+            uint32_t        fMain     : 1;
+            /** Set if this is a sub-field. */
+            uint32_t        fSubField : 1;
+            /** Unused, reserved for later. */
+            uint32_t        fReserved : 19;
+        } s;
+    } u;
     /** The register value. The valid view is indicated by enmType. */
     DBGFREGVAL      Val;
 } DBGFREGENTRYNM;
@@ -2454,6 +2473,16 @@ typedef struct DBGFREGENTRYNM
 typedef DBGFREGENTRYNM *PDBGFREGENTRYNM;
 /** Pointer to a const named register entry in a batch operation. */
 typedef DBGFREGENTRYNM const *PCDBGFREGENTRYNM;
+
+/** @name DBGFR3REG_QUERY_EX_F_XXX - Flags for DBGFR3RegNmQueryEx
+ * @{ */
+/** Include subfields in the result.   */
+#define DBGFR3REG_QUERY_EX_F_SUBFIELDS      RT_BIT_32(0)
+/** Include aliases in the result.   */
+#define DBGFR3REG_QUERY_EX_F_ALIASES        RT_BIT_32(1)
+/** Mask with the valid bits.   */
+#define DBGFR3REG_QUERY_EX_F_VALID_MASK     UINT32_C(0x00000003)
+/** @} */
 
 VMMR3DECL(int) DBGFR3RegNmValidate( PUVM pUVM, VMCPUID idDefCpu, const char *pszReg);
 
@@ -2465,6 +2494,7 @@ VMMR3DECL(int) DBGFR3RegNmQueryU64( PUVM pUVM, VMCPUID idDefCpu, const char *psz
 VMMR3DECL(int) DBGFR3RegNmQueryU128(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, PRTUINT128U  pu128);
 /*VMMR3DECL(int) DBGFR3RegNmQueryLrd( PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, long double *plrd);*/
 VMMR3DECL(int) DBGFR3RegNmQueryXdtr(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, uint64_t *pu64Base, uint16_t *pu16Limit);
+VMMR3DECL(int) DBGFR3RegNmQueryEx(  PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, uint32_t fFlags, PDBGFREGENTRYNM paRegs, size_t *pcRegs);
 VMMR3DECL(int) DBGFR3RegNmQueryBatch(PUVM pUVM,VMCPUID idDefCpu, PDBGFREGENTRYNM paRegs, size_t cRegs);
 VMMR3DECL(int) DBGFR3RegNmQueryAllCount(PUVM pUVM, size_t *pcRegs);
 VMMR3DECL(int) DBGFR3RegNmQueryAll( PUVM pUVM,                   PDBGFREGENTRYNM paRegs, size_t cRegs);

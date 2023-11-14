@@ -386,7 +386,6 @@ static int dbgfR3RegRegisterCommon(PUVM pUVM, PCDBGFREGDESC paRegisters, DBGFREG
     else
         RTStrPrintf(pRegSet->szPrefix, cchPrefix + 4 + 1, "%s%u", pszPrefix, iInstance);
 
-
     /*
      * Initialize the lookup records. See DBGFREGSET::paLookupRecs.
      */
@@ -477,12 +476,27 @@ static int dbgfR3RegRegisterCommon(PUVM pUVM, PCDBGFREGDESC paRegisters, DBGFREG
             pUVM->dbgf.s.cRegs += pRegSet->cDescs;
             if (enmType == DBGFREGSETTYPE_CPU)
             {
-                if (pRegSet->cDescs > DBGFREG_ALL_COUNT)
-                    pUVM->dbgf.s.cRegs -= pRegSet->cDescs - DBGFREG_ALL_COUNT;
                 if (!strcmp(pszPrefix, "cpu"))
+                {
+                    if (!pUVM->dbgf.s.cPerCpuRegs)
+                        pUVM->dbgf.s.cPerCpuRegs = pRegSet->cDescs;
+                    else
+                        AssertLogRelMsgStmt(pUVM->dbgf.s.cPerCpuRegs == pRegSet->cDescs,
+                                            ("%d vs %d\n", pUVM->dbgf.s.cPerCpuRegs, pRegSet->cDescs),
+                                            pUVM->dbgf.s.cPerCpuRegs = RT_MAX(pRegSet->cDescs, pUVM->dbgf.s.cPerCpuRegs));
                     pUVM->aCpus[iInstance].dbgf.s.pGuestRegSet = pRegSet;
+                }
                 else
+                {
+                    Assert(!strcmp(pszPrefix, "hypercpu"));
+                    if (!pUVM->dbgf.s.cPerCpuHyperRegs)
+                        pUVM->dbgf.s.cPerCpuHyperRegs = pRegSet->cDescs;
+                    else
+                        AssertLogRelMsgStmt(pUVM->dbgf.s.cPerCpuHyperRegs == pRegSet->cDescs,
+                                            ("%d vs %d\n", pUVM->dbgf.s.cPerCpuHyperRegs, pRegSet->cDescs),
+                                            pUVM->dbgf.s.cPerCpuHyperRegs = RT_MAX(pRegSet->cDescs, pUVM->dbgf.s.cPerCpuHyperRegs));
                     pUVM->aCpus[iInstance].dbgf.s.pHyperRegSet = pRegSet;
+                }
             }
 
             PDBGFREGLOOKUP  paLookupRecs = pRegSet->paLookupRecs;
@@ -532,8 +546,8 @@ VMMR3_INT_DECL(int) DBGFR3RegRegisterCpu(PVM pVM, PVMCPU pVCpu, PCDBGFREGDESC pa
             return rc;
     }
 
-    return dbgfR3RegRegisterCommon(pUVM, paRegisters, DBGFREGSETTYPE_CPU, pVCpu,
-                                   fGuestRegs ? "cpu" : "hypercpu", pVCpu->idCpu);
+    AssertReturn(fGuestRegs, VERR_RAW_MODE_NOT_SUPPORTED);
+    return dbgfR3RegRegisterCommon(pUVM, paRegisters, DBGFREGSETTYPE_CPU, pVCpu, fGuestRegs ? "cpu" : "hypercpu", pVCpu->idCpu);
 }
 
 
@@ -1843,6 +1857,284 @@ VMMR3DECL(int) DBGFR3RegNmQueryXdtr(PUVM pUVM, VMCPUID idDefCpu, const char *psz
 }
 
 
+/**
+ * Gets the number of bits in value of type @a enmValType.
+ */
+static unsigned dbgfR3RegGetBitsForValType(DBGFREGVALTYPE enmValType)
+{
+    switch (enmValType)
+    {
+        case DBGFREGVALTYPE_U8:     return 8;
+        case DBGFREGVALTYPE_U16:    return 16;
+        case DBGFREGVALTYPE_U32:    return 32;
+        case DBGFREGVALTYPE_U64:    return 64;
+        case DBGFREGVALTYPE_U128:   return 128;
+        case DBGFREGVALTYPE_U256:   return 256;
+        case DBGFREGVALTYPE_U512:   return 512;
+        case DBGFREGVALTYPE_R80:    return 80;
+        case DBGFREGVALTYPE_DTR:    return 80;
+        /* no default, want gcc warnings */
+        case DBGFREGVALTYPE_32BIT_HACK:
+        case DBGFREGVALTYPE_END:
+        case DBGFREGVALTYPE_INVALID:
+            break;
+    }
+    return 512;
+}
+
+
+/**
+ * On CPU worker for the extended register queries, used by DBGFR3RegNmQueryEx.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pUVM                The user mode VM handle.
+ * @param   pLookupRec          The register lookup record.
+ * @param   fFlags              DBGFR3REG_QUERY_EX_F_XXX
+ * @param   paRegs              Where to return the register values.
+ * @param   cRegs               The number of register values to return.
+ *                              The caller has checked that this is sufficient
+ *                              to store the entire result.
+ */
+static DECLCALLBACK(int) dbgfR3RegNmQueryExWorkerOnCpu(PUVM pUVM, PCDBGFREGLOOKUP pLookupRec, uint32_t fFlags,
+                                                       PDBGFREGENTRYNM paRegs, size_t cRegs)
+{
+    PCDBGFREGDESC       pDesc = pLookupRec->pDesc;
+    PCDBGFREGSET        pSet  = pLookupRec->pSet;
+    Assert(!pLookupRec->pSubField);
+    NOREF(pUVM);
+
+    /*
+     * The register first.
+     */
+    AssertReturn(cRegs > 0, VERR_BUFFER_OVERFLOW);
+    dbgfR3RegValClear(&paRegs[0].Val);
+    paRegs[0].pszName   = pLookupRec->Core.pszString;
+    paRegs[0].enmType   = pDesc->enmType;
+    paRegs[0].u.uInfo   = 0;
+    paRegs[0].u.s.fMain = true;
+    int rc = pDesc->pfnGet(pSet->uUserArg.pv, pDesc, &paRegs[0].Val);
+    AssertRCReturn(rc, rc);
+    DBGFREGVAL const MainValue = paRegs[0].Val;
+    uint32_t iReg = 1;
+
+    /* If it's a alias we looked up we may have to do some casting and
+       restricting the number of bits included in the sub-fields. */
+    unsigned cMaxBits = sizeof(paRegs[0].Val) * 8;
+    if (pLookupRec->pAlias)
+    {
+        paRegs[0].enmType    = pLookupRec->pAlias->enmType;
+        paRegs[0].u.uInfo    = 0;
+        paRegs[0].u.s.fAlias = true;
+        if (paRegs[0].enmType != pDesc->enmType)
+        {
+            dbgfR3RegValCast(&paRegs[0].Val, pDesc->enmType, paRegs[0].enmType);
+            cMaxBits = dbgfR3RegGetBitsForValType(paRegs[0].enmType);
+        }
+
+        /* Add the main value as the 2nd entry. */
+        paRegs[iReg].pszName  = pDesc->pszName;
+        paRegs[iReg].enmType  = pDesc->enmType;
+        paRegs[iReg].Val      = MainValue;
+        paRegs[iReg].u.uInfo   = 0;
+        paRegs[iReg].u.s.fMain = true;
+        iReg++;
+    }
+
+    /*
+     * (Other) Aliases.
+     */
+    if (   (fFlags & DBGFR3REG_QUERY_EX_F_ALIASES)
+        && pDesc->paAliases)
+    {
+        PCDBGFREGALIAS const paAliases = pDesc->paAliases;
+        for (uint32_t i = 0; paAliases[i].pszName != NULL; i++)
+            if (&paAliases[i] != pLookupRec->pAlias )
+            {
+                AssertReturn(iReg < cRegs, VERR_BUFFER_OVERFLOW);
+                paRegs[iReg].pszName    = paAliases[i].pszName;
+                paRegs[iReg].enmType    = paAliases[i].enmType;
+                paRegs[iReg].u.uInfo    = 0;
+                paRegs[iReg].u.s.fAlias = true;
+                paRegs[iReg].Val        = MainValue;
+                dbgfR3RegValCast(&paRegs[iReg].Val, pDesc->enmType, paAliases[i].enmType);
+                iReg++;
+            }
+    }
+
+    /*
+     * Subfields.
+     */
+    if (   (fFlags & DBGFR3REG_QUERY_EX_F_SUBFIELDS)
+        && pDesc->paSubFields)
+    {
+        PCDBGFREGSUBFIELD const paSubFields = pDesc->paSubFields;
+        for (uint32_t i = 0; paSubFields[i].pszName != NULL; i++)
+            if (paSubFields[i].iFirstBit < cMaxBits || paSubFields[i].pfnGet)
+            {
+                AssertReturn(iReg < cRegs, VERR_BUFFER_OVERFLOW);
+                int rc2;
+                paRegs[iReg].pszName       = paSubFields[i].pszName;
+                paRegs[iReg].u.uInfo       = 0;
+                paRegs[iReg].u.s.fSubField = true;
+                paRegs[iReg].u.s.cBits     = paSubFields[i].cBits + paSubFields[i].cShift;
+                if (paSubFields[i].pfnGet)
+                {
+                    dbgfR3RegValClear(&paRegs[iReg].Val);
+                    rc2 = paSubFields[i].pfnGet(pSet->uUserArg.pv, &paSubFields[i], &paRegs[iReg].Val.u128);
+                }
+                else
+                {
+                    paRegs[iReg].Val = MainValue;
+                    rc2 = dbgfR3RegValCast(&paRegs[iReg].Val, pDesc->enmType, DBGFREGVALTYPE_U128);
+                    if (RT_SUCCESS(rc2))
+                    {
+                        RTUInt128AssignShiftLeft(&paRegs[iReg].Val.u128, -paSubFields[i].iFirstBit);
+                        RTUInt128AssignAndNFirstBits(&paRegs[iReg].Val.u128, paSubFields[i].cBits);
+                        if (paSubFields[i].cShift)
+                            RTUInt128AssignShiftLeft(&paRegs[iReg].Val.u128, paSubFields[i].cShift);
+                    }
+                }
+                if (RT_SUCCESS(rc2))
+                {
+                    unsigned const cBits = paSubFields[i].cBits + paSubFields[i].cShift;
+                    if (cBits <= 8)
+                        paRegs[iReg].enmType = DBGFREGVALTYPE_U8;
+                    else if (cBits <= 16)
+                        paRegs[iReg].enmType = DBGFREGVALTYPE_U16;
+                    else if (cBits <= 32)
+                        paRegs[iReg].enmType = DBGFREGVALTYPE_U32;
+                    else if (cBits <= 64)
+                        paRegs[iReg].enmType = DBGFREGVALTYPE_U64;
+                    else
+                        paRegs[iReg].enmType = DBGFREGVALTYPE_U128;
+                    rc2 = dbgfR3RegValCast(&paRegs[iReg].Val, DBGFREGVALTYPE_U128, paRegs[iReg].enmType);
+                }
+                if (RT_SUCCESS(rc2))
+                    iReg++;
+                else
+                    rc = rc2;
+            }
+    }
+    return rc;
+}
+
+
+/**
+ * Queries a register with aliases and/or sub-fields.
+ *
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_INVALID_VM_HANDLE
+ * @retval  VERR_INVALID_CPU_ID
+ * @retval  VERR_BUFFER_OVERFLOW w/ *pcRegs set to the required size.
+ *          No other data returned.
+ * @retval  VERR_DBGF_REGISTER_NOT_FOUND
+ * @retval  VERR_DBGF_UNSUPPORTED_CAST
+ * @retval  VINF_DBGF_TRUNCATED_REGISTER
+ * @retval  VINF_DBGF_ZERO_EXTENDED_REGISTER
+ *
+ * @param   pUVM        The user mode VM handle.
+ * @param   idDefCpu    The default target CPU ID, VMCPUID_ANY if not
+ *                      applicable.  Can be OR'ed with DBGFREG_HYPER_VMCPUID.
+ * @param   pszReg      The register that's being queried.  Except for CPU
+ *                      registers, this must be on the form "set.reg[.sub]".
+ * @param   fFlags      DBGFR3REG_QUERY_EX_F_XXX
+ * @param   paRegs
+ * @param   pcRegs      On input this is the size of the paRegs buffer.
+ *                      On successful return this is set to the number of
+ *                      registers returned.  This is set to the required number
+ *                      of register entries when VERR_BUFFER_OVERFLOW is
+ *                      returned.
+ */
+VMMR3DECL(int) DBGFR3RegNmQueryEx(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, uint32_t fFlags,
+                                  PDBGFREGENTRYNM paRegs, size_t *pcRegs)
+{
+    /*
+     * Validate input.
+     */
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn((idDefCpu & ~DBGFREG_HYPER_VMCPUID) < pUVM->cCpus || idDefCpu == VMCPUID_ANY, VERR_INVALID_CPU_ID);
+    AssertPtrReturn(pszReg, VERR_INVALID_POINTER);
+    AssertReturn(!(fFlags & ~DBGFR3REG_QUERY_EX_F_VALID_MASK), VERR_INVALID_FLAGS);
+    AssertPtrReturn(pcRegs, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(paRegs, VERR_INVALID_POINTER);
+
+    /*
+     * Resolve the register and call the getter on the relevant CPU.
+     */
+    bool fGuestRegs = true;
+    if ((idDefCpu & DBGFREG_HYPER_VMCPUID) && idDefCpu != VMCPUID_ANY)
+    {
+        fGuestRegs = false;
+        idDefCpu &= ~DBGFREG_HYPER_VMCPUID;
+    }
+    PCDBGFREGLOOKUP pLookupRec = dbgfR3RegResolve(pUVM, idDefCpu, pszReg, fGuestRegs);
+    if (pLookupRec)
+    {
+        /*
+         * Determine how many register values we'd be returning.
+         */
+        uint32_t cRegs = 1; /* we always return the direct hit. */
+
+        if (   (fFlags & DBGFR3REG_QUERY_EX_F_ALIASES)
+            && !pLookupRec->pSubField
+            && pLookupRec->pDesc->paAliases)
+        {
+            PCDBGFREGALIAS const paAliases = pLookupRec->pDesc->paAliases;
+            for (uint32_t i = 0; paAliases[i].pszName != NULL; i++)
+                cRegs++;
+        }
+        else if (pLookupRec->pAlias)
+            cRegs++;
+
+        if (   (fFlags & DBGFR3REG_QUERY_EX_F_SUBFIELDS)
+            && !pLookupRec->pSubField
+            && pLookupRec->pDesc->paSubFields)
+        {
+            unsigned const cMaxBits = !pLookupRec->pAlias ? sizeof(paRegs[0].Val) * 8
+                                    : dbgfR3RegGetBitsForValType(pLookupRec->pAlias->enmType);
+            PCDBGFREGSUBFIELD const paSubFields = pLookupRec->pDesc->paSubFields;
+            for (uint32_t i = 0; paSubFields[i].pszName != NULL; i++)
+                if (paSubFields[i].iFirstBit < cMaxBits || paSubFields[i].pfnGet)
+                    cRegs++;
+        }
+
+        /*
+         * Did the caller provide sufficient room for the register values, then
+         * retrieve the register on the specified CPU.
+         */
+        if (paRegs && *pcRegs >= cRegs)
+        {
+            *pcRegs = cRegs;
+
+            if (pLookupRec->pSet->enmType == DBGFREGSETTYPE_CPU)
+                idDefCpu = pLookupRec->pSet->uUserArg.pVCpu->idCpu;
+            else if (idDefCpu != VMCPUID_ANY)
+                idDefCpu &= ~DBGFREG_HYPER_VMCPUID;
+
+            /* If we hit a sub-field we'll just use the regular worker to get it. */
+            if (!pLookupRec->pSubField)
+                return VMR3ReqPriorityCallWaitU(pUVM, idDefCpu, (PFNRT)dbgfR3RegNmQueryExWorkerOnCpu, 5,
+                                                pUVM, pLookupRec, fFlags, paRegs, cRegs);
+            Assert(cRegs == 1);
+            paRegs[0].pszName       = pLookupRec->Core.pszString;
+            paRegs[0].enmType       = DBGFREGVALTYPE_END;
+            paRegs[0].u.uInfo       = 0;
+            paRegs[0].u.s.cBits     = pLookupRec->pSubField->cBits + pLookupRec->pSubField->cShift;
+            paRegs[0].u.s.fSubField = true;
+            dbgfR3RegValClear(&paRegs[0].Val);
+            return VMR3ReqPriorityCallWaitU(pUVM, idDefCpu, (PFNRT)dbgfR3RegNmQueryWorkerOnCpu, 5,
+                                            pUVM, pLookupRec, DBGFREGVALTYPE_END, &paRegs[0].Val, &paRegs[0].enmType);
+        }
+        *pcRegs = cRegs;
+        return VERR_BUFFER_OVERFLOW;
+    }
+    return VERR_DBGF_REGISTER_NOT_FOUND;
+
+}
+
+
 /// @todo VMMR3DECL(int) DBGFR3RegNmQueryBatch(PUVM pUVM,VMCPUID idDefCpu, DBGFREGENTRYNM paRegs, size_t cRegs);
 
 
@@ -1880,6 +2172,7 @@ static void dbgfR3RegNmQueryAllPadEntries(PDBGFREGENTRYNM paRegs, size_t cRegs, 
         {
             paRegs[iReg].pszName = NULL;
             paRegs[iReg].enmType = DBGFREGVALTYPE_END;
+            paRegs[iReg].u.uInfo = 0;
             dbgfR3RegValClear(&paRegs[iReg].Val);
             iReg++;
         }
@@ -1904,8 +2197,10 @@ static void dbgfR3RegNmQueryAllInSet(PCDBGFREGSET pSet, size_t cRegsToQuery, PDB
 
     for (size_t iReg = 0; iReg < cRegsToQuery; iReg++)
     {
-        paRegs[iReg].enmType = pSet->paDescs[iReg].enmType;
-        paRegs[iReg].pszName = pSet->paLookupRecs[iReg].Core.pszString;
+        paRegs[iReg].enmType   = pSet->paDescs[iReg].enmType;
+        paRegs[iReg].pszName   = pSet->paLookupRecs[iReg].Core.pszString;
+        paRegs[iReg].u.uInfo   = 0;
+        paRegs[iReg].u.s.fMain = true;
         dbgfR3RegValClear(&paRegs[iReg].Val);
         int rc2 = pSet->paDescs[iReg].pfnGet(pSet->uUserArg.pv, &pSet->paDescs[iReg], &paRegs[iReg].Val);
         AssertRCSuccess(rc2);
@@ -1950,33 +2245,33 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3RegNmQueryAllWorker(PVM pVM, PVMCPU pVCp
     /*
      * My guest CPU registers.
      */
-    size_t iCpuReg = pVCpu->idCpu * DBGFREG_ALL_COUNT;
+    size_t iCpuReg = pVCpu->idCpu * pUVM->dbgf.s.cPerCpuRegs;
     if (pUVCpu->dbgf.s.pGuestRegSet)
     {
         if (iCpuReg < cRegs)
-            dbgfR3RegNmQueryAllInSet(pUVCpu->dbgf.s.pGuestRegSet, DBGFREG_ALL_COUNT, &paRegs[iCpuReg], cRegs - iCpuReg);
+            dbgfR3RegNmQueryAllInSet(pUVCpu->dbgf.s.pGuestRegSet, pUVM->dbgf.s.cPerCpuRegs, &paRegs[iCpuReg], cRegs - iCpuReg);
     }
     else
-        dbgfR3RegNmQueryAllPadEntries(paRegs, cRegs, iCpuReg, DBGFREG_ALL_COUNT);
+        dbgfR3RegNmQueryAllPadEntries(paRegs, cRegs, iCpuReg, pUVM->dbgf.s.cPerCpuRegs);
 
     /*
      * My hypervisor CPU registers.
      */
-    iCpuReg = pUVM->cCpus * DBGFREG_ALL_COUNT + pUVCpu->idCpu * DBGFREG_ALL_COUNT;
+    iCpuReg = pUVM->cCpus * pUVM->dbgf.s.cPerCpuRegs + pUVCpu->idCpu * pUVM->dbgf.s.cPerCpuHyperRegs;
     if (pUVCpu->dbgf.s.pHyperRegSet)
     {
         if (iCpuReg < cRegs)
-            dbgfR3RegNmQueryAllInSet(pUVCpu->dbgf.s.pHyperRegSet, DBGFREG_ALL_COUNT, &paRegs[iCpuReg], cRegs - iCpuReg);
+            dbgfR3RegNmQueryAllInSet(pUVCpu->dbgf.s.pHyperRegSet, pUVM->dbgf.s.cPerCpuHyperRegs, &paRegs[iCpuReg], cRegs - iCpuReg);
     }
     else
-        dbgfR3RegNmQueryAllPadEntries(paRegs, cRegs, iCpuReg, DBGFREG_ALL_COUNT);
+        dbgfR3RegNmQueryAllPadEntries(paRegs, cRegs, iCpuReg, pUVM->dbgf.s.cPerCpuHyperRegs);
 
     /*
      * The primary CPU does all the other registers.
      */
     if (pUVCpu->idCpu == 0)
     {
-        pArgs->iReg = pUVM->cCpus * DBGFREG_ALL_COUNT * 2;
+        pArgs->iReg = pUVM->cCpus * (pUVM->dbgf.s.cPerCpuRegs + pUVM->dbgf.s.cPerCpuHyperRegs);
         RTStrSpaceEnumerate(&pUVM->dbgf.s.RegSetSpace, dbgfR3RegNmQueryAllEnum, pArgs);
         dbgfR3RegNmQueryAllPadEntries(paRegs, cRegs, pArgs->iReg, cRegs);
     }

@@ -1357,10 +1357,12 @@ typedef struct DBGFUSERPERVM
     /** The number of registers (aliases, sub-fields and the special CPU
      * register aliases (eg AH) are not counted). */
     uint32_t                    cRegs;
+    /** Number of registers per CPU. */
+    uint16_t                    cPerCpuRegs;
+    /** Number of hypervisor register per CPU. */
+    uint8_t                     cPerCpuHyperRegs;
     /** For early initialization by . */
     bool volatile               fRegDbInitialized;
-    /** Alignment padding. */
-    bool                        afAlignment2[3];
 
     /** Critical section protecting the Guest OS Digger data, the info handlers
      * and the plugins.  These share to give the best possible plugin unload

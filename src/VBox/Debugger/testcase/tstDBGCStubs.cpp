@@ -301,12 +301,32 @@ VMMR3DECL(int) DBGFR3RegNmQuery(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg,
     }
     return VERR_DBGF_REGISTER_NOT_FOUND;
 }
+VMMR3DECL(int) DBGFR3RegNmQueryEx(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, uint32_t fFlags,
+                                  PDBGFREGENTRYNM paRegs, size_t *pcRegs)
+{
+    return VERR_INTERNAL_ERROR;
+}
+VMMR3DECL(int) DBGFR3RegNmQueryAll(PUVM pUVM, PDBGFREGENTRYNM paRegs, size_t cRegs)
+{
+    return VERR_INTERNAL_ERROR;
+}
+VMMR3DECL(int) DBGFR3RegNmQueryAllCount(PUVM pUVM, size_t *pcRegs)
+{
+    *pcRegs = 99;
+    return VINF_SUCCESS;
+}
 VMMR3DECL(int) DBGFR3RegPrintf(PUVM pUVM, VMCPUID idCpu, char *pszBuf, size_t cbBuf, const char *pszFormat, ...)
 {
     return VERR_INTERNAL_ERROR;
 }
 VMMDECL(ssize_t) DBGFR3RegFormatValue(char *pszBuf, size_t cbBuf, PCDBGFREGVAL pValue, DBGFREGVALTYPE enmType, bool fSpecial)
 {
+    return VERR_INTERNAL_ERROR;
+}
+VMMDECL(ssize_t) DBGFR3RegFormatValueEx(char *pszBuf, size_t cbBuf, PCDBGFREGVAL pValue, DBGFREGVALTYPE enmType,
+                                        unsigned uBase, signed int cchWidth, signed int cchPrecision, uint32_t fFlags)
+{
+    RT_NOREF(pszBuf, cbBuf, pValue, enmType, uBase, cchWidth, cchPrecision, fFlags);
     return VERR_INTERNAL_ERROR;
 }
 VMMR3DECL(int) DBGFR3RegNmSet(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, PCDBGFREGVAL pValue, DBGFREGVALTYPE enmType)
