@@ -317,6 +317,7 @@ HRESULT Unattended::initUnattended(VirtualBox *aParent)
         mStrPassword                = "changeme";
         mfInstallGuestAdditions     = false;
         mfInstallTestExecService    = false;
+        mfInstallUserPayload        = false;
         midxImage                   = 1;
 
         HRESULT hrc = mParent->i_getSystemProperties()->i_getDefaultAdditionsISO(mStrAdditionsIsoPath);
@@ -2569,6 +2570,9 @@ HRESULT Unattended::prepare()
     if (mfInstallTestExecService && !RTFileExists(mStrValidationKitIsoPath.c_str()))
         return setErrorBoth(E_FAIL, VERR_FILE_NOT_FOUND, tr("Could not locate the validation kit ISO file '%s'"),
                             mStrValidationKitIsoPath.c_str());
+    if (mfInstallUserPayload && !RTFileExists(mStrUserPayloadIsoPath.c_str()))
+        return setErrorBoth(E_FAIL, VERR_FILE_NOT_FOUND, tr("Could not locate the User Payload ISO file '%s'"),
+                            mStrUserPayloadIsoPath.c_str());
     if (mStrScriptTemplatePath.isNotEmpty() && !RTFileExists(mStrScriptTemplatePath.c_str()))
         return setErrorBoth(E_FAIL, VERR_FILE_NOT_FOUND, tr("Could not locate unattended installation script template '%s'"),
                             mStrScriptTemplatePath.c_str());
@@ -3524,6 +3528,36 @@ HRESULT Unattended::setInstallTestExecService(BOOL aInstallTestExecService)
     return S_OK;
 }
 
+HRESULT Unattended::getUserPayloadIsoPath(com::Utf8Str &aUserPayloadIsoPath)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    aUserPayloadIsoPath = mStrUserPayloadIsoPath;
+    return S_OK;
+}
+
+HRESULT Unattended::setUserPayloadIsoPath(const com::Utf8Str &aUserPayloadIsoPath)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AssertReturn(mpInstaller == NULL, setErrorBoth(E_FAIL, VERR_WRONG_ORDER, tr("Cannot change after prepare() has been called")));
+    mStrUserPayloadIsoPath = aUserPayloadIsoPath;
+    return S_OK;
+}
+
+HRESULT Unattended::getInstallUserPayload(BOOL *aInstallUserPayload)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    *aInstallUserPayload = mfInstallUserPayload;
+    return S_OK;
+}
+
+HRESULT Unattended::setInstallUserPayload(BOOL aInstallUserPayload)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AssertReturn(mpInstaller == NULL, setErrorBoth(E_FAIL, VERR_WRONG_ORDER, tr("Cannot change after prepare() has been called")));
+    mfInstallUserPayload = aInstallUserPayload != FALSE;
+    return S_OK;
+}
+
 HRESULT Unattended::getTimeZone(com::Utf8Str &aTimeZone)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -4095,6 +4129,18 @@ bool           Unattended::i_getInstallTestExecService() const
 {
     Assert(isReadLockedOnCurrentThread());
     return mfInstallTestExecService;
+}
+
+Utf8Str const &Unattended::i_getUserPayloadIsoPath() const
+{
+    Assert(isReadLockedOnCurrentThread());
+    return mStrUserPayloadIsoPath;
+}
+
+bool           Unattended::i_getInstallUserPayload() const
+{
+    Assert(isReadLockedOnCurrentThread());
+    return mfInstallUserPayload;
 }
 
 Utf8Str const &Unattended::i_getTimeZone() const

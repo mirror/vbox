@@ -4961,7 +4961,7 @@
 
   <interface
     name="IUnattended" extends="$unknown"
-    uuid="6f89464f-7773-436a-a4df-592e4e537fa0"
+    uuid="d1833215-78c9-4b42-9c2a-f44ef7b2d01f"
     wsmap="managed"
     rest="managed"
     reservedMethods="4" reservedAttributes="16"
@@ -5068,6 +5068,22 @@
 
         The TXS binary will be taken from the ISO indicated by
         <link to="IUnattended::validationKitIsoPath"/>.
+      </desc>
+    </attribute>
+
+    <attribute name="userPayloadIsoPath" type="wstring">
+      <desc>
+        User Payload ISO image path.  This is used when
+        <link to="IUnattended::installUserPayload"/> is set to true.
+      </desc>
+    </attribute>
+
+    <attribute name="installUserPayload" type="boolean">
+      <desc>
+        Indicates whether the User Payload should be installed or not.
+
+        The User Payload will be taken from the ISO indicated by
+        <link to="IUnattended::userPayloadIsoPath"/>.
       </desc>
     </attribute>
 

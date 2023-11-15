@@ -249,6 +249,30 @@ HRESULT Unattended::setInstallTestExecService(BOOL aInstallTestExecService)
     return E_NOTIMPL;
 }
 
+HRESULT Unattended::getUserPayloadIsoPath(com::Utf8Str &userPayloadIsoPath)
+{
+    RT_NOREF(userPayloadIsoPath);
+    return E_NOTIMPL;
+}
+
+HRESULT Unattended::setUserPayloadIsoPath(const com::Utf8Str &userPayloadIsoPath)
+{
+    RT_NOREF(userPayloadIsoPath);
+    return E_NOTIMPL;
+}
+
+HRESULT Unattended::getInstallUserPayload(BOOL *installUserPayload)
+{
+    RT_NOREF(installUserPayload);
+    return E_NOTIMPL;
+}
+
+HRESULT Unattended::setInstallUserPayload(BOOL installUserPayload)
+{
+    RT_NOREF(installUserPayload);
+    return E_NOTIMPL;
+}
+
 HRESULT Unattended::getTimeZone(com::Utf8Str &aTimeZone)
 {
     RT_NOREF(aTimeZone);

@@ -341,7 +341,8 @@ protected:
      * Adds files to the .viso-file vectors.
      *
      * The base class implementation adds the script from mAlg, additions ISO
-     * content to '/vboxadditions', and validation kit ISO to '/vboxvalidationkit'.
+     * content to '/vboxadditions', validation kit ISO to '/vboxvalidationkit',
+     * and user payload ISO to '/vboxuserpayload'.
      *
      * @returns COM status code.
      * @param   rVecArgs        The ISO maker argument list that will be turned into

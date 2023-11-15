@@ -88,6 +88,8 @@ public:
     bool           i_getInstallGuestAdditions() const;
     Utf8Str const &i_getValidationKitIsoPath() const;
     bool           i_getInstallTestExecService() const;
+    Utf8Str const &i_getUserPayloadIsoPath() const;
+    bool           i_getInstallUserPayload() const;
     Utf8Str const &i_getTimeZone() const;
     PCRTTIMEZONEINFO i_getTimeZoneInfo() const;
     Utf8Str const &i_getLocale() const;
@@ -134,6 +136,8 @@ private:
     bool            mfInstallGuestAdditions;
     bool            mfInstallTestExecService;
     Utf8Str         mStrValidationKitIsoPath;
+    Utf8Str         mStrUserPayloadIsoPath;
+    bool            mfInstallUserPayload;
     Utf8Str         mStrTimeZone;
     PCRTTIMEZONEINFO mpTimeZoneInfo;
     Utf8Str         mStrLocale;
@@ -208,6 +212,10 @@ private:
     HRESULT setValidationKitIsoPath(const com::Utf8Str &aValidationKitIsoPath);
     HRESULT getInstallTestExecService(BOOL *aInstallTestExecService);
     HRESULT setInstallTestExecService(BOOL aInstallTestExecService);
+    HRESULT getUserPayloadIsoPath(com::Utf8Str &aUserPayloadIsoPath);
+    HRESULT setUserPayloadIsoPath(const com::Utf8Str &aUserPayloadIsoPath);
+    HRESULT getInstallUserPayload(BOOL *aInstallUserPayload);
+    HRESULT setInstallUserPayload(BOOL aInstallUserPayload);
     HRESULT getTimeZone(com::Utf8Str &aTimezone);
     HRESULT setTimeZone(const com::Utf8Str &aTimezone);
     HRESULT getLocale(com::Utf8Str &aLocale);
