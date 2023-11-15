@@ -35,6 +35,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <iprt/initterm.h>
+
 #include "nsXPCOM.h"
 #include "nsXPCOMPrivate.h"
 #include "nscore.h"
@@ -469,6 +471,9 @@ nsresult NS_COM NS_InitXPCOM2(nsIServiceManager* *result,
                               nsIDirectoryServiceProvider* appFileLocationProvider)
 {
     nsresult rv = NS_OK;
+
+    /* Make sure IPRT is initialized. */
+    RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
 
      // We are not shutting down
     gXPCOMShuttingDown = PR_FALSE;
