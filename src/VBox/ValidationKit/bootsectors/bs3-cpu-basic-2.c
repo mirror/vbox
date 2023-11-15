@@ -45,6 +45,7 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuBasic2_Lea);
 BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_TssGateEsp);
 BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_RaiseXcpt1);
 
@@ -68,6 +69,7 @@ BS3_DECL_CALLBACK(void)     bs3CpuBasic2_Do32BitTests_pe32();
 *********************************************************************************************************************************/
 static const BS3TESTMODEENTRY g_aModeTest[] =
 {
+    BS3TESTMODEENTRY_CMN("lea", bs3CpuBasic2_Lea),
     BS3TESTMODEENTRY_MODE("tss / gate / esp", bs3CpuBasic2_TssGateEsp),
 #if 0 /** @todo The 'raise xcpt \#1' test doesn't work in IEM! */
     BS3TESTMODEENTRY_MODE("raise xcpt #1", bs3CpuBasic2_RaiseXcpt1),
