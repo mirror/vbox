@@ -221,10 +221,22 @@ void UIToolsModel::setCurrentItem(UIToolsItem *pItem)
             default: break;
         }
 
+        /* Load last tool types: */
+        UIToolType enmTypeGlobal, enmTypeMachine;
+        loadLastToolTypes(enmTypeGlobal, enmTypeMachine);
+
+        /* Depending on tool class: */
+        switch (m_enmCurrentClass)
+        {
+            case UIToolClass_Global: enmTypeGlobal = m_pLastItemGlobal->itemType(); break;
+            case UIToolClass_Machine: enmTypeMachine = m_pLastItemMachine->itemType(); break;
+            default: break;
+        }
+
         /* Save selected items data: */
-        const QList<UIToolType> currentTypes = QList<UIToolType>() << m_pLastItemGlobal->itemType() << m_pLastItemMachine->itemType();
+        const QList<UIToolType> currentTypes = QList<UIToolType>() << enmTypeGlobal << enmTypeMachine;
         LogRel2(("GUI: UIToolsModel: Saving tool items as: Global=%d, Machine=%d\n",
-                 (int)m_pLastItemGlobal->itemType(), (int)m_pLastItemMachine->itemType()));
+                 (int)enmTypeGlobal, (int)enmTypeMachine));
         gEDataManager->setToolsPaneLastItemsChosen(currentTypes);
     }
     /* Otherwise reset current item: */
