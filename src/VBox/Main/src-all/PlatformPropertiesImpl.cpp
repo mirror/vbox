@@ -858,6 +858,48 @@ HRESULT PlatformProperties::getSupportedAudioControllerTypes(std::vector<AudioCo
     return S_OK;
 }
 
+HRESULT PlatformProperties::getSupportedBootDevices(std::vector<DeviceType_T> &aSupportedBootDevices)
+{
+    /* Note: This function returns the supported boot devices for the given architecture,
+             in the default order, to keep it simple for the caller. */
+
+    switch (mPlatformArchitecture)
+    {
+        case PlatformArchitecture_x86:
+        {
+            static const DeviceType_T aBootDevices[] =
+            {
+                DeviceType_Floppy,
+                DeviceType_DVD,
+                DeviceType_HardDisk,
+                DeviceType_Network
+            };
+            aSupportedBootDevices.assign(aBootDevices,
+                                         aBootDevices + RT_ELEMENTS(aBootDevices));
+            break;
+        }
+
+        case PlatformArchitecture_ARM:
+        {
+            static const DeviceType_T aBootDevices[] =
+            {
+                DeviceType_DVD,
+                DeviceType_HardDisk
+                /** @todo BUGBUG We need to test network booting via PXE on ARM first! */
+            };
+            aSupportedBootDevices.assign(aBootDevices,
+                                         aBootDevices + RT_ELEMENTS(aBootDevices));
+            break;
+        }
+
+        default:
+            AssertFailedStmt(aSupportedBootDevices.clear());
+            break;
+    }
+
+    return S_OK;
+}
+
 HRESULT PlatformProperties::getSupportedStorageBuses(std::vector<StorageBus_T> &aSupportedStorageBuses)
 {
     switch (mPlatformArchitecture)

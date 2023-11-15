@@ -12722,7 +12722,7 @@
   <interface
     name="IPlatformProperties"
     extends="$unknown"
-    uuid="25cf8416-1e5b-4d01-ae9d-1dc34ef737c8"
+    uuid="45def725-ab32-4a0a-a85e-fae56249d547"
     wsmap="managed"
     rest="managed"
     reservedMethods="4" reservedAttributes="16"
@@ -12840,6 +12840,15 @@
       <desc>
         Returns an array of officially supported values for enum <link to="AudioControllerType"/>,
         in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedBootDevices" type="DeviceType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported boot devices for enum <link to="DeviceType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+
+        The returned array also defines the default boot device order for all supported devices.
       </desc>
     </attribute>
 
