@@ -918,27 +918,39 @@ void UIVirtualBoxManager::sltHandleCloudUpdateProgressChange()
     updateActionsAppearance();
 }
 
-void UIVirtualBoxManager::sltHandleToolTypeChange()
+void UIVirtualBoxManager::sltHandleGlobalToolTypeChange()
 {
     /* Update actions stuff: */
     updateActionsVisibility();
     updateActionsAppearance();
 
     /* Make sure separate dialog closed when corresponding tool opened: */
-    switch (m_pWidget->toolsType())
+    switch (m_pWidget->toolsTypeGlobal())
     {
         case UIToolType_Extensions:
         case UIToolType_Media:
         case UIToolType_Network:
         case UIToolType_Cloud:
         case UIToolType_CloudConsole:
-            sltCloseManagerWindow(m_pWidget->toolsType());
+            sltCloseManagerWindow(m_pWidget->toolsTypeGlobal());
             break;
+        default:
+            break;
+    }
+}
+
+void UIVirtualBoxManager::sltHandleMachineToolTypeChange()
+{
+    /* Update actions stuff: */
+    updateActionsVisibility();
+    updateActionsAppearance();
+
+    /* Make sure separate dialog closed when corresponding tool opened: */
+    switch (m_pWidget->toolsTypeMachine())
+    {
         case UIToolType_Logs:
             sltCloseLogViewerWindow();
             break;
-        case UIToolType_VMActivity:
-        case UIToolType_FileManager:
         default:
             break;
     }
@@ -1001,7 +1013,7 @@ void UIVirtualBoxManager::sltOpenManagerWindow(UIToolType enmType /* = UIToolTyp
     /* First check if instance of widget opened the embedded way: */
     if (m_pWidget->isGlobalToolOpened(enmType))
     {
-        m_pWidget->setToolsType(UIToolType_Welcome);
+        m_pWidget->setToolsTypeGlobal(UIToolType_Welcome);
         m_pWidget->closeGlobalTool(enmType);
     }
 
@@ -2173,14 +2185,14 @@ void UIVirtualBoxManager::sltPerformShowGlobalTool(QAction *pAction)
     AssertPtrReturnVoid(pAction);
     AssertPtrReturnVoid(m_pWidget);
     m_pWidget->switchToGlobalItem();
-    m_pWidget->setToolsType(pAction->property("UIToolType").value<UIToolType>());
+    m_pWidget->setToolsTypeGlobal(pAction->property("UIToolType").value<UIToolType>());
 }
 
 void UIVirtualBoxManager::sltPerformShowMachineTool(QAction *pAction)
 {
     AssertPtrReturnVoid(pAction);
     AssertPtrReturnVoid(m_pWidget);
-    m_pWidget->setToolsType(pAction->property("UIToolType").value<UIToolType>());
+    m_pWidget->setToolsTypeMachine(pAction->property("UIToolType").value<UIToolType>());
 }
 
 void UIVirtualBoxManager::sltOpenLogViewerWindow()
@@ -2192,7 +2204,7 @@ void UIVirtualBoxManager::sltOpenLogViewerWindow()
     /* First check if instance of widget opened the embedded way: */
     if (m_pWidget->isMachineToolOpened(UIToolType_Logs))
     {
-        m_pWidget->setToolsType(UIToolType_Details);
+        m_pWidget->setToolsTypeMachine(UIToolType_Details);
         m_pWidget->closeMachineTool(UIToolType_Logs);
     }
 
@@ -2477,8 +2489,10 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltPerformStartOrShowMachine);
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigCloudMachineStateChange,
             this, &UIVirtualBoxManager::sltHandleCloudMachineStateChange);
-    connect(m_pWidget, &UIVirtualBoxManagerWidget::sigToolTypeChange,
-            this, &UIVirtualBoxManager::sltHandleToolTypeChange);
+    connect(m_pWidget, &UIVirtualBoxManagerWidget::sigToolTypeChangeGlobal,
+            this, &UIVirtualBoxManager::sltHandleGlobalToolTypeChange);
+    connect(m_pWidget, &UIVirtualBoxManagerWidget::sigToolTypeChangeMachine,
+            this, &UIVirtualBoxManager::sltHandleMachineToolTypeChange);
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigCreateMedium,
             this, &UIVirtualBoxManager::sltCreateMedium);
     connect(m_pWidget, &UIVirtualBoxManagerWidget::sigCopyMedium,

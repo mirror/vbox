@@ -154,8 +154,10 @@ private slots:
         /** Handles signal about cloud update progress change. */
         void sltHandleCloudUpdateProgressChange();
 
-        /** Handles signal about Tool type change.  */
-        void sltHandleToolTypeChange();
+        /** Handles signal about Global Tool type change.  */
+        void sltHandleGlobalToolTypeChange();
+        /** Handles signal about Machine Tool type change.  */
+        void sltHandleMachineToolTypeChange();
 
         /** Handles create medium request. */
         void sltCreateMedium();
