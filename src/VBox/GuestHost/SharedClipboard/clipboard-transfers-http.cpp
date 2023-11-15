@@ -1170,10 +1170,9 @@ char *ShClTransferHttpServerGetUrlA(PSHCLHTTPSERVER pSrv, SHCLTRANSFERID idTrans
         AssertReturn(RTStrNLen(pSrvTx->szPathVirtual, RTPATH_MAX), NULL);
         pszUrl = RTStrAPrintf2("%s:%RU16%s/%s", shClTransferHttpServerGetHost(pSrv), pSrv->uPort, pSrvTx->szPathVirtual, pEntry->pszName);
         AssertPtr(pszUrl);
-
-        shClTransferHttpServerUnlock(pSrv);
     }
 
+    shClTransferHttpServerUnlock(pSrv);
     return pszUrl;
 }
 
