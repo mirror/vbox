@@ -33,6 +33,7 @@
 #include "UIChooser.h"
 #include "UIChooserModel.h"
 #include "UIChooserView.h"
+#include "UIVirtualMachineItem.h"
 
 
 UIChooser::UIChooser(QWidget *pParent, UIActionPool *pActionPool)
@@ -211,11 +212,11 @@ void UIChooser::setGlobalItemHeightHint(int iHeight)
     model()->setGlobalItemHeightHint(iHeight);
 }
 
-void UIChooser::sltToolMenuRequested(UIToolClass enmClass, const QPoint &position)
+void UIChooser::sltToolMenuRequested(const QPoint &position, UIVirtualMachineItem *pItem)
 {
     /* Translate scene coordinates to global one: */
     AssertPtrReturnVoid(view());
-    emit sigToolMenuRequested(enmClass, mapToGlobal(view()->mapFromScene(position)));
+    emit sigToolMenuRequested(mapToGlobal(view()->mapFromScene(position)), pItem);
 }
 
 void UIChooser::prepare()

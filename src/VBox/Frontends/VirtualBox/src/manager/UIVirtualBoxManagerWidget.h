@@ -302,8 +302,8 @@ private slots:
 
     /** @name Tools pane stuff.
       * @{ */
-        /** Handles tool menu request. */
-        void sltHandleToolMenuRequested(UIToolClass enmClass, const QPoint &position);
+        /** Handles tool popup-menu request. */
+        void sltHandleToolMenuRequested(const QPoint &position, UIVirtualMachineItem *pItem);
 
         /** Handles signal about Tools-pane index change. */
         void sltHandleToolsPaneIndexChange();
@@ -340,8 +340,8 @@ private:
 
     /** @name Tools / Common stuff.
       * @{ */
-        /** Updates Machine tools menu. */
-        void updateToolsMenuMachine();
+        /** Updates Machine tools menu for @a pItem specified. */
+        void updateToolsMenuMachine(UIVirtualMachineItem *pItem);
 
         /** Recaches current item information.
           * @param  fDontRaiseErrorPane  Brings whether we should not raise error-pane. */

@@ -534,17 +534,13 @@ void UIVirtualBoxManagerWidget::sltHandleCloudMachineStateChange(const QUuid &uI
     }
 }
 
-void UIVirtualBoxManagerWidget::sltHandleToolMenuRequested(UIToolClass enmClass, const QPoint &position)
+void UIVirtualBoxManagerWidget::sltHandleToolMenuRequested(const QPoint &position, UIVirtualMachineItem *pItem)
 {
-    /* Determine tools menu: */
-    UITools *pMenu = 0;
-    switch (enmClass)
-    {
-        case UIToolClass_Global: pMenu = m_pMenuToolsGlobal; break;
-        case UIToolClass_Machine: pMenu = m_pMenuToolsMachine; updateToolsMenuMachine(); break;
-        default: break;
-    }
+    /* Update tools menu beforehand: */
+    UITools *pMenu = pItem ? m_pMenuToolsMachine : m_pMenuToolsGlobal;
     AssertPtrReturnVoid(pMenu);
+    if (pItem)
+        updateToolsMenuMachine(pItem);
 
     /* Compose popup-menu geometry first of all: */
     QRect ourGeo = QRect(position, pMenu->minimumSizeHint());
@@ -1116,10 +1112,9 @@ void UIVirtualBoxManagerWidget::cleanup()
     cleanupWidgets();
 }
 
-void UIVirtualBoxManagerWidget::updateToolsMenuMachine()
+void UIVirtualBoxManagerWidget::updateToolsMenuMachine(UIVirtualMachineItem *pItem)
 {
-    /* Get current item: */
-    UIVirtualMachineItem *pItem = currentItem();
+    /* Get current item state: */
     const bool fCurrentItemIsOk = pItem && pItem->accessible();
 
     /* Update machine tools restrictions: */
