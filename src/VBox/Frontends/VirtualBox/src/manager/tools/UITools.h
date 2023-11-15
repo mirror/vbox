@@ -65,8 +65,9 @@ signals:
 
 public:
 
-    /** Constructs Tools-pane passing @a pParent to the base-class. */
-    UITools(UIVirtualBoxManagerWidget *pParent = 0);
+    /** Constructs Tools-pane passing @a pParent to the base-class.
+      * @param  Brings the tools class, it will be fixed one. */
+    UITools(UIToolClass enmClass, UIVirtualBoxManagerWidget *pParent = 0);
 
     /** @name General stuff.
       * @{ */
@@ -81,20 +82,10 @@ public:
         /** Return the Tools-view instance. */
         UIToolsView *view() const { return m_pToolsView; }
 
-        /** Defines current tools @a enmClass. */
-        void setToolsClass(UIToolClass enmClass);
-        /** Returns current tools class. */
-        UIToolClass toolsClass() const;
-
         /** Defines current tools @a enmType. */
         void setToolsType(UIToolType enmType);
         /** Returns current tools type. */
         UIToolType toolsType() const;
-
-        /** Returns last selected global tool. */
-        UIToolType lastSelectedToolGlobal() const;
-        /** Returns last selected machine tool. */
-        UIToolType lastSelectedToolMachine() const;
 
         /** Defines whether certain @a enmClass of tools is @a fEnabled.*/
         void setToolClassEnabled(UIToolClass enmClass, bool fEnabled);
@@ -133,6 +124,9 @@ private:
 
     /** @name General stuff.
       * @{ */
+        /** Holds the tools class. */
+        const UIToolClass  m_enmClass;
+
         /** Holds the manager-widget reference. */
         UIVirtualBoxManagerWidget *m_pManagerWidget;
 

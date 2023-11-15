@@ -86,8 +86,9 @@ signals:
 
 public:
 
-    /** Constructs Tools-model passing @a pParent to the base-class. */
-    UIToolsModel(UITools *pParent);
+    /** Constructs Tools-model passing @a pParent to the base-class.
+      * @param  Brings the tools class, it will be fixed one. */
+    UIToolsModel(UIToolClass enmClass, UITools *pParent);
     /** Destructs Tools-model. */
     virtual ~UIToolsModel() RT_OVERRIDE;
 
@@ -108,20 +109,10 @@ public:
         /** Returns item at @a position, taking into account possible @a deviceTransform. */
         QGraphicsItem *itemAt(const QPointF &position, const QTransform &deviceTransform = QTransform()) const;
 
-        /** Defines current tools @a enmClass. */
-        void setToolsClass(UIToolClass enmClass);
-        /** Returns current tools class. */
-        UIToolClass toolsClass() const;
-
         /** Defines current tools @a enmType. */
         void setToolsType(UIToolType enmType);
         /** Returns current tools type. */
         UIToolType toolsType() const;
-
-        /** Returns last selected global tool. */
-        UIToolType lastSelectedToolGlobal() const;
-        /** Returns last selected machine tool. */
-        UIToolType lastSelectedToolMachine() const;
 
         /** Defines whether certain @a enmClass of tools is @a fEnabled.*/
         void setToolClassEnabled(UIToolClass enmClass, bool fEnabled);
@@ -258,6 +249,9 @@ private:
 
     /** @name General stuff.
       * @{ */
+        /** Holds the tools class. */
+        const UIToolClass  m_enmClass;
+
         /** Holds the Tools reference. */
         UITools *m_pTools;
 
@@ -268,9 +262,6 @@ private:
         UIToolsHandlerMouse    *m_pMouseHandler;
         /** Holds the keyboard handler instance. */
         UIToolsHandlerKeyboard *m_pKeyboardHandler;
-
-        /** Holds current tools class. */
-        UIToolClass  m_enmCurrentClass;
 
         /** Holds whether tools of particular class are enabled. */
         QMap<UIToolClass, bool>  m_enabledToolClasses;
@@ -297,11 +288,6 @@ private:
       * @{ */
         /** Holds the navigation list. */
         QList<UIToolsItem*>  m_navigationList;
-
-        /** Holds the last chosen navigation item of global class. */
-        QPointer<UIToolsItem> m_pLastItemGlobal;
-        /** Holds the last chosen navigation item of machine class. */
-        QPointer<UIToolsItem> m_pLastItemMachine;
     /** @} */
 };
 

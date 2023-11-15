@@ -473,7 +473,6 @@ void UIVirtualBoxManagerWidget::sltHandleSlidingAnimationComplete(SlidingDirecti
     {
         case SlidingDirection_Forward:
         {
-            m_pMenuToolsMachine->setToolsClass(UIToolClass_Machine);
             m_pStackedWidget->setCurrentWidget(m_pPaneToolsMachine);
             m_pPaneToolsGlobal->setActive(false);
             m_pPaneToolsMachine->setActive(true);
@@ -481,7 +480,6 @@ void UIVirtualBoxManagerWidget::sltHandleSlidingAnimationComplete(SlidingDirecti
         }
         case SlidingDirection_Reverse:
         {
-            m_pMenuToolsGlobal->setToolsClass(UIToolClass_Global);
             m_pStackedWidget->setCurrentWidget(m_pPaneToolsGlobal);
             m_pPaneToolsMachine->setActive(false);
             m_pPaneToolsGlobal->setActive(true);
@@ -766,13 +764,9 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
         }
 
         /* Create Global Tools-menu: */
-        m_pMenuToolsGlobal = new UITools(this);
-        if (m_pMenuToolsGlobal)
-            m_pMenuToolsGlobal->setToolsClass(UIToolClass_Global);
+        m_pMenuToolsGlobal = new UITools(UIToolClass_Global, this);
         /* Create Machine Tools-menu: */
-        m_pMenuToolsMachine = new UITools(this);
-        if (m_pMenuToolsMachine)
-            m_pMenuToolsMachine->setToolsClass(UIToolClass_Machine);
+        m_pMenuToolsMachine = new UITools(UIToolClass_Machine, this);
     }
 
     /* Create notification-center: */
@@ -858,8 +852,8 @@ void UIVirtualBoxManagerWidget::loadSettings()
     }
 
     /* Open tools last chosen in Tools-pane: */
-    switchToGlobalTool(m_pMenuToolsGlobal->lastSelectedToolGlobal());
-    switchToMachineTool(m_pMenuToolsMachine->lastSelectedToolMachine());
+    switchToGlobalTool(m_pMenuToolsGlobal->toolsType());
+    switchToMachineTool(m_pMenuToolsMachine->toolsType());
 }
 
 void UIVirtualBoxManagerWidget::updateToolbar()

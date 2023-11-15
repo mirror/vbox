@@ -36,8 +36,9 @@
 #include "UIVirtualBoxManagerWidget.h"
 
 
-UITools::UITools(UIVirtualBoxManagerWidget *pParent /* = 0 */)
+UITools::UITools(UIToolClass enmClass, UIVirtualBoxManagerWidget *pParent /* = 0 */)
     : QWidget(pParent, Qt::Popup)
+    , m_enmClass(enmClass)
     , m_pManagerWidget(pParent)
     , m_pMainLayout(0)
     , m_pToolsModel(0)
@@ -51,16 +52,6 @@ UIActionPool *UITools::actionPool() const
     return managerWidget()->actionPool();
 }
 
-void UITools::setToolsClass(UIToolClass enmClass)
-{
-    m_pToolsModel->setToolsClass(enmClass);
-}
-
-UIToolClass UITools::toolsClass() const
-{
-    return m_pToolsModel->toolsClass();
-}
-
 void UITools::setToolsType(UIToolType enmType)
 {
     m_pToolsModel->setToolsType(enmType);
@@ -69,16 +60,6 @@ void UITools::setToolsType(UIToolType enmType)
 UIToolType UITools::toolsType() const
 {
     return m_pToolsModel->toolsType();
-}
-
-UIToolType UITools::lastSelectedToolGlobal() const
-{
-    return m_pToolsModel->lastSelectedToolGlobal();
-}
-
-UIToolType UITools::lastSelectedToolMachine() const
-{
-    return m_pToolsModel->lastSelectedToolMachine();
 }
 
 void UITools::setToolClassEnabled(UIToolClass enmClass, bool fEnabled)
@@ -136,7 +117,7 @@ void UITools::prepareContents()
 void UITools::prepareModel()
 {
     /* Prepare model: */
-    m_pToolsModel = new UIToolsModel(this);
+    m_pToolsModel = new UIToolsModel(m_enmClass, this);
     if (m_pToolsModel)
         prepareView();
 }
