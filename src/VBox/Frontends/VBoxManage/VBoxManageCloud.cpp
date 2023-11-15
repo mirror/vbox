@@ -1225,7 +1225,7 @@ static RTEXITCODE cloudInstanceMetricList(HandlerArg *a, int iFirst, PCLOUDCOMMO
     CHECK_PROGRESS_ERROR_RET(progress, (Cloud::tr("Reading the cloud machines list failed")), RTEXITCODE_FAILURE);
 
     com::SafeIfaceArray<ICloudMachine> aMachines;
-    CHECK_ERROR2_RET(hrc, oCloudClient, 
+    CHECK_ERROR2_RET(hrc, oCloudClient,
                      COMGETTER(CloudMachineList)(ComSafeArrayAsOutParam(aMachines)),
                      RTEXITCODE_FAILURE);
 
@@ -1261,7 +1261,7 @@ static RTEXITCODE cloudInstanceMetricList(HandlerArg *a, int iFirst, PCLOUDCOMMO
     if (bstrFoundMachineVBoxId.isEmpty())
     {
         RTPrintf("The passed cloud instance Id \'%s\' WASN'T found among the cloud machines "
-                 "of user \'%s\' registered with VirtualBox\n", 
+                 "of user \'%s\' registered with VirtualBox\n",
                  strInstanceId.c_str(), pCommonOpts->profile.pszProfileName);
         return RTEXITCODE_FAILURE;
     }
@@ -1480,7 +1480,7 @@ static RTEXITCODE cloudInstanceMetricData(HandlerArg *a, int iFirst, PCLOUDCOMMO
     if (bstrFoundMachineVBoxId.isEmpty())
     {
         RTPrintf("The passed cloud instance Id \'%s\' WASN'T found among the cloud machines "
-                 "of user \'%s\' registered with VirtualBox\n", 
+                 "of user \'%s\' registered with VirtualBox\n",
                  strInstanceId.c_str(), pCommonOpts->profile.pszProfileName);
         return RTEXITCODE_FAILURE;
     }
