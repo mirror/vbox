@@ -722,8 +722,12 @@ class BaseTestVm(object):
         if not oTestDrv.isHostCpuAmd():
             return False;
         try:
-            (uMaxExt, _, _, _) = oTestDrv.oVBox.host.getProcessorCPUIDLeaf(0, 0x80000000, 0);
-            (uFamilyModel, _, _, _) = oTestDrv.oVBox.host.getProcessorCPUIDLeaf(0, 0x80000001, 0);
+            if self.fpApiVer >= 7.1:
+                (uMaxExt, _, _, _) = oTestDrv.oVBox.host.x86.getProcessorCPUIDLeaf(0, 0x80000000, 0);
+                (uFamilyModel, _, _, _) = oTestDrv.oVBox.host.x86.getProcessorCPUIDLeaf(0, 0x80000001, 0);
+            else:
+                (uMaxExt, _, _, _) = oTestDrv.oVBox.host.getProcessorCPUIDLeaf(0, 0x80000000, 0);
+                (uFamilyModel, _, _, _) = oTestDrv.oVBox.host.getProcessorCPUIDLeaf(0, 0x80000001, 0);
         except:
             reporter.logXcpt();
             return False;
@@ -1430,8 +1434,12 @@ class TestVm(object):
         if not oTestDrv.isHostCpuAmd():
             return False;
         try:
-            (uMaxExt, _, _, _) = oTestDrv.oVBox.host.getProcessorCPUIDLeaf(0, 0x80000000, 0);
-            (uFamilyModel, _, _, _) = oTestDrv.oVBox.host.getProcessorCPUIDLeaf(0, 0x80000001, 0);
+            if self.fpApiVer >= 7.1:
+                (uMaxExt, _, _, _) = oTestDrv.oVBox.host.x86.getProcessorCPUIDLeaf(0, 0x80000000, 0);
+                (uFamilyModel, _, _, _) = oTestDrv.oVBox.host.x86.getProcessorCPUIDLeaf(0, 0x80000001, 0);
+            else:
+                (uMaxExt, _, _, _) = oTestDrv.oVBox.host.getProcessorCPUIDLeaf(0, 0x80000000, 0);
+                (uFamilyModel, _, _, _) = oTestDrv.oVBox.host.getProcessorCPUIDLeaf(0, 0x80000001, 0);
         except:
             reporter.logXcpt();
             return False;

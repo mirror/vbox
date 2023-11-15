@@ -3842,7 +3842,10 @@ class TestDriver(base.TestDriver):                                              
         if not self.isHostCpuIntel(fQuiet):
             return False;
 
-        (uFamilyModel, _, _, _) = self.oVBox.host.getProcessorCPUIDLeaf(0, 0x1, 0);
+        if self.fpApiVer >= 7.1:
+            (uFamilyModel, _, _, _) = self.oVBox.host.x86.getProcessorCPUIDLeaf(0, 0x1, 0);
+        else:
+            (uFamilyModel, _, _, _) = self.oVBox.host.getProcessorCPUIDLeaf(0, 0x1, 0);
         return ((uFamilyModel >> 8) & 0xf) == 0xf;
 
     def hasRawModeSupport(self, fQuiet = False):
