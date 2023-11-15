@@ -722,7 +722,7 @@ class BaseTestVm(object):
         if not oTestDrv.isHostCpuAmd():
             return False;
         try:
-            if self.fpApiVer >= 7.1:
+            if oTestDrv.fpApiVer >= 7.1:
                 (uMaxExt, _, _, _) = oTestDrv.oVBox.host.x86.getProcessorCPUIDLeaf(0, 0x80000000, 0);
                 (uFamilyModel, _, _, _) = oTestDrv.oVBox.host.x86.getProcessorCPUIDLeaf(0, 0x80000001, 0);
             else:
@@ -1434,7 +1434,7 @@ class TestVm(object):
         if not oTestDrv.isHostCpuAmd():
             return False;
         try:
-            if self.fpApiVer >= 7.1:
+            if oTestDrv.fpApiVer >= 7.1:
                 (uMaxExt, _, _, _) = oTestDrv.oVBox.host.x86.getProcessorCPUIDLeaf(0, 0x80000000, 0);
                 (uFamilyModel, _, _, _) = oTestDrv.oVBox.host.x86.getProcessorCPUIDLeaf(0, 0x80000001, 0);
             else:
