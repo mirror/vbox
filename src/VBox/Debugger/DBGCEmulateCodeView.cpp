@@ -2594,8 +2594,7 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
                     rc = DBGCCmdHlpPrintf(pCmdHlp, "\n");
             }
             else if (fAllRegs)
-                rc = DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3RegNmQueryAll failed: %Rrc.\n",
-                                         pszActualPrefix, rc);
+                rc = DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3RegNmQueryAll failed: %Rrc.\n", rc);
             else if (rc == VERR_DBGF_REGISTER_NOT_FOUND)
                 rc = DBGCCmdHlpVBoxError(pCmdHlp, VERR_INVALID_PARAMETER, "Unknown register: '%s%s'.\n",
                                          pszActualPrefix, pszRegBase);
