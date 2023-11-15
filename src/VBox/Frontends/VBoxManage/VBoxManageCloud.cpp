@@ -1444,7 +1444,7 @@ static RTEXITCODE cloudInstanceMetricData(HandlerArg *a, int iFirst, PCLOUDCOMMO
     CHECK_PROGRESS_ERROR_RET(progress, (Cloud::tr("Reading the cloud machines list failed")), RTEXITCODE_FAILURE);
 
     com::SafeIfaceArray<ICloudMachine> aMachines;
-    CHECK_ERROR2_RET(hrc, oCloudClient, 
+    CHECK_ERROR2_RET(hrc, oCloudClient,
                      COMGETTER(CloudMachineList)(ComSafeArrayAsOutParam(aMachines)),
                      RTEXITCODE_FAILURE);
 
