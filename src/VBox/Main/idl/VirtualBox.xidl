@@ -30033,6 +30033,35 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </const>
 </enum>
 
+  <enum
+    name="MetricType"
+    uuid="adf26edc-7e32-11ee-b962-0242ac120002"
+    >
+    <desc>Metric names</desc>
+    <const name="Invalid"                    value="0">
+      <desc>Invalid name</desc>
+    </const>
+    <const name="CpuUtilization"             value="1">
+      <desc>Cpu Utilization</desc>
+    </const>
+    <const name="MemoryUtilization"          value="2">
+      <desc>Memory Utilization</desc>
+    </const>
+    <const name="DiskBytesRead"              value="3">
+      <desc>Disk Bytes Read</desc>
+    </const>
+    <const name="DiskBytesWritten"           value="4">
+      <desc>Disk Bytes Written</desc>
+    </const>
+    <const name="NetworksBytesIn"            value="5">
+      <desc>Networks Bytes In</desc>
+    </const>
+    <const name="NetworksBytesOut"           value="6">
+      <desc>Networks Bytes Out</desc>
+    </const>
+</enum>
+
+
   <interface name="ICloudNetworkGatewayInfo" extends="$unknown"
              uuid="89a63ace-0c65-11ea-ad23-0ff257c71a7f"
              wsmap="managed"
@@ -30056,7 +30085,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
              uuid="147816c8-17e0-11eb-81fa-87cea6263e1a"
              wsmap="managed"
              rest="managed"
-             reservedMethods="15" reservedAttributes="7"
+             reservedMethods="13" reservedAttributes="7"
       >
     <desc>
       Virtual virtual machine (sic) in the cloud.
@@ -30329,6 +30358,72 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
+    <method name="listMetricNames">
+      <desc>
+        Returns the metrics available for the instances in the Cloud.
+        In instance, CPU utilization, memory utilization, disk read I/O.
+        Not all instances can have such metrics because a special service must be running on the instance.
+        Converting a string representation to a MetricType is done using <link to="ICloudClient::getMetricTypeByName"/>.
+      </desc>
+      <param name="metricNames" type="IStringArray" dir="out">
+        <desc>
+            List of metrics names. May be empty if there are no metrics available on the instance or
+            if the corresponding service is not running on the instance.
+        </desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+
+    <method name="enumerateMetricData">
+      <desc>
+        Returns the interested metric history points.
+      </desc>
+      <param name="metricType" type="MetricType" dir="in">
+        <desc>
+          The type of the requested metric.
+          Standard usage to get an appropriate MetricType: 
+           - call <link to="#listMetricNames"/> function; returns the types in string representation.
+           - call <link to="ICloudClient::getMetricTypeByName"/> function; converts the string representation into MetricType.
+        </desc>
+      </param>
+      <param name="pointsNumber" type="unsigned long" dir="in">
+        <desc>
+          History metric point numbers start at 1 and can go backwards as long as history exists.
+          Points are counted from the current time to the past. If user only wants the last actual value
+          he passes the value "1". If 2 values need to be returned (last and second to last),
+          the user passes "2", etc.
+          and etc.
+        </desc>
+      </param>
+      <param name="values" type="IStringArray" dir="out">
+        <desc>
+          The values of the metric returned.
+        </desc>
+      </param>
+      <param name="timestamps" type="IStringArray" dir="out">
+        <desc>
+          The timestamps of the metric returned. The array entries match
+          the corresponding entries in the @a array.
+          Time format is represented in Rfc2822.
+        </desc>
+      </param>
+      <param name="unit" type="IStringArray" dir="out">
+        <desc>
+          The measurement unit as "byte", "percentage" and etc...
+          The array entries match the corresponding entries in the @a array.
+        </desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+
   </interface>
 
   <!--
@@ -30339,7 +30434,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="ICloudClient" extends="$unknown"
     uuid="c2db178a-7485-11ec-aec4-2fbf90681a84"
     wsmap="managed"
-    reservedMethods="14" reservedAttributes="8"
+    reservedMethods="13" reservedAttributes="8"
     >
 
     <method name="getExportDescriptionForm">
@@ -30911,6 +31006,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="getMetricTypeByName" const="yes">
+      <desc>
+        Tries to find an appropriate metric type for the passed metric name.
+      </desc>
+      <param name="metricName" type="wstring" dir="in">
+        <desc>Metric name (see <link to="ICloudMachine::listMetricNames"/>)</desc>
+      </param>
+      <param name="metricType" type="MetricType" dir="return">
+        <desc>Found metric type.</desc>
+      </param>
+    </method>
 
   </interface>
 
