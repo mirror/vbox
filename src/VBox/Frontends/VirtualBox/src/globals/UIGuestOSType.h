@@ -69,6 +69,8 @@ public:
         LONG64                  getRecommendedHDD() const;
         KGraphicsControllerType getRecommendedGraphicsController() const;
         KStorageControllerType  getRecommendedDVDStorageController() const;
+        bool                    is64Bit() const;
+        KPlatformArchitecture   getPlatformArchitecture() const;
     /** @} */
 
     bool isOk() const;
@@ -135,6 +137,8 @@ public:
         KStorageControllerType  getRecommendedDVDStorageController(const QString &strTypeId) const;
         bool                    isLinux(const QString &strTypeId) const;
         bool                    isWindows(const QString &strTypeId) const;
+        bool                    is64Bit(const QString &strOSTypeId) const;
+        KPlatformArchitecture   getPlatformArchitecture(const QString &strTypeId) const;
     /** @} */
 
 private:

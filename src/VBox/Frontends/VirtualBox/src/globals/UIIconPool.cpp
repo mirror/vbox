@@ -34,8 +34,10 @@
 #include <QWindow>
 
 /* GUI includes: */
+#include "UICommon.h"
 #include "UIIconPool.h"
 #include "UIExtraDataManager.h"
+#include "UIGuestOSType.h"
 #include "UIModalWindowManager.h"
 
 /* COM includes: */
@@ -780,15 +782,26 @@ QPixmap UIIconPoolGeneral::guestOSTypePixmapDefault(const QString &strOSTypeID, 
 }
 
 /* static */
-QString UIIconPoolGeneral::determineOSArchString(const QString &osTypeId)
+QString UIIconPoolGeneral::determineOSArchString(const QString &strOSTypeId)
 {
-    if (osTypeId.contains("_x64") || osTypeId.contains("_64"))
-        return QString("x64");
-    else if (osTypeId.contains("arm32"))
-        return QString("A32");
-    else if (osTypeId.contains("arm64"))
-        return QString("A64");
-    return QString("32");
+    bool fIs64Bit = uiCommon().guestOSTypeManager().is64Bit(strOSTypeId);
+    KPlatformArchitecture enmPlatformArchitecture = uiCommon().guestOSTypeManager().getPlatformArchitecture(strOSTypeId);
+
+    if (enmPlatformArchitecture == KPlatformArchitecture_ARM)
+    {
+        if (fIs64Bit)
+            return QString("A64");
+        else
+            return QString("A32");
+    }
+    else if (enmPlatformArchitecture == KPlatformArchitecture_x86)
+    {
+        if (fIs64Bit)
+            return QString("x64");
+        else
+            return QString("32");
+    }
+    return QString();
 }
 
 /* static */

@@ -176,7 +176,7 @@ private:
     /** Overlay text @p strArch on top of @p pixmap. */
     static void overlayArchitectureTextOnPixmap(const QString &strArch, QPixmap &pixmap);
     /** Returns the architecture text we overlay on guest OS type id icon.*/
-    static QString determineOSArchString(const QString &osTypeId);
+    static QString determineOSArchString(const QString &strOSTypeId);
     /** Holds the singleton instance. */
     static UIIconPoolGeneral *s_pInstance;
 
