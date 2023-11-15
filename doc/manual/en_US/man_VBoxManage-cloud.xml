@@ -156,6 +156,24 @@
        <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
        <arg>--clone-name=<replaceable>name for a clone instance</replaceable></arg>
      </cmdsynopsis>
+     <cmdsynopsis id="synopsis-vboxmanage-cloud-instance-metriclist" sepchar=" ">
+       <command moreinfo="none">VBoxManage cloud</command>
+       <arg choice="req">--provider=<replaceable>name</replaceable></arg>
+       <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+       <sbr/>
+       <arg choice="plain">instance metriclist</arg>
+       <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
+     </cmdsynopsis>
+     <cmdsynopsis id="synopsis-vboxmanage-cloud-instance-metricdata" sepchar=" ">
+       <command moreinfo="none">VBoxManage cloud</command>
+       <arg choice="req">--provider=<replaceable>name</replaceable></arg>
+       <arg choice="req">--profile=<replaceable>name</replaceable></arg>
+       <sbr/>
+       <arg choice="plain">instance metricdata</arg>
+       <arg choice="req">--id=<replaceable>unique id</replaceable></arg>
+       <arg choice="req">--metric-name=<replaceable>metric name</replaceable></arg>
+       <arg choice="req">--metric-points=<replaceable>number of history metric points</replaceable></arg>
+     </cmdsynopsis>
 
      <!-- Cloud image commands -->
       <cmdsynopsis id="synopsis-vboxmanage-cloud-image-create" sepchar=" "> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
@@ -497,6 +515,48 @@
         </varlistentry>
         <varlistentry>
           <term><option>--clone-name</option></term><listitem><para>Name for a clone instance</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-cloud-instance-metriclist">
+      <title>available list of metrics for cloud instances</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        Displays the list of the available metrics for the instance.
+        The returned names must be used with the command "VBoxManage cloud instance metricdata".
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--id</option></term><listitem><para>Unique identifier which fully identify the instance in the Cloud.</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-cloud-instance-metricdata">
+      <title>Displays cloud instance metric data</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        Displays the metric data with the resolution 1 minute for the requested cloud instances.
+        The timestamps are returned in the format Rfc2822.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--id</option></term><listitem><para>Unique identifier which fully identify the instance in the Cloud.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+            <term><option>--metric-name</option></term><listitem><para>Metric name</para></listitem>
+        </varlistentry>
+        <varlistentry>
+            <term><option>--metric-points</option></term>
+            <listitem>
+                <para>
+                    History metric point numbers start at 1 and can go backwards as long as history exists.
+                    Points are counted from the current time to the past. If user only wants the last actual value
+                    he passes the value "1". If 2 values need to be returned (last and second to last),
+                    the user passes "2", etc.
+                </para>
+            </listitem>
         </varlistentry>
       </variablelist>
     </refsect2>
