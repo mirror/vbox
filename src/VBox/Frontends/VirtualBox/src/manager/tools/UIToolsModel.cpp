@@ -140,7 +140,7 @@ void UIToolsModel::setItemsEnabled(bool fEnabled)
     {
         m_fItemsEnabled = fEnabled;
         foreach (UIToolsItem *pItem, items())
-            pItem->setEnabled(m_fItemsEnabled && !m_restrictedToolTypes.contains(pItem->itemType()));
+            pItem->setEnabled(m_fItemsEnabled);
     }
 }
 
@@ -155,7 +155,11 @@ void UIToolsModel::setRestrictedToolTypes(const QList<UIToolType> &types)
     {
         m_restrictedToolTypes = types;
         foreach (UIToolsItem *pItem, items())
-            pItem->setEnabled(m_fItemsEnabled && !m_restrictedToolTypes.contains(pItem->itemType()));
+            pItem->setVisible(!m_restrictedToolTypes.contains(pItem->itemType()));
+        updateLayout();
+        updateNavigation();
+        sltItemMinimumWidthHintChanged();
+        sltItemMinimumHeightHintChanged();
     }
 }
 
