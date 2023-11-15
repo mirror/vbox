@@ -87,10 +87,10 @@ public:
         /** Returns current tools type. */
         UIToolType toolsType() const;
 
-        /** Defines whether certain @a enmClass of tools is @a fEnabled.*/
-        void setToolClassEnabled(UIToolClass enmClass, bool fEnabled);
-        /** Returns whether certain class of tools is enabled.*/
-        bool toolClassEnabled(UIToolClass enmClass) const;
+        /** Defines whether tool items @a fEnabled.*/
+        void setItemsEnabled(bool fEnabled);
+        /** Returns whether tool items enabled.*/
+        bool isItemsEnabled() const;
 
         /** Defines restructed tool @a types. */
         void setRestrictedToolTypes(const QList<UIToolType> &types);

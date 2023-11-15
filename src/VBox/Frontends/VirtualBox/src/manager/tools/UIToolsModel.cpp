@@ -67,6 +67,7 @@ UIToolsModel::UIToolsModel(UIToolClass enmClass, UITools *pParent)
     , m_pScene(0)
     , m_pMouseHandler(0)
     , m_pKeyboardHandler(0)
+    , m_fItemsEnabled(true)
 {
     prepare();
 }
@@ -133,20 +134,19 @@ UIToolType UIToolsModel::toolsType() const
     return currentItem() ? currentItem()->itemType() : UIToolType_Invalid;
 }
 
-void UIToolsModel::setToolClassEnabled(UIToolClass enmClass, bool fEnabled)
+void UIToolsModel::setItemsEnabled(bool fEnabled)
 {
-    if (m_enabledToolClasses.value(enmClass) != fEnabled)
+    if (m_fItemsEnabled != fEnabled)
     {
-        m_enabledToolClasses[enmClass] = fEnabled;
+        m_fItemsEnabled = fEnabled;
         foreach (UIToolsItem *pItem, items())
-            pItem->setEnabled(   m_enabledToolClasses.value(pItem->itemClass())
-                              && !m_restrictedToolTypes.contains(pItem->itemType()));
+            pItem->setEnabled(m_fItemsEnabled && !m_restrictedToolTypes.contains(pItem->itemType()));
     }
 }
 
-bool UIToolsModel::toolClassEnabled(UIToolClass enmClass) const
+bool UIToolsModel::isItemsEnabled() const
 {
-    return m_enabledToolClasses.value(enmClass);
+    return m_fItemsEnabled;
 }
 
 void UIToolsModel::setRestrictedToolTypes(const QList<UIToolType> &types)
@@ -155,8 +155,7 @@ void UIToolsModel::setRestrictedToolTypes(const QList<UIToolType> &types)
     {
         m_restrictedToolTypes = types;
         foreach (UIToolsItem *pItem, items())
-            pItem->setEnabled(   m_enabledToolClasses.value(pItem->itemClass())
-                              && !m_restrictedToolTypes.contains(pItem->itemType()));
+            pItem->setEnabled(m_fItemsEnabled && !m_restrictedToolTypes.contains(pItem->itemType()));
     }
 }
 
@@ -461,10 +460,6 @@ void UIToolsModel::prepareScene()
 
 void UIToolsModel::prepareItems()
 {
-    /* Enable both classes of tools initially: */
-    m_enabledToolClasses[UIToolClass_Global] = true;
-    m_enabledToolClasses[UIToolClass_Machine] = true;
-
     /* Depending on tool class: */
     switch (m_enmClass)
     {

@@ -62,14 +62,14 @@ UIToolType UITools::toolsType() const
     return m_pToolsModel->toolsType();
 }
 
-void UITools::setToolClassEnabled(UIToolClass enmClass, bool fEnabled)
+void UITools::setItemsEnabled(bool fEnabled)
 {
-    m_pToolsModel->setToolClassEnabled(enmClass, fEnabled);
+    m_pToolsModel->setItemsEnabled(fEnabled);
 }
 
-bool UITools::toolClassEnabled(UIToolClass enmClass) const
+bool UITools::isItemsEnabled() const
 {
-    return m_pToolsModel->toolClassEnabled(enmClass);
+    return m_pToolsModel->isItemsEnabled();
 }
 
 void UITools::setRestrictedToolTypes(const QList<UIToolType> &types)
