@@ -541,7 +541,7 @@ void UIVirtualBoxManagerWidget::sltHandleToolMenuRequested(UIToolClass enmClass,
     switch (enmClass)
     {
         case UIToolClass_Global: pMenu = m_pMenuToolsGlobal; break;
-        case UIToolClass_Machine: pMenu = m_pMenuToolsMachine; break;
+        case UIToolClass_Machine: pMenu = m_pMenuToolsMachine; updateToolsMenuMachine(); break;
         default: break;
     }
     AssertPtrReturnVoid(pMenu);
@@ -1116,7 +1116,7 @@ void UIVirtualBoxManagerWidget::cleanup()
     cleanupWidgets();
 }
 
-void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErrorPane /* = false */)
+void UIVirtualBoxManagerWidget::updateToolsMenuMachine()
 {
     /* Get current item: */
     UIVirtualMachineItem *pItem = currentItem();
@@ -1135,6 +1135,13 @@ void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErr
     /* Take restrictions into account, closing all restricted tools: */
     foreach (const UIToolType &enmRestrictedType, retrictedTypes)
         m_pPaneToolsMachine->closeTool(enmRestrictedType);
+}
+
+void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErrorPane /* = false */)
+{
+    /* Get current item: */
+    UIVirtualMachineItem *pItem = currentItem();
+    const bool fCurrentItemIsOk = pItem && pItem->accessible();
 
     /* Propagate current item anyway: */
     m_pPaneToolsMachine->setCurrentItem(pItem);

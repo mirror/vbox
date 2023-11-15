@@ -340,6 +340,9 @@ private:
 
     /** @name Tools / Common stuff.
       * @{ */
+        /** Updates Machine tools menu. */
+        void updateToolsMenuMachine();
+
         /** Recaches current item information.
           * @param  fDontRaiseErrorPane  Brings whether we should not raise error-pane. */
         void recacheCurrentItemInformation(bool fDontRaiseErrorPane = false);
