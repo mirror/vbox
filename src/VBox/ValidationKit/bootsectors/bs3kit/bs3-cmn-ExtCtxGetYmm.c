@@ -44,27 +44,38 @@
 #undef Bs3ExtCtxGetYmm
 BS3_CMN_DEF(PRTUINT256U, Bs3ExtCtxGetYmm,(PCBS3EXTCTX pExtCtx, uint8_t iReg, PRTUINT256U pValue))
 {
-    pValue->au128[0].au64[0] = 0;
-    pValue->au128[0].au64[1] = 0;
-    pValue->au128[1].au64[0] = 0;
-    pValue->au128[1].au64[1] = 0;
+#ifdef _MSC_VER /* No-SSE hack */
+    RTUINT256U volatile RT_FAR *pValueNoSseHack = (RTUINT256U volatile RT_FAR *)pValue; /* No-SSE hack */
+# define pValue pValueNoSseHack
+#endif
+    pValue->au64[0] = 0;
+    pValue->au64[1] = 0;
+    pValue->au64[2] = 0;
+    pValue->au64[3] = 0;
 
     switch (pExtCtx->enmMethod)
     {
         case BS3EXTCTXMETHOD_FXSAVE:
             if (iReg < RT_ELEMENTS(pExtCtx->Ctx.x87.aXMM))
-                pValue->au128[0] = pExtCtx->Ctx.x87.aXMM[iReg].uXmm;
+            {
+                pValue->au64[0] = pExtCtx->Ctx.x87.aXMM[iReg].uXmm.au64[0];
+                pValue->au64[1] = pExtCtx->Ctx.x87.aXMM[iReg].uXmm.au64[1];
+            }
             break;
 
         case BS3EXTCTXMETHOD_XSAVE:
             if (iReg < RT_ELEMENTS(pExtCtx->Ctx.x.x87.aXMM))
             {
-                pValue->au128[0] = pExtCtx->Ctx.x87.aXMM[iReg].uXmm;
+                pValue->au64[0] = pExtCtx->Ctx.x87.aXMM[iReg].uXmm.au64[0];
+                pValue->au64[1] = pExtCtx->Ctx.x87.aXMM[iReg].uXmm.au64[1];
                 if (pExtCtx->fXcr0Nominal & XSAVE_C_YMM)
-                    pValue->au128[1] = pExtCtx->Ctx.x.u.YmmHi.aYmmHi[iReg].uXmm;
+                {
+                    pValue->au64[2] = pExtCtx->Ctx.x.u.YmmHi.aYmmHi[iReg].uXmm.au64[0];
+                    pValue->au64[3] = pExtCtx->Ctx.x.u.YmmHi.aYmmHi[iReg].uXmm.au64[1];
+                }
             }
             break;
     }
-    return pValue;
+    return (PRTUINT256U)pValue;
 }
 

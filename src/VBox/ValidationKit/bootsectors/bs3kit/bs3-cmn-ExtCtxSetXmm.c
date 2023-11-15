@@ -51,7 +51,8 @@ BS3_CMN_DEF(bool, Bs3ExtCtxSetXmm,(PBS3EXTCTX pExtCtx, uint8_t iReg, PCRTUINT128
         case BS3EXTCTXMETHOD_XSAVE:
             if (iReg < RT_ELEMENTS(pExtCtx->Ctx.x87.aXMM))
             {
-                pExtCtx->Ctx.x87.aXMM[iReg].xmm = pValue->u;
+                pExtCtx->Ctx.x87.aXMM[iReg].au64[0] = pValue->au64[0];
+                pExtCtx->Ctx.x87.aXMM[iReg].au64[1] = pValue->au64[1];
                 return true;
             }
             break;

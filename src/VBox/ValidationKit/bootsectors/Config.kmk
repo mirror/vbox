@@ -340,6 +340,11 @@ endef
 #
 # Visual C++ tool variant that runs the object converter afterwards.
 #
+# We also run SED on the assembly listing looking for SSE instructions, since
+# the compiler doesn't have any known option to suppress SSE optimization. When
+# the SED script finds something, the source code needs to be tweaked to work
+# around it. See r160217 for examples.
+#
 TOOL_Bs3Vcc64 := Visual C++ 64-bit
 TOOL_Bs3Vcc64_CC  = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CC)
 TOOL_Bs3Vcc64_CXX = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_CXX)
@@ -355,9 +360,11 @@ TOOL_Bs3Vcc64_COMPILE_C_DEPEND         = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPI
 TOOL_Bs3Vcc64_COMPILE_C_DEPORD         = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_C_DEPORD)
 TOOL_Bs3Vcc64_COMPILE_C_OUTPUT         = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_C_OUTPUT)
 TOOL_Bs3Vcc64_COMPILE_C_OUTPUT_MAYBE   = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_C_OUTPUT_MAYBE) $(obj).original
+TOOL_Bs3Vcc64_COMPILE_C_OUTPUT_MAYBE_PRECIOUS = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_C_OUTPUT_MAYBE_PRECIOUS) $(outbase)-obj.asm
 define TOOL_Bs3Vcc64_COMPILE_C_CMDS
-$(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_C_CMDS)
+$(subst -Fo,-Fa$(outbase)-obj.asm -Fo,$(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_C_CMDS))
 	$(QUIET)$(VBOX_BS3KIT_KSUBMIT_OBJ_CONV) $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
+	$(QUIET)$(SED) -e '/xmm[0-9]/!d' -e 'q11' $(outbase)-obj.asm
 endef
 
 TOOL_Bs3Vcc64_C64OBJSUFF               = $(TOOL_Bs3Vcc64_COBJSUFF)
@@ -388,9 +395,11 @@ TOOL_Bs3Vcc64_COMPILE_CXX_DEPEND       = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPI
 TOOL_Bs3Vcc64_COMPILE_CXX_DEPORD       = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_CXX_DEPORD)
 TOOL_Bs3Vcc64_COMPILE_CXX_OUTPUT       = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_CXX_OUTPUT)
 TOOL_Bs3Vcc64_COMPILE_CXX_OUTPUT_MAYBE = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_CXX_OUTPUT_MAYBE) $(obj).original
+TOOL_Bs3Vcc64_COMPILE_CXX_OUTPUT_MAYBE_PRECIOUS = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_CXX_OUTPUT_MAYBE_PRECIOUS) $(outbase)-obj.asm
 define TOOL_Bs3Vcc64_COMPILE_CXX_CMDS
-$(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_CXX_CMDS)
+$(subst -Fo,-Fa$(outbase)-obj.asm -Fo,$(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_CXX_CMDS))
 	$(QUIET)$(VBOX_BS3KIT_KSUBMIT_OBJ_CONV) $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
+	$(QUIET)$(SED) -e '/xmm[0-9]/!d' -e 'q11' $(outbase)-obj.asm
 endef
 
 #

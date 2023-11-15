@@ -935,8 +935,8 @@ BS3_DECL_NEAR(void) bs3CpuBasic2_RaiseXcpt1Common(uint16_t const uSysR0Cs, uint1
     k = (0x83 << (cIdteShift + 3)) - 1;
     for (; i <= k; i++, g_usBs3TestStep++)
     {
-        Idtr = IdtrSaved;
-        Idtr.cbIdt  = i;
+        Idtr.pIdt  = IdtrSaved.pIdt;
+        Idtr.cbIdt = i;
         ASMSetIDTR(&Idtr);
         Bs3TrapSetJmpAndRestore(&Ctx81, &TrapCtx);
         if (i < j)

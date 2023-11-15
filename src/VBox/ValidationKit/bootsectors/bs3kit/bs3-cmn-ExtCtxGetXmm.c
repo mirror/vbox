@@ -44,6 +44,10 @@
 #undef Bs3ExtCtxGetXmm
 BS3_CMN_DEF(PRTUINT128U, Bs3ExtCtxGetXmm,(PCBS3EXTCTX pExtCtx, uint8_t iReg, PRTUINT128U pValue))
 {
+#ifdef _MSC_VER /* No-SSE hack */
+    RTUINT128U volatile RT_FAR *pValueNoSseHack = (RTUINT128U volatile RT_FAR *)pValue;
+# define pValue pValueNoSseHack
+#endif
     AssertCompileMembersAtSameOffset(BS3EXTCTX, Ctx.x87.aXMM, BS3EXTCTX, Ctx.x.x87.aXMM);
     switch (pExtCtx->enmMethod)
     {
@@ -51,7 +55,8 @@ BS3_CMN_DEF(PRTUINT128U, Bs3ExtCtxGetXmm,(PCBS3EXTCTX pExtCtx, uint8_t iReg, PRT
         case BS3EXTCTXMETHOD_XSAVE:
             if (iReg < RT_ELEMENTS(pExtCtx->Ctx.x87.aXMM))
             {
-                pValue->u = pExtCtx->Ctx.x87.aXMM[iReg].xmm;
+                pValue->au64[0] = pExtCtx->Ctx.x87.aXMM[iReg].au64[0];
+                pValue->au64[1] = pExtCtx->Ctx.x87.aXMM[iReg].au64[1];
                 return pValue;
             }
             break;
@@ -59,6 +64,6 @@ BS3_CMN_DEF(PRTUINT128U, Bs3ExtCtxGetXmm,(PCBS3EXTCTX pExtCtx, uint8_t iReg, PRT
 
     pValue->au64[0] = 0;
     pValue->au64[1] = 0;
-    return pValue;
+    return (PRTUINT128U)pValue;
 }
 
