@@ -932,21 +932,22 @@ int ShClTransferHttpServerRegisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER p
             RTStrFree(pszPath);
             pszPath = NULL;
 
-            AssertRCReturn(rc, rc);
+            if (RT_SUCCESS(rc))
+            {
+                pSrvTx->pTransfer = pTransfer;
+                pSrvTx->hObj      = NIL_SHCLOBJHANDLE;
 
-            pSrvTx->pTransfer = pTransfer;
-            pSrvTx->hObj      = NIL_SHCLOBJHANDLE;
+                RTListAppend(&pSrv->lstTransfers, &pSrvTx->Node);
+                pSrv->cTransfers++;
 
-            RTListAppend(&pSrv->lstTransfers, &pSrvTx->Node);
-            pSrv->cTransfers++;
+                shclTransferHttpServerSetStatusLocked(pSrv, SHCLHTTPSERVERSTATUS_TRANSFER_REGISTERED);
 
-            shclTransferHttpServerSetStatusLocked(pSrv, SHCLHTTPSERVERSTATUS_TRANSFER_REGISTERED);
+                LogFunc(("pTransfer=%p, idTransfer=%RU16, szPath=%s -> %RU32 transfers\n",
+                         pSrvTx->pTransfer, pSrvTx->pTransfer->State.uID, pSrvTx->szPathVirtual, pSrv->cTransfers));
 
-            LogFunc(("pTransfer=%p, idTransfer=%RU16, szPath=%s -> %RU32 transfers\n",
-                     pSrvTx->pTransfer, pSrvTx->pTransfer->State.uID, pSrvTx->szPathVirtual, pSrv->cTransfers));
-
-            LogRel2(("Shared Clipboard: Registered HTTP transfer %RU16, now %RU32 HTTP transfers total\n",
-                     pTransfer->State.uID, pSrv->cTransfers));
+                LogRel2(("Shared Clipboard: Registered HTTP transfer %RU16, now %RU32 HTTP transfers total\n",
+                         pTransfer->State.uID, pSrv->cTransfers));
+            }
         }
 
     }
