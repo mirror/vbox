@@ -180,7 +180,7 @@ public slots:
     /** @name General stuff.
       * @{ */
         /** Handles Tools-view resize. */
-        void sltHandleViewResized();
+        void sltHandleViewResized() { updateLayout(); }
     /** @} */
 
     /** @name Children stuff.
@@ -235,6 +235,9 @@ private:
         /** Loads settings. */
         void loadSettings();
 
+        /** Loads last tool types. */
+        static void loadLastToolTypes(UIToolType &enmTypeGlobal, UIToolType &enmTypeMachine);
+
         /** Cleanups connections. */
         void cleanupConnections();
         /** Cleanups connections. */
@@ -285,9 +288,9 @@ private:
     /** @name Selection stuff.
       * @{ */
         /** Holds the selected item reference. */
-        QPointer<UIToolsItem> m_pCurrentItem;
+        QPointer<UIToolsItem>  m_pCurrentItem;
         /** Holds the focus item reference. */
-        QPointer<UIToolsItem> m_pFocusItem;
+        QPointer<UIToolsItem>  m_pFocusItem;
     /** @} */
 
     /** @name Navigation stuff.
