@@ -1900,6 +1900,20 @@ BS3_CMN_PROTO_NOSB(uint32_t, Bs3SelFlatCodeToProtFar16,(uint32_t uFlatAddr));
 BS3_CMN_PROTO_FARSTUB(4, uint32_t, Bs3SelRealModeCodeToFlat,(PFNBS3FARADDRCONV uFar1616));
 
 /**
+ * Converts a far 16:16 real mode (code) address to a 16-bit protected mode
+ * address.
+ *
+ * This is mainly for converting X0TEXT16 and X1TEXT16 linker pointers to
+ * protected mode ones.
+ *
+ * @returns Protected mode function pointer.
+ * @param   uFar1616        Far real mode address (high 16-bit is segment, low
+ *                          is offset).  In 16-bit code, this is also the same
+ *                          as a linker address.
+ */
+BS3_CMN_PROTO_FARSTUB(4, PFNBS3FARADDRCONV, Bs3SelRealModeCodeToProtFar16,(PFNBS3FARADDRCONV uFar1616));
+
+/**
  * Converts a flat data address to a real mode segment and offset.
  *
  * @returns Far real mode address (high 16-bit is segment, low is offset)
@@ -1965,7 +1979,7 @@ BS3_CMN_PROTO_FARSTUB(4, uint32_t, Bs3SelProtFar16DataToFlat,(uint32_t uFar1616)
 BS3_CMN_PROTO_FARSTUB(4, uint32_t, Bs3SelRealModeDataToFlat,(uint32_t uFar1616));
 
 /**
- * Converts a link-time pointer to a current context pointer.
+ * Converts a link-time data pointer to a current context pointer.
  *
  * @returns Converted pointer.
  * @param   pvLnkPtr    The pointer the linker produced.
@@ -1973,12 +1987,20 @@ BS3_CMN_PROTO_FARSTUB(4, uint32_t, Bs3SelRealModeDataToFlat,(uint32_t uFar1616))
 BS3_CMN_PROTO_FARSTUB(4, void BS3_FAR *, Bs3SelLnkPtrToCurPtr,(void BS3_FAR *pvLnkPtr));
 
 /**
- * Converts a link-time pointer to a flat address.
+ * Converts a link-time data pointer to a flat address.
  *
  * @returns 32-bit flag address.
  * @param   pvLnkPtr    The pointer the linker produced.
  */
 BS3_CMN_PROTO_FARSTUB(4, uint32_t, Bs3SelLnkPtrToFlat,(void BS3_FAR *pvLnkPtr));
+
+/**
+ * Converts a link-time code pointer to a current context pointer.
+ *
+ * @returns Converted function pointer.
+ * @param   pfnLnkPtr   The function pointer the linker produced.
+ */
+BS3_CMN_PROTO_FARSTUB(4, FPFNBS3FAR, Bs3SelLnkCodePtrToCurPtr,(FPFNBS3FAR pfnLnkPtr));
 
 /**
  * Gets a flat address from a working poitner.
