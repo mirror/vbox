@@ -263,10 +263,10 @@ ifdef VBOX_WITH_BS3KIT
  	bs3-cpu-basic-2-x0.c \
  	bs3-cpu-basic-2-32.c32 \
  	bs3-cpu-basic-2-pf.c32 \
- 	bs3-cpu-basic-2-asm.asm \
  	bs3kit/bs3-cmn-instantiate-x0.c16 \
  	bs3kit/bs3-cmn-instantiate.c32 \
- 	bs3kit/bs3-cmn-instantiate.c64
+ 	bs3kit/bs3-cmn-instantiate.c64 \
+ 	bs3-cpu-basic-2-asm.asm
  bs3-cpu-basic-2-template.o:: \
  		$$(bs3-cpu-basic-2_0_OUTDIR)/bs3kit/bs3-cmn-instantiate-x0.o16 \
  		$$(bs3-cpu-basic-2_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o32 \
