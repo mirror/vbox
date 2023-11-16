@@ -1153,7 +1153,10 @@ void UIVirtualBoxManagerWidget::updateToolsMenuMachine(UIVirtualMachineItem *pIt
     /* Update machine tools restrictions: */
     QList<UIToolType> retrictedTypes;
     if (pItem && pItem->itemType() != UIVirtualMachineItemType_Local)
-        retrictedTypes << UIToolType_Snapshots << UIToolType_Logs << UIToolType_VMActivity;
+        retrictedTypes << UIToolType_Snapshots
+                       << UIToolType_Logs
+                       << UIToolType_VMActivity
+                       << UIToolType_FileManager;
     if (retrictedTypes.contains(m_pMenuToolsMachine->toolsType()))
         m_pMenuToolsMachine->setToolsType(UIToolType_Details);
     m_pMenuToolsMachine->setRestrictedToolTypes(retrictedTypes);
