@@ -1130,18 +1130,18 @@ void UIVirtualBoxManagerWidget::cleanup()
 void UIVirtualBoxManagerWidget::updateToolsMenuGlobal()
 {
     /* Update global tools restrictions: */
-    QList<UIToolType> retrictedTypes;
+    QList<UIToolType> restrictedTypes;
     const bool fExpertMode = gEDataManager->isSettingsInExpertMode();
     if (!fExpertMode)
-        retrictedTypes << UIToolType_Media
-                       << UIToolType_Network
-                       << UIToolType_VMActivityOverview;
-    if (retrictedTypes.contains(m_pMenuToolsGlobal->toolsType()))
+        restrictedTypes << UIToolType_Media
+                        << UIToolType_Network
+                        << UIToolType_VMActivityOverview;
+    if (restrictedTypes.contains(m_pMenuToolsGlobal->toolsType()))
         m_pMenuToolsGlobal->setToolsType(UIToolType_Welcome);
-    m_pMenuToolsGlobal->setRestrictedToolTypes(retrictedTypes);
+    m_pMenuToolsGlobal->setRestrictedToolTypes(restrictedTypes);
 
     /* Take restrictions into account, closing all restricted tools: */
-    foreach (const UIToolType &enmRestrictedType, retrictedTypes)
+    foreach (const UIToolType &enmRestrictedType, restrictedTypes)
         m_pPaneToolsGlobal->closeTool(enmRestrictedType);
 }
 
@@ -1151,20 +1151,19 @@ void UIVirtualBoxManagerWidget::updateToolsMenuMachine(UIVirtualMachineItem *pIt
     const bool fCurrentItemIsOk = pItem && pItem->accessible();
 
     /* Update machine tools restrictions: */
-    QList<UIToolType> retrictedTypes;
+    QList<UIToolType> restrictedTypes;
     if (pItem && pItem->itemType() != UIVirtualMachineItemType_Local)
-        retrictedTypes << UIToolType_Snapshots
-                       << UIToolType_Logs
-                       << UIToolType_VMActivity
-                       << UIToolType_FileManager;
-    if (retrictedTypes.contains(m_pMenuToolsMachine->toolsType()))
+        restrictedTypes << UIToolType_Snapshots
+                        << UIToolType_Logs
+                        << UIToolType_FileManager;
+    if (restrictedTypes.contains(m_pMenuToolsMachine->toolsType()))
         m_pMenuToolsMachine->setToolsType(UIToolType_Details);
-    m_pMenuToolsMachine->setRestrictedToolTypes(retrictedTypes);
+    m_pMenuToolsMachine->setRestrictedToolTypes(restrictedTypes);
     /* Update machine menu items availability: */
     m_pMenuToolsMachine->setItemsEnabled(fCurrentItemIsOk);
 
     /* Take restrictions into account, closing all restricted tools: */
-    foreach (const UIToolType &enmRestrictedType, retrictedTypes)
+    foreach (const UIToolType &enmRestrictedType, restrictedTypes)
         m_pPaneToolsMachine->closeTool(enmRestrictedType);
 }
 
