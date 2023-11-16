@@ -86,6 +86,8 @@
 %define X86_EFL_ID_BIT      21
 %define X86_EFL_LIVE_MASK   0x003f7fd5
 %define X86_EFL_RA1_MASK    RT_BIT_32(1)
+%define X86_EFL_RAZ_MASK    0xffc08028
+%define X86_EFL_RAZ_LO_MASK 0x00008028
 %define X86_EFL_IOPL_SHIFT  12
 %define X86_EFL_GET_IOPL(efl)   (((efl) >> X86_EFL_IOPL_SHIFT) & 3)
 %define X86_EFL_POPF_BITS       (  X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_TF | X86_EFL_IF \
@@ -208,10 +210,12 @@
 %define X86_CPUID_STEXT_FEATURE_ECX_UMIP              RT_BIT_32(2)
 %define X86_CPUID_STEXT_FEATURE_ECX_PKU               RT_BIT_32(3)
 %define X86_CPUID_STEXT_FEATURE_ECX_OSPKE             RT_BIT_32(4)
+%define X86_CPUID_STEXT_FEATURE_ECX_CET_SS            RT_BIT_32(7)
 %define X86_CPUID_STEXT_FEATURE_ECX_MAWAU             0x003e0000
 %define X86_CPUID_STEXT_FEATURE_ECX_RDPID             RT_BIT_32(2)
 %define X86_CPUID_STEXT_FEATURE_ECX_SGX_LC            RT_BIT_32(30)
 %define X86_CPUID_STEXT_FEATURE_EDX_MD_CLEAR          RT_BIT_32(10)
+%define X86_CPUID_STEXT_FEATURE_EDX_CET_IBT           RT_BIT_32(20)
 %define X86_CPUID_STEXT_FEATURE_EDX_IBRS_IBPB         RT_BIT_32(26)
 %define X86_CPUID_STEXT_FEATURE_EDX_STIBP             RT_BIT_32(27)
 %define X86_CPUID_STEXT_FEATURE_EDX_FLUSH_CMD         RT_BIT_32(28)
@@ -304,10 +308,17 @@
 %define X86_CPUID_SVM_FEATURE_EDX_VIRT_VMSAVE_VMLOAD        RT_BIT(15)
 %define X86_CPUID_SVM_FEATURE_EDX_VGIF                      RT_BIT(16)
 %define X86_CPUID_SVM_FEATURE_EDX_GMET                      RT_BIT(17)
+%define X86_CPUID_SVM_FEATURE_EDX_X2AVIC                    RT_BIT(18)
 %define X86_CPUID_SVM_FEATURE_EDX_SSSCHECK                  RT_BIT(19)
 %define X86_CPUID_SVM_FEATURE_EDX_SPEC_CTRL                 RT_BIT(20)
+%define X86_CPUID_SVM_FEATURE_EDX_ROGPT                     RT_BIT(21)
 %define X86_CPUID_SVM_FEATURE_EDX_HOST_MCE_OVERRIDE         RT_BIT(23)
 %define X86_CPUID_SVM_FEATURE_EDX_TLBICTL                   RT_BIT(24)
+%define X86_CPUID_SVM_FEATURE_EDX_VNMI                      RT_BIT(25)
+%define X86_CPUID_SVM_FEATURE_EDX_IBS_VIRT                  RT_BIT(26)
+%define X86_CPUID_SVM_FEATURE_EDX_EXT_LVT_AVIC_ACCESS_CHG   RT_BIT(27)
+%define X86_CPUID_SVM_FEATURE_EDX_NST_VIRT_VMCB_ADDR_CHK    RT_BIT(28)
+%define X86_CPUID_SVM_FEATURE_EDX_BUS_LOCK_THRESHOLD        RT_BIT(29)
 %define X86_CR0_PE                          RT_BIT_32(0)
 %define X86_CR0_PROTECTION_ENABLE           RT_BIT_32(0)
 %define X86_CR0_MP                          RT_BIT_32(1)
@@ -336,7 +347,7 @@
 %define X86_CR3_PAGE_MASK                   (0xfffff000)
 %define X86_CR3_PAE_PAGE_MASK               (0xffffffe0)
 %define X86_CR3_AMD64_PAGE_MASK             0x000ffffffffff000
-%define X86_CR3_EPT_PAGE_MASK               0x0000fffffffff000
+%define X86_CR3_EPT_PAGE_MASK               0x000ffffffffff000
 %define X86_CR4_VME                         RT_BIT_32(0)
 %define X86_CR4_PVI                         RT_BIT_32(1)
 %define X86_CR4_TSD                         RT_BIT_32(2)
@@ -412,6 +423,14 @@
 %define X86_DR7_GET_RW(uDR7, iBp)            ( ( (uDR7) >> ((iBp) * 4 + 16) ) & 3 )
 %define X86_DR7_RW_ALL_MASKS                0x33330000
 %ifndef VBOX_FOR_DTRACE_LIB
+ %define X86_DR7_IS_EO_CFG(a_uDR7, a_iBp)   ( ((a_uDR7) & (0x000f0000 << ((a_iBp) * 4))) == 0 )
+ %define X86_DR7_IS_EO_ENABLED(a_uDR7, a_iBp) \
+    ( ((a_uDR7) & (0x03 << ((a_iBp) * 2))) != 0 && X86_DR7_IS_EO_CFG(a_uDR7, a_iBp) )
+ %define X86_DR7_ANY_EO_ENABLED(a_uDR7) \
+    (   (((a_uDR7) & 0x03) != 0 && ((a_uDR7) & UINT32_C(0x000f0000)) == 0) \
+     || (((a_uDR7) & UINT32_C(0x0c)) != 0 && ((a_uDR7) & UINT32_C(0x00f00000)) == 0) \
+     || (((a_uDR7) & UINT32_C(0x30)) != 0 && ((a_uDR7) & UINT32_C(0x0f000000)) == 0) \
+     || (((a_uDR7) & UINT32_C(0xc0)) != 0 && ((a_uDR7) & UINT32_C(0xf0000000)) == 0) )
  %define X86_DR7_ANY_RW_IO(uDR7) \
     (   (    0x22220000 & (uDR7) )
 %endif
@@ -485,6 +504,18 @@
 %define MSR_IA32_MPERF                      0xE7
 %define MSR_IA32_APERF                      0xE8
 %define MSR_IA32_MTRR_CAP                   0xFE
+%define MSR_IA32_MTRR_CAP_VCNT_MASK         0x00000000000000ff
+%define MSR_IA32_MTRR_CAP_FIX               RT_BIT_64(8)
+%define MSR_IA32_MTRR_CAP_WC                RT_BIT_64(10)
+%define MSR_IA32_MTRR_CAP_SMRR              RT_BIT_64(11)
+%define MSR_IA32_MTRR_CAP_PRMRR             RT_BIT_64(12)
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%define X86_MTRR_MT_UC                      0
+%define X86_MTRR_MT_WC                      1
+%define X86_MTRR_MT_WT                      4
+%define X86_MTRR_MT_WP                      5
+%define X86_MTRR_MT_WB                      6
 %define MSR_IA32_ARCH_CAPABILITIES          0x10a
 %define MSR_IA32_ARCH_CAP_F_RDCL_NO         RT_BIT_32(0)
 %define MSR_IA32_ARCH_CAP_F_IBRS_ALL        RT_BIT_32(1)
@@ -504,6 +535,14 @@
 %define MSR_IA32_MCG_CTRL                   0x17B
 %define MSR_IA32_CR_PAT                     0x277
 %define MSR_IA32_CR_PAT_INIT_VAL            0x0007040600070406
+%define MSR_IA32_PAT_MT_UC                  0
+%define MSR_IA32_PAT_MT_WC                  1
+%define MSR_IA32_PAT_MT_RSVD_2              2
+%define MSR_IA32_PAT_MT_RSVD_3              3
+%define MSR_IA32_PAT_MT_WT                  4
+%define MSR_IA32_PAT_MT_WP                  5
+%define MSR_IA32_PAT_MT_WB                  6
+%define MSR_IA32_PAT_MT_UCD                 7
 %define MSR_IA32_PERFEVTSEL0                0x186
 %define MSR_IA32_PERFEVTSEL1                0x187
 %define MSR_IA32_PERFEVTSEL2                0x188
@@ -693,6 +732,13 @@
 %define MSR_IA32_MTRR_FIX4K_F0000           0x26e
 %define MSR_IA32_MTRR_FIX4K_F8000           0x26f
 %define MSR_IA32_MTRR_DEF_TYPE              0x2FF
+%define MSR_IA32_MTRR_DEF_TYPE_DEF_MT_MASK  0xFF
+%define MSR_IA32_MTRR_DEF_TYPE_FIXED_EN     RT_BIT_64(10)
+%define MSR_IA32_MTRR_DEF_TYPE_MTRR_EN      RT_BIT_64(11)
+%define MSR_IA32_MTRR_DEF_TYPE_VALID_MASK   (  MSR_IA32_MTRR_DEF_TYPE_DEF_MT_MASK \
+                                             | MSR_IA32_MTRR_DEF_TYPE_FIXED_EN    \
+                                             | MSR_IA32_MTRR_DEF_TYPE_MTRR_EN)
+%define MSR_IA32_MTRR_PHYSMASK_VALID        RT_BIT_64(11)
 %define MSR_IA32_PERF_GLOBAL_STATUS         0x38E
 %define MSR_IA32_PERF_GLOBAL_CTRL           0x38F
 %define MSR_IA32_PERF_GLOBAL_OVF_CTRL       0x390
@@ -718,6 +764,7 @@
 %define MSR_IA32_VMX_TRUE_ENTRY_CTLS        0x490
 %define MSR_IA32_VMX_VMFUNC                 0x491
 %define MSR_IA32_VMX_PROCBASED_CTLS3        0x492
+%define MSR_IA32_VMX_EXIT_CTLS2             0x493
 %define MSR_IA32_RTIT_CTL                   0x570
 %define MSR_IA32_DS_AREA                    0x600
 %define MSR_RAPL_POWER_UNIT                 0x606
@@ -738,6 +785,17 @@
 %define MSR_PP1_ENERGY_STATUS               0x641
 %define MSR_TURBO_ACTIVATION_RATIO          0x64c
 %define MSR_CORE_PERF_LIMIT_REASONS         0x64f
+%define MSR_IA32_U_CET                      0x6a0
+%define MSR_IA32_S_CET                      0x6a2
+ %define MSR_IA32_CET_SH_STK_EN             RT_BIT_64(0)
+ %define MSR_IA32_CET_WR_SHSTK_EN           RT_BIT_64(1)
+ %define MSR_IA32_CET_ENDBR_EN              RT_BIT_64(2)
+ %define MSR_IA32_CET_LEG_IW_EN             RT_BIT_64(3)
+ %define MSR_IA32_CET_NO_TRACK_EN           RT_BIT_64(4)
+ %define MSR_IA32_CET_SUPPRESS_DIS          RT_BIT_64(5)
+ %define MSR_IA32_CET_SUPPRESS              RT_BIT_64(10)
+ %define MSR_IA32_CET_TRACKER               RT_BIT_64(11)
+ %define MSR_IA32_CET_EB_LEG_BITMAP_BASE    0xfffffffffffff000
 %define MSR_IA32_X2APIC_START               0x800
 %define MSR_IA32_X2APIC_ID                  0x802
 %define MSR_IA32_X2APIC_VERSION             0x803
@@ -1354,6 +1412,10 @@
 %define X86_MODRM_MOD_MASK      0xc0
 %define X86_MODRM_MOD_SMASK     0x03
 %define X86_MODRM_MOD_SHIFT     6
+%define X86_MOD_MEM0            0
+%define X86_MOD_MEM1            1
+%define X86_MOD_MEM4            2
+%define X86_MOD_REG             3
 %ifndef VBOX_FOR_DTRACE_LIB
  %define X86_MODRM_MAKE(a_Mod, a_Reg, a_RegMem) (((a_Mod) << X86_MODRM_MOD_SHIFT) | ((a_Reg) << X86_MODRM_REG_SHIFT) | (a_RegMem))
 %endif
@@ -1365,6 +1427,8 @@
 %define X86_SIB_SCALE_SMASK   0x03
 %define X86_SIB_SCALE_SHIFT   6
 %ifndef VBOX_FOR_DTRACE_LIB
+ %define X86_SIB_MAKE(a_BaseReg, a_IndexReg, a_Scale) \
+    (((a_Scale) << X86_SIB_SCALE_SHIFT) | ((a_IndexReg) << X86_SIB_INDEX_SHIFT) | (a_BaseReg))
 %endif
 %define X86_GREG_xAX            0
 %define X86_GREG_xCX            1
@@ -1401,6 +1465,7 @@
 %define X86_OP_PRF_LOCK         0xf0
 %define X86_OP_PRF_REPZ         0xf3
 %define X86_OP_PRF_REPNZ        0xf2
+%define X86_OP_REX              0x40
 %define X86_OP_REX_B            0x41
 %define X86_OP_REX_X            0x42
 %define X86_OP_REX_R            0x44
