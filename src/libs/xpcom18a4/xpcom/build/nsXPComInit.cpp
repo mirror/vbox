@@ -482,9 +482,6 @@ nsresult NS_COM NS_InitXPCOM2(nsIServiceManager* *result,
     nsTraceRefcntImpl::Startup();
 #endif
 
-    // Establish the main thread here.
-    g_hMainThread = RTThreadSelf();
-
     // If the locale hasn't already been setup by our embedder,
     // get us out of the "C" locale and into the system
     if (strcmp(setlocale(LC_ALL, NULL), "C") == 0)
@@ -503,6 +500,10 @@ nsresult NS_COM NS_InitXPCOM2(nsIServiceManager* *result,
                                     (void**)&gDirectoryService);
     if (NS_FAILED(rv))
         return rv;
+
+    // Establish the main thread here now that _PR_ImplicitInitialization() -> _PR_InitStuff() ->
+    // RTR3InitDll() -> rtR3Init() -> rtThreadInit() has been called.
+    g_hMainThread = RTThreadSelf();
 
     nsCOMPtr<nsIDirectoryService> dirService = do_QueryInterface(gDirectoryService, &rv);
     if (NS_FAILED(rv))
