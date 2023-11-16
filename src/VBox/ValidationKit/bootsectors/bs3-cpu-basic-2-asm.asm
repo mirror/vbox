@@ -48,10 +48,6 @@ BS3_BEGIN_DATA16
 BS3_GLOBAL_DATA g_bs3CpuBasic2_ud2_FlatAddr, 4
         dd  _bs3CpuBasic2_ud2 wrt FLAT
 
-;; Place to save esp/rsp when doing LEA variations involving esp/rsp.
-BS3_GLOBAL_DATA g_bs3CpuBasic2_lea_rsp, 8
-        dq  0
-
 
 ;
 ; CPU mode agnostic test code snippets.

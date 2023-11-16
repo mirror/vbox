@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - bs3-cpu-basic-2, 16-bit C code.
+ * BS3Kit - bs3-cpu-basic-3, 16-bit C code.
  */
 
 /*
@@ -44,28 +44,12 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_TssGateEsp);
-BS3TESTMODE_PROTOTYPES_MODE(bs3CpuBasic2_RaiseXcpt1);
-
-FNBS3TESTDOMODE             bs3CpuBasic2_RaiseXcpt11_f16;
-FNBS3TESTDOMODE             bs3CpuBasic2_sidt_f16;
-FNBS3TESTDOMODE             bs3CpuBasic2_sgdt_f16;
-FNBS3TESTDOMODE             bs3CpuBasic2_lidt_f16;
-FNBS3TESTDOMODE             bs3CpuBasic2_lgdt_f16;
-FNBS3TESTDOMODE             bs3CpuBasic2_iret_f16;
-FNBS3TESTDOMODE             bs3CpuBasic2_jmp_call_f16;
-FNBS3TESTDOMODE             bs3CpuBasic2_far_jmp_call_f16;
-FNBS3TESTDOMODE             bs3CpuBasic2_near_ret_f16;
-FNBS3TESTDOMODE             bs3CpuBasic2_far_ret_f16;
-FNBS3TESTDOMODE             bs3CpuBasic2_instr_len_f16;
-
-BS3_DECL_CALLBACK(void)     bs3CpuBasic2_Do32BitTests_pe32();
+BS3TESTMODE_PROTOTYPES_CMN(bs3CpuBasic3_Lea);
 
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-#if 1
 /**
  * @note We're making 16:16 reference to 32-bit and 64-bit code here,
  *       so if the functions we're aiming for are past the first 64KB in the
@@ -73,63 +57,20 @@ BS3_DECL_CALLBACK(void)     bs3CpuBasic2_Do32BitTests_pe32();
  *       address xxxx:yyyyyyyy from frame xxxxx". */
 static const BS3TESTMODEENTRY g_aModeTest[] =
 {
-    BS3TESTMODEENTRY_MODE("tss / gate / esp", bs3CpuBasic2_TssGateEsp),
-#if 0 /** @todo The 'raise xcpt \#1' test doesn't work in IEM! */
-    BS3TESTMODEENTRY_MODE("raise xcpt #1", bs3CpuBasic2_RaiseXcpt1),
-#endif
-};
-#endif
-
-static const BS3TESTMODEBYONEENTRY g_aModeByOneTests[] =
-{
-#if 1
-    { "#ac",  bs3CpuBasic2_RaiseXcpt11_f16, 0 },
-#endif
-#if 1
-    { "iret", bs3CpuBasic2_iret_f16, 0 },
-    { "near jmp+call jb / jv / ind",  bs3CpuBasic2_jmp_call_f16, 0 },
-    { "far jmp+call",  bs3CpuBasic2_far_jmp_call_f16, 0 },
-    { "near ret",  bs3CpuBasic2_near_ret_f16, 0 },
-    { "far ret",   bs3CpuBasic2_far_ret_f16, 0 },
-#endif
-#if 1
-    { "sidt", bs3CpuBasic2_sidt_f16, 0 },
-    { "sgdt", bs3CpuBasic2_sgdt_f16, 0 },
-    { "lidt", bs3CpuBasic2_lidt_f16, 0 },
-    { "lgdt", bs3CpuBasic2_lgdt_f16, 0 },
-#endif
-#if 1
-    { "instr length", bs3CpuBasic2_instr_len_f16, 0 },
-#endif
+    BS3TESTMODEENTRY_CMN("lea", bs3CpuBasic3_Lea),
 };
 
 
 BS3_DECL(void) Main_rm()
 {
     Bs3InitAll_rm();
-    Bs3TestInit("bs3-cpu-basic-2");
+    Bs3TestInit("bs3-cpu-basic-3");
     Bs3TestPrintf("g_uBs3CpuDetected=%#x\n", g_uBs3CpuDetected);
 
     /*
      * Do tests driven from 16-bit code.
      */
-#if 1
     Bs3TestDoModes_rm(g_aModeTest, RT_ELEMENTS(g_aModeTest));
-#else
-    NOREF(g_aModeTest);
-#endif
-#if 1
-    Bs3TestDoModesByOne_rm(g_aModeByOneTests, RT_ELEMENTS(g_aModeByOneTests), 0);
-#else
-    NOREF(g_aModeByOneTests);
-#endif
-
-#if 0 /** @todo The '\#PF' test doesn't work right in IEM! */
-    /*
-     * Do tests driven from 32-bit code (bs3-cpu-basic-2-32.c32 via assembly).
-     */
-    Bs3SwitchTo32BitAndCallC_rm(bs3CpuBasic2_Do32BitTests_pe32, 0);
-#endif
 
     Bs3TestTerm();
     Bs3Shutdown();
