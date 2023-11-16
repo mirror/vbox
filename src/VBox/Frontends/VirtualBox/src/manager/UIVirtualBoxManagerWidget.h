@@ -346,6 +346,8 @@ private:
 
     /** @name Tools / Common stuff.
       * @{ */
+        /** Updates Global tools menu. */
+        void updateToolsMenuGlobal();
         /** Updates Machine tools menu for @a pItem specified. */
         void updateToolsMenuMachine(UIVirtualMachineItem *pItem);
 
