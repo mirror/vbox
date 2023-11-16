@@ -262,11 +262,12 @@ void UIToolPaneGlobal::closeTool(UIToolType enmType)
         /* Forget corresponding widget: */
         switch (enmType)
         {
-            case UIToolType_Welcome:    m_pPaneWelcome = 0; break;
-            case UIToolType_Extensions: m_pPaneExtensions = 0; break;
-            case UIToolType_Media:      m_pPaneMedia = 0; break;
-            case UIToolType_Network:    m_pPaneNetwork = 0; break;
-            case UIToolType_Cloud:      m_pPaneCloud = 0; break;
+            case UIToolType_Welcome:            m_pPaneWelcome = 0; break;
+            case UIToolType_Extensions:         m_pPaneExtensions = 0; break;
+            case UIToolType_Media:              m_pPaneMedia = 0; break;
+            case UIToolType_Network:            m_pPaneNetwork = 0; break;
+            case UIToolType_Cloud:              m_pPaneCloud = 0; break;
+            case UIToolType_VMActivityOverview: m_pPaneVMActivityOverview = 0; break;
             default: break;
         }
         /* Delete corresponding widget: */
