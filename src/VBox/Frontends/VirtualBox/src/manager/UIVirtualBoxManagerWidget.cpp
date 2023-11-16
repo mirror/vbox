@@ -375,6 +375,13 @@ void UIVirtualBoxManagerWidget::sltHandleStateChange(const QUuid &uId)
         recacheCurrentItemInformation();
 }
 
+void UIVirtualBoxManagerWidget::sltHandleSettingsExpertModeChange()
+{
+    /* Update tools restrictions for currently selected item: */
+    if (currentItem())
+        updateToolsMenuMachine(currentItem());
+}
+
 void UIVirtualBoxManagerWidget::sltHandleSplitterMove()
 {
     /* Create timer if isn't exist already: */
@@ -780,6 +787,10 @@ void UIVirtualBoxManagerWidget::prepareConnections()
     /* Global VBox event handlers: */
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
             this, &UIVirtualBoxManagerWidget::sltHandleStateChange);
+
+    /* Global VBox extra-data event handlers: */
+    connect(gEDataManager, &UIExtraDataManager::sigSettingsExpertModeChange,
+            this, &UIVirtualBoxManagerWidget::sltHandleSettingsExpertModeChange);
 
     /* Splitter connections: */
     connect(m_pSplitter, &QISplitter::splitterMoved,

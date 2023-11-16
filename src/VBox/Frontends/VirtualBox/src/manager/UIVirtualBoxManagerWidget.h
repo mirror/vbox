@@ -270,6 +270,12 @@ private slots:
         void sltHandleStateChange(const QUuid &uId);
     /** @} */
 
+    /** @name CVirtualBox extra-data event handling stuff.
+      * @{ */
+        /** Handles signal about settings expert mode change. */
+        void sltHandleSettingsExpertModeChange();
+    /** @} */
+
     /** @name Splitter stuff.
       * @{ */
         /** Handles signal about splitter move. */
