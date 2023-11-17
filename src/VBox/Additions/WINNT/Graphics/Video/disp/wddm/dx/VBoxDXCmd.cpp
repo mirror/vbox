@@ -1542,3 +1542,711 @@ int vgpu10PresentBlt(PVBOXDX_DEVICE pDevice,
     vboxDXCommandBufferCommit(pDevice);
     return VINF_SUCCESS;
 }
+
+
+int vgpu10DefineVideoProcessor(PVBOXDX_DEVICE pDevice,
+                               uint32 videoProcessorId,
+                               VBSVGA3dVideoProcessorDesc const &desc,
+                               uint32 RateConversionCapsIndex)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_DEFINE_VIDEO_PROCESSOR,
+                                             sizeof(VBSVGA3dCmdDXDefineVideoProcessor), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXDefineVideoProcessor *cmd = (VBSVGA3dCmdDXDefineVideoProcessor *)pvCmd;
+    SET_CMD_FIELD(videoProcessorId);
+    SET_CMD_FIELD(desc);
+    SET_CMD_FIELD(RateConversionCapsIndex);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10DefineVideoDecoderOutputView(PVBOXDX_DEVICE pDevice,
+                                       VBSVGA3dVideoDecoderOutputViewId videoDecoderOutputViewId,
+                                       D3DKMT_HANDLE hAllocation,
+                                       VBSVGA3dVDOVDesc const &desc)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_DEFINE_VIDEO_DECODER_OUTPUT_VIEW,
+                                             sizeof(VBSVGA3dCmdDXDefineVideoDecoderOutputView), 1);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXDefineVideoDecoderOutputView *cmd = (VBSVGA3dCmdDXDefineVideoDecoderOutputView *)pvCmd;
+    SET_CMD_FIELD(videoDecoderOutputViewId);
+    cmd->sid = SVGA3D_INVALID_ID;
+    SET_CMD_FIELD(desc);
+    vboxDXStorePatchLocation(pDevice, &cmd->sid, VBOXDXALLOCATIONTYPE_SURFACE,
+                             hAllocation, 0, true);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10DefineVideoDecoder(PVBOXDX_DEVICE pDevice,
+                             VBSVGA3dVideoDecoderId videoDecoderId,
+                             VBSVGA3dVideoDecoderDesc const &desc,
+                             VBSVGA3dVideoDecoderConfig const &config)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_DEFINE_VIDEO_DECODER,
+                                             sizeof(VBSVGA3dCmdDXDefineVideoDecoder), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXDefineVideoDecoder *cmd = (VBSVGA3dCmdDXDefineVideoDecoder *)pvCmd;
+    SET_CMD_FIELD(videoDecoderId);
+    SET_CMD_FIELD(desc);
+    SET_CMD_FIELD(config);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10VideoDecoderBeginFrame(PVBOXDX_DEVICE pDevice,
+                                 VBSVGA3dVideoDecoderId videoDecoderId,
+                                 VBSVGA3dVideoDecoderOutputViewId videoDecoderOutputViewId)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_VIDEO_DECODER_BEGIN_FRAME,
+                                             sizeof(VBSVGA3dCmdDXVideoDecoderBeginFrame), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXVideoDecoderBeginFrame *cmd = (VBSVGA3dCmdDXVideoDecoderBeginFrame *)pvCmd;
+    SET_CMD_FIELD(videoDecoderId);
+    SET_CMD_FIELD(videoDecoderOutputViewId);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10VideoDecoderSubmitBuffers(PVBOXDX_DEVICE pDevice,
+                                    VBSVGA3dVideoDecoderId videoDecoderId,
+                                    uint32 bufferCount,
+                                    D3DKMT_HANDLE const *pahAllocation,
+                                    VBSVGA3dVideoDecoderBufferDesc const *paBufferDesc)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_VIDEO_DECODER_SUBMIT_BUFFERS,
+                                             sizeof(VBSVGA3dCmdDXVideoDecoderSubmitBuffers)
+                                             + bufferCount * sizeof(VBSVGA3dVideoDecoderBufferDesc),
+                                             bufferCount);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXVideoDecoderSubmitBuffers *cmd = (VBSVGA3dCmdDXVideoDecoderSubmitBuffers *)pvCmd;
+    SET_CMD_FIELD(videoDecoderId);
+
+    VBSVGA3dVideoDecoderBufferDesc *paCmdBufferDesc = (VBSVGA3dVideoDecoderBufferDesc *)&cmd[1];
+    memcpy(paCmdBufferDesc, paBufferDesc, bufferCount * sizeof(VBSVGA3dVideoDecoderBufferDesc));
+
+    for (uint32_t i = 0; i < bufferCount; ++i)
+    {
+        vboxDXStorePatchLocation(pDevice, &paCmdBufferDesc[i].sidBuffer, VBOXDXALLOCATIONTYPE_SURFACE,
+                                 pahAllocation[i], 0, false);
+    }
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10VideoDecoderEndFrame(PVBOXDX_DEVICE pDevice,
+                               VBSVGA3dVideoDecoderId videoDecoderId)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_VIDEO_DECODER_END_FRAME,
+                                             sizeof(VBSVGA3dCmdDXVideoDecoderEndFrame), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXVideoDecoderEndFrame *cmd = (VBSVGA3dCmdDXVideoDecoderEndFrame *)pvCmd;
+    SET_CMD_FIELD(videoDecoderId);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10DefineVideoProcessorInputView(PVBOXDX_DEVICE pDevice,
+                                        VBSVGA3dVideoProcessorInputViewId videoProcessorInputViewId,
+                                        D3DKMT_HANDLE hAllocation,
+                                        VBSVGA3dVideoProcessorDesc const &contentDesc,
+                                        VBSVGA3dVPIVDesc const &desc)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_DEFINE_VIDEO_PROCESSOR_INPUT_VIEW,
+                                             sizeof(VBSVGA3dCmdDXDefineVideoProcessorInputView), 1);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXDefineVideoProcessorInputView *cmd = (VBSVGA3dCmdDXDefineVideoProcessorInputView *)pvCmd;
+    SET_CMD_FIELD(videoProcessorInputViewId);
+    cmd->sid = SVGA3D_INVALID_ID;
+    SET_CMD_FIELD(contentDesc);
+    SET_CMD_FIELD(desc);
+    vboxDXStorePatchLocation(pDevice, &cmd->sid, VBOXDXALLOCATIONTYPE_SURFACE,
+                             hAllocation, 0, true);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10DefineVideoProcessorOutputView(PVBOXDX_DEVICE pDevice,
+                                         VBSVGA3dVideoProcessorOutputViewId videoProcessorOutputViewId,
+                                         D3DKMT_HANDLE hAllocation,
+                                         VBSVGA3dVideoProcessorDesc const &contentDesc,
+                                         VBSVGA3dVPOVDesc const &desc)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_DEFINE_VIDEO_PROCESSOR_OUTPUT_VIEW,
+                                             sizeof(VBSVGA3dCmdDXDefineVideoProcessorOutputView), 1);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXDefineVideoProcessorOutputView *cmd = (VBSVGA3dCmdDXDefineVideoProcessorOutputView *)pvCmd;
+    SET_CMD_FIELD(videoProcessorOutputViewId);
+    cmd->sid = SVGA3D_INVALID_ID;
+    SET_CMD_FIELD(contentDesc);
+    SET_CMD_FIELD(desc);
+    vboxDXStorePatchLocation(pDevice, &cmd->sid, VBOXDXALLOCATIONTYPE_SURFACE,
+                             hAllocation, 0, true);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+int vgpu10VideoProcessorBlt(PVBOXDX_DEVICE pDevice,
+                            VBSVGA3dVideoProcessorId videoProcessorId,
+                            VBSVGA3dVideoProcessorOutputViewId videoProcessorOutputViewId,
+                            uint32 outputFrame,
+                            uint32 streamCount,
+                            uint32 cbVideoProcessorStreams,
+                            VBSVGA3dVideoProcessorStream *pVideoProcessorStreams)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_BLT,
+                                             sizeof(VBSVGA3dCmdDXVideoProcessorBlt) + cbVideoProcessorStreams, 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXVideoProcessorBlt *cmd = (VBSVGA3dCmdDXVideoProcessorBlt *)pvCmd;
+    SET_CMD_FIELD(videoProcessorId);
+    SET_CMD_FIELD(videoProcessorOutputViewId);
+    SET_CMD_FIELD(outputFrame);
+    SET_CMD_FIELD(streamCount);
+    memcpy(&cmd[1], pVideoProcessorStreams, cbVideoProcessorStreams);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10DestroyVideoDecoder(PVBOXDX_DEVICE pDevice,
+                              VBSVGA3dVideoDecoderId videoDecoderId)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_DESTROY_VIDEO_DECODER,
+                                             sizeof(VBSVGA3dCmdDXDestroyVideoDecoder), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXDestroyVideoDecoder *cmd = (VBSVGA3dCmdDXDestroyVideoDecoder *)pvCmd;
+    SET_CMD_FIELD(videoDecoderId);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10DestroyVideoDecoderOutputView(PVBOXDX_DEVICE pDevice,
+                                        VBSVGA3dVideoDecoderOutputViewId videoDecoderOutputViewId)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_DESTROY_VIDEO_DECODER_OUTPUT_VIEW,
+                                             sizeof(VBSVGA3dCmdDXDestroyVideoDecoderOutputView), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXDestroyVideoDecoderOutputView *cmd = (VBSVGA3dCmdDXDestroyVideoDecoderOutputView *)pvCmd;
+    SET_CMD_FIELD(videoDecoderOutputViewId);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10DestroyVideoProcessor(PVBOXDX_DEVICE pDevice,
+                                VBSVGA3dVideoProcessorId videoProcessorId)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_DESTROY_VIDEO_PROCESSOR,
+                                             sizeof(VBSVGA3dCmdDXDestroyVideoProcessor), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXDestroyVideoProcessor *cmd = (VBSVGA3dCmdDXDestroyVideoProcessor *)pvCmd;
+    SET_CMD_FIELD(videoProcessorId);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10DestroyVideoProcessorInputView(PVBOXDX_DEVICE pDevice,
+                                         VBSVGA3dVideoProcessorInputViewId videoProcessorInputViewId)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_DESTROY_VIDEO_PROCESSOR_INPUT_VIEW,
+                                             sizeof(VBSVGA3dCmdDXDestroyVideoProcessorInputView), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXDestroyVideoProcessorInputView *cmd = (VBSVGA3dCmdDXDestroyVideoProcessorInputView *)pvCmd;
+    SET_CMD_FIELD(videoProcessorInputViewId);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10DestroyVideoProcessorOutputView(PVBOXDX_DEVICE pDevice,
+                                          VBSVGA3dVideoProcessorOutputViewId videoProcessorOutputViewId)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_DESTROY_VIDEO_PROCESSOR_OUTPUT_VIEW,
+                                             sizeof(VBSVGA3dCmdDXDestroyVideoProcessorOutputView), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXDestroyVideoProcessorOutputView *cmd = (VBSVGA3dCmdDXDestroyVideoProcessorOutputView *)pvCmd;
+    SET_CMD_FIELD(videoProcessorOutputViewId);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10VideoProcessorSetOutputTargetRect(PVBOXDX_DEVICE pDevice,
+                                            VBSVGA3dVideoProcessorId videoProcessorId,
+                                            BOOL enable,
+                                            RECT const &outputRect)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_TARGET_RECT,
+                                             sizeof(VBSVGA3dCmdDXVideoProcessorSetOutputTargetRect), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXVideoProcessorSetOutputTargetRect *cmd = (VBSVGA3dCmdDXVideoProcessorSetOutputTargetRect *)pvCmd;
+    SET_CMD_FIELD(videoProcessorId);
+    SET_CMD_FIELD(enable);
+    cmd->outputRect.left   = outputRect.left;
+    cmd->outputRect.top    = outputRect.top;
+    cmd->outputRect.right  = outputRect.right;
+    cmd->outputRect.bottom = outputRect.bottom;
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10VideoProcessorSetOutputBackgroundColor(PVBOXDX_DEVICE pDevice,
+                                                 VBSVGA3dVideoProcessorId videoProcessorId,
+                                                 BOOL ycbcr,
+                                                 D3D11_1DDI_VIDEO_COLOR const &color)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_BACKGROUND_COLOR,
+                                             sizeof(VBSVGA3dCmdDXVideoProcessorSetOutputBackgroundColor), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXVideoProcessorSetOutputBackgroundColor *cmd = (VBSVGA3dCmdDXVideoProcessorSetOutputBackgroundColor *)pvCmd;
+    SET_CMD_FIELD(videoProcessorId);
+    SET_CMD_FIELD(ycbcr);
+    cmd->color.r = color.RGBA.R;
+    cmd->color.g = color.RGBA.G;
+    cmd->color.b = color.RGBA.B;
+    cmd->color.a = color.RGBA.A;
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10VideoProcessorSetOutputColorSpace(PVBOXDX_DEVICE pDevice,
+                                            VBSVGA3dVideoProcessorId videoProcessorId,
+                                            VBSVGA3dVideoProcessorColorSpace const &colorSpace)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_COLOR_SPACE,
+                                             sizeof(VBSVGA3dCmdDXVideoProcessorSetOutputColorSpace), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXVideoProcessorSetOutputColorSpace *cmd = (VBSVGA3dCmdDXVideoProcessorSetOutputColorSpace *)pvCmd;
+    SET_CMD_FIELD(videoProcessorId);
+    SET_CMD_FIELD(colorSpace);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10VideoProcessorSetOutputAlphaFillMode(PVBOXDX_DEVICE pDevice,
+                                               VBSVGA3dVideoProcessorId videoProcessorId,
+                                               VBSVGA3dVideoProcessorAlphaFillMode fillMode,
+                                               uint32 streamIndex)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_ALPHA_FILL_MODE,
+                                             sizeof(VBSVGA3dCmdDXVideoProcessorSetOutputAlphaFillMode), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXVideoProcessorSetOutputAlphaFillMode *cmd = (VBSVGA3dCmdDXVideoProcessorSetOutputAlphaFillMode *)pvCmd;
+    SET_CMD_FIELD(videoProcessorId);
+    SET_CMD_FIELD(fillMode);
+    SET_CMD_FIELD(streamIndex);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10VideoProcessorSetOutputConstriction(PVBOXDX_DEVICE pDevice,
+                                              VBSVGA3dVideoProcessorId videoProcessorId,
+                                              BOOL enabled,
+                                              SIZE constrictonSize)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_CONSTRICTION,
+                                             sizeof(VBSVGA3dCmdDXVideoProcessorSetOutputConstriction), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXVideoProcessorSetOutputConstriction *cmd = (VBSVGA3dCmdDXVideoProcessorSetOutputConstriction *)pvCmd;
+    SET_CMD_FIELD(videoProcessorId);
+    SET_CMD_FIELD(enabled);
+    cmd->width = constrictonSize.cx;
+    cmd->height = constrictonSize.cy;
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10VideoProcessorSetOutputStereoMode(PVBOXDX_DEVICE pDevice,
+                                            VBSVGA3dVideoProcessorId videoProcessorId,
+                                            BOOL enable)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_STEREO_MODE,
+                                             sizeof(VBSVGA3dCmdDXVideoProcessorSetOutputStereoMode), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXVideoProcessorSetOutputStereoMode *cmd = (VBSVGA3dCmdDXVideoProcessorSetOutputStereoMode *)pvCmd;
+    SET_CMD_FIELD(videoProcessorId);
+    SET_CMD_FIELD(enable);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10VideoProcessorSetStreamFrameFormat(PVBOXDX_DEVICE pDevice,
+                                             VBSVGA3dVideoProcessorId videoProcessorId,
+                                             uint32 streamIndex,
+                                             VBSVGA3dVideoFrameFormat format)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_FRAME_FORMAT,
+                                             sizeof(VBSVGA3dCmdDXVideoProcessorSetStreamFrameFormat), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXVideoProcessorSetStreamFrameFormat *cmd = (VBSVGA3dCmdDXVideoProcessorSetStreamFrameFormat *)pvCmd;
+    SET_CMD_FIELD(videoProcessorId);
+    SET_CMD_FIELD(streamIndex);
+    SET_CMD_FIELD(format);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10VideoProcessorSetStreamColorSpace(PVBOXDX_DEVICE pDevice,
+                                            VBSVGA3dVideoProcessorId videoProcessorId,
+                                            uint32 streamIndex,
+                                            VBSVGA3dVideoProcessorColorSpace const &colorSpace)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_COLOR_SPACE,
+                                             sizeof(VBSVGA3dCmdDXVideoProcessorSetStreamColorSpace), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXVideoProcessorSetStreamColorSpace *cmd = (VBSVGA3dCmdDXVideoProcessorSetStreamColorSpace *)pvCmd;
+    SET_CMD_FIELD(videoProcessorId);
+    SET_CMD_FIELD(streamIndex);
+    SET_CMD_FIELD(colorSpace);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10VideoProcessorSetStreamOutputRate(PVBOXDX_DEVICE pDevice,
+                                            VBSVGA3dVideoProcessorId videoProcessorId,
+                                            uint32 streamIndex,
+                                            VBSVGA3dVideoProcessorOutputRate outputRate,
+                                            uint8 repeatFrame,
+                                            SVGA3dFraction64 const &customRate)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_OUTPUT_RATE,
+                                             sizeof(VBSVGA3dCmdDXVideoProcessorSetStreamOutputRate), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXVideoProcessorSetStreamOutputRate *cmd = (VBSVGA3dCmdDXVideoProcessorSetStreamOutputRate *)pvCmd;
+    SET_CMD_FIELD(videoProcessorId);
+    SET_CMD_FIELD(streamIndex);
+    SET_CMD_FIELD(outputRate);
+    SET_CMD_FIELD(repeatFrame);
+    SET_CMD_FIELD(customRate);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10VideoProcessorSetStreamSourceRect(PVBOXDX_DEVICE pDevice,
+                                            VBSVGA3dVideoProcessorId videoProcessorId,
+                                            uint32 streamIndex,
+                                            BOOL enable,
+                                            RECT const *pSourceRect)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_SOURCE_RECT,
+                                             sizeof(VBSVGA3dCmdDXVideoProcessorSetStreamSourceRect), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXVideoProcessorSetStreamSourceRect *cmd = (VBSVGA3dCmdDXVideoProcessorSetStreamSourceRect *)pvCmd;
+    SET_CMD_FIELD(videoProcessorId);
+    SET_CMD_FIELD(streamIndex);
+    SET_CMD_FIELD(enable);
+    cmd->sourceRect.left   = pSourceRect->left;
+    cmd->sourceRect.top    = pSourceRect->top;
+    cmd->sourceRect.right  = pSourceRect->right;
+    cmd->sourceRect.bottom = pSourceRect->bottom;
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10VideoProcessorSetStreamDestRect(PVBOXDX_DEVICE pDevice,
+                                          VBSVGA3dVideoProcessorId videoProcessorId,
+                                          uint32 streamIndex,
+                                          BOOL enable,
+                                          RECT const *pDestRect)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_DEST_RECT,
+                                             sizeof(VBSVGA3dCmdDXVideoProcessorSetStreamDestRect), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXVideoProcessorSetStreamDestRect *cmd = (VBSVGA3dCmdDXVideoProcessorSetStreamDestRect *)pvCmd;
+    SET_CMD_FIELD(videoProcessorId);
+    SET_CMD_FIELD(streamIndex);
+    SET_CMD_FIELD(enable);
+    cmd->destRect.left   = pDestRect->left;
+    cmd->destRect.top    = pDestRect->top;
+    cmd->destRect.right  = pDestRect->right;
+    cmd->destRect.bottom = pDestRect->bottom;
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10VideoProcessorSetStreamAlpha(PVBOXDX_DEVICE pDevice,
+                                       VBSVGA3dVideoProcessorId videoProcessorId,
+                                       uint32 streamIndex,
+                                       BOOL enable,
+                                       float alpha)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_ALPHA,
+                                             sizeof(VBSVGA3dCmdDXVideoProcessorSetStreamAlpha), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXVideoProcessorSetStreamAlpha *cmd = (VBSVGA3dCmdDXVideoProcessorSetStreamAlpha *)pvCmd;
+    SET_CMD_FIELD(videoProcessorId);
+    SET_CMD_FIELD(streamIndex);
+    SET_CMD_FIELD(enable);
+    SET_CMD_FIELD(alpha);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10VideoProcessorSetStreamPixelAspectRatio(PVBOXDX_DEVICE pDevice,
+                                                  VBSVGA3dVideoProcessorId videoProcessorId,
+                                                  uint32 streamIndex,
+                                                  BOOL enable,
+                                                  SVGA3dFraction64 const &sourceRatio,
+                                                  SVGA3dFraction64 const &destRatio)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_PIXEL_ASPECT_RATIO,
+                                             sizeof(VBSVGA3dCmdDXVideoProcessorSetStreamPixelAspectRatio), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXVideoProcessorSetStreamPixelAspectRatio *cmd = (VBSVGA3dCmdDXVideoProcessorSetStreamPixelAspectRatio *)pvCmd;
+    SET_CMD_FIELD(videoProcessorId);
+    SET_CMD_FIELD(streamIndex);
+    SET_CMD_FIELD(enable);
+    SET_CMD_FIELD(sourceRatio);
+    SET_CMD_FIELD(destRatio);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10VideoProcessorSetStreamLumaKey(PVBOXDX_DEVICE pDevice,
+                                         VBSVGA3dVideoProcessorId videoProcessorId,
+                                         uint32 streamIndex,
+                                         BOOL enable,
+                                         float lower,
+                                         float upper)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_LUMA_KEY,
+                                             sizeof(VBSVGA3dCmdDXVideoProcessorSetStreamLumaKey), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXVideoProcessorSetStreamLumaKey *cmd = (VBSVGA3dCmdDXVideoProcessorSetStreamLumaKey *)pvCmd;
+    SET_CMD_FIELD(videoProcessorId);
+    SET_CMD_FIELD(streamIndex);
+    SET_CMD_FIELD(enable);
+    SET_CMD_FIELD(lower);
+    SET_CMD_FIELD(upper);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10VideoProcessorSetStreamStereoFormat(PVBOXDX_DEVICE pDevice,
+                                              VBSVGA3dVideoProcessorId videoProcessorId,
+                                              uint32 streamIndex,
+                                              BOOL enable,
+                                              VBSVGA3dVideoProcessorStereoFormat stereoFormat,
+                                              uint8 leftViewFrame0,
+                                              uint8 baseViewFrame0,
+                                              VBSVGA3dVideoProcessorStereoFlipMode flipMode,
+                                              int monoOffset)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_STEREO_FORMAT,
+                                             sizeof(VBSVGA3dCmdDXVideoProcessorSetStreamStereoFormat), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXVideoProcessorSetStreamStereoFormat *cmd = (VBSVGA3dCmdDXVideoProcessorSetStreamStereoFormat *)pvCmd;
+    SET_CMD_FIELD(videoProcessorId);
+    SET_CMD_FIELD(streamIndex);
+    SET_CMD_FIELD(enable);
+    SET_CMD_FIELD(stereoFormat);
+    SET_CMD_FIELD(leftViewFrame0);
+    SET_CMD_FIELD(baseViewFrame0);
+    SET_CMD_FIELD(flipMode);
+    SET_CMD_FIELD(monoOffset);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10VideoProcessorSetStreamAutoProcessingMode(PVBOXDX_DEVICE pDevice,
+                                                    VBSVGA3dVideoProcessorId videoProcessorId,
+                                                    uint32 streamIndex,
+                                                    BOOL enable)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_AUTO_PROCESSING_MODE,
+                                             sizeof(VBSVGA3dCmdDXVideoProcessorSetStreamAutoProcessingMode), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXVideoProcessorSetStreamAutoProcessingMode *cmd = (VBSVGA3dCmdDXVideoProcessorSetStreamAutoProcessingMode *)pvCmd;
+    SET_CMD_FIELD(videoProcessorId);
+    SET_CMD_FIELD(streamIndex);
+    SET_CMD_FIELD(enable);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10VideoProcessorSetStreamFilter(PVBOXDX_DEVICE pDevice,
+                                        VBSVGA3dVideoProcessorId videoProcessorId,
+                                        uint32 streamIndex,
+                                        BOOL enable,
+                                        VBSVGA3dVideoProcessorFilter filter,
+                                        int level)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_FILTER,
+                                             sizeof(VBSVGA3dCmdDXVideoProcessorSetStreamFilter), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXVideoProcessorSetStreamFilter *cmd = (VBSVGA3dCmdDXVideoProcessorSetStreamFilter *)pvCmd;
+    SET_CMD_FIELD(videoProcessorId);
+    SET_CMD_FIELD(streamIndex);
+    SET_CMD_FIELD(enable);
+    SET_CMD_FIELD(filter);
+    SET_CMD_FIELD(level);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10VideoProcessorSetStreamRotation(PVBOXDX_DEVICE pDevice,
+                                          VBSVGA3dVideoProcessorId videoProcessorId,
+                                          uint32 streamIndex,
+                                          BOOL enable,
+                                          VBSVGA3dVideoProcessorRotation rotation)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_ROTATION,
+                                             sizeof(VBSVGA3dCmdDXVideoProcessorSetStreamRotation), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXVideoProcessorSetStreamRotation *cmd = (VBSVGA3dCmdDXVideoProcessorSetStreamRotation *)pvCmd;
+    SET_CMD_FIELD(videoProcessorId);
+    SET_CMD_FIELD(streamIndex);
+    SET_CMD_FIELD(enable);
+    SET_CMD_FIELD(rotation);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10GetVideoCapability(PVBOXDX_DEVICE pDevice,
+                             VBSVGA3dVideoCapability capability,
+                             D3DKMT_HANDLE hAllocation,
+                             uint32 offsetInBytes,
+                             uint32 sizeInBytes,
+                             uint64 fenceValue)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_GET_VIDEO_CAPABILITY,
+                                             sizeof(VBSVGA3dCmdDXGetVideoCapability), 1);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXGetVideoCapability *cmd = (VBSVGA3dCmdDXGetVideoCapability *)pvCmd;
+    SET_CMD_FIELD(capability);
+    cmd->mobid = SVGA3D_INVALID_ID;
+    SET_CMD_FIELD(offsetInBytes);
+    SET_CMD_FIELD(sizeInBytes);
+    SET_CMD_FIELD(fenceValue);
+
+    vboxDXStorePatchLocation(pDevice, &cmd->mobid, VBOXDXALLOCATIONTYPE_CO,
+                             hAllocation, offsetInBytes, true);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}

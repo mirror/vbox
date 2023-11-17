@@ -573,7 +573,8 @@ static SVGA3dSurfaceAllFlags vboxDXCalcSurfaceFlags(const D3D11DDIARG_CREATERESO
                              | D3D10_DDI_BIND_STREAM_OUTPUT
                              | D3D10_DDI_BIND_RENDER_TARGET
                              | D3D10_DDI_BIND_DEPTH_STENCIL
-                             | D3D11_DDI_BIND_UNORDERED_ACCESS))) == 0);
+                             | D3D11_DDI_BIND_UNORDERED_ACCESS
+                             | D3D11_DDI_BIND_DECODER))) == 0);
 
     if (BindFlags & D3D10_DDI_BIND_VERTEX_BUFFER)
         f |= SVGA3D_SURFACE_BIND_VERTEX_BUFFER | SVGA3D_SURFACE_HINT_VERTEXBUFFER;
@@ -591,6 +592,8 @@ static SVGA3dSurfaceAllFlags vboxDXCalcSurfaceFlags(const D3D11DDIARG_CREATERESO
         f |= SVGA3D_SURFACE_BIND_DEPTH_STENCIL | SVGA3D_SURFACE_HINT_DEPTHSTENCIL;
     if (BindFlags & D3D11_DDI_BIND_UNORDERED_ACCESS)
         f |= SVGA3D_SURFACE_BIND_UAVIEW;
+    if (BindFlags & D3D11_DDI_BIND_DECODER)
+        f |= SVGA3D_SURFACE_RESERVED1;
 
     /* D3D10_DDI_BIND_PRESENT textures can be used as render targets in a blitter on the host. */
     if (BindFlags & D3D10_DDI_BIND_PRESENT)
@@ -703,6 +706,9 @@ int vboxDXInitResourceData(PVBOXDX_RESOURCE pResource, const D3D11DDIARG_CREATER
     RTListInit(&pResource->listRTV);
     RTListInit(&pResource->listDSV);
     RTListInit(&pResource->listUAV);
+    RTListInit(&pResource->listVDOV);
+    RTListInit(&pResource->listVPIV);
+    RTListInit(&pResource->listVPOV);
 
     return VINF_SUCCESS;
 }
@@ -828,6 +834,9 @@ bool vboxDXOpenResource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource,
     RTListInit(&pResource->listRTV);
     RTListInit(&pResource->listDSV);
     RTListInit(&pResource->listUAV);
+    RTListInit(&pResource->listVDOV);
+    RTListInit(&pResource->listVPIV);
+    RTListInit(&pResource->listVPOV);
 
     pResource->pKMResource->pResource = pResource;
     pResource->pKMResource->hAllocation = pOpenResource->pOpenAllocationInfo2[0].hAllocation;
@@ -851,6 +860,9 @@ void vboxDXDestroyResource(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource)
     Assert(RTListIsEmpty(&pResource->listRTV));
     Assert(RTListIsEmpty(&pResource->listDSV));
     Assert(RTListIsEmpty(&pResource->listUAV));
+    Assert(RTListIsEmpty(&pResource->listVDOV));
+    Assert(RTListIsEmpty(&pResource->listVPIV));
+    Assert(RTListIsEmpty(&pResource->listVPOV));
 
     /* Remove from the list of active resources. */
     RTListNodeRemove(&pResource->pKMResource->nodeResource);
@@ -2013,7 +2025,7 @@ void vboxDXQueryEnd(PVBOXDX_DEVICE pDevice, PVBOXDXQUERY pQuery)
 {
     if (pQuery->Query == D3D10DDI_QUERY_EVENT)
     {
-        pQuery->u64Value = ++pDevice->u64MobFenceValue;
+        pQuery->u64Value = ASMAtomicIncU64(&pDevice->u64MobFenceValue);
         vgpu10MobFence64(pDevice, pQuery->u64Value, pQuery->pCOAllocation->hCOAllocation, pQuery->offQuery);
         pQuery->enmQueryState = VBOXDXQUERYSTATE_ISSUED;
         return;
@@ -2899,6 +2911,16 @@ static void vboxDXUndefineResourceViews(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE
     }
 
     /** @todo UAV */
+
+    VBOXDXVIDEOPROCESSOROUTPUTVIEW *pVPOV;
+    RTListForEach(&pResource->listVPOV, pVPOV, VBOXDXVIDEOPROCESSOROUTPUTVIEW, nodeView)
+    {
+        if (pVPOV->fDefined)
+        {
+            vgpu10DestroyVideoProcessorOutputView(pDevice, pVPOV->uVideoProcessorOutputViewId);
+            pVPOV->fDefined = false;
+        }
+    }
 }
 
 
@@ -2942,6 +2964,18 @@ static void vboxDXRedefineResourceViews(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE
     }
 
     /** @todo UAV */
+
+    VBOXDXVIDEOPROCESSOROUTPUTVIEW *pVPOV;
+    RTListForEach(&pResource->listVPOV, pVPOV, VBOXDXVIDEOPROCESSOROUTPUTVIEW, nodeView)
+    {
+        if (!pVPOV->fDefined)
+        {
+            vgpu10DefineVideoProcessorOutputView(pDevice, pVPOV->uVideoProcessorOutputViewId,
+                                                 vboxDXGetAllocation(pVPOV->pResource),
+                                                 pVPOV->svga.ContentDesc, pVPOV->svga.VPOVDesc);
+            pVPOV->fDefined = true;
+        }
+    }
 }
 
 
@@ -2998,7 +3032,7 @@ HRESULT vboxDXRotateResourceIdentities(PVBOXDX_DEVICE pDevice, UINT cResources, 
     }
 
     /* Rotate allocation handles. The function would be that simple if resources would not have views. */
-    D3DKMT_HANDLE hAllocation = papResources[0]->pKMResource->hAllocation;
+    D3DKMT_HANDLE const hAllocation = papResources[0]->pKMResource->hAllocation;
     for (unsigned i = 0; i < cResources - 1; ++i)
         papResources[i]->pKMResource->hAllocation = papResources[i + 1]->pKMResource->hAllocation;
     papResources[cResources - 1]->pKMResource->hAllocation = hAllocation;
@@ -3426,6 +3460,26 @@ static int vboxDXDeviceCreateObjects(PVBOXDX_DEVICE pDevice)
                                SVGA_COTABLE_MAX_IDS, NULL, NULL);
     AssertRCReturn(rc, rc);
 
+    rc = RTHandleTableCreateEx(&pDevice->hHTVideoProcessor, /* fFlags */ 0, /* uBase */ 0,
+                               SVGA_COTABLE_MAX_IDS, NULL, NULL);
+    AssertRCReturn(rc, rc);
+
+    rc = RTHandleTableCreateEx(&pDevice->hHTVideoDecoderOutputView, /* fFlags */ 0, /* uBase */ 0,
+                               SVGA_COTABLE_MAX_IDS, NULL, NULL);
+    AssertRCReturn(rc, rc);
+
+    rc = RTHandleTableCreateEx(&pDevice->hHTVideoDecoder, /* fFlags */ 0, /* uBase */ 0,
+                               SVGA_COTABLE_MAX_IDS, NULL, NULL);
+    AssertRCReturn(rc, rc);
+
+    rc = RTHandleTableCreateEx(&pDevice->hHTVideoProcessorInputView, /* fFlags */ 0, /* uBase */ 0,
+                               SVGA_COTABLE_MAX_IDS, NULL, NULL);
+    AssertRCReturn(rc, rc);
+
+    rc = RTHandleTableCreateEx(&pDevice->hHTVideoProcessorOutputView, /* fFlags */ 0, /* uBase */ 0,
+                               SVGA_COTABLE_MAX_IDS, NULL, NULL);
+    AssertRCReturn(rc, rc);
+
     RTListInit(&pDevice->listResources);
     RTListInit(&pDevice->listDestroyedResources);
     RTListInit(&pDevice->listStagingResources);
@@ -3513,6 +3567,36 @@ static void vboxDXDeviceDeleteObjects(PVBOXDX_DEVICE pDevice)
         RTHandleTableDestroy(pDevice->hHTStreamOutput, NULL, NULL);
         pDevice->hHTStreamOutput = 0;
     }
+
+    if (pDevice->hHTVideoProcessor)
+    {
+        RTHandleTableDestroy(pDevice->hHTVideoProcessor, NULL, NULL);
+        pDevice->hHTVideoProcessor = 0;
+    }
+
+    if (pDevice->hHTVideoDecoderOutputView)
+    {
+        RTHandleTableDestroy(pDevice->hHTVideoDecoderOutputView, NULL, NULL);
+        pDevice->hHTVideoDecoderOutputView = 0;
+    }
+
+    if (pDevice->hHTVideoDecoder)
+    {
+        RTHandleTableDestroy(pDevice->hHTVideoDecoder, NULL, NULL);
+        pDevice->hHTVideoDecoder = 0;
+    }
+
+    if (pDevice->hHTVideoProcessorInputView)
+    {
+        RTHandleTableDestroy(pDevice->hHTVideoProcessorInputView, NULL, NULL);
+        pDevice->hHTVideoProcessorInputView = 0;
+    }
+
+    if (pDevice->hHTVideoProcessorOutputView)
+    {
+        RTHandleTableDestroy(pDevice->hHTVideoProcessorOutputView, NULL, NULL);
+        pDevice->hHTVideoProcessorOutputView = 0;
+    }
 }
 
 
@@ -3575,4 +3659,10 @@ void vboxDXDestroyDevice(PVBOXDX_DEVICE pDevice)
     LogFlowFunc(("hr %d, hContext 0x%p",  hr, pDevice->hContext)); RT_NOREF(hr);
 
     vboxDXDeviceDeleteObjects(pDevice);
+
+    RTMemFree(pDevice->VideoDevice.paDecodeProfile);
+    pDevice->VideoDevice.paDecodeProfile = 0;
+
+    RTMemFree(pDevice->VideoDevice.config.pConfigInfo);
+    pDevice->VideoDevice.config.pConfigInfo = 0;
 }

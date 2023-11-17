@@ -42,6 +42,7 @@
 #include <svga3d_shaderdefs.h>
 #include <svga_escape.h>
 #include <svga_overlay.h>
+#include <vbsvga3d_dx.h>
 #pragma pack()
 
 #include <d3d11_1.h>
@@ -203,6 +204,9 @@ typedef struct VBOXDX_RESOURCE
     RTLISTANCHOR                   listRTV;                 /* Render target views. */
     RTLISTANCHOR                   listDSV;                 /* Depth stencil views. */
     RTLISTANCHOR                   listUAV;                 /* Unordered access views. */
+    RTLISTANCHOR                   listVDOV;                /* Video decoder output views. */
+    RTLISTANCHOR                   listVPIV;                /* Video processor input views. */
+    RTLISTANCHOR                   listVPOV;                /* Video processor output views. */
 
     RT_FLEXIBLE_ARRAY_EXTENSION
     D3D10DDI_MIPINFO               aMipInfoList[RT_FLEXIBLE_ARRAY]; /** @todo Remove this array if it will not be needed. */
@@ -312,6 +316,168 @@ typedef struct VBOXDXUNORDEREDACCESSVIEW
 } VBOXDXUNORDEREDACCESSVIEW, *PVBOXDXUNORDEREDACCESSVIEW;
 
 
+typedef struct VBOXDXVIDEOPROCESSORINPUTVIEW
+{
+    RTLISTNODE                     nodeView;                /* listVPIV of the resource. */
+    bool                           fDefined : 1;            /* Whether the view has been defined on the host. */
+    D3D11_1DDI_HRTVIDEOPROCESSORINPUTVIEW hRTView;
+    uint32_t                       uVideoProcessorInputViewId;
+    PVBOXDX_RESOURCE               pResource;
+
+    struct
+    {
+        VBSVGA3dVideoProcessorDesc ContentDesc;
+        VBSVGA3dVPIVDesc           VPIVDesc;
+    } svga;
+} VBOXDXVIDEOPROCESSORINPUTVIEW, *PVBOXDXVIDEOPROCESSORINPUTVIEW;
+
+
+typedef struct VBOXDXVIDEOPROCESSOROUTPUTVIEW
+{
+    RTLISTNODE                     nodeView;                /* listVPOV of the resource. */
+    bool                           fDefined : 1;            /* Whether the view has been defined on the host. */
+    D3D11_1DDI_HRTVIDEOPROCESSOROUTPUTVIEW hRTView;
+    uint32_t                       uVideoProcessorOutputViewId;
+    PVBOXDX_RESOURCE               pResource;
+
+    struct
+    {
+        VBSVGA3dVideoProcessorDesc ContentDesc;
+        VBSVGA3dVPOVDesc           VPOVDesc;
+    } svga;
+} VBOXDXVIDEOPROCESSOROUTPUTVIEW, *PVBOXDXVIDEOPROCESSOROUTPUTVIEW;
+
+
+typedef struct VBOXDXVIDEOPROCESSORFILTER
+{
+    BOOL Enable;
+    int Level;
+} VBOXDXVIDEOPROCESSORFILTER;
+
+
+typedef struct VBOXDXVIDEOPROCESSORSTREAM
+{
+    D3D11_1DDI_VIDEO_FRAME_FORMAT FrameFormat;
+    D3D11_1DDI_VIDEO_PROCESSOR_COLOR_SPACE ColorSpace;
+    struct {
+        D3D11_1DDI_VIDEO_PROCESSOR_OUTPUT_RATE OutputRate;
+        BOOL RepeatFrame;
+        DXGI_RATIONAL CustomRate;
+    } OutputRate;
+    struct {
+        BOOL Enable;
+        RECT SourceRect;
+    } SourceRect;
+    struct {
+        BOOL Enable;
+        RECT DestRect;
+    } DestRect;
+    struct {
+        BOOL Enable;
+        FLOAT Lower;
+        FLOAT Upper;
+    } LumaKey;
+    struct {
+        BOOL Enable;
+    } AutoProcessingMode;
+    struct {
+        BOOL Enable;
+        D3D11_1DDI_VIDEO_PROCESSOR_STEREO_FORMAT Format;
+    } StereoFormat;
+    struct {
+        BOOL Enable;
+        D3D11_1DDI_VIDEO_PROCESSOR_ROTATION Rotation;
+    } Rotation;
+    VBOXDXVIDEOPROCESSORFILTER aFilters[D3D11_1DDI_VIDEO_PROCESSOR_FILTER_STEREO_ADJUSTMENT + 1];
+} VBOXDXVIDEOPROCESSORSTREAM;
+
+
+typedef struct VBOXDXVIDEOPROCESSOR
+{
+    D3D11_1DDI_HRTVIDEOPROCESSOR   hRTVideoProcessor;
+    uint32_t                       uVideoProcessorId;
+    struct {
+        VBSVGA3dVideoProcessorDesc desc;
+        uint32 RateConversionCapsIndex;
+    } svga;
+    struct {
+        BOOL Enable;
+        RECT Rect;
+    } OutputRect;
+    struct {
+        BOOL YCbCr;
+        D3D11_1DDI_VIDEO_COLOR Color;
+    } OutputBackgroundColor;
+    D3D11_1DDI_VIDEO_PROCESSOR_COLOR_SPACE Colorspace;
+    struct {
+        BOOL Enabled;
+        SIZE ConstrictonSize;
+    } OutputConstriction;
+
+    struct {
+        D3D11_1DDI_VIDEO_PROCESSOR_ALPHA_FILL_MODE FillMode;
+        UINT StreamIndex;
+    } AlphaFillMode;
+
+    struct {
+        BOOL Enable;
+    } StereoMode;
+
+    VBOXDXVIDEOPROCESSORSTREAM aStreams[2];
+} VBOXDXVIDEOPROCESSOR, *PVBOXDXVIDEOPROCESSOR;
+
+
+typedef struct VBOXDXVIDEOPROCESSORENUM
+{
+    D3D11_1DDI_HRTVIDEOPROCESSORENUM hRTVideoProcessorEnum;
+    D3D11_1DDI_VIDEO_PROCESSOR_CONTENT_DESC Desc;
+} VBOXDXVIDEOPROCESSORENUM, *PVBOXDXVIDEOPROCESSORENUM;
+
+
+typedef struct VBOXDXVIDEODECODEROUTPUTVIEW
+{
+    RTLISTNODE                     nodeView;                /* listVDOV of the resource. */
+    bool                           fDefined : 1;            /* Whether the view has been defined on the host. */
+    D3D11_1DDI_HRTVIDEODECODEROUTPUTVIEW hRTView;
+    uint32_t                       uVideoDecoderOutputViewId;
+    PVBOXDX_RESOURCE               pResource;
+
+    struct {
+        VBSVGA3dVDOVDesc           desc;
+    } svga;
+} VBOXDXVIDEODECODEROUTPUTVIEW, *PVBOXDXVIDEODECODEROUTPUTVIEW;
+
+
+typedef struct VBOXDXVIDEODECODER
+{
+    D3D11_1DDI_HRTDECODE           hRTVideoDecoder;
+    uint32_t                       uVideoDecoderId;
+
+    struct {
+        VBSVGA3dVideoDecoderDesc   Desc;
+        VBSVGA3dVideoDecoderConfig Config;
+    } svga;
+
+    struct {
+        PVBOXDXVIDEODECODEROUTPUTVIEW pOutputView;
+    } Frame;
+} VBOXDXVIDEODECODER, *PVBOXDXVIDEODECODER;
+
+
+typedef struct VBOXDXVIDEOCRYPTOSESSION
+{
+    D3D11_1DDI_HRTCRYPTOSESSION hRTCryptoSession;
+    uint32_t au32Dummy[3];
+} VBOXDXVIDEOCRYPTOSESSION, *PVBOXDXVIDEOCRYPTOSESSION;
+
+
+typedef struct VBOXDXVIDEOAUTHCHANNEL
+{
+    D3D11_1DDI_HRTAUTHCHANNEL hRTAuthChannel;
+    uint32_t au32Dummy[4];
+} VBOXDXVIDEOAUTHCHANNEL, *PVBOXDXVIDEOAUTHCHANNEL;
+
+
 typedef struct VBOXDXCONSTANTBUFFERSSTATE
 {
     UINT                           StartSlot;
@@ -381,6 +547,11 @@ typedef struct VBOXDX_DEVICE
     RTHANDLETABLE hHTQuery;
     RTHANDLETABLE hHTUnorderedAccessView;
     RTHANDLETABLE hHTStreamOutput;
+    RTHANDLETABLE hHTVideoProcessor;
+    RTHANDLETABLE hHTVideoDecoderOutputView;
+    RTHANDLETABLE hHTVideoDecoder;
+    RTHANDLETABLE hHTVideoProcessorInputView;
+    RTHANDLETABLE hHTVideoProcessorOutputView;
 
     /* Resources */
     RTLISTANCHOR                listResources;              /* All resources of this device, for cleanup. */
@@ -397,7 +568,7 @@ typedef struct VBOXDX_DEVICE
     /* Queries */
     RTLISTANCHOR                listQueries;                /* All queries of this device, to be able to repack them in the allocation. */
     RTLISTANCHOR                listCOAQuery;               /* List of VBOXDXCOALLOCATION for all query types. */
-    uint64_t                    u64MobFenceValue;
+    uint64_t volatile           u64MobFenceValue;
 
     /* Stream output declarations */
     RTLISTANCHOR                listCOAStreamOutput;        /* List of VBOXDXCOALLOCATION for stream output declarations. */
@@ -416,8 +587,27 @@ typedef struct VBOXDX_DEVICE
         VBOXDXVERTEXBUFFERSSTATE   VertexBuffers;
         VBOXDXINDEXBUFFERSTATE     IndexBuffer;
     } pipeline;
+
+    /* Video decoding and processing. */
+    struct
+    {
+        D3DKMT_HANDLE           hAllocation;                /* For querying capabilities of the host device. */
+        uint32_t                cbAllocation;
+        uint64_t volatile       u64MobFenceValue;           /* Fence value for host queries. */
+
+        bool                    fDecodeProfilesQueried;
+        UINT                    cDecodeProfile;             /* Number of elements in paDecodeProfile array. */
+        VBSVGA3dDecodeProfileInfo *paDecodeProfile;
+
+        struct
+        {
+            uint32_t cConfig;                               /* Number of elements in pConfigInfo->aConfig array. */
+            VBSVGA3dDecodeConfigInfo *pConfigInfo;
+        } config;
+    } VideoDevice;
 } VBOXDX_DEVICE, *PVBOXDX_DEVICE;
 
+HRESULT ddi11_1RetrieveVideoFunctions(PVBOXDX_DEVICE pDevice, D3D11_1DDI_VIDEO_INPUT *pVideoInput);
 
 HRESULT vboxDXDeviceInit(PVBOXDX_DEVICE pDevice);
 void vboxDXDestroyDevice(PVBOXDX_DEVICE pDevice);
@@ -530,6 +720,66 @@ HRESULT vboxDXBlt(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pDstResource, UINT Ds
                   UINT DstLeft, UINT DstTop, UINT DstRight, UINT DstBottom,
                   DXGI_DDI_ARG_BLT_FLAGS Flags, DXGI_DDI_MODE_ROTATION Rotate);
 HRESULT vboxDXFlush(PVBOXDX_DEVICE pDevice, bool fForce);
+
+void vboxDXGetVideoDecoderProfileCount(PVBOXDX_DEVICE pDevice, UINT *pDecodeProfileCount);
+void vboxDXGetVideoDecoderProfile(PVBOXDX_DEVICE pDevice, UINT Index, GUID *pGuid);
+void vboxDXCheckVideoDecoderFormat(PVBOXDX_DEVICE pDevice, GUID const *pDecodeProfile, DXGI_FORMAT Format, BOOL *pSupported);
+void vboxDXGetVideoDecoderConfigCount(PVBOXDX_DEVICE pDevice, D3D11_1DDI_VIDEO_DECODER_DESC const *pDecodeDesc, UINT *pConfigCount);
+void vboxDXGetVideoDecoderConfig(PVBOXDX_DEVICE pDevice, D3D11_1DDI_VIDEO_DECODER_DESC const *pDecodeDesc, UINT Index,
+                                 D3D11_1DDI_VIDEO_DECODER_CONFIG *pConfig);
+HRESULT vboxDXCreateVideoProcessor(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor,
+                                   PVBOXDXVIDEOPROCESSORENUM pVideoProcessorEnum, UINT RateConversionCapsIndex);
+HRESULT vboxDXCreateVideoDecoderOutputView(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEODECODEROUTPUTVIEW pVideoDecoderOutputView, PVBOXDX_RESOURCE pResource,
+                                           GUID const &DecodeProfile, UINT MipSlice, UINT FirstArraySlice, UINT ArraySize);
+HRESULT vboxDXCreateVideoDecoder(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEODECODER pVideoDecoder,
+                                 D3D11_1DDI_VIDEO_DECODER_DESC const &Desc, D3D11_1DDI_VIDEO_DECODER_CONFIG const &Config);
+HRESULT vboxDXVideoDecoderBeginFrame(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEODECODER pVideoDecoder,
+                                     PVBOXDXVIDEODECODEROUTPUTVIEW pVideoDecoderOutputView,
+                                     void const *pContentKey, UINT ContentKeySize);
+HRESULT vboxDXVideoDecoderSubmitBuffers(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEODECODER pVideoDecoder,
+                                        UINT BufferCount, D3D11_1DDI_VIDEO_DECODER_BUFFER_DESC const *pBufferDesc);
+HRESULT vboxDXVideoDecoderEndFrame(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEODECODER pVideoDecoder);
+HRESULT vboxDXCreateVideoProcessorInputView(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSORINPUTVIEW pVideoProcessorInputView,
+                                            PVBOXDX_RESOURCE pResource, PVBOXDXVIDEOPROCESSORENUM pVideoProcessorEnum,
+                                            UINT FourCC, UINT MipSlice, UINT FirstArraySlice, UINT ArraySize);
+HRESULT vboxDXCreateVideoProcessorOutputView(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOROUTPUTVIEW pVideoProcessorOutputView,
+                                             PVBOXDX_RESOURCE pResource, PVBOXDXVIDEOPROCESSORENUM pVideoProcessorEnum,
+                                             UINT MipSlice, UINT FirstArraySlice, UINT ArraySize);
+HRESULT vboxDXVideoProcessorBlt(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, PVBOXDXVIDEOPROCESSOROUTPUTVIEW pVideoProcessorOutputView,
+                                UINT OutputFrame, UINT StreamCount, D3D11_1DDI_VIDEO_PROCESSOR_STREAM const *paStream);
+void vboxDXDestroyVideoDecoder(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEODECODER pVideoDecoder);
+void vboxDXDestroyVideoDecoderOutputView(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEODECODEROUTPUTVIEW pVideoDecoderOutputView);
+void vboxDXDestroyVideoProcessor(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor);
+void vboxDXDestroyVideoProcessorInputView(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSORINPUTVIEW pVideoProcessorInputView);
+void vboxDXDestroyVideoProcessorOutputView(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOROUTPUTVIEW pVideoProcessorOutputView);
+void vboxDXVideoProcessorSetOutputTargetRect(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, BOOL Enable, RECT const *pOutputRect);
+void vboxDXVideoProcessorSetOutputBackgroundColor(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, BOOL YCbCr, D3D11_1DDI_VIDEO_COLOR const *pColor);
+void vboxDXVideoProcessorSetOutputColorSpace(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, D3D11_1DDI_VIDEO_PROCESSOR_COLOR_SPACE const *pColorSpace);
+void vboxDXVideoProcessorSetOutputAlphaFillMode(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, D3D11_1DDI_VIDEO_PROCESSOR_ALPHA_FILL_MODE FillMode, UINT StreamIndex);
+void vboxDXVideoProcessorSetOutputConstriction(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, BOOL Enabled, SIZE ConstrictonSize);
+void vboxDXVideoProcessorSetOutputStereoMode(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, BOOL Enable);
+void vboxDXVideoProcessorSetStreamFrameFormat(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, UINT StreamIndex, D3D11_1DDI_VIDEO_FRAME_FORMAT Format);
+void vboxDXVideoProcessorSetStreamColorSpace(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, UINT StreamIndex, D3D11_1DDI_VIDEO_PROCESSOR_COLOR_SPACE const *pColorSpace);
+void vboxDXVideoProcessorSetStreamOutputRate(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, UINT StreamIndex,
+                                             D3D11_1DDI_VIDEO_PROCESSOR_OUTPUT_RATE OutputRate, BOOL RepeatFrame, DXGI_RATIONAL const *pCustomRate);
+void vboxDXVideoProcessorSetStreamSourceRect(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, UINT StreamIndex,
+                                             BOOL Enable, RECT const *pSourceRect);
+void vboxDXVideoProcessorSetStreamDestRect(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, UINT StreamIndex,
+                                           BOOL Enable, RECT const *pDestRect);
+void vboxDXVideoProcessorSetStreamAlpha(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, UINT StreamIndex,
+                                        BOOL Enable, FLOAT Alpha);
+void vboxDXVideoProcessorSetStreamPixelAspectRatio(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, UINT StreamIndex,
+                                                   BOOL Enable, DXGI_RATIONAL const *pSourceRatio, DXGI_RATIONAL const *pDestRatio);
+void vboxDXVideoProcessorSetStreamLumaKey(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, UINT StreamIndex,
+                                          BOOL Enable, FLOAT Lower, FLOAT Upper);
+void vboxDXVideoProcessorSetStreamStereoFormat(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, UINT StreamIndex, BOOL Enable,
+                                               D3D11_1DDI_VIDEO_PROCESSOR_STEREO_FORMAT StereoFormat, BOOL LeftViewFrame0, BOOL BaseViewFrame0,
+                                               D3D11_1DDI_VIDEO_PROCESSOR_STEREO_FLIP_MODE FlipMode, int MonoOffset);
+void vboxDXVideoProcessorSetStreamAutoProcessingMode(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, UINT StreamIndex, BOOL Enable);
+void vboxDXVideoProcessorSetStreamFilter(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, UINT StreamIndex, BOOL Enable,
+                                         D3D11_1DDI_VIDEO_PROCESSOR_FILTER Filter, int Level);
+void vboxDXVideoProcessorSetStreamRotation(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, UINT StreamIndex, BOOL Enable,
+                                           D3D11_1DDI_VIDEO_PROCESSOR_ROTATION Rotation);
 
 DECLINLINE(void) vboxDXDeviceSetError(PVBOXDX_DEVICE pDevice, HRESULT hr)
 {

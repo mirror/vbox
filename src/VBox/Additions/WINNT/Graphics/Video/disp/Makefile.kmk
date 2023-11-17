@@ -216,7 +216,9 @@ ifdef VBOX_WITH_WDDM
   	$(VBOX_GRAPHICS_INCS)
   VBoxDX_SOURCES = \
   	wddm/dx/VBoxDXDDI.cpp \
+  	wddm/dx/VBoxDXDDIVideo.cpp \
   	wddm/dx/VBoxDX.cpp \
+  	wddm/dx/VBoxDXVideo.cpp \
   	wddm/dx/VBoxDXCmd.cpp \
   	wddm/dx/VBoxDX.rc \
   	wddm/dx/VBoxDX.def
