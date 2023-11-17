@@ -85,7 +85,7 @@ typedef struct _SHCLHTTPSERVERTRANSFER
     /** The handle we're going to use for this HTTP transfer. */
     SHCLOBJHANDLE       hObj;
     /** The virtual path of the HTTP server's root directory for this transfer.
-     *  Always has to start with a "/". */
+     *  Always has to start with a "/". Unescaped. */
     char                szPathVirtual[RTPATH_MAX];
 } SHCLHTTPSERVERTRANSFER;
 typedef SHCLHTTPSERVERTRANSFER *PSHCLHTTPSERVERTRANSFER;
@@ -166,6 +166,57 @@ DECLINLINE(void) shClHttpTransferUnlock(PSHCLHTTPSERVERTRANSFER pSrvTx)
 {
     int rc2 = RTCritSectLeave(&pSrvTx->CritSect);
     AssertRC(rc2);
+}
+
+/**
+ * Creates an URL from a given path, extended version.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_INVALID_PARAMETER if the path is not valid.
+ * @param   pszPath             Path to create URL for.
+ * @param   ppszURL             Where to return the allocated URL on success.
+ * @param   pchScheme           Where to return the size of the full HTTP scheme including "://". Optional and can be NULL.
+ *                              Right now this always is sizeof("http://").
+ *
+ * @note    The path is not checked on file system level.
+ */
+static int shClTransferHttpURLCreateFromPathEx(const char *pszPath, char **ppszURL, size_t *pchScheme)
+{
+    AssertRCReturn(ShClTransferValidatePath(pszPath, false /* fMustExist */), VERR_INVALID_PARAMETER);
+
+    int rc = VINF_SUCCESS;
+
+    const char   szScheme[] = "http://"; /** @todo For now we only support HTTP. */
+    const size_t cchScheme  = strlen(szScheme);
+
+    char *pszURL = RTStrAPrintf2("%s%s", szScheme, pszPath);
+    if (pszURL)
+    {
+        AssertReturn(strlen(pszURL) > cchScheme, VERR_INVALID_PARAMETER);
+
+        *ppszURL = pszURL;
+        if (pchScheme)
+            *pchScheme = cchScheme;
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    return rc;
+}
+
+/**
+ * Creates an URL from a given path.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_INVALID_PARAMETER if the path is not valid.
+ * @param   pszPath             Path to create URL for.
+ * @param   ppszURL             Where to return the allocated URL on success.
+ *
+ * @note    The path is not checked on file system level.
+ */
+static int shClTransferHttpURLCreateFromPath(const char *pszPath, char **ppszURL)
+{
+    return shClTransferHttpURLCreateFromPathEx(pszPath, ppszURL, NULL /* pchScheme */);
 }
 
 /**
@@ -402,81 +453,90 @@ static DECLCALLBACK(int) shClTransferHttpQueryInfo(PRTHTTPCALLBACKDATA pData,
 
     AssertReturn(RTStrIsValidEncoding(pReq->pszUrl), VERR_INVALID_PARAMETER);
 
-    size_t const cchUrl  = strlen(pReq->pszUrl);
-    AssertReturn(cchUrl, VERR_INVALID_PARAMETER);
+    LogRel2(("Shared Clipboard: HTTP query for '%s' ...\n", pReq->pszUrl));
 
-    int rc;
+    char *pszUrl;
+    int rc = shClTransferHttpURLCreateFromPath(pReq->pszUrl, &pszUrl);
+    AssertRCReturn(rc, rc);
 
-    /* For now we only know the transfer -- now we need to figure out the entry we want to serve. */
-    PSHCLHTTPSERVERTRANSFER pSrvTx = (PSHCLHTTPSERVERTRANSFER)pReq->pvUser;
-    if (pSrvTx)
+    RTURIPARSED Parsed;
+    rc = RTUriParse(pszUrl, &Parsed);
+    if (RT_SUCCESS(rc))
     {
-        size_t const cchBase = strlen(pSrvTx->szPathVirtual) + 1 /* Skip slash separating the base from the rest */;
-        AssertReturn(cchUrl >= cchBase, VERR_INVALID_PARAMETER);
+        char        *pszPath = RTUriParsedPath(pszUrl, &Parsed);
+        size_t const cchPath = strlen(pszPath);
 
-        SHCLOBJOPENCREATEPARMS openParms;
-        rc = ShClTransferObjOpenParmsInit(&openParms);
-        if (RT_SUCCESS(rc))
+        /* For now we only know the transfer -- now we need to figure out the entry we want to serve. */
+        PSHCLHTTPSERVERTRANSFER pSrvTx = (PSHCLHTTPSERVERTRANSFER)pReq->pvUser;
+        if (pSrvTx)
         {
-            openParms.fCreate = SHCL_OBJ_CF_ACCESS_READ
-                              | SHCL_OBJ_CF_ACCESS_DENYWRITE;
+            size_t const cchBase = strlen(pSrvTx->szPathVirtual) + 1 /* Skip slash separating the base from the rest */;
+            AssertReturn(cchPath >= cchBase, VERR_INVALID_PARAMETER);
 
-            PSHCLTRANSFER pTx = pSrvTx->pTransfer;
-            AssertPtr(pTx);
-
-            rc = VERR_NOT_FOUND; /* Must find the matching root entry first. */
-
-            uint64_t const cRoots = ShClTransferRootsCount(pTx);
-            for (uint32_t i = 0; i < cRoots; i++)
+            SHCLOBJOPENCREATEPARMS openParms;
+            rc = ShClTransferObjOpenParmsInit(&openParms);
+            if (RT_SUCCESS(rc))
             {
-                PCSHCLLISTENTRY pEntry = ShClTransferRootsEntryGet(pTx, i);
-                AssertPtrBreakStmt(pEntry, rc = VERR_NOT_FOUND);
+                openParms.fCreate = SHCL_OBJ_CF_ACCESS_READ
+                                  | SHCL_OBJ_CF_ACCESS_DENYWRITE;
 
-                const char *pszName = pReq->pszUrl + cchBase;
+                PSHCLTRANSFER pTx = pSrvTx->pTransfer;
+                AssertPtr(pTx);
 
-                Log3Func(("pReqUrl=%s -> pszName=%s vs. pEntry=%s\n", pReq->pszUrl, pszName, pEntry->pszName));
+                rc = VERR_NOT_FOUND; /* Must find the matching root entry first. */
 
-                if (RTStrCmp(pEntry->pszName, pszName)) /* Case-sensitive! */
-                    continue;
-
-                LogRel2(("Shared Clipboard: Querying HTTP transfer information for '%s' ...\n", pEntry->pszName));
-
-                rc = RTStrCopy(openParms.pszPath, openParms.cbPath, pEntry->pszName);
-                if (RT_SUCCESS(rc))
+                uint64_t const cRoots = ShClTransferRootsCount(pTx);
+                for (uint32_t i = 0; i < cRoots; i++)
                 {
-                    rc = ShClTransferObjOpen(pTx, &openParms, &pSrvTx->hObj);
+                    PCSHCLLISTENTRY pEntry = ShClTransferRootsEntryGet(pTx, i);
+                    AssertPtrBreakStmt(pEntry, rc = VERR_NOT_FOUND);
+
+                    Log3Func(("pszPath=%s vs. pEntry=%s\n", pszPath, pEntry->pszName));
+
+                    if (RTStrCmp(pEntry->pszName, pszPath + cchBase)) /* Case-sensitive! */
+                        continue;
+
+                    rc = RTStrCopy(openParms.pszPath, openParms.cbPath, pEntry->pszName);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = VERR_NOT_SUPPORTED; /* Play safe by default. */
-
-                        if (   pEntry->fInfo & VBOX_SHCL_INFO_F_FSOBJINFO
-                            && pEntry->cbInfo == sizeof(SHCLFSOBJINFO))
+                        rc = ShClTransferObjOpen(pTx, &openParms, &pSrvTx->hObj);
+                        if (RT_SUCCESS(rc))
                         {
-                            PCSHCLFSOBJINFO pSrcObjInfo = (PSHCLFSOBJINFO)pEntry->pvInfo;
+                            rc = VERR_NOT_SUPPORTED; /* Play safe by default. */
 
-                            LogFlowFunc(("pszName=%s, cbInfo=%RU32, fMode=%#x (type %#x)\n",
-                                         pEntry->pszName, pEntry->cbInfo, pSrcObjInfo->Attr.fMode, (pSrcObjInfo->Attr.fMode & RTFS_TYPE_MASK)));
-
-                            if (RTFS_IS_FILE(pSrcObjInfo->Attr.fMode))
+                            if (   pEntry->fInfo & VBOX_SHCL_INFO_F_FSOBJINFO
+                                && pEntry->cbInfo == sizeof(SHCLFSOBJINFO))
                             {
-                                memcpy(pObjInfo, pSrcObjInfo, sizeof(SHCLFSOBJINFO));
-                                rc = VINF_SUCCESS;
+                                PCSHCLFSOBJINFO pSrcObjInfo = (PSHCLFSOBJINFO)pEntry->pvInfo;
+
+                                LogFlowFunc(("pszName=%s, cbInfo=%RU32, fMode=%#x (type %#x)\n",
+                                             pEntry->pszName, pEntry->cbInfo, pSrcObjInfo->Attr.fMode, (pSrcObjInfo->Attr.fMode & RTFS_TYPE_MASK)));
+
+                                LogRel2(("Shared Clipboard: HTTP object info: fMode=%#x, cbObject=%zu\n", pSrcObjInfo->Attr.fMode, pSrcObjInfo->cbObject));
+
+                                if (RTFS_IS_FILE(pSrcObjInfo->Attr.fMode))
+                                {
+                                    memcpy(pObjInfo, pSrcObjInfo, sizeof(SHCLFSOBJINFO));
+                                    rc = VINF_SUCCESS;
+                                }
                             }
+                            else
+                                LogRel2(("Shared Clipboard: Supplied entry information for '%s' not supported (fInfo=%#x, cbInfo=%RU32\n",
+                                         pEntry->pszName, pEntry->fInfo, pEntry->cbInfo));
                         }
-                        else
-                            LogRel2(("Shared Clipboard: Supplied entry information for '%s' not supported (fInfo=%#x, cbInfo=%RU32\n",
-                                     pEntry->pszName, pEntry->fInfo, pEntry->cbInfo));
                     }
+
+                    break;
                 }
 
-                break;
+                ShClTransferObjOpenParmsDestroy(&openParms);
             }
-
-            ShClTransferObjOpenParmsDestroy(&openParms);
         }
+        else
+            rc = VERR_NOT_FOUND;
     }
-    else
-        rc = VERR_NOT_FOUND;
+
+    RTStrFree(pszUrl);
 
     if (RT_FAILURE(rc))
         LogRel(("Shared Clipboard: Querying info for HTTP transfer failed with %Rrc\n", rc));
@@ -898,30 +958,24 @@ int ShClTransferHttpServerRegisterTransfer(PSHCLHTTPSERVER pSrv, PSHCLTRANSFER p
             char *pszPath;
 #ifdef VBOX_SHCL_DEBUG_HTTPSERVER
 # ifdef DEBUG_andy /** Too lazy to specify a different transfer ID for debugging. */
-            ssize_t cch = RTStrAPrintf(&pszPath, "//transfer");
+            ssize_t cch = RTStrAPrintf(&pszPath, "/transfer");
 # else
-            ssize_t cch = RTStrAPrintf(&pszPath, "//transfer%RU16", pTransfer->State.uID);
+            ssize_t cch = RTStrAPrintf(&pszPath, "/transfer%RU16", pTransfer->State.uID);
 # endif
 #else /* Release mode */
-            ssize_t cch = RTStrAPrintf(&pszPath, "//%s/%s", SHCL_HTTPT_URL_NAMESPACE, szUuid);
+            ssize_t cch = RTStrAPrintf(&pszPath, "/%s/%s", SHCL_HTTPT_URL_NAMESPACE, szUuid);
 #endif
             AssertReturn(cch, VERR_NO_MEMORY);
 
-            const char   szScheme[] = "http"; /** @todo For now we only support HTTP. */
-            const size_t cchScheme  = strlen(szScheme) + 3 /* "://" */;
-
-            char *pszURI = RTUriCreate(szScheme, NULL /* pszAuthority */, pszPath, NULL /* pszQuery */, NULL /* pszFragment */);
-            if (pszURI)
+            char  *pszURI;
+            size_t cchScheme;
+            rc = shClTransferHttpURLCreateFromPathEx(pszPath, &pszURI, &cchScheme);
+            if (RT_SUCCESS(rc))
             {
-                if (strlen(pszURI) >= cchScheme)
-                {
-                    /* For the virtual path we only keep everything after the full scheme (e.g. "http://").
-                     * The virtual path always has to start with a "/". */
-                    if (RTStrPrintf2(pSrvTx->szPathVirtual, sizeof(pSrvTx->szPathVirtual), "/%s", pszURI + cchScheme) <= 0)
-                        rc = VERR_BUFFER_OVERFLOW;
-                }
-                else
-                    rc = VERR_INVALID_PARAMETER;
+                /* For the virtual path we only keep everything after the full scheme (e.g. "http://").
+                 * The virtual path always has to start with a "/". */
+                if (RTStrPrintf2(pSrvTx->szPathVirtual, sizeof(pSrvTx->szPathVirtual), "%s", pszURI + cchScheme) <= 0)
+                    rc = VERR_BUFFER_OVERFLOW;
 
                 RTStrFree(pszURI);
                 pszURI = NULL;
@@ -1143,6 +1197,7 @@ char *ShClTransferHttpServerGetAddressA(PSHCLHTTPSERVER pSrv)
  * @param   pSrv                HTTP server instance to return URL for.
  * @param   idTransfer          Transfer ID to return the URL for.
  * @param   idxEntry            Index of transfer entry to return URL for.
+ *                              Specify UINT64_MAX to only return the base URL.
  */
 char *ShClTransferHttpServerGetUrlA(PSHCLHTTPSERVER pSrv, SHCLTRANSFERID idTransfer, uint64_t idxEntry)
 {
@@ -1164,14 +1219,18 @@ char *ShClTransferHttpServerGetUrlA(PSHCLHTTPSERVER pSrv, SHCLTRANSFERID idTrans
 
     char *pszUrl = NULL;
 
-    /* For now this only supports root entries. */
-    PCSHCLLISTENTRY pEntry = ShClTransferRootsEntryGet(pTx, idxEntry);
-    if (pEntry)
+    if (RT_LIKELY(idxEntry != UINT64_MAX))
     {
-        AssertReturn(RTStrNLen(pSrvTx->szPathVirtual, RTPATH_MAX), NULL);
-        pszUrl = RTStrAPrintf2("%s:%RU16%s/%s", shClTransferHttpServerGetHost(pSrv), pSrv->uPort, pSrvTx->szPathVirtual, pEntry->pszName);
-        AssertPtr(pszUrl);
+        /* For now this only supports root entries. */
+        PCSHCLLISTENTRY pEntry = ShClTransferRootsEntryGet(pTx, idxEntry);
+        if (pEntry)
+        {
+            AssertReturn(RTStrNLen(pSrvTx->szPathVirtual, RTPATH_MAX), NULL);
+            pszUrl = RTStrAPrintf2("%s:%RU16%s/%s", shClTransferHttpServerGetHost(pSrv), pSrv->uPort, pSrvTx->szPathVirtual, pEntry->pszName);
+        }
     }
+    else /* Only return the base. */
+        pszUrl = RTStrAPrintf2("%s:%RU16%s", shClTransferHttpServerGetHost(pSrv), pSrv->uPort, pSrvTx->szPathVirtual);
 
     shClTransferHttpServerUnlock(pSrv);
     return pszUrl;

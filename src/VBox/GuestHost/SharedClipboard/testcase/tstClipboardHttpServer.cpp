@@ -50,6 +50,26 @@ static bool         g_fShutdown     = false;
 /** Manual mode indicator; allows manual testing w/ other HTTP clients. */
 static bool         g_fManual       = false;
 
+/** Test files to handle + download.
+ *  All files reside in a common temporary directory. */
+static struct
+{
+    /** File name to serve via HTTP server. */
+    const char *pszFileName;
+    /** URL to use for downloading the file via RTHttp APIs. */
+    const char *pszUrl;
+    /** File allocation size.
+     *  Specify UINT64_MAX for random size. */
+    size_t      cbSize;
+    /** Expected test result. */
+    int         rc;
+} g_aTests[] =
+{
+    "file1.txt",                          "file1.txt",                 UINT64_MAX, VINF_SUCCESS,
+    /* Note: For RTHttpGetFile() the URL needs to be percent-encoded. */
+    "file2 with spaces.txt",              "file2%20with%20spaces.txt", UINT64_MAX, VINF_SUCCESS,
+    "bigfile.bin",                        "bigfile.bin",               _1G,        VINF_SUCCESS
+};
 
 /* Worker thread for the HTTP server. */
 static DECLCALLBACK(int) tstSrvWorker(RTTHREAD hThread, void *pvUser)
@@ -232,123 +252,138 @@ int main(int argc, char *argv[])
         }
     }
 
-    char szRandomTestFile[RTPATH_MAX] = { 0 };
+    char szTempDir[RTPATH_MAX];
+    RTTEST_CHECK_RC_OK(hTest, RTPathTemp(szTempDir, sizeof(szTempDir)));
+    RTTEST_CHECK_RC_OK(hTest, RTPathAppend(szTempDir, sizeof(szTempDir), "tstClipboardHttpServer-XXXXXX"));
+    RTTEST_CHECK_RC_OK(hTest, RTDirCreateTemp(szTempDir, 0700));
 
-    uint32_t const cTx = ShClTransferCtxGetTotalTransfers(&TxCtx);
-    if (!cTx)
+    if (!g_fManual)
     {
-        RTTEST_CHECK_RC_OK(hTest, RTPathTemp(szRandomTestFile, sizeof(szRandomTestFile)));
-        RTTEST_CHECK_RC_OK(hTest, RTPathAppend(szRandomTestFile, sizeof(szRandomTestFile), "tstClipboardHttpServer-XXXXXX"));
-        RTTEST_CHECK_RC_OK(hTest, RTFileCreateTemp(szRandomTestFile, 0600));
+        char szFilePath[RTPATH_MAX];
+        for (size_t i = 0; i < RT_ELEMENTS(g_aTests); i++)
+        {
+            RTTEST_CHECK      (hTest, RTStrPrintf(szFilePath, sizeof(szFilePath),  szTempDir));
+            RTTEST_CHECK_RC_OK(hTest, RTPathAppend(szFilePath, sizeof(szFilePath), g_aTests[i].pszFileName));
 
-        size_t cbExist = RTRandU32Ex(0, _256M);
+            size_t cbSize =  g_aTests[i].cbSize == UINT64_MAX ? RTRandU32Ex(0, _256M) : g_aTests[i].cbSize;
 
-        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Random test file (%zu bytes): %s\n", cbExist, szRandomTestFile);
+            RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Random test file (%zu bytes): %s\n", cbSize, szFilePath);
 
-        RTFILE hFile;
-        rc = RTFileOpen(&hFile, szRandomTestFile, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE);
+            RTFILE hFile;
+            rc = RTFileOpen(&hFile, szFilePath, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE);
+            if (RT_SUCCESS(rc))
+            {
+                uint8_t abBuf[_64K] = { 42 };
+
+                while (cbSize > 0)
+                {
+                    size_t cbToWrite = sizeof(abBuf);
+                    if (cbToWrite > cbSize)
+                        cbToWrite = cbSize;
+                    rc = RTFileWrite(hFile, abBuf, cbToWrite, NULL);
+                    if (RT_FAILURE(rc))
+                    {
+                        RTTestIFailed("RTFileWrite(%#x) -> %Rrc\n", cbToWrite, rc);
+                        break;
+                    }
+                    cbSize -= cbToWrite;
+                }
+
+                RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
+
+                if (RT_SUCCESS(rc))
+                    tstCreateTransferSingle(hTest, &TxCtx, &HttpSrv, szFilePath, &Provider);
+            }
+            else
+                RTTestIFailed("RTFileOpen(%s) -> %Rrc\n", szFilePath, rc);
+        }
+    }
+
+    /* Don't bail out here to prevent cleaning up after ourselves on failure. */
+    if (RTTestErrorCount(hTest) == 0)
+    {
+        /* Create  thread for our HTTP server. */
+        RTTHREAD hThread;
+        rc = RTThreadCreate(&hThread, tstSrvWorker, NULL, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
+                            "tstClpHttpSrv");
+        RTTEST_CHECK_RC_OK(hTest, rc);
         if (RT_SUCCESS(rc))
         {
-            uint8_t abBuf[_64K] = { 42 };
+            rc = RTThreadUserWait(hThread, RT_MS_30SEC);
+            RTTEST_CHECK_RC_OK(hTest, rc);
+        }
 
-            while (cbExist > 0)
+        if (RT_SUCCESS(rc))
+        {
+            if (g_fManual)
             {
-                size_t cbToWrite = sizeof(abBuf);
-                if (cbToWrite > cbExist)
-                    cbToWrite = cbExist;
-                rc = RTFileWrite(hFile, abBuf, cbToWrite, NULL);
-                if (RT_FAILURE(rc))
+                uint32_t const cTx = ShClTransferCtxGetTotalTransfers(&TxCtx);
+                for (uint32_t i = 0; i < cTx; i++)
                 {
-                    RTTestIFailed("RTFileWrite(%#x) -> %Rrc\n", cbToWrite, rc);
-                    break;
+                    PSHCLTRANSFER pTx = ShClTransferCtxGetTransferByIndex(&TxCtx, i);
+
+                    uint16_t const uID    = ShClTransferGetID(pTx);
+                    char          *pszURL = ShClTransferHttpServerGetUrlA(&HttpSrv, uID, 0 /* Entry index */);
+                    RTTEST_CHECK(hTest, pszURL != NULL);
+                    RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "URL #%02RU32: %s\n", i, pszURL);
+                    RTStrFree(pszURL);
                 }
-                cbExist -= cbToWrite;
             }
-
-            RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
-
-            if (RT_SUCCESS(rc))
+            else /* Download all files to a temp file using our HTTP client. */
             {
-                tstCreateTransferSingle(hTest, &TxCtx, &HttpSrv, szRandomTestFile, &Provider);
-            }
-        }
-        else
-            RTTestIFailed("RTFileOpen(%s) -> %Rrc\n", szRandomTestFile, rc);
-    }
-
-    if (RTTestErrorCount(hTest))
-        return RTTestSummaryAndDestroy(hTest);
-
-    /* Create  thread for our HTTP server. */
-    RTTHREAD hThread;
-    rc = RTThreadCreate(&hThread, tstSrvWorker, NULL, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
-                        "tstClpHttpSrv");
-    RTTEST_CHECK_RC_OK(hTest, rc);
-    if (RT_SUCCESS(rc))
-    {
-        rc = RTThreadUserWait(hThread, RT_MS_30SEC);
-        RTTEST_CHECK_RC_OK(hTest, rc);
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        if (g_fManual)
-        {
-            for (uint32_t i = 0; i < cTx; i++)
-            {
-                PSHCLTRANSFER pTx = ShClTransferCtxGetTransferByIndex(&TxCtx, i);
-
-                uint16_t const uID    = ShClTransferGetID(pTx);
-                char          *pszURL = ShClTransferHttpServerGetUrlA(&HttpSrv, uID, 0 /* Entry index */);
-                RTTEST_CHECK(hTest, pszURL != NULL);
-                RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "URL #%02RU32: %s\n", i, pszURL);
-                RTStrFree(pszURL);
-            }
-        }
-        else /* Download all files to a temp file using our HTTP client. */
-        {
-            RTHTTP hClient;
-            rc = RTHttpCreate(&hClient);
-            if (RT_SUCCESS(rc))
-            {
-                char szFileTemp[RTPATH_MAX];
-                RTTEST_CHECK_RC_OK(hTest, RTPathTemp(szFileTemp, sizeof(szFileTemp)));
-                RTTEST_CHECK_RC_OK(hTest, RTPathAppend(szFileTemp, sizeof(szFileTemp), "tstClipboardHttpServer-XXXXXX"));
-                RTTEST_CHECK_RC_OK(hTest, RTFileCreateTemp(szFileTemp, 0600));
-
-                for (unsigned a = 0; a < 3; a++) /* Repeat downloads to stress things. */
+                RTHTTP hClient;
+                rc = RTHttpCreate(&hClient);
+                if (RT_SUCCESS(rc))
                 {
-                    for (uint32_t i = 0; i < ShClTransferCtxGetTotalTransfers(&TxCtx); i++)
+                    char szURL[RTPATH_MAX];
+                    for (size_t i = 0; i < RT_ELEMENTS(g_aTests); i++)
                     {
                         PSHCLTRANSFER pTx = ShClTransferCtxGetTransferByIndex(&TxCtx, i);
+                        char *pszUrlBase  = ShClTransferHttpServerGetUrlA(&HttpSrv, ShClTransferGetID(pTx), UINT64_MAX);
 
-                        uint16_t const uID    = ShClTransferGetID(pTx);
-                        char          *pszURL = ShClTransferHttpServerGetUrlA(&HttpSrv, uID, 0 /* Entry index */);
-                        RTTEST_CHECK(hTest, pszURL != NULL);
-                        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Downloading: %s -> %s\n", pszURL, szFileTemp);
-                        RTTEST_CHECK_RC_BREAK(hTest, RTHttpGetFile(hClient, pszURL, szFileTemp), VINF_SUCCESS);
-                        RTStrFree(pszURL);
+                        RTTEST_CHECK(hTest, RTStrPrintf2(szURL, sizeof(szURL), "%s/%s", pszUrlBase, g_aTests[i].pszUrl));
+
+                        RTStrFree(pszUrlBase);
+
+                        char szTempFile[RTPATH_MAX];
+                        RTTEST_CHECK_RC_OK(hTest, RTPathTemp(szTempFile, sizeof(szTempFile)));
+                        RTTEST_CHECK_RC_OK(hTest, RTPathAppend(szTempFile, sizeof(szTempFile), "tstClipboardHttpServer-XXXXXX"));
+                        RTTEST_CHECK_RC_OK(hTest, RTFileCreateTemp(szTempFile, 0600));
+
+                        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Downloading '%s' -> '%s'\n", szURL, szTempFile);
+
+                        RTTEST_CHECK_RC_OK(hTest, RTHttpGetFile(hClient, szURL, szTempFile));
+
+                        RTTEST_CHECK_RC_OK(hTest, RTFileDelete(szTempFile));
                     }
+
+                    RTTEST_CHECK_RC_OK(hTest, RTHttpDestroy(hClient));
                 }
 
-                RTTEST_CHECK_RC_OK(hTest, RTFileDelete(szFileTemp));
-                RTTEST_CHECK_RC_OK(hTest, RTHttpDestroy(hClient));
+                /* This is supposed to run unattended, so shutdown automatically. */
+                ASMAtomicXchgBool(&g_fShutdown, true); /* Set shutdown indicator. */
             }
-
-            /* This is supposed to run unattended, so shutdown automatically. */
-            ASMAtomicXchgBool(&g_fShutdown, true); /* Set shutdown indicator. */
         }
+
+        int rcThread;
+        RTTEST_CHECK_RC_OK(hTest, RTThreadWait(hThread, g_msRuntime, &rcThread));
+        RTTEST_CHECK_RC_OK(hTest, rcThread);
+
+        RTTEST_CHECK_RC_OK(hTest, ShClTransferHttpServerDestroy(&HttpSrv));
+        ShClTransferCtxDestroy(&TxCtx);
     }
 
-    int rcThread;
-    RTTEST_CHECK_RC_OK(hTest, RTThreadWait(hThread, g_msRuntime, &rcThread));
-    RTTEST_CHECK_RC_OK(hTest, rcThread);
-
-    RTTEST_CHECK_RC_OK(hTest, ShClTransferHttpServerDestroy(&HttpSrv));
-    ShClTransferCtxDestroy(&TxCtx);
-
-    if (strlen(szRandomTestFile))
-        RTTEST_CHECK_RC_OK(hTest, RTFileDelete(szRandomTestFile));
+    /*
+     * Cleanup
+     */
+    char szFilePath[RTPATH_MAX];
+    for (size_t i = 0; i < RT_ELEMENTS(g_aTests); i++)
+    {
+        RTTEST_CHECK      (hTest, RTStrPrintf(szFilePath, sizeof(szFilePath), szTempDir));
+        RTTEST_CHECK_RC_OK(hTest, RTPathAppend(szFilePath, sizeof(szFilePath), g_aTests[i].pszFileName));
+        RTTEST_CHECK_RC_OK(hTest, RTFileDelete(szFilePath));
+    }
+    RTTEST_CHECK_RC_OK(hTest, RTDirRemove(szTempDir));
 
     /*
      * Summary

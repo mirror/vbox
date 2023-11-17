@@ -64,7 +64,7 @@ typedef RTHTTPSERVER                            *PRTHTTPSERVER;
  */
 typedef struct RTHTTPSERVERREQ
 {
-    /** Request URL. */
+    /** Request URL. Unmodified (i.e. escaped by HTTP client). */
     char            *pszUrl;
     /** Request method. */
     RTHTTPMETHOD     enmMethod;
