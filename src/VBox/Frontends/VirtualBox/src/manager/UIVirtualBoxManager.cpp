@@ -880,11 +880,11 @@ void UIVirtualBoxManager::sltHandleChooserPaneIndexChange()
 
     /* Special handling for opened settings dialog: */
     if (   m_pWidget->isLocalMachineItemSelected()
-        && m_settings.contains(UISettingsDialog::Type_Machine))
+        && m_settings.contains(UIAdvancedSettingsDialog::Type_Machine))
     {
         /* Cast dialog to required type: */
         UIAdvancedSettingsDialogMachine *pDialog =
-            qobject_cast<UIAdvancedSettingsDialogMachine*>(m_settings.value(UISettingsDialog::Type_Machine));
+            qobject_cast<UIAdvancedSettingsDialogMachine*>(m_settings.value(UIAdvancedSettingsDialog::Type_Machine));
         AssertPtrReturnVoid(pDialog);
 
         /* Get current item: */
@@ -1105,22 +1105,22 @@ void UIVirtualBoxManager::sltOpenPreferencesDialog()
     m_fFirstMediumEnumerationHandled = true;
 
     /* Create instance if not yet created: */
-    if (!m_settings.contains(UISettingsDialog::Type_Global))
+    if (!m_settings.contains(UIAdvancedSettingsDialog::Type_Global))
     {
-        m_settings[UISettingsDialog::Type_Global] = new UIAdvancedSettingsDialogGlobal(this);
-        connect(m_settings[UISettingsDialog::Type_Global], &UIAdvancedSettingsDialogGlobal::sigClose,
+        m_settings[UIAdvancedSettingsDialog::Type_Global] = new UIAdvancedSettingsDialogGlobal(this);
+        connect(m_settings[UIAdvancedSettingsDialog::Type_Global], &UIAdvancedSettingsDialogGlobal::sigClose,
                 this, &UIVirtualBoxManager::sltClosePreferencesDialog);
-        m_settings.value(UISettingsDialog::Type_Global)->load();
+        m_settings.value(UIAdvancedSettingsDialog::Type_Global)->load();
     }
 
     /* Expose instance: */
-    UIDesktopWidgetWatchdog::restoreWidget(m_settings.value(UISettingsDialog::Type_Global));
+    UIDesktopWidgetWatchdog::restoreWidget(m_settings.value(UIAdvancedSettingsDialog::Type_Global));
 }
 
 void UIVirtualBoxManager::sltClosePreferencesDialog()
 {
     /* Remove instance if exist: */
-    delete m_settings.take(UISettingsDialog::Type_Global);
+    delete m_settings.take(UIAdvancedSettingsDialog::Type_Global);
 }
 
 void UIVirtualBoxManager::sltPerformExit()
@@ -1303,20 +1303,20 @@ void UIVirtualBoxManager::sltOpenSettingsDialog(QString strCategory /* = QString
             m_fFirstMediumEnumerationHandled = true;
 
             /* Create instance if not yet created: */
-            if (!m_settings.contains(UISettingsDialog::Type_Machine))
+            if (!m_settings.contains(UIAdvancedSettingsDialog::Type_Machine))
             {
-                m_settings[UISettingsDialog::Type_Machine] = new UIAdvancedSettingsDialogMachine(this,
-                                                                                                 uID.isNull() ? pItem->id() : uID,
-                                                                                                 actionPool(),
-                                                                                                 strCategory,
-                                                                                                 strControl);
-                connect(m_settings[UISettingsDialog::Type_Machine], &UIAdvancedSettingsDialogMachine::sigClose,
+                m_settings[UIAdvancedSettingsDialog::Type_Machine] = new UIAdvancedSettingsDialogMachine(this,
+                                                                                                         uID.isNull() ? pItem->id() : uID,
+                                                                                                         actionPool(),
+                                                                                                         strCategory,
+                                                                                                         strControl);
+                connect(m_settings[UIAdvancedSettingsDialog::Type_Machine], &UIAdvancedSettingsDialogMachine::sigClose,
                         this, &UIVirtualBoxManager::sltCloseSettingsDialog);
-                m_settings.value(UISettingsDialog::Type_Machine)->load();
+                m_settings.value(UIAdvancedSettingsDialog::Type_Machine)->load();
             }
 
             /* Expose instance: */
-            UIDesktopWidgetWatchdog::restoreWidget(m_settings.value(UISettingsDialog::Type_Machine));
+            UIDesktopWidgetWatchdog::restoreWidget(m_settings.value(UIAdvancedSettingsDialog::Type_Machine));
         }
     }
     /* For cloud machine: */
@@ -1340,7 +1340,7 @@ void UIVirtualBoxManager::sltCloseSettingsDialog()
 {
     /* What type of dialog should we delete? */
     enum DelType { None, Local, Cloud, All } enmType = None;
-    if (qobject_cast<UISettingsDialog*>(sender()))
+    if (qobject_cast<UIAdvancedSettingsDialog*>(sender()))
         enmType = (DelType)(enmType | Local);
     else if (qobject_cast<UICloudMachineSettingsDialog*>(sender()))
         enmType = (DelType)(enmType | Cloud);
@@ -1351,7 +1351,7 @@ void UIVirtualBoxManager::sltCloseSettingsDialog()
 
     /* Remove requested instances: */
     if (enmType & Local)
-        delete m_settings.take(UISettingsDialog::Type_Machine);
+        delete m_settings.take(UIAdvancedSettingsDialog::Type_Machine);
     if (enmType & Cloud)
         delete m_pCloudSettings;
 }

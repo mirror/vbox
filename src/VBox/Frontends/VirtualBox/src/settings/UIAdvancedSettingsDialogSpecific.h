@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UISettingsDialogSpecific class declaration.
+ * VBox Qt GUI - UIAdvancedSettingsDialogSpecific class declaration.
  */
 
 /*

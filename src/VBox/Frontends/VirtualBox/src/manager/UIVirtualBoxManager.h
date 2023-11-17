@@ -43,7 +43,7 @@
 #include "UICloudMachineSettingsDialog.h"
 #include "UICommon.h"
 #include "UIExtraDataDefs.h"
-#include "UISettingsDialog.h"
+#include "UIAdvancedSettingsDialog.h"
 
 /* Forward declarations: */
 class QMenu;
@@ -517,7 +517,7 @@ private:
     QMap<UIToolType, QIManagerDialog*>  m_managers;
 
     /** Holds the map of various settings dialogs. */
-    QMap<UISettingsDialog::DialogType, UIAdvancedSettingsDialog*>  m_settings;
+    QMap<UIAdvancedSettingsDialog::DialogType, UIAdvancedSettingsDialog*>  m_settings;
 
     /** Holds the cloud settings dialog instance. */
     UISafePointerCloudMachineSettingsDialog  m_pCloudSettings;

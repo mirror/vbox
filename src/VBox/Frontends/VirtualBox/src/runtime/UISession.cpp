@@ -50,7 +50,6 @@
 #include "UIMousePointerShapeData.h"
 #include "UINotificationCenter.h"
 #include "UISession.h"
-#include "UISettingsDialogSpecific.h"
 #include "UITextTable.h"
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
 # include "UIKeyboardHandler.h"
