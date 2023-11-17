@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; BS3Kit - bs3-cpu-basic-3 assembly template.
+; BS3Kit - bs3-cpu-basic-3 assembly template, common code (CMN).
 ;
 
 ;
@@ -44,12 +44,6 @@
 TMPL_BEGIN_TEXT
 
 
-;
-; Test code snippets containing code which differs between 16-bit, 32-bit
-; and 64-bit CPUs modes.
-;
-%ifdef BS3_INSTANTIATING_CMN
-
 
 ;*********************************************************************************************************************************
 ;*  LEA  -  in BS3X1TEXT16                                                                                                       *
@@ -67,17 +61,17 @@ TMPL_BEGIN_TEXT
 ;
 ; Switching segment for the 16-bit stuff, this may need some space.
 ;
- %if TMPL_BITS == 16
+%if TMPL_BITS == 16
 BS3_BEGIN_X0TEXT16
- %else
+%else
 TMPL_BEGIN_TEXT
- %endif
+%endif
 
 
 ;;
 ; Loads known values into all registers but xSP.
 BS3_PROC_BEGIN_CMN bs3CpuBasic3_lea_load_regs, BS3_PBC_NEAR
- %if TMPL_BITS == 64
+%if TMPL_BITS == 64
         mov     rax, 01111111111111110h
         mov     rcx, 02222222222222202h
         mov     rdx, 03333333333333033h
@@ -93,7 +87,7 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic3_lea_load_regs, BS3_PBC_NEAR
         mov     r13, 0ddddddddddddddd3h
         mov     r14, 0eeeeeeeeeeeeee3eh
         mov     r15, 0fffffffffffff3ffh
- %else
+%else
         mov     eax, LEA_EAX
         mov     ecx, LEA_ECX
         mov     edx, LEA_EDX
@@ -101,26 +95,26 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic3_lea_load_regs, BS3_PBC_NEAR
         mov     ebp, LEA_EBP
         mov     esi, LEA_ESI
         mov     edi, LEA_EDI
- %endif
+%endif
         BS3_HYBRID_RET
 BS3_PROC_END_CMN   bs3CpuBasic3_lea_16_load_regs
 
 
- %if TMPL_BITS != 64
+%if TMPL_BITS != 64
    ;
    ; Macros for 16-bit lea tests.
    ;
-   %ifndef BS3CPUBASIC3_LEA_16_MACROS
-   %define BS3CPUBASIC3_LEA_16_MACROS
-   %macro test_lea_16_one 3
+  %ifndef BS3CPUBASIC3_LEA_16_MACROS
+  %define BS3CPUBASIC3_LEA_16_MACROS
+  %macro test_lea_16_one 3
         call    BS3_CMN_NM(bs3CpuBasic3_lea_load_regs)
         lea     strict %1, strict %2
         cmp     %1, %3 & 0ffffh
         jz      %%okay
         int3
-    %%okay:
-   %endm
-   %macro test_lea_16_inner 2
+   %%okay:
+  %endm
+  %macro test_lea_16_inner 2
         test_lea_16_one ax, %1, %2
         test_lea_16_one cx, %1, %2
         test_lea_16_one dx, %1, %2
@@ -136,19 +130,19 @@ BS3_PROC_END_CMN   bs3CpuBasic3_lea_16_load_regs
         test_lea_16_one ebp, %1, %2
         test_lea_16_one esi, %1, %2
         test_lea_16_one edi, %1, %2
-   %endm
-   %macro test_lea_16_outer 3
-    %if %1 == 0
+  %endm
+  %macro test_lea_16_outer 3
+   %if %1 == 0
         test_lea_16_inner [%2], %3
-    %else
+   %else
         test_lea_16_inner [word %3], %3 ; mod0/6 = disp16
-    %endif
+   %endif
         test_lea_16_inner [%2 +  07fh], %3 + 7fh
         test_lea_16_inner [%2 -    19], %3 - 19
         test_lea_16_inner [%2 + 5708h], %3 + 5708h
         test_lea_16_inner [%2 - 7293h], %3 - 7293h
-   %endm
-  %endif
+  %endm
+ %endif
 
 ;;
 ; Tests 16-bit addressing using the LEA instruction.
@@ -180,15 +174,15 @@ BS3_BEGIN_X1TEXT16
 ;
 ; Macros for 32-bit lea tests.
 ;
-  %if TMPL_BITS == 16
-   %define MY_O16       67h,
-   %define MY_O32       67h, 66h,
-   %define MY_CMP_O32   66h,
-  %else
-   %define MY_O16       66h,
-   %define MY_O32
-   %define MY_CMP_O32
-  %endif
+ %if TMPL_BITS == 16
+  %define MY_O16       67h,
+  %define MY_O32       67h, 66h,
+  %define MY_CMP_O32   66h,
+ %else
+  %define MY_O16       66h,
+  %define MY_O32
+  %define MY_CMP_O32
+ %endif
 
 ;;
 ; Tests 32-bit addressing using the LEA instruction.
@@ -200,97 +194,127 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic3_lea_32, BS3_PBC_FAR
         ;
         ; Loop thru all the modr/m memory encodings.
         ;
-  %assign iMod          0
-  %rep   3
-   %assign iDstReg      0
+ %assign iMod          0
+ %rep   3
+  %assign iDstReg      0
+  %rep   8
+   %assign iMemReg     0
    %rep   8
-    %assign iMemReg     0
-    %rep   8
-      %if iDstReg == 0
-       %assign iDstReg_Value LEA_EAX
-      %elif iDstReg == 1
-       %assign iDstReg_Value LEA_ECX
-      %elif iDstReg == 2
-       %assign iDstReg_Value LEA_EDX
-      %elif iDstReg == 3
-       %assign iDstReg_Value LEA_EBX
-      %elif iDstReg == 4
-       %assign iDstReg_Value LEA_ESP
-      %elif iDstReg == 5
-       %assign iDstReg_Value LEA_EBP
-      %elif iDstReg == 6
-       %assign iDstReg_Value LEA_ESI
-      %elif iDstReg == 7
-       %assign iDstReg_Value LEA_EDI
-      %else
-       %error iDstReg
-      %endif
+     %if iDstReg == 0
+      %assign iDstReg_Value LEA_EAX
+     %elif iDstReg == 1
+      %assign iDstReg_Value LEA_ECX
+     %elif iDstReg == 2
+      %assign iDstReg_Value LEA_EDX
+     %elif iDstReg == 3
+      %assign iDstReg_Value LEA_EBX
+     %elif iDstReg == 4
+      %assign iDstReg_Value LEA_ESP
+     %elif iDstReg == 5
+      %assign iDstReg_Value LEA_EBP
+     %elif iDstReg == 6
+      %assign iDstReg_Value LEA_ESI
+     %elif iDstReg == 7
+      %assign iDstReg_Value LEA_EDI
+     %else
+      %error iDstReg
+     %endif
 
-     %if iMemReg == 4
+    %if iMemReg == 4
         ;
         ; SIB.
         ;
-        %assign iBase       0
-        %rep 8
-         %if iBase == 0
-          %assign iBase_Value LEA_EAX
-         %elif iBase == 1
-          %assign iBase_Value LEA_ECX
-         %elif iBase == 2
-          %assign iBase_Value LEA_EDX
-         %elif iBase == 3
-          %assign iBase_Value LEA_EBX
-         %elif iBase == 4
-          %assign iBase_Value LEA_ESP
-         %elif iBase == 5 && iMod == 0
-          %assign iBase_Value 0
-         %elif iBase == 5
-          %assign iBase_Value LEA_EBP
-         %elif iBase == 6
-          %assign iBase_Value LEA_ESI
-         %elif iBase == 7
-          %assign iBase_Value LEA_EDI
-         %else
-          %error iBase
-         %endif
+       %assign iBase       0
+       %rep 8
+        %if iBase == 0
+         %assign iBase_Value LEA_EAX
+        %elif iBase == 1
+         %assign iBase_Value LEA_ECX
+        %elif iBase == 2
+         %assign iBase_Value LEA_EDX
+        %elif iBase == 3
+         %assign iBase_Value LEA_EBX
+        %elif iBase == 4
+         %assign iBase_Value LEA_ESP
+        %elif iBase == 5 && iMod == 0
+         %assign iBase_Value 0
+        %elif iBase == 5
+         %assign iBase_Value LEA_EBP
+        %elif iBase == 6
+         %assign iBase_Value LEA_ESI
+        %elif iBase == 7
+         %assign iBase_Value LEA_EDI
+        %else
+         %error iBase
+        %endif
 
-         %assign iIndex     0
-         %assign cShift     0 ; we don't have enough room for checking all the shifts in the 16-bit segment or the total image.
-         %rep 8
-          %if iIndex == 0
-           %assign iIndex_Value LEA_EAX
-          %elif iIndex == 1
-           %assign iIndex_Value LEA_ECX
-          %elif iIndex == 2
-           %assign iIndex_Value LEA_EDX
-          %elif iIndex == 3
-           %assign iIndex_Value LEA_EBX
-          %elif iIndex == 4
-           %assign iIndex_Value 0
-          %elif iIndex == 5
-           %assign iIndex_Value LEA_EBP
-          %elif iIndex == 6
-           %assign iIndex_Value LEA_ESI
-          %elif iIndex == 7
-           %assign iIndex_Value LEA_EDI
-          %else
-           %error iIndex
-          %endif
+        %assign iIndex     0
+        %assign cShift     0 ; we don't have enough room for checking all the shifts in the 16-bit segment or the total image.
+        %rep 8
+         %if iIndex == 0
+          %assign iIndex_Value LEA_EAX
+         %elif iIndex == 1
+          %assign iIndex_Value LEA_ECX
+         %elif iIndex == 2
+          %assign iIndex_Value LEA_EDX
+         %elif iIndex == 3
+          %assign iIndex_Value LEA_EBX
+         %elif iIndex == 4
+          %assign iIndex_Value 0
+         %elif iIndex == 5
+          %assign iIndex_Value LEA_EBP
+         %elif iIndex == 6
+          %assign iIndex_Value LEA_ESI
+         %elif iIndex == 7
+          %assign iIndex_Value LEA_EDI
+         %else
+          %error iIndex
+         %endif
 
         ;
         ; We don't test all shift combinations, there just isn't enough space
         ; in the image (32-bit case) or the segment (16-bit case) unfortunately.
         ;
-          %if TMPL_BITS == 32
-            %assign cShiftLoops 2
-          %else
-            %assign cShiftLoops 1
-          %endif
-          %rep cShiftLoops
+         %if TMPL_BITS == 32
+           %assign cShiftLoops 2
+         %else
+           %assign cShiftLoops 1
+         %endif
+         %rep cShiftLoops
 
         ;
         ; LEA+SIB w/ 32-bit operand size.
         ;
+        call    .load_regs
+          %if iBase == 4 || iDstReg == 4
+        mov     esp, LEA_ESP
+          %endif
+
+        ; lea
+          %assign   iValue  iBase_Value + (iIndex_Value << cShift)
+        db      MY_O32 8dh, X86_MODRM_MAKE(iMod, iDstReg, iMemReg), X86_SIB_MAKE(iBase, iIndex, cShift)
+          %if iMod == X86_MOD_MEM1
+        db      -119
+           %assign  iValue  iValue - 119
+          %elif iMod == X86_MOD_MEM4 || (iMod == 0 && iBase == 5)
+        dd      -04353f1ech
+           %assign  iValue  iValue - 04353f1ech
+          %endif
+
+        ; cmp iDstReg, iValue
+        db      MY_CMP_O32 81h, X86_MODRM_MAKE(X86_MOD_REG, 7, iDstReg)
+        dd      iValue & 0ffffffffh
+          %if iBase == 4 || iDstReg == 4
+        mov     esp, [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp))]
+          %endif
+        jz      $+3
+        int3
+           %assign cShift    (cShift + 1) & 3
+
+        ;
+        ; LEA+SIB w/ 16-bit operand size.
+        ;
+          %if TMPL_BITS == 32   ; No room in the 16-bit segment for all of this.
         call    .load_regs
            %if iBase == 4 || iDstReg == 4
         mov     esp, LEA_ESP
@@ -298,111 +322,81 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic3_lea_32, BS3_PBC_FAR
 
         ; lea
            %assign   iValue  iBase_Value + (iIndex_Value << cShift)
-        db      MY_O32 8dh, X86_MODRM_MAKE(iMod, iDstReg, iMemReg), X86_SIB_MAKE(iBase, iIndex, cShift)
-           %if iMod == X86_MOD_MEM1
-        db      -119
-            %assign  iValue  iValue - 119
-           %elif iMod == X86_MOD_MEM4 || (iMod == 0 && iBase == 5)
-        dd      -04353f1ech
-            %assign  iValue  iValue - 04353f1ech
-           %endif
-
-        ; cmp iDstReg, iValue
-        db      MY_CMP_O32 81h, X86_MODRM_MAKE(X86_MOD_REG, 7, iDstReg)
-        dd      iValue & 0ffffffffh
-           %if iBase == 4 || iDstReg == 4
-        mov     esp, [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp))]
-           %endif
-        jz      $+3
-        int3
-            %assign cShift    (cShift + 1) & 3
-
-        ;
-        ; LEA+SIB w/ 16-bit operand size.
-        ;
-           %if TMPL_BITS == 32   ; No room in the 16-bit segment for all of this.
-        call    .load_regs
-            %if iBase == 4 || iDstReg == 4
-        mov     esp, LEA_ESP
-            %endif
-
-        ; lea
-            %assign   iValue  iBase_Value + (iIndex_Value << cShift)
         db      MY_O16 8dh, X86_MODRM_MAKE(iMod, iDstReg, iMemReg), X86_SIB_MAKE(iBase, iIndex, cShift)
-            %if iMod == X86_MOD_MEM1
+           %if iMod == X86_MOD_MEM1
         db      -7
-             %assign  iValue  iValue - 7
-            %elif iMod == X86_MOD_MEM4 || (iMod == 0 && iBase == 5)
+            %assign  iValue  iValue - 7
+           %elif iMod == X86_MOD_MEM4 || (iMod == 0 && iBase == 5)
         dd      -073d676e4h
-             %assign  iValue  iValue - 073d676e4h
-            %endif
+            %assign  iValue  iValue - 073d676e4h
+           %endif
 
         ; cmp iDstReg, iValue
         db      MY_CMP_O32 81h, X86_MODRM_MAKE(X86_MOD_REG, 7, iDstReg)
         dd      (iValue & 00000ffffh) | (iDstReg_Value & 0ffff0000h)
-            %if 1 || iBase == 4 || iDstReg == 4
+           %if 1 || iBase == 4 || iDstReg == 4
         mov     esp, [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp))]
-            %endif
+           %endif
         jz      $+3
         int3
-            %assign cShift    (cShift + 2) & 3
-           %endif ; TMPL_BITS == 32
-          %endrep
-          %assign iIndex    iIndex + 1
+           %assign cShift    (cShift + 2) & 3
+          %endif ; TMPL_BITS == 32
          %endrep
-         %assign iBase      iBase + 1
+         %assign iIndex    iIndex + 1
         %endrep
+        %assign iBase      iBase + 1
+       %endrep
 
-     %else ; !SIB
+    %else ; !SIB
         ;
         ; Plain lea reg, [reg] with disp according to iMod,
         ; or lea reg, [disp32] if iMemReg == 5 && iMod == 0.
         ;
-      %if iMemReg == 0
-       %assign iMemReg_Value LEA_EAX
-      %elif iMemReg == 1
-       %assign iMemReg_Value LEA_ECX
-      %elif iMemReg == 2
-       %assign iMemReg_Value LEA_EDX
-      %elif iMemReg == 3
-       %assign iMemReg_Value LEA_EBX
-      %elif iMemReg == 5 && iMod == 0
-       %assign iMemReg_Value 0
-      %elif iMemReg == 5
-       %assign iMemReg_Value LEA_EBP
-      %elif iMemReg == 6
-       %assign iMemReg_Value LEA_ESI
-      %elif iMemReg == 7
-       %assign iMemReg_Value LEA_EDI
-      %else
-       %error iMemReg
-      %endif
+     %if iMemReg == 0
+      %assign iMemReg_Value LEA_EAX
+     %elif iMemReg == 1
+      %assign iMemReg_Value LEA_ECX
+     %elif iMemReg == 2
+      %assign iMemReg_Value LEA_EDX
+     %elif iMemReg == 3
+      %assign iMemReg_Value LEA_EBX
+     %elif iMemReg == 5 && iMod == 0
+      %assign iMemReg_Value 0
+     %elif iMemReg == 5
+      %assign iMemReg_Value LEA_EBP
+     %elif iMemReg == 6
+      %assign iMemReg_Value LEA_ESI
+     %elif iMemReg == 7
+      %assign iMemReg_Value LEA_EDI
+     %else
+      %error iMemReg
+     %endif
 
         ;
         ; 32-bit operand size first.
         ;
         call    .load_regs
-      %if iDstReg == 4
+     %if iDstReg == 4
         mov     esp, LEA_ESP
-      %endif
+     %endif
 
         ; lea
-      %assign   iValue  iMemReg_Value
+     %assign   iValue  iMemReg_Value
         db      MY_O32 8dh, X86_MODRM_MAKE(iMod, iDstReg, iMemReg)
-      %if iMod == X86_MOD_MEM1
+     %if iMod == X86_MOD_MEM1
         db      89
-       %assign  iValue  iValue + 89
-      %elif iMod == X86_MOD_MEM4 || (iMod == 0 && iMemReg == 5)
+      %assign  iValue  iValue + 89
+     %elif iMod == X86_MOD_MEM4 || (iMod == 0 && iMemReg == 5)
         dd      058739af8h
-       %assign  iValue  iValue + 058739af8h
-      %endif
+      %assign  iValue  iValue + 058739af8h
+     %endif
 
         ; cmp iDstReg, iValue
         db      MY_CMP_O32 81h, X86_MODRM_MAKE(X86_MOD_REG, 7, iDstReg)
         dd      iValue & 0ffffffffh
-      %if iDstReg == 4
+     %if iDstReg == 4
         mov     esp, [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp))]
-      %endif
+     %endif
         jz      $+3
         int3
 
@@ -410,37 +404,37 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic3_lea_32, BS3_PBC_FAR
         ; 16-bit operand size next.
         ;
         call    .load_regs
-      %if iDstReg == 4
+     %if iDstReg == 4
         mov     esp, LEA_ESP
-      %endif
+     %endif
 
         ; lea
-      %assign   iValue  iMemReg_Value
+     %assign   iValue  iMemReg_Value
         db      MY_O16 8dh, X86_MODRM_MAKE(iMod, iDstReg, iMemReg)
-      %if iMod == X86_MOD_MEM1
+     %if iMod == X86_MOD_MEM1
         db      -98
-       %assign  iValue  iValue - 98
-      %elif iMod == X86_MOD_MEM4 || (iMod == 0 && iMemReg == 5)
+      %assign  iValue  iValue - 98
+     %elif iMod == X86_MOD_MEM4 || (iMod == 0 && iMemReg == 5)
         dd      0f3694352h
-       %assign  iValue  iValue + 0f3694352h
-      %endif
+      %assign  iValue  iValue + 0f3694352h
+     %endif
 
         ; cmp iDstReg, iValue
         db      MY_CMP_O32 81h, X86_MODRM_MAKE(X86_MOD_REG, 7, iDstReg)
         dd      (iValue & 00000ffffh) | (iDstReg_Value & 0ffff0000h)
-      %if iDstReg == 4
+     %if iDstReg == 4
         mov     esp, [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp))]
-      %endif
+     %endif
         jz      $+3
         int3
 
-     %endif ; !SIB
-     %assign iMemReg    iMemReg + 1
-    %endrep
-    %assign iDstReg     iDstReg + 1
+    %endif ; !SIB
+    %assign iMemReg    iMemReg + 1
    %endrep
-   %assign iMod         iMod + 1
+   %assign iDstReg     iDstReg + 1
   %endrep
+  %assign iMod         iMod + 1
+ %endrep
 
         mov     esp, [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp))]
         popad
@@ -457,9 +451,8 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic3_lea_32, BS3_PBC_FAR
         ret
 BS3_PROC_END_CMN   bs3CpuBasic3_lea_32
 
- %endif ; TMPL_BITS != 64
+%endif ; TMPL_BITS != 64
 
-%endif ; BS3_INSTANTIATING_CMN
 
 %include "bs3kit-template-footer.mac"   ; reset environment
 
