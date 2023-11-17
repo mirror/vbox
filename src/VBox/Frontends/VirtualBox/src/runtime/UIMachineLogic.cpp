@@ -43,6 +43,7 @@
 #include "QIFileDialog.h"
 #include "UIActionPoolRuntime.h"
 #include "UIAddDiskEncryptionPasswordDialog.h"
+#include "UIAdvancedSettingsDialogSpecific.h"
 #include "UIBootFailureDialog.h"
 #include "UICommon.h"
 #include "UIConverter.h"
@@ -68,7 +69,6 @@
 #include "UIModalWindowManager.h"
 #include "UIMouseHandler.h"
 #include "UINotificationCenter.h"
-#include "UISettingsDialogSpecific.h"
 #include "UISoftKeyboard.h"
 #include "UITakeSnapshotDialog.h"
 #include "UIVirtualBoxEventHandler.h"
@@ -1529,24 +1529,24 @@ void UIMachineLogic::sltOpenPreferencesDialog(const QString &strCategory /* = QS
         return;
 
     /* Create instance if not yet created: */
-    if (!m_settings.contains(UISettingsDialog::Type_Global))
+    if (!m_settings.contains(UIAdvancedSettingsDialog::Type_Global))
     {
-        m_settings[UISettingsDialog::Type_Global] = new UISettingsDialogGlobal(activeMachineWindow(),
-                                                                               strCategory,
-                                                                               strControl);
-        connect(m_settings[UISettingsDialog::Type_Global], &UISettingsDialogGlobal::sigClose,
+        m_settings[UIAdvancedSettingsDialog::Type_Global] = new UIAdvancedSettingsDialogGlobal(activeMachineWindow(),
+                                                                                               strCategory,
+                                                                                               strControl);
+        connect(m_settings[UIAdvancedSettingsDialog::Type_Global], &UIAdvancedSettingsDialogGlobal::sigClose,
                 this, &UIMachineLogic::sltClosePreferencesDialog);
-        m_settings.value(UISettingsDialog::Type_Global)->load();
+        m_settings.value(UIAdvancedSettingsDialog::Type_Global)->load();
     }
 
     /* Expose instance: */
-    UIDesktopWidgetWatchdog::restoreWidget(m_settings.value(UISettingsDialog::Type_Global));
+    UIDesktopWidgetWatchdog::restoreWidget(m_settings.value(UIAdvancedSettingsDialog::Type_Global));
 }
 
 void UIMachineLogic::sltClosePreferencesDialog()
 {
     /* Remove instance if exist: */
-    delete m_settings.take(UISettingsDialog::Type_Global);
+    delete m_settings.take(UIAdvancedSettingsDialog::Type_Global);
 }
 
 void UIMachineLogic::sltClose()
@@ -1571,26 +1571,26 @@ void UIMachineLogic::sltOpenSettingsDialog(const QString &strCategory /* = QStri
         return;
 
     /* Create instance if not yet created: */
-    if (!m_settings.contains(UISettingsDialog::Type_Machine))
+    if (!m_settings.contains(UIAdvancedSettingsDialog::Type_Machine))
     {
-        m_settings[UISettingsDialog::Type_Machine] = new UISettingsDialogMachine(activeMachineWindow(),
-                                                                                 uiCommon().managedVMUuid(),
-                                                                                 actionPool(),
-                                                                                 strCategory,
-                                                                                 strControl);
-        connect(m_settings[UISettingsDialog::Type_Machine], &UISettingsDialogGlobal::sigClose,
+        m_settings[UIAdvancedSettingsDialog::Type_Machine] = new UIAdvancedSettingsDialogMachine(activeMachineWindow(),
+                                                                                                 uiCommon().managedVMUuid(),
+                                                                                                 actionPool(),
+                                                                                                 strCategory,
+                                                                                                 strControl);
+        connect(m_settings[UIAdvancedSettingsDialog::Type_Machine], &UIAdvancedSettingsDialogGlobal::sigClose,
                 this, &UIMachineLogic::sltCloseSettingsDialog);
-        m_settings.value(UISettingsDialog::Type_Machine)->load();
+        m_settings.value(UIAdvancedSettingsDialog::Type_Machine)->load();
     }
 
     /* Expose instance: */
-    UIDesktopWidgetWatchdog::restoreWidget(m_settings.value(UISettingsDialog::Type_Machine));
+    UIDesktopWidgetWatchdog::restoreWidget(m_settings.value(UIAdvancedSettingsDialog::Type_Machine));
 }
 
 void UIMachineLogic::sltCloseSettingsDialog()
 {
     /* Remove instance if exist: */
-    delete m_settings.take(UISettingsDialog::Type_Machine);
+    delete m_settings.take(UIAdvancedSettingsDialog::Type_Machine);
 }
 
 void UIMachineLogic::sltTakeSnapshot()

@@ -34,7 +34,7 @@
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
 #include "UIExtraDataDefs.h"
-#include "UISettingsDialog.h"
+#include "UIAdvancedSettingsDialog.h"
 
 /* Forward declarations: */
 class QAction;
@@ -397,7 +397,7 @@ private:
     void *m_pHostLedsState;
 
     /** Holds the map of settings dialogs. */
-    QMap<UISettingsDialog::DialogType, UISettingsDialog*>  m_settings;
+    QMap<UIAdvancedSettingsDialog::DialogType, UIAdvancedSettingsDialog*>  m_settings;
 
     /** Holds the log viewer dialog instance. */
     QIManagerDialog       *m_pLogViewerDialog;
