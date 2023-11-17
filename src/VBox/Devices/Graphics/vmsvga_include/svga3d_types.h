@@ -1933,7 +1933,21 @@ typedef enum {
    SVGA_COTABLE_DX10_MAX        = 11,
    SVGA_COTABLE_UAVIEW          = 11,
    SVGA_COTABLE_MAX             = 12,
+#ifdef VBOX
+   VBSVGA_COTABLE_BASE           = 100,
+   VBSVGA_COTABLE_MIN            = VBSVGA_COTABLE_BASE,
+   VBSVGA_COTABLE_VIDEOPROCESSOR = VBSVGA_COTABLE_BASE + 0,
+   VBSVGA_COTABLE_VDOV           = VBSVGA_COTABLE_BASE + 1,  /* Video Decoder Output View */
+   VBSVGA_COTABLE_VIDEODECODER   = VBSVGA_COTABLE_BASE + 2,
+   VBSVGA_COTABLE_VPIV           = VBSVGA_COTABLE_BASE + 3,  /* Video Processor Input View */
+   VBSVGA_COTABLE_VPOV           = VBSVGA_COTABLE_BASE + 4,  /* Video Processor Output View */
+   VBSVGA_COTABLE_MAX            = VBSVGA_COTABLE_BASE + 5
+#endif
 } SVGACOTableType;
+
+#ifdef VBOX
+#define VBSVGA_NUM_COTABLES SVGA_COTABLE_MAX + (VBSVGA_COTABLE_MAX - VBSVGA_COTABLE_MIN)
+#endif
 
 /*
  * The largest size (number of entries) allowed in a COTable.
