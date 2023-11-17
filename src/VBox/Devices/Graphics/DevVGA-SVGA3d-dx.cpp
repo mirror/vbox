@@ -2282,6 +2282,9 @@ static int dxSetOrGrowCOTable(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext
                 pDXContext->cot.cUAView           = cEntries;
                 break;
             case SVGA_COTABLE_MAX: break; /* Compiler warning */
+#ifndef DEBUG_sunlover
+            default: break; /* Compiler warning. */
+#endif
         }
     }
     else
