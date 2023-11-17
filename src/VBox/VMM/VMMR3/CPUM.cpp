@@ -2250,8 +2250,8 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     uint32_t cbMaxXState = pVM->cpum.s.HostFeatures.cbMaxExtendedState;
     cbMaxXState = RT_ALIGN(cbMaxXState, 128);
     AssertLogRelReturn(   pVM->cpum.s.HostFeatures.cbMaxExtendedState >= sizeof(X86FXSTATE)
-                       && pVM->cpum.s.HostFeatures.cbMaxExtendedState <= sizeof(pVM->apCpusR3[0]->cpum.s.Host.XState)
-                       && pVM->cpum.s.HostFeatures.cbMaxExtendedState <= sizeof(pVM->apCpusR3[0]->cpum.s.Guest.XState)
+                       && pVM->cpum.s.HostFeatures.cbMaxExtendedState <= sizeof(pVM->apCpusR3[0]->cpum.s.Host.abXState)
+                       && pVM->cpum.s.HostFeatures.cbMaxExtendedState <= sizeof(pVM->apCpusR3[0]->cpum.s.Guest.abXState)
                        , VERR_CPUM_IPE_2);
 #endif
 
