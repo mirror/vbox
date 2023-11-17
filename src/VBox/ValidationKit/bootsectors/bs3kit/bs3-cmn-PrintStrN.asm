@@ -151,8 +151,8 @@ BS3_PROC_BEGIN_CMN Bs3PrintStrN, BS3_PBC_NEAR
 
 BS3_PROC_END_CMN   Bs3PrintStrN
 
-
 %if TMPL_BITS == 16
+
 ;
 ; This code is shared with the system handler.
 ;
@@ -172,12 +172,12 @@ BS3_PROC_BEGIN Bs3PrintStrN_c16_CX_Bytes_At_DS_SI
         lodsb                           ; al = next char
         cmp     al, 0ah                 ; \n
         je      .bios_loop_newline
-%ifdef BS3_STRICT
+ %ifdef BS3_STRICT
         test    al, al
         jnz     .not_zero
         hlt
 .not_zero:
-%endif
+ %endif
         mov     ah, 0eh
 .bios_loop_int10h:
         int     10h
@@ -200,5 +200,5 @@ BS3_PROC_END   Bs3PrintStrN_c16_CX_Bytes_At_DS_SI
 ;
 BS3_CMN_FAR_STUB Bs3PrintStrN, 6
 
-%endif
+%endif ; TMPL_BITS == 16
 
