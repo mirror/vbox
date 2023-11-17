@@ -86,7 +86,7 @@ public:
     virtual ~UIAdvancedSettingsDialog() RT_OVERRIDE;
 
     /** Loads the dialog data. */
-    virtual void load() = 0;
+    virtual bool load() = 0;
     /** Saves the dialog data. */
     virtual void save() = 0;
 

@@ -63,7 +63,7 @@ protected:
     virtual void retranslateUi() RT_OVERRIDE;
 
     /** Loads the dialog data. */
-    virtual void load() RT_OVERRIDE;
+    virtual bool load() RT_OVERRIDE;
     /** Saves the dialog data. */
     virtual void save() RT_OVERRIDE;
 
@@ -114,7 +114,7 @@ protected:
     virtual void retranslateUi() RT_OVERRIDE;
 
     /** Loads the dialog data. */
-    virtual void load() RT_OVERRIDE;
+    virtual bool load() RT_OVERRIDE;
     /** Saves the dialog data. */
     virtual void save() RT_OVERRIDE;
 
