@@ -44,6 +44,7 @@
 #pragma pack(1) /* VMSVGA structures are '__packed'. */
 #include <svga_reg.h>
 #include <svga3d_reg.h>
+#include <vbsvga3d_dx.h>
 #pragma pack()
 
 #define SVGA_SYNC_GENERIC         1
@@ -307,7 +308,7 @@ typedef struct VMSVGACONTEXT
     uint32_t                    u32Cid;                     /* SVGA context id of this context. */
     bool                        fDXContext : 1;             /* Whether this context is a DX context or VGPU9. */
     bool                        fDebugVerifyCommands : 1;
-    VMSVGACOT                   aCOT[SVGA_COTABLE_MAX];     /* Context Object Tables. */
+    VMSVGACOT                   aCOT[VBSVGA_NUM_COTABLES];  /* Context Object Tables. */
 } VMSVGACONTEXT, *PVMSVGACONTEXT;
 
 typedef struct SVGAHOSTOBJECT SVGAHOSTOBJECT;

@@ -1845,8 +1845,98 @@ static NTSTATUS procCmdVBDXClearRenderTargetViewRegion(PVBOXWDDM_EXT_VMSVGA pSvg
 }
 
 
+/* VBSVGA_3D_CMD_DX_DEFINE_VIDEO_PROCESSOR  VBSVGA_3D_CMD_DX_BASE + 0 */
+static NTSTATUS procVBCmdDXDefineVideoProcessor(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
+{
+    VBSVGA3dCmdDXDefineVideoProcessor *pCmd = (VBSVGA3dCmdDXDefineVideoProcessor *)&pHeader[1];
+    DEBUG_VERIFYCMD_RETURN();
+    return SvgaCOTNotifyId(pSvga, pSvgaContext, VBSVGA_COTABLE_VIDEOPROCESSOR, pCmd->videoProcessorId);
+}
+
+
+/* VBSVGA_3D_CMD_DX_DEFINE_VIDEO_DECODER_OUTPUT_VIEW  VBSVGA_3D_CMD_DX_BASE + 1 */
+static NTSTATUS procVBCmdDXDefineVideoDecoderOutputView(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
+{
+    VBSVGA3dCmdDXDefineVideoDecoderOutputView *pCmd = (VBSVGA3dCmdDXDefineVideoDecoderOutputView *)&pHeader[1];
+    DEBUG_VERIFYCMD_RETURN();
+    return SvgaCOTNotifyId(pSvga, pSvgaContext, VBSVGA_COTABLE_VDOV, pCmd->videoDecoderOutputViewId);
+}
+
+
+/* VBSVGA_3D_CMD_DX_DEFINE_VIDEO_DECODER  VBSVGA_3D_CMD_DX_BASE + 2 */
+static NTSTATUS procVBCmdDXDefineVideoDecoder(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
+{
+    VBSVGA3dCmdDXDefineVideoDecoder *pCmd = (VBSVGA3dCmdDXDefineVideoDecoder *)&pHeader[1];
+    DEBUG_VERIFYCMD_RETURN();
+    return SvgaCOTNotifyId(pSvga, pSvgaContext, VBSVGA_COTABLE_VIDEODECODER, pCmd->videoDecoderId);
+}
+
+
+/* VBSVGA_3D_CMD_DX_DEFINE_VIDEO_PROCESSOR_INPUT_VIEW  VBSVGA_3D_CMD_DX_BASE + 6 */
+static NTSTATUS procVBCmdDXDefineVideoProcessorInputView(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
+{
+    VBSVGA3dCmdDXDefineVideoProcessorInputView *pCmd = (VBSVGA3dCmdDXDefineVideoProcessorInputView *)&pHeader[1];
+    DEBUG_VERIFYCMD_RETURN();
+    return SvgaCOTNotifyId(pSvga, pSvgaContext, VBSVGA_COTABLE_VPIV, pCmd->videoProcessorInputViewId);
+}
+
+
+/* VBSVGA_3D_CMD_DX_DEFINE_VIDEO_PROCESSOR_OUTPUT_VIEW  VBSVGA_3D_CMD_DX_BASE + 7 */
+static NTSTATUS procVBCmdDXDefineVideoProcessorOutputView(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
+{
+    VBSVGA3dCmdDXDefineVideoProcessorOutputView *pCmd = (VBSVGA3dCmdDXDefineVideoProcessorOutputView *)&pHeader[1];
+    DEBUG_VERIFYCMD_RETURN();
+    return SvgaCOTNotifyId(pSvga, pSvgaContext, VBSVGA_COTABLE_VPOV, pCmd->videoProcessorOutputViewId);
+}
+
+
+/* VBSVGA_3D_CMD_DX_DESTROY_VIDEO_DECODER  VBSVGA_3D_CMD_DX_BASE + 9 */
+static NTSTATUS procVBCmdDXDestroyVideoDecoder(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
+{
+    VBSVGA3dCmdDXDestroyVideoDecoder *pCmd = (VBSVGA3dCmdDXDestroyVideoDecoder *)&pHeader[1];
+    DEBUG_VERIFYCMD_RETURN();
+    return SvgaCOTNotifyId(pSvga, pSvgaContext, VBSVGA_COTABLE_VIDEODECODER, pCmd->videoDecoderId);
+}
+
+
+/* VBSVGA_3D_CMD_DX_DESTROY_VIDEO_DECODER_OUTPUT_VIEW  VBSVGA_3D_CMD_DX_BASE + 10 */
+static NTSTATUS procVBCmdDXDestroyVideoDecoderOutputView(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
+{
+    VBSVGA3dCmdDXDestroyVideoDecoderOutputView *pCmd = (VBSVGA3dCmdDXDestroyVideoDecoderOutputView *)&pHeader[1];
+    DEBUG_VERIFYCMD_RETURN();
+    return SvgaCOTNotifyId(pSvga, pSvgaContext, VBSVGA_COTABLE_VDOV, pCmd->videoDecoderOutputViewId);
+}
+
+
+/* VBSVGA_3D_CMD_DX_DESTROY_VIDEO_PROCESSOR  VBSVGA_3D_CMD_DX_BASE + 11 */
+static NTSTATUS procVBCmdDXDestroyVideoProcessor(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
+{
+    VBSVGA3dCmdDXDestroyVideoProcessor *pCmd = (VBSVGA3dCmdDXDestroyVideoProcessor *)&pHeader[1];
+    DEBUG_VERIFYCMD_RETURN();
+    return SvgaCOTNotifyId(pSvga, pSvgaContext, VBSVGA_COTABLE_VIDEOPROCESSOR, pCmd->videoProcessorId);
+}
+
+
+/* VBSVGA_3D_CMD_DX_DESTROY_VIDEO_PROCESSOR_INPUT_VIEW  VBSVGA_3D_CMD_DX_BASE + 12 */
+static NTSTATUS procVBCmdDXDestroyVideoProcessorInputView(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
+{
+    VBSVGA3dCmdDXDestroyVideoProcessorInputView *pCmd = (VBSVGA3dCmdDXDestroyVideoProcessorInputView *)&pHeader[1];
+    DEBUG_VERIFYCMD_RETURN();
+    return SvgaCOTNotifyId(pSvga, pSvgaContext, VBSVGA_COTABLE_VPIV, pCmd->videoProcessorInputViewId);
+}
+
+
+/* VBSVGA_3D_CMD_DX_DESTROY_VIDEO_PROCESSOR_OUTPUT_VIEW  VBSVGA_3D_CMD_DX_BASE + 12 */
+static NTSTATUS procVBCmdDXDestroyVideoProcessorOutputView(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
+{
+    VBSVGA3dCmdDXDestroyVideoProcessorOutputView *pCmd = (VBSVGA3dCmdDXDestroyVideoProcessorOutputView *)&pHeader[1];
+    DEBUG_VERIFYCMD_RETURN();
+    return SvgaCOTNotifyId(pSvga, pSvgaContext, VBSVGA_COTABLE_VPOV, pCmd->videoProcessorOutputViewId);
+}
+
+
 /* Command ok. */
-static NTSTATUS procCmdNop(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
+static NTSTATUS procCmdOK(PVBOXWDDM_EXT_VMSVGA pSvga, PVMSVGACONTEXT pSvgaContext, SVGA3dCmdHeader *pHeader)
 {
     RT_NOREF(pSvga, pSvgaContext, pHeader);
     return STATUS_SUCCESS;
@@ -1867,7 +1957,7 @@ typedef struct SVGA3DCOMMANDDESC
     PFNPROCESSCOMMAND pfnProcessCommand;
 } SVGA3DCOMMANDDESC;
 
-static SVGA3DCOMMANDDESC const s_aCommandDesc[SVGA_3D_CMD_MAX - SVGA_3D_CMD_BASE] =
+static SVGA3DCOMMANDDESC const s_aCommandDesc[] =
 {
     { procCmdDefineSurface },                       // SVGA_3D_CMD_SURFACE_DEFINE
     { procCmdDestroySurface },                      // SVGA_3D_CMD_SURFACE_DESTROY
@@ -2107,8 +2197,44 @@ static SVGA3DCOMMANDDESC const s_aCommandDesc[SVGA_3D_CMD_MAX - SVGA_3D_CMD_BASE
     { procCmdDXBindStreamOutput },                  // SVGA_3D_CMD_DX_BIND_STREAMOUTPUT
     { procCmdSurfaceStretchBltNonMSToMS },          // SVGA_3D_CMD_SURFACE_STRETCHBLT_NON_MS_TO_MS
     { procCmdDXBindShaderIface },                   // SVGA_3D_CMD_DX_BIND_SHADER_IFACE
-};
 
+    /* VirtualBox commands */
+    { procVBCmdDXDefineVideoProcessor },            // VBSVGA_3D_CMD_DX_DEFINE_VIDEO_PROCESSOR
+    { procVBCmdDXDefineVideoDecoderOutputView },    // VBSVGA_3D_CMD_DX_DEFINE_VIDEO_DECODER_OUTPUT_VIEW
+    { procVBCmdDXDefineVideoDecoder },              // VBSVGA_3D_CMD_DX_DEFINE_VIDEO_DECODER
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_VIDEO_DECODER_BEGIN_FRAME
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_VIDEO_DECODER_SUBMIT_BUFFERS
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_VIDEO_DECODER_END_FRAME
+    { procVBCmdDXDefineVideoProcessorInputView },   // VBSVGA_3D_CMD_DX_DEFINE_VIDEO_PROCESSOR_INPUT_VIEW
+    { procVBCmdDXDefineVideoProcessorOutputView },  // VBSVGA_3D_CMD_DX_DEFINE_VIDEO_PROCESSOR_OUTPUT_VIEW
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_BLT
+    { procVBCmdDXDestroyVideoDecoder },             // VBSVGA_3D_CMD_DX_DESTROY_VIDEO_DECODER
+    { procVBCmdDXDestroyVideoDecoderOutputView },   // VBSVGA_3D_CMD_DX_DESTROY_VIDEO_DECODER_OUTPUT_VIEW
+    { procVBCmdDXDestroyVideoProcessor },           // VBSVGA_3D_CMD_DX_DESTROY_VIDEO_PROCESSOR
+    { procVBCmdDXDestroyVideoProcessorInputView },  // VBSVGA_3D_CMD_DX_DESTROY_VIDEO_PROCESSOR_INPUT_VIEW
+    { procVBCmdDXDestroyVideoProcessorOutputView }, // VBSVGA_3D_CMD_DX_DESTROY_VIDEO_PROCESSOR_OUTPUT_VIEW
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_TARGET_RECT
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_BACKGROUND_COLOR
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_COLOR_SPACE
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_ALPHA_FILL_MODE
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_CONSTRICTION
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_STEREO_MODE
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_FRAME_FORMAT
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_COLOR_SPACE
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_OUTPUT_RATE
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_SOURCE_RECT
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_DEST_RECT
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_ALPHA
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_PALETTE
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_PIXEL_ASPECT_RATIO
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_LUMA_KEY
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_STEREO_FORMAT
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_AUTO_PROCESSING_MODE
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_FILTER
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_ROTATION
+    { procCmdOK },                                  // VBSVGA_3D_CMD_DX_GET_VIDEO_CAPABILITY
+};
+AssertCompile(RT_ELEMENTS(s_aCommandDesc) == VBSVGA_NUM_COMMANDS);
 
 NTSTATUS SvgaRenderCommandsD3D(PVBOXWDDM_EXT_VMSVGA pSvga,
                                PVMSVGACONTEXT pSvgaContext,
@@ -2140,9 +2266,17 @@ NTSTATUS SvgaRenderCommandsD3D(PVBOXWDDM_EXT_VMSVGA pSvga,
         uint32_t cbCmd = 0;
 
         /* It is not expected that any of common SVGA commands will be in the command buffer
-         * because the SVGA gallium driver does not use them.
+         * because the user mode driver does not use them.
          */
-        AssertBreakStmt(SVGA_3D_CMD_BASE <= u32CmdId && u32CmdId < SVGA_3D_CMD_MAX, Status = STATUS_ILLEGAL_INSTRUCTION);
+        uint32_t idxCmd;
+        if (SVGA_3D_CMD_BASE <= u32CmdId && u32CmdId < SVGA_3D_CMD_MAX)
+            idxCmd = u32CmdId - SVGA_3D_CMD_BASE;
+        else if (VBSVGA_3D_CMD_BASE <= u32CmdId && u32CmdId < VBSVGA_3D_CMD_MAX)
+            idxCmd = u32CmdId - VBSVGA_3D_CMD_BASE + (SVGA_3D_CMD_MAX - SVGA_3D_CMD_BASE);
+        else
+            AssertFailedBreakStmt(Status = STATUS_ILLEGAL_INSTRUCTION);
+
+        AssertBreakStmt(idxCmd < RT_ELEMENTS(s_aCommandDesc), Status = STATUS_ILLEGAL_INSTRUCTION);
 
         /* A 3D command must have a header. */
         AssertBreakStmt(cbSrcLeft >= sizeof(SVGA3dCmdHeader), Status = STATUS_ILLEGAL_INSTRUCTION);
@@ -2158,12 +2292,10 @@ NTSTATUS SvgaRenderCommandsD3D(PVBOXWDDM_EXT_VMSVGA pSvga,
         memcpy(pu8Dst, pu8Src, cbCmd);
 
         /* Verify the command in dst place and update it if necessary. */
-        uint32_t const idxCmd = u32CmdId - SVGA_3D_CMD_BASE;
-        AssertBreakStmt(idxCmd < RT_ELEMENTS(s_aCommandDesc), Status = STATUS_ILLEGAL_INSTRUCTION);
-
         PFNPROCESSCOMMAND pfnProcessCommand = s_aCommandDesc[idxCmd].pfnProcessCommand;
         AssertBreakStmt(pfnProcessCommand, Status = STATUS_ILLEGAL_INSTRUCTION);
         Status = pfnProcessCommand(pSvga, pSvgaContext, (SVGA3dCmdHeader *)pu8Dst);
+
         if (Status != STATUS_SUCCESS)
         {
             Assert(Status == STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER);
@@ -2212,7 +2344,15 @@ NTSTATUS SvgaDebugCommandsD3D(PVBOXWDDM_EXT_VMSVGA pSvga,
         /* It is not expected that any of common SVGA commands will be in the command buffer
          * because the SVGA gallium driver does not use them.
          */
-        AssertBreakStmt(SVGA_3D_CMD_BASE <= u32CmdId && u32CmdId < SVGA_3D_CMD_MAX, Status = STATUS_ILLEGAL_INSTRUCTION);
+        uint32_t idxCmd;
+        if (SVGA_3D_CMD_BASE <= u32CmdId && u32CmdId < SVGA_3D_CMD_MAX)
+            idxCmd = u32CmdId - SVGA_3D_CMD_BASE;
+        else if (VBSVGA_3D_CMD_BASE <= u32CmdId && u32CmdId < VBSVGA_3D_CMD_MAX)
+            idxCmd = u32CmdId - VBSVGA_3D_CMD_BASE + (SVGA_3D_CMD_MAX - SVGA_3D_CMD_BASE);
+        else
+            AssertFailedBreakStmt(Status = STATUS_ILLEGAL_INSTRUCTION);
+
+        AssertBreakStmt(idxCmd < RT_ELEMENTS(s_aCommandDesc), Status = STATUS_ILLEGAL_INSTRUCTION);
 
         /* A 3D command must have a header. */
         AssertBreakStmt(cbSrcLeft >= sizeof(SVGA3dCmdHeader), Status = STATUS_ILLEGAL_INSTRUCTION);
@@ -2223,9 +2363,6 @@ NTSTATUS SvgaDebugCommandsD3D(PVBOXWDDM_EXT_VMSVGA pSvga,
         AssertBreakStmt(cbSrcLeft >= cbCmd, Status = STATUS_ILLEGAL_INSTRUCTION);
 
         /* Verify the command in src place. */
-        uint32_t const idxCmd = u32CmdId - SVGA_3D_CMD_BASE;
-        AssertBreakStmt(idxCmd < RT_ELEMENTS(s_aCommandDesc), Status = STATUS_ILLEGAL_INSTRUCTION);
-
         PFNPROCESSCOMMAND pfnProcessCommand = s_aCommandDesc[idxCmd].pfnProcessCommand;
         AssertBreakStmt(pfnProcessCommand, Status = STATUS_ILLEGAL_INSTRUCTION);
         pSvgaContext->fDebugVerifyCommands = true;
