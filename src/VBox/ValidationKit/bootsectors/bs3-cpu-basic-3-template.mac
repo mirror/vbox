@@ -195,7 +195,7 @@ BS3_BEGIN_X1TEXT16
 ;
 BS3_PROC_BEGIN_CMN bs3CpuBasic3_lea_32, BS3_PBC_FAR
         pushad
-        mov     [BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp)], esp
+        mov     [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp))], esp
 
         ;
         ; Loop thru all the modr/m memory encodings.
@@ -277,42 +277,20 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic3_lea_32, BS3_PBC_FAR
            %error iIndex
           %endif
 
+        ;
+        ; We don't test all shift combinations, there just isn't enough space
+        ; in the image (32-bit case) or the segment (16-bit case) unfortunately.
+        ;
           %if TMPL_BITS == 32
-            %assign cShiftLoops 1 ;; @todo split out the LEA tests, they are too big and we haven't done 64-bit mode yet.
+            %assign cShiftLoops 2
           %else
             %assign cShiftLoops 1
           %endif
           %rep cShiftLoops
 
         ;
-        ; We don't have room to test both 32-bit and 16-bit operand sizes here for 16-bit code.
+        ; LEA+SIB w/ 32-bit operand size.
         ;
-        call    .load_regs
-          %if iBase == 4 || iDstReg == 4
-        mov     esp, LEA_ESP
-          %endif
-
-        ; lea
-          %assign   iValue  iBase_Value + (iIndex_Value << cShift)
-        db      MY_O32 8dh, X86_MODRM_MAKE(iMod, iDstReg, iMemReg), X86_SIB_MAKE(iBase, iIndex, cShift)
-          %if iMod == X86_MOD_MEM1
-        db      -119
-           %assign  iValue  iValue - 119
-          %elif iMod == X86_MOD_MEM4 || (iMod == 0 && iBase == 5)
-        dd      -04353f1ech
-           %assign  iValue  iValue - 04353f1ech
-          %endif
-
-        ; cmp iDstReg, iValue
-        db      MY_CMP_O32 81h, X86_MODRM_MAKE(X86_MOD_REG, 7, iDstReg)
-        dd      iValue & 0ffffffffh
-          %if iBase == 4 || iDstReg == 4
-        mov     esp, [BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp)]
-          %endif
-        jz      $+3
-        int3
-
-          %if TMPL_BITS == 32
         call    .load_regs
            %if iBase == 4 || iDstReg == 4
         mov     esp, LEA_ESP
@@ -333,20 +311,49 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic3_lea_32, BS3_PBC_FAR
         db      MY_CMP_O32 81h, X86_MODRM_MAKE(X86_MOD_REG, 7, iDstReg)
         dd      iValue & 0ffffffffh
            %if iBase == 4 || iDstReg == 4
-        mov     esp, [BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp)]
+        mov     esp, [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp))]
            %endif
         jz      $+3
         int3
-          %endif ; TMPL_BITS == 32
+            %assign cShift    (cShift + 1) & 3
 
-           %assign cShift    (cShift + 1) & 3
+        ;
+        ; LEA+SIB w/ 16-bit operand size.
+        ;
+           %if TMPL_BITS == 32   ; No room in the 16-bit segment for all of this.
+        call    .load_regs
+            %if iBase == 4 || iDstReg == 4
+        mov     esp, LEA_ESP
+            %endif
+
+        ; lea
+            %assign   iValue  iBase_Value + (iIndex_Value << cShift)
+        db      MY_O16 8dh, X86_MODRM_MAKE(iMod, iDstReg, iMemReg), X86_SIB_MAKE(iBase, iIndex, cShift)
+            %if iMod == X86_MOD_MEM1
+        db      -7
+             %assign  iValue  iValue - 7
+            %elif iMod == X86_MOD_MEM4 || (iMod == 0 && iBase == 5)
+        dd      -073d676e4h
+             %assign  iValue  iValue - 073d676e4h
+            %endif
+
+        ; cmp iDstReg, iValue
+        db      MY_CMP_O32 81h, X86_MODRM_MAKE(X86_MOD_REG, 7, iDstReg)
+        dd      (iValue & 00000ffffh) | (iDstReg_Value & 0ffff0000h)
+            %if 1 || iBase == 4 || iDstReg == 4
+        mov     esp, [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp))]
+            %endif
+        jz      $+3
+        int3
+            %assign cShift    (cShift + 2) & 3
+           %endif ; TMPL_BITS == 32
           %endrep
           %assign iIndex    iIndex + 1
          %endrep
          %assign iBase      iBase + 1
         %endrep
 
-     %else
+     %else ; !SIB
         ;
         ; Plain lea reg, [reg] with disp according to iMod,
         ; or lea reg, [disp32] if iMemReg == 5 && iMod == 0.
@@ -394,7 +401,7 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic3_lea_32, BS3_PBC_FAR
         db      MY_CMP_O32 81h, X86_MODRM_MAKE(X86_MOD_REG, 7, iDstReg)
         dd      iValue & 0ffffffffh
       %if iDstReg == 4
-        mov     esp, [BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp)]
+        mov     esp, [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp))]
       %endif
         jz      $+3
         int3
@@ -422,12 +429,12 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic3_lea_32, BS3_PBC_FAR
         db      MY_CMP_O32 81h, X86_MODRM_MAKE(X86_MOD_REG, 7, iDstReg)
         dd      (iValue & 00000ffffh) | (iDstReg_Value & 0ffff0000h)
       %if iDstReg == 4
-        mov     esp, [BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp)]
+        mov     esp, [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp))]
       %endif
         jz      $+3
         int3
 
-     %endif
+     %endif ; !SIB
      %assign iMemReg    iMemReg + 1
     %endrep
     %assign iDstReg     iDstReg + 1
@@ -435,7 +442,7 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic3_lea_32, BS3_PBC_FAR
    %assign iMod         iMod + 1
   %endrep
 
-        mov     esp, [BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp)]
+        mov     esp, [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp))]
         popad
         BS3_HYBRID_RET
 
