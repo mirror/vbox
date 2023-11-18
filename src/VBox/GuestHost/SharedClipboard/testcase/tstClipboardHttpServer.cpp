@@ -60,7 +60,7 @@ static struct
     const char *pszUrl;
     /** File allocation size.
      *  Specify UINT64_MAX for random size. */
-    size_t      cbSize;
+    uint64_t    cbSize;
     /** Expected test result. */
     int         rc;
 } g_aTests[] =
@@ -68,7 +68,7 @@ static struct
     "file1.txt",                          "file1.txt",                 UINT64_MAX, VINF_SUCCESS,
     /* Note: For RTHttpGetFile() the URL needs to be percent-encoded. */
     "file2 with spaces.txt",              "file2%20with%20spaces.txt", UINT64_MAX, VINF_SUCCESS,
-    "bigfile.bin",                        "bigfile.bin",               _1G,        VINF_SUCCESS
+    "bigfile.bin",                        "bigfile.bin",               _1G64,      VINF_SUCCESS
 };
 
 /* Worker thread for the HTTP server. */
