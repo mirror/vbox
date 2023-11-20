@@ -2428,8 +2428,14 @@ static DECLCALLBACK(int) rtldrLX_GetBits(PRTLDRMODINTERNAL pMod, void *pvBits, R
     {
         /*
          * Perform relocations.
+         *
+         * We force this to take place by messing with the OldBaseAddress as we
+         * have to apply internal relocations even if the load address is the
+         * same as the link address.
          */
-        rc = rtldrLX_RelocateBits(pMod, pvBits, BaseAddress, pModLX->aSegments[0].LinkAddress, pfnGetImport, pvUser);
+        rc = rtldrLX_RelocateBits(pMod, pvBits, BaseAddress,
+                                  _4K ^ BaseAddress ^ pModLX->aSegments[0].LinkAddress,
+                                  pfnGetImport, pvUser);
     }
     return rc;
 }
