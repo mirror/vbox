@@ -242,5 +242,5 @@ TMPL_BEGIN_TEXT
         jne     .return
         dec     al
         jmp     .return
-BS3_PROC_END_MODE   Bs3BiosInt15hE820
+BS3_PROC_END_MODE   Bs3DiskQueryGeometry
 
