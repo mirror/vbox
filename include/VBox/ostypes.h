@@ -46,14 +46,65 @@ RT_C_DECLS_BEGIN
 /**
  * Global list of guest operating system types.
  *
- * They are grouped into families. A family identifer is always has
- * mod 0x10000 == 0. New entries can be added, however other components
- * depend on the values (e.g. the Qt GUI and guest additions) so the
- * existing values MUST stay the same.
+ * New entries can be added, however other components depend on the values (e.g.
+ * the guest additions) so the existing values MUST stay the same.
+ *
+ * Summary of the value bits:
+ *      - bits 31:24 - 0xff000000 - Reserved; more OS version bits if needed.
+ *      - bits 23:16 - 0x00ff0000 - OS family.
+ *      - bits 15:12 - 0x0000f000 - Major OS version or (Linux) distro.
+ *      - bit  11    - 0x00000800 - Should've been arch, only use by WinNT31.
+ *      - bits 10:08 - 0x00000700 - Architecture.
+ *      - bits 07:00 - 0x000000ff - Major distro release (Linux), or more bits
+ *                                  for major OS version.
+ *
+ * They are grouped into families.  A family identifer is always has
+ * mod 0x10000 == 0.  The bits making up the family component is given by
+ * VBOXOSTYPE_OsFamilyMask, as we probably won't need 32K OS families and
+ * currently restrict ourselves to 256 (currently only 14 + unknown have been
+ * defined).
+ *
+ * The VBOXOSTYPE_OsTypeMask value contains the OS family and the major OS
+ * version / distro. So use with care.
+ *
+ *
+ * The VBOXOSTYPE_OsMask value contains all bits except for the architecture.
+ * Use this and VBOXOSTYPE_ArchitectureMask for morphing the architecture of an
+ * specific OS type.
+ *
+ * The subdivision of the OS type bits other than the family (and architecture),
+ * i.e. VBOXOSTYPE_OsTypeMask & ~VBOXOSTYPE_OsFamilyMask, are specific to each
+ * OS family.  For Linux the 0xf000 mask currently identifies the distro and
+ * 0xff the major release of that distro in most cases.  While for most other
+ * families 0xf000 is used for identifying major OS releases (Windows is out of
+ * space with Windows 11, so will have to think of something new there when/if
+ * the next major release is out).
+ *
+ * @note    Do NOT use bit 19 (0x800) for anything. It is currently only used by
+ *          VBOXOSTYPE_WinNT3x and we'd like to keep it that way in case we ever
+ *          end up needing more than three new architectures.
+ *
+ * @note    Cleaning up the value structure here is a bit late.  The problem is
+ *          the use of this type in VBoxGuestInfo (VMMDevReq_ReportGuestInfo).
+ *          Any radical change here would require a new version (v3) of that
+ *          request and a safe protocol for dealing with backwards / forwards
+ *          compatiblity on both sides.  Then we need a very thoughful
+ *          partitioning of the value bits, picking new constants and mapping
+ *          from old to new types (we only need the one direction).
+ *
+ * @todo    r=bird: A more sensible layout of the bits would, imo be:
+ *              - bit  31    - 0x80000000 - the sign bit, forever unused.
+ *              - bits 30:24 - 0x7f000000 - OS family
+ *              - bits 23:16 - 0x00ff0000 - OS sub-family / distro.
+ *              - bits 15:08 - 0x0000ff00 - OS major release.
+ *              - bits 07:04 - 0x000000f0 - Reserved for future hacks.
+ *              - bits 03:00 - 0x0000000f - Architecture.
+ *          Basic conversion could be done by value shifting, though using a map
+ *          with known values would allow for more thorough cleanup.
  */
 typedef enum VBOXOSTYPE
 {
-    VBOXOSTYPE_Unknown          = 0,
+    VBOXOSTYPE_Unknown          = 0x00000,
     VBOXOSTYPE_Unknown_x64      = 0x00100,
     VBOXOSTYPE_Unknown_arm32    = 0x00200,
     VBOXOSTYPE_Unknown_arm64    = 0x00300,
@@ -62,10 +113,12 @@ typedef enum VBOXOSTYPE
      * @{ */
     VBOXOSTYPE_DOS              = 0x10000,
     VBOXOSTYPE_Win31            = 0x15000,
+
     VBOXOSTYPE_Win9x            = 0x20000,
     VBOXOSTYPE_Win95            = 0x21000,
     VBOXOSTYPE_Win98            = 0x22000,
     VBOXOSTYPE_WinMe            = 0x23000,
+
     VBOXOSTYPE_WinNT            = 0x30000,
     VBOXOSTYPE_WinNT_x64        = 0x30100,
     VBOXOSTYPE_WinNT3x          = 0x30800,
@@ -92,6 +145,7 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_Win2k19_x64      = 0x3D100,
     VBOXOSTYPE_Win11_x64        = 0x3E100,
     VBOXOSTYPE_Win2k22_x64      = 0x3F100,
+
     VBOXOSTYPE_OS2              = 0x40000,
     VBOXOSTYPE_OS2Warp3         = 0x41000,
     VBOXOSTYPE_OS2Warp4         = 0x42000,
@@ -100,7 +154,7 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_ArcaOS           = 0x45000,
     VBOXOSTYPE_OS21x            = 0x48000,
     /** @} */
-    /** @name Unixy related OSes
+    /** @name Linux
      * @{ */
     VBOXOSTYPE_Linux            = 0x50000,
     VBOXOSTYPE_Linux_x64        = 0x50100,
@@ -247,6 +301,9 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_Oracle9_arm64    = 0x5E306,
     VBOXOSTYPE_Oracle_latest_x64 = VBOXOSTYPE_Oracle9_x64,
     VBOXOSTYPE_Oracle_latest_arm64 = VBOXOSTYPE_Oracle9_arm64,
+    /** @} */
+    /** @name BSD and it's descendants
+     * @{ */
     VBOXOSTYPE_FreeBSD          = 0x60000,
     VBOXOSTYPE_FreeBSD_x64      = 0x60100,
     VBOXOSTYPE_FreeBSD_arm64    = 0x60300,
@@ -256,7 +313,10 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_NetBSD           = 0x62000,
     VBOXOSTYPE_NetBSD_x64       = 0x62100,
     VBOXOSTYPE_NetBSD_arm64     = 0x62300,
+    /** @} */
     VBOXOSTYPE_Netware          = 0x70000,
+    /** @name Solaris
+     * @{ */
     VBOXOSTYPE_Solaris          = 0x80000,  // Solaris 10U7 (5/09) and earlier
     VBOXOSTYPE_Solaris_x64      = 0x80100,  // Solaris 10U7 (5/09) and earlier
     VBOXOSTYPE_Solaris10U8_or_later     = 0x80001,
@@ -264,8 +324,11 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_OpenSolaris      = 0x81000,
     VBOXOSTYPE_OpenSolaris_x64  = 0x81100,
     VBOXOSTYPE_Solaris11_x64    = 0x82100,
+    /** @} */
     VBOXOSTYPE_L4               = 0x90000,
     VBOXOSTYPE_QNX              = 0xA0000,
+    /** @name MacOS
+     * @{ */
     VBOXOSTYPE_MacOS            = 0xB0000,
     VBOXOSTYPE_MacOS_x64        = 0xB0100,
     VBOXOSTYPE_MacOS106         = 0xB2000,
@@ -286,8 +349,16 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_VBoxBS_x64       = 0xE0100,
     /** @} */
 
-    /** OS type mask.   */
-    VBOXOSTYPE_OsTypeMask    = 0x00fff000,
+    /** OS family.   */
+    VBOXOSTYPE_OsFamilyMask  = 0x00ff0000,
+    /** OS type mask - family + distro / major version.
+     * @note Do not use bit 11 (0x800) ever. It's only used for WinNT3x and that was
+     *       a bit unfortunate. If out of bits, start with 24 and up rather than
+     *       using bit 11. */
+    VBOXOSTYPE_OsTypeMask    = 0x00fff800,
+    /** All the OS bits except architecture.
+     * Useful for changing the architecture of a value.  */
+    VBOXOSTYPE_OsMask        = 0x00fff8ff,
 
     /** @name Architecture Type
      * @{ */
