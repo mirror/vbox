@@ -65,10 +65,14 @@ static struct
     int         rc;
 } g_aTests[] =
 {
-    "file1.txt",                          "file1.txt",                 UINT64_MAX, VINF_SUCCESS,
+    "file1.txt",                          "file1.txt",                  UINT64_MAX, VINF_SUCCESS,
     /* Note: For RTHttpGetFile() the URL needs to be percent-encoded. */
-    "file2 with spaces.txt",              "file2%20with%20spaces.txt", UINT64_MAX, VINF_SUCCESS,
-    "bigfile.bin",                        "bigfile.bin",               _1G64,      VINF_SUCCESS
+    "file2 with spaces.txt",              "file2%20with%20spaces.txt",  UINT64_MAX, VINF_SUCCESS,
+    "bigfile.bin",                        "bigfile.bin",                _1G64,      VINF_SUCCESS,
+    "zerobytes",                          "zerobytes",                  0,          VINF_SUCCESS,
+    "file\\with\\slashes",                "file%5Cwith%5Cslashes",      42,         VINF_SUCCESS,
+    /* Korean encoding. */
+    "VirtualBox가 크게 성공했습니다!",         "VirtualBox%EA%B0%80%20%ED%81%AC%EA%B2%8C%20%EC%84%B1%EA%B3%B5%ED%96%88%EC%8A%B5%EB%8B%88%EB%8B%A4%21", 42, VINF_SUCCESS
 };
 
 /* Worker thread for the HTTP server. */
