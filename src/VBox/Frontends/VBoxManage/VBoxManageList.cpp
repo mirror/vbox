@@ -812,23 +812,39 @@ static HRESULT listGuestOSTypes(const com::SafeIfaceArray<IGuestOSType> &aGuestO
         guestOS = aGuestOSTypes[i];
         Bstr guestId;
         guestOS->COMGETTER(Id)(guestId.asOutParam());
-        RTPrintf("ID:          %ls\n", guestId.raw());
+        RTPrintf("ID:           %ls\n", guestId.raw());
         Bstr guestDescription;
         guestOS->COMGETTER(Description)(guestDescription.asOutParam());
-        RTPrintf(List::tr("Description: %ls\n"), guestDescription.raw());
+        RTPrintf(List::tr("Description:  %ls\n"), guestDescription.raw());
         Bstr familyId;
         guestOS->COMGETTER(FamilyId)(familyId.asOutParam());
-        RTPrintf(List::tr("Family ID:   %ls\n"), familyId.raw());
+        RTPrintf(List::tr("Family ID:    %ls\n"), familyId.raw());
         Bstr familyDescription;
         guestOS->COMGETTER(FamilyDescription)(familyDescription.asOutParam());
-        RTPrintf(List::tr("Family Desc: %ls\n"), familyDescription.raw());
+        RTPrintf(List::tr("Family Desc:  %ls\n"), familyDescription.raw());
         Bstr guestOSSubtype;
         guestOS->COMGETTER(Subtype)(guestOSSubtype.asOutParam());
         if (guestOSSubtype.isNotEmpty())
-            RTPrintf(List::tr("OS Subtype:  %ls\n"), guestOSSubtype.raw());
+            RTPrintf(List::tr("OS Subtype:   %ls\n"), guestOSSubtype.raw());
+        PlatformArchitecture_T enmArch;
+        guestOS->COMGETTER(PlatformArchitecture)(&enmArch);
+        const char *pszArch = "?";
+        switch (enmArch)
+        {
+            case PlatformArchitecture_x86:
+                pszArch = List::tr("x86");
+                break;
+            case PlatformArchitecture_ARM:
+                pszArch = List::tr("ARM");
+                break;
+            default:
+                ASSERT(false);
+                break;
+        }
+        RTPrintf(List::tr("Architecture: %s\n"), pszArch);
         BOOL is64Bit;
         guestOS->COMGETTER(Is64Bit)(&is64Bit);
-        RTPrintf(List::tr("64 bit:      %RTbool\n"), is64Bit);
+        RTPrintf(List::tr("64 bit:       %RTbool\n"), is64Bit);
         RTPrintf("\n");
     }
 
