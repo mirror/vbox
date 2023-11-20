@@ -572,7 +572,7 @@ static void parseArchElement(const xml::ElementNode *pElmArch, WIMImage &rImage)
             && uArch < RT_ELEMENTS(s_aArches))
         {
             rImage.mArch   = s_aArches[uArch].pszArch;
-            rImage.mOSType = (VBOXOSTYPE)(s_aArches[uArch].enmArch | (rImage.mOSType & VBOXOSTYPE_OsTypeMask));
+            rImage.mOSType = (VBOXOSTYPE)(s_aArches[uArch].enmArch | (rImage.mOSType & VBOXOSTYPE_OsMask));
         }
         else
             LogRel(("Unattended: bogus ARCH element value: '%s'\n", pszArch));
@@ -668,7 +668,7 @@ static void parseVersionElement(const xml::ElementNode *pNode, WIMImage &image)
                             }
                             if (image.mEnmOsType != VBOXOSTYPE_Unknown)
                                 image.mOSType = (VBOXOSTYPE)(  (image.mOSType & VBOXOSTYPE_ArchitectureMask)
-                                                             | (image.mEnmOsType & VBOXOSTYPE_OsTypeMask));
+                                                             | (image.mEnmOsType & VBOXOSTYPE_OsMask));
                             return;
                         }
                     }
@@ -2612,7 +2612,7 @@ HRESULT Unattended::prepare()
      */
     uint32_t const   idxIsoOSType = Global::getOSTypeIndexFromId(mStrDetectedOSTypeId.c_str());
     VBOXOSTYPE const enmIsoOSType = idxIsoOSType < Global::cOSTypes ? Global::sOSTypes[idxIsoOSType].osType : VBOXOSTYPE_Unknown;
-    if ((enmIsoOSType & VBOXOSTYPE_OsTypeMask) == VBOXOSTYPE_Unknown)
+    if ((enmIsoOSType & VBOXOSTYPE_OsFamilyMask) == VBOXOSTYPE_Unknown)
         return setError(E_FAIL, tr("The supplied ISO file does not contain an OS currently supported for unattended installation"));
 
     /*
@@ -3988,6 +3988,8 @@ HRESULT Unattended::getIsUnattendedInstallSupported(BOOL *aIsUnattendedInstallSu
     if (mStrDetectedOSTypeId.isEmpty())
         return S_OK;
 
+    /* Note! Includes the OS family and the distro (linux) or (part) of the
+             major OS version. Use with care. */
     const VBOXOSTYPE enmOsTypeMasked = (VBOXOSTYPE)(mEnmOsType & VBOXOSTYPE_OsTypeMask);
 
     /* We require a version to have been detected, except for windows where the
