@@ -102,22 +102,24 @@ public:
     UIGuestOSTypeManager();
     UIGuestOSTypeManager(const UIGuestOSTypeManager &other) = delete;
 
-    /** A list of all OS families. 'first' of each pair is family Id and 'second' is family description. */
-    typedef QVector<QPair<QString, QString> > UIGuestOSTypeFamilyInfo;
-    /** Guest OS type info list for all type.  'first' is typeId and 'second' is description. */
-    typedef QVector<QPair<QString, QString> > UIGuestOSTypeInfo;
+    /** OS info pair. 'first' is id and 'second' is description. */
+    typedef QPair<QString, QString> UIGuestInfoPair;
+    /** A list of all OS family pairs. */
+    typedef QVector<UIGuestInfoPair> UIGuestOSFamilyInfo;
+    /** A list of all OS type pairs. */
+    typedef QVector<UIGuestInfoPair> UIGuestOSTypeInfo;
 
     /** Re-create the guest OS type database. */
     void reCacheGuestOSTypes(const CGuestOSTypeVector &guestOSTypes);
 
     /** Returns a list of all families (id and description). */
-    const UIGuestOSTypeFamilyInfo &getFamilies() const;
+    const UIGuestOSFamilyInfo &getFamilies() const;
     /** Returns the list of subtypes for @p strFamilyId. This may be an empty list. */
-    QStringList                    getSubtypeListForFamilyId(const QString &strFamilyId) const;
+    QStringList                getSubtypeListForFamilyId(const QString &strFamilyId) const;
     /** Returns a list of OS types for the @p strFamilyId. */
-    UIGuestOSTypeInfo              getTypeListForFamilyId(const QString &strFamilyId) const;
+    UIGuestOSTypeInfo          getTypeListForFamilyId(const QString &strFamilyId) const;
     /** Returns a list of OS types for the @p strSubtype. */
-    UIGuestOSTypeInfo              getTypeListForSubtype(const QString &strSubtype) const;
+    UIGuestOSTypeInfo          getTypeListForSubtype(const QString &strSubtype) const;
 
     static bool isDOSType(const QString &strOSTypeId);
 
@@ -151,7 +153,7 @@ private:
       * is index to m_guestOSTypes list. */
     QMap<QString, int> m_typeIdIndexMap;
     /** First item of the pair is family id and the 2nd is family description. */
-    UIGuestOSTypeInfo m_guestOSFamilies;
+    UIGuestOSFamilyInfo m_guestOSFamilies;
 };
 
 

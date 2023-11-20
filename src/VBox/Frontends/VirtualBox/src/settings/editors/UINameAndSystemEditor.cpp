@@ -600,7 +600,7 @@ void UINameAndSystemEditor::populateFamilyCombo()
     AssertPtrReturnVoid(m_pComboFamily);
 
     /* Acquire family IDs: */
-    const UIGuestOSTypeManager::UIGuestOSTypeFamilyInfo &families = uiCommon().guestOSTypeManager().getFamilies();
+    const UIGuestOSTypeManager::UIGuestOSFamilyInfo &families = uiCommon().guestOSTypeManager().getFamilies();
 
     /* Block signals initially and clear the combo: */
     m_pComboFamily->blockSignals(true);

@@ -67,7 +67,7 @@ void UIGuestOSTypeManager::addGuestOSType(const CGuestOSType &comType)
         m_guestOSFamilies << family;
 }
 
-const UIGuestOSTypeManager::UIGuestOSTypeFamilyInfo &UIGuestOSTypeManager::getFamilies() const
+const UIGuestOSTypeManager::UIGuestOSFamilyInfo &UIGuestOSTypeManager::getFamilies() const
 {
     return m_guestOSFamilies;
 }
