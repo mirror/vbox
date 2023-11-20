@@ -62,18 +62,51 @@ void UIGuestOSTypeManager::addGuestOSType(const CGuestOSType &comType)
 {
     m_guestOSTypes.append(UIGuestOSType(comType));
     m_typeIdIndexMap[m_guestOSTypes.last().getId()] = m_guestOSTypes.size() - 1;
-    QPair<QString, QString> family = QPair<QString, QString>(m_guestOSTypes.last().getFamilyId(), m_guestOSTypes.last().getFamilyDescription());
+    const QString strFamilyId = m_guestOSTypes.last().getFamilyId();
+    const QString strFamilyDesc = m_guestOSTypes.last().getFamilyDescription();
+    const QString strSubtype = m_guestOSTypes.last().getSubtype();
+    QPair<QString, QString> family = QPair<QString, QString>(strFamilyId, strFamilyDesc);
     if (!m_guestOSFamilies.contains(family))
         m_guestOSFamilies << family;
+
+    /* Acquire arch type: */
+    const KPlatformArchitecture enmArch = m_guestOSTypes.last().getPlatformArchitecture();
+    /* Cache family arch type; That will be x86, ARM or None (for *any*): */
+    if (!m_guestOSFamilyArch.contains(strFamilyId))
+        m_guestOSFamilyArch[strFamilyId] = enmArch;
+    else if (m_guestOSFamilyArch.value(strFamilyId) != enmArch)
+        m_guestOSFamilyArch[strFamilyId] = KPlatformArchitecture_None;
+    /* Cache subtype arch type; That will be x86, ARM or None (for *any*): */
+    if (!m_guestOSSubtypeArch.contains(strSubtype))
+        m_guestOSSubtypeArch[strSubtype] = enmArch;
+    else if (m_guestOSSubtypeArch.value(strSubtype) != enmArch)
+        m_guestOSSubtypeArch[strSubtype] = KPlatformArchitecture_None;
 }
 
-UIGuestOSTypeManager::UIGuestOSFamilyInfo UIGuestOSTypeManager::getFamilies() const
+UIGuestOSTypeManager::UIGuestOSFamilyInfo
+UIGuestOSTypeManager::getFamilies(KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
 {
-    return m_guestOSFamilies;
+    /* Return all families by default: */
+    if (enmArch == KPlatformArchitecture_None)
+        return m_guestOSFamilies;
+
+    /* Otherwise we'll have to prepare list by arch type: */
+    UIGuestOSTypeManager::UIGuestOSFamilyInfo families;
+    foreach (const UIGuestInfoPair &family, m_guestOSFamilies)
+    {
+        const KPlatformArchitecture enmCurrentArch = m_guestOSFamilyArch.value(family.first, KPlatformArchitecture_Max);
+        if (   enmCurrentArch == enmArch
+            || enmCurrentArch == KPlatformArchitecture_None)
+            families << family;
+    }
+    return families;
 }
 
-QStringList UIGuestOSTypeManager::getSubtypeListForFamilyId(const QString &strFamilyId) const
+QStringList
+UIGuestOSTypeManager::getSubtypeListForFamilyId(const QString &strFamilyId,
+                                                KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
 {
+    /* Prepare list by arch type: */
     QStringList subtypes;
     foreach (const UIGuestOSType &type, m_guestOSTypes)
     {
@@ -82,12 +115,18 @@ QStringList UIGuestOSTypeManager::getSubtypeListForFamilyId(const QString &strFa
         const QString strSubtype = type.getSubtype();
         if (strSubtype.isEmpty() || subtypes.contains(strSubtype))
             continue;
-        subtypes << strSubtype;
+        const KPlatformArchitecture enmCurrentArch = m_guestOSSubtypeArch.value(strSubtype, KPlatformArchitecture_Max);
+        if (   enmCurrentArch == enmArch
+            || enmArch == KPlatformArchitecture_None
+            || enmCurrentArch == KPlatformArchitecture_None)
+            subtypes << strSubtype;
     }
     return subtypes;
 }
 
-UIGuestOSTypeManager::UIGuestOSTypeInfo UIGuestOSTypeManager::getTypeListForFamilyId(const QString &strFamilyId) const
+UIGuestOSTypeManager::UIGuestOSTypeInfo
+UIGuestOSTypeManager::getTypeListForFamilyId(const QString &strFamilyId,
+                                             KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
 {
     UIGuestOSTypeInfo typeInfoList;
     foreach (const UIGuestOSType &type, m_guestOSTypes)
@@ -97,12 +136,16 @@ UIGuestOSTypeManager::UIGuestOSTypeInfo UIGuestOSTypeManager::getTypeListForFami
         QPair<QString, QString> info(type.getId(), type.getDescription());
         if (typeInfoList.contains(info))
             continue;
-        typeInfoList << info;
+        if (   enmArch == KPlatformArchitecture_None
+            || type.getPlatformArchitecture() == enmArch)
+            typeInfoList << info;
     }
     return typeInfoList;
 }
 
-UIGuestOSTypeManager::UIGuestOSTypeInfo UIGuestOSTypeManager::getTypeListForSubtype(const QString &strSubtype) const
+UIGuestOSTypeManager::UIGuestOSTypeInfo
+UIGuestOSTypeManager::getTypeListForSubtype(const QString &strSubtype,
+                                            KPlatformArchitecture enmArch /* = KPlatformArchitecture_None */) const
 {
     UIGuestOSTypeInfo typeInfoList;
     if (strSubtype.isEmpty())
@@ -114,7 +157,9 @@ UIGuestOSTypeManager::UIGuestOSTypeInfo UIGuestOSTypeManager::getTypeListForSubt
         QPair<QString, QString> info(type.getId(), type.getDescription());
         if (typeInfoList.contains(info))
             continue;
-        typeInfoList << info;
+        if (   enmArch == KPlatformArchitecture_None
+            || type.getPlatformArchitecture() == enmArch)
+            typeInfoList << info;
     }
     return typeInfoList;
 }

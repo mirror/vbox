@@ -142,6 +142,11 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE;
 
+    /** Handles filter change.
+      * Reimplement this in subclass to handle various filter changes,
+      * like experience mode change or manual filter editor change. */
+    virtual void handleFilterChange() RT_OVERRIDE;
+
 private slots:
 
     /** Handles VM OS edition @a iIndex change. */

@@ -302,6 +302,11 @@ void UINameAndSystemEditor::retranslateUi()
                                         "virtual machine or used in unattended install."));
 }
 
+void UINameAndSystemEditor::handleFilterChange()
+{
+    populateFamilyCombo();
+}
+
 void UINameAndSystemEditor::sltSelectedEditionsChanged(int)
 {
     emit sigEditionChanged(selectedEditionIndex());
@@ -328,11 +333,16 @@ void UINameAndSystemEditor::sltDistributionChanged(const QString &strDistributio
     /* Save new distribution: */
     m_strDistribution = strDistribution;
 
+    /* Get current arch type, usually we'd default to x86, but here 'None' meaningful as well: */
+    const KPlatformArchitecture enmArch = optionalFlags().contains("arch")
+                                        ? optionalFlags().value("arch").value<KPlatformArchitecture>()
+                                        : KPlatformArchitecture_None;
+
     /* If distribution list is empty, all the types of the family are added to type combo: */
     const UIGuestOSTypeManager::UIGuestOSTypeInfo types
          = m_strDistribution.isEmpty()
-         ? uiCommon().guestOSTypeManager().getTypeListForFamilyId(m_strFamilyId)
-         : uiCommon().guestOSTypeManager().getTypeListForSubtype(m_strDistribution);
+         ? uiCommon().guestOSTypeManager().getTypeListForFamilyId(m_strFamilyId, enmArch)
+         : uiCommon().guestOSTypeManager().getTypeListForSubtype(m_strDistribution, enmArch);
 
     /* Save the most recently used item: */
     m_familyToDistribution[m_strFamilyId] = m_strDistribution;
@@ -599,8 +609,13 @@ void UINameAndSystemEditor::populateFamilyCombo()
     /* Sanity check: */
     AssertPtrReturnVoid(m_pComboFamily);
 
+    /* Get current arch type, usually we'd default to x86, but here 'None' meaningful as well: */
+    const KPlatformArchitecture enmArch = optionalFlags().contains("arch")
+                                        ? optionalFlags().value("arch").value<KPlatformArchitecture>()
+                                        : KPlatformArchitecture_None;
+
     /* Acquire family IDs: */
-    const UIGuestOSTypeManager::UIGuestOSFamilyInfo &families = uiCommon().guestOSTypeManager().getFamilies();
+    const UIGuestOSTypeManager::UIGuestOSFamilyInfo families = uiCommon().guestOSTypeManager().getFamilies(enmArch);
 
     /* Block signals initially and clear the combo: */
     m_pComboFamily->blockSignals(true);
@@ -628,8 +643,13 @@ void UINameAndSystemEditor::populateDistributionCombo()
     /* Sanity check: */
     AssertPtrReturnVoid(m_pComboDistribution);
 
+    /* Get current arch type, usually we'd default to x86, but here 'None' meaningful as well: */
+    const KPlatformArchitecture enmArch = optionalFlags().contains("arch")
+                                        ? optionalFlags().value("arch").value<KPlatformArchitecture>()
+                                        : KPlatformArchitecture_None;
+
     /* Acquire a list of suitable sub-types: */
-    const QStringList distributions = uiCommon().guestOSTypeManager().getSubtypeListForFamilyId(m_strFamilyId);
+    const QStringList distributions = uiCommon().guestOSTypeManager().getSubtypeListForFamilyId(m_strFamilyId, enmArch);
     m_pLabelDistribution->setEnabled(!distributions.isEmpty());
     m_pComboDistribution->setEnabled(!distributions.isEmpty());
 
