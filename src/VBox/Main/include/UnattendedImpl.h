@@ -56,7 +56,6 @@ struct WIMImage
     VBOXOSTYPE mOSType;
     WIMImage() : mImageIndex(0), mOSType(VBOXOSTYPE_Unknown) { }
     const Utf8Str &formatName(Utf8Str &r_strName) const;
-    VBOXOSTYPE mEnmOsType;
 };
 
 /**

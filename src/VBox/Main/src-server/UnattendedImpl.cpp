@@ -640,35 +640,35 @@ static void parseVersionElement(const xml::ElementNode *pNode, WIMImage &image)
                             /*
                              * Convert that to a version windows OS ID (newest first!).
                              */
-                            image.mEnmOsType = VBOXOSTYPE_Unknown;
+                            VBOXOSTYPE enmVersion = VBOXOSTYPE_Unknown;
                             if (RTStrVersionCompare(image.mVersion.c_str(), "10.0.22000.0") >= 0)
-                                image.mEnmOsType = VBOXOSTYPE_Win11_x64;
+                                enmVersion = VBOXOSTYPE_Win11_x64;
                             else if (RTStrVersionCompare(image.mVersion.c_str(), "10.0") >= 0)
-                                image.mEnmOsType = VBOXOSTYPE_Win10;
+                                enmVersion = VBOXOSTYPE_Win10;
                             else if (RTStrVersionCompare(image.mVersion.c_str(), "6.3") >= 0)
-                                image.mEnmOsType = VBOXOSTYPE_Win81;
+                                enmVersion = VBOXOSTYPE_Win81;
                             else if (RTStrVersionCompare(image.mVersion.c_str(), "6.2") >= 0)
-                                image.mEnmOsType = VBOXOSTYPE_Win8;
+                                enmVersion = VBOXOSTYPE_Win8;
                             else if (RTStrVersionCompare(image.mVersion.c_str(), "6.1") >= 0)
-                                image.mEnmOsType = VBOXOSTYPE_Win7;
+                                enmVersion = VBOXOSTYPE_Win7;
                             else if (RTStrVersionCompare(image.mVersion.c_str(), "6.0") >= 0)
-                                image.mEnmOsType = VBOXOSTYPE_WinVista;
+                                enmVersion = VBOXOSTYPE_WinVista;
                             if (image.mFlavor.contains("server", Utf8Str::CaseInsensitive))
                             {
                                 if (RTStrVersionCompare(image.mVersion.c_str(), "10.0.20348") >= 0)
-                                    image.mEnmOsType = VBOXOSTYPE_Win2k22_x64;
+                                    enmVersion = VBOXOSTYPE_Win2k22_x64;
                                 else if (RTStrVersionCompare(image.mVersion.c_str(), "10.0.17763") >= 0)
-                                    image.mEnmOsType = VBOXOSTYPE_Win2k19_x64;
+                                    enmVersion = VBOXOSTYPE_Win2k19_x64;
                                 else if (RTStrVersionCompare(image.mVersion.c_str(), "10.0") >= 0)
-                                    image.mEnmOsType = VBOXOSTYPE_Win2k16_x64;
+                                    enmVersion = VBOXOSTYPE_Win2k16_x64;
                                 else if (RTStrVersionCompare(image.mVersion.c_str(), "6.2") >= 0)
-                                    image.mEnmOsType = VBOXOSTYPE_Win2k12_x64;
+                                    enmVersion = VBOXOSTYPE_Win2k12_x64;
                                 else if (RTStrVersionCompare(image.mVersion.c_str(), "6.0") >= 0)
-                                    image.mEnmOsType = VBOXOSTYPE_Win2k8;
+                                    enmVersion = VBOXOSTYPE_Win2k8;
                             }
-                            if (image.mEnmOsType != VBOXOSTYPE_Unknown)
+                            if (enmVersion != VBOXOSTYPE_Unknown)
                                 image.mOSType = (VBOXOSTYPE)(  (image.mOSType & VBOXOSTYPE_ArchitectureMask)
-                                                             | (image.mEnmOsType & VBOXOSTYPE_OsMask));
+                                                             | (enmVersion    & VBOXOSTYPE_OsMask));
                             return;
                         }
                     }
@@ -4358,7 +4358,7 @@ bool Unattended::i_updateDetectedAttributeForImage(WIMImage const &rImage)
     else
         fRet = false;
 
-    mEnmOsType = rImage.mEnmOsType;
+    mEnmOsType = rImage.mOSType;
 
     return fRet;
 }
