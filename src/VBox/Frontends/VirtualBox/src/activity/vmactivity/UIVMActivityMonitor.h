@@ -219,7 +219,7 @@ protected:
         QString m_strDiskIOInfoLabelWrittenTotal;
         QString m_strDiskIOInfoLabelReadTotal;
     /** @} */
-
+        int iMaximum = 0;
 
 private slots:
 

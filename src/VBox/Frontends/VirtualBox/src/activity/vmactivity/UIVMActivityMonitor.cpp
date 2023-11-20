@@ -931,7 +931,7 @@ void UIVMActivityMonitor::retranslateUi()
         pChart->setXAxisLabel(QApplication::translate("UIVMInformationDialog", "Sec."));
 
     /* Translate the chart info labels: */
-    int iMaximum = 0;
+    iMaximum = 0;
     m_strCPUInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "CPU Load");
     iMaximum = qMax(iMaximum, m_strCPUInfoLabelTitle.length());
     m_strCPUInfoLabelGuest = QApplication::translate("UIVMInformationDialog", "Guest Load");
@@ -966,25 +966,6 @@ void UIVMActivityMonitor::retranslateUi()
     iMaximum = qMax(iMaximum, m_strDiskIOInfoLabelWrittenTotal.length());
     m_strDiskIOInfoLabelReadTotal = QApplication::translate("UIVMInformationDialog", "Total Read");
     iMaximum = qMax(iMaximum, m_strDiskIOInfoLabelReadTotal.length());
-
-    /* Compute the maximum label string length and set it as a fixed width to labels to prevent always changing widths: */
-    /* Add m_iDecimalCount plus 4 characters for the number and 3 for unit string: */
-    iMaximum += (g_iDecimalCount + 7);
-    if (!m_infoLabels.isEmpty())
-    {
-        QLabel *pLabel = m_infoLabels.begin().value();
-        if (pLabel)
-        {
-            QFontMetrics labelFontMetric(pLabel->font());
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-            int iWidth = iMaximum * labelFontMetric.horizontalAdvance('X');
-#else
-            int iWidth = iMaximum * labelFontMetric.width('X');
-#endif
-            foreach (QLabel *pInfoLabel, m_infoLabels)
-                pInfoLabel->setFixedWidth(iWidth);
-        }
-    }
 }
 
 bool UIVMActivityMonitor::eventFilter(QObject *pObj, QEvent *pEvent)
@@ -1186,6 +1167,7 @@ UIVMActivityMonitorLocal::UIVMActivityMonitorLocal(EmbedTo enmEmbedding, QWidget
 {
     prepareMetrics();
     prepareWidgets();
+    retranslateUi();
     prepareActions();
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange, this, &UIVMActivityMonitorLocal::sltMachineStateChange);
     connect(&uiCommon(), &UICommon::sigAskToDetachCOM, this, &UIVMActivityMonitorLocal::sltClearCOMData);
@@ -1208,11 +1190,30 @@ void UIVMActivityMonitorLocal::retranslateUi()
 {
     UIVMActivityMonitor::retranslateUi();
     m_strVMExitInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "VM Exits");
-    //iMaximum = qMax(iMaximum, m_strVMExitInfoLabelTitle.length());
+    iMaximum = qMax(iMaximum, m_strVMExitInfoLabelTitle.length());
     m_strVMExitLabelCurrent = QApplication::translate("UIVMInformationDialog", "Current");
-    //iMaximum = qMax(iMaximum, m_strVMExitLabelCurrent.length());
+    iMaximum = qMax(iMaximum, m_strVMExitLabelCurrent.length());
     m_strVMExitLabelTotal = QApplication::translate("UIVMInformationDialog", "Total");
-    //iMaximum = qMax(iMaximum, m_strVMExitLabelTotal.length());
+    iMaximum = qMax(iMaximum, m_strVMExitLabelTotal.length());
+
+    /* Compute the maximum label string length and set it as a fixed width to labels to prevent always changing widths: */
+    /* Add m_iDecimalCount plus 4 characters for the number and 3 for unit string: */
+    iMaximum += (g_iDecimalCount + 7);
+    if (!m_infoLabels.isEmpty())
+    {
+        QLabel *pLabel = m_infoLabels.begin().value();
+        if (pLabel)
+        {
+            QFontMetrics labelFontMetric(pLabel->font());
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+            int iWidth = iMaximum * labelFontMetric.horizontalAdvance('X');
+#else
+            int iWidth = iMaximum * labelFontMetric.width('X');
+#endif
+            foreach (QLabel *pInfoLabel, m_infoLabels)
+                pInfoLabel->setFixedWidth(iWidth);
+        }
+    }
 }
 
 void UIVMActivityMonitorLocal::setMachine(const CMachine &comMachine)
