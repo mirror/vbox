@@ -180,6 +180,7 @@
 #undef Bs3Shutdown
 #undef Bs3SlabAlloc
 #undef Bs3SlabAllocEx
+#undef Bs3SlabAllocFixed
 #undef Bs3SlabFree
 #undef Bs3SlabInit
 #undef Bs3SlabListAdd
@@ -250,6 +251,9 @@
 # undef Bs3BiosInt15h88
 # undef Bs3BiosInt15hE820
 # undef Bs3CpuDetect
+# undef Bs3DiskQueryGeometry
+# undef Bs3DiskRead
+# undef Bs3MemCopyFlat
 # undef Bs3SwitchTo32BitAndCallC
 # undef Bs3TestDoModes
 # undef Bs3TestDoModesByMax

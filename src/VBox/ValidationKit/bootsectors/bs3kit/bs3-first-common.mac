@@ -51,8 +51,9 @@
 ;
 ;
 
-;
-; 16-bit text
+
+;                                                                      0x86a00
+; 16-bit text                                                 442368 = 0x6C000 (442368)
 ;
 %ifndef BS3_IS_DOS_EXE
 BS3_BEGIN_TEXT16
@@ -110,15 +111,19 @@ BS3_GLOBAL_DATA Bs3TotalImageSize, 4
 
 BS3_GLOBAL_DATA Bs3Text16_Size, 2
     dw  BS3_DATA_NM(Bs3Text16_EndOfSegment) wrt CGROUP16
+%ifndef BS3_IS_HIGH_IMAGE
 BS3_GLOBAL_DATA Bs3RmText16_Size, 2
     dw  BS3_DATA_NM(Bs3RmText16_EndOfSegment) wrt BS3GROUPRMTEXT16
+%endif ; !BS3_IS_HIGH_IMAGE
 BS3_GLOBAL_DATA Bs3X0Text16_Size, 2
     dw  BS3_DATA_NM(Bs3X0Text16_EndOfSegment) wrt BS3GROUPX0TEXT16
 BS3_GLOBAL_DATA Bs3X1Text16_Size, 2
     dw  BS3_DATA_NM(Bs3X1Text16_EndOfSegment) wrt BS3GROUPX1TEXT16
 
+%ifndef BS3_IS_HIGH_IMAGE
 BS3_GLOBAL_DATA Bs3RmText16_FlatAddr, 4
     dd  BS3_DATA_NM(Bs3RmText16_StartOfSegment) wrt BS3FLAT
+%endif ; !BS3_IS_HIGH_IMAGE
 BS3_GLOBAL_DATA Bs3X0Text16_FlatAddr, 4
     dd  BS3_DATA_NM(Bs3X0Text16_StartOfSegment) wrt BS3FLAT
 BS3_GLOBAL_DATA Bs3X1Text16_FlatAddr, 4
@@ -163,6 +168,7 @@ GROUP BS3KIT_GRPNM_DATA16 \
     STACK
 %endif
 
+%ifndef BS3_IS_HIGH_IMAGE
 ;
 ; 16-bit real-mode text
 ;
@@ -173,7 +179,7 @@ BS3_BEGIN_RMTEXT16
 section BS3RMTEXT16_END   align=1 CLASS=BS3CLASS16RMCODE PUBLIC USE16
 BS3_GLOBAL_DATA Bs3RmText16_EndOfSegment, 0
 GROUP BS3GROUPRMTEXT16 BS3RMTEXT16_START BS3RMTEXT16 BS3RMTEXT16_END
-
+%endif ; !BS3_IS_HIGH_IMAGE
 
 ;
 ; 16-bit extra text segment #0.
@@ -198,6 +204,7 @@ BS3_GLOBAL_DATA Bs3X1Text16_EndOfSegment, 0
 section BS3X1TEXT16_END   align=1 CLASS=BS3CLASS16X1CODE PUBLIC USE16
 GROUP BS3GROUPX1TEXT16 BS3X1TEXT16_START BS3X1TEXT16 BS3X1TEXT16_END
 
+%ifndef BS3_IS_HIGH_IMAGE
 ;
 ; Separate the BS3X1TEXT16_END from BS3_BEGIN_TEXT32 to better help pinpoint
 ; the rigth segment when getting an E2083 linker error.
@@ -207,6 +214,7 @@ BS3_GLOBAL_DATA BS3SEPARATE16AND32BITCODE_StartOfSegment, 0
     db      10,13,'eye-catcher: 16-32 wedge',10,13
 BS3_GLOBAL_DATA BS3SEPARATE16AND32BITCODE_EndOfSegment, 0
 GROUP BS3SEPARATE16AND32BITCODEGROUP BS3SEPARATE16AND32BITCODE
+%endif ; !BS3_IS_HIGH_IMAGE
 
 
 ;
@@ -219,6 +227,7 @@ section BS3TEXT32_END   align=1 CLASS=BS3CLASS32CODE PUBLIC USE32 FLAT
 BS3_GLOBAL_DATA Bs3Text32_EndOfSegment, 0
 
 
+%ifndef BS3_IS_HIGH_IMAGE
 ;
 ; This is a hack to separate the 32-bit and 64-bit text segments when linking,
 ; such that they don't share the same base frame because they're both assigned
@@ -229,6 +238,7 @@ BS3_GLOBAL_DATA Bs3Separate32And64BitCode_StartOfSegment, 0
     db      10,13,'eye-catcher: 32-64 wedge',10,13
 BS3_GLOBAL_DATA Bs3Separate32And64BitCode_EndOfSegment, 0
 GROUP BS3SEPARATE32AND64BITCODEGROUP BS3SEPARATE32AND64BITCODE
+%endif ; !BS3_IS_HIGH_IMAGE
 
 
 ;
@@ -275,6 +285,19 @@ BS3_GLOBAL_DATA Bs3Data64_EndOfSegment, 0
 GROUP BS3DATA64_GROUP BS3DATA64 BS3DATA64CONST BS3DATA64_BSS BS3DATA64_END
 
 
+%ifndef BS3_IS_HIGH_IMAGE
+;
+; The high dll table segment.
+;
+section BS3HIGHDLLEXPORTS   align=4 CLASS=BS3HIGHDLLCLASS PUBLIC USE32 FLAT ;; @todo Consider moving this to DATA16...
+section BS3HIGHDLLIMPORTS   align=4 CLASS=BS3HIGHDLLCLASS PUBLIC USE32 FLAT
+section BS3HIGHDLLSTRINGS   align=4 CLASS=BS3HIGHDLLCLASS PUBLIC USE32 FLAT
+section BS3HIGHDLLTABLE     align=4 CLASS=BS3HIGHDLLCLASS PUBLIC USE32 FLAT
+BS3_GLOBAL_DATA g_aBs3HighDllTable, 0
+section BS3HIGHDLLTABLE_END align=4 CLASS=BS3HIGHDLLCLASS PUBLIC USE32 FLAT
+BS3_GLOBAL_DATA g_Bs3HighDllTable_End, 0
+GROUP BS3HIGHDLLGROUP  BS3HIGHDLLIMPORTS BS3HIGHDLLEXPORTS BS3HIGHDLLSTRINGS BS3HIGHDLLTABLE BS3HIGHDLLTABLE_END
+
 ;
 ; 16-bit accessible system data.
 ; No need to do anything here.
@@ -287,4 +310,5 @@ BS3_BEGIN_SYSTEM16
 ;
 BS3_BEGIN_TEXT16
 BS3_GLOBAL_NAME_EX Bs3KitEntryPoint, function, 0
+%endif ; !BS3_IS_HIGH_IMAGE
 

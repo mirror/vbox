@@ -58,6 +58,14 @@ BS3_DECL(void) Bs3InitAll_rm(void)
     Bs3InitMemory_rm_far();
     Bs3InitGdt_rm_far();
 
+#ifdef BS3_INIT_ALL_WITH_HIGH_DLLS
+    /*
+     * Load the high DLLs (if any) now, before we bugger up the PIC and
+     * replace the IVT.
+     */
+    Bs3InitHighDlls_rm_far();
+#endif
+
     /*
      * Before we disable all interrupts, try convince the BIOS to stop the
      * floppy motor, as it is kind of disturbing when the floppy light remains

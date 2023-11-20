@@ -1,6 +1,8 @@
 ; $Id$
 ;; @file
-; BS3Kit - bs3-cpu-basic-3
+; BS3Kit - First Object, high image.
+;
+; Defines segments and any standard symbols required by the compiler and linkers.
 ;
 
 ;
@@ -34,25 +36,12 @@
 ; SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 ;
 
-
-;*********************************************************************************************************************************
-;*  Header Files                                                                                                                 *
-;*********************************************************************************************************************************
-%include "bs3kit.mac"
-
-
-;*********************************************************************************************************************************
-;*  Global Variables                                                                                                             *
-;*********************************************************************************************************************************
-BS3_BEGIN_DATA16
-
-;; Place to save esp/rsp when doing LEA variations involving esp/rsp.
-BS3_GLOBAL_DATA g_bs3CpuBasic3_lea_rsp, 8
-        dq  0
+%ifndef BS3_IS_HIGH_IMAGE
+ %error "Only for targets with BS3_IS_HIGH_IMAGE defined!"
+%endif
 
 ;
-; Instantiate code templates.
+; Segment defs, grouping and related variables.
 ;
-BS3_INSTANTIATE_COMMON_TEMPLATE          "bs3-cpu-basic-3-cmn-template.mac"
-;BS3_INSTANTIATE_TEMPLATE_WITH_WEIRD_ONES "bs3-cpu-basic-3-mode-template.mac"
+%include "bs3-first-common.mac"
 

@@ -41,7 +41,7 @@ include $(KBUILD_PATH)/subheader.kmk
 
 # Boot Sector post-link tool (used via the parent Config.kmk).
 BLDPROGS += VBoxBs3Linker
-VBoxBs3Linker_TEMPLATE = VBoxBldProg
+VBoxBs3Linker_TEMPLATE = VBoxAdvBldProg
 VBoxBs3Linker_SOURCES  = $(VBOX_PATH_BS3KIT_SRC)/VBoxBs3Linker.cpp
 
 
@@ -203,6 +203,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
 	bs3-cmn-SlabInit.c \
 	bs3-cmn-SlabAlloc.c \
 	bs3-cmn-SlabAllocEx.c \
+	bs3-cmn-SlabAllocFixed.c \
 	bs3-cmn-SlabFree.c \
 	bs3-cmn-SlabListInit.c \
 	bs3-cmn-SlabListAdd.c \
@@ -298,8 +299,10 @@ bs3kit-common-16_ASDEFS   = RT_ASMDEFS_INC_FIRST_FILE
 bs3kit-common-16_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
 	bs3-system-data.asm \
 	bs3-rm-InitAll.c \
+	bs3-rm-InitAllWithHighDlls.c \
 	bs3-rm-InitMemory.c \
 	bs3-rm-InitGdt.c \
+	bs3-rm-InitHighDlls.c \
 	bs3-cmn-hexdigits.c \
 	bs3-cmn-CpuDetectData.c \
 	bs3-cmn-PerCpuData.c \
@@ -369,6 +372,7 @@ bs3kit-common-64_SOURCES  = $(VBOX_BS3KIT_COMMON_SOURCES) \
 # Common sources to be compiled for each CPU mode.
 #
 VBOX_BS3KIT_MODE_SOURCES = \
+	bs3-mode-MemCopyFlat.asm \
 	bs3-mode-Name.asm \
 	bs3-mode-NameShortLower.asm \
 	bs3-mode-SwitchToRM.asm \
@@ -407,7 +411,9 @@ VBOX_BS3KIT_MODE_SOURCES = \
 	bs3-mode-TestDoModesByOne.c \
 	bs3-mode-TestDoModesByMax.c \
 	bs3-mode-TestDoModesHlp.asm \
-	bs3-mode-BiosInt15hE820.asm
+	bs3-mode-BiosInt15hE820.asm \
+	bs3-mode-DiskQueryGeometry.asm \
+	bs3-mode-DiskRead.asm
 
 # The 16-bit real mode BS3Kit library.
 LIBRARIES += bs3kit-rm

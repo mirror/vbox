@@ -332,8 +332,15 @@ BS3_SET_BITS_MACROS ARCH_BITS
 ;   in the makefile.
 ;
 ; !!HACK ALERT!!
+ %ifndef BS3_IS_HIGH_IMAGE
 segment BS3FLAT use32 class=BS3FLAT
 GROUP FLAT BS3FLAT
+ %else
+; For HIGH DLLs the hack is WRONG, so we just declare both BS3FLAT and FLAT the way
+; wlink wants flat groups to be defined. (See FIX_FRAME_FLAT use in omfreloc.c.)
+GROUP BS3FLAT
+GROUP FLAT
+ %endif
 %endif
 
 

@@ -615,6 +615,14 @@ RT_C_DECLS_BEGIN
 # define BS3_FP_OFF(a_pv)            ((uintptr_t)(a_pv))
 #endif
 
+/**
+ * Converts a far real mode address to a 32-bit flat address.
+ *
+ * @returns Flat address.
+ * @param   a_pv        The _real_ _mode_ far pointer to convert.
+ */
+#define BS3_FP_REAL_TO_FLAT(a_pv)   (((uint32_t)BS3_FP_SEG(a_pv) << 4) + BS3_FP_OFF(a_pv))
+
 /** @def BS3_MAKE_PROT_R0PTR_FROM_FLAT
  * Creates a protected mode pointer from a flat address.
  *
@@ -1756,6 +1764,7 @@ BS3_CMN_PROTO_STUB(char BS3_FAR *, Bs3StrCpy,(char BS3_FAR *pszDst, const char B
  * @param   pvDst           The destination buffer.
  * @param   pvSrc           The source buffer.
  * @param   cbToCopy        The number of bytes to copy.
+ * @sa      Bs3MemCopyFlat
  */
 BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3MemCpy,(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy));
 
@@ -2151,7 +2160,7 @@ BS3_CMN_PROTO_STUB(void, Bs3SlabInit,(PBS3SLABCTL pSlabCtl, size_t cbSlabCtl, ui
 BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3SlabAlloc,(PBS3SLABCTL pSlabCtl));
 
 /**
- * Allocates one or more chunks rom a slab.
+ * Allocates one or more chunks from a slab.
  *
  * @returns Pointer to the request number of chunks on success, NULL if we're
  *          out of chunks.
@@ -2160,6 +2169,19 @@ BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3SlabAlloc,(PBS3SLABCTL pSlabCtl));
  * @param   fFlags          Flags, see BS3_SLAB_ALLOC_F_XXX
  */
 BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3SlabAllocEx,(PBS3SLABCTL pSlabCtl, uint16_t cChunks, uint16_t fFlags));
+
+/**
+ * Allocates a specific range of chunks from a slab.
+ *
+ * @returns Number of chunks it was possible to allocate in the slab.
+ * @retval  0 if the given address isn't in the slab.
+ * @retval  UINT16_MAX if one or more of the requested chunks are already in
+ *          use, so the request cannot be fulfilled.
+ * @param   pSlabCtl        The slab control structure to allocate from.
+ * @param   uFlatAddr       The flat address of the range to allocate.
+ * @param   cChunks         The number of contiguous chunks we want.
+ */
+BS3_CMN_PROTO_STUB(uint16_t, Bs3SlabAllocFixed,(PBS3SLABCTL pSlabCtl, uint32_t uFlatAddr, uint16_t cChunks));
 
 /**
  * Frees one or more chunks from a slab.
@@ -2541,7 +2563,7 @@ BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3PagingSetupCanonicalTraps,(void));
 /**
  * Call 16-bit prot mode function from v8086 mode.
  *
- * This switches from v8086 mode to 16-bit protected mode (code) and executed
+ * This switches from v8086 mode to 16-bit protected mode (code) and executes
  * @a fpfnCall with @a cbParams bytes of parameters pushed on the stack.
  * Afterwards it switches back to v8086 mode and returns a 16-bit status code.
  *
@@ -4130,6 +4152,11 @@ BS3_CMN_PROTO_NOSB(void, Bs3UtilSetFullIdtr,(uint16_t cbLimit, uint64_t uBase));
 BS3_DECL(void) Bs3InitAll_rm(void);
 
 /**
+ * Initializes all of boot sector kit \#3 as well as the high DLLs.
+ */
+BS3_DECL(void) Bs3InitAllWithHighDlls_rm(void);
+
+/**
  * Initializes the REAL and TILED memory pools.
  *
  * For proper operation on OLDer CPUs, call #Bs3CpuDetect_mmm first.
@@ -4140,6 +4167,13 @@ BS3_DECL_FAR(void) Bs3InitMemory_rm_far(void);
  * Initializes the X0TEXT16 and X1TEXT16 GDT entries.
  */
 BS3_DECL_FAR(void) Bs3InitGdt_rm_far(void);
+
+/**
+ * Initializes (loads) any high DLLs.
+ *
+ * @note This cannot be called after the PIC or traps have been initialized!
+ */
+BS3_DECL_FAR(void) Bs3InitHighDlls_rm_far(void);
 
 
 
@@ -4334,6 +4368,19 @@ BS3_MODE_PROTO_STUB(int32_t, Bs3SwitchTo32BitAndCallC,(FPFNBS3FAR fpfnCall, unsi
  * Calls the appropriate Bs3Trap16Init, Bs3Trap32Init or Bs3Trap64Init function.
  */
 BS3_MODE_PROTO_STUB(void, Bs3TrapInit,(void));
+
+/**
+ * Special version of memcpy for copying from/to real mode.
+ *
+ * @returns pvDst
+ * @param   uFlatDst        The flat address of the destination buffer.
+ * @param   uFlatSrc        The flat address of the source buffer.
+ * @param   cbToCopy        The number of bytes to copy.  Max 64KB.
+ *
+ * @todo    Only work on 386+ at present.   Could be made to work for 286 and
+ *          addresses < 16MB if we care...
+ */
+BS3_MODE_PROTO_STUB(void BS3_FAR *, Bs3MemCopyFlat,(uint32_t uFlatDst, uint32_t uFlatSrc, uint32_t cbToCopy));
 
 /**
  * Executes the array of tests in every possibly mode.
@@ -4542,6 +4589,42 @@ extern uint16_t             g_cBs3PitIntervalMs;
  * 0 if not yet started (cleared by Bs3PitDisable; used for checking the
  * state internally). */
 extern uint16_t volatile    g_cBs3PitIntervalHz;
+
+/** @} */
+
+/** @defgroup grp_bs3kit_disk   Disk via INT 13h
+ * @{
+ */
+
+/**
+ * Performs a int 13h function AL=08h call to get the driver parameters.
+ *
+ * @returns 0 on success, non-zero error BIOS code on failure.
+ * @param   bDrive          The drive to get parameters for.
+ * @param   puMaxCylinder   Where to store the max cylinder value.
+ *                          Range: 0 thru *pcMaxCylinder.
+ * @param   puMaxHead       Where to store the max head value.
+ *                          Range: 0 thru *pcMaxHead.
+ * @param   puMaxSector     Where to store the max sector value.
+ *                          Range: 1 thru *pcMaxSector.
+ */
+BS3_MODE_PROTO_STUB(uint8_t, Bs3DiskQueryGeometry,(uint8_t bDrive, uint16_t *puMaxCylinder,
+                                                   uint8_t *puMaxHead, uint8_t *puMaxSector));
+
+/**
+ * Performs a int 13h function AL=08h call to get the driver parameters.
+ *
+ * @returns 0 on success, non-zero error BIOS code on failure.
+ * @param   bDrive          The drive to read from.
+ * @param   uCylinder       The cylinder to start read at (0-max).
+ * @param   uHead           The head to start reading at (0-max).
+ * @param   uSector         The sector to start reading at (1-max).
+ * @param   cSectors        The number of sectors to read (1+).
+ * @param   pvBuf           The buffer to read into.  This MUST be addressable
+ *                          from real mode!
+ */
+BS3_MODE_PROTO_STUB(uint8_t, Bs3DiskRead,(uint8_t bDrive, uint16_t uCylinder, uint8_t uHead, uint8_t uSector,
+                                          uint8_t cSectors, void RT_FAR *pvBuf));
 
 /** @} */
 

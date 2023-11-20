@@ -171,7 +171,7 @@ TMPL_BEGIN_TEXT
         ;
         jc      .failed
         cmp     eax, INT15_E820_SIGNATURE
-        jc      .failed
+        jne     .failed
         cmp     ecx, 20
         jb      .failed
 

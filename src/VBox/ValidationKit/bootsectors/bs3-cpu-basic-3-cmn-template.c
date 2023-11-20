@@ -64,12 +64,10 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuBasic3_Lea)(uint8_t bMode)
         for (i = 0; i < 64; i++)
             pfnWorker32();
     }
-    return 0;
 #else
-    //for (i = 0; i < 64; i++)
-    //    BS3_CMN_FAR_NM(bs3CpuBasic3_lea_64)
-    RT_NOREF(i);
-    return BS3TESTDOMODE_SKIPPED;
+    for (i = 0; i < 64; i++)
+        BS3_CMN_FAR_NM(bs3CpuBasic3_lea_64)();
 #endif
+    return 0;
 }
 

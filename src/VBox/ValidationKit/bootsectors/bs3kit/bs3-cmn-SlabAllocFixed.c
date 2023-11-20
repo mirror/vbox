@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - bs3-cpu-basic-3, 16-bit C code.
+ * BS3Kit - Bs3SlabAllocEx
  */
 
 /*
@@ -38,42 +38,35 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include <bs3kit.h>
+#include "bs3kit-template-header.h"
+#include <iprt/asm.h>
 
 
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
-BS3TESTMODE_PROTOTYPES_CMN(bs3CpuBasic3_Lea);
-
-
-/*********************************************************************************************************************************
-*   Global Variables                                                                                                             *
-*********************************************************************************************************************************/
-/**
- * @note We're making 16:16 reference to 32-bit and 64-bit code here,
- *       so if the functions we're aiming for are past the first 64KB in the
- *       segment we're going to get linker error E2083 "cannot reference
- *       address xxxx:yyyyyyyy from frame xxxxx". */
-static const BS3TESTMODEENTRY g_aModeTest[] =
+#undef Bs3SlabAllocFixed
+BS3_CMN_DEF(uint16_t, Bs3SlabAllocFixed,(PBS3SLABCTL pSlabCtl, uint32_t uFlatAddr, uint16_t cChunks))
 {
-    BS3TESTMODEENTRY_CMN("lea", bs3CpuBasic3_Lea),
-};
+    uint32_t iBit32 = (uFlatAddr - BS3_XPTR_GET_FLAT(void, pSlabCtl->pbStart)) >> pSlabCtl->cChunkShift;
+    if (iBit32 < pSlabCtl->cChunks)
+    {
+        uint16_t iBit = (uint16_t)iBit32;
+        uint16_t i;
 
+        /* If the slab doesn't cover the entire area requested, reduce it.
+           Caller can then move on to the next slab in the list to get the rest. */
+        if (pSlabCtl->cChunks - iBit < cChunks)
+            cChunks = pSlabCtl->cChunks - iBit;
 
-BS3_DECL(void) Main_rm()
-{
-    Bs3InitAllWithHighDlls_rm();
-    Bs3TestInit("bs3-cpu-basic-3");
-    Bs3TestPrintf("g_uBs3CpuDetected=%#x\n", g_uBs3CpuDetected);
+        /* Check that all the chunks are free. */
+        for (i = 0; i < cChunks; i++)
+            if (ASMBitTest(&pSlabCtl->bmAllocated, iBit + i))
+                return UINT16_MAX;
 
-    /*
-     * Do tests driven from 16-bit code.
-     */
-    Bs3TestDoModes_rm(g_aModeTest, RT_ELEMENTS(g_aModeTest));
-
-    Bs3TestTerm();
-    Bs3Shutdown();
-    Bs3Panic();
+        /* Complete the allocation. */
+        for (i = 0; i < cChunks; i++)
+            ASMBitSet(&pSlabCtl->bmAllocated, iBit + i);
+        pSlabCtl->cFreeChunks  -= cChunks;
+        return cChunks;
+    }
+    return 0;
 }
 

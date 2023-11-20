@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * BS3Kit - bs3-cpu-basic-3, 16-bit C code.
+ * BS3Kit - Initialize all components and high DLLs, real mode.
  */
 
 /*
@@ -38,42 +38,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include <bs3kit.h>
-
-
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
-BS3TESTMODE_PROTOTYPES_CMN(bs3CpuBasic3_Lea);
-
-
-/*********************************************************************************************************************************
-*   Global Variables                                                                                                             *
-*********************************************************************************************************************************/
-/**
- * @note We're making 16:16 reference to 32-bit and 64-bit code here,
- *       so if the functions we're aiming for are past the first 64KB in the
- *       segment we're going to get linker error E2083 "cannot reference
- *       address xxxx:yyyyyyyy from frame xxxxx". */
-static const BS3TESTMODEENTRY g_aModeTest[] =
-{
-    BS3TESTMODEENTRY_CMN("lea", bs3CpuBasic3_Lea),
-};
-
-
-BS3_DECL(void) Main_rm()
-{
-    Bs3InitAllWithHighDlls_rm();
-    Bs3TestInit("bs3-cpu-basic-3");
-    Bs3TestPrintf("g_uBs3CpuDetected=%#x\n", g_uBs3CpuDetected);
-
-    /*
-     * Do tests driven from 16-bit code.
-     */
-    Bs3TestDoModes_rm(g_aModeTest, RT_ELEMENTS(g_aModeTest));
-
-    Bs3TestTerm();
-    Bs3Shutdown();
-    Bs3Panic();
-}
+#define BS3_INIT_ALL_WITH_HIGH_DLLS
+#define Bs3InitAll_rm Bs3InitAllWithHighDlls_rm
+#include "bs3-rm-InitAll.c"
 

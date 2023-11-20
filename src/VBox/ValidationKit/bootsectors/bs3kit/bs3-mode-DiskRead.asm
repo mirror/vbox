@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; BS3Kit - Bs3DiskQueryGeometry
+; BS3Kit - Bs3DiskRead
 ;
 
 ;
@@ -47,14 +47,21 @@ TMPL_BEGIN_TEXT
 extern TMPL_NM(Bs3SwitchToRM)
 BS3_BEGIN_TEXT16
 extern RT_CONCAT3(_Bs3SwitchTo,TMPL_MODE_UNAME,_Safe_rm)
-BS3_EXTERN_DATA16 g_aBs3RmIvtOriginal
+
+BS3_EXTERN_DATA16   g_aBs3RmIvtOriginal
+%ifdef TMPL_16BIT
+BS3_EXTERN_CMN      Bs3SelProtFar16DataToRealMode
+%else
+BS3_EXTERN_CMN      Bs3SelFlatDataToRealMode
+%endif
+
 
 
 ;;
-; Performs a int 13h function 8 call.
+; Performs a int 13h function 2 call.
 ;
-; @cproto   BS3_MODE_PROTO_STUB(uint8_t, Bs3DiskQueryGeometry,(uint8_t bDrive, uint16_t *puMaxCylinder,
-;                                                              uint8_t *puMaxHead, uint8_t *puMaxSector));
+; @cproto   BS3_MODE_PROTO_STUB(uint8_t, Bs3DiskRead,(uint8_t bDrive, uint16_t uCylinder, uint8_t uHead, uint8_t uSector,
+;                                                     uint8_t cSectors, void RT_FAR *pvBuf));
 ;
 ; @returns  Register value (ax/eax). Zero on success, non-zero on failure.
 ;
@@ -64,7 +71,7 @@ BS3_EXTERN_DATA16 g_aBs3RmIvtOriginal
 ; @remarks  ASSUMES we're on a 16-bit suitable stack.
 ;
 TMPL_BEGIN_TEXT
-BS3_PROC_BEGIN_MODE Bs3DiskQueryGeometry, BS3_PBC_HYBRID
+BS3_PROC_BEGIN_MODE Bs3DiskRead, BS3_PBC_HYBRID
         push    xBP
         mov     xBP, xSP
 ;; @todo does not work on 286 and earlier!
@@ -82,19 +89,59 @@ BS3_PROC_BEGIN_MODE Bs3DiskQueryGeometry, BS3_PBC_HYBRID
 
         ; Load/Save parameters.
 %define a_bDrive                [xBP + xCB + cbCurRetAddr + xCB*0]
-%define a_puMaxCylinder         [xBP + xCB + cbCurRetAddr + xCB + sCB*0]
-%define a_pMaxHead              [xBP + xCB + cbCurRetAddr + xCB + sCB*1]
-%define a_puMaxSector           [xBP + xCB + cbCurRetAddr + xCB + sCB*2]
+%define a_uCylinder             [xBP + xCB + cbCurRetAddr + xCB*1]
+%define a_uCylinderHi           [xBP + xCB + cbCurRetAddr + xCB*1 + 1]
+%define a_uHead                 [xBP + xCB + cbCurRetAddr + xCB*2]
+%define a_uSector               [xBP + xCB + cbCurRetAddr + xCB*3]
+%define a_cSectors              [xBP + xCB + cbCurRetAddr + xCB*4]
+%define a_pvBuf                 [xBP + xCB + cbCurRetAddr + xCB*5]
+%define a_pvBufSel              [xBP + xCB + cbCurRetAddr + xCB*5 + 2]
 
 %ifdef TMPL_64BIT
         mov     a_bDrive, rcx           ; save bDrive
-        mov     a_puMaxCylinder, rdx    ; save pcCylinders
-        mov     a_pMaxHead, r8          ; save pcHeads
-        mov     a_puMaxSector, r9       ; save pcSectors
+        mov     a_uCylinder, rdx        ; save uCylinder
+        mov     a_uHead, r8             ; save uHead
+        mov     a_uSector, r9           ; save uSector
         movzx   edx, cl                 ; dl = drive
 %else
         mov     dl, a_bDrive            ; dl = drive
 %endif
+
+        ;
+        ; Convert buffer pointer if not in real mode.
+        ; Note! We clean the stack up in the epilogue.
+        ;
+%ifdef TMPL_64BIT
+        sub     rsp, 20h
+        mov     rcx, a_pvBuf
+        call    Bs3SelFlatDataToRealMode
+        mov     a_pvBuf, rax
+%elifdef TMPL_32BIT
+        mov     ecx, a_pvBuf
+        push    ecx
+        call    Bs3SelFlatDataToRealMode
+        mov     a_pvBuf, eax
+%elif !BS3_MODE_IS_RM_OR_V86(TMPL_MODE)
+        push    word a_pvBufSel
+        push    word a_pvBuf
+        call    Bs3SelProtFar16DataToRealMode
+        mov     a_pvBuf, ax
+        mov     a_pvBufSel, dx
+%endif
+
+        ;
+        ; Set up the BIOS call parameters.
+        ;
+        mov     ah, 02h                     ; read
+        mov     al, a_cSectors
+        mov     cx, a_uCylinder
+        xchg    ch, cl
+        shl     cl, 6
+        or      cl, a_uSector
+        mov     dl, a_bDrive
+        mov     dh, a_uHead
+        mov     bx, a_pvBuf
+        mov     di, a_pvBufSel
 
         ;
         ; Switch to real mode, first we just to the 16-bit text segment.
@@ -112,19 +159,13 @@ BS3_BEGIN_TEXT16
 %endif
 
         ;
-        ; Ralf Brown suggest setting es:di to NULL before the call.
-        ; Doubt this is really needed in our case, but whatever.
-        ;
-        xor     di, di
-        mov     es, di
-
-        ;
         ; Make the call.
         ;
-        mov     ax, 0800h                   ; ah=08h
-        xor     di, di                      ; ralf brown suggestion to guard against bios bugs.
         mov     es, di
+;        pushf
+;        sti
         int     13h
+;        popf
 
         ;
         ; Switch back.
@@ -138,50 +179,14 @@ TMPL_BEGIN_TEXT
 .from_text16:
  %endif
 %endif
+hlt
+
         ;
         ; Check that we didn't failed.
         ;
         jc      .failed_return_ah
-
-        ;
-        ; Save the return values.
-        ;   CL[7:6]:CH = max cylinders.
-        ;   DH         = max heads
-        ;   CL[5:0]    = max sectors
-        ; Other stuff we don't care about:
-        ;   AH         = 0
-        ;   AL         = undefined/zero
-        ;   BL         = drive type
-        ;   DL         = max drives.
-        ;   ES:DI      = driver parameter table for floppies.
-        ;
-%ifdef TMPL_16BIT
-        les     di, a_pMaxHead
-        mov     [es:di], dh
-
-        les     di, a_puMaxSector
-        mov     al, 3fh
-        and     al, cl
-        mov     [es:di], al
-
-        les     di, a_puMaxCylinder
-        shr     cl, 6
-        xchg    cl, ch
-        mov     [es:di], cx
-%else
-        mov     xDI, a_pMaxHead
-        mov     [xDI], dh
-
-        mov     xDI, a_puMaxSector
-        mov     al, 3fh
-        and     al, cl
-        mov     [xDI], al
-
-        mov     xDI, a_puMaxCylinder
-        shr     cl, 6
-        xchg    cl, ch
-        mov     [xDI], cx
-%endif
+        test    ah, ah
+        jnz     .failed_return_ah
 
         ;
         ; Return success
@@ -214,5 +219,5 @@ TMPL_BEGIN_TEXT
         jne     .return
         dec     al
         jmp     .return
-BS3_PROC_END_MODE   Bs3DiskQueryGeometry
+BS3_PROC_END_MODE   Bs3DiskRead
 
