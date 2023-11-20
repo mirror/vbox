@@ -292,7 +292,7 @@ typedef enum VBOXOSTYPE
     /** @name Architecture Type
      * @{ */
     /** Mask containing the architecture value. */
-    VBOXOSTYPE_ArchitectureMask = 0x00f00,
+    VBOXOSTYPE_ArchitectureMask = 0x00700,
     /** Architecture value for 16-bit and 32-bit x86. */
     VBOXOSTYPE_x86              = 0x00000,
     /** Architecture value for 64-bit x86 (AMD64). */
@@ -302,7 +302,7 @@ typedef enum VBOXOSTYPE
     /** Architecture value for 64-bit ARM. */
     VBOXOSTYPE_arm64            = 0x00300,
     /** Architecture value for unknown or unsupported architectures. */
-    VBOXOSTYPE_UnknownArch      = 0x00f00,
+    VBOXOSTYPE_UnknownArch      = 0x00700,
     /** @} */
 
     /** The usual 32-bit hack. */
