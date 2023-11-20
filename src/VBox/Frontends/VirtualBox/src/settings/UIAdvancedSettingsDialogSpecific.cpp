@@ -782,10 +782,15 @@ void UIAdvancedSettingsDialogMachine::prepare()
             QMap<QString, QVariant> optFlags = optionalFlags();
             switch (enmArch)
             {
-                /* For x86 we no need the flag at all, removing if present: */
-                case KPlatformArchitecture_x86: optFlags.remove("arch"); break;
-                /* For rest of platforms we need the flag: */
-                default: optFlags["arch"] = QVariant::fromValue(enmArch); break;
+                /* For x86/ARM we'll set the flag: */
+                case KPlatformArchitecture_x86:
+                case KPlatformArchitecture_ARM:
+                    optFlags["arch"] = QVariant::fromValue(enmArch);
+                    break;
+                /* For rest of platforms (+None) we'll remove it: */
+                default:
+                    optFlags.remove("arch");
+                    break;
             }
             setOptionalFlags(optFlags);
         }

@@ -958,7 +958,8 @@ void UIAdvancedSettingsDialog::addItem(const QString &strBigIcon,
 
         /* Create validator: */
         UISettingsPageValidator *pValidator = new UISettingsPageValidator(this, pSettingsPage);
-        connect(pValidator, &UISettingsPageValidator::sigValidityChanged, this, &UIAdvancedSettingsDialog::sltHandleValidityChange);
+        connect(pValidator, &UISettingsPageValidator::sigValidityChanged,
+                this, &UIAdvancedSettingsDialog::sltHandleValidityChange);
         pSettingsPage->setValidator(pValidator);
         m_pWarningPane->registerValidator(pValidator);
 
