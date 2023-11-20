@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
             rc = RTFileOpen(&hFile, szFilePath, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE);
             if (RT_SUCCESS(rc))
             {
-                uint8_t abBuf[_64K] = { 42 };
+                uint8_t abBuf[_64K]; RTRandBytes(abBuf, sizeof(abBuf));
 
                 while (cbSize > 0)
                 {
@@ -345,16 +345,22 @@ int main(int argc, char *argv[])
 
                         RTStrFree(pszUrlBase);
 
-                        char szTempFile[RTPATH_MAX];
-                        RTTEST_CHECK_RC_OK(hTest, RTPathTemp(szTempFile, sizeof(szTempFile)));
-                        RTTEST_CHECK_RC_OK(hTest, RTPathAppend(szTempFile, sizeof(szTempFile), "tstClipboardHttpServer-XXXXXX"));
-                        RTTEST_CHECK_RC_OK(hTest, RTFileCreateTemp(szTempFile, 0600));
+                        /* Download to destination file. */
+                        char szDstFile[RTPATH_MAX];
+                        RTTEST_CHECK_RC_OK(hTest, RTPathTemp(szDstFile, sizeof(szDstFile)));
+                        RTTEST_CHECK_RC_OK(hTest, RTPathAppend(szDstFile, sizeof(szDstFile), "tstClipboardHttpServer-XXXXXX"));
+                        RTTEST_CHECK_RC_OK(hTest, RTFileCreateTemp(szDstFile, 0600));
+                        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Downloading '%s' -> '%s'\n", szURL, szDstFile);
+                        RTTEST_CHECK_RC_OK(hTest, RTHttpGetFile(hClient, szURL, szDstFile));
 
-                        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Downloading '%s' -> '%s'\n", szURL, szTempFile);
+                        /* Compare files. */
+                        char szSrcFile[RTPATH_MAX];
+                        RTTEST_CHECK      (hTest, RTStrPrintf(szSrcFile, sizeof(szSrcFile),  szTempDir));
+                        RTTEST_CHECK_RC_OK(hTest, RTPathAppend(szSrcFile, sizeof(szSrcFile), g_aTests[i].pszFileName));
+                        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Comparing files '%s' vs. '%s'\n", szSrcFile, szDstFile);
+                        RTTEST_CHECK_RC_OK(hTest, RTFileCompare(szSrcFile, szDstFile));
 
-                        RTTEST_CHECK_RC_OK(hTest, RTHttpGetFile(hClient, szURL, szTempFile));
-
-                        RTTEST_CHECK_RC_OK(hTest, RTFileDelete(szTempFile));
+                        RTTEST_CHECK_RC_OK(hTest, RTFileDelete(szDstFile));
                     }
 
                     RTTEST_CHECK_RC_OK(hTest, RTHttpDestroy(hClient));
