@@ -40,11 +40,11 @@
 
 
 /** The release logger. */
-static PRTLOGGER g_pRelLogger;
+static PRTLOGGER    g_pRelLogger;
 /** The current logging verbosity level. */
-static unsigned  g_uVerbosity = 0;
-/** Maximum HTTP server runtime (in ms). */
-static RTMSINTERVAL g_msRuntime     = RT_MS_30SEC;
+static unsigned     g_uVerbosity = 0;
+/** Default maximum HTTP server runtime (in ms). */
+static RTMSINTERVAL g_msRuntime     = RT_MS_5MIN;
 /** Shutdown indicator. */
 static bool         g_fShutdown     = false;
 /** Manual mode indicator; allows manual testing w/ other HTTP clients. */
