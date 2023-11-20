@@ -299,7 +299,7 @@ private:
     QString m_strVMExitLabelTotal;
 };
 
-class  SHARED_LIBRARY_STUFF UIVMActivityMonitorCloud : public QIWithRetranslateUI<UIVMActivityMonitor>
+class  SHARED_LIBRARY_STUFF UIVMActivityMonitorCloud : public UIVMActivityMonitor
 {
 
     Q_OBJECT;
