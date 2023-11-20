@@ -80,7 +80,7 @@ RT_C_DECLS_BEGIN
  * space with Windows 11, so will have to think of something new there when/if
  * the next major release is out).
  *
- * @note    Do NOT use bit 19 (0x800) for anything. It is currently only used by
+ * @note    Do NOT use bit 11 (0x800) for anything. It is currently only used by
  *          VBOXOSTYPE_WinNT3x and we'd like to keep it that way in case we ever
  *          end up needing more than three new architectures.
  *
