@@ -71,8 +71,10 @@ QSize UIDescriptionEditor::minimumSizeHint() const
 {
     /* Calculate on the basis of font metrics: */
     QFontMetrics fm(m_pTextEdit->font());
-    // approx. 50 symbols, not very precise:
-    const int iWidth = fm.averageCharWidth() * 50;
+    /// @todo that's somehow glitches on arm macOS, some other widget influencing this,
+    ///       need to check why layout srinks if value set to be less ..
+    // approx. 80 symbols, not very precise:
+    const int iWidth = fm.averageCharWidth() * 80;
     // exact. 7 symbols, quite precise:
     const int iHeight = fm.lineSpacing() * 7
                       + m_pTextEdit->document()->documentMargin() * 2
