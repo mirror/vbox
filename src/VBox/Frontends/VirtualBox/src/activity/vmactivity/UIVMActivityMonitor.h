@@ -133,52 +133,33 @@ class  SHARED_LIBRARY_STUFF UIVMActivityMonitor : public QIWithRetranslateUI<QWi
 
 public:
 
-    /** Constructs information-tab passing @a pParent to the QWidget base-class constructor.
-      * @param machine is machine reference. */
-    UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine);
-    ~UIVMActivityMonitor();
-    void setMachine(const CMachine &machine);
-    QUuid machineId() const;
-    QString machineName() const;
+    UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent);
+    virtual QUuid machineId() const = 0;
+    virtual QString machineName() const = 0;
 
- public slots:
+public slots:
 
-    /** @name These functions are connected to API events and implement necessary updates.
-      * @{ */
-        void sltGuestAdditionsStateChange();
-    /** @} */
         void sltExportMetricsToFile();
 
 protected:
 
     virtual void retranslateUi() RT_OVERRIDE;
     virtual bool eventFilter(QObject *pObj, QEvent *pEvent) RT_OVERRIDE;
-
-private slots:
-
-    /** Reads the metric values for several sources and calls corresponding update functions. */
-    void sltTimeout();
-    /** Stop updating the charts if/when the machine state changes something other than KMachineState_Running. */
-    void sltMachineStateChange(const QUuid &uId);
-    void sltCreateContextMenu(const QPoint &point);
-    void sltClearCOMData();
-
-private:
-
-    void prepareWidgets();
-    void prepareMetrics();
-    void prepareActions();
-    bool guestAdditionsAvailable(const char *pszMinimumVersion);
-    void enableDisableGuestAdditionDependedWidgets(bool fEnable);
+    virtual void obtainDataAndUpdate() = 0;
+    virtual QString defaultMachineFolder() const = 0;
+    virtual void reset() = 0;
+    virtual void start() = 0;
 
     /** @name The following functions update corresponding metric charts and labels with new values
       * @{ */
-        void updateCPUGraphsAndMetric(ULONG iLoadPercentage, ULONG iOtherPercentage);
-        void updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM);
-        void updateNetworkGraphsAndMetric(quint64 iReceiveTotal, quint64 iTransmitTotal);
-        void updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead);
-        void updateVMExitMetric(quint64 uTotalVMExits);
+        virtual void updateCPUGraphsAndMetric(ULONG iLoadPercentage, ULONG iOtherPercentage) = 0;
+        virtual void updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM) = 0;
+        virtual void updateNetworkGraphsAndMetric(quint64 iReceiveTotal, quint64 iTransmitTotal) = 0;
+        virtual void updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead) = 0;
     /** @} */
+
+    /** Returns a QColor for the chart with @p strChartName and data series with @p iDataIndex. */
+    QString dataColorString(const QString &strChartName, int iDataIndex);
 
     /** @name The following functions reset corresponding info labels
       * @{ */
@@ -186,37 +167,14 @@ private:
         void resetRAMInfoLabel();
         void resetNetworkInfoLabel();
         void resetDiskIOInfoLabel();
-        void resetVMExitInfoLabel();
     /** @} */
 
-    /** Returns a QColor for the chart with @p strChartName and data series with @p iDataIndex. */
-    QString dataColorString(const QString &strChartName, int iDataIndex);
-    /* Starts the timer which in return collects data and updates charts/graphs. */
-    void start();
-    void reset();
-    void openSession();
+    void prepareWidgets();
+    void prepareActions();
 
-    bool m_fGuestAdditionsAvailable;
-    CMachine m_comMachine;
-    CSession m_comSession;
-    CGuest m_comGuest;
-
-    CPerformanceCollector m_performanceCollector;
-    CMachineDebugger      m_comMachineDebugger;
-    /** Holds the instance of layout we create. */
-    QVBoxLayout *m_pMainLayout;
-    QTimer      *m_pTimer;
-
-    /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
-      * @{ */
-        QVector<QString> m_nameList;
-        QVector<CUnknown> m_objectList;
-    /** @} */
-
+    QTimer                 *m_pTimer;
+    quint64                 m_iTimeStep;
     QMap<QString, UIMetric> m_metrics;
-    QMap<QString,UIChart*>  m_charts;
-    /** Stores the QLabel instances which we show next to each UIChart. The value is the name of the metric. */
-    QMap<QString,QLabel*>   m_infoLabels;
 
     /** @name These metric names are used for map keys to identify metrics. They are not translated.
       * @{ */
@@ -227,6 +185,15 @@ private:
         QString m_strDiskIOMetricName;
         QString m_strVMExitMetricName;
     /** @} */
+
+    /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
+      * @{ */
+        QVector<QString> m_nameList;
+        QVector<CUnknown> m_objectList;
+    /** @} */
+    QMap<QString,UIChart*>  m_charts;
+    /** Stores the QLabel instances which we show next to each UIChart. The value is the name of the metric. */
+    QMap<QString,QLabel*>   m_infoLabels;
 
     /** @name Cached translated strings.
       * @{ */
@@ -251,13 +218,94 @@ private:
         QString m_strDiskIOInfoLabelRead;
         QString m_strDiskIOInfoLabelWrittenTotal;
         QString m_strDiskIOInfoLabelReadTotal;
-        /** VM Exit info label strings. */
-        QString m_strVMExitInfoLabelTitle;
-        QString m_strVMExitLabelCurrent;
-        QString m_strVMExitLabelTotal;
     /** @} */
-    quint64 m_iTimeStep;
+
+
+private slots:
+
+    /** Reads the metric values for several sources and calls corresponding update functions. */
+    void sltTimeout();
+    void sltCreateContextMenu(const QPoint &point);
+
+private:
+
+    bool guestAdditionsAvailable(const char *pszMinimumVersion);
+
+    /** Holds the instance of layout we create. */
+    QVBoxLayout *m_pMainLayout;
+
     EmbedTo m_enmEmbedding;
 };
 
+class  SHARED_LIBRARY_STUFF UIVMActivityMonitorLocal : public UIVMActivityMonitor
+{
+
+    Q_OBJECT;
+
+public:
+
+    /** Constructs information-tab passing @a pParent to the QWidget base-class constructor.
+      * @param machine is machine reference. */
+    UIVMActivityMonitorLocal(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine);
+    ~UIVMActivityMonitorLocal();
+    virtual QUuid machineId() const RT_OVERRIDE;
+    virtual QString machineName() const RT_OVERRIDE;
+
+public slots:
+
+    /** @name These functions are connected to API events and implement necessary updates.
+     * @{ */
+        void sltGuestAdditionsStateChange();
+    /** @} */
+
+protected:
+
+    virtual void retranslateUi() RT_OVERRIDE;
+    virtual void obtainDataAndUpdate() RT_OVERRIDE;
+    virtual QString defaultMachineFolder() const RT_OVERRIDE;
+    virtual void reset() RT_OVERRIDE;
+    virtual void start() RT_OVERRIDE;
+
+private slots:
+
+    /** Stop updating the charts if/when the machine state changes something other than KMachineState_Running. */
+    void sltMachineStateChange(const QUuid &uId);
+    void sltClearCOMData();
+
+private:
+
+    void setMachine(const CMachine &machine);
+    void openSession();
+    void prepareMetrics();
+    bool guestAdditionsAvailable(const char *pszMinimumVersion);
+    void enableDisableGuestAdditionDependedWidgets(bool fEnable);
+    void updateCPUGraphsAndMetric(ULONG iLoadPercentage, ULONG iOtherPercentage);
+    void updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM);
+    void updateNetworkGraphsAndMetric(quint64 iReceiveTotal, quint64 iTransmitTotal);
+    void updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead);
+    void updateVMExitMetric(quint64 uTotalVMExits);
+    void resetVMExitInfoLabel();
+
+    bool m_fGuestAdditionsAvailable;
+    CMachine m_comMachine;
+    CSession m_comSession;
+    CGuest m_comGuest;
+
+    CPerformanceCollector m_performanceCollector;
+    CMachineDebugger      m_comMachineDebugger;
+    /** VM Exit info label strings. */
+    QString m_strVMExitInfoLabelTitle;
+    QString m_strVMExitLabelCurrent;
+    QString m_strVMExitLabelTotal;
+};
+
+class  SHARED_LIBRARY_STUFF UIVMActivityMonitorCloud : public QIWithRetranslateUI<UIVMActivityMonitor>
+{
+
+    Q_OBJECT;
+
+public:
+
+
+};
 #endif /* !FEQT_INCLUDED_SRC_activity_vmactivity_UIVMActivityMonitor_h */

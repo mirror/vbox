@@ -219,12 +219,12 @@ void UIVMInformationDialog::prepareTabWidget()
         }
 
         /* Create Performance Monitor tab: */
-        UIVMActivityMonitor *pVMActivityMonitorWidget =
-            new UIVMActivityMonitor(EmbedTo_Dialog, this, gpMachine->uisession()->machine());
+        UIVMActivityMonitorLocal *pVMActivityMonitorWidget =
+            new UIVMActivityMonitorLocal(EmbedTo_Dialog, this, gpMachine->uisession()->machine());
         if (pVMActivityMonitorWidget)
         {
             connect(gpMachine, &UIMachine::sigAdditionsStateChange,
-                    pVMActivityMonitorWidget, &UIVMActivityMonitor::sltGuestAdditionsStateChange);
+                    pVMActivityMonitorWidget, &UIVMActivityMonitorLocal::sltGuestAdditionsStateChange);
             m_tabs.insert(Tabs_ActivityMonitor, pVMActivityMonitorWidget);
             m_pTabWidget->addTab(m_tabs.value(Tabs_ActivityMonitor), QString());
         }

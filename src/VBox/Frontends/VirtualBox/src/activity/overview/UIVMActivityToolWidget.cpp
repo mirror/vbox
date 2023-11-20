@@ -194,7 +194,7 @@ void UIVMActivityToolWidget::addTabs(const QVector<QUuid> &machineIdsToAdd)
         CMachine comMachine = uiCommon().virtualBox().FindMachine(id.toString());
         if (comMachine.isNull())
             continue;
-        addTab(new UIVMActivityMonitor(m_enmEmbedding, this, comMachine), comMachine.GetName());
+        addTab(new UIVMActivityMonitorLocal(m_enmEmbedding, this, comMachine), comMachine.GetName());
     }
 }
 

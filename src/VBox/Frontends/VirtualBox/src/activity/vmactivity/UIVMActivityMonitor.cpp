@@ -906,85 +906,23 @@ bool UIMetric::autoUpdateMaximum() const
 *   UIVMActivityMonitor implementation.                                                                              *
 *********************************************************************************************************************************/
 
-UIVMActivityMonitor::UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent,
-                                           const CMachine &machine)
+UIVMActivityMonitor::UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_fGuestAdditionsAvailable(false)
-    , m_pMainLayout(0)
     , m_pTimer(0)
+    , m_iTimeStep(0)
     , m_strCPUMetricName("CPU Load")
     , m_strRAMMetricName("RAM Usage")
     , m_strDiskMetricName("Disk Usage")
     , m_strNetworkMetricName("Network")
     , m_strDiskIOMetricName("DiskIO")
     , m_strVMExitMetricName("VMExits")
-    , m_iTimeStep(0)
+    , m_pMainLayout(0)
     , m_enmEmbedding(enmEmbedding)
 {
-    prepareMetrics();
-    prepareWidgets();
-    prepareActions();
-    retranslateUi();
-    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange, this, &UIVMActivityMonitor::sltMachineStateChange);
-    setMachine(machine);
     uiCommon().setHelpKeyword(this, "vm-session-information");
     setContextMenuPolicy(Qt::CustomContextMenu);
     connect(this, &UIVMActivityMonitor::customContextMenuRequested,
             this, &UIVMActivityMonitor::sltCreateContextMenu);
-    connect(&uiCommon(), &UICommon::sigAskToDetachCOM,
-            this, &UIVMActivityMonitor::sltClearCOMData);
-}
-
-UIVMActivityMonitor::~UIVMActivityMonitor()
-{
-    sltClearCOMData();
-}
-
-void UIVMActivityMonitor::setMachine(const CMachine &comMachine)
-{
-    reset();
-    if (comMachine.isNull())
-        return;
-
-    if (!m_comSession.isNull())
-        m_comSession.UnlockMachine();
-
-    m_comMachine = comMachine;
-
-    if (m_comMachine.GetState() == KMachineState_Running)
-    {
-        setEnabled(true);
-        openSession();
-        start();
-    }
-}
-
-QUuid UIVMActivityMonitor::machineId() const
-{
-    if (m_comMachine.isNull())
-        return QUuid();
-    return m_comMachine.GetId();
-}
-
-QString UIVMActivityMonitor::machineName() const
-{
-    if (m_comMachine.isNull())
-        return QString();
-    return m_comMachine.GetName();
-}
-
-void UIVMActivityMonitor::openSession()
-{
-    if (!m_comSession.isNull())
-        return;
-    m_comSession = uiCommon().openSession(m_comMachine.GetId(), KLockType_Shared);
-    AssertReturnVoid(!m_comSession.isNull());
-
-    CConsole comConsole = m_comSession.GetConsole();
-    AssertReturnVoid(!comConsole.isNull());
-    m_comGuest = comConsole.GetGuest();
-
-    m_comMachineDebugger = comConsole.GetDebugger();
 }
 
 void UIVMActivityMonitor::retranslateUi()
@@ -1028,12 +966,6 @@ void UIVMActivityMonitor::retranslateUi()
     iMaximum = qMax(iMaximum, m_strDiskIOInfoLabelWrittenTotal.length());
     m_strDiskIOInfoLabelReadTotal = QApplication::translate("UIVMInformationDialog", "Total Read");
     iMaximum = qMax(iMaximum, m_strDiskIOInfoLabelReadTotal.length());
-    m_strVMExitInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "VM Exits");
-    iMaximum = qMax(iMaximum, m_strVMExitInfoLabelTitle.length());
-    m_strVMExitLabelCurrent = QApplication::translate("UIVMInformationDialog", "Current");
-    iMaximum = qMax(iMaximum, m_strVMExitLabelCurrent.length());
-    m_strVMExitLabelTotal = QApplication::translate("UIVMInformationDialog", "Total");
-    iMaximum = qMax(iMaximum, m_strVMExitLabelTotal.length());
 
     /* Compute the maximum label string length and set it as a fixed width to labels to prevent always changing widths: */
     /* Add m_iDecimalCount plus 4 characters for the number and 3 for unit string: */
@@ -1103,6 +1035,7 @@ void UIVMActivityMonitor::prepareWidgets()
     {
         if (!m_metrics.contains(strMetricName))
             continue;
+
         QHBoxLayout *pChartLayout = new QHBoxLayout;
         pChartLayout->setSpacing(0);
 
@@ -1136,6 +1069,193 @@ void UIVMActivityMonitor::prepareWidgets()
 }
 
 void UIVMActivityMonitor::sltTimeout()
+{
+    obtainDataAndUpdate();
+}
+
+void UIVMActivityMonitor::sltExportMetricsToFile()
+{
+    QString strStartFileName = QString("%1/%2_%3").
+        arg(QFileInfo(defaultMachineFolder()).absolutePath()).
+        arg(machineName()).
+        arg(QDateTime::currentDateTime().toString("dd-MM-yyyy_hh-mm-ss"));
+    QString strFileName = QIFileDialog::getSaveFileName(strStartFileName,"",this,
+                                                        QApplication::translate("UIVMInformationDialog",
+                                                                                "Export activity data of the machine \"%1\"")
+                                                                                .arg(machineName()));
+    QFile dataFile(strFileName);
+    if (dataFile.open(QFile::WriteOnly | QFile::Truncate))
+    {
+        QTextStream stream(&dataFile);
+        for (QMap<QString, UIMetric>::const_iterator iterator =  m_metrics.begin(); iterator != m_metrics.end(); ++iterator)
+            iterator.value().toFile(stream);
+        dataFile.close();
+    }
+}
+
+void UIVMActivityMonitor::sltCreateContextMenu(const QPoint &point)
+{
+    QMenu menu;
+    QAction *pExportAction =
+        menu.addAction(QApplication::translate("UIVMInformationDialog", "Export"));
+    pExportAction->setIcon(UIIconPool::iconSet(":/performance_monitor_export_16px.png"));
+    connect(pExportAction, &QAction::triggered, this, &UIVMActivityMonitor::sltExportMetricsToFile);
+    menu.exec(mapToGlobal(point));
+}
+
+void UIVMActivityMonitor::prepareActions()
+{
+}
+
+void UIVMActivityMonitor::resetCPUInfoLabel()
+{
+    if (m_infoLabels.contains(m_strCPUMetricName)  && m_infoLabels[m_strCPUMetricName])
+    {
+        QString strInfo =QString("<b>%1</b></b><br/>%2: %3<br/>%4: %5")
+            .arg(m_strCPUInfoLabelTitle)
+            .arg(m_strCPUInfoLabelGuest).arg("--")
+            .arg(m_strCPUInfoLabelVMM).arg("--");
+        m_infoLabels[m_strCPUMetricName]->setText(strInfo);
+    }
+}
+
+void UIVMActivityMonitor::resetRAMInfoLabel()
+{
+    if (m_infoLabels.contains(m_strRAMMetricName)  && m_infoLabels[m_strRAMMetricName])
+    {
+        QString strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").
+            arg(m_strRAMInfoLabelTitle).arg(m_strRAMInfoLabelTotal).arg("--")
+            .arg(m_strRAMInfoLabelFree).arg("--")
+            .arg(m_strRAMInfoLabelUsed).arg("--");
+        m_infoLabels[m_strRAMMetricName]->setText(strInfo);
+    }
+}
+
+void UIVMActivityMonitor::resetNetworkInfoLabel()
+{
+    if (m_infoLabels.contains(m_strNetworkMetricName)  && m_infoLabels[m_strNetworkMetricName])
+    {
+        QString strInfo = QString("<b>%1</b></b><br/>%2: %3<br/>%4 %5<br/>%6: %7<br/>%8 %9")
+            .arg(m_strNetworkInfoLabelTitle)
+            .arg(m_strNetworkInfoLabelReceived).arg("--")
+            .arg(m_strNetworkInfoLabelReceivedTotal).arg("--")
+            .arg(m_strNetworkInfoLabelTransmitted).arg("--")
+            .arg(m_strNetworkInfoLabelTransmittedTotal).arg("--");
+        m_infoLabels[m_strNetworkMetricName]->setText(strInfo);
+    }
+}
+
+void UIVMActivityMonitor::resetDiskIOInfoLabel()
+{
+    if (m_infoLabels.contains(m_strDiskIOMetricName)  && m_infoLabels[m_strDiskIOMetricName])
+    {
+        QString strInfo = QString("<b>%1</b></b><br/>%2: %3<br/>%4 %5<br/>%6: %7<br/>%8 %9")
+            .arg(m_strDiskIOInfoLabelTitle)
+            .arg(m_strDiskIOInfoLabelWritten).arg("--")
+            .arg(m_strDiskIOInfoLabelWrittenTotal).arg("--")
+            .arg(m_strDiskIOInfoLabelRead).arg("--")
+            .arg(m_strDiskIOInfoLabelReadTotal).arg("--");
+        m_infoLabels[m_strDiskIOMetricName]->setText(strInfo);
+    }
+}
+
+QString UIVMActivityMonitor::dataColorString(const QString &strChartName, int iDataIndex)
+{
+    if (!m_charts.contains(strChartName))
+        return QColor(Qt::black).name(QColor::HexRgb);
+    UIChart *pChart = m_charts[strChartName];
+    if (!pChart)
+        return QColor(Qt::black).name(QColor::HexRgb);
+    return pChart->dataSeriesColor(iDataIndex).name(QColor::HexRgb);
+}
+
+void UIVMActivityMonitorLocal::start()
+{
+    if (m_comMachine.isNull() || m_comMachine.GetState() != KMachineState_Running)
+        return;
+
+    m_fGuestAdditionsAvailable = guestAdditionsAvailable("6.1");
+    enableDisableGuestAdditionDependedWidgets(m_fGuestAdditionsAvailable);
+    if (m_pTimer)
+        m_pTimer->start(1000 * g_iPeriod);
+}
+
+UIVMActivityMonitorLocal::UIVMActivityMonitorLocal(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine)
+    :UIVMActivityMonitor(enmEmbedding, pParent)
+    , m_fGuestAdditionsAvailable(false)
+{
+    prepareMetrics();
+    prepareWidgets();
+    prepareActions();
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange, this, &UIVMActivityMonitorLocal::sltMachineStateChange);
+    connect(&uiCommon(), &UICommon::sigAskToDetachCOM, this, &UIVMActivityMonitorLocal::sltClearCOMData);
+    setMachine(machine);
+}
+
+UIVMActivityMonitorLocal::~UIVMActivityMonitorLocal()
+{
+    sltClearCOMData();
+}
+
+QUuid UIVMActivityMonitorLocal::machineId() const
+{
+    if (m_comMachine.isNull())
+        return QUuid();
+    return m_comMachine.GetId();
+}
+
+void UIVMActivityMonitorLocal::retranslateUi()
+{
+    UIVMActivityMonitor::retranslateUi();
+    m_strVMExitInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "VM Exits");
+    //iMaximum = qMax(iMaximum, m_strVMExitInfoLabelTitle.length());
+    m_strVMExitLabelCurrent = QApplication::translate("UIVMInformationDialog", "Current");
+    //iMaximum = qMax(iMaximum, m_strVMExitLabelCurrent.length());
+    m_strVMExitLabelTotal = QApplication::translate("UIVMInformationDialog", "Total");
+    //iMaximum = qMax(iMaximum, m_strVMExitLabelTotal.length());
+}
+
+void UIVMActivityMonitorLocal::setMachine(const CMachine &comMachine)
+{
+    reset();
+    if (comMachine.isNull())
+        return;
+
+    if (!m_comSession.isNull())
+        m_comSession.UnlockMachine();
+
+    m_comMachine = comMachine;
+
+    if (m_comMachine.GetState() == KMachineState_Running)
+    {
+        setEnabled(true);
+        openSession();
+        start();
+    }
+}
+
+QString UIVMActivityMonitorLocal::machineName() const
+{
+    if (m_comMachine.isNull())
+        return QString();
+    return m_comMachine.GetName();
+}
+
+void UIVMActivityMonitorLocal::openSession()
+{
+    if (!m_comSession.isNull())
+        return;
+    m_comSession = uiCommon().openSession(m_comMachine.GetId(), KLockType_Shared);
+    AssertReturnVoid(!m_comSession.isNull());
+
+    CConsole comConsole = m_comSession.GetConsole();
+    AssertReturnVoid(!comConsole.isNull());
+    m_comGuest = comConsole.GetGuest();
+
+    m_comMachineDebugger = comConsole.GetDebugger();
+}
+
+void UIVMActivityMonitorLocal::obtainDataAndUpdate()
 {
     if (m_performanceCollector.isNull())
         return;
@@ -1183,7 +1303,7 @@ void UIVMActivityMonitor::sltTimeout()
     }
 }
 
-void UIVMActivityMonitor::sltMachineStateChange(const QUuid &uId)
+void UIVMActivityMonitorLocal::sltMachineStateChange(const QUuid &uId)
 {
     if (m_comMachine.isNull())
         return;
@@ -1205,37 +1325,15 @@ void UIVMActivityMonitor::sltMachineStateChange(const QUuid &uId)
         reset();
 }
 
-void UIVMActivityMonitor::sltExportMetricsToFile()
+QString UIVMActivityMonitorLocal::defaultMachineFolder() const
 {
-    QString strStartFileName = QString("%1/%2_%3").
-        arg(QFileInfo(m_comMachine.GetSettingsFilePath()).absolutePath()).
-        arg(m_comMachine.GetName()).
-        arg(QDateTime::currentDateTime().toString("dd-MM-yyyy_hh-mm-ss"));
-    QString strFileName = QIFileDialog::getSaveFileName(strStartFileName,"",this,
-                                                        QApplication::translate("UIVMInformationDialog",
-                                                                                "Export activity data of the machine \"%1\"")
-                                                                                .arg(m_comMachine.GetName()));
-    QFile dataFile(strFileName);
-    if (dataFile.open(QFile::WriteOnly | QFile::Truncate))
-    {
-        QTextStream stream(&dataFile);
-        for (QMap<QString, UIMetric>::const_iterator iterator =  m_metrics.begin(); iterator != m_metrics.end(); ++iterator)
-            iterator.value().toFile(stream);
-        dataFile.close();
-    }
+    if (m_comMachine.isOk())
+        return m_comMachine.GetSettingsFilePath();
+    else
+        return QString();
 }
 
-void UIVMActivityMonitor::sltCreateContextMenu(const QPoint &point)
-{
-    QMenu menu;
-    QAction *pExportAction =
-        menu.addAction(QApplication::translate("UIVMInformationDialog", "Export"));
-    pExportAction->setIcon(UIIconPool::iconSet(":/performance_monitor_export_16px.png"));
-    connect(pExportAction, &QAction::triggered, this, &UIVMActivityMonitor::sltExportMetricsToFile);
-    menu.exec(mapToGlobal(point));
-}
-
-void UIVMActivityMonitor::sltGuestAdditionsStateChange()
+void UIVMActivityMonitorLocal::sltGuestAdditionsStateChange()
 {
     bool fGuestAdditionsAvailable = guestAdditionsAvailable("6.1");
     if (m_fGuestAdditionsAvailable == fGuestAdditionsAvailable)
@@ -1244,7 +1342,7 @@ void UIVMActivityMonitor::sltGuestAdditionsStateChange()
     enableDisableGuestAdditionDependedWidgets(m_fGuestAdditionsAvailable);
 }
 
-void UIVMActivityMonitor::sltClearCOMData()
+void UIVMActivityMonitorLocal::sltClearCOMData()
 {
     if (!m_comSession.isNull())
     {
@@ -1253,7 +1351,32 @@ void UIVMActivityMonitor::sltClearCOMData()
     }
 }
 
-void UIVMActivityMonitor::prepareMetrics()
+void UIVMActivityMonitorLocal::reset()
+{
+    m_fGuestAdditionsAvailable = false;
+    setEnabled(false);
+
+    if (m_pTimer)
+        m_pTimer->stop();
+    /* reset the metrics. this will delete their data cache: */
+    for (QMap<QString, UIMetric>::iterator iterator =  m_metrics.begin();
+         iterator != m_metrics.end(); ++iterator)
+        iterator.value().reset();
+    /* force update on the charts to draw now emptied metrics' data: */
+    for (QMap<QString, UIChart*>::iterator iterator =  m_charts.begin();
+         iterator != m_charts.end(); ++iterator)
+        iterator.value()->update();
+    /* Reset the info labels: */
+    resetCPUInfoLabel();
+    resetRAMInfoLabel();
+    resetNetworkInfoLabel();
+    resetDiskIOInfoLabel();
+    resetVMExitInfoLabel();
+    update();
+    sltClearCOMData();
+}
+
+void UIVMActivityMonitorLocal::prepareMetrics()
 {
     m_performanceCollector = uiCommon().virtualBox().GetPerformanceCollector();
     if (m_performanceCollector.isNull())
@@ -1307,11 +1430,7 @@ void UIVMActivityMonitor::prepareMetrics()
     m_metrics.insert(m_strVMExitMetricName, VMExitsMetric);
 }
 
-void UIVMActivityMonitor::prepareActions()
-{
-}
-
-bool UIVMActivityMonitor::guestAdditionsAvailable(const char *pszMinimumVersion)
+bool UIVMActivityMonitorLocal::guestAdditionsAvailable(const char *pszMinimumVersion)
 {
     if (m_comGuest.isNull() || !pszMinimumVersion)
         return false;
@@ -1338,7 +1457,7 @@ bool UIVMActivityMonitor::guestAdditionsAvailable(const char *pszMinimumVersion)
     return false;
 }
 
-void UIVMActivityMonitor::enableDisableGuestAdditionDependedWidgets(bool fEnable)
+void UIVMActivityMonitorLocal::enableDisableGuestAdditionDependedWidgets(bool fEnable)
 {
     for (QMap<QString, UIMetric>::const_iterator iterator =  m_metrics.begin();
          iterator != m_metrics.end(); ++iterator)
@@ -1355,7 +1474,35 @@ void UIVMActivityMonitor::enableDisableGuestAdditionDependedWidgets(bool fEnable
     }
 }
 
-void UIVMActivityMonitor::updateCPUGraphsAndMetric(ULONG iExecutingPercentage, ULONG iOtherPercentage)
+void UIVMActivityMonitorLocal::updateVMExitMetric(quint64 uTotalVMExits)
+{
+    if (uTotalVMExits <= 0)
+        return;
+
+    UIMetric &VMExitMetric = m_metrics[m_strVMExitMetricName];
+    quint64 iRate = uTotalVMExits - VMExitMetric.total(0);
+    VMExitMetric.setTotal(0, uTotalVMExits);
+    /* Do not set data and maximum if the metric has not been initialized  since we need to initialize totals "(t-1)" first: */
+    if (!VMExitMetric.isInitialized())
+    {
+        VMExitMetric.setIsInitialized(true);
+        return;
+    }
+    VMExitMetric.addData(0, iRate);
+    if (m_infoLabels.contains(m_strVMExitMetricName)  && m_infoLabels[m_strVMExitMetricName])
+    {
+        QString strInfo;
+        strInfo = QString("<b>%1</b></b><br/>%2: %3 %4<br/>%5: %6 %7")
+            .arg(m_strVMExitInfoLabelTitle)
+            .arg(m_strVMExitLabelCurrent).arg(UITranslator::addMetricSuffixToNumber(iRate)).arg(VMExitMetric.unit())
+            .arg(m_strVMExitLabelTotal).arg(UITranslator::addMetricSuffixToNumber(uTotalVMExits)).arg(VMExitMetric.unit());
+         m_infoLabels[m_strVMExitMetricName]->setText(strInfo);
+    }
+    if (m_charts.contains(m_strVMExitMetricName))
+        m_charts[m_strVMExitMetricName]->update();
+}
+
+void UIVMActivityMonitorLocal::updateCPUGraphsAndMetric(ULONG iExecutingPercentage, ULONG iOtherPercentage)
 {
     UIMetric &CPUMetric = m_metrics[m_strCPUMetricName];
     CPUMetric.addData(0, iExecutingPercentage);
@@ -1378,7 +1525,7 @@ void UIVMActivityMonitor::updateCPUGraphsAndMetric(ULONG iExecutingPercentage, U
         m_charts[m_strCPUMetricName]->update();
 }
 
-void UIVMActivityMonitor::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM)
+void UIVMActivityMonitorLocal::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM)
 {
     UIMetric &RAMMetric = m_metrics[m_strRAMMetricName];
     RAMMetric.setMaximum(iTotalRAM);
@@ -1395,7 +1542,7 @@ void UIVMActivityMonitor::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iF
         m_charts[m_strRAMMetricName]->update();
 }
 
-void UIVMActivityMonitor::updateNetworkGraphsAndMetric(quint64 iReceiveTotal, quint64 iTransmitTotal)
+void UIVMActivityMonitorLocal::updateNetworkGraphsAndMetric(quint64 iReceiveTotal, quint64 iTransmitTotal)
 {
     UIMetric &NetMetric = m_metrics[m_strNetworkMetricName];
 
@@ -1429,73 +1576,7 @@ void UIVMActivityMonitor::updateNetworkGraphsAndMetric(quint64 iReceiveTotal, qu
         m_charts[m_strNetworkMetricName]->update();
 }
 
-void UIVMActivityMonitor::resetCPUInfoLabel()
-{
-    if (m_infoLabels.contains(m_strCPUMetricName)  && m_infoLabels[m_strCPUMetricName])
-    {
-        QString strInfo =QString("<b>%1</b></b><br/>%2: %3<br/>%4: %5")
-            .arg(m_strCPUInfoLabelTitle)
-            .arg(m_strCPUInfoLabelGuest).arg("--")
-            .arg(m_strCPUInfoLabelVMM).arg("--");
-        m_infoLabels[m_strCPUMetricName]->setText(strInfo);
-    }
-}
-
-void UIVMActivityMonitor::resetRAMInfoLabel()
-{
-    if (m_infoLabels.contains(m_strRAMMetricName)  && m_infoLabels[m_strRAMMetricName])
-    {
-        QString strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").
-            arg(m_strRAMInfoLabelTitle).arg(m_strRAMInfoLabelTotal).arg("--")
-            .arg(m_strRAMInfoLabelFree).arg("--")
-            .arg(m_strRAMInfoLabelUsed).arg("--");
-        m_infoLabels[m_strRAMMetricName]->setText(strInfo);
-    }
-}
-
-void UIVMActivityMonitor::resetNetworkInfoLabel()
-{
-    if (m_infoLabels.contains(m_strNetworkMetricName)  && m_infoLabels[m_strNetworkMetricName])
-    {
-        QString strInfo = QString("<b>%1</b></b><br/>%2: %3<br/>%4 %5<br/>%6: %7<br/>%8 %9")
-            .arg(m_strNetworkInfoLabelTitle)
-            .arg(m_strNetworkInfoLabelReceived).arg("--")
-            .arg(m_strNetworkInfoLabelReceivedTotal).arg("--")
-            .arg(m_strNetworkInfoLabelTransmitted).arg("--")
-            .arg(m_strNetworkInfoLabelTransmittedTotal).arg("--");
-        m_infoLabels[m_strNetworkMetricName]->setText(strInfo);
-    }
-}
-
-void UIVMActivityMonitor::resetVMExitInfoLabel()
-{
-    if (m_infoLabels.contains(m_strVMExitMetricName)  && m_infoLabels[m_strVMExitMetricName])
-    {
-        QString strInfo;
-        strInfo = QString("<b>%1</b></b><br/>%2: %3<br/>%4: %5")
-            .arg(m_strVMExitInfoLabelTitle)
-            .arg(m_strVMExitLabelCurrent).arg("--")
-            .arg(m_strVMExitLabelTotal).arg("--");
-
-        m_infoLabels[m_strVMExitMetricName]->setText(strInfo);
-    }
-}
-
-void UIVMActivityMonitor::resetDiskIOInfoLabel()
-{
-    if (m_infoLabels.contains(m_strDiskIOMetricName)  && m_infoLabels[m_strDiskIOMetricName])
-    {
-        QString strInfo = QString("<b>%1</b></b><br/>%2: %3<br/>%4 %5<br/>%6: %7<br/>%8 %9")
-            .arg(m_strDiskIOInfoLabelTitle)
-            .arg(m_strDiskIOInfoLabelWritten).arg("--")
-            .arg(m_strDiskIOInfoLabelWrittenTotal).arg("--")
-            .arg(m_strDiskIOInfoLabelRead).arg("--")
-            .arg(m_strDiskIOInfoLabelReadTotal).arg("--");
-        m_infoLabels[m_strDiskIOMetricName]->setText(strInfo);
-    }
-}
-
-void UIVMActivityMonitor::updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead)
+void UIVMActivityMonitorLocal::updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead)
 {
     UIMetric &diskMetric = m_metrics[m_strDiskIOMetricName];
 
@@ -1527,78 +1608,18 @@ void UIVMActivityMonitor::updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritte
         m_charts[m_strDiskIOMetricName]->update();
 }
 
-void UIVMActivityMonitor::updateVMExitMetric(quint64 uTotalVMExits)
+void UIVMActivityMonitorLocal::resetVMExitInfoLabel()
 {
-    if (uTotalVMExits <= 0)
-        return;
-
-    UIMetric &VMExitMetric = m_metrics[m_strVMExitMetricName];
-    quint64 iRate = uTotalVMExits - VMExitMetric.total(0);
-    VMExitMetric.setTotal(0, uTotalVMExits);
-    /* Do not set data and maximum if the metric has not been initialized  since we need to initialize totals "(t-1)" first: */
-    if (!VMExitMetric.isInitialized())
-    {
-        VMExitMetric.setIsInitialized(true);
-        return;
-    }
-    VMExitMetric.addData(0, iRate);
     if (m_infoLabels.contains(m_strVMExitMetricName)  && m_infoLabels[m_strVMExitMetricName])
     {
         QString strInfo;
-        strInfo = QString("<b>%1</b></b><br/>%2: %3 %4<br/>%5: %6 %7")
+        strInfo = QString("<b>%1</b></b><br/>%2: %3<br/>%4: %5")
             .arg(m_strVMExitInfoLabelTitle)
-            .arg(m_strVMExitLabelCurrent).arg(UITranslator::addMetricSuffixToNumber(iRate)).arg(VMExitMetric.unit())
-            .arg(m_strVMExitLabelTotal).arg(UITranslator::addMetricSuffixToNumber(uTotalVMExits)).arg(VMExitMetric.unit());
-         m_infoLabels[m_strVMExitMetricName]->setText(strInfo);
+            .arg(m_strVMExitLabelCurrent).arg("--")
+            .arg(m_strVMExitLabelTotal).arg("--");
+
+        m_infoLabels[m_strVMExitMetricName]->setText(strInfo);
     }
-    if (m_charts.contains(m_strVMExitMetricName))
-        m_charts[m_strVMExitMetricName]->update();
-}
-
-QString UIVMActivityMonitor::dataColorString(const QString &strChartName, int iDataIndex)
-{
-    if (!m_charts.contains(strChartName))
-        return QColor(Qt::black).name(QColor::HexRgb);
-    UIChart *pChart = m_charts[strChartName];
-    if (!pChart)
-        return QColor(Qt::black).name(QColor::HexRgb);
-    return pChart->dataSeriesColor(iDataIndex).name(QColor::HexRgb);
-}
-
-void UIVMActivityMonitor::reset()
-{
-    m_fGuestAdditionsAvailable = false;
-    setEnabled(false);
-
-    if (m_pTimer)
-        m_pTimer->stop();
-    /* reset the metrics. this will delete their data cache: */
-    for (QMap<QString, UIMetric>::iterator iterator =  m_metrics.begin();
-         iterator != m_metrics.end(); ++iterator)
-        iterator.value().reset();
-    /* force update on the charts to draw now emptied metrics' data: */
-    for (QMap<QString, UIChart*>::iterator iterator =  m_charts.begin();
-         iterator != m_charts.end(); ++iterator)
-        iterator.value()->update();
-    /* Reset the info labels: */
-    resetCPUInfoLabel();
-    resetRAMInfoLabel();
-    resetNetworkInfoLabel();
-    resetDiskIOInfoLabel();
-    resetVMExitInfoLabel();
-    update();
-    sltClearCOMData();
-}
-
-void UIVMActivityMonitor::start()
-{
-    if (m_comMachine.isNull() || m_comMachine.GetState() != KMachineState_Running)
-        return;
-
-    m_fGuestAdditionsAvailable = guestAdditionsAvailable("6.1");
-    enableDisableGuestAdditionDependedWidgets(m_fGuestAdditionsAvailable);
-    if (m_pTimer)
-        m_pTimer->start(1000 * g_iPeriod);
 }
 
 
