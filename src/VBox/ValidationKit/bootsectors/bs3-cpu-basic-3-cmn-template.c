@@ -65,8 +65,12 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuBasic3_Lea)(uint8_t bMode)
             pfnWorker32();
     }
 #else
-    for (i = 0; i < 64; i++)
-        BS3_CMN_FAR_NM(bs3CpuBasic3_lea_64)();
+    {
+        /* The worker for this is in the high DLL, so have to get the address. */
+        extern FPFNBS3FAR BS3_CMN_NM(g_pfnbs3CpuBasic3_lea_64);
+        for (i = 0; i < 64; i++)
+            BS3_CMN_NM(g_pfnbs3CpuBasic3_lea_64)();
+    }
 #endif
     return 0;
 }
