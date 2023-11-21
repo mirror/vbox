@@ -621,9 +621,6 @@ PR_IMPLEMENT(PRStatus) PR_Cleanup(void)
             PR_WaitCondVar(pt_book.cv, PR_INTERVAL_NO_TIMEOUT);
         PR_Unlock(pt_book.ml);
 
-        /* Close all the fd's before calling _PR_CleanupIO */
-        _PR_CleanupIO();
-
         /*
          * I am not sure if it's safe to delete the cv and lock here,
          * since there may still be "system" threads around. If this

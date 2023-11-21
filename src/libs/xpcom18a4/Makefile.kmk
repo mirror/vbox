@@ -170,10 +170,8 @@ NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/pr/include/prcvar.h \
 	nsprpub/pr/include/prerr.h \
 	nsprpub/pr/include/prerror.h \
-	nsprpub/pr/include/prinet.h \
 	nsprpub/pr/include/prinit.h \
 	nsprpub/pr/include/prinrval.h \
-	nsprpub/pr/include/prio.h \
 	nsprpub/pr/include/prlock.h \
 	nsprpub/pr/include/prlong.h \
 	nsprpub/pr/include/prmem.h \
@@ -192,7 +190,6 @@ NSPRPUB-MD-HEADERS_SOURCES = \
 	nsprpub/pr/include/md/_netbsd.h \
 	nsprpub/pr/include/md/_openbsd.h \
 	nsprpub/pr/include/md/_solaris.h \
-	nsprpub/pr/include/md/_unix_errors.h \
 	nsprpub/pr/include/md/_unixos.h \
 	nsprpub/pr/include/md/_pth.h \
 	nsprpub/pr/include/md/prosdep.h \
@@ -467,7 +464,6 @@ VBox-xpcom-nspr_INCS = \
 	$(VBox-xpcom-nspr_0_OUTDIR)
 
 VBox-xpcom-nspr_SOURCES  = \
-	nsprpub/pr/src/io/priometh.c \
 	nsprpub/pr/src/io/prprf.c \
 	nsprpub/pr/src/misc/prerr.c \
 	nsprpub/pr/src/misc/prerror.c \
@@ -487,7 +483,6 @@ ifeq ($(filter-out darwin freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET))
  VBox-xpcom-nspr_SOURCES += \
  	nsprpub/pr/src/md/unix/unix.c \
  	nsprpub/pr/src/md/unix/unix_errors.c \
- 	nsprpub/pr/src/pthreads/ptio.c \
  	nsprpub/pr/src/pthreads/ptsynch.c \
  	nsprpub/pr/src/pthreads/ptthread.c
 endif
