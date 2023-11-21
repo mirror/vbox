@@ -355,7 +355,7 @@ CategoryNode::Enumerate(nsISimpleEnumerator **_retval)
 }
 
 struct persistent_userstruct {
-  PRFileDesc* fd;
+  PRTSTREAM   fd;
   const char* categoryName;
   PRBool      success;
 };
@@ -369,11 +369,11 @@ enumfunc_pentries(CategoryLeaf* aLeaf, void* userArg)
   PLDHashOperator status = PL_DHASH_NEXT;
 
   if (aLeaf->pValue) {
-    if (PR_fprintf(args->fd,
-                   "%s,%s,%s\n",
-                   args->categoryName,
-                   aLeaf->GetKey(),
-                   aLeaf->pValue) == (PRUint32) -1) {
+    if (RTStrmPrintf(args->fd,
+                     "%s,%s,%s\n",
+                     args->categoryName,
+                     aLeaf->GetKey(),
+                     aLeaf->pValue) == -1) {
       args->success = PR_FALSE;
       status = PL_DHASH_STOP;
     }
@@ -383,7 +383,7 @@ enumfunc_pentries(CategoryLeaf* aLeaf, void* userArg)
 }
 
 PRBool
-CategoryNode::WritePersistentEntries(PRFileDesc* fd, const char* aCategoryName)
+CategoryNode::WritePersistentEntries(PRTSTREAM fd, const char* aCategoryName)
 {
   persistent_userstruct args = {
     fd,
@@ -644,7 +644,7 @@ nsCategoryManager::EnumerateCategories(nsISimpleEnumerator **_retval)
 }
 
 struct writecat_struct {
-  PRFileDesc* fd;
+  PRTSTREAM   fd;
   PRBool      success;
 };
 
@@ -664,7 +664,7 @@ enumfunc_categories(const char* aKey, CategoryNode* aCategory, void* userArg)
 }
 
 NS_METHOD
-nsCategoryManager::WriteCategoryManagerToRegistry(PRFileDesc* fd)
+nsCategoryManager::WriteCategoryManagerToRegistry(PRTSTREAM fd)
 {
   writecat_struct args = {
     fd,

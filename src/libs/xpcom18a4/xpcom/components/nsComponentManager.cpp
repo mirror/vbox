@@ -87,6 +87,8 @@
 #include NEW_H     // for placement new
 
 #include <iprt/assert.h>
+#include <iprt/file.h>
+#include <iprt/stream.h>
 #include <iprt/string.h>
 #include <VBox/log.h>
 
@@ -1275,7 +1277,7 @@ out:
 
 struct PersistentWriterArgs
 {
-    PRFileDesc *mFD;
+    PRTSTREAM    mFD;
     nsLoaderdata *mLoaderData;
 };
 
@@ -1295,11 +1297,11 @@ ContractIDWriter(PLDHashTable *table,
     if (factoryEntry->mTypeIndex < 0)
         return PL_DHASH_NEXT;
 
-    PRFileDesc* fd = ((PersistentWriterArgs*)arg)->mFD;
+    PRTSTREAM fd = ((PersistentWriterArgs*)arg)->mFD;
 
     char cidString[UID_STRING_LENGTH];
     GetIDString(factoryEntry->mCid, cidString);
-    PR_fprintf(fd, "%s,%s\n", contractID, cidString); // what if this fails?
+    RTStrmPrintf(fd, "%s,%s\n", contractID, cidString); // what if this fails?
     return PL_DHASH_NEXT;
 }
 
@@ -1310,7 +1312,7 @@ ClassIDWriter(PLDHashTable *table,
               void *arg)
 {
     nsFactoryEntry *factoryEntry = ((nsFactoryTableEntry*)hdr)->mFactoryEntry;
-    PRFileDesc* fd = ((PersistentWriterArgs*)arg)->mFD;
+    PRTSTREAM fd = ((PersistentWriterArgs*)arg)->mFD;
     nsLoaderdata *loaderData = ((PersistentWriterArgs*)arg)->mLoaderData;
 
     // for now, we only save out the top most parent.
@@ -1340,13 +1342,13 @@ ClassIDWriter(PLDHashTable *table,
     char* location = factoryEntry->mLocation;
 
     // cid,contract_id,type,class_name,inproc_server
-    PR_fprintf(fd,
-               "%s,%s,%s,%s,%s\n",
-               cidString,
-               (contractID ? contractID : ""),
-               (loaderName ? loaderName : ""),
-               (className  ? className  : ""),
-               (location   ? location   : ""));
+    RTStrmPrintf(fd,
+                 "%s,%s,%s,%s,%s\n",
+                 cidString,
+                 (contractID ? contractID : ""),
+                 (loaderName ? loaderName : ""),
+                 (className  ? className  : ""),
+                 (location   ? location   : ""));
 
     if (contractID)
         PR_Free(contractID);
@@ -1359,7 +1361,7 @@ ClassIDWriter(PLDHashTable *table,
 PRIntn PR_CALLBACK
 AutoRegEntryWriter(nsHashKey *aKey, void *aData, void* aClosure)
 {
-    PRFileDesc* fd = (PRFileDesc*) aClosure;
+    PRTSTREAM fd = (PRTSTREAM) aClosure;
     AutoRegEntry* entry = (AutoRegEntry*) aData;
 
     const char* extraData = entry->GetOptionalData();
@@ -1368,7 +1370,7 @@ AutoRegEntryWriter(nsHashKey *aKey, void *aData, void* aClosure)
         fmt = "%s,%lld,%s\n";
     else
         fmt = "%s,%lld\n";
-    PR_fprintf(fd, fmt, entry->GetName().get(), entry->GetDate(), extraData);
+    RTStrmPrintf(fd, fmt, entry->GetName().get(), entry->GetDate(), extraData);
 
     return PR_TRUE;
 }
@@ -1394,35 +1396,52 @@ nsComponentManagerImpl::WritePersistentRegistry()
 
     localFile->SetNativeLeafName(leafName);
 
-    PRFileDesc* fd = nsnull;
-    nsresult rv = localFile->OpenNSPRFileDesc(PR_WRONLY | PR_CREATE_FILE | PR_TRUNCATE, 0600, &fd);
+    nsCAutoString pathName;
+    nsresult rv = localFile->GetNativePath(pathName);
     if (NS_FAILED(rv))
         return rv;
 
-    if (PR_fprintf(fd, "Generated File. Do not edit.\n") == (PRUint32) -1) {
+    RTFILE hFile      = NIL_RTFILE;
+    PRTSTREAM pStream = NULL;
+    int vrc = RTFileOpen(&hFile, pathName.get(),
+                         RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_TRUNCATE | RTFILE_O_DENY_NONE
+                         | (0600 << RTFILE_O_CREATE_MODE_SHIFT));
+    if (RT_SUCCESS(vrc))
+    {
+        vrc = RTStrmOpenFileHandle(hFile, "at", 0 /*fFlags*/, &pStream);
+        if (RT_FAILURE(vrc))
+        {
+            RTFileClose(hFile);
+            return NS_ERROR_UNEXPECTED;
+        }
+    }
+    else
+        return NS_ERROR_UNEXPECTED;
+
+    if (RTStrmPrintf(pStream, "Generated File. Do not edit.\n") == -1) {
         rv = NS_ERROR_UNEXPECTED;
         goto out;
     }
 
-    if (PR_fprintf(fd, "\n[HEADER]\nVersion,%d,%d\n",
+    if (RTStrmPrintf(pStream, "\n[HEADER]\nVersion,%d,%d\n",
                    PERSISTENT_REGISTRY_VERSION_MAJOR,
-                   PERSISTENT_REGISTRY_VERSION_MINOR) == (PRUint32) -1) {
+                   PERSISTENT_REGISTRY_VERSION_MINOR) == -1) {
         rv = NS_ERROR_UNEXPECTED;
         goto out;
     }
 
-    if (PR_fprintf(fd, "\n[COMPONENTS]\n") == (PRUint32) -1) {
+    if (RTStrmPrintf(pStream, "\n[COMPONENTS]\n") == -1) {
         rv = NS_ERROR_UNEXPECTED;
         goto out;
     }
 
-    mAutoRegEntries.Enumerate(AutoRegEntryWriter, (void*)fd);
+    mAutoRegEntries.Enumerate(AutoRegEntryWriter, (void*)pStream);
 
     PersistentWriterArgs args;
-    args.mFD = fd;
+    args.mFD = pStream;
     args.mLoaderData = mLoaderData;
 
-    if (PR_fprintf(fd, "\n[CLASSIDS]\n") == (PRUint32) -1) {
+    if (RTStrmPrintf(pStream, "\n[CLASSIDS]\n") == -1) {
         rv = NS_ERROR_UNEXPECTED;
         goto out;
     }
@@ -1430,7 +1449,7 @@ nsComponentManagerImpl::WritePersistentRegistry()
 
     PL_DHashTableEnumerate(&mFactories, ClassIDWriter, (void*)&args);
 
-    if (PR_fprintf(fd, "\n[CONTRACTIDS]\n") == (PRUint32) -1) {
+    if (RTStrmPrintf(pStream, "\n[CONTRACTIDS]\n") == -1) {
         rv = NS_ERROR_UNEXPECTED;
         goto out;
     }
@@ -1438,7 +1457,7 @@ nsComponentManagerImpl::WritePersistentRegistry()
 
     PL_DHashTableEnumerate(&mContractIDs, ContractIDWriter, (void*)&args);
 
-    if (PR_fprintf(fd, "\n[CATEGORIES]\n") == (PRUint32) -1) {
+    if (RTStrmPrintf(pStream, "\n[CATEGORIES]\n") == -1) {
         rv = NS_ERROR_UNEXPECTED;
         goto out;
     }
@@ -1448,12 +1467,12 @@ nsComponentManagerImpl::WritePersistentRegistry()
         NS_WARNING("Could not access category manager.  Will not be able to save categories!");
         rv = NS_ERROR_UNEXPECTED;
     } else {
-        rv = mCategoryManager->WriteCategoryManagerToRegistry(fd);
+        rv = mCategoryManager->WriteCategoryManagerToRegistry(pStream);
     }
 
 out:
-    if (fd)
-        PR_Close(fd);
+    if (pStream)
+        RTStrmClose(pStream);
 
     // don't create the file is there was a problem????
     NS_ENSURE_SUCCESS(rv, rv);

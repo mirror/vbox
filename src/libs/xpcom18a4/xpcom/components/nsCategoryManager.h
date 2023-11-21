@@ -45,6 +45,7 @@
 #include "nsICategoryManager.h"
 
 #include <iprt/semaphore.h>
+#include <iprt/stream.h>
 
 #define NS_CATEGORYMANAGER_CLASSNAME     "Category Manager"
 
@@ -109,7 +110,7 @@ public:
 
   NS_METHOD Enumerate(nsISimpleEnumerator** _retval);
 
-  PRBool WritePersistentEntries(PRFileDesc* fd, const char* aCategoryName);
+  PRBool WritePersistentEntries(PRTSTREAM fd, const char* aCategoryName);
 
   // CategoryNode is arena-allocated, with the strings
   static CategoryNode* Create(PLArenaPool* aArena);
@@ -141,7 +142,7 @@ public:
    * Write the categories to the XPCOM persistent registry.
    * This is to be used by nsComponentManagerImpl (and NO ONE ELSE).
    */
-  NS_METHOD WriteCategoryManagerToRegistry(PRFileDesc* fd);
+  NS_METHOD WriteCategoryManagerToRegistry(PRTSTREAM fd);
 
   nsCategoryManager() : mLock(nsnull) { }
 private:
