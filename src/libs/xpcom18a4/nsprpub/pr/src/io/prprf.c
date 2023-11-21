@@ -1011,46 +1011,6 @@ static int dosprintf(SprintfState *ss, const char *fmt, va_list ap)
     return rv;
 }
 
-/************************************************************************/
-
-static int FuncStuff(SprintfState *ss, const char *sp, PRUint32 len)
-{
-    int rv;
-
-    rv = (*ss->func)(ss->arg, sp, len);
-    if (rv < 0) {
-	return rv;
-    }
-    ss->maxlen += len;
-    return 0;
-}
-
-PR_IMPLEMENT(PRUint32) PR_sxprintf(PRStuffFunc func, void *arg, 
-                                 const char *fmt, ...)
-{
-    va_list ap;
-    PRUint32 rv;
-
-    va_start(ap, fmt);
-    rv = PR_vsxprintf(func, arg, fmt, ap);
-    va_end(ap);
-    return rv;
-}
-
-PR_IMPLEMENT(PRUint32) PR_vsxprintf(PRStuffFunc func, void *arg, 
-                                  const char *fmt, va_list ap)
-{
-    SprintfState ss;
-    int rv;
-
-    ss.stuff = FuncStuff;
-    ss.func = func;
-    ss.arg = arg;
-    ss.maxlen = 0;
-    rv = dosprintf(&ss, fmt, ap);
-    return (rv < 0) ? (PRUint32)-1 : ss.maxlen;
-}
-
 /*
 ** Stuff routine that automatically grows the malloc'd output buffer
 ** before it overflows.
@@ -1190,41 +1150,3 @@ PR_IMPLEMENT(PRUint32) PR_vsnprintf(char *out, PRUint32 outlen,const char *fmt,
     n = ss.cur - ss.base;
     return n ? n - 1 : n;
 }
-
-PR_IMPLEMENT(char *) PR_sprintf_append(char *last, const char *fmt, ...)
-{
-    va_list ap;
-    char *rv;
-
-    va_start(ap, fmt);
-    rv = PR_vsprintf_append(last, fmt, ap);
-    va_end(ap);
-    return rv;
-}
-
-PR_IMPLEMENT(char *) PR_vsprintf_append(char *last, const char *fmt, va_list ap)
-{
-    SprintfState ss;
-    int rv;
-
-    ss.stuff = GrowStuff;
-    if (last) {
-	int lastlen = strlen(last);
-	ss.base = last;
-	ss.cur = last + lastlen;
-	ss.maxlen = lastlen;
-    } else {
-	ss.base = 0;
-	ss.cur = 0;
-	ss.maxlen = 0;
-    }
-    rv = dosprintf(&ss, fmt, ap);
-    if (rv < 0) {
-	if (ss.base) {
-	    PR_DELETE(ss.base);
-	}
-	return 0;
-    }
-    return ss.base;
-}
-

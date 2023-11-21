@@ -63,11 +63,7 @@
 #define PR_vsnprintf VBoxNsprPR_vsnprintf
 #define PR_smprintf VBoxNsprPR_smprintf
 #define PR_smprintf_free VBoxNsprPR_smprintf_free
-#define PR_sprintf_append VBoxNsprPR_sprintf_append
-#define PR_sxprintf VBoxNsprPR_sxprintf
 #define PR_vsmprintf VBoxNsprPR_vsmprintf
-#define PR_vsprintf_append VBoxNsprPR_vsprintf_append
-#define PR_vsxprintf VBoxNsprPR_vsxprintf
 #endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 
 PR_BEGIN_EXTERN_C
@@ -92,32 +88,10 @@ NSPR_API(char*) PR_smprintf(const char *fmt, ...);
 NSPR_API(void) PR_smprintf_free(char *mem);
 
 /*
-** "append" sprintf into a PR_MALLOC'd buffer. "last" is the last value of
-** the PR_MALLOC'd buffer. sprintf will append data to the end of last,
-** growing it as necessary using realloc. If last is NULL, PR_sprintf_append
-** will allocate the initial string. The return value is the new value of
-** last for subsequent calls, or NULL if there is a malloc failure.
-*/
-NSPR_API(char*) PR_sprintf_append(char *last, const char *fmt, ...);
-
-/*
-** sprintf into a function. The function "f" is called with a string to
-** place into the output. "arg" is an opaque pointer used by the stuff
-** function to hold any state needed to do the storage of the output
-** data. The return value is a count of the number of characters fed to
-** the stuff function, or (PRUint32)-1 if an error occurs.
-*/
-typedef PRIntn (*PRStuffFunc)(void *arg, const char *s, PRUint32 slen);
-
-NSPR_API(PRUint32) PR_sxprintf(PRStuffFunc f, void *arg, const char *fmt, ...);
-
-/*
 ** va_list forms of the above.
 */
 NSPR_API(PRUint32) PR_vsnprintf(char *out, PRUint32 outlen, const char *fmt, va_list ap);
 NSPR_API(char*) PR_vsmprintf(const char *fmt, va_list ap);
-NSPR_API(char*) PR_vsprintf_append(char *last, const char *fmt, va_list ap);
-NSPR_API(PRUint32) PR_vsxprintf(PRStuffFunc f, void *arg, const char *fmt, va_list ap);
 
 PR_END_EXTERN_C
 

@@ -52,9 +52,6 @@
 
 #ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
 #define PR_Now VBoxNsprPR_Now
-#define PR_ExplodeTime VBoxNsprPR_ExplodeTime
-#define PR_ImplodeTime VBoxNsprPR_ImplodeTime
-#define PR_NormalizeTime VBoxNsprPR_NormalizeTime
 #endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 
 PR_BEGIN_EXTERN_C
@@ -86,84 +83,6 @@ PR_BEGIN_EXTERN_C
 
 typedef PRInt64 PRTime;
 
-/*
- * Time zone and daylight saving time corrections applied to GMT to
- * obtain the local time of some geographic location
- */
-
-typedef struct PRTimeParameters {
-    PRInt32 tp_gmt_offset;     /* the offset from GMT in seconds */
-    PRInt32 tp_dst_offset;     /* contribution of DST in seconds */
-} PRTimeParameters;
-
-/*
- * PRExplodedTime --
- *
- *     Time broken down into human-readable components such as year, month,
- *     day, hour, minute, second, and microsecond.  Time zone and daylight
- *     saving time corrections may be applied.  If they are applied, the
- *     offsets from the GMT must be saved in the 'tm_params' field so that
- *     all the information is available to reconstruct GMT.
- *
- *     Notes on porting: PRExplodedTime corrresponds to struct tm in
- *     ANSI C, with the following differences:
- *       - an additional field tm_usec;
- *       - replacing tm_isdst by tm_params;
- *       - the month field is spelled tm_month, not tm_mon;
- *       - we use absolute year, AD, not the year since 1900.
- *     The corresponding type in NSPR 1.0 is called PRTime.  Below is
- *     a table of date/time type correspondence in the three APIs:
- *         API          time since epoch          time in components
- *       ANSI C             time_t                  struct tm
- *       NSPR 1.0           PRInt64                   PRTime
- *       NSPR 2.0           PRTime                  PRExplodedTime
- */
-
-typedef struct PRExplodedTime {
-    PRInt32 tm_usec;		    /* microseconds past tm_sec (0-99999)  */
-    PRInt32 tm_sec;             /* seconds past tm_min (0-61, accomodating
-                                   up to two leap seconds) */	
-    PRInt32 tm_min;             /* minutes past tm_hour (0-59) */
-    PRInt32 tm_hour;            /* hours past tm_day (0-23) */
-    PRInt32 tm_mday;            /* days past tm_mon (1-31, note that it
-				                starts from 1) */
-    PRInt32 tm_month;           /* months past tm_year (0-11, Jan = 0) */
-    PRInt16 tm_year;            /* absolute year, AD (note that we do not
-				                count from 1900) */
-
-    PRInt8 tm_wday;		        /* calculated day of the week
-				                (0-6, Sun = 0) */
-    PRInt16 tm_yday;            /* calculated day of the year 
-				                (0-365, Jan 1 = 0) */
-
-    PRTimeParameters tm_params;  /* time parameters used by conversion */
-} PRExplodedTime;
-
-/*
- * PRTimeParamFn --
- *
- *     A function of PRTimeParamFn type returns the time zone and
- *     daylight saving time corrections for some geographic location,
- *     given the current time in GMT.  The input argument gmt should
- *     point to a PRExplodedTime that is in GMT, i.e., whose
- *     tm_params contains all 0's.
- *
- *     For any time zone other than GMT, the computation is intended to
- *     consist of two steps:
- *       - Figure out the time zone correction, tp_gmt_offset.  This number
- *         usually depends on the geographic location only.  But it may
- *         also depend on the current time.  For example, all of China
- *         is one time zone right now.  But this situation may change
- *         in the future.
- *       - Figure out the daylight saving time correction, tp_dst_offset.
- *         This number depends on both the geographic location and the
- *         current time.  Most of the DST rules are expressed in local
- *         current time.  If so, one should apply the time zone correction
- *         to GMT before applying the DST rules.
- */
-
-typedef PRTimeParameters (PR_CALLBACK *PRTimeParamFn)(const PRExplodedTime *gmt);
-
 /**********************************************************************/
 /****************************** FUNCTIONS *****************************/
 /**********************************************************************/
@@ -187,42 +106,6 @@ PRTime __pascal __export __loadds
 NSPR_API(PRTime) 
 #endif
 PR_Now(void);
-
-/*
- * Expand time binding it to time parameters provided by PRTimeParamFn.
- * The calculation is envisoned to proceed in the following steps:
- *   - From given PRTime, calculate PRExplodedTime in GMT
- *   - Apply the given PRTimeParamFn to the GMT that we just calculated
- *     to obtain PRTimeParameters.
- *   - Add the PRTimeParameters offsets to GMT to get the local time
- *     as PRExplodedTime.
- */
-
-NSPR_API(void) PR_ExplodeTime(
-    PRTime usecs, PRTimeParamFn params, PRExplodedTime *exploded);
-
-/* Reverse operation of PR_ExplodeTime */
-#if defined(HAVE_WATCOM_BUG_2)
-PRTime __pascal __export __loadds
-#else
-NSPR_API(PRTime) 
-#endif
-PR_ImplodeTime(const PRExplodedTime *exploded);
-
-/*
- * Adjust exploded time to normalize field overflows after manipulation.
- * Note that the following fields of PRExplodedTime should not be
- * manipulated:
- *   - tm_month and tm_year: because the number of days in a month and
- *     number of days in a year are not constant, it is ambiguous to
- *     manipulate the month and year fields, although one may be tempted
- *     to.  For example, what does "a month from January 31st" mean?
- *   - tm_wday and tm_yday: these fields are calculated by NSPR.  Users
- *     should treat them as "read-only".
- */
-
-NSPR_API(void) PR_NormalizeTime(
-    PRExplodedTime *exploded, PRTimeParamFn params);
 
 PR_END_EXTERN_C
 
