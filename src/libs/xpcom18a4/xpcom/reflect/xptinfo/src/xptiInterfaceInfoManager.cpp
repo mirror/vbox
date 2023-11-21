@@ -360,7 +360,6 @@ xptiInterfaceInfoManager::ReadXPTFile(nsILocalFile* aFile,
 
     XPTHeader *header = nsnull;
     char *whole = nsnull;
-    PRFileDesc*   fd = nsnull;
     XPTState *state = nsnull;
     XPTCursor cursor;
     PRInt32 flen;
@@ -417,8 +416,8 @@ xptiInterfaceInfoManager::ReadXPTFile(nsILocalFile* aFile,
     }
 
  out:
-    if(fd)
-        PR_Close(fd);
+    if(hFile != NIL_RTFILE)
+        RTFileClose(hFile);
     if(state)
         XPT_DestroyXDRState(state);
     if(whole)
