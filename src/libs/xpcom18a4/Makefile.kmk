@@ -465,9 +465,7 @@ VBox-xpcom-nspr_INCS = \
 
 VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/pr/src/io/prprf.c \
-	nsprpub/pr/src/misc/prerr.c \
 	nsprpub/pr/src/misc/prerror.c \
-	nsprpub/pr/src/misc/prerrortable.c \
 	nsprpub/pr/src/misc/prinit.c \
 	nsprpub/pr/src/misc/prinrval.c \
 	nsprpub/pr/src/misc/prlog2.c \
