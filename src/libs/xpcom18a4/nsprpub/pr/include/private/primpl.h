@@ -254,11 +254,6 @@ struct PRThread {
     */
     PRUint32 tpdLength;             /* thread's current vector length */
     void **privateData;             /* private data vector or NULL */
-    PRErrorCode errorCode;          /* current NSPR error code | zero */
-    PRInt32 osErrorCode;            /* mapping of errorCode | zero */
-    PRIntn  errorStringLength;      /* textLength from last call to PR_SetErrorText() */
-    PRInt32 errorStringSize;        /* malloc()'d size of buffer | zero */
-    char *errorString;              /* current error string | NULL */
 
     pthread_t id;                   /* pthread identifier for the thread */
     PRBool okToDelete;              /* ok to delete the PRThread struct? */

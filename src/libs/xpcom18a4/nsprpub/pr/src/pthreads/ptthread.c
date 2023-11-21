@@ -147,8 +147,6 @@ static void _pt_thread_death(void *arg)
     }
 
     PR_Free(thred->privateData);
-    if (NULL != thred->errorString)
-        PR_Free(thred->errorString);
     if (NULL != thred->syspoll_list)
         PR_Free(thred->syspoll_list);
 #if defined(DEBUG)

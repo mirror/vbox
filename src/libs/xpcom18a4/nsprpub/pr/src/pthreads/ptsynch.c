@@ -368,13 +368,11 @@ PR_IMPLEMENT(PRStatus) PR_WaitCondVar(PRCondVar *cvar, PRIntervalTime timeout)
     if (_PT_THREAD_INTERRUPTED(thred)) goto aborted;
     if (rv != 0)
     {
-        _PR_MD_MAP_DEFAULT_ERROR(rv);
         return PR_FAILURE;
     }
     return PR_SUCCESS;
 
 aborted:
-    PR_SetError(PR_PENDING_INTERRUPT_ERROR, 0);
     thred->state &= ~PT_THREAD_ABORTED;
     return PR_FAILURE;
 }  /* PR_WaitCondVar */
@@ -409,7 +407,6 @@ PR_IMPLEMENT(PRMonitor*) PR_NewMonitor(void)
     cvar = PR_NEWZAP(PRCondVar);
     if (NULL == cvar)
     {
-        PR_SetError(PR_OUT_OF_MEMORY_ERROR, 0);
         return NULL;
     }
     mon = PR_NEWZAP(PRMonitor);

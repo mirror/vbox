@@ -71,7 +71,6 @@ PR_BEGIN_EXTERN_C
 #endif
 
 #include "md/_unixos.h"
-#include "md/_unix_errors.h"
 
 #else
 
