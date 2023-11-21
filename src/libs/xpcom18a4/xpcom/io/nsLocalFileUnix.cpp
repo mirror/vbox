@@ -72,9 +72,6 @@
 
 #include "nsNativeCharsetUtils.h"
 
-#include "prerror.h"
-#include "prerr.h"
-
 #include <iprt/err.h>
 #include <iprt/dir.h>
 #include <iprt/file.h>

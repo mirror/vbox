@@ -47,7 +47,6 @@
  */
 
 #include "prmem.h"
-#include "prerror.h"
 #include "nsNativeComponentLoader.h"
 #include "nsComponentManager.h"
 #include "nsCOMPtr.h"
@@ -115,13 +114,9 @@ nsNativeComponentLoader::GetFactory(const nsIID & aCID,
 
             Log(("nsNativeComponentLoader: load FAILED\n"));
 
+            /** @todo r=aeichner Get error information from RTLdr. */
             char errorMsg[1024] = "<unknown; can't get error from NSPR>";
-
-            if (PR_GetErrorTextLength() < (int) sizeof(errorMsg))
-                PR_GetErrorText(errorMsg);
-
             DumpLoadError(dll, "GetFactory", errorMsg);
-
             return NS_ERROR_FAILURE;
         }
     }
@@ -344,13 +339,10 @@ nsNativeComponentLoader::SelfRegisterDll(nsDll *dll,
 
     if (dll->Load() == PR_FALSE)
     {
+        /** @todo r=aeichner Get error text from RTLdr(). */
         // Cannot load. Probably not a dll.
         char errorMsg[1024] = "Cannot get error from nspr. Not enough memory.";
-        if (PR_GetErrorTextLength() < (int) sizeof(errorMsg))
-            PR_GetErrorText(errorMsg);
-
         DumpLoadError(dll, "SelfRegisterDll", errorMsg);
-
         return NS_ERROR_FAILURE;
     }
 
