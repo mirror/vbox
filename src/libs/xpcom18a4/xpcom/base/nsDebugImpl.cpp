@@ -41,7 +41,6 @@
 #include "nsDebugImpl.h"
 #include "nsDebug.h"
 #include "prprf.h"
-#include "prinit.h"
 #include "plstr.h"
 #include "nsError.h"
 
