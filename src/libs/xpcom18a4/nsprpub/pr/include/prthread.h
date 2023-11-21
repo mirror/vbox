@@ -79,22 +79,7 @@
 #include "prinrval.h"
 
 #ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
-#define PR_CreateThread VBoxNsprPR_CreateThread
-#define PR_JoinThread VBoxNsprPR_JoinThread
-#define PR_Sleep VBoxNsprPR_Sleep
 #define PR_GetCurrentThread VBoxNsprPR_GetCurrentThread
-#define PR_GetThreadState VBoxNsprPR_GetThreadState
-#define PR_SetThreadPrivate VBoxNsprPR_SetThreadPrivate
-#define PR_GetThreadPrivate VBoxNsprPR_GetThreadPrivate
-#define PR_NewThreadPrivateIndex VBoxNsprPR_NewThreadPrivateIndex
-#define PR_GetThreadPriority VBoxNsprPR_GetThreadPriority
-#define PR_SetThreadPriority VBoxNsprPR_SetThreadPriority
-#define PR_Interrupt VBoxNsprPR_Interrupt
-#define PR_ClearInterrupt VBoxNsprPR_ClearInterrupt
-#define PR_BlockInterrupt VBoxNsprPR_BlockInterrupt
-#define PR_UnblockInterrupt VBoxNsprPR_UnblockInterrupt
-#define PR_GetThreadScope VBoxNsprPR_GetThreadScope
-#define PR_GetThreadType VBoxNsprPR_GetThreadType
 #endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 
 PR_BEGIN_EXTERN_C
@@ -129,160 +114,10 @@ typedef enum PRThreadPriority
 } PRThreadPriority;
 
 /*
-** Create a new thread:
-**     "type" is the type of thread to create
-**     "start(arg)" will be invoked as the threads "main"
-**     "priority" will be created thread's priority
-**     "scope" will specify whether the thread is local or global
-**     "state" will specify whether the thread is joinable or not
-**     "stackSize" the size of the stack, in bytes. The value can be zero
-**        and then a machine specific stack size will be chosen.
-**
-** This can return NULL if some kind of error occurs, such as if memory is
-** tight.
-**
-** If you want the thread to start up waiting for the creator to do
-** something, enter a lock before creating the thread and then have the
-** threads start routine enter and exit the same lock. When you are ready
-** for the thread to run, exit the lock.
-**
-** If you want to detect the completion of the created thread, the thread
-** should be created joinable.  Then, use PR_JoinThread to synchrnoize the
-** termination of another thread.
-**
-** When the start function returns the thread exits. If it is the last
-** PR_USER_THREAD to exit then the process exits.
-*/
-NSPR_API(PRThread*) PR_CreateThread(PRThreadType type,
-                     void (PR_CALLBACK *start)(void *arg),
-                     void *arg,
-                     PRThreadPriority priority,
-                     PRThreadScope scope,
-                     PRThreadState state,
-                     PRUint32 stackSize);
-
-/*
-** Wait for thread termination:
-**     "thread" is the target thread 
-**
-** This can return PR_FAILURE if no joinable thread could be found 
-** corresponding to the specified target thread.
-**
-** The calling thread is blocked until the target thread completes.
-** Several threads cannot wait for the same thread to complete; one thread
-** will operate successfully and others will terminate with an error PR_FAILURE.
-** The calling thread will not be blocked if the target thread has already
-** terminated.
-*/
-NSPR_API(PRStatus) PR_JoinThread(PRThread *thread);
-
-/*
 ** Return the current thread object for the currently running code.
 ** Never returns NULL.
 */
 NSPR_API(PRThread*) PR_GetCurrentThread(void);
-#ifndef NO_NSPR_10_SUPPORT
-#define PR_CurrentThread() PR_GetCurrentThread() /* for nspr1.0 compat. */
-#endif /* NO_NSPR_10_SUPPORT */
-
-/*
-** Get the priority of "thread".
-*/
-NSPR_API(PRThreadPriority) PR_GetThreadPriority(const PRThread *thread);
-
-/*
-** Change the priority of the "thread" to "priority".
-*/
-NSPR_API(void) PR_SetThreadPriority(PRThread *thread, PRThreadPriority priority);
-
-/*
-** This routine returns a new index for per-thread-private data table. 
-** The index is visible to all threads within a process. This index can 
-** be used with the PR_SetThreadPrivate() and PR_GetThreadPrivate() routines 
-** to save and retrieve data associated with the index for a thread.
-**
-** Each index is associationed with a destructor function ('dtor'). The function
-** may be specified as NULL when the index is created. If it is not NULL, the
-** function will be called when:
-**      - the thread exits and the private data for the associated index
-**        is not NULL,
-**      - new thread private data is set and the current private data is
-**        not NULL.
-**
-** The index independently maintains specific values for each binding thread. 
-** A thread can only get access to its own thread-specific-data.
-**
-** Upon a new index return the value associated with the index for all threads
-** is NULL, and upon thread creation the value associated with all indices for 
-** that thread is NULL. 
-**
-** Returns PR_FAILURE if the total number of indices will exceed the maximun 
-** allowed.
-*/
-typedef void (PR_CALLBACK *PRThreadPrivateDTOR)(void *priv);
-
-NSPR_API(PRStatus) PR_NewThreadPrivateIndex(
-    PRUintn *newIndex, PRThreadPrivateDTOR destructor);
-
-/*
-** Define some per-thread-private data.
-**     "tpdIndex" is an index into the per-thread private data table
-**     "priv" is the per-thread-private data 
-**
-** If the per-thread private data table has a previously registered
-** destructor function and a non-NULL per-thread-private data value,
-** the destructor function is invoked.
-**
-** This can return PR_FAILURE if the index is invalid.
-*/
-NSPR_API(PRStatus) PR_SetThreadPrivate(PRUintn tpdIndex, void *priv);
-
-/*
-** Recover the per-thread-private data for the current thread. "tpdIndex" is
-** the index into the per-thread private data table. 
-**
-** The returned value may be NULL which is indistinguishable from an error 
-** condition.
-**
-** A thread can only get access to its own thread-specific-data.
-*/
-NSPR_API(void*) PR_GetThreadPrivate(PRUintn tpdIndex);
-
-/*
-** This routine sets the interrupt request for a target thread. The interrupt
-** request remains in the thread's state until it is delivered exactly once
-** or explicitly canceled.
-**
-** A thread that has been interrupted will fail all NSPR blocking operations
-** that return a PRStatus (I/O, waiting on a condition, etc).
-**
-** PR_Interrupt may itself fail if the target thread is invalid.
-*/
-NSPR_API(PRStatus) PR_Interrupt(PRThread *thread);
-
-/*
-** Make the current thread sleep until "ticks" time amount of time
-** has expired. If "ticks" is PR_INTERVAL_NO_WAIT then the call is
-** equivalent to calling PR_Yield. Calling PR_Sleep with an argument
-** equivalent to PR_INTERVAL_NO_TIMEOUT is an error and will result
-** in a PR_FAILURE error return.
-*/
-NSPR_API(PRStatus) PR_Sleep(PRIntervalTime ticks);
-
-/*
-** Get the scoping of this thread.
-*/
-NSPR_API(PRThreadScope) PR_GetThreadScope(const PRThread *thread);
-
-/*
-** Get the type of this thread.
-*/
-NSPR_API(PRThreadType) PR_GetThreadType(const PRThread *thread);
-
-/*
-** Get the join state of this thread.
-*/
-NSPR_API(PRThreadState) PR_GetThreadState(const PRThread *thread);
 
 PR_END_EXTERN_C
 
