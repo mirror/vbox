@@ -77,8 +77,10 @@ BS3_BEGIN_DATA64
 BS3_GLOBAL_DATA g_bs3CpuBasic3_lea_rsp, 8
         dq  0
 
+%ifdef WITH_TRACING
 BS3_GLOBAL_DATA g_bs3CpuBasic3_lea_trace, 4
         dd  0
+%endif
 
 ;
 ; Set up LM64 environment
@@ -93,14 +95,6 @@ BS3_GLOBAL_DATA g_bs3CpuBasic3_lea_trace, 4
 TMPL_BEGIN_TEXT
 export  BS3_CMN_NM(bs3CpuBasic3_lea_64)
 BS3_PROC_BEGIN_CMN bs3CpuBasic3_lea_64, BS3_PBC_NEAR
-%if 0
-        times 512-0x1a db 1
-%assign x 1
-%rep 167
-%assign x x+1
-        times 512 db x
-%endrep
-%else
         push    rax
         push    rcx
         push    rdx
@@ -122,149 +116,153 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic3_lea_64, BS3_PBC_NEAR
         ;
         ; Loop thru all the modr/m memory encodings.
         ;
- %assign iMod          0
- %assign iDstReg       0    ; We don't test all destination registers
- %rep   3
-  %rep   16                 ; Destination registers per encoding. Testing all takes too much space.
-   %assign iMemReg     0
-   %rep   16
-     %assign iDstReg_Value %sel(iDstReg+1, LEA_RAX, LEA_RCX, LEA_RDX, LEA_RBX, LEA_RSP, LEA_RBP, LEA_RSI, LEA_RDI, \
-                                           LEA_R8, LEA_R9, LEA_R10, LEA_R11, LEA_R12, LEA_R13, LEA_R14, LEA_R15)
+%assign iMod         0
+%rep   3
+ %assign iDstReg    0
+ %rep   16
+  %assign iMemReg   0
+  %rep   16
+   %assign iDstReg_Value %sel(iDstReg+1, LEA_RAX, LEA_RCX, LEA_RDX, LEA_RBX, LEA_RSP, LEA_RBP, LEA_RSI, LEA_RDI, \
+                                         LEA_R8, LEA_R9, LEA_R10, LEA_R11, LEA_R12, LEA_R13, LEA_R14, LEA_R15)
 
-    %if (iMemReg & 7) == 4
+   %if (iMemReg & 7) == 4
         ;
         ; SIB.
         ;
-       %assign iBase       0
-       %rep 16
-        %if (iBase & 7) == 5 && iMod == 0
-         %assign iBase_Value 0
-        %else
-         %assign iBase_Value %sel(iBase+1, LEA_RAX, LEA_RCX, LEA_RDX, LEA_RBX, LEA_RSP, LEA_RBP, LEA_RSI, LEA_RDI, \
-                                           LEA_R8, LEA_R9, LEA_R10, LEA_R11, LEA_R12, LEA_R13, LEA_R14, LEA_R15)
-        %endif
+    %assign iBase       0
+    %rep 16
+     %if (iBase & 7) == 5 && iMod == 0
+      %assign iBase_Value 0
+     %else
+      %assign iBase_Value %sel(iBase+1, LEA_RAX, LEA_RCX, LEA_RDX, LEA_RBX, LEA_RSP, LEA_RBP, LEA_RSI, LEA_RDI, \
+                                        LEA_R8, LEA_R9, LEA_R10, LEA_R11, LEA_R12, LEA_R13, LEA_R14, LEA_R15)
+     %endif
 
-        %assign iIndex     0
-        %assign cShift     0 ; we don't have enough room for checking all the shifts.
-        %rep 16
-         %assign iBase_Value %sel(iIndex+1, LEA_RAX, LEA_RCX, LEA_RDX, LEA_RBX, 0, LEA_RBP, LEA_RSI, LEA_RDI, \
-                                            LEA_R8, LEA_R9, LEA_R10, LEA_R11, LEA_R12, LEA_R13, LEA_R14, LEA_R15)
+     %assign iIndex     0
+     %assign cShift     0 ; we don't have enough room for checking all the shifts.
+     %rep 16
+      %assign iIndex_Value %sel(iIndex+1, LEA_RAX, LEA_RCX, LEA_RDX, LEA_RBX, 0, LEA_RBP, LEA_RSI, LEA_RDI, \
+                                          LEA_R8, LEA_R9, LEA_R10, LEA_R11, LEA_R12, LEA_R13, LEA_R14, LEA_R15)
 
         ;
         ; We don't test all shift combinations, there just isn't enough space
         ; in the image for that.
         ;
-         %assign cShiftLoops 0 ; Disabled for now
-         %rep cShiftLoops
-%error asdf
+      %assign cShiftLoops 4
+      %rep cShiftLoops
+
         ;
         ; LEA+SIB w/ 64-bit operand size and 64-bit address size.
         ;
+       %ifdef WITH_TRACING
+        mov     dword [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_trace))], $
+       %endif
         call    .load_regs
-          %if iBase == 4 || iDstReg == 4
+       %if iBase == 4 || iDstReg == 4
         mov     rsp, LEA_RSP
-          %endif
+       %endif
 
         ; lea
-          %assign   iValue  iBase_Value + (iIndex_Value << cShift)
-        db      X86_OP_REX_W | ((iBase & 8) >> 3) | ((iIndex & 8) >> 2) | ((iDstReg) & 8 >> 1)
+       %assign   iValue  iBase_Value + (iIndex_Value << cShift)
+        db      X86_OP_REX_W | ((iBase & 8) >> 3) | ((iIndex & 8) >> 2) | ((iDstReg & 8) >> 1)
         db      8dh, X86_MODRM_MAKE(iMod, iDstReg & 7, iMemReg & 7), X86_SIB_MAKE(iBase & 7, iIndex & 7, cShift)
-          %if iMod == X86_MOD_MEM1
+       %if iMod == X86_MOD_MEM1
         db      -128
-           %assign  iValue  iValue - 128
-          %elif iMod == X86_MOD_MEM4 || (iMod == 0 && iBase == 5)
-        dd      -07fffffffh
-           %assign  iValue  iValue - 07fffffffh
-          %endif
+        %assign  iValue  iValue - 128
+       %elif iMod == X86_MOD_MEM4 || (iMod == 0 && (iBase & 7) == 5)
+        dd      -07ffef3ffh
+        %assign  iValue  iValue - 07ffef3ffh
+       %endif
 
         ; cmp iDstReg, iValue
-          %if iValue <= 07fffffffh && iValue >= -080000000h
+       %if iValue <= 07fffffffh && iValue >= -080000000h
         db      X86_OP_REX_W | ((iDstReg & 8) >> 3)
         db      81h, X86_MODRM_MAKE(X86_MOD_REG, 7, iDstReg & 7)
         dd      iValue & 0ffffffffh
-          %elif iDstReg != X86_GREG_xAX
+       %elif iDstReg != X86_GREG_xAX
         mov     rax, iValue
         db      X86_OP_REX_W | ((iDstReg & 8) >> 3)
         db      39h, X86_MODRM_MAKE(X86_MOD_REG, X86_GREG_xAX, iDstReg & 7)
-          %else
+       %else
             mov     rcx, iValue
             cmp     rax, rcx
-          %endif
-          %if iDstReg == 4
+       %endif
+       %if iBase == 4 || iDstReg == 4
+        mov     rdx, rsp
         mov     rsp, [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp))]
-          %endif
+       %endif
         jz      $+3
         int3
-           %assign cShift    (cShift + 1) & 3
 
-         %endrep
-         %assign iIndex    iIndex + 1
-        %endrep
-        %assign iBase      iBase + 1
-       %endrep
+       %assign cShift   (cShift + 1) & 3
+      %endrep
+      %assign iIndex    iIndex + 1
+     %endrep
+     %assign iBase      iBase + 1
+    %endrep
 
-    %else ; !SIB
+   %else ; !SIB
         ;
         ; Plain lea reg, [reg] with disp according to iMod,
         ; or lea reg, [disp32] if iMemReg == 5 && iMod == 0.
         ;
-     %if (iMemReg & 7) == 5 && iMod == 0
-      %assign iMemReg_Value 0
-     %else
-      %assign iMemReg_Value %sel(iMemReg+1, LEA_RAX, LEA_RCX, LEA_RDX, LEA_RBX, LEA_RSP, LEA_RBP, LEA_RSI, LEA_RDI, \
-                                            LEA_R8, LEA_R9, LEA_R10, LEA_R11, LEA_R12, LEA_R13, LEA_R14, LEA_R15)
-     %endif
+    %if (iMemReg & 7) == 5 && iMod == 0
+     %assign iMemReg_Value 0
+    %else
+     %assign iMemReg_Value %sel(iMemReg+1, LEA_RAX, LEA_RCX, LEA_RDX, LEA_RBX, LEA_RSP, LEA_RBP, LEA_RSI, LEA_RDI, \
+                                           LEA_R8, LEA_R9, LEA_R10, LEA_R11, LEA_R12, LEA_R13, LEA_R14, LEA_R15)
+    %endif
 
         ;
         ; 64-bit operand and address size first.
         ;
-;mov eax, $
-mov     dword [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_trace))], $ ;iMod | (iDstReg << 4) | (iMemReg << 8)
-
+    %ifdef WITH_TRACING
+        mov     dword [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_trace))], $
+    %endif
         call    .load_regs
-     %if iDstReg == 4
+    %if iDstReg == 4
         mov     rsp, LEA_RSP
-     %endif
+    %endif
 
         ; lea
-     %assign   iValue  iMemReg_Value
+    %assign   iValue  iMemReg_Value
         db      X86_OP_REX_W | ((iDstReg & 8) >> 1) | ((iMemReg & 8) >> 3)
         db      8dh, X86_MODRM_MAKE(iMod, iDstReg & 7, iMemReg & 7)
-     %if iMod == X86_MOD_MEM1
+    %if iMod == X86_MOD_MEM1
         db      39
-      %assign  iValue  iValue + 39
-     %elif iMod == 0 && (iMemReg & 7) == 5
+     %assign  iValue  iValue + 39
+    %elif iMod == 0 && (iMemReg & 7) == 5
         dd      .load_regs - $ - 4
-     %elif iMod == X86_MOD_MEM4
+    %elif iMod == X86_MOD_MEM4
         dd      058739af8h
-      %assign  iValue  iValue + 058739af8h
-     %endif
+     %assign  iValue  iValue + 058739af8h
+    %endif
 
         ; cmp iDstReg, iValue
-     %if (iValue <= 07fffffffh && iValue >= -080000000h) || (iMod == 0 && (iMemReg & 7) == 5)
+    %if (iValue <= 07fffffffh && iValue >= -080000000h) || (iMod == 0 && (iMemReg & 7) == 5)
         db      X86_OP_REX_W | ((iDstReg & 8) >> 3)
         db      81h, X86_MODRM_MAKE(X86_MOD_REG, 7, iDstReg & 7)
-      %if iMod == 0 && (iMemReg & 7) == 5
+     %if iMod == 0 && (iMemReg & 7) == 5
         dd      .load_regs wrt BS3FLAT
-      %else
-        dd      iValue & 0ffffffffh
-      %endif
      %else
-      %if iDstReg != iMemReg && iValue == iMemReg_Value ; This isn't entirely safe, but it saves a bit of space.
+        dd      iValue & 0ffffffffh
+     %endif
+    %else
+     %if iDstReg != iMemReg && iValue == iMemReg_Value ; This isn't entirely safe, but it saves a bit of space.
         db      X86_OP_REX_W | ((iDstReg & 8) >> 1) | ((iMemReg & 8) >> 3)
         db      39h, X86_MODRM_MAKE(X86_MOD_REG, iDstReg & 7, iMemReg & 7)
-      %elif iDstReg != X86_GREG_xAX
+     %elif iDstReg != X86_GREG_xAX
         mov     rax, iValue
-        db      X86_OP_REX_W | ((iDstReg & 8) >> 3)
+        db      (X86_OP_REX_W | ((iDstReg & 8) >> 3))
         db      39h, X86_MODRM_MAKE(X86_MOD_REG, X86_GREG_xAX, iDstReg & 7)
-      %else
+     %else
         mov     rcx, iValue
         cmp     rax, rcx
-      %endif
      %endif
-     %if iDstReg == 4
+    %endif
+    %if iDstReg == 4
         mov     rsp, [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp))]
-     %endif
+    %endif
         jz      $+3
         int3
 
@@ -272,48 +270,49 @@ mov     dword [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_trace))], $ ;iMod |
         ; 64-bit operand and 32-bit address size.
         ;
         call    .load_regs
-     %if iDstReg == 4
+    %if iDstReg == 4
         mov     rsp, LEA_RSP
-     %endif
+    %endif
 
         ; lea
-     %assign   iValue  iMemReg_Value
+    %assign   iValue  iMemReg_Value
         db      X86_OP_PRF_SIZE_ADDR
         db      X86_OP_REX_W | ((iDstReg & 8) >> 1) | ((iMemReg & 8) >> 3)
         db      8dh, X86_MODRM_MAKE(iMod, iDstReg & 7, iMemReg & 7)
-     %if iMod == X86_MOD_MEM1
+    %if iMod == X86_MOD_MEM1
         db      -92
-      %assign  iValue  iValue - 92
-     %elif iMod == 0 && (iMemReg & 7) == 5
+     %assign  iValue  iValue - 92
+    %elif iMod == 0 && (iMemReg & 7) == 5
         dd      .test_label - $ - 4
-     %elif iMod == X86_MOD_MEM4
+    %elif iMod == X86_MOD_MEM4
         dd      -038f8acf3h
-      %assign  iValue  iValue - 038f8acf3h
-     %endif
-      %assign  iValue  iValue & 0ffffffffh
+     %assign  iValue  iValue - 038f8acf3h
+    %endif
+    %assign  iValue  iValue & 0ffffffffh
 
         ; cmp iDstReg, iValue
-     %if (iValue <= 07fffffffh && iValue >= 0) || (iMod == 0 && (iMemReg & 7) == 5)
+    %if (iValue <= 07fffffffh && iValue >= 0) || (iMod == 0 && (iMemReg & 7) == 5)
         db      X86_OP_REX_W | ((iDstReg & 8) >> 3)
         db      81h, X86_MODRM_MAKE(X86_MOD_REG, 7, iDstReg & 7)
-      %if iMod == 0 && (iMemReg & 7) == 5
+     %if iMod == 0 && (iMemReg & 7) == 5
         dd      .test_label wrt BS3FLAT
-      %else
-        dd      iValue
-      %endif
      %else
-      %if iDstReg != X86_GREG_xAX
+        dd      iValue
+     %endif
+    %else
+     %if iDstReg != X86_GREG_xAX
         mov     eax, iValue
+        ;cmp     eax, %sel(iDstReg+1, rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15)
         db      X86_OP_REX_W | ((iDstReg & 8) >> 3)
         db      39h, X86_MODRM_MAKE(X86_MOD_REG, X86_GREG_xAX, iDstReg & 7)
-      %else
+     %else
         mov     ecx, iValue
         cmp     rax, rcx
-      %endif
      %endif
-     %if iDstReg == 4
+    %endif
+    %if iDstReg == 4
         mov     rsp, [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp))]
-     %endif
+    %endif
         jz      $+3
         int3
 
@@ -321,49 +320,49 @@ mov     dword [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_trace))], $ ;iMod |
         ; 32-bit operand and 64-bit address size.
         ;
         call    .load_regs
-     %if iDstReg == 4
+    %if iDstReg == 4
         mov     rsp, LEA_RSP
-     %endif
+    %endif
 
         ; lea
-     %assign   iValue  iMemReg_Value
-      %if iDstReg >= 8 || iMemReg >= 8
+    %assign   iValue  iMemReg_Value
+    %if iDstReg >= 8 || iMemReg >= 8
         db      X86_OP_REX | ((iDstReg & 8) >> 1) | ((iMemReg & 8) >> 3)
-      %endif
+    %endif
         db      8dh, X86_MODRM_MAKE(iMod, iDstReg & 7, iMemReg & 7)
-     %if iMod == X86_MOD_MEM1
+    %if iMod == X86_MOD_MEM1
         db      16
-      %assign  iValue  iValue + 16
-     %elif iMod == 0 && (iMemReg & 7) == 5
+     %assign  iValue  iValue + 16
+    %elif iMod == 0 && (iMemReg & 7) == 5
         dd      .load_regs - $ - 4
-     %elif iMod == X86_MOD_MEM4
+    %elif iMod == X86_MOD_MEM4
         dd      0596829deh
-      %assign  iValue  iValue + 0596829deh
-     %endif
-      %assign  iValue  iValue & 0ffffffffh
+     %assign  iValue  iValue + 0596829deh
+    %endif
+    %assign  iValue  iValue & 0ffffffffh
 
         ; cmp iDstReg, iValue
-     %if (iValue <= 07fffffffh && iValue >= 0) || (iMod == 0 && (iMemReg & 7) == 5)
+    %if (iValue <= 07fffffffh && iValue >= 0) || (iMod == 0 && (iMemReg & 7) == 5)
         db      X86_OP_REX_W | ((iDstReg & 8) >> 3)
         db      81h, X86_MODRM_MAKE(X86_MOD_REG, 7, iDstReg & 7)
-      %if iMod == 0 && (iMemReg & 7) == 5
+     %if iMod == 0 && (iMemReg & 7) == 5
         dd      .load_regs wrt BS3FLAT
-      %else
-        dd      iValue
-      %endif
      %else
-      %if iDstReg != X86_GREG_xAX
+        dd      iValue
+     %endif
+    %else
+     %if iDstReg != X86_GREG_xAX
         mov     eax, iValue
         db      X86_OP_REX_W | ((iDstReg & 8) >> 3)
         db      39h, X86_MODRM_MAKE(X86_MOD_REG, X86_GREG_xAX, iDstReg & 7)
-      %else
+     %else
         mov     ecx, iValue
         cmp     rax, rcx
-      %endif
      %endif
-     %if iDstReg == 4
+    %endif
+    %if iDstReg == 4
         mov     rsp, [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp))]
-     %endif
+    %endif
         jz      $+3
         int3
 
@@ -371,45 +370,45 @@ mov     dword [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_trace))], $ ;iMod |
         ; 16-bit operand and 64-bit address size.
         ;
         call    .load_regs
-     %if iDstReg == 4
+    %if iDstReg == 4
         mov     rsp, LEA_RSP
-     %endif
+    %endif
 
         ; lea
-     %assign   iValue  iMemReg_Value
+    %assign   iValue  iMemReg_Value
         db      X86_OP_PRF_SIZE_OP
-      %if iDstReg >= 8 || iMemReg >= 8
+    %if iDstReg >= 8 || iMemReg >= 8
         db      X86_OP_REX | ((iDstReg & 8) >> 1) | ((iMemReg & 8) >> 3)
-      %endif
+    %endif
         db      8dh, X86_MODRM_MAKE(iMod, iDstReg & 7, iMemReg & 7)
-     %if iMod == X86_MOD_MEM1
+    %if iMod == X86_MOD_MEM1
         db      -16
-      %assign  iValue  iValue - 16
-     %elif iMod == 0 && (iMemReg & 7) == 5
+     %assign  iValue  iValue - 16
+    %elif iMod == 0 && (iMemReg & 7) == 5
         dd      _Bs3Text16_StartOfSegment - $ - 4 + 7 wrt BS3FLAT
-      %assign  iValue  7
-     %elif iMod == X86_MOD_MEM4
+     %assign  iValue  7
+    %elif iMod == X86_MOD_MEM4
         dd      075682332h
-      %assign  iValue  iValue + 075682332h
-     %endif
-      %assign  iValue  (iValue & 0ffffh) | (iDstReg_Value & 0ffffffffffff0000h)
+     %assign  iValue  iValue + 075682332h
+    %endif
+    %assign  iValue  (iValue & 0ffffh) | (iDstReg_Value & 0ffffffffffff0000h)
 
         ; cmp iDstReg, iValue
-     %if (iValue <= 07fffffffh && iValue >= -080000000h)
+    %if (iValue <= 07fffffffh && iValue >= -080000000h)
         db      X86_OP_REX_W | ((iDstReg & 8) >> 3)
         db      81h, X86_MODRM_MAKE(X86_MOD_REG, 7, iDstReg & 7)
         dd      iValue
-     %elif iDstReg != X86_GREG_xAX
+    %elif iDstReg != X86_GREG_xAX
         mov     rax, iValue
         db      X86_OP_REX_W | ((iDstReg & 8) >> 3)
         db      39h, X86_MODRM_MAKE(X86_MOD_REG, X86_GREG_xAX, iDstReg & 7)
-     %else
+    %else
         mov     rcx, iValue
         cmp     rax, rcx
-     %endif
-     %if iDstReg == 4
+    %endif
+    %if iDstReg == 4
         mov     rsp, [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp))]
-     %endif
+    %endif
         jz      $+3
         int3
 
@@ -417,56 +416,56 @@ mov     dword [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_trace))], $ ;iMod |
         ; 16-bit operand and 32-bit address size.
         ;
         call    .load_regs
-     %if iDstReg == 4
+    %if iDstReg == 4
         mov     rsp, LEA_RSP
-     %endif
+    %endif
 
         ; lea
-     %assign   iValue  iMemReg_Value
+    %assign   iValue  iMemReg_Value
         db      X86_OP_PRF_SIZE_OP
         db      X86_OP_PRF_SIZE_ADDR
-      %if iDstReg >= 8 || iMemReg >= 8
+    %if iDstReg >= 8 || iMemReg >= 8
         db      X86_OP_REX | ((iDstReg & 8) >> 1) | ((iMemReg & 8) >> 3)
-      %endif
+    %endif
         db      8dh, X86_MODRM_MAKE(iMod, iDstReg & 7, iMemReg & 7)
-     %if iMod == X86_MOD_MEM1
+    %if iMod == X86_MOD_MEM1
         db      99
-      %assign  iValue  iValue + 99
-     %elif iMod == 0 && (iMemReg & 7) == 5
+     %assign  iValue  iValue + 99
+    %elif iMod == 0 && (iMemReg & 7) == 5
         dd      _Bs3Text16_StartOfSegment - $ - 4 + 3347 wrt BS3FLAT
-      %assign  iValue  3347
-     %elif iMod == X86_MOD_MEM4
+     %assign  iValue  3347
+    %elif iMod == X86_MOD_MEM4
         dd      -075623432h
-      %assign  iValue  iValue - 075623432h
-     %endif
-      %assign  iValue  (iValue & 0ffffh) | (iDstReg_Value & 0ffffffffffff0000h)
+     %assign  iValue  iValue - 075623432h
+    %endif
+    %assign  iValue  (iValue & 0ffffh) | (iDstReg_Value & 0ffffffffffff0000h)
 
         ; cmp iDstReg, iValue
-     %if (iValue <= 07fffffffh && iValue >= -080000000h)
+    %if (iValue <= 07fffffffh && iValue >= -080000000h)
         db      X86_OP_REX_W | ((iDstReg & 8) >> 3)
         db      81h, X86_MODRM_MAKE(X86_MOD_REG, 7, iDstReg & 7)
         dd      iValue
-     %elif iDstReg != X86_GREG_xAX
+    %elif iDstReg != X86_GREG_xAX
         mov     rax, iValue
         db      X86_OP_REX_W | ((iDstReg & 8) >> 3)
         db      39h, X86_MODRM_MAKE(X86_MOD_REG, X86_GREG_xAX, iDstReg & 7)
-     %else
+    %else
         mov     rcx, iValue
         cmp     rax, rcx
-     %endif
-     %if iDstReg == 4
+    %endif
+    %if iDstReg == 4
         mov     rsp, [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp))]
-     %endif
+    %endif
         jz      $+3
         int3
 
-    %endif ; !SIB
-    %assign iMemReg    iMemReg + 1
-   %endrep
-   %assign iDstReg     (iDstReg + 1) & 15
+   %endif ; !SIB
+   %assign iMemReg    iMemReg + 1
   %endrep
-  %assign iMod         iMod + 1
+  %assign iDstReg     iDstReg + 1
  %endrep
+ %assign iMod         iMod + 1
+%endrep
 
         mov     rsp, [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_rsp))]
         pop     r15
@@ -503,6 +502,5 @@ mov     dword [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_trace))], $ ;iMod |
         mov     r14, LEA_R14
         mov     r15, LEA_R15
         ret
-%endif
 BS3_PROC_END_CMN   bs3CpuBasic3_lea_64
 
