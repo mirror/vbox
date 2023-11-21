@@ -190,6 +190,7 @@ NSPRPUB-MD-HEADERS_SOURCES = \
 	nsprpub/pr/include/md/_netbsd.h \
 	nsprpub/pr/include/md/_openbsd.h \
 	nsprpub/pr/include/md/_solaris.h \
+	nsprpub/pr/include/md/_unix_errors.h \
 	nsprpub/pr/include/md/_unixos.h \
 	nsprpub/pr/include/md/_pth.h \
 	nsprpub/pr/include/md/prosdep.h \
