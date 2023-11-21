@@ -205,7 +205,6 @@ NSPRPUB-MD-HEADERS_SOURCES = \
 NSPRPUB-PRIV-HEADERS_INST = $(INST_SDK)bindings/xpcom/include/nsprpub/private/
 NSPRPUB-PRIV-HEADERS_IFFLAGS = -m 644
 NSPRPUB-PRIV-HEADERS_SOURCES = \
-	nsprpub/pr/include/private/pprio.h \
 	nsprpub/pr/include/private/pprthred.h \
 	nsprpub/pr/include/private/prpriv.h
 

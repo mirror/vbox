@@ -42,7 +42,6 @@
  * NSPR 2.0 Private API
  */
 
-#include "private/pprio.h"
 #include "private/pprthred.h"
 
 
