@@ -55,7 +55,6 @@
 **	%g - float
 */
 #include "prtypes.h"
-#include "prio.h"
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -66,11 +65,9 @@
 #define PR_smprintf_free VBoxNsprPR_smprintf_free
 #define PR_sprintf_append VBoxNsprPR_sprintf_append
 #define PR_sxprintf VBoxNsprPR_sxprintf
-#define PR_fprintf VBoxNsprPR_fprintf
 #define PR_vsmprintf VBoxNsprPR_vsmprintf
 #define PR_vsprintf_append VBoxNsprPR_vsprintf_append
 #define PR_vsxprintf VBoxNsprPR_vsxprintf
-#define PR_vfprintf VBoxNsprPR_vfprintf
 #endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 
 PR_BEGIN_EXTERN_C
@@ -115,18 +112,12 @@ typedef PRIntn (*PRStuffFunc)(void *arg, const char *s, PRUint32 slen);
 NSPR_API(PRUint32) PR_sxprintf(PRStuffFunc f, void *arg, const char *fmt, ...);
 
 /*
-** fprintf to a PRFileDesc
-*/
-NSPR_API(PRUint32) PR_fprintf(struct PRFileDesc* fd, const char *fmt, ...);
-
-/*
 ** va_list forms of the above.
 */
 NSPR_API(PRUint32) PR_vsnprintf(char *out, PRUint32 outlen, const char *fmt, va_list ap);
 NSPR_API(char*) PR_vsmprintf(const char *fmt, va_list ap);
 NSPR_API(char*) PR_vsprintf_append(char *last, const char *fmt, va_list ap);
 NSPR_API(PRUint32) PR_vsxprintf(PRStuffFunc f, void *arg, const char *fmt, va_list ap);
-NSPR_API(PRUint32) PR_vfprintf(struct PRFileDesc* fd, const char *fmt, va_list ap);
 
 PR_END_EXTERN_C
 
