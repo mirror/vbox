@@ -44,6 +44,7 @@
 #include "nsString.h"
 
 #include <iprt/env.h>
+#include <iprt/file.h>
 
 #define NS_ZIPLOADER_CONTRACTID NS_XPTLOADER_CONTRACTID_PREFIX "zip"
 
@@ -383,16 +384,21 @@ xptiInterfaceInfoManager::ReadXPTFile(nsILocalFile* aFile,
     }
 
     // all exits from on here should be via 'goto out' 
-
-    if(NS_FAILED(aFile->OpenNSPRFileDesc(PR_RDONLY, 0444, &fd)) || !fd)
-    {
+    int vrc = VINF_SUCCESS;
+    size_t cbRead = 0;
+    RTFILE hFile = NIL_RTFILE;
+    nsCAutoString pathName;
+    if (NS_FAILED(aFile->GetNativePath(pathName)))
         goto out;
-    }
 
-    if(flen > PR_Read(fd, whole, flen))
-    {
+    vrc = RTFileOpen(&hFile, pathName.get(),
+                     RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+    if (RT_FAILURE(vrc))
         goto out;
-    }
+
+    vrc = RTFileRead(hFile, whole, flen, &cbRead);
+    if(RT_FAILURE(vrc) || cbRead < flen)
+        goto out;
 
     if(!(state = XPT_NewXDRState(XPT_DECODE, whole, flen)))
     {
