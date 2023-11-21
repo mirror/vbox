@@ -639,8 +639,6 @@ PL_WaitForEvent(PLEventQueue* self)
         PRStatus err;
         Log(("$$$ waiting for event"));
         err = PR_Wait(mon, PR_INTERVAL_NO_TIMEOUT);
-        if ((err == PR_FAILURE)
-            && (PR_PENDING_INTERRUPT_ERROR == PR_GetError())) break;
     }
 
     PR_ExitMonitor(mon);
