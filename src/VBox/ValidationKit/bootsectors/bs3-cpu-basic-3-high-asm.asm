@@ -506,11 +506,3 @@ mov     dword [BS3_DATA16_WRT(BS3_DATA_NM(g_bs3CpuBasic3_lea_trace))], $ ;iMod |
 %endif
 BS3_PROC_END_CMN   bs3CpuBasic3_lea_64
 
-
-align 512
-%assign x 1
-%rep 16
-%assign x x+1
-        times 512 db x
-%endrep
-
