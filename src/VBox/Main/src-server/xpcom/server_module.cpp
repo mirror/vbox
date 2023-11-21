@@ -40,8 +40,6 @@
 #include <ipcCID.h>
 #include <ipcdclient.h>
 
-#include "prio.h"
-
 // official XPCOM headers don't define it yet
 #define IPC_DCONNECTSERVICE_CONTRACTID \
     "@mozilla.org/ipc/dconnect-service;1"
