@@ -269,7 +269,7 @@ const char *UIExtraDataDefs::GUI_VMActivityOverview_ShowAllMachines = "GUI/VMAct
 
 const char *UIExtraDataDefs::GUI_MediumSelector_DialogGeometry = "GUI/MediumSelector/DialogGeometry";
 
-const int UIExtraDataDefs::iFontScaleMin = 20;
+const int UIExtraDataDefs::iFontScaleMin = 40;
 const int UIExtraDataDefs::iFontScaleMax = 200;
 
 /* Obsolete keys: */
