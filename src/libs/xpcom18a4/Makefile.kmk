@@ -168,7 +168,6 @@ NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/pr/include/prbit.h \
 	nsprpub/pr/include/prclist.h \
 	nsprpub/pr/include/prcvar.h \
-	nsprpub/pr/include/prinit.h \
 	nsprpub/pr/include/prinrval.h \
 	nsprpub/pr/include/prlock.h \
 	nsprpub/pr/include/prlong.h \

@@ -52,12 +52,6 @@
 
 PRBool _pr_initialized = PR_FALSE;
 
-
-PR_IMPLEMENT(PRBool) PR_Initialized(void)
-{
-    return _pr_initialized;
-}
-
 PRInt32 _native_threads_only = 0;
 
 static void _PR_InitStuff(void)
@@ -84,22 +78,6 @@ void _PR_ImplicitInitialization(void)
 {
 	_PR_InitStuff();
 }
-
-PR_IMPLEMENT(void) PR_Init(
-    PRThreadType type, PRThreadPriority priority, PRUintn maxPTDs)
-{
-    _PR_ImplicitInitialization();
-}
-
-PR_IMPLEMENT(PRIntn) PR_Initialize(
-    PRPrimordialFn prmain, PRIntn argc, char **argv, PRUintn maxPTDs)
-{
-    PRIntn rv;
-    _PR_ImplicitInitialization();
-    rv = prmain(argc, argv);
-	PR_Cleanup();
-    return rv;
-}  /* PR_Initialize */
 
 /* prinit.c */
 

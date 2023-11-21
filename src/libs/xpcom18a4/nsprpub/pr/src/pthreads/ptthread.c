@@ -232,35 +232,4 @@ void _PR_InitThreads(
     Assert(0 == rv);    
 }  /* _PR_InitThreads */
 
-PR_IMPLEMENT(PRStatus) PR_Cleanup(void)
-{
-    PRThread *me = PR_GetCurrentThread();
-    Log(("PR_Cleanup: shutting down NSPR\n"));
-    Assert(me->state & PT_THREAD_PRIMORD);
-    if (me->state & PT_THREAD_PRIMORD)
-    {
-        PR_Lock(pt_book.ml);
-        while (pt_book.user > pt_book.this_many)
-            PR_WaitCondVar(pt_book.cv, PR_INTERVAL_NO_TIMEOUT);
-        PR_Unlock(pt_book.ml);
-
-        /*
-         * I am not sure if it's safe to delete the cv and lock here,
-         * since there may still be "system" threads around. If this
-         * call isn't immediately prior to exiting, then there's a
-         * problem.
-         */
-        if (0 == pt_book.system)
-        {
-            PR_DestroyCondVar(pt_book.cv); pt_book.cv = NULL;
-            PR_DestroyLock(pt_book.ml); pt_book.ml = NULL;
-        }
-        _pt_thread_death(me);
-
-        _pr_initialized = PR_FALSE;
-        return PR_SUCCESS;
-    }
-    return PR_FAILURE;
-}  /* PR_Cleanup */
-
 /* ptthread.c */
