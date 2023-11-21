@@ -315,8 +315,6 @@ extern PRUintn _PR_NetAddrSize(const PRNetAddr* addr);
 
 #endif /* defined(_PR_INET6) */
 
-extern PRStatus _PR_MapOptionName(
-    PRSockOption optname, PRInt32 *level, PRInt32 *name);
 extern void _PR_InitThreads(
     PRThreadType type, PRThreadPriority priority, PRUintn maxPTDs);
 
