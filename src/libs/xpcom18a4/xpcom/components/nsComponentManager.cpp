@@ -1057,7 +1057,7 @@ nsComponentManagerImpl::ReadPersistentRegistry()
         return NS_ERROR_FAILURE;
     }
 
-    PRInt32 flen = nsInt64((int64_t)fileSize);
+    PRInt32 flen = nsInt64((PRInt64)fileSize);
     if (flen == 0)
     {
         RTFileClose(hFile);
