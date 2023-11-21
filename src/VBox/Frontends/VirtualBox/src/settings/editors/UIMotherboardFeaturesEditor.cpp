@@ -38,8 +38,7 @@
 
 
 UIMotherboardFeaturesEditor::UIMotherboardFeaturesEditor(QWidget *pParent /* = 0 */)
-    : UIEditor(pParent, true /* show in basic mode? */)
-    , m_fWasInExpertMode(true)
+    : UIEditor(pParent)
     , m_fEnableIoApic(false)
     , m_fEnableUtcTime(false)
     , m_fEnableEfi(false)
@@ -181,48 +180,6 @@ void UIMotherboardFeaturesEditor::retranslateUi()
     {
         m_pPushButtonResetSecureBoot->setText(tr("&Reset Keys to Default"));
         m_pPushButtonResetSecureBoot->setToolTip(tr("Resets secure boot keys to default."));
-    }
-}
-
-void UIMotherboardFeaturesEditor::handleFilterChange()
-{
-    /* Layout reinsertion is too expensive, do only if necessary: */
-    if (m_fWasInExpertMode == m_fInExpertMode)
-        return;
-    m_fWasInExpertMode = m_fInExpertMode;
-
-    /* Update visibility first of all (helps avoid flicker): */
-    if (m_pCheckBoxEnableIoApic)
-        m_pCheckBoxEnableIoApic->setVisible(m_fInExpertMode);
-    if (m_pCheckBoxEnableUtcTime)
-        m_pCheckBoxEnableUtcTime->setVisible(m_fInExpertMode);
-    if (m_pCheckBoxEnableSecureBoot)
-        m_pCheckBoxEnableSecureBoot->setVisible(m_fInExpertMode);
-    if (m_pPushButtonResetSecureBoot)
-        m_pPushButtonResetSecureBoot->setVisible(m_fInExpertMode);
-
-    /* It's a grid-layout, we'll have to dance a little: */
-    if (m_pLayout)
-    {
-        /* Remove the stuff from the layout first (backward direction): */
-        m_pLayout->removeWidget(m_pPushButtonResetSecureBoot);
-        m_pLayout->removeWidget(m_pCheckBoxEnableSecureBoot);
-        m_pLayout->removeWidget(m_pCheckBoxEnableEfi);
-        m_pLayout->removeWidget(m_pCheckBoxEnableUtcTime);
-        m_pLayout->removeWidget(m_pCheckBoxEnableIoApic);
-
-        /* Add it again: */
-        if (m_fInExpertMode)
-        {
-            m_pLayout->addWidget(m_pCheckBoxEnableIoApic, 0, 1);
-            m_pLayout->addWidget(m_pCheckBoxEnableUtcTime, 1, 1);
-            m_pLayout->addWidget(m_pCheckBoxEnableEfi, 2, 1);
-            m_pLayout->addWidget(m_pCheckBoxEnableSecureBoot, 3, 1);
-            m_pLayout->addWidget(m_pPushButtonResetSecureBoot, 4, 1);
-        }
-        /* Special place for EFI: */
-        else
-            m_pLayout->addWidget(m_pCheckBoxEnableEfi, 0, 1);
     }
 }
 
