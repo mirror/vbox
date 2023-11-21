@@ -58,10 +58,6 @@ typedef struct PRSemaphore PRSemaphore;
 static pthread_mutexattr_t _pt_mattr;
 static pthread_condattr_t _pt_cvar_attr;
 
-#if defined(DEBUG)
-extern PTDebug pt_debug;  /* this is shared between several modules */
-#endif  /* defined(DEBUG) */
-
 /**************************************************************/
 /**************************************************************/
 /*****************************LOCKS****************************/
@@ -133,17 +129,8 @@ static void pt_PostNotifies(PRLock *lock, PRBool unlock)
                     Assert(0 == rv);
                 }
             }
-#if defined(DEBUG)
-            pt_debug.cvars_notified += 1;
-            if (0 > ASMAtomicDecS32(&cv->notify_pending))
-            {
-                pt_debug.delayed_cv_deletes += 1;
-                PR_DestroyCondVar(cv);
-            }
-#else  /* defined(DEBUG) */
             if (0 > ASMAtomicDecS32(&cv->notify_pending))
                 PR_DestroyCondVar(cv);
-#endif  /* defined(DEBUG) */
         }
         prev = notified;
         notified = notified->link;
@@ -164,9 +151,6 @@ PR_IMPLEMENT(PRLock*) PR_NewLock(void)
         rv = _PT_PTHREAD_MUTEX_INIT(lock->mutex, _pt_mattr); 
         Assert(0 == rv);
     }
-#if defined(DEBUG)
-    pt_debug.locks_created += 1;
-#endif
     return lock;
 }  /* PR_NewLock */
 
@@ -181,7 +165,6 @@ PR_IMPLEMENT(void) PR_DestroyLock(PRLock *lock)
     Assert(0 == rv);
 #if defined(DEBUG)
     memset(lock, 0xaf, sizeof(PRLock));
-    pt_debug.locks_destroyed += 1;
 #endif
     PR_DELETE(lock);
 }  /* PR_DestroyLock */
@@ -197,9 +180,6 @@ PR_IMPLEMENT(void) PR_Lock(PRLock *lock)
     Assert(PR_FALSE == lock->locked);
     lock->locked = PR_TRUE;
     lock->owner = pthread_self();
-#if defined(DEBUG)
-    pt_debug.locks_acquired += 1;
-#endif
 }  /* PR_Lock */
 
 PR_IMPLEMENT(PRStatus) PR_Unlock(PRLock *lock)
@@ -222,9 +202,6 @@ PR_IMPLEMENT(PRStatus) PR_Unlock(PRLock *lock)
     }
     else pt_PostNotifies(lock, PR_TRUE);
 
-#if defined(DEBUG)
-    pt_debug.locks_released += 1;
-#endif
     return PR_SUCCESS;
 }  /* PR_Unlock */
 
@@ -328,9 +305,6 @@ PR_IMPLEMENT(PRCondVar*) PR_NewCondVar(PRLock *lock)
         Assert(0 == rv);
         cv->lock = lock;
         cv->notify_pending = 0;
-#if defined(DEBUG)
-        pt_debug.cvars_created += 1;
-#endif
     }
     return cv;
 }  /* PR_NewCondVar */
@@ -340,10 +314,6 @@ PR_IMPLEMENT(void) PR_DestroyCondVar(PRCondVar *cvar)
     if (0 > ASMAtomicDecS32(&cvar->notify_pending))
     {
         PRIntn rv = pthread_cond_destroy(&cvar->cv); Assert(0 == rv);
-#if defined(DEBUG)
-        memset(cvar, 0xaf, sizeof(PRCondVar));
-        pt_debug.cvars_destroyed += 1;
-#endif
         PR_DELETE(cvar);
     }
 }  /* PR_DestroyCondVar */

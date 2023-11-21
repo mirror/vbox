@@ -114,10 +114,6 @@ In <source>.c, the implementation is:
 PR_IMPLEMENT(PRInt32) _MD_GetFileInfo(const char *fn, PRFileInfo *info);
 */
 
-#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
-#define PT_FPrintStats VBoxNsprPT_FPrintStats
-#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
-
 PR_BEGIN_EXTERN_C
 
 typedef struct _MDLock _MDLock;
@@ -180,21 +176,6 @@ struct _PT_Notified
 **/
 #define PT_THREAD_RESUMED   0x80    /* thread has been resumed */
 #define PT_THREAD_SETGCABLE 0x100   /* set the GCAble flag */
-
-#if defined(DEBUG)
-
-typedef struct PTDebug
-{
-    PRTime timeStarted;
-    PRUintn locks_created, locks_destroyed;
-    PRUintn locks_acquired, locks_released;
-    PRUintn cvars_created, cvars_destroyed;
-    PRUintn cvars_notified, delayed_cv_deletes;
-} PTDebug;
-
-#endif /* defined(DEBUG) */
-
-NSPR_API(void) PT_FPrintStats(PRFileDesc *fd, const char *msg);
 
 /************************************************************************/
 /*************************************************************************

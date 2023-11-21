@@ -123,50 +123,6 @@ struct pt_Continuation
     pr_ContuationStatus status;             /* the status of the operation */
 };
 
-#if defined(DEBUG)
-
-PTDebug pt_debug;  /* this is shared between several modules */
-
-PR_IMPLEMENT(void) PT_FPrintStats(PRFileDesc *debug_out, const char *msg)
-{
-    PTDebug stats;
-    char buffer[100];
-    PRExplodedTime tod;
-    PRInt64 elapsed, aMil;
-    stats = pt_debug;  /* a copy */
-    PR_ExplodeTime(stats.timeStarted, PR_LocalTimeParameters, &tod);
-    (void)PR_FormatTime(buffer, sizeof(buffer), "%T", &tod);
-
-    LL_SUB(elapsed, PR_Now(), stats.timeStarted);
-    LL_I2L(aMil, 1000000);
-    LL_DIV(elapsed, elapsed, aMil);
-
-    if (NULL != msg) PR_fprintf(debug_out, "%s", msg);
-    PR_fprintf(
-        debug_out, "\tstarted: %s[%lld]\n", buffer, elapsed);
-    PR_fprintf(
-        debug_out, "\tlocks [created: %u, destroyed: %u]\n",
-        stats.locks_created, stats.locks_destroyed);
-    PR_fprintf(
-        debug_out, "\tlocks [acquired: %u, released: %u]\n",
-        stats.locks_acquired, stats.locks_released);
-    PR_fprintf(
-        debug_out, "\tcvars [created: %u, destroyed: %u]\n",
-        stats.cvars_created, stats.cvars_destroyed);
-    PR_fprintf(
-        debug_out, "\tcvars [notified: %u, delayed_delete: %u]\n",
-        stats.cvars_notified, stats.delayed_cv_deletes);
-}  /* PT_FPrintStats */
-
-#else
-
-PR_IMPLEMENT(void) PT_FPrintStats(PRFileDesc *debug_out, const char *msg)
-{
-    /* do nothing */
-}  /* PT_FPrintStats */
-
-#endif  /* DEBUG */
-
 /*
 ** Allocate a file descriptor from the heap.
 */
@@ -433,11 +389,6 @@ static PRBool pt_writev_cont(pt_Continuation *op, PRInt16 revents)
 
 void _PR_InitIO(void)
 {
-#if defined(DEBUG)
-    memset(&pt_debug, 0, sizeof(PTDebug));
-    pt_debug.timeStarted = PR_Now();
-#endif
-
     _pr_rename_lock = PR_NewLock();
     Assert(NULL != _pr_rename_lock);
 }  /* _PR_InitIO */

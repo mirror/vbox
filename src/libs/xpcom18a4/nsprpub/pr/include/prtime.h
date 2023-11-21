@@ -55,12 +55,6 @@
 #define PR_ExplodeTime VBoxNsprPR_ExplodeTime
 #define PR_ImplodeTime VBoxNsprPR_ImplodeTime
 #define PR_NormalizeTime VBoxNsprPR_NormalizeTime
-#define PR_LocalTimeParameters VBoxNsprPR_LocalTimeParameters
-#define PR_GMTParameters VBoxNsprPR_GMTParameters
-#define PR_USPacificTimeParameters VBoxNsprPR_USPacificTimeParameters
-#define PR_ParseTimeString VBoxNsprPR_ParseTimeString
-#define PR_FormatTime VBoxNsprPR_FormatTime
-#define PR_FormatTimeUSEnglish VBoxNsprPR_FormatTimeUSEnglish
 #endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 
 PR_BEGIN_EXTERN_C
@@ -229,82 +223,6 @@ PR_ImplodeTime(const PRExplodedTime *exploded);
 
 NSPR_API(void) PR_NormalizeTime(
     PRExplodedTime *exploded, PRTimeParamFn params);
-
-/**********************************************************************/
-/*********************** TIME PARAMETER FUNCTIONS *********************/
-/**********************************************************************/
-
-/* Time parameters that suit current host machine */
-NSPR_API(PRTimeParameters) PR_LocalTimeParameters(const PRExplodedTime *gmt);
-
-/* Time parameters that represent Greenwich Mean Time */
-NSPR_API(PRTimeParameters) PR_GMTParameters(const PRExplodedTime *gmt);
-
-/*
- * Time parameters that represent the US Pacific Time Zone, with the
- * current daylight saving time rules (for testing only)
- */
-NSPR_API(PRTimeParameters) PR_USPacificTimeParameters(const PRExplodedTime *gmt);
-
-/*
- * This parses a time/date string into a PRTime
- * (microseconds after "1-Jan-1970 00:00:00 GMT").
- * It returns PR_SUCCESS on success, and PR_FAILURE
- * if the time/date string can't be parsed.
- *
- * Many formats are handled, including:
- *
- *   14 Apr 89 03:20:12
- *   14 Apr 89 03:20 GMT
- *   Fri, 17 Mar 89 4:01:33
- *   Fri, 17 Mar 89 4:01 GMT
- *   Mon Jan 16 16:12 PDT 1989
- *   Mon Jan 16 16:12 +0130 1989
- *   6 May 1992 16:41-JST (Wednesday)
- *   22-AUG-1993 10:59:12.82
- *   22-AUG-1993 10:59pm
- *   22-AUG-1993 12:59am
- *   22-AUG-1993 12:59 PM
- *   Friday, August 04, 1995 3:54 PM
- *   06/21/95 04:24:34 PM
- *   20/06/95 21:07
- *   95-06-08 19:32:48 EDT
- *
- * If the input string doesn't contain a description of the timezone,
- * we consult the `default_to_gmt' to decide whether the string should
- * be interpreted relative to the local time zone (PR_FALSE) or GMT (PR_TRUE).
- * The correct value for this argument depends on what standard specified
- * the time string which you are parsing.
- */
-
-NSPR_API(PRStatus) PR_ParseTimeString (
-	const char *string,
-	PRBool default_to_gmt,
-	PRTime *result);
-
-/*
- * FIXME: should we also have a formatting function, such as asctime, ctime,
- * and strftime in standard C library?  But this would involve
- * internationalization issues.  Might want to provide a US English version.
- */
-
-/**********************************************************************/
-/*********************** OLD COMPATIBILITYFUNCTIONS *******************/
-/**********************************************************************/
-#ifndef NO_NSPR_10_SUPPORT
-
-/* Format a time value into a buffer. Same semantics as strftime() */
-NSPR_API(PRUint32) PR_FormatTime(char *buf, int buflen, const char *fmt, 
-                                           const PRExplodedTime *tm);
-
-/* Format a time value into a buffer. Time is always in US English format, regardless
- * of locale setting.
- */
-NSPR_API(PRUint32)
-PR_FormatTimeUSEnglish( char* buf, PRUint32 bufSize,
-                        const char* format, const PRExplodedTime* tm );
-
-#endif /* NO_NSPR_10_SUPPORT */
 
 PR_END_EXTERN_C
 
