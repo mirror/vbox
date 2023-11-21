@@ -2,7 +2,6 @@
 
 
 #include <plstr.h>
-#include <prio.h>
 #include <nsDeque.h>
 #include <nsHashSets.h>
 #include <xptcall.h>
@@ -17,7 +16,6 @@ uintptr_t deps[] =
     (uintptr_t)PL_strncpy,
     (uintptr_t)PL_strncpyz,
     (uintptr_t)PL_HashString,
-    (uintptr_t)PR_Close,
     (uintptr_t)NS_ProxyRelease,
     (uintptr_t)nsTraceRefcnt::LogRelease,
     (uintptr_t)nsDebug::Assertion,

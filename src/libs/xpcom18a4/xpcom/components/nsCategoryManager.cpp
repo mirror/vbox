@@ -42,7 +42,6 @@
 #include "nsCategoryManager.h"
 
 #include "plarena.h"
-#include "prio.h"
 #include "prprf.h"
 #include "prlock.h"
 #include "nsCOMPtr.h"

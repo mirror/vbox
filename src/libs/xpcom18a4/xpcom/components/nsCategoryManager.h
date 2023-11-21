@@ -39,7 +39,6 @@
 #ifndef NSCATEGORYMANAGER_H
 #define NSCATEGORYMANAGER_H
 
-#include "prio.h"
 #include "plarena.h"
 #include "nsClassHashtable.h"
 #include "nsICategoryManager.h"

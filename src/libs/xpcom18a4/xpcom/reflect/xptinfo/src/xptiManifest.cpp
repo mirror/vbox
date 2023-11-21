@@ -306,7 +306,6 @@ static char*
 ReadManifestIntoMemory(xptiInterfaceInfoManager* aMgr,
                        PRUint32* pLength)
 {
-    PRFileDesc* fd = nsnull;
     PRInt32 flen;
     PRInt64 fileSize;
     char* whole = nsnull;

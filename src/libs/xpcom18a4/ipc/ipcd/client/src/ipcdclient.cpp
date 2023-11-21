@@ -54,8 +54,6 @@
 #include "nsProxyRelease.h"
 #include "nsCOMArray.h"
 
-#include "prio.h"
-
 #include <iprt/asm.h>
 #include <iprt/critsect.h>
 #include <iprt/env.h>

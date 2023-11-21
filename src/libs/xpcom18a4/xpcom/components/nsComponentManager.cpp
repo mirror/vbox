@@ -1023,8 +1023,6 @@ nsComponentManagerImpl::ReadPersistentRegistry()
     if (!mComponentsDir)
         return NS_ERROR_NOT_INITIALIZED;  // this should have been set by Init().
 
-    PRFileDesc* fd = nsnull;
-
     // Set From Init
     if (!mRegistryFile) {
         return NS_ERROR_FILE_NOT_FOUND;

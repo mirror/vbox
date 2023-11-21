@@ -35,8 +35,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "prio.h"
-
 #include "ipcConfig.h"
 #include "ipcLog.h"
 #include "ipcMessage.h"
