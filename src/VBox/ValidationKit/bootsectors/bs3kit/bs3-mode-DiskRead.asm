@@ -187,7 +187,12 @@ hlt
         jc      .failed_return_ah
         test    ah, ah
         jnz     .failed_return_ah
-
+%ifdef BS3_STRICT
+        cmp      al, a_cSectors
+        je      .next
+        int3
+.next:
+%endif
         ;
         ; Return success
         ;

@@ -43,6 +43,7 @@
 #include "bs3kit-linker.h"
 #include "bs3-cmn-memory.h"
 
+
 extern BS3HIGHDLLENTRY BS3_FAR_DATA BS3_DATA_NM(g_aBs3HighDllTable)[];
 extern BS3HIGHDLLENTRY BS3_FAR_DATA BS3_DATA_NM(g_Bs3HighDllTable_End);
 
@@ -53,19 +54,28 @@ BS3_DECL_FAR(void) Bs3InitHighDlls_rm_far(void)
     if (   cHighDlls > 0
         && (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386)
     {
-        unsigned            i;
+        unsigned i;
 
         /*
          * We need a buffer first of all. Using a 4K / PAGE_SIZE buffer let us
          * share calculations and variables with the allocation code.
          */
-        void BS3_FAR * const pvBuf    = Bs3MemAlloc(BS3MEMKIND_REAL, _4K);
-        uint32_t const       uFlatBuf = BS3_FP_REAL_TO_FLAT(pvBuf);
+        uint32_t      uFlatBuf;
+        uint8_t       cBufSectors;
+        uint16_t      cbBuf = 12*_1K; /* This is typically enough for a track (512*18 = 0x2400 (9216)). */
+        void BS3_FAR *pvBuf = Bs3MemAlloc(BS3MEMKIND_REAL, cbBuf);
         if (!pvBuf)
         {
-            Bs3TestPrintf("Failed to allocate 4 KiB memory buffer for loading high DLL(s)!\n");
-            Bs3Shutdown();
+            cbBuf = _4K;
+            pvBuf = Bs3MemAlloc(BS3MEMKIND_REAL, cbBuf);
+            if (!pvBuf)
+            {
+                Bs3TestPrintf("Failed to allocate 4 KiB memory buffer for loading high DLL(s)!\n");
+                Bs3Shutdown();
+            }
         }
+        cBufSectors = (uint8_t)(cbBuf / 512);
+        uFlatBuf    = BS3_FP_REAL_TO_FLAT(pvBuf);
 
         /*
          * Iterate the high DLL table and load it all into memory.
@@ -74,11 +84,13 @@ BS3_DECL_FAR(void) Bs3InitHighDlls_rm_far(void)
         {
             const char RT_FAR * const pszzStrings  = (char RT_FAR *)&g_aBs3HighDllTable[i] + g_aBs3HighDllTable[i].offStrings;
             const char RT_FAR * const pszFilename  = &pszzStrings[g_aBs3HighDllTable[i].offFilename];
-            uint16_t                  cPagesToLoad = (uint16_t)(g_aBs3HighDllTable[i].cbLoaded / _4K);
+            uint16_t const            cPagesToLoad = (uint16_t)(g_aBs3HighDllTable[i].cbLoaded / _4K);
             uint16_t                  iPage;
             Bs3Printf("Loading dll '%s' at %#RX32 ...", pszFilename, g_aBs3HighDllTable[i].uLoadAddr);
 
-            /* Allocate the memory taken by the DLL. */
+            /*
+             * Allocate the memory taken by the DLL.
+             */
             iPage = Bs3SlabAllocFixed(&g_Bs3Mem4KUpperTiled.Core, g_aBs3HighDllTable[i].uLoadAddr, cPagesToLoad);
             if (iPage == 0 || iPage == UINT16_MAX)
             {
@@ -86,27 +98,25 @@ BS3_DECL_FAR(void) Bs3InitHighDlls_rm_far(void)
                               g_aBs3HighDllTable[i].uLoadAddr, cPagesToLoad, iPage, pszFilename);
                 Bs3Shutdown();
             }
-            /* We don't have any memory management above 16MB... */
+            /** @todo We don't have any memory management above 16MB... */
 
             /*
-             * Load the DLL. This is where we ASSUME real-mode as we need to
-             * use int13 for the actual reading.  We temporarily restores the
-             * int13 entry in the interrupt table and loads the next chunk.
-             * Then we switch to 32-bit protected mode and copies the chunk
-             * from pvBuf and to the actual load address.
+             * Load the DLL. This is where we ASSUME real-mode, pre-PIC setup,
+             * and interrupts enabled as we need to use int13 for the actual
+             * reading. We switch to 32-bit protected mode and copies the
+             * chunk from pvBuf and to the actual load address.
+             *
+             * Note! When reading we must make sure to not switch head as the
+             *       BIOS code messes up the result if it does the wraparound.
              */
             {
-                uint32_t      uCurFlatLoadAddr;
-                uint32_t      uCurSectorInImage;
-                uint16_t      cSectorsPerCylinder;
-
                 /* Get the drive geometry. ASSUMES the bootsector hasn't been trashed yet! */
+                uint16_t      cSectorsPerCylinder;
                 uint8_t const bDrive       = ((BS3BOOTSECTOR RT_FAR *)BS3_FP_MAKE(0,0x7c00))->bBootDrv;
                 uint16_t      uMaxCylinder = 0;
                 uint8_t       uMaxHead     = 0;
                 uint8_t       uMaxSector   = 0;
-                int           rc;
-                rc = Bs3DiskQueryGeometry_rm(bDrive, &uMaxCylinder, &uMaxHead, &uMaxSector);
+                int rc = Bs3DiskQueryGeometry_rm(bDrive, &uMaxCylinder, &uMaxHead, &uMaxSector);
                 if (rc != 0)
                 {
                     Bs3TestPrintf("Bs3DiskQueryGeometry(%#x) failed: %#x\n", bDrive, rc);
@@ -117,41 +127,59 @@ BS3_DECL_FAR(void) Bs3InitHighDlls_rm_far(void)
                 //              bDrive, uMaxCylinder, uMaxHead, uMaxSector, cSectorsPerCylinder);
 
                 /* Load the image. */
-                if (g_aBs3HighDllTable[i].cbInImage < g_aBs3HighDllTable[i].cbLoaded)
-                    cPagesToLoad = (uint16_t)(g_aBs3HighDllTable[i].cbInImage / _4K);
-                uCurFlatLoadAddr  = g_aBs3HighDllTable[i].uLoadAddr;
-                uCurSectorInImage = g_aBs3HighDllTable[i].offInImage / 512;
-                iPage             = 0;
-                while (iPage < cPagesToLoad)
                 {
-                    /* Read the next page. */
-                    uint16_t const uCylinder  = uCurSectorInImage / cSectorsPerCylinder;
-                    uint16_t const uRemainder = uCurSectorInImage % cSectorsPerCylinder;
-                    uint8_t  const uHead      = uRemainder / uMaxSector;
-                    uint8_t  const uSector    = (uRemainder % uMaxSector) + 1;
-                    //Bs3TestPrintf("Calling Bs3DiskRead(%#x,%#x,%#x,%#x,%#x,%p) [uCurSectorInImage=%RX32]\n",
-                    //              bDrive, uCylinder, uHead, uSector, (uint8_t)(_4K / 512), pvBuf, uCurSectorInImage);
-                    rc = Bs3DiskRead_rm(bDrive, uCylinder, uHead, uSector, _4K / 512, pvBuf);
-                    if (rc != 0)
+                    uint32_t       cSectorsLeftToLoad = g_aBs3HighDllTable[i].cbInImage  / 512;
+                    uint32_t       uCurFlatLoadAddr   = g_aBs3HighDllTable[i].uLoadAddr;
+                    /* Calculate the current CHS position: */
+                    uint32_t const uCurSectorInImage  = g_aBs3HighDllTable[i].offInImage / 512;
+                    uint16_t       uCylinder          = uCurSectorInImage / cSectorsPerCylinder;
+                    uint16_t const uRemainder         = uCurSectorInImage % cSectorsPerCylinder;
+                    uint8_t        uHead              = uRemainder / uMaxSector;
+                    uint8_t        uSector            = (uRemainder % uMaxSector) + 1;
+                    while (cSectorsLeftToLoad > 0)
                     {
-                        Bs3TestPrintf("Bs3DiskRead(%#x,%#x,%#x,%#x,,) failed: %#x\n", bDrive, uCylinder, uHead, uSector, rc);
-                        Bs3Shutdown();
+                        /* Figure out how much we dare read.  Only up to the end of the track. */
+                        uint8_t cSectors = uMaxSector + 1 - uSector;
+                        if (cSectors > cBufSectors)
+                            cSectors = cBufSectors;
+                        if (cSectorsLeftToLoad < cSectors)
+                            cSectors = (uint8_t)(cSectorsLeftToLoad);
+
+                        //Bs3TestPrintf("Calling Bs3DiskRead(%#x,%#x,%#x,%#x,%#x,%p) [uCurFlatLoadAddr=%RX32]\n",
+                        //              bDrive, uCylinder, uHead, uSector, cSectors, pvBuf, uCurFlatLoadAddr);
+                        rc = Bs3DiskRead_rm(bDrive, uCylinder, uHead, uSector, cSectors, pvBuf);
+                        if (rc != 0)
+                        {
+                            Bs3TestPrintf("Bs3DiskRead(%#x,%#x,%#x,%#x,%#x,) failed: %#x\n",
+                                          bDrive, uCylinder, uHead, uSector, cBufSectors, rc);
+                            Bs3Shutdown();
+                        }
+
+                        /* Copy the page to where the DLL is being loaded.  */
+                        Bs3MemCopyFlat_rm_far(uCurFlatLoadAddr, uFlatBuf, 512 * cSectors);
+                        Bs3PrintChr('.');
+
+                        /* Advance */
+                        uCurFlatLoadAddr   += cSectors * 512;
+                        cSectorsLeftToLoad -= cSectors;
+                        uSector            += cSectors;
+                        if (uSector > uMaxSector)
+                        {
+                            uSector        = 1;
+                            uHead++;
+                            if (uHead > uMaxHead)
+                            {
+                                uHead      = 0;
+                                uCylinder++;
+                            }
+                        }
                     }
-
-                    /* Copy the page to where the DLL is being loaded.  */
-                    Bs3MemCopyFlat_rm_far(uCurFlatLoadAddr, uFlatBuf, _4K);
-                    Bs3PrintChr('.');
-
-                    /* Advance */
-                    iPage             += 1;
-                    uCurFlatLoadAddr  += _4K;
-                    uCurSectorInImage += _4K / 512;
                 }
             }
         }
 
         Bs3Printf("\n");
-        Bs3MemFree(pvBuf, _4K);
+        Bs3MemFree(pvBuf, cbBuf);
     }
 }
 
