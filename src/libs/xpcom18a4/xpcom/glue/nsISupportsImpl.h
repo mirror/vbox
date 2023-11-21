@@ -50,8 +50,9 @@
 #include "nsDebug.h"
 #include "nsTraceRefcnt.h"
 #ifdef VBOX
-# include "iprt/asm.h"
-# include "iprt/assert.h"
+# include <iprt/asm.h>
+# include <iprt/assert.h>
+# include <iprt/thread.h>
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -61,7 +62,7 @@
 
 class nsAutoOwningThread {
 public:
-    nsAutoOwningThread() { mThread = PR_GetCurrentThread(); }
+    nsAutoOwningThread() { mThread = RTThreadSelf(); }
     void *GetThread() const { return mThread; }
 
 private:
