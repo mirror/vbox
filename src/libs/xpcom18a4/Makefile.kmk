@@ -61,7 +61,6 @@ endif
 INSTALLS += \
 	NSPRPUB-HEADERS \
 	NSPRPUB-MD-HEADERS \
-	NSPRPUB-PRIV-HEADERS \
 	STRING-HEADERS \
 	XPCOM-HEADERS \
 	IPCD-HEADERS
@@ -197,12 +196,6 @@ NSPRPUB-MD-HEADERS_SOURCES = \
 	nsprpub/pr/include/md/_openbsd.cfg \
 	nsprpub/pr/include/md/_solaris32.cfg \
 	nsprpub/pr/include/md/_solaris64.cfg
-
-NSPRPUB-PRIV-HEADERS_INST = $(INST_SDK)bindings/xpcom/include/nsprpub/private/
-NSPRPUB-PRIV-HEADERS_IFFLAGS = -m 644
-NSPRPUB-PRIV-HEADERS_SOURCES = \
-	nsprpub/pr/include/private/pprthred.h \
-	nsprpub/pr/include/private/prpriv.h
 
 STRING-HEADERS_INST = $(INST_SDK)bindings/xpcom/include/string/
 STRING-HEADERS_IFFLAGS = -m 644

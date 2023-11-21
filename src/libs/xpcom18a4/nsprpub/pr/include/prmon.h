@@ -49,6 +49,8 @@
 #define PR_Wait VBoxNsprPR_Wait
 #define PR_NewMonitor VBoxNsprPR_NewMonitor
 #define PR_DestroyMonitor VBoxNsprPR_DestroyMonitor
+#define PR_GetMonitorEntryCount VBoxNsprPR_GetMonitorEntryCount
+#define PR_NewNamedMonitor VBoxNsprPR_NewNamedMonitor
 #endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 
 PR_BEGIN_EXTERN_C
@@ -117,6 +119,14 @@ NSPR_API(PRStatus) PR_Notify(PRMonitor *mon);
 ** monitor.
 */
 NSPR_API(PRStatus) PR_NotifyAll(PRMonitor *mon);
+
+/*
+** Return the number of times that the current thread has entered the
+** mutex. Returns zero if the current thread has not entered the mutex.
+*/
+NSPR_API(PRIntn) PR_GetMonitorEntryCount(PRMonitor *mon);
+
+NSPR_API(PRMonitor*) PR_NewNamedMonitor(const char* name);
 
 PR_END_EXTERN_C
 

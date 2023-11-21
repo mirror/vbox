@@ -49,7 +49,6 @@
 #include <pthread.h>
 
 #include "nspr.h"
-#include "prpriv.h"
 
 #include "md/prosdep.h"
 
