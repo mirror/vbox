@@ -58,7 +58,6 @@
 #include <dirent.h>
 #include <errno.h>
 
-#include "prio.h"
 #include "prmem.h"
 #include "prclist.h"
 
@@ -298,9 +297,6 @@ extern void		_MD_Wakeup_CPUs(void);
 
 #define _MD_INIT_FILEDESC(fd)
 
-extern void		_MD_MakeNonblock(PRFileDesc *fd);
-#define _MD_MAKE_NONBLOCK			_MD_MakeNonblock
-
 /************************************************************************/
 
 #if !defined(_PR_PTHREADS)
@@ -339,131 +335,6 @@ extern void _MD_DisableClockInterrupts(void);
 extern void _MD_BlockClockInterrupts(void);
 extern void _MD_UnblockClockInterrupts(void);
 extern void _MD_PauseCPU(PRIntervalTime timeout);
-
-extern PRStatus _MD_open_dir(struct _MDDir *, const char *);
-extern PRInt32  _MD_close_dir(struct _MDDir *);
-extern char *   _MD_read_dir(struct _MDDir *, PRIntn);
-extern PRInt32  _MD_open(const char *name, PRIntn osflags, PRIntn mode);
-extern PRInt32	_MD_delete(const char *name);
-extern PRInt32	_MD_getfileinfo(const char *fn, PRFileInfo *info);
-extern PRInt32  _MD_getfileinfo64(const char *fn, PRFileInfo64 *info);
-extern PRInt32  _MD_getopenfileinfo(const PRFileDesc *fd, PRFileInfo *info);
-extern PRInt32  _MD_getopenfileinfo64(const PRFileDesc *fd, PRFileInfo64 *info);
-extern PRInt32	_MD_rename(const char *from, const char *to);
-extern PRInt32	_MD_mkdir(const char *name, PRIntn mode);
-extern PRInt32	_MD_rmdir(const char *name);
-extern PRInt32	_MD_accept_read(PRInt32 sock, PRInt32 *newSock,
-				PRNetAddr **raddr, void *buf, PRInt32 amount);
-
-#define _MD_OPEN_DIR(dir, name)		    _MD_open_dir(dir, name)
-#define _MD_CLOSE_DIR(dir)		        _MD_close_dir(dir)
-#define _MD_READ_DIR(dir, flags)	    _MD_read_dir(dir, flags)
-#define _MD_OPEN(name, osflags, mode)	_MD_open(name, osflags, mode)
-#define _MD_OPEN_FILE(name, osflags, mode)	_MD_open(name, osflags, mode)
-extern PRInt32 _MD_read(PRFileDesc *fd, void *buf, PRInt32 amount);
-#define _MD_READ(fd,buf,amount)		    _MD_read(fd,buf,amount)
-extern PRInt32 _MD_write(PRFileDesc *fd, const void *buf, PRInt32 amount);
-#define _MD_WRITE(fd,buf,amount)	    _MD_write(fd,buf,amount)
-#define _MD_DELETE(name)		        _MD_delete(name)
-#define _MD_GETFILEINFO(fn, info)	    _MD_getfileinfo(fn, info)
-#define _MD_GETFILEINFO64(fn, info)	    _MD_getfileinfo64(fn, info)
-#define _MD_GETOPENFILEINFO(fd, info)	_MD_getopenfileinfo(fd, info)
-#define _MD_GETOPENFILEINFO64(fd, info)	_MD_getopenfileinfo64(fd, info)
-#define _MD_RENAME(from, to)		    _MD_rename(from, to)
-#define _MD_MKDIR(name, mode)		    _MD_mkdir(name, mode)
-#define _MD_MAKE_DIR(name, mode)		_MD_mkdir(name, mode)
-#define _MD_RMDIR(name)			        _MD_rmdir(name)
-#define _MD_ACCEPT_READ(sock, newSock, raddr, buf, amount)	_MD_accept_read(sock, newSock, raddr, buf, amount)
-
-extern PRInt32		_MD_socket(int af, int type, int flags);
-#define _MD_SOCKET	_MD_socket
-extern PRInt32		_MD_connect(PRFileDesc *fd, const PRNetAddr *addr,
-								PRUint32 addrlen, PRIntervalTime timeout);
-#define _MD_CONNECT	_MD_connect
-extern PRInt32		_MD_accept(PRFileDesc *fd, PRNetAddr *addr, PRUint32 *addrlen,
-													PRIntervalTime timeout);
-#define _MD_ACCEPT	_MD_accept
-extern PRInt32		_MD_bind(PRFileDesc *fd, const PRNetAddr *addr, PRUint32 addrlen);
-#define _MD_BIND	_MD_bind
-extern PRInt32		_MD_listen(PRFileDesc *fd, PRIntn backlog);
-#define _MD_LISTEN	_MD_listen
-extern PRInt32		_MD_shutdown(PRFileDesc *fd, PRIntn how);
-#define _MD_SHUTDOWN	_MD_shutdown
-
-extern PRInt32		_MD_recv(PRFileDesc *fd, void *buf, PRInt32 amount,
-                               PRIntn flags, PRIntervalTime timeout);
-#define _MD_RECV	_MD_recv
-extern PRInt32		_MD_send(PRFileDesc *fd, const void *buf, PRInt32 amount,
-									PRIntn flags, PRIntervalTime timeout);
-#define _MD_SEND	_MD_send
-extern PRInt32		_MD_recvfrom(PRFileDesc *fd, void *buf, PRInt32 amount,
-						PRIntn flags, PRNetAddr *addr, PRUint32 *addrlen,
-											PRIntervalTime timeout);
-#define _MD_RECVFROM	_MD_recvfrom
-extern PRInt32 _MD_sendto(PRFileDesc *fd, const void *buf, PRInt32 amount,
-							PRIntn flags, const PRNetAddr *addr, PRUint32 addrlen,
-												PRIntervalTime timeout);
-#define _MD_SENDTO	_MD_sendto
-extern PRInt32		_MD_writev(PRFileDesc *fd, const struct PRIOVec *iov,
-								PRInt32 iov_size, PRIntervalTime timeout);
-#define _MD_WRITEV	_MD_writev
-
-extern PRInt32		_MD_socketavailable(PRFileDesc *fd);
-#define	_MD_SOCKETAVAILABLE		_MD_socketavailable
-extern PRInt64		_MD_socketavailable64(PRFileDesc *fd);
-#define	_MD_SOCKETAVAILABLE64		_MD_socketavailable64
-
-#define	_MD_PIPEAVAILABLE		_MD_socketavailable
-
-extern PRInt32 _MD_pr_poll(PRPollDesc *pds, PRIntn npds,
-												PRIntervalTime timeout);
-#define _MD_PR_POLL		_MD_pr_poll
-
-extern PRInt32		_MD_close(PRInt32 osfd);
-#define _MD_CLOSE_FILE	_MD_close
-extern PRInt32		_MD_lseek(PRFileDesc*, PRInt32, PRSeekWhence);
-#define _MD_LSEEK	_MD_lseek
-extern PRInt64		_MD_lseek64(PRFileDesc*, PRInt64, PRSeekWhence);
-#define _MD_LSEEK64	_MD_lseek64
-extern PRInt32		_MD_fsync(PRFileDesc *fd);
-#define _MD_FSYNC	_MD_fsync
-
-extern PRInt32 _MD_socketpair(int af, int type, int flags, PRInt32 *osfd);
-#define _MD_SOCKETPAIR		_MD_socketpair
-
-#define _MD_CLOSE_SOCKET	_MD_close
-
-#ifndef NO_NSPR_10_SUPPORT
-#define _MD_STAT	stat
-#endif
-
-extern PRStatus _MD_getpeername(PRFileDesc *fd, PRNetAddr *addr,
-											PRUint32 *addrlen);
-#define _MD_GETPEERNAME _MD_getpeername
-extern PRStatus _MD_getsockname(PRFileDesc *fd, PRNetAddr *addr,
-											PRUint32 *addrlen);
-#define _MD_GETSOCKNAME _MD_getsockname
-
-extern PRStatus _MD_getsockopt(PRFileDesc *fd, PRInt32 level,
-						PRInt32 optname, char* optval, PRInt32* optlen);
-#define _MD_GETSOCKOPT		_MD_getsockopt
-extern PRStatus _MD_setsockopt(PRFileDesc *fd, PRInt32 level,
-					PRInt32 optname, const char* optval, PRInt32 optlen);
-#define _MD_SETSOCKOPT		_MD_setsockopt
-
-extern PRStatus _MD_set_fd_inheritable(PRFileDesc *fd, PRBool inheritable);
-#define _MD_SET_FD_INHERITABLE _MD_set_fd_inheritable
-
-extern void _MD_init_fd_inheritable(PRFileDesc *fd, PRBool imported);
-#define _MD_INIT_FD_INHERITABLE _MD_init_fd_inheritable
-
-extern void _MD_query_fd_inheritable(PRFileDesc *fd);
-#define _MD_QUERY_FD_INHERITABLE _MD_query_fd_inheritable
-
-extern PRStatus _MD_gethostname(char *name, PRUint32 namelen);
-#define _MD_GETHOSTNAME		_MD_gethostname
-
-extern int _MD_unix_get_nonblocking_connect_error(int osfd);
 
 /*
  * The standard (XPG4) gettimeofday() (from BSD) takes two arguments.
@@ -541,8 +412,7 @@ struct stat64 {
     ino64_t st_ino;
     mode_t st_mode;
     nlink_t st_nlink;
-    uid_t st_uid;
-    gid_t st_gid;
+    uid_t st_uid;    gid_t st_gid;
     dev_t st_rdev;
     long t_pad2[2];
     off64_t st_size;

@@ -184,118 +184,6 @@ struct _PT_Notified
 *************************************************************************/
 /************************************************************************/
 
-extern PROffset32 _PR_MD_LSEEK(PRFileDesc *fd, PROffset32 offset, PRSeekWhence whence);
-#define    _PR_MD_LSEEK _MD_LSEEK
-
-extern PROffset64 _PR_MD_LSEEK64(PRFileDesc *fd, PROffset64 offset, PRSeekWhence whence);
-#define    _PR_MD_LSEEK64 _MD_LSEEK64
-
-extern PRInt32 _PR_MD_GETFILEINFO(const char *fn, PRFileInfo *info);
-#define _PR_MD_GETFILEINFO _MD_GETFILEINFO
-
-extern PRInt32 _PR_MD_GETFILEINFO64(const char *fn, PRFileInfo64 *info);
-#define _PR_MD_GETFILEINFO64 _MD_GETFILEINFO64
-
-extern PRInt32 _PR_MD_GETOPENFILEINFO(const PRFileDesc *fd, PRFileInfo *info);
-#define _PR_MD_GETOPENFILEINFO _MD_GETOPENFILEINFO
-
-extern PRInt32 _PR_MD_GETOPENFILEINFO64(const PRFileDesc *fd, PRFileInfo64 *info);
-#define _PR_MD_GETOPENFILEINFO64 _MD_GETOPENFILEINFO64
-
-
-/*
- * These flags are used by NSPR temporarily in the poll
- * descriptor's out_flags field to record the mapping of
- * NSPR's poll flags to the system poll flags.
- *
- * If _PR_POLL_READ_SYS_WRITE bit is set, it means the
- * PR_POLL_READ flag specified by the topmost layer is
- * mapped to the WRITE flag at the system layer.  Similarly
- * for the other three _PR_POLL_XXX_SYS_YYY flags.  It is
- * assumed that the PR_POLL_EXCEPT flag doesn't get mapped
- * to other flags.
- */
-#define _PR_POLL_READ_SYS_READ     0x1
-#define _PR_POLL_READ_SYS_WRITE    0x2
-#define _PR_POLL_WRITE_SYS_READ    0x4
-#define _PR_POLL_WRITE_SYS_WRITE   0x8
-
-/*
-** These methods are coerced into file descriptor methods table
-** when the intended service is inappropriate for the particular
-** type of file descriptor.
-*/
-extern PRIntn _PR_InvalidInt(void);
-extern PRInt16 _PR_InvalidInt16(void);
-extern PRInt64 _PR_InvalidInt64(void);
-extern PRStatus _PR_InvalidStatus(void);
-extern PRFileDesc *_PR_InvalidDesc(void);
-
-extern PRIOMethods _pr_faulty_methods;
-
-/*
-** The PR_NETADDR_SIZE macro can only be called on a PRNetAddr union
-** whose 'family' field is set.  It returns the size of the union
-** member corresponding to the specified address family.
-*/
-
-extern PRUintn _PR_NetAddrSize(const PRNetAddr* addr);
-
-#if defined(_PR_INET6)
-
-#define PR_NETADDR_SIZE(_addr) _PR_NetAddrSize(_addr)
-
-#elif defined(_PR_HAVE_MD_SOCKADDR_IN6)
-
-/*
-** Under the following conditions:
-** 1. _PR_INET6 is not defined;
-** 2. _PR_INET6_PROBE is defined;
-** 3. struct sockaddr_in6 has nonstandard fields at the end
-**    (e.g., on Solaris 8),
-** (_addr)->ipv6 is smaller than struct sockaddr_in6, and
-** hence we can't pass sizeof((_addr)->ipv6) to socket
-** functions such as connect because they would fail with
-** EINVAL.
-**
-** To pass the correct socket address length to socket
-** functions, define the macro _PR_HAVE_MD_SOCKADDR_IN6 and
-** define struct _md_sockaddr_in6 to be isomorphic to
-** struct sockaddr_in6.
-*/
-
-#if defined(XP_UNIX) || defined(XP_OS2_EMX)
-#define PR_NETADDR_SIZE(_addr) 					\
-        ((_addr)->raw.family == PR_AF_INET		\
-        ? sizeof((_addr)->inet)					\
-        : ((_addr)->raw.family == PR_AF_INET6	\
-        ? sizeof(struct _md_sockaddr_in6)		\
-        : sizeof((_addr)->local)))
-#else
-#define PR_NETADDR_SIZE(_addr) 					\
-        ((_addr)->raw.family == PR_AF_INET		\
-        ? sizeof((_addr)->inet)					\
-        : sizeof(struct _md_sockaddr_in6)
-#endif /* defined(XP_UNIX) */
-
-#else
-
-#if defined(XP_UNIX) || defined(XP_OS2_EMX)
-#define PR_NETADDR_SIZE(_addr) 					\
-        ((_addr)->raw.family == PR_AF_INET		\
-        ? sizeof((_addr)->inet)					\
-        : ((_addr)->raw.family == PR_AF_INET6	\
-        ? sizeof((_addr)->ipv6)					\
-        : sizeof((_addr)->local)))
-#else
-#define PR_NETADDR_SIZE(_addr) 					\
-        ((_addr)->raw.family == PR_AF_INET		\
-        ? sizeof((_addr)->inet)					\
-        : sizeof((_addr)->ipv6))
-#endif /* defined(XP_UNIX) */
-
-#endif /* defined(_PR_INET6) */
-
 extern void _PR_InitThreads(
     PRThreadType type, PRThreadPriority priority, PRUintn maxPTDs);
 
@@ -387,73 +275,11 @@ struct PRThread {
     PRUint32 syspoll_count;         /* number of elements in syspoll_list */
 };
 
-struct PRProcessAttr {
-    PRFileDesc *stdinFd;
-    PRFileDesc *stdoutFd;
-    PRFileDesc *stderrFd;
-    char *currentDirectory;
-    char *fdInheritBuffer;
-    PRSize fdInheritBufferSize;
-    PRSize fdInheritBufferUsed;
-};
-
 struct PRProcess {
     _MDProcess md;
 };
 
 /************************************************************************/
-
-/*
-** File descriptors of the NSPR layer can be in one of the
-** following states (stored in the 'state' field of struct
-** PRFilePrivate):
-** - _PR_FILEDESC_OPEN: The OS fd is open.
-** - _PR_FILEDESC_CLOSED: The OS fd is closed.  The PRFileDesc
-**   is still open but is unusable.  The only operation allowed
-**   on the PRFileDesc is PR_Close().
-** - _PR_FILEDESC_FREED: The OS fd is closed and the PRFileDesc
-**   structure is freed.
-*/
-
-#define _PR_FILEDESC_OPEN       0xaaaaaaaa    /* 1010101... */
-#define _PR_FILEDESC_CLOSED     0x55555555    /* 0101010... */
-#define _PR_FILEDESC_FREED      0x11111111
-
-/*
-** A boolean type with an additional "unknown" state
-*/
-
-typedef enum {
-    _PR_TRI_TRUE = 1,
-    _PR_TRI_FALSE = 0,
-    _PR_TRI_UNKNOWN = -1
-} _PRTriStateBool;
-
-struct PRFilePrivate {
-    PRInt32 state;
-    PRBool nonblocking;
-    _PRTriStateBool inheritable;
-    PRFileDesc *next;
-    PRIntn lockCount;   /*   0: not locked
-                         *  -1: a native lockfile call is in progress
-                         * > 0: # times the file is locked */
-#ifdef _PR_HAVE_PEEK_BUFFER
-    char *peekBuffer;
-    PRInt32 peekBufSize;
-    PRInt32 peekBytes;
-#endif
-#if !defined(XP_UNIX)   /* BugZilla: 4090 */
-    PRBool  appendMode;
-#endif
-    _MDFileDesc md;
-#ifdef _PR_STRICT_ADDR_LEN
-    PRUint16 af;        /* If the platform requires passing the exact
-                         * length of the sockaddr structure for the
-                         * address family of the socket to socket
-                         * functions like accept(), we need to save
-                         * the address family of the socket. */
-#endif
-};
 
 extern void _PR_InitSegs(void);
 extern void _PR_InitStacks(void);
@@ -498,11 +324,6 @@ struct PRSegment {
 
 extern PRInt32 _pr_pageSize;
 extern PRInt32 _pr_pageShift;
-
-extern PRFileDesc *_pr_stdin;
-extern PRFileDesc *_pr_stdout;
-extern PRFileDesc *_pr_stderr;
-
 
 /*************************************************************************
 * External machine-dependent code provided by each OS.                     *                                                                     *
@@ -587,16 +408,6 @@ NSPR_API(PRInt32) _PR_MD_GET_SOCKET_ERROR(void);
 /* Get name of current host */
 extern PRStatus _PR_MD_GETHOSTNAME(char *name, PRUint32 namelen);
 #define    _PR_MD_GETHOSTNAME _MD_GETHOSTNAME
-
-/* File descriptor inheritance */
-
-/*
- * If fd->secret->inheritable is _PR_TRI_UNKNOWN and we need to
- * know the inheritable attribute of the fd, call this function
- * to find that out.  This typically requires a system call.
- */
-extern void _PR_MD_QUERY_FD_INHERITABLE(PRFileDesc *fd);
-#define    _PR_MD_QUERY_FD_INHERITABLE _MD_QUERY_FD_INHERITABLE
 
 PR_END_EXTERN_C
 

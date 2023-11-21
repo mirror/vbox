@@ -50,10 +50,6 @@
 #include <iprt/process.h>
 #endif
 
-PRFileDesc *_pr_stdin;
-PRFileDesc *_pr_stdout;
-PRFileDesc *_pr_stderr;
-
 PRBool _pr_initialized = PR_FALSE;
 
 
