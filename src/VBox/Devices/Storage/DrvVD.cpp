@@ -4896,7 +4896,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
             }
 
             char *psz = NULL;
-           rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "Type", &psz);
+            rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "Type", &psz);
             if (RT_FAILURE(rc))
                 return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_BLOCK_NO_TYPE, N_("Failed to obtain the sub type"));
             pThis->enmType = drvvdGetMediaTypeFromString(psz);
@@ -4916,8 +4916,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                                       N_("DrvVD: Configuration error: Querying \"CachePath\" as string failed"));
                 break;
             }
-            else
-                rc = VINF_SUCCESS;
+            rc = VINF_SUCCESS;
 
             if (pszCachePath)
             {
@@ -5514,19 +5513,19 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                         pThis->enmType = PDMMEDIATYPE_FLOPPY_720;
                     RT_FALL_THRU();
                 case PDMMEDIATYPE_FLOPPY_720:
-                    if (cbFloppyImg > 80 * 2 * 14 * 512)
+                    if (cbFloppyImg > 80 * 2 * 9 * 512)
                         pThis->enmType = PDMMEDIATYPE_FLOPPY_1_20;
                     RT_FALL_THRU();
                 case PDMMEDIATYPE_FLOPPY_1_20:
-                    if (cbFloppyImg > 80 * 2 * 20 * 512)
+                    if (cbFloppyImg > 80 * 2 * 15 * 512)
                         pThis->enmType = PDMMEDIATYPE_FLOPPY_1_44;
                     RT_FALL_THRU();
                 case PDMMEDIATYPE_FLOPPY_1_44:
-                    if (cbFloppyImg > 80 * 2 * 24 * 512)
+                    if (cbFloppyImg > 80 * 2 * 18 * 512)
                         pThis->enmType = PDMMEDIATYPE_FLOPPY_2_88;
                     RT_FALL_THRU();
                 case PDMMEDIATYPE_FLOPPY_2_88:
-                    if (cbFloppyImg > 80 * 2 * 48 * 512)
+                    if (cbFloppyImg > 80 * 2 * 36 * 512)
                         pThis->enmType = PDMMEDIATYPE_FLOPPY_FAKE_15_6;
                     RT_FALL_THRU();
                 case PDMMEDIATYPE_FLOPPY_FAKE_15_6:
