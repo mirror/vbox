@@ -257,7 +257,6 @@ struct PRThread {
 
     pthread_t id;                   /* pthread identifier for the thread */
     PRBool okToDelete;              /* ok to delete the PRThread struct? */
-    PRCondVar *waiting;             /* where the thread is waiting | NULL */
     void *sp;                       /* recorded sp for garbage collection */
     PRThread *next, *prev;          /* simple linked list of all threads */
     PRUint32 suspend;               /* used to store suspend and resume flags */

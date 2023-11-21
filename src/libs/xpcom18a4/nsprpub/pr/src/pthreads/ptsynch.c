@@ -321,7 +321,6 @@ PR_IMPLEMENT(void) PR_DestroyCondVar(PRCondVar *cvar)
 PR_IMPLEMENT(PRStatus) PR_WaitCondVar(PRCondVar *cvar, PRIntervalTime timeout)
 {
     PRIntn rv;
-    PRThread *thred = PR_GetCurrentThread();
 
     Assert(cvar != NULL);
     /* We'd better be locked */
@@ -329,13 +328,6 @@ PR_IMPLEMENT(PRStatus) PR_WaitCondVar(PRCondVar *cvar, PRIntervalTime timeout)
     Assert(PR_TRUE == cvar->lock->locked);
     /* and it better be by us */
     Assert(pthread_equal(cvar->lock->owner, pthread_self()));
-
-    if (_PT_THREAD_INTERRUPTED(thred)) goto aborted;
-
-    /*
-     * The thread waiting is used for PR_Interrupt
-     */
-    thred->waiting = cvar;  /* this is where we're waiting */
 
     /*
      * If we have pending notifies, post them now.
@@ -364,17 +356,11 @@ PR_IMPLEMENT(PRStatus) PR_WaitCondVar(PRCondVar *cvar, PRIntervalTime timeout)
     cvar->lock->owner = pthread_self();
 
     Assert(0 == cvar->lock->notified.length);
-    thred->waiting = NULL;  /* and now we're not */
-    if (_PT_THREAD_INTERRUPTED(thred)) goto aborted;
     if (rv != 0)
     {
         return PR_FAILURE;
     }
     return PR_SUCCESS;
-
-aborted:
-    thred->state &= ~PT_THREAD_ABORTED;
-    return PR_FAILURE;
 }  /* PR_WaitCondVar */
 
 PR_IMPLEMENT(PRStatus) PR_NotifyCondVar(PRCondVar *cvar)
