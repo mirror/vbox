@@ -332,7 +332,7 @@ extern void _PR_InitLocks(void);
 struct PRCondVar {
     PRLock *lock;               /* associated lock that protects the condition */
     pthread_cond_t cv;          /* underlying pthreads condition */
-    volatile uint32_t notify_pending;     /* CV has destroy pending notification */
+    volatile int32_t notify_pending;     /* CV has destroy pending notification */
 };
 
 /************************************************************************/
