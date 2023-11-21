@@ -483,7 +483,6 @@ VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/lib/ds/plhash.c \
 	nsprpub/lib/libc/src/strlen.c \
 	nsprpub/lib/libc/src/strcpy.c \
-	nsprpub/lib/libc/src/strdup.c \
 	nsprpub/lib/libc/src/strcmp.c \
 	nsprpub/lib/libc/src/strccmp.c
 

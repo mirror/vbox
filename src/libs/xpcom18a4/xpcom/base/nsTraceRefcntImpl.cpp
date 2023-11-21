@@ -36,6 +36,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <iprt/string.h>
+
 #include "nsTraceRefcntImpl.h"
 #include "nscore.h"
 #include "nsISupports.h"
@@ -233,14 +235,14 @@ class BloatEntry {
 public:
   BloatEntry(const char* className, PRUint32 classSize)
     : mClassSize(classSize) { 
-    mClassName = PL_strdup(className);
+    mClassName = RTStrDup(className);
     Clear(&mNewStats);
     Clear(&mAllStats);
     mTotalLeaked = 0;
   }
 
   ~BloatEntry() {
-    PL_strfree(mClassName);
+    RTStrFree(mClassName);
   }
 
   PRUint32 GetClassSize() { return (PRUint32)mClassSize; }

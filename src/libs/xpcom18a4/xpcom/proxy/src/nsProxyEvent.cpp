@@ -48,6 +48,8 @@
  * 04/20/2000       IBM Corp.      Added PR_CALLBACK for Optlink use in OS2
  */
 
+#include <iprt/string.h>
+
 #include "nsProxyEvent.h"
 #include "nsProxyEventPrivate.h"
 #include "nsIProxyObjectManager.h"
@@ -176,7 +178,7 @@ nsProxyObjectCallInfo::CopyStrings(PRBool copy)
                 {
                     case nsXPTType::T_CHAR_STR:
                         mParameterList[i].val.p =
-                            PL_strdup((const char *)ptr);
+                            RTStrDup((const char *)ptr);
                         break;
                     case nsXPTType::T_WCHAR_STR:
                         mParameterList[i].val.p =
@@ -206,7 +208,7 @@ nsProxyObjectCallInfo::CopyStrings(PRBool copy)
                 {
                     case nsXPTType::T_CHAR_STR:
                     case nsXPTType::T_WCHAR_STR:
-                        PL_strfree((char*) ptr);
+                        RTStrFree((char*) ptr);
                         break;
                     case nsXPTType::T_DOMSTRING:
                     case nsXPTType::T_ASTRING:

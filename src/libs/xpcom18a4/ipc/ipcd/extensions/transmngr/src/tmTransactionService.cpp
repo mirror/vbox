@@ -35,6 +35,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <iprt/string.h>
+
 #include "nsCOMPtr.h"
 #include "nsIServiceManager.h"
 #include "nsReadableUtils.h"
@@ -55,7 +57,7 @@ struct tm_waiting_msg {
 
 tm_waiting_msg::~tm_waiting_msg() {
   if (domainName)
-    PL_strfree(domainName);
+    RTStrFree(domainName);
 }
 
 struct tm_queue_mapping {
@@ -68,9 +70,9 @@ struct tm_queue_mapping {
 
 tm_queue_mapping::~tm_queue_mapping() {
   if (domainName)
-    PL_strfree(domainName);
+    RTStrFree(domainName);
   if (joinedQueueName)
-    PL_strfree(joinedQueueName);
+    RTStrFree(joinedQueueName);
 }
 
 //////////////////////////////////////////////////////////////////////////////

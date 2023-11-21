@@ -135,44 +135,6 @@ PR_EXTERN(char *)
 PL_strncpyz(char *dest, const char *src, PRUint32 max);
 
 /*
- * PL_strdup
- *
- * Returns a pointer to a malloc'd extent of memory containing a duplicate
- * of the argument string.  The size of the allocated extent is one greater
- * than the length of the argument string, because of the terminator.  A
- * null argument, like a zero-length argument, will result in a pointer to
- * a one-byte extent containing the null value.  This routine returns null
- * upon malloc failure.
- */
-
-PR_EXTERN(char *)
-PL_strdup(const char *s);
-
-/*
- * PL_strfree
- *
- * Free memory allocated by PL_strdup
- */
-
-PR_EXTERN(void)
-PL_strfree(char *s);
-
-/*
- * PL_strndup
- *
- * Returns a pointer to a malloc'd extent of memory containing a duplicate
- * of the argument string, up to the maximum specified.  If the argument
- * string has a length greater than the value of the specified maximum, the
- * return value will be a pointer to an extent of memory of length one
- * greater than the maximum specified.  A null string, a zero-length string,
- * or a zero maximum will all result in a pointer to a one-byte extent
- * containing the null value.  This routine returns null upon malloc failure.
- */
-
-PR_EXTERN(char *)
-PL_strndup(const char *s, PRUint32 max);
-
-/*
  * PL_strcmp
  *
  * Returns an integer, the sign of which -- positive, zero, or negative --

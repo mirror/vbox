@@ -37,6 +37,8 @@
 #ifndef nsCRT_h___
 #define nsCRT_h___
 
+#include <iprt/string.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -169,15 +171,15 @@ public:
   }
   
   static char* strdup(const char* str) {
-    return PL_strdup(str);
+    return RTStrDup(str);
   }
 
   static char* strndup(const char* str, PRUint32 len) {
-    return PL_strndup(str, len);
+    return RTStrDupN(str, len);
   }
 
   static void free(char* str) {
-    PL_strfree(str);
+    RTStrFree(str);
   }
 
   /**

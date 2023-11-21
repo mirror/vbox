@@ -87,6 +87,7 @@
 #include NEW_H     // for placement new
 
 #include <iprt/assert.h>
+#include <iprt/string.h>
 #include <VBox/log.h>
 
 // Loader Types
@@ -766,7 +767,7 @@ nsresult nsComponentManagerImpl::Init(void)
     mMaxNLoaderData = NS_LOADER_DATA_ALLOC_STEP;
 
     mNLoaderData = NS_COMPONENT_TYPE_NATIVE;
-    mLoaderData[mNLoaderData].type = PL_strdup(nativeComponentType);
+    mLoaderData[mNLoaderData].type = RTStrDup(nativeComponentType);
     mLoaderData[mNLoaderData].loader = mNativeComponentLoader;
     NS_ADDREF(mLoaderData[mNLoaderData].loader);
     mNLoaderData++;
@@ -779,7 +780,7 @@ nsresult nsComponentManagerImpl::Init(void)
             return NS_ERROR_OUT_OF_MEMORY;
     }
 
-    mLoaderData[mNLoaderData].type = PL_strdup(staticComponentType);
+    mLoaderData[mNLoaderData].type = RTStrDup(staticComponentType);
     mLoaderData[mNLoaderData].loader = mStaticComponentLoader;
     NS_ADDREF(mLoaderData[mNLoaderData].loader);
     mNLoaderData++;
@@ -873,7 +874,7 @@ nsresult nsComponentManagerImpl::Shutdown(void)
     // Release all the component data - loaders and type strings
     for (i=0; i < mNLoaderData; i++) {
         NS_IF_RELEASE(mLoaderData[i].loader);
-        PL_strfree((char *)mLoaderData[i].type);
+        RTStrFree((char *)mLoaderData[i].type);
     }
     PR_Free(mLoaderData);
     mLoaderData = nsnull;
@@ -948,8 +949,8 @@ AutoRegEntry::AutoRegEntry(const nsACString& name, PRInt64* modDate) :
 
 AutoRegEntry::~AutoRegEntry()
 {
-    if (mName) PL_strfree(mName);
-    if (mData) PL_strfree(mData);
+    if (mName) RTStrFree(mName);
+    if (mData) RTStrFree(mData);
 }
 
 PRBool
@@ -962,14 +963,14 @@ void
 AutoRegEntry::SetOptionalData(const char* data)
 {
     if (mData)
-        PL_strfree(mData);
+        RTStrFree(mData);
 
     if (!data) {
         mData = nsnull;
         return;
     }
 
-    mData = PL_strdup(data);
+    mData = RTStrDup(data);
 }
 
 static
@@ -2426,7 +2427,7 @@ nsComponentManagerImpl::RegistryLocationForSpec(nsIFile *aSpec,
         return NS_ERROR_NOT_INITIALIZED;
 
     if (!aSpec) {
-        *aRegistryName = PL_strdup("");
+        *aRegistryName = RTStrDup("");
         return NS_OK;
     }
 
@@ -2843,7 +2844,7 @@ nsComponentManagerImpl::AddLoaderType(const char *typeStr, int *aTypeIndex)
     }
 
     typeIndex = mNLoaderData;
-    mLoaderData[typeIndex].type = PL_strdup(typeStr);
+    mLoaderData[typeIndex].type = RTStrDup(typeStr);
     if (!mLoaderData[typeIndex].type) {
         // mmh! no memory. return failure.
         return NS_ERROR_OUT_OF_MEMORY;
