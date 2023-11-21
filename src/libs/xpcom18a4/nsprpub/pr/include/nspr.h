@@ -42,7 +42,6 @@
 #include "prclist.h"
 #include "prcvar.h"
 #include "prerror.h"
-#include "prinet.h"
 #include "prinit.h"
 #include "prinrval.h"
 #include "prlock.h"
