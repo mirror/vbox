@@ -39,6 +39,8 @@
 
 /* Implementation of misc. xpti stuff. */
 
+#include <iprt/time.h>
+
 #include "xptiprivate.h"
 
 struct xptiFileTypeEntry
@@ -124,10 +126,14 @@ xptiAutoLog::~xptiAutoLog()
 
 void xptiAutoLog::WriteTimestamp(PRFileDesc* fd, const char* msg)
 {
-    PRExplodedTime expTime;
-    PR_ExplodeTime(PR_Now(), PR_LocalTimeParameters, &expTime);
+    RTTIMESPEC TimeSpec;
+    RTTimeLocalNow(&TimeSpec);
+
+    RTTIME Time;
+    RTTimeExplode(&Time, &TimeSpec);
+    RTTimeNormalize(&Time);
     char time[128];
-    PR_FormatTimeUSEnglish(time, 128, "%Y-%m-%d-%H:%M:%S", &expTime);
+    RTTimeToString(&Time, time, sizeof(time));
     PR_fprintf(fd, "\n%s %s\n\n", msg, time);
 }
 
