@@ -42,6 +42,8 @@
 #ifndef xptiprivate_h___
 #define xptiprivate_h___
 
+#include <iprt/stream.h>
+
 #include "nscore.h"
 #include "nsISupports.h"
 
@@ -842,15 +844,15 @@ class xptiAutoLog
 public:    
     xptiAutoLog();  // not implemented
     xptiAutoLog(xptiInterfaceInfoManager* mgr,
-                nsILocalFile* logfile, PRBool append);
+                const char *logfile, PRBool append);
     ~xptiAutoLog();
 private:
-    void WriteTimestamp(PRFileDesc* fd, const char* msg);
+    void WriteTimestamp(PRTSTREAM pStream, const char* msg);
 
     xptiInterfaceInfoManager* mMgr;
-    PRFileDesc* mOldFileDesc;
+    PRTSTREAM mOldFileDesc;
 #ifdef DEBUG
-    PRFileDesc* m_DEBUG_FileDesc;
+    PRTSTREAM m_DEBUG_FileDesc;
 #endif
 };
 
@@ -875,9 +877,9 @@ public:
     static void FreeInterfaceInfoManager();
 
     xptiWorkingSet*  GetWorkingSet() {return &mWorkingSet;}
-    PRFileDesc*      GetOpenLogFile() {return mOpenLogFile;}
-    PRFileDesc*      SetOpenLogFile(PRFileDesc* fd) 
-        {PRFileDesc* temp = mOpenLogFile; mOpenLogFile = fd; return temp;}
+    PRTSTREAM        GetOpenLogFile() {return mOpenLogFile;}
+    PRTSTREAM        SetOpenLogFile(PRTSTREAM pStream) 
+        {PRTSTREAM temp = mOpenLogFile; mOpenLogFile = pStream; return temp;}
 
     PRBool LoadFile(const xptiTypelib& aTypelibRecord,
                     xptiWorkingSet* aWorkingSet = nsnull);
@@ -957,9 +959,9 @@ private:
 
 private:
     xptiWorkingSet               mWorkingSet;
-    nsCOMPtr<nsILocalFile>       mStatsLogFile;
-    nsCOMPtr<nsILocalFile>       mAutoRegLogFile;
-    PRFileDesc*                  mOpenLogFile;
+    const char                   *mStatsLogFile;
+    const char                   *mAutoRegLogFile;
+    PRTSTREAM                    mOpenLogFile;
     RTSEMFASTMUTEX               mResolveLock;
     RTSEMFASTMUTEX               mAutoRegLock;
     PRMonitor*                   mInfoMonitor;

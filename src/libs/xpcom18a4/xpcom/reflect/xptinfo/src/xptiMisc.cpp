@@ -39,6 +39,7 @@
 
 /* Implementation of misc. xpti stuff. */
 
+#include <iprt/file.h>
 #include <iprt/time.h>
 
 #include "xptiprivate.h"
@@ -76,34 +77,42 @@ xptiFileType::Type xptiFileType::GetType(const char* name)
 MOZ_DECL_CTOR_COUNTER(xptiAutoLog)
 
 xptiAutoLog::xptiAutoLog(xptiInterfaceInfoManager* mgr, 
-                         nsILocalFile* logfile, PRBool append)
+                         const char *logfile, PRBool append)
     : mMgr(nsnull), mOldFileDesc(nsnull)
 {
     MOZ_COUNT_CTOR(xptiAutoLog);
 
     if(mgr && logfile)
     {
-        PRFileDesc* fd;
-        if(NS_SUCCEEDED(logfile->
-                    OpenNSPRFileDesc(PR_WRONLY | PR_CREATE_FILE | PR_APPEND |
-                                             (append ? 0 : PR_TRUNCATE),
-                                             0600, &fd)) && fd)
+        RTFILE hFile      = NIL_RTFILE;
+        PRTSTREAM pStream = NULL;
+        int vrc = RTFileOpen(&hFile, logfile,
+                             RTFILE_O_OPEN_CREATE | RTFILE_O_WRITE | RTFILE_O_APPEND | RTFILE_O_DENY_NONE
+                             | (append ? 0 : RTFILE_O_TRUNCATE)
+                             | (0600 << RTFILE_O_CREATE_MODE_SHIFT));
+        if (RT_SUCCESS(vrc))
+            vrc = RTStrmOpenFileHandle(hFile, "at", 0 /*fFlags*/, &pStream);
+
+        if (RT_SUCCESS(vrc))
         {
 #ifdef DEBUG
-            m_DEBUG_FileDesc = fd;
+            m_DEBUG_FileDesc = pStream;
 #endif
             mMgr = mgr;
-            mOldFileDesc = mMgr->SetOpenLogFile(fd);
-            if(append)
-                PR_Seek(fd, 0, PR_SEEK_END);
-            WriteTimestamp(fd, "++++ start logging ");
+            mOldFileDesc = mMgr->SetOpenLogFile(pStream);
+            if (append)
+                RTStrmSeek(pStream, 0, RTFILE_SEEK_END);
+            WriteTimestamp(pStream, "++++ start logging ");
 
         }
         else
         {
 #ifdef DEBUG
-        printf("xpti failed to open log file for writing\n");
+            printf("xpti failed to open log file for writing\n");
 #endif
+            if (hFile != NIL_RTFILE)
+                RTFileClose(hFile);
+            hFile = NIL_RTFILE;
         }
     }
 }
@@ -114,17 +123,17 @@ xptiAutoLog::~xptiAutoLog()
 
     if(mMgr)
     {
-        PRFileDesc* fd = mMgr->SetOpenLogFile(mOldFileDesc);
+        PRTSTREAM fd = mMgr->SetOpenLogFile(mOldFileDesc);
         NS_ASSERTION(fd == m_DEBUG_FileDesc, "bad unravel");
         if(fd)
         {
             WriteTimestamp(fd, "---- end logging   ");
-            PR_Close(fd);
+            RTStrmClose(fd);
         }
     }
 }
 
-void xptiAutoLog::WriteTimestamp(PRFileDesc* fd, const char* msg)
+void xptiAutoLog::WriteTimestamp(PRTSTREAM pStream, const char* msg)
 {
     RTTIMESPEC TimeSpec;
     RTTimeLocalNow(&TimeSpec);
@@ -134,7 +143,7 @@ void xptiAutoLog::WriteTimestamp(PRFileDesc* fd, const char* msg)
     RTTimeNormalize(&Time);
     char time[128];
     RTTimeToString(&Time, time, sizeof(time));
-    PR_fprintf(fd, "\n%s %s\n\n", msg, time);
+    RTStrmPrintf(pStream, "\n%s %s\n\n", msg, time);
 }
 
 /***************************************************************************/

@@ -136,37 +136,13 @@ xptiInterfaceInfoManager::xptiInterfaceInfoManager(nsISupportsArray* aSearchPath
     vrc = RTSemFastMutexCreate(&mAdditionalManagersLock);
     AssertRC(vrc); RT_NOREF(vrc);
 
-    const char* statsFilename = RTEnvGet("MOZILLA_XPTI_STATS");
-    if(statsFilename)
-    {
-        mStatsLogFile = do_CreateInstance(NS_LOCAL_FILE_CONTRACTID);         
-        if(mStatsLogFile && 
-           NS_SUCCEEDED(mStatsLogFile->InitWithNativePath(nsDependentCString(statsFilename))))
-        {
-            printf("* Logging xptinfo stats to: %s\n", statsFilename);
-        }
-        else
-        {
-            printf("* Failed to create xptinfo stats file: %s\n", statsFilename);
-            mStatsLogFile = nsnull;
-        }
-    }
+    mStatsLogFile = RTEnvGet("MOZILLA_XPTI_STATS");
+    if (mStatsLogFile)
+        printf("* Logging xptinfo stats to: %s\n", mStatsLogFile);
 
-    const char* autoRegFilename = RTEnvGet("MOZILLA_XPTI_REGLOG");
-    if(autoRegFilename)
-    {
-        mAutoRegLogFile = do_CreateInstance(NS_LOCAL_FILE_CONTRACTID);         
-        if(mAutoRegLogFile && 
-           NS_SUCCEEDED(mAutoRegLogFile->InitWithNativePath(nsDependentCString(autoRegFilename))))
-        {
-            printf("* Logging xptinfo autoreg to: %s\n", autoRegFilename);
-        }
-        else
-        {
-            printf("* Failed to create xptinfo autoreg file: %s\n", autoRegFilename);
-            mAutoRegLogFile = nsnull;
-        }
-    }
+    mAutoRegLogFile = RTEnvGet("MOZILLA_XPTI_REGLOG");
+    if (mAutoRegLogFile)
+        printf("* Logging xptinfo autoreg to: %s\n", mAutoRegLogFile);
 }
 
 xptiInterfaceInfoManager::~xptiInterfaceInfoManager()
@@ -1623,12 +1599,12 @@ xptiInterfaceInfoManager::WriteToLog(const char *fmt, ...)
     if(!gInterfaceInfoManager)
         return;
 
-    PRFileDesc* fd = gInterfaceInfoManager->GetOpenLogFile();
+    PRTSTREAM fd = gInterfaceInfoManager->GetOpenLogFile();
     if(fd)
     {
         va_list ap;
         va_start(ap, fmt);
-        PR_vfprintf(fd, fmt, ap);
+        RTStrmPrintfV(fd, fmt, ap);
         va_end(ap);
     }
 }        
@@ -1643,7 +1619,7 @@ xpti_ResolvedFileNameLogger(PLDHashTable *table, PLDHashEntryHdr *hdr,
     if(entry->IsFullyResolved())
     {
         xptiWorkingSet*  aWorkingSet = mgr->GetWorkingSet();
-        PRFileDesc* fd = mgr->GetOpenLogFile();
+        PRTSTREAM fd = mgr->GetOpenLogFile();
 
         const xptiTypelib& typelib = entry->GetTypelibRecord();
         const char* filename = 
@@ -1653,13 +1629,13 @@ xpti_ResolvedFileNameLogger(PLDHashTable *table, PLDHashEntryHdr *hdr,
         {
             const char* zipItemName = 
                 aWorkingSet->GetZipItemAt(typelib.GetZipItemIndex()).GetName();
-            PR_fprintf(fd, "xpti used interface: %s from %s::%s\n", 
-                       entry->GetTheName(), filename, zipItemName);
+            RTStrmPrintf(fd, "xpti used interface: %s from %s::%s\n", 
+                         entry->GetTheName(), filename, zipItemName);
         }    
         else
         {
-            PR_fprintf(fd, "xpti used interface: %s from %s\n", 
-                       entry->GetTheName(), filename);
+            RTStrmPrintf(fd, "xpti used interface: %s from %s\n", 
+                         entry->GetTheName(), filename);
         }
     }
     return PL_DHASH_NEXT;
@@ -1673,7 +1649,7 @@ xptiInterfaceInfoManager::LogStats()
     // This sets what will be returned by GetOpenLogFile().
     xptiAutoLog autoLog(this, mStatsLogFile, PR_FALSE);
 
-    PRFileDesc* fd = GetOpenLogFile();
+    PRTSTREAM fd = GetOpenLogFile();
     if(!fd)
         return;
 
@@ -1685,10 +1661,10 @@ xptiInterfaceInfoManager::LogStats()
     {
         xptiFile& f = mWorkingSet.GetFileAt(i);
         if(f.GetGuts())
-            PR_fprintf(fd, "xpti used file: %s\n", f.GetName());
+            RTStrmPrintf(fd, "xpti used file: %s\n", f.GetName());
     }
 
-    PR_fprintf(fd, "\n");
+    RTStrmPrintf(fd, "\n");
 
     // Show names of xptfiles loaded from zips from which at least 
     // one interface was resolved.
@@ -1698,10 +1674,10 @@ xptiInterfaceInfoManager::LogStats()
     {
         xptiZipItem& zi = mWorkingSet.GetZipItemAt(i);
         if(zi.GetGuts())                           
-            PR_fprintf(fd, "xpti used file from zip: %s\n", zi.GetName());
+            RTStrmPrintf(fd, "xpti used file from zip: %s\n", zi.GetName());
     }
 
-    PR_fprintf(fd, "\n");
+    RTStrmPrintf(fd, "\n");
 
     // Show name of each interface that was fully resolved and the name
     // of the file and (perhaps) zip from which it was loaded.
