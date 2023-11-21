@@ -1838,6 +1838,33 @@ NS_IMETHODIMP xptiInterfaceInfoManager::EnumerateInterfaces(nsIEnumerator **_ret
     return array->Enumerate(_retval);
 }
 
+#ifdef VBOX
+/*
+ * From nsprpub, only caller below.
+ *
+ * @todo r=aeichner Implement an IPRT equivalent and replace.
+ */
+static char *PL_strnstr(const char *big, const char *little, PRUint32 max)
+{
+    size_t ll;
+
+    if( ((const char *)0 == big) || ((const char *)0 == little) ) return (char *)0;
+    if( ((char)0 == *big) || ((char)0 == *little) ) return (char *)0;
+
+    ll = strlen(little);
+    if( ll > (size_t)max ) return (char *)0;
+    max -= (PRUint32)ll;
+    max++;
+
+    for( ; max && *big; big++, max-- )
+        if( *little == *big )
+            if( 0 == strncmp(big, little, ll) )
+                return (char *)big;
+
+    return (char *)0;
+}
+#endif
+
 struct ArrayAndPrefix
 {
     nsISupportsArray* array;

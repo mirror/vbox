@@ -485,11 +485,7 @@ VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/lib/libc/src/strcpy.c \
 	nsprpub/lib/libc/src/strdup.c \
 	nsprpub/lib/libc/src/strcmp.c \
-	nsprpub/lib/libc/src/strccmp.c \
-	nsprpub/lib/libc/src/strchr.c \
-	nsprpub/lib/libc/src/strpbrk.c \
-	nsprpub/lib/libc/src/strstr.c \
-	nsprpub/lib/libc/src/strcstr.c
+	nsprpub/lib/libc/src/strccmp.c
 
 ifeq ($(filter-out darwin freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # unixish
  VBox-xpcom-nspr_SOURCES += \

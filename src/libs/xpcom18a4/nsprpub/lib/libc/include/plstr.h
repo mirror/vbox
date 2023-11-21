@@ -71,14 +71,10 @@
 #define PL_strfree VBoxNsplPL_strfree
 #define PL_strncpy VBoxNsplPL_strncpy
 #define PL_strncpyz VBoxNsplPL_strncpyz
-#define PL_strrchr VBoxNsplPL_strrchr
 #define PL_strcaserstr VBoxNsplPL_strcaserstr
 #define PL_strcasestr VBoxNsplPL_strcasestr
 #define PL_strndup VBoxNsplPL_strndup
 #define PL_strnlen VBoxNsplPL_strnlen
-#define PL_strnstr VBoxNsplPL_strnstr
-#define PL_strpbrk VBoxNsplPL_strpbrk
-#define PL_strrstr VBoxNsplPL_strrstr
 #endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 
 PR_BEGIN_EXTERN_C
@@ -225,70 +221,6 @@ PL_strcasecmp(const char *a, const char *b);
 
 PR_EXTERN(PRIntn)
 PL_strncasecmp(const char *a, const char *b, PRUint32 max);
-
-/*
- * PL_strrchr
- *
- * Returns a pointer to the last instance of the specified character in the
- * provided string.  It returns null if the character is not found, or if the
- * provided string is null.  The character may be the null character.
- */
-
-PR_EXTERN(char *)
-PL_strrchr(const char *s, char c);
-
-/*
- * NOTE: Looking for strcasechr, strcaserchr, strncasechr, or strncaserchr?
- * Use strpbrk, strprbrk, strnpbrk or strnprbrk.
- */
-
-/*
- * PL_strpbrk
- *
- * Returns a pointer to the first instance in the first string of any character
- * (not including the terminating null character) of the second string.  It returns
- * null if either string is null.
- */
-
-PR_EXTERN(char *)
-PL_strpbrk(const char *s, const char *list);
-
-/*
- * PL_strrstr
- *
- * Returns a pointer to the last instance of the little string within the big one.
- * It returns null if either string is null.
- */
-
-PR_EXTERN(char *)
-PL_strrstr(const char *big, const char *little);
-
-/*
- * PL_strnstr
- *
- * Returns a pointer to the first instance of the little string within the first
- * n characters of the big one.  It returns null if either string is null.  It
- * returns null if the length of the little string is greater than n.
- */
-
-PR_EXTERN(char *)
-PL_strnstr(const char *big, const char *little, PRUint32 n);
-
-/*
- * PL_strcasestr
- *
- * Returns a pointer to the first instance of the little string within the big one,
- * ignoring case.  It returns null if either string is null.
- */
-
-PR_EXTERN(char *)
-PL_strcasestr(const char *big, const char *little);
-
-/*
- * Things not (yet?) included: strspn/strcspn, strsep.
- * memchr, memcmp, memcpy, memccpy, index, rindex, bcmp, bcopy, bzero.
- * Any and all i18n/l10n stuff.
- */
 
 PR_END_EXTERN_C
 
