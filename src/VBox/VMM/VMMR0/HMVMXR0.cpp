@@ -4397,8 +4397,7 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPUCC pVCpu, PVMXTRANSI
     bool         fOffsettedTsc;
     bool         fParavirtTsc;
     uint64_t     uTscOffset;
-    PVMCC        pVM       = pVCpu->CTX_SUFF(pVM);
-    PVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
+    PVMCC        pVM = pVCpu->CTX_SUFF(pVM);
 
     if (pVM->hmr0.s.vmx.fUsePreemptTimer)
     {
@@ -4464,7 +4463,7 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPUCC pVCpu, PVMXTRANSI
     {
         if (pVmxTransient->fIsNestedGuest)
             uTscOffset = CPUMApplyNestedGuestTscOffset(pVCpu, uTscOffset);
-        hmR0VmxSetTscOffsetVmcs(pVmcsInfo, uTscOffset);
+        hmR0VmxSetTscOffsetVmcs(pVmxTransient->pVmcsInfo, uTscOffset);
         hmR0VmxRemoveProcCtlsVmcs(pVCpu, pVmxTransient, VMX_PROC_CTLS_RDTSC_EXIT);
     }
     else
@@ -4860,6 +4859,7 @@ static int hmR0VmxExitToRing3(PVMCPUCC pVCpu, VBOXSTRICTRC rcExit)
      */
     if (!CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx))
     {
+        Assert(!pVCpu->hmr0.s.vmx.fSwitchedToNstGstVmcs);
         vmxHCClearIntWindowExitVmcs(pVCpu, pVmcsInfo);
         vmxHCClearNmiWindowExitVmcs(pVCpu, pVmcsInfo);
     }
