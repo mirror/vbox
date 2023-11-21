@@ -69,8 +69,6 @@ static void _PR_InitStuff(void)
     _PR_InitLocks();
     _PR_InitClock();
 
-    _PR_InitThreads(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
-
     _PR_MD_FINAL_INIT();
 }
 

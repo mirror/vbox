@@ -174,7 +174,6 @@ NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/pr/include/prmem.h \
 	nsprpub/pr/include/prmon.h \
 	nsprpub/pr/include/prprf.h \
-	nsprpub/pr/include/prthread.h \
 	nsprpub/pr/include/prtime.h \
 	nsprpub/pr/include/prtypes.h \
 	nsprpub/pr/include/md/_vbox.cfg=>prcpucfg.h
@@ -475,8 +474,7 @@ VBox-xpcom-nspr_SOURCES  = \
 ifeq ($(filter-out darwin freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # unixish
  VBox-xpcom-nspr_SOURCES += \
  	nsprpub/pr/src/md/unix/unix.c \
- 	nsprpub/pr/src/pthreads/ptsynch.c \
- 	nsprpub/pr/src/pthreads/ptthread.c
+ 	nsprpub/pr/src/pthreads/ptsynch.c
 endif
 
 $(call KB_FN_DO_PASS0_ON_TARGET,VBox-xpcom-nspr)

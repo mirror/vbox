@@ -47,7 +47,6 @@
 #include "prmem.h"
 #include "prmon.h"
 #include "prprf.h"
-#include "prthread.h"
 #include "prtime.h"
 #include "prtypes.h"
 
