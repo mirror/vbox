@@ -1037,22 +1037,30 @@ nsComponentManagerImpl::ReadPersistentRegistry()
 
     nsCOMPtr<nsILocalFile> localFile(do_QueryInterface(file));
 
-    rv = localFile->OpenNSPRFileDesc(PR_RDONLY, 0444, &fd);
+    nsCAutoString pathName;
+    rv = localFile->GetNativePath(pathName);
     if (NS_FAILED(rv))
         return rv;
 
-    PRInt64 fileSize;
-    rv = localFile->GetFileSize(&fileSize);
-    if (NS_FAILED(rv))
+    size_t cbRead = 0;
+    RTFILE hFile = NIL_RTFILE;
+    int vrc = RTFileOpen(&hFile, pathName.get(),
+                         RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+    if (RT_FAILURE(vrc))
+        return NS_ERROR_FAILURE;
+
+    uint64_t fileSize;
+    vrc = RTFileQuerySize(hFile, &fileSize);
+    if (RT_FAILURE(vrc))
     {
-        PR_Close(fd);
-        return rv;
+        RTFileClose(hFile);
+        return NS_ERROR_FAILURE;
     }
 
-    PRInt32 flen = nsInt64(fileSize);
+    PRInt32 flen = nsInt64((int64_t)fileSize);
     if (flen == 0)
     {
-        PR_Close(fd);
+        RTFileClose(hFile);
         NS_WARNING("Persistent Registry Empty!");
         return NS_OK; // ERROR CONDITION
     }
@@ -1061,7 +1069,8 @@ nsComponentManagerImpl::ReadPersistentRegistry()
     if (!registry)
         goto out;
 
-    if (flen > PR_Read(fd, registry, flen))
+    vrc = RTFileRead(hFile, registry, flen, &cbRead);
+    if (RT_FAILURE(vrc) || cbRead < flen)
     {
         rv = NS_ERROR_FAILURE;
         goto out;
@@ -1266,8 +1275,8 @@ nsComponentManagerImpl::ReadPersistentRegistry()
 
     mRegistryDirty = PR_FALSE;
 out:
-    if (fd)
-        PR_Close(fd);
+    if (hFile != NIL_RTFILE)
+        RTFileClose(hFile);
 
     if (registry)
         delete [] registry;
