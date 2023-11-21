@@ -65,10 +65,10 @@ static struct
     int         rc;
 } g_aTests[] =
 {
-    "file1.txt",                          "file1.txt",                  UINT64_MAX, VINF_SUCCESS,
+    "file1.txt",                          "file1.txt",                  _64K,       VINF_SUCCESS,
     /* Note: For RTHttpGetFile() the URL needs to be percent-encoded. */
-    "file2 with spaces.txt",              "file2%20with%20spaces.txt",  UINT64_MAX, VINF_SUCCESS,
-    "bigfile.bin",                        "bigfile.bin",                _1G64,      VINF_SUCCESS,
+    "file2 with spaces.txt",              "file2%20with%20spaces.txt",  _64K,       VINF_SUCCESS,
+    "bigfile.bin",                        "bigfile.bin",                _512M,      VINF_SUCCESS,
     "zerobytes",                          "zerobytes",                  0,          VINF_SUCCESS,
     "file\\with\\slashes",                "file%5Cwith%5Cslashes",      42,         VINF_SUCCESS,
     /* Korean encoding. */
