@@ -1130,15 +1130,15 @@ void UIVirtualBoxManagerWidget::cleanup()
 void UIVirtualBoxManagerWidget::updateToolsMenuGlobal()
 {
     /* Update global tools restrictions: */
-    QList<UIToolType> restrictedTypes;
+    QSet<UIToolType> restrictedTypes;
     const bool fExpertMode = gEDataManager->isSettingsInExpertMode();
     if (!fExpertMode)
         restrictedTypes << UIToolType_Media
-                        << UIToolType_Network
-                        << UIToolType_VMActivityOverview;
+                        << UIToolType_Network;
     if (restrictedTypes.contains(m_pMenuToolsGlobal->toolsType()))
         m_pMenuToolsGlobal->setToolsType(UIToolType_Welcome);
-    m_pMenuToolsGlobal->setRestrictedToolTypes(restrictedTypes);
+    const QList restrictions(restrictedTypes.begin(), restrictedTypes.end());
+    m_pMenuToolsGlobal->setRestrictedToolTypes(restrictions);
 
     /* Take restrictions into account, closing all restricted tools: */
     foreach (const UIToolType &enmRestrictedType, restrictedTypes)
@@ -1151,14 +1151,18 @@ void UIVirtualBoxManagerWidget::updateToolsMenuMachine(UIVirtualMachineItem *pIt
     const bool fCurrentItemIsOk = pItem && pItem->accessible();
 
     /* Update machine tools restrictions: */
-    QList<UIToolType> restrictedTypes;
+    QSet<UIToolType> restrictedTypes;
+    const bool fExpertMode = gEDataManager->isSettingsInExpertMode();
+    if (!fExpertMode)
+        restrictedTypes << UIToolType_FileManager;
     if (pItem && pItem->itemType() != UIVirtualMachineItemType_Local)
         restrictedTypes << UIToolType_Snapshots
                         << UIToolType_Logs
                         << UIToolType_FileManager;
     if (restrictedTypes.contains(m_pMenuToolsMachine->toolsType()))
         m_pMenuToolsMachine->setToolsType(UIToolType_Details);
-    m_pMenuToolsMachine->setRestrictedToolTypes(restrictedTypes);
+    const QList restrictions(restrictedTypes.begin(), restrictedTypes.end());
+    m_pMenuToolsMachine->setRestrictedToolTypes(restrictions);
     /* Update machine menu items availability: */
     m_pMenuToolsMachine->setItemsEnabled(fCurrentItemIsOk);
 
