@@ -49,8 +49,6 @@
 # include <CoreFoundation/CoreFoundation.h>
 #endif
 
-#include "private/pprthred.h"
-
 #include <iprt/assert.h>
 #include <iprt/errcore.h>
 #include <VBox/log.h>
