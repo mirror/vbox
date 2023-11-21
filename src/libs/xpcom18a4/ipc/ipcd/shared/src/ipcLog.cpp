@@ -43,7 +43,6 @@
 #include <ctype.h>
 
 #include "prprf.h"
-#include "prthread.h"
 #include "plstr.h"
 
 #include <iprt/initterm.h> // for RTR3InitDll

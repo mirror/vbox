@@ -53,6 +53,8 @@
 #include "ipcIMessageObserver.h"
 #include "ipcIClientObserver.h"
 
+#include "prinrval.h"
+
 /* This API is only provided for the extensions compiled into the IPCDC
  * library, hence this API is hidden in the final DSO. */
 #define IPC_METHOD NS_HIDDEN_(nsresult)

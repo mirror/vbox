@@ -45,8 +45,6 @@
 #include "nsISupportsBase.h"
 #endif
 
-#include "prthread.h" /* needed for thread-safety checks */
-
 #include "nsDebug.h"
 #include "nsTraceRefcnt.h"
 #ifdef VBOX
