@@ -1012,12 +1012,18 @@ int UISettingsSelectorTreeView::linkToId(const QString &strLink) const
     return iID;
 }
 
-void UISettingsSelectorTreeView::selectById(int iID)
+void UISettingsSelectorTreeView::selectById(int iID, bool fSilently)
 {
     const QModelIndex index = m_pModel->findItem(iID);
     const QModelIndex proxyIndex = m_pModelProxy->mapFromSource(index);
     if (proxyIndex.isValid())
+    {
+        if (fSilently)
+            m_pTreeView->blockSignals(true);
         m_pTreeView->setCurrentIndex(proxyIndex);
+        if (fSilently)
+            m_pTreeView->blockSignals(false);
+    }
 }
 
 void UISettingsSelectorTreeView::sltHandleCurrentChanged(const QModelIndex &proxyIndex,
@@ -1164,7 +1170,7 @@ int UISettingsSelectorTreeWidget::linkToId(const QString &strLink) const
     return iID;
 }
 
-void UISettingsSelectorTreeWidget::selectById(int iID)
+void UISettingsSelectorTreeWidget::selectById(int iID, bool)
 {
     QTreeWidgetItem *pItem = findItem(m_pTreeWidget, idToString(iID), TreeWidgetSection_Id);
     if (pItem)
@@ -1406,7 +1412,7 @@ QWidget *UISettingsSelectorToolBar::idToPage(int iID) const
     return pPage;
 }
 
-void UISettingsSelectorToolBar::selectById(int iID)
+void UISettingsSelectorToolBar::selectById(int iID, bool)
 {
     if (const UISelectorActionItem *pItem = findActionItem(iID))
     {

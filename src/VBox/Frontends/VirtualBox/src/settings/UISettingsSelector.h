@@ -105,7 +105,7 @@ public:
     virtual QWidget *idToPage(int iID) const;
 
     /** Make the section with @a iID current. */
-    virtual void selectById(int iID) = 0;
+    virtual void selectById(int iID, bool fSilently = false) = 0;
     /** Make the section with @a strLink current. */
     virtual void selectByLink(const QString &strLink) { selectById(linkToId(strLink)); }
 
@@ -175,7 +175,7 @@ public:
     virtual int linkToId(const QString &strLink) const RT_OVERRIDE;
 
     /** Make the section with @a iID current. */
-    virtual void selectById(int iID) RT_OVERRIDE;
+    virtual void selectById(int iID, bool fSilently) RT_OVERRIDE;
 
 private slots:
 
@@ -238,7 +238,7 @@ public:
     virtual int linkToId(const QString &strLink) const RT_OVERRIDE;
 
     /** Make the section with @a iID current. */
-    virtual void selectById(int iID) RT_OVERRIDE;
+    virtual void selectById(int iID, bool fSilently) RT_OVERRIDE;
 
     /** Performs selector polishing. */
     virtual void polish() RT_OVERRIDE;
@@ -311,7 +311,7 @@ public:
     virtual QWidget *idToPage(int iID) const RT_OVERRIDE;
 
     /** Make the section with @a iID current. */
-    virtual void selectById(int iID) RT_OVERRIDE;
+    virtual void selectById(int iID, bool fSilently) RT_OVERRIDE;
 
     /** Returns minimum selector width. */
     virtual int minWidth() const RT_OVERRIDE;
