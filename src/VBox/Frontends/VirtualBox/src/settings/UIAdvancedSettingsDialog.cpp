@@ -209,6 +209,11 @@ class UIVerticalScrollArea : public QScrollArea
     Q_OBJECT;
     Q_PROPERTY(int verticalScrollBarPosition READ verticalScrollBarPosition WRITE setVerticalScrollBarPosition);
 
+signals:
+
+    /** Notifies listeners about wheel-event. */
+    void sigWheelEvent();
+
 public:
 
     /** Constructs vertical scroll-area passing @a pParent to the base-class. */
@@ -226,6 +231,9 @@ protected:
 
     /** Returns the minimum widget size. */
     virtual QSize minimumSizeHint() const RT_OVERRIDE;
+
+    /** Handles wheel @a pEvent. */
+    virtual void wheelEvent(QWheelEvent *pEvent) RT_OVERRIDE;
 
 private:
 
@@ -567,6 +575,15 @@ QSize UIVerticalScrollArea::minimumSizeHint() const
     const int iMinHeight = qMax(QScrollArea::minimumSizeHint().height(),
                                 (int)(iMinWidth / 1.6));
     return QSize(iMinWidth, iMinHeight);
+}
+
+void UIVerticalScrollArea::wheelEvent(QWheelEvent *pEvent)
+{
+    /* Call to base-class: */
+    QScrollArea::wheelEvent(pEvent);
+
+    /* Notify listeners: */
+    emit sigWheelEvent();
 }
 
 void UIVerticalScrollArea::prepare()
@@ -1135,6 +1152,39 @@ void UIAdvancedSettingsDialog::sltHandleFrameVisibilityChange(bool fVisible)
     m_pSelector->setItemVisible(iId, fVisible);
 }
 
+void UIAdvancedSettingsDialog::sltHandleVerticalScrollAreaWheelEvent()
+{
+    /* Acquire layout info: */
+    int iL = 0, iT = 0, iR = 0, iB = 0;
+    if (   m_pScrollViewport
+        && m_pScrollViewport->layout())
+        m_pScrollViewport->layout()->getContentsMargins(&iL, &iT, &iR, &iB);
+
+    /* Search through all the frame keys we have: */
+    int iActualKey = -1;
+    foreach (int iKey, m_frames.keys())
+    {
+        /* Let's calculate scroll-bar position for enumerated frame: */
+        int iPosition = 0;
+        /* We'll have to take upper content's margin into account: */
+        iPosition -= iT;
+        /* And actual page position according to parent: */
+        const QPoint pnt = m_frames.value(iKey)->pos();
+        iPosition += pnt.y();
+
+        /* Check if scroll-bar haven't passed this position yet: */
+        if (m_pScrollArea->verticalScrollBarPosition() < iPosition)
+            break;
+
+        /* Remember last suitable frame key: */
+        iActualKey = iKey;
+    }
+
+    /* Silently update the selector with frame number we found: */
+    if (iActualKey != -1)
+        m_pSelector->selectById(iActualKey, true /* silently */);
+}
+
 void UIAdvancedSettingsDialog::prepare()
 {
     /* Prepare 'sticky scrolling timer': */
@@ -1232,6 +1282,8 @@ void UIAdvancedSettingsDialog::prepareScrollArea()
 
         m_pScrollArea->setWidgetResizable(true);
         m_pScrollArea->setFrameShape(QFrame::NoFrame);
+        connect(m_pScrollArea, &UIVerticalScrollArea::sigWheelEvent,
+                this, &UIAdvancedSettingsDialog::sltHandleVerticalScrollAreaWheelEvent);
 
         /* Prepare scroll-viewport: */
         m_pScrollViewport = new QWidget(m_pScrollArea);

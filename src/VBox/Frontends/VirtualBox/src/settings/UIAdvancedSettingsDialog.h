@@ -210,6 +210,9 @@ private slots:
     /** Handles frame visivility changes. */
     void sltHandleFrameVisibilityChange(bool fVisible);
 
+    /** Handles signal about vertical scroll-area wheel-event. */
+    void sltHandleVerticalScrollAreaWheelEvent();
+
 private:
 
     /** @name Prepare/cleanup cascade.
