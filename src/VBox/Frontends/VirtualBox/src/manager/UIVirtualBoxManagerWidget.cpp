@@ -377,6 +377,9 @@ void UIVirtualBoxManagerWidget::sltHandleStateChange(const QUuid &uId)
 
 void UIVirtualBoxManagerWidget::sltHandleSettingsExpertModeChange()
 {
+    /* Update toolbar to show/hide corresponding actions: */
+    updateToolbar();
+
     /* Update tools restrictions for currently selected item: */
     if (currentItem())
         updateToolsMenuMachine(currentItem());
@@ -994,7 +997,8 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                 m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Snapshot_S_Delete));
                 m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Snapshot_S_Restore));
                 m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Snapshot_T_Properties));
-                m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Snapshot_S_Clone));
+                if (gEDataManager->isSettingsInExpertMode())
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Snapshot_S_Clone));
                 m_pToolBar->addSeparator();
                 m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Settings));
                 m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Discard));

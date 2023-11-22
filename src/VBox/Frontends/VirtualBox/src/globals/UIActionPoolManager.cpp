@@ -4055,7 +4055,8 @@ void UIActionPoolManager::sltHandleSettingsExpertModeChange()
     /* Invalidate corresponding menus: */
     m_invalidations << UIActionIndexMN_M_File_M_Tools
                     << UIActionIndexMN_M_Group_M_Tools
-                    << UIActionIndexMN_M_Machine_M_Tools;
+                    << UIActionIndexMN_M_Machine_M_Tools
+                    << UIActionIndexMN_M_Snapshot;
 }
 
 void UIActionPoolManager::updateMenuFile()
@@ -4654,11 +4655,13 @@ void UIActionPoolManager::updateMenuSnapshot()
     pMenu->clear();
 
     /* Populate Snapshot-menu: */
+    const bool fExpertMode = gEDataManager->isSettingsInExpertMode();
     pMenu->addAction(action(UIActionIndexMN_M_Snapshot_S_Take));
     pMenu->addAction(action(UIActionIndexMN_M_Snapshot_S_Delete));
     pMenu->addAction(action(UIActionIndexMN_M_Snapshot_S_Restore));
     pMenu->addAction(action(UIActionIndexMN_M_Snapshot_T_Properties));
-    pMenu->addAction(action(UIActionIndexMN_M_Snapshot_S_Clone));
+    if (fExpertMode)
+        pMenu->addAction(action(UIActionIndexMN_M_Snapshot_S_Clone));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexMN_M_Snapshot);
