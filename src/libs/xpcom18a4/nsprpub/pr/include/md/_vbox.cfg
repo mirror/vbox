@@ -39,26 +39,71 @@
 #ifndef nspr_vboxcfg___
 #define nspr_vboxcfg___
 
+#include <iprt/cdefs.h>
+
+#ifdef RT_LITTLE_ENDIAN
+#undef IS_BIG_ENDIAN
+# define  IS_LITTLE_ENDIAN 1
+#elif defined(RT_BIG_ENDIAN)
+# undef IS_LITTLE_ENDIAN
+# define  IS_BIG_ENDIAN 1
+#else
+# error "Unknown endianess"
+#endif
+
+#define HAVE_LONG_LONG
+
+#define PR_BYTES_PER_BYTE   1
+#define PR_BYTES_PER_SHORT  2
+#define PR_BYTES_PER_INT    4
+#define PR_BYTES_PER_INT64  8
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64)
+# define PR_BYTES_PER_LONG   8
+#else
+# define PR_BYTES_PER_LONG   4
+#endif
+#define PR_BYTES_PER_FLOAT  4
+#define PR_BYTES_PER_DOUBLE 8
+
+#define PR_BITS_PER_BYTE    8
+#define PR_BITS_PER_SHORT   16
+#define PR_BITS_PER_INT     32
+#define PR_BITS_PER_INT64   64
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64)
+# define PR_BITS_PER_LONG    64
+#else
+# define PR_BITS_PER_LONG    32
+#endif
+#define PR_BITS_PER_FLOAT   32
+#define PR_BITS_PER_DOUBLE  64
+
+#define PR_BITS_PER_BYTE_LOG2   3
+#define PR_BITS_PER_SHORT_LOG2  4
+#define PR_BITS_PER_INT_LOG2    5
+#define PR_BITS_PER_INT64_LOG2  6
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64)
+# define PR_BITS_PER_LONG_LOG2   6
+#else
+# define PR_BITS_PER_LONG_LOG2   5
+#endif
+#define PR_BITS_PER_FLOAT_LOG2  5
+
+#ifndef XP_UNIX
+# define XP_UNIX
+#endif
+
 #ifdef RT_OS_DARWIN
-# include <md/_darwin.cfg>
+# define DARWIN
 #elif defined(RT_OS_FREEBSD)
-# include <md/_freebsd.cfg>
-#elif defined(RT_OS_L4)
-# include <md/_l4v2.cfg>
+# define FREEBSD
 #elif defined(RT_OS_LINUX)
-# include <md/_linux.cfg>
+# define LINUX
 #elif defined(RT_OS_NETBSD)
-# include <md/_netbsd.cfg>
+# define NETBSD
 #elif defined(RT_OS_OPENBSD)
-# include <md/_openbsd.cfg>
+# define OPENBSD
 #elif defined(RT_OS_SOLARIS)
-# if defined(RT_ARCH_X86)
-#  include <md/_solaris32.cfg>
-# else
-#  include <md/_solaris64.cfg>
-# endif
-#elif defined(RT_OS_OS2)
-# include <md/_os2.cfg>
+# define SOLARIS
 #else
 # error "Define the correct platform identifier / Port me."
 #endif

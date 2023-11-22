@@ -187,15 +187,7 @@ NSPRPUB-MD-HEADERS_SOURCES = \
 	nsprpub/pr/include/md/_solaris.h \
 	nsprpub/pr/include/md/_unixos.h \
 	nsprpub/pr/include/md/_pth.h \
-	nsprpub/pr/include/md/prosdep.h \
-	\
-	nsprpub/pr/include/md/_freebsd.cfg \
-	nsprpub/pr/include/md/_linux.cfg \
-	nsprpub/pr/include/md/_darwin.cfg \
-	nsprpub/pr/include/md/_netbsd.cfg \
-	nsprpub/pr/include/md/_openbsd.cfg \
-	nsprpub/pr/include/md/_solaris32.cfg \
-	nsprpub/pr/include/md/_solaris64.cfg
+	nsprpub/pr/include/md/prosdep.h
 
 STRING-HEADERS_INST = $(INST_SDK)bindings/xpcom/include/string/
 STRING-HEADERS_IFFLAGS = -m 644
@@ -422,13 +414,10 @@ VBox-xpcom-nspr_DEFS.darwin = \
 	HAVE_SOCKLEN_T=1 \
 	_PR_PTHREADS
 VBox-xpcom-nspr_DEFS.freebsd = \
-	FREEBSD=1 \
 	HAVE_CVAR_BUILT_ON_SEM \
 	_PR_PTHREADS
 ## @todo filling in the missing stuff, please don't just copy it from linux.
-# FIXME: LINUX should be defined by _linux.cfg
 VBox-xpcom-nspr_DEFS.linux = \
-	LINUX=1 \
 	_POSIX_SOURCE=1 \
 	_BSD_SOURCE=1 \
 	_SVID_SOURCE=1 \
