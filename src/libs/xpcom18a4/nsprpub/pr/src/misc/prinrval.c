@@ -42,7 +42,11 @@
 
 #include "primpl.h"
 
-#include <iprt/assert.h>
+#include <signal.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/utsname.h>
 
 /*
  * This version of interval times is based on the time of day
@@ -53,14 +57,45 @@
 
 PR_IMPLEMENT(PRIntervalTime) PR_IntervalNow(void)
 {
-    if (!_pr_initialized) _PR_ImplicitInitialization();
-    return _PR_MD_GET_INTERVAL();
+#if defined(SOLARIS)
+    union {
+        hrtime_t hrt;  /* hrtime_t is a 64-bit (long long) integer */
+        PRInt64 pr64;
+    } time;
+    PRInt64 resolution;
+    PRIntervalTime ticks;
+
+    time.hrt = gethrtime();  /* in nanoseconds */
+    /*
+     * Convert from nanoseconds to ticks.  A tick's resolution is
+     * 10 microseconds, or 10000 nanoseconds.
+     */
+    LL_I2L(resolution, 10000);
+    LL_DIV(time.pr64, time.pr64, resolution);
+    LL_L2UI(ticks, time.pr64);
+    return ticks;
+#else
+    struct timeval time;
+    PRIntervalTime ticks;
+
+    (void)GETTIMEOFDAY(&time);  /* fallicy of course */
+    ticks = (PRUint32)time.tv_sec * PR_MSEC_PER_SEC;  /* that's in milliseconds */
+    ticks += (PRUint32)time.tv_usec / PR_USEC_PER_MSEC;  /* so's that */
+    return ticks;
+#endif
 }  /* PR_IntervalNow */
 
 PR_EXTERN(PRUint32) PR_TicksPerSecond(void)
 {
-    if (!_pr_initialized) _PR_ImplicitInitialization();
-    return _PR_MD_INTERVAL_PER_SEC();
+#if defined(SOLARIS)
+    /*
+     * Ticks have a 10-microsecond resolution.  So there are
+     * 100000 ticks per second.
+     */
+    return 100000UL;
+#else
+    return 1000;  /* this needs some work :) */
+#endif
 }  /* PR_TicksPerSecond */
 
 PR_IMPLEMENT(PRIntervalTime) PR_SecondsToInterval(PRUint32 seconds)
