@@ -2782,9 +2782,35 @@ void vboxDXSetRenderTargets(PVBOXDX_DEVICE pDevice, PVBOXDXDEPTHSTENCILVIEW pDep
 
 
 void vboxDXSetShaderResourceViews(PVBOXDX_DEVICE pDevice, SVGA3dShaderType enmShaderType, uint32_t StartSlot,
-                                  uint32_t NumViews, uint32_t *paViewIds)
+                                  uint32_t NumViews, PVBOXDXSHADERRESOURCEVIEW const *papViews)
 {
-    vgpu10SetShaderResources(pDevice, enmShaderType, StartSlot, NumViews, paViewIds);
+    Assert(NumViews <= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT);
+    NumViews = RT_MIN(NumViews, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT);
+
+    /* Update the pipeline state. */
+    PVBOXDXSRVSTATE pSRVS = &pDevice->pipeline.aSRVs[enmShaderType - SVGA3D_SHADERTYPE_MIN];
+
+    for (unsigned i = 0; i < NumViews; ++i)
+        pSRVS->apShaderResourceView[StartSlot + i] = papViews[i];
+
+    uint32_t cSRV = RT_MAX(pSRVS->cShaderResourceView, StartSlot + NumViews);
+    while (cSRV)
+    {
+        if (pSRVS->apShaderResourceView[cSRV - 1])
+            break;
+        --cSRV;
+    }
+    pSRVS->cShaderResourceView = cSRV;
+
+    /* Fetch View ids. */
+    uint32_t aViewIds[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
+    for (unsigned i = 0; i < NumViews; ++i)
+    {
+        VBOXDXSHADERRESOURCEVIEW *pView = papViews[i];
+        aViewIds[i] = pView ? pView->uShaderResourceViewId : SVGA3D_INVALID_ID;
+    }
+
+    vgpu10SetShaderResources(pDevice, enmShaderType, StartSlot, NumViews, aViewIds);
 }
 
 
@@ -2910,7 +2936,36 @@ static void vboxDXUndefineResourceViews(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE
         }
     }
 
-    /** @todo UAV */
+    VBOXDXUNORDEREDACCESSVIEW *pUnorderedAccessView;
+    RTListForEach(&pResource->listUAV, pUnorderedAccessView, VBOXDXUNORDEREDACCESSVIEW, nodeView)
+    {
+        if (pUnorderedAccessView->fDefined)
+        {
+            vgpu10DestroyUAView(pDevice, pUnorderedAccessView->uUnorderedAccessViewId);
+            pUnorderedAccessView->fDefined = false;
+        }
+    }
+
+    VBOXDXVIDEODECODEROUTPUTVIEW *pVDOV;
+    RTListForEach(&pResource->listVDOV, pVDOV, VBOXDXVIDEODECODEROUTPUTVIEW, nodeView)
+    {
+        if (pVDOV->fDefined)
+        {
+            vgpu10DestroyVideoDecoderOutputView(pDevice, pVDOV->uVideoDecoderOutputViewId);
+            pVDOV->fDefined = false;
+        }
+    }
+
+    VBOXDXVIDEOPROCESSORINPUTVIEW *pVPIV;
+    RTListForEach(&pResource->listVPIV, pVPIV, VBOXDXVIDEOPROCESSORINPUTVIEW, nodeView)
+    {
+        if (pVPIV->fDefined)
+        {
+            vgpu10DestroyVideoProcessorInputView(pDevice, pVPIV->uVideoProcessorInputViewId);
+            pVPIV->fDefined = false;
+        }
+    }
+
 
     VBOXDXVIDEOPROCESSOROUTPUTVIEW *pVPOV;
     RTListForEach(&pResource->listVPOV, pVPOV, VBOXDXVIDEOPROCESSOROUTPUTVIEW, nodeView)
@@ -2963,7 +3018,41 @@ static void vboxDXRedefineResourceViews(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE
         }
     }
 
-    /** @todo UAV */
+    VBOXDXUNORDEREDACCESSVIEW *pUnorderedAccessView;
+    RTListForEach(&pResource->listUAV, pUnorderedAccessView, VBOXDXUNORDEREDACCESSVIEW, nodeView)
+    {
+        if (!pUnorderedAccessView->fDefined)
+        {
+            vgpu10DefineUAView(pDevice, pUnorderedAccessView->uUnorderedAccessViewId, vboxDXGetAllocation(pUnorderedAccessView->pResource),
+                               pUnorderedAccessView->svga.format, pUnorderedAccessView->svga.resourceDimension,
+                               pUnorderedAccessView->svga.desc);
+            pUnorderedAccessView->fDefined = true;
+        }
+    }
+
+    VBOXDXVIDEODECODEROUTPUTVIEW *pVDOV;
+    RTListForEach(&pResource->listVDOV, pVDOV, VBOXDXVIDEODECODEROUTPUTVIEW, nodeView)
+    {
+        if (!pVDOV->fDefined)
+        {
+            vgpu10DefineVideoDecoderOutputView(pDevice, pVDOV->uVideoDecoderOutputViewId,
+                                               vboxDXGetAllocation(pVDOV->pResource),
+                                               pVDOV->svga.desc);
+            pVDOV->fDefined = true;
+        }
+    }
+
+    VBOXDXVIDEOPROCESSORINPUTVIEW *pVPIV;
+    RTListForEach(&pResource->listVPIV, pVPIV, VBOXDXVIDEOPROCESSORINPUTVIEW, nodeView)
+    {
+        if (!pVPIV->fDefined)
+        {
+            vgpu10DefineVideoProcessorInputView(pDevice, pVPIV->uVideoProcessorInputViewId,
+                                                vboxDXGetAllocation(pVPIV->pResource),
+                                                pVPIV->svga.ContentDesc, pVPIV->svga.VPIVDesc);
+            pVPIV->fDefined = true;
+        }
+    }
 
     VBOXDXVIDEOPROCESSOROUTPUTVIEW *pVPOV;
     RTListForEach(&pResource->listVPOV, pVPOV, VBOXDXVIDEOPROCESSOROUTPUTVIEW, nodeView)
@@ -2979,9 +3068,80 @@ static void vboxDXRedefineResourceViews(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE
 }
 
 
+static void vboxdxUnbindResourceViews(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pResource)
+{
+    VBOXDXSHADERRESOURCEVIEW *pShaderResourceView;
+    RTListForEach(&pResource->listSRV, pShaderResourceView, VBOXDXSHADERRESOURCEVIEW, nodeView)
+    {
+        /* Search this view in the pipeline state. */
+        for (unsigned idxShaderType = 0; idxShaderType < RT_ELEMENTS(pDevice->pipeline.aSRVs); ++idxShaderType)
+        {
+            SVGA3dShaderType const enmShaderType = (SVGA3dShaderType)(idxShaderType + SVGA3D_SHADERTYPE_MIN);
+
+            PVBOXDXSRVSTATE pSRVS = &pDevice->pipeline.aSRVs[idxShaderType];
+            for (unsigned i = 0; i < pSRVS->cShaderResourceView; ++i)
+            {
+                if (pSRVS->apShaderResourceView[i] == pShaderResourceView)
+                {
+                    uint32_t id = SVGA3D_INVALID_ID;
+                    vgpu10SetShaderResources(pDevice, enmShaderType, i, 1, &id);
+                }
+            }
+        }
+    }
+}
+
+
 HRESULT vboxDXRotateResourceIdentities(PVBOXDX_DEVICE pDevice, UINT cResources, PVBOXDX_RESOURCE *papResources)
 {
-    /** @todo Rebind SRVs, UAVs which are currently bound to pipeline stages. */
+#ifdef LOG_ENABLED
+    for (unsigned i = 0; i < cResources; ++i)
+    {
+        PVBOXDX_RESOURCE pResource = papResources[i];
+        LogFlowFunc(("Resources[%d]: pResource %p, hAllocation 0x%08x\n", i, pResource, vboxDXGetAllocation(pResource)));
+
+        unsigned iV = 0;
+        VBOXDXRENDERTARGETVIEW *pRTV;
+        RTListForEach(&pResource->listRTV, pRTV, VBOXDXRENDERTARGETVIEW, nodeView)
+        {
+            LogFlowFunc(("  RTV[%d]: %p\n", iV, pRTV));
+            ++iV;
+        }
+
+        iV = 0;
+        VBOXDXSHADERRESOURCEVIEW *pSRV;
+        RTListForEach(&pResource->listSRV, pSRV, VBOXDXSHADERRESOURCEVIEW, nodeView)
+        {
+            LogFlowFunc(("  SRV[%d]: %p\n", iV, pSRV));
+            ++iV;
+        }
+    }
+
+    LogFlowFunc(("Pipeline: cRTV %u, cSRV VS %u, PS %u, GS %u, HS %u, DS %u, CS %u\n",
+                 pDevice->pipeline.cRenderTargetViews,
+                 pDevice->pipeline.aSRVs[0].cShaderResourceView,
+                 pDevice->pipeline.aSRVs[1].cShaderResourceView,
+                 pDevice->pipeline.aSRVs[2].cShaderResourceView,
+                 pDevice->pipeline.aSRVs[3].cShaderResourceView,
+                 pDevice->pipeline.aSRVs[4].cShaderResourceView,
+                 pDevice->pipeline.aSRVs[5].cShaderResourceView));
+    for (unsigned i = 0; i < pDevice->pipeline.cRenderTargetViews; ++i)
+        LogFlowFunc(("  RTV[%d]: %p\n", i, pDevice->pipeline.apRenderTargetViews[i]));
+    for (unsigned i = 0; i < pDevice->pipeline.aSRVs[0].cShaderResourceView; ++i)
+        LogFlowFunc(("  SRV VS[%d]: %p\n", i, pDevice->pipeline.aSRVs[0].apShaderResourceView[i]));
+    for (unsigned i = 0; i < pDevice->pipeline.aSRVs[1].cShaderResourceView; ++i)
+        LogFlowFunc(("  SRV PS[%d]: %p\n", i, pDevice->pipeline.aSRVs[1].apShaderResourceView[i]));
+    for (unsigned i = 0; i < pDevice->pipeline.aSRVs[2].cShaderResourceView; ++i)
+        LogFlowFunc(("  SRV GS[%d]: %p\n", i, pDevice->pipeline.aSRVs[2].apShaderResourceView[i]));
+    for (unsigned i = 0; i < pDevice->pipeline.aSRVs[3].cShaderResourceView; ++i)
+        LogFlowFunc(("  SRV HS[%d]: %p\n", i, pDevice->pipeline.aSRVs[3].apShaderResourceView[i]));
+    for (unsigned i = 0; i < pDevice->pipeline.aSRVs[4].cShaderResourceView; ++i)
+        LogFlowFunc(("  SRV DS[%d]: %p\n", i, pDevice->pipeline.aSRVs[4].apShaderResourceView[i]));
+    for (unsigned i = 0; i < pDevice->pipeline.aSRVs[5].cShaderResourceView; ++i)
+        LogFlowFunc(("  SRV CS[%d]: %p\n", i, pDevice->pipeline.aSRVs[5].apShaderResourceView[i]));
+#endif
+
+    /** @todo Rebind UAVs which are currently bound to pipeline. */
 
     /* Unbind current render targets, if a resource is bound as a render target. */
     for (unsigned i = 0; i < cResources; ++i)
@@ -3028,6 +3188,7 @@ HRESULT vboxDXRotateResourceIdentities(PVBOXDX_DEVICE pDevice, UINT cResources, 
     for (unsigned i = 0; i < cResources; ++i)
     {
         PVBOXDX_RESOURCE pResource = papResources[i];
+        vboxdxUnbindResourceViews(pDevice, pResource);
         vboxDXUndefineResourceViews(pDevice, pResource);
     }
 

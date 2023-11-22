@@ -208,18 +208,7 @@ static void APIENTRY ddi10PsSetShaderResources(
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
     LogFlowFunc(("pDevice = %p, StartSlot = %u, NumViews = %u\n", pDevice, StartSlot, NumViews));
 
-    Assert(NumViews <= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT);
-    NumViews = RT_MIN(NumViews, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT);
-
-    /* Fetch View ids. */
-    uint32_t aViewIds[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
-    for (unsigned i = 0; i < NumViews; ++i)
-    {
-        VBOXDXSHADERRESOURCEVIEW *pView = (PVBOXDXSHADERRESOURCEVIEW)phShaderResourceViews[i].pDrvPrivate;
-        aViewIds[i] = pView ? pView->uShaderResourceViewId : SVGA3D_INVALID_ID;
-    }
-
-    vboxDXSetShaderResourceViews(pDevice, SVGA3D_SHADERTYPE_PS, StartSlot, NumViews, aViewIds);
+    vboxDXSetShaderResourceViews(pDevice, SVGA3D_SHADERTYPE_PS, StartSlot, NumViews, (PVBOXDXSHADERRESOURCEVIEW *)phShaderResourceViews);
 }
 
 static void APIENTRY ddi10PsSetShader(
@@ -617,18 +606,7 @@ static void APIENTRY ddi10VsSetShaderResources(
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
     LogFlowFunc(("pDevice = %p, StartSlot = %u, NumViews = %u\n", pDevice, StartSlot, NumViews));
 
-    Assert(NumViews <= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT);
-    NumViews = RT_MIN(NumViews, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT);
-
-    /* Fetch View ids. */
-    uint32_t aViewIds[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
-    for (unsigned i = 0; i < NumViews; ++i)
-    {
-        VBOXDXSHADERRESOURCEVIEW *pView = (PVBOXDXSHADERRESOURCEVIEW)phShaderResourceViews[i].pDrvPrivate;
-        aViewIds[i] = pView ? pView->uShaderResourceViewId : SVGA3D_INVALID_ID;
-    }
-
-    vboxDXSetShaderResourceViews(pDevice, SVGA3D_SHADERTYPE_VS, StartSlot, NumViews, aViewIds);
+    vboxDXSetShaderResourceViews(pDevice, SVGA3D_SHADERTYPE_VS, StartSlot, NumViews, (PVBOXDXSHADERRESOURCEVIEW *)phShaderResourceViews);
 }
 
 static void APIENTRY ddi10VsSetSamplers(
@@ -667,18 +645,7 @@ static void APIENTRY ddi10GsSetShaderResources(
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
     LogFlowFunc(("pDevice = %p, StartSlot = %u, NumViews = %u\n", pDevice, StartSlot, NumViews));
 
-    Assert(NumViews <= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT);
-    NumViews = RT_MIN(NumViews, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT);
-
-    /* Fetch View ids. */
-    uint32_t aViewIds[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
-    for (unsigned i = 0; i < NumViews; ++i)
-    {
-        VBOXDXSHADERRESOURCEVIEW *pView = (PVBOXDXSHADERRESOURCEVIEW)phShaderResourceViews[i].pDrvPrivate;
-        aViewIds[i] = pView ? pView->uShaderResourceViewId : SVGA3D_INVALID_ID;
-    }
-
-    vboxDXSetShaderResourceViews(pDevice, SVGA3D_SHADERTYPE_GS, StartSlot, NumViews, aViewIds);
+    vboxDXSetShaderResourceViews(pDevice, SVGA3D_SHADERTYPE_GS, StartSlot, NumViews, (PVBOXDXSHADERRESOURCEVIEW *)phShaderResourceViews);
 }
 
 static void APIENTRY ddi10GsSetSamplers(
@@ -2956,18 +2923,7 @@ static void APIENTRY ddi10HsSetShaderResources(
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
     LogFlowFunc(("pDevice = %p, StartSlot = %u, NumViews = %u\n", pDevice, StartSlot, NumViews));
 
-    Assert(NumViews <= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT);
-    NumViews = RT_MIN(NumViews, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT);
-
-    /* Fetch View ids. */
-    uint32_t aViewIds[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
-    for (unsigned i = 0; i < NumViews; ++i)
-    {
-        VBOXDXSHADERRESOURCEVIEW *pView = (PVBOXDXSHADERRESOURCEVIEW)phShaderResourceViews[i].pDrvPrivate;
-        aViewIds[i] = pView ? pView->uShaderResourceViewId : SVGA3D_INVALID_ID;
-    }
-
-    vboxDXSetShaderResourceViews(pDevice, SVGA3D_SHADERTYPE_HS, StartSlot, NumViews, aViewIds);
+    vboxDXSetShaderResourceViews(pDevice, SVGA3D_SHADERTYPE_HS, StartSlot, NumViews, (PVBOXDXSHADERRESOURCEVIEW *)phShaderResourceViews);
 }
 
 static void APIENTRY ddi10HsSetShader(
@@ -3049,18 +3005,7 @@ static void APIENTRY ddi10DsSetShaderResources(
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
     LogFlowFunc(("pDevice = %p, StartSlot = %u, NumViews = %u\n", pDevice, StartSlot, NumViews));
 
-    Assert(NumViews <= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT);
-    NumViews = RT_MIN(NumViews, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT);
-
-    /* Fetch View ids. */
-    uint32_t aViewIds[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
-    for (unsigned i = 0; i < NumViews; ++i)
-    {
-        VBOXDXSHADERRESOURCEVIEW *pView = (PVBOXDXSHADERRESOURCEVIEW)phShaderResourceViews[i].pDrvPrivate;
-        aViewIds[i] = pView ? pView->uShaderResourceViewId : SVGA3D_INVALID_ID;
-    }
-
-    vboxDXSetShaderResourceViews(pDevice, SVGA3D_SHADERTYPE_DS, StartSlot, NumViews, aViewIds);
+    vboxDXSetShaderResourceViews(pDevice, SVGA3D_SHADERTYPE_DS, StartSlot, NumViews, (PVBOXDXSHADERRESOURCEVIEW *)phShaderResourceViews);
 }
 
 static void APIENTRY ddi10DsSetShader(
@@ -3448,18 +3393,7 @@ static void APIENTRY ddi10CsSetShaderResources(
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
     LogFlowFunc(("pDevice = %p, StartSlot = %u, NumViews = %u\n", pDevice, StartSlot, NumViews));
 
-    Assert(NumViews <= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT);
-    NumViews = RT_MIN(NumViews, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT);
-
-    /* Fetch View ids. */
-    uint32_t aViewIds[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
-    for (unsigned i = 0; i < NumViews; ++i)
-    {
-        VBOXDXSHADERRESOURCEVIEW *pView = (PVBOXDXSHADERRESOURCEVIEW)phShaderResourceViews[i].pDrvPrivate;
-        aViewIds[i] = pView ? pView->uShaderResourceViewId : SVGA3D_INVALID_ID;
-    }
-
-    vboxDXSetShaderResourceViews(pDevice, SVGA3D_SHADERTYPE_CS, StartSlot, NumViews, aViewIds);
+    vboxDXSetShaderResourceViews(pDevice, SVGA3D_SHADERTYPE_CS, StartSlot, NumViews, (PVBOXDXSHADERRESOURCEVIEW *)phShaderResourceViews);
 }
 
 static void APIENTRY ddi10CsSetSamplers(
@@ -3920,14 +3854,6 @@ static HRESULT APIENTRY dxgiRotateResourceIdentities(DXGI_DDI_ARG_ROTATE_RESOURC
 
     if (pRotateResourceIdentities->Resources <= 1)
         return S_OK;
-
-#ifdef LOG_ENABLED
-    for (unsigned i = 0; i < pRotateResourceIdentities->Resources; ++i)
-    {
-        PVBOXDX_RESOURCE pResource = (PVBOXDX_RESOURCE)pRotateResourceIdentities->pResources[i];
-        LogFlowFunc(("Resources[%d]: pResource %p, hAllocation 0x%08x", i, pResource, vboxDXGetAllocation(pResource)));
-    }
-#endif
 
     return vboxDXRotateResourceIdentities(pDevice, pRotateResourceIdentities->Resources, (PVBOXDX_RESOURCE *)pRotateResourceIdentities->pResources);
 }

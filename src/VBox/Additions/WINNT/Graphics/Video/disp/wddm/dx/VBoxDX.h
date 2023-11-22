@@ -505,6 +505,14 @@ typedef struct VBOXDXINDEXBUFFERSTATE
     UINT                           Offset;
 } VBOXDXINDEXBUFFERSTATE, *PVBOXDXINDEXBUFFERSTATE;
 
+
+typedef struct VBOXDXSRVSTATE
+{
+    uint32_t cShaderResourceView;
+    PVBOXDXSHADERRESOURCEVIEW apShaderResourceView[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
+} VBOXDXSRVSTATE, *PVBOXDXSRVSTATE;
+
+
 typedef struct VBOXDX_DEVICE
 {
     /* DX runtime data. */
@@ -586,6 +594,7 @@ typedef struct VBOXDX_DEVICE
         VBOXDXCONSTANTBUFFERSSTATE aConstantBuffers[SVGA3D_SHADERTYPE_MAX - SVGA3D_SHADERTYPE_MIN]; /* For each shader type. */
         VBOXDXVERTEXBUFFERSSTATE   VertexBuffers;
         VBOXDXINDEXBUFFERSTATE     IndexBuffer;
+        VBOXDXSRVSTATE             aSRVs[SVGA3D_SHADERTYPE_MAX - SVGA3D_SHADERTYPE_MIN]; /* For each shader type. */
     } pipeline;
 
     /* Video decoding and processing. */
@@ -697,7 +706,7 @@ void vboxDXDestroyDepthStencilView(PVBOXDX_DEVICE pDevice, PVBOXDXDEPTHSTENCILVI
 void vboxDXSetRenderTargets(PVBOXDX_DEVICE pDevice, PVBOXDXDEPTHSTENCILVIEW pDepthStencilView,
                             uint32_t NumRTVs, UINT ClearSlots, PVBOXDXRENDERTARGETVIEW *papRenderTargetViews);
 void vboxDXSetShaderResourceViews(PVBOXDX_DEVICE pDevice, SVGA3dShaderType enmShaderType, uint32_t StartSlot,
-                                  uint32_t NumViews, uint32_t *paViewIds);
+                                  uint32_t NumViews, PVBOXDXSHADERRESOURCEVIEW const *papViews);
 void vboxDXSetConstantBuffers(PVBOXDX_DEVICE pDevice, SVGA3dShaderType enmShaderType, UINT StartSlot, UINT NumBuffers,
                               PVBOXDX_RESOURCE *papBuffers, const UINT *pFirstConstant, const UINT *pNumConstants);
 void vboxDXResourceCopyRegion(PVBOXDX_DEVICE pDevice, PVBOXDX_RESOURCE pDstResource, UINT DstSubresource,
