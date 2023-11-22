@@ -50,6 +50,60 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 
+/*
+** Appropriate definitions of entry points not used in a pthreads world
+*/
+#define _PT_PTHREAD_MUTEXATTR_INIT        pthread_mutexattr_init
+#define _PT_PTHREAD_MUTEX_INIT(m, a)      pthread_mutex_init(&(m), &(a))
+#define _PT_PTHREAD_MUTEX_IS_LOCKED(m)    (EBUSY == pthread_mutex_trylock(&(m)))
+#if defined(DARWIN)
+#define _PT_PTHREAD_CONDATTR_INIT(x)      0
+#else
+#define _PT_PTHREAD_CONDATTR_INIT         pthread_condattr_init
+#endif
+#define _PT_PTHREAD_COND_INIT(m, a)       pthread_cond_init(&(m), &(a))
+
+/* The pthreads standard does not specify an invalid value for the
+ * pthread_t handle.  (0 is usually an invalid pthread identifier
+ * but there are exceptions, for example, DG/UX.)  These macros
+ * define a way to set the handle to or compare the handle with an
+ * invalid identifier.  These macros are not portable and may be
+ * more of a problem as we adapt to more pthreads implementations.
+ * They are only used in the PRMonitor functions.  Do not use them
+ * in new code.
+ *
+ * Unfortunately some of our clients depend on certain properties
+ * of our PRMonitor implementation, preventing us from replacing
+ * it by a portable implementation.
+ * - High-performance servers like the fact that PR_EnterMonitor
+ *   only calls PR_Lock and PR_ExitMonitor only calls PR_Unlock.
+ *   (A portable implementation would use a PRLock and a PRCondVar
+ *   to implement the recursive lock in a monitor and call both
+ *   PR_Lock and PR_Unlock in PR_EnterMonitor and PR_ExitMonitor.)
+ *   Unfortunately this forces us to read the monitor owner field
+ *   without holding a lock.
+ * - One way to make it safe to read the monitor owner field
+ *   without holding a lock is to make that field a PRThread*
+ *   (one should be able to read a pointer with a single machine
+ *   instruction).  However, PR_GetCurrentThread calls calloc if
+ *   it is called by a thread that was not created by NSPR.  The
+ *   malloc tracing tools in the Mozilla client use PRMonitor for
+ *   locking in their malloc, calloc, and free functions.  If
+ *   PR_EnterMonitor calls any of these functions, infinite
+ *   recursion ensues.
+ */
+#if defined(IRIX) || defined(OSF1) || defined(AIX) || defined(SOLARIS) \
+    || defined(HPUX) || defined(LINUX) || defined(FREEBSD) \
+    || defined(NETBSD) || defined(OPENBSD) || defined(BSDI) \
+    || defined(VMS) || defined(NTO) || defined(DARWIN) \
+    || defined(UNIXWARE)
+#define _PT_PTHREAD_INVALIDATE_THR_HANDLE(t)  (t) = 0
+#define _PT_PTHREAD_THR_HANDLE_IS_INVALID(t)  (t) == 0
+#define _PT_PTHREAD_COPY_THR_HANDLE(st, dt)   (dt) = (st)
+#else 
+#error "pthreads is not supported for this architecture"
+#endif
+
 static pthread_mutexattr_t _pt_mattr;
 static pthread_condattr_t _pt_cvar_attr;
 

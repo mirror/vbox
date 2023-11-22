@@ -177,7 +177,6 @@ NSPRPUB-HEADERS_SOURCES = \
 NSPRPUB-MD-HEADERS_INST = $(INST_SDK)bindings/xpcom/include/nsprpub/md/
 NSPRPUB-MD-HEADERS_IFFLAGS = -m 644
 NSPRPUB-MD-HEADERS_SOURCES = \
-	nsprpub/pr/include/md/_pth.h \
 	nsprpub/pr/include/md/prosdep.h
 
 STRING-HEADERS_INST = $(INST_SDK)bindings/xpcom/include/string/

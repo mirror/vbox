@@ -66,9 +66,6 @@ PR_BEGIN_EXTERN_C
 #define GETTIMEOFDAY(tp) gettimeofday((tp), NULL)
 #endif
 
-
-#include "md/_pth.h"
-
 PR_END_EXTERN_C
 
 #endif /* prosdep_h___ */
