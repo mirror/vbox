@@ -61,35 +61,6 @@ void _PR_UnixInit(void)
     Assert(0 == rv);
 }
 
-/*
- *-----------------------------------------------------------------------
- *
- * PR_Now --
- *
- *     Returns the current time in microseconds since the epoch.
- *     The epoch is midnight January 1, 1970 GMT.
- *     The implementation is machine dependent.  This is the Unix
- *     implementation.
- *     Cf. time_t time(time_t *tp)
- *
- *-----------------------------------------------------------------------
- */
-
-PR_IMPLEMENT(PRTime)
-PR_Now(void)
-{
-    struct timeval tv;
-    PRInt64 s, us, s2us;
-
-    GETTIMEOFDAY(&tv);
-    LL_I2L(s2us, PR_USEC_PER_SEC);
-    LL_I2L(s, tv.tv_sec);
-    LL_I2L(us, tv.tv_usec);
-    LL_MUL(s, s, s2us);
-    LL_ADD(s, s, us);
-    return s;
-}
-
 PRIntervalTime _PR_UNIX_GetInterval()
 {
     struct timeval time;

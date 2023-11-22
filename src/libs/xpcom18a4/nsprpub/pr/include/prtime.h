@@ -50,10 +50,6 @@
 
 #include "prlong.h"
 
-#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
-#define PR_Now VBoxNsprPR_Now
-#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
-
 PR_BEGIN_EXTERN_C
 
 /**********************************************************************/
@@ -62,9 +58,7 @@ PR_BEGIN_EXTERN_C
 
 #define PR_MSEC_PER_SEC		1000UL
 #define PR_USEC_PER_SEC		1000000UL
-#define PR_NSEC_PER_SEC		1000000000UL
 #define PR_USEC_PER_MSEC	1000UL
-#define PR_NSEC_PER_MSEC	1000000UL
 
 /*
  * PRTime --
@@ -82,30 +76,6 @@ PR_BEGIN_EXTERN_C
  */
 
 typedef PRInt64 PRTime;
-
-/**********************************************************************/
-/****************************** FUNCTIONS *****************************/
-/**********************************************************************/
-
-/*
- * The PR_Now routine returns the current time relative to the
- * epoch, midnight, January 1, 1970 UTC. The units of the returned
- * value are microseconds since the epoch.
- *
- * The values returned are not guaranteed to advance in a linear fashion
- * due to the application of time correction protocols which synchronize
- * computer clocks to some external time source. Consequently it should
- * not be depended on for interval timing.
- *
- * The implementation is machine dependent.
- * Cf. time_t time(time_t *tp) in ANSI C.
- */
-#if defined(HAVE_WATCOM_BUG_2)
-PRTime __pascal __export __loadds
-#else
-NSPR_API(PRTime) 
-#endif
-PR_Now(void);
 
 PR_END_EXTERN_C
 

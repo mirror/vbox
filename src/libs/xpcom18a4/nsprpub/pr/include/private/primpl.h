@@ -129,10 +129,6 @@ extern void _PR_MD_INTERVAL_INIT(void);
 NSPR_API(void) _PR_MD_FINAL_INIT(void);
 #define    _PR_MD_FINAL_INIT _MD_FINAL_INIT
 
-/* Current Time */
-NSPR_API(PRTime) _PR_MD_NOW(void);
-#define    _PR_MD_NOW _MD_NOW
-
 /* Time intervals */
 
 extern PRIntervalTime _PR_MD_GET_INTERVAL(void);

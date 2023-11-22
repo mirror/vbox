@@ -36,6 +36,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include <iprt/initterm.h>
+#include <iprt/time.h>
 
 #include "nsXPCOM.h"
 #include "nsXPCOMPrivate.h"
@@ -689,7 +690,9 @@ nsresult NS_COM NS_InitXPCOM2(nsIServiceManager* *result,
         rv = gDirectoryService->Get(NS_XPCOM_COMPONENT_REGISTRY_FILE,
                                     NS_GET_IID(nsIFile),
                                     getter_AddRefs(compregFile));
-        compregFile->SetLastModifiedTime(PR_Now() / 1000);
+        RTTIMESPEC Time;
+        RTTimeNow(&Time);
+        compregFile->SetLastModifiedTime(RTTimeSpecGetMilli(&Time));
     }
 
     // Pay the cost at startup time of starting this singleton.
