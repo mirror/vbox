@@ -126,6 +126,8 @@ protected:
      * @retval  VERR_NOT_FOUND if variable does not exist.
      *
      * @param   pchName             The variable name.  Not zero terminated.
+     *                              Will return hashed values if the variable name ends with
+     *                              "_MD5", _SHA1", "_SHA256" or "_SHA512".
      * @param   cchName             The length of the name.
      * @param   rstrTmp             String object that can be used for keeping the
      *                              value returned via @a *ppszValue.
