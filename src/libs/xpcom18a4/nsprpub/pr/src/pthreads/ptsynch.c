@@ -50,13 +50,10 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 
-#ifdef VBOX
-/* From the removed obsolete/prsem.h */
-typedef struct PRSemaphore PRSemaphore;
-#endif
-
 static pthread_mutexattr_t _pt_mattr;
 static pthread_condattr_t _pt_cvar_attr;
+
+static void PR_DestroyCondVar(PRCondVar *cvar);
 
 /**************************************************************/
 /**************************************************************/
@@ -138,38 +135,7 @@ static void pt_PostNotifies(PRLock *lock, PRBool unlock)
     } while (NULL != notified);
 }  /* pt_PostNotifies */
 
-PR_IMPLEMENT(PRLock*) PR_NewLock(void)
-{
-    PRIntn rv;
-    PRLock *lock;
-
-    if (!_pr_initialized) _PR_ImplicitInitialization();
-
-    lock = PR_NEWZAP(PRLock);
-    if (lock != NULL)
-    {
-        rv = _PT_PTHREAD_MUTEX_INIT(lock->mutex, _pt_mattr); 
-        Assert(0 == rv);
-    }
-    return lock;
-}  /* PR_NewLock */
-
-PR_IMPLEMENT(void) PR_DestroyLock(PRLock *lock)
-{
-    PRIntn rv;
-    Assert(NULL != lock);
-    Assert(PR_FALSE == lock->locked);
-    Assert(0 == lock->notified.length);
-    Assert(NULL == lock->notified.link);
-    rv = pthread_mutex_destroy(&lock->mutex);
-    Assert(0 == rv);
-#if defined(DEBUG)
-    memset(lock, 0xaf, sizeof(PRLock));
-#endif
-    PR_DELETE(lock);
-}  /* PR_DestroyLock */
-
-PR_IMPLEMENT(void) PR_Lock(PRLock *lock)
+static void PR_Lock(PRLock *lock)
 {
     PRIntn rv;
     Assert(lock != NULL);
@@ -182,7 +148,7 @@ PR_IMPLEMENT(void) PR_Lock(PRLock *lock)
     lock->owner = pthread_self();
 }  /* PR_Lock */
 
-PR_IMPLEMENT(PRStatus) PR_Unlock(PRLock *lock)
+static PRStatus PR_Unlock(PRLock *lock)
 {
     PRIntn rv;
 
@@ -295,21 +261,7 @@ finished:
     Assert(pthread_equal(cvar->lock->owner, pthread_self()));
 }  /* pt_PostNotifyToCvar */
 
-PR_IMPLEMENT(PRCondVar*) PR_NewCondVar(PRLock *lock)
-{
-    PRCondVar *cv = PR_NEW(PRCondVar);
-    Assert(lock != NULL);
-    if (cv != NULL)
-    {
-        int rv = _PT_PTHREAD_COND_INIT(cv->cv, _pt_cvar_attr); 
-        Assert(0 == rv);
-        cv->lock = lock;
-        cv->notify_pending = 0;
-    }
-    return cv;
-}  /* PR_NewCondVar */
-
-PR_IMPLEMENT(void) PR_DestroyCondVar(PRCondVar *cvar)
+static void PR_DestroyCondVar(PRCondVar *cvar)
 {
     if (0 > ASMAtomicDecS32(&cvar->notify_pending))
     {
@@ -363,14 +315,14 @@ PR_IMPLEMENT(PRStatus) PR_WaitCondVar(PRCondVar *cvar, PRIntervalTime timeout)
     return PR_SUCCESS;
 }  /* PR_WaitCondVar */
 
-PR_IMPLEMENT(PRStatus) PR_NotifyCondVar(PRCondVar *cvar)
+static PRStatus PR_NotifyCondVar(PRCondVar *cvar)
 {
     Assert(cvar != NULL);   
     pt_PostNotifyToCvar(cvar, PR_FALSE);
     return PR_SUCCESS;
 }  /* PR_NotifyCondVar */
 
-PR_IMPLEMENT(PRStatus) PR_NotifyAllCondVar(PRCondVar *cvar)
+static PRStatus PR_NotifyAllCondVar(PRCondVar *cvar)
 {
     Assert(cvar != NULL);
     pt_PostNotifyToCvar(cvar, PR_TRUE);

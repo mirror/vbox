@@ -57,6 +57,9 @@ PR_BEGIN_EXTERN_C
 typedef struct _MDLock _MDLock;
 typedef struct _MDCVar _MDCVar;
 
+typedef struct PRLock    PRLock;
+typedef struct PRCondVar PRCondVar;
+
 /*
 ** The following definitions are unique to implementing NSPR using pthreads.
 ** Since pthreads defines most of the thread and thread synchronization

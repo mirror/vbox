@@ -40,9 +40,7 @@
 
 #include "prbit.h"
 #include "prclist.h"
-#include "prcvar.h"
 #include "prinrval.h"
-#include "prlock.h"
 #include "prlong.h"
 #include "prmem.h"
 #include "prmon.h"
