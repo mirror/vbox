@@ -42,45 +42,45 @@
 ** Get OS specific header information
 */
 #include "prtypes.h"
+#include "prinrval.h"
+
+#ifndef XP_UNIX
+# error "XPCOM supports only Unixy environments currently!"
+#endif
+
+#ifndef _PR_PTHREADS
+# error "XPCOM supports pthreads only currently!"
+#endif
 
 PR_BEGIN_EXTERN_C
 
-#if defined(XP_UNIX)
+NSPR_API(void) _MD_EarlyInit(void);
 
-#if defined(FREEBSD)
-#include "md/_freebsd.h"
+#define _MD_EARLY_INIT                  _MD_EarlyInit
+#define _MD_FINAL_INIT                  _PR_UnixInit
 
-#elif defined(NETBSD)
-#include "md/_netbsd.h"
+#if defined(LINUX) || defined(DARWIN) || defined(NETBSD) || defined(FREEBSD) || defined(OPENBSD)
 
-#elif defined(OPENBSD)
-#include "md/_openbsd.h"
+NSPR_API(PRIntervalTime) _PR_UNIX_GetInterval(void);
+NSPR_API(PRIntervalTime) _PR_UNIX_TicksPerSecond(void);
 
-#elif defined(LINUX)
-#include "md/_linux.h"
-
-#elif defined(DARWIN)
-#include "md/_darwin.h"
+#define _MD_GET_INTERVAL                _PR_UNIX_GetInterval
+#define _MD_INTERVAL_PER_SEC            _PR_UNIX_TicksPerSecond
 
 #elif defined(SOLARIS)
-#include "md/_solaris.h"
+
+NSPR_API(PRIntervalTime) _MD_Solaris_GetInterval(void);
+NSPR_API(PRIntervalTime) _MD_Solaris_TicksPerSecond(void);
+
+# define _MD_GET_INTERVAL               _MD_Solaris_GetInterval
+# define _MD_INTERVAL_PER_SEC           _MD_Solaris_TicksPerSecond
 
 #else
-#error unknown Unix flavor
-
+# error unknown Unix flavor
 #endif
 
 #include "md/_unixos.h"
-
-#else
-
-#error "The platform is not BeOS, Unix, Windows, or Mac"
-
-#endif
-
-#ifdef _PR_PTHREADS
 #include "md/_pth.h"
-#endif
 
 PR_END_EXTERN_C
 

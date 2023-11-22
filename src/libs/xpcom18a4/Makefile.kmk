@@ -179,12 +179,6 @@ NSPRPUB-HEADERS_SOURCES = \
 NSPRPUB-MD-HEADERS_INST = $(INST_SDK)bindings/xpcom/include/nsprpub/md/
 NSPRPUB-MD-HEADERS_IFFLAGS = -m 644
 NSPRPUB-MD-HEADERS_SOURCES = \
-	nsprpub/pr/include/md/_darwin.h \
-	nsprpub/pr/include/md/_freebsd.h \
-	nsprpub/pr/include/md/_linux.h \
-	nsprpub/pr/include/md/_netbsd.h \
-	nsprpub/pr/include/md/_openbsd.h \
-	nsprpub/pr/include/md/_solaris.h \
 	nsprpub/pr/include/md/_unixos.h \
 	nsprpub/pr/include/md/_pth.h \
 	nsprpub/pr/include/md/prosdep.h
