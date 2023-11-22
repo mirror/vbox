@@ -648,7 +648,7 @@ int UnattendedScriptTemplate::queryVariable(const char *pchName, size_t cchName,
             pszValue = rstrTmp.assign(szDigest, strlen(szDigest)).c_str(); \
         } while (0)
 
-    const char *pszValue;
+    const char *pszValue = NULL;
 
     /*
      * Calculate the variable name length w/o any suffixes we want to handle down below.
