@@ -3840,6 +3840,8 @@ void UIActionPoolManager::prepareConnections()
             this, &UIActionPoolManager::sltApplyShortcuts);
     connect(gShortcutPool, &UIShortcutPool::sigRuntimeShortcutsReloaded,
             this, &UIActionPoolManager::sltApplyShortcuts);
+    connect(gEDataManager, &UIExtraDataManager::sigSettingsExpertModeChange,
+            this, &UIActionPoolManager::sltHandleSettingsExpertModeChange);
 
     /* Call to base-class: */
     UIActionPool::prepareConnections();
@@ -4048,6 +4050,14 @@ void UIActionPoolManager::updateShortcuts()
         UIActionPool::createTemporary(UIActionPoolType_Runtime);
 }
 
+void UIActionPoolManager::sltHandleSettingsExpertModeChange()
+{
+    /* Invalidate corresponding menus: */
+    m_invalidations << UIActionIndexMN_M_File_M_Tools
+                    << UIActionIndexMN_M_Group_M_Tools
+                    << UIActionIndexMN_M_Machine_M_Tools;
+}
+
 void UIActionPoolManager::updateMenuFile()
 {
     /* Get corresponding menu: */
@@ -4135,9 +4145,13 @@ void UIActionPoolManager::updateMenuFileTools()
     pMenu->clear();
 
     /* Populate 'File' / 'Tools' menu: */
+    const bool fExpertMode = gEDataManager->isSettingsInExpertMode();
     pMenu->addAction(action(UIActionIndexMN_M_File_M_Tools_T_ExtensionPackManager));
-    pMenu->addAction(action(UIActionIndexMN_M_File_M_Tools_T_VirtualMediaManager));
-    pMenu->addAction(action(UIActionIndexMN_M_File_M_Tools_T_NetworkManager));
+    if (fExpertMode)
+    {
+        pMenu->addAction(action(UIActionIndexMN_M_File_M_Tools_T_VirtualMediaManager));
+        pMenu->addAction(action(UIActionIndexMN_M_File_M_Tools_T_NetworkManager));
+    }
     pMenu->addAction(action(UIActionIndexMN_M_File_M_Tools_T_CloudProfileManager));
     pMenu->addAction(action(UIActionIndexMN_M_File_M_Tools_T_VMActivityOverview));
 
@@ -4327,11 +4341,13 @@ void UIActionPoolManager::updateMenuGroupTools()
     pMenu->clear();
 
     /* Populate 'Group' / 'Tools' menu: */
+    const bool fExpertMode = gEDataManager->isSettingsInExpertMode();
     pMenu->addAction(action(UIActionIndexMN_M_Group_M_Tools_T_Details));
     pMenu->addAction(action(UIActionIndexMN_M_Group_M_Tools_T_Snapshots));
     pMenu->addAction(action(UIActionIndexMN_M_Group_M_Tools_T_Logs));
     pMenu->addAction(action(UIActionIndexMN_M_Group_M_Tools_T_Activity));
-    pMenu->addAction(action(UIActionIndexMN_M_Group_M_Tools_T_FileManager));
+    if (fExpertMode)
+        pMenu->addAction(action(UIActionIndexMN_M_Group_M_Tools_T_FileManager));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexMN_M_Group_M_Tools);
@@ -4346,11 +4362,13 @@ void UIActionPoolManager::updateMenuMachineTools()
     pMenu->clear();
 
     /* Populate 'Machine' / 'Tools' menu: */
+    const bool fExpertMode = gEDataManager->isSettingsInExpertMode();
     pMenu->addAction(action(UIActionIndexMN_M_Machine_M_Tools_T_Details));
     pMenu->addAction(action(UIActionIndexMN_M_Machine_M_Tools_T_Snapshots));
     pMenu->addAction(action(UIActionIndexMN_M_Machine_M_Tools_T_Logs));
     pMenu->addAction(action(UIActionIndexMN_M_Machine_M_Tools_T_Activity));
-    pMenu->addAction(action(UIActionIndexMN_M_Machine_M_Tools_T_FileManager));
+    if (fExpertMode)
+        pMenu->addAction(action(UIActionIndexMN_M_Machine_M_Tools_T_FileManager));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexMN_M_Machine_M_Tools);

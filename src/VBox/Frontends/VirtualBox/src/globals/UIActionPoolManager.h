@@ -243,6 +243,11 @@ protected:
     /** Updates shortcuts. */
     virtual void updateShortcuts() RT_OVERRIDE;
 
+private slots:
+
+    /** Handles signal about settings expert mode change. */
+    void sltHandleSettingsExpertModeChange();
+
 private:
 
     /** Updates 'File' menu. */
