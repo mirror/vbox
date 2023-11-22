@@ -341,15 +341,6 @@ void UIVirtualBoxManagerWidget::retranslateUi()
 {
     /* Make sure chosen item fetched: */
     sltHandleChooserPaneIndexChange();
-
-#ifdef VBOX_WS_MAC
-    // WORKAROUND:
-    // There is a bug in Qt Cocoa which result in showing a "more arrow" when
-    // the necessary size of the toolbar is increased. Also for some languages
-    // the with doesn't match if the text increase. So manually adjust the size
-    // after changing the text.
-    m_pToolBar->updateLayout();
-#endif
 }
 
 void UIVirtualBoxManagerWidget::sltHandleStateChange(const QUuid &uId)
@@ -1053,27 +1044,6 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                 break;
         }
     }
-
-#ifdef VBOX_WS_MAC
-    // WORKAROUND:
-    // Actually Qt should do that itself but by some unknown reason it sometimes
-    // forget to update toolbar after changing its actions on Cocoa platform.
-    connect(actionPool()->action(UIActionIndexMN_M_Machine_S_New), &UIAction::changed,
-            m_pToolBar, static_cast<void(QIToolBar::*)(void)>(&QIToolBar::update)); // update ambiguity
-    connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Settings), &UIAction::changed,
-            m_pToolBar, static_cast<void(QIToolBar::*)(void)>(&QIToolBar::update)); // update ambiguity
-    connect(actionPool()->action(UIActionIndexMN_M_Machine_S_Discard), &UIAction::changed,
-            m_pToolBar, static_cast<void(QIToolBar::*)(void)>(&QIToolBar::update)); // update ambiguity
-    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow), &UIAction::changed,
-            m_pToolBar, static_cast<void(QIToolBar::*)(void)>(&QIToolBar::update)); // update ambiguity
-
-    // WORKAROUND:
-    // There is a bug in Qt Cocoa which result in showing a "more arrow" when
-    // the necessary size of the toolbar is increased. Also for some languages
-    // the with doesn't match if the text increase. So manually adjust the size
-    // after changing the text.
-    m_pToolBar->updateLayout();
-#endif /* VBOX_WS_MAC */
 }
 
 void UIVirtualBoxManagerWidget::cleanupConnections()

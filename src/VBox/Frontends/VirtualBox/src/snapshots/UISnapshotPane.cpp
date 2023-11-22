@@ -658,17 +658,6 @@ void UISnapshotPane::retranslateUi()
     /* Translate snapshot tree: */
     m_pSnapshotTree->setWhatsThis(tr("Contains the snapshot tree of the current virtual machine"));
 
-    /* Translate toolbar: */
-#ifdef VBOX_WS_MAC
-    // WORKAROUND:
-    // There is a bug in Qt Cocoa which result in showing a "more arrow" when
-    // the necessary size of the toolbar is increased. Also for some languages
-    // the with doesn't match if the text increase. So manually adjust the size
-    // after changing the text. */
-    if (m_pToolBar)
-        m_pToolBar->updateLayout();
-#endif
-
     /* Translate snapshot tree: */
     const QStringList fields = QStringList()
                                << tr("Name", "snapshot")
