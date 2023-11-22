@@ -132,14 +132,6 @@ if !defined(VBOX_ONLY_SDK) && (!defined(VBOX_ONLY_EXTPACKS) || !defined(VBOX_ONL
   	tstTestMinStringAPI \
   	tstTestStrings \
   	tstPrimitiveTest
-  #	tstnsIFileEnumerator
-  #	tstTestAtoms
-  #	tstTestServMgr
-  #	tstTestCallTemplates
-  #	tstTestPermanentAtoms
-  #	tstSimpleTypeLib
-  #	tstXptDump
-  #	tstXptLink
  endif # VBOX_WITH_TESTCASES
  PROGRAMS += VBoxXPCOMIPCD
 
@@ -893,8 +885,6 @@ endif # !VBOX_ONLY_EXTPACKS
 #
 # testcases
 #
-tstnsIFileEnumerator_TEMPLATE  = XPComTstExe
-tstnsIFileEnumerator_SOURCES   = xpcom/tests/nsIFileEnumerator.cpp
 tstnsIFileTest_TEMPLATE        = XPComTstExe
 tstnsIFileTest_SOURCES         = xpcom/tests/nsIFileTest.cpp
 tstTestArray_TEMPLATE          = XPComTstExe
@@ -903,8 +893,6 @@ tstTestAtoms_TEMPLATE          = XPComTstExe
 tstTestAtoms_SOURCES           = xpcom/tests/TestAtoms.cpp
 tstTestAutoLock_TEMPLATE       = XPComTstExe
 tstTestAutoLock_SOURCES        = xpcom/tests/TestAutoLock.cpp
-tstTestCallTemplates_TEMPLATE  = XPComTstExe
-tstTestCallTemplates_SOURCES   = xpcom/tests/TestCallTemplates.cpp
 tstTestCOMPtr_TEMPLATE         = XPComTstExe
 tstTestCOMPtr_SOURCES          = xpcom/tests/TestCOMPtr.cpp
 tstTestCOMPtrEq_TEMPLATE       = XPComTstExe
@@ -919,11 +907,6 @@ tstTestID_TEMPLATE             = XPComTstExe
 tstTestID_SOURCES              = xpcom/tests/TestID.cpp
 tstTestObserverService_TEMPLATE = XPComTstExe
 tstTestObserverService_SOURCES = xpcom/tests/TestObserverService.cpp
-tstTestPermanentAtoms_TEMPLATE = XPComTstExe
-tstTestPermanentAtoms_SOURCES  = xpcom/tests/TestPermanentAtoms.cpp
-tstTestServMgr_TEMPLATE        = XPComTstExe
-tstTestServMgr_SOURCES         = xpcom/tests/TestServMgr.cpp
-tstTestServMgr_INCS            = xpcom/tests/services
 tstTestXPIDLString_TEMPLATE    = XPComTstExe
 tstTestXPIDLString_SOURCES     = xpcom/tests/TestXPIDLString.cpp
 tstTestXPTCInvoke_TEMPLATE     = XPComTstExe
@@ -938,12 +921,6 @@ tstTestStrings_TEMPLATE        = XPComTstExe
 tstTestStrings_SOURCES         = xpcom/tests/TestStrings.cpp
 tstPrimitiveTest_TEMPLATE      = XPComTstExe
 tstPrimitiveTest_SOURCES       = xpcom/typelib/xpt/tests/PrimitiveTest.c
-tstSimpleTypeLib_TEMPLATE      = XPComTstExe
-tstSimpleTypeLib_SOURCES       = xpcom/typelib/xpt/tests/SimpleTypeLib.c
-tstXptDump_TEMPLATE            = XPComTstExe
-tstXptDump_SOURCES             = xpcom/typelib/xpt/tools/xpt_dump.c
-tstXptLink_TEMPLATE            = XPComTstExe
-tstXptLink_SOURCES             = xpcom/typelib/xpt/tools/xpt_link.c
 
 
 
