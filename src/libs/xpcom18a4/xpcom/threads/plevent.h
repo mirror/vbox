@@ -186,7 +186,6 @@ and to ensure that no more events will be delivered for that owner.
 
 #include "prtypes.h"
 #include "prclist.h"
-#include "prcvar.h"
 #include "prmon.h"
 
 #include <iprt/critsect.h>
