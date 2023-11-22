@@ -171,7 +171,7 @@ if   defined(VBOX_WITH_MAIN) \
   # libvpx is used for video capture.
   if   defined(VBOX_WITH_LIBVPX) \
     && ("$(SDK_VBoxLibVpx_INCS)" == "$(SDK_VBoxLibVpx_DEFAULT_INCS)")
-   include $(PATH_SUB_CURRENT)/libvpx-1.11.0/Makefile.kmk
+   include $(PATH_SUB_CURRENT)/libvpx-1.13.1/Makefile.kmk
   endif
 
  endif # !VBOX_ONLY_DOCS && !VBOX_ONLY_EXTPACKS && !VBOX_ONLY_SDK

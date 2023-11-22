@@ -5150,7 +5150,7 @@ endif
 
 ifdef VBOX_WITH_LIBVPX
  SDK_VBoxLibVpx                  := libvpx for dll linking.
- SDK_VBoxLibVpx_DEFAULT_INCS     := $(PATH_ROOT)/src/libs/libvpx-1.11.0
+ SDK_VBoxLibVpx_DEFAULT_INCS     := $(PATH_ROOT)/src/libs/libvpx-1.13.1
  SDK_VBoxLibVpx_INCS             ?= $(SDK_VBoxLibVpx_DEFAULT_INCS)
  SDK_VBoxLibVpx_LIBS             ?= $(PATH_STAGE_LIB)/VBox-libvpx$(VBOX_SUFF_LIB)
 endif
