@@ -45,22 +45,6 @@
 # include <iprt/mem.h>
 #endif
 
-sigset_t timer_set;
-
-void _PR_UnixInit(void)
-{
-    struct sigaction sigact;
-    int rv;
-
-    sigemptyset(&timer_set);
-
-    sigact.sa_handler = SIG_IGN;
-    sigemptyset(&sigact.sa_mask);
-    sigact.sa_flags = 0;
-    rv = sigaction(SIGPIPE, &sigact, 0);
-    Assert(0 == rv);
-}
-
 PRIntervalTime _PR_UNIX_GetInterval()
 {
     struct timeval time;
@@ -78,22 +62,6 @@ PRIntervalTime _PR_UNIX_TicksPerSecond()
 }
 
 /************************************************************************/
-
-void _MD_EarlyInit(void)
-{
-#if defined(FREEBSD) || defined(NETBSD) || defined(OPENBSD)
-    /*
-     * Ignore FPE because coercion of a NaN to an int causes SIGFPE
-     * to be raised.
-     */
-    struct sigaction act;
-
-    act.sa_handler = SIG_IGN;
-    sigemptyset(&act.sa_mask);
-    act.sa_flags = SA_RESTART;
-    sigaction(SIGFPE, &act, 0);
-#endif
-}
 
 #if defined(SOLARIS)
 PRIntervalTime _MD_Solaris_TicksPerSecond(void)

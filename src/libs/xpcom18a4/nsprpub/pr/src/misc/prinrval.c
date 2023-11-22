@@ -45,28 +45,6 @@
 #include <iprt/assert.h>
 
 /*
- *-----------------------------------------------------------------------
- *
- * _PR_InitClock --
- *
- *
- *-----------------------------------------------------------------------
- */
-
-void _PR_InitClock(void)
-{
-    _PR_MD_INTERVAL_INIT();
-#ifdef DEBUG
-    {
-        PRIntervalTime ticksPerSec = PR_TicksPerSecond();
-
-        Assert(ticksPerSec >= PR_INTERVAL_MIN);
-        Assert(ticksPerSec <= PR_INTERVAL_MAX);
-    }
-#endif /* DEBUG */
-}
-
-/*
  * This version of interval times is based on the time of day
  * capability offered by system. This isn't valid for two reasons:
  * 1) The time of day is neither linear nor montonically increasing

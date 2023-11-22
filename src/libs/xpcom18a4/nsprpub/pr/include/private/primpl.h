@@ -113,24 +113,12 @@ struct PRMonitor {
 
 /************************************************************************/
 
-extern void _PR_InitClock(void);
-
 extern PRBool _pr_initialized;
 extern void _PR_ImplicitInitialization(void);
 
 /*************************************************************************
 * External machine-dependent code provided by each OS.                     *                                                                     *
 *************************************************************************/
-
-/* Initialization related */
-extern void _PR_MD_EARLY_INIT(void);
-#define    _PR_MD_EARLY_INIT _MD_EARLY_INIT
-
-extern void _PR_MD_INTERVAL_INIT(void);
-#define    _PR_MD_INTERVAL_INIT _MD_INTERVAL_INIT
-
-NSPR_API(void) _PR_MD_FINAL_INIT(void);
-#define    _PR_MD_FINAL_INIT _MD_FINAL_INIT
 
 /* Time intervals */
 

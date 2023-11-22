@@ -52,8 +52,6 @@
 
 PRBool _pr_initialized = PR_FALSE;
 
-PRInt32 _native_threads_only = 0;
-
 static void _PR_InitStuff(void)
 {
 
@@ -63,13 +61,20 @@ static void _PR_InitStuff(void)
     RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
 #endif
 
-    /* NOTE: These init's cannot depend on _PR_MD_CURRENT_THREAD() */
-    _PR_MD_EARLY_INIT();
+#if defined(FREEBSD) || defined(NETBSD) || defined(OPENBSD)
+    /*
+     * Ignore FPE because coercion of a NaN to an int causes SIGFPE
+     * to be raised.
+     */
+    struct sigaction act;
+
+    act.sa_handler = SIG_IGN;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = SA_RESTART;
+    sigaction(SIGFPE, &act, 0);
+#endif
 
     _PR_InitLocks();
-    _PR_InitClock();
-
-    _PR_MD_FINAL_INIT();
 }
 
 void _PR_ImplicitInitialization(void)

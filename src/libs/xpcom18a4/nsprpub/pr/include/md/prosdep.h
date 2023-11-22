@@ -54,11 +54,6 @@
 
 PR_BEGIN_EXTERN_C
 
-NSPR_API(void) _MD_EarlyInit(void);
-
-#define _MD_EARLY_INIT                  _MD_EarlyInit
-#define _MD_FINAL_INIT                  _PR_UnixInit
-
 #if defined(LINUX) || defined(DARWIN) || defined(NETBSD) || defined(FREEBSD) || defined(OPENBSD)
 
 NSPR_API(PRIntervalTime) _PR_UNIX_GetInterval(void);
