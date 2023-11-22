@@ -83,7 +83,7 @@ static DECLCALLBACK(int) tstSrvWorker(RTTHREAD hThread, void *pvUser)
     int rc = RTThreadUserSignal(hThread);
     AssertRCReturn(rc, rc);
 
-    uint32_t const msStartTS = RTTimeMilliTS();
+    uint64_t const msStartTS = RTTimeMilliTS();
     while (RTTimeMilliTS() - msStartTS < g_msRuntime)
     {
         if (g_fShutdown)
