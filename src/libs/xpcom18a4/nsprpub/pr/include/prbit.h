@@ -38,12 +38,9 @@
 #ifndef prbit_h___
 #define prbit_h___
 
-#include "prtypes.h"
+#include <iprt/cdefs.h>
 
-#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
-#define PR_CeilingLog2 VBoxNsprPR_CeilingLog2
-#define PR_FloorLog2 VBoxNsprPR_FloorLog2
-#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+#include "prtypes.h"
 
 PR_BEGIN_EXTERN_C
 
@@ -62,12 +59,45 @@ typedef unsigned long prbitmap_t;
 /*
 ** Compute the log of the least power of 2 greater than or equal to n
 */
-NSPR_API(PRIntn) PR_CeilingLog2(PRUint32 i); 
+DECL_FORCE_INLINE(PRIntn) PR_CeilingLog2(PRUint32 n)
+{
+    PRIntn log2 = 0;
+
+    if (n & (n-1))
+  log2++;
+    if (n >> 16)
+  log2 += 16, n >>= 16;
+    if (n >> 8)
+  log2 += 8, n >>= 8;
+    if (n >> 4)
+  log2 += 4, n >>= 4;
+    if (n >> 2)
+  log2 += 2, n >>= 2;
+    if (n >> 1)
+  log2++;
+    return log2;
+}
 
 /*
-** Compute the log of the greatest power of 2 less than or equal to n
+** Compute the log of the greatest power of 2 less than or equal to n.
+** This really just finds the highest set bit in the word.
 */
-NSPR_API(PRIntn) PR_FloorLog2(PRUint32 i); 
+DECL_FORCE_INLINE(PRIntn) PR_FloorLog2(PRUint32 n)
+{
+    PRIntn log2 = 0;
+
+    if (n >> 16)
+  log2 += 16, n >>= 16;
+    if (n >> 8)
+  log2 += 8, n >>= 8;
+    if (n >> 4)
+  log2 += 4, n >>= 4;
+    if (n >> 2)
+  log2 += 2, n >>= 2;
+    if (n >> 1)
+  log2++;
+    return log2;
+}
 
 /*
 ** Macro version of PR_CeilingLog2: Compute the log of the least power of
