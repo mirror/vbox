@@ -24,7 +24,6 @@
 08=false
 09=true
 
-
 /*
  * Regular inserts.
  */
@@ -382,3 +381,13 @@
  */
 01:  GUEST_OS_VERSION >= 1.2.3
 02:  GUEST_OS_VERSION <= 3.4.2
+
+/*
+ * Hashing attributes.
+ * Contains the word "changeme" as hashed results.
+ */
+01=4cb9c8a8048fd02294477fcb1a41191a
+02=fa9beb99e4029ad5a6615399e7bbae21356086b3
+03=057ba03d6c44104863dc7361fe4578965d1887360f90a0895882e58a6248fc86
+04=f1891cea80fc05e433c943254c6bdabc159577a02a7395dfebbfbc4f7661d4af56f2d372131a45936de40160007368a56ef216a30cb202c66d3145fd24380906
+

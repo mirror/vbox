@@ -726,7 +726,7 @@ static void doTest1()
     /* Compare the two. */
     if (strExpected != strActual)
     {
-        RTTestIFailed("Output does not match tstUnattendedScript-1.expect!");
+        RTTestIFailed("Output does not match tstUnattendedScript-1.expected!");
         RTTestIFailureDetails("------ BEGIN OUTPUT ------\n");
         RTStrmWrite(g_pStdErr, strActual.c_str(), strActual.length());
         RTTestIFailureDetails("------- END OUTPUT -------\n");

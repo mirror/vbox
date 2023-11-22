@@ -39,6 +39,8 @@
 #include "UnattendedImpl.h"
 
 #include <iprt/err.h>
+#include <iprt/md5.h>
+#include <iprt/sha.h>
 
 #include <iprt/ctype.h>
 #include <iprt/file.h>
@@ -629,9 +631,33 @@ UnattendedScriptTemplate::queryVariableForExpr(const char *pchName, size_t cchNa
 int UnattendedScriptTemplate::queryVariable(const char *pchName, size_t cchName, Utf8Str &rstrTmp, const char **ppszValue)
 {
 #define IS_MATCH(a_szMatch) \
-        (cchName == sizeof(a_szMatch) - 1U && memcmp(pchName, a_szMatch, sizeof(a_szMatch) - 1U) == 0)
+        (cchNameWithoutSuffix == sizeof(a_szMatch) - 1U && memcmp(pchName, a_szMatch, sizeof(a_szMatch) - 1U) == 0)
+#define ENDS_WITH(a_szMatch) \
+        (   cchName \
+         && cchName >= sizeof(a_szMatch) - 1U \
+         && memcmp(&pchName[cchName - (sizeof(a_szMatch) - 1U)], a_szMatch, sizeof(a_szMatch) - 1U) == 0)
+#define CALCULATE_SUFFIX_LEN_IF_ENDS_WITH(a_szSuff) \
+        if (ENDS_WITH(a_szSuff)) \
+            cchNameWithoutSuffix = cchName - (sizeof(a_szSuff) - 1U);
+#define HASH_AND_ASSIGN(a_abData, a_cbData, a_fnHash, a_cbHashSize) \
+        do { \
+            uint8_t abHash[a_cbHashSize]; \
+            a_fnHash(a_abData, a_cbData, abHash); \
+            char    szDigest[a_cbHashSize * 4]; \
+            a_fnHash##ToString(abHash, szDigest, sizeof(szDigest)); \
+            pszValue = rstrTmp.assign(szDigest, strlen(szDigest)).c_str(); \
+        } while (0)
 
     const char *pszValue;
+
+    /*
+     * Calculate the variable name length w/o any suffixes we want to handle down below.
+     */
+    size_t cchNameWithoutSuffix = cchName;
+    CALCULATE_SUFFIX_LEN_IF_ENDS_WITH("_MD5");
+    CALCULATE_SUFFIX_LEN_IF_ENDS_WITH("_SHA1");
+    CALCULATE_SUFFIX_LEN_IF_ENDS_WITH("_SHA256");
+    CALCULATE_SUFFIX_LEN_IF_ENDS_WITH("_SHA512");
 
     /*
      * Variables
@@ -741,6 +767,24 @@ int UnattendedScriptTemplate::queryVariable(const char *pchName, size_t cchName,
         pszValue = mpUnattended->i_isRtcUsingUtc() ? "1" : "0";
     else if (IS_MATCH("HAS_PROXY"))
         pszValue = mpUnattended->i_getProxy().isNotEmpty() ? "1" : "0";
+
+    /*
+     * Hash output, if needed.
+     *
+     * Keep them ordered, strongest first (most likely nowadays).
+     * Add more here once we need them.
+     */
+    if (pszValue)
+    {
+        if (ENDS_WITH("_SHA512"))
+            HASH_AND_ASSIGN(pszValue, strlen(pszValue), RTSha512, RTSHA512_HASH_SIZE);
+        else if (ENDS_WITH("_SHA256"))
+            HASH_AND_ASSIGN(pszValue, strlen(pszValue), RTSha256, RTSHA256_HASH_SIZE);
+        else if (ENDS_WITH("_SHA1"))
+            HASH_AND_ASSIGN(pszValue, strlen(pszValue), RTSha1, RTSHA1_HASH_SIZE);
+        else if (ENDS_WITH("_MD5"))
+            HASH_AND_ASSIGN(pszValue, strlen(pszValue), RTMd5, RTMD5_HASH_SIZE);
+    }
     /*
      * Unknown variable.
      */
@@ -753,6 +797,12 @@ int UnattendedScriptTemplate::queryVariable(const char *pchName, size_t cchName,
     }
     if (ppszValue)
         *ppszValue = pszValue;
+
+#undef HASH_AND_ASSIGN
+#undef CALCULATE_SUFFIX_LEN_IF_ENDS_WITH
+#undef ENDS_WITH
+#undef IS_MATCH
+
     return VINF_SUCCESS;
 }
 

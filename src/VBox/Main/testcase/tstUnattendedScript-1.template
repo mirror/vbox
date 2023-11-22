@@ -24,7 +24,6 @@
 08=@@VBOX_COND[${IS_RTC_USING_UTC}]@@true@@VBOX_COND_ELSE@@false@@VBOX_COND_END@@
 09=@@VBOX_COND[${HAS_PROXY}]@@true@@VBOX_COND_ELSE@@false@@VBOX_COND_END@@
 
-
 /*
  * Regular inserts.
  */
@@ -382,3 +381,13 @@
  */
 01: @@VBOX_COND[${GUEST_OS_VERSION} vge 1.2.3]@@ GUEST_OS_VERSION >= 1.2.3@@VBOX_COND_ELSE@@ failed@@VBOX_COND_END@@
 02: @@VBOX_COND[${GUEST_OS_VERSION} vle 3.4.2]@@ GUEST_OS_VERSION <= 3.4.2@@VBOX_COND_ELSE@@ failed@@VBOX_COND_END@@
+
+/*
+ * Hashing attributes.
+ * Contains the word "changeme" as hashed results.
+ */
+01=@@VBOX_INSERT_USER_PASSWORD_MD5@@
+02=@@VBOX_INSERT_USER_PASSWORD_SHA1@@
+03=@@VBOX_INSERT_USER_PASSWORD_SHA256@@
+04=@@VBOX_INSERT_USER_PASSWORD_SHA512@@
+
