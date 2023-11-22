@@ -36,11 +36,13 @@
 #include <QMap>
 #include <QQueue>
 #include <QTextStream>
+#include <QHash>
 
 /* COM includes: */
 #include "COMEnums.h"
 #include "CGuest.h"
 #include "CMachine.h"
+#include "CCloudMachine.h"
 #include "CMachineDebugger.h"
 #include "CPerformanceCollector.h"
 #include "CSession.h"
@@ -57,6 +59,7 @@ class QLabel;
 class UIChart;
 class UISession;
 class UIRuntimeInfoWidget;
+class UIProgressTaskReadCloudMachineMetricList;
 
 #define DATA_SERIES_SIZE 2
 
@@ -169,7 +172,7 @@ protected:
         void resetDiskIOInfoLabel();
     /** @} */
 
-    void prepareWidgets();
+    virtual void prepareWidgets();
     void prepareActions();
 
     QTimer                 *m_pTimer;
@@ -306,6 +309,38 @@ class  SHARED_LIBRARY_STUFF UIVMActivityMonitorCloud : public UIVMActivityMonito
 
 public:
 
+    UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget *pParent, const CCloudMachine &machine);
+    virtual QUuid machineId() const RT_OVERRIDE;
+    virtual QString machineName() const RT_OVERRIDE;
 
+private slots:
+
+    void sltMetricNameListingComplete(QVector<QString> metricNameList);
+    void sltMetricDataReceived(KMetricType enmMetricType, QVector<QString> data, QVector<QString> timeStamps);
+
+private:
+    void setMachine(const CCloudMachine &comMachine);
+    virtual void retranslateUi() RT_OVERRIDE;
+    virtual void obtainDataAndUpdate() RT_OVERRIDE;
+
+    virtual QString defaultMachineFolder() const RT_OVERRIDE;
+    virtual void reset() RT_OVERRIDE;
+    virtual void start() RT_OVERRIDE;
+    virtual void prepareWidgets();
+    /** @name The following functions update corresponding metric charts and labels with new values
+      * @{ */
+        virtual void updateCPUGraphsAndMetric(ULONG iLoadPercentage, ULONG iOtherPercentage) RT_OVERRIDE;
+        virtual void updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM) RT_OVERRIDE;
+        virtual void updateNetworkGraphsAndMetric(quint64 iReceiveTotal, quint64 iTransmitTotal) RT_OVERRIDE;
+        virtual void updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead) RT_OVERRIDE;
+    /** @} */
+    bool findMetric(KMetricType enmMetricType, UIMetric &metric, int &iDataSeriesIndex) const;
+    void prepareMetrics();
+    CCloudMachine m_comMachine;
+    UIProgressTaskReadCloudMachineMetricList *m_ReadListProgressTask;
+
+    QVector<KMetricType> m_availableMetricTypes;
+    /** Mapping from API enums to internal metric names. Necessary also since we don't hace a 1-to-1 mapping. */
+    QHash<KMetricType, QString> m_metricTypeNames;
 };
 #endif /* !FEQT_INCLUDED_SRC_activity_vmactivity_UIVMActivityMonitor_h */

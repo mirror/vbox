@@ -84,7 +84,7 @@ private slots:
 
 private:
 
-    void setMachines(const QVector<QUuid> &machineIDs);
+    void setMachines(const QList<UIVirtualMachineItem*> &machines);
     /** @name Prepare/cleanup cascade.
       * @{ */
         void prepare();
@@ -97,7 +97,7 @@ private:
     /** Remove tabs conaining machine monitors with ids @machineIdsToRemove. */
     void removeTabs(const QVector<QUuid> &machineIdsToRemove);
     /** Add new tabs for each QUuid in @machineIdsToAdd. Does not check for duplicates. */
-    void addTabs(const QVector<QUuid> &machineIdsToAdd);
+    void addTabs(const QList<UIVirtualMachineItem*> &machines);
     void setExportActionEnabled(bool fEnabled);
 
     /** @name General variables.

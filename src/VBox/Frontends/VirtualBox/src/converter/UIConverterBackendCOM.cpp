@@ -67,6 +67,7 @@ template<> bool canConvert<KTpmType>() { return true; }
 template<> bool canConvert<KNATProtocol>() { return true; }
 template<> bool canConvert<KGuestSessionStatus>() { return true; }
 template<> bool canConvert<KProcessStatus>() { return true; }
+template<> bool canConvert<KMetricType>() { return true; }
 
 /* QIcon <= KCloudMachineState: */
 template<> QIcon toIcon(const KCloudMachineState &state)
@@ -862,4 +863,42 @@ template<> KProcessStatus fromString<KProcessStatus>(const QString &strStatus)
         AssertMsgFailed(("No value for '%s'", strStatus.toUtf8().constData()));
     }
     return list.value(strStatus, KProcessStatus_Undefined);
+}
+
+/* QString <= KMetricType: */
+template<> QString toInternalString(const KMetricType &metricType)
+{
+    QString strResult;
+    switch (metricType)
+    {
+        case KMetricType_Invalid:           strResult = "Invalid"; break;
+        case KMetricType_CpuUtilization:    strResult = "CpuUtilization"; break;
+        case KMetricType_MemoryUtilization: strResult = "MemoryUtilization"; break;
+        case KMetricType_DiskBytesRead:     strResult = "DiskBytesRead"; break;
+        case KMetricType_DiskBytesWritten:  strResult = "DiskBytesWritten"; break;
+        case KMetricType_NetworksBytesIn:   strResult = "NetworksBytesIn"; break;
+        case KMetricType_NetworksBytesOut:  strResult = "NetworksBytesOut"; break;
+        default: AssertMsgFailed(("No text for metric type=%d", metricType)); break;
+    }
+    return strResult;
+}
+
+/* KMetricType <= QString: */
+template<> KMetricType fromInternalString<KMetricType>(const QString &strMetricType)
+{
+    if (strMetricType.compare("Invalid", Qt::CaseInsensitive) == 0)
+        return KMetricType_Invalid;
+    if (strMetricType.compare("CpuUtilization", Qt::CaseInsensitive) == 0)
+        return KMetricType_CpuUtilization;
+    if (strMetricType.compare("MemoryUtilization", Qt::CaseInsensitive) == 0)
+        return KMetricType_MemoryUtilization;
+    if (strMetricType.compare("DiskBytesRead", Qt::CaseInsensitive) == 0)
+        return KMetricType_DiskBytesRead;
+    if (strMetricType.compare("DiskBytesWritten", Qt::CaseInsensitive) == 0)
+        return KMetricType_DiskBytesWritten;
+    if (strMetricType.compare("NetworksBytesIn", Qt::CaseInsensitive) == 0)
+        return KMetricType_NetworksBytesIn;
+    if (strMetricType.compare("NetworksBytesOut", Qt::CaseInsensitive) == 0)
+        return KMetricType_NetworksBytesOut;
+    AssertMsgFailedReturn(("No value for '%s'", strMetricType.toUtf8().constData()), KMetricType_Invalid);
 }

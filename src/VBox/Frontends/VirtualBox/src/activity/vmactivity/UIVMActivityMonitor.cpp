@@ -40,7 +40,9 @@
 /* GUI includes: */
 #include "QIFileDialog.h"
 #include "UICommon.h"
+#include "UIConverter.h"
 #include "UIIconPool.h"
+#include "UIProgressTask.h"
 #include "UITranslator.h"
 #include "UIVMActivityMonitor.h"
 #include "UIVirtualBoxEventHandler.h"
@@ -50,6 +52,7 @@
 #include "CGuest.h"
 #include "CPerformanceCollector.h"
 #include "CPerformanceMetric.h"
+#include "CStringArray.h"
 #include <iprt/string.h>
 
 /* External includes: */
@@ -62,6 +65,66 @@ const int g_iMaximumQueueSize = 120;
 /** This is passed to IPerformanceCollector during its setup. When 1 that means IPerformanceCollector object does a data cache of size 1. */
 const int g_iMetricSetupCount = 1;
 const int g_iDecimalCount = 2;
+
+
+/*********************************************************************************************************************************
+*   UIProgressTaskReadCloudMachineMetricList definition.                                                                         *
+*********************************************************************************************************************************/
+
+class UIProgressTaskReadCloudMachineMetricList : public UIProgressTask
+{
+    Q_OBJECT;
+
+signals:
+
+    void sigMetricListReceived(QVector<QString> metricNamesList);
+
+public:
+
+    UIProgressTaskReadCloudMachineMetricList(QObject *pParent, CCloudMachine comCloudMachine);
+
+protected:
+
+    virtual CProgress createProgress() RT_OVERRIDE;
+    virtual void handleProgressFinished(CProgress &comProgress) RT_OVERRIDE;
+
+private:
+
+    CCloudMachine m_comCloudMachine;
+    CStringArray m_metricNamesArray;
+};
+
+
+/*********************************************************************************************************************************
+*   UIProgressTaskReadCloudMachineMetricList definition.                                                                         *
+*********************************************************************************************************************************/
+
+class UIProgressTaskReadCloudMachineMetricData : public UIProgressTask
+{
+    Q_OBJECT;
+
+signals:
+
+    void sigMetricDataReceived(KMetricType enmMetricType, QVector<QString> data, QVector<QString> timeStamps);
+
+public:
+
+    UIProgressTaskReadCloudMachineMetricData(QObject *pParent, CCloudMachine comCloudMachine,
+                                             KMetricType enmMetricType, ULONG uDataPointsCount);
+
+protected:
+
+    virtual CProgress createProgress() RT_OVERRIDE;
+    virtual void handleProgressFinished(CProgress &comProgress) RT_OVERRIDE;
+
+private:
+
+    CCloudMachine m_comCloudMachine;
+    CStringArray m_metricData;
+    CStringArray m_timeStamps;
+    KMetricType m_enmMetricType;
+    ULONG m_uDataPointsCount;
+};
 
 
 /*********************************************************************************************************************************
@@ -176,6 +239,65 @@ private:
     /** The width of the right margin in characters. */
     int m_iRightMarginCharWidth;
 };
+
+
+/*********************************************************************************************************************************
+*   UIProgressTaskReadCloudMachineMetricList implementation.                                                                     *
+*********************************************************************************************************************************/
+
+UIProgressTaskReadCloudMachineMetricList::UIProgressTaskReadCloudMachineMetricList(QObject *pParent, CCloudMachine comCloudMachine)
+    :UIProgressTask(pParent)
+    , m_comCloudMachine(comCloudMachine)
+{
+}
+
+CProgress UIProgressTaskReadCloudMachineMetricList::createProgress()
+{
+    if (!m_comCloudMachine.isOk())
+        return CProgress();
+    return m_comCloudMachine.ListMetricNames(m_metricNamesArray);
+}
+
+void UIProgressTaskReadCloudMachineMetricList::handleProgressFinished(CProgress &comProgress)
+{
+    if (!comProgress.isOk())
+        return;
+    emit sigMetricListReceived(m_metricNamesArray.GetValues());
+}
+
+
+/*********************************************************************************************************************************
+*   UIProgressTaskReadCloudMachineMetricData implementation.                                                                     *
+*********************************************************************************************************************************/
+
+UIProgressTaskReadCloudMachineMetricData::UIProgressTaskReadCloudMachineMetricData(QObject *pParent,
+                                                                                   CCloudMachine comCloudMachine,
+                                                                                   KMetricType enmMetricType,
+                                                                                   ULONG uDataPointsCount)
+    :UIProgressTask(pParent)
+    , m_comCloudMachine(comCloudMachine)
+    , m_enmMetricType(enmMetricType)
+    , m_uDataPointsCount(uDataPointsCount)
+{
+}
+
+CProgress UIProgressTaskReadCloudMachineMetricData::createProgress()
+{
+    if (!m_comCloudMachine.isOk())
+        return CProgress();
+
+    CStringArray aUnit;
+    return m_comCloudMachine.EnumerateMetricData(m_enmMetricType, m_uDataPointsCount, m_metricData, m_timeStamps, aUnit);
+}
+
+
+void UIProgressTaskReadCloudMachineMetricData::handleProgressFinished(CProgress &comProgress)
+{
+    if (!comProgress.isOk())
+        return;
+    if (m_metricData.isOk() && m_timeStamps.isOk())
+        emit sigMetricDataReceived(m_enmMetricType, m_metricData.GetValues(), m_timeStamps.GetValues());
+}
 
 /*********************************************************************************************************************************
 *   UIChart implementation.                                                                                     *
@@ -1623,5 +1745,201 @@ void UIVMActivityMonitorLocal::resetVMExitInfoLabel()
     }
 }
 
+UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget *pParent, const CCloudMachine &machine)
+    :UIVMActivityMonitor(enmEmbedding, pParent)
+{
+    m_metricTypeNames[KMetricType_CpuUtilization] = m_strCPUMetricName;
+    m_metricTypeNames[KMetricType_MemoryUtilization] = m_strRAMMetricName;
+    m_metricTypeNames[KMetricType_DiskBytesRead] = m_strDiskMetricName;
+    m_metricTypeNames[KMetricType_DiskBytesWritten] = m_strDiskMetricName;
+    m_metricTypeNames[KMetricType_NetworksBytesIn] = m_strNetworkMetricName;
+    m_metricTypeNames[KMetricType_NetworksBytesOut] = m_strNetworkMetricName;
 
+    prepareMetrics();
+    prepareWidgets();
+    retranslateUi();
+    prepareActions();
+    //connect(&uiCommon(), &UICommon::sigAskToDetachCOM, this, &UIVMActivityMonitorLocal::sltClearCOMData);
+    setMachine(machine);
+}
+
+
+void UIVMActivityMonitorCloud::setMachine(const CCloudMachine &comMachine)
+{
+    m_comMachine = comMachine;
+    if (!m_comMachine.isOk())
+        return;
+
+    m_ReadListProgressTask = new UIProgressTaskReadCloudMachineMetricList(this, comMachine);
+    if (m_ReadListProgressTask)
+    {
+        connect(m_ReadListProgressTask, &UIProgressTaskReadCloudMachineMetricList::sigMetricListReceived,
+                this, &UIVMActivityMonitorCloud::sltMetricNameListingComplete);
+        m_ReadListProgressTask->start();
+    }
+}
+
+void UIVMActivityMonitorCloud::sltMetricNameListingComplete(QVector<QString> metricNameList)
+{
+    m_availableMetricTypes.clear();
+    foreach (const QString &strName, metricNameList)
+        m_availableMetricTypes << gpConverter->fromInternalString<KMetricType>(strName);
+
+    if (!m_availableMetricTypes.isEmpty())
+        start();
+
+    sender()->deleteLater();
+}
+
+void UIVMActivityMonitorCloud::sltMetricDataReceived(KMetricType enmMetricType, QVector<QString> data, QVector<QString> timeStamps)
+{
+    if (data.size() != timeStamps.size())
+        return;
+    for (int i = 0; i < data.size(); ++i)
+    {
+        if (enmMetricType == KMetricType_CpuUtilization)
+        {
+            float fValue = data[i].toFloat();
+            updateCPUGraphsAndMetric((ULONG)fValue, 0);
+        }
+    }
+
+    sender()->deleteLater();
+}
+
+QUuid UIVMActivityMonitorCloud::machineId() const
+{
+    if (m_comMachine.isOk())
+        return m_comMachine.GetId();
+    return QUuid();
+}
+
+QString UIVMActivityMonitorCloud::machineName() const
+{
+    if (m_comMachine.isOk())
+        return m_comMachine.GetName();
+    return QString();
+}
+
+void UIVMActivityMonitorCloud::retranslateUi()
+{
+    UIVMActivityMonitor::retranslateUi();
+}
+
+void UIVMActivityMonitorCloud::obtainDataAndUpdate()
+{
+    foreach (const KMetricType &enmMetricType, m_availableMetricTypes)
+    {
+        UIMetric metric;
+        int iDataSeriesIndex = 0;
+        if (!findMetric(enmMetricType, metric, iDataSeriesIndex))
+            continue;
+        /* Be a paranoid: */
+        if (iDataSeriesIndex >= DATA_SERIES_SIZE)
+            continue;
+        int iDataSize = 1;
+        if (metric.dataSize(iDataSeriesIndex) == 0)
+            iDataSize = 60;
+        UIProgressTaskReadCloudMachineMetricData *pTask = new UIProgressTaskReadCloudMachineMetricData(this, m_comMachine,
+                                                                                                       enmMetricType, iDataSize);
+        connect(pTask, &UIProgressTaskReadCloudMachineMetricData::sigMetricDataReceived,
+                this, &UIVMActivityMonitorCloud::sltMetricDataReceived);
+        pTask->start();
+    }
+}
+
+QString UIVMActivityMonitorCloud::defaultMachineFolder() const
+{
+    /** @todo */
+    return QString();
+}
+void UIVMActivityMonitorCloud::reset(){}
+void UIVMActivityMonitorCloud::start()
+{
+    obtainDataAndUpdate();
+    /* Every minute: */
+    if (m_pTimer)
+        m_pTimer->start(1000 * 60);
+
+}
+
+void UIVMActivityMonitorCloud::updateCPUGraphsAndMetric(ULONG iLoadPercentage, ULONG /*iOtherPercentage*/)
+{
+    UIMetric &CPUMetric = m_metrics[m_strCPUMetricName];
+    CPUMetric.addData(0, iLoadPercentage);
+    CPUMetric.setMaximum(100);
+    if (m_infoLabels.contains(m_strCPUMetricName)  && m_infoLabels[m_strCPUMetricName])
+    {
+        QString strInfo;
+
+        strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4%5</font>")
+            .arg(m_strCPUInfoLabelTitle)
+            .arg(dataColorString(m_strCPUMetricName, 0))
+            .arg(m_strCPUInfoLabelGuest).arg(QString::number(iLoadPercentage)).arg(CPUMetric.unit());
+
+        m_infoLabels[m_strCPUMetricName]->setText(strInfo);
+    }
+
+    if (m_charts.contains(m_strCPUMetricName))
+        m_charts[m_strCPUMetricName]->update();
+}
+void UIVMActivityMonitorCloud::updateRAMGraphsAndMetric(quint64 /*iTotalRAM*/, quint64 /*iFreeRAM*/){}
+void UIVMActivityMonitorCloud::updateNetworkGraphsAndMetric(quint64 /*iReceiveTotal*/, quint64 /*iTransmitTotal*/){}
+void UIVMActivityMonitorCloud::updateDiskIOGraphsAndMetric(quint64 /*uDiskIOTotalWritten*/, quint64 /*uDiskIOTotalRead*/){}
+
+bool UIVMActivityMonitorCloud::findMetric(KMetricType enmMetricType, UIMetric &metric, int &iDataSeriesIndex) const
+{
+    if (m_metricTypeNames[enmMetricType].isEmpty())
+        return false;
+
+    const QString &strMetricName = m_metricTypeNames[enmMetricType];
+
+    if (!m_metrics.contains(strMetricName))
+        return false;
+
+    metric = m_metrics[strMetricName];
+    iDataSeriesIndex = 0;
+    if (enmMetricType == KMetricType_NetworksBytesOut ||
+        enmMetricType == KMetricType_DiskBytesRead)
+        iDataSeriesIndex = 1;
+    return true;
+}
+
+void UIVMActivityMonitorCloud::prepareMetrics()
+{
+    // UIMetric ramMetric(m_strRAMMetricName, metrics[i].GetUnit(), g_iMaximumQueueSize);
+    // ramMetric.setDataSeriesName(0, "Free");
+    // ramMetric.setDataSeriesName(1, "Used");
+    // ramMetric.setRequiresGuestAdditions(true);
+    // m_metrics.insert(m_strRAMMetricName, ramMetric);
+
+    /* CPU Metric: */
+    UIMetric cpuMetric(m_strCPUMetricName, "%", g_iMaximumQueueSize);
+    cpuMetric.setDataSeriesName(0, "CPU Utilization");
+    m_metrics.insert(m_strCPUMetricName, cpuMetric);
+
+    // /* Network metric: */
+    // UIMetric networkMetric(m_strNetworkMetricName, "B", g_iMaximumQueueSize);
+    // networkMetric.setDataSeriesName(0, "Receive Rate");
+    // networkMetric.setDataSeriesName(1, "Transmit Rate");
+    // networkMetric.setAutoUpdateMaximum(true);
+    // m_metrics.insert(m_strNetworkMetricName, networkMetric);
+
+    // /* Disk IO metric */
+    // UIMetric diskIOMetric(m_strDiskIOMetricName, "B", g_iMaximumQueueSize);
+    // diskIOMetric.setDataSeriesName(0, "Write Rate");
+    // diskIOMetric.setDataSeriesName(1, "Read Rate");
+    // diskIOMetric.setAutoUpdateMaximum(true);
+    // m_metrics.insert(m_strDiskIOMetricName, diskIOMetric);
+
+    // /* VM exits metric */
+    // UIMetric VMExitsMetric(m_strVMExitMetricName, "times", g_iMaximumQueueSize);
+    // VMExitsMetric.setAutoUpdateMaximum(true);
+    // m_metrics.insert(m_strVMExitMetricName, VMExitsMetric);
+}
+void UIVMActivityMonitorCloud::prepareWidgets()
+{
+    UIVMActivityMonitor::prepareWidgets();
+    m_charts[m_strCPUMetricName]->setShowPieChart(false);
+}
 #include "UIVMActivityMonitor.moc"

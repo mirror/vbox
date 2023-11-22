@@ -172,7 +172,7 @@ template<> SHARED_LIBRARY_STUFF bool canConvert<KTpmType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<KNATProtocol>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<KGuestSessionStatus>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<KProcessStatus>();
-
+template<> SHARED_LIBRARY_STUFF bool canConvert<KMetricType>();
 
 /* Declare global conversion specializations: */
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const Qt::Alignment &enmAlignment);
@@ -349,6 +349,8 @@ template<> SHARED_LIBRARY_STUFF QString toString(const KGuestSessionStatus &stat
 template<> SHARED_LIBRARY_STUFF KGuestSessionStatus fromString<KGuestSessionStatus>(const QString &strStatus);
 template<> SHARED_LIBRARY_STUFF QString toString(const KProcessStatus &status);
 template<> SHARED_LIBRARY_STUFF KProcessStatus fromString<KProcessStatus>(const QString &strStatus);
+template<> SHARED_LIBRARY_STUFF QString toString(const KMetricType &metricType);
+template<> SHARED_LIBRARY_STUFF KMetricType fromString<KMetricType>(const QString &strMetricType);
 
 
 #endif /* !FEQT_INCLUDED_SRC_converter_UIConverterBackend_h */

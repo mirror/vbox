@@ -37,6 +37,8 @@
 #include "UIMessageCenter.h"
 #include "QIToolBar.h"
 #include "UIVirtualMachineItem.h"
+#include "UIVirtualMachineItemCloud.h"
+#include "UIVirtualMachineItemLocal.h"
 
 #ifdef VBOX_WS_MAC
 # include "UIWindowMenuManager.h"
@@ -98,28 +100,30 @@ void UIVMActivityToolWidget::prepare()
 
 void UIVMActivityToolWidget::setSelectedVMListItems(const QList<UIVirtualMachineItem*> &items)
 {
-    QVector<QUuid> selectedMachines;
-
-    foreach (const UIVirtualMachineItem *item, items)
-    {
-        if (!item)
-            continue;
-        selectedMachines << item->id();
-    }
-    setMachines(selectedMachines);
+    setMachines(items);
 }
 
-void UIVMActivityToolWidget::setMachines(const QVector<QUuid> &machineIds)
+void UIVMActivityToolWidget::setMachines(const QList<UIVirtualMachineItem*> &machines)
 {
+    QVector<QUuid> machineIds;
+    foreach (const UIVirtualMachineItem* pMachine, machines)
+    {
+        if (!pMachine)
+            continue;
+        machineIds << pMachine->id();
+    }
     /* List of machines that are newly added to selected machine list: */
-    QVector<QUuid> newSelections;
+    QList<UIVirtualMachineItem*> newSelections;
     QVector<QUuid> unselectedMachines(m_machineIds);
 
-    foreach (const QUuid &id, machineIds)
+    foreach (UIVirtualMachineItem* pMachine, machines)
     {
+        if (!pMachine)
+            continue;
+        QUuid id = pMachine->id();
         unselectedMachines.removeAll(id);
         if (!m_machineIds.contains(id))
-            newSelections << id;
+            newSelections << pMachine;
     }
     m_machineIds = machineIds;
 
@@ -187,14 +191,26 @@ void UIVMActivityToolWidget::removeTabs(const QVector<QUuid> &machineIdsToRemove
     qDeleteAll(removeList.begin(), removeList.end());
 }
 
-void UIVMActivityToolWidget::addTabs(const QVector<QUuid> &machineIdsToAdd)
+void UIVMActivityToolWidget::addTabs(const QList<UIVirtualMachineItem*> &machines)
 {
-    foreach (const QUuid &id, machineIdsToAdd)
+    foreach (UIVirtualMachineItem* pMachine, machines)
     {
-        CMachine comMachine = uiCommon().virtualBox().FindMachine(id.toString());
-        if (comMachine.isNull())
+        if (!pMachine)
             continue;
-        addTab(new UIVMActivityMonitorLocal(m_enmEmbedding, this, comMachine), comMachine.GetName());
+        if (pMachine->toLocal())
+        {
+            CMachine comMachine = pMachine->toLocal()->machine();
+            addTab(new UIVMActivityMonitorLocal(m_enmEmbedding, this, comMachine), comMachine.GetName());
+            continue;
+        }
+        if (pMachine->toCloud())
+        {
+            CCloudMachine comMachine = pMachine->toCloud()->machine();
+            if (!comMachine.isOk())
+                continue;
+            addTab(new UIVMActivityMonitorCloud(m_enmEmbedding, this, comMachine), comMachine.GetName());
+            continue;
+        }
     }
 }
 
