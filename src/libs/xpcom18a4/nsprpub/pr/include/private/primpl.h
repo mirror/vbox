@@ -93,8 +93,6 @@ struct PRLock {
     pthread_t owner;                /* if locked, current lock owner */
 };
 
-extern void _PR_InitLocks(void);
-
 struct PRCondVar {
     PRLock *lock;               /* associated lock that protects the condition */
     pthread_cond_t cv;          /* underlying pthreads condition */
@@ -112,9 +110,6 @@ struct PRMonitor {
 };
 
 /************************************************************************/
-
-extern PRBool _pr_initialized;
-extern void _PR_ImplicitInitialization(void);
 
 PR_END_EXTERN_C
 

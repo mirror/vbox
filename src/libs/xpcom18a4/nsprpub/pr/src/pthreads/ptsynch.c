@@ -107,6 +107,8 @@
 static pthread_mutexattr_t _pt_mattr;
 static pthread_condattr_t _pt_cvar_attr;
 
+static PRBool _pr_initialized = PR_FALSE;
+
 static void PR_DestroyCondVar(PRCondVar *cvar);
 
 /**************************************************************/
@@ -115,8 +117,10 @@ static void PR_DestroyCondVar(PRCondVar *cvar);
 /**************************************************************/
 /**************************************************************/
 
-void _PR_InitLocks(void)
+static void _PR_InitLocks(void)
 {
+    _pr_initialized = PR_TRUE;
+
     int rv;
     rv = _PT_PTHREAD_MUTEXATTR_INIT(&_pt_mattr); 
     Assert(0 == rv);
@@ -394,7 +398,7 @@ PR_IMPLEMENT(PRMonitor*) PR_NewMonitor(void)
     PRMonitor *mon;
     PRCondVar *cvar;
 
-    if (!_pr_initialized) _PR_ImplicitInitialization();
+    if (!_pr_initialized) _PR_InitLocks();
 
     cvar = PR_NEWZAP(PRCondVar);
     if (NULL == cvar)
