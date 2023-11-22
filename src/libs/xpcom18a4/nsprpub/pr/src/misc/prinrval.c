@@ -39,8 +39,7 @@
  * file:			prinrval.c
  * description:		implementation for the kernel interval timing functions
  */
-
-#include "primpl.h"
+#include "nspr.h"
 
 #include <signal.h>
 #include <unistd.h>
@@ -78,7 +77,7 @@ PR_IMPLEMENT(PRIntervalTime) PR_IntervalNow(void)
     struct timeval time;
     PRIntervalTime ticks;
 
-    (void)GETTIMEOFDAY(&time);  /* fallicy of course */
+    (void)gettimeofday(&time,NULL);  /* fallicy of course */
     ticks = (PRUint32)time.tv_sec * PR_MSEC_PER_SEC;  /* that's in milliseconds */
     ticks += (PRUint32)time.tv_usec / PR_USEC_PER_MSEC;  /* so's that */
     return ticks;

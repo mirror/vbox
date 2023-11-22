@@ -44,7 +44,6 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include "primpl.h"
 #include "prprf.h"
 #include "prlong.h"
 #include "prmem.h"

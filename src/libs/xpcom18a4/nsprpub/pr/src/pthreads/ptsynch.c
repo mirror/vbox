@@ -40,12 +40,12 @@
 ** Descritpion:        Implemenation for thread synchronization using pthreads
 ** Exports:            prlock.h, prcvar.h, prmon.h, prcmon.h
 */
-
-#include "primpl.h"
+#include "nspr.h"
 
 #include <string.h>
 #include <pthread.h>
 #include <sys/time.h>
+#include <errno.h>
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -296,7 +296,7 @@ static PRIntn pt_TimedWait(
     tmo.tv_nsec = (PRInt32)PR_IntervalToMicroseconds(PT_NANOPERMICRO * tmo.tv_nsec);
 
     /* pthreads wants this in absolute time, off we go ... */
-    (void)GETTIMEOFDAY(&now);
+    (void)gettimeofday(&now, NULL);
     /* that one's usecs, this one's nsecs - grrrr! */
     tmo.tv_sec += now.tv_sec;
     tmo.tv_nsec += (PT_NANOPERMICRO * now.tv_usec);
