@@ -447,7 +447,6 @@ VBox-xpcom-nspr_SOURCES  = \
 
 ifeq ($(filter-out darwin freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # unixish
  VBox-xpcom-nspr_SOURCES += \
- 	nsprpub/pr/src/md/unix/unix.c \
  	nsprpub/pr/src/pthreads/ptsynch.c
 endif
 
