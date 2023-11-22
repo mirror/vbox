@@ -3826,7 +3826,7 @@ void UIActionPoolManager::preparePool()
     m_menuUpdateHandlers[UIActionIndexMN_M_Cloud].ptfm =                 &UIActionPoolManager::updateMenuCloud;
     m_menuUpdateHandlers[UIActionIndexMN_M_CloudConsoleWindow].ptfm =    &UIActionPoolManager::updateMenuCloudConsoleWindow;
     m_menuUpdateHandlers[UIActionIndexMN_M_CloudConsole].ptfm =          &UIActionPoolManager::updateMenuCloudConsole;
-    m_menuUpdateHandlers[UIActionIndexMN_M_VMActivityOverview].ptfm =     &UIActionPoolManager::updateMenuVMActivityOverview;
+    m_menuUpdateHandlers[UIActionIndexMN_M_VMActivityOverview].ptfm =    &UIActionPoolManager::updateMenuVMActivityOverview;
     m_menuUpdateHandlers[UIActionIndexMN_M_Snapshot].ptfm =              &UIActionPoolManager::updateMenuSnapshot;
 
     /* Call to base-class: */
@@ -3836,8 +3836,10 @@ void UIActionPoolManager::preparePool()
 void UIActionPoolManager::prepareConnections()
 {
     /* Prepare connections: */
-    connect(gShortcutPool, &UIShortcutPool::sigManagerShortcutsReloaded, this, &UIActionPoolManager::sltApplyShortcuts);
-    connect(gShortcutPool, &UIShortcutPool::sigRuntimeShortcutsReloaded, this, &UIActionPoolManager::sltApplyShortcuts);
+    connect(gShortcutPool, &UIShortcutPool::sigManagerShortcutsReloaded,
+            this, &UIActionPoolManager::sltApplyShortcuts);
+    connect(gShortcutPool, &UIShortcutPool::sigRuntimeShortcutsReloaded,
+            this, &UIActionPoolManager::sltApplyShortcuts);
 
     /* Call to base-class: */
     UIActionPool::prepareConnections();
