@@ -6551,7 +6551,7 @@ iemNativeEmitStoreGregU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
 
 #elif defined(RT_ARCH_ARM64)
     /* bfi w1, w2, 0, 16 - moves bits 15:0 from idxVarReg to idxGstTmpReg bits 15:0. */
-    uint8_t const    idxVarReg   = iemNativeVarAllocRegister(pReNative, idxDstVar, &off);
+    uint8_t const    idxVarReg   = iemNativeVarAllocRegister(pReNative, idxValueVar, &off);
     uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
     pu32CodeBuf[off++] = Armv8A64MkInstrBfi(idxGstTmpReg, idxVarReg, 0, 16);
 
@@ -7267,7 +7267,7 @@ iemNativeEmitCalcRmEffAddrThreadedAddr32(PIEMRECOMPILERSTATE pReNative, uint32_t
         {
             uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
             pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(false /*fSub*/, idxRegRet, idxRegRet, idxRegIndex,
-                                                          false /*f64Bit*/ false /*fSetFlags*/, cShiftIndex);
+                                                          false /*f64Bit*/, false /*fSetFlags*/, cShiftIndex);
         }
     }
 
