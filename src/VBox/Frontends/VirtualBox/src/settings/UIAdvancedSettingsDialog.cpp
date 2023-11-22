@@ -214,23 +214,23 @@ public:
     /** Constructs vertical scroll-area passing @a pParent to the base-class. */
     UIVerticalScrollArea(QWidget *pParent);
 
+    /** Returns vertical scrollbar position. */
+    int verticalScrollBarPosition() const;
+    /** Defines vertical scrollbar @a iPosition. */
+    void setVerticalScrollBarPosition(int iPosition) const;
+
     /** Requests vertical scrollbar @a iPosition. */
     void requestVerticalScrollBarPosition(int iPosition);
 
 protected:
 
-    /** Holds the minimum widget size. */
+    /** Returns the minimum widget size. */
     virtual QSize minimumSizeHint() const RT_OVERRIDE;
 
 private:
 
     /** Prepares all. */
     void prepare();
-
-    /** Returns vertical scrollbar position. */
-    int verticalScrollBarPosition() const;
-    /** Defines vertical scrollbar @a iPosition. */
-    void setVerticalScrollBarPosition(int iPosition) const;
 
     /** Holds the vertical scrollbar animation instance. */
     QPropertyAnimation *m_pAnimation;
@@ -525,6 +525,16 @@ UIVerticalScrollArea::UIVerticalScrollArea(QWidget *pParent)
     prepare();
 }
 
+int UIVerticalScrollArea::verticalScrollBarPosition() const
+{
+    return verticalScrollBar()->value();
+}
+
+void UIVerticalScrollArea::setVerticalScrollBarPosition(int iPosition) const
+{
+    verticalScrollBar()->setValue(iPosition);
+}
+
 void UIVerticalScrollArea::requestVerticalScrollBarPosition(int iPosition)
 {
     /* Acquire scroll-bar minumum, maximum and length: */
@@ -566,16 +576,6 @@ void UIVerticalScrollArea::prepare()
 
     /* Prepare vertical scrollbar animation: */
     m_pAnimation = new QPropertyAnimation(this, "verticalScrollBarPosition", this);
-}
-
-int UIVerticalScrollArea::verticalScrollBarPosition() const
-{
-    return verticalScrollBar()->value();
-}
-
-void UIVerticalScrollArea::setVerticalScrollBarPosition(int iPosition) const
-{
-    verticalScrollBar()->setValue(iPosition);
 }
 
 
