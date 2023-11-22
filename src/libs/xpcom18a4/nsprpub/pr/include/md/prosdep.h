@@ -41,8 +41,9 @@
 /*
 ** Get OS specific header information
 */
-#include "prtypes.h"
-#include "prinrval.h"
+#include <unistd.h>
+#include <stddef.h>
+#include <errno.h>
 
 #ifndef XP_UNIX
 # error "XPCOM supports only Unixy environments currently!"
@@ -54,27 +55,18 @@
 
 PR_BEGIN_EXTERN_C
 
-#if defined(LINUX) || defined(DARWIN) || defined(NETBSD) || defined(FREEBSD) || defined(OPENBSD)
-
-NSPR_API(PRIntervalTime) _PR_UNIX_GetInterval(void);
-NSPR_API(PRIntervalTime) _PR_UNIX_TicksPerSecond(void);
-
-#define _MD_GET_INTERVAL                _PR_UNIX_GetInterval
-#define _MD_INTERVAL_PER_SEC            _PR_UNIX_TicksPerSecond
-
-#elif defined(SOLARIS)
-
-NSPR_API(PRIntervalTime) _MD_Solaris_GetInterval(void);
-NSPR_API(PRIntervalTime) _MD_Solaris_TicksPerSecond(void);
-
-# define _MD_GET_INTERVAL               _MD_Solaris_GetInterval
-# define _MD_INTERVAL_PER_SEC           _MD_Solaris_TicksPerSecond
-
+/*
+ * The standard (XPG4) gettimeofday() (from BSD) takes two arguments.
+ * On some SVR4 derivatives, gettimeofday() takes only one argument.
+ * The GETTIMEOFDAY macro is intended to hide this difference.
+ */
+#ifdef HAVE_SVID_GETTOD
+#define GETTIMEOFDAY(tp) gettimeofday(tp)
 #else
-# error unknown Unix flavor
+#define GETTIMEOFDAY(tp) gettimeofday((tp), NULL)
 #endif
 
-#include "md/_unixos.h"
+
 #include "md/_pth.h"
 
 PR_END_EXTERN_C
