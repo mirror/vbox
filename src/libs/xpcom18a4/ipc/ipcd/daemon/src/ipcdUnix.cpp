@@ -334,16 +334,7 @@ static void PollLoop(RTPOLLSET hPollSet, int fdListen)
         if (RT_SUCCESS(vrc))
         { /* likely */ }
         else if (vrc == VERR_TIMEOUT)
-        {
-            /* Shutdown if no clients. */
-            if (ipcClientCount == 0)
-            {
-                LogFlowFunc(("shutting down\n"));
-                break;
-            }
-
             continue;
-        }
         else
         {
             LogFlowFunc(("Polling failed with %Rrc\n", vrc));
@@ -384,6 +375,13 @@ static void PollLoop(RTPOLLSET hPollSet, int fdListen)
             {
                 /* Cleanup dead client. */
                 RemoveClient(hPollSet, idPoll);
+
+                /* Shutdown if no clients. */
+                if (ipcClientCount == 0)
+                {
+                    LogFlowFunc(("shutting down\n"));
+                    break;
+                }
             }
             else if (ipcClientArray[idPoll].m_fPollEvts != fNewFlags)
             {
