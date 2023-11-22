@@ -40,7 +40,6 @@
 #include "nsExceptionService.h"
 #include "nsIServiceManager.h"
 #include "nsCOMPtr.h"
-#include "prlock.h"
 
 #include <iprt/asm.h>
 #include <iprt/errcore.h>
