@@ -813,7 +813,6 @@ endif
 VBox-xpcom-ipcshared_TEMPLATE = XPComIpcDll
 VBox-xpcom-ipcshared_INSTTYPE = none
 VBox-xpcom-ipcshared_SOURCES = \
-	ipc/ipcd/shared/src/ipcLog.cpp \
 	ipc/ipcd/shared/src/ipcConfig.cpp \
 	ipc/ipcd/shared/src/ipcMessage.cpp \
 	ipc/ipcd/shared/src/ipcMessagePrimitives.cpp \
