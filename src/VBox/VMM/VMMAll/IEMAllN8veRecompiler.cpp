@@ -5485,7 +5485,7 @@ DECL_HIDDEN_THROW(uint8_t) iemNativeVarAllocRegisterForGuestReg(PIEMRECOMPILERST
         if (pReNative->Core.bmGstRegShadows & RT_BIT_64(enmGstReg))
         {
             uint8_t const idxRegOld = pReNative->Core.aidxGstRegShadows[enmGstReg];
-            iemNativeRegTransferGstRegShadowing(pReNative, pReNative->Core.aidxGstRegShadows[enmGstReg], idxReg, enmGstReg, *poff);
+            iemNativeRegTransferGstRegShadowing(pReNative, idxRegOld, idxReg, enmGstReg, *poff);
             Log12(("iemNativeVarAllocRegisterForGuestReg: Moved %s for guest %s into %s for full write\n",
                    g_apszIemNativeHstRegNames[idxRegOld], g_aGstShadowInfo[enmGstReg].pszName, g_apszIemNativeHstRegNames[idxReg]));
         }
