@@ -2604,9 +2604,13 @@
 #define VERR_IEM_VAR_IPE_9                          (-5372)
 /** Recompiler: Variable management internal processing error \#10. */
 #define VERR_IEM_VAR_IPE_10                         (-5373)
+/** Recompiler: Variable management internal processing error \#11. */
+#define VERR_IEM_VAR_IPE_11                         (-5374)
 
 /** Recompiler: Unimplemented case. */
 #define VERR_IEM_EMIT_CASE_NOT_IMPLEMENTED_1        (-5380)
+/** Recompiler: Totally unexpected memory size. */
+#define VERR_IEM_EMIT_BAD_MEM_SIZE                  (-5381)
 
 /** Restart the current instruction. For testing only. */
 #define VERR_IEM_RESTART_INSTRUCTION                (-5389)
