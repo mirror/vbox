@@ -48,6 +48,8 @@
 
 #include "prtypes.h"
 
+#include <iprt/types.h>
+
 #ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
 #define LL_MaxInt VBoxNsllLL_MaxInt
 #define LL_MaxUint VBoxNsllLL_MaxUint
@@ -66,10 +68,25 @@ PR_BEGIN_EXTERN_C
 **      Various interesting constants and static variable
 **      initializer
 ***********************************************************************/
-NSPR_API(PRInt64) LL_MaxInt(void);
-NSPR_API(PRInt64) LL_MinInt(void);
-NSPR_API(PRInt64) LL_Zero(void);
-NSPR_API(PRUint64) LL_MaxUint(void);
+DECL_FORCE_INLINE(PRInt64) LL_MaxInt(void)
+{
+    return INT64_MAX;
+}
+
+DECL_FORCE_INLINE(PRInt64) LL_MinInt(void)
+{
+    return INT64_MIN;
+}
+
+DECL_FORCE_INLINE(PRInt64) LL_Zero(void)
+{
+    return 0;
+}
+
+DECL_FORCE_INLINE(PRUint64) LL_MaxUint(void)
+{
+    return UINT64_MAX;
+}
 
 #define LL_MAXINT   LL_MaxInt()
 #define LL_MININT   LL_MinInt()

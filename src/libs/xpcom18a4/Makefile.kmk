@@ -389,7 +389,6 @@ VBox-xpcom-nspr_INCS = \
 VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/pr/src/io/prprf.c \
 	nsprpub/pr/src/misc/prinrval.c \
-	nsprpub/pr/src/misc/prlong.c \
 	nsprpub/lib/ds/plarena.c \
 	nsprpub/lib/ds/plhash.c \
 	nsprpub/lib/libc/src/strlen.c \
