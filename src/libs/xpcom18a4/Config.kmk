@@ -170,28 +170,14 @@ TEMPLATE_XPComDll_INCS                = $(VBOX_PATH_XPCOM_SRC)/xpcom/build \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/ipcd \
 	.
-ifn1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.4 10.5 10.6 10.7) # FlatCarbon is gone starting 10.8 (or Xcode 5.0).
- TEMPLATE_XPComDll_DEFS.darwin       += VBOX_WITH_NEWER_OSX_SDK
- TEMPLATE_XPComDll_INCS.darwin        = \
- 	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/CoreFoundation.framework/Versions/A/Headers/ \
- 	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/CarbonCore.framework/Versions/A/Headers/ \
- 	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/HIServices.framework/Versions/A/Headers/
-else
- TEMPLATE_XPComDll_INCS.darwin        = $(VBOX_PATH_MACOSX_SDK)/Developer/Headers/FlatCarbon
-endif
-TEMPLATE_XPComDll_LIBS.solaris        = sendfile
+TEMPLATE_XPComDll_DEFS.darwin       += VBOX_WITH_NEWER_OSX_SDK
+TEMPLATE_XPComDll_INCS.darwin        = \
+	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/CoreFoundation.framework/Versions/A/Headers/ \
+	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/CarbonCore.framework/Versions/A/Headers/ \
+	$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/HIServices.framework/Versions/A/Headers/
+
 TEMPLATE_XPComDll_ORDERDEPS           = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $($(hdrinst)_1_TARGET)) \
 	$(PATH_TARGET)/VBox-xpcom-idl-timestamp
-ifeq ($(KBUILD_TARGET),os2)
- ifndef USE_OS2_TOOLKIT_HEADERS
-  TEMPLATE_XPComDll_DEFS.os2         += OS2EMX_PLAIN_CHAR
- endif
- TEMPLATE_XPComDll_DEFS.os2          += XP_OS2_EMX OS2=4
- # this is at least for strnicmp()
- TEMPLATE_XPComDll_DEFS.os2          += _EMX_SOURCE
- # @@todo shouldn't this be somehow default for ASTOOL?
- TEMPLATE_XPComDll_ASFLAGS.os2       += -Zomf
-endif
 
 # When using IPRT in NSRP or/and using IPRT for logging, link with IPRT.
 TEMPLATE_XPComDll_LIBS               += $(LIB_RUNTIME)
@@ -278,57 +264,6 @@ TEMPLATE_XPComBldProg_CXXFLAGS.solaris   = $(TEMPLATE_VBoxBldProg_CXXFLAGS.solar
 TEMPLATE_XPComBldProg_LDFLAGS.darwin     = $(TEMPLATE_VBoxBldProg_LDFLAGS.darwin)      -fpascal-strings -fshort-wchar -fno-rtti -fno-exceptions
 TEMPLATE_XPComBldProg_ORDERDEPS          = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $($(hdrinst)_1_TARGET))
 
-
-ifeq ($(VBOX_DEF_MACOSX_VERSION_MIN),10.4)
- #
- # Template for building VBoxPython against the Mac OS X 10.4 SDK.
- # ASSUMES that the SDK bits are in the .darwin properties we're overriding below.
- #
- TEMPLATE_XPComDllOSX104                    = XPCOM libraries (shared) built against the Mac OS X 10.4 SDK
- TEMPLATE_XPComDllOSX104_EXTENDS            = XPComDll
- TEMPLATE_XPComDllOSX104_CXXFLAGS.darwin    = $(filter-out $(VBOX_DARWIN_DEF_SDK_CXXFLAGS),$(TEMPLATE_XPComDll_CXXFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_4_CXXFLAGS)
- TEMPLATE_XPComDllOSX104_CFLAGS.darwin      = $(filter-out $(VBOX_DARWIN_DEF_SDK_CFLAGS),$(TEMPLATE_XPComDll_CFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_4_CFLAGS)
- TEMPLATE_XPComDllOSX104_LDFLAGS.darwin     = $(filter-out $(VBOX_DARWIN_DEF_SDK_LDFLAGS),$(TEMPLATE_XPComDll_LDFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_4_LDFLAGS)
- TEMPLATE_XPComDllOSX104_DEFS.darwin        = $(filter-out $(VBOX_DARWIN_DEF_SDK_DEFS),$(TEMPLATE_XPComDll_DEFS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_4_DEFS)
- TEMPLATE_XPComDllOSX104_INCS.darwin        = $(VBOX_PATH_MACOSX_SDK_10_4)/Developer/Headers/FlatCarbon
-endif
-
-#
-# Template for building VBoxPython against the Mac OS X 10.5 SDK.
-# ASSUMES that the SDK bits are in the .darwin properties we're overriding below.
-#
-TEMPLATE_XPComDllOSX105                    = XPCOM libraries (shared) built against the Mac OS X 10.5 SDK
-TEMPLATE_XPComDllOSX105_EXTENDS            = XPComDll
-TEMPLATE_XPComDllOSX105_CXXFLAGS.darwin    = $(filter-out $(VBOX_DARWIN_DEF_SDK_CXXFLAGS),$(TEMPLATE_XPComDll_CXXFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_5_CXXFLAGS)
-TEMPLATE_XPComDllOSX105_CFLAGS.darwin      = $(filter-out $(VBOX_DARWIN_DEF_SDK_CFLAGS),$(TEMPLATE_XPComDll_CFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_5_CFLAGS)
-TEMPLATE_XPComDllOSX105_LDFLAGS.darwin     = $(filter-out $(VBOX_DARWIN_DEF_SDK_LDFLAGS),$(TEMPLATE_XPComDll_LDFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_5_LDFLAGS)
-TEMPLATE_XPComDllOSX105_DEFS.darwin        = $(filter-out $(VBOX_DARWIN_DEF_SDK_DEFS),$(TEMPLATE_XPComDll_DEFS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_5_DEFS)
-TEMPLATE_XPComDllOSX105_INCS.darwin        = $(VBOX_PATH_MACOSX_SDK_10_5)/Developer/Headers/FlatCarbon
-
-#
-# Template for building VBoxPython against the Mac OS X 10.6 SDK.
-# ASSUMES that the SDK bits are in the .darwin properties we're overriding below.
-#
-TEMPLATE_XPComDllOSX106                    = XPCOM libraries (shared) built against the Mac OS X 10.6 SDK
-TEMPLATE_XPComDllOSX106_EXTENDS            = XPComDll
-TEMPLATE_XPComDllOSX106_CXXFLAGS.darwin    = $(filter-out $(VBOX_DARWIN_DEF_SDK_CXXFLAGS),$(TEMPLATE_XPComDll_CXXFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_6_CXXFLAGS)
-TEMPLATE_XPComDllOSX106_CFLAGS.darwin      = $(filter-out $(VBOX_DARWIN_DEF_SDK_CFLAGS),$(TEMPLATE_XPComDll_CFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_6_CFLAGS)
-TEMPLATE_XPComDllOSX106_LDFLAGS.darwin     = $(filter-out $(VBOX_DARWIN_DEF_SDK_LDFLAGS),$(TEMPLATE_XPComDll_LDFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_6_LDFLAGS)
-TEMPLATE_XPComDllOSX106_DEFS.darwin        = $(filter-out $(VBOX_DARWIN_DEF_SDK_DEFS),$(TEMPLATE_XPComDll_DEFS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_6_DEFS)
-TEMPLATE_XPComDllOSX106_INCS.darwin        = $(VBOX_PATH_MACOSX_SDK_10_6)/Developer/Headers/FlatCarbon
-
-#
-# Template for building VBoxPython against the Mac OS X 10.7 SDK.
-# ASSUMES that the SDK bits are in the .darwin properties we're overriding below.
-#
-TEMPLATE_XPComDllOSX107                    = XPCOM libraries (shared) built against the Mac OS X 10.7 SDK
-TEMPLATE_XPComDllOSX107_EXTENDS            = XPComDll
-TEMPLATE_XPComDllOSX107_TOOL               = LLVMGXX42MACHO
-TEMPLATE_XPComDllOSX107_CXXFLAGS.darwin    = $(filter-out $(VBOX_DARWIN_DEF_SDK_CXXFLAGS),$(TEMPLATE_XPComDll_CXXFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_7_CXXFLAGS)
-TEMPLATE_XPComDllOSX107_CFLAGS.darwin      = $(filter-out $(VBOX_DARWIN_DEF_SDK_CFLAGS),$(TEMPLATE_XPComDll_CFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_7_CFLAGS)
-TEMPLATE_XPComDllOSX107_LDFLAGS.darwin     = $(filter-out $(VBOX_DARWIN_DEF_SDK_LDFLAGS),$(TEMPLATE_XPComDll_LDFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_7_LDFLAGS)
-TEMPLATE_XPComDllOSX107_DEFS.darwin        = $(filter-out $(VBOX_DARWIN_DEF_SDK_DEFS),$(TEMPLATE_XPComDll_DEFS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_7_DEFS)
-TEMPLATE_XPComDllOSX107_INCS.darwin        = $(VBOX_PATH_MACOSX_SDK_10_7)/Developer/Headers/FlatCarbon
 
 
 #

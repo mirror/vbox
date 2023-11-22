@@ -384,47 +384,16 @@ xpt_link_SOURCES = \
 VBox-xpcom-nspr_TEMPLATE   = XPComDll
 VBox-xpcom-nspr_INSTTYPE   = none
 VBox-xpcom-nspr_DEFS       = \
-	_NSPR_BUILD_ \
-	HAVE_LCHOWN=1 \
-	HAVE_STRERROR=1 \
-	FORCE_PR_LOG
-VBox-xpcom-nspr_DEFS      += \
-	VBOX_USE_IPRT_IN_NSPR
-VBox-xpcom-nspr_DEFS.darwin.amd64 = \
-	VBOX_USE_MORE_IPRT_IN_NSPR
-VBox-xpcom-nspr_DEFS.darwin.arm64 = \
-	VBOX_USE_MORE_IPRT_IN_NSPR
-VBox-xpcom-nspr_DEFS.darwin = \
-	HAVE_BSD_FLOCK=1 \
-	HAVE_SOCKLEN_T=1 \
-	_PR_PTHREADS
-VBox-xpcom-nspr_DEFS.freebsd = \
-	HAVE_CVAR_BUILT_ON_SEM \
-	_PR_PTHREADS
-## @todo filling in the missing stuff, please don't just copy it from linux.
+	_NSPR_BUILD_
 VBox-xpcom-nspr_DEFS.linux = \
 	_POSIX_SOURCE=1 \
 	_BSD_SOURCE=1 \
 	_SVID_SOURCE=1 \
 	_DEFAULT_SOURCE \
-	_REENTRANT=1 \
-	_LARGEFILE64_SOURCE=1 \
-	HAVE_FCNTL_FILE_LOCKING=1 \
-	HAVE_CVAR_BUILT_ON_SEM \
-	_PR_PTHREADS
+	_REENTRANT=1
 # _BSD_SOURCE is here to keep the Glibc header files happy and make them include the right things
-VBox-xpcom-nspr_DEFS.netbsd = \
-	_PR_PTHREADS
-VBox-xpcom-nspr_DEFS.openbsd = \
-	_PR_PTHREADS
-VBox-xpcom-nspr_DEFS.solaris = \
-	HAVE_FCNTL_FILE_LOCKING=1 \
-	HAVE_SOCKLEN_T=1 \
-	_PR_PTHREADS
 VBox-xpcom-nspr_INCS = \
-	nsprpub/pr/include/private \
 	$(VBox-xpcom-nspr_0_OUTDIR)
-
 VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/pr/src/io/prprf.c \
 	nsprpub/pr/src/misc/prinrval.c \
@@ -434,12 +403,8 @@ VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/lib/libc/src/strlen.c \
 	nsprpub/lib/libc/src/strcpy.c \
 	nsprpub/lib/libc/src/strcmp.c \
-	nsprpub/lib/libc/src/strccmp.c
-
-ifeq ($(filter-out darwin freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # unixish
- VBox-xpcom-nspr_SOURCES += \
- 	nsprpub/pr/src/pthreads/ptsynch.c
-endif
+	nsprpub/lib/libc/src/strccmp.c \
+	nsprpub/pr/src/pthreads/ptsynch.c
 
 $(call KB_FN_DO_PASS0_ON_TARGET,VBox-xpcom-nspr)
 
