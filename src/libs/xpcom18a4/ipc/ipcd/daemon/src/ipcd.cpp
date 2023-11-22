@@ -34,9 +34,8 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-
+#define LOG_GROUP LOG_GROUP_IPC
 #include "ipcConfig.h"
-#include "ipcLog.h"
 #include "ipcMessage.h"
 #include "ipcClient.h"
 #include "ipcCommandModule.h"

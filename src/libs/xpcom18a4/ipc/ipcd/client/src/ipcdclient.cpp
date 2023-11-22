@@ -34,13 +34,12 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-
+#define LOG_GROUP LOG_GROUP_IPC
 #include "ipcdclient.h"
 #include "ipcConnection.h"
 #include "ipcConfig.h"
 #include "ipcMessageQ.h"
 #include "ipcMessageUtils.h"
-#include "ipcLog.h"
 #include "ipcm.h"
 
 #include "nsIFile.h"
@@ -61,6 +60,8 @@
 #include <iprt/pipe.h>
 #include <iprt/process.h>
 #include <iprt/string.h>
+
+#include <VBox/log.h>
 
 /* ------------------------------------------------------------------------- */
 
@@ -279,7 +280,7 @@ ProcessPendingQ(const nsID &aTarget)
       // messages that make it here will simply be dropped.
       NS_ASSERTION(aTarget.Equals(IPCM_TARGET) || msg->Target().Equals(IPCM_TARGET),
                    "unexpected target");
-      LOG(("dropping IPCM message: type=%x\n", IPCM_GetType(msg)));
+      Log(("dropping IPCM message: type=%x\n", IPCM_GetType(msg)));
     }
     tempQ.DeleteFirst();
   }
@@ -446,7 +447,7 @@ WaitTarget(const nsID           &aTarget,
     }
     mon.Wait(timeEnd - t);
 
-    LOG(("woke up from sleep [pendingQempty=%d connected=%d shutdown=%d isIPCMTarget=%d]\n",
+    Log(("woke up from sleep [pendingQempty=%d connected=%d shutdown=%d isIPCMTarget=%d]\n",
           td->pendingQ.IsEmpty(), gClientState->connected,
           gClientState->shutdown, isIPCMTarget));
   }
@@ -693,7 +694,7 @@ RemoveTarget(const nsID &aTarget, PRBool aNotifyDaemon)
   {
     nsresult rv = MakeIPCMRequest(new ipcmMessageClientDelTarget(aTarget));
     if (NS_FAILED(rv))
-      LOG(("failed to delete target: rv=%x\n", rv));
+      Log(("failed to delete target: rv=%x\n", rv));
   }
 }
 
@@ -719,7 +720,7 @@ DefineTarget(const nsID           &aTarget,
     rv = MakeIPCMRequest(new ipcmMessageClientAddTarget(aTarget));
     if (NS_FAILED(rv))
     {
-      LOG(("failed to add target: rv=%x\n", rv));
+      Log(("failed to add target: rv=%x\n", rv));
       RemoveTarget(aTarget, PR_FALSE);
       return rv;
     }
@@ -767,7 +768,7 @@ TryConnect()
     gClientState->selfID = ipcMessageCast<ipcmMessageClientID>(msg)->ClientID();
   else
   {
-    LOG(("unexpected response from CLIENT_HELLO message: type=%x!\n",
+    Log(("unexpected response from CLIENT_HELLO message: type=%x!\n",
         IPCM_GetType(msg)));
     rv = NS_ERROR_UNEXPECTED;
   }
@@ -780,8 +781,6 @@ nsresult
 IPC_Init()
 {
   NS_ENSURE_TRUE(!gClientState, NS_ERROR_ALREADY_INITIALIZED);
-
-  IPC_InitLog(">>>");
 
   gClientState = ipcClientState::Create();
   if (!gClientState)
@@ -804,7 +803,7 @@ IPC_Shutdown()
 {
   NS_ENSURE_TRUE(gClientState, NS_ERROR_NOT_INITIALIZED);
 
-  LOG(("IPC_Shutdown: connected=%d\n",gClientState->connected));
+  Log(("IPC_Shutdown: connected=%d\n",gClientState->connected));
 
   if (gClientState->connected)
   {
@@ -989,7 +988,7 @@ static nsresult WaitMessageSelector(void *arg, ipcTargetData *td, const ipcMessa
              status->ClientID() == data->senderID) &&
             status->ClientState() == IPCM_CLIENT_STATE_DOWN)
         {
-          LOG(("sender (%d) we're waiting a message from (%d) has died\n",
+          Log(("sender (%d) we're waiting a message from (%d) has died\n",
                status->ClientID(), data->senderID));
 
           if (data->senderID != IPC_SENDER_ANY)
@@ -1023,7 +1022,7 @@ static nsresult WaitMessageSelector(void *arg, ipcTargetData *td, const ipcMessa
                   status->ClientID() == data->senderID) &&
                  status->ClientState() == IPCM_CLIENT_STATE_UP)
         {
-          LOG(("sender (%d) we're waiting a message from (%d) has come up\n",
+          Log(("sender (%d) we're waiting a message from (%d) has come up\n",
                status->ClientID(), data->senderID));
           if (data->senderID == IPC_SENDER_ANY)
           {
@@ -1194,7 +1193,7 @@ IPC_ResolveClientName(const char *aName, PRUint32 *aClientID)
     *aClientID = ipcMessageCast<ipcmMessageClientID>(msg)->ClientID();
   else
   {
-    LOG(("unexpected IPCM response: type=%x\n", IPCM_GetType(msg)));
+    Log(("unexpected IPCM response: type=%x\n", IPCM_GetType(msg)));
     rv = NS_ERROR_UNEXPECTED;
   }
 
@@ -1320,11 +1319,10 @@ PlaceOnPendingQ(const nsID &target, ipcTargetData *td, ipcMessage *msg)
   // put this message on our pending queue
   td->pendingQ.Append(msg);
 
-#ifdef IPC_LOGGING
-  if (IPC_LOG_ENABLED())
+#ifdef LOG_ENABLED
   {
     char *targetStr = target.ToString();
-    LOG(("placed message on pending queue for target %s and notifying all...\n", targetStr));
+    Log(("placed message on pending queue for target %s and notifying all...\n", targetStr));
     nsMemory::Free(targetStr);
   }
 #endif
@@ -1354,20 +1352,14 @@ EnumerateTargetMapAndPlaceMsg(const nsID    &aKey,
 
 /* ------------------------------------------------------------------------- */
 
-#ifdef IPC_LOGGING
-#include "prprf.h"
-#include <ctype.h>
-#endif
-
 // called on a background thread
 void
 IPC_OnMessageAvailable(ipcMessage *msg)
 {
-#ifdef IPC_LOGGING
-  if (IPC_LOG_ENABLED())
+#ifdef LOG_ENABLED
   {
     char *targetStr = msg->Target().ToString();
-    LOG(("got message for target: %s\n", targetStr));
+    Log(("got message for target: %s\n", targetStr));
     nsMemory::Free(targetStr);
 
 //     IPC_LogBinary((const PRUint8 *) msg->Data(), msg->DataLen());

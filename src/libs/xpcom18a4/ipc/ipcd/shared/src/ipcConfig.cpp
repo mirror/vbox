@@ -34,6 +34,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+#define LOG_GROUP LOG_GROUP_IPC
 
 #if defined(XP_WIN)
 #elif defined(XP_OS2) && defined(XP_OS2_NATIVEIPC)
@@ -45,10 +46,10 @@
 #include <pwd.h>
 #endif
 #include "ipcConfig.h"
-#include "ipcLog.h"
 #include "plstr.h"
 
 #include <iprt/env.h>
+#include <VBox/log.h>
 
 #if defined(XP_OS2) && !defined(XP_OS2_NATIVEIPC)
 #ifdef VBOX
@@ -88,7 +89,7 @@ void IPC_GetDefaultSocketPath(char *buf, PRUint32 bufLen)
         if (!logName || !logName[0]) {
             logName = RTEnvGet("USER");
             if (!logName || !logName[0]) {
-                LOG(("could not determine username from environment\n"));
+                Log(("could not determine username from environment\n"));
                 goto end;
             }
         }

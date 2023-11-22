@@ -36,15 +36,17 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#define LOG_GROUP LOG_GROUP_IPC
 #include <stdlib.h>
 #include "nsDependentString.h"
 #include "nsHashKeys.h"
 #include "nsAutoPtr.h"
 #include "ipcLockService.h"
 #include "ipcLockProtocol.h"
-#include "ipcLog.h"
 
 #include <iprt/errcore.h>
+#include <VBox/log.h>
+
 
 static const nsID kLockTargetID = IPC_LOCK_TARGETID;
 
@@ -79,7 +81,7 @@ NS_IMPL_THREADSAFE_ISUPPORTS2(ipcLockService, ipcILockService, ipcIMessageObserv
 NS_IMETHODIMP
 ipcLockService::AcquireLock(const char *lockName, PRBool waitIfBusy)
 {
-    LOG(("ipcLockService::AcquireLock [lock=%s wait=%u]\n", lockName, waitIfBusy));
+    LogFlowFunc(("ipcLockService::AcquireLock [lock=%s wait=%u]\n", lockName, waitIfBusy));
 
     ipcLockMsg msg;
     msg.opcode = IPC_LOCK_OP_ACQUIRE;
@@ -122,7 +124,7 @@ ipcLockService::AcquireLock(const char *lockName, PRBool waitIfBusy)
 NS_IMETHODIMP
 ipcLockService::ReleaseLock(const char *lockName)
 {
-    LOG(("ipcLockService::ReleaseLock [lock=%s]\n", lockName));
+    LogFlowFunc(("ipcLockService::ReleaseLock [lock=%s]\n", lockName));
 
     ipcLockMsg msg;
     msg.opcode = IPC_LOCK_OP_RELEASE;
@@ -151,7 +153,7 @@ ipcLockService::OnMessageAvailable(PRUint32 unused, const nsID &target,
     ipcLockMsg msg;
     IPC_UnflattenLockMsg(data, dataLen, &msg);
 
-    LOG(("ipcLockService::OnMessageAvailable [lock=%s opcode=%u]\n", msg.key, msg.opcode));
+    LogFlowFunc(("ipcLockService::OnMessageAvailable [lock=%s opcode=%u]\n", msg.key, msg.opcode));
 
     ipcPendingLock *pendingLock = (ipcPendingLock *) RTTlsGet(mTPIndex);
     if (strcmp(pendingLock->name, msg.key) == 0) {
@@ -163,7 +165,7 @@ ipcLockService::OnMessageAvailable(PRUint32 unused, const nsID &target,
         return NS_OK;
     }
 
-    LOG(("message does not match; waiting for another...\n"));
+    LogFlowFunc(("message does not match; waiting for another...\n"));
 
     // else, we got a message that another thread is waiting to receive.
     return IPC_WAIT_NEXT_MESSAGE;

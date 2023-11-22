@@ -35,11 +35,10 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-
+#define LOG_GROUP LOG_GROUP_IPC
 #include "ipcDConnectService.h"
 #include "ipcMessageWriter.h"
 #include "ipcMessageReader.h"
-#include "ipcLog.h"
 
 #include "nsIServiceManagerUtils.h"
 #include "nsIInterfaceInfo.h"
@@ -60,6 +59,8 @@
 # include <iprt/mem.h>
 # include <iprt/time.h>
 # include <iprt/thread.h>
+
+# include <VBox/log.h>
 #endif /* VBOX */
 
 #if defined(DCONNECT_MULTITHREADED)
@@ -451,7 +452,7 @@ SerializeParam(ipcMessageWriter &writer, const nsXPTType &t, const nsXPTCMiniVar
     case nsXPTType::T_PSTRING_SIZE_IS:
     case nsXPTType::T_PWSTRING_SIZE_IS:
     default:
-      LOG(("unexpected parameter type: %d\n", t.TagPart()));
+      Log(("unexpected parameter type: %d\n", t.TagPart()));
       return NS_ERROR_UNEXPECTED;
   }
   return NS_OK;
@@ -608,7 +609,7 @@ DeserializeParam(ipcMessageReader &reader, const nsXPTType &t, nsXPTCVariant &v)
     case nsXPTType::T_PSTRING_SIZE_IS:
     case nsXPTType::T_PWSTRING_SIZE_IS:
     default:
-      LOG(("unexpected parameter type\n"));
+      Log(("unexpected parameter type\n"));
       return NS_ERROR_UNEXPECTED;
   }
   return NS_OK;
@@ -645,7 +646,7 @@ SetupParam(const nsXPTParamInfo &p, nsXPTCVariant &v)
         break;
 
       default:
-        LOG(("unhandled dipper: type=%d\n", t.TagPart()));
+        Log(("unhandled dipper: type=%d\n", t.TagPart()));
         return NS_ERROR_UNEXPECTED;
     }
   }
@@ -854,7 +855,7 @@ DeserializeResult(ipcMessageReader &reader, const nsXPTType &t, nsXPTCMiniVarian
     case nsXPTType::T_PSTRING_SIZE_IS:
     case nsXPTType::T_PWSTRING_SIZE_IS:
     default:
-      LOG(("unexpected parameter type\n"));
+      Log(("unexpected parameter type\n"));
       return NS_ERROR_UNEXPECTED;
   }
   return NS_OK;
@@ -902,7 +903,7 @@ GetArrayParamInfo(nsIInterfaceInfo *iinfo, uint16 methodIndex,
     nsXPTParamInfo pi = methodInfo.GetParam (sizeArg);
     if (pi.GetType().TagPart() != nsXPTType::T_U32)
     {
-      LOG(("unexpected size_is() parameter type: $d\n",
+      Log(("unexpected size_is() parameter type: $d\n",
            pi.GetType().TagPart()));
       return NS_ERROR_UNEXPECTED;
     }
@@ -910,7 +911,7 @@ GetArrayParamInfo(nsIInterfaceInfo *iinfo, uint16 methodIndex,
     pi = methodInfo.GetParam (lenArg);
     if (pi.GetType().TagPart() != nsXPTType::T_U32)
     {
-      LOG(("unexpected length_is() parameter type: $d\n",
+      Log(("unexpected length_is() parameter type: $d\n",
            pi.GetType().TagPart()));
       return NS_ERROR_UNEXPECTED;
     }
@@ -942,14 +943,14 @@ GetArrayParamInfo(nsIInterfaceInfo *iinfo, uint16 methodIndex,
       (elemType.IsPointer() || elemType.IsUniquePointer() ||
        elemType.IsReference()))
   {
-    LOG(("arrays of pointers and references to arithmetic types are "
+    Log(("arrays of pointers and references to arithmetic types are "
          "not yet supported\n"));
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
   if (elemType.IsArray())
   {
-    LOG(("multidimensional arrays are not yet supported\n"));
+    Log(("multidimensional arrays are not yet supported\n"));
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -993,7 +994,7 @@ GetTypeSize(const nsXPTType &type, PRUint32 &size, PRBool &isSimple)
       isSimple = PR_FALSE;
       break;
     default:
-      LOG(("unexpected parameter type: %d\n", type.TagPart()));
+      Log(("unexpected parameter type: %d\n", type.TagPart()));
       return NS_ERROR_UNEXPECTED;
   }
 
@@ -1100,7 +1101,7 @@ DeserializeArrayParam(ipcDConnectService *dConnect,
   // sanity
   if (prefix != 1)
   {
-    LOG(("unexpected array prefix: %u\n", prefix));
+    Log(("unexpected array prefix: %u\n", prefix));
     return NS_ERROR_UNEXPECTED;
   }
 
@@ -1254,7 +1255,7 @@ FinishArrayParam(nsIInterfaceInfo *iinfo, uint16 methodIndex,
         v.SetValIsCString();
         break;
       default:
-        LOG(("unexpected parameter type: %d\n", elemType.TagPart()));
+        Log(("unexpected parameter type: %d\n", elemType.TagPart()));
         return;
     }
 
@@ -1386,7 +1387,7 @@ public:
     // (invalid sender id, empty target id, zero data and data length
     if (aSenderID == IPC_SENDER_ANY && aTarget.Equals(nsID()) && !aData && !aDataLen)
     {
-        LOG(("DConnectMsgSelector::OnMessageAvailable: poll liveness for mPeer=%d\n",
+        Log(("DConnectMsgSelector::OnMessageAvailable: poll liveness for mPeer=%d\n",
              mPeer));
         ClientDownMap::iterator it = g_ClientDownMap.find(mPeer);
         return (it == g_ClientDownMap.end()) ? IPC_WAIT_NEXT_MESSAGE : NS_OK;
@@ -1431,7 +1432,7 @@ public:
                                 const PRUint8 *aData, PRUint32 aDataLen)
   {
     const DConnectOp *op = (const DConnectOp *) aData;
-    LOG((
+    Log((
       "DConnectCompletion::OnMessageAvailable: "
       "senderID=%d, opcode_major=%d, index=%d (waiting for %d)\n",
       aSenderID, op->opcode_major, op->request_index, mSelector.mRequestIndex
@@ -2235,14 +2236,11 @@ ipcDConnectService::DeserializeException(ipcMessageReader &reader,
 
 DConnectStub::~DConnectStub()
 {
-#ifdef IPC_LOGGING
-  if (IPC_LOG_ENABLED())
-  {
-    const char *name = NULL;
-    mIInfo->GetNameShared(&name);
-    LOG(("{%p} DConnectStub::<dtor>(): peer=%d instance=0x%Lx {%s}\n",
-         this, mPeerID, mInstance, name));
-  }
+#ifdef LOG_ENABLED
+  const char *name = NULL;
+  mIInfo->GetNameShared(&name);
+  Log(("{%p} DConnectStub::<dtor>(): peer=%d instance=0x%Lx {%s}\n",
+       this, mPeerID, mInstance, name));
 #endif
 
   // release the cached nsISupports instance if it's not the same object
@@ -2279,15 +2277,12 @@ DConnectStub::Release()
     NS_LOG_RELEASE(this, count, "DConnectStub");
 
 
-    #ifdef IPC_LOGGING
-    if (IPC_LOG_ENABLED())
-    {
-      const char *name;
-      mIInfo->GetNameShared(&name);
-      LOG(("{%p} DConnectStub::Release(): peer=%d instance=0x%Lx {%s}, new count=%d\n",
-          this, mPeerID, mInstance, name, count));
-    }
-    #endif
+#ifdef LOG_ENABLED
+    const char *name;
+    mIInfo->GetNameShared(&name);
+    Log(("{%p} DConnectStub::Release(): peer=%d instance=0x%Lx {%s}, new count=%d\n",
+        this, mPeerID, mInstance, name, count));
+#endif
 
     // mRefCntLevels may already be empty here (due to the "stabilize" trick below)
     if (mRefCntLevels.GetSize() > 0)
@@ -2440,8 +2435,7 @@ DConnectStub::QueryInterface(const nsID &aIID, void **aInstancePtr)
 
   // else, we need to query the peer object by making an IPC call
 
-#ifdef IPC_LOGGING
-  if (IPC_LOG_ENABLED())
+#ifdef LOG_ENABLED
   {
     const char *name;
     mIInfo->GetNameShared(&name);
@@ -2450,7 +2444,7 @@ DConnectStub::QueryInterface(const nsID &aIID, void **aInstancePtr)
     dConnect->GetInterfaceInfo(aIID, getter_AddRefs(iinfoQ));
     if (iinfoQ) {
         iinfoQ->GetNameShared(&nameQ);
-        LOG(("calling QueryInterface {%s} on peer object "
+        Log(("calling QueryInterface {%s} on peer object "
              "(stub=%p, instance=0x%Lx {%s})\n",
              nameQ, this, mInstance, name));
     }
@@ -2493,7 +2487,7 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
                          const nsXPTMethodInfo *aInfo,
                          nsXPTCMiniVariant *aParams)
 {
-  LOG(("DConnectStub::CallMethod [methodIndex=%hu]\n", aMethodIndex));
+  Log(("DConnectStub::CallMethod [methodIndex=%hu]\n", aMethodIndex));
 
   nsresult rv;
 
@@ -2527,16 +2521,15 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
 
   PRUint8 i, paramCount = aInfo->GetParamCount();
 
-#ifdef IPC_LOGGING
-  if (IPC_LOG_ENABLED())
+#ifdef LOG_ENABLED
   {
     const char *name;
     nsCOMPtr<nsIInterfaceInfo> iinfo;
     GetInterfaceInfo(getter_AddRefs(iinfo));
     iinfo->GetNameShared(&name);
-    LOG(("  instance=0x%Lx {%s}\n", mInstance, name));
-    LOG(("  name=%s\n", aInfo->GetName()));
-    LOG(("  param-count=%u\n", (PRUint32) paramCount));
+    Log(("  instance=0x%Lx {%s}\n", mInstance, name));
+    Log(("  name=%s\n", aInfo->GetName()));
+    Log(("  param-count=%u\n", (PRUint32) paramCount));
   }
 #endif
 
@@ -2552,7 +2545,7 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
   invoke.instance = mInstance;
   invoke.method_index = aMethodIndex;
 
-  LOG(("  request-index=%d\n", (PRUint32) invoke.request_index));
+  Log(("  request-index=%d\n", (PRUint32) invoke.request_index));
 
   writer.PutBytes(&invoke, sizeof(invoke));
 
@@ -2628,7 +2621,7 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
   rv = IPC_SendMessage(mPeerID, kDConnectTargetID,
                        writer.GetBuffer(),
                        writer.GetSize());
-  LOG(("DConnectStub::CallMethod: IPC_SendMessage()=%08X\n", rv));
+  Log(("DConnectStub::CallMethod: IPC_SendMessage()=%08X\n", rv));
   if (NS_FAILED(rv))
   {
     // INVOKE message wasn't delivered; clean up wrappers
@@ -2649,7 +2642,7 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
     rv = IPC_WaitMessage(IPC_SENDER_ANY, kDConnectTargetID,
                          &completion.GetSelector(), &completion,
                          DCON_WAIT_TIMEOUT);
-    LOG(("DConnectStub::CallMethod: IPC_WaitMessage()=%08X\n", rv));
+    Log(("DConnectStub::CallMethod: IPC_WaitMessage()=%08X\n", rv));
     if (NS_FAILED(rv))
     {
       // INVOKE message wasn't received; clean up wrappers
@@ -2722,7 +2715,7 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
 
   if (completion.Reply()->flags & DCON_OP_FLAGS_REPLY_EXCEPTION)
   {
-    LOG(("got nsIException instance, will create a stub\n"));
+    Log(("got nsIException instance, will create a stub\n"));
 
     nsIException *xcpt = nsnull;
     rv = dConnect->DeserializeException (reader, mPeerID, &xcpt);
@@ -2766,7 +2759,7 @@ public:
 
     const DConnectSetupReply *reply = (const DConnectSetupReply *) op;
 
-    LOG(("got SETUP_REPLY: status=%x instance=0x%Lx\n", reply->status, reply->instance));
+    Log(("got SETUP_REPLY: status=%x instance=0x%Lx\n", reply->status, reply->instance));
 
     mStatus = reply->status;
 
@@ -2791,7 +2784,7 @@ public:
 
       ipcMessageReader reader(params, paramsLen);
 
-      LOG(("got nsIException instance, will create a stub\n"));
+      Log(("got nsIException instance, will create a stub\n"));
 
       nsresult rv;
       nsCOMPtr <nsIExceptionService> es;
@@ -2946,7 +2939,7 @@ DConnectWorker::Init()
 NS_IMETHODIMP
 DConnectWorker::Run()
 {
-  LOG(("DConnect Worker thread started.\n"));
+  Log(("DConnect Worker thread started.\n"));
 
   mIsRunnable = PR_TRUE;
 
@@ -2977,7 +2970,7 @@ DConnectWorker::Run()
     }
     else
     {
-      LOG(("DConnect Worker thread got request.\n"));
+      Log(("DConnect Worker thread got request.\n"));
 
       // remove the request from the queue
       mDConnect->mPendingQ.RemoveFirst();
@@ -3001,7 +2994,7 @@ DConnectWorker::Run()
 
   mIsRunnable = PR_FALSE;
 
-  LOG(("DConnect Worker thread stopped.\n"));
+  Log(("DConnect Worker thread stopped.\n"));
   return NS_OK;
 }
 
@@ -3050,14 +3043,11 @@ EnumerateInstanceMapAndDelete (const DConnectInstanceKey::Key &aKey,
   // (after which no DConnectInstances may exist), so forcibly delete them
   // disregarding the reference counter
 
-#ifdef IPC_LOGGING
-  if (IPC_LOG_ENABLED())
-  {
-    const char *name;
-    aData->InterfaceInfo()->GetNameShared(&name);
-    LOG(("ipcDConnectService: WARNING: deleting unreleased "
-         "instance=%p iface=%p {%s}\n", aData, aData->RealInstance(), name));
-  }
+#ifdef LOG_ENABLED
+  const char *name;
+  aData->InterfaceInfo()->GetNameShared(&name);
+  Log(("ipcDConnectService: WARNING: deleting unreleased "
+       "instance=%p iface=%p {%s}\n", aData, aData->RealInstance(), name));
 #endif
 
   delete aData;
@@ -3090,7 +3080,7 @@ ipcDConnectService::Init()
 {
   nsresult rv;
 
-  LOG(("ipcDConnectService::Init.\n"));
+  Log(("ipcDConnectService::Init.\n"));
 
   rv = IPC_DefineTarget(kDConnectTargetID, this);
   if (NS_FAILED(rv))
@@ -3171,7 +3161,7 @@ ipcDConnectService::Init()
 
   mInstance = this;
 
-  LOG(("ipcDConnectService::Init NS_OK.\n"));
+  Log(("ipcDConnectService::Init NS_OK.\n"));
   return NS_OK;
 }
 
@@ -3220,8 +3210,8 @@ ipcDConnectService::Shutdown()
 #if defined(DCONNECT_STATS)
   fprintf(stderr, "ipcDConnectService Stats\n");
   fprintf(stderr, " => number of worker threads: %d\n", mWorkers.Count());
-  LOG(("ipcDConnectService Stats\n"));
-  LOG((" => number of worker threads: %d\n", mWorkers.Count()));
+  Log(("ipcDConnectService Stats\n"));
+  Log((" => number of worker threads: %d\n", mWorkers.Count()));
 #endif
 
 
@@ -3229,7 +3219,7 @@ ipcDConnectService::Shutdown()
   // during VBOX_XPCOM_SHUTDOWN_TIMEOUT_MS, join() those who
   // exited a working loop and abandon ones which have not
   // managed to do that when timeout occurred.
-  LOG(("Worker threads: %d\n", mWorkers.Count()));
+  Log(("Worker threads: %d\n", mWorkers.Count()));
   uint64_t tsStart = RTTimeMilliTS();
   while ((tsStart + VBOX_XPCOM_SHUTDOWN_TIMEOUT_MS ) > RTTimeMilliTS() && mWorkers.Count() > 0)
   {
@@ -3241,7 +3231,7 @@ ipcDConnectService::Shutdown()
       DConnectWorker *worker = NS_STATIC_CAST(DConnectWorker *, mWorkers[i]);
       if (worker->IsRunning() == PR_FALSE)
       {
-        LOG(("Worker %p joined.\n", worker));
+        Log(("Worker %p joined.\n", worker));
         worker->Join();
         delete worker;
         mWorkers.RemoveElementAt(i);
@@ -3256,7 +3246,7 @@ ipcDConnectService::Shutdown()
     RTThreadSleep(10);
   }
 
-  LOG(("There are %d thread(s) left.\n", mWorkers.Count()));
+  Log(("There are %d thread(s) left.\n", mWorkers.Count()));
 
   // If there are some running threads left, terminate the process.
   if (mWorkers.Count() > 0)
@@ -3332,14 +3322,11 @@ ipcDConnectService::GetIIDForMethodParam(nsIInterfaceInfo *iinfo,
 nsresult
 ipcDConnectService::StoreInstance(DConnectInstance *wrapper)
 {
-#ifdef IPC_LOGGING
-  if (IPC_LOG_ENABLED())
-  {
-    const char *name;
-    wrapper->InterfaceInfo()->GetNameShared(&name);
-    LOG(("ipcDConnectService::StoreInstance(): instance=%p iface=%p {%s}\n",
-         wrapper, wrapper->RealInstance(), name));
-  }
+#ifdef LOG_ENABLED
+  const char *name;
+  wrapper->InterfaceInfo()->GetNameShared(&name);
+  Log(("ipcDConnectService::StoreInstance(): instance=%p iface=%p {%s}\n",
+       wrapper, wrapper->RealInstance(), name));
 #endif
 
   nsresult rv = mInstanceSet.Put(wrapper);
@@ -3360,14 +3347,11 @@ ipcDConnectService::DeleteInstance(DConnectInstance *wrapper,
   if (!locked)
     RTSemFastMutexRequest(mLock);
 
-#ifdef IPC_LOGGING
-  if (IPC_LOG_ENABLED())
-  {
-    const char *name;
-    wrapper->InterfaceInfo()->GetNameShared(&name);
-    LOG(("ipcDConnectService::DeleteInstance(): instance=%p iface=%p {%s}\n",
-         wrapper, wrapper->RealInstance(), name));
-  }
+#ifdef LOG_ENABLED
+  const char *name;
+  wrapper->InterfaceInfo()->GetNameShared(&name);
+  Log(("ipcDConnectService::DeleteInstance(): instance=%p iface=%p {%s}\n",
+       wrapper, wrapper->RealInstance(), name));
 #endif
 
   mInstances.Remove(wrapper->GetKey());
@@ -3405,16 +3389,13 @@ ipcDConnectService::CheckInstanceAndAddRef(DConnectInstance *wrapper, PRUint32 p
 nsresult
 ipcDConnectService::StoreStub(DConnectStub *stub)
 {
-#ifdef IPC_LOGGING
-  if (IPC_LOG_ENABLED())
-  {
-    const char *name;
-    nsCOMPtr<nsIInterfaceInfo> iinfo;
-    stub->GetInterfaceInfo(getter_AddRefs(iinfo));
-    iinfo->GetNameShared(&name);
-    LOG(("ipcDConnectService::StoreStub(): stub=%p instance=0x%Lx {%s}\n",
-         stub, stub->Instance(), name));
-  }
+#ifdef LOG_ENABLED
+  const char *name;
+  nsCOMPtr<nsIInterfaceInfo> iinfo;
+  stub->GetInterfaceInfo(getter_AddRefs(iinfo));
+  iinfo->GetNameShared(&name);
+  Log(("ipcDConnectService::StoreStub(): stub=%p instance=0x%Lx {%s}\n",
+       stub, stub->Instance(), name));
 #endif
 
   return mStubs.Put(stub->GetKey(), stub)
@@ -3424,16 +3405,13 @@ ipcDConnectService::StoreStub(DConnectStub *stub)
 void
 ipcDConnectService::DeleteStub(DConnectStub *stub)
 {
-#ifdef IPC_LOGGING
-  if (IPC_LOG_ENABLED())
-  {
-    const char *name;
-    nsCOMPtr<nsIInterfaceInfo> iinfo;
-    stub->GetInterfaceInfo(getter_AddRefs(iinfo));
-    iinfo->GetNameShared(&name);
-    LOG(("ipcDConnectService::DeleteStub(): stub=%p instance=0x%Lx {%s}\n",
-         stub, stub->Instance(), name));
-  }
+#ifdef LOG_ENABLED
+  const char *name;
+  nsCOMPtr<nsIInterfaceInfo> iinfo;
+  stub->GetInterfaceInfo(getter_AddRefs(iinfo));
+  iinfo->GetNameShared(&name);
+  Log(("ipcDConnectService::DeleteStub(): stub=%p instance=0x%Lx {%s}\n",
+       stub, stub->Instance(), name));
 #endif
 
   // this method is intended to be called only from DConnectStub::Release().
@@ -3546,7 +3524,7 @@ ipcDConnectService::OnMessageAvailable(PRUint32 aSenderID,
 
   const DConnectOp *op = (const DConnectOp *) aData;
 
-  LOG (("ipcDConnectService::OnMessageAvailable: "
+  Log (("ipcDConnectService::OnMessageAvailable: "
         "senderID=%d, opcode_major=%d, index=%d\n",
         aSenderID, op->opcode_major, op->request_index));
 
@@ -3622,7 +3600,7 @@ PruneInstanceMapForPeer (const DConnectInstanceKey::Key &aKey,
   {
     nsrefcnt countIPC = aData->ReleaseIPC(PR_TRUE /* locked */);
 
-    LOG(("ipcDConnectService::PruneInstanceMapForPeer: "
+    Log(("ipcDConnectService::PruneInstanceMapForPeer: "
          "instance=%p: %d IPC refs to release\n",
          aData, countIPC + 1));
 
@@ -3654,7 +3632,7 @@ NS_IMETHODIMP
 ipcDConnectService::OnClientStateChange(PRUint32 aClientID,
                                         PRUint32 aClientState)
 {
-  LOG(("ipcDConnectService::OnClientStateChange: aClientID=%d, aClientState=%d\n",
+  Log(("ipcDConnectService::OnClientStateChange: aClientID=%d, aClientState=%d\n",
        aClientID, aClientState));
 
   if (aClientState == ipcIClientObserver::CLIENT_DOWN)
@@ -3667,7 +3645,7 @@ ipcDConnectService::OnClientStateChange(PRUint32 aClientID,
     }
     else
     {
-      LOG(("ipcDConnectService::OnClientStateChange: "
+      Log(("ipcDConnectService::OnClientStateChange: "
            "pruning all instances created for peer %d...\n", aClientID));
 
       nsVoidArray wrappers;
@@ -3680,7 +3658,7 @@ ipcDConnectService::OnClientStateChange(PRUint32 aClientID,
         mInstances.EnumerateRead(PruneInstanceMapForPeer, (void *)&args);
       }
 
-      LOG(("ipcDConnectService::OnClientStateChange: "
+      Log(("ipcDConnectService::OnClientStateChange: "
            "%d lost instances\n", wrappers.Count()));
 
       // release all pending references left after PruneInstanceMapForPeer().
@@ -3892,7 +3870,7 @@ ipcDConnectService::OnSetup(PRUint32 peer, const DConnectSetup *setup, PRUint32 
         rv2 = em->GetCurrentException (getter_AddRefs (exception));
         if (NS_SUCCEEDED(rv2))
         {
-          LOG(("got nsIException instance, will serialize\n"));
+          Log(("got nsIException instance, will serialize\n"));
           got_exception = PR_TRUE;
         }
       }
@@ -3933,7 +3911,7 @@ ipcDConnectService::OnSetup(PRUint32 peer, const DConnectSetup *setup, PRUint32 
 
   if (NS_FAILED(rv))
   {
-    LOG(("unable to send SETUP_REPLY: rv=%x\n", rv));
+    Log(("unable to send SETUP_REPLY: rv=%x\n", rv));
     ReleaseWrappers(wrappers, peer);
   }
 }
@@ -3941,7 +3919,7 @@ ipcDConnectService::OnSetup(PRUint32 peer, const DConnectSetup *setup, PRUint32 
 void
 ipcDConnectService::OnRelease(PRUint32 peer, const DConnectRelease *release)
 {
-  LOG(("ipcDConnectService::OnRelease [peer=%u instance=0x%Lx]\n",
+  Log(("ipcDConnectService::OnRelease [peer=%u instance=0x%Lx]\n",
        peer, release->instance));
 
   DConnectInstance *wrapper = (DConnectInstance *)release->instance;
@@ -3968,7 +3946,7 @@ ipcDConnectService::OnRelease(PRUint32 peer, const DConnectRelease *release)
     // all client instances before the DCON_OP_RELEASE message sent by the
     // client gets processed here (because of true multithreading). Just log
     // a debug warning
-    LOG(("ipcDConnectService::OnRelease: WARNING: "
+    Log(("ipcDConnectService::OnRelease: WARNING: "
          "instance wrapper %p for peer %d not found", wrapper, peer));
   }
 }
@@ -3976,7 +3954,7 @@ ipcDConnectService::OnRelease(PRUint32 peer, const DConnectRelease *release)
 void
 ipcDConnectService::OnInvoke(PRUint32 peer, const DConnectInvoke *invoke, PRUint32 opLen)
 {
-  LOG(("ipcDConnectService::OnInvoke [peer=%u instance=0x%Lx method=%u]\n",
+  Log(("ipcDConnectService::OnInvoke [peer=%u instance=0x%Lx method=%u]\n",
       peer, invoke->instance, invoke->method_index));
 
   DConnectInstance *wrapper = (DConnectInstance *)invoke->instance;
@@ -4009,10 +3987,10 @@ ipcDConnectService::OnInvoke(PRUint32 peer, const DConnectInvoke *invoke, PRUint
 
   paramCount = methodInfo->GetParamCount();
 
-  LOG(("  iface=%p\n", wrapper->RealInstance()));
-  LOG(("  name=%s\n", methodInfo->GetName()));
-  LOG(("  param-count=%u\n", (PRUint32) paramCount));
-  LOG(("  request-index=%d\n", (PRUint32) invoke->request_index));
+  Log(("  iface=%p\n", wrapper->RealInstance()));
+  Log(("  name=%s\n", methodInfo->GetName()));
+  Log(("  param-count=%u\n", (PRUint32) paramCount));
+  Log(("  request-index=%d\n", (PRUint32) invoke->request_index));
 
   params = new nsXPTCVariant[paramCount];
   if (!params)
@@ -4113,7 +4091,7 @@ ipcDConnectService::OnInvoke(PRUint32 peer, const DConnectInvoke *invoke, PRUint
         rv2 = em->GetCurrentException (getter_AddRefs (exception));
         if (NS_SUCCEEDED(rv2))
         {
-          LOG(("got nsIException instance, will serialize\n"));
+          Log(("got nsIException instance, will serialize\n"));
           got_exception = PR_TRUE;
         }
       }
@@ -4124,7 +4102,7 @@ ipcDConnectService::OnInvoke(PRUint32 peer, const DConnectInvoke *invoke, PRUint
   }
 
 end:
-  LOG(("sending INVOKE_REPLY: rv=%x\n", rv));
+  Log(("sending INVOKE_REPLY: rv=%x\n", rv));
 
   // balance CheckInstanceAndAddRef()
   if (wrapper)
@@ -4214,7 +4192,7 @@ end:
     rv = IPC_SendMessage(peer, kDConnectTargetID, writer.GetBuffer(), writer.GetSize());
   if (NS_FAILED(rv))
   {
-    LOG(("unable to send INVOKE_REPLY: rv=%x\n", rv));
+    Log(("unable to send INVOKE_REPLY: rv=%x\n", rv));
     ReleaseWrappers(wrappers, peer);
   }
 
