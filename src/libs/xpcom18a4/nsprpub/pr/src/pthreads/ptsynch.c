@@ -104,6 +104,44 @@
 #error "pthreads is not supported for this architecture"
 #endif
 
+typedef struct PRLock    PRLock;
+typedef struct PRCondVar PRCondVar;
+
+#define PT_CV_NOTIFIED_LENGTH 6
+typedef struct _PT_Notified _PT_Notified;
+struct _PT_Notified
+{
+    PRIntn length;              /* # of used entries in this structure */
+    struct
+    {
+        PRCondVar *cv;          /* the condition variable notified */
+        PRIntn times;           /* and the number of times notified */
+    } cv[PT_CV_NOTIFIED_LENGTH];
+    _PT_Notified *link;         /* link to another of these | NULL */
+};
+
+struct PRLock {
+    pthread_mutex_t mutex;          /* the underlying lock */
+    _PT_Notified notified;          /* array of conditions notified */
+    PRBool locked;                  /* whether the mutex is locked */
+    pthread_t owner;                /* if locked, current lock owner */
+};
+
+struct PRCondVar {
+    PRLock *lock;               /* associated lock that protects the condition */
+    pthread_cond_t cv;          /* underlying pthreads condition */
+    volatile int32_t notify_pending;     /* CV has destroy pending notification */
+};
+
+struct PRMonitor {
+    const char* name;           /* monitor name for debugging */
+    PRLock lock;                /* the lock structure */
+    pthread_t owner;            /* the owner of the lock or invalid */
+    PRCondVar *cvar;            /* condition variable queue */
+    PRUint32 entryCount;        /* # of times re-entered */
+};
+
+
 static pthread_mutexattr_t _pt_mattr;
 static pthread_condattr_t _pt_cvar_attr;
 
