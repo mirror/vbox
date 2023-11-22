@@ -113,15 +113,14 @@ private:
     /** The total data (the counter value we get from IMachineDebugger API). For the metrics
       * we get from IMachineDebugger m_data values are computed as deltas of total values t - (t-1) */
     quint64 m_iTotal[DATA_SERIES_SIZE];
-#if 0 /* Unused according to Clang 11. */
-    int m_iMaximumQueueSize;
-#endif
+
     bool m_fRequiresGuestAdditions;
     /** Used for metrices whose data is computed as total deltas. That is we receieve only total value and
       * compute time step data from total deltas. m_isInitialised is true if the total has been set first time. */
     bool m_fIsInitialized;
     /** Maximum is updated as a new data is added to data queue. */
     bool m_fAutoUpdateMaximum;
+    int m_iMaximumQueueSize;
 };
 
 /** UIVMActivityMonitor class displays some high level performance metrics of the guest system.
@@ -136,7 +135,7 @@ class  SHARED_LIBRARY_STUFF UIVMActivityMonitor : public QIWithRetranslateUI<QWi
 
 public:
 
-    UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent);
+    UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent, int iMaximumQueueSize);
     virtual QUuid machineId() const = 0;
     virtual QString machineName() const = 0;
 
@@ -222,7 +221,8 @@ protected:
         QString m_strDiskIOInfoLabelWrittenTotal;
         QString m_strDiskIOInfoLabelReadTotal;
     /** @} */
-        int iMaximum = 0;
+    int m_iMaximumLabelLength;
+    int m_iMaximumQueueSize;
 
 private slots:
 

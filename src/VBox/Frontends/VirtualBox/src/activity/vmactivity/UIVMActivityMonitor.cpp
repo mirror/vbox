@@ -61,7 +61,7 @@
 /** The time in seconds between metric inquries done to API. */
 const ULONG g_iPeriod = 1;
 /** The number of data points we store in UIChart. with g_iPeriod=1 it corresponds to 2 min. of data. */
-const int g_iMaximumQueueSize = 120;
+//const int m_iMaximumQueueSize = 120;
 /** This is passed to IPerformanceCollector during its setup. When 1 that means IPerformanceCollector object does a data cache of size 1. */
 const int g_iMetricSetupCount = 1;
 const int g_iDecimalCount = 2;
@@ -142,7 +142,7 @@ signals:
 
 public:
 
-    UIChart(QWidget *pParent, UIMetric *pMetric);
+    UIChart(QWidget *pParent, UIMetric *pMetric, int iMaximumQueueSize);
     void setFontSize(int iFontSize);
     int  fontSize() const;
     const QStringList &textList() const;
@@ -238,6 +238,7 @@ private:
     bool    m_fDrawCurenValueIndicators;
     /** The width of the right margin in characters. */
     int m_iRightMarginCharWidth;
+    int m_iMaximumQueueSize;
 };
 
 
@@ -303,7 +304,7 @@ void UIProgressTaskReadCloudMachineMetricData::handleProgressFinished(CProgress 
 *   UIChart implementation.                                                                                     *
 *********************************************************************************************************************************/
 
-UIChart::UIChart(QWidget *pParent, UIMetric *pMetric)
+UIChart::UIChart(QWidget *pParent, UIMetric *pMetric, int iMaximumQueueSize)
     :QIWithRetranslateUI<QWidget>(pParent)
     , m_pMetric(pMetric)
     , m_size(QSize(50, 50))
@@ -318,6 +319,7 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric)
     , m_fIsAreaChartAllowed(false)
     , m_fDrawCurenValueIndicators(false)
     , m_iRightMarginCharWidth(10)
+    , m_iMaximumQueueSize(iMaximumQueueSize)
 {
     m_axisFont = font();
     m_axisFont.setPixelSize(14);
@@ -475,8 +477,8 @@ void UIChart::retranslateUi()
 void UIChart::resizeEvent(QResizeEvent *pEvent)
 {
     int iWidth = width() - m_iMarginLeft - m_iMarginRight;
-    if (g_iMaximumQueueSize > 0)
-        m_fPixelPerDataPoint = iWidth / (float)g_iMaximumQueueSize;
+    if (m_iMaximumQueueSize > 0)
+        m_fPixelPerDataPoint = iWidth / (float)m_iMaximumQueueSize;
     QIWithRetranslateUI<QWidget>::resizeEvent(pEvent);
 }
 
@@ -493,7 +495,7 @@ void UIChart::mouseMoveEvent(QMouseEvent *pEvent)
 void UIChart::paintEvent(QPaintEvent *pEvent)
 {
     Q_UNUSED(pEvent);
-    if (!m_pMetric || g_iMaximumQueueSize <= 1)
+    if (!m_pMetric || m_iMaximumQueueSize <= 1)
         return;
 
     QPainter painter(this);
@@ -563,7 +565,7 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
     else
     {
         /* Draw the data lines: */
-        float fBarWidth = m_lineChartRect.width() / (float) (g_iMaximumQueueSize - 1);
+        float fBarWidth = m_lineChartRect.width() / (float) (m_iMaximumQueueSize - 1);
         float fH = m_lineChartRect.height() / (float)iMaximum;
         for (int k = 0; k < DATA_SERIES_SIZE; ++k)
         {
@@ -679,7 +681,7 @@ void UIChart::drawXAxisLabels(QPainter &painter, int iXSubAxisCount)
     QFontMetrics fontMetrics(painter.font());
     int iFontHeight = fontMetrics.height();
 
-    int iTotalSeconds = g_iPeriod * g_iMaximumQueueSize;
+    int iTotalSeconds = g_iPeriod * m_iMaximumQueueSize;
     for (int i = 0; i < iXSubAxisCount + 2; ++i)
     {
         int iTextX = m_lineChartRect.left() + i * m_lineChartRect.width() / (float) (iXSubAxisCount + 1);
@@ -852,12 +854,10 @@ UIMetric::UIMetric(const QString &strName, const QString &strUnit, int iMaximumQ
     : m_strName(strName)
     , m_strUnit(strUnit)
     , m_iMaximum(0)
-#if 0 /* Unused according to Clang 11. */
-    , m_iMaximumQueueSize(iMaximumQueueSize) /** @todo r=bird: m_iMaximumQueueSize is not used anywhere that I can see. */
-#endif
     , m_fRequiresGuestAdditions(false)
     , m_fIsInitialized(false)
     , m_fAutoUpdateMaximum(false)
+    , m_iMaximumQueueSize(iMaximumQueueSize)
 {
     RT_NOREF(iMaximumQueueSize); /* Unused according to Clang 11. */
     m_iTotal[0] = 0;
@@ -907,7 +907,7 @@ void UIMetric::addData(int iDataSeriesIndex, quint64 iData)
     if (m_fAutoUpdateMaximum)
         m_iMaximum = qMax(m_iMaximum, iData);
 
-    if (m_data[iDataSeriesIndex].size() > g_iMaximumQueueSize)
+    if (m_data[iDataSeriesIndex].size() > m_iMaximumQueueSize)
     {
         bool fSearchMax = false;
         /* Check if the dequeued value is the Max value. In which case we will scan and find a new Max: */
@@ -1028,7 +1028,7 @@ bool UIMetric::autoUpdateMaximum() const
 *   UIVMActivityMonitor implementation.                                                                              *
 *********************************************************************************************************************************/
 
-UIVMActivityMonitor::UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent)
+UIVMActivityMonitor::UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent, int iMaximumQueueSize)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pTimer(0)
     , m_iTimeStep(0)
@@ -1038,6 +1038,7 @@ UIVMActivityMonitor::UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent)
     , m_strNetworkMetricName("Network")
     , m_strDiskIOMetricName("DiskIO")
     , m_strVMExitMetricName("VMExits")
+    , m_iMaximumQueueSize(iMaximumQueueSize)
     , m_pMainLayout(0)
     , m_enmEmbedding(enmEmbedding)
 {
@@ -1049,45 +1050,42 @@ UIVMActivityMonitor::UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent)
 
 void UIVMActivityMonitor::retranslateUi()
 {
-    foreach (UIChart *pChart, m_charts)
-        pChart->setXAxisLabel(QApplication::translate("UIVMInformationDialog", "Sec."));
-
     /* Translate the chart info labels: */
-    iMaximum = 0;
+    m_iMaximumLabelLength = 0;
     m_strCPUInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "CPU Load");
-    iMaximum = qMax(iMaximum, m_strCPUInfoLabelTitle.length());
+    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strCPUInfoLabelTitle.length());
     m_strCPUInfoLabelGuest = QApplication::translate("UIVMInformationDialog", "Guest Load");
-    iMaximum = qMax(iMaximum, m_strCPUInfoLabelGuest.length());
+    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strCPUInfoLabelGuest.length());
     m_strCPUInfoLabelVMM = QApplication::translate("UIVMInformationDialog", "VMM Load");
-    iMaximum = qMax(iMaximum, m_strCPUInfoLabelVMM.length());
+    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strCPUInfoLabelVMM.length());
     m_strRAMInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "RAM Usage");
-    iMaximum = qMax(iMaximum, m_strRAMInfoLabelTitle.length());
+    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strRAMInfoLabelTitle.length());
     m_strRAMInfoLabelTotal = QApplication::translate("UIVMInformationDialog", "Total");
-    iMaximum = qMax(iMaximum, m_strRAMInfoLabelTotal.length());
+    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strRAMInfoLabelTotal.length());
     m_strRAMInfoLabelFree = QApplication::translate("UIVMInformationDialog", "Free");
-    iMaximum = qMax(iMaximum, m_strRAMInfoLabelFree.length());
+    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strRAMInfoLabelFree.length());
     m_strRAMInfoLabelUsed = QApplication::translate("UIVMInformationDialog", "Used");
-    iMaximum = qMax(iMaximum, m_strRAMInfoLabelUsed.length());
+    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strRAMInfoLabelUsed.length());
     m_strNetworkInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "Network Rate");
-    iMaximum = qMax(iMaximum, m_strNetworkInfoLabelTitle.length());
+    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strNetworkInfoLabelTitle.length());
     m_strNetworkInfoLabelReceived = QApplication::translate("UIVMInformationDialog", "Receive Rate");
-    iMaximum = qMax(iMaximum, m_strNetworkInfoLabelReceived.length());
+    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strNetworkInfoLabelReceived.length());
     m_strNetworkInfoLabelTransmitted = QApplication::translate("UIVMInformationDialog", "Transmit Rate");
-    iMaximum = qMax(iMaximum, m_strNetworkInfoLabelTransmitted.length());
+    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strNetworkInfoLabelTransmitted.length());
     m_strNetworkInfoLabelReceivedTotal = QApplication::translate("UIVMInformationDialog", "Total Received");
-    iMaximum = qMax(iMaximum, m_strNetworkInfoLabelReceivedTotal.length());
+    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strNetworkInfoLabelReceivedTotal.length());
     m_strNetworkInfoLabelTransmittedTotal = QApplication::translate("UIVMInformationDialog", "Total Transmitted");
-    iMaximum = qMax(iMaximum, m_strNetworkInfoLabelReceivedTotal.length());
+    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strNetworkInfoLabelReceivedTotal.length());
     m_strDiskIOInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "Disk IO Rate");
-    iMaximum = qMax(iMaximum, m_strDiskIOInfoLabelTitle.length());
+    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strDiskIOInfoLabelTitle.length());
     m_strDiskIOInfoLabelWritten = QApplication::translate("UIVMInformationDialog", "Write Rate");
-    iMaximum = qMax(iMaximum, m_strDiskIOInfoLabelWritten.length());
+    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strDiskIOInfoLabelWritten.length());
     m_strDiskIOInfoLabelRead = QApplication::translate("UIVMInformationDialog", "Read Rate");
-    iMaximum = qMax(iMaximum, m_strDiskIOInfoLabelRead.length());
+    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strDiskIOInfoLabelRead.length());
     m_strDiskIOInfoLabelWrittenTotal = QApplication::translate("UIVMInformationDialog", "Total Written");
-    iMaximum = qMax(iMaximum, m_strDiskIOInfoLabelWrittenTotal.length());
+    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strDiskIOInfoLabelWrittenTotal.length());
     m_strDiskIOInfoLabelReadTotal = QApplication::translate("UIVMInformationDialog", "Total Read");
-    iMaximum = qMax(iMaximum, m_strDiskIOInfoLabelReadTotal.length());
+    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strDiskIOInfoLabelReadTotal.length());
 }
 
 bool UIVMActivityMonitor::eventFilter(QObject *pObj, QEvent *pEvent)
@@ -1147,7 +1145,7 @@ void UIVMActivityMonitor::prepareWidgets()
         pChartLayout->addWidget(pLabel);
         m_infoLabels.insert(strMetricName, pLabel);
 
-        UIChart *pChart = new UIChart(this, &(m_metrics[strMetricName]));
+        UIChart *pChart = new UIChart(this, &(m_metrics[strMetricName]), m_iMaximumQueueSize);
         pChart->installEventFilter(this);
         connect(pChart, &UIChart::sigExportMetricsToFile,
                 this, &UIVMActivityMonitor::sltExportMetricsToFile);
@@ -1284,7 +1282,7 @@ void UIVMActivityMonitorLocal::start()
 }
 
 UIVMActivityMonitorLocal::UIVMActivityMonitorLocal(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine)
-    :UIVMActivityMonitor(enmEmbedding, pParent)
+    :UIVMActivityMonitor(enmEmbedding, pParent, 120 /* iMaximumQueueSize */)
     , m_fGuestAdditionsAvailable(false)
 {
     prepareMetrics();
@@ -1311,16 +1309,20 @@ QUuid UIVMActivityMonitorLocal::machineId() const
 void UIVMActivityMonitorLocal::retranslateUi()
 {
     UIVMActivityMonitor::retranslateUi();
+
+    foreach (UIChart *pChart, m_charts)
+        pChart->setXAxisLabel(QApplication::translate("UIVMInformationDialog", "Sec."));
+
     m_strVMExitInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "VM Exits");
-    iMaximum = qMax(iMaximum, m_strVMExitInfoLabelTitle.length());
+    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strVMExitInfoLabelTitle.length());
     m_strVMExitLabelCurrent = QApplication::translate("UIVMInformationDialog", "Current");
-    iMaximum = qMax(iMaximum, m_strVMExitLabelCurrent.length());
+    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strVMExitLabelCurrent.length());
     m_strVMExitLabelTotal = QApplication::translate("UIVMInformationDialog", "Total");
-    iMaximum = qMax(iMaximum, m_strVMExitLabelTotal.length());
+    m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strVMExitLabelTotal.length());
 
     /* Compute the maximum label string length and set it as a fixed width to labels to prevent always changing widths: */
     /* Add m_iDecimalCount plus 4 characters for the number and 3 for unit string: */
-    iMaximum += (g_iDecimalCount + 7);
+    m_iMaximumLabelLength += (g_iDecimalCount + 7);
     if (!m_infoLabels.isEmpty())
     {
         QLabel *pLabel = m_infoLabels.begin().value();
@@ -1328,9 +1330,9 @@ void UIVMActivityMonitorLocal::retranslateUi()
         {
             QFontMetrics labelFontMetric(pLabel->font());
 #if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-            int iWidth = iMaximum * labelFontMetric.horizontalAdvance('X');
+            int iWidth = m_iMaximumLabelLength * labelFontMetric.horizontalAdvance('X');
 #else
-            int iWidth = iMaximum * labelFontMetric.width('X');
+            int iWidth = m_iMaximumLabelLength * labelFontMetric.width('X');
 #endif
             foreach (QLabel *pInfoLabel, m_infoLabels)
                 pInfoLabel->setFixedWidth(iWidth);
@@ -1517,7 +1519,7 @@ void UIVMActivityMonitorLocal::prepareMetrics()
             {
                 if (strName.contains("RAM", Qt::CaseInsensitive) && strName.contains("Free", Qt::CaseInsensitive))
                 {
-                    UIMetric ramMetric(m_strRAMMetricName, metrics[i].GetUnit(), g_iMaximumQueueSize);
+                    UIMetric ramMetric(m_strRAMMetricName, metrics[i].GetUnit(), m_iMaximumQueueSize);
                     ramMetric.setDataSeriesName(0, "Free");
                     ramMetric.setDataSeriesName(1, "Used");
                     ramMetric.setRequiresGuestAdditions(true);
@@ -1528,27 +1530,27 @@ void UIVMActivityMonitorLocal::prepareMetrics()
     }
 
     /* CPU Metric: */
-    UIMetric cpuMetric(m_strCPUMetricName, "%", g_iMaximumQueueSize);
+    UIMetric cpuMetric(m_strCPUMetricName, "%", m_iMaximumQueueSize);
     cpuMetric.setDataSeriesName(0, "Guest Load");
     cpuMetric.setDataSeriesName(1, "VMM Load");
     m_metrics.insert(m_strCPUMetricName, cpuMetric);
 
     /* Network metric: */
-    UIMetric networkMetric(m_strNetworkMetricName, "B", g_iMaximumQueueSize);
+    UIMetric networkMetric(m_strNetworkMetricName, "B", m_iMaximumQueueSize);
     networkMetric.setDataSeriesName(0, "Receive Rate");
     networkMetric.setDataSeriesName(1, "Transmit Rate");
     networkMetric.setAutoUpdateMaximum(true);
     m_metrics.insert(m_strNetworkMetricName, networkMetric);
 
     /* Disk IO metric */
-    UIMetric diskIOMetric(m_strDiskIOMetricName, "B", g_iMaximumQueueSize);
+    UIMetric diskIOMetric(m_strDiskIOMetricName, "B", m_iMaximumQueueSize);
     diskIOMetric.setDataSeriesName(0, "Write Rate");
     diskIOMetric.setDataSeriesName(1, "Read Rate");
     diskIOMetric.setAutoUpdateMaximum(true);
     m_metrics.insert(m_strDiskIOMetricName, diskIOMetric);
 
     /* VM exits metric */
-    UIMetric VMExitsMetric(m_strVMExitMetricName, "times", g_iMaximumQueueSize);
+    UIMetric VMExitsMetric(m_strVMExitMetricName, "times", m_iMaximumQueueSize);
     VMExitsMetric.setAutoUpdateMaximum(true);
     m_metrics.insert(m_strVMExitMetricName, VMExitsMetric);
 }
@@ -1746,7 +1748,7 @@ void UIVMActivityMonitorLocal::resetVMExitInfoLabel()
 }
 
 UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget *pParent, const CCloudMachine &machine)
-    :UIVMActivityMonitor(enmEmbedding, pParent)
+    :UIVMActivityMonitor(enmEmbedding, pParent, 60 /* iMaximumQueueSize */)
 {
     m_metricTypeNames[KMetricType_CpuUtilization] = m_strCPUMetricName;
     m_metricTypeNames[KMetricType_MemoryUtilization] = m_strRAMMetricName;
@@ -1759,7 +1761,6 @@ UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget
     prepareWidgets();
     retranslateUi();
     prepareActions();
-    //connect(&uiCommon(), &UICommon::sigAskToDetachCOM, this, &UIVMActivityMonitorLocal::sltClearCOMData);
     setMachine(machine);
 }
 
@@ -1800,10 +1801,9 @@ void UIVMActivityMonitorCloud::sltMetricDataReceived(KMetricType enmMetricType, 
         if (enmMetricType == KMetricType_CpuUtilization)
         {
             float fValue = data[i].toFloat();
-            updateCPUGraphsAndMetric((ULONG)fValue, 0);
+            updateCPUGraphsAndMetric((ULONG) fValue, 0);
         }
     }
-
     sender()->deleteLater();
 }
 
@@ -1824,6 +1824,8 @@ QString UIVMActivityMonitorCloud::machineName() const
 void UIVMActivityMonitorCloud::retranslateUi()
 {
     UIVMActivityMonitor::retranslateUi();
+    foreach (UIChart *pChart, m_charts)
+        pChart->setXAxisLabel(QApplication::translate("UIVMInformationDialog", "Min."));
 }
 
 void UIVMActivityMonitorCloud::obtainDataAndUpdate()
@@ -1907,33 +1909,33 @@ bool UIVMActivityMonitorCloud::findMetric(KMetricType enmMetricType, UIMetric &m
 
 void UIVMActivityMonitorCloud::prepareMetrics()
 {
-    // UIMetric ramMetric(m_strRAMMetricName, metrics[i].GetUnit(), g_iMaximumQueueSize);
+    // UIMetric ramMetric(m_strRAMMetricName, metrics[i].GetUnit(), m_iMaximumQueueSize);
     // ramMetric.setDataSeriesName(0, "Free");
     // ramMetric.setDataSeriesName(1, "Used");
     // ramMetric.setRequiresGuestAdditions(true);
     // m_metrics.insert(m_strRAMMetricName, ramMetric);
 
     /* CPU Metric: */
-    UIMetric cpuMetric(m_strCPUMetricName, "%", g_iMaximumQueueSize);
+    UIMetric cpuMetric(m_strCPUMetricName, "%", m_iMaximumQueueSize);
     cpuMetric.setDataSeriesName(0, "CPU Utilization");
     m_metrics.insert(m_strCPUMetricName, cpuMetric);
 
     // /* Network metric: */
-    // UIMetric networkMetric(m_strNetworkMetricName, "B", g_iMaximumQueueSize);
+    // UIMetric networkMetric(m_strNetworkMetricName, "B", m_iMaximumQueueSize);
     // networkMetric.setDataSeriesName(0, "Receive Rate");
     // networkMetric.setDataSeriesName(1, "Transmit Rate");
     // networkMetric.setAutoUpdateMaximum(true);
     // m_metrics.insert(m_strNetworkMetricName, networkMetric);
 
     // /* Disk IO metric */
-    // UIMetric diskIOMetric(m_strDiskIOMetricName, "B", g_iMaximumQueueSize);
+    // UIMetric diskIOMetric(m_strDiskIOMetricName, "B", m_iMaximumQueueSize);
     // diskIOMetric.setDataSeriesName(0, "Write Rate");
     // diskIOMetric.setDataSeriesName(1, "Read Rate");
     // diskIOMetric.setAutoUpdateMaximum(true);
     // m_metrics.insert(m_strDiskIOMetricName, diskIOMetric);
 
     // /* VM exits metric */
-    // UIMetric VMExitsMetric(m_strVMExitMetricName, "times", g_iMaximumQueueSize);
+    // UIMetric VMExitsMetric(m_strVMExitMetricName, "times", m_iMaximumQueueSize);
     // VMExitsMetric.setAutoUpdateMaximum(true);
     // m_metrics.insert(m_strVMExitMetricName, VMExitsMetric);
 }
