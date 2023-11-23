@@ -550,97 +550,82 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
     int iFontHeight = fontMetrics.height();
     int iAverageFontWidth = fontMetrics.averageCharWidth();
 
-    /* Draw a straight line per data series: */
-    if (iMaximum == 0)
+    /* Draw the data lines: */
+    float fBarWidth = m_lineChartRect.width() / (float) (m_iMaximumQueueSize - 1);
+    float fH = iMaximum == 0 ? 0 : m_lineChartRect.height() / (float)iMaximum;
+    for (int k = 0; k < DATA_SERIES_SIZE; ++k)
     {
-        for (int k = 0; k < DATA_SERIES_SIZE; ++k)
+        if (m_fUseGradientLineColor)
         {
-            QLineF bar(0 + m_iMarginLeft, height() - m_iMarginBottom,
-                       width() - m_iMarginRight, height() - m_iMarginBottom);
-            painter.drawLine(bar);
-            painter.setPen(QPen(m_dataSeriesColor[k], 2.5));
-            painter.setBrush(m_dataSeriesColor[k]);
+            QLinearGradient gradient(0, 0, 0, m_lineChartRect.height());
+            gradient.setColorAt(0, Qt::black);
+            gradient.setColorAt(1, m_dataSeriesColor[k]);
+            painter.setPen(QPen(gradient, 2.5));
         }
-    }
-    else
-    {
-        /* Draw the data lines: */
-        float fBarWidth = m_lineChartRect.width() / (float) (m_iMaximumQueueSize - 1);
-        float fH = m_lineChartRect.height() / (float)iMaximum;
-        for (int k = 0; k < DATA_SERIES_SIZE; ++k)
+        const QQueue<quint64> *data = m_pMetric->data(k);
+        if (!m_fUseGradientLineColor)
+            painter.setPen(QPen(m_dataSeriesColor[k], 2.5));
+        if (m_fUseAreaChart && m_fIsAreaChartAllowed)
         {
-            if (m_fUseGradientLineColor)
+            QVector<QPointF> points;
+            for (int i = 0; i < data->size(); ++i)
             {
-                QLinearGradient gradient(0, 0, 0, m_lineChartRect.height());
-                gradient.setColorAt(0, Qt::black);
-                gradient.setColorAt(1, m_dataSeriesColor[k]);
-                painter.setPen(QPen(gradient, 2.5));
-            }
-            const QQueue<quint64> *data = m_pMetric->data(k);
-            if (!m_fUseGradientLineColor)
-                painter.setPen(QPen(m_dataSeriesColor[k], 2.5));
-            if (m_fUseAreaChart && m_fIsAreaChartAllowed)
-            {
-                QVector<QPointF> points;
-                for (int i = 0; i < data->size(); ++i)
+                float fHeight = fH * data->at(i);
+                if (k == 0)
                 {
-                    float fHeight = fH * data->at(i);
-                    if (k == 0)
-                    {
-                        if (m_pMetric->data(1) && m_pMetric->data(1)->size() > i)
-                            fHeight += fH * m_pMetric->data(1)->at(i);
-                    }
-                    float fX = (width() - m_iMarginRight) - ((data->size() - i - 1) * fBarWidth);
-                    if (i == 0)
-                        points << QPointF(fX, height() - m_iMarginBottom);
-                    points << QPointF(fX, height() - (fHeight + m_iMarginBottom));
-                    if (i == data->size() - 1)
-                        points << QPointF(fX, height() - + m_iMarginBottom);
+                    if (m_pMetric->data(1) && m_pMetric->data(1)->size() > i)
+                        fHeight += fH * m_pMetric->data(1)->at(i);
                 }
-                painter.setPen(Qt::NoPen);
-                painter.setBrush(m_dataSeriesColor[k]);
-                painter.drawPolygon(points, Qt::WindingFill);
+                float fX = (width() - m_iMarginRight) - ((data->size() - i - 1) * fBarWidth);
+                if (i == 0)
+                    points << QPointF(fX, height() - m_iMarginBottom);
+                points << QPointF(fX, height() - (fHeight + m_iMarginBottom));
+                if (i == data->size() - 1)
+                    points << QPointF(fX, height() - + m_iMarginBottom);
             }
-            else
+            painter.setPen(Qt::NoPen);
+            painter.setBrush(m_dataSeriesColor[k]);
+            painter.drawPolygon(points, Qt::WindingFill);
+        }
+        else
+        {
+            for (int i = 0; i < data->size() - 1; ++i)
             {
-                for (int i = 0; i < data->size() - 1; ++i)
-                {
-                    int j = i + 1;
-                    float fHeight = fH * data->at(i);
-                    float fX = (width() - m_iMarginRight) - ((data->size() -i - 1) * fBarWidth);
-                    float fHeight2 = fH * data->at(j);
-                    float fX2 = (width() - m_iMarginRight) - ((data->size() -j - 1) * fBarWidth);
-                    QLineF bar(fX, height() - (fHeight + m_iMarginBottom), fX2, height() - (fHeight2 + m_iMarginBottom));
-                    painter.drawLine(bar);
-                }
+                int j = i + 1;
+                float fHeight = fH * data->at(i);
+                float fX = (width() - m_iMarginRight) - ((data->size() -i - 1) * fBarWidth);
+                float fHeight2 = fH * data->at(j);
+                float fX2 = (width() - m_iMarginRight) - ((data->size() -j - 1) * fBarWidth);
+                QLineF bar(fX, height() - (fHeight + m_iMarginBottom), fX2, height() - (fHeight2 + m_iMarginBottom));
+                painter.drawLine(bar);
             }
-            /* Draw a horizontal and vertical line on data point under the mouse cursor
-             * and draw the value on the left hand side of the chart: */
-            if (m_fDrawCurenValueIndicators && m_iDataIndexUnderCursor >= 0 && m_iDataIndexUnderCursor < data->size())
+        }
+        /* Draw a horizontal and vertical line on data point under the mouse cursor
+         * and draw the value on the left hand side of the chart: */
+        if (m_fDrawCurenValueIndicators && m_iDataIndexUnderCursor >= 0 && m_iDataIndexUnderCursor < data->size())
+        {
+            painter.setPen(QPen(m_dataSeriesColor[k], 0.5));
+            float fHeight = fH * data->at(data->size() - m_iDataIndexUnderCursor);
+            if (fHeight > 0)
             {
-                painter.setPen(QPen(m_dataSeriesColor[k], 0.5));
-                float fHeight = fH * data->at(data->size() - m_iDataIndexUnderCursor);
-                if (fHeight > 0)
-                {
-                    painter.drawLine(m_iMarginLeft, height() - (fHeight + m_iMarginBottom),
-                                     width() - m_iMarginRight, height() - (fHeight + m_iMarginBottom));
-                    QPoint cursorPosition = mapFromGlobal(cursor().pos());
-                    painter.setPen(mainAxisColor);
-                    painter.drawLine(cursorPosition.x(), 0,
-                                     cursorPosition.x(), height() - m_iMarginBottom);
-                    QString strValue = QString::number(data->at(data->size() - m_iDataIndexUnderCursor));
+                painter.drawLine(m_iMarginLeft, height() - (fHeight + m_iMarginBottom),
+                                 width() - m_iMarginRight, height() - (fHeight + m_iMarginBottom));
+                QPoint cursorPosition = mapFromGlobal(cursor().pos());
+                painter.setPen(mainAxisColor);
+                painter.drawLine(cursorPosition.x(), 0,
+                                 cursorPosition.x(), height() - m_iMarginBottom);
+                QString strValue = QString::number(data->at(data->size() - m_iDataIndexUnderCursor));
 #if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-                    painter.drawText(m_iMarginLeft - fontMetrics.horizontalAdvance(strValue) - iAverageFontWidth,
-                                     height() - (fHeight + m_iMarginBottom) + 0.5 * iFontHeight, strValue);
+                painter.drawText(m_iMarginLeft - fontMetrics.horizontalAdvance(strValue) - iAverageFontWidth,
+                                 height() - (fHeight + m_iMarginBottom) + 0.5 * iFontHeight, strValue);
 #else
-                    painter.drawText(m_iMarginLeft - fontMetrics.width(strValue) - iAverageFontWidth,
-                                     height() - (fHeight + m_iMarginBottom) + 0.5 * iFontHeight, strValue);
+                painter.drawText(m_iMarginLeft - fontMetrics.width(strValue) - iAverageFontWidth,
+                                 height() - (fHeight + m_iMarginBottom) + 0.5 * iFontHeight, strValue);
 #endif
 
-                }
             }
         }
-    }// else of if (iMaximum == 0)
+    }
 
     /* Draw YAxis tick labels: */
     painter.setPen(mainAxisColor);
@@ -1208,7 +1193,7 @@ void UIVMActivityMonitor::prepareActions()
 {
 }
 
-void UIVMActivityMonitor::resetCPUInfoLabel()
+void UIVMActivityMonitorLocal::resetCPUInfoLabel()
 {
     if (m_infoLabels.contains(m_strCPUMetricName)  && m_infoLabels[m_strCPUMetricName])
     {
@@ -1270,16 +1255,31 @@ QString UIVMActivityMonitor::dataColorString(const QString &strChartName, int iD
     return pChart->dataSeriesColor(iDataIndex).name(QColor::HexRgb);
 }
 
-void UIVMActivityMonitorLocal::start()
+void UIVMActivityMonitor::setInfoLabelWidth()
 {
-    if (m_comMachine.isNull() || m_comMachine.GetState() != KMachineState_Running)
-        return;
-
-    m_fGuestAdditionsAvailable = guestAdditionsAvailable("6.1");
-    enableDisableGuestAdditionDependedWidgets(m_fGuestAdditionsAvailable);
-    if (m_pTimer)
-        m_pTimer->start(1000 * g_iPeriod);
+    /* Compute the maximum label string length and set it as a fixed width to labels to prevent always changing widths: */
+    /* Add m_iDecimalCount plus 4 characters for the number and 3 for unit string: */
+    m_iMaximumLabelLength += (g_iDecimalCount + 7);
+    if (!m_infoLabels.isEmpty())
+    {
+        QLabel *pLabel = m_infoLabels.begin().value();
+        if (pLabel)
+        {
+            QFontMetrics labelFontMetric(pLabel->font());
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+            int iWidth = m_iMaximumLabelLength * labelFontMetric.horizontalAdvance('X');
+#else
+            int iWidth = m_iMaximumLabelLength * labelFontMetric.width('X');
+#endif
+            foreach (QLabel *pInfoLabel, m_infoLabels)
+                pInfoLabel->setFixedWidth(iWidth);
+        }
+    }
 }
+
+/*********************************************************************************************************************************
+*   UIVMActivityMonitorLocal definition.                                                                         *
+*********************************************************************************************************************************/
 
 UIVMActivityMonitorLocal::UIVMActivityMonitorLocal(EmbedTo enmEmbedding, QWidget *pParent, const CMachine &machine)
     :UIVMActivityMonitor(enmEmbedding, pParent, 120 /* iMaximumQueueSize */)
@@ -1292,6 +1292,17 @@ UIVMActivityMonitorLocal::UIVMActivityMonitorLocal(EmbedTo enmEmbedding, QWidget
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange, this, &UIVMActivityMonitorLocal::sltMachineStateChange);
     connect(&uiCommon(), &UICommon::sigAskToDetachCOM, this, &UIVMActivityMonitorLocal::sltClearCOMData);
     setMachine(machine);
+}
+
+void UIVMActivityMonitorLocal::start()
+{
+    if (m_comMachine.isNull() || m_comMachine.GetState() != KMachineState_Running)
+        return;
+
+    m_fGuestAdditionsAvailable = guestAdditionsAvailable("6.1");
+    enableDisableGuestAdditionDependedWidgets(m_fGuestAdditionsAvailable);
+    if (m_pTimer)
+        m_pTimer->start(1000 * g_iPeriod);
 }
 
 UIVMActivityMonitorLocal::~UIVMActivityMonitorLocal()
@@ -1320,24 +1331,7 @@ void UIVMActivityMonitorLocal::retranslateUi()
     m_strVMExitLabelTotal = QApplication::translate("UIVMInformationDialog", "Total");
     m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strVMExitLabelTotal.length());
 
-    /* Compute the maximum label string length and set it as a fixed width to labels to prevent always changing widths: */
-    /* Add m_iDecimalCount plus 4 characters for the number and 3 for unit string: */
-    m_iMaximumLabelLength += (g_iDecimalCount + 7);
-    if (!m_infoLabels.isEmpty())
-    {
-        QLabel *pLabel = m_infoLabels.begin().value();
-        if (pLabel)
-        {
-            QFontMetrics labelFontMetric(pLabel->font());
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-            int iWidth = m_iMaximumLabelLength * labelFontMetric.horizontalAdvance('X');
-#else
-            int iWidth = m_iMaximumLabelLength * labelFontMetric.width('X');
-#endif
-            foreach (QLabel *pInfoLabel, m_infoLabels)
-                pInfoLabel->setFixedWidth(iWidth);
-        }
-    }
+    setInfoLabelWidth();
 }
 
 void UIVMActivityMonitorLocal::setMachine(const CMachine &comMachine)
@@ -1747,6 +1741,10 @@ void UIVMActivityMonitorLocal::resetVMExitInfoLabel()
     }
 }
 
+/*********************************************************************************************************************************
+*   UIVMActivityMonitorCloud definition.                                                                         *
+*********************************************************************************************************************************/
+
 UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget *pParent, const CCloudMachine &machine)
     :UIVMActivityMonitor(enmEmbedding, pParent, 60 /* iMaximumQueueSize */)
 {
@@ -1762,6 +1760,7 @@ UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget
     retranslateUi();
     prepareActions();
     setMachine(machine);
+    resetCPUInfoLabel();
 }
 
 
@@ -1826,6 +1825,7 @@ void UIVMActivityMonitorCloud::retranslateUi()
     UIVMActivityMonitor::retranslateUi();
     foreach (UIChart *pChart, m_charts)
         pChart->setXAxisLabel(QApplication::translate("UIVMInformationDialog", "Min."));
+    setInfoLabelWidth();
 }
 
 void UIVMActivityMonitorCloud::obtainDataAndUpdate()
@@ -1885,6 +1885,7 @@ void UIVMActivityMonitorCloud::updateCPUGraphsAndMetric(ULONG iLoadPercentage, U
     if (m_charts.contains(m_strCPUMetricName))
         m_charts[m_strCPUMetricName]->update();
 }
+
 void UIVMActivityMonitorCloud::updateRAMGraphsAndMetric(quint64 /*iTotalRAM*/, quint64 /*iFreeRAM*/){}
 void UIVMActivityMonitorCloud::updateNetworkGraphsAndMetric(quint64 /*iReceiveTotal*/, quint64 /*iTransmitTotal*/){}
 void UIVMActivityMonitorCloud::updateDiskIOGraphsAndMetric(quint64 /*uDiskIOTotalWritten*/, quint64 /*uDiskIOTotalRead*/){}
@@ -1944,4 +1945,20 @@ void UIVMActivityMonitorCloud::prepareWidgets()
     UIVMActivityMonitor::prepareWidgets();
     m_charts[m_strCPUMetricName]->setShowPieChart(false);
 }
+
+void UIVMActivityMonitorCloud::resetCPUInfoLabel()
+{
+    if (m_infoLabels.contains(m_strCPUMetricName)  && m_infoLabels[m_strCPUMetricName])
+    {
+        QString strInfo;
+
+        strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4</font>")
+            .arg(m_strCPUInfoLabelTitle)
+            .arg(dataColorString(m_strCPUMetricName, 0))
+            .arg(m_strCPUInfoLabelGuest).arg("---");
+
+        m_infoLabels[m_strCPUMetricName]->setText(strInfo);
+    }
+}
+
 #include "UIVMActivityMonitor.moc"
