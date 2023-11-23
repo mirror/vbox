@@ -1024,14 +1024,14 @@ HRESULT SystemProperties::getSupportedPlatformArchitectures(std::vector<Platform
 {
     static const PlatformArchitecture_T aPlatformArchitectures[] =
     {
-        /* Currently we only support same-same architectures (host == guest). */
 #if   defined(RT_ARCH_X86)   || defined(RT_ARCH_AMD64)
+        /* Currently x86 can run x86 VMs only. */
         PlatformArchitecture_x86
 #elif defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
+        /* Currently ARM can run x86 emulation and if enabled ARM VMs. */
+        PlatformArchitecture_x86
 # ifdef VBOX_WITH_VIRT_ARMV8
-        PlatformArchitecture_ARM
-# else /* No platform supported. */
-        PlatformArchitecture_None:
+        , PlatformArchitecture_ARM
 # endif
 #else
 # error "Port me!"
