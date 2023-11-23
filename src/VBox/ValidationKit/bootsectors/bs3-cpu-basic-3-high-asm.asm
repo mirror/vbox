@@ -116,6 +116,7 @@ BS3_PROC_BEGIN_CMN bs3CpuBasic3_lea_64, BS3_PBC_NEAR
         ;
         ; We generate all the permutations using a python script, as nasm ends
         ; up consuming >19 GiB of memory running the preprocessor code below.
+        ; It also took forever (3+ min).
         ;
 %if 1
  %include "bs3-cpu-basic-3-high-lea64.inc"
