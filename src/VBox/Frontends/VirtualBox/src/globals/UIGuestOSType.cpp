@@ -33,19 +33,19 @@
 #include "CGuestOSType.h"
 
 
-UIGuestOSTypeManager::UIGuestOSTypeManager()
-{
-}
-
 void UIGuestOSTypeManager::reCacheGuestOSTypes(const CGuestOSTypeVector &guestOSTypes)
 {
     m_typeIdIndexMap.clear();
     m_guestOSTypes.clear();
     m_guestOSFamilies.clear();
+    m_guestOSFamilyArch.clear();
+    m_guestOSSubtypeArch.clear();
 
+    /* Enumerate guest OS types: */
     QVector<CGuestOSType> otherOSTypes;
     foreach (const CGuestOSType &comType, guestOSTypes)
     {
+        /* Filter out "other" family types: */
         if (comType.GetFamilyId().contains("other", Qt::CaseInsensitive))
         {
             otherOSTypes << comType;
@@ -53,7 +53,8 @@ void UIGuestOSTypeManager::reCacheGuestOSTypes(const CGuestOSTypeVector &guestOS
         }
         addGuestOSType(comType);
     }
-    /* Add OS types with family other to the end of the lists: */
+
+    /* Add OS types with family "other" to the end of the lists: */
     foreach (const CGuestOSType &comType, otherOSTypes)
         addGuestOSType(comType);
 }

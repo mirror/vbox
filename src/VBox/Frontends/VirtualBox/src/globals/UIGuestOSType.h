@@ -32,22 +32,19 @@
 #endif
 
 /* Qt includes: */
-#include <QVector>
 #include <QMap>
 #include <QString>
+#include <QVector>
 
 /* COM includes: */
 #include "COMEnums.h"
 #include "CGuestOSType.h"
-
-class UIGuestOSType;
 
 /** A wrapper around CGuestOSType. Some of the properties are cached here for performance. */
 class SHARED_LIBRARY_STUFF UIGuestOSType
 {
 
 public:
-
 
     UIGuestOSType(const CGuestOSType &comGuestOSType);
     UIGuestOSType();
@@ -96,11 +93,7 @@ private:
   *  types, e.g. Debian12_x64 etc. */
 class SHARED_LIBRARY_STUFF UIGuestOSTypeManager
 {
-
 public:
-
-    UIGuestOSTypeManager();
-    UIGuestOSTypeManager(const UIGuestOSTypeManager &other) = delete;
 
     /** OS info pair. 'first' is id and 'second' is description. */
     typedef QPair<QString, QString> UIGuestInfoPair;
@@ -108,6 +101,11 @@ public:
     typedef QVector<UIGuestInfoPair> UIGuestOSFamilyInfo;
     /** A list of all OS type pairs. */
     typedef QVector<UIGuestInfoPair> UIGuestOSTypeInfo;
+
+    /** Constructs guest OS type manager. */
+    UIGuestOSTypeManager() {}
+    /** Prohibits to copy guest OS type manager. */
+    UIGuestOSTypeManager(const UIGuestOSTypeManager &other) = delete;
 
     /** Re-create the guest OS type database. */
     void reCacheGuestOSTypes(const CGuestOSTypeVector &guestOSTypes);
@@ -124,9 +122,11 @@ public:
     UIGuestOSTypeInfo   getTypeListForSubtype(const QString &strSubtype,
                                               KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
 
+    /** Returns whether specified @a strOSTypeId is of DOS type. */
     static bool isDOSType(const QString &strOSTypeId);
 
-    /** @name Getters for UIGuestOSType properties. They utilize a map for faster access to UIGuestOSType instance with @p strTypeId
+    /** @name Getters for UIGuestOSType properties.
+      * They utilize a map for faster access to UIGuestOSType instance with @p strTypeId.
       * @{ */
         QString                 getFamilyId(const QString &strTypeId) const;
         QString                 getSubtype(const QString  &strTypeId) const;
@@ -148,6 +148,7 @@ public:
 
 private:
 
+    /** Adds certain @a comType to internal cache. */
     void addGuestOSType(const CGuestOSType &comType);
 
     /** The type list. Here it is a pointer to QVector to delay definition of UIGuestOSType. */
@@ -163,6 +164,5 @@ private:
     /** Caches arch types on per-subtype basis. */
     QMap<QString, KPlatformArchitecture>  m_guestOSSubtypeArch;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UIGuestOSType_h */
