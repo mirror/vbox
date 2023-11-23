@@ -1344,6 +1344,7 @@
 # define RTLdrLoadEx                                    RT_MANGLER(RTLdrLoadEx)
 # define RTLdrLoadSystem                                RT_MANGLER(RTLdrLoadSystem)
 # define RTLdrLoadSystemEx                              RT_MANGLER(RTLdrLoadSystemEx)
+# define RTLdrLxSetSegmentSelectors                     RT_MANGLER(RTLdrLxSetSegmentSelectors)
 # define RTLdrOpen                                      RT_MANGLER(RTLdrOpen)
 # define RTLdrOpenEx                                    RT_MANGLER(RTLdrOpenEx)
 # define RTLdrOpenInMemory                              RT_MANGLER(RTLdrOpenInMemory)

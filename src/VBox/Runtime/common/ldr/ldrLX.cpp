@@ -3125,3 +3125,15 @@ DECLHIDDEN(int) rtldrLXOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enm
 
 }
 
+
+RTDECL(int) RTLdrLxSetSegmentSelectors(RTLDRMOD hLdrMod, uint32_t iSegment, uint16_t Sel16bit, uint16_t SelFlat)
+{
+    AssertMsgReturn(rtldrIsValid(hLdrMod), ("hLdrMod=%p\n", hLdrMod), VERR_INVALID_HANDLE);
+    PKLDRMODLX pThis = RT_FROM_MEMBER(hLdrMod, KLDRMODLX, Core);
+    AssertReturn(pThis->Core.pOps == &s_rtldrLXOps, VERR_NOT_SUPPORTED);
+    AssertReturn(iSegment < pThis->cSegments, VERR_OUT_OF_RANGE);
+    pThis->aSegments[iSegment].Sel16bit = Sel16bit;
+    pThis->aSegments[iSegment].SelFlat  = SelFlat;
+    return VINF_SUCCESS;
+}
+

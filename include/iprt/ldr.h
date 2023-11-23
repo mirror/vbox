@@ -1010,6 +1010,18 @@ typedef FNRTLDRENUMSEGS *PFNRTLDRENUMSEGS;
 RTDECL(int) RTLdrEnumSegments(RTLDRMOD hLdrMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser);
 
 /**
+ * LX specific API for setting the selectors of a segment before getting
+ * segment bits.
+ *
+ * @returns IPRT status code.
+ * @param   hLdrMod         The module handle.
+ * @param   iSegment        The segment to set the selectors for.
+ * @param   Sel16bit        The 16-bit selector.
+ * @param   SelFlat         The flat selector.
+ */
+RTDECL(int) RTLdrLxSetSegmentSelectors(RTLDRMOD hLdrMod, uint32_t iSegment, uint16_t Sel16bit, uint16_t SelFlat);
+
+/**
  * Converts a link address to a segment:offset address.
  *
  * @returns IPRT status code.
