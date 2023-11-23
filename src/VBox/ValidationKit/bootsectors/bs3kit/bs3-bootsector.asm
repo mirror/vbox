@@ -50,10 +50,12 @@
 ;*********************************************************************************************************************************
 ;*      Defined Constants And Macros                                                                                             *
 ;*********************************************************************************************************************************
-;; Enabled faster loading.
+;; Enables faster loading.
 %define BS3KIT_BOOTSECTOR_FASTER_LOAD
-;; Enabled load progress dots.
+;; Enables load progress dots.
 %define BS3KIT_BOOTSECTOR_LOAD_DOTS
+;; Enables support for fake 63.5 MB floppies with 255 sectors, 2 heads and 255 tracks.
+%define BS3KIT_BOOTSECTOR_SUPPORT_63_5MB_FLOPPIES
 
 ;; Halts on failure location. For debugging.
 ;%define HLT_ON_FAILURE 1
@@ -94,7 +96,7 @@ g_cFATs:                                ; 010h
         db 0
 g_cRootDirEntries:                      ; 011h
         dw 0
-g_cTotalSectors:                        ; 013h
+g_cTotalSectors:                        ; 013h - We (ab)use this for the number of checksumed sectors.
         dw 0
 g_bMediaDescriptor:                     ; 015h
         db 0
@@ -114,7 +116,7 @@ g_bFlagsEtc:                            ; 025h
         db 0
 g_bExtendedSignature:                   ; 026h
         db 0x29
-g_dwSerialNumber:                       ; 027h
+g_dwSerialNumber:                       ; 027h - We (ab)use this for the base image checksum.
         dd 0x0a458634
 g_abLabel:                              ; 02bh
         db 'VirtualBox', 0ah
@@ -124,21 +126,24 @@ g_BpbEnd:                               ; 03ch
 
 
 ;
-; Where to real init code starts.
+; Where the real init code starts.
 ;
 bs3InitCode:
         cli
 
+%if 0 ; This does not work, we clear it wholesale below
 %ifdef BS3KIT_BOOTSECTOR_SAVE_INITIAL_STATE
         ; save the registers.
         mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.rax], ax
         mov     [cs:BS3_ADDR_REG_SAVE + BS3REGCTX.ds], ds
 %endif
+%endif
 
-        ; set up the DS segment reister so we can skip the CS prefix when saving more prefixes..
-        mov     ax, 0
+        ; set up the DS segment register so we can skip the CS prefix when saving more prefixes..
+        mov     ax, 0                   ; no xor ax,ax as that messes with the eflags
         mov     ds, ax
 
+%if 0 ; This does not work, we clear it wholesale below
 %ifdef BS3KIT_BOOTSECTOR_SAVE_INITIAL_STATE
         mov     [BS3_ADDR_REG_SAVE + BS3REGCTX.rdi], di
         mov     di, BS3_ADDR_REG_SAVE
@@ -147,6 +152,7 @@ bs3InitCode:
         mov     [di + BS3REGCTX.rcx], cx
         mov     [di + BS3REGCTX.es], es
         mov     [di + BS3REGCTX.rbp], bp
+%endif
 %endif
 
         ; set up the stack.
@@ -189,14 +195,19 @@ bs3InitCode:
         mov     di, BS3_ADDR_REG_SAVE + 0x70
 
         ; 1. bit 15-bit was fixed to 1 in pre-286 CPUs, and fixed to 0 in 286+.
+%if 0 ; 3 vs 2 bytes
         mov     ax, [bp - 2]
+%else
+        pop     ax
+        push    ax
+%endif
         test    ah, 080h                ; always set on pre 286, clear on 286 and later
         jnz     .pre_80286
 
         ; 2. On a 286 you cannot popf IOPL and NT from real mode.
 .detect_286_or_386plus:
 CPU 286
-        mov     ah, (X86_EFL_IOPL | X86_EFL_NT) >> 8
+        mov     ah, (X86_EFL_IOPL | X86_EFL_NT) >> 8 ; OR'ing would be safer, but costs a byte and nothing should be set anyway.
         push    ax
         popf
         pushf
@@ -211,6 +222,7 @@ CPU 286
 .pre_80286:
 CPU 8086
 %ifdef BS3KIT_BOOTSECTOR_SAVE_INITIAL_STATE
+        mov     [di - 0x70 + BS3REGCTX.rflags], ax
         mov     [di - 0x70 + BS3REGCTX.rbx], bx
         mov     [di - 0x70 + BS3REGCTX.rdx], dx
         mov     [di - 0x70 + BS3REGCTX.rsi], si
@@ -265,6 +277,8 @@ CPU 386
         mov     eax, cr4
         mov     [di - 0x70 + BS3REGCTX.cr4], eax
 .no_cr4:
+%else
+        popf                            ; (restores IOPL+NT)
 %endif
         ; Make sure caching is enabled and alignment is off.
         mov     eax, cr0
@@ -355,12 +369,14 @@ BEGINPROC bs3InitLoadImage
         hlt
 .ok_geometry_call:
 %endif
-        and     cl, 63                  ; only the sector count.
+%ifndef BS3KIT_BOOTSECTOR_SUPPORT_63_5MB_FLOPPIES
+        and     cl, 63                  ; only the sector count. (63.5MB has 255 sectors, so don't do this!)
+%endif
         mov     bMaxSector, cl
         mov     bMaxHead, dh
         mov     dl, bSavedDiskNo
-
-%if 0 ; bMaxSector=0x12 (18); bMaxHead=0x01; bMaxCylinder=0x4f (79)
+                                  ;63*2*0xff*512 = 0xFB0400 (16 450 560)
+%if 0 ; DEBUG ; bMaxSector=0x12 (18); bMaxHead=0x01; bMaxCylinder=0x4f (79)
         mov al, 'S'
         call bs3PrintChrInAl
         mov al, bMaxSector
@@ -388,7 +404,7 @@ BEGINPROC bs3InitLoadImage
         mov     cx, 0002h               ; ch/cylinder=0 (0-based); cl/sector=2 (1-based)
         xor     dh, dh                  ; dh/head=0
 .the_load_loop:
- %if 0
+ %if 0 ; DEBUG
         mov al, 'c'
         call bs3PrintChrInAl
         mov al, ch
@@ -450,7 +466,7 @@ BEGINPROC bs3InitLoadImage
         mov     cx, 0002h               ; ch/cylinder=0 (0-based); cl/sector=0 (1-based)
         xor     dh, dh                  ; dh/head=0
 .the_load_loop:
- %if 0
+ %if 0 ; DEBUG
         mov al, 'c'
         call bs3PrintChrInAl
         mov al, ch
@@ -463,7 +479,7 @@ BEGINPROC bs3InitLoadImage
         call bs3PrintChrInAl
         mov al, dh
         call bs3PrintHexInAl
-        mov al, ';'
+        mov al, '#'
         call bs3PrintChrInAl
  %elifdef BS3KIT_BOOTSECTOR_LOAD_DOTS
         mov     al, '.'
@@ -472,11 +488,24 @@ BEGINPROC bs3InitLoadImage
         mov     ax, wMaxSector          ; read to the end of the side by default.
         sub     al, cl
         inc     al
+ %ifdef BS3KIT_BOOTSECTOR_SUPPORT_63_5MB_FLOPPIES
+        cmp     al, 72                  ; The BIOS dislikes reading too many sectors at a time.
+        jbe     .read_again             ; Look for 'num_sectors > 72' in PC/BIOS/floppy.c.
+        mov     al, 72
+ %endif
 .read_again:
         cmp     si, ax
         jae     .do_read
         mov     ax, si
 .do_read:
+ %if 0 ; DEBUG
+        push    ax
+        call bs3PrintHexInAl
+        mov al, ';'
+        call bs3PrintChrInAl
+        pop     ax
+ %endif
+
         mov     ah, 02h                 ; ah=read function
         xor     bx, bx
         mov     es, di                  ; es:bx -> buffer
@@ -484,7 +513,7 @@ BEGINPROC bs3InitLoadImage
         jnc     .advance_sector
 
         cmp     ah, 9                   ; DMA 64KB crossing error
-%if 0 ; This hack doesn't work. If the FDC is in single sided mode we end up with a garbled image. Probably "missing" sides.
+ %if 0 ; This hack doesn't work. If the FDC is in single sided mode we end up with a garbled image. Probably "missing" sides.
         je      .read_one
 
         cmp     ah, 20h                 ; Controller error, probably because we're reading side 1 on a single sided floppy
@@ -498,23 +527,27 @@ BEGINPROC bs3InitLoadImage
         inc     ch
         jmp     .the_load_loop
 .read_one:
-%elifdef HLT_ON_FAILURE
+ %elifdef HLT_ON_FAILURE
         je      .read_one_ok
         cli
         hlt
 .read_one_ok:
-%else
+ %else
         jne     .failure
-%endif
+ %endif
         mov     ax, 1                   ; Retry reading a single sector.
         jmp     .read_again
 
         ; advance to the next sector/head/cylinder and address.
 .advance_sector:
         inc     cl
+ %ifdef BS3KIT_BOOTSECTOR_SUPPORT_63_5MB_FLOPPIES
+        jz      .adv_sector             ; Wraparound is a 63.5 MB problem.
+ %endif
         cmp     cl, bMaxSector
         jbe     .adv_addr
 
+.adv_sector:
         mov     cl, 1
         inc     dh
         cmp     dh, bMaxHead
@@ -533,7 +566,7 @@ BEGINPROC bs3InitLoadImage
 
 .done_reading:
 %endif ; BS3KIT_BOOTSECTOR_FASTER_LOAD
-%if 0
+%if 0 ; DEBUG
         mov     al, 'D'
         call bs3PrintChrInAl
 %elifdef BS3KIT_BOOTSECTOR_LOAD_DOTS
@@ -543,7 +576,12 @@ BEGINPROC bs3InitLoadImage
         call bs3PrintChrInAl
 %endif
 
+%if 0 ; 3 vs 2 bytes
         add     sp, 2*2
+%else
+        pop     dx
+        pop     dx
+%endif
         pop     dx
         pop     es
         pop     bp
@@ -580,6 +618,9 @@ BEGINPROC bs3InitLoadImage
         hlt
         jmp .failure
  %endif
+%else
+.failure:
+        hlt
 %endif
 .s_szErrMsgEnd:
 ;ENDPROC bs3InitLoadImage - don't want the padding.

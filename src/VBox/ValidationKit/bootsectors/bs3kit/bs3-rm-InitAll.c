@@ -41,22 +41,70 @@
 //#define BS3_USE_RM_TEXT_SEG 1
 #include "bs3kit-template-header.h"
 #include "bs3-cmn-test.h"
+#include "bs3kit-linker.h"
 #include <iprt/asm-amd64-x86.h>
 
+
 BS3_MODE_PROTO_NOSB(void, Bs3EnteredMode,(void));
+
+
+#ifdef BS3_WITH_LOAD_CHECKSUMS
+/**
+ * Verifies the base image checksum.
+ */
+static void bs3InitVerifyChecksum(void)
+{
+    BS3BOOTSECTOR const RT_FAR *pBootSector   = (BS3BOOTSECTOR const RT_FAR *)BS3_FP_MAKE(0, 0x7c00);
+    uint32_t                    cSectors      = pBootSector->cTotalSectors;
+    uint32_t const              cSectorsSaved = cSectors;
+    uint16_t                    uCurSeg       = (BS3_ADDR_LOAD >> 4); /* ASSUMES 16 byte aligned load address! */
+    uint32_t                    uChecksum     = BS3_CALC_CHECKSUM_INITIAL_VALUE;
+    while (cSectors > 0)
+    {
+        uint8_t const *pbSrc = BS3_FP_MAKE(uCurSeg, 0);
+        if (cSectors >= _32K / 512)
+        {
+            uChecksum = Bs3CalcChecksum(uChecksum, pbSrc, _32K);
+            cSectors -= _32K / 512;
+            uCurSeg  += 0x800;
+        }
+        else
+        {
+            uChecksum = Bs3CalcChecksum(uChecksum, pbSrc, (uint16_t)cSectors * 512);
+            break;
+        }
+    }
+    Bs3TestPrintf("base image checksum: %#RX32, expected %#RX32 over (%#RX32 sectors, uCurSeg=%#x) sizeof(size_t)=%d\n",
+                  uChecksum, pBootSector->dwSerialNumber, cSectorsSaved, uCurSeg, sizeof(size_t));
+    if (uChecksum != pBootSector->dwSerialNumber)
+    {
+        Bs3TestPrintf("base image checksum mismatch: %#RX32, expected %#RX32 over %#RX32 sectors\n",
+                      uChecksum, pBootSector->dwSerialNumber, cSectorsSaved);
+        Bs3Panic();
+    }
+}
+#endif /* BS3_WITH_LOAD_CHECKSUMS */
 
 
 BS3_DECL(void) Bs3InitAll_rm(void)
 {
     uint8_t volatile BS3_FAR  *pcTicksFlpyOff;
 
+#ifdef BS3_WITH_LOAD_CHECKSUMS
+    /* This must be done before we modify anything in the loaded image. */
+    bs3InitVerifyChecksum();
+#endif
+
     /*
      * Detect CPU first as the memory init code will otherwise use 386
      * instrunctions and cause trouble on older CPUs.
      */
     Bs3CpuDetect_rm_far();
+Bs3TestPrintf("#1\n");
     Bs3InitMemory_rm_far();
+Bs3TestPrintf("#2\n");
     Bs3InitGdt_rm_far();
+Bs3TestPrintf("#3\n");
 
 #ifdef BS3_INIT_ALL_WITH_HIGH_DLLS
     /*
@@ -65,6 +113,7 @@ BS3_DECL(void) Bs3InitAll_rm(void)
      */
     Bs3InitHighDlls_rm_far();
 #endif
+Bs3TestPrintf("#4\n");
 
     /*
      * Before we disable all interrupts, try convince the BIOS to stop the

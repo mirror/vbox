@@ -160,10 +160,17 @@ TMPL_BEGIN_TEXT
         mov     [es:di], dh
 
         les     di, a_puMaxSector
+        cmp     byte a_bDrive, 4            ; ASSUMES the first 4 drive are potentially BIG floppies.
+        jge     .not_floppy_sectors
+        mov     [es:di], cl                 ; For 63.5 MB the whole of CL is the sector number.
+        mov     cl, 0                       ; CL does not contribute to the cylinder count, so zero it.
+        jmp     .set_max_cylinder
+.not_floppy_sectors:
         mov     al, 3fh
         and     al, cl
         mov     [es:di], al
 
+.set_max_cylinder:
         les     di, a_puMaxCylinder
         shr     cl, 6
         xchg    cl, ch
@@ -173,10 +180,17 @@ TMPL_BEGIN_TEXT
         mov     [xDI], dh
 
         mov     xDI, a_puMaxSector
+        cmp     byte a_bDrive, 4            ; ASSUMES the first 4 drive are potentially BIG floppies.
+        jge     .not_floppy_sectors
+        mov     [xDI], cl                   ; For 63.5 MB the whole of CL is the sector number.
+        mov     cl, 0                       ; CL does not contribute to the cylinder count, so zero it.
+        jmp     .set_max_cylinder
+.not_floppy_sectors:
         mov     al, 3fh
         and     al, cl
         mov     [xDI], al
 
+.set_max_cylinder:
         mov     xDI, a_puMaxCylinder
         shr     cl, 6
         xchg    cl, ch

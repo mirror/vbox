@@ -66,7 +66,7 @@ typedef struct BS3LNKINPUT
     uint32_t        cbBits;
     uint32_t        uLoadAddr;
     uint32_t        offInImage;
-    void           *pvBits;
+    uint8_t        *pbBits;
     RTLDRMOD        hLdrMod;
 } BS3LNKINPUT;
 
@@ -87,7 +87,6 @@ typedef struct BS3LNKIMPORTNAME
     RT_FLEXIBLE_ARRAY_EXTENSION
     char            szName[RT_FLEXIBLE_ARRAY];
 } BS3LNKIMPORTNAME;
-
 
 
 /**
@@ -119,6 +118,7 @@ static DECLCALLBACK(int) GenerateHighDllAsmOutputExportTable(RTLDRMOD hLdrMod, c
     RT_NOREF(hLdrMod);
     return VINF_SUCCESS;
 }
+
 
 /**
  * @callback_method_impl{FNRTSTRSPACECALLBACK}
@@ -215,11 +215,11 @@ static RTEXITCODE GenerateHighDllImportTableAssembly(FILE *pOutput, const char *
     size_t cbImage = RTLdrSize(hLdrMod);
     if (cbImage != ~(size_t)0)
     {
-        void *pvBits = RTMemAlloc(cbImage);
-        if (pvBits)
+        void *pbBits = (uint8_t *)RTMemAlloc(cbImage);
+        if (pbBits)
         {
             BS3LNKIMPORTSTATE State = { pOutput, NULL, 0, 0, 0 };
-            rc = RTLdrGetBits(hLdrMod, pvBits, BS3HIGHDLL_LOAD_ADDRESS, GenerateHighDllAsmImportCallback, pOutput);
+            rc = RTLdrGetBits(hLdrMod, pbBits, BS3HIGHDLL_LOAD_ADDRESS, GenerateHighDllAsmImportCallback, pOutput);
             if (RT_SUCCESS(rc))
             {
                 /** @todo move more of this to bs3kit*.h?    */
@@ -253,7 +253,7 @@ static RTEXITCODE GenerateHighDllImportTableAssembly(FILE *pOutput, const char *
 
                 /* Populate the string table with exports. */
                 size_t const offExportStrings = State.cbStrings;
-                rc = RTLdrEnumSymbols(hLdrMod, 0, pvBits, BS3HIGHDLL_LOAD_ADDRESS, GenerateHighDllAsmOutputExportStrings, &State);
+                rc = RTLdrEnumSymbols(hLdrMod, 0, pbBits, BS3HIGHDLL_LOAD_ADDRESS, GenerateHighDllAsmOutputExportStrings, &State);
                 size_t const cbStrings        = State.cbStrings;
                 if (RT_SUCCESS(rc) && cbStrings < _64K)
                 {
@@ -270,7 +270,7 @@ static RTEXITCODE GenerateHighDllImportTableAssembly(FILE *pOutput, const char *
                             "section BS3HIGHDLLEXPORTS\n"
                             "start_exports:\n");
                     State.cbStrings = offExportStrings;
-                    rc = RTLdrEnumSymbols(hLdrMod, 0, pvBits, BS3HIGHDLL_LOAD_ADDRESS, GenerateHighDllAsmOutputExportTable, &State);
+                    rc = RTLdrEnumSymbols(hLdrMod, 0, pbBits, BS3HIGHDLL_LOAD_ADDRESS, GenerateHighDllAsmOutputExportTable, &State);
                     AssertRC(rc);
                     fprintf(pOutput, "\n");
 
@@ -290,6 +290,7 @@ static RTEXITCODE GenerateHighDllImportTableAssembly(FILE *pOutput, const char *
                             "        dd      %#05x           ; cbStrings\n"
                             "        dd      start_strings - start_entry\n"
                             "        dd      1               ; offDllName\n"
+                            "        dd      0               ; uChecksum\n"
                             , BS3HIGHDLLENTRY_MAGIC, cbImage, cbImage, State.cImports, State.cExports, (unsigned)cbStrings);
                     rcExit = RTEXITCODE_SUCCESS;
                 }
@@ -300,7 +301,7 @@ static RTEXITCODE GenerateHighDllImportTableAssembly(FILE *pOutput, const char *
             }
             else
                 rcExit = RTMsgErrorExitFailure("RTLdrGetBits failed: %Rrc", rc);
-            RTMemFree(pvBits);
+            RTMemFree(pbBits);
         }
         else
             rcExit = RTMsgErrorExitFailure("Out of memory!");
@@ -398,10 +399,10 @@ static RTEXITCODE DoTheLinking(FILE *pOutput, BS3LNKINPUT *paInputs, unsigned cI
         if (i < 2)
         {
             paInputs[i].cbBits = RT_ALIGN_32(paInputs[i].cbFile, 512);
-            paInputs[i].pvBits = RTMemAllocZ(paInputs[i].cbBits);
-            if (!paInputs[i].pvBits)
+            paInputs[i].pbBits = (uint8_t *)RTMemAllocZ(paInputs[i].cbBits);
+            if (!paInputs[i].pbBits)
                 return RTMsgErrorExitFailure("Out of memory (%#x)\n", paInputs[i].cbBits);
-            size_t cbRead = fread(paInputs[i].pvBits, sizeof(uint8_t), paInputs[i].cbFile, paInputs[i].pFile);
+            size_t cbRead = fread(paInputs[i].pbBits, sizeof(uint8_t), paInputs[i].cbFile, paInputs[i].pFile);
             if (cbRead != paInputs[i].cbFile)
                 return RTMsgErrorExitFailure("Error reading '%s' (got %d bytes, wanted %u).",
                                              paInputs[i].pszFile, (int)cbRead, (unsigned)paInputs[i].cbFile);
@@ -422,17 +423,21 @@ static RTEXITCODE DoTheLinking(FILE *pOutput, BS3LNKINPUT *paInputs, unsigned cI
                 return RTMsgErrorExitFailure("Image '%s' is definitely too large: %#zx", paInputs[i].pszFile, cbImage);
 
             paInputs[i].cbBits = RT_ALIGN_32((uint32_t)cbImage, 4096); /* Bs3InitHighDlls_rm depend on the 4KiB alignment.  */
-            paInputs[i].pvBits = RTMemAllocZ(paInputs[i].cbBits);
-            if (!paInputs[i].pvBits)
+            paInputs[i].pbBits = (uint8_t *)RTMemAllocZ(paInputs[i].cbBits);
+            if (!paInputs[i].pbBits)
                 return RTMsgErrorExitFailure("Out of memory (%#x)\n", paInputs[i].cbBits);
 
             /* Locate the entry for this high dll in the base image. */
-            BS3HIGHDLLENTRY *pHighDllEntry = LocateHighDllEntry((uint8_t *)paInputs[1].pvBits, paInputs[1].cbFile,
+            BS3HIGHDLLENTRY *pHighDllEntry = LocateHighDllEntry(paInputs[1].pbBits, paInputs[1].cbFile,
                                                                 RTPathFilename(paInputs[i].pszFile));
             AssertReturn(pHighDllEntry, RTEXITCODE_FAILURE);
+            if (   pHighDllEntry->cbLoaded  != paInputs[i].cbBits
+                || pHighDllEntry->cbInImage != paInputs[i].cbBits)
+                return RTMsgErrorExitFailure("HighDllEntry fields cbLoaded=%#x and/or cbInImage=%#x differs from cbBits=%#x!",
+                                             pHighDllEntry->cbLoaded, pHighDllEntry->cbInImage, paInputs[i].cbBits);
 
             /* Get the fixed up image bits. */
-            rc = RTLdrGetBits(paInputs[i].hLdrMod, paInputs[i].pvBits, uHiLoadAddr, ResolveHighDllImportCallback, pHighDllEntry);
+            rc = RTLdrGetBits(paInputs[i].hLdrMod, paInputs[i].pbBits, uHiLoadAddr, ResolveHighDllImportCallback, pHighDllEntry);
             if (RT_FAILURE(rc))
                 return RTMsgErrorExitFailure("RTLdrGetBits failed on '%s': %Rrc", paInputs[i].pszFile, rc);
 
@@ -444,7 +449,7 @@ static RTEXITCODE DoTheLinking(FILE *pOutput, BS3LNKINPUT *paInputs, unsigned cI
             {
                 const char * const pszSymbol = (const char *)&pszzStrings[paExports[iExport].offName];
                 RTLDRADDR          Value     = 0;
-                rc = RTLdrGetSymbolEx(paInputs[i].hLdrMod, paInputs[i].pvBits, uHiLoadAddr, UINT32_MAX, pszSymbol, &Value);
+                rc = RTLdrGetSymbolEx(paInputs[i].hLdrMod, paInputs[i].pbBits, uHiLoadAddr, UINT32_MAX, pszSymbol, &Value);
                 if (RT_SUCCESS(rc))
                     paExports[iExport].offFlat = (uint32_t)Value;
                 else
@@ -455,8 +460,19 @@ static RTEXITCODE DoTheLinking(FILE *pOutput, BS3LNKINPUT *paInputs, unsigned cI
             /* Update the DLL entry with the load address and file address: */
             pHighDllEntry->offInImage = off;
             pHighDllEntry->uLoadAddr  = uHiLoadAddr;
+            pHighDllEntry->uChecksum  = Bs3CalcChecksum(BS3_CALC_CHECKSUM_INITIAL_VALUE, paInputs[i].pbBits, paInputs[i].cbBits);
             paInputs[i].uLoadAddr     = uHiLoadAddr;
             uHiLoadAddr += paInputs[i].cbBits;
+#if 0
+            RTMsgInfo("offInImage=%#RX32 / sector #%u LB %#x\n", paInputs[i].offInImage, paInputs[i].offInImage / 512, paInputs[i].cbBits);
+            uint32_t uChecksum = BS3_CALC_CHECKSUM_INITIAL_VALUE;
+            for (unsigned j = 0, cSectors = paInputs[i].cbBits / 512; j < cSectors; j++)
+                RTMsgInfo("sector #%u: %#010RX32 %#010RX32\n", j,
+                          uChecksum = Bs3CalcChecksum(uChecksum, &paInputs[i].pbBits[j * 512], 512),
+                          Bs3CalcChecksum(BS3_CALC_CHECKSUM_INITIAL_VALUE, &paInputs[i].pbBits[j * 512], 512));
+            if (uChecksum != pHighDllEntry->uChecksum)
+                return RTMsgErrorExitFailure("Checksum calculation error: %#x, expected %#x", uChecksum, pHighDllEntry->uChecksum);
+#endif
         }
         Assert(!(off & 0x1ff));
         off += paInputs[i].cbBits;
@@ -466,13 +482,18 @@ static RTEXITCODE DoTheLinking(FILE *pOutput, BS3LNKINPUT *paInputs, unsigned cI
     /** @todo image size check.   */
 
     /*
-     * Patch the BPB with base image sector count.
+     * Patch the BPB with base image sector count and image checksum.
      */
-    PBS3BOOTSECTOR pBs = (PBS3BOOTSECTOR)paInputs[0].pvBits;
+    PBS3BOOTSECTOR pBs = (PBS3BOOTSECTOR)paInputs[0].pbBits;
     if (   memcmp(pBs->abLabel,  RT_STR_TUPLE(BS3_LABEL))  == 0
         && memcmp(pBs->abFSType, RT_STR_TUPLE(BS3_FSTYPE)) == 0
         && memcmp(pBs->abOemId,  RT_STR_TUPLE(BS3_OEMID))  == 0)
+    {
         pBs->cLargeTotalSectors = (paInputs[0].cbBits + paInputs[1].cbBits) / 512;
+        pBs->cTotalSectors      = RT_MIN(paInputs[1].cbBits, _1M) / 512;
+        pBs->dwSerialNumber     = Bs3CalcChecksum(BS3_CALC_CHECKSUM_INITIAL_VALUE, paInputs[1].pbBits,
+                                                  pBs->cTotalSectors * 512); /* dwSerialNumber is misaligned */
+    }
     else
         return RTMsgErrorExitFailure("Didn't find magic strings in the first file (%s).", paInputs[0].pszFile);
 
@@ -482,7 +503,7 @@ static RTEXITCODE DoTheLinking(FILE *pOutput, BS3LNKINPUT *paInputs, unsigned cI
     for (unsigned i = 0; i < cInputs; i++)
     {
         Assert(ftell(pOutput) == (int32_t)paInputs[i].offInImage);
-        ssize_t cbWritten = fwrite(paInputs[i].pvBits, sizeof(uint8_t), paInputs[i].cbBits, pOutput);
+        ssize_t cbWritten = fwrite(paInputs[i].pbBits, sizeof(uint8_t), paInputs[i].cbBits, pOutput);
         if (cbWritten != (ssize_t)paInputs[i].cbBits)
             return RTMsgErrorExitFailure("fwrite failed (%zd vs %zu)", cbWritten, paInputs[i].cbBits);
     }
@@ -587,7 +608,7 @@ int main(int argc, char **argv)
                                 {
                                     if (cSectors > 0)
                                     {
-                                        aInputs[cInputs].pvBits  = NULL;
+                                        aInputs[cInputs].pbBits  = NULL;
                                         aInputs[cInputs].cbBits  = 0;
                                         aInputs[cInputs].hLdrMod = NIL_RTLDRMOD;
                                         aInputs[cInputs++].pFile = pFile;
@@ -674,8 +695,8 @@ int main(int argc, char **argv)
             fclose(aInputs[i].pFile);
         if (aInputs[i].hLdrMod != NIL_RTLDRMOD)
             RTLdrClose(aInputs[i].hLdrMod);
-        if (aInputs[i].pvBits)
-            RTMemFree(aInputs[i].pvBits);
+        if (aInputs[i].pbBits)
+            RTMemFree(aInputs[i].pbBits);
     }
 
     /* Close stderr to make sure it's flushed properly. */

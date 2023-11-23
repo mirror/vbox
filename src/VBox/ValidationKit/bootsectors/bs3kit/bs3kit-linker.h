@@ -52,7 +52,7 @@ typedef struct BS3BOOTSECTOR
     uint16_t    cReservedSectors;       /**< 00eh */
     uint8_t     cFATs;                  /**< 010h */
     uint16_t    cRootDirEntries;        /**< 011h */
-    uint16_t    cTotalSectors;          /**< 013h */
+    uint16_t    cTotalSectors;          /**< 013h - We (ab)use this for the checksum length in sectors. */
     uint8_t     bMediaDescriptor;       /**< 015h */
     uint16_t    cSectorsPerFAT;         /**< 016h */
     uint16_t    cPhysSectorsPerTrack;   /**< 018h */
@@ -62,7 +62,7 @@ typedef struct BS3BOOTSECTOR
     uint8_t     bBootDrv;               /**< 024h */
     uint8_t     bFlagsEtc;              /**< 025h */
     uint8_t     bExtendedSignature;     /**< 026h */
-    uint32_t    dwSerialNumber;         /**< 027h */
+    uint32_t    dwSerialNumber;         /**< 027h - We (ab)use this for the base image checksum. */
     char        abLabel[11];            /**< 02bh */
     char        abFSType[8];            /**< 036h */
     /** @} */
@@ -103,6 +103,7 @@ typedef struct BS3HIGHDLLENTRY
     uint32_t    cbStrings;          /**< Size of the string table in bytes. */
     int32_t     offStrings;         /**< Relative address (to entry start) of the string table. */
     uint32_t    offFilename;        /**< String table offset of the DLL name (sans path, with extension). */
+    uint32_t    uChecksum;          /**< Simple checksum of all the on-disk image bits. */
 } BS3HIGHDLLENTRY;
 /** Magic value for BS3HIGHDLLENTRY. */
 #define BS3HIGHDLLENTRY_MAGIC           "HighDLL"
@@ -123,6 +124,26 @@ typedef struct BS3HIGHDLLEXPORTENTRY
     uint16_t    offName;            /**< The string table offset. */
 } BS3HIGHDLLEXPORTENTRY;
 
+
+/** Initial value for Bs3CalcChecksum. */
+#define BS3_CALC_CHECKSUM_INITIAL_VALUE 1
+
+/**
+ * Calculates an Adler-32 checksum.
+ */
+DECLINLINE(uint32_t) Bs3CalcChecksum(uint32_t uChecksum, uint8_t const RT_FAR *pbSrc, size_t cbSrc)
+{
+    uint32_t uA = RT_LO_U16(uChecksum);
+    uint32_t uB = RT_HI_U16(uChecksum);
+
+    while (cbSrc-- > 0)
+    {
+        uA = (uA + *pbSrc++) % 0xfff1;
+        uB = (uA + uB)       % 0xfff1;
+    }
+
+    return RT_MAKE_U32(uA, uB);
+}
 
 #endif /* !BS3KIT_INCLUDED_bs3kit_linker_h */
 
