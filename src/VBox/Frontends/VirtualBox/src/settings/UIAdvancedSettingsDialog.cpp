@@ -613,7 +613,7 @@ UIAdvancedSettingsDialog::UIAdvancedSettingsDialog(QWidget *pParent,
     , m_fSerializationIsInProgress(false)
     , m_fSerializationClean(false)
     , m_fClosed(false)
-    , m_iPageId(0)
+    , m_iPageId(MachineSettingsPageType_Invalid)
     , m_pStatusBar(0)
     , m_pProcessBar(0)
     , m_pWarningPane(0)
@@ -668,8 +668,13 @@ void UIAdvancedSettingsDialog::sltCategoryChanged(int cId)
     m_pScrollViewport->layout()->getContentsMargins(&iL, &iT, &iR, &iB);
     iPosition -= iT;
     /* And actual page position according to parent: */
-    const QPoint pnt = m_frames.value(m_iPageId)->pos();
-    iPosition += pnt.y();
+    UISettingsPageFrame *pFrame = m_frames.value(m_iPageId, 0);
+    AssertPtr(pFrame);
+    if (pFrame)
+    {
+        const QPoint pnt = pFrame->pos();
+        iPosition += pnt.y();
+    }
     /* Make sure corresponding page is visible: */
     m_pScrollArea->requestVerticalScrollBarPosition(iPosition);
 
@@ -948,6 +953,10 @@ void UIAdvancedSettingsDialog::addItem(const QString &strBigIcon,
                                        UISettingsPage *pSettingsPage /* = 0 */,
                                        int iParentId /* = -1 */)
 {
+    /* Init m_iPageId if we haven't yet: */
+    if (m_iPageId == MachineSettingsPageType_Invalid)
+        m_iPageId = cId;
+
     /* Add new selector item: */
     if (m_pSelector->addItem(strBigIcon, strMediumIcon, strSmallIcon,
                              cId, strLink, pSettingsPage, iParentId))
