@@ -215,9 +215,9 @@ UICommon::UICommon(UIType enmType)
     , m_fSettingsPwSet(false)
     , m_fWrappersValid(false)
     , m_fVBoxSVCAvailable(true)
-    , m_pGuestOSTypeManager(new UIGuestOSTypeManager)
     , m_pThreadPool(0)
     , m_pThreadPoolCloud(0)
+    , m_pGuestOSTypeManager(0)
     , m_pMediumEnumerator(0)
 {
     /* Assign instance: */
@@ -226,7 +226,6 @@ UICommon::UICommon(UIType enmType)
 
 UICommon::~UICommon()
 {
-    delete m_pGuestOSTypeManager;
     /* Unassign instance: */
     s_pInstance = 0;
 }
@@ -266,6 +265,9 @@ void UICommon::prepare()
 
     /* Load translation based on the current locale: */
     UITranslator::loadLanguage();
+
+    /* Prepare guest OS type manager before COM stuff: */
+    m_pGuestOSTypeManager = new UIGuestOSTypeManager;
 
     HRESULT rc = COMBase::InitializeCOM(true);
     if (FAILED(rc))
@@ -813,6 +815,10 @@ void UICommon::cleanup()
     m_pThreadPool = 0;
     delete m_pThreadPoolCloud;
     m_pThreadPoolCloud = 0;
+
+    /* Cleanup guest OS type manager before COM stuff: */
+    delete m_pGuestOSTypeManager;
+    m_pGuestOSTypeManager = 0;
 
     /* Starting COM cleanup: */
     m_comCleanupProtectionToken.lockForWrite();
@@ -1392,6 +1398,23 @@ void UICommon::notifyCloudMachineRegistered(const QString &strProviderShortName,
                                             const CCloudMachine &comMachine)
 {
     emit sigCloudMachineRegistered(strProviderShortName, strProfileName, comMachine);
+}
+
+const UIGuestOSTypeManager &UICommon::guestOSTypeManager()
+{
+    /* Handle exceptional and undesired case!
+     * This object is created and destroyed within own timeframe.
+     * If pointer isn't yet initialized or already cleaned up,
+     * something is definitely wrong. */
+    AssertPtr(m_pGuestOSTypeManager);
+    if (!m_pGuestOSTypeManager)
+    {
+        m_pGuestOSTypeManager = new UIGuestOSTypeManager;
+        m_pGuestOSTypeManager->reCacheGuestOSTypes(m_comVBox.GetGuestOSTypes());
+    }
+
+    /* Return an object instance: */
+    return *m_pGuestOSTypeManager;
 }
 
 void UICommon::enumerateMedia(const CMediumVector &comMedia /* = CMediumVector() */)
@@ -2508,9 +2531,9 @@ quint64 UICommon::requiredVideoMemory(const QString &strGuestOSTypeId, int cMoni
 
 KGraphicsControllerType UICommon::getRecommendedGraphicsController(const QString &strGuestOSTypeId) const
 {
-    if (!m_pGuestOSTypeManager)
-        return KGraphicsControllerType_Null;
-    return m_pGuestOSTypeManager->getRecommendedGraphicsController(strGuestOSTypeId);
+    return   m_pGuestOSTypeManager
+           ? m_pGuestOSTypeManager->getRecommendedGraphicsController(strGuestOSTypeId)
+           : KGraphicsControllerType_Null;
 }
 
 /* static */
@@ -2946,9 +2969,10 @@ void UICommon::comWrappersReinit()
     m_comHost = virtualBox().GetHost();
     m_strHomeFolder = virtualBox().GetHomeFolder();
 
-    /* Re-initialize guest OS Type database: */
+    /* Re-initialize guest OS type database: */
     if (m_pGuestOSTypeManager)
         m_pGuestOSTypeManager->reCacheGuestOSTypes(m_comVBox.GetGuestOSTypes());
+
     /* Mark wrappers valid: */
     m_fWrappersValid = true;
 }
