@@ -1410,7 +1410,7 @@ const UIGuestOSTypeManager &UICommon::guestOSTypeManager()
     if (!m_pGuestOSTypeManager)
     {
         m_pGuestOSTypeManager = new UIGuestOSTypeManager;
-        m_pGuestOSTypeManager->reCacheGuestOSTypes(m_comVBox.GetGuestOSTypes());
+        m_pGuestOSTypeManager->reCacheGuestOSTypes();
     }
 
     /* Return an object instance: */
@@ -2971,7 +2971,7 @@ void UICommon::comWrappersReinit()
 
     /* Re-initialize guest OS type database: */
     if (m_pGuestOSTypeManager)
-        m_pGuestOSTypeManager->reCacheGuestOSTypes(m_comVBox.GetGuestOSTypes());
+        m_pGuestOSTypeManager->reCacheGuestOSTypes();
 
     /* Mark wrappers valid: */
     m_fWrappersValid = true;

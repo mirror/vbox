@@ -108,7 +108,7 @@ public:
     UIGuestOSTypeManager(const UIGuestOSTypeManager &other) = delete;
 
     /** Re-create the guest OS type database. */
-    void reCacheGuestOSTypes(const CGuestOSTypeVector &guestOSTypes);
+    void reCacheGuestOSTypes();
 
     /** Returns a list of all families (id and description). */
     UIGuestOSFamilyInfo getFamilies(KPlatformArchitecture enmArch = KPlatformArchitecture_None) const;
