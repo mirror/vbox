@@ -295,10 +295,16 @@ ifdef VBOX_WITH_BS3KIT
 
  MISCBINS += bs3-cpu-basic-3-high
  bs3-cpu-basic-3-high_TEMPLATE = VBoxBS3KitHighImg
- bs3-cpu-basic-3-high_INCS     = .
+ bs3-cpu-basic-3-high_INCS     = . $(bs3-cpu-basic-3-high_0_OUTDIR)
  bs3-cpu-basic-3-high_SOURCES  = \
  	bs3kit/bs3-first-high-image.asm \
  	bs3-cpu-basic-3-high-asm.asm
+ bs3-cpu-basic-3-high_INTERMEDIATES = $(bs3-cpu-basic-3-high_0_OUTDIR)/bs3-cpu-basic-3-high-lea64.inc
+ bs3-cpu-basic-3-high_CLEANS        = $(bs3-cpu-basic-3-high_0_OUTDIR)/bs3-cpu-basic-3-high-lea64.inc
+ $$(bs3-cpu-basic-3-high_0_OUTDIR)/bs3-cpu-basic-3-high-lea64.inc: \
+ 		$(PATH_SUB_CURRENT)/bs3-cpu-basic-3-high-lea64.py | $$(dir $$@)
+	$(call MSG_GENERATE,bs3-cpu-basic-3-high,$@)
+	$(QUIET)$(REDIRECT) -0 /dev/null -- $(TIME) $(VBOX_BLD_PYTHON) "$<" "$@"
 
  #
  # CPU weird stuff #1.
