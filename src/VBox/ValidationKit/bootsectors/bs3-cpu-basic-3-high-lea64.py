@@ -180,7 +180,6 @@ def generateDispSib(iValue, iMod, iBase):
     """ Generates the displacement part of the LEA instruction for the SIB variant. """
     if iMod == 1: #X86_MOD_MEM1:
         iDisp = random.randint(-128, 127);
-        iValue += iDisp;
         return iValue + iDisp, ['db      %d' % (iDisp,),];
     if iMod == 2 or (iMod == 0 and (iBase & 7) == 5):
         iDisp = random.randint(-0x80000000, 0x7fffffff);
@@ -229,7 +228,10 @@ def generateLea64(oOut): # pylint: disable=too-many-statements
                             iBase_Value = g_kaiRegValues[iBase];
 
                         for iIndex in range(16):
-                            iIndex_Value = g_kaiRegValues[iIndex];
+                            if iIndex == 4:
+                                iIndex_Value = 0;
+                            else:
+                                iIndex_Value = g_kaiRegValues[iIndex];
 
                             for cShift in range(4):
                                 fLoadRestoreRsp = iBase == 4 or iDstReg == 4;
@@ -388,7 +390,7 @@ def generateLea64(oOut): # pylint: disable=too-many-statements
                                     % (x86RexW3(iMemReg, 0, iDstReg), x86ModRmMake(iMod, iDstReg, iMemReg),));
                     iValue, sValue, asAdd = generateDispModRm(iMemReg_Value, iMod, iMemReg, 1);
                     asLines.extend(asAdd);
-                    iValue &= 0xffffffffffffffff;
+                    iValue &= 0x00000000ffffffff;
 
                     # cmp iDstReg, iValue + jz + int3
                     asLines.extend(generateCompareAndCheckModRm(sDstReg_Name, iValue, sValue, fLoadRestoreRsp));
