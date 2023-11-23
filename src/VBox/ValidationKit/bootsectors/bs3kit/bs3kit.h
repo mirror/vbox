@@ -500,7 +500,41 @@ RT_C_DECLS_BEGIN
 
 #define BS3_SEL_DATA16              0x2900 /**< The BS3DATA16/BS3KIT_GRPNM_DATA16 selector. */
 
-#define BS3_SEL_FREE_PART4          0x2908 /**< Free selector space - part \#4. */
+#define BS3_SEL_HIGH16_CS_00        0x2908 /**< 16-bit CS for high DLLs. */
+#define BS3_SEL_HIGH16_CS_01        0x2910 /**< 16-bit CS for high DLLs. */
+#define BS3_SEL_HIGH16_CS_02        0x2918 /**< 16-bit CS for high DLLs. */
+#define BS3_SEL_HIGH16_CS_03        0x2920 /**< 16-bit CS for high DLLs. */
+#define BS3_SEL_HIGH16_CS_04        0x2928 /**< 16-bit CS for high DLLs. */
+#define BS3_SEL_HIGH16_CS_05        0x2930 /**< 16-bit CS for high DLLs. */
+#define BS3_SEL_HIGH16_CS_06        0x2938 /**< 16-bit CS for high DLLs. */
+#define BS3_SEL_HIGH16_CS_07        0x2940 /**< 16-bit CS for high DLLs. */
+#define BS3_SEL_HIGH16_CS_08        0x2948 /**< 16-bit CS for high DLLs. */
+#define BS3_SEL_HIGH16_CS_09        0x2950 /**< 16-bit CS for high DLLs. */
+#define BS3_SEL_HIGH16_CS_0a        0x2958 /**< 16-bit CS for high DLLs. */
+#define BS3_SEL_HIGH16_CS_0b        0x2960 /**< 16-bit CS for high DLLs. */
+#define BS3_SEL_HIGH16_CS_0c        0x2968 /**< 16-bit CS for high DLLs. */
+#define BS3_SEL_HIGH16_CS_0d        0x2970 /**< 16-bit CS for high DLLs. */
+#define BS3_SEL_HIGH16_CS_0e        0x2978 /**< 16-bit CS for high DLLs. */
+#define BS3_SEL_HIGH16_CS_0f        0x2980 /**< 16-bit CS for high DLLs. */
+#define BS3_SEL_HIGH16_CS_10        0x2988 /**< 16-bit CS for high DLLs. */
+#define BS3_SEL_HIGH16_CS_11        0x2990 /**< 16-bit CS for high DLLs. */
+#define BS3_SEL_HIGH16_CS_12        0x2998 /**< 16-bit CS for high DLLs. */
+#define BS3_SEL_HIGH16_CS_13        0x29a0 /**< 16-bit CS for high DLLs. */
+#define BS3_SEL_HIGH16_CS_14        0x29a8 /**< 16-bit CS for high DLLs. */
+#define BS3_SEL_HIGH16_CS_15        0x29b0 /**< 16-bit CS for high DLLs. */
+#define BS3_SEL_HIGH16_CS_16        0x29b8 /**< 16-bit CS for high DLLs. */
+#define BS3_SEL_HIGH16_CS_17        0x29c0 /**< 16-bit CS for high DLLs. */
+
+#define BS3_SEL_HIGH16_DS_00        0x29c8 /**< 16-bit DS for high DLLs. */
+#define BS3_SEL_HIGH16_DS_01        0x29d0 /**< 16-bit DS for high DLLs. */
+#define BS3_SEL_HIGH16_DS_02        0x29d8 /**< 16-bit DS for high DLLs. */
+#define BS3_SEL_HIGH16_DS_03        0x29e0 /**< 16-bit DS for high DLLs. */
+#define BS3_SEL_HIGH16_DS_04        0x29e8 /**< 16-bit DS for high DLLs. */
+#define BS3_SEL_HIGH16_DS_05        0x29f0 /**< 16-bit DS for high DLLs. */
+#define BS3_SEL_HIGH16_DS_06        0x29f8 /**< 16-bit DS for high DLLs. */
+#define BS3_SEL_HIGH16_DS_07        0x2a00 /**< 16-bit DS for high DLLs. */
+
+#define BS3_SEL_FREE_PART4          0x2a08 /**< Free selector space - part \#4. */
 #define BS3_SEL_FREE_PART4_LAST     0x2f98 /**< Free selector space - part \#4, last entry. */
 
 #define BS3_SEL_PRE_TEST_PAGE_08    0x2fa0 /**< Selector located 8 selectors before the test page. */
@@ -1054,8 +1088,13 @@ extern X86DESC BS3_FAR_DATA Bs3GdteFreePart3[223];
 /** The BS3DATA16/BS3KIT_GRPNM_DATA16 GDT entry. */
 extern X86DESC BS3_FAR_DATA Bs3Gdte_DATA16;
 
+/** 16-bit CSes for high DLLs. */
+extern X86DESC BS3_FAR_DATA Bs3GdteHighDllCSes[24];
+/** 16-bit DSes for high DLLs. */
+extern X86DESC BS3_FAR_DATA Bs3GdteHighDllDSes[8];
+
 /** Free GDTes, part \#4. */
-extern X86DESC BS3_FAR_DATA Bs3GdteFreePart4[211];
+extern X86DESC BS3_FAR_DATA Bs3GdteFreePart4[179];
 
 extern X86DESC BS3_FAR_DATA Bs3GdtePreTestPage08; /**< GDT entry 8 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_08 */
 extern X86DESC BS3_FAR_DATA Bs3GdtePreTestPage07; /**< GDT entry 7 selectors prior to the test page, testcase resource. @see BS3_SEL_PRE_TEST_PAGE_07 */

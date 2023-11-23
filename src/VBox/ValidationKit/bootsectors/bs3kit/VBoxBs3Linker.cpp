@@ -71,6 +71,8 @@ typedef struct BS3LNKINPUT
 } BS3LNKINPUT;
 
 
+#define BS3LNK_MAX_SEGMENTS 24
+
 typedef struct BS3LNKIMPORTSTATE
 {
     FILE           *pOutput;
@@ -78,6 +80,10 @@ typedef struct BS3LNKIMPORTSTATE
     unsigned        cImports;
     unsigned        cExports;
     size_t          cbStrings;
+    unsigned        cSegments;
+    uint8_t        *pbBits;
+    size_t          cbBits;
+    BS3HIGHDLLSEGMENT aSegments[BS3LNK_MAX_SEGMENTS];
 } BS3LNKIMPORTSTATE;
 
 typedef struct BS3LNKIMPORTNAME
@@ -89,8 +95,72 @@ typedef struct BS3LNKIMPORTNAME
 } BS3LNKIMPORTNAME;
 
 
+
 /**
- * @callback_method_impl{FNRTLDRENUMSYMS}
+ * @callback_method_impl{FNRTLDRENUMSEGS,
+ *  Construct a BS3LNKIMPORTSTATE::aSegments entry and adds it to the assembly.}
+ */
+static DECLCALLBACK(int) GenerateHighDllAsmOutputSegmentTable(RTLDRMOD hLdrMod, PCRTLDRSEG pSeg, void *pvUser)
+{
+    BS3LNKIMPORTSTATE * const pState = (BS3LNKIMPORTSTATE *)pvUser;
+    RT_NOREF(hLdrMod);
+
+    uint32_t const iSegment = pState->cSegments;
+    AssertReturn(iSegment < RT_ELEMENTS(pState->aSegments), VERR_OUT_OF_RANGE);
+    pState->cSegments++;
+
+    /* Address and size. */
+    if (pSeg->cbMapped != NIL_RTLDRADDR)
+    {
+        pState->aSegments[iSegment].uAddr = (uint32_t)(pSeg->RVA + BS3HIGHDLL_LOAD_ADDRESS);
+        pState->aSegments[iSegment].cb    = (uint32_t)pSeg->cbMapped;
+    }
+    else
+    {
+        pState->aSegments[iSegment].uAddr = UINT32_MAX;
+        pState->aSegments[iSegment].cb    = 0;
+    }
+
+    /* The selector is just the segment index at this point. We'll resolve it during linking. */
+    pState->aSegments[iSegment].idxSel = (uint16_t)iSegment;
+
+    /* Determine the flags. */
+    pState->aSegments[iSegment].fFlags = 0;
+    if (pSeg->fProt & RTMEM_PROT_EXEC)
+        pState->aSegments[iSegment].fFlags |= BS3HIGHDLLSEGMENT_F_EXEC;
+    if (pSeg->fFlags & RTLDRSEG_FLAG_16BIT)
+        pState->aSegments[iSegment].fFlags |= BS3HIGHDLLSEGMENT_F_16BIT;
+    else if (pSeg->RVA == NIL_RTLDRADDR)
+    {
+        /* Have to check the eyecatcher string to see if it's a 32-bit or 64-bit segment. */
+        Assert(pSeg->RVA + 16 < pState->cbBits);
+        char * const pchSeg    = (char *)&pState->pbBits[pSeg->RVA];
+        char const   chSaved32 = pchSeg[32];
+        pchSeg[32] = '\0';
+        if (RTStrStr(pchSeg, "32"))
+            pState->aSegments[iSegment].fFlags |= BS3HIGHDLLSEGMENT_F_32BIT;
+        else if (RTStrStr(pchSeg, "64"))
+            pState->aSegments[iSegment].fFlags |= BS3HIGHDLLSEGMENT_F_64BIT;
+        pchSeg[32] = chSaved32;
+    }
+
+    // BS3HIGHDLLSEGMENT
+    fprintf(pState->pOutput,
+            "        dd      %#010x ; %u - %.*s\n"
+            "        dd      %#010x\n"
+            "        dw      %#x\n"
+            "        dw      %#x\n",
+            pState->aSegments[iSegment].uAddr, iSegment, pSeg->cchName, pSeg->pszName,
+            pState->aSegments[iSegment].cb,
+            pState->aSegments[iSegment].idxSel,
+            pState->aSegments[iSegment].fFlags);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNRTLDRENUMSYMS, Outputs an export table entry.}
  */
 static DECLCALLBACK(int) GenerateHighDllAsmOutputExportTable(RTLDRMOD hLdrMod, const char *pszSymbol, unsigned uSymbol,
                                                              RTLDRADDR Value, void *pvUser)
@@ -99,19 +169,52 @@ static DECLCALLBACK(int) GenerateHighDllAsmOutputExportTable(RTLDRMOD hLdrMod, c
     if (!pszSymbol || !*pszSymbol)
         return RTMsgErrorRc(VERR_LDR_BAD_FIXUP, "All exports must be by name. uSymbol=%#x Value=%RX64", uSymbol, (uint64_t)Value);
 
-    // BS3HIGHDLLEXPORTENTRY
+    /* Translate it to segment+offset. We popuplate the table with indexes
+       here, later we'll replace them with BS3Kit selector values once
+       these are handed out during the linking phase. */
+    uint32_t  iSeg   = UINT32_MAX;
+    RTLDRADDR offSeg = NIL_RTLDRADDR;
+    int rc = RTLdrRvaToSegOffset(hLdrMod, Value - BS3HIGHDLL_LOAD_ADDRESS, &iSeg, &offSeg);
+    if (RT_SUCCESS(rc))
+    {
+        if (iSeg >= pState->cSegments || offSeg >= pState->aSegments[iSeg].cb)
+            return RTMsgErrorRc(VERR_ADDRESS_TOO_BIG, "Bogus segment + offset translation of '%s' at %#RX64: %x:%RX64",
+                                pszSymbol, (uint64_t)Value, iSeg, (uint64_t)offSeg);
+    }
+    else
+        return RTMsgErrorRc(rc, "Failed to translate '%s' at %#RX64 into segment + offset: %Rrc", pszSymbol, (uint64_t)Value);
 
-    fprintf(pState->pOutput,
-            "BS3_GLOBAL_DATA g_pfn%s, 8\n"
-            "        dd      0\n"
-            "        dd      0\n"
-            "BS3_GLOBAL_DATA g_fpfn48%s, 6\n"
-            "        dd      0\n"
-            "        dw      0\n"
-            "        dw      %#08x\n",
-            pszSymbol + (*pszSymbol == '_'),
-            pszSymbol + (*pszSymbol == '_'),
-            (unsigned)pState->cbStrings);
+    // BS3HIGHDLLEXPORTENTRY
+    const char *pszCSymbol = *pszSymbol == '_' ? &pszSymbol[1] : pszSymbol;
+    if (pState->aSegments[iSeg].fFlags & BS3HIGHDLLSEGMENT_F_EXEC)
+        fprintf(pState->pOutput,
+                "BS3_GLOBAL_DATA g_pfn%s, 8\n"
+                "        dd      0\n"
+                "        dd      0\n"
+                "BS3_GLOBAL_DATA g_fpfn48%s, 6\n"
+                "        dd      %#010x\n"
+                "        dw      %#06x\n"
+                "        dw      %#08x\n",
+                pszCSymbol,
+                pszCSymbol,
+                (uint32_t)offSeg,
+                (uint16_t)iSeg,
+                (unsigned)pState->cbStrings);
+    else
+        fprintf(pState->pOutput,
+                "BS3_GLOBAL_DATA g_p%s, 8\n"
+                "        dd      0\n"
+                "        dd      0\n"
+                "BS3_GLOBAL_DATA g_fp48%s, 6\n"
+                "        dd      %#010x\n"
+                "        dw      %#06x\n"
+                "        dw      %#08x\n",
+                pszCSymbol,
+                pszCSymbol,
+                (uint32_t)offSeg,
+                (uint16_t)iSeg,
+                (unsigned)pState->cbStrings);
+
     pState->cbStrings += strlen(pszSymbol) + 1;
     pState->cExports  += 1;
 
@@ -121,7 +224,7 @@ static DECLCALLBACK(int) GenerateHighDllAsmOutputExportTable(RTLDRMOD hLdrMod, c
 
 
 /**
- * @callback_method_impl{FNRTSTRSPACECALLBACK}
+ * @callback_method_impl{FNRTSTRSPACECALLBACK, Outputs an import table entry.}
  */
 static DECLCALLBACK(int) GenerateHighDllAsmOutputImportTable(PRTSTRSPACECORE pStr, void *pvUser)
 {
@@ -132,15 +235,16 @@ static DECLCALLBACK(int) GenerateHighDllAsmOutputImportTable(PRTSTRSPACECORE pSt
     fprintf(pOutput,
             "        dw      %#06x\n"
             "        dw      seg %s\n"
+            "        dd      %s\n"
             "        dd      %s wrt BS3FLAT\n"
-            , (unsigned)pName->offString, pName->szName, pName->szName);
+            , (unsigned)pName->offString, pName->szName, pName->szName, pName->szName);
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * @callback_method_impl{FNRTLDRENUMSYMS}
+ * @callback_method_impl{FNRTLDRENUMSYMS, Outputs export name string.}
  */
 static DECLCALLBACK(int) GenerateHighDllAsmOutputExportStrings(RTLDRMOD hLdrMod, const char *pszSymbol, unsigned uSymbol,
                                                                RTLDRADDR Value, void *pvUser)
@@ -158,7 +262,7 @@ static DECLCALLBACK(int) GenerateHighDllAsmOutputExportStrings(RTLDRMOD hLdrMod,
 
 
 /**
- * @callback_method_impl{FNRTSTRSPACECALLBACK}
+ * @callback_method_impl{FNRTSTRSPACECALLBACK, Outputs import name string.}
  */
 static DECLCALLBACK(int) GenerateHighDllAsmOutputImportStrings(PRTSTRSPACECORE pStr, void *pvUser)
 {
@@ -174,7 +278,10 @@ static DECLCALLBACK(int) GenerateHighDllAsmOutputImportStrings(PRTSTRSPACECORE p
 
 
 /**
- * @callback_method_impl{FNRTLDRIMPORT}
+ * @callback_method_impl{FNRTLDRIMPORT, Adds import to the import strings.}
+ *
+ * Since LX doesn't have a single import table as such, we collect imported in a
+ * string space while doing RTLdrGetBits.
  */
 static DECLCALLBACK(int) GenerateHighDllAsmImportCallback(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol,
                                                           unsigned uSymbol, PRTLDRADDR pValue, void *pvUser)
@@ -203,6 +310,24 @@ static DECLCALLBACK(int) GenerateHighDllAsmImportCallback(RTLDRMOD hLdrMod, cons
 }
 
 
+/**
+ * @callback_method_impl{FNRTLDRENUMSEGS, For counting segments.}
+ */
+static DECLCALLBACK(int) GenerateHighDllAsmCountSegments(RTLDRMOD hLdrMod, PCRTLDRSEG pSeg, void *pvUser)
+{
+    RT_NOREF(hLdrMod, pSeg);
+    *(uint32_t *)pvUser += 1;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Main worker function for --generate-high-dll-import-table.
+ *
+ * @returns Exit status.
+ * @param   pOutput         The assembly output file.
+ * @param   pszGenAsmFor    The name of the DLL to generate info for.
+ */
 static RTEXITCODE GenerateHighDllImportTableAssembly(FILE *pOutput, const char *pszGenAsmFor)
 {
     RTERRINFOSTATIC ErrInfo;
@@ -215,96 +340,118 @@ static RTEXITCODE GenerateHighDllImportTableAssembly(FILE *pOutput, const char *
     size_t cbImage = RTLdrSize(hLdrMod);
     if (cbImage != ~(size_t)0)
     {
-        void *pbBits = (uint8_t *)RTMemAlloc(cbImage);
-        if (pbBits)
+        uint32_t cSegments = 0;
+        rc = RTLdrEnumSegments(hLdrMod, GenerateHighDllAsmCountSegments, &cSegments);
+        if (RT_SUCCESS(rc) && cSegments >= 1 && cSegments <= BS3LNK_MAX_SEGMENTS)
         {
-            BS3LNKIMPORTSTATE State = { pOutput, NULL, 0, 0, 0 };
-            rc = RTLdrGetBits(hLdrMod, pbBits, BS3HIGHDLL_LOAD_ADDRESS, GenerateHighDllAsmImportCallback, pOutput);
-            if (RT_SUCCESS(rc))
+            uint8_t *pbBits = (uint8_t *)RTMemAlloc(cbImage);
+            if (pbBits)
             {
-                /** @todo move more of this to bs3kit*.h?    */
-                fprintf(pOutput,
-                        ";\n"
-                        "; Automatically generated - DO NOT MODIFY!\n"
-                        ";\n"
-                        "%%include \"bs3kit.mac\"\n"
-                        "\n"
-                        "section BS3HIGHDLLEXPORTS   align=4 CLASS=BS3HIGHDLLCLASS PUBLIC USE32 FLAT\n"
-                        "section BS3HIGHDLLIMPORTS   align=4 CLASS=BS3HIGHDLLCLASS PUBLIC USE32 FLAT\n"
-                        "section BS3HIGHDLLSTRINGS   align=4 CLASS=BS3HIGHDLLCLASS PUBLIC USE32 FLAT\n"
-                        "section BS3HIGHDLLTABLE     align=4 CLASS=BS3HIGHDLLCLASS PUBLIC USE32 FLAT\n"
-                        "section BS3HIGHDLLTABLE_END align=4 CLASS=BS3HIGHDLLCLASS PUBLIC USE32 FLAT\n"
-                        "GROUP BS3HIGHDLLGROUP  BS3HIGHDLLIMPORTS BS3HIGHDLLEXPORTS BS3HIGHDLLSTRINGS BS3HIGHDLLTABLE BS3HIGHDLLTABLE_END\n"
-                        "\n");
-
-                /* Populate the string table with imports. */
-                const char *pszFilename = RTPathFilename(pszGenAsmFor);
-                fprintf(pOutput,
-                        "section BS3HIGHDLLSTRINGS\n"
-                        "start_strings:\n"
-                        "        db      0\n"
-                        "        db      '%s', 0    ; module name\n"
-                        "        ; imports\n",
-                        pszFilename);
-                State.cbStrings = 1 + strlen(pszFilename) + 1;
-                rc = RTStrSpaceEnumerate(&State.hImportNames, GenerateHighDllAsmOutputImportStrings, &State);
-                AssertRC(rc);
-                fprintf(pOutput, "        ; exports\n");
-
-                /* Populate the string table with exports. */
-                size_t const offExportStrings = State.cbStrings;
-                rc = RTLdrEnumSymbols(hLdrMod, 0, pbBits, BS3HIGHDLL_LOAD_ADDRESS, GenerateHighDllAsmOutputExportStrings, &State);
-                size_t const cbStrings        = State.cbStrings;
-                if (RT_SUCCESS(rc) && cbStrings < _64K)
+                BS3LNKIMPORTSTATE State = { pOutput, NULL, 0, 0, 0, 0, pbBits, cbImage };
+                rc = RTLdrGetBits(hLdrMod, pbBits, BS3HIGHDLL_LOAD_ADDRESS, GenerateHighDllAsmImportCallback, pOutput);
+                if (RT_SUCCESS(rc))
                 {
-                    /* Output the import table. */
+                    /** @todo move more of this to bs3kit*.h?    */
                     fprintf(pOutput,
-                            "section BS3HIGHDLLIMPORTS\n"
-                            "start_imports:\n");
-                    rc = RTStrSpaceEnumerate(&State.hImportNames, GenerateHighDllAsmOutputImportTable, &State);
-                    AssertRC(rc);
-                    fprintf(pOutput, "\n");
+                            ";\n"
+                            "; Automatically generated - DO NOT MODIFY!\n"
+                            ";\n"
+                            "%%include \"bs3kit.mac\"\n"
+                            "\n"
+                            "section BS3HIGHDLLSEGMENTS  align=4 CLASS=BS3HIGHDLLCLASS PUBLIC USE32 FLAT\n"
+                            "section BS3HIGHDLLEXPORTS   align=4 CLASS=BS3HIGHDLLCLASS PUBLIC USE32 FLAT\n"
+                            "section BS3HIGHDLLIMPORTS   align=4 CLASS=BS3HIGHDLLCLASS PUBLIC USE32 FLAT\n"
+                            "section BS3HIGHDLLSTRINGS   align=4 CLASS=BS3HIGHDLLCLASS PUBLIC USE32 FLAT\n"
+                            "section BS3HIGHDLLTABLE     align=4 CLASS=BS3HIGHDLLCLASS PUBLIC USE32 FLAT\n"
+                            "section BS3HIGHDLLTABLE_END align=4 CLASS=BS3HIGHDLLCLASS PUBLIC USE32 FLAT\n"
+                            "GROUP BS3HIGHDLLGROUP  BS3HIGHDLLSEGMENTS BS3HIGHDLLEXPORTS BS3HIGHDLLIMPORTS BS3HIGHDLLSTRINGS BS3HIGHDLLTABLE BS3HIGHDLLTABLE_END\n"
+                            "\n");
 
-                    /* Output the export table (ASSUMES stable enumeration order). */
+                    /* Populate the string table with imports. */
+                    const char *pszFilename = RTPathFilename(pszGenAsmFor);
                     fprintf(pOutput,
-                            "section BS3HIGHDLLEXPORTS\n"
-                            "start_exports:\n");
-                    State.cbStrings = offExportStrings;
-                    rc = RTLdrEnumSymbols(hLdrMod, 0, pbBits, BS3HIGHDLL_LOAD_ADDRESS, GenerateHighDllAsmOutputExportTable, &State);
+                            "section BS3HIGHDLLSTRINGS\n"
+                            "start_strings:\n"
+                            "        db      0\n"
+                            "        db      '%s', 0    ; module name\n"
+                            "        ; imports\n",
+                            pszFilename);
+                    State.cbStrings = 1 + strlen(pszFilename) + 1;
+                    rc = RTStrSpaceEnumerate(&State.hImportNames, GenerateHighDllAsmOutputImportStrings, &State);
                     AssertRC(rc);
-                    fprintf(pOutput, "\n");
+                    fprintf(pOutput, "        ; exports\n");
 
-                    /* Generate the table entry. */
-                    fprintf(pOutput,
-                            "section BS3HIGHDLLTABLE\n"
-                            "start_entry: ; struct BS3HIGHDLLENTRY \n"
-                            "        db      '%s', 0    ; achMagic[8]\n"
-                            "        dd      0               ; uLoadAddress\n"
-                            "        dd      %#08zx        ; cbLoaded\n"
-                            "        dd      0               ; offInImage\n"
-                            "        dd      %#08zx        ; cbInImage\n"
-                            "        dd      %#04x            ; cImports\n"
-                            "        dd      start_imports - start_entry\n"
-                            "        dd      %#04x            ; cExports\n"
-                            "        dd      start_exports - start_entry\n"
-                            "        dd      %#05x           ; cbStrings\n"
-                            "        dd      start_strings - start_entry\n"
-                            "        dd      1               ; offDllName\n"
-                            "        dd      0               ; uChecksum\n"
-                            , BS3HIGHDLLENTRY_MAGIC, cbImage, cbImage, State.cImports, State.cExports, (unsigned)cbStrings);
-                    rcExit = RTEXITCODE_SUCCESS;
+                    /* Populate the string table with exports. */
+                    size_t const offExportStrings = State.cbStrings;
+                    rc = RTLdrEnumSymbols(hLdrMod, 0, pbBits, BS3HIGHDLL_LOAD_ADDRESS, GenerateHighDllAsmOutputExportStrings, &State);
+                    size_t const cbStrings        = State.cbStrings;
+                    if (RT_SUCCESS(rc) && cbStrings < _64K)
+                    {
+                        rcExit = RTEXITCODE_SUCCESS;
+
+                        /* Output the import table. */
+                        fprintf(pOutput,
+                                "section BS3HIGHDLLIMPORTS\n"
+                                "start_imports:\n");
+                        rc = RTStrSpaceEnumerate(&State.hImportNames, GenerateHighDllAsmOutputImportTable, &State);
+                        AssertRCStmt(rc, rcExit = RTEXITCODE_FAILURE);
+                        fprintf(pOutput, "\n");
+
+                        /* Output the segment table (before exports, so we get the segment info). */
+                        fprintf(pOutput,
+                                "section BS3HIGHDLLSEGMENTS\n"
+                                "start_segments:\n");
+                        rc = RTLdrEnumSegments(hLdrMod, GenerateHighDllAsmOutputSegmentTable, &State);
+                        AssertRCStmt(rc, rcExit = RTEXITCODE_FAILURE);
+
+                        /* Output the export table (ASSUMES stable enumeration order). */
+                        fprintf(pOutput,
+                                "section BS3HIGHDLLEXPORTS\n"
+                                "start_exports:\n");
+                        State.cbStrings = offExportStrings;
+                        rc = RTLdrEnumSymbols(hLdrMod, 0, pbBits, BS3HIGHDLL_LOAD_ADDRESS, GenerateHighDllAsmOutputExportTable, &State);
+                        AssertRCStmt(rc, rcExit = RTEXITCODE_FAILURE);
+                        fprintf(pOutput, "\n");
+
+                        /* Generate the table entry. */
+                        fprintf(pOutput,
+                                "section BS3HIGHDLLTABLE\n"
+                                "start_entry: ; struct BS3HIGHDLLENTRY\n"
+                                "        db      '%s', 0    ; achMagic[8]\n"
+                                "        dd      0               ; uLoadAddress\n"
+                                "        dd      %#08zx        ; cbLoaded\n"
+                                "        dd      0               ; offInImage\n"
+                                "        dd      %#08zx        ; cbInImage\n"
+                                "        dd      %#04x            ; cImports\n"
+                                "        dd      start_imports  - start_entry\n"
+                                "        dd      %#04x            ; cExports\n"
+                                "        dd      start_exports  - start_entry\n"
+                                "        dd      %#04x            ; cSegments\n"
+                                "        dd      start_segments - start_entry\n"
+                                "        dd      %#05x           ; cbStrings\n"
+                                "        dd      start_strings  - start_entry\n"
+                                "        dd      1               ; offDllName\n"
+                                "        dd      0               ; uChecksum\n"
+                                , BS3HIGHDLLENTRY_MAGIC, cbImage, cbImage,
+                                State.cImports, State.cExports, State.cSegments,
+                                (unsigned)cbStrings);
+                    }
+                    else if (RT_FAILURE(rc))
+                        rcExit = RTMsgErrorExitFailure("RTLdrEnumSymbols failed: %Rrc", rc);
+                    else
+                        rcExit = RTMsgErrorExitFailure("Too many import/export strings: %#x bytes, max 64KiB", cbStrings);
                 }
-                else if (RT_FAILURE(rc))
-                    rcExit = RTMsgErrorExitFailure("RTLdrEnumSymbols failed: %Rrc", rc);
                 else
-                    rcExit = RTMsgErrorExitFailure("Too many import/export strings: %#x bytes, max 64KiB", cbStrings);
+                    rcExit = RTMsgErrorExitFailure("RTLdrGetBits failed: %Rrc", rc);
+                RTMemFree(pbBits);
             }
             else
-                rcExit = RTMsgErrorExitFailure("RTLdrGetBits failed: %Rrc", rc);
-            RTMemFree(pbBits);
+                rcExit = RTMsgErrorExitFailure("Out of memory!");
         }
+        else if (RT_FAILURE(rc))
+            rcExit = RTMsgErrorExitFailure("RTLdrEnumSegment failed: %Rrc", rc);
         else
-            rcExit = RTMsgErrorExitFailure("Out of memory!");
+            rcExit = RTMsgErrorExitFailure("Bogus segment count: %#x (min 1, max 24)\n", cSegments);
     }
     else
         rcExit = RTMsgErrorExitFailure("RTLdrSize failed on '%s'", pszGenAsmFor);
@@ -371,6 +518,8 @@ static DECLCALLBACK(int) ResolveHighDllImportCallback(RTLDRMOD hLdrMod, const ch
     {
         if (strcmp(pszSymbol, &pszzStrings[paImports[i].offName]) == 0)
         {
+            /** @todo the import interface isn't good enough for segmented fixups like LX
+             *        uses. So we need to fix that at some point... */
             *pValue = paImports[i].offFlat;
             return VINF_SUCCESS;
         }
@@ -380,6 +529,9 @@ static DECLCALLBACK(int) ResolveHighDllImportCallback(RTLDRMOD hLdrMod, const ch
 }
 
 
+/**
+ * Main worker for linking a floppy image.
+ */
 static RTEXITCODE DoTheLinking(FILE *pOutput, BS3LNKINPUT *paInputs, unsigned cInputs)
 {
     if (cInputs < 2)
@@ -391,13 +543,16 @@ static RTEXITCODE DoTheLinking(FILE *pOutput, BS3LNKINPUT *paInputs, unsigned cI
      * The first two are binary blobs, i.e. the boot sector and the base image.
      * Any additional files are DLLs and we need to do linking.
      */
-    uint32_t uHiLoadAddr = BS3HIGHDLL_LOAD_ADDRESS;
-    uint32_t off         = 0;
+    uint32_t uHiLoadAddr  = BS3HIGHDLL_LOAD_ADDRESS;
+    uint16_t idxHi16BitCs = 0;
+    uint16_t idxHi16BitDs = 0;
+    uint32_t off          = 0;
     for (unsigned i = 0; i < cInputs; i++)
     {
         paInputs[i].offInImage = off;
         if (i < 2)
         {
+            /* Bootsector or the base image. */
             paInputs[i].cbBits = RT_ALIGN_32(paInputs[i].cbFile, 512);
             paInputs[i].pbBits = (uint8_t *)RTMemAllocZ(paInputs[i].cbBits);
             if (!paInputs[i].pbBits)
@@ -410,6 +565,9 @@ static RTEXITCODE DoTheLinking(FILE *pOutput, BS3LNKINPUT *paInputs, unsigned cI
         }
         else
         {
+            /*
+             * A DLL that will be loaded above 1MB.
+             */
             RTERRINFOSTATIC ErrInfo;
             int rc = RTLdrOpenEx(paInputs[i].pszFile, 0, RTLDRARCH_X86_32, &paInputs[i].hLdrMod, RTErrInfoInitStatic(&ErrInfo));
             if (RT_FAILURE(rc))
@@ -436,10 +594,49 @@ static RTEXITCODE DoTheLinking(FILE *pOutput, BS3LNKINPUT *paInputs, unsigned cI
                 return RTMsgErrorExitFailure("HighDllEntry fields cbLoaded=%#x and/or cbInImage=%#x differs from cbBits=%#x!",
                                              pHighDllEntry->cbLoaded, pHighDllEntry->cbInImage, paInputs[i].cbBits);
 
-            /* Get the fixed up image bits. */
-            rc = RTLdrGetBits(paInputs[i].hLdrMod, paInputs[i].pbBits, uHiLoadAddr, ResolveHighDllImportCallback, pHighDllEntry);
-            if (RT_FAILURE(rc))
-                return RTMsgErrorExitFailure("RTLdrGetBits failed on '%s': %Rrc", paInputs[i].pszFile, rc);
+            /* Update the segment table with actual selectors. */
+            uint32_t const     cSegments  = pHighDllEntry->cSegments;
+            BS3HIGHDLLSEGMENT *paSegments = (BS3HIGHDLLSEGMENT *)((uintptr_t)pHighDllEntry + pHighDllEntry->offSegments);
+            if (cSegments < 1 || cSegments > 32)
+                return RTMsgErrorExitFailure("Bogus segment count for '%s': %u", paInputs[i].pszFile, cSegments);
+            for (unsigned iSeg = 0; iSeg < cSegments; iSeg++)
+            {
+                if (paSegments[iSeg].fFlags & BS3HIGHDLLSEGMENT_F_16BIT)
+                {
+                    if (paSegments[iSeg].fFlags & BS3HIGHDLLSEGMENT_F_EXEC)
+                    {
+                        if (idxHi16BitCs >= BS3_SEL_HIGH16_CS_COUNT)
+                            return RTMsgErrorExitFailure("Out of 16-bit CS selectors ('%s')!", paInputs[i].pszFile);
+                        paSegments[iSeg].idxSel = BS3_SEL_HIGH16_CS_FIRST + idxHi16BitCs * 8;
+                        idxHi16BitCs++;
+                        rc = RTLdrLxSetSegmentSelectors(paInputs[i].hLdrMod, iSeg, paSegments[iSeg].idxSel, BS3_SEL_HIGH32_CS);
+                    }
+                    else
+                    {
+                        if (idxHi16BitDs >= BS3_SEL_HIGH16_DS_COUNT)
+                            return RTMsgErrorExitFailure("Out of 16-bit DS selectors ('%s')!", paInputs[i].pszFile);
+                        paSegments[iSeg].idxSel = BS3_SEL_HIGH16_DS_FIRST + idxHi16BitDs * 8;
+                        idxHi16BitDs++;
+                        rc = RTLdrLxSetSegmentSelectors(paInputs[i].hLdrMod, iSeg, paSegments[iSeg].idxSel, BS3_SEL_HIGH32_DS);
+                    }
+                }
+                else
+                {
+                    if (paSegments[iSeg].fFlags & BS3HIGHDLLSEGMENT_F_32BIT)
+                        paSegments[iSeg].idxSel = paSegments[iSeg].fFlags & BS3HIGHDLLSEGMENT_F_EXEC
+                                                ? BS3_SEL_HIGH32_CS : BS3_SEL_HIGH32_DS;
+                    else if (paSegments[iSeg].fFlags & BS3HIGHDLLSEGMENT_F_64BIT)
+                        paSegments[iSeg].idxSel = paSegments[iSeg].fFlags & BS3HIGHDLLSEGMENT_F_EXEC
+                                                ? BS3_SEL_HIGH64_CS : BS3_SEL_HIGH64_DS;
+                    else
+                        paSegments[iSeg].idxSel = 0;
+                    rc = RTLdrLxSetSegmentSelectors(paInputs[i].hLdrMod, iSeg, 4, paSegments[iSeg].idxSel);
+                }
+                if (RT_FAILURE(rc))
+                    return RTMsgErrorExitFailure("RTLdrLxSetSegmentSelectors failed segment #%u in '%s': %Rrc",
+                                                 iSeg, paInputs[i].pszFile, rc);
+                paSegments[iSeg].uAddr += uHiLoadAddr - BS3HIGHDLL_LOAD_ADDRESS; /* Was RVA + BS3HIGHDLL_LOAD_ADDRESS. */
+            }
 
             /* Update the export addresses. */
             BS3HIGHDLLEXPORTENTRY *paExports   = (BS3HIGHDLLEXPORTENTRY *)((uintptr_t)pHighDllEntry + pHighDllEntry->offExports);
@@ -448,14 +645,31 @@ static RTEXITCODE DoTheLinking(FILE *pOutput, BS3LNKINPUT *paInputs, unsigned cI
             while (iExport-- > 0)
             {
                 const char * const pszSymbol = (const char *)&pszzStrings[paExports[iExport].offName];
-                RTLDRADDR          Value     = 0;
+                uint16_t const     idxSeg    = paExports[iExport].idxSel;
+                if (idxSeg >= cSegments)
+                    return RTMsgErrorExitFailure("Bogus idxSel for '%s' in '%s': %#x(:%#x)",
+                                                 pszSymbol, paInputs[i].pszFile, idxSeg, paExports[iExport].offSeg);
+                RTLDRADDR Value = 0;
                 rc = RTLdrGetSymbolEx(paInputs[i].hLdrMod, paInputs[i].pbBits, uHiLoadAddr, UINT32_MAX, pszSymbol, &Value);
                 if (RT_SUCCESS(rc))
+                {
+                    if (Value != paExports[iExport].offSeg + paSegments[idxSeg].uAddr)
+                        return RTMsgErrorExitFailure("Bogus value for '%s' in '%s': %#RX64, expected %#RX64",
+                                                     pszSymbol, paInputs[i].pszFile, Value,
+                                                     paExports[iExport].offSeg + paSegments[idxSeg].uAddr);
                     paExports[iExport].offFlat = (uint32_t)Value;
+                    paExports[iExport].idxSel = paSegments[idxSeg].idxSel;
+                    if (paSegments[idxSeg].fFlags & (BS3HIGHDLLSEGMENT_F_32BIT | BS3HIGHDLLSEGMENT_F_64BIT))
+                        paExports[iExport].offSeg = (uint32_t)Value; /* 32-bit and 64-bit uses FLAT selectors, so FLAT addresses too. */
+                }
                 else
                     return RTMsgErrorExitFailure("Failed to resolve '%s' in '%s': %Rrc", pszSymbol, paInputs[i].pszFile, rc);
-                /** @todo Do BS3HIGHDLLEXPORTENTRY::offSeg and idxSel. */
             }
+
+            /* Get the fixed up image bits. */
+            rc = RTLdrGetBits(paInputs[i].hLdrMod, paInputs[i].pbBits, uHiLoadAddr, ResolveHighDllImportCallback, pHighDllEntry);
+            if (RT_FAILURE(rc))
+                return RTMsgErrorExitFailure("RTLdrGetBits failed on '%s': %Rrc", paInputs[i].pszFile, rc);
 
             /* Update the DLL entry with the load address and file address: */
             pHighDllEntry->offInImage = off;

@@ -100,11 +100,8 @@ BS3_DECL(void) Bs3InitAll_rm(void)
      * instrunctions and cause trouble on older CPUs.
      */
     Bs3CpuDetect_rm_far();
-Bs3TestPrintf("#1\n");
     Bs3InitMemory_rm_far();
-Bs3TestPrintf("#2\n");
     Bs3InitGdt_rm_far();
-Bs3TestPrintf("#3\n");
 
 #ifdef BS3_INIT_ALL_WITH_HIGH_DLLS
     /*
@@ -113,7 +110,6 @@ Bs3TestPrintf("#3\n");
      */
     Bs3InitHighDlls_rm_far();
 #endif
-Bs3TestPrintf("#4\n");
 
     /*
      * Before we disable all interrupts, try convince the BIOS to stop the

@@ -100,6 +100,8 @@ typedef struct BS3HIGHDLLENTRY
     int32_t     offImports;         /**< Relative address (to entry start) of the import table. */
     uint32_t    cExports;           /**< Number of exports. */
     int32_t     offExports;         /**< Relative address (to entry start) of the export table. */
+    uint32_t    cSegments;          /**< Number of segments. */
+    int32_t     offSegments;        /**< Relative address (to entry start) of the segment table. */
     uint32_t    cbStrings;          /**< Size of the string table in bytes. */
     int32_t     offStrings;         /**< Relative address (to entry start) of the string table. */
     uint32_t    offFilename;        /**< String table offset of the DLL name (sans path, with extension). */
@@ -112,6 +114,7 @@ typedef struct BS3HIGHDLLIMPORTENTRY
 {
     uint16_t    offName;
     uint16_t    uSeg;
+    uint32_t    offSeg;             /**< We'll see... */
     uint32_t    offFlat;
 } BS3HIGHDLLIMPORTENTRY;
 
@@ -123,6 +126,39 @@ typedef struct BS3HIGHDLLEXPORTENTRY
     uint16_t    idxSel;             /**< Segmented address: selector part. */
     uint16_t    offName;            /**< The string table offset. */
 } BS3HIGHDLLEXPORTENTRY;
+
+typedef struct BS3HIGHDLLSEGMENT
+{
+    uint32_t    uAddr;
+    uint32_t    cb;
+    uint16_t    idxSel;
+    uint16_t    fFlags;
+} BS3HIGHDLLSEGMENT;
+#define BS3HIGHDLLSEGMENT_F_EXEC    1
+#define BS3HIGHDLLSEGMENT_F_16BIT   2
+#define BS3HIGHDLLSEGMENT_F_32BIT   4
+#define BS3HIGHDLLSEGMENT_F_64BIT   8
+
+
+/** @name High DLL selector ranges.
+ * @{ */
+#define BS3_SEL_HIGH16_CS_FIRST     0x2908
+#define BS3_SEL_HIGH16_CS_COUNT     0x18
+#define BS3_SEL_HIGH16_DS_FIRST     0x29c8
+#define BS3_SEL_HIGH16_DS_COUNT     0x08
+#define BS3_SEL_HIGH32_CS           0x0118
+#define BS3_SEL_HIGH32_DS           0x0120
+#define BS3_SEL_HIGH64_CS           0x0130
+#define BS3_SEL_HIGH64_DS           0x0138
+#ifdef BS3KIT_INCLUDED_bs3kit_h
+AssertCompile(BS3_SEL_HIGH16_CS_00 == BS3_SEL_HIGH16_CS_FIRST);
+AssertCompile(BS3_SEL_HIGH16_DS_00 == BS3_SEL_HIGH16_DS_FIRST);
+AssertCompile(BS3_SEL_HIGH32_CS    == BS3_SEL_R0_CS32);
+AssertCompile(BS3_SEL_HIGH32_DS    == BS3_SEL_R0_DS32);
+AssertCompile(BS3_SEL_HIGH64_CS    == BS3_SEL_R0_CS64);
+AssertCompile(BS3_SEL_HIGH64_DS    == BS3_SEL_R0_DS64);
+#endif
+/** @} */
 
 
 /** Initial value for Bs3CalcChecksum. */

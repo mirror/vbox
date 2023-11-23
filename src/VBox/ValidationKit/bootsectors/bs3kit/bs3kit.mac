@@ -1702,7 +1702,41 @@ endstruc
 
 %define BS3_SEL_DATA16              2900h ;;< The BS3DATA16/BS3KIT_GRPNM_DATA16 selector.
 
-%define BS3_SEL_FREE_PART4          2908h ;;< Free selector space - part \#4.
+%define BS3_SEL_HIGH16_CS_00        2908h ;;< 16-bit CS for high DLLs.
+%define BS3_SEL_HIGH16_CS_01        2910h ;;< 16-bit CS for high DLLs.
+%define BS3_SEL_HIGH16_CS_02        2918h ;;< 16-bit CS for high DLLs.
+%define BS3_SEL_HIGH16_CS_03        2920h ;;< 16-bit CS for high DLLs.
+%define BS3_SEL_HIGH16_CS_04        2928h ;;< 16-bit CS for high DLLs.
+%define BS3_SEL_HIGH16_CS_05        2930h ;;< 16-bit CS for high DLLs.
+%define BS3_SEL_HIGH16_CS_06        2938h ;;< 16-bit CS for high DLLs.
+%define BS3_SEL_HIGH16_CS_07        2940h ;;< 16-bit CS for high DLLs.
+%define BS3_SEL_HIGH16_CS_08        2948h ;;< 16-bit CS for high DLLs.
+%define BS3_SEL_HIGH16_CS_09        2950h ;;< 16-bit CS for high DLLs.
+%define BS3_SEL_HIGH16_CS_0a        2958h ;;< 16-bit CS for high DLLs.
+%define BS3_SEL_HIGH16_CS_0b        2960h ;;< 16-bit CS for high DLLs.
+%define BS3_SEL_HIGH16_CS_0c        2968h ;;< 16-bit CS for high DLLs.
+%define BS3_SEL_HIGH16_CS_0d        2970h ;;< 16-bit CS for high DLLs.
+%define BS3_SEL_HIGH16_CS_0e        2978h ;;< 16-bit CS for high DLLs.
+%define BS3_SEL_HIGH16_CS_0f        2980h ;;< 16-bit CS for high DLLs.
+%define BS3_SEL_HIGH16_CS_10        2988h ;;< 16-bit CS for high DLLs.
+%define BS3_SEL_HIGH16_CS_11        2990h ;;< 16-bit CS for high DLLs.
+%define BS3_SEL_HIGH16_CS_12        2998h ;;< 16-bit CS for high DLLs.
+%define BS3_SEL_HIGH16_CS_13        29a0h ;;< 16-bit CS for high DLLs.
+%define BS3_SEL_HIGH16_CS_14        29a8h ;;< 16-bit CS for high DLLs.
+%define BS3_SEL_HIGH16_CS_15        29b0h ;;< 16-bit CS for high DLLs.
+%define BS3_SEL_HIGH16_CS_16        29b8h ;;< 16-bit CS for high DLLs.
+%define BS3_SEL_HIGH16_CS_17        29c0h ;;< 16-bit CS for high DLLs.
+
+%define BS3_SEL_HIGH16_DS_00        29c8h ;;< 16-bit DS for high DLLs.
+%define BS3_SEL_HIGH16_DS_01        29d0h ;;< 16-bit DS for high DLLs.
+%define BS3_SEL_HIGH16_DS_02        29d8h ;;< 16-bit DS for high DLLs.
+%define BS3_SEL_HIGH16_DS_03        29e0h ;;< 16-bit DS for high DLLs.
+%define BS3_SEL_HIGH16_DS_04        29e8h ;;< 16-bit DS for high DLLs.
+%define BS3_SEL_HIGH16_DS_05        29f0h ;;< 16-bit DS for high DLLs.
+%define BS3_SEL_HIGH16_DS_06        29f8h ;;< 16-bit DS for high DLLs.
+%define BS3_SEL_HIGH16_DS_07        2a00h ;;< 16-bit DS for high DLLs.
+
+%define BS3_SEL_FREE_PART4          2a08h ;;< Free selector space - part \#4.
 %define BS3_SEL_FREE_PART4_LAST     2f98h ;;< Free selector space - part \#4, last entry.
 
 %define BS3_SEL_PRE_TEST_PAGE_08    2fa0h ;;< Selector located 8 selectors before the test page.
