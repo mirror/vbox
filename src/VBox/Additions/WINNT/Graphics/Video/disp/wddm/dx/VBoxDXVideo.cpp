@@ -274,6 +274,25 @@ static void vboxDXQueryVideoDecodeConfig(PVBOXDX_DEVICE pDevice, VBSVGA3dVideoDe
 }
 
 
+static void vboxDXQueryVideoProcessorEnumInfo(PVBOXDX_DEVICE pDevice, VBSVGA3dVideoProcessorDesc const &desc)
+{
+    void *pvDataOut = 0;
+    uint32_t cbDataOut = 0;
+    vboxDXQueryVideoCapability(pDevice, VBSVGA3D_VIDEO_CAPABILITY_PROCESSOR_ENUM,
+                               &desc, sizeof(desc), &pvDataOut, &cbDataOut);
+    if (pvDataOut)
+    {
+        AssertReturnVoidStmt(cbDataOut >= sizeof(VBSVGA3dProcessorEnumInfo), RTMemFree(pvDataOut));
+
+        VBSVGA3dProcessorEnumInfo *pInfo = (VBSVGA3dProcessorEnumInfo *)pvDataOut;
+        pDevice->VideoDevice.videoProcessorEnum.desc = desc;
+        pDevice->VideoDevice.videoProcessorEnum.info = pInfo->info;
+
+        RTMemFree(pvDataOut);
+    }
+}
+
+
 void vboxDXGetVideoDecoderProfileCount(PVBOXDX_DEVICE pDevice, UINT *pDecodeProfileCount)
 {
     if (!pDevice->VideoDevice.fDecodeProfilesQueried)
@@ -304,9 +323,10 @@ void vboxDXCheckVideoDecoderFormat(PVBOXDX_DEVICE pDevice, GUID const *pDecodePr
         {
             switch (Format)
             {
-                case DXGI_FORMAT_AYUV: *pSupported = s->fAYUV; break;
-                case DXGI_FORMAT_NV12: *pSupported = s->fNV12; break;
-                case DXGI_FORMAT_420_OPAQUE: *pSupported = s->f420_OPAQUE; break;
+                case DXGI_FORMAT_AYUV: *pSupported = RT_BOOL(s->fAYUV); break;
+                case DXGI_FORMAT_NV12: *pSupported = RT_BOOL(s->fNV12); break;
+                case DXGI_FORMAT_420_OPAQUE: *pSupported = RT_BOOL(s->fNV12); break;
+                case DXGI_FORMAT_YUY2: *pSupported = RT_BOOL(s->fYUY2); break;
                 default:  *pSupported = false;
             }
             break;
@@ -370,30 +390,117 @@ void vboxDXGetVideoDecoderConfig(PVBOXDX_DEVICE pDevice, D3D11_1DDI_VIDEO_DECODE
 }
 
 
+HRESULT vboxDXCreateVideoProcessorEnum(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSORENUM pVideoProcessorEnum,
+                                       D3D11_1DDI_VIDEO_PROCESSOR_CONTENT_DESC const *pDesc)
+{
+    RT_NOREF(pDevice);
+
+    pVideoProcessorEnum->svga.desc.InputFrameFormat = pDesc->InputFrameFormat;
+    pVideoProcessorEnum->svga.desc.InputFrameRate.numerator = pDesc->InputFrameRate.Numerator;
+    pVideoProcessorEnum->svga.desc.InputFrameRate.denominator = pDesc->InputFrameRate.Denominator;
+    pVideoProcessorEnum->svga.desc.InputWidth       = pDesc->InputWidth;
+    pVideoProcessorEnum->svga.desc.InputHeight      = pDesc->InputHeight;
+    pVideoProcessorEnum->svga.desc.OutputFrameRate.numerator = pDesc->OutputFrameRate.Numerator;
+    pVideoProcessorEnum->svga.desc.OutputFrameRate.denominator = pDesc->OutputFrameRate.Denominator;
+    pVideoProcessorEnum->svga.desc.OutputWidth      = pDesc->OutputWidth;
+    pVideoProcessorEnum->svga.desc.OutputHeight     = pDesc->OutputHeight;
+    pVideoProcessorEnum->svga.desc.Usage            = pDesc->Usage;
+    return S_OK;
+}
+
+
+void vboxDXCheckVideoProcessorFormat(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSORENUM pVideoProcessorEnum,
+                                     DXGI_FORMAT Format, UINT *pSupported)
+{
+    if (memcmp(&pVideoProcessorEnum->svga.desc,
+               &pDevice->VideoDevice.videoProcessorEnum.desc, sizeof(pVideoProcessorEnum->svga.desc)) != 0)
+        vboxDXQueryVideoProcessorEnumInfo(pDevice, pVideoProcessorEnum->svga.desc);
+
+    AssertCompile(D3D11_1DDI_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT == VBSVGA3D_VP_FORMAT_SUPPORT_INPUT);
+    AssertCompile(D3D11_1DDI_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT == VBSVGA3D_VP_FORMAT_SUPPORT_OUTPUT);
+    VBSVGA3dVideoProcessorEnumInfo const *pInfo = &pDevice->VideoDevice.videoProcessorEnum.info;
+    switch (Format)
+    {
+        case DXGI_FORMAT_R8_UNORM:            *pSupported = pInfo->fR8_UNORM; break;
+        case DXGI_FORMAT_R16_UNORM:           *pSupported = pInfo->fR16_UNORM; break;
+        case DXGI_FORMAT_NV12:                *pSupported = pInfo->fNV12; break;
+        case DXGI_FORMAT_YUY2:                *pSupported = pInfo->fYUY2; break;
+        case DXGI_FORMAT_R16G16B16A16_FLOAT:  *pSupported = pInfo->fR16G16B16A16_FLOAT; break;
+        case DXGI_FORMAT_B8G8R8X8_UNORM:      *pSupported = pInfo->fB8G8R8X8_UNORM; break;
+        case DXGI_FORMAT_B8G8R8A8_UNORM:      *pSupported = pInfo->fB8G8R8A8_UNORM; break;
+        case DXGI_FORMAT_R8G8B8A8_UNORM:      *pSupported = pInfo->fR8G8B8A8_UNORM; break;
+        case DXGI_FORMAT_R10G10B10A2_UNORM:   *pSupported = pInfo->fR10G10B10A2_UNORM; break;
+        case DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM: *pSupported = pInfo->fR10G10B10_XR_BIAS_A2_UNORM; break;
+        case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: *pSupported = pInfo->fR8G8B8A8_UNORM_SRGB; break;
+        case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB: *pSupported = pInfo->fB8G8R8A8_UNORM_SRGB; break;
+        default:  *pSupported = 0;
+    }
+}
+
+
+void vboxDXGetVideoProcessorCaps(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSORENUM pVideoProcessorEnum,
+                                 D3D11_1DDI_VIDEO_PROCESSOR_CAPS *pCaps)
+{
+    if (memcmp(&pVideoProcessorEnum->svga.desc,
+               &pDevice->VideoDevice.videoProcessorEnum.desc, sizeof(pVideoProcessorEnum->svga.desc)) != 0)
+        vboxDXQueryVideoProcessorEnumInfo(pDevice, pVideoProcessorEnum->svga.desc);
+
+    VBSVGA3dVideoProcessorEnumInfo const *pInfo = &pDevice->VideoDevice.videoProcessorEnum.info;
+    pCaps->DeviceCaps              = pInfo->Caps.DeviceCaps;
+    pCaps->FeatureCaps             = pInfo->Caps.FeatureCaps;
+    pCaps->FilterCaps              = pInfo->Caps.FilterCaps;
+    pCaps->InputFormatCaps         = pInfo->Caps.InputFormatCaps;
+    pCaps->AutoStreamCaps          = pInfo->Caps.AutoStreamCaps;
+    pCaps->StereoCaps              = pInfo->Caps.StereoCaps;
+    pCaps->RateConversionCapsCount = RT_MIN(pInfo->Caps.RateConversionCapsCount, VBSVGA3D_MAX_VIDEO_RATE_CONVERSION_CAPS);
+    pCaps->MaxInputStreams         = RT_MIN(pInfo->Caps.MaxInputStreams, VBSVGA3D_MAX_VIDEO_STREAMS);
+    pCaps->MaxStreamStates         = RT_MIN(pInfo->Caps.MaxStreamStates, VBSVGA3D_MAX_VIDEO_STREAMS);
+}
+
+
+void vboxDXGetVideoProcessorRateConversionCaps(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSORENUM pVideoProcessorEnum,
+                                               D3D11_1DDI_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS *pCaps)
+{
+    if (memcmp(&pVideoProcessorEnum->svga.desc,
+               &pDevice->VideoDevice.videoProcessorEnum.desc, sizeof(pVideoProcessorEnum->svga.desc)) != 0)
+        vboxDXQueryVideoProcessorEnumInfo(pDevice, pVideoProcessorEnum->svga.desc);
+
+    VBSVGA3dVideoProcessorEnumInfo const *pInfo = &pDevice->VideoDevice.videoProcessorEnum.info;
+    pCaps->PastFrames      = pInfo->RateCaps.PastFrames;
+    pCaps->FutureFrames    = pInfo->RateCaps.FutureFrames;
+    pCaps->ConversionCaps  = pInfo->RateCaps.ProcessorCaps;
+    pCaps->ITelecineCaps   = pInfo->RateCaps.ITelecineCaps;
+    pCaps->CustomRateCount = 0;
+}
+
+
+void vboxDXGetVideoProcessorFilterRange(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSORENUM pVideoProcessorEnum,
+                                        D3D11_1DDI_VIDEO_PROCESSOR_FILTER Filter, D3D11_1DDI_VIDEO_PROCESSOR_FILTER_RANGE *pFilterRange)
+{
+    if (memcmp(&pVideoProcessorEnum->svga.desc,
+               &pDevice->VideoDevice.videoProcessorEnum.desc, sizeof(pVideoProcessorEnum->svga.desc)) != 0)
+        vboxDXQueryVideoProcessorEnumInfo(pDevice, pVideoProcessorEnum->svga.desc);
+
+    VBSVGA3dVideoProcessorEnumInfo const *pInfo = &pDevice->VideoDevice.videoProcessorEnum.info;
+    pFilterRange->Minimum = pInfo->aFilterRange[Filter].Minimum;
+    pFilterRange->Maximum = pInfo->aFilterRange[Filter].Maximum;
+    pFilterRange->Default = pInfo->aFilterRange[Filter].Default;
+    pFilterRange->Multiplier = pInfo->aFilterRange[Filter].Multiplier;
+}
+
+
 HRESULT vboxDXCreateVideoProcessor(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor,
                                    PVBOXDXVIDEOPROCESSORENUM pVideoProcessorEnum, UINT RateConversionCapsIndex)
 {
-    /// @todo Compare with a value from config.
-    AssertReturnStmt(RateConversionCapsIndex <= 0, vboxDXDeviceSetError(pDevice, E_INVALIDARG), E_INVALIDARG);
+    AssertReturnStmt(RateConversionCapsIndex < VBSVGA3D_MAX_VIDEO_RATE_CONVERSION_CAPS, vboxDXDeviceSetError(pDevice, E_INVALIDARG), E_INVALIDARG);
 
     int rc = RTHandleTableAlloc(pDevice->hHTVideoProcessor, pVideoProcessor, &pVideoProcessor->uVideoProcessorId);
     AssertRCReturnStmt(rc, vboxDXDeviceSetError(pDevice, E_OUTOFMEMORY), E_OUTOFMEMORY);
 
-    pVideoProcessor->svga.desc.InputFrameFormat = pVideoProcessorEnum->Desc.InputFrameFormat;
-    pVideoProcessor->svga.desc.InputFrameRate.numerator = pVideoProcessorEnum->Desc.InputFrameRate.Numerator;
-    pVideoProcessor->svga.desc.InputFrameRate.denominator = pVideoProcessorEnum->Desc.InputFrameRate.Denominator;
-    pVideoProcessor->svga.desc.InputWidth       = pVideoProcessorEnum->Desc.InputWidth;
-    pVideoProcessor->svga.desc.InputHeight      = pVideoProcessorEnum->Desc.InputHeight;
-    pVideoProcessor->svga.desc.OutputFrameRate.numerator = pVideoProcessorEnum->Desc.OutputFrameRate.Numerator;
-    pVideoProcessor->svga.desc.OutputFrameRate.denominator = pVideoProcessorEnum->Desc.OutputFrameRate.Denominator;
-    pVideoProcessor->svga.desc.OutputWidth      = pVideoProcessorEnum->Desc.OutputWidth;
-    pVideoProcessor->svga.desc.OutputHeight     = pVideoProcessorEnum->Desc.OutputHeight;
-    pVideoProcessor->svga.desc.Usage            = pVideoProcessorEnum->Desc.Usage;
-
-    pVideoProcessor->svga.RateConversionCapsIndex = RateConversionCapsIndex;
+    pVideoProcessor->svga.desc = pVideoProcessorEnum->svga.desc;
 
     vgpu10DefineVideoProcessor(pDevice, pVideoProcessor->uVideoProcessorId,
-                               pVideoProcessor->svga.desc, pVideoProcessor->svga.RateConversionCapsIndex);
+                               pVideoProcessor->svga.desc);
     return S_OK;
 }
 
@@ -488,7 +595,7 @@ HRESULT vboxDXVideoDecoderSubmitBuffers(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEODECO
         pahAllocation[i] = vboxDXGetAllocation(pBuffer);
 
         VBSVGA3dVideoDecoderBufferDesc *d = &paBD[i];
-        d->sidBuffer      = SVGA3D_INVALID_ID;;
+        d->sidBuffer      = SVGA3D_INVALID_ID;
         switch(s->BufferType)
         {
             default:
@@ -543,17 +650,7 @@ HRESULT vboxDXCreateVideoProcessorInputView(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEO
     AssertRCReturnStmt(rc, vboxDXDeviceSetError(pDevice, E_OUTOFMEMORY), E_OUTOFMEMORY);
 
     pVideoProcessorInputView->pResource = pResource;
-
-    pVideoProcessorInputView->svga.ContentDesc.InputFrameFormat = pVideoProcessorEnum->Desc.InputFrameFormat;
-    pVideoProcessorInputView->svga.ContentDesc.InputFrameRate.numerator = pVideoProcessorEnum->Desc.InputFrameRate.Numerator;
-    pVideoProcessorInputView->svga.ContentDesc.InputFrameRate.denominator = pVideoProcessorEnum->Desc.InputFrameRate.Denominator;
-    pVideoProcessorInputView->svga.ContentDesc.InputWidth       = pVideoProcessorEnum->Desc.InputWidth;
-    pVideoProcessorInputView->svga.ContentDesc.InputHeight      = pVideoProcessorEnum->Desc.InputHeight;
-    pVideoProcessorInputView->svga.ContentDesc.OutputFrameRate.numerator = pVideoProcessorEnum->Desc.OutputFrameRate.Numerator;
-    pVideoProcessorInputView->svga.ContentDesc.OutputFrameRate.denominator = pVideoProcessorEnum->Desc.OutputFrameRate.Denominator;
-    pVideoProcessorInputView->svga.ContentDesc.OutputWidth      = pVideoProcessorEnum->Desc.OutputWidth;
-    pVideoProcessorInputView->svga.ContentDesc.OutputHeight     = pVideoProcessorEnum->Desc.OutputHeight;
-    pVideoProcessorInputView->svga.ContentDesc.Usage            = pVideoProcessorEnum->Desc.Usage;
+    pVideoProcessorInputView->svga.ContentDesc = pVideoProcessorEnum->svga.desc;
 
     VBSVGA3dVPIVDesc *pDesc= &pVideoProcessorInputView->svga.VPIVDesc;
     RT_ZERO(*pDesc);
@@ -580,18 +677,7 @@ HRESULT vboxDXCreateVideoProcessorOutputView(PVBOXDX_DEVICE pDevice, PVBOXDXVIDE
     AssertRCReturnStmt(rc, vboxDXDeviceSetError(pDevice, E_OUTOFMEMORY), E_OUTOFMEMORY);
 
     pVideoProcessorOutputView->pResource = pResource;
-
-    VBSVGA3dVideoProcessorDesc *pContentDesc  = &pVideoProcessorOutputView->svga.ContentDesc;
-    pContentDesc->InputFrameFormat            = pVideoProcessorEnum->Desc.InputFrameFormat;
-    pContentDesc->InputFrameRate.numerator    = pVideoProcessorEnum->Desc.InputFrameRate.Numerator;
-    pContentDesc->InputFrameRate.denominator  = pVideoProcessorEnum->Desc.InputFrameRate.Denominator;
-    pContentDesc->InputWidth                  = pVideoProcessorEnum->Desc.InputWidth;
-    pContentDesc->InputHeight                 = pVideoProcessorEnum->Desc.InputHeight;
-    pContentDesc->OutputFrameRate.numerator   = pVideoProcessorEnum->Desc.OutputFrameRate.Numerator;
-    pContentDesc->OutputFrameRate.denominator = pVideoProcessorEnum->Desc.OutputFrameRate.Denominator;
-    pContentDesc->OutputWidth                 = pVideoProcessorEnum->Desc.OutputWidth;
-    pContentDesc->OutputHeight                = pVideoProcessorEnum->Desc.OutputHeight;
-    pContentDesc->Usage                       = pVideoProcessorEnum->Desc.Usage;
+    pVideoProcessorOutputView->svga.ContentDesc = pVideoProcessorEnum->svga.desc;
 
     VBSVGA3dVPOVDesc *pDesc= &pVideoProcessorOutputView->svga.VPOVDesc;
     RT_ZERO(*pDesc);
@@ -610,7 +696,7 @@ HRESULT vboxDXCreateVideoProcessorOutputView(PVBOXDX_DEVICE pDevice, PVBOXDXVIDE
 
     vgpu10DefineVideoProcessorOutputView(pDevice, pVideoProcessorOutputView->uVideoProcessorOutputViewId,
                                          vboxDXGetAllocation(pVideoProcessorOutputView->pResource),
-                                         *pContentDesc, *pDesc);
+                                         pVideoProcessorOutputView->svga.ContentDesc, *pDesc);
 
     pVideoProcessorOutputView->fDefined = true;
     RTListAppend(&pVideoProcessorOutputView->pResource->listVPOV, &pVideoProcessorOutputView->nodeView);
@@ -860,6 +946,14 @@ void vboxDXVideoProcessorSetStreamAlpha(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROC
                                         BOOL Enable, FLOAT Alpha)
 {
     vgpu10VideoProcessorSetStreamAlpha(pDevice, pVideoProcessor->uVideoProcessorId, StreamIndex, Enable, Alpha);
+}
+
+
+void vboxDXVideoProcessorSetStreamPalette(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, UINT StreamIndex,
+                                          UINT Count, UINT const *pEntries)
+{
+    vgpu10VideoProcessorSetStreamPalette(pDevice, pVideoProcessor->uVideoProcessorId, StreamIndex,
+                                         RT_MIN(Count, VBSVGA3D_MAX_VIDEO_PALETTE_ENTRIES), pEntries);
 }
 
 

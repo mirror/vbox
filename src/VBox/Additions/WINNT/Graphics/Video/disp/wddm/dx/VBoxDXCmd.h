@@ -326,8 +326,7 @@ int vgpu10PresentBlt(PVBOXDX_DEVICE pDevice,
 
 int vgpu10DefineVideoProcessor(PVBOXDX_DEVICE pDevice,
                                uint32 uVideoProcessorId,
-                               VBSVGA3dVideoProcessorDesc const &desc,
-                               uint32 RateConversionCapsIndex);
+                               VBSVGA3dVideoProcessorDesc const &desc);
 int vgpu10DefineVideoDecoderOutputView(PVBOXDX_DEVICE pDevice,
                                        VBSVGA3dVideoDecoderOutputViewId videoDecoderOutputViewId,
                                        D3DKMT_HANDLE hAllocation,
@@ -424,6 +423,11 @@ int vgpu10VideoProcessorSetStreamAlpha(PVBOXDX_DEVICE pDevice,
                                        uint32 streamIndex,
                                        BOOL enable,
                                        float alpha);
+int vgpu10VideoProcessorSetStreamPalette(PVBOXDX_DEVICE pDevice,
+                                         VBSVGA3dVideoProcessorId videoProcessorId,
+                                         uint32 streamIndex,
+                                         UINT Count,
+                                         UINT const *pEntries);
 int vgpu10VideoProcessorSetStreamPixelAspectRatio(PVBOXDX_DEVICE pDevice,
                                                   VBSVGA3dVideoProcessorId videoProcessorId,
                                                   uint32 streamIndex,

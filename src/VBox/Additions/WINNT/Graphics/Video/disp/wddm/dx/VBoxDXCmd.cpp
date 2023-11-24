@@ -1546,8 +1546,7 @@ int vgpu10PresentBlt(PVBOXDX_DEVICE pDevice,
 
 int vgpu10DefineVideoProcessor(PVBOXDX_DEVICE pDevice,
                                uint32 videoProcessorId,
-                               VBSVGA3dVideoProcessorDesc const &desc,
-                               uint32 RateConversionCapsIndex)
+                               VBSVGA3dVideoProcessorDesc const &desc)
 {
     void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_DEFINE_VIDEO_PROCESSOR,
                                              sizeof(VBSVGA3dCmdDXDefineVideoProcessor), 0);
@@ -1557,7 +1556,6 @@ int vgpu10DefineVideoProcessor(PVBOXDX_DEVICE pDevice,
     VBSVGA3dCmdDXDefineVideoProcessor *cmd = (VBSVGA3dCmdDXDefineVideoProcessor *)pvCmd;
     SET_CMD_FIELD(videoProcessorId);
     SET_CMD_FIELD(desc);
-    SET_CMD_FIELD(RateConversionCapsIndex);
 
     vboxDXCommandBufferCommit(pDevice);
     return VINF_SUCCESS;
@@ -2075,6 +2073,31 @@ int vgpu10VideoProcessorSetStreamAlpha(PVBOXDX_DEVICE pDevice,
     SET_CMD_FIELD(streamIndex);
     SET_CMD_FIELD(enable);
     SET_CMD_FIELD(alpha);
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
+int vgpu10VideoProcessorSetStreamPalette(PVBOXDX_DEVICE pDevice,
+                                         VBSVGA3dVideoProcessorId videoProcessorId,
+                                         uint32 streamIndex,
+                                         UINT Count,
+                                         UINT const *pEntries)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_PALETTE,
+                                             sizeof(VBSVGA3dCmdDXVideoProcessorSetStreamPalette) + Count * sizeof(uint32), 0);
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXVideoProcessorSetStreamPalette *cmd = (VBSVGA3dCmdDXVideoProcessorSetStreamPalette *)pvCmd;
+    SET_CMD_FIELD(videoProcessorId);
+    SET_CMD_FIELD(streamIndex);
+    if (Count > 0)
+    {
+        uint32 *p = (uint32 *)&cmd[1];
+        memcpy(p, pEntries, Count * sizeof(uint32));
+    }
 
     vboxDXCommandBufferCommit(pDevice);
     return VINF_SUCCESS;

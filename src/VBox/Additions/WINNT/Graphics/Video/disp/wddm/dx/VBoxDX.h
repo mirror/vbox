@@ -398,7 +398,6 @@ typedef struct VBOXDXVIDEOPROCESSOR
     uint32_t                       uVideoProcessorId;
     struct {
         VBSVGA3dVideoProcessorDesc desc;
-        uint32 RateConversionCapsIndex;
     } svga;
     struct {
         BOOL Enable;
@@ -423,14 +422,17 @@ typedef struct VBOXDXVIDEOPROCESSOR
         BOOL Enable;
     } StereoMode;
 
-    VBOXDXVIDEOPROCESSORSTREAM aStreams[2];
+    VBOXDXVIDEOPROCESSORSTREAM aStreams[VBSVGA3D_MAX_VIDEO_STREAMS];
 } VBOXDXVIDEOPROCESSOR, *PVBOXDXVIDEOPROCESSOR;
 
 
 typedef struct VBOXDXVIDEOPROCESSORENUM
 {
     D3D11_1DDI_HRTVIDEOPROCESSORENUM hRTVideoProcessorEnum;
-    D3D11_1DDI_VIDEO_PROCESSOR_CONTENT_DESC Desc;
+
+    struct {
+        VBSVGA3dVideoProcessorDesc desc;
+    } svga;
 } VBOXDXVIDEOPROCESSORENUM, *PVBOXDXVIDEOPROCESSORENUM;
 
 
@@ -613,6 +615,12 @@ typedef struct VBOXDX_DEVICE
             uint32_t cConfig;                               /* Number of elements in pConfigInfo->aConfig array. */
             VBSVGA3dDecodeConfigInfo *pConfigInfo;
         } config;
+
+        struct
+        {
+            VBSVGA3dVideoProcessorDesc desc;                /* Info has been queried for this desc; */
+            VBSVGA3dVideoProcessorEnumInfo info;            /* Last queried info. */
+        } videoProcessorEnum;
     } VideoDevice;
 } VBOXDX_DEVICE, *PVBOXDX_DEVICE;
 
@@ -736,6 +744,16 @@ void vboxDXCheckVideoDecoderFormat(PVBOXDX_DEVICE pDevice, GUID const *pDecodePr
 void vboxDXGetVideoDecoderConfigCount(PVBOXDX_DEVICE pDevice, D3D11_1DDI_VIDEO_DECODER_DESC const *pDecodeDesc, UINT *pConfigCount);
 void vboxDXGetVideoDecoderConfig(PVBOXDX_DEVICE pDevice, D3D11_1DDI_VIDEO_DECODER_DESC const *pDecodeDesc, UINT Index,
                                  D3D11_1DDI_VIDEO_DECODER_CONFIG *pConfig);
+HRESULT vboxDXCreateVideoProcessorEnum(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSORENUM pVideoProcessorEnum,
+                                       D3D11_1DDI_VIDEO_PROCESSOR_CONTENT_DESC const *Desc);
+void vboxDXCheckVideoProcessorFormat(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSORENUM pVideoProcessorEnum,
+                                     DXGI_FORMAT Format, UINT *pSupported);
+void vboxDXGetVideoProcessorCaps(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSORENUM pVideoProcessorEnum,
+                                 D3D11_1DDI_VIDEO_PROCESSOR_CAPS *pCaps);
+void vboxDXGetVideoProcessorRateConversionCaps(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSORENUM pVideoProcessorEnum,
+                                               D3D11_1DDI_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS *pCaps);
+void vboxDXGetVideoProcessorFilterRange(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSORENUM pVideoProcessorEnum,
+                                        D3D11_1DDI_VIDEO_PROCESSOR_FILTER Filter, D3D11_1DDI_VIDEO_PROCESSOR_FILTER_RANGE *pFilterRange);
 HRESULT vboxDXCreateVideoProcessor(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor,
                                    PVBOXDXVIDEOPROCESSORENUM pVideoProcessorEnum, UINT RateConversionCapsIndex);
 HRESULT vboxDXCreateVideoDecoderOutputView(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEODECODEROUTPUTVIEW pVideoDecoderOutputView, PVBOXDX_RESOURCE pResource,
@@ -777,6 +795,8 @@ void vboxDXVideoProcessorSetStreamDestRect(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOP
                                            BOOL Enable, RECT const *pDestRect);
 void vboxDXVideoProcessorSetStreamAlpha(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, UINT StreamIndex,
                                         BOOL Enable, FLOAT Alpha);
+void vboxDXVideoProcessorSetStreamPalette(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, UINT StreamIndex,
+                                          UINT Count, UINT const *pEntries);
 void vboxDXVideoProcessorSetStreamPixelAspectRatio(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, UINT StreamIndex,
                                                    BOOL Enable, DXGI_RATIONAL const *pSourceRatio, DXGI_RATIONAL const *pDestRatio);
 void vboxDXVideoProcessorSetStreamLumaKey(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor, UINT StreamIndex,
