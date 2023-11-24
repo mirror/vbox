@@ -158,8 +158,8 @@ static void bs3InitHighDllSetUpSegments(BS3HIGHDLLENTRY RT_FAR *pHighDllEntry, c
 
     for (iSeg = 0; iSeg < cSegments; iSeg++)
     {
-        Bs3TestPrintf("Segment #%u: %#RX32 LB %#RX32 idxSel=%#06x fFlags=%#x\n",
-                      iSeg, paSegments[iSeg].uAddr, paSegments[iSeg].cb, paSegments[iSeg].idxSel, paSegments[iSeg].fFlags);
+        Bs3Printf("Segment #%u: %#010RX32 LB %#010RX32 idxSel=%#06x fFlags=%#x\n",
+                  iSeg, paSegments[iSeg].uAddr, paSegments[iSeg].cb, paSegments[iSeg].idxSel, paSegments[iSeg].fFlags);
         if (paSegments[iSeg].fFlags & BS3HIGHDLLSEGMENT_F_16BIT)
         {
             X86DESC BS3_FAR *pDesc = &Bs3Gdt[paSegments[iSeg].idxSel >> X86_SEL_SHIFT];
@@ -265,7 +265,7 @@ BS3_DECL_FAR(void) Bs3InitHighDlls_rm_far(void)
             {
                 const char RT_FAR * const pszzStrings = (char RT_FAR *)&g_aBs3HighDllTable[i] + g_aBs3HighDllTable[i].offStrings;
                 const char RT_FAR * const pszFilename = &pszzStrings[g_aBs3HighDllTable[i].offFilename];
-                Bs3Printf("Loading dll '%s' at %#RX32..%#RX32 ...", pszFilename, g_aBs3HighDllTable[i].uLoadAddr,
+                Bs3Printf("Loading dll '%s' at %#RX32..%#RX32\n", pszFilename, g_aBs3HighDllTable[i].uLoadAddr,
                           g_aBs3HighDllTable[i].uLoadAddr + g_aBs3HighDllTable[i].cbLoaded - 1);
 
                 /*
