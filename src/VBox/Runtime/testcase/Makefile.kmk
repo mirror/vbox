@@ -143,6 +143,7 @@ ifdef VBOX_WITH_TESTCASES # The whole file
   	tstRTSemRW \
   	tstRTSemXRoads \
   	tstRTSg \
+  	tstRTShaCrypt \
   	tstRTSort \
   	tstRTStrAlloc \
   	tstRTStrCache \
@@ -835,6 +836,9 @@ ifdef VBOX_WITH_TESTCASES # The whole file
 
  tstRTSg_TEMPLATE = VBoxR3TstExe
  tstRTSg_SOURCES = tstRTSg.cpp
+
+ tstRTShaCrypt_TEMPLATE = VBoxR3TstExe
+ tstRTShaCrypt_SOURCES = tstRTShaCrypt.cpp
 
  tstRTSort_TEMPLATE = VBoxR3TstExe
  tstRTSort_SOURCES = tstRTSort.cpp
