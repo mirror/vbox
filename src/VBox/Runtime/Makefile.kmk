@@ -465,6 +465,7 @@ RuntimeBaseR3_SOURCES      := \
 	common/crypto/pkix-signature-ossl.cpp \
 	common/crypto/pkix-util.cpp \
 	common/crypto/pkix-verify.cpp \
+	common/crypto/shacrypt.cpp \
 	common/crypto/spc-asn1-decoder.cpp \
 	common/crypto/spc-core.cpp \
 	common/crypto/spc-init.cpp \
