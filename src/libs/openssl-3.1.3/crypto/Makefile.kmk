@@ -99,8 +99,6 @@ VBox-libcrypto_SOURCES  = \
 	self_test_core.c \
 	sparse_array.c \
 	threads_iprt.c \
-	threads_none.c \
-	threads_win.c \
 	trace.c \
 	uid.c
 
