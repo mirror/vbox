@@ -172,21 +172,30 @@ RTR3DECL(int) RTCrShaCrypt256(const char *pszKey, const char *pszSalt, uint32_t 
 
 
 RTR3DECL(int) RTCrShaCrypt256ToString(uint8_t abHash[RTSHA256_HASH_SIZE], const char *pszSalt, uint32_t cRounds,
-                                      char *pszString, size_t cbString)
+                                      char *pszString, size_t cchString)
 {
     AssertPtrReturn(pszSalt,   VERR_INVALID_POINTER);
     AssertReturn   (cRounds,   VERR_INVALID_PARAMETER);
-    AssertReturn   (cbString,  VERR_INVALID_PARAMETER);
+    AssertReturn   (cchString >= RTSHA256_DIGEST_LEN + 1, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszString, VERR_INVALID_POINTER);
 
     char  *psz = pszString;
-    size_t cch = cbString;
+    size_t cch = cchString;
 
     *psz = '\0';
+
+    size_t cchPrefix;
     if (cRounds == RT_SHACRYPT_DEFAULT_ROUNDS)
-        psz += RTStrPrintf2(psz, cch, "$5$%s$", pszSalt);
+        cchPrefix = RTStrPrintf2(psz, cchString, "$5$%s$", pszSalt);
     else
-        psz += RTStrPrintf2(psz, cch, "$5$rounds=%RU32$%s$", cRounds, pszSalt);
+        cchPrefix = RTStrPrintf2(psz, cchString, "$5$rounds=%RU32$%s$", cRounds, pszSalt);
+    AssertReturn(cchPrefix > 0, VERR_BUFFER_OVERFLOW);
+    AssertReturn(cch >= cchPrefix, VERR_BUFFER_OVERFLOW);
+    cch -= cchPrefix;
+    psz += cchPrefix;
+
+    /* Make sure that there is enough room to store the base64-encoded hash. */
+    AssertReturn(cch >= ((RTSHA256_HASH_SIZE / 3) * 4) + 1, VERR_BUFFER_OVERFLOW);
 
     static const char acBase64[64 + 1] =
         "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -346,21 +355,28 @@ RTR3DECL(int) RTCrShaCrypt512(const char *pszKey, const char *pszSalt, uint32_t 
 
 
 RTR3DECL(int) RTCrShaCrypt512ToString(uint8_t abHash[RTSHA512_HASH_SIZE], const char *pszSalt, uint32_t cRounds,
-                                      char *pszString, size_t cbString)
+                                      char *pszString, size_t cchString)
 {
     AssertPtrReturn(pszSalt,   VERR_INVALID_POINTER);
     AssertReturn   (cRounds,   VERR_INVALID_PARAMETER);
-    AssertReturn   (cbString,  VERR_INVALID_PARAMETER);
+    AssertReturn   (cchString >= RTSHA512_DIGEST_LEN + 1, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszString, VERR_INVALID_POINTER);
 
     char  *psz = pszString;
-    size_t cch = cbString;
+    size_t cch = cchString;
 
-    *psz = '\0';
+    size_t cchPrefix;
     if (cRounds == RT_SHACRYPT_DEFAULT_ROUNDS)
-        psz += RTStrPrintf2(psz, cch, "$6$%s$", pszSalt);
+        cchPrefix = RTStrPrintf2(psz, cchString, "$6$%s$", pszSalt);
     else
-        psz += RTStrPrintf2(psz, cch, "$6$rounds=%RU32$%s$", cRounds, pszSalt);
+        cchPrefix = RTStrPrintf2(psz, cchString, "$6$rounds=%RU32$%s$", cRounds, pszSalt);
+    AssertReturn(cchPrefix > 0, VERR_BUFFER_OVERFLOW);
+    AssertReturn(cch >= cchPrefix, VERR_BUFFER_OVERFLOW);
+    cch -= cchPrefix;
+    psz += cchPrefix;
+
+    /* Make sure that there is enough room to store the base64-encoded hash. */
+    AssertReturn(cch >= ((RTSHA512_HASH_SIZE / 3) * 4) + 1, VERR_BUFFER_OVERFLOW);
 
     static const char acBase64[64 + 1] =
         "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";

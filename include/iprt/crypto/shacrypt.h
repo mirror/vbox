@@ -80,11 +80,12 @@ RTR3DECL(int) RTCrShaCrypt256(const char *pszKey, const char *pszSalt, uint32_t 
  * @param   pszSalt             Salt to use. Must match the salt used when generating \a pabHash via RTSha256Crypt().
  * @param   cRounds             Number of rounds used for generating \a pabHash.
  * @param   pszString           Where to store the printable string on success.
- * @param   cbString            Size (in bytes) of \a pszString.
+ * @param   cchString           Size of \a pszString.
+ *                              Should be at least RTSHA256_DIGEST_LEN + 1 bytes.
  *
  * @note    This implements step 22 of SHA-crypt.txt Version: 0.6 2016-8-31.
  */
-RTR3DECL(int) RTCrShaCrypt256ToString(uint8_t abHash[RTSHA256_HASH_SIZE], const char *pszSalt, uint32_t cRounds, char *pszString, size_t cbString);
+RTR3DECL(int) RTCrShaCrypt256ToString(uint8_t abHash[RTSHA256_HASH_SIZE], const char *pszSalt, uint32_t cRounds, char *pszString, size_t cchString);
 
 
 /**
@@ -110,11 +111,12 @@ RTR3DECL(int) RTCrShaCrypt512(const char *pszKey, const char *pszSalt, uint32_t 
  * @param   pszSalt             Salt to use. Must match the salt used when generating \a pabHash via RTSha512Crypt().
  * @param   cRounds             Number of rounds used for generating \a pabHash.
  * @param   pszString           Where to store the printable string on success.
- * @param   cbString            Size (in bytes) of \a pszString.
+ * @param   cchString           Size of \a pszString.
+ *                              Should be at least RTSHA512_DIGEST_LEN + 1 bytes.
  *
  * @note    This implements step 22 of SHA-crypt.txt Version: 0.6 2016-8-31.
  */
-RTR3DECL(int) RTCrShaCrypt512ToString(uint8_t abHash[RTSHA512_HASH_SIZE], const char *pszSalt, uint32_t cRounds, char *pszString, size_t cbString);
+RTR3DECL(int) RTCrShaCrypt512ToString(uint8_t abHash[RTSHA512_HASH_SIZE], const char *pszSalt, uint32_t cRounds, char *pszString, size_t cchString);
 
 /** @} */
 

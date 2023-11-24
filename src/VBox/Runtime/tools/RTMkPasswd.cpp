@@ -176,7 +176,7 @@ int main(int argc, char **argv)
                               RT_SHACRYPT_MAX_SALT_LEN);
 
     uint8_t abDigest[RTSHA512_HASH_SIZE];
-    char    szResult[RTSHA512_DIGEST_LEN];
+    char    szResult[RTSHA512_DIGEST_LEN + 1];
 
     switch (enmMethod)
     {

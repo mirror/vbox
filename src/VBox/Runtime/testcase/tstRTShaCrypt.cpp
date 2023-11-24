@@ -226,7 +226,7 @@ int main()
         if (   RT_SUCCESS(rc)
             && g_aTests[i].pszResultStr)
         {
-            char szResult[RTSHA512_DIGEST_LEN];
+            char szResult[RTSHA512_DIGEST_LEN + 1];
 
             switch (enmType)
             {
