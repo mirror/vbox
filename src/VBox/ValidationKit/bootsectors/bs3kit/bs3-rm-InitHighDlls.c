@@ -48,6 +48,163 @@ extern BS3HIGHDLLENTRY BS3_FAR_DATA BS3_DATA_NM(g_aBs3HighDllTable)[];
 extern BS3HIGHDLLENTRY BS3_FAR_DATA BS3_DATA_NM(g_Bs3HighDllTable_End);
 
 
+
+/**
+ * Load the DLL. This is where we ASSUME real-mode, pre-PIC setup,
+ * and interrupts enabled as we need to use int13 for the actual
+ * reading. We switch to 32-bit protected mode and copies the
+ * chunk from pbBuf and to the actual load address.
+ *
+ * Note! When reading we must make sure to not switch head as the
+ *       BIOS code messes up the result if it does the wraparound.
+ */
+static void bs3InitHighDllLoadImage(BS3HIGHDLLENTRY RT_FAR * const pHighDllEntry, const char RT_FAR * const pszFilename,
+                                    uint8_t BS3_FAR * const pbBuf, uint8_t const cBufSectors, uint32_t const uFlatBuf,
+                                    uint8_t const bDrive, uint8_t const uMaxHead, uint8_t const uMaxSector,
+                                    uint16_t const cSectorsPerCylinder)
+{
+    int             rc;
+#ifdef BS3_WITH_LOAD_CHECKSUMS
+# if 0 /* for debugging */
+    uint32_t        iCurSector          = 0;
+# endif
+    uint32_t        uChecksum           = BS3_CALC_CHECKSUM_INITIAL_VALUE;
+#endif
+    uint32_t        cSectorsLeftToLoad  = pHighDllEntry->cbInImage  / 512U;
+    uint32_t        uCurFlatLoadAddr    = pHighDllEntry->uLoadAddr;
+    /* Calculate the current CHS position: */
+    uint32_t const  uCurSectorInImage   = pHighDllEntry->offInImage / 512U;
+    uint16_t        uCylinder           = uCurSectorInImage / cSectorsPerCylinder;
+    uint16_t const  uRemainder          = uCurSectorInImage % cSectorsPerCylinder;
+    uint8_t         uHead               = uRemainder / uMaxSector;
+    uint8_t         uSector             = (uRemainder % uMaxSector) + 1;
+    while (cSectorsLeftToLoad > 0)
+    {
+        /* Figure out how much we dare read.  Only up to the end of the track. */
+        uint8_t cSectors = uMaxSector + 1 - uSector;
+        if (cSectors > cBufSectors)
+            cSectors = cBufSectors;
+        if (cSectorsLeftToLoad < cSectors)
+            cSectors = (uint8_t)(cSectorsLeftToLoad);
+
+        //Bs3TestPrintf("Calling Bs3DiskRead(%#x,%#x,%#x,%#x,%#x,%p) [uCurFlatLoadAddr=%RX32]\n",
+        //              bDrive, uCylinder, uHead, uSector, cSectors, pbBuf, uCurFlatLoadAddr);
+        rc = Bs3DiskRead_rm(bDrive, uCylinder, uHead, uSector, cSectors, pbBuf);
+        if (rc != 0)
+        {
+            Bs3TestPrintf("Bs3DiskRead(%#x,%#x,%#x,%#x,%#x,) failed: %#x\n",
+                          bDrive, uCylinder, uHead, uSector, cBufSectors, rc);
+            Bs3Shutdown();
+        }
+
+#ifdef BS3_WITH_LOAD_CHECKSUMS
+        /* Checksum what we just loaded. */
+# if 0 /* For debugging. */
+        {
+            uint16_t j;
+            uint32_t uChecksumTmp = uChecksum;
+            for (j = 0; j < cSectors; j++, iCurSector++)
+                Bs3TestPrintf("sector #%RU32:  %#RX32 %#010RX32\n", iCurSector,
+                              uChecksumTmp = Bs3CalcChecksum(uChecksumTmp, &pbBuf[j * 512U], 512U),
+                              Bs3CalcChecksum(BS3_CALC_CHECKSUM_INITIAL_VALUE, &pbBuf[j * 512U], 512U));
+            uChecksum = Bs3CalcChecksum(uChecksum, pbBuf, 512U * cSectors);
+            if (uChecksum != uChecksumTmp)
+                Bs3TestPrintf("Checksum error: %#RX32, expected %#RX32!\n", uChecksum, uChecksumTmp);
+        }
+# else
+        uChecksum = Bs3CalcChecksum(uChecksum, pbBuf, 512U * cSectors);
+# endif
+#endif
+
+        /* Copy the page to where the DLL is being loaded.  */
+        Bs3MemCopyFlat_rm_far(uCurFlatLoadAddr, uFlatBuf, 512U * cSectors);
+        Bs3PrintChr('.');
+
+        /* Advance */
+        uCurFlatLoadAddr   += cSectors * 512U;
+        cSectorsLeftToLoad -= cSectors;
+        uSector            += cSectors;
+        if (!uSector || uSector > uMaxSector)
+        {
+            uSector        = 1;
+            uHead++;
+            if (uHead > uMaxHead)
+            {
+                uHead      = 0;
+                uCylinder++;
+            }
+        }
+    }
+
+#ifdef BS3_WITH_LOAD_CHECKSUMS
+    /* Verify the checksum. */
+    if (uChecksum != pHighDllEntry->uChecksum)
+    {
+        Bs3TestPrintf("Checksum mismatch for '%s': %#RX32 vs %#RX32\n", pszFilename, uChecksum, pHighDllEntry->uChecksum);
+        Bs3Shutdown();
+    }
+#endif
+}
+
+
+/**
+ * Initializes any special (16-bit) segments for the given high DLL.
+ */
+static void bs3InitHighDllSetUpSegments(BS3HIGHDLLENTRY RT_FAR *pHighDllEntry, const char RT_FAR *pszFilename)
+{
+    PBS3HIGHDLLSEGMENT const    paSegments = (PBS3HIGHDLLSEGMENT)((char RT_FAR *)pHighDllEntry + pHighDllEntry->offSegments);
+    unsigned const              cSegments  = pHighDllEntry->cSegments;
+    unsigned                    iSeg;
+
+    for (iSeg = 0; iSeg < cSegments; iSeg++)
+    {
+        Bs3TestPrintf("Segment #%u: %#RX32 LB %#RX32 idxSel=%#06x fFlags=%#x\n",
+                      iSeg, paSegments[iSeg].uAddr, paSegments[iSeg].cb, paSegments[iSeg].idxSel, paSegments[iSeg].fFlags);
+        if (paSegments[iSeg].fFlags & BS3HIGHDLLSEGMENT_F_16BIT)
+        {
+            X86DESC BS3_FAR *pDesc = &Bs3Gdt[paSegments[iSeg].idxSel >> X86_SEL_SHIFT];
+
+            if (paSegments[iSeg].fFlags & BS3HIGHDLLSEGMENT_F_EXEC)
+            {
+                BS3_ASSERT((unsigned)(paSegments[iSeg].idxSel - BS3_SEL_HIGH16_CS_FIRST) < (unsigned)BS3_SEL_HIGH16_CS_COUNT);
+                Bs3SelSetup16BitCode(pDesc, paSegments[iSeg].uAddr, 0);
+                if (paSegments[iSeg].fFlags & BS3HIGHDLLSEGMENT_F_CONFORMING)
+                    pDesc->Gen.u4Type = X86_SEL_TYPE_ER_CONF_ACC;
+                //Bs3TestPrintf("Segment #%u: 16-bit code %p %#x\n", iSeg, pDesc, paSegments[iSeg].idxSel);
+            }
+            else
+            {
+                BS3_ASSERT((unsigned)(paSegments[iSeg].idxSel - BS3_SEL_HIGH16_DS_FIRST) < (unsigned)BS3_SEL_HIGH16_DS_COUNT);
+                Bs3SelSetup16BitData(pDesc, paSegments[iSeg].uAddr);
+                //Bs3TestPrintf("Segment #%u: 16-bit data %p %#x\n", iSeg, pDesc, paSegments[iSeg].idxSel);
+            }
+            if (paSegments[iSeg].cb < _64K)
+                pDesc->Gen.u16LimitLow = paSegments[iSeg].cb - 1;
+        }
+        //else
+        //    Bs3TestPrintf("Segment #%u: Not 16-bit\n", iSeg);
+    }
+
+}
+
+
+/**
+ * Allocates/reserves the memory backing for the given DLL.
+ */
+static void bs3InitHighDllAllocateMemory(BS3HIGHDLLENTRY RT_FAR *pHighDllEntry, const char RT_FAR *pszFilename)
+{
+    uint16_t const cPagesToLoad = (uint16_t)(pHighDllEntry->cbLoaded / _4K);
+    uint16_t       iPage        = Bs3SlabAllocFixed(&g_Bs3Mem4KUpperTiled.Core, pHighDllEntry->uLoadAddr, cPagesToLoad);
+    if (iPage == 0 || iPage == UINT16_MAX)
+    {
+        Bs3TestPrintf("Bs3SlabAllocFixed(,%#RX32, %#RX16) failed: %#RX16 (%s)\n",
+                      pHighDllEntry->uLoadAddr, cPagesToLoad, iPage, pszFilename);
+        Bs3Shutdown();
+    }
+    /** @todo We don't have any memory management above 16MB... at the moment. */
+}
+
+
 BS3_DECL_FAR(void) Bs3InitHighDlls_rm_far(void)
 {
     unsigned const cHighDlls = (unsigned)(&g_Bs3HighDllTable_End - &g_aBs3HighDllTable[0]);
@@ -71,22 +228,28 @@ BS3_DECL_FAR(void) Bs3InitHighDlls_rm_far(void)
             unsigned i;
 
             /*
-             * We need a buffer first of all. Using a 4K / PAGE_SIZE buffer let us
-             * share calculations and variables with the allocation code.
+             * We need a buffer first of all.  Try for one able to contain a
+             * full track, as that'll give us the best reading speed.
              */
             uint32_t         uFlatBuf;
             uint8_t          cBufSectors;
             uint8_t BS3_FAR *pbBuf;
             uint16_t         cbBuf          = uMaxSector >= 72U ? 72U * 512U : uMaxSector * 512U;
             void BS3_FAR    *pvBufAllocated = Bs3MemAlloc(BS3MEMKIND_REAL, cbBuf);
-            if (!pbBuf)
+            if (!pvBufAllocated)
             {
-                cbBuf = _4K;
-                pvBufAllocated = Bs3MemAlloc(BS3MEMKIND_REAL, cbBuf);
-                if (!pvBufAllocated)
+                cbBuf = cbBuf >= _32K ? _32K : 1 << ASMBitLastSetU16(cbBuf) /* no - 1!*/; /* converts to a power of two. */
+                for (;;)
                 {
-                    Bs3TestPrintf("Failed to allocate 4 KiB memory buffer for loading high DLL(s)!\n");
-                    Bs3Shutdown();
+                    pvBufAllocated = Bs3MemAlloc(BS3MEMKIND_REAL, cbBuf);
+                    if (pvBufAllocated)
+                        break;
+                    if (cbBuf <= _4K)
+                    {
+                        Bs3TestPrintf("Failed to allocate 4 KiB memory buffer for loading high DLL(s)!\n");
+                        Bs3Shutdown();
+                    }
+                    cbBuf >>= 1;
                 }
             }
             cBufSectors = (uint8_t)(cbBuf / 512U);
@@ -100,121 +263,26 @@ BS3_DECL_FAR(void) Bs3InitHighDlls_rm_far(void)
              */
             for (i = 0; i < cHighDlls; i++)
             {
-                const char RT_FAR * const pszzStrings  = (char RT_FAR *)&g_aBs3HighDllTable[i] + g_aBs3HighDllTable[i].offStrings;
-                const char RT_FAR * const pszFilename  = &pszzStrings[g_aBs3HighDllTable[i].offFilename];
-                uint16_t const            cPagesToLoad = (uint16_t)(g_aBs3HighDllTable[i].cbLoaded / _4K);
-                uint16_t                  iPage;
+                const char RT_FAR * const pszzStrings = (char RT_FAR *)&g_aBs3HighDllTable[i] + g_aBs3HighDllTable[i].offStrings;
+                const char RT_FAR * const pszFilename = &pszzStrings[g_aBs3HighDllTable[i].offFilename];
                 Bs3Printf("Loading dll '%s' at %#RX32..%#RX32 ...", pszFilename, g_aBs3HighDllTable[i].uLoadAddr,
                           g_aBs3HighDllTable[i].uLoadAddr + g_aBs3HighDllTable[i].cbLoaded - 1);
 
                 /*
                  * Allocate the memory taken by the DLL.
                  */
-                iPage = Bs3SlabAllocFixed(&g_Bs3Mem4KUpperTiled.Core, g_aBs3HighDllTable[i].uLoadAddr, cPagesToLoad);
-                if (iPage == 0 || iPage == UINT16_MAX)
-                {
-                    Bs3TestPrintf("Bs3SlabAllocFixed(,%#RX32, %#RX16) failed: %#RX16 (%s)\n",
-                                  g_aBs3HighDllTable[i].uLoadAddr, cPagesToLoad, iPage, pszFilename);
-                    Bs3Shutdown();
-                }
-                /** @todo We don't have any memory management above 16MB... */
+                bs3InitHighDllAllocateMemory(&g_aBs3HighDllTable[i], pszFilename);
 
                 /*
-                 * Load the DLL. This is where we ASSUME real-mode, pre-PIC setup,
-                 * and interrupts enabled as we need to use int13 for the actual
-                 * reading. We switch to 32-bit protected mode and copies the
-                 * chunk from pbBuf and to the actual load address.
-                 *
-                 * Note! When reading we must make sure to not switch head as the
-                 *       BIOS code messes up the result if it does the wraparound.
+                 * Process the segment table.
                  */
-                {
+                bs3InitHighDllSetUpSegments(&g_aBs3HighDllTable[i], pszFilename);
 
-                    /* Load the image. */
-                    {
-#ifdef BS3_WITH_LOAD_CHECKSUMS
-# if 0 /* for debugging */
-                        uint32_t       iCurSector         = 0;
-# endif
-                        uint32_t       uChecksum          = BS3_CALC_CHECKSUM_INITIAL_VALUE;
-#endif
-                        uint32_t       cSectorsLeftToLoad = g_aBs3HighDllTable[i].cbInImage  / 512U;
-                        uint32_t       uCurFlatLoadAddr   = g_aBs3HighDllTable[i].uLoadAddr;
-                        /* Calculate the current CHS position: */
-                        uint32_t const uCurSectorInImage  = g_aBs3HighDllTable[i].offInImage / 512U;
-                        uint16_t       uCylinder          = uCurSectorInImage / cSectorsPerCylinder;
-                        uint16_t const uRemainder         = uCurSectorInImage % cSectorsPerCylinder;
-                        uint8_t        uHead              = uRemainder / uMaxSector;
-                        uint8_t        uSector            = (uRemainder % uMaxSector) + 1;
-                        while (cSectorsLeftToLoad > 0)
-                        {
-                            /* Figure out how much we dare read.  Only up to the end of the track. */
-                            uint8_t cSectors = uMaxSector + 1 - uSector;
-                            if (cSectors > cBufSectors)
-                                cSectors = cBufSectors;
-                            if (cSectorsLeftToLoad < cSectors)
-                                cSectors = (uint8_t)(cSectorsLeftToLoad);
-
-                            //Bs3TestPrintf("Calling Bs3DiskRead(%#x,%#x,%#x,%#x,%#x,%p) [uCurFlatLoadAddr=%RX32]\n",
-                            //              bDrive, uCylinder, uHead, uSector, cSectors, pbBuf, uCurFlatLoadAddr);
-                            rc = Bs3DiskRead_rm(bDrive, uCylinder, uHead, uSector, cSectors, pbBuf);
-                            if (rc != 0)
-                            {
-                                Bs3TestPrintf("Bs3DiskRead(%#x,%#x,%#x,%#x,%#x,) failed: %#x\n",
-                                              bDrive, uCylinder, uHead, uSector, cBufSectors, rc);
-                                Bs3Shutdown();
-                            }
-
-#ifdef BS3_WITH_LOAD_CHECKSUMS
-                            /* Checksum what we just loaded. */
-# if 0 /* For debugging. */
-                            {
-                                uint16_t j;
-                                uint32_t uChecksumTmp = uChecksum;
-                                for (j = 0; j < cSectors; j++, iCurSector++)
-                                    Bs3TestPrintf("sector #%RU32:  %#RX32 %#010RX32\n", iCurSector,
-                                                  uChecksumTmp = Bs3CalcChecksum(uChecksumTmp, &pbBuf[j * 512U], 512U),
-                                                  Bs3CalcChecksum(BS3_CALC_CHECKSUM_INITIAL_VALUE, &pbBuf[j * 512U], 512U));
-                                uChecksum = Bs3CalcChecksum(uChecksum, pbBuf, 512U * cSectors);
-                                if (uChecksum != uChecksumTmp)
-                                    Bs3TestPrintf("Checksum error: %#RX32, expected %#RX32!\n", uChecksum, uChecksumTmp);
-                            }
-# else
-                            uChecksum = Bs3CalcChecksum(uChecksum, pbBuf, 512U * cSectors);
-# endif
-#endif
-
-                            /* Copy the page to where the DLL is being loaded.  */
-                            Bs3MemCopyFlat_rm_far(uCurFlatLoadAddr, uFlatBuf, 512U * cSectors);
-                            Bs3PrintChr('.');
-
-                            /* Advance */
-                            uCurFlatLoadAddr   += cSectors * 512U;
-                            cSectorsLeftToLoad -= cSectors;
-                            uSector            += cSectors;
-                            if (!uSector || uSector > uMaxSector)
-                            {
-                                uSector        = 1;
-                                uHead++;
-                                if (uHead > uMaxHead)
-                                {
-                                    uHead      = 0;
-                                    uCylinder++;
-                                }
-                            }
-                        }
-
-#ifdef BS3_WITH_LOAD_CHECKSUMS
-                        /* Verify the checksum. */
-                        if (uChecksum != g_aBs3HighDllTable[i].uChecksum)
-                        {
-                            Bs3TestPrintf("Checksum mismatch for '%s': %#RX32 vs %#RX32\n",
-                                          pszFilename, uChecksum, g_aBs3HighDllTable[i].uChecksum);
-                            Bs3Shutdown();
-                        }
-#endif
-                    }
-                }
+                /*
+                 * Load it.
+                 */
+                bs3InitHighDllLoadImage(&g_aBs3HighDllTable[i], pszFilename, pbBuf, cBufSectors, uFlatBuf,
+                                        bDrive, uMaxHead, uMaxSector, cSectorsPerCylinder);
             }
 
             Bs3Printf("\n");
