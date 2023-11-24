@@ -59,17 +59,17 @@ RT_C_DECLS_BEGIN
  * @param   pszSalt             Salt to use.
  *                              Must be >= RT_SHACRYPT_MIN_SALT_LEN and <= RT_SHACRYPT_MAX_SALT_LEN.
  * @param   cRounds             Number of rounds to use.
- * @param   pabHash             Where to return the hash on success.
+ * @param   abHash              Where to return the hash on success.
  *
  * @note    This implements SHA-crypt.txt Version: 0.6 2016-8-31.
  */
-RTR3DECL(int) RTShaCrypt256(const char *pszKey, const char *pszSalt, uint32_t cRounds, uint8_t pabHash[RTSHA256_HASH_SIZE]);
+RTR3DECL(int) RTShaCrypt256(const char *pszKey, const char *pszSalt, uint32_t cRounds, uint8_t abHash[RTSHA256_HASH_SIZE]);
 
 /**
  * Returns a SHAcrypt (SHA-256) digest as a printable scheme.
  *
  * @returns VBox status code.
- * @param   pabHash             SHAcrypt (SHA-256) digest to return printable scheme for.
+ * @param   abHash              SHAcrypt (SHA-256) digest to return printable scheme for.
  * @param   pszSalt             Salt to use. Must match the salt used when generating \a pabHash via RTSha256Crypt().
  * @param   cRounds             Number of rounds used for generating \a pabHash.
  * @param   pszString           Where to store the printable string on success.
@@ -88,18 +88,18 @@ RTR3DECL(int) RTShaCrypt256ToString(uint8_t abHash[RTSHA256_HASH_SIZE], const ch
  * @param   pszSalt             Salt to use.
  *                              Must be >= RT_SHACRYPT_MIN_SALT_LEN and <= RT_SHACRYPT_MAX_SALT_LEN.
  * @param   cRounds             Number of rounds to use.
- * @param   pabHash             Where to return the hash on success.
+ * @param   abHash              Where to return the hash on success.
  *
  * @note    This implements SHA-crypt.txt Version: 0.6 2016-8-31.
  */
-RTR3DECL(int) RTShaCrypt512(const char *pszKey, const char *szSalt, uint32_t cRounds, uint8_t pabHash[RTSHA512_HASH_SIZE]);
+RTR3DECL(int) RTShaCrypt512(const char *pszKey, const char *pszSalt, uint32_t cRounds, uint8_t abHash[RTSHA512_HASH_SIZE]);
 
 
 /**
  * Returns a SHAcrypt (SHA-512) digest as a printable scheme.
  *
  * @returns VBox status code.
- * @param   pabHash             SHAcrypt (SHA-512) digest to return printable scheme for.
+ * @param   abHash              SHAcrypt (SHA-512) digest to return printable scheme for.
  * @param   pszSalt             Salt to use. Must match the salt used when generating \a pabHash via RTSha512Crypt().
  * @param   cRounds             Number of rounds used for generating \a pabHash.
  * @param   pszString           Where to store the printable string on success.
