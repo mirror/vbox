@@ -209,6 +209,11 @@ if !defined(VBOX_ONLY_BUILD)
  RTMkDir_TEMPLATE = VBoxR3Tool
  RTMkDir_SOURCES = RTMkDir.cpp
 
+ # RTMkPasswd - our mkpasswd clone.
+ PROGRAMS += RTMkPasswd
+ RTMkPasswd_TEMPLATE = VBoxR3Tool
+ RTMkPasswd_SOURCES = RTMkPasswd.cpp
+
  # RTRmDir - our mkdir clone.
  PROGRAMS += RTRmDir
  RTRmDir_TEMPLATE = VBoxR3Tool
