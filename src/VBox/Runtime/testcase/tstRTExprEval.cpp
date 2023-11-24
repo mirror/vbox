@@ -68,6 +68,8 @@ static DECLCALLBACK(int) tstBasicQueryVariable(const char *pchName, size_t cchNa
         pszValue = "string";
     else if (MATCH_VAR("MYNESTED1"))
         pszValue = "MYVAR1";
+    else if (MATCH_VAR("FOX_AND_DOG"))
+        pszValue = "The quick brown fox jumps over the lazy dog";
     else
         return VERR_NOT_FOUND;
 
@@ -169,6 +171,44 @@ static void tstBasic(void)
     CHECK_FREE_pszResult("false");
     RTTESTI_CHECK_RC(RTExprEvalToString(hExprEval, RT_STR_TUPLE("1+2"), &pszResult, NULL), VINF_SUCCESS);
     CHECK_FREE_pszResult("3");
+
+    /* hash functions: */
+    g_fQueryVariableExpected = true;
+    RTTESTI_CHECK_RC(RTExprEvalToString(hExprEval, RT_STR_TUPLE("sha1 \"${FOX_AND_DOG}\""), &pszResult, NULL), VINF_SUCCESS);
+    g_fQueryVariableExpected = false;
+    CHECK_FREE_pszResult("2fd4e1c67a2d28fced849ee1bb76e7391b93eb12");
+
+    g_fQueryVariableExpected = true;
+    RTTESTI_CHECK_RC(RTExprEvalToString(hExprEval, RT_STR_TUPLE("sha1(\"${FOX_AND_DOG}\")"), &pszResult, NULL), VINF_SUCCESS);
+    g_fQueryVariableExpected = false;
+    CHECK_FREE_pszResult("2fd4e1c67a2d28fced849ee1bb76e7391b93eb12");
+
+    g_fQueryVariableExpected = true;
+    RTTESTI_CHECK_RC(RTExprEvalToString(hExprEval, RT_STR_TUPLE("sha1(${FOX_AND_DOG})"), &pszResult, NULL), VINF_SUCCESS);
+    g_fQueryVariableExpected = false;
+    CHECK_FREE_pszResult("2fd4e1c67a2d28fced849ee1bb76e7391b93eb12");
+
+#if 0 /** @todo not happy with 'strcat' as an operator. Dot doesn't work, so, figure something else out... */
+    g_fQueryVariableExpected = true;
+    RTTESTI_CHECK_RC(RTExprEvalToString(hExprEval, RT_STR_TUPLE("sha1(${FOX_AND_DOG}) strcat sha1('')"), &pszResult, NULL), VINF_SUCCESS);
+    g_fQueryVariableExpected = false;
+    CHECK_FREE_pszResult("2fd4e1c67a2d28fced849ee1bb76e7391b93eb12da39a3ee5e6b4b0d3255bfef95601890afd80709");
+#endif
+
+    g_fQueryVariableExpected = true;
+    RTTESTI_CHECK_RC(RTExprEvalToString(hExprEval, RT_STR_TUPLE("sha256('')"), &pszResult, NULL), VINF_SUCCESS);
+    g_fQueryVariableExpected = false;
+    CHECK_FREE_pszResult("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+
+    g_fQueryVariableExpected = true;
+    RTTESTI_CHECK_RC(RTExprEvalToString(hExprEval, RT_STR_TUPLE("sha512('')"), &pszResult, NULL), VINF_SUCCESS);
+    g_fQueryVariableExpected = false;
+    CHECK_FREE_pszResult("cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e");
+
+    g_fQueryVariableExpected = true;
+    RTTESTI_CHECK_RC(RTExprEvalToString(hExprEval, RT_STR_TUPLE("md5(${FOX_AND_DOG})"), &pszResult, NULL), VINF_SUCCESS);
+    g_fQueryVariableExpected = false;
+    CHECK_FREE_pszResult("9e107d9d372bb6826bd81d3542a419d6");
 
     RTTESTI_CHECK_RETV(RTExprEvalRelease(hExprEval) == 0);
 }

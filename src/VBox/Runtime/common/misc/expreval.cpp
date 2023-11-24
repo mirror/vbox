@@ -45,8 +45,10 @@
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
 #include <iprt/err.h>
+#include <iprt/md5.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>
+#include <iprt/sha.h>
 #include <iprt/string.h>
 
 
@@ -524,51 +526,54 @@ static EXPRRET expr_var_init_substring(PEXPR pThis, PEXPRVAR pVar, const char *p
 }
 
 
-#if 0  /* unused */
 /**
  * Initializes a new variables with a string value.
  *
  * @returns kExprRet_Ok or kExprRet_Error.
+ * @param   pThis   The evaluator expression instance.
  * @param   pVar    The new variable.
  * @param   psz     The string value.
  * @param   enmType The string type.
  */
-static EXPRRET expr_var_init_string(PEXPRVAR pVar, const char *psz, EXPRVARTYPE enmType)
+static EXPRRET expr_var_init_string(PEXPR pThis, PEXPRVAR pVar, const char *psz, EXPRVARTYPE enmType)
 {
-    return expr_var_init_substring(pVar, psz, strlen(psz), enmType);
+    return expr_var_init_substring(pThis, pVar, psz, strlen(psz), enmType);
 }
 
 
+#if 0  /* unused */
 /**
  * Assigns a sub-string value to a variable.
  *
  * @returns kExprRet_Ok or kExprRet_Error.
+ * @param   pThis   The evaluator expression instance.
  * @param   pVar    The new variable.
  * @param   psz     The start of the string value.
  * @param   cch     The number of chars to copy.
  * @param   enmType The string type.
  */
-static void expr_var_assign_substring(PEXPRVAR pVar, const char *psz, size_t cch, EXPRVARTYPE enmType)
+static EXPRRET expr_var_assign_substring(PEXPR pThis, PEXPRVAR pVar, const char *psz, size_t cch, EXPRVARTYPE enmType)
 {
     expr_var_delete(pVar);
-    return expr_var_init_substring(pVar, psz, cch, enmType);
+    return expr_var_init_substring(pThis, pVar, psz, cch, enmType);
 }
+#endif /* unused */
 
 
 /**
  * Assignes a string value to a variable.
  *
  * @returns kExprRet_Ok or kExprRet_Error.
+ * @param   pThis       The evaluator expression instance.
  * @param   pVar    The variable.
  * @param   psz     The string value.
  * @param   enmType The string type.
  */
-static void expr_var_assign_string(PEXPRVAR pVar, const char *psz, EXPRVARTYPE enmType)
+static EXPRRET expr_var_assign_string(PEXPR pThis, PEXPRVAR pVar, const char *psz, EXPRVARTYPE enmType)
 {
     expr_var_delete(pVar);
-    return expr_var_init_string(pVar, psz, enmType);
+    return expr_var_init_string(pThis, pVar, psz, enmType);
 }
-#endif /* unused */
 
 
 /**
@@ -1313,6 +1318,110 @@ static EXPRRET expr_op_str(PEXPR pThis)
 
 
 /**
+ * Returns the MD5 digest of the input as a string.
+ *
+ * @returns Status code.
+ * @param   pThis       The instance.
+ */
+static EXPRRET expr_op_md5(PEXPR pThis)
+{
+    PEXPRVAR pVar = &pThis->aVars[pThis->iVar];
+    EXPRRET  rc   = expr_var_make_simple_string(pThis, pVar);
+    if (rc == kExprRet_Ok)
+    {
+        pVar->enmType = kExprVar_QuotedSimpleString;
+
+        uint8_t abDigest[RTMD5_HASH_SIZE];
+        RTMd5(pVar->uVal.psz, strlen(pVar->uVal.psz), abDigest);
+        char szHash[RTMD5_DIGEST_LEN + 1];
+        RTMd5ToString(abDigest, szHash, sizeof(szHash));
+
+        rc = expr_var_assign_string(pThis, pVar, szHash, kExprVar_QuotedSimpleString);
+    }
+
+    return rc;
+}
+
+
+/**
+ * Returns the SHA1 digest of the input as a string.
+ *
+ * @returns Status code.
+ * @param   pThis       The instance.
+ */
+static EXPRRET expr_op_sha1(PEXPR pThis)
+{
+    PEXPRVAR pVar = &pThis->aVars[pThis->iVar];
+    EXPRRET  rc   = expr_var_make_simple_string(pThis, pVar);
+    if (rc == kExprRet_Ok)
+    {
+        pVar->enmType = kExprVar_QuotedSimpleString;
+
+        uint8_t abDigest[RTSHA1_HASH_SIZE];
+        RTSha1(pVar->uVal.psz, strlen(pVar->uVal.psz), abDigest);
+        char szHash[RTSHA1_DIGEST_LEN + 1];
+        RTSha1ToString(abDigest, szHash, sizeof(szHash));
+
+        rc = expr_var_assign_string(pThis, pVar, szHash, kExprVar_QuotedSimpleString);
+    }
+
+    return rc;
+}
+
+
+/**
+ * Returns the SHA256 digest of the input as a string.
+ *
+ * @returns Status code.
+ * @param   pThis       The instance.
+ */
+static EXPRRET expr_op_sha256(PEXPR pThis)
+{
+    PEXPRVAR pVar = &pThis->aVars[pThis->iVar];
+    EXPRRET  rc   = expr_var_make_simple_string(pThis, pVar);
+    if (rc == kExprRet_Ok)
+    {
+        pVar->enmType = kExprVar_QuotedSimpleString;
+
+        uint8_t abDigest[RTSHA256_HASH_SIZE];
+        RTSha256(pVar->uVal.psz, strlen(pVar->uVal.psz), abDigest);
+        char szHash[RTSHA256_DIGEST_LEN + 1];
+        RTSha256ToString(abDigest, szHash, sizeof(szHash));
+
+        rc = expr_var_assign_string(pThis, pVar, szHash, kExprVar_QuotedSimpleString);
+    }
+
+    return rc;
+}
+
+
+/**
+ * Returns the SHA-512 digest of the input as a string.
+ *
+ * @returns Status code.
+ * @param   pThis       The instance.
+ */
+static EXPRRET expr_op_sha512(PEXPR pThis)
+{
+    PEXPRVAR pVar = &pThis->aVars[pThis->iVar];
+    EXPRRET  rc   = expr_var_make_simple_string(pThis, pVar);
+    if (rc == kExprRet_Ok)
+    {
+        pVar->enmType = kExprVar_QuotedSimpleString;
+
+        uint8_t abDigest[RTSHA512_HASH_SIZE];
+        RTSha512(pVar->uVal.psz, strlen(pVar->uVal.psz), abDigest);
+        char szHash[RTSHA512_DIGEST_LEN + 1];
+        RTSha512ToString(abDigest, szHash, sizeof(szHash));
+
+        rc = expr_var_assign_string(pThis, pVar, szHash, kExprVar_QuotedSimpleString);
+    }
+
+    return rc;
+}
+
+
+/**
  * Pluss (dummy / make_integer)
  *
  * @returns Status code.
@@ -1442,6 +1551,57 @@ static EXPRRET expr_op_modulus(PEXPR pThis)
     expr_pop_and_delete_var(pThis);
     return rc;
 }
+
+
+#if 0 /** @todo not happy with 'strcat' as an operator. Dot doesn't work, so, figure something else out... */
+/**
+ * Concatnation (string).
+ *
+ * @returns Status code.
+ * @param   pThis       The instance.
+ */
+static EXPRRET expr_op_concat(PEXPR pThis)
+{
+    PEXPRVAR pVar1 = &pThis->aVars[pThis->iVar - 1];
+    PEXPRVAR pVar2 = &pThis->aVars[pThis->iVar];
+    EXPRRET  rc    = kExprRet_Ok;
+    if (!expr_var_is_string(pVar1))
+        rc = expr_var_make_simple_string(pThis, pVar1);
+    if (rc >= kExprRet_Ok)
+    {
+        if (!expr_var_is_string(pVar2))
+            rc = expr_var_make_simple_string(pThis, pVar2);
+        if (rc >= kExprRet_Ok)
+        {
+            /** @todo this may be problematic if we combine simple with quoted strings
+             *        if the simple string contains $. */
+            if (rc >= kExprRet_Ok)
+            {
+                size_t cchVar1 = strlen(pVar1->uVal.psz);
+                size_t cchVar2 = strlen(pVar2->uVal.psz);
+                size_t cchNew  = cchVar1 + cchVar2;
+                char  *pszNew  = (char *)RTMemTmpAlloc(cchNew + 1);
+                if (pszNew)
+                {
+                    memcpy(pszNew, pVar1->uVal.psz, cchVar1);
+                    memcpy(&pszNew[cchVar1], pVar2->uVal.psz, cchVar2);
+                    pszNew[cchNew] = '\0';
+                    RTMemTmpFree(pVar1->uVal.psz);
+                    pVar1->uVal.psz = pszNew;
+                }
+                else
+                {
+                    RTErrInfoSetF(pThis->pErrInfo, VERR_NO_TMP_MEMORY, "Failed to allocate %zu bytes", cchNew + 1);
+                    rc = kExprRet_Error;
+                }
+            }
+        }
+    }
+
+    expr_pop_and_delete_var(pThis);
+    return rc;
+}
+#endif
 
 
 /**
@@ -2061,7 +2221,11 @@ static const EXPROP g_aExprOps[] =
     EXPR_OP("defined",     90,      1,    expr_op_defined),
     EXPR_OP("exists",      90,      1,    expr_op_exists),
     EXPR_OP("bool",        90,      1,    expr_op_bool),
+    EXPR_OP("md5",         90,      1,    expr_op_md5),
     EXPR_OP("num",         90,      1,    expr_op_num),
+    EXPR_OP("sha1",        90,      1,    expr_op_sha1),
+    EXPR_OP("sha256",      90,      1,    expr_op_sha256),
+    EXPR_OP("sha512",      90,      1,    expr_op_sha512),
     EXPR_OP("strlen",      90,      1,    expr_op_strlen),
     EXPR_OP("str",         90,      1,    expr_op_str),
     EXPR_OP("+",           80,      1,    expr_op_pluss),
@@ -2072,6 +2236,9 @@ static const EXPROP g_aExprOps[] =
     EXPR_OP("%",           75,      2,    expr_op_modulus),
     EXPR_OP("+",           70,      2,    expr_op_add),
     EXPR_OP("-",           70,      2,    expr_op_sub),
+#if 0  /** @todo not happy with 'strcat' as an operator. Dot doesn't work, so, figure something else out... */
+    EXPR_OP("strcat",      70,      2,    expr_op_concat),
+#endif
     EXPR_OP("<<",          65,      2,    expr_op_shift_left),
     EXPR_OP(">>",          65,      2,    expr_op_shift_right),
     EXPR_OP("<=",          60,      2,    expr_op_less_or_equal_than),
