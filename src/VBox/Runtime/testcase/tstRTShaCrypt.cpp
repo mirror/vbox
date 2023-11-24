@@ -211,11 +211,11 @@ int main()
         switch (enmType)
         {
             case TST_DIGESTTYPE_SHA256:
-                rc = RTShaCrypt256(g_aTests[i].pszPassword, pszSalt, cRounds, abDigest);
+                rc = RTCrShaCrypt256(g_aTests[i].pszPassword, pszSalt, cRounds, abDigest);
                 break;
 
             case TST_DIGESTTYPE_SHA512:
-                rc = RTShaCrypt512(g_aTests[i].pszPassword, pszSalt, cRounds, abDigest);
+                rc = RTCrShaCrypt512(g_aTests[i].pszPassword, pszSalt, cRounds, abDigest);
                 break;
 
             default:
@@ -231,11 +231,11 @@ int main()
             switch (enmType)
             {
                 case TST_DIGESTTYPE_SHA256:
-                    rc = RTShaCrypt256ToString(abDigest, pszSalt, cRounds, szResult, sizeof(szResult));
+                    rc = RTCrShaCrypt256ToString(abDigest, pszSalt, cRounds, szResult, sizeof(szResult));
                     break;
 
                 case TST_DIGESTTYPE_SHA512:
-                    rc = RTShaCrypt512ToString(abDigest, pszSalt, cRounds, szResult, sizeof(szResult));
+                    rc = RTCrShaCrypt512ToString(abDigest, pszSalt, cRounds, szResult, sizeof(szResult));
                     break;
 
                 default:

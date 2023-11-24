@@ -182,17 +182,17 @@ int main(int argc, char **argv)
     {
         case RTMKPASSWORD_METHODTYPE_SHA256:
         {
-            rc = RTShaCrypt256(pszKey, pszSalt, cRounds, abDigest);
+            rc = RTCrShaCrypt256(pszKey, pszSalt, cRounds, abDigest);
             if (RT_SUCCESS(rc))
-                rc = RTShaCrypt256ToString(abDigest, pszSalt, cRounds, szResult, sizeof(szResult));
+                rc = RTCrShaCrypt256ToString(abDigest, pszSalt, cRounds, szResult, sizeof(szResult));
             break;
         }
 
         case RTMKPASSWORD_METHODTYPE_SHA512:
         {
-            rc = RTShaCrypt512(pszKey, pszSalt, cRounds, abDigest);
+            rc = RTCrShaCrypt512(pszKey, pszSalt, cRounds, abDigest);
             if (RT_SUCCESS(rc))
-                rc = RTShaCrypt512ToString(abDigest, pszSalt, cRounds, szResult, sizeof(szResult));
+                rc = RTCrShaCrypt512ToString(abDigest, pszSalt, cRounds, szResult, sizeof(szResult));
             break;
         }
 

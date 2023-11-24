@@ -47,7 +47,7 @@
 
 
 
-RTR3DECL(int) RTShaCrypt256(const char *pszKey, const char *pszSalt, uint32_t cRounds, uint8_t abHash[RTSHA256_HASH_SIZE])
+RTR3DECL(int) RTCrShaCrypt256(const char *pszKey, const char *pszSalt, uint32_t cRounds, uint8_t abHash[RTSHA256_HASH_SIZE])
 {
     AssertPtrReturn(pszKey,   VERR_INVALID_POINTER);
     AssertPtrReturn(pszSalt,  VERR_INVALID_POINTER);
@@ -171,8 +171,8 @@ RTR3DECL(int) RTShaCrypt256(const char *pszKey, const char *pszSalt, uint32_t cR
 }
 
 
-RTR3DECL(int) RTShaCrypt256ToString(uint8_t abHash[RTSHA256_HASH_SIZE], const char *pszSalt, uint32_t cRounds,
-                                    char *pszString, size_t cbString)
+RTR3DECL(int) RTCrShaCrypt256ToString(uint8_t abHash[RTSHA256_HASH_SIZE], const char *pszSalt, uint32_t cRounds,
+                                      char *pszString, size_t cbString)
 {
     AssertPtrReturn(pszSalt,   VERR_INVALID_POINTER);
     AssertReturn   (cRounds,   VERR_INVALID_PARAMETER);
@@ -221,7 +221,7 @@ RTR3DECL(int) RTShaCrypt256ToString(uint8_t abHash[RTSHA256_HASH_SIZE], const ch
 }
 
 
-RTR3DECL(int) RTShaCrypt512(const char *pszKey, const char *pszSalt, uint32_t cRounds, uint8_t abHash[RTSHA512_HASH_SIZE])
+RTR3DECL(int) RTCrShaCrypt512(const char *pszKey, const char *pszSalt, uint32_t cRounds, uint8_t abHash[RTSHA512_HASH_SIZE])
 {
     AssertPtrReturn(pszKey,   VERR_INVALID_POINTER);
     AssertPtrReturn(pszSalt,  VERR_INVALID_POINTER);
@@ -345,8 +345,8 @@ RTR3DECL(int) RTShaCrypt512(const char *pszKey, const char *pszSalt, uint32_t cR
 }
 
 
-RTR3DECL(int) RTShaCrypt512ToString(uint8_t abHash[RTSHA512_HASH_SIZE], const char *pszSalt, uint32_t cRounds,
-                                    char *pszString, size_t cbString)
+RTR3DECL(int) RTCrShaCrypt512ToString(uint8_t abHash[RTSHA512_HASH_SIZE], const char *pszSalt, uint32_t cRounds,
+                                      char *pszString, size_t cbString)
 {
     AssertPtrReturn(pszSalt,   VERR_INVALID_POINTER);
     AssertReturn   (cRounds,   VERR_INVALID_PARAMETER);

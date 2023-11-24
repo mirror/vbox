@@ -42,6 +42,13 @@
 #include <iprt/sha.h>
 
 
+RT_C_DECLS_BEGIN
+
+/** @defgroup grp_rt_crshacrypt   RTCrShaCrypt - SHAcrypt functions
+ * @ingroup grp_rt
+ * @{
+ */
+
 /** Default number of rounds for SHA-crypt 256/512. */
 #define RT_SHACRYPT_DEFAULT_ROUNDS 5000
 /** Minimum salt length (in bytes) for SHA-crypt 256/512. */
@@ -49,7 +56,6 @@
 /** Maximum salt length (in bytes) for SHA-crypt 256/512. */
 #define RT_SHACRYPT_MAX_SALT_LEN   16
 
-RT_C_DECLS_BEGIN
 
 /**
  * Calculates a SHAcrypt (SHA-256) digest.
@@ -63,7 +69,8 @@ RT_C_DECLS_BEGIN
  *
  * @note    This implements SHA-crypt.txt Version: 0.6 2016-8-31.
  */
-RTR3DECL(int) RTShaCrypt256(const char *pszKey, const char *pszSalt, uint32_t cRounds, uint8_t abHash[RTSHA256_HASH_SIZE]);
+RTR3DECL(int) RTCrShaCrypt256(const char *pszKey, const char *pszSalt, uint32_t cRounds, uint8_t abHash[RTSHA256_HASH_SIZE]);
+
 
 /**
  * Returns a SHAcrypt (SHA-256) digest as a printable scheme.
@@ -77,7 +84,7 @@ RTR3DECL(int) RTShaCrypt256(const char *pszKey, const char *pszSalt, uint32_t cR
  *
  * @note    This implements step 22 of SHA-crypt.txt Version: 0.6 2016-8-31.
  */
-RTR3DECL(int) RTShaCrypt256ToString(uint8_t abHash[RTSHA256_HASH_SIZE], const char *pszSalt, uint32_t cRounds, char *pszString, size_t cbString);
+RTR3DECL(int) RTCrShaCrypt256ToString(uint8_t abHash[RTSHA256_HASH_SIZE], const char *pszSalt, uint32_t cRounds, char *pszString, size_t cbString);
 
 
 /**
@@ -92,7 +99,7 @@ RTR3DECL(int) RTShaCrypt256ToString(uint8_t abHash[RTSHA256_HASH_SIZE], const ch
  *
  * @note    This implements SHA-crypt.txt Version: 0.6 2016-8-31.
  */
-RTR3DECL(int) RTShaCrypt512(const char *pszKey, const char *pszSalt, uint32_t cRounds, uint8_t abHash[RTSHA512_HASH_SIZE]);
+RTR3DECL(int) RTCrShaCrypt512(const char *pszKey, const char *pszSalt, uint32_t cRounds, uint8_t abHash[RTSHA512_HASH_SIZE]);
 
 
 /**
@@ -107,7 +114,9 @@ RTR3DECL(int) RTShaCrypt512(const char *pszKey, const char *pszSalt, uint32_t cR
  *
  * @note    This implements step 22 of SHA-crypt.txt Version: 0.6 2016-8-31.
  */
-RTR3DECL(int) RTShaCrypt512ToString(uint8_t abHash[RTSHA512_HASH_SIZE], const char *pszSalt, uint32_t cRounds, char *pszString, size_t cbString);
+RTR3DECL(int) RTCrShaCrypt512ToString(uint8_t abHash[RTSHA512_HASH_SIZE], const char *pszSalt, uint32_t cRounds, char *pszString, size_t cbString);
+
+/** @} */
 
 RT_C_DECLS_END
 
