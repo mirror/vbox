@@ -43,7 +43,6 @@
 #include "nsIEnumerator.h"
 #include "nsString.h"
 #include "nsReadableUtils.h"
-#include "prprf.h"
 #include "nsWeakReference.h"
 
 static nsIObserverService *anObserverService = NULL;

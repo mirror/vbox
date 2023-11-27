@@ -36,7 +36,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "prprf.h"
 #include "prmem.h"
 
 #include "nscore.h"

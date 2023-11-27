@@ -78,7 +78,6 @@
 
 #include "pldhash.h"
 #include "plstr.h"
-#include "prprf.h"
 #include "prtime.h"
 
 #include <stdio.h>

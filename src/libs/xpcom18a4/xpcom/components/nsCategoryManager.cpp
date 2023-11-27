@@ -42,7 +42,6 @@
 #include "nsCategoryManager.h"
 
 #include "plarena.h"
-#include "prprf.h"
 #include "nsCOMPtr.h"
 #include "nsTHashtable.h"
 #include "nsClassHashtable.h"

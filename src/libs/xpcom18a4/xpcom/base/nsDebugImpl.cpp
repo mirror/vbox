@@ -40,7 +40,6 @@
 #include "nsXPCOMPrivate.h"
 #include "nsDebugImpl.h"
 #include "nsDebug.h"
-#include "prprf.h"
 #include "plstr.h"
 #include "nsError.h"
 
