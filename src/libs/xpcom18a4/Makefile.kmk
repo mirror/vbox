@@ -215,7 +215,6 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/ds/nsCRT.h \
 	xpcom/components/nsCategoryManagerUtils.h \
 	xpcom/ds/nsClassHashtable.h \
-	xpcom/base/nsCom.h \
 	xpcom/components/nsComponentManagerObsolete.h \
 	xpcom/components/nsComponentManagerUtils.h \
 	xpcom/ds/nsDataHashtable.h \
