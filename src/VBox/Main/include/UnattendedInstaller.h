@@ -670,7 +670,7 @@ public:
 
     UnattendedUbuntuAutoInstallInstaller(Unattended *pParent)
         : UnattendedDebianInstaller(pParent,
-                                    /* pszMainScriptTemplateName = */ "ubuntu_autoinstall_user-data",
+                                    /* pszMainScriptTemplateName = */ "ubuntu_autoinstall_user_data",
                                     /* pszPostScriptTemplateName = */ "debian_postinstall.sh",
                                     /* pszMainScriptFilename     = */ "user-data")
     {

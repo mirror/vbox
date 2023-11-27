@@ -1420,7 +1420,7 @@ HRESULT UnattendedUbuntuAutoInstallInstaller::addFilesToAuxVisoVectors(RTCList<R
         AssertRCReturn(vrc, mpParent->setErrorVrc(vrc));
         vrc = RTPathAppendCxx(strUnattendedTemplates, "UnattendedTemplates");
         AssertRCReturn(vrc, mpParent->setErrorVrc(vrc));
-        rVecArgs.append().assign("/meta-data=").append(strUnattendedTemplates).append("/ubuntu_autoinstall_meta-data");
+        rVecArgs.append().assign("/meta-data=").append(strUnattendedTemplates).append("/ubuntu_autoinstall_meta_data");
     }
     catch (std::bad_alloc &)
     {
