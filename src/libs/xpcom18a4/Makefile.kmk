@@ -488,7 +488,6 @@ VBox-xpcom-io_SOURCES = \
 	xpcom/io/nsAppFileLocationProvider.cpp \
 	xpcom/io/nsBinaryStream.cpp \
 	xpcom/io/nsDirectoryService.cpp \
-	xpcom/io/nsInputStreamTee.cpp \
 	xpcom/io/nsLocalFileCommon.cpp \
 	xpcom/io/nsScriptableInputStream.cpp \
 	xpcom/io/SpecialSystemDirectory.cpp \
@@ -962,7 +961,6 @@ VBOX_XPTFILES = $(addprefix $(PATH_TARGET)/VBox-xpcom-xpt-files/, \
 		nsISupportsPrimitives.xpt \
 		nsIBinaryInputStream.xpt \
 		nsIBinaryOutputStream.xpt \
-		nsIInputStreamTee.xpt \
 		nsILineInputStream.xpt \
 		nsIObjectInputStream.xpt \
 		nsIObjectOutputStream.xpt \
