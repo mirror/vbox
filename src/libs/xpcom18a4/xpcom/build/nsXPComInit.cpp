@@ -46,7 +46,6 @@
 #include "nsObserverService.h"
 #include "nsProperties.h"
 #include "nsIProperties.h"
-#include "nsScriptableInputStream.h"
 #include "nsBinaryStream.h"
 
 #include "nsDebugImpl.h"
@@ -322,7 +321,6 @@ static const nsModuleComponentInfo components[] = {
 #define NS_ERRORSERVICE_CLASSNAME NS_ERRORSERVICE_NAME
     COMPONENT(ERRORSERVICE, nsErrorService::Create),
 
-    COMPONENT(SCRIPTABLEINPUTSTREAM, nsScriptableInputStream::Create),
     COMPONENT(BINARYINPUTSTREAM, nsBinaryInputStreamConstructor),
     COMPONENT(BINARYOUTPUTSTREAM, nsBinaryOutputStreamConstructor),
 

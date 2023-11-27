@@ -252,7 +252,6 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/proxy/public/nsProxyRelease.h \
 	xpcom/ds/nsQuickSort.h \
 	xpcom/ds/nsRefPtrHashtable.h \
-	xpcom/io/nsScriptableInputStream.h \
 	xpcom/ds/nsStaticAtom.h \
 	xpcom/components/nsStaticComponent.h \
 	xpcom/ds/nsStringEnumerator.h \
@@ -483,7 +482,6 @@ VBox-xpcom-io_SOURCES = \
 	xpcom/io/nsBinaryStream.cpp \
 	xpcom/io/nsDirectoryService.cpp \
 	xpcom/io/nsLocalFileCommon.cpp \
-	xpcom/io/nsScriptableInputStream.cpp \
 	xpcom/io/SpecialSystemDirectory.cpp \
 	xpcom/io/nsNativeCharsetUtils.cpp
 if1of ($(KBUILD_TARGET) $(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), freebsd linux netbsd openbsd solaris darwin.amd64 darwin.arm64)
@@ -962,7 +960,6 @@ VBOX_XPTFILES = $(addprefix $(PATH_TARGET)/VBox-xpcom-xpt-files/, \
 		nsILocalFile.xpt \
 		nsIInputStream.xpt \
 		nsIOutputStream.xpt \
-		nsIScriptableInputStream.xpt \
 		nsIComponentLoader.xpt \
 		nsIComponentLoaderManager.xpt \
 		nsIComponentManagerObsolete.xpt \
