@@ -77,8 +77,7 @@ TEMPLATE_XPComDll_DEFS                = \
 	MOZILLA_CLIENT=1 \
 	NDEBUG=1 \
 	_IMPL_NS_COM \
-	IN_RING3 \
-	VBOX_USE_IPRT_IN_XPCOM
+	IN_RING3
 ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
  TEMPLATE_XPComDll_DEFS              += \
  	XPCOM_DLL_BASE="$(basename $(notdir $(LIB_XPCOM)))" \
@@ -241,25 +240,22 @@ endif
 # and CXXFLAGS completely at the moment.
 #
 TEMPLATE_XPComBldProg                     = XPCOM Build programs executables
-TEMPLATE_XPComBldProg_EXTENDS             = VBoxBldProg
-## @todo Verify that this doesn't blow up because of template inheriance ordering. (we're assuming XPComExe is expanded when this is being used.)
-TEMPLATE_XPComBldProg_DEFS                = \
-	$(TEMPLATE_VBoxBldProg_DEFS) \
-	$(filter-out VBOX_USE_IPRT_IN_XPCOM, $(TEMPLATE_XPComExe_DEFS))
-TEMPLATE_XPComBldProg_DEFS.$(KBUILD_HOST) = $(TEMPLATE_VBoxBldProg_DEFS.$(KBUILD_HOST)) $(TEMPLATE_XPComExe_DEFS.$(KBUILD_HOST))
-TEMPLATE_XPComBldProg_DEFS.x86            = $(TEMPLATE_VBoxBldProg_DEFS.x86)            $(TEMPLATE_XPComExe_DEFS.x86)
-TEMPLATE_XPComBldProg_DEFS.amd64          = $(TEMPLATE_VBoxBldProg_DEFS.amd64)          $(TEMPLATE_XPComExe_DEFS.amd64)
+TEMPLATE_XPComBldProg_EXTENDS             = VBoxAdvBldProg
+TEMPLATE_XPComBldProg_DEFS.$(KBUILD_HOST) = $(TEMPLATE_VBoxAdvBldProg_DEFS.$(KBUILD_HOST)) $(TEMPLATE_XPComExe_DEFS.$(KBUILD_HOST))
+TEMPLATE_XPComBldProg_DEFS.x86            = $(TEMPLATE_VBoxAdvBldProg_DEFS.x86)            $(TEMPLATE_XPComExe_DEFS.x86)
+TEMPLATE_XPComBldProg_DEFS.amd64          = $(TEMPLATE_VBoxAdvBldProg_DEFS.amd64)          $(TEMPLATE_XPComExe_DEFS.amd64)
+TEMPLATE_XPComBldProg_DEFS.arm64          = $(TEMPLATE_VBoxAdvBldProg_DEFS.arm64)          $(TEMPLATE_XPComExe_DEFS.arm64)
 TEMPLATE_XPComBldProg_INCS                = \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/string \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/ipcd
-TEMPLATE_XPComBldProg_CFLAGS             = $(filter-out $(VBOX_GCC_PEDANTIC_C), $(TEMPLATE_VBoxBldProg_CFLAGS)) \
+TEMPLATE_XPComBldProg_CFLAGS             = $(filter-out $(VBOX_GCC_PEDANTIC_C), $(TEMPLATE_VBoxAdvBldProg_CFLAGS)) \
 	$(VBOX_GCC_Wno-int-to-pointer-cast) $(VBOX_GCC_Wno-pointer-to-int-cast) $(VBOX_GCC_NON_PEDANTIC_C)
-TEMPLATE_XPComBldProg_CXXFLAGS.darwin    = $(TEMPLATE_VBoxBldProg_CXXFLAGS.darwin)     -fpascal-strings -fshort-wchar -fno-common -fno-rtti
-TEMPLATE_XPComBldProg_CXXFLAGS.solaris   = $(TEMPLATE_VBoxBldProg_CXXFLAGS.solaris)    -fno-omit-frame-pointer # for now anyway.
-TEMPLATE_XPComBldProg_LDFLAGS.darwin     = $(TEMPLATE_VBoxBldProg_LDFLAGS.darwin)      -fpascal-strings -fshort-wchar -fno-rtti -fno-exceptions
+TEMPLATE_XPComBldProg_CXXFLAGS.darwin    = $(TEMPLATE_VBoxAdvBldProg_CXXFLAGS.darwin)     -fpascal-strings -fshort-wchar -fno-common -fno-rtti
+TEMPLATE_XPComBldProg_CXXFLAGS.solaris   = $(TEMPLATE_VBoxAdvBldProg_CXXFLAGS.solaris)    -fno-omit-frame-pointer # for now anyway.
+TEMPLATE_XPComBldProg_LDFLAGS.darwin     = $(TEMPLATE_VBoxAdvBldProg_LDFLAGS.darwin)      -fpascal-strings -fshort-wchar -fno-rtti -fno-exceptions
 TEMPLATE_XPComBldProg_ORDERDEPS          = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $($(hdrinst)_1_TARGET))
 
 

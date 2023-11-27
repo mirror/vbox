@@ -39,9 +39,8 @@
 #include "ipcMessageWriter.h"
 #include "prmem.h"
 #include <string.h>
-#ifdef VBOX_USE_IPRT_IN_XPCOM
-# include <iprt/mem.h>
-#endif
+
+#include <iprt/mem.h>
 
 //*****************************************************************************
 // ipcMessageWriter
@@ -50,11 +49,7 @@
 ipcMessageWriter::~ipcMessageWriter()
 {
   if (mBuf)
-#ifdef VBOX_USE_IPRT_IN_XPCOM
     RTMemFree(mBuf);
-#else
-    free(mBuf);
-#endif
 }
 
 void ipcMessageWriter::PutInt8(PRUint8 val)
@@ -115,11 +110,7 @@ PRBool ipcMessageWriter::GrowCapacity(PRInt32 sizeNeeded)
   }
 
   PRInt32 curPos = mBufPtr - mBuf;
-#ifdef VBOX_USE_IPRT_IN_XPCOM
   mBuf = (PRUint8*)RTMemRealloc(mBuf, mCapacity);
-#else
-  mBuf = (PRUint8*)realloc(mBuf, mCapacity);
-#endif
   if (!mBuf) {
     mError = PR_TRUE;
     return PR_FALSE;

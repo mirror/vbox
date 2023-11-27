@@ -47,9 +47,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef VBOX_USE_IPRT_IN_XPCOM
-# include <iprt/mem.h>
-#endif
+
+#include <iprt/mem.h>
 
 
 /*************************/
@@ -140,11 +139,7 @@ struct XPTArena
 XPT_PUBLIC_API(XPTArena *)
 XPT_NewArena(PRUint32 block_size, size_t alignment, const char* name)
 {
-#ifdef VBOX_USE_IPRT_IN_XPCOM
     XPTArena *arena = RTMemAllocZ(sizeof(XPTArena));
-#else
-    XPTArena *arena = calloc(1, sizeof(XPTArena));
-#endif
     if (arena) {
         XPT_ASSERT(alignment);
         if (alignment > sizeof(double))
@@ -182,18 +177,10 @@ XPT_DestroyArena(XPTArena *arena)
     cur = arena->first;
     while (cur) {
         next = cur->next;
-#ifdef VBOX_USE_IPRT_IN_XPCOM
         RTMemFree(cur);
-#else
-        free(cur);
-#endif
         cur = next;
     }
-#ifdef VBOX_USE_IPRT_IN_XPCOM
     RTMemFree(arena);
-#else
-    free(arena);
-#endif
 }
 
 XPT_PUBLIC_API(void)
@@ -234,12 +221,7 @@ XPT_ArenaMalloc(XPTArena *arena, size_t size)
         if (bytes > new_space - block_header_size)
             new_space += bytes;
 
-#ifdef VBOX_USE_IPRT_IN_XPCOM
         new_block = (BLK_HDR*) RTMemAllocZ(new_space/arena->alignment * (size_t)arena->alignment);
-#else
-        new_block = (BLK_HDR*) calloc(new_space/arena->alignment,
-                                      arena->alignment);
-#endif
         if (!new_block) {
             arena->next = NULL;
             arena->space = 0;

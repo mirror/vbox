@@ -48,6 +48,7 @@
  * 04/20/2000       IBM Corp.      Added PR_CALLBACK for Optlink use in OS2
  */
 
+#include <iprt/mem.h>
 #include <iprt/string.h>
 
 #include "nsProxyEvent.h"
@@ -55,13 +56,13 @@
 #include "nsIProxyObjectManager.h"
 #include "nsCRT.h"
 
-#include "prmem.h"
 #include "xptcall.h"
+
+#include "prmem.h"
 
 #include "nsIComponentManager.h"
 #include "nsComponentManagerObsolete.h"
 #include "nsIServiceManager.h"
-#include "nsMemory.h"
 #include "nsIEventQueueService.h"
 
 #include "nsIAtom.h"  //hack!  Need a way to define a component as threadsafe (ie. sta).
@@ -121,11 +122,7 @@ nsProxyObjectCallInfo::~nsProxyObjectCallInfo()
     PR_FREEIF(mEvent);
 
     if (mParameterList)
-#ifdef VBOX_USE_IPRT_IN_XPCOM
-        nsMemory::Free((void*) mParameterList);
-#else
-        free( (void*) mParameterList);
-#endif
+        RTMemFree((void*) mParameterList);
 }
 
 void
@@ -420,12 +417,7 @@ nsProxyObject::convertMiniVariantToVariant(nsXPTMethodInfo *methodInfo,
 
     if (!paramCount) return NS_OK;
 
-#ifdef VBOX_USE_IPRT_IN_XPCOM
-    *fullParam = (nsXPTCVariant*)nsMemory::Alloc(sizeof(nsXPTCVariant) * paramCount);
-#else
-    *fullParam = (nsXPTCVariant*)malloc(sizeof(nsXPTCVariant) * paramCount);
-#endif
-
+    *fullParam = (nsXPTCVariant*)RTMemAlloc(sizeof(nsXPTCVariant) * paramCount);
     if (*fullParam == nsnull)
         return NS_ERROR_OUT_OF_MEMORY;
 
@@ -483,11 +475,7 @@ nsProxyObject::Post( PRUint32 methodIndex,
                                           fullParam);
 
         if (fullParam)
-#ifdef VBOX_USE_IPRT_IN_XPCOM
-            nsMemory::Free(fullParam);
-#else
-            free(fullParam);
-#endif
+            RTMemFree(fullParam);
         return rv;
     }
 
@@ -495,11 +483,7 @@ nsProxyObject::Post( PRUint32 methodIndex,
 
     if (event == nsnull) {
         if (fullParam)
-#ifdef VBOX_USE_IPRT_IN_XPCOM
-            nsMemory::Free(fullParam);
-#else
-            free(fullParam);
-#endif
+            RTMemFree(fullParam);
         return NS_ERROR_OUT_OF_MEMORY;
     }
 
@@ -513,11 +497,7 @@ nsProxyObject::Post( PRUint32 methodIndex,
     if (proxyInfo == nsnull) {
         PR_DELETE(event);
         if (fullParam)
-#ifdef VBOX_USE_IPRT_IN_XPCOM
-            nsMemory::Free(fullParam);
-#else
-            free(fullParam);
-#endif
+            RTMemFree(fullParam);
         return NS_ERROR_OUT_OF_MEMORY;
     }
 

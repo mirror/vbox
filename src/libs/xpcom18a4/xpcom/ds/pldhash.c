@@ -55,29 +55,19 @@
 #else
 # define METER(x)       /* nothing */
 #endif
-#ifdef VBOX_USE_IPRT_IN_XPCOM
-# include <iprt/assert.h>
-# include <iprt/mem.h>
-#endif
+#include <iprt/assert.h>
+#include <iprt/mem.h>
 
 PR_IMPLEMENT(void *)
 PL_DHashAllocTable(PLDHashTable *table, PRUint32 nbytes)
 {
-#ifdef VBOX_USE_IPRT_IN_XPCOM
     return RTMemAlloc(nbytes);
-#else
-    return malloc(nbytes);
-#endif
 }
 
 PR_IMPLEMENT(void)
 PL_DHashFreeTable(PLDHashTable *table, void *ptr)
 {
-#ifdef VBOX_USE_IPRT_IN_XPCOM
     RTMemFree(ptr);
-#else
-    free(ptr);
-#endif
 }
 
 PR_IMPLEMENT(PLDHashNumber)
@@ -147,11 +137,7 @@ PL_DHashFreeStringKey(PLDHashTable *table, PLDHashEntryHdr *entry)
 {
     const PLDHashEntryStub *stub = (const PLDHashEntryStub *)entry;
 
-#ifdef VBOX_USE_IPRT_IN_XPCOM
     RTMemFree((void *) stub->key);
-#else
-    free((void *) stub->key);
-#endif
     memset(entry, 0, table->entrySize);
 }
 
@@ -184,19 +170,11 @@ PL_NewDHashTable(const PLDHashTableOps *ops, void *data, PRUint32 entrySize,
 {
     PLDHashTable *table;
 
-#ifdef VBOX_USE_IPRT_IN_XPCOM
     table = (PLDHashTable *) RTMemAlloc(sizeof *table);
-#else
-    table = (PLDHashTable *) malloc(sizeof *table);
-#endif
     if (!table)
         return NULL;
     if (!PL_DHashTableInit(table, ops, data, entrySize, capacity)) {
-#ifdef VBOX_USE_IPRT_IN_XPCOM
         RTMemFree(table);
-#else
-        free(table);
-#endif
         return NULL;
     }
     return table;
@@ -206,11 +184,7 @@ PR_IMPLEMENT(void)
 PL_DHashTableDestroy(PLDHashTable *table)
 {
     PL_DHashTableFinish(table);
-#ifdef VBOX_USE_IPRT_IN_XPCOM
     RTMemFree(table);
-#else
-    free(table);
-#endif
 }
 
 PR_IMPLEMENT(PRBool)

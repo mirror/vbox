@@ -37,20 +37,15 @@
 
 #include <stdlib.h>
 #include "tmTransaction.h"
-#ifdef VBOX_USE_IPRT_IN_XPCOM
-# include <iprt/mem.h>
-#endif
+
+#include <iprt/mem.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor(s) & Destructor
 
 tmTransaction::~tmTransaction() {
   if (mHeader)
-#ifdef VBOX_USE_IPRT_IN_XPCOM
     RTMemFree(mHeader);
-#else
-    free(mHeader);
-#endif
 }
 
 // call only once per lifetime of object. does not reclaim the
@@ -67,11 +62,7 @@ tmTransaction::Init(PRUint32 aOwnerID,
 
   // indicates the message is the entire raw message
   if (aQueueID == TM_INVALID_ID) {
-#ifdef VBOX_USE_IPRT_IN_XPCOM
     header = (tmHeader*) RTMemAlloc(aLength);
-#else
-    header = (tmHeader*) malloc(aLength);
-#endif
     if (header) {
       mRawMessageLength = aLength;
       memcpy(header, aMessage, aLength);
@@ -80,11 +71,7 @@ tmTransaction::Init(PRUint32 aOwnerID,
       rv = NS_ERROR_OUT_OF_MEMORY;
   }
   else {   // need to create the tmHeader and concat the message
-#ifdef VBOX_USE_IPRT_IN_XPCOM
     header = (tmHeader*) RTMemAlloc (sizeof(tmHeader) + aLength);
-#else
-    header = (tmHeader*) malloc (sizeof(tmHeader) + aLength);
-#endif
     if (header) {
       mRawMessageLength = sizeof(tmHeader) + aLength;
       header->action = aAction;

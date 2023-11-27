@@ -64,9 +64,7 @@
 #include "nsTraceRefcntImpl.h"
 
 #include "nsNativeComponentLoader.h"
-#ifdef VBOX_USE_IPRT_IN_XPCOM
-# include "nsMemory.h"
-#endif
+#include "nsMemory.h"
 
 nsDll::nsDll(nsIFile *dllSpec, nsNativeComponentLoader *loader)
     : m_dllSpec(do_QueryInterface(dllSpec)),
