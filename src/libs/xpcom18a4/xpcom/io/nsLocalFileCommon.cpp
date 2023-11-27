@@ -61,7 +61,6 @@ void NS_ShutdownLocalFile()
     nsLocalFile::GlobalShutdown();
 }
 
-#if (!defined(XP_MAC) && !defined(XP_MACOSX)) || defined(VBOX_MACOSX_FOLLOWS_UNIX_IO)
 NS_IMETHODIMP
 nsLocalFile::InitWithFile(nsILocalFile *aFile)
 {
@@ -73,13 +72,8 @@ nsLocalFile::InitWithFile(nsILocalFile *aFile)
         return NS_ERROR_INVALID_ARG;
     return InitWithNativePath(path);
 }
-#endif
 
-#if defined(XP_MAC)
-#define kMaxFilenameLength 31
-#else
 #define kMaxFilenameLength 255
-#endif
 
 NS_IMETHODIMP
 nsLocalFile::CreateUnique(PRUint32 type, PRUint32 attributes)
@@ -127,19 +121,10 @@ nsLocalFile::CreateUnique(PRUint32 type, PRUint32 attributes)
     return NS_ERROR_FILE_TOO_BIG;
 }
 
-#if defined(XP_MAC)
-static const PRUnichar kPathSeparatorChar       = ':';
-#elif defined(XP_WIN) || defined(XP_OS2)
-static const PRUnichar kPathSeparatorChar       = '\\';
-#elif defined(XP_UNIX) || defined(XP_BEOS)
+#if defined(XP_UNIX)
 static const PRUnichar kPathSeparatorChar       = '/';
 #else
 #error Need to define file path separator for your platform
-#endif
-
-#if defined(XP_MAC)
-static const char kSlashStr[] = "/";
-static const char kESCSlashStr[] = "%2F";
 #endif
 
 static PRInt32 SplitPath(PRUnichar *path, PRUnichar **nodeArray, PRInt32 arrayLen)
@@ -200,13 +185,8 @@ nsLocalFile::GetRelativeDescriptor(nsILocalFile *fromFile, nsACString& _retval)
       return NS_ERROR_FAILURE;
 
     for (nodeIndex = 0; nodeIndex < thisNodeCnt && nodeIndex < fromNodeCnt; ++nodeIndex) {
-#ifdef XP_WIN
-      if (_wcsicmp(thisNodes[nodeIndex], fromNodes[nodeIndex]))
-        break;
-#else
       if (nsCRT::strcmp(thisNodes[nodeIndex], fromNodes[nodeIndex]))
         break;
-#endif
     }
 
     PRInt32 branchIndex = nodeIndex;
@@ -214,9 +194,6 @@ nsLocalFile::GetRelativeDescriptor(nsILocalFile *fromFile, nsACString& _retval)
       _retval.AppendLiteral("../");
     for (nodeIndex = branchIndex; nodeIndex < thisNodeCnt; nodeIndex++) {
       NS_ConvertUCS2toUTF8 nodeStr(thisNodes[nodeIndex]);
-#ifdef XP_MAC
-      nodeStr.ReplaceSubstring(kSlashStr, kESCSlashStr);
-#endif
       _retval.Append(nodeStr);
       if (nodeIndex + 1 < thisNodeCnt)
         _retval.Append('/');
@@ -261,13 +238,7 @@ nsLocalFile::SetRelativeDescriptor(nsILocalFile *fromFile, const nsACString& rel
     nodeBegin = nodeEnd = pos;
     while (nodeEnd != strEnd) {
       FindCharInReadable('/', nodeEnd, strEnd);
-#ifdef XP_MAC
-      nsCAutoString nodeString(Substring(nodeBegin, nodeEnd));
-      nodeString.ReplaceSubstring(kESCSlashStr, kSlashStr);
-      targetFile->Append(NS_ConvertUTF8toUCS2(nodeString));
-#else
       targetFile->Append(NS_ConvertUTF8toUCS2(Substring(nodeBegin, nodeEnd)));
-#endif
       if (nodeEnd != strEnd) // If there's more left in the string, inc over the '/' nodeEnd is on.
         ++nodeEnd;
       nodeBegin = nodeEnd;

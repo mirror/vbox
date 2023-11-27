@@ -242,7 +242,6 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/ds/nsInterfaceHashtable.h \
 	xpcom/io/nsLocalFile.h \
 	xpcom/io/nsLocalFileUnix.h \
-	xpcom/io/nsLocalFileOSX.h \
 	xpcom/components/nsModule.h \
 	xpcom/io/nsNativeCharsetUtils.h \
 	xpcom/components/nsNativeComponentLoader.h \
@@ -462,7 +461,6 @@ VBox-xpcom-ds_SOURCES = \
 	xpcom/ds/nsCOMArray.cpp \
 	xpcom/ds/nsArray.cpp \
 	xpcom/ds/nsArrayEnumerator.cpp
-#   xpcom/ds/nsHashPropertyBag.cpp
 $(evalcall VBOX_XPCOM_X86,VBox-xpcom-ds)
 
 # @todo what about MOZ_USER_DIR?

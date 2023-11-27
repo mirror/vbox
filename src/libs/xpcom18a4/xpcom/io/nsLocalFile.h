@@ -71,9 +71,7 @@
 
 #include "nsILocalFile.h"
 
-#if defined(XP_MACOSX) && !defined(VBOX_MACOSX_FOLLOWS_UNIX_IO)
-#include "nsLocalFileOSX.h"
-#elif defined(XP_UNIX) || defined(XP_BEOS)
+#if defined(XP_UNIX) || defined(XP_BEOS)
 #include "nsLocalFileUnix.h"
 #else
 #error NOT_IMPLEMENTED
