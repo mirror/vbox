@@ -335,7 +335,6 @@ XPCOM_IDLFILES = \
 	xpcom/ds/nsISupportsIterators.idl \
 	xpcom/ds/nsIVariant.idl \
 	xpcom/ds/nsIArray.idl \
-	xpcom/ds/nsIPropertyBag.idl \
 	xpcom/ds/nsIHashable.idl \
 	xpcom/io/nsIDirectoryService.idl \
 	xpcom/io/nsIDirectoryEnumerator.idl \

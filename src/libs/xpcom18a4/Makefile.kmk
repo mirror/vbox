@@ -947,7 +947,6 @@ VBOX_XPTFILES = $(addprefix $(PATH_TARGET)/VBox-xpcom-xpt-files/, \
 		nsIAtomService.xpt \
 		nsICollection.xpt \
 		nsIEnumerator.xpt \
-		nsIPropertyBag.xpt \
 		nsIVariant.xpt \
 		nsISerializable.xpt \
 		nsIStringEnumerator.xpt \
