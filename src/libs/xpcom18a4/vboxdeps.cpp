@@ -13,8 +13,8 @@
 
 uintptr_t deps[] =
 {
-    (uintptr_t)PL_strncpy,
-    (uintptr_t)PL_strncpyz,
+    (uintptr_t)PL_strcmp,
+    (uintptr_t)PL_strcasecmp,
     (uintptr_t)PL_HashString,
     (uintptr_t)NS_ProxyRelease,
     (uintptr_t)nsTraceRefcnt::LogRelease,
