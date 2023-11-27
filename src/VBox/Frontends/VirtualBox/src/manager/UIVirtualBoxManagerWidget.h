@@ -264,6 +264,12 @@ protected:
 
 private slots:
 
+    /** @name General stuff.
+      * @{ */
+        /** Handles request to commit data. */
+        void sltHandleCommitData();
+    /** @} */
+
     /** @name CVirtualBox event handling stuff.
       * @{ */
         /** Handles CVirtualBox event about state change for machine with @a uId. */

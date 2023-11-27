@@ -343,6 +343,14 @@ void UIVirtualBoxManagerWidget::retranslateUi()
     sltHandleChooserPaneIndexChange();
 }
 
+void UIVirtualBoxManagerWidget::sltHandleCommitData()
+{
+    // WORKAROUND:
+    // This will be fixed proper way during session management cleanup for Qt6.
+    // But for now we will just cleanup connections which is Ok anyway.
+    cleanupConnections();
+}
+
 void UIVirtualBoxManagerWidget::sltHandleStateChange(const QUuid &uId)
 {
     // WORKAROUND:
@@ -787,6 +795,10 @@ void UIVirtualBoxManagerWidget::prepareWidgets()
 
 void UIVirtualBoxManagerWidget::prepareConnections()
 {
+    /* UICommon connections: */
+    connect(&uiCommon(), &UICommon::sigAskToCommitData,
+            this, &UIVirtualBoxManagerWidget::sltHandleCommitData);
+
     /* Global VBox event handlers: */
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
             this, &UIVirtualBoxManagerWidget::sltHandleStateChange);
@@ -1101,8 +1113,10 @@ void UIVirtualBoxManagerWidget::cleanupWidgets()
 
 void UIVirtualBoxManagerWidget::cleanup()
 {
+    /* Ask sub-dialogs to commit data: */
+    sltHandleCommitData();
+
     /* Cleanup everything: */
-    cleanupConnections();
     cleanupWidgets();
 }
 

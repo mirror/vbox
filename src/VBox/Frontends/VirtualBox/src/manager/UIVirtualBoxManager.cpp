@@ -766,7 +766,7 @@ void UIVirtualBoxManager::sltHandleCommitData()
     sltClosePreferencesDialog();
 
     // WORKAROUND:
-    // This will be fixed proper way during session management cleanaup for Qt6.
+    // This will be fixed proper way during session management cleanup for Qt6.
     // But for now we will just cleanup connections which is Ok anyway.
     cleanupConnections();
 }
