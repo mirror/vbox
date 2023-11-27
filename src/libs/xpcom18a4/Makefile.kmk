@@ -218,7 +218,6 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/base/nsCom.h \
 	xpcom/components/nsComponentManagerObsolete.h \
 	xpcom/components/nsComponentManagerUtils.h \
-	xpcom/ds/nsCppSharedAllocator.h \
 	xpcom/ds/nsDataHashtable.h \
 	xpcom/base/nsDebugImpl.h \
 	xpcom/ds/nsDeque.h \
