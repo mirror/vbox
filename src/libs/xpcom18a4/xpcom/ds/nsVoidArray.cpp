@@ -34,8 +34,10 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+#include <iprt/cdefs.h>
+#include <iprt/sort.h>
+
 #include "nsVoidArray.h"
-#include "nsQuickSort.h"
 #include "prmem.h"
 #include "nsCRT.h"
 #include "nsString.h"
@@ -617,8 +619,7 @@ struct VoidArrayComparatorContext {
   void* mData;
 };
 
-PR_STATIC_CALLBACK(int)
-VoidArrayComparator(const void* aElement1, const void* aElement2, void* aData)
+static DECLCALLBACK(int) VoidArrayComparator(const void* aElement1, const void* aElement2, void* aData)
 {
   VoidArrayComparatorContext* ctx = NS_STATIC_CAST(VoidArrayComparatorContext*, aData);
   return (*ctx->mComparatorFunc)(*NS_STATIC_CAST(void* const*, aElement1),
@@ -631,8 +632,8 @@ void nsVoidArray::Sort(nsVoidArrayComparatorFunc aFunc, void* aData)
   if (mImpl && mImpl->mCount > 1)
   {
     VoidArrayComparatorContext ctx = {aFunc, aData};
-    NS_QuickSort(mImpl->mArray, mImpl->mCount, sizeof(mImpl->mArray[0]),
-                 VoidArrayComparator, &ctx);
+    RTSortShell(mImpl->mArray, mImpl->mCount, sizeof(mImpl->mArray[0]),
+                VoidArrayComparator, &ctx);
   }
 }
 

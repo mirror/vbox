@@ -249,7 +249,6 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/proxy/public/nsProxiedService.h \
 	xpcom/proxy/public/nsProxyEvent.h \
 	xpcom/proxy/public/nsProxyRelease.h \
-	xpcom/ds/nsQuickSort.h \
 	xpcom/ds/nsRefPtrHashtable.h \
 	xpcom/ds/nsStaticAtom.h \
 	xpcom/components/nsStaticComponent.h \
@@ -447,7 +446,6 @@ VBox-xpcom-ds_SOURCES = \
 	xpcom/ds/nsObserverList.cpp \
 	xpcom/ds/nsObserverService.cpp \
 	xpcom/ds/nsProperties.cpp \
-	xpcom/ds/nsQuickSort.cpp \
 	xpcom/ds/nsStringEnumerator.cpp \
 	xpcom/ds/nsSupportsArray.cpp \
 	xpcom/ds/nsSupportsArrayEnumerator.cpp \

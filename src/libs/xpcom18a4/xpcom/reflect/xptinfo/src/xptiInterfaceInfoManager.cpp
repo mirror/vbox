@@ -45,6 +45,7 @@
 
 #include <iprt/env.h>
 #include <iprt/file.h>
+#include <iprt/sort.h>
 
 #define NS_ZIPLOADER_CONTRACTID NS_XPTLOADER_CONTRACTID_PREFIX "zip"
 
@@ -623,8 +624,7 @@ struct SortData
     xptiWorkingSet*   mWorkingSet;
 };
 
-PR_STATIC_CALLBACK(int)
-xptiSortFileList(const void * p1, const void *p2, void * closure)
+static DECLCALLBACK(int) xptiSortFileList(const void * p1, const void *p2, void * closure)
 {
     nsILocalFile* pFile1 = *((nsILocalFile**) p1);
     nsILocalFile* pFile2 = *((nsILocalFile**) p2);
@@ -747,8 +747,8 @@ xptiInterfaceInfoManager::BuildOrderedFileArray(nsISupportsArray* aSearchPath,
     // sort the filelist
 
     SortData sortData = {aSearchPath, aWorkingSet};
-    NS_QuickSort(orderedFileList, countOfFilesInFileList, sizeof(nsILocalFile*),
-                 xptiSortFileList, &sortData);
+    RTSortShell(orderedFileList, countOfFilesInFileList, sizeof(nsILocalFile*),
+                xptiSortFileList, &sortData);
      
     return orderedFileList;
 }
