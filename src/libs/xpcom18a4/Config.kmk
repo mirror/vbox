@@ -349,7 +349,6 @@ XPCOM_IDLFILES = \
 	xpcom/io/nsIBinaryOutputStream.idl \
 	xpcom/io/nsIOutputStream.idl \
 	xpcom/io/nsIStreamBufferAccess.idl \
-	xpcom/io/nsIByteArrayInputStream.idl \
 	xpcom/io/nsISeekableStream.idl \
 	xpcom/io/nsIInputStreamTee.idl \
 	xpcom/io/nsIAsyncInputStream.idl \

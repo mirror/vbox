@@ -487,7 +487,6 @@ endif
 VBox-xpcom-io_SOURCES = \
 	xpcom/io/nsAppFileLocationProvider.cpp \
 	xpcom/io/nsBinaryStream.cpp \
-	xpcom/io/nsByteArrayInputStream.cpp \
 	xpcom/io/nsDirectoryService.cpp \
 	xpcom/io/nsInputStreamTee.cpp \
 	xpcom/io/nsLocalFileCommon.cpp \
