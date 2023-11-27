@@ -654,7 +654,7 @@ static PIEMTB iemTbCacheLookup(PVMCPUCC pVCpu, PIEMTBCACHE pTbCache,
                     pTb->msLastUsed = pVCpu->iem.s.msRecompilerPollNow;
                     pTb->cUsed++;
 #ifdef VBOX_WITH_IEM_NATIVE_RECOMPILER
-                    if ((pTb->fFlags & IEMTB_F_TYPE_NATIVE) || pTb->cUsed != 16)
+                    if ((pTb->fFlags & IEMTB_F_TYPE_NATIVE) || pTb->cUsed > 2)
                         return pTb;
                     return iemNativeRecompile(pVCpu, pTb);
 #else
@@ -1380,13 +1380,13 @@ static void iemThreadedLogCurInstr(PVMCPUCC pVCpu, const char *pszFunction, uint
                            szInstr, sizeof(szInstr), &cbInstr);
 
         PCX86FXSTATE pFpuCtx = &pVCpu->cpum.GstCtx.XState.x87;
-        Log2(("**** %s fExec=%x pTb=%p #%u\n"
+        Log2(("**** %s fExec=%x pTb=%p cUsed=%u #%u\n"
               " eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
               " eip=%08x esp=%08x ebp=%08x iopl=%d tr=%04x\n"
               " cs=%04x ss=%04x ds=%04x es=%04x fs=%04x gs=%04x efl=%08x\n"
               " fsw=%04x fcw=%04x ftw=%02x mxcsr=%04x/%04x\n"
               " %s\n"
-              , pszFunction, pVCpu->iem.s.fExec, pVCpu->iem.s.pCurTbR3, idxInstr,
+              , pszFunction, pVCpu->iem.s.fExec, pVCpu->iem.s.pCurTbR3, pVCpu->iem.s.pCurTbR3 ? pVCpu->iem.s.pCurTbR3->cUsed : 0, idxInstr,
               pVCpu->cpum.GstCtx.eax, pVCpu->cpum.GstCtx.ebx, pVCpu->cpum.GstCtx.ecx, pVCpu->cpum.GstCtx.edx, pVCpu->cpum.GstCtx.esi, pVCpu->cpum.GstCtx.edi,
               pVCpu->cpum.GstCtx.eip, pVCpu->cpum.GstCtx.esp, pVCpu->cpum.GstCtx.ebp, pVCpu->cpum.GstCtx.eflags.Bits.u2IOPL, pVCpu->cpum.GstCtx.tr.Sel,
               pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.ss.Sel, pVCpu->cpum.GstCtx.ds.Sel, pVCpu->cpum.GstCtx.es.Sel,
@@ -2242,6 +2242,11 @@ static VBOXSTRICTRC iemTbExec(PVMCPUCC pVCpu, PIEMTB pTb) IEM_NOEXCEPT_MAY_LONGJ
     /*
      * Check the opcodes in the first page before starting execution.
      */
+/** @todo this test should take IEMTB_F_CS_LIM_CHECKS into account or something.
+ * The 'near jmp+call' test in bs3-cpu-basic-2 triggers the 2nd assertion here by
+ * altering the CS limit such that only one or the two instruction bytes are valid.
+ * Since it's a CS_LIMT problem, the pbInstrBuf is good for the full length, and
+ * the test succeeds if skipped, but we assert in debug builds. */
     Assert(!(pVCpu->iem.s.GCPhysInstrBuf & (RTGCPHYS)GUEST_PAGE_OFFSET_MASK));
     Assert(pTb->aRanges[0].cbOpcodes <= pVCpu->iem.s.cbInstrBufTotal - pVCpu->iem.s.offInstrNextByte);
     if (memcmp(pTb->pabOpcodes, &pVCpu->iem.s.pbInstrBuf[pTb->aRanges[0].offPhysPage], pTb->aRanges[0].cbOpcodes) == 0)

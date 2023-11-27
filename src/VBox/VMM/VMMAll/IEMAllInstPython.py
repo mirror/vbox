@@ -2844,7 +2844,7 @@ g_dMcStmtParsers = {
     'IEM_MC_FETCH_MEM_U128_AND_XREG_U128':                       (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_FETCH_MEM_U128_AND_XREG_U128_AND_RAX_RDX_U64':       (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_FETCH_MEM_U128_AND_XREG_U128_AND_EAX_EDX_U32_SX_U64':(McBlock.parseMcGeneric,           True,  False, ),
-    'IEM_MC_FETCH_MEM_U16':                                      (McBlock.parseMcGeneric,           True,  False, ),
+    'IEM_MC_FETCH_MEM_U16':                                      (McBlock.parseMcGeneric,           True,  True,  ),
     'IEM_MC_FETCH_MEM_U16_DISP':                                 (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_FETCH_MEM_U16_SX_U32':                               (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_FETCH_MEM_U16_SX_U64':                               (McBlock.parseMcGeneric,           True,  False, ),

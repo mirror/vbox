@@ -285,10 +285,13 @@ typedef enum
     kIemNativeLabelType_NonZeroRetOrPassUp,
     kIemNativeLabelType_RaiseGp0,
     /* Labels with data, potentially multiple instances per TB: */
-    kIemNativeLabelType_If,
+    kIemNativeLabelType_FirstWithMultipleInstances,
+    kIemNativeLabelType_If = kIemNativeLabelType_FirstWithMultipleInstances,
     kIemNativeLabelType_Else,
     kIemNativeLabelType_Endif,
     kIemNativeLabelType_CheckIrq,
+    kIemNativeLabelType_TlbMiss,
+    kIemNativeLabelType_TlbDone,
     kIemNativeLabelType_End
 } IEMNATIVELABELTYPE;
 
@@ -619,6 +622,8 @@ typedef struct IEMRECOMPILERSTATE
     uint32_t                    cLabelsAlloc;
     /** Labels defined while recompiling (referenced by fixups). */
     PIEMNATIVELABEL             paLabels;
+    /** Array with indexes of unique labels (uData always 0). */
+    uint32_t                    aidxUniqueLabels[kIemNativeLabelType_FirstWithMultipleInstances];
 
     /** Actual number of fixups paFixups. */
     uint32_t                    cFixups;
@@ -638,14 +643,14 @@ typedef struct IEMRECOMPILERSTATE
     /** The translation block being recompiled. */
     PCIEMTB                     pTbOrg;
 
-    /** The current condition stack depth (aCondStack). */
-    uint8_t                     cCondDepth;
-    uint8_t                     bPadding2;
     /** Condition sequence number (for generating unique labels). */
     uint16_t                    uCondSeqNo;
-    /** Check IRQ seqeunce number (for generating unique lables). */
+    /** Check IRQ seqeunce number (for generating unique labels). */
     uint16_t                    uCheckIrqSeqNo;
-    uint8_t                     bPadding3;
+    /** TLB load sequence number (for generating unique labels). */
+    uint16_t                    uTlbSeqNo;
+    /** The current condition stack depth (aCondStack). */
+    uint8_t                     cCondDepth;
 
     /** The argument count + hidden regs from the IEM_MC_BEGIN statement. */
     uint8_t                     cArgs;
@@ -653,6 +658,8 @@ typedef struct IEMRECOMPILERSTATE
     uint32_t                    fCImpl;
     /** The IEM_MC_F_XXX flags from the IEM_MC_BEGIN statement. */
     uint32_t                    fMc;
+    /** The expected IEMCPU::fExec value for the current call/instruction. */
+    uint32_t                    fExec;
 
     /** Core state requiring care with branches. */
     IEMNATIVECORESTATE          Core;
@@ -752,6 +759,15 @@ typedef FNIEMNATIVERECOMPFUNC *PFNIEMNATIVERECOMPFUNC;
  * @see FNIEMNATIVERECOMPFUNC  */
 #define IEM_DECL_IEMNATIVERECOMPFUNC_PROTO(a_Name) FNIEMNATIVERECOMPFUNC a_Name
 
+
+/** Define a native recompiler helper function, safe to call from the TB code. */
+#define IEM_DECL_NATIVE_HLP_DEF(a_RetType, a_Name, a_ArgList) \
+    DECL_HIDDEN_THROW(a_RetType) VBOXCALL a_Name a_ArgList
+/** Prototype a native recompiler helper function, safe to call from the TB code. */
+#define IEM_DECL_NATIVE_HLP_PROTO(a_RetType, a_Name, a_ArgList) \
+    DECL_HIDDEN_THROW(a_RetType) VBOXCALL a_Name a_ArgList
+
+
 DECL_HIDDEN_THROW(uint32_t) iemNativeLabelCreate(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType,
                                                  uint32_t offWhere = UINT32_MAX, uint16_t uData = 0);
 DECL_HIDDEN_THROW(void)     iemNativeLabelDefine(PIEMRECOMPILERSTATE pReNative, uint32_t idxLabel, uint32_t offWhere);
@@ -834,7 +850,7 @@ iemNativeInstrBufEnsure(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint32_t cI
  * This also adds a RT_NOREF of a_idxVar.
  */
 #define IEMNATIVE_ASSERT_ARG_VAR_IDX(a_pReNative, a_idxVar, a_uArgNo) do { \
-        RT_NOREF(a_idxVar); \
+        RT_NOREF_PV(a_idxVar); \
         AssertMsg(   (unsigned)(a_idxVar) < RT_ELEMENTS((a_pReNative)->Core.aVars) \
                   && ((a_pReNative)->Core.bmVars & RT_BIT_32(a_idxVar))\
                   && (a_pReNative)->Core.aVars[a_idxVar].uArgNo == (a_uArgNo) \

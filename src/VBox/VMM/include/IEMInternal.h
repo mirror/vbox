@@ -668,7 +668,7 @@ AssertCompileSizeAlignment(IEMTLB, 64);
 /** Mode: The IEMMODE part of the IEMTB_F_MODE_MASK value. */
 #define IEM_F_MODE_CPUMODE_MASK             UINT32_C(0x00000003)
 /** X86 Mode: Bit used to indicating pre-386 CPU in 16-bit mode (for eliminating
- * conditional in EIP/IP updating), and flat wide open CS, SS DS, and ES in
+ * conditional in EIP/IP updating), and flat wide open CS, SS, DS, and ES in
  * 32-bit mode (for simplifying most memory accesses). */
 #define IEM_F_MODE_X86_FLAT_OR_PRE_386_MASK UINT32_C(0x00000004)
 /** X86 Mode: Bit indicating protected mode, real mode (or SMM) when not set. */
