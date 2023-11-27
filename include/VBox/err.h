@@ -2611,6 +2611,8 @@
 #define VERR_IEM_EMIT_CASE_NOT_IMPLEMENTED_1        (-5380)
 /** Recompiler: Totally unexpected memory size. */
 #define VERR_IEM_EMIT_BAD_MEM_SIZE                  (-5381)
+/** Recompiler: Bad segment register number for memory access. */
+#define VERR_IEM_EMIT_BAD_SEG_REG_NO                (-5382)
 
 /** Restart the current instruction. For testing only. */
 #define VERR_IEM_RESTART_INSTRUCTION                (-5389)
