@@ -38,6 +38,8 @@ ifdef VBOX_WITH_UNATTENDED
  VBoxUnattendedTemplates_SOURCES = \
  	debian_preseed.cfg \
  	ubuntu_preseed.cfg \
+ 	ubuntu_autoinstall_user-data \
+ 	ubuntu_autoinstall_meta-data \
  	rhel3_ks.cfg \
  	rhel4_ks.cfg \
  	rhel5_ks.cfg \

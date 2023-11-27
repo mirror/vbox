@@ -1881,6 +1881,7 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf)
      *   Debian GNU/Linux 8.11.1 "Jessie" - Official amd64 CD Binary-1 20190211-02:10
      *   Kali GNU/Linux 2021.3a "Kali-last-snapshot" - Official amd64 BD Binary-1 with firmware 20211015-16:55
      *   Official Debian GNU/Linux Live 10.10.0 cinnamon 2021-06-19T12:13
+     *   Ubuntu 23.10.1 "Mantic Minotaur" - Release amd64 (20231016.1)
      */
     vrc = RTVfsFileOpen(hVfsIso, ".disk/info", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
     if (RT_SUCCESS(vrc))

@@ -641,17 +641,63 @@ private:
 
 
 /**
- * Ubuntu installer (same as debian, except for the template).
+ * Ubuntu preseed installer (same as Debian, except for the template).
+ *
+ * Only for older Ubuntu desktop versions (<= 22.04).
  */
-class UnattendedUbuntuInstaller : public UnattendedDebianInstaller
+class UnattendedUbuntuPreseedInstaller : public UnattendedDebianInstaller
 {
 public:
-    DECLARE_TRANSLATE_METHODS(UnattendedUbuntuInstaller)
+    DECLARE_TRANSLATE_METHODS(UnattendedUbuntuPreseedInstaller)
 
-    UnattendedUbuntuInstaller(Unattended *pParent)
+    UnattendedUbuntuPreseedInstaller(Unattended *pParent)
         : UnattendedDebianInstaller(pParent, "ubuntu_preseed.cfg")
     { Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded()); Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO()); }
-    ~UnattendedUbuntuInstaller() {}
+    ~UnattendedUbuntuPreseedInstaller() {}
+};
+
+/**
+ * Ubuntu autoinstall installer.
+ *
+ * Newer Ubuntu desktop versions (>= 22.10) as well as newer Ubuntu server versions(>= 20.04) use a different installer ("subiquity")
+ * which in turn uses the autoinstall / cloud-init installer. This is substantially different from the old preseed files,
+ * as this is now YAML-based along with a different scheme.
+ */
+class UnattendedUbuntuAutoInstallInstaller : public UnattendedDebianInstaller
+{
+public:
+    DECLARE_TRANSLATE_METHODS(UnattendedUbuntuAutoInstall)
+
+    UnattendedUbuntuAutoInstallInstaller(Unattended *pParent)
+        : UnattendedDebianInstaller(pParent,
+                                    /* pszMainScriptTemplateName = */ "ubuntu_autoinstall_user-data",
+                                    /* pszPostScriptTemplateName = */ "debian_postinstall.sh",
+                                    /* pszMainScriptFilename     = */ "user-data")
+    {
+        Assert(!isOriginalIsoNeeded()); Assert(isAuxiliaryIsoNeeded());
+        Assert(!isAuxiliaryFloppyNeeded()); Assert(isAuxiliaryIsoIsVISO());
+        mStrDefaultExtraInstallKernelParameters.setNull();
+        mStrDefaultExtraInstallKernelParameters += " autoinstall";
+        mStrDefaultExtraInstallKernelParameters += " ds=nocloud\\;s=/cdrom/";
+        mStrDefaultExtraInstallKernelParameters += " ---";
+        mStrDefaultExtraInstallKernelParameters += " quiet";
+        mStrDefaultExtraInstallKernelParameters += " splash";
+        mStrDefaultExtraInstallKernelParameters += " noprompt";  /* no questions about things like CD/DVD ejections */
+        mStrDefaultExtraInstallKernelParameters += " noshell";   /* No shells on VT1-3 (debian, not ubuntu). */
+        mStrDefaultExtraInstallKernelParameters += " automatic-ubiquity";   // ubiquity
+        // the following can probably go into the preseed.cfg:
+        mStrDefaultExtraInstallKernelParameters.append(" debian-installer/locale=").append(pParent->i_getLocale());
+        mStrDefaultExtraInstallKernelParameters += " keyboard-configuration/layoutcode=us";
+        mStrDefaultExtraInstallKernelParameters += " languagechooser/language-name=English"; /** @todo fixme */
+        mStrDefaultExtraInstallKernelParameters.append(" localechooser/supported-locales=").append(pParent->i_getLocale()).append(".UTF-8");
+        mStrDefaultExtraInstallKernelParameters.append(" countrychooser/shortlist=").append(pParent->i_getCountry()); // ubiquity?
+        mStrDefaultExtraInstallKernelParameters += " --";
+    }
+    ~UnattendedUbuntuAutoInstallInstaller() {}
+
+protected:
+    HRESULT addFilesToAuxVisoVectors(RTCList<RTCString> &rVecArgs, RTCList<RTCString> &rVecFiles,
+                                     RTVFS hVfsOrgIso, bool fOverwrite);
 };
 
 /**

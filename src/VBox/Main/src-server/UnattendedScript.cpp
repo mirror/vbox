@@ -44,9 +44,12 @@
 
 #include <iprt/ctype.h>
 #include <iprt/file.h>
+#include <iprt/rand.h> /* For RTCrShaCrypt salt generation. */
 #include <iprt/vfs.h>
 #include <iprt/getopt.h>
 #include <iprt/path.h>
+
+#include <iprt/crypto/shacrypt.h>
 
 using namespace std;
 
@@ -647,6 +650,24 @@ int UnattendedScriptTemplate::queryVariable(const char *pchName, size_t cchName,
             a_fnHash##ToString(abHash, szDigest, sizeof(szDigest)); \
             pszValue = rstrTmp.assign(szDigest, strlen(szDigest)).c_str(); \
         } while (0)
+/** Uses the RTCrShaCrypt APIs to hash and crypt data. Uses a randomized salt + (recommended) default rounds. */
+#define SHACRYPT_AND_ASSIGN(a_szKey, a_fnHashAndCrypt, a_cbHashSize) \
+        do { \
+            uint8_t abHash[a_cbHashSize]; \
+            char    szSalt[RT_SHACRYPT_MAX_SALT_LEN + 1]; \
+            int vrc = RTCrShaCryptGenerateSalt(szSalt, RT_SHACRYPT_MAX_SALT_LEN); \
+            if (RT_SUCCESS(vrc)) \
+            { \
+                vrc = a_fnHashAndCrypt(a_szKey, szSalt, RT_SHACRYPT_DEFAULT_ROUNDS, abHash); \
+                if (RT_SUCCESS(vrc)) \
+                { \
+                    char szDigest[a_cbHashSize * 4]; \
+                    vrc = a_fnHashAndCrypt##ToString(abHash, szSalt, RT_SHACRYPT_DEFAULT_ROUNDS, szDigest, sizeof(szDigest)); \
+                    if (RT_SUCCESS(vrc)) \
+                        pszValue = rstrTmp.assign(szDigest, strlen(szDigest)).c_str(); \
+                } \
+            } \
+        } while (0)
 
     const char *pszValue = NULL;
 
@@ -654,10 +675,12 @@ int UnattendedScriptTemplate::queryVariable(const char *pchName, size_t cchName,
      * Calculate the variable name length w/o any suffixes we want to handle down below.
      */
     size_t cchNameWithoutSuffix = cchName;
-    CALCULATE_SUFFIX_LEN_IF_ENDS_WITH("_MD5");
-    CALCULATE_SUFFIX_LEN_IF_ENDS_WITH("_SHA1");
-    CALCULATE_SUFFIX_LEN_IF_ENDS_WITH("_SHA256");
+    CALCULATE_SUFFIX_LEN_IF_ENDS_WITH("_SHACRYPT512");
+    CALCULATE_SUFFIX_LEN_IF_ENDS_WITH("_SHACRYPT256");
     CALCULATE_SUFFIX_LEN_IF_ENDS_WITH("_SHA512");
+    CALCULATE_SUFFIX_LEN_IF_ENDS_WITH("_SHA256");
+    CALCULATE_SUFFIX_LEN_IF_ENDS_WITH("_SHA1");
+    CALCULATE_SUFFIX_LEN_IF_ENDS_WITH("_MD5");
 
     /*
      * Variables
@@ -776,7 +799,17 @@ int UnattendedScriptTemplate::queryVariable(const char *pchName, size_t cchName,
      */
     if (pszValue)
     {
-        if (ENDS_WITH("_SHA512"))
+        /*
+         * SHAcrypt stuff.
+         */
+        if (ENDS_WITH("_SHACRYPT512"))
+            SHACRYPT_AND_ASSIGN(pszValue, RTCrShaCrypt512, RTSHA512_HASH_SIZE);
+        else if (ENDS_WITH("_SHACRYPT256"))
+            SHACRYPT_AND_ASSIGN(pszValue, RTCrShaCrypt256, RTSHA256_HASH_SIZE);
+        /*
+         * Regular hashing.
+         */
+        else if (ENDS_WITH("_SHA512"))
             HASH_AND_ASSIGN(pszValue, strlen(pszValue), RTSha512, RTSHA512_HASH_SIZE);
         else if (ENDS_WITH("_SHA256"))
             HASH_AND_ASSIGN(pszValue, strlen(pszValue), RTSha256, RTSHA256_HASH_SIZE);

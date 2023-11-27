@@ -47,6 +47,8 @@
 #include <iprt/getopt.h>
 #include <iprt/file.h>
 #include <iprt/path.h>
+#include <iprt/rand.h>
+#include <iprt/sha.h>
 #include <iprt/stream.h>
 #include <iprt/vfs.h>
 #ifdef RT_OS_SOLARIS
@@ -84,7 +86,18 @@ UnattendedInstaller::createInstance(VBOXOSTYPE enmDetectedOSType, const Utf8Str 
         else if (   enmDetectedOSType >= VBOXOSTYPE_Ubuntu
                  && (   enmDetectedOSType <= VBOXOSTYPE_Ubuntu_latest_x64
                      || enmDetectedOSType <= VBOXOSTYPE_Ubuntu_latest_arm64))
-            pUinstaller = new UnattendedUbuntuInstaller(pParent);
+        {
+            /*
+             * Here we have to decide, based on the Ubuntu version, which exact installer flavor we have to use:
+             * - The preseed installer for older Ubuntu distros, or
+             * - The autoinstall installer for newer Ubuntu desktop or Ubuntu server versions.
+             */
+            if (RTStrVersionCompare(strDetectedOSVersion.c_str(), "22.10") >= 0)
+                pUinstaller = new UnattendedUbuntuAutoInstallInstaller(pParent);
+                /// @todo Check for Server >= 20.04 and others.
+            else
+                pUinstaller = new UnattendedUbuntuPreseedInstaller(pParent);
+        }
         else if (enmDetectedOSType >= VBOXOSTYPE_RedHat && enmDetectedOSType <= VBOXOSTYPE_RedHat_latest_x64)
         {
             if (RTStrVersionCompare(strDetectedOSVersion.c_str(), "8") >= 0)
@@ -1385,6 +1398,39 @@ bool UnattendedDebianInstaller::modifyLabelLine(GeneralTextScript *pEditor, cons
         }
     }
     return false;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
+*
+*
+*  Implementation UnattendedUbuntuAutoInstallInstaller functions
+*
+*/
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+HRESULT UnattendedUbuntuAutoInstallInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &rVecArgs, RTCList<RTCString> &rVecFiles,
+                                                                       RTVFS hVfsOrgIso, bool fOverwrite)
+{
+    try
+    {
+        /* Add the (empty) meta-data file to the ISO: */
+        Utf8Str strUnattendedTemplates;
+        int vrc = RTPathAppPrivateNoArchCxx(strUnattendedTemplates);
+        AssertRCReturn(vrc, mpParent->setErrorVrc(vrc));
+        vrc = RTPathAppendCxx(strUnattendedTemplates, "UnattendedTemplates");
+        AssertRCReturn(vrc, mpParent->setErrorVrc(vrc));
+        rVecArgs.append().assign("/meta-data=").append(strUnattendedTemplates).append("/ubuntu_autoinstall_meta-data");
+    }
+    catch (std::bad_alloc &)
+    {
+        return E_OUTOFMEMORY;
+    }
+
+    /*
+     * Call parent to add default Debian-based stuff.
+     */
+    return UnattendedDebianInstaller::addFilesToAuxVisoVectors(rVecArgs, rVecFiles, hVfsOrgIso, fOverwrite);
 }
 
 

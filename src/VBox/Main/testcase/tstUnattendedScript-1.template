@@ -391,3 +391,10 @@
 03=@@VBOX_INSERT_USER_PASSWORD_SHA256@@
 04=@@VBOX_INSERT_USER_PASSWORD_SHA512@@
 
+/*
+ * SHAcrypt attributes. Contains the word "changeme" as hashed results.
+ * Note: This uses a fixed salt ("testcase123") within UnattendedScript.cpp, so that we can compare the outputs.
+ */
+01=@@VBOX_INSERT_USER_PASSWORD_SHACRYPT256@@
+02=@@VBOX_INSERT_USER_PASSWORD_SHACRYPT512@@
+

@@ -1,0 +1,37 @@
+#cloud-config
+autoinstall:
+  # version is an Autoinstall required field.
+  version: 1
+
+  locale: @@VBOX_INSERT_LOCALE@@
+  keyboard:
+    layout: us
+
+  identity:
+    realname: '@@VBOX_INSERT_USER_FULL_NAME@@'
+    username: '@@VBOX_INSERT_USER_LOGIN@@'
+    password: '@@VBOX_INSERT_USER_PASSWORD_SHACRYPT512@@'
+    hostname: '@@VBOX_INSERT_HOSTNAME_WITHOUT_DOMAIN@@'
+
+  shutdown: reboot
+
+  storage:
+    layout:
+      name: direct
+    swap:
+      size: 0
+
+  user-data:
+@@VBOX_COND_IS_RTC_USING_UTC@@
+    timezone: Etc/UTC
+@@VBOX_COND_END@@
+@@VBOX_COND_IS_NOT_RTC_USING_UTC@@
+    timezone: @@VBOX_INSERT_TIME_ZONE_UX@@
+@@VBOX_COND_END@@
+  users:
+    - name: root
+      primary_group: root
+      groups: sudo
+      lock-passwd: false
+      passwd: '@@VBOX_INSERT_USER_PASSWORD_SHACRYPT512@@'
+      uid: 0
