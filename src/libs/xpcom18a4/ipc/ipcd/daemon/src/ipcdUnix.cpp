@@ -58,7 +58,6 @@
 #include <string.h>
 #include <errno.h>
 
-#include "plstr.h"
 #include "prprf.h"
 
 #include "ipcConfig.h"
@@ -485,7 +484,7 @@ int main(int argc, char **argv)
     if (!pszSocketPath)
         IPC_GetDefaultSocketPath(addr.sun_path, sizeof(addr.sun_path));
     else
-        PL_strncpyz(addr.sun_path, pszSocketPath, sizeof(addr.sun_path));
+        RTStrCopy(addr.sun_path, sizeof(addr.sun_path), pszSocketPath);
 
 #ifdef IPC_USE_FILE_LOCK
     Status status = InitDaemonDir(addr.sun_path);
