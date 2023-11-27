@@ -3866,11 +3866,27 @@ iemRaiseXcptOrInt(PVMCPUCC    pVCpu,
         u8Vector = X86_XCPT_GP;
         uErr     = 0;
     }
+
+    PVMCC const pVM = pVCpu->CTX_SUFF(pVM);
 #ifdef DBGFTRACE_ENABLED
-    RTTraceBufAddMsgF(pVCpu->CTX_SUFF(pVM)->CTX_SUFF(hTraceBuf), "Xcpt/%u: %02x %u %x %x %llx %04x:%04llx %04x:%04llx",
+    RTTraceBufAddMsgF(pVM->CTX_SUFF(hTraceBuf), "Xcpt/%u: %02x %u %x %x %llx %04x:%04llx %04x:%04llx",
                       pVCpu->iem.s.cXcptRecursions, u8Vector, cbInstr, fFlags, uErr, uCr2,
                       pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.ss.Sel, pVCpu->cpum.GstCtx.rsp);
 #endif
+
+    /*
+     * Check if DBGF wants to intercept the exception.
+     */
+    if (   (fFlags & (IEM_XCPT_FLAGS_T_EXT_INT | IEM_XCPT_FLAGS_T_SOFT_INT))
+        || !DBGF_IS_EVENT_ENABLED(pVM, (DBGFEVENTTYPE)(DBGFEVENT_XCPT_FIRST + u8Vector)) )
+    { /* likely */ }
+    else
+    {
+        VBOXSTRICTRC rcStrict = DBGFEventGenericWithArgs(pVM, pVCpu, (DBGFEVENTTYPE)(DBGFEVENT_XCPT_FIRST + u8Vector),
+                                                         DBGFEVENTCTX_INVALID, 1, (uint64_t)uErr);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+    }
 
     /*
      * Evaluate whether NMI blocking should be in effect.
@@ -4025,7 +4041,6 @@ iemRaiseXcptOrInt(PVMCPUCC    pVCpu,
     if (LogIs3Enabled())
     {
         IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_DR_MASK);
-        PVM     pVM = pVCpu->CTX_SUFF(pVM);
         char    szRegs[4096];
         DBGFR3RegPrintf(pVM->pUVM, pVCpu->idCpu, &szRegs[0], sizeof(szRegs),
                         "rax=%016VR{rax} rbx=%016VR{rbx} rcx=%016VR{rcx} rdx=%016VR{rdx}\n"
@@ -4206,6 +4221,8 @@ VBOXSTRICTRC iemRaiseSelectorNotPresentWithErr(PVMCPUCC pVCpu, uint16_t uErr) RT
 /** \#NP(sel) - 0b.  */
 VBOXSTRICTRC iemRaiseSelectorNotPresentBySelector(PVMCPUCC pVCpu, uint16_t uSel) RT_NOEXCEPT
 {
+    Log(("iemRaiseSelectorNotPresentBySelector: cs:rip=%04x:%RX64 uSel=%#x\n",
+         pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, uSel));
     return iemRaiseXcptOrInt(pVCpu, 0, X86_XCPT_NP, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR,
                              uSel & ~X86_SEL_RPL, 0);
 }
@@ -4214,6 +4231,8 @@ VBOXSTRICTRC iemRaiseSelectorNotPresentBySelector(PVMCPUCC pVCpu, uint16_t uSel)
 /** \#SS(seg) - 0c.  */
 VBOXSTRICTRC iemRaiseStackSelectorNotPresentBySelector(PVMCPUCC pVCpu, uint16_t uSel) RT_NOEXCEPT
 {
+    Log(("iemRaiseStackSelectorNotPresentBySelector: cs:rip=%04x:%RX64 uSel=%#x\n",
+         pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, uSel));
     return iemRaiseXcptOrInt(pVCpu, 0, X86_XCPT_SS, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR,
                              uSel & ~X86_SEL_RPL, 0);
 }
@@ -4222,6 +4241,8 @@ VBOXSTRICTRC iemRaiseStackSelectorNotPresentBySelector(PVMCPUCC pVCpu, uint16_t 
 /** \#SS(err) - 0c.  */
 VBOXSTRICTRC iemRaiseStackSelectorNotPresentWithErr(PVMCPUCC pVCpu, uint16_t uErr) RT_NOEXCEPT
 {
+    Log(("iemRaiseStackSelectorNotPresentWithErr: cs:rip=%04x:%RX64 uErr=%#x\n",
+         pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, uErr));
     return iemRaiseXcptOrInt(pVCpu, 0, X86_XCPT_SS, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR, uErr, 0);
 }
 
@@ -4229,6 +4250,7 @@ VBOXSTRICTRC iemRaiseStackSelectorNotPresentWithErr(PVMCPUCC pVCpu, uint16_t uEr
 /** \#GP(n) - 0d.  */
 VBOXSTRICTRC iemRaiseGeneralProtectionFault(PVMCPUCC pVCpu, uint16_t uErr) RT_NOEXCEPT
 {
+    Log(("iemRaiseGeneralProtectionFault: cs:rip=%04x:%RX64 uErr=%#x\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, uErr));
     return iemRaiseXcptOrInt(pVCpu, 0, X86_XCPT_GP, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR, uErr, 0);
 }
 
@@ -4236,6 +4258,7 @@ VBOXSTRICTRC iemRaiseGeneralProtectionFault(PVMCPUCC pVCpu, uint16_t uErr) RT_NO
 /** \#GP(0) - 0d.  */
 VBOXSTRICTRC iemRaiseGeneralProtectionFault0(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
+    Log(("iemRaiseGeneralProtectionFault0: cs:rip=%04x:%RX64\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
     return iemRaiseXcptOrInt(pVCpu, 0, X86_XCPT_GP, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR, 0, 0);
 }
 
@@ -4243,6 +4266,7 @@ VBOXSTRICTRC iemRaiseGeneralProtectionFault0(PVMCPUCC pVCpu) RT_NOEXCEPT
 /** \#GP(0) - 0d.  */
 DECL_NO_RETURN(void) iemRaiseGeneralProtectionFault0Jmp(PVMCPUCC pVCpu) IEM_NOEXCEPT_MAY_LONGJMP
 {
+    Log(("iemRaiseGeneralProtectionFault0Jmp: cs:rip=%04x:%RX64\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
     iemRaiseXcptOrIntJmp(pVCpu, 0, X86_XCPT_GP, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR, 0, 0);
 }
 #endif
@@ -4251,6 +4275,8 @@ DECL_NO_RETURN(void) iemRaiseGeneralProtectionFault0Jmp(PVMCPUCC pVCpu) IEM_NOEX
 /** \#GP(sel) - 0d.  */
 VBOXSTRICTRC iemRaiseGeneralProtectionFaultBySelector(PVMCPUCC pVCpu, RTSEL Sel) RT_NOEXCEPT
 {
+    Log(("iemRaiseGeneralProtectionFaultBySelector: cs:rip=%04x:%RX64 Sel=%#x\n",
+         pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, Sel));
     return iemRaiseXcptOrInt(pVCpu, 0, X86_XCPT_GP, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR,
                              Sel & ~X86_SEL_RPL, 0);
 }
@@ -4259,6 +4285,7 @@ VBOXSTRICTRC iemRaiseGeneralProtectionFaultBySelector(PVMCPUCC pVCpu, RTSEL Sel)
 /** \#GP(0) - 0d.  */
 VBOXSTRICTRC iemRaiseNotCanonical(PVMCPUCC pVCpu) RT_NOEXCEPT
 {
+    Log(("iemRaiseNotCanonical: cs:rip=%04x:%RX64\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
     return iemRaiseXcptOrInt(pVCpu, 0, X86_XCPT_GP, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR, 0, 0);
 }
 
@@ -4266,6 +4293,8 @@ VBOXSTRICTRC iemRaiseNotCanonical(PVMCPUCC pVCpu) RT_NOEXCEPT
 /** \#GP(sel) - 0d.  */
 VBOXSTRICTRC iemRaiseSelectorBounds(PVMCPUCC pVCpu, uint32_t iSegReg, uint32_t fAccess) RT_NOEXCEPT
 {
+    Log(("iemRaiseSelectorBounds: cs:rip=%04x:%RX64 iSegReg=%d fAccess=%#x\n",
+         pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, iSegReg, fAccess));
     NOREF(iSegReg); NOREF(fAccess);
     return iemRaiseXcptOrInt(pVCpu, 0, iSegReg == X86_SREG_SS ? X86_XCPT_SS : X86_XCPT_GP,
                              IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR, 0, 0);
@@ -4275,6 +4304,8 @@ VBOXSTRICTRC iemRaiseSelectorBounds(PVMCPUCC pVCpu, uint32_t iSegReg, uint32_t f
 /** \#GP(sel) - 0d, longjmp.  */
 DECL_NO_RETURN(void) iemRaiseSelectorBoundsJmp(PVMCPUCC pVCpu, uint32_t iSegReg, uint32_t fAccess) IEM_NOEXCEPT_MAY_LONGJMP
 {
+    Log(("iemRaiseSelectorBoundsJmp: cs:rip=%04x:%RX64 iSegReg=%d fAccess=%#x\n",
+         pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, iSegReg, fAccess));
     NOREF(iSegReg); NOREF(fAccess);
     iemRaiseXcptOrIntJmp(pVCpu, 0, iSegReg == X86_SREG_SS ? X86_XCPT_SS : X86_XCPT_GP,
                          IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR, 0, 0);
@@ -4284,6 +4315,8 @@ DECL_NO_RETURN(void) iemRaiseSelectorBoundsJmp(PVMCPUCC pVCpu, uint32_t iSegReg,
 /** \#GP(sel) - 0d.  */
 VBOXSTRICTRC iemRaiseSelectorBoundsBySelector(PVMCPUCC pVCpu, RTSEL Sel) RT_NOEXCEPT
 {
+    Log(("iemRaiseSelectorBoundsBySelector: cs:rip=%04x:%RX64 Sel=%#x\n",
+         pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, Sel));
     NOREF(Sel);
     return iemRaiseXcptOrInt(pVCpu, 0, X86_XCPT_GP, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR, 0, 0);
 }
@@ -4292,6 +4325,8 @@ VBOXSTRICTRC iemRaiseSelectorBoundsBySelector(PVMCPUCC pVCpu, RTSEL Sel) RT_NOEX
 /** \#GP(sel) - 0d, longjmp.  */
 DECL_NO_RETURN(void) iemRaiseSelectorBoundsBySelectorJmp(PVMCPUCC pVCpu, RTSEL Sel) IEM_NOEXCEPT_MAY_LONGJMP
 {
+    Log(("iemRaiseSelectorBoundsBySelectorJmp: cs:rip=%04x:%RX64 Sel=%#x\n",
+         pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, Sel));
     NOREF(Sel);
     iemRaiseXcptOrIntJmp(pVCpu, 0, X86_XCPT_GP, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR, 0, 0);
 }
@@ -4301,6 +4336,8 @@ DECL_NO_RETURN(void) iemRaiseSelectorBoundsBySelectorJmp(PVMCPUCC pVCpu, RTSEL S
 /** \#GP(sel) - 0d.  */
 VBOXSTRICTRC iemRaiseSelectorInvalidAccess(PVMCPUCC pVCpu, uint32_t iSegReg, uint32_t fAccess) RT_NOEXCEPT
 {
+    Log(("iemRaiseSelectorInvalidAccess: cs:rip=%04x:%RX64 iSegReg=%d fAccess=%#x\n",
+         pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, iSegReg, fAccess));
     NOREF(iSegReg); NOREF(fAccess);
     return iemRaiseXcptOrInt(pVCpu, 0, X86_XCPT_GP, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR, 0, 0);
 }
@@ -9072,8 +9109,9 @@ static void iemLogCurInstr(PVMCPUCC pVCpu, bool fSameCtx, const char *pszFunctio
               pFpuCtx->FSW, pFpuCtx->FCW, pFpuCtx->FTW, pFpuCtx->MXCSR, pFpuCtx->MXCSR_MASK,
               szInstr));
 
-        if (LogIs3Enabled())
-            DBGFR3InfoEx(pVCpu->pVMR3->pUVM, pVCpu->idCpu, "cpumguest", "verbose", NULL);
+        /* This stuff sucks atm. as it fills the log with MSRs. */
+        //if (LogIs3Enabled())
+        //    DBGFR3InfoEx(pVCpu->pVMR3->pUVM, pVCpu->idCpu, "cpumguest", "verbose", NULL);
     }
     else
 # endif
