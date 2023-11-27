@@ -100,7 +100,8 @@ RT_CONCAT3(iemMemFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 TMPL_MEM_TYPE const uRet = *(TMPL_MEM_TYPE const *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
-                LogEx(LOG_GROUP_IEM_MEM,("IEM RD " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, uRet));
+                LogEx(LOG_GROUP_IEM_MEM,("IEM RD " TMPL_MEM_FMT_DESC " %d|%RGv=%RGv: " TMPL_MEM_FMT_TYPE "\n",
+                                         iSegReg, GCPtrMem, GCPtrEff, uRet));
                 return uRet;
             }
         }
@@ -218,7 +219,8 @@ RT_CONCAT3(iemMemStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 *(TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK] = uValue;
-                Log5Ex(LOG_GROUP_IEM_MEM,("IEM WR " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, uValue));
+                Log5Ex(LOG_GROUP_IEM_MEM,("IEM WR " TMPL_MEM_FMT_DESC " %d|%RGv=%RGv: " TMPL_MEM_FMT_TYPE " (%04x:%RX64)\n",
+                                          iSegReg, GCPtrMem, GCPtrEff, uValue, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
                 return;
             }
         }
@@ -335,8 +337,8 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RwJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 *pbUnmapInfo = 0;
-                Log7Ex(LOG_GROUP_IEM_MEM,("IEM RW/map " TMPL_MEM_FMT_DESC " %d|%RGv: %p\n",
-                                          iSegReg, GCPtrMem, &pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK]));
+                Log7Ex(LOG_GROUP_IEM_MEM,("IEM RW/map " TMPL_MEM_FMT_DESC " %d|%RGv=%RGv: %p\n",
+                                          iSegReg, GCPtrMem, GCPtrEff, &pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK]));
                 return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
             }
         }
@@ -448,8 +450,8 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,WoJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 *pbUnmapInfo = 0;
-                Log7Ex(LOG_GROUP_IEM_MEM,("IEM WO/map " TMPL_MEM_FMT_DESC " %d|%RGv: %p\n",
-                                          iSegReg, GCPtrMem, &pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK]));
+                Log7Ex(LOG_GROUP_IEM_MEM,("IEM WO/map " TMPL_MEM_FMT_DESC " %d|%RGv=%RGv: %p\n",
+                                          iSegReg, GCPtrMem, GCPtrEff, &pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK]));
                 return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
             }
         }
@@ -560,8 +562,8 @@ RT_CONCAT3(iemMemMapData,TMPL_MEM_FN_SUFF,RoJmp)(PVMCPUCC pVCpu, uint8_t *pbUnma
                 Assert(pTlbe->pbMappingR3); /* (Only ever cleared by the owning EMT.) */
                 Assert(!((uintptr_t)pTlbe->pbMappingR3 & GUEST_PAGE_OFFSET_MASK));
                 *pbUnmapInfo = 0;
-                Log3Ex(LOG_GROUP_IEM_MEM,("IEM RO/map " TMPL_MEM_FMT_DESC " %d|%RGv: %p\n",
-                                          iSegReg, GCPtrMem, &pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK]));
+                Log3Ex(LOG_GROUP_IEM_MEM,("IEM RO/map " TMPL_MEM_FMT_DESC " %d|%RGv=%RGv: %p\n",
+                                          iSegReg, GCPtrMem, GCPtrEff, &pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK]));
                 return (TMPL_MEM_TYPE *)&pTlbe->pbMappingR3[GCPtrEff & GUEST_PAGE_OFFSET_MASK];
             }
         }
