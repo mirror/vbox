@@ -42,9 +42,24 @@
 #include <iprt/crypto/shacrypt.h>
 #include <iprt/types.h>
 #include <iprt/mem.h>
+#include <iprt/rand.h>
 #include <iprt/sha.h>
 #include <iprt/string.h>
 
+
+
+RTR3DECL(int) RTCrShaCryptGenerateSalt(char szSalt[RT_SHACRYPT_MAX_SALT_LEN + 1], size_t cchSalt)
+{
+    AssertMsgReturn(cchSalt >= RT_SHACRYPT_MIN_SALT_LEN && cchSalt <= RT_SHACRYPT_MAX_SALT_LEN, ("len=%zu\n", cchSalt),
+                    VERR_INVALID_PARAMETER);
+
+    static const char aRange[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890./";
+    for (size_t i = 0; i < cchSalt; i++)
+        szSalt[i] = aRange[RTRandU32Ex(0, sizeof(aRange) - 2)];
+
+    szSalt[RT_SHACRYPT_MAX_SALT_LEN] = '\0';
+    return VINF_SUCCESS;
+}
 
 
 RTR3DECL(int) RTCrShaCrypt256(const char *pszKey, const char *pszSalt, uint32_t cRounds, uint8_t abHash[RTSHA256_HASH_SIZE])

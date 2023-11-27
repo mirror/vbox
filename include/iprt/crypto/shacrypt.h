@@ -58,9 +58,20 @@ RT_C_DECLS_BEGIN
 
 
 /**
+ * Creates a randomized salt for the RTCrShaCryptXXX functions.
+ *
+ * @returns IPRT status code.
+ * @param   szSalt      Where to store the generated salt.
+ * @param   cchSalt     Number of characters the generated salt should use.
+ *                      Must be >= RT_SHACRYPT_MIN_SALT_LEN and <= RT_SHACRYPT_MAX_SALT_LEN.
+ */
+RTR3DECL(int) RTCrShaCryptGenerateSalt(char szSalt[RT_SHACRYPT_MAX_SALT_LEN + 1], size_t cchSalt);
+
+
+/**
  * Calculates a SHAcrypt (SHA-256) digest.
  *
- * @returns VBox status code.
+ * @returns IPRT status code.
  * @param   pszKey              Key (password) to use.
  * @param   pszSalt             Salt to use.
  *                              Must be >= RT_SHACRYPT_MIN_SALT_LEN and <= RT_SHACRYPT_MAX_SALT_LEN.
@@ -75,7 +86,7 @@ RTR3DECL(int) RTCrShaCrypt256(const char *pszKey, const char *pszSalt, uint32_t 
 /**
  * Returns a SHAcrypt (SHA-256) digest as a printable scheme.
  *
- * @returns VBox status code.
+ * @returns IPRT status code.
  * @param   abHash              SHAcrypt (SHA-256) digest to return printable scheme for.
  * @param   pszSalt             Salt to use. Must match the salt used when generating \a pabHash via RTSha256Crypt().
  * @param   cRounds             Number of rounds used for generating \a pabHash.
@@ -91,7 +102,7 @@ RTR3DECL(int) RTCrShaCrypt256ToString(uint8_t abHash[RTSHA256_HASH_SIZE], const 
 /**
  * Calculates a SHAcrypt (SHA-512) digest.
  *
- * @returns VBox status code.
+ * @returns IPRT status code.
  * @param   pszKey              Key (password) to use.
  * @param   pszSalt             Salt to use.
  *                              Must be >= RT_SHACRYPT_MIN_SALT_LEN and <= RT_SHACRYPT_MAX_SALT_LEN.
@@ -106,7 +117,7 @@ RTR3DECL(int) RTCrShaCrypt512(const char *pszKey, const char *pszSalt, uint32_t 
 /**
  * Returns a SHAcrypt (SHA-512) digest as a printable scheme.
  *
- * @returns VBox status code.
+ * @returns IPRT status code.
  * @param   abHash              SHAcrypt (SHA-512) digest to return printable scheme for.
  * @param   pszSalt             Salt to use. Must match the salt used when generating \a pabHash via RTSha512Crypt().
  * @param   cRounds             Number of rounds used for generating \a pabHash.

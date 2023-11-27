@@ -163,9 +163,8 @@ int main(int argc, char **argv)
          return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No password specified!\n");
     if (!pszSalt)
     {
-        static const char aRange[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!?+\"%&/()[]{}=#";
-        for (unsigned i = 0; i < RT_SHACRYPT_MAX_SALT_LEN; i++) /* Always go with a strong salt by default. */
-            szSalt[i] = aRange[RTRandU32Ex(0, sizeof(aRange) - 2)];
+        int vrc2 = RTCrShaCryptGenerateSalt(szSalt, RT_SHACRYPT_MAX_SALT_LEN);
+        AssertRCReturn(vrc2, RTEXITCODE_FAILURE);
         pszSalt = szSalt;
     }
     else if (strlen(pszSalt) < RT_SHACRYPT_MIN_SALT_LEN)

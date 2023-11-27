@@ -190,9 +190,8 @@ int main()
             pszSalt = g_aTests[i].pszSalt;
         else
         {
-            static const char aRange[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!?+\"%&/()[]{}=#";
-            for (unsigned s = 0; s < RT_SHACRYPT_MAX_SALT_LEN; s++) /* Always go with a strong salt by default. */
-                szSalt[s] = aRange[RTRandU32Ex(0, sizeof(aRange) - 2)];
+            rc = RTCrShaCryptGenerateSalt(szSalt, RT_SHACRYPT_MAX_SALT_LEN);
+            RTTEST_CHECK_RC_OK(hTest, rc);
             pszSalt = szSalt;
         }
 
