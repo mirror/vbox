@@ -46,7 +46,6 @@
 #include "nsObserverService.h"
 #include "nsProperties.h"
 #include "nsIProperties.h"
-#include "nsBinaryStream.h"
 
 #include "nsDebugImpl.h"
 #include "nsTraceRefcntImpl.h"
@@ -164,8 +163,6 @@ NS_GENERIC_FACTORY_CONSTRUCTOR(nsSupportsInterfacePointerImpl)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsArray)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsAtomService)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsExceptionService)
-NS_GENERIC_FACTORY_CONSTRUCTOR(nsBinaryOutputStream)
-NS_GENERIC_FACTORY_CONSTRUCTOR(nsBinaryInputStream)
 
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsVariant)
 
@@ -320,9 +317,6 @@ static const nsModuleComponentInfo components[] = {
     COMPONENT(DEBUG,  nsDebugImpl::Create),
 #define NS_ERRORSERVICE_CLASSNAME NS_ERRORSERVICE_NAME
     COMPONENT(ERRORSERVICE, nsErrorService::Create),
-
-    COMPONENT(BINARYINPUTSTREAM, nsBinaryInputStreamConstructor),
-    COMPONENT(BINARYOUTPUTSTREAM, nsBinaryOutputStreamConstructor),
 
 #define NS_PROPERTIES_CLASSNAME  "Properties"
     COMPONENT(PROPERTIES, nsProperties::Create),
