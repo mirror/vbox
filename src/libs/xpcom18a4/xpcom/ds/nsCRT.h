@@ -37,6 +37,7 @@
 #ifndef nsCRT_h___
 #define nsCRT_h___
 
+#include <iprt/mem.h>
 #include <iprt/string.h>
 
 #include <stdlib.h>
@@ -45,7 +46,6 @@
 #include "plstr.h"
 #include "nscore.h"
 #include "prtypes.h"
-#include "nsCppSharedAllocator.h"
 
 #ifdef XP_MAC
 #  define NS_LINEBREAK             "\015"
@@ -221,8 +221,7 @@ public:
   static PRUnichar* strndup(const PRUnichar* str, PRUint32 len);
 
   static void free(PRUnichar* str) {
-  	nsCppSharedAllocator<PRUnichar> shared_allocator;
-  	shared_allocator.deallocate(str, 0 /*we never new or kept the size*/);
+  	RTMemFree(str);
   }
 
   // Computes the hashcode for a c-string, returns the string length as

@@ -248,9 +248,7 @@ PRUnichar* nsCRT::strdup(const PRUnichar* str)
 
 PRUnichar* nsCRT::strndup(const PRUnichar* str, PRUint32 len)
 {
-	nsCppSharedAllocator<PRUnichar> shared_allocator;
-	PRUnichar* rslt = shared_allocator.allocate(len + 1); // add one for the null
-  // PRUnichar* rslt = new PRUnichar[len + 1];
+	PRUnichar* rslt = RTMemAlloc(sizeof(PRUnichar) * (len + 1)); // add one for the null
 
   if (rslt == NULL) return NULL;
   memcpy(rslt, str, len * sizeof(PRUnichar));
