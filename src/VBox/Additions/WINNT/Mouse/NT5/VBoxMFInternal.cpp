@@ -191,7 +191,9 @@ static void vboxNewProtDeviceRemoved(PVBOXMOUSE_DEVEXT pDevExt)
     KIRQL Irql;
     KeAcquireSpinLock(&g_ctx.SyncLock, &Irql);
 
-    RemoveEntryList(&pDevExt->ListEntry);
+    /* Do not try to remove the device from the list if it was never added. */
+    if (pDevExt->ListEntry.Flink && pDevExt->ListEntry.Blink)
+        RemoveEntryList(&pDevExt->ListEntry);
 
     /* Check if the PS/2 mouse is being removed. Usually never happens. */
     if (ASMAtomicCmpXchgPtr(&g_ctx.pCurrentDevExt, NULL, pDevExt))
