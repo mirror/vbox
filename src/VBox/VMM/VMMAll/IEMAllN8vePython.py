@@ -232,8 +232,8 @@ class NativeRecompFunctionVariation(object):
                 if oLocal.oReferencedBy:
                     oParent.raiseProblem('%s is already referenced by %s, so cannot make %s reference it as well'
                                          % (oLocal.oStmt.sVarName, oLocal.oReferencedBy.oStmt.sVarName, self.oStmt.sVarName,));
-                oInfo.oReferences = oLocal;
-                oInfo.oReferences.oReferencedBy = self;
+                self.oReferences = oLocal;
+                self.oReferences.oReferencedBy = self;
                 return True;
 
         #
@@ -254,7 +254,7 @@ class NativeRecompFunctionVariation(object):
                 asVarsInScope.append(oStmt.sVarName);
 
             elif oStmt.sName == 'IEM_MC_REF_LOCAL':
-                dVars[oStmt.asParam[0]].makeReference(dVars[oStmt.asParam[1]], self);
+                dVars[oStmt.asParams[0]].makeReference(dVars[oStmt.asParams[1]], self);
 
         #
         # Now work the statements backwards and look for the last reference to

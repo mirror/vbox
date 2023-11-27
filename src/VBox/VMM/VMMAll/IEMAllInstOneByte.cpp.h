@@ -2968,13 +2968,11 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev_Iz)
                 uint16_t u16Imm; IEM_OPCODE_GET_NEXT_U16(&u16Imm);
                 IEM_MC_BEGIN(3, 1, IEM_MC_F_MIN_186, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_ARG(uint16_t *,      pu16Dst,            0);
-                IEM_MC_ARG_CONST(uint16_t,  u16Src,/*=*/ u16Imm,1);
-                IEM_MC_ARG(uint32_t *,      pEFlags,            2);
-                IEM_MC_LOCAL(uint16_t,      u16Tmp);
-
+                IEM_MC_LOCAL(uint16_t,              u16Tmp);
                 IEM_MC_FETCH_GREG_U16(u16Tmp, IEM_GET_MODRM_RM(pVCpu, bRm));
-                IEM_MC_REF_LOCAL(pu16Dst, u16Tmp);
+                IEM_MC_ARG_LOCAL_REF(uint16_t *,    pu16Dst, u16Tmp,        0);
+                IEM_MC_ARG_CONST(uint16_t,          u16Src,/*=*/ u16Imm,    1);
+                IEM_MC_ARG(uint32_t *,              pEFlags,                2);
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pfnAImplU16, pu16Dst, u16Src, pEFlags);
                 IEM_MC_STORE_GREG_U16(IEM_GET_MODRM_REG(pVCpu, bRm), u16Tmp);
@@ -3017,13 +3015,12 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev_Iz)
                 uint32_t u32Imm; IEM_OPCODE_GET_NEXT_U32(&u32Imm);
                 IEM_MC_BEGIN(3, 1, IEM_MC_F_MIN_386, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_ARG(uint32_t *,      pu32Dst,            0);
-                IEM_MC_ARG_CONST(uint32_t,  u32Src,/*=*/ u32Imm,1);
-                IEM_MC_ARG(uint32_t *,      pEFlags,            2);
                 IEM_MC_LOCAL(uint32_t,      u32Tmp);
-
                 IEM_MC_FETCH_GREG_U32(u32Tmp, IEM_GET_MODRM_RM(pVCpu, bRm));
-                IEM_MC_REF_LOCAL(pu32Dst, u32Tmp);
+
+                IEM_MC_ARG_LOCAL_REF(uint32_t *,    pu32Dst,     u32Tmp,    0);
+                IEM_MC_ARG_CONST(uint32_t,          u32Src,/*=*/ u32Imm,    1);
+                IEM_MC_ARG(uint32_t *,              pEFlags,                2);
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pfnAImplU32, pu32Dst, u32Src, pEFlags);
                 IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), u32Tmp);
@@ -3066,13 +3063,12 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev_Iz)
                 uint64_t u64Imm; IEM_OPCODE_GET_NEXT_S32_SX_U64(&u64Imm);
                 IEM_MC_BEGIN(3, 1, IEM_MC_F_64BIT, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_ARG(uint64_t *,      pu64Dst,            0);
-                IEM_MC_ARG_CONST(uint64_t,  u64Src,/*=*/ u64Imm,1);
-                IEM_MC_ARG(uint32_t *,      pEFlags,            2);
-                IEM_MC_LOCAL(uint64_t,      u64Tmp);
-
+                IEM_MC_LOCAL(uint64_t,              u64Tmp);
                 IEM_MC_FETCH_GREG_U64(u64Tmp, IEM_GET_MODRM_RM(pVCpu, bRm));
-                IEM_MC_REF_LOCAL(pu64Dst, u64Tmp);
+
+                IEM_MC_ARG_LOCAL_REF(uint64_t *,    pu64Dst,     u64Tmp,    0);
+                IEM_MC_ARG_CONST(uint64_t,          u64Src,/*=*/ u64Imm,    1);
+                IEM_MC_ARG(uint32_t *,              pEFlags,                2);
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pfnAImplU64, pu64Dst, u64Src, pEFlags);
                 IEM_MC_STORE_GREG_U64(IEM_GET_MODRM_REG(pVCpu, bRm), u64Tmp);
@@ -3173,13 +3169,13 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev_Ib)
                 IEM_MC_BEGIN(3, 1, IEM_MC_F_MIN_186, 0);
                 uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_ARG(uint16_t *,      pu16Dst,                    0);
-                IEM_MC_ARG_CONST(uint16_t,  u16Src,/*=*/ (int8_t)u8Imm, 1);
-                IEM_MC_ARG(uint32_t *,      pEFlags,                    2);
-                IEM_MC_LOCAL(uint16_t,      u16Tmp);
 
+                IEM_MC_LOCAL(uint16_t,              u16Tmp);
                 IEM_MC_FETCH_GREG_U16(u16Tmp, IEM_GET_MODRM_RM(pVCpu, bRm));
-                IEM_MC_REF_LOCAL(pu16Dst, u16Tmp);
+
+                IEM_MC_ARG_LOCAL_REF(uint16_t *,    pu16Dst,    u16Tmp,         0);
+                IEM_MC_ARG_CONST(uint16_t,          u16Src,/*=*/ (int8_t)u8Imm, 1);
+                IEM_MC_ARG(uint32_t *,              pEFlags,                    2);
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pfnAImplU16, pu16Dst, u16Src, pEFlags);
                 IEM_MC_STORE_GREG_U16(IEM_GET_MODRM_REG(pVCpu, bRm), u16Tmp);
@@ -3223,13 +3219,12 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev_Ib)
                 uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
                 IEM_MC_BEGIN(3, 1, IEM_MC_F_MIN_386, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_ARG(uint32_t *,      pu32Dst,                    0);
-                IEM_MC_ARG_CONST(uint32_t,  u32Src,/*=*/ (int8_t)u8Imm, 1);
-                IEM_MC_ARG(uint32_t *,      pEFlags,                    2);
                 IEM_MC_LOCAL(uint32_t,      u32Tmp);
-
                 IEM_MC_FETCH_GREG_U32(u32Tmp, IEM_GET_MODRM_RM(pVCpu, bRm));
-                IEM_MC_REF_LOCAL(pu32Dst, u32Tmp);
+
+                IEM_MC_ARG_LOCAL_REF(uint32_t *,    pu32Dst,            u32Tmp, 0);
+                IEM_MC_ARG_CONST(uint32_t,          u32Src,/*=*/ (int8_t)u8Imm, 1);
+                IEM_MC_ARG(uint32_t *,              pEFlags,                    2);
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pfnAImplU32, pu32Dst, u32Src, pEFlags);
                 IEM_MC_STORE_GREG_U32(IEM_GET_MODRM_REG(pVCpu, bRm), u32Tmp);
@@ -3272,13 +3267,12 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev_Ib)
                 uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
                 IEM_MC_BEGIN(3, 1, IEM_MC_F_64BIT, 0);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_ARG(uint64_t *,      pu64Dst,                                0);
-                IEM_MC_ARG_CONST(uint64_t,  u64Src, /*=*/ (int64_t)(int8_t)u8Imm,   1);
-                IEM_MC_ARG(uint32_t *,      pEFlags,                                2);
                 IEM_MC_LOCAL(uint64_t,      u64Tmp);
-
                 IEM_MC_FETCH_GREG_U64(u64Tmp, IEM_GET_MODRM_RM(pVCpu, bRm));
-                IEM_MC_REF_LOCAL(pu64Dst, u64Tmp);
+
+                IEM_MC_ARG_LOCAL_REF(uint64_t *,    pu64Dst,                       u64Tmp,  0);
+                IEM_MC_ARG_CONST(uint64_t,          u64Src, /*=*/ (int64_t)(int8_t)u8Imm,   1);
+                IEM_MC_ARG(uint32_t *,              pEFlags,                                2);
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pfnAImplU64, pu64Dst, u64Src, pEFlags);
                 IEM_MC_STORE_GREG_U64(IEM_GET_MODRM_REG(pVCpu, bRm), u64Tmp);
@@ -6933,18 +6927,20 @@ FNIEMOP_DEF(iemOp_movswd_Xv_Yv)
 #define IEM_CMPS_CASE(ValBits, AddrBits, a_fMcFlags) \
         IEM_MC_BEGIN(3, 3, a_fMcFlags, 0); \
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
-        IEM_MC_ARG(uint##ValBits##_t *, puValue1, 0); \
-        IEM_MC_ARG(uint##ValBits##_t,   uValue2,  1); \
-        IEM_MC_ARG(uint32_t *,          pEFlags,  2); \
-        IEM_MC_LOCAL(uint##ValBits##_t, uValue1); \
-        IEM_MC_LOCAL(RTGCPTR,           uAddr); \
         \
-        IEM_MC_FETCH_GREG_U##AddrBits##_ZX_U64(uAddr, X86_GREG_xSI); \
-        IEM_MC_FETCH_MEM_U##ValBits(uValue1, pVCpu->iem.s.iEffSeg, uAddr); \
-        IEM_MC_FETCH_GREG_U##AddrBits##_ZX_U64(uAddr, X86_GREG_xDI); \
-        IEM_MC_FETCH_MEM_U##ValBits(uValue2, X86_SREG_ES, uAddr); \
-        IEM_MC_REF_LOCAL(puValue1, uValue1); \
+        IEM_MC_LOCAL(RTGCPTR,           uAddr1); \
+        IEM_MC_FETCH_GREG_U##AddrBits##_ZX_U64(uAddr1, X86_GREG_xSI); \
+        IEM_MC_LOCAL(uint##ValBits##_t, uValue1); \
+        IEM_MC_FETCH_MEM_U##ValBits(uValue1, pVCpu->iem.s.iEffSeg, uAddr1); \
+        \
+        IEM_MC_LOCAL(RTGCPTR,           uAddr2); \
+        IEM_MC_FETCH_GREG_U##AddrBits##_ZX_U64(uAddr2, X86_GREG_xDI); \
+        IEM_MC_ARG(uint##ValBits##_t,               uValue2,            1); \
+        IEM_MC_FETCH_MEM_U##ValBits(uValue2, X86_SREG_ES, uAddr2); \
+        \
+        IEM_MC_ARG(uint32_t *,                      pEFlags,            2); \
         IEM_MC_REF_EFLAGS(pEFlags); \
+        IEM_MC_ARG_LOCAL_REF(uint##ValBits##_t *,   puValue1, uValue1,  0); \
         IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_cmp_u##ValBits, puValue1, uValue2, pEFlags); \
         \
         IEM_MC_IF_EFL_BIT_SET(X86_EFL_DF) { \

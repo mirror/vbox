@@ -3083,9 +3083,9 @@ g_dMcStmtParsers = {
     'IEM_MC_REF_GREG_U32_CONST':                                 (McBlock.parseMcGeneric,           False, True,  ),
     'IEM_MC_REF_GREG_U64':                                       (McBlock.parseMcGeneric,           False, True,  ),
     'IEM_MC_REF_GREG_U64_CONST':                                 (McBlock.parseMcGeneric,           False, True,  ),
-    'IEM_MC_REF_GREG_U8':                                        (McBlock.parseMcGeneric,           False, False, ),
-    'IEM_MC_REF_GREG_U8_CONST':                                  (McBlock.parseMcGeneric,           False, False, ),
-    'IEM_MC_REF_LOCAL':                                          (McBlock.parseMcGeneric,           False, False, ),
+    'IEM_MC_REF_GREG_U8':                                        (McBlock.parseMcGeneric,           False, False, ), # threaded
+    'IEM_MC_REF_GREG_U8_CONST':                                  (McBlock.parseMcGeneric,           False, False, ), # threaded
+    'IEM_MC_REF_LOCAL':                                          (McBlock.parseMcGeneric,           False, False, ), # eliminate!
     'IEM_MC_REF_MREG_U32_CONST':                                 (McBlock.parseMcGeneric,           False, False, ),
     'IEM_MC_REF_MREG_U64':                                       (McBlock.parseMcGeneric,           False, False, ),
     'IEM_MC_REF_MREG_U64_CONST':                                 (McBlock.parseMcGeneric,           False, False, ),
