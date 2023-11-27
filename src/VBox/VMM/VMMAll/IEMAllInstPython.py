@@ -2691,6 +2691,63 @@ class McBlock(object):
             return "Block has more than one IEMOP_HLP_DONE_*DECODING* invocation!";
         return "Block is missing IEMOP_HLP_DONE_*DECODING* invocation!";
 
+    def checkForFetchAfterRef(self, aoStmts, asRegRefClasses):
+        """
+        Checks that the register references are placed after register fetches
+        from the same register class.
+        Returns None on success, error string on failure.
+
+        Example:
+                SHL CH, CL
+
+        If the CH reference is created first, the fetching of CL will cause the
+        RCX guest register to have an active shadow register when it's being
+        updated.  The shadow register will then be stale after the SHL operation
+        completes, without us noticing.
+
+        It's easier to ensure we've got correct code than complicating the
+        recompiler code with safeguards here.
+        """
+        for iStmt, oStmt in enumerate(aoStmts):
+            if not oStmt.isCppStmt():
+                offRef = oStmt.sName.find("_REF_");
+                if offRef > 0:
+                    if oStmt.sName not in ('IEM_MC_REF_LOCAL', ):
+                        if oStmt.sName in ('IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80',
+                                           'IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80',
+                                           'IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST',):
+                            sClass = 'FPUREG';
+                        else:
+                            offUnderscore = oStmt.sName.find('_', offRef + 5);
+                            if offUnderscore > 0:
+                                assert offUnderscore > offRef;
+                                sClass = oStmt.sName[offRef + 5 : offUnderscore];
+                            else:
+                                sClass = oStmt.sName[offRef + 5];
+                        asRegRefClasses[sClass] = True;
+                else:
+                    offFetch = oStmt.sName.find("_FETCH_");
+                    if offFetch > 0:
+                        sClass = oStmt.sName[offFetch + 7 : ];
+                        if not sClass.startswith("MEM"):
+                            offUnderscore = sClass.find('_');
+                            if offUnderscore >= 0:
+                                assert offUnderscore > 0;
+                                sClass = sClass[:offUnderscore];
+                            if sClass in asRegRefClasses:
+                                return "statement #%u: %s following REF! That'll mess up guest register shadowing" \
+                                     % (iStmt + 1, oStmt.sName,);
+
+            # Go into branches.
+            if isinstance(oStmt, McStmtCond):
+                sRet = self.checkForFetchAfterRef(oStmt.aoIfBranch, asRegRefClasses);
+                if sRet:
+                    return sRet;
+                sRet = self.checkForFetchAfterRef(oStmt.aoElseBranch, asRegRefClasses);
+                if sRet:
+                    return sRet;
+        return None;
+
     def check(self):
         """
         Performs some sanity checks on the block.
@@ -2704,6 +2761,10 @@ class McBlock(object):
             asRet.append(sRet);
 
         sRet = self.checkForDoneDecoding(aoStmts);
+        if sRet:
+            asRet.append(sRet);
+
+        sRet = self.checkForFetchAfterRef(aoStmts, {});
         if sRet:
             asRet.append(sRet);
 

@@ -1135,8 +1135,8 @@ FNIEMOP_DEF(iemOp_rorx_Gy_Ey_Ib)
             IEM_MC_ARG(uint64_t *,          pDst,    0);
             IEM_MC_ARG(uint64_t,            uSrc1,   1);
             IEM_MC_ARG_CONST(uint64_t,      uSrc2,   bImm8, 2);
-            IEM_MC_REF_GREG_U64(pDst,    IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_FETCH_GREG_U64(uSrc1, IEM_GET_MODRM_RM(pVCpu, bRm));
+            IEM_MC_REF_GREG_U64(pDst,    IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_rorx_u64, pDst, uSrc1, uSrc2);
             IEM_MC_ADVANCE_RIP_AND_FINISH();
             IEM_MC_END();
@@ -1148,8 +1148,8 @@ FNIEMOP_DEF(iemOp_rorx_Gy_Ey_Ib)
             IEM_MC_ARG(uint32_t *,          pDst,    0);
             IEM_MC_ARG(uint32_t,            uSrc1,   1);
             IEM_MC_ARG_CONST(uint32_t,      uSrc2,   bImm8, 2);
-            IEM_MC_REF_GREG_U32(pDst,    IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_FETCH_GREG_U32(uSrc1, IEM_GET_MODRM_RM(pVCpu, bRm));
+            IEM_MC_REF_GREG_U32(pDst,    IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_rorx_u32, pDst, uSrc1, uSrc2);
             IEM_MC_CLEAR_HIGH_GREG_U64(IEM_GET_MODRM_REG(pVCpu, bRm));
             IEM_MC_ADVANCE_RIP_AND_FINISH();
