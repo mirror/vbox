@@ -2120,7 +2120,7 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
 #endif /* < 5.10.0 */
 #if RTLNX_VER_MIN(2,6,19)
 /* See kernel 6.0.0 change eba2d3d798295dc43cae8fade102f9d083a2a741. */
-# if RTLNX_VER_MIN(6,0,0)
+# if RTLNX_VER_MIN(6,0,0) || RTLNX_RHEL_MAJ_PREREQ(9,4)
 #  define VBOX_IOV_GET_PAGES iov_iter_get_pages2
 # else
 #  define VBOX_IOV_GET_PAGES iov_iter_get_pages
