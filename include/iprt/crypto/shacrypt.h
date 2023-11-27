@@ -64,7 +64,7 @@ RT_C_DECLS_BEGIN
  * @param   pszKey              Key (password) to use.
  * @param   pszSalt             Salt to use.
  *                              Must be >= RT_SHACRYPT_MIN_SALT_LEN and <= RT_SHACRYPT_MAX_SALT_LEN.
- * @param   cRounds             Number of rounds to use.
+ * @param   cRounds             Number of rounds to use.  @sa RT_SHACRYPT_DEFAULT_ROUNDS
  * @param   abHash              Where to return the hash on success.
  *
  * @note    This implements SHA-crypt.txt Version: 0.6 2016-8-31.
@@ -95,7 +95,7 @@ RTR3DECL(int) RTCrShaCrypt256ToString(uint8_t abHash[RTSHA256_HASH_SIZE], const 
  * @param   pszKey              Key (password) to use.
  * @param   pszSalt             Salt to use.
  *                              Must be >= RT_SHACRYPT_MIN_SALT_LEN and <= RT_SHACRYPT_MAX_SALT_LEN.
- * @param   cRounds             Number of rounds to use.
+ * @param   cRounds             Number of rounds to use. @sa RT_SHACRYPT_DEFAULT_ROUNDS
  * @param   abHash              Where to return the hash on success.
  *
  * @note    This implements SHA-crypt.txt Version: 0.6 2016-8-31.
