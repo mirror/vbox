@@ -105,7 +105,7 @@ xptiInterfaceEntry::NewEntry(const xptiInterfaceEntry& r,
                              const xptiTypelib& typelib,
                              xptiWorkingSet* aWorkingSet)
 {
-    size_t nameLength = PL_strlen(r.mName);
+    size_t nameLength = strlen(r.mName);
     void* place = XPT_MALLOC(aWorkingSet->GetStructArena(),
                              sizeof(xptiInterfaceEntry) + nameLength);
     if(!place)
@@ -258,7 +258,7 @@ nsresult
 xptiInterfaceEntry::GetName(char **name)
 {
     // It is not necessary to Resolve because this info is read from manifest.
-    *name = (char*) nsMemory::Clone(mName, PL_strlen(mName)+1);
+    *name = (char*) nsMemory::Clone(mName, strlen(mName)+1);
     return *name ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
 }
 

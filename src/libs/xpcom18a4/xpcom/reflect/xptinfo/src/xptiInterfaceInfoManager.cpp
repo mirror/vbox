@@ -1862,20 +1862,6 @@ xpti_ArrayPrefixAppender(PLDHashTable *table, PLDHashEntryHdr *hdr,
     return PL_DHASH_NEXT;
 }
 
-/* nsIEnumerator enumerateInterfacesWhoseNamesStartWith (in string prefix); */
-NS_IMETHODIMP xptiInterfaceInfoManager::EnumerateInterfacesWhoseNamesStartWith(const char *prefix, nsIEnumerator **_retval)
-{
-    nsCOMPtr<nsISupportsArray> array;
-    NS_NewISupportsArray(getter_AddRefs(array));
-    if(!array)
-        return NS_ERROR_UNEXPECTED;
-
-    ArrayAndPrefix args = {array, prefix, PL_strlen(prefix)};
-    PL_DHashTableEnumerate(mWorkingSet.mNameTable, xpti_ArrayPrefixAppender, &args);
-    
-    return array->Enumerate(_retval);
-}
-
 /* void autoRegisterInterfaces (); */
 NS_IMETHODIMP xptiInterfaceInfoManager::AutoRegisterInterfaces()
 {

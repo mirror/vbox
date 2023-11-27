@@ -193,7 +193,7 @@ tmTransactionService::Attach(const nsACString & aDomainName,
                               TM_ATTACH,                     // action
                               NS_OK,                         // default status
                               (PRUint8 *)joinedQueueName,    // qName gets copied
-                              PL_strlen(joinedQueueName)+1))) { // message length
+                              strlen(joinedQueueName)+1))) { // message length
     // send the attach msg
     SendMessage(&trans, PR_TRUE);  // synchronous
     rv = NS_OK;

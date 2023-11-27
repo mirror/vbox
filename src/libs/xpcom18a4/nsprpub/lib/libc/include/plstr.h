@@ -62,7 +62,6 @@
 #include "prtypes.h"
 
 #ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
-#define PL_strlen VBoxNsplPL_strlen
 #define PL_strcmp VBoxNsplPL_strcmp
 #define PL_strncmp VBoxNsplPL_strncmp
 #define PL_strcasecmp VBoxNsplPL_strcasecmp
@@ -74,30 +73,9 @@
 #define PL_strcaserstr VBoxNsplPL_strcaserstr
 #define PL_strcasestr VBoxNsplPL_strcasestr
 #define PL_strndup VBoxNsplPL_strndup
-#define PL_strnlen VBoxNsplPL_strnlen
 #endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 
 PR_BEGIN_EXTERN_C
-/*
- * PL_strlen
- *
- * Returns the length of the provided string, not including the trailing '\0'.
- */
-
-PR_EXTERN(PRUint32)
-PL_strlen(const char *str);
-
-/*
- * PL_strnlen
- *
- * Returns the length of the provided string, not including the trailing '\0',
- * up to the indicated maximum.  The string will not be examined beyond the
- * maximum; if no terminating '\0' is found, the maximum will be returned.
- */
-
-PR_EXTERN(PRUint32)
-PL_strnlen(const char *str, PRUint32 max);
-
 /*
  * PL_strncpy
  *

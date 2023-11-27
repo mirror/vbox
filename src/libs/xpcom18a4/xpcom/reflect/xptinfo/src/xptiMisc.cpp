@@ -41,6 +41,7 @@
 
 #include <iprt/file.h>
 #include <iprt/time.h>
+#include <iprt/string.h>
 
 #include "xptiprivate.h"
 
@@ -63,7 +64,7 @@ static const xptiFileTypeEntry g_Entries[] =
 xptiFileType::Type xptiFileType::GetType(const char* name)
 {
     NS_ASSERTION(name, "loser!");
-    int len = PL_strlen(name);
+    int len = strlen(name);
     for(const xptiFileTypeEntry* p = g_Entries; p->name; p++)
     {
         if(len > p->len && 0 == PL_strcasecmp(p->name, &(name[len - p->len])))
