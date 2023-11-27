@@ -7532,7 +7532,22 @@ iemNativeEmitCalcRmEffAddrThreadedAddr32(PIEMRECOMPILERSTATE pReNative, uint32_t
 #define IEM_MC_FETCH_MEM_U64(a_u64Dst, a_iSeg, a_GCPtrMem) \
     off = iemNativeEmitMemFetchDataCommon(pReNative, off, pCallEntry->idxInstr, a_u64Dst, a_iSeg, a_GCPtrMem, sizeof(uint64_t))
 
-/** Emits code for IEM_MC_FETCH_MEM_U8/16/32/64. */
+
+#define IEM_MC_FETCH_MEM_FLAT_U8(a_u8Dst, a_GCPtrMem) \
+    off = iemNativeEmitMemFetchDataCommon(pReNative, off, pCallEntry->idxInstr, a_u8Dst, UINT8_MAX, a_GCPtrMem, sizeof(uint8_t))
+
+#define IEM_MC_FETCH_MEM_FLAT_U16(a_u16Dst, a_GCPtrMem) \
+    off = iemNativeEmitMemFetchDataCommon(pReNative, off, pCallEntry->idxInstr, a_u16Dst, UINT8_MAX, a_GCPtrMem, sizeof(uint16_t))
+
+#define IEM_MC_FETCH_MEM_FLAT_U32(a_u32Dst, a_GCPtrMem) \
+    off = iemNativeEmitMemFetchDataCommon(pReNative, off, pCallEntry->idxInstr, a_u32Dst, UINT8_MAX, a_GCPtrMem, sizeof(uint32_t))
+
+#define IEM_MC_FETCH_MEM_FLAT_U64(a_u64Dst, a_GCPtrMem) \
+    off = iemNativeEmitMemFetchDataCommon(pReNative, off, pCallEntry->idxInstr, a_u64Dst, UINT8_MAX, a_GCPtrMem, sizeof(uint64_t))
+
+
+/** Emits code for IEM_MC_FETCH_MEM_U8/16/32/64 and
+ *  IEM_MC_FETCH_MEM_FLAT_U8/16/32/64 (iSegReg = UINT8_MAX). */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitMemFetchDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr,
                                 uint8_t idxVarDst, uint8_t iSegReg, uint8_t idxVarGCPtrMem, uint8_t cbMem)
@@ -7542,7 +7557,7 @@ iemNativeEmitMemFetchDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uin
     AssertStmt(   pReNative->Core.aVars[idxVarGCPtrMem].enmKind == kIemNativeVarKind_Immediate
                || pReNative->Core.aVars[idxVarGCPtrMem].enmKind == kIemNativeVarKind_Stack,
                IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_UNEXPECTED_KIND));
-    Assert(iSegReg < 6);
+    Assert(iSegReg < 6 || iSegReg == UINT8_MAX);
     Assert(cbMem == 1 || cbMem == 2 || cbMem == 4 || cbMem == 8);
     RT_NOREF(idxInstr);
 
@@ -7599,7 +7614,8 @@ iemNativeEmitMemFetchDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uin
     if (   (   (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_64BIT
             || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_PROT_FLAT
             || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_FLAT)
-        && (   iSegReg == X86_SREG_DS
+        && (   iSegReg == UINT8_MAX
+            || iSegReg == X86_SREG_DS
             || iSegReg == X86_SREG_ES
             || iSegReg == X86_SREG_SS
             || (iSegReg == X86_SREG_CS && (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_64BIT) ))
@@ -7619,6 +7635,7 @@ iemNativeEmitMemFetchDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uin
     }
     else
     {
+        AssertStmt(iSegReg < 6, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_EMIT_BAD_SEG_REG_NO));
         AssertCompile(IEMNATIVE_CALL_ARG_GREG_COUNT >= 3);
         switch (cbMem)
         {
