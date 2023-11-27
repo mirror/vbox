@@ -92,6 +92,16 @@ Rules for adding a changelog entry to make them look more uniform:
        <para>virtio-net: Follow up fixes for FreeBSD 12.3 and pfSense 2.6.0 (bug #21201)</para>
       </listitem>
 
+      <listitem>
+       <para>Main: Introduced virtualization platform support to the public API to better abstract
+         platform-specific details. Please consult the SDK manual for more information</para>
+      </listitem>
+
+      <listitem>
+       <para>Unattended Installation: Added support for subiquity- / cloud-init-based installers;
+         this enables installing more modern Linux-based guest OSes in Unattended mode</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
