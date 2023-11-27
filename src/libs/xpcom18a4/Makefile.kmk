@@ -962,7 +962,6 @@ VBOX_XPTFILES = $(addprefix $(PATH_TARGET)/VBox-xpcom-xpt-files/, \
 		nsISupportsPrimitives.xpt \
 		nsIBinaryInputStream.xpt \
 		nsIBinaryOutputStream.xpt \
-		nsIByteArrayInputStream.xpt \
 		nsIInputStreamTee.xpt \
 		nsILineInputStream.xpt \
 		nsIObjectInputStream.xpt \
