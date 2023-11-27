@@ -1847,7 +1847,7 @@ iemNativeLabelCreate(PIEMRECOMPILERSTATE pReNative, IEMNATIVELABELTYPE enmType,
     uint32_t const  cLabels  = pReNative->cLabels;
     if (   pReNative->bmLabelTypes & RT_BIT_64(enmType)
 #ifndef VBOX_STRICT
-        && enmType  >= kIemNativeLabelType_FirstWithMultipleInstances
+        && enmType  <  kIemNativeLabelType_FirstWithMultipleInstances
         && offWhere == UINT32_MAX
         && uData    == 0
 #endif
@@ -8550,6 +8550,9 @@ DECLHIDDEN(PIEMTB) iemNativeRecompile(PVMCPUCC pVCpu, PIEMTB pTb) RT_NOEXCEPT
     {
         Assert(paFixups[i].off < off);
         Assert(paFixups[i].idxLabel < cLabels);
+        AssertMsg(paLabels[paFixups[i].idxLabel].off < off,
+                  ("idxLabel=%d enmType=%d off=%#x (max %#x)\n", paFixups[i].idxLabel,
+                   paLabels[paFixups[i].idxLabel].enmType, paLabels[paFixups[i].idxLabel].off, off));
         RTPTRUNION const Ptr = { &paFinalInstrBuf[paFixups[i].off] };
         switch (paFixups[i].enmType)
         {
