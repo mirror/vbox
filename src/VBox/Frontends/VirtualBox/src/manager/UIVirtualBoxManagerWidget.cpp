@@ -438,6 +438,13 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange()
         return;
     }
 
+    /* Update tools restrictions for currently selected item: */
+    UIVirtualMachineItem *pItem = currentItem();
+    if (pItem)
+        updateToolsMenuMachine(pItem);
+    else
+        updateToolsMenuGlobal();
+
     /* Recache current item info if machine or group item selected: */
     if (isMachineItemSelected() || isGroupItemSelected())
         recacheCurrentItemInformation();
@@ -454,11 +461,9 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange()
                                             : isCloudMachineItemSelected()
                                             ? SelectionType_FirstIsCloudMachineItem
                                             : SelectionType_Invalid;
-    /* Acquire current item: */
-    UIVirtualMachineItem *pItem = currentItem();
-    const bool fCurrentItemIsOk = pItem && pItem->accessible();
 
     /* Update toolbar if selection type or item accessibility got changed: */
+    const bool fCurrentItemIsOk = pItem && pItem->accessible();
     if (   m_enmSelectionType != enmSelectedItemType
         || m_fSelectedMachineItemAccessible != fCurrentItemIsOk)
         updateToolbar();
