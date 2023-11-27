@@ -68,7 +68,6 @@
 #include "nsMemory.h"
 
 #include "nsISupportsArray.h"
-#include "nsSupportsArray.h"
 #include "nsInt64.h"
 
 #include "nsQuickSort.h"
@@ -858,11 +857,10 @@ private:
 /***************************************************************************/
 
 class xptiInterfaceInfoManager 
-    : public nsIInterfaceInfoSuperManager
+    : public nsIInterfaceInfoManager
 {
     NS_DECL_ISUPPORTS
     NS_DECL_NSIINTERFACEINFOMANAGER
-    NS_DECL_NSIINTERFACEINFOSUPERMANAGER
 
     // helper
     PRBool 
@@ -964,8 +962,6 @@ private:
     RTSEMFASTMUTEX               mResolveLock;
     RTSEMFASTMUTEX               mAutoRegLock;
     PRMonitor*                   mInfoMonitor;
-    RTSEMFASTMUTEX               mAdditionalManagersLock;
-    nsSupportsArray              mAdditionalManagers;
     nsCOMPtr<nsISupportsArray>   mSearchPath;
 };
 

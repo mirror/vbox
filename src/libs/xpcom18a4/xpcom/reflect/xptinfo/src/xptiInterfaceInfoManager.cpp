@@ -48,9 +48,8 @@
 
 #define NS_ZIPLOADER_CONTRACTID NS_XPTLOADER_CONTRACTID_PREFIX "zip"
 
-NS_IMPL_THREADSAFE_ISUPPORTS2(xptiInterfaceInfoManager, 
-                              nsIInterfaceInfoManager,
-                              nsIInterfaceInfoSuperManager)
+NS_IMPL_THREADSAFE_ISUPPORTS1(xptiInterfaceInfoManager, 
+                              nsIInterfaceInfoManager);
 
 static xptiInterfaceInfoManager* gInterfaceInfoManager = nsnull;
 #ifdef DEBUG
@@ -115,8 +114,7 @@ xptiInterfaceInfoManager::IsValid()
     return mWorkingSet.IsValid() &&
            mResolveLock != NIL_RTSEMFASTMUTEX &&
            mAutoRegLock != NIL_RTSEMFASTMUTEX &&
-           mInfoMonitor &&
-           mAdditionalManagersLock != NIL_RTSEMFASTMUTEX;
+           mInfoMonitor;
 }        
 
 xptiInterfaceInfoManager::xptiInterfaceInfoManager(nsISupportsArray* aSearchPath)
@@ -125,16 +123,12 @@ xptiInterfaceInfoManager::xptiInterfaceInfoManager(nsISupportsArray* aSearchPath
         mResolveLock(NIL_RTSEMFASTMUTEX),
         mAutoRegLock(NIL_RTSEMFASTMUTEX),
         mInfoMonitor(nsAutoMonitor::NewMonitor("xptiInfoMonitor")),
-        mAdditionalManagersLock(NIL_RTSEMFASTMUTEX),
         mSearchPath(aSearchPath)
 {
     int vrc = RTSemFastMutexCreate(&mResolveLock);
     AssertRC(vrc); RT_NOREF(vrc);
 
     vrc = RTSemFastMutexCreate(&mAutoRegLock);
-    AssertRC(vrc); RT_NOREF(vrc);
-
-    vrc = RTSemFastMutexCreate(&mAdditionalManagersLock);
     AssertRC(vrc); RT_NOREF(vrc);
 
     mStatsLogFile = RTEnvGet("MOZILLA_XPTI_STATS");
@@ -157,8 +151,6 @@ xptiInterfaceInfoManager::~xptiInterfaceInfoManager()
         RTSemFastMutexDestroy(mAutoRegLock);
     if(mInfoMonitor)
         nsAutoMonitor::DestroyMonitor(mInfoMonitor);
-    if(mAdditionalManagersLock)
-        RTSemFastMutexDestroy(mAdditionalManagersLock);
 
     gInterfaceInfoManager = nsnull;
 #ifdef DEBUG
@@ -1966,163 +1958,6 @@ NS_IMETHODIMP xptiInterfaceInfoManager::AutoRegisterInterfaces()
 
     LOG_AUTOREG(("successful end of AutoRegister\n"));
 
-    return NS_OK;
-}
-
-/***************************************************************************/
-
-class xptiAdditionalManagersEnumerator : public nsISimpleEnumerator 
-{
-public:
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSISIMPLEENUMERATOR
-
-    xptiAdditionalManagersEnumerator();
-
-    PRBool SizeTo(PRUint32 likelyCount) {return mArray.SizeTo(likelyCount);}
-    PRBool AppendElement(nsIInterfaceInfoManager* element);
-
-private:
-    ~xptiAdditionalManagersEnumerator() {}
-
-    nsSupportsArray mArray;
-    PRUint32        mIndex;
-    PRUint32        mCount;
-};
-
-NS_IMPL_ISUPPORTS1(xptiAdditionalManagersEnumerator, nsISimpleEnumerator)
-
-xptiAdditionalManagersEnumerator::xptiAdditionalManagersEnumerator()
-    : mIndex(0), mCount(0)
-{
-}
-
-PRBool xptiAdditionalManagersEnumerator::AppendElement(nsIInterfaceInfoManager* element)
-{
-    if(!mArray.AppendElement(NS_STATIC_CAST(nsISupports*, element)))
-        return PR_FALSE;
-    mCount++;
-    return PR_TRUE;
-}
-
-/* boolean hasMoreElements (); */
-NS_IMETHODIMP xptiAdditionalManagersEnumerator::HasMoreElements(PRBool *_retval)
-{
-    *_retval = mIndex < mCount;
-    return NS_OK;
-}
-
-/* nsISupports getNext (); */
-NS_IMETHODIMP xptiAdditionalManagersEnumerator::GetNext(nsISupports **_retval)
-{
-    if(!(mIndex < mCount))
-    {
-        NS_ERROR("Bad nsISimpleEnumerator caller!");
-        return NS_ERROR_FAILURE;    
-    }
-
-    *_retval = mArray.ElementAt(mIndex++);
-    return *_retval ? NS_OK : NS_ERROR_FAILURE;
-}
-
-/***************************************************************************/
-
-/* void addAdditionalManager (in nsIInterfaceInfoManager manager); */
-NS_IMETHODIMP xptiInterfaceInfoManager::AddAdditionalManager(nsIInterfaceInfoManager *manager)
-{
-    nsCOMPtr<nsIWeakReference> weakRef = do_GetWeakReference(manager);
-    nsISupports* ptrToAdd = weakRef ? 
-                    NS_STATIC_CAST(nsISupports*, weakRef) :
-                    NS_STATIC_CAST(nsISupports*, manager);
-    { // scoped lock...
-        nsAutoLock lock(mAdditionalManagersLock);
-        PRInt32 index;
-        nsresult rv = mAdditionalManagers.GetIndexOf(ptrToAdd, &index);
-        if(NS_FAILED(rv) || -1 != index)
-            return NS_ERROR_FAILURE;
-        if(!mAdditionalManagers.AppendElement(ptrToAdd))
-            return NS_ERROR_OUT_OF_MEMORY;
-    }
-    return NS_OK;
-}
-
-/* void removeAdditionalManager (in nsIInterfaceInfoManager manager); */
-NS_IMETHODIMP xptiInterfaceInfoManager::RemoveAdditionalManager(nsIInterfaceInfoManager *manager)
-{
-    nsCOMPtr<nsIWeakReference> weakRef = do_GetWeakReference(manager);
-    nsISupports* ptrToRemove = weakRef ? 
-                    NS_STATIC_CAST(nsISupports*, weakRef) :
-                    NS_STATIC_CAST(nsISupports*, manager);
-    { // scoped lock...
-        nsAutoLock lock(mAdditionalManagersLock);
-        if(!mAdditionalManagers.RemoveElement(ptrToRemove))
-            return NS_ERROR_FAILURE;
-    }
-    return NS_OK;
-}
-
-/* PRBool hasAdditionalManagers (); */
-NS_IMETHODIMP xptiInterfaceInfoManager::HasAdditionalManagers(PRBool *_retval)
-{
-    PRUint32 count;
-    nsresult rv = mAdditionalManagers.Count(&count);
-    *_retval = count != 0;
-    return rv;
-}
-
-/* nsISimpleEnumerator enumerateAdditionalManagers (); */
-NS_IMETHODIMP xptiInterfaceInfoManager::EnumerateAdditionalManagers(nsISimpleEnumerator **_retval)
-{
-    nsAutoLock lock(mAdditionalManagersLock);
-
-    PRUint32 count;
-    nsresult rv = mAdditionalManagers.Count(&count);
-    if(NS_FAILED(rv))
-        return rv;
-
-    nsCOMPtr<xptiAdditionalManagersEnumerator> enumerator = 
-        new xptiAdditionalManagersEnumerator();
-    if(!enumerator)
-        return NS_ERROR_OUT_OF_MEMORY;
-
-    enumerator->SizeTo(count);
-
-    for(PRUint32 i = 0; i < count; /* i incremented in the loop body */)
-    {
-        nsCOMPtr<nsISupports> raw = 
-            dont_AddRef(mAdditionalManagers.ElementAt(i++));
-        if(!raw)
-            return NS_ERROR_FAILURE;
-        nsCOMPtr<nsIWeakReference> weakRef = do_QueryInterface(raw);
-        if(weakRef)
-        {
-            nsCOMPtr<nsIInterfaceInfoManager> manager = 
-                do_QueryReferent(weakRef);
-            if(manager)
-            {
-                if(!enumerator->AppendElement(manager))
-                    return NS_ERROR_FAILURE;
-            }
-            else
-            {
-                // The manager is no more. Remove the element.
-                if(!mAdditionalManagers.RemoveElementAt(--i))
-                    return NS_ERROR_FAILURE;
-                count--;
-            }
-        }
-        else
-        {
-            // We *know* we put a pointer to either a nsIWeakReference or
-            // an nsIInterfaceInfoManager into the array, so we can avoid an
-            // extra QI here and just do a cast.
-            if(!enumerator->AppendElement(
-                    NS_REINTERPRET_CAST(nsIInterfaceInfoManager*, raw.get())))
-                return NS_ERROR_FAILURE;
-        }
-    }
-    
-    NS_ADDREF(*_retval = enumerator);
     return NS_OK;
 }
 
