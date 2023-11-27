@@ -208,7 +208,6 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/ds/nsArray.h \
 	xpcom/ds/nsArrayEnumerator.h \
 	xpcom/ds/nsAtomService.h \
-	xpcom/ds/nsAutoBuffer.h \
 	xpcom/threads/nsAutoLock.h \
 	xpcom/base/nsAutoPtr.h \
 	xpcom/ds/nsBaseHashtable.h \
@@ -953,7 +952,6 @@ VBOX_XPTFILES = $(addprefix $(PATH_TARGET)/VBox-xpcom-xpt-files/, \
 		nsIBinaryOutputStream.xpt \
 		nsIObjectInputStream.xpt \
 		nsIObjectOutputStream.xpt \
-		nsIStreamBufferAccess.xpt \
 		nsIDirectoryService.xpt \
 		nsIFile.xpt \
 		nsILocalFile.xpt \
