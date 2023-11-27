@@ -36,54 +36,36 @@
  * ***** END LICENSE BLOCK ***** */
 #define LOG_GROUP LOG_GROUP_IPC
 
-#if defined(XP_WIN)
-#elif defined(XP_OS2) && defined(XP_OS2_NATIVEIPC)
-#else
-#include <string.h>
-#ifdef XP_UNIX
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
-#endif
+
 #include "ipcConfig.h"
-#include "plstr.h"
 
 #include <iprt/env.h>
+#include <iprt/string.h>
 #include <VBox/log.h>
 
-#if defined(XP_OS2) && !defined(XP_OS2_NATIVEIPC)
-#ifdef VBOX
-static const char kDefaultSocketPrefix[] = "\\socket\\vbox-";
-#else
-static const char kDefaultSocketPrefix[] = "\\socket\\mozilla-";
-#endif
-static const char kDefaultSocketSuffix[] = "-ipc\\ipcd";
-#else
-#ifdef VBOX
 static const char kDefaultSocketPrefix[] = "/tmp/.vbox-";
-#else
-static const char kDefaultSocketPrefix[] = "/tmp/.mozilla-";
-#endif
 static const char kDefaultSocketSuffix[] = "-ipc/ipcd";
-#endif
 
 void IPC_GetDefaultSocketPath(char *buf, PRUint32 bufLen)
 {
     const char *logName;
     int len;
 
-    PL_strncpyz(buf, kDefaultSocketPrefix, bufLen);
-    buf    += (sizeof(kDefaultSocketPrefix) - 1);
-    bufLen -= (sizeof(kDefaultSocketPrefix) - 1);
+    char *pszDst = buf;
+    size_t cbDst = bufLen;
+    int vrc = RTStrCopyP(&pszDst, &cbDst, kDefaultSocketPrefix);
+    AssertRC(vrc); RT_NOREF(vrc);
 
     logName = RTEnvGet("VBOX_IPC_SOCKETID");
-#if defined(VBOX) && defined(XP_UNIX)
     if (!logName || !logName[0]) {
         struct passwd *passStruct = getpwuid(getuid());
         if (passStruct)
             logName = passStruct->pw_name;
     }
-#endif
+
     if (!logName || !logName[0]) {
         logName = RTEnvGet("LOGNAME");
         if (!logName || !logName[0]) {
@@ -94,13 +76,11 @@ void IPC_GetDefaultSocketPath(char *buf, PRUint32 bufLen)
             }
         }
     }
-    PL_strncpyz(buf, logName, bufLen);
-    len = strlen(logName);
-    buf    += len;
-    bufLen -= len;
+
+    vrc = RTStrCopyP(&pszDst, &cbDst, logName);
+    AssertRC(vrc); RT_NOREF(vrc);
 
 end:
-    PL_strncpyz(buf, kDefaultSocketSuffix, bufLen);
+    vrc = RTStrCopyP(&pszDst, &cbDst, kDefaultSocketSuffix);
+    AssertRC(vrc); RT_NOREF(vrc);
 }
-
-#endif

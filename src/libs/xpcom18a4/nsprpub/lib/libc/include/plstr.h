@@ -77,42 +77,6 @@
 
 PR_BEGIN_EXTERN_C
 /*
- * PL_strncpy
- *
- * Copies the source string into the destination buffer, up to and including
- * the trailing '\0' or up to and including the max'th character, whichever
- * comes first.  It does not (can not) verify that the destination buffer is
- * large enough.  If the source string is longer than the maximum length,
- * the result will *not* be null-terminated (JLRU).
- */
-
-PR_EXTERN(char *)
-PL_strncpy(char *dest, const char *src, PRUint32 max);
-
-/*
- * PL_strncpyz
- *
- * Copies the source string into the destination buffer, up to and including 
- * the trailing '\0' or up but not including the max'th character, whichever 
- * comes first.  It does not (can not) verify that the destination buffer is
- * large enough.  The destination string is always terminated with a '\0',
- * unlike the traditional libc implementation.  It returns the "dest" argument.
- *
- * NOTE: If you call this with a source "abcdefg" and a max of 5, the 
- * destination will end up with "abcd\0" (i.e., it's strlen length will be 4)!
- *
- * This means you can do this:
- *
- *     char buffer[ SOME_SIZE ];
- *     PL_strncpyz(buffer, src, sizeof(buffer));
- *
- * and the result will be properly terminated.
- */
-
-PR_EXTERN(char *)
-PL_strncpyz(char *dest, const char *src, PRUint32 max);
-
-/*
  * PL_strcmp
  *
  * Returns an integer, the sign of which -- positive, zero, or negative --
