@@ -256,7 +256,6 @@ XPCOM-HEADERS_SOURCES = \
 	xpcom/io/nsScriptableInputStream.h \
 	xpcom/ds/nsStaticAtom.h \
 	xpcom/components/nsStaticComponent.h \
-	xpcom/ds/nsStaticNameTable.h \
 	xpcom/ds/nsStringEnumerator.h \
 	xpcom/io/nsStringIO.h \
 	xpcom/ds/nsSupportsArray.h \
@@ -453,7 +452,6 @@ VBox-xpcom-ds_SOURCES = \
 	xpcom/ds/nsObserverService.cpp \
 	xpcom/ds/nsProperties.cpp \
 	xpcom/ds/nsQuickSort.cpp \
-	xpcom/ds/nsStaticNameTable.cpp \
 	xpcom/ds/nsStringEnumerator.cpp \
 	xpcom/ds/nsSupportsArray.cpp \
 	xpcom/ds/nsSupportsArrayEnumerator.cpp \
