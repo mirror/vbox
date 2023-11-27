@@ -43,9 +43,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include "nsMemory.h"
 #include "plstr.h"
 #include "nscore.h"
 #include "prtypes.h"
+
+#ifdef HAVE_CPP_NUMERIC_LIMITS
+#include <limits>
+#else
+#include <limits.h>
+#endif
 
 #ifdef XP_MAC
 #  define NS_LINEBREAK             "\015"
