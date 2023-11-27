@@ -729,7 +729,6 @@ VBoxPython-inst-py-xpcom_MODE = a+r,u+w
 VBoxPython-inst-py-xpcom_SOURCES = \
 	vboxxpcom.py \
 	components.py \
-	file.py \
 	__init__.py \
 	nsError.py \
 	primitives.py \
