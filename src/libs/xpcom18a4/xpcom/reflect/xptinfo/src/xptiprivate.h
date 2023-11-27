@@ -70,8 +70,6 @@
 #include "nsISupportsArray.h"
 #include "nsInt64.h"
 
-#include "nsQuickSort.h"
-
 #include "nsXPIDLString.h"
 
 #include "nsIInputStream.h"
