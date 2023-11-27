@@ -36,7 +36,7 @@
 
 #include <iprt/buildconfig.h>
 #include <iprt/crypto/shacrypt.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/initterm.h>
 #include <iprt/getopt.h>
 #include <iprt/mem.h>
