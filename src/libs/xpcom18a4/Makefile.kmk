@@ -161,7 +161,6 @@ NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/pr/include/prlong.h \
 	nsprpub/pr/include/prmem.h \
 	nsprpub/pr/include/prmon.h \
-	nsprpub/pr/include/prprf.h \
 	nsprpub/pr/include/prtime.h \
 	nsprpub/pr/include/prtypes.h \
 	nsprpub/pr/include/md/_vbox.cfg=>prcpucfg.h
@@ -379,7 +378,6 @@ VBox-xpcom-nspr_DEFS.linux = \
 VBox-xpcom-nspr_INCS = \
 	$(VBox-xpcom-nspr_0_OUTDIR)
 VBox-xpcom-nspr_SOURCES  = \
-	nsprpub/pr/src/io/prprf.c \
 	nsprpub/pr/src/misc/prinrval.c \
 	nsprpub/lib/ds/plarena.c \
 	nsprpub/lib/ds/plhash.c \

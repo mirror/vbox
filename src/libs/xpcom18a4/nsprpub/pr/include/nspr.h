@@ -38,14 +38,16 @@
 #ifndef nspr_h___
 #define nspr_h___
 
+#include "prtypes.h"
+#include <stdio.h>
+#include <stdarg.h>
+
 #include "prbit.h"
 #include "prclist.h"
 #include "prinrval.h"
 #include "prlong.h"
 #include "prmem.h"
 #include "prmon.h"
-#include "prprf.h"
 #include "prtime.h"
-#include "prtypes.h"
 
 #endif /* nspr_h___ */
