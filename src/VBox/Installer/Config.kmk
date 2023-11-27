@@ -42,7 +42,6 @@ ifdef VBOX_WITH_PYTHON
  VBOXINST_SDK_BINDINGS_XPCOM_PYTHON_FILES = \
  	sdk/bindings/xpcom/python/xpcom/__init__.py \
  	sdk/bindings/xpcom/python/xpcom/primitives.py \
- 	sdk/bindings/xpcom/python/xpcom/file.py \
  	sdk/bindings/xpcom/python/xpcom/xpcom_consts.py \
  	sdk/bindings/xpcom/python/xpcom/nsError.py \
  	sdk/bindings/xpcom/python/xpcom/xpt.py \
