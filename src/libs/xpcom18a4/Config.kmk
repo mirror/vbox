@@ -257,8 +257,8 @@ TEMPLATE_XPComBldProg_CXXFLAGS.darwin    = $(TEMPLATE_VBoxAdvBldProg_CXXFLAGS.da
 TEMPLATE_XPComBldProg_CXXFLAGS.solaris   = $(TEMPLATE_VBoxAdvBldProg_CXXFLAGS.solaris)    -fno-omit-frame-pointer # for now anyway.
 TEMPLATE_XPComBldProg_LDFLAGS.darwin     = $(TEMPLATE_VBoxAdvBldProg_LDFLAGS.darwin)      -fpascal-strings -fshort-wchar -fno-rtti -fno-exceptions
 TEMPLATE_XPComBldProg_ORDERDEPS          = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $($(hdrinst)_1_TARGET))
-
-
+TEMPLATE_XPComBldProg_LIBS.darwin        = \
+	iconv
 
 #
 # Creates a x86 target for an XPCOM target if so desired.
