@@ -36,8 +36,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
 #include "nsID.h"
-#include "prprf.h"
 #include "prmem.h"
+
+#include <iprt/string.h>
 
 static const char gIDFormat[] = 
   "{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}";
@@ -129,11 +130,11 @@ NS_COM char *nsID::ToString() const
   char *res = (char*)PR_Malloc(39);    // use PR_Malloc if this is to be freed with nsCRT::free
 
   if (res != NULL) {
-    PR_snprintf(res, 39, gIDFormat,
-                m0, (PRUint32) m1, (PRUint32) m2,
-                (PRUint32) m3[0], (PRUint32) m3[1], (PRUint32) m3[2],
-                (PRUint32) m3[3], (PRUint32) m3[4], (PRUint32) m3[5],
-                (PRUint32) m3[6], (PRUint32) m3[7]);
+    RTStrPrintf2(res, 39, gIDFormat,
+                 m0, (PRUint32) m1, (PRUint32) m2,
+                 (PRUint32) m3[0], (PRUint32) m3[1], (PRUint32) m3[2],
+                 (PRUint32) m3[3], (PRUint32) m3[4], (PRUint32) m3[5],
+                 (PRUint32) m3[6], (PRUint32) m3[7]);
   }
   return res;
 }
@@ -141,11 +142,11 @@ NS_COM char *nsID::ToString() const
 #ifdef VBOX
 void nsID::ToProvidedString(char (&dest)[NSID_LENGTH]) const 
 {
-  PR_snprintf(dest, NSID_LENGTH, gIDFormat,
-              m0, (PRUint32) m1, (PRUint32) m2,
-              (PRUint32) m3[0], (PRUint32) m3[1], (PRUint32) m3[2],
-              (PRUint32) m3[3], (PRUint32) m3[4], (PRUint32) m3[5],
-              (PRUint32) m3[6], (PRUint32) m3[7]);
+  RTStrPrintf2(dest, NSID_LENGTH, gIDFormat,
+               m0, (PRUint32) m1, (PRUint32) m2,
+               (PRUint32) m3[0], (PRUint32) m3[1], (PRUint32) m3[2],
+               (PRUint32) m3[3], (PRUint32) m3[4], (PRUint32) m3[5],
+               (PRUint32) m3[6], (PRUint32) m3[7]);
 }
 #endif
 

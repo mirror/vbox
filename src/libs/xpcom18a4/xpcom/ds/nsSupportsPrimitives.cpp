@@ -35,11 +35,11 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+#include <iprt/string.h>
 
 #include "nsSupportsPrimitives.h"
 #include "nsCRT.h"
 #include "nsMemory.h"
-#include "prprf.h"
 #include "nsIInterfaceInfoManager.h"
 #include "nsDependentString.h"
 #include "nsReadableUtils.h"
@@ -255,7 +255,7 @@ NS_IMETHODIMP nsSupportsPRUint8Impl::ToString(char **_retval)
     static const int size = 8;
     char buf[size];
 
-    PR_snprintf(buf, size, "%u", (PRUint16) mData);
+    RTStrPrintf2(buf, size, "%u", (PRUint16) mData);
 
     char* result = (char*) nsMemory::Clone(buf,
                                 (strlen(buf)+1)*sizeof(char));
@@ -300,7 +300,7 @@ NS_IMETHODIMP nsSupportsPRUint16Impl::ToString(char **_retval)
     static const int size = 8;
     char buf[size];
 
-    PR_snprintf(buf, size, "%u", (int) mData);
+    RTStrPrintf2(buf, size, "%u", (int) mData);
 
     char* result = (char*) nsMemory::Clone(buf,
                                 (strlen(buf)+1)*sizeof(char));
@@ -345,7 +345,7 @@ NS_IMETHODIMP nsSupportsPRUint32Impl::ToString(char **_retval)
     static const int size = 16;
     char buf[size];
 
-    PR_snprintf(buf, size, "%lu", mData);
+    RTStrPrintf2(buf, size, "%lu", mData);
 
     char* result = (char*) nsMemory::Clone(buf,
                                 (strlen(buf)+1)*sizeof(char));
@@ -390,7 +390,7 @@ NS_IMETHODIMP nsSupportsPRUint64Impl::ToString(char **_retval)
     static const int size = 32;
     char buf[size];
 
-    PR_snprintf(buf, size, "%llu", mData);
+    RTStrPrintf2(buf, size, "%llu", mData);
 
     char* result = (char*) nsMemory::Clone(buf,
                                 (strlen(buf)+1)*sizeof(char));
@@ -435,7 +435,7 @@ NS_IMETHODIMP nsSupportsPRTimeImpl::ToString(char **_retval)
     static const int size = 32;
     char buf[size];
 
-    PR_snprintf(buf, size, "%llu", mData);
+    RTStrPrintf2(buf, size, "%llu", mData);
 
     char* result = (char*) nsMemory::Clone(buf,
                                 (strlen(buf)+1)*sizeof(char));
@@ -525,7 +525,7 @@ NS_IMETHODIMP nsSupportsPRInt16Impl::ToString(char **_retval)
     static const int size = 8;
     char buf[size];
 
-    PR_snprintf(buf, size, "%d", mData);
+    RTStrPrintf2(buf, size, "%d", mData);
 
     char* result = (char*) nsMemory::Clone(buf,
                                 (strlen(buf)+1)*sizeof(char));
@@ -570,7 +570,7 @@ NS_IMETHODIMP nsSupportsPRInt32Impl::ToString(char **_retval)
     static const int size = 16;
     char buf[size];
 
-    PR_snprintf(buf, size, "%ld", mData);
+    RTStrPrintf2(buf, size, "%ld", mData);
 
     char* result = (char*) nsMemory::Clone(buf,
                                 (strlen(buf)+1)*sizeof(char));
@@ -615,7 +615,7 @@ NS_IMETHODIMP nsSupportsPRInt64Impl::ToString(char **_retval)
     static const int size = 32;
     char buf[size];
 
-    PR_snprintf(buf, size, "%lld", mData);
+    RTStrPrintf2(buf, size, "%lld", mData);
 
     char* result = (char*) nsMemory::Clone(buf,
                                 (strlen(buf)+1)*sizeof(char));
@@ -660,7 +660,7 @@ NS_IMETHODIMP nsSupportsFloatImpl::ToString(char **_retval)
     static const int size = 32;
     char buf[size];
 
-    PR_snprintf(buf, size, "%f", (double) mData);
+    RTStrPrintf2(buf, size, "%f", (double) mData);
 
     char* result = (char*) nsMemory::Clone(buf,
                                 (strlen(buf)+1)*sizeof(char));
@@ -705,7 +705,7 @@ NS_IMETHODIMP nsSupportsDoubleImpl::ToString(char **_retval)
     static const int size = 32;
     char buf[size];
 
-    PR_snprintf(buf, size, "%f", mData);
+    RTStrPrintf2(buf, size, "%f", mData);
 
     char* result = (char*) nsMemory::Clone(buf,
                                 (strlen(buf)+1)*sizeof(char));

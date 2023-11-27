@@ -48,6 +48,8 @@
 #include "nsThreadUtils.h"
 #include "nsProxyRelease.h"
 
+#include <iprt/string.h>
+
 static nsID nullID =  {0, 0, 0, {0, 0, 0, 0, 0, 0, 0, 0}};
 
 #ifdef VBOX
@@ -1502,8 +1504,8 @@ static void makeErrorMessage(nsresult r, char* msg, size_t msgSize)
                 {
                     nsXPIDLCString emsg;
                     ex->GetMessage(getter_Copies(emsg));
-                    PR_snprintf(msg, msgSize, "%s",
-                                emsg.get());
+                    RTStrPrintf2(msg, msgSize, "%s",
+                                 emsg.get());
                     gotMsg = true;
                 }
             }
@@ -1515,16 +1517,16 @@ static void makeErrorMessage(nsresult r, char* msg, size_t msgSize)
         const RTCOMERRMSG* pMsg = RTErrCOMGet(r);
         if (strncmp(pMsg->pszMsgFull, "Unknown", 7) != 0)
         {
-            PR_snprintf(msg, msgSize, "%s (%s)",
-                        pMsg->pszMsgFull, pMsg->pszDefine);
+            RTStrPrintf2(msg, msgSize, "%s (%s)",
+                         pMsg->pszMsgFull, pMsg->pszDefine);
             gotMsg = true;
         }
     }
 
     if (!gotMsg)
     {
-        PR_snprintf(msg, msgSize, "Error 0x%x in module 0x%x",
-                    NS_ERROR_GET_CODE(r), NS_ERROR_GET_MODULE(r));
+        RTStrPrintf2(msg, msgSize, "Error 0x%x in module 0x%x",
+                     NS_ERROR_GET_CODE(r), NS_ERROR_GET_MODULE(r));
     }
 }
 #endif

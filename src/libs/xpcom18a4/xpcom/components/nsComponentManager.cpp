@@ -147,12 +147,12 @@ extern PRBool gXPCOMShuttingDown;
 
 static void GetIDString(const nsID& aCID, char buf[UID_STRING_LENGTH])
 {
-    PR_snprintf(buf, UID_STRING_LENGTH, gIDFormat,
-                aCID.m0, (PRUint32) aCID.m1, (PRUint32) aCID.m2,
-                (PRUint32) aCID.m3[0], (PRUint32) aCID.m3[1],
-                (PRUint32) aCID.m3[2], (PRUint32) aCID.m3[3],
-                (PRUint32) aCID.m3[4], (PRUint32) aCID.m3[5],
-                (PRUint32) aCID.m3[6], (PRUint32) aCID.m3[7]);
+    RTStrPrintf2(buf, UID_STRING_LENGTH, gIDFormat,
+                 aCID.m0, (PRUint32) aCID.m1, (PRUint32) aCID.m2,
+                 (PRUint32) aCID.m3[0], (PRUint32) aCID.m3[1],
+                 (PRUint32) aCID.m3[2], (PRUint32) aCID.m3[3],
+                 (PRUint32) aCID.m3[4], (PRUint32) aCID.m3[5],
+                 (PRUint32) aCID.m3[6], (PRUint32) aCID.m3[7]);
 }
 
 nsresult

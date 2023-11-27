@@ -45,7 +45,7 @@
 #include "nsString.h"
 
 #ifdef NS_DEBUG
-#include "prprf.h"
+#include <iprt/string.h>
 #endif
 
 #include <VBox/log.h>
@@ -464,8 +464,8 @@ nsEventQueueImpl::AppendQueue(nsIEventQueue *aQueue)
   }
   if (depth > 5) {
     char warning[80];
-    PR_snprintf(warning, sizeof(warning),
-      "event queue chain length is %d. this is almost certainly a leak.", depth);
+    RTStrPrintf2(warning, sizeof(warning),
+                 "event queue chain length is %d. this is almost certainly a leak.", depth);
     NS_WARNING(warning);
   }
 #endif

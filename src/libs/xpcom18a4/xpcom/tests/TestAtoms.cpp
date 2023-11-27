@@ -37,9 +37,10 @@
 #include "nsIAtom.h"
 #include "nsString.h"
 #include "nsReadableUtils.h"
-#include "prprf.h"
 #include "prtime.h"
 #include <stdio.h>
+
+#include <iprt/string.h>
 
 extern "C" int _CrtSetDbgFlag(int);
 
@@ -113,16 +114,16 @@ int main(int argc, char** argv)
   LL_DIV(lookups, lookups, ustoms);
   LL_SUB(dtor, end3, end2);
   char buf[500];
-  PR_snprintf(buf, sizeof(buf), "making %d ident strings took %lldms",
-              count, creates);
+  RTStrPrintf2(buf, sizeof(buf), "making %d ident strings took %lldms",
+               count, creates);
   puts(buf);
-  PR_snprintf(buf, sizeof(buf), "%d new idents took %lldms",
-              count, finds);
+  RTStrPrintf2(buf, sizeof(buf), "%d new idents took %lldms",
+               count, finds);
   puts(buf);
-  PR_snprintf(buf, sizeof(buf), "%d ident lookups took %lldms",
-              count, lookups);
+  RTStrPrintf2(buf, sizeof(buf), "%d ident lookups took %lldms",
+               count, lookups);
   puts(buf);
-  PR_snprintf(buf, sizeof(buf), "dtor took %lldusec", dtor);
+  RTStrPrintf2(buf, sizeof(buf), "dtor took %lldusec", dtor);
   puts(buf);
 
   printf("%d live atoms\n", NS_GetNumberOfAtoms());

@@ -38,8 +38,8 @@
 
 #include "nsPrintfCString.h"
 #include <stdarg.h>
-#include "prprf.h"
 
+#include <iprt/string.h>
 
 // though these classes define a fixed buffer, they do not set the F_FIXED
 // flag.  this is because they are not intended to be modified after they have
@@ -57,7 +57,9 @@ nsPrintfCString::nsPrintfCString( const char_type* format, ... )
     size_type physical_capacity = logical_capacity + 1;
 
     va_start(ap, format);
-    mLength = PR_vsnprintf(mData, physical_capacity, format, ap);
+    ssize_t cch = RTStrPrintf2V(mData, physical_capacity, format, ap);
+    Assert(cch > 0);
+    mLength = (size_type)cch;
     va_end(ap);
   }
 
@@ -78,6 +80,8 @@ nsPrintfCString::nsPrintfCString( size_type n, const char_type* format, ... )
     size_type physical_capacity = logical_capacity + 1;
 
     va_start(ap, format);
-    mLength = PR_vsnprintf(mData, physical_capacity, format, ap);
+    ssize_t cch = RTStrPrintf2V(mData, physical_capacity, format, ap);
+    Assert(cch > 0);
+    mLength = (size_type)cch;
     va_end(ap);
   }

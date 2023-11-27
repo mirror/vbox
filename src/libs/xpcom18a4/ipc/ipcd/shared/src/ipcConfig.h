@@ -38,34 +38,6 @@
 #ifndef ipcProto_h__
 #define ipcProto_h__
 
-#if defined(XP_WIN)
-//
-// use WM_COPYDATA messages
-//
-#include "prprf.h"
-
-#define IPC_WINDOW_CLASS              "Mozilla:IPCWindowClass"
-#define IPC_WINDOW_NAME               "Mozilla:IPCWindow"
-#define IPC_CLIENT_WINDOW_CLASS       "Mozilla:IPCAppWindowClass"
-#define IPC_CLIENT_WINDOW_NAME_PREFIX "Mozilla:IPCAppWindow:"
-#define IPC_SYNC_EVENT_NAME           "Local\\MozillaIPCSyncEvent"
-#ifndef IPC_DAEMON_APP_NAME
-#define IPC_DAEMON_APP_NAME           "mozilla-ipcd.exe"
-#endif
-#define IPC_PATH_SEP_CHAR             '\\'
-#define IPC_MODULES_DIR               "ipc\\modules"
-
-#define IPC_CLIENT_WINDOW_NAME_MAXLEN (sizeof(IPC_CLIENT_WINDOW_NAME_PREFIX) + 20)
-
-// writes client name into buf.  buf must be at least
-// IPC_CLIENT_WINDOW_NAME_MAXLEN bytes in length.
-inline void IPC_GetClientWindowName(PRUint32 pid, char *buf)
-{
-    PR_snprintf(buf, IPC_CLIENT_WINDOW_NAME_MAXLEN, "%s%u",
-                IPC_CLIENT_WINDOW_NAME_PREFIX, pid);
-}
-
-#else
 #include "nscore.h"
 //
 // use UNIX domain socket
@@ -87,8 +59,6 @@ inline void IPC_GetClientWindowName(PRUint32 pid, char *buf)
 #endif
 
 NS_HIDDEN_(void) IPC_GetDefaultSocketPath(char *buf, PRUint32 bufLen);
-
-#endif
 
 // common shared configuration values
 

@@ -58,8 +58,6 @@
 #include <string.h>
 #include <errno.h>
 
-#include "prprf.h"
-
 #include "ipcConfig.h"
 #include "ipcMessage.h"
 #include "ipcClient.h"
@@ -204,8 +202,10 @@ static Status AcquireDaemonLock(const char *baseDir)
     // no real purpose otherwise).
     //
     char buf[32];
-    int nb = PR_snprintf(buf, sizeof(buf), "%u\n", (unsigned long) getpid());
-    write(ipcLockFD, buf, nb);
+    ssize_t nb = RTStrPrintf2(buf, sizeof(buf), "%u\n", (unsigned long) getpid());
+    if (nb <= 0)
+        return ELockFileOpen;
+    write(ipcLockFD, buf, (size_t)nb);
 
     return EOk;
 }

@@ -50,7 +50,6 @@
 #include "nsReadableUtils.h"
 #include "nsCRT.h"
 #include "nsUTF8Utils.h"
-#include "prprf.h"
 
 #include <iprt/assert.h>
 #include <iprt/errcore.h>
@@ -1131,7 +1130,7 @@ nsCString::AppendInt( PRInt32 aInteger, PRInt32 aRadix )
         NS_ASSERTION(aRadix == 16, "Invalid radix!");
         fmt = "%x";
     }
-    PR_snprintf(buf, sizeof(buf), fmt, aInteger);
+    RTStrPrintf2(buf, sizeof(buf), fmt, aInteger);
     Append(buf);
   }
 
@@ -1151,7 +1150,7 @@ nsString::AppendInt( PRInt32 aInteger, PRInt32 aRadix )
         NS_ASSERTION(aRadix == 16, "Invalid radix!");
         fmt = "%x";
     }
-    PR_snprintf(buf, sizeof(buf), fmt, aInteger);
+    RTStrPrintf2(buf, sizeof(buf), fmt, aInteger);
     AppendASCIItoUTF16(buf, *this);
   }
 
@@ -1171,7 +1170,7 @@ nsCString::AppendInt( PRInt64 aInteger, PRInt32 aRadix )
         NS_ASSERTION(aRadix == 16, "Invalid radix!");
         fmt = "%llx";
     }
-    PR_snprintf(buf, sizeof(buf), fmt, aInteger);
+    RTStrPrintf2(buf, sizeof(buf), fmt, aInteger);
     Append(buf);
   }
 
@@ -1191,7 +1190,7 @@ nsString::AppendInt( PRInt64 aInteger, PRInt32 aRadix )
         NS_ASSERTION(aRadix == 16, "Invalid radix!");
         fmt = "%llx";
     }
-    PR_snprintf(buf, sizeof(buf), fmt, aInteger);
+    RTStrPrintf2(buf, sizeof(buf), fmt, aInteger);
     AppendASCIItoUTF16(buf, *this);
   }
 

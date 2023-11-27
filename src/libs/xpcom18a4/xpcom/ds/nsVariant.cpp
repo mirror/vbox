@@ -41,7 +41,6 @@
 
 #include "nsVariant.h"
 #include "nsString.h"
-#include "prprf.h"
 #include <math.h>
 #include "nsCRT.h"
 
@@ -815,11 +814,11 @@ static nsresult ToString(const nsDiscriminatedUnion& data,
         nsMemory::Free(ptr);
         return NS_OK;
 
-    // the rest can be PR_smprintf'd and use common code.
+    // the rest can use RTStrAPrintf() and use common code.
 
 #define CASE__SMPRINTF_NUMBER(type_, format_, cast_, member_)                 \
     case nsIDataType :: type_ :                                               \
-        ptr = PR_smprintf( format_ , (cast_) data.u. member_ );               \
+        RTStrAPrintf(&ptr, format_ , (cast_) data.u. member_ );               \
         break;
 
     CASE__SMPRINTF_NUMBER(VTYPE_INT8,   "%d",   int,      mInt8Value)
@@ -846,7 +845,7 @@ static nsresult ToString(const nsDiscriminatedUnion& data,
     if(!ptr)
         return NS_ERROR_OUT_OF_MEMORY;
     outString.Assign(ptr);
-    PR_smprintf_free(ptr);
+    RTStrFree(ptr);
     return NS_OK;
 }
 
