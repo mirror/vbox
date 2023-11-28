@@ -1248,13 +1248,17 @@ class ThreadedFunctionVariation(object):
 
         aoStmts.append(iai.McCppCall('IEM_MC2_EMIT_CALL_%s' % (len(asCallArgs) - 1,), asCallArgs, cchIndent = cchIndent));
 
-        # For CIMPL stuff, we need to consult the associated IEM_CIMPL_F_XXX
-        # mask and maybe emit additional checks.
-        if (   'IEM_CIMPL_F_MODE'   in self.oParent.dsCImplFlags
-            or 'IEM_CIMPL_F_XCPT'   in self.oParent.dsCImplFlags
-            or 'IEM_CIMPL_F_VMEXIT' in self.oParent.dsCImplFlags):
-            aoStmts.append(iai.McCppCall('IEM_MC2_EMIT_CALL_1', ( 'kIemThreadedFunc_BltIn_CheckMode', 'pVCpu->iem.s.fExec', ),
-                                         cchIndent = cchIndent));
+        # 2023-11-28: This has to be done AFTER the CIMPL call, so we have to
+        #             emit this mode check from the compilation loop.  On the
+        #             plus side, this means we eliminate unnecessary call at
+        #             end of the TB. :-)
+        ## For CIMPL stuff, we need to consult the associated IEM_CIMPL_F_XXX
+        ## mask and maybe emit additional checks.
+        #if (   'IEM_CIMPL_F_MODE'   in self.oParent.dsCImplFlags
+        #    or 'IEM_CIMPL_F_XCPT'   in self.oParent.dsCImplFlags
+        #    or 'IEM_CIMPL_F_VMEXIT' in self.oParent.dsCImplFlags):
+        #    aoStmts.append(iai.McCppCall('IEM_MC2_EMIT_CALL_1', ( 'kIemThreadedFunc_BltIn_CheckMode', 'pVCpu->iem.s.fExec', ),
+        #                                 cchIndent = cchIndent));
 
         sCImplFlags = ' | '.join(self.oParent.dsCImplFlags.keys());
         if not sCImplFlags:

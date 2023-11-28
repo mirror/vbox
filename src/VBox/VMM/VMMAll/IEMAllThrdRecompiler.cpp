@@ -1998,6 +1998,35 @@ DECL_FORCE_INLINE(bool) iemThreadedCompileIsIrqOrForceFlagPending(PVMCPUCC pVCpu
 
 
 /**
+ * Called by iemThreadedCompile when a block requires a mode check.
+ *
+ * @returns true if we should continue, false if we're out of call entries.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling
+ *                      thread.
+ * @param   pTb         The translation block being compiled.
+ */
+static bool iemThreadedCompileEmitCheckMode(PVMCPUCC pVCpu, PIEMTB pTb)
+{
+    /* Emit the call. */
+    uint32_t const idxCall = pTb->Thrd.cCalls;
+    AssertReturn(idxCall < pTb->Thrd.cAllocated, false);
+    PIEMTHRDEDCALLENTRY pCall = &pTb->Thrd.paCalls[idxCall];
+    pTb->Thrd.cCalls = (uint16_t)(idxCall + 1);
+    pCall->enmFunction = kIemThreadedFunc_BltIn_CheckMode;
+    pCall->idxInstr    = pTb->cInstructions - 1;
+    pCall->uUnused0    = 0;
+    pCall->offOpcode   = 0;
+    pCall->cbOpcode    = 0;
+    pCall->idxRange    = 0;
+    pCall->auParams[0] = pVCpu->iem.s.fExec;
+    pCall->auParams[1] = 0;
+    pCall->auParams[2] = 0;
+    LogFunc(("%04x:%08RX64 fExec=%#x\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->iem.s.fExec));
+    return true;
+}
+
+
+/**
  * Called by IEM_MC2_BEGIN_EMIT_CALLS() when IEM_CIMPL_F_CHECK_IRQ_BEFORE is
  * set.
  *
@@ -2167,6 +2196,15 @@ static VBOXSTRICTRC iemThreadedCompile(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhy
             Assert(cCallsPrev - pTb->Thrd.cCalls < 5);
 
             pVCpu->iem.s.cInstructions++;
+
+            /* Check for mode change _after_ certain CIMPL calls, so check that
+               we continue executing with the same mode value. */
+            if (!(pVCpu->iem.s.fTbCurInstr & (IEM_CIMPL_F_MODE | IEM_CIMPL_F_XCPT | IEM_CIMPL_F_VMEXIT)))
+            { /* probable */ }
+            else if (RT_LIKELY(iemThreadedCompileEmitCheckMode(pVCpu, pTb)))
+            { /* extremely likely */ }
+            else
+                break;
         }
         else
         {
