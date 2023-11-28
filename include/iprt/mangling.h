@@ -3734,6 +3734,7 @@
 # define RTCrPkixCanCertHandleDigestType                RT_MANGLER(RTCrPkixCanCertHandleDigestType)
 # define RTCrRandBytes                                  RT_MANGLER(RTCrRandBytes)
 # define RTCrShaCryptGenerateSalt                       RT_MANGLER(RTCrShaCryptGenerateSalt)
+# define RTCrShaCryptGenerateSaltWek                    RT_MANGLER(RTCrShaCryptGenerateSaltWeak)
 # define RTCrShaCrypt256                                RT_MANGLER(RTCrShaCrypt256)
 # define RTCrShaCrypt256ToString                        RT_MANGLER(RTCrShaCrypt256ToString)
 # define RTCrShaCrypt512                                RT_MANGLER(RTCrShaCrypt512)

@@ -655,7 +655,7 @@ int UnattendedScriptTemplate::queryVariable(const char *pchName, size_t cchName,
         do { \
             uint8_t abHash[a_cbHashSize]; \
             char    szSalt[RT_SHACRYPT_MAX_SALT_LEN + 1]; \
-            int vrc = RTCrShaCryptGenerateSalt(szSalt, RT_SHACRYPT_MAX_SALT_LEN); \
+            int vrc = RTCrShaCryptGenerateSaltWeak(szSalt, RT_SHACRYPT_MAX_SALT_LEN); \
             if (RT_SUCCESS(vrc)) \
             { \
                 vrc = a_fnHashAndCrypt(a_szKey, szSalt, RT_SHACRYPT_DEFAULT_ROUNDS, abHash); \
