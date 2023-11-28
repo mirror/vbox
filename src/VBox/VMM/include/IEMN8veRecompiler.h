@@ -253,7 +253,11 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 #endif
 
 /** This is the maximum argument count we'll ever be needing. */
-#define IEMNATIVE_CALL_MAX_ARG_COUNT        7
+#if defined(RT_OS_WINDOWS) && defined(VBOXSTRICTRC_STRICT_ENABLED)
+# define IEMNATIVE_CALL_MAX_ARG_COUNT       8
+#else
+# define IEMNATIVE_CALL_MAX_ARG_COUNT       7
+#endif
 /** @} */
 
 

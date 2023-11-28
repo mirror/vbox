@@ -7546,11 +7546,18 @@ iemNativeEmitCalcRmEffAddrThreadedAddr32(PIEMRECOMPILERSTATE pReNative, uint32_t
     off = iemNativeEmitMemFetchDataCommon(pReNative, off, pCallEntry->idxInstr, a_u64Dst, UINT8_MAX, a_GCPtrMem, sizeof(uint64_t))
 
 
+#define IEM_MC_FETCH_MEM_U16_DISP(a_u16Dst, a_iSeg, a_GCPtrMem, a_offDisp) \
+    off = iemNativeEmitMemFetchDataCommon(pReNative, off, pCallEntry->idxInstr, a_u16Dst, a_iSeg, a_GCPtrMem, sizeof(uint16_t), a_offDisp)
+
+#define IEM_MC_FETCH_MEM_U32_DISP(a_u32Dst, a_iSeg, a_GCPtrMem, a_offDisp) \
+    off = iemNativeEmitMemFetchDataCommon(pReNative, off, pCallEntry->idxInstr, a_u32Dst, a_iSeg, a_GCPtrMem, sizeof(uint32_t), a_offDisp)
+
+
 /** Emits code for IEM_MC_FETCH_MEM_U8/16/32/64 and
  *  IEM_MC_FETCH_MEM_FLAT_U8/16/32/64 (iSegReg = UINT8_MAX). */
 DECL_INLINE_THROW(uint32_t)
 iemNativeEmitMemFetchDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr,
-                                uint8_t idxVarDst, uint8_t iSegReg, uint8_t idxVarGCPtrMem, uint8_t cbMem)
+                                uint8_t idxVarDst, uint8_t iSegReg, uint8_t idxVarGCPtrMem, uint8_t cbMem, uint8_t offDisp = 0)
 {
     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVarDst);
     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVarGCPtrMem);
@@ -7654,19 +7661,25 @@ iemNativeEmitMemFetchDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uin
     off = iemNativeEmitLoadGpr8Imm(pReNative, off, idxRegArgInstrIdx, idxInstr);
 
     if (pReNative->Core.aVars[idxVarGCPtrMem].enmKind == kIemNativeVarKind_Immediate)
-        off = iemNativeEmitLoadGprImm64(pReNative, off, idxRegArgGCPtrMem, pReNative->Core.aVars[idxVarGCPtrMem].u.uValue);
+        off = iemNativeEmitLoadGprImm64(pReNative, off, idxRegArgGCPtrMem,
+                                        pReNative->Core.aVars[idxVarGCPtrMem].u.uValue + offDisp);
     else
     {
         uint8_t const idxRegVarGCPtrMem = pReNative->Core.aVars[idxVarGCPtrMem].idxReg;
         if (idxRegVarGCPtrMem < RT_ELEMENTS(pReNative->Core.aHstRegs))
         {
             Assert(!(RT_BIT_32(idxRegVarGCPtrMem) & IEMNATIVE_CALL_VOLATILE_GREG_MASK));
-            off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegArgGCPtrMem, idxRegVarGCPtrMem);
+            if (!offDisp)
+                off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegArgGCPtrMem, idxRegVarGCPtrMem);
+            else
+                off = iemNativeEmitLoadGprFromGprWithAddend(pReNative, off, idxRegArgGCPtrMem, idxRegVarGCPtrMem, offDisp);
         }
         else
         {
             AssertFailed(); /** @todo This was probably caused by iemNativeRegMoveAndFreeAndFlushAtCall above. Improve... */
             off = iemNativeEmitLoadGprByBp(pReNative, off, idxRegArgGCPtrMem, iemNativeVarCalcBpDisp(pReNative, idxVarGCPtrMem));
+            if (offDisp)
+                off = iemNativeEmitAddGprImm(pReNative, off, idxRegArgGCPtrMem, offDisp);
         }
     }
     off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);

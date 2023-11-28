@@ -729,6 +729,67 @@ iemNativeEmitLoadGprFromGpr8Hi(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
 }
 
 
+/**
+ * Emits a gprdst = gprsrc + addend load.
+ */
+DECL_INLINE_THROW(uint32_t)
+iemNativeEmitLoadGprFromGprWithAddend(PIEMRECOMPILERSTATE pReNative, uint32_t off,
+                                      uint8_t iGprDst, uint8_t iGprSrc, int32_t iAddend)
+{
+    Assert(iAddend != 0);
+
+#ifdef RT_ARCH_AMD64
+    /* lea gprdst, [gprsrc + iAddend] */
+    uint8_t * const pbCodeBuf = iemNativeInstrBufEnsure(pReNative, off, 7);
+    if ((iGprDst | iGprSrc) >= 8)
+        pbCodeBuf[off++] = iGprDst < 8  ? X86_OP_REX_W | X86_OP_REX_B
+                         : iGprSrc >= 8 ? X86_OP_REX_W | X86_OP_REX_R | X86_OP_REX_B
+                         :                X86_OP_REX_W | X86_OP_REX_R;
+    else
+        pbCodeBuf[off++] = X86_OP_REX_W;
+    pbCodeBuf[off++] = 0x8d;
+    if (iAddend >= -128 && iAddend < 128)
+    {
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM1, iGprDst & 7, iGprSrc & 7);
+        pbCodeBuf[off++] = (int8_t)iAddend;
+    }
+    else
+    {
+        pbCodeBuf[off++] = X86_MODRM_MAKE(X86_MOD_MEM4, iGprDst & 7, iGprSrc & 7);
+        pbCodeBuf[off++] = RT_BYTE1((uint32_t)iAddend);
+        pbCodeBuf[off++] = RT_BYTE2((uint32_t)iAddend);
+        pbCodeBuf[off++] = RT_BYTE3((uint32_t)iAddend);
+        pbCodeBuf[off++] = RT_BYTE4((uint32_t)iAddend);
+    }
+
+#elif RT_ARCH_ARM64
+    if ((uint32_t)iAddend < 4096)
+    {
+        /* add dst, src, uimm12 */
+        uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(false /*fSub*/, iGprDst, iGprSrc, (uint32_t)iAddend);
+    }
+    else if ((uint32_t)-iAddend < 4096)
+    {
+        /* sub dst, src, uimm12 */
+        uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, iGprDst, iGprSrc, (uint32_t)-iAddend);
+    }
+    else
+    {
+        off = iemNativeEmitLoadGprImm64(pReNative, off, iGrpDst, (int64)iAddend);
+        uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(false /*fSub*/, iGprDst, iGprSrc, iGprDst);
+    }
+
+#else
+# error "port me"
+#endif
+    IEMNATIVE_ASSERT_INSTR_BUF_ENSURE(pReNative, off);
+    return off;
+}
+
+
 #ifdef RT_ARCH_AMD64
 /**
  * Common bit of iemNativeEmitLoadGprByBp and friends.
