@@ -37,7 +37,10 @@
 SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-ifdef VBOX_ONLY_ADDITIONS
+ifdef VBOX_ONLY_SDK
+ # Required for xpidl
+ LIBRARIES += RuntimeBldProg
+else ifdef VBOX_ONLY_ADDITIONS
  #
  # Only build the additions, sort out the legacy names first.
  #
