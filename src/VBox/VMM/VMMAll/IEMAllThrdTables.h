@@ -226,6 +226,7 @@
 #define IEM_MC2_EMIT_CALL_0(a_enmFunction) do { \
         IEMTHREADEDFUNCS const enmFunctionCheck = a_enmFunction; RT_NOREF(enmFunctionCheck); \
         \
+        LogFlow(("Call #%u: " #a_enmFunction "\n", pTb->Thrd.cCalls)); \
         PIEMTHRDEDCALLENTRY const pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++]; \
         pCall->enmFunction = a_enmFunction; \
         pCall->idxInstr    = idxInstrMc2; \
@@ -241,6 +242,7 @@
         IEMTHREADEDFUNCS const enmFunctionCheck = a_enmFunction; RT_NOREF(enmFunctionCheck); \
         uint64_t         const uArg0Check       = (a_uArg0);     RT_NOREF(uArg0Check); \
         \
+        LogFlow(("Call #%u: " #a_enmFunction " a0=%RX64\n", pTb->Thrd.cCalls, (uint64_t)a_uArg0)); \
         PIEMTHRDEDCALLENTRY const pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++]; \
         pCall->enmFunction = a_enmFunction; \
         pCall->idxInstr    = idxInstrMc2; \
@@ -257,6 +259,7 @@
         uint64_t         const uArg0Check       = (a_uArg0);     RT_NOREF(uArg0Check); \
         uint64_t         const uArg1Check       = (a_uArg1);     RT_NOREF(uArg1Check); \
         \
+        LogFlow(("Call #%u: " #a_enmFunction " a0=%RX64 a1=%RX64\n", pTb->Thrd.cCalls, (uint64_t)a_uArg0, (uint64_t)a_uArg1)); \
         PIEMTHRDEDCALLENTRY const pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++]; \
         pCall->enmFunction = a_enmFunction; \
         pCall->idxInstr    = idxInstrMc2; \
@@ -274,6 +277,7 @@
         uint64_t         const uArg1Check       = (a_uArg1);     RT_NOREF(uArg1Check); \
         uint64_t         const uArg2Check       = (a_uArg2);     RT_NOREF(uArg2Check); \
         \
+        LogFlow(("Call #%u: " #a_enmFunction " a0=%RX64 a1=%RX64 a2=%RX64\n", pTb->Thrd.cCalls, (uint64_t)a_uArg0, (uint64_t)a_uArg1, (uint64_t)a_uArg2)); \
         PIEMTHRDEDCALLENTRY const pCall = &pTb->Thrd.paCalls[pTb->Thrd.cCalls++]; \
         pCall->enmFunction = a_enmFunction; \
         pCall->idxInstr    = idxInstrMc2; \
@@ -307,8 +311,8 @@
 DECLINLINE(VBOXSTRICTRC)
 iemThreadedRecompilerMcDeferToCImpl0(PVMCPUCC pVCpu, uint32_t fFlags, uint64_t fGstShwFlush, PFNIEMCIMPL0 pfnCImpl)
 {
-    Log8(("CImpl0: %04x:%08RX64 LB %#x: %#x %#RX64 %p\n",
-          pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, IEM_GET_INSTR_LEN(pVCpu), fFlags, fGstShwFlush, pfnCImpl));
+    LogFlow(("CImpl0: %04x:%08RX64 LB %#x: %#x %#RX64 %p\n",
+             pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, IEM_GET_INSTR_LEN(pVCpu), fFlags, fGstShwFlush, pfnCImpl));
     pVCpu->iem.s.fTbCurInstr = fFlags;
 
     IEM_MC2_BEGIN_EMIT_CALLS(fFlags & IEM_CIMPL_F_CHECK_IRQ_BEFORE);
