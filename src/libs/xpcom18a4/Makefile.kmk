@@ -344,8 +344,15 @@ if1of ($(KBUILD_HOST), linux solaris)
  xpidl_LIBS.$(KBUILD_HOST) += \
  	$(subst -l,,$(filter -l%,$(libIDL_config_libs)))
 else
- xpidl_LDFLAGS = \
- 	$(libIDL_config_libs)
+ ifeq ($(KBUILD_HOST), darwin)
+  # Need to put the SDK /usr/lib before the libIDL path to make it pick the system iconv
+  xpidl_LDFLAGS = \
+ 	-L$(VBOX_PATH_MACOSX_SDK)/usr/lib \
+  	$(libIDL_config_libs)
+ else
+  xpidl_LDFLAGS = \
+  	$(libIDL_config_libs)
+ endif
 endif
 xpidl_LDFLAGS.linux = \
 	$(VBOX_LD_as_needed)
