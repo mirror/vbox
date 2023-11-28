@@ -221,6 +221,8 @@ public:
         /** Returns display server type. */
         VBGHDISPLAYSERVERTYPE displayServerType() const;
 #endif
+        /** Returns the name of the host OS by using IHost::getOperatingSystem. */
+        QString hostOperatingSystem() const;
     /** @} */
 
     /** @name Process arguments stuff.

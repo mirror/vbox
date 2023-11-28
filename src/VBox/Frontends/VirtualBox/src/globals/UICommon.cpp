@@ -2988,3 +2988,10 @@ VBGHDISPLAYSERVERTYPE UICommon::displayServerType() const
     return m_enmDisplayServerType;
 }
 #endif
+
+QString UICommon::hostOperatingSystem() const
+{
+    if (!m_comHost.isOk())
+        return QString();
+    return m_comHost.GetOperatingSystem();
+}

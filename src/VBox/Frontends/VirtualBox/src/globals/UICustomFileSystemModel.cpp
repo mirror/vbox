@@ -37,6 +37,9 @@
 #include "UIPathOperations.h"
 #include "UITranslator.h"
 
+/* Other VBox includes: */
+#include "iprt/assert.h"
+
 const char *UICustomFileSystemModel::strUpDirectoryString = "..";
 
 
@@ -209,6 +212,7 @@ QString UICustomFileSystemItem::path(bool fRemoveTrailingDelimiters /* = false *
 
     while(pParent && pParent->parentItem())
     {
+        printf("ffff %s %d\n", qPrintable(pParent->fileObjectName()), isDriveItem());
         path.prepend(pParent->fileObjectName());
         pParent = pParent->parentItem();
     }
@@ -397,7 +401,7 @@ UICustomFileSystemModel::UICustomFileSystemModel(QObject *parent)
     : QAbstractItemModel(parent)
     , m_fShowHumanReadableSizes(false)
 {
-    initializeTree();
+    m_pRootItem = new UICustomFileSystemItem(QString(), 0, KFsObjType_Directory);
 }
 
 UICustomFileSystemItem* UICustomFileSystemModel::rootItem()
@@ -637,6 +641,7 @@ void UICustomFileSystemModel::endReset()
 
 void UICustomFileSystemModel::reset()
 {
+    AssertPtrReturnVoid(m_pRootItem);
     beginResetModel();
     m_pRootItem->reset();
     endResetModel();
@@ -659,14 +664,4 @@ void UICustomFileSystemModel::deleteItem(UICustomFileSystemItem* pItem)
     UICustomFileSystemItem *pParent = pItem->parentItem();
     if (pParent)
         pParent->removeChild(pItem);
-}
-
-void UICustomFileSystemModel::initializeTree()
-{
-    m_pRootItem = new UICustomFileSystemItem(UICustomFileSystemModel::tr("Name"), 0, KFsObjType_Directory);
-    m_pRootItem->setData(UICustomFileSystemModel::tr("Size"), UICustomFileSystemModelData_Size);
-    m_pRootItem->setData(UICustomFileSystemModel::tr("Change Time"), UICustomFileSystemModelData_ChangeTime);
-    m_pRootItem->setData(UICustomFileSystemModel::tr("Owner"), UICustomFileSystemModelData_Owner);
-    m_pRootItem->setData(UICustomFileSystemModel::tr("Permissions"), UICustomFileSystemModelData_Permissions);
-    m_pRootItem->setData(UICustomFileSystemModel::tr("Local Path"), UICustomFileSystemModelData_LocalPath);
 }

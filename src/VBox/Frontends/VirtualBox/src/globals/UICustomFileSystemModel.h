@@ -58,6 +58,7 @@ enum UICustomFileSystemModelData
     by these instances is the data source for the UICustomFileSystemModel. */
 class SHARED_LIBRARY_STUFF UICustomFileSystemItem
 {
+
 public:
 
     /** @p strName contains file object name which is assumed to be unique among a parent object's children. */
@@ -125,7 +126,7 @@ public:
 private:
 
     void appendChild(UICustomFileSystemItem *child);
-    QList<UICustomFileSystemItem*>         m_childItems;
+    QList<UICustomFileSystemItem*>               m_childItems;
     QMap<UICustomFileSystemModelData, QVariant>  m_itemData;
     UICustomFileSystemItem *m_parentItem;
     bool             m_bIsOpened;
@@ -215,7 +216,7 @@ public:
     static const char* strUpDirectoryString;
 
 private:
-    void                initializeTree();
+
     UICustomFileSystemItem    *m_pRootItem;
     void setupModelData(const QStringList &lines, UICustomFileSystemItem *parent);
     bool                m_fShowHumanReadableSizes;

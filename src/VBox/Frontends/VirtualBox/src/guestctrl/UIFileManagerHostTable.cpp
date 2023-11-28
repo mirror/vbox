@@ -33,6 +33,7 @@
 /* GUI includes: */
 #include "QILabel.h"
 #include "UIActionPool.h"
+#include "UICommon.h"
 #include "UIFileManager.h"
 #include "UIFileTableNavigationWidget.h"
 #include "UICustomFileSystemModel.h"
@@ -257,6 +258,11 @@ void UIFileManagerHostTable::toggleForwardBackwardActions()
         m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoForward)->setEnabled(m_pNavigationWidget->canGoForward());
     if (m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoBackward))
         m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoBackward)->setEnabled(m_pNavigationWidget->canGoBackward());
+}
+
+bool UIFileManagerHostTable::isFileSystemWindows() const
+{
+    return uiCommon().hostOperatingSystem().contains("windows", Qt::CaseInsensitive);
 }
 
 void UIFileManagerHostTable::readDirectory(const QString& strPath, UICustomFileSystemItem *parent, bool isStartDir /*= false*/)

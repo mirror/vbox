@@ -552,6 +552,8 @@ void UIFileManagerTable::initializeFileTree()
         return;
 
     const QString startPath("/");
+    /* On Unix-like systems startItem represents the root directory. On Windows it is like "my computer" under which
+     * drives are listed: */
     UICustomFileSystemItem* startItem = new UICustomFileSystemItem(startPath, rootItem(), KFsObjType_Directory);
 
     startItem->setIsOpened(false);

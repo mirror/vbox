@@ -101,9 +101,10 @@ protected:
 
     /** Read the directory with the path @p path recursively and collect #of objects and  total size */
     virtual void directoryStatisticsRecursive(const QString &path, UIDirectoryStatistics &statistics) = 0;
-    virtual void           run() RT_OVERRIDE;
+    virtual void run() RT_OVERRIDE;
     /** Returns the m_fOkToContinue flag */
-    bool                  isOkToContinue() const;
+    bool         isOkToContinue() const;
+
     /** Stores a list of paths whose statistics are accumulated, can be file, directory etc: */
     QStringList           m_pathList;
     UIDirectoryStatistics m_resultStatistics;
@@ -225,7 +226,7 @@ protected:
     virtual void     createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) = 0;
     virtual void     toggleForwardBackwardActions() = 0;
     virtual bool     event(QEvent *pEvent) RT_OVERRIDE;
-
+    virtual bool     isFileSystemWindows() const = 0;
     /** @name Copy/Cut guest-to-guest (host-to-host) stuff.
      * @{ */
         /** Disable/enable paste action depending on the m_eFileOperationType. */

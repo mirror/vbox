@@ -1589,6 +1589,13 @@ void UIFileManagerGuestTable::setSessionDependentWidgetsEnabled()
     emit sigStateChanged(m_enmState == State_SessionRunning);
 }
 
+bool UIFileManagerGuestTable::isFileSystemWindows() const
+{
+    if (!m_comGuest.isOk())
+        return false;
+    return m_comGuest.GetOSTypeId().contains("windows", Qt::CaseInsensitive);
+}
+
 bool UIFileManagerGuestTable::openGuestSession(const QString &strUserName, const QString &strPassword)
 {
     if (m_comGuest.isNull())
