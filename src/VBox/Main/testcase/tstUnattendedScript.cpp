@@ -665,7 +665,7 @@ bool Unattended::i_getAvoidUpdatesOverNetwork() const
 }
 
 /* Override RTCrShaCryptGenerateSalt() from IPRT to generate predictable salts to compare the script outputs. */
-RTR3DECL(int) RTCrShaCryptGenerateSalt(char szSalt[RT_SHACRYPT_MAX_SALT_LEN + 1], size_t cchSalt)
+int RTCrShaCryptGenerateSalt(char szSalt[RT_SHACRYPT_MAX_SALT_LEN + 1], size_t cchSalt)
 {
     RT_NOREF(cchSalt);
     RTStrPrintf(szSalt, RT_SHACRYPT_MAX_SALT_LEN, "testcase123");
