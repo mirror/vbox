@@ -2322,7 +2322,6 @@ else
 		'--exclude=src/VBox/HostServices/**' \
 		'--exclude=src/VBox/ImageMounter/**' \
 		'--exclude=src/VBox/NetworkServices/**' \
-		'--exclude=src/VBox/Runtime/**' \
 		'--exclude=src/VBox/Storage/**' \
 		'--exclude=src/VBox/VMM/**' \
 		'--include=src/libs/' \
