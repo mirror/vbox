@@ -190,7 +190,7 @@ int main()
             pszSalt = g_aTests[i].pszSalt;
         else
         {
-            rc = RTCrShaCryptGenerateSaltWeak(szSalt, RT_SHACRYPT_MAX_SALT_LEN);
+            rc = RTCrShaCryptGenerateSalt(szSalt, RT_SHACRYPT_MAX_SALT_LEN);
             RTTEST_CHECK_RC_OK(hTest, rc);
             pszSalt = szSalt;
         }

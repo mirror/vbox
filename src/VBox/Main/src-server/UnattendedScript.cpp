@@ -631,6 +631,18 @@ UnattendedScriptTemplate::queryVariableForExpr(const char *pchName, size_t cchNa
     return vrc;
 }
 
+/* static */
+int UnattendedScriptTemplate::shaCryptGenerateSalt(char *pszSalt, size_t cchSalt)
+{
+    AssertPtrReturn(pszSalt, VERR_INVALID_POINTER);
+#ifdef IN_TST_UNATTENDED_SCRIPT
+    /* Use a fixed salt to predict the hashing result with the testcases. */
+    return RTStrPrintf2(pszSalt, cchSalt, "testcase123") > 0 ? VINF_SUCCESS : VERR_BUFFER_OVERFLOW;
+#else
+    return RTCrShaCryptGenerateSalt(pszSalt, cchSalt);
+#endif
+}
+
 int UnattendedScriptTemplate::queryVariable(const char *pchName, size_t cchName, Utf8Str &rstrTmp, const char **ppszValue)
 {
 #define IS_MATCH(a_szMatch) \
@@ -655,7 +667,7 @@ int UnattendedScriptTemplate::queryVariable(const char *pchName, size_t cchName,
         do { \
             uint8_t abHash[a_cbHashSize]; \
             char    szSalt[RT_SHACRYPT_MAX_SALT_LEN + 1]; \
-            int vrc = RTCrShaCryptGenerateSaltWeak(szSalt, RT_SHACRYPT_MAX_SALT_LEN); \
+            int vrc = UnattendedScriptTemplate::shaCryptGenerateSalt(szSalt, RT_SHACRYPT_MAX_SALT_LEN); \
             if (RT_SUCCESS(vrc)) \
             { \
                 vrc = a_fnHashAndCrypt(a_szKey, szSalt, RT_SHACRYPT_DEFAULT_ROUNDS, abHash); \

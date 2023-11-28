@@ -156,6 +156,17 @@ protected:
      *                              in case someone want to sanity check anything.
      */
     virtual HRESULT getConditional(const char *pachPlaceholder, size_t cchPlaceholder, bool *pfOutputting);
+
+    /**
+     * Static function to generate a salt for the RTShaCryptXXX functions.
+     *
+     * @returns VBox status code.
+     * @param   pszSalt             Where to store the salt on success.
+     * @param   cchSalt             Size (in characters) of \a pszSalt. Not including terminator.
+     *                              This also specifies how long the generated salt will be.
+     *                              Must be >= RT_SHACRYPT_MIN_SALT_LEN and <= RT_SHACRYPT_MAX_SALT_LEN.
+     */
+    static int shaCryptGenerateSalt(char *pszSalt, size_t cchSalt);
 };
 
 #if 0 /* convert when we fix SUSE */

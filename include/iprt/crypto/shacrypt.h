@@ -67,20 +67,6 @@ RT_C_DECLS_BEGIN
  */
 RTR3DECL(int) RTCrShaCryptGenerateSalt(char szSalt[RT_SHACRYPT_MAX_SALT_LEN + 1], size_t cchSalt);
 
-/**
- * Creates a randomized salt for the RTCrShaCryptXXX functions, weak version. Can be overriden in local modules.
- *
- * @returns IPRT status code.
- * @param   szSalt      Where to store the generated salt.
- * @param   cchSalt     Number of characters the generated salt should use.
- *                      Must be >= RT_SHACRYPT_MIN_SALT_LEN and <= RT_SHACRYPT_MAX_SALT_LEN.
- */
-#if defined(IN_RING3) && (defined(IN_RT_STATIC) || defined(IPRT_NO_CRT))
-RTR3DECL(int) RTCrShaCryptGenerateSaltWeak(char szSalt[RT_SHACRYPT_MAX_SALT_LEN + 1], size_t cchSalt);
-#else
-# undef  RTCrShaCryptGenerateSaltWeak /* in case of mangling */
-# define RTCrShaCryptGenerateSaltWeak RTCrShaCryptGenerateSalt
-#endif
 
 /**
  * Calculates a SHAcrypt (SHA-256) digest.
