@@ -194,6 +194,11 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 #  define IEMNATIVE_CALL_ARG1_GREG          X86_GREG_xDX
 #  define IEMNATIVE_CALL_ARG2_GREG          X86_GREG_x8
 #  define IEMNATIVE_CALL_ARG3_GREG          X86_GREG_x9
+#  define IEMNATIVE_CALL_ARGS_GREG_MASK     (  RT_BIT_32(IEMNATIVE_CALL_ARG0_GREG) \
+                                             | RT_BIT_32(IEMNATIVE_CALL_ARG1_GREG) \
+                                             | RT_BIT_32(IEMNATIVE_CALL_ARG2_GREG) \
+                                             | RT_BIT_32(IEMNATIVE_CALL_ARG3_GREG) \
+                                             | RT_BIT_32(IEMNATIVE_CALL_ARG4_GREG) )
 #  define IEMNATIVE_CALL_VOLATILE_GREG_MASK (  RT_BIT_32(X86_GREG_xAX) \
                                              | RT_BIT_32(X86_GREG_xCX) \
                                              | RT_BIT_32(X86_GREG_xDX) \
@@ -209,6 +214,12 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 #  define IEMNATIVE_CALL_ARG3_GREG          X86_GREG_xCX
 #  define IEMNATIVE_CALL_ARG4_GREG          X86_GREG_x8
 #  define IEMNATIVE_CALL_ARG5_GREG          X86_GREG_x9
+#  define IEMNATIVE_CALL_ARGS_GREG_MASK     (  RT_BIT_32(IEMNATIVE_CALL_ARG0_GREG) \
+                                             | RT_BIT_32(IEMNATIVE_CALL_ARG1_GREG) \
+                                             | RT_BIT_32(IEMNATIVE_CALL_ARG2_GREG) \
+                                             | RT_BIT_32(IEMNATIVE_CALL_ARG3_GREG) \
+                                             | RT_BIT_32(IEMNATIVE_CALL_ARG4_GREG) \
+                                             | RT_BIT_32(IEMNATIVE_CALL_ARG5_GREG) )
 #  define IEMNATIVE_CALL_VOLATILE_GREG_MASK (  RT_BIT_32(X86_GREG_xAX) \
                                              | RT_BIT_32(X86_GREG_xCX) \
                                              | RT_BIT_32(X86_GREG_xDX) \
@@ -231,6 +242,14 @@ AssertCompile(IEMNATIVE_FRAME_VAR_SLOTS == 32);
 # define IEMNATIVE_CALL_ARG5_GREG           ARMV8_A64_REG_X5
 # define IEMNATIVE_CALL_ARG6_GREG           ARMV8_A64_REG_X6
 # define IEMNATIVE_CALL_ARG7_GREG           ARMV8_A64_REG_X7
+# define IEMNATIVE_CALL_ARGS_GREG_MASK      (  RT_BIT_32(ARMV8_A64_REG_X0) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X1) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X2) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X3) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X4) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X5) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X6) \
+                                             | RT_BIT_32(ARMV8_A64_REG_X7) )
 # define IEMNATIVE_CALL_VOLATILE_GREG_MASK  (  RT_BIT_32(ARMV8_A64_REG_X0) \
                                              | RT_BIT_32(ARMV8_A64_REG_X1) \
                                              | RT_BIT_32(ARMV8_A64_REG_X2) \

@@ -3001,8 +3001,8 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrAndsImm(uint32_t iRegResult, uint32_t
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBitfieldImm(uint32_t u2Opc, uint32_t iRegResult, uint32_t iRegSrc,
                                                        uint32_t cImm6Ror, uint32_t uImm6S, bool f64Bit, uint32_t uN1)
 {
-    Assert(cImm6Ror < (f64Bit ? UINT32_C(0x3f) : UINT32_C(0x1f))); Assert(iRegResult < 32); Assert(u2Opc < 4);
-    Assert(uImm6S   < (f64Bit ? UINT32_C(0x3f) : UINT32_C(0x1f))); Assert(iRegSrc    < 32); Assert(uN1 <= (unsigned)f64Bit);
+    Assert(cImm6Ror <= (f64Bit ? UINT32_C(0x3f) : UINT32_C(0x1f))); Assert(iRegResult < 32); Assert(u2Opc < 4);
+    Assert(uImm6S   <= (f64Bit ? UINT32_C(0x3f) : UINT32_C(0x1f))); Assert(iRegSrc    < 32); Assert(uN1 <= (unsigned)f64Bit);
     return ((uint32_t)f64Bit   << 31)
          | (u2Opc              << 29)
          | UINT32_C(0x13000000)

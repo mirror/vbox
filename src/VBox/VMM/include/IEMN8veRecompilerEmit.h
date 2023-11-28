@@ -777,7 +777,7 @@ iemNativeEmitLoadGprFromGprWithAddend(PIEMRECOMPILERSTATE pReNative, uint32_t of
     }
     else
     {
-        off = iemNativeEmitLoadGprImm64(pReNative, off, iGrpDst, (int64)iAddend);
+        off = iemNativeEmitLoadGprImm64(pReNative, off, iGprDst, (int64_t)iAddend);
         uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
         pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(false /*fSub*/, iGprDst, iGprSrc, iGprDst);
     }
