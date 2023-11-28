@@ -121,6 +121,9 @@ RT_CONCAT3(iemMemFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, uint8_t iSegReg
 DECL_INLINE_THROW(TMPL_MEM_TYPE)
 RT_CONCAT3(iemMemFlatFetchData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
 {
+    AssertMsg(   (pVCpu->iem.s.fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_64BIT
+              || (pVCpu->iem.s.fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_PROT_FLAT
+              || (pVCpu->iem.s.fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_FLAT, ("%#x\n", pVCpu->iem.s.fExec));
 # if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
     /*
      * Check that it doesn't cross a page boundrary.
@@ -241,6 +244,9 @@ DECL_INLINE_THROW(void)
 RT_CONCAT3(iemMemFlatStoreData,TMPL_MEM_FN_SUFF,Jmp)(PVMCPUCC pVCpu, RTGCPTR GCPtrMem,
                                                      TMPL_MEM_TYPE uValue) IEM_NOEXCEPT_MAY_LONGJMP
 {
+    AssertMsg(   (pVCpu->iem.s.fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_64BIT
+              || (pVCpu->iem.s.fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_PROT_FLAT
+              || (pVCpu->iem.s.fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_FLAT, ("%#x\n", pVCpu->iem.s.fExec));
 #  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3) && !defined(TMPL_MEM_NO_INLINE)
     /*
      * Check that it doesn't cross a page boundrary.
