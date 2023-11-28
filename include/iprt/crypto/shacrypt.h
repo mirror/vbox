@@ -61,11 +61,12 @@ RT_C_DECLS_BEGIN
  * Creates a randomized salt for the RTCrShaCryptXXX functions.
  *
  * @returns IPRT status code.
- * @param   szSalt      Where to store the generated salt.
- * @param   cchSalt     Number of characters the generated salt should use.
+ * @param   pszSalt     Where to store the generated salt.
+ * @param   cchSalt     Size of \a pszSalt.
+ *                      Also marks the number of characters the generated salt should use.
  *                      Must be >= RT_SHACRYPT_MIN_SALT_LEN and <= RT_SHACRYPT_MAX_SALT_LEN.
  */
-RTR3DECL(int) RTCrShaCryptGenerateSalt(char szSalt[RT_SHACRYPT_MAX_SALT_LEN + 1], size_t cchSalt);
+RTR3DECL(int) RTCrShaCryptGenerateSalt(char *pszSalt, size_t cchSalt);
 
 
 /**
