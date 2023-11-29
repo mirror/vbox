@@ -246,6 +246,39 @@ int main()
             {
                 if (RTStrCmp(szResult, g_aTests[i].pszResultStr))
                     RTTestIFailed("#%u: Returns '%s', expected '%s'", i, szResult, g_aTests[i].pszResultStr);
+
+                /* Now do the same, but hand-in the result string as the salt.
+                 *
+                 * This approach is used by many *crypt implementations -- it allows feeding the user-provided password and the
+                 * crypted password from "the password file" to the function. If it returns the same crypted password then the
+                 * user-provided password must be the correct one.
+                 */
+                switch (enmType)
+                {
+                    case TST_DIGESTTYPE_SHA256:
+                    {
+                        rc = RTCrShaCrypt256(g_aTests[i].pszPassword, g_aTests[i].pszResultStr, cRounds, abDigest);
+                        if (RT_SUCCESS(rc))
+                            rc = RTCrShaCrypt256ToString(abDigest, pszSalt, cRounds, szResult, sizeof(szResult));
+                        break;
+                    }
+
+                    case TST_DIGESTTYPE_SHA512:
+                    {
+                        rc = RTCrShaCrypt512(g_aTests[i].pszPassword, g_aTests[i].pszResultStr, cRounds, abDigest);
+                        if (RT_SUCCESS(rc))
+                            rc = RTCrShaCrypt512ToString(abDigest, pszSalt, cRounds, szResult, sizeof(szResult));
+                        break;
+                    }
+
+                    default:
+                        AssertFailed();
+                        break;
+                }
+
+                if (RTStrCmp(szResult, g_aTests[i].pszResultStr))
+                    RTTestIFailed("#%u (result as hash): Returns '%s', expected '%s'",
+                                  i, szResult, g_aTests[i].pszResultStr);
             }
         }
 

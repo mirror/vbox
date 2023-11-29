@@ -47,6 +47,11 @@
 #include <iprt/string.h>
 
 
+/** The digest prefix for SHAcrypt256 strings. */
+#define RT_SHACRYPT_DIGEST_PREFIX_256_STR       "$5$"
+/** The digest prefix for SHAcrypt512 strings. */
+#define RT_SHACRYPT_DIGEST_PREFIX_512_STR       "$6$"
+
 
 RTR3DECL(int) RTCrShaCryptGenerateSalt(char *pszSalt, size_t cchSalt)
 {
@@ -62,6 +67,45 @@ RTR3DECL(int) RTCrShaCryptGenerateSalt(char *pszSalt, size_t cchSalt)
 }
 
 
+/**
+ * Extracts the salt from a given string.
+ *
+ * @returns Pointer to the salt string, or NULL if not found / invalid.
+ * @param   pszStr              String to extract salt from.
+ * @param   pcchSalt            Where to reutrn the extracted salt length (in characters).
+ */
+static const char *rtCrShaCryptExtractSalt(const char *pszStr, size_t *pcchSalt)
+{
+    size_t cchSalt = strlen(pszStr);
+
+    /* Searches for a known SHAcrypt string prefix and skips it. */
+#define BEGINS_WITH(a_szMatch) \
+        (cchSalt >= sizeof(a_szMatch) - 1U && memcmp(pszStr, a_szMatch, sizeof(a_szMatch) - 1U) == 0)
+    if (BEGINS_WITH(RT_SHACRYPT_DIGEST_PREFIX_256_STR))
+    {
+        cchSalt -= sizeof(RT_SHACRYPT_DIGEST_PREFIX_256_STR) - 1;
+        pszStr  += sizeof(RT_SHACRYPT_DIGEST_PREFIX_256_STR) - 1;
+    }
+    else if (BEGINS_WITH(RT_SHACRYPT_DIGEST_PREFIX_512_STR))
+    {
+        cchSalt -= sizeof(RT_SHACRYPT_DIGEST_PREFIX_512_STR) - 1;
+        pszStr  += sizeof(RT_SHACRYPT_DIGEST_PREFIX_512_STR) - 1;
+    }
+#undef BEGINS_WITH
+
+    /* Search for the end of the salt string, denoted by a '$'. */
+    size_t cchLen = 0;
+    while (   cchLen < cchSalt
+           && pszStr[cchLen] != '$')
+        cchLen++;
+
+    AssertMsgReturn(cchLen >= RT_SHACRYPT_MIN_SALT_LEN && cchLen <= RT_SHACRYPT_MAX_SALT_LEN, ("len=%zu\n", cchLen), NULL);
+    *pcchSalt = cchLen;
+
+    return pszStr;
+}
+
+
 RTR3DECL(int) RTCrShaCrypt256(const char *pszKey, const char *pszSalt, uint32_t cRounds, uint8_t abHash[RTSHA256_HASH_SIZE])
 {
     AssertPtrReturn(pszKey,   VERR_INVALID_POINTER);
@@ -70,9 +114,10 @@ RTR3DECL(int) RTCrShaCrypt256(const char *pszKey, const char *pszSalt, uint32_t 
 
     size_t const cchKey     = strlen(pszKey);
     AssertReturn(cchKey, VERR_INVALID_PARAMETER);
-    size_t const cchSalt    = strlen(pszSalt);
-    AssertMsgReturn(cchSalt >= RT_SHACRYPT_MIN_SALT_LEN && cchSalt <= RT_SHACRYPT_MAX_SALT_LEN, ("len=%zu\n", cchSalt),
-                    VERR_INVALID_PARAMETER);
+
+    size_t cchSalt;
+    pszSalt = rtCrShaCryptExtractSalt(pszSalt, &cchSalt);
+    AssertPtrReturn(pszSalt, VERR_INVALID_PARAMETER);
 
     uint8_t abDigest[RTSHA256_HASH_SIZE];
     uint8_t abDigestTemp[RTSHA256_HASH_SIZE];
@@ -201,9 +246,9 @@ RTR3DECL(int) RTCrShaCrypt256ToString(uint8_t abHash[RTSHA256_HASH_SIZE], const 
 
     size_t cchPrefix;
     if (cRounds == RT_SHACRYPT_DEFAULT_ROUNDS)
-        cchPrefix = RTStrPrintf2(psz, cchString, "$5$%s$", pszSalt);
+        cchPrefix = RTStrPrintf2(psz, cchString, "%s%s$", RT_SHACRYPT_DIGEST_PREFIX_256_STR, pszSalt);
     else
-        cchPrefix = RTStrPrintf2(psz, cchString, "$5$rounds=%RU32$%s$", cRounds, pszSalt);
+        cchPrefix = RTStrPrintf2(psz, cchString, "%srounds=%RU32$%s$", RT_SHACRYPT_DIGEST_PREFIX_256_STR, cRounds, pszSalt);
     AssertReturn(cchPrefix > 0, VERR_BUFFER_OVERFLOW);
     AssertReturn(cch >= cchPrefix, VERR_BUFFER_OVERFLOW);
     cch -= cchPrefix;
@@ -254,11 +299,12 @@ RTR3DECL(int) RTCrShaCrypt512(const char *pszKey, const char *pszSalt, uint32_t 
     AssertPtrReturn(pszSalt,  VERR_INVALID_POINTER);
     AssertReturn   (cRounds, VERR_INVALID_PARAMETER);
 
-    size_t const cchKey     = strlen(pszKey);
+    size_t const cchKey = strlen(pszKey);
     AssertReturn(cchKey, VERR_INVALID_PARAMETER);
-    size_t const cchSalt    = strlen(pszSalt);
-    AssertMsgReturn(cchSalt >= RT_SHACRYPT_MIN_SALT_LEN && cchSalt <= RT_SHACRYPT_MAX_SALT_LEN, ("len=%zu\n", cchSalt),
-                    VERR_INVALID_PARAMETER);
+
+    size_t cchSalt;
+    pszSalt = rtCrShaCryptExtractSalt(pszSalt, &cchSalt);
+    AssertPtrReturn(pszSalt, VERR_INVALID_PARAMETER);
 
     uint8_t abDigest[RTSHA512_HASH_SIZE];
     uint8_t abDigestTemp[RTSHA512_HASH_SIZE];
@@ -385,9 +431,9 @@ RTR3DECL(int) RTCrShaCrypt512ToString(uint8_t abHash[RTSHA512_HASH_SIZE], const 
 
     size_t cchPrefix;
     if (cRounds == RT_SHACRYPT_DEFAULT_ROUNDS)
-        cchPrefix = RTStrPrintf2(psz, cchString, "$6$%s$", pszSalt);
+        cchPrefix = RTStrPrintf2(psz, cchString, "%s%s$", RT_SHACRYPT_DIGEST_PREFIX_512_STR, pszSalt);
     else
-        cchPrefix = RTStrPrintf2(psz, cchString, "$6$rounds=%RU32$%s$", cRounds, pszSalt);
+        cchPrefix = RTStrPrintf2(psz, cchString, "%srounds=%RU32$%s$", RT_SHACRYPT_DIGEST_PREFIX_512_STR, cRounds, pszSalt);
     AssertReturn(cchPrefix > 0, VERR_BUFFER_OVERFLOW);
     AssertReturn(cch >= cchPrefix, VERR_BUFFER_OVERFLOW);
     cch -= cchPrefix;

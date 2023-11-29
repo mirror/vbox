@@ -76,7 +76,13 @@ RTR3DECL(int) RTCrShaCryptGenerateSalt(char *pszSalt, size_t cchSalt);
  * @param   pszKey              Key (password) to use.
  * @param   pszSalt             Salt to use.
  *                              Must be >= RT_SHACRYPT_MIN_SALT_LEN and <= RT_SHACRYPT_MAX_SALT_LEN.
- * @param   cRounds             Number of rounds to use.  @sa RT_SHACRYPT_DEFAULT_ROUNDS
+ *
+ *                              This parameter also accepts crypted password strings produced by RTCrShaCrypt256ToString().
+ *
+ *                              This approach is used by many *crypt implementations -- it allows feeding the user-provided
+ *                              password and the crypted password from "the password file" to the function. If it returns the
+ *                              same crypted password then the user-provided password must be the correct one.
+ * @param   cRounds             Number of rounds to use. @sa RT_SHACRYPT_DEFAULT_ROUNDS
  * @param   abHash              Where to return the hash on success.
  *
  * @note    This implements SHA-crypt.txt Version: 0.6 2016-8-31.
@@ -107,6 +113,12 @@ RTR3DECL(int) RTCrShaCrypt256ToString(uint8_t abHash[RTSHA256_HASH_SIZE], const 
  * @param   pszKey              Key (password) to use.
  * @param   pszSalt             Salt to use.
  *                              Must be >= RT_SHACRYPT_MIN_SALT_LEN and <= RT_SHACRYPT_MAX_SALT_LEN.
+ *
+ *                              This parameter also accepts crypted password strings produced by RTCrShaCrypt512ToString().
+ *
+ *                              This approach is used by many *crypt implementations -- it allows feeding the user-provided
+ *                              password and the crypted password from "the password file" to the function. If it returns the
+ *                              same crypted password then the user-provided password must be the correct one.
  * @param   cRounds             Number of rounds to use. @sa RT_SHACRYPT_DEFAULT_ROUNDS
  * @param   abHash              Where to return the hash on success.
  *
