@@ -324,7 +324,7 @@ typedef const CPUMX86RFLAGS *PCCPUMX86RFLAGS;
 #pragma pack(1) /* for VBOXIDTR / VBOXGDTR. */
 typedef struct CPUMCTX
 {
-    /** General purpose registers. */
+    /** 0x0000 - General purpose registers. */
     union /* no tag! */
     {
         /** The general purpose register array view, indexed by X86_GREG_XXX. */
@@ -365,7 +365,7 @@ typedef struct CPUMCTX
         } CPUM_STRUCT_NM(b);
     } CPUM_UNION_NM(g);
 
-    /** Segment registers. */
+    /** 0x0080 - Segment registers. */
     union /* no tag! */
     {
         /** The segment register array view, indexed by X86_SREG_XXX. */
@@ -377,14 +377,14 @@ typedef struct CPUMCTX
         } CPUM_STRUCT_NM(n);
     } CPUM_UNION_NM(s);
 
-    /** The task register.
+    /** 0x0110 - The task register.
      * Only the guest context uses all the members. */
     CPUMSELREG          ldtr;
-    /** The task register.
+    /** 0x0128 - The task register.
      * Only the guest context uses all the members. */
     CPUMSELREG          tr;
 
-    /** The program counter. */
+    /** 0x0140 - The program counter. */
     union
     {
         uint16_t        ip;
@@ -392,28 +392,28 @@ typedef struct CPUMCTX
         uint64_t        rip;
     } CPUM_UNION_NM(rip);
 
-    /** The flags register. */
+    /** 0x0148 - The flags register. */
     union
     {
         CPUMX86EFLAGS   eflags;
         CPUMX86RFLAGS   rflags;
     } CPUM_UNION_NM(rflags);
 
-    /** 0x150 - Externalized state tracker, CPUMCTX_EXTRN_XXX. */
+    /** 0x0150 - Externalized state tracker, CPUMCTX_EXTRN_XXX. */
     uint64_t            fExtrn;
 
-    /** The RIP value an interrupt shadow is/was valid for. */
+    /** 0x0158 The RIP value an interrupt shadow is/was valid for. */
     uint64_t            uRipInhibitInt;
 
     /** @name Control registers.
      * @{ */
-    uint64_t            cr0;
-    uint64_t            cr2;
-    uint64_t            cr3;
-    uint64_t            cr4;
+    uint64_t            cr0;  /**< 0x0160 */
+    uint64_t            cr2;  /**< 0x0168 */
+    uint64_t            cr3;  /**< 0x0170 */
+    uint64_t            cr4;  /**< 0x0178 */
     /** @} */
 
-    /** Debug registers.
+    /** 0x0180 - Debug registers.
      * @remarks DR4 and DR5 should not be used since they are aliases for
      *          DR6 and DR7 respectively on both AMD and Intel CPUs.
      * @remarks DR8-15 are currently not supported by AMD or Intel, so
@@ -421,34 +421,34 @@ typedef struct CPUMCTX
      */
     uint64_t            dr[8];
 
-    /** Padding before the structure so the 64-bit member is correctly aligned.
+    /** 0x01c0 - Padding before the structure so the 64-bit member is correctly aligned.
      * @todo fix this structure!  */
     uint16_t            gdtrPadding[3];
     /** Global Descriptor Table register. */
     VBOXGDTR            gdtr;
 
-    /** Padding before the structure so the 64-bit member is correctly aligned.
+    /** 0x01d0 - Padding before the structure so the 64-bit member is correctly aligned.
      * @todo fix this structure!  */
     uint16_t            idtrPadding[3];
     /** Interrupt Descriptor Table register. */
     VBOXIDTR            idtr;
 
-    /** The sysenter msr registers.
+    /** 0x01e0 - The sysenter msr registers.
      * This member is not used by the hypervisor context. */
     CPUMSYSENTER        SysEnter;
 
     /** @name System MSRs.
      * @{ */
-    uint64_t            msrEFER; /**< @todo move EFER up to the crX registers for better cacheline mojo */
-    uint64_t            msrSTAR;            /**< Legacy syscall eip, cs & ss. */
-    uint64_t            msrPAT;             /**< Page attribute table. */
-    uint64_t            msrLSTAR;           /**< 64 bits mode syscall rip. */
-    uint64_t            msrCSTAR;           /**< Compatibility mode syscall rip. */
-    uint64_t            msrSFMASK;          /**< syscall flag mask. */
-    uint64_t            msrKERNELGSBASE;    /**< swapgs exchange value. */
+    uint64_t            msrEFER;            /**< 0x01f8 - @todo move EFER up to the crX registers for better cacheline mojo */
+    uint64_t            msrSTAR;            /**< 0x0200 - Legacy syscall eip, cs & ss. */
+    uint64_t            msrPAT;             /**< 0x0208 - Page attribute table. */
+    uint64_t            msrLSTAR;           /**< 0x0210 - 64 bits mode syscall rip. */
+    uint64_t            msrCSTAR;           /**< 0x0218 - Compatibility mode syscall rip. */
+    uint64_t            msrSFMASK;          /**< 0x0220 - syscall flag mask. */
+    uint64_t            msrKERNELGSBASE;    /**< 0x0228 - swapgs exchange value. */
     /** @} */
 
-    uint64_t            au64Unused[2];
+    uint64_t            au64Unused[2];      /**< 0x0230 */
 
     /** 0x240 - PAE PDPTEs. */
     X86PDPE             aPaePdpes[4];
