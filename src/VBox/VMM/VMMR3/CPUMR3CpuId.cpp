@@ -3302,19 +3302,20 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
                 LogRel(("CPUM: Enabled MTRR read-only support\n"));
             }
 
-            /* Setup MTRR capability based on what the host supports. */
+            /* Setup MTRR capability based on what the guest CPU profile (typically host) supports. */
             Assert(!pVM->cpum.s.fMtrrWrite || pVM->cpum.s.fMtrrRead);
             if (pVM->cpum.s.fMtrrRead)
             {
+#ifdef RT_ARCH_AMD64
                 Assert(pVM->cpum.s.HostFeatures.fMtrr);
-
-                /* Lookup the number of variable-range MTRRs supported on the host. */
+#endif
+                /* Lookup the number of variable-range MTRRs supported by the CPU profile. */
                 PCCPUMMSRRANGE pMtrrCapRange = cpumLookupMsrRange(pVM, MSR_IA32_MTRR_CAP);
                 AssertLogRelReturn(pMtrrCapRange, VERR_CPUM_IPE_2);
-                uint8_t const cHostVarRangeRegs = pMtrrCapRange->uValue & MSR_IA32_MTRR_CAP_VCNT_MASK;
+                uint8_t const cProfileVarRangeRegs = pMtrrCapRange->uValue & MSR_IA32_MTRR_CAP_VCNT_MASK;
 
                 /* Construct guest MTRR support capabilities. */
-                uint8_t const  cGuestVarRangeRegs = RT_MIN(cHostVarRangeRegs, CPUMCTX_MAX_MTRRVAR_COUNT);
+                uint8_t const  cGuestVarRangeRegs = RT_MIN(cProfileVarRangeRegs, CPUMCTX_MAX_MTRRVAR_COUNT);
                 uint64_t const uGstMtrrCap        = cGuestVarRangeRegs
                                                   | MSR_IA32_MTRR_CAP_FIX
                                                   | MSR_IA32_MTRR_CAP_WC;
