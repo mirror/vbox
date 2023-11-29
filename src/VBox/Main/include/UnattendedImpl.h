@@ -217,6 +217,10 @@ private:
     HRESULT setInstallUserPayload(BOOL aInstallUserPayload);
     HRESULT getTimeZone(com::Utf8Str &aTimezone);
     HRESULT setTimeZone(const com::Utf8Str &aTimezone);
+    HRESULT getKeyboardLayout(com::Utf8Str &aKeyboardLayout);
+    HRESULT setKeyboardLayout(const com::Utf8Str &aKeyboardLayout);
+    HRESULT getKeyboardVariant(com::Utf8Str &aKeyboardVariant);
+    HRESULT setKeyboardVariant(const com::Utf8Str &aKeyboardVariant);
     HRESULT getLocale(com::Utf8Str &aLocale);
     HRESULT setLocale(const com::Utf8Str &aLocale);
     HRESULT getLanguage(com::Utf8Str &aLanguage);

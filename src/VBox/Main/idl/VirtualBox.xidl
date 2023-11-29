@@ -4961,7 +4961,7 @@
 
   <interface
     name="IUnattended" extends="$unknown"
-    uuid="d1833215-78c9-4b42-9c2a-f44ef7b2d01f"
+    uuid="1136224d-0ba7-45d6-9aee-03b628da46b6"
     wsmap="managed"
     rest="managed"
     reservedMethods="4" reservedAttributes="16"
@@ -5108,6 +5108,39 @@
         TODO: Investigate automatic mapping between linux and the two windows
               time zone formats.
         TODO: Take default from host (this requires mapping).
+      </desc>
+    </attribute>
+
+    <attribute name="keyboardLayout" type="wstring">
+      <desc>
+        Sets the keyboard layout of the guest, if available.
+
+        The 2 letter locale identifier, no codesets or such.
+
+        The format is two lower case country letter (ISO 3166-1 alpha-2).
+        For instance 'us', 'de', or 'no'.
+
+        The default is taken from the host if possible, with 'us' as fallback.
+
+        <result name="E_NOTIMPL">
+          Not implemented yet.
+        </result>
+      </desc>
+    </attribute>
+
+    <attribute name="keyboardVariant" type="wstring">
+      <desc>
+        Sets the keyboard variant of the guest, if available. Leave empty to use
+        the default variant for the current keyboard layout set.
+
+        TODO: Define + document a keyboard variants table (e.g. by using 'localectl list-x11-keymap-variants [layout]' as a base),
+              plus a mapping to Windows-based guests for that.
+
+        This depends on the current keyboard layout being set.
+
+        <result name="E_NOTIMPL">
+          Not implemented yet.
+        </result>
       </desc>
     </attribute>
 

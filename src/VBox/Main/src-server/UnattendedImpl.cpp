@@ -3575,6 +3575,30 @@ HRESULT Unattended::setTimeZone(const com::Utf8Str &aTimezone)
     return S_OK;
 }
 
+HRESULT Unattended::getKeyboardLayout(com::Utf8Str &aKeyboardLayout)
+{
+    RT_NOREF(aKeyboardLayout);
+    return E_NOTIMPL;
+}
+
+HRESULT Unattended::setKeyboardLayout(const com::Utf8Str &aKeyboardLayout)
+{
+    RT_NOREF(aKeyboardLayout);
+    return E_NOTIMPL;
+}
+
+HRESULT Unattended::getKeyboardVariant(com::Utf8Str &aKeyboardVariant)
+{
+    RT_NOREF(aKeyboardVariant);
+    return E_NOTIMPL;
+}
+
+HRESULT Unattended::setKeyboardVariant(const com::Utf8Str &aKeyboardVariant)
+{
+    RT_NOREF(aKeyboardVariant);
+    return E_NOTIMPL;
+}
+
 HRESULT Unattended::getLocale(com::Utf8Str &aLocale)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
