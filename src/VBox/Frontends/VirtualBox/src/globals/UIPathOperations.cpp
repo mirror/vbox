@@ -161,3 +161,9 @@ const QChar UIPathOperations::dosDelimiter = QChar('\\');
         return false;
     return true;
 }
+
+/* static */ const QString UIPathOperations::replaceDosDelimeter(const QString &path)
+{
+    QString newPath(path);
+    return newPath.replace(dosDelimiter, delimiter);
+}

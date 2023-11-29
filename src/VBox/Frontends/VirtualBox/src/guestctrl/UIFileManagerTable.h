@@ -226,7 +226,7 @@ protected:
     virtual void     createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) = 0;
     virtual void     toggleForwardBackwardActions() = 0;
     virtual bool     event(QEvent *pEvent) RT_OVERRIDE;
-    virtual bool     isFileSystemWindows() const = 0;
+    virtual bool     isWindowsFileSystem() const = 0;
     /** @name Copy/Cut guest-to-guest (host-to-host) stuff.
      * @{ */
         /** Disable/enable paste action depending on the m_eFileOperationType. */
@@ -251,6 +251,7 @@ protected:
     void             setPathSeparator(const QChar &separator);
     QHBoxLayout*     toolBarLayout();
     void             setSessionWidgetsEnabled(bool fEnabled);
+    void             setModelFileSystem(bool fIsWindowsFileSystem);
 
     QILabel                 *m_pLocationLabel;
     UIPropertiesDialog      *m_pPropertiesDialog;

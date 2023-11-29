@@ -60,7 +60,7 @@ public:
     static const QChar dosDelimiter;
     /** Tries to determine if the path starts with DOS style drive letters. */
     static bool doesPathStartWithDriveLetter(const QString &path);
-
+    static const QString replaceDosDelimeter(const QString &path);
 };
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UIPathOperations_h */

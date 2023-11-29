@@ -61,7 +61,10 @@ UICustomFileSystemItem::UICustomFileSystemItem(const QString &strFileObjectName,
     m_itemData[UICustomFileSystemModelData_Name] = strFileObjectName;
 
     if (parent)
+    {
         parent->appendChild(this);
+        setParentModel(parent->parentModel());
+    }
 }
 
 UICustomFileSystemItem::~UICustomFileSystemItem()
@@ -206,18 +209,22 @@ void UICustomFileSystemItem::setIsOpened(bool flag)
 
 QString UICustomFileSystemItem::path(bool fRemoveTrailingDelimiters /* = false */) const
 {
+    const QChar delimiter('/');
     Q_UNUSED(fRemoveTrailingDelimiters);
     const UICustomFileSystemItem *pParent = this;
     QStringList path;
-
     while(pParent && pParent->parentItem())
     {
-        printf("ffff %s %d\n", qPrintable(pParent->fileObjectName()), isDriveItem());
         path.prepend(pParent->fileObjectName());
         pParent = pParent->parentItem();
     }
-
-    return UIPathOperations::removeMultipleDelimiters(path.join("/"));
+    QString strPath = UIPathOperations::removeMultipleDelimiters(path.join(delimiter));
+    if (m_pParentModel && m_pParentModel->isWindowsFileSystem())
+    {
+        if (!strPath.isEmpty() && strPath.at(0) == delimiter)
+            strPath.remove(0, 1);
+    }
+    return UIPathOperations::addTrailingDelimiters(strPath);
 }
 
 bool UICustomFileSystemItem::isUpDirectory() const
@@ -299,6 +306,15 @@ const QString &UICustomFileSystemItem::toolTip() const
     return m_strToolTip;
 }
 
+void UICustomFileSystemItem::setParentModel(UICustomFileSystemModel *pModel)
+{
+    m_pParentModel = pModel;
+}
+
+UICustomFileSystemModel *UICustomFileSystemItem::parentModel()
+{
+    return m_pParentModel;
+}
 
 /*********************************************************************************************************************************
 *   UICustomFileSystemProxyModel implementation.                                                                                 *
@@ -400,8 +416,10 @@ bool UICustomFileSystemProxyModel::showHiddenObjects() const
 UICustomFileSystemModel::UICustomFileSystemModel(QObject *parent)
     : QAbstractItemModel(parent)
     , m_fShowHumanReadableSizes(false)
+    , m_fIsWindowFileSystemModel(false)
 {
     m_pRootItem = new UICustomFileSystemItem(QString(), 0, KFsObjType_Directory);
+    m_pRootItem->setParentModel(this);
 }
 
 UICustomFileSystemItem* UICustomFileSystemModel::rootItem()
@@ -664,4 +682,14 @@ void UICustomFileSystemModel::deleteItem(UICustomFileSystemItem* pItem)
     UICustomFileSystemItem *pParent = pItem->parentItem();
     if (pParent)
         pParent->removeChild(pItem);
+}
+
+void UICustomFileSystemModel::setIsWindowsFileSystem(bool fIsWindowsFileSystem)
+{
+    m_fIsWindowFileSystemModel = fIsWindowsFileSystem;
+}
+
+bool UICustomFileSystemModel::isWindowsFileSystem() const
+{
+    return m_fIsWindowFileSystemModel;
 }

@@ -40,6 +40,8 @@
 /* COM includes: */
 #include "COMEnums.h"
 
+class UICustomFileSystemModel;
+
 enum UICustomFileSystemModelData
 {
     UICustomFileSystemModelData_Name = 0,
@@ -126,6 +128,9 @@ public:
 private:
 
     void appendChild(UICustomFileSystemItem *child);
+    void setParentModel(UICustomFileSystemModel *pModel);
+    UICustomFileSystemModel *parentModel();
+
     QList<UICustomFileSystemItem*>               m_childItems;
     QMap<UICustomFileSystemModelData, QVariant>  m_itemData;
     UICustomFileSystemItem *m_parentItem;
@@ -134,12 +139,15 @@ private:
     QString          m_strTargetPath;
     /** True if this is a symlink and the target is a directory */
     bool             m_fIsTargetADirectory;
-    KFsObjType  m_type;
+    KFsObjType       m_type;
     /** True if only this item represents a DOS style drive letter item */
     bool             m_fIsDriveItem;
     /** True if the file object is hidden in the file system. */
     bool             m_fIsHidden;
     QString          m_strToolTip;
+    /** Pointer to the parent model. */
+    UICustomFileSystemModel *m_pParentModel;
+    friend UICustomFileSystemModel;
 };
 
 /** A QSortFilterProxyModel extension used in file tables. Modifies some
@@ -213,13 +221,17 @@ public:
     UICustomFileSystemItem* rootItem();
     const UICustomFileSystemItem* rootItem() const;
 
+    void setIsWindowsFileSystem(bool fIsWindowsFileSystem);
+    bool isWindowsFileSystem() const;
+
     static const char* strUpDirectoryString;
 
 private:
 
     UICustomFileSystemItem    *m_pRootItem;
     void setupModelData(const QStringList &lines, UICustomFileSystemItem *parent);
-    bool                m_fShowHumanReadableSizes;
+    bool m_fShowHumanReadableSizes;
+    bool m_fIsWindowFileSystemModel;
 };
 
 

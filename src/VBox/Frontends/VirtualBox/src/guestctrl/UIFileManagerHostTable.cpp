@@ -135,6 +135,7 @@ void UIHostDirectoryDiskUsageComputer::directoryStatisticsRecursive(const QStrin
 UIFileManagerHostTable::UIFileManagerHostTable(UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
     :UIFileManagerTable(pActionPool, pParent)
 {
+    setModelFileSystem(isWindowsFileSystem());
     initializeFileTree();
     prepareToolbar();
     prepareActionConnections();
@@ -260,7 +261,7 @@ void UIFileManagerHostTable::toggleForwardBackwardActions()
         m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoBackward)->setEnabled(m_pNavigationWidget->canGoBackward());
 }
 
-bool UIFileManagerHostTable::isFileSystemWindows() const
+bool UIFileManagerHostTable::isWindowsFileSystem() const
 {
     return uiCommon().hostOperatingSystem().contains("windows", Qt::CaseInsensitive);
 }

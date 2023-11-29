@@ -101,7 +101,7 @@ protected:
     virtual void  toggleForwardBackwardActions() override final;
     virtual void  setState();
     virtual void  setSessionDependentWidgetsEnabled();
-    virtual bool  isFileSystemWindows() const override final;
+    virtual bool  isWindowsFileSystem() const override final;
 
 private slots:
 

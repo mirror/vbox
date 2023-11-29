@@ -426,12 +426,12 @@ UIFileManagerGuestTable::UIFileManagerGuestTable(UIActionPool *pActionPool, cons
     , m_fIsCurrent(false)
     , pszMinimumGuestAdditionVersion("6.1")
 {
+    setModelFileSystem(isWindowsFileSystem());
     if (!m_comMachine.isNull())
         m_strTableName = m_comMachine.GetName();
     prepareToolbar();
     prepareGuestSessionPanel();
     prepareActionConnections();
-
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
             this, &UIFileManagerGuestTable::sltMachineStateChange);
     connect(&uiCommon(), &UICommon::sigAskToCommitData,
@@ -1589,11 +1589,11 @@ void UIFileManagerGuestTable::setSessionDependentWidgetsEnabled()
     emit sigStateChanged(m_enmState == State_SessionRunning);
 }
 
-bool UIFileManagerGuestTable::isFileSystemWindows() const
+bool UIFileManagerGuestTable::isWindowsFileSystem() const
 {
-    if (!m_comGuest.isOk())
+    if (!m_comMachine.isOk())
         return false;
-    return m_comGuest.GetOSTypeId().contains("windows", Qt::CaseInsensitive);
+    return m_comMachine.GetOSTypeId().contains("windows", Qt::CaseInsensitive);
 }
 
 bool UIFileManagerGuestTable::openGuestSession(const QString &strUserName, const QString &strPassword)

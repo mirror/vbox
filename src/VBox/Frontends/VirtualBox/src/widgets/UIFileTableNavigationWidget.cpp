@@ -114,7 +114,7 @@ void UIFileManagerHistoryComboBox::hidePopup()
 
 UIFileManagerBreadCrumbs::UIFileManagerBreadCrumbs(QWidget *pParent /* = 0 */)
     :QLabel(pParent)
-    , m_pathSeparator('/')
+    , m_pathSeparator(UIPathOperations::delimiter)
 {
     float fFontMult = 1.f;
     QFont mFont = font();
@@ -138,14 +138,15 @@ void UIFileManagerBreadCrumbs::setPath(const QString &strPath)
 {
     m_strPath = strPath;
 
-    const QChar separator('/');
+    const QChar separator(UIPathOperations::delimiter);
     clear();
 
     if (strPath.isEmpty())
         return;
 
     QStringList folderList = UIPathOperations::pathTrail(strPath);
-    folderList.push_front(separator);
+    if (!strPath.isEmpty() && strPath.at(0) == UIPathOperations::delimiter)
+        folderList.push_front(separator);
 
     QString strLabelText;
     QVector<QString> strPathUpto;
@@ -153,19 +154,16 @@ void UIFileManagerBreadCrumbs::setPath(const QString &strPath)
 
     for (int i = 0; i < folderList.size(); ++i)
     {
-        QString strFolder = UIPathOperations::removeTrailingDelimiters(folderList.at(i));
+        QString strFolder = folderList.at(i);
         if (i != 0)
             strPathUpto[i] = strPathUpto[i - 1];
-        if (i == 0 || i == folderList.size() - 1)
-            strPathUpto[i].append(QString("%1").arg(strFolder));
-        else
-            strPathUpto[i].append(QString("%1%2").arg(strFolder).arg(separator));
+        strPathUpto[i].append(QString("%1%2").arg(strFolder).arg(separator));
     }
 
     int iWidth = 0;
     for (int i = folderList.size() - 1; i >= 0; --i)
     {
-        QString strFolder = UIPathOperations::removeTrailingDelimiters(folderList.at(i)).replace('/', m_pathSeparator);
+        QString strFolder = UIPathOperations::removeTrailingDelimiters(folderList.at(i)).replace(UIPathOperations::delimiter, m_pathSeparator);
         QString strWord = QString("<a href=\"%1\" style=\"color:black;text-decoration:none;\">%2</a>").arg(strPathUpto[i]).arg(strFolder);
 
         if (i < folderList.size() - 1)
@@ -213,7 +211,7 @@ UIFileTableNavigationWidget::UIFileTableNavigationWidget(QWidget *pParent /* = 0
     , m_pHistoryComboBox(0)
     , m_pAddressLineEdit(0)
     , m_pSwitchButton(0)
-    , m_pathSeparator('/')
+    , m_pathSeparator(UIPathOperations::delimiter)
 {
     prepare();
 }
@@ -231,7 +229,7 @@ void UIFileTableNavigationWidget::setPath(const QString &strLocation)
     if (m_pHistoryComboBox)
     {
         QString strNativeLocation(strLocation);
-        strNativeLocation.replace('/', m_pathSeparator);
+        strNativeLocation.replace(UIPathOperations::delimiter, m_pathSeparator);
         int itemIndex = m_pHistoryComboBox->findText(strNativeLocation,
                                                       Qt::MatchExactly | Qt::MatchCaseSensitive);
         if (itemIndex == -1)
@@ -368,7 +366,7 @@ void UIFileTableNavigationWidget::sltHandleHidePopup()
 
 void UIFileTableNavigationWidget::sltHandlePathChange(const QString &strPath)
 {
-    emit sigPathChanged(QDir::fromNativeSeparators(strPath));
+    emit sigPathChanged(UIPathOperations::replaceDosDelimeter(strPath));
 }
 
 void UIFileTableNavigationWidget::sltHandleSwitch()

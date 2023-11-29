@@ -50,6 +50,7 @@ class QMenu;
 class QIDialogButtonBox;
 class QIToolBar;
 class UIActionPool;
+class UIFileManagerHostTable;
 class UIVisoHostBrowser;
 class UIVisoContentBrowser;
 class UIVisoSettingWidget;
@@ -151,9 +152,10 @@ private:
         QAction              *m_pRemoveISOAction;
     /** @} */
 
-    QVBoxLayout          *m_pMainLayout;
-    UIVisoHostBrowser    *m_pHostBrowser;
-    UIVisoContentBrowser *m_pVISOContentBrowser;
+    QVBoxLayout            *m_pMainLayout;
+    UIVisoHostBrowser      *m_pHostBrowser;
+    UIVisoContentBrowser   *m_pVISOContentBrowser;
+    UIFileManagerHostTable *m_pHostFileBrowser;
 
     QIToolBar             *m_pToolBar;
     QIToolBar             *m_pVerticalToolBar;
