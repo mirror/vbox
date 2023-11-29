@@ -277,7 +277,7 @@ int main()
                 }
 
                 if (RTStrCmp(szResult, g_aTests[i].pszResultStr))
-                    RTTestIFailed("#%u (result as hash): Returns '%s', expected '%s'",
+                    RTTestIFailed("#%u (result as salt): Returns '%s', expected '%s'",
                                   i, szResult, g_aTests[i].pszResultStr);
             }
         }
