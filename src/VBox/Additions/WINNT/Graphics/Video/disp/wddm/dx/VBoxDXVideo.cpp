@@ -470,7 +470,24 @@ void vboxDXGetVideoProcessorRateConversionCaps(PVBOXDX_DEVICE pDevice, PVBOXDXVI
     pCaps->FutureFrames    = pInfo->RateCaps.FutureFrames;
     pCaps->ConversionCaps  = pInfo->RateCaps.ProcessorCaps;
     pCaps->ITelecineCaps   = pInfo->RateCaps.ITelecineCaps;
-    pCaps->CustomRateCount = 0;
+    pCaps->CustomRateCount = RT_MIN(pInfo->RateCaps.CustomRateCount, VBSVGA3D_MAX_VIDEO_CUSTOM_RATE_CAPS);;
+}
+
+
+void vboxDXGetVideoProcessorCustomRate(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSORENUM pVideoProcessorEnum,
+                                       UINT CustomRateIndex, D3D11_1DDI_VIDEO_PROCESSOR_CUSTOM_RATE *pRate)
+{
+    if (memcmp(&pVideoProcessorEnum->svga.desc,
+               &pDevice->VideoDevice.videoProcessorEnum.desc, sizeof(pVideoProcessorEnum->svga.desc)) != 0)
+        vboxDXQueryVideoProcessorEnumInfo(pDevice, pVideoProcessorEnum->svga.desc);
+
+    VBSVGA3dVideoProcessorEnumInfo const *pInfo = &pDevice->VideoDevice.videoProcessorEnum.info;
+    VBSVGA3dVideoProcessorCustomRateCaps const *pCustomRateCaps = &pInfo->aCustomRateCaps[CustomRateIndex];
+    pRate->CustomRate.Numerator   = pCustomRateCaps->CustomRate.numerator;
+    pRate->CustomRate.Denominator = pCustomRateCaps->CustomRate.denominator;
+    pRate->OutputFrames           = pCustomRateCaps->OutputFrames;
+    pRate->InputInterlaced        = RT_BOOL(pCustomRateCaps->InputInterlaced);
+    pRate->InputFramesOrFields    = pCustomRateCaps->InputFramesOrFields;
 }
 
 

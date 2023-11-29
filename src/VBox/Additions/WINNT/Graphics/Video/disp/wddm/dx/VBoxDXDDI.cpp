@@ -118,6 +118,8 @@ static HRESULT vboxDXAdapterInit(D3D10DDIARG_OPENADAPTER const* pOpenData, VBOXW
     pAdapter->AdapterInfo = *pAdapterInfo;
     pAdapter->f3D = true;
 
+    pAdapter->fVBoxCaps = pHWInfo->u.svga.au32Caps[SVGA3D_DEVCAP_3D];
+
     *ppAdapter = pAdapter;
 
     return S_OK;
@@ -3957,12 +3959,12 @@ static HRESULT APIENTRY ddi10RetrieveSubObject(
     {
         AssertReturn(ParamSize >= sizeof(D3D11_1DDI_VIDEO_INPUT), E_INVALIDARG);
 
-#if 0
-        D3D11_1DDI_VIDEO_INPUT *pVideoInput = (D3D11_1DDI_VIDEO_INPUT *)pParams;
-        return ddi11_1RetrieveVideoFunctions(pDevice, pVideoInput);
-#else
-        RT_NOREF(pDevice, pParams);
-#endif
+        if (pDevice->pAdapter->fVBoxCaps & VBSVGA3D_CAP_VIDEO)
+        {
+            D3D11_1DDI_VIDEO_INPUT *pVideoInput = (D3D11_1DDI_VIDEO_INPUT *)pParams;
+            return ddi11_1RetrieveVideoFunctions(pDevice, pVideoInput);
+        }
+        return E_FAIL;
     }
 
     DEBUG_BREAKPOINT_TEST();

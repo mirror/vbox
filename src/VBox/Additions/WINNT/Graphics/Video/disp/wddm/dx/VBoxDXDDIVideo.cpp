@@ -311,16 +311,16 @@ static VOID APIENTRY ddi11_1GetVideoProcessorRateConversionCaps(
 static VOID APIENTRY ddi11_1GetVideoProcessorCustomRate(
     D3D10DDI_HDEVICE hDevice,
     D3D11_1DDI_HVIDEOPROCESSORENUM hProcessorEnum,
-    UINT CustomRateIndex,
     UINT RateConversionIndex,
+    UINT CustomRateIndex,
     D3D11_1DDI_VIDEO_PROCESSOR_CUSTOM_RATE *pRate)
 {
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
     PVBOXDXVIDEOPROCESSORENUM pVideoProcessorEnum = (PVBOXDXVIDEOPROCESSORENUM)hProcessorEnum.pDrvPrivate;
-    DEBUG_BREAKPOINT_TEST();
+    //DEBUG_BREAKPOINT_TEST();
 
-    RT_NOREF(pDevice, pVideoProcessorEnum, CustomRateIndex, RateConversionIndex);
-    RT_ZERO(*pRate); /* Not supported. */
+    RT_NOREF(RateConversionIndex); /* One capability. */
+    vboxDXGetVideoProcessorCustomRate(pDevice, pVideoProcessorEnum, CustomRateIndex, pRate);
 }
 
 static VOID APIENTRY ddi11_1GetVideoProcessorFilterRange(

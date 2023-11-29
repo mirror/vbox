@@ -64,6 +64,8 @@ typedef struct VBOXDXADAPTER
 
     bool f3D;
 
+    uint32_t fVBoxCaps;
+
     VBOXWDDM_QAI AdapterInfo;
 } VBOXDXADAPTER, *PVBOXDXADAPTER;
 
@@ -752,6 +754,8 @@ void vboxDXGetVideoProcessorCaps(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOREN
                                  D3D11_1DDI_VIDEO_PROCESSOR_CAPS *pCaps);
 void vboxDXGetVideoProcessorRateConversionCaps(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSORENUM pVideoProcessorEnum,
                                                D3D11_1DDI_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS *pCaps);
+void vboxDXGetVideoProcessorCustomRate(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSORENUM pVideoProcessorEnum,
+                                       UINT CustomRateIndex, D3D11_1DDI_VIDEO_PROCESSOR_CUSTOM_RATE *pRate);
 void vboxDXGetVideoProcessorFilterRange(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSORENUM pVideoProcessorEnum,
                                         D3D11_1DDI_VIDEO_PROCESSOR_FILTER Filter, D3D11_1DDI_VIDEO_PROCESSOR_FILTER_RANGE *pFilterRange);
 HRESULT vboxDXCreateVideoProcessor(PVBOXDX_DEVICE pDevice, PVBOXDXVIDEOPROCESSOR pVideoProcessor,
