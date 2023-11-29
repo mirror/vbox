@@ -236,6 +236,7 @@ PyTypeObject *Py_nsIID::GetTypeObject(void)
 		{ Py_tp_hash,   	(void *)(uintptr_t)&Py_nsIID::PyTypeMethod_hash },
 		{ Py_tp_str,    	(void *)(uintptr_t)&Py_nsIID::PyTypeMethod_str },
 		{ Py_tp_richcompare,    (void *)(uintptr_t)&Py_nsIID::PyTypeMethod_richcompare },
+		{ Py_tp_is_gc,          (void *)(uintptr_t)&Py_nsIID::PyTypeMethod_is_gc },
 		{ 0, NULL } /* terminator */
 	};
 	PyType_Spec TypeSpec = {
@@ -319,6 +320,18 @@ Py_nsIID::PyTypeMethod_compare(PyObject *self, PyObject *other)
 /* static */ PyObject *
 Py_nsIID::PyTypeMethod_richcompare(PyObject *self, PyObject *other, int op)
 {
+    if (self->ob_type != other->ob_type) /* Different types can't be compared. */
+    {
+        if (op == Py_EQ)
+            Py_RETURN_FALSE;
+        else if (op == Py_NE)
+            Py_RETURN_TRUE;
+
+       /* different are not comparable. */
+       PyErr_SetString(PyExc_TypeError, "Comparison between different object types is not defined");
+       return NULL;
+    }
+
     PyObject *result = NULL;
 	Py_nsIID *s_iid = (Py_nsIID *)self;
 	Py_nsIID *o_iid = (Py_nsIID *)other;
@@ -408,3 +421,11 @@ Py_nsIID::PyTypeMethod_dealloc(PyObject *ob)
 {
 	delete (Py_nsIID *)ob;
 }
+
+#ifdef Py_LIMITED_API
+/* static */ int
+Py_nsIID::PyTypeMethod_is_gc(PyObject *self)
+{
+	return 1;
+}
+#endif
