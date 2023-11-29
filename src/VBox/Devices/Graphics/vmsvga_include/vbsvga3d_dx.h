@@ -28,12 +28,20 @@
 
 #include "svga3d_dx.h"
 
+/* Extended capabilities returned by SVGA3D_DEVCAP_3D if VBoxSVGA virtual device is enabled. */
+/* The original "3D support" capability. */
+#define VBSVGA3D_CAP_3D    0x00000001
+/* Video decoding/processing and ClearView commands. */
+#define VBSVGA3D_CAP_VIDEO 0x00000002
+
 /* Arbitrary limits. Allows to use constant size structures.
  * NVIDIA supports 5 streams, AMD more, so 8 seems to be a good round number.
  * Both support 1 rate conversion caps set.
+ * NVIDIA driver reports 6 custom rates.
  */
 #define VBSVGA3D_MAX_VIDEO_STREAMS 8
 #define VBSVGA3D_MAX_VIDEO_RATE_CONVERSION_CAPS 1
+#define VBSVGA3D_MAX_VIDEO_CUSTOM_RATE_CAPS 8
 
 /* For 8-bit palettized formats. */
 #define VBSVGA3D_MAX_VIDEO_PALETTE_ENTRIES 256
@@ -205,6 +213,31 @@ typedef uint32 VBSVGA3dVideoRateConversionITelecineCaps;
 typedef uint32 VBSVGA3dVideoCapability;
 
 typedef struct {
+    union {
+        float r;
+        float y;
+    };
+    union {
+        float g;
+        float cb;
+    };
+    union {
+        float b;
+        float cr;
+    };
+    float a;
+} VBSVGA3dVideoColor;
+
+typedef struct {
+    uint32 Usage : 1;
+    uint32 RGB_Range : 1;
+    uint32 YCbCr_Matrix : 1;
+    uint32 YCbCr_xvYCC : 1;
+    uint32 Nominal_Range : 2;
+    uint32 Reserved : 26;
+} VBSVGA3dVideoProcessorColorSpace;
+
+typedef struct {
     VBSVGA3dVideoFrameFormat InputFrameFormat;
     SVGA3dFraction64 InputFrameRate;
     uint32 InputWidth;
@@ -215,11 +248,95 @@ typedef struct {
     VBSVGA3dVideoUsage Usage;
 } VBSVGA3dVideoProcessorDesc;
 
+#define VBSVGA3D_VP_SET_STREAM_FRAME_FORMAT         0x00000001
+#define VBSVGA3D_VP_SET_STREAM_COLOR_SPACE          0x00000002
+#define VBSVGA3D_VP_SET_STREAM_OUTPUT_RATE          0x00000004
+#define VBSVGA3D_VP_SET_STREAM_SOURCE_RECT          0x00000008
+#define VBSVGA3D_VP_SET_STREAM_DEST_RECT            0x00000010
+#define VBSVGA3D_VP_SET_STREAM_ALPHA                0x00000020
+#define VBSVGA3D_VP_SET_STREAM_PALETTE              0x00000040
+#define VBSVGA3D_VP_SET_STREAM_ASPECT_RATIO         0x00000080
+#define VBSVGA3D_VP_SET_STREAM_LUMA_KEY             0x00000100
+#define VBSVGA3D_VP_SET_STREAM_STEREO_FORMAT        0x00000200
+#define VBSVGA3D_VP_SET_STREAM_AUTO_PROCESSING_MODE 0x00000400
+#define VBSVGA3D_VP_SET_STREAM_FILTER               0x00000800
+#define VBSVGA3D_VP_SET_STREAM_ROTATION             0x00001000
+typedef uint32 VBSVGA3dVideoProcessorStreamSetMask;
+
+typedef struct
+{
+    VBSVGA3dVideoProcessorStreamSetMask SetMask;
+
+    uint32 SourceRectEnable : 1;
+    uint32 DestRectEnable : 1;
+    uint32 AlphaEnable : 1;
+    uint32 AspectRatioEnable : 1;
+    uint32 LumaKeyEnable : 1;
+    uint32 StereoFormatEnable : 1;
+    uint32 AutoProcessingModeEnable : 1;
+    uint32 RotationEnable : 1;
+
+    VBSVGA3dVideoFrameFormat FrameFormat;
+    VBSVGA3dVideoProcessorColorSpace ColorSpace;
+    VBSVGA3dVideoProcessorOutputRate OutputRate;
+    uint32 RepeatFrame;
+    SVGA3dFraction64 CustomRate;
+    SVGASignedRect SourceRect;
+    SVGASignedRect DestRect;
+    float Alpha;
+    uint32 PaletteCount;
+    uint32 aPalette[VBSVGA3D_MAX_VIDEO_PALETTE_ENTRIES];
+    SVGA3dFraction64 AspectSourceRatio;
+    SVGA3dFraction64 AspectDestRatio;
+    float LumaKeyLower;
+    float LumaKeyUpper;
+    VBSVGA3dVideoProcessorStereoFormat StereoFormat;
+    uint32 LeftViewFrame0 : 1;
+    uint32 BaseViewFrame0 : 1;
+    VBSVGA3dVideoProcessorStereoFlipMode FlipMode;
+    int32 MonoOffset;
+    uint32 FilterEnableMask;
+    struct {
+        int32 Level;
+    } aFilter[VBSVGA3D_VP_MAX_FILTER_COUNT];
+    VBSVGA3dVideoProcessorRotation Rotation;
+} VBSVGA3dVideoProcessorStreamState;
+
+#define VBSVGA3D_VP_SET_OUTPUT_TARGET_RECT       0x00000001
+#define VBSVGA3D_VP_SET_OUTPUT_BACKGROUND_COLOR  0x00000002
+#define VBSVGA3D_VP_SET_OUTPUT_COLOR_SPACE       0x00000004
+#define VBSVGA3D_VP_SET_OUTPUT_ALPHA_FILL_MODE   0x00000008
+#define VBSVGA3D_VP_SET_OUTPUT_CONSTRICTION      0x00000010
+#define VBSVGA3D_VP_SET_OUTPUT_STEREO_MODE       0x00000020
+typedef uint32 VBSVGA3dVideoProcessorOutputSetMask;
+
+typedef struct
+{
+    VBSVGA3dVideoProcessorOutputSetMask SetMask;
+
+    uint32 TargetRectEnable : 1;
+    uint32 BackgroundColorYCbCr : 1;
+    uint32 ConstrictionEnable : 1;
+    uint32 StereoModeEnable : 1;
+
+    SVGASignedRect TargetRect;
+    VBSVGA3dVideoColor BackgroundColor;
+    VBSVGA3dVideoProcessorColorSpace ColorSpace;
+    VBSVGA3dVideoProcessorAlphaFillMode AlphaFillMode;
+    uint32 AlphaFillStreamIndex;
+    uint32 ConstrictionWidth;
+    uint32 ConstrictionHeight;
+} VBSVGA3dVideoProcessorOutputState;
+
 typedef struct {
     VBSVGA3dVideoProcessorDesc desc;
-    uint32 pad[6];
+
+    VBSVGA3dVideoProcessorOutputState output;
+
+    VBSVGA3dVideoProcessorStreamState aStreamState[VBSVGA3D_MAX_VIDEO_STREAMS];
+    uint32 pad[1719];
 } VBSVGACOTableDXVideoProcessorEntry;
-AssertCompile(sizeof(VBSVGACOTableDXVideoProcessorEntry) == 16 * 4);
+AssertCompile(sizeof(VBSVGACOTableDXVideoProcessorEntry) == 4096 * 4);
 
 typedef struct VBSVGA3dCmdDXDefineVideoProcessor {
     VBSVGA3dVideoProcessorId videoProcessorId;
@@ -292,8 +409,10 @@ typedef struct {
 typedef struct {
     VBSVGA3dVideoDecoderDesc desc;
     VBSVGA3dVideoDecoderConfig config;
+    VBSVGA3dVideoDecoderOutputViewId vdovId;
+    uint32 pad[31];
 } VBSVGACOTableDXVideoDecoderEntry;
-AssertCompile(sizeof(VBSVGACOTableDXVideoDecoderEntry) == 32 * 4);
+AssertCompile(sizeof(VBSVGACOTableDXVideoDecoderEntry) == 64 * 4);
 
 typedef struct VBSVGA3dCmdDXDefineVideoDecoder {
     VBSVGA3dVideoDecoderId videoDecoderId;
@@ -456,37 +575,12 @@ typedef struct VBSVGA3dCmdDXVideoProcessorSetOutputTargetRect {
 } VBSVGA3dCmdDXVideoProcessorSetOutputTargetRect;
 /* VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_TARGET_RECT */
 
-typedef struct {
-    union {
-        float r;
-        float y;
-    };
-    union {
-        float g;
-        float cb;
-    };
-    union {
-        float b;
-        float cr;
-    };
-    float a;
-} VBSVGA3dVideoColor;
-
 typedef struct VBSVGA3dCmdDXVideoProcessorSetOutputBackgroundColor {
     VBSVGA3dVideoProcessorId videoProcessorId;
     uint32 ycbcr;
     VBSVGA3dVideoColor color;
 } VBSVGA3dCmdDXVideoProcessorSetOutputBackgroundColor;
 /* VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_OUTPUT_BACKGROUND_COLOR */
-
-typedef struct {
-    uint32 Usage : 1;
-    uint32 RGB_Range : 1;
-    uint32 YCbCr_Matrix : 1;
-    uint32 YCbCr_xvYCC : 1;
-    uint32 Nominal_Range : 2;
-    uint32 Reserved : 26;
-} VBSVGA3dVideoProcessorColorSpace;
 
 typedef struct VBSVGA3dCmdDXVideoProcessorSetOutputColorSpace {
     VBSVGA3dVideoProcessorId videoProcessorId;
@@ -654,7 +748,16 @@ typedef struct {
     uint32 FutureFrames;
     VBSVGA3dVideoRateConversionProcessorCaps ProcessorCaps;
     VBSVGA3dVideoRateConversionITelecineCaps ITelecineCaps;
+    uint32 CustomRateCount;
 } VBSVGA3dVideoProcessorRateCaps;
+
+typedef struct {
+    SVGA3dFraction64 CustomRate;
+    uint32 OutputFrames;
+    uint8 InputInterlaced;
+    uint8 pad[3];
+    uint32 InputFramesOrFields;
+} VBSVGA3dVideoProcessorCustomRateCaps;
 
 typedef struct {
     int32 Minimum;
@@ -680,6 +783,7 @@ typedef struct {
 
     VBSVGA3dVideoProcessorCaps Caps;
     VBSVGA3dVideoProcessorRateCaps RateCaps;
+    VBSVGA3dVideoProcessorCustomRateCaps aCustomRateCaps[VBSVGA3D_MAX_VIDEO_CUSTOM_RATE_CAPS];
     VBSVGA3dVideoProcessorFilterRange aFilterRange[VBSVGA3D_VP_MAX_FILTER_COUNT];
 } VBSVGA3dVideoProcessorEnumInfo;
 
