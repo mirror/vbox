@@ -3032,7 +3032,7 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBfm(uint32_t iRegResult, uint32_t iRe
 }
 
 
-/** A64: Encodes a BFI instruction.
+/** A64: Encodes a BFI instruction (insert).
  * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
 DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrBfi(uint32_t iRegResult, uint32_t iRegSrc,
                                                uint32_t offFirstBit, uint32_t cBitsWidth, bool f64Bit = true)
@@ -3049,6 +3049,15 @@ DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrUbfm(uint32_t iRegResult, uint32_t iR
                                                 bool f64Bit = true, uint32_t uN1 = UINT32_MAX)
 {
     return Armv8A64MkInstrBitfieldImm(2, iRegResult, iRegSrc, cImm6Ror, uImm6S, f64Bit, uN1 == UINT32_MAX ? f64Bit : uN1);
+}
+
+
+/** A64: Encodes an UBFX instruction (zero extending extract).
+ * @see Armv8A64MkInstrBitfieldImm for parameter details.  */
+DECL_FORCE_INLINE(uint32_t) Armv8A64MkInstrUbfx(uint32_t iRegResult, uint32_t iRegSrc,
+                                                uint32_t offFirstBit, uint32_t cBitsWidth, bool f64Bit = true)
+{
+    return Armv8A64MkInstrUbfm(iRegResult, iRegSrc, offFirstBit, offFirstBit + cBitsWidth - 1, f64Bit);
 }
 
 

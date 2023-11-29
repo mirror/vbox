@@ -717,9 +717,9 @@ iemNativeEmitLoadGprFromGpr8Hi(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint
     pbCodeBuf[off++] = 8;
 
 #elif RT_ARCH_ARM64
-    /* bfi gprdst, gprsrc, #8, #8 */
+    /* ubfx gprdst, gprsrc, #8, #8 - gprdst = gprsrc[15:8] */
     uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-    pu32CodeBuf[off++] = Armv8A64MkInstrBfi(iGprDst, iGprSrc, 8, 8, false /*f64Bit*/);
+    pu32CodeBuf[off++] = Armv8A64MkInstrUbfx(iGprDst, iGprSrc, 8, 8, false /*f64Bit*/);
 
 #else
 # error "port me"
