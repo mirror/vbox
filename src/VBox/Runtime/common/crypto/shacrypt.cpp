@@ -68,10 +68,10 @@ RTR3DECL(int) RTCrShaCrypt256(const char *pszKey, const char *pszSalt, uint32_t 
     AssertPtrReturn(pszSalt,  VERR_INVALID_POINTER);
     AssertReturn   (cRounds, VERR_INVALID_PARAMETER);
 
-    size_t const cbKey     = strlen(pszKey);
-    AssertReturn(cbKey, VERR_INVALID_PARAMETER);
-    size_t const cbSalt    = strlen(pszSalt);
-    AssertMsgReturn(cbSalt >= RT_SHACRYPT_MIN_SALT_LEN && cbSalt <= RT_SHACRYPT_MAX_SALT_LEN, ("len=%zu\n", cbSalt),
+    size_t const cchKey     = strlen(pszKey);
+    AssertReturn(cchKey, VERR_INVALID_PARAMETER);
+    size_t const cchSalt    = strlen(pszSalt);
+    AssertMsgReturn(cchSalt >= RT_SHACRYPT_MIN_SALT_LEN && cchSalt <= RT_SHACRYPT_MAX_SALT_LEN, ("len=%zu\n", cchSalt),
                     VERR_INVALID_PARAMETER);
 
     uint8_t abDigest[RTSHA256_HASH_SIZE];
@@ -79,42 +79,42 @@ RTR3DECL(int) RTCrShaCrypt256(const char *pszKey, const char *pszSalt, uint32_t 
 
     RTSHA256CONTEXT Ctx;
     RTSha256Init(&Ctx);                                                         /* Step 1. */
-    RTSha256Update(&Ctx, pszKey, cbKey);                                        /* Step 2. */
-    RTSha256Update(&Ctx, pszSalt, cbSalt);                                      /* Step 3. */
+    RTSha256Update(&Ctx, pszKey, cchKey);                                       /* Step 2. */
+    RTSha256Update(&Ctx, pszSalt, cchSalt);                                     /* Step 3. */
 
     RTSHA256CONTEXT CtxAlt;
     RTSha256Init(&CtxAlt);                                                      /* Step 4. */
-    RTSha256Update(&CtxAlt, pszKey, cbKey);                                     /* Step 5. */
-    RTSha256Update(&CtxAlt, pszSalt, cbSalt);                                   /* Step 6. */
-    RTSha256Update(&CtxAlt, pszKey, cbKey);                                     /* Step 7. */
+    RTSha256Update(&CtxAlt, pszKey, cchKey);                                    /* Step 5. */
+    RTSha256Update(&CtxAlt, pszSalt, cchSalt);                                  /* Step 6. */
+    RTSha256Update(&CtxAlt, pszKey, cchKey);                                    /* Step 7. */
     RTSha256Final(&CtxAlt, abDigest);                                           /* Step 8. */
 
-    size_t i = cbKey;
+    size_t i = cchKey;
     for (; i > RTSHA256_HASH_SIZE; i -= RTSHA256_HASH_SIZE)                     /* Step 9. */
         RTSha256Update(&Ctx, abDigest, sizeof(abDigest));
     RTSha256Update(&Ctx, abDigest, i);                                          /* Step 10. */
 
-    size_t keyBits = cbKey;
+    size_t keyBits = cchKey;
     while (keyBits)                                                             /* Step 11. */
     {
         if ((keyBits & 1) != 0)
             RTSha256Update(&Ctx, abDigest, sizeof(abDigest));                   /* a) */
         else
-            RTSha256Update(&Ctx, pszKey, cbKey);                                /* b) */
+            RTSha256Update(&Ctx, pszKey, cchKey);                               /* b) */
         keyBits >>= 1;
     }
 
     RTSha256Final(&Ctx, abDigest);                                              /* Step 12. */
 
     RTSha256Init(&CtxAlt);                                                      /* Step 13. */
-    for (i = 0; i < cbKey; i++)                                                 /* Step 14. */
-        RTSha256Update(&CtxAlt, pszKey, cbKey);
+    for (i = 0; i < cchKey; i++)                                                /* Step 14. */
+        RTSha256Update(&CtxAlt, pszKey, cchKey);
     RTSha256Final(&CtxAlt, abDigestTemp);                                       /* Step 15. */
 
     /*
      * Byte sequence P (= password).
      */
-    size_t const cbSeqP  = cbKey;
+    size_t const cbSeqP  = cchKey;
     uint8_t     *pabSeqP = (uint8_t *)RTMemDup(pszKey, cbSeqP);
     uint8_t     *p       = pabSeqP;
     AssertPtrReturn(pabSeqP, VERR_NO_MEMORY);
@@ -129,14 +129,14 @@ RTR3DECL(int) RTCrShaCrypt256(const char *pszKey, const char *pszSalt, uint32_t 
     RTSha256Init(&CtxAlt);                                                      /* Step 17. */
 
     for (i = 0; i < 16 + (unsigned)abDigest[0]; i++)                            /* Step 18. */
-        RTSha256Update(&CtxAlt, pszSalt, cbSalt);
+        RTSha256Update(&CtxAlt, pszSalt, cchSalt);
 
     RTSha256Final(&CtxAlt, abDigestTemp);                                       /* Step 19. */
 
     /*
      * Byte sequence S (= salt).
      */
-    size_t   const cbSeqS  = cbSalt;
+    size_t   const cbSeqS  = cchSalt;
     uint8_t       *pabSeqS = (uint8_t *)RTMemDup(pszSalt, cbSeqS);
                    p       = pabSeqS;
     AssertPtrReturn(pabSeqS, VERR_NO_MEMORY);
@@ -254,10 +254,10 @@ RTR3DECL(int) RTCrShaCrypt512(const char *pszKey, const char *pszSalt, uint32_t 
     AssertPtrReturn(pszSalt,  VERR_INVALID_POINTER);
     AssertReturn   (cRounds, VERR_INVALID_PARAMETER);
 
-    size_t const cbKey     = strlen(pszKey);
-    AssertReturn(cbKey, VERR_INVALID_PARAMETER);
-    size_t const cbSalt    = strlen(pszSalt);
-    AssertMsgReturn(cbSalt >= RT_SHACRYPT_MIN_SALT_LEN && cbSalt <= RT_SHACRYPT_MAX_SALT_LEN, ("len=%zu\n", cbSalt),
+    size_t const cchKey     = strlen(pszKey);
+    AssertReturn(cchKey, VERR_INVALID_PARAMETER);
+    size_t const cchSalt    = strlen(pszSalt);
+    AssertMsgReturn(cchSalt >= RT_SHACRYPT_MIN_SALT_LEN && cchSalt <= RT_SHACRYPT_MAX_SALT_LEN, ("len=%zu\n", cchSalt),
                     VERR_INVALID_PARAMETER);
 
     uint8_t abDigest[RTSHA512_HASH_SIZE];
@@ -265,42 +265,42 @@ RTR3DECL(int) RTCrShaCrypt512(const char *pszKey, const char *pszSalt, uint32_t 
 
     RTSHA512CONTEXT Ctx;
     RTSha512Init(&Ctx);                                                         /* Step 1. */
-    RTSha512Update(&Ctx, pszKey, cbKey);                                        /* Step 2. */
-    RTSha512Update(&Ctx, pszSalt, cbSalt);                                      /* Step 3. */
+    RTSha512Update(&Ctx, pszKey, cchKey);                                       /* Step 2. */
+    RTSha512Update(&Ctx, pszSalt, cchSalt);                                     /* Step 3. */
 
     RTSHA512CONTEXT CtxAlt;
     RTSha512Init(&CtxAlt);                                                      /* Step 4. */
-    RTSha512Update(&CtxAlt, pszKey, cbKey);                                     /* Step 5. */
-    RTSha512Update(&CtxAlt, pszSalt, cbSalt);                                   /* Step 6. */
-    RTSha512Update(&CtxAlt, pszKey, cbKey);                                     /* Step 7. */
+    RTSha512Update(&CtxAlt, pszKey, cchKey);                                    /* Step 5. */
+    RTSha512Update(&CtxAlt, pszSalt, cchSalt);                                  /* Step 6. */
+    RTSha512Update(&CtxAlt, pszKey, cchKey);                                    /* Step 7. */
     RTSha512Final(&CtxAlt, abDigest);                                           /* Step 8. */
 
-    size_t i = cbKey;
+    size_t i = cchKey;
     for (; i > RTSHA512_HASH_SIZE; i -= RTSHA512_HASH_SIZE)                     /* Step 9. */
         RTSha512Update(&Ctx, abDigest, sizeof(abDigest));
     RTSha512Update(&Ctx, abDigest, i);                                          /* Step 10. */
 
-    size_t keyBits = cbKey;
+    size_t keyBits = cchKey;
     while (keyBits)                                                             /* Step 11. */
     {
         if ((keyBits & 1) != 0)
             RTSha512Update(&Ctx, abDigest, sizeof(abDigest));                   /* a) */
         else
-            RTSha512Update(&Ctx, pszKey, cbKey);                                /* b) */
+            RTSha512Update(&Ctx, pszKey, cchKey);                               /* b) */
         keyBits >>= 1;
     }
 
     RTSha512Final(&Ctx, abDigest);                                              /* Step 12. */
 
     RTSha512Init(&CtxAlt);                                                      /* Step 13. */
-    for (i = 0; i < cbKey; i++)                                                 /* Step 14. */
-        RTSha512Update(&CtxAlt, pszKey, cbKey);
+    for (i = 0; i < cchKey; i++)                                                /* Step 14. */
+        RTSha512Update(&CtxAlt, pszKey, cchKey);
     RTSha512Final(&CtxAlt, abDigestTemp);                                       /* Step 15. */
 
     /*
      * Byte sequence P (= password).
      */
-    size_t const cbSeqP  = cbKey;
+    size_t const cbSeqP  = cchKey;
     uint8_t     *pabSeqP = (uint8_t *)RTMemDup(pszKey, cbSeqP);
     uint8_t     *p       = pabSeqP;
     AssertPtrReturn(pabSeqP, VERR_NO_MEMORY);
@@ -315,14 +315,14 @@ RTR3DECL(int) RTCrShaCrypt512(const char *pszKey, const char *pszSalt, uint32_t 
     RTSha512Init(&CtxAlt);                                                      /* Step 17. */
 
     for (i = 0; i < 16 + (unsigned)abDigest[0]; i++)                            /* Step 18. */
-        RTSha512Update(&CtxAlt, pszSalt, cbSalt);
+        RTSha512Update(&CtxAlt, pszSalt, cchSalt);
 
     RTSha512Final(&CtxAlt, abDigestTemp);                                       /* Step 19. */
 
     /*
      * Byte sequence S (= salt).
      */
-    size_t   const cbSeqS  = cbSalt;
+    size_t   const cbSeqS  = cchSalt;
     uint8_t       *pabSeqS = (uint8_t *)RTMemDup(pszSalt, cbSeqS);
                    p       = pabSeqS;
     AssertPtrReturn(pabSeqS, VERR_NO_MEMORY);
