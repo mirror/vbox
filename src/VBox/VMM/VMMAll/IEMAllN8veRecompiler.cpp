@@ -149,6 +149,8 @@ DECL_FORCE_INLINE(void) iemNativeRegClearGstRegShadowing(PIEMRECOMPILERSTATE pRe
 DECL_FORCE_INLINE(void) iemNativeRegClearGstRegShadowingOne(PIEMRECOMPILERSTATE pReNative, uint8_t idxHstReg,
                                                             IEMNATIVEGSTREG enmGstReg, uint32_t off);
 
+static uint8_t iemNativeVarGetStackSlot(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar);
+
 
 /*********************************************************************************************************************************
 *   Executable Memory Allocator                                                                                                  *
@@ -2414,6 +2416,7 @@ static uint8_t iemNativeRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint32_t
         {
             uint32_t const idxVar = ASMBitFirstSetU32(fVars) - 1;
             uint8_t const  idxReg = pReNative->Core.aVars[idxVar].idxReg;
+/** @todo Prevent active variables from changing here... */
             if (   idxReg < RT_ELEMENTS(pReNative->Core.aHstRegs)
                 && (RT_BIT_32(idxReg) & fRegMask)
                 && (  iLoop == 0
@@ -2429,9 +2432,8 @@ static uint8_t iemNativeRegAllocFindFree(PIEMRECOMPILERSTATE pReNative, uint32_t
 
                 if (pReNative->Core.aVars[idxVar].enmKind == kIemNativeVarKind_Stack)
                 {
-                    AssertStmt(pReNative->Core.aVars[idxVar].idxStackSlot < IEMNATIVE_FRAME_VAR_SLOTS,
-                               IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_REG_IPE_8));
-                    *poff = iemNativeEmitStoreGprByBp(pReNative, *poff, iemNativeVarCalcBpDisp(pReNative, idxVar), idxReg);
+                    uint8_t const idxStackSlot = iemNativeVarGetStackSlot(pReNative, idxVar);
+                    *poff = iemNativeEmitStoreGprByBp(pReNative, *poff, iemNativeStackCalcBpDisp(idxStackSlot), idxReg);
                 }
 
                 pReNative->Core.aVars[idxVar].idxReg    = UINT8_MAX;
@@ -2548,10 +2550,9 @@ static uint32_t iemNativeRegMoveOrSpillStackVar(PIEMRECOMPILERSTATE pReNative, u
     /*
      * Otherwise we must spill the register onto the stack.
      */
-    uint8_t const idxStackSlot = pReNative->Core.aVars[idxVar].idxStackSlot;
+    uint8_t const idxStackSlot = iemNativeVarGetStackSlot(pReNative, idxVar);
     Log12(("iemNativeRegMoveOrSpillStackVar: spilling idxVar=%d/idxReg=%d onto the stack (slot %#x bp+%d, off=%#x)\n",
            idxVar, idxRegOld, idxStackSlot, iemNativeStackCalcBpDisp(idxStackSlot), off));
-    AssertStmt(idxStackSlot < IEMNATIVE_FRAME_VAR_SLOTS, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_REG_IPE_7));
     off = iemNativeEmitStoreGprByBp(pReNative, off, iemNativeStackCalcBpDisp(idxStackSlot), idxRegOld);
 
     pReNative->Core.aVars[idxVar].idxReg    = UINT8_MAX;
@@ -5337,6 +5338,77 @@ static uint8_t iemNativeArgAllocInt(PIEMRECOMPILERSTATE pReNative, uint8_t iArgN
 
 
 /**
+ * Gets the stack slot for a stack variable, allocating one if necessary.
+ *
+ * Calling this function implies that the stack slot will contain a valid
+ * variable value.  The caller deals with any register currently assigned to the
+ * variable, typically by spilling it into the stack slot.
+ *
+ * @returns The stack slot number.
+ * @param   pReNative   The recompiler state.
+ * @param   idxVar      The variable.
+ * @throws  VERR_IEM_VAR_OUT_OF_STACK_SLOTS
+ */
+static uint8_t iemNativeVarGetStackSlot(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar)
+{
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
+    Assert(pReNative->Core.aVars[idxVar].enmKind == kIemNativeVarKind_Stack);
+
+    /* Already got a slot? */
+    uint8_t const idxStackSlot = pReNative->Core.aVars[idxVar].idxStackSlot;
+    if (idxStackSlot != UINT8_MAX)
+    {
+        Assert(idxStackSlot < IEMNATIVE_FRAME_VAR_SLOTS);
+        return idxStackSlot;
+    }
+
+    /*
+     * A single slot is easy to allocate.
+     * Allocate them from the top end, closest to BP, to reduce the displacement.
+     */
+    if (pReNative->Core.aVars[idxVar].cbVar <= sizeof(uint64_t))
+    {
+        unsigned const iSlot = ASMBitLastSetU32(~pReNative->Core.bmStack) - 1;
+        AssertStmt(iSlot < IEMNATIVE_FRAME_VAR_SLOTS, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_OUT_OF_STACK_SLOTS));
+        pReNative->Core.bmStack |= RT_BIT_32(iSlot);
+        pReNative->Core.aVars[idxVar].idxStackSlot = (uint8_t)iSlot;
+        Log11(("iemNativeVarSetKindToStack: idxVar=%d iSlot=%#x\n", idxVar, iSlot));
+        return (uint8_t)iSlot;
+    }
+
+    /*
+     * We need more than one stack slot.
+     *
+     * cbVar -> fBitAlignMask: 16 -> 1; 32 -> 3; 64 -> 7;
+     */
+    AssertCompile(RT_IS_POWER_OF_TWO(IEMNATIVE_FRAME_VAR_SLOTS)); /* If not we have to add an overflow check. */
+    Assert(pReNative->Core.aVars[idxVar].cbVar <= 64);
+    uint32_t const fBitAlignMask = RT_BIT_32(ASMBitLastSetU32(pReNative->Core.aVars[idxVar].cbVar) - 4) - 1;
+    uint32_t       fBitAllocMask = RT_BIT_32((pReNative->Core.aVars[idxVar].cbVar + 7) >> 3) - 1;
+    uint32_t       bmStack       = ~pReNative->Core.bmStack;
+    while (bmStack != UINT32_MAX)
+    {
+/** @todo allocate from the top to reduce BP displacement. */
+        unsigned const iSlot = ASMBitFirstSetU32(bmStack) - 1;
+        AssertStmt(iSlot < IEMNATIVE_FRAME_VAR_SLOTS, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_OUT_OF_STACK_SLOTS));
+        if (!(iSlot & fBitAlignMask))
+        {
+            if ((bmStack & (fBitAllocMask << iSlot)) == (fBitAllocMask << iSlot))
+            {
+                pReNative->Core.bmStack |= (fBitAllocMask << iSlot);
+                pReNative->Core.aVars[idxVar].idxStackSlot = (uint8_t)iSlot;
+                Log11(("iemNativeVarSetKindToStack: idxVar=%d iSlot=%#x/%#x (cbVar=%#x)\n",
+                       idxVar, iSlot, fBitAllocMask, pReNative->Core.aVars[idxVar].cbVar));
+                return (uint8_t)iSlot;
+            }
+        }
+        bmStack |= fBitAlignMask << (iSlot & ~fBitAlignMask);
+    }
+    AssertFailedStmt(IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_OUT_OF_STACK_SLOTS));
+}
+
+
+/**
  * Changes the variable to a stack variable.
  *
  * Currently this is s only possible to do the first time the variable is used,
@@ -5344,7 +5416,7 @@ static uint8_t iemNativeArgAllocInt(PIEMRECOMPILERSTATE pReNative, uint8_t iArgN
  *
  * @param   pReNative   The recompiler state.
  * @param   idxVar      The variable.
- * @throws  VERR_IEM_VAR_OUT_OF_STACK_SLOTS, VERR_IEM_VAR_IPE_2
+ * @throws  VERR_IEM_VAR_IPE_2
  */
 static void iemNativeVarSetKindToStack(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar)
 {
@@ -5359,42 +5431,8 @@ static void iemNativeVarSetKindToStack(PIEMRECOMPILERSTATE pReNative, uint8_t id
         AssertStmt(pReNative->Core.aVars[idxVar].idxReg == UINT8_MAX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_IPE_2));
         pReNative->Core.aVars[idxVar].enmKind = kIemNativeVarKind_Stack;
 
-        if (pReNative->Core.aVars[idxVar].idxStackSlot == UINT8_MAX)
-        {
-            if (pReNative->Core.aVars[idxVar].cbVar <= sizeof(uint64_t))
-            {
-                unsigned const iSlot = ASMBitFirstSetU32(~pReNative->Core.bmStack) - 1;
-                AssertStmt(iSlot < IEMNATIVE_FRAME_VAR_SLOTS, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_OUT_OF_STACK_SLOTS));
-                pReNative->Core.bmStack |= RT_BIT_32(iSlot);
-                pReNative->Core.aVars[idxVar].idxStackSlot = iSlot;
-                Log11(("iemNativeVarSetKindToStack: idxVar=%d iSlot=%#x\n", idxVar, iSlot));
-                return;
-            }
-            /* cbVar -> fBitAlignMask: 16 -> 1; 32 -> 3; 64 -> 7;*/
-            AssertCompile(RT_IS_POWER_OF_TWO(IEMNATIVE_FRAME_VAR_SLOTS)); /* If not we have to add an overflow check. */
-            Assert(pReNative->Core.aVars[idxVar].cbVar <= 64);
-            uint32_t const fBitAlignMask = RT_BIT_32(ASMBitLastSetU32(pReNative->Core.aVars[idxVar].cbVar) - 4) - 1;
-            uint32_t       fBitAllocMask = RT_BIT_32((pReNative->Core.aVars[idxVar].cbVar + 7) >> 3) - 1;
-            uint32_t       bmStack       = ~pReNative->Core.bmStack;
-            while (bmStack != UINT32_MAX)
-            {
-                unsigned const iSlot = ASMBitFirstSetU32(bmStack) - 1;
-                AssertStmt(iSlot < IEMNATIVE_FRAME_VAR_SLOTS, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_OUT_OF_STACK_SLOTS));
-                if (!(iSlot & fBitAlignMask))
-                {
-                    if ((bmStack & (fBitAllocMask << iSlot)) == (fBitAllocMask << iSlot))
-                    {
-                        pReNative->Core.bmStack |= (fBitAllocMask << iSlot);
-                        pReNative->Core.aVars[idxVar].idxStackSlot = iSlot;
-                        Log11(("iemNativeVarSetKindToStack: idxVar=%d iSlot=%#x/%#x (cbVar=%#x)\n",
-                               idxVar, iSlot, fBitAllocMask, pReNative->Core.aVars[idxVar].cbVar));
-                        return;
-                    }
-                }
-                bmStack |= fBitAlignMask << (iSlot & ~fBitAlignMask);
-            }
-            AssertFailedStmt(IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_OUT_OF_STACK_SLOTS));
-        }
+        /* Note! We don't allocate a stack slot here, that's only done when a
+                 slot is actually needed to hold a variable value. */
     }
 }
 
@@ -5544,12 +5582,20 @@ DECL_HIDDEN_THROW(uint8_t) iemNativeVarAllocConst(PIEMRECOMPILERSTATE pReNative,
  * @param   pReNative   The recompiler state.
  * @param   idxVar      The variable.
  * @param   poff        Pointer to the instruction buffer offset.
- *                      In case a register needs to be freed up.
+ *                      In case a register needs to be freed up or the value
+ *                      loaded off the stack.
+ * @param  fInitialized Set if the variable must already have been initialized.
+ *                      Will throw VERR_IEM_VAR_NOT_INITIALIZED if this is not
+ *                      the case.
  */
-DECL_HIDDEN_THROW(uint8_t) iemNativeVarAllocRegister(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar, uint32_t *poff)
+DECL_HIDDEN_THROW(uint8_t) iemNativeVarAllocRegister(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar,
+                                                     uint32_t *poff, bool fInitialized = false)
 {
     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVar);
     Assert(pReNative->Core.aVars[idxVar].cbVar <= 8);
+/** @todo we must mark the variable as active and add a release function to
+ *        mark it as inactive, otherwise temporary register allocations may
+ *        cause the variable to be spilled onto the stack. */
 
     uint8_t idxReg = pReNative->Core.aVars[idxVar].idxReg;
     if (idxReg < RT_ELEMENTS(pReNative->Core.aHstRegs))
@@ -5618,6 +5664,29 @@ DECL_HIDDEN_THROW(uint8_t) iemNativeVarAllocRegister(PIEMRECOMPILERSTATE pReNati
     }
     iemNativeRegMarkAllocated(pReNative, idxReg, kIemNativeWhat_Var, idxVar);
     pReNative->Core.aVars[idxVar].idxReg = idxReg;
+
+    /*
+     * Load it off the stack if we've got a stack slot.
+     */
+    uint8_t const idxStackSlot = pReNative->Core.aVars[idxVar].idxStackSlot;
+    if (idxStackSlot < IEMNATIVE_FRAME_VAR_SLOTS)
+    {
+        int32_t const offDispBp = iemNativeStackCalcBpDisp(idxStackSlot);
+        switch (pReNative->Core.aVars[idxVar].cbVar)
+        {
+            case 1: *poff = iemNativeEmitLoadGprByBpU8( pReNative, *poff, idxReg, offDispBp); break;
+            case 2: *poff = iemNativeEmitLoadGprByBpU16(pReNative, *poff, idxReg, offDispBp); break;
+            case 3: AssertFailed(); RT_FALL_THRU();
+            case 4: *poff = iemNativeEmitLoadGprByBpU32(pReNative, *poff, idxReg, offDispBp); break;
+            default: AssertFailed(); RT_FALL_THRU();
+            case 8: *poff = iemNativeEmitLoadGprByBp(   pReNative, *poff, idxReg, offDispBp); break;
+        }
+    }
+    else
+    {
+        Assert(idxStackSlot == UINT8_MAX);
+        AssertStmt(!fInitialized, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_NOT_INITIALIZED));
+    }
     return idxReg;
 }
 
@@ -5708,9 +5777,8 @@ DECL_HIDDEN_THROW(uint8_t) iemNativeVarAllocRegisterForGuestReg(PIEMRECOMPILERST
         *poff = iemNativeEmitLoadGprImm64(pReNative, *poff, idxReg, pReNative->Core.aVars[idxVar].u.uValue);
     else
     {
-        uint8_t const idxStackSlot = pReNative->Core.aVars[idxVar].idxStackSlot;
-        AssertStmt(idxStackSlot < IEMNATIVE_FRAME_VAR_SLOTS, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_IPE_7));
-        int32_t const offDispBp = iemNativeStackCalcBpDisp(idxStackSlot);
+        uint8_t const idxStackSlot = iemNativeVarGetStackSlot(pReNative, idxVar);
+        int32_t const offDispBp    = iemNativeStackCalcBpDisp(idxStackSlot);
         switch (pReNative->Core.aVars[idxVar].cbVar)
         {
             case sizeof(uint64_t):
@@ -5777,7 +5845,6 @@ DECL_INLINE_THROW(uint8_t) iemNativeVarSetRegister(PIEMRECOMPILERSTATE pReNative
 DECL_FORCE_INLINE(void) iemNativeVarFreeStackSlots(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar)
 {
     uint8_t const idxStackSlot = pReNative->Core.aVars[idxVar].idxStackSlot;
-    Assert(idxStackSlot == UINT8_MAX || idxStackSlot < IEMNATIVE_FRAME_VAR_SLOTS);
     if (idxStackSlot < IEMNATIVE_FRAME_VAR_SLOTS)
     {
         uint8_t const  cbVar      = pReNative->Core.aVars[idxVar].cbVar;
@@ -5789,6 +5856,8 @@ DECL_FORCE_INLINE(void) iemNativeVarFreeStackSlots(PIEMRECOMPILERSTATE pReNative
         pReNative->Core.bmStack &= ~(fAllocMask << idxStackSlot);
         pReNative->Core.aVars[idxVar].idxStackSlot = UINT8_MAX;
     }
+    else
+        Assert(idxStackSlot == UINT8_MAX);
 }
 
 
@@ -6027,11 +6096,10 @@ iemNativeEmitCallCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cAr
                 uint8_t const idxRegOld = pReNative->Core.aVars[idxVar].idxReg;
                 if (idxRegOld < RT_ELEMENTS(pReNative->Core.aHstRegs))
                 {
-                    uint8_t const idxStackSlot = pReNative->Core.aVars[idxVar].idxStackSlot;
+                    uint8_t const idxStackSlot = iemNativeVarGetStackSlot(pReNative, idxVar);
                     Log12(("iemNativeEmitCallCommon: spilling idxVar=%d/idxReg=%d (referred to by %d) onto the stack (slot %#x bp+%d, off=%#x)\n",
                            idxVar, idxRegOld, pReNative->Core.aVars[idxVar].idxReferrerVar,
                            idxStackSlot, iemNativeStackCalcBpDisp(idxStackSlot), off));
-                    AssertStmt(idxStackSlot < IEMNATIVE_FRAME_VAR_SLOTS, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_REG_IPE_7));
                     off = iemNativeEmitStoreGprByBp(pReNative, off, iemNativeStackCalcBpDisp(idxStackSlot), idxRegOld);
 
                     pReNative->Core.aVars[idxVar].idxReg    = UINT8_MAX;
@@ -6127,12 +6195,14 @@ iemNativeEmitCallCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cAr
                 switch (pReNative->Core.aVars[idxVar].enmKind)
                 {
                     case kIemNativeVarKind_Stack:
-                        AssertStmt(pReNative->Core.aVars[idxVar].idxStackSlot != UINT8_MAX,
-                                   IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_IPE_3));
+                    {
+                        uint8_t const idxStackSlot = pReNative->Core.aVars[idxVar].idxStackSlot;
+                        AssertStmt(idxStackSlot != UINT8_MAX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_NOT_INITIALIZED));
                         off = iemNativeEmitLoadGprByBp(pReNative, off, IEMNATIVE_CALL_ARG0_GREG /* is free */,
-                                                       iemNativeVarCalcBpDisp(pReNative, idxVar));
+                                                       iemNativeStackCalcBpDisp(idxStackSlot));
                         off = iemNativeEmitStoreGprByBp(pReNative, off, offBpDisp, IEMNATIVE_CALL_ARG0_GREG);
                         continue;
+                    }
 
                     case kIemNativeVarKind_Immediate:
                         off = iemNativeEmitStoreImm64ByBp(pReNative, off, offBpDisp, pReNative->Core.aVars[idxVar].u.uValue);
@@ -6140,13 +6210,19 @@ iemNativeEmitCallCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cAr
 
                     case kIemNativeVarKind_VarRef:
                     {
-                        uint8_t const idxOtherVar = pReNative->Core.aVars[idxVar].u.idxRefVar;
+                        uint8_t const idxOtherVar    = pReNative->Core.aVars[idxVar].u.idxRefVar;
                         Assert(idxOtherVar < RT_ELEMENTS(pReNative->Core.aVars));
-                        AssertStmt(   pReNative->Core.aVars[idxOtherVar].idxStackSlot != UINT8_MAX
-                                   && pReNative->Core.aVars[idxOtherVar].idxReg       == UINT8_MAX,
-                                   IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_IPE_4));
-                        off = iemNativeEmitLeaGprByBp(pReNative, off, IEMNATIVE_CALL_ARG0_GREG,
-                                                      iemNativeStackCalcBpDisp(pReNative->Core.aVars[idxOtherVar].idxStackSlot));
+                        uint8_t const idxStackSlot   = iemNativeVarGetStackSlot(pReNative, idxOtherVar);
+                        int32_t const offBpDispOther = iemNativeStackCalcBpDisp(idxStackSlot);
+                        uint8_t const idxRegOther    = pReNative->Core.aVars[idxOtherVar].idxReg;
+                        if (idxRegOther < RT_ELEMENTS(pReNative->Core.aHstRegs))
+                        {
+                            off = iemNativeEmitStoreGprByBp(pReNative, off, offBpDispOther, idxRegOther);
+                            pReNative->Core.aVars[idxOtherVar].idxReg = UINT8_MAX;
+                        }
+                        Assert(   pReNative->Core.aVars[idxOtherVar].idxStackSlot != UINT8_MAX
+                               && pReNative->Core.aVars[idxOtherVar].idxReg       == UINT8_MAX);
+                        off = iemNativeEmitLeaGprByBp(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, offBpDispOther);
                         off = iemNativeEmitStoreGprByBp(pReNative, off, offBpDisp, IEMNATIVE_CALL_ARG0_GREG);
                         continue;
                     }
@@ -6201,10 +6277,12 @@ iemNativeEmitCallCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cAr
                     switch (pReNative->Core.aVars[idxVar].enmKind)
                     {
                         case kIemNativeVarKind_Stack:
-                            AssertStmt(pReNative->Core.aVars[idxVar].idxStackSlot != UINT8_MAX,
-                                       IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_IPE_3));
-                            off = iemNativeEmitLoadGprByBp(pReNative, off, idxArgReg, iemNativeVarCalcBpDisp(pReNative, idxVar));
+                        {
+                            uint8_t const idxStackSlot = pReNative->Core.aVars[idxVar].idxStackSlot;
+                            AssertStmt(idxStackSlot != UINT8_MAX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_NOT_INITIALIZED));
+                            off = iemNativeEmitLoadGprByBp(pReNative, off, idxArgReg, iemNativeStackCalcBpDisp(idxStackSlot));
                             continue;
+                        }
 
                         case kIemNativeVarKind_Immediate:
                             off = iemNativeEmitLoadGprImm64(pReNative, off, idxArgReg, pReNative->Core.aVars[idxVar].u.uValue);
@@ -6212,13 +6290,19 @@ iemNativeEmitCallCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t cAr
 
                         case kIemNativeVarKind_VarRef:
                         {
-                            uint8_t const idxOtherVar = pReNative->Core.aVars[idxVar].u.idxRefVar;
+                            uint8_t const idxOtherVar    = pReNative->Core.aVars[idxVar].u.idxRefVar;
                             Assert(idxOtherVar < RT_ELEMENTS(pReNative->Core.aVars));
-                            AssertStmt(   pReNative->Core.aVars[idxOtherVar].idxStackSlot != UINT8_MAX
-                                       && pReNative->Core.aVars[idxOtherVar].idxReg       == UINT8_MAX,
-                                       IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_IPE_4));
-                            off = iemNativeEmitLeaGprByBp(pReNative, off, idxArgReg,
-                                                          iemNativeStackCalcBpDisp(pReNative->Core.aVars[idxOtherVar].idxStackSlot));
+                            uint8_t const idxStackSlot   = iemNativeVarGetStackSlot(pReNative, idxOtherVar);
+                            int32_t const offBpDispOther = iemNativeStackCalcBpDisp(idxStackSlot);
+                            uint8_t const idxRegOther    = pReNative->Core.aVars[idxOtherVar].idxReg;
+                            if (idxRegOther < RT_ELEMENTS(pReNative->Core.aHstRegs))
+                            {
+                                off = iemNativeEmitStoreGprByBp(pReNative, off, offBpDispOther, idxRegOther);
+                                pReNative->Core.aVars[idxOtherVar].idxReg = UINT8_MAX;
+                            }
+                            Assert(   pReNative->Core.aVars[idxOtherVar].idxStackSlot != UINT8_MAX
+                                   && pReNative->Core.aVars[idxOtherVar].idxReg       == UINT8_MAX);
+                            off = iemNativeEmitLeaGprByBp(pReNative, off, idxArgReg, offBpDispOther);
                             continue;
                         }
 
@@ -6781,17 +6865,17 @@ iemNativeEmitStoreGregU16(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t i
     }
     else
     {
-        AssertStmt(pReNative->Core.aVars[idxValueVar].idxStackSlot != UINT8_MAX,
-                   IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_IPE_4));
+        uint8_t const idxStackSlot = pReNative->Core.aVars[idxValueVar].idxStackSlot;
+        AssertStmt(idxStackSlot != UINT8_MAX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_NOT_INITIALIZED));
         if (idxGstTmpReg >= 8)
             pbCodeBuf[off++] = X86_OP_REX_R;
         pbCodeBuf[off++] = 0x8b;
-        off = iemNativeEmitGprByBpDisp(pbCodeBuf, off, idxGstTmpReg, iemNativeVarCalcBpDisp(pReNative, idxValueVar), pReNative);
+        off = iemNativeEmitGprByBpDisp(pbCodeBuf, off, idxGstTmpReg, iemNativeStackCalcBpDisp(idxStackSlot), pReNative);
     }
 
 #elif defined(RT_ARCH_ARM64)
     /* bfi w1, w2, 0, 16 - moves bits 15:0 from idxVarReg to idxGstTmpReg bits 15:0. */
-    uint8_t const    idxVarReg   = iemNativeVarAllocRegister(pReNative, idxValueVar, &off);
+    uint8_t const    idxVarReg   = iemNativeVarAllocRegister(pReNative, idxValueVar, &off, true /*fInitialized*/);
     uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
     pu32CodeBuf[off++] = Armv8A64MkInstrBfi(idxGstTmpReg, idxVarReg, 0, 16);
 
@@ -7515,10 +7599,11 @@ iemNativeEmitCalcRmEffAddrThreadedAddr32(PIEMRECOMPILERSTATE pReNative, uint32_t
         else
         {
             off = iemNativeEmitLoadGprImm64(pReNative, off, idxRegRet, u32EffAddr);
-            uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
-            pu32CodeBuf[off++] = Armv8A64MkInstrMovZ(idxRegRet, u32EffAddr);
             if (idxRegBase != UINT8_MAX)
+            {
+                uint32_t * const pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
                 pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(false /*fSub*/, idxRegRet, idxRegRet, idxRegBase, false /*f64Bit*/);
+            }
         }
         if (idxRegIndex != UINT8_MAX)
         {
@@ -7714,8 +7799,10 @@ iemNativeEmitMemFetchDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uin
         }
         else
         {
+            uint8_t const idxStackSlot = pReNative->Core.aVars[idxVarGCPtrMem].idxStackSlot;
+            AssertStmt(idxStackSlot != UINT8_MAX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_NOT_INITIALIZED));
             AssertFailed(); /** @todo This was probably caused by iemNativeRegMoveAndFreeAndFlushAtCall above. Improve... */
-            off = iemNativeEmitLoadGprByBp(pReNative, off, idxRegArgGCPtrMem, iemNativeVarCalcBpDisp(pReNative, idxVarGCPtrMem));
+            off = iemNativeEmitLoadGprByBp(pReNative, off, idxRegArgGCPtrMem, iemNativeStackCalcBpDisp(idxStackSlot));
             if (offDisp)
                 off = iemNativeEmitAddGprImm(pReNative, off, idxRegArgGCPtrMem, offDisp);
         }

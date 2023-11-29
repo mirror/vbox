@@ -459,7 +459,9 @@ typedef struct IEMNATIVEVAR
     /** The variable size in bytes. */
     uint8_t             cbVar;
     /** The first stack slot (uint64_t), except for immediate and references
-     *  where it usually is UINT8_MAX. */
+     *  where it usually is UINT8_MAX. This is allocated lazily, so if a variable
+     *  has a stack slot it has been initialized and has a value.  Unused variables
+     *  has neither a stack slot nor a host register assignment. */
     uint8_t             idxStackSlot;
     /** The host register allocated for the variable, UINT8_MAX if not. */
     uint8_t             idxReg;
@@ -889,15 +891,6 @@ iemNativeStackCalcBpDisp(uint8_t idxStackSlot)
 {
     Assert(idxStackSlot < IEMNATIVE_FRAME_VAR_SLOTS);
     return idxStackSlot * sizeof(uint64_t) + IEMNATIVE_FP_OFF_STACK_VARS;
-}
-
-/**
- * Calculates the stack address of a variable as a [r]BP displacement value.
- */
-DECL_FORCE_INLINE(int32_t)
-iemNativeVarCalcBpDisp(PIEMRECOMPILERSTATE pReNative, uint8_t idxVar)
-{
-    return iemNativeStackCalcBpDisp(pReNative->Core.aVars[idxVar].idxStackSlot);
 }
 
 /** @} */

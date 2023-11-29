@@ -964,12 +964,12 @@ iemNativeEmitLeaGprByBp(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGp
     if ((uint32_t)offDisp < (unsigned)_4K)
     {
         uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(false /*fSub*/, iGprDst, ARMV8_A64_REG_SP, (uint32_t)offDisp);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(false /*fSub*/, iGprDst, ARMV8_A64_REG_BP, (uint32_t)offDisp);
     }
     else if ((uint32_t)-offDisp < (unsigned)_4K)
     {
         uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
-        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, iGprDst, ARMV8_A64_REG_SP, (uint32_t)-offDisp);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, iGprDst, ARMV8_A64_REG_BP, (uint32_t)-offDisp);
     }
     else
     {
@@ -977,9 +977,9 @@ iemNativeEmitLeaGprByBp(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t iGp
         off = iemNativeEmitLoadGprImm64(pReNative, off, iGprDst, offDisp >= 0 ? (uint32_t)offDisp : (uint32_t)-offDisp);
         uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
         if (offDisp >= 0)
-            pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(false /*fSub*/, iGprDst, ARMV8_A64_REG_SP, iGprDst);
+            pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(false /*fSub*/, iGprDst, ARMV8_A64_REG_BP, iGprDst);
         else
-            pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(true /*fSub*/, iGprDst, ARMV8_A64_REG_SP, iGprDst);
+            pu32CodeBuf[off++] = Armv8A64MkInstrAddSubReg(true /*fSub*/, iGprDst, ARMV8_A64_REG_BP, iGprDst);
     }
 
 #else
@@ -1022,6 +1022,14 @@ iemNativeEmitStoreGprByBp(PIEMRECOMPILERSTATE pReNative, uint32_t off, int32_t o
         /* stur w/ signed imm9 (unscaled) */
         uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 1);
         pu32CodeBuf[off++] = Armv8A64MkInstrSturLdur(kArmv8A64InstrLdStType_St_Dword, iGprSrc, ARMV8_A64_REG_BP, offDisp);
+    }
+    else if ((uint32_t)-offDisp < (unsigned)_4K)
+    {
+        /* Use temporary indexing register w/ sub uimm12. */
+        uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 2);
+        pu32CodeBuf[off++] = Armv8A64MkInstrAddSubUImm12(true /*fSub*/, IEMNATIVE_REG_FIXED_TMP0,
+                                                         ARMV8_A64_REG_BP, (uint32_t)-offDisp);
+        pu32CodeBuf[off++] = Armv8A64MkInstrStLdRUOff(kArmv8A64InstrLdStType_St_Dword, iGprSrc, IEMNATIVE_REG_FIXED_TMP0, 0);
     }
     else
     {

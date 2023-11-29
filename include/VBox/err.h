@@ -2584,28 +2584,30 @@
 #define VERR_IEM_VAR_OUT_OF_STACK_SLOTS             (-5362)
 /** Recompiler: Unexpected kind of variable. */
 #define VERR_IEM_VAR_UNEXPECTED_KIND                (-5363)
+/** Recompiler: Uninitialized variable. */
+#define VERR_IEM_VAR_NOT_INITIALIZED                (-5364)
 /** Recompiler: Variable management internal processing error \#1. */
-#define VERR_IEM_VAR_IPE_1                          (-5364)
+#define VERR_IEM_VAR_IPE_1                          (-5365)
 /** Recompiler: Variable management internal processing error \#2. */
-#define VERR_IEM_VAR_IPE_2                          (-5365)
+#define VERR_IEM_VAR_IPE_2                          (-5366)
 /** Recompiler: Variable management internal processing error \#3. */
-#define VERR_IEM_VAR_IPE_3                          (-5366)
+#define VERR_IEM_VAR_IPE_3                          (-5367)
 /** Recompiler: Variable management internal processing error \#4. */
-#define VERR_IEM_VAR_IPE_4                          (-5367)
+#define VERR_IEM_VAR_IPE_4                          (-5368)
 /** Recompiler: Variable management internal processing error \#5. */
-#define VERR_IEM_VAR_IPE_5                          (-5368)
+#define VERR_IEM_VAR_IPE_5                          (-5369)
 /** Recompiler: Variable management internal processing error \#6. */
-#define VERR_IEM_VAR_IPE_6                          (-5369)
+#define VERR_IEM_VAR_IPE_6                          (-5370)
 /** Recompiler: Variable management internal processing error \#7. */
-#define VERR_IEM_VAR_IPE_7                          (-5370)
+#define VERR_IEM_VAR_IPE_7                          (-5371)
 /** Recompiler: Variable management internal processing error \#8. */
-#define VERR_IEM_VAR_IPE_8                          (-5371)
+#define VERR_IEM_VAR_IPE_8                          (-5372)
 /** Recompiler: Variable management internal processing error \#9. */
-#define VERR_IEM_VAR_IPE_9                          (-5372)
+#define VERR_IEM_VAR_IPE_9                          (-5373)
 /** Recompiler: Variable management internal processing error \#10. */
-#define VERR_IEM_VAR_IPE_10                         (-5373)
+#define VERR_IEM_VAR_IPE_10                         (-5374)
 /** Recompiler: Variable management internal processing error \#11. */
-#define VERR_IEM_VAR_IPE_11                         (-5374)
+#define VERR_IEM_VAR_IPE_11                         (-5375)
 
 /** Recompiler: Unimplemented case. */
 #define VERR_IEM_EMIT_CASE_NOT_IMPLEMENTED_1        (-5380)
