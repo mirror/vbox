@@ -2498,7 +2498,12 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu)
     /*
      * Init the execution environment.
      */
-    iemInitExec(pVCpu, 0 /*fExecOpts*/);
+#ifdef RT_ARCH_ARM64 /** @todo ARM64: fix unaligned locked instructions properly. @bugreg{10547} */
+    if (pVM->cCpus == 1)
+        iemInitExec(pVCpu, IEM_F_X86_DISREGARD_LOCK /*fExecOpts*/);
+    else
+#endif
+        iemInitExec(pVCpu, 0 /*fExecOpts*/);
     if (RT_LIKELY(pVCpu->iem.s.msRecompilerPollNow != 0))
     { }
     else
