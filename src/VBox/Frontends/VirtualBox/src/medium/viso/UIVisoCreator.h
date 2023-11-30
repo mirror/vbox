@@ -108,7 +108,7 @@ protected:
 
 private slots:
 
-    void sltAddObjectsToViso(QStringList pathList);
+    void sltAddObjectsToViso();
     void sltSettingsActionToggled(bool fChecked);
     void sltHostBrowserTableSelectionChanged(bool fHasSelection);
     void sltContentBrowserTableSelectionChanged(bool fIsSelectionEmpty);
