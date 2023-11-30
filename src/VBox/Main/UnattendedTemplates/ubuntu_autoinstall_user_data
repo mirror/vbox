@@ -21,17 +21,48 @@ autoinstall:
     swap:
       size: 0
 
+@@VBOX_COND_HAS_PROXY@@
+  proxy: @@VBOX_INSERT_PROXY@@
+@@VBOX_COND_END@@
+
+@@VBOX_COND_IS_INSTALLING_ADDITIONS@@
+  # Stuff we need to build Guest Additions modules.
+  packages:
+    - build-essential
+    - linux-headers-generic
+    - perl
+    - make
+@@VBOX_COND_END@@
+
+  # Custom Commands.
+  late-commands:
+    - cp /cdrom/vboxpostinstall.sh /target/root/vboxpostinstall.sh
+    - chmod +x /target/root/vboxpostinstall.sh
+    - curtin in-target --target=/target -- /bin/bash /root/vboxpostinstall.sh --direct
+
+  # Additional cloud-init configuration affecting the target system can be supplied
+  # underneath a user-data section inside of autoinstall.
   user-data:
+
+    users:
+      - name: root
+        primary_group: root
+        groups: sudo
+        lock-passwd: false
+        passwd: '@@VBOX_INSERT_USER_PASSWORD_SHACRYPT512@@'
+        uid: 0
+
 @@VBOX_COND_IS_RTC_USING_UTC@@
     timezone: Etc/UTC
 @@VBOX_COND_END@@
 @@VBOX_COND_IS_NOT_RTC_USING_UTC@@
     timezone: @@VBOX_INSERT_TIME_ZONE_UX@@
 @@VBOX_COND_END@@
-  users:
-    - name: root
-      primary_group: root
-      groups: sudo
-      lock-passwd: false
-      passwd: '@@VBOX_INSERT_USER_PASSWORD_SHACRYPT512@@'
-      uid: 0
+
+    ntp:
+@@VBOX_COND_IS_INSTALLING_ADDITIONS@@
+        enabled: false
+@@VBOX_COND_END@@
+@@VBOX_COND_IS_NOT_INSTALLING_ADDITIONS@@
+        enabled: true
+@@VBOX_COND_END@@
