@@ -1429,7 +1429,15 @@ class ThreadedFunction(object):
                                         'IEM_MC_DEFER_TO_CIMPL_3_RET': True, }):
             asVariations = (ThreadedFunctionVariation.ksVariation_Default,);
 
-        elif iai.McStmt.findStmtByNames(aoStmts, {'IEM_MC_CALC_RM_EFF_ADDR' : True,}):
+        elif iai.McStmt.findStmtByNames(aoStmts, { 'IEM_MC_CALC_RM_EFF_ADDR' : True,
+                                                   'IEM_MC_FETCH_MEM_U8'  : True,  # mov_AL_Ob ++
+                                                   'IEM_MC_FETCH_MEM_U16' : True,  # mov_rAX_Ov ++
+                                                   'IEM_MC_FETCH_MEM_U32' : True,
+                                                   'IEM_MC_FETCH_MEM_U64' : True,
+                                                   'IEM_MC_STORE_MEM_U8'  : True,  # mov_Ob_AL ++
+                                                   'IEM_MC_STORE_MEM_U16' : True,  # mov_Ov_rAX ++
+                                                   'IEM_MC_STORE_MEM_U32' : True,
+                                                   'IEM_MC_STORE_MEM_U64' : True, }):
             if 'IEM_MC_F_64BIT' in self.oMcBlock.dsMcFlags:
                 asVariations = ThreadedFunctionVariation.kasVariationsWithAddressOnly64;
             elif 'IEM_MC_F_NOT_64BIT' in self.oMcBlock.dsMcFlags and 'IEM_MC_F_NOT_286_OR_OLDER' in self.oMcBlock.dsMcFlags:

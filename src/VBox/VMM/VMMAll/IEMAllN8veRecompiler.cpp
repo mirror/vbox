@@ -125,14 +125,6 @@ extern "C" void *__deregister_frame_info(void *pvBegin);           /* (returns p
 #endif
 
 
-
-/*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
-/** Always count instructions for now. */
-#define IEMNATIVE_WITH_INSTRUCTION_COUNTING
-
-
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
@@ -1585,7 +1577,11 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecStatusCodeFiddling,(PVMCPUCC pVCpu,
  */
 IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseGp0,(PVMCPUCC pVCpu, uint8_t idxInstr))
 {
-    pVCpu->iem.s.cInstructions += idxInstr;
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+    pVCpu->iem.s.idxTbCurInstr = idxInstr;
+#else
+    RT_NOREF(idxInstr);
+#endif
     iemRaiseGeneralProtectionFault0Jmp(pVCpu);
 #ifndef _MSC_VER
     return VINF_IEM_RAISED_XCPT; /* not reached */
@@ -1598,9 +1594,8 @@ IEM_DECL_NATIVE_HLP_DEF(int, iemNativeHlpExecRaiseGp0,(PVMCPUCC pVCpu, uint8_t i
 /**
  * Used by TB code to load unsigned 8-bit data w/ segmentation.
  */
-IEM_DECL_NATIVE_HLP_DEF(uint8_t, iemNativeHlpMemFetchDataU8,(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, uint8_t idxInstr))
+IEM_DECL_NATIVE_HLP_DEF(uint8_t, iemNativeHlpMemFetchDataU8,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg))
 {
-    RT_NOREF(idxInstr); /** @todo idxInstr */
     return iemMemFetchDataU8Jmp(pVCpu, iSegReg, GCPtrMem); /** @todo use iemMemFetchDataU8SafeJmp */
 }
 
@@ -1608,9 +1603,8 @@ IEM_DECL_NATIVE_HLP_DEF(uint8_t, iemNativeHlpMemFetchDataU8,(PVMCPUCC pVCpu, uin
 /**
  * Used by TB code to load unsigned 16-bit data w/ segmentation.
  */
-IEM_DECL_NATIVE_HLP_DEF(uint16_t, iemNativeHlpMemFetchDataU16,(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, uint8_t idxInstr))
+IEM_DECL_NATIVE_HLP_DEF(uint16_t, iemNativeHlpMemFetchDataU16,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg))
 {
-    RT_NOREF(idxInstr); /** @todo idxInstr */
     return iemMemFetchDataU16Jmp(pVCpu, iSegReg, GCPtrMem); /** @todo use iemMemFetchDataU8SafeJmp */
 }
 
@@ -1618,9 +1612,8 @@ IEM_DECL_NATIVE_HLP_DEF(uint16_t, iemNativeHlpMemFetchDataU16,(PVMCPUCC pVCpu, u
 /**
  * Used by TB code to load unsigned 32-bit data w/ segmentation.
  */
-IEM_DECL_NATIVE_HLP_DEF(uint32_t, iemNativeHlpMemFetchDataU32,(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, uint8_t idxInstr))
+IEM_DECL_NATIVE_HLP_DEF(uint32_t, iemNativeHlpMemFetchDataU32,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg))
 {
-    RT_NOREF(idxInstr); /** @todo idxInstr */
     return iemMemFetchDataU32Jmp(pVCpu, iSegReg, GCPtrMem); /** @todo use iemMemFetchDataU8SafeJmp */
 }
 
@@ -1628,10 +1621,45 @@ IEM_DECL_NATIVE_HLP_DEF(uint32_t, iemNativeHlpMemFetchDataU32,(PVMCPUCC pVCpu, u
 /**
  * Used by TB code to load unsigned 64-bit data w/ segmentation.
  */
-IEM_DECL_NATIVE_HLP_DEF(uint64_t, iemNativeHlpMemFetchDataU64,(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, uint8_t idxInstr))
+IEM_DECL_NATIVE_HLP_DEF(uint64_t, iemNativeHlpMemFetchDataU64,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg))
 {
-    RT_NOREF(idxInstr); /** @todo idxInstr */
     return iemMemFetchDataU64Jmp(pVCpu, iSegReg, GCPtrMem); /** @todo use iemMemFetchDataU8SafeJmp */
+}
+
+
+/**
+ * Used by TB code to store unsigned 8-bit data w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemStoreDataU8,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg, uint8_t u8Value))
+{
+    iemMemStoreDataU8Jmp(pVCpu, iSegReg, GCPtrMem, u8Value); /** @todo use iemMemStoreDataU8SafeJmp */
+}
+
+
+/**
+ * Used by TB code to store unsigned 16-bit data w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemStoreDataU16,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg, uint16_t u16Value))
+{
+    iemMemStoreDataU16Jmp(pVCpu, iSegReg, GCPtrMem, u16Value); /** @todo use iemMemStoreDataU16SafeJmp */
+}
+
+
+/**
+ * Used by TB code to store unsigned 32-bit data w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemStoreDataU32,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg, uint32_t u32Value))
+{
+    iemMemStoreDataU32Jmp(pVCpu, iSegReg, GCPtrMem, u32Value); /** @todo use iemMemStoreDataU32SafeJmp */
+}
+
+
+/**
+ * Used by TB code to store unsigned 64-bit data w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemStoreDataU64,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t iSegReg, uint64_t u64Value))
+{
+    iemMemStoreDataU64Jmp(pVCpu, iSegReg, GCPtrMem, u64Value); /** @todo use iemMemStoreDataU64SafeJmp */
 }
 
 
@@ -1640,9 +1668,8 @@ IEM_DECL_NATIVE_HLP_DEF(uint64_t, iemNativeHlpMemFetchDataU64,(PVMCPUCC pVCpu, u
 /**
  * Used by TB code to load unsigned 8-bit data w/ segmentation.
  */
-IEM_DECL_NATIVE_HLP_DEF(uint8_t, iemNativeHlpMemFlatFetchDataU8,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t idxInstr))
+IEM_DECL_NATIVE_HLP_DEF(uint8_t, iemNativeHlpMemFlatFetchDataU8,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem))
 {
-    RT_NOREF(idxInstr); /** @todo idxInstr */
     return iemMemFlatFetchDataU8Jmp(pVCpu, GCPtrMem); /** @todo use iemMemFetchDataU8SafeJmp */
 }
 
@@ -1650,9 +1677,8 @@ IEM_DECL_NATIVE_HLP_DEF(uint8_t, iemNativeHlpMemFlatFetchDataU8,(PVMCPUCC pVCpu,
 /**
  * Used by TB code to load unsigned 16-bit data w/ segmentation.
  */
-IEM_DECL_NATIVE_HLP_DEF(uint16_t, iemNativeHlpMemFlatFetchDataU16,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t idxInstr))
+IEM_DECL_NATIVE_HLP_DEF(uint16_t, iemNativeHlpMemFlatFetchDataU16,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem))
 {
-    RT_NOREF(idxInstr); /** @todo idxInstr */
     return iemMemFlatFetchDataU16Jmp(pVCpu, GCPtrMem); /** @todo use iemMemFetchDataU8SafeJmp */
 }
 
@@ -1660,9 +1686,8 @@ IEM_DECL_NATIVE_HLP_DEF(uint16_t, iemNativeHlpMemFlatFetchDataU16,(PVMCPUCC pVCp
 /**
  * Used by TB code to load unsigned 32-bit data w/ segmentation.
  */
-IEM_DECL_NATIVE_HLP_DEF(uint32_t, iemNativeHlpMemFlatFetchDataU32,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t idxInstr))
+IEM_DECL_NATIVE_HLP_DEF(uint32_t, iemNativeHlpMemFlatFetchDataU32,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem))
 {
-    RT_NOREF(idxInstr); /** @todo idxInstr */
     return iemMemFlatFetchDataU32Jmp(pVCpu, GCPtrMem); /** @todo use iemMemFetchDataU8SafeJmp */
 }
 
@@ -1670,11 +1695,47 @@ IEM_DECL_NATIVE_HLP_DEF(uint32_t, iemNativeHlpMemFlatFetchDataU32,(PVMCPUCC pVCp
 /**
  * Used by TB code to load unsigned 64-bit data w/ segmentation.
  */
-IEM_DECL_NATIVE_HLP_DEF(uint64_t, iemNativeHlpMemFlatFetchDataU64,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t idxInstr))
+IEM_DECL_NATIVE_HLP_DEF(uint64_t, iemNativeHlpMemFlatFetchDataU64,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem))
 {
-    RT_NOREF(idxInstr); /** @todo idxInstr */
     return iemMemFlatFetchDataU64Jmp(pVCpu, GCPtrMem); /** @todo use iemMemFetchDataU8SafeJmp */
 }
+
+
+/**
+ * Used by TB code to store unsigned 8-bit data w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatStoreDataU8,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint8_t u8Value))
+{
+    iemMemFlatStoreDataU8Jmp(pVCpu, GCPtrMem, u8Value); /** @todo use iemMemStoreDataU8SafeJmp */
+}
+
+
+/**
+ * Used by TB code to store unsigned 16-bit data w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatStoreDataU16,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint16_t u16Value))
+{
+    iemMemFlatStoreDataU16Jmp(pVCpu, GCPtrMem, u16Value); /** @todo use iemMemStoreDataU16SafeJmp */
+}
+
+
+/**
+ * Used by TB code to store unsigned 32-bit data w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatStoreDataU32,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint32_t u32Value))
+{
+    iemMemFlatStoreDataU32Jmp(pVCpu, GCPtrMem, u32Value); /** @todo use iemMemStoreDataU32SafeJmp */
+}
+
+
+/**
+ * Used by TB code to store unsigned 64-bit data w/ segmentation.
+ */
+IEM_DECL_NATIVE_HLP_DEF(void, iemNativeHlpMemFlatStoreDataU64,(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint64_t u64Value))
+{
+    iemMemFlatStoreDataU64Jmp(pVCpu, GCPtrMem, u64Value); /** @todo use iemMemStoreDataU64SafeJmp */
+}
+
 
 
 
@@ -3657,7 +3718,9 @@ iemNativeEmitCheckCallRetAndPassUp(PIEMRECOMPILERSTATE pReNative, uint32_t off, 
     /*
      * ARM64: w0 = call status code.
      */
-    off = iemNativeEmitLoadGprImm64(pReNative, off, ARMV8_A64_REG_X2, idxInstr); /** @todo 32-bit imm load? Fixed counter register? */
+# ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+    off = iemNativeEmitLoadGprImm64(pReNative, off, ARMV8_A64_REG_X2, idxInstr);
+# endif
     off = iemNativeEmitLoadGprFromVCpuU32(pReNative, off, ARMV8_A64_REG_X3, RT_UOFFSETOF(VMCPUCC, iem.s.rcPassUp));
 
     uint32_t *pu32CodeBuf = iemNativeInstrBufEnsure(pReNative, off, 3);
@@ -3910,6 +3973,13 @@ static uint32_t iemNativeEmitThreadedCall(PIEMRECOMPILERSTATE pReNative, uint32_
 {
     iemNativeRegFlushGuestShadows(pReNative, UINT64_MAX); /** @todo optimize this */
     off = iemNativeRegMoveAndFreeAndFlushAtCall(pReNative, off, 4);
+
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+    /* The threaded function may throw / long jmp, so set current instruction
+       number if we're counting. */
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, pCallEntry->idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+#endif
+
     uint8_t const cParams = g_acIemThreadedFunctionUsedArgs[pCallEntry->enmFunction];
 
 #ifdef RT_ARCH_AMD64
@@ -7637,59 +7707,63 @@ iemNativeEmitCalcRmEffAddrThreadedAddr32(PIEMRECOMPILERSTATE pReNative, uint32_t
 
 
 /*********************************************************************************************************************************
-*   Memory fetches (IEM_MEM_FETCH_XXX).                                                                                          *
+*   Memory fetches and stores common                                                                                             *
 *********************************************************************************************************************************/
 
-
-
-
-#define IEM_MC_FETCH_MEM_U8(a_u8Dst, a_iSeg, a_GCPtrMem) \
-    off = iemNativeEmitMemFetchDataCommon(pReNative, off, pCallEntry->idxInstr, a_u8Dst, a_iSeg, a_GCPtrMem, sizeof(uint8_t))
-
-#define IEM_MC_FETCH_MEM_U16(a_u16Dst, a_iSeg, a_GCPtrMem) \
-    off = iemNativeEmitMemFetchDataCommon(pReNative, off, pCallEntry->idxInstr, a_u16Dst, a_iSeg, a_GCPtrMem, sizeof(uint16_t))
-
-#define IEM_MC_FETCH_MEM_U32(a_u32Dst, a_iSeg, a_GCPtrMem) \
-    off = iemNativeEmitMemFetchDataCommon(pReNative, off, pCallEntry->idxInstr, a_u32Dst, a_iSeg, a_GCPtrMem, sizeof(uint32_t))
-
-#define IEM_MC_FETCH_MEM_U64(a_u64Dst, a_iSeg, a_GCPtrMem) \
-    off = iemNativeEmitMemFetchDataCommon(pReNative, off, pCallEntry->idxInstr, a_u64Dst, a_iSeg, a_GCPtrMem, sizeof(uint64_t))
-
-
-#define IEM_MC_FETCH_MEM_FLAT_U8(a_u8Dst, a_GCPtrMem) \
-    off = iemNativeEmitMemFetchDataCommon(pReNative, off, pCallEntry->idxInstr, a_u8Dst, UINT8_MAX, a_GCPtrMem, sizeof(uint8_t))
-
-#define IEM_MC_FETCH_MEM_FLAT_U16(a_u16Dst, a_GCPtrMem) \
-    off = iemNativeEmitMemFetchDataCommon(pReNative, off, pCallEntry->idxInstr, a_u16Dst, UINT8_MAX, a_GCPtrMem, sizeof(uint16_t))
-
-#define IEM_MC_FETCH_MEM_FLAT_U32(a_u32Dst, a_GCPtrMem) \
-    off = iemNativeEmitMemFetchDataCommon(pReNative, off, pCallEntry->idxInstr, a_u32Dst, UINT8_MAX, a_GCPtrMem, sizeof(uint32_t))
-
-#define IEM_MC_FETCH_MEM_FLAT_U64(a_u64Dst, a_GCPtrMem) \
-    off = iemNativeEmitMemFetchDataCommon(pReNative, off, pCallEntry->idxInstr, a_u64Dst, UINT8_MAX, a_GCPtrMem, sizeof(uint64_t))
-
-
-#define IEM_MC_FETCH_MEM_U16_DISP(a_u16Dst, a_iSeg, a_GCPtrMem, a_offDisp) \
-    off = iemNativeEmitMemFetchDataCommon(pReNative, off, pCallEntry->idxInstr, a_u16Dst, a_iSeg, a_GCPtrMem, sizeof(uint16_t), a_offDisp)
-
-#define IEM_MC_FETCH_MEM_U32_DISP(a_u32Dst, a_iSeg, a_GCPtrMem, a_offDisp) \
-    off = iemNativeEmitMemFetchDataCommon(pReNative, off, pCallEntry->idxInstr, a_u32Dst, a_iSeg, a_GCPtrMem, sizeof(uint32_t), a_offDisp)
-
-
-/** Emits code for IEM_MC_FETCH_MEM_U8/16/32/64 and
- *  IEM_MC_FETCH_MEM_FLAT_U8/16/32/64 (iSegReg = UINT8_MAX). */
+/** Emits code for IEM_MC_FETCH_MEM_U8/16/32/64 and IEM_MC_STORE_MEM_U8/16/32/64,
+ * and IEM_MC_FETCH_MEM_FLAT_U8/16/32/64 and IEM_MC_STORE_MEM_FLAT_U8/16/32/64
+ * (with iSegReg = UINT8_MAX). */
 DECL_INLINE_THROW(uint32_t)
-iemNativeEmitMemFetchDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uint8_t idxInstr,
-                                uint8_t idxVarDst, uint8_t iSegReg, uint8_t idxVarGCPtrMem, uint8_t cbMem, uint8_t offDisp = 0)
+iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off,  uint8_t idxVarValue, uint8_t iSegReg,
+                                     uint8_t idxVarGCPtrMem, uint8_t cbMem, bool fFetch, uintptr_t pfnFunction, uint8_t idxInstr,
+                                     uint8_t offDisp = 0)
 {
-    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVarDst);
+    /*
+     * Assert sanity.
+     */
+    IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVarValue);
+    Assert(   fFetch
+           || pReNative->Core.aVars[idxVarValue].enmKind == kIemNativeVarKind_Immediate
+           || pReNative->Core.aVars[idxVarValue].enmKind == kIemNativeVarKind_Stack);
     IEMNATIVE_ASSERT_VAR_IDX(pReNative, idxVarGCPtrMem);
     AssertStmt(   pReNative->Core.aVars[idxVarGCPtrMem].enmKind == kIemNativeVarKind_Immediate
                || pReNative->Core.aVars[idxVarGCPtrMem].enmKind == kIemNativeVarKind_Stack,
                IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_UNEXPECTED_KIND));
     Assert(iSegReg < 6 || iSegReg == UINT8_MAX);
     Assert(cbMem == 1 || cbMem == 2 || cbMem == 4 || cbMem == 8);
-    RT_NOREF(idxInstr);
+    AssertCompile(IEMNATIVE_CALL_ARG_GREG_COUNT >= 4);
+#ifdef VBOX_STRICT
+    if (   (   (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_64BIT
+            || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_PROT_FLAT
+            || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_FLAT)
+        && (   iSegReg == UINT8_MAX
+            || iSegReg == X86_SREG_DS
+            || iSegReg == X86_SREG_ES
+            || iSegReg == X86_SREG_SS
+            || (iSegReg == X86_SREG_CS && (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_64BIT) ))
+    {
+        Assert(iSegReg == UINT8_MAX);
+        switch (cbMem)
+        {
+            case 1: Assert(pfnFunction == (fFetch ? (uintptr_t)iemNativeHlpMemFlatFetchDataU8  : (uintptr_t)iemNativeHlpMemFlatStoreDataU8 )); break;
+            case 2: Assert(pfnFunction == (fFetch ? (uintptr_t)iemNativeHlpMemFlatFetchDataU16 : (uintptr_t)iemNativeHlpMemFlatStoreDataU16)); break;
+            case 4: Assert(pfnFunction == (fFetch ? (uintptr_t)iemNativeHlpMemFlatFetchDataU32 : (uintptr_t)iemNativeHlpMemFlatStoreDataU32)); break;
+            case 8: Assert(pfnFunction == (fFetch ? (uintptr_t)iemNativeHlpMemFlatFetchDataU64 : (uintptr_t)iemNativeHlpMemFlatStoreDataU64)); break;
+        }
+    }
+    else
+    {
+        Assert(iSegReg < 6);
+        switch (cbMem)
+        {
+            case 1: Assert(pfnFunction == (fFetch ? (uintptr_t)iemNativeHlpMemFetchDataU8  : (uintptr_t)iemNativeHlpMemStoreDataU8 ));  break;
+            case 2: Assert(pfnFunction == (fFetch ? (uintptr_t)iemNativeHlpMemFetchDataU16 : (uintptr_t)iemNativeHlpMemStoreDataU16)); break;
+            case 4: Assert(pfnFunction == (fFetch ? (uintptr_t)iemNativeHlpMemFetchDataU32 : (uintptr_t)iemNativeHlpMemStoreDataU32)); break;
+            case 8: Assert(pfnFunction == (fFetch ? (uintptr_t)iemNativeHlpMemFetchDataU64 : (uintptr_t)iemNativeHlpMemStoreDataU64)); break;
+        }
+    }
+#endif
+
 
 #ifdef VBOX_STRICT
     /*
@@ -7719,12 +7793,13 @@ iemNativeEmitMemFetchDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uin
      * Define labels and allocate the result register (trying for the return
      * register if we can).
      */
-    uint16_t const uTlbSeqNo       = pReNative->uTlbSeqNo++;
-    uint32_t const idxLabelTlbMiss = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbMiss, UINT32_MAX, uTlbSeqNo);
-    uint32_t const idxLabelTlbDone = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbDone, UINT32_MAX, uTlbSeqNo);
-    uint8_t  const idxRegDst       = !(pReNative->Core.bmHstRegs & RT_BIT_32(IEMNATIVE_CALL_RET_GREG))
-                                   ? iemNativeVarSetRegister(pReNative, idxVarDst, IEMNATIVE_CALL_RET_GREG, off)
-                                   : iemNativeVarAllocRegister(pReNative, idxVarDst, &off);
+    uint16_t const uTlbSeqNo        = pReNative->uTlbSeqNo++;
+    uint32_t const idxLabelTlbMiss  = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbMiss, UINT32_MAX, uTlbSeqNo);
+    uint32_t const idxLabelTlbDone  = iemNativeLabelCreate(pReNative, kIemNativeLabelType_TlbDone, UINT32_MAX, uTlbSeqNo);
+    uint8_t  const idxRegValueFetch = !fFetch ? UINT8_MAX /* special case value storing below */
+                                    : !(pReNative->Core.bmHstRegs & RT_BIT_32(IEMNATIVE_CALL_RET_GREG))
+                                    ? iemNativeVarSetRegister(pReNative, idxVarValue, IEMNATIVE_CALL_RET_GREG, off)
+                                    : iemNativeVarAllocRegister(pReNative, idxVarValue, &off);
 
     /*
      * First we try to go via the TLB.
@@ -7738,53 +7813,49 @@ iemNativeEmitMemFetchDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uin
      */
     iemNativeLabelDefine(pReNative, idxLabelTlbMiss, off);
 
-    uint8_t   idxRegArgGCPtrMem;
-    uint8_t   idxRegArgInstrIdx;
-    uintptr_t pfnFunction;
-    if (   (   (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_64BIT
-            || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_PROT_FLAT
-            || (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_32BIT_FLAT)
-        && (   iSegReg == UINT8_MAX
-            || iSegReg == X86_SREG_DS
-            || iSegReg == X86_SREG_ES
-            || iSegReg == X86_SREG_SS
-            || (iSegReg == X86_SREG_CS && (pReNative->fExec & IEM_F_MODE_MASK) == IEM_F_MODE_X86_64BIT) ))
-    {
-        AssertCompile(IEMNATIVE_CALL_ARG_GREG_COUNT >= 4);
-        switch (cbMem)
-        {
-            case 1: pfnFunction = (uintptr_t)iemNativeHlpMemFlatFetchDataU8;  break;
-            case 2: pfnFunction = (uintptr_t)iemNativeHlpMemFlatFetchDataU16; break;
-            case 4: pfnFunction = (uintptr_t)iemNativeHlpMemFlatFetchDataU32; break;
-            case 8: pfnFunction = (uintptr_t)iemNativeHlpMemFlatFetchDataU64; break;
-            default:
-                AssertFailedStmt(IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_EMIT_BAD_MEM_SIZE));
-        }
-        idxRegArgInstrIdx = IEMNATIVE_CALL_ARG2_GREG;
-        idxRegArgGCPtrMem = IEMNATIVE_CALL_ARG1_GREG;
-    }
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+    off = iemNativeEmitStoreImmToVCpuU8(pReNative, off, idxInstr, RT_UOFFSETOF(VMCPUCC, iem.s.idxTbCurInstr));
+#else
+    RT_NOREF(idxInstr);
+#endif
+
+    uint8_t idxRegArgValue;
+    if (iSegReg == UINT8_MAX)
+        idxRegArgValue = IEMNATIVE_CALL_ARG2_GREG;
     else
     {
+        /* IEMNATIVE_CALL_ARG2_GREG = iSegReg */
         AssertStmt(iSegReg < 6, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_EMIT_BAD_SEG_REG_NO));
-        AssertCompile(IEMNATIVE_CALL_ARG_GREG_COUNT >= 3);
-        switch (cbMem)
-        {
-            case 1: pfnFunction = (uintptr_t)iemNativeHlpMemFetchDataU8;  break;
-            case 2: pfnFunction = (uintptr_t)iemNativeHlpMemFetchDataU16; break;
-            case 4: pfnFunction = (uintptr_t)iemNativeHlpMemFetchDataU32; break;
-            case 8: pfnFunction = (uintptr_t)iemNativeHlpMemFetchDataU64; break;
-            default:
-                AssertFailedStmt(IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_EMIT_BAD_MEM_SIZE));
-        }
-        off = iemNativeEmitLoadGpr8Imm(pReNative, off,  IEMNATIVE_CALL_ARG1_GREG, iSegReg);
-        idxRegArgInstrIdx = IEMNATIVE_CALL_ARG3_GREG;
-        idxRegArgGCPtrMem = IEMNATIVE_CALL_ARG2_GREG;
+        off = iemNativeEmitLoadGpr8Imm(pReNative, off, IEMNATIVE_CALL_ARG2_GREG, iSegReg);
+
+        idxRegArgValue = IEMNATIVE_CALL_ARG3_GREG;
     }
 
-    off = iemNativeEmitLoadGpr8Imm(pReNative, off, idxRegArgInstrIdx, idxInstr);
+    /* IEMNATIVE_CALL_ARG2/3_GREG = uValue (idxVarValue) - if store */
+    if (!fFetch)
+    {
+        if (pReNative->Core.aVars[idxVarValue].enmKind == kIemNativeVarKind_Immediate)
+            off = iemNativeEmitLoadGprImm64(pReNative, off, idxRegArgValue, pReNative->Core.aVars[idxVarValue].u.uValue);
+        else
+        {
+            uint8_t const idxRegVarValue = pReNative->Core.aVars[idxVarValue].idxReg;
+            if (idxRegVarValue < RT_ELEMENTS(pReNative->Core.aHstRegs))
+            {
+                Assert(!(RT_BIT_32(idxRegVarValue) & IEMNATIVE_CALL_VOLATILE_GREG_MASK));
+                off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegArgValue, idxRegVarValue);
+            }
+            else
+            {
+                uint8_t const idxStackSlot = pReNative->Core.aVars[idxVarValue].idxStackSlot;
+                AssertStmt(idxStackSlot != UINT8_MAX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_NOT_INITIALIZED));
+                off = iemNativeEmitLoadGprByBp(pReNative, off, idxRegArgValue, iemNativeStackCalcBpDisp(idxStackSlot));
+            }
+        }
+    }
 
+    /* IEMNATIVE_CALL_ARG1_GREG = GCPtrMem */
     if (pReNative->Core.aVars[idxVarGCPtrMem].enmKind == kIemNativeVarKind_Immediate)
-        off = iemNativeEmitLoadGprImm64(pReNative, off, idxRegArgGCPtrMem,
+        off = iemNativeEmitLoadGprImm64(pReNative, off, IEMNATIVE_CALL_ARG1_GREG,
                                         pReNative->Core.aVars[idxVarGCPtrMem].u.uValue + offDisp);
     else
     {
@@ -7793,32 +7864,127 @@ iemNativeEmitMemFetchDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off, uin
         {
             Assert(!(RT_BIT_32(idxRegVarGCPtrMem) & IEMNATIVE_CALL_VOLATILE_GREG_MASK));
             if (!offDisp)
-                off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegArgGCPtrMem, idxRegVarGCPtrMem);
+                off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, idxRegVarGCPtrMem);
             else
-                off = iemNativeEmitLoadGprFromGprWithAddend(pReNative, off, idxRegArgGCPtrMem, idxRegVarGCPtrMem, offDisp);
+                off = iemNativeEmitLoadGprFromGprWithAddend(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, idxRegVarGCPtrMem, offDisp);
         }
         else
         {
             uint8_t const idxStackSlot = pReNative->Core.aVars[idxVarGCPtrMem].idxStackSlot;
             AssertStmt(idxStackSlot != UINT8_MAX, IEMNATIVE_DO_LONGJMP(pReNative, VERR_IEM_VAR_NOT_INITIALIZED));
             AssertFailed(); /** @todo This was probably caused by iemNativeRegMoveAndFreeAndFlushAtCall above. Improve... */
-            off = iemNativeEmitLoadGprByBp(pReNative, off, idxRegArgGCPtrMem, iemNativeStackCalcBpDisp(idxStackSlot));
+            off = iemNativeEmitLoadGprByBp(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, iemNativeStackCalcBpDisp(idxStackSlot));
             if (offDisp)
-                off = iemNativeEmitAddGprImm(pReNative, off, idxRegArgGCPtrMem, offDisp);
+                off = iemNativeEmitAddGprImm(pReNative, off, IEMNATIVE_CALL_ARG1_GREG, offDisp);
         }
     }
+
+    /* IEMNATIVE_CALL_ARG0_GREG = pVCpu */
     off = iemNativeEmitLoadGprFromGpr(pReNative, off, IEMNATIVE_CALL_ARG0_GREG, IEMNATIVE_REG_FIXED_PVMCPU);
+
+    /* Done setting up parameters, make the call. */
     off = iemNativeEmitCallImm(pReNative, off, pfnFunction);
 
-    /* Put the result in the right register. */
-    Assert(idxRegDst == pReNative->Core.aVars[idxVarDst].idxReg);
-    if (idxRegDst != IEMNATIVE_CALL_RET_GREG)
-        off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxRegDst, IEMNATIVE_CALL_RET_GREG);
+    /*
+     * Put the result in the right register if this is a fetch.
+     */
+    if (fFetch)
+    {
+        Assert(idxRegValueFetch == pReNative->Core.aVars[idxVarValue].idxReg);
+        if (idxRegValueFetch != IEMNATIVE_CALL_RET_GREG)
+            off = iemNativeEmitLoadGprFromGpr(pReNative, off, idxVarValue, IEMNATIVE_CALL_RET_GREG);
+    }
 
     iemNativeLabelDefine(pReNative, idxLabelTlbDone, off);
 
     return off;
 }
+
+
+
+/*********************************************************************************************************************************
+*   Memory fetches (IEM_MEM_FETCH_XXX).                                                                                          *
+*********************************************************************************************************************************/
+
+#define IEM_MC_FETCH_MEM_U8(a_u8Dst, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u8Dst, a_iSeg, a_GCPtrMem, sizeof(uint8_t), true /*fFetch*/, \
+                                               (uintptr_t)iemNativeHlpMemFetchDataU8, pCallEntry->idxInstr)
+
+#define IEM_MC_FETCH_MEM_U16(a_u16Dst, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u16Dst, a_iSeg, a_GCPtrMem, sizeof(uint16_t), true /*fFetch*/, \
+                                               (uintptr_t)iemNativeHlpMemFetchDataU16, pCallEntry->idxInstr)
+
+#define IEM_MC_FETCH_MEM_U16_DISP(a_u16Dst, a_iSeg, a_GCPtrMem, a_offDisp) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u16Dst, a_iSeg, a_GCPtrMem, sizeof(uint16_t), true /*fFetch*/, \
+                                               (uintptr_t)iemNativeHlpMemFetchDataU16, pCallEntry->idxInstr, a_offDisp)
+
+#define IEM_MC_FETCH_MEM_U32(a_u32Dst, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u32Dst, a_iSeg, a_GCPtrMem, sizeof(uint32_t), true /*fFetch*/, \
+                                               (uintptr_t)iemNativeHlpMemFetchDataU32, pCallEntry->idxInstr)
+
+#define IEM_MC_FETCH_MEM_U32_DISP(a_u32Dst, a_iSeg, a_GCPtrMem, a_offDisp) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u32Dst, a_iSeg, a_GCPtrMem, sizeof(uint32_t), true /*fFetch*/, \
+                                               (uintptr_t)iemNativeHlpMemFetchDataU32, pCallEntry->idxInstr, a_offDisp)
+
+#define IEM_MC_FETCH_MEM_U64(a_u64Dst, a_iSeg, a_GCPtrMem) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u64Dst, a_iSeg, a_GCPtrMem, sizeof(uint64_t), true /*fFetch*/, \
+                                               (uintptr_t)iemNativeHlpMemFetchDataU64, pCallEntry->idxInstr)
+
+
+#define IEM_MC_FETCH_MEM_FLAT_U8(a_u8Dst, a_GCPtrMem) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u8Dst, UINT8_MAX, a_GCPtrMem, sizeof(uint8_t), true /*fFetch*/, \
+                                               (uintptr_t)iemNativeHlpMemFlatFetchDataU8, pCallEntry->idxInstr)
+
+#define IEM_MC_FETCH_MEM_FLAT_U16(a_u16Dst, a_GCPtrMem) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u16Dst, UINT8_MAX, a_GCPtrMem, sizeof(uint16_t), true /*fFetch*/, \
+                                               (uintptr_t)iemNativeHlpMemFlatFetchDataU16, pCallEntry->idxInstr)
+
+#define IEM_MC_FETCH_MEM_FLAT_U32(a_u32Dst, a_GCPtrMem) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u32Dst, UINT8_MAX, a_GCPtrMem, sizeof(uint32_t), true /*fFetch*/, \
+                                               (uintptr_t)iemNativeHlpMemFlatFetchDataU32, pCallEntry->idxInstr)
+
+#define IEM_MC_FETCH_MEM_FLAT_U64(a_u64Dst, a_GCPtrMem) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u64Dst, UINT8_MAX, a_GCPtrMem, sizeof(uint64_t), true /*fFetch*/, \
+                                               (uintptr_t)iemNativeHlpMemFlatFetchDataU64, pCallEntry->idxInstr)
+
+
+
+/*********************************************************************************************************************************
+*   Memory stores (IEM_MEM_STORE_XXX).                                                                                          *
+*********************************************************************************************************************************/
+
+#define IEM_MC_STORE_MEM_U8(a_iSeg, a_GCPtrMem, a_u8Value) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u8Value, a_iSeg, a_GCPtrMem, sizeof(uint8_t), false /*fFetch*/, \
+                                               (uintptr_t)iemNativeHlpMemStoreDataU8, pCallEntry->idxInstr)
+
+#define IEM_MC_STORE_MEM_U16(a_iSeg, a_GCPtrMem, a_u16Dst) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u16Value, a_iSeg, a_GCPtrMem, sizeof(uint16_t), false /*fFetch*/, \
+                                               (uintptr_t)iemNativeHlpMemStoreDataU16, pCallEntry->idxInstr)
+
+#define IEM_MC_STORE_MEM_U32(a_iSeg, a_GCPtrMem, a_u32Value) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u32Value, a_iSeg, a_GCPtrMem, sizeof(uint32_t), false /*fFetch*/, \
+                                               (uintptr_t)iemNativeHlpMemStoreDataU32, pCallEntry->idxInstr)
+
+#define IEM_MC_STORE_MEM_U64(a_iSeg, a_GCPtrMem, a_u64Value) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u64Value, a_iSeg, a_GCPtrMem, sizeof(uint64_t), false /*fFetch*/, \
+                                               (uintptr_t)iemNativeHlpMemStoreDataU64, pCallEntry->idxInstr)
+
+
+#define IEM_MC_STORE_MEM_FLAT_U8(a_GCPtrMem, a_u8Value) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u8Value, a_iSeg, a_GCPtrMem, sizeof(uint8_t), false /*fFetch*/, \
+                                               (uintptr_t)iemNativeHlpMemFlatStoreDataU8, pCallEntry->idxInstr)
+
+#define IEM_MC_STORE_MEM_FLAT_U16(a_GCPtrMem, a_u16Value) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u16Value, a_iSeg, a_GCPtrMem, sizeof(uint16_t), false /*fFetch*/, \
+                                               (uintptr_t)iemNativeHlpMemFlatStoreDataU16, pCallEntry->idxInstr)
+
+#define IEM_MC_STORE_MEM_FLAT_U32(a_GCPtrMem, a_u32Value) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u32Value, a_iSeg, a_GCPtrMem, sizeof(uint32_t), false /*fFetch*/, \
+                                               (uintptr_t)iemNativeHlpMemFlatStoreDataU32, pCallEntry->idxInstr)
+
+#define IEM_MC_STORE_MEM_FLAT_U64(a_GCPtrMem, a_u64Value) \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u64Value, a_iSeg, a_GCPtrMem, sizeof(uint64_t), false /*fFetch*/, \
+                                               (uintptr_t)iemNativeHlpMemFlatStoreDataU64, pCallEntry->idxInstr)
 
 
 

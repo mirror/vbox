@@ -2569,6 +2569,14 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecRecompiler(PVMCC pVM, PVMCPUCC pVCpu)
             if (pVCpu->iem.s.cActiveMappings > 0)
                 iemMemRollback(pVCpu);
 
+#ifdef IEMNATIVE_WITH_INSTRUCTION_COUNTING
+            if (pTb && (pTb->fFlags & IEMTB_F_TYPE_MASK) == IEMTB_F_TYPE_NATIVE)
+            {
+                Assert(pVCpu->iem.s.idxTbCurInstr < pTb->cInstructions);
+                pVCpu->iem.s.cInstructions += pVCpu->iem.s.idxTbCurInstr;
+            }
+#endif
+
 #if 0 /** @todo do we need to clean up anything?  If not, we can drop the pTb = NULL some lines up and change the scope. */
             /* If pTb isn't NULL we're in iemTbExec. */
             if (!pTb)

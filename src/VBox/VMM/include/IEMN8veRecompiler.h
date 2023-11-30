@@ -43,6 +43,9 @@
 # define IEMNATIVE_WITH_TB_DEBUG_INFO
 #endif
 
+/** Always count instructions for now. */
+#define IEMNATIVE_WITH_INSTRUCTION_COUNTING
+
 
 /** @name Stack Frame Layout
  *

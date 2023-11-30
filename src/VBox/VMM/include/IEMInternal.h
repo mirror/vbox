@@ -1651,8 +1651,13 @@ typedef struct IEMCPU
     bool                    fTbCurInstrIsSti;
     /** The size of the IEMTB::pabOpcodes allocation in pThrdCompileTbR3. */
     uint16_t                cbOpcodesAllocated;
+    /** The current instruction number in a native TB.
+     * This is set by code that may trigger an unexpected TB exit (throw/longjmp)
+     * and will be picked up by the TB execution loop. Only used when
+     * IEMNATIVE_WITH_INSTRUCTION_COUNTING is defined. */
+    uint8_t                 idxTbCurInstr;
     /** Spaced reserved for recompiler data / alignment. */
-    bool                    afRecompilerStuff1[4];
+    bool                    afRecompilerStuff1[3];
     /** The virtual sync time at the last timer poll call. */
     uint32_t                msRecompilerPollNow;
     /** The IEM_CIMPL_F_XXX mask for the current instruction. */
