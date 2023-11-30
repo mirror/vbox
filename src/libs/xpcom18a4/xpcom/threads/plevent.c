@@ -636,7 +636,7 @@ PL_WaitForEvent(PLEventQueue* self)
     while ((event = PL_GetEvent(self)) == NULL) {
         PRStatus err;
         Log(("$$$ waiting for event"));
-        err = PR_Wait(mon, PR_INTERVAL_NO_TIMEOUT);
+        err = PR_Wait(mon, RT_INDEFINITE_WAIT);
     }
 
     PR_ExitMonitor(mon);
