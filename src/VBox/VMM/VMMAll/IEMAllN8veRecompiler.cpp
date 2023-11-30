@@ -7950,7 +7950,7 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
 
 
 /*********************************************************************************************************************************
-*   Memory stores (IEM_MEM_STORE_XXX).                                                                                          *
+*   Memory stores (IEM_MEM_STORE_XXX).                                                                                           *
 *********************************************************************************************************************************/
 
 #define IEM_MC_STORE_MEM_U8(a_iSeg, a_GCPtrMem, a_u8Value) \
