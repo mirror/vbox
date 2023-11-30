@@ -162,6 +162,7 @@ PACK_STRUCT_END
 
 /* Renaming functions to avoid linker collisions with libslirp  */
 #define ip6_input lwip_ip6_input
+#define ip6_output lwip_ip6_output
 
 
 #define ip6_init() /* TODO should we init current addresses and header pointer? */
