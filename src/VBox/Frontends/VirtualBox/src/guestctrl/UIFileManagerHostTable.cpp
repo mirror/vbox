@@ -283,7 +283,7 @@ void UIFileManagerHostTable::deleteByItem(UICustomFileSystemItem *item)
     if (!item->isDirectory())
     {
         QDir itemToDelete;
-        itemToDelete.remove(item->path());
+        itemToDelete.remove(UIPathOperations::removeTrailingDelimiters(item->path()));
     }
     QDir itemToDelete(item->path());
     itemToDelete.setFilter(QDir::NoDotAndDotDot);
@@ -296,27 +296,6 @@ void UIFileManagerHostTable::deleteByItem(UICustomFileSystemItem *item)
 
     if (!deleteSuccess)
         emit sigLogOutput(QString(item->path()).append(" could not be deleted"), m_strTableName, FileManagerLogType_Error);
-}
-
-void UIFileManagerHostTable::deleteByPath(const QStringList &pathList)
-{
-    foreach (const QString &strPath, pathList)
-    {
-        bool deleteSuccess = true;
-        KFsObjType eType = fileType(QFileInfo(strPath));
-        if (eType == KFsObjType_File || eType == KFsObjType_Symlink)
-        {
-            deleteSuccess = QDir().remove(strPath);
-        }
-        else if (eType == KFsObjType_Directory)
-        {
-            QDir itemToDelete(strPath);
-            itemToDelete.setFilter(QDir::NoDotAndDotDot);
-            deleteSuccess = itemToDelete.removeRecursively();
-        }
-        if (!deleteSuccess)
-            emit sigLogOutput(QString(strPath).append(" could not be deleted"), m_strTableName, FileManagerLogType_Error);
-    }
 }
 
 void UIFileManagerHostTable::goToHomeDirectory()

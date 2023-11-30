@@ -91,8 +91,7 @@ public:
     bool isOpened() const;
     void setIsOpened(bool flag);
 
-    /** Full absolute path of the item. With or without the trailing '/' */
-    QString  path(bool fRemoveTrailingDelimiters = false) const;
+    QString  path() const;
 
     /** Returns true if this is directory and file object name is ".." */
     bool isUpDirectory() const;

@@ -609,32 +609,14 @@ void UIFileManagerGuestTable::deleteByItem(UICustomFileSystemItem *item)
     if (item->isDirectory())
     {
         QVector<KDirectoryRemoveRecFlag> aFlags(1, KDirectoryRemoveRecFlag_ContentAndDir);
-        m_comGuestSession.DirectoryRemoveRecursive(item->path(), aFlags);
+        m_comGuestSession.DirectoryRemoveRecursive(UIPathOperations::removeTrailingDelimiters(item->path()), aFlags);
     }
     else
-        m_comGuestSession.FsObjRemove(item->path());
+        m_comGuestSession.FsObjRemove(UIPathOperations::removeTrailingDelimiters(item->path()));
     if (!m_comGuestSession.isOk())
     {
         emit sigLogOutput(QString(item->path()).append(" could not be deleted"), m_strTableName, FileManagerLogType_Error);
         emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), m_strTableName, FileManagerLogType_Error);
-    }
-}
-
-void UIFileManagerGuestTable::deleteByPath(const QStringList &pathList)
-{
-    foreach (const QString &strPath, pathList)
-    {
-        CGuestFsObjInfo fileInfo = m_comGuestSession.FsObjQueryInfo(strPath, true);
-        KFsObjType eType = fileType(fileInfo);
-        if (eType == KFsObjType_File || eType == KFsObjType_Symlink)
-        {
-              m_comGuestSession.FsObjRemove(strPath);
-        }
-        else if (eType == KFsObjType_Directory)
-        {
-            QVector<KDirectoryRemoveRecFlag> aFlags(1, KDirectoryRemoveRecFlag_ContentAndDir);
-            m_comGuestSession.DirectoryRemoveRecursive(strPath, aFlags);
-        }
     }
 }
 
@@ -705,7 +687,7 @@ void UIFileManagerGuestTable::copyHostToGuest(const QStringList &hostSourcePathL
     QVector<QString> sourcePaths = hostSourcePathList.toVector();
     QVector<QString> aFilters;
     QVector<QString> aFlags;
-    QString strDestinationPath = strDestination;
+    QString strDestinationPath = UIPathOperations::addTrailingDelimiters(strDestination);
 
     /* Remove empty source paths. Typically happens when up directory is selected: */
     sourcePaths.removeAll(QString());
@@ -725,26 +707,19 @@ void UIFileManagerGuestTable::copyHostToGuest(const QStringList &hostSourcePathL
     }
     QString strDirectoryFlags("CopyIntoExisting,Recursive,FollowLinks");
     QString strFileFlags("FollowLinks");
-    foreach (const QString &strSource, sourcePaths)
+
+    for (int i = 0; i < sourcePaths.size(); ++i)
     {
-        KFsObjType enmFileType = UIFileManagerHostTable::fileType(strSource);
+        sourcePaths[i] = UIPathOperations::removeTrailingDelimiters(sourcePaths[i]);
+        KFsObjType enmFileType = UIFileManagerHostTable::fileType(sourcePaths[i]);
         if (enmFileType == KFsObjType_Unknown)
-            emit sigLogOutput(QString("Querying information for host item %1 failed.").arg(strSource), m_strTableName, FileManagerLogType_Error);
+            emit sigLogOutput(QString("Querying information for host item %1 failed.").arg(sourcePaths[i]), m_strTableName, FileManagerLogType_Error);
         /* If the source is an directory, make sure to add the appropriate flag to make copying work
          * into existing directories on the guest. This otherwise would fail (default): */
         else if (enmFileType == KFsObjType_Directory)
-        {
-            /* Make sure that if the source is a directory, that we append a trailing delimiter to it,
-             * so that it gets copied *into* the destination directory as a whole, and not just it's contents. */
-            strDestinationPath = UIPathOperations::addTrailingDelimiters(strDestinationPath);
             aFlags << strDirectoryFlags;
-        }
         else
-        {
-            /* Ditto goes for source files, as the destination always is a directory path. */
-            strDestinationPath = UIPathOperations::addTrailingDelimiters(strDestinationPath);
             aFlags << strFileFlags;
-        }
     }
 
     CProgress progress = m_comGuestSession.CopyToGuest(sourcePaths, aFilters, aFlags, strDestinationPath);
@@ -795,16 +770,18 @@ void UIFileManagerGuestTable::copyGuestToHost(const QString& hostDestinationPath
         return;
     }
 
-    QString strDestinationPath = hostDestinationPath;
+    QString strDestinationPath = UIPathOperations::addTrailingDelimiters(hostDestinationPath);
     QString strDirectoryFlags("CopyIntoExisting,Recursive,FollowLinks");
     QString strFileFlags;
-    foreach (const QString &strSource, sourcePaths)
+    //foreach (const QString &strSource, sourcePaths)
+    for (int i = 0; i < sourcePaths.size(); ++i)
     {
+        sourcePaths[i] = UIPathOperations::removeTrailingDelimiters(sourcePaths[i]);
         /** @todo Cache this info and use the item directly, which has this info already? */
 
         /* If the source is an directory, make sure to add the appropriate flag to make copying work
          * into existing directories on the guest. This otherwise would fail (default). */
-        CGuestFsObjInfo fileInfo = m_comGuestSession.FsObjQueryInfo(strSource, true);
+        CGuestFsObjInfo fileInfo = m_comGuestSession.FsObjQueryInfo(sourcePaths[i], true);
         if (!m_comGuestSession.isOk())
         {
             emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), m_strTableName, FileManagerLogType_Error);
@@ -812,19 +789,10 @@ void UIFileManagerGuestTable::copyGuestToHost(const QString& hostDestinationPath
         }
 
         if (fileType(fileInfo) == KFsObjType_Directory)
-        {
-            /* Make sure that if the source is a directory, that we append a trailing delimiter to the destination,
-             * so that the source directory gets copied *into* the destination directory as a whole, and not
-             * just it's contents. */
-            strDestinationPath = UIPathOperations::addTrailingDelimiters(strDestinationPath);
             aFlags << strDirectoryFlags;
-        }
         else
-        {
-            /* Ditto goes for source files, as the destination always is a directory path. */
-            strDestinationPath = UIPathOperations::addTrailingDelimiters(strDestinationPath);
             aFlags << strFileFlags;
-        }
+
     }
 
     CProgress progress = m_comGuestSession.CopyFromGuest(sourcePaths, aFilters, aFlags, strDestinationPath);

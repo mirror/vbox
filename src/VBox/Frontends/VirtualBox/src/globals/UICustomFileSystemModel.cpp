@@ -207,10 +207,10 @@ void UICustomFileSystemItem::setIsOpened(bool flag)
     m_bIsOpened = flag;
 }
 
-QString UICustomFileSystemItem::path(bool fRemoveTrailingDelimiters /* = false */) const
+QString UICustomFileSystemItem::path() const
 {
     const QChar delimiter('/');
-    Q_UNUSED(fRemoveTrailingDelimiters);
+
     const UICustomFileSystemItem *pParent = this;
     QStringList path;
     while(pParent && pParent->parentItem())
