@@ -46,10 +46,10 @@
 #include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
+#include "UIFileManagerHostTable.h"
 #include "UIIconPool.h"
 #include "UIPaneContainer.h"
 #include "UIModalWindowManager.h"
-#include "UIVisoHostBrowser.h"
 #include "UIVisoCreator.h"
 #include "UIVisoContentBrowser.h"
 #ifdef VBOX_WS_MAC
@@ -132,7 +132,7 @@ void UIVisoSettingWidget::prepare()
     AssertReturnVoid(m_pVisoNameLineEdit);
     m_pVisoNameLabel->setBuddy(m_pVisoNameLineEdit);
     m_pVisoNameLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-    //m_pVisoNameLineEdit->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+
     m_pVisoOptionsGridLayout->addWidget(m_pVisoNameLabel, iRow, 0, 1, 1, Qt::AlignTop);
     m_pVisoOptionsGridLayout->addWidget(m_pVisoNameLineEdit, iRow, 1, 1, 1, Qt::AlignTop);
     m_pVisoOptionsGridLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum), iRow, 2, 1, 3);
@@ -144,7 +144,7 @@ void UIVisoSettingWidget::prepare()
     AssertReturnVoid(m_pCustomOptionsLabel);
     AssertReturnVoid(m_pCustomOptionsLineEdit);
     m_pCustomOptionsLabel->setBuddy(m_pCustomOptionsLineEdit);
-    //m_pCustomOptionsLineEdit->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+
     m_pCustomOptionsLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
     m_pVisoOptionsGridLayout->addWidget(m_pCustomOptionsLabel, iRow, 0, 1, 1, Qt::AlignTop);
     m_pVisoOptionsGridLayout->addWidget(m_pCustomOptionsLineEdit, iRow, 1, 1, 1, Qt::AlignTop);
@@ -197,8 +197,6 @@ void UIVisoSettingWidget::retranslateUi()
     }
     setTabText(1, QApplication::translate("UIVisoCreatorWidget", "Dialog Settings"));
     setTabText(0, QApplication::translate("UIVisoCreatorWidget", "VISO options"));
-
-    //m_pVisoOptionsGridLayout->setColumnMinimumWidth(0, iLabelWidth);
 }
 
 void UIVisoSettingWidget::prepareConnections()
@@ -254,8 +252,8 @@ UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pPa
     , m_pImportISOAction(0)
     , m_pRemoveISOAction(0)
     , m_pMainLayout(0)
-    , m_pHostBrowser(0)
     , m_pVISOContentBrowser(0)
+    , m_pHostFileBrowser(0)
     , m_pToolBar(0)
     , m_pVerticalToolBar(0)
     , m_pMainMenu(0)
@@ -323,16 +321,16 @@ const QStringList &UIVisoCreatorWidget::customOptions() const
 
 QString UIVisoCreatorWidget::currentPath() const
 {
-    if (!m_pHostBrowser)
+    if (!m_pHostFileBrowser)
         return QString();
-    return m_pHostBrowser->currentPath();
+    return m_pHostFileBrowser->currentDirectoryPath();
 }
 
-void UIVisoCreatorWidget::setCurrentPath(const QString &strPath)
+void UIVisoCreatorWidget::setCurrentPath(const QString &/*strPath*/)
 {
-    if (!m_pHostBrowser)
+    if (!m_pHostFileBrowser)
         return;
-    m_pHostBrowser->setCurrentPath(strPath);
+    //m_pHostFileBrowser->goIntoDirectory(const QStringList &pathTrail);
 }
 
 QMenu *UIVisoCreatorWidget::menu() const
@@ -355,10 +353,12 @@ void UIVisoCreatorWidget::sltSettingsActionToggled(bool fChecked)
     toggleSettingsWidget(fChecked);
 }
 
-void UIVisoCreatorWidget::sltHostBrowserTableSelectionChanged(QStringList pathList)
+void UIVisoCreatorWidget::sltHostBrowserTableSelectionChanged(bool fHasSelection)
 {
+    AssertPtrReturnVoid(m_pHostFileBrowser);
+    QStringList pathList = m_pHostFileBrowser->selectedItemPathList();
     if (m_pAddAction)
-        m_pAddAction->setEnabled(!pathList.isEmpty());
+        m_pAddAction->setEnabled(fHasSelection);
     if (m_pImportISOAction)
         m_pImportISOAction->setEnabled(!findISOFiles(pathList).isEmpty());
 }
@@ -399,9 +399,9 @@ void UIVisoCreatorWidget::sltSaveAsAction()
 
 void UIVisoCreatorWidget::sltISOImportAction()
 {
-    if (!m_pHostBrowser || !m_pVISOContentBrowser)
+    if (!m_pHostFileBrowser || !m_pVISOContentBrowser)
         return;
-    QStringList selectedObjectPaths = m_pHostBrowser->selectedPathList();
+    QStringList selectedObjectPaths = m_pHostFileBrowser->selectedItemPathList();
     if (selectedObjectPaths.isEmpty())
         return;
     /* We can import only a ISO file into VISO:*/
@@ -434,8 +434,8 @@ void UIVisoCreatorWidget::sltSettingsChanged()
     if (m_settings.m_fShowHiddenObjects != settings.m_fShowHiddenObjects)
     {
         m_settings.m_fShowHiddenObjects = settings.m_fShowHiddenObjects;
-        if (m_pHostBrowser)
-            m_pHostBrowser->showHideHiddenObjects(settings.m_fShowHiddenObjects);
+        // if (m_pHostFileBrowser)
+        //     m_pHostFileBrowser->showHideHiddenObjects(settings.m_fShowHiddenObjects);
     }
 }
 
@@ -486,9 +486,9 @@ void UIVisoCreatorWidget::prepareWidgets()
     AssertPtrReturnVoid(pContainerLayout);
     pContainerLayout->setContentsMargins(0, 0, 0, 0);
 
-    m_pHostBrowser = new UIVisoHostBrowser(m_pActionPool);
-    AssertPtrReturnVoid(m_pHostBrowser);
-    pContainerLayout->addWidget(m_pHostBrowser, 0, 0, 1, 4);
+    m_pHostFileBrowser = new UIFileManagerHostTable(m_pActionPool);
+    AssertPtrReturnVoid(m_pHostFileBrowser);
+    pContainerLayout->addWidget(m_pHostFileBrowser, 0, 0, 1, 4);
 
     prepareVerticalToolBar();
     AssertPtrReturnVoid(m_pVerticalToolBar);
@@ -513,11 +513,11 @@ void UIVisoCreatorWidget::prepareWidgets()
 
 void UIVisoCreatorWidget::prepareConnections()
 {
-    if (m_pHostBrowser)
+    if (m_pHostFileBrowser)
     {
-        connect(m_pHostBrowser, &UIVisoHostBrowser::sigAddObjectsToViso,
-                this, &UIVisoCreatorWidget::sltAddObjectsToViso);
-        connect(m_pHostBrowser, &UIVisoHostBrowser::sigTableSelectionChanged,
+    //     connect(m_pHostBrowser, &UIVisoHostBrowser::sigAddObjectsToViso,
+    //             this, &UIVisoCreatorWidget::sltAddObjectsToViso);
+        connect(m_pHostFileBrowser, &UIFileManagerHostTable::sigSelectionChanged,
                 this, &UIVisoCreatorWidget::sltHostBrowserTableSelectionChanged);
     }
 
@@ -540,9 +540,9 @@ void UIVisoCreatorWidget::prepareConnections()
                 this, &UIVisoCreatorWidget::sltPanelContainerHidden);
     }
 
-    if (m_pAddAction)
-        connect(m_pAddAction, &QAction::triggered,
-                m_pHostBrowser, &UIVisoHostBrowser::sltAddAction);
+    // if (m_pAddAction)
+    //     connect(m_pAddAction, &QAction::triggered,
+    //             m_pHostBrowser, &UIVisoHostBrowser::sltAddAction);
     if (m_pOpenAction)
         connect(m_pOpenAction, &QAction::triggered,
                 this, &UIVisoCreatorWidget::sltOpenAction);
@@ -565,8 +565,8 @@ void UIVisoCreatorWidget::prepareActions()
     m_pActionSettings = m_pActionPool->action(UIActionIndex_M_VISOCreator_ToggleSettingsDialog);
 
     m_pAddAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Add);
-    if (m_pAddAction && m_pHostBrowser)
-        m_pAddAction->setEnabled(m_pHostBrowser->tableViewHasSelection());
+    if (m_pAddAction && m_pHostFileBrowser)
+        m_pAddAction->setEnabled(m_pHostFileBrowser->hasSelection());
     m_pOpenAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Open);
     m_pSaveAsAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_SaveAs);
     m_pImportISOAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_ImportISO);
@@ -602,8 +602,8 @@ void UIVisoCreatorWidget::populateMenuMainToolbar()
             m_pMainMenu->addAction(m_pRemoveISOAction);
     }
 
-    if (m_pHostBrowser)
-        m_pHostBrowser->prepareMainMenu(m_pMainMenu);
+    // if (m_pHostBrowser)
+    //     m_pHostBrowser->prepareMainMenu(m_pMainMenu);
 
     if (m_pVISOContentBrowser)
         m_pVISOContentBrowser->prepareMainMenu(m_pMainMenu);

@@ -51,7 +51,6 @@ class QIDialogButtonBox;
 class QIToolBar;
 class UIActionPool;
 class UIFileManagerHostTable;
-class UIVisoHostBrowser;
 class UIVisoContentBrowser;
 class UIVisoSettingWidget;
 
@@ -111,7 +110,7 @@ private slots:
 
     void sltAddObjectsToViso(QStringList pathList);
     void sltSettingsActionToggled(bool fChecked);
-    void sltHostBrowserTableSelectionChanged(QStringList pathList);
+    void sltHostBrowserTableSelectionChanged(bool fHasSelection);
     void sltContentBrowserTableSelectionChanged(bool fIsSelectionEmpty);
     void sltOpenAction();
     void sltSaveAsAction();
@@ -153,7 +152,6 @@ private:
     /** @} */
 
     QVBoxLayout            *m_pMainLayout;
-    UIVisoHostBrowser      *m_pHostBrowser;
     UIVisoContentBrowser   *m_pVISOContentBrowser;
     UIFileManagerHostTable *m_pHostFileBrowser;
 
