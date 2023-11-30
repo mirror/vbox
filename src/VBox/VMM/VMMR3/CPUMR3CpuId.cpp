@@ -3286,7 +3286,7 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
         {
             /* Check if MTRR read+write support is enabled. */
             bool fEnableMtrrWrite;
-            rc = CFGMR3QueryBoolDef(pCpumCfg, "MTRRWrite", &fEnableMtrrWrite, true);
+            rc = CFGMR3QueryBoolDef(pCpumCfg, "MTRRWrite", &fEnableMtrrWrite, false);
             AssertRCReturn(rc, rc);
             if (fEnableMtrrWrite)
             {
@@ -3297,7 +3297,7 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
             else
             {
                 /* Check if MTRR read-only reporting is enabled. */
-                rc = CFGMR3QueryBoolDef(pCpumCfg, "MTRR", &pVM->cpum.s.fMtrrRead, true);
+                rc = CFGMR3QueryBoolDef(pCpumCfg, "MTRR", &pVM->cpum.s.fMtrrRead, false);
                 AssertRCReturn(rc, rc);
                 LogRel(("CPUM: Enabled MTRR read-only support\n"));
             }
