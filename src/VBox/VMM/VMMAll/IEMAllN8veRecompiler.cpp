@@ -7957,7 +7957,7 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
     off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u8Value, a_iSeg, a_GCPtrMem, sizeof(uint8_t), false /*fFetch*/, \
                                                (uintptr_t)iemNativeHlpMemStoreDataU8, pCallEntry->idxInstr)
 
-#define IEM_MC_STORE_MEM_U16(a_iSeg, a_GCPtrMem, a_u16Dst) \
+#define IEM_MC_STORE_MEM_U16(a_iSeg, a_GCPtrMem, a_u16Value) \
     off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u16Value, a_iSeg, a_GCPtrMem, sizeof(uint16_t), false /*fFetch*/, \
                                                (uintptr_t)iemNativeHlpMemStoreDataU16, pCallEntry->idxInstr)
 
@@ -7971,19 +7971,19 @@ iemNativeEmitMemFetchStoreDataCommon(PIEMRECOMPILERSTATE pReNative, uint32_t off
 
 
 #define IEM_MC_STORE_MEM_FLAT_U8(a_GCPtrMem, a_u8Value) \
-    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u8Value, a_iSeg, a_GCPtrMem, sizeof(uint8_t), false /*fFetch*/, \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u8Value, UINT8_MAX, a_GCPtrMem, sizeof(uint8_t), false /*fFetch*/, \
                                                (uintptr_t)iemNativeHlpMemFlatStoreDataU8, pCallEntry->idxInstr)
 
 #define IEM_MC_STORE_MEM_FLAT_U16(a_GCPtrMem, a_u16Value) \
-    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u16Value, a_iSeg, a_GCPtrMem, sizeof(uint16_t), false /*fFetch*/, \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u16Value, UINT8_MAX, a_GCPtrMem, sizeof(uint16_t), false /*fFetch*/, \
                                                (uintptr_t)iemNativeHlpMemFlatStoreDataU16, pCallEntry->idxInstr)
 
 #define IEM_MC_STORE_MEM_FLAT_U32(a_GCPtrMem, a_u32Value) \
-    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u32Value, a_iSeg, a_GCPtrMem, sizeof(uint32_t), false /*fFetch*/, \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u32Value, UINT8_MAX, a_GCPtrMem, sizeof(uint32_t), false /*fFetch*/, \
                                                (uintptr_t)iemNativeHlpMemFlatStoreDataU32, pCallEntry->idxInstr)
 
 #define IEM_MC_STORE_MEM_FLAT_U64(a_GCPtrMem, a_u64Value) \
-    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u64Value, a_iSeg, a_GCPtrMem, sizeof(uint64_t), false /*fFetch*/, \
+    off = iemNativeEmitMemFetchStoreDataCommon(pReNative, off, a_u64Value, UINT8_MAX, a_GCPtrMem, sizeof(uint64_t), false /*fFetch*/, \
                                                (uintptr_t)iemNativeHlpMemFlatStoreDataU64, pCallEntry->idxInstr)
 
 
