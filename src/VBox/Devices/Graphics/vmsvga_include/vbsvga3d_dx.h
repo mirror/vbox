@@ -813,4 +813,17 @@ typedef struct VBSVGA3dCmdDXGetVideoCapability {
 } VBSVGA3dCmdDXGetVideoCapability;
 /* VBSVGA_3D_CMD_DX_GET_VIDEO_CAPABILITY */
 
+typedef struct VBSVGA3dCmdDXClearView
+{
+   uint32 viewId;
+   SVGA3dRGBAFloat color;
+   /* followed by SVGASignedRect array */
+} VBSVGA3dCmdDXClearView;
+/* VBSVGA_3D_CMD_DX_CLEAR_RTV
+ * VBSVGA_3D_CMD_DX_CLEAR_UAV
+ * VBSVGA_3D_CMD_DX_CLEAR_VDOV
+ * VBSVGA_3D_CMD_DX_CLEAR_VPIV
+ * VBSVGA_3D_CMD_DX_CLEAR_VPOV
+ */
+
 #endif /* !VBOX_INCLUDED_SRC_Graphics_vmsvga_include_vbsvga3d_dx_h */

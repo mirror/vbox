@@ -376,7 +376,12 @@ typedef enum {
    VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_FILTER     = VBSVGA_3D_CMD_BASE + 31,
    VBSVGA_3D_CMD_DX_VIDEO_PROCESSOR_SET_STREAM_ROTATION   = VBSVGA_3D_CMD_BASE + 32,
    VBSVGA_3D_CMD_DX_GET_VIDEO_CAPABILITY                  = VBSVGA_3D_CMD_BASE + 33,
-   VBSVGA_3D_CMD_MAX                                      = VBSVGA_3D_CMD_BASE + 34
+   VBSVGA_3D_CMD_DX_CLEAR_RTV                             = VBSVGA_3D_CMD_BASE + 34,
+   VBSVGA_3D_CMD_DX_CLEAR_UAV                             = VBSVGA_3D_CMD_BASE + 35,
+   VBSVGA_3D_CMD_DX_CLEAR_VDOV                            = VBSVGA_3D_CMD_BASE + 36,
+   VBSVGA_3D_CMD_DX_CLEAR_VPIV                            = VBSVGA_3D_CMD_BASE + 37,
+   VBSVGA_3D_CMD_DX_CLEAR_VPOV                            = VBSVGA_3D_CMD_BASE + 38,
+   VBSVGA_3D_CMD_MAX                                      = VBSVGA_3D_CMD_BASE + 39
 #endif
 } SVGAFifo3dCmdId;
 
