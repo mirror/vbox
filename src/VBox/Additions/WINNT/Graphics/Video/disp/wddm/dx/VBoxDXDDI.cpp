@@ -3704,6 +3704,59 @@ static void APIENTRY ddi11_1ClearView(
     //DEBUG_BREAKPOINT_TEST();
     PVBOXDX_DEVICE pDevice = (PVBOXDX_DEVICE)hDevice.pDrvPrivate;
     LogFlowFunc(("pDevice 0x%p, ViewType %d, pView %p, pRect %p, NumRects %u", pDevice, ViewType, hView, pRect, NumRects));
+
+    if (pDevice->pAdapter->fVBoxCaps & VBSVGA3D_CAP_VIDEO)
+    {
+        uint32_t ViewId = SVGA3D_INVALID_ID;
+
+        /* "Possible types are the following.
+         * D3D10DDI_HT_RENDERTARGETVIEW
+         * D3D11DDI_HT_UNORDEREDACCESSVIEW
+         * Any D3D11_1DDI_HT_VIDEOXXX type"
+         */
+        switch (ViewType)
+        {
+            case D3D10DDI_HT_RENDERTARGETVIEW:
+            {
+                PVBOXDXRENDERTARGETVIEW pRenderTargetView = (PVBOXDXRENDERTARGETVIEW)hView;
+                ViewId = pRenderTargetView->uRenderTargetViewId;
+                break;
+            }
+            case D3D11DDI_HT_UNORDEREDACCESSVIEW:
+            {
+                PVBOXDXUNORDEREDACCESSVIEW pUnorderedAccessView = (PVBOXDXUNORDEREDACCESSVIEW)hView;
+                ViewId = pUnorderedAccessView->uUnorderedAccessViewId;
+                break;
+            }
+            case D3D11_1DDI_HT_VIDEODECODEROUTPUTVIEW:
+            {
+                PVBOXDXVIDEODECODEROUTPUTVIEW pVideoDecoderOutputView = (PVBOXDXVIDEODECODEROUTPUTVIEW)hView;
+                ViewId = pVideoDecoderOutputView->uVideoDecoderOutputViewId;
+                break;
+            }
+            case D3D11_1DDI_HT_VIDEOPROCESSORINPUTVIEW:
+            {
+                PVBOXDXVIDEOPROCESSORINPUTVIEW pVideoProcessorInputView = (PVBOXDXVIDEOPROCESSORINPUTVIEW)hView;
+                ViewId = pVideoProcessorInputView->uVideoProcessorInputViewId;
+                break;
+            }
+            case D3D11_1DDI_HT_VIDEOPROCESSOROUTPUTVIEW:
+            {
+                PVBOXDXVIDEOPROCESSOROUTPUTVIEW pVideoProcessorOutputView = (PVBOXDXVIDEOPROCESSOROUTPUTVIEW)hView;
+                ViewId = pVideoProcessorOutputView->uVideoProcessorOutputViewId;
+                break;
+            }
+            default:
+            {
+                DEBUG_BREAKPOINT_TEST();
+                break;
+            }
+        }
+        if (ViewId != SVGA3D_INVALID_ID)
+            vboxDXClearView(pDevice, ViewType, ViewId, Color, pRect, NumRects);
+        return;
+    }
+
     if (ViewType == D3D10DDI_HT_RENDERTARGETVIEW)
     {
         PVBOXDXRENDERTARGETVIEW pRenderTargetView = (PVBOXDXRENDERTARGETVIEW)hView;

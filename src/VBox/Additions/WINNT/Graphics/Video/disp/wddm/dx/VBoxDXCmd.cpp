@@ -920,6 +920,42 @@ int vgpu10ClearRenderTargetViewRegion(PVBOXDX_DEVICE pDevice,
     return VINF_SUCCESS;
 }
 
+
+int vgpu10ClearView(PVBOXDX_DEVICE pDevice,
+                    SVGAFifo3dCmdId cmdId,
+                    uint32_t viewId,
+                    const float color[4],
+                    const D3D10_DDI_RECT *paRects,
+                    uint32_t cRects)
+{
+    void *pvCmd = vboxDXCommandBufferReserve(pDevice, cmdId,
+                                             sizeof(VBSVGA3dCmdDXClearView) + cRects * sizeof(SVGASignedRect));
+    if (!pvCmd)
+        return VERR_NO_MEMORY;
+
+    VBSVGA3dCmdDXClearView *cmd = (VBSVGA3dCmdDXClearView *)pvCmd;
+    SET_CMD_FIELD(viewId);
+    cmd->color.value[0] = color[0];
+    cmd->color.value[1] = color[1];
+    cmd->color.value[2] = color[2];
+    cmd->color.value[3] = color[3];
+
+    SVGASignedRect *paSvgaRects = (SVGASignedRect *)&cmd[1];
+    for (uint32_t i = 0; i < cRects; ++i)
+    {
+        SVGASignedRect *d = &paSvgaRects[i];
+        const D3D10_DDI_RECT *s = &paRects[i];
+        d->left   = s->left;
+        d->top    = s->top;
+        d->right  = s->right;
+        d->bottom = s->bottom;
+    }
+
+    vboxDXCommandBufferCommit(pDevice);
+    return VINF_SUCCESS;
+}
+
+
 int vgpu10DestroyRenderTargetView(PVBOXDX_DEVICE pDevice,
                                   SVGA3dRenderTargetViewId renderTargetViewId)
 {
