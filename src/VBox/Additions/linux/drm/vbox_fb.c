@@ -358,7 +358,7 @@ static int vboxfb_create(struct drm_fb_helper *helper,
 #endif
 	info->fbops = &vboxfb_ops;
 
-#if RTLNX_VER_MAX(6,3,0) && !RTLNX_RHEL_MAJ_PREREQ(9,3)
+#if RTLNX_VER_MAX(6,3,0) && !RTLNX_RHEL_RANGE(8,9, 8,99) && !RTLNX_RHEL_MAJ_PREREQ(9,3)
 	/*
 	 * This seems to be done for safety checking that the framebuffer
 	 * is not registered twice by different drivers.
@@ -532,7 +532,7 @@ void vbox_fbdev_set_base(struct vbox_private *vbox, unsigned long gpu_addr)
 {
 	struct fb_info *fbdev = VBOX_FBDEV_INFO(vbox->fbdev->helper);
 
-#if RTLNX_VER_MIN(6,3,0) || RTLNX_RHEL_MAJ_PREREQ(9,3)
+#if RTLNX_VER_MIN(6,3,0) || RTLNX_RHEL_RANGE(8,9, 8,99) || RTLNX_RHEL_MAJ_PREREQ(9,3)
 	fbdev->fix.smem_start = pci_resource_start(VBOX_DRM_TO_PCI_DEV(vbox->fbdev->helper.dev), 0) + gpu_addr;
 #else
 	fbdev->fix.smem_start = fbdev->apertures->ranges[0].base + gpu_addr;
