@@ -585,7 +585,6 @@ public:
 #else
 	static NS_EXPORT_STATIC_MEMBER_(PyTypeObject *) s_pType;
         static PyTypeObject *GetTypeObject(void);
-    static int PyTypeMethod_is_gc(PyObject *self);
 #endif
 	static NS_EXPORT_STATIC_MEMBER_(PyMethodDef) methods[];
 };
