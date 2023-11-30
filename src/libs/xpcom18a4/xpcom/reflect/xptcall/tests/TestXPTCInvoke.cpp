@@ -43,6 +43,7 @@
 #include <stdio.h>
 #include "xptcall.h"
 #include "prlong.h"
+#include "prinrval.h"
 #include "nsMemory.h"
 
 // forward declration
@@ -52,7 +53,6 @@ static void DoSpeedTest();
 
 
 #include <iprt/string.h>
-#include <iprt/time.h>
 
 static char  g_szDirect[16384];
 static char  g_szInvoke[16384];
@@ -1437,28 +1437,28 @@ static void DoSpeedTest()
     // Crank this number down if your platform is slow :)
     static const int count = 100000000;
     int i;
-    uint64_t start;
-    uint64_t interval_direct;
-    uint64_t interval_invoke;
+    PRIntervalTime start;
+    PRIntervalTime interval_direct;
+    PRIntervalTime interval_invoke;
 
     printf("Speed test...\n\n");
     printf("Doing %d direct call iterations...\n", count); 
-    start = RTTimeNanoTS();
+    start = PR_IntervalNow();
     for(i = count; i; i--)
         (void)test->AddTwoInts(in1, in2, &out);
-    interval_direct = RTTimeNanoTS() - start;
+    interval_direct = PR_IntervalNow() - start;
 
     printf("Doing %d invoked call iterations...\n", count); 
-    start = RTTimeNanoTS();
+    start = PR_IntervalNow();
     for(i = count; i; i--)
         (void)XPTC_InvokeByIndex(test, 3, 3, var);
-    interval_invoke = RTTimeNanoTS() - start;
+    interval_invoke = PR_IntervalNow() - start;
 
     printf(" direct took %0.2f seconds\n", 
-            (double)interval_direct/(double)RT_NS_1SEC);
+            (double)interval_direct/(double)PR_TicksPerSecond());
     printf(" invoke took %0.2f seconds\n", 
-            (double)interval_invoke/(double)RT_NS_1SEC);
+            (double)interval_invoke/(double)PR_TicksPerSecond());
     printf(" So, invoke overhead was ~ %0.2f seconds (~ %0.0f%%)\n", 
-            (double)(interval_invoke-interval_direct)/(double)RT_NS_1SEC,
+            (double)(interval_invoke-interval_direct)/(double)PR_TicksPerSecond(),
             (double)(interval_invoke-interval_direct)/(double)interval_invoke*100);
 }        

@@ -65,7 +65,7 @@
 
 /* ------------------------------------------------------------------------- */
 
-#define IPC_REQUEST_TIMEOUT (30 * RT_MS_1SEC)
+#define IPC_REQUEST_TIMEOUT PR_SecondsToInterval(30)
 
 /* ------------------------------------------------------------------------- */
 
@@ -306,7 +306,7 @@ DefaultSelector(void *arg, ipcTargetData *td, const ipcMessage *msg)
 
 static nsresult
 WaitTarget(const nsID           &aTarget,
-           RTMSINTERVAL         aTimeout,
+           PRIntervalTime        aTimeout,
            ipcMessage          **aMsg,
            ipcMessageSelector    aSelector = nsnull,
            void                 *aArg = nsnull)
@@ -322,11 +322,11 @@ WaitTarget(const nsID           &aTarget,
 
   PRBool isIPCMTarget = aTarget.Equals(IPCM_TARGET);
 
-  uint64_t timeStart = RTTimeMilliTS();
-  uint64_t timeEnd;
-  if (aTimeout == RT_INDEFINITE_WAIT)
+  PRIntervalTime timeStart = PR_IntervalNow();
+  PRIntervalTime timeEnd;
+  if (aTimeout == PR_INTERVAL_NO_TIMEOUT)
     timeEnd = aTimeout;
-  else if (aTimeout == 0)
+  else if (aTimeout == PR_INTERVAL_NO_WAIT)
     timeEnd = timeStart;
   else
   {
@@ -334,7 +334,7 @@ WaitTarget(const nsID           &aTarget,
 
     // if overflowed, then set to max value
     if (timeEnd < timeStart)
-      timeEnd = RT_INDEFINITE_WAIT;
+      timeEnd = PR_INTERVAL_NO_TIMEOUT;
   }
 
   ipcMessage *lastChecked = nsnull, *beforeLastChecked = nsnull;
@@ -439,7 +439,7 @@ WaitTarget(const nsID           &aTarget,
     }
 #endif /* VBOX */
 
-    uint64_t t = RTTimeMilliTS();
+    PRIntervalTime t = PR_IntervalNow();
     if (t > timeEnd) // check if timeout has expired
     {
       rv = IPC_ERROR_WOULD_BLOCK;
@@ -1080,7 +1080,7 @@ IPC_WaitMessage(PRUint32             aSenderID,
                 const nsID          &aTarget,
                 ipcIMessageObserver *aObserver,
                 ipcIMessageObserver *aConsumer,
-                RTMSINTERVAL        aTimeout)
+                PRIntervalTime       aTimeout)
 {
   NS_ENSURE_TRUE(gClientState, NS_ERROR_NOT_INITIALIZED);
 

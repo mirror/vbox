@@ -256,8 +256,8 @@ public:
      * Wait
      * @see prmon.h 
      **/      
-    nsresult Wait(RTMSINTERVAL msTimeout = RT_INDEFINITE_WAIT) {
-        return PR_Wait(mMonitor, msTimeout) == PR_SUCCESS
+    nsresult Wait(PRIntervalTime interval = PR_INTERVAL_NO_TIMEOUT) {
+        return PR_Wait(mMonitor, interval) == PR_SUCCESS
             ? NS_OK : NS_ERROR_FAILURE;
     }
 

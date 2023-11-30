@@ -108,7 +108,7 @@ ipcLockService::AcquireLock(const char *lockName, PRBool waitIfBusy)
     if (NS_SUCCEEDED(rv)) {
         do {
             // block the calling thread until we get a response from the daemon
-            rv = IPC_WaitMessage(0, kLockTargetID, this, nsnull, RT_INDEFINITE_WAIT);
+            rv = IPC_WaitMessage(0, kLockTargetID, this, nsnull, PR_INTERVAL_NO_TIMEOUT);
         }
         while (NS_SUCCEEDED(rv) && !pendingLock.complete);
 

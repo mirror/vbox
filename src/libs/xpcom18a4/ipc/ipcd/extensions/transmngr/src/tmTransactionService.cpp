@@ -327,7 +327,7 @@ tmTransactionService::SendMessage(tmTransaction *aTrans, PRBool aSync) {
                   aTrans->GetRawMessage(), 
                   aTrans->GetRawMessageLength());
   if (aSync)
-    IPC_WaitMessage(0, kTransModuleID, nsnull, nsnull, RT_INDEFINITE_WAIT);
+    IPC_WaitMessage(0, kTransModuleID, nsnull, nsnull, PR_INTERVAL_NO_TIMEOUT);
 }
 
 void

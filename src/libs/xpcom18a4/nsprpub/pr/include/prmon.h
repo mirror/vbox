@@ -39,8 +39,7 @@
 #define prmon_h___
 
 #include "prtypes.h"
-
-#include <iprt/types.h>
+#include "prinrval.h"
 
 #ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
 #define PR_EnterMonitor VBoxNsprPR_EnterMonitor
@@ -105,7 +104,7 @@ NSPR_API(PRStatus) PR_ExitMonitor(PRMonitor *mon);
 **
 ** Returns PR_FAILURE if the caller has not entered the monitor.
 */
-NSPR_API(PRStatus) PR_Wait(PRMonitor *mon, RTMSINTERVAL msWait);
+NSPR_API(PRStatus) PR_Wait(PRMonitor *mon, PRIntervalTime ticks);
 
 /*
 ** Notify a thread waiting on the monitor's condition variable. If a thread

@@ -284,14 +284,16 @@ static PRStatus PR_Unlock(PRLock *lock)
 #define PT_BILLION 1000000000UL
 
 static PRIntn pt_TimedWait(
-    pthread_cond_t *cv, pthread_mutex_t *ml, RTMSINTERVAL msTimeout)
+    pthread_cond_t *cv, pthread_mutex_t *ml, PRIntervalTime timeout)
 {
     int rv;
     struct timeval now;
     struct timespec tmo;
+    PRUint32 ticks = PR_TicksPerSecond();
 
-    tmo.tv_sec = (PRInt32)(msTimeout / RT_MS_1SEC);
-    tmo.tv_nsec = (PRInt32)((msTimeout - (tmo.tv_sec * RT_MS_1SEC)) * RT_NS_1MS);
+    tmo.tv_sec = (PRInt32)(timeout / ticks);
+    tmo.tv_nsec = (PRInt32)(timeout - (tmo.tv_sec * ticks));
+    tmo.tv_nsec = (PRInt32)PR_IntervalToMicroseconds(PT_NANOPERMICRO * tmo.tv_nsec);
 
     /* pthreads wants this in absolute time, off we go ... */
     (void)gettimeofday(&now, NULL);
@@ -364,7 +366,7 @@ static void PR_DestroyCondVar(PRCondVar *cvar)
     }
 }  /* PR_DestroyCondVar */
 
-PR_IMPLEMENT(PRStatus) PR_WaitCondVar(PRCondVar *cvar, RTMSINTERVAL msTimeout)
+PR_IMPLEMENT(PRStatus) PR_WaitCondVar(PRCondVar *cvar, PRIntervalTime timeout)
 {
     PRIntn rv;
 
@@ -391,10 +393,10 @@ PR_IMPLEMENT(PRStatus) PR_WaitCondVar(PRCondVar *cvar, RTMSINTERVAL msTimeout)
      */
     cvar->lock->locked = PR_FALSE;
 
-    if (msTimeout == RT_INDEFINITE_WAIT)
+    if (timeout == PR_INTERVAL_NO_TIMEOUT)
         rv = pthread_cond_wait(&cvar->cv, &cvar->lock->mutex);
     else
-        rv = pt_TimedWait(&cvar->cv, &cvar->lock->mutex, msTimeout);
+        rv = pt_TimedWait(&cvar->cv, &cvar->lock->mutex, timeout);
 
     /* We just got the lock back - this better be empty */
     Assert(PR_FALSE == cvar->lock->locked);
@@ -542,7 +544,7 @@ PR_IMPLEMENT(PRStatus) PR_ExitMonitor(PRMonitor *mon)
     return PR_SUCCESS;
 }  /* PR_ExitMonitor */
 
-PR_IMPLEMENT(PRStatus) PR_Wait(PRMonitor *mon, RTMSINTERVAL msTimeout)
+PR_IMPLEMENT(PRStatus) PR_Wait(PRMonitor *mon, PRIntervalTime timeout)
 {
     PRStatus rv;
     PRInt16 saved_entries;
@@ -562,7 +564,7 @@ PR_IMPLEMENT(PRStatus) PR_Wait(PRMonitor *mon, RTMSINTERVAL msTimeout)
     _PT_PTHREAD_COPY_THR_HANDLE(mon->owner, saved_owner);
     _PT_PTHREAD_INVALIDATE_THR_HANDLE(mon->owner);
     
-    rv = PR_WaitCondVar(mon->cvar, msTimeout);
+    rv = PR_WaitCondVar(mon->cvar, timeout);
 
     /* reinstate the intresting information */
     mon->entryCount = saved_entries;

@@ -104,7 +104,7 @@ ipcService::WaitMessage(PRUint32 aSenderID, const nsID &aTarget,
                         PRUint32 aTimeout)
 {
     return IPC_WaitMessage(aSenderID, aTarget, aObserver, nsnull,
-                           aTimeout);
+                           PR_MillisecondsToInterval(aTimeout));
 }
 
 NS_IMETHODIMP
