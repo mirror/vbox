@@ -2195,6 +2195,49 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #endif
 
 
+/**
+ * Maps guest memory for 80-bit BCD writeonly direct (or bounce) buffer acccess.
+ *
+ * @param[out] a_pd80Mem    Where to return the pointer to the mapping.
+ * @param[out] a_bUnmapInfo Where to return umapping instructions. uint8_t.
+ * @param[in]  a_iSeg       The segment register to access via. No UINT8_MAX!
+ * @param[in]  a_GCPtrMem   The memory address.
+ * @remarks Will return/long jump on errors.
+ * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_WO
+ */
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_MAP_D80_WO(a_pd80Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { \
+        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pd80Mem), sizeof(RTFLOAT80U), (a_iSeg), \
+                                           (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint64_t) - 1)); \
+        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_WRITE << 4); \
+    } while (0)
+#else
+# define IEM_MC_MEM_MAP_D80_WO(a_pd80Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    (a_pd80Mem) = iemMemMapDataD80WoJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
+#endif
+
+/**
+ * Maps guest memory for 80-bit BCD writeonly direct (or bounce) buffer acccess.
+ *
+ * @param[out] a_pd80Mem    Where to return the pointer to the mapping.
+ * @param[out] a_bUnmapInfo Where to return umapping instructions. uint8_t.
+ * @param[in]  a_GCPtrMem   The memory address.
+ * @remarks Will return/long jump on errors.
+ * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_WO
+ */
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_FLAT_MAP_D80_WO(a_pd80Mem, a_bUnmapInfo, a_GCPtrMem) do { \
+        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pd80Mem), sizeof(RTFLOAT80U), UINT8_MAX, \
+                                           (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint64_t) - 1)); \
+        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_WRITE << 4); \
+    } while (0)
+#else
+# define IEM_MC_MEM_FLAT_MAP_D80_WO(a_pd80Mem, a_bUnmapInfo, a_GCPtrMem) \
+    (a_pd80Mem) = iemMemFlatMapDataD80WoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
+#endif
+
+
+
 /* commit + unmap */
 
 /** Commits the memory and unmaps guest memory previously mapped RW.

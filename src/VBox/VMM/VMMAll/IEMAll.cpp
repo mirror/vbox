@@ -7102,6 +7102,13 @@ void iemMemRollback(PVMCPUCC pVCpu) RT_NOEXCEPT
 #define TMPL_MEM_FMT_DESC   "tword"
 #include "IEMAllMemRWTmpl.cpp.h"
 
+#define TMPL_MEM_TYPE       RTPBCD80U
+#define TMPL_MEM_TYPE_ALIGN (sizeof(uint64_t) - 1) /** @todo testcase: 80-bit BCD alignment */
+#define TMPL_MEM_FN_SUFF    D80
+#define TMPL_MEM_FMT_TYPE   "%.10Rhxs"
+#define TMPL_MEM_FMT_DESC   "tword"
+#include "IEMAllMemRWTmpl.cpp.h"
+
 
 /**
  * Fetches a data dword and zero extends it to a qword.
@@ -7157,54 +7164,6 @@ VBOXSTRICTRC iemMemFetchDataS32SxU64(PVMCPUCC pVCpu, uint64_t *pu64Dst, uint8_t 
         *pu64Dst = 0;
 #endif
     return rc;
-}
-#endif
-
-
-/**
- * Fetches a data decimal tword.
- *
- * @returns Strict VBox status code.
- * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
- * @param   pd80Dst             Where to return the tword.
- * @param   iSegReg             The index of the segment register to use for
- *                              this access.  The base and limits are checked.
- * @param   GCPtrMem            The address of the guest memory.
- */
-VBOXSTRICTRC iemMemFetchDataD80(PVMCPUCC pVCpu, PRTPBCD80U pd80Dst, uint8_t iSegReg, RTGCPTR GCPtrMem) RT_NOEXCEPT
-{
-    /* The lazy approach for now... */
-    PCRTPBCD80U pd80Src;
-    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&pd80Src, sizeof(*pd80Src), iSegReg, GCPtrMem,
-                                IEM_ACCESS_DATA_R, 7 /** @todo FBLD alignment check */);
-    if (rc == VINF_SUCCESS)
-    {
-        *pd80Dst = *pd80Src;
-        rc = iemMemCommitAndUnmap(pVCpu, (void *)pd80Src, IEM_ACCESS_DATA_R);
-        Log(("IEM RD tword %d|%RGv: %.10Rhxs\n", iSegReg, GCPtrMem, pd80Dst));
-    }
-    return rc;
-}
-
-
-#ifdef IEM_WITH_SETJMP
-/**
- * Fetches a data decimal tword, longjmp on error.
- *
- * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
- * @param   pd80Dst             Where to return the tword.
- * @param   iSegReg             The index of the segment register to use for
- *                              this access.  The base and limits are checked.
- * @param   GCPtrMem            The address of the guest memory.
- */
-void iemMemFetchDataD80Jmp(PVMCPUCC pVCpu, PRTPBCD80U pd80Dst, uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
-{
-    /* The lazy approach for now... */
-    PCRTPBCD80U pd80Src = (PCRTPBCD80U)iemMemMapJmp(pVCpu, sizeof(*pd80Src), iSegReg, GCPtrMem,
-                                                    IEM_ACCESS_DATA_R, 7 /** @todo FBSTP alignment check */);
-    *pd80Dst = *pd80Src;
-    iemMemCommitAndUnmapJmp(pVCpu, (void *)pd80Src, IEM_ACCESS_DATA_R);
-    Log(("IEM RD tword %d|%RGv: %.10Rhxs\n", iSegReg, GCPtrMem, pd80Dst));
 }
 #endif
 

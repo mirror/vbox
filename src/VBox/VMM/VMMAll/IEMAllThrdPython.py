@@ -704,6 +704,7 @@ class ThreadedFunctionVariation(object):
         'IEM_MC_STORE_MEM_U256':                  (  0, 'IEM_MC_STORE_MEM_FLAT_U256' ),
         'IEM_MC_STORE_MEM_U256_ALIGN_AVX':        (  0, 'IEM_MC_STORE_MEM_FLAT_U256_ALIGN_AVX' ),
         'IEM_MC_MEM_MAP':                         (  2, 'IEM_MC_MEM_FLAT_MAP' ),
+        'IEM_MC_MEM_MAP_D80_WO':                  (  2, 'IEM_MC_MEM_FLAT_MAP_D80_WO' ),
         'IEM_MC_MEM_MAP_I16_WO':                  (  2, 'IEM_MC_MEM_FLAT_MAP_I16_WO' ),
         'IEM_MC_MEM_MAP_I32_WO':                  (  2, 'IEM_MC_MEM_FLAT_MAP_I32_WO' ),
         'IEM_MC_MEM_MAP_I64_WO':                  (  2, 'IEM_MC_MEM_FLAT_MAP_I64_WO' ),

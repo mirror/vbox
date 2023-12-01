@@ -12330,28 +12330,32 @@ FNIEMOP_DEF_1(iemOp_fild_m64i,   uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_fbstp_m80d,  uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fbstp_m80d, "fbstp m80d");
-    IEM_MC_BEGIN(3, 2, 0, 0);
+    IEM_MC_BEGIN(3, 3, 0, 0);
     IEM_MC_LOCAL(RTGCPTR,               GCPtrEffDst);
-    IEM_MC_LOCAL(uint16_t,              u16Fsw);
-    IEM_MC_ARG_LOCAL_REF(uint16_t *,    pu16Fsw,    u16Fsw, 0);
-    IEM_MC_ARG(PRTPBCD80U,              pd80Dst,            1);
-    IEM_MC_ARG(PCRTFLOAT80U,            pr80Value,          2);
-
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
+
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
-
-    IEM_MC_MEM_MAP_EX(pd80Dst, IEM_ACCESS_DATA_W, sizeof(*pd80Dst), pVCpu->iem.s.iEffSeg, GCPtrEffDst, 7 /*cbAlign*/, 1 /*arg*/);
     IEM_MC_PREPARE_FPU_USAGE();
+
+    IEM_MC_LOCAL(uint8_t,               bUnmapInfo);
+    IEM_MC_ARG(PRTPBCD80U,              pd80Dst,            1);
+    IEM_MC_MEM_MAP_D80_WO(pd80Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
+
+    IEM_MC_ARG(PCRTFLOAT80U,            pr80Value,          2);
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
+        IEM_MC_LOCAL(uint16_t,          u16Fsw);
+        IEM_MC_ARG_LOCAL_REF(uint16_t *,pu16Fsw,    u16Fsw, 0);
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fst_r80_to_d80, pu16Fsw, pd80Dst, pr80Value);
-        IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pd80Dst, IEM_ACCESS_DATA_W, u16Fsw);
+        IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE_WO(pd80Dst, bUnmapInfo, u16Fsw);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffDst, pVCpu->iem.s.uFpuOpcode);
     } IEM_MC_ELSE() {
         IEM_MC_IF_FCW_IM() {
             IEM_MC_STORE_MEM_INDEF_D80_BY_REF(pd80Dst);
-            IEM_MC_MEM_COMMIT_AND_UNMAP(pd80Dst, IEM_ACCESS_DATA_W);
+            IEM_MC_MEM_COMMIT_AND_UNMAP_WO(pd80Dst, bUnmapInfo);
+        } IEM_MC_ELSE() {
+            IEM_MC_MEM_ROLLBACK_AND_UNMAP_WO(pd80Dst, bUnmapInfo);
         } IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffDst, pVCpu->iem.s.uFpuOpcode);
     } IEM_MC_ENDIF();
