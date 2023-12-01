@@ -5333,6 +5333,9 @@ ifdef VBOX_WITH_RAW_MODE
   if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
    TEMPLATE_VBoxRc_CXXFLAGS         += -Gw
   endif
+  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
+   TEMPLATE_VBoxRc_CXXFLAGS         += -Zc:inline
+  endif
   ifdef VBOX_WITH_MSC_ANALYZE_THIS
    TEMPLATE_VBoxRc_CXXFLAGS         += /analyze
   endif
@@ -5483,6 +5486,9 @@ ifeq ($(VBOX_LDR_FMT),pe)
  	-Gy $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_std) $(VBOX_VCC_WARN_ALL) -wd4505 $(VBOX_VCC_WERR)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
   TEMPLATE_VBoxR0_CXXFLAGS         += -Gw
+ endif
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140" # Reduces object size, speeding up linking and makes inline behaviour C++11 compliant.
+  TEMPLATE_VBoxR0_CXXFLAGS         += -Zc:inline
  endif
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Don't waste space on x86/amd64-on-arm emulation optimizations.
   TEMPLATE_VBoxR0_CXXFLAGS         += /volatileMetadata-
@@ -5683,6 +5689,9 @@ ifeq ($(KBUILD_TARGET),win)
  	-Gy $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
   TEMPLATE_VBoxR0Drv_CXXFLAGS         += -Gw
+ endif
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140" # Reduces object size, speeding up linking and makes inline behaviour C++11 compliant.
+  TEMPLATE_VBoxR0Drv_CXXFLAGS         += -Zc:inline
  endif
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Don't waste space on x86/amd64-on-arm emulation optimizations.
   TEMPLATE_VBoxR0Drv_CXXFLAGS         += /volatileMetadata-
@@ -6247,6 +6256,9 @@ ifeq ($(KBUILD_TARGET),win)
  	-Gy $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS) $(VBOX_VCC_std) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
   TEMPLATE_VBoxR3Exe_CXXFLAGS         += -Gw
+ endif
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140" # Reduces object size, speeding up linking and makes inline behaviour C++11 compliant.
+  TEMPLATE_VBoxR3Exe_CXXFLAGS         += -Zc:inline
  endif
  ifdef VBOX_WITH_MSC_ANALYZE_THIS
   TEMPLATE_VBoxR3Exe_CXXFLAGS         += /analyze
@@ -7200,6 +7212,9 @@ ifeq ($(KBUILD_TARGET),win)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
   TEMPLATE_VBoxMainExe_CXXFLAGS         += -Gw
  endif
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140" # Reduces object size, speeding up linking and makes inline behaviour C++11 compliant.
+  TEMPLATE_VBoxMainExe_CXXFLAGS         += -Zc:inline
+ endif
  ifdef VBOX_WITH_MSC_ANALYZE_THIS
   TEMPLATE_VBoxMainExe_CXXFLAGS         += /analyze
  endif
@@ -7913,6 +7928,9 @@ ifdef VBOX_WITH_QTGUI
   if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
    TEMPLATE_VBoxQtGuiExe_CXXFLAGS += -Gw
   endif
+  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140" # Reduces object size, speeding up linking and makes inline behaviour C++11 compliant.
+   TEMPLATE_VBoxQtGuiExe_CXXFLAGS += -Zc:inline
+  endif
   ifdef VBOX_WITH_MSC_ANALYZE_THIS
    TEMPLATE_VBoxQtGuiExe_CXXFLAGS += /analyze
   endif
@@ -8231,6 +8249,9 @@ ifeq ($(KBUILD_HOST),win)
  	-MT$(VBOX_VCC_CRT_TYPE) -Gy $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_std) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
   TEMPLATE_VBoxBldProg_CXXFLAGS         += -Gw
+ endif
+ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140" # Reduces object size, speeding up linking and makes inline behaviour C++11 compliant.
+  TEMPLATE_VBoxBldProg_CXXFLAGS         += -Zc:inline
  endif
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Don't waste space on x86/amd64-on-arm emulation optimizations.
   TEMPLATE_VBoxBldProg_CXXFLAGS         += /volatileMetadata-
