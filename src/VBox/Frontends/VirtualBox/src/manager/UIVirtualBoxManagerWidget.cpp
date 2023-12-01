@@ -579,6 +579,8 @@ void UIVirtualBoxManagerWidget::sltHandleToolsPaneIndexChange()
 {
     /* Determine sender: */
     UITools *pMenu = qobject_cast<UITools*>(sender());
+    if (!pMenu)
+        pMenu = m_pMenuToolsMachine;
 
     /* Acquire current class/type: */
     UIToolClass enmCurrentClass = UIToolClass_Invalid;
