@@ -686,8 +686,12 @@ void UIFileManagerTable::goIntoDirectory(const QModelIndex &itemIndex)
     if (item->isDirectory() || item->isSymLinkToADirectory())
     {
         if (!item->isOpened())
-            readDirectory(item->path(),item);
-        changeLocation(index);
+        {
+            if (readDirectory(item->path(),item))
+                changeLocation(index);
+        }
+        else
+            changeLocation(index);
     }
 }
 
@@ -701,7 +705,8 @@ void UIFileManagerTable::goIntoDirectory(const QStringList &pathTrail)
             return;
         /* Make sure parent is already opened: */
         if (!parent->isOpened())
-            readDirectory(parent->path(), parent, parent == getStartDirectoryItem());
+            if (!readDirectory(parent->path(), parent, parent == getStartDirectoryItem()))
+                return;
         /* search the current path item among the parent's children: */
         UICustomFileSystemItem *item = parent->child(pathTrail.at(i));
 
@@ -712,7 +717,10 @@ void UIFileManagerTable::goIntoDirectory(const QStringList &pathTrail)
     if (!parent)
         return;
     if (!parent->isOpened())
-        readDirectory(parent->path(), parent, parent == getStartDirectoryItem());
+    {
+        if (!readDirectory(parent->path(), parent, parent == getStartDirectoryItem()))
+            return;
+    }
     goIntoDirectory(parent);
 }
 

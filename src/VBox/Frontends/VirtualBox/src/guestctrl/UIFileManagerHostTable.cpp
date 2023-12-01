@@ -134,6 +134,7 @@ void UIHostDirectoryDiskUsageComputer::directoryStatisticsRecursive(const QStrin
 
 UIFileManagerHostTable::UIFileManagerHostTable(UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
     :UIFileManagerTable(pActionPool, pParent)
+    , m_pModifierActionSeparator(0)
 {
     setModelFileSystem(isWindowsFileSystem());
     initializeFileTree();
@@ -143,7 +144,19 @@ UIFileManagerHostTable::UIFileManagerHostTable(UIActionPool *pActionPool, QWidge
     retranslateUi();
 }
 
-/* static */ void UIFileManagerHostTable::scanDirectory(const QString& strPath, UICustomFileSystemItem *parent,
+void UIFileManagerHostTable::setModifierActionsVisible(bool fShown)
+{
+    if (m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Delete))
+        m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Delete)->setVisible(fShown);
+    if (m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Rename))
+        m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Rename)->setVisible(fShown);
+    if (m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_CreateNewDirectory))
+        m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_CreateNewDirectory)->setVisible(fShown);
+    if (m_pModifierActionSeparator)
+        m_pModifierActionSeparator->setVisible(fShown);
+}
+
+/* static */ bool UIFileManagerHostTable::scanDirectory(const QString& strPath, UICustomFileSystemItem *parent,
                                                         QMap<QString, UICustomFileSystemItem*> &fileObjects)
 {
 
@@ -152,9 +165,11 @@ UIFileManagerHostTable::UIFileManagerHostTable(UIActionPool *pActionPool, QWidge
        returns an empty list: */
     /*directory.setFilter(QDir::NoDotAndDotDot);*/
     parent->setIsOpened(true);
-    if (!directory.exists())
-        return;
+    if (!directory.exists() || !directory.isReadable())
+        return false;
     QFileInfoList entries = directory.entryInfoList(QDir::Hidden|QDir::AllEntries|QDir::NoDotAndDotDot);
+    if (entries.isEmpty())
+        return false;
     for (int i = 0; i < entries.size(); ++i)
     {
         const QFileInfo &fileInfo = entries.at(i);
@@ -179,6 +194,7 @@ UIFileManagerHostTable::UIFileManagerHostTable(UIActionPool *pActionPool, QWidge
         fileObjects.insert(fileInfo.fileName(), item);
         item->setIsOpened(false);
     }
+    return true;
 }
 
 void UIFileManagerHostTable::retranslateUi()
@@ -198,11 +214,12 @@ void UIFileManagerHostTable::prepareToolbar()
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoUp));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoHome));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Refresh));
-        m_pToolBar->addSeparator();
+
+        m_pModifierActionSeparator = m_pToolBar->addSeparator();
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Delete));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Rename));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_CreateNewDirectory));
-        // m_pToolBar->addSeparator();
+
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Copy));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Cut));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Paste));
@@ -266,14 +283,16 @@ bool UIFileManagerHostTable::isWindowsFileSystem() const
     return uiCommon().hostOperatingSystem().contains("windows", Qt::CaseInsensitive);
 }
 
-void UIFileManagerHostTable::readDirectory(const QString& strPath, UICustomFileSystemItem *parent, bool isStartDir /*= false*/)
+bool UIFileManagerHostTable::readDirectory(const QString& strPath, UICustomFileSystemItem *parent, bool isStartDir /*= false*/)
 {
     if (!parent)
-        return;
+        return false;
 
     QMap<QString, UICustomFileSystemItem*> fileObjects;
-    scanDirectory(strPath, parent, fileObjects);
+    if (!scanDirectory(strPath, parent, fileObjects))
+        return false;
     checkDotDot(fileObjects, parent, isStartDir);
+    return true;
 }
 
 void UIFileManagerHostTable::deleteByItem(UICustomFileSystemItem *item)

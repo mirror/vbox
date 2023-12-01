@@ -50,6 +50,9 @@ class UIFileManagerHostTable : public UIFileManagerTable
 public:
 
     UIFileManagerHostTable(UIActionPool *pActionPool, QWidget *pParent = 0);
+    /** Hide delete, rename, new folder actions. */
+    void setModifierActionsVisible(bool fShown);
+
     static KFsObjType  fileType(const QFileInfo &fsInfo);
     static KFsObjType  fileType(const QString &strPath);
 
@@ -57,10 +60,10 @@ protected:
 
     /** Scans the directory with the path @strPath and inserts items to the
      *  tree under the @p parent. */
-    static void scanDirectory(const QString& strPath, UICustomFileSystemItem *parent,
+    static bool scanDirectory(const QString& strPath, UICustomFileSystemItem *parent,
                               QMap<QString, UICustomFileSystemItem*> &fileObjects);
     void            retranslateUi() override final;
-    virtual void    readDirectory(const QString& strPath, UICustomFileSystemItem *parent, bool isStartDir = false) override final;
+    virtual bool    readDirectory(const QString& strPath, UICustomFileSystemItem *parent, bool isStartDir = false) override final;
     virtual void    deleteByItem(UICustomFileSystemItem *item) override final;
     virtual void    goToHomeDirectory() override final;
     virtual bool    renameItem(UICustomFileSystemItem *item, const QString &strOldPath) override final;
@@ -84,6 +87,8 @@ private:
 
     static QString permissionString(QFileDevice::Permissions permissions);
     void    prepareActionConnections();
+
+    QAction *m_pModifierActionSeparator;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_guestctrl_UIFileManagerHostTable_h */

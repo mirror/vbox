@@ -210,7 +210,7 @@ protected:
     void initializeFileTree();
     void checkDotDot(QMap<QString,UICustomFileSystemItem*> &map, UICustomFileSystemItem *parent, bool isStartDir);
 
-    virtual void     readDirectory(const QString& strPath, UICustomFileSystemItem *parent, bool isStartDir = false) = 0;
+    virtual bool     readDirectory(const QString& strPath, UICustomFileSystemItem *parent, bool isStartDir = false) = 0;
     virtual void     deleteByItem(UICustomFileSystemItem *item) = 0;
     virtual void     goToHomeDirectory() = 0;
     virtual bool     renameItem(UICustomFileSystemItem *item, const QString &strOldPath) = 0;

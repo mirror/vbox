@@ -490,6 +490,7 @@ void UIVisoCreatorWidget::prepareWidgets()
     m_pHostFileBrowser = new UIFileManagerHostTable(m_pActionPool);
     AssertPtrReturnVoid(m_pHostFileBrowser);
     pContainerLayout->addWidget(m_pHostFileBrowser, 0, 0, 1, 4);
+    m_pHostFileBrowser->setModifierActionsVisible(false);
 
     prepareVerticalToolBar();
     AssertPtrReturnVoid(m_pVerticalToolBar);

@@ -80,7 +80,7 @@ public:
 protected:
 
     void            retranslateUi() override final;
-    virtual void    readDirectory(const QString& strPath, UICustomFileSystemItem *parent, bool isStartDir = false) override final;
+    virtual bool    readDirectory(const QString& strPath, UICustomFileSystemItem *parent, bool isStartDir = false) override final;
     virtual void    deleteByItem(UICustomFileSystemItem *item) override final;
     virtual void    goToHomeDirectory() override final;
     virtual bool    renameItem(UICustomFileSystemItem *item, const QString &strOldPath) override final;

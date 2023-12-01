@@ -513,11 +513,11 @@ void UIFileManagerGuestTable::retranslateUi()
     UIFileManagerTable::retranslateUi();
 }
 
-void UIFileManagerGuestTable::readDirectory(const QString& strPath,
+bool UIFileManagerGuestTable::readDirectory(const QString& strPath,
                                      UICustomFileSystemItem *parent, bool isStartDir /*= false*/)
 {
     if (!parent)
-        return;
+        return false;
 
     CGuestDirectory directory;
     QVector<KDirectoryOpenFlag> flag;
@@ -527,7 +527,7 @@ void UIFileManagerGuestTable::readDirectory(const QString& strPath,
     if (!m_comGuestSession.isOk())
     {
         emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), m_strTableName, FileManagerLogType_Error);
-        return;
+        return false;
     }
 
     parent->setIsOpened(true);
@@ -568,6 +568,7 @@ void UIFileManagerGuestTable::readDirectory(const QString& strPath,
                     item->setData(changeTime, UICustomFileSystemModelData_ChangeTime);
                     item->setData(fsInfo.GetUserName(), UICustomFileSystemModelData_Owner);
                     item->setData(permissionString(fsInfo), UICustomFileSystemModelData_Permissions);
+                    printf(" %s === %s\n", qPrintable(fsInfo.GetName()), qPrintable(fsInfo.GetFileAttributes()));
                     item->setIsOpened(false);
                     item->setIsHidden(isFileObjectHidden(fsInfo));
                     fileObjects.insert(fsInfo.GetName(), item);
@@ -595,8 +596,13 @@ void UIFileManagerGuestTable::readDirectory(const QString& strPath,
 
         checkDotDot(fileObjects, parent, isStartDir);
     }
-
+    else
+    {
+        directory.Close();
+        return false;
+    }
     directory.Close();
+    return true;
 }
 
 void UIFileManagerGuestTable::deleteByItem(UICustomFileSystemItem *item)
