@@ -383,18 +383,9 @@
 02: @@VBOX_COND[${GUEST_OS_VERSION} vle 3.4.2]@@ GUEST_OS_VERSION <= 3.4.2@@VBOX_COND_ELSE@@ failed@@VBOX_COND_END@@
 
 /*
- * Hashing attributes.
- * Contains the word "changeme" as hashed results.
- */
-01=@@VBOX_INSERT_USER_PASSWORD_MD5@@
-02=@@VBOX_INSERT_USER_PASSWORD_SHA1@@
-03=@@VBOX_INSERT_USER_PASSWORD_SHA256@@
-04=@@VBOX_INSERT_USER_PASSWORD_SHA512@@
-
-/*
- * SHAcrypt attributes. Contains the word "changeme" as hashed results.
+ * SHAcrypt 512. Contains the word "changeme" as hashed results.
  * Note: This uses a fixed salt ("testcase123") within UnattendedScript.cpp, so that we can compare the outputs.
  */
-01=@@VBOX_INSERT_USER_PASSWORD_SHACRYPT256@@
-02=@@VBOX_INSERT_USER_PASSWORD_SHACRYPT512@@
+01=@@VBOX_INSERT_USER_PASSWORD_SHACRYPT512@@
+02=@@VBOX_INSERT_ROOT_PASSWORD_SHACRYPT512@@
 
