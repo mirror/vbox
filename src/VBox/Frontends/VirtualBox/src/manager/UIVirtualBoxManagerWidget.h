@@ -302,7 +302,7 @@ private slots:
         void sltHandleChooserPaneIndexChange();
 
         /** Handles signal about Chooser-pane selection invalidated. */
-        void sltHandleChooserPaneSelectionInvalidated() { recacheCurrentItemInformation(true /* fDontRaiseErrorPane */); }
+        void sltHandleChooserPaneSelectionInvalidated() { recacheCurrentMachineItemInformation(true /* fDontRaiseErrorPane */); }
 
         /** Handles sliding animation complete signal.
           * @param  enmDirection  Brings which direction was animation finished for. */
@@ -357,9 +357,9 @@ private:
         /** Updates Machine tools menu for @a pItem specified. */
         void updateToolsMenuMachine(UIVirtualMachineItem *pItem);
 
-        /** Recaches current item information.
+        /** Recaches current machine item information.
           * @param  fDontRaiseErrorPane  Brings whether we should not raise error-pane. */
-        void recacheCurrentItemInformation(bool fDontRaiseErrorPane = false);
+        void recacheCurrentMachineItemInformation(bool fDontRaiseErrorPane = false);
     /** @} */
 
     /** Holds the action-pool instance. */

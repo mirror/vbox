@@ -369,9 +369,8 @@ void UIVirtualBoxManagerWidget::sltHandleStateChange(const QUuid &uId)
         }
     }
 
-    /* Recache current item info if machine or group item selected: */
-    if (isMachineItemSelected() || isGroupItemSelected())
-        recacheCurrentItemInformation();
+    /* Recache current machine item information: */
+    recacheCurrentMachineItemInformation();
 }
 
 void UIVirtualBoxManagerWidget::sltHandleSettingsExpertModeChange()
@@ -453,9 +452,8 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange()
     else
         updateToolsMenuGlobal();
 
-    /* Recache current item info if machine or group item selected: */
-    if (isMachineItemSelected() || isGroupItemSelected())
-        recacheCurrentItemInformation();
+    /* Recache current machine item information: */
+    recacheCurrentMachineItemInformation();
 
     /* Calculate selection type: */
     const SelectionType enmSelectedItemType = isSingleLocalGroupSelected()
@@ -1166,8 +1164,12 @@ void UIVirtualBoxManagerWidget::updateToolsMenuMachine(UIVirtualMachineItem *pIt
         m_pPaneToolsMachine->closeTool(enmRestrictedType);
 }
 
-void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErrorPane /* = false */)
+void UIVirtualBoxManagerWidget::recacheCurrentMachineItemInformation(bool fDontRaiseErrorPane /* = false */)
 {
+    /* Sanity check, this method is for machine or group of machine items: */
+    if (!isMachineItemSelected() && !isGroupItemSelected())
+        return;
+
     /* Get current item: */
     UIVirtualMachineItem *pItem = currentItem();
     const bool fCurrentItemIsOk = pItem && pItem->accessible();
@@ -1178,21 +1180,19 @@ void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErr
         /* If Error-pane is chosen currently => open tool currently chosen in Tools-pane: */
         if (m_pPaneToolsMachine->currentTool() == UIToolType_Error)
             sltHandleToolsPaneIndexChange();
+
+        /* Propagate current items to the Tools pane: */
+        m_pPaneToolsMachine->setItems(currentItems());
     }
-    else
+    /* Otherwise if we were not asked separately to calm down: */
+    else if (!fDontRaiseErrorPane)
     {
-        /* If we were not asked separately: */
-        if (!fDontRaiseErrorPane)
-        {
-            /* Make sure Error pane raised: */
+        /* Make sure Error pane raised: */
+        if (m_pPaneToolsMachine->currentTool() != UIToolType_Error)
             m_pPaneToolsMachine->openTool(UIToolType_Error);
 
-            /* Propagate last access error to update the Error-pane (if machine selected but inaccessible): */
-            if (pItem)
-                m_pPaneToolsMachine->setErrorDetails(pItem->accessError());
-        }
+        /* Propagate last access error to the Error-pane: */
+        if (pItem)
+            m_pPaneToolsMachine->setErrorDetails(pItem->accessError());
     }
-
-    /* Propagate current items to update the Details-pane: */
-    m_pPaneToolsMachine->setItems(currentItems());
 }
