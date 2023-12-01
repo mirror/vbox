@@ -373,6 +373,42 @@ HRESULT Unattended::detectIsoOS()
         hrc = i_innerDetectIsoOS(hVfsIso);
 
         RTVfsRelease(hVfsIso);
+
+        /* If detecting the ISO failed, print everything we got to the VBoxSVC release log,
+         * to (hopefully) provide us more clues about which distros don't work. */
+        if (FAILED(hrc))
+        {
+            Utf8Str strLangs;
+            for (size_t i = 0; i < mDetectedOSLanguages.size(); i++)
+            {
+                if (i)
+                    strLangs += ", ";
+                strLangs += mDetectedOSLanguages[i];
+            }
+
+            Utf8Str strImages;
+            for (size_t i = 0; i < mDetectedImages.size(); i++)
+            {
+                if (i)
+                    strImages += ", ";
+                strImages += mDetectedImages[i].mName;
+            }
+
+            LogRel(("Unattended: Detection summary:\n"
+                    "Unattended: OS type ID : %s\n"
+                    "Unattended: OS version : %s\n"
+                    "Unattended: OS flavor  : %s\n"
+                    "Unattended: OS language: %s\n"
+                    "Unattended: OS hints   : %s\n"
+                    "Unattended: Images     : %s\n",
+                    mStrDetectedOSTypeId.c_str(),
+                    mStrDetectedOSVersion.c_str(),
+                    mStrDetectedOSFlavor.c_str(),
+                    strLangs.c_str(),
+                    mStrDetectedOSHints.c_str(),
+                    strImages.c_str()));
+        }
+
         if (hrc == S_FALSE) /** @todo Finish the linux and windows detection code. Only OS/2 returns S_OK right now. */
             hrc = E_NOTIMPL;
     }
@@ -841,7 +877,7 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf)
                     vrc = RTVfsFileReadAt(hVfsFile, (RTFOFF)header.XmlData.off, pachXmlBuf, cbXmlData, NULL);
                     if (RT_SUCCESS(vrc))
                     {
-                        LogRel2(("XML Data (%#zx bytes):\n%32.*Rhxd\n", cbXmlData, cbXmlData, pachXmlBuf));
+                        LogRel2(("Unattended: XML Data (%#zx bytes):\n%32.*Rhxd\n", cbXmlData, cbXmlData, pachXmlBuf));
 
                         /* Parse the XML: */
                         xml::Document doc;
