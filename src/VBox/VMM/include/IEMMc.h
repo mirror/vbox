@@ -1802,6 +1802,24 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     (a_pu16Mem) = iemMemFlatMapDataU16RoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
 #endif
 
+/** int16_t alias. */
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_MAP_I16_WO(a_pi16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+         IEM_MC_MEM_MAP_U16_WO(a_pi16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem)
+#else
+# define IEM_MC_MEM_MAP_I16_WO(a_pi16Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    (a_pi16Mem) = (int16_t *)iemMemMapDataU16WoJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
+#endif
+
+/** Flat int16_t alias. */
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_FLAT_MAP_I16_WO(a_pi16Mem, a_bUnmapInfo, a_GCPtrMem) \
+         IEM_MC_MEM_FLAT_MAP_U16_WO(a_pi16Mem, a_bUnmapInfo, a_GCPtrMem)
+#else
+# define IEM_MC_MEM_FLAT_MAP_I16_WO(a_pi16Mem, a_bUnmapInfo, a_GCPtrMem) \
+    (a_pi16Mem) = (int16_t *)iemMemFlatMapDataU16WoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
+#endif
+
 
 /* 32-bit */
 

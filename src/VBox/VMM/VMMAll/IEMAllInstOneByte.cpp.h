@@ -12149,28 +12149,32 @@ FNIEMOP_DEF_1(iemOp_fild_m16i, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_fisttp_m16i, uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fisttp_m16i, "fisttp m16i");
-    IEM_MC_BEGIN(3, 2, 0, 0);
+    IEM_MC_BEGIN(3, 3, 0, 0);
     IEM_MC_LOCAL(RTGCPTR,               GCPtrEffDst);
-    IEM_MC_LOCAL(uint16_t,              u16Fsw);
-    IEM_MC_ARG_LOCAL_REF(uint16_t *,    pu16Fsw,    u16Fsw, 0);
-    IEM_MC_ARG(int16_t *,               pi16Dst,            1);
-    IEM_MC_ARG(PCRTFLOAT80U,            pr80Value,          2);
-
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
+
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
-
-    IEM_MC_MEM_MAP(pi16Dst, IEM_ACCESS_DATA_W, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 1 /*arg*/);
     IEM_MC_PREPARE_FPU_USAGE();
+
+    IEM_MC_LOCAL(uint8_t,               bUnmapInfo);
+    IEM_MC_ARG(int16_t *,               pi16Dst,            1);
+    IEM_MC_MEM_MAP_I16_WO(pi16Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
+
+    IEM_MC_ARG(PCRTFLOAT80U,            pr80Value,          2);
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
+        IEM_MC_LOCAL(uint16_t,          u16Fsw);
+        IEM_MC_ARG_LOCAL_REF(uint16_t *,pu16Fsw,    u16Fsw, 0);
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fistt_r80_to_i16, pu16Fsw, pi16Dst, pr80Value);
-        IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pi16Dst, IEM_ACCESS_DATA_W, u16Fsw);
+        IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE_WO(pi16Dst, bUnmapInfo, u16Fsw);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffDst, pVCpu->iem.s.uFpuOpcode);
     } IEM_MC_ELSE() {
         IEM_MC_IF_FCW_IM() {
             IEM_MC_STORE_MEM_I16_CONST_BY_REF(pi16Dst, INT16_MIN /* (integer indefinite) */);
-            IEM_MC_MEM_COMMIT_AND_UNMAP(pi16Dst, IEM_ACCESS_DATA_W);
+            IEM_MC_MEM_COMMIT_AND_UNMAP_WO(pi16Dst, bUnmapInfo);
+        } IEM_MC_ELSE() {
+            IEM_MC_MEM_ROLLBACK_AND_UNMAP_WO(pi16Dst, bUnmapInfo);
         } IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffDst, pVCpu->iem.s.uFpuOpcode);
     } IEM_MC_ENDIF();
@@ -12184,28 +12188,32 @@ FNIEMOP_DEF_1(iemOp_fisttp_m16i, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_fist_m16i,   uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fist_m16i, "fist m16i");
-    IEM_MC_BEGIN(3, 2, 0, 0);
+    IEM_MC_BEGIN(3, 3, 0, 0);
     IEM_MC_LOCAL(RTGCPTR,               GCPtrEffDst);
-    IEM_MC_LOCAL(uint16_t,              u16Fsw);
-    IEM_MC_ARG_LOCAL_REF(uint16_t *,    pu16Fsw,    u16Fsw, 0);
-    IEM_MC_ARG(int16_t *,               pi16Dst,            1);
-    IEM_MC_ARG(PCRTFLOAT80U,            pr80Value,          2);
-
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
+
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
-
-    IEM_MC_MEM_MAP(pi16Dst, IEM_ACCESS_DATA_W, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 1 /*arg*/);
     IEM_MC_PREPARE_FPU_USAGE();
+
+    IEM_MC_LOCAL(uint8_t,               bUnmapInfo);
+    IEM_MC_ARG(int16_t *,               pi16Dst,            1);
+    IEM_MC_MEM_MAP_I16_WO(pi16Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
+
+    IEM_MC_ARG(PCRTFLOAT80U,            pr80Value,          2);
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
+        IEM_MC_LOCAL(uint16_t,          u16Fsw);
+        IEM_MC_ARG_LOCAL_REF(uint16_t *,pu16Fsw,    u16Fsw, 0);
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fist_r80_to_i16, pu16Fsw, pi16Dst, pr80Value);
-        IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pi16Dst, IEM_ACCESS_DATA_W, u16Fsw);
+        IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE_WO(pi16Dst, bUnmapInfo, u16Fsw);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffDst, pVCpu->iem.s.uFpuOpcode);
     } IEM_MC_ELSE() {
         IEM_MC_IF_FCW_IM() {
             IEM_MC_STORE_MEM_I16_CONST_BY_REF(pi16Dst, INT16_MIN /* (integer indefinite) */);
-            IEM_MC_MEM_COMMIT_AND_UNMAP(pi16Dst, IEM_ACCESS_DATA_W);
+            IEM_MC_MEM_COMMIT_AND_UNMAP_WO(pi16Dst, bUnmapInfo);
+        } IEM_MC_ELSE() {
+            IEM_MC_MEM_ROLLBACK_AND_UNMAP_WO(pi16Dst, bUnmapInfo);
         } IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffDst, pVCpu->iem.s.uFpuOpcode);
     } IEM_MC_ENDIF();
@@ -12219,28 +12227,32 @@ FNIEMOP_DEF_1(iemOp_fist_m16i,   uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_fistp_m16i,  uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fistp_m16i, "fistp m16i");
-    IEM_MC_BEGIN(3, 2, 0, 0);
+    IEM_MC_BEGIN(3, 3, 0, 0);
     IEM_MC_LOCAL(RTGCPTR,               GCPtrEffDst);
-    IEM_MC_LOCAL(uint16_t,              u16Fsw);
-    IEM_MC_ARG_LOCAL_REF(uint16_t *,    pu16Fsw,    u16Fsw, 0);
-    IEM_MC_ARG(int16_t *,               pi16Dst,            1);
-    IEM_MC_ARG(PCRTFLOAT80U,            pr80Value,          2);
-
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
+
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
-
-    IEM_MC_MEM_MAP(pi16Dst, IEM_ACCESS_DATA_W, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 1 /*arg*/);
     IEM_MC_PREPARE_FPU_USAGE();
+
+    IEM_MC_LOCAL(uint8_t,               bUnmapInfo);
+    IEM_MC_ARG(int16_t *,               pi16Dst,            1);
+    IEM_MC_MEM_MAP_I16_WO(pi16Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
+
+    IEM_MC_ARG(PCRTFLOAT80U,            pr80Value,          2);
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
+        IEM_MC_LOCAL(uint16_t,          u16Fsw);
+        IEM_MC_ARG_LOCAL_REF(uint16_t *,pu16Fsw,    u16Fsw, 0);
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fist_r80_to_i16, pu16Fsw, pi16Dst, pr80Value);
-        IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pi16Dst, IEM_ACCESS_DATA_W, u16Fsw);
+        IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE_WO(pi16Dst, bUnmapInfo, u16Fsw);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffDst, pVCpu->iem.s.uFpuOpcode);
     } IEM_MC_ELSE() {
         IEM_MC_IF_FCW_IM() {
             IEM_MC_STORE_MEM_I16_CONST_BY_REF(pi16Dst, INT16_MIN /* (integer indefinite) */);
-            IEM_MC_MEM_COMMIT_AND_UNMAP(pi16Dst, IEM_ACCESS_DATA_W);
+            IEM_MC_MEM_COMMIT_AND_UNMAP_WO(pi16Dst, bUnmapInfo);
+        } IEM_MC_ELSE() {
+            IEM_MC_MEM_ROLLBACK_AND_UNMAP_WO(pi16Dst, bUnmapInfo);
         } IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffDst, pVCpu->iem.s.uFpuOpcode);
     } IEM_MC_ENDIF();
@@ -12353,28 +12365,32 @@ FNIEMOP_DEF_1(iemOp_fbstp_m80d,  uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_fistp_m64i,  uint8_t, bRm)
 {
     IEMOP_MNEMONIC(fistp_m64i, "fistp m64i");
-    IEM_MC_BEGIN(3, 2, 0, 0);
+    IEM_MC_BEGIN(3, 3, 0, 0);
     IEM_MC_LOCAL(RTGCPTR,               GCPtrEffDst);
-    IEM_MC_LOCAL(uint16_t,              u16Fsw);
-    IEM_MC_ARG_LOCAL_REF(uint16_t *,    pu16Fsw,    u16Fsw, 0);
-    IEM_MC_ARG(int64_t *,               pi64Dst,            1);
-    IEM_MC_ARG(PCRTFLOAT80U,            pr80Value,          2);
-
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
+
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
-
-    IEM_MC_MEM_MAP(pi64Dst, IEM_ACCESS_DATA_W, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 1 /*arg*/);
     IEM_MC_PREPARE_FPU_USAGE();
+
+    IEM_MC_LOCAL(uint8_t,               bUnmapInfo);
+    IEM_MC_ARG(int64_t *,               pi64Dst,            1);
+    IEM_MC_MEM_MAP_I64_WO(pi64Dst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst);
+
+    IEM_MC_ARG(PCRTFLOAT80U,            pr80Value,          2);
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0) {
+        IEM_MC_LOCAL(uint16_t,          u16Fsw);
+        IEM_MC_ARG_LOCAL_REF(uint16_t *,pu16Fsw,    u16Fsw, 0);
         IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fist_r80_to_i64, pu16Fsw, pi64Dst, pr80Value);
-        IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(pi64Dst, IEM_ACCESS_DATA_W, u16Fsw);
+        IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE_WO(pi64Dst, bUnmapInfo, u16Fsw);
         IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(u16Fsw, pVCpu->iem.s.iEffSeg, GCPtrEffDst, pVCpu->iem.s.uFpuOpcode);
     } IEM_MC_ELSE() {
         IEM_MC_IF_FCW_IM() {
             IEM_MC_STORE_MEM_I64_CONST_BY_REF(pi64Dst, INT64_MIN /* (integer indefinite) */);
-            IEM_MC_MEM_COMMIT_AND_UNMAP(pi64Dst, IEM_ACCESS_DATA_W);
+            IEM_MC_MEM_COMMIT_AND_UNMAP_WO(pi64Dst, bUnmapInfo);
+        } IEM_MC_ELSE() {
+            IEM_MC_MEM_ROLLBACK_AND_UNMAP_WO(pi64Dst, bUnmapInfo);
         } IEM_MC_ENDIF();
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(UINT8_MAX, pVCpu->iem.s.iEffSeg, GCPtrEffDst, pVCpu->iem.s.uFpuOpcode);
     } IEM_MC_ENDIF();

@@ -3027,6 +3027,7 @@ g_dMcStmtParsers = {
     'IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE_WO':              (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_MEM_MAP':                                            (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_MEM_MAP_EX':                                         (McBlock.parseMcGeneric,           True,  False, ),
+    'IEM_MC_MEM_MAP_I16_WO':                                     (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_MEM_MAP_I32_WO':                                     (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_MEM_MAP_I64_WO':                                     (McBlock.parseMcGeneric,           True,  False, ),
     'IEM_MC_MEM_MAP_R32_WO':                                     (McBlock.parseMcGeneric,           True,  False, ),
