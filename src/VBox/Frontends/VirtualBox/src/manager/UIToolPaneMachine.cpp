@@ -52,7 +52,6 @@
 UIToolPaneMachine::UIToolPaneMachine(UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
     : QWidget(pParent)
     , m_pActionPool(pActionPool)
-    , m_pItem(0)
     , m_pLayout(0)
     , m_pPaneError(0)
     , m_pPaneDetails(0)
@@ -291,15 +290,6 @@ void UIToolPaneMachine::setErrorDetails(const QString &strDetails)
     /* Update Error pane: */
     if (m_pPaneError)
         m_pPaneError->setErrorDetails(strDetails);
-}
-
-void UIToolPaneMachine::setCurrentItem(UIVirtualMachineItem *pItem)
-{
-    if (m_pItem == pItem)
-        return;
-
-    /* Remember new item: */
-    m_pItem = pItem;
 }
 
 void UIToolPaneMachine::setItems(const QList<UIVirtualMachineItem*> &items)

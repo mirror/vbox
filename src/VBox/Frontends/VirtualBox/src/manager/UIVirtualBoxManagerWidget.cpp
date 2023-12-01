@@ -1170,9 +1170,6 @@ void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErr
     UIVirtualMachineItem *pItem = currentItem();
     const bool fCurrentItemIsOk = pItem && pItem->accessible();
 
-    /* Propagate current item anyway: */
-    m_pPaneToolsMachine->setCurrentItem(pItem);
-
     /* If current item is Ok: */
     if (fCurrentItemIsOk)
     {

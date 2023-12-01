@@ -99,9 +99,6 @@ public:
     /** Defines error @a strDetails and switches to Error pane. */
     void setErrorDetails(const QString &strDetails);
 
-    /** Defines current machine @a pItem. */
-    void setCurrentItem(UIVirtualMachineItem *pItem);
-
     /** Defines the machine @a items. */
     void setItems(const QList<UIVirtualMachineItem*> &items);
 
@@ -128,9 +125,6 @@ private:
 
     /** Holds the action pool reference. */
     UIActionPool *m_pActionPool;
-
-    /** Holds current machine item reference. */
-    UIVirtualMachineItem *m_pItem;
 
     /** Holds the stacked-layout instance. */
     QStackedLayout      *m_pLayout;
