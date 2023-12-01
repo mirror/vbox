@@ -1120,6 +1120,7 @@ void UIMachine::closeRuntimeUI()
 
     /* Asynchronously ask QApplication to quit: */
     LogRel(("GUI: Request for async QApp quit.\n"));
+    m_fQuitRequested = true;
     QMetaObject::invokeMethod(qApp, "quit", Qt::QueuedConnection);
 }
 
@@ -1470,6 +1471,7 @@ UIMachine::UIMachine()
     , m_fIsManualOverride(false)
     , m_defaultCloseAction(MachineCloseAction_Invalid)
     , m_restrictedCloseActions(MachineCloseAction_Invalid)
+    , m_fQuitRequested(false)
 {
     s_pInstance = this;
 }

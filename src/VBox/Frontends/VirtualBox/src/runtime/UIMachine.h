@@ -679,6 +679,9 @@ public:
         /** Acquires whether guest @a fEntered ACPI mode. */
         bool acquireWhetherGuestEnteredACPIMode(bool &fEntered);
 
+        /** Returns whether qpp quit is requested. */
+        bool isQuitRequested() const { return m_fQuitRequested; }
+
         /** Detaches and closes Runtime UI. */
         void detachUi();
         /** Saves VM state, then closes Runtime UI. */
@@ -1106,6 +1109,9 @@ private:
         MachineCloseAction  m_defaultCloseAction;
         /** Merged restricted close actions. */
         MachineCloseAction  m_restrictedCloseActions;
+
+        /** Holds whether app quit is requested. */
+        bool  m_fQuitRequested;
     /** @} */
 };
 

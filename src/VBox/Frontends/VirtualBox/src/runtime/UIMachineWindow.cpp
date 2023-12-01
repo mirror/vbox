@@ -359,31 +359,26 @@ void UIMachineWindow::hideEvent(QHideEvent *pEvent)
 
 void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
 {
-    /* Fast handling in case if session is invalid: */
-    if (!uimachine()->isSessionValid())
+    /* Always ignore close-event first: */
+    pCloseEvent->ignore();
+    /* But accept close-event if app quit was requested: */
+    if (uimachine()->isQuitRequested())
+    {
+        pCloseEvent->accept();
+        return;
+    }
+
+    /* In certain cases we need to just request app quit: */
+    if (   !uimachine()->isSessionValid()
+        || uimachine()->isTurnedOff())
     {
         uimachine()->closeRuntimeUI();
         return;
     }
 
-    /* Always ignore close-event first: */
-    pCloseEvent->ignore();
-
     /* Make sure machine is in one of the allowed states: */
     if (!uimachine()->isRunning() && !uimachine()->isPaused() && !uimachine()->isStuck())
-    {
-#ifdef VBOX_IS_QT6_OR_LATER /** @todo qt6 ... */
-        /* If we want to close the application, we need to accept the close event.
-           If we don't the QEvent::Quit processing in QApplication::event fails and
-           [QCocoaApplicationDelegate applicationShouldTerminate] complains printing
-           "Qt DEBUG: Application termination canceled" in the debug log. */
-        /** @todo qt6: This could easily be caused by something else, but needs to be
-         * looked at by a proper GUI expert.  */
-        if (uimachine()->isTurnedOff()) /** @todo qt6: Better state check here? */
-            pCloseEvent->accept();
-#endif
         return;
-    }
 
     /* If there is a close hook script defined: */
     const QString strScript = gEDataManager->machineCloseHookScript(uiCommon().managedVMUuid());
