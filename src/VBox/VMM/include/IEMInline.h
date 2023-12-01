@@ -3743,6 +3743,15 @@ DECL_INLINE_THROW(void) iemMemCommitAndUnmapRoJmp(PVMCPUCC pVCpu, const void *pv
     iemMemCommitAndUnmapRoSafeJmp(pVCpu, pvMem, bMapInfo);
 }
 
+DECLINLINE(void) iemMemRollbackAndUnmapWo(PVMCPUCC pVCpu, const void *pvMem, uint8_t bMapInfo) RT_NOEXCEPT
+{
+# if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3)
+    if (RT_LIKELY(bMapInfo == 0))
+        return;
+# endif
+    iemMemRollbackAndUnmapWoSafe(pVCpu, pvMem, bMapInfo);
+}
+
 #endif /* IEM_WITH_SETJMP */
 
 
@@ -3816,6 +3825,17 @@ AssertCompile(((3U + 1U) << 16) == X86_CR0_AM);
 #define TMPL_MEM_FN_SUFF    U64AlignedU128
 #define TMPL_MEM_FMT_TYPE   "%#018RX64"
 #define TMPL_MEM_FMT_DESC   "qword"
+#include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
+
+#undef TMPL_MEM_NO_STORE
+#undef TMPL_MEM_NO_MAPPING
+
+#define TMPL_MEM_TYPE       RTFLOAT80U
+#define TMPL_MEM_TYPE_ALIGN 7
+#define TMPL_MEM_TYPE_SIZE  10
+#define TMPL_MEM_FN_SUFF    R80
+#define TMPL_MEM_FMT_TYPE   "%.10Rhxs"
+#define TMPL_MEM_FMT_DESC   "tword"
 #include "../VMMAll/IEMAllMemRWTmplInline.cpp.h"
 
 #undef TMPL_MEM_CHECK_UNALIGNED_WITHIN_PAGE_OK

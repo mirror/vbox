@@ -980,7 +980,7 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 # define IEM_MC_FETCH_MEM_FLAT_R64(a_r64Dst, a_GCPtrMem) \
     ((a_r64Dst).u = iemMemFlatFetchDataU64Jmp(pVCpu, (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_FLAT_R80(a_r80Dst, a_GCPtrMem) \
-    iemMemFetchDataR80Jmp(pVCpu, &(a_r80Dst), UINT8_MAX, (a_GCPtrMem))
+    iemMemFlatFetchDataR80Jmp(pVCpu, &(a_r80Dst), (a_GCPtrMem))
 # define IEM_MC_FETCH_MEM_FLAT_D80(a_d80Dst, a_GCPtrMem) \
     iemMemFetchDataD80Jmp(pVCpu, &(a_d80Dst), UINT8_MAX, (a_GCPtrMem))
 #endif
@@ -1931,6 +1931,42 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     (a_pu32Mem) = iemMemFlatMapDataU32RoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
 #endif
 
+/** int32_t alias. */
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_MAP_I32_WO(a_pi32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+         IEM_MC_MEM_MAP_U32_WO(a_pi32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem)
+#else
+# define IEM_MC_MEM_MAP_I32_WO(a_pi32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    (a_pi32Mem) = (int32_t *)iemMemMapDataU32WoJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
+#endif
+
+/** Flat int32_t alias. */
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_FLAT_MAP_I32_WO(a_pi32Mem, a_bUnmapInfo, a_GCPtrMem) \
+         IEM_MC_MEM_FLAT_MAP_U32_WO(a_pi32Mem, a_bUnmapInfo, a_GCPtrMem)
+#else
+# define IEM_MC_MEM_FLAT_MAP_I32_WO(a_pi32Mem, a_bUnmapInfo, a_GCPtrMem) \
+    (a_pi32Mem) = (int32_t *)iemMemFlatMapDataU32WoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
+#endif
+
+/** RTFLOAT32U alias. */
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_MAP_R32_WO(a_pr32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+         IEM_MC_MEM_MAP_U32_WO(a_pr32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem)
+#else
+# define IEM_MC_MEM_MAP_R32_WO(a_pr32Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    (a_pr32Mem) = (PRTFLOAT32U)iemMemMapDataU32WoJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
+#endif
+
+/** Flat RTFLOAT32U alias. */
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_FLAT_MAP_R32_WO(a_pr32Mem, a_bUnmapInfo, a_GCPtrMem) \
+         IEM_MC_MEM_FLAT_MAP_U32_WO(a_pr32Mem, a_bUnmapInfo, a_GCPtrMem)
+#else
+# define IEM_MC_MEM_FLAT_MAP_R32_WO(a_pr32Mem, a_bUnmapInfo, a_GCPtrMem) \
+    (a_pr32Mem) = (PRTFLOAT32U)iemMemFlatMapDataU32WoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
+#endif
+
 
 /* 64-bit */
 
@@ -2061,6 +2097,50 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #endif
 
 
+/* misc */
+
+/**
+ * Maps guest memory for 80-bit float writeonly direct (or bounce) buffer acccess.
+ *
+ * @param[out] a_pr80Mem    Where to return the pointer to the mapping.
+ * @param[out] a_bUnmapInfo Where to return umapping instructions. uint8_t.
+ * @param[in]  a_iSeg       The segment register to access via. No UINT8_MAX!
+ * @param[in]  a_GCPtrMem   The memory address.
+ * @remarks Will return/long jump on errors.
+ * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_WO
+ */
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_MAP_R80_WO(a_pr80Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { \
+        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pr80Mem), sizeof(RTFLOAT80U), (a_iSeg), \
+                                           (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint64_t) - 1)); \
+        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_WRITE << 4); \
+    } while (0)
+#else
+# define IEM_MC_MEM_MAP_R80_WO(a_pr80Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    (a_pr80Mem) = iemMemMapDataR80WoJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
+#endif
+
+/**
+ * Maps guest memory for 80-bit float writeonly direct (or bounce) buffer acccess.
+ *
+ * @param[out] a_pr80Mem    Where to return the pointer to the mapping.
+ * @param[out] a_bUnmapInfo Where to return umapping instructions. uint8_t.
+ * @param[in]  a_GCPtrMem   The memory address.
+ * @remarks Will return/long jump on errors.
+ * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_WO
+ */
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_FLAT_MAP_R80_WO(a_pr80Mem, a_bUnmapInfo, a_GCPtrMem) do { \
+        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pr80Mem), sizeof(RTFLOAT80U), UINT8_MAX, \
+                                           (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(uint64_t) - 1)); \
+        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_WRITE << 4); \
+    } while (0)
+#else
+# define IEM_MC_MEM_FLAT_MAP_R80_WO(a_pr80Mem, a_bUnmapInfo, a_GCPtrMem) \
+    (a_pr80Mem) = iemMemFlatMapDataR80WoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
+#endif
+
+
 /* commit + unmap */
 
 /** Commits the memory and unmaps guest memory previously mapped RW.
@@ -2111,6 +2191,8 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
  * store, while \#P will not.
  *
  * @remarks     May in theory return - for now.
+ *
+ * @deprecated
  */
 #define IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(a_pvMem, a_fAccess, a_u16FSW) \
     do { \
@@ -2119,6 +2201,48 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
                  & ~(pVCpu->cpum.GstCtx.XState.x87.FCW & X86_FCW_MASK_ALL) ) ) \
             IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, (a_pvMem), (a_fAccess))); \
     } while (0)
+
+
+/** Commits the memory and unmaps the guest memory unless the FPU status word
+ * indicates (@a a_u16FSW) and FPU control word indicates a pending exception
+ * that would cause FLD not to store.
+ *
+ * The current understanding is that \#O, \#U, \#IA and \#IS will prevent a
+ * store, while \#P will not.
+ *
+ * @remarks     May in theory return - for now.
+ */
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE_WO(a_pvMem, a_bMapInfo, a_u16FSW) do { \
+        RT_NOREF_PV(a_bMapInfo); Assert(a_bMapInfo == (1 | (IEM_ACCESS_TYPE_WRITE << 4)) ); \
+        if (   !(a_u16FSW & X86_FSW_ES) \
+            || !(  (a_u16FSW & (X86_FSW_UE | X86_FSW_OE | X86_FSW_IE)) \
+                 & ~(pVCpu->cpum.GstCtx.XState.x87.FCW & X86_FCW_MASK_ALL) ) ) \
+            IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pVCpu, (a_pvMem), IEM_ACCESS_DATA_W)); \
+        else \
+            iemMemRollbackAndUnmap(pVCpu, (a_pvMem), IEM_ACCESS_DATA_W); \
+    } while (0)
+#else
+# define IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE_WO(a_pvMem, a_bMapInfo, a_u16FSW) do { \
+        if (   !(a_u16FSW & X86_FSW_ES) \
+            || !(  (a_u16FSW & (X86_FSW_UE | X86_FSW_OE | X86_FSW_IE)) \
+                 & ~(pVCpu->cpum.GstCtx.XState.x87.FCW & X86_FCW_MASK_ALL) ) ) \
+            iemMemCommitAndUnmapWoJmp(pVCpu, (a_pvMem), a_bMapInfo); \
+        else \
+            iemMemRollbackAndUnmapWo(pVCpu, (a_pvMem), a_bMapInfo); \
+    } while (0)
+#endif
+
+/** Rolls back (conceptually only, assumes no writes) and unmaps the guest  memory. */
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_ROLLBACK_AND_UNMAP_WO(a_pvMem, a_bMapInfo) do { \
+        RT_NOREF_PV(a_bMapInfo); Assert(a_bMapInfo == (1 | (IEM_ACCESS_TYPE_WRITE << 4)) ); \
+        iemMemRollbackAndUnmap(pVCpu, (a_pvMem), IEM_ACCESS_DATA_W); \
+    } while (0)
+#else
+# define IEM_MC_MEM_ROLLBACK_AND_UNMAP_WO(a_pvMem, a_bMapInfo) \
+        iemMemRollbackAndUnmapWo(pVCpu, (a_pvMem), a_bMapInfo)
+#endif
 
 
 

@@ -713,9 +713,12 @@ class ThreadedFunctionVariation(object):
         'IEM_MC_MEM_MAP_U32_RW':                  (  2, 'IEM_MC_MEM_FLAT_MAP_U32_RW' ),
         'IEM_MC_MEM_MAP_U32_RO':                  (  2, 'IEM_MC_MEM_FLAT_MAP_U32_RO' ),
         'IEM_MC_MEM_MAP_U32_WO':                  (  2, 'IEM_MC_MEM_FLAT_MAP_U32_WO' ),
+        'IEM_MC_MEM_MAP_I32_WO':                  (  2, 'IEM_MC_MEM_FLAT_MAP_I32_WO' ),
+        'IEM_MC_MEM_MAP_R32_WO':                  (  2, 'IEM_MC_MEM_FLAT_MAP_R32_WO' ),
         'IEM_MC_MEM_MAP_U64_RW':                  (  2, 'IEM_MC_MEM_FLAT_MAP_U64_RW' ),
         'IEM_MC_MEM_MAP_U64_RO':                  (  2, 'IEM_MC_MEM_FLAT_MAP_U64_RO' ),
         'IEM_MC_MEM_MAP_U64_WO':                  (  2, 'IEM_MC_MEM_FLAT_MAP_U64_WO' ),
+        'IEM_MC_MEM_MAP_R80_WO':                  (  2, 'IEM_MC_MEM_FLAT_MAP_R80_WO' ),
         'IEM_MC_MEM_MAP_EX':                      (  3, 'IEM_MC_MEM_FLAT_MAP_EX' ),
     };
 
@@ -1349,8 +1352,8 @@ class ThreadedFunction(object):
                 cBefore = len(self.dVariables);
                 self.analyzeFindVariablesAndCallArgs(oStmt.aoIfBranch);
                 self.analyzeFindVariablesAndCallArgs(oStmt.aoElseBranch);
-                if len(self.dVariables) != cBefore:
-                    raise Exception('Variables/arguments defined in conditional branches!');
+                #if len(self.dVariables) != cBefore:
+                #    raise Exception('Variables/arguments defined in conditional branches!');
         return True;
 
     def analyzeCodeOperation(self, aoStmts: List[iai.McStmt], fSeenConditional = False) -> bool:

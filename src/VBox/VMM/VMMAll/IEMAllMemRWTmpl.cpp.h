@@ -71,12 +71,26 @@ VBOXSTRICTRC RT_CONCAT(iemMemFetchData,TMPL_MEM_FN_SUFF)(PVMCPUCC pVCpu, TMPL_ME
 /**
  * Safe/fallback fetch function that longjmps on error.
  */
+# ifdef TMPL_MEM_BY_REF
+void
+RT_CONCAT3(iemMemFetchData,TMPL_MEM_FN_SUFF,SafeJmp)(PVMCPUCC pVCpu, TMPL_MEM_TYPE *pDst, uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
+{
+#  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3)
+    pVCpu->iem.s.DataTlb.cTlbSafeReadPath++;
+#  endif
+    TMPL_MEM_TYPE const *pSrc = (TMPL_MEM_TYPE const *)iemMemMapJmp(pVCpu, sizeof(*pSrc), iSegReg, GCPtrMem,
+                                                                    IEM_ACCESS_DATA_R, TMPL_MEM_TYPE_ALIGN);
+    *pDst = *pSrc;
+    iemMemCommitAndUnmapJmp(pVCpu, (void *)pSrc, IEM_ACCESS_DATA_R);
+    Log2(("IEM RD " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, pDst));
+}
+# else /* !TMPL_MEM_BY_REF */
 TMPL_MEM_TYPE
 RT_CONCAT3(iemMemFetchData,TMPL_MEM_FN_SUFF,SafeJmp)(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
 {
-# if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3)
+#  if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3)
     pVCpu->iem.s.DataTlb.cTlbSafeReadPath++;
-# endif
+#  endif
     TMPL_MEM_TYPE const *puSrc = (TMPL_MEM_TYPE const *)iemMemMapJmp(pVCpu, sizeof(*puSrc), iSegReg, GCPtrMem,
                                                                      IEM_ACCESS_DATA_R, TMPL_MEM_TYPE_ALIGN);
     TMPL_MEM_TYPE const  uRet = *puSrc;
@@ -84,27 +98,40 @@ RT_CONCAT3(iemMemFetchData,TMPL_MEM_FN_SUFF,SafeJmp)(PVMCPUCC pVCpu, uint8_t iSe
     Log2(("IEM RD " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, uRet));
     return uRet;
 }
+# endif /* !TMPL_MEM_BY_REF */
 #endif /* IEM_WITH_SETJMP */
 
 
 
 /**
- * Standard fetch function.
+ * Standard store function.
  *
  * This is used by CImpl code, so it needs to be kept even when IEM_WITH_SETJMP
  * is defined.
  */
 VBOXSTRICTRC RT_CONCAT(iemMemStoreData,TMPL_MEM_FN_SUFF)(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem,
+#ifdef TMPL_MEM_BY_REF
+                                                         TMPL_MEM_TYPE const *pValue) RT_NOEXCEPT
+#else
                                                          TMPL_MEM_TYPE uValue) RT_NOEXCEPT
+#endif
 {
     /* The lazy approach for now... */
     TMPL_MEM_TYPE *puDst;
     VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&puDst, sizeof(*puDst), iSegReg, GCPtrMem, IEM_ACCESS_DATA_W, TMPL_MEM_TYPE_ALIGN);
     if (rc == VINF_SUCCESS)
     {
+#ifdef TMPL_MEM_BY_REF
+        *puDst = *pValue;
+#else
         *puDst = uValue;
+#endif
         rc = iemMemCommitAndUnmap(pVCpu, puDst, IEM_ACCESS_DATA_W);
+#ifdef TMPL_MEM_BY_REF
+        Log6(("IEM WR " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, pValue));
+#else
         Log6(("IEM WR " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, uValue));
+#endif
     }
     return rc;
 }
@@ -118,18 +145,30 @@ VBOXSTRICTRC RT_CONCAT(iemMemStoreData,TMPL_MEM_FN_SUFF)(PVMCPUCC pVCpu, uint8_t
  * @param   iSegReg             The index of the segment register to use for
  *                              this access.  The base and limits are checked.
  * @param   GCPtrMem            The address of the guest memory.
- * @param   u8Value             The value to store.
+ * @param   uValue              The value to store.
  */
 void RT_CONCAT3(iemMemStoreData,TMPL_MEM_FN_SUFF,SafeJmp)(PVMCPUCC pVCpu, uint8_t iSegReg, RTGCPTR GCPtrMem,
+#ifdef TMPL_MEM_BY_REF
+                                                          TMPL_MEM_TYPE const *pValue) IEM_NOEXCEPT_MAY_LONGJMP
+#else
                                                           TMPL_MEM_TYPE uValue) IEM_NOEXCEPT_MAY_LONGJMP
+#endif
 {
 # if defined(IEM_WITH_DATA_TLB) && defined(IN_RING3)
     pVCpu->iem.s.DataTlb.cTlbSafeWritePath++;
 # endif
+#ifdef TMPL_MEM_BY_REF
+    Log6(("IEM WR " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, pValue));
+#else
     Log6(("IEM WR " TMPL_MEM_FMT_DESC " %d|%RGv: " TMPL_MEM_FMT_TYPE "\n", iSegReg, GCPtrMem, uValue));
+#endif
     TMPL_MEM_TYPE *puDst = (TMPL_MEM_TYPE *)iemMemMapJmp(pVCpu, sizeof(*puDst), iSegReg, GCPtrMem,
                                                          IEM_ACCESS_DATA_W, TMPL_MEM_TYPE_ALIGN);
+#ifdef TMPL_MEM_BY_REF
+    *puDst = *pValue;
+#else
     *puDst = uValue;
+#endif
     iemMemCommitAndUnmapJmp(pVCpu, puDst, IEM_ACCESS_DATA_W);
 }
 #endif /* IEM_WITH_SETJMP */
@@ -460,5 +499,6 @@ void RT_CONCAT3(iemMemStackPush,TMPL_MEM_FN_SUFF,SRegSafeJmp)(PVMCPUCC pVCpu, TM
 #undef TMPL_MEM_FN_SUFF
 #undef TMPL_MEM_FMT_TYPE
 #undef TMPL_MEM_FMT_DESC
+#undef TMPL_MEM_BY_REF
 #undef TMPL_WITH_PUSH_SREG
 

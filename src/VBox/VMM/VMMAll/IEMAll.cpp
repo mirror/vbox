@@ -6576,6 +6576,29 @@ VBOXSTRICTRC iemMemCommitAndUnmap(PVMCPUCC pVCpu, void *pvMem, uint32_t fAccess)
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Rolls back the guest memory (conceptually only) and unmaps it.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   pvMem               The mapping.
+ * @param   fAccess             The kind of access.
+ */
+void iemMemRollbackAndUnmap(PVMCPUCC pVCpu, void *pvMem, uint32_t fAccess) RT_NOEXCEPT
+{
+    int iMemMap = iemMapLookup(pVCpu, pvMem, fAccess);
+    AssertReturnVoid(iMemMap >= 0);
+
+    /* Unlock it if necessary. */
+    if (!(pVCpu->iem.s.aMemMappings[iMemMap].fAccess & IEM_ACCESS_NOT_LOCKED))
+        PGMPhysReleasePageMappingLock(pVCpu->CTX_SUFF(pVM), &pVCpu->iem.s.aMemMappingLocks[iMemMap].Lock);
+
+    /* Free the entry. */
+    pVCpu->iem.s.aMemMappings[iMemMap].fAccess = IEM_ACCESS_INVALID;
+    Assert(pVCpu->iem.s.cActiveMappings != 0);
+    pVCpu->iem.s.cActiveMappings--;
+}
+
 #ifdef IEM_WITH_SETJMP
 
 /**
@@ -6950,6 +6973,14 @@ void iemMemCommitAndUnmapRoSafeJmp(PVMCPUCC pVCpu, const void *pvMem, uint8_t bM
     iemMemCommitAndUnmapJmp(pVCpu, (void *)pvMem, IEM_ACCESS_DATA_R);
 }
 
+
+/** Fallback for iemMemRollbackAndUnmapWo.  */
+void iemMemRollbackAndUnmapWoSafe(PVMCPUCC pVCpu, const void *pvMem, uint8_t bMapInfo) RT_NOEXCEPT
+{
+    Assert(bMapInfo == (1 | (IEM_ACCESS_TYPE_READ << 4)) ); RT_NOREF_PV(bMapInfo);
+    iemMemRollbackAndUnmap(pVCpu, (void *)pvMem, IEM_ACCESS_DATA_R);
+}
+
 #endif /* IEM_WITH_SETJMP */
 
 #ifndef IN_RING3
@@ -7061,6 +7092,16 @@ void iemMemRollback(PVMCPUCC pVCpu) RT_NOEXCEPT
 #define TMPL_MEM_FMT_DESC   "qword"
 #include "IEMAllMemRWTmpl.cpp.h"
 
+/* See IEMAllMemRWTmplInline.cpp.h */
+#define TMPL_MEM_BY_REF
+
+#define TMPL_MEM_TYPE       RTFLOAT80U
+#define TMPL_MEM_TYPE_ALIGN (sizeof(uint64_t) - 1)
+#define TMPL_MEM_FN_SUFF    R80
+#define TMPL_MEM_FMT_TYPE   "%.10Rhxs"
+#define TMPL_MEM_FMT_DESC   "tword"
+#include "IEMAllMemRWTmpl.cpp.h"
+
 
 /**
  * Fetches a data dword and zero extends it to a qword.
@@ -7116,52 +7157,6 @@ VBOXSTRICTRC iemMemFetchDataS32SxU64(PVMCPUCC pVCpu, uint64_t *pu64Dst, uint8_t 
         *pu64Dst = 0;
 #endif
     return rc;
-}
-#endif
-
-
-/**
- * Fetches a data tword.
- *
- * @returns Strict VBox status code.
- * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
- * @param   pr80Dst             Where to return the tword.
- * @param   iSegReg             The index of the segment register to use for
- *                              this access.  The base and limits are checked.
- * @param   GCPtrMem            The address of the guest memory.
- */
-VBOXSTRICTRC iemMemFetchDataR80(PVMCPUCC pVCpu, PRTFLOAT80U pr80Dst, uint8_t iSegReg, RTGCPTR GCPtrMem) RT_NOEXCEPT
-{
-    /* The lazy approach for now... */
-    PCRTFLOAT80U pr80Src;
-    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&pr80Src, sizeof(*pr80Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R, 7);
-    if (rc == VINF_SUCCESS)
-    {
-        *pr80Dst = *pr80Src;
-        rc = iemMemCommitAndUnmap(pVCpu, (void *)pr80Src, IEM_ACCESS_DATA_R);
-        Log(("IEM RD tword %d|%RGv: %.10Rhxs\n", iSegReg, GCPtrMem, pr80Dst));
-    }
-    return rc;
-}
-
-
-#ifdef IEM_WITH_SETJMP
-/**
- * Fetches a data tword, longjmp on error.
- *
- * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
- * @param   pr80Dst             Where to return the tword.
- * @param   iSegReg             The index of the segment register to use for
- *                              this access.  The base and limits are checked.
- * @param   GCPtrMem            The address of the guest memory.
- */
-void iemMemFetchDataR80Jmp(PVMCPUCC pVCpu, PRTFLOAT80U pr80Dst, uint8_t iSegReg, RTGCPTR GCPtrMem) IEM_NOEXCEPT_MAY_LONGJMP
-{
-    /* The lazy approach for now... */
-    PCRTFLOAT80U pr80Src = (PCRTFLOAT80U)iemMemMapJmp(pVCpu, sizeof(*pr80Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R, 7);
-    *pr80Dst = *pr80Src;
-    iemMemCommitAndUnmapJmp(pVCpu, (void *)pr80Src, IEM_ACCESS_DATA_R);
-    Log(("IEM RD tword %d|%RGv: %.10Rhxs\n", iSegReg, GCPtrMem, pr80Dst));
 }
 #endif
 
