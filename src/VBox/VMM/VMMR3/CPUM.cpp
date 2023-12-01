@@ -4609,6 +4609,31 @@ VMMR3DECL(int) CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fAnd)
 
 
 /**
+ * Computes the variable-range MTRR physical address mask given an address range.
+ *
+ * @returns The MTRR physical address mask.
+ * @param   pVM             The cross context VM structure.
+ * @param   GCPhysFirst     The first guest-physical address of the memory range
+ *                          (inclusive).
+ * @param   GCPhysLast      The last guest-physical address of the memory range
+ *                          (inclusive).
+ */
+static uint64_t cpumR3GetVarRangeMtrrMask(PVM pVM, RTGCPHYS GCPhysFirst, RTGCPHYS GCPhysLast)
+{
+    RTGCPHYS const GCPhysLength  = GCPhysLast - GCPhysFirst;
+    uint64_t const fInvPhysMask  = ~(RT_BIT_64(pVM->cpum.s.GuestFeatures.cMaxPhysAddrWidth) - 1U);
+    RTGCPHYS const GCPhysMask    = (~(GCPhysLength - 1) & ~fInvPhysMask) & X86_PAGE_BASE_MASK;
+#ifdef VBOX_STRICT
+    /* Paranoia. */
+    Assert(GCPhysLast == ((GCPhysFirst | ~GCPhysMask) & ~fInvPhysMask));
+    Assert((GCPhysLast & GCPhysMask) == (GCPhysFirst & GCPhysMask));
+    Assert(((GCPhysLast + 1) & GCPhysMask) != (GCPhysFirst & GCPhysMask));
+#endif
+    return GCPhysMask;
+}
+
+
+/**
  * Called when the ring-3 init phase completes.
  *
  * @returns VBox status code.
@@ -4665,18 +4690,9 @@ VMMR3DECL(int) CPUMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
                 uint64_t cbRam;
                 CFGMR3QueryU64Def(CFGMR3GetRoot(pVM), "RamSize", &cbRam, 0);
                 AssertReturn(cbRam > _1M, VERR_CPUM_IPE_1);
-                RTGCPHYS const GCPhysFirst   = _1M;
-                RTGCPHYS const GCPhysLast    = cbRam - 1;
-                RTGCPHYS const GCPhysLength  = GCPhysLast - GCPhysFirst;
-                uint64_t const fInvPhysMask  = ~(RT_BIT_64(pVM->cpum.s.GuestFeatures.cMaxPhysAddrWidth) - 1U);
-                RTGCPHYS const GCPhysMask    = (~(GCPhysLength - 1) & ~fInvPhysMask) & X86_PAGE_BASE_MASK;
-                uint64_t const uMtrrPhysMask = GCPhysMask | MSR_IA32_MTRR_PHYSMASK_VALID;
-#ifdef VBOX_STRICT
-                /* Paranoia. */
-                Assert(GCPhysLast == ((GCPhysFirst | ~GCPhysMask) & ~fInvPhysMask));
-                Assert((GCPhysLast & GCPhysMask) == (GCPhysFirst & GCPhysMask));
-                Assert(((GCPhysLast + 1) & GCPhysMask) != (GCPhysFirst & GCPhysMask));
-#endif
+                RTGCPHYS const GCPhysFirst    = 0;
+                RTGCPHYS const GCPhysLast     = cbRam - 1;
+                uint64_t const fMtrrPhysMask = cpumR3GetVarRangeMtrrMask(pVM, GCPhysFirst, GCPhysLast);
                 for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
                 {
                     PCPUMCTXMSRS pCtxMsrs = &pVM->apCpusR3[idCpu]->cpum.s.GuestMsrs;
@@ -4691,10 +4707,10 @@ VMMR3DECL(int) CPUMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
                     pCtxMsrs->msr.MtrrFix4K_E8000  = 0x0505050505050505;
                     pCtxMsrs->msr.MtrrFix4K_F0000  = 0x0505050505050505;
                     pCtxMsrs->msr.MtrrFix4K_F8000  = 0x0505050505050505;
-                    pCtxMsrs->msr.aMtrrVarMsrs[0].MtrrPhysBase = GCPhysFirst | X86_MTRR_MT_WB;
-                    pCtxMsrs->msr.aMtrrVarMsrs[0].MtrrPhysMask = uMtrrPhysMask;
+                    pCtxMsrs->msr.aMtrrVarMsrs[0].MtrrPhysBase = GCPhysFirst   | X86_MTRR_MT_WB;
+                    pCtxMsrs->msr.aMtrrVarMsrs[0].MtrrPhysMask = fMtrrPhysMask | MSR_IA32_MTRR_PHYSMASK_VALID;
                 }
-                LogRel(("CPUM: Initialized MTRRs (MtrrPhysMask=%RGp GCPhysLast=%RGp)\n", uMtrrPhysMask, GCPhysLast));
+                LogRel(("CPUM: Initialized MTRRs (fMtrrPhysMask=%RGp GCPhysLast=%RGp)\n", fMtrrPhysMask, GCPhysLast));
             }
             break;
         }
