@@ -3,6 +3,9 @@ autoinstall:
   # version is an Autoinstall required field.
   version: 1
 
+  apt:
+    fallback: offline-install
+
   locale: @@VBOX_INSERT_LOCALE@@
   keyboard:
     layout: us
