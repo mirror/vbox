@@ -2096,6 +2096,42 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
     (a_pu64Mem) = iemMemFlatMapDataU64RoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
 #endif
 
+/** int64_t alias. */
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_MAP_I64_WO(a_pi64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+         IEM_MC_MEM_MAP_U64_WO(a_pi64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem)
+#else
+# define IEM_MC_MEM_MAP_I64_WO(a_pi64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    (a_pi64Mem) = (int64_t *)iemMemMapDataU64WoJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
+#endif
+
+/** Flat int64_t alias. */
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_FLAT_MAP_I64_WO(a_pi64Mem, a_bUnmapInfo, a_GCPtrMem) \
+         IEM_MC_MEM_FLAT_MAP_U64_WO(a_pi64Mem, a_bUnmapInfo, a_GCPtrMem)
+#else
+# define IEM_MC_MEM_FLAT_MAP_I64_WO(a_pi64Mem, a_bUnmapInfo, a_GCPtrMem) \
+    (a_pi64Mem) = (int64_t *)iemMemFlatMapDataU64WoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
+#endif
+
+/** RTFLOAT64U alias. */
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_MAP_R64_WO(a_pr64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+         IEM_MC_MEM_MAP_U64_WO(a_pr64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem)
+#else
+# define IEM_MC_MEM_MAP_R64_WO(a_pr64Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    (a_pr64Mem) = (PRTFLOAT64U)iemMemMapDataU64WoJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
+#endif
+
+/** Flat RTFLOAT64U alias. */
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_FLAT_MAP_R64_WO(a_pr64Mem, a_bUnmapInfo, a_GCPtrMem) \
+         IEM_MC_MEM_FLAT_MAP_U64_WO(a_pr64Mem, a_bUnmapInfo, a_GCPtrMem)
+#else
+# define IEM_MC_MEM_FLAT_MAP_R64_WO(a_pr64Mem, a_bUnmapInfo, a_GCPtrMem) \
+    (a_pr64Mem) = (PRTFLOAT64U)iemMemFlatMapDataU64WoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
+#endif
+
 
 /* misc */
 
