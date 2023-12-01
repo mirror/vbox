@@ -1419,17 +1419,17 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 
 #ifndef IEM_WITH_SETJMP
 # define IEM_MC_STORE_MEM_U128(a_iSeg, a_GCPtrMem, a_u128Value) \
-    IEM_MC_RETURN_ON_FAILURE(iemMemStoreDataU128(pVCpu, (a_iSeg), (a_GCPtrMem), (a_u128Value)))
+    IEM_MC_RETURN_ON_FAILURE(iemMemStoreDataU128(pVCpu, (a_iSeg), (a_GCPtrMem), &(a_u128Value)))
 # define IEM_MC_STORE_MEM_U128_ALIGN_SSE(a_iSeg, a_GCPtrMem, a_u128Value) \
     IEM_MC_RETURN_ON_FAILURE(iemMemStoreDataU128AlignedSse(pVCpu, (a_iSeg), (a_GCPtrMem), (a_u128Value)))
 #else
 # define IEM_MC_STORE_MEM_U128(a_iSeg, a_GCPtrMem, a_u128Value) \
-    iemMemStoreDataU128Jmp(pVCpu, (a_iSeg), (a_GCPtrMem), (a_u128Value))
+    iemMemStoreDataU128Jmp(pVCpu, (a_iSeg), (a_GCPtrMem), &(a_u128Value))
 # define IEM_MC_STORE_MEM_U128_ALIGN_SSE(a_iSeg, a_GCPtrMem, a_u128Value) \
     iemMemStoreDataU128AlignedSseJmp(pVCpu, (a_iSeg), (a_GCPtrMem), (a_u128Value))
 
 # define IEM_MC_STORE_MEM_FLAT_U128(a_GCPtrMem, a_u128Value) \
-    iemMemStoreDataU128Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem), (a_u128Value))
+    iemMemStoreDataU128Jmp(pVCpu, UINT8_MAX, (a_GCPtrMem), &(a_u128Value))
 # define IEM_MC_STORE_MEM_FLAT_U128_ALIGN_SSE(a_GCPtrMem, a_u128Value) \
     iemMemStoreDataU128AlignedSseJmp(pVCpu, UINT8_MAX, (a_GCPtrMem), (a_u128Value))
 #endif
@@ -2148,6 +2148,135 @@ AssertCompile(X86_CR4_FSGSBASE > UINT8_MAX);
 #else
 # define IEM_MC_MEM_FLAT_MAP_R64_WO(a_pr64Mem, a_bUnmapInfo, a_GCPtrMem) \
     (a_pr64Mem) = (PRTFLOAT64U)iemMemFlatMapDataU64WoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
+#endif
+
+
+/* 128-bit */
+
+/**
+ * Maps guest memory for dqword read+write direct (or bounce) buffer acccess.
+ *
+ * @param[out] a_pu128Mem   Where to return the pointer to the mapping.
+ * @param[out] a_bUnmapInfo Where to return umapping instructions. uint8_t.
+ * @param[in]  a_iSeg       The segment register to access via. No UINT8_MAX!
+ * @param[in]  a_GCPtrMem   The memory address.
+ * @remarks Will return/long jump on errors.
+ * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RW
+ */
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_MAP_U128_RW(a_pu128Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { \
+        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu128Mem), sizeof(RTUINT128U), (a_iSeg), \
+                                           (a_GCPtrMem), IEM_ACCESS_DATA_RW, sizeof(RTUINT128U) - 1)); \
+        a_bUnmapInfo = 1 | ((IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE) << 4); \
+    } while (0)
+#else
+# define IEM_MC_MEM_MAP_U128_RW(a_pu128Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    (a_pu128Mem) = iemMemMapDataU128RwJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
+#endif
+
+/**
+ * Maps guest memory for dqword writeonly direct (or bounce) buffer acccess.
+ *
+ * @param[out] a_pu128Mem   Where to return the pointer to the mapping.
+ * @param[out] a_bUnmapInfo Where to return umapping instructions. uint8_t.
+ * @param[in]  a_iSeg       The segment register to access via. No UINT8_MAX!
+ * @param[in]  a_GCPtrMem   The memory address.
+ * @remarks Will return/long jump on errors.
+ * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_WO
+ */
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_MAP_U128_WO(a_pu128Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { \
+        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu128Mem), sizeof(RTUINT128), (a_iSeg), \
+                                           (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(RTUINT128) - 1)); \
+        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_WRITE << 4); \
+    } while (0)
+#else
+# define IEM_MC_MEM_MAP_U128_WO(a_pu128Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    (a_pu128Mem) = iemMemMapDataU128WoJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
+#endif
+
+/**
+ * Maps guest memory for dqword readonly direct (or bounce) buffer acccess.
+ *
+ * @param[out] a_pu128Mem   Where to return the pointer to the mapping.
+ * @param[out] a_bUnmapInfo Where to return umapping instructions. uint8_t.
+ * @param[in]  a_iSeg       The segment register to access via. No UINT8_MAX!
+ * @param[in]  a_GCPtrMem   The memory address.
+ * @remarks Will return/long jump on errors.
+ * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RO
+ */
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_MAP_U128_RO(a_pu128Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) do { \
+        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu128Mem), sizeof(RTUINT128), (a_iSeg), \
+                                           (a_GCPtrMem), IEM_ACCESS_DATA_R, sizeof(RTUINT128) - 1)); \
+        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_READ << 4); \
+    } while (0)
+#else
+# define IEM_MC_MEM_MAP_U128_RO(a_pu128Mem, a_bUnmapInfo, a_iSeg, a_GCPtrMem) \
+    (a_pu128Mem) = iemMemMapDataU128RoJmp(pVCpu, &(a_bUnmapInfo), (a_iSeg), (a_GCPtrMem))
+#endif
+
+/**
+ * Maps guest memory for dqword read+write direct (or bounce) buffer acccess,
+ * flat address variant.
+ *
+ * @param[out] a_pu128Mem   Where to return the pointer to the mapping.
+ * @param[out] a_bUnmapInfo Where to return umapping instructions. uint8_t.
+ * @param[in]  a_GCPtrMem   The memory address.
+ * @remarks Will return/long jump on errors.
+ * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RW
+ */
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_FLAT_MAP_U128_RW(a_pu128Mem, a_bUnmapInfo, a_GCPtrMem) do { \
+        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu128Mem), sizeof(RTUINT128), UINT8_MAX, \
+                                           (a_GCPtrMem), IEM_ACCESS_DATA_RW, sizeof(RTUINT128) - 1)); \
+        a_bUnmapInfo = 1 | ((IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE) << 4); \
+    } while (0)
+#else
+# define IEM_MC_MEM_FLAT_MAP_U128_RW(a_pu128Mem, a_bUnmapInfo, a_GCPtrMem) \
+    (a_pu128Mem) = iemMemFlatMapDataU128RwJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
+#endif
+
+/**
+ * Maps guest memory for dqword writeonly direct (or bounce) buffer acccess,
+ * flat address variant.
+ *
+ * @param[out] a_pu128Mem   Where to return the pointer to the mapping.
+ * @param[out] a_bUnmapInfo Where to return umapping instructions. uint8_t.
+ * @param[in]  a_GCPtrMem   The memory address.
+ * @remarks Will return/long jump on errors.
+ * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_WO
+ */
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_FLAT_MAP_U128_WO(a_pu128Mem, a_bUnmapInfo, a_GCPtrMem) do { \
+        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu128Mem), sizeof(RTUINT128), UINT8_MAX, \
+                                           (a_GCPtrMem), IEM_ACCESS_DATA_W, sizeof(RTUINT128) - 1)); \
+        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_WRITE << 4); \
+    } while (0)
+#else
+# define IEM_MC_MEM_FLAT_MAP_U128_WO(a_pu128Mem, a_bUnmapInfo, a_GCPtrMem) \
+    (a_pu128Mem) = iemMemFlatMapDataU128WoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
+#endif
+
+/**
+ * Maps guest memory for dqword readonly direct (or bounce) buffer acccess, flat
+ * address variant.
+ *
+ * @param[out] a_pu128Mem   Where to return the pointer to the mapping.
+ * @param[out] a_bUnmapInfo Where to return umapping instructions. uint8_t.
+ * @param[in]  a_GCPtrMem   The memory address.
+ * @remarks Will return/long jump on errors.
+ * @see     IEM_MC_MEM_COMMIT_AND_UNMAP_RO
+ */
+#ifndef IEM_WITH_SETJMP
+# define IEM_MC_MEM_FLAT_MAP_U128_RO(a_pu128Mem, a_bUnmapInfo, a_GCPtrMem) do { \
+        IEM_MC_RETURN_ON_FAILURE(iemMemMap(pVCpu, (void **)&(a_pu128Mem), sizeof(RTUINT128), UINT8_MAX, \
+                                           (a_GCPtrMem), IEM_ACCESS_DATA_R, sizeof(RTUINT128) - 1)); \
+        a_bUnmapInfo = 1 | (IEM_ACCESS_TYPE_READ << 4); \
+    } while (0)
+#else
+# define IEM_MC_MEM_FLAT_MAP_U128_RO(a_pu128Mem, a_bUnmapInfo, a_GCPtrMem) \
+    (a_pu128Mem) = iemMemFlatMapDataU128RoJmp(pVCpu, &(a_bUnmapInfo), (a_GCPtrMem))
 #endif
 
 

@@ -12481,14 +12481,15 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg16b_Mdq, uint8_t, bRm)
          * the patterns IEMAllThrdPython.py requires for the code morphing.
          */
 #define BODY_CMPXCHG16B_HEAD \
-            IEM_MC_BEGIN(4, 3, IEM_MC_F_64BIT, 0); \
+            IEM_MC_BEGIN(4, 4, IEM_MC_F_64BIT, 0); \
             IEM_MC_LOCAL(RTGCPTR,               GCPtrEffDst); \
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0); \
             IEMOP_HLP_DONE_DECODING(); \
             \
             IEM_MC_RAISE_GP0_IF_EFF_ADDR_UNALIGNED(GCPtrEffDst, 16); \
+            IEM_MC_LOCAL(uint8_t,               bUnmapInfo); \
             IEM_MC_ARG(PRTUINT128U,             pu128MemDst,                0); \
-            IEM_MC_MEM_MAP(pu128MemDst, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/); \
+            IEM_MC_MEM_MAP_U128_RW(pu128MemDst, bUnmapInfo, pVCpu->iem.s.iEffSeg, GCPtrEffDst); \
             \
             IEM_MC_LOCAL(RTUINT128U, u128RaxRdx); \
             IEM_MC_FETCH_GREG_PAIR_U64(u128RaxRdx, X86_GREG_xAX, X86_GREG_xDX); \
@@ -12502,7 +12503,7 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg16b_Mdq, uint8_t, bRm)
             IEM_MC_FETCH_EFLAGS(EFlags)
 
 #define BODY_CMPXCHG16B_TAIL \
-            IEM_MC_MEM_COMMIT_AND_UNMAP(pu128MemDst, IEM_ACCESS_DATA_RW); \
+            IEM_MC_MEM_COMMIT_AND_UNMAP_RW(pu128MemDst, bUnmapInfo); \
             IEM_MC_COMMIT_EFLAGS(EFlags); \
             IEM_MC_IF_EFL_BIT_NOT_SET(X86_EFL_ZF) { \
                 IEM_MC_STORE_GREG_PAIR_U64(X86_GREG_xAX, X86_GREG_xDX, u128RaxRdx); \
