@@ -162,8 +162,13 @@ void QIToolBar::paintEvent(QPaintEvent *pEvent)
         /* Prepare gradient: */
         const QColor backgroundColor = QApplication::palette().color(QPalette::Active, QPalette::Window);
         QLinearGradient gradient(rectangle.topLeft(), rectangle.bottomLeft());
+#if defined (VBOX_WS_MAC)
+        gradient.setColorAt(0, backgroundColor.lighter(105));
+        gradient.setColorAt(1, backgroundColor.darker(105));
+#else
         gradient.setColorAt(0, backgroundColor.darker(105));
         gradient.setColorAt(1, backgroundColor.darker(115));
+#endif
 
         /* Fill background: */
         painter.fillRect(rectangle, gradient);
