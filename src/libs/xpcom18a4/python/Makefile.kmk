@@ -79,9 +79,8 @@ ifeq ($(KBUILD_TARGET),darwin) # Relatively predictable, don't script.
  # For now we will only provide the module for 3.8 and the version agnostic variant using the limited API.
  #
  if exists "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9"
-  VBOX_PYTHON39_INC = /Users/aeichner/python-3.11.6/include/python3.11
-  VBOX_PYTHON39_LIB = /Users/aeichner/python-3.11.6/lib/libpython3.9.dylib
- endif
+  VBOX_PYTHON39_INC = /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/Headers
+  VBOX_PYTHON39_LIB = /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/libpython3.9.dylib
  if exists "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.8"
   VBOX_PYTHON38_INC = /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.8/Headers
   VBOX_PYTHON38_LIB = /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.8/lib/libpython3.8.dylib
